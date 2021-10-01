@@ -74,7 +74,7 @@ class NumeReDebugger
                 bExceptionHandled = false;
                 reset();
             }
-        inline void finalizeTest()
+        inline void finalizeCatched()
             {
                 bExceptionHandled = false;
                 resetBP();

@@ -69,6 +69,8 @@ typedef std::string (*StringFunc)(StringFuncArgs&);
 /////////////////////////////////////////////////
 enum FunctionSignatureType
 {
+    NOARGS,
+
 	PARSER_INT,
 	VAL,
 

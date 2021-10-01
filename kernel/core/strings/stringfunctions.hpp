@@ -2048,7 +2048,7 @@ static string strfnc_dectobase(StringFuncArgs& funcArgs)
 
 
 /////////////////////////////////////////////////
-/// \brief Implementation if the basetodec()
+/// \brief Implementation of the basetodec()
 /// function.
 ///
 /// \param funcArgs StringFuncArgs&
@@ -2151,6 +2151,20 @@ static string strfnc_justify(StringFuncArgs& funcArgs)
 
 
 /////////////////////////////////////////////////
+/// \brief Implementation of the getlasterror()
+/// function.
+///
+/// \param funcArgs StringFuncArgs&
+/// \return string
+///
+/////////////////////////////////////////////////
+static string strfnc_getlasterror(StringFuncArgs& funcArgs)
+{
+    return "\"" + errorTypeToString(getLastErrorType()) + "\"" + NEWSTRING + "\"" +getLastErrorMessage() + "\"";
+}
+
+
+/////////////////////////////////////////////////
 /// \brief This static function is used to construct
 /// the string map.
 ///
@@ -2178,6 +2192,7 @@ static map<string, StringFuncHandle> getStringFuncHandles()
     mHandleTable["getfileparts"]        = StringFuncHandle(STR, strfnc_getFileParts, false);
     mHandleTable["getfolderlist"]       = StringFuncHandle(STR_VALOPT, strfnc_getfolderlist, false);
     mHandleTable["getkeyval"]           = StringFuncHandle(STR_STR_STR_VALOPT_VALOPT, strfnc_getkeyval, true);
+    mHandleTable["getlasterror"]        = StringFuncHandle(NOARGS, strfnc_getlasterror, false);
     mHandleTable["getmatchingparens"]   = StringFuncHandle(STR, strfnc_getmatchingparens, false);
     mHandleTable["getopt"]              = StringFuncHandle(STR_VAL, strfnc_getopt, false);
     mHandleTable["is_alnum"]            = StringFuncHandle(STR, strfnc_isalnum, false);

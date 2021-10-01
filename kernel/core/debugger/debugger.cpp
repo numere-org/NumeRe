@@ -59,55 +59,25 @@ void NumeReDebugger::showError(exception_ptr e_ptr)
 
     // Rethrow the obtained exception to determine its
     // type and its message
-    try
-    {
-        rethrow_exception(e_ptr);
-    }
-    catch (mu::Parser::exception_type& e)
-    {
-        // Parser exception
-        sErrorMessage = _lang.get("ERR_MUP_HEAD") + "\n\n" + e.GetMsg();
-        showError(_lang.get("ERR_MUP_HEAD_DBG"));
-    }
-    catch (const std::exception& e)
-    {
-        // C++ Standard exception
-        sErrorMessage = _lang.get("ERR_STD_INTERNAL_HEAD") + "\n\n" + e.what();
-        showError(_lang.get("ERR_STD_INTERNAL_HEAD_DBG"));
-    }
-    catch (SyntaxError& e)
-    {
-        // Internal exception
-        if (e.errorcode == SyntaxError::PROCESS_ABORTED_BY_USER)
-        {
-            // Do nothing, if the user pressed ESC
-            return;
-        }
-        else
-        {
-            if (e.getToken().length() && (e.errorcode == SyntaxError::PROCEDURE_THROW || e.errorcode == SyntaxError::LOOP_THROW))
-            {
-                sErrorMessage = _lang.get("ERR_NR_HEAD") + "\n\n" + e.getToken();
-            }
-            else
-            {
-                sErrorMessage = _lang.get("ERR_NR_" + toString((int)e.errorcode) + "_0_*", e.getToken(), toString(e.getIndices()[0]), toString(e.getIndices()[1]), toString(e.getIndices()[2]),
-                                          toString(e.getIndices()[3]));
+    ErrorType type = getErrorType(e_ptr);
+    sErrorMessage = getLastErrorMessage();
 
-                if (sErrorMessage.substr(0, 7) == "ERR_NR_")
-                {
-                    sErrorMessage = _lang.get("ERR_GENERIC_0", toString((int)e.errorcode));
-                }
-
-                sErrorMessage = _lang.get("ERR_NR_HEAD") + "\n\n" + sErrorMessage;
-            }
-
+    switch (type)
+    {
+        case TYPE_MATHERROR:
+            showError(_lang.get("ERR_MUP_HEAD_DBG"));
+            break;
+        case TYPE_SYNTAXERROR:
+        case TYPE_ASSERTIONERROR:
+        case TYPE_CUSTOMERROR:
             showError(_lang.get("ERR_NR_HEAD_DBG"));
-        }
-    }
-    catch (...)
-    {
-        return ;
+            break;
+        case TYPE_INTERNALERROR:
+        case TYPE_CRITICALERROR:
+            showError(_lang.get("ERR_STD_INTERNAL_HEAD_DBG"));
+            break;
+        default:
+            return;
     }
 }
 
@@ -554,6 +524,23 @@ void NumeReDebugger::gatherInformations(ProcedureVarFactory* _varFactory, const 
 }
 
 
+/////////////////////////////////////////////////
+/// \brief This member function gathers all
+/// information from the current workspace and
+/// stores them internally to display them to the
+/// user.
+///
+/// \param _mLocalVars const std::map<std::string, std::pair<std::string, mu::value_type*>>&
+/// \param _mLocalStrings const std::map<std::string, std::pair<std::string, std::string>>&
+/// \param _mLocalTables const std::map<std::string, std::string>&
+/// \param _mLocalClusters const std::map<std::string, std::string>&
+/// \param _mArguments const std::map<std::string, std::string>&
+/// \param _sErraticCommand const string&
+/// \param _sErraticModule const string&
+/// \param _nLineNumber unsigned int
+/// \return void
+///
+/////////////////////////////////////////////////
 void NumeReDebugger:: gatherInformations(const std::map<std::string, std::pair<std::string, mu::value_type*>>& _mLocalVars,
                                          const std::map<std::string, std::pair<std::string, std::string>>& _mLocalStrings,
                                          const std::map<std::string, std::string>& _mLocalTables,

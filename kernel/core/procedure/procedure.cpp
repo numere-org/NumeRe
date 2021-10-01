@@ -317,7 +317,7 @@ Returnvalue Procedure::ProcCalc(string sLine, string sCurrentCommand, int& nByte
             // It may also be possible that some procedure occures at this
             // position. Handle them here
             if (sLine.find('$') != std::string::npos)
-                procedureInterface(sLine, _parser, _functions, _data, _out, _pData, _script, _option, nthRecursion, 0);
+                procedureInterface(sLine, _parser, _functions, _data, _out, _pData, _script, _option, 0);
         }
 
     }
@@ -341,7 +341,7 @@ Returnvalue Procedure::ProcCalc(string sLine, string sCurrentCommand, int& nByte
         || (nCurrentByteCode & ProcedureCommandLine::BYTECODE_RECURSIVEEXPRESSION
             && !(nCurrentByteCode & ProcedureCommandLine::BYTECODE_FLOWCTRLSTATEMENT)))
     {
-        if (!getLoop())
+        if (!getCurrentBlockDepth())
         {
             // Keep breakpoints and remove the token from the command line
             bool bBreakPoint = (sLine.substr(0, 2) == "|>");
@@ -367,7 +367,7 @@ Returnvalue Procedure::ProcCalc(string sLine, string sCurrentCommand, int& nByte
     if (nCurrentByteCode == ProcedureCommandLine::BYTECODE_NOT_PARSED
         || nCurrentByteCode & ProcedureCommandLine::BYTECODE_FLOWCTRLSTATEMENT)
     {
-        if (getLoop() || sCurrentCommand == "for" || sCurrentCommand == "if" || sCurrentCommand == "while" || sCurrentCommand == "switch")
+        if (getCurrentBlockDepth() || FlowCtrl::isFlowCtrlStatement(sCurrentCommand))
         {
             if (nCurrentByteCode == ProcedureCommandLine::BYTECODE_NOT_PARSED)
                 nByteCode |= ProcedureCommandLine::BYTECODE_FLOWCTRLSTATEMENT;
@@ -954,7 +954,7 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, F
         // define the current command to be a flow control statement,
         // if the procedure was not parsed already
         if (nCurrentByteCode == ProcedureCommandLine::BYTECODE_NOT_PARSED
-            && (sCurrentCommand == "if" || sCurrentCommand == "for" || sCurrentCommand == "while" || sCurrentCommand == "switch" || getLoop()))
+            && (FlowCtrl::isFlowCtrlStatement(sCurrentCommand) || getCurrentBlockDepth()))
         {
             nCurrentByteCode = ProcedureCommandLine::BYTECODE_FLOWCTRLSTATEMENT;
             nByteCode |= ProcedureCommandLine::BYTECODE_FLOWCTRLSTATEMENT;
@@ -965,7 +965,7 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, F
             && !(nCurrentByteCode & ProcedureCommandLine::BYTECODE_FLOWCTRLSTATEMENT))
         {
             if ((sProcCommandLine.substr(sProcCommandLine.find_first_not_of(' '), 2) == "|>" || nDebuggerCode == NumeReKernel::DEBUGGER_STEP)
-                && !getLoop())
+                && !getCurrentBlockDepth())
             {
                 if (sProcCommandLine.substr(sProcCommandLine.find_first_not_of(' '), 2) == "|>")
                 {
@@ -1015,7 +1015,7 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, F
             || (nCurrentByteCode & ProcedureCommandLine::BYTECODE_NAMESPACE
                 && !(nCurrentByteCode & ProcedureCommandLine::BYTECODE_FLOWCTRLSTATEMENT)))
         {
-            if (sCurrentCommand == "namespace" && !getLoop())
+            if (sCurrentCommand == "namespace" && !getCurrentBlockDepth())
             {
                 sNameSpace = decodeNameSpace(sProcCommandLine, sThisNameSpace);
 
@@ -1091,7 +1091,7 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, F
             // virtual procedure interface function
             try
             {
-                FlowCtrl::ProcedureInterfaceRetVal nRetVal = procedureInterface(sProcCommandLine, _parser, _functions, _data, _out, _pData, _script, _option, nth_procedure, 0);
+                FlowCtrl::ProcedureInterfaceRetVal nRetVal = procedureInterface(sProcCommandLine, _parser, _functions, _data, _out, _pData, _script, _option, 0);
 
                 // Only those two return values indicate that this line
                 // does contain a procedure or a plugin
@@ -1239,7 +1239,7 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, F
 
 
     // Ensure that all loops are closed now
-    if (getLoop())
+    if (getCurrentBlockDepth())
     {
         _debugger.gatherInformations(_varFactory, sProcCommandLine, sCurrentProcedureName, GetCurrentLine());
 
@@ -1285,12 +1285,11 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, F
 /// \param _pData PlotData&
 /// \param _script Script&
 /// \param _option Settings&
-/// \param nth_procedure unsigned int
 /// \param nth_command int
 /// \return FlowCtrl::ProcedureInterfaceRetVal
 ///
 /////////////////////////////////////////////////
-FlowCtrl::ProcedureInterfaceRetVal Procedure::procedureInterface(string& sLine, Parser& _parser, FunctionDefinitionManager& _functions, MemoryManager& _data, Output& _out, PlotData& _pData, Script& _script, Settings& _option, unsigned int nth_procedure, int nth_command)
+FlowCtrl::ProcedureInterfaceRetVal Procedure::procedureInterface(string& sLine, Parser& _parser, FunctionDefinitionManager& _functions, MemoryManager& _data, Output& _out, PlotData& _pData, Script& _script, Settings& _option, int nth_command)
 {
     // Create a new procedure object on the heap
     std::unique_ptr<Procedure> _procedure(new Procedure(*this));
@@ -1368,7 +1367,7 @@ FlowCtrl::ProcedureInterfaceRetVal Procedure::procedureInterface(string& sLine, 
                     sLine = sLine.substr(0, nPos - 1) + sLine.substr(nParPos + 1);
                 else
                 {
-                    nPos += replaceReturnVal(sLine, _parser, tempreturnval, nPos - 1, nParPos + 1, "_~PROC~[" + mangleName(__sName) + "~" + toString(nProc) + "_" + toString((int)nth_procedure) + "_" + toString((int)(nth_command + nth_procedure)) + "]");
+                    nPos += replaceReturnVal(sLine, _parser, tempreturnval, nPos - 1, nParPos + 1, "_~PROC~[" + mangleName(__sName) + "~" + toString(nProc) + "_" + toString((int)nthRecursion) + "_" + toString((int)(nth_command + nthRecursion)) + "]");
                     nProc++;
                 }
 
@@ -1451,8 +1450,8 @@ FlowCtrl::ProcedureInterfaceRetVal Procedure::procedureInterface(string& sLine, 
                     }
                     else
                     {
-                        _parser.SetVectorVar("_~PLUGIN[" + _procedure->getPluginProcName() + "~" + toString((int)nth_procedure) + "]", _return.vNumVal);
-                        sLine.replace(sLine.find("<<RETURNVAL>>"), 13, "_~PLUGIN[" + _procedure->getPluginProcName() + "~" + toString((int)(nth_command + nth_procedure)) + "]");
+                        _parser.SetVectorVar("_~PLUGIN[" + _procedure->getPluginProcName() + "~" + toString((int)nthRecursion) + "]", _return.vNumVal);
+                        sLine.replace(sLine.find("<<RETURNVAL>>"), 13, "_~PLUGIN[" + _procedure->getPluginProcName() + "~" + toString((int)(nth_command + nthRecursion)) + "]");
                     }
                 }
             }
@@ -2467,7 +2466,7 @@ int Procedure::catchExceptionForTest(exception_ptr e_ptr, bool bSupressAnswer_ba
         catch (mu::Parser::exception_type& e)
         {
             // Catch and convert parser errors
-            NumeReKernel::getInstance()->getDebugger().finalizeTest();
+            NumeReKernel::getInstance()->getDebugger().finalizeCatched();
             NumeReKernel::failMessage("@" + toString(nLine+1) + " | FAILED EXPRESSION: '" + e.GetExpr() + "'");
         }
         catch (SyntaxError& e)
@@ -2483,13 +2482,13 @@ int Procedure::catchExceptionForTest(exception_ptr e_ptr, bool bSupressAnswer_ba
             else if (e.getToken().length() && (e.errorcode == SyntaxError::PROCEDURE_THROW || e.errorcode == SyntaxError::LOOP_THROW))
             {
                 // Display custom errors with their message
-                NumeReKernel::getInstance()->getDebugger().finalizeTest();
+                NumeReKernel::getInstance()->getDebugger().finalizeCatched();
                 NumeReKernel::failMessage("@" + toString(nLine+1) + " | ERROR CAUGHT: " + e.getToken());
             }
             else
             {
                 // Mark default errors only with the failing expression
-                NumeReKernel::getInstance()->getDebugger().finalizeTest();
+                NumeReKernel::getInstance()->getDebugger().finalizeCatched();
                 NumeReKernel::failMessage("@" + toString(nLine+1) + " | FAILED EXPRESSION: '" + e.getExpr() + "'");
             }
         }
@@ -2609,6 +2608,7 @@ void Procedure::resetProcedure(Parser& _parser, bool bSupressAnswer)
     nDebuggerCode = 0;
     nFlags = 0;
     sTestClusterName.clear();
+    nthRecursion = 0;
 
     // Delete the variable factory for the current procedure
     if (_varFactory)

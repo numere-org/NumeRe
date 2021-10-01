@@ -1933,6 +1933,7 @@ namespace NumeRe
 			|| sExpression.find("string(") != string::npos
 			|| sExpression.find("string_cast(") != string::npos
 			|| sExpression.find("char(") != string::npos
+			|| sExpression.find("getlasterror(") != string::npos
 			|| sExpression.find("valtostr(") != string::npos)
             return true;
 

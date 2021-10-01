@@ -155,7 +155,7 @@ namespace NumeRe
                 nMaxArgs = argumentParser(sFunctionArgument, sStringArg1, sStringArg2, sStringArg3, nIntArg1, nIntArg2);
 
             // Ensure that at least a single argument is available
-            if (!nMaxArgs)
+            if (!nMaxArgs && funcHandle.fType != NOARGS)
                 throw SyntaxError(SyntaxError::STRING_ERROR, sLine, SyntaxError::invalid_position);
 
             // Evaluate the function calls
@@ -658,10 +658,14 @@ namespace NumeRe
     /////////////////////////////////////////////////
     vector<string> StringFuncHandler::callFunction(StringFuncHandle funcHandle, s_vect& sStringArg1, s_vect& sStringArg2, s_vect& sStringArg3, n_vect& nIntArg1, n_vect& nIntArg2, size_t nMaxArgs)
     {
-        vector<string> vReturnValues(nMaxArgs);
-
         StringFuncArgs stringArgs;
         stringArgs.opt = &NumeReKernel::getInstance()->getSettings();
+
+        // Shortcut for empty function arguments
+        if (!nMaxArgs)
+            return std::vector<std::string>(1, addMaskedStrings(funcHandle.fHandle(stringArgs)));
+
+        vector<string> vReturnValues(nMaxArgs);
 
         for (size_t i = 0; i < nMaxArgs; i++)
         {

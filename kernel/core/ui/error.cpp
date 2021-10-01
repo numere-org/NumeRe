@@ -24,8 +24,152 @@
 size_t SyntaxError::invalid_position = string::npos;
 int SyntaxError::invalid_index = INT_MIN;
 Assertion _assertionHandler;
+static std::string sLastErrorMessage;
+static ErrorType nLastErrorType;
 
 
+
+/////////////////////////////////////////////////
+/// \brief This function obtains the error type
+/// of a catched exception and sets the last
+/// error message.
+///
+/// \param e_ptr std::exception_ptr
+/// \return ErrorType
+///
+/////////////////////////////////////////////////
+ErrorType getErrorType(std::exception_ptr e_ptr)
+{
+    sLastErrorMessage.clear();
+
+    try
+    {
+        rethrow_exception(e_ptr);
+    }
+    catch (mu::Parser::exception_type& e)
+    {
+        // Parser exception
+        sLastErrorMessage = e.GetMsg();
+        return (nLastErrorType = TYPE_MATHERROR);
+    }
+    catch (const std::bad_alloc& e)
+    {
+        sLastErrorMessage = _lang.get("ERR_STD_BA_HEAD") + "\n" + e.what();
+        return (nLastErrorType = TYPE_CRITICALERROR);
+    }
+    catch (const std::exception& e)
+    {
+        // C++ Standard exception
+        sLastErrorMessage = _lang.get("ERR_STD_INTERNAL_HEAD") + "\n" + e.what();
+        return (nLastErrorType = TYPE_INTERNALERROR);
+    }
+    catch (SyntaxError& e)
+    {
+        // Internal exception
+        if (e.errorcode == SyntaxError::PROCESS_ABORTED_BY_USER)
+        {
+            // the user pressed ESC
+            return (nLastErrorType = TYPE_ABORT);
+        }
+        else
+        {
+            if (e.getToken().length() && (e.errorcode == SyntaxError::PROCEDURE_THROW || e.errorcode == SyntaxError::LOOP_THROW))
+            {
+                sLastErrorMessage = e.getToken();
+                return (nLastErrorType = TYPE_CUSTOMERROR);
+            }
+            else if (e.errorcode == SyntaxError::ASSERTION_ERROR)
+            {
+                sLastErrorMessage = _lang.get("ERR_NR_" + toString((int)e.errorcode) + "_0_*", e.getToken(),
+                                              toString(e.getIndices()[0]), toString(e.getIndices()[1]),
+                                              toString(e.getIndices()[2]), toString(e.getIndices()[3]));
+                sLastErrorMessage = sLastErrorMessage;
+                return (nLastErrorType = TYPE_ASSERTIONERROR);
+            }
+            else
+            {
+                sLastErrorMessage = _lang.get("ERR_NR_" + toString((int)e.errorcode) + "_0_*", e.getToken(),
+                                              toString(e.getIndices()[0]), toString(e.getIndices()[1]),
+                                              toString(e.getIndices()[2]), toString(e.getIndices()[3]));
+
+                // This error message does not exist
+                if (sLastErrorMessage.substr(0, 7) == "ERR_NR_")
+                    sLastErrorMessage = _lang.get("ERR_GENERIC_0", toString((int)e.errorcode));
+
+                return (nLastErrorType = TYPE_SYNTAXERROR);
+            }
+        }
+    }
+    catch (...)
+    {
+        sLastErrorMessage = _lang.get("ERR_CATCHALL_HEAD");
+        return (nLastErrorType = TYPE_GENERICERROR);
+    }
+
+    return (nLastErrorType = TYPE_NOERROR);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Return the last error message, which
+/// was catched by the getErrorType() function.
+///
+/// \return std::string
+///
+/////////////////////////////////////////////////
+std::string getLastErrorMessage()
+{
+    return sLastErrorMessage;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Return the last error type, which was
+/// catched by the getErrorType() function.
+///
+/// \return ErrorType
+///
+/////////////////////////////////////////////////
+ErrorType getLastErrorType()
+{
+    return nLastErrorType;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Return the error type converted to a
+/// human readable string.
+///
+/// \param e ErrorType
+/// \return std::string
+///
+/////////////////////////////////////////////////
+std::string errorTypeToString(ErrorType e)
+{
+    switch (e)
+    {
+        case TYPE_NOERROR:
+            return "none";
+        case TYPE_ABORT:
+            return "abort";
+        case TYPE_MATHERROR:
+            return "expression";
+        case TYPE_SYNTAXERROR:
+            return "error";
+        case TYPE_ASSERTIONERROR:
+            return "assertion";
+        case TYPE_CUSTOMERROR:
+            return "thrown";
+        case TYPE_INTERNALERROR:
+            return "internal";
+        case TYPE_CRITICALERROR:
+            return "critical";
+        case TYPE_GENERICERROR:
+            return "generic";
+    }
+
+    return "none";
+}
 
 
 /////////////////////////////////////////////////

@@ -46,7 +46,8 @@ size_t findVariableInExpression(const string& sExpr, const string& sVarName)
     while ((nMatch = sExpr.find(sVarName, nMatch)) != string::npos)
     {
         if ((!nMatch || sDelimiter.find(sExpr[nMatch-1]) != string::npos)
-            && (nMatch + sVarName.length() >= sExpr.length() || sDelimiter.find(sExpr[nMatch+sVarName.length()]) != string::npos))
+            && (nMatch + sVarName.length() >= sExpr.length() || sDelimiter.find(sExpr[nMatch+sVarName.length()]) != string::npos)
+            && !isInQuotes(sExpr, nMatch))
         {
             return nMatch;
         }

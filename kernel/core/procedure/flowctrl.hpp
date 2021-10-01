@@ -23,9 +23,9 @@
 #define FLOWCTRL_HPP
 
 #include <string>
-#include <iostream>
+#include <vector>
+#include <map>
 
-#include "../ui/error.hpp"
 #include "../ParserLib/muParser.h"
 #include "../datamanagement/memorymanager.hpp"
 #include "../maths/define.hpp"
@@ -33,12 +33,8 @@
 #include "../io/output.hpp"
 #include "../plotting/plotdata.hpp"
 #include "../script.hpp"
-#include "../maths/parser_functions.hpp"
-#include "../built-in.hpp"
-#include "../utils/tools.hpp"
 
 
-using namespace std;
 using namespace mu;
 
 struct FlowCtrlCommand
@@ -47,13 +43,13 @@ struct FlowCtrlCommand
     int nInputLine;
     bool bFlowCtrlStatement;
 
-    FlowCtrlCommand(const string& sCmd, int nLine, bool bStatement = false) : sCommand(sCmd), nInputLine(nLine), bFlowCtrlStatement(bStatement) {}
+    FlowCtrlCommand(const std::string& sCmd, int nLine, bool bStatement = false) : sCommand(sCmd), nInputLine(nLine), bFlowCtrlStatement(bStatement) {}
 };
 
 class FlowCtrl
 {
     private:
-        string sVarName;
+        std::string sVarName;
         double* dVarAdress;
         bool bLoopSupressAnswer;
 
@@ -98,76 +94,87 @@ class FlowCtrl
             INTERFACE_VALUE = 2
         };
 
-        vector<FlowCtrlCommand> vCmdArray;
+        enum FlowCtrlStatement
+        {
+            FC_FOR,
+            FC_IF,
+            FC_WHILE,
+            FC_SWITCH,
+            FC_TRY,
+            FC_COUNT
+        };
+
+        std::vector<FlowCtrlCommand> vCmdArray;
         value_type** vVarArray;
-        string* sVarArray;
+        std::string* sVarArray;
         varmap_type vVars;
-        int** nJumpTable;
-        int* nCalcType;
-        unsigned int nJumpTableLength;
-        string sLoopNames;
-        int nLoop;
-        int nIf;
-        int nWhile;
-        int nSwitch;
-        int nDefaultLength;
+        std::vector<std::vector<int>> nJumpTable;
+        std::vector<int> nCalcType;
+        std::string sLoopNames;
+
+        int nFlowCtrlStatements[FC_COUNT];
+
         int nVarArray;
-        int nReturnType;
         int nCurrentCommand;
         Returnvalue ReturnVal;
         bool bUseLoopParsingMode;
         bool bLockedPauseMode;
         bool bFunctionsReplaced;
-        string sLoopPlotCompose;
-        map<string,string> mVarMap;
+        std::string sLoopPlotCompose;
+        std::map<std::string,std::string> mVarMap;
         bool bSilent;
         bool bMask;
         bool bPrintedStatus;
-        bool bBreakSignal;
-        bool bContinueSignal;
-        bool bReturnSignal;
         bool bEvaluatingFlowControlStatements;
-        int nLoopSavety;
+        int nLoopSafety;
         int nDebuggerCode;
         AssertionStats baseline;
         std::string sTestClusterName;
+        int nthRecursion;
+
+        int nReturnType;
+        bool bReturnSignal;
+        bool bBreakSignal;
+        bool bContinueSignal;
 
         int for_loop(int nth_Cmd = 0, int nth_Loop = 0);
         int while_loop(int nth_Cmd = 0, int nth_Loop = 0);
         int if_fork(int nth_Cmd = 0, int nth_Loop = -1);
         int switch_fork(int nth_Cmd = 0, int nth_Loop = -1);
-        int calc(string sLine, int nthCmd);
-        value_type* evalHeader(int& nNum, string& sHeadExpression, bool bIsForHead, int nth_Cmd);
+        int try_catch(int nth_Cmd = 0, int nth_Loop = -1);
+
+        int calc(std::string sLine, int nthCmd);
+        value_type* evalHeader(int& nNum, std::string& sHeadExpression, bool bIsForHead, int nth_Cmd);
         int evalLoopFlowCommands(int __j, int nth_loop);
         int evalForkFlowCommands(int __j, int nth_loop);
-        void replaceLocalVars(string& sLine);
-        bool checkFlowControlArgument(const string& sFlowControlArgument, bool isForLoop = false);
-        bool checkCaseValue(const string& sCaseDefinition);
-        string extractFlagsAndIndexVariables();
+
+        void replaceLocalVars(std::string& sLine);
+
+        bool checkFlowControlArgument(const std::string& sFlowControlArgument, bool isForLoop = false);
+        bool checkCaseValue(const std::string& sCaseDefinition);
+
+        std::string extractFlagsAndIndexVariables();
         void fillJumpTableAndExpandRecursives();
         void prepareSwitchExpression(int nSwitchStart);
         void checkParsingModeAndExpandDefinitions();
-        void prepareLocalVarsAndReplace(string& sVars);
+        void prepareLocalVarsAndReplace(std::string& sVars);
         void updateTestStats();
 
 
-        virtual int procedureCmdInterface(string& sLine);
-        virtual ProcedureInterfaceRetVal procedureInterface(string& sLine, Parser& _parser, FunctionDefinitionManager& _functions, MemoryManager& _data, Output& _out, PlotData& _pData, Script& _script, Settings& _option, unsigned int nth_loop, int nth_command);
-        virtual int isInline(const string& sProc);
+        virtual int procedureCmdInterface(std::string& sLine);
+        virtual ProcedureInterfaceRetVal procedureInterface(std::string& sLine, Parser& _parser, FunctionDefinitionManager& _functions, MemoryManager& _data, Output& _out, PlotData& _pData, Script& _script, Settings& _option, int nth_command);
+        virtual int isInline(const std::string& sProc);
         virtual int evalDebuggerBreakPoint(Parser& _parser, Settings& _option);
         virtual int getErrorInformationForDebugger();
-        virtual vector<string> expandInlineProcedures(string& sLine);
+        virtual std::vector<std::string> expandInlineProcedures(std::string& sLine);
         virtual int catchExceptionForTest(exception_ptr e_ptr, bool bSupressAnswer_back, int nLine);
 
     public:
         FlowCtrl();
-        FlowCtrl(int _nDefaultLength);
         virtual ~FlowCtrl();
 
-        int nthRecursion;
-        inline int getLoop() const
-            {return nLoop + nIf + nWhile + nSwitch;};
-        inline string getCurrentBlock() const
+        int getCurrentBlockDepth() const;
+        inline std::string getCurrentBlock() const
             {
                 if (sLoopNames.length())
                     return sLoopNames.substr(sLoopNames.rfind(';')+1);
@@ -182,14 +189,15 @@ class FlowCtrl
             {
                 return bReturnSignal;
             }
-        void setCommand(string& __sCmd, int nCurrentLine);
+        void setCommand(std::string& __sCmd, int nCurrentLine);
         void eval();
         void reset();
 
         int getCurrentLineNumber() const;
-        string getCurrentCommand() const;
+        std::string getCurrentCommand() const;
 
         static bool isFlowCtrlStatement(const std::string& sCmd);
+        static bool isAnyFlowCtrlStatement(const std::string& sCmd);
 
 };
 

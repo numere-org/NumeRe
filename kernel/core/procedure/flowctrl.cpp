@@ -19,8 +19,11 @@
 
 // Implementation der FlowCtrl-Klasse
 #include "flowctrl.hpp"
+#include "../ui/error.hpp"
 #include "../../kernel.hpp"
-#include "../utils/stringtools.hpp"
+#include "../maths/parser_functions.hpp"
+#include "../built-in.hpp"
+#include "../utils/tools.hpp"
 
 // Definition of special return values
 #define FLOWCTRL_ERROR -1
@@ -33,8 +36,9 @@
 // Definition of standard values of the jump table
 #define NO_FLOW_COMMAND -1
 #define BLOCK_END 0
-#define ELSE_START 1
+#define BLOCK_MIDDLE 1
 #define PROCEDURE_INTERFACE 2
+#define JUMP_TABLE_ELEMENTS 3 // The maximal number of elements
 extern value_type vAns;
 
 
@@ -45,9 +49,9 @@ FlowCtrl::FlowCtrl()
 {
     vVarArray = nullptr;
     sVarArray = nullptr;
-    nJumpTable = nullptr;
-    nCalcType = nullptr;
     dVarAdress = nullptr;
+    sVarName = "";
+    nVarArray = 0;
 
     _parserRef = nullptr;
     _dataRef = nullptr;
@@ -57,45 +61,32 @@ FlowCtrl::FlowCtrl()
     _pDataRef = nullptr;
     _scriptRef = nullptr;
 
-    nJumpTableLength = 0;
-    nLoopSavety = -1;
-    nReturnType = 1;
-    nLoop = 0;
-    nIf = 0;
-    nSwitch = 0;
-    nWhile = 0;
-    nDefaultLength = 10;
-    nVarArray = 0;
+    nLoopSafety = -1;
+
+    for (size_t i = 0; i < FC_COUNT; i++)
+        nFlowCtrlStatements[i] = 0;
+
     nCurrentCommand = 0;
     nDebuggerCode = 0;
     sLoopNames = "";
     sLoopPlotCompose = "";
     bSilent = true;
     bMask = false;
+    bLoopSupressAnswer = false;
+
     bPrintedStatus = false;
+
+    bUseLoopParsingMode = false;
+    bLockedPauseMode = false;
+
+    bFunctionsReplaced = false;
+    nthRecursion = 0;
+    bEvaluatingFlowControlStatements = false;
+
+    nReturnType = 1;
     bBreakSignal = false;
     bContinueSignal = false;
     bReturnSignal = false;
-    sVarName = "";
-    bUseLoopParsingMode = false;
-    bLockedPauseMode = false;
-    bFunctionsReplaced = false;
-    nthRecursion = 0;
-    bLoopSupressAnswer = false;
-    bEvaluatingFlowControlStatements = false;
-}
-
-
-/////////////////////////////////////////////////
-/// \brief Generalized constructor. Delegates to
-/// the default constructor.
-///
-/// \param _nDefaultLength int
-///
-/////////////////////////////////////////////////
-FlowCtrl::FlowCtrl(int _nDefaultLength) : FlowCtrl()
-{
-    nDefaultLength = _nDefaultLength;
 }
 
 
@@ -116,6 +107,26 @@ FlowCtrl::~FlowCtrl()
         delete[] vVarArray;
         vVarArray = nullptr;
     }
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Returns the current block depth while
+/// reading a flow control statement to memory.
+///
+/// \return int
+///
+/////////////////////////////////////////////////
+int FlowCtrl::getCurrentBlockDepth() const
+{
+    int nCount = 0;
+
+    for (size_t i = 0; i < FC_COUNT; i++)
+    {
+        nCount += nFlowCtrlStatements[i];
+    }
+
+    return nCount;
 }
 
 
@@ -187,9 +198,9 @@ int FlowCtrl::for_loop(int nth_Cmd, int nth_loop)
         // Ensure that the loop is aborted, if the
         // maximal number of repetitions has been
         // performed
-        if (nLoopSavety > 0)
+        if (nLoopSafety > 0)
         {
-            if (nLoopCount >= nLoopSavety)
+            if (nLoopCount >= nLoopSafety)
                 return FLOWCTRL_ERROR;
 
             nLoopCount++;
@@ -365,9 +376,9 @@ int FlowCtrl::while_loop(int nth_Cmd, int nth_loop)
         // Ensure that the loop is aborted, if the
         // maximal number of repetitions has been
         // performed
-        if (nLoopSavety > 0)
+        if (nLoopSafety > 0)
         {
-            if (nLoopCount >= nLoopSavety)
+            if (nLoopCount >= nLoopSafety)
                 return FLOWCTRL_ERROR;
             nLoopCount++;
         }
@@ -509,7 +520,7 @@ int FlowCtrl::while_loop(int nth_Cmd, int nth_loop)
 int FlowCtrl::if_fork(int nth_Cmd, int nth_loop)
 {
     string sIf_Condition;
-    int nElse = nJumpTable[nth_Cmd][ELSE_START]; // Position of next else/elseif
+    int nElse = nJumpTable[nth_Cmd][BLOCK_MIDDLE]; // Position of next else/elseif
     int nEndif = nJumpTable[nth_Cmd][BLOCK_END];
     string sLine = "";
     bPrintedStatus = false;
@@ -522,7 +533,7 @@ int FlowCtrl::if_fork(int nth_Cmd, int nth_loop)
     while (vCmdArray[nth_Cmd].sCommand.find(">>if") != string::npos || vCmdArray[nth_Cmd].sCommand.find(">>elseif") != string::npos)
     {
         sIf_Condition = vCmdArray[nth_Cmd].sCommand.substr(vCmdArray[nth_Cmd].sCommand.find('(') + 1, vCmdArray[nth_Cmd].sCommand.rfind(')') - vCmdArray[nth_Cmd].sCommand.find('(') - 1);
-        nElse = nJumpTable[nth_Cmd][ELSE_START];
+        nElse = nJumpTable[nth_Cmd][BLOCK_MIDDLE];
         nEndif = nJumpTable[nth_Cmd][BLOCK_END];
         sLine = "";
         bPrintedStatus = false;
@@ -768,7 +779,7 @@ int FlowCtrl::if_fork(int nth_Cmd, int nth_loop)
 int FlowCtrl::switch_fork(int nth_Cmd, int nth_loop)
 {
     string sSwitch_Condition = vCmdArray[nth_Cmd].sCommand.substr(vCmdArray[nth_Cmd].sCommand.find('(') + 1, vCmdArray[nth_Cmd].sCommand.rfind(')') - vCmdArray[nth_Cmd].sCommand.find('(') - 1);
-    int nNextCase = nJumpTable[nth_Cmd][ELSE_START]; // Position of next case/default
+    int nNextCase = nJumpTable[nth_Cmd][BLOCK_MIDDLE]; // Position of next case/default
     int nSwitchEnd = nJumpTable[nth_Cmd][BLOCK_END];
     string sLine = "";
     bPrintedStatus = false;
@@ -782,7 +793,7 @@ int FlowCtrl::switch_fork(int nth_Cmd, int nth_loop)
     for (int i = 0; i < nNum; i++)
     {
         if (v[i] == 0.0)
-            nNextCase = nJumpTable[nNextCase][ELSE_START];
+            nNextCase = nJumpTable[nNextCase][BLOCK_MIDDLE];
         else
             break;
 
@@ -906,6 +917,259 @@ int FlowCtrl::switch_fork(int nth_Cmd, int nth_loop)
 
 
 /////////////////////////////////////////////////
+/// \brief Implements a try-catch block.
+///
+/// \param nth_Cmd int
+/// \param nth_loop int
+/// \return int
+///
+/////////////////////////////////////////////////
+int FlowCtrl::try_catch(int nth_Cmd, int nth_loop)
+{
+    int nNextCatch = nJumpTable[nth_Cmd][BLOCK_MIDDLE]; // Position of next case/default
+    int nTryEnd = nJumpTable[nth_Cmd][BLOCK_END];
+    string sLine = "";
+    bPrintedStatus = false;
+
+    // The inner loop goes through the contained
+    // commands
+    for (int __i = nth_Cmd+1; __i < (int)vCmdArray.size(); __i++)
+    {
+        nCurrentCommand = __i;
+        // If we reach the end of the
+        // current block, return with the last line
+        // of this block
+        if (__i >= nTryEnd || (nNextCatch >= 0 && __i >= nNextCatch))
+            return nTryEnd;
+
+        if (__i != nth_Cmd)
+        {
+            // If this is not the first line of the command block
+            // try to find control flow statements in the first column
+            if (vCmdArray[__i].bFlowCtrlStatement)
+            {
+                // Evaluate the flow control commands
+                int nReturn = evalForkFlowCommands(__i, nth_loop);
+
+                // Handle the return value
+                if (nReturn == FLOWCTRL_ERROR || nReturn == FLOWCTRL_RETURN)
+                    return nReturn;
+                else if (nReturn == FLOWCTRL_BREAK || nReturn == FLOWCTRL_CONTINUE)
+                    return nTryEnd;
+                else if (nReturn != FLOWCTRL_NO_CMD)
+                    __i = nReturn;
+
+                continue;
+            }
+        }
+
+        // Handle the "continue" and "break" flow
+        // control statements
+        if (nCalcType[__i] & CALCTYPE_CONTINUECMD)
+        {
+            bContinueSignal = true;
+            return nTryEnd;
+        }
+        else if (nCalcType[__i] & CALCTYPE_BREAKCMD)
+        {
+            bBreakSignal = true;
+            return nTryEnd;
+        }
+        else if (!nCalcType[__i])
+        {
+            string sCommand = findCommand(vCmdArray[__i].sCommand).sString;
+
+            // "continue" and "break" are both exiting the current
+            // condition, but they are yielding different signals
+            if (sCommand == "continue")
+            {
+                nCalcType[__i] = CALCTYPE_CONTINUECMD;
+                bContinueSignal = true;
+                return nTryEnd;
+            }
+
+            if (sCommand == "break")
+            {
+                // We don't propagate the break signal in this case
+                nCalcType[__i] = CALCTYPE_BREAKCMD;
+                bBreakSignal = true;
+                return nTryEnd;
+            }
+        }
+
+        // Increment the parser index, if the loop parsing
+        // mode was activated
+        if (bUseLoopParsingMode && !bLockedPauseMode)
+            _parserRef->SetIndex(__i);
+
+        try
+        {
+            // Evaluate the command line with the calc function
+            if (calc(vCmdArray[__i].sCommand, __i) == FLOWCTRL_ERROR)
+            {
+                if (_optionRef->useDebugger())
+                {
+                    NumeReKernel::getInstance()->getDebugger().gatherLoopBasedInformations(vCmdArray[__i].sCommand, getCurrentLineNumber(), mVarMap, vVarArray, sVarArray, nVarArray);
+                    getErrorInformationForDebugger();
+                }
+
+                return FLOWCTRL_ERROR;
+            }
+
+            if (bReturnSignal)
+                return FLOWCTRL_RETURN;
+        }
+        catch (...)
+        {
+            if (_optionRef->useDebugger())
+            {
+                NumeReKernel::getInstance()->getDebugger().gatherLoopBasedInformations(vCmdArray[__i].sCommand, getCurrentLineNumber(), mVarMap, vVarArray, sVarArray, nVarArray);
+                getErrorInformationForDebugger();
+            }
+
+            NumeReKernel::getInstance()->getDebugger().showError(current_exception());
+            nCalcType[__i] = CALCTYPE_NONE;
+
+            ErrorType type = getErrorType(current_exception());
+
+            // We won't catch every possible error
+            if (type == TYPE_ABORT || type == TYPE_INTERNALERROR || type == TYPE_CRITICALERROR)
+                catchExceptionForTest(current_exception(), NumeReKernel::bSupressAnswer, getCurrentLineNumber());
+
+            // Search for the correct first(!) case
+            while (nNextCatch >= 0)
+            {
+                std::string sCatchExpression = vCmdArray[nNextCatch].sCommand;
+                sCatchExpression.erase(0, sCatchExpression.find(">>catch")+7);
+
+                if (sCatchExpression.find_first_not_of(" :") == std::string::npos
+                    || sCatchExpression.find(" " + errorTypeToString(type)) != std::string::npos)
+                    break;
+                else
+                    nNextCatch = nJumpTable[nNextCatch][BLOCK_MIDDLE];
+            }
+
+            // Set the start index of the current switch case
+            if (nNextCatch < 0)
+                catchExceptionForTest(current_exception(), NumeReKernel::bSupressAnswer, getCurrentLineNumber());
+
+            nth_Cmd = nNextCatch;
+            NumeReKernel::getInstance()->getDebugger().finalizeCatched();
+            nNextCatch = nJumpTable[nNextCatch][BLOCK_MIDDLE];
+
+            // Execute handler code
+            // The inner loop goes through the contained
+            // commands
+            for (int __i = nth_Cmd+1; __i < (int)vCmdArray.size(); __i++)
+            {
+                nCurrentCommand = __i;
+                // If we reach the end of the
+                // current block, return with the last line
+                // of this block
+                if (__i >= nTryEnd || (nNextCatch >= 0 && __i >= nNextCatch))
+                    return nTryEnd;
+
+                if (__i != nth_Cmd)
+                {
+                    // If this is not the first line of the command block
+                    // try to find control flow statements in the first column
+                    if (vCmdArray[__i].bFlowCtrlStatement)
+                    {
+                        // Evaluate the flow control commands
+                        int nReturn = evalForkFlowCommands(__i, nth_loop);
+
+                        // Handle the return value
+                        if (nReturn == FLOWCTRL_ERROR || nReturn == FLOWCTRL_RETURN)
+                            return nReturn;
+                        else if (nReturn == FLOWCTRL_BREAK || nReturn == FLOWCTRL_CONTINUE)
+                            return nTryEnd;
+                        else if (nReturn != FLOWCTRL_NO_CMD)
+                            __i = nReturn;
+
+                        continue;
+                    }
+                }
+
+                // Handle the "continue" and "break" flow
+                // control statements
+                if (nCalcType[__i] & CALCTYPE_CONTINUECMD)
+                {
+                    bContinueSignal = true;
+                    return nTryEnd;
+                }
+                else if (nCalcType[__i] & CALCTYPE_BREAKCMD)
+                {
+                    bBreakSignal = true;
+                    return nTryEnd;
+                }
+                else if (!nCalcType[__i])
+                {
+                    string sCommand = findCommand(vCmdArray[__i].sCommand).sString;
+
+                    // "continue" and "break" are both exiting the current
+                    // condition, but they are yielding different signals
+                    if (sCommand == "continue")
+                    {
+                        nCalcType[__i] = CALCTYPE_CONTINUECMD;
+                        bContinueSignal = true;
+                        return nTryEnd;
+                    }
+
+                    if (sCommand == "break")
+                    {
+                        // We don't propagate the break signal in this case
+                        nCalcType[__i] = CALCTYPE_BREAKCMD;
+                        bBreakSignal = true;
+                        return nTryEnd;
+                    }
+                }
+
+                // Increment the parser index, if the loop parsing
+                // mode was activated
+                if (bUseLoopParsingMode && !bLockedPauseMode)
+                    _parserRef->SetIndex(__i);
+
+                try
+                {
+                    if (findCommand(vCmdArray[__i].sCommand).sString == "rethrow")
+                        rethrow_exception(current_exception());
+
+                    // Evaluate the command line with the calc function
+                    if (calc(vCmdArray[__i].sCommand, __i) == FLOWCTRL_ERROR)
+                    {
+                        if (_optionRef->useDebugger())
+                        {
+                            NumeReKernel::getInstance()->getDebugger().gatherLoopBasedInformations(vCmdArray[__i].sCommand, getCurrentLineNumber(), mVarMap, vVarArray, sVarArray, nVarArray);
+                            getErrorInformationForDebugger();
+                        }
+
+                        return FLOWCTRL_ERROR;
+                    }
+
+                    if (bReturnSignal)
+                        return FLOWCTRL_RETURN;
+                }
+                catch (...)
+                {
+                    if (_optionRef->useDebugger())
+                    {
+                        NumeReKernel::getInstance()->getDebugger().gatherLoopBasedInformations(vCmdArray[__i].sCommand, getCurrentLineNumber(), mVarMap, vVarArray, sVarArray, nVarArray);
+                        getErrorInformationForDebugger();
+                    }
+
+                    NumeReKernel::getInstance()->getDebugger().showError(current_exception());
+                    nCalcType[__i] = CALCTYPE_NONE;
+                    catchExceptionForTest(current_exception(), NumeReKernel::bSupressAnswer, getCurrentLineNumber());
+                }
+            }
+        }
+    }
+
+    return vCmdArray.size();
+}
+
+
+/////////////////////////////////////////////////
 /// \brief This member function abstracts the
 /// evaluation of all flow control headers. It
 /// will return an array of evaluated return
@@ -946,7 +1210,7 @@ value_type* FlowCtrl::evalHeader(int& nNum, string& sHeadExpression, bool bIsFor
         }
 
         // Call the procedure interface function
-        ProcedureInterfaceRetVal nReturn = procedureInterface(sHeadExpression, *_parserRef, *_functionRef, *_dataRef, *_outRef, *_pDataRef, *_scriptRef, *_optionRef, nLoop + nWhile + nIf, nth_Cmd);
+        ProcedureInterfaceRetVal nReturn = procedureInterface(sHeadExpression, *_parserRef, *_functionRef, *_dataRef, *_outRef, *_pDataRef, *_scriptRef, *_optionRef, nth_Cmd);
 
         // Handle the return value
         if (nReturn == INTERFACE_ERROR)
@@ -1091,6 +1355,25 @@ int FlowCtrl::evalLoopFlowCommands(int __j, int nth_loop)
 
         return __j;
     }
+    else if (vCmdArray[__j].sCommand.find(">>try") != string::npos)
+    {
+        __j = try_catch(__j, nth_loop + 1);
+
+        if (__j == FLOWCTRL_ERROR || __j == FLOWCTRL_RETURN || bReturnSignal)
+            return __j;
+
+        if (bContinueSignal)
+        {
+            return FLOWCTRL_CONTINUE;
+        }
+
+        if (bBreakSignal)
+        {
+            return FLOWCTRL_BREAK;
+        }
+
+        return __j;
+    }
     else if (vCmdArray[__j].sCommand.find(">>switch") != string::npos)
     {
         __j = switch_fork(__j, nth_loop + 1);
@@ -1181,9 +1464,18 @@ int FlowCtrl::evalForkFlowCommands(int __i, int nth_loop)
             return FLOWCTRL_CONTINUE;
         }
 
-        if (bBreakSignal)
+        return __i;
+    }
+    else if (vCmdArray[__i].sCommand.find(">>try") != string::npos)
+    {
+        __i = try_catch(__i, nth_loop + 1);
+
+        if (__i == FLOWCTRL_ERROR || __i == FLOWCTRL_RETURN || bReturnSignal)
+            return __i;
+
+        if (bContinueSignal)
         {
-            return FLOWCTRL_BREAK;
+            return FLOWCTRL_CONTINUE;
         }
 
         return __i;
@@ -1252,18 +1544,7 @@ void FlowCtrl::setCommand(string& __sCmd, int nCurrentLine)
     // if there's any
     string command =  findCommand(__sCmd).sString;
 
-    if (command == "for"
-        || command == "endfor"
-        || command == "if"
-        || command == "endif"
-        || command == "else"
-        || command == "elseif"
-        || command == "switch"
-        || command == "endswitch"
-        || command == "case"
-        || command == "default"
-        || command == "while"
-        || command == "endwhile")
+    if (isAnyFlowCtrlStatement(command))
     {
         // Ensure that the parentheses are
         // matching each other
@@ -1276,7 +1557,7 @@ void FlowCtrl::setCommand(string& __sCmd, int nCurrentLine)
         if (command == "for")
         {
             sLoopNames += ";FOR";
-            nLoop++;
+            nFlowCtrlStatements[FC_FOR]++;
 
             // Check the flow control argument for completeness
             if (!checkFlowControlArgument(__sCmd, true))
@@ -1306,7 +1587,7 @@ void FlowCtrl::setCommand(string& __sCmd, int nCurrentLine)
         else if (command == "while")
         {
             sLoopNames += ";WHL";
-            nWhile++;
+            nFlowCtrlStatements[FC_WHILE]++;
 
             // check the flow control argument for completeness
             if (!checkFlowControlArgument(__sCmd, false))
@@ -1318,7 +1599,7 @@ void FlowCtrl::setCommand(string& __sCmd, int nCurrentLine)
         else if (command == "if")
         {
             sLoopNames += ";IF";
-            nIf++;
+            nFlowCtrlStatements[FC_IF]++;
 
             // check the flow control argument for completeness
             if (!checkFlowControlArgument(__sCmd, false))
@@ -1327,11 +1608,11 @@ void FlowCtrl::setCommand(string& __sCmd, int nCurrentLine)
                 throw SyntaxError(SyntaxError::CANNOT_EVAL_IF, __sCmd, SyntaxError::invalid_position);
             }
 
-            __sCmd = toString(nIf) + ">>" + __sCmd;
+            __sCmd = toString(nFlowCtrlStatements[FC_IF]) + ">>" + __sCmd;
         }
         else if (command == "else" || command == "elseif")
         {
-            if (nIf && (getCurrentBlock() == "IF" || getCurrentBlock() == "ELIF"))
+            if (nFlowCtrlStatements[FC_IF] && (getCurrentBlock() == "IF" || getCurrentBlock() == "ELIF"))
             {
                 if (command == "elseif")
                 {
@@ -1349,18 +1630,18 @@ void FlowCtrl::setCommand(string& __sCmd, int nCurrentLine)
                     sLoopNames = sLoopNames.substr(0, sLoopNames.rfind(';')) + ";ELSE";
                 }
 
-                __sCmd = toString(nIf) + ">>" + __sCmd;
+                __sCmd = toString(nFlowCtrlStatements[FC_IF]) + ">>" + __sCmd;
             }
             else
                 return;
         }
         else if (command == "endif")
         {
-            if (nIf && (getCurrentBlock() == "IF" || getCurrentBlock() == "ELIF" || getCurrentBlock() == "ELSE"))
+            if (nFlowCtrlStatements[FC_IF] && (getCurrentBlock() == "IF" || getCurrentBlock() == "ELIF" || getCurrentBlock() == "ELSE"))
             {
                 sLoopNames = sLoopNames.substr(0, sLoopNames.rfind(';'));
-                __sCmd = toString(nIf) + ">>" + __sCmd;
-                nIf--;
+                __sCmd = toString(nFlowCtrlStatements[FC_IF]) + ">>" + __sCmd;
+                nFlowCtrlStatements[FC_IF]--;
             }
             else
                 return;
@@ -1368,7 +1649,7 @@ void FlowCtrl::setCommand(string& __sCmd, int nCurrentLine)
         else if (command == "switch")
         {
             sLoopNames += ";SWCH";
-            nSwitch++;
+            nFlowCtrlStatements[FC_SWITCH]++;
 
             // check the flow control argument for completeness
             if (!checkFlowControlArgument(__sCmd, false))
@@ -1377,11 +1658,11 @@ void FlowCtrl::setCommand(string& __sCmd, int nCurrentLine)
                 throw SyntaxError(SyntaxError::CANNOT_EVAL_SWITCH, __sCmd, SyntaxError::invalid_position);
             }
 
-            __sCmd = toString(nSwitch) + ">>" + __sCmd;
+            __sCmd = toString(nFlowCtrlStatements[FC_SWITCH]) + ">>" + __sCmd;
         }
         else if (command == "case" || command == "default")
         {
-            if (nSwitch && (getCurrentBlock() == "SWCH" || getCurrentBlock() == "CASE"))
+            if (nFlowCtrlStatements[FC_SWITCH] && (getCurrentBlock() == "SWCH" || getCurrentBlock() == "CASE"))
             {
                 // check the case definition for completeness
                 if (!checkCaseValue(__sCmd))
@@ -1400,38 +1681,75 @@ void FlowCtrl::setCommand(string& __sCmd, int nCurrentLine)
                     sLoopNames = sLoopNames.substr(0, sLoopNames.rfind(';')) + ";CASE";
                 }
 
-                __sCmd = toString(nSwitch) + ">>" + __sCmd;
+                __sCmd = toString(nFlowCtrlStatements[FC_SWITCH]) + ">>" + __sCmd;
             }
             else
                 return;
         }
         else if (command == "endswitch")
         {
-            if (nSwitch && (getCurrentBlock() == "SWCH" || getCurrentBlock() == "CASE" || getCurrentBlock() == "DEF"))
+            if (nFlowCtrlStatements[FC_SWITCH] && (getCurrentBlock() == "SWCH" || getCurrentBlock() == "CASE" || getCurrentBlock() == "DEF"))
             {
                 sLoopNames = sLoopNames.substr(0, sLoopNames.rfind(';'));
-                __sCmd = toString(nSwitch) + ">>" + __sCmd;
-                nSwitch--;
+                __sCmd = toString(nFlowCtrlStatements[FC_SWITCH]) + ">>" + __sCmd;
+                nFlowCtrlStatements[FC_SWITCH]--;
+            }
+            else
+                return;
+        }
+        else if (command == "try")
+        {
+            sLoopNames += ";TRY";
+            nFlowCtrlStatements[FC_TRY]++;
+
+            __sCmd = toString(nFlowCtrlStatements[FC_TRY]) + ">>" + __sCmd;
+        }
+        else if (command == "catch")
+        {
+            if (nFlowCtrlStatements[FC_TRY] && (getCurrentBlock() == "TRY" || getCurrentBlock() == "CTCH"))
+            {
+                // check the case definition for completeness
+                if (!checkCaseValue(__sCmd))
+                {
+                    reset();
+                    throw SyntaxError(SyntaxError::CANNOT_EVAL_SWITCH, __sCmd, SyntaxError::invalid_position);
+                }
+
+                // Set the corresponding loop names
+                sLoopNames = sLoopNames.substr(0, sLoopNames.rfind(';')) + ";CTCH";
+
+                __sCmd = toString(nFlowCtrlStatements[FC_TRY]) + ">>" + __sCmd;
+            }
+            else
+                return;
+        }
+        else if (command == "endtry")
+        {
+            if (nFlowCtrlStatements[FC_TRY] && (getCurrentBlock() == "TRY" || getCurrentBlock() == "CTCH"))
+            {
+                sLoopNames = sLoopNames.substr(0, sLoopNames.rfind(';'));
+                __sCmd = toString(nFlowCtrlStatements[FC_TRY]) + ">>" + __sCmd;
+                nFlowCtrlStatements[FC_TRY]--;
             }
             else
                 return;
         }
         else if (command == "endfor")
         {
-            if (nLoop && getCurrentBlock() == "FOR")
+            if (nFlowCtrlStatements[FC_FOR] && getCurrentBlock() == "FOR")
             {
                 sLoopNames = sLoopNames.substr(0, sLoopNames.rfind(';'));
-                nLoop--;
+                nFlowCtrlStatements[FC_FOR]--;
             }
             else
                 return;
         }
         else if (command == "endwhile")
         {
-            if (nWhile && getCurrentBlock() == "WHL")
+            if (nFlowCtrlStatements[FC_WHILE] && getCurrentBlock() == "WHL")
             {
                 sLoopNames = sLoopNames.substr(0, sLoopNames.rfind(';'));
-                nWhile--;
+                nFlowCtrlStatements[FC_WHILE]--;
             }
             else
                 return;
@@ -1452,7 +1770,7 @@ void FlowCtrl::setCommand(string& __sCmd, int nCurrentLine)
             sAppendedExpression = __sCmd.substr(getMatchingParenthesis(__sCmd) + 1);
             __sCmd.erase(getMatchingParenthesis(__sCmd) + 1);
         }
-        else if (command == "case" || command == "default")
+        else if (command == "case" || command == "default" || command == "catch")
         {
             if (__sCmd.find(':', 4) != string::npos
                 && __sCmd.find_first_not_of(": ", __sCmd.find(':', 4)) != string::npos)
@@ -1483,52 +1801,41 @@ void FlowCtrl::setCommand(string& __sCmd, int nCurrentLine)
         // If there's a flow control statement somewhere
         // in the current string, then store this part in
         // a temporary cache
-        if (__sCmd.find(" for ") != string::npos
-            || __sCmd.find(" for(") != string::npos
-            || __sCmd.find(" endfor") != string::npos
-            || __sCmd.find(" if ") != string::npos
-            || __sCmd.find(" if(") != string::npos
-            || __sCmd.find(" else") != string::npos
-            || __sCmd.find(" elseif ") != string::npos
-            || __sCmd.find(" elseif(") != string::npos
-            || __sCmd.find(" endif") != string::npos
-            || __sCmd.find(" switch ") != string::npos
-            || __sCmd.find(" switch(") != string::npos
-            || __sCmd.find(" case ") != string::npos
-            || __sCmd.find(" default ") != string::npos
-            || __sCmd.find(" default:") != string::npos
-            || __sCmd.find(" endswitch") != string::npos
-            || __sCmd.find(" while ") != string::npos
-            || __sCmd.find(" while(") != string::npos
-            || __sCmd.find(" endwhile") != string::npos)
+        size_t nQuotes = 0;
+
+        for (size_t n = 0; n < __sCmd.length(); n++)
         {
-            for (unsigned int n = 0; n < __sCmd.length(); n++)
+            if (__sCmd[n] == '"' && (!n || __sCmd[n-1] != '\\'))
+                nQuotes++;
+
+            if (__sCmd[n] == ' ' && !(nQuotes % 2))
             {
-                if (__sCmd[n] == ' ' && !isInQuotes(__sCmd, n))
+                if (__sCmd.substr(n, 5) == " for "
+                    || __sCmd.substr(n, 5) == " for("
+                    || __sCmd.substr(n, 7) == " endfor"
+                    || __sCmd.substr(n, 4) == " if "
+                    || __sCmd.substr(n, 4) == " if("
+                    || __sCmd.substr(n, 5) == " else"
+                    || __sCmd.substr(n, 8) == " elseif "
+                    || __sCmd.substr(n, 8) == " elseif("
+                    || __sCmd.substr(n, 6) == " endif"
+                    || __sCmd.substr(n, 8) == " switch "
+                    || __sCmd.substr(n, 8) == " switch("
+                    || __sCmd.substr(n, 6) == " case "
+                    || __sCmd.substr(n, 9) == " default "
+                    || __sCmd.substr(n, 9) == " default:"
+                    || __sCmd.substr(n, 10) == " endswitch"
+                    || __sCmd.substr(n, 4) == " try"
+                    || __sCmd.substr(n, 7) == " catch "
+                    || __sCmd.substr(n, 7) == " catch:"
+                    || __sCmd.substr(n, 7) == " endtry"
+                    || __sCmd.substr(n, 7) == " while "
+                    || __sCmd.substr(n, 7) == " while("
+                    || __sCmd.substr(n, 9) == " endwhile")
                 {
-                    if (__sCmd.substr(n, 5) == " for "
-                        || __sCmd.substr(n, 5) == " for("
-                        || __sCmd.substr(n, 7) == " endfor"
-                        || __sCmd.substr(n, 4) == " if "
-                        || __sCmd.substr(n, 4) == " if("
-                        || __sCmd.substr(n, 5) == " else"
-                        || __sCmd.substr(n, 8) == " elseif "
-                        || __sCmd.substr(n, 8) == " elseif("
-                        || __sCmd.substr(n, 6) == " endif"
-                        || __sCmd.substr(n, 8) == " switch "
-                        || __sCmd.substr(n, 8) == " switch("
-                        || __sCmd.substr(n, 6) == " case "
-                        || __sCmd.substr(n, 9) == " default "
-                        || __sCmd.substr(n, 9) == " default:"
-                        || __sCmd.substr(n, 10) == " endswitch"
-                        || __sCmd.substr(n, 7) == " while "
-                        || __sCmd.substr(n, 7) == " while("
-                        || __sCmd.substr(n, 9) == " endwhile")
-                    {
-                        sAppendedExpression = __sCmd.substr(n + 1);
-                        __sCmd.erase(n);
-                        break;
-                    }
+                    sAppendedExpression = __sCmd.substr(n + 1);
+                    __sCmd.erase(n);
+                    break;
                 }
             }
         }
@@ -1546,7 +1853,7 @@ void FlowCtrl::setCommand(string& __sCmd, int nCurrentLine)
     // the complete block
     if (vCmdArray.size())
     {
-        if (!(nLoop + nIf + nWhile + nSwitch) && vCmdArray.back().bFlowCtrlStatement)
+        if (!getCurrentBlockDepth() && vCmdArray.back().bFlowCtrlStatement)
             eval();
     }
 
@@ -1636,22 +1943,10 @@ void FlowCtrl::eval()
     }
 
     // Prepare the bytecode storage
-    nCalcType = new int[vCmdArray.size()];
-
-    for (size_t i = 0; i < vCmdArray.size(); i++)
-        nCalcType[i] = CALCTYPE_NONE;
+    nCalcType.resize(vCmdArray.size(), CALCTYPE_NONE);
 
     // Prepare the jump table
-    nJumpTableLength = vCmdArray.size();
-    nJumpTable = new int*[nJumpTableLength];
-
-    for (size_t i = 0; i < nJumpTableLength; i++)
-    {
-        nJumpTable[i] = new int[3];
-        nJumpTable[i][BLOCK_END] = NO_FLOW_COMMAND;
-        nJumpTable[i][ELSE_START] = NO_FLOW_COMMAND;
-        nJumpTable[i][PROCEDURE_INTERFACE] = NO_FLOW_COMMAND;
-    }
+    nJumpTable.resize(vCmdArray.size(), std::vector<int>(JUMP_TABLE_ELEMENTS, NO_FLOW_COMMAND));
 
     // Go again through the whole command set and fill
     // the jump table with the corresponding block ends
@@ -1723,7 +2018,7 @@ void FlowCtrl::eval()
                 throw SyntaxError(SyntaxError::CANNOT_EVAL_IF, "", SyntaxError::invalid_position);
             }
         }
-        else
+        else if (vCmdArray[0].sCommand.find(">>switch") != string::npos)
         {
             if (switch_fork() == FLOWCTRL_ERROR)
             {
@@ -1733,6 +2028,18 @@ void FlowCtrl::eval()
                 throw SyntaxError(SyntaxError::CANNOT_EVAL_SWITCH, "", SyntaxError::invalid_position);
             }
         }
+        else if (vCmdArray[0].sCommand.find(">>try") != string::npos)
+        {
+            if (try_catch() == FLOWCTRL_ERROR)
+            {
+                if (bSilent || bMask)
+                    NumeReKernel::printPreFmt("\n");
+
+                throw SyntaxError(SyntaxError::CANNOT_EVAL_TRY, "", SyntaxError::invalid_position);
+            }
+        }
+        else
+            throw SyntaxError(SyntaxError::INVALID_FLOWCTRL_STATEMENT, vCmdArray[0].sCommand, SyntaxError::invalid_position);
     }
     catch (...)
     {
@@ -1828,32 +2135,18 @@ void FlowCtrl::reset()
         sVarArray = nullptr;
     }
 
-    if (nJumpTable)
-    {
-        for (unsigned int i = 0; i < nJumpTableLength; i++)
-            delete[] nJumpTable[i];
-
-        delete[] nJumpTable;
-        nJumpTable = nullptr;
-        nJumpTableLength = 0;
-    }
-
-    if (nCalcType)
-    {
-        delete[] nCalcType;
-        nCalcType = nullptr;
-    }
+    nJumpTable.clear();
+    nCalcType.clear();
 
     if (nDebuggerCode == NumeReKernel::DEBUGGER_STEPOVER)
         nDebuggerCode = NumeReKernel::DEBUGGER_STEP;
 
     nVarArray = 0;
-    nLoop = 0;
-    nLoopSavety = -1;
-    nIf = 0;
-    nSwitch = 0;
-    nWhile = 0;
-    nDefaultLength = 10;
+    nLoopSafety = -1;
+
+    for (size_t i = 0; i < FC_COUNT; i++)
+        nFlowCtrlStatements[i] = 0;
+
     bSilent = true;
     bBreakSignal = false;
     bContinueSignal = false;
@@ -2323,7 +2616,7 @@ int FlowCtrl::calc(string sLine, int nthCmd)
             _parserRef->LockPause();
         }
 
-        ProcedureInterfaceRetVal nReturn = procedureInterface(sLine, *_parserRef, *_functionRef, *_dataRef, *_outRef, *_pDataRef, *_scriptRef, *_optionRef, nLoop + nWhile + nIf, nthCmd);
+        ProcedureInterfaceRetVal nReturn = procedureInterface(sLine, *_parserRef, *_functionRef, *_dataRef, *_outRef, *_pDataRef, *_scriptRef, *_optionRef, nthCmd);
 
         if (!bLockedPauseMode && bUseLoopParsingMode)
         {
@@ -2427,7 +2720,7 @@ int FlowCtrl::calc(string sLine, int nthCmd)
             // It may be possible that some procedure occures at this
             // position. Handle them here
             if (sLine.find('$') != std::string::npos)
-                procedureInterface(sLine, *_parserRef, *_functionRef, *_dataRef, *_outRef, *_pDataRef, *_scriptRef, *_optionRef, nLoop + nWhile + nIf, nthCmd);
+                procedureInterface(sLine, *_parserRef, *_functionRef, *_dataRef, *_outRef, *_pDataRef, *_scriptRef, *_optionRef, nthCmd);
         }
 
         if (!bLockedPauseMode && bUseLoopParsingMode)
@@ -2782,15 +3075,15 @@ string FlowCtrl::extractFlagsAndIndexVariables()
             bMask = false;
 
         if (vCmdArray[i].sCommand.find("end") != string::npos && findParameter(vCmdArray[i].sCommand, "lnumctrl"))
-            nLoopSavety = 1000;
+            nLoopSafety = 1000;
 
         if (vCmdArray[i].sCommand.find("end") != string::npos && findParameter(vCmdArray[i].sCommand, "lnumctrl", '='))
         {
             _parserRef->SetExpr(getArgAtPos(vCmdArray[i].sCommand, findParameter(vCmdArray[i].sCommand, "lnumctrl", '=') + 8));
-            nLoopSavety = intCast(_parserRef->Eval());
+            nLoopSafety = intCast(_parserRef->Eval());
 
-            if (nLoopSavety <= 0)
-                nLoopSavety = 1000;
+            if (nLoopSafety <= 0)
+                nLoopSafety = 1000;
         }
     }
     return sVars;
@@ -2870,10 +3163,10 @@ void FlowCtrl::fillJumpTableAndExpandRecursives()
                     if (!vCmdArray[j].bFlowCtrlStatement)
                         continue;
 
-                    if (vCmdArray[j].sCommand.length() && vCmdArray[j].sCommand.substr(0, (sNth_If + ">>else").length()) == sNth_If + ">>else" && nJumpTable[i][ELSE_START] == NO_FLOW_COMMAND)
-                        nJumpTable[i][ELSE_START] = j;
-                    else if (vCmdArray[j].sCommand.length() && vCmdArray[j].sCommand.substr(0, (sNth_If + ">>elseif").length()) == sNth_If + ">>elseif" && nJumpTable[i][ELSE_START] == NO_FLOW_COMMAND)
-                        nJumpTable[i][ELSE_START] = j;
+                    if (vCmdArray[j].sCommand.length() && vCmdArray[j].sCommand.substr(0, (sNth_If + ">>else").length()) == sNth_If + ">>else" && nJumpTable[i][BLOCK_MIDDLE] == NO_FLOW_COMMAND)
+                        nJumpTable[i][BLOCK_MIDDLE] = j;
+                    else if (vCmdArray[j].sCommand.length() && vCmdArray[j].sCommand.substr(0, (sNth_If + ">>elseif").length()) == sNth_If + ">>elseif" && nJumpTable[i][BLOCK_MIDDLE] == NO_FLOW_COMMAND)
+                        nJumpTable[i][BLOCK_MIDDLE] = j;
                     else if (vCmdArray[j].sCommand.length() && vCmdArray[j].sCommand.substr(0, (sNth_If + ">>endif").length()) == sNth_If + ">>endif")
                     {
                         nJumpTable[i][BLOCK_END] = j;
@@ -2890,10 +3183,10 @@ void FlowCtrl::fillJumpTableAndExpandRecursives()
                     if (!vCmdArray[j].bFlowCtrlStatement)
                         continue;
 
-                    if (vCmdArray[j].sCommand.length() && vCmdArray[j].sCommand.substr(0, (sNth_If + ">>else").length()) == sNth_If + ">>else" && nJumpTable[i][ELSE_START] == NO_FLOW_COMMAND)
-                        nJumpTable[i][ELSE_START] = j;
-                    else if (vCmdArray[j].sCommand.length() && vCmdArray[j].sCommand.substr(0, (sNth_If + ">>elseif").length()) == sNth_If + ">>elseif" && nJumpTable[i][ELSE_START] == NO_FLOW_COMMAND)
-                        nJumpTable[i][ELSE_START] = j;
+                    if (vCmdArray[j].sCommand.length() && vCmdArray[j].sCommand.substr(0, (sNth_If + ">>else").length()) == sNth_If + ">>else" && nJumpTable[i][BLOCK_MIDDLE] == NO_FLOW_COMMAND)
+                        nJumpTable[i][BLOCK_MIDDLE] = j;
+                    else if (vCmdArray[j].sCommand.length() && vCmdArray[j].sCommand.substr(0, (sNth_If + ">>elseif").length()) == sNth_If + ">>elseif" && nJumpTable[i][BLOCK_MIDDLE] == NO_FLOW_COMMAND)
+                        nJumpTable[i][BLOCK_MIDDLE] = j;
                     else if (vCmdArray[j].sCommand.length() && vCmdArray[j].sCommand.substr(0, (sNth_If + ">>endif").length()) == sNth_If + ">>endif")
                     {
                         nJumpTable[i][BLOCK_END] = j;
@@ -2910,10 +3203,10 @@ void FlowCtrl::fillJumpTableAndExpandRecursives()
                     if (!vCmdArray[j].bFlowCtrlStatement)
                         continue;
 
-                    if (vCmdArray[j].sCommand.length() && vCmdArray[j].sCommand.substr(0, (sNth_Switch + ">>case").length()) == sNth_Switch + ">>case" && nJumpTable[i][ELSE_START] == NO_FLOW_COMMAND)
-                        nJumpTable[i][ELSE_START] = j;
-                    else if (vCmdArray[j].sCommand.length() && vCmdArray[j].sCommand.substr(0, (sNth_Switch + ">>default").length()) == sNth_Switch + ">>default" && nJumpTable[i][ELSE_START] == NO_FLOW_COMMAND)
-                        nJumpTable[i][ELSE_START] = j;
+                    if (vCmdArray[j].sCommand.length() && vCmdArray[j].sCommand.substr(0, (sNth_Switch + ">>case").length()) == sNth_Switch + ">>case" && nJumpTable[i][BLOCK_MIDDLE] == NO_FLOW_COMMAND)
+                        nJumpTable[i][BLOCK_MIDDLE] = j;
+                    else if (vCmdArray[j].sCommand.length() && vCmdArray[j].sCommand.substr(0, (sNth_Switch + ">>default").length()) == sNth_Switch + ">>default" && nJumpTable[i][BLOCK_MIDDLE] == NO_FLOW_COMMAND)
+                        nJumpTable[i][BLOCK_MIDDLE] = j;
                     else if (vCmdArray[j].sCommand.length() && vCmdArray[j].sCommand.substr(0, (sNth_Switch + ">>endswitch").length()) == sNth_Switch + ">>endswitch")
                     {
                         nJumpTable[i][BLOCK_END] = j;
@@ -2936,11 +3229,47 @@ void FlowCtrl::fillJumpTableAndExpandRecursives()
                     if (!vCmdArray[j].bFlowCtrlStatement)
                         continue;
 
-                    if (vCmdArray[j].sCommand.length() && vCmdArray[j].sCommand.substr(0, (sNth_Switch + ">>case").length()) == sNth_Switch + ">>case" && nJumpTable[i][ELSE_START] == NO_FLOW_COMMAND)
-                        nJumpTable[i][ELSE_START] = j;
-                    else if (vCmdArray[j].sCommand.length() && vCmdArray[j].sCommand.substr(0, (sNth_Switch + ">>default").length()) == sNth_Switch + ">>default" && nJumpTable[i][ELSE_START] == NO_FLOW_COMMAND)
-                        nJumpTable[i][ELSE_START] = j;
+                    if (vCmdArray[j].sCommand.length() && vCmdArray[j].sCommand.substr(0, (sNth_Switch + ">>case").length()) == sNth_Switch + ">>case" && nJumpTable[i][BLOCK_MIDDLE] == NO_FLOW_COMMAND)
+                        nJumpTable[i][BLOCK_MIDDLE] = j;
+                    else if (vCmdArray[j].sCommand.length() && vCmdArray[j].sCommand.substr(0, (sNth_Switch + ">>default").length()) == sNth_Switch + ">>default" && nJumpTable[i][BLOCK_MIDDLE] == NO_FLOW_COMMAND)
+                        nJumpTable[i][BLOCK_MIDDLE] = j;
                     else if (vCmdArray[j].sCommand.length() && vCmdArray[j].sCommand.substr(0, (sNth_Switch + ">>endswitch").length()) == sNth_Switch + ">>endswitch")
+                    {
+                        nJumpTable[i][BLOCK_END] = j;
+                        break;
+                    }
+                }
+            }
+            else if (vCmdArray[i].sCommand.find(">>try") != string::npos)
+            {
+                string sNth_Try = vCmdArray[i].sCommand.substr(0, vCmdArray[i].sCommand.find(">>"));
+
+                for (size_t j = i + 1; j < vCmdArray.size(); j++)
+                {
+                    if (!vCmdArray[j].bFlowCtrlStatement)
+                        continue;
+
+                    if (vCmdArray[j].sCommand.length() && vCmdArray[j].sCommand.substr(0, (sNth_Try + ">>catch").length()) == sNth_Try + ">>catch" && nJumpTable[i][BLOCK_MIDDLE] == NO_FLOW_COMMAND)
+                        nJumpTable[i][BLOCK_MIDDLE] = j;
+                    else if (vCmdArray[j].sCommand.length() && vCmdArray[j].sCommand.substr(0, (sNth_Try + ">>endtry").length()) == sNth_Try + ">>endtry")
+                    {
+                        nJumpTable[i][BLOCK_END] = j;
+                        break;
+                    }
+                }
+            }
+            else if (vCmdArray[i].sCommand.find(">>catch") != string::npos)
+            {
+                string sNth_Try = vCmdArray[i].sCommand.substr(0, vCmdArray[i].sCommand.find(">>"));
+
+                for (size_t j = i + 1; j < vCmdArray.size(); j++)
+                {
+                    if (!vCmdArray[j].bFlowCtrlStatement)
+                        continue;
+
+                    if (vCmdArray[j].sCommand.length() && vCmdArray[j].sCommand.substr(0, (sNth_Try + ">>catch").length()) == sNth_Try + ">>catch" && nJumpTable[i][BLOCK_MIDDLE] == NO_FLOW_COMMAND)
+                        nJumpTable[i][BLOCK_MIDDLE] = j;
+                    else if (vCmdArray[j].sCommand.length() && vCmdArray[j].sCommand.substr(0, (sNth_Try + ">>endtry").length()) == sNth_Try + ">>endtry")
                     {
                         nJumpTable[i][BLOCK_END] = j;
                         break;
@@ -3302,7 +3631,37 @@ string FlowCtrl::getCurrentCommand() const
 /////////////////////////////////////////////////
 bool FlowCtrl::isFlowCtrlStatement(const std::string& sCmd)
 {
-    return sCmd == "if" || sCmd == "for" || sCmd == "while" || sCmd == "switch";
+    return sCmd == "if" || sCmd == "for" || sCmd == "while" || sCmd == "switch" || sCmd == "try";
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This static member function returns
+/// whether the passed command is any of the
+/// known flow control statements (not only their
+/// headers).
+///
+/// \param sCmd const std::string&
+/// \return bool
+///
+/////////////////////////////////////////////////
+bool FlowCtrl::isAnyFlowCtrlStatement(const std::string& sCmd)
+{
+    return sCmd == "for"
+        || sCmd == "endfor"
+        || sCmd == "if"
+        || sCmd == "endif"
+        || sCmd == "else"
+        || sCmd == "elseif"
+        || sCmd == "switch"
+        || sCmd == "endswitch"
+        || sCmd == "case"
+        || sCmd == "default"
+        || sCmd == "try"
+        || sCmd == "catch"
+        || sCmd == "endtry"
+        || sCmd == "while"
+        || sCmd == "endwhile";
 }
 
 
@@ -3318,12 +3677,11 @@ bool FlowCtrl::isFlowCtrlStatement(const std::string& sCmd)
 /// \param _pData PlotData&
 /// \param _script Script&
 /// \param _option Settings&
-/// \param nth_loop unsigned int
 /// \param nth_command int
 /// \return ProcedureInterfaceRetVal
 ///
 /////////////////////////////////////////////////
-FlowCtrl::ProcedureInterfaceRetVal FlowCtrl::procedureInterface(string& sLine, Parser& _parser, FunctionDefinitionManager& _functions, MemoryManager& _data, Output& _out, PlotData& _pData, Script& _script, Settings& _option, unsigned int nth_loop, int nth_command)
+FlowCtrl::ProcedureInterfaceRetVal FlowCtrl::procedureInterface(string& sLine, Parser& _parser, FunctionDefinitionManager& _functions, MemoryManager& _data, Output& _out, PlotData& _pData, Script& _script, Settings& _option, int nth_command)
 {
     return FlowCtrl::INTERFACE_NONE;
 }

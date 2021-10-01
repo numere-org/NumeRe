@@ -88,6 +88,7 @@ class SyntaxError
             CANNOT_EVAL_SWITCH,
             CANNOT_PASS_LITERAL_PER_REFERENCE,
             CANNOT_ASSIGN_COLUMN_OF_DIFFERENT_TYPE,
+            CANNOT_EVAL_TRY,
             /// INSERT HERE
             COL_COUNTS_DOESNT_MATCH=200,
             DATAFILE_NOT_EXIST=300,
@@ -138,6 +139,7 @@ class SyntaxError
             INVALID_WINDOW_ID,
             INVALID_WINDOW_ITEM_ID,
             INVALID_SYM_NAME,
+            INVALID_FLOWCTRL_STATEMENT,
             /// INSERT HERE
             LGS_HAS_NO_SOLUTION=2100,
             LGS_HAS_NO_UNIQUE_SOLUTION,
@@ -450,6 +452,30 @@ class SyntaxError
             {return nErrorIndices;}
 
 };
+
+
+/////////////////////////////////////////////////
+/// \brief Defines the possible error types,
+/// which can be thrown in this application.
+/////////////////////////////////////////////////
+enum ErrorType
+{
+    TYPE_NOERROR,
+    TYPE_ABORT,
+    TYPE_MATHERROR,
+    TYPE_SYNTAXERROR,
+    TYPE_ASSERTIONERROR,
+    TYPE_CUSTOMERROR,
+    TYPE_INTERNALERROR,
+    TYPE_CRITICALERROR,
+    TYPE_GENERICERROR
+};
+
+
+ErrorType getErrorType(std::exception_ptr e_ptr);
+std::string getLastErrorMessage();
+ErrorType getLastErrorType();
+std::string errorTypeToString(ErrorType e);
 
 
 // Forward declaration for the Assertion class
