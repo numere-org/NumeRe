@@ -43,3 +43,4 @@ Fixed	Table columns and expressions can now be used for clusters in inlined proc
 Cleaned	Renamed "type" to "method" in "smooth" and "fwt", because this is semantically more correct.
 Applied	"resample" can now be configured to accept two different sample counts and the filter for the "method" can be selected as well.
 Applied	The documentation browser now displays all articles in tabs instead of opening new windows.
+New	A "try...catch...endtry" control flow statement is now available.

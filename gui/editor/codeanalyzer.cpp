@@ -1091,7 +1091,11 @@ AnnotationCount CodeAnalyzer::analyseFunctions(bool isContinuedLine)
         else
             AnnotCount += addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE", highlightFoundOccurence(sSyntaxElement, wordstart, wordend-wordstart), m_sError, _guilang.get("GUI_ANALYZER_MISSINGPARENTHESIS")), ANNOTATION_ERROR);
     }
-    else if (sSyntaxElement != "time()" && sSyntaxElement != "clock()" && sSyntaxElement != "version()" && sSyntaxElement.find('(') != string::npos)
+    else if (sSyntaxElement != "time()"
+             && sSyntaxElement != "clock()"
+             && sSyntaxElement != "version()"
+             && sSyntaxElement != "getlasterror()"
+             && sSyntaxElement.find('(') != string::npos)
     {
         // Check for missing arguments
         int nPos = m_editor->BraceMatch(wordend);

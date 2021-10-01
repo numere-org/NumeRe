@@ -441,6 +441,10 @@ void NumeReKernel::defineConst()
     _parser.DefineConst("inf", INFINITY);
     _parser.DefineConst("void", NAN);
     _parser.DefineConst("I", mu::value_type(0.0, 1.0));
+    _parser.DefineConst(errorTypeToString(TYPE_CUSTOMERROR), mu::value_type(TYPE_CUSTOMERROR, 0));
+    _parser.DefineConst(errorTypeToString(TYPE_SYNTAXERROR), mu::value_type(TYPE_SYNTAXERROR, 0));
+    _parser.DefineConst(errorTypeToString(TYPE_ASSERTIONERROR), mu::value_type(TYPE_ASSERTIONERROR, 0));
+    _parser.DefineConst(errorTypeToString(TYPE_MATHERROR), mu::value_type(TYPE_MATHERROR, 0));
 }
 
 
@@ -685,7 +689,7 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
                 continue;
 
             // Search for the "assert" command decoration
-            if (findCommand(sLine, "assert").sString == "assert" && !_procedure.getLoop())
+            if (findCommand(sLine, "assert").sString == "assert" && !_procedure.getCurrentBlockDepth())
             {
                 _assertionHandler.enable(sLine);
                 sLine.erase(findCommand(sLine, "assert").nPos, 6);
@@ -704,7 +708,7 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
             if ((sLine.substr(0, 2) == "|>" || nDebuggerCode == DEBUGGER_STEP)
                     && _script.isValid()
                     && !_procedure.is_writing()
-                    && !_procedure.getLoop())
+                    && !_procedure.getCurrentBlockDepth())
             {
                 if (sLine.substr(0, 2) == "|>")
                     sLine.erase(0, 2);
@@ -772,7 +776,7 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
                 continue;
 
             // --> Gibt es "??"? Dann rufe die Prompt-Funktion auf <--
-            if (!_procedure.getLoop() && sLine.find("??") != string::npos && sCurrentCommand != "help")
+            if (!_procedure.getCurrentBlockDepth() && sLine.find("??") != string::npos && sCurrentCommand != "help")
                 sLine = promptForUserInput(sLine);
 
             // Handle plugin commands
@@ -791,7 +795,7 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
              *     eine Schleife eingegeben wird, dann nur in den wenigen Spezialfaellen, die zum Nachschlagen
              *     eines Keywords noetig sind ("list", "help", "find", etc.) <--
              */
-            if ((!_procedure.getLoop() && !FlowCtrl::isFlowCtrlStatement(sCurrentCommand))
+            if ((!_procedure.getCurrentBlockDepth() && !FlowCtrl::isFlowCtrlStatement(sCurrentCommand))
                     || sCurrentCommand == "help"
                     || sCurrentCommand == "man"
                     || sCurrentCommand == "quit"
@@ -850,7 +854,7 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
             }
 
             // Evaluate function calls (only outside the flow control blocks)
-            if (!_procedure.getLoop() && sCurrentCommand != "for" && sCurrentCommand != "if" && sCurrentCommand != "while" && sCurrentCommand != "switch")
+            if (!_procedure.getCurrentBlockDepth() && !FlowCtrl::isFlowCtrlStatement(sCurrentCommand))
             {
                 if (!_functions.call(sLine))
                     throw SyntaxError(SyntaxError::FUNCTION_ERROR, sLine, SyntaxError::invalid_position);
@@ -863,7 +867,7 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
 
             // --> Nochmals ueberzaehlige Leerzeichen entfernen <--
             StripSpaces(sLine);
-            if (!_procedure.getLoop())
+            if (!_procedure.getCurrentBlockDepth())
             {
                 // this is obviously a time consuming task => to be investigated
                 evalRecursiveExpressions(sLine);
@@ -1436,25 +1440,25 @@ bool NumeReKernel::handleComposeBlock(string& sLine, const string& sCmdCache, co
             // to complete it
             if (!(_script.isValid() && _script.isOpen()) && !sCmdCache.length())
             {
-                if (_procedure.getLoop())
+                if (_procedure.getCurrentBlockDepth())
                 {
                     // --> Wenn in "_procedure" geschrieben wird und dabei kein Script ausgefuehrt wird, hebe dies entsprechend hervor <--
                     printPreFmt("|" + _procedure.getCurrentBlock());
                     if (_procedure.getCurrentBlock() == "IF")
                     {
-                        if (_procedure.getLoop() > 1)
+                        if (_procedure.getCurrentBlockDepth() > 1)
                             printPreFmt("---");
                         else
                             printPreFmt("-");
                     }
-                    else if (_procedure.getCurrentBlock() == "ELSE" && _procedure.getLoop() > 1)
+                    else if (_procedure.getCurrentBlock() == "ELSE" && _procedure.getCurrentBlockDepth() > 1)
                         printPreFmt("-");
                     else
                     {
-                        if (_procedure.getLoop() > 1)
+                        if (_procedure.getCurrentBlockDepth() > 1)
                             printPreFmt("--");
                     }
-                    printPreFmt(strfill("> ", 2 * _procedure.getLoop(), '-'));
+                    printPreFmt(strfill("> ", 2 * _procedure.getCurrentBlockDepth(), '-'));
                 }
                 else if (_procedure.is_writing())
                 {
@@ -1497,25 +1501,25 @@ bool NumeReKernel::handleComposeBlock(string& sLine, const string& sCmdCache, co
                 // to complete it
                 if (!(_script.isValid() && _script.isOpen()) && !sCmdCache.length())
                 {
-                    if (_procedure.getLoop())
+                    if (_procedure.getCurrentBlockDepth())
                     {
                         // --> Wenn in "_procedure" geschrieben wird und dabei kein Script ausgefuehrt wird, hebe dies entsprechend hervor <--
                         printPreFmt("|" + _procedure.getCurrentBlock());
                         if (_procedure.getCurrentBlock() == "IF")
                         {
-                            if (_procedure.getLoop() > 1)
+                            if (_procedure.getCurrentBlockDepth() > 1)
                                 printPreFmt("---");
                             else
                                 printPreFmt("-");
                         }
-                        else if (_procedure.getCurrentBlock() == "ELSE" && _procedure.getLoop() > 1)
+                        else if (_procedure.getCurrentBlock() == "ELSE" && _procedure.getCurrentBlockDepth() > 1)
                             printPreFmt("-");
                         else
                         {
-                            if (_procedure.getLoop() > 1)
+                            if (_procedure.getCurrentBlockDepth() > 1)
                                 printPreFmt("--");
                         }
-                        printPreFmt(strfill("> ", 2 * _procedure.getLoop(), '-'));
+                        printPreFmt(strfill("> ", 2 * _procedure.getCurrentBlockDepth(), '-'));
                     }
                     else if (_procedure.is_writing())
                     {
@@ -1565,25 +1569,25 @@ bool NumeReKernel::handleProcedureWrite(const string& sLine, const string& sCmdC
             print(LineBreak(_lang.get("PARSER_CANNOTCREATEPROC"), _option));
         if (!(_script.isValid() && _script.isOpen()) && !sCmdCache.length())
         {
-            if (_procedure.getLoop())
+            if (_procedure.getCurrentBlockDepth())
             {
                 // --> Wenn in "_procedure" geschrieben wird und dabei kein Script ausgefuehrt wird, hebe dies entsprechend hervor <--
                 printPreFmt("|" + _procedure.getCurrentBlock());
                 if (_procedure.getCurrentBlock() == "IF")
                 {
-                    if (_procedure.getLoop() > 1)
+                    if (_procedure.getCurrentBlockDepth() > 1)
                         printPreFmt("---");
                     else
                         printPreFmt("-");
                 }
-                else if (_procedure.getCurrentBlock() == "ELSE" && _procedure.getLoop() > 1)
+                else if (_procedure.getCurrentBlock() == "ELSE" && _procedure.getCurrentBlockDepth() > 1)
                     printPreFmt("-");
                 else
                 {
-                    if (_procedure.getLoop() > 1)
+                    if (_procedure.getCurrentBlockDepth() > 1)
                         printPreFmt("--");
                 }
-                printPreFmt(strfill("> ", 2 * _procedure.getLoop(), '-'));
+                printPreFmt(strfill("> ", 2 * _procedure.getCurrentBlockDepth(), '-'));
             }
             else if (_procedure.is_writing())
             {
@@ -1662,7 +1666,7 @@ bool NumeReKernel::uninstallPlugin(const string& sLine, const string& sCurrentCo
 void NumeReKernel::handleToCmd(string& sLine, string& sCache, string& sCurrentCommand)
 {
     // Do only something, if "to_cmd()" is located
-    if (sLine.find("to_cmd(") != string::npos && !_procedure.getLoop())
+    if (sLine.find("to_cmd(") != string::npos && !_procedure.getCurrentBlockDepth())
     {
         unsigned int nPos = 0;
 
@@ -1707,7 +1711,7 @@ void NumeReKernel::handleToCmd(string& sLine, string& sCache, string& sCurrentCo
 bool NumeReKernel::evaluateProcedureCalls(string& sLine)
 {
     // Only if there's a candidate for a procedure
-    if (sLine.find('$') != string::npos && sLine.find('(', sLine.find('$')) != string::npos && !_procedure.getLoop())
+    if (sLine.find('$') != string::npos && sLine.find('(', sLine.find('$')) != string::npos && !_procedure.getCurrentBlockDepth())
     {
         unsigned int nPos = 0;
         int nProc = 0;
@@ -1796,7 +1800,7 @@ bool NumeReKernel::evaluateProcedureCalls(string& sLine)
 bool NumeReKernel::executePlugins(string& sLine)
 {
     // If there's a plugin command
-    if (_procedure.isPluginCmd(sLine) && !_procedure.getLoop())
+    if (_procedure.isPluginCmd(sLine) && !_procedure.getCurrentBlockDepth())
     {
         // Evaluate the command and store procedure name and argument list internally
         if (_procedure.evalPluginCmd(sLine))
@@ -1846,7 +1850,7 @@ bool NumeReKernel::executePlugins(string& sLine)
 /////////////////////////////////////////////////
 bool NumeReKernel::handleFlowControls(string& sLine, const string& sCmdCache, const string& sCurrentCommand, KernelStatus& nReturnVal)
 {
-    if (_procedure.getLoop() || sCurrentCommand == "for" || sCurrentCommand == "if" || sCurrentCommand == "while" || sCurrentCommand == "switch")
+    if (_procedure.getCurrentBlockDepth() || FlowCtrl::isFlowCtrlStatement(sCurrentCommand) )
     {
         if (bSupressAnswer)
             sLine += ";";
@@ -1857,7 +1861,7 @@ bool NumeReKernel::handleFlowControls(string& sLine, const string& sCmdCache, co
          */
         if (!(_script.isValid() && _script.isOpen()) && !sCmdCache.length())
         {
-            if (_procedure.getLoop())
+            if (_procedure.getCurrentBlockDepth())
             {
                 toggleTableStatus();
                 // --> Wenn in "_procedure" geschrieben wird und dabei kein Script ausgefuehrt wird, hebe dies entsprechend hervor <--
@@ -1865,21 +1869,21 @@ bool NumeReKernel::handleFlowControls(string& sLine, const string& sCmdCache, co
 
                 if (_procedure.getCurrentBlock() == "IF")
                 {
-                    if (_procedure.getLoop() > 1)
+                    if (_procedure.getCurrentBlockDepth() > 1)
                         printPreFmt("---");
                     else
                         printPreFmt("-");
                 }
-                else if (_procedure.getCurrentBlock() == "ELSE" && _procedure.getLoop() > 1)
+                else if (_procedure.getCurrentBlock() == "ELSE" && _procedure.getCurrentBlockDepth() > 1)
                     printPreFmt("-");
                 else
                 {
-                    if (_procedure.getLoop() > 1)
+                    if (_procedure.getCurrentBlockDepth() > 1)
                         printPreFmt("--");
                 }
 
                 toggleTableStatus();
-                printPreFmt(strfill("> ", 2 * _procedure.getLoop(), '-'));
+                printPreFmt(strfill("> ", 2 * _procedure.getCurrentBlockDepth(), '-'));
             }
             else if (_procedure.is_writing())
                 printPreFmt("|PROC> ");

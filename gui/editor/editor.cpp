@@ -1768,7 +1768,7 @@ void NumeReEditor::OnMouseDwell(wxStyledTextEvent& event)
             std::string sBlock = addLinebreaks(realignLangString(_guilang.get("PARSERFUNCS_LISTCMD_CMD_" + toUpperCase(blockDef.startWord) + "_*"), lastpos)) + "\n  [...]\n";
 
             if (selection != blockDef.startWord)
-                nLength = sBlock.length();
+                nLength = sBlock.length() + countUmlauts(sBlock);
 
             // Include middle words
             if (blockDef.middleWord1.length())
@@ -6804,13 +6804,15 @@ wxString NumeReEditor::getBlockAutoCompletion(const wxString& sWord)
     {
         if (sWord == "layout" || sWord == "compose" || sWord == "group")
             return sWord + " |\r\n" + getBlockEnd(sWord);
+        else if (sWord == "try")
+            return sWord + "\r\n|\r\n" + getBlockEnd(sWord);
         else if (sWord == "procedure")
             return sWord + " $|()\r\nendprocedure";
         else if (sWord == "else")
             return sWord + "|";
         else if (sWord == "elseif")
             return sWord + " (|)";
-        else if (sWord == "case")
+        else if (sWord == "case" || sWord == "catch")
             return sWord + " |:";
         else if (sWord == "default")
             return sWord + ":|";
