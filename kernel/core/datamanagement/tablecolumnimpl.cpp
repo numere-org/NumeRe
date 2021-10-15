@@ -23,30 +23,6 @@
 
 
 /////////////////////////////////////////////////
-/// \brief Shrink the column by removing all
-/// invalid elements from the end.
-///
-/// \return void
-///
-/////////////////////////////////////////////////
-void ValueColumn::shrink()
-{
-    for (int i = m_data.size()-1; i >= 0; i--)
-    {
-        if (!mu::isnan(m_data[i]))
-        {
-            m_data.resize(i+1);
-            return;
-        }
-    }
-
-    // If the code reaches this point, it is either empty
-    // or full of NANs
-    m_data.clear();
-}
-
-
-/////////////////////////////////////////////////
 /// \brief Returns the selected value as a string
 /// or a default value, if it does not exist.
 ///
@@ -98,9 +74,6 @@ mu::value_type ValueColumn::getValue(size_t elem) const
 /////////////////////////////////////////////////
 /// \brief Set a single string value.
 ///
-/// \throws SyntaxError, because this assignment
-/// is not possible.
-///
 /// \param elem size_t
 /// \param sValue const std::string&
 /// \return void
@@ -108,7 +81,10 @@ mu::value_type ValueColumn::getValue(size_t elem) const
 /////////////////////////////////////////////////
 void ValueColumn::setValue(size_t elem, const std::string& sValue)
 {
-    throw SyntaxError(SyntaxError::STRING_ERROR, sValue, sValue);
+    if (isConvertible(toInternalString(sValue), CONVTYPE_VALUE))
+        setValue(elem, StrToCmplx(toInternalString(sValue)));
+    else
+        throw SyntaxError(SyntaxError::STRING_ERROR, sValue, sValue);
 }
 
 
@@ -129,73 +105,6 @@ void ValueColumn::setValue(size_t elem, const mu::value_type& vValue)
         m_data.resize(elem+1, NAN);
 
     m_data[elem] = vValue;
-}
-
-
-/////////////////////////////////////////////////
-/// \brief Sets a string vector at the specified
-/// indices.
-///
-/// \throws SyntaxError, because this assignment
-/// is not possible.
-///
-/// \param idx const VectorIndex&
-/// \param vValue const std::vector<std::string>&
-/// \return void
-///
-/////////////////////////////////////////////////
-void ValueColumn::setValue(const VectorIndex& idx, const std::vector<std::string>& vValue)
-{
-    throw SyntaxError(SyntaxError::STRING_ERROR, "", "");
-}
-
-
-/////////////////////////////////////////////////
-/// \brief Sets a numerical vector at the
-/// specified indices.
-///
-/// \param idx const VectorIndex&
-/// \param vValue const std::vector<mu::value_type>&
-/// \return void
-///
-/////////////////////////////////////////////////
-void ValueColumn::setValue(const VectorIndex& idx, const std::vector<mu::value_type>& vValue)
-{
-    for (size_t i = 0; i < idx.size(); i++)
-    {
-        if (i >= vValue.size())
-            break;
-
-        if (idx[i] >= (int)m_data.size())
-            m_data.resize(idx[i]+1, NAN);
-
-        m_data[idx[i]] = vValue[i];
-    }
-}
-
-
-/////////////////////////////////////////////////
-/// \brief Sets a plain numerical array at the
-/// specified indices.
-///
-/// \param idx const VectorIndex&
-/// \param _dData mu::value_type*
-/// \param _nNum unsigned int
-/// \return void
-///
-/////////////////////////////////////////////////
-void ValueColumn::setValue(const VectorIndex& idx, mu::value_type* _dData, unsigned int _nNum)
-{
-    for (size_t i = 0; i < idx.size(); i++)
-    {
-        if (i >= _nNum)
-            break;
-
-        if (idx[i] >= (int)m_data.size())
-            m_data.resize(idx[i]+1, NAN);
-
-        m_data[idx[i]] = _dData[i];
-    }
 }
 
 
@@ -256,7 +165,7 @@ void ValueColumn::assign(const TableColumn* column)
 void ValueColumn::insert(const VectorIndex& idx, const TableColumn* column)
 {
     if (column->m_type == TableColumn::TYPE_VALUE)
-        setValue(idx, static_cast<const ValueColumn*>(column)->m_data);
+        TableColumn::setValue(idx, static_cast<const ValueColumn*>(column)->m_data);
     else
         throw SyntaxError(SyntaxError::CANNOT_ASSIGN_COLUMN_OF_DIFFERENT_TYPE, m_sHeadLine, column->m_sHeadLine, _lang.get("TYPE_VALUE") + "/" + _lang.get("TYPE_STRING"));
 }
@@ -341,6 +250,22 @@ void ValueColumn::removeElements(size_t pos, size_t elem)
 
 
 /////////////////////////////////////////////////
+/// \brief Resizes the internal array.
+///
+/// \param elem size_t
+/// \return void
+///
+/////////////////////////////////////////////////
+void ValueColumn::resize(size_t elem)
+{
+    if (!elem)
+        m_data.clear();
+    else
+        m_data.resize(elem, NAN);
+}
+
+
+/////////////////////////////////////////////////
 /// \brief Returns 0, if both elements are equal,
 /// -1 if element i is smaller than element j and
 /// 1 otherwise.
@@ -399,24 +324,53 @@ bool ValueColumn::asBool(int elem) const
 
 
 /////////////////////////////////////////////////
-/// \brief Returns the contents of this column as
-/// a StringColumn.
+/// \brief Returns the contents of this column
+/// converted to the new column type. Might even
+/// return itself.
 ///
-/// \return StringColumn*
+/// \param type ColumnType
+/// \return TableColumn*
 ///
 /////////////////////////////////////////////////
-StringColumn* ValueColumn::convert() const
+TableColumn* ValueColumn::convert(ColumnType type)
 {
-    StringColumn* strCol = new StringColumn(m_data.size());
-    strCol->m_sHeadLine = m_sHeadLine;
+    TableColumn* col = nullptr;
 
-    for (size_t i = 0; i < m_data.size(); i++)
+    switch (type)
     {
-        if (!mu::isnan(m_data[i]))
-            strCol->setValue(i, toString(m_data[i], NumeReKernel::getInstance()->getSettings().getPrecision()));
+        case TableColumn::TYPE_NONE:
+        case TableColumn::TYPE_STRING:
+        {
+            col = new StringColumn(m_data.size());
+
+            for (size_t i = 0; i < m_data.size(); i++)
+            {
+                if (!mu::isnan(m_data[i]))
+                    col->setValue(i, toString(m_data[i], NumeReKernel::getInstance()->getSettings().getPrecision()));
+            }
+
+            break;
+        }
+        case TableColumn::TYPE_DATETIME:
+        {
+            col = new DateTimeColumn(m_data.size());
+
+            for (size_t i = 0; i < m_data.size(); i++)
+            {
+                if (!mu::isnan(m_data[i]))
+                    col->setValue(i, m_data[i]);
+            }
+
+            break;
+        }
+        case TableColumn::TYPE_VALUE:
+            return this;
+        default:
+            return nullptr;
     }
 
-    return strCol;
+    col->m_sHeadLine = m_sHeadLine;
+    return col;
 }
 
 
@@ -425,31 +379,367 @@ StringColumn* ValueColumn::convert() const
 
 
 
+/////////////////////////////////////////////////
+/// \brief Returns the selected value as a string
+/// or a default value, if it does not exist.
+///
+/// \param elem size_t
+/// \return std::string
+///
+/////////////////////////////////////////////////
+std::string DateTimeColumn::getValueAsString(size_t elem) const
+{
+    if (elem < m_data.size() && !mu::isnan(m_data[elem]))
+        return toString(to_timePoint(m_data[elem]), 0);
 
+    return "nan";
+}
 
 
 /////////////////////////////////////////////////
-/// \brief Shrink the column by removing all
-/// invalid elements from the end.
+/// \brief Returns the contents as an internal
+/// string (i.e. without quotation marks).
 ///
+/// \param elem size_t
+/// \return std::string
+///
+/////////////////////////////////////////////////
+std::string DateTimeColumn::getValueAsInternalString(size_t elem) const
+{
+    return getValueAsString(elem);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Returns the selected value as a
+/// numerical type or an invalid value, if it
+/// does not exist.
+///
+/// \param elem size_t
+/// \return mu::value_type
+///
+/////////////////////////////////////////////////
+mu::value_type DateTimeColumn::getValue(size_t elem) const
+{
+    if (elem < m_data.size())
+        return m_data[elem];
+
+    return NAN;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Set a single string value.
+///
+/// \param elem size_t
+/// \param sValue const std::string&
 /// \return void
 ///
 /////////////////////////////////////////////////
-void StringColumn::shrink()
+void DateTimeColumn::setValue(size_t elem, const std::string& sValue)
 {
-    for (int i = m_data.size()-1; i >= 0; i--)
+    if (isConvertible(toInternalString(sValue), CONVTYPE_DATE_TIME))
+        setValue(elem, to_double(StrToTime(toInternalString(sValue))));
+    else
+        throw SyntaxError(SyntaxError::STRING_ERROR, sValue, sValue);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Set a single numerical value.
+///
+/// \param elem size_t
+/// \param vValue const mu::value_type&
+/// \return void
+///
+/////////////////////////////////////////////////
+void DateTimeColumn::setValue(size_t elem, const mu::value_type& vValue)
+{
+    if (elem >= m_data.size() && mu::isnan(vValue))
+        return;
+
+    if (elem >= m_data.size())
+        m_data.resize(elem+1, NAN);
+
+    m_data[elem] = vValue.real();
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Creates a copy of the selected part of
+/// this column. Can be used for simple
+/// extraction into a new table.
+///
+/// \param idx const VectorIndex&
+/// \return DateTimeColumn*
+///
+/////////////////////////////////////////////////
+DateTimeColumn* DateTimeColumn::copy(const VectorIndex& idx) const
+{
+    idx.setOpenEndIndex(size()-1);
+
+    DateTimeColumn* col = new DateTimeColumn(idx.size());
+    col->m_sHeadLine = m_sHeadLine;
+
+    for (size_t i = 0; i < idx.size(); i++)
     {
-        if (m_data[i].length())
-        {
-            m_data.resize(i+1);
-            return;
-        }
+        col->m_data[i] = getValue(idx[i]).real();
     }
 
-    // If the code reaches this point, it is either empty
-    // or consists only empty strings
-    m_data.clear();
+    return col;
 }
+
+
+/////////////////////////////////////////////////
+/// \brief Assign another TableColumn's contents
+/// to this table column.
+///
+/// \param column const TableColumn*
+/// \return void
+///
+/////////////////////////////////////////////////
+void DateTimeColumn::assign(const TableColumn* column)
+{
+    if (column->m_type == TableColumn::TYPE_DATETIME || column->m_type == TableColumn::TYPE_VALUE)
+    {
+        m_sHeadLine = column->m_sHeadLine;
+        m_data.clear();
+
+        for (const auto& val : static_cast<const DateTimeColumn*>(column)->m_data)
+            m_data.push_back(val);
+    }
+    else
+        throw SyntaxError(SyntaxError::CANNOT_ASSIGN_COLUMN_OF_DIFFERENT_TYPE, m_sHeadLine, column->m_sHeadLine, _lang.get("TYPE_DATETIME") + "/" + _lang.get("TYPE_STRING"));
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Insert the contents of the passed
+/// column at the specified positions.
+///
+/// \param idx const VectorIndex&
+/// \param column const TableColumn*
+/// \return void
+///
+/////////////////////////////////////////////////
+void DateTimeColumn::insert(const VectorIndex& idx, const TableColumn* column)
+{
+    if (column->m_type == TableColumn::TYPE_DATETIME || column->m_type == TableColumn::TYPE_VALUE)
+        TableColumn::setValue(idx, column->getValue(VectorIndex(0, VectorIndex::OPEN_END)));
+    else
+        throw SyntaxError(SyntaxError::CANNOT_ASSIGN_COLUMN_OF_DIFFERENT_TYPE, m_sHeadLine, column->m_sHeadLine, _lang.get("TYPE_DATETIME") + "/" + _lang.get("TYPE_STRING"));
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Delete the specified elements.
+///
+/// \note Will trigger the shrinking algorithm.
+///
+/// \param idx const VectorIndex&
+/// \return void
+///
+/////////////////////////////////////////////////
+void DateTimeColumn::deleteElements(const VectorIndex& idx)
+{
+    idx.setOpenEndIndex(size()-1);
+
+    // Shortcut, if everything shall be deleted
+    if (idx.isExpanded() && idx.front() == 0 && idx.last() >= (int)m_data.size()-1)
+    {
+        m_data.clear();
+        return;
+    }
+
+    for (size_t i = 0; i < idx.size(); i++)
+    {
+        if (idx[i] >= 0 && idx[i] < (int)m_data.size())
+            m_data[idx[i]] = NAN;
+    }
+
+    shrink();
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Inserts as many as the selected
+/// elements at the desired position, if the
+/// column is already larger than the starting
+/// position.
+///
+/// \param pos size_t
+/// \param elem size_t
+/// \return void
+///
+/////////////////////////////////////////////////
+void DateTimeColumn::insertElements(size_t pos, size_t elem)
+{
+    if (pos < m_data.size())
+        m_data.insert(m_data.begin()+pos, elem, NAN);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Appends the number of elements.
+///
+/// \param elem size_t
+/// \return void
+///
+/////////////////////////////////////////////////
+void DateTimeColumn::appendElements(size_t elem)
+{
+    m_data.insert(m_data.end(), elem, NAN);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Removes the selected number of
+/// elements from the column and moving all
+/// following items forward.
+///
+/// \param pos size_t
+/// \param elem size_t
+/// \return void
+///
+/////////////////////////////////////////////////
+void DateTimeColumn::removeElements(size_t pos, size_t elem)
+{
+    if (pos < m_data.size())
+        m_data.erase(m_data.begin()+pos, m_data.begin()+pos+elem);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Resizes the internal array.
+///
+/// \param elem size_t
+/// \return void
+///
+/////////////////////////////////////////////////
+void DateTimeColumn::resize(size_t elem)
+{
+    if (!elem)
+        m_data.clear();
+    else
+        m_data.resize(elem, NAN);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Returns 0, if both elements are equal,
+/// -1 if element i is smaller than element j and
+/// 1 otherwise.
+///
+/// \param i int
+/// \param j int
+/// \param unused bool
+/// \return int
+///
+/////////////////////////////////////////////////
+int DateTimeColumn::compare(int i, int j, bool unused) const
+{
+    if ((int)m_data.size() <= std::max(i, j))
+        return 0;
+
+    if (m_data[i] == m_data[j])
+        return 0;
+    else if (m_data[i] < m_data[j])
+        return -1;
+
+    return 1;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Returns true, if the selected element
+/// is a valid value.
+///
+/// \param elem int
+/// \return bool
+///
+/////////////////////////////////////////////////
+bool DateTimeColumn::isValid(int elem) const
+{
+    if (elem >= (int)m_data.size() || std::isnan(m_data[elem]))
+        return false;
+
+    return true;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Interprets the value as a boolean.
+///
+/// \param elem int
+/// \return bool
+///
+/////////////////////////////////////////////////
+bool DateTimeColumn::asBool(int elem) const
+{
+    if (elem < 0 || elem >= (int)m_data.size())
+        return false;
+
+    return m_data[elem] != 0.0;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Returns the contents of this column
+/// converted to the new column type. Might even
+/// return itself.
+///
+/// \param type ColumnType
+/// \return TableColumn*
+///
+/////////////////////////////////////////////////
+TableColumn* DateTimeColumn::convert(ColumnType type)
+{
+    TableColumn* col = nullptr;
+
+    switch (type)
+    {
+        case TableColumn::TYPE_NONE:
+        case TableColumn::TYPE_STRING:
+        {
+            col = new StringColumn(m_data.size());
+
+            for (size_t i = 0; i < m_data.size(); i++)
+            {
+                if (!mu::isnan(m_data[i]))
+                    col->setValue(i, toString(to_timePoint(m_data[i]), 0));
+            }
+
+            break;
+        }
+        case TableColumn::TYPE_VALUE:
+        {
+            col = new ValueColumn(m_data.size());
+
+            for (size_t i = 0; i < m_data.size(); i++)
+            {
+                if (!mu::isnan(m_data[i]))
+                    col->setValue(i, m_data[i]);
+            }
+
+            break;
+        }
+        case TableColumn::TYPE_DATETIME:
+            return this;
+        default:
+            return nullptr;
+    }
+
+    col->m_sHeadLine = m_sHeadLine;
+    return col;
+}
+
+
+
+
+
+
+
+
 
 
 /////////////////////////////////////////////////
@@ -538,81 +828,6 @@ void StringColumn::setValue(size_t elem, const mu::value_type& vValue)
 
 
 /////////////////////////////////////////////////
-/// \brief Assigns the strings from the passed
-/// vector at the selected positions.
-///
-/// \param idx const VectorIndex&
-/// \param vValue const std::vector<std::string>&
-/// \return void
-///
-/////////////////////////////////////////////////
-void StringColumn::setValue(const VectorIndex& idx, const std::vector<std::string>& vValue)
-{
-    for (size_t i = 0; i < idx.size(); i++)
-    {
-        if (i >= vValue.size())
-            break;
-
-        if (idx[i] >= (int)m_data.size())
-            m_data.resize(idx[i]+1);
-
-        m_data[idx[i]] = toInternalString(vValue[i]);
-    }
-}
-
-
-/////////////////////////////////////////////////
-/// \brief Assigns the numerical values of the
-/// passed vector at the selected positions by
-/// converting the values to strings.
-///
-/// \param idx const VectorIndex&
-/// \param vValue const std::vector<mu::value_type>&
-/// \return void
-///
-/////////////////////////////////////////////////
-void StringColumn::setValue(const VectorIndex& idx, const std::vector<mu::value_type>& vValue)
-{
-    for (size_t i = 0; i < idx.size(); i++)
-    {
-        if (i >= vValue.size())
-            break;
-
-        if (idx[i] >= (int)m_data.size())
-            m_data.resize(idx[i]+1);
-
-        m_data[idx[i]] = toString(vValue[i], NumeReKernel::getInstance()->getSettings().getPrecision());
-    }
-}
-
-
-/////////////////////////////////////////////////
-/// \brief Assigns the numerical values of the
-/// passed array at the selected positions by
-/// converting the values to strings.
-///
-/// \param idx const VectorIndex&
-/// \param _dData mu::value_type*
-/// \param _nNum unsigned int
-/// \return void
-///
-/////////////////////////////////////////////////
-void StringColumn::setValue(const VectorIndex& idx, mu::value_type* _dData, unsigned int _nNum)
-{
-    for (size_t i = 0; i < idx.size(); i++)
-    {
-        if (i >= _nNum)
-            break;
-
-        if (idx[i] >= (int)m_data.size())
-            m_data.resize(idx[i]+1);
-
-        m_data[idx[i]] = toString(_dData[i], NumeReKernel::getInstance()->getSettings().getPrecision());
-    }
-}
-
-
-/////////////////////////////////////////////////
 /// \brief Creates a copy of the selected part of
 /// this column. Can be used for simple
 /// extraction into a new table.
@@ -670,7 +885,7 @@ void StringColumn::assign(const TableColumn* column)
 void StringColumn::insert(const VectorIndex& idx, const TableColumn* column)
 {
     if (column->m_type == TableColumn::TYPE_STRING)
-        setValue(idx, static_cast<const StringColumn*>(column)->m_data);
+        TableColumn::setValue(idx, static_cast<const StringColumn*>(column)->m_data);
     else
         throw SyntaxError(SyntaxError::CANNOT_ASSIGN_COLUMN_OF_DIFFERENT_TYPE, m_sHeadLine, column->m_sHeadLine, _lang.get("TYPE_STRING") + "/" + _lang.get("TYPE_VALUE"));
 }
@@ -751,6 +966,22 @@ void StringColumn::removeElements(size_t pos, size_t elem)
 {
     if (pos < m_data.size())
         m_data.erase(m_data.begin()+pos, m_data.begin()+pos+elem);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Resizes the internal array.
+///
+/// \param elem size_t
+/// \return void
+///
+/////////////////////////////////////////////////
+void StringColumn::resize(size_t elem)
+{
+    if (!elem)
+        m_data.clear();
+    else
+        m_data.resize(elem, "");
 }
 
 
@@ -841,47 +1072,99 @@ size_t StringColumn::getBytes() const
 
 
 /////////////////////////////////////////////////
-/// \brief Returns the contents of this column as
-/// a ValueColumn or a nullptr, if the conversion
-/// is not possible.
+/// \brief Returns the contents of this column
+/// converted to the new column type. Might even
+/// return itself.
 ///
-/// \return ValueColumn*
+/// \param type ColumnType
+/// \return TableColumn*
 ///
 /////////////////////////////////////////////////
-ValueColumn* StringColumn::convert() const
+TableColumn* StringColumn::convert(ColumnType type)
 {
+    TableColumn* col = nullptr;
+
+    ConvertibleType convType = CONVTYPE_NONE;
+
     // Determine first, if a conversion is possible
     for (size_t i = 0; i < m_data.size(); i++)
     {
         if (!m_data[i].length())
             continue;
 
-        if (!isConvertible(m_data[i], CONVTYPE_VALUE))
+        if (convType == CONVTYPE_NONE)
+        {
+            if (isConvertible(m_data[i], CONVTYPE_VALUE))
+                convType = CONVTYPE_VALUE;
+            else if (isConvertible(m_data[i], CONVTYPE_DATE_TIME))
+                convType = CONVTYPE_DATE_TIME;
+            else
+                break;
+        }
+        else if (!isConvertible(m_data[i], convType))
+        {
+            convType = CONVTYPE_NONE;
+            break;
+        }
+    }
+
+    switch (type)
+    {
+        case TableColumn::TYPE_NONE:
+        {
+            if (convType == CONVTYPE_NONE)
+                return nullptr;
+
+            break;
+        }
+        case TableColumn::TYPE_DATETIME:
+        {
+            if (convType != CONVTYPE_DATE_TIME)
+                return nullptr;
+
+            break;
+        }
+        case TableColumn::TYPE_VALUE:
+        {
+            if (convType != CONVTYPE_VALUE)
+                return nullptr;
+
+            break;
+        }
+        case TableColumn::TYPE_STRING:
+            return this;
+        default:
             return nullptr;
     }
 
-    ValueColumn* valCol = new ValueColumn(m_data.size());
-    valCol->m_sHeadLine = m_sHeadLine;
+    if (convType == CONVTYPE_DATE_TIME)
+        col = new DateTimeColumn(m_data.size());
+    else if (convType == CONVTYPE_VALUE)
+        col = new ValueColumn(m_data.size());
 
     for (size_t i = 0; i < m_data.size(); i++)
     {
         if (!m_data[i].length() || toLowerCase(m_data[i]) == "nan" || m_data[i] == "---")
-            valCol->setValue(i, NAN);
+            col->setValue(i, NAN);
         else if (toLowerCase(m_data[i]) == "inf")
-            valCol->setValue(i, INFINITY);
+            col->setValue(i, INFINITY);
         else if (toLowerCase(m_data[i]) == "-inf")
-            valCol->setValue(i, -INFINITY);
-        else
+            col->setValue(i, -INFINITY);
+        else if (convType == CONVTYPE_VALUE)
         {
             std::string strval = m_data[i];
             replaceAll(strval, ",", ".");
-            valCol->setValue(i, StrToCmplx(strval));
+            col->setValue(i, StrToCmplx(strval));
+        }
+        else if (convType == CONVTYPE_DATE_TIME)
+        {
+            col->setValue(i, to_double(StrToTime(m_data[i])));
         }
     }
 
-    return valCol;
+    col->m_sHeadLine = m_sHeadLine;
+    return col;
 }
-
 
 
 
@@ -915,6 +1198,9 @@ void convert_if_empty(TblColPtr& col, size_t colNo, TableColumn::ColumnType type
             case TableColumn::TYPE_VALUE:
                 col.reset(new ValueColumn);
                 break;
+            case TableColumn::TYPE_DATETIME:
+                col.reset(new DateTimeColumn);
+                break;
             default:
                 return;
         }
@@ -945,29 +1231,10 @@ void convert_if_needed(TblColPtr& col, size_t colNo, TableColumn::ColumnType typ
     if (col->m_type == type)
         return;
 
-    switch (type)
-    {
-        case TableColumn::TYPE_STRING:
-        {
-            StringColumn* strCol = static_cast<ValueColumn*>(col.get())->convert();
+    TableColumn* convertedCol = col->convert(type);
 
-            if (strCol)
-                col.reset(strCol);
-
-            break;
-        }
-        case TableColumn::TYPE_VALUE:
-        {
-            ValueColumn* valCol = static_cast<StringColumn*>(col.get())->convert();
-
-            if (valCol)
-                col.reset(valCol);
-
-            break;
-        }
-        default:
-            return;
-    }
+    if (convertedCol && convertedCol != col.get())
+        col.reset(convertedCol);
 }
 
 
@@ -1009,6 +1276,12 @@ void convert_for_overwrite(TblColPtr& col, size_t colNo, TableColumn::ColumnType
         case TableColumn::TYPE_VALUE:
         {
             col.reset(new ValueColumn);
+            col->m_sHeadLine = sHeadLine;
+            break;
+        }
+        case TableColumn::TYPE_DATETIME:
+        {
+            col.reset(new DateTimeColumn);
             col->m_sHeadLine = sHeadLine;
             break;
         }

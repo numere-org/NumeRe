@@ -236,6 +236,7 @@ static std::string parseLayoutScript(std::string& sLayoutScript, tinyxml2::XMLDo
 
     // Load the layoutscript as a StyledTextFile
     StyledTextFile layoutScript(sLayoutScript);
+    SymDefManager _symDefs;
 
     std::string sFolderName = sLayoutScript.substr(0, sLayoutScript.rfind('/'));
     std::string sOnOpenEvent;
@@ -253,11 +254,21 @@ static std::string parseLayoutScript(std::string& sLayoutScript, tinyxml2::XMLDo
         // Get the current line without comments
         std::string line = layoutScript.getStrippedLine(i);
 
+        // Resolve symbol declarations
+        _symDefs.resolveSymbols(line);
+
         StripSpaces(line);
 
         if (line.length())
         {
             Match _mMatch = findCommand(line);
+
+            // Create new symbol declarations
+            if (_mMatch.sString == "declare")
+            {
+                _symDefs.createSymbol(line.substr(_mMatch.nPos+8));
+                continue;
+            }
 
             // Decode the commands
             if (_mMatch.sString == "layout")

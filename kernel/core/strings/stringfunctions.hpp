@@ -822,15 +822,24 @@ static string strfnc_to_time(StringFuncArgs& funcArgs)
 {
     string sTime = funcArgs.sArg2 + " ";
     string sPattern = funcArgs.sArg1 + " ";
+
     if (sTime.length() != sPattern.length())
         return "nan";
-    __time64_t timeVal = _time64(nullptr);
-    tm timeStruct = *_localtime64(&timeVal);
-    timeStruct.tm_isdst = 0;
-    TIME_ZONE_INFORMATION timezone;
-    GetTimeZoneInformation(&timezone);
+
+    time_stamp timeStruct = getTimeStampFromTimePoint(sys_time_now());
+    time_zone tz = getCurrentTimeZone();
+    timeStruct.m_hours = std::chrono::hours::zero();
+    timeStruct.m_minutes = std::chrono::minutes::zero();
+    timeStruct.m_seconds = std::chrono::seconds::zero();
+    timeStruct.m_millisecs = std::chrono::milliseconds::zero();
+    timeStruct.m_microsecs = std::chrono::microseconds::zero();
+
     char cCurrentChar = sPattern.front();
     string sCurrentElement;
+    date::year y = timeStruct.m_ymd.year();
+    date::month m = timeStruct.m_ymd.month();
+    date::day d = timeStruct.m_ymd.day();
+
     for (size_t i = 0; i < sPattern.length(); i++)
     {
         if (sPattern[i] != cCurrentChar)
@@ -840,53 +849,40 @@ static string strfnc_to_time(StringFuncArgs& funcArgs)
                 case 'y':
                 case 'Y': // year is either four or two chars long. The structure expects the time to start at the year 1900
                     if (sCurrentElement.length() > 2)
-                        timeStruct.tm_year = StrToInt(sCurrentElement) - 1900;
+                        y = date::year(StrToInt(sCurrentElement));
                     else
-                        timeStruct.tm_year = StrToInt(sCurrentElement) + (100 * (timeStruct.tm_year / 100));
+                        y = date::year(StrToInt(sCurrentElement) + 2000);
                     break;
                 case 'M':
-                    timeStruct.tm_mon = StrToInt(sCurrentElement) - 1;
+                    m = date::month(StrToInt(sCurrentElement));
                     break;
                 case 'D':
-                    timeStruct.tm_mday = StrToInt(sCurrentElement);
+                    d = date::day(StrToInt(sCurrentElement));
                     break;
                 case 'H':
-                    timeStruct.tm_hour = StrToInt(sCurrentElement);
+                    timeStruct.m_hours = std::chrono::hours(StrToInt(sCurrentElement));
                     break;
                 case 'h':
-                    timeStruct.tm_hour = StrToInt(sCurrentElement) - timezone.Bias / 60;
-                    if (timeStruct.tm_hour < 0)
-                        timeStruct.tm_hour += 24;
-                    else if (timeStruct.tm_hour >= 24)
-                        timeStruct.tm_hour -= 24;
+                    timeStruct.m_hours = std::chrono::hours(StrToInt(sCurrentElement) + (tz.Bias + tz.DayLightBias).count() / 60);
                     break;
                 case 'm':
-                    timeStruct.tm_min = StrToInt(sCurrentElement);
+                    timeStruct.m_minutes = std::chrono::minutes(StrToInt(sCurrentElement));
                     break;
                 case 's':
-                    timeStruct.tm_sec = StrToInt(sCurrentElement);
+                    timeStruct.m_seconds = std::chrono::seconds(StrToInt(sCurrentElement));
                     break;
             }
+
             cCurrentChar = sPattern[i];
             sCurrentElement.clear();
         }
+
         sCurrentElement += sTime[i];
     }
 
-    // Store hour val
-    int h = timeStruct.tm_hour;
+    timeStruct.m_ymd = date::year_month_day(y,m,d);
 
-    // Adapts daylight saving time and hour
-    timeVal = mktime(&timeStruct);
-
-    // Reset hour and recalculate if necessary
-    if (timeStruct.tm_hour != h)
-    {
-        timeStruct.tm_hour = h;
-        timeVal = mktime(&timeStruct);
-    }
-
-    return toString((size_t)timeVal);
+    return toCmdString(to_double(getTimePointFromTimeStamp(timeStruct)));
 }
 
 
@@ -1251,9 +1247,9 @@ static string strfnc_timeformat(StringFuncArgs& funcArgs)
 {
     string sFormattedTime = funcArgs.sArg1 + " "; // contains pattern
     __time64_t nTime = llabs(funcArgs.nArg1);
-    tm* timeStruct = _localtime64(&nTime);
-    TIME_ZONE_INFORMATION timezone;
-    GetTimeZoneInformation(&timezone);
+    time_stamp timeStruct = getTimeStampFromTime_t(nTime);
+    time_zone tz = getCurrentTimeZone();
+
     char cCurrentChar = sFormattedTime.front();
     size_t currentElementStart = 0;
 
@@ -1264,37 +1260,37 @@ static string strfnc_timeformat(StringFuncArgs& funcArgs)
             switch (cCurrentChar)
             {
                 case 'Y':
-                case 'y': // year is either four or two chars long. The structure expects the time to start at the year 1900
+                case 'y':
                     if (i - currentElementStart > 2)
-                        sFormattedTime.replace(currentElementStart, i - currentElementStart, padWithZeros(timeStruct->tm_year + 1900, i - currentElementStart));
+                        sFormattedTime.replace(currentElementStart, i - currentElementStart, padWithZeros(int(timeStruct.m_ymd.year()), i - currentElementStart));
                     else
-                        sFormattedTime.replace(currentElementStart, i - currentElementStart, padWithZeros(timeStruct->tm_year - (100 * (timeStruct->tm_year / 100)), i - currentElementStart));
+                        sFormattedTime.replace(currentElementStart, i - currentElementStart, padWithZeros(int(timeStruct.m_ymd.year()) - 100 * (int(timeStruct.m_ymd.year()) / 100), i - currentElementStart));
                     break;
                 case 'M':
-                    sFormattedTime.replace(currentElementStart, i - currentElementStart, padWithZeros(timeStruct->tm_mon + 1, i - currentElementStart));
+                    sFormattedTime.replace(currentElementStart, i - currentElementStart, padWithZeros(unsigned(timeStruct.m_ymd.month()), i - currentElementStart));
                     break;
                 case 'D':
-                    sFormattedTime.replace(currentElementStart, i - currentElementStart, padWithZeros(timeStruct->tm_mday, i - currentElementStart));
+                    sFormattedTime.replace(currentElementStart, i - currentElementStart, padWithZeros(unsigned(timeStruct.m_ymd.day()), i - currentElementStart));
                     break;
                 case 'd':
-                    sFormattedTime.replace(currentElementStart, i - currentElementStart, padWithZeros(timeStruct->tm_yday, i - currentElementStart));
+                    sFormattedTime.replace(currentElementStart, i - currentElementStart, padWithZeros((date::sys_days(timeStruct.m_ymd) - date::sys_days(timeStruct.m_ymd.year()/1u/1u)).count()+1, i - currentElementStart));
                     break;
                 case 'H':
-                    sFormattedTime.replace(currentElementStart, i - currentElementStart, padWithZeros(timeStruct->tm_hour, i - currentElementStart));
+                    sFormattedTime.replace(currentElementStart, i - currentElementStart, padWithZeros(timeStruct.m_hours.count(), i - currentElementStart));
                     break;
                 case 'h':
-                    if (timeStruct->tm_hour + timezone.Bias / 60 < 0)
-                        sFormattedTime.replace(currentElementStart, i - currentElementStart, padWithZeros(timeStruct->tm_hour + 24 + timezone.Bias / 60, i - currentElementStart));
-                    else if (timeStruct->tm_hour + timezone.Bias / 60 >= 24)
-                        sFormattedTime.replace(currentElementStart, i - currentElementStart, padWithZeros(timeStruct->tm_hour - 24 + timezone.Bias / 60, i - currentElementStart));
+                    if (timeStruct.m_hours.count() - (tz.Bias + tz.DayLightBias).count() / 60 < 0)
+                        sFormattedTime.replace(currentElementStart, i - currentElementStart, padWithZeros(timeStruct.m_hours.count() + 24 - (tz.Bias + tz.DayLightBias).count() / 60, i - currentElementStart));
+                    else if (timeStruct.m_hours.count() - (tz.Bias + tz.DayLightBias).count() / 60  >= 24)
+                        sFormattedTime.replace(currentElementStart, i - currentElementStart, padWithZeros(timeStruct.m_hours.count() - 24 - (tz.Bias + tz.DayLightBias).count() / 60, i - currentElementStart));
                     else
-                        sFormattedTime.replace(currentElementStart, i - currentElementStart, padWithZeros(timeStruct->tm_hour + timezone.Bias / 60, i - currentElementStart));
+                        sFormattedTime.replace(currentElementStart, i - currentElementStart, padWithZeros(timeStruct.m_hours.count() - (tz.Bias + tz.DayLightBias).count() / 60, i - currentElementStart));
                     break;
                 case 'm':
-                    sFormattedTime.replace(currentElementStart, i - currentElementStart, padWithZeros(timeStruct->tm_min, i - currentElementStart));
+                    sFormattedTime.replace(currentElementStart, i - currentElementStart, padWithZeros(timeStruct.m_minutes.count(), i - currentElementStart));
                     break;
                 case 's':
-                    sFormattedTime.replace(currentElementStart, i - currentElementStart, padWithZeros(timeStruct->tm_sec, i - currentElementStart));
+                    sFormattedTime.replace(currentElementStart, i - currentElementStart, padWithZeros(timeStruct.m_seconds.count(), i - currentElementStart));
                     break;
             }
 

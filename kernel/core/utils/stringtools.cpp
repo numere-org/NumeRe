@@ -21,9 +21,11 @@
 
 #include <cstring>
 #include <sstream>
+#include <iomanip>
 
-// Forward declaration
+// Forward declarations
 std::string getNextArgument(std::string& sArgList, bool bCut);
+double intPower(double, int);
 
 // toString function implementations
 // There's an overwrite for mostly every variable type
@@ -146,21 +148,19 @@ std::string toString(size_t nNumber)
 std::string toString(__time64_t tTime, int timeStampFlags)
 {
     tm* ltm = _localtime64(&tTime);
+
+    if (!ltm)
+        return "";
+
+    time_zone tz = getCurrentTimeZone();
+
     ostringstream timeStream;
 
     if (!(timeStampFlags & GET_ONLY_TIME))
     {
-        timeStream << 1900 + ltm->tm_year << "-"; //YYYY-
-
-        if (1 + ltm->tm_mon < 10)		// 0, falls Monat kleiner als 10
-            timeStream << "0";
-
-        timeStream << 1 + ltm->tm_mon << "-"; // MM-
-
-        if (ltm->tm_mday < 10)		// 0, falls Tag kleiner als 10
-            timeStream << "0";
-
-        timeStream << ltm->tm_mday; 	// DD
+        timeStream << 1900+ltm->tm_year << "-"; //YYYY-
+        timeStream << std::setfill('0') << std::setw(2) << ltm->tm_mon + 1 << "-"; // MM-
+        timeStream << std::setfill('0') << std::setw(2) << ltm->tm_mday; 	// DD
 
         if (timeStampFlags & GET_AS_TIMESTAMP)
             timeStream << "_";
@@ -178,29 +178,78 @@ std::string toString(__time64_t tTime, int timeStampFlags)
         }
     }
 
-    if (ltm->tm_hour < 10)
-        timeStream << "0";
-
     if (timeStampFlags & GET_ONLY_TIME)
-        timeStream << ltm->tm_hour - 1; 	// hh
+        timeStream << std::setfill('0') << std::setw(2) << ltm->tm_hour + tz.Bias.count()/60; 	// hh
     else
-        timeStream << ltm->tm_hour; 	// hh
+        timeStream << std::setfill('0') << std::setw(2) << ltm->tm_hour; 	// hh
 
     if (!(timeStampFlags & GET_AS_TIMESTAMP))
         timeStream << ":";		// ':' im regulaeren Datum
 
-    if (ltm->tm_min < 10)
-        timeStream << "0";
-
-    timeStream << ltm->tm_min;	// mm
+    timeStream << std::setfill('0') << std::setw(2) << ltm->tm_min;	// mm
 
     if (!(timeStampFlags & GET_AS_TIMESTAMP))
         timeStream << ":";
 
-    if (ltm->tm_sec < 10)
-        timeStream << "0";
+    timeStream << std::setfill('0') << std::setw(2) << ltm->tm_sec;	// ss
 
-    timeStream << ltm->tm_sec;	// ss
+    return timeStream.str();
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Converts a sys_time_point to a string.
+///
+/// \param tp sys_time_point
+/// \param timeStampFlags int
+/// \return std::string
+///
+/////////////////////////////////////////////////
+std::string toString(sys_time_point tp, int timeStampFlags)
+{
+    time_stamp ltm = getTimeStampFromTimePoint(tp);
+    time_zone tz = getCurrentTimeZone();
+    ostringstream timeStream;
+
+    if (!(timeStampFlags & GET_ONLY_TIME))
+    {
+        timeStream << ltm.m_ymd.year() << "-"; //YYYY-
+        timeStream << std::setfill('0') << std::setw(2) << unsigned(ltm.m_ymd.month()) << "-"; // MM-
+        timeStream << ltm.m_ymd.day(); 	// DD
+
+        if (timeStampFlags & GET_AS_TIMESTAMP)
+            timeStream << "_";
+        else
+        {
+            timeStream << ", ";	// Komma im regulaeren Datum
+
+            if (timeStampFlags & GET_WITH_TEXT)
+            {
+                if (_lang.get("TOOLS_TIMESTAMP_AT") == "TOOLS_TIMESTAMP_AT")
+                    timeStream << "at ";
+                else
+                    timeStream << _lang.get("TOOLS_TIMESTAMP_AT") << " ";
+            }
+        }
+    }
+
+    if (timeStampFlags & GET_ONLY_TIME)
+        timeStream << std::setfill('0') << std::setw(2) << ltm.m_hours.count() + (tz.Bias + tz.DayLightBias).count()/60; 	// hh
+    else
+        timeStream << std::setfill('0') << std::setw(2) << ltm.m_hours.count(); 	// hh
+
+    if (!(timeStampFlags & GET_AS_TIMESTAMP))
+        timeStream << ":";		// ':' im regulaeren Datum
+
+    timeStream << std::setfill('0') << std::setw(2) << ltm.m_minutes.count();	// mm
+
+    if (!(timeStampFlags & GET_AS_TIMESTAMP))
+        timeStream << ":";
+
+    timeStream << std::setfill('0') << std::setw(2) << ltm.m_seconds.count();	// ss
+
+    if (ltm.m_millisecs.count() && !(timeStampFlags & GET_AS_TIMESTAMP))
+        timeStream << "." << std::setfill('0') << std::setw(3) << ltm.m_millisecs.count();
 
     return timeStream.str();
 }
@@ -460,10 +509,30 @@ std::complex<double> StrToCmplx(const std::string& sString)
 
     // read 1st value
     if (!(in >> re))
-        return NAN; // ERROR!
+    {
+        // If this does not succeed, we read it as a
+        // string and try to detect INF and NAN
+        // constants it manually
+        in.clear();
+        in.seekg(0);
+        std::string val;
+        in >> val;
+        val = toLowerCase(val);
 
-    // check whether next char is 'i'
-    char c = in.peek();
+        if (val == "inf")
+            re = INFINITY;
+        else if (val == "-inf")
+            re = -INFINITY;
+        else
+            re = NAN;
+    }
+
+    char c;
+
+    // check whether next char is 'i' and advance
+    // over all whitespaces
+    while ((c = in.peek()) == ' ')
+        in.get(c);
 
     if (c == EOF)
         return re; // End of Input
@@ -473,9 +542,30 @@ std::complex<double> StrToCmplx(const std::string& sString)
         return std::complex<double>(0.0, re);
 
     if (!(in >> im))
-        return re; // ERROR or end of input
+    {
+        // Anything left?
+        if (in.eof())
+            return re;
 
-    c = in.peek();
+        in.clear();
+
+        // If this does not succeed, we read it as a
+        // string and try to detect INF and NAN
+        // constants it manually
+        std::string val;
+        in >> val;
+        val = toLowerCase(val);
+
+        if (val == "inf")
+            im = (c == '-' ? -1.0 : 1.0) * INFINITY;
+        else
+            im = NAN;
+    }
+
+    // check whether next char is 'i' and advance
+    // over all whitespaces
+    while ((c = in.peek()) == ' ')
+        in.get(c);
 
     if (c == EOF || (c != 'i' && c != 'I' && c != '*'))
     { // ERROR or premature end of input
@@ -483,6 +573,168 @@ std::complex<double> StrToCmplx(const std::string& sString)
     }
 
     return std::complex<double>(re, im);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Convert a string to a sys_time_point.
+///
+/// \param sString const std::string&
+/// \return sys_time_point
+///
+/////////////////////////////////////////////////
+sys_time_point StrToTime(const std::string& sString)
+{
+    int format = detectTimeDateFormat(sString);
+
+    if (format == TD_NONE)
+        return sys_time_point();
+
+    // Try to detect dates
+    size_t pos = sString.find_first_not_of(" \t");
+
+    time_stamp timeStruct = getTimeStampFromTimePoint(sys_time_now());
+    timeStruct.m_hours = std::chrono::hours::zero();
+    timeStruct.m_minutes = std::chrono::minutes::zero();
+    timeStruct.m_seconds = std::chrono::seconds::zero();
+    timeStruct.m_millisecs = std::chrono::milliseconds::zero();
+    timeStruct.m_microsecs = std::chrono::microseconds::zero();
+
+    const char* DIGITS = "0123456789";
+
+    // Contains time
+    if (format & TD_HHMM || format & TD_HHMMSS)
+    {
+        std::vector<std::string> toks = split(sString, ':');
+
+        bool isFirst = sString.find(':') < 3 + pos;
+
+        for (size_t i = 0; i < toks.size(); i++)
+        {
+            // Catch milliseconds written as s.i or ss.iii
+            if (i == 2 && toks[i].length() >= 3 && (toks[i][1] == '.' || toks[i][2] == '.'))
+            {
+                size_t dot = toks[i].find('.');
+                toks.insert(toks.begin()+i+1, toks[i].substr(dot+1));
+                toks[i].erase(dot);
+            }
+
+            // Remove leading of trailing non-time characters
+            if (toks[i].find_first_not_of(DIGITS) != std::string::npos)
+            {
+                if ((isFirst && i+1 != toks.size()) || (!isFirst && i))
+                    break;
+
+                if (isFirst)
+                    toks[i].erase(toks[i].find_first_not_of(DIGITS));
+                else
+                    toks[i].erase(0, toks[i].find_last_not_of(DIGITS)+1);
+            }
+
+            if (!i)
+                timeStruct.m_hours = std::chrono::hours(StrToInt(toks[i]));
+            else if (i == 1)
+                timeStruct.m_minutes = std::chrono::minutes(StrToInt(toks[i]));
+            else if (i == 2 && format & TD_HHMMSS)
+                timeStruct.m_seconds = std::chrono::seconds(StrToInt(toks[i]));
+            else if (i == 3 && format & TD_HHMMSS)
+                timeStruct.m_millisecs = std::chrono::milliseconds(int(StrToInt(toks[i])*intPower(10.0, 3-toks[i].length()))); // scaling due to possible missing trailing zeros
+        }
+    }
+
+    // Contains DD.MM.YY
+    if (format & TD_DDMM || format & TD_DDMMYY)
+    {
+        std::vector<std::string> toks = split(sString, '.');
+        date::year y(timeStruct.m_ymd.year());
+        date::month m(0);
+        date::day d(0);
+
+        bool isFirst = sString.find('.') < 3 + pos;
+
+        for (size_t i = 0; i < toks.size(); i++)
+        {
+            // Remove leading or trailing non-date chars
+            if (toks[i].find_first_not_of(DIGITS) != std::string::npos)
+            {
+                // Obscure logic needed because msecs are also
+                // separated by a dot
+                if ((isFirst && i < bool(format & TD_DDMMYY) + 1) || (!isFirst && i))
+                    break;
+
+                if (isFirst)
+                    toks[i].erase(toks[i].find_first_not_of(DIGITS));
+                else
+                    toks[i].erase(0, toks[i].find_last_not_of(DIGITS)+1);
+            }
+
+            if (!i)
+                d = date::day(StrToInt(toks[i]));
+            else if (i == 1)
+                m = date::month(StrToInt(toks[i]));
+            else if (i == 2 && format & TD_DDMMYY)
+            {
+                if (toks[i].length() > 2)
+                    y = date::year(StrToInt(toks[i]));
+                else
+                    y = date::year(StrToInt(toks[i]) + 2000);
+            }
+        }
+
+        timeStruct.m_ymd = date::year_month_day(y,m,d);
+    }
+
+    // Contains YY-MM-DD or YY/MM/DD
+    if (format & TD_YYMMDD)
+    {
+        std::vector<std::string> toks;
+        bool isFirst;
+        date::year y(0);
+        date::month m(0);
+        date::day d(0);
+
+        if (format & TD_SEP_MINUS)
+        {
+            toks = split(sString, '-');
+            isFirst = sString.find('-') < 5 + pos;
+        }
+        else
+        {
+            toks = split(sString, '/');
+            isFirst = sString.find('/') < 5 + pos;
+        }
+
+        for (size_t i = 0; i < toks.size(); i++)
+        {
+            // Remove leading or trailing non-date chars
+            if (toks[i].find_first_not_of(DIGITS) != std::string::npos)
+            {
+                if ((isFirst && i+1 != toks.size()) || (!isFirst && i))
+                    break;
+
+                if (isFirst)
+                    toks[i].erase(toks[i].find_first_not_of(DIGITS));
+                else
+                    toks[i].erase(0, toks[i].find_last_not_of(DIGITS)+1);
+            }
+
+            if (!i)
+            {
+                if (toks[i].length() > 2)
+                    y = date::year(StrToInt(toks[i]));
+                else
+                    y = date::year(StrToInt(toks[i]) + 2000);
+            }
+            else if (i == 1)
+                m = date::month(StrToInt(toks[i]));
+            else if (i == 2)
+                d = date::day(StrToInt(toks[i]));
+        }
+
+        timeStruct.m_ymd = date::year_month_day(y,m,d);
+    }
+
+    return getTimePointFromTimeStamp(timeStruct);
 }
 
 
@@ -607,6 +859,31 @@ std::string toUpperCase(const std::string& sLowerCase)
 
 
 /////////////////////////////////////////////////
+/// \brief Static function to determine, whether
+/// the character at passed position fits the
+/// pattern needed for a date.
+///
+/// \param sStr const std::string&
+/// \param pos size_t
+/// \return bool
+///
+/////////////////////////////////////////////////
+static bool isDateTimePattern(const std::string& sStr, size_t pos)
+{
+    if (pos
+        && isdigit(sStr[pos-1])
+        && isdigit(sStr[pos+1])
+        && ((pos+3 < sStr.length() && sStr[pos+3] == sStr[pos])
+            || (pos+2 < sStr.length() && sStr[pos+2] == sStr[pos])
+            || sStr[pos] == ':'
+            || (sStr[pos] == '.' && pos > 6 && sStr[pos-2] == ':')))
+        return true;
+
+    return false;
+}
+
+
+/////////////////////////////////////////////////
 /// \brief This function checks, whether a string
 /// can be converted to the selected
 /// ConvertibleType.
@@ -633,27 +910,29 @@ bool isConvertible(const std::string& sStr, ConvertibleType type)
             return false;
 
         // Try to detect dates
-        return !isConvertible(sStr, CONVTYPE_DATE);
+        return !isConvertible(sStr, CONVTYPE_DATE_TIME);
     }
-    else if (type == CONVTYPE_DATE)
+    else if (type == CONVTYPE_DATE_TIME)
     {
         // Apply the simplest heuristic: only digits and separators
-        if (sStr.find_first_not_of(" 0123456789.-/\t") != std::string::npos || sStr.find_first_not_of(" \t") == std::string::npos)
+        if (sStr.find_first_not_of(" 0123456789,.:-/\t") != std::string::npos || sStr.find_first_not_of(" \t") == std::string::npos)
             return false;
 
         // Try to detect dates
         size_t pos = sStr.find_first_not_of(" \t");
 
-        if (sStr.length() >= pos+4 && isdigit(sStr[pos]))
+        if (sStr.length() >= pos+3 && isdigit(sStr[pos]))
         {
-            for (size_t i = pos; i < sStr.length()-3; i++)
+            for (size_t i = pos; i < sStr.length()-1; i++)
             {
                 // Detects these candidates:
                 // (YY)YY-MM-DD, DD.MM.YY(YY), (yy)yy-m-d, d.m.yy(yy),
-                // d.m., dd.mm., (YY)YY/MM/DD, (YY)YY/M/D
-                if (sStr[i] == '-' || sStr[i] == '.' || sStr[i] == '/')
+                // d.m., dd.mm., (YY)YY/MM/DD, (YY)YY/M/D,
+                // hh:mm:ss, h:mm:ss, h:mm, hh:mm
+                // hh:mm:ss:iii, h:mm:ss:iii, hh:mm:ss.iii, h:mm:ss.iii
+                if (sStr[i] == '-' || sStr[i] == '.' || sStr[i] == '/' || sStr[i] == ':')
                 {
-                    if (isdigit(sStr[i-1]) && isdigit(sStr[i+1]) && (sStr[i+3] == sStr[i] || sStr[i+2] == sStr[i]))
+                    if (isDateTimePattern(sStr, i))
                         return true;
 
                     return false;
@@ -663,6 +942,127 @@ bool isConvertible(const std::string& sStr, ConvertibleType type)
     }
 
     return false;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Returns a formatting flag combination,
+/// if the string is a US-specific date pattern
+/// or TD_NONE.
+///
+/// \param sStr const std::string&
+/// \param i size_t
+/// \return int
+///
+/////////////////////////////////////////////////
+static int isDatePattern_US(const std::string& sStr, size_t i)
+{
+    // Surrounded by digits?
+    if (!i || !isdigit(sStr[i-1]) || !isdigit(sStr[i+1]))
+        return TD_NONE;
+
+    // Detects these candidates:
+    // YY-MM-DD, yy-m-d, YY/MM/DD, YY/M/D,
+    if ((i+3 < sStr.length() && sStr[i+3] == sStr[i])
+        || (i+2 < sStr.length() && sStr[i+2] == sStr[i]))
+        return TD_YYMMDD | (sStr[i] == '-' ? TD_SEP_MINUS : TD_SEP_SLASH);
+
+    return TD_NONE;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Returns a formatting flag combination,
+/// if the string is a DE-specific date pattern
+/// or TD_NONE.
+///
+/// \param sStr const std::string&
+/// \param i size_t
+/// \return int
+///
+/////////////////////////////////////////////////
+static int isDatePattern_DE(const std::string& sStr, size_t i)
+{
+    // Surrounded by digits?
+    if (!i || !isdigit(sStr[i-1]) || !isdigit(sStr[i+1]))
+        return TD_NONE;
+
+    // Detects these candidates:
+    // DD.MM.YY, d.m.yy
+    if ((i+4 < sStr.length() && sStr[i+3] == sStr[i] && isdigit(sStr[i+4]))
+        || (i+3 < sStr.length() && sStr[i+2] == sStr[i] && isdigit(sStr[i+3])))
+        return TD_DDMMYY | TD_SEP_DOT;
+    // d.m., dd.mm.
+    else if ((i+3 < sStr.length() && sStr[i+3] == sStr[i])
+             || (i+2 < sStr.length() && sStr[i+2] == sStr[i]))
+        return TD_DDMM | TD_SEP_DOT;
+
+    return TD_NONE;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Returns a formatting flag combination,
+/// if the string is a time pattern or TD_NONE.
+///
+/// \param sStr const std::string&
+/// \param i size_t
+/// \return int
+///
+/////////////////////////////////////////////////
+static int isTimePattern(const std::string& sStr, size_t i)
+{
+    // Surrounded by digits?
+    if (!i || !isdigit(sStr[i-1]) || !isdigit(sStr[i+1]))
+        return TD_NONE;
+
+    // Detects these candidates:
+    // hh:mm:ss, h:mm:ss, hh:mm:ss:iii, h:mm:ss:iii, hh:mm:ss.iii, h:mm:ss.iii
+    if ((i+3 < sStr.length() && sStr[i+3] == sStr[i])
+        || (i+2 < sStr.length() && sStr[i+2] == sStr[i]))
+        return TD_HHMMSS | TD_SEP_COLON;
+
+    // h:mm, hh:mm
+    return TD_HHMM | TD_SEP_COLON;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Detects the contained date-time format
+/// and returns it as a bitflag composition.
+///
+/// \param sStr const std::string&
+/// \return int
+///
+/////////////////////////////////////////////////
+int detectTimeDateFormat(const std::string& sStr)
+{
+    if (sStr.find_first_not_of(" 0123456789,.:-/\t") != std::string::npos || sStr.find_first_not_of(" \t") == std::string::npos)
+        return TD_NONE;
+
+    // Try to detect dates
+    size_t pos = sStr.find_first_not_of(" \t");
+    int format = TD_NONE;
+
+    if (sStr.length() >= pos+3 && isdigit(sStr[pos]))
+    {
+        for (size_t i = pos; i < sStr.length()-1; i++)
+        {
+            // Detects these candidates:
+            // (YY)YY-MM-DD, (yy)yy-m-d, (YY)YY/MM/DD, (YY)YY/M/D
+            if (sStr[i] == '-' || sStr[i] == '/')
+                format |= isDatePattern_US(sStr, i);
+            // DD.MM.YY(YY), d.m.yy(yy), d.m., dd.mm.
+            else if (sStr[i] == '.')
+                format |= isDatePattern_DE(sStr, i);
+            // hh:mm:ss, h:mm:ss, h:mm, hh:mm
+            // hh:mm:ss:iii, h:mm:ss:iii, hh:mm:ss.iii, h:mm:ss.iii
+            else if (sStr[i] == ':')
+                format |= isTimePattern(sStr, i);
+        }
+    }
+
+    return format;
 }
 
 
@@ -829,6 +1229,36 @@ std::string utf8parser(const std::string& sString)
 std::string getTimeStamp(bool bGetStamp)
 {
     return toString(_time64(0), bGetStamp ? GET_AS_TIMESTAMP : GET_WITH_TEXT);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Splits a vector at the selected
+/// characters.
+///
+/// \param sStr const std::string&
+/// \param cSplit char
+/// \return std::vector<std::string>
+///
+/////////////////////////////////////////////////
+std::vector<std::string> split(const std::string& sStr, char cSplit)
+{
+    std::vector<std::string> vSplit;
+    size_t lastPos = 0;
+
+    for (size_t i = 1; i < sStr.length(); i++)
+    {
+        if (sStr[i] == cSplit)
+        {
+            vSplit.push_back(sStr.substr(lastPos, i - lastPos));
+            lastPos = i+1;
+        }
+    }
+
+    if (lastPos < sStr.length())
+        vSplit.push_back(sStr.substr(lastPos));
+
+    return vSplit;
 }
 
 

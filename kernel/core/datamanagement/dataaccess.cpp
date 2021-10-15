@@ -511,7 +511,7 @@ void replaceDataEntities(string& sLine, const string& sEntity, MemoryManager& _d
 			// This is a usual data access
 			// create a vector containing the data
 #warning NOTE (numere#1#08/17/21): Might be the source of some bytecode issues
-			if (/*options & INSERT_STRINGS &&*/ _data.getType(_idx.col, sEntityName) != TableColumn::TYPE_VALUE)
+			if (/*options & INSERT_STRINGS &&*/ _data.getType(_idx.col, sEntityName) > TableColumn::STRINGLIKE)
                 sEntityStringReplacement = NumeReKernel::getInstance()->getStringParser().createTempStringVectorVar(_data.getElementMixed(_idx.row, _idx.col, sEntityName));
             else
                 vEntityContents = _data.getElement(_idx.row, _idx.col, sEntityName);
@@ -1076,6 +1076,131 @@ static string createEveryDefinition(const string& sLine, Parser& _parser)
 
 
 /////////////////////////////////////////////////
+/// \brief Realizes the "aliasof()" table method.
+///
+/// \param sTableName const std::string&
+/// \param sMethodArguments std::string
+/// \return std::string
+///
+/////////////////////////////////////////////////
+static std::string tableMethod_aliasof(const std::string& sTableName, std::string sMethodArguments)
+{
+    // Might be necessary to resolve the contents of the reference
+    getDataElements(sMethodArguments, NumeReKernel::getInstance()->getParser(), NumeReKernel::getInstance()->getMemoryManager(), NumeReKernel::getInstance()->getSettings());
+
+    NumeReKernel::getInstance()->getMemoryManager().addReference(sTableName, sMethodArguments.substr(1, sMethodArguments.length()-2));
+
+    return sMethodArguments;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Realizes the "convert()" table method.
+///
+/// \param sTableName const std::string&
+/// \param sMethodArguments std::string
+/// \return std::string
+///
+/////////////////////////////////////////////////
+static std::string tableMethod_convert(const std::string& sTableName, std::string sMethodArguments)
+{
+    std::string sColumns = getNextArgument(sMethodArguments, true);
+
+    // Might be necessary to resolve the contents of columns and conversions
+    getDataElements(sColumns, NumeReKernel::getInstance()->getParser(), NumeReKernel::getInstance()->getMemoryManager(), NumeReKernel::getInstance()->getSettings());
+
+    if (containsStrings(sMethodArguments))
+    {
+        std::string sDummy;
+        sMethodArguments += " -nq";
+        NumeRe::StringParser::StringParserRetVal res = NumeReKernel::getInstance()->getStringParser().evalAndFormat(sMethodArguments, sDummy, true);
+
+        if (res == NumeRe::StringParser::STRING_NUMERICAL)
+            return "\"\"";
+    }
+
+    int nResults = 0;
+    NumeReKernel::getInstance()->getParser().SetExpr(sColumns);
+    mu::value_type* v = NumeReKernel::getInstance()->getParser().Eval(nResults);
+
+    if (NumeReKernel::getInstance()->getMemoryManager().convertColumns(sTableName, VectorIndex(v, nResults, 0), sMethodArguments))
+        return "\"" + sMethodArguments + "\"";
+
+    return "\"\"";
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Realizes the "typeof()" table method.
+///
+/// \param sTableName const std::string&
+/// \param sMethodArguments std::string
+/// \return std::string
+///
+/////////////////////////////////////////////////
+static std::string tableMethod_typeof(const std::string& sTableName, std::string sMethodArguments)
+{
+    // Might be necessary to resolve the contents of columns and conversions
+    getDataElements(sMethodArguments, NumeReKernel::getInstance()->getParser(), NumeReKernel::getInstance()->getMemoryManager(), NumeReKernel::getInstance()->getSettings());
+
+    int nResults = 0;
+    NumeReKernel::getInstance()->getParser().SetExpr(sMethodArguments);
+    mu::value_type* v = NumeReKernel::getInstance()->getParser().Eval(nResults);
+
+    std::string sRet;
+
+    for (int i = 0; i < nResults; i++)
+    {
+        if (sRet.length())
+            sRet += ",";
+
+        TableColumn::ColumnType type = NumeReKernel::getInstance()->getMemoryManager().getType(VectorIndex(intCast(v[i])-1), sTableName);
+
+        if (type == TableColumn::TYPE_NONE)
+            sRet += "\"none\"";
+        else if (type == TableColumn::TYPE_VALUE)
+            sRet += "\"value\"";
+        else if (type == TableColumn::TYPE_STRING)
+            sRet += "\"string\"";
+        else if (type == TableColumn::TYPE_DATETIME)
+            sRet += "\"datetime\"";
+        else
+            sRet += "\"unknown\"";
+    }
+
+    if (sRet.length())
+        return sRet;
+
+    return "\"\"";
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Typedef for a table method
+/////////////////////////////////////////////////
+typedef std::string (*TableMethod)(const std::string&, std::string);
+
+
+/////////////////////////////////////////////////
+/// \brief Returns the declared list of table
+/// methods.
+///
+/// \return std::map<std::string, TableMethod>
+///
+/////////////////////////////////////////////////
+static std::map<std::string, TableMethod> getInplaceTableMethods()
+{
+    std::map<std::string, TableMethod> mTableMethods;
+
+    mTableMethods["aliasof"] = tableMethod_aliasof;
+    mTableMethods["convert"] = tableMethod_convert;
+    mTableMethods["typeof"] = tableMethod_typeof;
+
+    return mTableMethods;
+}
+
+
+/////////////////////////////////////////////////
 /// \brief This function simply returns the
 /// vector name obtained from the MAF method
 /// string.
@@ -1086,19 +1211,19 @@ static string createEveryDefinition(const string& sLine, Parser& _parser)
 /////////////////////////////////////////////////
 static string createMafVectorName(string sAccessString)
 {
-    if (sAccessString.find(".aliasof(") != std::string::npos)
+    static std::map<std::string, TableMethod> mMethods = getInplaceTableMethods();
+
+    for (auto& method : mMethods)
     {
-        string sTable = sAccessString.substr(0, sAccessString.find("()."));
-        string sReference = sAccessString.substr(sAccessString.find(".aliasof(") + 8);
-        sReference.erase(getMatchingParenthesis(sReference)+1);
-        sReference = sReference.substr(1, sReference.length()-2);
+        if (sAccessString.find("." + method.first + "(") != std::string::npos)
+        {
+            std::string sTableName = sAccessString.substr(0, sAccessString.find("()."));
+            std::string sMethodArguments = sAccessString.substr(sAccessString.find("." + method.first + "(") + 1 + method.first.length());
+            sMethodArguments.erase(getMatchingParenthesis(sMethodArguments)+1);
+            sMethodArguments = sMethodArguments.substr(1, sMethodArguments.length()-2);
 
-        // Might be necessary to resolve the contents of the reference
-        getDataElements(sReference, NumeReKernel::getInstance()->getParser(), NumeReKernel::getInstance()->getMemoryManager(), NumeReKernel::getInstance()->getSettings());
-
-        NumeReKernel::getInstance()->getMemoryManager().addReference(sTable, sReference.substr(1, sReference.length()-2));
-
-        return sReference;
+            return method.second(sTableName, sMethodArguments);
+        }
     }
 
     if (sAccessString.find(".name") != std::string::npos)

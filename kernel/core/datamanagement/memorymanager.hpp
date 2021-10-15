@@ -331,6 +331,10 @@ class MemoryManager : public NumeRe::FileAdapter, public StringMemory, public Nu
 			return vMemory[findTable(_sCache)]->resample(_vLine, _vCol, samples, (Memory::AppDir)Direction, sFilter);
 		}
 
+		inline bool convertColumns(const std::string& _sTable, const VectorIndex& _vCol, const std::string& _sType)
+		{
+		    return vMemory[findTable(_sTable)]->convertColumns(_vCol, _sType);
+		}
 
 
 

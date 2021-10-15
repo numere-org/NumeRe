@@ -313,6 +313,7 @@ void TableViewer::OnCellChange(wxGridEvent& event)
 
     updateFrame();
     highlightCursorPosition(GetGridCursorRow(), GetGridCursorCol());
+    UpdateColumnAlignment(GetGridCursorCol());
     event.Veto();
 }
 
@@ -432,6 +433,7 @@ void TableViewer::updateFrame()
                 // Headline
                 SetCellFont(i, j, this->GetCellFont(i, j).MakeBold());
                 SetCellBackgroundColour(i, j, HeadlineColor);
+                SetCellAlignment(wxALIGN_LEFT, i, j);
             }
             else
             {
@@ -899,6 +901,40 @@ void TableViewer::highlightCursorPosition(int nRow, int nCol)
     lastCursorPosition = wxGridCellCoords(nRow, nCol);
     EndBatch();
     this->Refresh();
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Changes the alignment of a whole
+/// column to reflect its internal type.
+///
+/// \param col int
+/// \return void
+///
+/////////////////////////////////////////////////
+void TableViewer::UpdateColumnAlignment(int col)
+{
+    std::vector<int> vTypes;
+
+    if (col+1 == GetNumberCols())
+        return;
+
+    if (isGridNumeReTable)
+    {
+        GridNumeReTable* gridtab = static_cast<GridNumeReTable*>(GetTable());
+        vTypes = gridtab->getColumnTypes();
+    }
+
+    // Search the boundaries and color the frame correspondingly
+    for (int i = nFirstNumRow; i < GetNumberRows(); i++)
+    {
+        if (isGridNumeReTable && (int)vTypes.size() > col && vTypes[col] == TableColumn::TYPE_STRING)
+            SetCellAlignment(wxALIGN_LEFT, i, col);
+        else if (!isGridNumeReTable && GetCellValue(i, col)[0] == '"')
+            SetCellAlignment(wxALIGN_LEFT, i, col);
+        else
+            SetCellAlignment(wxALIGN_RIGHT, i, col);
+    }
 }
 
 

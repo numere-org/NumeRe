@@ -20,9 +20,10 @@
 #define STRINGTOOLS_HPP
 
 #include <string>
-#include <ctime>
 #include <complex>
 #include <vector>
+
+#include "datetimetools.hpp"
 
 // Forward declaration
 class Settings;
@@ -38,7 +39,23 @@ enum ConvertibleType
 {
     CONVTYPE_NONE,
     CONVTYPE_VALUE,
-    CONVTYPE_DATE
+    CONVTYPE_DATE_TIME
+};
+
+enum TimeDateFormat
+{
+    TD_NONE = 0x0,
+    TD_HHMMSS = 0x1,
+    TD_HHMM = 0x2,
+
+    TD_YYMMDD = 0x100,
+    TD_DDMMYY = 0x200,
+    TD_DDMM = 0x400,
+
+    TD_SEP_COLON = 0x100000,
+    TD_SEP_DOT = 0x200000,
+    TD_SEP_MINUS = 0x400000,
+    TD_SEP_SLASH = 0x800000
 };
 
 std::string toString(int nNumber, const Settings& _option);
@@ -47,6 +64,7 @@ std::string toString(double dNumber, int nPrecision);
 std::string toString(const std::complex<double>& dNumber, int nPrecision);
 std::string toString(int);
 std::string toString(__time64_t tTime, int timeStampFlags);
+std::string toString(sys_time_point tp, int timeStampFlags);
 std::string toString(long long int nNumber);
 std::string toString(size_t nNumber);
 std::string toCmdString(double dNumber);
@@ -69,8 +87,10 @@ std::string toUpperCase(const std::string& sLowerCase);
 int StrToInt(const std::string&);
 double StrToDb(const std::string&);
 std::complex<double> StrToCmplx(const std::string&);
+sys_time_point StrToTime(const std::string&);
 
 bool isConvertible(const std::string& sStr, ConvertibleType type = CONVTYPE_VALUE);
+int detectTimeDateFormat(const std::string&);
 
 std::string toSystemCodePage(std::string sOutput);
 std::string fromSystemCodePage(std::string sOutput);
@@ -81,6 +101,7 @@ std::string utf8parser(const std::string& sString);
 
 std::string replacePathSeparator(const std::string& __sPath);
 std::string getTimeStamp(bool bGetStamp = true);
+std::vector<std::string> split(const std::string& sStr, char cSplit);
 
 #endif // STRINGTOOLS_HPP
 

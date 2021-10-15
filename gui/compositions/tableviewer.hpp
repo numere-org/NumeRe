@@ -72,6 +72,7 @@ class TableViewer : public wxGrid
         void copyContents();
         void pasteContents(bool useCursor = false);
         void highlightCursorPosition(int nRow, int nCol);
+        void UpdateColumnAlignment(int col);
         vector<wxString> getLinesFromPaste(const wxString& data);
         void replaceDecimalSign(wxString& text);
         void replaceTabSign(wxString& text);

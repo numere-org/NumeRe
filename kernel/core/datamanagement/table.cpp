@@ -276,25 +276,29 @@ namespace NumeRe
         // Resize the table if needed
         this->setMinSize(i+1, j+1);
 
-        // Empty value means deletion
-        if (!_sValue.length())
-        {
-            if (vTableData[j])
-                vTableData[j]->deleteElements(VectorIndex(i));
+        if (vTableData[j])
+            vTableData[j]->deleteElements(VectorIndex(i));
 
+        // Empty value means only deletion
+        if (!_sValue.length())
             return;
-        }
 
         // Is it a numerical value?
-        if (!isNumerical(_sValue))
+        if (isConvertible(_sValue, CONVTYPE_DATE_TIME))
+        {
+            convert_if_needed(vTableData[j], j, TableColumn::TYPE_DATETIME);
+            vTableData[j]->setValue(i, to_double(StrToTime(_sValue)));
+        }
+        else if (isConvertible(_sValue, CONVTYPE_VALUE))
+        {
+            convert_if_needed(vTableData[j], j, TableColumn::TYPE_VALUE);
+            vTableData[j]->setValue(i, StrToCmplx(_sValue));
+        }
+        else
         {
             convert_if_needed(vTableData[j], j, TableColumn::TYPE_STRING);
             vTableData[j]->setValue(i, _sValue);
-            return;
         }
-
-        convert_if_needed(vTableData[j], j, TableColumn::TYPE_VALUE);
-        vTableData[j]->setValue(i, StrToCmplx(_sValue));
     }
 
 

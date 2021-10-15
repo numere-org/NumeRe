@@ -2547,7 +2547,7 @@ value_type parser_is_string(value_type v)
 /////////////////////////////////////////////////
 value_type parser_time()
 {
-    return _time64(0);
+    return to_double(sys_time_now());
 }
 
 
@@ -2626,30 +2626,35 @@ value_type parser_numereversion()
 /////////////////////////////////////////////////
 value_type parser_date(value_type vTime, value_type vType)
 {
-    time_t tTime = (time_t)rint(vTime.real());
+    sys_time_point tp = to_timePoint(vTime.real());
     int nType = (int)rint(vType.real());
-    tm *ltm = localtime(&tTime);
+    time_stamp ltm = getTimeStampFromTimePoint(tp);
 
     switch (nType)
     {
         case 1:
-            return 1900+ltm->tm_year;
+            return int(ltm.m_ymd.year());
         case 2:
-            return 1+ltm->tm_mon;
+            return unsigned(ltm.m_ymd.month());
         case 3:
-            return ltm->tm_mday;
+            return unsigned(ltm.m_ymd.day());
         case 4:
-            return ltm->tm_hour;
+            return ltm.m_hours.count();
         case 5:
-            return ltm->tm_min;
+            return ltm.m_minutes.count();
         case 6:
-            return ltm->tm_sec;
+            return ltm.m_seconds.count();
+        case 7:
+            return ltm.m_millisecs.count();
+        case 8:
+            return ltm.m_microsecs.count();
         case -1:
-            return (1900+ltm->tm_year)*10000.0+(1+ltm->tm_mon)*100.0+(ltm->tm_mday);
+            return int(ltm.m_ymd.year())*10000.0 + unsigned(ltm.m_ymd.month())*100.0 + unsigned(ltm.m_ymd.day());
         case -2:
-            return (ltm->tm_hour)*10000.0+(ltm->tm_min)*100.0+ltm->tm_sec;
+            return ltm.m_hours.count()*10000.0 + ltm.m_minutes.count()*100.0 + ltm.m_seconds.count() + ltm.m_millisecs.count()*1.0e-3;
         default:
-            return ((1900+ltm->tm_year)*10000.0+(1+ltm->tm_mon)*100.0+(ltm->tm_mday))*1000000.0+(ltm->tm_hour)*10000.0+(ltm->tm_min)*100.0+ltm->tm_sec;
+            return (int(ltm.m_ymd.year())*10000.0 + unsigned(ltm.m_ymd.month())*100.0 + unsigned(ltm.m_ymd.day()))*1000000.0
+                + ltm.m_hours.count()*10000.0 + ltm.m_minutes.count()*100.0 + ltm.m_seconds.count() + ltm.m_millisecs.count()*1.0e-3;
     }
 
     return 0;

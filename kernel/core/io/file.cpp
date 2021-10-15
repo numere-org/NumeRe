@@ -334,7 +334,7 @@ namespace NumeRe
                 {
                     if (fileData->at(j)->m_type == TableColumn::TYPE_VALUE)
                         fFileStream << toString(fileData->at(j)->getValue(i), DEFAULT_PRECISION);
-                    else if (fileData->at(j)->m_type == TableColumn::TYPE_STRING)
+                    else if (fileData->at(j)->m_type == TableColumn::TYPE_STRING || fileData->at(j)->m_type == TableColumn::TYPE_DATETIME)
                         fFileStream << fileData->at(j)->getValueAsInternalString(i);
                 }
             }
@@ -987,6 +987,12 @@ namespace NumeRe
             std::vector<mu::value_type> values = col->getValue(VectorIndex(0, VectorIndex::OPEN_END));
             writeNumBlock<mu::value_type>(&values[0], values.size());
         }
+        if (col->m_type == TableColumn::TYPE_DATETIME)
+        {
+            writeStringField("DTYPE=DATETIME");
+            std::vector<mu::value_type> values = col->getValue(VectorIndex(0, VectorIndex::OPEN_END));
+            writeNumBlock<mu::value_type>(&values[0], values.size());
+        }
         else if (col->m_type == TableColumn::TYPE_STRING)
         {
             writeStringField("DTYPE=STRING");
@@ -1209,6 +1215,14 @@ namespace NumeRe
         if (sDataType == "DTYPE=COMPLEX")
         {
             col.reset(new ValueColumn);
+            col->m_sHeadLine = sHeadLine;
+            long long int size = 0;
+            mu::value_type* values = readNumBlock<mu::value_type>(size);
+            col->setValue(VectorIndex(0, VectorIndex::OPEN_END), std::vector<mu::value_type>(values, values+size));
+        }
+        else if (sDataType == "DTYPE=DATETIME")
+        {
+            col.reset(new DateTimeColumn);
             col->m_sHeadLine = sHeadLine;
             long long int size = 0;
             mu::value_type* values = readNumBlock<mu::value_type>(size);
@@ -1995,7 +2009,7 @@ namespace NumeRe
                 {
                     if (fileData->at(j)->m_type == TableColumn::TYPE_VALUE)
                         fFileStream << toString(fileData->at(j)->getValue(i), DEFAULT_PRECISION);
-                    else if (fileData->at(j)->m_type == TableColumn::TYPE_STRING)
+                    else if (fileData->at(j)->m_type == TableColumn::TYPE_STRING || fileData->at(j)->m_type == TableColumn::TYPE_DATETIME)
                         fFileStream << fileData->at(j)->getValueAsInternalString(i);
                 }
 
@@ -2252,7 +2266,7 @@ namespace NumeRe
                     fFileStream << "---";
                 else if (fileData->at(j)->m_type == TableColumn::TYPE_VALUE)
                     fFileStream << formatNumber(fileData->at(j)->getValue(i));
-                else if (fileData->at(j)->m_type == TableColumn::TYPE_STRING)
+                else if (fileData->at(j)->m_type == TableColumn::TYPE_STRING || fileData->at(j)->m_type == TableColumn::TYPE_DATETIME)
                     fFileStream << fileData->at(j)->getValueAsInternalString(i);
 
                 if (j+1 < nCols)
@@ -3500,7 +3514,7 @@ namespace NumeRe
                     continue;
                 }
 
-                if (fileData->at(j)->m_type == TableColumn::TYPE_STRING)
+                if (fileData->at(j)->m_type == TableColumn::TYPE_STRING || fileData->at(j)->m_type == TableColumn::TYPE_DATETIME)
                     _cell->SetString(fileData->at(j)->getValueAsInternalString(i).c_str());
                 else if (fileData->at(j)->m_type == TableColumn::TYPE_VALUE)
                     _cell->SetDouble(fileData->at(j)->getValue(i).real());

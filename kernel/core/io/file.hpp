@@ -1449,7 +1449,7 @@ namespace NumeRe
             long int versionMinor;
             long int versionBuild;
             const short fileSpecVersionMajor = 3;
-            const short fileSpecVersionMinor = 0;
+            const short fileSpecVersionMinor = 1;
             float fileVersionRead;
 
             void writeHeader();

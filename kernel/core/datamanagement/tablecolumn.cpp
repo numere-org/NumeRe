@@ -90,6 +90,70 @@ std::vector<mu::value_type> TableColumn::getValue(const VectorIndex& idx) const
 
 
 /////////////////////////////////////////////////
+/// \brief Sets a string vector at the specified
+/// indices.
+///
+/// \param idx const VectorIndex&
+/// \param vValue const std::vector<std::string>&
+/// \return void
+///
+/////////////////////////////////////////////////
+void TableColumn::setValue(const VectorIndex& idx, const std::vector<std::string>& vValue)
+{
+    for (size_t i = 0; i < idx.size(); i++)
+    {
+        if (i >= vValue.size())
+            break;
+
+        setValue(idx[i], vValue[i]);
+    }
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Sets a numerical vector at the
+/// specified indices.
+///
+/// \param idx const VectorIndex&
+/// \param vValue const std::vector<mu::value_type>&
+/// \return void
+///
+/////////////////////////////////////////////////
+void TableColumn::setValue(const VectorIndex& idx, const std::vector<mu::value_type>& vValue)
+{
+    for (size_t i = 0; i < idx.size(); i++)
+    {
+        if (i >= vValue.size())
+            break;
+
+        setValue(idx[i], vValue[i]);
+    }
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Sets a plain numerical array at the
+/// specified indices.
+///
+/// \param idx const VectorIndex&
+/// \param _dData mu::value_type*
+/// \param _nNum unsigned int
+/// \return void
+///
+/////////////////////////////////////////////////
+void TableColumn::setValue(const VectorIndex& idx, mu::value_type* _dData, unsigned int _nNum)
+{
+    for (size_t i = 0; i < idx.size(); i++)
+    {
+        if (i >= _nNum)
+            break;
+
+        setValue(idx[i], _dData[i]);
+    }
+}
+
+
+/////////////////////////////////////////////////
 /// \brief Simplification wrapper around the
 /// indiced copy method to copy the whole column.
 ///
@@ -99,6 +163,30 @@ std::vector<mu::value_type> TableColumn::getValue(const VectorIndex& idx) const
 TableColumn* TableColumn::copy() const
 {
     return copy(VectorIndex(0, VectorIndex::OPEN_END));
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Shrink the column by removing all
+/// invalid elements from the end.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
+void TableColumn::shrink()
+{
+    for (int i = size()-1; i >= 0; i--)
+    {
+        if (isValid(i))
+        {
+            resize(i+1);
+            return;
+        }
+    }
+
+    // If the code reaches this point, it is either empty
+    // or full of invalid values
+    resize(0);
 }
 
 

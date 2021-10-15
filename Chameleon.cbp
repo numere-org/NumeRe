@@ -183,7 +183,6 @@
 			</Target>
 			<Target title="Deep Debug">
 				<Option output="../../../Software/NumeRe/numere" prefix_auto="1" extension_auto="1" />
-				<Option working_dir="../../../Software/NumeRe/." />
 				<Option object_output="Deepdebug" />
 				<Option type="0" />
 				<Option compiler="tdm-gcc" />
@@ -543,6 +542,9 @@
 		<Unit filename="kernel/core/ui/winlayout.hpp" />
 		<Unit filename="kernel/core/utils/BasicExcel.cpp" />
 		<Unit filename="kernel/core/utils/BasicExcel.hpp" />
+		<Unit filename="kernel/core/utils/date/date.h" />
+		<Unit filename="kernel/core/utils/datetimetools.cpp" />
+		<Unit filename="kernel/core/utils/datetimetools.hpp" />
 		<Unit filename="kernel/core/utils/stringtools.cpp" />
 		<Unit filename="kernel/core/utils/stringtools.hpp" />
 		<Unit filename="kernel/core/utils/timer.hpp">

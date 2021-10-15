@@ -487,7 +487,10 @@ ValueVector Memory::readMixedMem(const VectorIndex& _vLine, const VectorIndex& _
                     continue;
                 }
 
-                vReturn[j + i * _vCol.size()] = memArray[_vCol[j]]->getValueAsString(_vLine[i]);
+                if (memArray[_vCol[j]]->m_type == TableColumn::TYPE_DATETIME)
+                    vReturn[j + i * _vCol.size()] = "\"" + memArray[_vCol[j]]->getValueAsString(_vLine[i]) + "\"";
+                else
+                    vReturn[j + i * _vCol.size()] = memArray[_vCol[j]]->getValueAsString(_vLine[i]);
             }
         }
     }
@@ -514,7 +517,8 @@ TableColumn::ColumnType Memory::getType(const VectorIndex& _vCol) const
         {
             if (type == TableColumn::TYPE_NONE)
                 type = memArray[_vCol[i]]->m_type;
-            else if (type != memArray[_vCol[i]]->m_type)
+            else if (type != memArray[_vCol[i]]->m_type
+                     && (type > TableColumn::STRINGLIKE || memArray[_vCol[i]]->m_type > TableColumn::STRINGLIKE))
                 return TableColumn::TYPE_MIXED;
         }
     }
@@ -698,14 +702,64 @@ void Memory::convert()
     {
         if (memArray[i] && memArray[i]->m_type == TableColumn::TYPE_STRING)
         {
-            ValueColumn* valCol = static_cast<StringColumn*>(memArray[i].get())->convert();
+            TableColumn* col = memArray[i]->convert();
 
             // Only valid conversions return a non-zero
             // pointer
-            if (valCol)
-                memArray[i].reset(valCol);
+            if (col && col != memArray[i].get())
+                memArray[i].reset(col);
         }
     }
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This member function tries to convert
+/// the selected columns to the target column
+/// type, if it is possible.
+///
+/// \param _vCol const VectorIndex&
+/// \param _sType const std::string&
+/// \return bool
+///
+/////////////////////////////////////////////////
+bool Memory::convertColumns(const VectorIndex& _vCol, const std::string& _sType)
+{
+    if (_sType != "value" && _sType != "string" && _sType != "datetime")
+        return false;
+
+    TableColumn::ColumnType _type = TableColumn::TYPE_NONE;
+
+    if (_sType == "value")
+        _type = TableColumn::TYPE_VALUE;
+    else if (_sType == "string")
+        _type = TableColumn::TYPE_STRING;
+    else if (_sType == "datetime")
+        _type = TableColumn::TYPE_DATETIME;
+
+    _vCol.setOpenEndIndex(memArray.size()-1);
+
+    bool success = true;
+
+    for (size_t i = 0; i < _vCol.size(); i++)
+    {
+        if (_vCol[i] < 0 || _vCol[i] >= memArray.size())
+            continue;
+
+        if (memArray[_vCol[i]] && memArray[_vCol[i]]->m_type != _type)
+        {
+            TableColumn* col = memArray[_vCol[i]]->convert(_type);
+
+            // Only valid conversions return a non-zero
+            // pointer
+            if (col && col != memArray[_vCol[i]].get())
+                memArray[_vCol[i]].reset(col);
+            else
+                success = false;
+        }
+    }
+
+    return success;
 }
 
 
@@ -1446,6 +1500,8 @@ void Memory::importTable(NumeRe::Table _table, const VectorIndex& lines, const V
         {
             if (tabCol->m_type == TableColumn::TYPE_VALUE)
                 memArray[cols[j]].reset(new ValueColumn);
+            else if (tabCol->m_type == TableColumn::TYPE_DATETIME)
+                memArray[cols[j]].reset(new DateTimeColumn);
             else if (tabCol->m_type == TableColumn::TYPE_STRING)
                 memArray[cols[j]].reset(new StringColumn);
         }

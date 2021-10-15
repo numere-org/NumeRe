@@ -35,7 +35,10 @@ struct TableColumn
     enum ColumnType
     {
         TYPE_NONE,
+        VALUELIKE,
         TYPE_VALUE,
+        TYPE_DATETIME,
+        STRINGLIKE,
         TYPE_STRING,
         TYPE_MIXED
     };
@@ -54,22 +57,24 @@ struct TableColumn
     virtual std::string getValueAsInternalString(size_t elem) const = 0;
     virtual mu::value_type getValue(size_t elem) const = 0;
 
+    void setValue(const VectorIndex& idx, const std::vector<std::string>& vValue);
+    void setValue(const VectorIndex& idx, const std::vector<mu::value_type>& vValue);
+    void setValue(const VectorIndex& idx, mu::value_type* _dData, unsigned int _nNum);
+
     virtual void setValue(size_t elem, const std::string& sValue) = 0;
     virtual void setValue(size_t elem, const mu::value_type& vValue) = 0;
-    virtual void setValue(const VectorIndex& idx, const std::vector<std::string>& vValue) = 0;
-    virtual void setValue(const VectorIndex& idx, const std::vector<mu::value_type>& vValue) = 0;
-    virtual void setValue(const VectorIndex& idx, mu::value_type* _dData, unsigned int _nNum) = 0;
 
     TableColumn* copy() const;
     virtual TableColumn* copy(const VectorIndex& idx) const = 0;
     virtual void assign(const TableColumn* column) = 0;
     virtual void insert(const VectorIndex& idx, const TableColumn* column) = 0;
     virtual void deleteElements(const VectorIndex& idx) = 0;
-    virtual void shrink() = 0;
+    void shrink();
 
     virtual void insertElements(size_t pos, size_t elem) = 0;
     virtual void appendElements(size_t elem) = 0;
     virtual void removeElements(size_t pos, size_t elem) = 0;
+    virtual void resize(size_t elem) = 0;
 
     virtual int compare(int i, int j, bool flag) const = 0;
     virtual bool isValid(int elem) const = 0;
@@ -78,6 +83,8 @@ struct TableColumn
 
     virtual size_t size() const = 0;
     virtual size_t getBytes() const = 0;
+
+    virtual TableColumn* convert(ColumnType type = TableColumn::TYPE_NONE) = 0;
 
     static std::string getDefaultColumnHead(size_t colNo);
 };

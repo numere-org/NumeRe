@@ -1498,6 +1498,7 @@ int CodeAnalyzer::calculateCyclomaticComplexity(int startline, int endline)
 					|| m_editor->GetTextRange(wordstart, wordend) == "elseif"
 					|| m_editor->GetTextRange(wordstart, wordend) == "while"
 					|| m_editor->GetTextRange(wordstart, wordend) == "case"
+					|| m_editor->GetTextRange(wordstart, wordend) == "try"
 					|| m_editor->GetTextRange(wordstart, wordend) == "for")
 				nCycComplx++;
 

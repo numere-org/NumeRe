@@ -30,7 +30,7 @@ class StringColumn;
 /////////////////////////////////////////////////
 class ValueColumn : public TableColumn
 {
-    private:
+    protected:
         std::vector<mu::value_type> m_data;
 
     public:
@@ -52,7 +52,7 @@ class ValueColumn : public TableColumn
         /////////////////////////////////////////////////
         ValueColumn(size_t nElem) : ValueColumn()
         {
-            m_data.resize(nElem);
+            resize(nElem);
         }
 
         virtual ~ValueColumn() {}
@@ -63,19 +63,16 @@ class ValueColumn : public TableColumn
 
         virtual void setValue(size_t elem, const std::string& sValue) override;
         virtual void setValue(size_t elem, const mu::value_type& vValue) override;
-        virtual void setValue(const VectorIndex& idx, const std::vector<std::string>& vValue) override;
-        virtual void setValue(const VectorIndex& idx, const std::vector<mu::value_type>& vValue) override;
-        virtual void setValue(const VectorIndex& idx, mu::value_type* _dData, unsigned int _nNum) override;
 
         virtual ValueColumn* copy(const VectorIndex& idx) const override;
         virtual void assign(const TableColumn* column) override;
         virtual void insert(const VectorIndex& idx, const TableColumn* column) override;
         virtual void deleteElements(const VectorIndex& idx) override;
-        virtual void shrink() override;
 
-        virtual void insertElements(size_t pos, size_t elem);
-        virtual void appendElements(size_t elem);
-        virtual void removeElements(size_t pos, size_t elem);
+        virtual void insertElements(size_t pos, size_t elem) override;
+        virtual void appendElements(size_t elem) override;
+        virtual void removeElements(size_t pos, size_t elem) override;
+        virtual void resize(size_t elem) override;
 
         virtual int compare(int i, int j, bool unused) const override;
         virtual bool isValid(int elem) const override;
@@ -105,7 +102,89 @@ class ValueColumn : public TableColumn
             return m_data.size();
         }
 
-        StringColumn* convert() const;
+        virtual TableColumn* convert(ColumnType type = TableColumn::TYPE_NONE) override;
+};
+
+
+/////////////////////////////////////////////////
+/// \brief A table column containing numerical
+/// values formatted as dates and times.
+/////////////////////////////////////////////////
+class DateTimeColumn : public TableColumn
+{
+    private:
+        std::vector<double> m_data;
+
+    public:
+        /////////////////////////////////////////////////
+        /// \brief Default constructor. Sets only the
+        /// column's type.
+        /////////////////////////////////////////////////
+        DateTimeColumn() : TableColumn()
+        {
+            m_type = TableColumn::TYPE_DATETIME;
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief Generalized constructor. Will prepare
+        /// a column with the specified size.
+        ///
+        /// \param nElem size_t
+        ///
+        /////////////////////////////////////////////////
+        DateTimeColumn(size_t nElem) : DateTimeColumn()
+        {
+            resize(nElem);
+        }
+
+        virtual ~DateTimeColumn() {}
+
+        virtual std::string getValueAsString(size_t elem) const override;
+        virtual std::string getValueAsInternalString(size_t elem) const override;
+        virtual mu::value_type getValue(size_t elem) const override;
+
+        virtual void setValue(size_t elem, const std::string& sValue) override;
+        virtual void setValue(size_t elem, const mu::value_type& vValue) override;
+
+        virtual DateTimeColumn* copy(const VectorIndex& idx) const override;
+        virtual void assign(const TableColumn* column) override;
+        virtual void insert(const VectorIndex& idx, const TableColumn* column) override;
+        virtual void deleteElements(const VectorIndex& idx) override;
+
+        virtual void insertElements(size_t pos, size_t elem) override;
+        virtual void appendElements(size_t elem) override;
+        virtual void removeElements(size_t pos, size_t elem) override;
+        virtual void resize(size_t elem) override;
+
+        virtual int compare(int i, int j, bool unused) const override;
+        virtual bool isValid(int elem) const override;
+        virtual bool asBool(int elem) const override;
+
+        /////////////////////////////////////////////////
+        /// \brief Return the number of bytes occupied by
+        /// this column.
+        ///
+        /// \return size_t
+        ///
+        /////////////////////////////////////////////////
+        virtual size_t getBytes() const override
+        {
+            return size() * sizeof(double) + m_sHeadLine.length() * sizeof(char);
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief Return the number of elements in this
+        /// column (will also count invalid ones).
+        ///
+        /// \return size_t
+        ///
+        /////////////////////////////////////////////////
+        virtual size_t size() const override
+        {
+            return m_data.size();
+        }
+
+        virtual TableColumn* convert(ColumnType type = TableColumn::TYPE_NONE) override;
 };
 
 
@@ -121,7 +200,7 @@ class StringColumn : public TableColumn
     public:
         /////////////////////////////////////////////////
         /// \brief Default constructor. Sets only the
-        /// columns type.
+        /// column's type.
         /////////////////////////////////////////////////
         StringColumn() : TableColumn()
         {
@@ -137,7 +216,7 @@ class StringColumn : public TableColumn
         /////////////////////////////////////////////////
         StringColumn(size_t nElem) : StringColumn()
         {
-            m_data.resize(nElem);
+            resize(nElem);
         }
 
         virtual ~StringColumn() {}
@@ -148,19 +227,16 @@ class StringColumn : public TableColumn
 
         virtual void setValue(size_t elem, const std::string& sValue) override;
         virtual void setValue(size_t elem, const mu::value_type& vValue) override;
-        virtual void setValue(const VectorIndex& idx, const std::vector<std::string>& vValue) override;
-        virtual void setValue(const VectorIndex& idx, const std::vector<mu::value_type>& vValue) override;
-        virtual void setValue(const VectorIndex& idx, mu::value_type* _dData, unsigned int _nNum) override;
 
         virtual StringColumn* copy(const VectorIndex& idx) const override;
         virtual void assign(const TableColumn* column) override;
         virtual void insert(const VectorIndex& idx, const TableColumn* column) override;
         virtual void deleteElements(const VectorIndex& idx) override;
-        virtual void shrink() override;
 
         virtual void insertElements(size_t pos, size_t elem);
         virtual void appendElements(size_t elem);
         virtual void removeElements(size_t pos, size_t elem);
+        virtual void resize(size_t elem) override;
 
         virtual int compare(int i, int j, bool caseinsensitive) const override;
         virtual bool isValid(int elem) const override;
@@ -180,7 +256,7 @@ class StringColumn : public TableColumn
             return m_data.size();
         }
 
-        ValueColumn* convert() const;
+        virtual TableColumn* convert(ColumnType type = TableColumn::TYPE_NONE) override;
 };
 
 

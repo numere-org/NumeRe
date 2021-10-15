@@ -44,3 +44,9 @@ Cleaned	Renamed "type" to "method" in "smooth" and "fwt", because this is semant
 Applied	"resample" can now be configured to accept two different sample counts and the filter for the "method" can be selected as well.
 Applied	The documentation browser now displays all articles in tabs instead of opening new windows.
 New	A "try...catch...endtry" control flow statement is now available.
+Added	"declare" can now be used in layout scribts as well.
+Added	A new column type for date-time-values was added. Those values are now also automatically detected when read from a text file (if following certain patterns).
+Added	Two new table methods allow asking table columns for their type and converting them (if possible).
+Cleaned	Improved the method of creating new table inplace methods.
+Updated	Changed the internal time representation to std::chrono and improved the precision to microseconds.
+Applied	"declare" can now be used in layout scripts as well.
