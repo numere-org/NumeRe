@@ -871,6 +871,14 @@ static string strfnc_to_time(StringFuncArgs& funcArgs)
                 case 's':
                     timeStruct.m_seconds = std::chrono::seconds(StrToInt(sCurrentElement));
                     break;
+                case 'i':
+                    sCurrentElement.append(3-sCurrentElement.size(), '0');
+                    timeStruct.m_millisecs = std::chrono::milliseconds(StrToInt(sCurrentElement));
+                    break;
+                case 'u':
+                    sCurrentElement.append(3-sCurrentElement.size(), '0');
+                    timeStruct.m_microsecs = std::chrono::microseconds(StrToInt(sCurrentElement));
+                    break;
             }
 
             cCurrentChar = sPattern[i];
@@ -1246,8 +1254,8 @@ static string padWithZeros(int nTime, size_t nLength)
 static string strfnc_timeformat(StringFuncArgs& funcArgs)
 {
     string sFormattedTime = funcArgs.sArg1 + " "; // contains pattern
-    __time64_t nTime = llabs(funcArgs.nArg1);
-    time_stamp timeStruct = getTimeStampFromTime_t(nTime);
+    sys_time_point nTime = to_timePoint(funcArgs.dArg1.real());
+    time_stamp timeStruct = getTimeStampFromTimePoint(nTime);
     time_zone tz = getCurrentTimeZone();
 
     char cCurrentChar = sFormattedTime.front();
@@ -1275,10 +1283,10 @@ static string strfnc_timeformat(StringFuncArgs& funcArgs)
                 case 'd':
                     sFormattedTime.replace(currentElementStart, i - currentElementStart, padWithZeros((date::sys_days(timeStruct.m_ymd) - date::sys_days(timeStruct.m_ymd.year()/1u/1u)).count()+1, i - currentElementStart));
                     break;
-                case 'H':
+                case 'h':
                     sFormattedTime.replace(currentElementStart, i - currentElementStart, padWithZeros(timeStruct.m_hours.count(), i - currentElementStart));
                     break;
-                case 'h':
+                case 'H':
                     if (timeStruct.m_hours.count() - (tz.Bias + tz.DayLightBias).count() / 60 < 0)
                         sFormattedTime.replace(currentElementStart, i - currentElementStart, padWithZeros(timeStruct.m_hours.count() + 24 - (tz.Bias + tz.DayLightBias).count() / 60, i - currentElementStart));
                     else if (timeStruct.m_hours.count() - (tz.Bias + tz.DayLightBias).count() / 60  >= 24)
@@ -1291,6 +1299,12 @@ static string strfnc_timeformat(StringFuncArgs& funcArgs)
                     break;
                 case 's':
                     sFormattedTime.replace(currentElementStart, i - currentElementStart, padWithZeros(timeStruct.m_seconds.count(), i - currentElementStart));
+                    break;
+                case 'i':
+                    sFormattedTime.replace(currentElementStart, i - currentElementStart, padWithZeros(timeStruct.m_millisecs.count(), i - currentElementStart));
+                    break;
+                case 'u':
+                    sFormattedTime.replace(currentElementStart, i - currentElementStart, padWithZeros(timeStruct.m_microsecs.count(), i - currentElementStart));
                     break;
             }
 
@@ -2228,7 +2242,7 @@ static map<string, StringFuncHandle> getStringFuncHandles()
     mHandleTable["sum"]                 = StringFuncHandle(STR, strfnc_sum, true);
     mHandleTable["substr"]              = StringFuncHandle(STR_VAL_VALOPT, strfnc_substr, false);
     mHandleTable["textparse"]           = StringFuncHandle(STR_STR_VALOPT_VALOPT, strfnc_textparse, false);
-    mHandleTable["timeformat"]          = StringFuncHandle(STR_VAL, strfnc_timeformat, false);
+    mHandleTable["timeformat"]          = StringFuncHandle(STR_DBL, strfnc_timeformat, false);
     mHandleTable["to_char"]             = StringFuncHandle(VAL, strfnc_to_char, true);
     mHandleTable["to_lowercase"]        = StringFuncHandle(STR, strfnc_to_lowercase, false);
     mHandleTable["to_string"]           = StringFuncHandle(STR, strfnc_to_string, false);

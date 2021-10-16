@@ -116,13 +116,14 @@ namespace NumeRe
             // Create function argument vector variables
             s_vect sStringArg1, sStringArg2, sStringArg3;
             n_vect nIntArg1, nIntArg2;
+            d_vect dValArg;
             size_t nMaxArgs = 0;
 
             // Apply the parser as specified by the function signature. After that call the corresponding
             // string function with the returned arguments as many times as it's needed
             if (funcHandle.fType >= PARSER_INT && funcHandle.fType < PARSER_STRING)
                 nMaxArgs = argumentParser(sFunctionArgument, nIntArg1);
-            else if (funcHandle.fType >= PARSER_STRING && funcHandle.fType < PARSER_STRING_INT_INT)
+            else if (funcHandle.fType >= PARSER_STRING && funcHandle.fType < PARSER_STRING_DOUBLE)
             {
                 if (sFuncName == "to_string(" && !isStringExpression(sFunctionArgument))
                 {
@@ -145,6 +146,8 @@ namespace NumeRe
                     continue;
                 }
             }
+            else if (funcHandle.fType >= PARSER_STRING_DOUBLE && funcHandle.fType < PARSER_STRING_INT_INT)
+                nMaxArgs = argumentParser(sFunctionArgument, sStringArg1, dValArg);
             else if (funcHandle.fType >= PARSER_STRING_INT_INT && funcHandle.fType < PARSER_STRING_INT_INT_STRING)
                 nMaxArgs = argumentParser(sFunctionArgument, sStringArg1, nIntArg1, nIntArg2);
             else if (funcHandle.fType >= PARSER_STRING_INT_INT_STRING && funcHandle.fType < PARSER_STRING_STRING_INT_INT)
@@ -171,17 +174,17 @@ namespace NumeRe
                     nMaxArgs = max(max(max(max(sStringArg2.size(), sStringArg3.size()), nIntArg1.size()), nIntArg2.size()), 1u);
 
                     if (nMaxArgs < 500)
-                        vReturnValues = callMultiFunction(funcHandle, sStringArg1, sStringArg2, sStringArg3, nIntArg1, nIntArg2, nMaxArgs);
+                        vReturnValues = callMultiFunction(funcHandle, sStringArg1, sStringArg2, sStringArg3, nIntArg1, nIntArg2, dValArg, nMaxArgs);
                     else
-                        vReturnValues = callMultiFunctionParallel(funcHandle, sStringArg1, sStringArg2, sStringArg3, nIntArg1, nIntArg2, nMaxArgs);
+                        vReturnValues = callMultiFunctionParallel(funcHandle, sStringArg1, sStringArg2, sStringArg3, nIntArg1, nIntArg2, dValArg, nMaxArgs);
                 }
             }
             else
             {
                 if (nMaxArgs < 500)
-                    vReturnValues = callFunction(funcHandle, sStringArg1, sStringArg2, sStringArg3, nIntArg1, nIntArg2, nMaxArgs);
+                    vReturnValues = callFunction(funcHandle, sStringArg1, sStringArg2, sStringArg3, nIntArg1, nIntArg2, dValArg, nMaxArgs);
                 else
-                    vReturnValues = callFunctionParallel(funcHandle, sStringArg1, sStringArg2, sStringArg3, nIntArg1, nIntArg2, nMaxArgs);
+                    vReturnValues = callFunctionParallel(funcHandle, sStringArg1, sStringArg2, sStringArg3, nIntArg1, nIntArg2, dValArg, nMaxArgs);
             }
 
             // copy the return values to the final variable
@@ -272,6 +275,68 @@ namespace NumeRe
 
     /////////////////////////////////////////////////
     /// \brief This member function is the string
+    /// function argument parser for numerical
+    /// arguments.
+    ///
+    /// \param __sFuncArgument const string&
+    /// \param dArg d_vect& a vector of numerical
+    /// values as return value
+    /// \return size_t
+    ///
+    /// It is one of the two basic argument parser
+    /// functions, which are called by all others
+    /// depending on the signatures of their functions.
+    /////////////////////////////////////////////////
+    size_t StringFuncHandler::argumentParser(const string& __sFuncArgument, d_vect& dArg)
+    {
+        Parser& _parser = NumeReKernel::getInstance()->getParser();
+        MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
+        Settings& _option = NumeReKernel::getInstance()->getSettings();
+        string sFuncArgument = __sFuncArgument;
+        value_type* v = 0;
+        int nReturn = 0;
+
+        // If the current function argument contains strings,
+        // parse it correspondingly
+        if (isStringExpression(sFuncArgument) || _data.containsClusters(sFuncArgument))
+        {
+            // Call the string parser core
+            StringResult strRes = eval(sFuncArgument, "", true);
+
+            // If already numerical value are available, use them directly
+            if (strRes.vNumericalValues.size())
+            {
+                dArg = strRes.vNumericalValues;
+
+                return dArg.size();
+            }
+
+            // Evaluate the returned strings numerically
+            for (size_t i = 0; i < strRes.vResult.size(); i++)
+            {
+                _parser.SetExpr(strRes.vResult[i]);
+                v = _parser.Eval(nReturn);
+                dArg.insert(dArg.end(), v, v+nReturn);
+            }
+
+            return dArg.size();
+        }
+        else if (_data.containsTablesOrClusters(sFuncArgument))
+        {
+            getDataElements(sFuncArgument, _parser, _data, _option, false);
+        }
+
+        // Set the expression and evaluate it
+        _parser.SetExpr(sFuncArgument);
+        v = _parser.Eval(nReturn);
+        dArg.insert(dArg.end(), v, v+nReturn);
+
+        return (size_t)nReturn;
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief This member function is the string
     /// function argument parser for string
     /// arguments.
     ///
@@ -342,6 +407,49 @@ namespace NumeRe
         bLogicalOnly = true;
 
         return sArg.size();
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief This member function is the string
+    /// function argument parser for one string and
+    /// one (optional) numerical argument.
+    ///
+    /// \param __sFuncArgument const string&
+    /// \param sArg1 s_vect&
+    /// \param dArg1 d_vect&
+    /// \return size_t
+    ///
+    /////////////////////////////////////////////////
+    size_t StringFuncHandler::argumentParser(const string& __sFuncArgument, s_vect& sArg1, d_vect& dArg1)
+    {
+        string sFuncArgument = __sFuncArgument;
+        size_t nMaxLength = 0;
+        bool bLogicalOnly = false;
+
+        // Get the single arguments
+        string sString = getNextArgument(sFuncArgument, true);
+        string sNumVal = getNextArgument(sFuncArgument, true);
+
+        // Handle the arguments using the basic functions
+        // and store the highets number of return values
+        nMaxLength = argumentParser(sString, sArg1, bLogicalOnly);
+
+        if (!nMaxLength)
+            return 0;
+
+        if (sNumVal.length())
+        {
+            size_t nReturn = argumentParser(sNumVal, dArg1);
+
+            if (!nReturn)
+                return 0;
+
+            if (nMaxLength < nReturn)
+                nMaxLength = nReturn;
+        }
+
+        return nMaxLength;
     }
 
 
@@ -652,11 +760,12 @@ namespace NumeRe
     /// \param sStringArg3 s_vect&
     /// \param nIntArg1 n_vect&
     /// \param nIntArg2 n_vect&
+    /// \param dValArg d_vect&
     /// \param nMaxArgs size_t
     /// \return vector<string>
     ///
     /////////////////////////////////////////////////
-    vector<string> StringFuncHandler::callFunction(StringFuncHandle funcHandle, s_vect& sStringArg1, s_vect& sStringArg2, s_vect& sStringArg3, n_vect& nIntArg1, n_vect& nIntArg2, size_t nMaxArgs)
+    vector<string> StringFuncHandler::callFunction(StringFuncHandle funcHandle, s_vect& sStringArg1, s_vect& sStringArg2, s_vect& sStringArg3, n_vect& nIntArg1, n_vect& nIntArg2, d_vect& dValArg, size_t nMaxArgs)
     {
         StringFuncArgs stringArgs;
         stringArgs.opt = &NumeReKernel::getInstance()->getSettings();
@@ -704,6 +813,13 @@ namespace NumeRe
             else
                 stringArgs.nArg2 = DEFAULT_NUM_ARG;
 
+            if (i < dValArg.size())
+                stringArgs.dArg1 = dValArg[i];
+            else if (dValArg.size() == 1)
+                stringArgs.dArg1 = dValArg[0];
+            else
+                stringArgs.dArg1 = 0.0;
+
             vReturnValues[i] = addMaskedStrings(funcHandle.fHandle(stringArgs));
         }
 
@@ -722,11 +838,12 @@ namespace NumeRe
     /// \param sStringArg3 s_vect&
     /// \param nIntArg1 n_vect&
     /// \param nIntArg2 n_vect&
+    /// \param dValArg d_vect&
     /// \param nMaxArgs size_t
     /// \return vector<string>
     ///
     /////////////////////////////////////////////////
-    vector<string> StringFuncHandler::callFunctionParallel(StringFuncHandle funcHandle, s_vect& sStringArg1, s_vect& sStringArg2, s_vect& sStringArg3, n_vect& nIntArg1, n_vect& nIntArg2, size_t nMaxArgs)
+    vector<string> StringFuncHandler::callFunctionParallel(StringFuncHandle funcHandle, s_vect& sStringArg1, s_vect& sStringArg2, s_vect& sStringArg3, n_vect& nIntArg1, n_vect& nIntArg2, d_vect& dValArg, size_t nMaxArgs)
     {
         vector<string> vReturnValues(nMaxArgs);
 
@@ -771,6 +888,13 @@ namespace NumeRe
             else
                 stringArgs.nArg2 = DEFAULT_NUM_ARG;
 
+            if (i < dValArg.size())
+                stringArgs.dArg1 = dValArg[i];
+            else if (dValArg.size() == 1)
+                stringArgs.dArg1 = dValArg[0];
+            else
+                stringArgs.dArg1 = 0.0;
+
             vReturnValues[i] = addMaskedStrings(funcHandle.fHandle(stringArgs));
         }
 
@@ -790,11 +914,12 @@ namespace NumeRe
     /// \param sStringArg3 s_vect&
     /// \param nIntArg1 n_vect&
     /// \param nIntArg2 n_vect&
+    /// \param dValArg d_vect&
     /// \param nMaxArgs size_t
     /// \return vector<string>
     ///
     /////////////////////////////////////////////////
-    vector<string> StringFuncHandler::callMultiFunction(StringFuncHandle funcHandle, s_vect& sStringArg1, s_vect& sStringArg2, s_vect& sStringArg3, n_vect& nIntArg1, n_vect& nIntArg2, size_t nMaxArgs)
+    vector<string> StringFuncHandler::callMultiFunction(StringFuncHandle funcHandle, s_vect& sStringArg1, s_vect& sStringArg2, s_vect& sStringArg3, n_vect& nIntArg1, n_vect& nIntArg2, d_vect& dValArg, size_t nMaxArgs)
     {
         vector<string> vReturnValues(nMaxArgs);
 
@@ -832,6 +957,13 @@ namespace NumeRe
             else
                 stringArgs.nArg2 = DEFAULT_NUM_ARG;
 
+            if (i < dValArg.size())
+                stringArgs.dArg1 = dValArg[i];
+            else if (dValArg.size() == 1)
+                stringArgs.dArg1 = dValArg[0];
+            else
+                stringArgs.dArg1 = 0.0;
+
             vReturnValues[i] = addMaskedStrings(funcHandle.fHandle(stringArgs));
         }
 
@@ -851,11 +983,12 @@ namespace NumeRe
     /// \param sStringArg3 s_vect&
     /// \param nIntArg1 n_vect&
     /// \param nIntArg2 n_vect&
+    /// \param dValArg d_vect&
     /// \param nMaxArgs size_t
     /// \return vector<string>
     ///
     /////////////////////////////////////////////////
-    vector<string> StringFuncHandler::callMultiFunctionParallel(StringFuncHandle funcHandle, s_vect& sStringArg1, s_vect& sStringArg2, s_vect& sStringArg3, n_vect& nIntArg1, n_vect& nIntArg2, size_t nMaxArgs)
+    vector<string> StringFuncHandler::callMultiFunctionParallel(StringFuncHandle funcHandle, s_vect& sStringArg1, s_vect& sStringArg2, s_vect& sStringArg3, n_vect& nIntArg1, n_vect& nIntArg2, d_vect& dValArg, size_t nMaxArgs)
     {
         vector<string> vReturnValues(nMaxArgs);
 
@@ -893,6 +1026,13 @@ namespace NumeRe
                 stringArgs.nArg2 = nIntArg2[0];
             else
                 stringArgs.nArg2 = DEFAULT_NUM_ARG;
+
+            if (i < dValArg.size())
+                stringArgs.dArg1 = dValArg[i];
+            else if (dValArg.size() == 1)
+                stringArgs.dArg1 = dValArg[0];
+            else
+                stringArgs.dArg1 = 0.0;
 
             vReturnValues[i] = addMaskedStrings(funcHandle.fHandle(stringArgs));
         }

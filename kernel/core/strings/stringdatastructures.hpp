@@ -37,6 +37,11 @@ typedef std::vector<std::string> s_vect;
 /////////////////////////////////////////////////
 typedef std::vector<long long int> n_vect;
 
+/////////////////////////////////////////////////
+/// \brief Simple abbreviation
+/////////////////////////////////////////////////
+typedef std::vector<mu::value_type> d_vect;
+
 
 /////////////////////////////////////////////////
 /// \brief This structure combines all string
@@ -48,10 +53,11 @@ struct StringFuncArgs
 	string sArg1, sArg2, sArg3;
 	s_vect sMultiArg;
 	long long int nArg1, nArg2;
+	mu::value_type dArg1;
 	n_vect nMultiArg;
 	const Settings* opt;
 
-	StringFuncArgs() : nArg1(INT_MIN), nArg2(INT_MIN), opt(nullptr) {}
+	StringFuncArgs() : nArg1(INT_MIN), nArg2(INT_MIN), dArg1(0.0), opt(nullptr) {}
 };
 
 
@@ -76,6 +82,9 @@ enum FunctionSignatureType
 
 	PARSER_STRING,
 	STR,
+
+	PARSER_STRING_DOUBLE,
+	STR_DBL,
 
 	PARSER_STRING_INT_INT,
 	STR_VAL,

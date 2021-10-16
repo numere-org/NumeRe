@@ -50,3 +50,5 @@ Added	Two new table methods allow asking table columns for their type and conver
 Cleaned	Improved the method of creating new table inplace methods.
 Updated	Changed the internal time representation to std::chrono and improved the precision to microseconds.
 Applied	"declare" can now be used in layout scripts as well.
+Fixed	The menu entry field for GUI plugins in the package creator accepts now whitespaces.
+Updated	"to_time()" and "timeformat()" now support milli- and microseconds via the characters "i" and "u".

@@ -125,7 +125,7 @@ PackageDialog::PackageDialog(wxWindow* parent, NumeReTerminal* terminal, IconMan
     m_packageProperties->Append(new wxStringProperty(_guilang.get("GUI_PKGDLG_PLUGINCOMMAND"), "-plugincommand"));
     m_packageProperties->SetPropertyValidator("-plugincommand", wxTextValidator(wxFILTER_ALPHANUMERIC));
     m_packageProperties->Append(new wxStringProperty(_guilang.get("GUI_PKGDLG_PLUGINMENUENTRY"), "-pluginmenuentry"));
-    m_packageProperties->SetPropertyValidator("-pluginmenuentry", wxTextValidator(wxFILTER_ALPHANUMERIC));
+    m_packageProperties->SetPropertyValidator("-pluginmenuentry", wxTextValidator(wxFILTER_ASCII));
 
     m_packageProperties->Append(new wxStringProperty(_guilang.get("GUI_PKGDLG_PLUGINMAIN"), "-pluginmain"));
 

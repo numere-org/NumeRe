@@ -42,16 +42,18 @@ namespace NumeRe
             string addMaskedStrings(const string& sString);
             void evalFunction(string& sLine, const string& sFuncName, StringFuncHandle);
             size_t argumentParser(const string&, n_vect&);
+            size_t argumentParser(const string&, d_vect&);
             size_t argumentParser(const string&, s_vect&, bool& bLogicalOnly);
+            size_t argumentParser(const string&, s_vect&, d_vect&);
             size_t argumentParser(const string&, s_vect&, n_vect&, n_vect&);
             size_t argumentParser(const string&, s_vect&, n_vect&, n_vect&, s_vect&);
             size_t argumentParser(const string&, s_vect&, s_vect&, n_vect&, n_vect&);
             size_t argumentParser(const string&, s_vect&, s_vect&, s_vect&, n_vect&, n_vect&);
 
-            vector<string> callFunction(StringFuncHandle, s_vect&, s_vect&, s_vect&, n_vect&, n_vect&, size_t);
-            vector<string> callFunctionParallel(StringFuncHandle, s_vect&, s_vect&, s_vect&, n_vect&, n_vect&, size_t);
-            vector<string> callMultiFunction(StringFuncHandle, s_vect&, s_vect&, s_vect&, n_vect&, n_vect&, size_t);
-            vector<string> callMultiFunctionParallel(StringFuncHandle, s_vect&, s_vect&, s_vect&, n_vect&, n_vect&, size_t);
+            vector<string> callFunction(StringFuncHandle, s_vect&, s_vect&, s_vect&, n_vect&, n_vect&, d_vect&, size_t);
+            vector<string> callFunctionParallel(StringFuncHandle, s_vect&, s_vect&, s_vect&, n_vect&, n_vect&, d_vect&, size_t);
+            vector<string> callMultiFunction(StringFuncHandle, s_vect&, s_vect&, s_vect&, n_vect&, n_vect&, d_vect&, size_t);
+            vector<string> callMultiFunctionParallel(StringFuncHandle, s_vect&, s_vect&, s_vect&, n_vect&, n_vect&, d_vect&, size_t);
 
         protected:
             string applySpecialStringFuncs(string sLine);
