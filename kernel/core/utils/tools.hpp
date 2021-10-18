@@ -55,7 +55,8 @@ enum ArgExtraction
     ARGEXTRACT_NONE = 0x0,
     ARGEXTRACT_STRIPPED = 0x1,
     ARGEXTRACT_PARSED = 0x2,
-    ARGEXTRACT_ASINT = 0x4
+    ARGEXTRACT_ASINT = 0x4,
+    ARGEXTRACT_ASSTRING = 0x8
 };
 
 string getArgAtPos(const string& sCmd, unsigned int nPos, int extraction = ARGEXTRACT_STRIPPED);

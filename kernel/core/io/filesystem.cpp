@@ -117,6 +117,8 @@ string FileSystem::cleanPath(string sFilePath) const
         }
     }
 
+    const std::string sINVALID_CHARS = "~\"#%&<>{|}";
+
     for (unsigned int i = 0; i < sFilePath.length(); i++)
     {
         if (sFilePath[i] == (char)142)
@@ -133,8 +135,8 @@ string FileSystem::cleanPath(string sFilePath) const
             sFilePath[i] = 'ü';
         else if (sFilePath[i] == (char)225)
             sFilePath[i] = 'ß';
-        else
-            continue;
+        else if (sINVALID_CHARS.find(sFilePath[i]) != std::string::npos)
+            sFilePath[i] = '_';
     }
 
     return sFilePath;
@@ -329,10 +331,7 @@ string FileSystem::ValidFileName(string _sFileName, const string sExtension, boo
             if (sValid == ".*")
                 sValid = _sFileName.substr(0,nPos);
             else
-            {
-                NumeReKernel::printPreFmt("|-> WARNUNG: Dieser Datentyp ist unbekannt oder geschuetzt! Die Endung wurde automatisch durch \".dat\" ersetzt!\n");
-                sValid = _sFileName.substr(0, nPos) + ".dat";
-            }
+                throw SyntaxError(SyntaxError::INVALID_FILETYPE, _sFileName, _sFileName.substr(nPos), _sFileName);
         }
     }
     else

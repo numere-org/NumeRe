@@ -638,7 +638,7 @@ std::string CommandLineParser::getParameterValueAsString(const std::string& sPar
     if (!nParPos)
         return sDefaultValue;
 
-    std::string arg = getArgAtPos(m_parlist, nParPos+sParameter.length(), ARGEXTRACT_PARSED);
+    std::string arg = getArgAtPos(m_parlist, nParPos+sParameter.length(), ARGEXTRACT_PARSED | ARGEXTRACT_ASSTRING);
     StripSpaces(arg);
 
     if (!stripAlways && arg.find(",") != std::string::npos && arg.find("\"") != std::string::npos)

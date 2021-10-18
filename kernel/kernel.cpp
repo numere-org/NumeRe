@@ -1711,20 +1711,21 @@ void NumeReKernel::handleToCmd(string& sLine, string& sCache, string& sCurrentCo
 bool NumeReKernel::evaluateProcedureCalls(string& sLine)
 {
     // Only if there's a candidate for a procedure
-    if (sLine.find('$') != string::npos && sLine.find('(', sLine.find('$')) != string::npos && !_procedure.getCurrentBlockDepth())
+    if (sLine.find('$') != std::string::npos && sLine.find('(', sLine.find('$')) != std::string::npos && !_procedure.getCurrentBlockDepth())
     {
         unsigned int nPos = 0;
         int nProc = 0;
 
         // Find all procedures
-        while (sLine.find('$', nPos) != string::npos && sLine.find('(', sLine.find('$', nPos)) != string::npos)
+        while (sLine.find('$', nPos) != std::string::npos && sLine.find('(', sLine.find('$', nPos)) != std::string::npos)
         {
             unsigned int nParPos = 0;
             nPos = sLine.find('$', nPos) + 1;
 
             // Get procedure name and argument list
-            string __sName = sLine.substr(nPos, sLine.find('(', nPos) - nPos);
-            string __sVarList = "";
+            std::string __sName = sLine.substr(nPos, sLine.find('(', nPos) - nPos);
+            std::string __sVarList = "";
+
             if (sLine[nPos] == '\'')
             {
                 // This is an explicit file name
@@ -1733,6 +1734,7 @@ bool NumeReKernel::evaluateProcedureCalls(string& sLine)
             }
             else
                 nParPos = sLine.find('(', nPos);
+
             __sVarList = sLine.substr(nParPos);
             nParPos += getMatchingParenthesis(sLine.substr(nParPos));
             __sVarList = __sVarList.substr(1, getMatchingParenthesis(__sVarList) - 1);
@@ -1750,26 +1752,31 @@ bool NumeReKernel::evaluateProcedureCalls(string& sLine)
                     nProc++;
                 }
             }
+
             nPos += __sName.length() + __sVarList.length() + 1;
         }
+
         StripSpaces(sLine);
+
         if (!sLine.length())
             return false;
     }
-    else if (sLine.find('$') != string::npos && sLine.find('(', sLine.find('$')) == string::npos)
+    else if (sLine.find('$') != std::string::npos && sLine.find('(', sLine.find('$')) == std::string::npos)
     {
         // If there's a dollar sign without an opening parenthesis
         // ensure that it is enclosed with quotation marks
         size_t i = sLine.find('$');
+
+        if (findCommand(sLine).sString == "new")
+            return true;
+
         bool isnotinquotes = true;
 
         // Examine each occurence of a dollar sign
         while (isInQuotes(sLine, i))
         {
             if (sLine.find('$', i + 1) != string::npos)
-            {
                 i = sLine.find('$', i + 1);
-            }
             else
             {
                 isnotinquotes = false;
@@ -1785,6 +1792,7 @@ bool NumeReKernel::evaluateProcedureCalls(string& sLine)
             return false;
         }
     }
+
     return true;
 }
 

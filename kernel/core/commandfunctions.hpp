@@ -222,6 +222,30 @@ static bool undefineFunctions(string sFunctionList, FunctionDefinitionManager& _
 
 
 /////////////////////////////////////////////////
+/// \brief Perpares a template based upon the
+/// selected template id. The file has to exist.
+///
+/// \param sTemplateID const std::string&
+/// \param sFileName const std::string&
+/// \return bool
+///
+/////////////////////////////////////////////////
+static bool prepareTemplate(const std::string& sTemplateID, const std::string& sFileName)
+{
+    std::vector<std::string> vTokens;
+    Settings& _option = NumeReKernel::getInstance()->getSettings();
+
+    vTokens.push_back(sFileName.substr(sFileName.rfind('/') + 1, sFileName.rfind('.') - sFileName.rfind('/') - 1));
+    vTokens.push_back(getTimeStamp(false));
+
+    if (fileExists(_option.ValidFileName("<>/user/lang/" + sTemplateID + ".nlng", ".nlng")))
+        return generateTemplate(sFileName, "<>/user/lang/" + sTemplateID + ".nlng", vTokens, _option);
+
+    return generateTemplate(sFileName, "<>/lang/" + sTemplateID + ".nlng", vTokens, _option);
+}
+
+
+/////////////////////////////////////////////////
 /// \brief This function creates new objects:
 /// files, directories, procedures and tables
 ///
@@ -234,70 +258,142 @@ static bool undefineFunctions(string sFunctionList, FunctionDefinitionManager& _
 /////////////////////////////////////////////////
 static bool newObject(string& sCmd, Parser& _parser, MemoryManager& _data, Settings& _option)
 {
-	int nType = 0;
-	string sObject = "";
-	vector<string> vTokens;
-	FileSystem _fSys;
-	_fSys.setTokens(_option.getTokenPaths());
+    CommandLineParser cmdParser(sCmd, CommandLineParser::CMD_DAT_PAR);
+    std::string sFileName;
+    FileSystem _fSys;
+    _fSys.initializeFromKernel();
 
-	if (NumeReKernel::getInstance()->getStringParser().containsStringVars(sCmd))
-		NumeReKernel::getInstance()->getStringParser().getStringValues(sCmd);
+    if (cmdParser.hasParam("dir"))
+    {
+        sFileName = replacePathSeparator(cmdParser.getParameterValueAsString("dir", "", true));
+        int nReturn = _fSys.setPath(sFileName, true, _option.getExePath());
 
-    // Evaluate and prepare the passed parameters
-	if (findParameter(sCmd, "dir", '='))
-	{
-		nType = 1;
-		addArgumentQuotes(sCmd, "dir");
-	}
-	else if (findParameter(sCmd, "script", '='))
-	{
-		nType = 2;
-		addArgumentQuotes(sCmd, "script");
-	}
-	else if (findParameter(sCmd, "proc", '='))
-	{
-		nType = 3;
-		addArgumentQuotes(sCmd, "proc");
-	}
-	else if (findParameter(sCmd, "file", '='))
-	{
-		nType = 4;
-		addArgumentQuotes(sCmd, "file");
-	}
-	else if (findParameter(sCmd, "plugin", '='))
-	{
-		nType = 5;
-		addArgumentQuotes(sCmd, "plugin");
-	}
-	else if (sCmd.find_first_not_of(' ', findCommand(sCmd).nPos + 3) != string::npos)
-	{
-		if (sCmd[sCmd.find_first_not_of(' ', findCommand(sCmd).nPos + 3)] == '$')
-		{
-		    // Insert the parameter for the new procedure
-			nType = 3;
-			sCmd.insert(sCmd.find_first_not_of(' ', findCommand(sCmd).nPos + 3), "-proc=");
-			addArgumentQuotes(sCmd, "proc");
-		}
-		else if (sCmd.find("()", findCommand(sCmd).nPos + 3) != string::npos)
-		{
-		    // Create new tables
-			string sReturnVal = "";
+		if (nReturn == 1 && _option.systemPrints())
+			NumeReKernel::print(_lang.get("BUILTIN_NEW_FOLDERCREATED", sFileName));
 
-			if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sCmd))
-			{
-				if (!extractFirstParameterStringValue(sCmd, sObject))
-					return false;
-			}
-			else
-				sObject = sCmd.substr(findCommand(sCmd).nPos + 3);
+        return true;
+    }
+    else if (cmdParser.hasParam("script"))
+    {
+        sFileName = replacePathSeparator(cmdParser.getParameterValueAsString("script", "", true));
 
-			StripSpaces(sObject);
+        if (!sFileName.length())
+            return false;
 
-			if (findParameter(sObject, "free"))
-				eraseToken(sObject, "free", false);
+        if (sFileName.find(':') == std::string::npos && sFileName.front() != '<')
+			sFileName = "<scriptpath>/" + sFileName;
 
-			if (sObject.rfind('-') != string::npos)
-				sObject.erase(sObject.rfind('-'));
+        sFileName = _fSys.ValidizeAndPrepareName(sFileName, ".nscr");
+
+        if (!prepareTemplate("tmpl_script", sFileName))
+            throw SyntaxError(SyntaxError::CANNOT_GENERATE_SCRIPT, sCmd, sFileName, sFileName);
+
+		if (_option.systemPrints())
+			NumeReKernel::print(_lang.get("BUILTIN_NEW_SCRIPTCREATED", sFileName));
+
+        return true;
+    }
+    else if (cmdParser.hasParam("proc"))
+    {
+        sFileName = replacePathSeparator(cmdParser.getParameterValueAsString("proc", "", true));
+
+        if (!sFileName.length())
+            return false;
+
+        replaceAll(sFileName, "~", "/");
+        replaceAll(sFileName, "$", "");
+        replaceAll(sFileName, "main/", "");
+
+        if (sFileName.find(':') == std::string::npos && sFileName.front() != '<')
+			sFileName = "<procpath>/" + sFileName;
+
+        sFileName = _fSys.ValidizeAndPrepareName(sFileName, ".nprc");
+
+        if (!prepareTemplate("tmpl_procedure", sFileName))
+            throw SyntaxError(SyntaxError::CANNOT_GENERATE_PROCEDURE, sCmd, sFileName, sFileName);
+
+		if (_option.systemPrints())
+			NumeReKernel::print(_lang.get("BUILTIN_NEW_PROCCREATED", sFileName));
+
+        return true;
+    }
+    else if (cmdParser.hasParam("file"))
+    {
+        sFileName = replacePathSeparator(cmdParser.getParameterValueAsString("file", "", true));
+
+        if (!sFileName.length())
+            return false;
+
+        if (sFileName.find(':') == std::string::npos && sFileName.front() != '<')
+			sFileName = "<>/" + sFileName;
+
+        sFileName = _fSys.ValidizeAndPrepareName(sFileName, ".txt");
+
+        if (sFileName.substr(sFileName.rfind('.')) == ".nprc"
+				|| sFileName.substr(sFileName.rfind('.')) == ".nscr"
+				|| sFileName.substr(sFileName.rfind('.')) == ".nlyt"
+				|| sFileName.substr(sFileName.rfind('.')) == ".ndat")
+			sFileName.replace(sFileName.rfind('.'), 5, ".txt");
+
+        if (!prepareTemplate("tmpl_file", sFileName))
+            throw SyntaxError(SyntaxError::CANNOT_GENERATE_FILE, sCmd, sFileName, sFileName);
+
+		if (_option.systemPrints())
+			NumeReKernel::print(_lang.get("BUILTIN_NEW_FILECREATED", sFileName));
+
+        return true;
+    }
+    else if (cmdParser.hasParam("plugin"))
+    {
+        sFileName = replacePathSeparator(cmdParser.getParameterValueAsString("plugin", "", true));
+
+        if (!sFileName.length())
+            return false;
+
+        if (sFileName.find(':') == std::string::npos && sFileName.front() != '<')
+			sFileName = "<scriptpath>/" + sFileName;
+
+        sFileName = _fSys.ValidizeAndPrepareName(sFileName, ".nscr");
+
+        if (!prepareTemplate("tmpl_plugin", sFileName))
+            throw SyntaxError(SyntaxError::CANNOT_GENERATE_SCRIPT, sCmd, sFileName, sFileName);
+
+		if (_option.systemPrints())
+			NumeReKernel::print(_lang.get("BUILTIN_NEW_PLUGINCREATED", sFileName));
+
+        return true;
+    }
+    else
+    {
+        if (cmdParser.getExpr().front() == '$')
+        {
+            sFileName = cmdParser.getExpr();
+
+            if (!sFileName.length())
+                return false;
+
+            replaceAll(sFileName, "~", "/");
+            replaceAll(sFileName, "$", "");
+            replaceAll(sFileName, "main/", "");
+
+            if (sFileName.find(':') == std::string::npos && sFileName.front() != '<')
+                sFileName = "<procpath>/" + sFileName;
+
+            sFileName = _fSys.ValidizeAndPrepareName(sFileName, ".nprc");
+
+            if (!prepareTemplate("tmpl_procedure", sFileName))
+                throw SyntaxError(SyntaxError::CANNOT_GENERATE_PROCEDURE, sCmd, sFileName, sFileName);
+
+            if (_option.systemPrints())
+                NumeReKernel::print(_lang.get("BUILTIN_NEW_PROCCREATED", sFileName));
+
+            return true;
+        }
+        else if (cmdParser.getExpr().find("()") != std::string::npos)
+        {
+            // Create new tables
+			std::string sReturnVal = "";
+			std::string sObject = cmdParser.parseExprAsString();
 
 			if (!sObject.length())
 				return false;
@@ -305,14 +401,15 @@ static bool newObject(string& sCmd, Parser& _parser, MemoryManager& _data, Setti
             // Create the tables
 			while (sObject.length())
 			{
-			    string sTableName = getNextArgument(sObject, true);
+			    std::string sTableName = getNextArgument(sObject, true);
 
 			    // Does the table already exist?
 				if (_data.isTable(sTableName))
 				{
-					if (findParameter(sCmd, "free"))
+					if (cmdParser.hasParam("free"))
 					{
-						_data.deleteBulk(sTableName.substr(0, sTableName.find('(')), 0, _data.getLines(sTableName.substr(0, sTableName.find('('))) - 1, 0, _data.getCols(sTableName.substr(0, sTableName.find('('))) - 1);
+					    std::string sName = sTableName.substr(0, sTableName.find('('));
+						_data.deleteBulk(sName, 0, _data.getLines(sName) - 1, 0, _data.getCols(sName) - 1);
 
 						if (sReturnVal.length())
 							sReturnVal += ", ";
@@ -338,254 +435,17 @@ static bool newObject(string& sCmd, Parser& _parser, MemoryManager& _data, Setti
 
 			if (sReturnVal.length() && _option.systemPrints())
 			{
-				if (findParameter(sCmd, "free"))
-					NumeReKernel::print(LineBreak(  _lang.get("BUILTIN_NEW_FREE_CACHES", sReturnVal), _option) );
+				if (cmdParser.hasParam("free"))
+					NumeReKernel::print(_lang.get("BUILTIN_NEW_FREE_CACHES", sReturnVal));
 				else
-					NumeReKernel::print(LineBreak(  _lang.get("BUILTIN_NEW_CACHES", sReturnVal), _option) );
+					NumeReKernel::print(_lang.get("BUILTIN_NEW_CACHES", sReturnVal));
 			}
 
 			return true;
-		}
-	}
-
-	if (!nType)
-		return false;
-
-	extractFirstParameterStringValue(sCmd, sObject);
-	StripSpaces(sObject);
-
-	if (!sObject.length())
-		throw SyntaxError(SyntaxError::NO_FILENAME, sCmd, SyntaxError::invalid_position);
-
-	if (_option.isDeveloperMode())
-		NumeReKernel::print("DEBUG: sObject = " + sObject );
-
-    // Create the objects
-	if (nType == 1) // Directory
-	{
-		int nReturn = _fSys.setPath(sObject, true, _option.getExePath());
-
-		if (nReturn == 1 && _option.systemPrints())
-			NumeReKernel::print(LineBreak( _lang.get("BUILTIN_NEW_FOLDERCREATED", sObject), _option) );
-	}
-	else if (nType == 2) // Script template
-	{
-		if (sObject.find('/') != string::npos || sObject.find('\\') != string::npos)
-		{
-			string sPath = sObject;
-
-			for (unsigned int i = sPath.length() - 1; i >= 0; i--)
-			{
-				if (sPath[i] == '\\' || sPath[i] == '/')
-				{
-					sPath = sPath.substr(0, i);
-					break;
-				}
-			}
-
-			_fSys.setPath(sPath, true, _option.getScriptPath());
-		}
-		else
-			_fSys.setPath(_option.getScriptPath(), false, _option.getExePath());
-
-		if (sObject.find('\\') == string::npos && sObject.find('/') == string::npos)
-			sObject = "<scriptpath>/" + sObject;
-
-		sObject = _fSys.ValidFileName(sObject, ".nscr");
-		vTokens.push_back(sObject.substr(sObject.rfind('/') + 1, sObject.rfind('.') - sObject.rfind('/') - 1));
-		vTokens.push_back(getTimeStamp(false));
-
-		if (fileExists(_option.ValidFileName("<>/user/lang/tmpl_script.nlng", ".nlng")))
-		{
-			if (!generateTemplate(sObject, "<>/user/lang/tmpl_script.nlng", vTokens, _option))
-				throw SyntaxError(SyntaxError::CANNOT_GENERATE_SCRIPT, sCmd, sObject, sObject);
-		}
-		else
-		{
-			if (!generateTemplate(sObject, "<>/lang/tmpl_script.nlng", vTokens, _option))
-				throw SyntaxError(SyntaxError::CANNOT_GENERATE_SCRIPT, sCmd, sObject, sObject);
-		}
-
-		if (_option.systemPrints())
-			NumeReKernel::print(LineBreak( _lang.get("BUILTIN_NEW_SCRIPTCREATED", sObject), _option) );
-	}
-	else if (nType == 3) // Procedure template
-	{
-		replaceAll(sObject, "\\", "/");
-		replaceAll(sObject, "~", "/");
-
-		for (size_t i = 0; i < sObject.length(); i++)
-        {
-            if (!isalnum(sObject[i])
-                && sObject[i] != '_'
-                && sObject[i] != '/'
-                && sObject[i] != '$'
-                && sObject[i] != '<'
-                && sObject[i] != '>')
-                sObject[i] = '_';
         }
+    }
 
-		if (sObject.find('/') != string::npos || sObject.find('\\') != string::npos || sObject.find('~') != string::npos)
-		{
-			string sPath = sObject.substr(0, sObject.find_last_of('/'));
-
-			for (size_t i = 0; i < sPath.length(); i++)
-            {
-                if (!isalnum(sPath[i]) && sPath[i] != '_' && sPath[i] != '/')
-                    sPath[i] = '_';
-            }
-
-			_fSys.setPath(sPath, true, _option.getProcPath());
-		}
-		else
-			_fSys.setPath(_option.getProcPath(), false, _option.getExePath());
-
-		string sProcedure = sObject;
-
-		if (sProcedure.find('$') != string::npos)
-		{
-			sProcedure = sProcedure.substr(sProcedure.rfind('$'));
-
-			if (sProcedure.find('/') != string::npos)
-				sProcedure.erase(1, sProcedure.rfind('/'));
-		}
-		else
-		{
-			if (sProcedure.find('/') != string::npos)
-				sProcedure = sProcedure.substr(sProcedure.rfind('/') + 1);
-
-			StripSpaces(sProcedure);
-			sProcedure = "$" + sProcedure;
-		}
-
-		if (sProcedure.find('.') != string::npos)
-			sProcedure = sProcedure.substr(0, sProcedure.rfind('.'));
-
-		if (sObject.find('/') == string::npos)
-			sObject = "<procpath>/" + sObject;
-
-		while (sObject.find('~') != string::npos)
-			sObject[sObject.find('~')] = '/';
-
-		while (sObject.find('$') != string::npos)
-			sObject.erase(sObject.find('$'), 1);
-
-		sObject = _fSys.ValidFileName(sObject, ".nprc");
-
-		vTokens.push_back(sProcedure.substr(1));
-		vTokens.push_back(getTimeStamp(false));
-
-		if (fileExists(_option.ValidFileName("<>/user/lang/tmpl_procedure.nlng", ".nlng")))
-		{
-			if (!generateTemplate(sObject, "<>/user/lang/tmpl_procedure.nlng", vTokens, _option))
-				throw SyntaxError(SyntaxError::CANNOT_GENERATE_PROCEDURE, sCmd, SyntaxError::invalid_position, sObject);
-		}
-		else
-		{
-			if (!generateTemplate(sObject, "<>/lang/tmpl_procedure.nlng", vTokens, _option))
-				throw SyntaxError(SyntaxError::CANNOT_GENERATE_PROCEDURE, sCmd, SyntaxError::invalid_position, sObject);
-		}
-
-		if (_option.systemPrints())
-			NumeReKernel::print(LineBreak( _lang.get("BUILTIN_NEW_PROCCREATED", sObject), _option) );
-	}
-	else if (nType == 4) // Arbitrary file template
-	{
-		if (sObject.find('/') != string::npos || sObject.find('\\') != string::npos)
-		{
-			string sPath = sObject;
-
-			for (unsigned int i = sPath.length() - 1; i >= 0; i--)
-			{
-				if (sPath[i] == '\\' || sPath[i] == '/')
-				{
-					sPath = sPath.substr(0, i);
-					break;
-				}
-			}
-
-			_fSys.setPath(sPath, true, _option.getExePath());
-		}
-		else
-			_fSys.setPath(_option.getScriptPath(), false, _option.getExePath());
-
-		if (sObject.find('\\') == string::npos && sObject.find('/') == string::npos)
-			sObject = "<>/" + sObject;
-
-		sObject = _fSys.ValidFileName(sObject, ".txt");
-
-		if (sObject.substr(sObject.rfind('.')) == ".nprc"
-				|| sObject.substr(sObject.rfind('.')) == ".nscr"
-				|| sObject.substr(sObject.rfind('.')) == ".ndat")
-			sObject.replace(sObject.rfind('.'), 5, ".txt");
-
-		vTokens.push_back(sObject.substr(sObject.rfind('/') + 1, sObject.rfind('.') - sObject.rfind('/') - 1));
-		vTokens.push_back(getTimeStamp(false));
-
-		if (fileExists(_option.ValidFileName("<>/user/lang/tmpl_file.nlng", ".nlng")))
-		{
-			if (!generateTemplate(sObject, "<>/user/lang/tmpl_file.nlng", vTokens, _option))
-				throw SyntaxError(SyntaxError::CANNOT_GENERATE_FILE, sCmd, SyntaxError::invalid_position, sObject);
-		}
-		else
-		{
-			if (!generateTemplate(sObject, "<>/lang/tmpl_file.nlng", vTokens, _option))
-				throw SyntaxError(SyntaxError::CANNOT_GENERATE_FILE, sCmd, SyntaxError::invalid_position, sObject);
-		}
-
-		if (_option.systemPrints())
-			NumeReKernel::print(LineBreak( _lang.get("BUILTIN_NEW_FILECREATED", sObject), _option) );
-	}
-	else if (nType == 5) // Plugin template
-	{
-		if (sObject.find('/') != string::npos || sObject.find('\\') != string::npos)
-		{
-			string sPath = sObject;
-			for (unsigned int i = sPath.length() - 1; i >= 0; i--)
-			{
-				if (sPath[i] == '\\' || sPath[i] == '/')
-				{
-					sPath = sPath.substr(0, i);
-					break;
-				}
-			}
-
-			_fSys.setPath(sPath, true, _option.getScriptPath());
-		}
-		else
-			_fSys.setPath(_option.getScriptPath(), false, _option.getExePath());
-
-		if (sObject.find('\\') == string::npos && sObject.find('/') == string::npos)
-			sObject = "<scriptpath>/" + sObject;
-
-		sObject = _fSys.ValidFileName(sObject, ".nscr");
-
-		if (sObject.substr(sObject.rfind('/') + 1, 5) != "plgn_")
-			sObject.insert(sObject.rfind('/') + 1, "plgn_");
-
-		while (sObject.find(' ', sObject.rfind('/')) != string::npos)
-			sObject.erase(sObject.find(' ', sObject.rfind('/')), 1);
-
-		string sPluginName = sObject.substr(sObject.rfind("plgn_") + 5, sObject.rfind('.') - sObject.rfind("plgn_") - 5);
-		vTokens.push_back(sPluginName);
-		vTokens.push_back(getTimeStamp(false));
-
-		if (fileExists(_option.ValidFileName("<>/user/lang/tmpl_plugin.nlng", ".nlng")))
-		{
-			if (!generateTemplate(sObject, "<>/user/lang/tmpl_plugin.nlng", vTokens, _option))
-				throw SyntaxError(SyntaxError::CANNOT_GENERATE_SCRIPT, sCmd, SyntaxError::invalid_position, sObject);
-		}
-		else
-		{
-			if (!generateTemplate(sObject, "<>/lang/tmpl_plugin.nlng", vTokens, _option))
-				throw SyntaxError(SyntaxError::CANNOT_GENERATE_SCRIPT, sCmd, SyntaxError::invalid_position, sObject);
-		}
-
-		if (_option.systemPrints())
-			NumeReKernel::print(LineBreak( _lang.get("BUILTIN_NEW_PLUGINCREATED", sPluginName, sObject), _option) );
-	}
-
-	return true;
+    return false;
 }
 
 
@@ -5095,12 +4955,12 @@ static CommandReturnValues cmd_url(string& sCmd)
 /// commands linked to their function
 /// implementation.
 ///
-/// \return map<string,CommandFunc>
+/// \return std::map<std::string,CommandFunc>
 ///
 /////////////////////////////////////////////////
-static map<string,CommandFunc> getCommandFunctions()
+static std::map<std::string,CommandFunc> getCommandFunctions()
 {
-    map<string, CommandFunc> mCommandFuncMap;
+    std::map<std::string, CommandFunc> mCommandFuncMap;
 
     mCommandFuncMap["about"] = cmd_credits;
     mCommandFuncMap["audio"] = cmd_audio;
@@ -5208,12 +5068,12 @@ static map<string,CommandFunc> getCommandFunctions()
 /// commands with return values linked to their
 /// function implementation.
 ///
-/// \return map<string,CommandFunc>
+/// \return std::map<std::string,CommandFunc>
 ///
 /////////////////////////////////////////////////
-static map<string,CommandFunc> getCommandFunctionsWithReturnValues()
+static std::map<std::string,CommandFunc> getCommandFunctionsWithReturnValues()
 {
-    map<string, CommandFunc> mCommandFuncMap;
+    std::map<std::string, CommandFunc> mCommandFuncMap;
 
     mCommandFuncMap["append"] = cmd_append;
     mCommandFuncMap["audioread"] = cmd_audioread;

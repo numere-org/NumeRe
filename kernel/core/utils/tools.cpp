@@ -1450,10 +1450,11 @@ static size_t isStringContinuation(const std::string& sCmd, size_t pos)
 /// string.
 ///
 /// \param sArg std::string&
+/// \param flags int
 /// \return void
 ///
 /////////////////////////////////////////////////
-static void parseArg(std::string& sArg, bool bAsInt)
+static void parseArg(std::string& sArg, int flags)
 {
     NumeReKernel* instance = NumeReKernel::getInstance();
 
@@ -1471,6 +1472,9 @@ static void parseArg(std::string& sArg, bool bAsInt)
         if (_ret == NumeRe::StringParser::STRING_SUCCESS)
             return;
     }
+
+    if (flags & ARGEXTRACT_ASSTRING)
+        return;
 
     // Read data
     if (instance->getMemoryManager().containsTablesOrClusters(sArg))
@@ -1490,7 +1494,7 @@ static void parseArg(std::string& sArg, bool bAsInt)
         if (sArg.length())
             sArg += ",";
 
-        if (bAsInt)
+        if (flags & ARGEXTRACT_ASINT)
             sArg += toString(intCast(v[i]));
         else
             sArg += toString(v[i], nPrec);
@@ -1557,7 +1561,7 @@ string getArgAtPos(const string& sCmd, unsigned int nPos, int extraction)
 
     // Parse the argument, if necessary
     if (extraction & ARGEXTRACT_PARSED)
-        parseArg(sArgument, (extraction & ARGEXTRACT_ASINT));
+        parseArg(sArgument, extraction);
 
     // Strip the argument, if necessary
     if (extraction & ARGEXTRACT_STRIPPED)
