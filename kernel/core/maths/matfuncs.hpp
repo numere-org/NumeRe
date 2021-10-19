@@ -2642,6 +2642,43 @@ static Matrix selection(const MatFuncData& funcData, const MatFuncErrorInfo& err
 
 
 /////////////////////////////////////////////////
+/// \brief Calculates the length of an open
+/// polygon. If the circumference of a closed
+/// polygon shall be calculated, then append the
+/// first vertex at the end of the polygon.
+///
+/// \param funcData const MatFuncData&
+/// \param errorInfo const MatFuncErrorInfo&
+/// \return Matrix
+///
+/////////////////////////////////////////////////
+static Matrix polyLength(const MatFuncData& funcData, const MatFuncErrorInfo& errorInfo)
+{
+    if (!funcData.mat1.size() || !funcData.mat1[0].size())
+        throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, errorInfo.command, errorInfo.position);
+
+    if (funcData.mat1[0].size() < 2)
+        throw SyntaxError(SyntaxError::WRONG_MATRIX_DIMENSIONS_FOR_MATOP, errorInfo.command, errorInfo.position, toString(funcData.mat1.size()) + "x" + toString(funcData.mat1[0].size()));
+
+    Matrix mRes = createZeroesMatrix(1, 1);
+
+    for (size_t i = 0; i < funcData.mat1.size()-1; i++)
+    {
+        double sum = 0;
+
+        for (size_t j = 0; j < funcData.mat1[0].size(); j++)
+        {
+            sum += ((funcData.mat1[i+1][j] - funcData.mat1[i][j]) * conj(funcData.mat1[i+1][j] - funcData.mat1[i][j])).real();
+        }
+
+        mRes[0][0] += sqrt(sum);
+    }
+
+    return mRes;
+}
+
+
+/////////////////////////////////////////////////
 /// \brief Static invalid matrix function, which
 /// will always throw an error.
 ///
@@ -2717,6 +2754,7 @@ static std::map<std::string,MatFuncDef> getMatrixFunctions()
     mFunctions["coordstogrid"] = MatFuncDef(MATSIG_MAT_MAT, coordsToGrid);
     mFunctions["interpolate"] = MatFuncDef(MATSIG_MAT_MAT, interpolate);
     mFunctions["select"] = MatFuncDef(MATSIG_MAT_MAT_MAT, selection);
+    mFunctions["polylength"] = MatFuncDef(MATSIG_MAT, polyLength);
 
     // For finding matrix functions
     mFunctions["matfl"] = MatFuncDef(MATSIG_INVALID, invalidMatrixFunction);
