@@ -641,7 +641,7 @@ void PackageRepoBrowser::populatePackageList(const std::string& sUrl)
     m_listCtrl->SetItemText(currPackageInfo, REPOCOLUMN, getTagValue(sInfo, "author"));
 
     currPackageInfo = m_listCtrl->AppendItem(currPackage, "Type");
-    m_listCtrl->SetItemText(currPackageInfo, REPOCOLUMN, getTagValue(sInfo, "type").find("TYPE_PLUGIN") != std::string::npos ? "Plugin" : "Package");
+    m_listCtrl->SetItemText(currPackageInfo, REPOCOLUMN, getTagValue(sInfo, "type").find("PLUGIN") != std::string::npos ? "Plugin" : "Package");
 
     std::string sReqVersion = getTagValue(sInfo, "requireversion");
 

@@ -305,32 +305,22 @@ std::string Dependencies::getProcedureFileName(std::string sProc) const
 		if (sProc.find("thisfile~") != std::string::npos)
 		    return sFileName;
 
+        // Replace all tilde characters in the current path
+        // string. Consider the special namespace "main", which
+        // is a reference to the toplevel procedure folder
+        for (size_t i = 0; i < sProc.length(); i++)
+        {
+            if (sProc[i] == '~')
+            {
+                if (sProc.length() > 5 && i >= 4 && sProc.substr(i - 4, 5) == "main~")
+                    sProc = sProc.substr(0, i - 4) + sProc.substr(i + 1);
+                else
+                    sProc[i] = '/';
+            }
+        }
+
 		// Create a valid file name from the procedure name
 		sProc = NumeReKernel::getInstance()->getProcedureInterpreter().ValidFileName(sProc, ".nprc");
-
-		// Replace tilde characters with path separators
-		if (sProc.find('~') != std::string::npos)
-		{
-			size_t nPos = sProc.rfind('/');
-
-            // Find the last path separator
-			if (nPos < sProc.rfind('\\') && sProc.rfind('\\') != std::string::npos)
-				nPos = sProc.rfind('\\');
-
-            // Replace all tilde characters in the current path
-            // string. Consider the special namespace "main", which
-            // is a reference to the toplevel procedure folder
-			for (size_t i = nPos; i < sProc.length(); i++)
-			{
-				if (sProc[i] == '~')
-				{
-					if (sProc.length() > 5 && i >= 4 && sProc.substr(i - 4, 5) == "main~")
-						sProc = sProc.substr(0, i - 4) + sProc.substr(i + 1);
-					else
-						sProc[i] = '/';
-				}
-			}
-		}
 
 		// Append the newly obtained procedure file name
 		// to the call stack

@@ -628,17 +628,20 @@ std::string CommandLineParser::getFileParameterValueForSaving(std::string sFileE
 /// \param sParameter const std::string&
 /// \param sDefaultValue const std::string&
 /// \param stripAlways bool Always strip quotation marks
+/// \param onlyStringEvaluation bool
 /// \return std::string
 ///
 /////////////////////////////////////////////////
-std::string CommandLineParser::getParameterValueAsString(const std::string& sParameter, const std::string& sDefaultValue, bool stripAlways) const
+std::string CommandLineParser::getParameterValueAsString(const std::string& sParameter, const std::string& sDefaultValue, bool stripAlways, bool onlyStringEvaluation) const
 {
     int nParPos = findParameter(m_parlist, sParameter, '=');
 
     if (!nParPos)
         return sDefaultValue;
 
-    std::string arg = getArgAtPos(m_parlist, nParPos+sParameter.length(), ARGEXTRACT_PARSED | ARGEXTRACT_ASSTRING);
+    std::string arg = getArgAtPos(m_parlist,
+                                  nParPos+sParameter.length(),
+                                  ARGEXTRACT_PARSED | (onlyStringEvaluation ? ARGEXTRACT_ASSTRING : ARGEXTRACT_NONE));
     StripSpaces(arg);
 
     if (!stripAlways && arg.find(",") != std::string::npos && arg.find("\"") != std::string::npos)

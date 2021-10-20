@@ -24,9 +24,9 @@
 #include "filesystem.hpp"
 #include "../../kernel.hpp"
 
-using namespace std;
+std::string removeQuotationMarks(const std::string& sString);
 
-string toLowerCase(const string&);
+using namespace std;
 
 
 /////////////////////////////////////////////////
@@ -82,16 +82,8 @@ FileSystem& FileSystem::assign(const FileSystem& _fSys)
 /////////////////////////////////////////////////
 string FileSystem::cleanPath(string sFilePath) const
 {
-    for (size_t i = 0; i < sFilePath.length(); i++)
-    {
-        if (sFilePath[i] == '\\')
-            sFilePath[i] = '/';
-    }
-
-    sFilePath.erase(0, sFilePath.find_first_not_of(" \t"));
-
-    if (sFilePath.find_last_not_of(" \t") != string::npos)
-        sFilePath.erase(sFilePath.find_last_not_of(" \t")+1);
+    sFilePath = replacePathSeparator(removeQuotationMarks(sFilePath));
+    StripSpaces(sFilePath);
 
     if (sFilePath[0] == '<')
     {
@@ -117,7 +109,7 @@ string FileSystem::cleanPath(string sFilePath) const
         }
     }
 
-    const std::string sINVALID_CHARS = "~\"#%&<>{|}";
+    const std::string sINVALID_CHARS = "\"#%&<>{|}";
 
     for (unsigned int i = 0; i < sFilePath.length(); i++)
     {
@@ -135,8 +127,16 @@ string FileSystem::cleanPath(string sFilePath) const
             sFilePath[i] = 'ü';
         else if (sFilePath[i] == (char)225)
             sFilePath[i] = 'ß';
+        else if (sFilePath[i] == '~')
+        {
+            NumeReKernel::issueWarning("INTERNAL ISSUE: Replaced a tilde character in \"" + sFilePath + "\" with a slash. This should not happen. Consider informing the development team about this warning and how to recreate it. Thank you.");
+            sFilePath[i] = '/';
+        }
         else if (sINVALID_CHARS.find(sFilePath[i]) != std::string::npos)
+        {
+            NumeReKernel::issueWarning("Replaced an invalid character in \"" + sFilePath + "\" with an underscore. This should not happen. Consider informing the development team about this warning and how to recreate it. Thank you.");
             sFilePath[i] = '_';
+        }
     }
 
     return sFilePath;

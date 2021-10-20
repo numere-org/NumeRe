@@ -265,7 +265,7 @@ static bool newObject(string& sCmd, Parser& _parser, MemoryManager& _data, Setti
 
     if (cmdParser.hasParam("dir"))
     {
-        sFileName = replacePathSeparator(cmdParser.getParameterValueAsString("dir", "", true));
+        sFileName = replacePathSeparator(cmdParser.getParameterValueAsString("dir", "", true, true));
         int nReturn = _fSys.setPath(sFileName, true, _option.getExePath());
 
 		if (nReturn == 1 && _option.systemPrints())
@@ -275,7 +275,7 @@ static bool newObject(string& sCmd, Parser& _parser, MemoryManager& _data, Setti
     }
     else if (cmdParser.hasParam("script"))
     {
-        sFileName = replacePathSeparator(cmdParser.getParameterValueAsString("script", "", true));
+        sFileName = replacePathSeparator(cmdParser.getParameterValueAsString("script", "", true, true));
 
         if (!sFileName.length())
             return false;
@@ -295,7 +295,7 @@ static bool newObject(string& sCmd, Parser& _parser, MemoryManager& _data, Setti
     }
     else if (cmdParser.hasParam("proc"))
     {
-        sFileName = replacePathSeparator(cmdParser.getParameterValueAsString("proc", "", true));
+        sFileName = replacePathSeparator(cmdParser.getParameterValueAsString("proc", "", true, true));
 
         if (!sFileName.length())
             return false;
@@ -319,7 +319,7 @@ static bool newObject(string& sCmd, Parser& _parser, MemoryManager& _data, Setti
     }
     else if (cmdParser.hasParam("file"))
     {
-        sFileName = replacePathSeparator(cmdParser.getParameterValueAsString("file", "", true));
+        sFileName = replacePathSeparator(cmdParser.getParameterValueAsString("file", "", true, true));
 
         if (!sFileName.length())
             return false;
@@ -345,7 +345,7 @@ static bool newObject(string& sCmd, Parser& _parser, MemoryManager& _data, Setti
     }
     else if (cmdParser.hasParam("plugin"))
     {
-        sFileName = replacePathSeparator(cmdParser.getParameterValueAsString("plugin", "", true));
+        sFileName = replacePathSeparator(cmdParser.getParameterValueAsString("plugin", "", true, true));
 
         if (!sFileName.length())
             return false;

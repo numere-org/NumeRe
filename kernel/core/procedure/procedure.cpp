@@ -551,32 +551,22 @@ bool Procedure::setProcName(const string& sProc, bool bInstallFileName)
         else if (_sProc.substr(0, 9) == "thisfile~")
             return false;
 
-        // Create a valid file name from the procedure name
-        sCurrentProcedureName = FileSystem::ValidFileName(sProc, ".nprc");
-
-        // Replace tilde characters with path separators
-        if (sCurrentProcedureName.find('~') != string::npos)
+        // Replace all tilde characters in the current path
+        // string. Consider the special namespace "main", which
+        // is a reference to the toplevel procedure folder
+        for (size_t i = 0; i < _sProc.length(); i++)
         {
-            unsigned int nPos = sCurrentProcedureName.rfind('/');
-
-            // Find the last path separator
-            if (nPos < sCurrentProcedureName.rfind('\\') && sCurrentProcedureName.rfind('\\') != string::npos)
-                nPos = sCurrentProcedureName.rfind('\\');
-
-            // Replace all tilde characters in the current path
-            // string. Consider the special namespace "main", which
-            // is a reference to the toplevel procedure folder
-            for (unsigned int i = nPos; i < sCurrentProcedureName.length(); i++)
+            if (_sProc[i] == '~')
             {
-                if (sCurrentProcedureName[i] == '~')
-                {
-                    if (sCurrentProcedureName.length() > 5 && i >= 4 && sCurrentProcedureName.substr(i - 4, 5) == "main~")
-                        sCurrentProcedureName = sCurrentProcedureName.substr(0, i - 4) + sCurrentProcedureName.substr(i + 1);
-                    else
-                        sCurrentProcedureName[i] = '/';
-                }
+                if (_sProc.length() > 5 && i >= 4 && _sProc.substr(i - 4, 5) == "main~")
+                    _sProc = _sProc.substr(0, i - 4) + _sProc.substr(i + 1);
+                else
+                    _sProc[i] = '/';
             }
         }
+
+        // Create a valid file name from the procedure name
+        sCurrentProcedureName = FileSystem::ValidFileName(_sProc, ".nprc");
 
         // Append the newly obtained procedure file name
         // to the call stack
