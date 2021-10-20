@@ -24,10 +24,12 @@
 #include "../NumeReWindow.h"
 #include <wx/menu.h>
 #include <wx/dialog.h>
+#include <wx/clipbrd.h>
 
 #define DIMCOLUMN 1
 #define CLASSCOLUMN 2
 #define VALUECOLUMN 3
+#define SIZECOLUMN 4
 
 extern Language _guilang;
 using namespace wxcode;
@@ -45,7 +47,7 @@ struct VarData : public wxTreeItemData
 BEGIN_EVENT_TABLE(VariableViewer, wxcode::wxTreeListCtrl)
     EVT_TREE_ITEM_RIGHT_CLICK(-1, VariableViewer::OnRightClick)
     EVT_TREE_ITEM_ACTIVATED(-1, VariableViewer::OnDoubleClick)
-    EVT_MENU_RANGE(ID_VARVIEWER_NEW, ID_VARVIEWER_SAVEAS, VariableViewer::OnMenuEvent)
+    EVT_MENU_RANGE(ID_VARVIEWER_NEW, ID_VARVIEWER_COPYVALUE, VariableViewer::OnMenuEvent)
 END_EVENT_TABLE()
 
 
@@ -55,11 +57,11 @@ END_EVENT_TABLE()
 /// \param parent wxWindow*
 /// \param mainWin NumeReWindow*
 /// \param fieldsize int
+/// \param debugMode bool
 ///
 /////////////////////////////////////////////////
-VariableViewer::VariableViewer(wxWindow* parent, NumeReWindow* mainWin, int fieldsize) : wxTreeListCtrl(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTR_TWIST_BUTTONS | wxTR_FULL_ROW_HIGHLIGHT | wxTR_ROW_LINES | wxTR_NO_LINES | wxTR_HIDE_ROOT)
+VariableViewer::VariableViewer(wxWindow* parent, NumeReWindow* mainWin, int fieldsize, bool debugMode) : wxTreeListCtrl(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTR_TWIST_BUTTONS | wxTR_FULL_ROW_HIGHLIGHT | wxTR_ROW_LINES | wxTR_NO_LINES | wxTR_HIDE_ROOT)
 {
-    debuggerMode = false;
     selectedID = wxTreeItemId();
 
     nDataFieldSize = fieldsize;
@@ -69,7 +71,10 @@ VariableViewer::VariableViewer(wxWindow* parent, NumeReWindow* mainWin, int fiel
     AddColumn(_guilang.get("GUI_VARVIEWER_NAME"), 150);
     AddColumn(_guilang.get("GUI_VARVIEWER_DIM"), 80, wxALIGN_RIGHT);
     AddColumn(_guilang.get("GUI_VARVIEWER_CLASS"), 55);
-    AddColumn(_guilang.get("GUI_VARVIEWER_VALUE"), fieldsize);
+    AddColumn(_guilang.get("GUI_VARVIEWER_VALUE"), fieldsize - (!debugMode)*50);
+
+    if (!debugMode)
+        AddColumn(_guilang.get("GUI_VARVIEWER_SIZE"), 120);
 
     // Create root node
     AddRoot("ROOT");
@@ -92,6 +97,8 @@ VariableViewer::VariableViewer(wxWindow* parent, NumeReWindow* mainWin, int fiel
     {
         bExpandedState[i] = true;
     }
+
+    setDebuggerMode(debugMode);
 }
 
 
@@ -190,6 +197,13 @@ wxTreeItemId VariableViewer::AppendVariable(wxTreeItemId rootNode, std::string s
         tooltip += " = " + sVar.substr(0, 500) + "[...]" + sVar.substr(pos-500, pos);
 
     SetItemToolTip(currentItem, tooltip);
+
+    // Write values to the size column
+    if (!debuggerMode)
+    {
+        SetItemText(currentItem, SIZECOLUMN, " " + sVar.substr(sVar.rfind('\t')+1));
+        sVar.erase(sVar.rfind('\t'));
+    }
 
     // Set the internal variable's name as a
     // VarData object
@@ -297,6 +311,9 @@ void VariableViewer::OnMenuEvent(wxCommandEvent& event)
         case ID_VARVIEWER_SHOW:
             OnShowTable(GetInternalName(selectedID), GetItemText(selectedID));
             break;
+        case ID_VARVIEWER_EDIT:
+            OnEditTable(GetInternalName(selectedID));
+            break;
         case ID_VARVIEWER_REMOVE:
             OnRemoveTable(GetItemText(selectedID));
             break;
@@ -309,6 +326,8 @@ void VariableViewer::OnMenuEvent(wxCommandEvent& event)
         case ID_VARVIEWER_SAVEAS:
             OnSaveasTable(GetItemText(selectedID));
             break;
+        case ID_VARVIEWER_COPYVALUE:
+            OnCopyValue(GetItemText(selectedID) + " =" + GetItemText(selectedID, VALUECOLUMN));
     }
 }
 
@@ -385,6 +404,20 @@ void VariableViewer::OnShowTable(const wxString& table, const wxString& tableDis
 
 
 /////////////////////////////////////////////////
+/// \brief This member function displays the
+/// selected table for editing.
+///
+/// \param table const wxString&
+/// \return void
+///
+/////////////////////////////////////////////////
+void VariableViewer::OnEditTable(const wxString& table)
+{
+    mainWindow->pass_command("edit " + table);
+}
+
+
+/////////////////////////////////////////////////
 /// \brief This member function displays a text
 /// entry dialog to choose a new name for the
 /// selected table.
@@ -444,12 +477,30 @@ void VariableViewer::OnSaveTable(const wxString& table)
 /////////////////////////////////////////////////
 void VariableViewer::OnSaveasTable(const wxString& table)
 {
-    wxTextEntryDialog textEntry(this, _guilang.get("GUI_VARVIEWER_SAVENAME_QUESTION"), _guilang.get("GUI_VARVIEWER_SAVENAME"), table);
+    wxTextEntryDialog textEntry(this, _guilang.get("GUI_VARVIEWER_SAVENAME_QUESTION"), _guilang.get("GUI_VARVIEWER_SAVENAME"), table.substr(0, table.find('(')));
 
     if (textEntry.ShowModal() != wxID_OK)
         return;
 
     mainWindow->pass_command("save " + table + " -file=\"" + textEntry.GetValue() + "\"");
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Copies the selected text to the clip
+/// board.
+///
+/// \param value const wxString&
+/// \return void
+///
+/////////////////////////////////////////////////
+void VariableViewer::OnCopyValue(const wxString& value)
+{
+    if (wxTheClipboard->Open())
+    {
+        wxTheClipboard->SetData(new wxTextDataObject(value));
+        wxTheClipboard->Close();
+    }
 }
 
 
@@ -494,51 +545,54 @@ void VariableViewer::ExpandAll()
 /////////////////////////////////////////////////
 void VariableViewer::OnRightClick(wxTreeEvent& event)
 {
-    // do nothing in the debugger case
-    if (debuggerMode)
-        return;
-
-    // do nothing, if the parent node is not the
-    // table root node
-    if (GetItemParent(event.GetItem()) != tableRoot)
+    if (GetItemParent(event.GetItem()) == GetRootItem())
         return;
 
     // Get the name of the table and determine, whether
     // the table may be modified
+    bool isTable = GetItemParent(event.GetItem()) == tableRoot || GetItemText(event.GetItem()).find("()") != std::string::npos;
     wxString itemLabel = GetItemText(event.GetItem());
     bool bMayBeModified = itemLabel != "string()" && itemLabel != "table()";
 
     // Create the menu
     wxMenu popUpmenu;
 
-    // Append commons
-    popUpmenu.Append(ID_VARVIEWER_NEW, _guilang.get("GUI_VARVIEWER_MENU_NEWTABLE"));
-    popUpmenu.AppendSeparator();
-    popUpmenu.Append(ID_VARVIEWER_SHOW, _guilang.get("GUI_VARVIEWER_MENU_SHOWVALUE"));
-    popUpmenu.Append(ID_VARVIEWER_RENAME, _guilang.get("GUI_VARVIEWER_MENU_RENAME"));
-    popUpmenu.Append(ID_VARVIEWER_REMOVE, _guilang.get("GUI_VARVIEWER_MENU_REMOVE"));
-
-    // Add stuff, for non-string tables
-    if (itemLabel != "string()")
+    if (isTable && !debuggerMode)
     {
+        // Append commons
+        popUpmenu.Append(ID_VARVIEWER_NEW, _guilang.get("GUI_VARVIEWER_MENU_NEWTABLE"));
         popUpmenu.AppendSeparator();
-        popUpmenu.Append(ID_VARVIEWER_SAVE, _guilang.get("GUI_VARVIEWER_MENU_SAVE"));
-        popUpmenu.Append(ID_VARVIEWER_SAVEAS, _guilang.get("GUI_VARVIEWER_MENU_SAVEAS"));
-    }
+        popUpmenu.Append(ID_VARVIEWER_SHOW, _guilang.get("GUI_VARVIEWER_MENU_SHOWVALUE"));
+        popUpmenu.Append(ID_VARVIEWER_EDIT, _guilang.get("GUI_VARVIEWER_MENU_EDITVALUE"));
+        popUpmenu.Append(ID_VARVIEWER_RENAME, _guilang.get("GUI_VARVIEWER_MENU_RENAME"));
+        popUpmenu.Append(ID_VARVIEWER_REMOVE, _guilang.get("GUI_VARVIEWER_MENU_REMOVE"));
 
-    // Disable menu items for tables, which
-    // cannot be modified
-    if (!bMayBeModified)
-    {
-        popUpmenu.Enable(ID_VARVIEWER_RENAME, false);
-        popUpmenu.Enable(ID_VARVIEWER_REMOVE, false);
+        // Add stuff, for non-string tables
+        if (itemLabel != "string()")
+        {
+            popUpmenu.AppendSeparator();
+            popUpmenu.Append(ID_VARVIEWER_SAVE, _guilang.get("GUI_VARVIEWER_MENU_SAVE"));
+            popUpmenu.Append(ID_VARVIEWER_SAVEAS, _guilang.get("GUI_VARVIEWER_MENU_SAVEAS"));
+        }
+
+        // Disable menu items for tables, which
+        // cannot be modified
+        if (!bMayBeModified)
+        {
+            popUpmenu.Enable(ID_VARVIEWER_RENAME, false);
+            popUpmenu.Enable(ID_VARVIEWER_REMOVE, false);
+        }
     }
+    else if (!isTable)
+        popUpmenu.Append(ID_VARVIEWER_COPYVALUE, _guilang.get("GUI_VARVIEWER_MENU_COPYVALUE"));
+
 
     // Store the selected item for the menu event handler
     selectedID = event.GetItem();
 
     // Display the menu
-    PopupMenu(&popUpmenu, event.GetPoint());
+    if (!isTable || !debuggerMode)
+        PopupMenu(&popUpmenu, event.GetPoint());
 }
 
 

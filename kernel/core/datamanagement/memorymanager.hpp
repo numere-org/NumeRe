@@ -380,6 +380,11 @@ class MemoryManager : public NumeRe::FileAdapter, public StringMemory, public Nu
             return 0;
 		}
 
+		inline int getBytes(const std::string& sTable) const
+		{
+		    return getSize(findTable(sTable));
+		}
+
 		inline int getSize(int _nLayer) const
 		{
 			if (vMemory.size() && _nLayer < (int)vMemory.size())

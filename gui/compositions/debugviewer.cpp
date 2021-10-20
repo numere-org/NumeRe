@@ -107,8 +107,7 @@ DebugViewer::DebugViewer(wxWindow* parent, Options* _options, const wxString& ti
         m_stacktrace->SetColumnWidth(nModuleColumn, 0);
 
     // Create the variable viewer in debugger mode
-    m_varViewer = new VariableViewer(varBox->GetStaticBox(), static_cast<NumeReWindow*>(parent));
-    m_varViewer->setDebuggerMode(true);
+    m_varViewer = new VariableViewer(varBox->GetStaticBox(), static_cast<NumeReWindow*>(parent), 600, true);
 
     // Add the GUI elements to the static box sizers
     exprBox->Add(m_lineNumber, 0, wxALIGN_CENTER_HORIZONTAL | wxALL | wxEXPAND);

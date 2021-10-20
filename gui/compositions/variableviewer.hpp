@@ -56,14 +56,16 @@ class VariableViewer : public wxcode::wxTreeListCtrl
 
         void OnNewTable();
         void OnShowTable(const wxString& table, const wxString& tableDisplayName);
+        void OnEditTable(const wxString& table);
         void OnRenameTable(const wxString& table);
         void OnRemoveTable(const wxString& table);
         void OnSaveTable(const wxString& table);
         void OnSaveasTable(const wxString& table);
+        void OnCopyValue(const wxString& value);
 
 
     public:
-        VariableViewer(wxWindow* parent, NumeReWindow* mainWin, int fieldsize = 600);
+        VariableViewer(wxWindow* parent, NumeReWindow* mainWin, int fieldsize = 300, bool debugMode = false);
 
         void ExpandAll();
         void OnRightClick(wxTreeEvent& event);

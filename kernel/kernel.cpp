@@ -2330,6 +2330,30 @@ vector<string> NumeReKernel::getDocIndex()
 
 
 /////////////////////////////////////////////////
+/// \brief Formats the byte size using KB or MB
+/// as units.
+///
+/// \param bytes double
+/// \return std::string
+///
+/////////////////////////////////////////////////
+static std::string formatByteSize(double bytes)
+{
+    if (bytes > 1024.0)
+    {
+        bytes /= 1024.0;
+
+        if (bytes > 1024.0)
+            return toString(bytes / 1024.0, 5) + " MBytes";
+
+        return toString(bytes, 5) + " KBytes";
+    }
+
+    return toString(bytes, 5) + " Bytes";
+}
+
+
+/////////////////////////////////////////////////
 /// \brief This member function returns a structure
 /// containing all currently declared variables,
 /// which can be displayed in the variable viewer.
@@ -2357,9 +2381,9 @@ NumeReVariables NumeReKernel::getVariableList()
             continue;
 
         if ((*iter->second).imag() && !(isnan((*iter->second).real()) && isnan((*iter->second).imag())))
-            sCurrentLine = iter->first + "\t1 x 1\tcomplex\t" + toString(*iter->second, DEFAULT_NUM_PRECISION*2) + "\t" + iter->first;
+            sCurrentLine = iter->first + "\t1 x 1\tcomplex\t" + toString(*iter->second, DEFAULT_NUM_PRECISION*2) + "\t" + iter->first + "\t" + formatByteSize(16);
         else
-            sCurrentLine = iter->first + "\t1 x 1\tdouble\t" + toString(*iter->second, DEFAULT_NUM_PRECISION) + "\t" + iter->first;
+            sCurrentLine = iter->first + "\t1 x 1\tdouble\t" + toString(*iter->second, DEFAULT_NUM_PRECISION) + "\t" + iter->first + "\t" + formatByteSize(8);
 
         vars.vVariables.push_back(sCurrentLine);
     }
@@ -2372,7 +2396,7 @@ NumeReVariables NumeReKernel::getVariableList()
         if ((iter->first).substr(0, 2) == "_~")
             continue;
 
-        sCurrentLine = iter->first + "\t1 x 1\tstring\t\"" + replaceControlCharacters(iter->second) + "\"\t" + iter->first;
+        sCurrentLine = iter->first + "\t1 x 1\tstring\t\"" + replaceControlCharacters(iter->second) + "\"\t" + iter->first + "\t" + formatByteSize(iter->second.length());
         vars.vVariables.push_back(sCurrentLine);
     }
 
@@ -2387,12 +2411,12 @@ NumeReVariables NumeReKernel::getVariableList()
         if (iter->first == "string")
         {
             sCurrentLine = iter->first + "()\t" + toString(_memoryManager.getStringElements()) + " x " + toString(_memoryManager.getStringCols());
-            sCurrentLine += "\tstring\t{\"" + replaceControlCharacters(_memoryManager.minString()) + "\", ..., \"" + replaceControlCharacters(_memoryManager.maxString()) + "\"}\tstring()";
+            sCurrentLine += "\tstring\t{\"" + replaceControlCharacters(_memoryManager.minString()) + "\", ..., \"" + replaceControlCharacters(_memoryManager.maxString()) + "\"}\tstring()\t" + formatByteSize(_memoryManager.getStringSize());
         }
         else
         {
             sCurrentLine = iter->first + "()\t" + toString(_memoryManager.getLines(iter->first, false)) + " x " + toString(_memoryManager.getCols(iter->first, false));
-            sCurrentLine += "\ttable\t{" + toString(_memoryManager.min(iter->first, "")[0], DEFAULT_MINMAX_PRECISION) + ", ..., " + toString(_memoryManager.max(iter->first, "")[0], DEFAULT_MINMAX_PRECISION) + "}\t" + iter->first + "()";
+            sCurrentLine += "\ttable\t{" + toString(_memoryManager.min(iter->first, "")[0], DEFAULT_MINMAX_PRECISION) + ", ..., " + toString(_memoryManager.max(iter->first, "")[0], DEFAULT_MINMAX_PRECISION) + "}\t" + iter->first + "()\t" + formatByteSize(_memoryManager.getBytes(iter->first));
         }
 
         vars.vVariables.push_back(sCurrentLine);
@@ -2407,7 +2431,7 @@ NumeReVariables NumeReKernel::getVariableList()
             continue;
 
         sCurrentLine = iter->first + "{}\t" + toString(iter->second.size()) + " x 1";
-        sCurrentLine += "\tcluster\t" + iter->second.getShortVectorRepresentation() + "\t" + iter->first + "{}";
+        sCurrentLine += "\tcluster\t" + iter->second.getShortVectorRepresentation() + "\t" + iter->first + "{}\t" + formatByteSize(iter->second.getBytes());
 
         vars.vVariables.push_back(sCurrentLine);
     }
