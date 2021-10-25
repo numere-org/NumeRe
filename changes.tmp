@@ -54,3 +54,4 @@ Fixed	The menu entry field for GUI plugins in the package creator accepts now wh
 Updated	"to_time()" and "timeformat()" now support milli- and microseconds via the characters "i" and "u".
 New	The matop function "polylength()" can be used to calculate the length of a n-D open ended poylgon (repeat the first vertex at the end to calculate the perimeter of a closed polygon).
 Updated	The variable viewer now supports more functionalities (including copying a value to clipboard) and displays the current needed memory of each variable.
+Updated	The "list plugins" command now writes a well formated table that is adapted to the display size. Improved the methods handling the line breaks and display of strings.

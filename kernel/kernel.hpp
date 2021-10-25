@@ -394,13 +394,22 @@ struct NumeReTask
 /// \return string
 ///
 /////////////////////////////////////////////////
-inline string strfill(const string& sString, unsigned int nWidth, char cFill = ' ')
+inline string strfill(const string& sString, unsigned int nWidth, char cFill = ' ', bool limit = false)
 {
+    //TODO: Docstring anpassen
     if (!nWidth)
         return "";
+
     string sReturn = sString;
+
+    // Fill the string
     if (sString.length() < nWidth)
-        sReturn.insert(0, nWidth-sReturn.length(), cFill);
+        sReturn.insert(sReturn.length(), nWidth-sReturn.length(), cFill);
+
+    // Limit the output size if necessary
+    if (limit && sString.length() > nWidth)
+        sReturn = sString.substr(0, nWidth - 3) + "-  ";
+
     return sReturn;
 }
 

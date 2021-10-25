@@ -1841,34 +1841,49 @@ bool checkDelimiter(const string& sString, bool stringdelim)
     return isDelimiter(sString.front()) && (isDelimiter(sString.back()) || (sString.back() == '.' && stringdelim));
 }
 
-// --> Funktion, die die Laenge der Zeile anhand der festgelegten Fensterdimensionen bestimmt und die Zeilenumbrueche automatisch erzeugt <--
-string LineBreak(string sOutput, const Settings& _option, bool bAllowDashBreaks, int nFirstIndent, int nIndent)
+
+/////////////////////////////////////////////////
+/// \brief This function splits a string into
+/// multiple lines if the line is longer than the
+/// desired line width.
+///
+/// \param sOutput std::string
+/// \param lineWidth size_t
+/// \param bAllowDashBreaks bool
+/// \param nFirstIndent int
+/// \param nIndent int
+/// \return std::vector<std::string>
+///
+/////////////////////////////////////////////////
+std::vector<std::string> splitIntoLines(std::string sOutput, size_t lineWidth, bool bAllowDashBreaks, int nFirstIndent, int nIndent)
 {
-    unsigned int nLastLineBreak = 0;     // Variable zum Speichern der Position des letzten Zeilenumbruchs
-    string sIndent = "\n|";     // String fuer den Einzug der 2. und der folgenden Zeilen
-    //cerr << sOutput << endl;
+    // Set the return vector of strings
+    std::vector<std::string> outputInLines;
+
+    // Variable to store the position of the last line break
+    unsigned int nLastLineBreak = 0;
+
+    // Convert the output to the system code page
     sOutput = toSystemCodePage(sOutput);
-    // --> Falls der string kuerzer als die Zeilenlaenge ist, braucht nichts getan zu werden <--
-    if (sOutput.length() < _option.getWindow() - nFirstIndent && sOutput.find('$') == string::npos && sOutput.find("\\n") == string::npos && sOutput.find('\n') == string::npos)
-        return sOutput;
 
-    // --> Ergaenze den Einzug um die noetige Zahl an Leerstellen <--
-    for (int i = 1; i < nIndent; i++)
-    {
-        sIndent += " ";
-    }
-
+    // Check if the output already contains the line starting chars
     if ((sOutput.substr(0, 4) == "|   " || sOutput.substr(0, 4) == "|-> ") && nFirstIndent == 4)
         nFirstIndent = 0;
 
-    // --> Laufe alle Zeichen des strings ab <--
+    // Check if string is already shorter than the line length and does not have any new line commands
+    if (sOutput.length() < lineWidth - nFirstIndent && sOutput.find('$') == string::npos && sOutput.find("\\n") == string::npos && sOutput.find('\n') == string::npos)
+    {
+        outputInLines.push_back(sOutput);
+        return outputInLines;
+    }
+
+    // Go through the whole string
     for (unsigned int i = 1; i < sOutput.length(); i++)
     {
-        /* --> Stolpere ich ueber ein "$"? Dann muss hier ein Zeilenumbruch hin. Damit muss der Index des
-         *     letzten Zeilenumbruchs aktualisiert werden <--
-         */
+        // Check for the '$' sign. If found update the last line break
         if (sOutput[i] == '$' && sOutput[i - 1] != '\\')
             nLastLineBreak = i;
+
         if (sOutput[i] == 'n' && sOutput[i - 1] == '\\')
         {
             if ((i == 1 || sOutput[i - 2] != '\\')
@@ -1878,15 +1893,16 @@ string LineBreak(string sOutput, const Settings& _option, bool bAllowDashBreaks,
             else if (i != 1 && sOutput[i - 2] != '\\')
                 sOutput.insert(i, "\\");
         }
+        // Check for explicit line break
         if (sOutput[i] == '\n')
         {
             nLastLineBreak = i;
         }
-        // --> Ist die maximale Zeilenlaenge erreicht? Dann muss ein Zeilenumbruch eingefuegt werden <--
-        if ((i == _option.getWindow() - nFirstIndent && !nLastLineBreak)
-                || (nLastLineBreak && i - nLastLineBreak == _option.getWindow() - nIndent))
+
+        // Check if max line length is reached. In that case, split the string at a fitting position
+        if ((i == lineWidth - nFirstIndent && !nLastLineBreak) || (nLastLineBreak && i - nLastLineBreak == lineWidth - nIndent))
         {
-            // --> Laufe von hier ab rueckwaerts und suche nach entweder: 1 Leerstelle oder 1 Minus-Zeichen (wenn erlaubt) oder dem "$" <--
+            // Go backwards from the current position and look for 1 space or 1 minus sign (if allowed) or the "$"
             for (unsigned int j = i; j > nLastLineBreak; j--)
             {
                 if (sOutput[j] == ' ')
@@ -1898,14 +1914,14 @@ string LineBreak(string sOutput, const Settings& _option, bool bAllowDashBreaks,
                     }
                     else
                     {
-                        sOutput[j] = '$';   // Leerzeichen durch "$" ersetzen
+                        sOutput[j] = '$';   // Replace " " with a "$"
                         nLastLineBreak = j;
                     }
                     break;
                 }
                 else if (sOutput[j] == '-' && bAllowDashBreaks && j != i)
                 {
-                    // --> Minuszeichen: nicht immer ist das Trennen an dieser Stelle sinnvoll. Wir pruefen die einfachsten Faelle <--
+                    // Check if a line break is applicable for the "-" used
                     if (j &&
                             (sOutput[j - 1] == ' '
                              || sOutput[j - 1] == '('
@@ -1926,7 +1942,7 @@ string LineBreak(string sOutput, const Settings& _option, bool bAllowDashBreaks,
                     nLastLineBreak = j + 1;
                     break;
                 }
-                else if (sOutput[j] == '$' && sOutput[j - 1] != '\\') // --> Hier ist auf jeden Fall ein Zeilenumbruch gewuenscht <--
+                else if (sOutput[j] == '$' && sOutput[j - 1] != '\\') // Definitely a line break is required here
                 {
                     nLastLineBreak = j;
                     break;
@@ -1952,38 +1968,101 @@ string LineBreak(string sOutput, const Settings& _option, bool bAllowDashBreaks,
             }
         }
     }
-    // --> Laufe jetzt nochmals den gesamten String ab <--
+
+    // Go through the whole string again
+    size_t lastBreak = 0;   // lastBreak is the position of the first relevant char for the new line
     for (unsigned int i = 0; i < sOutput.length(); i++)
     {
         if (sOutput[i] == '$' && sOutput[i - 1] != '\\')
         {
-            // --> Ersetze '$' durch den oben erstellten Einzug <--
-            sOutput.replace(i, 1, sIndent);
-            i += sIndent.length() - 1;
+            // Split the string at the '$' sign
+            outputInLines.push_back(sOutput.substr(lastBreak, i - lastBreak));
+            lastBreak = i + 1;
             continue;
         }
-        else if (sOutput[i] == '\n' && (i > sOutput.length() - sIndent.length() || sOutput.substr(i, sIndent.length()) != sIndent))
+        else if (sOutput[i] == '\n')
         {
-            sOutput.replace(i, 1, sIndent);
-            i += sIndent.length();
+            outputInLines.push_back(sOutput.substr(lastBreak, i - lastBreak));
+            lastBreak = i + 1;
             continue;
         }
         else if (sOutput[i] == 'n' && sOutput[i - 1] == '\\' && sOutput[i - 2] != '\\')
-            sOutput = sOutput.substr(0, i - 1) + sIndent + sOutput.substr(i + 1);
+            sOutput = sOutput.substr(0, i - 1) + "\n" + sOutput.substr(i + 1);
         else if (sOutput[i] == 'n' && sOutput[i - 1] == '\\' && sOutput[i - 2] == '\\')
             sOutput.erase(i - 1, 1);
         else if (sOutput[i] == '$' && sOutput[i - 1] == '\\')
-        {
             sOutput.erase(i - 1, 1);
-        }
         else if (sOutput[i] == '%' && bAllowDashBreaks)
         {
-            // --> Ersetze '%' durch ',' und den oben erstellten Einzug, falls erlaubt <--
-            sOutput = sOutput.substr(0, i) + "," + sIndent + sOutput.substr(i + 1);
+            // Replace '%' with ',' and the indent if allowed
+            sOutput = sOutput.substr(0, i) + ",\n" + sOutput.substr(i + 1);
         }
     }
+
+    // Add the rest of the string
+    outputInLines.push_back(sOutput.substr(lastBreak));
+
+    return outputInLines;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This function outputs a string by
+/// adding the required prefixes and joining
+/// the various strings together.
+///
+/// \param stringInLines std::vector<std::string>
+/// \param nFirstIndent int
+/// \param nIndent int
+/// \return std::string
+///
+/////////////////////////////////////////////////
+std::string outputString(std::vector<std::string> stringInLines, int nFirstIndent, int nIndent)
+{
+    std::string sOutput = "";
+
+    // Check if vector is empty and return empty string if so
+    if (!stringInLines.size())
+        return sOutput;
+
+    // Check if the output already contains the line starting chars
+    if ((sOutput.substr(0, 4) == "|   " || sOutput.substr(0, 4) == "|-> ") && nFirstIndent == 4)
+        nFirstIndent = 0;
+
+    // Add the first line with the corresponding indent
+    sOutput.append(stringInLines[0]);
+
+    // Prepare the prefix for all strings except the first one
+    std::string sIndent = "\n|";
+    for (int i = 1; i < nIndent; i++)
+        sIndent += " ";
+
+    // Add the prefixes and join the strings
+    for (size_t i = 1; i < stringInLines.size(); i++)
+        sOutput.append(sIndent + stringInLines[i]);
+
     return sOutput;
 }
+
+
+/////////////////////////////////////////////////
+/// \brief This function takes a string, splits
+/// it into multiple lines if it is too long
+/// and returns the result.
+///
+/// \param sOutput std::string
+/// \param _option const Settings&
+/// \param bAllowDashBreaks bool
+/// \param nFirstIndent int
+/// \param nIndent int
+/// \return std::string
+///
+/////////////////////////////////////////////////
+std::string LineBreak(std::string sOutput, const Settings& _option, bool bAllowDashBreaks, int nFirstIndent, int nIndent)
+{
+    return outputString(splitIntoLines(sOutput, _option.getWindow(), bAllowDashBreaks, nFirstIndent, nIndent), nFirstIndent, nIndent);
+}
+
 
 // --> Linearisiert die Funktion zwischen zwei Punkten (x_0,y_0) und (x_1,y_1) und gibt den Schnittpunkt mit der x-Achse zurueck <--
 double Linearize(double x_0, double y_0, double x_1, double y_1)

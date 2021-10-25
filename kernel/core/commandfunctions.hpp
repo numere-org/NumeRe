@@ -1633,6 +1633,119 @@ static void listUnitConversions(const Settings& _option) //PRSRFUNC_LISTUNITS_*
 
 
 /////////////////////////////////////////////////
+/// \brief This function returns a vector with
+/// column widths for a table, depending on
+/// the overall table size and the minimal
+/// desired column sizes. A zero for the minimal
+/// desired column width means to maximize that
+/// column. If multiple columns are maximized then
+/// the space is distributed equally between them.
+///
+/// \param maxWidth size_t
+/// \param minDesiredColWidth std::vector<size_t>
+/// \return std::vector<size_t>
+///
+/////////////////////////////////////////////////
+std::vector<size_t> calcTableWidth(size_t maxWidth, std::vector<size_t> minDesiredColWidth)
+{
+    std::vector<size_t> colWidth;
+
+    // Get the average column width
+    size_t avgWidth = maxWidth / minDesiredColWidth.size();
+
+    // Find the column width, depending on wether this column should be maxed or not
+    for (size_t i = 0; i < minDesiredColWidth.size(); i++)
+    {
+        if (minDesiredColWidth[i] > 0)
+            colWidth.push_back(std::min(avgWidth, minDesiredColWidth[i]));
+        else
+            colWidth.push_back(0);
+    }
+
+    // Find the number of columns to be maximized
+    size_t numOfMarkedColumns = std::count(colWidth.begin(), colWidth.end(), 0);
+
+    // Get the current sum of chars
+    size_t sumOfChars = 0;
+    for (auto& n : colWidth)
+        sumOfChars += n;
+
+    // Expand the marked columns
+    for (size_t i = 0; i < colWidth.size(); i++)
+    {
+        if (colWidth[i] == 0)
+            colWidth[i] = (maxWidth - sumOfChars) / numOfMarkedColumns;
+    }
+
+    return colWidth;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This function actually plots the table
+/// with the desired colun widths. For this
+/// all the content to plot and the column
+/// sizes are required.
+///
+/// \param lineEntries std::vector<std::string>
+/// \param lineColSizes std::vector<size_t>
+/// \return void
+///
+/////////////////////////////////////////////////
+void plotTableBySize(std::vector<std::string> lineEntries, std::vector<size_t> lineColSizes)
+{
+    // Format the string
+    string sDummy = "";
+    for (auto& thisEntry: lineEntries)
+    {
+        thisEntry = '"' + thisEntry + "\" -nq";
+        NumeReKernel::getInstance()->getStringParser().evalAndFormat(thisEntry, sDummy, true);
+    }
+
+    // Split all columns into multiple lines if necessary
+    std::vector<std::vector<std::string>> splittedLineEntries;
+    for (size_t i = 0; i < lineEntries.size(); i++)
+    {
+        splittedLineEntries.push_back(splitIntoLines(lineEntries[i], lineColSizes[i], true, 2, 2));
+    }
+
+    // Print lines as long as strings are not all empty
+    while (true)
+    {
+        std::string sLine = "|   ";
+
+        // Join the various columns into one line
+        for (size_t i = 0; i < splittedLineEntries.size(); i++)
+        {
+            if (splittedLineEntries[i].size())
+            {
+                sLine += strfill(splittedLineEntries[i].front(), lineColSizes[i], ' ', true);
+                splittedLineEntries[i].erase(splittedLineEntries[i].begin());
+            }
+            else
+                sLine += strfill("", lineColSizes[i], ' ', true);
+        }
+
+        // Check if all strings have been plotted completely
+        size_t totalStringElements = 0;
+        for (std::vector<std::string> thisColumn: splittedLineEntries)
+            totalStringElements += thisColumn.size();
+
+        // Plot depending on last line or not
+        if (totalStringElements <= 0)
+        {
+            NumeReKernel::printPreFmt(sLine + "\n|\n");
+            break;
+        }
+        else
+        {
+            NumeReKernel::printPreFmt(sLine + "\n");
+        }
+    }
+}
+
+
+/////////////////////////////////////////////////
 /// \brief This function lists all declared
 /// plugins including their name, their command
 /// and their description.
@@ -1647,7 +1760,7 @@ static void listUnitConversions(const Settings& _option) //PRSRFUNC_LISTUNITS_*
 /////////////////////////////////////////////////
 static void listInstalledPlugins(Parser& _parser, MemoryManager& _data, const Settings& _option)
 {
-	string sDummy = "";
+
 	NumeReKernel::toggleTableStatus();
 	make_hline();
 	NumeReKernel::print(toSystemCodePage("NUMERE: " + toUpperCase(_lang.get("PARSERFUNCS_LISTPLUGINS_HEADLINE"))));
@@ -1659,35 +1772,46 @@ static void listInstalledPlugins(Parser& _parser, MemoryManager& _data, const Se
 		NumeReKernel::print(toSystemCodePage(_lang.get("PARSERFUNCS_LISTPLUGINS_EMPTY")));
 	else
 	{
-		NumeReKernel::printPreFmt(LineBreak("|   " + _lang.get("PARSERFUNCS_LISTPLUGINS_TABLEHEAD"), _option, 0) + "\n");
-		NumeReKernel::printPreFmt("|\n");
+        // The info to be printed is: Package Name, Version, Command, Description, Author, License
+        // The minimal desired column width is
+        std::vector<size_t> minDesiredColWidth{20, 10, 15, 0, 20, 15};
 
-		// Print all plugins (name, command and description)
-		// on the terminal
+        //Get the terminal window width minus the 4 digit indent
+        size_t maxWidth = _option.getWindow(0) - 4;
+
+        // Set the column withs depending on number of columns and window width
+        std::vector<size_t> colWidth = calcTableWidth(maxWidth, minDesiredColWidth);
+
+        // Print the table head and an empty line
+        std::vector<std::string> headerEntries;
+        headerEntries.push_back(_lang.get("PARSERFUNCS_LISTPLUGINS_PACKAGENAME"));
+        headerEntries.push_back(_lang.get("PARSERFUNCS_LISTPLUGINS_VERSION"));
+        headerEntries.push_back(_lang.get("PARSERFUNCS_LISTPLUGINS_COMMAND"));
+        headerEntries.push_back(_lang.get("PARSERFUNCS_LISTPLUGINS_DESCRIPTION"));
+        headerEntries.push_back(_lang.get("PARSERFUNCS_LISTPLUGINS_AUTHOR"));
+        headerEntries.push_back(_lang.get("PARSERFUNCS_LISTPLUGINS_LICENSE"));
+        plotTableBySize(headerEntries, colWidth);
+
+		// Print all plugins (name, command and description) on the terminal
 		for (unsigned int i = 0; i < _procedure.getPackageCount(); i++)
 		{
-			string sLine = "|   ";
+            // Tabellenfunktion unter utils/tools.cpp oder util/stringtools.cpp
+            std::vector<std::string> lineEntries;
 
-			if (_procedure.getPluginCommand(i).length() > 18)
-				sLine += _procedure.getPluginCommand(i).substr(0, 15) + "...";
-			else
-				sLine += _procedure.getPluginCommand(i);
-
-			sLine.append(23 - sLine.length(), ' ');
-
-			// Print basic information about the plugin
-			sLine += _lang.get("PARSERFUNCS_LISTPLUGINS_PLUGININFO", _procedure.getPackageName(i), _procedure.getPackageVersion(i), _procedure.getPackageAuthor(i));
-
-            if (_procedure.getPackageLicense(i).length())
-                sLine += " | " + _procedure.getPackageLicense(i);
-
+			// Print package name
+			lineEntries.push_back(_procedure.getPackageName(i));
+			// Print package version
+			lineEntries.push_back(_procedure.getPackageVersion(i));
+			// Print command info
+            lineEntries.push_back(_procedure.getPluginCommand(i));
 			// Print the description
-			if (_procedure.getPackageDescription(i).length())
-				sLine += "$" + _procedure.getPackageDescription(i);
-
-			sLine = '"' + sLine + "\" -nq";
-			NumeReKernel::getInstance()->getStringParser().evalAndFormat(sLine, sDummy, true);
-			NumeReKernel::printPreFmt(LineBreak(sLine, _option, true, 0, 25) + "\n");
+            lineEntries.push_back(_procedure.getPackageDescription(i));
+            // Print package author
+			lineEntries.push_back(_procedure.getPackageAuthor(i));
+			// Print package license
+            lineEntries.push_back(_procedure.getPackageLicense(i));
+            // Plot this line
+            plotTableBySize(lineEntries, colWidth);
 		}
 	}
 

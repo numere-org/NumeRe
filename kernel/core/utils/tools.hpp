@@ -65,6 +65,8 @@ bool isToStringArg(const string& sExpr, unsigned int nPos);
 bool isDelimiter(char cChar);
 bool addLegends(string&);
 bool checkDelimiter(const string& sToken, bool stringdelim = false);
+std::vector<std::string> splitIntoLines(std::string sOutput, size_t lineWidth, bool bAllowDashBreaks = true, int nFirstIndent = 4, int nIndent = 4);
+std::string outputString(std::vector<std::string> stringInLines, int nFirstIndent, int nIndent);
 string LineBreak(string sOutput, const Settings& _option, bool bAllowDashBreaks = true, int nFirstIndent = 4, int nIndent = 4);
 double Linearize(double x_0, double y_0, double x_1, double y_1);
 void make_hline(int nLength = -1);
