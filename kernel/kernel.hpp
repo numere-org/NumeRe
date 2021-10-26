@@ -386,17 +386,19 @@ struct NumeReTask
 /// \brief This function fills the passed string
 /// up to the width nWidth with the characters
 /// cFill. The characters are inserted on the
-/// right.
+/// right. If the bool option limit is true,
+/// the string will be shortened to the required
+/// size and '...' will be added.
 ///
 /// \param sString const string&
 /// \param nWidth unsigned int
-/// \param cFill char
+/// \param cFill = ' ' char
+/// \param limit = false bool
 /// \return string
 ///
 /////////////////////////////////////////////////
 inline string strfill(const string& sString, unsigned int nWidth, char cFill = ' ', bool limit = false)
 {
-    //TODO: Docstring anpassen
     if (!nWidth)
         return "";
 
@@ -406,9 +408,9 @@ inline string strfill(const string& sString, unsigned int nWidth, char cFill = '
     if (sString.length() < nWidth)
         sReturn.insert(sReturn.length(), nWidth-sReturn.length(), cFill);
 
-    // Limit the output size if necessary
+    // Limit the output size if required
     if (limit && sString.length() > nWidth)
-        sReturn = sString.substr(0, nWidth - 3) + "-  ";
+        sReturn = sString.substr(0, nWidth - 3) + "...";
 
     return sReturn;
 }
