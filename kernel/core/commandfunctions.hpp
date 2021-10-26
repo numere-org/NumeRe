@@ -1719,11 +1719,11 @@ void plotTableBySize(std::vector<std::string> lineEntries, std::vector<size_t> l
         {
             if (splittedLineEntries[i].size())
             {
-                sLine += strfill(splittedLineEntries[i].front(), lineColSizes[i], ' ', true);
+                sLine += strlfill(splittedLineEntries[i].front(), lineColSizes[i], ' ');
                 splittedLineEntries[i].erase(splittedLineEntries[i].begin());
             }
             else
-                sLine += strfill("", lineColSizes[i], ' ', true);
+                sLine += strlfill("", lineColSizes[i], ' ');
         }
 
         // Check if all strings have been plotted completely
@@ -1772,9 +1772,10 @@ static void listInstalledPlugins(Parser& _parser, MemoryManager& _data, const Se
 		NumeReKernel::print(toSystemCodePage(_lang.get("PARSERFUNCS_LISTPLUGINS_EMPTY")));
 	else
 	{
+	    int largewindowoffset = _option.getWindow() > 230 ? 10 : 0;
         // The info to be printed is: Package Name, Version, Command, Description, Author, License
         // The minimal desired column width is
-        std::vector<size_t> minDesiredColWidth{20, 10, 15, 0, 20, 15};
+        std::vector<size_t> minDesiredColWidth{20 + largewindowoffset, 10 + largewindowoffset, 15 + largewindowoffset, 0, 20 + largewindowoffset, 15 + largewindowoffset};
 
         //Get the terminal window width minus the 4 digit indent
         size_t maxWidth = _option.getWindow(0) - 4;
@@ -1801,9 +1802,9 @@ static void listInstalledPlugins(Parser& _parser, MemoryManager& _data, const Se
 			// Print package name
 			lineEntries.push_back(_procedure.getPackageName(i));
 			// Print package version
-			lineEntries.push_back(_procedure.getPackageVersion(i));
+			lineEntries.push_back("v" + _procedure.getPackageVersion(i));
 			// Print command info
-            lineEntries.push_back(_procedure.getPluginCommand(i));
+            lineEntries.push_back(_procedure.getPluginCommand(i).length() ? _procedure.getPluginCommand(i) : "---");
 			// Print the description
             lineEntries.push_back(_procedure.getPackageDescription(i));
             // Print package author
@@ -2203,7 +2204,11 @@ static CommandReturnValues saveDataObject(string& sCmd)
         if (!sFileName.length())
         {
             _cache.setPrefix(_access.getDataObject());
-            sFileName = _cache.generateFileName(".dat");
+
+            if (cmdParser.getCommand() == "export")
+                sFileName = _cache.generateFileName(".dat");
+            else
+                sFileName = _cache.generateFileName(".ndat");
         }
 
         if (_cache.saveFile(_access.getDataObject(), sFileName, nPrecision))

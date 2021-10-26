@@ -1934,6 +1934,27 @@ class StringView : public StringViewBase
         }
 
         /////////////////////////////////////////////////
+        /// \brief StringView constructor from a const
+        /// std::string reference, a start and a length
+        ///
+        /// \param data const std::string&
+        /// \param start size_t
+        /// \param len size_t
+        ///
+        /////////////////////////////////////////////////
+        StringView(const std::string& data, size_t start, size_t len = std::string::npos) : StringView()
+        {
+            assign(&data);
+
+            if (m_data && start < m_len)
+            {
+                len = validizeLength(start, len);
+                m_start = start;
+                m_len = len;
+            }
+        }
+
+        /////////////////////////////////////////////////
         /// \brief StringView copy constructor.
         ///
         /// \param view const StringView&

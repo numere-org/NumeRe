@@ -18,6 +18,7 @@
 
 #include "stringtools.hpp"
 #include "../settings.hpp"
+#include "../structures.hpp"
 
 #include <cstring>
 #include <sstream>
@@ -1343,6 +1344,27 @@ std::string replacePathSeparator(const std::string& __sPath)
         if (sPath[i] == '\\')
             sPath[i] = '/';
     }
+
     return sPath;
 }
+
+
+/////////////////////////////////////////////////
+/// \brief Returns true, if the contents of the
+/// strings are equal, if all surrounding
+/// whitespaces will be stripped.
+///
+/// \param str1 StringView
+/// \param str2 StringView
+/// \return bool
+///
+/////////////////////////////////////////////////
+bool isEqualStripped(StringView str1, StringView str2)
+{
+    str1.strip();
+    str2.strip();
+
+    return str1 == str2;
+}
+
 

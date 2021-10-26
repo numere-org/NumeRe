@@ -27,6 +27,7 @@
 
 // Forward declaration
 class Settings;
+class StringView;
 
 enum TIMESTAMP
 {
@@ -102,6 +103,8 @@ std::string utf8parser(const std::string& sString);
 std::string replacePathSeparator(const std::string& __sPath);
 std::string getTimeStamp(bool bGetStamp = true);
 std::vector<std::string> split(const std::string& sStr, char cSplit);
+
+bool isEqualStripped(StringView str1, StringView str2);
 
 #endif // STRINGTOOLS_HPP
 

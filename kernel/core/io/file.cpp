@@ -1219,6 +1219,7 @@ namespace NumeRe
             long long int size = 0;
             mu::value_type* values = readNumBlock<mu::value_type>(size);
             col->setValue(VectorIndex(0, VectorIndex::OPEN_END), std::vector<mu::value_type>(values, values+size));
+            delete[] values;
         }
         else if (sDataType == "DTYPE=DATETIME")
         {
@@ -1227,6 +1228,7 @@ namespace NumeRe
             long long int size = 0;
             mu::value_type* values = readNumBlock<mu::value_type>(size);
             col->setValue(VectorIndex(0, VectorIndex::OPEN_END), std::vector<mu::value_type>(values, values+size));
+            delete[] values;
         }
         else if (sDataType == "DTYPE=STRING")
         {
@@ -1235,6 +1237,7 @@ namespace NumeRe
             long long int size = 0;
             std::string* strings = readStringBlock(size);
             col->setValue(VectorIndex(0, VectorIndex::OPEN_END), std::vector<std::string>(strings, strings+size));
+            delete[] strings;
         }
     }
 

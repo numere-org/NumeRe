@@ -340,6 +340,7 @@ PackageRepoBrowser::PackageRepoBrowser(wxWindow* parent, NumeReTerminal* termina
     m_uninstallButton->Disable();
 
     StartThread(TASK_LOADREPO);
+    Refresh();
 }
 
 
