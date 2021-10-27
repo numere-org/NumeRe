@@ -3072,7 +3072,7 @@ void Memory::smoothingWindow1D(const VectorIndex& _vLine, const VectorIndex& _vC
     auto sizes = _filter->getWindowSize();
 
     mu::value_type sum = 0.0;
-    std::queue<mu::value_type>& filterBuffer = _filter->getBuffer();
+    NumeRe::FilterBuffer& filterBuffer = _filter->getBuffer();
 
     // Apply the filter to the data
     for (size_t n = 0; n < sizes.first; n++)
@@ -3091,24 +3091,25 @@ void Memory::smoothingWindow1D(const VectorIndex& _vLine, const VectorIndex& _vC
     // remove the first one
     if (filterBuffer.size() > sizes.first/2)
     {
+        // Writes the element to the first position of the window
         writeData(_vLine[i], _vCol[j], filterBuffer.front());
         filterBuffer.pop();
     }
 
     // Is this the last point? Then extract all remaining points from the
     // buffer
-    if (smoothLines && _vCol.size()-sizes.first-2 == j)
+    if (smoothLines && _vCol.size()-sizes.first-1 == j)
     {
-        while (!_filter->getBuffer().empty())
+        while (!filterBuffer.empty())
         {
             j++;
             writeData(_vLine[i], _vCol[j], filterBuffer.front());
             filterBuffer.pop();
         }
     }
-    else if (!smoothLines && _vLine.size()-sizes.first-2 == i)
+    else if (!smoothLines && _vLine.size()-sizes.first-1 == i)
     {
-        while (!_filter->getBuffer().empty())
+        while (!filterBuffer.empty())
         {
             i++;
             writeData(_vLine[i], _vCol[j], filterBuffer.front());
@@ -3133,8 +3134,8 @@ void Memory::smoothingWindow1D(const VectorIndex& _vLine, const VectorIndex& _vC
 /////////////////////////////////////////////////
 void Memory::smoothingWindow2D(const VectorIndex& _vLine, const VectorIndex& _vCol, size_t i, size_t j, NumeRe::Filter* _filter)
 {
-#warning TODO (numere#3#09/16/21): This code section misses a buffer as well
     auto sizes = _filter->getWindowSize();
+    NumeRe::FilterBuffer2D& filterBuffer = _filter->get2DBuffer();
 
     mu::value_type sum = 0.0;
 
@@ -3152,7 +3153,38 @@ void Memory::smoothingWindow2D(const VectorIndex& _vLine, const VectorIndex& _vC
 
     // If the filter is a convolution, store the new value here
     if (_filter->isConvolution())
-        writeData(_vLine[i + sizes.first/2], _vCol[j + sizes.second/2], sum);
+    {
+        if (j == 1)
+            filterBuffer.push(std::vector<mu::value_type>());
+
+        filterBuffer.back().push_back(sum);
+    }
+
+    // If enough elements are stored in the buffer
+    // remove the first row
+    if (filterBuffer.size() > sizes.first/2+1)
+    {
+        // Write the finished row
+        for (size_t k = 0; k < filterBuffer.front().size(); k++)
+            writeData(_vLine[i-1], _vCol[k+sizes.second/2+1], filterBuffer.front()[k]);
+
+        filterBuffer.pop();
+    }
+
+    // Is this the last point? Then extract all remaining points from the
+    // buffer
+    if (_vLine.size()-sizes.first-1 == i && _vCol.size()-sizes.second-1 == j)
+    {
+        while (!filterBuffer.empty())
+        {
+
+            for (size_t k = 0; k < filterBuffer.front().size(); k++)
+                writeData(_vLine[i], _vCol[k+sizes.second/2+1], filterBuffer.front()[k]);
+
+            i++;
+            filterBuffer.pop();
+        }
+    }
 }
 
 
@@ -3263,7 +3295,7 @@ bool Memory::smooth(VectorIndex _vLine, VectorIndex _vCol, NumeRe::FilterSetting
         // Smooth the lines
         for (size_t i = 0; i < _vLine.size(); i++)
         {
-            for (size_t j = 1; j < _vCol.size() - _settings.row-1; j++)
+            for (size_t j = 1; j < _vCol.size() - _settings.row; j++)
             {
                 smoothingWindow1D(_vLine, _vCol, i, j, _filterPtr.get(), true);
             }
@@ -3286,7 +3318,7 @@ bool Memory::smooth(VectorIndex _vLine, VectorIndex _vCol, NumeRe::FilterSetting
         // Smooth the columns
         for (size_t j = 0; j < _vCol.size(); j++)
         {
-            for (size_t i = 1; i < _vLine.size() - _settings.row-1; i++)
+            for (size_t i = 1; i < _vLine.size() - _settings.row; i++)
             {
                 smoothingWindow1D(_vLine, _vCol, i, j, _filterPtr.get(), false);
             }
@@ -3319,9 +3351,9 @@ bool Memory::smooth(VectorIndex _vLine, VectorIndex _vCol, NumeRe::FilterSetting
 
         // Smooth the data in two dimensions, if that is reasonable
         // Go through every point
-        for (size_t i = 1; i < _vLine.size() - _settings.row-1; i++)
+        for (size_t i = 1; i < _vLine.size() - _settings.row; i++)
         {
-            for (size_t j = 1; j < _vCol.size() - _settings.col-1; j++)
+            for (size_t j = 1; j < _vCol.size() - _settings.col; j++)
             {
                 smoothingWindow2D(_vLine, _vCol, i, j, _filterPtr.get());
             }

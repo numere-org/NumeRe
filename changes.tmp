@@ -55,3 +55,4 @@ Updated	"to_time()" and "timeformat()" now support milli- and microseconds via t
 New	The matop function "polylength()" can be used to calculate the length of a n-D open ended poylgon (repeat the first vertex at the end to calculate the perimeter of a closed polygon).
 Updated	The variable viewer now supports more functionalities (including copying a value to clipboard) and displays the current needed memory of each variable.
 Updated	The "list plugins" command now writes a well formated table that is adapted to the display size. Improved the methods handling the line breaks and display of strings.
+Fixed	The command "smooth" now uses buffers in 1D and 2D cases. Additionally resolved a small logic error ignoring the last points in the arrays.

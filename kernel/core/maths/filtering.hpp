@@ -73,6 +73,14 @@ namespace NumeRe
 
 
     /////////////////////////////////////////////////
+    /// \brief Typedef for simplifying the usage of
+    /// the buffer.
+    /////////////////////////////////////////////////
+    using FilterBuffer = std::queue<mu::value_type>;
+    using FilterBuffer2D = std::queue<std::vector<mu::value_type>>;
+
+
+    /////////////////////////////////////////////////
     /// \brief This is an abstract base class for any
     /// type of a data filter. Requires some methods
     /// to be implemented by its child classes.
@@ -83,7 +91,8 @@ namespace NumeRe
             FilterSettings::FilterType m_type;
             std::pair<size_t, size_t> m_windowSize;
             bool m_isConvolution;
-            std::queue<mu::value_type> m_queue;
+            FilterBuffer m_buffer;
+            FilterBuffer2D m_buffer2D;
 
         public:
             /////////////////////////////////////////////////
@@ -177,12 +186,26 @@ namespace NumeRe
             /// filtering buffer queue to store already
             /// smoothed points avoiding leakage effects.
             ///
-            /// \return std::queue<mu::value_type>&
+            /// \return FilterBuffer&
             ///
             /////////////////////////////////////////////////
-            std::queue<mu::value_type>& getBuffer()
+            FilterBuffer& getBuffer()
             {
-                return m_queue;
+                return m_buffer;
+            }
+
+            /////////////////////////////////////////////////
+            /// \brief This method returns the internal
+            /// filtering buffer queue for 2D data to store
+            /// already smoothed points avoiding leakage
+            /// effects.
+            ///
+            /// \return FilterBuffer2D&
+            ///
+            /////////////////////////////////////////////////
+            FilterBuffer2D& get2DBuffer()
+            {
+                return m_buffer2D;
             }
     };
 
