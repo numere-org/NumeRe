@@ -190,11 +190,11 @@ sys_time_point to_timePoint(double d)
 time_zone getCurrentTimeZone()
 {
     TIME_ZONE_INFORMATION timezone;
-    GetTimeZoneInformation(&timezone);
+    int res = GetTimeZoneInformation(&timezone);
 
     time_zone tz;
     tz.Bias = std::chrono::minutes(timezone.Bias);
-    tz.DayLightBias = std::chrono::minutes(timezone.DaylightBias);
+    tz.DayLightBias = res == TIME_ZONE_ID_DAYLIGHT ? std::chrono::minutes(timezone.DaylightBias) : std::chrono::minutes(0);
 
     return tz;
 }

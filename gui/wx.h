@@ -72,7 +72,7 @@ public:
 	inline void SetDraw(int (*draw)(mglGraph *gr))
 	{	SetDraw(draw?mgl_draw_graph:0,(void*)draw);	}
 	inline void ZoomRegion(mreal xx1,mreal xx2,mreal yy1, mreal yy2)
-	{	x1=xx1;	y1=yy1;	x2=xx2;	y2=yy2;	}
+	{	zoom_x0=xx1;	zoom_y0=yy1;	zoom_x1=xx2;	zoom_y1=yy2;	}
 
 	int GetPer() 	{return dPerspective;};		///< Get perspective value
 	int GetPhi() 	{return dAzimutalViewPoint;};		///< Get Phi-angle value
@@ -90,19 +90,19 @@ public:
 	void SetPer(int p);		///< Set perspective value
 	void SetPhi(int p);		///< Set Phi-angle value
 	void SetTet(int t);		///< Set Theta-angle value
-	void SetAlpha(bool a);	///< Switch on/off transparency
-	void SetLight(bool l);	///< Switch on/off lightning
+//	void SetAlpha(bool a);	///< Switch on/off transparency
+//	void SetLight(bool l);	///< Switch on/off lightning
 	void SetZoom(bool z);	///< Switch on/off mouse zooming
 	void SetRotate(bool r);	///< Switch on/off mouse rotation
 	void SetDrawMode(int dm);
-	void ZoomIn();			///< Zoom in graphics
-	void ZoomOut();			///< Zoom out graphics
+	void ZoomIn(int x, int y);			///< Zoom in graphics
+	void ZoomOut(int x, int y);			///< Zoom out graphics
 	void Restore();			///< Restore zoom and rotation to default values
 //	void Reload();			///< Reload data and execute script
-	void ShiftLeft();		///< Shift graphics to left direction
-	void ShiftRight();		///< Shift graphics to right direction
-	void ShiftUp();			///< Shift graphics to up direction
-	void ShiftDown();		///< Shift graphics to down direction
+//	void ShiftLeft();		///< Shift graphics to left direction
+//	void ShiftRight();		///< Shift graphics to right direction
+//	void ShiftUp();			///< Shift graphics to up direction
+//	void ShiftDown();		///< Shift graphics to down direction
 	void DrawCurrentObject(int end_x, int end_y);
 	void ExportPNG(wxString fname = L"");	///< export to PNG file
 	void ExportPNGs(wxString fname = L"");	///< export to PNG file (no transparency)
@@ -152,6 +152,7 @@ protected:
 	void OnMouseMove(wxMouseEvent &ev);
 
 	void OnEnter(wxMouseEvent& event);
+	void OnLeave(wxMouseEvent& event);
 	void OnKeyDown(wxKeyEvent& event);
 	void OnNavigationKey(wxNavigationKeyEvent& event);
 	void OnMenuEvent(wxCommandEvent& event);
@@ -183,7 +184,7 @@ protected:
 	bool drawModeActive;///< Flag, if the current draw mode is active => mouse down
 	mreal l_x1, l_y1;   ///< start coordinates for line
 	mreal start_x, start_y; ///< start coordinates for drawing
-	mreal x1,x2,y1,y2;	///< Zoom in region
+	mreal zoom_x0, zoom_x1, zoom_y0, zoom_y1;	///< Zoom in region
 	bool showMessage;	///< Flag for showing messages (enabled by each execute())
 	wxMenu *popup;		///< Pointer to pop-up menu
 	wxTimer *timer;		///< Timer for animation
@@ -195,7 +196,7 @@ protected:
 private:
     void UpdateTools();
 
-	int x0, y0, xe, ye;		///< Temporary variables for mouse
+	int mouse_x0, mouse_y0, mouse_x1, mouse_y1;		///< Temporary variables for mouse
 	wxFrame* m_parentFrame;
 	wxToolBar* toptoolbar;
 	wxStatusBar* statusbar;

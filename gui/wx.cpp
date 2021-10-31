@@ -105,6 +105,7 @@ BEGIN_EVENT_TABLE(wxMGL, wxWindow)
     EVT_KEY_DOWN    (wxMGL::OnKeyDown)
     EVT_NAVIGATION_KEY(wxMGL::OnNavigationKey)
     EVT_ENTER_WINDOW(wxMGL::OnEnter)
+    EVT_LEAVE_WINDOW(wxMGL::OnLeave)
     EVT_CLOSE       (wxMGL::OnClose)
 
     EVT_MENU        (ID_GRAPH_EXPORT, wxMGL::OnMenuEvent)
@@ -117,11 +118,24 @@ BEGIN_EVENT_TABLE(wxMGL, wxWindow)
     EVT_MENU_RANGE  (ID_GRAPH_NEXT, ID_GRAPH_STOP, wxMGL::OnMenuEvent)
     EVT_MENU_RANGE  (ID_GRAPH_DRAW_FIRST, ID_GRAPH_DRAW_LAST, wxMGL::OnMenuEvent)
 END_EVENT_TABLE()
-//-----------------------------------------------------------------------------
-//
-//		class wxMathGL
-//
-//-----------------------------------------------------------------------------
+
+
+
+
+
+
+/////////////////////////////////////////////////
+/// \brief wxMGL constructor.
+///
+/// \param parent wxWindow*
+/// \param id wxWindowID
+/// \param pos const wxPoint&
+/// \param size const wxSize&
+/// \param style long
+/// \param frameless bool
+/// \param name const wxString&
+///
+/////////////////////////////////////////////////
 wxMGL::wxMGL(wxWindow* parent, wxWindowID id, const wxPoint& pos, const wxSize& size, long style, bool frameless, const wxString& name) : wxWindow(parent, id, pos, size, style, name)
 {
     AutoResize = true;
@@ -131,8 +145,8 @@ wxMGL::wxMGL(wxWindow* parent, wxWindowID id, const wxPoint& pos, const wxSize& 
     popup = nullptr;
     draw_cl = nullptr;
     dAzimutalViewPoint = dPolarViewPoint = dPerspective = 0.0;
-    x1 = y1 = 0;
-    x2 = y2 = 1;
+    zoom_x0 = zoom_y0 = 0;
+    zoom_x1 = zoom_y1 = 1;
     l_x1 = l_y1 = 0;
     start_x = start_y = 0;
     alpha = light = bZoomingMode = zoomactive = bRotatingMode = false;
@@ -173,8 +187,12 @@ wxMGL::wxMGL(wxWindow* parent, wxWindowID id, const wxPoint& pos, const wxSize& 
         m_parentFrame = nullptr;
 }
 
-// Destructor: stops the timer, if it is running
-// and deletes the referenced drawing class
+
+/////////////////////////////////////////////////
+/// \brief Destructor: stops the timer, if it is
+/// running and deletes the referenced drawing
+/// class.
+/////////////////////////////////////////////////
 wxMGL::~wxMGL()
 {
     timer->Stop();
@@ -185,8 +203,15 @@ wxMGL::~wxMGL()
     draw_cl = nullptr;
 }
 
-// This member function dis- or enables the animation tools
-// depending on whether an animation is available
+
+/////////////////////////////////////////////////
+/// \brief This member function dis- or enables
+/// the animation tools depending on whether an
+/// animation is available.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
 void wxMGL::UpdateTools()
 {
     if (!m_parentFrame)
@@ -208,14 +233,27 @@ void wxMGL::UpdateTools()
     }
 }
 
-// This member function returns the image ratio
+
+/////////////////////////////////////////////////
+/// \brief This member function returns the image
+/// aspect ratio.
+///
+/// \return double
+///
+/////////////////////////////////////////////////
 double wxMGL::GetRatio()
 {
     return double(mgl_get_width(gr->Self())) / mgl_get_height(gr->Self());
 }
 
-// This member function initializes the toolbar of the
-// GraphViewer Window
+
+/////////////////////////////////////////////////
+/// \brief This member function initializes the
+/// toolbar of the GraphViewer Window.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
 void wxMGL::InitializeToolbar()
 {
     if (!m_parentFrame)
@@ -257,8 +295,15 @@ void wxMGL::InitializeToolbar()
     toptoolbar->Realize();
 }
 
-// This member function displays the file dialog during
-// exporting the current image displayed in the window
+
+/////////////////////////////////////////////////
+/// \brief This member function displays the file
+/// dialog during exporting the current image
+/// displayed in the window.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
 void wxMGL::OnExport()
 {
     if (!m_parentFrame)
@@ -288,9 +333,17 @@ void wxMGL::OnExport()
         ExportSVG(fileName.GetFullPath());
 }
 
-// This member function is the redrawing and painting
-// event handler. It will display the bitmap currently
-// selected by the wxMGL::Repaint() function
+
+/////////////////////////////////////////////////
+/// \brief This member function is the redrawing
+/// and painting event handler. It will display
+/// the bitmap currently selected by the
+/// wxMGL::Repaint() function.
+///
+/// \param event wxPaintEvent&
+/// \return void
+///
+/////////////////////////////////////////////////
 void wxMGL::OnPaint(wxPaintEvent& event)
 {
     wxPaintDC dc(this);
@@ -315,7 +368,7 @@ void wxMGL::OnPaint(wxPaintEvent& event)
 
     // Draw the zooming rectangle
     if (zoomactive)
-        dc.DrawRectangle(x0, y0, xe-x0, ye-y0);
+        dc.DrawRectangle(mouse_x0, mouse_y0, mouse_x1-mouse_x0, mouse_y1-mouse_y0);
 
     // Draw the previews of the drawing objects
     if (drawModeActive)
@@ -323,27 +376,43 @@ void wxMGL::OnPaint(wxPaintEvent& event)
         switch (drawMode)
         {
             case DM_LINE:
-                dc.DrawLine(start_x, start_y, xe, ye);
+                dc.DrawLine(start_x, start_y, mouse_x1, mouse_y1);
                 break;
             case DM_CIRCLE:
-                dc.DrawCircle(start_x, start_y, hypot(xe-start_x, ye-start_y));
+                dc.DrawCircle(start_x, start_y, hypot(mouse_x1-start_x, mouse_y1-start_y));
                 break;
             case DM_RECT:
-                dc.DrawRectangle(start_x, start_y, xe-start_x, ye-start_y);
+                dc.DrawRectangle(start_x, start_y, mouse_x1-start_x, mouse_y1-start_y);
                 break;
 
         }
     }
 }
 
-// This member function handles the background erasing
-// process. It is disabled to avoid flickering
+
+/////////////////////////////////////////////////
+/// \brief This member function handles the
+/// background erasing process. It is disabled to
+/// avoid flickering (kind of a hack).
+///
+/// \param event wxEraseEvent&
+/// \return void
+///
+/////////////////////////////////////////////////
 void wxMGL::OnEraseBackground(wxEraseEvent& event)
 {
     // Empty method to avoid flickering
 }
 
-// This member function is the resizing event handler
+
+/////////////////////////////////////////////////
+/// \brief This member function is the resizing
+/// event handler.
+///
+/// \param event wxSizeEvent&
+/// \return void
+///
+/////////////////////////////////////////////////
 void wxMGL::OnSize(wxSizeEvent& event)
 {
     wxSize ev = event.GetSize();
@@ -370,15 +439,31 @@ void wxMGL::OnSize(wxSizeEvent& event)
         SetSize(mgl_get_width(gr->Self()), mgl_get_height(gr->Self()));
 }
 
-// This member function is the timer event handling
-// function needed for the animation
+
+/////////////////////////////////////////////////
+/// \brief This member function is the timer
+/// event handling function needed for the
+/// animation.
+///
+/// \param wxTimerEvent&
+/// \return void
+///
+/////////////////////////////////////////////////
 void wxMGL::OnNextSlide(wxTimerEvent& )
 {
     NextSlide();
 }
 
-// This member function can be used to set the
-// perspective effect applied to the drawing
+
+/////////////////////////////////////////////////
+/// \brief This member function can be used to
+/// set the perspective effect applied to the
+/// drawing.
+///
+/// \param p int
+/// \return void
+///
+/////////////////////////////////////////////////
 void wxMGL::SetPer(int p)
 {
     // Convert the integer percentage into a double value
@@ -389,8 +474,15 @@ void wxMGL::SetPer(int p)
     }
 }
 
-// This member function can be used to set the
-// azimutal viewpoint of the drawing
+
+/////////////////////////////////////////////////
+/// \brief This member function can be used to
+/// set the azimutal viewpoint of the drawing.
+///
+/// \param p int
+/// \return void
+///
+/////////////////////////////////////////////////
 void wxMGL::SetPhi(int p)
 {
     if (dAzimutalViewPoint != p)
@@ -400,8 +492,15 @@ void wxMGL::SetPhi(int p)
     }
 }
 
-// This member function can be used to set the
-// polar viewpoint of the drawing
+
+/////////////////////////////////////////////////
+/// \brief This member function can be used to
+/// set the polar viewpoint of the drawing.
+///
+/// \param t int
+/// \return void
+///
+/////////////////////////////////////////////////
 void wxMGL::SetTet(int t)
 {
     if (dPolarViewPoint != t)
@@ -411,30 +510,15 @@ void wxMGL::SetTet(int t)
     }
 }
 
-// Unneeded member function
-void wxMGL::SetAlpha(bool a)
-{
-    if (alpha != a)
-    {
-        alpha = a;
-        Update();
-    }
-    toptoolbar->ToggleTool(ID_GRAPH_ALPHA, alpha);
-}
 
-// Unneeded member function
-void wxMGL::SetLight(bool l)
-{
-    if (light != l)
-    {
-        light = l;
-        Update();
-    }
-    toptoolbar->ToggleTool(ID_GRAPH_LIGHT, light);
-}
-
-// This member function can be used to (de-)
-// activate the zooming mode
+/////////////////////////////////////////////////
+/// \brief This member function can be used to
+/// (de-)activate the zooming mode.
+///
+/// \param z bool
+/// \return void
+///
+/////////////////////////////////////////////////
 void wxMGL::SetZoom(bool z)
 {
     if (bZoomingMode != z)
@@ -452,8 +536,15 @@ void wxMGL::SetZoom(bool z)
     statusbar->SetStatusText(_guilang.get("GUI_GRAPH_ZOOM"), 1);
 }
 
-// This member function can be used to (de-)
-// activate the rotating mode
+
+/////////////////////////////////////////////////
+/// \brief This member function can be used to
+/// (de-)activate the rotating mode.
+///
+/// \param r bool
+/// \return void
+///
+/////////////////////////////////////////////////
 void wxMGL::SetRotate(bool r)
 {
     if (bRotatingMode != r)
@@ -471,9 +562,16 @@ void wxMGL::SetRotate(bool r)
     statusbar->SetStatusText(_guilang.get("GUI_GRAPH_ROTATE"), 1);
 }
 
-// This member function selects the current drawing mode
-// by dis- and enabling the tools and the other modification
-// modes
+
+/////////////////////////////////////////////////
+/// \brief This member function selects the
+/// current drawing mode by dis- and enabling the
+/// tools and the other modification modes.
+///
+/// \param dm int
+/// \return void
+///
+/////////////////////////////////////////////////
 void wxMGL::SetDrawMode(int dm)
 {
     if (drawMode != dm)
@@ -524,45 +622,17 @@ void wxMGL::SetDrawMode(int dm)
     }
 }
 
-// Unneeded member function
-void wxMGL::ShiftDown()
-{
-    mreal d = (y2-y1)/3;
-    y1 += d;
-    y2 += d;
-    Repaint();
-}
 
-// Unneeded member function
-void wxMGL::ShiftUp()
-{
-    mreal d = (y2-y1)/3;
-    y1 -= d;
-    y2 -= d;
-    Repaint();
-}
-
-// Unneeded member function
-void wxMGL::ShiftRight()
-{
-    mreal d = (x2-x1)/3;
-    x1 -= d;
-    x2 -= d;
-    Repaint();
-}
-
-// Unneeded member function
-void wxMGL::ShiftLeft()
-{
-    mreal d = (x2-x1)/3;
-    x1 += d;
-    x2 += d;
-    Repaint();
-}
-
-// This member function draws the drawing object
-// selected by the toolbar after the user released
-// the left mouse button
+/////////////////////////////////////////////////
+/// \brief This member function draws the drawing
+/// object selected by the toolbar after the user
+/// released the left mouse button.
+///
+/// \param end_x int
+/// \param end_y int
+/// \return void
+///
+/////////////////////////////////////////////////
 void wxMGL::DrawCurrentObject(int end_x, int end_y)
 {
     // Get the starting and ending postions
@@ -602,47 +672,81 @@ void wxMGL::DrawCurrentObject(int end_x, int end_y)
     }
 }
 
-// This member funciton can be used to reset the
-// the view modifications completely
+
+/////////////////////////////////////////////////
+/// \brief This member function can be used to
+/// reset the view modifications completely.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
 void wxMGL::Restore()
 {
     SetPhi(0);
     SetTet(0);
     SetPer(0);
-    x1 = y1 = 0;
-    x2 = y2 = 1;
+    zoom_x0 = zoom_y0 = 0;
+    zoom_x1 = zoom_y1 = 1;
     bZoomingMode = bRotatingMode = false;
     Repaint();
 }
 
-// Unneeded member function
-void wxMGL::ZoomIn()
+
+/////////////////////////////////////////////////
+/// \brief Applies a zoom with the factor of two
+/// around the selected position (passed as pixel
+/// coordinates).
+///
+/// \param x int
+/// \param y int
+/// \return void
+///
+/////////////////////////////////////////////////
+void wxMGL::ZoomIn(int x, int y)
 {
+    double w_off = 2.0*x/double(GetSize().GetWidth())-1.0, h_off = -2.0*y/double(GetSize().GetHeight())+1.0;
     mreal d;
-    d = (y2-y1)/4;
-    y1 += d;
-    y2 -= d;
-    d = (x2-x1)/4;
-    x1 += d;
-    x2 -= d;
+    d = (zoom_y1-zoom_y0)/4;
+    zoom_y0 = zoom_y0 + d + 2*h_off*d;
+    zoom_y1 = zoom_y1 - d + 2*h_off*d;
+    d = (zoom_x1-zoom_x0)/4;
+    zoom_x0 = zoom_x0 + d + 2*w_off*d;
+    zoom_x1 = zoom_x1 - d + 2*w_off*d;
     Repaint();
 }
 
-// Unneeded member function
-void wxMGL::ZoomOut()
+
+/////////////////////////////////////////////////
+/// \brief Applies a zoom with the factor of one
+/// half around the selected position (passed as
+/// pixel coordinates).
+///
+/// \param x int
+/// \param y int
+/// \return void
+///
+/////////////////////////////////////////////////
+void wxMGL::ZoomOut(int x, int y)
 {
+    double w_off = 2.0*x/double(GetSize().GetWidth())-1.0, h_off = -2.0*y/double(GetSize().GetHeight())+1.0;
     mreal d;
-    d = (y2-y1)/2;
-    y1 -= d;
-    y2 += d;
-    d = (x2-x1)/2;
-    x1 -= d;
-    x2 += d;
+    d = (zoom_y1-zoom_y0)/2;
+    zoom_y0 = zoom_y0 - d - h_off*d;
+    zoom_y1 = zoom_y1 + d - h_off*d;
+    d = (zoom_x1-zoom_x0)/2;
+    zoom_x0 = zoom_x0 - d - w_off*d;
+    zoom_x1 = zoom_x1 + d - w_off*d;
     Repaint();
 }
 
-// This member function tells the internal
-// mglGraph object to draw its contents
+
+/////////////////////////////////////////////////
+/// \brief This member function tells the
+/// internal mglGraph object to draw its contents.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
 void wxMGL::Update()
 {
     if (!draw_cl && !gr)
@@ -682,10 +786,16 @@ void wxMGL::Update()
     Repaint();
 }
 
-// This member function converts the RGB image
-// created by the mglGraph object into a
-// platform-independent wxImage object, which can
-// be used to create a bitmap from
+
+/////////////////////////////////////////////////
+/// \brief This member function converts the RGB
+/// image created by the mglGraph object into a
+/// platform-independent wxImage object, which
+/// can be used to create a bitmap from.
+///
+/// \return wxImage
+///
+/////////////////////////////////////////////////
 wxImage wxMGL::ConvertFromGraph()
 {
     const unsigned char *bb = mgl_get_rgb(gr->Self());
@@ -696,9 +806,15 @@ wxImage wxMGL::ConvertFromGraph()
     return wxImage(w, h, tmp);
 }
 
-// This member function sets the current drawing
-// as new bitmap and applies the view modifications
-// in advance
+
+/////////////////////////////////////////////////
+/// \brief This member function sets the current
+/// drawing as new bitmap and applies the view
+/// modifications in advance.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
 void wxMGL::Repaint()
 {
     if (!draw_cl && !gr)
@@ -708,7 +824,7 @@ void wxMGL::Repaint()
         return;
 
     if (bZoomingMode)
-        gr->Zoom(x1, y1, x2, y2);
+        gr->Zoom(zoom_x0, zoom_y0, zoom_x1, zoom_y1);
 
     if (bRotatingMode)
         gr->View(0, -dPolarViewPoint, -dAzimutalViewPoint);
@@ -730,8 +846,16 @@ void wxMGL::Repaint()
     wxWindow::Update();
 }
 
-// This member function is the event handling function
-// applied, when the user presses the left mouse button
+
+/////////////////////////////////////////////////
+/// \brief This member function is the event
+/// handling function applied, when the user
+/// presses the left mouse button.
+///
+/// \param ev wxMouseEvent&
+/// \return void
+///
+/////////////////////////////////////////////////
 void wxMGL::OnMouseLeftDown(wxMouseEvent &ev)
 {
     long x=ev.GetX(), y=ev.GetY();
@@ -751,8 +875,8 @@ void wxMGL::OnMouseLeftDown(wxMouseEvent &ev)
         drawModeActive = true;
     }
 
-    xe = x0 = x;
-    ye = y0 = y;
+    mouse_x1 = mouse_x0 = x;
+    mouse_y1 = mouse_y0 = y;
     ev.Skip();
 
     // Forward the mouse event to the custom window
@@ -763,50 +887,76 @@ void wxMGL::OnMouseLeftDown(wxMouseEvent &ev)
     }
 }
 
-// This member function is the event handling function
-// applied, when the user presses any of the other mouse
-// buttons
+
+/////////////////////////////////////////////////
+/// \brief This member function is the event
+/// handling function applied, when the user
+/// presses any of the other mouse buttons.
+///
+/// \param ev wxMouseEvent&
+/// \return void
+///
+/////////////////////////////////////////////////
 void wxMGL::OnMouseDown(wxMouseEvent &ev)
 {
-    xe = x0 = ev.GetX();
-    ye = y0 = ev.GetY();
+    mouse_x1 = mouse_x0 = ev.GetX();
+    mouse_y1 = mouse_y0 = ev.GetY();
     ev.Skip();
 }
 
-// This member function is the event handling function
-// applied, when the user releases the left mouse button
+
+/////////////////////////////////////////////////
+/// \brief This member function is the event
+/// handling function applied, when the user
+/// releases the left mouse button.
+///
+/// \param ev wxMouseEvent&
+/// \return void
+///
+/////////////////////////////////////////////////
 void wxMGL::OnMouseLeftUp(wxMouseEvent& ev)
 {
     // Apply the zooming
     if (bZoomingMode)
     {
+        if (mouse_x0 == mouse_x1 || mouse_y0 == mouse_y1)
+        {
+            ZoomIn(mouse_x0, mouse_y0);
+            mouse_x0 = mouse_x1;
+            mouse_y0 = mouse_y1;
+            zoomactive = false;
+            return;
+        }
+
         int w1 = GetSize().GetWidth(), h1 = GetSize().GetHeight();
         mreal _x1, _x2, _y1, _y2;
-        _x1 = x1+(x2-x1)*(x0-GetPosition().x)/mreal(w1);
-        _y1 = y2-(y2-y1)*(ye-GetPosition().y)/mreal(h1);
-        _x2 = x1+(x2-x1)*(xe-GetPosition().x)/mreal(w1);
-        _y2 = y2-(y2-y1)*(y0-GetPosition().y)/mreal(h1);
-        x1 = _x1;
-        x2 = _x2;
-        y1 = _y1;
-        y2 = _y2;
 
-        if (x1 > x2)
+        _x1 = zoom_x0 + (zoom_x1-zoom_x0) * mouse_x0/mreal(w1);
+        _y1 = zoom_y1 - (zoom_y1-zoom_y0) * mouse_y1/mreal(h1);
+        _x2 = zoom_x0 + (zoom_x1-zoom_x0) * mouse_x1/mreal(w1);
+        _y2 = zoom_y1 - (zoom_y1-zoom_y0) * mouse_y0/mreal(h1);
+
+        zoom_x0 = _x1;
+        zoom_x1 = _x2;
+        zoom_y0 = _y1;
+        zoom_y1 = _y2;
+
+        if (zoom_x0 > zoom_x1)
         {
-            _x1 = x1;
-            x1 = x2;
-            x2 = _x1;
+            _x1 = zoom_x0;
+            zoom_x0 = zoom_x1;
+            zoom_x1 = _x1;
         }
 
-        if (y1 > y2)
+        if (zoom_y0 > zoom_y1)
         {
-            _x1 = y1;
-            y1 = y2;
-            y2 = _x1;
+            _x1 = zoom_y0;
+            zoom_y0 = zoom_y1;
+            zoom_y1 = _x1;
         }
 
-        x0 = xe;
-        y0 = ye;
+        mouse_x0 = mouse_x1;
+        mouse_y0 = mouse_y1;
         zoomactive = false;
         Update();
     }
@@ -827,8 +977,16 @@ void wxMGL::OnMouseLeftUp(wxMouseEvent& ev)
     }
 }
 
-// This member function is the event handling function
-// applied, when the user releases the right mouse button
+
+/////////////////////////////////////////////////
+/// \brief This member function is the event
+/// handling function applied, when the user
+/// releases the right mouse button.
+///
+/// \param ev wxMouseEvent&
+/// \return void
+///
+/////////////////////////////////////////////////
 void wxMGL::OnMouseRightUp(wxMouseEvent &ev)
 {
     if (popup && !bRotatingMode)
@@ -840,23 +998,38 @@ void wxMGL::OnMouseRightUp(wxMouseEvent &ev)
         skiprotate = 0;
         Update();
     }
+    else if (bZoomingMode)
+    {
+        ZoomOut(mouse_x0, mouse_y0);
+        mouse_x0 = mouse_x1;
+        mouse_y0 = mouse_y1;
+        zoomactive = false;
+    }
 }
 
-// This member function is the event handling function
-// applied, when the user moves the mouse
+
+/////////////////////////////////////////////////
+/// \brief This member function is the event
+/// handling function applied, when the user
+/// moves the mouse.
+///
+/// \param ev wxMouseEvent&
+/// \return void
+///
+/////////////////////////////////////////////////
 void wxMGL::OnMouseMove(wxMouseEvent &ev)
 {
     if (!m_parentFrame)
         return;
 
     long w = GetSize().GetWidth(), h = GetSize().GetHeight();
-    xe = ev.GetX();
-    ye = ev.GetY();
-    mglPoint p = gr->CalcXYZ(xe, ye);
+    mouse_x1 = ev.GetX();
+    mouse_y1 = ev.GetY();
+    mglPoint p = gr->CalcXYZ(mouse_x1, mouse_y1);
 
     if (zoomactive)
     {
-        mglPoint start = gr->CalcXYZ(x0,y0);
+        mglPoint start = gr->CalcXYZ(mouse_x0,mouse_y0);
         MousePos.Printf(wxT("[%.4g, %.4g] --> [%.4g, %.4g]"), start.x, start.y, p.x, p.y);
     }
     else if (drawModeActive && drawMode != DM_NONE && drawMode != DM_TEXT)
@@ -878,8 +1051,8 @@ void wxMGL::OnMouseMove(wxMouseEvent &ev)
         if (ev.ButtonIsDown(wxMOUSE_BTN_LEFT))
         {
             mreal ff = 240/sqrt(mreal(w*h));
-            dAzimutalViewPoint += int((x0-xe)*ff);
-            dPolarViewPoint += int((y0-ye)*ff);
+            dAzimutalViewPoint += int((mouse_x0-mouse_x1)*ff);
+            dPolarViewPoint += int((mouse_y0-mouse_y1)*ff);
 
             if (dAzimutalViewPoint > 180)
                 dAzimutalViewPoint -= 360;
@@ -897,12 +1070,12 @@ void wxMGL::OnMouseMove(wxMouseEvent &ev)
         // Apply the perspective effect
         if (ev.ButtonIsDown(wxMOUSE_BTN_RIGHT))
         {
-            mreal ff = 2.*(y0-ye)/w, gg = 0.5*(xe-x0)/h;
-            mreal cx = (x1+x2)/2, cy = (y1+y2)/2;
-            x1 = cx+(x1-cx)*exp(-ff);
-            x2 = cx+(x2-cx)*exp(-ff);
-            y1 = cy+(y1-cy)*exp(-ff);
-            y2 = cy+(y2-cy)*exp(-ff);
+            mreal ff = 2.*(mouse_y0-mouse_y1)/w, gg = 0.5*(mouse_x1-mouse_x0)/h;
+            mreal cx = (zoom_x0+zoom_x1)/2, cy = (zoom_y0+zoom_y1)/2;
+            zoom_x0 = cx+(zoom_x0-cx)*exp(-ff);
+            zoom_x1 = cx+(zoom_x1-cx)*exp(-ff);
+            zoom_y0 = cy+(zoom_y0-cy)*exp(-ff);
+            zoom_y1 = cy+(zoom_y1-cy)*exp(-ff);
             dPerspective = dPerspective + gg;
 
             if (dPerspective < 0)
@@ -916,15 +1089,15 @@ void wxMGL::OnMouseMove(wxMouseEvent &ev)
         if (ev.ButtonIsDown(wxMOUSE_BTN_MIDDLE))
         {
             mreal ff = 1./sqrt(mreal(w*h));
-            mreal dx = (x0-xe)*ff*(x2-x1), dy = (y0-ye)*ff*(y2-y1);
-            x1 += dx;
-            x2 += dx;
-            y1 -= dy;
-            y2 -= dy;
+            mreal dx = (mouse_x0-mouse_x1)*ff*(zoom_x1-zoom_x0), dy = (mouse_y0-mouse_y1)*ff*(zoom_y1-zoom_y0);
+            zoom_x0 += dx;
+            zoom_x1 += dx;
+            zoom_y0 -= dy;
+            zoom_y1 -= dy;
         }
 
-        x0 = xe;
-        y0 = ye;
+        mouse_x0 = mouse_x1;
+        mouse_y0 = mouse_y1;
         Update();
     }
 
@@ -934,8 +1107,16 @@ void wxMGL::OnMouseMove(wxMouseEvent &ev)
     statusbar->SetStatusText(MousePos);
 }
 
-// This member function is the event handling function
-// applied, when the user moves the mouse in the window
+
+/////////////////////////////////////////////////
+/// \brief This member function is the event
+/// handling function applied, when the user
+/// moves the mouse in the window.
+///
+/// \param event wxMouseEvent&
+/// \return void
+///
+/////////////////////////////////////////////////
 void wxMGL::OnEnter(wxMouseEvent& event)
 {
     if (m_parentFrame)
@@ -944,8 +1125,36 @@ void wxMGL::OnEnter(wxMouseEvent& event)
     event.Skip();
 }
 
-// This member function is the event handling function
-// applied, when the user presses a key
+
+/////////////////////////////////////////////////
+/// \brief Event handler for leaving the window.
+/// Will change the drawing mode to normal and
+/// redraw the windows contents.
+///
+/// \param event wxMouseEvent&
+/// \return void
+///
+/////////////////////////////////////////////////
+void wxMGL::OnLeave(wxMouseEvent& event)
+{
+    if (bRotatingMode)
+    {
+        gr->SetQuality(MGL_DRAW_NORM);
+        skiprotate = 0;
+        Update();
+    }
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This member function is the event
+/// handling function applied, when the user
+/// presses a key.
+///
+/// \param event wxKeyEvent&
+/// \return void
+///
+/////////////////////////////////////////////////
 void wxMGL::OnKeyDown(wxKeyEvent& event)
 {
     if (!m_parentFrame)
@@ -975,8 +1184,16 @@ void wxMGL::OnKeyDown(wxKeyEvent& event)
         PrevSlide();
 }
 
-// This member function is the event handling function
-// applied, when the user presses a navigation key
+
+/////////////////////////////////////////////////
+/// \brief This member function is the event
+/// handling function applied, when the user
+/// presses a navigation key.
+///
+/// \param event wxNavigationKeyEvent&
+/// \return void
+///
+/////////////////////////////////////////////////
 void wxMGL::OnNavigationKey(wxNavigationKeyEvent& event)
 {
     if (!m_parentFrame)
@@ -992,8 +1209,16 @@ void wxMGL::OnNavigationKey(wxNavigationKeyEvent& event)
         PrevSlide();
 }
 
-// This member function is the event handling function
-// for any events emitted by the toolbar
+
+/////////////////////////////////////////////////
+/// \brief This member function is the event
+/// handling function for any events emitted by
+/// the toolbar.
+///
+/// \param event wxCommandEvent&
+/// \return void
+///
+/////////////////////////////////////////////////
 void wxMGL::OnMenuEvent(wxCommandEvent& event)
 {
     switch (event.GetId())
@@ -1005,10 +1230,10 @@ void wxMGL::OnMenuEvent(wxCommandEvent& event)
             this->Copy();
             break;
         case ID_GRAPH_ALPHA:
-            SetAlpha(!alpha);
+            //SetAlpha(!alpha);
             break;
         case ID_GRAPH_LIGHT:
-            SetLight(!light);
+            //SetLight(!light);
             break;
         case ID_GRAPH_ROTATE:
             SetRotate(!bRotatingMode);
@@ -1030,8 +1255,8 @@ void wxMGL::OnMenuEvent(wxCommandEvent& event)
             break;
         case ID_GRAPH_RESET:
             dAzimutalViewPoint = dPolarViewPoint = dPerspective = 0;
-            x1 = y1 = 0;
-            x2 = y2 = 1;
+            zoom_x0 = zoom_y0 = 0;
+            zoom_x1 = zoom_y1 = 1;
             Update();
             break;
         case ID_GRAPH_NEXT:
@@ -1049,17 +1274,32 @@ void wxMGL::OnMenuEvent(wxCommandEvent& event)
     }
 }
 
-// This member function is the event handling function
-// applied, when the window is closed
+
+/////////////////////////////////////////////////
+/// \brief This member function is the event
+/// handling function applied, when the window is
+/// closed.
+///
+/// \param event wxCloseEvent&
+/// \return void
+///
+/////////////////////////////////////////////////
 void wxMGL::OnClose(wxCloseEvent& event)
 {
     // Stop the animation before closing
     Animation(false);
 }
 
-// This function sets the current bitmap either by
-// explicit conversion from the RGB data in the mglGraph
-// object or by selecting an image from the buffer
+
+/////////////////////////////////////////////////
+/// \brief This function sets the current bitmap
+/// either by explicit conversion from the RGB
+/// data in the mglGraph object or by selecting
+/// an image from the buffer.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
 void wxMGL::setBitmap()
 {
     if (animation && vAnimationBuffer.size() == (size_t)gr->GetNumFrame())
@@ -1075,8 +1315,16 @@ void wxMGL::setBitmap()
         pic = wxBitmap(ConvertFromGraph());
 }
 
-// This function is used to append the extension to the
-// filename, if needed
+
+/////////////////////////////////////////////////
+/// \brief This function is used to append the
+/// extension to the filename, if needed.
+///
+/// \param fname const wxString&
+/// \param ext const wxString&
+/// \return wxString
+///
+/////////////////////////////////////////////////
 wxString mglSetExtension(const wxString &fname, const wxString& ext)
 {
     if (fname.find('.') == string::npos)
@@ -1187,7 +1435,14 @@ void wxMGL::Adjust()
     Repaint();
 }
 
-// This member function displays the next slide
+
+/////////////////////////////////////////////////
+/// \brief This member function displays the next
+/// slide.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
 void wxMGL::NextSlide()
 {
     if (gr->GetNumFrame() > 1)
@@ -1219,7 +1474,14 @@ void wxMGL::NextSlide()
     }
 }
 
-// This member function displays the previous slide
+
+/////////////////////////////////////////////////
+/// \brief This member function displays the
+/// previous slide.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
 void wxMGL::PrevSlide()
 {
     if (gr->GetNumFrame() > 1)
@@ -1242,9 +1504,16 @@ void wxMGL::PrevSlide()
     }
 }
 
-// This member function starts or stops the animation. It
-// will also dis- or enable the corresponding tools from
-// the toolbar
+
+/////////////////////////////////////////////////
+/// \brief This member function starts or stops
+/// the animation. It will also dis- or enable
+/// the corresponding tools from the toolbar.
+///
+/// \param st bool
+/// \return void
+///
+/////////////////////////////////////////////////
 void wxMGL::Animation(bool st)
 {
     if (!gr || gr->GetNumFrame() <= 1)
@@ -1311,11 +1580,19 @@ void wxMGL::Animation(bool st)
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Return the clicked coordinates as a
+/// parsable string. This is used by the custom
+/// GUI event handler.
+///
+/// \return wxString
+///
+/////////////////////////////////////////////////
 wxString wxMGL::getClickedCoords()
 {
     if (gr)
     {
-        mglPoint p = gr->CalcXYZ(x0, y0);
+        mglPoint p = gr->CalcXYZ(mouse_x0, mouse_y0);
         return wxString::Format("{%.12g,%.12g}", p.x, p.y);
     }
 

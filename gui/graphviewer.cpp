@@ -36,9 +36,6 @@ GraphViewer::GraphViewer(wxWindow* parent, const wxString& title, GraphHelper* _
     _grapherWindow->SetDraw(_helper);
     _grapherWindow->SetGraph(_helper->setGrapher());
 
-    _grapherWindow->SetAlpha(_helper->getAlpha());
-    _grapherWindow->SetLight(_helper->getLighting());
-
     sizer->Add(_grapherWindow, 1, wxEXPAND);
     double dHeight = sqrt(640.0*480.0 / _helper->getAspect());
     if (_helper->getHires())
