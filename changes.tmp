@@ -57,3 +57,4 @@ Updated	The variable viewer now supports more functionalities (including copying
 Updated	The "list plugins" command now writes a well formated table that is adapted to the display size. Improved the methods handling the line breaks and display of strings.
 Fixed	The command "smooth" now uses buffers in 1D and 2D cases. Additionally resolved a small logic error ignoring the last points in the arrays.
 Fixed	The "zooming bug" of the graph viewer has been removed. Additionally, inverse zooming is now possible with the right mouse button.
+Updated	The commands "diff" and "taylor" now use the differentiation method of Savitzky and Golay to derive their numbers.

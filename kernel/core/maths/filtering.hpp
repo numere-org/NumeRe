@@ -73,6 +73,34 @@ namespace NumeRe
 
 
     /////////////////////////////////////////////////
+    /// \brief This function is a simple helper to
+    /// implement a power of three.
+    ///
+    /// \param val double
+    /// \return double
+    ///
+    /////////////////////////////////////////////////
+    inline double pow3(double val)
+    {
+        return val * val * val;
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief This function is a simple helper to
+    /// implement a power of four.
+    ///
+    /// \param val double
+    /// \return double
+    ///
+    /////////////////////////////////////////////////
+    inline double pow4(double val)
+    {
+        return val * val * val * val;
+    }
+
+
+    /////////////////////////////////////////////////
     /// \brief Typedef for simplifying the usage of
     /// the buffer.
     /////////////////////////////////////////////////
@@ -651,6 +679,121 @@ namespace NumeRe
                     return 0.0;
 
                 return m_filterKernel[i][j] * val;
+            }
+    };
+
+
+    /////////////////////////////////////////////////
+    /// \brief This class implements a Savitzky-Golay
+    /// filter for differentiation providing a
+    /// derivative up to degree three.
+    /////////////////////////////////////////////////
+    class SavitzkyGolayDiffFilter : public Filter
+    {
+        private:
+            std::vector<double> m_filterKernel;
+
+            /////////////////////////////////////////////////
+            /// \brief This method will create the filter's
+            /// kernel for the selected window size.
+            ///
+            /// \param nthDerivative size_t
+            /// \return void
+            ///
+            /////////////////////////////////////////////////
+            void createKernel(size_t nthDerivative)
+            {
+                // Ensure odd numbers
+                if (!(m_windowSize.first % 2))
+                    m_windowSize.first++;
+
+                // Create a 1D kernel
+                m_filterKernel = std::vector<double>(m_windowSize.first, 0.0);
+                double m = m_windowSize.first;
+
+                for (size_t i = 0; i < m_windowSize.first; i++)
+                {
+                    double I = (int)i - floor(m/2.0);
+
+                    if (nthDerivative == 1)
+                        m_filterKernel[i] = (5.0*(3.0*pow4(m) - 18.0*pow2(m) + 31.0)*I - 28.0*(3.0*pow2(m)-7.0)*pow3(I))
+                                             / (m * (pow2(m) - 1.0)*(3.0*pow4(m) - 39.0*pow2(m) + 108.0) / 15.0);
+                    else if (nthDerivative == 2)
+                        m_filterKernel[i] = (12.0*m*pow2(I) - m * (pow2(m) - 1.0))
+                                             / (pow2(m) * (pow2(m) - 1.0) * (pow2(m) - 4.0) / 30.0);
+                    else if (nthDerivative == 3)
+                        m_filterKernel[i] = (-(3.0*pow2(m) - 7.0)*I + 20.0*pow3(I))
+                                             / (m * (pow2(m) - 1.0)*(3.0*pow4(m)-39.0*pow2(m) + 108.0) / 420.0);
+                    else
+                        m_filterKernel[i] = (5.0*(3.0*pow4(m) - 18.0*pow2(m) + 31.0)*I - 28.0*(3.0*pow2(m)-7.0)*pow3(I))
+                                             / (m * (pow2(m) - 1.0)*(3.0*pow4(m) - 39.0*pow2(m) + 108.0) / 15.0);
+                }
+            }
+
+        public:
+            /////////////////////////////////////////////////
+            /// \brief Filter constructor. Will automatically
+            /// create the filter kernel.
+            ///
+            /// \param row size_t
+            /// \param nthDerivative size_t
+            ///
+            /////////////////////////////////////////////////
+            SavitzkyGolayDiffFilter(size_t row, size_t nthDerivative) : Filter(row, 1)
+            {
+                m_type = FilterSettings::FILTER_SAVITZKY_GOLAY;
+                m_isConvolution = true;
+
+                createKernel(nthDerivative);
+            }
+
+            /////////////////////////////////////////////////
+            /// \brief Filter destructor. Will clear the
+            /// previously calculated filter kernel.
+            /////////////////////////////////////////////////
+            virtual ~SavitzkyGolayDiffFilter() override
+            {
+                m_filterKernel.clear();
+            }
+
+            /////////////////////////////////////////////////
+            /// \brief Override for the operator(). Returns
+            /// the filter kernel at the desired position.
+            ///
+            /// \param i size_t
+            /// \param j size_t
+            /// \return double
+            ///
+            /////////////////////////////////////////////////
+            virtual double operator()(size_t i, size_t j) const override
+            {
+                if (i >= m_windowSize.first)
+                    return NAN;
+
+                return m_filterKernel[i];
+            }
+
+            /////////////////////////////////////////////////
+            /// \brief Override for the abstract apply method
+            /// of the base class. Applies the filter to the
+            /// value at the selected position and returns
+            /// the new value.
+            ///
+            /// \param i size_t
+            /// \param j size_t
+            /// \param val const mu::value_type&
+            /// \return virtual mu::value_type
+            ///
+            /////////////////////////////////////////////////
+            virtual mu::value_type apply(size_t i, size_t j, const mu::value_type& val) const override
+            {
+                if (i >= m_windowSize.first)
+                    return NAN;
+
+                if (mu::isnan(val))
+                    return 0.0;
+
+                return m_filterKernel[i] * val;
             }
     };
 

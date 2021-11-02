@@ -26,6 +26,7 @@
 #include "matrixoperations.hpp"
 #include "spline.h"
 #include "wavelet.hpp"
+#include "filtering.hpp"
 #include "../AudioLib/audiofile.hpp"
 #include "../../kernel.hpp"
 #include "../../../common/http.h"
@@ -901,6 +902,10 @@ bool differentiate(CommandLineParser& cmdParser)
         DataAccessParser accessParser = cmdParser.getExprAsDataObject();
         Indices& _idx = accessParser.getIndices();
         std::string sTableName = accessParser.getDataObject();
+#warning TODO (numere#3#11/02/21): Provide an interface for higher filter lengths
+        const size_t nFILTERSIZE = 5;
+#warning TODO (numere#3#11/02/21): Provide an interface to higher order derivations
+        NumeRe::SavitzkyGolayDiffFilter diff(nFILTERSIZE, 1);
 
         // Validate the indices
         if (!isValidIndexSet(_idx))
@@ -912,6 +917,15 @@ bool differentiate(CommandLineParser& cmdParser)
         if (_idx.col.isOpenEnd())
             _idx.col.setRange(0, _idx.col.front()+1);
 
+        // If shorter than filter's size return an invalid
+        // value
+        if (_idx.row.size() < nFILTERSIZE)
+        {
+            vResult.push_back(NAN);
+            cmdParser.setReturnValue(vResult);
+            return true;
+        }
+
         // Copy the data contents, sort the values
         // and calculate the derivative
 
@@ -922,17 +936,26 @@ bool differentiate(CommandLineParser& cmdParser)
         // between two values is 1
         if (_idx.col.size() == 1)
         {
+            vResult.resize(_idx.row.size());
+
             // No sorting, difference is 1
             //
             // Jump over NaNs and get the difference of the neighbouring
             // values, which is identical to the derivative in this case
-            for (long long int i = 0; i < _idx.row.size() - 1; i++)
+            for (size_t i = nFILTERSIZE/2; i < _idx.row.size() - nFILTERSIZE/2; i++)
             {
-                if (_data.isValidElement(_idx.row[i], _idx.col.front(), sTableName)
-                        && _data.isValidElement(_idx.row[i + 1], _idx.col.front(), sTableName))
-                    vResult.push_back(_data.getElement(_idx.row[i + 1], _idx.col.front(), sTableName) - _data.getElement(_idx.row[i], _idx.col.front(), sTableName));
-                else
-                    vResult.push_back(NAN);
+                for (int j = 0; j < nFILTERSIZE; j++)
+                {
+                    if (_data.isValidElement(_idx.row[i + j - nFILTERSIZE/2], _idx.col.front(), sTableName))
+                        vResult[i] += diff.apply(j, 0, _data.getElement(_idx.row[i + j - nFILTERSIZE/2], _idx.col.front(), sTableName));
+                }
+            }
+
+            // Repeat the first and last values
+            for (size_t i = 0; i < nFILTERSIZE/2; i++)
+            {
+                vResult[i] = vResult[nFILTERSIZE/2];
+                vResult[vResult.size()-1-i] = vResult[vResult.size()-1-nFILTERSIZE/2];
             }
         }
         else
@@ -954,9 +977,11 @@ bool differentiate(CommandLineParser& cmdParser)
             // Shall the x values be calculated?
             if (cmdParser.hasParam("xvals"))
             {
+                NumeReKernel::getInstance()->issueWarning(_lang.get("COMMON_SYNTAX_DEPRECATED"));
+
                 // The x values are approximated to be in the
                 // middle of the two samplex
-                for (long long int i = 0; i < _cache.getLines("table", false) - 1; i++)
+                for (int i = 0; i < _cache.getLines("table", false) - 1; i++)
                 {
                     if (_cache.isValidElement(i, 0, "table")
                             && _cache.isValidElement(i + 1, 0, "table")
@@ -969,18 +994,42 @@ bool differentiate(CommandLineParser& cmdParser)
             }
             else
             {
+                vResult.resize(_cache.getLines("table", false));
+
                 // We calculate the derivative of the data
                 // by approximating it linearily
-                for (long long int i = 0; i < _cache.getLines("table", false) - 1; i++)
+                for (int i = nFILTERSIZE/2; i < _cache.getLines("table", false) - nFILTERSIZE/2; i++)
                 {
-                    if (_cache.isValidElement(i, 0, "table")
-                            && _cache.isValidElement(i + 1, 0, "table")
-                            && _cache.isValidElement(i, 1, "table")
-                            && _cache.isValidElement(i + 1, 1, "table"))
-                        vResult.push_back((_cache.getElement(i + 1, 1, "table") - _cache.getElement(i, 1, "table"))
-                                          / (_cache.getElement(i + 1, 0, "table") - _cache.getElement(i, 0, "table")));
+                    std::pair<mu::value_type, size_t> avgDiff(0.0, 0);
+
+                    for (int j = 0; j < nFILTERSIZE; j++)
+                    {
+                        if (_cache.isValidElement(i + j - nFILTERSIZE/2, 0, "table")
+                            && _cache.isValidElement(i + j - nFILTERSIZE/2, 1, "table"))
+                        {
+                            vResult[i] += diff.apply(j, 0, _cache.getElement(i + j - nFILTERSIZE/2, 1, "table"));
+
+                            // Calculate the average difference
+                            if (_cache.isValidElement(i + j - nFILTERSIZE/2 - 1, 0, "table"))
+                            {
+                                avgDiff.first += _cache.getElement(i + j - nFILTERSIZE/2, 0, "table")
+                                                - _cache.getElement(i + j - nFILTERSIZE/2 - 1, 0, "table");
+                                avgDiff.second++;
+                            }
+                        }
+                    }
+
+                    if (!avgDiff.second)
+                        vResult[i] = NAN;
                     else
-                        vResult.push_back(NAN);
+                        vResult[i] /= avgDiff.first/(double)avgDiff.second;
+                }
+
+                // Repeat the first and last values
+                for (size_t i = 0; i < nFILTERSIZE/2; i++)
+                {
+                    vResult[i] = vResult[nFILTERSIZE/2];
+                    vResult[vResult.size()-1-i] = vResult[vResult.size()-1-nFILTERSIZE/2];
                 }
             }
         }
@@ -2241,6 +2290,7 @@ void taylor(CommandLineParser& cmdParser)
     Parser& _parser = NumeReKernel::getInstance()->getParser();
     const Settings& _option = NumeReKernel::getInstance()->getSettings();
 
+    const double dPRECISION = 1e-1;
     string sVarName = "";
     string sExpr = cmdParser.getExprAsMathExpression();
     string sExpr_cpy = "";
@@ -2250,10 +2300,8 @@ void taylor(CommandLineParser& cmdParser)
     bool bUseUniqueName = cmdParser.hasParam("unique") || cmdParser.hasParam("u");
     size_t nth_taylor = 6;
     size_t nSamples = 0;
-    size_t nMiddle = 0;
     mu::value_type* dVar = 0;
     mu::value_type dVarValue = 0.0;
-    mu::value_type** dDiffValues = 0;
 
     // We cannot approximate string expressions
     if (containsStrings(sExpr))
@@ -2349,19 +2397,6 @@ void taylor(CommandLineParser& cmdParser)
         *dVar = dVarValue;
         sTaylor += toString(_parser.Eval(), _option.getPrecision());
     }
-    else if (nth_taylor == 1)
-    {
-        // First order polynomial
-        *dVar = dVarValue;
-
-        // the constant term
-        sPolynom = toString(_parser.Eval(), _option.getPrecision()) + ",";
-
-        // Handle the linear term
-        sPolynom += toString(_parser.Diff(dVar, dVarValue, 1e-7), _option.getPrecision());
-
-        sTaylor += "polynomial(" + sArg + "," + sPolynom + ")";
-    }
     else
     {
         // nth order polynomial
@@ -2370,55 +2405,41 @@ void taylor(CommandLineParser& cmdParser)
         // the constant term
         sPolynom = toString(_parser.Eval(), _option.getPrecision()) + ",";
 
-        // Handle the linear term
-        sPolynom += toString(_parser.Diff(dVar, dVarValue, 1e-7), _option.getPrecision()) + ",";
+        nSamples = 6*nth_taylor + 1;
+        const size_t nFILTERSIZE = 7;
+        NumeRe::SavitzkyGolayDiffFilter filter(nFILTERSIZE, 1);
+        std::vector<mu::value_type> vValues(nSamples, 0.0);
+        std::vector<mu::value_type> vDiffValues;
+        double dPrec = dPRECISION / nth_taylor;
 
-        nSamples = 4 * nth_taylor + 1;
-        nMiddle = 2 * nth_taylor;
-
-        // Create the memory for the derivatives
-        dDiffValues = new mu::value_type*[nSamples];
-        for (size_t i = 0; i < nSamples; i++)
-            dDiffValues[i] = new mu::value_type[2];
-
-        // Fill the first column with the x-axis values
-        for (size_t i = 0; i < nSamples; i++)
-            dDiffValues[i][0] = dVarValue + ((mu::value_type)i - (mu::value_type)nMiddle) * 1e-1;
-
-        // Fill the second column with the first
-        // order derivatives
-        for (size_t i = 0; i < nSamples; i++)
-            dDiffValues[i][1] = _parser.Diff(dVar, dDiffValues[i][0], 1e-7);
-
-        // Evaluate the nth taylor polynomial and the nth
-        // order derivative
-        for (size_t j = 1; j < nth_taylor; j++)
+        // Prepare smoothing array
+        for (size_t i = 0; i < vValues.size(); i++)
         {
-            for (size_t i = nMiddle; i < nSamples - j; i++)
+            *dVar = dVarValue + ((int)i - (int)nSamples/2)*dPrec;
+            vValues[i] = _parser.Eval();
+        }
+
+        // Copy values for easier initialisation
+        vDiffValues = vValues;
+
+        // Perform the derivation
+        for (size_t n = 0; n < nth_taylor; n++)
+        {
+            for (size_t i = nFILTERSIZE/2; i < vValues.size()-nFILTERSIZE/2; i++)
             {
-                if (i == nMiddle)
-                {
-                    mu::value_type dRight = (dDiffValues[nMiddle + 1][1] - dDiffValues[nMiddle][1]) / ((1.0 + (j - 1) * 0.5) * 1e-1);
-                    mu::value_type dLeft = (dDiffValues[nMiddle][1] - dDiffValues[nMiddle - 1][1]) / ((1.0 + (j - 1) * 0.5) * 1e-1);
-                    dDiffValues[nMiddle][1] = (dLeft + dRight) / 2.0;
-                }
-                else
-                {
-                    dDiffValues[i][1] = (dDiffValues[i + 1][1] - dDiffValues[i][1]) / (1e-1);
-                    dDiffValues[(int)nSamples - (int)i - 1][1] = (dDiffValues[(int)nSamples - (int)i - 1][1] - dDiffValues[(int)nSamples - (int)i - 2][1]) / (1e-1);
-                }
+                vDiffValues[i] = 0.0;
+
+                for (size_t j = 0; j < nFILTERSIZE; j++)
+                    vDiffValues[i] += filter.apply(j, 0, vValues[i + j - nFILTERSIZE/2]);
+
+                vDiffValues[i] /= dPrec;
             }
 
-            sPolynom += toString(dDiffValues[nMiddle][1] / (double)integralFactorial((int)j + 1), _option.getPrecision()) + ",";
+            sPolynom += toString(vDiffValues[vDiffValues.size()/2] / (double)integralFactorial(n+1), _option.getPrecision()) + ",";
+            vValues = vDiffValues;
         }
 
         sTaylor += "polynomial(" + sArg + "," + sPolynom.substr(0, sPolynom.length()-1) + ")";
-
-        for (size_t i = 0; i < nSamples; i++)
-            delete[] dDiffValues[i];
-
-        delete[] dDiffValues;
-        dDiffValues = 0;
     }
 
     if (_option.systemPrints())
@@ -2439,8 +2460,6 @@ void taylor(CommandLineParser& cmdParser)
         NumeReKernel::print(_lang.get("DEFINE_SUCCESS"), _option.systemPrints());
     else
         NumeReKernel::issueWarning(_lang.get("DEFINE_FAILURE"));
-
-    return;
 }
 
 
