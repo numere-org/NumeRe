@@ -3390,6 +3390,22 @@ static CommandReturnValues cmd_audio(string& sCmd)
 
 /////////////////////////////////////////////////
 /// \brief This static function implements the
+/// "clc" command.
+///
+/// \param sCmd string&
+/// \return CommandReturnValues
+///
+/////////////////////////////////////////////////
+static CommandReturnValues cmd_clc(string& sCmd)
+{
+    NumeReKernel::clcTerminal(); //NumeReTerminal::clearTerminal();
+
+	return COMMAND_PROCESSED;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This static function implements the
 /// "audioread" command.
 ///
 /// \param sCmd string&
@@ -5093,6 +5109,7 @@ static std::map<std::string,CommandFunc> getCommandFunctions()
 
     mCommandFuncMap["about"] = cmd_credits;
     mCommandFuncMap["audio"] = cmd_audio;
+    mCommandFuncMap["clc"] = cmd_clc;
     mCommandFuncMap["clear"] = cmd_clear;
     mCommandFuncMap["close"] = cmd_close;
     mCommandFuncMap["cont"] = cmd_plotting;

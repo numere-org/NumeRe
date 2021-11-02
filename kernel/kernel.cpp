@@ -588,8 +588,7 @@ void NumeReKernel::printVersionInfo()
     if (_option.showGreeting() && fileExists(_option.getExePath() + "\\numere.ini"))
         printPreFmt(toSystemCodePage(getGreeting()) + "|\n");
 
-    print(LineBreak(_lang.get("PARSER_INTRO"), _option));;
-    printPreFmt("|\n|<- ");
+    print(LineBreak(_lang.get("PARSER_INTRO"), _option));
     flush();
     bWritingTable = false;
 
@@ -3555,6 +3554,33 @@ void NumeReKernel::addToLog(const string& sLogMessage)
 
 
 /////////////////////////////////////////////////
+/// \brief Clear the terminal
+///
+/// \return void
+///
+/////////////////////////////////////////////////
+void NumeReKernel::clcTerminal()
+{
+    if (!m_parent)
+        return;
+    else
+    {
+        wxCriticalSectionLocker lock(m_parent->m_kernelCS);
+
+        // create the task
+        NumeReTask task;
+        task.taskType = NUMERE_CLC_TERMINAL;
+
+        taskQueue.push(task);
+
+        m_parent->m_KernelStatus = NUMERE_QUEUED_COMMAND;
+    }
+
+    wxQueueEvent(m_parent->GetEventHandler(), new wxThreadEvent());
+    Sleep(KERNEL_PRINT_SLEEP);
+}
+
+/////////////////////////////////////////////////
 /// \brief This member function informs the GUI
 /// to reload the contents of the function tree
 /// as soon as possible.
@@ -3739,4 +3765,3 @@ void make_hline(int nLength)
 
     return;
 }
-

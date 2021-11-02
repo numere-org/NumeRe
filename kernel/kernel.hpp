@@ -126,7 +126,8 @@ class NumeReKernel
             NUMERE_SHOW_WINDOW,
             NUMERE_REFRESH_FUNCTIONTREE,
             NUMERE_CLOSE_WINDOWS,
-            NUMERE_INSTALLATION_DONE
+            NUMERE_INSTALLATION_DONE,
+            NUMERE_CLC_TERMINAL
         };
 
         enum DebuggerCodes
@@ -249,6 +250,7 @@ class NumeReKernel
         static int waitForContinue();
         static int evalDebuggerBreakPoint(const string& sCurrentCommand = "");
         static void addToLog(const string& sLogMessage);
+        static void clcTerminal();
         void refreshFunctionTree();
         void closeWindows(int type);
 

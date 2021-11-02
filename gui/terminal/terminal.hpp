@@ -272,6 +272,8 @@ class NumeReTerminal : public wxWindow, public GenericTerminal, public wxThreadH
 		virtual void Bell() override;
 		virtual void ResizeTerminal(int width, int height) override;
 		virtual void UpdateRemoteSize(int width, int height);
+		void clearTerminal();
+
 		int GetTermWidth()
 		{
 			return m_charsInLine;

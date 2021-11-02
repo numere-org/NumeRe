@@ -437,6 +437,7 @@ wxThread::ExitCode NumeReTerminal::Entry()
 	bool bCommandAvailable;
 	bool updateLibrary;
 	_kernel.printVersionInfo();
+	_kernel.printPreFmt("|\n|<- ");
 
 	// Test repeatedly, whether the thread shall terminate
 	while (!GetThread()->TestDestroy())
@@ -684,6 +685,9 @@ void NumeReTerminal::OnThreadUpdate(wxThreadEvent& event)
                 break;
             case NumeReKernel::NUMERE_INSTALLATION_DONE:
                 m_wxParent->notifyInstallationDone();
+                break;
+            case NumeReKernel::NUMERE_CLC_TERMINAL:
+                clearTerminal();
                 break;
         }
     }
@@ -2181,3 +2185,21 @@ void NumeReTerminal::UpdateRemoteSize(int width, int height)
 {
 }
 
+
+/////////////////////////////////////////////////
+/// \brief This member function clears the
+/// terminal.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
+void NumeReTerminal::clearTerminal()
+{
+    wxCriticalSectionLocker lock(m_kernelCS);
+
+    // Reset terminal removes all lines
+    GetTM()->Reset();
+
+    // Print the version info same as during start of program
+    _kernel.printVersionInfo();
+}
