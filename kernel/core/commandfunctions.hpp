@@ -3398,7 +3398,7 @@ static CommandReturnValues cmd_audio(string& sCmd)
 /////////////////////////////////////////////////
 static CommandReturnValues cmd_clc(string& sCmd)
 {
-    NumeReKernel::clcTerminal(); //NumeReTerminal::clearTerminal();
+    NumeReKernel::clcTerminal();
 
 	return COMMAND_PROCESSED;
 }

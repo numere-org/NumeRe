@@ -169,6 +169,9 @@ void Language::loadStrings(bool bloadUserFiles)
     // Load errors file
     loadAndInsert("<>/lang/error.nlng");
 
+    // Load NumeRe specific syntax language files
+    loadAndInsert("<>/lang/numere.nlng");
+
     // Shall user language files be loaded?
     if (bloadUserFiles)
     {
@@ -179,6 +182,10 @@ void Language::loadStrings(bool bloadUserFiles)
         // Load user error language file, if it exists
         if (fileExists(FileSystem::ValidFileName("<>/user/lang/error.nlng", ".nlng")))
             loadAndInsert("<>/user/lang/error.nlng");
+
+        // Load user NumeRe specific syntax language file, if it exists
+        if (fileExists(FileSystem::ValidFileName("<>/user/lang/numere.nlng", ".nlng")))
+            loadAndInsert("<>/user/lang/numere.nlng");
     }
 
     // Replace all named tokens with their corresponding
