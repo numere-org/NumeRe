@@ -59,3 +59,4 @@ Fixed	The command "smooth" now uses buffers in 1D and 2D cases. Additionally res
 Fixed	The "zooming bug" of the graph viewer has been removed. Additionally, inverse zooming is now possible with the right mouse button.
 Updated	The commands "diff" and "taylor" now use the differentiation method of Savitzky and Golay to derive their numbers.
 New	The command "clc" is now available to clear the content of the terminal window and reset it to the startup state.
+Updated	The new language file structure requires an additional load command for the new language file. Added this load command.
