@@ -23,11 +23,11 @@
 GraphHelper::GraphHelper(mglGraph* __graph, const PlotData& _pData)
 {
     _graph = __graph;
-    bAlphaActive = _pData.getTransparency();
-    bLightActive = _pData.getLighting();
-    bHires = _pData.getHighRes() == 2;
-    dAspect = _pData.getAspect();
-    sTitle = _pData.getComposedTitle();
+    bAlphaActive = _pData.getSettings(PlotData::LOG_ALPHA);
+    bLightActive = _pData.getSettings(PlotData::INT_LIGHTING);
+    bHires = _pData.getSettings(PlotData::INT_HIGHRESLEVEL) == 2;
+    dAspect = _pData.getSettings(PlotData::FLOAT_ASPECT);
+    sTitle = _pData.getSettings(PlotData::STR_COMPOSEDTITLE);
 }
 
 GraphHelper::~GraphHelper()

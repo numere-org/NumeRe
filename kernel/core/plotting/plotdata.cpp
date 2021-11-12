@@ -53,8 +53,6 @@ static string evaluateString(string sExpression)
 PlotData::PlotData() : FileSystem()
 {
     dPlotData = 0;
-    sFontStyle = "pagella";
-//    _graph = 0;
     PlotData::reset();
 }
 
@@ -77,12 +75,6 @@ PlotData::PlotData(int _nLines, int _nRows, int _nLayers) : PlotData()
             }
         }
     }
-    for (int i = 0; i < 3; i++)
-    {
-        dRanges[i][0] = -10.0;
-        dRanges[i][1] = 10.0;
-    }
-
 }
 
 // --> Destruktor <--
@@ -101,8 +93,6 @@ PlotData::~PlotData()
         delete[] dPlotData;
         dPlotData = 0;
     }
-//    if (_graph)
-//        delete _graph;
 }
 
 // --> Daten in Speicher schreiben: beachtet auch die aktuelle Groesse des Speichers <--
@@ -137,133 +127,129 @@ double PlotData::getData(int _i, int _j, int _k) const
         return dPlotData[_i][_j][_k];
 }
 
-// --> Gespeicherten Dateinamen lesen <--
-string PlotData::getFileName() const
-{
-    return sFileName;
-}
-
 /* --> Parameter setzen: Verwendet die bool matchParams(const string&, const string&, char)-Funktion,
  *     um die einzelnen Befehle zu identifizieren. Unbekannte Befehle werden automatisch ignoriert. 7
  *     Dies ist dann automatisch Fehlertoleranter <--
  */
-void PlotData::setParams(const string& __sCmd, Parser& _parser, const Settings& _option, int nType)
+void PlotData::setParams(const string& __sCmd, int nType)
 {
+    mu::Parser& _parser = NumeReKernel::getInstance()->getParser();
+
     string sCmd = toLowerCase(__sCmd);
     if (findParameter(sCmd, "reset") && (nType == ALL || nType & SUPERGLOBAL))
         reset();
     if (findParameter(sCmd, "grid") && (nType == ALL || nType & GLOBAL))
-        nGrid = 1;
+        intSettings[INT_GRID] = 1;
     if (findParameter(sCmd, "grid", '=') && (nType == ALL || nType & GLOBAL))
     {
         unsigned int nPos = findParameter(sCmd, "grid", '=')+4;
         if (getArgAtPos(sCmd, nPos) == "fine")
-            nGrid = 2;
+            intSettings[INT_GRID] = 2;
         else if (getArgAtPos(sCmd, nPos) == "coarse")
-            nGrid = 1;
+            intSettings[INT_GRID] = 1;
         else
-            nGrid = 1;
+            intSettings[INT_GRID] = 1;
     }
     if (findParameter(sCmd, "nogrid") && (nType == ALL || nType & GLOBAL))
-        nGrid = 0;
+        intSettings[INT_GRID] = 0;
     if ((findParameter(sCmd, "alpha") || findParameter(sCmd, "transparency")) && (nType == ALL || nType & LOCAL))
     {
-        bAlpha = true;
+        logicalSettings[LOG_ALPHA] = true;
 
         if (findParameter(sCmd, "alpha", '='))
         {
             _parser.SetExpr(getArgAtPos(sCmd, findParameter(sCmd, "alpha", '=')+5));
-            dAlphaVal = 1 - _parser.Eval().real();
+            floatSettings[FLOAT_ALPHAVAL] = 1 - _parser.Eval().real();
 
-            if (dAlphaVal < 0 || dAlphaVal > 1)
-                dAlphaVal = 0.5;
+            if (floatSettings[FLOAT_ALPHAVAL] < 0 || floatSettings[FLOAT_ALPHAVAL] > 1)
+                floatSettings[FLOAT_ALPHAVAL] = 0.5;
         }
 
         if (findParameter(sCmd, "transparency", '='))
         {
             _parser.SetExpr(getArgAtPos(sCmd, findParameter(sCmd, "transparency", '=')+12));
-            dAlphaVal = 1 - _parser.Eval().real();
+            floatSettings[FLOAT_ALPHAVAL] = 1 - _parser.Eval().real();
 
-            if (dAlphaVal < 0 || dAlphaVal > 1)
-                dAlphaVal = 0.5;
+            if (floatSettings[FLOAT_ALPHAVAL] < 0 || floatSettings[FLOAT_ALPHAVAL] > 1)
+                floatSettings[FLOAT_ALPHAVAL] = 0.5;
         }
     }
     if ((findParameter(sCmd, "noalpha") || findParameter(sCmd, "notransparency")) && (nType == ALL || nType & LOCAL))
-        bAlpha = false;
+        logicalSettings[LOG_ALPHA] = false;
     if (findParameter(sCmd, "light") && (nType == ALL || nType & LOCAL))
-        nLighting = 1;
+        intSettings[INT_LIGHTING] = 1;
     if (findParameter(sCmd, "light", '=') && (nType == ALL || nType & LOCAL))
     {
         if (getArgAtPos(sCmd, findParameter(sCmd, "light", '=')+5) == "smooth")
-            nLighting = 2;
+            intSettings[INT_LIGHTING] = 2;
         else if (getArgAtPos(sCmd, findParameter(sCmd, "light", '=')+5) == "soft")
-            nLighting = 2;
+            intSettings[INT_LIGHTING] = 2;
         else
-            nLighting = 0;
+            intSettings[INT_LIGHTING] = 0;
     }
     if (findParameter(sCmd, "nolight") && (nType == ALL || nType & LOCAL))
-        nLighting = 0;
+        intSettings[INT_LIGHTING] = 0;
     if (findParameter(sCmd, "axis") && (nType == ALL || nType & GLOBAL))
-        bAxis = true;
+        logicalSettings[LOG_AXIS] = true;
     if (findParameter(sCmd, "noaxis") && (nType == ALL || nType & GLOBAL))
-        bAxis = false;
+        logicalSettings[LOG_AXIS] = false;
     if (findParameter(sCmd, "box") && (nType == ALL || nType & GLOBAL))
-        bBox = true;
+        logicalSettings[LOG_BOX] = true;
     if (findParameter(sCmd, "nobox") && (nType == ALL || nType & GLOBAL))
-        bBox = false;
+        logicalSettings[LOG_BOX] = false;
     if (findParameter(sCmd, "lcont") && (nType == ALL || nType & LOCAL))
     {
-        bContLabels = true;
+        logicalSettings[LOG_CONTLABELS] = true;
 
         if (findParameter(sCmd, "lcont", '='))
         {
             _parser.SetExpr(getArgAtPos(sCmd, findParameter(sCmd, "lcont", '=')));
-            nContLines = (size_t)_parser.Eval().real();
+            intSettings[INT_CONTLINES] = intCast(_parser.Eval());
         }
     }
     if (findParameter(sCmd, "nolcont") && (nType == ALL || nType & LOCAL))
-        bContLabels = false;
+        logicalSettings[LOG_CONTLABELS] = false;
     if (findParameter(sCmd, "pcont") && (nType == ALL || nType & LOCAL))
     {
-        bContProj = true;
+        logicalSettings[LOG_CONTPROJ] = true;
 
         if (findParameter(sCmd, "pcont", '='))
         {
             _parser.SetExpr(getArgAtPos(sCmd, findParameter(sCmd, "pcont", '=')));
-            nContLines = (size_t)_parser.Eval().real();
+            intSettings[INT_CONTLINES] = intCast(_parser.Eval());
         }
     }
     if (findParameter(sCmd, "nopcont") && (nType == ALL || nType & LOCAL))
-        bContProj = false;
+        logicalSettings[LOG_CONTPROJ] = false;
     if (findParameter(sCmd, "fcont") && (nType == ALL || nType & LOCAL))
     {
-        bContFilled = true;
+        logicalSettings[LOG_CONTFILLED] = true;
 
         if (findParameter(sCmd, "fcont", '='))
         {
             _parser.SetExpr(getArgAtPos(sCmd, findParameter(sCmd, "fcont", '=')));
-            nContLines = (size_t)_parser.Eval().real();
+            intSettings[INT_CONTLINES] = intCast(_parser.Eval());
         }
     }
     if (findParameter(sCmd, "nofcont") && (nType == ALL || nType & LOCAL))
-        bContFilled = false;
+        logicalSettings[LOG_CONTFILLED] = false;
     if (findParameter(sCmd, "xerrorbars") && (nType == ALL || nType & LOCAL))
-        bxError = true;
+        logicalSettings[LOG_XERROR] = true;
     if (findParameter(sCmd, "noxerrorbars") && (nType == ALL || nType & LOCAL))
-        bxError = false;
+        logicalSettings[LOG_XERROR] = false;
     if (findParameter(sCmd, "yerrorbars") && (nType == ALL || nType & LOCAL))
-        byError = true;
+        logicalSettings[LOG_YERROR] = true;
     if (findParameter(sCmd, "noyerrorbars") && (nType == ALL || nType & LOCAL))
-        byError = false;
+        logicalSettings[LOG_YERROR] = false;
     if (findParameter(sCmd, "errorbars") && (nType == ALL || nType & LOCAL))
     {
-        bxError = true;
-        byError = true;
+        logicalSettings[LOG_XERROR] = true;
+        logicalSettings[LOG_YERROR] = true;
     }
     if (findParameter(sCmd, "noerrorbars") && (nType == ALL || nType & LOCAL))
     {
-        bxError = false;
-        byError = false;
+        logicalSettings[LOG_XERROR] = false;
+        logicalSettings[LOG_YERROR] = false;
     }
     if (findParameter(sCmd, "logscale") && (nType == ALL || nType & GLOBAL))
     {
@@ -299,48 +285,22 @@ void PlotData::setParams(const string& __sCmd, Parser& _parser, const Settings& 
     {
         int nPos = findParameter(sCmd, "samples", '=') + 7;
         _parser.SetExpr(getArgAtPos(__sCmd, nPos));
-        nSamples = (int)_parser.Eval().real();
+        intSettings[INT_SAMPLES] = intCast(_parser.Eval());
+
         if (isnan(_parser.Eval().real()) || isinf(_parser.Eval().real()))
-            nSamples = 100;
-        if (_option.isDeveloperMode())
-            cerr << "|-> DEBUG: nSamples = " << nSamples << endl;
+            intSettings[INT_SAMPLES] = 100;
     }
     if (findParameter(sCmd, "t", '=') && (nType == ALL || nType & LOCAL))
     {
         int nPos = findParameter(sCmd, "t", '=')+1;
         string sTemp_1 = getArgAtPos(__sCmd, nPos);
-
-        if (sTemp_1.find(':') != string::npos)
-        {
-            auto indices = getAllIndices(sTemp_1);
-            _parser.SetExpr(indices[0]);
-            dtParam[0] = _parser.Eval().real();
-            if (isnan(dtParam[0]) || isinf(dtParam[0]))
-                dtParam[0] = 0;
-            _parser.SetExpr(indices[1]);
-            dtParam[1] = _parser.Eval().real();
-            if (isnan(dtParam[1]) || isinf(dtParam[1]))
-                dtParam[1] = 1;
-        }
+        ranges[4].reset(sTemp_1);
     }
     if (findParameter(sCmd, "colorrange", '=') && (nType == ALL || nType & GLOBAL))
     {
         unsigned int nPos = findParameter(sCmd, "colorrange", '=') + 10;
         string sTemp_1 = getArgAtPos(__sCmd, nPos);
-
-        if (sTemp_1.find(':') != string::npos)
-        {
-            auto indices = getAllIndices(sTemp_1);
-            _parser.SetExpr(indices[0]);
-            dColorRange[0] = _parser.Eval().real();
-            _parser.SetExpr(indices[1]);
-            dColorRange[1] = _parser.Eval().real();
-            if (isnan(dColorRange[0]) || isnan(dColorRange[1]) || isinf(dColorRange[0]) || isinf(dColorRange[1]))
-            {
-                dColorRange[0] = NAN;
-                dColorRange[1] = NAN;
-            }
-        }
+        ranges[3].reset(sTemp_1);
     }
     if (findParameter(sCmd, "rotate", '=') && (nType == ALL || nType & GLOBAL))
     {
@@ -367,6 +327,7 @@ void PlotData::setParams(const string& __sCmd, Parser& _parser, const Settings& 
                 _parser.SetExpr(sTemp.substr(0,sTemp.length()-1));
                 dRotateAngles[0] = _parser.Eval().real();
             }
+
             for (unsigned int i = 0; i < 2; i++)
             {
                 if (isinf(dRotateAngles[i]) || isnan(dRotateAngles[i]))
@@ -377,22 +338,19 @@ void PlotData::setParams(const string& __sCmd, Parser& _parser, const Settings& 
                         dRotateAngles[i] = 115;
                 }
             }
+
             if (dRotateAngles[0] < 0)
-            {
                 dRotateAngles[0] += ceil(-dRotateAngles[0]/180.0)*180.0;
-            }
+
             if (dRotateAngles[0] > 180)
-            {
                 dRotateAngles[0] -= floor(dRotateAngles[0]/180.0)*180.0;
-            }
+
             if (dRotateAngles[1] < 0)
-            {
                 dRotateAngles[1] += ceil(-dRotateAngles[1]/360.0)*360.0;
-            }
+
             if (dRotateAngles[1] > 360)
-            {
                 dRotateAngles[1] -= floor(dRotateAngles[1]/360.0)*360.0;
-            }
+
         }
     }
     if (findParameter(sCmd, "origin", '=') && (nType == ALL || nType & GLOBAL))
@@ -470,225 +428,229 @@ void PlotData::setParams(const string& __sCmd, Parser& _parser, const Settings& 
         }
     }
     if (findParameter(sCmd, "connect") && (nType == ALL || nType & LOCAL))
-        bConnectPoints = true;
+        logicalSettings[LOG_CONNECTPOINTS] = true;
     if (findParameter(sCmd, "noconnect") && (nType == ALL || nType & LOCAL))
-        bConnectPoints = false;
+        logicalSettings[LOG_CONNECTPOINTS] = false;
     if (findParameter(sCmd, "points") && (nType == ALL || nType & LOCAL))
-        bDrawPoints = true;
+        logicalSettings[LOG_DRAWPOINTS] = true;
     if (findParameter(sCmd, "nopoints") && (nType == ALL || nType & LOCAL))
-        bDrawPoints = false;
+        logicalSettings[LOG_DRAWPOINTS] = false;
     if (findParameter(sCmd, "open") && (nType == ALL || nType & SUPERGLOBAL))
-        bOpenImage = true;
+        logicalSettings[LOG_OPENIMAGE] = true;
     if (findParameter(sCmd, "noopen") && (nType == ALL || nType & SUPERGLOBAL))
-        bOpenImage = false;
+        logicalSettings[LOG_OPENIMAGE] = false;
     if (findParameter(sCmd, "interpolate") && (nType == ALL || nType & LOCAL))
-        bInterpolate = true;
+        logicalSettings[LOG_INTERPOLATE] = true;
     if (findParameter(sCmd, "nointerpolate") && (nType == ALL || nType & LOCAL))
-        bInterpolate = false;
+        logicalSettings[LOG_INTERPOLATE] = false;
     if (findParameter(sCmd, "hires") && (nType == ALL || nType & SUPERGLOBAL))
-        nHighResLevel = 2;
+        intSettings[INT_HIGHRESLEVEL] = 2;
     if (findParameter(sCmd, "hires", '=') && (nType == ALL || nType & SUPERGLOBAL))
     {
         int nPos = findParameter(sCmd, "hires", '=')+5;
         if (getArgAtPos(sCmd, nPos) == "all")
         {
-            bAllHighRes = true;
-            nHighResLevel = 2;
+            logicalSettings[LOG_ALLHIGHRES] = true;
+            intSettings[INT_HIGHRESLEVEL] = 2;
         }
         else if (getArgAtPos(sCmd, nPos) == "allmedium")
         {
-            bAllHighRes = true;
-            nHighResLevel = 1;
+            logicalSettings[LOG_ALLHIGHRES] = true;
+            intSettings[INT_HIGHRESLEVEL] = 1;
         }
         else if (getArgAtPos(sCmd, nPos) == "medium")
         {
-            nHighResLevel = 1;
+            intSettings[INT_HIGHRESLEVEL] = 1;
         }
     }
     if (findParameter(sCmd, "legend", '=') && (nType == ALL || nType & GLOBAL))
     {
         int nPos = findParameter(sCmd, "legend", '=')+6;
         if (getArgAtPos(sCmd, nPos) == "topleft" || getArgAtPos(sCmd, nPos) == "left")
-            nLegendPosition = 2;
+            intSettings[INT_LEGENDPOSITION] = 2;
         else if (getArgAtPos(sCmd, nPos) == "bottomleft")
-            nLegendPosition = 0;
+            intSettings[INT_LEGENDPOSITION] = 0;
         else if (getArgAtPos(sCmd, nPos) == "bottomright")
-            nLegendPosition = 1;
+            intSettings[INT_LEGENDPOSITION] = 1;
         else
-            nLegendPosition = 3;
+            intSettings[INT_LEGENDPOSITION] = 3;
     }
     if (findParameter(sCmd, "nohires") && (nType == ALL || nType & SUPERGLOBAL))
     {
-        nHighResLevel = 0;
-        bAllHighRes = false;
+        intSettings[INT_HIGHRESLEVEL] = 0;
+        logicalSettings[LOG_ALLHIGHRES] = false;
     }
     if (findParameter(sCmd, "animate") && (nType == ALL || nType & SUPERGLOBAL))
-        bAnimate = true;
+        logicalSettings[LOG_ANIMATE] = true;
     if (findParameter(sCmd, "animate", '=') && (nType == ALL || nType & SUPERGLOBAL))
     {
         unsigned int nPos = findParameter(sCmd, "animate", '=')+7;
         _parser.SetExpr(getArgAtPos(__sCmd, nPos));
-        nAnimateSamples = (int)_parser.Eval().real();
-        if (nAnimateSamples && !isinf(_parser.Eval()) && !isnan(_parser.Eval()))
-            bAnimate = true;
+        intSettings[INT_ANIMATESAMPLES] = intCast(_parser.Eval());
+        if (intSettings[INT_ANIMATESAMPLES] && !isinf(_parser.Eval()) && !isnan(_parser.Eval()))
+            logicalSettings[LOG_ANIMATE] = true;
         else
         {
-            nAnimateSamples = 50;
-            bAnimate = false;
+            intSettings[INT_ANIMATESAMPLES] = 50;
+            logicalSettings[LOG_ANIMATE] = false;
         }
-        if (nAnimateSamples > 128)
-            nAnimateSamples = 128;
-        if (nAnimateSamples < 1)
-            nAnimateSamples = 50;
+        if (intSettings[INT_ANIMATESAMPLES] > 128)
+            intSettings[INT_ANIMATESAMPLES] = 128;
+        if (intSettings[INT_ANIMATESAMPLES] < 1)
+            intSettings[INT_ANIMATESAMPLES] = 50;
     }
     if (findParameter(sCmd, "marks", '=') && (nType == ALL || nType & LOCAL))
     {
         unsigned int nPos = findParameter(sCmd, "marks", '=')+5;
         _parser.SetExpr(getArgAtPos(__sCmd, nPos));
-        nMarks = (int)_parser.Eval().real();
-        if (!nMarks || isinf(_parser.Eval().real()) || isnan(_parser.Eval().real()))
-            nMarks = 0;
-        if (nMarks > 9)
-            nMarks = 9;
-        if (nMarks < 0)
-            nMarks = 0;
+        intSettings[INT_MARKS] = intCast(_parser.Eval());
+        if (!intSettings[INT_MARKS] || isinf(_parser.Eval().real()) || isnan(_parser.Eval().real()))
+            intSettings[INT_MARKS] = 0;
+        if (intSettings[INT_MARKS] > 9)
+            intSettings[INT_MARKS] = 9;
+        if (intSettings[INT_MARKS] < 0)
+            intSettings[INT_MARKS] = 0;
     }
     if (findParameter(sCmd, "nomarks") && (nType == ALL || nType & LOCAL))
-        nMarks = 0;
+        intSettings[INT_MARKS] = 0;
     if (findParameter(sCmd, "textsize", '=') && (nType == ALL || nType & SUPERGLOBAL))
     {
         unsigned int nPos = findParameter(sCmd, "textsize", '=')+8;
         _parser.SetExpr(getArgAtPos(__sCmd, nPos));
-        dTextsize = _parser.Eval().real();
+        floatSettings[FLOAT_TEXTSIZE] = _parser.Eval().real();
 
-        if (isinf(dTextsize) || isnan(dTextsize))
-            dTextsize = 5;
+        if (isinf(floatSettings[FLOAT_TEXTSIZE]) || isnan(floatSettings[FLOAT_TEXTSIZE]))
+            floatSettings[FLOAT_TEXTSIZE] = 5;
 
-        if (dTextsize <= -1)
-            dTextsize = 5;
+        if (floatSettings[FLOAT_TEXTSIZE] <= -1)
+            floatSettings[FLOAT_TEXTSIZE] = 5;
     }
     if (findParameter(sCmd, "aspect", '=') && (nType == ALL || nType & SUPERGLOBAL))
     {
         unsigned int nPos = findParameter(sCmd, "aspect", '=') + 6;
         _parser.SetExpr(getArgAtPos(__sCmd, nPos));
-        dAspect = _parser.Eval().real();
-        if (dAspect <= 0 || isnan(dAspect) || isinf(dAspect))
-            dAspect = 4/3;
+        floatSettings[FLOAT_ASPECT] = _parser.Eval().real();
+        if (floatSettings[FLOAT_ASPECT] <= 0 || isnan(floatSettings[FLOAT_ASPECT]) || isinf(floatSettings[FLOAT_ASPECT]))
+            floatSettings[FLOAT_ASPECT] = 4/3;
     }
     if (findParameter(sCmd, "noanimate") && (nType == ALL || nType & SUPERGLOBAL))
-        bAnimate = false;
+        logicalSettings[LOG_ANIMATE] = false;
     if (findParameter(sCmd, "silent") && (nType == ALL || nType & SUPERGLOBAL))
-        bSilentMode = true;
+        logicalSettings[LOG_SILENTMODE] = true;
     if (findParameter(sCmd, "nosilent") && (nType == ALL || nType & SUPERGLOBAL))
-        bSilentMode = false;
+        logicalSettings[LOG_SILENTMODE] = false;
     if (findParameter(sCmd, "cut") && (nType == ALL || nType & LOCAL))
-        bCutBox = true;
+        logicalSettings[LOG_CUTBOX] = true;
     if (findParameter(sCmd, "nocut") && (nType == ALL || nType & LOCAL))
-        bCutBox = false;
+        logicalSettings[LOG_CUTBOX] = false;
     if (findParameter(sCmd, "flow") && (nType == ALL || nType & LOCAL))
     {
-        bFlow = true;
-        if (bPipe)
-            bPipe = false;
+        logicalSettings[LOG_FLOW] = true;
+        logicalSettings[LOG_PIPE] = false;
     }
     if (findParameter(sCmd, "noflow") && (nType == ALL || nType & LOCAL))
-        bFlow = false;
+        logicalSettings[LOG_FLOW] = false;
     if (findParameter(sCmd, "pipe") && (nType == ALL || nType & LOCAL))
     {
-        bPipe = true;
-        if (bFlow)
-            bFlow = false;
+        logicalSettings[LOG_PIPE] = true;
+        logicalSettings[LOG_FLOW] = false;
     }
     if (findParameter(sCmd, "nopipe") && (nType == ALL || nType & LOCAL))
-        bPipe = false;
+        logicalSettings[LOG_PIPE] = false;
     if (findParameter(sCmd, "flength") && (nType == ALL || nType & LOCAL))
-        bFixedLength = true;
+        logicalSettings[LOG_FIXEDLENGTH] = true;
     if (findParameter(sCmd, "noflength") && (nType == ALL || nType & LOCAL))
-        bFixedLength = false;
+        logicalSettings[LOG_FIXEDLENGTH] = false;
     if (findParameter(sCmd, "colorbar") && (nType == ALL || nType & LOCAL))
-        bColorbar = true;
+        logicalSettings[LOG_COLORBAR] = true;
     if (findParameter(sCmd, "nocolorbar") && (nType == ALL || nType & LOCAL))
-        bColorbar = false;
+        logicalSettings[LOG_COLORBAR] = false;
     if (findParameter(sCmd, "orthoproject") && (nType == ALL || nType & GLOBAL))
-        bOrthoProject = true;
+        logicalSettings[LOG_ORTHOPROJECT] = true;
     if (findParameter(sCmd, "noorthoproject") && (nType == ALL || nType & GLOBAL))
-        bOrthoProject = false;
+        logicalSettings[LOG_ORTHOPROJECT] = false;
     if (findParameter(sCmd, "area") && (nType == ALL || nType & LOCAL))
-        bArea = true;
+        logicalSettings[LOG_AREA] = true;
     if (findParameter(sCmd, "noarea") && (nType == ALL || nType & LOCAL))
-        bArea = false;
+        logicalSettings[LOG_AREA] = false;
     if (findParameter(sCmd, "bars") && (nType == ALL || nType & LOCAL))
     {
-        dBars = 0.9;
-        dHBars = 0.0;
+        floatSettings[FLOAT_BARS] = 0.9;
+        floatSettings[FLOAT_HBARS] = 0.0;
     }
     if (findParameter(sCmd, "bars", '=') && (nType == ALL || nType & LOCAL))
     {
         _parser.SetExpr(getArgAtPos(__sCmd, findParameter(sCmd, "bars", '=')+4));
-        dBars = _parser.Eval().real();
-        if (dBars && !isinf(_parser.Eval().real()) && !isnan(_parser.Eval().real()) && (dBars < 0.0 || dBars > 1.0))
-            dBars = 0.9;
-        dHBars = 0.0;
+        floatSettings[FLOAT_BARS] = _parser.Eval().real();
+        if (floatSettings[FLOAT_BARS]
+            && !isinf(_parser.Eval().real())
+            && !isnan(_parser.Eval().real())
+            && (floatSettings[FLOAT_BARS] < 0.0 || floatSettings[FLOAT_BARS] > 1.0))
+            floatSettings[FLOAT_BARS] = 0.9;
+        floatSettings[FLOAT_HBARS] = 0.0;
     }
     if (findParameter(sCmd, "hbars") && (nType == ALL || nType & LOCAL))
     {
-        dBars = 0.0;
-        dHBars = 0.9;
+        floatSettings[FLOAT_BARS] = 0.0;
+        floatSettings[FLOAT_HBARS] = 0.9;
     }
     if (findParameter(sCmd, "hbars", '=') && (nType == ALL || nType & LOCAL))
     {
         _parser.SetExpr(getArgAtPos(__sCmd, findParameter(sCmd, "hbars", '=')+5));
-        dHBars = _parser.Eval().real();
-        if (dHBars && !isinf(_parser.Eval().real()) && !isnan(_parser.Eval().real()) && (dHBars < 0.0 || dHBars > 1.0))
-            dHBars = 0.9;
-        dBars = 0.0;
+        floatSettings[FLOAT_HBARS] = _parser.Eval().real();
+        if (floatSettings[FLOAT_HBARS]
+            && !isinf(_parser.Eval().real())
+            && !isnan(_parser.Eval().real())
+            && (floatSettings[FLOAT_HBARS] < 0.0 || floatSettings[FLOAT_HBARS] > 1.0))
+            floatSettings[FLOAT_HBARS] = 0.9;
+        floatSettings[FLOAT_BARS] = 0.0;
     }
     if ((findParameter(sCmd, "nobars") || findParameter(sCmd, "nohbars")) && (nType == ALL || nType & LOCAL))
     {
-        dBars = 0.0;
-        dHBars = 0.0;
+        floatSettings[FLOAT_BARS] = 0.0;
+        floatSettings[FLOAT_HBARS] = 0.0;
     }
     if (findParameter(sCmd, "steps") && (nType == ALL || nType & LOCAL))
-        bStepPlot = true;
+        logicalSettings[LOG_STEPPLOT] = true;
     if (findParameter(sCmd, "nosteps") && (nType == ALL || nType & LOCAL))
-        bStepPlot = false;
+        logicalSettings[LOG_STEPPLOT] = false;
     if (findParameter(sCmd, "boxplot") && (nType == ALL || nType & LOCAL))
-        bBoxPlot = true;
+        logicalSettings[LOG_BOXPLOT] = true;
     if (findParameter(sCmd, "noboxplot") && (nType == ALL || nType & LOCAL))
-        bBoxPlot = false;
+        logicalSettings[LOG_BOXPLOT] = false;
     if (findParameter(sCmd, "colormask") && (nType == ALL || nType & LOCAL))
-        bColorMask = true;
+        logicalSettings[LOG_COLORMASK] = true;
     if (findParameter(sCmd, "nocolormask") && (nType == ALL || nType & LOCAL))
-        bColorMask = false;
+        logicalSettings[LOG_COLORMASK] = false;
     if (findParameter(sCmd, "alphamask") && (nType == ALL || nType & LOCAL))
-        bAlphaMask = true;
+        logicalSettings[LOG_ALPHAMASK] = true;
     if (findParameter(sCmd, "noalphamask") && (nType == ALL || nType & LOCAL))
-        bAlphaMask = false;
+        logicalSettings[LOG_ALPHAMASK] = false;
     if (findParameter(sCmd, "schematic") && (nType == ALL || nType & GLOBAL))
-        bSchematic = true;
+        logicalSettings[LOG_SCHEMATIC] = true;
     if (findParameter(sCmd, "noschematic") && (nType == ALL || nType & GLOBAL))
-        bSchematic = false;
+        logicalSettings[LOG_SCHEMATIC] = false;
     if (findParameter(sCmd, "perspective", '=') && (nType == ALL || nType & GLOBAL))
     {
         _parser.SetExpr(getArgAtPos(__sCmd, findParameter(sCmd, "perspective", '=')+11));
-        dPerspective = fabs(_parser.Eval());
-        if (dPerspective >= 1.0)
-            dPerspective = 0.0;
+        floatSettings[FLOAT_PERSPECTIVE] = fabs(_parser.Eval());
+        if (floatSettings[FLOAT_PERSPECTIVE] >= 1.0)
+            floatSettings[FLOAT_PERSPECTIVE] = 0.0;
     }
     if (findParameter(sCmd, "noperspective") && (nType == ALL || nType & GLOBAL))
-        dPerspective = 0.0;
+        floatSettings[FLOAT_PERSPECTIVE] = 0.0;
     if (findParameter(sCmd, "cloudplot") && (nType == ALL || nType & LOCAL))
-        bCloudPlot = true;
+        logicalSettings[LOG_CLOUDPLOT] = true;
     if (findParameter(sCmd, "nocloudplot") && (nType == ALL || nType & LOCAL))
-        bCloudPlot = false;
+        logicalSettings[LOG_CLOUDPLOT] = false;
     if (findParameter(sCmd, "region") && (nType == ALL || nType & LOCAL))
-        bRegion = true;
+        logicalSettings[LOG_REGION] = true;
     if (findParameter(sCmd, "noregion") && (nType == ALL || nType & LOCAL))
-        bRegion = false;
+        logicalSettings[LOG_REGION] = false;
     if ((findParameter(sCmd, "crust") || findParameter(sCmd, "reconstruct")) && (nType == ALL || nType & LOCAL))
-        bCrust = true;
+        logicalSettings[LOG_CRUST] = true;
     if ((findParameter(sCmd, "nocrust") || findParameter(sCmd, "noreconstruct")) && (nType == ALL || nType & LOCAL))
-        bCrust = false;
+        logicalSettings[LOG_CRUST] = false;
     if (findParameter(sCmd, "maxline", '=') && (nType == ALL || nType & LOCAL))
     {
         string sTemp = getArgAtPos(__sCmd, findParameter(sCmd, "maxline", '=')+7);
@@ -889,78 +851,87 @@ void PlotData::setParams(const string& __sCmd, Parser& _parser, const Settings& 
     if (findParameter(sCmd, "addxaxis", '=') && (nType == ALL || nType & GLOBAL))
     {
         string sTemp = getArgAtPos(__sCmd, findParameter(sCmd, "addxaxis", '=')+8);
+
         if (sTemp.find(',') != string::npos || sTemp.find('"') != string::npos)
         {
             if (sTemp[0] == '(' && sTemp[sTemp.length()-1] == ')')
                 sTemp = sTemp.substr(1,sTemp.length()-2);
+
             if (getNextArgument(sTemp, false).front() != '"')
             {
                 _parser.SetExpr(getNextArgument(sTemp, true));
-                _AddAxes[0].dMin = _parser.Eval().real();
+                mu::value_type minval = _parser.Eval();
                 _parser.SetExpr(getNextArgument(sTemp, true));
-                _AddAxes[0].dMax = _parser.Eval().real();
+                _AddAxes[0].ivl.reset(minval, _parser.Eval());
+
                 if (getNextArgument(sTemp, false).length())
                 {
                     _AddAxes[0].sLabel = evaluateString(getArgAtPos(getNextArgument(sTemp, true),0));
+
                     if (getNextArgument(sTemp, false).length())
                     {
                         _AddAxes[0].sStyle = evaluateString(getArgAtPos(getNextArgument(sTemp, true),0));
+
                         if (!checkColorChars(_AddAxes[0].sStyle))
                             _AddAxes[0].sStyle = "k";
                     }
                 }
                 else
-                {
                     _AddAxes[0].sLabel = "\\i x";
-                }
             }
             else
             {
                 _AddAxes[0].sLabel = evaluateString(getArgAtPos(getNextArgument(sTemp, true),0));
+
                 if (getNextArgument(sTemp, false).length())
                 {
                     _AddAxes[0].sStyle = evaluateString(getArgAtPos(getNextArgument(sTemp, true),0));
+
                     if (!checkColorChars(_AddAxes[0].sStyle))
                         _AddAxes[0].sStyle = "k";
                 }
             }
         }
-        //replaceControlChars(_[1].sDesc);
     }
     if (findParameter(sCmd, "addyaxis", '=') && (nType == ALL || nType & GLOBAL))
     {
         string sTemp = getArgAtPos(__sCmd, findParameter(sCmd, "addyaxis", '=')+8);
+
         if (sTemp.find(',') != string::npos || sTemp.find('"') != string::npos)
         {
             if (sTemp[0] == '(' && sTemp[sTemp.length()-1] == ')')
                 sTemp = sTemp.substr(1,sTemp.length()-2);
+
             if (getNextArgument(sTemp, false).front() != '"')
             {
                 _parser.SetExpr(getNextArgument(sTemp, true));
-                _AddAxes[1].dMin = _parser.Eval().real();
+                mu::value_type minval = _parser.Eval();
                 _parser.SetExpr(getNextArgument(sTemp, true));
-                _AddAxes[1].dMax = _parser.Eval().real();
+                _AddAxes[1].ivl.reset(minval, _parser.Eval());
+
                 if (getNextArgument(sTemp, false).length())
                 {
                     _AddAxes[1].sLabel = evaluateString(getArgAtPos(getNextArgument(sTemp, true),0));
+
                     if (getNextArgument(sTemp, false).length())
                     {
                         _AddAxes[1].sStyle = evaluateString(getArgAtPos(getNextArgument(sTemp, true),0));
+
                         if (!checkColorChars(_AddAxes[0].sStyle))
                             _AddAxes[1].sStyle = "k";
                     }
                 }
                 else
-                {
                     _AddAxes[1].sLabel = "\\i y";
-                }
             }
             else
             {
                 _AddAxes[1].sLabel = evaluateString(getArgAtPos(getNextArgument(sTemp, true),0));
+
                 if (getNextArgument(sTemp, false).length())
                 {
                     _AddAxes[1].sStyle = evaluateString(getArgAtPos(getNextArgument(sTemp, true),0));
+
                     if (!checkColorChars(_AddAxes[1].sStyle))
                         _AddAxes[1].sStyle = "k";
                 }
@@ -978,109 +949,107 @@ void PlotData::setParams(const string& __sCmd, Parser& _parser, const Settings& 
             string __sColorScheme = __sCmd.substr(nPos+1, __sCmd.find('"', nPos+1)-nPos-1);
             StripSpaces(__sColorScheme);
             if (!checkColorChars(__sColorScheme))
-                sColorScheme = "kRryw";
+                stringSettings[STR_COLORSCHEME] = "kRryw";
             else
             {
-                if (__sColorScheme == "#" && sColorScheme.find('#') == string::npos)
-                    sColorScheme += '#';
-                else if (__sColorScheme == "|" && sColorScheme.find('|') == string::npos)
-                    sColorScheme += '|';
-                else if ((__sColorScheme == "#|" || __sColorScheme == "|#") && (sColorScheme.find('#') == string::npos || sColorScheme.find('|') == string::npos))
+                if (__sColorScheme == "#" && stringSettings[STR_COLORSCHEME].find('#') == string::npos)
+                    stringSettings[STR_COLORSCHEME] += '#';
+                else if (__sColorScheme == "|" && stringSettings[STR_COLORSCHEME].find('|') == string::npos)
+                    stringSettings[STR_COLORSCHEME] += '|';
+                else if ((__sColorScheme == "#|" || __sColorScheme == "|#") && (stringSettings[STR_COLORSCHEME].find('#') == string::npos || stringSettings[STR_COLORSCHEME].find('|') == string::npos))
                 {
-                    if (sColorScheme.find('#') == string::npos && sColorScheme.find('|') != string::npos)
-                        sColorScheme += '#';
-                    else if (sColorScheme.find('|') == string::npos && sColorScheme.find('#') != string::npos)
-                        sColorScheme += '|';
+                    if (stringSettings[STR_COLORSCHEME].find('#') == string::npos && stringSettings[STR_COLORSCHEME].find('|') != string::npos)
+                        stringSettings[STR_COLORSCHEME] += '#';
+                    else if (stringSettings[STR_COLORSCHEME].find('|') == string::npos && stringSettings[STR_COLORSCHEME].find('#') != string::npos)
+                        stringSettings[STR_COLORSCHEME] += '|';
                     else
-                        sColorScheme += "#|";
+                        stringSettings[STR_COLORSCHEME] += "#|";
                 }
                 else if (__sColorScheme != "#" && __sColorScheme != "|" && __sColorScheme != "#|" && __sColorScheme != "|#")
-                    sColorScheme = __sColorScheme;
+                    stringSettings[STR_COLORSCHEME] = __sColorScheme;
             }
-            //sColorScheme = __sCmd.substr(nPos+1, __sCmd.find('"', nPos+1)-nPos-1);
-            //StripSpaces(sColorScheme);
-            //if (!checkColorChars(sColorScheme))
-            //    sColorScheme = "BbcyrR";
         }
         else
         {
             string sTemp = sCmd.substr(nPos, sCmd.find(' ', nPos+1)-nPos);
             StripSpaces(sTemp);
             if (sTemp == "rainbow")
-                sColorScheme = "BbcyrR";
+                stringSettings[STR_COLORSCHEME] = "BbcyrR";
             else if (sTemp == "grey")
-                sColorScheme = "kw";
+                stringSettings[STR_COLORSCHEME] = "kw";
             else if (sTemp == "hot")
-                sColorScheme = "kRryw";
+                stringSettings[STR_COLORSCHEME] = "kRryw";
             else if (sTemp == "cold")
-                sColorScheme = "kBncw";
+                stringSettings[STR_COLORSCHEME] = "kBncw";
             else if (sTemp == "copper")
-                sColorScheme = "kQqw";
+                stringSettings[STR_COLORSCHEME] = "kQqw";
             else if (sTemp == "map")
-                sColorScheme = "UBbcgyqRH";
+                stringSettings[STR_COLORSCHEME] = "UBbcgyqRH";
             else if (sTemp == "moy")
-                sColorScheme = "kMqyw";
+                stringSettings[STR_COLORSCHEME] = "kMqyw";
             else if (sTemp == "coast")
-                sColorScheme = "BCyw";
+                stringSettings[STR_COLORSCHEME] = "BCyw";
             else if (sTemp == "viridis" || sTemp == "std")
-                sColorScheme = "UNC{e4}y";
+                stringSettings[STR_COLORSCHEME] = "UNC{e4}y";
             else if (sTemp == "plasma")
-                sColorScheme = "B{u4}p{q6}{y7}";
+                stringSettings[STR_COLORSCHEME] = "B{u4}p{q6}{y7}";
             else
-                sColorScheme = "kRryw";
+                stringSettings[STR_COLORSCHEME] = "kRryw";
         }
-        if (sColorScheme.length() > 32)
+        if (stringSettings[STR_COLORSCHEME].length() > 32)
         {
-            sColorScheme = "BbcyrR";
-            sColorSchemeMedium = "{B4}{b4}{c4}{y4}{r4}{R4}";
-            sColorSchemeLight = "{B8}{b8}{c8}{y8}{r8}{R8}";
+            stringSettings[STR_COLORSCHEME] = "BbcyrR";
+            stringSettings[STR_COLORSCHEMEMEDIUM] = "{B4}{b4}{c4}{y4}{r4}{R4}";
+            stringSettings[STR_COLORSCHEMELIGHT] = "{B8}{b8}{c8}{y8}{r8}{R8}";
         }
         else
         {
-            while (sColorScheme.find(' ') != string::npos)
+            while (stringSettings[STR_COLORSCHEME].find(' ') != string::npos)
             {
-                sColorScheme.erase(sColorScheme.find(' '),1);
+                stringSettings[STR_COLORSCHEME].erase(stringSettings[STR_COLORSCHEME].find(' '),1);
             }
-            sColorSchemeLight = "";
-            sColorSchemeMedium = "";
-            for (unsigned int i = 0; i < sColorScheme.length(); i++)
+            stringSettings[STR_COLORSCHEMELIGHT] = "";
+            stringSettings[STR_COLORSCHEMEMEDIUM] = "";
+            for (unsigned int i = 0; i < stringSettings[STR_COLORSCHEME].length(); i++)
             {
-                if (sColorScheme[i] == '#' || sColorScheme[i] == '|')
+                if (stringSettings[STR_COLORSCHEME][i] == '#' || stringSettings[STR_COLORSCHEME][i] == '|')
                 {
-                    sColorSchemeLight += sColorScheme[i];
-                    sColorSchemeMedium += sColorScheme[i];
+                    stringSettings[STR_COLORSCHEMELIGHT] += stringSettings[STR_COLORSCHEME][i];
+                    stringSettings[STR_COLORSCHEMEMEDIUM] += stringSettings[STR_COLORSCHEME][i];
                     continue;
                 }
-                if (sColorScheme[i] == '{' && i+3 < sColorScheme.length() && sColorScheme[i+3] == '}')
+                if (stringSettings[STR_COLORSCHEME][i] == '{'
+                    && i+3 < stringSettings[STR_COLORSCHEME].length()
+                    && stringSettings[STR_COLORSCHEME][i+3] == '}')
                 {
-                    sColorSchemeLight += "{";
-                    sColorSchemeMedium += "{";
-                    sColorSchemeLight += sColorScheme[i+1];
-                    sColorSchemeMedium += sColorScheme[i+1];
-                    if (sColorScheme[i+2] >= '2' && sColorScheme[i+2] <= '8')
+                    stringSettings[STR_COLORSCHEMELIGHT] += "{";
+                    stringSettings[STR_COLORSCHEMEMEDIUM] += "{";
+                    stringSettings[STR_COLORSCHEMELIGHT] += stringSettings[STR_COLORSCHEME][i+1];
+                    stringSettings[STR_COLORSCHEMEMEDIUM] += stringSettings[STR_COLORSCHEME][i+1];
+                    if (stringSettings[STR_COLORSCHEME][i+2] >= '2' && stringSettings[STR_COLORSCHEME][i+2] <= '8')
                     {
-                        sColorSchemeMedium += sColorScheme[i+2]-1;
-                        if (sColorScheme[i+2] < '6')
-                            sColorSchemeLight += sColorScheme[i+2]+3;
+                        stringSettings[STR_COLORSCHEMEMEDIUM] += stringSettings[STR_COLORSCHEME][i+2]-1;
+                        if (stringSettings[STR_COLORSCHEME][i+2] < '6')
+                            stringSettings[STR_COLORSCHEMELIGHT] += stringSettings[STR_COLORSCHEME][i+2]+3;
                         else
-                            sColorSchemeLight += "9";
-                        sColorSchemeLight += "}";
-                        sColorSchemeMedium += "}";
+                            stringSettings[STR_COLORSCHEMELIGHT] += "9";
+                        stringSettings[STR_COLORSCHEMELIGHT] += "}";
+                        stringSettings[STR_COLORSCHEMEMEDIUM] += "}";
                     }
                     else
                     {
-                        sColorSchemeLight += sColorScheme.substr(i+2,2);
-                        sColorSchemeMedium += sColorScheme.substr(i+2,2);
+                        stringSettings[STR_COLORSCHEMELIGHT] += stringSettings[STR_COLORSCHEME].substr(i+2,2);
+                        stringSettings[STR_COLORSCHEMEMEDIUM] += stringSettings[STR_COLORSCHEME].substr(i+2,2);
                     }
                     i += 3;
                     continue;
                 }
-                sColorSchemeLight += "{";
-                sColorSchemeLight += sColorScheme[i];
-                sColorSchemeLight += "8}";
-                sColorSchemeMedium += "{";
-                sColorSchemeMedium += sColorScheme[i];
-                sColorSchemeMedium += "4}";
+                stringSettings[STR_COLORSCHEMELIGHT] += "{";
+                stringSettings[STR_COLORSCHEMELIGHT] += stringSettings[STR_COLORSCHEME][i];
+                stringSettings[STR_COLORSCHEMELIGHT] += "8}";
+                stringSettings[STR_COLORSCHEMEMEDIUM] += "{";
+                stringSettings[STR_COLORSCHEMEMEDIUM] += stringSettings[STR_COLORSCHEME][i];
+                stringSettings[STR_COLORSCHEMEMEDIUM] += "4}";
             }
         }
     }
@@ -1094,66 +1063,68 @@ void PlotData::setParams(const string& __sCmd, Parser& _parser, const Settings& 
             string __sBGColorScheme = __sCmd.substr(nPos+1, __sCmd.find('"', nPos+1)-nPos-1);
             StripSpaces(__sBGColorScheme);
             if (!checkColorChars(__sBGColorScheme))
-                sBackgroundColorScheme = "kRryw";
+                stringSettings[STR_BACKGROUNDCOLORSCHEME] = "kRryw";
             else
             {
-                if (__sBGColorScheme == "#" && sBackgroundColorScheme.find('#') == string::npos)
-                    sBackgroundColorScheme += '#';
-                else if (__sBGColorScheme == "|" && sBackgroundColorScheme.find('|') == string::npos)
-                    sBackgroundColorScheme += '|';
-                else if ((__sBGColorScheme == "#|" || __sBGColorScheme == "|#") && (sBackgroundColorScheme.find('#') == string::npos || sBackgroundColorScheme.find('|') == string::npos))
+                if (__sBGColorScheme == "#"
+                    && stringSettings[STR_BACKGROUNDCOLORSCHEME].find('#') == string::npos)
+                    stringSettings[STR_BACKGROUNDCOLORSCHEME] += '#';
+                else if (__sBGColorScheme == "|"
+                         && stringSettings[STR_BACKGROUNDCOLORSCHEME].find('|') == string::npos)
+                    stringSettings[STR_BACKGROUNDCOLORSCHEME] += '|';
+                else if ((__sBGColorScheme == "#|" || __sBGColorScheme == "|#")
+                         && (stringSettings[STR_BACKGROUNDCOLORSCHEME].find('#') == string::npos
+                             || stringSettings[STR_BACKGROUNDCOLORSCHEME].find('|') == string::npos))
                 {
-                    if (sBackgroundColorScheme.find('#') == string::npos && sBackgroundColorScheme.find('|') != string::npos)
-                        sBackgroundColorScheme += '#';
-                    else if (sBackgroundColorScheme.find('|') == string::npos && sBackgroundColorScheme.find('#') != string::npos)
-                        sBackgroundColorScheme += '|';
+                    if (stringSettings[STR_BACKGROUNDCOLORSCHEME].find('#') == string::npos
+                        && stringSettings[STR_BACKGROUNDCOLORSCHEME].find('|') != string::npos)
+                        stringSettings[STR_BACKGROUNDCOLORSCHEME] += '#';
+                    else if (stringSettings[STR_BACKGROUNDCOLORSCHEME].find('|') == string::npos
+                             && stringSettings[STR_BACKGROUNDCOLORSCHEME].find('#') != string::npos)
+                        stringSettings[STR_BACKGROUNDCOLORSCHEME] += '|';
                     else
-                        sBackgroundColorScheme += "#|";
+                        stringSettings[STR_BACKGROUNDCOLORSCHEME] += "#|";
                 }
                 else if (__sBGColorScheme != "#" && __sBGColorScheme != "|" && __sBGColorScheme != "#|" && __sBGColorScheme != "|#")
-                    sBackgroundColorScheme = __sBGColorScheme;
+                    stringSettings[STR_BACKGROUNDCOLORSCHEME] = __sBGColorScheme;
             }
-            /*sBackgroundColorScheme = __sCmd.substr(nPos+1, __sCmd.find('"', nPos+1)-nPos-1);
-            StripSpaces(sBackgroundColorScheme);
-            if (!checkColorChars(sBackgroundColorScheme))
-                sBackgroundColorScheme = "BbcyrR";*/
         }
         else
         {
             string sTemp = sCmd.substr(nPos, sCmd.find(' ', nPos+1)-nPos);
             StripSpaces(sTemp);
             if (sTemp == "rainbow")
-                sBackgroundColorScheme = "BbcyrR";
+                stringSettings[STR_BACKGROUNDCOLORSCHEME] = "BbcyrR";
             else if (sTemp == "grey")
-                sBackgroundColorScheme = "kw";
+                stringSettings[STR_BACKGROUNDCOLORSCHEME] = "kw";
             else if (sTemp == "hot")
-                sBackgroundColorScheme = "kRryw";
+                stringSettings[STR_BACKGROUNDCOLORSCHEME] = "kRryw";
             else if (sTemp == "cold")
-                sBackgroundColorScheme = "kBbcw";
+                stringSettings[STR_BACKGROUNDCOLORSCHEME] = "kBbcw";
             else if (sTemp == "copper")
-                sBackgroundColorScheme = "kQqw";
+                stringSettings[STR_BACKGROUNDCOLORSCHEME] = "kQqw";
             else if (sTemp == "map")
-                sBackgroundColorScheme = "UBbcgyqRH";
+                stringSettings[STR_BACKGROUNDCOLORSCHEME] = "UBbcgyqRH";
             else if (sTemp == "moy")
-                sBackgroundColorScheme = "kMqyw";
+                stringSettings[STR_BACKGROUNDCOLORSCHEME] = "kMqyw";
             else if (sTemp == "coast")
-                sBackgroundColorScheme = "BCyw";
+                stringSettings[STR_BACKGROUNDCOLORSCHEME] = "BCyw";
             else if (sTemp == "viridis" || sTemp == "std")
-                sBackgroundColorScheme = "UNC{e4}y";
+                stringSettings[STR_BACKGROUNDCOLORSCHEME] = "UNC{e4}y";
             else if (sTemp == "plasma")
-                sBackgroundColorScheme = "B{u4}p{q6}{y7}";
+                stringSettings[STR_BACKGROUNDCOLORSCHEME] = "B{u4}p{q6}{y7}";
             else if (sTemp == "real")
-                sBackgroundColorScheme = "<<REALISTIC>>";
+                stringSettings[STR_BACKGROUNDCOLORSCHEME] = "<<REALISTIC>>";
             else
-                sBackgroundColorScheme = "BbcyrR";
+                stringSettings[STR_BACKGROUNDCOLORSCHEME] = "BbcyrR";
         }
-        if (sBackgroundColorScheme.length() > 32)
+        if (stringSettings[STR_BACKGROUNDCOLORSCHEME].length() > 32)
         {
-            sBackgroundColorScheme = "BbcyrR";
+            stringSettings[STR_BACKGROUNDCOLORSCHEME] = "BbcyrR";
         }
-        while (sBackgroundColorScheme.find(' ') != string::npos)
+        while (stringSettings[STR_BACKGROUNDCOLORSCHEME].find(' ') != string::npos)
         {
-            sBackgroundColorScheme = sBackgroundColorScheme.substr(0, sBackgroundColorScheme.find(' ')) + sBackgroundColorScheme.substr(sBackgroundColorScheme.find(' ')+1);
+            stringSettings[STR_BACKGROUNDCOLORSCHEME] = stringSettings[STR_BACKGROUNDCOLORSCHEME].substr(0, stringSettings[STR_BACKGROUNDCOLORSCHEME].find(' ')) + stringSettings[STR_BACKGROUNDCOLORSCHEME].substr(stringSettings[STR_BACKGROUNDCOLORSCHEME].find(' ')+1);
         }
     }
     if (findParameter(sCmd, "plotcolors", '=') && (nType == ALL || nType & LOCAL))
@@ -1168,7 +1139,7 @@ void PlotData::setParams(const string& __sCmd, Parser& _parser, const Settings& 
                     break;
                 if (sTemp[i] == ' ')
                     continue;
-                sColors[i] = sTemp[i];
+                stringSettings[STR_COLORS][i] = sTemp[i];
             }
         }
     }
@@ -1182,58 +1153,58 @@ void PlotData::setParams(const string& __sCmd, Parser& _parser, const Settings& 
             {
                 if (sTemp.length() > i+1 && (sTemp[i+1] == 't' || sTemp[i+1] == 'b'))
                 {
-                    sAxisBind += sTemp.substr(i,2);
+                    stringSettings[STR_AXISBIND] += sTemp.substr(i,2);
                     i++;
                 }
                 else if (sTemp.length() > i+1 && (sTemp[i+1] == ' ' || sTemp[i+1] == 'r' || sTemp[i+1] == 'l'))
                 {
-                    sAxisBind += sTemp.substr(i,1) + "b";
+                    stringSettings[STR_AXISBIND] += sTemp.substr(i,1) + "b";
                     if (sTemp[i+1] == ' ')
                         i++;
                 }
                 else if (sTemp.length() == i+1)
-                    sAxisBind += sTemp.substr(i) + "b";
+                    stringSettings[STR_AXISBIND] += sTemp.substr(i) + "b";
                 else
-                    sAxisBind += "lb";
+                    stringSettings[STR_AXISBIND] += "lb";
             }
             else if (sTemp[i] == 't' || sTemp[i] == 'b')
             {
                 if (sTemp.length() > i+1 && (sTemp[i+1] == 'l' || sTemp[i+1] == 'r'))
                 {
-                    sAxisBind += sTemp.substr(i+1,1) + sTemp.substr(i,1);
+                    stringSettings[STR_AXISBIND] += sTemp.substr(i+1,1) + sTemp.substr(i,1);
                     i++;
                 }
                 else if (sTemp.length() > i+1 && (sTemp[i+1] == ' ' || sTemp[i+1] == 't' || sTemp[i+1] == 'b'))
                 {
-                    sAxisBind += "l" + sTemp.substr(i,1);
+                    stringSettings[STR_AXISBIND] += "l" + sTemp.substr(i,1);
                     if (sTemp[i+1] == ' ')
                         i++;
                 }
                 else if (sTemp.length() == i+1)
-                    sAxisBind += "l" + sTemp.substr(i);
+                    stringSettings[STR_AXISBIND] += "l" + sTemp.substr(i);
                 else
-                    sAxisBind += "lb";
+                    stringSettings[STR_AXISBIND] += "lb";
             }
             else if (sTemp.substr(i,2) == "  ")
             {
-                sAxisBind += "lb";
+                stringSettings[STR_AXISBIND] += "lb";
                 i++;
             }
         }
-        if (sAxisBind.find('l') == string::npos && sAxisBind.length())
+        if (stringSettings[STR_AXISBIND].find('l') == string::npos && stringSettings[STR_AXISBIND].length())
         {
-            for (unsigned int i = 0; i < sAxisBind.length(); i++)
+            for (unsigned int i = 0; i < stringSettings[STR_AXISBIND].length(); i++)
             {
-                if (sAxisBind[i] == 'r')
-                    sAxisBind[i] = 'l';
+                if (stringSettings[STR_AXISBIND][i] == 'r')
+                    stringSettings[STR_AXISBIND][i] = 'l';
             }
         }
-        if (sAxisBind.find('b') == string::npos && sAxisBind.length())
+        if (stringSettings[STR_AXISBIND].find('b') == string::npos && stringSettings[STR_AXISBIND].length())
         {
-            for (unsigned int i = 0; i < sAxisBind.length(); i++)
+            for (unsigned int i = 0; i < stringSettings[STR_AXISBIND].length(); i++)
             {
-                if (sAxisBind[i] == 't')
-                    sAxisBind[i] = 'b';
+                if (stringSettings[STR_AXISBIND][i] == 't')
+                    stringSettings[STR_AXISBIND][i] = 'b';
             }
         }
     }
@@ -1249,8 +1220,8 @@ void PlotData::setParams(const string& __sCmd, Parser& _parser, const Settings& 
                     break;
                 if (sTemp[i] == ' ')
                     continue;
-                sLineStyles[i] = sTemp[i];
-                sLineStylesGrey[i] = sTemp[i];
+                stringSettings[STR_LINESTYLES][i] = sTemp[i];
+                stringSettings[STR_LINESTYLESGREY][i] = sTemp[i];
             }
         }
     }
@@ -1267,7 +1238,7 @@ void PlotData::setParams(const string& __sCmd, Parser& _parser, const Settings& 
                 continue;
             if (sTemp[i] < '0' || sTemp[i] > '9')
                 continue;
-            sLineSizes[i] = sTemp[i];
+            stringSettings[STR_LINESIZES][i] = sTemp[i];
         }
 
     }
@@ -1294,7 +1265,7 @@ void PlotData::setParams(const string& __sCmd, Parser& _parser, const Settings& 
                     sChar = "#";
                     i++;
                     sChar += sTemp[i];
-                    sPointStyles.replace(2*nChar, 2, sChar);
+                    stringSettings[STR_POINTSTYLES].replace(2*nChar, 2, sChar);
                     nChar++;
                     continue;
                 }
@@ -1302,7 +1273,7 @@ void PlotData::setParams(const string& __sCmd, Parser& _parser, const Settings& 
                 {
                     sChar = " ";
                     sChar += sTemp[i];
-                    sPointStyles.replace(2*nChar, 2, sChar);
+                    stringSettings[STR_POINTSTYLES].replace(2*nChar, 2, sChar);
                     nChar++;
                 }
             }
@@ -1329,14 +1300,14 @@ void PlotData::setParams(const string& __sCmd, Parser& _parser, const Settings& 
                     continue;
                 if (sTemp[i+j] >= '0' && sTemp[i+j] <= '9')
                 {
-                    sLineSizes[nStyle] = sTemp[i+j];
+                    stringSettings[STR_LINESIZES][nStyle] = sTemp[i+j];
                     continue;
                 }
                 if (sTemp[i+j] == '#' && i+j+1 < sTemp.length() && checkPointChars(sTemp.substr(i+j,2)))
                 {
-                    sPointStyles[2*nStyle] = '#';
+                    stringSettings[STR_POINTSTYLES][2*nStyle] = '#';
                     if (sTemp[i+j+1] != ' ')
-                        sPointStyles[2*nStyle+1] = sTemp[i+j+1];
+                        stringSettings[STR_POINTSTYLES][2*nStyle+1] = sTemp[i+j+1];
                     j++;
                     continue;
                 }
@@ -1344,19 +1315,19 @@ void PlotData::setParams(const string& __sCmd, Parser& _parser, const Settings& 
                     continue;
                 if (checkPointChars(sTemp.substr(i+j,1)))
                 {
-                    sPointStyles[2*nStyle] = ' ';
-                    sPointStyles[2*nStyle+1] = sTemp[i+j];
+                    stringSettings[STR_POINTSTYLES][2*nStyle] = ' ';
+                    stringSettings[STR_POINTSTYLES][2*nStyle+1] = sTemp[i+j];
                     continue;
                 }
                 if (checkColorChars(sTemp.substr(i+j,1)))
                 {
-                    sColors[nStyle] = sTemp[i+j];
+                    stringSettings[STR_COLORS][nStyle] = sTemp[i+j];
                     continue;
                 }
                 if (checkLineChars(sTemp.substr(i+j,1)))
                 {
-                    sLineStyles[nStyle] = sTemp[i+j];
-                    sLineStylesGrey[nStyle] = sTemp[i+j];
+                    stringSettings[STR_LINESTYLES][nStyle] = sTemp[i+j];
+                    stringSettings[STR_LINESTYLESGREY][nStyle] = sTemp[i+j];
                     continue;
                 }
             }
@@ -1378,7 +1349,7 @@ void PlotData::setParams(const string& __sCmd, Parser& _parser, const Settings& 
                     continue;
                 if (sTemp[i+j] >= '0' && sTemp[i+j] <= '9')
                 {
-                    sGridStyle[2+i] = sTemp[i+j];
+                    stringSettings[STR_GRIDSTYLE][2+i] = sTemp[i+j];
                     continue;
                 }
                 if (sTemp[i+j] == '#')
@@ -1389,12 +1360,12 @@ void PlotData::setParams(const string& __sCmd, Parser& _parser, const Settings& 
                 }
                 if (checkColorChars(sTemp.substr(i+j,1)))
                 {
-                    sGridStyle[i] = sTemp[i+j];
+                    stringSettings[STR_GRIDSTYLE][i] = sTemp[i+j];
                     continue;
                 }
                 if (checkLineChars(sTemp.substr(i+j,1)))
                 {
-                    sGridStyle[i+1] = sTemp[i+j];
+                    stringSettings[STR_GRIDSTYLE][i+1] = sTemp[i+j];
                     continue;
                 }
             }
@@ -1403,43 +1374,30 @@ void PlotData::setParams(const string& __sCmd, Parser& _parser, const Settings& 
     if (findParameter(sCmd, "legendstyle", '=') && (nType == ALL || nType & LOCAL))
     {
         if (getArgAtPos(sCmd, findParameter(sCmd, "legendstyle", '=')+11) == "onlycolors")
-            nLegendstyle = 1;
+            intSettings[INT_LEGENDSTYLE] = 1;
         else if (getArgAtPos(sCmd, findParameter(sCmd, "legendstyle", '=')+11) == "onlystyles")
-            nLegendstyle = 2;
+            intSettings[INT_LEGENDSTYLE] = 2;
         else
-            nLegendstyle = 0;
+            intSettings[INT_LEGENDSTYLE] = 0;
     }
     if (findParameter(sCmd, "coords", '=') && (nType == ALL || nType & GLOBAL))
     {
         int nPos = findParameter(sCmd, "coords", '=')+6;
+
         if (getArgAtPos(sCmd, nPos) == "cartesian" || getArgAtPos(sCmd, nPos) == "std")
-        {
-            nCoords = CARTESIAN;
-        }
+            intSettings[INT_COORDS] = CARTESIAN;
         else if (getArgAtPos(sCmd, nPos) == "polar" || getArgAtPos(sCmd, nPos) == "polar_pz" || getArgAtPos(sCmd, nPos) == "cylindrical")
-        {
-            nCoords = POLAR_PZ;
-        }
+            intSettings[INT_COORDS] = POLAR_PZ;
         else if (getArgAtPos(sCmd, nPos) == "polar_rp")
-        {
-            nCoords = POLAR_RP;
-        }
+            intSettings[INT_COORDS] = POLAR_RP;
         else if (getArgAtPos(sCmd, nPos) == "polar_rz")
-        {
-            nCoords = POLAR_RZ;
-        }
+            intSettings[INT_COORDS] = POLAR_RZ;
         else if (getArgAtPos(sCmd, nPos) == "spherical" || getArgAtPos(sCmd, nPos) == "spherical_pt")
-        {
-            nCoords = SPHERICAL_PT;
-        }
+            intSettings[INT_COORDS] = SPHERICAL_PT;
         else if (getArgAtPos(sCmd, nPos) == "spherical_rp")
-        {
-            nCoords = SPHERICAL_RP;
-        }
+            intSettings[INT_COORDS] = SPHERICAL_RP;
         else if (getArgAtPos(sCmd, nPos) == "spherical_rt")
-        {
-            nCoords = SPHERICAL_RT;
-        }
+            intSettings[INT_COORDS] = SPHERICAL_RT;
     }
     if (findParameter(sCmd, "font", '=') && (nType == ALL || nType & SUPERGLOBAL))
     {
@@ -1459,7 +1417,7 @@ void PlotData::setParams(const string& __sCmd, Parser& _parser, const Settings& 
             sTemp = "cursor";
         if (sTemp == "helvetica")
             sTemp = "heros";
-        if (sTemp != sFontStyle
+        if (sTemp != stringSettings[STR_FONTSTYLE]
             && (sTemp == "pagella"
                 || sTemp == "adventor"
                 || sTemp == "bonum"
@@ -1471,8 +1429,8 @@ void PlotData::setParams(const string& __sCmd, Parser& _parser, const Settings& 
                 || sTemp == "termes")
             )
         {
-            sFontStyle = sTemp;
-            _fontData.LoadFont(sFontStyle.c_str(), (sTokens[0][1]+ "\\fonts").c_str());
+            stringSettings[STR_FONTSTYLE] = sTemp;
+            _fontData.LoadFont(stringSettings[STR_FONTSTYLE].c_str(), (sTokens[0][1]+ "\\fonts").c_str());
         }
     }
     if ((findParameter(sCmd, "opng", '=')
@@ -1508,33 +1466,33 @@ void PlotData::setParams(const string& __sCmd, Parser& _parser, const Settings& 
         else if (findParameter(sCmd, "ogif", '='))
             nPos = findParameter(sCmd, "ogif", '=') + 4;
 
-        sFileName = evaluateString(getArgAtPos(__sCmd, nPos));
-        StripSpaces(sFileName);
-        if (sFileName.length())
+        stringSettings[STR_FILENAME] = evaluateString(getArgAtPos(__sCmd, nPos));
+        StripSpaces(stringSettings[STR_FILENAME]);
+        if (stringSettings[STR_FILENAME].length())
         {
             string sExtension = "";
-            if (sFileName.length() > 4)
-                sExtension = sFileName.substr(sFileName.length()-4,4);
+            if (stringSettings[STR_FILENAME].length() > 4)
+                sExtension = stringSettings[STR_FILENAME].substr(stringSettings[STR_FILENAME].length()-4,4);
             if (sExtension != ".png"
                 && (findParameter(sCmd, "opng", '=')
                     || findParameter(sCmd, "opnga", '=')))
-                sFileName += ".png";
+                stringSettings[STR_FILENAME] += ".png";
             else if (sExtension != ".eps" && findParameter(sCmd, "oeps", '='))
-                sFileName += ".eps";
+                stringSettings[STR_FILENAME] += ".eps";
             else if (sExtension != ".bps" && findParameter(sCmd, "obps", '='))
-                sFileName += ".bps";
+                stringSettings[STR_FILENAME] += ".bps";
             else if (sExtension != ".svg" && findParameter(sCmd, "osvg", '='))
-                sFileName += ".svg";
+                stringSettings[STR_FILENAME] += ".svg";
             else if (sExtension != ".tex" && findParameter(sCmd, "otex", '='))
-                sFileName += ".tex";
+                stringSettings[STR_FILENAME] += ".tex";
             else if (sExtension != ".tif" && sExtension != ".tiff" && findParameter(sCmd, "otif", '='))
-                sFileName += ".tiff";
+                stringSettings[STR_FILENAME] += ".tiff";
             else if (sExtension != ".gif" && findParameter(sCmd, "ogif", '='))
-                sFileName += ".gif";
-            else if ((findParameter(sCmd, "export", '=') || findParameter(sCmd, "save", '=')) && sFileName.rfind('.') == string::npos)
-                sFileName += ".png";
+                stringSettings[STR_FILENAME] += ".gif";
+            else if ((findParameter(sCmd, "export", '=') || findParameter(sCmd, "save", '=')) && stringSettings[STR_FILENAME].rfind('.') == string::npos)
+                stringSettings[STR_FILENAME] += ".png";
 
-            sFileName = FileSystem::ValidizeAndPrepareName(sFileName, sFileName.substr(sFileName.rfind('.')));
+            stringSettings[STR_FILENAME] = FileSystem::ValidizeAndPrepareName(stringSettings[STR_FILENAME], stringSettings[STR_FILENAME].substr(stringSettings[STR_FILENAME].rfind('.')));
         }
     }
     if ((findParameter(sCmd, "xlabel", '=')
@@ -1565,27 +1523,27 @@ void PlotData::setParams(const string& __sCmd, Parser& _parser, const Settings& 
         if (findParameter(sCmd, "title", '='))
         {
             nPos = findParameter(sCmd, "title", '=') + 5;
-            sPlotTitle = getArgAtPos(__sCmd, nPos);
-            StripSpaces(sPlotTitle);
-            if (sComposedTitle.length())
-                sComposedTitle += ", " + sPlotTitle;
+            stringSettings[STR_PLOTTITLE] = getArgAtPos(__sCmd, nPos);
+            StripSpaces(stringSettings[STR_PLOTTITLE]);
+            if (stringSettings[STR_COMPOSEDTITLE].length())
+                stringSettings[STR_COMPOSEDTITLE] += ", " + stringSettings[STR_PLOTTITLE];
             else
-                sComposedTitle = sPlotTitle;
+                stringSettings[STR_COMPOSEDTITLE] = stringSettings[STR_PLOTTITLE];
         }
         if (findParameter(sCmd, "background", '='))
         {
             nPos = findParameter(sCmd, "background", '=')+10;
-            sBackground = getArgAtPos(__sCmd, nPos);
-            StripSpaces(sBackground);
-            if (sBackground.length())
+            stringSettings[STR_BACKGROUND] = getArgAtPos(__sCmd, nPos);
+            StripSpaces(stringSettings[STR_BACKGROUND]);
+            if (stringSettings[STR_BACKGROUND].length())
             {
-                if (sBackground.find('.') == string::npos)
-                    sBackground += ".png";
-                else if (sBackground.substr(sBackground.rfind('.')) != ".png")
-                    sBackground = "";
-                if (sBackground.length())
+                if (stringSettings[STR_BACKGROUND].find('.') == string::npos)
+                    stringSettings[STR_BACKGROUND] += ".png";
+                else if (stringSettings[STR_BACKGROUND].substr(stringSettings[STR_BACKGROUND].rfind('.')) != ".png")
+                    stringSettings[STR_BACKGROUND] = "";
+                if (stringSettings[STR_BACKGROUND].length())
                 {
-                    sBackground = FileSystem::ValidFileName(sBackground, ".png");
+                    stringSettings[STR_BACKGROUND] = FileSystem::ValidFileName(stringSettings[STR_BACKGROUND], ".png");
                 }
             }
         }
@@ -1697,64 +1655,34 @@ void PlotData::setParams(const string& __sCmd, Parser& _parser, const Settings& 
 
             for (size_t i = 0; i < args.size(); i++)
             {
-                if (i >= 4)
+                if (i > 4)
                     break;
 
                 if (args[i].find(':') == string::npos)
                     continue;
 
-                auto indices = getAllIndices(args[i]);
+                ranges[i].reset(args[i]);
 
-                if (i == 3)
+                if (i < 3)
                 {
-                    for (size_t j = 0; j < 2; j++)
-                    {
-                        if (!isNotEmptyExpression(indices[j]))
-                            continue;
+                    bRanges[i] = true;
+                    nRanges = i+1;
 
-                        _parser.SetExpr(indices[j]);
-                        dColorRange[j] = _parser.Eval().real();
-                    }
-
-                    if (isnan(dColorRange[0]) || isnan(dColorRange[1]) || isinf(dColorRange[0]) || isinf(dColorRange[1]))
-                    {
-                        dColorRange[0] = NAN;
-                        dColorRange[1] = NAN;
-                    }
-                }
-                else
-                {
-                    for (size_t j = 0; j < 2; j++)
-                    {
-                        if (!isNotEmptyExpression(indices[j]))
-                            continue;
-
-                        _parser.SetExpr(indices[j]);
-                        dRanges[i][j] = _parser.Eval().real();
-                    }
-
-                    if (isNotEmptyExpression(indices[0]) || isNotEmptyExpression(indices[1]))
-                        bRanges[i] = true;
-
-                    if (dRanges[i][0] > dRanges[i][1])
+                    if (ranges[i].front().real() > ranges[i].back().real())
                     {
                         bMirror[i] = true;
-                        double dTemp = dRanges[i][1];
-                        dRanges[i][1] = dRanges[i][0];
-                        dRanges[i][0] = dTemp;
+                        ranges[i].reset(ranges[i].back(), ranges[i].front());
                     }
-
-                    nRanges = i+1;
                 }
             }
 
-            for (unsigned int i = 0; i < 3; i++)
+            for (size_t i = 0; i < ranges.size(); i++)
             {
-                if (isinf(dRanges[i][0]) || isnan(dRanges[i][0]))
-                    dRanges[i][0] = -10.0;
+                if (isinf(ranges[i].front()) || isnan(ranges[i].front()))
+                    ranges[i].reset(-10.0, ranges[i].back());
 
-                if (isinf(dRanges[i][1]) || isnan(dRanges[i][1]))
-                    dRanges[i][1] = 10.0;
+                if (isinf(ranges[i].back()) || isnan(ranges[i].back()))
+                    ranges[i].reset(ranges[i].front(), 10.0);
             }
 
             for (int n = nRanges-1; n >= 0; n--)
@@ -1793,16 +1721,20 @@ void PlotData::reset()
     _lVLines.clear();
     _lHlines.clear();
 
+    ranges.intervals.clear();
+    ranges.intervals.resize(3, Interval(-10.0, 10.0));
+    ranges.intervals.push_back(Interval(NAN, NAN));
+    ranges.intervals.push_back(Interval(0, 1.0));
+
+    ranges.setNames({"x", "y", "z", "c", "t"});
+
     for (int i = 0; i < 3; i++)
     {
         bRanges[i] = false;
         bMirror[i] = false;
-        dRanges[i][0] = -10.0;
-        dRanges[i][1] = 10.0;
         dOrigin[i] = 0.0;
         sAxisLabels[i] = "";
         bDefaultAxisLabels[i] = true;
-        sAxisBind.clear();
         _lHlines.push_back(Line());
         _lVLines.push_back(Line());
         nSlices[i] = 1;
@@ -1819,102 +1751,79 @@ void PlotData::reset()
 
     for (int i = 0; i < 2; i++)
     {
-        _AddAxes[i].dMin = NAN;
-        _AddAxes[i].dMax = NAN;
+        _AddAxes[i].ivl.reset(NAN, NAN);
         _AddAxes[i].sLabel = "";
         _AddAxes[i].sStyle = "k";
     }
 
-    dAspect = 4.0/3.0;
-    dtParam[0] = 0.0;
-    dtParam[1] = 1.0;
+    for (size_t i = 0; i < LOG_SETTING_SIZE; i++)
+    {
+        logicalSettings[i] = false;
+    }
+
+    logicalSettings[LOG_AXIS] = true;
+    logicalSettings[LOG_OPENIMAGE] = true;
+    logicalSettings[LOG_COLORBAR] = true;
+
+    for (size_t i = 0; i < INT_SETTING_SIZE; i++)
+    {
+        intSettings[i] = 0;
+    }
+
+    intSettings[INT_SAMPLES] = 100;
+    intSettings[INT_CONTLINES] = 35;
+    intSettings[INT_ANIMATESAMPLES] = 50;
+    intSettings[INT_LEGENDPOSITION] = 3;
+
+    for (size_t i = 0; i < FLOAT_SETTING_SIZE; i++)
+    {
+        floatSettings[i] = 0.0;
+    }
+
+    floatSettings[FLOAT_ASPECT] = 4.0/3.0;
+    floatSettings[FLOAT_ALPHAVAL] = 0.5;
+    floatSettings[FLOAT_TEXTSIZE] = 5;
+
+    for (size_t i = 0; i < STR_SETTING_SIZE; i++)
+    {
+        stringSettings[i].clear();
+    }
+
+    stringSettings[STR_COLORSCHEME] = "UNC{e4}y";
+    stringSettings[STR_COLORSCHEMEMEDIUM] = "{U4}{N4}{C4}{e3}{y4}";
+    stringSettings[STR_COLORSCHEMELIGHT] = "{U8}{N8}{C8}{e7}{y8}";
+    stringSettings[STR_BACKGROUNDCOLORSCHEME] = "<<REALISTIC>>";
+    stringSettings[STR_COLORS] =         "rbGqmPunclRBgQMpUNCL";
+    stringSettings[STR_CONTCOLORS] =     "kUHYPCQNLMhuWypcqnlm";
+    stringSettings[STR_CONTGREYS] =      "kwkwkwkwkwkwkwkwkwkw";
+    stringSettings[STR_POINTSTYLES] =    " + x o s . d#+#x#.#* x o s . d#+#x#.#* +";
+    stringSettings[STR_LINESTYLES] =     "----------;;;;;;;;;;";
+    stringSettings[STR_LINESIZES] =      "00000000000000000000";
+    stringSettings[STR_GREYS] =          "kHhWkHhWkHhWkHhWkHhW";
+    stringSettings[STR_LINESTYLESGREY] = "-|=;i:j|=;i:j-|=:i;-";
+    stringSettings[STR_GRIDSTYLE] = "=h0-h0";
+
     dRotateAngles[0] = 60;
     dRotateAngles[1] = 115;
-    dColorRange[0] = NAN;
-    dColorRange[1] = NAN;
     nTargetGUI[0] = -1;
     nTargetGUI[1] = -1;
     nLines = 100;
     nRows = 1;
     nLayers = 1;
+    nRanges = 0;
     nRequestedLayers = 1;
-    nSamples = 100;
     dMin = NAN;
     dMax = NAN;
     dMaximum = 1.0;
-    nGrid = 0;
-    nLighting = 0;
-    bAxis = true;
-    bAlpha = false;
-    dAlphaVal = 0.5;
-    bBox = false;
-    bContLabels = false;
-    bContProj = false;
-    bContFilled = false;
-    nContLines = 35;
-    bxError = false;
-    byError = false;
-    bConnectPoints = false;
-    bDrawPoints = false;
-    bOpenImage = true;
-    bInterpolate = false;
-    nHighResLevel = 0;
-    bAllHighRes = false;
-    bSilentMode = false;
-    bAnimate = false;
-    bCutBox = false;
-    bFlow = false;
-    bPipe = false;
-    bFixedLength = false;
-    bColorbar = true;
-    bOrthoProject = false;
-    bArea = false;
-    dBars = 0.0;
-    dHBars = 0.0;
-    bStepPlot = false;
-    bBoxPlot = false;
-    bColorMask = false;
-    bAlphaMask = false;
-    bSchematic = false;
-    bCloudPlot = false;
-    bRegion = false;
-    bCrust = false;
-    dPerspective = 0.0;
-    sColorScheme = "UNC{e4}y";
-    sColorSchemeMedium = "{U4}{N4}{C4}{e3}{y4}";
-    sColorSchemeLight = "{U8}{N8}{C8}{e7}{y8}";
-    sBackgroundColorScheme = "<<REALISTIC>>";
-    sBackground = "";
-    sColors =         "rbGqmPunclRBgQMpUNCL";
-    sContColors =     "kUHYPCQNLMhuWypcqnlm";
-    sContGreys =      "kwkwkwkwkwkwkwkwkwkw";
-    sPointStyles =    " + x o s . d#+#x#.#* x o s . d#+#x#.#* +";
-    sLineStyles =     "----------;;;;;;;;;;";
-    sLineSizes =      "00000000000000000000";
-    sGreys =          "kHhWkHhWkHhWkHhWkHhW";
-    sLineStylesGrey = "-|=;i:j|=;i:j-|=:i;-";
-    sGridStyle = "=h0-h0";
-    nAnimateSamples = 50;
-    nRanges = 0;
-    nMarks = 0;
-    dTextsize = 5;
-    sFileName = "";
-    sPlotTitle = "";
-    sComposedTitle = "";
-    nCoords = CARTESIAN;
-    nLegendPosition = 3;
-    nLegendstyle = 0;
-
     if (NumeReKernel::getInstance())
     {
-        if (sFontStyle != NumeReKernel::getInstance()->getSettings().getDefaultPlotFont())
-        {
-            sFontStyle = NumeReKernel::getInstance()->getSettings().getDefaultPlotFont();
-            _fontData.LoadFont(sFontStyle.c_str(), (sTokens[0][1]+ "\\fonts").c_str());
-        }
+        if (stringSettings[STR_FONTSTYLE] != NumeReKernel::getInstance()->getSettings().getDefaultPlotFont())
+            stringSettings[STR_FONTSTYLE] = NumeReKernel::getInstance()->getSettings().getDefaultPlotFont();
     }
     else
-        _fontData.LoadFont("pagella", (sTokens[0][1] + "\\fonts").c_str());
+        stringSettings[STR_FONTSTYLE] = "pagella";
+
+    _fontData.LoadFont(stringSettings[STR_FONTSTYLE].c_str(), (sTokens[0][1] + "\\fonts").c_str());
 }
 
 // --> Daten im Speicher loeschen. Speicher selbst bleibt bestehen <--
@@ -1937,10 +1846,15 @@ void PlotData::deleteData(bool bGraphFinished /* = false*/)
     _lHlines.clear();
     _lVLines.clear();
 
+    ranges.intervals.clear();
+    ranges.intervals.resize(3, Interval(-10.0, 10.0));
+    ranges.intervals.push_back(Interval(NAN, NAN));
+    ranges.intervals.push_back(Interval(0.0, 1.0));
+
+    ranges.setNames({"x", "y", "z", "c", "t"});
+
     for (int i = 0; i < 3; i++)
     {
-        dRanges[i][0] = -10.0;
-        dRanges[i][1] = 10.0;
         bRanges[i] = false;
         bMirror[i] = false;
         sAxisLabels[i] = "";
@@ -1957,42 +1871,40 @@ void PlotData::deleteData(bool bGraphFinished /* = false*/)
     }
 
     nRanges = 0;
-    sFileName = "";
-    sPlotTitle = "";
 
     if (bGraphFinished)
     {
-        sComposedTitle = "";
+        stringSettings[STR_COMPOSEDTITLE].clear();
         nTargetGUI[0] = -1;
         nTargetGUI[1] = -1;
     }
 
-    if (!bAllHighRes)
-        nHighResLevel = 0;
+    if (!logicalSettings[LOG_ALLHIGHRES])
+        intSettings[INT_HIGHRESLEVEL] = 0;
 
     dMin = NAN;
     dMax = NAN;
     dMaximum = 1.0;
     nRequestedLayers = 1;
-    sColors =         "rbGqmPunclRBgQMpUNCL";
-    sContColors =     "kUHYPCQNLMhuWypcqnlm";
-    sContGreys =      "kwkwkwkwkwkwkwkwkwkw";
-    sPointStyles =    " + x o s . d#+#x#.#* x o s . d#+#x#.#* +";
-    sLineStyles =     "----------;;;;;;;;;;";
-    sLineSizes =      "00000000000000000000";
-    sGreys =          "kHhWkHhWkHhWkHhWkHhW";
-    sLineStylesGrey = "-|=;i:j|=;i:j-|=:i;-";
-    nLegendstyle = 0;
-    sAxisBind.clear();
-    sFunctionAxisBind.clear();
-    sBackground = "";
-    dColorRange[0] = NAN;
-    dColorRange[1] = NAN;
+    intSettings[INT_LEGENDSTYLE] = 0;
+
+    stringSettings[STR_COLORS] =         "rbGqmPunclRBgQMpUNCL";
+    stringSettings[STR_CONTCOLORS] =     "kUHYPCQNLMhuWypcqnlm";
+    stringSettings[STR_CONTGREYS] =      "kwkwkwkwkwkwkwkwkwkw";
+    stringSettings[STR_POINTSTYLES] =    " + x o s . d#+#x#.#* x o s . d#+#x#.#* +";
+    stringSettings[STR_LINESTYLES] =     "----------;;;;;;;;;;";
+    stringSettings[STR_LINESIZES] =      "00000000000000000000";
+    stringSettings[STR_GREYS] =          "kHhWkHhWkHhWkHhWkHhW";
+    stringSettings[STR_LINESTYLESGREY] = "-|=;i:j|=;i:j-|=:i;-";
+    stringSettings[STR_FILENAME].clear();
+    stringSettings[STR_PLOTTITLE].clear();
+    stringSettings[STR_AXISBIND].clear();
+    stringSettings[STR_FUNCTIONAXISBIND].clear();
+    stringSettings[STR_BACKGROUND].clear();
 
     for (int i = 0; i < 2; i++)
     {
-        _AddAxes[i].dMin = NAN;
-        _AddAxes[i].dMax = NAN;
+        _AddAxes[i].ivl.reset(NAN, NAN);
         _AddAxes[i].sLabel = "";
         _AddAxes[i].sStyle = "k";
     }
@@ -2001,8 +1913,9 @@ void PlotData::deleteData(bool bGraphFinished /* = false*/)
 /* --> Plotparameter als String lesen: Gibt nur Parameter zurueck, die von Plot zu Plot
  *     uebernommen werden. (sFileName und sAxisLabels[] z.B nicht) <--
  */
-string PlotData::getParams(const Settings& _option, bool asstr) const
+string PlotData::getParams(bool asstr) const
 {
+    const Settings& _option = NumeReKernel::getInstance()->getSettings();
     string sReturn = "";
     string sSepString = "; ";
     if (asstr)
@@ -2011,31 +1924,31 @@ string PlotData::getParams(const Settings& _option, bool asstr) const
         sSepString = "\", \"";
     }
     sReturn += "[";
-    for (int i = 0; i < 3; i++)
+    for (size_t i = 0; i < ranges.size(); i++)
     {
-        sReturn += toString(dRanges[i][0], _option) + ":" + toString(dRanges[i][1], _option);
+        sReturn += toString(ranges[i].front(), _option.getPrecision()) + ":" + toString(ranges[i].back(), _option.getPrecision());
         if (i < 2)
             sReturn += ", ";
     }
     sReturn += "]" + sSepString;
-    if (bAlpha)
+    if (logicalSettings[LOG_ALPHA])
         sReturn += "alpha" + sSepString;
-    if (bAlphaMask)
+    if (logicalSettings[LOG_ALPHAMASK])
         sReturn += "alphamask" +sSepString;
-    if (bAnimate)
-        sReturn += "animate [" + toString(nAnimateSamples) + " frames]" + sSepString;
-    if (bArea)
+    if (logicalSettings[LOG_ANIMATE])
+        sReturn += "animate [" + toString(intSettings[INT_ANIMATESAMPLES]) + " frames]" + sSepString;
+    if (logicalSettings[LOG_AREA])
         sReturn += "area" + sSepString;
-    sReturn += "aspect=" + toString(dAspect, 4) + sSepString;
-    if (bAxis)
+    sReturn += "aspect=" + toString(floatSettings[FLOAT_ASPECT], 4) + sSepString;
+    if (logicalSettings[LOG_AXIS])
         sReturn += "axis" + sSepString;
-    if (sAxisBind.length())
+    if (stringSettings[STR_AXISBIND].length())
     {
         sReturn += "axisbind=";
         if (asstr)
-            sReturn += "\\\"" + sAxisBind + "\\\"";
+            sReturn += "\\\"" + stringSettings[STR_AXISBIND] + "\\\"";
         else
-            sReturn += "\"" + sAxisBind + "\"";
+            sReturn += "\"" + stringSettings[STR_AXISBIND] + "\"";
         sReturn += sSepString;
     }
     sReturn += "axisscale=[";
@@ -2046,148 +1959,146 @@ string PlotData::getParams(const Settings& _option, bool asstr) const
             sReturn += ", ";
     }
     sReturn += "]" + sSepString;
-    if (dBars)
-        sReturn += "bars=" + toString(dBars, 4) + sSepString;
-    if (sBackground.length())
+    if (floatSettings[FLOAT_BARS])
+        sReturn += "bars=" + toString(floatSettings[FLOAT_BARS], 4) + sSepString;
+    if (stringSettings[STR_BACKGROUND].length())
     {
         if (asstr)
-            sReturn += "background=\\\"" + sBackground + "\\\"" +  sSepString;
+            sReturn += "background=\\\"" + stringSettings[STR_BACKGROUND] + "\\\"" +  sSepString;
         else
-            sReturn += "background=\"" + sBackground + "\"" + sSepString;
+            sReturn += "background=\"" + stringSettings[STR_BACKGROUND] + "\"" + sSepString;
     }
     sReturn += "bgcolorscheme=";
-    if (sBackgroundColorScheme == "BbcyrR")
+    if (stringSettings[STR_BACKGROUNDCOLORSCHEME] == "BbcyrR")
         sReturn += "rainbow" + sSepString;
-    else if (sBackgroundColorScheme == "kw")
+    else if (stringSettings[STR_BACKGROUNDCOLORSCHEME] == "kw")
         sReturn += "grey" + sSepString;
-    else if (sBackgroundColorScheme == "kRryw")
+    else if (stringSettings[STR_BACKGROUNDCOLORSCHEME] == "kRryw")
         sReturn += "hot" + sSepString;
-    else if (sBackgroundColorScheme == "kBncw")
+    else if (stringSettings[STR_BACKGROUNDCOLORSCHEME] == "kBncw")
         sReturn += "cold" + sSepString;
-    else if (sBackgroundColorScheme == "kQqw")
+    else if (stringSettings[STR_BACKGROUNDCOLORSCHEME] == "kQqw")
         sReturn += "copper" + sSepString;
-    else if (sBackgroundColorScheme == "UBbcgyqRH")
+    else if (stringSettings[STR_BACKGROUNDCOLORSCHEME] == "UBbcgyqRH")
         sReturn += "map" + sSepString;
-    else if (sBackgroundColorScheme == "kMqyw")
+    else if (stringSettings[STR_BACKGROUNDCOLORSCHEME] == "kMqyw")
         sReturn += "moy" + sSepString;
-    else if (sBackgroundColorScheme == "BCyw")
+    else if (stringSettings[STR_BACKGROUNDCOLORSCHEME] == "BCyw")
         sReturn += "coast" + sSepString;
-    else if (sBackgroundColorScheme == "UNC{e4}y")
+    else if (stringSettings[STR_BACKGROUNDCOLORSCHEME] == "UNC{e4}y")
         sReturn += "viridis" + sSepString;
-    else if (sBackgroundColorScheme == "B{u4}p{q6}{y7}")
+    else if (stringSettings[STR_BACKGROUNDCOLORSCHEME] == "B{u4}p{q6}{y7}")
         sReturn += "plasma" + sSepString;
-    else if (sBackgroundColorScheme == "<<REALISTIC>>")
+    else if (stringSettings[STR_BACKGROUNDCOLORSCHEME] == "<<REALISTIC>>")
         sReturn += "real" + sSepString;
     else
     {
         if (asstr)
-            sReturn += "\\\"" + sBackgroundColorScheme + "\\\"" + sSepString;
+            sReturn += "\\\"" + stringSettings[STR_BACKGROUNDCOLORSCHEME] + "\\\"" + sSepString;
         else
-            sReturn += "\"" + sBackgroundColorScheme + "\"" + sSepString;
+            sReturn += "\"" + stringSettings[STR_BACKGROUNDCOLORSCHEME] + "\"" + sSepString;
     }
-    if (bBox)
+    if (logicalSettings[LOG_BOX])
         sReturn += "box" + sSepString;
-    if (bBoxPlot)
+    if (logicalSettings[LOG_BOXPLOT])
         sReturn += "boxplot" + sSepString;
-    if (bCloudPlot)
+    if (logicalSettings[LOG_CLOUDPLOT])
         sReturn += "cloudplot" + sSepString;
-    if (bColorbar)
+    if (logicalSettings[LOG_COLORBAR])
         sReturn += "colorbar" + sSepString;
-    if (bColorMask)
+    if (logicalSettings[LOG_COLORMASK])
         sReturn += "colormask" + sSepString;
-    if (!isnan(dColorRange[0]) && !isnan(dColorRange[1]))
-        sReturn += "colorrange="+toString(dColorRange[0], _option) + ":" + toString(dColorRange[1],_option) + sSepString;
     sReturn += "colorscheme=";
-    if (sColorScheme == "BbcyrR")
+    if (stringSettings[STR_COLORSCHEME] == "BbcyrR")
         sReturn += "rainbow" + sSepString;
-    else if (sColorScheme == "kw")
+    else if (stringSettings[STR_COLORSCHEME] == "kw")
         sReturn += "grey" + sSepString;
-    else if (sColorScheme == "kRryw")
+    else if (stringSettings[STR_COLORSCHEME] == "kRryw")
         sReturn += "hot" + sSepString;
-    else if (sColorScheme == "kBncw")
+    else if (stringSettings[STR_COLORSCHEME] == "kBncw")
         sReturn += "cold" + sSepString;
-    else if (sColorScheme == "kQqw")
+    else if (stringSettings[STR_COLORSCHEME] == "kQqw")
         sReturn += "copper" + sSepString;
-    else if (sColorScheme == "UBbcgyqRH")
+    else if (stringSettings[STR_COLORSCHEME] == "UBbcgyqRH")
         sReturn += "map" + sSepString;
-    else if (sColorScheme == "kMqyw")
+    else if (stringSettings[STR_COLORSCHEME] == "kMqyw")
         sReturn += "moy" + sSepString;
-    else if (sColorScheme == "BCyw")
+    else if (stringSettings[STR_COLORSCHEME] == "BCyw")
         sReturn += "coast" + sSepString;
-    else if (sColorScheme == "UNC{e4}y")
+    else if (stringSettings[STR_COLORSCHEME] == "UNC{e4}y")
         sReturn += "viridis" + sSepString;
-    else if (sColorScheme == "B{u4}p{q6}{y7}")
+    else if (stringSettings[STR_COLORSCHEME] == "B{u4}p{q6}{y7}")
         sReturn += "plasma" + sSepString;
     else
     {
         if (asstr)
-            sReturn += "\\\"" + sColorScheme + "\\\"" + sSepString;
+            sReturn += "\\\"" + stringSettings[STR_COLORSCHEME] + "\\\"" + sSepString;
         else
-            sReturn += "\"" + sColorScheme + "\"" + sSepString;
+            sReturn += "\"" + stringSettings[STR_COLORSCHEME] + "\"" + sSepString;
     }
-    if (bConnectPoints)
+    if (logicalSettings[LOG_CONNECTPOINTS])
         sReturn += "connect" + sSepString;
-    if (bCrust)
+    if (logicalSettings[LOG_CRUST])
         sReturn += "crust" + sSepString;
-    if (nCoords == 1)
-        sReturn += "polar coords" + sSepString;
-    if (nCoords == 2)
+    if (intSettings[INT_COORDS] >= 100)
         sReturn += "spherical coords" + sSepString;
-    if (bCutBox)
+    else if (intSettings[INT_COORDS] >= 10)
+        sReturn += "polar coords" + sSepString;
+    if (logicalSettings[LOG_CUTBOX])
         sReturn += "cutbox" + sSepString;
-    if (bxError && byError)
+    if (logicalSettings[LOG_XERROR] && logicalSettings[LOG_YERROR])
         sReturn += "errorbars" + sSepString;
-    else if (bxError)
+    else if (logicalSettings[LOG_XERROR])
         sReturn += "xerrorbars" + sSepString;
-    else if (byError)
+    else if (logicalSettings[LOG_YERROR])
         sReturn += "yerrorbars" + sSepString;
-    if (bFixedLength)
+    if (logicalSettings[LOG_FIXEDLENGTH])
         sReturn += "fixed length" + sSepString;
-    if (bFlow)
+    if (logicalSettings[LOG_FLOW])
         sReturn += "flow" + sSepString;
-    sReturn += "font="+sFontStyle+sSepString;
-    if (nGrid == 1)
+    sReturn += "font="+stringSettings[STR_FONTSTYLE]+sSepString;
+    if (intSettings[INT_GRID] == 1)
         sReturn += "grid=coarse" + sSepString;
-    else if (nGrid == 2)
+    else if (intSettings[INT_GRID] == 2)
         sReturn += "grid=fine" + sSepString;
     sReturn += "gridstyle=";
     if (asstr)
-        sReturn += "\\\"" + sGridStyle + "\\\"";
+        sReturn += "\\\"" + stringSettings[STR_GRIDSTYLE] + "\\\"";
     else
-        sReturn += "\"" + sGridStyle + "\"";
+        sReturn += "\"" + stringSettings[STR_GRIDSTYLE] + "\"";
     sReturn += sSepString;
-    if (dHBars)
-        sReturn += "hbars=" + toString(dHBars, 4) + sSepString;
-    if (bInterpolate)
+    if (floatSettings[FLOAT_HBARS])
+        sReturn += "hbars=" + toString(floatSettings[FLOAT_HBARS], 4) + sSepString;
+    if (logicalSettings[LOG_INTERPOLATE])
         sReturn += "interpolate" + sSepString;
-    if (bContLabels)
+    if (logicalSettings[LOG_CONTLABELS])
         sReturn += "lcont" + sSepString;
     sReturn += "legend=";
-    if (nLegendPosition == 0)
+    if (intSettings[INT_LEGENDPOSITION] == 0)
         sReturn += "bottomleft";
-    else if (nLegendPosition == 1)
+    else if (intSettings[INT_LEGENDPOSITION] == 1)
         sReturn += "bottomright";
-    else if (nLegendPosition == 2)
+    else if (intSettings[INT_LEGENDPOSITION] == 2)
         sReturn += "topleft";
     else
         sReturn += "topright";
     sReturn += sSepString;
-    if (nLegendstyle == 1)
+    if (intSettings[INT_LEGENDSTYLE] == 1)
         sReturn += "legendstyle=onlycolors" + sSepString;
-    if (nLegendstyle == 2)
+    if (intSettings[INT_LEGENDSTYLE] == 2)
         sReturn += "legendstyle=onlystyles" + sSepString;
-    if (nLighting == 1)
+    if (intSettings[INT_LIGHTING] == 1)
         sReturn += "lighting" + sSepString;
-    if (nLighting == 2)
+    if (intSettings[INT_LIGHTING] == 2)
         sReturn += "lighting=smooth" + sSepString;
     if (asstr)
-        sReturn += "linesizes=\\\"" + sLineSizes + "\\\"" + sSepString;
+        sReturn += "linesizes=\\\"" + stringSettings[STR_LINESIZES] + "\\\"" + sSepString;
     else
-        sReturn += "linesizes=\"" + sLineSizes + "\"" + sSepString;
+        sReturn += "linesizes=\"" + stringSettings[STR_LINESIZES] + "\"" + sSepString;
     if (asstr)
-        sReturn += "linestyles=\\\"" + sLineStyles + "\\\"" + sSepString;
+        sReturn += "linestyles=\\\"" + stringSettings[STR_LINESTYLES] + "\\\"" + sSepString;
     else
-        sReturn += "linestyles=\"" + sLineStyles + "\"" + sSepString;
+        sReturn += "linestyles=\"" + stringSettings[STR_LINESTYLES] + "\"" + sSepString;
     if (bLogscale[0] && bLogscale[1] && bLogscale[2] && bLogscale[3])
         sReturn += "logscale" + sSepString;
     else
@@ -2201,9 +2112,9 @@ string PlotData::getParams(const Settings& _option, bool asstr) const
         if (bLogscale[3])
             sReturn += "clog" + sSepString;
     }
-    if (nMarks)
-        sReturn += "marks=" + toString(nMarks) + sSepString;
-    if (bOpenImage)
+    if (intSettings[INT_MARKS])
+        sReturn += "marks=" + toString(intSettings[INT_MARKS]) + sSepString;
+    if (logicalSettings[LOG_OPENIMAGE])
         sReturn += "open" + sSepString;
     sReturn += "origin=";
     if (isnan(dOrigin[0]) && isnan(dOrigin[1]) && isnan(dOrigin[2]))
@@ -2213,44 +2124,43 @@ string PlotData::getParams(const Settings& _option, bool asstr) const
     else
         sReturn += "[" + toString(dOrigin[0], _option) + ", " + toString(dOrigin[1], _option) + ", " + toString(dOrigin[2], _option) + "]" + sSepString;
     sReturn += "slices=[" +toString((int)nSlices[0]) + ", " + toString((int)nSlices[1]) + ", " + toString((int)nSlices[2]) + "]" + sSepString;
-    if (bStepPlot)
+    if (logicalSettings[LOG_STEPPLOT])
         sReturn += "steps" + sSepString;
-    if (bOrthoProject)
+    if (logicalSettings[LOG_ORTHOPROJECT])
         sReturn += "orthogonal projection" + sSepString;
-    if (bContProj)
+    if (logicalSettings[LOG_CONTPROJ])
         sReturn += "pcont" + sSepString;
-    if (dPerspective)
-        sReturn += "perspective=" + toString(dPerspective, _option) + sSepString;
+    if (floatSettings[FLOAT_PERSPECTIVE])
+        sReturn += "perspective=" + toString(floatSettings[FLOAT_PERSPECTIVE], _option) + sSepString;
     if (asstr)
-        sReturn += "plotcolors=\\\"" + sColors + "\\\"" + sSepString;
+        sReturn += "plotcolors=\\\"" + stringSettings[STR_COLORS] + "\\\"" + sSepString;
     else
-        sReturn += "plotcolors=\"" + sColors + "\"" + sSepString;
+        sReturn += "plotcolors=\"" + stringSettings[STR_COLORS] + "\"" + sSepString;
     if (asstr)
-        sReturn += "pointstyles=\\\"" + sPointStyles + "\\\"" + sSepString;
+        sReturn += "pointstyles=\\\"" + stringSettings[STR_POINTSTYLES] + "\\\"" + sSepString;
     else
-        sReturn += "pointstyles=\"" + sPointStyles + "\"" + sSepString;
-    if (bPipe)
+        sReturn += "pointstyles=\"" + stringSettings[STR_POINTSTYLES] + "\"" + sSepString;
+    if (logicalSettings[LOG_PIPE])
         sReturn += "pipe" + sSepString;
-    if (bDrawPoints)
+    if (logicalSettings[LOG_DRAWPOINTS])
         sReturn += "points" + sSepString;
-    if (bRegion)
+    if (logicalSettings[LOG_REGION])
         sReturn += "region" + sSepString;
-    if (nHighResLevel)
+    if (intSettings[INT_HIGHRESLEVEL])
     {
-        if (nHighResLevel == 1)
+        if (intSettings[INT_HIGHRESLEVEL] == 1)
             sReturn += "medium";
         else
             sReturn += "high";
         sReturn += " resolution" + sSepString;
     }
     sReturn += "rotate=" + toString(dRotateAngles[0], _option) + "," + toString(dRotateAngles[1], _option) + sSepString;
-    sReturn += "samples=" + toString(nSamples) + sSepString;
-    if (bSchematic)
+    sReturn += "samples=" + toString(intSettings[INT_HIGHRESLEVEL]) + sSepString;
+    if (logicalSettings[LOG_SCHEMATIC])
         sReturn += "schematic" + sSepString;
-    if (bSilentMode)
+    if (logicalSettings[LOG_SILENTMODE])
         sReturn += "silent mode" + sSepString;
-    sReturn += "t=" + toString(dtParam[0], _option) + ":" + toString(dtParam[1], _option) + sSepString;
-    sReturn += "textsize=" + toString(dTextsize, _option) + sSepString;
+    sReturn += "textsize=" + toString(floatSettings[FLOAT_TEXTSIZE], _option) + sSepString;
     sReturn += "tickstemplate=[";
     for (int i = 0; i < 4; i++)
     {
@@ -2615,24 +2525,10 @@ vector<double> PlotData::getWeightedRanges(int nCol, double dLowerPercentage, do
     return vRanges;
 }
 
-// --> Ein spezifisches Plot-Intervall einstellen <--
-void PlotData::setRanges(int _j, double x_0, double x_1)
-{
-    dRanges[_j][0] = x_0;
-    dRanges[_j][1] = x_1;
-    return;
-}
-
-// --> Grenzen eines Intervalls lesen <--
-double PlotData::getRanges(int _j, int _i) const
-{
-    return dRanges[_j][_i];
-}
-
 // --> Datenpunkte einstellen <--
 void PlotData::setSamples(int _nSamples)
 {
-    nSamples = _nSamples;
+    intSettings[INT_SAMPLES] = _nSamples;
 }
 
 // --> Ausgabe-Dateinamen setzen <--
@@ -2646,17 +2542,17 @@ void PlotData::setFileName(string _sFileName)
         if (_sFileName.find('\\') == string::npos && _sFileName.find('/') == string::npos)
         {
             if (sPath[0] == '"' && sPath[sPath.length()-1] == '"')
-                sFileName = sPath.substr(0,sPath.length()-1)+"/"+_sFileName+"\"";
+                stringSettings[STR_FILENAME] = sPath.substr(0,sPath.length()-1)+"/"+_sFileName+"\"";
             else
-                sFileName = sPath + "/" + _sFileName;
+                stringSettings[STR_FILENAME] = sPath + "/" + _sFileName;
         }
         else
-            sFileName = _sFileName;
+            stringSettings[STR_FILENAME] = _sFileName;
 
-        sFileName = FileSystem::ValidizeAndPrepareName(sFileName, sExt);
+        stringSettings[STR_FILENAME] = FileSystem::ValidizeAndPrepareName(stringSettings[STR_FILENAME], sExt);
     }
     else
-        sFileName = "";
+        stringSettings[STR_FILENAME] = "";
     return;
 }
 
@@ -2854,7 +2750,7 @@ string PlotData::getxLabel() const
         return replaceToTeX(sAxisLabels[0]);
     else
     {
-        switch (nCoords)
+        switch (intSettings[INT_COORDS])
         {
             case CARTESIAN:
                 return "\\i x";
@@ -2878,7 +2774,7 @@ string PlotData::getyLabel() const
         return replaceToTeX(sAxisLabels[1]);
     else
     {
-        switch (nCoords)
+        switch (intSettings[INT_COORDS])
         {
             case CARTESIAN:
                 return "\\i y";
@@ -2902,7 +2798,7 @@ string PlotData::getzLabel() const
         return replaceToTeX(sAxisLabels[2]);
     else
     {
-        switch (nCoords)
+        switch (intSettings[INT_COORDS])
         {
             case CARTESIAN:
             case POLAR_RP:

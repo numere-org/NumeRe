@@ -313,14 +313,14 @@ bool integrate(CommandLineParser& cmdParser)
         if (ivl[0].min() == ivl[0].max())
             throw SyntaxError(SyntaxError::INVALID_INTEGRATION_RANGES, cmdParser.getCommandLine(), SyntaxError::invalid_position);
 
-        if (isinf(ivl[0].min().real()) || isnan(ivl[0].min().real())
-            || isinf(ivl[0].max().real()) || isnan(ivl[0].max().real()))
+        if (isinf(ivl[0].min()) || isnan(ivl[0].min())
+            || isinf(ivl[0].max()) || isnan(ivl[0].max()))
         {
             cmdParser.setReturnValue("nan");
             return false;
         }
 
-        range = ivl[0].max().real() - ivl[0].min().real();
+        range = ivl[0].range();
     }
     else
         throw SyntaxError(SyntaxError::NO_INTEGRATION_RANGES, cmdParser.getCommandLine(), SyntaxError::invalid_position);
@@ -512,16 +512,16 @@ bool integrate2d(CommandLineParser& cmdParser)
         if (ivl[0].front() == ivl[0].back())
             throw SyntaxError(SyntaxError::INVALID_INTEGRATION_RANGES, cmdParser.getCommandLine(), SyntaxError::invalid_position);
 
-        if (isinf(ivl[0].front().real()) || isnan(ivl[0].front().real())
-            || isinf(ivl[0].back().real()) || isnan(ivl[0].back().real())
-            || isinf(ivl[1].front().real()) || isnan(ivl[1].front().real())
-            || isinf(ivl[1].back().real()) || isnan(ivl[1].back().real()))
+        if (isinf(ivl[0].min()) || isnan(ivl[0].min())
+            || isinf(ivl[0].max()) || isnan(ivl[0].max())
+            || isinf(ivl[1].min()) || isnan(ivl[1].min())
+            || isinf(ivl[1].max()) || isnan(ivl[1].max()))
         {
             cmdParser.setReturnValue("nan");
             return false;
         }
 
-        range = std::min(ivl[0].max().real() - ivl[0].min().real(), ivl[1].max().real() - ivl[1].min().real());
+        range = std::min(ivl[0].range(), ivl[1].range());
     }
     else
         throw SyntaxError(SyntaxError::NO_INTEGRATION_RANGES, cmdParser.getCommandLine(), SyntaxError::invalid_position);
@@ -614,8 +614,8 @@ bool integrate2d(CommandLineParser& cmdParser)
 
     y = ivl[1](0); // y = y_0
 
-    double dx = (ivl[0].max() - ivl[0].min()).real() / (nSamples-1);
-    double dy = (ivl[1].max() - ivl[1].min()).real() / (nSamples-1);
+    double dx = ivl[0].range() / (nSamples-1);
+    double dy = ivl[1].range() / (nSamples-1);
 
     // --> Werte mit den Startwerten die erste Stuetzstelle fuer die y-Integration aus <--
     v = _parser.Eval(nResults);
@@ -648,7 +648,7 @@ bool integrate2d(CommandLineParser& cmdParser)
             if (bRenewBoundaries)
             {
                 refreshBoundaries(ivl, sIntegrationExpression);
-                dy = (ivl[1].max() - ivl[1].min()).real() / (nSamples-1);
+                dy = ivl[1].range() / (nSamples-1);
             }
 
             // --> Setzen wir "y" auf den Wert, der von der unteren y-Grenze vorgegeben wird <--
@@ -681,7 +681,7 @@ bool integrate2d(CommandLineParser& cmdParser)
                 if (bRenewBoundaries)
                 {
                     refreshBoundaries(ivl, sIntegrationExpression);
-                    dy = (ivl[1].max() - ivl[1].min()).real() / (nSamples-1);
+                    dy = ivl[1].range() / (nSamples-1);
                 }
 
                 // Set y to the first position
@@ -3212,7 +3212,7 @@ bool evalPoints(CommandLineParser& cmdParser)
         return false;
     }
 
-    if (bLogarithmic && (ivl[0].min().real() <= 0.0))
+    if (bLogarithmic && (ivl[0].min() <= 0.0))
         throw SyntaxError(SyntaxError::WRONG_PLOT_INTERVAL_FOR_LOGSCALE, cmdParser.getCommandLine(), SyntaxError::invalid_position);
 
     // Set the corresponding expression
@@ -4569,7 +4569,7 @@ void particleSwarmOptimizer(CommandLineParser& cmdParser)
                 vPos[n][j] += fAdaptiveVelFactor * vVel[n][j];
 
                 // Restrict to interval boundaries
-                vPos[n][j] = std::max(ivl[n].min().real(), std::min(vPos[n][j], ivl[n].max().real()));
+                vPos[n][j] = std::max(ivl[n].min(), std::min(vPos[n][j], ivl[n].max()));
 
                 // Update the corresponding default variable
                 _defVars.vValue[n][0] = vPos[n][j];

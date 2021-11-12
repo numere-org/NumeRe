@@ -23,14 +23,15 @@
 #ifndef PLOTINFO_HPP
 #define PLOTINFO_HPP
 
+#include "../interval.hpp"
+
 using namespace std;
 
 
 struct PlotInfo
 {
-    double dRanges[3][2];
-    double dSecAxisRanges[2][2];
-    double dColorRanges[2];
+    IntervalSet ranges;
+    IntervalSet secranges;
     bool b2D;
     bool b3D;
     bool b2DVect;
@@ -69,45 +70,6 @@ struct PlotInfo
             sPointStyles = nullptr;
             sConPointStyles = nullptr;
         }
-    /*inline PlotInfo(PlotInfo& __pinfo)
-        {
-            for (int i = 0; i < 3; i++)
-            {
-                dRanges[i][0] = __pinfo.dRanges[i][0];
-                dRanges[i][1] = __pinfo.dRanges[i][1];
-            }
-            for (int i = 0; i < 2; i++)
-            {
-                dSecAxisRanges[i][0] = __pinfo.dSecAxisRanges[i][0];
-                dSecAxisRanges[i][1] = __pinfo.dSecAxisRanges[i][1];
-                dColorRanges[i] = __pinfo.dColorRanges[i];
-            }
-            b2D = __pinfo.b2D;
-            b3D = __pinfo.b3D;
-            b2DVect = __pinfo.b2DVect;
-            b3DVect = __pinfo.b3DVect;
-            bDraw = __pinfo.bDraw;
-            bDraw3D = __pinfo.bDraw3D;
-            sCommand = __pinfo.sCommand;
-            sPlotParams = __pinfo.sPlotParams;
-            nSamples = __pinfo.nSamples;
-            nStyleMax = __pinfo.nStyleMax;
-            nMaxPlotDim = __pinfo.nMaxPlotDim;
-            // Pointer-Variablen
-            nStyle = __pinfo.nStyle;
-            nFunctions = __pinfo.nFunctions;
-            sLineStyles = __pinfo.sLineStyles;
-            sContStyles = __pinfo.sContStyles;
-            sPointStyles = __pinfo.sPointStyles;
-            sConPointStyles = __pinfo.sConPointStyles;
-
-            // pointer take-over
-            __pinfo.sLineStyles = nullptr;
-            __pinfo.sContStyles = nullptr;
-            __pinfo.sPointStyles = nullptr;
-            __pinfo.sConPointStyles = nullptr;
-        }*/
-
 };
 
 

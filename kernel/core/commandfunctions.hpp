@@ -1772,7 +1772,7 @@ static void listInstalledPlugins(Parser& _parser, MemoryManager& _data, const Se
 		NumeReKernel::print(toSystemCodePage(_lang.get("PARSERFUNCS_LISTPLUGINS_EMPTY")));
 	else
 	{
-	    int largewindowoffset = _option.getWindow() > 230 ? 10 : 0;
+	    size_t largewindowoffset = _option.getWindow() > 230 ? 10 : 0;
         // The info to be printed is: Package Name, Version, Command, Description, Author, License
         // The minimal desired column width is
         std::vector<size_t> minDesiredColWidth{20 + largewindowoffset, 10 + largewindowoffset, 15 + largewindowoffset, 0, 20 + largewindowoffset, 15 + largewindowoffset};
@@ -2522,9 +2522,9 @@ static CommandReturnValues cmd_plotting(string& sCmd)
             if (!isNotEmptyExpression(sCmdSubstr))
             {
                 if (sCmd.find("--") != string::npos)
-                    _pData.setParams(sCmd.substr(sCmd.find("--")), _parser, _option);
+                    _pData.setParams(sCmd.substr(sCmd.find("--")));
                 else
-                    _pData.setParams(sCmd.substr(sCmd.find("-set")), _parser, _option);
+                    _pData.setParams(sCmd.substr(sCmd.find("-set")));
 
                 if (_option.systemPrints())
                     NumeReKernel::print(toSystemCodePage( _lang.get("BUILTIN_CHECKKEYWORD_PLOTPARAMS")));
@@ -2755,14 +2755,14 @@ static CommandReturnValues cmd_get(string& sCmd)
         if (asStr)
         {
             if (!nPos)
-                sCmd = _pData.getParams(_option, true);
+                sCmd = _pData.getParams(true);
             else
-                sCmd.replace(nPos, sCommand.length(), _pData.getParams(_option, true));
+                sCmd.replace(nPos, sCommand.length(), _pData.getParams(true));
 
             return COMMAND_HAS_RETURNVALUE;
         }
 
-        NumeReKernel::print(LineBreak("PLOTPARAMS: " + _pData.getParams(_option), _option, false));
+        NumeReKernel::print(LineBreak("PLOTPARAMS: " + _pData.getParams(), _option, false));
         return COMMAND_PROCESSED;
     }
     else

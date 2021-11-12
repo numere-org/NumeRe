@@ -42,7 +42,7 @@ class Interval
     public:
         std::string name;
 
-        Interval() : m_sDefinition(), m_vInterval(), name() {}
+        Interval() : m_sDefinition(), m_vInterval({NAN,NAN}), name() {}
         Interval(const std::string& sDef);
         Interval(mu::value_type dFront, mu::value_type dBack);
         Interval(const Interval& ivl);
@@ -54,14 +54,23 @@ class Interval
         mu::value_type front() const;
         mu::value_type back() const;
 
-        mu::value_type min() const;
-        mu::value_type max() const;
+        mu::value_type cmin() const;
+        mu::value_type cmax() const;
+
+        double min() const;
+        double max() const;
+        double range() const;
+        double middle() const;
 
         bool isInside(mu::value_type val) const;
         bool contains(const std::string& sVarName) const;
         size_t getSamples() const;
 
         void refresh();
+        void reset(const std::string& sDef);
+        void reset(mu::value_type dFront, mu::value_type dBack);
+
+        void expand(double perc, double dMin = -INFINITY);
 };
 
 
@@ -76,14 +85,96 @@ struct IntervalSet
 
     IntervalSet(const std::string& sIntervalString);
     IntervalSet(const IntervalSet& ivSet);
+    IntervalSet() = default;
 
     IntervalSet& operator=(const IntervalSet& ivSet);
     Interval& operator[](size_t n);
+    const Interval& operator[](size_t n) const;
 
     bool hasDependentIntervals() const;
     size_t size() const;
     std::vector<mu::value_type> convert();
+    void setNames(const std::vector<std::string>& vNames);
 };
+
+
+/////////////////////////////////////////////////
+/// \brief Structure for the horizontal and
+/// vertical lines in plots.
+/////////////////////////////////////////////////
+struct Line
+{
+    std::string sDesc;
+    std::string sStyle;
+    double dPos;
+
+    Line() : sDesc(""), sStyle("k;2"), dPos(0.0) {}
+};
+
+
+/////////////////////////////////////////////////
+/// \brief Structure for the axes in plots.
+/////////////////////////////////////////////////
+struct Axis
+{
+    std::string sLabel;
+    std::string sStyle;
+    Interval ivl;
+};
+
+
+/////////////////////////////////////////////////
+/// \brief Structure for describing time axes in
+/// plots.
+/////////////////////////////////////////////////
+struct TimeAxis
+{
+    std::string sTimeFormat;
+    bool use;
+
+    TimeAxis() : sTimeFormat(""), use(false) {}
+
+    void activate(const std::string& sFormat = "")
+    {
+        use = true;
+        sTimeFormat = sFormat;
+
+        if (!sTimeFormat.length())
+            return;
+
+        if (sTimeFormat.find("YYYY") != std::string::npos)
+            sTimeFormat.replace(sTimeFormat.find("YYYY"), 4, "%Y");
+
+        if (sTimeFormat.find("YY") != std::string::npos)
+            sTimeFormat.replace(sTimeFormat.find("YY"), 2, "%y");
+
+        if (sTimeFormat.find("MM") != std::string::npos)
+            sTimeFormat.replace(sTimeFormat.find("MM"), 2, "%m");
+
+        if (sTimeFormat.find("DD") != std::string::npos)
+            sTimeFormat.replace(sTimeFormat.find("DD"), 2, "%d");
+
+        if (sTimeFormat.find("HH") != std::string::npos)
+            sTimeFormat.replace(sTimeFormat.find("HH"), 2, "%H");
+
+        if (sTimeFormat.find("hh") != std::string::npos)
+            sTimeFormat.replace(sTimeFormat.find("hh"), 2, "%H");
+
+        if (sTimeFormat.find("mm") != std::string::npos)
+            sTimeFormat.replace(sTimeFormat.find("mm"), 2, "%M");
+
+        if (sTimeFormat.find("ss") != std::string::npos)
+            sTimeFormat.replace(sTimeFormat.find("ss"), 2, "%S");
+    }
+
+    void deactivate()
+    {
+        use = false;
+        sTimeFormat.clear();
+    }
+};
+
+
 
 #endif // INTERVAL_HPP
 
