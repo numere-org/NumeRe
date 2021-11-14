@@ -16,6 +16,9 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
+#ifndef PLOTTING_HPP
+#define PLOTTING_HPP
+
 #include <mgl2/mgl.h>
 #include <string>
 #include <vector>
@@ -29,9 +32,7 @@
 #include "graph_helper.hpp"
 
 class DataAccessParser;
-
-#ifndef PLOTTING_HPP
-#define PLOTTING_HPP
+struct PlotAsset;
 
 using namespace std;
 using namespace mu;
@@ -46,6 +47,7 @@ void createPlot(string& sCmd, MemoryManager& _data, Parser& _parser, Settings& _
 class Plot
 {
     private:
+        std::vector<PlotAsset> m_assets;
         mglData _mAxisVals[3];
         std::vector<std::vector<mglData>> v_mDataPlots;
         bool bOutputDesired;

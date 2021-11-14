@@ -492,6 +492,7 @@
 		<Unit filename="kernel/core/maths/wavelet.hpp" />
 		<Unit filename="kernel/core/plotting/graph_helper.cpp" />
 		<Unit filename="kernel/core/plotting/graph_helper.hpp" />
+		<Unit filename="kernel/core/plotting/plotasset.hpp" />
 		<Unit filename="kernel/core/plotting/plotdata.cpp" />
 		<Unit filename="kernel/core/plotting/plotdata.hpp" />
 		<Unit filename="kernel/core/plotting/plotinfo.hpp" />

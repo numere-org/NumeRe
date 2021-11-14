@@ -26,6 +26,11 @@
 
 using namespace std;
 
+/////////////////////////////////////////////////
+/// \brief This class encapsulates the mglGraph
+/// object during transmission from the kernel to
+/// the GUI.
+/////////////////////////////////////////////////
 class GraphHelper : public mglDraw
 {
     private:

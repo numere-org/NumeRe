@@ -19,6 +19,7 @@
 #include <wx/image.h>
 
 #include "plotting.hpp"
+#include "plotasset.hpp"
 #include "../maths/parser_functions.hpp"
 #include "../../kernel.hpp"
 
@@ -28,15 +29,6 @@ extern mglGraph _fontData;
 
 
 // These definitions are for easier understanding of the different ranges
-#define XCOORD 0
-#define YCOORD 1
-#define ZCOORD 2
-#define TCOORD 3
-#define XRANGE XCOORD
-#define YRANGE YCOORD
-#define ZRANGE ZCOORD
-#define TRANGE 4
-#define CRANGE 3
 #define APPR_ONE 0.9999999
 #define APPR_TWO 1.9999999
 #define STYLES_COUNT 20
@@ -99,7 +91,7 @@ void createPlot(string& sCmd, MemoryManager& _data, Parser& _parser, Settings& _
 /// \return mglData
 ///
 /////////////////////////////////////////////////
-static mglData duplicatePoints(const mglData& _mData)
+mglData duplicatePoints(const mglData& _mData)
 {
     if (_mData.GetNy() > 1)
     {
@@ -285,6 +277,7 @@ Plot::Plot(string& sCmd, MemoryManager& __data, Parser& __parser, Settings& __op
                      && !isInQuotes(vPlotCompose[i], vPlotCompose[i].find("--"))
                      && findCommand(vPlotCompose[i]).sString != "subplot")
                 _pInfo.sPlotParams += vPlotCompose[i].substr(vPlotCompose[i].find("--"));
+
             _pInfo.sPlotParams += " ";
         }
 
@@ -293,6 +286,7 @@ Plot::Plot(string& sCmd, MemoryManager& __data, Parser& __parser, Settings& __op
         if (_pInfo.sPlotParams.length())
         {
             evaluatePlotParamString();
+
             if (nMultiplots[0]) // if this is a multiplot layout, then we will only evaluate the SUPERGLOBAL parameters
                 _pData.setParams(_pInfo.sPlotParams, PlotData::SUPERGLOBAL);
             else
@@ -334,8 +328,7 @@ Plot::Plot(string& sCmd, MemoryManager& __data, Parser& __parser, Settings& __op
     {
         // If this is a multiplot layout then we need to evaluate the global options for every subplot,
         // because we omitted this set further up. We enter this for each "subplot" command.
-        if (vPlotCompose.size() > 1
-                && nMultiplots[0])
+        if (vPlotCompose.size() > 1 && nMultiplots[0])
         {
             // Reset the maximal plotting dimension
             _pInfo.nMaxPlotDim = 0;
@@ -344,18 +337,16 @@ Plot::Plot(string& sCmd, MemoryManager& __data, Parser& __parser, Settings& __op
             // whole block
             for (unsigned int i = nPlotStart; i < vPlotCompose.size(); i++)
             {
-                if (vPlotCompose[i].find("-set") != string::npos
-                        && !isInQuotes(vPlotCompose[i], vPlotCompose[i].find("-set"))
-                        && findCommand(vPlotCompose[i]).sString != "subplot")
-                    _pInfo.sPlotParams += vPlotCompose[i].substr(vPlotCompose[i].find("-set"));
-                else if (vPlotCompose[i].find("--") != string::npos
-                         && !isInQuotes(vPlotCompose[i], vPlotCompose[i].find("--"))
-                         && findCommand(vPlotCompose[i]).sString != "subplot")
-                    _pInfo.sPlotParams += vPlotCompose[i].substr(vPlotCompose[i].find("--"));
-
                 // Leave the loop, if the current command equals "subplot"
                 if (findCommand(vPlotCompose[i]).sString == "subplot")
                     break;
+
+                if (vPlotCompose[i].find("-set") != string::npos
+                    && !isInQuotes(vPlotCompose[i], vPlotCompose[i].find("-set")))
+                    _pInfo.sPlotParams += vPlotCompose[i].substr(vPlotCompose[i].find("-set"));
+                else if (vPlotCompose[i].find("--") != string::npos
+                         && !isInQuotes(vPlotCompose[i], vPlotCompose[i].find("--")))
+                    _pInfo.sPlotParams += vPlotCompose[i].substr(vPlotCompose[i].find("--"));
 
                 // Find the maximal plotting dimension of the current subplot
                 determinePlottingDimensions(findCommand(vPlotCompose[i]).sString);
@@ -1714,7 +1705,8 @@ void Plot::createStdPlot(vector<short>& vType, int& nStyle, size_t& nLegends, in
                     // Add the legend
                     if (sConvLegends != "\"\"")
                     {
-                        _graph->AddLegend(fromSystemCodePage(replaceToTeX(sConvLegends.substr(1, sConvLegends.length() - 2))).c_str(), _pInfo.sLineStyles[nCurrentStyle].c_str());
+                        _graph->AddLegend(fromSystemCodePage(replaceToTeX(sConvLegends.substr(1, sConvLegends.length() - 2))).c_str(),
+                                          _pInfo.sLineStyles[nCurrentStyle].c_str());
                         nLegends++;
                     }
 
@@ -1749,7 +1741,8 @@ void Plot::createStdPlot(vector<short>& vType, int& nStyle, size_t& nLegends, in
                     // Add the legend
                     if (sLegend != "\"\"")
                     {
-                        _graph->AddLegend(fromSystemCodePage(replaceToTeX(sLegend.substr(1, sLegend.length() - 2))).c_str(), getLegendStyle(_pInfo.sLineStyles[nCurrentStyle]).c_str());
+                        _graph->AddLegend(fromSystemCodePage(replaceToTeX(sLegend.substr(1, sLegend.length() - 2))).c_str(),
+                                          getLegendStyle(_pInfo.sLineStyles[nCurrentStyle]).c_str());
                         nLegends++;
                     }
                     if (nCurrentStyle == _pInfo.nStyleMax - 1)
@@ -1786,26 +1779,30 @@ void Plot::createStdPlot(vector<short>& vType, int& nStyle, size_t& nLegends, in
                 if (sLegend != "\"\"")
                 {
                     nLegends++;
+                    std::string sLegendStyle;
+
                     if (_pData.getSettings(PlotData::LOG_BOXPLOT))
-                    {
-                        _graph->AddLegend(fromSystemCodePage(replaceToTeX(sLegend.substr(1, sLegend.length() - 2))).c_str(), getLegendStyle(_pInfo.sLineStyles[nCurrentStyle]).c_str());
-                    }
+                        sLegendStyle = getLegendStyle(_pInfo.sLineStyles[nCurrentStyle]);
                     else if (!_pData.getSettings(PlotData::LOG_XERROR) && !_pData.getSettings(PlotData::LOG_YERROR))
                     {
-                        if ((_pData.getSettings(PlotData::LOG_INTERPOLATE) && v_mDataPlots[nTypeCounter[1]][0].nx >= _pInfo.nSamples) || _pData.getSettings(PlotData::FLOAT_BARS) || _pData.getSettings(PlotData::FLOAT_HBARS))
-                            _graph->AddLegend(fromSystemCodePage(replaceToTeX(sLegend.substr(1, sLegend.length() - 2))).c_str(), getLegendStyle(_pInfo.sLineStyles[nCurrentStyle]).c_str());
-                        else if (_pData.getSettings(PlotData::LOG_CONNECTPOINTS) || (_pData.getSettings(PlotData::LOG_INTERPOLATE) && v_mDataPlots[nTypeCounter[1]][0].nx >= 0.9 * _pInfo.nSamples))
-                            _graph->AddLegend(fromSystemCodePage(replaceToTeX(sLegend.substr(1, sLegend.length() - 2))).c_str(), getLegendStyle(_pInfo.sConPointStyles[nCurrentStyle]).c_str());
+                        if ((_pData.getSettings(PlotData::LOG_INTERPOLATE) && v_mDataPlots[nTypeCounter[1]][0].nx >= _pInfo.nSamples)
+                            || _pData.getSettings(PlotData::FLOAT_BARS)
+                            || _pData.getSettings(PlotData::FLOAT_HBARS))
+                            sLegendStyle = getLegendStyle(_pInfo.sLineStyles[nCurrentStyle]);
+                        else if (_pData.getSettings(PlotData::LOG_CONNECTPOINTS)
+                                 || (_pData.getSettings(PlotData::LOG_INTERPOLATE) && v_mDataPlots[nTypeCounter[1]][0].nx >= 0.9 * _pInfo.nSamples))
+                            sLegendStyle = getLegendStyle(_pInfo.sConPointStyles[nCurrentStyle]);
                         else if (_pData.getSettings(PlotData::LOG_STEPPLOT))
-                            _graph->AddLegend(fromSystemCodePage(replaceToTeX(sLegend.substr(1, sLegend.length() - 2))).c_str(), getLegendStyle(_pInfo.sLineStyles[nCurrentStyle]).c_str());
+                            sLegendStyle = getLegendStyle(_pInfo.sLineStyles[nCurrentStyle]);
                         else
-                            _graph->AddLegend(fromSystemCodePage(replaceToTeX(sLegend.substr(1, sLegend.length() - 2))).c_str(), getLegendStyle(_pInfo.sPointStyles[nCurrentStyle]).c_str());
+                            sLegendStyle = getLegendStyle(_pInfo.sPointStyles[nCurrentStyle]);
                     }
                     else
-                    {
-                        _graph->AddLegend(fromSystemCodePage(replaceToTeX(sLegend.substr(1, sLegend.length() - 2))).c_str(), getLegendStyle(_pInfo.sPointStyles[nCurrentStyle]).c_str());
-                    }
+                        sLegendStyle = getLegendStyle(_pInfo.sPointStyles[nCurrentStyle]);
+
+                    _graph->AddLegend(fromSystemCodePage(replaceToTeX(sLegend.substr(1, sLegend.length() - 2))).c_str(), sLegendStyle.c_str());
                 }
+
                 if (nCurrentStyle == _pInfo.nStyleMax - 1)
                     nCurrentStyle = 0;
                 else
@@ -1814,33 +1811,38 @@ void Plot::createStdPlot(vector<short>& vType, int& nStyle, size_t& nLegends, in
 
             nTypeCounter[1]++;
         }
+
         if (_pData.getSettings(PlotData::LOG_REGION) && vType.size() > nType + 1 && getNN(_mData2[0]) > 1)
             nType++;
     }
 
 
-    for (unsigned int i = 0; i < _pData.getHLinesSize(); i++)
+    for (const Line& line : _pData.getHLines())
     {
-        if (_pData.getHLines(i).sDesc.length())
-        {
-            _graph->Line(mglPoint(_pInfo.ranges[XRANGE].min(), _pData.getHLines(i).dPos), mglPoint(_pInfo.ranges[XRANGE].max(), _pData.getHLines(i).dPos), _pData.getHLines(i).sStyle.c_str(), 100);
-            _graph->Puts(_pInfo.ranges[XRANGE].min() + 0.03 * (_pData.getLogscale(XRANGE) ? log10(_pInfo.ranges[XRANGE].range()) : _pInfo.ranges[XRANGE].range()),
-                         _pData.getHLines(i).dPos + 0.01 * (_pData.getLogscale(YRANGE) ? log10(_pInfo.ranges[YRANGE].range()) : _pInfo.ranges[YRANGE].range()),
-                         fromSystemCodePage(_pData.getHLines(i).sDesc).c_str(), ":kL");
-        }
+        if (!line.sDesc.length())
+            continue;
+
+        _graph->Line(mglPoint(_pInfo.ranges[XRANGE].min(), line.dPos), mglPoint(_pInfo.ranges[XRANGE].max(), line.dPos), line.sStyle.c_str(), 100);
+        _graph->Puts(_pInfo.ranges[XRANGE].min() + 0.03 * (_pData.getLogscale(XRANGE)
+                                                           ? log10(_pInfo.ranges[XRANGE].range())
+                                                           : _pInfo.ranges[XRANGE].range()),
+                     line.dPos + 0.01 * (_pData.getLogscale(YRANGE) ? log10(_pInfo.ranges[YRANGE].range()) : _pInfo.ranges[YRANGE].range()),
+                     fromSystemCodePage(line.sDesc).c_str(), ":kL");
     }
 
-    for (unsigned int i = 0; i < _pData.getVLinesSize(); i++)
+    for (const Line& line : _pData.getVLines())
     {
-        if (_pData.getVLines(i).sDesc.length())
-        {
-            _graph->Line(mglPoint(_pData.getVLines(i).dPos, _pInfo.ranges[YRANGE].min()), mglPoint(_pData.getVLines(i).dPos, _pInfo.ranges[YRANGE].max()), _pData.getVLines(i).sStyle.c_str());
-            _graph->Puts(mglPoint(_pData.getVLines(i).dPos - 0.01 * (_pData.getLogscale(XRANGE) ? log10(_pInfo.ranges[XRANGE].range()) : _pInfo.ranges[XRANGE].range()),
-                                  _pInfo.ranges[YRANGE].min() + 0.05 * (_pData.getLogscale(YRANGE) ? log10(_pInfo.ranges[YRANGE].range()) : _pInfo.ranges[YRANGE].range())),
-                         mglPoint(_pData.getVLines(i).dPos - 0.01 * (_pData.getLogscale(XRANGE) ? log10(_pInfo.ranges[XRANGE].range()) : _pInfo.ranges[XRANGE].range()),
-                                  _pInfo.ranges[YRANGE].min()),
-                         fromSystemCodePage(_pData.getVLines(i).sDesc).c_str(), ":kL");
-        }
+        if (!line.sDesc.length())
+            continue;
+
+        _graph->Line(mglPoint(line.dPos, _pInfo.ranges[YRANGE].min()), mglPoint(line.dPos, _pInfo.ranges[YRANGE].max()), line.sStyle.c_str());
+        _graph->Puts(mglPoint(line.dPos - 0.01 * (_pData.getLogscale(XRANGE) ? log10(_pInfo.ranges[XRANGE].range()) : _pInfo.ranges[XRANGE].range()),
+                              _pInfo.ranges[YRANGE].min() + 0.05 * (_pData.getLogscale(YRANGE)
+                                                                    ? log10(_pInfo.ranges[YRANGE].range())
+                                                                    : _pInfo.ranges[YRANGE].range())),
+                     mglPoint(line.dPos - 0.01 * (_pData.getLogscale(XRANGE) ? log10(_pInfo.ranges[XRANGE].range()) : _pInfo.ranges[XRANGE].range()),
+                              _pInfo.ranges[YRANGE].min()),
+                     fromSystemCodePage(line.sDesc).c_str(), ":kL");
     }
 
     if (nLegends && !_pData.getSettings(PlotData::LOG_SCHEMATIC) && nPlotCompose + 1 == nPlotComposeSize)
@@ -1863,14 +1865,20 @@ void Plot::createStdPlot(vector<short>& vType, int& nStyle, size_t& nLegends, in
 bool Plot::plotstd(mglData& _mData, mglData& _mAxisVals, mglData _mData2[2], const short nType)
 {
 #warning NOTE (numere#3#08/15/21): Temporary fix for MathGL misbehaviour
-    if (!_pData.getSettings(PlotData::LOG_BOXPLOT) && !_pData.getSettings(PlotData::LOG_YERROR) && !_pData.getSettings(PlotData::LOG_XERROR) && !_pData.getSettings(PlotData::FLOAT_BARS) && !_pData.getSettings(PlotData::FLOAT_HBARS) && !_pData.getSettings(PlotData::LOG_STEPPLOT))
+    if (!_pData.getSettings(PlotData::LOG_BOXPLOT)
+        && !_pData.getSettings(PlotData::LOG_YERROR)
+        && !_pData.getSettings(PlotData::LOG_XERROR)
+        && !_pData.getSettings(PlotData::FLOAT_BARS)
+        && !_pData.getSettings(PlotData::FLOAT_HBARS)
+        && !_pData.getSettings(PlotData::LOG_STEPPLOT))
     {
         _mData = duplicatePoints(_mData);
         _mAxisVals = duplicatePoints(_mAxisVals);
         _mData2[0] = duplicatePoints(_mData2[0]);
         _mData2[1] = duplicatePoints(_mData2[1]);
 
-        if (_pData.getSettings(PlotData::INT_COORDS) == PlotData::POLAR_PZ || _pData.getSettings(PlotData::INT_COORDS) == PlotData::SPHERICAL_PT)
+        if (_pData.getSettings(PlotData::INT_COORDS) == PlotData::POLAR_PZ
+            || _pData.getSettings(PlotData::INT_COORDS) == PlotData::SPHERICAL_PT)
         {
             removeNegativeValues(_mData);
             removeNegativeValues(_mData2[0]);
@@ -1884,79 +1892,133 @@ bool Plot::plotstd(mglData& _mData, mglData& _mAxisVals, mglData _mData2[2], con
         else if (_pData.getSettings(PlotData::LOG_REGION) && getNN(_mData2[0]) > 1)
         {
             if (*_pInfo.nStyle == _pInfo.nStyleMax - 1)
-                _graph->Region(_mAxisVals, _mData, _mData2[0], ("a{" + _pData.getColors().substr(*_pInfo.nStyle, 1) + "7}{" + _pData.getColors().substr(0, 1) + "7}").c_str());
+                _graph->Region(_mAxisVals, _mData, _mData2[0],
+                               ("a{" + _pData.getColors().substr(*_pInfo.nStyle, 1) + "7}{" + _pData.getColors().substr(0, 1) + "7}").c_str());
             else
-                _graph->Region(_mAxisVals, _mData, _mData2[0], ("a{" + _pData.getColors().substr(*_pInfo.nStyle, 1) + "7}{" + _pData.getColors().substr(*_pInfo.nStyle + 1, 1) + "7}").c_str());
-            _graph->Plot(_mAxisVals, _mData, ("a" + _pInfo.sLineStyles[*_pInfo.nStyle]).c_str());
+                _graph->Region(_mAxisVals, _mData, _mData2[0],
+                               ("a{" + _pData.getColors().substr(*_pInfo.nStyle, 1) + "7}{" + _pData.getColors().substr(*_pInfo.nStyle + 1, 1) + "7}").c_str());
+
+            _graph->Plot(_mAxisVals, _mData,
+                         ("a" + _pInfo.sLineStyles[*_pInfo.nStyle]).c_str());
+
             if (*_pInfo.nStyle == _pInfo.nStyleMax - 1)
-                _graph->Plot(_mAxisVals, _mData2[0], ("a" + _pInfo.sLineStyles[0]).c_str());
+                _graph->Plot(_mAxisVals, _mData2[0],
+                             ("a" + _pInfo.sLineStyles[0]).c_str());
             else
-                _graph->Plot(_mAxisVals, _mData2[0], ("a" + _pInfo.sLineStyles[*_pInfo.nStyle + 1]).c_str());
+                _graph->Plot(_mAxisVals, _mData2[0],
+                             ("a" + _pInfo.sLineStyles[*_pInfo.nStyle + 1]).c_str());
         }
         else if (_pData.getSettings(PlotData::LOG_AREA) || _pData.getSettings(PlotData::LOG_REGION))
-            _graph->Area(_mAxisVals, _mData, ("a" + _pInfo.sLineStyles[*_pInfo.nStyle] + "{" + _pData.getColors()[*_pInfo.nStyle] + "9}").c_str());
+            _graph->Area(_mAxisVals, _mData,
+                         ("a" + _pInfo.sLineStyles[*_pInfo.nStyle] + "{" + _pData.getColors()[*_pInfo.nStyle] + "9}").c_str());
     }
     else
     {
         if (_pData.getSettings(PlotData::LOG_BOXPLOT))
-        {
-            _graph->BoxPlot(_mData2[0], _mData, _pInfo.sLineStyles[*_pInfo.nStyle].c_str());
-        }
+            _graph->BoxPlot(_mData2[0], _mData,
+                            _pInfo.sLineStyles[*_pInfo.nStyle].c_str());
         else if (!_pData.getSettings(PlotData::LOG_XERROR) && !_pData.getSettings(PlotData::LOG_YERROR))
         {
             if (_pData.getSettings(PlotData::LOG_INTERPOLATE) && countValidElements(_mData) >= (size_t)_pInfo.nSamples)
             {
-                if (!_pData.getSettings(PlotData::LOG_AREA) && !_pData.getSettings(PlotData::FLOAT_BARS) && !_pData.getSettings(PlotData::LOG_REGION) && !_pData.getSettings(PlotData::LOG_STEPPLOT))
-                    _graph->Plot(_mAxisVals, _mData, ("a" + expandStyleForCurveArray(_pInfo.sLineStyles[*_pInfo.nStyle], _mData.ny > 1)).c_str());
-                else if (_pData.getSettings(PlotData::FLOAT_BARS) && !_pData.getSettings(PlotData::LOG_AREA) && !_pData.getSettings(PlotData::LOG_REGION) && !_pData.getSettings(PlotData::LOG_STEPPLOT))
-                    _graph->Bars(_mAxisVals, _mData, (composeColoursForBarChart(_mData.ny) + "^").c_str());
+                if (!_pData.getSettings(PlotData::LOG_AREA)
+                    && !_pData.getSettings(PlotData::FLOAT_BARS)
+                    && !_pData.getSettings(PlotData::LOG_REGION)
+                    && !_pData.getSettings(PlotData::LOG_STEPPLOT))
+                    _graph->Plot(_mAxisVals, _mData,
+                                 ("a" + expandStyleForCurveArray(_pInfo.sLineStyles[*_pInfo.nStyle], _mData.ny > 1)).c_str());
+                else if (_pData.getSettings(PlotData::FLOAT_BARS)
+                         && !_pData.getSettings(PlotData::LOG_AREA)
+                         && !_pData.getSettings(PlotData::LOG_REGION)
+                         && !_pData.getSettings(PlotData::LOG_STEPPLOT))
+                    _graph->Bars(_mAxisVals, _mData,
+                                 (composeColoursForBarChart(_mData.ny) + "^").c_str());
                 else if (_pData.getSettings(PlotData::LOG_REGION) && getNN(_mData2[0]) > 1)
                 {
                     if (*_pInfo.nStyle == _pInfo.nStyleMax - 1)
-                        _graph->Region(_mAxisVals, _mData, _mData2[0], ("a{" + _pData.getColors().substr(*_pInfo.nStyle, 1) + "7}{" + _pData.getColors().substr(0, 1) + "7}").c_str());
+                        _graph->Region(_mAxisVals, _mData, _mData2[0],
+                                       ("a{" + _pData.getColors().substr(*_pInfo.nStyle, 1) + "7}{" + _pData.getColors().substr(0, 1) + "7}").c_str());
                     else
-                        _graph->Region(_mAxisVals, _mData, _mData2[0], ("a{" + _pData.getColors().substr(*_pInfo.nStyle, 1) + "7}{" + _pData.getColors().substr(*_pInfo.nStyle + 1, 1) + "7}").c_str());
-                    _graph->Plot(_mAxisVals, _mData, ("a" + _pInfo.sLineStyles[*_pInfo.nStyle]).c_str());
+                        _graph->Region(_mAxisVals, _mData, _mData2[0],
+                                       ("a{" + _pData.getColors().substr(*_pInfo.nStyle, 1) + "7}{" + _pData.getColors().substr(*_pInfo.nStyle + 1, 1) + "7}").c_str());
+
+                    _graph->Plot(_mAxisVals, _mData,
+                                 ("a" + _pInfo.sLineStyles[*_pInfo.nStyle]).c_str());
+
                     if (*_pInfo.nStyle == _pInfo.nStyleMax - 1)
-                        _graph->Plot(_mAxisVals, _mData2[0], ("a" + _pInfo.sLineStyles[0]).c_str());
+                        _graph->Plot(_mAxisVals, _mData2[0],
+                                     ("a" + _pInfo.sLineStyles[0]).c_str());
                     else
-                        _graph->Plot(_mAxisVals, _mData2[0], ("a" + _pInfo.sLineStyles[*_pInfo.nStyle + 1]).c_str());
+                        _graph->Plot(_mAxisVals, _mData2[0],
+                                     ("a" + _pInfo.sLineStyles[*_pInfo.nStyle + 1]).c_str());
                 }
                 else if (_pData.getSettings(PlotData::LOG_AREA) || _pData.getSettings(PlotData::LOG_REGION))
-                    _graph->Area(_mAxisVals, _mData, ("a" + _pInfo.sLineStyles[*_pInfo.nStyle] + "{" + _pData.getColors()[*_pInfo.nStyle] + "9}").c_str());
-                else if (!_pData.getSettings(PlotData::FLOAT_BARS) && !_pData.getSettings(PlotData::LOG_AREA) && !_pData.getSettings(PlotData::FLOAT_HBARS) && _pData.getSettings(PlotData::LOG_STEPPLOT))
-                    _graph->Step(_mAxisVals, _mData, (_pInfo.sLineStyles[*_pInfo.nStyle]).c_str());
+                    _graph->Area(_mAxisVals, _mData,
+                                 ("a" + _pInfo.sLineStyles[*_pInfo.nStyle] + "{" + _pData.getColors()[*_pInfo.nStyle] + "9}").c_str());
+                else if (!_pData.getSettings(PlotData::FLOAT_BARS)
+                         && !_pData.getSettings(PlotData::LOG_AREA)
+                         && !_pData.getSettings(PlotData::FLOAT_HBARS)
+                         && _pData.getSettings(PlotData::LOG_STEPPLOT))
+                    _graph->Step(_mAxisVals, _mData,
+                                 (_pInfo.sLineStyles[*_pInfo.nStyle]).c_str());
             }
-            else if (_pData.getSettings(PlotData::LOG_CONNECTPOINTS) || (_pData.getSettings(PlotData::LOG_INTERPOLATE) && countValidElements(_mData) >= 0.9 * _pInfo.nSamples))
+            else if (_pData.getSettings(PlotData::LOG_CONNECTPOINTS)
+                     || (_pData.getSettings(PlotData::LOG_INTERPOLATE) && countValidElements(_mData) >= 0.9 * _pInfo.nSamples))
             {
-                if (!_pData.getSettings(PlotData::LOG_AREA) && !_pData.getSettings(PlotData::FLOAT_BARS) && !_pData.getSettings(PlotData::LOG_STEPPLOT))
-                    _graph->Plot(_mAxisVals, _mData, ("a" + expandStyleForCurveArray(_pInfo.sConPointStyles[*_pInfo.nStyle], _mData.ny > 1)).c_str());
+                if (!_pData.getSettings(PlotData::LOG_AREA)
+                    && !_pData.getSettings(PlotData::FLOAT_BARS)
+                    && !_pData.getSettings(PlotData::LOG_STEPPLOT))
+                    _graph->Plot(_mAxisVals, _mData,
+                                 ("a" + expandStyleForCurveArray(_pInfo.sConPointStyles[*_pInfo.nStyle], _mData.ny > 1)).c_str());
                 else if (_pData.getSettings(PlotData::FLOAT_BARS) && !_pData.getSettings(PlotData::LOG_AREA))
-                    _graph->Bars(_mAxisVals, _mData, (composeColoursForBarChart(_mData.ny) + "^").c_str());
-                else if (!_pData.getSettings(PlotData::FLOAT_BARS) && !_pData.getSettings(PlotData::LOG_AREA) && !_pData.getSettings(PlotData::FLOAT_HBARS) && _pData.getSettings(PlotData::LOG_STEPPLOT))
-                    _graph->Step(_mAxisVals, _mData, (_pInfo.sLineStyles[*_pInfo.nStyle]).c_str());
+                    _graph->Bars(_mAxisVals, _mData,
+                                 (composeColoursForBarChart(_mData.ny) + "^").c_str());
+                else if (!_pData.getSettings(PlotData::FLOAT_BARS)
+                         && !_pData.getSettings(PlotData::LOG_AREA)
+                         && !_pData.getSettings(PlotData::FLOAT_HBARS)
+                         && _pData.getSettings(PlotData::LOG_STEPPLOT))
+                    _graph->Step(_mAxisVals, _mData,
+                                 (_pInfo.sLineStyles[*_pInfo.nStyle]).c_str());
                 else
-                    _graph->Area(_mAxisVals, _mData, ("a" + _pInfo.sLineStyles[*_pInfo.nStyle] + "{" + _pData.getColors()[*_pInfo.nStyle] + "9}").c_str());
+                    _graph->Area(_mAxisVals, _mData,
+                                 ("a" + _pInfo.sLineStyles[*_pInfo.nStyle] + "{" + _pData.getColors()[*_pInfo.nStyle] + "9}").c_str());
             }
             else
             {
-                if (!_pData.getSettings(PlotData::LOG_AREA) && !_pData.getSettings(PlotData::FLOAT_BARS) && !_pData.getSettings(PlotData::FLOAT_HBARS) && !_pData.getSettings(PlotData::LOG_STEPPLOT))
-                    _graph->Plot(_mAxisVals, _mData, ("a" + expandStyleForCurveArray(_pInfo.sPointStyles[*_pInfo.nStyle], _mData.ny > 1)).c_str());
-                else if (_pData.getSettings(PlotData::FLOAT_BARS) && !_pData.getSettings(PlotData::LOG_AREA) && !_pData.getSettings(PlotData::FLOAT_HBARS) && !_pData.getSettings(PlotData::LOG_STEPPLOT))
-                    _graph->Bars(_mAxisVals, _mData, (composeColoursForBarChart(_mData.ny) + "^").c_str());
-                else if (!_pData.getSettings(PlotData::FLOAT_BARS) && !_pData.getSettings(PlotData::LOG_AREA) && _pData.getSettings(PlotData::FLOAT_HBARS) && !_pData.getSettings(PlotData::LOG_STEPPLOT))
-                    _graph->Barh(_mAxisVals, _mData, (composeColoursForBarChart(_mData.ny) + "^").c_str());
-                else if (!_pData.getSettings(PlotData::FLOAT_BARS) && !_pData.getSettings(PlotData::LOG_AREA) && !_pData.getSettings(PlotData::FLOAT_HBARS) && _pData.getSettings(PlotData::LOG_STEPPLOT))
-                    _graph->Step(_mAxisVals, _mData, (_pInfo.sLineStyles[*_pInfo.nStyle]).c_str());
+                if (!_pData.getSettings(PlotData::LOG_AREA)
+                    && !_pData.getSettings(PlotData::FLOAT_BARS)
+                    && !_pData.getSettings(PlotData::FLOAT_HBARS)
+                    && !_pData.getSettings(PlotData::LOG_STEPPLOT))
+                    _graph->Plot(_mAxisVals, _mData,
+                                 ("a" + expandStyleForCurveArray(_pInfo.sPointStyles[*_pInfo.nStyle], _mData.ny > 1)).c_str());
+                else if (_pData.getSettings(PlotData::FLOAT_BARS)
+                         && !_pData.getSettings(PlotData::LOG_AREA)
+                         && !_pData.getSettings(PlotData::FLOAT_HBARS)
+                         && !_pData.getSettings(PlotData::LOG_STEPPLOT))
+                    _graph->Bars(_mAxisVals, _mData,
+                                 (composeColoursForBarChart(_mData.ny) + "^").c_str());
+                else if (!_pData.getSettings(PlotData::FLOAT_BARS)
+                         && !_pData.getSettings(PlotData::LOG_AREA)
+                         && _pData.getSettings(PlotData::FLOAT_HBARS)
+                         && !_pData.getSettings(PlotData::LOG_STEPPLOT))
+                    _graph->Barh(_mAxisVals, _mData,
+                                 (composeColoursForBarChart(_mData.ny) + "^").c_str());
+                else if (!_pData.getSettings(PlotData::FLOAT_BARS)
+                         && !_pData.getSettings(PlotData::LOG_AREA)
+                         && !_pData.getSettings(PlotData::FLOAT_HBARS)
+                         && _pData.getSettings(PlotData::LOG_STEPPLOT))
+                    _graph->Step(_mAxisVals, _mData,
+                                 (_pInfo.sLineStyles[*_pInfo.nStyle]).c_str());
                 else
-                    _graph->Stem(_mAxisVals, _mData, _pInfo.sConPointStyles[*_pInfo.nStyle].c_str());
+                    _graph->Stem(_mAxisVals, _mData,
+                                 _pInfo.sConPointStyles[*_pInfo.nStyle].c_str());
             }
         }
         else if (_pData.getSettings(PlotData::LOG_XERROR) || _pData.getSettings(PlotData::LOG_YERROR))
-        {
-            _graph->Error(_mAxisVals, _mData, _mData2[0], _mData2[1], _pInfo.sPointStyles[*_pInfo.nStyle].c_str());
-        }
+            _graph->Error(_mAxisVals, _mData, _mData2[0], _mData2[1],
+                          _pInfo.sPointStyles[*_pInfo.nStyle].c_str());
     }
+
     return true;
 }
 
@@ -6620,12 +6682,12 @@ void Plot::CoordSettings()
                         || findParameter(_pInfo.sPlotParams, "ylabel", '=')
                         || findParameter(_pInfo.sPlotParams, "zlabel", '='))
                     {
-                        _graph->Label('x', fromSystemCodePage(_pData.getxLabel()).c_str(), 0.25);
+                        _graph->Label('x', fromSystemCodePage(_pData.getAxisLabel(XCOORD)).c_str(), 0.25);
 
                         if (_pData.getSettings(PlotData::INT_COORDS) == PlotData::POLAR_RP || _pData.getSettings(PlotData::INT_COORDS) == PlotData::SPHERICAL_RP)
-                            _graph->Label('y', fromSystemCodePage(_pData.getyLabel()).c_str(), 0.0);
+                            _graph->Label('y', fromSystemCodePage(_pData.getAxisLabel(YCOORD)).c_str(), 0.0);
                         else
-                            _graph->Label('y', fromSystemCodePage(_pData.getzLabel()).c_str(), 0.0);
+                            _graph->Label('y', fromSystemCodePage(_pData.getAxisLabel(ZCOORD)).c_str(), 0.0);
                     }
 
                     if (_pData.getSettings(PlotData::FLOAT_BARS) || _pData.getSettings(PlotData::LOG_AREA))
@@ -6685,9 +6747,9 @@ void Plot::CoordSettings()
                         || findParameter(_pInfo.sPlotParams, "ylabel", '=')
                         || findParameter(_pInfo.sPlotParams, "zlabel", '='))
                     {
-                        _graph->Label('x', fromSystemCodePage(_pData.getzLabel()).c_str(), -0.5);
-                        _graph->Label('y', fromSystemCodePage(_pData.getxLabel()).c_str(), (_pData.getRotateAngle(1) - 225.0) / 180.0);
-                        _graph->Label('z', fromSystemCodePage(_pData.getyLabel()).c_str(), 0.0);
+                        _graph->Label('x', fromSystemCodePage(_pData.getAxisLabel(ZCOORD)).c_str(), -0.5);
+                        _graph->Label('y', fromSystemCodePage(_pData.getAxisLabel(XCOORD)).c_str(), (_pData.getRotateAngle(1) - 225.0) / 180.0);
+                        _graph->Label('z', fromSystemCodePage(_pData.getAxisLabel(YCOORD)).c_str(), 0.0);
                     }
 
                     if (_pData.getSettings(PlotData::FLOAT_BARS) || _pData.getSettings(PlotData::LOG_AREA))
@@ -6745,9 +6807,9 @@ void Plot::CoordSettings()
                         || findParameter(_pInfo.sPlotParams, "ylabel", '=')
                         || findParameter(_pInfo.sPlotParams, "zlabel", '='))
                     {
-                        _graph->Label('x', fromSystemCodePage(_pData.getzLabel()).c_str(), -0.4);
-                        _graph->Label('y', fromSystemCodePage(_pData.getxLabel()).c_str(), (_pData.getRotateAngle(1) - 225.0) / 180.0);
-                        _graph->Label('z', fromSystemCodePage(_pData.getyLabel()).c_str(), -0.9); // -0.4
+                        _graph->Label('x', fromSystemCodePage(_pData.getAxisLabel(ZCOORD)).c_str(), -0.4);
+                        _graph->Label('y', fromSystemCodePage(_pData.getAxisLabel(XCOORD)).c_str(), (_pData.getRotateAngle(1) - 225.0) / 180.0);
+                        _graph->Label('z', fromSystemCodePage(_pData.getAxisLabel(YCOORD)).c_str(), -0.9); // -0.4
                     }
 
                     if (_pData.getSettings(PlotData::FLOAT_BARS) || _pData.getSettings(PlotData::LOG_AREA))
@@ -6796,8 +6858,8 @@ void Plot::CoordSettings()
                             || findParameter(_pInfo.sPlotParams, "ylabel", '=')
                             || findParameter(_pInfo.sPlotParams, "zlabel", '='))
                     {
-                        _graph->Label('x', fromSystemCodePage(_pData.getzLabel()).c_str(), 0.0);
-                        _graph->Label('y', fromSystemCodePage(_pData.getxLabel()).c_str(), 0.25);
+                        _graph->Label('x', fromSystemCodePage(_pData.getAxisLabel(ZCOORD)).c_str(), 0.0);
+                        _graph->Label('y', fromSystemCodePage(_pData.getAxisLabel(XCOORD)).c_str(), 0.25);
                     }
 
                     _pInfo.ranges[XRANGE].reset(0.0, _pInfo.ranges[XRANGE].max());
@@ -6987,9 +7049,9 @@ void Plot::CoordSettings()
                         || findParameter(_pInfo.sPlotParams, "ylabel", '=')
                         || findParameter(_pInfo.sPlotParams, "zlabel", '='))
                 {
-                    _graph->Label('x', fromSystemCodePage(_pData.getxLabel()).c_str(), getLabelPosition(XCOORD));
-                    _graph->Label('y', fromSystemCodePage(_pData.getyLabel()).c_str(), getLabelPosition(YCOORD));
-                    _graph->Label('z', fromSystemCodePage(_pData.getzLabel()).c_str(), getLabelPosition(ZCOORD));
+                    _graph->Label('x', fromSystemCodePage(_pData.getAxisLabel(XCOORD)).c_str(), getLabelPosition(XCOORD));
+                    _graph->Label('y', fromSystemCodePage(_pData.getAxisLabel(YCOORD)).c_str(), getLabelPosition(YCOORD));
+                    _graph->Label('z', fromSystemCodePage(_pData.getAxisLabel(ZCOORD)).c_str(), getLabelPosition(ZCOORD));
                 }
             }
         }
@@ -7306,9 +7368,9 @@ void Plot::CoordSettings()
                     || findParameter(_pInfo.sPlotParams, "ylabel", '=')
                     || findParameter(_pInfo.sPlotParams, "zlabel", '=')))
         {
-            _graph->Label('x', fromSystemCodePage(_pData.getxLabel()).c_str(), getLabelPosition(XCOORD));
-            _graph->Label('y', fromSystemCodePage(_pData.getyLabel()).c_str(), getLabelPosition(YCOORD));
-            _graph->Label('z', fromSystemCodePage(_pData.getzLabel()).c_str(), getLabelPosition(ZCOORD));
+            _graph->Label('x', fromSystemCodePage(_pData.getAxisLabel(XCOORD)).c_str(), getLabelPosition(XCOORD));
+            _graph->Label('y', fromSystemCodePage(_pData.getAxisLabel(YCOORD)).c_str(), getLabelPosition(YCOORD));
+            _graph->Label('z', fromSystemCodePage(_pData.getAxisLabel(ZCOORD)).c_str(), getLabelPosition(ZCOORD));
         }
         else if (_pData.getSettings(PlotData::LOG_AXIS)
                  && !_pData.getSettings(PlotData::LOG_BOX)
@@ -7317,9 +7379,9 @@ void Plot::CoordSettings()
                      || findParameter(_pInfo.sPlotParams, "ylabel", '=')
                      || findParameter(_pInfo.sPlotParams, "zlabel", '=')))
         {
-            _graph->Label('x', fromSystemCodePage(_pData.getxLabel()).c_str(), getLabelPosition(XCOORD));
-            _graph->Label('y', fromSystemCodePage(_pData.getyLabel()).c_str(), getLabelPosition(YCOORD));
-            _graph->Label('z', fromSystemCodePage(_pData.getzLabel()).c_str(), getLabelPosition(ZCOORD));
+            _graph->Label('x', fromSystemCodePage(_pData.getAxisLabel(XCOORD)).c_str(), getLabelPosition(XCOORD));
+            _graph->Label('y', fromSystemCodePage(_pData.getAxisLabel(YCOORD)).c_str(), getLabelPosition(YCOORD));
+            _graph->Label('z', fromSystemCodePage(_pData.getAxisLabel(ZCOORD)).c_str(), getLabelPosition(ZCOORD));
         }
     }
 }

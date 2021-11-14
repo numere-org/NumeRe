@@ -32,13 +32,9 @@
 #include "../interval.hpp"
 
 
-/* --> Prototyp einer Funktion, die nicht per Header eingebunden werden kann
- *     (da dieser Header bereits in den entsprechenden Header eingebunden
- *     wird) <--
- */
-bool isNotEmptyExpression(const string& sExpr);
 
-class PlotData : public FileSystem  // CHILD von Filesystem
+
+class PlotData : public FileSystem
 {
     public:
         enum Coordinates
@@ -155,23 +151,23 @@ class PlotData : public FileSystem  // CHILD von Filesystem
         };
 
     private:
-        double*** dPlotData;        // Datenspeicher fuer die berechneten Plotpunkte (dreidimensionaler Speicher!)
+        double*** dPlotData;
         IntervalSet ranges;
-        int nRows;                  // Dimensions-Speicher-Int: Spalten
-        int nLines;                 // Dimensions-Speicher-Int: Zeilen
-        int nLayers;                // Dimensions-Speicher-Int: Ebenen (Jede Ebene fuer einen neue Funktion)
-        int nRanges;                // Anzahl der angegeben Plot-Intervalle (wichtig fuer die Berechnung der fehlenden)
+        int nRows;
+        int nLines;
+        int nLayers;
+        int nRanges;
         int nRequestedLayers;
         bool bRanges[3];
         bool bMirror[3];
-        bool bDefaultAxisLabels[3];      // Achsenbeschriftungen fuer alle drei Achsen
+        bool bDefaultAxisLabels[3];
         bool bLogscale[4];
-        std::string sAxisLabels[3];      // Achsenbeschriftungen fuer alle drei Achsen
+        std::string sAxisLabels[3];
         std::string sTickTemplate[4];
         std::string sCustomTicks[4];
-        double dMin;                // Globales Minimum
-        double dMax;                // GLobales Maximum
-        double dMaximum;            // Norm-Maximum
+        double dMin;
+        double dMax;
+        double dMaximum;
         double dRotateAngles[2];
         double dAxisScale[4];
         double dOrigin[3];
@@ -183,8 +179,6 @@ class PlotData : public FileSystem  // CHILD von Filesystem
         double floatSettings[FLOAT_SETTING_SIZE];
         std::string stringSettings[STR_SETTING_SIZE];
 
-
-
         std::vector<Line> _lHlines;
         std::vector<Line> _lVLines;
         Axis _AddAxes[2];
@@ -193,63 +187,20 @@ class PlotData : public FileSystem  // CHILD von Filesystem
         PlotData(const PlotData&) = delete;
         PlotData& operator=(const PlotData&) = delete;
 
-        inline bool checkColorChars(const std::string& sColorSet)
-        {
-            std::string sColorChars = "#| wWhHkRrQqYyEeGgLlCcNnBbUuMmPp123456789{}";
-            for (unsigned int i = 0; i < sColorSet.length(); i++)
-            {
-                if (sColorSet[i] == '{' && i+3 >= sColorSet.length())
-                    return false;
-                else if (sColorSet[i] == '{'
-                    && (sColorSet[i+3] != '}'
-                        || sColorChars.substr(3,sColorChars.length()-14).find(sColorSet[i+1]) == std::string::npos
-                        || sColorSet[i+2] > '9'
-                        || sColorSet[i+2] < '1'))
-                    return false;
-                if (sColorChars.find(sColorSet[i]) == std::string::npos)
-                    return false;
-            }
-            return true;
-        }
-
-        inline bool checkLineChars(const std::string& sLineSet)
-        {
-            std::string sLineChars = " -:;ij|=";
-            for (unsigned int i = 0; i < sLineSet.length(); i++)
-            {
-                if (sLineChars.find(sLineSet[i]) == std::string::npos)
-                    return false;
-            }
-            return true;
-        }
-
-        inline bool checkPointChars(const std::string& sPointSet)
-        {
-            std::string sPointChars = " .*+x#sdo^v<>";
-            for (unsigned int i = 0; i < sPointSet.length(); i++)
-            {
-                if (sPointChars.find(sPointSet[i]) == std::string::npos)
-                    return false;
-            }
-            return true;
-        }
-
         void replaceControlChars(std::string& sString);
         std::string removeSurroundingQuotationMarks(const std::string& sString);
         void rangeByPercentage(double* dData, size_t nLength, double dLowerPercentage, double dUpperPercentage, vector<double>& vRanges);
 
     public:
-        // --> Konstruktoren und Destruktoren <--
         PlotData();
         PlotData(int _nLines, int _nRows = 1, int _nLayers = 1);
         ~PlotData();
 
-        // --> Wichtigste Funktionen: Daten in Speicher schreiben und daraus lesen <---
         void setData(int _i, int _j, double Data, int _k = 0);
         double getData(int _i, int _j = 0, int _k = 0) const;
 
-        // --> Ebenfalls bedeutend: Plot-Parameter setzen (obige Booleans) und selbige als String lesen <--
         void setParams(const std::string& __sCmd, int nType = ALL);
+
         inline void setGlobalComposeParams(const std::string& __sCmd)
         {
             return setParams(__sCmd, GLOBAL | SUPERGLOBAL);
@@ -287,7 +238,6 @@ class PlotData : public FileSystem  // CHILD von Filesystem
             return stringSettings[setting];
         }
 
-        // --> Obige Booleans lesen <--
         inline bool getRangeSetting(int i = 0) const
         {
             if (i < 3 && i >= 0)
@@ -425,40 +375,14 @@ class PlotData : public FileSystem  // CHILD von Filesystem
             return stringSettings[STR_GRIDSTYLE].substr(3);
         }
 
-        inline Line getHLines(unsigned int i = 0)
+        inline const std::vector<Line>& getHLines() const
         {
-            Line _lLine;
-            _lLine.dPos = 0.0;
-            _lLine.sDesc = "";
-            if (!i)
-                _lHlines[i].dPos = getMax();
-            if (i == 1)
-                _lHlines[i].dPos = getMin();
-            if (i < _lHlines.size())
-                return _lHlines[i];
-            else
-                return _lLine;
+            return _lHlines;
         }
 
-        inline size_t getHLinesSize() const
+        inline const std::vector<Line>& getVLines() const
         {
-            return _lHlines.size();
-        }
-
-        inline Line getVLines(unsigned int i = 0) const
-        {
-            Line _lLine;
-            _lLine.dPos = 0.0;
-            _lLine.sDesc = "";
-            if (i < _lVLines.size())
-                return _lVLines[i];
-            else
-                return _lLine;
-        }
-
-        inline size_t getVLinesSize() const
-        {
-            return _lVLines.size();
+            return _lVLines;
         }
 
         inline Axis getAddAxis(unsigned int i = 0) const
@@ -506,10 +430,7 @@ class PlotData : public FileSystem  // CHILD von Filesystem
             return nTargetGUI;
         }
 
-        // --> Lesen der einzelnen Achsenbeschriftungen <--
-        std::string getxLabel() const;
-        std::string getyLabel() const;
-        std::string getzLabel() const;
+        std::string getAxisLabel(size_t axis) const;
 
         inline std::string getTickTemplate(int nAxis = 0) const
         {
@@ -527,24 +448,19 @@ class PlotData : public FileSystem  // CHILD von Filesystem
                 return "";
         }
 
-        // --> Einstellen der Groesse des Speichers <--
         void setDim(int _i, int _j = 1, int _k = 1);
         void setSamples(int _nSamples);
         void normalize(int nDim = 2, int t_animate = 0);
 
-        // --> Setzen des Dateinamens <--
         void setFileName(std::string _sFileName);
 
-        // --> Zuruecksetzen des gesamten Objekts bzw. Loeschen des Speichers <--
         void reset();
         void deleteData(bool bGraphFinished = false);
 
-        // --> Dimensionen des Speichers lesen <--
         int getRows() const;
         int getLines() const;
         int getLayers(bool bFull = false) const;
 
-        // --> Maximum und Minimum aller Werte im Speicher lesen <--
         double getMin(int nCol = ALLRANGES) const;
         double getMax(int nCol = ALLRANGES) const;
         vector<double> getWeightedRanges(int nCol = ALLRANGES, double dLowerPercentage = 0.75, double dUpperPercentage = 0.75);

@@ -23,6 +23,9 @@
 
 extern mglGraph _fontData;
 
+// Function prototype
+bool isNotEmptyExpression(const string& sExpr);
+
 static value_type* evaluateNumerical(int& nResults, string sExpression)
 {
     MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
@@ -45,6 +48,46 @@ static string evaluateString(string sExpression)
     return sExpression;
 }
 
+static bool checkColorChars(const std::string& sColorSet)
+{
+    std::string sColorChars = "#| wWhHkRrQqYyEeGgLlCcNnBbUuMmPp123456789{}";
+    for (unsigned int i = 0; i < sColorSet.length(); i++)
+    {
+        if (sColorSet[i] == '{' && i+3 >= sColorSet.length())
+            return false;
+        else if (sColorSet[i] == '{'
+            && (sColorSet[i+3] != '}'
+                || sColorChars.substr(3,sColorChars.length()-14).find(sColorSet[i+1]) == std::string::npos
+                || sColorSet[i+2] > '9'
+                || sColorSet[i+2] < '1'))
+            return false;
+        if (sColorChars.find(sColorSet[i]) == std::string::npos)
+            return false;
+    }
+    return true;
+}
+
+static bool checkLineChars(const std::string& sLineSet)
+{
+    std::string sLineChars = " -:;ij|=";
+    for (unsigned int i = 0; i < sLineSet.length(); i++)
+    {
+        if (sLineChars.find(sLineSet[i]) == std::string::npos)
+            return false;
+    }
+    return true;
+}
+
+static bool checkPointChars(const std::string& sPointSet)
+{
+    std::string sPointChars = " .*+x#sdo^v<>";
+    for (unsigned int i = 0; i < sPointSet.length(); i++)
+    {
+        if (sPointChars.find(sPointSet[i]) == std::string::npos)
+            return false;
+    }
+    return true;
+}
 
 
 
@@ -2743,77 +2786,46 @@ void PlotData::rangeByPercentage(double* dData, size_t nLength, double dLowerPer
     }
 }
 
+
+struct AxisLabels
+{
+    std::string x;
+    std::string y;
+    std::string z;
+};
+
+static std::map<PlotData::Coordinates, AxisLabels> getLabelDefinitions()
+{
+    std::map<PlotData::Coordinates, AxisLabels> mLabels;
+
+    mLabels[PlotData::CARTESIAN] =    {"\\i x",            "\\i y",              "\\i z"};
+    mLabels[PlotData::POLAR_PZ] =     {"\\varphi  [\\pi]", "\\i z",              "\\rho"};
+    mLabels[PlotData::POLAR_RP] =     {"\\rho",            "\\varphi  [\\pi]",   "\\i z"};
+    mLabels[PlotData::POLAR_RZ] =     {"\\rho",            "\\i z",              "\\varphi  [\\pi]"};
+    mLabels[PlotData::SPHERICAL_PT] = {"\\varphi  [\\pi]", "\\vartheta  [\\pi]", "\\i r"};
+    mLabels[PlotData::SPHERICAL_RP] = {"\\i r",            "\\varphi  [\\pi]",   "\\vartheta  [\\pi]"};
+    mLabels[PlotData::SPHERICAL_RT] = {"\\i r",            "\\vartheta  [\\pi]", "\\varphi  [\\pi]"};
+
+    return mLabels;
+}
+
 // --> Lesen der einzelnen Achsenbeschriftungen <--
-string PlotData::getxLabel() const
+string PlotData::getAxisLabel(size_t axis) const
 {
-    if (!bDefaultAxisLabels[0])
-        return replaceToTeX(sAxisLabels[0]);
+    if (!bDefaultAxisLabels[axis])
+        return replaceToTeX(sAxisLabels[axis]);
     else
     {
-        switch (intSettings[INT_COORDS])
-        {
-            case CARTESIAN:
-                return "\\i x";
-            case POLAR_PZ:
-            case SPHERICAL_PT:
-                return "\\varphi  [\\pi]";
-            case POLAR_RP:
-            case POLAR_RZ:
-                return "\\rho";
-            case SPHERICAL_RP:
-            case SPHERICAL_RT:
-                return "\\i r";
-        }
-    }
-    return "";
-}
+        static std::map<PlotData::Coordinates,AxisLabels> mLabels = getLabelDefinitions();
 
-string PlotData::getyLabel() const
-{
-    if (!bDefaultAxisLabels[1])
-        return replaceToTeX(sAxisLabels[1]);
-    else
-    {
-        switch (intSettings[INT_COORDS])
-        {
-            case CARTESIAN:
-                return "\\i y";
-            case POLAR_PZ:
-            case POLAR_RZ:
-                return "\\i z";
-            case POLAR_RP:
-            case SPHERICAL_RP:
-                return "\\varphi  [\\pi]";
-            case SPHERICAL_PT:
-            case SPHERICAL_RT:
-                return "\\vartheta  [\\pi]";
-        }
+        if (axis == 0)
+            return mLabels[(PlotData::Coordinates)intSettings[INT_COORDS]].x;
+        else if (axis == 1)
+            return mLabels[(PlotData::Coordinates)intSettings[INT_COORDS]].y;
+        else
+            return mLabels[(PlotData::Coordinates)intSettings[INT_COORDS]].z;
     }
-    return "";
-}
 
-string PlotData::getzLabel() const
-{
-    if (!bDefaultAxisLabels[2])
-        return replaceToTeX(sAxisLabels[2]);
-    else
-    {
-        switch (intSettings[INT_COORDS])
-        {
-            case CARTESIAN:
-            case POLAR_RP:
-                return "\\i z";
-            case POLAR_PZ:
-                return "\\rho";
-            case SPHERICAL_PT:
-                return "\\i r";
-            case SPHERICAL_RP:
-                return "\\vartheta  [\\pi]";
-            case POLAR_RZ:
-            case SPHERICAL_RT:
-                return "\\varphi  [\\pi]";
-        }
-    }
     return "";
 }
 

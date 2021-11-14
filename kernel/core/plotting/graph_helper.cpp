@@ -20,6 +20,13 @@
 #include "../../kernel.hpp"
 #include "../utils/tools.hpp"
 
+/////////////////////////////////////////////////
+/// \brief Constructor.
+///
+/// \param __graph mglGraph*
+/// \param _pData const PlotData&
+///
+/////////////////////////////////////////////////
 GraphHelper::GraphHelper(mglGraph* __graph, const PlotData& _pData)
 {
     _graph = __graph;
@@ -30,17 +37,37 @@ GraphHelper::GraphHelper(mglGraph* __graph, const PlotData& _pData)
     sTitle = _pData.getSettings(PlotData::STR_COMPOSEDTITLE);
 }
 
+
+/////////////////////////////////////////////////
+/// \brief Destructor. Deletes the internal
+/// mglGraph pointer.
+/////////////////////////////////////////////////
 GraphHelper::~GraphHelper()
 {
     if (_graph)
         delete _graph;
 }
 
+
+/////////////////////////////////////////////////
+/// \brief Empty virtual function implementation.
+///
+/// \param _graph mglGraph*
+/// \return int
+///
+/////////////////////////////////////////////////
 int GraphHelper::Draw(mglGraph* _graph)
 {
     return 0;
 }
 
+
+/////////////////////////////////////////////////
+/// \brief Empty virtual function implementation.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
 void GraphHelper::Reload()
 {
     return;

@@ -448,6 +448,20 @@ void Interval::expand(double perc, double dMin)
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Returns the (continous) interval,
+/// which contains this and the passed interval.
+///
+/// \param _ivl const Interval&
+/// \return Interval
+///
+/////////////////////////////////////////////////
+Interval Interval::combine(const Interval& _ivl) const
+{
+    return Interval(::min(this->min(), _ivl.min()), ::max(this->max(), _ivl.max()));
+}
+
+
 
 
 

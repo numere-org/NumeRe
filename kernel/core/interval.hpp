@@ -71,6 +71,7 @@ class Interval
         void reset(mu::value_type dFront, mu::value_type dBack);
 
         void expand(double perc, double dMin = -INFINITY);
+        Interval combine(const Interval& _ivl) const;
 };
 
 

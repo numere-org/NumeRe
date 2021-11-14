@@ -16,18 +16,19 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
-#include <mgl2/mgl.h>
-#include <string>
 
 
 #ifndef PLOTINFO_HPP
 #define PLOTINFO_HPP
 
+#include <mgl2/mgl.h>
+#include <string>
 #include "../interval.hpp"
 
-using namespace std;
-
-
+/////////////////////////////////////////////////
+/// \brief This structure governs the needed
+/// parameters for plotting.
+/////////////////////////////////////////////////
 struct PlotInfo
 {
     IntervalSet ranges;
@@ -38,38 +39,50 @@ struct PlotInfo
     bool b3DVect;
     bool bDraw;
     bool bDraw3D;
-    string sCommand;
-    string sPlotParams;
+    std::string sCommand;
+    std::string sPlotParams;
     int nSamples;
     int nStyleMax;
     unsigned int nMaxPlotDim;
     // Pointer-Variablen
     int* nStyle;
     int* nFunctions;
-    string* sLineStyles;
-    string* sContStyles;
-    string* sPointStyles;
-    string* sConPointStyles;
+    std::string* sLineStyles;
+    std::string* sContStyles;
+    std::string* sPointStyles;
+    std::string* sConPointStyles;
 
-    inline PlotInfo() : nStyle(nullptr), nFunctions(nullptr), sLineStyles(nullptr), sContStyles(nullptr), sPointStyles(nullptr), sConPointStyles(nullptr) {}
+    /////////////////////////////////////////////////
+    /// \brief Simple constructor to initialize the
+    /// structure into a valid state.
+    /////////////////////////////////////////////////
+    PlotInfo() : nStyle(nullptr), nFunctions(nullptr), sLineStyles(nullptr), sContStyles(nullptr), sPointStyles(nullptr), sConPointStyles(nullptr) {}
 
-    inline ~PlotInfo()
-        {
-            nStyle = 0;
-            if (sLineStyles)
-                delete[] sLineStyles;
-            if (sContStyles)
-                delete[] sContStyles;
-            if (sPointStyles)
-                delete[] sPointStyles;
-            if (sConPointStyles)
-                delete[] sConPointStyles;
-            nFunctions = nullptr;
-            sLineStyles = nullptr;
-            sContStyles = nullptr;
-            sPointStyles = nullptr;
-            sConPointStyles = nullptr;
-        }
+    /////////////////////////////////////////////////
+    /// \brief Destructor. Frees all aquired memory.
+    /////////////////////////////////////////////////
+    ~PlotInfo()
+    {
+        nStyle = 0;
+
+        if (sLineStyles)
+            delete[] sLineStyles;
+
+        if (sContStyles)
+            delete[] sContStyles;
+
+        if (sPointStyles)
+            delete[] sPointStyles;
+
+        if (sConPointStyles)
+            delete[] sConPointStyles;
+
+        nFunctions = nullptr;
+        sLineStyles = nullptr;
+        sContStyles = nullptr;
+        sPointStyles = nullptr;
+        sConPointStyles = nullptr;
+    }
 };
 
 
