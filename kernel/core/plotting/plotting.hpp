@@ -48,8 +48,10 @@ class Plot
 {
     private:
         std::vector<PlotAsset> m_assets;
+        IntervalSet dataRanges;
+        IntervalSet secDataRanges;
         mglData _mAxisVals[3];
-        std::vector<std::vector<mglData>> v_mDataPlots;
+        //std::vector<std::vector<mglData>> v_mDataPlots;
         bool bOutputDesired;
 
         string sLabels;
@@ -72,7 +74,7 @@ class Plot
         void determinePlottingDimensions(const string& sPlotCommand);
         size_t createSubPlotSet(string& sOutputName, bool& bAnimateVar, vector<string>& vPlotCompose, size_t nSubPlotStart, size_t nMultiplots[2], size_t& nSubPlots, size_t& nSubPlotMap);
         void applyPlotSizeAndQualitySettings();
-        bool createPlotOrAnimation(int& nStyle, size_t nPlotCompose, size_t nPlotComposeSize, size_t& nLegends, bool bNewSubPlot, bool bAnimateVar, vector<string>& vDrawVector, const vector<string>& vDataPlots, vector<short>& vType, int nFunctions, double dDataRanges[3][2], double dSecDataRanges[2][2], const string& sDataAxisBinds, const string& sOutputName);
+        bool createPlotOrAnimation(int& nStyle, size_t nPlotCompose, size_t nPlotComposeSize, size_t& nLegends, bool bNewSubPlot, bool bAnimateVar, vector<string>& vDrawVector, const vector<string>& vDataPlots, vector<short>& vType, int nFunctions, const string& sDataAxisBinds, const string& sOutputName);
         void create2dPlot(vector<short>& vType, int& nStyle, size_t& nLegends, int nFunctions, size_t nPlotCompose, size_t nPlotComposeSize);
         bool plot2d(mglData& _mData, mglData& _mMaskData, mglData* _mAxisVals, mglData& _mContVec);
         void createStdPlot(vector<short>& vType, int& nStyle, size_t& nLegends, int nFunctions, size_t nPlotCompose, size_t nPlotComposeSize);
@@ -93,19 +95,19 @@ class Plot
         void evaluateSubplot(size_t& nLegends, string& sCmd, size_t nMultiplots[2], size_t& nSubPlots, size_t& nSubPlotMap);
         void displayMessage(bool bAnimateVar);
         std::vector<std::string> evaluateDataPlots(vector<short>& vType, string& sAxisBinds, string& sDataAxisBinds);
-        void extractDataValues(const std::vector<std::string>& vDataPlots, const std::string& sDataAxisBinds, double dDataRanges[3][2], double dSecDataRanges[2][2]);
-        void getValuesFromData(DataAccessParser& _accessParser, size_t i, const std::string& sDataAxisBinds, double dDataRanges[3][2], double dSecDataRanges[2][2], bool openEnd);
+        void extractDataValues(const std::vector<std::string>& vDataPlots, const std::string& sDataAxisBinds);
+        void getValuesFromData(DataAccessParser& _accessParser, size_t i, const std::string& sDataAxisBinds, bool openEnd);
         void createDataLegends();
         string constructDataLegendElement(string& sColumnIndices, const string& sTableName);
-        void calculateDataRanges(const string& sDataAxisBinds, double dDataRanges[3][2], double dSecDataRanges[2][2], int i, int l, const VectorIndex& _vLine, size_t numberofColNodes = 2);
+        void calculateDataRanges(const string& sDataAxisBinds, int i, int l, const VectorIndex& _vLine, size_t numberofColNodes = 2);
         size_t countValidElements(const mglData& _mData);
         void separateLegends();
         void prepareMemory(int nFunctions);
-        void defaultRanges(double dDataRanges[3][2], double dSecDataRanges[2][2], size_t nPlotCompose, bool bNewSubPlot);
+        void defaultRanges(size_t nPlotCompose, bool bNewSubPlot);
         int fillData(value_type* vResults, double dt_max, int t_animate, int nFunctions);
-        void fitPlotRanges(double dDataRanges[3][2], size_t nPlotCompose, bool bNewSubPlot);
+        void fitPlotRanges(size_t nPlotCompose, bool bNewSubPlot);
         void clearData();
-        void passRangesToGraph(double dDataRanges[3][2]);
+        void passRangesToGraph();
         void applyColorbar();
         void applyLighting();
         void applyGrid();

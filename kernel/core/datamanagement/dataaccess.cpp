@@ -212,6 +212,18 @@ bool DataAccessParser::isCluster() const
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Covenience wrapper method for the
+/// global function.
+///
+/// \return std::vector<size_t>
+///
+/////////////////////////////////////////////////
+std::vector<size_t> DataAccessParser::getDataGridDimensions() const
+{
+    return ::getDataGridDimensions(idx, sDataObject);
+}
+
 
 static void resolveTablesAndClusters(string& sLine, Parser& _parser, MemoryManager& _data, const Settings& _option, int options);
 static const string& handleCachedDataAccess(string& sLine, Parser& _parser, MemoryManager& _data, const Settings& _option);
@@ -1591,4 +1603,27 @@ bool parser_CheckMultArgFunc(const string& sLeft, const string& sRight)
 		return false;
 }
 
+
+/////////////////////////////////////////////////
+/// \brief Returns the accessed data grid
+/// dimensions.
+///
+/// \param _idx const Indices&
+/// \param sTableName const std::string&
+/// \return std::vector<size_t>
+///
+/////////////////////////////////////////////////
+std::vector<size_t> getDataGridDimensions(const Indices& _idx, const std::string& sTableName)
+{
+    MemoryManager& _manager = NumeReKernel::getInstance()->getMemoryManager();
+    std::vector<size_t> sizes(2, 0);
+
+    if (_manager.isTable(sTableName))
+    {
+        sizes[0] = _manager.cnt(sTableName, _idx.row, _idx.col.subidx(0, 1)).real();
+        sizes[1] = _manager.cnt(sTableName, _idx.row, _idx.col.subidx(1, 1)).real();
+    }
+
+    return sizes;
+}
 

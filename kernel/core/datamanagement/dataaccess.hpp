@@ -50,6 +50,7 @@ class DataAccessParser
         std::string getIndexString();
         Indices& getIndices();
         bool isCluster() const;
+        std::vector<size_t> getDataGridDimensions() const;
 };
 
 
@@ -80,6 +81,8 @@ inline bool isValidIndexSet(const Indices& _idx)
 {
     return _idx.row.isValid() && _idx.col.isValid();
 }
+
+std::vector<size_t> getDataGridDimensions(const Indices& _idx, const std::string& sTableName);
 
 
 #endif // DATAACCESS_HPP

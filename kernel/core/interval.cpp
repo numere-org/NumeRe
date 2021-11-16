@@ -458,6 +458,11 @@ void Interval::expand(double perc, double dMin)
 /////////////////////////////////////////////////
 Interval Interval::combine(const Interval& _ivl) const
 {
+    if (isnan(m_vInterval.first()))
+        return _ivl;
+    else if (isnan(_ivl.m_vInterval.first()))
+        return *this;
+
     return Interval(::min(this->min(), _ivl.min()), ::max(this->max(), _ivl.max()));
 }
 
