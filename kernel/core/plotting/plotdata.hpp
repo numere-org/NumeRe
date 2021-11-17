@@ -139,7 +139,6 @@ class PlotData : public FileSystem
             STR_CONTGREYS,
             STR_FILENAME,
             STR_FONTSTYLE,
-            STR_FUNCTIONAXISBIND,
             STR_GREYS,
             STR_GRIDSTYLE,
             STR_LINESIZES,
@@ -151,11 +150,7 @@ class PlotData : public FileSystem
         };
 
     private:
-        double*** dPlotData;
         IntervalSet ranges;
-        int nRows;
-        int nLines;
-        int nLayers;
         int nRanges;
         int nRequestedLayers;
         bool bRanges[3];
@@ -165,9 +160,6 @@ class PlotData : public FileSystem
         std::string sAxisLabels[3];
         std::string sTickTemplate[4];
         std::string sCustomTicks[4];
-        double dMin;
-        double dMax;
-        double dMaximum;
         double dRotateAngles[2];
         double dAxisScale[4];
         double dOrigin[3];
@@ -193,11 +185,7 @@ class PlotData : public FileSystem
 
     public:
         PlotData();
-        PlotData(int _nLines, int _nRows = 1, int _nLayers = 1);
         ~PlotData();
-
-        void setData(int _i, int _j, double Data, int _k = 0);
-        double getData(int _i, int _j = 0, int _k = 0) const;
 
         void setParams(const std::string& __sCmd, int nType = ALL);
 
@@ -274,20 +262,6 @@ class PlotData : public FileSystem
                 return stringSettings[STR_AXISBIND].substr(2*i,2);
             else
                 return "lb";
-        }
-
-        inline std::string getFunctionAxisbind(unsigned int i) const
-        {
-            if (2*i+1 < stringSettings[STR_FUNCTIONAXISBIND].length())
-                return stringSettings[STR_FUNCTIONAXISBIND].substr(2*i,2);
-            else
-                return "lb";
-        }
-
-        inline void setFunctionAxisbind(const std::string& sBind)
-        {
-            if (sBind.length())
-                stringSettings[STR_FUNCTIONAXISBIND] = sBind;
         }
 
         inline int getGivenRanges() const
@@ -448,22 +422,18 @@ class PlotData : public FileSystem
                 return "";
         }
 
-        void setDim(int _i, int _j = 1, int _k = 1);
         void setSamples(int _nSamples);
-        void normalize(int nDim = 2, int t_animate = 0);
+        //void normalize(int nDim = 2, int t_animate = 0);
 
         void setFileName(std::string _sFileName);
 
         void reset();
         void deleteData(bool bGraphFinished = false);
 
-        int getRows() const;
-        int getLines() const;
-        int getLayers(bool bFull = false) const;
 
-        double getMin(int nCol = ALLRANGES) const;
-        double getMax(int nCol = ALLRANGES) const;
-        vector<double> getWeightedRanges(int nCol = ALLRANGES, double dLowerPercentage = 0.75, double dUpperPercentage = 0.75);
+        //double getMin(int nCol = ALLRANGES) const;
+        //double getMax(int nCol = ALLRANGES) const;
+        //vector<double> getWeightedRanges(int nCol = ALLRANGES, double dLowerPercentage = 0.75, double dUpperPercentage = 0.75);
 };
 
 #endif

@@ -95,80 +95,14 @@ static bool checkPointChars(const std::string& sPointSet)
 // --> Konstruktor <--
 PlotData::PlotData() : FileSystem()
 {
-    dPlotData = 0;
     PlotData::reset();
-}
-
-// --> Allgemeiner Konstruktor <--
-PlotData::PlotData(int _nLines, int _nRows, int _nLayers) : PlotData()
-{
-    nRows = _nRows;
-    nLines = _nLines;
-    nLayers = _nLayers;
-    dPlotData = new double**[nLines];
-    for (int i = 0; i < nLines; i++)
-    {
-        dPlotData[i] = new double*[nRows];
-        for (int j = 0; j < nRows; j++)
-        {
-            dPlotData[i][j] = new double[nLayers];
-            for (int k = 0; k < nLayers; k++)
-            {
-                dPlotData[i][j][k] = 0.0;
-            }
-        }
-    }
 }
 
 // --> Destruktor <--
 PlotData::~PlotData()
 {
-    if (dPlotData)
-    {
-        for (int i = 0; i < nLines; i++)
-        {
-            for (int j = 0; j < nRows; j++)
-            {
-                delete[] dPlotData[i][j];
-            }
-            delete[] dPlotData[i];
-        }
-        delete[] dPlotData;
-        dPlotData = 0;
-    }
 }
 
-// --> Daten in Speicher schreiben: beachtet auch die aktuelle Groesse des Speichers <--
-void PlotData::setData(int _i, int _j, double dData, int _k)
-{
-    if (!dPlotData || _i >= nLines || _j >= nRows || _k >= nLayers)
-    {
-        setDim(_i+1, _j+1, _k+1);
-    }
-    dPlotData[_i][_j][_k] = dData;
-    if (_k > nRequestedLayers-1)
-        nRequestedLayers = _k+1;
-    if (isnan(dData))
-        return;
-    if (isnan(dMin) || dMin > dData)
-    {
-        dMin = dData;
-    }
-    if (isnan(dMax) || dMax < dData)
-    {
-        dMax = dData;
-    }
-    return;
-}
-
-// --> Daten aus Speicher lesen <--
-double PlotData::getData(int _i, int _j, int _k) const
-{
-    if (!dPlotData || _i >= nLines || _j >= nRows || _k >= nLayers)
-        return NAN;
-    else
-        return dPlotData[_i][_j][_k];
-}
 
 /* --> Parameter setzen: Verwendet die bool matchParams(const string&, const string&, char)-Funktion,
  *     um die einzelnen Befehle zu identifizieren. Unbekannte Befehle werden automatisch ignoriert. 7
@@ -1747,20 +1681,6 @@ void PlotData::setParams(const string& __sCmd, int nType)
 // --> Alle Einstellungen zuruecksetzen <--
 void PlotData::reset()
 {
-    if (dPlotData)
-    {
-        for (int i = 0; i < nLines; i++)
-        {
-            for (int j = 0; j < nRows; j++)
-            {
-                delete[] dPlotData[i][j];
-            }
-            delete[] dPlotData[i];
-        }
-        delete[] dPlotData;
-    }
-    dPlotData = 0;
-
     _lVLines.clear();
     _lHlines.clear();
 
@@ -1850,14 +1770,9 @@ void PlotData::reset()
     dRotateAngles[1] = 115;
     nTargetGUI[0] = -1;
     nTargetGUI[1] = -1;
-    nLines = 100;
-    nRows = 1;
-    nLayers = 1;
     nRanges = 0;
     nRequestedLayers = 1;
-    dMin = NAN;
-    dMax = NAN;
-    dMaximum = 1.0;
+
     if (NumeReKernel::getInstance())
     {
         if (stringSettings[STR_FONTSTYLE] != NumeReKernel::getInstance()->getSettings().getDefaultPlotFont())
@@ -1872,20 +1787,6 @@ void PlotData::reset()
 // --> Daten im Speicher loeschen. Speicher selbst bleibt bestehen <--
 void PlotData::deleteData(bool bGraphFinished /* = false*/)
 {
-    if (dPlotData)
-    {
-        for (int i = 0; i < nLines; i++)
-        {
-            for (int j = 0; j < nRows; j++)
-            {
-                for (int k = 0; k < nLayers; k++)
-                {
-                    dPlotData[i][j][k] = NAN;
-                }
-            }
-        }
-    }
-
     _lHlines.clear();
     _lVLines.clear();
 
@@ -1925,9 +1826,6 @@ void PlotData::deleteData(bool bGraphFinished /* = false*/)
     if (!logicalSettings[LOG_ALLHIGHRES])
         intSettings[INT_HIGHRESLEVEL] = 0;
 
-    dMin = NAN;
-    dMax = NAN;
-    dMaximum = 1.0;
     nRequestedLayers = 1;
     intSettings[INT_LEGENDSTYLE] = 0;
 
@@ -1942,7 +1840,6 @@ void PlotData::deleteData(bool bGraphFinished /* = false*/)
     stringSettings[STR_FILENAME].clear();
     stringSettings[STR_PLOTTITLE].clear();
     stringSettings[STR_AXISBIND].clear();
-    stringSettings[STR_FUNCTIONAXISBIND].clear();
     stringSettings[STR_BACKGROUND].clear();
 
     for (int i = 0; i < 2; i++)
@@ -2249,324 +2146,6 @@ string PlotData::getParams(bool asstr) const
     return sReturn;
 }
 
-/* --> Groesse des Speichers einstellen: falls die neuen Groessen (ganz oder teilweise) kleiner als
- *     die bisherigen sind, werden automatisch die groesseren gewaehlt <--
- */
-void PlotData::setDim(int _i, int _j, int _k)
-{
-    nRequestedLayers = _k;
-    if (_i == nLines && _j == nRows && _k == nLayers && dPlotData)
-    {
-        return;
-    }
-    int nNLines = _i;
-    int nNRows = _j;
-    int nNLayers = _k;
-    double*** dTemp;
-    if (nNLines < nLines)
-        nNLines = nLines;
-    if (nNRows < nRows)
-        nNRows = nRows;
-    if (nNLayers < nLayers)
-        nNLayers = nLayers;
-    if (!dPlotData)
-    {
-        dPlotData = new double**[nNLines];
-        for (int i = 0; i < nNLines; i++)
-        {
-            dPlotData[i] = new double*[nNRows];
-            for (int j = 0; j < nNRows; j++)
-            {
-                dPlotData[i][j] = new double[nNLayers];
-                for (int k = 0; k < nNLayers; k++)
-                {
-                    dPlotData[i][j][k] = NAN;
-                }
-            }
-        }
-        nLines = nNLines;
-        nRows = nNRows;
-        nLayers = nNLayers;
-    }
-    else
-    {
-        dTemp = new double**[nLines];
-        for (int i = 0; i < nLines; i++)
-        {
-            dTemp[i] = new double*[nRows];
-            for (int j = 0; j < nRows; j++)
-            {
-                dTemp[i][j] = new double[nLayers];
-                for (int k = 0; k < nLayers; k++)
-                {
-                    dTemp[i][j][k] = dPlotData[i][j][k];
-                }
-            }
-        }
-
-        for (int i = 0; i < nLines; i++)
-        {
-            for (int j = 0; j < nRows; j++)
-            {
-                delete[] dPlotData[i][j];
-            }
-            delete[] dPlotData[i];
-        }
-        delete[] dPlotData;
-        dPlotData = 0;
-
-        dPlotData = new double**[nNLines];
-        for (int i = 0; i < nNLines; i++)
-        {
-            dPlotData[i] = new double*[nNRows];
-            for (int j = 0; j < nNRows; j++)
-            {
-                dPlotData[i][j] = new double[nNLayers];
-                for (int k = 0; k < nNLayers; k++)
-                {
-                    if (i < nLines && j < nRows && k < nLayers)
-                        dPlotData[i][j][k] = dTemp[i][j][k];
-                    else
-                        dPlotData[i][j][k] = NAN;
-                }
-            }
-        }
-        for (int i = 0; i < nLines; i++)
-        {
-            for (int j = 0; j < nRows; j++)
-            {
-                delete[] dTemp[i][j];
-            }
-            delete[] dTemp[i];
-        }
-        delete[] dTemp;
-        dTemp = 0;
-
-        nLines = nNLines;
-        nRows = nNRows;
-        nLayers = nNLayers;
-    }
-
-    return;
-}
-
-// --> Spalten lesen <--
-int PlotData::getRows() const
-{
-    return nRows;
-}
-
-// --> Zeilen lesen <--
-int PlotData::getLines() const
-{
-    return nLines;
-}
-
-// --> Ebenen lesen <--
-int PlotData::getLayers(bool bFull) const
-{
-    return bFull ? nLayers : nRequestedLayers;
-}
-
-// --> Minimum aller Daten im Speicher lesen <--
-double PlotData::getMin(int nCol) const
-{
-    double _dMin = NAN;
-    if (dPlotData)
-    {
-        if (nCol == ALLRANGES)
-        {
-            return dMin;
-        }
-        else if (nCol == ONLYLEFT) // l
-        {
-            for (int j = 0; j < nRows; j++)
-            {
-                if (getFunctionAxisbind(j)[0] != 'l')
-                    continue;
-                for (int i = 0; i < nLines; i++)
-                {
-                    if (dPlotData[i][j][0] < _dMin || isnan(_dMin))
-                        _dMin = dPlotData[i][j][0];
-                }
-            }
-        }
-        else if (nCol == ONLYRIGHT) // r
-        {
-            for (int j = 0; j < nRows; j++)
-            {
-                if (getFunctionAxisbind(j)[0] != 'r')
-                    continue;
-                for (int i = 0; i < nLines; i++)
-                {
-                    if (dPlotData[i][j][0] < _dMin || isnan(_dMin))
-                        _dMin = dPlotData[i][j][0];
-                }
-            }
-        }
-        else if (nCol >= nRows)
-            return NAN;
-        else
-        {
-            for (int i = 0; i < nLines; i++)
-            {
-                for (int k = 0; k < nLayers; k++)
-                {
-                    if (dPlotData[i][nCol][k] < _dMin || isnan(_dMin))
-                        _dMin = dPlotData[i][nCol][k];
-                }
-            }
-        }
-    }
-    return _dMin;
-}
-
-// --> Maximum aller Daten im Speicher lesen <--
-double PlotData::getMax(int nCol) const
-{
-    double _dMax = NAN;
-    if (dPlotData)
-    {
-        if (nCol == ALLRANGES)
-        {
-            return dMax;
-        }
-        else if (nCol == ONLYLEFT) // l
-        {
-            for (int j = 0; j < nRows; j++)
-            {
-                if (getFunctionAxisbind(j)[0] != 'l')
-                    continue;
-                for (int i = 0; i < nLines; i++)
-                {
-                    if (dPlotData[i][j][0] > _dMax || isnan(_dMax))
-                        _dMax = dPlotData[i][j][0];
-                }
-            }
-        }
-        else if (nCol == ONLYRIGHT) // r
-        {
-            for (int j = 0; j < nRows; j++)
-            {
-                if (getFunctionAxisbind(j)[0] != 'r')
-                    continue;
-                for (int i = 0; i < nLines; i++)
-                {
-                    if (dPlotData[i][j][0] > _dMax || isnan(_dMax))
-                        _dMax = dPlotData[i][j][0];
-                }
-            }
-        }
-        else if (nCol >= nRows)
-            return NAN;
-        else
-        {
-            for (int i = 0; i < nLines; i++)
-            {
-                for (int k = 0; k < nLayers; k++)
-                {
-                    if (dPlotData[i][nCol][k] > _dMax || isnan(_dMax))
-                        _dMax = dPlotData[i][nCol][k];
-                }
-            }
-        }
-    }
-    return _dMax;
-}
-
-vector<double> PlotData::getWeightedRanges(int nCol, double dLowerPercentage, double dUpperPercentage)
-{
-    vector<double> vRanges(2, NAN);
-    size_t nLength = 0;
-
-    if (dPlotData)
-    {
-        if (nCol == ALLRANGES)
-        {
-            double* dData = new double[nRows*nLayers*nLines];
-
-            for (int i = 0; i < nLines; i++)
-            {
-                for (int j = 0; j < nRows; j++)
-                {
-                    for (int k = 0; k < nLayers; k++)
-                        dData[i+j*nLines+k*nLines*nRows] = dPlotData[i][j][k];
-                }
-            }
-
-            nLength = qSortDouble(dData, nRows*nLayers*nLines);
-
-            rangeByPercentage(dData, nLength, dLowerPercentage, dUpperPercentage, vRanges);
-
-            delete[] dData;
-        }
-        else if (nCol == ONLYLEFT) // l
-        {
-            double* dData = new double[nRows*nLines];
-            int row = 0;
-
-            for (int j = 0; j < nRows; j++)
-            {
-                if (getFunctionAxisbind(j)[0] != 'l')
-                    continue;
-                for (int i = 0; i < nLines; i++)
-                {
-                    dData[i + row*nLines] = dPlotData[i][j][0];
-                }
-                row++;
-            }
-
-            nLength = qSortDouble(dData, nLines*row);
-
-            rangeByPercentage(dData, nLength, dLowerPercentage, dUpperPercentage, vRanges);
-
-            delete[] dData;
-        }
-        else if (nCol == ONLYRIGHT) // r
-        {
-            double* dData = new double[nRows*nLines];
-            int row = 0;
-
-            for (int j = 0; j < nRows; j++)
-            {
-                if (getFunctionAxisbind(j)[0] != 'r')
-                    continue;
-                for (int i = 0; i < nLines; i++)
-                {
-                    dData[i+row*nLines] = dPlotData[i][j][0];
-                }
-                row++;
-            }
-
-            nLength = qSortDouble(dData, nLines*row);
-
-            rangeByPercentage(dData, nLength, dLowerPercentage, dUpperPercentage, vRanges);
-
-            delete[] dData;
-        }
-        else if (nCol >= nRows)
-            return vRanges;
-        else
-        {
-            double* dData = new double[nLines*nLayers];
-
-            for (int i = 0; i < nLines; i++)
-            {
-                for (int k = 0; k < nLayers; k++)
-                {
-                    dData[i+k*nLines] = dPlotData[i][nCol][k];
-                }
-            }
-
-            nLength = qSortDouble(dData, nLines*nLayers);
-
-            rangeByPercentage(dData, nLength, dLowerPercentage, dUpperPercentage, vRanges);
-
-            delete[] dData;
-        }
-    }
-    return vRanges;
-}
 
 // --> Datenpunkte einstellen <--
 void PlotData::setSamples(int _nSamples)
@@ -2599,146 +2178,6 @@ void PlotData::setFileName(string _sFileName)
     return;
 }
 
-// --> Vektorlaengen auf das Intervall [0,1] normieren <--
-void PlotData::normalize(int nDim, int t_animate)
-{
-    double dCurrentMax = 0.0;
-    if (dPlotData)
-    {
-        if (!t_animate)
-        {
-            dMaximum = 0.0;
-            double dNorm = 0.0;
-            dMax = NAN;
-            dMin = NAN;
-            for (int i = 0; i < nLines; i++)
-            {
-                for (int j = 0; j < nRows; j++)
-                {
-                    if (nDim == 2)
-                    {
-                        dNorm = 0.0;
-                        for (int k = 0; k < nDim; k++)
-                        {
-                            if (isnan(dPlotData[i][j][k]))
-                            {
-                                dNorm = 0.0;
-                                break;
-                            }
-                            dNorm += dPlotData[i][j][k]*dPlotData[i][j][k];
-                        }
-                        if (dMaximum < dNorm)
-                            dMaximum = dNorm;
-                    }
-                    else
-                    {
-                        dNorm = 0.0;
-                        for (int k = 0; k < nLayers; k++)
-                        {
-                            if (isnan((dPlotData[i][j][k])))
-                            {
-                                dNorm = 0.0;
-                                if (!k)
-                                    k = 2;
-                                else
-                                    k += 3-(k % 3)-1;
-                                continue;
-                            }
-                            dNorm += dPlotData[i][j][k]*dPlotData[i][j][k];
-                            if (k && !((k+1) % 3))
-                            {
-                                //cerr << dNorm << endl;
-                                if (dMaximum < dNorm)
-                                    dMaximum = dNorm;
-                                dNorm = 0.0;
-                            }
-                        }
-                    }
-                }
-            }
-            dMaximum = sqrt(dMaximum);
-            if (!dMaximum)
-                dMaximum = 1.0;
-        }
-        else
-        {
-            double dNorm = 0.0;
-            dMax = NAN;
-            dMin = NAN;
-            for (int i = 0; i < nLines; i++)
-            {
-                for (int j = 0; j < nRows; j++)
-                {
-                    if (nDim == 2)
-                    {
-                        dNorm = 0.0;
-                        for (int k = 0; k < nDim; k++)
-                        {
-                            if (isnan(dPlotData[i][j][k]))
-                            {
-                                dNorm = 0.0;
-                                break;
-                            }
-                            dNorm += dPlotData[i][j][k]*dPlotData[i][j][k];
-                        }
-                        if (dCurrentMax < dNorm)
-                            dCurrentMax = dNorm;
-                    }
-                    else
-                    {
-                        dNorm = 0.0;
-                        for (int k = 0; k < nLayers; k++)
-                        {
-                            if (isnan((dPlotData[i][j][k])))
-                            {
-                                dNorm = 0.0;
-                                if (!k)
-                                    k = 2;
-                                else
-                                    k += 3-(k % 3)-1;
-                                continue;
-                            }
-                            dNorm += dPlotData[i][j][k]*dPlotData[i][j][k];
-                            if (k && !((k+1) % 3))
-                            {
-                                //cerr << dNorm << endl;
-                                if (dCurrentMax < dNorm)
-                                    dCurrentMax = dNorm;
-                                dNorm = 0.0;
-                            }
-                        }
-                    }
-                }
-            }
-            dCurrentMax = sqrt(dCurrentMax);
-            if (!dCurrentMax)
-                dCurrentMax = 1.0;
-        }
-        //cerr << dMaximum << endl;
-        //cerr << dCurrentMax << endl;
-        //cerr << 1/(dCurrentMax*dCurrentMax/dMaximum) << endl;
-        for (int i = 0; i < nLines; i++)
-        {
-            for (int j = 0; j < nRows; j++)
-            {
-                for (int k = 0; k < nLayers; k++)
-                {
-                    if (!t_animate)
-                        dPlotData[i][j][k] /= dMaximum;
-                    else if (dCurrentMax >= 1.0)
-                        dPlotData[i][j][k] /= (dCurrentMax*dCurrentMax)/dMaximum;
-                    else
-                        dPlotData[i][j][k] /= (dCurrentMax*dCurrentMax)/dMaximum;
-                    if (isnan(dMax) || dMax < dPlotData[i][j][k])
-                        dMax = dPlotData[i][j][k];
-                    if (isnan(dMin) || dMin > dPlotData[i][j][k])
-                        dMin = dPlotData[i][j][k];
-                }
-            }
-        }
-    }
-    return;
-}
 
 // --> \n und \t passend ersetzen <--
 void PlotData::replaceControlChars(string& sString)
@@ -2761,29 +2200,6 @@ string PlotData::removeSurroundingQuotationMarks(const string& sString)
     if (sString.front() == '"' && sString.back() == '"')
         return sString.substr(1,sString.length()-2);
     return sString;
-}
-
-void PlotData::rangeByPercentage(double* dData, size_t nLength, double dLowerPercentage, double dUpperPercentage, vector<double>& vRanges)
-{
-    if (dLowerPercentage == 1.0)
-    {
-        vRanges[0] = dData[0];
-        size_t pos = dUpperPercentage*nLength;
-        vRanges[1] = dData[pos];
-    }
-    else if (dUpperPercentage == 1.0)
-    {
-        size_t pos = (1.0-dLowerPercentage)*nLength;
-        vRanges[1] = dData[nLength-1];
-        vRanges[0] = dData[pos];
-    }
-    else
-    {
-        size_t lowerpos = (1.0-dLowerPercentage)/2.0*(nLength);
-        size_t upperpos = (dUpperPercentage/2.0+0.5)*(nLength);
-        vRanges[0] = dData[lowerpos];
-        vRanges[1] = dData[upperpos];
-    }
 }
 
 
