@@ -96,6 +96,7 @@ void PlotAsset::writeData(const mu::value_type& val, size_t layer, size_t x, siz
     data[layer].second.a[x + data[layer].second.nx*y + data[layer].second.ny*z] = mu::isinf(val) ? NAN : val.imag();
 }
 
+
 /////////////////////////////////////////////////
 /// \brief Convenience function to write the axis
 /// values.
@@ -116,6 +117,7 @@ void PlotAsset::writeAxis(double val, size_t pos, PlotCoords c)
 
     axes[c].a[pos] = isinf(val) ? NAN : val;
 }
+
 
 /////////////////////////////////////////////////
 /// \brief This function is a fix for the
@@ -139,6 +141,7 @@ void PlotAsset::duplicatePoints()
     }
 }
 
+
 /////////////////////////////////////////////////
 /// \brief This function is a fix for the
 /// MathGL bug to connect points, which are out
@@ -146,20 +149,29 @@ void PlotAsset::duplicatePoints()
 /// coordinates case, where the calculated
 /// coordinate is r or rho.
 ///
+/// \param c PlotCoords
 /// \return void
 ///
 /////////////////////////////////////////////////
-void PlotAsset::removeNegativeValues()
+void PlotAsset::removeNegativeValues(PlotCoords c)
 {
-    for (size_t l = 0; l < data.size(); l++)
+    if (c < axes.size())
     {
-        for (int i = 0; i < data[l].first.GetNN(); i++)
+        for (int n = 0; n < axes[c].GetNN(); n++)
         {
-            data[l].first.a[i] = data[l].first.a[i] >= 0.0 ? data[l].first.a[i] : NAN;
-            data[l].second.a[i] = data[l].second.a[i] >= 0.0 ? data[l].second.a[i] : NAN;
+            axes[c].a[n] = axes[c].a[n] >= 0.0 ? axes[c].a[n] : NAN;
+        }
+    }
+    else if (c < data.size())
+    {
+        for (int i = 0; i < data[c].first.GetNN(); i++)
+        {
+            data[c].first.a[i] = data[c].first.a[i] >= 0.0 ? data[c].first.a[i] : NAN;
+            data[c].second.a[i] = data[c].second.a[i] >= 0.0 ? data[c].second.a[i] : NAN;
         }
     }
 }
+
 
 /////////////////////////////////////////////////
 /// \brief Return the interval, which is governed
@@ -177,6 +189,7 @@ Interval PlotAsset::getAxisInterval(PlotCoords c) const
     return Interval(axes[c].Minimal(), axes[c].Maximal());
 }
 
+
 /////////////////////////////////////////////////
 /// \brief Return the internal data arrays for
 /// real and imaginary values.
@@ -190,7 +203,11 @@ IntervalSet PlotAsset::getDataIntervals(size_t layer) const
     IntervalSet ivl;
 
     if (layer >= data.size())
+    {
+        // Always return an "valid" intervalset
+        ivl.intervals.resize(2);
         return ivl;
+    }
 
     ivl.intervals.push_back(Interval(data[layer].first.Minimal(), data[layer].first.Maximal()));
     ivl.intervals.push_back(Interval(data[layer].second.Minimal(), data[layer].second.Maximal()));
@@ -198,6 +215,7 @@ IntervalSet PlotAsset::getDataIntervals(size_t layer) const
 
     return ivl;
 }
+
 
 /////////////////////////////////////////////////
 /// \brief Return true, if the internal data is
@@ -237,7 +255,7 @@ void PlotAsset::applyModulus(PlotCoords c, double mod)
                 axes[c].a[n] += mod;
         }
     }
-    else if (c < data.size() && !axes.size())
+    else if (c < data.size())
     {
         for (int n = 0; n < data[c].first.nx; n++)
         {
@@ -252,6 +270,7 @@ void PlotAsset::applyModulus(PlotCoords c, double mod)
         }
     }
 }
+
 
 /////////////////////////////////////////////////
 /// \brief Converts the vectors in multiple
@@ -284,6 +303,7 @@ mglData PlotAsset::vectorsToMatrix() const
 
     return _mData;
 }
+
 
 /////////////////////////////////////////////////
 /// \brief Get the centralized data quantiles.
@@ -324,6 +344,81 @@ IntervalSet PlotAsset::getWeightedRanges(size_t layer, double dLowerPercentage, 
 // PLOTASSETMANAGER
 /////////////////////////////////////////////////
 
+
+
+/////////////////////////////////////////////////
+/// \brief Returns the intervals fitting to all
+/// selected data and type.
+///
+/// \param t PlotType
+/// \param coord int
+/// \return IntervalSet
+///
+/////////////////////////////////////////////////
+IntervalSet PlotAssetManager::getIntervalsOfType(PlotType t, int coord) const
+{
+    IntervalSet ivl;
+    ivl.intervals.resize(2);
+
+    for (size_t i = 0; i < assets.size(); i++)
+    {
+        if (assets[i].type != t)
+            continue;
+
+        if (coord == ALLRANGES
+            || (coord == ONLYLEFT && assets[i].boundAxes.find('l') != std::string::npos)
+            || (coord == ONLYRIGHT && assets[i].boundAxes.find('r') != std::string::npos))
+        {
+            IntervalSet dataIntervals;
+
+            for (size_t l = 0; l < assets[i].getLayers(); l++)
+            {
+                dataIntervals = assets[i].getDataIntervals(l);
+                ivl[REAL] = ivl[REAL].combine(dataIntervals[REAL]);
+                ivl[IMAG] = ivl[IMAG].combine(dataIntervals[IMAG]);
+            }
+        }
+        else
+        {
+            if (assets[i].getLayers() <= coord)
+                continue;
+
+            IntervalSet dataIntervals = assets[i].getDataIntervals(coord);
+            ivl[REAL] = ivl[REAL].combine(dataIntervals[REAL]);
+            ivl[IMAG] = ivl[IMAG].combine(dataIntervals[IMAG]);
+        }
+    }
+
+    return ivl;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Returns the axis intervals of the
+/// selected type.
+///
+/// \param t PlotType
+/// \return IntervalSet
+///
+/////////////////////////////////////////////////
+IntervalSet PlotAssetManager::getAxisIntervalsOfType(PlotType t) const
+{
+    IntervalSet ivl;
+    ivl.intervals.resize(3);
+
+    for (size_t i = 0; i < assets.size(); i++)
+    {
+        if (assets[i].type != t)
+            continue;
+
+        for (size_t c = 0; c < min(3u, assets[i].getDim()); c++)
+        {
+            ivl[c] = ivl[c].combine(assets[i].getAxisInterval((PlotCoords)c));
+        }
+    }
+
+    return ivl;
+}
 
 
 /////////////////////////////////////////////////
@@ -377,41 +472,23 @@ void PlotAssetManager::normalize(int t_animate)
 /// \return IntervalSet
 ///
 /////////////////////////////////////////////////
+IntervalSet PlotAssetManager::getDataIntervals(int coord) const
+{
+    return getIntervalsOfType(PT_DATA, coord);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Returns the intervals fitting to all
+/// selected data.
+///
+/// \param coord int
+/// \return IntervalSet
+///
+/////////////////////////////////////////////////
 IntervalSet PlotAssetManager::getFunctionIntervals(int coord) const
 {
-    IntervalSet ivl;
-    ivl.intervals.resize(2);
-
-    for (size_t i = 0; i < assets.size(); i++)
-    {
-        if (assets[i].type != PT_FUNCTION)
-            continue;
-
-        if (coord == ALLRANGES
-            || (coord == ONLYLEFT && assets[i].boundAxes.find('l') != std::string::npos)
-            || (coord == ONLYRIGHT && assets[i].boundAxes.find('r') != std::string::npos))
-        {
-            IntervalSet dataIntervals;
-
-            for (size_t l = 0; l < assets[i].getLayers(); i++)
-            {
-                dataIntervals = assets[i].getDataIntervals(l);
-                ivl[REAL] = ivl[REAL].combine(dataIntervals[REAL]);
-                ivl[IMAG] = ivl[IMAG].combine(dataIntervals[IMAG]);
-            }
-        }
-        else
-        {
-            if (assets[i].getLayers() <= coord)
-                continue;
-
-            IntervalSet dataIntervals = assets[i].getDataIntervals(coord);
-            ivl[REAL] = ivl[REAL].combine(dataIntervals[REAL]);
-            ivl[IMAG] = ivl[IMAG].combine(dataIntervals[IMAG]);
-        }
-    }
-
-    return ivl;
+    return getIntervalsOfType(PT_FUNCTION, coord);
 }
 
 
@@ -463,6 +540,32 @@ IntervalSet PlotAssetManager::getWeightedFunctionIntervals(int coord, double dLo
 
 
 /////////////////////////////////////////////////
+/// \brief Returns the axis intervals of data
+/// plots.
+///
+/// \return IntervalSet
+///
+/////////////////////////////////////////////////
+IntervalSet PlotAssetManager::getDataAxes() const
+{
+    return getAxisIntervalsOfType(PT_DATA);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Returns the axis intervals of function
+/// plots.
+///
+/// \return IntervalSet
+///
+/////////////////////////////////////////////////
+IntervalSet PlotAssetManager::getFunctionAxes() const
+{
+    return getAxisIntervalsOfType(PT_FUNCTION);
+}
+
+
+/////////////////////////////////////////////////
 /// \brief This member function does the
 /// "undefined data point" magic, where the range
 /// of the plot is chosen so that "infinity"
@@ -473,7 +576,7 @@ IntervalSet PlotAssetManager::getWeightedFunctionIntervals(int coord, double dLo
 /// \return void
 ///
 /////////////////////////////////////////////////
-void PlotAssetManager::weightedRange(int coord, Interval& ivl)
+void PlotAssetManager::weightedRange(int coord, Interval& ivl) const
 {
     if (log(ivl.range()) > 5)
     {
@@ -492,6 +595,99 @@ void PlotAssetManager::weightedRange(int coord, Interval& ivl)
             ivl = getWeightedFunctionIntervals(coord, dSinglePercentageUse, 1.0)[0];
         else
             ivl = getWeightedFunctionIntervals(coord, dPercentage, dPercentage)[0];
+    }
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Returns true, if the manager contains
+/// some data plots.
+///
+/// \return bool
+///
+/////////////////////////////////////////////////
+bool PlotAssetManager::hasDataPlots() const
+{
+    for (const PlotAsset& ass : assets)
+    {
+        if (ass.type == PT_DATA)
+            return true;
+    }
+
+    return false;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Apply the necessary transformation for
+/// the selected coordinate system to the managed
+/// assets.
+///
+/// \param coords CoordinateSystem
+/// \return void
+///
+/////////////////////////////////////////////////
+void PlotAssetManager::applyCoordSys(CoordinateSystem coords)
+{
+    // Do not apply cartesian coordinates
+    if (coords == CARTESIAN)
+        return;
+
+    for (PlotAsset& ass : assets)
+    {
+        // Special case for 1D plots, as there are only two
+        // possible valid combinations
+        if (ass.getDim() == 1)
+        {
+            switch (coords)
+            {
+                case POLAR_PZ:
+                case SPHERICAL_PT:
+                    ass.applyModulus(XCOORD, 2.0*M_PI);
+                    ass.removeNegativeValues(YCOORD);
+                    break;
+                case POLAR_RP:
+                case POLAR_RZ:
+                case SPHERICAL_RP:
+                case SPHERICAL_RT:
+                    ass.applyModulus(YCOORD, 2.0*M_PI);
+                    ass.removeNegativeValues(XCOORD);
+                    break;
+            }
+        }
+        else
+        {
+            switch (coords)
+            {
+                case POLAR_PZ:
+                    ass.applyModulus(XCOORD, 2.0*M_PI);
+                    ass.removeNegativeValues(ZCOORD);
+                    break;
+                case POLAR_RP:
+                    ass.applyModulus(YCOORD, 2.0*M_PI);
+                    ass.removeNegativeValues(XCOORD);
+                    break;
+                case POLAR_RZ:
+                    ass.applyModulus(ZCOORD, 2.0*M_PI);
+                    ass.removeNegativeValues(XCOORD);
+                    break;
+                case SPHERICAL_PT:
+                    ass.applyModulus(XCOORD, 2.0*M_PI);
+                    ass.applyModulus(YCOORD, M_PI);
+                    ass.removeNegativeValues(ZCOORD);
+                    break;
+                case SPHERICAL_RP:
+                    ass.applyModulus(YCOORD, 2.0*M_PI);
+                    ass.applyModulus(ZCOORD, M_PI);
+                    ass.removeNegativeValues(XCOORD);
+                    break;
+                case SPHERICAL_RT:
+                    ass.applyModulus(ZCOORD, 2.0*M_PI);
+                    ass.applyModulus(YCOORD, M_PI);
+                    ass.removeNegativeValues(XCOORD);
+                    break;
+            }
+        }
     }
 }
 

@@ -19,36 +19,13 @@
 #ifndef PLOTASSET_HPP
 #define PLOTASSET_HPP
 
+#include "plotdef.hpp"
 #include "../interval.hpp"
 #include "../utils/tools.hpp"
 #include <mgl2/mgl.h>
 #include <string>
 #include <vector>
 #include <utility>
-
-enum PlotType
-{
-    PT_NONE,
-    PT_FUNCTION,
-    PT_DATA
-};
-
-enum PlotCoords
-{
-    XCOORD = 0,
-    YCOORD = 1,
-    ZCOORD = 2,
-    TCOORD = 3
-};
-
-enum PlotRanges
-{
-    XRANGE = XCOORD,
-    YRANGE = YCOORD,
-    ZRANGE = ZCOORD,
-    CRANGE = 3,
-    TRANGE = 4
-};
 
 
 /////////////////////////////////////////////////
@@ -76,7 +53,7 @@ struct PlotAsset
     void writeData(const mu::value_type& val, size_t layer, size_t x, size_t y = 0, size_t z = 0);
     void writeAxis(double val, size_t pos, PlotCoords c = XCOORD);
     void duplicatePoints();
-    void removeNegativeValues();
+    void removeNegativeValues(PlotCoords c);
     Interval getAxisInterval(PlotCoords c = XCOORD) const;
     IntervalSet getDataIntervals(size_t layer = 0) const;
     bool isComplex(size_t layer = 0) const;
@@ -222,12 +199,19 @@ class PlotAssetManager
 
     private:
         std::pair<double,double> m_maxnorm;
+        IntervalSet getIntervalsOfType(PlotType t, int coord) const;
+        IntervalSet getAxisIntervalsOfType(PlotType t) const;
 
     public:
         void normalize(int t_animate);
+        IntervalSet getDataIntervals(int coord = ALLRANGES) const;
         IntervalSet getFunctionIntervals(int coord = ALLRANGES) const;
         IntervalSet getWeightedFunctionIntervals(int coord = ALLRANGES, double dLowerPercentage = 1.0, double dUpperPercentage = 1.0) const;
-        void weightedRange(int coord, Interval& ivl);
+        IntervalSet getFunctionAxes() const;
+        IntervalSet getDataAxes() const;
+        void weightedRange(int coord, Interval& ivl) const;
+        bool hasDataPlots() const;
+        void applyCoordSys(CoordinateSystem coords);
 };
 
 #endif // PLOTASSET_HPP

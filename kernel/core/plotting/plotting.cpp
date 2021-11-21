@@ -164,24 +164,6 @@ mglData duplicatePoints(const mglData& _mData)
 
 
 /////////////////////////////////////////////////
-/// \brief This static function is a fix for the
-/// MathGL bug to connect points, which are out
-/// of data range. This fix is used in curved
-/// coordinates case, where the calculated
-/// coordinate is r or rho.
-///
-/// \param _mData mglData&
-/// \return void
-///
-/////////////////////////////////////////////////
-static void removeNegativeValues(mglData& _mData)
-{
-    for (int i = 0; i < _mData.GetNN(); i++)
-        _mData.a[i] = _mData.a[i] >= 0.0 ? _mData.a[i] : NAN;
-}
-
-
-/////////////////////////////////////////////////
 /// \brief This static function uses wxWidgets
 /// functionality to add TIFF exporting support
 /// to MathGL.
@@ -684,7 +666,7 @@ size_t Plot::createSubPlotSet(string& sOutputName, bool& bAnimateVar, vector<str
 
         // Apply the logic and the transformation for logarithmic
         // plotting axes
-        if (_pData.getSettings(PlotData::INT_COORDS) == PlotData::CARTESIAN
+        if (_pData.getSettings(PlotData::INT_COORDS) == CARTESIAN
                 && (nPlotCompose == nSubPlotStart)
                 && (_pData.getLogscale(XRANGE) || _pData.getLogscale(YRANGE) || _pData.getLogscale(ZRANGE) || _pData.getLogscale(CRANGE)))
         {
@@ -733,6 +715,7 @@ size_t Plot::createSubPlotSet(string& sOutputName, bool& bAnimateVar, vector<str
             }
         }
 
+        NumeReKernel::print("Preparing memory");
         // Prepare the plotting memory for functions and datasets depending
         // on their number
         prepareMemory();
@@ -743,14 +726,8 @@ size_t Plot::createSubPlotSet(string& sOutputName, bool& bAnimateVar, vector<str
         StripSpaces(sFunc);
 
         // Ensure that either functions or data plots are available
-        if (!sFunc.length() && !m_manager.assets.size())
+        if (!m_manager.assets.size())
             throw SyntaxError(SyntaxError::PLOT_ERROR, sCmd, SyntaxError::invalid_position);
-
-        // Legacy vector to multi-expression conversion. Is quite probable not
-        // needed any more
-#warning TODO (numere#3#11/16/21): This might be an issue with 3dPlots
-        if (sFunc.find("{") != string::npos && !_pInfo.bDraw3D && !_pInfo.bDraw)
-            convertVectorToExpression(sFunc, _option);
 
         // Ensure that the functions do not contain any strings, because strings
         // cannot be plotted
@@ -811,11 +788,12 @@ size_t Plot::createSubPlotSet(string& sOutputName, bool& bAnimateVar, vector<str
             }
 
             // Set the function string to be empty
-            sFunc = "<<empty>>";
+            sFunc.clear();
         }
         else
-            sFunc = "<<empty>>";
+            sFunc.clear();
 
+            NumeReKernel::print("Default ranges");
         // Calculate the default plotting ranges depending on the user
         // specification. If the user didn't specify
         // a set of ranges, we try to use the plotting ranges of the data
@@ -1017,7 +995,7 @@ bool Plot::createPlotOrAnimation(int& nStyle, size_t nPlotCompose, size_t nPlotC
         // Rotate the graph to the desired plotting angles
         if (_pInfo.nMaxPlotDim > 2 && (!nPlotCompose || bNewSubPlot))
             _graph->Rotate(_pData.getRotateAngle(), _pData.getRotateAngle(1));
-
+NumeReKernel::print("Filling data");
         // Calculate the function values for the set plotting ranges
         // and the eventually set time variable
         nFunctions = fillData(dt_max, t_animate, nFunctions);
@@ -1026,11 +1004,11 @@ bool Plot::createPlotOrAnimation(int& nStyle, size_t nPlotCompose, size_t nPlotC
         // style is a vector field
         if (_pInfo.b2DVect || _pInfo.b3DVect)
             m_manager.normalize(t_animate);
-
+NumeReKernel::print("Fitting ranges");
         // Change the plotting ranges to fit to the calculated plot
         // data (only, if the user did not specify those ranges, too).
         fitPlotRanges(nPlotCompose, bNewSubPlot);
-
+NumeReKernel::print("Passing ranges");
         // Pass the final ranges to the graph. Only do this, if this is
         // the first plot of a plot composition or a new subplot.
         if (!nPlotCompose || bNewSubPlot)
@@ -1138,70 +1116,31 @@ void Plot::create2dPlot(int& nStyle, size_t& nLegends, int nFunctions, size_t nP
     if (_pData.getSettings(PlotData::INT_CONTLINES) % 2)
         _mContVec.a[_pData.getSettings(PlotData::INT_CONTLINES)/2] = (_pInfo.ranges[ZRANGE].max() - _pInfo.ranges[ZRANGE].min()) / 2.0 + _pInfo.ranges[ZRANGE].min();
 
+    m_manager.applyCoordSys((CoordinateSystem)_pData.getSettings(PlotData::INT_COORDS));
+
     for (unsigned int n = 0; n < m_manager.assets.size(); n++)
     {
-        if (m_manager.assets[n].type == PT_FUNCTION)
-        {
-            StripSpaces(m_manager.assets[n].legend);
-            _mData = m_manager.assets[n].data[0].first;
+        StripSpaces(m_manager.assets[n].legend);
 
-            if ((_pData.getSettings(PlotData::LOG_COLORMASK) || _pData.getSettings(PlotData::LOG_ALPHAMASK))
-                && n+1 < m_manager.assets.size())
-                _mMaskData = m_manager.assets[n+1].data[0].first;
-
-#warning TODO (numere#3#11/16/21): Why is this different compared to data plots?
-            if (_pData.getSettings(PlotData::INT_COORDS) == PlotData::POLAR_RZ
-                || _pData.getSettings(PlotData::INT_COORDS) == PlotData::SPHERICAL_RT)
-            {
-                _mData = fmod(_mData, 2.0 * M_PI);
-                _mMaskData = fmod(_mMaskData, 2.0 * M_PI);
-            }
-            else if (_pData.getSettings(PlotData::INT_COORDS) == PlotData::SPHERICAL_RP)
-            {
-                _mData = fmod(_mData, M_PI);
-                _mMaskData = fmod(_mMaskData, M_PI);
-            }
-
-            _mPlotAxes[XCOORD] = m_manager.assets[n].axes[XCOORD];
-            _mPlotAxes[YCOORD] = m_manager.assets[n].axes[YCOORD];
-        }
-        else
-        {
-            StripSpaces(m_manager.assets[n].legend);
-
-            if (_pData.getSettings(PlotData::INT_COORDS) == PlotData::POLAR_PZ
-                || _pData.getSettings(PlotData::INT_COORDS) == PlotData::SPHERICAL_PT)
-                m_manager.assets[n].applyModulus(XCOORD, 2.0*M_PI);
-
-            if (_pData.getSettings(PlotData::INT_COORDS) == PlotData::POLAR_RP
-                || _pData.getSettings(PlotData::INT_COORDS) == PlotData::SPHERICAL_RP)
-                m_manager.assets[n].applyModulus(YCOORD, 2.0*M_PI);
-
-            if (_pData.getSettings(PlotData::INT_COORDS) == PlotData::SPHERICAL_PT
-                || _pData.getSettings(PlotData::INT_COORDS) == PlotData::SPHERICAL_RT)
-                m_manager.assets[n].applyModulus(YCOORD, M_PI);
+        _mPlotAxes[XCOORD] = m_manager.assets[n].axes[XCOORD];
+        _mPlotAxes[YCOORD] = m_manager.assets[n].axes[YCOORD];
 
 #warning TODO (numere#3#11/15/21): Enable complex values
-            _mData = m_manager.assets[n].data[0].first;
-            _mPlotAxes[XCOORD] = m_manager.assets[n].axes[XCOORD];
-            _mPlotAxes[YCOORD] = m_manager.assets[n].axes[YCOORD];
+        _mData = m_manager.assets[n].data[0].first;
 
-            if ((_pData.getSettings(PlotData::LOG_COLORMASK) || _pData.getSettings(PlotData::LOG_ALPHAMASK))
-                && n+1 < m_manager.assets.size())
-#warning TODO (numere#3#11/15/21): Enable complex values
-                _mMaskData = m_manager.assets[n + 1].data[0].first;
-        }
+        if ((_pData.getSettings(PlotData::LOG_COLORMASK) || _pData.getSettings(PlotData::LOG_ALPHAMASK))
+            && n+1 < m_manager.assets.size())
+            _mMaskData = m_manager.assets[n+1].data[0].first;
 
         if (!plot2d(_mData, _mMaskData, _mPlotAxes, _mContVec))
         {
-            // --> Den gibt's nicht: Speicher freigeben und zurueck! <--
             clearData();
             return;
         }
 
-        if ((m_manager.assets.size() > 1 && !(_pData.getSettings(PlotData::LOG_COLORMASK) || _pData.getSettings(PlotData::LOG_ALPHAMASK)))
-            || (m_manager.assets.size() > 2 && (_pData.getSettings(PlotData::LOG_COLORMASK) || _pData.getSettings(PlotData::LOG_ALPHAMASK)))
-            || (nFunctions && m_manager.assets.size()))
+        if (m_manager.assets.size() > 1
+            || _pData.getSettings(PlotData::LOG_COLORMASK)
+            || _pData.getSettings(PlotData::LOG_ALPHAMASK))
         {
             if (_pData.getSettings(PlotData::LOG_CONTLABELS) && _pInfo.sCommand.substr(0, 4) != "cont")
                 _graph->Cont(m_manager.assets[n].data[0].first,
@@ -1231,9 +1170,7 @@ void Plot::create2dPlot(int& nStyle, size_t& nLegends, int nFunctions, size_t nP
     }
     // --> Position der Legende etwas aendern <--
     if (m_manager.assets.size() > 1 && nLegends && !_pData.getSettings(PlotData::LOG_SCHEMATIC) && nPlotCompose + 1 == nPlotComposeSize)
-    {
         _graph->Legend(1.35, 1.2);
-    }
 }
 
 
@@ -1386,75 +1323,53 @@ void Plot::createStdPlot(int& nStyle, size_t& nLegends, int nFunctions, size_t n
     mglData _mPlotAxes;
     mglData _mData2[2];
 
-    int nLastDataCounter = 0;
+    int nPrevDataLayers = 0;
     int nCurrentStyle = 0;
+
+    m_manager.applyCoordSys((CoordinateSystem)_pData.getSettings(PlotData::INT_COORDS));
 
     for (size_t n = 0; n < m_manager.assets.size(); n++)
     {
+        StripSpaces(m_manager.assets[n].legend);
+
+#warning TODO (numere#3#11/17/21): Enable complex values
+        _mData = m_manager.assets[n].data[0].first;
+        _mPlotAxes = m_manager.assets[n].axes[XCOORD];
+
+        if (_pData.getSettings(PlotData::LOG_REGION) && n+1 < m_manager.assets.size())
+            _mData2[0] = m_manager.assets[n+1].data[0].first;
+        else
+        {
+            _mData2[0].Create(_pInfo.nSamples);
+
+            for (long int i = 0; i < _pInfo.nSamples; i++)
+                _mData2[0].a[i] = 0.0;
+        }
+
         // Copy the data to the relevant memory
         if (m_manager.assets[n].type == PT_FUNCTION)
         {
-            StripSpaces(m_manager.assets[n].legend);
-#warning TODO (numere#3#11/17/21): Enable complex values
-            _mData = m_manager.assets[n].data[0].first;
-            _mPlotAxes = m_manager.assets[n].axes[XCOORD];
-
-            if (_pData.getSettings(PlotData::INT_COORDS) == PlotData::POLAR_RP
-                || _pData.getSettings(PlotData::INT_COORDS) == PlotData::SPHERICAL_RP)
-                _mData = fmod(_mData, 2.0 * M_PI);
-
-            if (_pData.getSettings(PlotData::LOG_REGION) && n+1 < m_manager.assets.size())
-#warning TODO (numere#3#11/15/21): Enable complex values
-                _mData2[0] = m_manager.assets[n+1].data[0].first;
-            else
-            {
-                _mData2[0].Create(_pInfo.nSamples);
-
-                for (long int i = 0; i < _pInfo.nSamples; i++)
-                    _mData2[0].a[i] = 0.0;
-            }
-
-            if (_pData.getSettings(PlotData::INT_COORDS) == PlotData::POLAR_RP
-                || _pData.getSettings(PlotData::INT_COORDS) == PlotData::SPHERICAL_RP)
-                _mData2[0] = fmod(_mData2[0], 2.0 * M_PI);
-
-            if (_pData.getAxisbind(n)[0] == 'r')
+            if (m_manager.assets[n].boundAxes.find('r') != std::string::npos)
                 _mData = (_mData - _pInfo.secranges[YRANGE].min()) * _pInfo.ranges[YRANGE].range() / _pInfo.secranges[YRANGE].range() + _pInfo.ranges[YRANGE].min();
 
-            if (_pData.getSettings(PlotData::LOG_REGION) && _pData.getAxisbind(n + 1)[0] == 'r')
+            if (_pData.getSettings(PlotData::LOG_REGION) && m_manager.assets[n+1].boundAxes.find('r') != std::string::npos)
                 _mData2[0] = (_mData2[0] - _pInfo.secranges[YRANGE].min()) * _pInfo.ranges[YRANGE].range() / _pInfo.secranges[YRANGE].range() + _pInfo.ranges[YRANGE].min();
         }
         else
         {
-            StripSpaces(m_manager.assets[n].legend);
-
-            // Fallback for all bended coordinates, which are not covered by the second case
-            if (_pData.getSettings(PlotData::INT_COORDS) == PlotData::POLAR_PZ
-                || _pData.getSettings(PlotData::INT_COORDS) == PlotData::SPHERICAL_PT
-                || _pData.getSettings(PlotData::INT_COORDS) == PlotData::SPHERICAL_RT
-                || _pData.getSettings(PlotData::INT_COORDS) == PlotData::POLAR_RZ)
-                m_manager.assets[n].applyModulus(XCOORD, 2.0*M_PI);
-
-            if (_pData.getSettings(PlotData::INT_COORDS) == PlotData::POLAR_RP
-                || _pData.getSettings(PlotData::INT_COORDS) == PlotData::SPHERICAL_RP)
-                m_manager.assets[n].applyModulus(YCOORD, 2.0*M_PI);
-
-
-#warning TODO (numere#3#11/15/21): Enable complex values
-            _mData = m_manager.assets[n].data[0].first;
-            _mPlotAxes = m_manager.assets[n].axes[XCOORD];
-
             if (_pData.getSettings(PlotData::LOG_BOXPLOT))
             {
+                // Create the boxplot axis
                 _mData2[0].Create(m_manager.assets[n].getLayers());
 
-#warning TODO (numere#3#11/15/21): This is a bit weird
                 for (size_t col = 0; col < m_manager.assets[n].getLayers(); col++)
                 {
-                    _mData2[0].a[col] = n + nLastDataCounter + 0.5 + col;
+                    // Create the axis by adding previous layers to shift
+                    // the current box plots to the right
+                    _mData2[0].a[col] = nPrevDataLayers + 0.5 + col;
                 }
 
-                nLastDataCounter += m_manager.assets[n].getLayers() - 2; // it's always incremented by 1
+                nPrevDataLayers += m_manager.assets[n].getLayers();
                 _mData = m_manager.assets[n].vectorsToMatrix();
                 _mData.Transpose();
             }
@@ -1466,7 +1381,7 @@ void Plot::createStdPlot(int& nStyle, size_t& nLegends, int nFunctions, size_t n
                 if (_pData.getSettings(PlotData::LOG_INTERPOLATE) && getNN(_mData) >= _pData.getSettings(PlotData::INT_SAMPLES))
                 {
                     if (_pData.getSettings(PlotData::LOG_REGION) && n+1 < m_manager.assets.size())
-                        _mData2[0] = m_manager.assets[n + 1].data[0].first;
+                        _mData2[0] = m_manager.assets[n+1].data[0].first;
                     else
                     {
                         // If the current data dimension is higher than 2, then we
@@ -1492,11 +1407,9 @@ void Plot::createStdPlot(int& nStyle, size_t& nLegends, int nFunctions, size_t n
                           || _pData.getSettings(PlotData::LOG_XERROR))
                          && m_manager.assets[n].getLayers() > 1)
                 {
-                    _mData2[0].Create(getNN(_mData));
-                    _mData2[1].Create(getNN(_mData));
-
                     if (_pData.getSettings(PlotData::LOG_YERROR) && !_pData.getSettings(PlotData::LOG_XERROR))
                     {
+                        _mData2[0].Create(getNN(_mData));
                         _mData2[1] = m_manager.assets[n].data[1].first;
 
                         for (long int i = 0; i < getNN(_mData); i++)
@@ -1505,6 +1418,7 @@ void Plot::createStdPlot(int& nStyle, size_t& nLegends, int nFunctions, size_t n
                     else
                     {
                         _mData2[0] = m_manager.assets[n].data[1].first;
+                        _mData2[1].Create(getNN(_mData));
 
                         for (long int i = 0; i < getNN(_mData); i++)
                             _mData2[1].a[i] = 0.0;
@@ -1514,7 +1428,7 @@ void Plot::createStdPlot(int& nStyle, size_t& nLegends, int nFunctions, size_t n
                     _mData = m_manager.assets[n].vectorsToMatrix();
             }
 
-            if (_pData.getAxisbind(n)[1] == 't')
+            if (m_manager.assets[n].boundAxes.find('t') != std::string::npos)
             {
                 for (int i = 0; i < getNN(_mPlotAxes); i++)
                 {
@@ -1533,16 +1447,16 @@ void Plot::createStdPlot(int& nStyle, size_t& nLegends, int nFunctions, size_t n
                 }
             }
 
-            if (_pData.getAxisbind(n)[0] == 'r')
+            if (m_manager.assets[n].boundAxes.find('r') != std::string::npos)
                 _mData = (_mData - _pInfo.secranges[YRANGE].min()) * _pInfo.ranges[YRANGE].range() / _pInfo.secranges[YRANGE].range() + _pInfo.ranges[YRANGE].min();
 
-            if (_pData.getSettings(PlotData::LOG_REGION) && _pData.getAxisbind(n + 1)[0] == 'r' && getNN(_mData2[0]) > 1)
+            if (_pData.getSettings(PlotData::LOG_REGION) && m_manager.assets[n+1].boundAxes.find('r') != std::string::npos && getNN(_mData2[0]) > 1)
                 _mData2[0] = (_mData2[0] - _pInfo.secranges[YRANGE].min()) * _pInfo.ranges[YRANGE].range() / _pInfo.secranges[YRANGE].range() + _pInfo.ranges[YRANGE].min();
 
-            if (_pData.getSettings(PlotData::LOG_YERROR) && _pData.getAxisbind(n)[0] == 'r')
+            if (_pData.getSettings(PlotData::LOG_YERROR) && m_manager.assets[n].boundAxes.find('r') != std::string::npos)
                 _mData2[1] = (_mData2[1] - _pInfo.secranges[YRANGE].min()) * _pInfo.ranges[YRANGE].range() / _pInfo.secranges[YRANGE].range() + _pInfo.ranges[YRANGE].min();
 
-            if (_pData.getSettings(PlotData::LOG_XERROR) && _pData.getAxisbind(n)[1] == 't')
+            if (_pData.getSettings(PlotData::LOG_XERROR) && m_manager.assets[n].boundAxes.find('t') != std::string::npos)
                 _mData2[0] = (_mData2[0] - _pInfo.secranges[YRANGE].min()) * _pInfo.ranges[XRANGE].range() / _pInfo.secranges[XRANGE].range() + _pInfo.ranges[XRANGE].min();
         }
 
@@ -1566,64 +1480,36 @@ void Plot::createStdPlot(int& nStyle, size_t& nLegends, int nFunctions, size_t n
         // Create the legend
         if (m_manager.assets[n].type == PT_FUNCTION)
         {
-            if (_pData.getSettings(PlotData::LOG_REGION) && n+1 < m_manager.assets.size())
+            sConvLegends = m_manager.assets[n].legend + " -nq";
+
+            // Apply the string parser
+            NumeReKernel::getInstance()->getStringParser().evalAndFormat(sConvLegends, sDummy, true);
+
+            // While the legend string is not empty
+            while (sConvLegends.length())
             {
-                for (int k = 0; k < 2; k++)
+                // Get the next legend string
+                string sLegend = sConvLegends.substr(0, sConvLegends.find('\n'));
+
+                if (sConvLegends.find('\n') != string::npos)
+                    sConvLegends.erase(0, sConvLegends.find('\n')+1);
+                else
+                    sConvLegends.clear();
+
+                // Add new surrounding quotation marks
+                sLegend = "\"" + sLegend + "\"";
+
+                // Add the legend
+                if (sLegend != "\"\"")
                 {
-                    sConvLegends = m_manager.assets[n].legend + " -nq";
-
-                    // Apply the string parser
-                    NumeReKernel::getInstance()->getStringParser().evalAndFormat(sConvLegends, sDummy, true);
-
-                    // Add new surrounding quotation marks
-                    sConvLegends = "\"" + sConvLegends + "\"";
-
-                    // Add the legend
-                    if (sConvLegends != "\"\"")
-                    {
-                        _graph->AddLegend(fromSystemCodePage(replaceToTeX(sConvLegends.substr(1, sConvLegends.length() - 2))).c_str(),
-                                          _pInfo.sLineStyles[nCurrentStyle].c_str());
-                        nLegends++;
-                    }
-
-                    if (nCurrentStyle == _pInfo.nStyleMax - 1)
-                        nCurrentStyle = 0;
-                    else
-                        nCurrentStyle++;
+                    _graph->AddLegend(fromSystemCodePage(replaceToTeX(sLegend.substr(1, sLegend.length() - 2))).c_str(),
+                                      getLegendStyle(_pInfo.sLineStyles[nCurrentStyle]).c_str());
+                    nLegends++;
                 }
-            }
-            else
-            {
-                sConvLegends = m_manager.assets[n].legend + " -nq";
-
-                // Apply the string parser
-                NumeReKernel::getInstance()->getStringParser().evalAndFormat(sConvLegends, sDummy, true);
-
-                // While the legend string is not empty
-                while (sConvLegends.length())
-                {
-                    // Get the next legend string
-                    string sLegend = sConvLegends.substr(0, sConvLegends.find('\n'));
-                    if (sConvLegends.find('\n') != string::npos)
-                        sConvLegends.erase(0, sConvLegends.find('\n')+1);
-                    else
-                        sConvLegends.clear();
-
-                    // Add new surrounding quotation marks
-                    sLegend = "\"" + sLegend + "\"";
-
-                    // Add the legend
-                    if (sLegend != "\"\"")
-                    {
-                        _graph->AddLegend(fromSystemCodePage(replaceToTeX(sLegend.substr(1, sLegend.length() - 2))).c_str(),
-                                          getLegendStyle(_pInfo.sLineStyles[nCurrentStyle]).c_str());
-                        nLegends++;
-                    }
-                    if (nCurrentStyle == _pInfo.nStyleMax - 1)
-                        nCurrentStyle = 0;
-                    else
-                        nCurrentStyle++;
-                }
+                if (nCurrentStyle == _pInfo.nStyleMax - 1)
+                    nCurrentStyle = 0;
+                else
+                    nCurrentStyle++;
             }
         }
         else
@@ -1745,13 +1631,6 @@ bool Plot::plotstd(mglData& _mData, mglData& _mAxisVals, mglData _mData2[2], con
         _mAxisVals = duplicatePoints(_mAxisVals);
         _mData2[0] = duplicatePoints(_mData2[0]);
         _mData2[1] = duplicatePoints(_mData2[1]);
-
-        if (_pData.getSettings(PlotData::INT_COORDS) == PlotData::POLAR_PZ
-            || _pData.getSettings(PlotData::INT_COORDS) == PlotData::SPHERICAL_PT)
-        {
-            removeNegativeValues(_mData);
-            removeNegativeValues(_mData2[0]);
-        }
     }
 
     if (nType == PT_FUNCTION)
@@ -1901,11 +1780,12 @@ bool Plot::plotstd(mglData& _mData, mglData& _mAxisVals, mglData _mData2[2], con
 /////////////////////////////////////////////////
 void Plot::create3dPlot()
 {
-    if (sFunc != "<<empty>>")
+    if (sFunc.length())
     {
         mglData _mContVec(15);
         IntervalSet dataInterval = m_manager.assets[0].getDataIntervals();
         m_manager.weightedRange(ALLRANGES, dataInterval[0]);
+        m_manager.applyCoordSys((CoordinateSystem)_pData.getSettings(PlotData::INT_COORDS));
 
         if (!isnan(_pInfo.ranges[CRANGE].front()))
             dataInterval[0] = _pInfo.ranges[CRANGE];
@@ -1925,7 +1805,8 @@ void Plot::create3dPlot()
                 && _pInfo.sCommand.substr(0, 4) != "grad"
                 && (_pInfo.sCommand.substr(0, 4) != "dens" || (_pInfo.sCommand.substr(0, 4) == "dens" && _pData.getSettings(PlotData::LOG_CLOUDPLOT))))
         {
-            _graph->SetCutBox(CalcCutBox(_pData.getRotateAngle(1), 0, _pData.getSettings(PlotData::INT_COORDS), true), CalcCutBox(_pData.getRotateAngle(1), 1, _pData.getSettings(PlotData::INT_COORDS), true));
+            _graph->SetCutBox(CalcCutBox(_pData.getRotateAngle(1), 0, _pData.getSettings(PlotData::INT_COORDS), true),
+                              CalcCutBox(_pData.getRotateAngle(1), 1, _pData.getSettings(PlotData::INT_COORDS), true));
         }
         // --> Entsprechend dem gewuenschten Plotting-Style plotten <--
         if (_pInfo.sCommand.substr(0, 4) == "mesh")
@@ -2048,7 +1929,6 @@ void Plot::create3dPlot()
         }
         else
         {
-            // --> Den gibt's nicht: Speicher freigeben und zurueck! <--
             clearData();
             return;
         }
@@ -2115,7 +1995,7 @@ void Plot::create3dPlot()
 /////////////////////////////////////////////////
 void Plot::create3dVect()
 {
-    if (sFunc != "<<empty>>")
+    if (sFunc.length())
     {
         mglData& _mData_x = m_manager.assets[0].data[XCOORD].first;
         mglData& _mData_y = m_manager.assets[0].data[YCOORD].first;
@@ -2158,7 +2038,7 @@ void Plot::create3dVect()
 /////////////////////////////////////////////////
 void Plot::create2dVect()
 {
-    if (sFunc != "<<empty>>")
+    if (sFunc.length())
     {
         mglData& _mData_x = m_manager.assets[0].data[XCOORD].first;
         mglData& _mData_y = m_manager.assets[0].data[YCOORD].first;
@@ -2835,32 +2715,17 @@ void Plot::createStd3dPlot(int& nStyle, size_t& nLegends, int nFunctions, size_t
         _graph->SetCutBox(CalcCutBox(_pData.getRotateAngle(1), 0, _pData.getSettings(PlotData::INT_COORDS), true),
                           CalcCutBox(_pData.getRotateAngle(1), 1, _pData.getSettings(PlotData::INT_COORDS), true));
 
+    m_manager.applyCoordSys((CoordinateSystem)_pData.getSettings(PlotData::INT_COORDS));
+
     for (size_t n = 0; n < m_manager.assets.size(); n++)
     {
+        StripSpaces(m_manager.assets[n].legend);
+
         if (m_manager.assets[n].type == PT_FUNCTION)
         {
-            StripSpaces(m_manager.assets[n].legend);
-
-            for (int i = 0; i < 3; i++)
-            {
-                _mData2[i].Create(_pInfo.nSamples);
-            }
-
             _mData[XCOORD] = m_manager.assets[n].data[XCOORD].first;
             _mData[YCOORD] = m_manager.assets[n].data[YCOORD].first;
             _mData[ZCOORD] = m_manager.assets[n].data[ZCOORD].first;
-
-            if (_pData.getSettings(PlotData::INT_COORDS) == PlotData::POLAR_PZ
-                || _pData.getSettings(PlotData::INT_COORDS) == PlotData::SPHERICAL_PT)
-                _mData[YCOORD] = fmod(_mData[YCOORD], 2.0 * M_PI);
-
-            if (_pData.getSettings(PlotData::INT_COORDS) == PlotData::POLAR_RP
-                || _pData.getSettings(PlotData::INT_COORDS) == PlotData::SPHERICAL_RP)
-                _mData[ZCOORD] = fmod(_mData[ZCOORD], 2.0 * M_PI);
-
-            if (_pData.getSettings(PlotData::INT_COORDS) == PlotData::SPHERICAL_PT
-                || _pData.getSettings(PlotData::INT_COORDS) == PlotData::SPHERICAL_RT)
-                _mData[ZCOORD] = fmod(_mData[ZCOORD], 1.0 * M_PI);
 
             if (_pData.getSettings(PlotData::LOG_REGION)
                 && n+1 < m_manager.assets.size())
@@ -2868,61 +2733,17 @@ void Plot::createStd3dPlot(int& nStyle, size_t& nLegends, int nFunctions, size_t
                 _mData2[XCOORD] = m_manager.assets[n+1].data[XCOORD].first;
                 _mData2[YCOORD] = m_manager.assets[n+1].data[YCOORD].first;
                 _mData2[ZCOORD] = m_manager.assets[n+1].data[ZCOORD].first;
-
-                if (_pData.getSettings(PlotData::INT_COORDS) == PlotData::POLAR_PZ
-                    || _pData.getSettings(PlotData::INT_COORDS) == PlotData::SPHERICAL_PT)
-                    _mData2[YCOORD] = fmod(_mData2[YCOORD], 2.0 * M_PI);
-
-                if (_pData.getSettings(PlotData::INT_COORDS) == PlotData::POLAR_RP
-                    || _pData.getSettings(PlotData::INT_COORDS) == PlotData::SPHERICAL_RP)
-                    _mData2[ZCOORD] = fmod(_mData2[ZCOORD], 2.0 * M_PI);
-
-                if (_pData.getSettings(PlotData::INT_COORDS) == PlotData::SPHERICAL_PT
-                    || _pData.getSettings(PlotData::INT_COORDS) == PlotData::SPHERICAL_RT)
-                    _mData2[ZCOORD] = fmod(_mData2[ZCOORD], 1.0 * M_PI);
             }
             else
             {
-                for (long int i = 0; i < _pInfo.nSamples; i++)
+                for (int j = XCOORD; j <= ZCOORD; j++)
                 {
-                    for (int j = 0; j < 3; j++)
-                    {
-                        _mData2[j].a[i] = 0.0;
-                    }
+                    _mData2[j] = 0.0 * _mData[j];
                 }
             }
         }
         else
         {
-            if (_pData.getSettings(PlotData::INT_COORDS) == PlotData::POLAR_PZ
-                || _pData.getSettings(PlotData::INT_COORDS) == PlotData::SPHERICAL_PT)
-                m_manager.assets[n].applyModulus(XCOORD, 2.0*M_PI);
-
-            if (_pData.getSettings(PlotData::INT_COORDS) == PlotData::POLAR_RP
-                || _pData.getSettings(PlotData::INT_COORDS) == PlotData::SPHERICAL_RP)
-                m_manager.assets[n].applyModulus(YCOORD, 2.0*M_PI);
-
-            if (_pData.getSettings(PlotData::INT_COORDS) == PlotData::SPHERICAL_PT
-                || _pData.getSettings(PlotData::INT_COORDS) == PlotData::SPHERICAL_RT)
-                m_manager.assets[n].applyModulus(YCOORD, 1.0*M_PI);
-
-            StripSpaces(m_manager.assets[n].legend);
-
-            if (_pData.getSettings(PlotData::LOG_XERROR) || _pData.getSettings(PlotData::LOG_YERROR))
-            {
-                for (long int i = 0; i < m_manager.assets[n].data[0].first.nx; i++)
-                {
-                    if (!_pInfo.ranges[XRANGE].isInside(m_manager.assets[n].data[XCOORD].first.a[i])
-                        || !_pInfo.ranges[YRANGE].isInside(m_manager.assets[n].data[YCOORD].first.a[i])
-                        || !_pInfo.ranges[ZRANGE].isInside(m_manager.assets[n].data[ZCOORD].first.a[i]))
-                    {
-                        m_manager.assets[n].writeData(NAN, XCOORD, i);
-                        m_manager.assets[n].writeData(NAN, YCOORD, i);
-                        m_manager.assets[n].writeData(NAN, ZCOORD, i);
-                    }
-                }
-            }
-
             _mData[XCOORD] = m_manager.assets[n].data[XCOORD].first;
             _mData[YCOORD] = m_manager.assets[n].data[YCOORD].first;
             _mData[ZCOORD] = m_manager.assets[n].data[ZCOORD].first;
@@ -2936,35 +2757,18 @@ void Plot::createStd3dPlot(int& nStyle, size_t& nLegends, int nFunctions, size_t
                 }
             }
 
-            if (_pData.getSettings(PlotData::LOG_REGION) && n+1 < m_manager.assets.size())
+            if (_pData.getSettings(PlotData::LOG_REGION)
+                && n+1 < m_manager.assets.size())
             {
-                _mData2[XCOORD] = m_manager.assets[n + 1].data[XCOORD].first;
-                _mData2[YCOORD] = m_manager.assets[n + 1].data[YCOORD].first;
-                _mData2[ZCOORD] = m_manager.assets[n + 1].data[ZCOORD].first;
-
-                if (_pData.getSettings(PlotData::INT_COORDS) == PlotData::POLAR_PZ
-                    || _pData.getSettings(PlotData::INT_COORDS) == PlotData::SPHERICAL_PT)
-                    _mData2[YCOORD] = fmod(_mData2[YCOORD], 2.0 * M_PI);
-
-                if (_pData.getSettings(PlotData::INT_COORDS) == PlotData::POLAR_RP
-                    || _pData.getSettings(PlotData::INT_COORDS) == PlotData::SPHERICAL_RP)
-                    _mData2[ZCOORD] = fmod(_mData2[ZCOORD], 2.0 * M_PI);
-
-                if (_pData.getSettings(PlotData::INT_COORDS) == PlotData::SPHERICAL_PT
-                    || _pData.getSettings(PlotData::INT_COORDS) == PlotData::SPHERICAL_RT)
-                    _mData2[ZCOORD] = fmod(_mData2[ZCOORD], 1.0 * M_PI);
+                _mData2[XCOORD] = m_manager.assets[n+1].data[XCOORD].first;
+                _mData2[YCOORD] = m_manager.assets[n+1].data[YCOORD].first;
+                _mData2[ZCOORD] = m_manager.assets[n+1].data[ZCOORD].first;
             }
             else if (_pData.getSettings(PlotData::LOG_REGION))
             {
-                for (int j = 0; j < 3; j++)
-                    _mData2[j].Create(getNN(_mData[0]));
-
-                for (long int i = 0; i < getNN(_mData[0]); i++)
+                for (int j = XCOORD; j <= ZCOORD; j++)
                 {
-                    for (int j = 0; j < 3; j++)
-                    {
-                        _mData2[j].a[i] = 0.0;
-                    }
+                    _mData2[j] = 0.0 * _mData[j];
                 }
             }
 
@@ -2978,7 +2782,6 @@ void Plot::createStd3dPlot(int& nStyle, size_t& nLegends, int nFunctions, size_t
 
         if (!plotstd3d(_mData, _mData2, m_manager.assets[n].type))
         {
-            // --> Den gibt's nicht: Speicher freigeben und zurueck! <--
             clearData();
             return;
         }
@@ -3006,7 +2809,8 @@ void Plot::createStd3dPlot(int& nStyle, size_t& nLegends, int nFunctions, size_t
 
                     if (sConvLegends != "\"\"")
                     {
-                        _graph->AddLegend(fromSystemCodePage(replaceToTeX(sConvLegends.substr(1, sConvLegends.length() - 2))).c_str(), _pInfo.sLineStyles[nStyle].c_str());
+                        _graph->AddLegend(fromSystemCodePage(replaceToTeX(sConvLegends.substr(1, sConvLegends.length() - 2))).c_str(),
+                                          _pInfo.sLineStyles[nStyle].c_str());
                         nLegends++;
                     }
 
@@ -3018,13 +2822,14 @@ void Plot::createStd3dPlot(int& nStyle, size_t& nLegends, int nFunctions, size_t
             }
             else
             {
-                sConvLegends =m_manager.assets[n].legend + " -nq";
+                sConvLegends = m_manager.assets[n].legend + " -nq";
                 NumeReKernel::getInstance()->getStringParser().evalAndFormat(sConvLegends, sDummy, true);
                 sConvLegends = "\"" + sConvLegends + "\"";
 
                 if (sConvLegends != "\"\"")
                 {
-                    _graph->AddLegend(fromSystemCodePage(replaceToTeX(sConvLegends.substr(1, sConvLegends.length() - 2))).c_str(), getLegendStyle(_pInfo.sLineStyles[nStyle]).c_str());
+                    _graph->AddLegend(fromSystemCodePage(replaceToTeX(sConvLegends.substr(1, sConvLegends.length() - 2))).c_str(),
+                                      getLegendStyle(_pInfo.sLineStyles[nStyle]).c_str());
                     nLegends++;
                 }
 
@@ -3115,13 +2920,6 @@ bool Plot::plotstd3d(mglData _mData[3], mglData _mData2[3], const short nType)
         {
             _mData[i] = duplicatePoints(_mData[i]);
             _mData2[i] = duplicatePoints(_mData2[i]);
-        }
-
-        if (_pData.getSettings(PlotData::INT_COORDS) == PlotData::POLAR_PZ
-            || _pData.getSettings(PlotData::INT_COORDS) == PlotData::SPHERICAL_PT)
-        {
-            removeNegativeValues(_mData[2]);
-            removeNegativeValues(_mData2[2]);
         }
     }
 
@@ -3846,23 +3644,11 @@ std::vector<std::string> Plot::separateFunctionsAndData()
         }
         else
         {
-            //sFunc += "," + sToken;
-            //_functions.call(sToken);
-            //StripSpaces(sToken);
-            //
-            //if (sToken.front() == '{')
-            //    sToken.front() = ' ';
-            //
-            //if (sToken.back() == '}')
-            //    sToken.back() = ' ';
-
-#warning TODO (numere#3#11/16/21): This has been deactivated and should be evaluated
-            //while (getNextArgument(sToken, true).length())
-                m_types.push_back(PT_FUNCTION);
-
+            m_types.push_back(PT_FUNCTION);
             m_manager.assets.push_back(PlotAsset());
             m_manager.assets.back().boundAxes = _pData.getAxisbind(m_manager.assets.size()-1);
             m_manager.assets.back().legend = sToken.substr(nPos);
+
             sFunc += "," + sToken.substr(0, nPos);
         }
     }
@@ -5061,7 +4847,7 @@ void Plot::defaultRanges(size_t nPlotCompose, bool bNewSubPlot)
             if (_pInfo.bDraw3D || _pInfo.bDraw)///Temporary
                 continue;
 
-            if (m_manager.assets.size() && (_pData.getGivenRanges() < i + 1 || !_pData.getRangeSetting(i)))
+            if (m_manager.hasDataPlots() && (_pData.getGivenRanges() < i + 1 || !_pData.getRangeSetting(i)))
             {
                 if ((isinf(dataRanges[i].front()) || isnan(dataRanges[i].front())) && (unsigned)i < _pInfo.nMaxPlotDim)
                 {
@@ -5089,7 +4875,7 @@ void Plot::defaultRanges(size_t nPlotCompose, bool bNewSubPlot)
         }
     }
     // --> Sonderkoordinatensaetze und dazu anzugleichende Ranges. Noch nicht korrekt implementiert <--
-    if (_pData.getSettings(PlotData::INT_COORDS) == PlotData::CARTESIAN)
+    if (_pData.getSettings(PlotData::INT_COORDS) == CARTESIAN)
     {
         /* --> Im Falle logarithmischer Plots muessen die Darstellungsintervalle angepasst werden. Falls
          *     die Intervalle zu Teilen im Negativen liegen, versuchen wir trotzdem etwas sinnvolles
@@ -5110,22 +4896,24 @@ void Plot::defaultRanges(size_t nPlotCompose, bool bNewSubPlot)
 
         }
     }
-    else if (_pData.getSettings(PlotData::INT_COORDS) != PlotData::CARTESIAN)
+    else if (_pData.getSettings(PlotData::INT_COORDS) != CARTESIAN)
     {
         // --> Im Falle polarer oder sphaerischer Koordinaten muessen die Darstellungsintervalle angepasst werden <--
-        if (_pData.getSettings(PlotData::INT_COORDS) == PlotData::POLAR_PZ || _pData.getSettings(PlotData::INT_COORDS) == PlotData::POLAR_RP || _pData.getSettings(PlotData::INT_COORDS) == PlotData::POLAR_RZ)
+        if (_pData.getSettings(PlotData::INT_COORDS) == POLAR_PZ
+            || _pData.getSettings(PlotData::INT_COORDS) == POLAR_RP
+            || _pData.getSettings(PlotData::INT_COORDS) == POLAR_RZ)
         {
             if (_pInfo.sCommand.find("3d") == string::npos && !_pInfo.b2DVect)
             {
                 int nRCoord = ZCOORD;
                 int nPhiCoord = XCOORD;
 
-                if (_pData.getSettings(PlotData::INT_COORDS) == PlotData::POLAR_RP)
+                if (_pData.getSettings(PlotData::INT_COORDS) == POLAR_RP)
                 {
                     nRCoord = XCOORD;
                     nPhiCoord = YRANGE;
                 }
-                else if (_pData.getSettings(PlotData::INT_COORDS) == PlotData::POLAR_RZ && (_pInfo.b2D || _pInfo.sCommand == "plot3d" || _pInfo.b3D || _pInfo.b3DVect || _pInfo.b2DVect))
+                else if (_pData.getSettings(PlotData::INT_COORDS) == POLAR_RZ && (_pInfo.b2D || _pInfo.sCommand == "plot3d" || _pInfo.b3D || _pInfo.b3DVect || _pInfo.b2DVect))
                 {
                     nRCoord = XCOORD;
                     nPhiCoord = ZCOORD;
@@ -5147,7 +4935,9 @@ void Plot::defaultRanges(size_t nPlotCompose, bool bNewSubPlot)
                     _pInfo.ranges[YRANGE].reset(0.0, 2.0 * M_PI);
             }
         }
-        else if (_pData.getSettings(PlotData::INT_COORDS) == PlotData::SPHERICAL_PT || _pData.getSettings(PlotData::INT_COORDS) == PlotData::SPHERICAL_RP || _pData.getSettings(PlotData::INT_COORDS) == PlotData::SPHERICAL_RT)
+        else if (_pData.getSettings(PlotData::INT_COORDS) == SPHERICAL_PT
+                 || _pData.getSettings(PlotData::INT_COORDS) == SPHERICAL_RP
+                 || _pData.getSettings(PlotData::INT_COORDS) == SPHERICAL_RT)
         {
             if (_pInfo.sCommand.find("3d") == string::npos)
             {
@@ -5155,13 +4945,13 @@ void Plot::defaultRanges(size_t nPlotCompose, bool bNewSubPlot)
                 int nPhiCoord = XCOORD;
                 int nThetaCoord = YCOORD;
 
-                if (_pData.getSettings(PlotData::INT_COORDS) == PlotData::SPHERICAL_RP)
+                if (_pData.getSettings(PlotData::INT_COORDS) == SPHERICAL_RP)
                 {
                     nRCoord = XCOORD;
                     nPhiCoord = YCOORD;
                     nThetaCoord = ZCOORD;
                 }
-                else if (_pData.getSettings(PlotData::INT_COORDS) == PlotData::SPHERICAL_RT && (_pInfo.b2D || _pInfo.sCommand == "plot3d" || _pInfo.b3D || _pInfo.b3DVect || _pInfo.b2DVect))
+                else if (_pData.getSettings(PlotData::INT_COORDS) == SPHERICAL_RT && (_pInfo.b2D || _pInfo.sCommand == "plot3d" || _pInfo.b3D || _pInfo.b3DVect || _pInfo.b2DVect))
                 {
                     nRCoord = XCOORD;
                     nPhiCoord = ZCOORD;
@@ -5211,7 +5001,7 @@ int Plot::fillData(double dt_max, int t_animate, int nFunctions)
 {
     mu::value_type* vResults = nullptr;
 
-    if (sFunc == "<<empty>>")
+    if (!sFunc.length())
         return nFunctions;
 
     std::vector<size_t> vFuncMap;
@@ -5224,6 +5014,9 @@ int Plot::fillData(double dt_max, int t_animate, int nFunctions)
 
     if (isPlot1D(_pInfo.sCommand))
     {
+        if (sFunc.find('{') != string::npos && !_pInfo.bDraw3D && !_pInfo.bDraw)
+            convertVectorToExpression(sFunc, _option);
+
         for (int x = 0; x < _pInfo.nSamples; x++)
         {
             if (x != 0)
@@ -5248,25 +5041,31 @@ int Plot::fillData(double dt_max, int t_animate, int nFunctions)
     }
     else if (isPlot3D(_pInfo.sCommand))
     {
+        EndlessVector<std::string> expressions = getAllArguments(sFunc);
+
         for (size_t k = 0; k < vFuncMap.size(); k++)
         {
             _defVars.vValue[XCOORD][0] = 0.0;
             _defVars.vValue[YCOORD][0] = 0.0;
             _defVars.vValue[ZCOORD][0] = 0.0;
+
+            if (expressions[k].find('{') != string::npos && !_pInfo.bDraw3D && !_pInfo.bDraw)
+                convertVectorToExpression(expressions[k], _option);
+
+            _parser.SetExpr(expressions[k]);
             vResults = _parser.Eval(nFunctions);
 
             if (nFunctions != vFuncMap.size())
                 throw SyntaxError(SyntaxError::PLOT_ERROR, "", "");
 
             _defVars.vValue[TCOORD][0] = _pInfo.ranges[TRANGE].front();
-#warning TODO (numere#3#11/16/21): This might not be resonable in this case. Better use s.th. like getNextArgument
-            _defVars.vValue[XCOORD][0] = vResults[3 * k];
+            _defVars.vValue[XCOORD][0] = vResults[XCOORD];
 
-            if (3 * k + 1 < nFunctions)
-                _defVars.vValue[YCOORD][0] = vResults[3 * k + 1];
+            if (YCOORD < nFunctions)
+                _defVars.vValue[YCOORD][0] = vResults[YCOORD];
 
-            if (3 * k + 2 < nFunctions)
-                _defVars.vValue[ZCOORD][0] = vResults[3 + k + 2];
+            if (ZCOORD < nFunctions)
+                _defVars.vValue[ZCOORD][0] = vResults[ZCOORD];
 
             int nRenderSamples = _pInfo.nSamples;
 
@@ -5303,10 +5102,10 @@ int Plot::fillData(double dt_max, int t_animate, int nFunctions)
 
                 for (int i = XCOORD; i <= ZCOORD; i++)
                 {
-                    if (i + 3 * k >= nFunctions)
+                    if (i >= nFunctions)
                         m_manager.assets[vFuncMap[k]].writeData(0.0, i, t);
                     else
-                        m_manager.assets[vFuncMap[k]].writeData(vResults[i+3*k], i, t);
+                        m_manager.assets[vFuncMap[k]].writeData(vResults[i], i, t);
                 }
             }
 
@@ -5321,6 +5120,9 @@ int Plot::fillData(double dt_max, int t_animate, int nFunctions)
     }
     else if (isMesh2D(_pInfo.sCommand))
     {
+        if (sFunc.find('{') != string::npos && !_pInfo.bDraw3D && !_pInfo.bDraw)
+            convertVectorToExpression(sFunc, _option);
+
         for (int x = 0; x < _pInfo.nSamples; x++)
         {
             if (x != 0)
@@ -5354,6 +5156,9 @@ int Plot::fillData(double dt_max, int t_animate, int nFunctions)
     }
     else if (isMesh3D(_pInfo.sCommand))
     {
+        if (sFunc.find('{') != string::npos && !_pInfo.bDraw3D && !_pInfo.bDraw)
+            convertVectorToExpression(sFunc, _option);
+
         for (int x = 0; x < _pInfo.nSamples; x++)
         {
             if (x != 0)
@@ -5396,8 +5201,15 @@ int Plot::fillData(double dt_max, int t_animate, int nFunctions)
     }
     else if (isVect2D(_pInfo.sCommand))
     {
+        EndlessVector<std::string> expressions = getAllArguments(sFunc);
+
         for (size_t k = 0; k < vFuncMap.size(); k++)
         {
+            if (expressions[k].find('{') != string::npos && !_pInfo.bDraw3D && !_pInfo.bDraw)
+                convertVectorToExpression(expressions[k], _option);
+
+            _parser.SetExpr(expressions[k]);
+
             for (int x = 0; x < _pInfo.nSamples; x++)
             {
                 _defVars.vValue[XCOORD][0] = _pInfo.ranges[XRANGE](x, _pInfo.nSamples);
@@ -5407,7 +5219,6 @@ int Plot::fillData(double dt_max, int t_animate, int nFunctions)
                     _defVars.vValue[YCOORD][0] = _pInfo.ranges[YRANGE](y, _pInfo.nSamples);
                     vResults = _parser.Eval(nFunctions);
 
-#warning TODO (numere#3#11/16/21): This might not be resonable in this case. Better use s.th. like getNextArgument
                     for (int i = 0; i < nFunctions; i++)
                     {
                         m_manager.assets[vFuncMap[k]].writeAxis(_defVars.vValue[XCOORD][0].real(), x, XCOORD);
@@ -5420,8 +5231,15 @@ int Plot::fillData(double dt_max, int t_animate, int nFunctions)
     }
     else if (isVect3D(_pInfo.sCommand))
     {
+        EndlessVector<std::string> expressions = getAllArguments(sFunc);
+
         for (size_t k = 0; k < vFuncMap.size(); k++)
         {
+            if (expressions[k].find('{') != string::npos && !_pInfo.bDraw3D && !_pInfo.bDraw)
+                convertVectorToExpression(expressions[k], _option);
+
+            _parser.SetExpr(expressions[k]);
+
             for (int x = 0; x < _pInfo.nSamples; x++)
             {
                 _defVars.vValue[XCOORD][0] = _pInfo.ranges[XRANGE](x, _pInfo.nSamples);
@@ -5435,7 +5253,6 @@ int Plot::fillData(double dt_max, int t_animate, int nFunctions)
                         _defVars.vValue[ZCOORD][0] = _pInfo.ranges[ZRANGE](z, _pInfo.nSamples);
                         vResults = _parser.Eval(nFunctions);
 
-#warning TODO (numere#3#11/16/21): This might not be resonable in this case. Better use s.th. like getNextArgument
                         for (int i = 0; i < nFunctions; i++)
                         {
                             m_manager.assets[vFuncMap[k]].writeAxis(_defVars.vValue[XCOORD][0].real(), x, XCOORD);
@@ -5474,14 +5291,14 @@ void Plot::fitPlotRanges(size_t nPlotCompose, bool bNewSubPlot)
      *     liegt, vergroessern wir das Intervall um 5% nach oben und 5% nach unten <--
      * --> Fuer Vektor- und 3D-Plots ist das allerdings recht sinnlos <--
      */
-    if (sFunc != "<<empty>>")
+    if (sFunc.length())
     {
         IntervalSet functionIntervals = m_manager.getFunctionIntervals();
 
-        if (isnan(functionIntervals[0].min())
-            || isnan(functionIntervals[0].max())
-            || isinf(functionIntervals[0].min())
-            || isinf(functionIntervals[0].max()))
+        if (isnan(functionIntervals[0].front())
+            || isnan(functionIntervals[0].back())
+            || isinf(functionIntervals[0].front())
+            || isinf(functionIntervals[0].back()))
         {
             clearData();
             throw SyntaxError(SyntaxError::PLOTDATA_IS_NAN, "", SyntaxError::invalid_position);
@@ -5492,16 +5309,17 @@ void Plot::fitPlotRanges(size_t nPlotCompose, bool bNewSubPlot)
     {
         if (!_pInfo.b2D && _pData.getGivenRanges() < 2 && _pInfo.sCommand != "plot3d") // Std-Plot?
         {
-            if (sFunc != "<<empty>>")
+            if (sFunc.length())
             {
                 IntervalSet funcIntLeft = m_manager.getFunctionIntervals(ONLYLEFT);
                 IntervalSet funcIntRight = m_manager.getFunctionIntervals(ONLYRIGHT);
-
+                NumeReKernel::print("Interval range: " + toString(funcIntLeft[0].min(), 5) + ", " + toString(funcIntLeft[0].max(), 5));
+NumeReKernel::print("Weighting intervals");
                 m_manager.weightedRange(ONLYLEFT, funcIntLeft[0]);
                 m_manager.weightedRange(ONLYRIGHT, funcIntRight[0]);
+                NumeReKernel::print("Interval range: " + toString(funcIntLeft[0].min(), 5) + ", " + toString(funcIntLeft[0].max(), 5));
 
-#warning TODO (numere#3#11/17/21): This should indicate dataplots
-                if (m_manager.assets.size())
+                if (m_manager.hasDataPlots())
                 {
                     _pInfo.ranges[YRANGE] = _pInfo.ranges[YRANGE].combine(funcIntLeft[0]);
                     _pInfo.secranges[YRANGE] = _pInfo.secranges[YRANGE].combine(funcIntRight[0]);
@@ -5518,13 +5336,14 @@ void Plot::fitPlotRanges(size_t nPlotCompose, bool bNewSubPlot)
                 if ((isnan(funcIntLeft[0].front()) || isnan(_pInfo.ranges[YRANGE].front())) && isnan(dataRanges[YRANGE].front()))
                     _pInfo.ranges[YRANGE].reset(_pInfo.secranges[YRANGE].min(), _pInfo.secranges[YRANGE].max());
             }
-
-            _pInfo.ranges[YRANGE].expand(1.1, (_pData.getLogscale(YRANGE) || _pData.getSettings(PlotData::INT_COORDS) != PlotData::CARTESIAN
+NumeReKernel::print("Expanding ranges");
+            _pInfo.ranges[YRANGE].expand(1.1, (_pData.getLogscale(YRANGE) || _pData.getSettings(PlotData::INT_COORDS) != CARTESIAN
                                                ? 0.0 : -INFINITY));
+NumeReKernel::print("Interval range: " + toString(_pInfo.ranges[YRANGE].min(), 5) + ", " + toString(_pInfo.ranges[YRANGE].max(), 5));
         }
         else if (_pInfo.sCommand == "plot3d" && _pData.getGivenRanges() < 3)
         {
-            if (sFunc != "<<empty>>")
+            if (sFunc.length())
             {
                 double dMin, dMax;
 
@@ -5539,40 +5358,41 @@ void Plot::fitPlotRanges(size_t nPlotCompose, bool bNewSubPlot)
 
                     _pInfo.ranges[i] = _pInfo.ranges[i].combine(coordIntervals[0]);
 
-                    if (!m_manager.assets.size())
+                    if (!m_manager.hasDataPlots())
                         _pInfo.ranges[i].reset(dMin, dMax);
 
-                    _pInfo.ranges[i].expand(1.1, (_pData.getSettings(PlotData::INT_COORDS) == PlotData::SPHERICAL_PT
-                                                  || (_pData.getSettings(PlotData::INT_COORDS) == PlotData::POLAR_PZ && i < 2)
-                                                  || (_pData.getSettings(PlotData::INT_COORDS) != PlotData::CARTESIAN && !i) ? 0.0 : -INFINITY));
+                    _pInfo.ranges[i].expand(1.1, (_pData.getSettings(PlotData::INT_COORDS) == SPHERICAL_PT
+                                                  || (_pData.getSettings(PlotData::INT_COORDS) == POLAR_PZ && i < 2)
+                                                  || (_pData.getSettings(PlotData::INT_COORDS) != CARTESIAN && !i) ? 0.0 : -INFINITY));
                 }
 
-                if (_pData.getSettings(PlotData::INT_COORDS) != PlotData::CARTESIAN && _pInfo.ranges[YRANGE].min() != 0.0)
+                if (_pData.getSettings(PlotData::INT_COORDS) != CARTESIAN && _pInfo.ranges[YRANGE].min() != 0.0)
                     _pInfo.ranges[YRANGE].reset(0.0, _pInfo.ranges[YRANGE].max());
 
-                if (_pData.getSettings(PlotData::INT_COORDS) == PlotData::SPHERICAL_PT && _pInfo.ranges[ZRANGE].min() != 0.0)
+                if (_pData.getSettings(PlotData::INT_COORDS) == SPHERICAL_PT && _pInfo.ranges[ZRANGE].min() != 0.0)
                     _pInfo.ranges[ZRANGE].reset(0.0, _pInfo.ranges[ZRANGE].max());
             }
         }
         else if (_pData.getGivenRanges() < 3 && _pInfo.sCommand != "implot")
         {
-            if (sFunc != "<<empty>>")
+            NumeReKernel::print("Last case");
+            if (sFunc.length())
             {
                 IntervalSet funcIntervals = m_manager.getFunctionIntervals();
                 m_manager.weightedRange(ALLRANGES, funcIntervals[0]);
                 _pInfo.ranges[ZRANGE] = _pInfo.ranges[ZRANGE].combine(funcIntervals[0]);
 
-                if (!m_manager.assets.size())
+                if (!m_manager.hasDataPlots())
                     _pInfo.ranges[ZRANGE] = funcIntervals[0];
             }
 
             _pInfo.ranges[ZRANGE].expand(1.1, (_pData.getLogscale(ZRANGE)
-                                               || (_pData.getSettings(PlotData::INT_COORDS) != PlotData::CARTESIAN && _pData.getSettings(PlotData::INT_COORDS) != PlotData::POLAR_RP) ? 0.0 : -INFINITY));
+                                               || (_pData.getSettings(PlotData::INT_COORDS) != CARTESIAN && _pData.getSettings(PlotData::INT_COORDS) != POLAR_RP) ? 0.0 : -INFINITY));
         }
 
         if (!_pInfo.b2D && _pInfo.sCommand != "plot3d")
         {
-            _pInfo.secranges[YRANGE].expand(1.1, (_pData.getLogscale(YRANGE) || _pData.getSettings(PlotData::INT_COORDS) != PlotData::CARTESIAN ? 0.0 : -INFINITY));
+            _pInfo.secranges[YRANGE].expand(1.1, (_pData.getLogscale(YRANGE) || _pData.getSettings(PlotData::INT_COORDS) != CARTESIAN ? 0.0 : -INFINITY));
 
             for (int i = XRANGE; i <= YRANGE; i++)
                 _pData.setAddAxis(i, _pInfo.secranges[i]);
@@ -5580,7 +5400,7 @@ void Plot::fitPlotRanges(size_t nPlotCompose, bool bNewSubPlot)
     }
     else if (_pInfo.b2DVect && (!nPlotCompose || bNewSubPlot) && !(_pInfo.bDraw3D || _pInfo.bDraw))
     {
-        if (sFunc != "<<empty>>")
+        if (sFunc.length())
         {
             if (_pData.getGivenRanges() < 3)
             {
@@ -5589,7 +5409,7 @@ void Plot::fitPlotRanges(size_t nPlotCompose, bool bNewSubPlot)
                 _pInfo.ranges[ZRANGE] = funcIntervals[0];
             }
 
-            if (_pData.getSettings(PlotData::INT_COORDS) != PlotData::CARTESIAN)
+            if (_pData.getSettings(PlotData::INT_COORDS) != CARTESIAN)
             {
                 _pInfo.ranges[YRANGE].reset(0.0, _pInfo.ranges[YRANGE].max());
                 _pInfo.ranges[XRANGE].reset(0.0, _pInfo.ranges[XRANGE].max());
@@ -5639,13 +5459,16 @@ void Plot::clearData()
 /////////////////////////////////////////////////
 void Plot::passRangesToGraph()
 {
-    if (_pData.getSettings(PlotData::LOG_BOXPLOT) && !_pData.getRangeSetting() && m_manager.assets.size())
+    if (_pData.getSettings(PlotData::LOG_BOXPLOT) && !_pData.getRangeSetting() && m_manager.hasDataPlots())
     {
-        _pInfo.ranges[XRANGE].reset(0, 1);
+        size_t nLayers = 0;
 
-#warning TODO (numere#3#11/15/21): This is a bit weird
+        // Create the x axis by summing up all data layers
         for (size_t i = 0; i < m_manager.assets.size(); i++)
-            _pInfo.ranges[XRANGE].reset(0, _pInfo.ranges[XRANGE].max() + m_manager.assets[i].getLayers() - 1);
+            nLayers += m_manager.assets[i].getLayers();
+
+#warning TODO (numere#1#11/17/21): This might require an additional +1
+        _pInfo.ranges[XRANGE].reset(0, nLayers);
     }
 
     if (_pData.getInvertion(XCOORD))
@@ -5663,13 +5486,14 @@ void Plot::passRangesToGraph()
     else
         _graph->SetRange('z', _pInfo.ranges[ZRANGE].min() / _pData.getAxisScale(ZRANGE), _pInfo.ranges[ZRANGE].max() / _pData.getAxisScale(ZRANGE));
 
-    if (_pData.getSettings(PlotData::FLOAT_BARS) && m_manager.assets.size() && !_pInfo.b2D)
+    if (_pData.getSettings(PlotData::FLOAT_BARS) && m_manager.hasDataPlots() && !_pInfo.b2D)
     {
         int nMinbars = -1;
 
         for (size_t k = 0; k < m_manager.assets.size(); k++)
         {
-            if (nMinbars == -1 || nMinbars > m_manager.assets[k].axes[XCOORD].nx)
+            if (m_manager.assets[k].type == PT_DATA
+                && (nMinbars == -1 || nMinbars > m_manager.assets[k].axes[XCOORD].nx))
                 nMinbars = m_manager.assets[k].axes[XCOORD].nx;
         }
 
@@ -5714,8 +5538,7 @@ void Plot::passRangesToGraph()
         else
             _graph->SetRange('c', _pInfo.ranges[CRANGE].min() / _pData.getAxisScale(CRANGE), _pInfo.ranges[CRANGE].max() / _pData.getAxisScale(CRANGE));
     }
-#warning TODO (numere#3#11/17/21): This should indicate data plots
-    else if (m_manager.assets.size())
+    else if (m_manager.hasDataPlots())
     {
         double dColorMin = dataRanges[ZRANGE].min() / _pData.getAxisScale(CRANGE);
         double dColorMax = dataRanges[ZRANGE].max() / _pData.getAxisScale(CRANGE);
@@ -5725,10 +5548,10 @@ void Plot::passRangesToGraph()
         double dMin = zfuncIntervals[0].min();
         double dMax = zfuncIntervals[0].max();
 
-        if (dMax > dColorMax && sFunc != "<<empty>>" && _pInfo.sCommand == "plot3d")
+        if (dMax > dColorMax && sFunc.length() && _pInfo.sCommand == "plot3d")
             dColorMax = dMax / _pData.getAxisScale(CRANGE);
 
-        if (dMin < dColorMin && sFunc != "<<empty>>" && _pInfo.sCommand == "plot3d")
+        if (dMin < dColorMin && sFunc.length() && _pInfo.sCommand == "plot3d")
             dColorMin = dMin / _pData.getAxisScale(CRANGE);
 
         if (_pData.getLogscale(CRANGE) && (_pInfo.b2D || _pInfo.sCommand == "plot3d" || _pInfo.b3D || _pInfo.b3DVect) && dColorMin <= 0.0 && dColorMax <= 0.0)
@@ -5842,13 +5665,14 @@ void Plot::passRangesToGraph()
         else
             _graph->SetRange('z', _pInfo.ranges[ZRANGE].min(), _pInfo.ranges[ZRANGE].max());
 
-        if (_pData.getSettings(PlotData::FLOAT_BARS) && m_manager.assets.size() && !_pInfo.b2D)
+        if (_pData.getSettings(PlotData::FLOAT_BARS) && m_manager.hasDataPlots() && !_pInfo.b2D)
         {
             int nMinbars = -1;
 
             for (size_t k = 0; k < m_manager.assets.size(); k++)
             {
-                if (nMinbars == -1 || nMinbars > m_manager.assets[k].axes[XCOORD].nx)
+                if (m_manager.assets[k].type == PT_DATA
+                    && (nMinbars == -1 || nMinbars > m_manager.assets[k].axes[XCOORD].nx))
                     nMinbars = m_manager.assets[k].axes[XCOORD].nx;
             }
 
@@ -5886,7 +5710,7 @@ void Plot::passRangesToGraph()
 
             _graph->SetRange('c', _pInfo.ranges[CRANGE].min(), _pInfo.ranges[CRANGE].max());
         }
-        else if (m_manager.assets.size())
+        else if (m_manager.hasDataPlots())
         {
             double dColorMin = dataRanges[ZRANGE].min();
             double dColorMax = dataRanges[ZRANGE].max();
@@ -5896,9 +5720,9 @@ void Plot::passRangesToGraph()
             double dMin = zfuncIntervals[0].min();
             double dMax = zfuncIntervals[0].max();
 
-            if (dMax > dColorMax && sFunc != "<<empty>>" && _pInfo.sCommand == "plot3d")
+            if (dMax > dColorMax && sFunc.length() && _pInfo.sCommand == "plot3d")
                 dColorMax = dMax;
-            if (dMin < dColorMin && sFunc != "<<empty>>" && _pInfo.sCommand == "plot3d")
+            if (dMin < dColorMin && sFunc.length() && _pInfo.sCommand == "plot3d")
                 dColorMin = dMin;
 
             if (_pData.getLogscale(CRANGE) && (_pInfo.b2D || _pInfo.sCommand == "plot3d" || _pInfo.b3D || _pInfo.b3DVect) && dColorMin <= 0.0 && dColorMax <= 0.0)
@@ -6095,7 +5919,7 @@ void Plot::applyLighting()
 void Plot::setLogScale(bool bzLogscale)
 {
     // --> Logarithmische Skalierung; ein bisschen Fummelei <--
-    if (_pData.getSettings(PlotData::INT_COORDS) == PlotData::CARTESIAN)
+    if (_pData.getSettings(PlotData::INT_COORDS) == CARTESIAN)
     {
         if ((_pData.getLogscale(XRANGE) || _pData.getLogscale(YRANGE) || _pData.getLogscale(ZRANGE)) || _pData.getLogscale(CRANGE))
             _graph->SetRanges(0.1, 10.0, 0.1, 10.0, 0.1, 10.0);
@@ -6175,25 +5999,25 @@ mglPoint Plot::CalcCutBox(double dPhi, int nEdge, int nCoords, bool b3D)
     {
         switch (nCoords)
         {
-            case PlotData::POLAR_PZ:
+            case POLAR_PZ:
                 z = YCOORD;
                 r = ZCOORD;
                 break;
-            case PlotData::POLAR_RP:
+            case POLAR_RP:
                 z = ZCOORD;
                 r = XCOORD;
                 break;
-            case PlotData::POLAR_RZ:
+            case POLAR_RZ:
                 z = YCOORD;
                 r = XCOORD;
                 break;
-            case PlotData::SPHERICAL_PT:
+            case SPHERICAL_PT:
                 r = ZCOORD;
                 break;
-            case PlotData::SPHERICAL_RP:
+            case SPHERICAL_RP:
                 r = XCOORD;
                 break;
-            case PlotData::SPHERICAL_RT:
+            case SPHERICAL_RT:
                 r = XCOORD;
                 break;
         }
@@ -6206,24 +6030,24 @@ mglPoint Plot::CalcCutBox(double dPhi, int nEdge, int nCoords, bool b3D)
     {
         if (!nEdge)
         {
-            if (nCoords == PlotData::CARTESIAN)
+            if (nCoords == CARTESIAN)
                 return mglPoint(_pInfo.ranges[XRANGE].middle(),
                                 _pInfo.ranges[YRANGE].min() - 0.1 * fabs(_pInfo.ranges[YRANGE].min()),
                                 _pInfo.ranges[ZRANGE].min() - 0.1 * fabs(_pInfo.ranges[ZRANGE].min()));
-            else if (nCoords == PlotData::POLAR_PZ || nCoords == PlotData::POLAR_RP || nCoords == PlotData::POLAR_RZ)
+            else if (nCoords == POLAR_PZ || nCoords == POLAR_RP || nCoords == POLAR_RZ)
                 return createMglPoint(nCoords, 0.0, 1.5 * M_PI, _pInfo.ranges[z].min() - 0.1 * fabs(_pInfo.ranges[z].min()));
-            else if (nCoords == PlotData::SPHERICAL_PT || nCoords == PlotData::SPHERICAL_RP || nCoords == PlotData::SPHERICAL_RT)
+            else if (nCoords == SPHERICAL_PT || nCoords == SPHERICAL_RP || nCoords == SPHERICAL_RT)
                 return createMglPoint(nCoords, 0.0, 1.5 * M_PI, 0.0, b3D);
         }
         else
         {
-            if (nCoords == PlotData::CARTESIAN)
+            if (nCoords == CARTESIAN)
                 return mglPoint(_pInfo.ranges[XRANGE].max() + 0.1 * fabs(_pInfo.ranges[XRANGE].max()),
                                 _pInfo.ranges[YRANGE].middle(),
                                 _pInfo.ranges[ZRANGE].max() + 0.1 * fabs(_pInfo.ranges[ZRANGE].max()));
-            else if (nCoords == PlotData::POLAR_PZ || nCoords == PlotData::POLAR_RP || nCoords == PlotData::POLAR_RZ)
+            else if (nCoords == POLAR_PZ || nCoords == POLAR_RP || nCoords == POLAR_RZ)
                 return createMglPoint(nCoords, 1.1 * _pInfo.ranges[r].max(), 2.0 * M_PI, _pInfo.ranges[z].max() + 0.1 * fabs(_pInfo.ranges[z].max()), b3D);
-            else if (nCoords == PlotData::SPHERICAL_PT || nCoords == PlotData::SPHERICAL_RP || nCoords == PlotData::SPHERICAL_RT)
+            else if (nCoords == SPHERICAL_PT || nCoords == SPHERICAL_RP || nCoords == SPHERICAL_RT)
                 return createMglPoint(nCoords, 1.1 * _pInfo.ranges[r].max(), 2.0 * M_PI, M_PI, b3D);
         }
     }
@@ -6231,24 +6055,24 @@ mglPoint Plot::CalcCutBox(double dPhi, int nEdge, int nCoords, bool b3D)
     {
         if (!nEdge)
         {
-            if (nCoords == PlotData::CARTESIAN)
+            if (nCoords == CARTESIAN)
                 return mglPoint(_pInfo.ranges[XRANGE].middle(),
                                 _pInfo.ranges[YRANGE].middle(),
                                 _pInfo.ranges[ZRANGE].min() - 0.1 * fabs(_pInfo.ranges[ZRANGE].min()));
-            else if (nCoords == PlotData::POLAR_PZ || nCoords == PlotData::POLAR_RP || nCoords == PlotData::POLAR_RZ)
+            else if (nCoords == POLAR_PZ || nCoords == POLAR_RP || nCoords == POLAR_RZ)
                 return createMglPoint(nCoords, 0.0, 0.0, _pInfo.ranges[z].min() - 0.1 * fabs(_pInfo.ranges[z].min()), b3D);
-            else if (nCoords == PlotData::SPHERICAL_PT || nCoords == PlotData::SPHERICAL_RP || nCoords == PlotData::SPHERICAL_RT)
+            else if (nCoords == SPHERICAL_PT || nCoords == SPHERICAL_RP || nCoords == SPHERICAL_RT)
                 return createMglPoint(nCoords, 0.0, 0.0, 0.0, b3D);
         }
         else
         {
-            if (nCoords == PlotData::CARTESIAN)
+            if (nCoords == CARTESIAN)
                 return mglPoint(_pInfo.ranges[XRANGE].max() + 0.1 * fabs(_pInfo.ranges[XRANGE].max()),
                                 _pInfo.ranges[YRANGE].max() + 0.1 * fabs(_pInfo.ranges[YRANGE].max()),
                                 _pInfo.ranges[ZRANGE].max() + 0.1 * fabs(_pInfo.ranges[ZRANGE].max()));
-            else if (nCoords == PlotData::POLAR_PZ || nCoords == PlotData::POLAR_RP || nCoords == PlotData::POLAR_RZ)
+            else if (nCoords == POLAR_PZ || nCoords == POLAR_RP || nCoords == POLAR_RZ)
                 return createMglPoint(nCoords, _pInfo.ranges[r].max() * 1.1, 0.5 * M_PI, _pInfo.ranges[z].max() + 0.1 * fabs(_pInfo.ranges[z].max()), b3D);
-            else if (nCoords == PlotData::SPHERICAL_PT || nCoords == PlotData::SPHERICAL_RP || nCoords == PlotData::SPHERICAL_RT)
+            else if (nCoords == SPHERICAL_PT || nCoords == SPHERICAL_RP || nCoords == SPHERICAL_RT)
                 return createMglPoint(nCoords, 1.1 * _pInfo.ranges[r].max(), 0.5 * M_PI, M_PI, b3D);
         }
     }
@@ -6256,24 +6080,24 @@ mglPoint Plot::CalcCutBox(double dPhi, int nEdge, int nCoords, bool b3D)
     {
         if (!nEdge)
         {
-            if (nCoords == PlotData::CARTESIAN)
+            if (nCoords == CARTESIAN)
                 return mglPoint(_pInfo.ranges[XRANGE].min() - 0.1 * fabs(_pInfo.ranges[XRANGE].min()),
                                 _pInfo.ranges[YRANGE].middle(),
                                 _pInfo.ranges[ZRANGE].min() - 0.1 * fabs(_pInfo.ranges[ZRANGE].min()));
-            else if (nCoords == PlotData::POLAR_PZ || nCoords == PlotData::POLAR_RP || nCoords == PlotData::POLAR_RZ)
+            else if (nCoords == POLAR_PZ || nCoords == POLAR_RP || nCoords == POLAR_RZ)
                 return createMglPoint(nCoords, 0.0, 0.5 * M_PI, _pInfo.ranges[z].min() - 0.1 * fabs(_pInfo.ranges[z].min()), b3D);
-            else if (nCoords == PlotData::SPHERICAL_PT || nCoords == PlotData::SPHERICAL_RP || nCoords == PlotData::SPHERICAL_RT)
+            else if (nCoords == SPHERICAL_PT || nCoords == SPHERICAL_RP || nCoords == SPHERICAL_RT)
                 return createMglPoint(nCoords, 0.0, 0.5 * M_PI, 0.0, b3D);
         }
         else
         {
-            if (nCoords == PlotData::CARTESIAN)
+            if (nCoords == CARTESIAN)
                 return mglPoint(_pInfo.ranges[XRANGE].middle(),
                                 _pInfo.ranges[YRANGE].max() + 0.1 * fabs(_pInfo.ranges[YRANGE].max()),
                                 _pInfo.ranges[ZRANGE].max() + 0.1 * fabs(_pInfo.ranges[ZRANGE].max()));
-            else if (nCoords == PlotData::POLAR_PZ || nCoords == PlotData::POLAR_RP || nCoords == PlotData::POLAR_RZ)
+            else if (nCoords == POLAR_PZ || nCoords == POLAR_RP || nCoords == POLAR_RZ)
                 return createMglPoint(nCoords, 1.1 * _pInfo.ranges[r].max(), M_PI, _pInfo.ranges[z].max() + 0.1 * fabs(_pInfo.ranges[z].max()), b3D);
-            else if (nCoords == PlotData::SPHERICAL_PT || nCoords == PlotData::SPHERICAL_RP || nCoords == PlotData::SPHERICAL_RT)
+            else if (nCoords == SPHERICAL_PT || nCoords == SPHERICAL_RP || nCoords == SPHERICAL_RT)
                 return createMglPoint(nCoords, 1.1 * _pInfo.ranges[r].max(), M_PI, M_PI, b3D);
         }
     }
@@ -6281,24 +6105,24 @@ mglPoint Plot::CalcCutBox(double dPhi, int nEdge, int nCoords, bool b3D)
     {
         if (!nEdge)
         {
-            if (nCoords == PlotData::CARTESIAN)
+            if (nCoords == CARTESIAN)
                 return mglPoint(_pInfo.ranges[XRANGE].min() - 0.1 * fabs(_pInfo.ranges[XRANGE].min()),
                                 _pInfo.ranges[YRANGE].min() - 0.1 * fabs(_pInfo.ranges[YRANGE].min()),
                                 _pInfo.ranges[ZRANGE].min() - 0.1 * fabs(_pInfo.ranges[ZRANGE].min()));
-            else if (nCoords == PlotData::POLAR_PZ || nCoords == PlotData::POLAR_RP || nCoords == PlotData::POLAR_RZ)
+            else if (nCoords == POLAR_PZ || nCoords == POLAR_RP || nCoords == POLAR_RZ)
                 return createMglPoint(nCoords, 0.0, M_PI, _pInfo.ranges[z].min() - 0.1 * fabs(_pInfo.ranges[z].min()), b3D);
-            else if (nCoords == PlotData::SPHERICAL_PT || nCoords == PlotData::SPHERICAL_RP || nCoords == PlotData::SPHERICAL_RT)
+            else if (nCoords == SPHERICAL_PT || nCoords == SPHERICAL_RP || nCoords == SPHERICAL_RT)
                 return createMglPoint(nCoords, 0.0, M_PI, 0.0, b3D);
         }
         else
         {
-            if (nCoords == PlotData::CARTESIAN)
+            if (nCoords == CARTESIAN)
                 return mglPoint(_pInfo.ranges[XRANGE].middle(),
                                 _pInfo.ranges[YRANGE].middle(),
                                 _pInfo.ranges[ZRANGE].max() + 0.1 * fabs(_pInfo.ranges[ZRANGE].max()));
-            else if (nCoords == PlotData::POLAR_PZ || nCoords == PlotData::POLAR_RP || nCoords == PlotData::POLAR_RZ)
+            else if (nCoords == POLAR_PZ || nCoords == POLAR_RP || nCoords == POLAR_RZ)
                 return createMglPoint(nCoords, 1.1 * _pInfo.ranges[r].max(), 1.5 * M_PI, _pInfo.ranges[z].max() + 0.1 * fabs(_pInfo.ranges[z].max()), b3D);
-            else if (nCoords == PlotData::SPHERICAL_PT || nCoords == PlotData::SPHERICAL_RP || nCoords == PlotData::SPHERICAL_RT)
+            else if (nCoords == SPHERICAL_PT || nCoords == SPHERICAL_RP || nCoords == SPHERICAL_RT)
                 return createMglPoint(nCoords, 1.1 * _pInfo.ranges[r].max(), 1.5 * M_PI, M_PI, b3D);
         }
     }
@@ -6327,17 +6151,17 @@ mglPoint Plot::createMglPoint(int nCoords, double r, double phi, double theta, b
 
     switch (nCoords)
     {
-        case PlotData::POLAR_PZ:
+        case POLAR_PZ:
             return mglPoint(phi, theta, r);
-        case PlotData::POLAR_RP:
+        case POLAR_RP:
             return mglPoint(r, phi, theta);
-        case PlotData::POLAR_RZ:
+        case POLAR_RZ:
             return mglPoint(r, theta, phi);
-        case PlotData::SPHERICAL_PT:
+        case SPHERICAL_PT:
             return mglPoint(phi, theta, r);
-        case PlotData::SPHERICAL_RP:
+        case SPHERICAL_RP:
             return mglPoint(r, phi, theta);
-        case PlotData::SPHERICAL_RT:
+        case SPHERICAL_RT:
             return mglPoint(r, theta, phi);
         default:
             return mglPoint(r, phi, theta);
@@ -6493,7 +6317,7 @@ void Plot::CoordSettings()
                     _mAxisRange.Create(nCount);
 
                     // Ranges fuer customn ticks anpassen
-                    if (_pData.getSettings(PlotData::INT_COORDS) != PlotData::CARTESIAN)
+                    if (_pData.getSettings(PlotData::INT_COORDS) != CARTESIAN)
                     {
                         if (!(_pInfo.b2D || _pInfo.b3D || _pInfo.sCommand == "plot3d" || _pInfo.b3DVect || _pInfo.b2DVect))
                         {
@@ -6505,9 +6329,9 @@ void Plot::CoordSettings()
                             _pInfo.ranges[XRANGE].reset(0.0, _pInfo.ranges[XRANGE].max());
                             _pInfo.ranges[YRANGE].reset(0.0, 2.0);
 
-                            if (_pData.getSettings(PlotData::INT_COORDS) == PlotData::SPHERICAL_PT
-                                || _pData.getSettings(PlotData::INT_COORDS) == PlotData::SPHERICAL_RP
-                                || _pData.getSettings(PlotData::INT_COORDS) == PlotData::SPHERICAL_RT)
+                            if (_pData.getSettings(PlotData::INT_COORDS) == SPHERICAL_PT
+                                || _pData.getSettings(PlotData::INT_COORDS) == SPHERICAL_RP
+                                || _pData.getSettings(PlotData::INT_COORDS) == SPHERICAL_RT)
                                 _pInfo.ranges[ZRANGE].reset(0.0, 1.0);
                         }
                         else if (_pInfo.b2DVect)
@@ -6520,9 +6344,9 @@ void Plot::CoordSettings()
                             _pInfo.ranges[XRANGE].reset(0.0, 2.0);
                             _pInfo.ranges[ZRANGE].reset(0.0, _pInfo.ranges[ZRANGE].max());
 
-                            if (_pData.getSettings(PlotData::INT_COORDS) == PlotData::SPHERICAL_PT
-                                || _pData.getSettings(PlotData::INT_COORDS) == PlotData::SPHERICAL_RP
-                                || _pData.getSettings(PlotData::INT_COORDS) == PlotData::SPHERICAL_RT)
+                            if (_pData.getSettings(PlotData::INT_COORDS) == SPHERICAL_PT
+                                || _pData.getSettings(PlotData::INT_COORDS) == SPHERICAL_RP
+                                || _pData.getSettings(PlotData::INT_COORDS) == SPHERICAL_RT)
                                 _pInfo.ranges[YRANGE].reset(0.0, 1.0);
                         }
                     }
@@ -6573,11 +6397,11 @@ void Plot::CoordSettings()
         }
 
         if (_pData.getSettings(PlotData::LOG_BOX)
-            || _pData.getSettings(PlotData::INT_COORDS) != PlotData::CARTESIAN)
+            || _pData.getSettings(PlotData::INT_COORDS) != CARTESIAN)
         {
             if (isPlot1D(_pInfo.sCommand)) // standard plot
             {
-                if (_pData.getSettings(PlotData::INT_COORDS) == PlotData::CARTESIAN)
+                if (_pData.getSettings(PlotData::INT_COORDS) == CARTESIAN)
                 {
                     if (!_pData.getSettings(PlotData::LOG_SCHEMATIC))
                     {
@@ -6613,8 +6437,8 @@ void Plot::CoordSettings()
                 }
                 else
                 {
-                    if (_pData.getSettings(PlotData::INT_COORDS) == PlotData::POLAR_RP
-                        || _pData.getSettings(PlotData::INT_COORDS) == PlotData::SPHERICAL_RP)
+                    if (_pData.getSettings(PlotData::INT_COORDS) == POLAR_RP
+                        || _pData.getSettings(PlotData::INT_COORDS) == SPHERICAL_RP)
                     {
                         _graph->SetOrigin(_pInfo.ranges[XRANGE].max() / _pData.getAxisScale(XRANGE), 0.0);
                         _graph->SetFunc(CoordFunc("x*cos(pi*y*$PS$)", _pData.getAxisScale(YCOORD)).c_str(),
@@ -6622,7 +6446,7 @@ void Plot::CoordSettings()
                         _graph->SetRange('y', 0.0, APPR_TWO / _pData.getAxisScale(YCOORD));
                         _graph->SetRange('x', 0.0, _pInfo.ranges[XRANGE].max() / _pData.getAxisScale(XRANGE));
                     }
-                    else if (_pData.getSettings(PlotData::INT_COORDS) != PlotData::CARTESIAN)
+                    else if (_pData.getSettings(PlotData::INT_COORDS) != CARTESIAN)
                     {
                         _graph->SetOrigin(0.0, _pInfo.ranges[YCOORD].max() / _pData.getAxisScale(YCOORD));
                         _graph->SetFunc(CoordFunc("y*cos(pi*x*$PS$)", _pData.getAxisScale(XRANGE)).c_str(),
@@ -6633,14 +6457,14 @@ void Plot::CoordSettings()
 
                     applyGrid();
 
-                    if (_pData.getSettings(PlotData::INT_COORDS) == PlotData::POLAR_RP
-                        || _pData.getSettings(PlotData::INT_COORDS) == PlotData::SPHERICAL_RP)
+                    if (_pData.getSettings(PlotData::INT_COORDS) == POLAR_RP
+                        || _pData.getSettings(PlotData::INT_COORDS) == SPHERICAL_RP)
                     {
                         _graph->SetFunc("x*cos(y)", "x*sin(y)");
                         _graph->SetRange('y', 0.0, 2.0 * M_PI);
                         _graph->SetRange('x', 0.0, _pInfo.ranges[XRANGE].max());
                     }
-                    else if (_pData.getSettings(PlotData::INT_COORDS) != PlotData::CARTESIAN)
+                    else if (_pData.getSettings(PlotData::INT_COORDS) != CARTESIAN)
                     {
                         _graph->SetFunc("y*cos(x)", "y*sin(x)");
                         _graph->SetRange('x', 0.0, 2.0 * M_PI);
@@ -6654,8 +6478,8 @@ void Plot::CoordSettings()
                     {
                         _graph->Label('x', fromSystemCodePage(_pData.getAxisLabel(XCOORD)).c_str(), 0.25);
 
-                        if (_pData.getSettings(PlotData::INT_COORDS) == PlotData::POLAR_RP
-                            || _pData.getSettings(PlotData::INT_COORDS) == PlotData::SPHERICAL_RP)
+                        if (_pData.getSettings(PlotData::INT_COORDS) == POLAR_RP
+                            || _pData.getSettings(PlotData::INT_COORDS) == SPHERICAL_RP)
                             _graph->Label('y', fromSystemCodePage(_pData.getAxisLabel(YCOORD)).c_str(), 0.0);
                         else
                             _graph->Label('y', fromSystemCodePage(_pData.getAxisLabel(ZCOORD)).c_str(), 0.0);
@@ -6670,9 +6494,9 @@ void Plot::CoordSettings()
             }
             else if (isMesh3D(_pInfo.sCommand) || isVect3D(_pInfo.sCommand) || isPlot3D(_pInfo.sCommand)) // 3d-plots and plot3d and vect3d
             {
-                if (_pData.getSettings(PlotData::INT_COORDS) == PlotData::POLAR_PZ
-                    || _pData.getSettings(PlotData::INT_COORDS) == PlotData::POLAR_RP
-                    || _pData.getSettings(PlotData::INT_COORDS) == PlotData::POLAR_RZ)
+                if (_pData.getSettings(PlotData::INT_COORDS) == POLAR_PZ
+                    || _pData.getSettings(PlotData::INT_COORDS) == POLAR_RP
+                    || _pData.getSettings(PlotData::INT_COORDS) == POLAR_RZ)
                 {
                     _graph->SetOrigin(_pInfo.ranges[XRANGE].max() / _pData.getAxisScale(), 0.0, _pInfo.ranges[ZRANGE].min() / _pData.getAxisScale(2));
                     _graph->SetFunc(CoordFunc("x*cos(pi*y*$PS$)", _pData.getAxisScale(1)).c_str(),
@@ -6724,9 +6548,9 @@ void Plot::CoordSettings()
                     _pInfo.ranges[YRANGE].reset(0.0, 2.0*M_PI);
 
                 }
-                else if (_pData.getSettings(PlotData::INT_COORDS) == PlotData::SPHERICAL_PT
-                         || _pData.getSettings(PlotData::INT_COORDS) == PlotData::SPHERICAL_RP
-                         || _pData.getSettings(PlotData::INT_COORDS) == PlotData::SPHERICAL_RT)
+                else if (_pData.getSettings(PlotData::INT_COORDS) == SPHERICAL_PT
+                         || _pData.getSettings(PlotData::INT_COORDS) == SPHERICAL_RP
+                         || _pData.getSettings(PlotData::INT_COORDS) == SPHERICAL_RT)
                 {
                     _graph->SetOrigin(_pInfo.ranges[XRANGE].max() / _pData.getAxisScale(), 0.0, 0.5 / _pData.getAxisScale(2));
                     _graph->SetFunc(CoordFunc("x*cos(pi*y*$PS$)*sin(pi*z*$TS$)", _pData.getAxisScale(1), _pData.getAxisScale(2)).c_str(),
@@ -6787,7 +6611,7 @@ void Plot::CoordSettings()
             }
             else if (isVect2D(_pInfo.sCommand)) // vect
             {
-                if (_pData.getSettings(PlotData::INT_COORDS) != PlotData::CARTESIAN)
+                if (_pData.getSettings(PlotData::INT_COORDS) != CARTESIAN)
                 {
                     _graph->SetOrigin(_pInfo.ranges[XRANGE].max() / _pData.getAxisScale(), 0.0);
                     _graph->SetFunc(CoordFunc("x*cos(pi*y*$PS$)", _pData.getAxisScale(1)).c_str(),
@@ -6831,7 +6655,7 @@ void Plot::CoordSettings()
             {
                 switch (_pData.getSettings(PlotData::INT_COORDS))
                 {
-                    case PlotData::POLAR_PZ:
+                    case POLAR_PZ:
                     {
                         _graph->SetOrigin(0.0,
                                           _pInfo.ranges[YRANGE].min() / _pData.getAxisScale(YRANGE),
@@ -6856,7 +6680,7 @@ void Plot::CoordSettings()
                         _pInfo.ranges[ZRANGE].reset(0.0, _pInfo.ranges[ZRANGE].max());
                         break;
                     }
-                    case PlotData::POLAR_RP:
+                    case POLAR_RP:
                     {
                         _graph->SetOrigin(_pInfo.ranges[XRANGE].max() / _pData.getAxisScale(XRANGE),
                                           0.0,
@@ -6881,7 +6705,7 @@ void Plot::CoordSettings()
                         _pInfo.ranges[YRANGE].reset(0.0, 2.0 * M_PI);
                         break;
                     }
-                    case PlotData::POLAR_RZ:
+                    case POLAR_RZ:
                     {
                         _graph->SetOrigin(_pInfo.ranges[XRANGE].max() / _pData.getAxisScale(XRANGE),
                                           _pInfo.ranges[YRANGE].min() / _pData.getAxisScale(YRANGE),
@@ -6906,7 +6730,7 @@ void Plot::CoordSettings()
                         _pInfo.ranges[ZRANGE].reset(0.0, 2.0*M_PI);
                         break;
                     }
-                    case PlotData::SPHERICAL_PT:
+                    case SPHERICAL_PT:
                     {
                         _graph->SetOrigin(0.0,
                                           0.5 / _pData.getAxisScale(YRANGE),
@@ -6932,7 +6756,7 @@ void Plot::CoordSettings()
                         _pInfo.ranges[ZRANGE].reset(0.0, _pInfo.ranges[ZRANGE].max());
                         break;
                     }
-                    case PlotData::SPHERICAL_RP:
+                    case SPHERICAL_RP:
                     {
                         _graph->SetOrigin(_pInfo.ranges[XRANGE].max() / _pData.getAxisScale(XRANGE),
                                           0.0,
@@ -6958,7 +6782,7 @@ void Plot::CoordSettings()
                         _pInfo.ranges[ZRANGE].reset(0.0, M_PI);
                         break;
                     }
-                    case PlotData::SPHERICAL_RT:
+                    case SPHERICAL_RT:
                     {
                         _graph->SetOrigin(_pInfo.ranges[XRANGE].max() / _pData.getAxisScale(XRANGE),
                                           0.5 / _pData.getAxisScale(YRANGE),
@@ -7284,7 +7108,7 @@ void Plot::CoordSettings()
         }
     }
 
-    if (_pData.getSettings(PlotData::INT_COORDS) == PlotData::CARTESIAN)
+    if (_pData.getSettings(PlotData::INT_COORDS) == CARTESIAN)
     {
         if (_pData.getSettings(PlotData::INT_GRID) && !_pInfo.b2DVect && !_pInfo.b3DVect) // Standard-Grid
         {
@@ -7346,7 +7170,7 @@ void Plot::CoordSettings()
 /////////////////////////////////////////////////
 double Plot::getLabelPosition(int nCoord)
 {
-    if (_pData.getSettings(PlotData::INT_COORDS) == PlotData::CARTESIAN)
+    if (_pData.getSettings(PlotData::INT_COORDS) == CARTESIAN)
     {
         if (_pData.getSettings(PlotData::LOG_BOX))
             return 0.0;
@@ -7362,7 +7186,7 @@ double Plot::getLabelPosition(int nCoord)
 
         double dCoordPos[] = {-0.5, (_pData.getRotateAngle(1) - 225.0) / 180.0, 0.0};
 
-        if (_pData.getSettings(PlotData::INT_COORDS) >= PlotData::SPHERICAL_PT)
+        if (_pData.getSettings(PlotData::INT_COORDS) >= SPHERICAL_PT)
         {
             dCoordPos[RCOORD] = -0.4;
             dCoordPos[THETACOORD] = -0.9;
@@ -7370,32 +7194,32 @@ double Plot::getLabelPosition(int nCoord)
 
         switch (_pData.getSettings(PlotData::INT_COORDS))
         {
-            case PlotData::POLAR_PZ:
+            case POLAR_PZ:
                 nCoordMap[XCOORD] = PHICOORD;
                 nCoordMap[YCOORD] = ZCOORD;
                 nCoordMap[ZCOORD] = RCOORD;
                 break;
-            case PlotData::POLAR_RP:
+            case POLAR_RP:
                 nCoordMap[XCOORD] = RCOORD;
                 nCoordMap[YCOORD] = PHICOORD;
                 nCoordMap[ZCOORD] = ZCOORD;
                 break;
-            case PlotData::POLAR_RZ:
+            case POLAR_RZ:
                 nCoordMap[XCOORD] = RCOORD;
                 nCoordMap[YCOORD] = ZCOORD;
                 nCoordMap[ZCOORD] = PHICOORD;
                 break;
-            case PlotData::SPHERICAL_PT:
+            case SPHERICAL_PT:
                 nCoordMap[XCOORD] = PHICOORD;
                 nCoordMap[YCOORD] = THETACOORD;
                 nCoordMap[ZCOORD] = RCOORD;
                 break;
-            case PlotData::SPHERICAL_RP:
+            case SPHERICAL_RP:
                 nCoordMap[XCOORD] = RCOORD;
                 nCoordMap[YCOORD] = PHICOORD;
                 nCoordMap[ZCOORD] = THETACOORD;
                 break;
-            case PlotData::SPHERICAL_RT:
+            case SPHERICAL_RT:
                 nCoordMap[XCOORD] = RCOORD;
                 nCoordMap[YCOORD] = THETACOORD;
                 nCoordMap[ZCOORD] = PHICOORD;
@@ -7426,7 +7250,7 @@ void Plot::applyGrid()
         _graph->Axis("_");
     }
 
-    if (_pData.getSettings(PlotData::LOG_BOX) || _pData.getSettings(PlotData::INT_COORDS) != PlotData::CARTESIAN)
+    if (_pData.getSettings(PlotData::LOG_BOX) || _pData.getSettings(PlotData::INT_COORDS) != CARTESIAN)
         _graph->Box();
 
     if (_pData.getSettings(PlotData::INT_GRID) == 1)

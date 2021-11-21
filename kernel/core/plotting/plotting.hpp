@@ -53,12 +53,8 @@ class Plot
         std::vector<short> m_types;
         IntervalSet dataRanges;
         IntervalSet secDataRanges;
-        //mglData _mAxisVals[3];
         bool bOutputDesired;
-
-        //string sLabels;
-        //string sDataLabels;
-        string sFunc;
+        std::string sFunc;
 
         MemoryManager& _data;
         Parser& _parser;

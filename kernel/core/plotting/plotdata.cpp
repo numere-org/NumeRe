@@ -2210,17 +2210,17 @@ struct AxisLabels
     std::string z;
 };
 
-static std::map<PlotData::Coordinates, AxisLabels> getLabelDefinitions()
+static std::map<CoordinateSystem, AxisLabels> getLabelDefinitions()
 {
-    std::map<PlotData::Coordinates, AxisLabels> mLabels;
+    std::map<CoordinateSystem, AxisLabels> mLabels;
 
-    mLabels[PlotData::CARTESIAN] =    {"\\i x",            "\\i y",              "\\i z"};
-    mLabels[PlotData::POLAR_PZ] =     {"\\varphi  [\\pi]", "\\i z",              "\\rho"};
-    mLabels[PlotData::POLAR_RP] =     {"\\rho",            "\\varphi  [\\pi]",   "\\i z"};
-    mLabels[PlotData::POLAR_RZ] =     {"\\rho",            "\\i z",              "\\varphi  [\\pi]"};
-    mLabels[PlotData::SPHERICAL_PT] = {"\\varphi  [\\pi]", "\\vartheta  [\\pi]", "\\i r"};
-    mLabels[PlotData::SPHERICAL_RP] = {"\\i r",            "\\varphi  [\\pi]",   "\\vartheta  [\\pi]"};
-    mLabels[PlotData::SPHERICAL_RT] = {"\\i r",            "\\vartheta  [\\pi]", "\\varphi  [\\pi]"};
+    mLabels[CARTESIAN] =    {"\\i x",            "\\i y",              "\\i z"};
+    mLabels[POLAR_PZ] =     {"\\varphi  [\\pi]", "\\i z",              "\\rho"};
+    mLabels[POLAR_RP] =     {"\\rho",            "\\varphi  [\\pi]",   "\\i z"};
+    mLabels[POLAR_RZ] =     {"\\rho",            "\\i z",              "\\varphi  [\\pi]"};
+    mLabels[SPHERICAL_PT] = {"\\varphi  [\\pi]", "\\vartheta  [\\pi]", "\\i r"};
+    mLabels[SPHERICAL_RP] = {"\\i r",            "\\varphi  [\\pi]",   "\\vartheta  [\\pi]"};
+    mLabels[SPHERICAL_RT] = {"\\i r",            "\\vartheta  [\\pi]", "\\varphi  [\\pi]"};
 
     return mLabels;
 }
@@ -2232,14 +2232,14 @@ string PlotData::getAxisLabel(size_t axis) const
         return replaceToTeX(sAxisLabels[axis]);
     else
     {
-        static std::map<PlotData::Coordinates,AxisLabels> mLabels = getLabelDefinitions();
+        static std::map<CoordinateSystem,AxisLabels> mLabels = getLabelDefinitions();
 
         if (axis == 0)
-            return mLabels[(PlotData::Coordinates)intSettings[INT_COORDS]].x;
+            return mLabels[(CoordinateSystem)intSettings[INT_COORDS]].x;
         else if (axis == 1)
-            return mLabels[(PlotData::Coordinates)intSettings[INT_COORDS]].y;
+            return mLabels[(CoordinateSystem)intSettings[INT_COORDS]].y;
         else
-            return mLabels[(PlotData::Coordinates)intSettings[INT_COORDS]].z;
+            return mLabels[(CoordinateSystem)intSettings[INT_COORDS]].z;
     }
 
     return "";

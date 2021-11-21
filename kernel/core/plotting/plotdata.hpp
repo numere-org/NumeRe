@@ -30,24 +30,12 @@
 #include "../utils/tools.hpp"
 #include "../structures.hpp"
 #include "../interval.hpp"
-
-
+#include "plotdef.hpp"
 
 
 class PlotData : public FileSystem
 {
     public:
-        enum Coordinates
-        {
-            CARTESIAN = 0,
-            POLAR_PZ = 10,
-            POLAR_RP,
-            POLAR_RZ,
-            SPHERICAL_PT = 100,
-            SPHERICAL_RP,
-            SPHERICAL_RT
-        };
-
         enum RangeType
         {
             ALLRANGES = -1,
@@ -188,6 +176,12 @@ class PlotData : public FileSystem
         ~PlotData();
 
         void setParams(const std::string& __sCmd, int nType = ALL);
+        std::string getParams(bool asstr = false) const;
+        std::string getAxisLabel(size_t axis) const;
+        void setSamples(int _nSamples);
+        void setFileName(std::string _sFileName);
+        void reset();
+        void deleteData(bool bGraphFinished = false);
 
         inline void setGlobalComposeParams(const std::string& __sCmd)
         {
@@ -198,8 +192,6 @@ class PlotData : public FileSystem
         {
             return setParams(__sCmd, LOCAL);
         }
-
-        std::string getParams(bool asstr = false) const;
 
         IntervalSet& getRanges()
         {
@@ -404,8 +396,6 @@ class PlotData : public FileSystem
             return nTargetGUI;
         }
 
-        std::string getAxisLabel(size_t axis) const;
-
         inline std::string getTickTemplate(int nAxis = 0) const
         {
             if (nAxis >= 0 && nAxis < 4)
@@ -422,18 +412,7 @@ class PlotData : public FileSystem
                 return "";
         }
 
-        void setSamples(int _nSamples);
-        //void normalize(int nDim = 2, int t_animate = 0);
 
-        void setFileName(std::string _sFileName);
-
-        void reset();
-        void deleteData(bool bGraphFinished = false);
-
-
-        //double getMin(int nCol = ALLRANGES) const;
-        //double getMax(int nCol = ALLRANGES) const;
-        //vector<double> getWeightedRanges(int nCol = ALLRANGES, double dLowerPercentage = 0.75, double dUpperPercentage = 0.75);
 };
 
 #endif
