@@ -35,7 +35,7 @@ mglData duplicatePoints(const mglData& _mData);
 /////////////////////////////////////////////////
 void PlotAsset::create(PlotType _t, size_t nDim, size_t nAxes, const std::vector<size_t>& samples, size_t nLayers)
 {
-    if (_t == PT_NONE || !nDim || samples.size() < nDim || samples.size() < nAxes || !nAxes || !nLayers)
+    if (_t == PT_NONE || !nDim || samples.size() < nDim || samples.size() < nAxes || !nLayers)
     {
         type = PT_NONE;
         return;
@@ -63,11 +63,14 @@ void PlotAsset::create(PlotType _t, size_t nDim, size_t nAxes, const std::vector
                               nDim == 3 ? samples[ZCOORD] : 1);
     }
 
-    axes.resize(nAxes);
-
-    for (size_t a = 0; a < nAxes; a++)
+    if (nAxes)
     {
-        axes[a].Create(samples[a]);
+        axes.resize(nAxes);
+
+        for (size_t a = 0; a < nAxes; a++)
+        {
+            axes[a].Create(samples[a]);
+        }
     }
 }
 
@@ -92,8 +95,8 @@ void PlotAsset::writeData(const mu::value_type& val, size_t layer, size_t x, siz
         || z >= (size_t)data[layer].first.nz)
         throw SyntaxError(SyntaxError::PLOT_ERROR, "", "");
 
-    data[layer].first.a[x + data[layer].first.nx*y + data[layer].first.ny*z] = mu::isinf(val) ? NAN : val.real();
-    data[layer].second.a[x + data[layer].second.nx*y + data[layer].second.ny*z] = mu::isinf(val) ? NAN : val.imag();
+    data[layer].first.a[x + data[layer].first.nx*y + data[layer].first.nx*data[layer].first.ny*z] = mu::isinf(val) ? NAN : val.real();
+    data[layer].second.a[x + data[layer].second.nx*y + data[layer].second.nx*data[layer].second.ny*z] = mu::isinf(val) ? NAN : val.imag();
 }
 
 
@@ -255,18 +258,18 @@ void PlotAsset::applyModulus(PlotCoords c, double mod)
                 axes[c].a[n] += mod;
         }
     }
-    else if (c < data.size())
+    else if (c - axes.size() < data.size())
     {
-        for (int n = 0; n < data[c].first.nx; n++)
+        for (int n = 0; n < data[c-axes.size()].first.GetNN(); n++)
         {
-            data[c].first.a[n] = ::fmod(data[c].first.a[n], mod);
-            data[c].second.a[n] = ::fmod(data[c].second.a[n], mod);
+            data[c-axes.size()].first.a[n] = ::fmod(data[c-axes.size()].first.a[n], mod);
+            data[c-axes.size()].second.a[n] = ::fmod(data[c-axes.size()].second.a[n], mod);
 
-            if (data[c].first.a[n] < 0)
-                data[c].first.a[n] += mod;
+            if (data[c-axes.size()].first.a[n] < 0)
+                data[c-axes.size()].first.a[n] += mod;
 
-            if (data[c].second.a[n] < 0)
-                data[c].second.a[n] += mod;
+            if (data[c-axes.size()].second.a[n] < 0)
+                data[c-axes.size()].second.a[n] += mod;
         }
     }
 }
@@ -317,6 +320,7 @@ mglData PlotAsset::vectorsToMatrix() const
 IntervalSet PlotAsset::getWeightedRanges(size_t layer, double dLowerPercentage, double dUpperPercentage) const
 {
     IntervalSet ivl;
+    ivl.intervals.resize(2);
 
     if (layer >= data.size())
         return ivl;
@@ -380,7 +384,7 @@ IntervalSet PlotAssetManager::getIntervalsOfType(PlotType t, int coord) const
         }
         else
         {
-            if (assets[i].getLayers() <= coord)
+            if ((int)assets[i].getLayers() <= coord)
                 continue;
 
             IntervalSet dataIntervals = assets[i].getDataIntervals(coord);
@@ -517,7 +521,7 @@ IntervalSet PlotAssetManager::getWeightedFunctionIntervals(int coord, double dLo
         {
             IntervalSet dataIntervals;
 
-            for (size_t l = 0; l < assets[i].getLayers(); i++)
+            for (size_t l = 0; l < assets[i].getLayers(); l++)
             {
                 dataIntervals = assets[i].getWeightedRanges(l, dLowerPercentage, dUpperPercentage);
                 ivl[REAL] = ivl[REAL].combine(dataIntervals[REAL]);
@@ -526,7 +530,7 @@ IntervalSet PlotAssetManager::getWeightedFunctionIntervals(int coord, double dLo
         }
         else
         {
-            if (assets[i].getLayers() <= coord)
+            if ((int)assets[i].getLayers() <= coord)
                 continue;
 
             IntervalSet dataIntervals = assets[i].getWeightedRanges(coord, dLowerPercentage, dUpperPercentage);
@@ -653,6 +657,7 @@ void PlotAssetManager::applyCoordSys(CoordinateSystem coords)
                     ass.applyModulus(YCOORD, 2.0*M_PI);
                     ass.removeNegativeValues(XCOORD);
                     break;
+                case CARTESIAN: break;
             }
         }
         else
@@ -673,19 +678,20 @@ void PlotAssetManager::applyCoordSys(CoordinateSystem coords)
                     break;
                 case SPHERICAL_PT:
                     ass.applyModulus(XCOORD, 2.0*M_PI);
-                    ass.applyModulus(YCOORD, M_PI);
+                    ass.applyModulus(YCOORD, 1.00001*M_PI);
                     ass.removeNegativeValues(ZCOORD);
                     break;
                 case SPHERICAL_RP:
                     ass.applyModulus(YCOORD, 2.0*M_PI);
-                    ass.applyModulus(ZCOORD, M_PI);
+                    ass.applyModulus(ZCOORD, 1.00001*M_PI);
                     ass.removeNegativeValues(XCOORD);
                     break;
                 case SPHERICAL_RT:
                     ass.applyModulus(ZCOORD, 2.0*M_PI);
-                    ass.applyModulus(YCOORD, M_PI);
+                    ass.applyModulus(YCOORD, 1.00001*M_PI);
                     ass.removeNegativeValues(XCOORD);
                     break;
+                case CARTESIAN: break;
             }
         }
     }

@@ -42,6 +42,7 @@ static bool isMesh2D(const std::string& sCommand)
     return sCommand == "implot"
         || (sCommand.substr(sCommand.length()-2) != "3d"
             && (sCommand.substr(0, 4) == "mesh"
+                || sCommand.substr(0, 4) == "surf"
                 || sCommand.substr(0, 4) == "dens"
                 || sCommand.substr(0, 4) == "cont"
                 || sCommand.substr(0, 4) == "grad"));
@@ -51,6 +52,7 @@ static bool isMesh3D(const std::string& sCommand)
 {
     return sCommand.substr(sCommand.length()-2) == "3d"
         && (sCommand.substr(0, 4) == "mesh"
+            || sCommand.substr(0, 4) == "surf"
             || sCommand.substr(0, 4) == "dens"
             || sCommand.substr(0, 4) == "cont"
             || sCommand.substr(0, 4) == "grad");
@@ -66,6 +68,20 @@ static bool isVect3D(const std::string& sCommand)
     return sCommand == "vect3d" || sCommand == "vector3d";
 }
 
+static bool isDraw(const std::string& sCommand)
+{
+    return sCommand == "draw" || sCommand == "draw3d";
+}
+
+static bool has3DView(const std::string& sCommand)
+{
+    return sCommand == "draw3d"
+        || isPlot3D(sCommand)
+        || isMesh3D(sCommand)
+        || sCommand.substr(0, 4) == "mesh" // "mesh3d" already handled and included
+        || sCommand.substr(0, 4) == "surf"
+        || sCommand.substr(0, 4) == "cont";
+}
 
 
 // These definitions are for easier understanding of the different ranges
@@ -698,7 +714,10 @@ size_t Plot::createSubPlotSet(string& sOutputName, bool& bAnimateVar, vector<str
         // evaluate the indices of the data sets and store the values of the
         // data sets into the mglData objects, which will be used further down
         // to display the data values in the plots
-        std::vector<std::string> vDataPlots = separateFunctionsAndData();
+        std::vector<std::string> vDataPlots;
+
+        if (!isDraw(_pInfo.sCommand))
+            vDataPlots = separateFunctionsAndData();
 
         // Do we need to search for the animation parameter variable?
         if (_pData.getAnimateSamples())
@@ -715,7 +734,6 @@ size_t Plot::createSubPlotSet(string& sOutputName, bool& bAnimateVar, vector<str
             }
         }
 
-        NumeReKernel::print("Preparing memory");
         // Prepare the plotting memory for functions and datasets depending
         // on their number
         prepareMemory();
@@ -726,7 +744,7 @@ size_t Plot::createSubPlotSet(string& sOutputName, bool& bAnimateVar, vector<str
         StripSpaces(sFunc);
 
         // Ensure that either functions or data plots are available
-        if (!m_manager.assets.size())
+        if (!m_manager.assets.size() && !isDraw(_pInfo.sCommand))
             throw SyntaxError(SyntaxError::PLOT_ERROR, sCmd, SyntaxError::invalid_position);
 
         // Ensure that the functions do not contain any strings, because strings
@@ -793,7 +811,6 @@ size_t Plot::createSubPlotSet(string& sOutputName, bool& bAnimateVar, vector<str
         else
             sFunc.clear();
 
-            NumeReKernel::print("Default ranges");
         // Calculate the default plotting ranges depending on the user
         // specification. If the user didn't specify
         // a set of ranges, we try to use the plotting ranges of the data
@@ -981,12 +998,7 @@ bool Plot::createPlotOrAnimation(int& nStyle, size_t nPlotCompose, size_t nPlotC
 
         // If the user requested an orthogonal projection, then
         // we activate this plotting mode at this location
-        if (_pData.getSettings(PlotData::LOG_ORTHOPROJECT)
-                && (_pInfo.b3D
-                    || (_pInfo.b2D && _pInfo.sCommand.substr(0, 4) != "grad" && _pInfo.sCommand.substr(0, 4) != "dens")
-                    || _pInfo.b3DVect
-                    || _pInfo.sCommand == "plot3d")
-           )
+        if (_pData.getSettings(PlotData::LOG_ORTHOPROJECT) && has3DView(_pInfo.sCommand))
         {
             _graph->Ternary(4);
             _graph->SetRotatedText(false);
@@ -995,7 +1007,7 @@ bool Plot::createPlotOrAnimation(int& nStyle, size_t nPlotCompose, size_t nPlotC
         // Rotate the graph to the desired plotting angles
         if (_pInfo.nMaxPlotDim > 2 && (!nPlotCompose || bNewSubPlot))
             _graph->Rotate(_pData.getRotateAngle(), _pData.getRotateAngle(1));
-NumeReKernel::print("Filling data");
+
         // Calculate the function values for the set plotting ranges
         // and the eventually set time variable
         nFunctions = fillData(dt_max, t_animate, nFunctions);
@@ -1004,11 +1016,11 @@ NumeReKernel::print("Filling data");
         // style is a vector field
         if (_pInfo.b2DVect || _pInfo.b3DVect)
             m_manager.normalize(t_animate);
-NumeReKernel::print("Fitting ranges");
+
         // Change the plotting ranges to fit to the calculated plot
         // data (only, if the user did not specify those ranges, too).
         fitPlotRanges(nPlotCompose, bNewSubPlot);
-NumeReKernel::print("Passing ranges");
+
         // Pass the final ranges to the graph. Only do this, if this is
         // the first plot of a plot composition or a new subplot.
         if (!nPlotCompose || bNewSubPlot)
@@ -1046,15 +1058,15 @@ NumeReKernel::print("Passing ranges");
         // This section will transform the calculated data points into the desired
         // plotting style. The most complex plots are the default plot, the "plot3d"
         // and the 2D-Plots (mesh, surf, etc.)
-        if (_pInfo.b2D || _pInfo.sCommand == "implot")        // 2D-Plot
+        if (isMesh2D(_pInfo.sCommand))        // 2D-Plot
             create2dPlot(nStyle, nLegends, nFunctions, nPlotCompose, nPlotComposeSize);
-        else if (_pInfo.sCommand != "plot3d" && !_pInfo.b3D && !_pInfo.b3DVect && !_pInfo.b2DVect && !_pInfo.bDraw3D && !_pInfo.bDraw)      // Standardplot
+        else if (isPlot1D(_pInfo.sCommand))      // Standardplot
             createStdPlot(nStyle, nLegends, nFunctions, nPlotCompose, nPlotComposeSize);
-        else if (_pInfo.b3D)   // 3D-Plot
+        else if (isMesh3D(_pInfo.sCommand))   // 3D-Plot
             create3dPlot();
-        else if (_pInfo.b3DVect)   // 3D-Vektorplot
+        else if (isVect3D(_pInfo.sCommand))   // 3D-Vektorplot
             create3dVect();
-        else if (_pInfo.b2DVect)   // 2D-Vektorplot
+        else if (isVect2D(_pInfo.sCommand))   // 2D-Vektorplot
             create2dVect();
         else if (_pInfo.bDraw)
             create2dDrawing(vDrawVector, nFunctions);
@@ -3104,6 +3116,7 @@ void Plot::evaluatePlotParamString()
             if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sOptionValue))
             {
                 size_t nLength = sOptionValue.length();
+                StripSpaces(sOptionValue);
                 string sParsedString;
 
                 // Remove surrounding parentheses
@@ -5029,7 +5042,7 @@ int Plot::fillData(double dt_max, int t_animate, int nFunctions)
 
             vResults = _parser.Eval(nFunctions);
 
-            if (nFunctions != vFuncMap.size())
+            if ((size_t)nFunctions != vFuncMap.size())
                 throw SyntaxError(SyntaxError::PLOT_ERROR, "", "");
 
             for (int i = 0; i < nFunctions; i++)
@@ -5054,9 +5067,6 @@ int Plot::fillData(double dt_max, int t_animate, int nFunctions)
 
             _parser.SetExpr(expressions[k]);
             vResults = _parser.Eval(nFunctions);
-
-            if (nFunctions != vFuncMap.size())
-                throw SyntaxError(SyntaxError::PLOT_ERROR, "", "");
 
             _defVars.vValue[TCOORD][0] = _pInfo.ranges[TRANGE].front();
             _defVars.vValue[XCOORD][0] = vResults[XCOORD];
@@ -5142,7 +5152,7 @@ int Plot::fillData(double dt_max, int t_animate, int nFunctions)
 
                 vResults = _parser.Eval(nFunctions);
 
-                if (nFunctions != vFuncMap.size())
+                if ((size_t)nFunctions != vFuncMap.size())
                     throw SyntaxError(SyntaxError::PLOT_ERROR, "", "");
 
                 for (size_t i = 0; i < vFuncMap.size(); i++)
@@ -5185,7 +5195,7 @@ int Plot::fillData(double dt_max, int t_animate, int nFunctions)
 
                     vResults = _parser.Eval(nFunctions);
 
-                    if (nFunctions != vFuncMap.size())
+                    if ((size_t)nFunctions != vFuncMap.size())
                         throw SyntaxError(SyntaxError::PLOT_ERROR, "", "");
 
                     for (size_t i = 0; i < vFuncMap.size(); i++)
@@ -5313,11 +5323,9 @@ void Plot::fitPlotRanges(size_t nPlotCompose, bool bNewSubPlot)
             {
                 IntervalSet funcIntLeft = m_manager.getFunctionIntervals(ONLYLEFT);
                 IntervalSet funcIntRight = m_manager.getFunctionIntervals(ONLYRIGHT);
-                NumeReKernel::print("Interval range: " + toString(funcIntLeft[0].min(), 5) + ", " + toString(funcIntLeft[0].max(), 5));
-NumeReKernel::print("Weighting intervals");
+
                 m_manager.weightedRange(ONLYLEFT, funcIntLeft[0]);
                 m_manager.weightedRange(ONLYRIGHT, funcIntRight[0]);
-                NumeReKernel::print("Interval range: " + toString(funcIntLeft[0].min(), 5) + ", " + toString(funcIntLeft[0].max(), 5));
 
                 if (m_manager.hasDataPlots())
                 {
@@ -5336,17 +5344,14 @@ NumeReKernel::print("Weighting intervals");
                 if ((isnan(funcIntLeft[0].front()) || isnan(_pInfo.ranges[YRANGE].front())) && isnan(dataRanges[YRANGE].front()))
                     _pInfo.ranges[YRANGE].reset(_pInfo.secranges[YRANGE].min(), _pInfo.secranges[YRANGE].max());
             }
-NumeReKernel::print("Expanding ranges");
+
             _pInfo.ranges[YRANGE].expand(1.1, (_pData.getLogscale(YRANGE) || _pData.getSettings(PlotData::INT_COORDS) != CARTESIAN
                                                ? 0.0 : -INFINITY));
-NumeReKernel::print("Interval range: " + toString(_pInfo.ranges[YRANGE].min(), 5) + ", " + toString(_pInfo.ranges[YRANGE].max(), 5));
         }
         else if (_pInfo.sCommand == "plot3d" && _pData.getGivenRanges() < 3)
         {
             if (sFunc.length())
             {
-                double dMin, dMax;
-
                 for (int i = XRANGE; i <= ZRANGE; i++)
                 {
                     IntervalSet coordIntervals = m_manager.getFunctionIntervals(i);
@@ -5357,9 +5362,6 @@ NumeReKernel::print("Interval range: " + toString(_pInfo.ranges[YRANGE].min(), 5
                         continue;
 
                     _pInfo.ranges[i] = _pInfo.ranges[i].combine(coordIntervals[0]);
-
-                    if (!m_manager.hasDataPlots())
-                        _pInfo.ranges[i].reset(dMin, dMax);
 
                     _pInfo.ranges[i].expand(1.1, (_pData.getSettings(PlotData::INT_COORDS) == SPHERICAL_PT
                                                   || (_pData.getSettings(PlotData::INT_COORDS) == POLAR_PZ && i < 2)
@@ -5375,7 +5377,6 @@ NumeReKernel::print("Interval range: " + toString(_pInfo.ranges[YRANGE].min(), 5
         }
         else if (_pData.getGivenRanges() < 3 && _pInfo.sCommand != "implot")
         {
-            NumeReKernel::print("Last case");
             if (sFunc.length())
             {
                 IntervalSet funcIntervals = m_manager.getFunctionIntervals();

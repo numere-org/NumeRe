@@ -440,13 +440,18 @@ void Interval::expand(double perc, double dMin)
     if (r == 0.0 || r < 1e-4 * mi)
         r = fabs(ma);
 
-    mi -= r * (perc - 1.0) * 0.5;
+    double mi2 = mi - r * (perc - 1.0) * 0.5;
     ma += r * (perc - 1.0) * 0.5;
 
-    if (mi <= dMin)
-        mi = dMin + r * (perc - 1.0) * 0.5;
+    if (mi2 <= dMin)
+    {
+        if (mi > dMin)
+            mi2 = mi;
+        else
+            mi = dMin + r * (perc - 1.0) * 0.5;
+    }
 
-    reset(mi, ma);
+    reset(mi2, ma);
 }
 
 
