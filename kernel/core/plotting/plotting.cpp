@@ -3749,7 +3749,7 @@ void Plot::extractDataValues(const std::vector<std::string>& vDataPlots)
                 datarows = 3;
             else if (_pData.getSettings(PlotData::LOG_XERROR) || _pData.getSettings(PlotData::LOG_YERROR))
                 datarows = 2;
-            else if (_idx.col.numberOfNodes() > 2)
+            else if (_idx.col.numberOfNodes() >= 2)
                 datarows = _idx.col.numberOfNodes() - 1*!_pData.getSettings(PlotData::LOG_BOXPLOT);
 
             m_manager.assets[typeCounter].create1DPlot(PT_DATA, _idx.row.size(), datarows);
@@ -3820,6 +3820,9 @@ void Plot::extractDataValues(const std::vector<std::string>& vDataPlots)
             }
 
             bool isHbar = _pData.getSettings(PlotData::FLOAT_HBARS) != 0.0;
+            bool isMultiDataSet = _pData.getSettings(PlotData::FLOAT_HBARS) != 0.0
+                || _pData.getSettings(PlotData::FLOAT_BARS) != 0.0
+                || _pData.getSettings(PlotData::LOG_BOXPLOT);
 
             // Calculated the data ranges
             if (m_manager.assets[typeCounter].boundAxes.find('r') != std::string::npos)
@@ -3827,11 +3830,14 @@ void Plot::extractDataValues(const std::vector<std::string>& vDataPlots)
             else
                 dataRanges[XRANGE+isHbar] = dataRanges[XRANGE+isHbar].combine(m_manager.assets[typeCounter].getAxisInterval(XCOORD));
 
-#warning TODO (numere#3#11/15/21): Enhance the data intervals in this case and enable complex values
-            if (m_manager.assets[typeCounter].boundAxes.find('t') != std::string::npos)
-                secDataRanges[YRANGE-isHbar] = secDataRanges[YRANGE-isHbar].combine(m_manager.assets[typeCounter].getDataIntervals(0)[0]);
-            else
-                dataRanges[YRANGE-isHbar] = dataRanges[YRANGE-isHbar].combine(m_manager.assets[typeCounter].getDataIntervals(0)[0]);
+            for (size_t layer = 0; layer < std::max(1u, isMultiDataSet*m_manager.assets[typeCounter].getLayers()); layer++)
+            {
+    #warning TODO (numere#3#11/15/21): Enhance the data intervals in this case and enable complex values
+                if (m_manager.assets[typeCounter].boundAxes.find('t') != std::string::npos)
+                    secDataRanges[YRANGE-isHbar] = secDataRanges[YRANGE-isHbar].combine(m_manager.assets[typeCounter].getDataIntervals(layer)[0]);
+                else
+                    dataRanges[YRANGE-isHbar] = dataRanges[YRANGE-isHbar].combine(m_manager.assets[typeCounter].getDataIntervals(layer)[0]);
+            }
         }
         else if (isPlot3D(_pInfo.sCommand))
         {

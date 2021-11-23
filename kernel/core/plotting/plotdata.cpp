@@ -1635,7 +1635,7 @@ void PlotData::setParams(const string& __sCmd, int nType)
                 if (i > 4)
                     break;
 
-                if (args[i].find(':') == string::npos)
+                if (args[i].find(':') == string::npos || args[i] == ":")
                     continue;
 
                 ranges[i].reset(args[i]);
