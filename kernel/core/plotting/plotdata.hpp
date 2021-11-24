@@ -141,8 +141,8 @@ class PlotData : public FileSystem
         IntervalSet ranges;
         int nRanges;
         int nRequestedLayers;
-        bool bRanges[3];
-        bool bMirror[3];
+        bool bRanges[4];
+        bool bMirror[4];
         bool bDefaultAxisLabels[3];
         bool bLogscale[4];
         std::string sAxisLabels[3];
@@ -228,7 +228,7 @@ class PlotData : public FileSystem
 
         inline bool getInvertion(int i = 0) const
         {
-            if (i < 3 && i >= 0)
+            if (i < 4 && i >= 0)
                 return bMirror[i];
             else
                 return false;

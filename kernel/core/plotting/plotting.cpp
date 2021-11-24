@@ -1371,10 +1371,10 @@ void Plot::createStdPlot(int& nStyle, size_t& nLegends, int nFunctions, size_t n
         {
             if (_pData.getSettings(PlotData::LOG_BOXPLOT))
             {
-                // Create the boxplot axis
-                _mData2[0].Create(m_manager.assets[n].getLayers());
+                // Create the boxplot axis (count of elements has to be one element larger)
+                _mData2[0].Create(m_manager.assets[n].getLayers()+1);
 
-                for (size_t col = 0; col < m_manager.assets[n].getLayers(); col++)
+                for (size_t col = 0; col < m_manager.assets[n].getLayers()+1; col++)
                 {
                     // Create the axis by adding previous layers to shift
                     // the current box plots to the right
@@ -3825,15 +3825,14 @@ void Plot::extractDataValues(const std::vector<std::string>& vDataPlots)
                 || _pData.getSettings(PlotData::LOG_BOXPLOT);
 
             // Calculated the data ranges
-            if (m_manager.assets[typeCounter].boundAxes.find('r') != std::string::npos)
+            if (m_manager.assets[typeCounter].boundAxes.find('t') != std::string::npos)
                 secDataRanges[XRANGE+isHbar] = secDataRanges[XRANGE+isHbar].combine(m_manager.assets[typeCounter].getAxisInterval(XCOORD));
             else
                 dataRanges[XRANGE+isHbar] = dataRanges[XRANGE+isHbar].combine(m_manager.assets[typeCounter].getAxisInterval(XCOORD));
 
             for (size_t layer = 0; layer < std::max(1u, isMultiDataSet*m_manager.assets[typeCounter].getLayers()); layer++)
             {
-    #warning TODO (numere#3#11/15/21): Enhance the data intervals in this case and enable complex values
-                if (m_manager.assets[typeCounter].boundAxes.find('t') != std::string::npos)
+                if (m_manager.assets[typeCounter].boundAxes.find('r') != std::string::npos)
                     secDataRanges[YRANGE-isHbar] = secDataRanges[YRANGE-isHbar].combine(m_manager.assets[typeCounter].getDataIntervals(layer)[0]);
                 else
                     dataRanges[YRANGE-isHbar] = dataRanges[YRANGE-isHbar].combine(m_manager.assets[typeCounter].getDataIntervals(layer)[0]);
@@ -5474,8 +5473,7 @@ void Plot::passRangesToGraph()
         for (size_t i = 0; i < m_manager.assets.size(); i++)
             nLayers += m_manager.assets[i].getLayers();
 
-#warning TODO (numere#1#11/17/21): This might require an additional +1
-        _pInfo.ranges[XRANGE].reset(0, nLayers);
+        _pInfo.ranges[XRANGE].reset(0, nLayers+1);
     }
 
     if (_pData.getInvertion(XCOORD))
@@ -5542,6 +5540,8 @@ void Plot::passRangesToGraph()
                                   _pInfo.ranges[CRANGE].max() / _pData.getAxisScale(CRANGE));
             _pInfo.ranges[CRANGE].reset(_pInfo.ranges[CRANGE].max()*1e-3, _pInfo.ranges[CRANGE].max());
         }
+        else if (_pData.getInvertion(CRANGE))
+            _graph->SetRange('c', _pInfo.ranges[CRANGE].max() / _pData.getAxisScale(CRANGE), _pInfo.ranges[CRANGE].min() / _pData.getAxisScale(CRANGE));
         else
             _graph->SetRange('c', _pInfo.ranges[CRANGE].min() / _pData.getAxisScale(CRANGE), _pInfo.ranges[CRANGE].max() / _pData.getAxisScale(CRANGE));
     }
@@ -5715,7 +5715,10 @@ void Plot::passRangesToGraph()
             else
                 _pInfo.ranges[CRANGE] = _pData.getRanges()[CRANGE];
 
-            _graph->SetRange('c', _pInfo.ranges[CRANGE].min(), _pInfo.ranges[CRANGE].max());
+            if (_pData.getInvertion(CRANGE))
+                _graph->SetRange('c', _pInfo.ranges[CRANGE].max(), _pInfo.ranges[CRANGE].min());
+            else
+                _graph->SetRange('c', _pInfo.ranges[CRANGE].min(), _pInfo.ranges[CRANGE].max());
         }
         else if (m_manager.hasDataPlots())
         {
@@ -6412,10 +6415,10 @@ void Plot::CoordSettings()
                 {
                     if (!_pData.getSettings(PlotData::LOG_SCHEMATIC))
                     {
-                        if (!isnan(_pData.getAddAxis(XCOORD).ivl.min()) || !isnan(_pData.getAddAxis(YCOORD).ivl.min()))
+                        if (!isnan(_pData.getAddAxis(XCOORD).ivl.front()) || !isnan(_pData.getAddAxis(YCOORD).ivl.front()))
                         {
                             Axis _axis;
-                            _graph->SetOrigin(_pInfo.ranges[XRANGE].max(), _pInfo.ranges[ZRANGE].max());
+                            _graph->SetOrigin(_pInfo.ranges[XRANGE].max(), _pInfo.ranges[YRANGE].max());
 
                             for (int i = XCOORD; i <= YCOORD; i++)
                             {

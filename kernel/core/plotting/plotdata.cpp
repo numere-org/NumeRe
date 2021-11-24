@@ -277,7 +277,13 @@ void PlotData::setParams(const string& __sCmd, int nType)
     {
         unsigned int nPos = findParameter(sCmd, "colorrange", '=') + 10;
         string sTemp_1 = getArgAtPos(__sCmd, nPos);
-        ranges[3].reset(sTemp_1);
+        ranges[CRANGE].reset(sTemp_1);
+
+        if (ranges[CRANGE].front().real() > ranges[CRANGE].back().real())
+        {
+            bMirror[CRANGE] = true;
+            ranges[CRANGE].reset(ranges[CRANGE].back(), ranges[CRANGE].front());
+        }
     }
     if (findParameter(sCmd, "rotate", '=') && (nType == ALL || nType & GLOBAL))
     {
@@ -1640,7 +1646,7 @@ void PlotData::setParams(const string& __sCmd, int nType)
 
                 ranges[i].reset(args[i]);
 
-                if (i < 3)
+                if (i < 4)
                 {
                     bRanges[i] = true;
                     nRanges = i+1;
