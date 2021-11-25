@@ -27,6 +27,11 @@
 extern DefaultVariables _defVars;
 extern mglGraph _fontData;
 
+
+std::string removeQuotationMarks(const std::string&);
+
+
+
 static bool isPlot1D(const std::string& sCommand)
 {
     return sCommand == "plot" || sCommand == "graph";
@@ -1150,15 +1155,14 @@ void Plot::create2dPlot(int& nStyle, size_t& nLegends, int nFunctions, size_t nP
             return;
         }
 
-        if (m_manager.assets.size() > 1
-            || _pData.getSettings(PlotData::LOG_COLORMASK)
-            || _pData.getSettings(PlotData::LOG_ALPHAMASK))
+        if (m_manager.assets.size() > 2
+            || (m_manager.assets.size() >= 2 && !(_pData.getSettings(PlotData::LOG_COLORMASK) || _pData.getSettings(PlotData::LOG_ALPHAMASK))))
         {
             if (_pData.getSettings(PlotData::LOG_CONTLABELS) && _pInfo.sCommand.substr(0, 4) != "cont")
-                _graph->Cont(m_manager.assets[n].data[0].first,
+                _graph->Cont(_mPlotAxes[0], _mPlotAxes[1], m_manager.assets[n].data[0].first,
                              ("t" + _pInfo.sContStyles[nStyle]).c_str(), ("val " + toString(_pData.getSettings(PlotData::INT_CONTLINES))).c_str());
             else if (!_pData.getSettings(PlotData::LOG_CONTLABELS) && _pInfo.sCommand.substr(0, 4) != "cont")
-                _graph->Cont(m_manager.assets[n].data[0].first,
+                _graph->Cont(_mPlotAxes[0], _mPlotAxes[1], m_manager.assets[n].data[0].first,
                              _pInfo.sContStyles[nStyle].c_str(), ("val " + toString(_pData.getSettings(PlotData::INT_CONTLINES))).c_str());
 
             sConvLegends = m_manager.assets[n].legend;
@@ -1177,7 +1181,8 @@ void Plot::create2dPlot(int& nStyle, size_t& nLegends, int nFunctions, size_t nP
                 nStyle++;
         }
 
-        if ((_pData.getSettings(PlotData::LOG_COLORMASK) || _pData.getSettings(PlotData::LOG_ALPHAMASK)) && n+1 < m_manager.assets.size())
+        if ((_pData.getSettings(PlotData::LOG_COLORMASK) || _pData.getSettings(PlotData::LOG_ALPHAMASK))
+            && n+1 < m_manager.assets.size())
             n++;
     }
     // --> Position der Legende etwas aendern <--
@@ -1584,17 +1589,19 @@ void Plot::createStdPlot(int& nStyle, size_t& nLegends, int nFunctions, size_t n
             n++;
     }
 
+    double AutoRangeX = _pData.getLogscale(XRANGE) ? log10(_pInfo.ranges[XRANGE].range()) : _pInfo.ranges[XRANGE].range();
+    double AutoRangeY = _pData.getLogscale(YRANGE) ? log10(_pInfo.ranges[YRANGE].range()) : _pInfo.ranges[YRANGE].range();
+
     for (const Line& line : _pData.getHLines())
     {
         if (!line.sDesc.length())
             continue;
 
+        double xpos = _pInfo.ranges[XRANGE].min() + 0.03 * AutoRangeX;
+        double ypos = line.dPos + 0.01 * AutoRangeY;
+
         _graph->Line(mglPoint(_pInfo.ranges[XRANGE].min(), line.dPos), mglPoint(_pInfo.ranges[XRANGE].max(), line.dPos), line.sStyle.c_str(), 100);
-        _graph->Puts(_pInfo.ranges[XRANGE].min() + 0.03 * (_pData.getLogscale(XRANGE)
-                                                           ? log10(_pInfo.ranges[XRANGE].range())
-                                                           : _pInfo.ranges[XRANGE].range()),
-                     line.dPos + 0.01 * (_pData.getLogscale(YRANGE) ? log10(_pInfo.ranges[YRANGE].range()) : _pInfo.ranges[YRANGE].range()),
-                     fromSystemCodePage(line.sDesc).c_str(), ":kL");
+        _graph->Puts(xpos, ypos, fromSystemCodePage(line.sDesc).c_str(), ":kL");
     }
 
     for (const Line& line : _pData.getVLines())
@@ -1602,14 +1609,13 @@ void Plot::createStdPlot(int& nStyle, size_t& nLegends, int nFunctions, size_t n
         if (!line.sDesc.length())
             continue;
 
+        mglPoint textpos = mglPoint(line.dPos - 0.01 * AutoRangeX,
+                                    _pInfo.ranges[YRANGE].min() + 0.05 * AutoRangeY);
+        mglPoint textdir = mglPoint(line.dPos - 0.01 * AutoRangeX,
+                                    _pInfo.ranges[YRANGE].max());
+
         _graph->Line(mglPoint(line.dPos, _pInfo.ranges[YRANGE].min()), mglPoint(line.dPos, _pInfo.ranges[YRANGE].max()), line.sStyle.c_str());
-        _graph->Puts(mglPoint(line.dPos - 0.01 * (_pData.getLogscale(XRANGE) ? log10(_pInfo.ranges[XRANGE].range()) : _pInfo.ranges[XRANGE].range()),
-                              _pInfo.ranges[YRANGE].min() + 0.05 * (_pData.getLogscale(YRANGE)
-                                                                    ? log10(_pInfo.ranges[YRANGE].range())
-                                                                    : _pInfo.ranges[YRANGE].range())),
-                     mglPoint(line.dPos - 0.01 * (_pData.getLogscale(XRANGE) ? log10(_pInfo.ranges[XRANGE].range()) : _pInfo.ranges[XRANGE].range()),
-                              _pInfo.ranges[YRANGE].min()),
-                     fromSystemCodePage(line.sDesc).c_str(), ":kL");
+        _graph->Puts(textpos, textdir, fromSystemCodePage(line.sDesc).c_str(), ":kL");
     }
 
     if (nLegends && !_pData.getSettings(PlotData::LOG_SCHEMATIC) && nPlotCompose + 1 == nPlotComposeSize)
@@ -2862,12 +2868,12 @@ void Plot::createStd3dPlot(int& nStyle, size_t& nLegends, int nFunctions, size_t
 
                 if (!_pData.getSettings(PlotData::LOG_XERROR) && !_pData.getSettings(PlotData::LOG_YERROR))
                 {
-                    if ((_pData.getSettings(PlotData::LOG_INTERPOLATE) && m_manager.assets[n].axes[XCOORD].nx >= _pInfo.nSamples)
+                    if ((_pData.getSettings(PlotData::LOG_INTERPOLATE) && countValidElements(_mData[XCOORD]) >= (size_t)_pInfo.nSamples)
                         || _pData.getSettings(PlotData::FLOAT_BARS))
                         _graph->AddLegend(fromSystemCodePage(replaceToTeX(sConvLegends.substr(1, sConvLegends.length() - 2))).c_str(),
                                           getLegendStyle(_pInfo.sLineStyles[nStyle]).c_str());
                     else if (_pData.getSettings(PlotData::LOG_CONNECTPOINTS)
-                             || (_pData.getSettings(PlotData::LOG_INTERPOLATE) && m_manager.assets[n].axes[XCOORD].nx >= 0.9 * _pInfo.nSamples))
+                             || (_pData.getSettings(PlotData::LOG_INTERPOLATE) && countValidElements(_mData[XCOORD]) >= 0.9 * _pInfo.nSamples))
                         _graph->AddLegend(fromSystemCodePage(replaceToTeX(sConvLegends.substr(1, sConvLegends.length() - 2))).c_str(),
                                           getLegendStyle(_pInfo.sConPointStyles[nStyle]).c_str());
                     else if (_pData.getSettings(PlotData::LOG_STEPPLOT))
@@ -3855,7 +3861,10 @@ void Plot::extractDataValues(const std::vector<std::string>& vDataPlots)
 
             for (size_t q = 0; q < 3*datarows; q++)
             {
-                if (_idx.col[q] == VectorIndex::INVALID)
+                // If the column is invalid or completely empty, then
+                // use zeros to fill it
+                if (_idx.col[q] == VectorIndex::INVALID
+                    || !_data.getColElements(_idx.col.subidx(q, 1), _accessParser.getDataObject()))
                 {
                     for (size_t t = 0; t < _idx.row.size(); t++)
                         m_manager.assets[typeCounter].writeData(0.0, q, t);
@@ -3865,9 +3874,9 @@ void Plot::extractDataValues(const std::vector<std::string>& vDataPlots)
                     for (size_t t = 0; t < _idx.row.size(); t++)
                     {
                         m_manager.assets[typeCounter].writeData(getDataFromObject(_accessParser.getDataObject(),
-                                                                _idx.row[t],
-                                                                _idx.col[q],
-                                                                _accessParser.isCluster()), q, t);
+                                                                                  _idx.row[t],
+                                                                                  _idx.col[q],
+                                                                                  _accessParser.isCluster()), q, t);
                     }
                 }
             }
@@ -4216,8 +4225,10 @@ void Plot::createDataLegends()
     {
         if (m_types[i] != PT_DATA)
             continue;
-        // Extraxt the current label
-        string sTemp = m_manager.assets[i].legend;
+
+        // Extraxt the current label and
+        // remove the surrounding quotation marks
+        std::string sTemp = removeQuotationMarks(m_manager.assets[i].legend);
 
         // Try to find a data object in the current label
         if (_data.containsTables(sTemp)
@@ -4231,10 +4242,6 @@ void Plot::createDataLegends()
             // Strip all spaces and extract the table name
             StripSpaces(sTemp);
             string sTableName = sTemp.substr(0, sTemp.find('('));
-
-            // Clear quotation marks and semicolons at the beginning of the table name
-            while (sTableName[0] == '"')
-                sTableName.erase(0, 1);
 
             // Ensure that the parentheses are matching each other
             if (getMatchingParenthesis(sTemp.substr(sTemp.find('('))) == string::npos)
@@ -5366,7 +5373,13 @@ void Plot::fitPlotRanges(size_t nPlotCompose, bool bNewSubPlot)
                     if (_pData.getGivenRanges() >= i + 1 && _pData.getRangeSetting(i))
                         continue;
 
-                    _pInfo.ranges[i] = _pInfo.ranges[i].combine(coordIntervals[0]);
+                    if (m_manager.hasDataPlots())
+                    {
+                        IntervalSet dataCoordIntervals = m_manager.getDataIntervals(i);
+                        _pInfo.ranges[i] = dataCoordIntervals[0].combine(coordIntervals[0]);
+                    }
+                    else
+                        _pInfo.ranges[i] = coordIntervals[0];
 
                     _pInfo.ranges[i].expand(1.1, (_pData.getSettings(PlotData::INT_COORDS) == SPHERICAL_PT
                                                   || (_pData.getSettings(PlotData::INT_COORDS) == POLAR_PZ && i < 2)

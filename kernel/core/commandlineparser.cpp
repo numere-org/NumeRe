@@ -371,7 +371,7 @@ std::string CommandLineParser::getExprAsMathExpression(bool parseDataObjects) co
     if (parseDataObjects && instance->getMemoryManager().containsTablesOrClusters(sExpr))
         getDataElements(sExpr, instance->getParser(), instance->getMemoryManager(), instance->getSettings());
 
-    if (sExpr.find('{') != std::string::npos)
+    if (!instance->getMemoryManager().containsTablesOrClusters(sExpr) && sExpr.find('{') != std::string::npos)
         convertVectorToExpression(sExpr, instance->getSettings());
 
     StripSpaces(sExpr);

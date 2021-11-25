@@ -1659,8 +1659,12 @@ void PlotData::setParams(const string& __sCmd, int nType)
                 }
             }
 
-            for (size_t i = 0; i < ranges.size(); i++)
+            // Do not perform this logic for CRANGE and TRANGE
+            for (size_t i = 0; i <= ZRANGE; i++)
             {
+                if (!bRanges[i])
+                    continue;
+
                 if (isinf(ranges[i].front()) || isnan(ranges[i].front()))
                     ranges[i].reset(-10.0, ranges[i].back());
 
@@ -1699,8 +1703,6 @@ void PlotData::reset()
 
     for (int i = 0; i < 3; i++)
     {
-        bRanges[i] = false;
-        bMirror[i] = false;
         dOrigin[i] = 0.0;
         sAxisLabels[i] = "";
         bDefaultAxisLabels[i] = true;
@@ -1711,6 +1713,8 @@ void PlotData::reset()
 
     for (int i = 0; i < 4; i++)
     {
+        bRanges[i] = false;
+        bMirror[i] = false;
         bLogscale[i] = false;
         sTickTemplate[i] = "";
         sCustomTicks[i] = "";
@@ -1796,17 +1800,13 @@ void PlotData::deleteData(bool bGraphFinished /* = false*/)
     _lHlines.clear();
     _lVLines.clear();
 
-    ranges.intervals.clear();
-    ranges.intervals.resize(3, Interval(-10.0, 10.0));
-    ranges.intervals.push_back(Interval(NAN, NAN));
-    ranges.intervals.push_back(Interval(0.0, 1.0));
+    for (int i = XRANGE; i <= ZRANGE; i++)
+        ranges[i].reset(-10.0, 10.0);
 
-    ranges.setNames({"x", "y", "z", "c", "t"});
+    ranges[CRANGE].reset(NAN, NAN);
 
     for (int i = 0; i < 3; i++)
     {
-        bRanges[i] = false;
-        bMirror[i] = false;
         sAxisLabels[i] = "";
         bDefaultAxisLabels[i] = true;
         _lHlines.push_back(Line());
@@ -1815,6 +1815,8 @@ void PlotData::deleteData(bool bGraphFinished /* = false*/)
 
     for (int i = 0; i < 4; i++)
     {
+        bRanges[i] = false;
+        bMirror[i] = false;
         sCustomTicks[i] = "";
         dAxisScale[i] = 1.0;
         _timeAxes[i].deactivate();

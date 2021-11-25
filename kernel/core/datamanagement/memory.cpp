@@ -549,11 +549,22 @@ Memory* Memory::extractRange(const VectorIndex& _vLine, const VectorIndex& _vCol
 
     _memCopy->Allocate(_vCol.size());
 
-    #pragma omp parallel for
-    for (size_t j = 0; j < _vCol.size(); j++)
+    if (_vCol.size() * _vLine.size() > 10000)
     {
-        if (_vCol[j] >= 0 && _vCol[j] < (int)memArray.size() && memArray[_vCol[j]])
-            _memCopy->memArray[j].reset(memArray[_vCol[j]]->copy(_vLine));
+        #pragma omp parallel for
+        for (size_t j = 0; j < _vCol.size(); j++)
+        {
+            if (_vCol[j] >= 0 && _vCol[j] < (int)memArray.size() && memArray[_vCol[j]])
+                _memCopy->memArray[j].reset(memArray[_vCol[j]]->copy(_vLine));
+        }
+    }
+    else
+    {
+        for (size_t j = 0; j < _vCol.size(); j++)
+        {
+            if (_vCol[j] >= 0 && _vCol[j] < (int)memArray.size() && memArray[_vCol[j]])
+                _memCopy->memArray[j].reset(memArray[_vCol[j]]->copy(_vLine));
+        }
     }
 
     return _memCopy;
@@ -3598,11 +3609,11 @@ bool Memory::resample(VectorIndex _vLine, VectorIndex _vCol, std::pair<size_t,si
 
     // Delete empty lines
     if (Direction != LINES && samples.first < _vLine.size())
-        deleteBulk(VectorIndex(_vLine.front() + samples.first+1, _vLine.last()), _vCol);
+        deleteBulk(VectorIndex(_vLine.front() + samples.first, _vLine.last()), _vCol);
 
     // Delete empty cols
     if (Direction != COLS && samples.second < _vCol.size())
-        deleteBulk(_vLine, VectorIndex(_vCol.front() + samples.second+1, _vCol.last()));
+        deleteBulk(_vLine, VectorIndex(_vCol.front() + samples.second, _vCol.last()));
 
     // Reset the calculated lines and columns
     nCalcLines = -1;

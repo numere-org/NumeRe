@@ -232,6 +232,7 @@ void NumeReKernel::StartUp(NumeReTerminal* _parent, const string& __sPath, const
     // Set the current line length
     nLINE_LENGTH = _option.getWindow();
     installing = false;
+    refreshTree = false;
 
     // Set the default paths for all objects
     _out.setPath(_option.getSavePath(), true, sPath);
@@ -627,6 +628,7 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
     nLastStatusVal = -1;
     nLastLineLength = 0;
     installing = false;
+    refreshTree = false;
 
     // Needed for some handler functions
     KernelStatus nReturnVal = NUMERE_ERROR;
@@ -816,12 +818,9 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
                                 print(LineBreak(_lang.get("PARSER_SCRIPT_FINISHED", _script.getScriptFileName()), _option, true, 4));
                                 _memoryManager.setPluginCommands(_procedure.getPluginNames());
 
-                                if (installing)
-                                {
-                                    installing = false;
-                                    installationDone();
-                                }
+                                checkInternalStates();
                             }
+
                             sCommandLine.clear();
                             bCancelSignal = false;
                             return NUMERE_DONE_KEYWORD;
@@ -1198,11 +1197,7 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
             print(LineBreak(_lang.get("PARSER_SCRIPT_FINISHED", _script.getScriptFileName()), _option, true, 4));
             _memoryManager.setPluginCommands(_procedure.getPluginNames());
 
-            if (installing)
-            {
-                installing = false;
-                installationDone();
-            }
+            checkInternalStates();
 
             if (!sCmdCache.length())
             {
@@ -1221,11 +1216,7 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
         print(LineBreak(_lang.get("PARSER_SCRIPT_FINISHED", _script.getScriptFileName()), _option, true, 4));
         _memoryManager.setPluginCommands(_procedure.getPluginNames());
 
-        if (installing)
-        {
-            installing = false;
-            installationDone();
-        }
+        checkInternalStates();
 
         return NUMERE_DONE_KEYWORD;
     }
@@ -1903,11 +1894,7 @@ bool NumeReKernel::handleFlowControls(string& sLine, const string& sCmdCache, co
                     print(LineBreak(_lang.get("PARSER_SCRIPT_FINISHED", _script.getScriptFileName()), _option, true, 4));
                     _memoryManager.setPluginCommands(_procedure.getPluginNames());
 
-                    if (installing)
-                    {
-                        installing = false;
-                        installationDone();
-                    }
+                    checkInternalStates();
                 }
 
                 bCancelSignal = false;
@@ -1928,11 +1915,7 @@ bool NumeReKernel::handleFlowControls(string& sLine, const string& sCmdCache, co
                 _script.returnCommand();
                 print(LineBreak(_lang.get("PARSER_SCRIPT_FINISHED", _script.getScriptFileName()), _option, true, 4));
 
-                if (installing)
-                {
-                    installing = false;
-                    installationDone();
-                }
+                checkInternalStates();
 
                 nReturnVal = NUMERE_DONE_KEYWORD;
             }
@@ -1954,12 +1937,7 @@ bool NumeReKernel::handleFlowControls(string& sLine, const string& sCmdCache, co
             if (!_script.isOpen())
             {
                 print(LineBreak(_lang.get("PARSER_SCRIPT_FINISHED", _script.getScriptFileName()), _option, true, 4));
-
-                if (installing)
-                {
-                    installing = false;
-                    installationDone();
-                }
+                checkInternalStates();
             }
             else
                 return true;
@@ -1999,12 +1977,7 @@ bool NumeReKernel::evaluateStrings(string& sLine, string& sCache, const string& 
                 {
                     print(LineBreak(_lang.get("PARSER_SCRIPT_FINISHED", _script.getScriptFileName()), _option, true, 4));
                     _memoryManager.setPluginCommands(_procedure.getPluginNames());
-
-                    if (installing)
-                    {
-                        installing = false;
-                        installationDone();
-                    }
+                    checkInternalStates();
                 }
 
                 sCommandLine.clear();
@@ -2098,6 +2071,45 @@ string NumeReKernel::getGreeting()
 
     // return a random greeting
     return "|-> \"" + greetingsDB.getElement(greetingsDB.randomRecord(), 0) + "\"\n";
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Evaluates the internal states,
+/// performs necessary actions and resets them.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
+void NumeReKernel::checkInternalStates()
+{
+    if (installing)
+    {
+        installing = false;
+        installationDone();
+    }
+
+    if (refreshTree)
+    {
+        refreshTree = false;
+
+        if (!m_parent)
+            return;
+        else
+        {
+            wxCriticalSectionLocker lock(m_parent->m_kernelCS);
+
+            // create the task
+            NumeReTask task;
+            task.taskType = NUMERE_REFRESH_FUNCTIONTREE;
+
+            taskQueue.push(task);
+
+            m_parent->m_KernelStatus = NUMERE_QUEUED_COMMAND;
+        }
+
+        wxQueueEvent(m_parent->GetEventHandler(), new wxThreadEvent());
+    }
 }
 
 
@@ -3590,23 +3602,7 @@ void NumeReKernel::clcTerminal()
 /////////////////////////////////////////////////
 void NumeReKernel::refreshFunctionTree()
 {
-    if (!m_parent)
-        return;
-    else
-    {
-        wxCriticalSectionLocker lock(m_parent->m_kernelCS);
-
-        // create the task
-        NumeReTask task;
-        task.taskType = NUMERE_REFRESH_FUNCTIONTREE;
-
-        taskQueue.push(task);
-
-        m_parent->m_KernelStatus = NUMERE_QUEUED_COMMAND;
-    }
-
-    wxQueueEvent(m_parent->GetEventHandler(), new wxThreadEvent());
-    Sleep(KERNEL_PRINT_SLEEP);
+    getInstance()->refreshTree = true;
 }
 
 

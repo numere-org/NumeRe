@@ -3335,7 +3335,7 @@ bool createDatagrid(CommandLineParser& cmdParser)
             _idx.col.setRange(0, _data.getCols(szDatatable)-1);
 
         if (_idx.row.isOpenEnd())
-            _idx.row.setRange(0, _data.getColElements(_idx.col.subidx(1), szDatatable)-1);
+            _idx.row.setRange(0, _data.getColElements(_idx.col.subidx(0), szDatatable)-1);
 
         // Get the data. Choose the order of reading depending on the "transpose" command line option
         if (!bTranspose)
@@ -3465,7 +3465,7 @@ static vector<size_t> getSamplesForDatagrid(CommandLineParser& cmdParser, size_t
             _idx.col.setRange(0, _data.getCols(sZDatatable)-1);
 
         if (_idx.row.isOpenEnd())
-            _idx.row.setRange(0, _data.getColElements(_idx.col.subidx(1), sZDatatable)-1);
+            _idx.row.setRange(0, _data.getColElements(_idx.col, sZDatatable)-1);
 
         vSamples.push_back(_idx.row.size());
         vSamples.push_back(_idx.col.size());

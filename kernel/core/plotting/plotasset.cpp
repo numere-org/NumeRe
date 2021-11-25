@@ -165,12 +165,14 @@ void PlotAsset::removeNegativeValues(PlotCoords c)
             axes[c].a[n] = axes[c].a[n] >= 0.0 ? axes[c].a[n] : NAN;
         }
     }
-    else if (c < data.size())
+    else if (c - axes.size() < data.size())
     {
-        for (int i = 0; i < data[c].first.GetNN(); i++)
+        for (int i = 0; i < data[c-axes.size()].first.GetNN(); i++)
         {
-            data[c].first.a[i] = data[c].first.a[i] >= 0.0 ? data[c].first.a[i] : NAN;
-            data[c].second.a[i] = data[c].second.a[i] >= 0.0 ? data[c].second.a[i] : NAN;
+            data[c-axes.size()].first.a[i] = data[c-axes.size()].first.a[i] >= 0.0
+                                             ? data[c-axes.size()].first.a[i] : NAN;
+            data[c-axes.size()].second.a[i] = data[c-axes.size()].second.a[i] >= 0.0
+                                              ? data[c-axes.size()].second.a[i] : NAN;
         }
     }
 }
