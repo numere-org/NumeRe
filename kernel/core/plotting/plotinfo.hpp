@@ -83,6 +83,23 @@ struct PlotInfo
         sPointStyles = nullptr;
         sConPointStyles = nullptr;
     }
+
+    /////////////////////////////////////////////////
+    /// \brief Returns the ID of the next style.
+    ///
+    /// \return int
+    ///
+    /////////////////////////////////////////////////
+    int nextStyle() const
+    {
+        if (!nStyle)
+            return 0;
+
+        if (*nStyle == nStyleMax - 1)
+            return 0;
+
+        return *nStyle+1;
+    }
 };
 
 

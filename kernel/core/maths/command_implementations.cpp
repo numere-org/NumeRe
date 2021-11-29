@@ -944,7 +944,7 @@ bool differentiate(CommandLineParser& cmdParser)
             // values, which is identical to the derivative in this case
             for (size_t i = nFILTERSIZE/2; i < _idx.row.size() - nFILTERSIZE/2; i++)
             {
-                for (int j = 0; j < nFILTERSIZE; j++)
+                for (int j = 0; j < (int)nFILTERSIZE; j++)
                 {
                     if (_data.isValidElement(_idx.row[i + j - nFILTERSIZE/2], _idx.col.front(), sTableName))
                         vResult[i] += diff.apply(j, 0, _data.getElement(_idx.row[i + j - nFILTERSIZE/2], _idx.col.front(), sTableName));
@@ -998,11 +998,11 @@ bool differentiate(CommandLineParser& cmdParser)
 
                 // We calculate the derivative of the data
                 // by approximating it linearily
-                for (int i = nFILTERSIZE/2; i < _cache.getLines("table", false) - nFILTERSIZE/2; i++)
+                for (int i = nFILTERSIZE/2; i < _cache.getLines("table", false) - (int)nFILTERSIZE/2; i++)
                 {
                     std::pair<mu::value_type, size_t> avgDiff(0.0, 0);
 
-                    for (int j = 0; j < nFILTERSIZE; j++)
+                    for (int j = 0; j < (int)nFILTERSIZE; j++)
                     {
                         if (_cache.isValidElement(i + j - nFILTERSIZE/2, 0, "table")
                             && _cache.isValidElement(i + j - nFILTERSIZE/2, 1, "table"))
@@ -2718,7 +2718,7 @@ static void calculate2dFFT(MemoryManager& _data, Indices& _idx, const std::strin
 
         for (int i = 0; i < nElemsLines; i++)
         {
-            if (i > _idx.row.size())
+            if ((size_t)i > _idx.row.size())
                 break;
 
             // Write x axis
@@ -2774,7 +2774,7 @@ static void calculate2dFFT(MemoryManager& _data, Indices& _idx, const std::strin
 
         for (int i = 0; i < nElemsLines; i++)
         {
-            if (i > _idx.row.size())
+            if ((size_t)i > _idx.row.size())
                 break;
 
             // Write x axis
@@ -2790,7 +2790,7 @@ static void calculate2dFFT(MemoryManager& _data, Indices& _idx, const std::strin
         // Write y axis
         for (int i = 0; i < nElemsCols; i++)
         {
-            if (i > _idx.row.size())
+            if ((size_t)i > _idx.row.size())
                 break;
 
             _data.writeToTable(_idx.row[i], _idx.col[1], sTargetTable, (double)(i)*_fft.dTimeInterval[1] / (double)(nElemsCols - 1));
@@ -2922,8 +2922,8 @@ bool fastFourierTransform(CommandLineParser& cmdParser)
             for (size_t j = 0; j < (size_t)(_fft.cols-2); j++)
             {
                 if (_fft.bShiftAxis && _fft.bInverseTrafo)
-                    _fftData.a[j+i*(_fft.cols-2)] = _mem->readMem(i + (i > _fft.lines/2 ? -1 : 1)*_fft.lines/2,
-                                                             j + 2 + (j > (_fft.cols-2)/2 ? -1 : 1)*(_fft.cols-2)/2);
+                    _fftData.a[j+i*(_fft.cols-2)] = _mem->readMem(i + (i > (size_t)_fft.lines/2 ? -1 : 1)*_fft.lines/2,
+                                                             j + 2 + (j > (size_t)(_fft.cols-2)/2 ? -1 : 1)*(_fft.cols-2)/2);
                 else
                     _fftData.a[j+i*(_fft.cols-2)] = _mem->readMem(i, j+2);
             }

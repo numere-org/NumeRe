@@ -28,6 +28,14 @@ enum PlotType
 };
 
 
+enum ComplexType
+{
+    CPLX_NONE,
+    CPLX_REIM,
+    CPLX_PLANE
+};
+
+
 enum PlotCoords
 {
     XCOORD = 0,

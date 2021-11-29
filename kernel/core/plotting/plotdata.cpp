@@ -17,6 +17,8 @@
 ******************************************************************************/
 
 #include <mgl2/mgl.h>
+#include <map>
+#include <utility>
 #include "plotdata.hpp"
 #include "../../kernel.hpp"
 #define STYLES_COUNT 20
@@ -104,6 +106,39 @@ PlotData::~PlotData()
 }
 
 
+
+static std::map<std::string,std::pair<PlotData::LogicalPlotSetting,PlotData::ParamType>> getGenericSwitches()
+{
+    std::map<std::string,std::pair<PlotData::LogicalPlotSetting,PlotData::ParamType>> mGenericSwitches;
+
+    mGenericSwitches.emplace("axis", std::make_pair(PlotData::LOG_AXIS, PlotData::GLOBAL));
+    mGenericSwitches.emplace("box", std::make_pair(PlotData::LOG_BOX, PlotData::GLOBAL));
+    mGenericSwitches.emplace("xerrorbars", std::make_pair(PlotData::LOG_XERROR, PlotData::LOCAL));
+    mGenericSwitches.emplace("yerrorbars", std::make_pair(PlotData::LOG_YERROR, PlotData::LOCAL));
+    mGenericSwitches.emplace("connect", std::make_pair(PlotData::LOG_CONNECTPOINTS, PlotData::LOCAL));
+    mGenericSwitches.emplace("points", std::make_pair(PlotData::LOG_DRAWPOINTS, PlotData::LOCAL));
+    mGenericSwitches.emplace("interpolate", std::make_pair(PlotData::LOG_INTERPOLATE, PlotData::LOCAL));
+    mGenericSwitches.emplace("open", std::make_pair(PlotData::LOG_OPENIMAGE, PlotData::SUPERGLOBAL));
+    mGenericSwitches.emplace("silent", std::make_pair(PlotData::LOG_SILENTMODE, PlotData::SUPERGLOBAL));
+    mGenericSwitches.emplace("cut", std::make_pair(PlotData::LOG_CUTBOX, PlotData::LOCAL));
+    mGenericSwitches.emplace("flength", std::make_pair(PlotData::LOG_FIXEDLENGTH, PlotData::LOCAL));
+    mGenericSwitches.emplace("colorbar", std::make_pair(PlotData::LOG_COLORBAR, PlotData::LOCAL));
+    mGenericSwitches.emplace("orthoproject", std::make_pair(PlotData::LOG_ORTHOPROJECT, PlotData::GLOBAL));
+    mGenericSwitches.emplace("area", std::make_pair(PlotData::LOG_AREA, PlotData::LOCAL));
+    mGenericSwitches.emplace("steps", std::make_pair(PlotData::LOG_STEPPLOT, PlotData::LOCAL));
+    mGenericSwitches.emplace("boxplot", std::make_pair(PlotData::LOG_BOXPLOT, PlotData::LOCAL));
+    mGenericSwitches.emplace("colormask", std::make_pair(PlotData::LOG_COLORMASK, PlotData::LOCAL));
+    mGenericSwitches.emplace("alphamask", std::make_pair(PlotData::LOG_ALPHAMASK, PlotData::LOCAL));
+    mGenericSwitches.emplace("schematic", std::make_pair(PlotData::LOG_SCHEMATIC, PlotData::GLOBAL));
+    mGenericSwitches.emplace("cloudplot", std::make_pair(PlotData::LOG_CLOUDPLOT, PlotData::LOCAL));
+    mGenericSwitches.emplace("region", std::make_pair(PlotData::LOG_REGION, PlotData::LOCAL));
+    mGenericSwitches.emplace("crust", std::make_pair(PlotData::LOG_CRUST, PlotData::LOCAL));
+    mGenericSwitches.emplace("reconstruct", std::make_pair(PlotData::LOG_CRUST, PlotData::LOCAL));
+    mGenericSwitches.emplace("valtab", std::make_pair(PlotData::LOG_TABLE, PlotData::GLOBAL));
+
+    return mGenericSwitches;
+}
+
 /* --> Parameter setzen: Verwendet die bool matchParams(const string&, const string&, char)-Funktion,
  *     um die einzelnen Befehle zu identifizieren. Unbekannte Befehle werden automatisch ignoriert. 7
  *     Dies ist dann automatisch Fehlertoleranter <--
@@ -111,15 +146,29 @@ PlotData::~PlotData()
 void PlotData::setParams(const string& __sCmd, int nType)
 {
     mu::Parser& _parser = NumeReKernel::getInstance()->getParser();
+    static std::map<std::string,std::pair<PlotData::LogicalPlotSetting,PlotData::ParamType>> mGenericSwitches = getGenericSwitches();
 
     string sCmd = toLowerCase(__sCmd);
+
     if (findParameter(sCmd, "reset") && (nType == ALL || nType & SUPERGLOBAL))
         reset();
+
+    // Handle generic switches first
+    for (const auto& iter : mGenericSwitches)
+    {
+        if (findParameter(sCmd, iter.first) && (nType == ALL || nType & iter.second.second))
+            logicalSettings[iter.second.first] = true;
+        else if (findParameter(sCmd, "no" + iter.first) && (nType == ALL || nType & iter.second.second))
+            logicalSettings[iter.second.first] = false;
+    }
+
     if (findParameter(sCmd, "grid") && (nType == ALL || nType & GLOBAL))
         intSettings[INT_GRID] = 1;
+
     if (findParameter(sCmd, "grid", '=') && (nType == ALL || nType & GLOBAL))
     {
         unsigned int nPos = findParameter(sCmd, "grid", '=')+4;
+
         if (getArgAtPos(sCmd, nPos) == "fine")
             intSettings[INT_GRID] = 2;
         else if (getArgAtPos(sCmd, nPos) == "coarse")
@@ -127,8 +176,10 @@ void PlotData::setParams(const string& __sCmd, int nType)
         else
             intSettings[INT_GRID] = 1;
     }
+
     if (findParameter(sCmd, "nogrid") && (nType == ALL || nType & GLOBAL))
         intSettings[INT_GRID] = 0;
+
     if ((findParameter(sCmd, "alpha") || findParameter(sCmd, "transparency")) && (nType == ALL || nType & LOCAL))
     {
         logicalSettings[LOG_ALPHA] = true;
@@ -151,10 +202,13 @@ void PlotData::setParams(const string& __sCmd, int nType)
                 floatSettings[FLOAT_ALPHAVAL] = 0.5;
         }
     }
+
     if ((findParameter(sCmd, "noalpha") || findParameter(sCmd, "notransparency")) && (nType == ALL || nType & LOCAL))
         logicalSettings[LOG_ALPHA] = false;
+
     if (findParameter(sCmd, "light") && (nType == ALL || nType & LOCAL))
         intSettings[INT_LIGHTING] = 1;
+
     if (findParameter(sCmd, "light", '=') && (nType == ALL || nType & LOCAL))
     {
         if (getArgAtPos(sCmd, findParameter(sCmd, "light", '=')+5) == "smooth")
@@ -164,16 +218,10 @@ void PlotData::setParams(const string& __sCmd, int nType)
         else
             intSettings[INT_LIGHTING] = 0;
     }
+
     if (findParameter(sCmd, "nolight") && (nType == ALL || nType & LOCAL))
         intSettings[INT_LIGHTING] = 0;
-    if (findParameter(sCmd, "axis") && (nType == ALL || nType & GLOBAL))
-        logicalSettings[LOG_AXIS] = true;
-    if (findParameter(sCmd, "noaxis") && (nType == ALL || nType & GLOBAL))
-        logicalSettings[LOG_AXIS] = false;
-    if (findParameter(sCmd, "box") && (nType == ALL || nType & GLOBAL))
-        logicalSettings[LOG_BOX] = true;
-    if (findParameter(sCmd, "nobox") && (nType == ALL || nType & GLOBAL))
-        logicalSettings[LOG_BOX] = false;
+
     if (findParameter(sCmd, "lcont") && (nType == ALL || nType & LOCAL))
     {
         logicalSettings[LOG_CONTLABELS] = true;
@@ -184,8 +232,10 @@ void PlotData::setParams(const string& __sCmd, int nType)
             intSettings[INT_CONTLINES] = intCast(_parser.Eval());
         }
     }
+
     if (findParameter(sCmd, "nolcont") && (nType == ALL || nType & LOCAL))
         logicalSettings[LOG_CONTLABELS] = false;
+
     if (findParameter(sCmd, "pcont") && (nType == ALL || nType & LOCAL))
     {
         logicalSettings[LOG_CONTPROJ] = true;
@@ -196,8 +246,10 @@ void PlotData::setParams(const string& __sCmd, int nType)
             intSettings[INT_CONTLINES] = intCast(_parser.Eval());
         }
     }
+
     if (findParameter(sCmd, "nopcont") && (nType == ALL || nType & LOCAL))
         logicalSettings[LOG_CONTPROJ] = false;
+
     if (findParameter(sCmd, "fcont") && (nType == ALL || nType & LOCAL))
     {
         logicalSettings[LOG_CONTFILLED] = true;
@@ -208,56 +260,62 @@ void PlotData::setParams(const string& __sCmd, int nType)
             intSettings[INT_CONTLINES] = intCast(_parser.Eval());
         }
     }
+
     if (findParameter(sCmd, "nofcont") && (nType == ALL || nType & LOCAL))
         logicalSettings[LOG_CONTFILLED] = false;
-    if (findParameter(sCmd, "xerrorbars") && (nType == ALL || nType & LOCAL))
-        logicalSettings[LOG_XERROR] = true;
-    if (findParameter(sCmd, "noxerrorbars") && (nType == ALL || nType & LOCAL))
-        logicalSettings[LOG_XERROR] = false;
-    if (findParameter(sCmd, "yerrorbars") && (nType == ALL || nType & LOCAL))
-        logicalSettings[LOG_YERROR] = true;
-    if (findParameter(sCmd, "noyerrorbars") && (nType == ALL || nType & LOCAL))
-        logicalSettings[LOG_YERROR] = false;
+
     if (findParameter(sCmd, "errorbars") && (nType == ALL || nType & LOCAL))
     {
         logicalSettings[LOG_XERROR] = true;
         logicalSettings[LOG_YERROR] = true;
     }
+
     if (findParameter(sCmd, "noerrorbars") && (nType == ALL || nType & LOCAL))
     {
         logicalSettings[LOG_XERROR] = false;
         logicalSettings[LOG_YERROR] = false;
     }
+
     if (findParameter(sCmd, "logscale") && (nType == ALL || nType & GLOBAL))
     {
-        for (int i = 0; i < 4; i++)
+        for (int i = XRANGE; i <= CRANGE; i++)
         {
             bLogscale[i] = true;
         }
     }
+
     if (findParameter(sCmd, "nologscale") && (nType == ALL || nType & GLOBAL))
     {
-        for (int i = 0; i < 4; i++)
+        for (int i = XRANGE; i <= CRANGE; i++)
         {
             bLogscale[i] = false;
         }
     }
+
     if (findParameter(sCmd, "xlog") && (nType == ALL || nType & GLOBAL))
-        bLogscale[0] = true;
+        bLogscale[XRANGE] = true;
+
     if (findParameter(sCmd, "ylog") && (nType == ALL || nType & GLOBAL))
-        bLogscale[1] = true;
+        bLogscale[YRANGE] = true;
+
     if (findParameter(sCmd, "zlog") && (nType == ALL || nType & GLOBAL))
-        bLogscale[2] = true;
+        bLogscale[ZRANGE] = true;
+
     if (findParameter(sCmd, "clog") && (nType == ALL || nType & GLOBAL))
-        bLogscale[3] = true;
+        bLogscale[CRANGE] = true;
+
     if (findParameter(sCmd, "noxlog") && (nType == ALL || nType & GLOBAL))
-        bLogscale[0] = false;
+        bLogscale[XRANGE] = false;
+
     if (findParameter(sCmd, "noylog") && (nType == ALL || nType & GLOBAL))
-        bLogscale[1] = false;
+        bLogscale[YRANGE] = false;
+
     if (findParameter(sCmd, "nozlog") && (nType == ALL || nType & GLOBAL))
-        bLogscale[2] = false;
+        bLogscale[ZRANGE] = false;
+
     if (findParameter(sCmd, "noclog") && (nType == ALL || nType & GLOBAL))
-        bLogscale[3] = false;
+        bLogscale[CRANGE] = false;
+
     if (findParameter(sCmd, "samples", '=') && (nType == ALL || nType & LOCAL))
     {
         int nPos = findParameter(sCmd, "samples", '=') + 7;
@@ -267,12 +325,14 @@ void PlotData::setParams(const string& __sCmd, int nType)
         if (isnan(_parser.Eval().real()) || isinf(_parser.Eval().real()))
             intSettings[INT_SAMPLES] = 100;
     }
+
     if (findParameter(sCmd, "t", '=') && (nType == ALL || nType & LOCAL))
     {
         int nPos = findParameter(sCmd, "t", '=')+1;
         string sTemp_1 = getArgAtPos(__sCmd, nPos);
-        ranges[4].reset(sTemp_1);
+        ranges[TRANGE].reset(sTemp_1);
     }
+
     if (findParameter(sCmd, "colorrange", '=') && (nType == ALL || nType & GLOBAL))
     {
         unsigned int nPos = findParameter(sCmd, "colorrange", '=') + 10;
@@ -285,6 +345,7 @@ void PlotData::setParams(const string& __sCmd, int nType)
             ranges[CRANGE].reset(ranges[CRANGE].back(), ranges[CRANGE].front());
         }
     }
+
     if (findParameter(sCmd, "rotate", '=') && (nType == ALL || nType & GLOBAL))
     {
         int nPos = findParameter(sCmd, "rotate", '=')+6;
@@ -336,6 +397,7 @@ void PlotData::setParams(const string& __sCmd, int nType)
 
         }
     }
+
     if (findParameter(sCmd, "origin", '=') && (nType == ALL || nType & GLOBAL))
     {
         int nPos = findParameter(sCmd, "origin", '=')+6;
@@ -367,6 +429,7 @@ void PlotData::setParams(const string& __sCmd, int nType)
                 dOrigin[i] = 0.0;
         }
     }
+
     if (findParameter(sCmd, "slices", '=') && (nType == ALL || nType & LOCAL))
     {
         int nPos = findParameter(sCmd, "slices", '=')+6;
@@ -393,6 +456,7 @@ void PlotData::setParams(const string& __sCmd, int nType)
                 nSlices[i] = 1;
         }
     }
+
     if (findParameter(sCmd, "streamto", '=') && (nType == ALL || nType & SUPERGLOBAL))
     {
         int nPos = findParameter(sCmd, "streamto", '=')+8;
@@ -410,27 +474,14 @@ void PlotData::setParams(const string& __sCmd, int nType)
             }
         }
     }
-    if (findParameter(sCmd, "connect") && (nType == ALL || nType & LOCAL))
-        logicalSettings[LOG_CONNECTPOINTS] = true;
-    if (findParameter(sCmd, "noconnect") && (nType == ALL || nType & LOCAL))
-        logicalSettings[LOG_CONNECTPOINTS] = false;
-    if (findParameter(sCmd, "points") && (nType == ALL || nType & LOCAL))
-        logicalSettings[LOG_DRAWPOINTS] = true;
-    if (findParameter(sCmd, "nopoints") && (nType == ALL || nType & LOCAL))
-        logicalSettings[LOG_DRAWPOINTS] = false;
-    if (findParameter(sCmd, "open") && (nType == ALL || nType & SUPERGLOBAL))
-        logicalSettings[LOG_OPENIMAGE] = true;
-    if (findParameter(sCmd, "noopen") && (nType == ALL || nType & SUPERGLOBAL))
-        logicalSettings[LOG_OPENIMAGE] = false;
-    if (findParameter(sCmd, "interpolate") && (nType == ALL || nType & LOCAL))
-        logicalSettings[LOG_INTERPOLATE] = true;
-    if (findParameter(sCmd, "nointerpolate") && (nType == ALL || nType & LOCAL))
-        logicalSettings[LOG_INTERPOLATE] = false;
+
     if (findParameter(sCmd, "hires") && (nType == ALL || nType & SUPERGLOBAL))
         intSettings[INT_HIGHRESLEVEL] = 2;
+
     if (findParameter(sCmd, "hires", '=') && (nType == ALL || nType & SUPERGLOBAL))
     {
         int nPos = findParameter(sCmd, "hires", '=')+5;
+
         if (getArgAtPos(sCmd, nPos) == "all")
         {
             logicalSettings[LOG_ALLHIGHRES] = true;
@@ -446,6 +497,19 @@ void PlotData::setParams(const string& __sCmd, int nType)
             intSettings[INT_HIGHRESLEVEL] = 1;
         }
     }
+
+    if (findParameter(sCmd, "complexmode", '=') && (nType == ALL || nType & SUPERGLOBAL))
+    {
+        int nPos = findParameter(sCmd, "complexmode", '=')+11;
+
+        if (getArgAtPos(sCmd, nPos) == "reim")
+            intSettings[INT_COMPLEXMODE] = CPLX_REIM;
+        else if (getArgAtPos(sCmd, nPos) == "plane")
+            intSettings[INT_COMPLEXMODE] = CPLX_PLANE;
+        else
+            intSettings[INT_COMPLEXMODE] = CPLX_NONE;
+    }
+
     if (findParameter(sCmd, "legend", '=') && (nType == ALL || nType & GLOBAL))
     {
         int nPos = findParameter(sCmd, "legend", '=')+6;
@@ -458,13 +522,16 @@ void PlotData::setParams(const string& __sCmd, int nType)
         else
             intSettings[INT_LEGENDPOSITION] = 3;
     }
+
     if (findParameter(sCmd, "nohires") && (nType == ALL || nType & SUPERGLOBAL))
     {
         intSettings[INT_HIGHRESLEVEL] = 0;
         logicalSettings[LOG_ALLHIGHRES] = false;
     }
+
     if (findParameter(sCmd, "animate") && (nType == ALL || nType & SUPERGLOBAL))
         logicalSettings[LOG_ANIMATE] = true;
+
     if (findParameter(sCmd, "animate", '=') && (nType == ALL || nType & SUPERGLOBAL))
     {
         unsigned int nPos = findParameter(sCmd, "animate", '=')+7;
@@ -482,6 +549,7 @@ void PlotData::setParams(const string& __sCmd, int nType)
         if (intSettings[INT_ANIMATESAMPLES] < 1)
             intSettings[INT_ANIMATESAMPLES] = 50;
     }
+
     if (findParameter(sCmd, "marks", '=') && (nType == ALL || nType & LOCAL))
     {
         unsigned int nPos = findParameter(sCmd, "marks", '=')+5;
@@ -494,8 +562,10 @@ void PlotData::setParams(const string& __sCmd, int nType)
         if (intSettings[INT_MARKS] < 0)
             intSettings[INT_MARKS] = 0;
     }
+
     if (findParameter(sCmd, "nomarks") && (nType == ALL || nType & LOCAL))
         intSettings[INT_MARKS] = 0;
+
     if (findParameter(sCmd, "textsize", '=') && (nType == ALL || nType & SUPERGLOBAL))
     {
         unsigned int nPos = findParameter(sCmd, "textsize", '=')+8;
@@ -508,6 +578,7 @@ void PlotData::setParams(const string& __sCmd, int nType)
         if (floatSettings[FLOAT_TEXTSIZE] <= -1)
             floatSettings[FLOAT_TEXTSIZE] = 5;
     }
+
     if (findParameter(sCmd, "aspect", '=') && (nType == ALL || nType & SUPERGLOBAL))
     {
         unsigned int nPos = findParameter(sCmd, "aspect", '=') + 6;
@@ -516,51 +587,34 @@ void PlotData::setParams(const string& __sCmd, int nType)
         if (floatSettings[FLOAT_ASPECT] <= 0 || isnan(floatSettings[FLOAT_ASPECT]) || isinf(floatSettings[FLOAT_ASPECT]))
             floatSettings[FLOAT_ASPECT] = 4/3;
     }
+
     if (findParameter(sCmd, "noanimate") && (nType == ALL || nType & SUPERGLOBAL))
         logicalSettings[LOG_ANIMATE] = false;
-    if (findParameter(sCmd, "silent") && (nType == ALL || nType & SUPERGLOBAL))
-        logicalSettings[LOG_SILENTMODE] = true;
-    if (findParameter(sCmd, "nosilent") && (nType == ALL || nType & SUPERGLOBAL))
-        logicalSettings[LOG_SILENTMODE] = false;
-    if (findParameter(sCmd, "cut") && (nType == ALL || nType & LOCAL))
-        logicalSettings[LOG_CUTBOX] = true;
-    if (findParameter(sCmd, "nocut") && (nType == ALL || nType & LOCAL))
-        logicalSettings[LOG_CUTBOX] = false;
+
     if (findParameter(sCmd, "flow") && (nType == ALL || nType & LOCAL))
     {
         logicalSettings[LOG_FLOW] = true;
         logicalSettings[LOG_PIPE] = false;
     }
+
     if (findParameter(sCmd, "noflow") && (nType == ALL || nType & LOCAL))
         logicalSettings[LOG_FLOW] = false;
+
     if (findParameter(sCmd, "pipe") && (nType == ALL || nType & LOCAL))
     {
         logicalSettings[LOG_PIPE] = true;
         logicalSettings[LOG_FLOW] = false;
     }
+
     if (findParameter(sCmd, "nopipe") && (nType == ALL || nType & LOCAL))
         logicalSettings[LOG_PIPE] = false;
-    if (findParameter(sCmd, "flength") && (nType == ALL || nType & LOCAL))
-        logicalSettings[LOG_FIXEDLENGTH] = true;
-    if (findParameter(sCmd, "noflength") && (nType == ALL || nType & LOCAL))
-        logicalSettings[LOG_FIXEDLENGTH] = false;
-    if (findParameter(sCmd, "colorbar") && (nType == ALL || nType & LOCAL))
-        logicalSettings[LOG_COLORBAR] = true;
-    if (findParameter(sCmd, "nocolorbar") && (nType == ALL || nType & LOCAL))
-        logicalSettings[LOG_COLORBAR] = false;
-    if (findParameter(sCmd, "orthoproject") && (nType == ALL || nType & GLOBAL))
-        logicalSettings[LOG_ORTHOPROJECT] = true;
-    if (findParameter(sCmd, "noorthoproject") && (nType == ALL || nType & GLOBAL))
-        logicalSettings[LOG_ORTHOPROJECT] = false;
-    if (findParameter(sCmd, "area") && (nType == ALL || nType & LOCAL))
-        logicalSettings[LOG_AREA] = true;
-    if (findParameter(sCmd, "noarea") && (nType == ALL || nType & LOCAL))
-        logicalSettings[LOG_AREA] = false;
+
     if (findParameter(sCmd, "bars") && (nType == ALL || nType & LOCAL))
     {
         floatSettings[FLOAT_BARS] = 0.9;
         floatSettings[FLOAT_HBARS] = 0.0;
     }
+
     if (findParameter(sCmd, "bars", '=') && (nType == ALL || nType & LOCAL))
     {
         _parser.SetExpr(getArgAtPos(__sCmd, findParameter(sCmd, "bars", '=')+4));
@@ -572,11 +626,13 @@ void PlotData::setParams(const string& __sCmd, int nType)
             floatSettings[FLOAT_BARS] = 0.9;
         floatSettings[FLOAT_HBARS] = 0.0;
     }
+
     if (findParameter(sCmd, "hbars") && (nType == ALL || nType & LOCAL))
     {
         floatSettings[FLOAT_BARS] = 0.0;
         floatSettings[FLOAT_HBARS] = 0.9;
     }
+
     if (findParameter(sCmd, "hbars", '=') && (nType == ALL || nType & LOCAL))
     {
         _parser.SetExpr(getArgAtPos(__sCmd, findParameter(sCmd, "hbars", '=')+5));
@@ -588,31 +644,13 @@ void PlotData::setParams(const string& __sCmd, int nType)
             floatSettings[FLOAT_HBARS] = 0.9;
         floatSettings[FLOAT_BARS] = 0.0;
     }
+
     if ((findParameter(sCmd, "nobars") || findParameter(sCmd, "nohbars")) && (nType == ALL || nType & LOCAL))
     {
         floatSettings[FLOAT_BARS] = 0.0;
         floatSettings[FLOAT_HBARS] = 0.0;
     }
-    if (findParameter(sCmd, "steps") && (nType == ALL || nType & LOCAL))
-        logicalSettings[LOG_STEPPLOT] = true;
-    if (findParameter(sCmd, "nosteps") && (nType == ALL || nType & LOCAL))
-        logicalSettings[LOG_STEPPLOT] = false;
-    if (findParameter(sCmd, "boxplot") && (nType == ALL || nType & LOCAL))
-        logicalSettings[LOG_BOXPLOT] = true;
-    if (findParameter(sCmd, "noboxplot") && (nType == ALL || nType & LOCAL))
-        logicalSettings[LOG_BOXPLOT] = false;
-    if (findParameter(sCmd, "colormask") && (nType == ALL || nType & LOCAL))
-        logicalSettings[LOG_COLORMASK] = true;
-    if (findParameter(sCmd, "nocolormask") && (nType == ALL || nType & LOCAL))
-        logicalSettings[LOG_COLORMASK] = false;
-    if (findParameter(sCmd, "alphamask") && (nType == ALL || nType & LOCAL))
-        logicalSettings[LOG_ALPHAMASK] = true;
-    if (findParameter(sCmd, "noalphamask") && (nType == ALL || nType & LOCAL))
-        logicalSettings[LOG_ALPHAMASK] = false;
-    if (findParameter(sCmd, "schematic") && (nType == ALL || nType & GLOBAL))
-        logicalSettings[LOG_SCHEMATIC] = true;
-    if (findParameter(sCmd, "noschematic") && (nType == ALL || nType & GLOBAL))
-        logicalSettings[LOG_SCHEMATIC] = false;
+
     if (findParameter(sCmd, "perspective", '=') && (nType == ALL || nType & GLOBAL))
     {
         _parser.SetExpr(getArgAtPos(__sCmd, findParameter(sCmd, "perspective", '=')+11));
@@ -620,20 +658,10 @@ void PlotData::setParams(const string& __sCmd, int nType)
         if (floatSettings[FLOAT_PERSPECTIVE] >= 1.0)
             floatSettings[FLOAT_PERSPECTIVE] = 0.0;
     }
+
     if (findParameter(sCmd, "noperspective") && (nType == ALL || nType & GLOBAL))
         floatSettings[FLOAT_PERSPECTIVE] = 0.0;
-    if (findParameter(sCmd, "cloudplot") && (nType == ALL || nType & LOCAL))
-        logicalSettings[LOG_CLOUDPLOT] = true;
-    if (findParameter(sCmd, "nocloudplot") && (nType == ALL || nType & LOCAL))
-        logicalSettings[LOG_CLOUDPLOT] = false;
-    if (findParameter(sCmd, "region") && (nType == ALL || nType & LOCAL))
-        logicalSettings[LOG_REGION] = true;
-    if (findParameter(sCmd, "noregion") && (nType == ALL || nType & LOCAL))
-        logicalSettings[LOG_REGION] = false;
-    if ((findParameter(sCmd, "crust") || findParameter(sCmd, "reconstruct")) && (nType == ALL || nType & LOCAL))
-        logicalSettings[LOG_CRUST] = true;
-    if ((findParameter(sCmd, "nocrust") || findParameter(sCmd, "noreconstruct")) && (nType == ALL || nType & LOCAL))
-        logicalSettings[LOG_CRUST] = false;
+
     if (findParameter(sCmd, "maxline", '=') && (nType == ALL || nType & LOCAL))
     {
         string sTemp = getArgAtPos(__sCmd, findParameter(sCmd, "maxline", '=')+7);
@@ -644,6 +672,7 @@ void PlotData::setParams(const string& __sCmd, int nType)
             _lHlines[0].sStyle = evaluateString(getArgAtPos(getNextArgument(sTemp, true),0));
         replaceControlChars(_lHlines[0].sDesc);
     }
+
     if (findParameter(sCmd, "minline", '=') && (nType == ALL || nType & LOCAL))
     {
         string sTemp = getArgAtPos(__sCmd, findParameter(sCmd, "minline", '=')+7);
@@ -654,6 +683,7 @@ void PlotData::setParams(const string& __sCmd, int nType)
             _lHlines[1].sStyle = evaluateString(getArgAtPos(getNextArgument(sTemp, true),0));
         replaceControlChars(_lHlines[1].sDesc);
     }
+
     if ((findParameter(sCmd, "hline", '=') || findParameter(sCmd, "hlines", '=')) && (nType == ALL || nType & LOCAL))
     {
         string sTemp;
@@ -708,6 +738,7 @@ void PlotData::setParams(const string& __sCmd, int nType)
             }
         }
     }
+
     if ((findParameter(sCmd, "vline", '=') || findParameter(sCmd, "vlines", '=')) && (nType == ALL || nType & LOCAL))
     {
         string sTemp;
@@ -762,6 +793,7 @@ void PlotData::setParams(const string& __sCmd, int nType)
             }
         }
     }
+
     if (findParameter(sCmd, "timeaxes", '=') && (nType == ALL || nType & GLOBAL))
     {
         string sTemp;
@@ -801,6 +833,7 @@ void PlotData::setParams(const string& __sCmd, int nType)
                 _timeAxes[sAxis[0]-'x'].activate(removeSurroundingQuotationMarks(getNextArgument(sFormat, true)));
         }
     }
+
     if (findParameter(sCmd, "lborder", '=') && (nType == ALL || nType & LOCAL))
     {
         string sTemp = getArgAtPos(__sCmd, findParameter(sCmd, "lborder", '=')+7);
@@ -816,6 +849,7 @@ void PlotData::setParams(const string& __sCmd, int nType)
         }
         replaceControlChars(_lVLines[0].sDesc);
     }
+
     if (findParameter(sCmd, "rborder", '=') && (nType == ALL || nType & LOCAL))
     {
         string sTemp = getArgAtPos(__sCmd, findParameter(sCmd, "rborder", '=')+7);
@@ -831,6 +865,7 @@ void PlotData::setParams(const string& __sCmd, int nType)
         }
         replaceControlChars(_lVLines[1].sDesc);
     }
+
     if (findParameter(sCmd, "addxaxis", '=') && (nType == ALL || nType & GLOBAL))
     {
         string sTemp = getArgAtPos(__sCmd, findParameter(sCmd, "addxaxis", '=')+8);
@@ -876,6 +911,7 @@ void PlotData::setParams(const string& __sCmd, int nType)
             }
         }
     }
+
     if (findParameter(sCmd, "addyaxis", '=') && (nType == ALL || nType & GLOBAL))
     {
         string sTemp = getArgAtPos(__sCmd, findParameter(sCmd, "addyaxis", '=')+8);
@@ -922,6 +958,7 @@ void PlotData::setParams(const string& __sCmd, int nType)
         }
         //replaceControlChars(_[1].sDesc);
     }
+
     if (findParameter(sCmd, "colorscheme", '=') && (nType == ALL || nType & LOCAL))
     {
         unsigned int nPos = findParameter(sCmd, "colorscheme", '=') + 11;
@@ -976,6 +1013,8 @@ void PlotData::setParams(const string& __sCmd, int nType)
                 stringSettings[STR_COLORSCHEME] = "UNC{e4}y";
             else if (sTemp == "plasma")
                 stringSettings[STR_COLORSCHEME] = "B{u4}p{q6}{y7}";
+            else if (sTemp == "hue" || sTemp == "complex")
+                stringSettings[STR_COLORSCHEME] = "rygcbmr";
             else
                 stringSettings[STR_COLORSCHEME] = "kRryw";
         }
@@ -1036,6 +1075,7 @@ void PlotData::setParams(const string& __sCmd, int nType)
             }
         }
     }
+
     if (findParameter(sCmd, "bgcolorscheme", '=') && (nType == ALL || nType & LOCAL))
     {
         unsigned int nPos = findParameter(sCmd, "bgcolorscheme", '=') + 13;
@@ -1096,6 +1136,8 @@ void PlotData::setParams(const string& __sCmd, int nType)
                 stringSettings[STR_BACKGROUNDCOLORSCHEME] = "UNC{e4}y";
             else if (sTemp == "plasma")
                 stringSettings[STR_BACKGROUNDCOLORSCHEME] = "B{u4}p{q6}{y7}";
+            else if (sTemp == "hue" || sTemp == "complex")
+                stringSettings[STR_BACKGROUNDCOLORSCHEME] = "rygcbmr";
             else if (sTemp == "real")
                 stringSettings[STR_BACKGROUNDCOLORSCHEME] = "<<REALISTIC>>";
             else
@@ -1110,6 +1152,7 @@ void PlotData::setParams(const string& __sCmd, int nType)
             stringSettings[STR_BACKGROUNDCOLORSCHEME] = stringSettings[STR_BACKGROUNDCOLORSCHEME].substr(0, stringSettings[STR_BACKGROUNDCOLORSCHEME].find(' ')) + stringSettings[STR_BACKGROUNDCOLORSCHEME].substr(stringSettings[STR_BACKGROUNDCOLORSCHEME].find(' ')+1);
         }
     }
+
     if (findParameter(sCmd, "plotcolors", '=') && (nType == ALL || nType & LOCAL))
     {
         unsigned int nPos = findParameter(sCmd, "plotcolors", '=')+10;
@@ -1126,6 +1169,7 @@ void PlotData::setParams(const string& __sCmd, int nType)
             }
         }
     }
+
     if (findParameter(sCmd, "axisbind", '=') && (nType == ALL || nType & LOCAL))
     {
         unsigned int nPos = findParameter(sCmd, "axisbind", '=')+8;
@@ -1191,6 +1235,7 @@ void PlotData::setParams(const string& __sCmd, int nType)
             }
         }
     }
+
     if (findParameter(sCmd, "linestyles", '=') && (nType == ALL || nType & LOCAL))
     {
         unsigned int nPos = findParameter(sCmd, "linestyles", '=')+10;
@@ -1208,6 +1253,7 @@ void PlotData::setParams(const string& __sCmd, int nType)
             }
         }
     }
+
     if (findParameter(sCmd, "linesizes", '=') && (nType == ALL || nType & LOCAL))
     {
         unsigned int nPos = findParameter(sCmd, "linesizes", '=')+9;
@@ -1225,6 +1271,7 @@ void PlotData::setParams(const string& __sCmd, int nType)
         }
 
     }
+
     if (findParameter(sCmd, "pointstyles", '=') && (nType == ALL || nType & LOCAL))
     {
         unsigned int nPos = findParameter(sCmd, "pointstyles", '=')+11;
@@ -1262,6 +1309,7 @@ void PlotData::setParams(const string& __sCmd, int nType)
             }
         }
     }
+
     if (findParameter(sCmd, "styles", '=') && (nType == ALL || nType & LOCAL))
     {
         unsigned int nPos = findParameter(sCmd, "styles", '=')+6;
@@ -1318,6 +1366,7 @@ void PlotData::setParams(const string& __sCmd, int nType)
             i += nJump;
         }
     }
+
     if (findParameter(sCmd, "gridstyle", '=') && (nType == ALL || nType & GLOBAL))
     {
         unsigned int nPos = findParameter(sCmd, "gridstyle", '=')+9;
@@ -1354,6 +1403,7 @@ void PlotData::setParams(const string& __sCmd, int nType)
             }
         }
     }
+
     if (findParameter(sCmd, "legendstyle", '=') && (nType == ALL || nType & LOCAL))
     {
         if (getArgAtPos(sCmd, findParameter(sCmd, "legendstyle", '=')+11) == "onlycolors")
@@ -1363,6 +1413,7 @@ void PlotData::setParams(const string& __sCmd, int nType)
         else
             intSettings[INT_LEGENDSTYLE] = 0;
     }
+
     if (findParameter(sCmd, "coords", '=') && (nType == ALL || nType & GLOBAL))
     {
         int nPos = findParameter(sCmd, "coords", '=')+6;
@@ -1382,6 +1433,7 @@ void PlotData::setParams(const string& __sCmd, int nType)
         else if (getArgAtPos(sCmd, nPos) == "spherical_rt")
             intSettings[INT_COORDS] = SPHERICAL_RT;
     }
+
     if (findParameter(sCmd, "font", '=') && (nType == ALL || nType & SUPERGLOBAL))
     {
         string sTemp = getArgAtPos(sCmd, findParameter(sCmd, "font", '=')+4);
@@ -1416,6 +1468,7 @@ void PlotData::setParams(const string& __sCmd, int nType)
             _fontData.LoadFont(stringSettings[STR_FONTSTYLE].c_str(), (sTokens[0][1]+ "\\fonts").c_str());
         }
     }
+
     if ((findParameter(sCmd, "opng", '=')
         || findParameter(sCmd, "save", '=')
         || findParameter(sCmd, "export", '=')
@@ -1478,6 +1531,7 @@ void PlotData::setParams(const string& __sCmd, int nType)
             stringSettings[STR_FILENAME] = FileSystem::ValidizeAndPrepareName(stringSettings[STR_FILENAME], stringSettings[STR_FILENAME].substr(stringSettings[STR_FILENAME].rfind('.')));
         }
     }
+
     if ((findParameter(sCmd, "xlabel", '=')
         || findParameter(sCmd, "ylabel", '=')
         || findParameter(sCmd, "zlabel", '=')
@@ -1535,6 +1589,7 @@ void PlotData::setParams(const string& __sCmd, int nType)
             StripSpaces(sAxisLabels[i]);
         }
     }
+
     if ((findParameter(sCmd, "xticks", '=')
         || findParameter(sCmd, "yticks", '=')
         || findParameter(sCmd, "zticks", '=')
@@ -1565,6 +1620,7 @@ void PlotData::setParams(const string& __sCmd, int nType)
                 sTickTemplate[3] += "%g";
         }
     }
+
     if ((findParameter(sCmd, "xscale", '=')
         || findParameter(sCmd, "yscale", '=')
         || findParameter(sCmd, "zscale", '=')
@@ -1597,6 +1653,7 @@ void PlotData::setParams(const string& __sCmd, int nType)
                 dAxisScale[i] = 1.0;
         }
     }
+
     if ((findParameter(sCmd, "xticklabels", '=')
         || findParameter(sCmd, "yticklabels", '=')
         || findParameter(sCmd, "zticklabels", '=')
@@ -1619,6 +1676,7 @@ void PlotData::setParams(const string& __sCmd, int nType)
             sCustomTicks[3] = getArgAtPos(__sCmd, findParameter(sCmd, "cticklabels", '=')+11);
         }
     }
+
     if (sCmd.find('[') != string::npos && (nType == ALL || nType & GLOBAL))
     {
         unsigned int nPos = 0;
@@ -1866,30 +1924,41 @@ string PlotData::getParams(bool asstr) const
     const Settings& _option = NumeReKernel::getInstance()->getSettings();
     string sReturn = "";
     string sSepString = "; ";
+    static std::map<std::string,std::pair<PlotData::LogicalPlotSetting,PlotData::ParamType>> mGenericSwitches = getGenericSwitches();
+
     if (asstr)
     {
         sReturn = "\"";
         sSepString = "\", \"";
     }
+
     sReturn += "[";
-    for (size_t i = 0; i < ranges.size(); i++)
+
+    for (size_t i = XRANGE; i <= TRANGE; i++)
     {
         sReturn += toString(ranges[i].front(), _option.getPrecision()) + ":" + toString(ranges[i].back(), _option.getPrecision());
-        if (i < 2)
+
+        if (i < TRANGE)
             sReturn += ", ";
     }
+
     sReturn += "]" + sSepString;
+
+    // Handle generic switches first
+    for (const auto& iter : mGenericSwitches)
+    {
+        if (logicalSettings[iter.second.first] && iter.first != "reconstruct")
+            sReturn += iter.first + sSepString;
+    }
+
     if (logicalSettings[LOG_ALPHA])
         sReturn += "alpha" + sSepString;
-    if (logicalSettings[LOG_ALPHAMASK])
-        sReturn += "alphamask" +sSepString;
+
     if (logicalSettings[LOG_ANIMATE])
         sReturn += "animate [" + toString(intSettings[INT_ANIMATESAMPLES]) + " frames]" + sSepString;
-    if (logicalSettings[LOG_AREA])
-        sReturn += "area" + sSepString;
+
     sReturn += "aspect=" + toString(floatSettings[FLOAT_ASPECT], 4) + sSepString;
-    if (logicalSettings[LOG_AXIS])
-        sReturn += "axis" + sSepString;
+
     if (stringSettings[STR_AXISBIND].length())
     {
         sReturn += "axisbind=";
@@ -1899,16 +1968,21 @@ string PlotData::getParams(bool asstr) const
             sReturn += "\"" + stringSettings[STR_AXISBIND] + "\"";
         sReturn += sSepString;
     }
+
     sReturn += "axisscale=[";
+
     for (int i = 0; i < 4; i++)
     {
         sReturn += toString(dAxisScale[i], _option);
         if (i < 3)
             sReturn += ", ";
     }
+
     sReturn += "]" + sSepString;
+
     if (floatSettings[FLOAT_BARS])
         sReturn += "bars=" + toString(floatSettings[FLOAT_BARS], 4) + sSepString;
+
     if (stringSettings[STR_BACKGROUND].length())
     {
         if (asstr)
@@ -1916,7 +1990,9 @@ string PlotData::getParams(bool asstr) const
         else
             sReturn += "background=\"" + stringSettings[STR_BACKGROUND] + "\"" + sSepString;
     }
+
     sReturn += "bgcolorscheme=";
+
     if (stringSettings[STR_BACKGROUNDCOLORSCHEME] == "BbcyrR")
         sReturn += "rainbow" + sSepString;
     else if (stringSettings[STR_BACKGROUNDCOLORSCHEME] == "kw")
@@ -1937,6 +2013,8 @@ string PlotData::getParams(bool asstr) const
         sReturn += "viridis" + sSepString;
     else if (stringSettings[STR_BACKGROUNDCOLORSCHEME] == "B{u4}p{q6}{y7}")
         sReturn += "plasma" + sSepString;
+    else if (stringSettings[STR_BACKGROUNDCOLORSCHEME] == "rygcbmr")
+        sReturn += "hue" + sSepString;
     else if (stringSettings[STR_BACKGROUNDCOLORSCHEME] == "<<REALISTIC>>")
         sReturn += "real" + sSepString;
     else
@@ -1946,17 +2024,9 @@ string PlotData::getParams(bool asstr) const
         else
             sReturn += "\"" + stringSettings[STR_BACKGROUNDCOLORSCHEME] + "\"" + sSepString;
     }
-    if (logicalSettings[LOG_BOX])
-        sReturn += "box" + sSepString;
-    if (logicalSettings[LOG_BOXPLOT])
-        sReturn += "boxplot" + sSepString;
-    if (logicalSettings[LOG_CLOUDPLOT])
-        sReturn += "cloudplot" + sSepString;
-    if (logicalSettings[LOG_COLORBAR])
-        sReturn += "colorbar" + sSepString;
-    if (logicalSettings[LOG_COLORMASK])
-        sReturn += "colormask" + sSepString;
+
     sReturn += "colorscheme=";
+
     if (stringSettings[STR_COLORSCHEME] == "BbcyrR")
         sReturn += "rainbow" + sSepString;
     else if (stringSettings[STR_COLORSCHEME] == "kw")
@@ -1977,6 +2047,8 @@ string PlotData::getParams(bool asstr) const
         sReturn += "viridis" + sSepString;
     else if (stringSettings[STR_COLORSCHEME] == "B{u4}p{q6}{y7}")
         sReturn += "plasma" + sSepString;
+    else if (stringSettings[STR_COLORSCHEME] == "rygcbmr")
+        sReturn += "hue" + sSepString;
     else
     {
         if (asstr)
@@ -1984,44 +2056,44 @@ string PlotData::getParams(bool asstr) const
         else
             sReturn += "\"" + stringSettings[STR_COLORSCHEME] + "\"" + sSepString;
     }
-    if (logicalSettings[LOG_CONNECTPOINTS])
-        sReturn += "connect" + sSepString;
-    if (logicalSettings[LOG_CRUST])
-        sReturn += "crust" + sSepString;
+
+    if (intSettings[INT_COMPLEXMODE] == CPLX_REIM)
+        sReturn += "complexmode=reim" + sSepString;
+    else if (intSettings[INT_COMPLEXMODE] == CPLX_PLANE)
+        sReturn += "complexmode=plane" + sSepString;
+
     if (intSettings[INT_COORDS] >= 100)
         sReturn += "spherical coords" + sSepString;
     else if (intSettings[INT_COORDS] >= 10)
         sReturn += "polar coords" + sSepString;
-    if (logicalSettings[LOG_CUTBOX])
-        sReturn += "cutbox" + sSepString;
-    if (logicalSettings[LOG_XERROR] && logicalSettings[LOG_YERROR])
-        sReturn += "errorbars" + sSepString;
-    else if (logicalSettings[LOG_XERROR])
-        sReturn += "xerrorbars" + sSepString;
-    else if (logicalSettings[LOG_YERROR])
-        sReturn += "yerrorbars" + sSepString;
-    if (logicalSettings[LOG_FIXEDLENGTH])
-        sReturn += "fixed length" + sSepString;
+
     if (logicalSettings[LOG_FLOW])
         sReturn += "flow" + sSepString;
+
     sReturn += "font="+stringSettings[STR_FONTSTYLE]+sSepString;
+
     if (intSettings[INT_GRID] == 1)
         sReturn += "grid=coarse" + sSepString;
     else if (intSettings[INT_GRID] == 2)
         sReturn += "grid=fine" + sSepString;
+
     sReturn += "gridstyle=";
+
     if (asstr)
         sReturn += "\\\"" + stringSettings[STR_GRIDSTYLE] + "\\\"";
     else
         sReturn += "\"" + stringSettings[STR_GRIDSTYLE] + "\"";
+
     sReturn += sSepString;
+
     if (floatSettings[FLOAT_HBARS])
         sReturn += "hbars=" + toString(floatSettings[FLOAT_HBARS], 4) + sSepString;
-    if (logicalSettings[LOG_INTERPOLATE])
-        sReturn += "interpolate" + sSepString;
+
     if (logicalSettings[LOG_CONTLABELS])
         sReturn += "lcont" + sSepString;
+
     sReturn += "legend=";
+
     if (intSettings[INT_LEGENDPOSITION] == 0)
         sReturn += "bottomleft";
     else if (intSettings[INT_LEGENDPOSITION] == 1)
@@ -2030,23 +2102,31 @@ string PlotData::getParams(bool asstr) const
         sReturn += "topleft";
     else
         sReturn += "topright";
+
     sReturn += sSepString;
+
     if (intSettings[INT_LEGENDSTYLE] == 1)
         sReturn += "legendstyle=onlycolors" + sSepString;
+
     if (intSettings[INT_LEGENDSTYLE] == 2)
         sReturn += "legendstyle=onlystyles" + sSepString;
+
     if (intSettings[INT_LIGHTING] == 1)
         sReturn += "lighting" + sSepString;
+
     if (intSettings[INT_LIGHTING] == 2)
         sReturn += "lighting=smooth" + sSepString;
+
     if (asstr)
         sReturn += "linesizes=\\\"" + stringSettings[STR_LINESIZES] + "\\\"" + sSepString;
     else
         sReturn += "linesizes=\"" + stringSettings[STR_LINESIZES] + "\"" + sSepString;
+
     if (asstr)
         sReturn += "linestyles=\\\"" + stringSettings[STR_LINESTYLES] + "\\\"" + sSepString;
     else
         sReturn += "linestyles=\"" + stringSettings[STR_LINESTYLES] + "\"" + sSepString;
+
     if (bLogscale[0] && bLogscale[1] && bLogscale[2] && bLogscale[3])
         sReturn += "logscale" + sSepString;
     else
@@ -2060,40 +2140,40 @@ string PlotData::getParams(bool asstr) const
         if (bLogscale[3])
             sReturn += "clog" + sSepString;
     }
+
     if (intSettings[INT_MARKS])
         sReturn += "marks=" + toString(intSettings[INT_MARKS]) + sSepString;
-    if (logicalSettings[LOG_OPENIMAGE])
-        sReturn += "open" + sSepString;
+
     sReturn += "origin=";
+
     if (isnan(dOrigin[0]) && isnan(dOrigin[1]) && isnan(dOrigin[2]))
         sReturn += "sliding" + sSepString;
     else if (dOrigin[0] == 0.0 && dOrigin[1] == 0.0 && dOrigin[2] == 0.0)
         sReturn += "std" + sSepString;
     else
         sReturn += "[" + toString(dOrigin[0], _option) + ", " + toString(dOrigin[1], _option) + ", " + toString(dOrigin[2], _option) + "]" + sSepString;
+
     sReturn += "slices=[" +toString((int)nSlices[0]) + ", " + toString((int)nSlices[1]) + ", " + toString((int)nSlices[2]) + "]" + sSepString;
-    if (logicalSettings[LOG_STEPPLOT])
-        sReturn += "steps" + sSepString;
-    if (logicalSettings[LOG_ORTHOPROJECT])
-        sReturn += "orthogonal projection" + sSepString;
+
     if (logicalSettings[LOG_CONTPROJ])
         sReturn += "pcont" + sSepString;
+
     if (floatSettings[FLOAT_PERSPECTIVE])
         sReturn += "perspective=" + toString(floatSettings[FLOAT_PERSPECTIVE], _option) + sSepString;
+
     if (asstr)
         sReturn += "plotcolors=\\\"" + stringSettings[STR_COLORS] + "\\\"" + sSepString;
     else
         sReturn += "plotcolors=\"" + stringSettings[STR_COLORS] + "\"" + sSepString;
+
     if (asstr)
         sReturn += "pointstyles=\\\"" + stringSettings[STR_POINTSTYLES] + "\\\"" + sSepString;
     else
         sReturn += "pointstyles=\"" + stringSettings[STR_POINTSTYLES] + "\"" + sSepString;
+
     if (logicalSettings[LOG_PIPE])
         sReturn += "pipe" + sSepString;
-    if (logicalSettings[LOG_DRAWPOINTS])
-        sReturn += "points" + sSepString;
-    if (logicalSettings[LOG_REGION])
-        sReturn += "region" + sSepString;
+
     if (intSettings[INT_HIGHRESLEVEL])
     {
         if (intSettings[INT_HIGHRESLEVEL] == 1)
@@ -2102,14 +2182,13 @@ string PlotData::getParams(bool asstr) const
             sReturn += "high";
         sReturn += " resolution" + sSepString;
     }
+
     sReturn += "rotate=" + toString(dRotateAngles[0], _option) + "," + toString(dRotateAngles[1], _option) + sSepString;
     sReturn += "samples=" + toString(intSettings[INT_HIGHRESLEVEL]) + sSepString;
-    if (logicalSettings[LOG_SCHEMATIC])
-        sReturn += "schematic" + sSepString;
-    if (logicalSettings[LOG_SILENTMODE])
-        sReturn += "silent mode" + sSepString;
+
     sReturn += "textsize=" + toString(floatSettings[FLOAT_TEXTSIZE], _option) + sSepString;
     sReturn += "tickstemplate=[";
+
     for (int i = 0; i < 4; i++)
     {
         if (i == 3)
@@ -2128,8 +2207,10 @@ string PlotData::getParams(bool asstr) const
                 sReturn += "=\"" + sTickTemplate[i] + "\", ";
         }
     }
+
     sReturn += "]" + sSepString;
     sReturn += "tickslabels=[";
+
     for (int i = 0; i < 4; i++)
     {
         if (i == 3)
@@ -2148,9 +2229,12 @@ string PlotData::getParams(bool asstr) const
                 sReturn += "=\"" + sCustomTicks[i] + "\", ";
         }
     }
+
     sReturn += "]" + sSepString;
+
     if (asstr)
         sReturn += "\"";
+
     return sReturn;
 }
 
@@ -2238,15 +2322,24 @@ string PlotData::getAxisLabel(size_t axis) const
 {
     if (!bDefaultAxisLabels[axis])
         return replaceToTeX(sAxisLabels[axis]);
+    else if (intSettings[INT_COMPLEXMODE] == CPLX_PLANE)
+    {
+        if (axis == XCOORD)
+            return "Re \\i z";
+        else if (axis == YCOORD)
+            return "Im \\i z";
+        else if (axis == ZCOORD)
+            return "|\\i z|";
+    }
     else
     {
         static std::map<CoordinateSystem,AxisLabels> mLabels = getLabelDefinitions();
 
-        if (axis == 0)
+        if (axis == XCOORD)
             return mLabels[(CoordinateSystem)intSettings[INT_COORDS]].x;
-        else if (axis == 1)
+        else if (axis == YCOORD)
             return mLabels[(CoordinateSystem)intSettings[INT_COORDS]].y;
-        else
+        else if (axis == ZCOORD)
             return mLabels[(CoordinateSystem)intSettings[INT_COORDS]].z;
     }
 

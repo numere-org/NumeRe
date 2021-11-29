@@ -210,15 +210,62 @@ IntervalSet PlotAsset::getDataIntervals(size_t layer) const
     if (layer >= data.size())
     {
         // Always return an "valid" intervalset
-        ivl.intervals.resize(2);
+        ivl.intervals.resize(4);
         return ivl;
     }
 
     ivl.intervals.push_back(Interval(data[layer].first.Minimal(), data[layer].first.Maximal()));
     ivl.intervals.push_back(Interval(data[layer].second.Minimal(), data[layer].second.Maximal()));
-    ivl.setNames({"Re", "Im"});
+    ivl.intervals.push_back(ivl[0].combine(ivl[1]));
+    mglData normData = norm(layer);
+    ivl.intervals.push_back(Interval(normData.Minimal(), normData.Maximal()));
+    ivl.setNames({"Re", "Im", "ReIm", "AbsReIm"});
 
     return ivl;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Get the absolute value of the complex
+/// value contained within this asset.
+///
+/// \param layer size_t
+/// \return mglData
+///
+/////////////////////////////////////////////////
+mglData PlotAsset::norm(size_t layer) const
+{
+    if (layer >= data.size())
+        return mglData();
+
+    mglData absData = data[layer].first * data[layer].first + data[layer].second*data[layer].second;
+
+    for (int i = 0; i < absData.GetNN(); i++)
+        absData.a[i] = sqrt(absData.a[i]);
+
+    return absData;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Get the phase angle of the complex
+/// value contained within this asset.
+///
+/// \param layer size_t
+/// \return mglData
+///
+/////////////////////////////////////////////////
+mglData PlotAsset::arg(size_t layer) const
+{
+    if (layer >= data.size())
+        return mglData();
+
+    mglData phaseData(data[layer].first.nx, data[layer].first.ny, data[layer].first.nz);
+
+    for (int i = 0; i < phaseData.GetNN(); i++)
+        phaseData.a[i] = atan2(data[layer].second.a[i], data[layer].first.a[i]);
+
+    return phaseData;
 }
 
 
@@ -364,7 +411,7 @@ IntervalSet PlotAsset::getWeightedRanges(size_t layer, double dLowerPercentage, 
 IntervalSet PlotAssetManager::getIntervalsOfType(PlotType t, int coord) const
 {
     IntervalSet ivl;
-    ivl.intervals.resize(2);
+    ivl.intervals.resize(DATIVLCOUNT);
 
     for (size_t i = 0; i < assets.size(); i++)
     {
@@ -380,8 +427,9 @@ IntervalSet PlotAssetManager::getIntervalsOfType(PlotType t, int coord) const
             for (size_t l = 0; l < assets[i].getLayers(); l++)
             {
                 dataIntervals = assets[i].getDataIntervals(l);
-                ivl[REAL] = ivl[REAL].combine(dataIntervals[REAL]);
-                ivl[IMAG] = ivl[IMAG].combine(dataIntervals[IMAG]);
+
+                for (int n = 0; n < DATIVLCOUNT; n++)
+                    ivl[n] = ivl[n].combine(dataIntervals[n]);
             }
         }
         else
@@ -390,8 +438,9 @@ IntervalSet PlotAssetManager::getIntervalsOfType(PlotType t, int coord) const
                 continue;
 
             IntervalSet dataIntervals = assets[i].getDataIntervals(coord);
-            ivl[REAL] = ivl[REAL].combine(dataIntervals[REAL]);
-            ivl[IMAG] = ivl[IMAG].combine(dataIntervals[IMAG]);
+
+            for (int n = 0; n < DATIVLCOUNT; n++)
+                ivl[n] = ivl[n].combine(dataIntervals[n]);
         }
     }
 

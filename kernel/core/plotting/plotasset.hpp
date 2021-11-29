@@ -56,6 +56,8 @@ struct PlotAsset
     void removeNegativeValues(PlotCoords c);
     Interval getAxisInterval(PlotCoords c = XCOORD) const;
     IntervalSet getDataIntervals(size_t layer = 0) const;
+    mglData norm(size_t layer) const;
+    mglData arg(size_t layer) const;
     bool isComplex(size_t layer = 0) const;
     void applyModulus(PlotCoords c, double mod);
     mglData vectorsToMatrix() const;
@@ -170,7 +172,6 @@ struct PlotAsset
     {
         return data.size();
     }
-
 };
 
 
@@ -194,7 +195,10 @@ class PlotAssetManager
         enum DataIntervalNames
         {
             REAL,
-            IMAG
+            IMAG,
+            REIM,
+            ABSREIM,
+            DATIVLCOUNT
         };
 
     private:

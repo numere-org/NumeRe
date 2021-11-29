@@ -1116,13 +1116,11 @@ void Plot::create2dPlot(int& nStyle, size_t& nLegends, int nFunctions, size_t nP
 {
     string sDummy = "";
     string sConvLegends = "";
+    bool useImag = false;
+    bool isComplexPlaneMode = _pData.getSettings(PlotData::INT_COMPLEXMODE) == CPLX_PLANE;
     mglData _mData(_pInfo.nSamples, _pInfo.nSamples);
-    mglData _mMaskData;
+    mglData _mData2;
     mglData _mPlotAxes[2];
-
-    if (_pData.getSettings(PlotData::LOG_COLORMASK) || _pData.getSettings(PlotData::LOG_ALPHAMASK))
-        _mMaskData.Create(_pInfo.nSamples, _pInfo.nSamples);
-
     mglData _mContVec(_pData.getSettings(PlotData::INT_CONTLINES));
 
     for (int nCont = 0; nCont < _pData.getSettings(PlotData::INT_CONTLINES); nCont++)
@@ -1131,42 +1129,58 @@ void Plot::create2dPlot(int& nStyle, size_t& nLegends, int nFunctions, size_t nP
     }
 
     if (_pData.getSettings(PlotData::INT_CONTLINES) % 2)
-        _mContVec.a[_pData.getSettings(PlotData::INT_CONTLINES)/2] = (_pInfo.ranges[ZRANGE].max() - _pInfo.ranges[ZRANGE].min()) / 2.0 + _pInfo.ranges[ZRANGE].min();
+        _mContVec.a[_pData.getSettings(PlotData::INT_CONTLINES)/2] = _pInfo.ranges[ZRANGE].middle();
 
+    // Apply curvilinear coordinates
     m_manager.applyCoordSys((CoordinateSystem)_pData.getSettings(PlotData::INT_COORDS));
 
-    for (unsigned int n = 0; n < m_manager.assets.size(); n++)
+    for (int n = 0; n < (int)m_manager.assets.size(); n++)
     {
         StripSpaces(m_manager.assets[n].legend);
 
-        _mPlotAxes[XCOORD] = m_manager.assets[n].axes[XCOORD];
-        _mPlotAxes[YCOORD] = m_manager.assets[n].axes[YCOORD];
+        _mPlotAxes[XCOORD].Link(m_manager.assets[n].axes[XCOORD]);
+        _mPlotAxes[YCOORD].Link(m_manager.assets[n].axes[YCOORD]);
 
-#warning TODO (numere#3#11/15/21): Enable complex values
-        _mData = m_manager.assets[n].data[0].first;
+        if (isComplexPlaneMode)
+            _mData = m_manager.assets[n].norm(0);
+        else
+            _mData.Link(useImag ? m_manager.assets[n].data[0].second : m_manager.assets[n].data[0].first);
 
         if ((_pData.getSettings(PlotData::LOG_COLORMASK) || _pData.getSettings(PlotData::LOG_ALPHAMASK))
-            && n+1 < m_manager.assets.size())
-            _mMaskData = m_manager.assets[n+1].data[0].first;
+            && n+1 < (int)m_manager.assets.size())
+            _mData2.Link(useImag ? m_manager.assets[n+1].data[0].second : m_manager.assets[n+1].data[0].first);
+        else if (isComplexPlaneMode)
+            _mData2 = m_manager.assets[n].arg(0);
+        else if (_pData.getSettings(PlotData::LOG_COLORMASK) || _pData.getSettings(PlotData::LOG_ALPHAMASK))
+            _mData2.Create(_pInfo.nSamples, _pInfo.nSamples);
 
-        if (!plot2d(_mData, _mMaskData, _mPlotAxes, _mContVec))
+        // Create the actual 2D plot
+        if (!plot2d(_mData, _mData2, _mPlotAxes, _mContVec))
         {
             clearData();
             return;
         }
 
+        // Do only present legend entries, if there are more than two
+        // data sets or more than two composed data sets to be displayed
         if (m_manager.assets.size() > 2
+            || _pData.getSettings(PlotData::INT_COMPLEXMODE) == CPLX_REIM
             || (m_manager.assets.size() >= 2 && !(_pData.getSettings(PlotData::LOG_COLORMASK) || _pData.getSettings(PlotData::LOG_ALPHAMASK))))
         {
             if (_pData.getSettings(PlotData::LOG_CONTLABELS) && _pInfo.sCommand.substr(0, 4) != "cont")
-                _graph->Cont(_mPlotAxes[0], _mPlotAxes[1], m_manager.assets[n].data[0].first,
+                _graph->Cont(_mPlotAxes[0], _mPlotAxes[1], _mData,
                              ("t" + _pInfo.sContStyles[nStyle]).c_str(), ("val " + toString(_pData.getSettings(PlotData::INT_CONTLINES))).c_str());
             else if (!_pData.getSettings(PlotData::LOG_CONTLABELS) && _pInfo.sCommand.substr(0, 4) != "cont")
-                _graph->Cont(_mPlotAxes[0], _mPlotAxes[1], m_manager.assets[n].data[0].first,
+                _graph->Cont(_mPlotAxes[0], _mPlotAxes[1], _mData,
                              _pInfo.sContStyles[nStyle].c_str(), ("val " + toString(_pData.getSettings(PlotData::INT_CONTLINES))).c_str());
 
-            sConvLegends = m_manager.assets[n].legend;
+            sConvLegends = m_manager.assets[n].legend + " -nq";
             NumeReKernel::getInstance()->getStringParser().evalAndFormat(sConvLegends, sDummy, true);
+
+            if (_pData.getSettings(PlotData::INT_COMPLEXMODE) == CPLX_REIM && sConvLegends.length())
+                sConvLegends = useImag ? "Im(" + sConvLegends + ")" : "Re(" + sConvLegends + ")";
+
+            sConvLegends + "\"" + sConvLegends + "\"";
 
             if (sConvLegends != "\"\"")
             {
@@ -1175,18 +1189,27 @@ void Plot::create2dPlot(int& nStyle, size_t& nLegends, int nFunctions, size_t nP
                 nLegends++;
             }
 
-            if (nStyle == _pInfo.nStyleMax - 1)
-                nStyle = 0;
+            nStyle = _pInfo.nextStyle();
+        }
+
+        if (_pData.getSettings(PlotData::INT_COMPLEXMODE) == CPLX_REIM)
+        {
+            if (!useImag)
+            {
+                useImag = true;
+                n--;
+            }
             else
-                nStyle++;
+                useImag = false;
         }
 
         if ((_pData.getSettings(PlotData::LOG_COLORMASK) || _pData.getSettings(PlotData::LOG_ALPHAMASK))
-            && n+1 < m_manager.assets.size())
+            && n+1 < (int)m_manager.assets.size()
+            && (useImag || _pData.getSettings(PlotData::INT_COMPLEXMODE) != CPLX_REIM))
             n++;
     }
-    // --> Position der Legende etwas aendern <--
-    if (m_manager.assets.size() > 1 && nLegends && !_pData.getSettings(PlotData::LOG_SCHEMATIC) && nPlotCompose + 1 == nPlotComposeSize)
+
+    if (nLegends && !_pData.getSettings(PlotData::LOG_SCHEMATIC) && nPlotCompose + 1 == nPlotComposeSize)
         _graph->Legend(1.35, 1.2);
 }
 
@@ -1197,23 +1220,21 @@ void Plot::create2dPlot(int& nStyle, size_t& nLegends, int nFunctions, size_t nP
 /// current plotting command.
 ///
 /// \param _mData mglData&
-/// \param _mMaskData mglData&
+/// \param _mData2 mglData&
 /// \param _mAxisVals mglData*
 /// \param _mContVec mglData&
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool Plot::plot2d(mglData& _mData, mglData& _mMaskData, mglData* _mAxisVals, mglData& _mContVec)
+bool Plot::plot2d(mglData& _mData, mglData& _mData2, mglData* _mAxisVals, mglData& _mContVec)
 {
-    /*if (_option.getbDebug())
-        cerr << "|-> DEBUG: generating 2D-Plot..." << endl;*/
-
     if (_pData.getSettings(PlotData::LOG_CUTBOX)
             && _pInfo.sCommand.substr(0, 4) != "cont"
             && _pInfo.sCommand.substr(0, 4) != "grad"
             && _pInfo.sCommand.substr(0, 4) != "dens"
             && _pInfo.sCommand != "implot")
-        _graph->SetCutBox(CalcCutBox(_pData.getRotateAngle(1), 0, _pData.getSettings(PlotData::INT_COORDS)), CalcCutBox(_pData.getRotateAngle(1), 1, _pData.getSettings(PlotData::INT_COORDS)));
+        _graph->SetCutBox(CalcCutBox(_pData.getRotateAngle(1), 0, _pData.getSettings(PlotData::INT_COORDS)),
+                          CalcCutBox(_pData.getRotateAngle(1), 1, _pData.getSettings(PlotData::INT_COORDS)));
 
     // --> Entsprechend dem gewuenschten Plotting-Style plotten <--
     if (_pInfo.sCommand.substr(0, 4) == "mesh")
@@ -1227,13 +1248,12 @@ bool Plot::plot2d(mglData& _mData, mglData& _mMaskData, mglData* _mAxisVals, mgl
     {
         if (_pData.getSettings(PlotData::FLOAT_BARS))
             _graph->Boxs(_mAxisVals[0], _mAxisVals[1], _mData, _pData.getColorScheme().c_str());
-        else if (_pData.getSettings(PlotData::LOG_COLORMASK))
-            _graph->SurfC(_mAxisVals[0], _mAxisVals[1], _mData, _mMaskData, _pData.getColorScheme().c_str());
+        else if (_pData.getSettings(PlotData::LOG_COLORMASK) || _pData.getSettings(PlotData::INT_COMPLEXMODE) == CPLX_PLANE)
+            _graph->SurfC(_mAxisVals[0], _mAxisVals[1], _mData, _mData2, _pData.getColorScheme().c_str());
         else if (_pData.getSettings(PlotData::LOG_ALPHAMASK))
-            _graph->SurfA(_mAxisVals[0], _mAxisVals[1], _mData, _mMaskData, _pData.getColorScheme().c_str());
+            _graph->SurfA(_mAxisVals[0], _mAxisVals[1], _mData, _mData2, _pData.getColorScheme().c_str());
         else
             _graph->Surf(_mAxisVals[0], _mAxisVals[1], _mData, _pData.getColorScheme().c_str());
-        //cerr << "\"" << _pData.getColorScheme().c_str() << "\" " << strlen(_pData.getColorScheme().c_str()) << endl;
     }
     else if (_pInfo.sCommand.substr(0, 4) == "cont")
     {
@@ -1241,6 +1261,7 @@ bool Plot::plot2d(mglData& _mData, mglData& _mMaskData, mglData* _mAxisVals, mgl
         {
             if (_pData.getSettings(PlotData::LOG_CONTFILLED))
                 _graph->ContF(_mContVec, _mAxisVals[0], _mAxisVals[1], _mData, _pData.getColorScheme().c_str());
+
             _graph->Cont(_mContVec, _mAxisVals[0], _mAxisVals[1], _mData, _pData.getColorScheme("t").c_str());
         }
         else if (_pData.getSettings(PlotData::LOG_CONTPROJ))
@@ -1277,6 +1298,7 @@ bool Plot::plot2d(mglData& _mData, mglData& _mMaskData, mglData* _mAxisVals, mgl
             else
                 _graph->Grad(_mAxisVals[0], _mAxisVals[1], _mData, _pData.getColorScheme().c_str());
         }
+
         if (!(_pData.getSettings(PlotData::LOG_CONTFILLED) && _pData.getSettings(PlotData::LOG_CONTPROJ)))
             _graph->Dens(_mAxisVals[0], _mAxisVals[1], _mData, _pData.getColorSchemeLight().c_str());
     }
@@ -1284,6 +1306,15 @@ bool Plot::plot2d(mglData& _mData, mglData& _mMaskData, mglData* _mAxisVals, mgl
     {
         if (_pData.getSettings(PlotData::FLOAT_BARS))
             _graph->Tile(_mAxisVals[0], _mAxisVals[1], _mData, _pData.getColorScheme().c_str());
+        else if (_pData.getSettings(PlotData::INT_COMPLEXMODE) == CPLX_PLANE)
+        {
+            // Density plot from -PI to PI
+            _graph->Dens(_mAxisVals[0], _mAxisVals[1], _mData2, _pData.getColorScheme().c_str());
+
+            // Contour lines from ZRANGE-min to ZRANGE-max
+            _graph->SetRange('c', _pInfo.ranges[ZRANGE].min(), _pInfo.ranges[ZRANGE].max());
+            _graph->Cont(_mContVec, _mAxisVals[0], _mAxisVals[1], _mData, "kw");
+        }
         else
             _graph->Dens(_mAxisVals[0], _mAxisVals[1], _mData, _pData.getColorScheme().c_str());
     }
@@ -1295,6 +1326,7 @@ bool Plot::plot2d(mglData& _mData, mglData& _mMaskData, mglData* _mAxisVals, mgl
             && _pInfo.sCommand.substr(0, 4) != "grad"
             && _pInfo.sCommand.substr(0, 4) != "dens")
         _graph->SetCutBox(mglPoint(0), mglPoint(0));
+
     // --> Ggf. Konturlinien ergaenzen <--
     if (_pData.getSettings(PlotData::LOG_CONTPROJ) && _pInfo.sCommand.substr(0, 4) != "cont")
     {
@@ -1308,13 +1340,32 @@ bool Plot::plot2d(mglData& _mData, mglData& _mMaskData, mglData* _mAxisVals, mgl
         else
             _graph->Cont(_mContVec, _mAxisVals[0], _mAxisVals[1], _mData, _pData.getColorScheme("_").c_str());
     }
+
     if (_pData.getSettings(PlotData::LOG_CONTLABELS) && _pInfo.sCommand.substr(0, 4) != "cont" && *_pInfo.nFunctions == 1)
     {
         _graph->Cont(_mContVec, _mAxisVals[0], _mAxisVals[1], _mData, ("t" + _pInfo.sContStyles[*_pInfo.nStyle]).c_str());
+
         if (_pData.getSettings(PlotData::LOG_CONTFILLED))
             _graph->ContF(_mContVec, _mAxisVals[0], _mAxisVals[1], _mData, _pData.getColorScheme().c_str());
     }
+
     return true;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Simple helper function for
+/// Plot::createStdPlot.
+///
+/// \param _mData const mglData&
+/// \param ivl const Interval&
+/// \param secIvl const Interval&
+/// \return mglData
+///
+/////////////////////////////////////////////////
+static mglData scaleSecondaryToPrimaryInterval(const mglData& _mData, const Interval& ivl, const Interval& secIvl)
+{
+    return (_mData - secIvl.min()) * ivl.range() / secIvl.range() + ivl.min();
 }
 
 
@@ -1335,42 +1386,39 @@ void Plot::createStdPlot(int& nStyle, size_t& nLegends, int nFunctions, size_t n
 {
     string sDummy = "";
     string sConvLegends = "";
+    bool useImag = false;
+    bool isCplxPlaneMode = _pData.getSettings(PlotData::INT_COMPLEXMODE) == CPLX_PLANE;
 
-    mglData _mData(_pInfo.nSamples);
+    mglData _mData;
     mglData _mPlotAxes;
     mglData _mData2[2];
 
     int nPrevDataLayers = 0;
     int nCurrentStyle = 0;
 
+    // Apply curvilinear coordinates
     m_manager.applyCoordSys((CoordinateSystem)_pData.getSettings(PlotData::INT_COORDS));
 
-    for (size_t n = 0; n < m_manager.assets.size(); n++)
+    for (int n = 0; n < (int)m_manager.assets.size(); n++)
     {
         StripSpaces(m_manager.assets[n].legend);
 
-#warning TODO (numere#3#11/17/21): Enable complex values
-        _mData = m_manager.assets[n].data[0].first;
-        _mPlotAxes = m_manager.assets[n].axes[XCOORD];
+        _mData.Link(useImag || isCplxPlaneMode ? m_manager.assets[n].data[0].second : m_manager.assets[n].data[0].first);
+        _mPlotAxes.Link(isCplxPlaneMode ? m_manager.assets[n].data[0].first : m_manager.assets[n].axes[XCOORD]);
 
-        if (_pData.getSettings(PlotData::LOG_REGION) && n+1 < m_manager.assets.size())
-            _mData2[0] = m_manager.assets[n+1].data[0].first;
+        if (_pData.getSettings(PlotData::LOG_REGION) && n+1 < (int)m_manager.assets.size())
+            _mData2[0].Link(useImag || isCplxPlaneMode ? m_manager.assets[n+1].data[0].second : m_manager.assets[n+1].data[0].first);
         else
-        {
-            _mData2[0].Create(_pInfo.nSamples);
-
-            for (long int i = 0; i < _pInfo.nSamples; i++)
-                _mData2[0].a[i] = 0.0;
-        }
+            _mData2[0] = 0.0 * _mData;
 
         // Copy the data to the relevant memory
         if (m_manager.assets[n].type == PT_FUNCTION)
         {
             if (m_manager.assets[n].boundAxes.find('r') != std::string::npos)
-                _mData = (_mData - _pInfo.secranges[YRANGE].min()) * _pInfo.ranges[YRANGE].range() / _pInfo.secranges[YRANGE].range() + _pInfo.ranges[YRANGE].min();
+                _mData = scaleSecondaryToPrimaryInterval(_mData, _pInfo.ranges[YRANGE], _pInfo.secranges[YRANGE]);
 
             if (_pData.getSettings(PlotData::LOG_REGION) && m_manager.assets[n+1].boundAxes.find('r') != std::string::npos)
-                _mData2[0] = (_mData2[0] - _pInfo.secranges[YRANGE].min()) * _pInfo.ranges[YRANGE].range() / _pInfo.secranges[YRANGE].range() + _pInfo.ranges[YRANGE].min();
+                _mData2[0] = scaleSecondaryToPrimaryInterval(_mData2[0], _pInfo.ranges[YRANGE], _pInfo.secranges[YRANGE]);
         }
         else
         {
@@ -1397,9 +1445,7 @@ void Plot::createStdPlot(int& nStyle, size_t& nLegends, int nFunctions, size_t n
             {
                 if (_pData.getSettings(PlotData::LOG_INTERPOLATE) && getNN(_mData) >= _pData.getSettings(PlotData::INT_SAMPLES))
                 {
-                    if (_pData.getSettings(PlotData::LOG_REGION) && n+1 < m_manager.assets.size())
-                        _mData2[0] = m_manager.assets[n+1].data[0].first;
-                    else
+                    if (!_pData.getSettings(PlotData::LOG_REGION))
                     {
                         // If the current data dimension is higher than 2, then we
                         // expand it into an array of curves
@@ -1407,39 +1453,25 @@ void Plot::createStdPlot(int& nStyle, size_t& nLegends, int nFunctions, size_t n
                             _mData = m_manager.assets[n].vectorsToMatrix();
 
                         // Create an zero-error data set
-                        _mData2[0].Create(getNN(_mData));
-
-                        for (long int i = 0; i < getNN(_mData); i++)
-                            _mData2[0].a[i] = 0.0;
+                        _mData2[0] = 0.0 * _mData;
                     }
                 }
-                else if (_pData.getSettings(PlotData::LOG_XERROR)
-                         && _pData.getSettings(PlotData::LOG_YERROR)
-                         && m_manager.assets[n].getLayers() > 2)
+                else if (_pData.getSettings(PlotData::LOG_YERROR) || _pData.getSettings(PlotData::LOG_XERROR))
                 {
-                    _mData2[0] = m_manager.assets[n].data[1].first;
-                    _mData2[1] = m_manager.assets[n].data[2].first;
-                }
-                else if ((_pData.getSettings(PlotData::LOG_YERROR)
-                          || _pData.getSettings(PlotData::LOG_XERROR))
-                         && m_manager.assets[n].getLayers() > 1)
-                {
-                    if (_pData.getSettings(PlotData::LOG_YERROR) && !_pData.getSettings(PlotData::LOG_XERROR))
-                    {
-                        _mData2[0].Create(getNN(_mData));
-                        _mData2[1] = m_manager.assets[n].data[1].first;
+                    size_t layer = 1;
 
-                        for (long int i = 0; i < getNN(_mData); i++)
-                            _mData2[0].a[i] = 0.0;
+                    if (_pData.getSettings(PlotData::LOG_XERROR) && m_manager.assets[n].getLayers() > layer)
+                    {
+                        _mData2[XCOORD].Link(m_manager.assets[n].data[layer].first);
+                        layer++;
                     }
                     else
-                    {
-                        _mData2[0] = m_manager.assets[n].data[1].first;
-                        _mData2[1].Create(getNN(_mData));
+                        _mData2[XCOORD] = 0.0 * _mData;
 
-                        for (long int i = 0; i < getNN(_mData); i++)
-                            _mData2[1].a[i] = 0.0;
-                    }
+                    if (_pData.getSettings(PlotData::LOG_YERROR) && m_manager.assets[n].getLayers() > layer)
+                        _mData2[YCOORD].Link(m_manager.assets[n].data[layer].first);
+                    else
+                        _mData2[YCOORD] = 0.0 * _mData;
                 }
                 else if (m_manager.assets[n].getLayers() > 1)
                     _mData = m_manager.assets[n].vectorsToMatrix();
@@ -1449,32 +1481,32 @@ void Plot::createStdPlot(int& nStyle, size_t& nLegends, int nFunctions, size_t n
             {
                 for (int i = 0; i < getNN(_mPlotAxes); i++)
                 {
-                    if (_mPlotAxes.a[i] < _pInfo.secranges[XRANGE].min() || _mPlotAxes.a[i] > _pInfo.secranges[XRANGE].max())
+                    if (!_pInfo.secranges[XRANGE].isInside(_mPlotAxes.a[i]))
                         _mPlotAxes.a[i] = NAN;
                 }
 
-                _mPlotAxes = (_mPlotAxes - _pInfo.secranges[XRANGE].min()) * _pInfo.ranges[XRANGE].range() / _pInfo.secranges[XRANGE].range() + _pInfo.ranges[XRANGE].min();
+                _mPlotAxes = scaleSecondaryToPrimaryInterval(_mPlotAxes, _pInfo.ranges[XRANGE], _pInfo.secranges[XRANGE]);
             }
             else
             {
                 for (int i = 0; i < getNN(_mPlotAxes); i++)
                 {
-                    if (_mPlotAxes.a[i] < _pInfo.ranges[XRANGE].min() || _mPlotAxes.a[i] > _pInfo.ranges[XRANGE].max())
+                    if (!_pInfo.ranges[XRANGE].isInside(_mPlotAxes.a[i]))
                         _mPlotAxes.a[i] = NAN;
                 }
             }
 
             if (m_manager.assets[n].boundAxes.find('r') != std::string::npos)
-                _mData = (_mData - _pInfo.secranges[YRANGE].min()) * _pInfo.ranges[YRANGE].range() / _pInfo.secranges[YRANGE].range() + _pInfo.ranges[YRANGE].min();
+                _mData = scaleSecondaryToPrimaryInterval(_mData, _pInfo.ranges[YRANGE], _pInfo.secranges[YRANGE]);
 
             if (_pData.getSettings(PlotData::LOG_REGION) && m_manager.assets[n+1].boundAxes.find('r') != std::string::npos && getNN(_mData2[0]) > 1)
-                _mData2[0] = (_mData2[0] - _pInfo.secranges[YRANGE].min()) * _pInfo.ranges[YRANGE].range() / _pInfo.secranges[YRANGE].range() + _pInfo.ranges[YRANGE].min();
+                _mData2[0] = scaleSecondaryToPrimaryInterval(_mData2[0], _pInfo.ranges[YRANGE], _pInfo.secranges[YRANGE]);
 
             if (_pData.getSettings(PlotData::LOG_YERROR) && m_manager.assets[n].boundAxes.find('r') != std::string::npos)
-                _mData2[1] = (_mData2[1] - _pInfo.secranges[YRANGE].min()) * _pInfo.ranges[YRANGE].range() / _pInfo.secranges[YRANGE].range() + _pInfo.ranges[YRANGE].min();
+                _mData2[1] = scaleSecondaryToPrimaryInterval(_mData2[1], _pInfo.ranges[YRANGE], _pInfo.secranges[YRANGE]);
 
             if (_pData.getSettings(PlotData::LOG_XERROR) && m_manager.assets[n].boundAxes.find('t') != std::string::npos)
-                _mData2[0] = (_mData2[0] - _pInfo.secranges[YRANGE].min()) * _pInfo.ranges[XRANGE].range() / _pInfo.secranges[XRANGE].range() + _pInfo.ranges[XRANGE].min();
+                _mData2[0] = scaleSecondaryToPrimaryInterval(_mData2[0], _pInfo.ranges[XRANGE], _pInfo.secranges[XRANGE]);
         }
 
         // Store the current style
@@ -1489,73 +1521,44 @@ void Plot::createStdPlot(int& nStyle, size_t& nLegends, int nFunctions, size_t n
         }
 
         // Increment the style counter
-        if (nStyle == _pInfo.nStyleMax - 1)
-            nStyle = 0;
-        else
-            nStyle++;
+        nStyle = _pInfo.nextStyle();
 
         // Create the legend
-        if (m_manager.assets[n].type == PT_FUNCTION)
-        {
-            sConvLegends = m_manager.assets[n].legend + " -nq";
-
-            // Apply the string parser
-            NumeReKernel::getInstance()->getStringParser().evalAndFormat(sConvLegends, sDummy, true);
-
-            // While the legend string is not empty
-            while (sConvLegends.length())
-            {
-                // Get the next legend string
-                string sLegend = sConvLegends.substr(0, sConvLegends.find('\n'));
-
-                if (sConvLegends.find('\n') != string::npos)
-                    sConvLegends.erase(0, sConvLegends.find('\n')+1);
-                else
-                    sConvLegends.clear();
-
-                // Add new surrounding quotation marks
-                sLegend = "\"" + sLegend + "\"";
-
-                // Add the legend
-                if (sLegend != "\"\"")
-                {
-                    _graph->AddLegend(fromSystemCodePage(replaceToTeX(sLegend.substr(1, sLegend.length() - 2))).c_str(),
-                                      getLegendStyle(_pInfo.sLineStyles[nCurrentStyle]).c_str());
-                    nLegends++;
-                }
-                if (nCurrentStyle == _pInfo.nStyleMax - 1)
-                    nCurrentStyle = 0;
-                else
-                    nCurrentStyle++;
-            }
-        }
+        if (_pData.getSettings(PlotData::LOG_REGION) && getNN(_mData2[0]) > 1)
+            sConvLegends = "\"" + removeQuotationMarks(m_manager.assets[n].legend) + "\n"
+                            + removeQuotationMarks(m_manager.assets[n].legend) + "\" -nq";
         else
-        {
             sConvLegends = m_manager.assets[n].legend + " -nq";
 
-            // Apply the string parser
-            NumeReKernel::getInstance()->getStringParser().evalAndFormat(sConvLegends, sDummy, true);
+        // Apply the string parser
+        NumeReKernel::getInstance()->getStringParser().evalAndFormat(sConvLegends, sDummy, true);
 
-            // While the legend string is not empty
-            while (sConvLegends.length())
+        // While the legend string is not empty
+        while (sConvLegends.length())
+        {
+            // Get the next legend string
+            string sLegend = sConvLegends.substr(0, sConvLegends.find('\n'));
+
+            if (sConvLegends.find('\n') != string::npos)
+                sConvLegends.erase(0, sConvLegends.find('\n')+1);
+            else
+                sConvLegends.clear();
+
+            if (_pData.getSettings(PlotData::INT_COMPLEXMODE) == CPLX_REIM && sLegend.length())
+                sLegend = useImag ? "Im(" + sLegend + ")" : "Re(" + sLegend + ")";
+
+            // Add new surrounding quotation marks
+            sLegend = "\"" + sLegend + "\"";
+
+            // Add the legend
+            if (sLegend != "\"\"")
             {
-                // Get the next legend string
-                string sLegend = sConvLegends.substr(0, sConvLegends.find('\n'));
+                std::string sLegendStyle;
 
-                if (sConvLegends.find('\n') != string::npos)
-                    sConvLegends.erase(0, sConvLegends.find('\n')+1);
+                if (m_manager.assets[n].type == PT_FUNCTION)
+                    sLegendStyle = getLegendStyle(_pInfo.sLineStyles[nCurrentStyle]);
                 else
-                    sConvLegends.clear();
-
-                // Add new surrounding quotation marks
-                sLegend = "\"" + sLegend + "\"";
-
-                // Add the legend
-                if (sLegend != "\"\"")
                 {
-                    nLegends++;
-                    std::string sLegendStyle;
-
                     if (_pData.getSettings(PlotData::LOG_BOXPLOT))
                         sLegendStyle = getLegendStyle(_pInfo.sLineStyles[nCurrentStyle]);
                     else if (!_pData.getSettings(PlotData::LOG_XERROR) && !_pData.getSettings(PlotData::LOG_YERROR))
@@ -1574,19 +1577,36 @@ void Plot::createStdPlot(int& nStyle, size_t& nLegends, int nFunctions, size_t n
                     }
                     else
                         sLegendStyle = getLegendStyle(_pInfo.sPointStyles[nCurrentStyle]);
-
-                    _graph->AddLegend(fromSystemCodePage(replaceToTeX(sLegend.substr(1, sLegend.length() - 2))).c_str(), sLegendStyle.c_str());
                 }
 
-                if (nCurrentStyle == _pInfo.nStyleMax - 1)
-                    nCurrentStyle = 0;
-                else
-                    nCurrentStyle++;
+                nLegends++;
+                _graph->AddLegend(fromSystemCodePage(replaceToTeX(sLegend.substr(1, sLegend.length() - 2))).c_str(), sLegendStyle.c_str());
             }
+
+            if (nCurrentStyle == _pInfo.nStyleMax - 1)
+                nCurrentStyle = 0;
+            else
+                nCurrentStyle++;
         }
 
-        if (_pData.getSettings(PlotData::LOG_REGION) && n+1 < m_manager.assets.size())
+        if (_pData.getSettings(PlotData::LOG_REGION)
+            && n+1 < (int)m_manager.assets.size()
+            && (useImag || _pData.getSettings(PlotData::INT_COMPLEXMODE) != CPLX_REIM))
             n++;
+
+        if (getNN(_mData2[0]) && _pData.getSettings(PlotData::LOG_REGION))
+            nStyle = _pInfo.nextStyle();
+
+        if (_pData.getSettings(PlotData::INT_COMPLEXMODE) == CPLX_REIM)
+        {
+            if (!useImag)
+            {
+                useImag = true;
+                n--;
+            }
+            else
+                useImag = false;
+        }
     }
 
     double AutoRangeX = _pData.getLogscale(XRANGE) ? log10(_pInfo.ranges[XRANGE].range()) : _pInfo.ranges[XRANGE].range();
@@ -1643,7 +1663,8 @@ bool Plot::plotstd(mglData& _mData, mglData& _mAxisVals, mglData _mData2[2], con
         && !_pData.getSettings(PlotData::LOG_XERROR)
         && !_pData.getSettings(PlotData::FLOAT_BARS)
         && !_pData.getSettings(PlotData::FLOAT_HBARS)
-        && !_pData.getSettings(PlotData::LOG_STEPPLOT))
+        && !_pData.getSettings(PlotData::LOG_STEPPLOT)
+        && !_pData.getSettings(PlotData::LOG_TABLE))
     {
         _mData = duplicatePoints(_mData);
         _mAxisVals = duplicatePoints(_mAxisVals);
@@ -1651,32 +1672,24 @@ bool Plot::plotstd(mglData& _mData, mglData& _mAxisVals, mglData _mData2[2], con
         _mData2[1] = duplicatePoints(_mData2[1]);
     }
 
+    int nNextStyle = _pInfo.nextStyle();
+
     if (nType == PT_FUNCTION)
     {
-        if (!_pData.getSettings(PlotData::LOG_AREA) && !_pData.getSettings(PlotData::LOG_REGION))
-            _graph->Plot(_mAxisVals, _mData, ("a" + _pInfo.sLineStyles[*_pInfo.nStyle]).c_str());
-        else if (_pData.getSettings(PlotData::LOG_REGION) && getNN(_mData2[0]) > 1)
+        if (_pData.getSettings(PlotData::LOG_REGION) && getNN(_mData2[0]) > 1) // Default region plot
         {
-            if (*_pInfo.nStyle == _pInfo.nStyleMax - 1)
-                _graph->Region(_mAxisVals, _mData, _mData2[0],
-                               ("a{" + _pData.getColors().substr(*_pInfo.nStyle, 1) + "7}{" + _pData.getColors().substr(0, 1) + "7}").c_str());
-            else
-                _graph->Region(_mAxisVals, _mData, _mData2[0],
-                               ("a{" + _pData.getColors().substr(*_pInfo.nStyle, 1) + "7}{" + _pData.getColors().substr(*_pInfo.nStyle + 1, 1) + "7}").c_str());
-
+            _graph->Region(_mAxisVals, _mData, _mData2[0],
+                           ("a{" + _pData.getColors().substr(*_pInfo.nStyle, 1) + "7}{" + _pData.getColors().substr(nNextStyle, 1) + "7}").c_str());
             _graph->Plot(_mAxisVals, _mData,
                          ("a" + _pInfo.sLineStyles[*_pInfo.nStyle]).c_str());
-
-            if (*_pInfo.nStyle == _pInfo.nStyleMax - 1)
-                _graph->Plot(_mAxisVals, _mData2[0],
-                             ("a" + _pInfo.sLineStyles[0]).c_str());
-            else
-                _graph->Plot(_mAxisVals, _mData2[0],
-                             ("a" + _pInfo.sLineStyles[*_pInfo.nStyle + 1]).c_str());
+            _graph->Plot(_mAxisVals, _mData2[0],
+                         ("a" + _pInfo.sLineStyles[nNextStyle]).c_str());
         }
-        else if (_pData.getSettings(PlotData::LOG_AREA) || _pData.getSettings(PlotData::LOG_REGION))
+        else if (_pData.getSettings(PlotData::LOG_AREA) || _pData.getSettings(PlotData::LOG_REGION)) // Fallback for region with only single plot
             _graph->Area(_mAxisVals, _mData,
                          ("a" + _pInfo.sLineStyles[*_pInfo.nStyle] + "{" + _pData.getColors()[*_pInfo.nStyle] + "9}").c_str());
+        else
+            _graph->Plot(_mAxisVals, _mData, ("a" + _pInfo.sLineStyles[*_pInfo.nStyle]).c_str());
     }
     else
     {
@@ -1687,100 +1700,65 @@ bool Plot::plotstd(mglData& _mData, mglData& _mAxisVals, mglData _mData2[2], con
         {
             if (_pData.getSettings(PlotData::LOG_INTERPOLATE) && countValidElements(_mData) >= (size_t)_pInfo.nSamples)
             {
-                if (!_pData.getSettings(PlotData::LOG_AREA)
-                    && !_pData.getSettings(PlotData::FLOAT_BARS)
-                    && !_pData.getSettings(PlotData::LOG_REGION)
-                    && !_pData.getSettings(PlotData::LOG_STEPPLOT))
-                    _graph->Plot(_mAxisVals, _mData,
-                                 ("a" + expandStyleForCurveArray(_pInfo.sLineStyles[*_pInfo.nStyle], _mData.ny > 1)).c_str());
-                else if (_pData.getSettings(PlotData::FLOAT_BARS)
-                         && !_pData.getSettings(PlotData::LOG_AREA)
-                         && !_pData.getSettings(PlotData::LOG_REGION)
-                         && !_pData.getSettings(PlotData::LOG_STEPPLOT))
+                if (_pData.getSettings(PlotData::FLOAT_BARS))
                     _graph->Bars(_mAxisVals, _mData,
                                  (composeColoursForBarChart(_mData.ny) + "^").c_str());
                 else if (_pData.getSettings(PlotData::LOG_REGION) && getNN(_mData2[0]) > 1)
                 {
-                    if (*_pInfo.nStyle == _pInfo.nStyleMax - 1)
-                        _graph->Region(_mAxisVals, _mData, _mData2[0],
-                                       ("a{" + _pData.getColors().substr(*_pInfo.nStyle, 1) + "7}{" + _pData.getColors().substr(0, 1) + "7}").c_str());
-                    else
-                        _graph->Region(_mAxisVals, _mData, _mData2[0],
-                                       ("a{" + _pData.getColors().substr(*_pInfo.nStyle, 1) + "7}{" + _pData.getColors().substr(*_pInfo.nStyle + 1, 1) + "7}").c_str());
-
+                    _graph->Region(_mAxisVals, _mData, _mData2[0],
+                                   ("a{" + _pData.getColors().substr(*_pInfo.nStyle, 1) + "7}{" + _pData.getColors().substr(nNextStyle, 1) + "7}").c_str());
                     _graph->Plot(_mAxisVals, _mData,
                                  ("a" + _pInfo.sLineStyles[*_pInfo.nStyle]).c_str());
-
-                    if (*_pInfo.nStyle == _pInfo.nStyleMax - 1)
-                        _graph->Plot(_mAxisVals, _mData2[0],
-                                     ("a" + _pInfo.sLineStyles[0]).c_str());
-                    else
-                        _graph->Plot(_mAxisVals, _mData2[0],
-                                     ("a" + _pInfo.sLineStyles[*_pInfo.nStyle + 1]).c_str());
+                    _graph->Plot(_mAxisVals, _mData2[0],
+                                 ("a" + _pInfo.sLineStyles[nNextStyle]).c_str());
                 }
                 else if (_pData.getSettings(PlotData::LOG_AREA) || _pData.getSettings(PlotData::LOG_REGION))
                     _graph->Area(_mAxisVals, _mData,
                                  ("a" + _pInfo.sLineStyles[*_pInfo.nStyle] + "{" + _pData.getColors()[*_pInfo.nStyle] + "9}").c_str());
-                else if (!_pData.getSettings(PlotData::FLOAT_BARS)
-                         && !_pData.getSettings(PlotData::LOG_AREA)
-                         && !_pData.getSettings(PlotData::FLOAT_HBARS)
-                         && _pData.getSettings(PlotData::LOG_STEPPLOT))
+                else if (_pData.getSettings(PlotData::LOG_STEPPLOT))
                     _graph->Step(_mAxisVals, _mData,
                                  (_pInfo.sLineStyles[*_pInfo.nStyle]).c_str());
+                else
+                    _graph->Plot(_mAxisVals, _mData,
+                                 ("a" + expandStyleForCurveArray(_pInfo.sLineStyles[*_pInfo.nStyle], _mData.ny > 1)).c_str());
             }
             else if (_pData.getSettings(PlotData::LOG_CONNECTPOINTS)
                      || (_pData.getSettings(PlotData::LOG_INTERPOLATE) && countValidElements(_mData) >= 0.9 * _pInfo.nSamples))
             {
-                if (!_pData.getSettings(PlotData::LOG_AREA)
-                    && !_pData.getSettings(PlotData::FLOAT_BARS)
-                    && !_pData.getSettings(PlotData::LOG_STEPPLOT))
-                    _graph->Plot(_mAxisVals, _mData,
-                                 ("a" + expandStyleForCurveArray(_pInfo.sConPointStyles[*_pInfo.nStyle], _mData.ny > 1)).c_str());
-                else if (_pData.getSettings(PlotData::FLOAT_BARS) && !_pData.getSettings(PlotData::LOG_AREA))
+                if (_pData.getSettings(PlotData::FLOAT_BARS))
                     _graph->Bars(_mAxisVals, _mData,
                                  (composeColoursForBarChart(_mData.ny) + "^").c_str());
-                else if (!_pData.getSettings(PlotData::FLOAT_BARS)
-                         && !_pData.getSettings(PlotData::LOG_AREA)
-                         && !_pData.getSettings(PlotData::FLOAT_HBARS)
-                         && _pData.getSettings(PlotData::LOG_STEPPLOT))
+                else if (_pData.getSettings(PlotData::LOG_STEPPLOT))
                     _graph->Step(_mAxisVals, _mData,
                                  (_pInfo.sLineStyles[*_pInfo.nStyle]).c_str());
-                else
+                else if (_pData.getSettings(PlotData::LOG_AREA))
                     _graph->Area(_mAxisVals, _mData,
                                  ("a" + _pInfo.sLineStyles[*_pInfo.nStyle] + "{" + _pData.getColors()[*_pInfo.nStyle] + "9}").c_str());
+                else
+                    _graph->Plot(_mAxisVals, _mData,
+                                 ("a" + expandStyleForCurveArray(_pInfo.sConPointStyles[*_pInfo.nStyle], _mData.ny > 1)).c_str());
             }
             else
             {
-                if (!_pData.getSettings(PlotData::LOG_AREA)
-                    && !_pData.getSettings(PlotData::FLOAT_BARS)
-                    && !_pData.getSettings(PlotData::FLOAT_HBARS)
-                    && !_pData.getSettings(PlotData::LOG_STEPPLOT))
-                    _graph->Plot(_mAxisVals, _mData,
-                                 ("a" + expandStyleForCurveArray(_pInfo.sPointStyles[*_pInfo.nStyle], _mData.ny > 1)).c_str());
-                else if (_pData.getSettings(PlotData::FLOAT_BARS)
-                         && !_pData.getSettings(PlotData::LOG_AREA)
-                         && !_pData.getSettings(PlotData::FLOAT_HBARS)
-                         && !_pData.getSettings(PlotData::LOG_STEPPLOT))
+
+                if (_pData.getSettings(PlotData::FLOAT_BARS))
                     _graph->Bars(_mAxisVals, _mData,
                                  (composeColoursForBarChart(_mData.ny) + "^").c_str());
-                else if (!_pData.getSettings(PlotData::FLOAT_BARS)
-                         && !_pData.getSettings(PlotData::LOG_AREA)
-                         && _pData.getSettings(PlotData::FLOAT_HBARS)
-                         && !_pData.getSettings(PlotData::LOG_STEPPLOT))
+                else if (_pData.getSettings(PlotData::FLOAT_HBARS))
                     _graph->Barh(_mAxisVals, _mData,
                                  (composeColoursForBarChart(_mData.ny) + "^").c_str());
-                else if (!_pData.getSettings(PlotData::FLOAT_BARS)
-                         && !_pData.getSettings(PlotData::LOG_AREA)
-                         && !_pData.getSettings(PlotData::FLOAT_HBARS)
-                         && _pData.getSettings(PlotData::LOG_STEPPLOT))
+                else if (_pData.getSettings(PlotData::LOG_STEPPLOT))
                     _graph->Step(_mAxisVals, _mData,
                                  (_pInfo.sLineStyles[*_pInfo.nStyle]).c_str());
-                else
+                else if (_pData.getSettings(PlotData::LOG_AREA))
                     _graph->Stem(_mAxisVals, _mData,
                                  _pInfo.sConPointStyles[*_pInfo.nStyle].c_str());
+                else
+                    _graph->Plot(_mAxisVals, _mData,
+                                 ("a" + expandStyleForCurveArray(_pInfo.sPointStyles[*_pInfo.nStyle], _mData.ny > 1)).c_str());
             }
         }
-        else if (_pData.getSettings(PlotData::LOG_XERROR) || _pData.getSettings(PlotData::LOG_YERROR))
+        else
             _graph->Error(_mAxisVals, _mData, _mData2[0], _mData2[1],
                           _pInfo.sPointStyles[*_pInfo.nStyle].c_str());
     }
@@ -1798,11 +1776,15 @@ bool Plot::plotstd(mglData& _mData, mglData& _mAxisVals, mglData _mData2[2], con
 /////////////////////////////////////////////////
 void Plot::create3dPlot()
 {
+    static const std::string slicesStyleChars[3] = {"x", "", "z"};
+
     if (sFunc.length())
     {
         mglData _mContVec(15);
         IntervalSet dataInterval = m_manager.assets[0].getDataIntervals();
         m_manager.weightedRange(ALLRANGES, dataInterval[0]);
+
+        // Apply curvilinear coordinates
         m_manager.applyCoordSys((CoordinateSystem)_pData.getSettings(PlotData::INT_COORDS));
 
         if (!isnan(_pInfo.ranges[CRANGE].front()))
@@ -1826,6 +1808,7 @@ void Plot::create3dPlot()
             _graph->SetCutBox(CalcCutBox(_pData.getRotateAngle(1), 0, _pData.getSettings(PlotData::INT_COORDS), true),
                               CalcCutBox(_pData.getRotateAngle(1), 1, _pData.getSettings(PlotData::INT_COORDS), true));
         }
+
         // --> Entsprechend dem gewuenschten Plotting-Style plotten <--
         if (_pInfo.sCommand.substr(0, 4) == "mesh")
             _graph->Surf3(m_manager.assets[0].axes[XCOORD], m_manager.assets[0].axes[YCOORD], m_manager.assets[0].axes[ZCOORD], _mData,
@@ -1860,39 +1843,25 @@ void Plot::create3dPlot()
             }
             else if (_pData.getSettings(PlotData::LOG_CONTFILLED))
             {
-                for (unsigned short n = 0; n < _pData.getSlices(); n++)
+                for (int i = XCOORD; i <= ZCOORD; i++)
                 {
-                    _graph->ContF3(_mContVec, m_manager.assets[0].axes[XCOORD], m_manager.assets[0].axes[YCOORD], m_manager.assets[0].axes[ZCOORD], _mData,
-                                   _pData.getColorScheme("x").c_str(), (n + 1)*_pInfo.nSamples / (_pData.getSlices() + 1));
-                    _graph->Cont3(_mContVec, m_manager.assets[0].axes[XCOORD], m_manager.assets[0].axes[YCOORD], m_manager.assets[0].axes[ZCOORD], _mData,
-                                  "kx", (n + 1)*_pInfo.nSamples / (_pData.getSlices() + 1));
-                }
-                for (unsigned short n = 0; n < _pData.getSlices(1); n++)
-                {
-                    _graph->ContF3(_mContVec, m_manager.assets[0].axes[XCOORD], m_manager.assets[0].axes[YCOORD], m_manager.assets[0].axes[ZCOORD], _mData,
-                                    _pData.getColorScheme().c_str(), (n + 1)*_pInfo.nSamples / (_pData.getSlices(1) + 1));
-                    _graph->Cont3(_mContVec, m_manager.assets[0].axes[XCOORD], m_manager.assets[0].axes[YCOORD], m_manager.assets[0].axes[ZCOORD], _mData,
-                                  "k", (n + 1)*_pInfo.nSamples / (_pData.getSlices(1) + 1));
-                }
-                for (unsigned short n = 0; n < _pData.getSlices(2); n++)
-                {
-                    _graph->ContF3(_mContVec, m_manager.assets[0].axes[XCOORD], m_manager.assets[0].axes[YCOORD], m_manager.assets[0].axes[ZCOORD], _mData,
-                                   _pData.getColorScheme("z").c_str(), (n + 1)*_pInfo.nSamples / (_pData.getSlices(2) + 1));
-                    _graph->Cont3(_mContVec, m_manager.assets[0].axes[XCOORD], m_manager.assets[0].axes[YCOORD], m_manager.assets[0].axes[ZCOORD], _mData,
-                                  "kz", (n + 1)*_pInfo.nSamples / (_pData.getSlices(2) + 1));
+                    for (unsigned short n = 0; n < _pData.getSlices(i); n++)
+                    {
+                        _graph->ContF3(_mContVec, m_manager.assets[0].axes[XCOORD], m_manager.assets[0].axes[YCOORD], m_manager.assets[0].axes[ZCOORD], _mData,
+                                       _pData.getColorScheme(slicesStyleChars[i]).c_str(), (n + 1)*_pInfo.nSamples / (_pData.getSlices(i) + 1));
+                        _graph->Cont3(_mContVec, m_manager.assets[0].axes[i], m_manager.assets[0].axes[YCOORD], m_manager.assets[0].axes[ZCOORD], _mData,
+                                      ("k" + slicesStyleChars[i]).c_str(), (n + 1)*_pInfo.nSamples / (_pData.getSlices() + 1));
+                    }
                 }
             }
             else
             {
-                for (unsigned short n = 0; n < _pData.getSlices(); n++)
-                    _graph->Cont3(_mContVec, m_manager.assets[0].axes[XCOORD], m_manager.assets[0].axes[YCOORD], m_manager.assets[0].axes[ZCOORD], _mData,
-                                  _pData.getColorScheme("x").c_str(), (n + 1)*_pInfo.nSamples / (_pData.getSlices() + 1));
-                for (unsigned short n = 0; n < _pData.getSlices(1); n++)
-                    _graph->Cont3(_mContVec, m_manager.assets[0].axes[XCOORD], m_manager.assets[0].axes[YCOORD], m_manager.assets[0].axes[ZCOORD], _mData,
-                                  _pData.getColorScheme().c_str(), (n + 1)*_pInfo.nSamples / (_pData.getSlices(1) + 1));
-                for (unsigned short n = 0; n < _pData.getSlices(2); n++)
-                    _graph->Cont3(_mContVec, m_manager.assets[0].axes[XCOORD], m_manager.assets[0].axes[YCOORD], m_manager.assets[0].axes[ZCOORD], _mData,
-                                  _pData.getColorScheme("z").c_str(), (n + 1)*_pInfo.nSamples / (_pData.getSlices(2) + 1));
+                for (int i = XCOORD; i <= ZCOORD; i++)
+                {
+                    for (unsigned short n = 0; n < _pData.getSlices(i); n++)
+                        _graph->Cont3(_mContVec, m_manager.assets[0].axes[XCOORD], m_manager.assets[0].axes[YCOORD], m_manager.assets[0].axes[ZCOORD], _mData,
+                                      _pData.getColorScheme(slicesStyleChars[i]).c_str(), (n + 1)*_pInfo.nSamples / (_pData.getSlices(i) + 1));
+                }
             }
         }
         else if (_pInfo.sCommand.substr(0, 4) == "grad")
@@ -1915,14 +1884,14 @@ void Plot::create3dPlot()
                     _graph->Grad(m_manager.assets[0].axes[XCOORD], m_manager.assets[0].axes[YCOORD], m_manager.assets[0].axes[ZCOORD], _mData,
                                  _pData.getColorScheme().c_str());
             }
+
             if (!(_pData.getSettings(PlotData::LOG_CONTPROJ)))
             {
-                _graph->Dens3(m_manager.assets[0].axes[XCOORD], m_manager.assets[0].axes[YCOORD], m_manager.assets[0].axes[ZCOORD], _mData,
-                              _pData.getColorSchemeLight("x").c_str(), _pInfo.nSamples / 2);
-                _graph->Dens3(m_manager.assets[0].axes[XCOORD], m_manager.assets[0].axes[YCOORD], m_manager.assets[0].axes[ZCOORD], _mData,
-                              _pData.getColorSchemeLight().c_str(), _pInfo.nSamples / 2);
-                _graph->Dens3(m_manager.assets[0].axes[XCOORD], m_manager.assets[0].axes[YCOORD], m_manager.assets[0].axes[ZCOORD], _mData,
-                              _pData.getColorSchemeLight("z").c_str(), _pInfo.nSamples / 2);
+                for (int i = XCOORD; i <= ZCOORD; i++)
+                {
+                    _graph->Dens3(m_manager.assets[0].axes[XCOORD], m_manager.assets[0].axes[YCOORD], m_manager.assets[0].axes[ZCOORD], _mData,
+                                  _pData.getColorSchemeLight(slicesStyleChars[i]).c_str(), _pInfo.nSamples / 2);
+                }
             }
         }
         else if (_pInfo.sCommand.substr(0, 4) == "dens")
@@ -1930,15 +1899,12 @@ void Plot::create3dPlot()
             if (!(_pData.getSettings(PlotData::LOG_CONTFILLED) && _pData.getSettings(PlotData::LOG_CONTPROJ))
                 && !_pData.getSettings(PlotData::LOG_CLOUDPLOT))
             {
-                for (unsigned short n = 0; n < _pData.getSlices(); n++)
-                    _graph->Dens3(m_manager.assets[0].axes[XCOORD], m_manager.assets[0].axes[YCOORD], m_manager.assets[0].axes[ZCOORD], _mData,
-                                  _pData.getColorScheme("x").c_str(), (n + 1)*_pInfo.nSamples / (_pData.getSlices() + 1));
-                for (unsigned short n = 0; n < _pData.getSlices(1); n++)
-                    _graph->Dens3(m_manager.assets[0].axes[XCOORD], m_manager.assets[0].axes[YCOORD], m_manager.assets[0].axes[ZCOORD], _mData,
-                                  _pData.getColorScheme().c_str(), (n + 1)*_pInfo.nSamples / (_pData.getSlices(1) + 1));
-                for (unsigned short n = 0; n < _pData.getSlices(2); n++)
-                    _graph->Dens3(m_manager.assets[0].axes[XCOORD], m_manager.assets[0].axes[YCOORD], m_manager.assets[0].axes[ZCOORD], _mData,
-                                  _pData.getColorScheme("z").c_str(), (n + 1)*_pInfo.nSamples / (_pData.getSlices(2) + 1));
+                for (int i = XCOORD; i <= ZCOORD; i++)
+                {
+                    for (unsigned short n = 0; n < _pData.getSlices(i); n++)
+                        _graph->Dens3(m_manager.assets[0].axes[XCOORD], m_manager.assets[0].axes[YCOORD], m_manager.assets[0].axes[ZCOORD], _mData,
+                                      _pData.getColorScheme(slicesStyleChars[i]).c_str(), (n + 1)*_pInfo.nSamples / (_pData.getSlices(i) + 1));
+                }
             }
             else if (_pData.getSettings(PlotData::LOG_CLOUDPLOT) && !(_pData.getSettings(PlotData::LOG_CONTFILLED)
                                                                       && _pData.getSettings(PlotData::LOG_CONTPROJ)))
@@ -1952,12 +1918,10 @@ void Plot::create3dPlot()
         }
 
         if (_pData.getSettings(PlotData::LOG_CUTBOX)
-                && _pInfo.sCommand.substr(0, 4) != "cont"
-                && _pInfo.sCommand.substr(0, 4) != "grad"
-                && (_pInfo.sCommand.substr(0, 4) != "dens" || (_pInfo.sCommand.substr(0, 4) == "dens" && _pData.getSettings(PlotData::LOG_CLOUDPLOT))))
-        {
+            && _pInfo.sCommand.substr(0, 4) != "cont"
+            && _pInfo.sCommand.substr(0, 4) != "grad"
+            && (_pInfo.sCommand.substr(0, 4) != "dens" || (_pInfo.sCommand.substr(0, 4) == "dens" && _pData.getSettings(PlotData::LOG_CLOUDPLOT))))
             _graph->SetCutBox(mglPoint(0), mglPoint(0));
-        }
 
         // --> Ggf. Konturlinien ergaenzen <--
         if (_pData.getSettings(PlotData::LOG_CONTPROJ) && _pInfo.sCommand.substr(0, 4) != "cont")
@@ -2021,7 +1985,8 @@ void Plot::create3dVect()
 
         if (_pData.getSettings(PlotData::LOG_CUTBOX))
         {
-            _graph->SetCutBox(CalcCutBox(_pData.getRotateAngle(1),  0, _pData.getSettings(PlotData::INT_COORDS), true), CalcCutBox(_pData.getRotateAngle(1), 1, _pData.getSettings(PlotData::INT_COORDS), true));
+            _graph->SetCutBox(CalcCutBox(_pData.getRotateAngle(1),  0, _pData.getSettings(PlotData::INT_COORDS), true),
+                              CalcCutBox(_pData.getRotateAngle(1), 1, _pData.getSettings(PlotData::INT_COORDS), true));
         }
         // --> Entsprechend dem gewuenschten Plotting-Style plotten <--
         if (_pData.getSettings(PlotData::LOG_FLOW))
@@ -2040,9 +2005,7 @@ void Plot::create3dVect()
         }
 
         if (_pData.getSettings(PlotData::LOG_CUTBOX))
-        {
             _graph->SetCutBox(mglPoint(0), mglPoint(0));
-        }
     }
 }
 
@@ -2725,47 +2688,43 @@ void Plot::createStd3dPlot(int& nStyle, size_t& nLegends, int nFunctions, size_t
 {
     string sDummy = "";
     string sConvLegends = "";
+    bool useImag = false;
 
-    mglData _mData[3] = {mglData(_pInfo.nSamples), mglData(_pInfo.nSamples), mglData(_pInfo.nSamples)};
-    mglData _mData2[3] = {mglData(_pInfo.nSamples), mglData(_pInfo.nSamples), mglData(_pInfo.nSamples)};
+    mglData _mData[3];
+    mglData _mData2[3];
 
     if (_pData.getSettings(PlotData::LOG_CUTBOX))
         _graph->SetCutBox(CalcCutBox(_pData.getRotateAngle(1), 0, _pData.getSettings(PlotData::INT_COORDS), true),
                           CalcCutBox(_pData.getRotateAngle(1), 1, _pData.getSettings(PlotData::INT_COORDS), true));
 
+    // Apply curvilinear coordinates
     m_manager.applyCoordSys((CoordinateSystem)_pData.getSettings(PlotData::INT_COORDS));
 
     for (size_t n = 0; n < m_manager.assets.size(); n++)
     {
         StripSpaces(m_manager.assets[n].legend);
 
-        if (m_manager.assets[n].type == PT_FUNCTION)
-        {
-            _mData[XCOORD] = m_manager.assets[n].data[XCOORD].first;
-            _mData[YCOORD] = m_manager.assets[n].data[YCOORD].first;
-            _mData[ZCOORD] = m_manager.assets[n].data[ZCOORD].first;
+        _mData[XCOORD].Link(useImag ? m_manager.assets[n].data[XCOORD].second : m_manager.assets[n].data[XCOORD].first);
+        _mData[YCOORD].Link(useImag ? m_manager.assets[n].data[YCOORD].second : m_manager.assets[n].data[YCOORD].first);
+        _mData[ZCOORD].Link(useImag ? m_manager.assets[n].data[ZCOORD].second : m_manager.assets[n].data[ZCOORD].first);
 
-            if (_pData.getSettings(PlotData::LOG_REGION)
-                && n+1 < m_manager.assets.size())
-            {
-                _mData2[XCOORD] = m_manager.assets[n+1].data[XCOORD].first;
-                _mData2[YCOORD] = m_manager.assets[n+1].data[YCOORD].first;
-                _mData2[ZCOORD] = m_manager.assets[n+1].data[ZCOORD].first;
-            }
-            else
-            {
-                for (int j = XCOORD; j <= ZCOORD; j++)
-                {
-                    _mData2[j] = 0.0 * _mData[j];
-                }
-            }
+        if (_pData.getSettings(PlotData::LOG_REGION)
+            && n+1 < m_manager.assets.size())
+        {
+            _mData2[XCOORD].Link(useImag ? m_manager.assets[n+1].data[XCOORD].second : m_manager.assets[n+1].data[XCOORD].first);
+            _mData2[YCOORD].Link(useImag ? m_manager.assets[n+1].data[YCOORD].second : m_manager.assets[n+1].data[YCOORD].first);
+            _mData2[ZCOORD].Link(useImag ? m_manager.assets[n+1].data[ZCOORD].second : m_manager.assets[n+1].data[ZCOORD].first);
         }
         else
         {
-            _mData[XCOORD] = m_manager.assets[n].data[XCOORD].first;
-            _mData[YCOORD] = m_manager.assets[n].data[YCOORD].first;
-            _mData[ZCOORD] = m_manager.assets[n].data[ZCOORD].first;
+            for (int j = XCOORD; j <= ZCOORD; j++)
+            {
+                _mData2[j] = 0.0 * _mData[j];
+            }
+        }
 
+        if (m_manager.assets[n].type == PT_DATA)
+        {
             for (int j = XRANGE; j <= ZRANGE; j++)
             {
                 for (int i = 0; i < getNN(_mData[j]); i++)
@@ -2775,29 +2734,15 @@ void Plot::createStd3dPlot(int& nStyle, size_t& nLegends, int nFunctions, size_t
                 }
             }
 
-            if (_pData.getSettings(PlotData::LOG_REGION)
-                && n+1 < m_manager.assets.size())
-            {
-                _mData2[XCOORD] = m_manager.assets[n+1].data[XCOORD].first;
-                _mData2[YCOORD] = m_manager.assets[n+1].data[YCOORD].first;
-                _mData2[ZCOORD] = m_manager.assets[n+1].data[ZCOORD].first;
-            }
-            else if (_pData.getSettings(PlotData::LOG_REGION))
-            {
-                for (int j = XCOORD; j <= ZCOORD; j++)
-                {
-                    _mData2[j] = 0.0 * _mData[j];
-                }
-            }
-
             if (_pData.getSettings(PlotData::LOG_XERROR) && _pData.getSettings(PlotData::LOG_YERROR))
             {
-                _mData2[XCOORD] = m_manager.assets[n].data[XCOORD+3].first;
-                _mData2[YCOORD] = m_manager.assets[n].data[YCOORD+3].first;
-                _mData2[ZCOORD] = m_manager.assets[n].data[ZCOORD+3].first;
+                _mData2[XCOORD].Link(m_manager.assets[n].data[XCOORD+3].first);
+                _mData2[YCOORD].Link(m_manager.assets[n].data[YCOORD+3].first);
+                _mData2[ZCOORD].Link(m_manager.assets[n].data[ZCOORD+3].first);
             }
         }
 
+        // Create the actual 3D trajectory plot
         if (!plotstd3d(_mData, _mData2, m_manager.assets[n].type))
         {
             clearData();
@@ -2818,6 +2763,7 @@ void Plot::createStd3dPlot(int& nStyle, size_t& nLegends, int nFunctions, size_t
                     {
                         if (sConvLegends[l] == '(')
                             l += getMatchingParenthesis(sConvLegends.substr(l));
+
                         if (sConvLegends[l] == ',')
                         {
                             sConvLegends = "\"[" + sConvLegends.substr(1, sConvLegends.length() - 2) + "]\"";
@@ -2832,16 +2778,16 @@ void Plot::createStd3dPlot(int& nStyle, size_t& nLegends, int nFunctions, size_t
                         nLegends++;
                     }
 
-                    if (nStyle == _pInfo.nStyleMax - 1)
-                        nStyle = 0;
-                    else
-                        nStyle++;
                 }
             }
             else
             {
                 sConvLegends = m_manager.assets[n].legend + " -nq";
                 NumeReKernel::getInstance()->getStringParser().evalAndFormat(sConvLegends, sDummy, true);
+
+                if (_pData.getSettings(PlotData::INT_COMPLEXMODE) == CPLX_REIM && sConvLegends.length())
+                    sConvLegends = useImag ? "Im(" + sConvLegends + ")" : "Re(" + sConvLegends + ")";
+
                 sConvLegends = "\"" + sConvLegends + "\"";
 
                 if (sConvLegends != "\"\"")
@@ -2851,51 +2797,65 @@ void Plot::createStd3dPlot(int& nStyle, size_t& nLegends, int nFunctions, size_t
                     nLegends++;
                 }
 
-                if (nStyle == _pInfo.nStyleMax - 1)
-                    nStyle = 0;
-                else
-                    nStyle++;
             }
         }
         else
         {
-            sConvLegends = m_manager.assets[n].legend;
+            sConvLegends = m_manager.assets[n].legend + " -nq";
             NumeReKernel::getInstance()->getStringParser().evalAndFormat(sConvLegends, sDummy, true);
+
+            if (_pData.getSettings(PlotData::INT_COMPLEXMODE) == CPLX_REIM && sConvLegends.length())
+                sConvLegends = useImag ? "Im(" + sConvLegends + ")" : "Re(" + sConvLegends + ")";
+
+            sConvLegends = "\"" + sConvLegends + "\"";
 
             if (sConvLegends != "\"\"")
             {
                 nLegends++;
+                std::string sLegendStyle;
+                std::string sLegend = fromSystemCodePage(replaceToTeX(sConvLegends.substr(1, sConvLegends.length() - 2)));
 
                 if (!_pData.getSettings(PlotData::LOG_XERROR) && !_pData.getSettings(PlotData::LOG_YERROR))
                 {
                     if ((_pData.getSettings(PlotData::LOG_INTERPOLATE) && countValidElements(_mData[XCOORD]) >= (size_t)_pInfo.nSamples)
                         || _pData.getSettings(PlotData::FLOAT_BARS))
-                        _graph->AddLegend(fromSystemCodePage(replaceToTeX(sConvLegends.substr(1, sConvLegends.length() - 2))).c_str(),
-                                          getLegendStyle(_pInfo.sLineStyles[nStyle]).c_str());
+                        sLegendStyle = getLegendStyle(_pInfo.sLineStyles[nStyle]);
                     else if (_pData.getSettings(PlotData::LOG_CONNECTPOINTS)
                              || (_pData.getSettings(PlotData::LOG_INTERPOLATE) && countValidElements(_mData[XCOORD]) >= 0.9 * _pInfo.nSamples))
-                        _graph->AddLegend(fromSystemCodePage(replaceToTeX(sConvLegends.substr(1, sConvLegends.length() - 2))).c_str(),
-                                          getLegendStyle(_pInfo.sConPointStyles[nStyle]).c_str());
+                        sLegendStyle = getLegendStyle(_pInfo.sConPointStyles[nStyle]);
                     else if (_pData.getSettings(PlotData::LOG_STEPPLOT))
-                        _graph->AddLegend(fromSystemCodePage(replaceToTeX(sConvLegends.substr(1, sConvLegends.length() - 2))).c_str(),
-                                          getLegendStyle(_pInfo.sLineStyles[nStyle]).c_str());
+                        sLegendStyle = getLegendStyle(_pInfo.sLineStyles[nStyle]);
                     else
-                        _graph->AddLegend(fromSystemCodePage(replaceToTeX(sConvLegends.substr(1, sConvLegends.length() - 2))).c_str(),
-                                          getLegendStyle(_pInfo.sPointStyles[nStyle]).c_str());
+                        sLegendStyle = getLegendStyle(_pInfo.sPointStyles[nStyle]);
                 }
                 else
-                    _graph->AddLegend(fromSystemCodePage(replaceToTeX(sConvLegends.substr(1, sConvLegends.length() - 2))).c_str(),
-                                      getLegendStyle(_pInfo.sPointStyles[nStyle]).c_str());
+                    sLegendStyle = getLegendStyle(_pInfo.sPointStyles[nStyle]);
+
+                _graph->AddLegend(sLegend.c_str(), sLegendStyle.c_str());
             }
 
-            if (nStyle == _pInfo.nStyleMax - 1)
-                nStyle = 0;
-            else
-                nStyle++;
         }
 
-        if (_pData.getSettings(PlotData::LOG_REGION) && n+1 < m_manager.assets.size())
+        nStyle = _pInfo.nextStyle();
+
+        if (_pData.getSettings(PlotData::LOG_REGION)
+            && n+1 < m_manager.assets.size()
+            && (useImag || _pData.getSettings(PlotData::INT_COMPLEXMODE) != CPLX_REIM))
             n++;
+
+        if (getNN(_mData2[0]) && _pData.getSettings(PlotData::LOG_REGION))
+            nStyle = _pInfo.nextStyle();
+
+        if (_pData.getSettings(PlotData::INT_COMPLEXMODE) == CPLX_REIM)
+        {
+            if (!useImag)
+            {
+                useImag = true;
+                n--;
+            }
+            else
+                useImag = false;
+        }
     }
 
     if (_pData.getSettings(PlotData::LOG_CUTBOX))
@@ -2934,39 +2894,32 @@ bool Plot::plotstd3d(mglData _mData[3], mglData _mData2[3], const short nType)
         && !_pData.getSettings(PlotData::FLOAT_HBARS)
         && !_pData.getSettings(PlotData::LOG_STEPPLOT))
     {
-        for (int i = 0; i < 3; i++)
+        for (int i = XCOORD; i <= ZCOORD; i++)
         {
             _mData[i] = duplicatePoints(_mData[i]);
             _mData2[i] = duplicatePoints(_mData2[i]);
         }
     }
 
+    int nNextStyle = _pInfo.nextStyle();
+
     if (nType == PT_FUNCTION)
     {
         if (!_pData.getSettings(PlotData::LOG_AREA)
             && !_pData.getSettings(PlotData::LOG_REGION))
-            _graph->Plot(_mData[0], _mData[1], _mData[2], ("a" + _pInfo.sLineStyles[*_pInfo.nStyle]).c_str());
+            _graph->Plot(_mData[XCOORD], _mData[YCOORD], _mData[ZCOORD], ("a" + _pInfo.sLineStyles[*_pInfo.nStyle]).c_str());
         else if (_pData.getSettings(PlotData::LOG_REGION)
                  && getNN(_mData2[0]))
         {
-            if (*_pInfo.nStyle == _pInfo.nStyleMax - 1)
-                _graph->Region(_mData[0], _mData[1], _mData[2], _mData2[0], _mData2[1], _mData2[2],
-                               ("a{" + _pData.getColors().substr(*_pInfo.nStyle, 1) + "7}{" + _pData.getColors().substr(0, 1) + "7}").c_str());
-            else
-                _graph->Region(_mData[0], _mData[1], _mData[2], _mData2[0], _mData2[1], _mData2[2],
-                               ("a{" + _pData.getColors().substr(*_pInfo.nStyle, 1) + "7}{" + _pData.getColors().substr(*_pInfo.nStyle + 1, 1) + "7}").c_str());
-            _graph->Plot(_mData[0], _mData[1], _mData[2],
+            _graph->Region(_mData[XCOORD], _mData[YCOORD], _mData[ZCOORD], _mData2[XCOORD], _mData2[YCOORD], _mData2[ZCOORD],
+                           ("a{" + _pData.getColors().substr(*_pInfo.nStyle, 1) + "7}{" + _pData.getColors().substr(nNextStyle, 1) + "7}").c_str());
+            _graph->Plot(_mData[XCOORD], _mData[YCOORD], _mData[ZCOORD],
                          ("a" + _pInfo.sLineStyles[*_pInfo.nStyle]).c_str());
-
-            if (*_pInfo.nStyle == _pInfo.nStyleMax - 1)
-                _graph->Plot(_mData2[0], _mData2[1], _mData2[2],
-                             ("a" + _pInfo.sLineStyles[0]).c_str());
-            else
-                _graph->Plot(_mData2[0], _mData2[1], _mData2[2],
-                             ("a" + _pInfo.sLineStyles[*_pInfo.nStyle + 1]).c_str());
+            _graph->Plot(_mData2[XCOORD], _mData2[YCOORD], _mData2[ZCOORD],
+                         ("a" + _pInfo.sLineStyles[nNextStyle]).c_str());
         }
         else
-            _graph->Area(_mData[0], _mData[1], _mData[2],
+            _graph->Area(_mData[XCOORD], _mData[YCOORD], _mData[ZCOORD],
                          ("a" + _pInfo.sLineStyles[*_pInfo.nStyle] + "{" + _pData.getColors()[*_pInfo.nStyle] + "9}").c_str());
     }
     else
@@ -2977,75 +2930,49 @@ bool Plot::plotstd3d(mglData _mData[3], mglData _mData2[3], const short nType)
             if (_pData.getSettings(PlotData::LOG_INTERPOLATE)
                 && countValidElements(_mData[0]) >= (size_t)_pInfo.nSamples)
             {
-                if (!_pData.getSettings(PlotData::LOG_AREA)
-                    && !_pData.getSettings(PlotData::FLOAT_BARS)
-                    && !_pData.getSettings(PlotData::LOG_REGION))
-                    _graph->Plot(_mData[0], _mData[1], _mData[2],
-                                 ("a" + _pInfo.sLineStyles[*_pInfo.nStyle]).c_str());
-                else if (_pData.getSettings(PlotData::FLOAT_BARS)
-                         && !_pData.getSettings(PlotData::LOG_AREA)
-                         && !_pData.getSettings(PlotData::LOG_REGION))
-                    _graph->Bars(_mData[0], _mData[1], _mData[2],
+                if (_pData.getSettings(PlotData::FLOAT_BARS))
+                    _graph->Bars(_mData[XCOORD], _mData[YCOORD], _mData[ZCOORD],
                                  (_pInfo.sLineStyles[*_pInfo.nStyle] + "^").c_str());
-                    else
-                    _graph->Area(_mData[0], _mData[1], _mData[2],
+                else if (_pData.getSettings(PlotData::LOG_AREA) || _pData.getSettings(PlotData::LOG_REGION))
+                    _graph->Area(_mData[XCOORD], _mData[YCOORD], _mData[ZCOORD],
                                  ("a" + _pInfo.sLineStyles[*_pInfo.nStyle] + "{" + _pData.getColors()[*_pInfo.nStyle] + "9}").c_str());
+                else
+                    _graph->Plot(_mData[XCOORD], _mData[YCOORD], _mData[ZCOORD],
+                                 ("a" + _pInfo.sLineStyles[*_pInfo.nStyle]).c_str());
             }
             else if (_pData.getSettings(PlotData::LOG_CONNECTPOINTS)
                      || (_pData.getSettings(PlotData::LOG_INTERPOLATE) && countValidElements(_mData[0]) >= 0.9 * _pInfo.nSamples))
             {
-                if (!_pData.getSettings(PlotData::LOG_AREA)
-                    && !_pData.getSettings(PlotData::FLOAT_BARS))
-                    _graph->Plot(_mData[0], _mData[1], _mData[2],
-                                 ("a" + _pInfo.sConPointStyles[*_pInfo.nStyle]).c_str());
-                else if (_pData.getSettings(PlotData::FLOAT_BARS)
-                         && !_pData.getSettings(PlotData::LOG_AREA))
-                    _graph->Bars(_mData[0], _mData[1], _mData[2],
+                if (_pData.getSettings(PlotData::FLOAT_BARS))
+                    _graph->Bars(_mData[XCOORD], _mData[YCOORD], _mData[ZCOORD],
                                  (_pInfo.sLineStyles[*_pInfo.nStyle] + "^").c_str());
-                else
-                    _graph->Area(_mData[0], _mData[1], _mData[2],
+                else if (_pData.getSettings(PlotData::LOG_AREA))
+                    _graph->Area(_mData[XCOORD], _mData[YCOORD], _mData[ZCOORD],
                                  ("a" + _pInfo.sLineStyles[*_pInfo.nStyle] + "{" + _pData.getColors()[*_pInfo.nStyle] + "9}").c_str());
+                else
+                    _graph->Plot(_mData[XCOORD], _mData[YCOORD], _mData[ZCOORD],
+                                 ("a" + _pInfo.sConPointStyles[*_pInfo.nStyle]).c_str());
             }
             else
             {
-                if (!_pData.getSettings(PlotData::LOG_AREA)
-                    && !_pData.getSettings(PlotData::INT_MARKS)
-                    && !_pData.getSettings(PlotData::FLOAT_BARS)
-                    && !_pData.getSettings(PlotData::LOG_STEPPLOT)
-                    && !_pData.getSettings(PlotData::LOG_CRUST))
-                    _graph->Plot(_mData[0], _mData[1], _mData[2],
-                                 ("a" + _pInfo.sPointStyles[*_pInfo.nStyle]).c_str());
-                else if (_pData.getSettings(PlotData::INT_MARKS)
-                         && !_pData.getSettings(PlotData::LOG_CRUST)
-                         && !_pData.getSettings(PlotData::FLOAT_BARS)
-                         && !_pData.getSettings(PlotData::LOG_AREA)
-                         && !_pData.getSettings(PlotData::LOG_STEPPLOT))
-                    _graph->Dots(_mData[0], _mData[1], _mData[2],
+                if (_pData.getSettings(PlotData::INT_MARKS))
+                    _graph->Dots(_mData[XCOORD], _mData[YCOORD], _mData[ZCOORD],
                                  _pData.getColorScheme(toString(_pData.getSettings(PlotData::INT_MARKS))).c_str());
-                else if (_pData.getSettings(PlotData::LOG_CRUST)
-                         && !_pData.getSettings(PlotData::INT_MARKS)
-                         && !_pData.getSettings(PlotData::FLOAT_BARS)
-                         && !_pData.getSettings(PlotData::LOG_AREA)
-                         && !_pData.getSettings(PlotData::LOG_STEPPLOT))
-                    _graph->Crust(_mData[0], _mData[1], _mData[2],
+                else if (_pData.getSettings(PlotData::LOG_CRUST))
+                    _graph->Crust(_mData[XCOORD], _mData[YCOORD], _mData[ZCOORD],
                                   _pData.getColorScheme().c_str());
-                else if (_pData.getSettings(PlotData::FLOAT_BARS)
-                         && !_pData.getSettings(PlotData::LOG_AREA)
-                         && !_pData.getSettings(PlotData::INT_MARKS)
-                         && !_pData.getSettings(PlotData::LOG_STEPPLOT)
-                         && !_pData.getSettings(PlotData::LOG_CRUST))
-                    _graph->Bars(_mData[0], _mData[1], _mData[2],
+                else if (_pData.getSettings(PlotData::FLOAT_BARS))
+                    _graph->Bars(_mData[XCOORD], _mData[YCOORD], _mData[ZCOORD],
                                  (_pInfo.sLineStyles[*_pInfo.nStyle] + "^").c_str());
-                else if (!_pData.getSettings(PlotData::FLOAT_BARS)
-                         && !_pData.getSettings(PlotData::LOG_AREA)
-                         && !_pData.getSettings(PlotData::INT_MARKS)
-                         && _pData.getSettings(PlotData::LOG_STEPPLOT)
-                         && !_pData.getSettings(PlotData::LOG_CRUST))
-                    _graph->Step(_mData[0], _mData[1], _mData[2],
+                else if (_pData.getSettings(PlotData::LOG_STEPPLOT))
+                    _graph->Step(_mData[XCOORD], _mData[YCOORD], _mData[ZCOORD],
                                  (_pInfo.sLineStyles[*_pInfo.nStyle]).c_str());
-                else
-                    _graph->Stem(_mData[0], _mData[1], _mData[2],
+                else if (_pData.getSettings(PlotData::LOG_AREA))
+                    _graph->Stem(_mData[XCOORD], _mData[YCOORD], _mData[ZCOORD],
                                  _pInfo.sConPointStyles[*_pInfo.nStyle].c_str());
+                else
+                    _graph->Plot(_mData[XCOORD], _mData[YCOORD], _mData[ZCOORD],
+                                 ("a" + _pInfo.sPointStyles[*_pInfo.nStyle]).c_str());
             }
         }
         else if (_pData.getSettings(PlotData::LOG_XERROR)
@@ -3053,12 +2980,13 @@ bool Plot::plotstd3d(mglData _mData[3], mglData _mData2[3], const short nType)
         {
             for (int m = 0; m < _mData[0].nx; m++)
             {
-                _graph->Error(mglPoint(_mData[0].a[m], _mData[1].a[m], _mData[2].a[m]),
-                              mglPoint(_mData2[0].a[m], _mData2[1].a[m], _mData2[2].a[m]),
+                _graph->Error(mglPoint(_mData[XCOORD].a[m], _mData[YCOORD].a[m], _mData[ZCOORD].a[m]),
+                              mglPoint(_mData2[XCOORD].a[m], _mData2[YCOORD].a[m], _mData2[ZCOORD].a[m]),
                               _pInfo.sPointStyles[*_pInfo.nStyle].c_str());
             }
         }
     }
+
     return true;
 }
 
@@ -3693,6 +3621,19 @@ std::vector<std::string> Plot::separateFunctionsAndData()
 void Plot::extractDataValues(const std::vector<std::string>& vDataPlots)
 {
     size_t typeCounter = 0;
+    size_t datIvlID = PlotAssetManager::REAL;
+    size_t datIvlID3D = PlotAssetManager::REAL;
+
+    if (_pData.getSettings(PlotData::INT_COMPLEXMODE) == CPLX_REIM)
+    {
+        datIvlID = PlotAssetManager::REIM;
+        datIvlID3D = PlotAssetManager::REIM;
+    }
+    else if (_pData.getSettings(PlotData::INT_COMPLEXMODE) == CPLX_PLANE)
+    {
+        datIvlID = PlotAssetManager::IMAG;
+        datIvlID3D = PlotAssetManager::ABSREIM;
+    }
 
     // Now extract the index informations of each referred
     // data object and copy its contents to the prepared
@@ -3772,7 +3713,8 @@ void Plot::extractDataValues(const std::vector<std::string>& vDataPlots)
             if (_idx.col.front() == VectorIndex::INVALID)
             {
                 for (size_t n = 0; n < _idx.row.size(); n++)
-                    m_manager.assets[typeCounter].writeAxis(_idx.row[n]+1.0, n, XCOORD);
+#warning TODO (numere#1#11/26/21): Changed this from _idx.row[n]+1 to n+1
+                    m_manager.assets[typeCounter].writeAxis(n+1.0, n, XCOORD);
             }
             else
             {
@@ -3810,7 +3752,8 @@ void Plot::extractDataValues(const std::vector<std::string>& vDataPlots)
                     else if (_idx.col[q+1] == VectorIndex::INVALID)
                     {
                         for (size_t n = 0; n < _idx.row.size(); n++)
-                            m_manager.assets[typeCounter].writeData(_idx.row[n]+1.0, q, n);
+#warning TODO (numere#1#11/26/21): Changes this from _idx.row[n]+1 to n+1
+                            m_manager.assets[typeCounter].writeData(n+1.0, q, n);
                     }
                     else
                     {
@@ -3830,18 +3773,23 @@ void Plot::extractDataValues(const std::vector<std::string>& vDataPlots)
                 || _pData.getSettings(PlotData::FLOAT_BARS) != 0.0
                 || _pData.getSettings(PlotData::LOG_BOXPLOT);
 
-            // Calculated the data ranges
+
+            // Calculate the data ranges
+            Interval axisrange = m_manager.assets[typeCounter].getAxisInterval(XCOORD);
+
             if (m_manager.assets[typeCounter].boundAxes.find('t') != std::string::npos)
-                secDataRanges[XRANGE+isHbar] = secDataRanges[XRANGE+isHbar].combine(m_manager.assets[typeCounter].getAxisInterval(XCOORD));
+                secDataRanges[XRANGE+isHbar] = secDataRanges[XRANGE+isHbar].combine(axisrange);
             else
-                dataRanges[XRANGE+isHbar] = dataRanges[XRANGE+isHbar].combine(m_manager.assets[typeCounter].getAxisInterval(XCOORD));
+                dataRanges[XRANGE+isHbar] = dataRanges[XRANGE+isHbar].combine(axisrange);
 
             for (size_t layer = 0; layer < std::max(1u, isMultiDataSet*m_manager.assets[typeCounter].getLayers()); layer++)
             {
+                IntervalSet datIvl = m_manager.assets[typeCounter].getDataIntervals(layer);
+
                 if (m_manager.assets[typeCounter].boundAxes.find('r') != std::string::npos)
-                    secDataRanges[YRANGE-isHbar] = secDataRanges[YRANGE-isHbar].combine(m_manager.assets[typeCounter].getDataIntervals(layer)[0]);
+                    secDataRanges[YRANGE-isHbar] = secDataRanges[YRANGE-isHbar].combine(datIvl[datIvlID]);
                 else
-                    dataRanges[YRANGE-isHbar] = dataRanges[YRANGE-isHbar].combine(m_manager.assets[typeCounter].getDataIntervals(layer)[0]);
+                    dataRanges[YRANGE-isHbar] = dataRanges[YRANGE-isHbar].combine(datIvl[datIvlID]);
             }
         }
         else if (isPlot3D(_pInfo.sCommand))
@@ -3882,9 +3830,8 @@ void Plot::extractDataValues(const std::vector<std::string>& vDataPlots)
             }
 
             // Calculated the data ranges
-#warning TODO (numere#3#11/15/21): Enable complex values
             for (size_t c = XCOORD; c <= ZCOORD; c++)
-                dataRanges[c] = dataRanges[c].combine(m_manager.assets[typeCounter].getDataIntervals(c)[0]);
+                dataRanges[c] = dataRanges[c].combine(m_manager.assets[typeCounter].getDataIntervals(c)[datIvlID]);
         }
         else if (isMesh2D(_pInfo.sCommand))
         {
@@ -3926,288 +3873,13 @@ void Plot::extractDataValues(const std::vector<std::string>& vDataPlots)
             if (_pInfo.sCommand == "implot")
                 dataRanges[ZRANGE] = dataRanges[ZRANGE].combine(Interval(0.0, 255.0));
             else
-#warning TODO (numere#3#11/15/21): Enable complex values
-                dataRanges[ZRANGE] = dataRanges[ZRANGE].combine(m_manager.assets[typeCounter].getDataIntervals(0)[0]);
+                dataRanges[ZRANGE] = dataRanges[ZRANGE].combine(m_manager.assets[typeCounter].getDataIntervals(0)[datIvlID3D]);
         }
         else
             throw SyntaxError(SyntaxError::PLOT_ERROR, _accessParser.getDataObject(), SyntaxError::invalid_position);
 
         typeCounter++;
-
-
-
-
-        /* --> Bestimmen wir die "Dimension" des zu plottenden Datensatzes. Dabei ist es auch
-         *     von Bedeutung, ob Fehlerbalken anzuzeigen sind <--
-         */
-
-        /*switch (_idx.col.numberOfNodes())
-        {
-            case 1:
-                if (!_pData.getSettings(PlotData::LOG_XERROR) && !_pData.getSettings(PlotData::LOG_YERROR))
-                    m_manager.assets[i].create1DPlot(PT_DATA, _idx.row.size(), 1);
-                else if (_pData.getSettings(PlotData::LOG_XERROR) && _pData.getSettings(PlotData::LOG_YERROR))
-                    m_manager.assets[l].create1DPlot(PT_DATA, _idx.row.size(), 3);
-                else if (_pData.getSettings(PlotData::LOG_XERROR) || _pData.getSettings(PlotData::LOG_YERROR))
-                    m_manager.assets[i].create1DPlot(PT_DATA, _idx.row.size(), 2);
-
-                break;
-            case 2:
-                if (_pInfo.sCommand == "plot" && !_pData.getSettings(PlotData::LOG_XERROR) && !_pData.getSettings(PlotData::LOG_YERROR))
-                    m_manager.assets[i].create1DPlot(PT_DATA, _idx.row.size(), 1);
-                else if (_pInfo.sCommand == "plot" && _pData.getSettings(PlotData::LOG_XERROR) && _pData.getSettings(PlotData::LOG_YERROR))
-                    m_manager.assets[i].create1DPlot(PT_DATA, _idx.row.size(), 3);
-                else if (_pInfo.sCommand == "plot" && (_pData.getSettings(PlotData::LOG_XERROR) || _pData.getSettings(PlotData::LOG_YERROR)))
-                    m_manager.assets[i].create1DPlot(PT_DATA, _idx.row.size(), 2);
-                else if (_pInfo.sCommand == "plot3d" && !_pData.getSettings(PlotData::LOG_XERROR) && !_pData.getSettings(PlotData::LOG_YERROR))
-                    m_manager.assets[i].create3DPlot(PT_DATA, _idx.row.size(), 1);
-                else if (_pInfo.sCommand == "plot3d" && _pData.getSettings(PlotData::LOG_XERROR) && _pData.getSettings(PlotData::LOG_YERROR))
-                    m_manager.assets[i].create3DPlot(PT_DATA, _idx.row.size(), 2);// v_mDataPlots[i].resize(6);
-                else if (_pInfo.b2D)
-                    m_manager.assets[i].create2DMesh(PT_DATA, _accessParser.getDataGridDimensions(), 1);
-                    //v_mDataPlots[i].resize(3);
-
-                if ((_pData.getSettings(PlotData::LOG_BOXPLOT)
-                     || _pData.getSettings(PlotData::FLOAT_BARS)
-                     || _pData.getSettings(PlotData::FLOAT_HBARS)) && openEnd)
-#warning TODO (numere#5#11/14/21): This is not correct
-                    m_manager.assets[i].create(PT_DATA, 1, _idx.row.size(),
-                                       _data.getCols(sDataTable, false) + _pData.getSettings(PlotData::LOG_BOXPLOT) - _idx.col.front());
-
-                break;
-            default:
-                if (!(_pData.getSettings(PlotData::LOG_BOXPLOT)
-                      || _pData.getSettings(PlotData::FLOAT_BARS)
-                      || _pData.getSettings(PlotData::FLOAT_HBARS)
-                      || _pInfo.b2D))
-                {
-                    // This section was commented to allow arrays of curves
-                    // to be displayed in the plot
-                        m_manager.assets[i].create1DPlot(PT_DATA, _idx.row.size(), _idx.col.numberOfNodes()-1);
-                            //v_mDataPlots[i].resize(_idx.col.numberOfNodes());
-
-                }
-                else if (_pInfo.b2D)
-                    m_manager.assets[i].create2DMesh(PT_DATA, _accessParser.getDataGridDimensions(), 1);
-                    //v_mDataPlots[i].resize(3);
-                else
-                {
-                    if (_pData.getSettings(PlotData::FLOAT_BARS) || _pData.getSettings(PlotData::FLOAT_HBARS))
-                        m_manager.assets[i].create1DPlot(PT_DATA, _idx.row.size(), _idx.col.numberOfNodes()-1);
-                        //v_mDataPlots[i].resize(_idx.col.numberOfNodes());
-                    else
-                        m_manager.assets[i].create1DPlot(PT_DATA, _idx.row.size(), _idx.col.numberOfNodes());
-                        //v_mDataPlots[i].resize(_idx.col.numberOfNodes() + 1);
-                }
-        }
-
-        if (m_manager.assets[i].type == PT_NONE)
-            throw SyntaxError(SyntaxError::PLOT_ERROR, sDataTable, SyntaxError::invalid_position);
-
-        // Prepare and fill the mglData objects for the current
-        // data access depending on whether single indices or an
-        // index vector is used
-        getValuesFromData(_accessParser, i, sDataAxisBinds, dDataRanges, dSecDataRanges, openEnd);*/
     }
-}
-
-
-/////////////////////////////////////////////////
-/// \brief Fills the created mglData objects with
-/// the data values from the MemoryManager.
-///
-/// \param _accessParser DataAccessParser&
-/// \param i size_t
-/// \param openEnd bool
-/// \return void
-///
-/////////////////////////////////////////////////
-void Plot::getValuesFromData(DataAccessParser& _accessParser, size_t i, bool openEnd)
-{
-    /*Indices& _idx = _accessParser.getIndices();
-
-    if (_idx.col.numberOfNodes() > 2 && !_pInfo.b2D)
-    {
-        // A vector index was used. Insert a column index
-        // if the current plot is a boxplot
-        if (_pData.getSettings(PlotData::LOG_BOXPLOT))
-        {
-            vector<int> vJ = _idx.col.getVector();
-            vJ.insert(vJ.begin(), -1);
-            _idx.col = vJ;
-        }
-
-        // Fill the mglData objects with the data from the
-        // referenced data object
-        for (size_t q = 0; q < v_mDataPlots[i].size(); q++)
-        {
-            v_mDataPlots[i][q].Create(_idx.row.size());
-
-            if (_idx.col[q] == -1)
-            {
-                for (size_t n = 0; n < _idx.row.size(); n++)
-                    v_mDataPlots[i][q].a[n] = _idx.row[n] + 1;
-            }
-            else
-            {
-                for (size_t n = 0; n < _idx.row.size(); n++)
-                {
-                    v_mDataPlots[i][q].a[n] = validize(getDataFromObject(_accessParser.getDataObject(), _idx.row[n], _idx.col[q], _accessParser.isCluster()));
-
-                    if (!_accessParser.isCluster() && _pInfo.sCommand == "plot3d" && q < 3 && !(_data.getLines(_accessParser.getDataObject(), true) - _data.getAppendedZeroes(_idx.col[q], _accessParser.getDataObject()) - _idx.row[0]))
-                        v_mDataPlots[i][q].a[n] = 0.0;
-                }
-            }
-        }
-
-        // Calculated the data ranges
-        for (int l = 0; l < (int)_idx.row.size(); l++)
-        {
-            calculateDataRanges(sDataAxisBinds, dDataRanges, dSecDataRanges, i, l, _idx.row, _idx.col.numberOfNodes());
-        }
-    }
-    else
-    {
-        // Create the mglData object for the current data
-        // access using single indices
-        for (size_t q = 0; q < v_mDataPlots[i].size(); q++)
-        {
-            if (_pInfo.b2D && q == 2)///TEMPORARY
-                v_mDataPlots[i][q].Create(_idx.row.size(), _idx.row.size());
-            else
-                v_mDataPlots[i][q].Create(_idx.row.size());
-        }
-
-        long long int nDataCols = _data.getCols(_accessParser.getDataObject());
-
-        size_t nNum = 0;
-
-        // Needed for data grids
-        if (!_accessParser.isCluster())
-            nNum = _data.num(_accessParser.getDataObject(), _idx.row, VectorIndex(_idx.col.front()+1)).real();
-
-        // Fill the mglData objects using the single indices
-        // and the referenced data object
-        for (size_t l = 0; l < _idx.row.size(); l++)
-        {
-            // Fill the objects depending on the selected columns
-            if (_idx.col.numberOfNodes() == 1 && (_accessParser.isCluster() || nDataCols >= _idx.col.front()))
-            {
-                // These are only y-values. Add index values
-                // as x column
-                v_mDataPlots[i][0].a[l] = _idx.row[l] + 1;
-
-                v_mDataPlots[i][1].a[l] = validize(getDataFromObject(_accessParser.getDataObject(), _idx.row[l], _idx.col.front(), _accessParser.isCluster()));
-
-                // Create pseudo error values in this case
-                if (_pData.getSettings(PlotData::LOG_XERROR) && _pData.getSettings(PlotData::LOG_YERROR))
-                    v_mDataPlots[i][3].a[l] = 0.0;
-                else if (_pData.getSettings(PlotData::LOG_YERROR) || _pData.getSettings(PlotData::LOG_XERROR))
-                    v_mDataPlots[i][2].a[l] = 0.0;
-            }
-            else if (!_accessParser.isCluster() && nDataCols < _idx.col.front() && _pInfo.sCommand != "plot3d")
-            {
-                // Catch column index errors
-                throw SyntaxError(SyntaxError::TOO_FEW_COLS, _accessParser.getDataObject(), SyntaxError::invalid_position);
-            }
-            else if (!_accessParser.isCluster() && v_mDataPlots[i].size() == 2 && _idx.col.numberOfNodes() == 2)
-            {
-                // These are xy data values
-                if ((nDataCols >= _idx.col.front()+1 && (_idx.col.isOrdered() || openEnd))
-                    || (nDataCols >= _idx.col.back()+1 && !_idx.col.isOrdered()))
-                {
-                    // These data columns are in correct order
-                    v_mDataPlots[i][0].a[l] = validize(getDataFromObject(_accessParser.getDataObject(), _idx.row[l], _idx.col.front(), _accessParser.isCluster()));
-
-                    if (!openEnd)
-                        v_mDataPlots[i][1].a[l] = validize(getDataFromObject(_accessParser.getDataObject(), _idx.row[l], _idx.col.last(), _accessParser.isCluster()));
-                    else
-                        v_mDataPlots[i][1].a[l] = validize(getDataFromObject(_accessParser.getDataObject(), _idx.row[l], _idx.col.front() + 1, _accessParser.isCluster()));
-                }
-                else if ((nDataCols >= _idx.col.front() && (_idx.col.isOrdered() || openEnd))
-                         || (nDataCols >= _idx.col.back() && !_idx.col.isOrdered()))
-                {
-                    // These data columns miss a x-column
-                    v_mDataPlots[i][0].a[l] = _idx.row[l] + 1;
-
-                    if (_idx.col.isOrdered() || openEnd)
-                        v_mDataPlots[i][1].a[l] = validize(getDataFromObject(_accessParser.getDataObject(), _idx.row[l], _idx.col.front(), _accessParser.isCluster()));
-                    else if (!_idx.col.isOrdered())
-                        v_mDataPlots[i][1].a[l] = validize(getDataFromObject(_accessParser.getDataObject(), _idx.row[l], _idx.col.last(), _accessParser.isCluster()));
-                    else
-                        v_mDataPlots[i][1].a[l] = NAN;
-                }
-                else
-                {
-                    // Catch column index errors
-                    throw SyntaxError(SyntaxError::TOO_FEW_COLS, _accessParser.getDataObject(), SyntaxError::invalid_position);
-                }
-            }
-            else if (!_accessParser.isCluster() && v_mDataPlots[i].size() >= 3 && (_idx.col.numberOfNodes() == 2 || _pInfo.b2D))
-            {
-                // These are xyz data values
-                // These columns are in correct order
-                for (size_t q = 0; q < v_mDataPlots[i].size() - (_pData.getSettings(PlotData::LOG_BOXPLOT)); q++)
-                {
-                    // Use the data either as data grid or as xyz
-                    // tuple values
-                    if (_pInfo.b2D && q == 2)
-                    {
-                        for (size_t k = 0; k < _idx.row.size(); k++)
-                        {
-                            if (nNum <= k)
-                            {
-                                v_mDataPlots[i][q].a[l + (_idx.row.size())*k] = NAN;
-                                continue;
-                            }
-
-                            v_mDataPlots[i][q].a[l + (_idx.row.size())*k] = validize(getDataFromObject(_accessParser.getDataObject(), _idx.row[l], _idx.col[q+k], _accessParser.isCluster()));
-                        }
-                    }
-                    else
-                    {
-                        // --> Vorwaerts zaehlen <--
-                        if (!q && (_pData.getSettings(PlotData::LOG_BOXPLOT)))
-                            v_mDataPlots[i][q] = _idx.row[l]+1;
-
-                        if (nDataCols > _idx.col[q])
-                            v_mDataPlots[i][q + (_pData.getSettings(PlotData::LOG_BOXPLOT))].a[l] = validize(getDataFromObject(_accessParser.getDataObject(), _idx.row[l], _idx.col[q], _accessParser.isCluster()));
-                        else if (q == 2 && _pInfo.sCommand == "plot3d"
-                                 && !(_data.getLines(_accessParser.getDataObject(), true) - _data.getAppendedZeroes(_idx.col[q], _accessParser.getDataObject()) - _idx.row.front()))
-                            v_mDataPlots[i][q].a[l] = 0.0;
-                        else
-                            v_mDataPlots[i][q + (_pData.getSettings(PlotData::LOG_BOXPLOT))].a[l] = NAN;
-                    }
-                }
-            }
-            else if (!_accessParser.isCluster())
-            {
-                // These are columns in arbitrary order and an
-                // arbitrary number of columns
-                if ((_pData.getSettings(PlotData::LOG_BOXPLOT) || _pData.getSettings(PlotData::FLOAT_BARS) || _pData.getSettings(PlotData::FLOAT_HBARS)) && !_pInfo.b2D)
-                {
-                    bool bBoxplot = _pData.getSettings(PlotData::LOG_BOXPLOT) && !_pData.getSettings(PlotData::FLOAT_BARS) && !_pData.getSettings(PlotData::FLOAT_HBARS);
-
-                    for (size_t k = 0; k < min(v_mDataPlots[i].size(), _idx.col.size()); k++)
-                    {
-                        if (bBoxplot && !k)
-                            v_mDataPlots[i][0] = _idx.row[l] + 1;
-
-                        if (nDataCols > _idx.col[k])
-                            v_mDataPlots[i][k + bBoxplot].a[l] = validize(getDataFromObject(_accessParser.getDataObject(), _idx.row[l], _idx.col[k], _accessParser.isCluster()));
-                        else if (_pInfo.sCommand == "plot3d" && k < 3
-                                 && !(_data.getLines(_accessParser.getDataObject(), true) - _data.getAppendedZeroes(_idx.col[k], _accessParser.getDataObject()) - _idx.row.front()))
-                            v_mDataPlots[i][k].a[l] = 0.0;
-                        else
-                            v_mDataPlots[i][k + bBoxplot].a[l] = NAN;
-                    }
-                }
-            }
-
-            // --> Berechnen der DataRanges <--
-            calculateDataRanges(sDataAxisBinds, dDataRanges, dSecDataRanges, i, l, _idx.row);
-        }
-    }*/
 }
 
 
@@ -4505,240 +4177,6 @@ string Plot::constructDataLegendElement(string& sColumnIndices, const string& sT
 
 
 /////////////////////////////////////////////////
-/// \brief This member function is used to
-/// calculate the data ranges. It is called
-/// during filling the data objects.
-///
-/// \param sDataAxisBinds const string&
-/// \param i int
-/// \param l int
-/// \param _vLine const VectorIndex&
-/// \param numberofColNodes size_t
-/// \return void
-///
-/////////////////////////////////////////////////
-void Plot::calculateDataRanges(const string& sDataAxisBinds, int i, int l, const VectorIndex& _vLine, size_t numberofColNodes)
-{
-    // Calculate the ranges for all three spatial directions
-    /*for (int q = 0; q < 3; q++)
-    {
-        // Ignore the third direction, if it is not used
-        // for the current plot
-        if (q == 2 && v_mDataPlots[i].size() < 3)
-        {
-            dDataRanges[2][0] = 0;
-            dDataRanges[2][1] = 0;
-            break;
-        }
-
-        // Use the first row of the first data set to
-        // initialize the data ranges
-        if (l == 0 && i == 0)
-        {
-            // Ignore data ranges, which are resulting from
-            // values, which are already excluded by the user
-            if (q && _pData.getRangeSetting(q - 1))
-            {
-                if (_pData.getRanges()[q-1].min() > v_mDataPlots[i][q - 1].a[l] || _pData.getRanges()[q-1].max() < v_mDataPlots[i][q - 1].a[l])
-                {
-                    if (_pInfo.sCommand != "plot")
-                    {
-                        dDataRanges[q][0] = NAN;
-                        dDataRanges[q][1] = NAN;
-                    }
-                    else
-                    {
-                        if (q < 2)
-                        {
-                            dSecDataRanges[q][0] = NAN;
-                            dSecDataRanges[q][1] = NAN;
-                        }
-                        dDataRanges[q][0] = NAN;
-                        dDataRanges[q][1] = NAN;
-                    }
-                    continue;
-                }
-            }
-            // Use the first value as a base value
-            if (_pInfo.sCommand != "plot" || q >= 2)
-            {
-                // Straightforward solution for three-dimensional plots
-                dDataRanges[q][0] = v_mDataPlots[i][q].a[l];
-                dDataRanges[q][1] = v_mDataPlots[i][q].a[l];
-            }
-            else if ((_pData.getSettings(PlotData::LOG_BOXPLOT) || _pData.getSettings(PlotData::FLOAT_BARS) || (numberofColNodes > 2 && !_pData.getSettings(PlotData::FLOAT_HBARS))) && q == 1)
-            {
-                // Handle boxplots (not only the first value but the whole table)
-                for (size_t dim = 1; dim < v_mDataPlots[i].size(); dim++)
-                {
-                    if (sDataAxisBinds[2 * i] == 'l' || sDataAxisBinds[2 * i] == 'b')
-                    {
-                        dDataRanges[1][0] = v_mDataPlots[i][dim].a[l];
-                        dDataRanges[1][1] = v_mDataPlots[i][dim].a[l];
-                    }
-                    else
-                    {
-                        dSecDataRanges[1][0] = v_mDataPlots[i][dim].a[l];
-                        dSecDataRanges[1][1] = v_mDataPlots[i][dim].a[l];
-                    }
-                }
-            }
-            else if (_pData.getSettings(PlotData::FLOAT_HBARS))
-            {
-                // Handle bars (not only the first value but the whole table)
-                for (size_t dim = 0; dim < v_mDataPlots[i].size(); dim++)
-                {
-                    if (sDataAxisBinds[2 * i + !q] == 'l' || sDataAxisBinds[2 * i + !q] == 'b')
-                    {
-                        dDataRanges[0 + !dim][0] = v_mDataPlots[i][dim].a[l];
-                        dDataRanges[0 + !dim][1] = v_mDataPlots[i][dim].a[l];
-                    }
-                    else
-                    {
-                        dSecDataRanges[0 + !dim][0] = v_mDataPlots[i][dim].a[l];
-                        dSecDataRanges[0 + !dim][1] = v_mDataPlots[i][dim].a[l];
-                    }
-                }
-            }
-            else
-            {
-                // Handle usual plots with the additional axes
-                if (sDataAxisBinds[2 * i + !q] == 'l' || sDataAxisBinds[2 * i + !q] == 'b')
-                {
-                    dDataRanges[q][0] = v_mDataPlots[i][q].a[l];
-                    dDataRanges[q][1] = v_mDataPlots[i][q].a[l];
-                    dSecDataRanges[q][0] = NAN;
-                    dSecDataRanges[q][1] = NAN;
-                }
-                else
-                {
-                    dSecDataRanges[q][0] = v_mDataPlots[i][q].a[l];
-                    dSecDataRanges[q][1] = v_mDataPlots[i][q].a[l];
-                    dDataRanges[q][0] = NAN;
-                    dDataRanges[q][1] = NAN;
-                }
-            }
-        }
-        else
-        {
-            // All other rows are used to compare them with the already setted value
-            //
-            // Three dimensional plot:
-            if (_pInfo.b2D && q == 2 && _pInfo.sCommand != "implot")
-            {
-                // Ignore data ranges, which are resulting from
-                // values, which are already excluded by the user
-                if (_pData.getRangeSetting(XRANGE))
-                {
-                    if (_pData.getRanges()[XRANGE].min() > v_mDataPlots[i][0].a[l] || _pData.getRanges()[XRANGE].max() < v_mDataPlots[i][0].a[l])
-                        continue;
-                }
-                if (_pData.getRangeSetting(YRANGE))
-                {
-                    if (_pData.getRanges()[YRANGE].min() > v_mDataPlots[i][1].a[l] || _pData.getRanges()[YRANGE].max() < v_mDataPlots[i][1].a[l])
-                        continue;
-                }
-
-                // Calculate the data ranges for three dimensional plots
-                for (size_t k = 0; k < _vLine.size(); k++)
-                {
-                    if (dDataRanges[q][0] > v_mDataPlots[i][q].a[l + _vLine.size() * k] || isnan(dDataRanges[q][0]))
-                        dDataRanges[q][0] = v_mDataPlots[i][q].a[l + _vLine.size() * k];
-
-                    if (dDataRanges[q][1] < v_mDataPlots[i][q].a[l + _vLine.size() * k] || isnan(dDataRanges[q][1]))
-                        dDataRanges[q][1] = v_mDataPlots[i][q].a[l + _vLine.size() * k];
-                }
-            }
-            else if (q == 2 && _pInfo.sCommand == "implot")
-            {
-                dDataRanges[q][0] = 0;
-                dDataRanges[q][1] = 255;
-            }
-            else
-            {
-                // Ignore data ranges, which are resulting from
-                // values, which are already excluded by the user
-                if (q && _pData.getRangeSetting(XRANGE))
-                {
-                    if (_pData.getRanges()[XRANGE].min() > v_mDataPlots[i][0].a[l] || _pData.getRanges()[XRANGE].max() < v_mDataPlots[i][0].a[l])
-                        continue;
-                }
-
-                // Calculate the data ranges for all other plot types
-                if (_pInfo.sCommand != "plot" || q >= 2)
-                {
-                    if (dDataRanges[q][0] > v_mDataPlots[i][q].a[l] || isnan(dDataRanges[q][0]))
-                        dDataRanges[q][0] = v_mDataPlots[i][q].a[l];
-                    if (dDataRanges[q][1] < v_mDataPlots[i][q].a[l] || isnan(dDataRanges[q][1]))
-                        dDataRanges[q][1] = v_mDataPlots[i][q].a[l];
-                }
-                else if ((_pData.getSettings(PlotData::LOG_BOXPLOT) || _pData.getSettings(PlotData::FLOAT_BARS) || (numberofColNodes > 2 && !_pData.getSettings(PlotData::FLOAT_HBARS))) && q == 1)
-                {
-                    // Handle boxplots (evalute the row of the whole table)
-                    for (size_t dim = 1; dim < v_mDataPlots[i].size(); dim++)
-                    {
-                        if (sDataAxisBinds[2 * i] == 'l' || sDataAxisBinds[2 * i] == 'b')
-                        {
-                            if (dDataRanges[1][0] > v_mDataPlots[i][dim].a[l] || isnan(dDataRanges[1][0]))
-                                dDataRanges[1][0] = v_mDataPlots[i][dim].a[l];
-                            if (dDataRanges[1][1] < v_mDataPlots[i][dim].a[l] || isnan(dDataRanges[1][1]))
-                                dDataRanges[1][1] = v_mDataPlots[i][dim].a[l];
-                        }
-                        else
-                        {
-                            if (dSecDataRanges[1][0] > v_mDataPlots[i][dim].a[l] || isnan(dSecDataRanges[1][0]))
-                                dSecDataRanges[1][0] = v_mDataPlots[i][dim].a[l];
-                            if (dSecDataRanges[1][1] < v_mDataPlots[i][dim].a[l] || isnan(dSecDataRanges[1][1]))
-                                dSecDataRanges[1][1] = v_mDataPlots[i][dim].a[l];
-                        }
-                    }
-                }
-                else if (_pData.getSettings(PlotData::FLOAT_HBARS))
-                {
-                    // Handle barplots (evalute the row of the whole table)
-                    for (size_t dim = 0; dim < v_mDataPlots[i].size(); dim++)
-                    {
-                        if (sDataAxisBinds[2 * i + !q] == 'l' || sDataAxisBinds[2 * i + !q] == 'b')
-                        {
-                            if (dDataRanges[0 + !dim][0] > v_mDataPlots[i][dim].a[l] || isnan(dDataRanges[0 + !dim][0]))
-                                dDataRanges[0 + !dim][0] = v_mDataPlots[i][dim].a[l];
-                            if (dDataRanges[0 + !dim][1] < v_mDataPlots[i][dim].a[l] || isnan(dDataRanges[0 + !dim][1]))
-                                dDataRanges[0 + !dim][1] = v_mDataPlots[i][dim].a[l];
-                        }
-                        else
-                        {
-                            if (dSecDataRanges[0 + !dim][0] > v_mDataPlots[i][dim].a[l] || isnan(dSecDataRanges[0 + !dim][0]))
-                                dSecDataRanges[0 + !dim][0] = v_mDataPlots[i][dim].a[l];
-                            if (dSecDataRanges[0 + !dim][1] < v_mDataPlots[i][dim].a[l] || isnan(dSecDataRanges[0 + !dim][1]))
-                                dSecDataRanges[0 + !dim][1] = v_mDataPlots[i][dim].a[l];
-                        }
-                    }
-                }
-                else
-                {
-                    // Handle usual plots
-                    if (sDataAxisBinds[2 * i + !q] == 'l' || sDataAxisBinds[2 * i + !q] == 'b')
-                    {
-                        if (dDataRanges[q][0] > v_mDataPlots[i][q].a[l] || isnan(dDataRanges[q][0]))
-                            dDataRanges[q][0] = v_mDataPlots[i][q].a[l];
-                        if (dDataRanges[q][1] < v_mDataPlots[i][q].a[l] || isnan(dDataRanges[q][1]))
-                            dDataRanges[q][1] = v_mDataPlots[i][q].a[l];
-                    }
-                    else
-                    {
-                        if (dSecDataRanges[q][0] > v_mDataPlots[i][q].a[l] || isnan(dSecDataRanges[q][0]))
-                            dSecDataRanges[q][0] = v_mDataPlots[i][q].a[l];
-                        if (dSecDataRanges[q][1] < v_mDataPlots[i][q].a[l] || isnan(dSecDataRanges[q][1]))
-                            dSecDataRanges[q][1] = v_mDataPlots[i][q].a[l];
-                    }
-                }
-            }
-        }
-    }*/
-}
-
-
-/////////////////////////////////////////////////
 /// \brief This member function counts the valid
 /// data points in the passed mglData object.
 ///
@@ -4821,28 +4259,6 @@ void Plot::prepareMemory()
                 m_manager.assets[i].create3DVect(PT_FUNCTION, std::vector<size_t>(3, _pInfo.nSamples));
         }
     }
-
-
-    /*if (!_pInfo.b2D && sFunc != "<<empty>>" && _pInfo.sCommand != "plot3d" && !_pInfo.b3D && !_pInfo.b3DVect && !_pInfo.b2DVect)
-        _pData.setDim(_pInfo.nSamples, nFunctions);    // _pInfo.nSamples * nFunctions (Standardplot)
-    else if (sFunc != "<<empty>>" && _pInfo.sCommand == "plot3d")
-        nFunctions % 3 ? _pData.setDim(_pInfo.nSamples, 3, nFunctions / 3 + 1) : _pData.setDim(_pInfo.nSamples, 3, nFunctions / 3); // _pInfo.nSamples * 3 * _pInfo.nSamples/3 (3D-Trajektorie)
-    else if (sFunc != "<<empty>>" && _pInfo.b3D)
-        _pData.setDim(_pInfo.nSamples, _pInfo.nSamples, _pInfo.nSamples);    // _pInfo.nSamples * _pInfo.nSamples * _pInfo.nSamples (3D-Plot)
-    else if (sFunc != "<<empty>>" && _pInfo.b3DVect)
-        _pData.setDim(_pInfo.nSamples, _pInfo.nSamples, 3 * _pInfo.nSamples); // _pInfo.nSamples * _pInfo.nSamples * 3*_pInfo.nSamples (3D-Vektorplot)
-    else if (sFunc != "<<empty>>" && _pInfo.b2DVect)
-        _pData.setDim(_pInfo.nSamples, _pInfo.nSamples, 2 * _pInfo.nSamples); // _pInfo.nSamples * _pInfo.nSamples * 2*_pInfo.nSamples (2D-Vektorplot)
-    else if (sFunc != "<<empty>>")
-        _pData.setDim(_pInfo.nSamples, _pInfo.nSamples, nFunctions);  // _pInfo.nSamples * _pInfo.nSamples * nFunctions (2D-Plot)
-
-    _mAxisVals[0].Create(_pInfo.nSamples);
-    if (_pInfo.b2D || _pInfo.b3D)
-    {
-        _mAxisVals[1].Create(_pInfo.nSamples);
-        if (_pInfo.b3D)
-            _mAxisVals[2].Create(_pInfo.nSamples);
-    }*/
 }
 
 
@@ -5327,6 +4743,21 @@ void Plot::fitPlotRanges(size_t nPlotCompose, bool bNewSubPlot)
         }
     }
 
+    bool isCmplxPlane = _pData.getSettings(PlotData::INT_COMPLEXMODE) == CPLX_PLANE;
+    size_t ivlID = PlotAssetManager::REAL;
+    size_t ivlID3D = PlotAssetManager::REAL;
+
+    if (_pData.getSettings(PlotData::INT_COMPLEXMODE) == CPLX_REIM)
+    {
+        ivlID = PlotAssetManager::REIM;
+        ivlID3D = PlotAssetManager::REIM;
+    }
+    else if (_pData.getSettings(PlotData::INT_COMPLEXMODE) == CPLX_PLANE)
+    {
+        ivlID = PlotAssetManager::IMAG;
+        ivlID3D = PlotAssetManager::ABSREIM;
+    }
+
     if (!(_pInfo.b3D || _pInfo.b3DVect || _pInfo.b2DVect) && (!nPlotCompose || bNewSubPlot) && !(_pInfo.bDraw3D || _pInfo.bDraw))
     {
         if (!_pInfo.b2D && _pData.getGivenRanges() < 2 && _pInfo.sCommand != "plot3d") // Std-Plot?
@@ -5336,29 +4767,38 @@ void Plot::fitPlotRanges(size_t nPlotCompose, bool bNewSubPlot)
                 IntervalSet funcIntLeft = m_manager.getFunctionIntervals(ONLYLEFT);
                 IntervalSet funcIntRight = m_manager.getFunctionIntervals(ONLYRIGHT);
 
-                m_manager.weightedRange(ONLYLEFT, funcIntLeft[0]);
-                m_manager.weightedRange(ONLYRIGHT, funcIntRight[0]);
+                m_manager.weightedRange(ONLYLEFT, funcIntLeft[ivlID]);
+                m_manager.weightedRange(ONLYRIGHT, funcIntRight[ivlID]);
 
                 if (m_manager.hasDataPlots())
                 {
-                    _pInfo.ranges[YRANGE] = _pInfo.ranges[YRANGE].combine(funcIntLeft[0]);
-                    _pInfo.secranges[YRANGE] = _pInfo.secranges[YRANGE].combine(funcIntRight[0]);
+                    _pInfo.ranges[YRANGE] = _pInfo.ranges[YRANGE].combine(funcIntLeft[ivlID]);
+                    _pInfo.secranges[YRANGE] = _pInfo.secranges[YRANGE].combine(funcIntRight[ivlID]);
+
+                    if (isCmplxPlane)
+                        _pInfo.ranges[XRANGE] = m_manager.getDataIntervals()[PlotAssetManager::REAL].combine(funcIntLeft[PlotAssetManager::REAL]);
                 }
                 else
                 {
-                    _pInfo.ranges[YRANGE] = funcIntLeft[0];
-                    _pInfo.secranges[YRANGE] = funcIntRight[0];
+                    _pInfo.ranges[YRANGE] = funcIntLeft[ivlID];
+                    _pInfo.secranges[YRANGE] = funcIntRight[ivlID];
 
                     if (!isnan(_pData.getAddAxis(YCOORD).ivl.min()))
                         _pInfo.secranges[YRANGE].reset(_pData.getAddAxis(YCOORD).ivl.min(), _pData.getAddAxis(YCOORD).ivl.max());
+
+                    if (isCmplxPlane)
+                        _pInfo.ranges[XRANGE] = funcIntLeft[PlotAssetManager::REAL];
                 }
 
-                if ((isnan(funcIntLeft[0].front()) || isnan(_pInfo.ranges[YRANGE].front())) && isnan(dataRanges[YRANGE].front()))
+                if ((isnan(funcIntLeft[ivlID].front()) || isnan(_pInfo.ranges[YRANGE].front())) && isnan(dataRanges[YRANGE].front()))
                     _pInfo.ranges[YRANGE].reset(_pInfo.secranges[YRANGE].min(), _pInfo.secranges[YRANGE].max());
             }
 
             _pInfo.ranges[YRANGE].expand(1.1, (_pData.getLogscale(YRANGE) || _pData.getSettings(PlotData::INT_COORDS) != CARTESIAN
                                                ? 0.0 : -INFINITY));
+
+            if (isCmplxPlane)
+                _pInfo.ranges[XRANGE].expand(1.1);
         }
         else if (_pInfo.sCommand == "plot3d" && _pData.getGivenRanges() < 3)
         {
@@ -5368,7 +4808,7 @@ void Plot::fitPlotRanges(size_t nPlotCompose, bool bNewSubPlot)
                 {
                     IntervalSet coordIntervals = m_manager.getFunctionIntervals(i);
 
-                    m_manager.weightedRange(i, coordIntervals[0]);
+                    m_manager.weightedRange(i, coordIntervals[ivlID]);
 
                     if (_pData.getGivenRanges() >= i + 1 && _pData.getRangeSetting(i))
                         continue;
@@ -5376,10 +4816,10 @@ void Plot::fitPlotRanges(size_t nPlotCompose, bool bNewSubPlot)
                     if (m_manager.hasDataPlots())
                     {
                         IntervalSet dataCoordIntervals = m_manager.getDataIntervals(i);
-                        _pInfo.ranges[i] = dataCoordIntervals[0].combine(coordIntervals[0]);
+                        _pInfo.ranges[i] = dataCoordIntervals[ivlID].combine(coordIntervals[ivlID]);
                     }
                     else
-                        _pInfo.ranges[i] = coordIntervals[0];
+                        _pInfo.ranges[i] = coordIntervals[ivlID];
 
                     _pInfo.ranges[i].expand(1.1, (_pData.getSettings(PlotData::INT_COORDS) == SPHERICAL_PT
                                                   || (_pData.getSettings(PlotData::INT_COORDS) == POLAR_PZ && i < 2)
@@ -5398,11 +4838,11 @@ void Plot::fitPlotRanges(size_t nPlotCompose, bool bNewSubPlot)
             if (sFunc.length())
             {
                 IntervalSet funcIntervals = m_manager.getFunctionIntervals();
-                m_manager.weightedRange(ALLRANGES, funcIntervals[0]);
-                _pInfo.ranges[ZRANGE] = _pInfo.ranges[ZRANGE].combine(funcIntervals[0]);
+                m_manager.weightedRange(ALLRANGES, funcIntervals[ivlID3D]);
+                _pInfo.ranges[ZRANGE] = _pInfo.ranges[ZRANGE].combine(funcIntervals[ivlID3D]);
 
                 if (!m_manager.hasDataPlots())
-                    _pInfo.ranges[ZRANGE] = funcIntervals[0];
+                    _pInfo.ranges[ZRANGE] = funcIntervals[ivlID3D];
             }
 
             _pInfo.ranges[ZRANGE].expand(1.1, (_pData.getLogscale(ZRANGE)
@@ -5595,6 +5035,11 @@ void Plot::passRangesToGraph()
             _graph->SetRange('c', 0, 255.0);
             _pInfo.ranges[CRANGE].reset(0.0, 255.0);
         }
+        else if (_pData.getSettings(PlotData::INT_COMPLEXMODE) == CPLX_PLANE)
+        {
+            _pInfo.ranges[CRANGE].reset(-M_PI, M_PI);
+            _graph->SetRange('c', -M_PI, M_PI);
+        }
         else
         {
             _pInfo.ranges[CRANGE].reset(dColorMin, dColorMax);
@@ -5655,6 +5100,11 @@ void Plot::passRangesToGraph()
                 _pInfo.ranges[CRANGE].reset(dMin * 0.95 / _pData.getAxisScale(CRANGE),
                                             dMax * 1.05 / _pData.getAxisScale(CRANGE));
                 _graph->SetRange('c', _pInfo.ranges[CRANGE].min(), _pInfo.ranges[CRANGE].max());
+            }
+            else if (_pData.getSettings(PlotData::INT_COMPLEXMODE) == CPLX_PLANE)
+            {
+                _pInfo.ranges[CRANGE].reset(-M_PI, M_PI);
+                _graph->SetRange('c', -M_PI, M_PI);
             }
             else
             {

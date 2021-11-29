@@ -60,3 +60,4 @@ Fixed	The "zooming bug" of the graph viewer has been removed. Additionally, inve
 Updated	The commands "diff" and "taylor" now use the differentiation method of Savitzky and Golay to derive their numbers.
 New	The command "clc" is now available to clear the content of the terminal window and reset it to the startup state.
 Updated	The new language file structure requires an additional load command for the new language file. Added this load command.
+Cleaned	Improved the implementation of the plotting algorithm

@@ -84,12 +84,14 @@ class PlotData : public FileSystem
             LOG_SCHEMATIC,
             LOG_SILENTMODE,
             LOG_STEPPLOT,
+            LOG_TABLE,
             LOG_SETTING_SIZE
         };
 
         enum IntPlotSetting
         {
             INT_ANIMATESAMPLES,
+            INT_COMPLEXMODE,
             INT_CONTLINES,
             INT_COORDS,
             INT_GRID,

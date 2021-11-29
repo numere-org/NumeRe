@@ -74,7 +74,7 @@ class Plot
         void applyPlotSizeAndQualitySettings();
         bool createPlotOrAnimation(int& nStyle, size_t nPlotCompose, size_t nPlotComposeSize, size_t& nLegends, bool bNewSubPlot, bool bAnimateVar, vector<string>& vDrawVector, const vector<string>& vDataPlots, int nFunctions, const string& sOutputName);
         void create2dPlot(int& nStyle, size_t& nLegends, int nFunctions, size_t nPlotCompose, size_t nPlotComposeSize);
-        bool plot2d(mglData& _mData, mglData& _mMaskData, mglData* _mAxisVals, mglData& _mContVec);
+        bool plot2d(mglData& _mData, mglData& _mData2, mglData* _mAxisVals, mglData& _mContVec);
         void createStdPlot(int& nStyle, size_t& nLegends, int nFunctions, size_t nPlotCompose, size_t nPlotComposeSize);
         bool plotstd(mglData& _mData, mglData& _mAxisVals, mglData _mData2[2], const short nType);
         void create3dPlot();
@@ -94,10 +94,8 @@ class Plot
         void displayMessage(bool bAnimateVar);
         std::vector<std::string> separateFunctionsAndData();
         void extractDataValues(const std::vector<std::string>& vDataPlots);
-        void getValuesFromData(DataAccessParser& _accessParser, size_t i, bool openEnd);
         void createDataLegends();
         string constructDataLegendElement(string& sColumnIndices, const string& sTableName);
-        void calculateDataRanges(const string& sDataAxisBinds, int i, int l, const VectorIndex& _vLine, size_t numberofColNodes = 2);
         size_t countValidElements(const mglData& _mData);
         void prepareMemory();
         void defaultRanges(size_t nPlotCompose, bool bNewSubPlot);
@@ -138,3 +136,5 @@ class Plot
 
 
 #endif
+
+
