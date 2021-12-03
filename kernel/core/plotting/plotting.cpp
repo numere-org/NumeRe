@@ -1313,6 +1313,8 @@ bool Plot::plot2d(mglData& _mData, mglData& _mData2, mglData* _mAxisVals, mglDat
 
             // Contour lines from ZRANGE-min to ZRANGE-max
             _graph->SetRange('c', _pInfo.ranges[ZRANGE].min(), _pInfo.ranges[ZRANGE].max());
+            _graph->SetTicksVal('c', "");
+            _graph->Colorbar(_pData.getSettings(PlotData::LOG_BOX) ? "kw^I" : "kw^");
             _graph->Cont(_mContVec, _mAxisVals[0], _mAxisVals[1], _mData, "kw");
         }
         else
@@ -4758,9 +4760,10 @@ void Plot::fitPlotRanges(size_t nPlotCompose, bool bNewSubPlot)
         ivlID3D = PlotAssetManager::ABSREIM;
     }
 
-    if (!(_pInfo.b3D || _pInfo.b3DVect || _pInfo.b2DVect) && (!nPlotCompose || bNewSubPlot) && !(_pInfo.bDraw3D || _pInfo.bDraw))
+    if ((isPlot1D(_pInfo.sCommand) || isPlot3D(_pInfo.sCommand) || isMesh2D(_pInfo.sCommand))
+        && (!nPlotCompose || bNewSubPlot))
     {
-        if (!_pInfo.b2D && _pData.getGivenRanges() < 2 && _pInfo.sCommand != "plot3d") // Std-Plot?
+        if (isPlot1D(_pInfo.sCommand) && _pData.getGivenRanges() < 2)
         {
             if (sFunc.length())
             {
@@ -4800,7 +4803,48 @@ void Plot::fitPlotRanges(size_t nPlotCompose, bool bNewSubPlot)
             if (isCmplxPlane)
                 _pInfo.ranges[XRANGE].expand(1.1);
         }
-        else if (_pInfo.sCommand == "plot3d" && _pData.getGivenRanges() < 3)
+        else if (isPlot1D(_pInfo.sCommand) && _pData.getGivenRanges() >= 2 && isCmplxPlane)
+        {
+            if (sFunc.length())
+            {
+                IntervalSet funcInt = m_manager.getFunctionIntervals(ALLRANGES);
+
+                m_manager.weightedRange(ALLRANGES, funcInt[ivlID]);
+
+                if (m_manager.hasDataPlots())
+                {
+                    if (_pData.getRangeSetting(YRANGE))
+                        _pInfo.ranges[XRANGE] = _pData.getRanges()[YRANGE].combine(m_manager.getDataIntervals()[PlotAssetManager::REAL].combine(funcInt[PlotAssetManager::REAL]));
+                    else
+                        _pInfo.ranges[XRANGE] = m_manager.getDataIntervals()[PlotAssetManager::REAL].combine(funcInt[PlotAssetManager::REAL]);
+
+                    if (_pData.getRangeSetting(ZRANGE))
+                        _pInfo.ranges[YRANGE] = _pData.getRanges()[ZRANGE].combine(m_manager.getDataIntervals()[PlotAssetManager::IMAG].combine(funcInt[PlotAssetManager::IMAG]));
+                    else
+                        _pInfo.ranges[YRANGE] = m_manager.getDataIntervals()[PlotAssetManager::IMAG].combine(funcInt[PlotAssetManager::IMAG]);
+                }
+                else
+                {
+                    if (_pData.getRangeSetting(YRANGE))
+                        _pInfo.ranges[XRANGE] = _pData.getRanges()[YRANGE].combine(funcInt[PlotAssetManager::REAL]);
+                    else
+                        _pInfo.ranges[XRANGE] = funcInt[PlotAssetManager::REAL];
+
+                    if (_pData.getRangeSetting(ZRANGE))
+                        _pInfo.ranges[YRANGE] = _pData.getRanges()[ZRANGE].combine(funcInt[PlotAssetManager::IMAG]);
+                    else
+                        _pInfo.ranges[YRANGE] = funcInt[PlotAssetManager::IMAG];
+                }
+            }
+
+            if (!_pData.getRangeSetting(ZRANGE))
+                _pInfo.ranges[YRANGE].expand(1.1, (_pData.getLogscale(YRANGE) || _pData.getSettings(PlotData::INT_COORDS) != CARTESIAN
+                                                   ? 0.0 : -INFINITY));
+
+            if (!_pData.getRangeSetting(YRANGE))
+                _pInfo.ranges[XRANGE].expand(1.1);
+        }
+        else if (isPlot3D(_pInfo.sCommand) && _pData.getGivenRanges() < 3)
         {
             if (sFunc.length())
             {
@@ -4833,7 +4877,7 @@ void Plot::fitPlotRanges(size_t nPlotCompose, bool bNewSubPlot)
                     _pInfo.ranges[ZRANGE].reset(0.0, _pInfo.ranges[ZRANGE].max());
             }
         }
-        else if (_pData.getGivenRanges() < 3 && _pInfo.sCommand != "implot")
+        else if (isMesh2D(_pInfo.sCommand) && _pData.getGivenRanges() < 3 && _pInfo.sCommand != "implot")
         {
             if (sFunc.length())
             {
@@ -4849,7 +4893,7 @@ void Plot::fitPlotRanges(size_t nPlotCompose, bool bNewSubPlot)
                                                || (_pData.getSettings(PlotData::INT_COORDS) != CARTESIAN && _pData.getSettings(PlotData::INT_COORDS) != POLAR_RP) ? 0.0 : -INFINITY));
         }
 
-        if (!_pInfo.b2D && _pInfo.sCommand != "plot3d")
+        if (isPlot1D(_pInfo.sCommand))
         {
             _pInfo.secranges[YRANGE].expand(1.1, (_pData.getLogscale(YRANGE) || _pData.getSettings(PlotData::INT_COORDS) != CARTESIAN ? 0.0 : -INFINITY));
 
@@ -5258,6 +5302,13 @@ void Plot::applyColorbar()
 {
     if (_pData.getSettings(PlotData::LOG_COLORBAR) && (_pInfo.sCommand.substr(0, 4) == "grad" || _pInfo.sCommand.substr(0, 4) == "dens" || _pInfo.sCommand == "implot") && !_pInfo.b3D && !_pData.getSettings(PlotData::LOG_SCHEMATIC))
     {
+        if (_pData.getSettings(PlotData::INT_COMPLEXMODE) == CPLX_PLANE)
+        {
+            _graph->SetRange('x', _pInfo.ranges[CRANGE].min()+1e-3, _pInfo.ranges[CRANGE].max()-1e-3);
+            _graph->SetTicksVal('c', "--\\pi\n--\\pi/2\n0\n\\pi/2\n\\pi");
+            _graph->SetRange('x', _pInfo.ranges[XRANGE].min(), _pInfo.ranges[XRANGE].max());
+        }
+
         if (_pData.getAxisScale(CRANGE) != 1.0)
             _graph->SetRange('c', _pInfo.ranges[CRANGE].min() / _pData.getAxisScale(CRANGE), _pInfo.ranges[CRANGE].max() / _pData.getAxisScale(CRANGE));
 
@@ -5290,6 +5341,13 @@ void Plot::applyColorbar()
                 )
             )
     {
+        if (_pData.getSettings(PlotData::INT_COMPLEXMODE) == CPLX_PLANE)
+        {
+            _graph->SetRange('x', _pInfo.ranges[CRANGE].min()+1e-3, _pInfo.ranges[CRANGE].max()-1e-3);
+            _graph->SetTicksVal('c', "--\\pi\n--\\pi/2\n0\n\\pi/2\n\\pi");
+            _graph->SetRange('x', _pInfo.ranges[XRANGE].min(), _pInfo.ranges[XRANGE].max());
+        }
+
         if (_pData.getAxisScale(CRANGE) != 1.0)
             _graph->SetRange('c', _pInfo.ranges[CRANGE].min() / _pData.getAxisScale(CRANGE), _pInfo.ranges[CRANGE].max() / _pData.getAxisScale(CRANGE));
 

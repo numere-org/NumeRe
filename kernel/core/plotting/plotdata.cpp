@@ -139,6 +139,33 @@ static std::map<std::string,std::pair<PlotData::LogicalPlotSetting,PlotData::Par
     return mGenericSwitches;
 }
 
+
+static std::map<std::string, std::string> getColorSchemes()
+{
+    std::map<std::string, std::string> mColorSchemes;
+
+    mColorSchemes.emplace("rainbow", "BbcyrR");
+    mColorSchemes.emplace("grey", "kw");
+    mColorSchemes.emplace("hot", "{R1}{r4}qy");
+    mColorSchemes.emplace("cold", "{B2}n{c8}");
+    mColorSchemes.emplace("copper", "{Q2}{q3}{q9}");
+    mColorSchemes.emplace("map", "UBbcgyqRH");
+    mColorSchemes.emplace("moy", "kMqyw");
+    mColorSchemes.emplace("coast", "{B6}C{y8}");
+    mColorSchemes.emplace("viridis", "UNC{e4}y");
+    mColorSchemes.emplace("std", "UNC{e4}y");
+    mColorSchemes.emplace("plasma", "B{u4}p{q6}{y7}");
+    mColorSchemes.emplace("hue", "rygcbmr");
+    mColorSchemes.emplace("polarity", "w{n5}{u2}{r7}w");
+    mColorSchemes.emplace("complex", "w{n5}{u2}{r7}w");
+    mColorSchemes.emplace("spectral", "{R6}{q6}{y8}{l6}{N6}");
+    mColorSchemes.emplace("coolwarm", "{n6}{r7}");
+    mColorSchemes.emplace("ryg", "{R6}{y7}{G6}");
+
+    return mColorSchemes;
+}
+
+
 /* --> Parameter setzen: Verwendet die bool matchParams(const string&, const string&, char)-Funktion,
  *     um die einzelnen Befehle zu identifizieren. Unbekannte Befehle werden automatisch ignoriert. 7
  *     Dies ist dann automatisch Fehlertoleranter <--
@@ -147,6 +174,7 @@ void PlotData::setParams(const string& __sCmd, int nType)
 {
     mu::Parser& _parser = NumeReKernel::getInstance()->getParser();
     static std::map<std::string,std::pair<PlotData::LogicalPlotSetting,PlotData::ParamType>> mGenericSwitches = getGenericSwitches();
+    static std::map<std::string,std::string> mColorSchemes = getColorSchemes();
 
     string sCmd = toLowerCase(__sCmd);
 
@@ -962,14 +990,17 @@ void PlotData::setParams(const string& __sCmd, int nType)
     if (findParameter(sCmd, "colorscheme", '=') && (nType == ALL || nType & LOCAL))
     {
         unsigned int nPos = findParameter(sCmd, "colorscheme", '=') + 11;
+
         while (sCmd[nPos] == ' ')
             nPos++;
+
         if (sCmd[nPos] == '"')
         {
             string __sColorScheme = __sCmd.substr(nPos+1, __sCmd.find('"', nPos+1)-nPos-1);
             StripSpaces(__sColorScheme);
+
             if (!checkColorChars(__sColorScheme))
-                stringSettings[STR_COLORSCHEME] = "kRryw";
+                stringSettings[STR_COLORSCHEME] = mColorSchemes["std"];
             else
             {
                 if (__sColorScheme == "#" && stringSettings[STR_COLORSCHEME].find('#') == string::npos)
@@ -993,100 +1024,89 @@ void PlotData::setParams(const string& __sCmd, int nType)
         {
             string sTemp = sCmd.substr(nPos, sCmd.find(' ', nPos+1)-nPos);
             StripSpaces(sTemp);
-            if (sTemp == "rainbow")
-                stringSettings[STR_COLORSCHEME] = "BbcyrR";
-            else if (sTemp == "grey")
-                stringSettings[STR_COLORSCHEME] = "kw";
-            else if (sTemp == "hot")
-                stringSettings[STR_COLORSCHEME] = "kRryw";
-            else if (sTemp == "cold")
-                stringSettings[STR_COLORSCHEME] = "kBncw";
-            else if (sTemp == "copper")
-                stringSettings[STR_COLORSCHEME] = "kQqw";
-            else if (sTemp == "map")
-                stringSettings[STR_COLORSCHEME] = "UBbcgyqRH";
-            else if (sTemp == "moy")
-                stringSettings[STR_COLORSCHEME] = "kMqyw";
-            else if (sTemp == "coast")
-                stringSettings[STR_COLORSCHEME] = "BCyw";
-            else if (sTemp == "viridis" || sTemp == "std")
-                stringSettings[STR_COLORSCHEME] = "UNC{e4}y";
-            else if (sTemp == "plasma")
-                stringSettings[STR_COLORSCHEME] = "B{u4}p{q6}{y7}";
-            else if (sTemp == "hue" || sTemp == "complex")
-                stringSettings[STR_COLORSCHEME] = "rygcbmr";
+
+            auto iter = mColorSchemes.find(sTemp);
+
+            if (iter != mColorSchemes.end())
+                stringSettings[STR_COLORSCHEME] = iter->second;
             else
-                stringSettings[STR_COLORSCHEME] = "kRryw";
+                stringSettings[STR_COLORSCHEME] = mColorSchemes["std"];
         }
+
         if (stringSettings[STR_COLORSCHEME].length() > 32)
+            stringSettings[STR_COLORSCHEME] = mColorSchemes["std"];
+
+        while (stringSettings[STR_COLORSCHEME].find(' ') != string::npos)
         {
-            stringSettings[STR_COLORSCHEME] = "BbcyrR";
-            stringSettings[STR_COLORSCHEMEMEDIUM] = "{B4}{b4}{c4}{y4}{r4}{R4}";
-            stringSettings[STR_COLORSCHEMELIGHT] = "{B8}{b8}{c8}{y8}{r8}{R8}";
+            stringSettings[STR_COLORSCHEME].erase(stringSettings[STR_COLORSCHEME].find(' '),1);
         }
-        else
+
+        stringSettings[STR_COLORSCHEMELIGHT] = "";
+        stringSettings[STR_COLORSCHEMEMEDIUM] = "";
+
+        for (unsigned int i = 0; i < stringSettings[STR_COLORSCHEME].length(); i++)
         {
-            while (stringSettings[STR_COLORSCHEME].find(' ') != string::npos)
+            if (stringSettings[STR_COLORSCHEME][i] == '#' || stringSettings[STR_COLORSCHEME][i] == '|')
             {
-                stringSettings[STR_COLORSCHEME].erase(stringSettings[STR_COLORSCHEME].find(' '),1);
-            }
-            stringSettings[STR_COLORSCHEMELIGHT] = "";
-            stringSettings[STR_COLORSCHEMEMEDIUM] = "";
-            for (unsigned int i = 0; i < stringSettings[STR_COLORSCHEME].length(); i++)
-            {
-                if (stringSettings[STR_COLORSCHEME][i] == '#' || stringSettings[STR_COLORSCHEME][i] == '|')
-                {
-                    stringSettings[STR_COLORSCHEMELIGHT] += stringSettings[STR_COLORSCHEME][i];
-                    stringSettings[STR_COLORSCHEMEMEDIUM] += stringSettings[STR_COLORSCHEME][i];
-                    continue;
-                }
-                if (stringSettings[STR_COLORSCHEME][i] == '{'
-                    && i+3 < stringSettings[STR_COLORSCHEME].length()
-                    && stringSettings[STR_COLORSCHEME][i+3] == '}')
-                {
-                    stringSettings[STR_COLORSCHEMELIGHT] += "{";
-                    stringSettings[STR_COLORSCHEMEMEDIUM] += "{";
-                    stringSettings[STR_COLORSCHEMELIGHT] += stringSettings[STR_COLORSCHEME][i+1];
-                    stringSettings[STR_COLORSCHEMEMEDIUM] += stringSettings[STR_COLORSCHEME][i+1];
-                    if (stringSettings[STR_COLORSCHEME][i+2] >= '2' && stringSettings[STR_COLORSCHEME][i+2] <= '8')
-                    {
-                        stringSettings[STR_COLORSCHEMEMEDIUM] += stringSettings[STR_COLORSCHEME][i+2]-1;
-                        if (stringSettings[STR_COLORSCHEME][i+2] < '6')
-                            stringSettings[STR_COLORSCHEMELIGHT] += stringSettings[STR_COLORSCHEME][i+2]+3;
-                        else
-                            stringSettings[STR_COLORSCHEMELIGHT] += "9";
-                        stringSettings[STR_COLORSCHEMELIGHT] += "}";
-                        stringSettings[STR_COLORSCHEMEMEDIUM] += "}";
-                    }
-                    else
-                    {
-                        stringSettings[STR_COLORSCHEMELIGHT] += stringSettings[STR_COLORSCHEME].substr(i+2,2);
-                        stringSettings[STR_COLORSCHEMEMEDIUM] += stringSettings[STR_COLORSCHEME].substr(i+2,2);
-                    }
-                    i += 3;
-                    continue;
-                }
-                stringSettings[STR_COLORSCHEMELIGHT] += "{";
                 stringSettings[STR_COLORSCHEMELIGHT] += stringSettings[STR_COLORSCHEME][i];
-                stringSettings[STR_COLORSCHEMELIGHT] += "8}";
-                stringSettings[STR_COLORSCHEMEMEDIUM] += "{";
                 stringSettings[STR_COLORSCHEMEMEDIUM] += stringSettings[STR_COLORSCHEME][i];
-                stringSettings[STR_COLORSCHEMEMEDIUM] += "4}";
+                continue;
             }
+
+            if (stringSettings[STR_COLORSCHEME][i] == '{'
+                && i+3 < stringSettings[STR_COLORSCHEME].length()
+                && stringSettings[STR_COLORSCHEME][i+3] == '}')
+            {
+                stringSettings[STR_COLORSCHEMELIGHT] += "{";
+                stringSettings[STR_COLORSCHEMEMEDIUM] += "{";
+                stringSettings[STR_COLORSCHEMELIGHT] += stringSettings[STR_COLORSCHEME][i+1];
+                stringSettings[STR_COLORSCHEMEMEDIUM] += stringSettings[STR_COLORSCHEME][i+1];
+
+                if (stringSettings[STR_COLORSCHEME][i+2] >= '2' && stringSettings[STR_COLORSCHEME][i+2] <= '8')
+                {
+                    stringSettings[STR_COLORSCHEMEMEDIUM] += stringSettings[STR_COLORSCHEME][i+2]-1;
+
+                    if (stringSettings[STR_COLORSCHEME][i+2] < '6')
+                        stringSettings[STR_COLORSCHEMELIGHT] += stringSettings[STR_COLORSCHEME][i+2]+3;
+                    else
+                        stringSettings[STR_COLORSCHEMELIGHT] += "9";
+
+                    stringSettings[STR_COLORSCHEMELIGHT] += "}";
+                    stringSettings[STR_COLORSCHEMEMEDIUM] += "}";
+                }
+                else
+                {
+                    stringSettings[STR_COLORSCHEMELIGHT] += stringSettings[STR_COLORSCHEME].substr(i+2,2);
+                    stringSettings[STR_COLORSCHEMEMEDIUM] += stringSettings[STR_COLORSCHEME].substr(i+2,2);
+                }
+
+                i += 3;
+                continue;
+            }
+
+            stringSettings[STR_COLORSCHEMELIGHT] += "{";
+            stringSettings[STR_COLORSCHEMELIGHT] += stringSettings[STR_COLORSCHEME][i];
+            stringSettings[STR_COLORSCHEMELIGHT] += "8}";
+            stringSettings[STR_COLORSCHEMEMEDIUM] += "{";
+            stringSettings[STR_COLORSCHEMEMEDIUM] += stringSettings[STR_COLORSCHEME][i];
+            stringSettings[STR_COLORSCHEMEMEDIUM] += "4}";
         }
     }
 
     if (findParameter(sCmd, "bgcolorscheme", '=') && (nType == ALL || nType & LOCAL))
     {
         unsigned int nPos = findParameter(sCmd, "bgcolorscheme", '=') + 13;
+
         while (sCmd[nPos] == ' ')
             nPos++;
+
         if (sCmd[nPos] == '"')
         {
             string __sBGColorScheme = __sCmd.substr(nPos+1, __sCmd.find('"', nPos+1)-nPos-1);
             StripSpaces(__sBGColorScheme);
+
             if (!checkColorChars(__sBGColorScheme))
-                stringSettings[STR_BACKGROUNDCOLORSCHEME] = "kRryw";
+                stringSettings[STR_BACKGROUNDCOLORSCHEME] = mColorSchemes["std"];
             else
             {
                 if (__sBGColorScheme == "#"
@@ -1116,37 +1136,20 @@ void PlotData::setParams(const string& __sCmd, int nType)
         {
             string sTemp = sCmd.substr(nPos, sCmd.find(' ', nPos+1)-nPos);
             StripSpaces(sTemp);
-            if (sTemp == "rainbow")
-                stringSettings[STR_BACKGROUNDCOLORSCHEME] = "BbcyrR";
-            else if (sTemp == "grey")
-                stringSettings[STR_BACKGROUNDCOLORSCHEME] = "kw";
-            else if (sTemp == "hot")
-                stringSettings[STR_BACKGROUNDCOLORSCHEME] = "kRryw";
-            else if (sTemp == "cold")
-                stringSettings[STR_BACKGROUNDCOLORSCHEME] = "kBbcw";
-            else if (sTemp == "copper")
-                stringSettings[STR_BACKGROUNDCOLORSCHEME] = "kQqw";
-            else if (sTemp == "map")
-                stringSettings[STR_BACKGROUNDCOLORSCHEME] = "UBbcgyqRH";
-            else if (sTemp == "moy")
-                stringSettings[STR_BACKGROUNDCOLORSCHEME] = "kMqyw";
-            else if (sTemp == "coast")
-                stringSettings[STR_BACKGROUNDCOLORSCHEME] = "BCyw";
-            else if (sTemp == "viridis" || sTemp == "std")
-                stringSettings[STR_BACKGROUNDCOLORSCHEME] = "UNC{e4}y";
-            else if (sTemp == "plasma")
-                stringSettings[STR_BACKGROUNDCOLORSCHEME] = "B{u4}p{q6}{y7}";
-            else if (sTemp == "hue" || sTemp == "complex")
-                stringSettings[STR_BACKGROUNDCOLORSCHEME] = "rygcbmr";
+
+            auto iter = mColorSchemes.find(sTemp);
+
+            if (iter != mColorSchemes.end())
+                stringSettings[STR_BACKGROUNDCOLORSCHEME] = iter->second;
             else if (sTemp == "real")
                 stringSettings[STR_BACKGROUNDCOLORSCHEME] = "<<REALISTIC>>";
             else
-                stringSettings[STR_BACKGROUNDCOLORSCHEME] = "BbcyrR";
+                stringSettings[STR_BACKGROUNDCOLORSCHEME] = mColorSchemes["std"];
         }
+
         if (stringSettings[STR_BACKGROUNDCOLORSCHEME].length() > 32)
-        {
-            stringSettings[STR_BACKGROUNDCOLORSCHEME] = "BbcyrR";
-        }
+            stringSettings[STR_BACKGROUNDCOLORSCHEME] = mColorSchemes["std"];
+
         while (stringSettings[STR_BACKGROUNDCOLORSCHEME].find(' ') != string::npos)
         {
             stringSettings[STR_BACKGROUNDCOLORSCHEME] = stringSettings[STR_BACKGROUNDCOLORSCHEME].substr(0, stringSettings[STR_BACKGROUNDCOLORSCHEME].find(' ')) + stringSettings[STR_BACKGROUNDCOLORSCHEME].substr(stringSettings[STR_BACKGROUNDCOLORSCHEME].find(' ')+1);
@@ -1925,6 +1928,7 @@ string PlotData::getParams(bool asstr) const
     string sReturn = "";
     string sSepString = "; ";
     static std::map<std::string,std::pair<PlotData::LogicalPlotSetting,PlotData::ParamType>> mGenericSwitches = getGenericSwitches();
+    static std::map<std::string,std::string> mColorSchemes = getColorSchemes();
 
     if (asstr)
     {
@@ -1993,69 +1997,55 @@ string PlotData::getParams(bool asstr) const
 
     sReturn += "bgcolorscheme=";
 
-    if (stringSettings[STR_BACKGROUNDCOLORSCHEME] == "BbcyrR")
-        sReturn += "rainbow" + sSepString;
-    else if (stringSettings[STR_BACKGROUNDCOLORSCHEME] == "kw")
-        sReturn += "grey" + sSepString;
-    else if (stringSettings[STR_BACKGROUNDCOLORSCHEME] == "kRryw")
-        sReturn += "hot" + sSepString;
-    else if (stringSettings[STR_BACKGROUNDCOLORSCHEME] == "kBncw")
-        sReturn += "cold" + sSepString;
-    else if (stringSettings[STR_BACKGROUNDCOLORSCHEME] == "kQqw")
-        sReturn += "copper" + sSepString;
-    else if (stringSettings[STR_BACKGROUNDCOLORSCHEME] == "UBbcgyqRH")
-        sReturn += "map" + sSepString;
-    else if (stringSettings[STR_BACKGROUNDCOLORSCHEME] == "kMqyw")
-        sReturn += "moy" + sSepString;
-    else if (stringSettings[STR_BACKGROUNDCOLORSCHEME] == "BCyw")
-        sReturn += "coast" + sSepString;
-    else if (stringSettings[STR_BACKGROUNDCOLORSCHEME] == "UNC{e4}y")
-        sReturn += "viridis" + sSepString;
-    else if (stringSettings[STR_BACKGROUNDCOLORSCHEME] == "B{u4}p{q6}{y7}")
-        sReturn += "plasma" + sSepString;
-    else if (stringSettings[STR_BACKGROUNDCOLORSCHEME] == "rygcbmr")
-        sReturn += "hue" + sSepString;
-    else if (stringSettings[STR_BACKGROUNDCOLORSCHEME] == "<<REALISTIC>>")
+    if (stringSettings[STR_BACKGROUNDCOLORSCHEME] == "<<REALISTIC>>")
         sReturn += "real" + sSepString;
     else
     {
-        if (asstr)
-            sReturn += "\\\"" + stringSettings[STR_BACKGROUNDCOLORSCHEME] + "\\\"" + sSepString;
-        else
-            sReturn += "\"" + stringSettings[STR_BACKGROUNDCOLORSCHEME] + "\"" + sSepString;
+        bool found = false;
+
+        for (const auto& iter : mColorSchemes)
+        {
+            if (iter.second == stringSettings[STR_BACKGROUNDCOLORSCHEME])
+            {
+                sReturn += iter.first + sSepString;
+                found = true;
+                break;
+            }
+        }
+
+        if (!found)
+        {
+            if (asstr)
+                sReturn += "\\\"" + stringSettings[STR_BACKGROUNDCOLORSCHEME] + "\\\"" + sSepString;
+            else
+                sReturn += "\"" + stringSettings[STR_BACKGROUNDCOLORSCHEME] + "\"" + sSepString;
+        }
     }
 
     sReturn += "colorscheme=";
 
-    if (stringSettings[STR_COLORSCHEME] == "BbcyrR")
-        sReturn += "rainbow" + sSepString;
-    else if (stringSettings[STR_COLORSCHEME] == "kw")
-        sReturn += "grey" + sSepString;
-    else if (stringSettings[STR_COLORSCHEME] == "kRryw")
-        sReturn += "hot" + sSepString;
-    else if (stringSettings[STR_COLORSCHEME] == "kBncw")
-        sReturn += "cold" + sSepString;
-    else if (stringSettings[STR_COLORSCHEME] == "kQqw")
-        sReturn += "copper" + sSepString;
-    else if (stringSettings[STR_COLORSCHEME] == "UBbcgyqRH")
-        sReturn += "map" + sSepString;
-    else if (stringSettings[STR_COLORSCHEME] == "kMqyw")
-        sReturn += "moy" + sSepString;
-    else if (stringSettings[STR_COLORSCHEME] == "BCyw")
-        sReturn += "coast" + sSepString;
-    else if (stringSettings[STR_COLORSCHEME] == "UNC{e4}y")
-        sReturn += "viridis" + sSepString;
-    else if (stringSettings[STR_COLORSCHEME] == "B{u4}p{q6}{y7}")
-        sReturn += "plasma" + sSepString;
-    else if (stringSettings[STR_COLORSCHEME] == "rygcbmr")
-        sReturn += "hue" + sSepString;
-    else
     {
-        if (asstr)
-            sReturn += "\\\"" + stringSettings[STR_COLORSCHEME] + "\\\"" + sSepString;
-        else
-            sReturn += "\"" + stringSettings[STR_COLORSCHEME] + "\"" + sSepString;
+        bool found = false;
+
+        for (const auto& iter : mColorSchemes)
+        {
+            if (iter.second == stringSettings[STR_COLORSCHEME])
+            {
+                sReturn += iter.first + sSepString;
+                found = true;
+                break;
+            }
+        }
+
+        if (!found)
+        {
+            if (asstr)
+                sReturn += "\\\"" + stringSettings[STR_COLORSCHEME] + "\\\"" + sSepString;
+            else
+                sReturn += "\"" + stringSettings[STR_COLORSCHEME] + "\"" + sSepString;
+        }
     }
+
 
     if (intSettings[INT_COMPLEXMODE] == CPLX_REIM)
         sReturn += "complexmode=reim" + sSepString;

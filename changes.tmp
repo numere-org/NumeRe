@@ -61,3 +61,5 @@ Updated	The commands "diff" and "taylor" now use the differentiation method of S
 New	The command "clc" is now available to clear the content of the terminal window and reset it to the startup state.
 Updated	The new language file structure requires an additional load command for the new language file. Added this load command.
 Cleaned	Improved the implementation of the plotting algorithm
+Added	Plotting modes for complex-valued results are now available: use "complexmode=reim" to display real and imaginary data together and "complexmode=plane" to use the x-y plane as the complex plane.
+Applied	Made new colour maps and revisited already available ones to have less strong gradients.
