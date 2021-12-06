@@ -20,27 +20,54 @@
 #include "../../kernel.hpp"
 #include "../utils/tools.hpp"
 
+/////////////////////////////////////////////////
+/// \brief Constructor.
+///
+/// \param __graph mglGraph*
+/// \param _pData const PlotData&
+///
+/////////////////////////////////////////////////
 GraphHelper::GraphHelper(mglGraph* __graph, const PlotData& _pData)
 {
     _graph = __graph;
-    bAlphaActive = _pData.getTransparency();
-    bLightActive = _pData.getLighting();
-    bHires = _pData.getHighRes() == 2;
-    dAspect = _pData.getAspect();
-    sTitle = _pData.getComposedTitle();
+    bAlphaActive = _pData.getSettings(PlotData::LOG_ALPHA);
+    bLightActive = _pData.getSettings(PlotData::INT_LIGHTING);
+    bHires = _pData.getSettings(PlotData::INT_HIGHRESLEVEL) == 2;
+    dAspect = _pData.getSettings(PlotData::FLOAT_ASPECT);
+    sTitle = _pData.getSettings(PlotData::STR_COMPOSEDTITLE);
 }
 
+
+/////////////////////////////////////////////////
+/// \brief Destructor. Deletes the internal
+/// mglGraph pointer.
+/////////////////////////////////////////////////
 GraphHelper::~GraphHelper()
 {
     if (_graph)
         delete _graph;
 }
 
+
+/////////////////////////////////////////////////
+/// \brief Empty virtual function implementation.
+///
+/// \param _graph mglGraph*
+/// \return int
+///
+/////////////////////////////////////////////////
 int GraphHelper::Draw(mglGraph* _graph)
 {
     return 0;
 }
 
+
+/////////////////////////////////////////////////
+/// \brief Empty virtual function implementation.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
 void GraphHelper::Reload()
 {
     return;

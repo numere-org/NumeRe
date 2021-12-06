@@ -580,12 +580,12 @@ static mglGraph* prepareGraphForHist(double dAspect, PlotData& _pData, bool bSil
 
     // Apply plot output size using the resolution
     // and the aspect settings
-    if (_pData.getHighRes() == 2 && bSilent && _pData.getSilentMode())
+    if (_pData.getSettings(PlotData::INT_HIGHRESLEVEL) == 2 && bSilent && _pData.getSettings(PlotData::LOG_SILENTMODE))
     {
         double dHeight = sqrt(1920.0 * 1440.0 / dAspect);
         _histGraph->SetSize((int)lrint(dAspect * dHeight), (int)lrint(dHeight));
     }
-    else if (_pData.getHighRes() == 1 && bSilent && _pData.getSilentMode())
+    else if (_pData.getSettings(PlotData::INT_HIGHRESLEVEL) == 1 && bSilent && _pData.getSettings(PlotData::LOG_SILENTMODE))
     {
         double dHeight = sqrt(1280.0 * 960.0 / dAspect);
         _histGraph->SetSize((int)lrint(dAspect * dHeight), (int)lrint(dHeight));
@@ -599,27 +599,16 @@ static mglGraph* prepareGraphForHist(double dAspect, PlotData& _pData, bool bSil
     // Get curret plot font, font size
     // and the width of the bars
     _histGraph->CopyFont(&_fontData);
-    _histGraph->SetFontSizeCM(0.24 * ((double)(1 + _pData.getTextSize()) / 6.0), 72);
-    _histGraph->SetBarWidth(_pData.getBars() ? _pData.getBars() : 0.9);
+    _histGraph->SetFontSizeCM(0.24 * ((double)(1 + _pData.getSettings(PlotData::FLOAT_TEXTSIZE)) / 6.0), 72);
+    _histGraph->SetBarWidth(_pData.getSettings(PlotData::FLOAT_BARS) ? _pData.getSettings(PlotData::FLOAT_BARS) : 0.9);
 
     _histGraph->SetRanges(1, 2, 1, 2, 1, 2);
 
     // Apply logarithmic functions to the axes,
     // if necessary
-    if (_pData.getxLogscale() && !_pData.getyLogscale() && !_pData.getzLogscale())
-        _histGraph->SetFunc("lg(x)", "");
-    else if (_pData.getxLogscale() && _pData.getyLogscale() && !_pData.getzLogscale())
-        _histGraph->SetFunc("lg(x)", "lg(y)");
-    else if (!_pData.getxLogscale() && _pData.getyLogscale() && !_pData.getzLogscale())
-        _histGraph->SetFunc("", "lg(y)");
-    else if (_pData.getxLogscale() && !_pData.getyLogscale() && _pData.getzLogscale())
-        _histGraph->SetFunc("lg(x)", "", "lg(z)");
-    else if (!_pData.getxLogscale() && !_pData.getyLogscale() && _pData.getzLogscale())
-        _histGraph->SetFunc("", "", "lg(z)");
-    else if (!_pData.getxLogscale() && _pData.getyLogscale() && _pData.getzLogscale())
-        _histGraph->SetFunc("", "lg(y)", "lg(z)");
-    else if (_pData.getxLogscale() && _pData.getyLogscale() && _pData.getzLogscale())
-        _histGraph->SetFunc("lg(x)", "lg(y)", "lg(z)");
+    _histGraph->SetFunc(_pData.getLogscale(XRANGE) ? "lg(x)" : "",
+                        _pData.getLogscale(YRANGE) ? "lg(y)" : "",
+                        _pData.getLogscale(ZRANGE) ? "lg(z)" : "");
 
     return _histGraph;
 }
@@ -685,27 +674,27 @@ static void createPlotForHist1D(HistogramParameters& _histParams, mglData& _mAxi
     }
 
     // Update the x ranges for a possible logscale
-    if (_pData.getxLogscale() && _histParams.ranges.x[0] <= 0.0 && _histParams.ranges.x[1] > 0.0)
+    if (_pData.getLogscale(XRANGE) && _histParams.ranges.x[0] <= 0.0 && _histParams.ranges.x[1] > 0.0)
         _histParams.ranges.x[0] = _histParams.ranges.x[1] / 1e3;
-    else if (_pData.getxLogscale() && _histParams.ranges.x[0] < 0.0 && _histParams.ranges.x[1] <= 0.0)
+    else if (_pData.getLogscale(XRANGE) && _histParams.ranges.x[0] < 0.0 && _histParams.ranges.x[1] <= 0.0)
     {
         _histParams.ranges.x[0] = 1.0;
         _histParams.ranges.x[1] = 1.0;
     }
 
     // Update the y ranges for a possible logscale
-    if (_pData.getyLogscale())
+    if (_pData.getLogscale(YRANGE))
         _histGraph->SetRanges(_histParams.ranges.x[0], _histParams.ranges.x[1], 0.1, 1.4 * (double)nMax);
     else
         _histGraph->SetRanges(_histParams.ranges.x[0], _histParams.ranges.x[1], 0.0, 1.05 * (double)nMax);
 
     // Create the axes
-    if (_pData.getAxis())
+    if (_pData.getSettings(PlotData::LOG_AXIS))
     {
-        if (!_pData.getxLogscale())
+        if (!_pData.getLogscale(XRANGE))
             _histGraph->SetTicksVal('x', _mAxisVals, sTicks.c_str());
 
-        if (!_pData.getBox() && _histParams.ranges.x[0] <= 0.0 && _histParams.ranges.x[1] >= 0.0 && !_pData.getyLogscale())
+        if (!_pData.getSettings(PlotData::LOG_BOX) && _histParams.ranges.x[0] <= 0.0 && _histParams.ranges.x[1] >= 0.0 && !_pData.getLogscale(YRANGE))
         {
             //_histGraph->SetOrigin(0.0,0.0);
             if (_histParams.nBin > 40)
@@ -713,7 +702,7 @@ static void createPlotForHist1D(HistogramParameters& _histParams, mglData& _mAxi
             else
                 _histGraph->Axis("AKDTVISO");
         }
-        else if (!_pData.getBox())
+        else if (!_pData.getSettings(PlotData::LOG_BOX))
         {
             if (_histParams.nBin > 40)
                 _histGraph->Axis("UAKDTVISO");
@@ -730,29 +719,29 @@ static void createPlotForHist1D(HistogramParameters& _histParams, mglData& _mAxi
     }
 
     // Create the surrounding box
-    if (_pData.getBox())
+    if (_pData.getSettings(PlotData::LOG_BOX))
         _histGraph->Box();
 
     // Write the axis labels
-    if (_pData.getAxis())
+    if (_pData.getSettings(PlotData::LOG_AXIS))
     {
         _histGraph->Label('x', _histParams.sBinLabel.c_str(), 0.0);
 
-        if (sCommonExponent.length() && !_pData.getxLogscale())
+        if (sCommonExponent.length() && !_pData.getLogscale(XRANGE))
         {
             _histGraph->Puts(mglPoint(_histParams.ranges.x[1] + (_histParams.ranges.x[1] - _histParams.ranges.x[0]) / 10.0), mglPoint(_histParams.ranges.x[1] + (_histParams.ranges.x[1] - _histParams.ranges.x[0]) / 10.0 + 1), sCommonExponent.c_str(), ":TL", -1.3);
         }
 
-        if (_pData.getBox())
+        if (_pData.getSettings(PlotData::LOG_BOX))
             _histGraph->Label('y', _histParams.sCountLabel.c_str(), 0.0);
         else
             _histGraph->Label('y', _histParams.sCountLabel.c_str(), 1.1);
     }
 
     // Create the grid
-    if (_pData.getGrid())
+    if (_pData.getSettings(PlotData::INT_GRID))
     {
-        if (_pData.getGrid() == 2)
+        if (_pData.getSettings(PlotData::INT_GRID) == 2)
         {
             _histGraph->Grid("xy!", _pData.getGridStyle().c_str());
             _histGraph->Grid("xy", _pData.getFineGridStyle().c_str());
@@ -762,10 +751,10 @@ static void createPlotForHist1D(HistogramParameters& _histParams, mglData& _mAxi
     }
 
     // Position the legend
-    if (!_pData.getBox())
+    if (!_pData.getSettings(PlotData::LOG_BOX))
         _histGraph->Legend(1.25, 1.0);
     else
-        _histGraph->Legend(_pData.getLegendPosition());
+        _histGraph->Legend(_pData.getSettings(PlotData::INT_LEGENDPOSITION));
 
     std::string sHistSavePath = _out.getFileName();
 
@@ -798,7 +787,7 @@ static void createPlotForHist1D(HistogramParameters& _histParams, mglData& _mAxi
 
     // Open the plot in the graph viewer
     // of write it directly to file
-    if (_pData.getOpenImage() && !_pData.getSilentMode() && !bSilent)
+    if (_pData.getSettings(PlotData::LOG_OPENIMAGE) && !_pData.getSettings(PlotData::LOG_SILENTMODE) && !bSilent)
     {
         GraphHelper* _graphHelper = new GraphHelper(_histGraph, _pData);
         _graphHelper->setAspect(dAspect);
@@ -916,14 +905,14 @@ static void createHist1D(const std::string& sCmd, const std::string& sTargettabl
             // --> Berechne die Intervall-Laenge (Explizite Typumwandlung von int->double) <--
             if (bGrid)
             {
-                if (_pData.getxLogscale())
+                if (_pData.getLogscale(XRANGE))
                     _histParams.binWidth[0] = (log10(_histParams.ranges.z[1]) - log10(_histParams.ranges.z[0])) / (double)_histParams.nBin;
                 else
                     _histParams.binWidth[0] = abs(_histParams.ranges.z[1] - _histParams.ranges.z[0]) / (double)_histParams.nBin;
             }
             else
             {
-                if (_pData.getxLogscale())
+                if (_pData.getLogscale(XRANGE))
                     _histParams.binWidth[0] = (log10(_histParams.ranges.x[1]) - log10(_histParams.ranges.x[0])) / (double)_histParams.nBin;
                 else
                     _histParams.binWidth[0] = abs(_histParams.ranges.x[1] - _histParams.ranges.x[0]) / (double)_histParams.nBin;
@@ -959,7 +948,7 @@ static void createHist1D(const std::string& sCmd, const std::string& sTargettabl
 
     // Calculate the data for the histogram
     std::vector<std::string> vLegends;
-    std::vector<std::vector<double>> vHistMatrix = calculateHist1dData(_data, _idx, _histParams, _histData, _mAxisVals, nMax, vLegends, bGrid, _pData.getxLogscale());
+    std::vector<std::vector<double>> vHistMatrix = calculateHist1dData(_data, _idx, _histParams, _histData, _mAxisVals, nMax, vLegends, bGrid, _pData.getLogscale(XRANGE));
 
     // Create the textual data for the terminal
     // and the file, if necessary
@@ -1300,24 +1289,12 @@ static void createPlotsForHist2D(const std::string& sCmd, HistogramParameters& _
     _histParams.binWidth[0] = _barHistData.Maximal() - _barHistData.Minimal();
     _histGraph->SetRanges(1, 2, 1, 2, 1, 2);
 
-    if (_pData.getxLogscale() && !_pData.getyLogscale() && !_pData.getzLogscale())
-        _histGraph->SetFunc("lg(x)", "");
-    else if (_pData.getxLogscale() && _pData.getyLogscale() && !_pData.getzLogscale())
-        _histGraph->SetFunc("lg(x)", "");
-    else if (!_pData.getxLogscale() && _pData.getyLogscale() && !_pData.getzLogscale())
-        _histGraph->SetFunc("", "");
-    else if (_pData.getxLogscale() && !_pData.getyLogscale() && _pData.getzLogscale())
-        _histGraph->SetFunc("lg(x)", "lg(y)");
-    else if (!_pData.getxLogscale() && !_pData.getyLogscale() && _pData.getzLogscale())
-        _histGraph->SetFunc("", "lg(y)");
-    else if (!_pData.getxLogscale() && _pData.getyLogscale() && _pData.getzLogscale())
-        _histGraph->SetFunc("", "lg(y)");
-    else if (_pData.getxLogscale() && _pData.getyLogscale() && _pData.getzLogscale())
-        _histGraph->SetFunc("lg(x)", "lg(y)");
+    _histGraph->SetFunc(_pData.getLogscale(XRANGE) ? "lg(x)" : "",
+                        _pData.getLogscale(ZRANGE) ? "lg(y)" : "");
 
     if (_barHistData.Minimal() >= 0)
     {
-        if (_pData.getzLogscale() && _barHistData.Maximal() > 0.0)
+        if (_pData.getLogscale(ZRANGE) && _barHistData.Maximal() > 0.0)
         {
             if (_barHistData.Minimal() - _histParams.binWidth[0] / 20.0 > 0)
                 _histGraph->SetRanges(_histParams.ranges.x[0], _histParams.ranges.x[1], _barHistData.Minimal() - _histParams.binWidth[0] / 20.0, _barHistData.Maximal() + _histParams.binWidth[0] / 20.0);
@@ -1326,7 +1303,7 @@ static void createPlotsForHist2D(const std::string& sCmd, HistogramParameters& _
             else
                 _histGraph->SetRanges(_histParams.ranges.x[0], _histParams.ranges.x[1], (1e-2 * _barHistData.Maximal() < 1e-2 ? 1e-2 * _barHistData.Maximal() : 1e-2), _barHistData.Maximal() + _histParams.binWidth[0] / 20.0);
         }
-        else if (_barHistData.Maximal() < 0.0 && _pData.getzLogscale())
+        else if (_barHistData.Maximal() < 0.0 && _pData.getLogscale(ZRANGE))
         {
             delete _histGraph;
             throw SyntaxError(SyntaxError::WRONG_PLOT_INTERVAL_FOR_LOGSCALE, sCmd, SyntaxError::invalid_position);
@@ -1340,9 +1317,9 @@ static void createPlotsForHist2D(const std::string& sCmd, HistogramParameters& _
     _histGraph->Box();
     _histGraph->Axis();
 
-    if (_pData.getGrid() == 1)
+    if (_pData.getSettings(PlotData::INT_GRID) == 1)
         _histGraph->Grid("xy", _pData.getGridStyle().c_str());
-    else if (_pData.getGrid() == 2)
+    else if (_pData.getSettings(PlotData::INT_GRID) == 2)
     {
         _histGraph->Grid("xy!", _pData.getGridStyle().c_str());
         _histGraph->Grid("xy", _pData.getFineGridStyle().c_str());
@@ -1362,29 +1339,17 @@ static void createPlotsForHist2D(const std::string& sCmd, HistogramParameters& _
     _histGraph->SetTuneTicks(3, 1.05);
 
     _histGraph->SetRanges(1, 2, 1, 2, 1, 2);
+    _histGraph->SetFunc(_pData.getLogscale(XRANGE) ? "lg(x)" : "",
+                        _pData.getLogscale(YRANGE) ? "lg(y)" : "",
+                        _pData.getLogscale(ZRANGE) ? "lg(z)" : "");
 
-    if (_pData.getxLogscale() && !_pData.getyLogscale() && !_pData.getzLogscale())
-        _histGraph->SetFunc("lg(x)", "");
-    else if (_pData.getxLogscale() && _pData.getyLogscale() && !_pData.getzLogscale())
-        _histGraph->SetFunc("lg(x)", "lg(y)");
-    else if (!_pData.getxLogscale() && _pData.getyLogscale() && !_pData.getzLogscale())
-        _histGraph->SetFunc("", "lg(y)");
-    else if (_pData.getxLogscale() && !_pData.getyLogscale() && _pData.getzLogscale())
-        _histGraph->SetFunc("lg(x)", "", "lg(z)");
-    else if (!_pData.getxLogscale() && !_pData.getyLogscale() && _pData.getzLogscale())
-        _histGraph->SetFunc("", "", "lg(z)");
-    else if (!_pData.getxLogscale() && _pData.getyLogscale() && _pData.getzLogscale())
-        _histGraph->SetFunc("", "lg(y)", "lg(z)");
-    else if (_pData.getxLogscale() && _pData.getyLogscale() && _pData.getzLogscale())
-        _histGraph->SetFunc("lg(x)", "lg(y)", "lg(z)");
-
-    if (_hist2DData[2].Maximal() < 0 && _pData.getzLogscale())
+    if (_hist2DData[2].Maximal() < 0 && _pData.getLogscale(ZRANGE))
     {
         delete _histGraph;
         throw SyntaxError(SyntaxError::WRONG_PLOT_INTERVAL_FOR_LOGSCALE, sCmd, SyntaxError::invalid_position);
     }
 
-    if (_pData.getzLogscale())
+    if (_pData.getLogscale(ZRANGE))
     {
         if (_hist2DData[2].Minimal() > 0.0)
             _histGraph->SetRanges(_histParams.ranges.x[0], _histParams.ranges.x[1], _histParams.ranges.y[0], _histParams.ranges.y[1], _hist2DData[2].Minimal(), _hist2DData[2].Maximal());
@@ -1398,9 +1363,9 @@ static void createPlotsForHist2D(const std::string& sCmd, HistogramParameters& _
     _histGraph->Axis("xy");
     _histGraph->Colorbar(_pData.getColorScheme("I>").c_str());
 
-    if (_pData.getGrid() == 1)
+    if (_pData.getSettings(PlotData::INT_GRID) == 1)
         _histGraph->Grid("xy", _pData.getGridStyle().c_str());
-    else if (_pData.getGrid() == 2)
+    else if (_pData.getSettings(PlotData::INT_GRID) == 2)
     {
         _histGraph->Grid("xy!", _pData.getGridStyle().c_str());
         _histGraph->Grid("xy", _pData.getFineGridStyle().c_str());
@@ -1421,25 +1386,12 @@ static void createPlotsForHist2D(const std::string& sCmd, HistogramParameters& _
     _histParams.binWidth[0] = _hBarHistData.Maximal() - _hBarHistData.Minimal();
 
     _histGraph->SetRanges(1, 2, 1, 2, 1, 2);
-
-    if (_pData.getxLogscale() && !_pData.getyLogscale() && !_pData.getzLogscale())
-        _histGraph->SetFunc("", "");
-    else if (_pData.getxLogscale() && _pData.getyLogscale() && !_pData.getzLogscale())
-        _histGraph->SetFunc("", "lg(y)");
-    else if (!_pData.getxLogscale() && _pData.getyLogscale() && !_pData.getzLogscale())
-        _histGraph->SetFunc("", "lg(y)");
-    else if (_pData.getxLogscale() && !_pData.getyLogscale() && _pData.getzLogscale())
-        _histGraph->SetFunc("lg(x)", "");
-    else if (!_pData.getxLogscale() && !_pData.getyLogscale() && _pData.getzLogscale())
-        _histGraph->SetFunc("lg(x)", "");
-    else if (!_pData.getxLogscale() && _pData.getyLogscale() && _pData.getzLogscale())
-        _histGraph->SetFunc("lg(x)", "lg(y)");
-    else if (_pData.getxLogscale() && _pData.getyLogscale() && _pData.getzLogscale())
-        _histGraph->SetFunc("lg(x)", "lg(y)");
+    _histGraph->SetFunc(_pData.getLogscale(ZRANGE) ? "lg(x)" : "",
+                        _pData.getLogscale(YRANGE) ? "lg(y)" : "");
 
     if (_hBarHistData.Minimal() >= 0)
     {
-        if (_pData.getzLogscale() && _hBarHistData.Maximal() > 0.0)
+        if (_pData.getLogscale(ZRANGE) && _hBarHistData.Maximal() > 0.0)
         {
             if (_hBarHistData.Minimal() - _histParams.binWidth[0] / 20.0 > 0)
                 _histGraph->SetRanges(_hBarHistData.Minimal() - _histParams.binWidth[0] / 20.0, _hBarHistData.Maximal() + _histParams.binWidth[0] / 20.0, _histParams.ranges.y[0], _histParams.ranges.y[1]);
@@ -1448,7 +1400,7 @@ static void createPlotsForHist2D(const std::string& sCmd, HistogramParameters& _
             else
                 _histGraph->SetRanges((1e-2 * _hBarHistData.Maximal() < 1e-2 ? 1e-2 * _hBarHistData.Maximal() : 1e-2), _hBarHistData.Maximal() + _histParams.binWidth[0] / 10.0, _histParams.ranges.y[0], _histParams.ranges.y[1]);
         }
-        else if (_hBarHistData.Maximal() < 0.0 && _pData.getzLogscale())
+        else if (_hBarHistData.Maximal() < 0.0 && _pData.getLogscale(ZRANGE))
         {
             delete _histGraph;
             throw SyntaxError(SyntaxError::WRONG_PLOT_INTERVAL_FOR_LOGSCALE, sCmd, SyntaxError::invalid_position);
@@ -1462,9 +1414,9 @@ static void createPlotsForHist2D(const std::string& sCmd, HistogramParameters& _
     _histGraph->Box();
     _histGraph->Axis("xy");
 
-    if (_pData.getGrid() == 1)
+    if (_pData.getSettings(PlotData::INT_GRID) == 1)
         _histGraph->Grid("xy", _pData.getGridStyle().c_str());
-    else if (_pData.getGrid() == 2)
+    else if (_pData.getSettings(PlotData::INT_GRID) == 2)
     {
         _histGraph->Grid("xy!", _pData.getGridStyle().c_str());
         _histGraph->Grid("xy", _pData.getFineGridStyle().c_str());
@@ -1489,7 +1441,7 @@ static void createPlotsForHist2D(const std::string& sCmd, HistogramParameters& _
     else
         sHistSavePath = _option.ValidFileName("<plotpath>/histogramm2d", ".png");
 
-    if (_pData.getOpenImage() && !_pData.getSilentMode() && !bSilent)
+    if (_pData.getSettings(PlotData::LOG_OPENIMAGE) && !_pData.getSettings(PlotData::LOG_SILENTMODE) && !bSilent)
     {
         GraphHelper* _graphHelper = new GraphHelper(_histGraph, _pData);
         _graphHelper->setAspect(dAspect);
@@ -1560,17 +1512,17 @@ static void createHist2D(const std::string& sCmd, const std::string& sTargettabl
                             _data.max(_histParams.sTable, _idx.row, _idx.col.subidx(2)).real());
 
     // Adapt the ranges for logscale
-    if (_pData.getxLogscale() && _histParams.ranges.x[1] < 0.0)
+    if (_pData.getLogscale(XRANGE) && _histParams.ranges.x[1] < 0.0)
         throw SyntaxError(SyntaxError::WRONG_PLOT_INTERVAL_FOR_LOGSCALE, sCmd, SyntaxError::invalid_position);
-    else if (_pData.getxLogscale())
+    else if (_pData.getLogscale(XRANGE))
     {
         if (_histParams.ranges.x[0] < 0.0)
             _histParams.ranges.x[0] = (1e-2 * _histParams.ranges.x[1] < 1e-2 ? 1e-2 * _histParams.ranges.x[1] : 1e-2);
     }
 
-    if (_pData.getyLogscale() && _histParams.ranges.y[1] < 0.0)
+    if (_pData.getLogscale(YRANGE) && _histParams.ranges.y[1] < 0.0)
         throw SyntaxError(SyntaxError::WRONG_PLOT_INTERVAL_FOR_LOGSCALE, sCmd, SyntaxError::invalid_position);
-    else if (_pData.getyLogscale())
+    else if (_pData.getLogscale(YRANGE))
     {
         if (_histParams.ranges.y[0] < 0.0)
             _histParams.ranges.y[0] = (1e-2 * _histParams.ranges.y[1] < 1e-2 ? 1e-2 * _histParams.ranges.y[1] : 1e-2);
@@ -1627,7 +1579,7 @@ static void createHist2D(const std::string& sCmd, const std::string& sTargettabl
     if (_histParams.binWidth[0] == 0.0)
     {
         // --> Berechne die Intervall-Laenge (Explizite Typumwandlung von int->double) <--
-        if (_pData.getxLogscale())
+        if (_pData.getLogscale(XRANGE))
             _histParams.binWidth[0] = (log10(_histParams.ranges.x[1]) - log10(_histParams.ranges.x[0])) / (double)_histParams.nBin;
         else
             _histParams.binWidth[0] = abs(_histParams.ranges.x[1] - _histParams.ranges.x[0]) / (double)_histParams.nBin;
@@ -1635,7 +1587,7 @@ static void createHist2D(const std::string& sCmd, const std::string& sTargettabl
 
     // Determine the bin interval width in
     // y direction
-    if (_pData.getyLogscale())
+    if (_pData.getLogscale(YRANGE))
         _histParams.binWidth[1] = (log10(_histParams.ranges.y[1]) - log10(_histParams.ranges.y[0])) / (double)_histParams.nBin;
     else
         _histParams.binWidth[1] = abs(_histParams.ranges.y[1] - _histParams.ranges.y[0]) / (double)_histParams.nBin;
@@ -1647,13 +1599,13 @@ static void createHist2D(const std::string& sCmd, const std::string& sTargettabl
     // along the y axis of the central plot
     mglData _barHistData = calculateXYHist(_data, _idx, _histParams, &_mAxisVals[0],
                                            _histParams.ranges.x[0], _histParams.ranges.y[0], _histParams.ranges.y[1], _histParams.binWidth[0],
-                                           nMax, _pData.getxLogscale(), false, bSum);
+                                           nMax, _pData.getLogscale(XRANGE), false, bSum);
 
     // Calculate the necessary data for the horizontal
     // bar chart along the x axis of the central plot
     mglData _hBarHistData = calculateXYHist(_data, _idx, _histParams, &_mAxisVals[1],
                                             _histParams.ranges.y[0], _histParams.ranges.x[0], _histParams.ranges.x[1], _histParams.binWidth[1],
-                                            nMax, _pData.getyLogscale(), true, bSum);
+                                            nMax, _pData.getLogscale(YRANGE), true, bSum);
 
     // Format the data for the textual output for the
     // terminal, the text file and store the result in

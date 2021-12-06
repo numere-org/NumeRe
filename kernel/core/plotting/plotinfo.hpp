@@ -16,98 +16,61 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
-#include <mgl2/mgl.h>
-#include <string>
 
 
 #ifndef PLOTINFO_HPP
 #define PLOTINFO_HPP
 
-using namespace std;
+#include <mgl2/mgl.h>
+#include <string>
+#include <vector>
+#include "../interval.hpp"
 
-
+/////////////////////////////////////////////////
+/// \brief This structure governs the needed
+/// parameters for plotting.
+/////////////////////////////////////////////////
 struct PlotInfo
 {
-    double dRanges[3][2];
-    double dSecAxisRanges[2][2];
-    double dColorRanges[2];
+    IntervalSet ranges;
+    IntervalSet secranges;
     bool b2D;
     bool b3D;
     bool b2DVect;
     bool b3DVect;
     bool bDraw;
     bool bDraw3D;
-    string sCommand;
-    string sPlotParams;
+    std::string sCommand;
+    std::string sPlotParams;
     int nSamples;
+    int nStyle;
     int nStyleMax;
     unsigned int nMaxPlotDim;
-    // Pointer-Variablen
-    int* nStyle;
-    int* nFunctions;
-    string* sLineStyles;
-    string* sContStyles;
-    string* sPointStyles;
-    string* sConPointStyles;
+    int nFunctions;
+    std::vector<std::string> sLineStyles;
+    std::vector<std::string> sContStyles;
+    std::vector<std::string> sPointStyles;
+    std::vector<std::string> sConPointStyles;
 
-    inline PlotInfo() : nStyle(nullptr), nFunctions(nullptr), sLineStyles(nullptr), sContStyles(nullptr), sPointStyles(nullptr), sConPointStyles(nullptr) {}
+    /////////////////////////////////////////////////
+    /// \brief Simple constructor to initialize the
+    /// structure into a valid state.
+    /////////////////////////////////////////////////
+    PlotInfo() : nStyle(0), nFunctions(0) {}
 
-    inline ~PlotInfo()
-        {
-            nStyle = 0;
-            if (sLineStyles)
-                delete[] sLineStyles;
-            if (sContStyles)
-                delete[] sContStyles;
-            if (sPointStyles)
-                delete[] sPointStyles;
-            if (sConPointStyles)
-                delete[] sConPointStyles;
-            nFunctions = nullptr;
-            sLineStyles = nullptr;
-            sContStyles = nullptr;
-            sPointStyles = nullptr;
-            sConPointStyles = nullptr;
-        }
-    /*inline PlotInfo(PlotInfo& __pinfo)
-        {
-            for (int i = 0; i < 3; i++)
-            {
-                dRanges[i][0] = __pinfo.dRanges[i][0];
-                dRanges[i][1] = __pinfo.dRanges[i][1];
-            }
-            for (int i = 0; i < 2; i++)
-            {
-                dSecAxisRanges[i][0] = __pinfo.dSecAxisRanges[i][0];
-                dSecAxisRanges[i][1] = __pinfo.dSecAxisRanges[i][1];
-                dColorRanges[i] = __pinfo.dColorRanges[i];
-            }
-            b2D = __pinfo.b2D;
-            b3D = __pinfo.b3D;
-            b2DVect = __pinfo.b2DVect;
-            b3DVect = __pinfo.b3DVect;
-            bDraw = __pinfo.bDraw;
-            bDraw3D = __pinfo.bDraw3D;
-            sCommand = __pinfo.sCommand;
-            sPlotParams = __pinfo.sPlotParams;
-            nSamples = __pinfo.nSamples;
-            nStyleMax = __pinfo.nStyleMax;
-            nMaxPlotDim = __pinfo.nMaxPlotDim;
-            // Pointer-Variablen
-            nStyle = __pinfo.nStyle;
-            nFunctions = __pinfo.nFunctions;
-            sLineStyles = __pinfo.sLineStyles;
-            sContStyles = __pinfo.sContStyles;
-            sPointStyles = __pinfo.sPointStyles;
-            sConPointStyles = __pinfo.sConPointStyles;
+    /////////////////////////////////////////////////
+    /// \brief Returns the ID of the next style.
+    ///
+    /// \return int
+    ///
+    /////////////////////////////////////////////////
+    int nextStyle() const
+    {
+        if (nStyle == nStyleMax - 1)
+            return 0;
 
-            // pointer take-over
-            __pinfo.sLineStyles = nullptr;
-            __pinfo.sContStyles = nullptr;
-            __pinfo.sPointStyles = nullptr;
-            __pinfo.sConPointStyles = nullptr;
-        }*/
-
+        return nStyle+1;
+    }
 };
 
 

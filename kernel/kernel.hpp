@@ -143,6 +143,7 @@ class NumeReKernel
         string sAnswer;
         string sPlotCompose;
         bool installing;
+        bool refreshTree;
 
         static NumeReKernel* kernelInstance;
 
@@ -176,6 +177,7 @@ class NumeReKernel
         void createCalculationAnswer(int nNum, value_type* v, const string& sCmdCache);
         void resetAfterError(string& sCmdCache);
         string getGreeting();
+        void checkInternalStates();
 
         // Functions for initializing the numerical parser
         void defineOperators();

@@ -105,8 +105,7 @@ double Interval::getSample(size_t n, size_t nSamples) const
 /////////////////////////////////////////////////
 Interval::Interval(const std::string& sDef) : Interval()
 {
-    m_sDefinition = sDef;
-    refresh();
+    reset(sDef);
 }
 
 
@@ -120,8 +119,7 @@ Interval::Interval(const std::string& sDef) : Interval()
 /////////////////////////////////////////////////
 Interval::Interval(mu::value_type dFront, mu::value_type dBack) : Interval()
 {
-    m_vInterval.push_back(dFront.real());
-    m_vInterval.push_back(dBack.real());
+    reset(dFront, dBack);
 }
 
 
@@ -206,13 +204,39 @@ mu::value_type Interval::back() const
 
 
 /////////////////////////////////////////////////
-/// \brief Return the minimal element in the
-/// interval.
+/// \brief Return the componentwise minimal
+/// element in the interval.
 ///
 /// \return mu::value_type
 ///
 /////////////////////////////////////////////////
-mu::value_type Interval::min() const
+mu::value_type Interval::cmin() const
+{
+    return *std::min_element(m_vInterval.begin(), m_vInterval.end());
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Return the componentwise maximal
+/// element in the interval.
+///
+/// \return mu::value_type
+///
+/////////////////////////////////////////////////
+mu::value_type Interval::cmax() const
+{
+    return *std::max_element(m_vInterval.begin(), m_vInterval.end());
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Return the minimal element in the
+/// interval.
+///
+/// \return double
+///
+/////////////////////////////////////////////////
+double Interval::min() const
 {
     return *std::min_element(m_vInterval.begin(), m_vInterval.end());
 }
@@ -222,12 +246,38 @@ mu::value_type Interval::min() const
 /// \brief Return the maximal element in the
 /// interval.
 ///
-/// \return mu::value_type
+/// \return double
 ///
 /////////////////////////////////////////////////
-mu::value_type Interval::max() const
+double Interval::max() const
 {
     return *std::max_element(m_vInterval.begin(), m_vInterval.end());
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Return the real inteval range of this
+/// interval.
+///
+/// \return double
+///
+/////////////////////////////////////////////////
+double Interval::range() const
+{
+    return max() - min();
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Calculates the middle point of the
+/// interval
+///
+/// \return double
+///
+/////////////////////////////////////////////////
+double Interval::middle() const
+{
+    return 0.5 * (max() + min());
 }
 
 
@@ -241,7 +291,7 @@ mu::value_type Interval::max() const
 /////////////////////////////////////////////////
 bool Interval::isInside(mu::value_type val) const
 {
-    return (m_vInterval.size() == 2 && val.real() >= m_vInterval.front() && val.real() <= m_vInterval.back())
+    return (m_vInterval.size() == 2 && val.real() >= min() && val.real() <= max())
         || std::find(m_vInterval.begin(), m_vInterval.end(), val.real()) != m_vInterval.end();
 }
 
@@ -340,6 +390,88 @@ void Interval::refresh()
     }
 }
 
+
+/////////////////////////////////////////////////
+/// \brief Reset the interval with a new
+/// definition.
+///
+/// \param sDef const std::string&
+/// \return void
+///
+/////////////////////////////////////////////////
+void Interval::reset(const std::string& sDef)
+{
+    m_sDefinition = sDef;
+    refresh();
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Reset the interval with new boundaries.
+///
+/// \param dFront mu::value_type
+/// \param dBack mu::value_type
+/// \return void
+///
+/////////////////////////////////////////////////
+void Interval::reset(mu::value_type dFront, mu::value_type dBack)
+{
+    m_vInterval.assign({dFront.real(), dBack.real()});
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Expand the interval by the
+/// corresponding percentage. The expansion is
+/// equally distributed to both ends keeping the
+/// minimal value.
+///
+/// \param perc double
+/// \param dMin double
+/// \return void
+///
+/////////////////////////////////////////////////
+void Interval::expand(double perc, double dMin)
+{
+    double r = range();
+    double mi = min();
+    double ma = max();
+
+    if (r == 0.0 || r < 1e-4 * mi)
+        r = fabs(ma);
+
+    double mi2 = mi - r * (perc - 1.0) * 0.5;
+    ma += r * (perc - 1.0) * 0.5;
+
+    if (mi2 <= dMin)
+    {
+        if (mi > dMin)
+            mi2 = mi;
+        else
+            mi = dMin + r * (perc - 1.0) * 0.5;
+    }
+
+    reset(mi2, ma);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Returns the (continous) interval,
+/// which contains this and the passed interval.
+///
+/// \param _ivl const Interval&
+/// \return Interval
+///
+/////////////////////////////////////////////////
+Interval Interval::combine(const Interval& _ivl) const
+{
+    if (isnan(m_vInterval.front()))
+        return _ivl;
+    else if (isnan(_ivl.m_vInterval.front()))
+        return *this;
+
+    return Interval(::min(this->min(), _ivl.min()), ::max(this->max(), _ivl.max()));
+}
 
 
 
@@ -465,6 +597,22 @@ Interval& IntervalSet::operator[](size_t n)
 
 
 /////////////////////////////////////////////////
+/// \brief Access operator const overload.
+///
+/// \param n size_t
+/// \return const Interval&
+///
+/////////////////////////////////////////////////
+const Interval& IntervalSet::operator[](size_t n) const
+{
+    if (n < intervals.size())
+        return intervals[n];
+
+    return intervals.back();
+}
+
+
+/////////////////////////////////////////////////
 /// \brief Detect, whether there are intervals,
 /// which depend on each other.
 ///
@@ -519,5 +667,22 @@ std::vector<mu::value_type> IntervalSet::convert()
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Set the interval names.
+///
+/// \param vNames const std::vector<std::string>&
+/// \return void
+///
+/////////////////////////////////////////////////
+void IntervalSet::setNames(const std::vector<std::string>& vNames)
+{
+    for (size_t i = 0; i < vNames.size(); i++)
+    {
+        if (intervals.size() <= i)
+            break;
+
+        intervals[i].name = vNames[i];
+    }
+}
 
 

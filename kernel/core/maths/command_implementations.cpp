@@ -313,14 +313,14 @@ bool integrate(CommandLineParser& cmdParser)
         if (ivl[0].min() == ivl[0].max())
             throw SyntaxError(SyntaxError::INVALID_INTEGRATION_RANGES, cmdParser.getCommandLine(), SyntaxError::invalid_position);
 
-        if (isinf(ivl[0].min().real()) || isnan(ivl[0].min().real())
-            || isinf(ivl[0].max().real()) || isnan(ivl[0].max().real()))
+        if (isinf(ivl[0].min()) || isnan(ivl[0].min())
+            || isinf(ivl[0].max()) || isnan(ivl[0].max()))
         {
             cmdParser.setReturnValue("nan");
             return false;
         }
 
-        range = ivl[0].max().real() - ivl[0].min().real();
+        range = ivl[0].range();
     }
     else
         throw SyntaxError(SyntaxError::NO_INTEGRATION_RANGES, cmdParser.getCommandLine(), SyntaxError::invalid_position);
@@ -512,16 +512,16 @@ bool integrate2d(CommandLineParser& cmdParser)
         if (ivl[0].front() == ivl[0].back())
             throw SyntaxError(SyntaxError::INVALID_INTEGRATION_RANGES, cmdParser.getCommandLine(), SyntaxError::invalid_position);
 
-        if (isinf(ivl[0].front().real()) || isnan(ivl[0].front().real())
-            || isinf(ivl[0].back().real()) || isnan(ivl[0].back().real())
-            || isinf(ivl[1].front().real()) || isnan(ivl[1].front().real())
-            || isinf(ivl[1].back().real()) || isnan(ivl[1].back().real()))
+        if (isinf(ivl[0].min()) || isnan(ivl[0].min())
+            || isinf(ivl[0].max()) || isnan(ivl[0].max())
+            || isinf(ivl[1].min()) || isnan(ivl[1].min())
+            || isinf(ivl[1].max()) || isnan(ivl[1].max()))
         {
             cmdParser.setReturnValue("nan");
             return false;
         }
 
-        range = std::min(ivl[0].max().real() - ivl[0].min().real(), ivl[1].max().real() - ivl[1].min().real());
+        range = std::min(ivl[0].range(), ivl[1].range());
     }
     else
         throw SyntaxError(SyntaxError::NO_INTEGRATION_RANGES, cmdParser.getCommandLine(), SyntaxError::invalid_position);
@@ -614,8 +614,8 @@ bool integrate2d(CommandLineParser& cmdParser)
 
     y = ivl[1](0); // y = y_0
 
-    double dx = (ivl[0].max() - ivl[0].min()).real() / (nSamples-1);
-    double dy = (ivl[1].max() - ivl[1].min()).real() / (nSamples-1);
+    double dx = ivl[0].range() / (nSamples-1);
+    double dy = ivl[1].range() / (nSamples-1);
 
     // --> Werte mit den Startwerten die erste Stuetzstelle fuer die y-Integration aus <--
     v = _parser.Eval(nResults);
@@ -648,7 +648,7 @@ bool integrate2d(CommandLineParser& cmdParser)
             if (bRenewBoundaries)
             {
                 refreshBoundaries(ivl, sIntegrationExpression);
-                dy = (ivl[1].max() - ivl[1].min()).real() / (nSamples-1);
+                dy = ivl[1].range() / (nSamples-1);
             }
 
             // --> Setzen wir "y" auf den Wert, der von der unteren y-Grenze vorgegeben wird <--
@@ -681,7 +681,7 @@ bool integrate2d(CommandLineParser& cmdParser)
                 if (bRenewBoundaries)
                 {
                     refreshBoundaries(ivl, sIntegrationExpression);
-                    dy = (ivl[1].max() - ivl[1].min()).real() / (nSamples-1);
+                    dy = ivl[1].range() / (nSamples-1);
                 }
 
                 // Set y to the first position
@@ -944,7 +944,7 @@ bool differentiate(CommandLineParser& cmdParser)
             // values, which is identical to the derivative in this case
             for (size_t i = nFILTERSIZE/2; i < _idx.row.size() - nFILTERSIZE/2; i++)
             {
-                for (int j = 0; j < nFILTERSIZE; j++)
+                for (int j = 0; j < (int)nFILTERSIZE; j++)
                 {
                     if (_data.isValidElement(_idx.row[i + j - nFILTERSIZE/2], _idx.col.front(), sTableName))
                         vResult[i] += diff.apply(j, 0, _data.getElement(_idx.row[i + j - nFILTERSIZE/2], _idx.col.front(), sTableName));
@@ -998,11 +998,11 @@ bool differentiate(CommandLineParser& cmdParser)
 
                 // We calculate the derivative of the data
                 // by approximating it linearily
-                for (int i = nFILTERSIZE/2; i < _cache.getLines("table", false) - nFILTERSIZE/2; i++)
+                for (int i = nFILTERSIZE/2; i < _cache.getLines("table", false) - (int)nFILTERSIZE/2; i++)
                 {
                     std::pair<mu::value_type, size_t> avgDiff(0.0, 0);
 
-                    for (int j = 0; j < nFILTERSIZE; j++)
+                    for (int j = 0; j < (int)nFILTERSIZE; j++)
                     {
                         if (_cache.isValidElement(i + j - nFILTERSIZE/2, 0, "table")
                             && _cache.isValidElement(i + j - nFILTERSIZE/2, 1, "table"))
@@ -2718,7 +2718,7 @@ static void calculate2dFFT(MemoryManager& _data, Indices& _idx, const std::strin
 
         for (int i = 0; i < nElemsLines; i++)
         {
-            if (i > _idx.row.size())
+            if ((size_t)i > _idx.row.size())
                 break;
 
             // Write x axis
@@ -2774,7 +2774,7 @@ static void calculate2dFFT(MemoryManager& _data, Indices& _idx, const std::strin
 
         for (int i = 0; i < nElemsLines; i++)
         {
-            if (i > _idx.row.size())
+            if ((size_t)i > _idx.row.size())
                 break;
 
             // Write x axis
@@ -2790,7 +2790,7 @@ static void calculate2dFFT(MemoryManager& _data, Indices& _idx, const std::strin
         // Write y axis
         for (int i = 0; i < nElemsCols; i++)
         {
-            if (i > _idx.row.size())
+            if ((size_t)i > _idx.row.size())
                 break;
 
             _data.writeToTable(_idx.row[i], _idx.col[1], sTargetTable, (double)(i)*_fft.dTimeInterval[1] / (double)(nElemsCols - 1));
@@ -2922,8 +2922,8 @@ bool fastFourierTransform(CommandLineParser& cmdParser)
             for (size_t j = 0; j < (size_t)(_fft.cols-2); j++)
             {
                 if (_fft.bShiftAxis && _fft.bInverseTrafo)
-                    _fftData.a[j+i*(_fft.cols-2)] = _mem->readMem(i + (i > _fft.lines/2 ? -1 : 1)*_fft.lines/2,
-                                                             j + 2 + (j > (_fft.cols-2)/2 ? -1 : 1)*(_fft.cols-2)/2);
+                    _fftData.a[j+i*(_fft.cols-2)] = _mem->readMem(i + (i > (size_t)_fft.lines/2 ? -1 : 1)*_fft.lines/2,
+                                                             j + 2 + (j > (size_t)(_fft.cols-2)/2 ? -1 : 1)*(_fft.cols-2)/2);
                 else
                     _fftData.a[j+i*(_fft.cols-2)] = _mem->readMem(i, j+2);
             }
@@ -3212,7 +3212,7 @@ bool evalPoints(CommandLineParser& cmdParser)
         return false;
     }
 
-    if (bLogarithmic && (ivl[0].min().real() <= 0.0))
+    if (bLogarithmic && (ivl[0].min() <= 0.0))
         throw SyntaxError(SyntaxError::WRONG_PLOT_INTERVAL_FOR_LOGSCALE, cmdParser.getCommandLine(), SyntaxError::invalid_position);
 
     // Set the corresponding expression
@@ -3335,7 +3335,7 @@ bool createDatagrid(CommandLineParser& cmdParser)
             _idx.col.setRange(0, _data.getCols(szDatatable)-1);
 
         if (_idx.row.isOpenEnd())
-            _idx.row.setRange(0, _data.getColElements(_idx.col.subidx(1), szDatatable)-1);
+            _idx.row.setRange(0, _data.getColElements(_idx.col.subidx(0), szDatatable)-1);
 
         // Get the data. Choose the order of reading depending on the "transpose" command line option
         if (!bTranspose)
@@ -3465,7 +3465,7 @@ static vector<size_t> getSamplesForDatagrid(CommandLineParser& cmdParser, size_t
             _idx.col.setRange(0, _data.getCols(sZDatatable)-1);
 
         if (_idx.row.isOpenEnd())
-            _idx.row.setRange(0, _data.getColElements(_idx.col.subidx(1), sZDatatable)-1);
+            _idx.row.setRange(0, _data.getColElements(_idx.col, sZDatatable)-1);
 
         vSamples.push_back(_idx.row.size());
         vSamples.push_back(_idx.col.size());
@@ -4569,7 +4569,7 @@ void particleSwarmOptimizer(CommandLineParser& cmdParser)
                 vPos[n][j] += fAdaptiveVelFactor * vVel[n][j];
 
                 // Restrict to interval boundaries
-                vPos[n][j] = std::max(ivl[n].min().real(), std::min(vPos[n][j], ivl[n].max().real()));
+                vPos[n][j] = std::max(ivl[n].min(), std::min(vPos[n][j], ivl[n].max()));
 
                 // Update the corresponding default variable
                 _defVars.vValue[n][0] = vPos[n][j];
