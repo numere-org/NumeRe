@@ -67,7 +67,5 @@ enum CoordinateSystem
 };
 
 
-
-
-
 #endif // PLOTDEF_HPP
+

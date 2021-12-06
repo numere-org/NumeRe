@@ -23,6 +23,7 @@
 
 #include <mgl2/mgl.h>
 #include <string>
+#include <vector>
 #include "../interval.hpp"
 
 /////////////////////////////////////////////////
@@ -42,47 +43,20 @@ struct PlotInfo
     std::string sCommand;
     std::string sPlotParams;
     int nSamples;
+    int nStyle;
     int nStyleMax;
     unsigned int nMaxPlotDim;
-    // Pointer-Variablen
-    int* nStyle;
-    int* nFunctions;
-    std::string* sLineStyles;
-    std::string* sContStyles;
-    std::string* sPointStyles;
-    std::string* sConPointStyles;
+    int nFunctions;
+    std::vector<std::string> sLineStyles;
+    std::vector<std::string> sContStyles;
+    std::vector<std::string> sPointStyles;
+    std::vector<std::string> sConPointStyles;
 
     /////////////////////////////////////////////////
     /// \brief Simple constructor to initialize the
     /// structure into a valid state.
     /////////////////////////////////////////////////
-    PlotInfo() : nStyle(nullptr), nFunctions(nullptr), sLineStyles(nullptr), sContStyles(nullptr), sPointStyles(nullptr), sConPointStyles(nullptr) {}
-
-    /////////////////////////////////////////////////
-    /// \brief Destructor. Frees all aquired memory.
-    /////////////////////////////////////////////////
-    ~PlotInfo()
-    {
-        nStyle = 0;
-
-        if (sLineStyles)
-            delete[] sLineStyles;
-
-        if (sContStyles)
-            delete[] sContStyles;
-
-        if (sPointStyles)
-            delete[] sPointStyles;
-
-        if (sConPointStyles)
-            delete[] sConPointStyles;
-
-        nFunctions = nullptr;
-        sLineStyles = nullptr;
-        sContStyles = nullptr;
-        sPointStyles = nullptr;
-        sConPointStyles = nullptr;
-    }
+    PlotInfo() : nStyle(0), nFunctions(0) {}
 
     /////////////////////////////////////////////////
     /// \brief Returns the ID of the next style.
@@ -92,13 +66,10 @@ struct PlotInfo
     /////////////////////////////////////////////////
     int nextStyle() const
     {
-        if (!nStyle)
+        if (nStyle == nStyleMax - 1)
             return 0;
 
-        if (*nStyle == nStyleMax - 1)
-            return 0;
-
-        return *nStyle+1;
+        return nStyle+1;
     }
 };
 

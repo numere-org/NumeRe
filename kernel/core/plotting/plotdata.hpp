@@ -33,6 +33,10 @@
 #include "plotdef.hpp"
 
 
+/////////////////////////////////////////////////
+/// \brief This class contains all the plot
+/// settings usable by the plotting algorithm.
+/////////////////////////////////////////////////
 class PlotData : public FileSystem
 {
     public:
@@ -175,7 +179,6 @@ class PlotData : public FileSystem
 
     public:
         PlotData();
-        ~PlotData();
 
         void setParams(const std::string& __sCmd, int nType = ALL);
         std::string getParams(bool asstr = false) const;

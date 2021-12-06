@@ -55,6 +55,8 @@ class Plot
         IntervalSet secDataRanges;
         bool bOutputDesired;
         std::string sFunc;
+        std::string sOutputName;
+        size_t nLegends;
 
         MemoryManager& _data;
         Parser& _parser;
@@ -70,19 +72,19 @@ class Plot
 
     protected:
         void determinePlottingDimensions(const string& sPlotCommand);
-        size_t createSubPlotSet(string& sOutputName, bool& bAnimateVar, vector<string>& vPlotCompose, size_t nSubPlotStart, size_t nMultiplots[2], size_t& nSubPlots, size_t& nSubPlotMap);
+        size_t createSubPlotSet(bool& bAnimateVar, vector<string>& vPlotCompose, size_t nSubPlotStart, size_t nMultiplots[2], size_t& nSubPlots, size_t& nSubPlotMap);
         void applyPlotSizeAndQualitySettings();
-        bool createPlotOrAnimation(int& nStyle, size_t nPlotCompose, size_t nPlotComposeSize, size_t& nLegends, bool bNewSubPlot, bool bAnimateVar, vector<string>& vDrawVector, const vector<string>& vDataPlots, int nFunctions, const string& sOutputName);
-        void create2dPlot(int& nStyle, size_t& nLegends, int nFunctions, size_t nPlotCompose, size_t nPlotComposeSize);
+        bool createPlotOrAnimation(size_t nPlotCompose, size_t nPlotComposeSize, bool bNewSubPlot, bool bAnimateVar, vector<string>& vDrawVector, const vector<string>& vDataPlots);
+        void create2dPlot(size_t nPlotCompose, size_t nPlotComposeSize);
         bool plot2d(mglData& _mData, mglData& _mData2, mglData* _mAxisVals, mglData& _mContVec);
-        void createStdPlot(int& nStyle, size_t& nLegends, int nFunctions, size_t nPlotCompose, size_t nPlotComposeSize);
+        void createStdPlot(size_t nPlotCompose, size_t nPlotComposeSize);
         bool plotstd(mglData& _mData, mglData& _mAxisVals, mglData _mData2[2], const short nType);
         void create3dPlot();
         void create3dVect();
         void create2dVect();
-        void create2dDrawing(vector<string>& vDrawVector, int& nFunctions);
-        void create3dDrawing(vector<string>& vDrawVector, int& nFunctions);
-        void createStd3dPlot(int& nStyle, size_t& nLegends, int nFunctions, size_t nPlotCompose, size_t nPlotComposeSize);
+        void create2dDrawing(vector<string>& vDrawVector);
+        void create3dDrawing(vector<string>& vDrawVector);
+        void createStd3dPlot(size_t nPlotCompose, size_t nPlotComposeSize);
         bool plotstd3d(mglData _mData[3], mglData _mData2[3], const short nType);
         bool checkMultiPlotArray(unsigned int nMultiPlot[2], unsigned int& nSubPlotMap, unsigned int nPlotPos, unsigned int nCols, unsigned int nLines);
         long getNN(const mglData& _mData);
@@ -90,7 +92,7 @@ class Plot
         void filename(size_t nPlotComposeSize, size_t nPlotCompose);
         void setStyles();
         string expandStyleForCurveArray(const string& sCurrentStyle, bool expand);
-        void evaluateSubplot(size_t& nLegends, string& sCmd, size_t nMultiplots[2], size_t& nSubPlots, size_t& nSubPlotMap);
+        void evaluateSubplot(string& sCmd, size_t nMultiplots[2], size_t& nSubPlots, size_t& nSubPlotMap);
         void displayMessage(bool bAnimateVar);
         std::vector<std::string> separateFunctionsAndData();
         void extractDataValues(const std::vector<std::string>& vDataPlots);
@@ -99,7 +101,7 @@ class Plot
         size_t countValidElements(const mglData& _mData);
         void prepareMemory();
         void defaultRanges(size_t nPlotCompose, bool bNewSubPlot);
-        int fillData(double dt_max, int t_animate, int nFunctions);
+        void fillData(double dt_max, int t_animate);
         void fitPlotRanges(size_t nPlotCompose, bool bNewSubPlot);
         void clearData();
         void passRangesToGraph();
@@ -117,11 +119,6 @@ class Plot
         void CoordSettings();
         string CoordFunc(const std::string& sFuncDef, double dPhiScale = 1.0, double dThetaScale = 1.0);
         string composeColoursForBarChart(long int nNum);
-
-        inline double validize(std::complex<double> d)
-        {
-            return isValidValue(d.real()) ? d.real() : NAN;
-        }
 
     public:
         Plot(string& sCmd, MemoryManager& __data, Parser& __parser, Settings& __option, FunctionDefinitionManager& __functions, PlotData& __pData);

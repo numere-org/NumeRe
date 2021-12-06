@@ -19,9 +19,6 @@
 
 #include "plugins.hpp"
 #include "../kernel.hpp"
-#define XRANGE 0
-#define YRANGE 1
-#define ZRANGE 2
 
 /*
  * Plugin zur Erzeugung von Histogramm-Rubriken

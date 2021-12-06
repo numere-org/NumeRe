@@ -224,7 +224,6 @@ static void writeTiff(mglGraph* _graph, const string& sOutputName)
 Plot::Plot(string& sCmd, MemoryManager& __data, Parser& __parser, Settings& __option, FunctionDefinitionManager& __functions, PlotData& __pData)
     : _data(__data), _parser(__parser), _option(__option), _functions(__functions), _pData(__pData)
 {
-    mglData _mBackground;                   // mglData-Objekt fuer ein evtl. Hintergrundbild
     _graph = new mglGraph();
     bOutputDesired = false;             // if a output directly into a file is desired
 
@@ -241,7 +240,7 @@ Plot::Plot(string& sCmd, MemoryManager& __data, Parser& __parser, Settings& __op
     _pInfo.secranges.intervals.resize(2, Interval(NAN, NAN));
 
     bool bAnimateVar = false;
-    string sOutputName = "";
+    sOutputName.clear();
 
     vector<string> vPlotCompose;
     unsigned int nMultiplots[2] = {0, 0};
@@ -348,10 +347,10 @@ Plot::Plot(string& sCmd, MemoryManager& __data, Parser& __parser, Settings& __op
     }
 
     // String-Arrays fuer die endgueltigen Styles:
-    _pInfo.sLineStyles = new string[_pInfo.nStyleMax];
-    _pInfo.sContStyles = new string[_pInfo.nStyleMax];
-    _pInfo.sPointStyles = new string[_pInfo.nStyleMax];
-    _pInfo.sConPointStyles = new string[_pInfo.nStyleMax];
+    _pInfo.sLineStyles.resize(_pInfo.nStyleMax);
+    _pInfo.sContStyles.resize(_pInfo.nStyleMax);
+    _pInfo.sPointStyles.resize(_pInfo.nStyleMax);
+    _pInfo.sConPointStyles.resize(_pInfo.nStyleMax);
 
     // The following statement moves the output cursor to the first postion and
     // cleans the line to avoid overwriting
@@ -406,7 +405,7 @@ Plot::Plot(string& sCmd, MemoryManager& __data, Parser& __parser, Settings& __op
         // Create the actual subplot of this plot composition (if only
         // one plotting command is used, the return value will be equal to
         // the size of the plot composition vectore, which is 1)
-        nPlotStart = createSubPlotSet(sOutputName, bAnimateVar, vPlotCompose, nPlotStart, nMultiplots, nSubPlots, nSubPlotMap);
+        nPlotStart = createSubPlotSet(bAnimateVar, vPlotCompose, nPlotStart, nMultiplots, nSubPlots, nSubPlotMap);
 
         // Perform the reset between single subplots here
         if (nPlotStart < vPlotCompose.size())
@@ -504,7 +503,6 @@ void Plot::determinePlottingDimensions(const string& sPlotCommand)
 /// creation of a single subplot, which may be a
 /// single plot or part of a plot composition.
 ///
-/// \param sOutputName string&
 /// \param bAnimateVar bool&
 /// \param vPlotCompose vector<string>&
 /// \param nSubPlotStart size_t
@@ -514,7 +512,7 @@ void Plot::determinePlottingDimensions(const string& sPlotCommand)
 /// \return size_t
 ///
 /////////////////////////////////////////////////
-size_t Plot::createSubPlotSet(string& sOutputName, bool& bAnimateVar, vector<string>& vPlotCompose, size_t nSubPlotStart, size_t nMultiplots[2], size_t& nSubPlots, size_t& nSubPlotMap)
+size_t Plot::createSubPlotSet(bool& bAnimateVar, vector<string>& vPlotCompose, size_t nSubPlotStart, size_t nMultiplots[2], size_t& nSubPlots, size_t& nSubPlotMap)
 {
     vector<string> vDrawVector;
     string sCmd;
@@ -525,13 +523,7 @@ size_t Plot::createSubPlotSet(string& sOutputName, bool& bAnimateVar, vector<str
     secDataRanges.intervals.resize(2);
     secDataRanges.setNames({"x", "y"});
 
-    size_t nLegends = 0;
-
-    int nFunctions = 0;
-    _pInfo.nFunctions = &nFunctions;
-
-    int nStyle = 0;
-    _pInfo.nStyle = &nStyle;
+    nLegends = 0;
 
     // This loop will iterate through the plotting commands from
     // the passed starting index until the end or until the command
@@ -673,7 +665,7 @@ size_t Plot::createSubPlotSet(string& sOutputName, bool& bAnimateVar, vector<str
             // This function closes the current graph (puts the legend)
             // and determines the position of the next subplot in the
             // plotting layout
-            evaluateSubplot(nLegends, sCmd, nMultiplots, nSubPlots, nSubPlotMap);
+            evaluateSubplot(sCmd, nMultiplots, nSubPlots, nSubPlotMap);
             nSubPlots++;
 
             // Return the position of the next plotting command
@@ -768,7 +760,7 @@ size_t Plot::createSubPlotSet(string& sOutputName, bool& bAnimateVar, vector<str
             try
             {
                 _parser.SetExpr(sFunc);
-                _parser.Eval(nFunctions);
+                _parser.Eval(_pInfo.nFunctions);
 
                 // Search for the animation time variable "t"
                 if (findVariableInExpression(sFunc, "t"))
@@ -837,7 +829,7 @@ size_t Plot::createSubPlotSet(string& sOutputName, bool& bAnimateVar, vector<str
         // Now create the plot or the animation using the provided and
         // pre-calculated data. This function will also open and
         // close the GIF, if the animation directly saved to a file
-        createPlotOrAnimation(nStyle, nPlotCompose, vPlotCompose.size(), nLegends, bNewSubPlot, bAnimateVar, vDrawVector, vDataPlots, nFunctions, sOutputName);
+        createPlotOrAnimation(nPlotCompose, vPlotCompose.size(), bNewSubPlot, bAnimateVar, vDrawVector, vDataPlots);
 
         bNewSubPlot = false;
 
@@ -919,16 +911,12 @@ void Plot::applyPlotSizeAndQualitySettings()
 /// \brief This member function creates the plot
 /// or animation selected by the plotting command.
 ///
-/// \param nStyle int&
 /// \param nPlotCompose size_t
 /// \param nPlotComposeSize size_t
-/// \param nLegends size_t&
 /// \param bNewSubPlot bool
 /// \param bAnimateVar bool
 /// \param vDrawVector vector<string>&
-/// \param nFunctions int
 /// \param sDataAxisBinds const string&
-/// \param sOutputName const string&
 /// \return bool
 ///
 /// It will also create the samples for the
@@ -937,7 +925,7 @@ void Plot::applyPlotSizeAndQualitySettings()
 /// GraphViewer, which will finalize the
 /// rendering step.
 /////////////////////////////////////////////////
-bool Plot::createPlotOrAnimation(int& nStyle, size_t nPlotCompose, size_t nPlotComposeSize, size_t& nLegends, bool bNewSubPlot, bool bAnimateVar, vector<string>& vDrawVector, const vector<string>& vDataPlots, int nFunctions, const string& sOutputName)
+bool Plot::createPlotOrAnimation(size_t nPlotCompose, size_t nPlotComposeSize, bool bNewSubPlot, bool bAnimateVar, vector<string>& vDrawVector, const vector<string>& vDataPlots)
 {
     mglData _mBackground;
 
@@ -973,7 +961,7 @@ bool Plot::createPlotOrAnimation(int& nStyle, size_t nPlotCompose, size_t nPlotC
         if (_pData.getAnimateSamples() && !_pData.getSettings(PlotData::LOG_SILENTMODE) && _option.systemPrints() && bAnimateVar)
         {
             NumeReKernel::printPreFmt("\r|-> " + toSystemCodePage(_lang.get("PLOT_RENDERING_FRAME", toString(t_animate + 1), toString(_pData.getAnimateSamples() + 1))) + " ... ");
-            nStyle = 0;
+            _pInfo.nStyle = 0;
 
             // Prepare a new frame
             _graph->NewFrame();
@@ -1015,7 +1003,7 @@ bool Plot::createPlotOrAnimation(int& nStyle, size_t nPlotCompose, size_t nPlotC
 
         // Calculate the function values for the set plotting ranges
         // and the eventually set time variable
-        nFunctions = fillData(dt_max, t_animate, nFunctions);
+        fillData(dt_max, t_animate);
 
         // Normalize the plotting results, if the current plotting
         // style is a vector field
@@ -1064,9 +1052,9 @@ bool Plot::createPlotOrAnimation(int& nStyle, size_t nPlotCompose, size_t nPlotC
         // plotting style. The most complex plots are the default plot, the "plot3d"
         // and the 2D-Plots (mesh, surf, etc.)
         if (isMesh2D(_pInfo.sCommand))        // 2D-Plot
-            create2dPlot(nStyle, nLegends, nFunctions, nPlotCompose, nPlotComposeSize);
+            create2dPlot(nPlotCompose, nPlotComposeSize);
         else if (isPlot1D(_pInfo.sCommand))      // Standardplot
-            createStdPlot(nStyle, nLegends, nFunctions, nPlotCompose, nPlotComposeSize);
+            createStdPlot(nPlotCompose, nPlotComposeSize);
         else if (isMesh3D(_pInfo.sCommand))   // 3D-Plot
             create3dPlot();
         else if (isVect3D(_pInfo.sCommand))   // 3D-Vektorplot
@@ -1074,11 +1062,11 @@ bool Plot::createPlotOrAnimation(int& nStyle, size_t nPlotCompose, size_t nPlotC
         else if (isVect2D(_pInfo.sCommand))   // 2D-Vektorplot
             create2dVect();
         else if (_pInfo.bDraw)
-            create2dDrawing(vDrawVector, nFunctions);
+            create2dDrawing(vDrawVector);
         else if (_pInfo.bDraw3D)
-            create3dDrawing(vDrawVector, nFunctions);
+            create3dDrawing(vDrawVector);
         else            // 3D-Trajektorie
-            createStd3dPlot(nStyle, nLegends, nFunctions, nPlotCompose, nPlotComposeSize);
+            createStd3dPlot(nPlotCompose, nPlotComposeSize);
 
         // Finalize the GIF frame
         if (_pData.getAnimateSamples() && bAnimateVar)
@@ -1104,15 +1092,12 @@ bool Plot::createPlotOrAnimation(int& nStyle, size_t nPlotCompose, size_t nPlotC
 /// creation of all all two-dimensional plots
 /// (e.g. surface or density plots).
 ///
-/// \param nStyle int&
-/// \param nLegends size_t&
-/// \param nFunctions int
 /// \param nPlotCompose size_t
 /// \param nPlotComposeSize size_t
 /// \return void
 ///
 /////////////////////////////////////////////////
-void Plot::create2dPlot(int& nStyle, size_t& nLegends, int nFunctions, size_t nPlotCompose, size_t nPlotComposeSize)
+void Plot::create2dPlot(size_t nPlotCompose, size_t nPlotComposeSize)
 {
     string sDummy = "";
     string sConvLegends = "";
@@ -1169,10 +1154,10 @@ void Plot::create2dPlot(int& nStyle, size_t& nLegends, int nFunctions, size_t nP
         {
             if (_pData.getSettings(PlotData::LOG_CONTLABELS) && _pInfo.sCommand.substr(0, 4) != "cont")
                 _graph->Cont(_mPlotAxes[0], _mPlotAxes[1], _mData,
-                             ("t" + _pInfo.sContStyles[nStyle]).c_str(), ("val " + toString(_pData.getSettings(PlotData::INT_CONTLINES))).c_str());
+                             ("t" + _pInfo.sContStyles[_pInfo.nStyle]).c_str(), ("val " + toString(_pData.getSettings(PlotData::INT_CONTLINES))).c_str());
             else if (!_pData.getSettings(PlotData::LOG_CONTLABELS) && _pInfo.sCommand.substr(0, 4) != "cont")
                 _graph->Cont(_mPlotAxes[0], _mPlotAxes[1], _mData,
-                             _pInfo.sContStyles[nStyle].c_str(), ("val " + toString(_pData.getSettings(PlotData::INT_CONTLINES))).c_str());
+                             _pInfo.sContStyles[_pInfo.nStyle].c_str(), ("val " + toString(_pData.getSettings(PlotData::INT_CONTLINES))).c_str());
 
             sConvLegends = m_manager.assets[n].legend + " -nq";
             NumeReKernel::getInstance()->getStringParser().evalAndFormat(sConvLegends, sDummy, true);
@@ -1185,11 +1170,11 @@ void Plot::create2dPlot(int& nStyle, size_t& nLegends, int nFunctions, size_t nP
             if (sConvLegends != "\"\"")
             {
                 _graph->AddLegend(fromSystemCodePage(replaceToTeX(sConvLegends.substr(1, sConvLegends.length() - 2))).c_str(),
-                                  _pInfo.sContStyles[nStyle].c_str());
+                                  _pInfo.sContStyles[_pInfo.nStyle].c_str());
                 nLegends++;
             }
 
-            nStyle = _pInfo.nextStyle();
+            _pInfo.nStyle = _pInfo.nextStyle();
         }
 
         if (_pData.getSettings(PlotData::INT_COMPLEXMODE) == CPLX_REIM)
@@ -1343,9 +1328,9 @@ bool Plot::plot2d(mglData& _mData, mglData& _mData2, mglData* _mAxisVals, mglDat
             _graph->Cont(_mContVec, _mAxisVals[0], _mAxisVals[1], _mData, _pData.getColorScheme("_").c_str());
     }
 
-    if (_pData.getSettings(PlotData::LOG_CONTLABELS) && _pInfo.sCommand.substr(0, 4) != "cont" && *_pInfo.nFunctions == 1)
+    if (_pData.getSettings(PlotData::LOG_CONTLABELS) && _pInfo.sCommand.substr(0, 4) != "cont" && _pInfo.nFunctions == 1)
     {
-        _graph->Cont(_mContVec, _mAxisVals[0], _mAxisVals[1], _mData, ("t" + _pInfo.sContStyles[*_pInfo.nStyle]).c_str());
+        _graph->Cont(_mContVec, _mAxisVals[0], _mAxisVals[1], _mData, ("t" + _pInfo.sContStyles[_pInfo.nStyle]).c_str());
 
         if (_pData.getSettings(PlotData::LOG_CONTFILLED))
             _graph->ContF(_mContVec, _mAxisVals[0], _mAxisVals[1], _mData, _pData.getColorScheme().c_str());
@@ -1376,15 +1361,12 @@ static mglData scaleSecondaryToPrimaryInterval(const mglData& _mData, const Inte
 /// creation of all one-dimensional plots
 /// (e.g. line or point plots).
 ///
-/// \param nStyle int&
-/// \param nLegends size_t&
-/// \param nFunctions int
 /// \param nPlotCompose size_t
 /// \param nPlotComposeSize size_t
 /// \return void
 ///
 /////////////////////////////////////////////////
-void Plot::createStdPlot(int& nStyle, size_t& nLegends, int nFunctions, size_t nPlotCompose, size_t nPlotComposeSize)
+void Plot::createStdPlot(size_t nPlotCompose, size_t nPlotComposeSize)
 {
     string sDummy = "";
     string sConvLegends = "";
@@ -1512,7 +1494,7 @@ void Plot::createStdPlot(int& nStyle, size_t& nLegends, int nFunctions, size_t n
         }
 
         // Store the current style
-        nCurrentStyle = nStyle;
+        nCurrentStyle = _pInfo.nStyle;
 
         // Create the plot
         if (!plotstd(_mData, _mPlotAxes, _mData2, m_manager.assets[n].type))
@@ -1523,7 +1505,7 @@ void Plot::createStdPlot(int& nStyle, size_t& nLegends, int nFunctions, size_t n
         }
 
         // Increment the style counter
-        nStyle = _pInfo.nextStyle();
+        _pInfo.nStyle = _pInfo.nextStyle();
 
         // Create the legend
         if (_pData.getSettings(PlotData::LOG_REGION) && getNN(_mData2[0]) > 1)
@@ -1597,7 +1579,7 @@ void Plot::createStdPlot(int& nStyle, size_t& nLegends, int nFunctions, size_t n
             n++;
 
         if (getNN(_mData2[0]) && _pData.getSettings(PlotData::LOG_REGION))
-            nStyle = _pInfo.nextStyle();
+            _pInfo.nStyle = _pInfo.nextStyle();
 
         if (_pData.getSettings(PlotData::INT_COMPLEXMODE) == CPLX_REIM)
         {
@@ -1681,23 +1663,23 @@ bool Plot::plotstd(mglData& _mData, mglData& _mAxisVals, mglData _mData2[2], con
         if (_pData.getSettings(PlotData::LOG_REGION) && getNN(_mData2[0]) > 1) // Default region plot
         {
             _graph->Region(_mAxisVals, _mData, _mData2[0],
-                           ("a{" + _pData.getColors().substr(*_pInfo.nStyle, 1) + "7}{" + _pData.getColors().substr(nNextStyle, 1) + "7}").c_str());
+                           ("a{" + _pData.getColors().substr(_pInfo.nStyle, 1) + "7}{" + _pData.getColors().substr(nNextStyle, 1) + "7}").c_str());
             _graph->Plot(_mAxisVals, _mData,
-                         ("a" + _pInfo.sLineStyles[*_pInfo.nStyle]).c_str());
+                         ("a" + _pInfo.sLineStyles[_pInfo.nStyle]).c_str());
             _graph->Plot(_mAxisVals, _mData2[0],
                          ("a" + _pInfo.sLineStyles[nNextStyle]).c_str());
         }
         else if (_pData.getSettings(PlotData::LOG_AREA) || _pData.getSettings(PlotData::LOG_REGION)) // Fallback for region with only single plot
             _graph->Area(_mAxisVals, _mData,
-                         ("a" + _pInfo.sLineStyles[*_pInfo.nStyle] + "{" + _pData.getColors()[*_pInfo.nStyle] + "9}").c_str());
+                         ("a" + _pInfo.sLineStyles[_pInfo.nStyle] + "{" + _pData.getColors()[_pInfo.nStyle] + "9}").c_str());
         else
-            _graph->Plot(_mAxisVals, _mData, ("a" + _pInfo.sLineStyles[*_pInfo.nStyle]).c_str());
+            _graph->Plot(_mAxisVals, _mData, ("a" + _pInfo.sLineStyles[_pInfo.nStyle]).c_str());
     }
     else
     {
         if (_pData.getSettings(PlotData::LOG_BOXPLOT))
             _graph->BoxPlot(_mData2[0], _mData,
-                            _pInfo.sLineStyles[*_pInfo.nStyle].c_str());
+                            _pInfo.sLineStyles[_pInfo.nStyle].c_str());
         else if (!_pData.getSettings(PlotData::LOG_XERROR) && !_pData.getSettings(PlotData::LOG_YERROR))
         {
             if (_pData.getSettings(PlotData::LOG_INTERPOLATE) && countValidElements(_mData) >= (size_t)_pInfo.nSamples)
@@ -1708,21 +1690,21 @@ bool Plot::plotstd(mglData& _mData, mglData& _mAxisVals, mglData _mData2[2], con
                 else if (_pData.getSettings(PlotData::LOG_REGION) && getNN(_mData2[0]) > 1)
                 {
                     _graph->Region(_mAxisVals, _mData, _mData2[0],
-                                   ("a{" + _pData.getColors().substr(*_pInfo.nStyle, 1) + "7}{" + _pData.getColors().substr(nNextStyle, 1) + "7}").c_str());
+                                   ("a{" + _pData.getColors().substr(_pInfo.nStyle, 1) + "7}{" + _pData.getColors().substr(nNextStyle, 1) + "7}").c_str());
                     _graph->Plot(_mAxisVals, _mData,
-                                 ("a" + _pInfo.sLineStyles[*_pInfo.nStyle]).c_str());
+                                 ("a" + _pInfo.sLineStyles[_pInfo.nStyle]).c_str());
                     _graph->Plot(_mAxisVals, _mData2[0],
                                  ("a" + _pInfo.sLineStyles[nNextStyle]).c_str());
                 }
                 else if (_pData.getSettings(PlotData::LOG_AREA) || _pData.getSettings(PlotData::LOG_REGION))
                     _graph->Area(_mAxisVals, _mData,
-                                 ("a" + _pInfo.sLineStyles[*_pInfo.nStyle] + "{" + _pData.getColors()[*_pInfo.nStyle] + "9}").c_str());
+                                 ("a" + _pInfo.sLineStyles[_pInfo.nStyle] + "{" + _pData.getColors()[_pInfo.nStyle] + "9}").c_str());
                 else if (_pData.getSettings(PlotData::LOG_STEPPLOT))
                     _graph->Step(_mAxisVals, _mData,
-                                 (_pInfo.sLineStyles[*_pInfo.nStyle]).c_str());
+                                 (_pInfo.sLineStyles[_pInfo.nStyle]).c_str());
                 else
                     _graph->Plot(_mAxisVals, _mData,
-                                 ("a" + expandStyleForCurveArray(_pInfo.sLineStyles[*_pInfo.nStyle], _mData.ny > 1)).c_str());
+                                 ("a" + expandStyleForCurveArray(_pInfo.sLineStyles[_pInfo.nStyle], _mData.ny > 1)).c_str());
             }
             else if (_pData.getSettings(PlotData::LOG_CONNECTPOINTS)
                      || (_pData.getSettings(PlotData::LOG_INTERPOLATE) && countValidElements(_mData) >= 0.9 * _pInfo.nSamples))
@@ -1732,13 +1714,13 @@ bool Plot::plotstd(mglData& _mData, mglData& _mAxisVals, mglData _mData2[2], con
                                  (composeColoursForBarChart(_mData.ny) + "^").c_str());
                 else if (_pData.getSettings(PlotData::LOG_STEPPLOT))
                     _graph->Step(_mAxisVals, _mData,
-                                 (_pInfo.sLineStyles[*_pInfo.nStyle]).c_str());
+                                 (_pInfo.sLineStyles[_pInfo.nStyle]).c_str());
                 else if (_pData.getSettings(PlotData::LOG_AREA))
                     _graph->Area(_mAxisVals, _mData,
-                                 ("a" + _pInfo.sLineStyles[*_pInfo.nStyle] + "{" + _pData.getColors()[*_pInfo.nStyle] + "9}").c_str());
+                                 ("a" + _pInfo.sLineStyles[_pInfo.nStyle] + "{" + _pData.getColors()[_pInfo.nStyle] + "9}").c_str());
                 else
                     _graph->Plot(_mAxisVals, _mData,
-                                 ("a" + expandStyleForCurveArray(_pInfo.sConPointStyles[*_pInfo.nStyle], _mData.ny > 1)).c_str());
+                                 ("a" + expandStyleForCurveArray(_pInfo.sConPointStyles[_pInfo.nStyle], _mData.ny > 1)).c_str());
             }
             else
             {
@@ -1751,18 +1733,18 @@ bool Plot::plotstd(mglData& _mData, mglData& _mAxisVals, mglData _mData2[2], con
                                  (composeColoursForBarChart(_mData.ny) + "^").c_str());
                 else if (_pData.getSettings(PlotData::LOG_STEPPLOT))
                     _graph->Step(_mAxisVals, _mData,
-                                 (_pInfo.sLineStyles[*_pInfo.nStyle]).c_str());
+                                 (_pInfo.sLineStyles[_pInfo.nStyle]).c_str());
                 else if (_pData.getSettings(PlotData::LOG_AREA))
                     _graph->Stem(_mAxisVals, _mData,
-                                 _pInfo.sConPointStyles[*_pInfo.nStyle].c_str());
+                                 _pInfo.sConPointStyles[_pInfo.nStyle].c_str());
                 else
                     _graph->Plot(_mAxisVals, _mData,
-                                 ("a" + expandStyleForCurveArray(_pInfo.sPointStyles[*_pInfo.nStyle], _mData.ny > 1)).c_str());
+                                 ("a" + expandStyleForCurveArray(_pInfo.sPointStyles[_pInfo.nStyle], _mData.ny > 1)).c_str());
             }
         }
         else
             _graph->Error(_mAxisVals, _mData, _mData2[0], _mData2[1],
-                          _pInfo.sPointStyles[*_pInfo.nStyle].c_str());
+                          _pInfo.sPointStyles[_pInfo.nStyle].c_str());
     }
 
     return true;
@@ -2050,12 +2032,12 @@ void Plot::create2dVect()
 /// creation of all two-dimensional drawings.
 ///
 /// \param vDrawVector vector<string>&
-/// \param nFunctions int&
 /// \return void
 ///
 /////////////////////////////////////////////////
-void Plot::create2dDrawing(vector<string>& vDrawVector, int& nFunctions)
+void Plot::create2dDrawing(vector<string>& vDrawVector)
 {
+    int nFunctions;
     string sStyle;
     string sTextString;
     string sDrawExpr;
@@ -2313,12 +2295,12 @@ void Plot::create2dDrawing(vector<string>& vDrawVector, int& nFunctions)
 /// creation of all three-dimensional drawings.
 ///
 /// \param vDrawVector vector<string>&
-/// \param nFunctions int&
 /// \return void
 ///
 /////////////////////////////////////////////////
-void Plot::create3dDrawing(vector<string>& vDrawVector, int& nFunctions)
+void Plot::create3dDrawing(vector<string>& vDrawVector)
 {
+    int nFunctions;
     string sStyle;
     string sTextString;
     string sDrawExpr;
@@ -2678,15 +2660,12 @@ void Plot::create3dDrawing(vector<string>& vDrawVector, int& nFunctions)
 /// creation of all trajectory-like plots (plots
 /// describing a series of points in 3D space).
 ///
-/// \param nStyle int&
-/// \param nLegends size_t&
-/// \param nFunctions int
 /// \param nPlotCompose size_t
 /// \param nPlotComposeSize size_t
 /// \return void
 ///
 /////////////////////////////////////////////////
-void Plot::createStd3dPlot(int& nStyle, size_t& nLegends, int nFunctions, size_t nPlotCompose, size_t nPlotComposeSize)
+void Plot::createStd3dPlot(size_t nPlotCompose, size_t nPlotComposeSize)
 {
     string sDummy = "";
     string sConvLegends = "";
@@ -2776,7 +2755,7 @@ void Plot::createStd3dPlot(int& nStyle, size_t& nLegends, int nFunctions, size_t
                     if (sConvLegends != "\"\"")
                     {
                         _graph->AddLegend(fromSystemCodePage(replaceToTeX(sConvLegends.substr(1, sConvLegends.length() - 2))).c_str(),
-                                          _pInfo.sLineStyles[nStyle].c_str());
+                                          _pInfo.sLineStyles[_pInfo.nStyle].c_str());
                         nLegends++;
                     }
 
@@ -2795,7 +2774,7 @@ void Plot::createStd3dPlot(int& nStyle, size_t& nLegends, int nFunctions, size_t
                 if (sConvLegends != "\"\"")
                 {
                     _graph->AddLegend(fromSystemCodePage(replaceToTeX(sConvLegends.substr(1, sConvLegends.length() - 2))).c_str(),
-                                      getLegendStyle(_pInfo.sLineStyles[nStyle]).c_str());
+                                      getLegendStyle(_pInfo.sLineStyles[_pInfo.nStyle]).c_str());
                     nLegends++;
                 }
 
@@ -2821,24 +2800,24 @@ void Plot::createStd3dPlot(int& nStyle, size_t& nLegends, int nFunctions, size_t
                 {
                     if ((_pData.getSettings(PlotData::LOG_INTERPOLATE) && countValidElements(_mData[XCOORD]) >= (size_t)_pInfo.nSamples)
                         || _pData.getSettings(PlotData::FLOAT_BARS))
-                        sLegendStyle = getLegendStyle(_pInfo.sLineStyles[nStyle]);
+                        sLegendStyle = getLegendStyle(_pInfo.sLineStyles[_pInfo.nStyle]);
                     else if (_pData.getSettings(PlotData::LOG_CONNECTPOINTS)
                              || (_pData.getSettings(PlotData::LOG_INTERPOLATE) && countValidElements(_mData[XCOORD]) >= 0.9 * _pInfo.nSamples))
-                        sLegendStyle = getLegendStyle(_pInfo.sConPointStyles[nStyle]);
+                        sLegendStyle = getLegendStyle(_pInfo.sConPointStyles[_pInfo.nStyle]);
                     else if (_pData.getSettings(PlotData::LOG_STEPPLOT))
-                        sLegendStyle = getLegendStyle(_pInfo.sLineStyles[nStyle]);
+                        sLegendStyle = getLegendStyle(_pInfo.sLineStyles[_pInfo.nStyle]);
                     else
-                        sLegendStyle = getLegendStyle(_pInfo.sPointStyles[nStyle]);
+                        sLegendStyle = getLegendStyle(_pInfo.sPointStyles[_pInfo.nStyle]);
                 }
                 else
-                    sLegendStyle = getLegendStyle(_pInfo.sPointStyles[nStyle]);
+                    sLegendStyle = getLegendStyle(_pInfo.sPointStyles[_pInfo.nStyle]);
 
                 _graph->AddLegend(sLegend.c_str(), sLegendStyle.c_str());
             }
 
         }
 
-        nStyle = _pInfo.nextStyle();
+        _pInfo.nStyle = _pInfo.nextStyle();
 
         if (_pData.getSettings(PlotData::LOG_REGION)
             && n+1 < m_manager.assets.size()
@@ -2846,7 +2825,7 @@ void Plot::createStd3dPlot(int& nStyle, size_t& nLegends, int nFunctions, size_t
             n++;
 
         if (getNN(_mData2[0]) && _pData.getSettings(PlotData::LOG_REGION))
-            nStyle = _pInfo.nextStyle();
+            _pInfo.nStyle = _pInfo.nextStyle();
 
         if (_pData.getSettings(PlotData::INT_COMPLEXMODE) == CPLX_REIM)
         {
@@ -2909,20 +2888,20 @@ bool Plot::plotstd3d(mglData _mData[3], mglData _mData2[3], const short nType)
     {
         if (!_pData.getSettings(PlotData::LOG_AREA)
             && !_pData.getSettings(PlotData::LOG_REGION))
-            _graph->Plot(_mData[XCOORD], _mData[YCOORD], _mData[ZCOORD], ("a" + _pInfo.sLineStyles[*_pInfo.nStyle]).c_str());
+            _graph->Plot(_mData[XCOORD], _mData[YCOORD], _mData[ZCOORD], ("a" + _pInfo.sLineStyles[_pInfo.nStyle]).c_str());
         else if (_pData.getSettings(PlotData::LOG_REGION)
                  && getNN(_mData2[0]))
         {
             _graph->Region(_mData[XCOORD], _mData[YCOORD], _mData[ZCOORD], _mData2[XCOORD], _mData2[YCOORD], _mData2[ZCOORD],
-                           ("a{" + _pData.getColors().substr(*_pInfo.nStyle, 1) + "7}{" + _pData.getColors().substr(nNextStyle, 1) + "7}").c_str());
+                           ("a{" + _pData.getColors().substr(_pInfo.nStyle, 1) + "7}{" + _pData.getColors().substr(nNextStyle, 1) + "7}").c_str());
             _graph->Plot(_mData[XCOORD], _mData[YCOORD], _mData[ZCOORD],
-                         ("a" + _pInfo.sLineStyles[*_pInfo.nStyle]).c_str());
+                         ("a" + _pInfo.sLineStyles[_pInfo.nStyle]).c_str());
             _graph->Plot(_mData2[XCOORD], _mData2[YCOORD], _mData2[ZCOORD],
                          ("a" + _pInfo.sLineStyles[nNextStyle]).c_str());
         }
         else
             _graph->Area(_mData[XCOORD], _mData[YCOORD], _mData[ZCOORD],
-                         ("a" + _pInfo.sLineStyles[*_pInfo.nStyle] + "{" + _pData.getColors()[*_pInfo.nStyle] + "9}").c_str());
+                         ("a" + _pInfo.sLineStyles[_pInfo.nStyle] + "{" + _pData.getColors()[_pInfo.nStyle] + "9}").c_str());
     }
     else
     {
@@ -2934,26 +2913,26 @@ bool Plot::plotstd3d(mglData _mData[3], mglData _mData2[3], const short nType)
             {
                 if (_pData.getSettings(PlotData::FLOAT_BARS))
                     _graph->Bars(_mData[XCOORD], _mData[YCOORD], _mData[ZCOORD],
-                                 (_pInfo.sLineStyles[*_pInfo.nStyle] + "^").c_str());
+                                 (_pInfo.sLineStyles[_pInfo.nStyle] + "^").c_str());
                 else if (_pData.getSettings(PlotData::LOG_AREA) || _pData.getSettings(PlotData::LOG_REGION))
                     _graph->Area(_mData[XCOORD], _mData[YCOORD], _mData[ZCOORD],
-                                 ("a" + _pInfo.sLineStyles[*_pInfo.nStyle] + "{" + _pData.getColors()[*_pInfo.nStyle] + "9}").c_str());
+                                 ("a" + _pInfo.sLineStyles[_pInfo.nStyle] + "{" + _pData.getColors()[_pInfo.nStyle] + "9}").c_str());
                 else
                     _graph->Plot(_mData[XCOORD], _mData[YCOORD], _mData[ZCOORD],
-                                 ("a" + _pInfo.sLineStyles[*_pInfo.nStyle]).c_str());
+                                 ("a" + _pInfo.sLineStyles[_pInfo.nStyle]).c_str());
             }
             else if (_pData.getSettings(PlotData::LOG_CONNECTPOINTS)
                      || (_pData.getSettings(PlotData::LOG_INTERPOLATE) && countValidElements(_mData[0]) >= 0.9 * _pInfo.nSamples))
             {
                 if (_pData.getSettings(PlotData::FLOAT_BARS))
                     _graph->Bars(_mData[XCOORD], _mData[YCOORD], _mData[ZCOORD],
-                                 (_pInfo.sLineStyles[*_pInfo.nStyle] + "^").c_str());
+                                 (_pInfo.sLineStyles[_pInfo.nStyle] + "^").c_str());
                 else if (_pData.getSettings(PlotData::LOG_AREA))
                     _graph->Area(_mData[XCOORD], _mData[YCOORD], _mData[ZCOORD],
-                                 ("a" + _pInfo.sLineStyles[*_pInfo.nStyle] + "{" + _pData.getColors()[*_pInfo.nStyle] + "9}").c_str());
+                                 ("a" + _pInfo.sLineStyles[_pInfo.nStyle] + "{" + _pData.getColors()[_pInfo.nStyle] + "9}").c_str());
                 else
                     _graph->Plot(_mData[XCOORD], _mData[YCOORD], _mData[ZCOORD],
-                                 ("a" + _pInfo.sConPointStyles[*_pInfo.nStyle]).c_str());
+                                 ("a" + _pInfo.sConPointStyles[_pInfo.nStyle]).c_str());
             }
             else
             {
@@ -2965,16 +2944,16 @@ bool Plot::plotstd3d(mglData _mData[3], mglData _mData2[3], const short nType)
                                   _pData.getColorScheme().c_str());
                 else if (_pData.getSettings(PlotData::FLOAT_BARS))
                     _graph->Bars(_mData[XCOORD], _mData[YCOORD], _mData[ZCOORD],
-                                 (_pInfo.sLineStyles[*_pInfo.nStyle] + "^").c_str());
+                                 (_pInfo.sLineStyles[_pInfo.nStyle] + "^").c_str());
                 else if (_pData.getSettings(PlotData::LOG_STEPPLOT))
                     _graph->Step(_mData[XCOORD], _mData[YCOORD], _mData[ZCOORD],
-                                 (_pInfo.sLineStyles[*_pInfo.nStyle]).c_str());
+                                 (_pInfo.sLineStyles[_pInfo.nStyle]).c_str());
                 else if (_pData.getSettings(PlotData::LOG_AREA))
                     _graph->Stem(_mData[XCOORD], _mData[YCOORD], _mData[ZCOORD],
-                                 _pInfo.sConPointStyles[*_pInfo.nStyle].c_str());
+                                 _pInfo.sConPointStyles[_pInfo.nStyle].c_str());
                 else
                     _graph->Plot(_mData[XCOORD], _mData[YCOORD], _mData[ZCOORD],
-                                 ("a" + _pInfo.sPointStyles[*_pInfo.nStyle]).c_str());
+                                 ("a" + _pInfo.sPointStyles[_pInfo.nStyle]).c_str());
             }
         }
         else if (_pData.getSettings(PlotData::LOG_XERROR)
@@ -2984,7 +2963,7 @@ bool Plot::plotstd3d(mglData _mData[3], mglData _mData2[3], const short nType)
             {
                 _graph->Error(mglPoint(_mData[XCOORD].a[m], _mData[YCOORD].a[m], _mData[ZCOORD].a[m]),
                               mglPoint(_mData2[XCOORD].a[m], _mData2[YCOORD].a[m], _mData2[ZCOORD].a[m]),
-                              _pInfo.sPointStyles[*_pInfo.nStyle].c_str());
+                              _pInfo.sPointStyles[_pInfo.nStyle].c_str());
             }
         }
     }
@@ -3267,7 +3246,6 @@ string Plot::expandStyleForCurveArray(const string& sCurrentStyle, bool expand)
 /// determines, where to place the next plot and
 /// if that is actually possible.
 ///
-/// \param nLegends size_t&
 /// \param sCmd string&
 /// \param nMultiplots[2] size_t
 /// \param nSubPlots size_t&
@@ -3275,7 +3253,7 @@ string Plot::expandStyleForCurveArray(const string& sCurrentStyle, bool expand)
 /// \return void
 ///
 /////////////////////////////////////////////////
-void Plot::evaluateSubplot(size_t& nLegends, string& sCmd, size_t nMultiplots[2], size_t& nSubPlots, size_t& nSubPlotMap)
+void Plot::evaluateSubplot(string& sCmd, size_t nMultiplots[2], size_t& nSubPlots, size_t& nSubPlotMap)
 {
     if (nLegends && !_pData.getSettings(PlotData::LOG_SCHEMATIC))
     {
@@ -4436,16 +4414,15 @@ void Plot::defaultRanges(size_t nPlotCompose, bool bNewSubPlot)
 ///
 /// \param dt_max double
 /// \param t_animate int
-/// \param nFunctions int
-/// \return int
+/// \return void
 ///
 /////////////////////////////////////////////////
-int Plot::fillData(double dt_max, int t_animate, int nFunctions)
+void Plot::fillData(double dt_max, int t_animate)
 {
     mu::value_type* vResults = nullptr;
 
     if (!sFunc.length())
-        return nFunctions;
+        return;
 
     std::vector<size_t> vFuncMap;
 
@@ -4470,12 +4447,12 @@ int Plot::fillData(double dt_max, int t_animate, int nFunctions)
                     _defVars.vValue[XCOORD][0] = _pInfo.ranges[XRANGE](x, _pInfo.nSamples);
             }
 
-            vResults = _parser.Eval(nFunctions);
+            vResults = _parser.Eval(_pInfo.nFunctions);
 
-            if ((size_t)nFunctions != vFuncMap.size())
+            if ((size_t)_pInfo.nFunctions != vFuncMap.size())
                 throw SyntaxError(SyntaxError::PLOT_ERROR, "", "");
 
-            for (int i = 0; i < nFunctions; i++)
+            for (int i = 0; i < _pInfo.nFunctions; i++)
             {
                 m_manager.assets[vFuncMap[i]].writeAxis(_defVars.vValue[XCOORD][0].real(), x, XCOORD);
                 m_manager.assets[vFuncMap[i]].writeData(vResults[i], 0, x);
@@ -4496,15 +4473,15 @@ int Plot::fillData(double dt_max, int t_animate, int nFunctions)
                 convertVectorToExpression(expressions[k], _option);
 
             _parser.SetExpr(expressions[k]);
-            vResults = _parser.Eval(nFunctions);
+            vResults = _parser.Eval(_pInfo.nFunctions);
 
             _defVars.vValue[TCOORD][0] = _pInfo.ranges[TRANGE].front();
             _defVars.vValue[XCOORD][0] = vResults[XCOORD];
 
-            if (YCOORD < nFunctions)
+            if (YCOORD < _pInfo.nFunctions)
                 _defVars.vValue[YCOORD][0] = vResults[YCOORD];
 
-            if (ZCOORD < nFunctions)
+            if (ZCOORD < _pInfo.nFunctions)
                 _defVars.vValue[ZCOORD][0] = vResults[ZCOORD];
 
             int nRenderSamples = _pInfo.nSamples;
@@ -4538,11 +4515,11 @@ int Plot::fillData(double dt_max, int t_animate, int nFunctions)
                 }
 
                 // --> Wir werten alle Koordinatenfunktionen zugleich aus und verteilen sie auf die einzelnen Parameterkurven <--
-                vResults = _parser.Eval(nFunctions);
+                vResults = _parser.Eval(_pInfo.nFunctions);
 
                 for (int i = XCOORD; i <= ZCOORD; i++)
                 {
-                    if (i >= nFunctions)
+                    if (i >= _pInfo.nFunctions)
                         m_manager.assets[vFuncMap[k]].writeData(0.0, i, t);
                     else
                         m_manager.assets[vFuncMap[k]].writeData(vResults[i], i, t);
@@ -4580,9 +4557,9 @@ int Plot::fillData(double dt_max, int t_animate, int nFunctions)
                 else
                     _defVars.vValue[YCOORD][0] = _pInfo.ranges[YRANGE](y, _pInfo.nSamples);
 
-                vResults = _parser.Eval(nFunctions);
+                vResults = _parser.Eval(_pInfo.nFunctions);
 
-                if ((size_t)nFunctions != vFuncMap.size())
+                if ((size_t)_pInfo.nFunctions != vFuncMap.size())
                     throw SyntaxError(SyntaxError::PLOT_ERROR, "", "");
 
                 for (size_t i = 0; i < vFuncMap.size(); i++)
@@ -4623,9 +4600,9 @@ int Plot::fillData(double dt_max, int t_animate, int nFunctions)
                     else
                         _defVars.vValue[ZCOORD][0] = _pInfo.ranges[ZRANGE](z, _pInfo.nSamples);
 
-                    vResults = _parser.Eval(nFunctions);
+                    vResults = _parser.Eval(_pInfo.nFunctions);
 
-                    if ((size_t)nFunctions != vFuncMap.size())
+                    if ((size_t)_pInfo.nFunctions != vFuncMap.size())
                         throw SyntaxError(SyntaxError::PLOT_ERROR, "", "");
 
                     for (size_t i = 0; i < vFuncMap.size(); i++)
@@ -4657,9 +4634,9 @@ int Plot::fillData(double dt_max, int t_animate, int nFunctions)
                 for (int y = 0; y < _pInfo.nSamples; y++)
                 {
                     _defVars.vValue[YCOORD][0] = _pInfo.ranges[YRANGE](y, _pInfo.nSamples);
-                    vResults = _parser.Eval(nFunctions);
+                    vResults = _parser.Eval(_pInfo.nFunctions);
 
-                    for (int i = 0; i < nFunctions; i++)
+                    for (int i = 0; i < _pInfo.nFunctions; i++)
                     {
                         m_manager.assets[vFuncMap[k]].writeAxis(_defVars.vValue[XCOORD][0].real(), x, XCOORD);
                         m_manager.assets[vFuncMap[k]].writeAxis(_defVars.vValue[YCOORD][0].real(), y, YCOORD);
@@ -4691,9 +4668,9 @@ int Plot::fillData(double dt_max, int t_animate, int nFunctions)
                     for (int z = 0; z < _pInfo.nSamples; z++)
                     {
                         _defVars.vValue[ZCOORD][0] = _pInfo.ranges[ZRANGE](z, _pInfo.nSamples);
-                        vResults = _parser.Eval(nFunctions);
+                        vResults = _parser.Eval(_pInfo.nFunctions);
 
-                        for (int i = 0; i < nFunctions; i++)
+                        for (int i = 0; i < _pInfo.nFunctions; i++)
                         {
                             m_manager.assets[vFuncMap[k]].writeAxis(_defVars.vValue[XCOORD][0].real(), x, XCOORD);
                             m_manager.assets[vFuncMap[k]].writeAxis(_defVars.vValue[YCOORD][0].real(), y, YCOORD);
@@ -4705,8 +4682,6 @@ int Plot::fillData(double dt_max, int t_animate, int nFunctions)
             }
         }
     }
-
-    return nFunctions;
 }
 
 
@@ -6851,13 +6826,10 @@ string Plot::composeColoursForBarChart(long int nNum)
 
     for (int i = 0; i < nNum; i++)
     {
-        sColours += _pInfo.sLineStyles[*_pInfo.nStyle];
+        sColours += _pInfo.sLineStyles[_pInfo.nStyle];
 
         if (i + 1 < nNum)
-            (*_pInfo.nStyle)++;
-
-        if (*_pInfo.nStyle >= _pInfo.nStyleMax)
-            *_pInfo.nStyle = 0;
+            _pInfo.nStyle = _pInfo.nextStyle();
     }
 
     return sColours;

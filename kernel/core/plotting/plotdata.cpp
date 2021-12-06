@@ -26,9 +26,19 @@
 extern mglGraph _fontData;
 
 // Function prototype
-bool isNotEmptyExpression(const string& sExpr);
+bool isNotEmptyExpression(const std::string& sExpr);
 
-static value_type* evaluateNumerical(int& nResults, string sExpression)
+
+/////////////////////////////////////////////////
+/// \brief Static helper function to evaluate
+/// numerical parameters.
+///
+/// \param nResults int&
+/// \param sExpression std::string
+/// \return mu::value_type*
+///
+/////////////////////////////////////////////////
+static mu::value_type* evaluateNumerical(int& nResults, std::string sExpression)
 {
     MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
     Parser& _parser = NumeReKernel::getInstance()->getParser();
@@ -41,19 +51,39 @@ static value_type* evaluateNumerical(int& nResults, string sExpression)
     return _parser.Eval(nResults);
 }
 
-static string evaluateString(string sExpression)
+
+/////////////////////////////////////////////////
+/// \brief Static helper functio to evaluate
+/// string parameters.
+///
+/// \param sExpression std::string
+/// \return std::string
+///
+/////////////////////////////////////////////////
+static std::string evaluateString(std::string sExpression)
 {
-    string sDummy;
+    std::string sDummy;
+
     if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sExpression))
         NumeReKernel::getInstance()->getStringParser().evalAndFormat(sExpression, sDummy, true);
 
     return sExpression;
 }
 
+
+/////////////////////////////////////////////////
+/// \brief Static helper function to evaluate the
+/// passed color characters for their validness.
+///
+/// \param sColorSet const std::string&
+/// \return bool
+///
+/////////////////////////////////////////////////
 static bool checkColorChars(const std::string& sColorSet)
 {
-    std::string sColorChars = "#| wWhHkRrQqYyEeGgLlCcNnBbUuMmPp123456789{}";
-    for (unsigned int i = 0; i < sColorSet.length(); i++)
+    static std::string sColorChars = "#| wWhHkRrQqYyEeGgLlCcNnBbUuMmPp123456789{}";
+
+    for (size_t i = 0; i < sColorSet.length(); i++)
     {
         if (sColorSet[i] == '{' && i+3 >= sColorSet.length())
             return false;
@@ -63,50 +93,68 @@ static bool checkColorChars(const std::string& sColorSet)
                 || sColorSet[i+2] > '9'
                 || sColorSet[i+2] < '1'))
             return false;
+
         if (sColorChars.find(sColorSet[i]) == std::string::npos)
             return false;
     }
+
     return true;
 }
 
+
+/////////////////////////////////////////////////
+/// \brief Static helper function to evaluate the
+/// passed line type characters for their
+/// validness.
+///
+/// \param sLineSet const std::string&
+/// \return bool
+///
+/////////////////////////////////////////////////
 static bool checkLineChars(const std::string& sLineSet)
 {
-    std::string sLineChars = " -:;ij|=";
-    for (unsigned int i = 0; i < sLineSet.length(); i++)
+    static std::string sLineChars = " -:;ij|=";
+
+    for (size_t i = 0; i < sLineSet.length(); i++)
     {
         if (sLineChars.find(sLineSet[i]) == std::string::npos)
             return false;
     }
+
     return true;
 }
 
+
+/////////////////////////////////////////////////
+/// \brief Static heloer function to evaluate the
+/// passeed point type characters for their
+/// validness.
+///
+/// \param sPointSet const std::string&
+/// \return bool
+///
+/////////////////////////////////////////////////
 static bool checkPointChars(const std::string& sPointSet)
 {
-    std::string sPointChars = " .*+x#sdo^v<>";
-    for (unsigned int i = 0; i < sPointSet.length(); i++)
+    static std::string sPointChars = " .*+x#sdo^v<>";
+
+    for (size_t i = 0; i < sPointSet.length(); i++)
     {
         if (sPointChars.find(sPointSet[i]) == std::string::npos)
             return false;
     }
+
     return true;
 }
 
 
-
-
-// --> Konstruktor <--
-PlotData::PlotData() : FileSystem()
-{
-    PlotData::reset();
-}
-
-// --> Destruktor <--
-PlotData::~PlotData()
-{
-}
-
-
-
+/////////////////////////////////////////////////
+/// \brief Static helper function to create a map
+/// containing the simple logical plot settings.
+///
+/// \return std::map<std::string,std::pair<PlotData::LogicalPlotSetting,PlotData::ParamType>>
+///
+/////////////////////////////////////////////////
 static std::map<std::string,std::pair<PlotData::LogicalPlotSetting,PlotData::ParamType>> getGenericSwitches()
 {
     std::map<std::string,std::pair<PlotData::LogicalPlotSetting,PlotData::ParamType>> mGenericSwitches;
@@ -140,6 +188,14 @@ static std::map<std::string,std::pair<PlotData::LogicalPlotSetting,PlotData::Par
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Static helper function to create a map
+/// containing all color schemes and their
+/// corresponding color characters.
+///
+/// \return std::map<std::string, std::string>
+///
+/////////////////////////////////////////////////
 static std::map<std::string, std::string> getColorSchemes()
 {
     std::map<std::string, std::string> mColorSchemes;
@@ -151,9 +207,9 @@ static std::map<std::string, std::string> getColorSchemes()
     mColorSchemes.emplace("copper", "{Q2}{q3}{q9}");
     mColorSchemes.emplace("map", "UBbcgyqRH");
     mColorSchemes.emplace("moy", "kMqyw");
-    mColorSchemes.emplace("coast", "{B6}C{y8}");
-    mColorSchemes.emplace("viridis", "UNC{e4}y");
-    mColorSchemes.emplace("std", "UNC{e4}y");
+    mColorSchemes.emplace("coast", "{B6}{c3}{y8}");
+    mColorSchemes.emplace("viridis", "{U3}{N4}C{e4}y"); //UNC{e4}y
+    mColorSchemes.emplace("std", "{U3}{N4}C{e4}y");
     mColorSchemes.emplace("plasma", "B{u4}p{q6}{y7}");
     mColorSchemes.emplace("hue", "rygcbmr");
     mColorSchemes.emplace("polarity", "w{n5}{u2}{r7}w");
@@ -166,10 +222,32 @@ static std::map<std::string, std::string> getColorSchemes()
 }
 
 
-/* --> Parameter setzen: Verwendet die bool matchParams(const string&, const string&, char)-Funktion,
- *     um die einzelnen Befehle zu identifizieren. Unbekannte Befehle werden automatisch ignoriert. 7
- *     Dies ist dann automatisch Fehlertoleranter <--
- */
+
+
+
+
+
+/////////////////////////////////////////////////
+/// \brief PlotData constructor. Calls
+/// PlotData::reset() for initialisation.
+/////////////////////////////////////////////////
+PlotData::PlotData() : FileSystem()
+{
+    PlotData::reset();
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Identifies parameters and values in
+/// the passed parameter string and updates the
+/// selected type of the parameters
+/// correspondingly.
+///
+/// \param __sCmd const string&
+/// \param nType int
+/// \return void
+///
+/////////////////////////////////////////////////
 void PlotData::setParams(const string& __sCmd, int nType)
 {
     mu::Parser& _parser = NumeReKernel::getInstance()->getParser();
@@ -1749,7 +1827,14 @@ void PlotData::setParams(const string& __sCmd, int nType)
     return;
 }
 
-// --> Alle Einstellungen zuruecksetzen <--
+
+/////////////////////////////////////////////////
+/// \brief Resets all settings to the
+/// initialisation stage.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
 void PlotData::reset()
 {
     _lVLines.clear();
@@ -1762,7 +1847,7 @@ void PlotData::reset()
 
     ranges.setNames({"x", "y", "z", "c", "t"});
 
-    for (int i = 0; i < 3; i++)
+    for (int i = XRANGE; i <= ZRANGE; i++)
     {
         dOrigin[i] = 0.0;
         sAxisLabels[i] = "";
@@ -1772,7 +1857,7 @@ void PlotData::reset()
         nSlices[i] = 1;
     }
 
-    for (int i = 0; i < 4; i++)
+    for (int i = XRANGE; i <= CRANGE; i++)
     {
         bRanges[i] = false;
         bMirror[i] = false;
@@ -1783,7 +1868,7 @@ void PlotData::reset()
         _timeAxes[i].deactivate();
     }
 
-    for (int i = 0; i < 2; i++)
+    for (int i = XRANGE; i <= YRANGE; i++)
     {
         _AddAxes[i].ivl.reset(NAN, NAN);
         _AddAxes[i].sLabel = "";
@@ -1855,26 +1940,32 @@ void PlotData::reset()
     _fontData.LoadFont(stringSettings[STR_FONTSTYLE].c_str(), (sTokens[0][1] + "\\fonts").c_str());
 }
 
-// --> Daten im Speicher loeschen. Speicher selbst bleibt bestehen <--
+
+/////////////////////////////////////////////////
+/// \brief Delete the internal per-plot data
+/// (i.e. weak reset).
+///
+/// \param bGraphFinished bool
+/// \return void
+///
+/////////////////////////////////////////////////
 void PlotData::deleteData(bool bGraphFinished /* = false*/)
 {
     _lHlines.clear();
     _lVLines.clear();
 
     for (int i = XRANGE; i <= ZRANGE; i++)
-        ranges[i].reset(-10.0, 10.0);
-
-    ranges[CRANGE].reset(NAN, NAN);
-
-    for (int i = 0; i < 3; i++)
     {
+        ranges[i].reset(-10.0, 10.0);
         sAxisLabels[i] = "";
         bDefaultAxisLabels[i] = true;
         _lHlines.push_back(Line());
         _lVLines.push_back(Line());
     }
 
-    for (int i = 0; i < 4; i++)
+    ranges[CRANGE].reset(NAN, NAN);
+
+    for (int i = XRANGE; i <= CRANGE; i++)
     {
         bRanges[i] = false;
         bMirror[i] = false;
@@ -1911,7 +2002,7 @@ void PlotData::deleteData(bool bGraphFinished /* = false*/)
     stringSettings[STR_AXISBIND].clear();
     stringSettings[STR_BACKGROUND].clear();
 
-    for (int i = 0; i < 2; i++)
+    for (int i = XRANGE; i <= YRANGE; i++)
     {
         _AddAxes[i].ivl.reset(NAN, NAN);
         _AddAxes[i].sLabel = "";
@@ -1919,9 +2010,17 @@ void PlotData::deleteData(bool bGraphFinished /* = false*/)
     }
 }
 
-/* --> Plotparameter als String lesen: Gibt nur Parameter zurueck, die von Plot zu Plot
- *     uebernommen werden. (sFileName und sAxisLabels[] z.B nicht) <--
- */
+
+/////////////////////////////////////////////////
+/// \brief Return the internal plotting
+/// parameters as a human-readable string. Can be
+/// converted to an internal string using the
+/// additional parameter.
+///
+/// \param asstr bool
+/// \return string
+///
+/////////////////////////////////////////////////
 string PlotData::getParams(bool asstr) const
 {
     const Settings& _option = NumeReKernel::getInstance()->getSettings();
@@ -2229,21 +2328,36 @@ string PlotData::getParams(bool asstr) const
 }
 
 
-// --> Datenpunkte einstellen <--
+/////////////////////////////////////////////////
+/// \brief Change the number of samples.
+///
+/// \param _nSamples int
+/// \return void
+///
+/////////////////////////////////////////////////
 void PlotData::setSamples(int _nSamples)
 {
     intSettings[INT_SAMPLES] = _nSamples;
 }
 
-// --> Ausgabe-Dateinamen setzen <--
-void PlotData::setFileName(string _sFileName)
+
+/////////////////////////////////////////////////
+/// \brief Change the output file name.
+///
+/// \param _sFileName std::string
+/// \return void
+///
+/////////////////////////////////////////////////
+void PlotData::setFileName(std::string _sFileName)
 {
     if (_sFileName.length())
     {
-        string sExt = _sFileName.substr(_sFileName.rfind('.'));
+        std::string sExt = _sFileName.substr(_sFileName.rfind('.'));
+
         if (sExt[sExt.length()-1] == '"')
             sExt = sExt.substr(0,sExt.length()-1);
-        if (_sFileName.find('\\') == string::npos && _sFileName.find('/') == string::npos)
+
+        if (_sFileName.find('\\') == std::string::npos && _sFileName.find('/') == std::string::npos)
         {
             if (sPath[0] == '"' && sPath[sPath.length()-1] == '"')
                 stringSettings[STR_FILENAME] = sPath.substr(0,sPath.length()-1)+"/"+_sFileName+"\"";
@@ -2257,34 +2371,53 @@ void PlotData::setFileName(string _sFileName)
     }
     else
         stringSettings[STR_FILENAME] = "";
-    return;
 }
 
 
-// --> \n und \t passend ersetzen <--
-void PlotData::replaceControlChars(string& sString)
+/////////////////////////////////////////////////
+/// \brief Replaces tab and newlines
+/// correspondingly.
+///
+/// \param sString std::string&
+/// \return void
+///
+/////////////////////////////////////////////////
+void PlotData::replaceControlChars(std::string& sString)
 {
-    if (sString.find('\t') == string::npos && sString.find('\n') == string::npos)
+    if (sString.find('\t') == std::string::npos && sString.find('\n') == std::string::npos)
         return;
 
-    for (unsigned int i = 0; i < sString.length(); i++)
+    for (size_t i = 0; i < sString.length(); i++)
     {
         if (sString[i] == '\t' && sString.substr(i+1,2) == "au")
-            sString.replace(i,1,"\\t");
+            sString.replace(i, 1, "\\t");
+
         if (sString[i] == '\n' && sString[i+1] == 'u')
-            sString.replace(i,1,"\\n");
+            sString.replace(i, 1, "\\n");
     }
-    return;
 }
 
-string PlotData::removeSurroundingQuotationMarks(const string& sString)
+
+/////////////////////////////////////////////////
+/// \brief Removes surrounding quotation marks.
+///
+/// \param sString const std::string&
+/// \return std::string
+///
+/////////////////////////////////////////////////
+std::string PlotData::removeSurroundingQuotationMarks(const std::string& sString)
 {
     if (sString.front() == '"' && sString.back() == '"')
         return sString.substr(1,sString.length()-2);
+
     return sString;
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Structure for simplification of the
+/// standard axis labels
+/////////////////////////////////////////////////
 struct AxisLabels
 {
     std::string x;
@@ -2292,6 +2425,15 @@ struct AxisLabels
     std::string z;
 };
 
+
+/////////////////////////////////////////////////
+/// \brief Static helper function to create a map
+/// containing the standard axis labels for each
+/// coordinate system.
+///
+/// \return std::map<CoordinateSystem, AxisLabels>
+///
+/////////////////////////////////////////////////
 static std::map<CoordinateSystem, AxisLabels> getLabelDefinitions()
 {
     std::map<CoordinateSystem, AxisLabels> mLabels;
@@ -2307,8 +2449,16 @@ static std::map<CoordinateSystem, AxisLabels> getLabelDefinitions()
     return mLabels;
 }
 
-// --> Lesen der einzelnen Achsenbeschriftungen <--
-string PlotData::getAxisLabel(size_t axis) const
+
+/////////////////////////////////////////////////
+/// \brief Return the axis label associated to
+/// the selected axis.
+///
+/// \param axis size_t
+/// \return std::string
+///
+/////////////////////////////////////////////////
+std::string PlotData::getAxisLabel(size_t axis) const
 {
     if (!bDefaultAxisLabels[axis])
         return replaceToTeX(sAxisLabels[axis]);
@@ -2335,21 +2485,6 @@ string PlotData::getAxisLabel(size_t axis) const
 
     return "";
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

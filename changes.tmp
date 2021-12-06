@@ -63,3 +63,4 @@ Updated	The new language file structure requires an additional load command for 
 Cleaned	Improved the implementation of the plotting algorithm
 Added	Plotting modes for complex-valued results are now available: use "complexmode=reim" to display real and imaginary data together and "complexmode=plane" to use the x-y plane as the complex plane.
 Applied	Made new colour maps and revisited already available ones to have less strong gradients.
+Cleaned	Added more documentation comments to the PlotData class.

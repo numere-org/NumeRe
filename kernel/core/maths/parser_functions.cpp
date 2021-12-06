@@ -31,22 +31,25 @@ extern mglGraph _fontData;
 /// returns the position of the first occurence
 /// or string::npos, if nothing was found.
 ///
-/// \param sExpr const string&
-/// \param sVarName const string&
+/// \param sExpr const std::string&
+/// \param sVarName const std::string&
 /// \return size_t
 ///
 /////////////////////////////////////////////////
-size_t findVariableInExpression(const string& sExpr, const string& sVarName)
+size_t findVariableInExpression(const std::string& sExpr, const std::string& sVarName)
 {
     size_t nMatch = 0;
-    const static string sDelimiter = "+-*/,^!%&|()?:{}[]#<>='; ";
+    const static std::string sOperators = "+-*/,^!%&|?:#<>='; ";
+    const static std::string sDelimiterLeft = sOperators + "([{";
+#warning TODO (numere#1#12/05/21): Cannot detect variables with methods (if that is needed)
+    const static std::string sDelimiterRight = sOperators + ")]}";
 
     // search the first match of the token, which is surrounded by the
     // defined separator characters
     while ((nMatch = sExpr.find(sVarName, nMatch)) != string::npos)
     {
-        if ((!nMatch || sDelimiter.find(sExpr[nMatch-1]) != string::npos)
-            && (nMatch + sVarName.length() >= sExpr.length() || sDelimiter.find(sExpr[nMatch+sVarName.length()]) != string::npos)
+        if ((!nMatch || sDelimiterLeft.find(sExpr[nMatch-1]) != string::npos)
+            && (nMatch + sVarName.length() >= sExpr.length() || sDelimiterRight.find(sExpr[nMatch+sVarName.length()]) != string::npos)
             && !isInQuotes(sExpr, nMatch))
         {
             return nMatch;
@@ -55,7 +58,7 @@ size_t findVariableInExpression(const string& sExpr, const string& sVarName)
         nMatch++;
     }
 
-    return string::npos;
+    return std::string::npos;
 }
 
 
