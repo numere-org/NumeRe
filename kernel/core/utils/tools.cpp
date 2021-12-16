@@ -3235,6 +3235,11 @@ string getFileInfo(const string& sFileName)
                 + " (NDAT v" + toString(info.fileVersion, 5) + ") | "
                 + toString(info.nRows) + " x " + toString(info.nCols) + " | \"" + info.sTableName + "()\"";
 
+    if (info.sComment.length() > 204)
+        sFileInfo += "\n" + info.sComment.substr(0, 200) + "...";
+    else if (info.sComment.length())
+        sFileInfo += "\n" + info.sComment;
+
     // Return the read file meta information
     return sFileInfo;
 }

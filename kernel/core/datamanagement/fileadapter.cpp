@@ -170,6 +170,12 @@ namespace NumeRe
             _mem->createTableHeaders();
             _mem->setSaveStatus(false);
 
+            NumeRe::TableMetaData meta;
+            meta.comment = info.sComment;
+            meta.source = sFile;
+
+            _mem->setMetaData(meta);
+
             // Melt or append the new instance. The
             // melt() member function is responsible
             // for freeing the passed memory.

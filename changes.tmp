@@ -64,3 +64,5 @@ Cleaned	Improved the implementation of the plotting algorithm
 Added	Plotting modes for complex-valued results are now available: use "complexmode=reim" to display real and imaginary data together and "complexmode=plane" to use the x-y plane as the complex plane.
 Applied	Made new colour maps and revisited already available ones to have less strong gradients.
 Cleaned	Added more documentation comments to the PlotData class.
+Applied	The function "zeta(x)" now also accepts complex numbers as input.
+New	It's now possible to add a documenation to tables. This documentation will also be displayed in the file tree. The documentation can either be modified using table methods ("TABLE().describe(DESCR)" and "TABLE().description") or via the GUI elements used for displaying and editing tables.

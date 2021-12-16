@@ -1187,6 +1187,26 @@ static std::string tableMethod_typeof(const std::string& sTableName, std::string
 }
 
 
+static std::string tableMethod_annotate(const std::string& sTableName, std::string sMethodArguments)
+{
+    // Might be necessary to resolve the contents of columns and conversions
+    getDataElements(sMethodArguments, NumeReKernel::getInstance()->getParser(), NumeReKernel::getInstance()->getMemoryManager(), NumeReKernel::getInstance()->getSettings());
+
+    if (containsStrings(sMethodArguments))
+    {
+        std::string sDummy;
+        sMethodArguments += " -nq";
+        NumeRe::StringParser::StringParserRetVal res = NumeReKernel::getInstance()->getStringParser().evalAndFormat(sMethodArguments, sDummy, true);
+
+        if (res == NumeRe::StringParser::STRING_NUMERICAL)
+            return "\"\"";
+    }
+
+    NumeReKernel::getInstance()->getMemoryManager().writeComment(sTableName, sMethodArguments);
+    return "\"" + sMethodArguments + "\"";
+}
+
+
 /////////////////////////////////////////////////
 /// \brief Typedef for a table method
 /////////////////////////////////////////////////
@@ -1207,6 +1227,7 @@ static std::map<std::string, TableMethod> getInplaceTableMethods()
     mTableMethods["aliasof"] = tableMethod_aliasof;
     mTableMethods["convert"] = tableMethod_convert;
     mTableMethods["typeof"] = tableMethod_typeof;
+    mTableMethods["describe"] = tableMethod_annotate;
 
     return mTableMethods;
 }
@@ -1240,6 +1261,9 @@ static string createMafVectorName(string sAccessString)
 
     if (sAccessString.find(".name") != std::string::npos)
         return "\"" + sAccessString.substr(0, sAccessString.find("().")+2) + "\"";
+
+    if (sAccessString.find(".description") != std::string::npos)
+        return "\"" + NumeReKernel::getInstance()->getMemoryManager().getComment(sAccessString.substr(0, sAccessString.find("()."))) + "\"";
 
     sAccessString.replace(sAccessString.find("()"), 2, "[");
     sAccessString = replaceToVectorname(sAccessString);

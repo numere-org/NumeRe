@@ -1883,9 +1883,9 @@ void NumeReWindow::openTable(NumeRe::Container<string> _stringTable, const strin
     ViewerFrame* frame = new ViewerFrame(this, "NumeRe: " + sTableName);
     registerWindow(frame, WT_TABLEVIEWER);
     frame->SetSize(800,600);
-    TableViewer* grid = new TableViewer(frame, wxID_ANY, frame->CreateStatusBar(3), wxDefaultPosition, wxDefaultSize, wxWANTS_CHARS | wxBORDER_STATIC);
+    TableViewer* grid = new TableViewer(frame, wxID_ANY, frame->CreateStatusBar(3), nullptr, wxDefaultPosition, wxDefaultSize, wxWANTS_CHARS | wxBORDER_STATIC);
     grid->SetData(_stringTable);
-    frame->SetSize(min(800u, grid->GetWidth()), min(600u, grid->GetHeight()+30));
+    frame->SetSize(min(800u, grid->GetWidth()), max(min(600u, grid->GetHeight()+50), 300u));
     frame->SetIcon(getStandardIcon());
     frame->Show();
     frame->SetFocus();
@@ -1906,9 +1906,9 @@ void NumeReWindow::openTable(NumeRe::Table _table, const string& sTableName)
     ViewerFrame* frame = new ViewerFrame(this, "NumeRe: " + sTableName);
     registerWindow(frame, WT_TABLEVIEWER);
     frame->SetSize(800,600);
-    TableViewer* grid = new TableViewer(frame, wxID_ANY, frame->CreateStatusBar(3), wxDefaultPosition, wxDefaultSize, wxWANTS_CHARS | wxBORDER_STATIC);
-    grid->SetData(_table);
-    frame->SetSize(min(800u, grid->GetWidth()), min(600u, grid->GetHeight()+30));
+    TablePanel* panel = new TablePanel(frame, wxID_ANY, frame->CreateStatusBar(3));
+    panel->grid->SetData(_table);
+    frame->SetSize(min(800u, panel->grid->GetWidth()+200), max(min(600u, panel->grid->GetHeight()+50), 300u));
     frame->SetIcon(getStandardIcon());
     frame->Show();
     frame->SetFocus();
@@ -1931,9 +1931,8 @@ void NumeReWindow::editTable(NumeRe::Container<string> _stringTable, const strin
     frame->SetSize(800,600);
     TableEditPanel* panel = new TableEditPanel(frame, wxID_ANY, frame->CreateStatusBar(3));
     panel->SetTerminal(m_terminal);
-    panel->grid->SetTableReadOnly(false);
     panel->grid->SetData(_stringTable);
-    frame->SetSize(min(800u, panel->grid->GetWidth()), min(600u, panel->grid->GetHeight()+30));
+    frame->SetSize(min(800u, panel->grid->GetWidth()), max(min(600u, panel->grid->GetHeight()+50), 300u));
     frame->SetIcon(getStandardIcon());
     frame->Show();
     frame->SetFocus();
@@ -1956,9 +1955,8 @@ void NumeReWindow::editTable(NumeRe::Table _table, const string& sTableName)
     frame->SetSize(800,600);
     TableEditPanel* panel = new TableEditPanel(frame, wxID_ANY, frame->CreateStatusBar(3));
     panel->SetTerminal(m_terminal);
-    panel->grid->SetTableReadOnly(false);
     panel->grid->SetData(_table);
-    frame->SetSize(min(800u, panel->grid->GetWidth()), min(600u, panel->grid->GetHeight()+30));
+    frame->SetSize(min(800u, panel->grid->GetWidth()+200), max(min(600u, panel->grid->GetHeight()+50), 300u));
     frame->SetIcon(getStandardIcon());
     frame->Show();
     frame->SetFocus();

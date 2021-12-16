@@ -852,7 +852,7 @@ static bool listDirectory(const string& sDir, const string& sParams, const Setti
 				if (sConnect.find('.') != string::npos)
 					sExt = toLowerCase(sConnect.substr(sConnect.rfind('.'), sConnect.find(' ', sConnect.rfind('.')) - sConnect.rfind('.')));
 
-				sConnect.append(nFirstColLength + 7 - nLength, ' ');
+                sConnect.append(nFirstColLength + 7 - nLength, '.');
 
 				// Get the language string for the current file type
 				if (!sExt.length())
@@ -894,13 +894,15 @@ static bool listDirectory(const string& sDir, const string& sParams, const Setti
 				}
 
 				sFilesize = toString(dFilesize, 3) + " " + sFilesize;
-				sConnect.append(_option.getWindow() - sConnect.length() - sFilesize.length(), ' ');
+				sConnect.append(_option.getWindow() - sConnect.length() - sFilesize.length(), '.');
 				sConnect += sFilesize;
 
 				if (sExt == _lang.get("COMMON_FILETYPE_NDAT") && _option.showExtendedFileInfo())
 				{
-					sConnect += "\n|   ";
-					sConnect += getFileInfo(sFileName);
+					sConnect += "\n|     : ";
+					std::string sFileInfo = getFileInfo(sFileName);
+					replaceAll(sFileInfo, "\n", "\n|     : ");
+					sConnect += sFileInfo;
 				}
 			}
 			else
@@ -2023,6 +2025,7 @@ static void copyDataToTemporaryTable(const string& sCmd, DataAccessParser& _acce
     _accessParser.evalIndices();
 
     _cache.resizeTable(_accessParser.getIndices().col.size(), "table");
+    _cache.setMetaData("table", _data.getMetaData(_accessParser.getDataObject()));
 
     for (size_t i = 0; i < _accessParser.getIndices().row.size(); i++)
     {

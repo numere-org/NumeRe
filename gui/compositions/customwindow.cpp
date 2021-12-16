@@ -718,7 +718,7 @@ void CustomWindow::layoutChild(const tinyxml2::XMLElement* currentChild, wxWindo
         else if (string(currentChild->Value()) == "tablegrid")
         {
             // Add a table grid
-            TableViewer* table = new TableViewer(currParent, id, nullptr, wxDefaultPosition, wxDefaultSize, wxWANTS_CHARS | wxBORDER_THEME);
+            TableViewer* table = new TableViewer(currParent, id, nullptr, nullptr, wxDefaultPosition, wxDefaultSize, wxWANTS_CHARS | wxBORDER_THEME);
             currSizer->Add(table, 1, alignment | wxALL | wxEXPAND | wxRESERVE_SPACE_EVEN_IF_HIDDEN, 5);
             m_windowItems[id] = std::make_pair(CustomWindow::TABLE, table);
             table->SetTableReadOnly(false);

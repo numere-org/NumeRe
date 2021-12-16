@@ -2192,27 +2192,82 @@ value_type parser_beta(value_type a, value_type b)
 
 
 /////////////////////////////////////////////////
+/// \brief Calculates the sum of binomial
+/// coefficients from k to N.
+///
+/// \param k int
+/// \param N int
+/// \return double
+///
+/////////////////////////////////////////////////
+static double ek(int k, int N)
+{
+    double sum = 0;
+    static std::vector<double> vLookUp;
+
+    if (vLookUp.size() > k-1)
+        return vLookUp[k-1];
+
+    for (int j = k; j <= N; j++)
+        sum += parser_Binom((double)N, (double)j).real();
+
+    vLookUp.push_back(sum);
+
+    return sum;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Calculates the complex-valued
+/// Riemannian Zeta function for complex numbers
+/// with Re(s) >= 0.
+///
+/// \param s const std::complex<double>&
+/// \return std::complex<double>
+///
+/////////////////////////////////////////////////
+static std::complex<double> complex_zeta(const std::complex<double>& s)
+{
+    if (s == 1.0)
+        return NAN;
+
+    std::complex<double> sum;
+    static const int N = 20;
+    static const double coeff = intPower(0.5, N);
+
+    for (int k = 1; k <= N; k++)
+    {
+        sum += ((k-1) % 2 ? -1.0 : 1.0) / std::pow(k, s);
+    }
+
+    for (int k = N+1; k <= 2*N; k++)
+    {
+        sum += coeff * ((k-1) % 2 ? -1.0 : 1.0) * ek(k-N, N) / std::pow(k, s);
+    }
+
+    return 1.0 / (1.0-std::pow(2.0, 1.0-s)) * sum;
+}
+
+
+/////////////////////////////////////////////////
 /// \brief This function returns the value of the
 /// Zeta function.
 ///
-/// \param n value_type
+/// \param s value_type
 /// \return value_type
 ///
 /////////////////////////////////////////////////
-value_type parser_zeta(value_type n)
+value_type parser_zeta(value_type s)
 {
-    n.imag(0);
-
-    if (isnan(n) || isinf(n))
+    if (isnan(s) || isinf(s))
         return NAN;
 
-    if (n.real() == 1)
-        return NAN;
+    // Use the functional equation to swap negative
+    // real numbers into the positive half-plane
+    if (s.real() < 0.0)
+        return std::pow(2.0, s)*std::pow(M_PI, s-1.0)*sin(0.5*M_PI*s)*parser_gamma(1.0-s)*complex_zeta(1.0-s);
 
-    if (intCast(n) == (int)n.real())
-        return gsl_sf_zeta_int(intCast(n));
-    else
-        return gsl_sf_zeta(n.real());
+    return complex_zeta(s);
 }
 
 

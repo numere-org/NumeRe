@@ -29,6 +29,8 @@
 #include "../../kernel/core/datamanagement/container.hpp"
 #include "../../kernel/core/datamanagement/table.hpp"
 
+class TablePanel;
+
 using namespace std;
 
 /////////////////////////////////////////////////
@@ -52,6 +54,8 @@ class TableViewer : public wxGrid
         wxGridCellCoords lastCursorPosition;
         wxGridCellCoordsArray selectedCells;
 
+        // External window elements
+        TablePanel* m_parentPanel;
         wxStatusBar* m_statusBar;
 
         void layoutGrid();
@@ -95,7 +99,7 @@ class TableViewer : public wxGrid
 
 
     public:
-        TableViewer(wxWindow* parent, wxWindowID id, wxStatusBar* statusbar, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxDefaultSize, long style = wxWANTS_CHARS, const wxString& name = wxGridNameStr);
+        TableViewer(wxWindow* parent, wxWindowID id, wxStatusBar* statusbar, TablePanel* parentPanel, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxDefaultSize, long style = wxWANTS_CHARS, const wxString& name = wxGridNameStr);
 
         void SetData(NumeRe::Container<string>& _stringTable);
         void SetData(NumeRe::Table& _table);

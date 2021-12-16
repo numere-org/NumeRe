@@ -27,17 +27,45 @@
 
 extern Language _guilang;
 
-class TableEditPanel : public wxPanel
+/////////////////////////////////////////////////
+/// \brief Generic table panel, which also
+/// contains all meta UI elements.
+/////////////////////////////////////////////////
+class TablePanel : public wxPanel
 {
-    private:
-        NumeReTerminal* m_terminal;
+    protected:
+        wxTextCtrl* m_commentField;
+        wxTextCtrl* m_sourceField;
         wxBoxSizer* vsizer;
         wxBoxSizer* hsizer;
+        wxStaticText* m_lastSaveText;
         bool finished;
 
     public:
         TableViewer* grid;
 
+        TablePanel(wxFrame* parent, wxWindowID id, wxStatusBar* statusbar, bool readOnly = true);
+        void update(const NumeRe::TableMetaData& meta);
+        std::string getComment() const;
+
+        void OnClose(wxCloseEvent& event);
+
+        DECLARE_EVENT_TABLE();
+};
+
+
+
+/////////////////////////////////////////////////
+/// \brief A table panel with editing
+/// functionalities. Creates APPLY and CANCEL
+/// buttons and provides their event handlers.
+/////////////////////////////////////////////////
+class TableEditPanel : public TablePanel
+{
+    private:
+        NumeReTerminal* m_terminal;
+
+    public:
         TableEditPanel(wxFrame* parent, wxWindowID id, wxStatusBar* statusbar);
 
         void SetTerminal(NumeReTerminal* term) {m_terminal = term;}
@@ -45,7 +73,6 @@ class TableEditPanel : public wxPanel
         void OnButtonOk(wxCommandEvent& event);
         void OnButtonCancel(wxCommandEvent& event);
         void OnClose(wxCloseEvent& event);
-        //void OnKeyDown(wxKeyEvent& event);
 
         DECLARE_EVENT_TABLE();
 };

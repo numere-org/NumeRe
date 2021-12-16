@@ -42,7 +42,7 @@ namespace NumeRe
     /////////////////////////////////////////////////
     Table::Table(int nLines, int nCols) : Table()
     {
-        setMinSize(nLines, nCols);
+        setSize(nLines, nCols);
     }
 
 
@@ -52,7 +52,7 @@ namespace NumeRe
     /// \param _table const Table&
     ///
     /////////////////////////////////////////////////
-    Table::Table(const Table& _table) : sTableName(_table.sTableName)
+    Table::Table(const Table& _table) : sTableName(_table.sTableName), m_meta(_table.m_meta)
     {
         vTableData.resize(_table.vTableData.size());
 
@@ -70,7 +70,7 @@ namespace NumeRe
     /// \param _table Table&&
     ///
     /////////////////////////////////////////////////
-    Table::Table(Table&& _table) : sTableName(_table.sTableName)
+    Table::Table(Table&& _table) : sTableName(_table.sTableName), m_meta(_table.m_meta)
     {
         // We move by using the std::swap() functions
         std::swap(vTableData, _table.vTableData);
@@ -98,6 +98,7 @@ namespace NumeRe
         // We move by using the std::swap() functions
         std::swap(vTableData, _table.vTableData);
         sTableName = _table.sTableName;
+        m_meta = _table.m_meta;
 
         return *this;
     }
@@ -162,6 +163,14 @@ namespace NumeRe
     void Table::setSize(size_t i, size_t j)
     {
         this->setMinSize(i, j);
+
+        for (auto& col : vTableData)
+        {
+            if (col)
+                col->resize(i);
+            else
+                col.reset(new ValueColumn(i));
+        }
     }
 
 
@@ -175,6 +184,33 @@ namespace NumeRe
     void Table::setName(const std::string& _sName)
     {
         sTableName = _sName;
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Setter function for the table meta
+    /// data.
+    ///
+    /// \param meta const TableMetaData&
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
+    void Table::setMetaData(const TableMetaData& meta)
+    {
+        m_meta = meta;
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Setter function for the table comment.
+    ///
+    /// \param _comment const std::string&
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
+    void Table::setComment(const std::string& _comment)
+    {
+        m_meta.comment = _comment;
     }
 
 
@@ -321,8 +357,7 @@ namespace NumeRe
 
 
     /////////////////////////////////////////////////
-    /// \brief Getter function for the table
-    /// headline.
+    /// \brief Getter function for the table name.
     ///
     /// \return string
     ///
@@ -330,6 +365,31 @@ namespace NumeRe
     std::string Table::getName() const
     {
         return sTableName;
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Getter function for the table meta
+    /// data.
+    ///
+    /// \return TableMetaData
+    ///
+    /////////////////////////////////////////////////
+    TableMetaData Table::getMetaData() const
+    {
+        return m_meta;
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Getter function for the table comment.
+    ///
+    /// \return std::string
+    ///
+    /////////////////////////////////////////////////
+    std::string Table::getComment() const
+    {
+        return m_meta.comment;
     }
 
 

@@ -469,7 +469,15 @@ class MemoryManager : public NumeRe::FileAdapter, public StringMemory, public Nu
 
 		int getColElements(const VectorIndex& cols, const std::string& _sTable) const;
 
+		std::string getComment(const std::string& _sTable) const
+		{
+		    return vMemory[findTable(_sTable)]->getComment();
+		}
 
+		NumeRe::TableMetaData getMetaData(const std::string& _sTable) const
+		{
+		    return vMemory[findTable(_sTable)]->getMetaData();
+		}
 
         // WRITE ACCESS METHODS
 		inline void writeToTable(int _nLine, int _nCol, const std::string& _sCache, mu::value_type _dData)
@@ -498,6 +506,16 @@ class MemoryManager : public NumeRe::FileAdapter, public StringMemory, public Nu
 		}
 
 		void overwriteColumn(int col, const std::string& _sCache, TableColumn::ColumnType type);
+
+		void writeComment(const std::string& _sTable, const std::string& _comment)
+		{
+		    vMemory[findTable(_sTable)]->writeComment(_comment);
+		}
+
+		void setMetaData(const std::string& _sTable, const NumeRe::TableMetaData& meta)
+		{
+		    vMemory[findTable(_sTable)]->setMetaData(meta);
+		}
 
 
 		// MAF METHODS

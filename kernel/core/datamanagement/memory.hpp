@@ -90,13 +90,13 @@ class Memory : public Sorter
 	    friend class NumeRe::FileAdapter;
 
 	    TableColumnArray memArray;
+		NumeRe::TableMetaData m_meta;
 
 		mutable int nCalcLines;
 
-		bool bIsSaved;
 		bool bSaveMutex;
 		bool bSortCaseInsensitive;
-		time_t nLastSaved;
+
 
 		bool Allocate(size_t _nNCols, bool shrink = false);
 		void createTableHeaders();
@@ -141,6 +141,8 @@ class Memory : public Sorter
 		std::vector<std::string> getHeadLineElement(const VectorIndex& _vCol) const;
 		size_t getAppendedZeroes(size_t _i) const;
 		size_t getHeadlineCount() const;
+		std::string getComment() const;
+		NumeRe::TableMetaData getMetaData() const;
 
 		// WRITE ACCESS METHODS
 		void writeSingletonData(Indices& _idx, const mu::value_type& _dData);
@@ -150,6 +152,8 @@ class Memory : public Sorter
 		void writeData(Indices& _idx, mu::value_type* _dData, unsigned int _nNum);
 		void writeData(Indices& _idx, const ValueVector& _values);
 		bool setHeadLineElement(size_t _i, const std::string& _sHead);
+		void writeComment(const std::string& comment);
+		void setMetaData(const NumeRe::TableMetaData& meta);
 
 		bool save(std::string _sFileName, const std::string& sTableName, unsigned short nPrecision);
         bool getSaveStatus() const;

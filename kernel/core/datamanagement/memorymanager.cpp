@@ -324,7 +324,7 @@ bool MemoryManager::saveToCacheFile()
         cacheFile.setDimensions(nLines, nCols);
         cacheFile.setData(&vMemory[iter->second.first]->memArray, nLines, nCols);
         cacheFile.setTableName(iter->first);
-        cacheFile.setComment("NO COMMENT");
+        cacheFile.setComment(vMemory[iter->second.first]->m_meta.comment);
 
         cacheFile.write();
     }
@@ -395,6 +395,9 @@ bool MemoryManager::loadFromNewCacheFile()
             cacheFile.getData(&vMemory.back()->memArray);
 
             vMemory.back()->shrink();
+
+            if (cacheFile.getComment() != "NO COMMENT")
+                vMemory.back()->m_meta.comment = cacheFile.getComment();
         }
 
         bSaveMutex = false;
@@ -871,6 +874,7 @@ void MemoryManager::melt(Memory* _mem, const string& sTable, bool overrideTarget
 
         _existingMem->setSaveStatus(false);
         _existingMem->nCalcLines = -1;
+        _existingMem->setMetaData(_existingMem->getMetaData().melt(_mem->getMetaData()));
 
         // Delete the passed instance (it is not
         // needed any more).

@@ -20,9 +20,64 @@
 #define TABLE_HPP
 
 #include "tablecolumn.hpp"
+#include <ctime>
 
 namespace NumeRe
 {
+    /////////////////////////////////////////////////
+    /// \brief Encapsulating structure to gather all
+    /// table meta data information.
+    /////////////////////////////////////////////////
+    struct TableMetaData
+    {
+        std::string comment;
+        std::string source;
+        __time64_t lastSavedTime;
+        bool isSaved;
+
+        void save()
+        {
+            lastSavedTime = _time64(0);
+            isSaved = true;
+        }
+
+        void modify()
+        {
+            if (!isSaved)
+                return;
+
+            lastSavedTime = _time64(0);
+            isSaved = false;
+        }
+
+        TableMetaData melt(const TableMetaData& meta)
+        {
+            TableMetaData melted(*this);
+
+            if (meta.comment.length())
+            {
+                if (melted.comment.length())
+                    melted.comment += "\n\n========\n\n" + meta.comment;
+                else
+                    melted.comment = meta.comment;
+            }
+
+            if (meta.source.length())
+            {
+                if (melted.source.length())
+                    melted.source += "; " + meta.source;
+                else
+                    melted.source = meta.source;
+            }
+
+            return melted;
+        }
+    };
+
+
+
+
+
     /////////////////////////////////////////////////
     /// \brief This data container is a copy-
     /// efficient table to interchange data between
@@ -33,6 +88,7 @@ namespace NumeRe
         private:
             TableColumnArray vTableData;
             std::string sTableName;
+            TableMetaData m_meta;
 
             void setMinSize(size_t i, size_t j);
             bool isNumerical(const std::string& sValue) const;
@@ -51,6 +107,8 @@ namespace NumeRe
             void setSize(size_t i, size_t j);
 
             void setName(const std::string& _sName);
+            void setComment(const std::string& _comment);
+            void setMetaData(const TableMetaData& meta);
             void setHead(size_t i, const std::string& _sHead);
             void setHeadPart(size_t i, size_t part, const std::string& _sHead);
             void setValue(size_t i, size_t j, const mu::value_type& _dValue);
@@ -58,6 +116,8 @@ namespace NumeRe
             void setColumn(size_t j, TableColumn* column);
 
             std::string getName() const;
+            std::string getComment() const;
+            TableMetaData getMetaData() const;
             int getHeadCount() const;
             std::string getHead(size_t i) const;
             std::string getCleanHead(size_t i) const;

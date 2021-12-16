@@ -83,8 +83,7 @@ Memory::Memory()
 {
     nCalcLines = -1;
     bSaveMutex = false;
-    bIsSaved = true;
-    nLastSaved = time(0);
+    m_meta.save();
 }
 
 
@@ -178,7 +177,7 @@ bool Memory::clear()
     memArray.clear();
 
     nCalcLines = -1;
-    bIsSaved = false;
+    m_meta.modify();
     bSaveMutex = false;
 
     return true;
@@ -294,7 +293,7 @@ size_t Memory::getSize() const
             bytes += col->getBytes();
     }
 
-    return bytes;
+    return bytes + m_meta.comment.length();
 }
 
 
@@ -784,7 +783,7 @@ bool Memory::convertColumns(const VectorIndex& _vCol, const std::string& _sType)
 /////////////////////////////////////////////////
 bool Memory::getSaveStatus() const
 {
-    return bIsSaved;
+    return m_meta.isSaved;
 }
 
 
@@ -853,14 +852,38 @@ bool Memory::setHeadLineElement(size_t _i, const std::string& _sHead)
         memArray[_i].reset(new DEFAULT_COL_TYPE);
 
     memArray[_i]->m_sHeadLine = _sHead;
-
-    if (bIsSaved)
-    {
-        nLastSaved = time(0);
-        bIsSaved = false;
-    }
+    m_meta.modify();
 
     return true;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Update the comment associated with
+/// this table.
+///
+/// \param comment const std::string&
+/// \return void
+///
+/////////////////////////////////////////////////
+void Memory::writeComment(const std::string& comment)
+{
+    m_meta.comment = comment;
+    m_meta.modify();
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Update the internal meta data with the
+/// passed one.
+///
+/// \param meta const NumeRe::TableMetaData&
+/// \return void
+///
+/////////////////////////////////////////////////
+void Memory::setMetaData(const NumeRe::TableMetaData& meta)
+{
+    m_meta = meta;
 }
 
 
@@ -919,6 +942,32 @@ size_t Memory::getHeadlineCount() const
 
 
 /////////////////////////////////////////////////
+/// \brief Return the comment associated with
+/// this table.
+///
+/// \return std::string
+///
+/////////////////////////////////////////////////
+std::string Memory::getComment() const
+{
+    return m_meta.comment;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Return the internal meta data
+/// structure.
+///
+/// \return NumeRe::TableMetaData
+///
+/////////////////////////////////////////////////
+NumeRe::TableMetaData Memory::getMetaData() const
+{
+    return m_meta;
+}
+
+
+/////////////////////////////////////////////////
 /// \brief This member function writes the passed
 /// value to the selected position. The table is
 /// automatically enlarged, if necessary.
@@ -944,11 +993,7 @@ void Memory::writeData(int _nLine, int _nCol, const mu::value_type& _dData)
         nCalcLines = -1;
 
     // --> Setze den Zeitstempel auf "jetzt", wenn der Memory eben noch gespeichert war <--
-    if (bIsSaved)
-    {
-        nLastSaved = time(0);
-        bIsSaved = false;
-    }
+    m_meta.modify();
 }
 
 
@@ -977,11 +1022,7 @@ void Memory::writeData(int _nLine, int _nCol, const std::string& sValue)
         nCalcLines = -1;
 
     // --> Setze den Zeitstempel auf "jetzt", wenn der Memory eben noch gespeichert war <--
-    if (bIsSaved)
-    {
-        nLastSaved = time(0);
-        bIsSaved = false;
-    }
+    m_meta.modify();
 }
 
 
@@ -1176,10 +1217,10 @@ void Memory::writeSingletonData(Indices& _idx, const std::string& _sValue)
 /////////////////////////////////////////////////
 void Memory::setSaveStatus(bool _bIsSaved)
 {
-    bIsSaved = _bIsSaved;
-
-    if (bIsSaved)
-        nLastSaved = time(0);
+    if (_bIsSaved)
+        m_meta.save();
+    else
+        m_meta.modify();
 }
 
 
@@ -1192,7 +1233,7 @@ void Memory::setSaveStatus(bool _bIsSaved)
 /////////////////////////////////////////////////
 long long int Memory::getLastSaved() const
 {
-    return nLastSaved;
+    return m_meta.lastSavedTime;
 }
 
 
@@ -1372,11 +1413,7 @@ vector<int> Memory::sortElements(int i1, int i2, int j1, int j2, const std::stri
             vIndex[i]++;
     }
 
-    if (bIsSaved)
-    {
-        bIsSaved = false;
-        nLastSaved = time(0);
-    }
+    m_meta.modify();
 
     if (bError || !bReturnIndex)
         return vector<int>();
@@ -1464,6 +1501,7 @@ NumeRe::Table Memory::extractTable(const string& _sTable, const VectorIndex& lin
     NumeRe::Table table(lines.size(), cols.size());
 
     table.setName(_sTable);
+    table.setMetaData(m_meta);
 
     #pragma omp parallel for
     for (size_t j = 0; j < cols.size(); j++)
@@ -1495,6 +1533,7 @@ void Memory::importTable(NumeRe::Table _table, const VectorIndex& lines, const V
     cols.setOpenEndIndex(cols.front() + _table.getCols()-1);
 
     resizeMemory(lines.max()+1, cols.max()+1);
+    m_meta = _table.getMetaData();
 
     #pragma omp parallel for
     for (size_t j = 0; j < _table.getCols(); j++)
@@ -1523,12 +1562,7 @@ void Memory::importTable(NumeRe::Table _table, const VectorIndex& lines, const V
 
     // Try to convert string- to valuecolumns
     convert();
-
-    if (bIsSaved)
-    {
-        bIsSaved = false;
-        nLastSaved = time(0);
-    }
+    m_meta.modify();
 }
 
 
@@ -1567,7 +1601,7 @@ bool Memory::save(string _sFileName, const string& sTableName, unsigned short nP
     // we can also set the comment associated with
     // this memory page
     if (file->getExtension() == "ndat")
-        static_cast<NumeRe::NumeReDataFile*>(file)->setComment("");
+        static_cast<NumeRe::NumeReDataFile*>(file)->setComment(m_meta.comment);
 
     // Try to write the data to the file. This might
     // either result in writing errors or the write
@@ -1607,12 +1641,7 @@ void Memory::deleteEntry(int _nLine, int _nCol)
         {
             // Delete the element
             memArray[_nCol]->deleteElements(VectorIndex(_nLine));
-
-            if (bIsSaved)
-            {
-                nLastSaved = time(0);
-                bIsSaved = false;
-            }
+            m_meta.modify();
 
             // Evaluate, whether we can remove
             // the column from memory
@@ -1652,11 +1681,7 @@ void Memory::deleteBulk(const VectorIndex& _vLine, const VectorIndex& _vCol)
             memArray[_vCol[j]]->deleteElements(_vLine);
     }
 
-    if (bIsSaved)
-    {
-        bIsSaved = false;
-        nLastSaved = time(0);
-    }
+    m_meta.modify();
 
     // Remove all invalid elements and columns
     if (bHasFirstLine)
@@ -2917,11 +2942,8 @@ bool Memory::retouch1D(const VectorIndex& _vLine, const VectorIndex& _vCol, AppD
         }
     }
 
-    if (markModified && bIsSaved)
-    {
-        bIsSaved = false;
-        nLastSaved = time(0);
-    }
+    if (markModified)
+        m_meta.modify();
 
     return true;
 }
@@ -2984,11 +3006,8 @@ bool Memory::retouch2D(const VectorIndex& _vLine, const VectorIndex& _vCol)
         }
     }
 
-    if (bMarkModified && bIsSaved)
-    {
-        bIsSaved = false;
-        nLastSaved = time(0);
-    }
+    if (bMarkModified)
+        m_meta.modify();
 
     return true;
 }
@@ -3371,12 +3390,7 @@ bool Memory::smooth(VectorIndex _vLine, VectorIndex _vCol, NumeRe::FilterSetting
         }
     }
 
-    if (bIsSaved)
-    {
-        bIsSaved = false;
-        nLastSaved = time(0);
-    }
-
+    m_meta.modify();
     return true;
 }
 
@@ -3617,12 +3631,7 @@ bool Memory::resample(VectorIndex _vLine, VectorIndex _vCol, std::pair<size_t,si
 
     // Reset the calculated lines and columns
     nCalcLines = -1;
-
-    if (bIsSaved)
-    {
-        bIsSaved = false;
-        nLastSaved = time(0);
-    }
+    m_meta.modify();
 
     return true;
 }

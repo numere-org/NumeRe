@@ -18,6 +18,7 @@
 
 #include "tableviewer.hpp"
 #include "gridtable.hpp"
+#include "tableeditpanel.hpp"
 #include "../../kernel/core/ui/language.hpp"
 #include "../../kernel/core/utils/tools.hpp"
 #include "../../kernel/core/datamanagement/tablecolumn.hpp"
@@ -49,13 +50,14 @@ END_EVENT_TABLE()
 /// \param parent wxWindow*
 /// \param id wxWindowID
 /// \param statusbar wxStatusBar*
+/// \param parentPanel TablePanel*
 /// \param pos const wxPoint&
 /// \param size const wxSize&
 /// \param style long
 /// \param name const wxString&
 ///
 /////////////////////////////////////////////////
-TableViewer::TableViewer(wxWindow* parent, wxWindowID id, wxStatusBar* statusbar, const wxPoint& pos, const wxSize& size, long style, const wxString& name)
+TableViewer::TableViewer(wxWindow* parent, wxWindowID id, wxStatusBar* statusbar, TablePanel* parentPanel, const wxPoint& pos, const wxSize& size, long style, const wxString& name)
             : wxGrid(parent, id, pos, size, style, name), nHeight(600), nWidth(800), nFirstNumRow(1), readOnly(true)
 {
     // Bind enter window events dynamically to the local event handler funtion
@@ -78,6 +80,8 @@ TableViewer::TableViewer(wxWindow* parent, wxWindowID id, wxStatusBar* statusbar
 
     // prepare the status bar
     m_statusBar = statusbar;
+    m_parentPanel = parentPanel;
+
     isGridNumeReTable = false;
 
     if (m_statusBar)
@@ -1477,6 +1481,9 @@ void TableViewer::SetData(NumeRe::Container<string>& _stringTable)
 /////////////////////////////////////////////////
 void TableViewer::SetData(NumeRe::Table& _table)
 {
+    if (m_parentPanel)
+        m_parentPanel->update(_table.getMetaData());
+
     // Create an empty table, if necessary
     if (_table.isEmpty() || !_table.getLines())
     {
@@ -1845,7 +1852,12 @@ wxString TableViewer::getSelectedValues()
 /////////////////////////////////////////////////
 NumeRe::Table TableViewer::GetData()
 {
-    return static_cast<GridNumeReTable*>(GetTable())->getTable();
+    NumeRe::Table table = static_cast<GridNumeReTable*>(GetTable())->getTable();
+
+    if (!readOnly && m_parentPanel)
+        table.setComment(m_parentPanel->getComment());
+
+    return table;
 }
 
 
@@ -1858,6 +1870,11 @@ NumeRe::Table TableViewer::GetData()
 /////////////////////////////////////////////////
 NumeRe::Table TableViewer::GetDataCopy()
 {
-    return static_cast<GridNumeReTable*>(GetTable())->getTableCopy();
+    NumeRe::Table tableCopy = static_cast<GridNumeReTable*>(GetTable())->getTableCopy();
+
+    if (!readOnly && m_parentPanel)
+        tableCopy.setComment(m_parentPanel->getComment());
+
+    return tableCopy;
 }
 
