@@ -140,6 +140,7 @@ class SyntaxError
             INVALID_WINDOW_ITEM_ID,
             INVALID_SYM_NAME,
             INVALID_FLOWCTRL_STATEMENT,
+            INVALID_STATS_WINDOW_SIZE,
             /// INSERT HERE
             LGS_HAS_NO_SOLUTION=2100,
             LGS_HAS_NO_UNIQUE_SOLUTION,

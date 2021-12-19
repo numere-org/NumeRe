@@ -31,6 +31,7 @@
 #include "../ui/error.hpp"
 #include "../../kernel.hpp"
 #include "functionimplementation.hpp"
+#include "statslogic.hpp"
 
 
 /////////////////////////////////////////////////
@@ -816,6 +817,74 @@ static Matrix logToIndex(const MatFuncData& funcData, const MatFuncErrorInfo& er
 
 
 /////////////////////////////////////////////////
+/// \brief Driver code to calculate some
+/// statistics from a matrix while being able to
+/// use moving windows. The calculation is
+/// switched to parallel mode, once the moving
+/// window is large enough.
+///
+/// \param mat const Matrix&
+/// \param logic StatsLogic
+/// \param rowStart int
+/// \param rowCount size_t
+/// \param colStart int
+/// \param colCount size_t
+/// \return mu::value_type
+///
+/////////////////////////////////////////////////
+static mu::value_type calculateStats(const Matrix& mat, StatsLogic logic, int rowStart, size_t rowCount, int colStart, size_t colCount)
+{
+    constexpr size_t MINTHREADCOUNT = 100;
+    constexpr size_t MINELEMENTPERCOL = 100;
+
+    std::vector<StatsLogic> operation(rowCount, logic);
+
+    // Only apply multiprocessing, if there are really a lot of
+    // elements to process
+    if (rowCount >= MINTHREADCOUNT && colCount >= MINELEMENTPERCOL)
+    {
+        #pragma omp parallel for
+        for (size_t i = 0; i < rowCount; i++)
+        {
+            if (rowStart + (int)i < 0 || rowStart + i >= mat.size())
+                continue;
+
+            for (size_t j = 0; j < colCount; j++)
+            {
+                if (colStart + (int)j < 0 || colStart + j >= mat[0].size())
+                    continue;
+
+                operation[i](mat[i+rowStart][j+colStart]);
+            }
+        }
+    }
+    else
+    {
+        for (size_t i = 0; i < rowCount; i++)
+        {
+            if (rowStart + (int)i < 0 || rowStart + i >= mat.size())
+                continue;
+
+            for (size_t j = 0; j < colCount; j++)
+            {
+                if (colStart + (int)j < 0 || colStart + j >= mat[0].size())
+                    continue;
+
+                operation[i](mat[i+rowStart][j+colStart]);
+            }
+        }
+    }
+
+    for (size_t i = 1; i < operation.size(); i++)
+    {
+        operation.front().combine(operation[i]);
+    }
+
+    return operation.front().m_val;
+}
+
+
+/////////////////////////////////////////////////
 /// \brief This static function applies the
 /// \c max() function on the matrix elements.
 ///
@@ -829,28 +898,42 @@ static Matrix matrixMax(const MatFuncData& funcData, const MatFuncErrorInfo& err
     if (!funcData.mat1.size() || !funcData.mat1[0].size())
         throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, errorInfo.command, errorInfo.position);
 
-    Matrix _mReturn = createFilledMatrix(1, 1, 0.0);
-    std::vector<double> vTemp(funcData.mat1.size(), 0.0);
+    return createFilledMatrix(1, 1, calculateStats(funcData.mat1, StatsLogic(StatsLogic::OPERATION_MAX, funcData.mat1[0][0].real()),
+                                                   0, funcData.mat1.size(), 0, funcData.mat1[0].size()));
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Moving window version of the \c max()
+/// function.
+///
+/// \param funcData const MatFuncData&
+/// \param errorInfo const MatFuncErrorInfo&
+/// \return Matrix
+///
+/////////////////////////////////////////////////
+static Matrix matrixMovMax(const MatFuncData& funcData, const MatFuncErrorInfo& errorInfo)
+{
+    if (!funcData.mat1.size() || !funcData.mat1[0].size())
+        throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, errorInfo.command, errorInfo.position);
+
+    if (funcData.nVal < 0 || funcData.mVal < 0 || funcData.nVal >= funcData.mat1.size() / 4 || funcData.mVal >= funcData.mat1[0].size() / 4)
+        throw SyntaxError(SyntaxError::INVALID_STATS_WINDOW_SIZE, errorInfo.command, errorInfo.position);
+
+    Matrix _mResult = createFilledMatrix(funcData.mat1.size(), funcData.mat1[0].size(), NAN);
 
     #pragma omp parallel for
-    for (size_t i = 0; i < funcData.mat1.size(); i++)
+    for (int i = 0; i < (int)_mResult.size(); i++)
     {
-        for (size_t j = 0; j < funcData.mat1[0].size(); j++)
+        for (int j = 0; j < (int)_mResult[0].size(); j++)
         {
-            if (!j)
-                vTemp[i] = funcData.mat1[i][j].real();
-            else if (funcData.mat1[i][j].real() > vTemp[i] || std::isnan(vTemp[i]))
-                vTemp[i] = funcData.mat1[i][j].real();
+            if (!isnan(funcData.mat1[i][j]))
+                _mResult[i][j] = calculateStats(funcData.mat1, StatsLogic(StatsLogic::OPERATION_MAX, funcData.mat1[i][j].real()),
+                                                i-funcData.nVal, 2*funcData.nVal+1, j-funcData.mVal, 2*funcData.mVal+1);
         }
     }
 
-    for (size_t i = 0; i < vTemp.size(); i++)
-    {
-        if (!i || mu::isnan(_mReturn[0][0]) || _mReturn[0][0].real() < vTemp[i])
-            _mReturn[0][0] = vTemp[i];
-    }
-
-    return _mReturn;
+    return _mResult;
 }
 
 
@@ -1071,23 +1154,42 @@ static Matrix matrixSum(const MatFuncData& funcData, const MatFuncErrorInfo& err
     if (!funcData.mat1.size() || !funcData.mat1[0].size())
         throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, errorInfo.command, errorInfo.position);
 
-    Matrix _mReturn = createFilledMatrix(1, 1, 0.0);
-    std::vector<mu::value_type> vTemp(funcData.mat1.size(), 0.0);
+    return createFilledMatrix(1, 1, calculateStats(funcData.mat1, StatsLogic(StatsLogic::OPERATION_ADD),
+                                                   0, funcData.mat1.size(), 0, funcData.mat1[0].size()));
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Moving window version of the \c sum()
+/// function.
+///
+/// \param funcData const MatFuncData&
+/// \param errorInfo const MatFuncErrorInfo&
+/// \return Matrix
+///
+/////////////////////////////////////////////////
+static Matrix matrixMovSum(const MatFuncData& funcData, const MatFuncErrorInfo& errorInfo)
+{
+    if (!funcData.mat1.size() || !funcData.mat1[0].size())
+        throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, errorInfo.command, errorInfo.position);
+
+    if (funcData.nVal < 0 || funcData.mVal < 0 || funcData.nVal >= funcData.mat1.size() / 4 || funcData.mVal >= funcData.mat1[0].size() / 4)
+        throw SyntaxError(SyntaxError::INVALID_STATS_WINDOW_SIZE, errorInfo.command, errorInfo.position);
+
+    Matrix _mResult = createFilledMatrix(funcData.mat1.size(), funcData.mat1[0].size(), NAN);
 
     #pragma omp parallel for
-    for (size_t i = 0; i < funcData.mat1.size(); i++)
+    for (int i = 0; i < (int)_mResult.size(); i++)
     {
-        for (size_t j = 0; j < funcData.mat1[0].size(); j++)
+        for (int j = 0; j < (int)_mResult[0].size(); j++)
         {
             if (!isnan(funcData.mat1[i][j]))
-                vTemp[i] += funcData.mat1[i][j];
+                _mResult[i][j] = calculateStats(funcData.mat1, StatsLogic(StatsLogic::OPERATION_ADD),
+                                                i-funcData.nVal, 2*funcData.nVal+1, j-funcData.mVal, 2*funcData.mVal+1);
         }
     }
 
-    for (const auto& val : vTemp)
-        _mReturn[0][0] += val;
-
-    return _mReturn;
+    return _mResult;
 }
 
 
@@ -1105,23 +1207,42 @@ static Matrix matrixNum(const MatFuncData& funcData, const MatFuncErrorInfo& err
     if (!funcData.mat1.size() || !funcData.mat1[0].size())
         throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, errorInfo.command, errorInfo.position);
 
-    Matrix _mReturn = createFilledMatrix(1, 1, 0.0);
-    std::vector<mu::value_type> vTemp(funcData.mat1.size(), 0.0);
+    return createFilledMatrix(1, 1, calculateStats(funcData.mat1, StatsLogic(StatsLogic::OPERATION_NUM),
+                                                   0, funcData.mat1.size(), 0, funcData.mat1[0].size()));
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Moving window version of the \c num()
+/// function.
+///
+/// \param funcData const MatFuncData&
+/// \param errorInfo const MatFuncErrorInfo&
+/// \return Matrix
+///
+/////////////////////////////////////////////////
+static Matrix matrixMovNum(const MatFuncData& funcData, const MatFuncErrorInfo& errorInfo)
+{
+    if (!funcData.mat1.size() || !funcData.mat1[0].size())
+        throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, errorInfo.command, errorInfo.position);
+
+    if (funcData.nVal < 0 || funcData.mVal < 0 || funcData.nVal >= funcData.mat1.size() / 4 || funcData.mVal >= funcData.mat1[0].size() / 4)
+        throw SyntaxError(SyntaxError::INVALID_STATS_WINDOW_SIZE, errorInfo.command, errorInfo.position);
+
+    Matrix _mResult = createFilledMatrix(funcData.mat1.size(), funcData.mat1[0].size(), NAN);
 
     #pragma omp parallel for
-    for (size_t i = 0; i < funcData.mat1.size(); i++)
+    for (int i = 0; i < (int)_mResult.size(); i++)
     {
-        for (size_t j = 0; j < funcData.mat1[0].size(); j++)
+        for (int j = 0; j < (int)_mResult[0].size(); j++)
         {
             if (!isnan(funcData.mat1[i][j]))
-                vTemp[i] += 1;
+                _mResult[i][j] = calculateStats(funcData.mat1, StatsLogic(StatsLogic::OPERATION_NUM),
+                                                i-funcData.nVal, 2*funcData.nVal+1, j-funcData.mVal, 2*funcData.mVal+1);
         }
     }
 
-    for (const auto& val : vTemp)
-        _mReturn[0][0] += val;
-
-    return _mReturn;
+    return _mResult;
 }
 
 
@@ -1147,6 +1268,48 @@ static Matrix matrixAvg(const MatFuncData& funcData, const MatFuncErrorInfo& err
 
 
 /////////////////////////////////////////////////
+/// \brief Moving window version of the \c avg()
+/// function.
+///
+/// \param funcData const MatFuncData&
+/// \param errorInfo const MatFuncErrorInfo&
+/// \return Matrix
+///
+/////////////////////////////////////////////////
+static Matrix matrixMovAvg(const MatFuncData& funcData, const MatFuncErrorInfo& errorInfo)
+{
+    if (!funcData.mat1.size() || !funcData.mat1[0].size())
+        throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, errorInfo.command, errorInfo.position);
+
+    if (funcData.nVal < 0 || funcData.mVal < 0 || funcData.nVal >= funcData.mat1.size() / 4 || funcData.mVal >= funcData.mat1[0].size() / 4)
+        throw SyntaxError(SyntaxError::INVALID_STATS_WINDOW_SIZE, errorInfo.command, errorInfo.position);
+
+    Matrix _mResult = createFilledMatrix(funcData.mat1.size(), funcData.mat1[0].size(), NAN);
+
+    #pragma omp parallel for
+    for (int i = 0; i < (int)_mResult.size(); i++)
+    {
+        for (int j = 0; j < (int)_mResult[0].size(); j++)
+        {
+            if (!isnan(funcData.mat1[i][j]))
+            {
+                mu::value_type sum = calculateStats(funcData.mat1, StatsLogic(StatsLogic::OPERATION_ADD),
+                                                    i-funcData.nVal, 2*funcData.nVal+1, j-funcData.mVal, 2*funcData.mVal+1);
+
+                double num = calculateStats(funcData.mat1, StatsLogic(StatsLogic::OPERATION_NUM),
+                                            i-funcData.nVal, 2*funcData.nVal+1, j-funcData.mVal, 2*funcData.mVal+1).real();
+
+                if (num > 0)
+                    _mResult[i][j] = sum / num;
+            }
+        }
+    }
+
+    return _mResult;
+}
+
+
+/////////////////////////////////////////////////
 /// \brief This static function applies the
 /// \c std() function on the matrix elements.
 ///
@@ -1160,27 +1323,58 @@ static Matrix matrixStd(const MatFuncData& funcData, const MatFuncErrorInfo& err
     if (!funcData.mat1.size() || !funcData.mat1[0].size())
         throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, errorInfo.command, errorInfo.position);
 
-    Matrix _mReturn = createFilledMatrix(1, 1, 0.0);
     Matrix _mAvg = matrixAvg(funcData, errorInfo);
     Matrix _mNum = matrixNum(funcData, errorInfo);
-
-    std::vector<mu::value_type> vTemp(funcData.mat1.size(), 0.0);
-
-    #pragma omp parallel for
-    for (size_t i = 0; i < funcData.mat1.size(); i++)
-    {
-        for (size_t j = 0; j < funcData.mat1[0].size(); j++)
-        {
-            if (!isnan(funcData.mat1[i][j]))
-                vTemp[i] += (funcData.mat1[i][j] - _mAvg[0][0])*conj(funcData.mat1[i][j] - _mAvg[0][0]);
-        }
-    }
-
-    for (const auto& val : vTemp)
-        _mReturn[0][0] += val;
+    Matrix _mReturn = createFilledMatrix(1, 1, calculateStats(funcData.mat1, StatsLogic(StatsLogic::OPERATION_ADDSQSUB, 0.0, _mAvg[0][0]),
+                                                              0, funcData.mat1.size(), 0, funcData.mat1[0].size()));
 
     _mReturn[0][0] = sqrt(_mReturn[0][0])/(_mNum[0][0].real()-1.0);
     return _mReturn;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Moving window version of the \c std()
+/// function.
+///
+/// \param funcData const MatFuncData&
+/// \param errorInfo const MatFuncErrorInfo&
+/// \return Matrix
+///
+/////////////////////////////////////////////////
+static Matrix matrixMovStd(const MatFuncData& funcData, const MatFuncErrorInfo& errorInfo)
+{
+    if (!funcData.mat1.size() || !funcData.mat1[0].size())
+        throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, errorInfo.command, errorInfo.position);
+
+    if (funcData.nVal < 0 || funcData.mVal < 0 || funcData.nVal >= funcData.mat1.size() / 4 || funcData.mVal >= funcData.mat1[0].size() / 4)
+        throw SyntaxError(SyntaxError::INVALID_STATS_WINDOW_SIZE, errorInfo.command, errorInfo.position);
+
+    Matrix _mResult = createFilledMatrix(funcData.mat1.size(), funcData.mat1[0].size(), NAN);
+
+    #pragma omp parallel for
+    for (int i = 0; i < (int)_mResult.size(); i++)
+    {
+        for (int j = 0; j < (int)_mResult[0].size(); j++)
+        {
+            if (!isnan(funcData.mat1[i][j]))
+            {
+                mu::value_type sum = calculateStats(funcData.mat1, StatsLogic(StatsLogic::OPERATION_ADD),
+                                                    i-funcData.nVal, 2*funcData.nVal+1, j-funcData.mVal, 2*funcData.mVal+1);
+
+                double num = calculateStats(funcData.mat1, StatsLogic(StatsLogic::OPERATION_NUM),
+                                            i-funcData.nVal, 2*funcData.nVal+1, j-funcData.mVal, 2*funcData.mVal+1).real();
+
+                mu::value_type std = calculateStats(funcData.mat1, StatsLogic(StatsLogic::OPERATION_ADDSQSUB, 0.0, sum/num),
+                                                    i-funcData.nVal, 2*funcData.nVal+1, j-funcData.mVal, 2*funcData.mVal+1);
+
+                if (num > 1)
+                    _mResult[i][j] = sqrt(std) / (num - 1.0);
+            }
+        }
+    }
+
+    return _mResult;
 }
 
 
@@ -1198,24 +1392,42 @@ static Matrix matrixPrd(const MatFuncData& funcData, const MatFuncErrorInfo& err
     if (!funcData.mat1.size() || !funcData.mat1[0].size())
         throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, errorInfo.command, errorInfo.position);
 
-    Matrix _mReturn = createFilledMatrix(1, 1, 1.0);
+    return createFilledMatrix(1, 1, calculateStats(funcData.mat1, StatsLogic(StatsLogic::OPERATION_MULT, 1.0),
+                                                   0, funcData.mat1.size(), 0, funcData.mat1[0].size()));
+}
 
-    std::vector<mu::value_type> vTemp(funcData.mat1.size(), 1.0);
+
+/////////////////////////////////////////////////
+/// \brief Moving window version of the \c prd()
+/// function.
+///
+/// \param funcData const MatFuncData&
+/// \param errorInfo const MatFuncErrorInfo&
+/// \return Matrix
+///
+/////////////////////////////////////////////////
+static Matrix matrixMovPrd(const MatFuncData& funcData, const MatFuncErrorInfo& errorInfo)
+{
+    if (!funcData.mat1.size() || !funcData.mat1[0].size())
+        throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, errorInfo.command, errorInfo.position);
+
+    if (funcData.nVal < 0 || funcData.mVal < 0 || funcData.nVal >= funcData.mat1.size() / 4 || funcData.mVal >= funcData.mat1[0].size() / 4)
+        throw SyntaxError(SyntaxError::INVALID_STATS_WINDOW_SIZE, errorInfo.command, errorInfo.position);
+
+    Matrix _mResult = createFilledMatrix(funcData.mat1.size(), funcData.mat1[0].size(), NAN);
 
     #pragma omp parallel for
-    for (size_t i = 0; i < funcData.mat1.size(); i++)
+    for (int i = 0; i < (int)_mResult.size(); i++)
     {
-        for (size_t j = 0; j < funcData.mat1[0].size(); j++)
+        for (int j = 0; j < (int)_mResult[0].size(); j++)
         {
             if (!isnan(funcData.mat1[i][j]))
-                vTemp[i] *= funcData.mat1[i][j];
+                _mResult[i][j] = calculateStats(funcData.mat1, StatsLogic(StatsLogic::OPERATION_MULT, 1.0),
+                                                i-funcData.nVal, 2*funcData.nVal+1, j-funcData.mVal, 2*funcData.mVal+1);
         }
     }
 
-    for (const auto& val : vTemp)
-        _mReturn[0][0] *= val;
-
-    return _mReturn;
+    return _mResult;
 }
 
 
@@ -1251,25 +1463,45 @@ static Matrix matrixNorm(const MatFuncData& funcData, const MatFuncErrorInfo& er
     if (!funcData.mat1.size() || !funcData.mat1[0].size())
         throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, errorInfo.command, errorInfo.position);
 
-    Matrix _mReturn = createFilledMatrix(1, 1, 0.0);
-
-    std::vector<mu::value_type> vTemp(funcData.mat1.size(), 0.0);
-
-    #pragma omp parallel for
-    for (size_t i = 0; i < funcData.mat1.size(); i++)
-    {
-        for (size_t j = 0; j < funcData.mat1[0].size(); j++)
-        {
-            if (!isnan(funcData.mat1[i][j]))
-                vTemp[i] += funcData.mat1[i][j]*conj(funcData.mat1[i][j]);
-        }
-    }
-
-    for (const auto& val : vTemp)
-        _mReturn[0][0] += val;
+    Matrix _mReturn = createFilledMatrix(1, 1, calculateStats(funcData.mat1, StatsLogic(StatsLogic::OPERATION_ADDSQ),
+                                                              0, funcData.mat1.size(), 0, funcData.mat1[0].size()));
 
     _mReturn[0][0] = sqrt(_mReturn[0][0]);
     return _mReturn;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Moving window version of the \c norm()
+/// function.
+///
+/// \param funcData const MatFuncData&
+/// \param errorInfo const MatFuncErrorInfo&
+/// \return Matrix
+///
+/////////////////////////////////////////////////
+static Matrix matrixMovNorm(const MatFuncData& funcData, const MatFuncErrorInfo& errorInfo)
+{
+    if (!funcData.mat1.size() || !funcData.mat1[0].size())
+        throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, errorInfo.command, errorInfo.position);
+
+    if (funcData.nVal < 0 || funcData.mVal < 0 || funcData.nVal >= funcData.mat1.size() / 4 || funcData.mVal >= funcData.mat1[0].size() / 4)
+        throw SyntaxError(SyntaxError::INVALID_STATS_WINDOW_SIZE, errorInfo.command, errorInfo.position);
+
+    Matrix _mResult = createFilledMatrix(funcData.mat1.size(), funcData.mat1[0].size(), NAN);
+
+    #pragma omp parallel for
+    for (int i = 0; i < (int)_mResult.size(); i++)
+    {
+        for (int j = 0; j < (int)_mResult[0].size(); j++)
+        {
+            if (!isnan(funcData.mat1[i][j]))
+                _mResult[i][j] = sqrt(calculateStats(funcData.mat1, StatsLogic(StatsLogic::OPERATION_ADDSQ),
+                                                     i-funcData.nVal, 2*funcData.nVal+1, j-funcData.mVal, 2*funcData.mVal+1));
+        }
+    }
+
+    return _mResult;
 }
 
 
@@ -1287,29 +1519,42 @@ static Matrix matrixMin(const MatFuncData& funcData, const MatFuncErrorInfo& err
     if (!funcData.mat1.size() || !funcData.mat1[0].size())
         throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, errorInfo.command, errorInfo.position);
 
-    Matrix _mReturn = createFilledMatrix(1, 1, 0.0);
+    return createFilledMatrix(1, 1, calculateStats(funcData.mat1, StatsLogic(StatsLogic::OPERATION_MIN, funcData.mat1[0][0].real()),
+                                                   0, funcData.mat1.size(), 0, funcData.mat1[0].size()));
+}
 
-    std::vector<double> vTemp(funcData.mat1.size(), 0.0);
+
+/////////////////////////////////////////////////
+/// \brief Moving window version of the \c min()
+/// function.
+///
+/// \param funcData const MatFuncData&
+/// \param errorInfo const MatFuncErrorInfo&
+/// \return Matrix
+///
+/////////////////////////////////////////////////
+static Matrix matrixMovMin(const MatFuncData& funcData, const MatFuncErrorInfo& errorInfo)
+{
+    if (!funcData.mat1.size() || !funcData.mat1[0].size())
+        throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, errorInfo.command, errorInfo.position);
+
+    if (funcData.nVal < 0 || funcData.mVal < 0 || funcData.nVal >= funcData.mat1.size() / 4 || funcData.mVal >= funcData.mat1[0].size() / 4)
+        throw SyntaxError(SyntaxError::INVALID_STATS_WINDOW_SIZE, errorInfo.command, errorInfo.position);
+
+    Matrix _mResult = createFilledMatrix(funcData.mat1.size(), funcData.mat1[0].size(), NAN);
 
     #pragma omp parallel for
-    for (size_t i = 0; i < funcData.mat1.size(); i++)
+    for (int i = 0; i < (int)_mResult.size(); i++)
     {
-        for (size_t j = 0; j < funcData.mat1[0].size(); j++)
+        for (int j = 0; j < (int)_mResult[0].size(); j++)
         {
-            if (!j)
-                vTemp[i] = funcData.mat1[i][j].real();
-            else if (funcData.mat1[i][j].real() < vTemp[i] || std::isnan(vTemp[i]))
-                vTemp[i] = funcData.mat1[i][j].real();
+            if (!isnan(funcData.mat1[i][j]))
+                _mResult[i][j] = calculateStats(funcData.mat1, StatsLogic(StatsLogic::OPERATION_MIN, funcData.mat1[i][j].real()),
+                                                i-funcData.nVal, 2*funcData.nVal+1, j-funcData.mVal, 2*funcData.mVal+1);
         }
     }
 
-    for (size_t i = 0; i < vTemp.size(); i++)
-    {
-        if (!i || mu::isnan(_mReturn[0][0]) || _mReturn[0][0].real() > vTemp[i])
-            _mReturn[0][0] = vTemp[i];
-    }
-
-    return _mReturn;
+    return _mResult;
 }
 
 
@@ -1454,6 +1699,57 @@ static Matrix matrixMed(const MatFuncData& funcData, const MatFuncErrorInfo& err
     }
 
     return createFilledMatrix(1, 1, _mem.med(VectorIndex(0, funcData.mat1.size()*funcData.mat1[0].size()-1), VectorIndex(0)));
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Moving window version of the \c med()
+/// function.
+///
+/// \param funcData const MatFuncData&
+/// \param errorInfo const MatFuncErrorInfo&
+/// \return Matrix
+///
+/////////////////////////////////////////////////
+static Matrix matrixMovMed(const MatFuncData& funcData, const MatFuncErrorInfo& errorInfo)
+{
+    if (!funcData.mat1.size() || !funcData.mat1[0].size())
+        throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, errorInfo.command, errorInfo.position);
+
+    if (funcData.nVal < 0 || funcData.mVal < 0 || funcData.nVal >= funcData.mat1.size() / 4 || funcData.mVal >= funcData.mat1[0].size() / 4)
+        throw SyntaxError(SyntaxError::INVALID_STATS_WINDOW_SIZE, errorInfo.command, errorInfo.position);
+
+    Matrix _mResult = createFilledMatrix(funcData.mat1.size(), funcData.mat1[0].size(), NAN);
+
+    #pragma omp parallel for
+    for (int i = 0; i < (int)_mResult.size(); i++)
+    {
+        for (int j = 0; j < (int)_mResult[0].size(); j++)
+        {
+            if (!isnan(funcData.mat1[i][j]))
+            {
+                Memory _mem;
+
+                for (int n = 0; n < 2*funcData.nVal+1; n++)
+                {
+                    if (i+n-funcData.nVal < 0 || i+n-funcData.nVal >= (int)funcData.mat1.size())
+                        continue;
+
+                    for (int m = 0; m < 2*funcData.mVal+1; m++)
+                    {
+                        if (j+m-funcData.mVal < 0 || j+m-funcData.mVal >= (int)funcData.mat1[0].size())
+                            continue;
+
+                        _mem.writeData(m + n*(2*funcData.mVal+1), 0, funcData.mat1[i+n-funcData.nVal][j+m-funcData.mVal]);
+                    }
+                }
+
+                _mResult[i][j] = _mem.med(VectorIndex(0, (2*funcData.nVal+1)*(2*funcData.mVal+1)), VectorIndex(0));
+            }
+        }
+    }
+
+    return _mResult;
 }
 
 
@@ -2732,6 +3028,15 @@ static std::map<std::string,MatFuncDef> getMatrixFunctions()
     mFunctions["med"] = MatFuncDef(MATSIG_MAT, matrixMed, false);
     mFunctions["pct"] = MatFuncDef(MATSIG_MAT_F, matrixPct, false);
     mFunctions["cmp"] = MatFuncDef(MATSIG_MAT_F_N, matrixCmp, false);
+    mFunctions["movsum"] = MatFuncDef(MATSIG_MAT_N_MOPT, matrixMovSum);
+    mFunctions["movstd"] = MatFuncDef(MATSIG_MAT_N_MOPT, matrixMovStd);
+    mFunctions["movavg"] = MatFuncDef(MATSIG_MAT_N_MOPT, matrixMovAvg);
+    mFunctions["movprd"] = MatFuncDef(MATSIG_MAT_N_MOPT, matrixMovPrd);
+    mFunctions["movmed"] = MatFuncDef(MATSIG_MAT_N_MOPT, matrixMovMed);
+    mFunctions["movmin"] = MatFuncDef(MATSIG_MAT_N_MOPT, matrixMovMin);
+    mFunctions["movmax"] = MatFuncDef(MATSIG_MAT_N_MOPT, matrixMovMax);
+    mFunctions["movnorm"] = MatFuncDef(MATSIG_MAT_N_MOPT, matrixMovNorm);
+    mFunctions["movnum"] = MatFuncDef(MATSIG_MAT_N_MOPT, matrixMovNum);
     mFunctions["zero"] = MatFuncDef(MATSIG_N_MOPT, createZeroesMatrix);
     mFunctions["one"] = MatFuncDef(MATSIG_N_MOPT, createOnesMatrix);
     mFunctions["identity"] = MatFuncDef(MATSIG_N_MOPT, identityMatrix);

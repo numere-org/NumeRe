@@ -415,6 +415,8 @@ namespace NumeRe
         vector<string> vKeyWords;
         string sTemp = _sSearchString;
         map<double,vector<size_t>> mRelevance;
+#warning TODO (numere#3#12/19/21): This should be moved to a language file
+        static const std::string sIGNOREWORDS = " of this the a an their der die das ein des dies eine einer eines einen den ";
 
         if (sTemp.back() != ' ')
             sTemp += " ";
@@ -422,8 +424,14 @@ namespace NumeRe
         // Create a keyword list to search independently
         do
         {
-            vKeyWords.push_back(sTemp.substr(0, sTemp.find(" ")));
+            std::string sKeyWord = sTemp.substr(0, sTemp.find(" "));
             sTemp.erase(0, sTemp.find(" ")+1);
+
+            // Do not use ingore words unless it's the only
+            // search term
+            if (sIGNOREWORDS.find(" " + sKeyWord + " ") == std::string::npos
+                || (!vKeyWords.size() && !sTemp.length()))
+                vKeyWords.push_back(sKeyWord);
         }
         while (sTemp.length());
 

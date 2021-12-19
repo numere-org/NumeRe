@@ -486,6 +486,7 @@
 		<Unit filename="kernel/core/maths/resampler.cpp" />
 		<Unit filename="kernel/core/maths/resampler.h" />
 		<Unit filename="kernel/core/maths/spline.h" />
+		<Unit filename="kernel/core/maths/statslogic.hpp" />
 		<Unit filename="kernel/core/maths/student_t.cpp" />
 		<Unit filename="kernel/core/maths/student_t.hpp" />
 		<Unit filename="kernel/core/maths/wavelet.cpp" />

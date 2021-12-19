@@ -354,6 +354,21 @@ static Matrix evalMatOp(string& sCmd, Parser& _parser, MemoryManager& _data, Fun
                             vReturnedMatrices.push_back(fIter->second.func(MatFuncData(evalMatOp(sMatrix, _parser, _data, _functions, _option), fVal, n), errorInfo));
                             break;
                         }
+                        case MATSIG_MAT_N_MOPT:
+                        {
+                            std::string sMatrix = getNextArgument(sSubExpr, true);
+
+                            _parser.SetExpr(sSubExpr);
+                            v = _parser.Eval(nResults);
+                            int n = intCast(v[0]);
+                            int m = intCast(v[0]);
+
+                            if (nResults > 1)
+                                m = intCast(v[1]);
+
+                            vReturnedMatrices.push_back(fIter->second.func(MatFuncData(evalMatOp(sMatrix, _parser, _data, _functions, _option), n, m), errorInfo));
+                            break;
+                        }
                         case MATSIG_N_MOPT:
                         {
                             _parser.SetExpr(sSubExpr);

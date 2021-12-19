@@ -29,47 +29,11 @@
 #include "../utils/tools.hpp"
 #include "../version.h"
 #include "../maths/resampler.h"
+#include "../maths/statslogic.hpp"
 
 #define MAX_TABLE_SIZE 1e8
 #define MAX_TABLE_COLS 1e4
 #define DEFAULT_COL_TYPE ValueColumn
-
-
-/////////////////////////////////////////////////
-/// \brief Implements the statistics logic.
-///
-/// \param newVal const mu::value_type&
-/// \return void
-///
-/////////////////////////////////////////////////
-void StatsLogic::operator()(const mu::value_type& newVal)
-{
-    if (mu::isnan(newVal))
-        return;
-
-    switch (m_type)
-    {
-        case OPERATION_ADD:
-            m_val += newVal;
-            return;
-        case OPERATION_MULT:
-            m_val *= newVal;
-            return;
-        case OPERATION_ADDSQ:
-            m_val += newVal * conj(newVal);
-            return;
-        case OPERATION_ADDSQSUB:
-            m_val += intPower(newVal - m_compval, 2);
-            return;
-        case OPERATION_MAX:
-            m_val = newVal.real() > m_val.real() || isnan(m_val.real()) ? newVal.real() : m_val.real();
-            return;
-        case OPERATION_MIN:
-            m_val = newVal.real() < m_val.real() || isnan(m_val.real()) ? newVal.real() : m_val.real();
-            return;
-    }
-}
-
 
 
 using namespace std;
@@ -1704,8 +1668,8 @@ void Memory::deleteBulk(const VectorIndex& _vLine, const VectorIndex& _vCol)
 /////////////////////////////////////////////////
 void Memory::calculateStats(const VectorIndex& _vLine, const VectorIndex& _vCol, std::vector<StatsLogic>& operation) const
 {
-    const size_t MINTHREADCOUNT = 16;
-    const size_t MINELEMENTPERCOL = 1000;
+    constexpr size_t MINTHREADCOUNT = 16;
+    constexpr size_t MINELEMENTPERCOL = 1000;
 
     // Only apply multiprocessing, if there are really a lot of
     // elements to process
