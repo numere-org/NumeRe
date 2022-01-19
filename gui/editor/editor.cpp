@@ -6805,7 +6805,7 @@ wxString NumeReEditor::getBlockAutoCompletion(const wxString& sWord)
         if (sWord == "layout" || sWord == "compose" || sWord == "group")
             return sWord + " |\r\n" + getBlockEnd(sWord);
         else if (sWord == "try")
-            return sWord + "\r\n|\r\n" + getBlockEnd(sWord);
+            return sWord + "|\r\n" + getBlockEnd(sWord); // Had to remove first "\r\n" due to a lack in the insertion algorithm
         else if (sWord == "procedure")
             return sWord + " $|()\r\nendprocedure";
         else if (sWord == "else")

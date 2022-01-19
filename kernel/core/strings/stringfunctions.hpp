@@ -836,9 +836,13 @@ static string strfnc_to_time(StringFuncArgs& funcArgs)
 
     char cCurrentChar = sPattern.front();
     string sCurrentElement;
-    date::year y = timeStruct.m_ymd.year();
-    date::month m = timeStruct.m_ymd.month();
-    date::day d = timeStruct.m_ymd.day();
+    date::year y{1970u};// timeStruct.m_ymd.year();
+
+    if (sPattern.find_first_of("MD") != std::string::npos)
+        y = timeStruct.m_ymd.year();
+
+    date::month m{1u};// timeStruct.m_ymd.month();
+    date::day d{1u};//timeStruct.m_ymd.day();
 
     for (size_t i = 0; i < sPattern.length(); i++)
     {

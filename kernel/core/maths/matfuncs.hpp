@@ -917,7 +917,7 @@ static Matrix matrixMovMax(const MatFuncData& funcData, const MatFuncErrorInfo& 
     if (!funcData.mat1.size() || !funcData.mat1[0].size())
         throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, errorInfo.command, errorInfo.position);
 
-    if (funcData.nVal < 0 || funcData.mVal < 0 || funcData.nVal >= funcData.mat1.size() / 4 || funcData.mVal >= funcData.mat1[0].size() / 4)
+    if (funcData.nVal < 0 || funcData.mVal < 0 || 2*funcData.nVal+1 > funcData.mat1.size() || 2*funcData.mVal+1 > funcData.mat1[0].size())
         throw SyntaxError(SyntaxError::INVALID_STATS_WINDOW_SIZE, errorInfo.command, errorInfo.position);
 
     Matrix _mResult = createFilledMatrix(funcData.mat1.size(), funcData.mat1[0].size(), NAN);
@@ -1173,7 +1173,7 @@ static Matrix matrixMovSum(const MatFuncData& funcData, const MatFuncErrorInfo& 
     if (!funcData.mat1.size() || !funcData.mat1[0].size())
         throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, errorInfo.command, errorInfo.position);
 
-    if (funcData.nVal < 0 || funcData.mVal < 0 || funcData.nVal >= funcData.mat1.size() / 4 || funcData.mVal >= funcData.mat1[0].size() / 4)
+    if (funcData.nVal < 0 || funcData.mVal < 0 || 2*funcData.nVal+1 > funcData.mat1.size() || 2*funcData.mVal+1 > funcData.mat1[0].size())
         throw SyntaxError(SyntaxError::INVALID_STATS_WINDOW_SIZE, errorInfo.command, errorInfo.position);
 
     Matrix _mResult = createFilledMatrix(funcData.mat1.size(), funcData.mat1[0].size(), NAN);
@@ -1226,7 +1226,7 @@ static Matrix matrixMovNum(const MatFuncData& funcData, const MatFuncErrorInfo& 
     if (!funcData.mat1.size() || !funcData.mat1[0].size())
         throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, errorInfo.command, errorInfo.position);
 
-    if (funcData.nVal < 0 || funcData.mVal < 0 || funcData.nVal >= funcData.mat1.size() / 4 || funcData.mVal >= funcData.mat1[0].size() / 4)
+    if (funcData.nVal < 0 || funcData.mVal < 0 || 2*funcData.nVal+1 > funcData.mat1.size() || 2*funcData.mVal+1 > funcData.mat1[0].size())
         throw SyntaxError(SyntaxError::INVALID_STATS_WINDOW_SIZE, errorInfo.command, errorInfo.position);
 
     Matrix _mResult = createFilledMatrix(funcData.mat1.size(), funcData.mat1[0].size(), NAN);
@@ -1281,7 +1281,7 @@ static Matrix matrixMovAvg(const MatFuncData& funcData, const MatFuncErrorInfo& 
     if (!funcData.mat1.size() || !funcData.mat1[0].size())
         throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, errorInfo.command, errorInfo.position);
 
-    if (funcData.nVal < 0 || funcData.mVal < 0 || funcData.nVal >= funcData.mat1.size() / 4 || funcData.mVal >= funcData.mat1[0].size() / 4)
+    if (funcData.nVal < 0 || funcData.mVal < 0 || 2*funcData.nVal+1 > funcData.mat1.size() || 2*funcData.mVal+1 > funcData.mat1[0].size())
         throw SyntaxError(SyntaxError::INVALID_STATS_WINDOW_SIZE, errorInfo.command, errorInfo.position);
 
     Matrix _mResult = createFilledMatrix(funcData.mat1.size(), funcData.mat1[0].size(), NAN);
@@ -1328,7 +1328,7 @@ static Matrix matrixStd(const MatFuncData& funcData, const MatFuncErrorInfo& err
     Matrix _mReturn = createFilledMatrix(1, 1, calculateStats(funcData.mat1, StatsLogic(StatsLogic::OPERATION_ADDSQSUB, 0.0, _mAvg[0][0]),
                                                               0, funcData.mat1.size(), 0, funcData.mat1[0].size()));
 
-    _mReturn[0][0] = sqrt(_mReturn[0][0])/(_mNum[0][0].real()-1.0);
+    _mReturn[0][0] = sqrt(_mReturn[0][0]/(_mNum[0][0].real()-1.0));
     return _mReturn;
 }
 
@@ -1347,7 +1347,7 @@ static Matrix matrixMovStd(const MatFuncData& funcData, const MatFuncErrorInfo& 
     if (!funcData.mat1.size() || !funcData.mat1[0].size())
         throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, errorInfo.command, errorInfo.position);
 
-    if (funcData.nVal < 0 || funcData.mVal < 0 || funcData.nVal >= funcData.mat1.size() / 4 || funcData.mVal >= funcData.mat1[0].size() / 4)
+    if (funcData.nVal < 0 || funcData.mVal < 0 || 2*funcData.nVal+1 > funcData.mat1.size() || 2*funcData.mVal+1 > funcData.mat1[0].size())
         throw SyntaxError(SyntaxError::INVALID_STATS_WINDOW_SIZE, errorInfo.command, errorInfo.position);
 
     Matrix _mResult = createFilledMatrix(funcData.mat1.size(), funcData.mat1[0].size(), NAN);
@@ -1369,7 +1369,7 @@ static Matrix matrixMovStd(const MatFuncData& funcData, const MatFuncErrorInfo& 
                                                     i-funcData.nVal, 2*funcData.nVal+1, j-funcData.mVal, 2*funcData.mVal+1);
 
                 if (num > 1)
-                    _mResult[i][j] = sqrt(std) / (num - 1.0);
+                    _mResult[i][j] = sqrt(std / (num - 1.0));
             }
         }
     }
@@ -1411,7 +1411,7 @@ static Matrix matrixMovPrd(const MatFuncData& funcData, const MatFuncErrorInfo& 
     if (!funcData.mat1.size() || !funcData.mat1[0].size())
         throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, errorInfo.command, errorInfo.position);
 
-    if (funcData.nVal < 0 || funcData.mVal < 0 || funcData.nVal >= funcData.mat1.size() / 4 || funcData.mVal >= funcData.mat1[0].size() / 4)
+    if (funcData.nVal < 0 || funcData.mVal < 0 || 2*funcData.nVal+1 > funcData.mat1.size() || 2*funcData.mVal+1 > funcData.mat1[0].size())
         throw SyntaxError(SyntaxError::INVALID_STATS_WINDOW_SIZE, errorInfo.command, errorInfo.position);
 
     Matrix _mResult = createFilledMatrix(funcData.mat1.size(), funcData.mat1[0].size(), NAN);
@@ -1485,7 +1485,7 @@ static Matrix matrixMovNorm(const MatFuncData& funcData, const MatFuncErrorInfo&
     if (!funcData.mat1.size() || !funcData.mat1[0].size())
         throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, errorInfo.command, errorInfo.position);
 
-    if (funcData.nVal < 0 || funcData.mVal < 0 || funcData.nVal >= funcData.mat1.size() / 4 || funcData.mVal >= funcData.mat1[0].size() / 4)
+    if (funcData.nVal < 0 || funcData.mVal < 0 || 2*funcData.nVal+1 > funcData.mat1.size() || 2*funcData.mVal+1 > funcData.mat1[0].size())
         throw SyntaxError(SyntaxError::INVALID_STATS_WINDOW_SIZE, errorInfo.command, errorInfo.position);
 
     Matrix _mResult = createFilledMatrix(funcData.mat1.size(), funcData.mat1[0].size(), NAN);
@@ -1538,7 +1538,7 @@ static Matrix matrixMovMin(const MatFuncData& funcData, const MatFuncErrorInfo& 
     if (!funcData.mat1.size() || !funcData.mat1[0].size())
         throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, errorInfo.command, errorInfo.position);
 
-    if (funcData.nVal < 0 || funcData.mVal < 0 || funcData.nVal >= funcData.mat1.size() / 4 || funcData.mVal >= funcData.mat1[0].size() / 4)
+    if (funcData.nVal < 0 || funcData.mVal < 0 || 2*funcData.nVal+1 > funcData.mat1.size() || 2*funcData.mVal+1 > funcData.mat1[0].size())
         throw SyntaxError(SyntaxError::INVALID_STATS_WINDOW_SIZE, errorInfo.command, errorInfo.position);
 
     Matrix _mResult = createFilledMatrix(funcData.mat1.size(), funcData.mat1[0].size(), NAN);
@@ -1716,7 +1716,7 @@ static Matrix matrixMovMed(const MatFuncData& funcData, const MatFuncErrorInfo& 
     if (!funcData.mat1.size() || !funcData.mat1[0].size())
         throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, errorInfo.command, errorInfo.position);
 
-    if (funcData.nVal < 0 || funcData.mVal < 0 || funcData.nVal >= funcData.mat1.size() / 4 || funcData.mVal >= funcData.mat1[0].size() / 4)
+    if (funcData.nVal < 0 || funcData.mVal < 0 || 2*funcData.nVal+1 > funcData.mat1.size() || 2*funcData.mVal+1 > funcData.mat1[0].size())
         throw SyntaxError(SyntaxError::INVALID_STATS_WINDOW_SIZE, errorInfo.command, errorInfo.position);
 
     Matrix _mResult = createFilledMatrix(funcData.mat1.size(), funcData.mat1[0].size(), NAN);
@@ -1839,8 +1839,8 @@ static Matrix correlation(const MatFuncData& funcData, const MatFuncErrorInfo& e
         throw SyntaxError(SyntaxError::WRONG_MATRIX_DIMENSIONS_FOR_MATOP, errorInfo.command, errorInfo.position, toString(funcData.mat1.size()) +"x"+ toString(funcData.mat1[0].size()) + ", " + toString(funcData.mat2.size()) +"x"+ toString(funcData.mat2[0].size()));
 
     // Resize the matrices to fit their counterparts
-    Matrix mMatrix1 = matrixResize(MatFuncData(funcData.mat1, max(funcData.mat1.size(), funcData.mat2.size()), max(funcData.mat1[0].size(), funcData.mat2[0].size())), errorInfo);
-    Matrix mMatrix2 = matrixResize(MatFuncData(funcData.mat2, max(funcData.mat1.size(), funcData.mat2.size()), max(funcData.mat1[0].size(), funcData.mat2[0].size())), errorInfo);
+    Matrix mMatrix1 = matrixResize(MatFuncData(funcData.mat1, mu::value_type(max(funcData.mat1.size(), funcData.mat2.size())), max(funcData.mat1[0].size(), funcData.mat2[0].size())), errorInfo);
+    Matrix mMatrix2 = matrixResize(MatFuncData(funcData.mat2, mu::value_type(max(funcData.mat1.size(), funcData.mat2.size())), max(funcData.mat1[0].size(), funcData.mat2[0].size())), errorInfo);
 
     int n = mMatrix1.size();
     int m = mMatrix1[0].size();
@@ -2147,7 +2147,7 @@ static Matrix matrixUnique(const MatFuncData& funcData, const MatFuncErrorInfo& 
         if (!funcData.nVal)
         {
             // funcData.nVal == 0 -> Roll out the total matrix and return it as a overall row vector
-            Matrix retVal = matrixReshape(MatFuncData(funcData.mat1, 1, funcData.mat1.size()*funcData.mat1[0].size()), errorInfo);
+            Matrix retVal = matrixReshape(MatFuncData(funcData.mat1, mu::value_type(1.0), funcData.mat1.size()*funcData.mat1[0].size()), errorInfo);
             dataList.assign(retVal[0].begin(), retVal[0].end());
             _mReturn.push_back(getUniqueList(dataList));
         }
@@ -2500,7 +2500,7 @@ static Matrix diagonalMatrix(const MatFuncData& funcData, const MatFuncErrorInfo
     if (!funcData.mat1.size() || !funcData.mat1[0].size())
         throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, errorInfo.command, errorInfo.position);
 
-    Matrix _reshapedMat = matrixReshape(MatFuncData(funcData.mat1, funcData.mat1.size() * funcData.mat1[0].size(), 1), errorInfo);
+    Matrix _reshapedMat = matrixReshape(MatFuncData(funcData.mat1, mu::value_type(funcData.mat1.size() * funcData.mat1[0].size()), 1), errorInfo);
     Matrix _diagonalMat = createFilledMatrix(_reshapedMat.size(), _reshapedMat.size(), 0.0);
 
     for (size_t i = 0; i < _reshapedMat.size(); i++)

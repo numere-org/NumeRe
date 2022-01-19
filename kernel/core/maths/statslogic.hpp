@@ -70,7 +70,7 @@ struct StatsLogic
                 m_val += newVal * conj(newVal);
                 return;
             case OPERATION_ADDSQSUB:
-                m_val += intPower(newVal - m_compval, 2);
+                m_val += (newVal - m_compval)*std::conj(newVal - m_compval);
                 return;
             case OPERATION_MAX:
                 m_val = newVal.real() > m_val.real() || isnan(m_val.real()) ? newVal.real() : m_val.real();
@@ -102,13 +102,11 @@ struct StatsLogic
             case OPERATION_ADD:
             case OPERATION_NUM:
             case OPERATION_ADDSQ:
+            case OPERATION_ADDSQSUB:
                 m_val += other.m_val;
                 return;
             case OPERATION_MULT:
                 m_val *= other.m_val;
-                return;
-            case OPERATION_ADDSQSUB:
-                m_val += intPower(other.m_val - m_compval, 2);
                 return;
             case OPERATION_MAX:
                 m_val = other.m_val.real() > m_val.real() || isnan(m_val.real()) ? other.m_val.real() : m_val.real();

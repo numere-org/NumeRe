@@ -545,7 +545,7 @@ void VariableViewer::ExpandAll()
 /////////////////////////////////////////////////
 void VariableViewer::OnRightClick(wxTreeEvent& event)
 {
-    if (GetItemParent(event.GetItem()) == GetRootItem())
+    if (!event.GetItem().IsOk() || GetItemParent(event.GetItem()) == GetRootItem())
         return;
 
     // Get the name of the table and determine, whether

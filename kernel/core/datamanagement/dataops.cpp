@@ -948,14 +948,13 @@ bool sortData(CommandLineParser& cmdParser)
     MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
 
 	// Evalulate special index values
-	if (_idx.row.isOpenEnd())
-		_idx.row.setRange(0, _data.getLines(_accessParser.getDataObject(), false)-1);
-	if (_idx.col.isOpenEnd())
-		_idx.col.setRange(0, _data.getCols(_accessParser.getDataObject(), false)-1);
+	_accessParser.evalIndices();
 
     // Perform the actual sorting operation
     // The member function will be able to handle the remaining command line parameters by itself
-	vSortIndex = _data.sortElements(_accessParser.getDataObject(), _idx.row.front(), _idx.row.back(), _idx.col.front(), _idx.col.back(), cmdParser.getParameterList());
+	vSortIndex = _data.sortElements(_accessParser.getDataObject(),
+                                    _idx.row.front(), _idx.row.last(), _idx.col.front(), _idx.col.last(),
+                                    cmdParser.getParameterList());
 
 	// If the sorting index contains elements, the user had requested them
 	if (vSortIndex.size())

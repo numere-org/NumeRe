@@ -1254,8 +1254,9 @@ vector<int> Memory::sortElements(int i1, int i2, int j1, int j2, const std::stri
     // sort everything?
     if (!findParameter(sSortingExpression, "cols", '=') && !findParameter(sSortingExpression, "c", '='))
     {
-        // Sort everything independently
-        #pragma omp parallel for
+        // Sort everything independently (we use vIndex from
+        // the outside, we therefore must declare it as firstprivate)
+        #pragma omp parallel for firstprivate(vIndex)
         for (int i = j1; i <= j2; i++)
         {
             // Change for OpenMP
@@ -1277,7 +1278,7 @@ vector<int> Memory::sortElements(int i1, int i2, int j1, int j2, const std::stri
 
             // Reset the sorting index
             for (int j = i1; j <= i2; j++)
-                vIndex[j] = j;
+                vIndex[j-i1] = j;
         }
     }
     else
@@ -1355,7 +1356,7 @@ vector<int> Memory::sortElements(int i1, int i2, int j1, int j2, const std::stri
 
                 // Reset the sorting index for the next column
                 for (int _j = i1; _j <= i2; _j++)
-                    vIndex[_j] = _j;
+                    vIndex[_j-i1] = _j;
             }
 
             // Free the occupied memory
