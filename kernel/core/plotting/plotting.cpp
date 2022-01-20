@@ -370,6 +370,7 @@ Plot::Plot(string& sCmd, MemoryManager& __data, Parser& __parser, Settings& __op
         {
             // Reset the maximal plotting dimension
             _pInfo.nMaxPlotDim = 0;
+            _pInfo.nStyle = 0;
 
             // Gather each plotting parameter until the next "subplot" command or until the end of the
             // whole block
