@@ -900,7 +900,7 @@ static void handleMafDataAccess(string& sLine, const string& sMafAccess, Parser&
 	string sMafVectorName = createMafVectorName(sMafAccess);
 
 	// Only store the value, if it is not a string literal (i.e. the name)
-	if (sMafVectorName.front() != '"')
+	if (!NumeReKernel::getInstance()->getStringParser().isStringExpression(sMafVectorName))
     {
         // Set the vector variable with its value for the parser
         _parser.SetVectorVar(sMafVectorName, MafDataAccess(_data, getMafFromAccessString(sMafAccess), sMafAccess.substr(0, sMafAccess.find('(')), createMafDataAccessString(sMafAccess, _parser)));
@@ -1181,7 +1181,12 @@ static std::string tableMethod_typeof(const std::string& sTableName, std::string
     }
 
     if (sRet.length())
+    {
+        if (sRet.find(',') != std::string::npos)
+            return "{" + sRet + "}";
+
         return sRet;
+    }
 
     return "\"\"";
 }

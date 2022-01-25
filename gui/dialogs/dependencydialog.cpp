@@ -327,8 +327,12 @@ void DependencyDialog::CreateDotFile()
     {
         for (auto called = caller->second.begin(); called != caller->second.end(); ++called)
         {
-            mProcedures[caller->first.substr(0, caller->first.rfind('~')+1)].push_back(caller->first);
-            mProcedures[called->getProcedureName().substr(0, called->getProcedureName().rfind('~')+1)].push_back(called->getProcedureName());
+            if (caller->first.find_last_of("~/") != std::string::npos)
+                mProcedures[caller->first.substr(0, caller->first.find_last_of("~/")+1)].push_back(caller->first);
+            else
+                mProcedures[caller->first].push_back(caller->first);
+
+            mProcedures[called->getProcedureName().substr(0, called->getProcedureName().find_last_of("~/")+1)].push_back(called->getProcedureName());
 
             sDotFileContent += "\t\"" + caller->first + "()\" -> \"" + called->getProcedureName() + "()\"\n";
         }
@@ -336,7 +340,7 @@ void DependencyDialog::CreateDotFile()
 
     std::string sCurrentNameSpace;
     std::string sNameSpace;
-    char cClusterIndex = 'A';
+    int nClusterindex = 0;
     int nCurrentClusterLevel = 0;
 
     // Prepare the cluster list by calculating the cluster level of
@@ -344,7 +348,9 @@ void DependencyDialog::CreateDotFile()
     for (auto iter = mProcedures.begin(); iter != mProcedures.end(); ++iter)
     {
         sNameSpace = iter->first;
-        sNameSpace.erase(sNameSpace.rfind('~')+1);
+
+        if (sNameSpace.find_last_of("~/") != std::string::npos)
+            sNameSpace.erase(sNameSpace.find_last_of("~/")+1);
 
         int nNewClusterLevel = calculateClusterLevel(sCurrentNameSpace, sNameSpace);
 
@@ -374,8 +380,8 @@ void DependencyDialog::CreateDotFile()
         sCurrentNameSpace = sNameSpace;
 
         // Write the cluster header
-        sClusterDefinition += std::string(nCurrentClusterLevel, '\t') + "subgraph cluster_" + cClusterIndex + "\n" + std::string(nCurrentClusterLevel, '\t') + "{\n" + std::string(nCurrentClusterLevel+1, '\t') + "style=rounded\n" + std::string(nCurrentClusterLevel+1, '\t') + "label=\"" + sCurrentNameSpace.substr(1) + "\"\n" + std::string(nCurrentClusterLevel+1, '\t');
-        cClusterIndex++;
+        sClusterDefinition += std::string(nCurrentClusterLevel, '\t') + "subgraph cluster_" + toString(nClusterindex) + "\n" + std::string(nCurrentClusterLevel, '\t') + "{\n" + std::string(nCurrentClusterLevel+1, '\t') + "style=rounded\n" + std::string(nCurrentClusterLevel+1, '\t') + "label=\"" + sCurrentNameSpace.substr(1) + "\"\n" + std::string(nCurrentClusterLevel+1, '\t');
+        nClusterindex++;
 
         // Ensure that the procedure list is unique
         iter->second.sort();

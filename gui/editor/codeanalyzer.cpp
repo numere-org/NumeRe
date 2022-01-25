@@ -1047,7 +1047,7 @@ AnnotationCount CodeAnalyzer::analyseFunctions(bool isContinuedLine)
             AnnotCount += addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE", highlightFoundOccurence(sSyntaxElement + "()", wordstart, wordend-wordstart), m_sError, _guilang.get("GUI_ANALYZER_STRINGFUNCTION", sSyntaxElement + "()")), ANNOTATION_ERROR);
 
         // ignore modifiers, i.e. method without parentheses
-        static string sMODIFIER = ",len,cols,lines,grid,avg,std,min,max,med,sum,prd,cnt,num,norm,and,or,xor,name,size,minpos,maxpos,";
+        static string sMODIFIER = ",len,cols,lines,grid,avg,std,min,max,med,sum,prd,cnt,num,norm,and,or,xor,name,size,minpos,maxpos,description,";
 
         if (sMODIFIER.find("," + sSyntaxElement + ",") == string::npos)
             sSyntaxElement += "()";
