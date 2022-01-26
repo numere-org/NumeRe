@@ -1318,7 +1318,7 @@ bool readImage(CommandLineParser& cmdParser)
 			break;
 
         if (sChannels == "grey")
-            _data.setHeadLineElement(_idx.col[2+j], sTargetCache, "z(x(:),y(" + toString(j) + "))");
+            _data.setHeadLineElement(_idx.col[2+j], sTargetCache, "z(x(:),y(" + toString(j+1) + "))");
         else
         {
             for (size_t n = 0; n < sChannels.length(); n++)

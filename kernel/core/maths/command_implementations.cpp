@@ -2730,9 +2730,9 @@ static void calculate2dFFT(MemoryManager& _data, Indices& _idx, const std::strin
             for (int j = 0; j < nElemsCols; j++)
             {
                 // Write the values
-                if (_fft.bShiftAxis)
-                    _data.writeToTable(_idx.row[i + (i > nElemsLines/2 ? -1 : 1)*nElemsLines/2],
-                                       _idx.col[j+2 + (j > nElemsCols/2 ? -1 : 1)*nElemsCols/2],
+                if (_fft.bShiftAxis) // double and integer divisions are intended
+                    _data.writeToTable(_idx.row[i + std::rint(i >= nElemsLines/2 ? -nElemsLines/2 : nElemsLines/2.0)],
+                                       _idx.col[j+2 + std::rint(j >= nElemsCols/2 ? -nElemsCols/2 : nElemsCols/2.0)],
                                        sTargetTable,
                                        _fft.bComplex ? _fftData.a[j+i*nElemsCols] : std::abs(_fftData.a[j+i*nElemsCols]));
                 else
@@ -2924,6 +2924,12 @@ bool fastFourierTransform(CommandLineParser& cmdParser)
                 if (_fft.bShiftAxis && _fft.bInverseTrafo)
                     _fftData.a[j+i*(_fft.cols-2)] = _mem->readMem(i + (i > (size_t)_fft.lines/2 ? -1 : 1)*_fft.lines/2,
                                                              j + 2 + (j > (size_t)(_fft.cols-2)/2 ? -1 : 1)*(_fft.cols-2)/2);
+                // Might be needed here:
+                //if (_fft.bShiftAxis) // double and integer divisions are intended
+                //    _data.writeToTable(_idx.row[i + std::rint(i >= nElemsLines/2 ? -nElemsLines/2 : nElemsLines/2.0)],
+                //                       _idx.col[j+2 + std::rint(j >= nElemsCols/2 ? -nElemsCols/2 : nElemsCols/2.0)],
+                //                       sTargetTable,
+                //                       _fft.bComplex ? _fftData.a[j+i*nElemsCols] : std::abs(_fftData.a[j+i*nElemsCols]));
                 else
                     _fftData.a[j+i*(_fft.cols-2)] = _mem->readMem(i, j+2);
             }
