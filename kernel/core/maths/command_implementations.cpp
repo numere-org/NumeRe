@@ -2730,9 +2730,9 @@ static void calculate2dFFT(MemoryManager& _data, Indices& _idx, const std::strin
             for (int j = 0; j < nElemsCols; j++)
             {
                 // Write the values
-                if (_fft.bShiftAxis) // double and integer divisions are intended
-                    _data.writeToTable(_idx.row[i + std::rint(i >= nElemsLines/2 ? -nElemsLines/2 : nElemsLines/2.0)],
-                                       _idx.col[j+2 + std::rint(j >= nElemsCols/2 ? -nElemsCols/2 : nElemsCols/2.0)],
+                if (_fft.bShiftAxis)
+                    _data.writeToTable(_idx.row[i + (i >= nElemsLines/2 ? -nElemsLines/2 : nElemsLines/2+nElemsLines % 2)],
+                                       _idx.col[j+2 + (j >= nElemsCols/2 ? -nElemsCols/2 : nElemsCols/2+nElemsCols % 2)],
                                        sTargetTable,
                                        _fft.bComplex ? _fftData.a[j+i*nElemsCols] : std::abs(_fftData.a[j+i*nElemsCols]));
                 else
@@ -2870,8 +2870,11 @@ bool fastFourierTransform(CommandLineParser& cmdParser)
 
         _fft.dNyquistFrequency[1] = collines / (_mem->readMem(collines - 1, 1).real() - _mem->readMem(0, 1).real()) / 2.0;
         _fft.dTimeInterval[1] = (collines - 1) / (_mem->readMem(collines - 1, 1).real());
-
     }
+
+    // Check the dimensions of the input data
+    if (_fft.lines < 10 || _fft.cols < 2 || (bIs2DFFT && _fft.cols < _mem->getElemsInColumn(1)+2))
+        throw SyntaxError(SyntaxError::WRONG_DATA_SIZE, cmdParser.getCommandLine(), cmdParser.getExpr());
 
     // Adapt the values for the shifted axis
     if (_fft.bShiftAxis)
@@ -2908,7 +2911,7 @@ bool fastFourierTransform(CommandLineParser& cmdParser)
     }
 
     // Copy the data
-    for (size_t i = 0; i < (size_t)_fft.lines; i++)
+    for (int i = 0; i < _fft.lines; i++)
     {
         if (_fft.cols == 2)
             _fftData.a[i] = _mem->readMem(vAxis[i], 1); // Can be complex or not: does not matter
@@ -2919,19 +2922,16 @@ bool fastFourierTransform(CommandLineParser& cmdParser)
                                  _mem->readMem(vAxis[i], 1).real() * sin(_mem->readMem(vAxis[i], 2).real()));
         else if (bIs2DFFT)
         {
-            for (size_t j = 0; j < (size_t)(_fft.cols-2); j++)
+            int nLines = _fft.lines;
+            int nCols = _fft.cols-2;
+
+            for (int j = 0; j < nCols; j++)
             {
                 if (_fft.bShiftAxis && _fft.bInverseTrafo)
-                    _fftData.a[j+i*(_fft.cols-2)] = _mem->readMem(i + (i > (size_t)_fft.lines/2 ? -1 : 1)*_fft.lines/2,
-                                                             j + 2 + (j > (size_t)(_fft.cols-2)/2 ? -1 : 1)*(_fft.cols-2)/2);
-                // Might be needed here:
-                //if (_fft.bShiftAxis) // double and integer divisions are intended
-                //    _data.writeToTable(_idx.row[i + std::rint(i >= nElemsLines/2 ? -nElemsLines/2 : nElemsLines/2.0)],
-                //                       _idx.col[j+2 + std::rint(j >= nElemsCols/2 ? -nElemsCols/2 : nElemsCols/2.0)],
-                //                       sTargetTable,
-                //                       _fft.bComplex ? _fftData.a[j+i*nElemsCols] : std::abs(_fftData.a[j+i*nElemsCols]));
+                    _fftData.a[j+i*nCols] = _mem->readMem(i + (i >= nLines/2 ? -nLines/2 : nLines/2 + nLines % 2),
+                                                          j+2 + (j >= nCols/2 ? -nCols/2 : nCols/2 + nCols % 2));
                 else
-                    _fftData.a[j+i*(_fft.cols-2)] = _mem->readMem(i, j+2);
+                    _fftData.a[j+i*nCols] = _mem->readMem(i, j+2);
             }
         }
     }
