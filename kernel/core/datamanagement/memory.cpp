@@ -3459,12 +3459,8 @@ bool Memory::resample(VectorIndex _vLine, VectorIndex _vCol, std::pair<size_t,si
 
         // Create the resample object and prepare the needed memory
         _resampler.reset(new Resampler(_vCol.size(), _vLine.size(),
-                                       samples.first, samples.second,
+                                       samples.second, samples.first,
                                        Resampler::BOUNDARY_CLAMP, 1.0, 0.0, sFilter.c_str()));
-
-        // Determine final size (only upscale)
-        if (samples.first > _vLine.size() || samples.second > _vCol.size())
-            resizeMemory(1, getCols() + samples.second - _vCol.size());
     }
     else if (Direction == COLS) // cols
     {

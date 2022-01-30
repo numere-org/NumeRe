@@ -90,7 +90,7 @@ int findParameter(const string& sCmd, const string& sParam, const char cFollowin
             if (nParamStart != string::npos
                     && !(nQuotes % 2)
                     && !isOptionValue
-                    && __sCmd.substr(i, sParam.length()) == sParam)
+                    && __sCmd.substr(i, sParam.length()) == toLowerCase(sParam))
             {
                 /* --> Pruefe die Zeichen davor und danach (unter Beachtung eines moeglicherweise
                  *     speziell gewaehlten Zeichens) <--

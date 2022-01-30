@@ -2864,7 +2864,7 @@ void NumeReWindow::NewFile(FileFilterType _filetype, const wxString& defaultfile
             // Clean the folders
             for (size_t i = 0; i < folder.length(); i++)
             {
-                if (!isalnum(folder[i]) && folder[i] != '_' && folder[i] != '\\')
+                if (!isalnum(folder[i]) && folder[i] != '_' && folder[i] != '\\' && folder[i] != ':')
                     folder[i] = '_';
             }
 

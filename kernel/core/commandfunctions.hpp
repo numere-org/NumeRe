@@ -4334,7 +4334,7 @@ static CommandReturnValues cmd_resample(string& sCmd)
         else if (cmdParser.hasParam("lines"))
             dir = MemoryManager::LINES;
 
-        std::string sFilter = "lanczos6";
+        std::string sFilter = "lanczos3";
 
         if (cmdParser.hasParam("method"))
             sFilter = cmdParser.getParameterValue("method");
