@@ -67,6 +67,9 @@ DocumentationBrowser::DocumentationBrowser(wxWindow* parent, const wxString& tit
     treePanel->AddWindows(treeSearchCtrl, m_doctree);
 
     m_docTabs = new wxNotebook(splitter, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxBORDER_STATIC);
+
+    // Bind the mouse middle event handler to this class
+    m_docTabs->Bind(wxEVT_MIDDLE_UP, &DocumentationBrowser::OnMiddleClick, this);
     m_titleTemplate = titletemplate;
 
     // Set a reasonable window size and the window icon
@@ -161,6 +164,29 @@ void DocumentationBrowser::fillDocTree(NumeReWindow* mainwindow)
 
 
 /////////////////////////////////////////////////
+/// \brief Finds and selects the page with the
+/// passed title or returns false.
+///
+/// \param title const wxString&
+/// \return bool
+///
+/////////////////////////////////////////////////
+bool DocumentationBrowser::findAndSelectPage(const wxString& title)
+{
+    for (size_t i = 0; i < m_docTabs->GetPageCount(); i++)
+    {
+        if (m_docTabs->GetPageText(i) == title)
+        {
+            m_docTabs->SetSelection(i);
+            return true;
+        }
+    }
+
+    return false;
+}
+
+
+/////////////////////////////////////////////////
 /// \brief Event handler function to load the
 /// documentation article describing the clicked
 /// item.
@@ -222,6 +248,34 @@ void DocumentationBrowser::OnToolbarEvent(wxCommandEvent& event)
 
 
 /////////////////////////////////////////////////
+/// \brief Event handler for the middle click on
+/// the tabs.
+///
+/// \param event wxMouseEvent&
+/// \return void
+///
+/////////////////////////////////////////////////
+void DocumentationBrowser::OnMiddleClick(wxMouseEvent& event)
+{
+    wxPoint pt;
+	pt.x = event.GetX();
+	pt.y = event.GetY();
+
+	long flags = 0;
+	int pageNum = m_docTabs->HitTest(pt, &flags);
+
+	if (pageNum == wxNOT_FOUND)
+		return;
+
+    // Is this the only page?
+    if (m_docTabs->GetPageCount() == 1)
+        Close();
+
+    m_docTabs->DeletePage(pageNum);
+}
+
+
+/////////////////////////////////////////////////
 /// \brief Create a new viewer in a new page.
 ///
 /// \param docId const wxString&
@@ -230,7 +284,25 @@ void DocumentationBrowser::OnToolbarEvent(wxCommandEvent& event)
 /////////////////////////////////////////////////
 bool DocumentationBrowser::createNewPage(const wxString& docId)
 {
-    HelpViewer* viewer = new HelpViewer(m_docTabs, static_cast<NumeReWindow*>(m_parent), this);
+    NumeReWindow* mainFrame = static_cast<NumeReWindow*>(m_parent);
+    wxString title;
+
+    // Find an already opened page with the same title
+    if (docId.substr(0, 15) != "<!DOCTYPE html>")
+        title = mainFrame->GetDocContent(docId); // Get the page content from the kernel
+    else
+        title = docId;
+
+    // Extract the title from the HTML page
+    title.erase(title.find("</title>"));
+    title.erase(0, title.find("<title>")+7);
+
+    // If the page already exists, we select it and
+    // leave this method
+    if (findAndSelectPage(title))
+        return true;
+
+    HelpViewer* viewer = new HelpViewer(m_docTabs, mainFrame, this);
     viewer->SetRelatedFrame(this, m_titleTemplate);
     viewer->SetRelatedStatusBar(0);
 

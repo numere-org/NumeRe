@@ -53,7 +53,7 @@ CommandReturnValues commandHandler(string& sCmd)
 	// are most important and will evaluated first
 	if (sCommand == "find" || sCommand == "search")
         return cmd_find(sCmd);
-    else if (sCommand == "help" || sCommand == "man")
+    else if (sCommand == "help" || sCommand == "man" || sCommand == "doc")
         return cmd_help(sCmd);
 
     // Try to find any of the commands with a

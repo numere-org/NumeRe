@@ -43,6 +43,7 @@ class DocumentationBrowser : public ViewerFrame
 
         void prepareToolbar();
         void fillDocTree(NumeReWindow* mainwindow);
+        bool findAndSelectPage(const wxString& title);
 
     public:
         DocumentationBrowser(wxWindow* parent, const wxString& titletemplate, NumeReWindow* mainwindow);
@@ -51,6 +52,7 @@ class DocumentationBrowser : public ViewerFrame
         bool SetStartPage(const wxString& docId);
         void OnTreeClick(wxTreeEvent& event);
         void OnToolbarEvent(wxCommandEvent& event);
+        void OnMiddleClick(wxMouseEvent& event);
 
         bool createNewPage(const wxString& docId);
         void setCurrentTabText(const wxString& text);
@@ -61,3 +63,5 @@ class DocumentationBrowser : public ViewerFrame
 
 
 #endif // DOCUMENTATIONBROWSER_HPP
+
+
