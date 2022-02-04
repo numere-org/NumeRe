@@ -222,16 +222,13 @@ bool MyApp::OnInit()
 
     std::setlocale(LC_ALL, "C");
     wxFileName f(wxStandardPaths::Get().GetExecutablePath());
+
     wxInitAllImageHandlers();
     wxBitmap splashImage;
+    wxSplashScreen* splash = nullptr;
 
     if (splashImage.LoadFile(f.GetPath(wxPATH_GET_VOLUME | wxPATH_GET_SEPARATOR)+"icons\\splash.png", wxBITMAP_TYPE_PNG))
-    {
-        wxSplashScreen* splash = new wxSplashScreen(splashImage, wxSPLASH_CENTRE_ON_SCREEN | wxSPLASH_NO_TIMEOUT, 3000, nullptr, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxNO_BORDER);
-        //wxApp::Yield();
-        wxSleep(2);
-        splash->Destroy();
-    }
+        splash = new wxSplashScreen(splashImage, wxSPLASH_CENTRE_ON_SCREEN | wxSPLASH_NO_TIMEOUT, 0, nullptr, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxNO_BORDER);
 
     g_findReplace = nullptr;
 
@@ -262,6 +259,11 @@ bool MyApp::OnInit()
     NumeReMainFrame->EvaluateCommandLine(wxArgV);
     NumeReMainFrame->Ready();
 
+    // Destroy the splash image once the window
+    // is ready
+    if (splash)
+        splash->Destroy();
+
     // Tip of the day
     if (NumeReMainFrame->showTipAtStartup)
     {
@@ -283,6 +285,7 @@ bool MyApp::OnInit()
         NumeReMainFrame->Update();
         wxMessageBox(_guilang.get("GUI_DLG_SESSION_RECREATIONERROR", NumeReMainFrame->m_UnrecoverableFiles), _guilang.get("GUI_DLG_SESSION_ERROR"), wxICON_ERROR);
     }
+
 
     return true;
 }
