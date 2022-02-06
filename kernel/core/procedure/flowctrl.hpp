@@ -143,6 +143,7 @@ class FlowCtrl
         int switch_fork(int nth_Cmd = 0, int nth_Loop = -1);
         int try_catch(int nth_Cmd = 0, int nth_Loop = -1);
 
+        int compile(std::string sLine, int nthCmd);
         int calc(std::string sLine, int nthCmd);
         value_type* evalHeader(int& nNum, std::string& sHeadExpression, bool bIsForHead, int nth_Cmd);
         int evalLoopFlowCommands(int __j, int nth_loop);

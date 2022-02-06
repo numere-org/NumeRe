@@ -27,14 +27,14 @@
 class Timer
 {
     private:
-        std::chrono::time_point<std::chrono::steady_clock> m_StartPoint;
+        std::chrono::time_point<std::chrono::system_clock, std::chrono::nanoseconds> m_StartPoint;
         std::string m_ScopeName;
 
     public:
         Timer(const std::string& scopeName)
         {
             m_ScopeName = scopeName;
-            m_StartPoint = std::chrono::steady_clock::now();
+            m_StartPoint = std::chrono::time_point_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now());
         }
 
         ~Timer()
@@ -44,10 +44,10 @@ class Timer
 
         void Stop()
         {
-            auto endTimePoint = std::chrono::steady_clock::now();
-            std::chrono::duration<double> time_span = std::chrono::duration_cast<std::chrono::duration<double>>(endTimePoint - m_StartPoint);
+            auto endTimePoint = std::chrono::time_point_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now());
+            std::chrono::nanoseconds time_span = endTimePoint - m_StartPoint;
 
-            NumeReKernel::print("[" + m_ScopeName + "] Measured run time: " + toString(time_span.count() * 1000, 14) + " ms.");
+            NumeReKernel::print("[" + m_ScopeName + "] Measured run time: " + toString(time_span.count() / 1000.0, 14) + " mus.");
         }
 };
 
