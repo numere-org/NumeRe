@@ -879,14 +879,14 @@ static Matrix evalMatOp(string& sCmd, Parser& _parser, MemoryManager& _data, Fun
                 continue;
             else
             {
-                currentVec->clear();
+                currentVec->resize(vReturnedMatrices[iter.first].size(), 0.0);
 
                 for (unsigned int k = 0; k < vReturnedMatrices[iter.first].size(); k++)
                 {
                     if (vReturnedMatrices[iter.first][0].size() <= i)
-                        currentVec->push_back(0.0);
+                        (*currentVec)[k] = 0.0;
                     else
-                        currentVec->push_back(vReturnedMatrices[iter.first][k][i]);
+                        (*currentVec)[k] = vReturnedMatrices[iter.first][k][i];
                 }
             }
 

@@ -127,10 +127,6 @@ void Procedure::init()
 /////////////////////////////////////////////////
 Returnvalue Procedure::ProcCalc(string sLine, string sCurrentCommand, int& nByteCode, Parser& _parser, FunctionDefinitionManager& _functions, MemoryManager& _data, Settings& _option, Output& _out, PlotData& _pData, Script& _script)
 {
-    string sCache = "";
-    Indices _idx;
-    bool bWriteToCache = false;
-    bool bWriteToCluster = false;
     Returnvalue thisReturnVal;
     int nNum = 0;
     int nCurrentByteCode = nByteCode;
@@ -204,8 +200,8 @@ Returnvalue Procedure::ProcCalc(string sLine, string sCurrentCommand, int& nByte
                 if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sCmdString))
                 {
                     sCmdString += " -nq";
-                    NumeReKernel::getInstance()->getStringParser().evalAndFormat(sCmdString, sCache, true);
-                    sCache = "";
+                    std::string sDummy;
+                    NumeReKernel::getInstance()->getStringParser().evalAndFormat(sCmdString, sDummy, true);
                 }
 
                 // Replace the current command line
@@ -237,7 +233,8 @@ Returnvalue Procedure::ProcCalc(string sLine, string sCurrentCommand, int& nByte
 
                 getStringArgument(sLine, sErrorToken);
                 sErrorToken += " -nq";
-                NumeReKernel::getInstance()->getStringParser().evalAndFormat(sErrorToken, sCache, true);
+                std::string sDummy;
+                NumeReKernel::getInstance()->getStringParser().evalAndFormat(sErrorToken, sDummy, true);
             }
 
             if (nCurrentByteCode == ProcedureCommandLine::BYTECODE_NOT_PARSED)
@@ -384,6 +381,12 @@ Returnvalue Procedure::ProcCalc(string sLine, string sCurrentCommand, int& nByte
         }
     }
 
+    // Declare all variables, which are needed in the
+    // following sections
+    std::string sCache;
+    bool bWriteToCache = false;
+    bool bWriteToCluster = false;
+
     // Get elements from data access
     if (nCurrentByteCode == ProcedureCommandLine::BYTECODE_NOT_PARSED
         || nCurrentByteCode & ProcedureCommandLine::BYTECODE_DATAACCESS
@@ -446,6 +449,9 @@ Returnvalue Procedure::ProcCalc(string sLine, string sCurrentCommand, int& nByte
         }
     }
 
+    // Create the indices structure
+    Indices _idx;
+
     // Get the target coordinates of the target cache,
     // if this is required
     if (nCurrentByteCode == ProcedureCommandLine::BYTECODE_NOT_PARSED
@@ -490,7 +496,6 @@ Returnvalue Procedure::ProcCalc(string sLine, string sCurrentCommand, int& nByte
     }
 
     vAns = v[0];
-    NumeReKernel::getInstance()->getAns().clear();
     NumeReKernel::getInstance()->getAns().setDoubleArray(nNum, v);
 
     // Print the output to the console, if it isn't suppressed

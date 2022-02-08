@@ -880,7 +880,6 @@ namespace NumeRe
                         if (nResults)
                         {
                             vAns = v[0];
-                            NumeReKernel::getInstance()->getAns().clear();
                             NumeReKernel::getInstance()->getAns().setDoubleArray(nResults, v);
                             string sValues;
                             strRes.vNumericalValues.insert(strRes.vNumericalValues.end(), v, v+nResults);
@@ -1597,7 +1596,6 @@ namespace NumeRe
 
                 v = _parser.Eval(nResults);
                 vAns = v[0];
-                NumeReKernel::getInstance()->getAns().clear();
                 NumeReKernel::getInstance()->getAns().setDoubleArray(nResults, v);
                 //eq_pos = strExpr.sLine.find('=');
                 //strExpr.findAssignmentOperator();

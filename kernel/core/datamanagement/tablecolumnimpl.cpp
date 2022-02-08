@@ -1183,7 +1183,7 @@ TableColumn* StringColumn::convert(ColumnType type)
 /////////////////////////////////////////////////
 void convert_if_empty(TblColPtr& col, size_t colNo, TableColumn::ColumnType type)
 {
-    if (!col || (!col->size() && col->m_type != type))
+    if (!col || (col->m_type != type && !col->size()))
     {
         std::string sHead = TableColumn::getDefaultColumnHead(colNo);
 

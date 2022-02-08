@@ -591,7 +591,7 @@ void replaceDataEntities(string& sLine, const string& sEntity, MemoryManager& _d
 			_parser.SetVectorVar(sEntityReplacement, vEntityContents);
 
 			// Cache the current access if needed
-			mu::CachedDataAccess _access = {sEntityName + (isCluster ? "{" + _idx.sCompiledAccessEquation + "}" : "(" + _idx.sCompiledAccessEquation + ")") , sEntityReplacement, sEntityName};
+			mu::CachedDataAccess _access = {sEntityName + (isCluster ? "{" + _idx.sCompiledAccessEquation + "}" : "(" + _idx.sCompiledAccessEquation + ")") , sEntityReplacement, sEntityName, isCluster ? mu::CachedDataAccess::IS_CLUSTER : mu::CachedDataAccess::NO_FLAG};
 			_parser.CacheCurrentAccess(_access);
 
 			// Replace the occurences
@@ -623,17 +623,20 @@ static const string& handleCachedDataAccess(string& sLine, Parser& _parser, Memo
 		// Get the current cached data access
 		const mu::CachedDataAccess& _access = _parser.GetCachedAccess(i);
 
-		bool isCluster = _data.isCluster(_access.sAccessEquation);
-
-		if (_access.sAccessEquation.find("().") != string::npos)
+		if (_access.flags & mu::CachedDataAccess::IS_TABLE_METHOD)
 		{
 			// handle cached MAF methods
-			_parser.SetVectorVar(_access.sVectorName, MafDataAccess(_data, getMafFromAccessString(_access.sAccessEquation), _access.sCacheName, createMafDataAccessString(_access.sAccessEquation, _parser)));
+			_parser.SetVectorVar(_access.sVectorName, MafDataAccess(_data,
+                                                                    getMafFromAccessString(_access.sAccessEquation),
+                                                                    _access.sCacheName,
+                                                                    createMafDataAccessString(_access.sAccessEquation, _parser)));
 			continue;
 		}
 
 		// Create an index
 		Indices _idx;
+
+		bool isCluster = _access.flags & mu::CachedDataAccess::IS_CLUSTER;
 
 		// Read the indices
 		getIndices(_access.sAccessEquation, _idx, _parser, _data, _option);
@@ -906,7 +909,7 @@ static void handleMafDataAccess(string& sLine, const string& sMafAccess, Parser&
         _parser.SetVectorVar(sMafVectorName, MafDataAccess(_data, getMafFromAccessString(sMafAccess), sMafAccess.substr(0, sMafAccess.find('(')), createMafDataAccessString(sMafAccess, _parser)));
 
         // Create a cached access and store it
-        mu::CachedDataAccess _access = {sMafAccess, sMafVectorName, sMafAccess.substr(0, sMafAccess.find('('))};
+        mu::CachedDataAccess _access = {sMafAccess, sMafVectorName, sMafAccess.substr(0, sMafAccess.find('(')), mu::CachedDataAccess::IS_TABLE_METHOD};
         _parser.CacheCurrentAccess(_access);
 
     }

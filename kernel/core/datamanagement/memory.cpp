@@ -549,13 +549,11 @@ Memory* Memory::extractRange(const VectorIndex& _vLine, const VectorIndex& _vCol
 /////////////////////////////////////////////////
 void Memory::copyElementsInto(vector<mu::value_type>* vTarget, const VectorIndex& _vLine, const VectorIndex& _vCol) const
 {
-    vTarget->clear();
-
     if ((_vLine.size() > 1 && _vCol.size() > 1) || !memArray.size())
-        vTarget->resize(1, NAN);
+        vTarget->assign(1, NAN);
     else
     {
-        vTarget->resize(_vLine.size()*_vCol.size(), NAN);
+        vTarget->assign(_vLine.size()*_vCol.size(), NAN);
 
         //#pragma omp parallel for
         for (size_t j = 0; j < _vCol.size(); j++)
@@ -1029,21 +1027,39 @@ void Memory::writeData(Indices& _idx, mu::value_type* _dData, unsigned int _nNum
     {
         for (size_t j = 0; j < _idx.col.size(); j++)
         {
+            if (!i && _idx.col[j] >= memArray.size())
+                resizeMemory(i, _idx.col[j]+1);
+
+            if (!i)
+                convert_if_empty(memArray[_idx.col[j]], _idx.col[j], TableColumn::TYPE_VALUE);
+
             if (nDirection == COLS)
             {
-                if (!i && rewriteColumn && memArray.size() > _idx.col[j])
+                if (!i && rewriteColumn)
                     convert_for_overwrite(memArray[_idx.col[j]], _idx.col[j], TableColumn::TYPE_VALUE);
 
                 if (_nNum > i)
-                    writeData(_idx.row[i], _idx.col[j], _dData[i]);
+                {
+                    memArray[_idx.col[j]]->setValue(_idx.row[i], _dData[i]);
+
+                    if (nCalcLines != -1 && (nCalcLines <= _idx.row[i] || mu::isnan(_dData[i])))
+                        nCalcLines = -1;
+                }
             }
             else
             {
                 if (_nNum > j)
-                    writeData(_idx.row[i], _idx.col[j], _dData[j]);
+                {
+                    memArray[_idx.col[j]]->setValue(_idx.row[i], _dData[j]);
+
+                    if (nCalcLines != -1 && (nCalcLines <= _idx.row[i] || mu::isnan(_dData[j])))
+                        nCalcLines = -1;
+                }
             }
         }
     }
+
+    m_meta.modify();
 }
 
 

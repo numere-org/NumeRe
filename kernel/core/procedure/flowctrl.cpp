@@ -2337,7 +2337,6 @@ int FlowCtrl::compile(string sLine, int nthCmd)
         _assertionHandler.checkAssertion(v, nNum);
 
         vAns = v[0];
-        NumeReKernel::getInstance()->getAns().clear();
         NumeReKernel::getInstance()->getAns().setDoubleArray(nNum, v);
 
         if (!bLoopSupressAnswer)
@@ -2772,7 +2771,6 @@ int FlowCtrl::compile(string sLine, int nthCmd)
     _assertionHandler.checkAssertion(v, nNum);
 
     vAns = v[0];
-    NumeReKernel::getInstance()->getAns().clear();
     NumeReKernel::getInstance()->getAns().setDoubleArray(nNum, v);
 
     // Do only add the bytecode flag, if it does not depend on
@@ -2829,14 +2827,10 @@ int FlowCtrl::compile(string sLine, int nthCmd)
 /////////////////////////////////////////////////
 int FlowCtrl::calc(string sLine, int nthCmd)
 {
-    string sCache;
-
     value_type* v = 0;
     int nNum = 0;
-    Indices _idx;
-    bool bCompiling = false;
-    bool bWriteToCache = false;
-    bool bWriteToCluster = false;
+    NumeRe::Cluster& ans = NumeReKernel::getInstance()->getAns();
+
     _assertionHandler.reset();
     updateTestStats();
 
@@ -2902,7 +2896,8 @@ int FlowCtrl::calc(string sLine, int nthCmd)
 
             getStringArgument(sLine, sErrorToken);
             sErrorToken += " -nq";
-            NumeReKernel::getInstance()->getStringParser().evalAndFormat(sErrorToken, sCache, true);
+            std::string sDummy;
+            NumeReKernel::getInstance()->getStringParser().evalAndFormat(sErrorToken, sDummy, true);
         }
 
         throw SyntaxError(SyntaxError::LOOP_THROW, sLine, SyntaxError::invalid_position, sErrorToken);
@@ -2951,25 +2946,16 @@ int FlowCtrl::calc(string sLine, int nthCmd)
     // parsed? Evaluate it here
     if (nCurrentCalcType & CALCTYPE_NUMERICAL)
     {
-        if (_parserRef->IsValidByteCode() == 1 && _parserRef->IsAlreadyParsed(sLine) && !bLockedPauseMode && bUseLoopParsingMode)
+        if (_parserRef->IsValidByteCode() == 1 /*&& _parserRef->IsAlreadyParsed(sLine)*/ && !bLockedPauseMode && bUseLoopParsingMode)
         {
             v = _parserRef->Eval(nNum);
             _assertionHandler.checkAssertion(v, nNum);
 
             vAns = v[0];
-            NumeReKernel::getInstance()->getAns().clear();
-            NumeReKernel::getInstance()->getAns().setDoubleArray(nNum, v);
+            ans.setDoubleArray(nNum, v);
 
             if (!bLoopSupressAnswer)
-            {
-                /* --> Der Benutzer will also die Ergebnisse sehen. Es gibt die Moeglichkeit,
-                 *     dass der Parser mehrere Ausdruecke je Zeile auswertet. Dazu muessen die
-                 *     Ausdruecke durch Kommata getrennt sein. Damit der Parser bemerkt, dass er
-                 *     mehrere Ausdruecke auszuwerten hat, muss man die Auswerte-Funktion des
-                 *     Parsers einmal aufgerufen werden <--
-                 */
                 NumeReKernel::print(NumeReKernel::formatResultOutput(nNum, v));
-            }
 
             return FLOWCTRL_OK;
         }
@@ -3045,8 +3031,8 @@ int FlowCtrl::calc(string sLine, int nthCmd)
             if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sCmdString))
             {
                 sCmdString += " -nq";
-                NumeReKernel::getInstance()->getStringParser().evalAndFormat(sCmdString, sCache, true);
-                sCache = "";
+                std::string sDummy;
+                NumeReKernel::getInstance()->getStringParser().evalAndFormat(sCmdString, sDummy, true);
             }
 
             sLine = sLine.substr(0, nPos - 6) + sCmdString + sLine.substr(nPos + nParPos + 1);
@@ -3246,6 +3232,12 @@ int FlowCtrl::calc(string sLine, int nthCmd)
     if (nCurrentCalcType & CALCTYPE_RECURSIVEEXPRESSION)
         evalRecursiveExpressions(sLine);
 
+    // Declare all further necessary variables
+    std::string sDataObject;
+    bool bCompiling = false;
+    bool bWriteToCache = false;
+    bool bWriteToCluster = false;
+
     // Get the data from the used data object
     if (nCurrentCalcType & CALCTYPE_DATAACCESS)
     {
@@ -3260,25 +3252,25 @@ int FlowCtrl::calc(string sLine, int nthCmd)
                 _parserRef->SetCompiling(true);
             }
 
-            sCache = getDataElements(sLine, *_parserRef, *_dataRef, *_optionRef);
+            sDataObject = getDataElements(sLine, *_parserRef, *_dataRef, *_optionRef);
 
-            if (sCache.length())
+            if (sDataObject.length())
                 bWriteToCache = true;
 
             // Ad-hoc bytecode adaption
 #warning NOTE (numere#1#08/21/21): Might need some adaption, if bytecode issues are experienced
-            if (nCurrentCalcType && NumeReKernel::getInstance()->getStringParser().isStringExpression(sLine))
+            if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sLine))
                 nCurrentCalcType |= CALCTYPE_STRING;
 
             if (_parserRef->IsCompiling() && _parserRef->CanCacheAccess())
             {
                 _parserRef->CacheCurrentEquation(sLine);
-                _parserRef->CacheCurrentTarget(sCache);
+                _parserRef->CacheCurrentTarget(sDataObject);
             }
 
             _parserRef->SetCompiling(false);
         }
-        else if (isClusterCandidate(sLine, sCache))
+        else if (isClusterCandidate(sLine, sDataObject))
             bWriteToCache = true;
     }
 
@@ -3288,7 +3280,7 @@ int FlowCtrl::calc(string sLine, int nthCmd)
         if (!bLockedPauseMode && bUseLoopParsingMode)
             _parserRef->PauseLoopMode();
 
-        auto retVal = NumeReKernel::getInstance()->getStringParser().evalAndFormat(sLine, sCache, bLoopSupressAnswer);
+        auto retVal = NumeReKernel::getInstance()->getStringParser().evalAndFormat(sLine, sDataObject, bLoopSupressAnswer);
         NumeReKernel::getInstance()->getStringParser().removeTempStringVectorVars();
 
         if (retVal == NumeRe::StringParser::STRING_SUCCESS)
@@ -3307,12 +3299,15 @@ int FlowCtrl::calc(string sLine, int nthCmd)
 
         replaceLocalVars(sLine);
 
-        if (sCache.length() && _dataRef->containsTablesOrClusters(sCache) && !bWriteToCache)
+        if (sDataObject.length() && _dataRef->containsTablesOrClusters(sDataObject) && !bWriteToCache)
             bWriteToCache = true;
 
         if (!bLockedPauseMode && bUseLoopParsingMode)
             _parserRef->PauseLoopMode(false);
     }
+
+    // Prepare the indices for storing the data
+    Indices _idx;
 
     // Get the target indices of the target data object
     if (nCurrentCalcType & CALCTYPE_DATAACCESS)
@@ -3324,43 +3319,43 @@ int FlowCtrl::calc(string sLine, int nthCmd)
             if (bCompiling)
             {
                 _parserRef->SetCompiling(true);
-                getIndices(sCache, _idx, *_parserRef, *_dataRef, *_optionRef);
+                getIndices(sDataObject, _idx, *_parserRef, *_dataRef, *_optionRef);
 
-                if (sCache[(pos = sCache.find_first_of("({"))] == '{')
+                if (sDataObject[(pos = sDataObject.find_first_of("({"))] == '{')
                     bWriteToCluster = true;
 
                 if (!isValidIndexSet(_idx))
-                    throw SyntaxError(SyntaxError::INVALID_INDEX, sCache, "", _idx.row.to_string() + ", " + _idx.col.to_string());
+                    throw SyntaxError(SyntaxError::INVALID_INDEX, sDataObject, "", _idx.row.to_string() + ", " + _idx.col.to_string());
 
                 if (!bWriteToCluster && _idx.row.isOpenEnd() && _idx.col.isOpenEnd())
-                    throw SyntaxError(SyntaxError::NO_MATRIX, sCache, "");
+                    throw SyntaxError(SyntaxError::NO_MATRIX, sDataObject, "");
 
-                sCache.erase(pos);
-                StripSpaces(sCache);
+                sDataObject.erase(pos);
+                StripSpaces(sDataObject);
 
                 if (!bWriteToCluster)
-                    _parserRef->CacheCurrentTarget(sCache + "(" + _idx.sCompiledAccessEquation + ")");
+                    _parserRef->CacheCurrentTarget(sDataObject + "(" + _idx.sCompiledAccessEquation + ")");
                 else
-                    _parserRef->CacheCurrentTarget(sCache + "{" + _idx.sCompiledAccessEquation + "}");
+                    _parserRef->CacheCurrentTarget(sDataObject + "{" + _idx.sCompiledAccessEquation + "}");
 
                 _parserRef->SetCompiling(false);
             }
             else
             {
-                getIndices(sCache, _idx, *_parserRef, *_dataRef, *_optionRef);
+                getIndices(sDataObject, _idx, *_parserRef, *_dataRef, *_optionRef);
                 //_idx.col.front() = 0;
                 //_idx.row.front() = 0;
 
-                if (sCache[(pos = sCache.find_first_of("({"))] == '{')
+                if (sDataObject[(pos = sDataObject.find_first_of("({"))] == '{')
                     bWriteToCluster = true;
 
                 if (!isValidIndexSet(_idx))
-                    throw SyntaxError(SyntaxError::INVALID_INDEX, sCache, "", _idx.row.to_string() + ", " + _idx.col.to_string());
+                    throw SyntaxError(SyntaxError::INVALID_INDEX, sDataObject, "", _idx.row.to_string() + ", " + _idx.col.to_string());
 
                 if (!bWriteToCluster && _idx.row.isOpenEnd() && _idx.col.isOpenEnd())
-                    throw SyntaxError(SyntaxError::NO_MATRIX, sCache, "");
+                    throw SyntaxError(SyntaxError::NO_MATRIX, sDataObject, "");
 
-                sCache.erase(pos);
+                sDataObject.erase(pos);
             }
         }
     }
@@ -3375,19 +3370,10 @@ int FlowCtrl::calc(string sLine, int nthCmd)
     _assertionHandler.checkAssertion(v, nNum);
 
     vAns = v[0];
-    NumeReKernel::getInstance()->getAns().clear();
-    NumeReKernel::getInstance()->getAns().setDoubleArray(nNum, v);
+    ans.setDoubleArray(nNum, v);
 
     if (!bLoopSupressAnswer)
-    {
-        /* --> Der Benutzer will also die Ergebnisse sehen. Es gibt die Moeglichkeit,
-         *     dass der Parser mehrere Ausdruecke je Zeile auswertet. Dazu muessen die
-         *     Ausdruecke durch Kommata getrennt sein. Damit der Parser bemerkt, dass er
-         *     mehrere Ausdruecke auszuwerten hat, muss man die Auswerte-Funktion des
-         *     Parsers einmal aufgerufen werden <--
-         */
         NumeReKernel::print(NumeReKernel::formatResultOutput(nNum, v));
-    }
 
     // Write the result to a table or a cluster
     // this was implied by the syntax of the command
@@ -3396,9 +3382,9 @@ int FlowCtrl::calc(string sLine, int nthCmd)
     {
         // Is it a cluster?
         if (bWriteToCluster)
-            _dataRef->getCluster(sCache).assignResults(_idx, nNum, v);
+            _dataRef->getCluster(sDataObject).assignResults(_idx, nNum, v);
         else
-            _dataRef->writeToTable(_idx, sCache, v, nNum);
+            _dataRef->writeToTable(_idx, sDataObject, v, nNum);
     }
 
     if (bReturnSignal)

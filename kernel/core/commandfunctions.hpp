@@ -3146,7 +3146,9 @@ static CommandReturnValues cmd_clear(string& sCmd)
 
         // Clear also the clusters
         _data.clearAllClusters();
-        _data.newCluster("ans").setDouble(0, NAN);
+        NumeRe::Cluster& ans = _data.newCluster("ans");
+        ans.setDouble(0, NAN);
+        NumeReKernel::getInstance()->setAns(&ans);
     }
     else if (cmdParser.getExpr() == "string()")
     {

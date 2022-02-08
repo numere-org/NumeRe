@@ -52,9 +52,17 @@ namespace mu
 
 	struct CachedDataAccess
 	{
+	    enum
+	    {
+	        NO_FLAG = 0x0,
+	        IS_CLUSTER = 0x1,
+	        IS_TABLE_METHOD = 0x2
+	    };
+
 		std::string sAccessEquation; // Passed to parser_getIndices -> returns the indices for the current access
 		std::string sVectorName; // target of the created vector -> use SetVectorVar
 		std::string sCacheName; // needed for reading the data -> create a vector var
+		int flags;
 	};
 
 	//--------------------------------------------------------------------------------------------------

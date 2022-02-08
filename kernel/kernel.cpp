@@ -102,6 +102,7 @@ NumeReKernel::NumeReKernel() : _option(), _memoryManager(), _parser(), _stringPa
     sAnswer.clear();
     sPlotCompose.clear();
     kernelInstance = this;
+    _ans = nullptr;
 }
 
 
@@ -2011,7 +2012,6 @@ bool NumeReKernel::evaluateStrings(string& sLine, string& sCache, const string& 
 void NumeReKernel::createCalculationAnswer(int nNum, value_type* v, const string& sCmdCache)
 {
     vAns = v[0];
-    getAns().clear();
     getAns().setDoubleArray(nNum, v);
 
     if (!bSupressAnswer)
@@ -3734,10 +3734,7 @@ bool NumeReKernel::GetAsyncCancelState()
     bool bCancel = bCancelSignal;
     bCancelSignal = false;
 
-    if (bCancel)
-        return true;
-
-    return false;
+    return bCancel;
 }
 
 

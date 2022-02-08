@@ -28,7 +28,14 @@ namespace NumeRe
     //
     //
 
-    // Private cluster copy assignment function
+    /////////////////////////////////////////////////
+    /// \brief Private cluster copy assignment
+    /// function.
+    ///
+    /// \param cluster const Cluster&
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
     void Cluster::assign(const Cluster& cluster)
     {
         bSortCaseInsensitive = false;
@@ -48,8 +55,16 @@ namespace NumeRe
         }
     }
 
-    // Private double vector assign ment function
-    void Cluster::assign(const vector<mu::value_type>& vVals)
+
+    /////////////////////////////////////////////////
+    /// \brief Private double vector assignment
+    /// function.
+    ///
+    /// \param vVals const std::vector<mu::value_type>&
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
+    void Cluster::assign(const std::vector<mu::value_type>& vVals)
     {
         bSortCaseInsensitive = false;
 
@@ -65,8 +80,16 @@ namespace NumeRe
         }
     }
 
-    // Private string vector assignment function
-    void Cluster::assign(const vector<string>& vStrings)
+
+    /////////////////////////////////////////////////
+    /// \brief Private string vector assignment
+    /// function.
+    ///
+    /// \param vStrings const std::vector<std::string>&
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
+    void Cluster::assign(const std::vector<std::string>& vStrings)
     {
         bSortCaseInsensitive = false;
 
@@ -82,8 +105,17 @@ namespace NumeRe
         }
     }
 
-    // Private result assignment function for doubles
-    // using vectors as indices
+
+    /////////////////////////////////////////////////
+    /// \brief Private result assignment function for
+    /// values using vectors as indices.
+    ///
+    /// \param _idx Indices
+    /// \param nNum int
+    /// \param data mu::value_type*
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
     void Cluster::assignVectorResults(Indices _idx, int nNum, mu::value_type* data)
     {
         if (nGlobalType != ClusterItem::ITEMTYPE_DOUBLE)
@@ -114,8 +146,17 @@ namespace NumeRe
         }
     }
 
-    // This private member function is an override for the
-    // sorter object
+
+    /////////////////////////////////////////////////
+    /// \brief This private member function is an
+    /// override for the sorter object.
+    ///
+    /// \param i int
+    /// \param j int
+    /// \param col int
+    /// \return int
+    ///
+    /////////////////////////////////////////////////
     int Cluster::compare(int i, int j, int col)
     {
         if (isString() || isMixed())
@@ -153,8 +194,16 @@ namespace NumeRe
         return 0;
     }
 
-    // This private member function is an override for the
-    // sorter object
+
+    /////////////////////////////////////////////////
+    /// \brief This private member function is an
+    /// override for the sorter object.
+    ///
+    /// \param line int
+    /// \param col int
+    /// \return bool
+    ///
+    /////////////////////////////////////////////////
     bool Cluster::isValue(int line, int col)
     {
         if (vClusterArray[line]->getType() == ClusterItem::ITEMTYPE_DOUBLE && !isnan(vClusterArray[line]->getDouble().real()))
@@ -166,9 +215,19 @@ namespace NumeRe
         return false;
     }
 
-    // This private member function reorders the elements in the
-    // cluster based upon the passed index vector
-    void Cluster::reorderElements(vector<int> vIndex, int i1, int i2)
+
+    /////////////////////////////////////////////////
+    /// \brief This private member function reorders
+    /// the elements in the cluster based upon the
+    /// passed index vector.
+    ///
+    /// \param vIndex std::vector<int>
+    /// \param i1 int
+    /// \param i2 int
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
+    void Cluster::reorderElements(std::vector<int> vIndex, int i1, int i2)
     {
         vector<ClusterItem*> vSortVector = vClusterArray;
 
@@ -178,11 +237,40 @@ namespace NumeRe
         {
             vClusterArray[i+i1] = vSortVector[vIndex[i]];
         }
-
     }
 
-    // This member function appends an arbitrary cluster
-    // item at the back of the internal clsuter array buffer
+
+    /////////////////////////////////////////////////
+    /// \brief Reduces the size of this cluster to
+    /// the specified number of elements. Does not
+    /// create anything, if the cluster is already
+    /// smaller.
+    ///
+    /// \param s size_t
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
+    void Cluster::reduceSize(size_t s)
+    {
+        if (vClusterArray.size() <= s)
+            return;
+
+        for (size_t i = s; i < vClusterArray.size(); i++)
+            delete vClusterArray[i];
+
+        vClusterArray.resize(s);
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief This member function appends an
+    /// arbitrary cluster item at the back of the
+    /// internal cluster array buffer.
+    ///
+    /// \param item ClusterItem*
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
     void Cluster::push_back(ClusterItem* item)
     {
         if (item)
@@ -195,9 +283,17 @@ namespace NumeRe
             nGlobalType = ClusterItem::ITEMTYPE_MIXED;
     }
 
-    // This member function constructs a new double cluster
-    // item at the back of the internal clsuter array buffer
-    void Cluster::push_back(mu::value_type val)
+
+    /////////////////////////////////////////////////
+    /// \brief This member function constructs a new
+    /// double cluster item at the back of the
+    /// internal cluster array buffer.
+    ///
+    /// \param val const mu::value_type&
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
+    void Cluster::push_back(const mu::value_type& val)
     {
         vClusterArray.push_back(new ClusterDoubleItem(val));
 
@@ -208,9 +304,17 @@ namespace NumeRe
             nGlobalType = ClusterItem::ITEMTYPE_MIXED;
     }
 
-    // This member function constructs a new string cluster
-    // item at the back of the internal clsuter array buffer
-    void Cluster::push_back(const string& strval)
+
+    /////////////////////////////////////////////////
+    /// \brief This member function constructs a new
+    /// string cluster item at the back of the
+    /// internal cluster array buffer.
+    ///
+    /// \param strval const std::string&
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
+    void Cluster::push_back(const std::string& strval)
     {
         vClusterArray.push_back(new ClusterStringItem(strval));
 
@@ -221,8 +325,15 @@ namespace NumeRe
             nGlobalType = ClusterItem::ITEMTYPE_MIXED;
     }
 
-    // This member function removes the last item in the internal
-    // memory buffer and frees the associated mempry
+
+    /////////////////////////////////////////////////
+    /// \brief This member function removes the last
+    /// item in the internal memory buffer and frees
+    /// the associated memory.
+    ///
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
     void Cluster::pop_back()
     {
         if (vClusterArray.size())
@@ -234,15 +345,27 @@ namespace NumeRe
         }
     }
 
-    // This member function returns the size of the internal
-    // memory buffer as items
+
+    /////////////////////////////////////////////////
+    /// \brief This member function returns the size
+    /// of the internal memory buffer as items.
+    ///
+    /// \return size_t
+    ///
+    /////////////////////////////////////////////////
     size_t Cluster::size() const
     {
         return vClusterArray.size();
     }
 
-    // This member function returns the size of the associated
-    // memory as bytes
+
+    /////////////////////////////////////////////////
+    /// \brief This member function returns the size
+    /// of the associated memory as bytes.
+    ///
+    /// \return size_t
+    ///
+    /////////////////////////////////////////////////
     size_t Cluster::getBytes() const
     {
         size_t nBytes = 0;
@@ -260,8 +383,15 @@ namespace NumeRe
         return nBytes;
     }
 
-    // This member function clears the internal memory buffer
-    // and frees the associated memory
+
+    /////////////////////////////////////////////////
+    /// \brief This member function clears the
+    /// internal memory buffer and frees the
+    /// associated memory.
+    ///
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
     void Cluster::clear()
     {
         for (size_t i = 0; i < vClusterArray.size(); i++)
@@ -273,8 +403,14 @@ namespace NumeRe
         nGlobalType = ClusterItem::ITEMTYPE_INVALID;
     }
 
-    // This member function returns, whether the data in the
-    // cluster have mixed type
+
+    /////////////////////////////////////////////////
+    /// \brief This member function returns, whether
+    /// the data in the cluster have mixed type.
+    ///
+    /// \return bool
+    ///
+    /////////////////////////////////////////////////
     bool Cluster::isMixed() const
     {
         // Only do something, if the array has a length
@@ -303,8 +439,15 @@ namespace NumeRe
         return false;
     }
 
-    // This member function returns, whether the data in the
-    // cluster have only double as type
+
+    /////////////////////////////////////////////////
+    /// \brief This member function returns, whether
+    /// the data in the cluster have only double as
+    /// type.
+    ///
+    /// \return bool
+    ///
+    /////////////////////////////////////////////////
     bool Cluster::isDouble() const
     {
         // Only do something, if the array has a length
@@ -332,8 +475,15 @@ namespace NumeRe
         return false;
     }
 
-    // This member function returns, whether the data in the
-    // cluster have only string as type
+
+    /////////////////////////////////////////////////
+    /// \brief This member function returns, whether
+    /// the data in the cluster have only string as
+    /// type.
+    ///
+    /// \return bool
+    ///
+    /////////////////////////////////////////////////
     bool Cluster::isString() const
     {
         // Only do something, if the array has a length
@@ -361,8 +511,16 @@ namespace NumeRe
         return false;
     }
 
-    // This member function returns the type of the i-th
-    // cluster item in the internal memory buffer
+
+    /////////////////////////////////////////////////
+    /// \brief This member function returns the type
+    /// of the i-th cluster item in the internal
+    /// memory buffer.
+    ///
+    /// \param i size_t
+    /// \return unsigned short
+    ///
+    /////////////////////////////////////////////////
     unsigned short Cluster::getType(size_t i) const
     {
         if (vClusterArray.size() > i)
@@ -371,8 +529,15 @@ namespace NumeRe
         return ClusterItem::ITEMTYPE_INVALID;
     }
 
-    // This member function returns the data of the i-th
-    // cluster item in memory as a double
+
+    /////////////////////////////////////////////////
+    /// \brief This member function returns the data
+    /// of the i-th cluster item in memory as a value.
+    ///
+    /// \param i size_t
+    /// \return mu::value_type
+    ///
+    /////////////////////////////////////////////////
     mu::value_type Cluster::getDouble(size_t i) const
     {
         if (vClusterArray.size() > i)
@@ -381,10 +546,19 @@ namespace NumeRe
         return NAN;
     }
 
-    // This member function assigns a double as data for
-    // the i-th cluster item in memory. The type of the
-    // i-th cluster item is adapted on-the-fly
-    void Cluster::setDouble(size_t i, mu::value_type value)
+
+    /////////////////////////////////////////////////
+    /// \brief This member function assigns a value
+    /// as data for the i-th cluster item in memory.
+    /// The type of the i-th cluster item is adapted
+    /// on-the-fly.
+    ///
+    /// \param i size_t
+    /// \param value const mu::value_type&
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
+    void Cluster::setDouble(size_t i, const mu::value_type& value)
     {
         // Create new items if needed
         while (vClusterArray.size() <= i)
@@ -403,11 +577,17 @@ namespace NumeRe
         nGlobalType = ClusterItem::ITEMTYPE_INVALID;
     }
 
-    // This member function returns the data of all cluster
-    // items memory as a double vector
-    vector<mu::value_type> Cluster::getDoubleArray() const
+
+    /////////////////////////////////////////////////
+    /// \brief This member function returns the data
+    /// of all cluster items memory as a value vector.
+    ///
+    /// \return std::vector<mu::value_type>
+    ///
+    /////////////////////////////////////////////////
+    std::vector<mu::value_type> Cluster::getDoubleArray() const
     {
-        vector<mu::value_type> vArray;
+        std::vector<mu::value_type> vArray;
 
         for (size_t i = 0; i < vClusterArray.size(); i++)
         {
@@ -417,16 +597,22 @@ namespace NumeRe
         return vArray;
     }
 
-    // This member function inserts the data of all cluster
-    // items memory into the pointer passed to the function.
-    // This function is used for cached memory accesses
-    void Cluster::insertDataInArray(vector<mu::value_type>* vTarget, const VectorIndex& _vLine)
+
+    /////////////////////////////////////////////////
+    /// \brief This member function inserts the data
+    /// of all cluster items memory into the pointer
+    /// passed to the function. This function is used
+    /// for cached memory accesses.
+    ///
+    /// \param vTarget std::vector<mu::value_type>*
+    /// \param _vLine const VectorIndex&
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
+    void Cluster::insertDataInArray(std::vector<mu::value_type>* vTarget, const VectorIndex& _vLine)
     {
         if (vTarget == nullptr)
             return;
-
-        // Clear the passed array
-        vTarget->clear();
 
         // Try to resize the array as copy-efficient as
         // possible
@@ -448,10 +634,18 @@ namespace NumeRe
         }
     }
 
-    // This member function assigns a doubles as data for
-    // the all cluster items in memory. The type of the
-    // cluster items is adapted on-the-fly
-    void Cluster::setDoubleArray(const vector<mu::value_type>& vVals)
+
+    /////////////////////////////////////////////////
+    /// \brief This member function assigns values as
+    /// data for the all cluster items in memory. The
+    /// type of the cluster items is adapted
+    /// on-the-fly.
+    ///
+    /// \param vVals const std::vector<mu::value_type>&
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
+    void Cluster::setDoubleArray(const std::vector<mu::value_type>& vVals)
     {
         // Create new cluster items, if needed
         while (vClusterArray.size() < vVals.size())
@@ -467,15 +661,25 @@ namespace NumeRe
                 vClusterArray[i] = new ClusterDoubleItem(vVals[i]);
             }
             else
-                vClusterArray[i]->setDouble(vVals[i]);
+                static_cast<ClusterDoubleItem*>(vClusterArray[i])->setDouble(vVals[i]);
         }
 
-        nGlobalType = ClusterItem::ITEMTYPE_INVALID;
+        reduceSize(vVals.size());
+        nGlobalType = ClusterItem::ITEMTYPE_DOUBLE;
     }
 
-    // This member function assigns a doubles as data for
-    // the all cluster items in memory. The type of the
-    // cluster items is adapted on-the-fly
+
+    /////////////////////////////////////////////////
+    /// \brief This member function assigns values as
+    /// data for the all cluster items in memory. The
+    /// type of the cluster items is adapted
+    /// on-the-fly.
+    ///
+    /// \param nNum int
+    /// \param data mu::value_type*
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
     void Cluster::setDoubleArray(int nNum, mu::value_type* data)
     {
         // Create new cluster items, if needed
@@ -492,25 +696,33 @@ namespace NumeRe
                 vClusterArray[i] = new ClusterDoubleItem(data[i]);
             }
             else
-                vClusterArray[i]->setDouble(data[i]);
+                static_cast<ClusterDoubleItem*>(vClusterArray[i])->setDouble(data[i]);
         }
 
-        nGlobalType = ClusterItem::ITEMTYPE_INVALID;
+        reduceSize(nNum);
+        nGlobalType = ClusterItem::ITEMTYPE_DOUBLE;
     }
 
-    // This member function assigns a calculation results
-    // as data for the cluster items in memory, which are
-    // referenced by the passed indices. The type of the
-    // cluster items is adapted on-the-fly
+
+    /////////////////////////////////////////////////
+    /// \brief This member function assigns
+    /// calculation results as data for the cluster
+    /// items in memory, which are referenced by the
+    /// passed indices. The type of the cluster items
+    /// is adapted on-the-fly.
+    ///
+    /// \param _idx Indices
+    /// \param nNum int
+    /// \param data mu::value_type*
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
     void Cluster::assignResults(Indices _idx, int nNum, mu::value_type* data)
     {
         // If the indices indicate a complete override
         // do that here and return
         if (_idx.row.isOpenEnd() && _idx.row.front() == 0)
         {
-            if (vClusterArray.size() > (size_t)nNum)
-                clear();
-
             setDoubleArray(nNum, data);
             return;
         }
@@ -520,9 +732,17 @@ namespace NumeRe
         assignVectorResults(_idx, nNum, data);
     }
 
-    // This member function returns the data of the i-th
-    // cluster item in memory as a string
-    string Cluster::getString(size_t i) const
+
+    /////////////////////////////////////////////////
+    /// \brief This member function returns the data
+    /// of the i-th cluster item in memory as a
+    /// string.
+    ///
+    /// \param i size_t
+    /// \return std::string
+    ///
+    /////////////////////////////////////////////////
+    std::string Cluster::getString(size_t i) const
     {
         if (vClusterArray.size() > i)
             return vClusterArray[i]->getString();
@@ -530,10 +750,19 @@ namespace NumeRe
         return "\"\"";
     }
 
-    // This member function assigns a string as data for
-    // the i-th cluster item in memory. The type of the
-    // i-th cluster item is adapted on-the-fly
-    void Cluster::setString(size_t i, const string& strval)
+
+    /////////////////////////////////////////////////
+    /// \brief This member function assigns a string
+    /// as data for the i-th cluster item in memory.
+    /// The type of the i-th cluster item is adapted
+    /// on-the-fly.
+    ///
+    /// \param i size_t
+    /// \param strval const std::string&
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
+    void Cluster::setString(size_t i, const std::string& strval)
     {
         // Create new cluster items, if needed
         while (vClusterArray.size() <= i)
@@ -552,11 +781,17 @@ namespace NumeRe
         nGlobalType = ClusterItem::ITEMTYPE_INVALID;
     }
 
-    // This member function returns the data of all cluster
-    // items memory as a double vector
-    vector<string> Cluster::getStringArray() const
+
+    /////////////////////////////////////////////////
+    /// \brief This member function returns the data
+    /// of all cluster items memory as a value vector.
+    ///
+    /// \return std::vector<std::string>
+    ///
+    /////////////////////////////////////////////////
+    std::vector<std::string> Cluster::getStringArray() const
     {
-        vector<string> vArray;
+        std::vector<std::string> vArray;
 
         for (size_t i = 0; i < vClusterArray.size(); i++)
         {
@@ -566,10 +801,18 @@ namespace NumeRe
         return vArray;
     }
 
-    // This member function assigns a doubles as data for
-    // the all cluster items in memory. The type of the
-    // cluster items is adapted on-the-fly
-    void Cluster::setStringArray(const vector<string>& sVals)
+
+    /////////////////////////////////////////////////
+    /// \brief This member function assigns values as
+    /// data for the all cluster items in memory. The
+    /// type of the cluster items is adapted
+    /// on-the-fly.
+    ///
+    /// \param sVals const std::vector<std::string>&
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
+    void Cluster::setStringArray(const std::vector<std::string>& sVals)
     {
         // Create new cluster items, if needed
         while (vClusterArray.size() < sVals.size())
@@ -588,20 +831,27 @@ namespace NumeRe
                 vClusterArray[i]->setString(sVals[i]);
         }
 
-        nGlobalType = ClusterItem::ITEMTYPE_INVALID;
+        reduceSize(sVals.size());
+        nGlobalType = ClusterItem::ITEMTYPE_STRING;
     }
 
-    // This member function constructs a plain vector
-    // from the data in memory, which can be inserted
-    // in the commandline as a replacement for the
-    // call to the cluster
-    string Cluster::getVectorRepresentation() const
+
+    /////////////////////////////////////////////////
+    /// \brief This member function constructs a
+    /// plain vector from the data in memory, which
+    /// can be inserted in the commandline as a
+    /// replacement for the call to the cluster.
+    ///
+    /// \return std::string
+    ///
+    /////////////////////////////////////////////////
+    std::string Cluster::getVectorRepresentation() const
     {
         // Return nan, if no data is available
         if (!vClusterArray.size())
             return "nan";
 
-        string sVector = "{";
+        std::string sVector = "{";
 
         // Append the contained data depending on its type
         for (size_t i = 0; i < vClusterArray.size(); i++)
@@ -618,18 +868,24 @@ namespace NumeRe
         return sVector;
     }
 
-    // This member function constructs a short version of
-    // a plain vector from the data in memory, which is used
-    // to display a preview of the contained data in the
-    // variable viewers
-    string Cluster::getShortVectorRepresentation() const
+
+    /////////////////////////////////////////////////
+    /// \brief This member function constructs a
+    /// short version of a plain vector from the data
+    /// in memory, which is used to display a preview
+    /// of the contained data in the variable viewers.
+    ///
+    /// \return std::string
+    ///
+    /////////////////////////////////////////////////
+    std::string Cluster::getShortVectorRepresentation() const
     {
         // Return an empty brace pair, if no data is
         // available
         if (!vClusterArray.size())
             return "{}";
 
-        string sVector = "{";
+        std::string sVector = "{";
 
         // Append the contained data depending on its type but
         // restrict the number to maximal five values (use the first
@@ -655,17 +911,27 @@ namespace NumeRe
         return sVector;
     }
 
-    // This public member function provides access to the sorting
-    // algorithm for the cluster object
-    vector<int> Cluster::sortElements(long long int i1, long long int i2, const string& sSortingExpression)
+
+    /////////////////////////////////////////////////
+    /// \brief This public member function provides
+    /// access to the sorting algorithm for the
+    /// cluster object.
+    ///
+    /// \param i1 long longint
+    /// \param i2 long longint
+    /// \param sSortingExpression const std::string&
+    /// \return std::vector<int>
+    ///
+    /////////////////////////////////////////////////
+    std::vector<int> Cluster::sortElements(long long int i1, long long int i2, const std::string& sSortingExpression)
     {
         if (!vClusterArray.size())
-            return vector<int>();
+            return std::vector<int>();
 
         bool bReturnIndex = false;
         bSortCaseInsensitive = false;
         int nSign = 1;
-        vector<int> vIndex;
+        std::vector<int> vIndex;
 
         // Look for command line parameters
         if (findParameter(sSortingExpression, "desc"))
@@ -705,13 +971,21 @@ namespace NumeRe
         }
 
         if (!bReturnIndex)
-            return vector<int>();
+            return std::vector<int>();
 
         return vIndex;
     }
 
-    // This public member function erases elements located from
-    // the index i1 to i2
+
+    /////////////////////////////////////////////////
+    /// \brief This public member function erases
+    /// elements located from the index i1 to i2.
+    ///
+    /// \param i1 long longint
+    /// \param i2 long longint
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
     void Cluster::deleteItems(long long int i1, long long int i2)
     {
         if (i2 >= vClusterArray.size())
@@ -747,8 +1021,15 @@ namespace NumeRe
         nGlobalType = ClusterItem::ITEMTYPE_INVALID;
     }
 
-    // This public member function erases elements located from
-    // the index i1 to i2
+
+    /////////////////////////////////////////////////
+    /// \brief This public member function erases
+    /// elements referenced by the passed VectorIndex.
+    ///
+    /// \param vLines const VectorIndex&
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
     void Cluster::deleteItems(const VectorIndex& vLines)
     {
         // Delete the cluster items first and
@@ -778,12 +1059,21 @@ namespace NumeRe
         nGlobalType = ClusterItem::ITEMTYPE_INVALID;
     }
 
+
     //
     // Statistic functions section
     //
-    // This member function calculates the standard deviation
-    // of the data in memory. Cluster items, which do not
-    // have the type "double" are ignored
+
+    /////////////////////////////////////////////////
+    /// \brief This member function calculates the
+    /// standard deviation of the data in memory.
+    /// Cluster items, which do not have the type
+    /// "value" are ignored.
+    ///
+    /// \param _vLine const VectorIndex&
+    /// \return mu::value_type
+    ///
+    /////////////////////////////////////////////////
     mu::value_type Cluster::std(const VectorIndex& _vLine)
     {
         if (!vClusterArray.size())
@@ -808,12 +1098,20 @@ namespace NumeRe
         if (nInvalid >= _vLine.size() - 1)
             return NAN;
 
-        return sqrt(dStd / ((_vLine.size()) - 1 - (double)nInvalid));
+        return std::sqrt(dStd / ((_vLine.size()) - 1 - (double)nInvalid));
     }
 
-    // This member function calculates the average of
-    // the data in memory. Cluster items, which do not
-    // have the type "double" are ignored
+
+    /////////////////////////////////////////////////
+    /// \brief This member function calculates the
+    /// average of the data in memory. Cluster items,
+    /// which do not have the type "value" are
+    /// ignored.
+    ///
+    /// \param _vLine const VectorIndex&
+    /// \return mu::value_type
+    ///
+    /////////////////////////////////////////////////
     mu::value_type Cluster::avg(const VectorIndex& _vLine)
     {
         if (!vClusterArray.size())
@@ -839,9 +1137,17 @@ namespace NumeRe
         return dAvg / (_vLine.size() - (double)nInvalid);
     }
 
-    // This member function calculates the maximal value
-    // of the data in memory. Cluster items, which do not
-    // have the type "double" are ignored
+
+    /////////////////////////////////////////////////
+    /// \brief This member function calculates the
+    /// maximal value of the data in memory. Cluster
+    /// items, which do not have the type "value" are
+    /// ignored.
+    ///
+    /// \param _vLine const VectorIndex&
+    /// \return mu::value_type
+    ///
+    /////////////////////////////////////////////////
     mu::value_type Cluster::max(const VectorIndex& _vLine)
     {
         if (!vClusterArray.size() || isString())
@@ -868,15 +1174,23 @@ namespace NumeRe
         return dMax;
     }
 
-    // This member function calculates the maximal string value
-    // of the data in memory. Cluster items of all types are used
-    // and converted on-the-fly
-    string Cluster::strmax(const VectorIndex& _vLine)
+
+    /////////////////////////////////////////////////
+    /// \brief This member function calculates the
+    /// maximal string value of the data in memory.
+    /// Cluster items of all types are used and
+    /// converted on-the-fly.
+    ///
+    /// \param _vLine const VectorIndex&
+    /// \return string
+    ///
+    /////////////////////////////////////////////////
+    std::string Cluster::strmax(const VectorIndex& _vLine)
     {
         if (!vClusterArray.size() || isDouble())
             return "";
 
-        string sMax = "";
+        std::string sMax = "";
 
         // Apply the operation on all items and convert
         // their values on-the-fly
@@ -895,9 +1209,17 @@ namespace NumeRe
         return sMax;
     }
 
-    // This member function calculates the minimal value
-    // of the data in memory. Cluster items, which do not
-    // have the type "double" are ignored
+
+    /////////////////////////////////////////////////
+    /// \brief This member function calculates the
+    /// minimal value of the data in memory. Cluster
+    /// items, which do not have the type "value" are
+    /// ignored.
+    ///
+    /// \param _vLine const VectorIndex&
+    /// \return mu::value_type
+    ///
+    /////////////////////////////////////////////////
     mu::value_type Cluster::min(const VectorIndex& _vLine)
     {
         if (!vClusterArray.size() || isString())
@@ -924,15 +1246,23 @@ namespace NumeRe
         return dMin;
     }
 
-    // This member function calculates the minimal string value
-    // of the data in memory. Cluster items of all types are used
-    // and converted on-the-fly
-    string Cluster::strmin(const VectorIndex& _vLine)
+
+    /////////////////////////////////////////////////
+    /// \brief This member function calculates the
+    /// minimal string value of the data in memory.
+    /// Cluster items of all types are used and
+    /// converted on-the-fly.
+    ///
+    /// \param _vLine const VectorIndex&
+    /// \return std::string
+    ///
+    /////////////////////////////////////////////////
+    std::string Cluster::strmin(const VectorIndex& _vLine)
     {
         if (!vClusterArray.size() || isDouble())
             return "";
 
-        string sMin = "";
+        std::string sMin = "";
 
         // Apply the operation on all items and convert
         // their values on-the-fly
@@ -951,9 +1281,17 @@ namespace NumeRe
         return sMin;
     }
 
-    // This member function calculates the product
-    // of the data in memory. Cluster items, which do not
-    // have the type "double" are ignored
+
+    /////////////////////////////////////////////////
+    /// \brief This member function calculates the
+    /// product of the data in memory. Cluster items,
+    /// which do not have the type "value" are
+    /// ignored.
+    ///
+    /// \param _vLine const VectorIndex&
+    /// \return mu::value_type
+    ///
+    /////////////////////////////////////////////////
     mu::value_type Cluster::prd(const VectorIndex& _vLine)
     {
         if (!vClusterArray.size())
@@ -976,9 +1314,17 @@ namespace NumeRe
         return dPrd;
     }
 
-    // This member function calculates the sum of the
-    // data in memory. Cluster items, which do not
-    // have the type "double" are ignored
+
+    /////////////////////////////////////////////////
+    /// \brief This member function calculates the
+    /// sum of the data in memory. Cluster items,
+    /// which do not have the type "value" are
+    /// ignored.
+    ///
+    /// \param _vLine const VectorIndex&
+    /// \return mu::value_type
+    ///
+    /////////////////////////////////////////////////
     mu::value_type Cluster::sum(const VectorIndex& _vLine)
     {
         if (!vClusterArray.size() && isString())
@@ -1001,15 +1347,23 @@ namespace NumeRe
         return dSum;
     }
 
-    // This member function calculates the string concatenation
-    // of the data in memory. Cluster items of all types are used
-    // and converted on-the-fly
-    string Cluster::strsum(const VectorIndex& _vLine)
+
+    /////////////////////////////////////////////////
+    /// \brief This member function calculates the
+    /// string concatenation of the data in memory.
+    /// Cluster items of all types are used and
+    /// converted on-the-fly.
+    ///
+    /// \param _vLine const VectorIndex&
+    /// \return std::string
+    ///
+    /////////////////////////////////////////////////
+    std::string Cluster::strsum(const VectorIndex& _vLine)
     {
         if (!vClusterArray.size() || isDouble())
             return "";
 
-        string sSum = "";
+        std::string sSum = "";
 
         // Apply the operation on all items and convert
         // their values on-the-fly
@@ -1024,9 +1378,17 @@ namespace NumeRe
         return sSum;
     }
 
-    // This member function counts the number of valid cluster
-    // items in memory. Cluster items of any type are counted, if
-    // they do have a valid value (depending on their type)
+
+    /////////////////////////////////////////////////
+    /// \brief This member function counts the number
+    /// of valid cluster items in memory. Cluster
+    /// items of any type are counted, if they do
+    /// have a valid value (depending on their type).
+    ///
+    /// \param _vLine const VectorIndex&
+    /// \return mu::value_type
+    ///
+    /////////////////////////////////////////////////
     mu::value_type Cluster::num(const VectorIndex& _vLine)
     {
         if (!vClusterArray.size())
@@ -1048,9 +1410,16 @@ namespace NumeRe
         return _vLine.size() - (double)nInvalid;
     }
 
-    // This member function applies an "AND" to
-    // the data in memory. Cluster items, which do not
-    // have the type "double" are ignored
+
+    /////////////////////////////////////////////////
+    /// \brief This member function applies an "AND"
+    /// to the data in memory. Cluster items, which
+    /// do not have the type "value" are ignored.
+    ///
+    /// \param _vLine const VectorIndex&
+    /// \return mu::value_type
+    ///
+    /////////////////////////////////////////////////
     mu::value_type Cluster::and_func(const VectorIndex& _vLine)
     {
         if (!vClusterArray.size())
@@ -1077,9 +1446,16 @@ namespace NumeRe
         return 1.0;
     }
 
-    // This member function applies an "OR" to
-    // the data in memory. Cluster items, which do not
-    // have the type "double" are ignored
+
+    /////////////////////////////////////////////////
+    /// \brief This member function applies an "OR"
+    /// to the data in memory. Cluster items, which
+    /// do not have the type "value" are ignored.
+    ///
+    /// \param _vLine const VectorIndex&
+    /// \return mu::value_type
+    ///
+    /////////////////////////////////////////////////
     mu::value_type Cluster::or_func(const VectorIndex& _vLine)
     {
         if (!vClusterArray.size())
@@ -1099,9 +1475,17 @@ namespace NumeRe
         return 0.0;
     }
 
-    // This member function applies an "exclusive OR" to
-    // the data in memory. Cluster items, which do not
-    // have the type "double" are ignored
+
+    /////////////////////////////////////////////////
+    /// \brief This member function applies an
+    /// "exclusive OR" to the data in memory. Cluster
+    /// items, which do not have the type "value" are
+    /// ignored.
+    ///
+    /// \param _vLine const VectorIndex&
+    /// \return mu::value_type
+    ///
+    /////////////////////////////////////////////////
     mu::value_type Cluster::xor_func(const VectorIndex& _vLine)
     {
         if (!vClusterArray.size())
@@ -1131,9 +1515,17 @@ namespace NumeRe
         return 0.0;
     }
 
-    // This member function counts the number of valid cluster
-    // items in memory. Cluster items of any type are counted, if
-    // the vector index points to a valid location
+
+    /////////////////////////////////////////////////
+    /// \brief This member function counts the number
+    /// of valid cluster items in memory. Cluster
+    /// items of any type are counted, if the vector
+    /// index points to a valid location.
+    ///
+    /// \param _vLine const VectorIndex&
+    /// \return mu::value_type
+    ///
+    /////////////////////////////////////////////////
     mu::value_type Cluster::cnt(const VectorIndex& _vLine)
     {
         if (!vClusterArray.size())
@@ -1150,9 +1542,17 @@ namespace NumeRe
         return _vLine.size() - (double)nInvalid;
     }
 
-    // This member function calculates the euclidic vector norm
-    // of the data in memory. Cluster items, which do not
-    // have the type "double" are ignored
+
+    /////////////////////////////////////////////////
+    /// \brief This member function calculates the
+    /// euclidic vector norm of the data in memory.
+    /// Cluster items, which do not have the type
+    /// "value" are ignored.
+    ///
+    /// \param _vLine const VectorIndex&
+    /// \return mu::value_type
+    ///
+    /////////////////////////////////////////////////
     mu::value_type Cluster::norm(const VectorIndex& _vLine)
     {
         if (!vClusterArray.size())
@@ -1172,13 +1572,23 @@ namespace NumeRe
             dNorm += vClusterArray[_vLine[i]]->getDouble() * conj(vClusterArray[_vLine[i]]->getDouble());
         }
 
-        return sqrt(dNorm);
+        return std::sqrt(dNorm);
     }
 
-    // This member function compares the values in memory with
-    // the referenced value and returns indices or values depending
-    // on the passed type. Cluster items, which do not
-    // have the type "double" are ignored
+
+    /////////////////////////////////////////////////
+    /// \brief This member function compares the
+    /// values in memory with the referenced value
+    /// and returns indices or values depending on
+    /// the passed type. Cluster items, which do not
+    /// have the type "value" are ignored.
+    ///
+    /// \param _vLine const VectorIndex&
+    /// \param dRef mu::value_type
+    /// \param _nType int
+    /// \return mu::value_type
+    ///
+    /////////////////////////////////////////////////
     mu::value_type Cluster::cmp(const VectorIndex& _vLine, mu::value_type dRef, int _nType)
     {
         if (!vClusterArray.size())
@@ -1277,9 +1687,17 @@ namespace NumeRe
         return nKeep+1;
     }
 
-    // This member function calculates the median value
-    // of the data in memory. Cluster items, which do not
-    // have the type "double" are ignored
+
+    /////////////////////////////////////////////////
+    /// \brief This member function calculates the
+    /// median value of the data in memory. Cluster
+    /// items, which do not have the type "value" are
+    /// ignored.
+    ///
+    /// \param _vLine const VectorIndex&
+    /// \return mu::value_type
+    ///
+    /////////////////////////////////////////////////
     mu::value_type Cluster::med(const VectorIndex& _vLine)
     {
         if (!vClusterArray.size())
@@ -1335,9 +1753,18 @@ namespace NumeRe
         return dMed;
     }
 
-    // This member function calculates the p-th percentile
-    // of the data in memory. Cluster items, which do not
-    // have the type "double" are ignored
+
+    /////////////////////////////////////////////////
+    /// \brief This member function calculates the
+    /// p-th percentile of the data in memory.
+    /// Cluster items, which do not have the type
+    /// "value" are ignored.
+    ///
+    /// \param _vLine const VectorIndex&
+    /// \param dPct mu::value_type
+    /// \return mu::value_type
+    ///
+    /////////////////////////////////////////////////
     mu::value_type Cluster::pct(const VectorIndex& _vLine, mu::value_type dPct)
     {
         if (!vClusterArray.size())
@@ -1401,12 +1828,20 @@ namespace NumeRe
     //
     //
 
-    // This member function creates a valid cluster identifier
-    // name, which can be used to create or append a new cluster
-    string ClusterManager::validateClusterName(const string& sCluster)
+
+    /////////////////////////////////////////////////
+    /// \brief This member function creates a valid
+    /// cluster identifier name, which can be used to
+    /// create or append a new cluster.
+    ///
+    /// \param sCluster const std::string&
+    /// \return std::string
+    ///
+    /////////////////////////////////////////////////
+    std::string ClusterManager::validateClusterName(const std::string& sCluster)
     {
-        string sClusterName = sCluster.substr(0, sCluster.find('{'));
-        const static string sVALIDCHARACTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_~";
+        std::string sClusterName = sCluster.substr(0, sCluster.find('{'));
+        const static std::string sVALIDCHARACTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_~";
 
         if ((sClusterName[0] >= '0' && sClusterName[0] <= '9') || sClusterName[0] == '~' || sClusterName.find_first_not_of(sVALIDCHARACTERS) != string::npos)
             throw SyntaxError(SyntaxError::INVALID_CLUSTER_NAME, "", SyntaxError::invalid_position, sClusterName);
@@ -1414,7 +1849,17 @@ namespace NumeRe
         return sClusterName;
     }
 
-    map<string, Cluster>::const_iterator ClusterManager::mapStringViewFind(StringView view) const
+
+    /////////////////////////////////////////////////
+    /// \brief This private member function returns
+    /// an iterator to the referenced cluster or
+    /// std::map::end().
+    ///
+    /// \param view StringView
+    /// \return std::map<std::string, Cluster>::const_iterator
+    ///
+    /////////////////////////////////////////////////
+    std::map<std::string, Cluster>::const_iterator ClusterManager::mapStringViewFind(StringView view) const
     {
         for (auto iter = mClusterMap.begin(); iter != mClusterMap.end(); ++iter)
         {
@@ -1427,7 +1872,16 @@ namespace NumeRe
         return mClusterMap.end();
     }
 
-    map<string, Cluster>::iterator ClusterManager::mapStringViewFind(StringView view)
+    /////////////////////////////////////////////////
+    /// \brief This private member function returns
+    /// an iterator to the referenced cluster or
+    /// std::map::end().
+    ///
+    /// \param view StringView
+    /// \return std::map<std::string, Cluster>::iterator
+    ///
+    /////////////////////////////////////////////////
+    std::map<std::string, Cluster>::iterator ClusterManager::mapStringViewFind(StringView view)
     {
         for (auto iter = mClusterMap.begin(); iter != mClusterMap.end(); ++iter)
         {
@@ -1440,13 +1894,20 @@ namespace NumeRe
         return mClusterMap.end();
     }
 
-    // This member function detects, whether a cluster is used
-    // in the current expression
-    bool ClusterManager::containsClusters(const string& sCmdLine) const
+
+    /////////////////////////////////////////////////
+    /// \brief This member function detects, whether
+    /// any cluster is used in the current expression.
+    ///
+    /// \param sCmdLine const std::string&
+    /// \return bool
+    ///
+    /////////////////////////////////////////////////
+    bool ClusterManager::containsClusters(const std::string& sCmdLine) const
     {
         size_t nQuotes = 0;
 
-        if (sCmdLine.find('{') == string::npos)
+        if (sCmdLine.find('{') == std::string::npos)
             return false;
 
         // Search through the expression
@@ -1484,8 +1945,16 @@ namespace NumeRe
         return false;
     }
 
-    // This member function returns true, if the passed cluster
-    // identifier can be found in the internal map
+
+    /////////////////////////////////////////////////
+    /// \brief This member function returns true, if
+    /// the passed cluster identifier can be found in
+    /// the internal map.
+    ///
+    /// \param sCluster StringView
+    /// \return bool
+    ///
+    /////////////////////////////////////////////////
     bool ClusterManager::isCluster(StringView sCluster) const
     {
         if (mapStringViewFind(sCluster.subview(0, sCluster.find('{'))) != mClusterMap.end())
@@ -1494,9 +1963,17 @@ namespace NumeRe
         return false;
     }
 
-    // This member function returns true, if the passed cluster
-    // identifier can be found in the internal map
-    bool ClusterManager::isCluster(const string& sCluster) const
+
+    /////////////////////////////////////////////////
+    /// \brief This member function returns true, if
+    /// the passed cluster identifier can be found in
+    /// the internal map.
+    ///
+    /// \param sCluster const std::string&
+    /// \return bool
+    ///
+    /////////////////////////////////////////////////
+    bool ClusterManager::isCluster(const std::string& sCluster) const
     {
         if (mClusterMap.find(sCluster.substr(0, sCluster.find('{'))) != mClusterMap.end())
             return true;
@@ -1504,8 +1981,16 @@ namespace NumeRe
         return false;
     }
 
-    // This member function returns a reference to the cluster indicated
-    // by the passed cluster identifier
+
+    /////////////////////////////////////////////////
+    /// \brief This member function returns a
+    /// reference to the cluster indicated by the
+    /// passed cluster identifier.
+    ///
+    /// \param sCluster StringView
+    /// \return Cluster&
+    ///
+    /////////////////////////////////////////////////
     Cluster& ClusterManager::getCluster(StringView sCluster)
     {
         auto iter = mapStringViewFind(sCluster);
@@ -1516,9 +2001,17 @@ namespace NumeRe
         return iter->second;
     }
 
-    // This member function returns a reference to the cluster indicated
-    // by the passed cluster identifier
-    Cluster& ClusterManager::getCluster(const string& sCluster)
+
+    /////////////////////////////////////////////////
+    /// \brief This member function returns a
+    /// reference to the cluster indicated by the
+    /// passed cluster identifier.
+    ///
+    /// \param sCluster const std::string&
+    /// \return Cluster&
+    ///
+    /////////////////////////////////////////////////
+    Cluster& ClusterManager::getCluster(const std::string& sCluster)
     {
         auto iter = mClusterMap.find(sCluster);
 
@@ -1528,10 +2021,19 @@ namespace NumeRe
         return iter->second;
     }
 
-    // This member function returns a const reference to the cluster
-    // indicated by the passed cluster identifier. Used in context
-    // when this object is passed as const reference
-    const Cluster& ClusterManager::getCluster(const string& sCluster) const
+
+    /////////////////////////////////////////////////
+    /// \brief This member function returns a const
+    /// reference to the cluster indicated by the
+    /// passed cluster identifier. Used in context
+    /// when this object is passed as const
+    /// reference.
+    ///
+    /// \param sCluster const std::string&
+    /// \return const Cluster&
+    ///
+    /////////////////////////////////////////////////
+    const Cluster& ClusterManager::getCluster(const std::string& sCluster) const
     {
         auto iter = mClusterMap.find(sCluster);
 
@@ -1541,10 +2043,17 @@ namespace NumeRe
         return iter->second;
     }
 
-    // This member function creates a new cluster from the passed
-    // cluster identifier and returns a reference to this new
-    // object
-    Cluster& ClusterManager::newCluster(const string& sCluster)
+
+    /////////////////////////////////////////////////
+    /// \brief This member function creates a new
+    /// cluster from the passed cluster identifier
+    /// and returns a reference to this new object.
+    ///
+    /// \param sCluster const std::string&
+    /// \return Cluster&
+    ///
+    /////////////////////////////////////////////////
+    Cluster& ClusterManager::newCluster(const std::string& sCluster)
     {
         string sValidName = validateClusterName(sCluster);
         mClusterMap[sValidName] = Cluster();
@@ -1552,16 +2061,33 @@ namespace NumeRe
         return mClusterMap[sValidName];
     }
 
-    // This member function appends the passed cluster to the
-    // internal cluster map using the passed string as the identifier
-    void ClusterManager::appendCluster(const string& sCluster, const Cluster& cluster)
+
+    /////////////////////////////////////////////////
+    /// \brief This member function appends the
+    /// passed cluster to the internal cluster map
+    /// using the passed string as the identifier.
+    ///
+    /// \param sCluster const std::string&
+    /// \param cluster const Cluster&
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
+    void ClusterManager::appendCluster(const std::string& sCluster, const Cluster& cluster)
     {
         mClusterMap[validateClusterName(sCluster)] = cluster;
     }
 
-    // This member function removes the cluster from memory,
-    // which corresponds to the passed cluster identifier
-    void ClusterManager::removeCluster(const string& sCluster)
+
+    /////////////////////////////////////////////////
+    /// \brief This member function removes the
+    /// cluster from memory, which corresponds to the
+    /// passed cluster identifier.
+    ///
+    /// \param sCluster const std::string&
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
+    void ClusterManager::removeCluster(const std::string& sCluster)
     {
         auto iter = mClusterMap.find(sCluster);
 
@@ -1569,20 +2095,33 @@ namespace NumeRe
             mClusterMap.erase(iter);
     }
 
-    // This member function creates a temporary cluster
-    // with a unique name and returns this name to the
-    // calling function
-    string ClusterManager::createTemporaryCluster()
+
+    /////////////////////////////////////////////////
+    /// \brief This member function creates a
+    /// temporary cluster with a unique name and
+    /// returns this name to the calling function.
+    ///
+    /// \return std::string
+    ///
+    /////////////////////////////////////////////////
+    std::string ClusterManager::createTemporaryCluster()
     {
-        string sTemporaryClusterName = "_~~TEMPCLUSTER_" + toString(mClusterMap.size()) + "_";
+        std::string sTemporaryClusterName = "_~~TEMPCLUSTER_" + toString(mClusterMap.size()) + "_";
         mClusterMap[sTemporaryClusterName] = Cluster();
 
         return sTemporaryClusterName + "{}";
     }
 
-    // This member function returns all temporary
-    // clusters from the internal map. Temporary
-    // clusters are indicated by their name
+
+    /////////////////////////////////////////////////
+    /// \brief This member function returns all
+    /// temporary clusters from the internal map.
+    /// Temporary clusters are indicated by their
+    /// name.
+    ///
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
     void ClusterManager::removeTemporaryClusters()
     {
         auto iter = mClusterMap.begin();
@@ -1598,15 +2137,29 @@ namespace NumeRe
         }
     }
 
-    // Clear all clusters currently in memory
+
+    /////////////////////////////////////////////////
+    /// \brief Clear all clusters currently in memory.
+    ///
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
     void ClusterManager::clearAllClusters()
     {
         mClusterMap.clear();
     }
 
-    // This member function updates the dimension variable
-    // reserved for cluster accesses with the size of the
-    // current accessed cluster
+
+    /////////////////////////////////////////////////
+    /// \brief This member function updates the
+    /// dimension variable reserved for cluster
+    /// accesses with the size of the current
+    /// accessed cluster.
+    ///
+    /// \param sCluster StringView
+    /// \return bool
+    ///
+    /////////////////////////////////////////////////
     bool ClusterManager::updateClusterSizeVariables(StringView sCluster)
     {
         if (isCluster(sCluster))

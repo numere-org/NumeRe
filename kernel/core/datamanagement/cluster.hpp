@@ -26,19 +26,25 @@
 #include "../utils/tools.hpp"
 #include "sorter.hpp"
 
-using namespace std;
-
 namespace NumeRe
 {
-    // This is an abstract cluster item. It is used as root class
-    // of any cluster items and only contains the type of the item
-    // and virtual functions as interfaces to the child classes
+    /////////////////////////////////////////////////
+    /// \brief This is an abstract cluster item. It
+    /// is used as root class of any cluster items
+    /// and only contains the type of the item and
+    /// virtual functions as interfaces to the child
+    /// classes.
+    /////////////////////////////////////////////////
     class ClusterItem
     {
         private:
             unsigned short nType;
 
         public:
+            /////////////////////////////////////////////////
+            /// \brief Defines the available types of
+            /// clusters.
+            /////////////////////////////////////////////////
             enum ClusterItemType
             {
                 ITEMTYPE_INVALID = -1,
@@ -50,106 +56,218 @@ namespace NumeRe
             ClusterItem(unsigned short type) : nType(type) {}
             virtual ~ClusterItem() {}
 
+            /////////////////////////////////////////////////
+            /// \brief Returns the ClusterItemType.
+            ///
+            /// \return unsigned short
+            ///
+            /////////////////////////////////////////////////
             unsigned short getType() const
             {
                 return nType;
             }
 
+            /////////////////////////////////////////////////
+            /// \brief Base implementation. Returns always
+            /// NaN.
+            ///
+            /// \return virtual mu::value_type
+            ///
+            /////////////////////////////////////////////////
             virtual mu::value_type getDouble()
             {
                 return NAN;
             }
-            virtual void setDouble(mu::value_type val) {}
 
-            virtual string getString()
+            /////////////////////////////////////////////////
+            /// \brief Base implementation. Does nothing.
+            ///
+            /// \param val const mu::value_type&
+            /// \return virtual void
+            ///
+            /////////////////////////////////////////////////
+            virtual void setDouble(const mu::value_type& val) {}
+
+            /////////////////////////////////////////////////
+            /// \brief Base implementation. Always returns an
+            /// empty string.
+            ///
+            /// \return virtual std::string
+            ///
+            /////////////////////////////////////////////////
+            virtual std::string getString()
             {
                 return "\"\"";
             }
-            virtual void setString(const string& strval) {}
+
+            /////////////////////////////////////////////////
+            /// \brief Base implementation. Does nothing.
+            ///
+            /// \param strval const std::string&
+            /// \return virtual void
+            ///
+            /////////////////////////////////////////////////
+            virtual void setString(const std::string& strval) {}
     };
 
 
-    // This is a cluster item, which contains a double. It
-    // features conversions to and from strings on-the-fly
+
+    /////////////////////////////////////////////////
+    /// \brief This is a cluster item, which contains
+    /// a double. It features conversions to and from
+    /// strings on-the-fly.
+    /////////////////////////////////////////////////
     class ClusterDoubleItem : public ClusterItem
     {
         private:
             mu::value_type dData;
 
         public:
-            ClusterDoubleItem(mu::value_type value) : ClusterItem(ClusterItem::ITEMTYPE_DOUBLE), dData(value) {}
+            ClusterDoubleItem(const mu::value_type& value) : ClusterItem(ClusterItem::ITEMTYPE_DOUBLE), dData(value) {}
             virtual ~ClusterDoubleItem() override {}
 
+            /////////////////////////////////////////////////
+            /// \brief Returns the internal value.
+            ///
+            /// \return virtual mu::value_type
+            ///
+            /////////////////////////////////////////////////
             virtual mu::value_type getDouble() override
             {
                 return dData;
             }
-            virtual void setDouble(mu::value_type val) override
+
+            /////////////////////////////////////////////////
+            /// \brief Overwrites the internal value.
+            ///
+            /// \param val const mu::value_type&
+            /// \return virtual void
+            ///
+            /////////////////////////////////////////////////
+            virtual void setDouble(const mu::value_type& val) override
             {
                 dData = val;
             }
-            virtual string getString() override
+
+            /////////////////////////////////////////////////
+            /// \brief Returns the internal value converted
+            /// to a string.
+            ///
+            /// \return virtual std::string
+            ///
+            /////////////////////////////////////////////////
+            virtual std::string getString() override
             {
                 if (isnan(std::abs(dData)))
                     return toExternalString("nan");
 
                 return toExternalString(toString(dData, 7));
             }
-            virtual void setString(const string& strval) override
+
+            /////////////////////////////////////////////////
+            /// \brief Overwrites the internal value with the
+            /// passed string, which will converted to a
+            /// value first.
+            ///
+            /// \param strval const std::string&
+            /// \return virtual void
+            ///
+            /////////////////////////////////////////////////
+            virtual void setString(const std::string& strval) override
             {
                 dData = StrToCmplx(toInternalString(strval));
             }
     };
 
 
-    // This is a cluster item, which contains a string. It
-    // features conversions to and from doubles on-the-fly
+    /////////////////////////////////////////////////
+    /// \brief This is a cluster item, which contains
+    /// a string. It features conversions to and from
+    /// doubles on-the-fly.
+    /////////////////////////////////////////////////
     class ClusterStringItem : public ClusterItem
     {
         private:
-            string sData;
+            std::string sData;
 
         public:
-            ClusterStringItem(const string& strval) : ClusterItem(ClusterItem::ITEMTYPE_STRING) {setString(strval);}
+            ClusterStringItem(const std::string& strval) : ClusterItem(ClusterItem::ITEMTYPE_STRING) {setString(strval);}
             virtual ~ClusterStringItem() override {}
 
+            /////////////////////////////////////////////////
+            /// \brief Returns the internal string converted
+            /// to a value.
+            ///
+            /// \return virtual mu::value_type
+            ///
+            /////////////////////////////////////////////////
             virtual mu::value_type getDouble() override
             {
                 return StrToCmplx(sData.c_str());
             }
-            virtual void setDouble(mu::value_type val) override
+
+            /////////////////////////////////////////////////
+            /// \brief Overwrites the internal string with
+            /// the passed value, which will be converted to
+            /// a string first.
+            ///
+            /// \param val const mu::value_type&
+            /// \return virtual void
+            ///
+            /////////////////////////////////////////////////
+            virtual void setDouble(const mu::value_type& val) override
             {
                 sData = toString(val, 7);
             }
-            virtual string getString() override
+
+            /////////////////////////////////////////////////
+            /// \brief Returns the internal string.
+            ///
+            /// \return virtual std::string
+            ///
+            /////////////////////////////////////////////////
+            virtual std::string getString() override
             {
                 return toExternalString(sData);
             }
-            virtual void setString(const string& strval) override
+
+            /////////////////////////////////////////////////
+            /// \brief Overwrites the internal string.
+            ///
+            /// \param strval const std::string&
+            /// \return virtual void
+            ///
+            /////////////////////////////////////////////////
+            virtual void setString(const std::string& strval) override
             {
                 sData = toInternalString(strval);
             }
     };
 
 
-    // This class represents a whole cluster. The single items
-    // are stored as pointers to the abstract cluster item. This
-    // object can be constructed from many different base items
-    // and has more or less all memory-like functions.
+    /////////////////////////////////////////////////
+    /// \brief This class represents a whole cluster.
+    /// The single items are stored as pointers to
+    /// the abstract cluster item. This object can be
+    /// constructed from many different base items
+    /// and has more or less all memory-like
+    /// functions.
+    /////////////////////////////////////////////////
     class Cluster : public Sorter
     {
         private:
-            vector<ClusterItem*> vClusterArray;
+            std::vector<ClusterItem*> vClusterArray;
             bool bSortCaseInsensitive;
             mutable int nGlobalType;
 
             void assign(const Cluster& cluster);
             void assign(const vector<mu::value_type>& vVals);
-            void assign(const vector<string>& vStrings);
+            void assign(const std::vector<std::string>& vStrings);
             void assignVectorResults(Indices _idx, int nNum, mu::value_type* data);
             virtual int compare(int i, int j, int col) override;
             virtual bool isValue(int line, int col) override;
-            void reorderElements(vector<int> vIndex, int i1, int i2);
+            void reorderElements(std::vector<int> vIndex, int i1, int i2);
+            void reduceSize(size_t z);
 
         public:
             Cluster()
@@ -161,11 +279,11 @@ namespace NumeRe
             {
                 assign(cluster);
             }
-            Cluster(const vector<mu::value_type>& vVals)
+            Cluster(const std::vector<mu::value_type>& vVals)
             {
                 assign(vVals);
             }
-            Cluster(const vector<string>& vStrings)
+            Cluster(const std::vector<std::string>& vStrings)
             {
                 assign(vStrings);
             }
@@ -180,20 +298,20 @@ namespace NumeRe
                 assign(cluster);
                 return *this;
             }
-            Cluster& operator=(const vector<mu::value_type>& vVals)
+            Cluster& operator=(const std::vector<mu::value_type>& vVals)
             {
                 assign(vVals);
                 return *this;
             }
-            Cluster& operator=(const vector<string>& vStrings)
+            Cluster& operator=(const std::vector<std::string>& vStrings)
             {
                 assign(vStrings);
                 return *this;
             }
 
             void push_back(ClusterItem* item);
-            void push_back(mu::value_type val);
-            void push_back(const string& strval);
+            void push_back(const mu::value_type& val);
+            void push_back(const std::string& strval);
             void pop_back();
 
             size_t size() const;
@@ -207,34 +325,34 @@ namespace NumeRe
             unsigned short getType(size_t i) const;
 
             mu::value_type getDouble(size_t i) const;
-            void setDouble(size_t i, mu::value_type value);
+            void setDouble(size_t i, const mu::value_type& value);
             vector<mu::value_type> getDoubleArray() const;
-            void insertDataInArray(vector<mu::value_type>* vTarget, const VectorIndex& _vLine);
-            void setDoubleArray(const vector<mu::value_type>& vVals);
+            void insertDataInArray(std::vector<mu::value_type>* vTarget, const VectorIndex& _vLine);
+            void setDoubleArray(const std::vector<mu::value_type>& vVals);
             void setDoubleArray(int nNum, mu::value_type* data);
             void assignResults(Indices _idx, int nNum, mu::value_type* data);
 
-            string getString(size_t i) const;
-            void setString(size_t i, const string& strval);
-            vector<string> getStringArray() const;
-            void setStringArray(const vector<string>& sVals);
+            std::string getString(size_t i) const;
+            void setString(size_t i, const std::string& strval);
+            std::vector<std::string> getStringArray() const;
+            void setStringArray(const std::vector<std::string>& sVals);
 
-            string getVectorRepresentation() const;
-            string getShortVectorRepresentation() const;
+            std::string getVectorRepresentation() const;
+            std::string getShortVectorRepresentation() const;
 
-            vector<int> sortElements(long long int i1, long long int i2, const string& sSortingExpression);
+            std::vector<int> sortElements(long long int i1, long long int i2, const std::string& sSortingExpression);
             void deleteItems(long long int i1, long long int i2);
             void deleteItems(const VectorIndex& vLines);
 
             mu::value_type std(const VectorIndex& _vLine);
             mu::value_type avg(const VectorIndex& _vLine);
             mu::value_type max(const VectorIndex& _vLine);
-            string strmax(const VectorIndex& _vLine);
+            std::string strmax(const VectorIndex& _vLine);
             mu::value_type min(const VectorIndex& _vLine);
-            string strmin(const VectorIndex& _vLine);
+            std::string strmin(const VectorIndex& _vLine);
             mu::value_type prd(const VectorIndex& _vLine);
             mu::value_type sum(const VectorIndex& _vLine);
-            string strsum(const VectorIndex& _vLine);
+            std::string strsum(const VectorIndex& _vLine);
             mu::value_type num(const VectorIndex& _vLine);
             mu::value_type and_func(const VectorIndex& _vLine);
             mu::value_type or_func(const VectorIndex& _vLine);
@@ -248,16 +366,19 @@ namespace NumeRe
     };
 
 
-    // This class is the management class for the different
-    // clusters, which are currently available in memory
+    /////////////////////////////////////////////////
+    /// \brief This class is the management class for
+    /// the different clusters, which are currently
+    /// available in memory.
+    /////////////////////////////////////////////////
     class ClusterManager
     {
         private:
-            map<string, Cluster> mClusterMap;
+            std::map<std::string, Cluster> mClusterMap;
 
-            string validateClusterName(const string& sCluster);
-            map<string, Cluster>::iterator mapStringViewFind(StringView view);
-            map<string, Cluster>::const_iterator mapStringViewFind(StringView view) const;
+            std::string validateClusterName(const std::string& sCluster);
+            std::map<std::string, Cluster>::iterator mapStringViewFind(StringView view);
+            std::map<std::string, Cluster>::const_iterator mapStringViewFind(StringView view) const;
 
         public:
             ClusterManager() {dClusterElementsCount = 0.0;}
@@ -265,21 +386,21 @@ namespace NumeRe
 
             mu::value_type dClusterElementsCount;
 
-            bool containsClusters(const string& sCmdLine) const;
+            bool containsClusters(const std::string& sCmdLine) const;
             bool isCluster(StringView sCluster) const;
-            bool isCluster(const string& sCluster) const;
+            bool isCluster(const std::string& sCluster) const;
             Cluster& getCluster(StringView sCluster);
-            Cluster& getCluster(const string& sCluster);
-            const Cluster& getCluster(const string& sCluster) const;
-            Cluster& newCluster(const string& sCluster);
-            void appendCluster(const string& sCluster, const Cluster& cluster);
-            void removeCluster(const string& sCluster);
-            string createTemporaryCluster();
+            Cluster& getCluster(const std::string& sCluster);
+            const Cluster& getCluster(const std::string& sCluster) const;
+            Cluster& newCluster(const std::string& sCluster);
+            void appendCluster(const std::string& sCluster, const Cluster& cluster);
+            void removeCluster(const std::string& sCluster);
+            std::string createTemporaryCluster();
             void removeTemporaryClusters();
             void clearAllClusters();
             bool updateClusterSizeVariables(StringView sCluster);
 
-            const map<string, Cluster>& getClusterMap() const
+            const std::map<std::string, Cluster>& getClusterMap() const
             {
                 return mClusterMap;
             }
