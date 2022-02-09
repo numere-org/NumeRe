@@ -2400,6 +2400,7 @@ namespace mu
 			vLoopByteCode[nthLoopElement][nthLoopPartEquation] = m_vRPN;
 			//vLoopByteCode[nthLoopElement].AsciiDump();
 			vLoopString[nthLoopElement][nthLoopPartEquation] = m_pTokenReader->GetExpr();
+			StripSpaces(vLoopString[nthLoopElement][nthLoopPartEquation]);
 			//std::cerr << vLoopString[nthLoopElement] << endl;
 			vNumResultsIDX[nthLoopElement][nthLoopPartEquation] = m_nFinalResultIdx;
 			vLoopStackBuf[nthLoopElement][nthLoopPartEquation].resize(m_vStackBuffer.size());
@@ -3479,10 +3480,9 @@ namespace mu
     bool ParserBase::IsAlreadyParsed(StringView sNewEquation)
     {
         StringView sCurrentEquation(GetExpr());
-        sCurrentEquation.strip();
         sNewEquation.strip();
 
-        if (sCurrentEquation == sNewEquation
+        if (sNewEquation == sCurrentEquation
             && (!bMakeLoopByteCode || bPauseLoopByteCode || vValidByteCode[nthLoopElement][nthLoopPartEquation]))
             return true;
 

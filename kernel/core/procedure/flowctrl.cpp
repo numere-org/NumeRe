@@ -2235,8 +2235,7 @@ int FlowCtrl::compile(string sLine, int nthCmd)
     else
         bLoopSupressAnswer = false;
 
-    if (!bFunctionsReplaced)
-        sCommand = findCommand(sLine).sString;
+    sCommand = findCommand(sLine).sString;
 
     // Replace the custom defined functions, if it wasn't already done
     if (!bFunctionsReplaced
@@ -2613,6 +2612,10 @@ int FlowCtrl::compile(string sLine, int nthCmd)
             case COMMAND_PROCESSED:
                 NumeReKernel::bSupressAnswer = bSupressAnswer_back;
                 nCalcType[nthCmd] |= CALCTYPE_COMMAND;
+
+                if (!bLockedPauseMode && bUseLoopParsingMode)
+                    _parserRef->PauseLoopMode(false);
+
                 return FLOWCTRL_OK;
             case NUMERE_QUIT:
                 NumeReKernel::bSupressAnswer = bSupressAnswer_back;
@@ -2775,7 +2778,13 @@ int FlowCtrl::compile(string sLine, int nthCmd)
 
     // Do only add the bytecode flag, if it does not depend on
     // previous operations
-    if (!(nCalcType[nthCmd] & CALCTYPE_DATAACCESS || nCalcType[nthCmd] & CALCTYPE_STRING))
+    if (!nJumpTable[nthCmd][PROCEDURE_INTERFACE]
+        && !(nCalcType[nthCmd] & (CALCTYPE_DATAACCESS
+                                  | CALCTYPE_STRING
+                                  | CALCTYPE_TOCOMMAND
+                                  | CALCTYPE_COMMAND
+                                  | CALCTYPE_PROCEDURECMDINTERFACE
+                                  | CALCTYPE_PROMPT)))
         nCalcType[nthCmd] |= CALCTYPE_NUMERICAL;
 
     if (!bLoopSupressAnswer)
@@ -2946,6 +2955,7 @@ int FlowCtrl::calc(string sLine, int nthCmd)
     // parsed? Evaluate it here
     if (nCurrentCalcType & CALCTYPE_NUMERICAL)
     {
+        // Part of the condition disabled due to the slowness of the comparison
         if (_parserRef->IsValidByteCode() == 1 /*&& _parserRef->IsAlreadyParsed(sLine)*/ && !bLockedPauseMode && bUseLoopParsingMode)
         {
             v = _parserRef->Eval(nNum);
@@ -3207,6 +3217,10 @@ int FlowCtrl::calc(string sLine, int nthCmd)
                     break;
                 case COMMAND_PROCESSED:
                     NumeReKernel::bSupressAnswer = bSupressAnswer_back;
+
+                    if (!bLockedPauseMode && bUseLoopParsingMode)
+                        _parserRef->PauseLoopMode(false);
+
                     return FLOWCTRL_OK;
                 case NUMERE_QUIT:
                     NumeReKernel::bSupressAnswer = bSupressAnswer_back;

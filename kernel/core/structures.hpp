@@ -991,8 +991,10 @@ class StringViewBase
         /////////////////////////////////////////////////
         inline bool operator==(const StringViewBase& view) const
         {
-            if (getData() && view.getData())
-                return getData()->compare(m_start, m_len, *view.getData(), view.m_start, view.m_len) == 0;
+            const std::string* thisString = getData();
+            const std::string* viewString = view.getData();
+            if (thisString && viewString)
+                return thisString->compare(m_start, m_len, *viewString, view.m_start, view.m_len) == 0;
 
             return false;
         }
@@ -1008,8 +1010,10 @@ class StringViewBase
         /////////////////////////////////////////////////
         inline bool operator==(const std::string& sString) const
         {
-            if (getData())
-                return getData()->compare(m_start, m_len, sString) == 0;
+            const std::string* thisString = getData();
+
+            if (thisString)
+                return thisString->compare(m_start, m_len, sString) == 0;
 
             return false;
         }
