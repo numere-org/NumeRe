@@ -1273,7 +1273,7 @@ bool readImage(CommandLineParser& cmdParser)
 
 	// Evaluate the indices correspondingly
 	if (_idx.row.isOpenEnd())
-		_idx.row.setRange(0, _idx.row.front() + nWidth-1);
+		_idx.row.setRange(0, _idx.row.front() + std::max(nWidth, nHeight)-1);
 
 	if (_idx.col.isOpenEnd() && sChannels == "grey")
 		_idx.col.setRange(0, _idx.col.front() + 2 + nHeight-1);
