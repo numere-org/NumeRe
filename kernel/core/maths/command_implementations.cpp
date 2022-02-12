@@ -4333,6 +4333,9 @@ void rotateTable(CommandLineParser& cmdParser)
     // Extract the range (will pass the ownership)
     Memory* _source = _data.getTable(_accessParser.getDataObject())->extractRange(_accessParser.getIndices().row, _accessParser.getIndices().col);
 
+    // Remove obsolete entries (needed since new memory model)
+    _source->shrink();
+
     // Get the edges
     Point topLeft(0, 0);
     Point topRight(_source->getCols(false), 0);

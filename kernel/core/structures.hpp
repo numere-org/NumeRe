@@ -2165,8 +2165,52 @@ struct Point
 
     Point(double _x, double _y) : x(_x), y(_y) {}
 
+    void rotate90(int n, const Point& origin = Point(0, 0))
+    {
+        x -= origin.x;
+        y -= origin.y;
+
+        double x1 = x;
+        double y1 = y;
+
+        // Remove multiples of 360 degrees
+        n = n % 4;
+
+        // Move negative angles to the corresponding
+        // positive value
+        if (n < 0)
+            n += 4;
+
+        // We only have to consider the values 1-3
+        switch (n)
+        {
+            case 1:
+                x1 = -y;
+                y1 = x;
+                break;
+            case 2:
+                x1 = -x;
+                y1 = -y;
+                break;
+            case 3:
+                x1 = y;
+                y1 = -x;
+                break;
+        }
+
+        x = x1 + origin.x;
+        y = y1 + origin.y;
+    }
+
     void rotate(double dAlpha, const Point& origin = Point(0, 0))
     {
+        // Use the 90 degree rotation optimisation
+        if (abs(dAlpha / M_PI_2 - rint(dAlpha / M_PI_2)) < 1e-8)
+        {
+            rotate90(rint(dAlpha / M_PI_2), origin);
+            return;
+        }
+
         double x1 = (x - origin.x) * cos(dAlpha) - (y - origin.y) * sin(dAlpha) + origin.x;
         double y1 = (x - origin.x) * sin(dAlpha) + (y - origin.y) * cos(dAlpha) + origin.y;
 

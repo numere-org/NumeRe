@@ -70,3 +70,4 @@ New	The matrix operations mode knows now a set of moving statistics functions li
 Fixed	The axes of non-square images are now loaded correctly using "imread".
 Fixed	The superfluous indent during procedure installs will now be omitted.
 Fixed	The y and z intervals of fits will now work as expected.
+Added	For angles really close to multiples of 90 degrees, a nearly lossless optimisation of the rotation is used.
