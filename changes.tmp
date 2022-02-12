@@ -69,3 +69,4 @@ New	It's now possible to add a documenation to tables. This documentation will a
 New	The matrix operations mode knows now a set of moving statistics functions like "movsum()", "movavg()" or "movmed()". The window is configurable and is rectangular.
 Fixed	The axes of non-square images are now loaded correctly using "imread".
 Fixed	The superfluous indent during procedure installs will now be omitted.
+Fixed	The y and z intervals of fits will now work as expected.

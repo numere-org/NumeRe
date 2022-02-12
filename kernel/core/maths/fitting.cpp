@@ -19,6 +19,7 @@
 #include "parser_functions.hpp"
 #include "../../kernel.hpp"
 #include "fitcontroller.hpp"
+#include "../interval.hpp"
 
 // This structure combines all main fitting
 // parameter and storage objects to simplify
@@ -32,17 +33,13 @@ struct FittingData
     vector<vector<double> > vz;
     vector<vector<double> > vz_w;
 
-    double dMin;
-    double dMax;
-    double dMinY;
-    double dMaxY;
+    IntervalSet ivl;
+    bool restricted[3];
 
     size_t nDim;
     size_t nFitVars;
     bool bUseErrors;
     bool bSaveErrors;
-    bool bRestrictXVals;
-    bool bRestrictYVals;
     bool bNoParams;
     bool b1DChiMap;
     double dPrecision;
@@ -94,16 +91,15 @@ bool fitDataSet(string& sCmd, Parser& _parser, MemoryManager& _data, FunctionDef
 
     // Prepare the default values in the FittingData
     // object for the further calculation
-    fitData.dMin = NAN;
-    fitData.dMax = NAN;
-    fitData.dMinY = NAN;
-    fitData.dMaxY = NAN;
+    fitData.ivl.intervals.resize(3);
+    fitData.restricted[0] = false;
+    fitData.restricted[1] = false;
+    fitData.restricted[2] = false;
+
     fitData.nDim = 1;
     fitData.nFitVars = 0;
     fitData.bUseErrors = false;
     fitData.bSaveErrors = false;
-    fitData.bRestrictXVals = false;
-    fitData.bRestrictYVals = false;
     fitData.bNoParams = false;
     fitData.b1DChiMap = false;
     fitData.dPrecision = 1e-4;
@@ -478,29 +474,10 @@ static vector<double> evaluateFittingParams(FittingData& fitData, string& sCmd, 
     vInterVal = readAndParseIntervals(sCmd, _parser, _data, _functions, _option, true);
 
     // Evaluate the contents of the parsed interval definitions
-    if (vInterVal.size())
+    for (size_t i = 0; i < vInterVal.size(); i += 2)
     {
-        if (vInterVal.size() >= 4)
-        {
-            fitData.dMin = vInterVal[0];
-            fitData.dMax = vInterVal[1];
-            fitData.dMinY = vInterVal[2];
-            fitData.dMaxY = vInterVal[3];
-
-            if (!isnan(fitData.dMin) || !isnan(fitData.dMax))
-                fitData.bRestrictXVals = true;
-
-            if (!isnan(fitData.dMinY) || !isnan(fitData.dMaxY))
-                fitData.bRestrictYVals = true;
-        }
-        else if (vInterVal.size() == 2)
-        {
-            fitData.dMin = vInterVal[0];
-            fitData.dMax = vInterVal[1];
-
-            if (!isnan(fitData.dMin) || !isnan(fitData.dMax))
-                fitData.bRestrictXVals = true;
-        }
+        fitData.ivl[i / 2].reset(vInterVal[i], vInterVal[i+1]);
+        fitData.restricted[i / 2] = true;
     }
 
     // Insert the command line option list after the intervals
@@ -863,41 +840,22 @@ static int getDataForFit(const string& sCmd, string& sDimsForFitLog, FittingData
         nDim = _idx.col.size();
     }
 
-    if (isnan(fitData.dMin))
+    if (isnan(fitData.ivl[0].front()))
     {
-        fitData.dMin = _data.min(sDataTable, _idx.row, VectorIndex(_idx.col.front())).real();
+        fitData.ivl[0].reset(_data.min(sDataTable, _idx.row, VectorIndex(_idx.col.front())).real(),
+                             _data.max(sDataTable, _idx.row, VectorIndex(_idx.col.front())).real());
     }
 
-    if (isnan(fitData.dMax))
+    if (isnan(fitData.ivl[1].front()) && !isCluster)
     {
-        fitData.dMax = _data.max(sDataTable, _idx.row, VectorIndex(_idx.col.front())).real();
+        fitData.ivl[1].reset(_data.min(sDataTable, _idx.row, VectorIndex(_idx.col[1])).real(),
+                             _data.max(sDataTable, _idx.row, VectorIndex(_idx.col[1])).real());
     }
 
-    if (fitData.dMax < fitData.dMin)
+    if (fitData.nFitVars & 2 && !isCluster && isnan(fitData.ivl[2].front()))
     {
-        double dTemp = fitData.dMax;
-        fitData.dMax = fitData.dMin;
-        fitData.dMin = dTemp;
-    }
-
-    if (fitData.nFitVars & 2 && !isCluster)
-    {
-        if (isnan(fitData.dMinY))
-        {
-            fitData.dMinY = _data.min(sDataTable, _idx.row, VectorIndex(_idx.col[1])).real();
-        }
-
-        if (isnan(fitData.dMaxY))
-        {
-            fitData.dMaxY = _data.max(sDataTable, _idx.row, VectorIndex(_idx.col[1])).real();
-        }
-
-        if (fitData.dMaxY < fitData.dMinY)
-        {
-            double dTemp = fitData.dMaxY;
-            fitData.dMaxY = fitData.dMinY;
-            fitData.dMinY = dTemp;
-        }
+        fitData.ivl[2].reset(_data.min(sDataTable, _idx.row, VectorIndex(_idx.col.subidx(2))).real(),
+                             _data.max(sDataTable, _idx.row, VectorIndex(_idx.col.subidx(2))).real());
     }
 
     if (nDim == 2 || isCluster)
@@ -906,7 +864,8 @@ static int getDataForFit(const string& sCmd, string& sDimsForFitLog, FittingData
         {
             if (nColumns == 1)
             {
-                if (isValidValue(getDataFromObject(sDataTable, _idx.row[i], _idx.col.front(), isCluster).real()))
+                mu::value_type val = getDataFromObject(sDataTable, _idx.row[i], _idx.col.front(), isCluster);
+                if (isValidValue(val.real()) && fitData.ivl[0].isInside(val))
                 {
                     fitData.vx.push_back(_idx.row[i] + 1);
                     fitData.vy.push_back(getDataFromObject(sDataTable, _idx.row[i], _idx.col.front(), isCluster).real());
@@ -914,9 +873,11 @@ static int getDataForFit(const string& sCmd, string& sDimsForFitLog, FittingData
             }
             else
             {
-                if (_data.isValidElement(_idx.row[i], _idx.col.front(), sDataTable) && _data.isValidElement(_idx.row[i], _idx.col.last(), sDataTable))
+                if (_data.isValidElement(_idx.row[i], _idx.col.front(), sDataTable)
+                    && _data.isValidElement(_idx.row[i], _idx.col.last(), sDataTable))
                 {
-                    if (!isnan(fitData.dMin) && !isnan(fitData.dMax) && (_data.getElement(_idx.row[i], _idx.col.front(), sDataTable).real() < fitData.dMin || _data.getElement(_idx.row[i], _idx.col.front(), sDataTable).real() > fitData.dMax))
+                    if (!fitData.ivl[0].isInside(_data.getElement(_idx.row[i], _idx.col.front(), sDataTable))
+                        || !fitData.ivl[1].isInside(_data.getElement(_idx.row[i], _idx.col.last(), sDataTable)))
                         continue;
 
                     fitData.vx.push_back(_data.getElement(_idx.row[i], _idx.col.front(), sDataTable).real());
@@ -941,9 +902,11 @@ static int getDataForFit(const string& sCmd, string& sDimsForFitLog, FittingData
         {
             if (nColumns == 2)
             {
-                if (_data.isValidElement(_idx.row[i], _idx.col[0], sDataTable) && _data.isValidElement(_idx.row[i], _idx.col[1], sDataTable))
+                if (_data.isValidElement(_idx.row[i], _idx.col[0], sDataTable)
+                    && _data.isValidElement(_idx.row[i], _idx.col[1], sDataTable))
                 {
-                    if (!isnan(fitData.dMin) && !isnan(fitData.dMax) && (_data.getElement(_idx.row[i], _idx.col[0], sDataTable).real() < fitData.dMin || _data.getElement(_idx.row[i], _idx.col[0], sDataTable).real() > fitData.dMax))
+                    if (!fitData.ivl[0].isInside(_data.getElement(_idx.row[i], _idx.col[0], sDataTable))
+                        || !fitData.ivl[1].isInside(_data.getElement(_idx.row[i], _idx.col[1], sDataTable)))
                         continue;
 
                     fitData.vx.push_back(_data.getElement(_idx.row[i], _idx.col[0], sDataTable).real());
@@ -958,7 +921,10 @@ static int getDataForFit(const string& sCmd, string& sDimsForFitLog, FittingData
                     }
                     else
                     {
-                        if (_data.isValidElement(_idx.row[i], _idx.col[2], sDataTable) && _data.isValidElement(_idx.row[i], _idx.col[3], sDataTable) && (_data.getElement(_idx.row[i], _idx.col[2], sDataTable).real() && _data.getElement(_idx.row[i], _idx.col[3], sDataTable).real()))
+                        if (_data.isValidElement(_idx.row[i], _idx.col[2], sDataTable)
+                            && _data.isValidElement(_idx.row[i], _idx.col[3], sDataTable)
+                            && (_data.getElement(_idx.row[i], _idx.col[2], sDataTable).real()
+                                && _data.getElement(_idx.row[i], _idx.col[3], sDataTable).real()))
                             fitData.vy_w.push_back(sqrt(fabs(_data.getElement(_idx.row[i], _idx.col[2], sDataTable).real()) * fabs(_data.getElement(_idx.row[i], _idx.col[3], sDataTable).real())));
                         else if (_data.isValidElement(_idx.row[i], _idx.col[2], sDataTable) && _data.getElement(_idx.row[i], _idx.col[2], sDataTable).real())
                             fitData.vy_w.push_back(fabs(_data.getElement(_idx.row[i], _idx.col[2], sDataTable).real()));
@@ -973,13 +939,17 @@ static int getDataForFit(const string& sCmd, string& sDimsForFitLog, FittingData
             {
                 if (_data.isValidElement(_idx.row[i], _idx.col[0], sDataTable) && _data.isValidElement(_idx.row[i], _idx.col[1], sDataTable))
                 {
-                    if (!isnan(fitData.dMin) && !isnan(fitData.dMax) && (_data.getElement(_idx.row[i], _idx.col[0], sDataTable).real() < fitData.dMin || _data.getElement(_idx.row[i], _idx.col[0], sDataTable).real() > fitData.dMax))
+                    if (!fitData.ivl[0].isInside(_data.getElement(_idx.row[i], _idx.col[0], sDataTable))
+                        || !fitData.ivl[1].isInside(_data.getElement(_idx.row[i], _idx.col[1], sDataTable)))
                         continue;
 
                     fitData.vx.push_back(_data.getElement(_idx.row[i], _idx.col[0], sDataTable).real());
                     fitData.vy.push_back(_data.getElement(_idx.row[i], _idx.col[1], sDataTable).real());
 
-                    if (_data.isValidElement(_idx.row[i], _idx.col[2], sDataTable) && _data.isValidElement(_idx.row[i], _idx.col[3], sDataTable) && (_data.getElement(_idx.row[i], _idx.col[2], sDataTable).real() && _data.getElement(_idx.row[i], _idx.col[3], sDataTable).real()))
+                    if (_data.isValidElement(_idx.row[i], _idx.col[2], sDataTable)
+                        && _data.isValidElement(_idx.row[i], _idx.col[3], sDataTable)
+                        && (_data.getElement(_idx.row[i], _idx.col[2], sDataTable).real()
+                            && _data.getElement(_idx.row[i], _idx.col[3], sDataTable).real()))
                         fitData.vy_w.push_back(sqrt(fabs(_data.getElement(_idx.row[i], _idx.col[2], sDataTable).real()) * fabs(_data.getElement(i, _idx.col[3], sDataTable).real())));
                     else if (_data.isValidElement(_idx.row[i], _idx.col[2], sDataTable) && _data.getElement(_idx.row[i], _idx.col[2], sDataTable).real())
                         fitData.vy_w.push_back(fabs(_data.getElement(_idx.row[i], _idx.col[2], sDataTable).real()));
@@ -995,12 +965,14 @@ static int getDataForFit(const string& sCmd, string& sDimsForFitLog, FittingData
     {
         for (size_t i = 0; i < _idx.row.size(); i++)
         {
-            if (!_data.isValidElement(_idx.row[i], _idx.col[1], sDataTable) || _data.getElement(_idx.row[i], _idx.col[1], sDataTable).real() < fitData.dMinY || _data.getElement(_idx.row[i], _idx.col[1], sDataTable).real() > fitData.dMaxY)
+            if (!_data.isValidElement(_idx.row[i], _idx.col[1], sDataTable)
+                || !fitData.ivl[1].isInside(_data.getElement(_idx.row[i], _idx.col[1], sDataTable)))
                 continue;
             else
                 fitData.vy.push_back(_data.getElement(_idx.row[i], _idx.col[1], sDataTable).real());
 
-            if (!_data.isValidElement(_idx.row[i], _idx.col[0], sDataTable) || _data.getElement(_idx.row[i], _idx.col[0], sDataTable).real() < fitData.dMin || _data.getElement(_idx.row[i], _idx.col[0], sDataTable).real() > fitData.dMax)
+            if (!_data.isValidElement(_idx.row[i], _idx.col[0], sDataTable)
+                || !fitData.ivl[0].isInside(_data.getElement(_idx.row[i], _idx.col[0], sDataTable)))
                 continue;
             else
                 fitData.vx.push_back(_data.getElement(_idx.row[i], _idx.col[0], sDataTable).real());
@@ -1011,8 +983,8 @@ static int getDataForFit(const string& sCmd, string& sDimsForFitLog, FittingData
                     break;
 
                 if (!_data.isValidElement(_idx.row[k-2], _idx.col[1], sDataTable)
-                        || _data.getElement(_idx.row[k-2], _idx.col[1], sDataTable).real() < fitData.dMinY
-                        || _data.getElement(_idx.row[k-2], _idx.col[1], sDataTable).real() > fitData.dMaxY)
+                    || !fitData.ivl[1].isInside(_data.getElement(_idx.row[k-2], _idx.col[1], sDataTable))
+                    || !fitData.ivl[2].isInside(_data.getElement(_idx.row[i], _idx.col[k], sDataTable)))
                     continue;
                 else
                 {
@@ -1044,7 +1016,8 @@ static int getDataForFit(const string& sCmd, string& sDimsForFitLog, FittingData
         {
             if (_data.isValidElement(_idx.row[i], _idx.col[0], sDataTable) && _data.isValidElement(_idx.row[i], _idx.col[1], sDataTable))
             {
-                if (!isnan(fitData.dMin) && !isnan(fitData.dMax) && (_data.getElement(_idx.row[i], _idx.col[0], sDataTable).real() < fitData.dMin || _data.getElement(_idx.row[i], _idx.col[0], sDataTable).real() > fitData.dMax))
+                if (!fitData.ivl[0].isInside(_data.getElement(_idx.row[i], _idx.col[0], sDataTable))
+                    || !fitData.ivl[1].isInside(_data.getElement(_idx.row[i], _idx.col[1], sDataTable)))
                     continue;
 
                 fitData.vx.push_back(_data.getElement(_idx.row[i], _idx.col[0], sDataTable).real());
@@ -1406,11 +1379,15 @@ static string getFitOptionsTable(Fitcontroller& _fControl, FittingData& fitData,
     else
         sFitParameterTable += sPrefix + _lang.get("PARSERFUNCS_FIT_POINTS_WO_ERR", toString((int)nSize)) + "\n";
 
-    if (fitData.bRestrictXVals)
-        sFitParameterTable += sPrefix + _lang.get("PARSERFUNCS_FIT_COORD_RESTRICTS", "x", toString(fitData.dMin, 5), toString(fitData.dMax, 5)) + "\n";
+    if (fitData.restricted[0])
+        sFitParameterTable += sPrefix + _lang.get("PARSERFUNCS_FIT_COORD_RESTRICTS", "x", toString(fitData.ivl[0].min(), 5), toString(fitData.ivl[0].max(), 5)) + "\n";
 
-    if (fitData.bRestrictYVals)
-        sFitParameterTable += sPrefix + _lang.get("PARSERFUNCS_FIT_COORD_RESTRICTS", "y", toString(fitData.dMinY, 5), toString(fitData.dMaxY, 5)) + "\n";
+    if (fitData.restricted[1])
+        sFitParameterTable += sPrefix + _lang.get("PARSERFUNCS_FIT_COORD_RESTRICTS", "y", toString(fitData.ivl[1].min(), 5), toString(fitData.ivl[1].max(), 5)) + "\n";
+
+    if (fitData.restricted[2])
+        sFitParameterTable += sPrefix + _lang.get("PARSERFUNCS_FIT_COORD_RESTRICTS", "z", toString(fitData.ivl[2].min(), 5), toString(fitData.ivl[2].max(), 5)) + "\n";
+
 
     if (fitData.sRestrictions.length())
         sFitParameterTable += sPrefix + _lang.get("PARSERFUNCS_FIT_PARAM_RESTRICTS", fitData.sRestrictions) + "\n";
@@ -1642,11 +1619,14 @@ static void createTeXExport(Fitcontroller& _fControl, const string& sTeXExportFi
     else
         oTeXExport << "\t\\item " << _lang.get("PARSERFUNCS_FIT_POINTS_WO_ERR", toString((int)nSize)) << endl;
 
-    if (fitData.bRestrictXVals)
-        oTeXExport << "\t\\item " << _lang.get("PARSERFUNCS_FIT_COORD_RESTRICTS", "x", toString(fitData.dMin, 5), toString(fitData.dMax, 5)) << endl;
+    if (fitData.restricted[0])
+        oTeXExport << "\t\\item " << _lang.get("PARSERFUNCS_FIT_COORD_RESTRICTS", "x", toString(fitData.ivl[0].min(), 5), toString(fitData.ivl[0].max(), 5)) << endl;
 
-    if (fitData.bRestrictYVals)
-        oTeXExport << "\t\\item " << _lang.get("PARSERFUNCS_FIT_COORD_RESTRICTS", "y", toString(fitData.dMinY, 5), toString(fitData.dMaxY, 5)) << endl;
+    if (fitData.restricted[1])
+        oTeXExport << "\t\\item " << _lang.get("PARSERFUNCS_FIT_COORD_RESTRICTS", "y", toString(fitData.ivl[1].min(), 5), toString(fitData.ivl[1].max(), 5)) << endl;
+
+    if (fitData.restricted[2])
+        oTeXExport << "\t\\item " << _lang.get("PARSERFUNCS_FIT_COORD_RESTRICTS", "z", toString(fitData.ivl[2].min(), 5), toString(fitData.ivl[2].max(), 5)) << endl;
 
     if (fitData.sRestrictions.length())
         oTeXExport << "\t\\item " << _lang.get("PARSERFUNCS_FIT_PARAM_RESTRICTS", "$" + replaceToTeX(fitData.sRestrictions, true) + "$") << endl;
