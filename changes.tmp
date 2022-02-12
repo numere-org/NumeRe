@@ -68,3 +68,4 @@ Applied	The function "zeta(x)" now also accepts complex numbers as input.
 New	It's now possible to add a documenation to tables. This documentation will also be displayed in the file tree. The documentation can either be modified using table methods ("TABLE().describe(DESCR)" and "TABLE().description") or via the GUI elements used for displaying and editing tables.
 New	The matrix operations mode knows now a set of moving statistics functions like "movsum()", "movavg()" or "movmed()". The window is configurable and is rectangular.
 Fixed	The axes of non-square images are now loaded correctly using "imread".
+Fixed	The superfluous indent during procedure installs will now be omitted.

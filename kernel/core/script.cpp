@@ -643,21 +643,29 @@ bool Script::writeWholeFile()
         return false;
 
     std::string sFileName = ValidizeAndPrepareName(Documentation::getArgAtPos(sStartLine, sStartLine.find("name=", pos)+5), ".nscr");
-    std::ofstream wholeFile(sFileName);
     m_logger.push_line(">> Writing file: \"" + sFileName + "\" ...");
+    std::vector<std::string> vFileContents;
+    size_t nIndent = UINT_MAX;
 
+    // Buffer the files contents and determine the minimal indent, which may be
+    // removed
     while (nLine < m_script->getLinesCount())
     {
-        std::string sLine = m_script->getLine(nLine);
+        // Get the contents and replace all tab characters with 4 whitespaces
+        // (more secure, because users might prefer whitespaces)
+        vFileContents.push_back(m_script->getLine(nLine));
+        replaceAll(vFileContents.back(), "\t", "    ");
+
+        // Find the first non-whitespace character
+        size_t nFirstChar = vFileContents.back().find_first_not_of(' ');
+
+        // Determine, if it is smaller than the already
+        // determined index
+        if (nFirstChar < nIndent)
+            nIndent = nFirstChar;
 
         if (nInstallModeFlags & ENABLE_FULL_LOGGING)
-            m_logger.push_line(">> >> Copying: " + sLine + " ...");
-
-        // Ignore first character (mostly a tab)
-        if (sLine.front() == '\t')
-            wholeFile << sLine.substr(1) + "\n";
-        else
-            wholeFile << sLine + "\n";
+            m_logger.push_line(">> >> Copying: " + vFileContents.back() + " ...");
 
         nLine++;
 
@@ -665,8 +673,18 @@ bool Script::writeWholeFile()
             break;
     }
 
-    wholeFile.close();
     nLine++;
+
+    std::ofstream wholeFile(sFileName);
+
+    // Now write the buffer to the file while removing the
+    // superfluous indent
+    for (size_t i = 0; i < vFileContents.size(); i++)
+    {
+        wholeFile << vFileContents[i].substr(nIndent) + "\n";
+    }
+
+    wholeFile.close();
 
     return true;
 }
