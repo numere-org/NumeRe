@@ -22,6 +22,7 @@
 #include "../gui/terminal/terminal.hpp"
 #include "core/datamanagement/dataops.hpp" // for make_stringmatrix()
 #include "core/datamanagement/database.hpp"
+#include "core/io/logger.hpp"
 
 #define KERNEL_PRINT_SLEEP 2
 #define TERMINAL_FORMAT_FIELD_LENOFFSET 16
@@ -58,39 +59,7 @@ NumeRe::Table NumeReKernel::table;
 bool NumeReKernel::bSupressAnswer = false;
 bool NumeReKernel::bGettingLine = false;
 bool NumeReKernel::bErrorNotification = false;
-ofstream NumeReKernel::oLogFile;
 ProcedureLibrary NumeReKernel::ProcLibrary;
-
-typedef BOOL (WINAPI* LPFN_ISWOW64PROCESS) (HANDLE, PBOOL);
-
-
-/////////////////////////////////////////////////
-/// \brief This function returns true, if we're
-/// currently running on Win x64.
-///
-/// \return bool
-///
-/////////////////////////////////////////////////
-bool IsWow64()
-{
-    BOOL bIsWow64 = false;
-
-    //IsWow64Process is not available on all supported versions of Windows.
-    //Use GetModuleHandle to get a handle to the DLL that contains the function
-    //and GetProcAddress to get a pointer to the function if available.
-
-    LPFN_ISWOW64PROCESS fnIsWow64Process = (LPFN_ISWOW64PROCESS) GetProcAddress(
-            GetModuleHandle(TEXT("kernel32")), "IsWow64Process");
-
-    if (NULL != fnIsWow64Process)
-    {
-        if (!fnIsWow64Process(GetCurrentProcess(), &bIsWow64))
-        {
-            return false;
-        }
-    }
-    return (bool)bIsWow64;
-}
 
 
 /////////////////////////////////////////////////
@@ -153,8 +122,10 @@ void NumeReKernel::setKernelSettings(const Settings& _settings)
 void NumeReKernel::Autosave()
 {
     if (!_memoryManager.getSaveStatus())
+    {
+        g_logger.info("Autosaving tables.");
         _memoryManager.saveToCacheFile();
-    return;
+    }
 }
 
 
@@ -187,11 +158,6 @@ void NumeReKernel::StartUp(NumeReTerminal* _parent, const string& __sPath, const
     _script.setPredefinedFuncs(sPredefinedFunctions);
     _procedure.setPredefinedFuncs(sPredefinedFunctions);
 
-    // Get the version of the operating system
-    OSVERSIONINFOA _osversioninfo;
-    _osversioninfo.dwOSVersionInfoSize = sizeof(OSVERSIONINFOA);
-    GetVersionExA(&_osversioninfo);
-
     // Make the path UNIX style
     while (sPath.find('\\') != string::npos)
         sPath[sPath.find('\\')] = '/';
@@ -205,20 +171,12 @@ void NumeReKernel::StartUp(NumeReTerminal* _parent, const string& __sPath, const
     if (_option.useLogFile())
     {
         reduceLogFilesize((sPath + "/" + sLogFile).c_str());
-        oLogFile.open((sPath + "/" + sLogFile).c_str(), ios_base::out | ios_base::app | ios_base::ate);
-        if (oLogFile.fail())
-            oLogFile.close();
+        g_logger.open(sPath + "/" + sLogFile);
     }
+    else
+        g_logger.setLoggingLevel(Logger::LVL_DISABLED);
 
-    // Add headline information to the log file
-    if (oLogFile.is_open())
-    {
-        oLogFile << "--- NUMERE-SESSION-PROTOCOL: " << sTime << " ---" << endl;
-        oLogFile << "--- NumeRe v " << sVersion
-                 << " | Build " << AutoVersion::YEAR << "-" << AutoVersion::MONTH << "-" << AutoVersion::DATE
-                 << " | OS: Windows v " << _osversioninfo.dwMajorVersion << "." << _osversioninfo.dwMinorVersion << "." << _osversioninfo.dwBuildNumber << " " << _osversioninfo.szCSDVersion << (IsWow64() ? " (64 Bit) ---" : " ---") << endl;
-    }
-
+    g_logger.info("Verifying file system.");
     // Set the path tokens for all relevant objects
     _fSys.setTokens(_option.getTokenPaths());
     _memoryManager.setTokens(_option.getTokenPaths());
@@ -265,41 +223,42 @@ void NumeReKernel::StartUp(NumeReTerminal* _parent, const string& __sPath, const
     _option.setPath(_option.getSavePath() + "/docs", true, sPath);
     _functions.setPath(_option.getExePath(), false, sPath);
     _fSys.setPath(_option.getExePath(), false, sPath);
-    addToLog("> SYSTEM: File system was verified.");
+    g_logger.info("File system was verified.");
 
     // Load the documentation index file
+    g_logger.info("Loading documentation index.");
     _option.createDocumentationIndex(_option.useCustomLangFiles());
-    addToLog("> SYSTEM: Documentation index was loaded.");
 
     // Load the language strings
+    g_logger.info("Loading kernel language files.");
     _lang.loadStrings(_option.useCustomLangFiles());
-    addToLog("> SYSTEM: Language files were loaded.");
 
     string sCacheFile = _option.getExePath() + "/numere.cache";
 
     // Load the plugin informations
     if (fileExists(_procedure.getPluginInfoPath()))
     {
+        g_logger.info("Loading plugins.");
         _procedure.loadPlugins();
         _memoryManager.setPluginCommands(_procedure.getPluginNames());
-        addToLog("> SYSTEM: Plugin information was loaded.");
     }
 
     // Load the function definitions
     if (_option.controlDefinitions() && fileExists(_option.getExePath() + "\\functions.def"))
     {
+        g_logger.info("Loading custom function definitions.");
         _functions.load(_option, true);
-        addToLog("> SYSTEM: Function definitions were loaded.");
     }
 
     // Load the binary plot font
+    g_logger.info("Loading plotting font.");
     _fontData.LoadFont(_option.getDefaultPlotFont().c_str(), (_option.getExePath() + "\\fonts").c_str());
 
     // Load the autosave file
     if (fileExists(sCacheFile))
     {
+        g_logger.info("Loading tables from last session.");
         _memoryManager.loadFromCacheFile();
-        addToLog("> SYSTEM: Automatic backup was loaded.");
     }
 
     // Declare the default variables
@@ -315,16 +274,22 @@ void NumeReKernel::StartUp(NumeReTerminal* _parent, const string& __sPath, const
     _parser.DefineVar("nlen", &_memoryManager.dClusterElementsCount);
 
     // --> VAR-FACTORY Deklarieren (Irgendwo muessen die ganzen Variablen-Werte ja auch gespeichert werden) <--
+    g_logger.debug("Creating variable factory.");
     _parser.SetVarFactory(parser_AddVariable, &(_parser.m_lDataStorage));
 
     // Define the operators
+    g_logger.debug("Defining operators.");
     defineOperators();
 
     // Define the constants
+    g_logger.debug("Defining constants.");
     defineConst();
 
     // Define the functions
+    g_logger.debug("Defining functions.");
     defineFunctions();
+
+    g_logger.info("Kernel ready.");
 }
 
 
@@ -722,7 +687,7 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
             }
 
             // Log the current line
-            addToLog(sLine);
+            g_logger.cmdline(sLine);
 
             // Handle, whether the pressed the ESC key
             if (GetAsyncCancelState() && _script.isValid() && _script.isOpen())
@@ -1028,7 +993,7 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
             resetAfterError(sCmdCache);
 
             make_hline();
-            addToLog("> " + toUpperCase(_lang.get("ERR_ERROR")) + ": " + e.GetMsg());
+            g_logger.error(toUpperCase(_lang.get("ERR_ERROR")) + ": " + e.GetMsg());
 
 
             sendErrorNotification();
@@ -1049,7 +1014,7 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
             resetAfterError(sCmdCache);
 
             make_hline();
-            addToLog("> ERROR: CRITICAL ACCESS VIOLATION");
+            g_logger.error("ERROR: CRITICAL ACCESS VIOLATION");
             sendErrorNotification();
 
             return NUMERE_ERROR;
@@ -1067,7 +1032,7 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
 
             resetAfterError(sCmdCache);
 
-            addToLog("> " + toUpperCase(_lang.get("ERR_ERROR")) + ": " + e.what());
+            g_logger.error(toUpperCase(_lang.get("ERR_ERROR")) + ": " + e.what());
             make_hline();
             sendErrorNotification();
 
@@ -1085,7 +1050,7 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
                 print(LineBreak(_lang.get("ERR_NR_3200_0_PROCESS_ABORTED_BY_USER"), _option, false));
                 //cerr << LineBreak("|-> Siehe auch \"help procedure\"", _option) << endl;
 
-                addToLog("> NOTE: Process was cancelled by user");
+                g_logger.warning("Process was cancelled by user");
                 // --> Wenn ein Script ausgefuehrt wird, lesen wir den Index der letzten eingelesenen Zeile und geben diesen hier aus <--
                 if (_script.isValid() && _script.isOpen())
                 {
@@ -1102,8 +1067,7 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
                 if (e.getToken().length() && (e.errorcode == SyntaxError::PROCEDURE_THROW || e.errorcode == SyntaxError::LOOP_THROW))
                 {
                     print(LineBreak(e.getToken(), _option));
-
-                    addToLog("> " + toUpperCase(_lang.get("ERR_ERROR")) + ": " + e.getToken());
+                    g_logger.error(toUpperCase(_lang.get("ERR_ERROR")) + ": " + e.getToken());
                 }
                 else
                 {
@@ -1160,7 +1124,7 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
                         }
                     }
 
-                    addToLog("> " + toUpperCase(_lang.get("ERR_ERROR")) + ": " + sErrIDString);
+                    g_logger.error(toUpperCase(_lang.get("ERR_ERROR")) + ": " + sErrIDString);
                 }
             }
             resetAfterError(sCmdCache);
@@ -1185,7 +1149,7 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
             resetAfterError(sCmdCache);
             make_hline();
 
-            addToLog("> ERROR: UNKNOWN EXCEPTION");
+            g_logger.error("ERROR: UNKNOWN EXCEPTION");
             sendErrorNotification();
 
             return NUMERE_ERROR;
@@ -2126,6 +2090,7 @@ void NumeReKernel::updateLineLenght(int nLength)
 {
     if (nLength > 0)
     {
+        g_logger.debug("Changing line length.");
         nLINE_LENGTH = nLength;
         _option.getSetting(SETTING_V_WINDOW_X).value() = nLength;
     }
@@ -2143,6 +2108,7 @@ void NumeReKernel::saveData()
 {
     if (!_memoryManager.getSaveStatus())
     {
+        g_logger.info("Saving latest table changes.");
         _memoryManager.saveToCacheFile();
         print(LineBreak(_lang.get("MAIN_CACHE_SAVED"), _option));
         Sleep(500);
@@ -2163,6 +2129,10 @@ void NumeReKernel::saveData()
 /////////////////////////////////////////////////
 void NumeReKernel::CloseSession()
 {
+    // Does not to be carried out twice
+    if (!m_parent)
+        return;
+
     saveData();
     _memoryManager.removeTablesFromMemory();
 
@@ -2175,17 +2145,13 @@ void NumeReKernel::CloseSession()
     // Save the function definitions
     if (_option.controlDefinitions() && _functions.getDefinedFunctions())
     {
+        g_logger.info("Saving function definitions.");
         _functions.save(_option);
         Sleep(100);
     }
-    _option.save(_option.getExePath()); // MAIN_QUIT
 
-    // Write an information to the log file
-    if (oLogFile.is_open())
-    {
-        oLogFile << "--- NUMERE WAS TERMINATED SUCCESSFULLY ---" << endl << endl << endl;
-        oLogFile.close();
-    }
+    g_logger.info("Saving options.");
+    _option.save(_option.getExePath()); // MAIN_QUIT
 
     // Do some clean-up stuff here
     sCommandLine.clear();
@@ -2798,6 +2764,7 @@ void NumeReKernel::issueWarning(string sWarningMessage)
         return;
     else
     {
+        g_logger.warning(sWarningMessage);
         wxCriticalSectionLocker lock(m_parent->m_kernelCS);
 
         // Insert warning symbols, if linebreaks are contained in this message
@@ -3336,6 +3303,7 @@ void NumeReKernel::showDebugEvent(const string& sTitle, const vector<string>& vS
         return;
     else
     {
+        g_logger.debug("Debugger event.");
         wxCriticalSectionLocker lock(m_parent->m_kernelCS);
 
         NumeReTask task;
@@ -3370,6 +3338,7 @@ int NumeReKernel::waitForContinue()
         return DEBUGGER_CONTINUE;
 
     int nDebuggerCode = 0;
+    g_logger.debug("Waiting for continue.");
 
     // Periodically check for an updated debugger code
     do
@@ -3551,21 +3520,6 @@ int NumeReKernel::evalDebuggerBreakPoint(const string& sCurrentCommand)
 
 
 /////////////////////////////////////////////////
-/// \brief This member function appends the passed
-/// string to the command log.
-///
-/// \param sLogMessage const string&
-/// \return void
-///
-/////////////////////////////////////////////////
-void NumeReKernel::addToLog(const string& sLogMessage)
-{
-    if (oLogFile.is_open())
-        oLogFile << toString(_time64(0) - tTimeZero, 1) << "> " << sLogMessage << endl;
-}
-
-
-/////////////////////////////////////////////////
 /// \brief Clear the terminal
 ///
 /// \return void
@@ -3577,6 +3531,7 @@ void NumeReKernel::clcTerminal()
         return;
     else
     {
+        g_logger.debug("Clearing terminal.");
         wxCriticalSectionLocker lock(m_parent->m_kernelCS);
 
         // create the task
@@ -3602,6 +3557,7 @@ void NumeReKernel::clcTerminal()
 /////////////////////////////////////////////////
 void NumeReKernel::refreshFunctionTree()
 {
+    g_logger.debug("Refreshing function tree.");
     getInstance()->refreshTree = true;
 }
 
@@ -3758,3 +3714,5 @@ void make_hline(int nLength)
 
     return;
 }
+
+

@@ -21,6 +21,7 @@
 
 #include <fstream>
 #include <string>
+#include <vector>
 
 /////////////////////////////////////////////////
 /// \brief This class represents a simple logging
@@ -46,7 +47,108 @@ class Logger
 
         void push(const std::string& sMessage);
         void push_line(const std::string& sMessage);
+
+        enum LogLevel
+        {
+            LVL_DEBUG,
+            LVL_INFO,
+            LVL_CMDLINE,
+            LVL_WARNING,
+            LVL_ERROR,
+            LVL_DISABLED
+        };
 };
+
+
+
+/////////////////////////////////////////////////
+/// \brief This class is a specialisation of the
+/// Logger to run detached, i.e. as a global
+/// instance usable form everywhere.
+/////////////////////////////////////////////////
+class DetachedLogger : public Logger
+{
+    private:
+        std::vector<std::string> m_buffer;
+        Logger::LogLevel m_level;
+
+    public:
+        DetachedLogger(Logger::LogLevel lvl = Logger::LVL_INFO);
+        ~DetachedLogger();
+
+        bool is_buffering() const;
+        bool open(const std::string& sLogFile);
+        void setLoggingLevel(Logger::LogLevel lvl);
+
+        void push_info(const std::string& sInfo);
+        void write_system_information();
+        void push_line(Logger::LogLevel lvl, const std::string& sMessage);
+
+        /////////////////////////////////////////////////
+        /// \brief Convenience member function.
+        ///
+        /// \param sMessage const std::string&
+        /// \return void
+        ///
+        /////////////////////////////////////////////////
+        inline void debug(const std::string& sMessage)
+        {
+            push_line(Logger::LVL_DEBUG, sMessage);
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief Convenience member function.
+        ///
+        /// \param sMessage const std::string&
+        /// \return void
+        ///
+        /////////////////////////////////////////////////
+        inline void info(const std::string& sMessage)
+        {
+            push_line(Logger::LVL_INFO, sMessage);
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief Convenience member function.
+        ///
+        /// \param sMessage const std::string&
+        /// \return void
+        ///
+        /////////////////////////////////////////////////
+        inline void cmdline(const std::string& sMessage)
+        {
+            push_line(Logger::LVL_CMDLINE, sMessage);
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief Convenience member function.
+        ///
+        /// \param sMessage const std::string&
+        /// \return void
+        ///
+        /////////////////////////////////////////////////
+        inline void warning(const std::string& sMessage)
+        {
+            push_line(Logger::LVL_WARNING, sMessage);
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief Convenience member function.
+        ///
+        /// \param sMessage const std::string&
+        /// \return void
+        ///
+        /////////////////////////////////////////////////
+        inline void error(const std::string& sMessage)
+        {
+            push_line(Logger::LVL_ERROR, sMessage);
+        }
+
+};
+
+
+// Declaration of the global instance
+extern DetachedLogger g_logger;
 
 #endif // LOGGER_HPP
 

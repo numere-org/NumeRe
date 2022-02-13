@@ -203,7 +203,6 @@ class NumeReKernel
         static bool bSupressAnswer;
         static bool bGettingLine;
         static bool bErrorNotification;
-        static ofstream oLogFile;
         static ProcedureLibrary ProcLibrary;
 
         // Constructor and Destructor
@@ -252,7 +251,6 @@ class NumeReKernel
         static void showDebugEvent(const string& sTitle, const vector<string>& vStacktrace);
         static int waitForContinue();
         static int evalDebuggerBreakPoint(const string& sCurrentCommand = "");
-        static void addToLog(const string& sLogMessage);
         static void clcTerminal();
         void refreshFunctionTree();
         void closeWindows(int type);

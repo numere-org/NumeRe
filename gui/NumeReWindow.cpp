@@ -94,6 +94,7 @@
 #include "../kernel/core/datamanagement/database.hpp"
 #include "../kernel/core/documentation/docgen.hpp"
 #include "../kernel/core/ui/error.hpp"
+#include "../kernel/core/io/logger.hpp"
 
 #include "../common/recycler.hpp"
 #include "../common/Options.h"
@@ -127,6 +128,7 @@ string prepareStringsForDialog(const string& sString)
     return removeMaskedStrings(removeQuotationMarks(sString));
 }
 // Create the stack trace object here
+
 Language _guilang;
 FindReplaceDialog* g_findReplace;
 double g_pixelScale = 1.0;
@@ -180,9 +182,20 @@ IMPLEMENT_APP(MyApp)
 /////////////////////////////////////////////////
 bool MyApp::OnInit()
 {
+    #ifdef DO_LOG
+    g_logger.setLoggingLevel(Logger::LVL_DEBUG);
+    #endif // DO_LOG
+
+    g_logger.push_info("NEW INSTANCE STARTUP");
+    g_logger.push_info("NumeRe v " + sVersion + " (var. " + AutoVersion::UBUNTU_VERSION_STYLE + ")");
+    g_logger.write_system_information();
+    g_logger.info("Starting up.");
+
     wxString sInstanceLocation = wxStandardPaths::Get().GetDataDir();
     sInstanceLocation.Replace(":\\", "~");
     sInstanceLocation.Replace("\\", "~");
+
+    g_logger.debug("Creating single instance checker.");
     m_singlinst = new wxSingleInstanceChecker("NumeRe::" + sInstanceLocation + "::" + wxGetUserId(), wxGetHomeDir());
     m_DDEServer = nullptr;
 
@@ -220,28 +233,34 @@ bool MyApp::OnInit()
         return false;
     }
 
+
     std::setlocale(LC_ALL, "C");
     wxFileName f(wxStandardPaths::Get().GetExecutablePath());
 
     wxInitAllImageHandlers();
     wxBitmap splashImage;
     wxSplashScreen* splash = nullptr;
+    g_logger.debug("Loading splash image.");
 
     if (splashImage.LoadFile(f.GetPath(wxPATH_GET_VOLUME | wxPATH_GET_SEPARATOR)+"icons\\splash.png", wxBITMAP_TYPE_PNG))
         splash = new wxSplashScreen(splashImage, wxSPLASH_CENTRE_ON_SCREEN | wxSPLASH_NO_TIMEOUT, 0, nullptr, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxNO_BORDER);
 
     g_findReplace = nullptr;
 
+    g_logger.info("Creating window.");
+
     // Create and initialize the main frame. Will also
     // include loading the configuration, loading existing
     // caches and preparing the editor.
     NumeReWindow* NumeReMainFrame = new NumeReWindow("NumeRe: Framework für Numerische Rechnungen (v" + sVersion + ")", wxDefaultPosition, wxDefaultSize);
 
+    g_logger.debug("Starting DDE server instance.");
     // Create the DDE server for the first (main)
     // instance of the application
     m_DDEServer = new DDE::Server(NumeReMainFrame);
     m_DDEServer->Create(DDE_SERVICE);
 
+    g_logger.debug("Showing main frame.");
     NumeReMainFrame->Show(true);
     NumeReMainFrame->Maximize();
 
@@ -252,12 +271,14 @@ bool MyApp::OnInit()
         wxArgV.Add(argv[i]);
     }
 
+    g_logger.info("Evaluating command line arguments.");
     // force the history window to perform a
     // page down to scroll to its actually
     // last position
     NumeReMainFrame->forceHistoryPageDown();
     NumeReMainFrame->EvaluateCommandLine(wxArgV);
     NumeReMainFrame->Ready();
+    g_logger.info("NumeRe ready.");
 
     // Destroy the splash image once the window
     // is ready
@@ -267,6 +288,7 @@ bool MyApp::OnInit()
     // Tip of the day
     if (NumeReMainFrame->showTipAtStartup)
     {
+        g_logger.debug("Showing tip of the day.");
         wxArrayString DialogText;
         DialogText.Add(_guilang.get("GUI_TIPOTD_HEAD"));
         DialogText.Add(_guilang.get("GUI_TIPOTD_DYK"));
@@ -281,6 +303,7 @@ bool MyApp::OnInit()
 
     if (NumeReMainFrame->m_UnrecoverableFiles.length())
     {
+        g_logger.warning("The files '" + NumeReMainFrame->m_UnrecoverableFiles + "' could not be restored.");
         NumeReMainFrame->Refresh();
         NumeReMainFrame->Update();
         wxMessageBox(_guilang.get("GUI_DLG_SESSION_RECREATIONERROR", NumeReMainFrame->m_UnrecoverableFiles), _guilang.get("GUI_DLG_SESSION_ERROR"), wxICON_ERROR);
@@ -386,9 +409,11 @@ NumeReWindow::NumeReWindow(const wxString& title, const wxPoint& pos, const wxSi
     m_loadingFilesDuringStartup = false;
     m_appStarting = true;
 
+    g_logger.debug("Creating new file watcher.");
     m_watcher = new Filewatcher();
     m_watcher->SetOwner(this);
 
+    g_logger.debug("Creating icon manager.");
     m_iconManager = new IconManager(getProgramFolder());
 
     // Show a log window for all debug messages
@@ -403,6 +428,7 @@ NumeReWindow::NumeReWindow(const wxString& title, const wxPoint& pos, const wxSi
 
     m_remoteMode = true;
 
+    g_logger.debug("Creating window elements.");
     // Create the main frame splitters
     m_splitProjectEditor = new wxSplitterWindow(this, ID_SPLITPROJECTEDITOR, wxDefaultPosition, wxDefaultSize, wxBORDER_THEME);
     m_splitEditorOutput = new wxProportionalSplitterWindow(m_splitProjectEditor, ID_SPLITEDITOROUTPUT, 0.75, wxDefaultPosition, wxDefaultSize, wxSP_3DSASH);
@@ -419,6 +445,7 @@ NumeReWindow::NumeReWindow(const wxString& title, const wxPoint& pos, const wxSi
 
     // Create container and the contained terminal
     m_termContainer = new wxTermContainer(m_splitCommandHistory, ID_CONTAINER_TERM);
+    g_logger.debug("Creating terminal and starting kernel session.");
     m_terminal = new NumeReTerminal(m_termContainer, ID_TERMINAL, m_options, programPath, wxPoint(0, 0));
     m_terminal->set_mode_flag(GenericTerminal::CURSORINVISIBLE);
     m_termContainer->SetTerminal(m_terminal);
@@ -428,11 +455,13 @@ NumeReWindow::NumeReWindow(const wxString& title, const wxPoint& pos, const wxSi
     m_splitEditorOutput->SetCharHeigth(m_terminal->getTextHeight());
     m_splitCommandHistory->SetCharHeigth(m_terminal->getTextHeight());
 
+    g_logger.info("Initializing options.");
     // Fetch legacy settings, if available
     InitializeProgramOptions();
 
     _guilang.setTokens("<>="+getProgramFolder().ToStdString()+";");
 
+    g_logger.info("Loading GUI language files.");
     if (m_options->useCustomLangFiles())
         _guilang.loadStrings(true);
     else
@@ -469,6 +498,7 @@ NumeReWindow::NumeReWindow(const wxString& title, const wxPoint& pos, const wxSi
     m_projectFileFolders[3] = m_fileTree->AppendItem(rootNode, _guilang.get("GUI_TREE_PROCEDURES"), idxFolderOpen);
     m_projectFileFolders[4] = m_fileTree->AppendItem(rootNode, _guilang.get("GUI_TREE_PLOTS"), idxFolderOpen);
 
+    g_logger.debug("Preparing function tree.");
     prepareFunctionTree();
 
 #if wxUSE_DRAG_AND_DROP
@@ -514,10 +544,12 @@ NumeReWindow::NumeReWindow(const wxString& title, const wxPoint& pos, const wxSi
     UpdateMenuBar();
     UpdateTerminalNotebook();
 
+    g_logger.info("Evaluating options.");
     EvaluateOptions();
 
     // Recreate the last session or
     // create a new empty file
+    g_logger.info("Preparing session.");
     prepareSession();
 
     PageHasChanged(m_currentPage);
@@ -563,6 +595,7 @@ NumeReWindow::NumeReWindow(const wxString& title, const wxPoint& pos, const wxSi
 
     tipProvider = new MyTipProvider(tipDataBase.getColumn(0));
     showTipAtStartup = m_options->showHints();
+    g_logger.info("Windows ready.");
 }
 
 
@@ -886,6 +919,8 @@ void NumeReWindow::prepareSession()
     // create the initial blank open file or recreate the last session
     if (wxFileExists(getProgramFolder()+"\\numere.session") && m_options->GetSaveSession())
     {
+        g_logger.info("Reopening files from last session.");
+
         // Inform the application that the editor
         // settings do not have to be copied during
         // the session recovery
@@ -1045,6 +1080,7 @@ void NumeReWindow::prepareSession()
 void NumeReWindow::OnClose(wxCloseEvent &event)
 {
     m_appClosing = true;
+    g_logger.info("Closing NumeRe.");
 
     if (!CloseAllFiles())
     {
@@ -1074,6 +1110,7 @@ void NumeReWindow::OnClose(wxCloseEvent &event)
 
     if (m_terminal->IsWorking())
     {
+        g_logger.info("Stopping Kernel.");
         m_terminal->EndKernelTask();
         wxMilliSleep(200);
     }
@@ -1081,8 +1118,12 @@ void NumeReWindow::OnClose(wxCloseEvent &event)
     if (m_debugViewer != nullptr)
         m_debugViewer->Destroy();
 
+
     if (m_history)
+    {
+        g_logger.info("Saving command line history.");
         m_history->saveHistory();
+    }
 
     // Close all windows to avoid calls to the map afterwards
     closeWindows(WT_ALL);
@@ -3309,12 +3350,21 @@ bool NumeReWindow::CloseAllFiles()
             sSession += "*";
 
         if (edit->GetFileNameAndPath().length())
-            sSession += edit->GetFileNameAndPath().ToStdString() + "\t" + toString(i) + "\t" + toString(edit->GetCurrentPos()) + "\t" + toString(edit->getSettings()) + (m_options->GetSaveBookmarksInSession() ? "\t" + toString(edit->getBookmarks()) + "\n" : "\n");
+        {
+            g_logger.info("Adding file '" + edit->GetFileNameAndPath().ToStdString() + "' to the session backup.");
+            sSession += edit->GetFileNameAndPath().ToStdString()
+                        + "\t" + toString(i)
+                        + "\t" + toString(edit->GetCurrentPos())
+                        + "\t" + toString(edit->getSettings())
+                        + (m_options->GetSaveBookmarksInSession() ? "\t" + toString(edit->getBookmarks()) + "\n" : "\n");
+        }
         else
         {
             sSession += "<NEWFILE>\t" +toString(i) + "\t" + toString(edit->GetCurrentPos()) + "\n";
         }
     }
+
+    g_logger.debug("Closing files.");
 
     for (int i = 0; i < cnt; i++)
     {
@@ -3323,6 +3373,7 @@ bool NumeReWindow::CloseAllFiles()
 
     if (m_appClosing && !m_sessionSaved && m_options->GetSaveSession())
     {
+        g_logger.debug("Writing session file.");
         of_session.open((getProgramFolder().ToStdString()+"/numere.session").c_str(), ios_base::out | ios_base::trunc);
 
         if (of_session.is_open())
@@ -3687,6 +3738,7 @@ void NumeReWindow::OpenSourceFile(wxArrayString fnames, unsigned int nLine, int 
         }
         else
         {
+            g_logger.info("Loading file '" + fnames[n].ToStdString() + "'.");
             FileFilterType _fileType;
 
             if (fnames[n].rfind(".nscr") != string::npos)
@@ -5978,6 +6030,7 @@ wxString NumeReWindow::getFileDetails(const wxFileName& filename)
 /////////////////////////////////////////////////
 void NumeReWindow::LoadFilesToTree(wxString fromPath, FileFilterType fileType, wxTreeItemId treeid)
 {
+    g_logger.info("Loading files from '" + fromPath.ToStdString() + "' into file tree.");
     wxDir currentDir(fromPath);
     DirTraverser _traverser(m_fileTree, m_iconManager, treeid, fromPath, fileType);
     currentDir.Traverse(_traverser);

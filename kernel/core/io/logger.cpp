@@ -17,6 +17,53 @@
 ******************************************************************************/
 
 #include "logger.hpp"
+#include "../utils/stringtools.hpp"
+#include <windows.h>
+
+DetachedLogger g_logger;
+
+typedef BOOL (WINAPI* LPFN_ISWOW64PROCESS) (HANDLE, PBOOL);
+
+
+/////////////////////////////////////////////////
+/// \brief This function returns true, if we're
+/// currently running on Win x64.
+///
+/// \return bool
+///
+/////////////////////////////////////////////////
+bool IsWow64()
+{
+    BOOL bIsWow64 = false;
+
+    //IsWow64Process is not available on all supported versions of Windows.
+    //Use GetModuleHandle to get a handle to the DLL that contains the function
+    //and GetProcAddress to get a pointer to the function if available.
+
+    LPFN_ISWOW64PROCESS fnIsWow64Process = (LPFN_ISWOW64PROCESS) GetProcAddress(
+            GetModuleHandle(TEXT("kernel32")), "IsWow64Process");
+
+    if (NULL != fnIsWow64Process)
+    {
+        if (!fnIsWow64Process(GetCurrentProcess(), &bIsWow64))
+        {
+            return false;
+        }
+    }
+    return (bool)bIsWow64;
+}
+
+
+
+
+
+
+
+
+
+
+
+
 
 /////////////////////////////////////////////////
 /// \brief Empty default constructor.
@@ -132,5 +179,170 @@ void Logger::push_line(const std::string& sMessage)
 {
     if (ensure_open())
         m_logFile << sMessage << std::endl;
+}
+
+
+
+
+
+
+
+/////////////////////////////////////////////////
+/// \brief DetachedLogger constructor. Sets the
+/// default logging level.
+///
+/// \param lvl Logger::LogLevel
+///
+/////////////////////////////////////////////////
+DetachedLogger::DetachedLogger(Logger::LogLevel lvl) : m_level(lvl)
+{
+    //
+}
+
+
+/////////////////////////////////////////////////
+/// \brief DetachedLogger destructor. Appends a
+/// terminating message to the current logfile
+/// (if any).
+/////////////////////////////////////////////////
+DetachedLogger::~DetachedLogger()
+{
+    // Write an information to the log file
+    push_info("SESSION WAS TERMINATED SUCCESSFULLY\n");
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Determine, whether this instance is
+/// currently buffering or directly writing to a
+/// file.
+///
+/// \return bool
+///
+/////////////////////////////////////////////////
+bool DetachedLogger::is_buffering() const
+{
+    return !is_open();
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Open the log file and push the
+/// buffered messages directly to this file.
+///
+/// \param sLogFile const std::string&
+/// \return bool
+///
+/////////////////////////////////////////////////
+bool DetachedLogger::open(const std::string& sLogFile)
+{
+    bool good = Logger::open(sLogFile);
+
+    if (!good)
+        return false;
+
+    for (size_t i = 0; i < m_buffer.size(); i++)
+        Logger::push_line(m_buffer[i]);
+
+    m_buffer.clear();
+
+    return good;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Change the logging level or completely
+/// disable the logger.
+///
+/// \param lvl Logger::LogLevel
+/// \return void
+///
+/////////////////////////////////////////////////
+void DetachedLogger::setLoggingLevel(Logger::LogLevel lvl)
+{
+    m_level = lvl;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Push a message to the logger, which
+/// is not dependend on the logging level and
+/// will be shown without a timestamp.
+///
+/// \param sInfo const std::string&
+/// \return void
+///
+/////////////////////////////////////////////////
+void DetachedLogger::push_info(const std::string& sInfo)
+{
+    if (is_buffering())
+        m_buffer.push_back(sInfo);
+    else
+        Logger::push_line(sInfo);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief A helper function to write the current
+/// OS's information to the log file.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
+void DetachedLogger::write_system_information()
+{
+    std::string sysInfo;
+    // Get the version of the operating system
+    OSVERSIONINFOA _osversioninfo;
+    _osversioninfo.dwOSVersionInfoSize = sizeof(OSVERSIONINFOA);
+    GetVersionExA(&_osversioninfo);
+
+    // Create system information to the log file
+    sysInfo = "OS: Windows v " + toString((int)_osversioninfo.dwMajorVersion) + "." + toString((int)_osversioninfo.dwMinorVersion) + "." + toString((int)_osversioninfo.dwBuildNumber) + (IsWow64() ? " (64 Bit)" : "");
+
+    push_info(sysInfo);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Push a message with the corresponding
+/// logging level to the logger. The message will
+/// be prefixed with the millisecond-precise
+/// timestamp.
+///
+/// \param lvl Logger::LogLevel
+/// \param sMessage const std::string&
+/// \return void
+///
+/////////////////////////////////////////////////
+void DetachedLogger::push_line(Logger::LogLevel lvl, const std::string& sMessage)
+{
+    if (lvl < m_level)
+        return;
+
+    std::string sLevel = toString(sys_time_now(), 0) + "  ";
+
+    switch (lvl)
+    {
+        case Logger::LVL_DEBUG:
+            sLevel += "DEBUG:   ";
+            break;
+        case Logger::LVL_INFO:
+            sLevel += "INFO:    ";
+            break;
+        case Logger::LVL_CMDLINE:
+            sLevel += "CMDLINE: ";
+            break;
+        case Logger::LVL_WARNING:
+            sLevel += "WARNING: ";
+            break;
+        case Logger::LVL_ERROR:
+            sLevel += "ERROR:   ";
+            break;
+        case Logger::LVL_DISABLED:
+            return;
+    }
+
+    push_info(sLevel + sMessage);
 }
 

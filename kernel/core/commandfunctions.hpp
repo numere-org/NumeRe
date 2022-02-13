@@ -28,6 +28,7 @@
 #include "plotting/plotting.hpp"
 #include "../kernel.hpp"
 #include "ui/winlayout.hpp"
+#include "io/logger.hpp"
 #include "utils/tools.hpp"
 
 #include "commandlineparser.hpp"
@@ -3807,10 +3808,7 @@ static CommandReturnValues cmd_set(string& sCmd)
 
     if ((pos = findSettingOption(sCmd, "mode")))
     {
-        if (sCmd[pos] == '=')
-            addArgumentQuotes(sCmd, "mode");
-
-        extractFirstParameterStringValue(sCmd, sArgument);
+        sArgument = getArgAtPos(sCmd, pos, ARGEXTRACT_STRIPPED);
 
         if (sArgument.length() && sArgument == "debug")
         {
@@ -3835,6 +3833,7 @@ static CommandReturnValues cmd_set(string& sCmd)
                 NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_SET_DEVMODE_INACTIVE"), _option) );
                 mSettings[SETTING_B_DEVELOPERMODE].active() = false;
                 _parser.EnableDebugDump(false, false);
+                g_logger.setLoggingLevel(Logger::LVL_INFO);
             }
             else
             {
@@ -3853,6 +3852,7 @@ static CommandReturnValues cmd_set(string& sCmd)
                     mSettings[SETTING_B_DEVELOPERMODE].active() = true;
                     NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_SET_DEVMODE_SUCCESS"), _option) );
                     _parser.EnableDebugDump(true, true);
+                    g_logger.setLoggingLevel(Logger::LVL_DEBUG);
                 }
                 else
                     NumeReKernel::print(toSystemCodePage( _lang.get("COMMON_CANCEL")) );
