@@ -1860,10 +1860,11 @@ namespace NumeRe
     /// \param sLine string&
     /// \param sCache string&
     /// \param bSilent bool
+    /// \param bCheckAssertions bool
     /// \return StringParser::StringParserRetVal
     ///
     /////////////////////////////////////////////////
-    StringParser::StringParserRetVal StringParser::evalAndFormat(string& sLine, string& sCache, bool bSilent)
+    StringParser::StringParserRetVal StringParser::evalAndFormat(string& sLine, string& sCache, bool bSilent, bool bCheckAssertions)
     {
         //Timer timer(sLine);
         sLine = " " + sLine + " ";
@@ -1883,7 +1884,8 @@ namespace NumeRe
 
         // Check the results, if the assertion handler is active
         // and the results are not logical only
-        _assertionHandler.checkAssertion(StrRes);
+        if (bCheckAssertions)
+            _assertionHandler.checkAssertion(StrRes);
 
         // The result of the string parser core has to be parsed, so that
         // it is readable in the terminal. This is done here in this

@@ -1932,7 +1932,7 @@ bool NumeReKernel::evaluateStrings(string& sLine, string& sCache, const string& 
 {
     if (_stringParser.isStringExpression(sLine))
     {
-        auto retVal = _stringParser.evalAndFormat(sLine, sCache);
+        auto retVal = _stringParser.evalAndFormat(sLine, sCache, false, true);
 
         if (retVal == NumeRe::StringParser::STRING_SUCCESS)
         {

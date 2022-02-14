@@ -2690,7 +2690,7 @@ int FlowCtrl::compile(string sLine, int nthCmd)
         if (!bLockedPauseMode && bUseLoopParsingMode)
             _parserRef->PauseLoopMode();
 
-        auto retVal = NumeReKernel::getInstance()->getStringParser().evalAndFormat(sLine, sCache, bLoopSupressAnswer);
+        auto retVal = NumeReKernel::getInstance()->getStringParser().evalAndFormat(sLine, sCache, bLoopSupressAnswer, true);
         NumeReKernel::getInstance()->getStringParser().removeTempStringVectorVars();
 
         if (retVal == NumeRe::StringParser::STRING_SUCCESS)
@@ -3294,7 +3294,7 @@ int FlowCtrl::calc(string sLine, int nthCmd)
         if (!bLockedPauseMode && bUseLoopParsingMode)
             _parserRef->PauseLoopMode();
 
-        auto retVal = NumeReKernel::getInstance()->getStringParser().evalAndFormat(sLine, sDataObject, bLoopSupressAnswer);
+        auto retVal = NumeReKernel::getInstance()->getStringParser().evalAndFormat(sLine, sDataObject, bLoopSupressAnswer, true);
         NumeReKernel::getInstance()->getStringParser().removeTempStringVectorVars();
 
         if (retVal == NumeRe::StringParser::STRING_SUCCESS)
