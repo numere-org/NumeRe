@@ -22,6 +22,7 @@
 #include <wx/wx.h>
 #include <string>
 #include <map>
+#include <vector>
 #include "../controls/treelistctrl.h"
 #include "../../kernel/core/procedure/procedurelibrary.hpp"
 #include "../../kernel/core/procedure/dependency.hpp"
@@ -45,7 +46,8 @@ class DependencyDialog : public wxDialog
         bool findInParents(wxTreeItemId item, const std::string& sCurrProc);
 
         void CollapseAll(wxTreeItemId item);
-        int calculateClusterLevel(const std::string& sCurrentNameSpace, const std::string& sNewNameSpace);
+        std::vector<std::string> parseNameSpace(std::string sNameSpace) const;
+        int calculateClusterLevel(const std::vector<std::string>& sCurrentNameSpace, const std::vector<std::string>& sNewNameSpace);
         void CreateDotFile();
 
         void OnItemActivate(wxTreeEvent& event);

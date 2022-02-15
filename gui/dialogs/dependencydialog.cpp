@@ -269,40 +269,63 @@ void DependencyDialog::CollapseAll(wxTreeItemId item)
 
 
 /////////////////////////////////////////////////
+/// \brief Convert a name space into a vector of
+/// single namespaces for easier comparison.
+///
+/// \param sNameSpace std::string
+/// \return std::vector<std::string>
+///
+/////////////////////////////////////////////////
+std::vector<std::string> DependencyDialog::parseNameSpace(std::string sNameSpace) const
+{
+    std::vector<std::string> vNameSpace;
+
+    if (sNameSpace.front() == '$')
+        sNameSpace.erase(0, 1);
+
+    while (sNameSpace.length())
+    {
+        size_t pos = sNameSpace.find('~');
+        vNameSpace.push_back(sNameSpace.substr(0, pos));
+        sNameSpace.erase(0, pos);
+
+        if (pos != std::string::npos)
+            sNameSpace.erase(0, 1);
+    }
+
+    return vNameSpace;
+}
+
+
+/////////////////////////////////////////////////
 /// \brief This private member function calculates
 /// the level of nested clusters needed to
 /// correctly visualize the nested namespaces.
 ///
-/// \param sCurrentNameSpace const std::string&
-/// \param sNewNameSpace const std::string&
+/// \param sCurrentNameSpace const std::vector<std::string>&
+/// \param sNewNameSpace const std::vector<std::string>&
 /// \return int
 ///
 /////////////////////////////////////////////////
-int DependencyDialog::calculateClusterLevel(const std::string& sCurrentNameSpace, const std::string& sNewNameSpace)
+int DependencyDialog::calculateClusterLevel(const std::vector<std::string>& sCurrentNameSpace, const std::vector<std::string>& sNewNameSpace)
 {
     int nNameSpaces = 0;
 
     // Go through the namespaces and compare them
-    // character-wise
-    for (size_t i = 0; i < sCurrentNameSpace.size(); i++)
+    for (; nNameSpaces < sCurrentNameSpace.size(); nNameSpaces++)
     {
         // New one is shorter? Return
-        if (sNewNameSpace.size() <= i)
-            return nNameSpaces;
+        if (sNewNameSpace.size() <= nNameSpaces)
+            return nNameSpaces+1;
 
         // Characters differ? Return
-        if (sCurrentNameSpace[i] != sNewNameSpace[i])
-            return nNameSpaces;
-
-        // Found a namespace separator? Increment
-        // namespace counter
-        if (sCurrentNameSpace[i] == '~')
-            nNameSpaces++;
+        if (sCurrentNameSpace[nNameSpaces] != sNewNameSpace[nNameSpaces])
+            return nNameSpaces+1;
     }
 
     // New one is longer? Return the namespace counter + 1
     if (sNewNameSpace.size() > sCurrentNameSpace.size())
-        return nNameSpaces+1;
+        return sNewNameSpace.size();
 
     return nNameSpaces;
 }
@@ -338,8 +361,8 @@ void DependencyDialog::CreateDotFile()
         }
     }
 
-    std::string sCurrentNameSpace;
-    std::string sNameSpace;
+    std::vector<std::string> vCurrentNameSpace;
+    std::vector<std::string> vNameSpace;
     int nClusterindex = 0;
     int nCurrentClusterLevel = 0;
 
@@ -347,41 +370,53 @@ void DependencyDialog::CreateDotFile()
     // the current namespace and nest it in a previous cluster
     for (auto iter = mProcedures.begin(); iter != mProcedures.end(); ++iter)
     {
-        sNameSpace = iter->first;
+        std::string sNameSpace = iter->first;
 
         if (sNameSpace.find_last_of("~/") != std::string::npos)
             sNameSpace.erase(sNameSpace.find_last_of("~/")+1);
 
-        int nNewClusterLevel = calculateClusterLevel(sCurrentNameSpace, sNameSpace);
+        vNameSpace = parseNameSpace(sNameSpace);
+
+        int nNewClusterLevel = calculateClusterLevel(vCurrentNameSpace, vNameSpace);
 
         // Deduce, whether the new cluster is nested or
         // an independent one
-        if (nNewClusterLevel+1 == nCurrentClusterLevel)
-            sClusterDefinition += "\n" + std::string(nCurrentClusterLevel, '\t') + "}\n";
-        else if (nNewClusterLevel < nCurrentClusterLevel)
+        if (nNewClusterLevel < nCurrentClusterLevel)
         {
             sClusterDefinition += "\n";
 
-            for (int i = nCurrentClusterLevel-nNewClusterLevel; i > 0; i--)
-                sClusterDefinition += std::string(i, '\t') + "}\n";
+            for (int i = nCurrentClusterLevel-nNewClusterLevel; i >= 0; i--)
+                sClusterDefinition += std::string(i+nNewClusterLevel, '\t') + "}\n";
 
-            nCurrentClusterLevel = nNewClusterLevel;
+            nCurrentClusterLevel = nNewClusterLevel-1;
 
-            // Minimal level is 1 in this case
-            if (!nCurrentClusterLevel)
-                nCurrentClusterLevel = 1;
+            // Minimal level is 0 in this case
+            if (nCurrentClusterLevel < 0)
+                nCurrentClusterLevel = 0;
+        }
+        else if (nNewClusterLevel == nCurrentClusterLevel)
+        {
+            sClusterDefinition += "\n" + std::string(nNewClusterLevel, '\t') + "}\n";
+            nCurrentClusterLevel--;
         }
         else
-        {
             sClusterDefinition += "\n";
-            nCurrentClusterLevel++;
+
+        vCurrentNameSpace = vNameSpace;
+
+        for (int i = nCurrentClusterLevel; i < vCurrentNameSpace.size(); i++)
+        {
+            // Write the cluster header
+            sClusterDefinition += "\n" + std::string(i+1, '\t')
+                + "subgraph cluster_" + toString(nClusterindex) + "\n"
+                + std::string(i+1, '\t') + "{\n"
+                + std::string(i+2, '\t') + "style=rounded\n"
+                + std::string(i+2, '\t') + "label=\"" + vCurrentNameSpace[i] + "\"\n";
+            nClusterindex++;
         }
 
-        sCurrentNameSpace = sNameSpace;
-
-        // Write the cluster header
-        sClusterDefinition += std::string(nCurrentClusterLevel, '\t') + "subgraph cluster_" + toString(nClusterindex) + "\n" + std::string(nCurrentClusterLevel, '\t') + "{\n" + std::string(nCurrentClusterLevel+1, '\t') + "style=rounded\n" + std::string(nCurrentClusterLevel+1, '\t') + "label=\"" + sCurrentNameSpace.substr(1) + "\"\n" + std::string(nCurrentClusterLevel+1, '\t');
-        nClusterindex++;
+        sClusterDefinition += std::string(vCurrentNameSpace.size()+1, '\t');
+        nCurrentClusterLevel = vCurrentNameSpace.size();
 
         // Ensure that the procedure list is unique
         iter->second.sort();
