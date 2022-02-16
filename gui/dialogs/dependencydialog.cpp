@@ -407,11 +407,23 @@ void DependencyDialog::CreateDotFile()
         for (int i = nCurrentClusterLevel; i < vCurrentNameSpace.size(); i++)
         {
             // Write the cluster header
-            sClusterDefinition += "\n" + std::string(i+1, '\t')
-                + "subgraph cluster_" + toString(nClusterindex) + "\n"
-                + std::string(i+1, '\t') + "{\n"
-                + std::string(i+2, '\t') + "style=rounded\n"
-                + std::string(i+2, '\t') + "label=\"" + vCurrentNameSpace[i] + "\"\n";
+            if (vCurrentNameSpace[i].find("::thisfile") != std::string::npos)
+                sClusterDefinition += "\n" + std::string(i+1, '\t')
+                    + "subgraph cluster_" + toString(nClusterindex) + "\n"
+                    + std::string(i+1, '\t') + "{\n"
+                    + std::string(i+2, '\t') + "style=filled\n"
+                    + std::string(i+2, '\t') + "color=lightsteelblue\n"
+                    + std::string(i+2, '\t') + "fillcolor=floralwhite\n"
+                    + std::string(i+2, '\t') + "node [fillcolor=\"cornsilk\"]\n"
+                    + std::string(i+2, '\t') + "label=\"" + vCurrentNameSpace[i] + "\"\n";
+            else
+                sClusterDefinition += "\n" + std::string(i+1, '\t')
+                    + "subgraph cluster_" + toString(nClusterindex) + "\n"
+                    + std::string(i+1, '\t') + "{\n"
+                    + std::string(i+2, '\t') + "style=rounded\n"
+                    + std::string(i+2, '\t') + "color=mediumslateblue\n"
+                    + std::string(i+2, '\t') + "label=\"" + vCurrentNameSpace[i] + "\"\n";
+
             nClusterindex++;
         }
 
@@ -445,7 +457,7 @@ void DependencyDialog::CreateDotFile()
     // of the DOT file to the opened file
     if (file.good())
     {
-        file << "digraph ProcedureDependency\n{\n\tratio=0.4\n";
+        file << "digraph ProcedureDependency\n{\n\tratio=0.4\n\tfontname=\"Consolas\"\n\tnode [fontname=\"Consolas\" fontcolor=\"maroon\" style=\"filled\" fillcolor=\"palegoldenrod\"]";
         file << sClusterDefinition << "\n\n";
         file << sDotFileContent << "}\n";
     }
