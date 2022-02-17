@@ -53,6 +53,8 @@ enum TimeDateFormat
     TD_DDMMYY = 0x200,
     TD_DDMM = 0x400,
 
+    TD_UTC = 0x10000,
+
     TD_SEP_COLON = 0x100000,
     TD_SEP_DOT = 0x200000,
     TD_SEP_MINUS = 0x400000,

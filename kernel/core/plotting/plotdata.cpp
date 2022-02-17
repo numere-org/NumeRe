@@ -253,6 +253,7 @@ void PlotData::setParams(const string& __sCmd, int nType)
     mu::Parser& _parser = NumeReKernel::getInstance()->getParser();
     static std::map<std::string,std::pair<PlotData::LogicalPlotSetting,PlotData::ParamType>> mGenericSwitches = getGenericSwitches();
     static std::map<std::string,std::string> mColorSchemes = getColorSchemes();
+    constexpr int STRINGEXTRACT = ARGEXTRACT_ASSTRING | ARGEXTRACT_PARSED | ARGEXTRACT_STRIPPED;
 
     string sCmd = toLowerCase(__sCmd);
 
@@ -1237,7 +1238,7 @@ void PlotData::setParams(const string& __sCmd, int nType)
     if (findParameter(sCmd, "plotcolors", '=') && (nType == ALL || nType & LOCAL))
     {
         unsigned int nPos = findParameter(sCmd, "plotcolors", '=')+10;
-        string sTemp = getArgAtPos(__sCmd, nPos);
+        string sTemp = getArgAtPos(__sCmd, nPos, STRINGEXTRACT);
         if (checkColorChars(sTemp))
         {
             for (unsigned int i = 0; i < sTemp.length(); i++)
@@ -1254,7 +1255,7 @@ void PlotData::setParams(const string& __sCmd, int nType)
     if (findParameter(sCmd, "axisbind", '=') && (nType == ALL || nType & LOCAL))
     {
         unsigned int nPos = findParameter(sCmd, "axisbind", '=')+8;
-        string sTemp = getArgAtPos(__sCmd, nPos);
+        string sTemp = getArgAtPos(__sCmd, nPos, STRINGEXTRACT);
         for (unsigned int i = 0; i < sTemp.length(); i++)
         {
             if (sTemp[i] == 'r' || sTemp[i] == 'l')
@@ -1320,7 +1321,7 @@ void PlotData::setParams(const string& __sCmd, int nType)
     if (findParameter(sCmd, "linestyles", '=') && (nType == ALL || nType & LOCAL))
     {
         unsigned int nPos = findParameter(sCmd, "linestyles", '=')+10;
-        string sTemp = getArgAtPos(__sCmd, nPos);
+        string sTemp = getArgAtPos(__sCmd, nPos, STRINGEXTRACT);
         if (checkLineChars(sTemp))
         {
             for (unsigned int i = 0; i < sTemp.length(); i++)
@@ -1338,7 +1339,7 @@ void PlotData::setParams(const string& __sCmd, int nType)
     if (findParameter(sCmd, "linesizes", '=') && (nType == ALL || nType & LOCAL))
     {
         unsigned int nPos = findParameter(sCmd, "linesizes", '=')+9;
-        string sTemp = getArgAtPos(__sCmd, nPos);
+        string sTemp = getArgAtPos(__sCmd, nPos, STRINGEXTRACT);
 
         for (unsigned int i = 0; i < sTemp.length(); i++)
         {
@@ -1356,7 +1357,7 @@ void PlotData::setParams(const string& __sCmd, int nType)
     if (findParameter(sCmd, "pointstyles", '=') && (nType == ALL || nType & LOCAL))
     {
         unsigned int nPos = findParameter(sCmd, "pointstyles", '=')+11;
-        string sTemp = getArgAtPos(__sCmd, nPos);
+        string sTemp = getArgAtPos(__sCmd, nPos, STRINGEXTRACT);
         if (checkPointChars(sTemp))
         {
             int nChar = 0;
@@ -1394,7 +1395,7 @@ void PlotData::setParams(const string& __sCmd, int nType)
     if (findParameter(sCmd, "styles", '=') && (nType == ALL || nType & LOCAL))
     {
         unsigned int nPos = findParameter(sCmd, "styles", '=')+6;
-        string sTemp = getArgAtPos(__sCmd, nPos);
+        string sTemp = getArgAtPos(__sCmd, nPos, STRINGEXTRACT);
         unsigned int nJump = 0;
         unsigned int nStyle = 0;
         for (unsigned int i = 0; i < sTemp.length(); i += 4)
@@ -1519,20 +1520,28 @@ void PlotData::setParams(const string& __sCmd, int nType)
     {
         string sTemp = getArgAtPos(sCmd, findParameter(sCmd, "font", '=')+4);
         StripSpaces(sTemp);
+
         if (sTemp == "palatino")
             sTemp = "pagella";
+
         if (sTemp == "times")
             sTemp = "termes";
+
         if (sTemp == "bookman")
             sTemp = "bonum";
+
         if (sTemp == "avantgarde")
             sTemp = "adventor";
+
         if (sTemp == "chancery")
             sTemp = "chorus";
+
         if (sTemp == "courier")
             sTemp = "cursor";
+
         if (sTemp == "helvetica")
             sTemp = "heros";
+
         if (sTemp != stringSettings[STR_FONTSTYLE]
             && (sTemp == "pagella"
                 || sTemp == "adventor"
@@ -1562,6 +1571,7 @@ void PlotData::setParams(const string& __sCmd, int nType)
         || findParameter(sCmd, "ogif", '=')) && (nType == ALL || nType & SUPERGLOBAL))
     {
         unsigned int nPos = 0;
+
         if (findParameter(sCmd, "opng", '='))
             nPos = findParameter(sCmd, "opng", '=') + 4;
         else if (findParameter(sCmd, "opnga", '='))
@@ -1585,11 +1595,14 @@ void PlotData::setParams(const string& __sCmd, int nType)
 
         stringSettings[STR_FILENAME] = evaluateString(getArgAtPos(__sCmd, nPos));
         StripSpaces(stringSettings[STR_FILENAME]);
+
         if (stringSettings[STR_FILENAME].length())
         {
             string sExtension = "";
+
             if (stringSettings[STR_FILENAME].length() > 4)
                 sExtension = stringSettings[STR_FILENAME].substr(stringSettings[STR_FILENAME].length()-4,4);
+
             if (sExtension != ".png"
                 && (findParameter(sCmd, "opng", '=')
                     || findParameter(sCmd, "opnga", '=')))
@@ -1606,7 +1619,8 @@ void PlotData::setParams(const string& __sCmd, int nType)
                 stringSettings[STR_FILENAME] += ".tiff";
             else if (sExtension != ".gif" && findParameter(sCmd, "ogif", '='))
                 stringSettings[STR_FILENAME] += ".gif";
-            else if ((findParameter(sCmd, "export", '=') || findParameter(sCmd, "save", '=')) && stringSettings[STR_FILENAME].rfind('.') == string::npos)
+            else if ((findParameter(sCmd, "export", '=') || findParameter(sCmd, "save", '='))
+                     && stringSettings[STR_FILENAME].rfind('.') == string::npos)
                 stringSettings[STR_FILENAME] += ".png";
 
             stringSettings[STR_FILENAME] = FileSystem::ValidizeAndPrepareName(stringSettings[STR_FILENAME], stringSettings[STR_FILENAME].substr(stringSettings[STR_FILENAME].rfind('.')));
@@ -1620,51 +1634,58 @@ void PlotData::setParams(const string& __sCmd, int nType)
         || findParameter(sCmd, "background", '=')) && (nType == ALL || nType & GLOBAL))
     {
         int nPos = 0;
+
         if (findParameter(sCmd, "xlabel", '='))
         {
             nPos = findParameter(sCmd, "xlabel", '=') + 6;
-            sAxisLabels[0] = getArgAtPos(__sCmd, nPos);
+            sAxisLabels[0] = getArgAtPos(__sCmd, nPos, STRINGEXTRACT);
             bDefaultAxisLabels[0] = false;
         }
+
         if (findParameter(sCmd, "ylabel", '='))
         {
             nPos = findParameter(sCmd, "ylabel", '=') + 6;
-            sAxisLabels[1] = getArgAtPos(__sCmd, nPos);
+            sAxisLabels[1] = getArgAtPos(__sCmd, nPos, STRINGEXTRACT);
             bDefaultAxisLabels[1] = false;
         }
+
         if (findParameter(sCmd, "zlabel", '='))
         {
             nPos = findParameter(sCmd, "zlabel", '=') + 6;
-            sAxisLabels[2] = getArgAtPos(__sCmd, nPos);
+            sAxisLabels[2] = getArgAtPos(__sCmd, nPos, STRINGEXTRACT);
             bDefaultAxisLabels[2] = false;
         }
+
         if (findParameter(sCmd, "title", '='))
         {
             nPos = findParameter(sCmd, "title", '=') + 5;
-            stringSettings[STR_PLOTTITLE] = getArgAtPos(__sCmd, nPos);
+            stringSettings[STR_PLOTTITLE] = getArgAtPos(__sCmd, nPos, STRINGEXTRACT);
             StripSpaces(stringSettings[STR_PLOTTITLE]);
+
             if (stringSettings[STR_COMPOSEDTITLE].length())
                 stringSettings[STR_COMPOSEDTITLE] += ", " + stringSettings[STR_PLOTTITLE];
             else
                 stringSettings[STR_COMPOSEDTITLE] = stringSettings[STR_PLOTTITLE];
         }
+
         if (findParameter(sCmd, "background", '='))
         {
             nPos = findParameter(sCmd, "background", '=')+10;
             stringSettings[STR_BACKGROUND] = getArgAtPos(__sCmd, nPos);
             StripSpaces(stringSettings[STR_BACKGROUND]);
+
             if (stringSettings[STR_BACKGROUND].length())
             {
                 if (stringSettings[STR_BACKGROUND].find('.') == string::npos)
                     stringSettings[STR_BACKGROUND] += ".png";
                 else if (stringSettings[STR_BACKGROUND].substr(stringSettings[STR_BACKGROUND].rfind('.')) != ".png")
                     stringSettings[STR_BACKGROUND] = "";
+
                 if (stringSettings[STR_BACKGROUND].length())
-                {
                     stringSettings[STR_BACKGROUND] = FileSystem::ValidFileName(stringSettings[STR_BACKGROUND], ".png");
-                }
             }
         }
+
         for (int i = 0; i < 3; i++)
         {
             StripSpaces(sAxisLabels[i]);
@@ -1676,27 +1697,36 @@ void PlotData::setParams(const string& __sCmd, int nType)
         || findParameter(sCmd, "zticks", '=')
         || findParameter(sCmd, "cticks", '=')) && (nType == ALL || nType & GLOBAL))
     {
-        if (findParameter(sCmd, "xticks", '='))
+        int nPos = 0;
+
+        if ((nPos = findParameter(sCmd, "xticks", '=')))
         {
-            sTickTemplate[0] = getArgAtPos(__sCmd, findParameter(sCmd, "xticks", '=')+6);
+            sTickTemplate[0] = getArgAtPos(__sCmd, nPos+6, STRINGEXTRACT);
+
             if (sTickTemplate[0].find('%') == string::npos && sTickTemplate[0].length())
                 sTickTemplate[0] += "%g";
         }
-        if (findParameter(sCmd, "yticks", '='))
+
+        if ((nPos = findParameter(sCmd, "yticks", '=')))
         {
-            sTickTemplate[1] = getArgAtPos(__sCmd, findParameter(sCmd, "yticks", '=')+6);
+            sTickTemplate[1] = getArgAtPos(__sCmd, nPos+6, STRINGEXTRACT);
+
             if (sTickTemplate[1].find('%') == string::npos && sTickTemplate[1].length())
                 sTickTemplate[1] += "%g";
         }
-        if (findParameter(sCmd, "zticks", '='))
+
+        if ((nPos = findParameter(sCmd, "zticks", '=')))
         {
-            sTickTemplate[2] = getArgAtPos(__sCmd, findParameter(sCmd, "zticks", '=')+6);
+            sTickTemplate[2] = getArgAtPos(__sCmd, nPos+6, STRINGEXTRACT);
+
             if (sTickTemplate[2].find('%') == string::npos && sTickTemplate[2].length())
                 sTickTemplate[2] += "%g";
         }
-        if (findParameter(sCmd, "cticks", '='))
+
+        if ((nPos = findParameter(sCmd, "cticks", '=')))
         {
-            sTickTemplate[3] = getArgAtPos(__sCmd, findParameter(sCmd, "cticks", '=')+6);
+            sTickTemplate[3] = getArgAtPos(__sCmd, nPos+6, STRINGEXTRACT);
+
             if (sTickTemplate[3].find('%') == string::npos && sTickTemplate[3].length())
                 sTickTemplate[3] += "%g";
         }
@@ -1707,24 +1737,29 @@ void PlotData::setParams(const string& __sCmd, int nType)
         || findParameter(sCmd, "zscale", '=')
         || findParameter(sCmd, "cscale", '=')) && (nType == ALL || nType & GLOBAL))
     {
-        if (findParameter(sCmd, "xscale", '='))
+        int nPos = 0;
+
+        if ((nPos = findParameter(sCmd, "xscale", '=')))
         {
-            _parser.SetExpr(getArgAtPos(__sCmd, findParameter(sCmd, "xscale", '=')+6));
+            _parser.SetExpr(getArgAtPos(__sCmd, nPos+6));
             dAxisScale[0] = _parser.Eval().real();
         }
-        if (findParameter(sCmd, "yscale", '='))
+
+        if ((nPos = findParameter(sCmd, "yscale", '=')))
         {
-            _parser.SetExpr(getArgAtPos(__sCmd, findParameter(sCmd, "yscale", '=')+6));
+            _parser.SetExpr(getArgAtPos(__sCmd, nPos+6));
             dAxisScale[1] = _parser.Eval().real();
         }
-        if (findParameter(sCmd, "zscale", '='))
+
+        if ((nPos = findParameter(sCmd, "zscale", '=')))
         {
-            _parser.SetExpr(getArgAtPos(__sCmd, findParameter(sCmd, "zscale", '=')+6));
+            _parser.SetExpr(getArgAtPos(__sCmd, nPos+6));
             dAxisScale[2] = _parser.Eval().real();
         }
-        if (findParameter(sCmd, "cscale", '='))
+
+        if ((nPos = findParameter(sCmd, "cscale", '=')))
         {
-            _parser.SetExpr(getArgAtPos(__sCmd, findParameter(sCmd, "cscale", '=')+6));
+            _parser.SetExpr(getArgAtPos(__sCmd, nPos+6));
             dAxisScale[3] = _parser.Eval().real();
         }
 
@@ -1740,22 +1775,19 @@ void PlotData::setParams(const string& __sCmd, int nType)
         || findParameter(sCmd, "zticklabels", '=')
         || findParameter(sCmd, "cticklabels", '=')) && (nType == ALL || nType & GLOBAL))
     {
-        if (findParameter(sCmd, "xticklabels", '='))
-        {
-            sCustomTicks[0] = getArgAtPos(__sCmd, findParameter(sCmd, "xticklabels", '=')+11);
-        }
-        if (findParameter(sCmd, "yticklabels", '='))
-        {
-            sCustomTicks[1] = getArgAtPos(__sCmd, findParameter(sCmd, "yticklabels", '=')+11);
-        }
-        if (findParameter(sCmd, "zticklabels", '='))
-        {
-            sCustomTicks[2] = getArgAtPos(__sCmd, findParameter(sCmd, "zticklabels", '=')+11);
-        }
-        if (findParameter(sCmd, "cticklabels", '='))
-        {
-            sCustomTicks[3] = getArgAtPos(__sCmd, findParameter(sCmd, "cticklabels", '=')+11);
-        }
+        int nPos = 0;
+
+        if ((nPos = findParameter(sCmd, "xticklabels", '=')))
+            sCustomTicks[0] = getArgAtPos(__sCmd, nPos+11, STRINGEXTRACT);
+
+        if ((nPos = findParameter(sCmd, "yticklabels", '=')))
+            sCustomTicks[1] = getArgAtPos(__sCmd, nPos+11, STRINGEXTRACT);
+
+        if ((nPos = findParameter(sCmd, "zticklabels", '=')))
+            sCustomTicks[2] = getArgAtPos(__sCmd, nPos+11, STRINGEXTRACT);
+
+        if ((nPos = findParameter(sCmd, "cticklabels", '=')))
+            sCustomTicks[3] = getArgAtPos(__sCmd, nPos+11, STRINGEXTRACT);
     }
 
     if (sCmd.find('[') != string::npos && (nType == ALL || nType & GLOBAL))

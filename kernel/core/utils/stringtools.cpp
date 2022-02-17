@@ -916,7 +916,7 @@ bool isConvertible(const std::string& sStr, ConvertibleType type)
     else if (type == CONVTYPE_DATE_TIME)
     {
         // Apply the simplest heuristic: only digits and separators
-        if (sStr.find_first_not_of(" 0123456789,.:-/\t") != std::string::npos || sStr.find_first_not_of(" \t") == std::string::npos)
+        if (sStr.find_first_not_of(" 0123456789,.:-/\tTZ") != std::string::npos || sStr.find_first_not_of(" \t") == std::string::npos)
             return false;
 
         // Try to detect dates
@@ -931,6 +931,7 @@ bool isConvertible(const std::string& sStr, ConvertibleType type)
                 // d.m., dd.mm., (YY)YY/MM/DD, (YY)YY/M/D,
                 // hh:mm:ss, h:mm:ss, h:mm, hh:mm
                 // hh:mm:ss:iii, h:mm:ss:iii, hh:mm:ss.iii, h:mm:ss.iii
+                // YYYY-MM-DDThh:mm:ss.iiiZ
                 if (sStr[i] == '-' || sStr[i] == '.' || sStr[i] == '/' || sStr[i] == ':')
                 {
                     if (isDateTimePattern(sStr, i))
@@ -1038,7 +1039,7 @@ static int isTimePattern(const std::string& sStr, size_t i)
 /////////////////////////////////////////////////
 int detectTimeDateFormat(const std::string& sStr)
 {
-    if (sStr.find_first_not_of(" 0123456789,.:-/\t") != std::string::npos || sStr.find_first_not_of(" \t") == std::string::npos)
+    if (sStr.find_first_not_of(" 0123456789,.:-/\tTZ") != std::string::npos || sStr.find_first_not_of(" \t") == std::string::npos)
         return TD_NONE;
 
     // Try to detect dates
@@ -1062,6 +1063,13 @@ int detectTimeDateFormat(const std::string& sStr)
                 format |= isTimePattern(sStr, i);
         }
     }
+
+    // If we have the dashed american theme and T and Z,
+    // then we have a full UTC time stamp
+    if (format & (TD_YYMMDD | TD_HHMMSS | TD_SEP_COLON | TD_SEP_MINUS)
+        && sStr.find('T') != std::string::npos
+        && sStr.find('Z') != std::string::npos)
+        format |= TD_UTC;
 
     return format;
 }
