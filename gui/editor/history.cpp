@@ -92,6 +92,7 @@ NumeReHistory::NumeReHistory(NumeReWindow* mframe, Options* options, wxWindow* p
 
 	UpdateSyntaxHighlighting();
 
+	SetEdgeMode(wxSTC_EDGE_NONE);
 	this->SetCaretLineVisible(false);
 
 	this->SetWrapMode(wxSTC_WRAP_WORD);

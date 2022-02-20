@@ -4604,9 +4604,9 @@ void NumeReWindow::UpdateStatusBar()
     wxString editable = isEdReadOnly ? "Read only" : "Read/Write";
 
     int curLine = m_currentEd->GetCurrentLine();
-    int curPos = m_currentEd->GetCurrentPos() - m_currentEd->PositionFromLine (-curLine);
+    int curPos = m_currentEd->GetColumn(m_currentEd->GetCurrentPos());
     wxString linecol;
-    linecol.Printf (_(_guilang.get("GUI_STATUSBAR_LINECOL")), curLine+1, curPos+1);
+    linecol.Printf(_(_guilang.get("GUI_STATUSBAR_LINECOL")), curLine+1, curPos+1);
 
     wxString sDebuggerMode = "";
     if (m_terminal->getKernelSettings().useDebugger() && m_currentEd->getEditorSetting(NumeReEditor::SETTING_USEANALYZER))

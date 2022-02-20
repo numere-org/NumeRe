@@ -271,6 +271,7 @@ void OptionsDialog::CreateEditorPage()
     m_foldDuringLoading = panel->CreateCheckBox(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_FOLD_DURING_LOADING"));
     m_FilePathsInTabs = panel->CreateCheckBox(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_SHOW_FILEPATHS"));
     m_useTabs = panel->CreateCheckBox(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_USE_TABS"));
+    m_lineLengthIndicator = panel->CreateCheckBox(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_SHOW_LINE_LENGTH_INDICATOR"));
     m_caretBlinkTime = panel->CreateSpinControl(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_CARET_BLINK_TIME"), 100, 2000, 500);
 
     group = panel->createGroup(_guilang.get("GUI_OPTIONS_AUTOCOMPLETION"));
@@ -814,6 +815,7 @@ bool OptionsDialog::EvaluateOptions()
     mSettings[SETTING_B_BLOCKAUTOCOMP].active() = m_blockAutoComp->IsChecked();
     mSettings[SETTING_B_QUOTEAUTOCOMP].active() = m_quoteAutoComp->IsChecked();
     mSettings[SETTING_B_AUTOSAVEEXECUTION].active() = m_saveBeforeExecuting->IsChecked();
+    mSettings[SETTING_B_LINELENGTH].active() = m_lineLengthIndicator->IsChecked();
 
     wxString selectedPrintStyleString = m_printStyle->GetValue();
 
@@ -912,6 +914,7 @@ void OptionsDialog::InitializeDialog()
     m_blockAutoComp->SetValue(mSettings[SETTING_B_BLOCKAUTOCOMP].active());
     m_quoteAutoComp->SetValue(mSettings[SETTING_B_QUOTEAUTOCOMP].active());
     m_saveBeforeExecuting->SetValue(mSettings[SETTING_B_AUTOSAVEEXECUTION].active());
+    m_lineLengthIndicator->SetValue(mSettings[SETTING_B_LINELENGTH].active());
 
     m_debuggerFocusLine->SetValue(mSettings[SETTING_V_FOCUSEDLINE].value());
     m_debuggerDecodeArguments->SetValue(mSettings[SETTING_B_DECODEARGUMENTS].active());

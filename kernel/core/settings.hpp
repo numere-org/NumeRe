@@ -82,6 +82,7 @@
 #define SETTING_B_FOLDLOADEDFILE      "editor.foldloadedfile"
 #define SETTING_B_HIGHLIGHTLOCALS     "editor.highlightlocals"
 #define SETTING_B_USETABS             "editor.usetabs"
+#define SETTING_B_LINELENGTH          "editor.linelengthindicator"
 #define SETTING_B_HOMEENDCANCELS      "editor.autocomp.homeendcancels"
 #define SETTING_B_BRACEAUTOCOMP       "editor.autocomp.braces"
 #define SETTING_B_QUOTEAUTOCOMP       "editor.autocomp.quotes"

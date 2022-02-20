@@ -3862,6 +3862,15 @@ void NumeReEditor::updateDefaultHighlightSettings()
     else
         this->SetCaretLineVisible(false);
 
+    if (m_options->getSetting(SETTING_B_LINELENGTH).active())
+    {
+        SetEdgeColour(wxColour(210, 210, 255));
+        SetEdgeMode(wxSTC_EDGE_LINE);
+        SetEdgeColumn(120);
+    }
+    else
+        SetEdgeMode(wxSTC_EDGE_NONE);
+
     // standard settings for the brace highlighting
     this->StyleSetForeground(wxSTC_STYLE_BRACELIGHT, wxColour(0, 150, 0));
     this->StyleSetBackground(wxSTC_STYLE_BRACELIGHT, wxColour(0, 220, 0));

@@ -1793,7 +1793,7 @@ void NumeReTerminal::Calltip(int x, int y, NumeRe::CallTip& _cTip)
 
 	// Consider here the possible shift due toe the fact that
 	// the window could be below the bottom corner
-	if ((y+2) > m_height) // m_height is already in character units
+	if ((y+2.1) > m_height) // m_height is already in character units
         y = (y-1) * m_charHeight - 2;
     else
         y = (y+1) * m_charHeight;
