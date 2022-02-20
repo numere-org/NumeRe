@@ -21,6 +21,7 @@
 #include "TextManager.h"
 
 #include "../../kernel/syntax.hpp"
+#include "../../kernel/core/ui/calltipprovider.hpp"
 
 using namespace std;
 
@@ -80,6 +81,8 @@ class GenericTerminal
         // The text buffer and renderer
         TextManager tm;
 
+        NumeRe::CallTipProvider m_tipProvider;
+
         // terminal state
         ViewCursor termCursor;
         int fg_color, bg_color;
@@ -89,6 +92,7 @@ class GenericTerminal
         void clear_area(int start_x, int start_y, int end_x, int end_y);
         int calc_color(int fg, int bg, int flags);
         void move_cursor(int x, int y);
+        void handle_calltip(int x, int y);
 
         // action parameters
         int nparam, param[30];
@@ -139,7 +143,8 @@ class GenericTerminal
         GenericTerminal(int w, int h);
         virtual ~GenericTerminal();
 
-        NumeReSyntax* getSyntax(){return &_syntax;}
+        NumeReSyntax* getSyntax() {return &_syntax;}
+        NumeRe::CallTipProvider* getProvider() {return &m_tipProvider;}
 
         // function to control terminal
         virtual void ProcessInput(int len, const string& sData);
@@ -180,6 +185,9 @@ class GenericTerminal
                               int x, int y, const string& sText) = 0;
         virtual void DrawCursor(int fg_color, int bg_color, int flags,
                                 int x, int y, unsigned char c) = 0;
+
+        virtual void Calltip(int x, int y, NumeRe::CallTip& _cTip) {}
+        virtual void CalltipCancel() {}
 
         // optional child-supplied functions
         virtual void ClearChars(int bg_color, int x, int y, int w, int h) { }

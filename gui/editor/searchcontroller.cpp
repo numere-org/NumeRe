@@ -465,7 +465,12 @@ wxString SearchController::FindProcedureDefinition()
 		procedurename.insert(0, 1, '$');
 
 	// Find procedure in a global procedure file
-	return FindProcedureDefinitionInOtherFile(pathname, procedurename);
+	NumeRe::CallTip _procDef = NumeRe::addLinebreaks(NumeRe::FindProcedureDefinition(pathname.ToStdString(), procedurename.ToStdString()));
+
+	if (_procDef.sDocumentation.length())
+        return _procDef.sDefinition + "\n" + _procDef.sDocumentation;
+
+	return _procDef.sDefinition;
 }
 
 
@@ -615,210 +620,6 @@ wxString SearchController::FindProcedureDefinitionInLocalFile(const wxString& pr
 
 
 /////////////////////////////////////////////////
-/// \brief Search the procedure definition in a global file.
-///
-/// \param pathname const wxString&
-/// \param procedurename const wxString&
-/// \return wxString
-///
-/// This private member function searches for the procedure
-/// definition in a selected global procedure file. It also
-/// appends the documentation to the definition, so that
-/// it might be shown in the tooltip.
-/////////////////////////////////////////////////
-wxString SearchController::FindProcedureDefinitionInOtherFile(const wxString& pathname, const wxString& procedurename)
-{
-	if (!fileExists((pathname + ".nprc").ToStdString()))
-	{
-		return "";
-	}
-	else
-	{
-		ifstream procedure_in;
-		string sProcCommandLine;
-		bool bBlockComment = false;
-		wxString sDocumentation;
-		bool bDocFound = false;
-		procedure_in.open((pathname + ".nprc").ToStdString().c_str());
-
-		// Ensure that the file is in good state
-		if (!procedure_in.good())
-			return "";
-
-		// As long as we're not at the end of the file
-		while (!procedure_in.eof())
-		{
-		    // Read one line and strip all spaces
-			getline(procedure_in, sProcCommandLine);
-			StripSpaces(sProcCommandLine);
-
-			// Ignore empty lines
-			if (!sProcCommandLine.length())
-            {
-                sDocumentation.clear();
-                bDocFound = false;
-				continue;
-            }
-
-            // Ignore comment lines
-			if (sProcCommandLine.substr(0, 2) == "##")
-            {
-                // Append each documentation string
-                if (sProcCommandLine.substr(0, 3) == "##!")
-                {
-                    AppendToDocumentation(sDocumentation, sProcCommandLine.substr(3));
-                }
-				continue;
-            }
-
-            // Erase line comment parts
-			if (sProcCommandLine.find("##") != string::npos)
-				sProcCommandLine = sProcCommandLine.substr(0, sProcCommandLine.find("##"));
-
-			// Remove block comments and continue
-			if (sProcCommandLine.substr(0, 2) == "#*" && sProcCommandLine.find("*#", 2) == string::npos)
-			{
-			    if (sProcCommandLine.substr(0, 3) == "#*!")
-                {
-                    bDocFound = true;
-                    AppendToDocumentation(sDocumentation, sProcCommandLine.substr(3));
-                }
-				bBlockComment = true;
-				continue;
-			}
-
-			// Search for the end of the current block comment
-			if (bBlockComment && sProcCommandLine.find("*#") != string::npos)
-			{
-				bBlockComment = false;
-				if (bDocFound)
-                {
-                    AppendToDocumentation(sDocumentation, sProcCommandLine.substr(0, sProcCommandLine.find("*#")));
-                }
-				if (sProcCommandLine.find("*#") == sProcCommandLine.length() - 2)
-				{
-					continue;
-				}
-				else
-					sProcCommandLine = sProcCommandLine.substr(sProcCommandLine.find("*#") + 2);
-			}
-			else if (bBlockComment && sProcCommandLine.find("*#") == string::npos)
-			{
-			    // if the documentation has a length, append the current block
-			    if (bDocFound)
-                {
-                    AppendToDocumentation(sDocumentation, sProcCommandLine);
-                }
-				continue;
-			}
-
-			// Ignore includes
-			if (sProcCommandLine[0] != '@' && findCommand(sProcCommandLine).sString != "procedure")
-            {
-                sDocumentation.clear();
-                bDocFound = false;
-				continue;
-            }
-			else if (sProcCommandLine[0] == '@')
-            {
-                sDocumentation.clear();
-                bDocFound = false;
-				continue;
-            }
-
-			// Ignore lines without "procedure"
-			if (findCommand(sProcCommandLine).sString != "procedure")
-            {
-                sDocumentation.clear();
-                bDocFound = false;
-				continue;
-            }
-
-			// Search for the current procedure name
-			if (sProcCommandLine.find(procedurename.ToStdString()) == string::npos || sProcCommandLine.find('(') == string::npos)
-            {
-                // clear the documentation string
-                sDocumentation.clear();
-                bDocFound = false;
-				continue;
-            }
-			else
-			{
-                // Found the procedure name, now extract the definition
-				if (getMatchingParenthesis(sProcCommandLine.substr(sProcCommandLine.find(procedurename.ToStdString()))) == string::npos)
-					return "";
-				string sProcDef = sProcCommandLine.substr(sProcCommandLine.find(procedurename.ToStdString()), getMatchingParenthesis(sProcCommandLine.substr(sProcCommandLine.find(procedurename.ToStdString()))) + 1);
-				size_t nFirstParens = sProcDef.find('(');
-				string sArgList = sProcDef.substr(nFirstParens + 1, getMatchingParenthesis(sProcDef.substr(nFirstParens)) - 1);
-				sProcDef.erase(nFirstParens + 1);
-				while (sArgList.length())
-				{
-					string currentarg = getNextArgument(sArgList, true);
-					if (currentarg.front() == '_')
-						currentarg.erase(0, 1);
-					sProcDef += currentarg;
-					if (sArgList.length())
-						sProcDef += ", ";
-				}
-				sProcDef += ")";
-
-				if (sProcCommandLine.find("::") != string::npos)
-				{
-					string sFlags = sProcCommandLine.substr(sProcCommandLine.find("::") + 2).c_str();
-					if (sFlags.find("##") != string::npos)
-						sFlags.erase(sFlags.find("##"));
-					StripSpaces(sFlags);
-					sProcDef += " :: " + sFlags;
-				}
-
-				// If no documentation was found, search in the following lines
-				if (!sDocumentation.length())
-                {
-                    while (!procedure_in.eof())
-                    {
-                        getline(procedure_in, sProcCommandLine);
-                        StripSpaces(sProcCommandLine);
-                        if (sProcCommandLine.substr(0, 3) == "##!")
-                        {
-                            AppendToDocumentation(sDocumentation, sProcCommandLine.substr(3));
-                        }
-                        else if (sProcCommandLine.substr(0, 3) == "#*!")
-                        {
-                            AppendToDocumentation(sDocumentation, sProcCommandLine.substr(3));
-                            bBlockComment = true;
-                        }
-                        else if (bBlockComment)
-                        {
-                            AppendToDocumentation(sDocumentation, sProcCommandLine.substr(0, sProcCommandLine.find("*#")));
-                            if (sProcCommandLine.find("*#") != string::npos)
-                                break;
-                        }
-                        else
-                            break;
-                    }
-                }
-
-                // clean the documentation
-                sDocumentation = CleanDocumentation(sDocumentation);
-
-				// if the documentation has a length, append it here
-				if (sDocumentation.length())
-                {
-                    if (sDocumentation.substr(0, 3) == "-> ")
-                        sProcDef += " " + sDocumentation.ToStdString();
-                    else
-                        sProcDef += "\n" + sDocumentation.ToStdString();
-                }
-
-				return sProcDef;
-			}
-		}
-	}
-    return "";
-}
-
-
-/////////////////////////////////////////////////
 /// \brief Returns the required procedure name for the current file.
 ///
 /// \return wxString
@@ -828,6 +629,7 @@ wxString SearchController::GetNameOfNamingProcedure()
 {
     return "$" + m_editor->GetFileName().GetName();
 }
+
 
 /////////////////////////////////////////////////
 /// \brief Appends the text to the current documentation.

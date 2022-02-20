@@ -961,43 +961,44 @@ void NumeReEditor::HandleFunctionCallTip()
     int nStartingBrace = 0;
     int nArgStartPos = 0;
     string sFunctionContext = this->GetCurrentFunctionContext(nStartingBrace);
-    string sDefinition;
+    static NumeRe::CallTipProvider _provider = *m_terminal->getProvider();
+    NumeRe::CallTip _cTip;
 
     if (!sFunctionContext.length())
         return;
 
     if (sFunctionContext.front() == '$')
     {
-        sDefinition = m_search->FindProcedureDefinition().ToStdString();
+        _cTip.sDefinition = m_search->FindProcedureDefinition().ToStdString();
 
-        if (sDefinition.find('\n') != string::npos)
-            sDefinition.erase(sDefinition.find('\n'));
+        if (_cTip.sDefinition.find('\n') != string::npos)
+            _cTip.sDefinition.erase(_cTip.sDefinition.find('\n'));
 
-        if (sDefinition.find(')') != string::npos)
-            sDefinition.erase(sDefinition.rfind(')') + 1);
+        if (_cTip.sDefinition.find(')') != string::npos)
+            _cTip.sDefinition.erase(_cTip.sDefinition.rfind(')') + 1);
     }
     else if (sFunctionContext.front() == '.')
     {
-        sDefinition = this->GetMethodCallTip(sFunctionContext.substr(1));
-        size_t nDotPos = sDefinition.find('.');
+        _cTip = _provider.getMethod(sFunctionContext.substr(1));
+        size_t nDotPos = _cTip.sDefinition.find('.');
 
-        if (sDefinition.find(')', nDotPos) != string::npos)
-            sDefinition.erase(sDefinition.find(')', nDotPos) + 1);
+        if (_cTip.sDefinition.find(')', nDotPos) != string::npos)
+            _cTip.sDefinition.erase(_cTip.sDefinition.find(')', nDotPos) + 1);
         else
-            sDefinition.erase(sDefinition.find(' ', nDotPos));
+            _cTip.sDefinition.erase(_cTip.sDefinition.find(' ', nDotPos));
     }
     else
     {
-        sDefinition = this->GetFunctionCallTip(sFunctionContext);
+        _cTip = _provider.getFunction(sFunctionContext);
 
-        if (sDefinition.find(')') != string::npos)
-            sDefinition.erase(sDefinition.find(')') + 1);
+        if (_cTip.sDefinition.find(')') != string::npos)
+            _cTip.sDefinition.erase(_cTip.sDefinition.find(')') + 1);
     }
 
-    if (!sDefinition.length())
+    if (!_cTip.sDefinition.length())
         return;
 
-    string sArgument = this->GetCurrentArgument(sDefinition, nStartingBrace, nArgStartPos);
+    string sArgument = this->GetCurrentArgument(_cTip.sDefinition, nStartingBrace, nArgStartPos);
 
     /*if (sArgument.length())
     {
@@ -1023,10 +1024,10 @@ void NumeReEditor::HandleFunctionCallTip()
     if (this->CallTipActive() && this->CallTipStartPos() != nStartingBrace)
     {
         this->AdvCallTipCancel();
-        this->AdvCallTipShow(nStartingBrace, sDefinition);
+        this->AdvCallTipShow(nStartingBrace, _cTip.sDefinition);
     }
     else if (!this->CallTipActive())
-        this->AdvCallTipShow(nStartingBrace, sDefinition);
+        this->AdvCallTipShow(nStartingBrace, _cTip.sDefinition);
 
     if (sArgument.length())
         this->CallTipSetHighlight(nArgStartPos, nArgStartPos + sArgument.length());
@@ -1068,7 +1069,9 @@ string NumeReEditor::GetCurrentFunctionContext(int& nStartingBrace)
     {
         if (this->GetCharAt(i) == '('
                 && (this->BraceMatch(i) >= nCurrentPos || this->BraceMatch(i) == -1) // either no brace (yet) or the brace further right
-                && (this->GetStyleAt(i - 1) == wxSTC_NSCR_FUNCTION || this->GetStyleAt(i - 1) == wxSTC_NSCR_PROCEDURES || this->GetStyleAt(i - 1) == wxSTC_NSCR_METHOD))
+                && (this->GetStyleAt(i - 1) == wxSTC_NSCR_FUNCTION
+                    || this->GetStyleAt(i - 1) == wxSTC_NSCR_PROCEDURES
+                    || this->GetStyleAt(i - 1) == wxSTC_NSCR_METHOD))
         {
             nStartingBrace = i;
 
@@ -1086,56 +1089,6 @@ string NumeReEditor::GetCurrentFunctionContext(int& nStartingBrace)
     }
 
     return "";
-}
-
-
-/////////////////////////////////////////////////
-/// \brief Returns the function documentation.
-///
-/// \param sFunctionName const string&
-/// \return string
-///
-/// The documentation of the current function is
-/// obtained from the language files. Functions,
-/// which have aliases, are handled as well.
-/////////////////////////////////////////////////
-string NumeReEditor::GetFunctionCallTip(const string& sFunctionName)
-{
-    string selection = sFunctionName;
-
-    // Handle aliases
-    if (selection == "arcsin")
-        selection = "asin";
-    else if (selection == "arccos")
-        selection = "acos";
-    else if (selection == "arctan")
-        selection = "atan";
-    else if (selection == "arsinh")
-        selection = "asinh";
-    else if (selection == "arcosh")
-        selection = "acosh";
-    else if (selection == "artanh")
-        selection = "atanh";
-
-    return _guilang.get("PARSERFUNCS_LISTFUNC_FUNC_" + toUpperCase(selection) + "_[*");
-}
-
-
-/////////////////////////////////////////////////
-/// \brief Returns the method documentation.
-///
-/// \param sMethodName const string&
-/// \return string
-///
-/// The documentation of the current method is
-/// obtained from the language files.
-/////////////////////////////////////////////////
-string NumeReEditor::GetMethodCallTip(const string& sMethodName)
-{
-    if (_guilang.get("PARSERFUNCS_LISTFUNC_METHOD_" + toUpperCase(sMethodName) + "_[STRING]") != "PARSERFUNCS_LISTFUNC_METHOD_" + toUpperCase(sMethodName) + "_[STRING]")
-        return "STRINGVAR." + _guilang.get("PARSERFUNCS_LISTFUNC_METHOD_" + toUpperCase(sMethodName) + "_[STRING]");
-    else
-        return "TABLE()." + _guilang.get("PARSERFUNCS_LISTFUNC_METHOD_" + toUpperCase(sMethodName) + "_[DATA]");
 }
 
 
@@ -1679,85 +1632,26 @@ void NumeReEditor::OnMouseDwell(wxStyledTextEvent& event)
     int charpos = event.GetPosition();
     int startPosition = WordStartPosition(charpos, true);
     int endPosition = WordEndPosition(charpos, true);
+    static NumeRe::CallTipProvider _provider = *m_terminal->getProvider();
 
     wxString selection = this->GetTextRange(startPosition, endPosition);
+    NumeRe::CallTip _cTip;
 
     if (GetStyleAt(charpos) == wxSTC_NSCR_FUNCTION)
-    {
-        if (this->CallTipActive() && m_nCallTipStart == startPosition)
-            return;
-        else
-            this->AdvCallTipCancel();
-
-        size_t lastpos = 22;
-        this->AdvCallTipShow(startPosition, addLinebreaks(realignLangString(GetFunctionCallTip(selection.ToStdString()), lastpos)));
-        this->CallTipSetHighlight(0, lastpos);
-    }
+        _cTip = _provider.getFunction(selection.ToStdString());
     else if (GetStyleAt(charpos) == wxSTC_NSCR_COMMAND || this->GetStyleAt(charpos) == wxSTC_NSCR_PROCEDURE_COMMANDS)
     {
-        if (this->CallTipActive() && m_nCallTipStart == startPosition)
-            return;
-        else
-            this->AdvCallTipCancel();
-
-        if (selection == "showf")
-            selection = "show";
-        else if (selection == "view")
-            selection = "edit";
-        else if (selection == "undef")
-            selection = "undefine";
-        else if (selection == "ifndef")
-            selection = "ifndefined";
-        else if (selection == "redef")
-            selection = "redefine";
-        else if (selection == "del")
-            selection = "delete";
-        else if (selection == "search")
-            selection = "find";
-        else if (selection == "vector")
-            selection = "vect";
-        else if (selection == "vector3d")
-            selection = "vect3d";
-        else if (selection == "graph")
-            selection = "plot";
-        else if (selection == "graph3d")
-            selection = "plot3d";
-        else if (selection == "gradient")
-            selection = "grad";
-        else if (selection == "gradient3d")
-            selection = "grad3d";
-        else if (selection == "surface")
-            selection = "surf";
-        else if (selection == "surface3d")
-            selection = "surf3d";
-        else if (selection == "meshgrid")
-            selection = "mesh";
-        else if (selection == "meshgrid3d")
-            selection = "mesh3d";
-        else if (selection == "density")
-            selection = "dens";
-        else if (selection == "density3d")
-            selection = "dens3d";
-        else if (selection == "contour")
-            selection = "cont";
-        else if (selection == "contour3d")
-            selection = "cont3d";
-        else if (selection == "mtrxop")
-            selection = "matop";
-        else if (selection == "man")
-            selection = "help";
-        else if (selection == "credits" || selection == "info")
-            selection = "about";
-        else if (selection == "integrate2" || selection == "integrate2d")
-            selection = "integrate";
-
-        size_t lastpos = 0;
-
         // Is it a block?
         int id = getBlockID(selection);
 
         if (id != wxNOT_FOUND)
         {
+            if (this->CallTipActive() && m_nCallTipStart == startPosition)
+                return;
+            else
+                this->AdvCallTipCancel();
+
+            size_t lastpos = 0;
             size_t nLength = 0;
             size_t lastpos2 = 0;
 
@@ -1794,12 +1688,10 @@ void NumeReEditor::OnMouseDwell(wxStyledTextEvent& event)
             // Display the tooltip and highlight the corresponding positions
             AdvCallTipShow(startPosition, sBlock);
             CallTipSetHighlight(nLength, selection.length() + nLength);
+            return;
         }
         else
-        {
-            this->AdvCallTipShow(startPosition, addLinebreaks(realignLangString(_guilang.get("PARSERFUNCS_LISTCMD_CMD_" + toUpperCase(selection.ToStdString()) + "_*"), lastpos)));
-            this->CallTipSetHighlight(0, lastpos);
-        }
+            _cTip = _provider.getCommand(selection.ToStdString());
     }
     else if (GetStyleAt(charpos) == wxSTC_NSCR_PROCEDURES)
     {
@@ -1844,65 +1736,26 @@ void NumeReEditor::OnMouseDwell(wxStyledTextEvent& event)
             this->AdvCallTipShow(startPosition, procdef + flags + "\n    " + _guilang.get("GUI_EDITOR_CALLTIP_PROC2"));
 
         this->CallTipSetHighlight(0, procdef.length());
+        return;
     }
     else if (this->GetStyleAt(charpos) == wxSTC_NSCR_OPTION)
-    {
-        if (this->CallTipActive() && m_nCallTipStart == startPosition)
-            return;
-        else
-            this->AdvCallTipCancel();
-
-        selection = _guilang.get("GUI_EDITOR_CALLTIP_OPT_" + toUpperCase(selection.ToStdString()));
-        size_t highlightlength = selection.length();
-
-        if (selection.find(' ') != string::npos)
-            highlightlength = selection.find(' ');
-
-        this->AdvCallTipShow(startPosition, "Option: " + selection);
-        this->CallTipSetHighlight(8, 8 + highlightlength);
-    }
+        _cTip = _provider.getOption(selection.ToStdString());
     else if (this->GetStyleAt(charpos) == wxSTC_NSCR_METHOD)
-    {
-        if (this->CallTipActive() && m_nCallTipStart == startPosition)
-            return;
-        else
-            this->AdvCallTipCancel();
-
-        selection = GetMethodCallTip(selection.ToStdString());
-        size_t highlightlength;
-        size_t highlightStart = selection.find('.') + 1;
-
-        if (selection.find(' ') != string::npos)
-            highlightlength = selection.find(' ');
-
-        this->AdvCallTipShow(startPosition, addLinebreaks(realignLangString(selection.ToStdString(), highlightlength)));
-        this->CallTipSetHighlight(highlightStart, highlightlength);
-    }
+        _cTip = _provider.getMethod(selection.ToStdString());
     else if (this->GetStyleAt(charpos) == wxSTC_NSCR_PREDEFS)
-    {
-        if (this->CallTipActive() && m_nCallTipStart == startPosition)
-            return;
-        else
-            this->AdvCallTipCancel();
-
-        size_t highlightLength = 10;
-        this->AdvCallTipShow(startPosition, addLinebreaks(realignLangString(_guilang.get("GUI_EDITOR_CALLTIP_" + toUpperCase(selection.ToStdString())), highlightLength)));
-        this->CallTipSetHighlight(0, highlightLength);
-    }
+        _cTip = _provider.getPredef(selection.ToStdString());
     else if (this->GetStyleAt(charpos) == wxSTC_NSCR_CONSTANTS)
+        _cTip = _provider.getConstant(selection.ToStdString());
+
+    if (_cTip.sDefinition.length())
     {
-        if (this->CallTipActive() && m_nCallTipStart == startPosition)
+        if (CallTipActive() && m_nCallTipStart == startPosition)
             return;
         else
-            this->AdvCallTipCancel();
+            AdvCallTipCancel();
 
-        string sCalltip = _guilang.get("GUI_EDITOR_CALLTIP_CONST" + toUpperCase(selection.ToStdString()) + "_*");
-
-        if (selection == "_G")
-            sCalltip = _guilang.get("GUI_EDITOR_CALLTIP_CONST_GRAV_*");
-
-        this->AdvCallTipShow(startPosition, sCalltip);
-        this->CallTipSetHighlight(0, sCalltip.find('='));
+        AdvCallTipShow(startPosition, _cTip.sDefinition + (_cTip.sDocumentation.length() ? "\n" + _cTip.sDocumentation : ""));
+        CallTipSetHighlight(_cTip.nStart, _cTip.nEnd);
     }
 }
 

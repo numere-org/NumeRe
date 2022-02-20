@@ -74,3 +74,4 @@ Added	For angles really close to multiples of 90 degrees, a nearly lossless opti
 Updated	NumeRe's internal logger was updated to gather more information during runtime with a more precise time measurement.
 Fixed	Resolved a bug witin "assert", where it evaluated intermediate calculation steps within string expressions.
 Fixed	The from the dependency viewer generated DOT file is now correct and displays all namespaces as their own cluster.
+Added	The terminal now features also tooltips, which show the signatures of the current syntax element.

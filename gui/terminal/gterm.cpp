@@ -69,6 +69,7 @@ void GenericTerminal::ProcessOutput(int len, const string& sData)
 	// Evaluate the input and update the GUI
 	normal_output();
 	update_changes();
+	CalltipCancel();
 	return;
 }
 
@@ -280,6 +281,7 @@ bool GenericTerminal::Scroll(int numLines, bool scrollUp)
 	if (tm.Scroll(numLines, scrollUp))
 	{
 		update_changes();
+		handle_calltip(termCursor.x, termCursor.y);
 		return true;
 	}
 	return false;

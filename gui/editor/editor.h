@@ -126,8 +126,6 @@ class NumeReEditor : public wxStyledTextCtrl, public wxThreadHelper
 		void HandleFunctionCallTip();
 		void UpdateProcedureViewer();
 		string GetCurrentFunctionContext(int& nStartingBrace);
-		string GetFunctionCallTip(const string& sFunctionName);
-		string GetMethodCallTip(const string& sMethodName);
 		string GetCurrentArgument(const string& sCallTip, int nStartingBrace, int& nArgStartPos);
 
 		int CallTipStartPos();

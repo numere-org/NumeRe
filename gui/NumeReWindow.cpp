@@ -247,7 +247,7 @@ bool MyApp::OnInit()
 
     g_findReplace = nullptr;
 
-    g_logger.info("Creating window.");
+    g_logger.info("Creating graphical user interface.");
 
     // Create and initialize the main frame. Will also
     // include loading the configuration, loading existing
@@ -271,7 +271,6 @@ bool MyApp::OnInit()
         wxArgV.Add(argv[i]);
     }
 
-    g_logger.info("Evaluating command line arguments.");
     // force the history window to perform a
     // page down to scroll to its actually
     // last position
@@ -597,7 +596,7 @@ NumeReWindow::NumeReWindow(const wxString& title, const wxPoint& pos, const wxSi
 
     tipProvider = new MyTipProvider(tipDataBase.getColumn(0));
     showTipAtStartup = m_options->showHints();
-    g_logger.info("Windows ready.");
+    g_logger.info("Graphical user interface ready.");
 }
 
 
@@ -2678,6 +2677,7 @@ void NumeReWindow::OnRemoveFolder()
 /////////////////////////////////////////////////
 void NumeReWindow::EvaluateCommandLine(wxArrayString& wxArgV)
 {
+    g_logger.info("Evaluating command line arguments.");
     wxArrayString filestoopen;
     wxString ext;
 
@@ -3285,10 +3285,13 @@ void NumeReWindow::CloseFile(int pageNr, bool askforsave)
             return;
         }
     }
+
     if (m_book->GetPageCount() > 0)
     {
+        g_logger.info("Closing file '" + m_currentEd->GetFileNameAndPath().ToStdString() + "'.");
         wxFileName currentFileName;
         m_terminal->clearBreakpoints(m_currentEd->GetFileNameAndPath().ToStdString());
+
         if ((m_book->GetPageCount() > 1) || m_appClosing)
         {
             currentFileName = m_currentEd->GetFileName();
@@ -3308,6 +3311,7 @@ void NumeReWindow::CloseFile(int pageNr, bool askforsave)
             m_currentEd->SetText("\r\n");
             m_currentEd->EmptyUndoBuffer();
         }
+
         if(m_book->GetPageCount() > 0)
         {
             if(currentFileName.IsOk())
@@ -4484,6 +4488,7 @@ void NumeReWindow::OnFileEventTimer(wxTimerEvent& event)
     // Now refresh the procedure library
     if (refreshProcedureLibrary)
     {
+        g_logger.info("Refreshing procedure library.");
         CreateProcedureTree(vPaths[PROCPATH]);
         m_terminal->UpdateLibrary();
     }
@@ -5450,6 +5455,7 @@ void NumeReWindow::refreshFunctionTree()
 {
     wxWindow* focus = wxWindow::FindFocus();
     _guilang.loadStrings(m_options->useCustomLangFiles());
+    g_logger.info("Refreshing function tree.");
     prepareFunctionTree();
     m_functionTree->Refresh();
 

@@ -1270,9 +1270,12 @@ vector<int> Memory::sortElements(int i1, int i2, int j1, int j2, const std::stri
     // sort everything?
     if (!findParameter(sSortingExpression, "cols", '=') && !findParameter(sSortingExpression, "c", '='))
     {
+        // Make a copy of the global index for the private threads
+        std::vector<int> vPrivateIndex = vIndex;
+
         // Sort everything independently (we use vIndex from
         // the outside, we therefore must declare it as firstprivate)
-        #pragma omp parallel for firstprivate(vIndex)
+        #pragma omp parallel for firstprivate(vPrivateIndex)
         for (int i = j1; i <= j2; i++)
         {
             // Change for OpenMP
@@ -1280,21 +1283,24 @@ vector<int> Memory::sortElements(int i1, int i2, int j1, int j2, const std::stri
                 continue;
 
             // Sort the current column
-            if (!qSort(&vIndex[0], i2 - i1 + 1, i, 0, i2 - i1, nSign))
+            if (!qSort(&vPrivateIndex[0], i2 - i1 + 1, i, 0, i2 - i1, nSign))
                 throw SyntaxError(SyntaxError::CANNOT_SORT_CACHE, sSortingExpression, SyntaxError::invalid_position);
 
             // Abort after the first column, if
             // an index shall be returned
             // Continue is a change for OpenMP
             if (bReturnIndex)
+            {
+                vIndex = vPrivateIndex;
                 continue;
+            }
 
             // Actually reorder the column
-            reorderColumn(vIndex, i1, i2, i);
+            reorderColumn(vPrivateIndex, i1, i2, i);
 
             // Reset the sorting index
             for (int j = i1; j <= i2; j++)
-                vIndex[j-i1] = j;
+                vPrivateIndex[j-i1] = j;
         }
     }
     else

@@ -40,10 +40,10 @@
 
 #include "gterm.hpp"
 #include "terminal.hpp"
+#include "terminalcalltip.hpp"
 #include <wx/clipbrd.h>
 #include <wx/dataobj.h>
 #include "../globals.hpp"
-
 
 void WinMessageBeep();
 
@@ -110,6 +110,7 @@ NumeReTerminal::NumeReTerminal(wxWindow* parent, wxWindowID id, Options* _option
 	m_bitmap = nullptr;
 	m_wxParent = nullptr;
 
+
 	/*
 	**  Determine window size from current font
 	*/
@@ -140,6 +141,7 @@ NumeReTerminal::NumeReTerminal(wxWindow* parent, wxWindowID id, Options* _option
 	dc.GetTextExtent("M", &m_charWidth, &h); // EKHL: Changed because Height made no sense
 	dc.GetTextExtent("My", &w, &m_charHeight);
 
+	m_callTip = new TerminalCallTip(this, wxSize(100*m_charWidth, 2*m_charHeight));
 	SetClientSize(m_charsInLine * 8, m_linesDisplayed * 16);
 	// 10pt Courier New is 8 pixels wide and 16 pixels high... set up
 	// a default client size to match
@@ -1028,7 +1030,6 @@ NumeReTerminal::OnChar(wxKeyEvent& event)
 		buf[0] = (char)keyCode;
 
 		GenericTerminal::resetAutoComp(RESETCURSOR | RESETTAB);
-
         wxClientDC dc(this);
 
         m_curDC = &dc;
@@ -1774,6 +1775,48 @@ NumeReTerminal::OnTimer(wxTimerEvent& WXUNUSED(event))
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Function reimplementation to display a
+/// tooltip requested by the GenericTerminal.
+///
+/// \param x int
+/// \param y int
+/// \param _cTip NumeRe::CallTip&
+/// \return void
+///
+/////////////////////////////////////////////////
+void NumeReTerminal::Calltip(int x, int y, NumeRe::CallTip& _cTip)
+{
+    // Convert x-y char coordinates into pixel coordinates
+    // and compensate for an additional line
+	x *= m_charWidth;
+
+	// Consider here the possible shift due toe the fact that
+	// the window could be below the bottom corner
+	if ((y+2) > m_height) // m_height is already in character units
+        y = (y-1) * m_charHeight - 2;
+    else
+        y = (y+1) * m_charHeight;
+
+    m_callTip->PopUp(wxPoint(x, y), _cTip.sDefinition);
+    m_callTip->Resize(wxSize(m_charWidth * (_cTip.sDefinition.length()+1), m_charHeight));
+    m_callTip->Highlight(_cTip.nStart, _cTip.nEnd-_cTip.nStart);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Function reimplementation to close the
+/// previously opened calltip.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
+void NumeReTerminal::CalltipCancel()
+{
+    m_callTip->Dismiss();
+}
+
+
 //////////////////////////////////////////////////////////////////////////////
 ///  public virtual ClearChars
 ///  Clears a section of characters from the screen.  This virtual function
@@ -2013,6 +2056,7 @@ NumeReTerminal::ResizeTerminal(int width, int height)
 }
 
 
+
 /** \brief Processes text received from the keybord or clipboard
  *
  * \param len int
@@ -2031,7 +2075,6 @@ void NumeReTerminal::ProcessInput(int len, const string& sData)
         delSelected();
         ClearSelection();
     }
-
 
 	wxClientDC
 	dc(this);

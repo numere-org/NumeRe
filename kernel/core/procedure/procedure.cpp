@@ -724,8 +724,9 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, F
         {
             // if the print status is true, set it to false
             _option.enableSystemPrints(false);
-            nFlags |= ProcedureCommandLine::FLAG_MASK;
         }
+        else
+            nFlags &= ~ProcedureCommandLine::FLAG_MASK;
     }
 
     // Get the argument list and evaluate it

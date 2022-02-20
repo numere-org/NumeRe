@@ -1,7 +1,11 @@
 // Copyright Timothy Miller, 1999
 
 #include "gterm.hpp"
+#include "../../kernel/core/ui/language.hpp"
+#include "../../kernel/core/utils/tools.hpp"
 #include <wx/log.h>
+
+extern Language _guilang;
 
 
 /////////////////////////////////////////////////
@@ -134,8 +138,158 @@ void GenericTerminal::move_cursor( int x, int y )
 
     if (!tm.toLogicalCursor(termCursor))
         termCursor = tm.getCurrentViewPos();
+
+    handle_calltip(termCursor.x, termCursor.y);
 }
 
+
+/////////////////////////////////////////////////
+/// \brief Returns true, if a color corresponds
+/// to a syntax element, which has a (context,
+/// e.g. a function) tooltip.
+///
+/// \param c short int
+/// \param inParens bool
+/// \return bool
+///
+/////////////////////////////////////////////////
+static inline bool hasContextToolTip(short int c, bool inParens)
+{
+    return c == NumeReSyntax::SYNTAX_COMMAND
+        || (c == NumeReSyntax::SYNTAX_FUNCTION && inParens)
+        || (c == NumeReSyntax::SYNTAX_METHODS && inParens)
+        || (c == NumeReSyntax::SYNTAX_PROCEDURE && inParens);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Returns true, if a color corresponds
+/// to a syntax element, which doesn't have a
+/// (context, e.g. a function) tooltip.
+///
+/// \param c short int
+/// \return bool
+///
+/////////////////////////////////////////////////
+static inline bool hasNonContextToolTip(short int c)
+{
+    return c == NumeReSyntax::SYNTAX_OPTION
+        || c == NumeReSyntax::SYNTAX_CONSTANT;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Check, whether a calltip is needed and
+/// select the corresponding text from the
+/// CallTipProvider.
+///
+/// \param x int
+/// \param y int
+/// \return void
+///
+/////////////////////////////////////////////////
+void GenericTerminal::handle_calltip(int x, int y)
+{
+    // Do nothing, if the terminal is scrolled up
+    if (IsScrolledUp())
+    {
+        CalltipCancel();
+        return;
+    }
+    // if the position is on a relevant syntax element
+    // create a calltip for this element, otherwise
+    // dismiss it
+    std::string sLine = tm.getRenderedString(y);
+    std::vector<unsigned short> vColors = tm.getRenderedColors(y);
+
+    if ((int)vColors.size() <= x || x < 0)
+    {
+        CalltipCancel();
+        return;
+    }
+
+    // If we're not directly on a tool-tip specific element,
+    // then we'll search a context tooltip left of the current
+    // position.
+    if (!hasContextToolTip((vColors[x] >> 4) & 0xf, true) // to enable actual detection, we set us to be in a parenthesis
+        && !hasNonContextToolTip((vColors[x] >> 4) & 0xf))
+    {
+        bool isInParens = false;
+        size_t cursor_x = x;
+
+        while (x >= 0)
+        {
+            if (((vColors[x] >> 4) & 0xf) == NumeReSyntax::SYNTAX_OPERATOR && (sLine[x] == '(' || sLine[x] =='{'))
+                isInParens = getMatchingParenthesis(StringView(sLine, x)) >= cursor_x-x;
+
+            // Functions and commands
+            if (hasContextToolTip((vColors[x] >> 4) & 0xf, isInParens))
+                break;
+
+            // options and constants (only near cursor)
+            if (cursor_x-x <= 2
+                && hasNonContextToolTip((vColors[x] >> 4) & 0xf)
+                && (sLine[cursor_x] == ' ' || ((vColors[cursor_x] >> 4) & 0xf) == NumeReSyntax::SYNTAX_OPERATOR))
+                break;
+
+            x--;
+        }
+    }
+
+    // If we found nothing, return
+    if (x < 0)
+    {
+        CalltipCancel();
+        return;
+    }
+
+    int posStart = x;
+    size_t posEnd = x;
+
+    while (posStart > 0 && vColors[posStart-1] == vColors[x])
+        posStart--;
+
+    while (posEnd < vColors.size() && vColors[posEnd] == vColors[x])
+        posEnd++;
+
+    std::string sSyntaxElement = sLine.substr(posStart, posEnd - posStart);
+    NumeRe::CallTip _cTip;
+
+    // Determine the type of the color
+    switch ((vColors[x] >> 4) & 0xf)
+    {
+        case NumeReSyntax::SYNTAX_COMMAND:
+            _cTip = m_tipProvider.getCommand(sSyntaxElement);
+            break;
+        case NumeReSyntax::SYNTAX_FUNCTION:
+            _cTip = m_tipProvider.getFunction(sSyntaxElement);
+            break;
+        case NumeReSyntax::SYNTAX_PROCEDURE:
+            _cTip = m_tipProvider.getProcedure(sSyntaxElement);
+            break;
+        case NumeReSyntax::SYNTAX_METHODS:
+            _cTip = m_tipProvider.getMethod(sSyntaxElement);
+            break;
+        case NumeReSyntax::SYNTAX_CONSTANT:
+            _cTip = m_tipProvider.getConstant(sSyntaxElement);
+            break;
+        case NumeReSyntax::SYNTAX_OPTION:
+            _cTip = m_tipProvider.getOption(sSyntaxElement);
+            break;
+        default:
+            CalltipCancel();
+            return;
+    }
+
+    // Do not display empty calltips
+    if (!_cTip.sDefinition.length())
+    {
+        CalltipCancel();
+        return;
+    }
+
+    Calltip(posStart, y, _cTip);
+}
 
 /////////////////////////////////////////////////
 /// \brief Moves the cursor to a location, if

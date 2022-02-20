@@ -44,6 +44,8 @@ void GenericTerminal::normal_input()
     // view cursor of the last position
     if (!termCursor)
         termCursor = tm.getCurrentViewPos();
+
+    handle_calltip(termCursor.x, termCursor.y);
 }
 
 
@@ -308,6 +310,8 @@ bool GenericTerminal::bs()
 
     // Update the GUI and return
     update_changes();
+
+    handle_calltip(termCursor.x, termCursor.y);
     return true;
 }
 
@@ -337,6 +341,8 @@ bool GenericTerminal::del()
     // The view cursor stays at its position so
     // only update the GUI and return
     update_changes();
+
+    handle_calltip(termCursor.x, termCursor.y);
     return true;
 }
 
@@ -371,6 +377,8 @@ bool GenericTerminal::delSelected()
 
     termCursor = tm.toViewCursor(curStart);
     update_changes();
+
+    handle_calltip(termCursor.x, termCursor.y);
     return true;
 }
 
@@ -429,6 +437,8 @@ bool GenericTerminal::cursor_left()
 
     termCursor = tm.toViewCursor(cursor);
 
+    handle_calltip(termCursor.x, termCursor.y);
+
     return true;
 }
 
@@ -449,6 +459,8 @@ bool GenericTerminal::cursor_right()
         return false;
 
     termCursor = tm.toViewCursor(cursor);
+
+    handle_calltip(termCursor.x, termCursor.y);
 
     return true;
 }
@@ -605,6 +617,7 @@ bool GenericTerminal::ctrl_left()
         return false;
 
     termCursor = tm.toViewCursor(cursor);
+    handle_calltip(termCursor.x, termCursor.y);
 
     return true;
 }
@@ -634,6 +647,7 @@ bool GenericTerminal::ctrl_right()
         return false;
 
     termCursor = tm.toViewCursor(cursor);
+    handle_calltip(termCursor.x, termCursor.y);
 
     return true;
 }
@@ -798,6 +812,8 @@ void GenericTerminal::erase_usercontent_line()
     // If the view cursor is not valid, use the current input location
     if (!termCursor)
         termCursor = tm.getCurrentViewPos();
+
+    handle_calltip(termCursor.x, termCursor.y);
 }
 
 

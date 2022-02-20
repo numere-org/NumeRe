@@ -37,6 +37,8 @@
 
 using namespace std;
 
+class TerminalCallTip;
+
 
 /////////////////////////////////////////////////
 /// \brief The terminal class for the GUI. It's a
@@ -71,6 +73,8 @@ class NumeReTerminal : public wxWindow, public GenericTerminal, public wxThreadH
 		int m_scrollBarWidth;
 		int m_charsInLine;
 		int m_linesDisplayed;
+
+		TerminalCallTip* m_callTip;
 
 		unsigned char
 		m_curChar;
@@ -252,6 +256,9 @@ class NumeReTerminal : public wxWindow, public GenericTerminal, public wxThreadH
 		// Text printing functions
 		virtual void DrawText(int fg_color, int bg_color, int flags, int x, int y, const string& sText) override;
 		virtual void DrawCursor(int fg_color, int bg_color, int flags, int x, int y, unsigned char c) override;
+
+		virtual void Calltip(int x, int y, NumeRe::CallTip& _cTip) override;
+        virtual void CalltipCancel() override;
 
 		virtual void ClearChars(int bg_color, int x, int y, int w, int h) override;
 		virtual void ProcessInput(int len, const string& sData) override;
