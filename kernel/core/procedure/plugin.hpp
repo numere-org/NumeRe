@@ -93,6 +93,7 @@ class Package
         std::string getDescription() const;
         std::string getLicense() const;
         std::string getMenuEntry() const;
+        std::string getCommandSignature() const;
 };
 
 
@@ -195,6 +196,22 @@ class PackageManager : public FileSystem
         {
             if (i < vPackageInfo.size())
                 return vPackageInfo[i].sCommand;
+
+            return "";
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief Returns the plugin command signature
+        /// of the ith plugin.
+        ///
+        /// \param i unsigned int i
+        /// \return string
+        ///
+        /////////////////////////////////////////////////
+        inline string getPluginCommandSignature(unsigned int i = 0) const
+        {
+            if (i < vPackageInfo.size())
+                return vPackageInfo[i].getCommandSignature();
 
             return "";
         }

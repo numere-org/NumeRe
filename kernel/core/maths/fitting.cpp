@@ -58,7 +58,7 @@ static mu::varmap_type getFittingParameters(FittingData& fitData, const mu::varm
 static int getDataForFit(const string& sCmd, string& sDimsForFitLog, FittingData& fitData);
 static void removeObsoleteParentheses(string& sFunction);
 static bool calculateChiMap(string sFunctionDefString, const string& sFuncDisplay, Indices& _idx, mu::varmap_type& varMap, mu::varmap_type& paramsMap, FittingData& fitData, vector<double> vInitialVals);
-static string applyFitAlgorithm(Fitcontroller& _fControl, FittingData& fitData, mu::varmap_type& paramsMap, const string& sFuncDisplay);
+static string applyFitAlgorithm(Fitcontroller& _fControl, FittingData& fitData, mu::varmap_type& paramsMap, const string& sFuncDisplay, const std::string& sCmd);
 static void calculateCovarianceData(FittingData& fitData, double dChisq, size_t paramsMapSize);
 static string getFitOptionsTable(Fitcontroller& _fControl, FittingData& fitData, const string& sFuncDisplay, const string& sFittedFunction, const string& sDimsForFitLog, double dChisq, const mu::varmap_type& paramsMap, size_t nSize, bool forFitLog);
 static string getParameterTable(FittingData& fitData, mu::varmap_type& paramsMap, const vector<double>& vInitialVals, size_t windowSize, const string& sPMSign, bool forFitLog);
@@ -238,7 +238,7 @@ bool fitDataSet(string& sCmd, Parser& _parser, MemoryManager& _data, FunctionDef
     // Apply the fitting algorithm to data and fitting function.
     // This will update the parameter values and return all necessary
     // values for evaluating the fitting result.
-    sFunctionDefString =  applyFitAlgorithm(_fControl, fitData, paramsMap, sFuncDisplay);
+    sFunctionDefString = applyFitAlgorithm(_fControl, fitData, paramsMap, sFuncDisplay, sCmd);
 
     // DONE. We're finished with fitting. The following lines have the
     // single purpose to display the results in the logfiles and in the
@@ -983,9 +983,15 @@ static int getDataForFit(const string& sCmd, string& sDimsForFitLog, FittingData
                     break;
 
                 if (!_data.isValidElement(_idx.row[k-2], _idx.col[1], sDataTable)
-                    || !fitData.ivl[1].isInside(_data.getElement(_idx.row[k-2], _idx.col[1], sDataTable))
-                    || !fitData.ivl[2].isInside(_data.getElement(_idx.row[i], _idx.col[k], sDataTable)))
+                    || !fitData.ivl[1].isInside(_data.getElement(_idx.row[k-2], _idx.col[1], sDataTable)))
                     continue;
+                else if (!fitData.ivl[2].isInside(_data.getElement(_idx.row[i], _idx.col[k], sDataTable)))
+                {
+                    vTempZ.push_back(NAN);
+
+                    if (fitData.bUseErrors)
+                        fitData.vy_w.push_back(0.0);
+                }
                 else
                 {
                     vTempZ.push_back(_data.getElement(_idx.row[i], _idx.col[k], sDataTable).real());
@@ -1014,7 +1020,8 @@ static int getDataForFit(const string& sCmd, string& sDimsForFitLog, FittingData
     {
         for (unsigned int i = 0; i < _idx.row.size(); i++)
         {
-            if (_data.isValidElement(_idx.row[i], _idx.col[0], sDataTable) && _data.isValidElement(_idx.row[i], _idx.col[1], sDataTable))
+            if (_data.isValidElement(_idx.row[i], _idx.col[0], sDataTable)
+                && _data.isValidElement(_idx.row[i], _idx.col[1], sDataTable))
             {
                 if (!fitData.ivl[0].isInside(_data.getElement(_idx.row[i], _idx.col[0], sDataTable))
                     || !fitData.ivl[1].isInside(_data.getElement(_idx.row[i], _idx.col[1], sDataTable)))
@@ -1263,7 +1270,7 @@ static bool calculateChiMap(string sFunctionDefString, const string& sFuncDispla
 // the obtained data and the prepared fitting function. It
 // returns the function definition string for the autmatically
 // created fitting function
-static string applyFitAlgorithm(Fitcontroller& _fControl, FittingData& fitData, mu::varmap_type& paramsMap, const string& sFuncDisplay)
+static string applyFitAlgorithm(Fitcontroller& _fControl, FittingData& fitData, mu::varmap_type& paramsMap, const string& sFuncDisplay, const std::string& sCmd)
 {
     string sFunctionDefString;
     Settings& _option = NumeReKernel::getInstance()->getSettings();
@@ -1277,7 +1284,7 @@ static string applyFitAlgorithm(Fitcontroller& _fControl, FittingData& fitData, 
                 if (_option.systemPrints())
                     NumeReKernel::printPreFmt(_lang.get("COMMON_FAILURE") + "!\n");
 
-                throw SyntaxError(SyntaxError::FUNCTION_CANNOT_BE_FITTED, sFuncDisplay, sFuncDisplay);
+                throw SyntaxError(SyntaxError::FUNCTION_CANNOT_BE_FITTED, sFuncDisplay, sFuncDisplay, sFuncDisplay);
             }
 
             sFunctionDefString = "Fit(x) := " + sFuncDisplay + " " + _lang.get("PARSERFUNCS_FIT_DEFINECOMMENT");
@@ -1289,7 +1296,7 @@ static string applyFitAlgorithm(Fitcontroller& _fControl, FittingData& fitData, 
                 if (_option.systemPrints())
                     NumeReKernel::printPreFmt(_lang.get("COMMON_FAILURE") + "!\n");
 
-                throw SyntaxError(SyntaxError::FUNCTION_CANNOT_BE_FITTED, sFuncDisplay, sFuncDisplay);
+                throw SyntaxError(SyntaxError::FUNCTION_CANNOT_BE_FITTED, sFuncDisplay, sFuncDisplay, sFuncDisplay);
             }
 
             sFunctionDefString = "Fitw(x) := " + sFuncDisplay + " " + _lang.get("PARSERFUNCS_FIT_DEFINECOMMENT");
@@ -1302,7 +1309,7 @@ static string applyFitAlgorithm(Fitcontroller& _fControl, FittingData& fitData, 
             if (_option.systemPrints())
                 NumeReKernel::printPreFmt(_lang.get("COMMON_FAILURE") + "!\n");
 
-            throw SyntaxError(SyntaxError::FUNCTION_CANNOT_BE_FITTED, sFuncDisplay, sFuncDisplay);
+            throw SyntaxError(SyntaxError::FUNCTION_CANNOT_BE_FITTED, sFuncDisplay, sFuncDisplay, sFuncDisplay);
         }
 
         sFunctionDefString = "Fit(x,y) := " + sFuncDisplay + " " + _lang.get("PARSERFUNCS_FIT_DEFINECOMMENT");
@@ -1314,7 +1321,7 @@ static string applyFitAlgorithm(Fitcontroller& _fControl, FittingData& fitData, 
             if (_option.systemPrints())
                 NumeReKernel::printPreFmt(_lang.get("COMMON_FAILURE") + "!\n");
 
-            throw SyntaxError(SyntaxError::FUNCTION_CANNOT_BE_FITTED, sFuncDisplay, sFuncDisplay);
+            throw SyntaxError(SyntaxError::FUNCTION_CANNOT_BE_FITTED, sFuncDisplay, sFuncDisplay, sFuncDisplay);
         }
 
         sFunctionDefString = "Fitw(x,y) := " + sFuncDisplay + " " + _lang.get("PARSERFUNCS_FIT_DEFINECOMMENT");

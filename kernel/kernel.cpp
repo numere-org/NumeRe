@@ -241,6 +241,7 @@ void NumeReKernel::StartUp(NumeReTerminal* _parent, const string& __sPath, const
         g_logger.info("Loading plugins.");
         _procedure.loadPlugins();
         _memoryManager.setPluginCommands(_procedure.getPluginNames());
+        _lang.addToLanguage(getPluginLanguageStrings());
     }
 
     // Load the function definitions
@@ -2056,6 +2057,7 @@ void NumeReKernel::checkInternalStates()
     if (refreshTree)
     {
         refreshTree = false;
+        _lang.addToLanguage(getPluginLanguageStrings());
 
         if (!m_parent)
             return;
@@ -2206,7 +2208,7 @@ map<string, string> NumeReKernel::getPluginLanguageStrings()
         if (!_procedure.getPluginCommand(i).length())
             continue;
 
-        string sDesc = _procedure.getPluginCommand(i) + "     - " + _procedure.getPackageDescription(i);
+        string sDesc = _procedure.getPluginCommandSignature(i) + "     - " + _procedure.getPackageDescription(i);
         replaceAll(sDesc, "\\\"", "\"");
         mPluginLangStrings["PARSERFUNCS_LISTCMD_CMD_" + toUpperCase(_procedure.getPluginCommand(i)) + "_[PLUGINS]"] = sDesc;
     }

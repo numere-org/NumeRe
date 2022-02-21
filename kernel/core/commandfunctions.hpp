@@ -1778,7 +1778,12 @@ static void listInstalledPlugins(Parser& _parser, MemoryManager& _data, const Se
 	    size_t largewindowoffset = _option.getWindow() > 230 ? 10 : 0;
         // The info to be printed is: Package Name, Version, Command, Description, Author, License
         // The minimal desired column width is
-        std::vector<size_t> minDesiredColWidth{20 + largewindowoffset, 10 + largewindowoffset, 15 + largewindowoffset, 0, 20 + largewindowoffset, 15 + largewindowoffset};
+        std::vector<size_t> minDesiredColWidth{20 + largewindowoffset,
+                                               10,
+                                               25 + largewindowoffset,
+                                               0,
+                                               20 + largewindowoffset,
+                                               15 + largewindowoffset};
 
         //Get the terminal window width minus the 4 digit indent
         size_t maxWidth = _option.getWindow(0) - 4;
@@ -1807,7 +1812,7 @@ static void listInstalledPlugins(Parser& _parser, MemoryManager& _data, const Se
 			// Print package version
 			lineEntries.push_back("v" + _procedure.getPackageVersion(i));
 			// Print command info
-            lineEntries.push_back(_procedure.getPluginCommand(i).length() ? _procedure.getPluginCommand(i) : "---");
+            lineEntries.push_back(_procedure.getPluginCommand(i).length() ? _procedure.getPluginCommandSignature(i) : "---");
 			// Print the description
             lineEntries.push_back(_procedure.getPackageDescription(i));
             // Print package author

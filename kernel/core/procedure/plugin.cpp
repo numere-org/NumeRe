@@ -322,6 +322,37 @@ std::string Package::getMenuEntry() const
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Creates a command signature for a
+/// plugin depending on the selected command line
+/// exraction tags of the main procedure.
+///
+/// \return std::string
+///
+/////////////////////////////////////////////////
+std::string Package::getCommandSignature() const
+{
+    if (!sCommand.length())
+        return "";
+
+    std::string sSignature = sCommand + " ";
+
+    if (sArgumentList.find("<EXPRESSION>") != std::string::npos && sArgumentList.find("<PARAMSTRING>") != std::string::npos)
+        sSignature += "EX -set PAR ";
+    else if (sArgumentList.find("<EXPRESSION>") != std::string::npos)
+        sSignature += "EX ";
+    else if (sArgumentList.find("<PARAMSTRING>") != std::string::npos)
+        sSignature += "-PAR ";
+    else if (sArgumentList.find("<CMDSTRING>") != std::string::npos)
+        sSignature += "(...) ";
+
+    if (sType.find("TYPE_PLUGIN_WITH_RETURN_VALUE") != std::string::npos)
+        sSignature += "-> ARG";
+
+    return sSignature;
+}
+
+
 
 
 
