@@ -181,78 +181,31 @@ void TableViewer::OnKeyDown(wxKeyEvent& event)
     if (event.GetKeyCode() == WXK_ESCAPE)
         m_parent->Close();
     else if (event.GetKeyCode() == WXK_UP)
-    {
         this->MoveCursorUp(false);
-        //highlightCursorPosition();
-    }
     else if (event.GetKeyCode() == WXK_DOWN)
-    {
-        /*if (!readOnly && this->GetCursorRow() +1 == this->GetRows())
-        {
-            this->AppendRows();
-            updateFrame();
-        }*/
         this->MoveCursorDown(false);
-        //highlightCursorPosition();
-    }
     else if (event.GetKeyCode() == WXK_RETURN)
-    {
-        /*if (!readOnly && this->GetCursorRow() +1 == this->GetRows())
-        {
-            this->AppendRows();
-            updateFrame();
-        }*/
         this->MoveCursorDown(false);
-        //highlightCursorPosition();
-    }
     else if (event.GetKeyCode() == WXK_LEFT)
-    {
         this->MoveCursorLeft(false);
-        //highlightCursorPosition();
-    }
     else if (event.GetKeyCode() == WXK_RIGHT)
-    {
-        /*if (!readOnly && this->GetCursorColumn() +1 == this->GetCols())
-        {
-            this->AppendCols();
-            updateFrame();
-        }*/
         this->MoveCursorRight(false);
-        //highlightCursorPosition();
-    }
     else if (event.GetKeyCode() == WXK_TAB)
-    {
-        /*if (!readOnly && this->GetCursorColumn() +1 == this->GetCols())
-        {
-            this->AppendCols();
-            updateFrame();
-        }*/
         this->MoveCursorRight(false);
-        //highlightCursorPosition();
-    }
     else if (event.GetKeyCode() == WXK_DELETE)
     {
         if (!readOnly)
-        {
             deleteSelection();
-        }
     }
     else if (event.ControlDown() && event.ShiftDown())
     {
         if (event.GetKeyCode() == 'C')
-        {
             copyContents();
-        }
         else if (event.GetKeyCode() == 'V')
-        {
             pasteContents();
-        }
-        //event.Skip();
     }
     else
-    {
         event.Skip();
-    }
 }
 
 
@@ -316,7 +269,7 @@ void TableViewer::OnCellChange(wxGridEvent& event)
     SetCellValue(event.GetRow(), event.GetCol(), event.GetString());
 
     updateFrame();
-    highlightCursorPosition(GetGridCursorRow(), GetGridCursorCol());
+    //highlightCursorPosition(GetGridCursorRow()+1, GetGridCursorCol());
     UpdateColumnAlignment(GetGridCursorCol());
     event.Veto();
 }
@@ -422,6 +375,10 @@ void TableViewer::updateFrame()
     wxFont font = this->GetCellFont(0,0);
     font.SetWeight(wxFONTWEIGHT_NORMAL);
 
+    if (GetRows() > MAXIMAL_RENDERING_SIZE || GetCols() > MAXIMAL_RENDERING_SIZE)
+        return;
+
+
     for (int i = 0; i < this->GetRows(); i++)
     {
         for (int j = 0; j < this->GetCols(); j++)
@@ -429,29 +386,28 @@ void TableViewer::updateFrame()
             if (i+1 == this->GetRows() || j+1 == this->GetCols())
             {
                 // Surrounding frame
-                SetCellFont(i, j, font);
                 SetCellBackgroundColour(i, j, FrameColor);
             }
-            else if (GetRowLabelValue(i) == "#")
+            else if (i < nFirstNumRow)
             {
                 // Headline
                 SetCellFont(i, j, this->GetCellFont(i, j).MakeBold());
                 SetCellBackgroundColour(i, j, HeadlineColor);
                 SetCellAlignment(wxALIGN_LEFT, i, j);
             }
-            else
+            else if ((i+2 == this->GetRows() || j+2 == this->GetCols())
+                     && GetCellBackgroundColour(i, j) != HighlightColor)
             {
-                // Remaining central cells
-                SetCellFont(i, j, font);
+                // Cells near the boundary, which might have been modified
                 SetCellBackgroundColour(i, j, *wxWHITE);
             }
         }
     }
 
-    lastCursorPosition = wxGridCellCoords();
+    //lastCursorPosition = wxGridCellCoords();
 
     // Highlight the position of the cursor
-    highlightCursorPosition(this->GetCursorRow(), this->GetCursorColumn());
+    //highlightCursorPosition(this->GetCursorRow(), this->GetCursorColumn());
 }
 
 
