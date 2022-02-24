@@ -89,7 +89,7 @@ DebugViewer::DebugViewer(wxWindow* parent, Options* _options, const wxString& ti
     m_lineNumber->SetFont(font);
     m_lineNumber->SetBackgroundColour(wxColour(220, 220, 220));
     m_expression->SetFont(font);
-    m_expression->SetBackgroundColour(*wxWHITE);
+    //m_expression->SetBackgroundColour(*wxWHITE);
     m_errorMessage->SetForegroundColour(*wxRED);
 
     // Create the stack trace list control and add
@@ -452,6 +452,8 @@ void DebugViewer::setDebugInfo(const wxString& title, const vector<string>& vSta
     b_transferredControl = true;
 
     EnableDebugger(true);
+    m_errorMessage->SetForegroundColour(*wxRED);
+    m_errorMessage->Refresh();
     GetStatusBar()->SetStatusText(_guilang.get("DBG_STOPPED"), 1);
 
     // Remove all previous stack items
@@ -530,6 +532,8 @@ void DebugViewer::OnClose(wxCloseEvent& event)
 void DebugViewer::OnExecutionFinished()
 {
     EnableDebugger(false);
+    m_errorMessage->SetForegroundColour(wxColour(128, 128, 128));
+    m_errorMessage->Refresh();
     GetStatusBar()->SetStatusText(_guilang.get("DBG_FINISHED"), 1);
     SetTitle("NumeRe: Debugger  [" + _guilang.get("DBG_FINISHED") + "]");
 }

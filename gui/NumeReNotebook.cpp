@@ -1,6 +1,7 @@
 #include "../common/CommonHeaders.h"
 #include "NumeReNotebook.h"
 #include "NumeReWindow.h"
+#include "numeredroptarget.hpp"
 
 #include "../common/vcsmanager.hpp"
 #include "editor/editor.h"
@@ -20,6 +21,7 @@ BEGIN_EVENT_TABLE(EditorNotebook, wxNotebook)
 	EVT_ENTER_WINDOW(EditorNotebook::OnEnter)
 	EVT_LEAVE_WINDOW(EditorNotebook::OnLeave)
 	EVT_SIZE        (EditorNotebook::OnSize)
+	EVT_SPLITTER_UNSPLIT(-1, EditorNotebook::OnUnsplit)
 END_EVENT_TABLE()
 
 /////////////////////////////////////////////////
@@ -64,7 +66,7 @@ void EditorNotebook::SetShowPathsOnTabs(bool showText)
 
     for (size_t i = 0; i < GetPageCount(); i++)
     {
-        NumeReEditor* edit = static_cast<NumeReEditor*>(GetPage(i));
+        NumeReEditor* edit = getEditor(i);
         SetTabText(i, edit->GetFileNameAndPath());
     }
 
@@ -116,19 +118,144 @@ void EditorNotebook::SetTabText(size_t nTab, const wxString& text)
 
 
 /////////////////////////////////////////////////
-/// \brief Wrapper for AddPage, which
-/// automatically calls SetTabText.
+/// \brief Create a new editor and add it to a
+/// new tab automatically. The passed text is
+/// used for the tab name.
 ///
-/// \param window wxWindow*
 /// \param text const wxString&
-/// \param select bool
+/// \return NumeReEditor*
+///
+/////////////////////////////////////////////////
+NumeReEditor* EditorNotebook::createEditor(const wxString& text)
+{
+    wxSplitterWindow* splitter = new wxSplitterWindow(this, wxID_ANY);
+    NumeReEditor* editor = new NumeReEditor(m_top_parent, m_top_parent->getOptions(), splitter,
+                                            wxID_ANY, m_top_parent->getTerminal()->getSyntax(), m_top_parent->getTerminal());
+    splitter->Initialize(editor);
+    AddPage(splitter, text, false);
+    return editor;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Returns a pointer to the embedded
+/// editor instance. Will always return the left
+/// or top editor pointer, if the view is
+/// currently splitted.
+///
+/// \param pageNum size_t
+/// \return NumeReEditor*
+///
+/////////////////////////////////////////////////
+NumeReEditor* EditorNotebook::getEditor(size_t pageNum)
+{
+    if (pageNum >= GetPageCount())
+        return nullptr;
+
+    return static_cast<NumeReEditor*>(static_cast<wxSplitterWindow*>(GetPage(pageNum))->GetWindow1());
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Split the current editor horizontally
+/// or vertically (depending on the flag), if it
+/// is not already splitted.
+///
+/// \param pageNum size_t
+/// \param horizontal bool
 /// \return void
 ///
 /////////////////////////////////////////////////
-void EditorNotebook::AddNewTab(wxWindow* window, const wxString& text, bool select)
+void EditorNotebook::split(size_t pageNum, bool horizontal)
 {
-    AddPage(window, "page", select);
-    SetTabText(GetPageCount()-1, text);
+    if (pageNum >= GetPageCount())
+        return;
+
+    wxSplitterWindow* splitter = static_cast<wxSplitterWindow*>(GetPage(pageNum));
+
+    if (!splitter->IsSplit())
+    {
+        NumeReEditor* edit = static_cast<NumeReEditor*>(splitter->GetWindow1());
+        NumeReEditor* secEdit = new NumeReEditor(m_top_parent, m_top_parent->getOptions(), splitter,
+                                                 wxID_ANY, m_top_parent->getTerminal()->getSyntax(), m_top_parent->getTerminal());
+        secEdit->SetDocPointer(edit->GetDocPointer());
+        secEdit->SetFilename(edit->GetFileName(), false);
+        secEdit->ToggleSettings(edit->getSettings());
+        secEdit->UpdateSyntaxHighlighting();
+
+        if (m_top_parent->getOptions()->GetFoldDuringLoading())
+            secEdit->FoldAll();
+
+        secEdit->GotoLine(edit->GetCurrentLine());
+        secEdit->EnsureVisible(edit->GetCurrentLine());
+
+        #if wxUSE_DRAG_AND_DROP
+        secEdit->SetDropTarget(new NumeReDropTarget(m_top_parent, secEdit, NumeReDropTarget::EDITOR));
+        #endif
+
+
+        if (horizontal)
+            splitter->SplitHorizontally(splitter->GetWindow1(), secEdit);
+        else
+            splitter->SplitVertically(splitter->GetWindow1(), secEdit);
+    }
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Remove the splitted view.
+///
+/// \param pageNum size_t
+/// \return void
+///
+/////////////////////////////////////////////////
+void EditorNotebook::unsplit(size_t pageNum)
+{
+    if (pageNum >= GetPageCount())
+        return;
+
+    wxSplitterWindow* splitter = static_cast<wxSplitterWindow*>(GetPage(pageNum));
+
+    if (splitter->IsSplit())
+    {
+        wxWindow* sec = splitter->GetWindow2();
+        splitter->Unsplit(sec);
+        Refresh();
+        sec->Destroy();
+    }
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Check, whether the editor is currently
+/// splitted.
+///
+/// \param pageNum size_t
+/// \return bool
+///
+/////////////////////////////////////////////////
+bool EditorNotebook::isSplit(size_t pageNum) const
+{
+    if (pageNum >= GetPageCount())
+        return false;
+
+    wxSplitterWindow* splitter = static_cast<wxSplitterWindow*>(GetPage(pageNum));
+
+    return splitter->IsSplit();
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Event handler, if the user drags the
+/// sash to the outermost edge.
+///
+/// \param event wxSplitterEvent&
+/// \return void
+///
+/////////////////////////////////////////////////
+void EditorNotebook::OnUnsplit(wxSplitterEvent& event)
+{
+    event.GetWindowBeingRemoved()->Destroy();
 }
 
 
@@ -155,7 +282,7 @@ void EditorNotebook::OnTabRightClicked(wxMouseEvent &event)
 		return;
 
     VersionControlSystemManager manager(m_top_parent);
-    wxString filename = static_cast<NumeReEditor*>(GetPage(pageNum))->GetFileNameAndPath();
+    wxString filename = getEditor(pageNum)->GetFileNameAndPath();
 
 	m_top_parent->SetIntVar(VN_CLICKEDTAB, pageNum);
 	wxMenu popupMenu;
@@ -166,6 +293,17 @@ void EditorNotebook::OnTabRightClicked(wxMouseEvent &event)
 	popupMenu.Append(ID_MENU_OPEN_FOLDER, _guilang.get("GUI_EDITOR_TAB_OPENFOLDER"));
 	popupMenu.AppendSeparator();
 	popupMenu.Append(ID_MENU_RUN_FROM_TAB, _guilang.get("GUI_TB_RUN"));
+	popupMenu.AppendSeparator();
+
+    if (isSplit(pageNum))
+        popupMenu.Append(ID_MENU_UNSPLIT_TAB, _guilang.get("GUI_EDITOR_TAB_UNSPLIT"));
+    else
+    {
+        wxMenu* splitMenu = new wxMenu();
+        splitMenu->Append(ID_MENU_SPLIT_TAB_H, _guilang.get("GUI_EDITOR_TAB_SPLIT_H"));
+        splitMenu->Append(ID_MENU_SPLIT_TAB_V, _guilang.get("GUI_EDITOR_TAB_SPLIT_V"));
+        popupMenu.Append(wxID_ANY, _guilang.get("GUI_EDITOR_TAB_SPLITTING"), splitMenu);
+    }
 
 	// Append the file revision menu, if the file has revisions
 	if (manager.hasRevisions(filename))
@@ -277,7 +415,7 @@ int EditorNotebook::FindPagePosition(wxNotebookPage* page)
 	int nPageCount = GetPageCount();
 	int nPage;
 	for ( nPage = 0; nPage < nPageCount; nPage++ )
-		if (GetPage(nPage) == page)
+		if (getEditor(nPage) == page)
 			return nPage;
 	return -1;
 }

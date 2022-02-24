@@ -3866,7 +3866,7 @@ void NumeReEditor::updateDefaultHighlightSettings()
     {
         SetEdgeColour(wxColour(210, 210, 255));
         SetEdgeMode(wxSTC_EDGE_LINE);
-        SetEdgeColumn(120);
+        SetEdgeColumn(100);
     }
     else
         SetEdgeMode(wxSTC_EDGE_NONE);

@@ -1508,6 +1508,24 @@ void NumeReWindow::OnMenuEvent(wxCommandEvent &event)
             OpenContainingFolder();
             break;
         }
+        case ID_MENU_UNSPLIT_TAB:
+        {
+            int tab = GetIntVar(VN_CLICKEDTAB);
+            m_book->unsplit(tab);
+            break;
+        }
+        case ID_MENU_SPLIT_TAB_H:
+        {
+            int tab = GetIntVar(VN_CLICKEDTAB);
+            m_book->split(tab, true);
+            break;
+        }
+        case ID_MENU_SPLIT_TAB_V:
+        {
+            int tab = GetIntVar(VN_CLICKEDTAB);
+            m_book->split(tab, false);
+            break;
+        }
 
         case ID_MENU_TOGGLE_CONSOLE:
         {
@@ -2566,7 +2584,7 @@ void NumeReWindow::OnShowRevisions()
 /////////////////////////////////////////////////
 void NumeReWindow::OnShowRevisionsFromTab()
 {
-    NumeReEditor* edit = static_cast<NumeReEditor*>(m_book->GetPage(GetIntVar(VN_CLICKEDTAB)));
+    NumeReEditor* edit = m_book->getEditor(GetIntVar(VN_CLICKEDTAB));
     wxString filename = edit->GetFileNameAndPath();
     VersionControlSystemManager manager(this);
     FileRevisions* revisions = manager.getRevisions(filename);
@@ -2780,7 +2798,7 @@ void NumeReWindow::NewFile(FileFilterType _filetype, const wxString& defaultfile
         //wxString locationPrefix = "(?) ";
 
         wxString noname = _guilang.get("GUI_NEWFILE_UNTITLED") + " " + wxString::Format ("%d", m_fileNum);
-        NumeReEditor* edit = new NumeReEditor (this, m_options, m_book, -1, m_terminal->getSyntax(), m_terminal);
+        NumeReEditor* edit = m_book->createEditor(noname);
         //edit->SetSyntax(m_terminal->getSyntax());
 
     #if wxUSE_DRAG_AND_DROP
@@ -2793,9 +2811,9 @@ void NumeReWindow::NewFile(FileFilterType _filetype, const wxString& defaultfile
         m_currentEd = edit;
 
         m_currentEd->EmptyUndoBuffer();
-        m_currentPage = m_book->GetPageCount();
-        m_book->AddPage (edit, noname, true);
+        m_currentPage = m_book->GetPageCount()-1;
         m_currentEd->ToggleSettings(settings);
+        m_book->SetSelection(m_currentPage);
     }
     else if (_filetype == FILE_DIFF)
     {
@@ -2806,7 +2824,7 @@ void NumeReWindow::NewFile(FileFilterType _filetype, const wxString& defaultfile
         m_fileNum += 1;
 
         // Create a new editor
-        NumeReEditor* edit = new NumeReEditor (this, m_options, m_book, -1, m_terminal->getSyntax(), m_terminal);
+        NumeReEditor* edit = m_book->createEditor("");
         edit->SetText("DIFF");
         int settings = CopyEditorSettings(_filetype);
 
@@ -2815,12 +2833,13 @@ void NumeReWindow::NewFile(FileFilterType _filetype, const wxString& defaultfile
         // Set the corresponding full file name
         m_currentEd->SetFilename(wxFileName(vPaths[SAVEPATH], filename), false);
 
-        m_currentPage = m_book->GetPageCount();
+        m_currentPage = m_book->GetPageCount()-1;
         m_currentEd->UpdateSyntaxHighlighting();
 
         // Add a new tab for the editor
-        m_book->AddNewTab(edit, m_currentEd->GetFileNameAndPath(), true);
+        m_book->SetTabText(m_currentPage, m_currentEd->GetFileNameAndPath());
         m_currentEd->ToggleSettings(settings);
+        m_book->SetSelection(m_currentPage);
     }
     else
     {
@@ -2962,7 +2981,7 @@ void NumeReWindow::NewFile(FileFilterType _filetype, const wxString& defaultfile
         m_fileNum += 1;
 
         // Create a new editor
-        NumeReEditor* edit = new NumeReEditor (this, m_options, m_book, -1, m_terminal->getSyntax(), m_terminal);
+        NumeReEditor* edit = m_book->createEditor("");
         edit->SetText(template_file);
 
         int settings = CopyEditorSettings(_filetype);
@@ -2977,7 +2996,7 @@ void NumeReWindow::NewFile(FileFilterType _filetype, const wxString& defaultfile
         else
             m_currentEd->SetFilename(wxFileName(vPaths[SAVEPATH] + folder, filename), false);
 
-        m_currentPage = m_book->GetPageCount();
+        m_currentPage = m_book->GetPageCount()-1;
         m_currentEd->UpdateSyntaxHighlighting();
 
         // Jump to the predefined template position
@@ -2987,8 +3006,9 @@ void NumeReWindow::NewFile(FileFilterType _filetype, const wxString& defaultfile
         m_currentEd->EmptyUndoBuffer();
 
         // Add a new tab for the editor
-        m_book->AddNewTab(edit, edit->GetFileNameAndPath(), true);
+        m_book->SetTabText(m_currentPage, edit->GetFileNameAndPath());
         m_currentEd->ToggleSettings(settings);
+        m_book->SetSelection(m_currentPage);
     }
 }
 
@@ -3069,7 +3089,7 @@ void NumeReWindow::DefaultPage()
 
     m_fileNum += 1;
 
-    NumeReEditor* edit = new NumeReEditor (this, m_options, m_book, -1, m_terminal->getSyntax(), m_terminal);
+    NumeReEditor* edit = m_book->createEditor(_guilang.get("GUI_EDITOR_TAB_WELCOMEPAGE"));
 
 #if wxUSE_DRAG_AND_DROP
     edit->SetDropTarget(new NumeReDropTarget(this, edit, NumeReDropTarget::EDITOR));
@@ -3080,8 +3100,8 @@ void NumeReWindow::DefaultPage()
     m_currentEd->defaultPage = true;
     m_currentEd->SetReadOnly(true);
     m_currentEd->ToggleSettings(NumeReEditor::SETTING_USETXTADV);
-    m_currentPage = m_book->GetPageCount();
-    m_book->AddPage (edit, _guilang.get("GUI_EDITOR_TAB_WELCOMEPAGE"), true);
+    m_currentPage = m_book->GetPageCount()-1;
+    m_book->SetSelection(m_currentPage);
 }
 
 
@@ -3130,7 +3150,7 @@ void NumeReWindow::PageHasChanged (int pageNr)
             m_currentEd->AdvCallTipCancel();
 
         m_currentPage = pageNr;
-        m_currentEd = static_cast< NumeReEditor * > (m_book->GetPage (m_currentPage));
+        m_currentEd = m_book->getEditor(m_currentPage);
         m_book->SetSelection(pageNr);
 
         if (!m_book->GetMouseFocus())
@@ -3225,7 +3245,7 @@ void NumeReWindow::CloseOtherTabs()
 void NumeReWindow::OpenContainingFolder()
 {
     int tab = GetIntVar(VN_CLICKEDTAB);
-    NumeReEditor* edit = static_cast<NumeReEditor*>(m_book->GetPage(tab));
+    NumeReEditor* edit = m_book->getEditor(tab);
     wxFileName filename = edit->GetFileName();
     wxExecute("explorer " + filename.GetPath(), wxEXEC_ASYNC, nullptr, nullptr);
 }
@@ -3242,7 +3262,7 @@ void NumeReWindow::OpenContainingFolder()
 void NumeReWindow::EvaluateTab()
 {
     int tab = GetIntVar(VN_CLICKEDTAB);
-    NumeReEditor* edit = static_cast<NumeReEditor*>(m_book->GetPage(tab));
+    NumeReEditor* edit = m_book->getEditor(tab);
 
     if (!edit->HasBeenSaved() || edit->Modified())
     {
@@ -3341,7 +3361,7 @@ bool NumeReWindow::CloseAllFiles()
 
     for (int i = 0; i < cnt; i++)
     {
-        edit = static_cast<NumeReEditor*>(m_book->GetPage(i));
+        edit = m_book->getEditor(i);
 
         if (edit->defaultPage)
             continue;
@@ -3416,7 +3436,7 @@ int NumeReWindow::GetPageNum(wxFileName fn,  bool compareWholePath, int starting
 
     for (int pageNum = startingTab; pageNum < numPages; pageNum++)
     {
-        edit = static_cast <NumeReEditor *> (m_book->GetPage(pageNum));
+        edit = m_book->getEditor(pageNum);
 
         bool fileMatches = false;
 
@@ -3470,7 +3490,7 @@ void NumeReWindow::OnPageChange (wxNotebookEvent &WXUNUSED(event))
 /////////////////////////////////////////////////
 int NumeReWindow::HandleModifiedFile(int pageNr, ModifiedFileAction fileAction)
 {
-    NumeReEditor *edit = static_cast <NumeReEditor * > (m_book->GetPage (pageNr));
+    NumeReEditor *edit = m_book->getEditor(pageNr);
 
     if (!edit)
     {
@@ -3734,7 +3754,7 @@ void NumeReWindow::OpenSourceFile(wxArrayString fnames, unsigned int nLine, int 
                     m_setSelection = false;
                     m_currentPage = pageNr;
 
-                    m_currentEd = static_cast< NumeReEditor* > (m_book->GetPage (m_currentPage));
+                    m_currentEd = m_book->getEditor(m_currentPage);
                     m_currentEd->LoadFileText(fileContents);
                     m_currentEd->UpdateSyntaxHighlighting();
                 }
@@ -3768,17 +3788,18 @@ void NumeReWindow::OpenSourceFile(wxArrayString fnames, unsigned int nLine, int 
             // need to create a new buffer for the file
             else
             {
-                NumeReEditor *edit = new NumeReEditor(this, m_options, m_book, -1, m_terminal->getSyntax(), m_terminal);
+                NumeReEditor *edit = m_book->createEditor("");
 #if wxUSE_DRAG_AND_DROP
                 edit->SetDropTarget(new NumeReDropTarget(this, edit, NumeReDropTarget::EDITOR));
 #endif
                 edit->LoadFileText(fileContents);
                 int settings = CopyEditorSettings(_fileType);
-                m_currentPage = m_book->GetPageCount();
+                m_currentPage = m_book->GetPageCount()-1;
                 m_currentEd = edit;
                 m_currentEd->SetFilename(newFileName, m_remoteMode);
                 m_currentEd->ToggleSettings(settings);
-                m_book->AddNewTab(edit, edit->GetFileNameAndPath(), true);
+                m_book->SetTabText(m_currentPage, edit->GetFileNameAndPath());
+                m_book->SetSelection(m_currentPage);
             }
 
             m_currentEd->UpdateSyntaxHighlighting();
@@ -3912,7 +3933,7 @@ void NumeReWindow::Ready()
 
         for (size_t i = 0; i < m_book->GetPageCount(); i++)
         {
-            NumeReEditor* edit = static_cast<NumeReEditor*>(m_book->GetPage(i));
+            NumeReEditor* edit =m_book->getEditor(i);
             edit->MarkerDeleteAll(MARKER_FOCUSEDLINE);
         }
     }
@@ -4064,7 +4085,7 @@ bool NumeReWindow::SaveCurrentFile(bool saveas)
 /////////////////////////////////////////////////
 bool NumeReWindow::SaveTab(int tab)
 {
-    NumeReEditor* edit = static_cast<NumeReEditor*>(m_book->GetPage(tab));
+    NumeReEditor* edit = m_book->getEditor(tab);
     wxString filename = edit->GetFileNameAndPath();
 
     // Make the folder, if it doesn't exist
@@ -4106,7 +4127,7 @@ bool NumeReWindow::SaveAll(bool refreshLibrary)
 
     for (size_t i = 0; i < m_book->GetPageCount(); i++)
     {
-        NumeReEditor* edit = static_cast<NumeReEditor*>(m_book->GetPage(i));
+        NumeReEditor* edit = m_book->getEditor(i);
 
         if (edit->Modified())
         {
@@ -4435,7 +4456,7 @@ void NumeReWindow::OnFileEventTimer(wxTimerEvent& event)
             // opened files
             for (size_t j = 0; j < m_book->GetPageCount(); j++)
             {
-                edit = static_cast<NumeReEditor*>(m_book->GetPage(j));
+                edit = m_book->getEditor(j);
 
                 // Found it?
                 if (edit && edit->GetFileNameAndPath() == modifiedFiles[i].second)
@@ -4519,7 +4540,10 @@ void NumeReWindow::ToolbarStatusUpdate()
     if (!m_currentEd)
         return;
 
-    if (m_currentEd->getFileType() == FILE_NSCR || m_currentEd->getFileType() == FILE_NPRC || m_currentEd->getFileType() == FILE_MATLAB || m_currentEd->getFileType() == FILE_CPP)
+    if (m_currentEd->getFileType() == FILE_NSCR
+        || m_currentEd->getFileType() == FILE_NPRC
+        || m_currentEd->getFileType() == FILE_MATLAB
+        || m_currentEd->getFileType() == FILE_CPP)
     {
         tb->EnableTool(ID_MENU_ADDEDITORBREAKPOINT, true);
         tb->EnableTool(ID_MENU_REMOVEEDITORBREAKPOINT, true);
@@ -4829,7 +4853,7 @@ void NumeReWindow::EvaluateOptions()
     // editor instance
     for (int i = 0; i < (int)m_book->GetPageCount(); i++)
     {
-        NumeReEditor* edit = static_cast<NumeReEditor*> (m_book->GetPage(i));
+        NumeReEditor* edit = m_book->getEditor(i);
         edit->UpdateSyntaxHighlighting();
         edit->SetCaretPeriod(m_options->GetCaretBlinkTime());
         edit->AnalyseCode();
@@ -5462,7 +5486,7 @@ void NumeReWindow::refreshFunctionTree()
     // Update the syntax colors in the editor windows
     for (size_t i = 0; i < m_book->GetPageCount(); i++)
     {
-        static_cast<NumeReEditor*>(m_book->GetPage(i))->UpdateSyntaxHighlighting(true);
+        m_book->getEditor(i)->UpdateSyntaxHighlighting(true);
     }
 
     m_history->UpdateSyntaxHighlighting(true);
@@ -6283,7 +6307,7 @@ void NumeReWindow::UpdateLocationIfOpen(const wxFileName& fname, const wxFileNam
 
     if (num != wxNOT_FOUND)
     {
-        NumeReEditor* edit = static_cast<NumeReEditor*>(m_book->GetPage(num));
+        NumeReEditor* edit = m_book->getEditor(num);
 
         if (edit->Modified())
             return;
@@ -6720,7 +6744,7 @@ void NumeReWindow::OnOptions()
 
         for (size_t i = 0; i < m_book->GetPageCount(); i++)
         {
-            NumeReEditor* edit = static_cast<NumeReEditor*>(m_book->GetPage(i));
+            NumeReEditor* edit = m_book->getEditor(i);
             edit->UpdateSyntaxHighlighting(true);
             edit->SetEditorFont(m_options->GetEditorFont());
         }
