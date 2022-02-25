@@ -52,24 +52,6 @@ static mu::value_type* evaluateNumerical(int& nResults, std::string sExpression)
 }
 
 
-/////////////////////////////////////////////////
-/// \brief Static helper functio to evaluate
-/// string parameters.
-///
-/// \param sExpression std::string
-/// \return std::string
-///
-/////////////////////////////////////////////////
-static std::string evaluateString(std::string sExpression)
-{
-    std::string sDummy;
-
-    if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sExpression))
-        NumeReKernel::getInstance()->getStringParser().evalAndFormat(sExpression, sDummy, true);
-
-    return sExpression;
-}
-
 
 /////////////////////////////////////////////////
 /// \brief Static helper function to evaluate the
@@ -461,10 +443,8 @@ void PlotData::setParams(const string& __sCmd, int nType)
         {
             if (sTemp.find(',') && sTemp.find(',') != sTemp.length()-1)
             {
-                _parser.SetExpr(sTemp);
-                _parser.Eval();
-                int nResults = _parser.GetNumResults();
-                mu::value_type* dTemp = _parser.Eval(nResults);
+                int nResults;
+                mu::value_type* dTemp = evaluateNumerical(nResults, sTemp);
                 dRotateAngles[0] = dTemp[0].real();
                 dRotateAngles[1] = dTemp[1].real();
             }
@@ -511,9 +491,8 @@ void PlotData::setParams(const string& __sCmd, int nType)
         string sTemp = getArgAtPos(__sCmd, nPos);
         if (sTemp.find(',') != string::npos && sTemp.length() > 1)
         {
-            _parser.SetExpr(sTemp);
             int nResults = 0;
-            mu::value_type* dTemp = _parser.Eval(nResults);
+            mu::value_type* dTemp = evaluateNumerical(nResults, sTemp);
             if (nResults)
             {
                 for (int i = 0; i < 3; i++)
@@ -543,9 +522,9 @@ void PlotData::setParams(const string& __sCmd, int nType)
         string sTemp = getArgAtPos(__sCmd, nPos);
         if (sTemp.find(',') != string::npos && sTemp.length() > 1)
         {
-            _parser.SetExpr(sTemp);
-            int nResults = 0;
-            mu::value_type* dTemp = _parser.Eval(nResults);
+            int nResults;
+            mu::value_type* dTemp = evaluateNumerical(nResults, sTemp);
+
             if (nResults)
             {
                 for (int i = 0; i < 3; i++)
@@ -570,9 +549,8 @@ void PlotData::setParams(const string& __sCmd, int nType)
         string sTemp = getArgAtPos(__sCmd, nPos);
         if (sTemp.find(',') != string::npos && sTemp.length() > 1)
         {
-            _parser.SetExpr(sTemp);
             int nResults = 0;
-            mu::value_type* dTemp = _parser.Eval(nResults);
+            mu::value_type* dTemp = evaluateNumerical(nResults, sTemp);
 
             if (nResults >= 2)
             {
@@ -774,9 +752,9 @@ void PlotData::setParams(const string& __sCmd, int nType)
         string sTemp = getArgAtPos(__sCmd, findParameter(sCmd, "maxline", '=')+7);
         if (sTemp[0] == '(' && sTemp[sTemp.length()-1] == ')')
             sTemp = sTemp.substr(1,sTemp.length()-2);
-        _lHlines[0].sDesc = evaluateString(getArgAtPos(getNextArgument(sTemp, true),0));
+        _lHlines[0].sDesc = getArgAtPos(getNextArgument(sTemp, true),0,STRINGEXTRACT);
         if (sTemp.length())
-            _lHlines[0].sStyle = evaluateString(getArgAtPos(getNextArgument(sTemp, true),0));
+            _lHlines[0].sStyle = getArgAtPos(getNextArgument(sTemp, true),0,STRINGEXTRACT);
         replaceControlChars(_lHlines[0].sDesc);
     }
 
@@ -785,9 +763,9 @@ void PlotData::setParams(const string& __sCmd, int nType)
         string sTemp = getArgAtPos(__sCmd, findParameter(sCmd, "minline", '=')+7);
         if (sTemp[0] == '(' && sTemp[sTemp.length()-1] == ')')
             sTemp = sTemp.substr(1,sTemp.length()-2);
-        _lHlines[1].sDesc = evaluateString(getArgAtPos(getNextArgument(sTemp, true),0));
+        _lHlines[1].sDesc = getArgAtPos(getNextArgument(sTemp, true),0,STRINGEXTRACT);
         if (sTemp.length())
-            _lHlines[1].sStyle = evaluateString(getArgAtPos(getNextArgument(sTemp, true),0));
+            _lHlines[1].sStyle = getArgAtPos(getNextArgument(sTemp, true),0,STRINGEXTRACT);
         replaceControlChars(_lHlines[1].sDesc);
     }
 
@@ -815,7 +793,7 @@ void PlotData::setParams(const string& __sCmd, int nType)
                 _lHlines[i+2].dPos = v[i].real();
             }
 
-            string sDescList = evaluateString(getArgAtPos(getNextArgument(sTemp, true),0));
+            string sDescList = getArgAtPos(getNextArgument(sTemp, true),0,ARGEXTRACT_ASSTRING | ARGEXTRACT_PARSED);
 
             if (sDescList.front() == '{')
                 sDescList.erase(0,1);
@@ -831,7 +809,7 @@ void PlotData::setParams(const string& __sCmd, int nType)
 
             if (sTemp.length())
             {
-                string sStyles = evaluateString(getArgAtPos(getNextArgument(sTemp, true),0));
+                string sStyles = getArgAtPos(getNextArgument(sTemp, true),0,ARGEXTRACT_ASSTRING | ARGEXTRACT_PARSED);
                 if (sStyles.front() == '{')
                     sStyles.erase(0,1);
                 if (sStyles.back() == '}')
@@ -870,7 +848,7 @@ void PlotData::setParams(const string& __sCmd, int nType)
                 _lVLines[i+2].dPos = v[i].real();
             }
 
-            string sDescList = evaluateString(getArgAtPos(getNextArgument(sTemp, true),0));
+            string sDescList = getArgAtPos(getNextArgument(sTemp, true),0, ARGEXTRACT_ASSTRING | ARGEXTRACT_PARSED);
 
             if (sDescList.front() == '{')
                 sDescList.erase(0,1);
@@ -886,7 +864,7 @@ void PlotData::setParams(const string& __sCmd, int nType)
 
             if (sTemp.length())
             {
-                string sStyles = evaluateString(getArgAtPos(getNextArgument(sTemp, true),0));
+                string sStyles = getArgAtPos(getNextArgument(sTemp, true),0, ARGEXTRACT_ASSTRING | ARGEXTRACT_PARSED);
                 if (sStyles.front() == '{')
                     sStyles.erase(0,1);
                 if (sStyles.back() == '}')
@@ -909,7 +887,7 @@ void PlotData::setParams(const string& __sCmd, int nType)
         if (sTemp[0] == '(' && sTemp[sTemp.length()-1] == ')')
             sTemp = sTemp.substr(1,sTemp.length()-2);
 
-        string sAxesList = evaluateString(getArgAtPos(getNextArgument(sTemp, true),0));
+        string sAxesList = getArgAtPos(getNextArgument(sTemp, true), 0, ARGEXTRACT_ASSTRING | ARGEXTRACT_PARSED);
 
         if (sAxesList.front() == '{')
             sAxesList.erase(0,1);
@@ -921,7 +899,7 @@ void PlotData::setParams(const string& __sCmd, int nType)
 
         if (sTemp.length())
         {
-            sFormat = evaluateString(getArgAtPos(getNextArgument(sTemp, true),0));
+            sFormat = getArgAtPos(getNextArgument(sTemp, true),0, ARGEXTRACT_ASSTRING | ARGEXTRACT_PARSED);
 
             if (sFormat.front() == '{')
                 sFormat.erase(0,1);
@@ -950,9 +928,9 @@ void PlotData::setParams(const string& __sCmd, int nType)
                 sTemp = sTemp.substr(1,sTemp.length()-2);
             _parser.SetExpr(getNextArgument(sTemp, true));
             _lVLines[0].dPos = _parser.Eval().real();
-            _lVLines[0].sDesc = evaluateString(getArgAtPos(getNextArgument(sTemp, true),0));
+            _lVLines[0].sDesc = getArgAtPos(getNextArgument(sTemp, true),0,STRINGEXTRACT);
             if (sTemp.length())
-                _lVLines[0].sStyle = evaluateString(getArgAtPos(getNextArgument(sTemp, true),0));
+                _lVLines[0].sStyle = getArgAtPos(getNextArgument(sTemp, true),0, STRINGEXTRACT);
         }
         replaceControlChars(_lVLines[0].sDesc);
     }
@@ -966,9 +944,9 @@ void PlotData::setParams(const string& __sCmd, int nType)
                 sTemp = sTemp.substr(1,sTemp.length()-2);
             _parser.SetExpr(getNextArgument(sTemp, true));
             _lVLines[1].dPos = _parser.Eval().real();
-            _lVLines[1].sDesc = evaluateString(getArgAtPos(getNextArgument(sTemp, true),0));
+            _lVLines[1].sDesc = getArgAtPos(getNextArgument(sTemp, true),0, STRINGEXTRACT);
             if (sTemp.length())
-                _lVLines[1].sStyle = evaluateString(getArgAtPos(getNextArgument(sTemp, true),0));
+                _lVLines[1].sStyle = getArgAtPos(getNextArgument(sTemp, true),0,STRINGEXTRACT);
         }
         replaceControlChars(_lVLines[1].sDesc);
     }
@@ -991,11 +969,11 @@ void PlotData::setParams(const string& __sCmd, int nType)
 
                 if (getNextArgument(sTemp, false).length())
                 {
-                    _AddAxes[0].sLabel = evaluateString(getArgAtPos(getNextArgument(sTemp, true),0));
+                    _AddAxes[0].sLabel = getArgAtPos(getNextArgument(sTemp, true),0,STRINGEXTRACT);
 
                     if (getNextArgument(sTemp, false).length())
                     {
-                        _AddAxes[0].sStyle = evaluateString(getArgAtPos(getNextArgument(sTemp, true),0));
+                        _AddAxes[0].sStyle = getArgAtPos(getNextArgument(sTemp, true),0,STRINGEXTRACT);
 
                         if (!checkColorChars(_AddAxes[0].sStyle))
                             _AddAxes[0].sStyle = "k";
@@ -1006,11 +984,11 @@ void PlotData::setParams(const string& __sCmd, int nType)
             }
             else
             {
-                _AddAxes[0].sLabel = evaluateString(getArgAtPos(getNextArgument(sTemp, true),0));
+                _AddAxes[0].sLabel = getArgAtPos(getNextArgument(sTemp, true),0,STRINGEXTRACT);
 
                 if (getNextArgument(sTemp, false).length())
                 {
-                    _AddAxes[0].sStyle = evaluateString(getArgAtPos(getNextArgument(sTemp, true),0));
+                    _AddAxes[0].sStyle = getArgAtPos(getNextArgument(sTemp, true),0,STRINGEXTRACT);
 
                     if (!checkColorChars(_AddAxes[0].sStyle))
                         _AddAxes[0].sStyle = "k";
@@ -1037,11 +1015,11 @@ void PlotData::setParams(const string& __sCmd, int nType)
 
                 if (getNextArgument(sTemp, false).length())
                 {
-                    _AddAxes[1].sLabel = evaluateString(getArgAtPos(getNextArgument(sTemp, true),0));
+                    _AddAxes[1].sLabel = getArgAtPos(getNextArgument(sTemp, true),0,STRINGEXTRACT);
 
                     if (getNextArgument(sTemp, false).length())
                     {
-                        _AddAxes[1].sStyle = evaluateString(getArgAtPos(getNextArgument(sTemp, true),0));
+                        _AddAxes[1].sStyle = getArgAtPos(getNextArgument(sTemp, true),0,STRINGEXTRACT);
 
                         if (!checkColorChars(_AddAxes[0].sStyle))
                             _AddAxes[1].sStyle = "k";
@@ -1052,11 +1030,11 @@ void PlotData::setParams(const string& __sCmd, int nType)
             }
             else
             {
-                _AddAxes[1].sLabel = evaluateString(getArgAtPos(getNextArgument(sTemp, true),0));
+                _AddAxes[1].sLabel = getArgAtPos(getNextArgument(sTemp, true),0,STRINGEXTRACT);
 
                 if (getNextArgument(sTemp, false).length())
                 {
-                    _AddAxes[1].sStyle = evaluateString(getArgAtPos(getNextArgument(sTemp, true),0));
+                    _AddAxes[1].sStyle = getArgAtPos(getNextArgument(sTemp, true),0,STRINGEXTRACT);
 
                     if (!checkColorChars(_AddAxes[1].sStyle))
                         _AddAxes[1].sStyle = "k";
@@ -1069,13 +1047,11 @@ void PlotData::setParams(const string& __sCmd, int nType)
     if (findParameter(sCmd, "colorscheme", '=') && (nType == ALL || nType & LOCAL))
     {
         unsigned int nPos = findParameter(sCmd, "colorscheme", '=') + 11;
+        std::string sTemp = getArgAtPos(sCmd, nPos, ARGEXTRACT_ASSTRING | ARGEXTRACT_PARSED);
 
-        while (sCmd[nPos] == ' ')
-            nPos++;
-
-        if (sCmd[nPos] == '"')
+        if (sTemp.front() == '"')
         {
-            string __sColorScheme = __sCmd.substr(nPos+1, __sCmd.find('"', nPos+1)-nPos-1);
+            string __sColorScheme = removeSurroundingQuotationMarks(sTemp);
             StripSpaces(__sColorScheme);
 
             if (!checkColorChars(__sColorScheme))
@@ -1101,7 +1077,6 @@ void PlotData::setParams(const string& __sCmd, int nType)
         }
         else
         {
-            string sTemp = sCmd.substr(nPos, sCmd.find(' ', nPos+1)-nPos);
             StripSpaces(sTemp);
 
             auto iter = mColorSchemes.find(sTemp);
@@ -1175,13 +1150,11 @@ void PlotData::setParams(const string& __sCmd, int nType)
     if (findParameter(sCmd, "bgcolorscheme", '=') && (nType == ALL || nType & LOCAL))
     {
         unsigned int nPos = findParameter(sCmd, "bgcolorscheme", '=') + 13;
+        std::string sTemp = getArgAtPos(sCmd, nPos, ARGEXTRACT_ASSTRING | ARGEXTRACT_PARSED);
 
-        while (sCmd[nPos] == ' ')
-            nPos++;
-
-        if (sCmd[nPos] == '"')
+        if (sTemp.front() == '"')
         {
-            string __sBGColorScheme = __sCmd.substr(nPos+1, __sCmd.find('"', nPos+1)-nPos-1);
+            string __sBGColorScheme = removeSurroundingQuotationMarks(sTemp);
             StripSpaces(__sBGColorScheme);
 
             if (!checkColorChars(__sBGColorScheme))
@@ -1213,7 +1186,6 @@ void PlotData::setParams(const string& __sCmd, int nType)
         }
         else
         {
-            string sTemp = sCmd.substr(nPos, sCmd.find(' ', nPos+1)-nPos);
             StripSpaces(sTemp);
 
             auto iter = mColorSchemes.find(sTemp);
@@ -1452,7 +1424,7 @@ void PlotData::setParams(const string& __sCmd, int nType)
     if (findParameter(sCmd, "gridstyle", '=') && (nType == ALL || nType & GLOBAL))
     {
         unsigned int nPos = findParameter(sCmd, "gridstyle", '=')+9;
-        string sTemp = getArgAtPos(__sCmd, nPos);
+        string sTemp = getArgAtPos(__sCmd, nPos, STRINGEXTRACT);
         for (unsigned int i = 0; i < sTemp.length(); i += 3)
         {
             for (unsigned int j = 0; j < 3; j++)
@@ -1499,20 +1471,21 @@ void PlotData::setParams(const string& __sCmd, int nType)
     if (findParameter(sCmd, "coords", '=') && (nType == ALL || nType & GLOBAL))
     {
         int nPos = findParameter(sCmd, "coords", '=')+6;
+        std::string sCoords = getArgAtPos(sCmd, nPos);
 
-        if (getArgAtPos(sCmd, nPos) == "cartesian" || getArgAtPos(sCmd, nPos) == "std")
+        if (sCoords == "cartesian" || sCoords == "std")
             intSettings[INT_COORDS] = CARTESIAN;
-        else if (getArgAtPos(sCmd, nPos) == "polar" || getArgAtPos(sCmd, nPos) == "polar_pz" || getArgAtPos(sCmd, nPos) == "cylindrical")
+        else if (sCoords == "polar" || sCoords == "polar_pz" || sCoords == "cylindrical")
             intSettings[INT_COORDS] = POLAR_PZ;
-        else if (getArgAtPos(sCmd, nPos) == "polar_rp")
+        else if (sCoords == "polar_rp")
             intSettings[INT_COORDS] = POLAR_RP;
-        else if (getArgAtPos(sCmd, nPos) == "polar_rz")
+        else if (sCoords == "polar_rz")
             intSettings[INT_COORDS] = POLAR_RZ;
-        else if (getArgAtPos(sCmd, nPos) == "spherical" || getArgAtPos(sCmd, nPos) == "spherical_pt")
+        else if (sCoords == "spherical" || sCoords == "spherical_pt")
             intSettings[INT_COORDS] = SPHERICAL_PT;
-        else if (getArgAtPos(sCmd, nPos) == "spherical_rp")
+        else if (sCoords == "spherical_rp")
             intSettings[INT_COORDS] = SPHERICAL_RP;
-        else if (getArgAtPos(sCmd, nPos) == "spherical_rt")
+        else if (sCoords == "spherical_rt")
             intSettings[INT_COORDS] = SPHERICAL_RT;
     }
 
@@ -1593,7 +1566,7 @@ void PlotData::setParams(const string& __sCmd, int nType)
         else if (findParameter(sCmd, "ogif", '='))
             nPos = findParameter(sCmd, "ogif", '=') + 4;
 
-        stringSettings[STR_FILENAME] = evaluateString(getArgAtPos(__sCmd, nPos));
+        stringSettings[STR_FILENAME] = getArgAtPos(__sCmd, nPos, STRINGEXTRACT);
         StripSpaces(stringSettings[STR_FILENAME]);
 
         if (stringSettings[STR_FILENAME].length())
@@ -1671,7 +1644,7 @@ void PlotData::setParams(const string& __sCmd, int nType)
         if (findParameter(sCmd, "background", '='))
         {
             nPos = findParameter(sCmd, "background", '=')+10;
-            stringSettings[STR_BACKGROUND] = getArgAtPos(__sCmd, nPos);
+            stringSettings[STR_BACKGROUND] = getArgAtPos(__sCmd, nPos, STRINGEXTRACT);
             StripSpaces(stringSettings[STR_BACKGROUND]);
 
             if (stringSettings[STR_BACKGROUND].length())

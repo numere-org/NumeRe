@@ -323,7 +323,7 @@ Plot::Plot(string& sCmd, MemoryManager& __data, Parser& __parser, Settings& __op
         // then use the "GLOBAL" parameter flag, otherwise use the "SUPERGLOBAL" flag
         if (_pInfo.sPlotParams.length())
         {
-            evaluatePlotParamString();
+            //evaluatePlotParamString();
 
             if (nMultiplots[0]) // if this is a multiplot layout, then we will only evaluate the SUPERGLOBAL parameters
                 _pData.setParams(_pInfo.sPlotParams, PlotData::SUPERGLOBAL);
@@ -397,7 +397,7 @@ Plot::Plot(string& sCmd, MemoryManager& __data, Parser& __parser, Settings& __op
             // Apply the global parameters for this single subplot
             if (_pInfo.sPlotParams.length())
             {
-                evaluatePlotParamString();
+                //evaluatePlotParamString();
                 _pData.setParams(_pInfo.sPlotParams, PlotData::GLOBAL);
                 _pInfo.sPlotParams.clear();
             }
@@ -589,7 +589,7 @@ size_t Plot::createSubPlotSet(bool& bAnimateVar, vector<string>& vPlotCompose, s
         // also parsed at this location
         if (_pInfo.sPlotParams.length())
         {
-            evaluatePlotParamString();
+            //evaluatePlotParamString();
 
             // Apply the parameters locally (for a plot composition) or globally, if
             // this is a single plot command
@@ -2996,21 +2996,25 @@ long Plot::getNN(const mglData& _mData)
 /// \return void
 ///
 /////////////////////////////////////////////////
+#warning TODO (numere#3#02/25/22): Maybe unused
 void Plot::evaluatePlotParamString()
 {
-    string sDummy;
+    std::string sDummy;
+
     if (_pInfo.sPlotParams.find("??") != string::npos)
         _pInfo.sPlotParams = promptForUserInput(_pInfo.sPlotParams);
 
     if (!_functions.call(_pInfo.sPlotParams))
         throw SyntaxError(SyntaxError::FUNCTION_ERROR, _pInfo.sPlotParams, SyntaxError::invalid_position);
 
-    if (NumeReKernel::getInstance()->getStringParser().isStringExpression(_pInfo.sPlotParams) && _pInfo.sPlotParams.find('=') != string::npos)
+    NumeReKernel* instance = NumeReKernel::getInstance();
+
+    if (_pInfo.sPlotParams.find('=') != string::npos)
     {
         unsigned int nPos = 0;
 
-        if (NumeReKernel::getInstance()->getStringParser().containsStringVars(_pInfo.sPlotParams))
-            NumeReKernel::getInstance()->getStringParser().getStringValues(_pInfo.sPlotParams);
+        if (instance->getStringParser().containsStringVars(_pInfo.sPlotParams))
+            instance->getStringParser().getStringValues(_pInfo.sPlotParams);
 
         // Search for all option values in the current string
         while ((nPos = _pInfo.sPlotParams.find('=', nPos)) != string::npos)
@@ -3027,13 +3031,17 @@ void Plot::evaluatePlotParamString()
             while (_pInfo.sPlotParams[nPos] == ' ')
                 nPos++;
 
-            string sOptionValue = extractStringToken(_pInfo.sPlotParams, nPos);
+            std::string sOptionValue = extractStringToken(_pInfo.sPlotParams, nPos);
+            size_t nLength = sOptionValue.length();
 
-            if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sOptionValue))
+            if (!instance->getStringParser().isStringExpression(sOptionValue)
+                && instance->getMemoryManager().containsTablesOrClusters(_pInfo.sPlotParams))
+                getDataElements(sOptionValue, instance->getParser(), instance->getMemoryManager(), instance->getSettings());
+
+            if (instance->getStringParser().isStringExpression(sOptionValue))
             {
-                size_t nLength = sOptionValue.length();
+                std::string sParsedString;
                 StripSpaces(sOptionValue);
-                string sParsedString;
 
                 // Remove surrounding parentheses
                 if (sOptionValue.front() == '(' && sOptionValue.back() == ')')
@@ -3050,7 +3058,7 @@ void Plot::evaluatePlotParamString()
                     bool bVector = sCurrentString.find('{') != string::npos;
 
                     if (containsStrings(sCurrentString))
-                        NumeReKernel::getInstance()->getStringParser().evalAndFormat(sCurrentString, sDummy, true);
+                        instance->getStringParser().evalAndFormat(sCurrentString, sDummy, true);
 
                     if (bVector && sCurrentString.find('{') == string::npos)
                         sCurrentString = "{" + sCurrentString + "}";
@@ -3067,6 +3075,9 @@ void Plot::evaluatePlotParamString()
                 // Replace the parsed string
                 _pInfo.sPlotParams.replace(nPos, nLength, sParsedString);
             }
+            else
+                // Replace the parsed string
+                _pInfo.sPlotParams.replace(nPos, nLength, sOptionValue);
         }
     }
 }

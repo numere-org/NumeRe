@@ -305,7 +305,7 @@ string extractStringToken(const string& sCmd, size_t nPos)
 
         // If it's the last character or the current character is a
         // punctuation character
-        if (i >= sCmd.length() - 1 || (ispunct(sCmd[i]) && sCmd[i] != '_' && sCmd[i] != '+' && sCmd[i] != '#'))
+        if (i >= sCmd.length() - 1 || (ispunct(sCmd[i]) && sCmd[i] != '.' && sCmd[i] != '_' && sCmd[i] != '+' && sCmd[i] != '#'))
         {
             if (i == string::npos)
                 nPos_2 = sCmd.length();
@@ -1462,6 +1462,11 @@ static void parseArg(std::string& sArg, int flags)
     if (!instance->getDefinitions().call(sArg))
         throw SyntaxError(SyntaxError::FUNCTION_ERROR, sArg, "");
 
+    // Read data
+    if (instance->getMemoryManager().containsTablesOrClusters(sArg)
+        && !instance->getStringParser().isStringExpression(sArg))
+        getDataElements(sArg, instance->getParser(), instance->getMemoryManager(), instance->getSettings());
+
     // String evaluation
     if (instance->getStringParser().isStringExpression(sArg))
     {
@@ -1475,10 +1480,6 @@ static void parseArg(std::string& sArg, int flags)
 
     if (flags & ARGEXTRACT_ASSTRING)
         return;
-
-    // Read data
-    if (instance->getMemoryManager().containsTablesOrClusters(sArg))
-        getDataElements(sArg, instance->getParser(), instance->getMemoryManager(), instance->getSettings());
 
     // Numerical evaluation
     instance->getParser().SetExpr(sArg);

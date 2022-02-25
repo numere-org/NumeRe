@@ -3757,7 +3757,7 @@ void NumeReWindow::OpenSourceFile(wxArrayString fnames, unsigned int nLine, int 
             if (nLine)
             {
                 PageHasChanged(pageNr);
-                m_book->getCurrentEditor()->FocusOnLine(nLine, true);
+                m_book->getFocusedEditor()->FocusOnLine(nLine, true);
             }
             else
             {
@@ -3835,8 +3835,8 @@ void NumeReWindow::OpenSourceFile(wxArrayString fnames, unsigned int nLine, int 
 
             if (nLine)
             {
-                m_book->getCurrentEditor()->GotoLine(nLine);
-                m_book->getCurrentEditor()->EnsureVisible(nLine);
+                m_book->getFocusedEditor()->GotoLine(nLine);
+                m_book->getFocusedEditor()->EnsureVisible(nLine);
             }
         }
 
