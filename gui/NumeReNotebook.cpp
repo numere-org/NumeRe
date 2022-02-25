@@ -139,20 +139,68 @@ NumeReEditor* EditorNotebook::createEditor(const wxString& text)
 
 /////////////////////////////////////////////////
 /// \brief Returns a pointer to the embedded
-/// editor instance. Will always return the left
-/// or top editor pointer, if the view is
-/// currently splitted.
+/// editor instance. Will return the left
+/// or top editor pointer or the secondary editor,
+/// if the boolean is set to true. The return
+/// value might be a nullptr.
 ///
 /// \param pageNum size_t
+/// \param secondary bool
 /// \return NumeReEditor*
 ///
 /////////////////////////////////////////////////
-NumeReEditor* EditorNotebook::getEditor(size_t pageNum)
+NumeReEditor* EditorNotebook::getEditor(size_t pageNum, bool secondary)
 {
     if (pageNum >= GetPageCount())
         return nullptr;
 
-    return static_cast<NumeReEditor*>(static_cast<wxSplitterWindow*>(GetPage(pageNum))->GetWindow1());
+    wxSplitterWindow* splitter = static_cast<wxSplitterWindow*>(GetPage(pageNum));
+
+    if (secondary && splitter->GetWindow2())
+        return static_cast<NumeReEditor*>(splitter->GetWindow2());
+
+    return static_cast<NumeReEditor*>(splitter->GetWindow1());
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Returns a pointer to the current
+/// viewed editor in this notebook. Will return
+/// the left or top editor or the secondary one,
+/// if the boolean is set to true. The return
+/// value might be a nullptr. This is a
+/// convenience wrapper around
+/// EditorNotebook::getEditor.
+///
+/// \param secondary bool
+/// \return NumeReEditor*
+///
+/////////////////////////////////////////////////
+NumeReEditor* EditorNotebook::getCurrentEditor(bool secondary)
+{
+    return getEditor(GetSelection(), secondary);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Returns a pointer to the current
+/// focused editor. This will automatically
+/// return the secondary editor, it that is the
+/// focused one. This handling might be weak. In
+/// doubt, the primary editor is returned.
+///
+/// \return NumeReEditor*
+///
+/////////////////////////////////////////////////
+NumeReEditor* EditorNotebook::getFocusedEditor()
+{
+    NumeReEditor* first = getCurrentEditor(false);
+    NumeReEditor* second = getCurrentEditor(true);
+
+    if (second && second->HasFocus())
+        return second;
+
+    return first;
 }
 
 
@@ -198,6 +246,8 @@ void EditorNotebook::split(size_t pageNum, bool horizontal)
             splitter->SplitHorizontally(splitter->GetWindow1(), secEdit);
         else
             splitter->SplitVertically(splitter->GetWindow1(), secEdit);
+
+        splitter->SetSashGravity(0.5);
     }
 }
 

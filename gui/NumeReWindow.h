@@ -207,10 +207,7 @@ class NumeReWindow : public wxFrame
 
         void refreshFunctionTree();
 
-        NumeReEditor* GetCurrentEditor()
-        {
-            return m_currentEd;
-        }
+        NumeReEditor* GetCurrentEditor();
 
         void PassImageList(wxImageList* imagelist);
 
@@ -376,7 +373,7 @@ class NumeReWindow : public wxFrame
         /*! Notebook for the tree controls on the right side */
         ViewerBook* m_treeBook;
         /*! Pointer to the currently active editor */
-        NumeReEditor* m_currentEd;
+        //NumeReEditor* m_currentEd;
 
         NumeReHistory* m_history;
         VariableViewer* m_varViewer;

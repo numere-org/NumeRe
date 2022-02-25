@@ -397,7 +397,6 @@ NumeReWindow::NumeReWindow(const wxString& title, const wxPoint& pos, const wxSi
     this->SetSize(1024, 768);
 
     m_debugViewer = nullptr;
-    m_currentEd = nullptr;
     m_currentView = nullptr;
     m_statusBar = nullptr;
     fSplitPercentage = -0.65f;
@@ -557,7 +556,7 @@ NumeReWindow::NumeReWindow(const wxString& title, const wxPoint& pos, const wxSi
 
     // TO BE INVESTIGATED: For some reason we have to
     // set the procedure list twice to function it correctly
-    m_procedureViewer->setCurrentEditor(m_currentEd);
+    m_procedureViewer->setCurrentEditor(m_book->getCurrentEditor());
 
     // bind the event after the loading of the files - FIX for Win10 1803
     Connect(wxEVT_FSWATCHER, wxFileSystemWatcherEventHandler(NumeReWindow::OnFileSystemEvent));
@@ -1015,11 +1014,11 @@ void NumeReWindow::prepareSession()
                     if (vSessionFile.size() != 1)
                     {
                         NewFile();
-                        m_currentEd->SetUnsaved();
+                        m_book->getCurrentEditor()->SetUnsaved();
                     }
 
-                    m_currentEd->GotoPos(nLine);
-                    m_currentEd->ToggleSettings(nSetting);
+                    m_book->getCurrentEditor()->GotoPos(nLine);
+                    m_book->getCurrentEditor()->ToggleSettings(nSetting);
                     continue;
                 }
 
@@ -1027,10 +1026,11 @@ void NumeReWindow::prepareSession()
                 if (wxFileExists(sFileName))
                 {
                     OpenSourceFile(wxArrayString(1, sFileName));
-                    m_currentEd->GotoPos(nLine);
-                    m_currentEd->ToggleSettings(nSetting);
-                    m_currentEd->EnsureVisible(m_currentEd->LineFromPosition(nLine));
-                    m_currentEd->setBookmarks(toVector(sBookmarks));
+                    NumeReEditor* currentEd = m_book->getCurrentEditor();
+                    currentEd->GotoPos(nLine);
+                    currentEd->ToggleSettings(nSetting);
+                    currentEd->EnsureVisible(currentEd->LineFromPosition(nLine));
+                    currentEd->setBookmarks(toVector(sBookmarks));
                 }
                 else
                 {
@@ -1091,7 +1091,7 @@ void NumeReWindow::OnClose(wxCloseEvent &event)
     }
 
     // double check in case something went wrong
-    if (m_currentEd && m_currentEd->Modified())
+    if (m_book->getCurrentEditor() && m_book->getCurrentEditor()->Modified())
     {
         if (event.CanVeto())
         {
@@ -1175,8 +1175,10 @@ void NumeReWindow::OnMenuEvent(wxCommandEvent &event)
                 command = (data->tooltip).substr(0, (data->tooltip).find('(')+1);
             else if (data->isConstant)
                 command = (data->tooltip).substr(0, (data->tooltip).find(' '));
-            m_currentEd->InsertText(m_currentEd->GetCurrentPos(), command);
-            m_currentEd->GotoPos(m_currentEd->GetCurrentPos()+command.length());
+
+            NumeReEditor* edit = m_book->getFocusedEditor();
+            edit->InsertText(edit->GetCurrentPos(), command);
+            edit->GotoPos(edit->GetCurrentPos()+command.length());
             break;
         }
         case ID_MENU_INSERT_IN_CONSOLE_FROM_TREE:
@@ -1245,57 +1247,73 @@ void NumeReWindow::OnMenuEvent(wxCommandEvent &event)
             break;
         case ID_MENU_AUTOINDENT:
         {
-            m_currentEd->ApplyAutoIndentation();
+            m_book->getCurrentEditor()->ApplyAutoIndentation();
             break;
         }
         case ID_MENU_LINEWRAP:
         {
             wxToolBar* t = GetToolBar();
-            m_currentEd->ToggleSettings(NumeReEditor::SETTING_WRAPEOL);
-            t->ToggleTool(ID_MENU_LINEWRAP, m_currentEd->getEditorSetting(NumeReEditor::SETTING_WRAPEOL));
-            m_menuItems[ID_MENU_LINEWRAP]->Check(m_currentEd->getEditorSetting(NumeReEditor::SETTING_WRAPEOL));
+            m_book->getCurrentEditor()->ToggleSettings(NumeReEditor::SETTING_WRAPEOL);
+
+            if (m_book->getCurrentEditor(true))
+                m_book->getCurrentEditor(true)->ToggleSettings(NumeReEditor::SETTING_WRAPEOL);
+
+            t->ToggleTool(ID_MENU_LINEWRAP, m_book->getCurrentEditor()->getEditorSetting(NumeReEditor::SETTING_WRAPEOL));
+            m_menuItems[ID_MENU_LINEWRAP]->Check(m_book->getCurrentEditor()->getEditorSetting(NumeReEditor::SETTING_WRAPEOL));
             break;
         }
         case ID_MENU_DISPCTRLCHARS:
         {
-            m_currentEd->ToggleSettings(NumeReEditor::SETTING_DISPCTRLCHARS);
+            m_book->getCurrentEditor()->ToggleSettings(NumeReEditor::SETTING_DISPCTRLCHARS);
+
+            if (m_book->getCurrentEditor(true))
+                m_book->getCurrentEditor(true)->ToggleSettings(NumeReEditor::SETTING_DISPCTRLCHARS);
+
             break;
         }
         case ID_MENU_USETXTADV:
         {
-            m_currentEd->ToggleSettings(NumeReEditor::SETTING_USETXTADV);
+            m_book->getCurrentEditor()->ToggleSettings(NumeReEditor::SETTING_USETXTADV);
+
+            if (m_book->getCurrentEditor(true))
+                m_book->getCurrentEditor(true)->ToggleSettings(NumeReEditor::SETTING_USETXTADV);
+
             break;
         }
         case ID_MENU_USEANALYZER:
         {
             wxToolBar* t = GetToolBar();
-            m_currentEd->ToggleSettings(NumeReEditor::SETTING_USEANALYZER);
-            t->ToggleTool(ID_MENU_USEANALYZER, m_currentEd->getEditorSetting(NumeReEditor::SETTING_USEANALYZER));
-            m_menuItems[ID_MENU_USEANALYZER]->Check(m_currentEd->getEditorSetting(NumeReEditor::SETTING_USEANALYZER));
+            m_book->getCurrentEditor()->ToggleSettings(NumeReEditor::SETTING_USEANALYZER);
+            t->ToggleTool(ID_MENU_USEANALYZER, m_book->getCurrentEditor()->getEditorSetting(NumeReEditor::SETTING_USEANALYZER));
+            m_menuItems[ID_MENU_USEANALYZER]->Check(m_book->getCurrentEditor()->getEditorSetting(NumeReEditor::SETTING_USEANALYZER));
             break;
         }
         case ID_MENU_INDENTONTYPE:
         {
             wxToolBar* t = GetToolBar();
-            m_currentEd->ToggleSettings(NumeReEditor::SETTING_INDENTONTYPE);
-            t->ToggleTool(ID_MENU_INDENTONTYPE, m_currentEd->getEditorSetting(NumeReEditor::SETTING_INDENTONTYPE));
-            m_menuItems[ID_MENU_INDENTONTYPE]->Check(m_currentEd->getEditorSetting(NumeReEditor::SETTING_INDENTONTYPE));
+            m_book->getCurrentEditor()->ToggleSettings(NumeReEditor::SETTING_INDENTONTYPE);
+
+            if (m_book->getCurrentEditor(true))
+                m_book->getCurrentEditor(true)->ToggleSettings(NumeReEditor::SETTING_INDENTONTYPE);
+
+            t->ToggleTool(ID_MENU_INDENTONTYPE, m_book->getCurrentEditor()->getEditorSetting(NumeReEditor::SETTING_INDENTONTYPE));
+            m_menuItems[ID_MENU_INDENTONTYPE]->Check(m_book->getCurrentEditor()->getEditorSetting(NumeReEditor::SETTING_INDENTONTYPE));
             break;
         }
         case ID_MENU_USESECTIONS:
         {
-            m_currentEd->ToggleSettings(NumeReEditor::SETTING_USESECTIONS);
-            m_menuItems[ID_MENU_USESECTIONS]->Check(m_currentEd->getEditorSetting(NumeReEditor::SETTING_USESECTIONS));
+            m_book->getCurrentEditor()->ToggleSettings(NumeReEditor::SETTING_USESECTIONS);
+            m_menuItems[ID_MENU_USESECTIONS]->Check(m_book->getCurrentEditor()->getEditorSetting(NumeReEditor::SETTING_USESECTIONS));
             break;
         }
         case ID_MENU_AUTOFORMAT:
         {
-            m_currentEd->ApplyAutoFormat();
+            m_book->getCurrentEditor()->ApplyAutoFormat();
             break;
         }
         case ID_MENU_TRANSPOSESELECTION:
         {
-            m_currentEd->OnTranspose();
+            m_book->getFocusedEditor()->OnTranspose();
             break;
         }
         case ID_MENU_GOTOLINE:
@@ -1308,94 +1326,98 @@ void NumeReWindow::OnMenuEvent(wxCommandEvent &event)
             m_book->ToggleWindowStyle(wxNB_MULTILINE);
             m_book->SendSizeEvent();
             m_book->Refresh();
-            m_currentEd->Refresh();
+            m_book->getCurrentEditor()->Refresh();
+
+            if (m_book->getCurrentEditor(true))
+                m_book->getCurrentEditor(true)->Refresh();
+
             m_multiRowState = !m_multiRowState;
             break;
         }
         case ID_MENU_TOGGLE_COMMENT_LINE:
         {
-            m_currentEd->ToggleCommentLine();
+            m_book->getFocusedEditor()->ToggleCommentLine();
             break;
         }
         case ID_MENU_TOGGLE_COMMENT_SELECTION:
         {
-            m_currentEd->ToggleCommentSelection();
+            m_book->getFocusedEditor()->ToggleCommentSelection();
             break;
         }
         case ID_MENU_FOLD_ALL:
         {
-            m_currentEd->FoldAll();
+            m_book->getFocusedEditor()->FoldAll();
             break;
         }
         case ID_MENU_UNFOLD_ALL:
         {
-            m_currentEd->UnfoldAll();
+            m_book->getFocusedEditor()->UnfoldAll();
             break;
         }
         case ID_MENU_UNHIDE_ALL:
         {
-            m_currentEd->OnUnhideAllFromMenu();
+            m_book->getFocusedEditor()->OnUnhideAllFromMenu();
             break;
         }
         case ID_MENU_SELECTION_UP:
         {
-            m_currentEd->MoveSelection(false);
+            m_book->getFocusedEditor()->MoveSelection(false);
             break;
         }
         case ID_MENU_SELECTION_DOWN:
         {
-            m_currentEd->MoveSelection();
+            m_book->getFocusedEditor()->MoveSelection();
             break;
         }
         case ID_MENU_SORT_SELECTION_ASC:
         {
-            m_currentEd->sortSelection();
+            m_book->getFocusedEditor()->sortSelection();
             break;
         }
         case ID_MENU_SORT_SELECTION_DESC:
         {
-            m_currentEd->sortSelection(false);
+            m_book->getFocusedEditor()->sortSelection(false);
             break;
         }
         case ID_MENU_BOOKMARK_TOGGLE:
         {
-            m_currentEd->toggleBookmark();
+            m_book->getFocusedEditor()->toggleBookmark();
             break;
         }
         case ID_MENU_BOOKMARK_CLEARMENU:
         {
-            m_currentEd->clearBookmarks();
+            m_book->getCurrentEditor()->clearBookmarks();
             break;
         }
         case ID_MENU_BOOKMARK_PREVIOUS:
         {
-            m_currentEd->JumpToBookmark(false);
+            m_book->getFocusedEditor()->JumpToBookmark(false);
             break;
         }
         case ID_MENU_BOOKMARK_NEXT:
         {
-            m_currentEd->JumpToBookmark(true);
+            m_book->getFocusedEditor()->JumpToBookmark(true);
             break;
         }
         case ID_MENU_FIND_DUPLICATES:
         {
             // only if the file type is matching
-            m_currentEd->InitDuplicateCode();
+            m_book->getCurrentEditor()->InitDuplicateCode();
             break;
         }
         case ID_MENU_STRIP_SPACES_BOTH:
         {
-            m_currentEd->removeWhiteSpaces(RM_WS_BOTH);
+            m_book->getFocusedEditor()->removeWhiteSpaces(RM_WS_BOTH);
             break;
         }
         case ID_MENU_STRIP_SPACES_FRONT:
         {
-            m_currentEd->removeWhiteSpaces(RM_WS_FRONT);
+            m_book->getFocusedEditor()->removeWhiteSpaces(RM_WS_FRONT);
             break;
         }
         case ID_MENU_STRIP_SPACES_BACK:
         {
-            m_currentEd->removeWhiteSpaces(RM_WS_BACK);
+            m_book->getFocusedEditor()->removeWhiteSpaces(RM_WS_BACK);
             break;
         }
         case ID_MENU_CREATE_LATEX_FILE:
@@ -1483,7 +1505,7 @@ void NumeReWindow::OnMenuEvent(wxCommandEvent &event)
 
         case ID_MENU_CLOSEPAGE:
         {
-            if (!m_currentEd)
+            if (!m_book->getCurrentEditor())
             {
                 return;
             }
@@ -1558,13 +1580,9 @@ void NumeReWindow::OnMenuEvent(wxCommandEvent &event)
         case ID_MENU_UNDO:
         {
             if(id == ID_MENU_REDO)
-            {
-                m_currentEd->Redo();
-            }
+                m_book->getFocusedEditor()->Redo();
             else
-            {
-                m_currentEd->Undo();
-            }
+                m_book->getFocusedEditor()->Undo();
 
             m_book->Refresh();
             break;
@@ -1572,8 +1590,8 @@ void NumeReWindow::OnMenuEvent(wxCommandEvent &event)
 
         case ID_MENU_COPY:
         {
-            if (m_currentEd->HasFocus())
-                m_currentEd->Copy();
+            if (m_book->getFocusedEditor()->HasFocus())
+                m_book->getFocusedEditor()->Copy();
             else
                 event.Skip();
             break;
@@ -1581,13 +1599,13 @@ void NumeReWindow::OnMenuEvent(wxCommandEvent &event)
 
         case ID_MENU_CUT:
         {
-            m_currentEd->Cut();
+            m_book->getFocusedEditor()->Cut();
             break;
         }
 
         case ID_MENU_PASTE:
         {
-            m_currentEd->Paste();
+            m_book->getFocusedEditor()->Paste();
             break;
         }
 
@@ -1599,12 +1617,12 @@ void NumeReWindow::OnMenuEvent(wxCommandEvent &event)
         }
         case ID_MENU_FIND_PROCEDURE:
         {
-            m_currentEd->OnFindProcedureFromMenu();
+            m_book->getFocusedEditor()->OnFindProcedureFromMenu();
             break;
         }
         case ID_MENU_FIND_INCLUDE:
         {
-            m_currentEd->OnFindIncludeFromMenu();
+            m_book->getFocusedEditor()->OnFindIncludeFromMenu();
             break;
         }
 
@@ -1632,12 +1650,12 @@ void NumeReWindow::OnMenuEvent(wxCommandEvent &event)
         }
         case ID_MENU_RENAME_SYMBOL:
         {
-            m_currentEd->OnRenameSymbolsFromMenu();
+            m_book->getFocusedEditor()->OnRenameSymbolsFromMenu();
             break;
         }
         case ID_MENU_ABSTRAHIZE_SECTION:
         {
-            m_currentEd->OnAbstrahizeSectionFromMenu();
+            m_book->getFocusedEditor()->OnAbstrahizeSectionFromMenu();
             break;
         }
         case ID_MENU_SHOW_DEPENDENCY_REPORT:
@@ -1652,12 +1670,12 @@ void NumeReWindow::OnMenuEvent(wxCommandEvent &event)
         }
         case ID_MENU_CREATE_DOCUMENTATION:
         {
-            m_currentEd->AddProcedureDocumentation();
+            m_book->getFocusedEditor()->AddProcedureDocumentation();
             break;
         }
         case ID_MENU_EXPORT_AS_HTML:
         {
-            m_currentEd->OnExtractAsHTML();
+            m_book->getFocusedEditor()->OnExtractAsHTML();
             break;
         }
         case ID_MENU_PLUGINBROWSER:
@@ -1694,32 +1712,32 @@ void NumeReWindow::OnMenuEvent(wxCommandEvent &event)
 
         case ID_MENU_ADDEDITORBREAKPOINT:
         {
-            m_currentEd->OnAddBreakpoint(event);
+            m_book->getFocusedEditor()->OnAddBreakpoint(event);
             break;
         }
         case ID_MENU_REMOVEEDITORBREAKPOINT:
         {
-            m_currentEd->OnRemoveBreakpoint(event);
+            m_book->getFocusedEditor()->OnRemoveBreakpoint(event);
             break;
         }
         case ID_MENU_CLEAREDITORBREAKPOINTS:
         {
-            m_currentEd->OnClearBreakpoints(event);
+            m_book->getFocusedEditor()->OnClearBreakpoints(event);
             break;
         }
 
         case ID_MENU_EXECUTE:
         {
-            if (!m_currentEd->HasBeenSaved() || m_currentEd->Modified())
+            if (!m_book->getCurrentEditor()->HasBeenSaved() || m_book->getCurrentEditor()->Modified())
             {
-                int tabNum = m_book->FindPagePosition(m_currentEd);
+                int tabNum = m_book->GetSelection();
                 int result = HandleModifiedFile(tabNum, MODIFIEDFILE_COMPILE);
 
                 if (result == wxCANCEL)
                     return;
             }
 
-            string command = replacePathSeparator((m_currentEd->GetFileName()).GetFullPath().ToStdString());
+            string command = replacePathSeparator((m_book->getCurrentEditor()->GetFileName()).GetFullPath().ToStdString());
             OnExecuteFile(command, id);
             break;
         }
@@ -2370,7 +2388,7 @@ void NumeReWindow::evaluateDebugInfo(const vector<string>& vDebugInfo)
 /////////////////////////////////////////////////
 void NumeReWindow::createLaTeXFile()
 {
-    std::string sFileName = m_currentEd->GetFileNameAndPath().ToStdString();
+    std::string sFileName = m_book->getCurrentEditor()->GetFileNameAndPath().ToStdString();
     DocumentationGenerator docGen(m_terminal->getSyntax(), m_terminal->getPathSettings()[SAVEPATH] + "/docs");
 
     std::string sDocFile = docGen.createDocumentation(sFileName);
@@ -2392,7 +2410,7 @@ void NumeReWindow::createLaTeXFile()
 /////////////////////////////////////////////////
 void NumeReWindow::runLaTeX()
 {
-    std::string sFileName = m_currentEd->GetFileNameAndPath().ToStdString();
+    std::string sFileName = m_book->getCurrentEditor()->GetFileNameAndPath().ToStdString();
     DocumentationGenerator docGen(m_terminal->getSyntax(), m_terminal->getPathSettings()[SAVEPATH] + "/docs");
     std::string sMain = docGen.createFullDocumentation(sFileName);
 
@@ -2426,11 +2444,11 @@ void NumeReWindow::runLaTeX()
 /////////////////////////////////////////////////
 void NumeReWindow::compileLaTeX()
 {
-    FileFilterType fileType = m_currentEd->getFileType();
+    FileFilterType fileType = m_book->getCurrentEditor()->getFileType();
 
     if (fileType == FILE_TEXSOURCE)
     {
-        wxFileName filename = m_currentEd->GetFileName();
+        wxFileName filename = m_book->getCurrentEditor()->GetFileName();
         ShellExecuteA(NULL, "open", (m_options->GetLaTeXRoot()+"/xelatex.exe").ToStdString().c_str(), (filename.GetName().ToStdString() + " -interaction=nonstopmode").c_str(), filename.GetPath().ToStdString().c_str(), SW_SHOW);
     }
 }
@@ -2808,11 +2826,9 @@ void NumeReWindow::NewFile(FileFilterType _filetype, const wxString& defaultfile
         edit->SetText("\r\n");
         int settings = CopyEditorSettings(_filetype);
 
-        m_currentEd = edit;
-
-        m_currentEd->EmptyUndoBuffer();
+        edit->EmptyUndoBuffer();
         m_currentPage = m_book->GetPageCount()-1;
-        m_currentEd->ToggleSettings(settings);
+        edit->ToggleSettings(settings);
         m_book->SetSelection(m_currentPage);
     }
     else if (_filetype == FILE_DIFF)
@@ -2828,17 +2844,15 @@ void NumeReWindow::NewFile(FileFilterType _filetype, const wxString& defaultfile
         edit->SetText("DIFF");
         int settings = CopyEditorSettings(_filetype);
 
-        m_currentEd = edit;
-
         // Set the corresponding full file name
-        m_currentEd->SetFilename(wxFileName(vPaths[SAVEPATH], filename), false);
+        edit->SetFilename(wxFileName(vPaths[SAVEPATH], filename), false);
 
         m_currentPage = m_book->GetPageCount()-1;
-        m_currentEd->UpdateSyntaxHighlighting();
+        edit->UpdateSyntaxHighlighting();
 
         // Add a new tab for the editor
-        m_book->SetTabText(m_currentPage, m_currentEd->GetFileNameAndPath());
-        m_currentEd->ToggleSettings(settings);
+        m_book->SetTabText(m_currentPage, edit->GetFileNameAndPath());
+        edit->ToggleSettings(settings);
         m_book->SetSelection(m_currentPage);
     }
     else
@@ -2986,28 +3000,26 @@ void NumeReWindow::NewFile(FileFilterType _filetype, const wxString& defaultfile
 
         int settings = CopyEditorSettings(_filetype);
 
-        m_currentEd = edit;
-
         // Set the corresponding full file name
         if (_filetype == FILE_NSCR || _filetype == FILE_PLUGIN || _filetype == FILE_NLYT)
-            m_currentEd->SetFilename(wxFileName(vPaths[SCRIPTPATH] + folder, filename), false);
+            edit->SetFilename(wxFileName(vPaths[SCRIPTPATH] + folder, filename), false);
         else if (_filetype == FILE_NPRC)
-            m_currentEd->SetFilename(wxFileName(vPaths[PROCPATH] + folder, filename), false);
+            edit->SetFilename(wxFileName(vPaths[PROCPATH] + folder, filename), false);
         else
-            m_currentEd->SetFilename(wxFileName(vPaths[SAVEPATH] + folder, filename), false);
+            edit->SetFilename(wxFileName(vPaths[SAVEPATH] + folder, filename), false);
 
         m_currentPage = m_book->GetPageCount()-1;
-        m_currentEd->UpdateSyntaxHighlighting();
+        edit->UpdateSyntaxHighlighting();
 
         // Jump to the predefined template position
-        m_currentEd->GotoPipe();
+        edit->GotoPipe();
 
-        m_currentEd->SetUnsaved();
-        m_currentEd->EmptyUndoBuffer();
+        edit->SetUnsaved();
+        edit->EmptyUndoBuffer();
 
         // Add a new tab for the editor
         m_book->SetTabText(m_currentPage, edit->GetFileNameAndPath());
-        m_currentEd->ToggleSettings(settings);
+        edit->ToggleSettings(settings);
         m_book->SetSelection(m_currentPage);
     }
 }
@@ -3026,10 +3038,11 @@ void NumeReWindow::NewFile(FileFilterType _filetype, const wxString& defaultfile
 void NumeReWindow::ShowRevision(const wxString& revisionName, const wxString& revisionContent)
 {
     NewFile(FILE_DIFF, revisionName);
-    m_currentEd->SetText(revisionContent);
-    m_currentEd->EmptyUndoBuffer();
-    m_currentEd->SetUnsaved();
-    m_currentEd->UpdateSyntaxHighlighting(true);
+    NumeReEditor* edit = m_book->getCurrentEditor();
+    edit->SetText(revisionContent);
+    edit->EmptyUndoBuffer();
+    edit->SetUnsaved();
+    edit->UpdateSyntaxHighlighting(true);
 }
 
 
@@ -3044,9 +3057,9 @@ void NumeReWindow::ShowRevision(const wxString& revisionName, const wxString& re
 /////////////////////////////////////////////////
 int NumeReWindow::CopyEditorSettings(FileFilterType _fileType)
 {
-    if (m_currentEd && !m_loadingFilesDuringStartup)
+    if (m_book->getCurrentEditor() && !m_loadingFilesDuringStartup)
     {
-        int settings = m_currentEd->getSettings();
+        int settings = m_book->getCurrentEditor()->getSettings();
 
         if (_fileType != FILE_NSCR && _fileType != FILE_NPRC && _fileType != FILE_MATLAB && _fileType != FILE_PLUGIN && _fileType != FILE_XML)
         {
@@ -3095,11 +3108,10 @@ void NumeReWindow::DefaultPage()
     edit->SetDropTarget(new NumeReDropTarget(this, edit, NumeReDropTarget::EDITOR));
 #endif
 
-    m_currentEd = edit;
-    m_currentEd->LoadFileText(template_file);
-    m_currentEd->defaultPage = true;
-    m_currentEd->SetReadOnly(true);
-    m_currentEd->ToggleSettings(NumeReEditor::SETTING_USETXTADV);
+    edit->LoadFileText(template_file);
+    edit->defaultPage = true;
+    edit->SetReadOnly(true);
+    edit->ToggleSettings(NumeReEditor::SETTING_USETXTADV);
     m_currentPage = m_book->GetPageCount()-1;
     m_book->SetSelection(m_currentPage);
 }
@@ -3123,7 +3135,6 @@ void NumeReWindow::PageHasChanged (int pageNr)
     if (m_book->GetPageCount() == 0)
     {
         m_currentPage = -1;
-        m_currentEd = nullptr;
         m_procedureViewer->setCurrentEditor(nullptr);
         return;
     }
@@ -3132,7 +3143,6 @@ void NumeReWindow::PageHasChanged (int pageNr)
     if (pageNr == -1)
     {
         pageNr = m_book->GetSelection();
-
     }
 
     if ((int)m_book->GetPageCount() <= pageNr)
@@ -3143,23 +3153,24 @@ void NumeReWindow::PageHasChanged (int pageNr)
     // activate the selected page
     if (pageNr >= 0)
     {
-        if (m_currentEd->AutoCompActive())
-            m_currentEd->AutoCompCancel();
+        NumeReEditor* edit = m_book->getCurrentEditor();
 
-        if (m_currentEd->CallTipActive())
-            m_currentEd->AdvCallTipCancel();
+        if (edit->AutoCompActive())
+            edit->AutoCompCancel();
+
+        if (edit->CallTipActive())
+            edit->AdvCallTipCancel();
 
         m_currentPage = pageNr;
-        m_currentEd = m_book->getEditor(m_currentPage);
+        edit = m_book->getEditor(m_currentPage); // might need adaptions for the procedure viewer
         m_book->SetSelection(pageNr);
 
         if (!m_book->GetMouseFocus())
-            m_currentEd->SetFocus();
+            edit->SetFocus();
     }
     else
     {
         m_currentPage = -1;
-        m_currentEd = nullptr;
     }
 
     // Set the current editor in the procedure viewer,
@@ -3167,20 +3178,22 @@ void NumeReWindow::PageHasChanged (int pageNr)
     if (m_appClosing || m_loadingFilesDuringStartup)
         m_procedureViewer->setCurrentEditor(nullptr);
     else
-        m_procedureViewer->setCurrentEditor(m_currentEd);
+        m_procedureViewer->setCurrentEditor(m_book->getCurrentEditor());
 
     m_book->Refresh();
 
-    if (m_currentEd != nullptr)
+    if (m_book->getCurrentEditor() != nullptr)
     {
-        m_menuItems[ID_MENU_LINEWRAP]->Check(m_currentEd->getEditorSetting(NumeReEditor::SETTING_WRAPEOL));
-        m_menuItems[ID_MENU_DISPCTRLCHARS]->Check(m_currentEd->getEditorSetting(NumeReEditor::SETTING_DISPCTRLCHARS));
-        m_menuItems[ID_MENU_USETXTADV]->Check(m_currentEd->getEditorSetting(NumeReEditor::SETTING_USETXTADV));
-        m_menuItems[ID_MENU_USESECTIONS]->Check(m_currentEd->getEditorSetting(NumeReEditor::SETTING_USESECTIONS));
-        m_menuItems[ID_MENU_USEANALYZER]->Check(m_currentEd->getEditorSetting(NumeReEditor::SETTING_USEANALYZER));
-        m_menuItems[ID_MENU_INDENTONTYPE]->Check(m_currentEd->getEditorSetting(NumeReEditor::SETTING_INDENTONTYPE));
+        NumeReEditor* edit = m_book->getCurrentEditor();
 
-        m_currentEd->Refresh();
+        m_menuItems[ID_MENU_LINEWRAP]->Check(edit->getEditorSetting(NumeReEditor::SETTING_WRAPEOL));
+        m_menuItems[ID_MENU_DISPCTRLCHARS]->Check(edit->getEditorSetting(NumeReEditor::SETTING_DISPCTRLCHARS));
+        m_menuItems[ID_MENU_USETXTADV]->Check(edit->getEditorSetting(NumeReEditor::SETTING_USETXTADV));
+        m_menuItems[ID_MENU_USESECTIONS]->Check(edit->getEditorSetting(NumeReEditor::SETTING_USESECTIONS));
+        m_menuItems[ID_MENU_USEANALYZER]->Check(edit->getEditorSetting(NumeReEditor::SETTING_USEANALYZER));
+        m_menuItems[ID_MENU_INDENTONTYPE]->Check(edit->getEditorSetting(NumeReEditor::SETTING_INDENTONTYPE));
+
+        edit->Refresh();
 
         wxString tabText = m_book->GetPageText(m_currentPage);
         // set the title of the main window according the current opened file
@@ -3308,13 +3321,15 @@ void NumeReWindow::CloseFile(int pageNr, bool askforsave)
 
     if (m_book->GetPageCount() > 0)
     {
-        g_logger.info("Closing file '" + m_currentEd->GetFileNameAndPath().ToStdString() + "'.");
+        NumeReEditor* edit = m_book->getCurrentEditor();
+
+        g_logger.info("Closing file '" + edit->GetFileNameAndPath().ToStdString() + "'.");
         wxFileName currentFileName;
-        m_terminal->clearBreakpoints(m_currentEd->GetFileNameAndPath().ToStdString());
+        m_terminal->clearBreakpoints(edit->GetFileNameAndPath().ToStdString());
 
         if ((m_book->GetPageCount() > 1) || m_appClosing)
         {
-            currentFileName = m_currentEd->GetFileName();
+            currentFileName = edit->GetFileName();
             //NumeReEditor* pEdit = static_cast <NumeReEditor* >(m_book->GetPage(pageNr));
             m_book->DeletePage (pageNr);
             m_watcher->Remove(currentFileName);
@@ -3323,13 +3338,13 @@ void NumeReWindow::CloseFile(int pageNr, bool askforsave)
         else
         {
             m_fileNum = 1;
-            m_watcher->Remove(m_currentEd->GetFileName());
+            m_watcher->Remove(edit->GetFileName());
             //wxString locationPrefix = "(?) ";
             wxString noname = _guilang.get("GUI_NEWFILE_UNTITLED") + " " + wxString::Format ("%d", m_fileNum);
             m_book->SetPageText (pageNr, noname);
-            m_currentEd->ResetEditor();
-            m_currentEd->SetText("\r\n");
-            m_currentEd->EmptyUndoBuffer();
+            edit->ResetEditor();
+            edit->SetText("\r\n");
+            edit->EmptyUndoBuffer();
         }
 
         if(m_book->GetPageCount() > 0)
@@ -3567,21 +3582,21 @@ int NumeReWindow::HandleModifiedFile(int pageNr, ModifiedFileAction fileAction)
         if (fileAction != MODIFIEDFILE_COMPILE || !m_options->getSetting(SETTING_B_AUTOSAVEEXECUTION).active())
             result = wxMessageBox (saveMessage, _guilang.get("GUI_SAVE_QUESTION"), options);//wxYES_NO | wxCANCEL | wxICON_QUESTION);
 
-        if( result == wxYES)
+        if (result == wxYES)
         {
-            NumeReEditor* tmpCurrentEd = m_currentEd;
-            m_currentEd = edit;
+            size_t selection = m_book->GetSelection();
+            m_book->ChangeSelection(pageNr);
             // only do a Save As if necessary
             SaveCurrentFile(false);
-            m_currentEd = tmpCurrentEd;
-            m_currentEd->SetFocus();
+            m_book->ChangeSelection(selection);
+            m_book->getCurrentEditor()->SetFocus();
 
             if (edit->Modified())
             {
                 wxString errorMessage = fileName + " could not be saved!";
                 wxMessageBox (errorMessage, "File not closed",
                     wxOK | wxICON_EXCLAMATION);
-                m_currentEd->Refresh();
+                m_book->getCurrentEditor()->Refresh();
             }
         }
 
@@ -3611,7 +3626,7 @@ wxArrayString NumeReWindow::OpenFile(FileFilterType filterType)
 {
     wxArrayString fnames;
 
-    if (!m_currentEd)
+    if (!m_book->getCurrentEditor())
         return fnames;
 
     wxString filterString = ConstructFilterString(filterType);
@@ -3621,7 +3636,7 @@ wxArrayString NumeReWindow::OpenFile(FileFilterType filterType)
     if (dlg.ShowModal() != wxID_OK)
         return fnames;
 
-    m_currentEd->SetFocus();
+    m_book->getCurrentEditor()->SetFocus();
     dlg.GetPaths (fnames);
 
     return fnames;
@@ -3742,7 +3757,7 @@ void NumeReWindow::OpenSourceFile(wxArrayString fnames, unsigned int nLine, int 
             if (nLine)
             {
                 PageHasChanged(pageNr);
-                m_currentEd->FocusOnLine(nLine, true);
+                m_book->getCurrentEditor()->FocusOnLine(nLine, true);
             }
             else
             {
@@ -3754,9 +3769,12 @@ void NumeReWindow::OpenSourceFile(wxArrayString fnames, unsigned int nLine, int 
                     m_setSelection = false;
                     m_currentPage = pageNr;
 
-                    m_currentEd = m_book->getEditor(m_currentPage);
-                    m_currentEd->LoadFileText(fileContents);
-                    m_currentEd->UpdateSyntaxHighlighting();
+                    NumeReEditor* edit = m_book->getEditor(m_currentPage); // Needs work for the syntax highlighting
+                    edit->LoadFileText(fileContents);
+                    edit->UpdateSyntaxHighlighting();
+
+                    if (m_book->getCurrentEditor(true))
+                        m_book->getCurrentEditor(true)->UpdateSyntaxHighlighting();
                 }
                 else
                     PageHasChanged(pageNr);
@@ -3776,14 +3794,16 @@ void NumeReWindow::OpenSourceFile(wxArrayString fnames, unsigned int nLine, int 
             else
                 _fileType = FILE_NOTYPE;
 
+            NumeReEditor* edit = m_book->getCurrentEditor();
+
             // current buffer is empty and untouched, so load the file into it
-            if ((!m_currentEd->Modified()
-                && !m_currentEd->HasBeenSaved()
-                && (m_currentEd->GetText().IsEmpty() || m_currentEd->GetText() == "\r\n")) || m_currentEd->defaultPage )
+            if ((!edit->Modified()
+                && !edit->HasBeenSaved()
+                && (edit->GetText().IsEmpty() || edit->GetText() == "\r\n")) || edit->defaultPage )
             {
-                m_currentEd->LoadFileText(fileContents);
-                m_currentEd->SetFilename(newFileName, m_remoteMode);
-                m_book->SetTabText(m_currentPage, m_currentEd->GetFileNameAndPath());
+                edit->LoadFileText(fileContents);
+                edit->SetFilename(newFileName, m_remoteMode);
+                m_book->SetTabText(m_currentPage, edit->GetFileNameAndPath());
             }
             // need to create a new buffer for the file
             else
@@ -3795,24 +3815,28 @@ void NumeReWindow::OpenSourceFile(wxArrayString fnames, unsigned int nLine, int 
                 edit->LoadFileText(fileContents);
                 int settings = CopyEditorSettings(_fileType);
                 m_currentPage = m_book->GetPageCount()-1;
-                m_currentEd = edit;
-                m_currentEd->SetFilename(newFileName, m_remoteMode);
-                m_currentEd->ToggleSettings(settings);
+                edit->SetFilename(newFileName, m_remoteMode);
+                edit->ToggleSettings(settings);
                 m_book->SetTabText(m_currentPage, edit->GetFileNameAndPath());
                 m_book->SetSelection(m_currentPage);
             }
 
-            m_currentEd->UpdateSyntaxHighlighting();
+            m_book->getCurrentEditor()->UpdateSyntaxHighlighting();
 
             if (m_options->GetFoldDuringLoading())
-                m_currentEd->FoldAll();
+            {
+                m_book->getCurrentEditor()->FoldAll();
+
+                if (m_book->getCurrentEditor(true))
+                    m_book->getCurrentEditor(true)->FoldAll();
+            }
 
             m_watcher->Add(newFileName);
 
             if (nLine)
             {
-                m_currentEd->GotoLine(nLine);
-                m_currentEd->EnsureVisible(nLine);
+                m_book->getCurrentEditor()->GotoLine(nLine);
+                m_book->getCurrentEditor()->EnsureVisible(nLine);
             }
         }
 
@@ -3825,7 +3849,7 @@ void NumeReWindow::OpenSourceFile(wxArrayString fnames, unsigned int nLine, int 
     if (firstPageNr >= 0)
         PageHasChanged(firstPageNr);
 
-    m_currentEd->SetFocus();
+    m_book->getCurrentEditor()->SetFocus();
 }
 
 
@@ -3933,7 +3957,7 @@ void NumeReWindow::Ready()
 
         for (size_t i = 0; i < m_book->GetPageCount(); i++)
         {
-            NumeReEditor* edit =m_book->getEditor(i);
+            NumeReEditor* edit = m_book->getEditor(i);
             edit->MarkerDeleteAll(MARKER_FOCUSEDLINE);
         }
     }
@@ -3976,12 +4000,13 @@ void NumeReWindow::Busy()
 bool NumeReWindow::SaveCurrentFile(bool saveas)
 {
     m_remoteMode = false;
-    bool doSaveAs = saveas || !m_currentEd->HasBeenSaved();
+    NumeReEditor* edit = m_book->getCurrentEditor();
+    bool doSaveAs = saveas || !edit->HasBeenSaved();
 
     if (doSaveAs)
     {
         wxString filename;
-        wxString filterString = ConstructFilterString(m_currentEd->getFileType());
+        wxString filterString = ConstructFilterString(edit->getFileType());
 
         // the last item in a filter's list will be the default extension if none is given
         // ie, right now, .cpp is the default extension for C++ files
@@ -3989,26 +4014,26 @@ bool NumeReWindow::SaveCurrentFile(bool saveas)
         vector<string> vPaths = m_terminal->getPathSettings();
         int i = 0;
 
-        if (m_currentEd->getFileType() == FILE_NSCR)
+        if (edit->getFileType() == FILE_NSCR)
             i = SCRIPTPATH;
-        else if (m_currentEd->getFileType() == FILE_NPRC)
+        else if (edit->getFileType() == FILE_NPRC)
             i = PROCPATH;
-        else if (m_currentEd->getFileType() == FILE_DATAFILES
-            || m_currentEd->getFileType() == FILE_TEXSOURCE
-            || m_currentEd->getFileType() == FILE_NONSOURCE)
+        else if (edit->getFileType() == FILE_DATAFILES
+            || edit->getFileType() == FILE_TEXSOURCE
+            || edit->getFileType() == FILE_NONSOURCE)
             i = SAVEPATH;
 
         // Create the file dialog
-        wxFileDialog dlg (this, title, vPaths[i], m_currentEd->GetFileName().GetName(), filterString,
+        wxFileDialog dlg (this, title, vPaths[i], edit->GetFileName().GetName(), filterString,
             wxFD_SAVE | wxFD_OVERWRITE_PROMPT | wxFD_CHANGE_DIR);
 
         // Select the correct filter string depending on the
         // file extensions
-        wxString sExt = m_currentEd->GetFileName().GetExt();
+        wxString sExt = edit->GetFileName().GetExt();
 
-        if (m_currentEd->getFileType() == FILE_NSCR && sExt == "nlyt")
+        if (edit->getFileType() == FILE_NSCR && sExt == "nlyt")
             dlg.SetFilterIndex(1);
-        else if (m_currentEd->getFileType() == FILE_DATAFILES)
+        else if (edit->getFileType() == FILE_DATAFILES)
         {
             if (sExt == "dat")
                 dlg.SetFilterIndex(0);
@@ -4021,7 +4046,7 @@ bool NumeReWindow::SaveCurrentFile(bool saveas)
                 || sExt == "jcm")
                 dlg.SetFilterIndex(3);
         }
-        else if (m_currentEd->getFileType() == FILE_NONSOURCE)
+        else if (edit->getFileType() == FILE_NONSOURCE)
         {
             if (sExt == "txt")
                 dlg.SetFilterIndex(0);
@@ -4033,8 +4058,8 @@ bool NumeReWindow::SaveCurrentFile(bool saveas)
         if (dlg.ShowModal() != wxID_OK)
             return false;
 
-        if (m_currentEd->GetFileName().IsOk())
-            m_watcher->Remove(m_currentEd->GetFileName());
+        if (edit->GetFileName().IsOk())
+            m_watcher->Remove(edit->GetFileName());
 
         filename = dlg.GetPath();
         m_watcher->Add(wxFileName(filename));
@@ -4042,30 +4067,33 @@ bool NumeReWindow::SaveCurrentFile(bool saveas)
         // Append the correct file extension
         if (filename.find('.') == string::npos || filename.find('.', filename.rfind('\\')) == string::npos)
         {
-            if (m_currentEd->getFileType() == FILE_NSCR)
+            if (edit->getFileType() == FILE_NSCR)
                 filename += ".nscr";
-            else if (m_currentEd->getFileType() == FILE_NPRC)
+            else if (edit->getFileType() == FILE_NPRC)
                 filename += ".nprc";
-            else if (m_currentEd->getFileType() == FILE_DATAFILES)
+            else if (edit->getFileType() == FILE_DATAFILES)
             {
-                if (m_currentEd->GetFilenameString().find('.') != string::npos)
-                    filename += m_currentEd->GetFilenameString().substr(m_currentEd->GetFilenameString().rfind('.'));
+                if (edit->GetFilenameString().find('.') != string::npos)
+                    filename += edit->GetFilenameString().substr(edit->GetFilenameString().rfind('.'));
                 else
                     filename += ".dat";
             }
-            else if (m_currentEd->getFileType() == FILE_TEXSOURCE)
+            else if (edit->getFileType() == FILE_TEXSOURCE)
                 filename += ".tex";
-            else if (m_currentEd->getFileType() == FILE_NONSOURCE)
+            else if (edit->getFileType() == FILE_NONSOURCE)
             {
-                if (m_currentEd->GetFilenameString().find('.') != string::npos)
-                    filename += m_currentEd->GetFilenameString().substr(m_currentEd->GetFilenameString().rfind('.'));
+                if (edit->GetFilenameString().find('.') != string::npos)
+                    filename += edit->GetFilenameString().substr(edit->GetFilenameString().rfind('.'));
                 else
                     filename += ".txt";
             }
         }
 
         wxFileName fn(filename);
-        m_currentEd->SetFilename(fn, false);
+        edit->SetFilename(fn, false);
+
+        if (m_book->getCurrentEditor(true))
+            m_book->getCurrentEditor(true)->SetFilename(fn, false);
     }
 
     if (SaveTab(m_book->GetSelection()))
@@ -4085,7 +4113,7 @@ bool NumeReWindow::SaveCurrentFile(bool saveas)
 /////////////////////////////////////////////////
 bool NumeReWindow::SaveTab(int tab)
 {
-    NumeReEditor* edit = m_book->getEditor(tab);
+    NumeReEditor* edit = m_book->getEditor(tab); // Might need adaption for the filename
     wxString filename = edit->GetFileNameAndPath();
 
     // Make the folder, if it doesn't exist
@@ -4473,10 +4501,10 @@ void NumeReWindow::OnFileEventTimer(wxTimerEvent& event)
 
                         if (answer == wxYES)
                         {
-                            int pos = m_currentEd->GetCurrentPos();
-                            m_currentEd->LoadFileText(fileContents);
-                            m_currentEd->MarkerDeleteAll(MARKER_SAVED);
-                            m_currentEd->GotoPos(pos);
+                            int pos = m_book->getFocusedEditor()->GetCurrentPos();
+                            m_book->getCurrentEditor()->LoadFileText(fileContents);
+                            m_book->getCurrentEditor()->MarkerDeleteAll(MARKER_SAVED);
+                            m_book->getFocusedEditor()->GotoPos(pos);
                             m_currentSavedFile = toString((int)time(0))+"|"+modifiedFiles[i].second;
                         }
                     }
@@ -4537,21 +4565,21 @@ void NumeReWindow::ToolbarStatusUpdate()
         tb->EnableTool(ID_MENU_STOP_EXECUTION, false);
     }
 
-    if (!m_currentEd)
+    if (!m_book->getCurrentEditor())
         return;
 
-    if (m_currentEd->getFileType() == FILE_NSCR
-        || m_currentEd->getFileType() == FILE_NPRC
-        || m_currentEd->getFileType() == FILE_MATLAB
-        || m_currentEd->getFileType() == FILE_CPP)
+    if (m_book->getCurrentEditor()->getFileType() == FILE_NSCR
+        || m_book->getCurrentEditor()->getFileType() == FILE_NPRC
+        || m_book->getCurrentEditor()->getFileType() == FILE_MATLAB
+        || m_book->getCurrentEditor()->getFileType() == FILE_CPP)
     {
         tb->EnableTool(ID_MENU_ADDEDITORBREAKPOINT, true);
         tb->EnableTool(ID_MENU_REMOVEEDITORBREAKPOINT, true);
         tb->EnableTool(ID_MENU_CLEAREDITORBREAKPOINTS, true);
         tb->EnableTool(ID_MENU_USEANALYZER, true);
-        tb->ToggleTool(ID_MENU_USEANALYZER, m_currentEd->getEditorSetting(NumeReEditor::SETTING_USEANALYZER));
+        tb->ToggleTool(ID_MENU_USEANALYZER, m_book->getCurrentEditor()->getEditorSetting(NumeReEditor::SETTING_USEANALYZER));
         tb->EnableTool(ID_MENU_INDENTONTYPE, true);
-        tb->ToggleTool(ID_MENU_INDENTONTYPE, m_currentEd->getEditorSetting(NumeReEditor::SETTING_INDENTONTYPE));
+        tb->ToggleTool(ID_MENU_INDENTONTYPE, m_book->getCurrentEditor()->getEditorSetting(NumeReEditor::SETTING_INDENTONTYPE));
     }
     else
     {
@@ -4564,13 +4592,13 @@ void NumeReWindow::ToolbarStatusUpdate()
         tb->ToggleTool(ID_MENU_INDENTONTYPE, false);
     }
 
-    if (m_currentEd->GetFileName().GetExt() == "m")
+    if (m_book->getCurrentEditor()->GetFileName().GetExt() == "m")
     {
         tb->EnableTool(ID_MENU_INDENTONTYPE, true);
-        tb->ToggleTool(ID_MENU_INDENTONTYPE, m_currentEd->getEditorSetting(NumeReEditor::SETTING_INDENTONTYPE));
+        tb->ToggleTool(ID_MENU_INDENTONTYPE, m_book->getCurrentEditor()->getEditorSetting(NumeReEditor::SETTING_INDENTONTYPE));
     }
 
-    tb->ToggleTool(ID_MENU_LINEWRAP, m_currentEd->getEditorSetting(NumeReEditor::SETTING_WRAPEOL));
+    tb->ToggleTool(ID_MENU_LINEWRAP, m_book->getCurrentEditor()->getEditorSetting(NumeReEditor::SETTING_WRAPEOL));
 }
 
 
@@ -4599,8 +4627,12 @@ void NumeReWindow::UpdateStatusBar()
     wxString filetype;
     string sExt = "";
 
-    filename = m_currentEd->GetFileNameAndPath();
-    if (m_currentEd->defaultPage)
+    NumeReEditor* currEd = m_book->getCurrentEditor();
+    NumeReEditor* focusEd = m_book->getFocusedEditor();
+
+    filename = currEd->GetFileNameAndPath();
+
+    if (currEd->defaultPage)
         filename = _guilang.get("GUI_STATUSBAR_WELCOMEPAGE");
 
     if (filename.find('.') != string::npos)
@@ -4612,7 +4644,7 @@ void NumeReWindow::UpdateStatusBar()
         filename = _guilang.get("GUI_STATUSBAR_UNSAVEDFILE");
         filetype = "N/A";
     }
-    else if (m_currentEd->defaultPage)
+    else if (currEd->defaultPage)
         filetype = _guilang.get("GUI_STATUSBAR_WELCOMEPAGE_FILETYPE");
     else if (sExt.length() && _guilang.get("GUI_STATUSBAR_"+toUpperCase(sExt)) != "GUI_STATUSBAR_"+toUpperCase(sExt))
     {
@@ -4623,21 +4655,21 @@ void NumeReWindow::UpdateStatusBar()
         filetype = _guilang.get("GUI_STATUSBAR_UNKNOWN", sExt);
     }
 
-    bool isEdReadOnly = m_currentEd->GetReadOnly();
+    bool isEdReadOnly = currEd->GetReadOnly();
 
     wxString editable = isEdReadOnly ? "Read only" : "Read/Write";
 
-    int curLine = m_currentEd->GetCurrentLine();
-    int curPos = m_currentEd->GetColumn(m_currentEd->GetCurrentPos());
+    int curLine = focusEd->GetCurrentLine();
+    int curPos = focusEd->GetColumn(focusEd->GetCurrentPos());
     wxString linecol;
     linecol.Printf(_(_guilang.get("GUI_STATUSBAR_LINECOL")), curLine+1, curPos+1);
 
     wxString sDebuggerMode = "";
-    if (m_terminal->getKernelSettings().useDebugger() && m_currentEd->getEditorSetting(NumeReEditor::SETTING_USEANALYZER))
+    if (m_terminal->getKernelSettings().useDebugger() && currEd->getEditorSetting(NumeReEditor::SETTING_USEANALYZER))
          sDebuggerMode = _guilang.get("GUI_STATUSBAR_DEBUGGER_ANALYZER");
-    else if (m_terminal->getKernelSettings().useDebugger() && !m_currentEd->getEditorSetting(NumeReEditor::SETTING_USEANALYZER))
+    else if (m_terminal->getKernelSettings().useDebugger() && !currEd->getEditorSetting(NumeReEditor::SETTING_USEANALYZER))
          sDebuggerMode = _guilang.get("GUI_STATUSBAR_DEBUGGER");
-    else if (!m_terminal->getKernelSettings().useDebugger() && m_currentEd->getEditorSetting(NumeReEditor::SETTING_USEANALYZER))
+    else if (!m_terminal->getKernelSettings().useDebugger() && currEd->getEditorSetting(NumeReEditor::SETTING_USEANALYZER))
          sDebuggerMode = _guilang.get("GUI_STATUSBAR_ANALYZER");
 
     m_statusBar->SetStatus(NumeReStatusbar::STATUS_PATH, filename);
@@ -4658,7 +4690,7 @@ void NumeReWindow::UpdateStatusBar()
 //////////////////////////////////////////////////////////////////////////////
 void NumeReWindow::OnUpdateSaveUI()//wxUpdateUIEvent &event)
 {
-    bool enable = m_currentEd->Modified();
+    bool enable = m_book->getCurrentEditor()->Modified();
 
     int tabNum = m_book->GetSelection();
     wxString title = m_book->GetPageText(tabNum);
@@ -4853,7 +4885,7 @@ void NumeReWindow::EvaluateOptions()
     // editor instance
     for (int i = 0; i < (int)m_book->GetPageCount(); i++)
     {
-        NumeReEditor* edit = m_book->getEditor(i);
+        NumeReEditor* edit = m_book->getEditor(i); // Needs adaption
         edit->UpdateSyntaxHighlighting();
         edit->SetCaretPeriod(m_options->GetCaretBlinkTime());
         edit->AnalyseCode();
@@ -5052,14 +5084,16 @@ void NumeReWindow::UpdateMenuBar()
 
     menuBar->Append(helpMenu, _guilang.get("GUI_MENU_HELP"));
 
-    if (m_currentEd)
+    NumeReEditor* edit = m_book->getCurrentEditor();
+
+    if (edit)
     {
-        m_menuItems[ID_MENU_LINEWRAP]->Check(m_currentEd->getEditorSetting(NumeReEditor::SETTING_WRAPEOL));
-        m_menuItems[ID_MENU_DISPCTRLCHARS]->Check(m_currentEd->getEditorSetting(NumeReEditor::SETTING_DISPCTRLCHARS));
-        m_menuItems[ID_MENU_USETXTADV]->Check(m_currentEd->getEditorSetting(NumeReEditor::SETTING_USETXTADV));
-        m_menuItems[ID_MENU_USESECTIONS]->Check(m_currentEd->getEditorSetting(NumeReEditor::SETTING_USESECTIONS));
-        m_menuItems[ID_MENU_INDENTONTYPE]->Check(m_currentEd->getEditorSetting(NumeReEditor::SETTING_INDENTONTYPE));
-        m_menuItems[ID_MENU_USEANALYZER]->Check(m_currentEd->getEditorSetting(NumeReEditor::SETTING_USEANALYZER));
+        m_menuItems[ID_MENU_LINEWRAP]->Check(edit->getEditorSetting(NumeReEditor::SETTING_WRAPEOL));
+        m_menuItems[ID_MENU_DISPCTRLCHARS]->Check(edit->getEditorSetting(NumeReEditor::SETTING_DISPCTRLCHARS));
+        m_menuItems[ID_MENU_USETXTADV]->Check(edit->getEditorSetting(NumeReEditor::SETTING_USETXTADV));
+        m_menuItems[ID_MENU_USESECTIONS]->Check(edit->getEditorSetting(NumeReEditor::SETTING_USESECTIONS));
+        m_menuItems[ID_MENU_INDENTONTYPE]->Check(edit->getEditorSetting(NumeReEditor::SETTING_INDENTONTYPE));
+        m_menuItems[ID_MENU_USEANALYZER]->Check(edit->getEditorSetting(NumeReEditor::SETTING_USEANALYZER));
     }
     else
     {
@@ -5423,7 +5457,10 @@ void NumeReWindow::showConsole()
 /////////////////////////////////////////////////
 void NumeReWindow::gotoLine()
 {
-    wxTextEntryDialog dialog(this, _guilang.get("GUI_DLG_GOTO_QUESTION", toString(m_currentEd->GetLineCount())), _guilang.get("GUI_DLG_GOTO"));
+    NumeReEditor* focusEd = m_book->getFocusedEditor();
+    wxTextEntryDialog dialog(this,
+                             _guilang.get("GUI_DLG_GOTO_QUESTION", toString(focusEd->GetLineCount())),
+                             _guilang.get("GUI_DLG_GOTO"));
     int ret = dialog.ShowModal();
 
     if (ret == wxID_CANCEL)
@@ -5431,12 +5468,12 @@ void NumeReWindow::gotoLine()
 
     int line = StrToInt(dialog.GetValue().ToStdString())-1;
 
-    if (line < 0 || line >= m_currentEd->GetLineCount())
+    if (line < 0 || line >= focusEd->GetLineCount())
         wxMessageBox(_guilang.get("GUI_DLG_GOTO_ERROR"), _guilang.get("GUI_DLG_GOTO"), wxCENTRE | wxICON_ERROR);
     else
     {
-        m_currentEd->GotoLine(line);
-        m_currentEd->SetFocus();
+        focusEd->GotoLine(line);
+        focusEd->SetFocus();
     }
 }
 
@@ -5450,7 +5487,7 @@ void NumeReWindow::gotoLine()
 /////////////////////////////////////////////////
 void NumeReWindow::setEditorFocus()
 {
-    m_currentEd->SetFocus();
+    m_book->getCurrentEditor()->SetFocus();
 }
 
 
@@ -5486,7 +5523,7 @@ void NumeReWindow::refreshFunctionTree()
     // Update the syntax colors in the editor windows
     for (size_t i = 0; i < m_book->GetPageCount(); i++)
     {
-        m_book->getEditor(i)->UpdateSyntaxHighlighting(true);
+        m_book->getEditor(i)->UpdateSyntaxHighlighting(true); // Needs adaption
     }
 
     m_history->UpdateSyntaxHighlighting(true);
@@ -5494,6 +5531,22 @@ void NumeReWindow::refreshFunctionTree()
     if (focus)
         focus->SetFocus();
 }
+
+
+/////////////////////////////////////////////////
+/// \brief Public access method for accessing the
+/// currently viewed editor. Does only return a
+/// pointer to the top or left editor and shall
+/// not be used to modify settings.
+///
+/// \return NumeReEditor*
+///
+/////////////////////////////////////////////////
+NumeReEditor* NumeReWindow::GetCurrentEditor()
+{
+    return m_book->getCurrentEditor();
+}
+
 
 /////////////////////////////////////////////////
 /// \brief This member function creates the
@@ -5815,11 +5868,12 @@ void NumeReWindow::OnTreeItemActivated(wxTreeEvent &event)
 
             OpenFileByType(pathname);
         }
-        m_currentEd->Refresh();
+        m_book->getCurrentEditor()->Refresh();
         m_book->Refresh();
     }
     else
     {
+        NumeReEditor* edit = m_book->getFocusedEditor();
         wxTreeItemId item = event.GetItem();
         FileNameTreeData* data = static_cast<FileNameTreeData*>(m_functionTree->GetItemData(item));
         if (data->isDir)
@@ -5828,18 +5882,18 @@ void NumeReWindow::OnTreeItemActivated(wxTreeEvent &event)
         }
         else if (data->isCommand)
         {
-            m_currentEd->InsertText(m_currentEd->GetCurrentPos(), (data->tooltip).substr(0, (data->tooltip).find(' ')+1));
-            m_currentEd->GotoPos(m_currentEd->GetCurrentPos()+(data->tooltip).find(' ')+1);
+            edit->InsertText(edit->GetCurrentPos(), (data->tooltip).substr(0, (data->tooltip).find(' ')+1));
+            edit->GotoPos(edit->GetCurrentPos()+(data->tooltip).find(' ')+1);
         }
         else if (data->isFunction)
         {
-            m_currentEd->InsertText(m_currentEd->GetCurrentPos(), (data->tooltip).substr(0, (data->tooltip).find('(')+1));
-            m_currentEd->GotoPos(m_currentEd->GetCurrentPos()+(data->tooltip).find('(')+1);
+            edit->InsertText(edit->GetCurrentPos(), (data->tooltip).substr(0, (data->tooltip).find('(')+1));
+            edit->GotoPos(edit->GetCurrentPos()+(data->tooltip).find('(')+1);
         }
         else if (data->isConstant)
         {
-            m_currentEd->InsertText(m_currentEd->GetCurrentPos(), (data->tooltip).substr(0, (data->tooltip).find(' ')));
-            m_currentEd->GotoPos(m_currentEd->GetCurrentPos()+(data->tooltip).find(' '));
+            edit->InsertText(edit->GetCurrentPos(), (data->tooltip).substr(0, (data->tooltip).find(' ')));
+            edit->GotoPos(edit->GetCurrentPos()+(data->tooltip).find(' '));
         }
     }
 }
@@ -6084,7 +6138,8 @@ void NumeReWindow::OnFindEvent(wxFindDialogEvent& event)
     wxEventType type = event.GetEventType();
     wxString findString = event.GetFindString();
     long flags = event.GetFlags();
-    int pos = m_currentEd->GetCurrentPos();
+    NumeReEditor* edit = m_book->getFocusedEditor();
+    int pos = edit->GetCurrentPos();
 
     if ((type == wxEVT_COMMAND_FIND) ||
         (type == wxEVT_COMMAND_FIND_NEXT))
@@ -6099,18 +6154,18 @@ void NumeReWindow::OnFindEvent(wxFindDialogEvent& event)
     }
     else if (type == wxEVT_COMMAND_FIND_REPLACE)
     {
-        if ((flags & wxFR_MATCHCASE && m_currentEd->GetSelectedText() != findString)
-            || (!(flags & wxFR_MATCHCASE) && toLowerCase(m_currentEd->GetSelectedText().ToStdString()) != toLowerCase(findString.ToStdString())))
+        if ((flags & wxFR_MATCHCASE && edit->GetSelectedText() != findString)
+            || (!(flags & wxFR_MATCHCASE) && toLowerCase(edit->GetSelectedText().ToStdString()) != toLowerCase(findString.ToStdString())))
         {
             wxBell();
             return;
         }
 
-        pos = m_currentEd->GetSelectionStart();
+        pos = edit->GetSelectionStart();
         wxString replaceString = event.GetReplaceString();
-        m_currentEd->ReplaceSelection(replaceString);
-        m_currentEd->EnsureCaretVisible();
-        m_currentEd->SetSelection(pos, pos + replaceString.length());
+        edit->ReplaceSelection(replaceString);
+        edit->EnsureCaretVisible();
+        edit->SetSelection(pos, pos + replaceString.length());
     }
     else if (type == wxEVT_COMMAND_FIND_REPLACE_ALL)
     {
@@ -6151,6 +6206,8 @@ void NumeReWindow::OnFindEvent(wxFindDialogEvent& event)
 //////////////////////////////////////////////////////////////////////////////
 int NumeReWindow::FindString(const wxString &findString, int start_pos, int flags, bool highlight)
 {
+    NumeReEditor* edit = m_book->getFocusedEditor();
+
     if (findString.IsEmpty())
         return wxNOT_FOUND;
 
@@ -6164,41 +6221,41 @@ int NumeReWindow::FindString(const wxString &findString, int start_pos, int flag
         stc_flags |= wxSTC_FIND_WHOLEWORD;
     }
 
-    int pos = start_pos == -1 ? m_currentEd->GetCurrentPos() : start_pos;
+    int pos = start_pos == -1 ? edit->GetCurrentPos() : start_pos;
 
     if ((flags & wxFR_DOWN) != 0)
     {
-        m_currentEd->SetTargetStart(wxMax(0, pos));
-        m_currentEd->SetTargetEnd(wxMax(0, m_currentEd->GetTextLength()));
+        edit->SetTargetStart(wxMax(0, pos));
+        edit->SetTargetEnd(wxMax(0, edit->GetTextLength()));
     }
     else
     {
-        if (labs(m_currentEd->GetTargetEnd() - m_currentEd->GetTargetStart()) == long(findString.length()))
+        if (labs(edit->GetTargetEnd() - edit->GetTargetStart()) == long(findString.length()))
         {
             pos -= findString.length() + 1; // doesn't matter if it matches or not, skip it
         }
 
-        m_currentEd->SetTargetStart(wxMax(0, pos));
-        m_currentEd->SetTargetEnd(0);
+        edit->SetTargetStart(wxMax(0, pos));
+        edit->SetTargetEnd(0);
     }
 
-    m_currentEd->SetSearchFlags(stc_flags);
-    pos = m_currentEd->SearchInTarget(findString);
+    edit->SetSearchFlags(stc_flags);
+    pos = edit->SearchInTarget(findString);
 
     if (pos >= 0)
     {
         if (highlight)
         {
-            m_currentEd->SetSelection(pos, pos + findString.length());
-            m_currentEd->EnsureCaretVisible();
+            edit->SetSelection(pos, pos + findString.length());
+            edit->EnsureCaretVisible();
         }
     }
     else if (flags & wxFR_WRAPAROUND)
     {
         if ((flags & wxFR_DOWN) && start_pos)
             return FindString(findString, 0, flags, highlight);
-        else if (!(flags & wxFR_DOWN) && start_pos != m_currentEd->GetLastPosition())
-            return FindString(findString, m_currentEd->GetLastPosition(), flags, highlight);
+        else if (!(flags & wxFR_DOWN) && start_pos != edit->GetLastPosition())
+            return FindString(findString, edit->GetLastPosition(), flags, highlight);
     }
 
     return pos;
@@ -6220,21 +6277,22 @@ int NumeReWindow::FindString(const wxString &findString, int start_pos, int flag
 int NumeReWindow::ReplaceAllStrings(const wxString &findString, const wxString &replaceString, int flags)
 {
     int count = 0;
+    NumeReEditor* edit = m_book->getFocusedEditor();
 
     if (findString.IsEmpty() || (findString == replaceString))
         return count;
 
-    int cursor_pos = m_currentEd->GetCurrentPos();  // return here when done
+    int cursor_pos = edit->GetCurrentPos();  // return here when done
     if (flags & wxFR_WRAPAROUND)
     {
-        m_currentEd->GotoPos(0);
+        edit->GotoPos(0);
         flags &= flags & ~wxFR_WRAPAROUND;
     }
-    m_currentEd->BeginUndoAction();
-    if (m_currentEd->GetSelectedText() == findString)
+    edit->BeginUndoAction();
+    if (edit->GetSelectedText() == findString)
     {
         ++count;
-        m_currentEd->ReplaceSelection(replaceString);
+        edit->ReplaceSelection(replaceString);
     }
 
     int pos = FindString(findString, -1, flags, true);
@@ -6242,13 +6300,13 @@ int NumeReWindow::ReplaceAllStrings(const wxString &findString, const wxString &
     while (pos != -1)
     {
         ++count;
-        m_currentEd->ReplaceSelection(replaceString);
+        edit->ReplaceSelection(replaceString);
         pos = FindString(findString, -1, flags, true);
     }
 
     // return to starting pos or as close as possible
-    m_currentEd->GotoPos(wxMin(cursor_pos, m_currentEd->GetLength()));
-    m_currentEd->EndUndoAction();
+    edit->GotoPos(wxMin(cursor_pos, edit->GetLength()));
+    edit->EndUndoAction();
 
     return count;
 }
@@ -6287,7 +6345,7 @@ wxRect NumeReWindow::DeterminePrintSize()
 /////////////////////////////////////////////////
 void NumeReWindow::FindAndOpenProcedure(const wxString& procedureName)
 {
-    m_currentEd->FindAndOpenProcedure(procedureName);
+    m_book->getFocusedEditor()->FindAndOpenProcedure(procedureName);
 }
 
 
@@ -6307,7 +6365,7 @@ void NumeReWindow::UpdateLocationIfOpen(const wxFileName& fname, const wxFileNam
 
     if (num != wxNOT_FOUND)
     {
-        NumeReEditor* edit = m_book->getEditor(num);
+        NumeReEditor* edit = m_book->getEditor(num); // Might need adaption
 
         if (edit->Modified())
             return;
@@ -6573,14 +6631,17 @@ void NumeReWindow::OnExecuteFile(const string& sFileName, int id)
 /////////////////////////////////////////////////
 void NumeReWindow::OnCalculateDependencies()
 {
-    if (m_currentEd->getFileType() != FILE_NPRC)
+    if (m_book->getCurrentEditor()->getFileType() != FILE_NPRC)
         return;
 
     ProcedureLibrary& procLib = m_terminal->getKernel().getProcedureLibrary();
 
     try
     {
-        DependencyDialog dlg(this, wxID_ANY, _guilang.get("GUI_DEPDLG_HEAD", m_currentEd->GetFilenameString().ToStdString()), m_currentEd->GetFileNameAndPath().ToStdString(), procLib);
+        DependencyDialog dlg(this,
+                             wxID_ANY,
+                             _guilang.get("GUI_DEPDLG_HEAD", m_book->getCurrentEditor()->GetFilenameString().ToStdString()),
+                             m_book->getCurrentEditor()->GetFileNameAndPath().ToStdString(), procLib);
         dlg.ShowModal();
     }
     catch (SyntaxError& e)
@@ -6605,12 +6666,13 @@ void NumeReWindow::OnCreatePackage(const wxString& projectFile)
     try
     {
         PackageDialog dlg(this, m_terminal, m_iconManager);
+        NumeReEditor* edit = m_book->getCurrentEditor();
 
         if (projectFile.length())
             dlg.loadProjectFile(projectFile);
-        else if (m_currentEd->getFileType() == FILE_NPRC
-            || (m_currentEd->getFileType() == FILE_NSCR && m_currentEd->GetFileName().GetExt() == "nlyt"))
-            dlg.setMainFile(m_currentEd->GetFileNameAndPath());
+        else if (edit->getFileType() == FILE_NPRC
+            || (edit->getFileType() == FILE_NSCR && edit->GetFileName().GetExt() == "nlyt"))
+            dlg.setMainFile(edit->GetFileNameAndPath());
 
         if (dlg.ShowModal() == wxID_OK)
         {
@@ -6625,8 +6687,9 @@ void NumeReWindow::OnCreatePackage(const wxString& projectFile)
                 return;
 
             NewFile(FILE_NSCR, "packages/" + identifier);
+            edit = m_book->getCurrentEditor();
 
-            m_currentEd->AddText("<install>\r\n" + installinfo + "\r\n");
+            edit->AddText("<install>\r\n" + installinfo + "\r\n");
 
             for (size_t i = 0; i < procedures.size(); i++)
             {
@@ -6638,10 +6701,10 @@ void NumeReWindow::OnCreatePackage(const wxString& projectFile)
                 // Insert the prepared contents
                 for (size_t j = 0; j < contents.size(); j++)
                 {
-                    m_currentEd->AddText("\t" + contents[j] + "\r\n");
+                    edit->AddText("\t" + contents[j] + "\r\n");
                 }
 
-                m_currentEd->AddText("\r\n");
+                edit->AddText("\r\n");
             }
 
             if (dlg.includeDocs())
@@ -6655,7 +6718,7 @@ void NumeReWindow::OnCreatePackage(const wxString& projectFile)
                 template_file.Replace("%%IDXKEY%%", dlg.getPackageIdentifier());
                 template_file.Replace("%%KEYWORD%%", dlg.getPackageIdentifier());
 
-                m_currentEd->AddText(template_file + "\r\n");
+                edit->AddText(template_file + "\r\n");
             }
             else if (dlg.getDocFile().length())
             {
@@ -6663,22 +6726,24 @@ void NumeReWindow::OnCreatePackage(const wxString& projectFile)
                 wxString fcontents;
 
                 if (docfile.ReadAll(&fcontents))
-                    m_currentEd->AddText(fcontents + "\r\n");
+                    edit->AddText(fcontents + "\r\n");
             }
 
-            m_currentEd->AddText("\treturn;\r\n<endinstall>\r\n");
-            m_currentEd->AddText("\r\nwarn \"" + _guilang.get("GUI_PKGDLG_INSTALLERWARNING", identifier.ToStdString()) + "\"\r\n");
-            m_currentEd->UpdateSyntaxHighlighting(true);
-            m_currentEd->ApplyAutoIndentation(0, m_currentEd->GetNumberOfLines());
+            edit->AddText("\treturn;\r\n<endinstall>\r\n");
+            edit->AddText("\r\nwarn \"" + _guilang.get("GUI_PKGDLG_INSTALLERWARNING", identifier.ToStdString()) + "\"\r\n");
+            edit->UpdateSyntaxHighlighting(true);
+            edit->ApplyAutoIndentation(0, edit->GetNumberOfLines());
 
             // Deactivate the indent on type in this case
-            if (m_currentEd->getEditorSetting(NumeReEditor::SETTING_INDENTONTYPE))
-                m_currentEd->ToggleSettings(NumeReEditor::SETTING_INDENTONTYPE);
+            if (edit->getEditorSetting(NumeReEditor::SETTING_INDENTONTYPE))
+                edit->ToggleSettings(NumeReEditor::SETTING_INDENTONTYPE);
         }
     }
     catch (SyntaxError& e)
     {
-        wxMessageBox(_guilang.get("ERR_NR_" + toString((int)e.errorcode) + "_0_*", e.getToken(), toString(e.getIndices()[0]), toString(e.getIndices()[1]), toString(e.getIndices()[2]), toString(e.getIndices()[3])), _guilang.get("ERR_NR_HEAD"), wxCENTER | wxICON_ERROR | wxOK);
+        wxMessageBox(_guilang.get("ERR_NR_" + toString((int)e.errorcode) + "_0_*", e.getToken(), toString(e.getIndices()[0]), toString(e.getIndices()[1]), toString(e.getIndices()[2]), toString(e.getIndices()[3])),
+                     _guilang.get("ERR_NR_HEAD"),
+                     wxCENTER | wxICON_ERROR | wxOK);
     }
 }
 
@@ -6693,8 +6758,8 @@ void NumeReWindow::OnCreatePackage(const wxString& projectFile)
 /////////////////////////////////////////////////
 void NumeReWindow::OnFindReplace(int id)
 {
-    if (m_currentEd->HasSelection())
-        m_findData.SetFindString(m_currentEd->GetSelectedText());
+    if (m_book->getFocusedEditor()->HasSelection())
+        m_findData.SetFindString(m_book->getFocusedEditor()->GetSelectedText());
 
     if (g_findReplace != nullptr)
     {
@@ -6744,13 +6809,20 @@ void NumeReWindow::OnOptions()
 
         for (size_t i = 0; i < m_book->GetPageCount(); i++)
         {
-            NumeReEditor* edit = m_book->getEditor(i);
+            NumeReEditor* edit = m_book->getEditor(i); // Might need adaption
             edit->UpdateSyntaxHighlighting(true);
             edit->SetEditorFont(m_options->GetEditorFont());
+
+            if (m_book->getEditor(i, true))
+            {
+                edit = m_book->getEditor(i, true);
+                edit->UpdateSyntaxHighlighting(true);
+                edit->SetEditorFont(m_options->GetEditorFont());
+            }
         }
     }
 
-    m_currentEd->SetFocus();
+    m_book->getCurrentEditor()->SetFocus();
 }
 
 
@@ -6763,14 +6835,14 @@ void NumeReWindow::OnOptions()
 /////////////////////////////////////////////////
 void NumeReWindow::OnPrintPage()
 {
-    m_currentEd->SetPrintColourMode(m_options->GetPrintStyle());
+    m_book->getCurrentEditor()->SetPrintColourMode(m_options->GetPrintStyle());
 
     if (!g_printData->IsOk())
         this->OnPrintSetup();
 
     wxPrintDialogData printDialogData( *g_printData);
     wxPrinter printer (&printDialogData);
-    NumeRePrintout printout (m_currentEd, m_options);
+    NumeRePrintout printout (m_book->getCurrentEditor(), m_options);
 
     if (!printer.Print (this, &printout, true))
     {
@@ -6795,13 +6867,15 @@ void NumeReWindow::OnPrintPage()
 /////////////////////////////////////////////////
 void NumeReWindow::OnPrintPreview()
 {
-    m_currentEd->SetPrintColourMode(m_options->GetPrintStyle());
+    m_book->getCurrentEditor()->SetPrintColourMode(m_options->GetPrintStyle());
 
     if (!g_printData->IsOk())
         this->OnPrintSetup();
 
     wxPrintDialogData printDialogData( *g_printData);
-    wxPrintPreview *preview = new wxPrintPreview (new NumeRePrintout (m_currentEd, m_options), new NumeRePrintout (m_currentEd, m_options), &printDialogData);
+    wxPrintPreview *preview = new wxPrintPreview(new NumeRePrintout(m_book->getCurrentEditor(), m_options),
+                                                 new NumeRePrintout(m_book->getCurrentEditor(), m_options),
+                                                 &printDialogData);
 
     if (!preview->Ok())
     {

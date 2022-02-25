@@ -10,6 +10,10 @@
 class NumeReWindow;
 class NumeReEditor;
 
+/////////////////////////////////////////////////
+/// \brief This class represents the notebook
+/// containing all editors of one main pane.
+/////////////////////////////////////////////////
 class EditorNotebook : public wxNotebook
 {
 public:
@@ -24,9 +28,10 @@ public:
 
     void SetShowPathsOnTabs(bool showText);
     void SetTabText(size_t nTab, const wxString& text);
-    //void AddNewTab(wxWindow* window, const wxString& text, bool select);
     NumeReEditor* createEditor(const wxString& text);
-    NumeReEditor* getEditor(size_t pageNum);
+    NumeReEditor* getEditor(size_t pageNum, bool secondary = false);
+    NumeReEditor* getCurrentEditor(bool secondary = false);
+    NumeReEditor* getFocusedEditor();
     void split(size_t pageNum, bool horizontal);
     void unsplit(size_t pageNum);
     bool isSplit(size_t pageNum) const;
