@@ -283,7 +283,7 @@ string getDataElements(string& sLine, Parser& _parser, MemoryManager& _data, con
 	if (!validateParenthesisNumber(sLine))
 		throw SyntaxError(SyntaxError::UNMATCHED_PARENTHESIS, sLine, SyntaxError::invalid_position);
 
-	string sCache = "";             // Rueckgabe-string: Ggf. der linke Teil der Gleichung, falls es sich um eine Zuweisung handelt
+	string sCache;             // Rueckgabe-string: Ggf. der linke Teil der Gleichung, falls es sich um eine Zuweisung handelt
 	string sLine_Temp;         // temporaerer string, da wir die string-Referenz nicht unnoetig veraendern wollen
 	size_t eq_pos = string::npos;                // int zum Zwischenspeichern der Position des "="
 
@@ -303,8 +303,36 @@ string getDataElements(string& sLine, Parser& _parser, MemoryManager& _data, con
         if (sLine[sLine.find_first_not_of(' ')] != '-')
             eq_pos = findAssignmentOperator(sLine);
 
+        // Try to handle the assignment operator shortcut
+        if (eq_pos != std::string::npos)
+        {
+            sCache = sLine.substr(0, eq_pos);
+            StripSpaces(sCache);
+
+            // Direct assignment shortcut
+            if (sCache.find('(') != std::string::npos
+                && sCache.substr(sCache.find('(')) == "()"
+                && sCache.find_first_of(" +-*/?:!%&|<>=") == std::string::npos)
+            {
+                std::string source = sLine.substr(eq_pos+1);
+                StripSpaces(source);
+
+                // Is the source also a complete table
+                if (source.find('(') != std::string::npos
+                    && source.substr(source.find("(")) == "()"
+                    && source.find_first_of(" +-*/?:!%&|<>=") == std::string::npos
+                    && _data.isTable(source))
+                {
+                    _data.copyTable(source, sCache);
+                    sLine = _parser.CreateTempVectorVar(std::vector<mu::value_type>({_data.getLines(source.substr(0, source.find("("))),
+                                                                                     _data.getCols(source.substr(0, source.find("(")))}));
+                    return "";
+                }
+            }
+        }
+
 		if (eq_pos == string::npos              // gar kein "="?
-            || !_data.containsTablesOrClusters(sLine.substr(0, eq_pos)))   // nur links von "cache("?
+            || !_data.containsTablesOrClusters(sCache))   // nur links von "cache("?
 		{
             resolveTablesAndClusters(sLine, _parser, _data, _option, options);
 		}
@@ -315,7 +343,8 @@ string getDataElements(string& sLine, Parser& _parser, MemoryManager& _data, con
 			 * --> Suchen wir zuerst mal nach der Position des "=" und speichern diese in eq_pos <--
 			 */
 			// --> Teilen wir nun sLine an "=": Der Teillinks in sCache, der Teil rechts in sLine_Temp <--
-			sCache = sLine.substr(0, eq_pos);
+
+            sCache = sLine.substr(0, eq_pos);
 			StripSpaces(sCache);
 
 			while (sCache[0] == '(')

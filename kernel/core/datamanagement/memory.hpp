@@ -93,6 +93,8 @@ class Memory : public Sorter
 		Memory(size_t _nCols);
 		~Memory();
 
+		Memory& operator=(const Memory& other);
+
 		bool resizeMemory(size_t _nLines, size_t _nCols);
 		bool isValid() const;
 		bool isValidElement(size_t _nLine, size_t _nCol) const;

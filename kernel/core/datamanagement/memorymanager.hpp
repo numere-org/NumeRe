@@ -289,6 +289,8 @@ class MemoryManager : public NumeRe::FileAdapter, public StringMemory, public Nu
 			mCachesMap[sTable].second = iter->second.first;
 		}
 
+		void copyTable(const std::string& source, const std::string& target);
+
 
 		// TABLE EXTRACTOR AND IMPORTER METHODS
         inline NumeRe::Table extractTable(const std::string& _sTable, const VectorIndex& lines = VectorIndex(0, VectorIndex::OPEN_END), const VectorIndex& cols = VectorIndex(0, VectorIndex::OPEN_END))

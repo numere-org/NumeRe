@@ -240,6 +240,7 @@
 			</Target>
 		</Build>
 		<Compiler>
+			<Add option="-Wno-narrowing" />
 			<Add option="-D__MSVCRT_VERSION__=0x0601" />
 		</Compiler>
 		<Linker>

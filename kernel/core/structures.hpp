@@ -2249,12 +2249,18 @@ struct Returnvalue
 {
     vector<mu::value_type> vNumVal;
     vector<string> vStringVal;
+    std::string sReturnedTable;
+    bool delayDelete;
+
+    Returnvalue() : delayDelete(false) {}
 
     // clear method
     void clear()
     {
         vNumVal.clear();
         vStringVal.clear();
+        sReturnedTable.clear();
+        delayDelete = false;
     }
 
     // boolean checkers

@@ -2193,6 +2193,7 @@ int FlowCtrl::compile(string sLine, int nthCmd)
     bool bCompiling = false;
     bool bWriteToCache = false;
     bool bWriteToCluster = false;
+    bool returnCommand = false;
     _assertionHandler.reset();
     updateTestStats();
 
@@ -2291,30 +2292,37 @@ int FlowCtrl::compile(string sLine, int nthCmd)
     {
         nCalcType[nthCmd] |= CALCTYPE_RETURNCOMMAND;
 
-        if (sLine.find("void", sLine.find("return") + 6) != string::npos)
+        string sReturnValue = sLine.substr(sLine.find("return") + 6);
+        StripSpaces(sReturnValue);
+
+        if (sReturnValue.back() == ';')
+            sReturnValue.pop_back();
+
+        StripSpaces(sReturnValue);
+
+        if (sReturnValue == "void")
         {
-            string sReturnValue = sLine.substr(sLine.find("return") + 6);
-            StripSpaces(sReturnValue);
-
-            if (sReturnValue == "void")
-            {
-                bReturnSignal = true;
-                nReturnType = 0;
-                return FLOWCTRL_RETURN;
-            }
+            bReturnSignal = true;
+            nReturnType = 0;
+            return FLOWCTRL_RETURN;
         }
-
-        sLine = sLine.substr(sLine.find("return") + 6);
-        StripSpaces(sLine);
-
-        if (!sLine.length())
+        else if (sReturnValue.find('(') != std::string::npos
+                 && sReturnValue.substr(sReturnValue.find('(')) == "()"
+                 && _dataRef->isTable(sReturnValue.substr(0, sReturnValue.find('('))))
+        {
+            ReturnVal.sReturnedTable = sReturnValue.substr(0, sReturnValue.find('('));
+            bReturnSignal = true;
+            return FLOWCTRL_RETURN;
+        }
+        else if (!sReturnValue.length())
         {
             ReturnVal.vNumVal.push_back(1.0);
             bReturnSignal = true;
             return FLOWCTRL_RETURN;
         }
 
-        bReturnSignal = true;
+        sLine = sReturnValue;
+        returnCommand = true;
     }
 
     // Check, whether the user tried to abort the
@@ -2546,6 +2554,10 @@ int FlowCtrl::compile(string sLine, int nthCmd)
             _parserRef->LockPause();
         }
 
+        // Prepend the return statement
+        if (returnCommand)
+            sLine.insert(0, "return ");
+
         ProcedureInterfaceRetVal nReturn = procedureInterface(sLine, *_parserRef, *_functionRef, *_dataRef, *_outRef, *_pDataRef, *_scriptRef, *_optionRef, nthCmd);
 
         if (!bLockedPauseMode && bUseLoopParsingMode)
@@ -2558,6 +2570,11 @@ int FlowCtrl::compile(string sLine, int nthCmd)
             nJumpTable[nthCmd][PROCEDURE_INTERFACE] = 1;
         else
             nJumpTable[nthCmd][PROCEDURE_INTERFACE] = 0;
+
+        if (bReturnSignal)
+            return FLOWCTRL_RETURN;
+        else if (returnCommand)
+            sLine.erase(0, 7); // Rempve the return statement
 
         if (nReturn == INTERFACE_ERROR)
             return FLOWCTRL_ERROR;
@@ -2698,9 +2715,10 @@ int FlowCtrl::compile(string sLine, int nthCmd)
             if (!bLockedPauseMode && bUseLoopParsingMode)
                 _parserRef->PauseLoopMode(false);
 
-            if (bReturnSignal)
+            if (returnCommand)
             {
                 ReturnVal.vStringVal.push_back(sLine);
+                bReturnSignal = true;
                 return FLOWCTRL_RETURN;
             }
 
@@ -2810,11 +2828,12 @@ int FlowCtrl::compile(string sLine, int nthCmd)
             _dataRef->writeToTable(_idx, sCache, v, nNum);
     }
 
-    if (bReturnSignal)
+    if (returnCommand)
     {
         for (int i = 0; i < nNum; i++)
             ReturnVal.vNumVal.push_back(v[i]);
 
+        bReturnSignal = true;
         return FLOWCTRL_RETURN;
     }
 
@@ -2915,30 +2934,36 @@ int FlowCtrl::calc(string sLine, int nthCmd)
     // Handle the return command
     if (nCurrentCalcType & CALCTYPE_RETURNCOMMAND)
     {
-        if (sLine.find("void", sLine.find("return") + 6) != string::npos)
+        string sReturnValue = sLine.substr(sLine.find("return") + 6);
+        StripSpaces(sReturnValue);
+
+        if (sReturnValue.back() == ';')
+            sReturnValue.pop_back();
+
+        StripSpaces(sReturnValue);
+
+        if (sReturnValue == "void")
         {
-            string sReturnValue = sLine.substr(sLine.find("return") + 6);
-            StripSpaces(sReturnValue);
-
-            if (sReturnValue == "void")
-            {
-                bReturnSignal = true;
-                nReturnType = 0;
-                return FLOWCTRL_RETURN;
-            }
+            bReturnSignal = true;
+            nReturnType = 0;
+            return FLOWCTRL_RETURN;
         }
-
-        sLine = sLine.substr(sLine.find("return") + 6);
-        StripSpaces(sLine);
-
-        if (!sLine.length())
+        else if (sReturnValue.find('(') != std::string::npos
+                 && sReturnValue.substr(sReturnValue.find('(')) == "()"
+                 && _dataRef->isTable(sReturnValue.substr(0, sReturnValue.find('('))))
+        {
+            ReturnVal.sReturnedTable = sReturnValue.substr(0, sReturnValue.find('('));
+            bReturnSignal = true;
+            return FLOWCTRL_RETURN;
+        }
+        else if (!sReturnValue.length())
         {
             ReturnVal.vNumVal.push_back(1.0);
             bReturnSignal = true;
             return FLOWCTRL_RETURN;
         }
 
-        bReturnSignal = true;
+        sLine = sReturnValue;
     }
 
     // Check, whether the user tried to abort the
@@ -3160,6 +3185,9 @@ int FlowCtrl::calc(string sLine, int nthCmd)
             _parserRef->LockPause();
         }
 
+        if (nCurrentCalcType & CALCTYPE_RETURNCOMMAND)
+            sLine.insert(0, "return ");
+
         ProcedureInterfaceRetVal nReturn = procedureInterface(sLine, *_parserRef, *_functionRef, *_dataRef, *_outRef, *_pDataRef, *_scriptRef, *_optionRef, nthCmd);
 
         if (!bLockedPauseMode && bUseLoopParsingMode)
@@ -3172,6 +3200,11 @@ int FlowCtrl::calc(string sLine, int nthCmd)
             nJumpTable[nthCmd][PROCEDURE_INTERFACE] = 1;
         else
             nJumpTable[nthCmd][PROCEDURE_INTERFACE] = 0;
+
+        if (bReturnSignal)
+            return FLOWCTRL_RETURN;
+        else if (nCurrentCalcType & CALCTYPE_RETURNCOMMAND)
+            sLine.erase(0, 7);
 
         if (nReturn == INTERFACE_ERROR)
             return FLOWCTRL_ERROR;
@@ -3302,8 +3335,9 @@ int FlowCtrl::calc(string sLine, int nthCmd)
             if (!bLockedPauseMode && bUseLoopParsingMode)
                 _parserRef->PauseLoopMode(false);
 
-            if (bReturnSignal)
+            if (nCurrentCalcType & CALCTYPE_RETURNCOMMAND)
             {
+                bReturnSignal = true;
                 ReturnVal.vStringVal.push_back(sLine);
                 return FLOWCTRL_RETURN;
             }
@@ -3401,11 +3435,12 @@ int FlowCtrl::calc(string sLine, int nthCmd)
             _dataRef->writeToTable(_idx, sDataObject, v, nNum);
     }
 
-    if (bReturnSignal)
+    if (nCurrentCalcType & CALCTYPE_RETURNCOMMAND)
     {
         for (int i = 0; i < nNum; i++)
             ReturnVal.vNumVal.push_back(v[i]);
 
+        bReturnSignal = true;
         return FLOWCTRL_RETURN;
     }
 

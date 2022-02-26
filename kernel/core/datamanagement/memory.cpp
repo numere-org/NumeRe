@@ -149,6 +149,57 @@ bool Memory::clear()
 
 
 /////////////////////////////////////////////////
+/// \brief Assignment operator.
+///
+/// \param other const Memory&
+/// \return Memory&
+///
+/////////////////////////////////////////////////
+Memory& Memory::operator=(const Memory& other)
+{
+    clear();
+
+    memArray.resize(other.memArray.size());
+
+    #pragma omp parallel for
+    for (size_t i = 0; i < other.memArray.size(); i++)
+    {
+        if (!other.memArray[i])
+            continue;
+
+        switch (other.memArray[i]->m_type)
+        {
+            case TableColumn::TYPE_VALUE:
+                memArray[i].reset(new ValueColumn);
+                break;
+            case TableColumn::TYPE_DATETIME:
+                memArray[i].reset(new DateTimeColumn);
+                break;
+            case TableColumn::TYPE_STRING:
+                memArray[i].reset(new StringColumn);
+                break;
+
+            // These labels are only for getting warnings
+            // if new column types are added
+            case TableColumn::TYPE_NONE:
+            case TableColumn::VALUELIKE:
+            case TableColumn::STRINGLIKE:
+            case TableColumn::TYPE_MIXED:
+                break;
+        }
+
+        memArray[i]->assign(other.memArray[i].get());
+    }
+
+    m_meta = other.m_meta;
+    nCalcLines = other.nCalcLines;
+    m_meta.modify();
+
+    return *this;
+}
+
+
+/////////////////////////////////////////////////
 /// \brief This member function will handle all
 /// memory grow operations by doubling the base
 /// size, which shall be incremented, as long as

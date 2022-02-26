@@ -1061,6 +1061,7 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, F
             if (sCurrentCommand == "for"
                 || sCurrentCommand == "if"
                 || sCurrentCommand == "switch"
+                || sCurrentCommand == "try"
                 || sCurrentCommand == "while")
             {
                 _debugger.gatherInformations(_varFactory, sProcCommandLine, sCurrentProcedureName, GetCurrentLine());
@@ -1088,13 +1089,25 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, F
             try
             {
                 FlowCtrl::ProcedureInterfaceRetVal nRetVal = procedureInterface(sProcCommandLine, _parser, _functions, _data, _out, _pData, _script, _option, 0);
-
                 // Only those two return values indicate that this line
                 // does contain a procedure or a plugin
                 if ((nRetVal == FlowCtrl::INTERFACE_EMPTY || nRetVal == FlowCtrl::INTERFACE_VALUE)
                     && nCurrentByteCode == ProcedureCommandLine::BYTECODE_NOT_PARSED)
                 {
                     nByteCode |= ProcedureCommandLine::BYTECODE_PROCEDUREINTERFACE;
+                }
+
+                // Might be possible that we have s.th. like "return $myProc();", which will
+                // result in a shortcut
+                if (getReturnSignal())
+                {
+                    _ReturnVal = getReturnValue();
+                    // Is it local and can we use it for swapping
+                    // instead of copying it?
+                    if (_ReturnVal.sReturnedTable.length() && !_ReturnVal.delayDelete)
+                        _ReturnVal.delayDelete = _varFactory->delayDeletionOfReturnedTable(_ReturnVal.sReturnedTable);
+
+                    break;
                 }
 
                 if (nRetVal == FlowCtrl::INTERFACE_ERROR || nRetVal == FlowCtrl::INTERFACE_EMPTY)
@@ -1177,23 +1190,26 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, F
                     if (nCurrentByteCode == ProcedureCommandLine::BYTECODE_NOT_PARSED)
                         nByteCode |= ProcedureCommandLine::BYTECODE_RETURNCOMMAND;
 
-                    if (sProcCommandLine.find("void", sProcCommandLine.find("return") + 1) != string::npos)
-                    {
-                        string sReturnValue = sProcCommandLine.substr(sProcCommandLine.find("return") + 6);
-                        StripSpaces(sReturnValue);
+                    std::string sReturnValue = sProcCommandLine.substr(sProcCommandLine.find("return")+6);
 
-                        if (sReturnValue == "void")
-                        {
-                            nReturnType = 0;
-                        }
-                        else
-                        {
-                            sReturnValue += " ";
-                            _ReturnVal = ProcCalc(sReturnValue, sCurrentCommand, nCurrentByteCode, _parser, _functions, _data, _option, _out, _pData, _script);
-                        }
+                    StripSpaces(sReturnValue);
+
+                    if (sReturnValue.back() == ';')
+                        sReturnValue.pop_back();
+
+                    StripSpaces(sReturnValue);
+
+                    if (sReturnValue == "void")
+                        nReturnType = 0;
+                    else if (sReturnValue.find('(') != std::string::npos
+                             && sReturnValue.substr(sReturnValue.find('(')) == "()"
+                             && _data.isTable(sReturnValue.substr(0, sReturnValue.find('('))))
+                    {
+                        _ReturnVal.sReturnedTable = sReturnValue.substr(0, sReturnValue.find('('));
+                        _ReturnVal.delayDelete = _varFactory->delayDeletionOfReturnedTable(_ReturnVal.sReturnedTable);
                     }
-                    else if (sProcCommandLine.length() > 6)
-                        _ReturnVal = ProcCalc(sProcCommandLine.substr(sProcCommandLine.find("return") + 6), sCurrentCommand, nCurrentByteCode, _parser, _functions, _data, _option, _out, _pData, _script);
+                    else if (sReturnValue.length())
+                        _ReturnVal = ProcCalc(sReturnValue, sCurrentCommand, nCurrentByteCode, _parser, _functions, _data, _option, _out, _pData, _script);
 
                     break;
                 }
@@ -1217,6 +1233,12 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, F
             if (getReturnSignal())
             {
                 _ReturnVal = getReturnValue();
+
+                // Is it local and can we use it for swapping
+                // instead of copying it?
+                if (_ReturnVal.sReturnedTable.length())
+                    _ReturnVal.delayDelete = _varFactory->delayDeletionOfReturnedTable(_ReturnVal.sReturnedTable);
+
                 break;
             }
         }
@@ -1363,7 +1385,10 @@ FlowCtrl::ProcedureInterfaceRetVal Procedure::procedureInterface(string& sLine, 
                     sLine = sLine.substr(0, nPos - 1) + sLine.substr(nParPos + 1);
                 else
                 {
-                    nPos += replaceReturnVal(sLine, _parser, tempreturnval, nPos - 1, nParPos + 1, "_~PROC~[" + mangleName(__sName) + "~" + toString(nProc) + "_" + toString((int)nthRecursion) + "_" + toString((int)(nth_command + nthRecursion)) + "]");
+                    nPos += replaceReturnVal(sLine, _parser, tempreturnval, nPos - 1, nParPos + 1,
+                                             "_~PROC~[" + mangleName(__sName) + "~"
+                                                + toString(nProc) + "_" + toString((int)nthRecursion) + "_"
+                                                + toString((int)(nth_command + nthRecursion)) + "]");
                     nProc++;
                 }
 
@@ -1434,6 +1459,17 @@ FlowCtrl::ProcedureInterfaceRetVal Procedure::procedureInterface(string& sLine, 
             {
                 if (sLine.find("<<RETURNVAL>>") != string::npos)
                 {
+                    // Shortcut for direct returns
+                    Match _cmd = findCommand(sLine);
+
+                    if (_cmd.sString == "return"
+                        && sLine.find_first_not_of(' ', _cmd.nPos+_cmd.sString.length()) == sLine.find("<<RETURNVAL>>"))
+                    {
+                        ReturnVal = _return;
+                        bReturnSignal = true;
+                        return nReturn;
+                    }
+
                     if (_return.vStringVal.size())
                     {
                         string sReturn = "{";
@@ -1443,6 +1479,47 @@ FlowCtrl::ProcedureInterfaceRetVal Procedure::procedureInterface(string& sLine, 
 
                         sReturn.back() = '}';
                         sLine.replace(sLine.find("<<RETURNVAL>>"), 13, sReturn);
+                    }
+                    else if (_return.sReturnedTable.length())
+                    {
+                        std::string sTargetTable = sLine.substr(0, sLine.find("<<RETURNVAL>>"));
+
+                        if (sTargetTable.find('=') != std::string::npos)
+                            sTargetTable.erase(sTargetTable.find_last_not_of(" ="));
+
+                        StripSpaces(sTargetTable);
+
+                        if (sTargetTable.find('(') != std::string::npos
+                            && sTargetTable.substr(sTargetTable.find('(')) == "()"
+                            && sLine.substr(sLine.find("<<RETURNVAL>>")+13).find_first_not_of(" ;") == std::string::npos)
+                        {
+                            sTargetTable.erase(sTargetTable.find('('));
+
+                            // Copy efficient move operations
+                            if (_return.delayDelete)
+                            {
+                                if (!_data.isTable(sTargetTable))
+                                    _data.renameTable(_return.sReturnedTable, sTargetTable, true);
+                                else
+                                {
+                                    _data.swapTables(sTargetTable, _return.sReturnedTable);
+                                    _data.deleteTable(_return.sReturnedTable);
+                                }
+                            }
+                            else
+                                _data.copyTable(_return.sReturnedTable, sTargetTable);
+
+                            sLine = _parser.CreateTempVectorVar(std::vector<mu::value_type>({_data.getLines(sTargetTable),
+                                                                                             _data.getCols(sTargetTable)}))
+                                    + sLine.substr(sLine.find("<<RETURNVAL>>")+13);
+                        }
+                        else
+                        {
+                            sLine.replace(sLine.find("<<RETURNVAL>>"), 13, _data.isEmpty(_return.sReturnedTable) ? "false" : "true");
+
+                            if (_return.delayDelete)
+                                _data.deleteTable(_return.sReturnedTable);
+                        }
                     }
                     else
                     {
@@ -2547,6 +2624,20 @@ unsigned int Procedure::GetCurrentLine() const
 /////////////////////////////////////////////////
 size_t Procedure::replaceReturnVal(string& sLine, Parser& _parser, const Returnvalue& _return, unsigned int nPos, unsigned int nPos2, const string& sReplaceName)
 {
+    // If the return value is passed to the "return" command, then
+    // simply use the current value as the next return value and
+    // inform the procedure handler
+    Match _cmd = findCommand(sLine.substr(0, nPos));
+
+    if (_cmd.sString == "return"
+        && sLine.substr(0, nPos).find_last_not_of(' ') == _cmd.nPos + _cmd.sString.length()-1
+        && sLine.substr(nPos2).find_first_not_of("; ") == std::string::npos)
+    {
+        ReturnVal = _return;
+        bReturnSignal = true;
+        return nPos2;
+    }
+
     // Replace depending on the type
     if (_return.isString())
     {
@@ -2561,6 +2652,49 @@ size_t Procedure::replaceReturnVal(string& sLine, Parser& _parser, const Returnv
         sLine = sLine.substr(0, nPos) + sReturn + sLine.substr(nPos2);
 
         return sReturn.length();
+    }
+    else if (_return.sReturnedTable.length())
+    {
+        std::string sTargetTable = sLine.substr(0, nPos);
+        MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
+
+        if (sTargetTable.find('=') != std::string::npos)
+            sTargetTable.erase(sTargetTable.find_last_not_of(" =")+1);
+
+        StripSpaces(sTargetTable);
+
+        if (sTargetTable.find('(') != std::string::npos
+            && sTargetTable.substr(sTargetTable.find('(')) == "()"
+            && sLine.substr(nPos2).find_first_not_of(" ;") == std::string::npos)
+        {
+            sTargetTable.erase(sTargetTable.find('('));
+
+            // Copy efficient move operations
+            if (_return.delayDelete)
+            {
+                if (!_data.isTable(sTargetTable))
+                    _data.renameTable(_return.sReturnedTable, sTargetTable, true);
+                else
+                {
+                    _data.swapTables(sTargetTable, _return.sReturnedTable);
+                    _data.deleteTable(_return.sReturnedTable);
+                }
+            }
+            else
+                _data.copyTable(_return.sReturnedTable, sTargetTable);
+
+            std::string sTempVar = _parser.CreateTempVectorVar(std::vector<mu::value_type>({_data.getLines(sTargetTable),
+                                                                                            _data.getCols(sTargetTable)}));
+            sLine = sTempVar + sLine.substr(nPos2);
+            return sTempVar.length();
+        }
+
+        sLine.replace(nPos, nPos2-nPos, _data.isEmpty(_return.sReturnedTable) ? "false" : "true");
+
+        if (_return.delayDelete)
+            _data.deleteTable(_return.sReturnedTable);
+
+        return _data.isEmpty(_return.sReturnedTable) ? 5 : 4;
     }
     else if (_return.isNumeric())
     {

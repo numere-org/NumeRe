@@ -822,6 +822,31 @@ Memory* MemoryManager::getTable(const string& sTable)
     return vMemory[findTable(sTable.substr(0, sTable.find('(')))];
 }
 
+
+/////////////////////////////////////////////////
+/// \brief Copy one table to another one (and
+/// create the missing table automatically, if
+/// needed).
+///
+/// \param source const std::string&
+/// \param target const std::string&
+/// \return void
+///
+/////////////////////////////////////////////////
+void MemoryManager::copyTable(const std::string& source, const std::string& target)
+{
+    Memory* sourceTable = vMemory[findTable(source.substr(0, source.find('(')))];
+
+    if (!exists(target.substr(0, target.find('('))))
+        addTable(target, NumeReKernel::getInstance()->getSettings());
+
+    Memory* targetTable = vMemory[findTable(target.substr(0, target.find('(')))];
+
+    // Use the assignment operator overload
+    *targetTable = *sourceTable;
+}
+
+
 /////////////////////////////////////////////////
 /// \brief This member function either combines
 /// the contents of the passed Memory instance

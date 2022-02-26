@@ -1704,7 +1704,8 @@ bool NumeReKernel::evaluateProcedureCalls(string& sLine)
                     sLine = sLine.substr(0, nPos - 1) + sLine.substr(nParPos + 1);
                 else
                 {
-                    _procedure.replaceReturnVal(sLine, _parser, _rTemp, nPos - 1, nParPos + 1, "_~PROC~[" + _procedure.mangleName(__sName) + "~ROOT_" + toString(nProc) + "]");
+                    _procedure.replaceReturnVal(sLine, _parser, _rTemp, nPos - 1, nParPos + 1,
+                                                "_~PROC~[" + _procedure.mangleName(__sName) + "~ROOT_" + toString(nProc) + "]");
                     nProc++;
                 }
             }
@@ -1782,6 +1783,47 @@ bool NumeReKernel::executePlugins(string& sLine)
                     sReturn += _rTemp.vStringVal[v] + ",";
                 sReturn.back() = '}';
                 sLine.replace(sLine.find("<<RETURNVAL>>"), 13, sReturn);
+            }
+            else if (_rTemp.sReturnedTable.length())
+            {
+                std::string sTargetTable = sLine.substr(0, sLine.find("<<RETURNVAL>>"));
+
+                if (sTargetTable.find('=') != std::string::npos)
+                    sTargetTable.erase(sTargetTable.find_last_not_of(" ="));
+
+                StripSpaces(sTargetTable);
+
+                if (sTargetTable.find('(') != std::string::npos
+                    && sTargetTable.substr(sTargetTable.find('(')) == "()"
+                    && sLine.substr(sLine.find("<<RETURNVAL>>")+13).find_first_not_of(" ;") == std::string::npos)
+                {
+                    sTargetTable.erase(sTargetTable.find('('));
+
+                    // Copy efficient move operations
+                    if (_rTemp.delayDelete)
+                    {
+                        if (!_memoryManager.isTable(sTargetTable))
+                            _memoryManager.renameTable(_rTemp.sReturnedTable, sTargetTable, true);
+                        else
+                        {
+                            _memoryManager.swapTables(sTargetTable, _rTemp.sReturnedTable);
+                            _memoryManager.deleteTable(_rTemp.sReturnedTable);
+                        }
+                    }
+                    else
+                        _memoryManager.copyTable(_rTemp.sReturnedTable, sTargetTable);
+
+                    sLine = _parser.CreateTempVectorVar(std::vector<mu::value_type>({_memoryManager.getLines(sTargetTable),
+                                                                                     _memoryManager.getCols(sTargetTable)}))
+                            + sLine.substr(sLine.find("<<RETURNVAL>>")+13);
+                }
+                else
+                {
+                    sLine.replace(sLine.find("<<RETURNVAL>>"), 13, _memoryManager.isEmpty(_rTemp.sReturnedTable) ? "false" : "true");
+
+                    if (_rTemp.delayDelete)
+                        _memoryManager.deleteTable(_rTemp.sReturnedTable);
+                }
             }
             else if (_rTemp.isNumeric() && sLine.find("<<RETURNVAL>>") != string::npos)
             {

@@ -105,6 +105,7 @@ class ProcedureVarFactory
         ~ProcedureVarFactory();
 
         void reset();
+        bool delayDeletionOfReturnedTable(const std::string& sTableName);
         bool isReference(const std::string& sArgName) const;
         map<string,string> createProcedureArguments(string sArgumentList, string sArgumentValues);
         void createLocalVars(string sVarList);
