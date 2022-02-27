@@ -894,7 +894,9 @@ AnnotationCount CodeAnalyzer::analyseCommands()
                 // Decode the list
                 for (int i = nArgumentParensStart+1; i < nArgumentParensEnd; i++)
                 {
-                    if (m_editor->GetStyleAt(i) == wxSTC_NPRC_IDENTIFIER || m_editor->GetStyleAt(i) == wxSTC_NPRC_CUSTOM_FUNCTION || m_editor->GetStyleAt(i) == wxSTC_NPRC_CLUSTER)
+                    if (m_editor->GetStyleAt(i) == wxSTC_NPRC_IDENTIFIER
+                        || m_editor->GetStyleAt(i) == wxSTC_NPRC_CUSTOM_FUNCTION
+                        || m_editor->GetStyleAt(i) == wxSTC_NPRC_CLUSTER)
                     {
                         wxString sArg = m_editor->GetTextRange(m_editor->WordStartPosition(i, true), m_editor->WordEndPosition(i, true));
 
@@ -1233,6 +1235,15 @@ AnnotationCount CodeAnalyzer::analyseIdentifiers()
     // Return, if the current identifier is a data object
     if (m_editor->isStyleType(NumeReEditor::STYLE_DATAOBJECT, m_nCurPos))
     {
+        if (!m_options->getSetting(SETTING_B_FUTURE).active()
+            && m_hasProcedureDefinition
+            && m_editor->GetStyleAt(wordstart) == wxSTC_NSCR_CUSTOM_FUNCTION
+            && m_editor->GetCharAt(wordstart-1) != '&'
+            && m_editor->GetTextRange(wordend, wordend+3) != "()&")
+        {
+            AnnotCount += addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE", highlightFoundOccurence(sSyntaxElement, wordstart, sSyntaxElement.length()), m_sWarn, _guilang.get("GUI_ANALYZER_WARN_TABLE_REFERENCE", sSyntaxElement)), ANNOTATION_WARN);
+        }
+
         m_nCurPos = wordend;
         return AnnotCount;
     }
@@ -1265,7 +1276,7 @@ AnnotationCount CodeAnalyzer::analyseIdentifiers()
         string sFirstChars = "nsfbxyzt";
 
         if (sFirstChars.find(sSyntaxElement[shift]) == string::npos
-                || ((sSyntaxElement[shift + 1] < 'A' || sSyntaxElement[shift + 1] > 'Z') && sSyntaxElement[shift + 1] != '_'))
+            || ((sSyntaxElement[shift + 1] < 'A' || sSyntaxElement[shift + 1] > 'Z') && sSyntaxElement[shift + 1] != '_'))
         {
             // var not type-oriented
             // Add and underscore to indicate the procedures arguments
@@ -1282,6 +1293,7 @@ AnnotationCount CodeAnalyzer::analyseIdentifiers()
             AnnotCount += addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE", highlightFoundOccurence(sSyntaxElement, wordstart, sSyntaxElement.length()), m_sNote, _guilang.get("GUI_ANALYZER_INDICATEARGUMENT")), ANNOTATION_NOTE);
         }
     }
+
     m_nCurPos = wordend;
 
     // Return the gathered number of annotations

@@ -2746,7 +2746,7 @@ static size_t findNearestLowerGridAxisValue(const Matrix& gaxes, size_t axis, do
 /////////////////////////////////////////////////
 static Matrix coordsToGrid(const MatFuncData& funcData, const MatFuncErrorInfo& errorInfo)
 {
-    if (!funcData.mat1.size() || !funcData.mat1[0].size() || !funcData.mat2.size() || !funcData.mat2[0].size())
+    if (funcData.mat1.size() < 2 || !funcData.mat1[0].size() || !funcData.mat2.size() || !funcData.mat2[0].size())
         throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, errorInfo.command, errorInfo.position);
 
     if (funcData.mat1[0].size() > 2)

@@ -44,8 +44,9 @@ Settings::Settings() : Documentation()
     m_settings[SETTING_B_COMPACT] = SettingsValue(false);
     m_settings[SETTING_B_GREETING] = SettingsValue(true);
     m_settings[SETTING_B_DEFCONTROL] = SettingsValue(false);
+    m_settings[SETTING_B_FUTURE] = SettingsValue(false, SettingsValue::UIREFRESH | SettingsValue::SAVE);
     m_settings[SETTING_B_SYSTEMPRINTS] = SettingsValue(true, SettingsValue::HIDDEN);
-    m_settings[SETTING_B_EXTENDEDFILEINFO] = SettingsValue(false);
+    m_settings[SETTING_B_EXTENDEDFILEINFO] = SettingsValue(false, SettingsValue::UIREFRESH | SettingsValue::SAVE);
     m_settings[SETTING_B_LOGFILE] = SettingsValue(true);
     m_settings[SETTING_B_LOADEMPTYCOLS] = SettingsValue(false);
     m_settings[SETTING_B_SHOWHINTS] = SettingsValue(true);
@@ -61,15 +62,15 @@ Settings::Settings() : Documentation()
     m_settings[SETTING_V_WINDOW_Y] = SettingsValue(34u, 0u, -1u, SettingsValue::HIDDEN);
     m_settings[SETTING_V_BUFFERSIZE] = SettingsValue(300u, 300u, 1000u, SettingsValue::IMMUTABLE | SettingsValue::SAVE);
     m_settings[SETTING_S_EXEPATH] = SettingsValue("./", SettingsValue::PATH | SettingsValue::IMMUTABLE);
-    m_settings[SETTING_S_SAVEPATH] = SettingsValue("<>/save", SettingsValue::SAVE | SettingsValue::PATH);
-    m_settings[SETTING_S_LOADPATH] = SettingsValue("<>/data", SettingsValue::SAVE | SettingsValue::PATH);
-    m_settings[SETTING_S_PLOTPATH] = SettingsValue("<>/plots", SettingsValue::SAVE | SettingsValue::PATH);
-    m_settings[SETTING_S_SCRIPTPATH] = SettingsValue("<>/scripts", SettingsValue::SAVE | SettingsValue::PATH);
-    m_settings[SETTING_S_PROCPATH] = SettingsValue("<>/procedures", SettingsValue::SAVE | SettingsValue::PATH);
+    m_settings[SETTING_S_SAVEPATH] = SettingsValue("<>/save", SettingsValue::SAVE | SettingsValue::PATH | SettingsValue::UIREFRESH);
+    m_settings[SETTING_S_LOADPATH] = SettingsValue("<>/data", SettingsValue::SAVE | SettingsValue::PATH | SettingsValue::UIREFRESH);
+    m_settings[SETTING_S_PLOTPATH] = SettingsValue("<>/plots", SettingsValue::SAVE | SettingsValue::PATH | SettingsValue::UIREFRESH);
+    m_settings[SETTING_S_SCRIPTPATH] = SettingsValue("<>/scripts", SettingsValue::SAVE | SettingsValue::PATH | SettingsValue::UIREFRESH);
+    m_settings[SETTING_S_PROCPATH] = SettingsValue("<>/procedures", SettingsValue::SAVE | SettingsValue::PATH | SettingsValue::UIREFRESH);
     m_settings[SETTING_S_WORKPATH] = SettingsValue("<>", SettingsValue::PATH);
     m_settings[SETTING_S_PLOTFONT] = SettingsValue("pagella");
 
-    m_settings[SETTING_S_LATEXROOT] = SettingsValue("C:/Program Files", SettingsValue::SAVE | SettingsValue::PATH);
+    m_settings[SETTING_S_LATEXROOT] = SettingsValue("C:/Program Files", SettingsValue::SAVE | SettingsValue::PATH | SettingsValue::UIREFRESH);
     m_settings[SETTING_B_PRINTINCOLOR] = SettingsValue(false, SettingsValue::SAVE | SettingsValue::IMMUTABLE);
     m_settings[SETTING_V_CARETBLINKTIME] = SettingsValue(500u, 100u, 2000u, SettingsValue::SAVE | SettingsValue::HIDDEN);
     m_settings[SETTING_V_FOCUSEDLINE] = SettingsValue(10u, 1u, 30u, SettingsValue::SAVE | SettingsValue::IMMUTABLE);

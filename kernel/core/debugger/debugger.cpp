@@ -258,11 +258,13 @@ string NumeReDebugger::decodeType(string& sArgumentValue, const std::string& sAr
         // argument type as reference
         sArgumentValue = "{" + toString(_data.min(sCache, "")[0], DEFAULT_MINMAX_PRECISION) + ", ..., " + toString(_data.max(sCache, "")[0], DEFAULT_MINMAX_PRECISION) + "}";
 
+        std::string sDim = toString(_data.getLines(sCache, false)) + " x " + toString(_data.getCols(sCache, false));
+
         // Determine whether this is a templated variable
         if (sArgumentName.length() && sArgumentName.find("()") == std::string::npos)
-            return "\t" + toString(_data.getLines(sCache, false)) + " x " + toString(_data.getCols(sCache, false)) + "\t(&@) double\t";
+            isRef = isRef.length() ? "(&@) " : "(@) ";
 
-        return "\t" + toString(_data.getLines(sCache, false)) + " x " + toString(_data.getCols(sCache, false)) + "\t(&) double\t";
+        return "\t" + sDim + "\t" + isRef + "table\t";
     }
 
     // Is the current argument value a cluster?

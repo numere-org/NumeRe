@@ -3741,6 +3741,9 @@ static CommandReturnValues cmd_set(string& sCmd)
                     else if (iter->first == SETTING_B_DEBUGGER)
                         NumeReKernel::getInstance()->getDebugger().setActive(mSettings[SETTING_B_DEBUGGER].active());
 
+                    if (iter->second.isUiModifying())
+                        NumeReKernel::modifiedSettings = true;
+
                     if (_option.systemPrints())
                         NumeReKernel::print(toUpperCase(iter->first.substr(iter->first.find('.')+1)) + ": " + toString((bool)nArgument));
 
@@ -3751,6 +3754,9 @@ static CommandReturnValues cmd_set(string& sCmd)
                         && nArgument <= iter->second.max())
                     {
                         iter->second.value() = nArgument;
+
+                        if (iter->second.isUiModifying())
+                            NumeReKernel::modifiedSettings = true;
 
                         if (_option.systemPrints())
                             NumeReKernel::print(toUpperCase(iter->first.substr(iter->first.find('.')+1)) + ": " + toString(nArgument));
@@ -3773,7 +3779,9 @@ static CommandReturnValues cmd_set(string& sCmd)
                         _data.setPath(mSettings[SETTING_S_LOADPATH].stringval(), false, mSettings[SETTING_S_EXEPATH].stringval());
                         _script.setPath(mSettings[SETTING_S_SCRIPTPATH].stringval(), false, mSettings[SETTING_S_EXEPATH].stringval());
                         _pData.setPath(mSettings[SETTING_S_PLOTPATH].stringval(), false, mSettings[SETTING_S_EXEPATH].stringval());
-                        NumeReKernel::modifiedSettings = true;
+
+                        if (iter->second.isUiModifying())
+                            NumeReKernel::modifiedSettings = true;
 
                         if (_option.systemPrints())
                             NumeReKernel::print(toUpperCase(iter->first.substr(iter->first.find('.')+1)) + ": " + iter->second.stringval());
@@ -3799,6 +3807,9 @@ static CommandReturnValues cmd_set(string& sCmd)
                             }
                             else
                                 iter->second.stringval() = sArgument;
+
+                            if (iter->second.isUiModifying())
+                                NumeReKernel::modifiedSettings = true;
 
                             if (_option.systemPrints())
                                 NumeReKernel::print(toUpperCase(iter->first.substr(iter->first.find('.')+1)) + ": " + sArgument);

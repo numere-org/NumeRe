@@ -335,6 +335,7 @@ string getDataElements(string& sLine, Parser& _parser, MemoryManager& _data, con
             || !_data.containsTablesOrClusters(sCache))   // nur links von "cache("?
 		{
             resolveTablesAndClusters(sLine, _parser, _data, _option, options);
+            sCache.clear();
 		}
 		else
 		{

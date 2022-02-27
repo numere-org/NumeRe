@@ -33,6 +33,7 @@
 #define SETTING_B_DEVELOPERMODE       "internal.developermode"
 #define SETTING_B_DEBUGGER            "internal.debugger"
 #define SETTING_B_SYSTEMPRINTS        "internal.usesystemprints"
+#define SETTING_B_FUTURE              "internal.enablefuture"
 #define SETTING_B_DRAFTMODE           "plotting.draftmode"
 #define SETTING_B_COMPACT             "table.compact"
 #define SETTING_B_LOADEMPTYCOLS       "table.loademptycols"
@@ -200,7 +201,8 @@ class SettingsValue
             SAVE = 0x1,
             HIDDEN = 0x2,
             PATH = 0x4,
-            IMMUTABLE = 0x8
+            IMMUTABLE = 0x8,
+            UIREFRESH = 0x10
         };
 
     private:
@@ -488,6 +490,19 @@ class SettingsValue
         bool isMutable() const
         {
             return !(m_valueProperties & (IMMUTABLE | HIDDEN));
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief Returns true, when a setting modifies
+        /// the graphical user interface and therefore
+        /// needs to refresh it.
+        ///
+        /// \return bool
+        ///
+        /////////////////////////////////////////////////
+        bool isUiModifying() const
+        {
+            return m_valueProperties & UIREFRESH;
         }
 
         /////////////////////////////////////////////////

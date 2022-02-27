@@ -786,6 +786,13 @@ void ProcedureVarFactory::evaluateProcedureArguments(std::string& currentArg, st
     {
         currentArg.pop_back();
 
+#warning TODO (numere#1#02/27/22): This behavior will be deprecated with v1.1.5
+        if (!_optionRef->getSetting(SETTING_B_FUTURE).active() && !isRef)
+        {
+            isRef = true;
+            NumeReKernel::issueWarning(_currentProcedure->getCurrentProcedureName() + ": " + _lang.get("PROCEDURE_WARN_TABLE_REFERENCE"));
+        }
+
         if (isRef)
         {
             if (!isCompleteTable(currentValue, _dataRef))
@@ -1327,6 +1334,7 @@ void ProcedureVarFactory::createLocalTables(string sTableList)
 
     // Get the number of declared variables
     size_t nLocalTableSize = countVarListElements(sTableList);
+    std::string sCurrentValue;
 
     // Decode the variable list
     for (unsigned int i = 0; i < nLocalTableSize; i++)
@@ -1341,15 +1349,76 @@ void ProcedureVarFactory::createLocalTables(string sTableList)
             NumeReKernel::getInstance()->getDebugger().throwException(SyntaxError(SyntaxError::INVALID_SYM_NAME, sTableList, SyntaxError::invalid_position, sSymbol));
         }
 
+        if (currentDef.find('=') != string::npos)
+            sCurrentValue = currentDef.substr(currentDef.find('=')+1);
+
         if (currentDef.find('(') != string::npos)
             currentDef.erase(currentDef.find('('));
 
         StripSpaces(currentDef);
+        StripSpaces(sCurrentValue);
         std::string currentVar = createMangledVarName(currentDef);
 
         try
         {
             _dataRef->addTable(currentVar, *_optionRef);
+
+            if (sCurrentValue.length())
+            {
+                sCurrentValue = resolveLocalTables(sCurrentValue, i);
+
+                if (sCurrentValue.find('$') != string::npos && sCurrentValue.find('(', sCurrentValue.find('$')+1))
+                {
+                    if (_currentProcedure->getProcedureFlags() & FLAG_INLINE)
+                    {
+                        throw SyntaxError(SyntaxError::INLINE_PROCEDURE_IS_NOT_INLINE, sTableList, SyntaxError::invalid_position);
+                    }
+
+                    sCurrentValue.insert(0, currentVar + "() = ");
+
+                    FlowCtrl::ProcedureInterfaceRetVal nReturn = _currentProcedure->procedureInterface(sCurrentValue, *_parserRef, *_functionRef, *_dataRef, *_outRef, *_pDataRef, *_scriptRef, *_optionRef, nth_procedure);
+
+                    if (nReturn == FlowCtrl::INTERFACE_ERROR)
+                        throw SyntaxError(SyntaxError::PROCEDURE_ERROR, sTableList, SyntaxError::invalid_position);
+                    else if (nReturn == FlowCtrl::INTERFACE_EMPTY)
+                        sCurrentValue = "false";
+                    else
+                    {
+                        if (sCurrentValue.substr(0, currentVar.length()+5) == currentVar + "() = ")
+                            currentVar.erase(0, currentVar.length()+5);
+                        else
+                        {
+                            mLocalTables[currentDef] = currentVar;
+                            continue;
+                        }
+                    }
+                }
+
+                if (isCompleteTable(sCurrentValue, _dataRef))
+                    _dataRef->copyTable(sCurrentValue.substr(0, sCurrentValue.find('(')), currentVar);
+                else
+                {
+                    if (_dataRef->containsTablesOrClusters(sCurrentValue))
+                        getDataElements(sCurrentValue, *_parserRef, *_dataRef, *_optionRef, false);
+
+                    if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sCurrentValue))
+                    {
+                        std::string sTable = currentVar + "(:,1)";
+                        NumeReKernel::getInstance()->getStringParser().evalAndFormat(sCurrentValue, sTable, true);
+                    }
+                    else
+                    {
+                        mu::value_type* v = nullptr;
+                        int nResults;
+                        _parserRef->SetExpr(sCurrentValue);
+                        v = _parserRef->Eval(nResults);
+                        Indices _idx;
+                        _idx.row = VectorIndex(0, VectorIndex::OPEN_END);
+                        _idx.col = VectorIndex(0);
+                        _dataRef->writeToTable(_idx, currentVar, v, nResults);
+                    }
+                }
+            }
         }
         catch (...)
         {
@@ -1402,6 +1471,7 @@ void ProcedureVarFactory::createLocalClusters(string sClusterList)
         if (currentDef.find('{') != string::npos)
             currentDef.erase(currentDef.find('{'));
 
+        StripSpaces(sCurrentValue);
         StripSpaces(currentDef);
         std::string currentVar = createMangledVarName(currentDef);
 
@@ -1428,21 +1498,26 @@ void ProcedureVarFactory::createLocalClusters(string sClusterList)
                         sCurrentValue = "false";
                 }
 
-                if (_dataRef->containsTablesOrClusters(sCurrentValue))
-                    getDataElements(sCurrentValue, *_parserRef, *_dataRef, *_optionRef, false);
-
-                if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sCurrentValue))
-                {
-                    string sCluster = currentVar + "{}";
-                    NumeReKernel::getInstance()->getStringParser().evalAndFormat(sCurrentValue, sCluster, true);
-                }
+                if (isCompleteCluster(sCurrentValue, _dataRef))
+                    cluster = _dataRef->getCluster(sCurrentValue.substr(0, sCurrentValue.find('{')));
                 else
                 {
-                    value_type* v = nullptr;
-                    int nResults;
-                    _parserRef->SetExpr(sCurrentValue);
-                    v = _parserRef->Eval(nResults);
-                    cluster.setDoubleArray(nResults, v);
+                    if (_dataRef->containsTablesOrClusters(sCurrentValue))
+                        getDataElements(sCurrentValue, *_parserRef, *_dataRef, *_optionRef, false);
+
+                    if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sCurrentValue))
+                    {
+                        string sCluster = currentVar + "{}";
+                        NumeReKernel::getInstance()->getStringParser().evalAndFormat(sCurrentValue, sCluster, true);
+                    }
+                    else
+                    {
+                        value_type* v = nullptr;
+                        int nResults;
+                        _parserRef->SetExpr(sCurrentValue);
+                        v = _parserRef->Eval(nResults);
+                        cluster.setDoubleArray(nResults, v);
+                    }
                 }
             }
         }
