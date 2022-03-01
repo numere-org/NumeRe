@@ -1599,13 +1599,17 @@ void NumeReWindow::OnMenuEvent(wxCommandEvent &event)
 
         case ID_MENU_CUT:
         {
-            m_book->getFocusedEditor()->Cut();
+            if (m_book->getFocusedEditor()->HasFocus())
+                m_book->getFocusedEditor()->Cut();
+
             break;
         }
 
         case ID_MENU_PASTE:
         {
-            m_book->getFocusedEditor()->Paste();
+            if (m_book->getFocusedEditor()->HasFocus())
+                m_book->getFocusedEditor()->Paste();
+
             break;
         }
 
@@ -4123,7 +4127,7 @@ bool NumeReWindow::SaveTab(int tab)
     FileSystem _fSys;
     _fSys.setPath(sPath, true, getProgramFolder().ToStdString());
 
-    m_currentSavedFile = toString((int)time(0)) + "|" + filename;
+    m_filesLastSaveTime[filename] = time(0);
 
     if (!edit->SaveFile(filename))
     {
@@ -4438,13 +4442,14 @@ void NumeReWindow::OnFileEventTimer(wxTimerEvent& event)
             // Ignore files, which have been saved by NumeRe
             // currently and therefore are result of a modify
             // event
-            if (m_currentSavedFile == toString((int)time(0))+"|"+modifiedFiles[i].second
-                || m_currentSavedFile == toString((int)time(0)-1)+"|"+modifiedFiles[i].second
-                || m_currentSavedFile == "BLOCKALL|"+modifiedFiles[i].second)
+            auto iter = m_filesLastSaveTime.find(modifiedFiles[i].second);
+
+            if (iter != m_filesLastSaveTime.end()
+                && (iter->second == 0 || time(0) - iter->second < 3))
                 continue;
 
             // Ignore also files, whose modification time differs
-            // more than two seconds from te current time. Older
+            // more than two seconds from the current time. Older
             // modifications are likely to be metadata updates
             // done by the OS and do not require any refresh
             //
@@ -4453,7 +4458,10 @@ void NumeReWindow::OnFileEventTimer(wxTimerEvent& event)
             {
                 wxLogNull logNull;
 
-                if (filename.IsDir() || !filename.IsFileReadable() || !filename.GetModificationTime().IsValid() || (wxDateTime::Now() - filename.GetModificationTime()).GetSeconds() > 2)
+                if (filename.IsDir()
+                    || !filename.IsFileReadable()
+                    || !filename.GetModificationTime().IsValid()
+                    || (wxDateTime::Now() - filename.GetModificationTime()).GetSeconds() > 2)
                     continue;
             }
 
@@ -4489,7 +4497,7 @@ void NumeReWindow::OnFileEventTimer(wxTimerEvent& event)
                 // Found it?
                 if (edit && edit->GetFileNameAndPath() == modifiedFiles[i].second)
                 {
-                    m_currentSavedFile = "BLOCKALL|"+modifiedFiles[i].second;
+                    m_filesLastSaveTime[modifiedFiles[i].second] = 0;
 
                     // If the user has modified the file, as
                     // him to reload the file, otherwise re-
@@ -4505,7 +4513,7 @@ void NumeReWindow::OnFileEventTimer(wxTimerEvent& event)
                             m_book->getCurrentEditor()->LoadFileText(fileContents);
                             m_book->getCurrentEditor()->MarkerDeleteAll(MARKER_SAVED);
                             m_book->getFocusedEditor()->GotoPos(pos);
-                            m_currentSavedFile = toString((int)time(0))+"|"+modifiedFiles[i].second;
+                            m_filesLastSaveTime[modifiedFiles[i].second] = time(0);
                         }
                     }
                     else
@@ -4514,7 +4522,7 @@ void NumeReWindow::OnFileEventTimer(wxTimerEvent& event)
                         edit->LoadFileText(fileContents);
                         edit->MarkerDeleteAll(MARKER_SAVED);
                         edit->GotoPos(pos);
-                        m_currentSavedFile = toString((int)time(0))+"|"+modifiedFiles[i].second;
+                        m_filesLastSaveTime[modifiedFiles[i].second] = time(0);
                     }
 
                     break;

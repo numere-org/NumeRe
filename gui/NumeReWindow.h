@@ -478,7 +478,7 @@ class NumeReWindow : public wxFrame
         wxString m_filterNonsource;
         wxString m_filterSupportedFiles;
 
-        wxString m_currentSavedFile;
+        std::map<wxString, __time64_t> m_filesLastSaveTime;
         wxString m_fileToRefresh;
 
 

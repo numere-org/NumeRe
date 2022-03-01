@@ -158,6 +158,8 @@ NumeReEditor* EditorNotebook::getEditor(size_t pageNum, bool secondary)
 
     if (secondary && splitter->GetWindow2())
         return static_cast<NumeReEditor*>(splitter->GetWindow2());
+    else if (secondary)
+        return nullptr;
 
     return static_cast<NumeReEditor*>(splitter->GetWindow1());
 }
