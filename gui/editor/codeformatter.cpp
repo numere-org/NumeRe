@@ -50,15 +50,19 @@ void CodeFormatter::IndentCode(int nFirstLine, int nLastLine) // int nFirstLine 
 {
 	if (nFirstLine < 0)
 		nFirstLine = 0;
+
 	if (nLastLine <= 0 || nLastLine > m_editor->GetLineCount())
 		nLastLine = m_editor->GetLineCount();
 
-	int nIndentCount = 0;
+    m_editor->SetTabWidth(4);
+
+    // If we do not start at the beginning of the document,
+    // then keep the latest indentation
+	int nIndentCount = nFirstLine > 0 ? m_editor->GetLineIndentation(nFirstLine)/4 : 0;
 	int nCurrentIndent = 0;
 
 	int singleLineIndent = 0;
 	int nLastSingleIndent = 0;
-    m_editor->SetTabWidth(4);
     m_editor->BeginUndoAction();
 
     // Go through the complete document

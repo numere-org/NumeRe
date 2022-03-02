@@ -4395,6 +4395,8 @@ void NumeReWindow::OnFileEventTimer(wxTimerEvent& event)
     // Fill the refresh indicator with false values
     pathsToRefresh.fill(false);
 
+    g_logger.info("File event timer handler: catched " + toString(modifiedFiles.size()) + " file events.");
+
     // Go through all cached events
     for (size_t i = 0; i < modifiedFiles.size(); i++)
     {
@@ -4541,6 +4543,8 @@ void NumeReWindow::OnFileEventTimer(wxTimerEvent& event)
             LoadFilesToTree(vPaths[i+LOADPATH], fileType[i], m_projectFileFolders[i]);
         }
     }
+
+    g_logger.info("All necessary file trees have been refreshed.");
 
     // Now refresh the procedure library
     if (refreshProcedureLibrary)

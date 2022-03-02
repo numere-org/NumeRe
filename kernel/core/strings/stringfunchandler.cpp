@@ -1625,6 +1625,14 @@ namespace NumeRe
                 {
                     if (sLine[i] == '(' || sLine[i] == '{')
                         i += getMatchingParenthesis(sLine.substr(i));
+                    else if (sLine[i] == ')' || sLine[i] == '}')
+                    {
+                        // This block will only get activated, if we find an unmatched
+                        // closing paranthesis, which can happen with methods, that
+                        // don't need parentheses
+                        nEndPosition = i-1;
+                        break;
+                    }
 
                     if (isDelimiter(sLine[i]) || i+1 == sLine.length())
                     {

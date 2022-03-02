@@ -249,7 +249,7 @@ std::string toString(sys_time_point tp, int timeStampFlags)
 
     timeStream << std::setfill('0') << std::setw(2) << ltm.m_seconds.count();	// ss
 
-    if (ltm.m_millisecs.count() && !(timeStampFlags & GET_AS_TIMESTAMP))
+    if (!(timeStampFlags & GET_AS_TIMESTAMP))
         timeStream << "." << std::setfill('0') << std::setw(3) << ltm.m_millisecs.count();
 
     return timeStream.str();

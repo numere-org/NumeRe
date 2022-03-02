@@ -4661,7 +4661,22 @@ void NumeReEditor::AsynchActions()
         && (m_fileType == FILE_NSCR || m_fileType == FILE_NPRC || m_fileType == FILE_MATLAB || m_fileType == FILE_CPP)
         && !isNoAutoIndentionKey(m_nLastReleasedKey)
         && !HasSelection())
-        ApplyAutoIndentation(0, this->GetCurrentLine() + 1);
+    {
+        int nLine = GetCurrentLine();
+
+        // Probably the current line is also a parent line -> take the parent
+        if (GetFoldLevel(nLine) & wxSTC_FOLDLEVELHEADERFLAG)
+            nLine--;
+
+        // Get parent line
+        int nParentline = GetFoldParent(nLine);
+
+        // if not found -> return
+        if (nParentline == wxNOT_FOUND)
+            nParentline = 0;
+
+        ApplyAutoIndentation(nParentline, nLine + 1);
+    }
 
     HandleFunctionCallTip();
 }
@@ -4680,6 +4695,14 @@ void NumeReEditor::AsynchActions()
 /////////////////////////////////////////////////
 void NumeReEditor::AsynchEvaluations()
 {
+    //if (!this->AutoCompActive()
+    //    && this->getEditorSetting(SETTING_INDENTONTYPE)
+    //    && (m_fileType == FILE_NSCR || m_fileType == FILE_NPRC || m_fileType == FILE_MATLAB || m_fileType == FILE_CPP)
+    //    && !isNoAutoIndentionKey(m_nLastReleasedKey)
+    //    && !HasSelection())
+    //    ApplyAutoIndentation(0, this->GetCurrentLine() + 1);
+
+
     if (getEditorSetting(SETTING_USEANALYZER))
         m_analyzer->run();
 

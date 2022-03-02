@@ -53,9 +53,10 @@ void SymDefManager::resolveSymbols(std::string& sCommandLine) const
 
         // Find all occurences of the current variable
 #warning TODO (numere#1#12/05/21): If it's expected that variables with methods are replaced, then this won't work
-        while ((pos = findVariableInExpression(sCommandLine, iter->first)) != std::string::npos)
+        while ((pos = findVariableInExpression(sCommandLine, iter->first, pos)) != std::string::npos)
         {
             sCommandLine.replace(pos, iter->first.length(), iter->second);
+            pos += iter->second.length();
         }
     }
 }
@@ -86,6 +87,9 @@ void SymDefManager::createSymbol(const std::string& sCommandLine)
             std::string symbol = symdef.substr(0, pos);
             std::string definition = symdef.substr(pos+2);
 
+            // Enable nested definitions
+            resolveSymbols(definition);
+
             StripSpaces(symbol);
             StripSpaces(definition);
 
@@ -95,7 +99,7 @@ void SymDefManager::createSymbol(const std::string& sCommandLine)
                 StripSpaces(definition);
             }
 
-            if (symbol.length() && definition.length())
+            if (symbol.length() && definition.length() && symbol != definition)
                 m_symDefs[symbol] = definition;
         }
     }

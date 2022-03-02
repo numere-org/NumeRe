@@ -22,7 +22,7 @@
 #include "utils/tools.hpp"
 
 // Prototype from parser_functions.hpp
-size_t findVariableInExpression(const std::string& sExpr, const std::string& sVarName);
+size_t findVariableInExpression(const std::string& sExpr, const std::string& sVarName, size_t nPosStart);
 
 
 /////////////////////////////////////////////////

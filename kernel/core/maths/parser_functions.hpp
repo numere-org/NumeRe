@@ -34,7 +34,7 @@ using namespace mu;
 
 // Tools & Stuff
 string evaluateTargetOptionInCommand(string& sCmd, const string& sDefaultTarget, Indices& _idx, Parser& _parser, MemoryManager& _data, const Settings& _option);
-size_t findVariableInExpression(const string& sExpr, const string& sVarName);
+size_t findVariableInExpression(const string& sExpr, const string& sVarName, size_t nPosStart = 0);
 void convertVectorToExpression(string&, const Settings&);
 string addMissingVectorComponent(const string&, const string&, const string&, bool);
 mu::value_type* getPointerToVariable(const string& sVarName, Parser& _parser);

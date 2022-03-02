@@ -33,12 +33,13 @@ extern mglGraph _fontData;
 ///
 /// \param sExpr const std::string&
 /// \param sVarName const std::string&
+/// \param nPosStart size_t
 /// \return size_t
 ///
 /////////////////////////////////////////////////
-size_t findVariableInExpression(const std::string& sExpr, const std::string& sVarName)
+size_t findVariableInExpression(const std::string& sExpr, const std::string& sVarName, size_t nPosStart)
 {
-    size_t nMatch = 0;
+    size_t nMatch = nPosStart;
     const static std::string sOperators = "+-*/,^!%&|?:#<>='; ";
     const static std::string sDelimiterLeft = sOperators + "([{";
 #warning TODO (numere#1#12/05/21): Cannot detect variables with methods (if that is needed)
