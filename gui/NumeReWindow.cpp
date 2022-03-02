@@ -4395,7 +4395,7 @@ void NumeReWindow::OnFileEventTimer(wxTimerEvent& event)
     // Fill the refresh indicator with false values
     pathsToRefresh.fill(false);
 
-    g_logger.info("File event timer handler: catched " + toString(modifiedFiles.size()) + " file events.");
+    g_logger.info("File event handler: catched " + toString(modifiedFiles.size()) + " file events.");
 
     // Go through all cached events
     for (size_t i = 0; i < modifiedFiles.size(); i++)
@@ -4447,8 +4447,15 @@ void NumeReWindow::OnFileEventTimer(wxTimerEvent& event)
             auto iter = m_filesLastSaveTime.find(modifiedFiles[i].second);
 
             if (iter != m_filesLastSaveTime.end()
-                && (iter->second == 0 || time(0) - iter->second < 3))
+                && (iter->second == 0 || time(0) - iter->second < 5))
+            {
+                g_logger.info("Ignored '" + modifiedFiles[i].second.ToStdString()
+                              + "' due to last modification time difference: " + toString((int)(time(0) - iter->second)));
                 continue;
+            }
+            else if (iter != m_filesLastSaveTime.end())
+                g_logger.info("Reloading '" + modifiedFiles[i].second.ToStdString()
+                              + "' due to last modification time difference: " + toString((int)(time(0) - iter->second)));
 
             // Ignore also files, whose modification time differs
             // more than two seconds from the current time. Older
@@ -4474,6 +4481,7 @@ void NumeReWindow::OnFileEventTimer(wxTimerEvent& event)
             if (manager.hasRevisions(modifiedFiles[i].second) && m_options->GetKeepBackupFile())
             {
                 unique_ptr<FileRevisions> revisions(manager.getRevisions(modifiedFiles[i].second));
+                g_logger.info("Adding external revision to '" + modifiedFiles[i].second.ToStdString() + "'.");
 
                 if (revisions.get())
                     revisions->addExternalRevision(modifiedFiles[i].second);
@@ -4499,6 +4507,7 @@ void NumeReWindow::OnFileEventTimer(wxTimerEvent& event)
                 // Found it?
                 if (edit && edit->GetFileNameAndPath() == modifiedFiles[i].second)
                 {
+                    g_logger.info("Reloading '" + modifiedFiles[i].second.ToStdString() + "' to editor.");
                     m_filesLastSaveTime[modifiedFiles[i].second] = 0;
 
                     // If the user has modified the file, as
@@ -4544,7 +4553,7 @@ void NumeReWindow::OnFileEventTimer(wxTimerEvent& event)
         }
     }
 
-    g_logger.info("All necessary file trees have been refreshed.");
+    g_logger.debug("All necessary file trees have been refreshed.");
 
     // Now refresh the procedure library
     if (refreshProcedureLibrary)

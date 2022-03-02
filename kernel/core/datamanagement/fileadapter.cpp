@@ -18,6 +18,7 @@
 
 #include "fileadapter.hpp"
 #include "../utils/tools.hpp"
+#include "../io/logger.hpp"
 #include "memory.hpp"
 
 namespace NumeRe
@@ -115,6 +116,8 @@ namespace NumeRe
         if (!fileExists(sFile) && (_sFile.find('.') == string::npos || _sFile.find('.') < _sFile.rfind('/')))
             sFile = ValidFileName(_sFile+".*");
 
+        g_logger.info("Loading file '" + _sFile + "'.");
+
         // Get an instance of the desired file type
         GenericFile* file = getFileByType(sFile);
 
@@ -142,6 +145,8 @@ namespace NumeRe
             throw;
         }
 
+        g_logger.debug("File read. Preparing memory.");
+
         // Get the header information structure
         info = file->getFileHeaderInformation();
 
@@ -163,8 +168,9 @@ namespace NumeRe
             // afterwards
             file->getData(&_mem->memArray);
             delete file;
-
+            g_logger.debug("Data copied.");
             _mem->convert();
+            g_logger.debug("Data converted.");
             _mem->shrink();
             condenseDataSet(_mem);
             _mem->createTableHeaders();
@@ -191,6 +197,8 @@ namespace NumeRe
             }
             else
                 melt(_mem, "data");
+
+            g_logger.info("File sucessfully loaded. Data file dimensions = {" + toString(info.nRows) + ", " + toString(info.nCols) + "}");
         }
         else
         {
