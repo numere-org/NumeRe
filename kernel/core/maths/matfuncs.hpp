@@ -33,6 +33,19 @@
 #include "functionimplementation.hpp"
 #include "statslogic.hpp"
 
+/////////////////////////////////////////////////
+/// \brief Simple helper for printing the matrix
+/// dimensions to a string.
+///
+/// \param mat const Matrix&
+/// \return std::string
+///
+/////////////////////////////////////////////////
+static inline std::string printMatrixDim(const Matrix& mat)
+{
+    return toString(mat.size()) + "x" + toString(mat[0].size());
+}
+
 
 /////////////////////////////////////////////////
 /// \brief This static function returns a matrix
@@ -155,7 +168,8 @@ static Matrix calcTrace(const MatFuncData& funcData, const MatFuncErrorInfo& err
         throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, errorInfo.command, errorInfo.position);
 
     if (funcData.mat1.size() != funcData.mat1[0].size())
-        throw SyntaxError(SyntaxError::WRONG_MATRIX_DIMENSIONS_FOR_MATOP, errorInfo.command, errorInfo.position, toString(funcData.mat1.size()) +"x"+ toString(funcData.mat1[0].size()));
+        throw SyntaxError(SyntaxError::WRONG_MATRIX_DIMENSIONS_FOR_MATOP, errorInfo.command, errorInfo.position,
+                          printMatrixDim(funcData.mat1));
 
     Matrix _mReturn = createFilledMatrix(1, 1, 0.0);
 
@@ -261,7 +275,8 @@ static Matrix getDeterminant(const MatFuncData& funcData, const MatFuncErrorInfo
     std::vector<int> vRemovedLines(funcData.mat1.size(), 0);
 
     if (funcData.mat1.size() != funcData.mat1[0].size())
-        throw SyntaxError(SyntaxError::WRONG_MATRIX_DIMENSIONS_FOR_MATOP, errorInfo.command, errorInfo.position, toString(funcData.mat1.size()) +"x"+ toString(funcData.mat1[0].size()));
+        throw SyntaxError(SyntaxError::WRONG_MATRIX_DIMENSIONS_FOR_MATOP, errorInfo.command, errorInfo.position,
+                          printMatrixDim(funcData.mat1));
 
     _mReturn[0][0] = calcDeterminant(funcData.mat1, vRemovedLines);
     return _mReturn;
@@ -289,7 +304,8 @@ static Matrix calcCrossProduct(const MatFuncData& funcData, const MatFuncErrorIn
         return _mResult;
 
     if (funcData.mat1.size()-1 != funcData.mat1[0].size())
-        throw SyntaxError(SyntaxError::WRONG_MATRIX_DIMENSIONS_FOR_MATOP, errorInfo.command, errorInfo.position, toString(funcData.mat1.size()) +"x"+ toString(funcData.mat1[0].size()));
+        throw SyntaxError(SyntaxError::WRONG_MATRIX_DIMENSIONS_FOR_MATOP, errorInfo.command, errorInfo.position,
+                          printMatrixDim(funcData.mat1));
 
     if (funcData.mat1.size() == 2)
     {
@@ -360,7 +376,8 @@ __attribute__((force_align_arg_pointer)) static Matrix calcEigenVectsAndValues(c
         throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, errorInfo.command, errorInfo.position);
 
     if (_mMatrix.size() != _mMatrix[0].size())
-        throw SyntaxError(SyntaxError::WRONG_MATRIX_DIMENSIONS_FOR_MATOP, errorInfo.command, errorInfo.position, toString(_mMatrix.size()) +"x"+ toString(_mMatrix[0].size()));
+        throw SyntaxError(SyntaxError::WRONG_MATRIX_DIMENSIONS_FOR_MATOP, errorInfo.command, errorInfo.position,
+                          printMatrixDim(_mMatrix));
 
     Matrix _mEigenVals;
     Matrix _mEigenVects;
@@ -377,89 +394,45 @@ __attribute__((force_align_arg_pointer)) static Matrix calcEigenVectsAndValues(c
         }
     }
 
-    // For symmetric matrices the return value is always real
-    // This is not true for asymmetric matrices
-    /*if (isSymmMatrix(_mMatrix, errorInfo))
+    // Prepare return values
+    _mEigenVals = createFilledMatrix(_mMatrix.size(), 1, 0.0);
+    _mEigenVects = createFilledMatrix(_mMatrix.size(), _mMatrix.size(), 0.0);
+
+    // Construct an Eigen eigenvalue solver
+    Eigen::ComplexEigenSolver<Eigen::MatrixXcd> eSolver(mMatrix);
+
+    // Get eigenvalues, eigenvectors or the diagonal matrix depending
+    // on the selected return type. Separate the result into real and
+    // imaginary parts
+    if (nReturnType == EIGENVALUES)
     {
-        // Prepare return values
-        _mEigenVals = createFilledMatrix(_mMatrix.size(), 1, 0.0);
-        _mEigenVects = createFilledMatrix(_mMatrix.size(), _mMatrix.size(), 0.0);
+        Eigen::VectorXcd vEigenVals = eSolver.eigenvalues();
 
-        // Construct an Eigen eigenvalue solver
-        Eigen::SelfAdjointEigenSolver<Eigen::MatrixXcd> eSolver(mMatrix);
+        for (unsigned int i = 0; i < _mEigenVals.size(); i++)
+        {
+            _mEigenVals[i][0] = vEigenVals(i,0);
+        }
+    }
+    else if (nReturnType == EIGENVECTORS)
+    {
+        Eigen::EigenSolver<Eigen::MatrixXcd>::EigenvectorsType mEigenVects = eSolver.eigenvectors();
 
-        // Get eigenvalues, eigenvectors or the diagonal matrix depending
-        // on the selected return type
-        if (nReturnType == EIGENVALUES)
+        #pragma omp parallel for
+        for (unsigned int i = 0; i < _mEigenVects.size(); i++)
         {
-            Eigen::EigenValueType vEigenVals = eSolver.eigenvalues();
-            for (unsigned int i = 0; i < _mEigenVals.size(); i++)
+            for (unsigned int j = 0; j < _mEigenVects.size(); j++)
             {
-                _mEigenVals[i][0] = vEigenVals(i,0);
-            }
-        }
-        else if (nReturnType == EIGENVECTORS)
-        {
-            Eigen::MatrixXcd mEigenVects = eSolver.eigenvectors();
-            for (unsigned int i = 0; i < _mEigenVects.size(); i++)
-            {
-                for (unsigned int j = 0; j < _mEigenVects.size(); j++)
-                {
-                    _mEigenVects[i][j] = mEigenVects(i,j);
-                }
-            }
-        }
-        else if (nReturnType == DIAGONALIZE)
-        {
-            Eigen::VectorXcd vEigenVals = eSolver.eigenvalues();
-            for (unsigned int i = 0; i < _mEigenVects.size(); i++)
-            {
-                _mEigenVects[i][i] = vEigenVals(i,0);
+                _mEigenVects[i][j] = mEigenVects(i, j);
             }
         }
     }
-    else*/
+    else if (nReturnType == DIAGONALIZE)
     {
-        // Prepare return values
-        _mEigenVals = createFilledMatrix(_mMatrix.size(), 1, 0.0);
-        _mEigenVects = createFilledMatrix(_mMatrix.size(), _mMatrix.size(), 0.0);
+        Eigen::VectorXcd vEigenVals = eSolver.eigenvalues();
 
-        // Construct an Eigen eigenvalue solver
-        Eigen::ComplexEigenSolver<Eigen::MatrixXcd> eSolver(mMatrix);
-
-        // Get eigenvalues, eigenvectors or the diagonal matrix depending
-        // on the selected return type. Separate the result into real and
-        // imaginary parts
-        if (nReturnType == EIGENVALUES)
+        for (unsigned int i = 0; i < _mEigenVects.size(); i++)
         {
-            Eigen::VectorXcd vEigenVals = eSolver.eigenvalues();
-
-            for (unsigned int i = 0; i < _mEigenVals.size(); i++)
-            {
-                _mEigenVals[i][0] = vEigenVals(i,0);
-            }
-        }
-        else if (nReturnType == EIGENVECTORS)
-        {
-            Eigen::EigenSolver<Eigen::MatrixXcd>::EigenvectorsType mEigenVects = eSolver.eigenvectors();
-
-            #pragma omp parallel for
-            for (unsigned int i = 0; i < _mEigenVects.size(); i++)
-            {
-                for (unsigned int j = 0; j < _mEigenVects.size(); j++)
-                {
-                    _mEigenVects[i][j] = mEigenVects(i, j);
-                }
-            }
-        }
-        else if (nReturnType == DIAGONALIZE)
-        {
-            Eigen::VectorXcd vEigenVals = eSolver.eigenvalues();
-
-            for (unsigned int i = 0; i < _mEigenVects.size(); i++)
-            {
-                _mEigenVects[i][i] = vEigenVals(i, 0);
-            }
+            _mEigenVects[i][i] = vEigenVals(i, 0);
         }
     }
 
@@ -590,7 +563,8 @@ static Matrix invertMatrix(const MatFuncData& funcData, const MatFuncErrorInfo& 
         throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, errorInfo.command, errorInfo.position);
 
     if (funcData.mat1.size() != funcData.mat1[0].size())
-        throw SyntaxError(SyntaxError::WRONG_MATRIX_DIMENSIONS_FOR_MATOP, errorInfo.command, errorInfo.position, toString(funcData.mat1.size()) +"x"+ toString(funcData.mat1[0].size()));
+        throw SyntaxError(SyntaxError::WRONG_MATRIX_DIMENSIONS_FOR_MATOP, errorInfo.command, errorInfo.position,
+                          printMatrixDim(funcData.mat1));
 
     // Gauss-Elimination???
     Matrix _mInverse = identityMatrix(MatFuncData(funcData.mat1.size()), errorInfo);
@@ -1836,7 +1810,8 @@ static Matrix correlation(const MatFuncData& funcData, const MatFuncErrorInfo& e
 
     // Ensure that the size is non-zero
     if (!(funcData.mat1.size() && funcData.mat2.size()) || !(funcData.mat1[0].size() && funcData.mat2[0].size()))
-        throw SyntaxError(SyntaxError::WRONG_MATRIX_DIMENSIONS_FOR_MATOP, errorInfo.command, errorInfo.position, toString(funcData.mat1.size()) +"x"+ toString(funcData.mat1[0].size()) + ", " + toString(funcData.mat2.size()) +"x"+ toString(funcData.mat2[0].size()));
+        throw SyntaxError(SyntaxError::WRONG_MATRIX_DIMENSIONS_FOR_MATOP, errorInfo.command, errorInfo.position,
+                          printMatrixDim(funcData.mat1) + ", " + printMatrixDim(funcData.mat2));
 
     // Resize the matrices to fit their counterparts
     Matrix mMatrix1 = matrixResize(MatFuncData(funcData.mat1, mu::value_type(max(funcData.mat1.size(), funcData.mat2.size())), max(funcData.mat1[0].size(), funcData.mat2[0].size())), errorInfo);
@@ -1889,7 +1864,8 @@ static Matrix covariance(const MatFuncData& funcData, const MatFuncErrorInfo& er
 
     // Ensure that their size is equal
     if (funcData.mat1.size() != funcData.mat2.size() || funcData.mat1[0].size() != funcData.mat2[0].size() || !funcData.mat1.size() || !funcData.mat1[0].size())
-        throw SyntaxError(SyntaxError::WRONG_MATRIX_DIMENSIONS_FOR_MATOP, errorInfo.command, errorInfo.position, toString(funcData.mat1.size()) +"x"+ toString(funcData.mat1[0].size()) + " != " + toString(funcData.mat2.size()) +"x"+ toString(funcData.mat2[0].size()));
+        throw SyntaxError(SyntaxError::WRONG_MATRIX_DIMENSIONS_FOR_MATOP, errorInfo.command, errorInfo.position,
+                          printMatrixDim(funcData.mat1) + " != " + printMatrixDim(funcData.mat2));
 
     // Prepare the target matrix
     Matrix mCovariance = createFilledMatrix(1, 1, 0.0);
@@ -1973,7 +1949,9 @@ static Matrix matrixReshape(const MatFuncData& funcData, const MatFuncErrorInfo&
         throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, errorInfo.command, errorInfo.position);
 
     if (nLines * nCols != funcData.mat1.size() * funcData.mat1[0].size())
-        throw SyntaxError(SyntaxError::WRONG_MATRIX_DIMENSIONS_FOR_MATOP, errorInfo.command, errorInfo.position, toString(nLines) + "x" + toString(nCols) + "=" + toString(nLines*nCols) +" vs. "+ toString(funcData.mat1.size()) + "x" +  toString(funcData.mat1[0].size()) + "=" + toString(funcData.mat1.size()*funcData.mat1[0].size()));
+        throw SyntaxError(SyntaxError::WRONG_MATRIX_DIMENSIONS_FOR_MATOP, errorInfo.command, errorInfo.position,
+                          toString(nLines) + "x" + toString(nCols) + "=" + toString(nLines*nCols) +" vs. "
+                          + toString(funcData.mat1.size()) + "x" + toString(funcData.mat1[0].size()) + "=" + toString(funcData.mat1.size()*funcData.mat1[0].size()));
 
     Matrix _mReturn = createFilledMatrix(nLines, nCols, 0.0);
 
@@ -2033,7 +2011,7 @@ static Matrix matrixRepMat(const MatFuncData& funcData, const MatFuncErrorInfo& 
 /////////////////////////////////////////////////
 /// \brief Static helper function for
 /// std::list::remove_if() called in
-/// parser_getUniqueList()
+/// getUniqueList().
 ///
 /// \param value const mu::value_type&
 /// \return bool
@@ -2042,6 +2020,22 @@ static Matrix matrixRepMat(const MatFuncData& funcData, const MatFuncErrorInfo& 
 static bool is_nan(const mu::value_type& value)
 {
     return isnan(value);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Static helper function for std::sort()
+/// called in getUniqueList(). Determines a
+/// real-only order.
+///
+/// \param value1 const mu::value_type&
+/// \param value2 const mu::value_type&
+/// \return bool
+///
+/////////////////////////////////////////////////
+static bool isSmallerRealOnly(const mu::value_type& value1, const mu::value_type& value2)
+{
+    return value1.real() < value2.real();
 }
 
 
@@ -2068,6 +2062,8 @@ static std::vector<mu::value_type> getUniqueList(std::list<mu::value_type>& _lis
         if (std::find(vReturn.begin(), vReturn.end(), val) == vReturn.end())
             vReturn.push_back(val);
     }
+
+    std::sort(vReturn.begin(), vReturn.end(), isSmallerRealOnly);
 
     return vReturn;
 }
@@ -2527,7 +2523,8 @@ static Matrix cartToCyl(const MatFuncData& funcData, const MatFuncErrorInfo& err
         throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, errorInfo.command, errorInfo.position);
 
     if (funcData.mat1[0].size() > 3 || funcData.mat1[0].size() < 2)
-        throw SyntaxError(SyntaxError::WRONG_MATRIX_DIMENSIONS_FOR_MATOP, errorInfo.command, errorInfo.position, toString(funcData.mat1.size()) + "x" + toString(funcData.mat1[0].size()) + " vs. "+ toString(funcData.mat1.size()) + "x3");
+        throw SyntaxError(SyntaxError::WRONG_MATRIX_DIMENSIONS_FOR_MATOP, errorInfo.command, errorInfo.position,
+                          printMatrixDim(funcData.mat1) + " vs. "+ toString(funcData.mat1.size()) + "x3");
 
     Matrix _mReturn = funcData.mat1;
 
@@ -2557,7 +2554,8 @@ static Matrix cartToPolar(const MatFuncData& funcData, const MatFuncErrorInfo& e
         throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, errorInfo.command, errorInfo.position);
 
     if (funcData.mat1[0].size() > 3 || funcData.mat1[0].size() < 2)
-        throw SyntaxError(SyntaxError::WRONG_MATRIX_DIMENSIONS_FOR_MATOP, errorInfo.command, errorInfo.position, toString(funcData.mat1.size()) + "x" + toString(funcData.mat1[0].size()) + " vs. "+ toString(funcData.mat1.size()) + "x3");
+        throw SyntaxError(SyntaxError::WRONG_MATRIX_DIMENSIONS_FOR_MATOP, errorInfo.command, errorInfo.position,
+                          printMatrixDim(funcData.mat1) + " vs. "+ toString(funcData.mat1.size()) + "x3");
 
     if (funcData.mat1[0].size() == 2)
         return cartToCyl(funcData, errorInfo);
@@ -2591,7 +2589,8 @@ static Matrix cylToCart(const MatFuncData& funcData, const MatFuncErrorInfo& err
         throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, errorInfo.command, errorInfo.position);
 
     if (funcData.mat1[0].size() > 3 || funcData.mat1[0].size() < 2)
-        throw SyntaxError(SyntaxError::WRONG_MATRIX_DIMENSIONS_FOR_MATOP, errorInfo.command, errorInfo.position, toString(funcData.mat1.size()) + "x" + toString(funcData.mat1[0].size()) + " vs. "+ toString(funcData.mat1.size()) + "x3");
+        throw SyntaxError(SyntaxError::WRONG_MATRIX_DIMENSIONS_FOR_MATOP, errorInfo.command, errorInfo.position,
+                          printMatrixDim(funcData.mat1) + " vs. "+ toString(funcData.mat1.size()) + "x3");
 
     Matrix _mReturn = funcData.mat1;
 
@@ -2621,7 +2620,8 @@ static Matrix cylToPolar(const MatFuncData& funcData, const MatFuncErrorInfo& er
         throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, errorInfo.command, errorInfo.position);
 
     if (funcData.mat1[0].size() > 3 || funcData.mat1[0].size() < 2)
-        throw SyntaxError(SyntaxError::WRONG_MATRIX_DIMENSIONS_FOR_MATOP, errorInfo.command, errorInfo.position, toString(funcData.mat1.size()) + "x" + toString(funcData.mat1[0].size()) + " vs. "+ toString(funcData.mat1.size()) + "x3");
+        throw SyntaxError(SyntaxError::WRONG_MATRIX_DIMENSIONS_FOR_MATOP, errorInfo.command, errorInfo.position,
+                          printMatrixDim(funcData.mat1) + " vs. "+ toString(funcData.mat1.size()) + "x3");
 
     if (funcData.mat1[0].size() == 2)
         return funcData.mat1;
@@ -2654,7 +2654,8 @@ static Matrix polarToCart(const MatFuncData& funcData, const MatFuncErrorInfo& e
         throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, errorInfo.command, errorInfo.position);
 
     if (funcData.mat1[0].size() > 3 || funcData.mat1[0].size() < 2)
-        throw SyntaxError(SyntaxError::WRONG_MATRIX_DIMENSIONS_FOR_MATOP, errorInfo.command, errorInfo.position, toString(funcData.mat1.size()) + "x" + toString(funcData.mat1[0].size()) + " vs. "+ toString(funcData.mat1.size()) + "x3");
+        throw SyntaxError(SyntaxError::WRONG_MATRIX_DIMENSIONS_FOR_MATOP, errorInfo.command, errorInfo.position,
+                          printMatrixDim(funcData.mat1) + " vs. "+ toString(funcData.mat1.size()) + "x3");
 
     if (funcData.mat1[0].size() == 2)
         return cylToCart(funcData, errorInfo);
@@ -2688,7 +2689,8 @@ static Matrix polarToCyl(const MatFuncData& funcData, const MatFuncErrorInfo& er
         throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, errorInfo.command, errorInfo.position);
 
     if (funcData.mat1[0].size() > 3 || funcData.mat1[0].size() < 2)
-        throw SyntaxError(SyntaxError::WRONG_MATRIX_DIMENSIONS_FOR_MATOP, errorInfo.command, errorInfo.position, toString(funcData.mat1.size()) + "x" + toString(funcData.mat1[0].size()) + " vs. "+ toString(funcData.mat1.size()) + "x3");
+        throw SyntaxError(SyntaxError::WRONG_MATRIX_DIMENSIONS_FOR_MATOP, errorInfo.command, errorInfo.position,
+                          printMatrixDim(funcData.mat1) + " vs. "+ toString(funcData.mat1.size()) + "x3");
 
     Matrix _mReturn = funcData.mat1;
 
@@ -2750,13 +2752,16 @@ static Matrix coordsToGrid(const MatFuncData& funcData, const MatFuncErrorInfo& 
         throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, errorInfo.command, errorInfo.position);
 
     if (funcData.mat1[0].size() > 2)
-        throw SyntaxError(SyntaxError::WRONG_MATRIX_DIMENSIONS_FOR_MATOP, errorInfo.command, errorInfo.position, toString(funcData.mat1.size()) + "x" + toString(funcData.mat1[0].size()) + " vs. "+ toString(funcData.mat1.size()) + "x2");
+        throw SyntaxError(SyntaxError::WRONG_MATRIX_DIMENSIONS_FOR_MATOP, errorInfo.command, errorInfo.position,
+                          printMatrixDim(funcData.mat1) + " vs. "+ toString(funcData.mat1.size()) + "x2");
 
     if (funcData.mat2[0].size() > 2)
-        throw SyntaxError(SyntaxError::WRONG_MATRIX_DIMENSIONS_FOR_MATOP, errorInfo.command, errorInfo.position, toString(funcData.mat2.size()) + "x" + toString(funcData.mat2[0].size()) + " vs. "+ toString(funcData.mat2.size()) + "x2");
+        throw SyntaxError(SyntaxError::WRONG_MATRIX_DIMENSIONS_FOR_MATOP, errorInfo.command, errorInfo.position,
+                          printMatrixDim(funcData.mat2) + " vs. "+ toString(funcData.mat2.size()) + "x2");
 
     if (funcData.mat2[0].size() == 2 && funcData.mat1[0].size() < 2)
-        throw SyntaxError(SyntaxError::WRONG_MATRIX_DIMENSIONS_FOR_MATOP, errorInfo.command, errorInfo.position, toString(funcData.mat1.size()) + "x" + toString(funcData.mat1[0].size()) + " vs. "+ toString(funcData.mat2.size()) + "x2");
+        throw SyntaxError(SyntaxError::WRONG_MATRIX_DIMENSIONS_FOR_MATOP, errorInfo.command, errorInfo.position,
+                          printMatrixDim(funcData.mat1) + " vs. "+ toString(funcData.mat2.size()) + "x2");
 
     Matrix gcoords = funcData.mat2;
 
@@ -2857,7 +2862,8 @@ static Matrix interpolate(const MatFuncData& funcData, const MatFuncErrorInfo& e
         throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, errorInfo.command, errorInfo.position);
 
     if (funcData.mat2[0].size() >= 2 && funcData.mat1[0].size() <= 2)
-        throw SyntaxError(SyntaxError::WRONG_MATRIX_DIMENSIONS_FOR_MATOP, errorInfo.command, errorInfo.position, toString(funcData.mat1.size()) + "x" + toString(funcData.mat1[0].size()) + " vs. "+ toString(funcData.mat2.size()) + "x"+ toString(funcData.mat2[0].size()));
+        throw SyntaxError(SyntaxError::WRONG_MATRIX_DIMENSIONS_FOR_MATOP, errorInfo.command, errorInfo.position,
+                          printMatrixDim(funcData.mat1) + " vs. "+ printMatrixDim(funcData.mat2));
 
     Matrix interp = createFilledMatrix(funcData.mat2.size(), std::max(1u, funcData.mat2[0].size()-1), 0.0);
 
@@ -2900,13 +2906,14 @@ static Matrix selection(const MatFuncData& funcData, const MatFuncErrorInfo& err
     bool isScalar[2] = {funcData.mat2.size() == 1 && funcData.mat2[0].size() == 1, funcData.mat3.size() == 1 && funcData.mat3[0].size() == 1};
 
     if (!isScalar[0] && !isScalar[1] && (funcData.mat2.size() != funcData.mat3.size() || funcData.mat2[0].size() != funcData.mat3[0].size()))
-        throw SyntaxError(SyntaxError::WRONG_MATRIX_DIMENSIONS_FOR_MATOP, errorInfo.command, errorInfo.position, toString(funcData.mat2.size()) + "x" + toString(funcData.mat2[0].size()) + " vs. "+ toString(funcData.mat3.size()) + "x"+ toString(funcData.mat3[0].size()));
+        throw SyntaxError(SyntaxError::WRONG_MATRIX_DIMENSIONS_FOR_MATOP, errorInfo.command, errorInfo.position,
+                          printMatrixDim(funcData.mat2) + " vs. " + printMatrixDim(funcData.mat3));
 
     // Prepare the return value
     Matrix selected = createFilledMatrix(std::max(funcData.mat2.size(), funcData.mat3.size()), std::max(funcData.mat2[0].size(), funcData.mat3[0].size()), NAN);
 
-    long long int row = 0;
-    long long int col = 0;
+    int row = 0;
+    int col = 0;
 
     // Store the scalar values
     if (isScalar[0])
@@ -2938,6 +2945,79 @@ static Matrix selection(const MatFuncData& funcData, const MatFuncErrorInfo& err
 
 
 /////////////////////////////////////////////////
+/// \brief Assembles a matrix from coordinates
+/// and values (a datagrid replacement without
+/// interpolation).
+///
+/// \param funcData const MatFuncData&
+/// \param errorInfo const MatFuncErrorInfo&
+/// \return Matrix
+///
+/////////////////////////////////////////////////
+static Matrix assemble(const MatFuncData& funcData, const MatFuncErrorInfo& errorInfo)
+{
+    if (!funcData.mat1.size()
+        || !funcData.mat1[0].size()
+        || !funcData.mat2.size()
+        || !funcData.mat2[0].size()
+        || !funcData.mat3.size()
+        || !funcData.mat3[0].size())
+        throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, errorInfo.command, errorInfo.position);
+
+    // Store the scalar state
+    bool isScalar[2] = {funcData.mat1.size() == 1 && funcData.mat1[0].size() == 1,
+                        funcData.mat2.size() == 1 && funcData.mat2[0].size() == 1};
+
+    if (!isScalar[0]
+        && !isScalar[1]
+        && (funcData.mat1.size() != funcData.mat2.size()
+            || funcData.mat1[0].size() != funcData.mat2[0].size()
+            || funcData.mat1.size() != funcData.mat3.size()
+            || funcData.mat1[0].size() != funcData.mat3[0].size()))
+        throw SyntaxError(SyntaxError::WRONG_MATRIX_DIMENSIONS_FOR_MATOP, errorInfo.command, errorInfo.position,
+                          printMatrixDim(funcData.mat1) + " vs. " + printMatrixDim(funcData.mat2) + " vs. " + printMatrixDim(funcData.mat3));
+
+    // Prepare the return value
+    int rows = calculateStats(funcData.mat1, StatsLogic(StatsLogic::OPERATION_MAX, funcData.mat1[0][0].real()),
+                              0, funcData.mat1.size(), 0, funcData.mat1[0].size()).real();
+
+    int cols = calculateStats(funcData.mat2, StatsLogic(StatsLogic::OPERATION_MAX, funcData.mat2[0][0].real()),
+                              0, funcData.mat2.size(), 0, funcData.mat2[0].size()).real();
+
+    // Prepare the filled matrix
+    Matrix assembled = createFilledMatrix(rows, cols, NAN);
+
+    int row = 0;
+    int col = 0;
+
+    // Store the scalar values
+    if (isScalar[0])
+        row = intCast(funcData.mat1[0][0])-1;
+
+    if (isScalar[1])
+        col = intCast(funcData.mat2[0][0])-1;
+
+    #pragma omp parallel for firstprivate(row,col)
+    for (size_t i = 0; i < funcData.mat3.size(); i++)
+    {
+        for (size_t j = 0; j < funcData.mat3[0].size(); j++)
+        {
+            // Get the values, if they are no scalars
+            if (!isScalar[0])
+                row = intCast(funcData.mat1[i][j])-1;
+
+            if (!isScalar[1])
+                col = intCast(funcData.mat2[i][j])-1;
+
+            assembled[row][col] = funcData.mat3[i][j];
+        }
+    }
+
+    return assembled;
+}
+
+
+/////////////////////////////////////////////////
 /// \brief Calculates the length of an open
 /// polygon. If the circumference of a closed
 /// polygon shall be calculated, then append the
@@ -2954,7 +3034,8 @@ static Matrix polyLength(const MatFuncData& funcData, const MatFuncErrorInfo& er
         throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, errorInfo.command, errorInfo.position);
 
     if (funcData.mat1[0].size() < 2)
-        throw SyntaxError(SyntaxError::WRONG_MATRIX_DIMENSIONS_FOR_MATOP, errorInfo.command, errorInfo.position, toString(funcData.mat1.size()) + "x" + toString(funcData.mat1[0].size()));
+        throw SyntaxError(SyntaxError::WRONG_MATRIX_DIMENSIONS_FOR_MATOP, errorInfo.command, errorInfo.position,
+                          printMatrixDim(funcData.mat1));
 
     Matrix mRes = createZeroesMatrix(1, 1);
 
@@ -3059,6 +3140,7 @@ static std::map<std::string,MatFuncDef> getMatrixFunctions()
     mFunctions["coordstogrid"] = MatFuncDef(MATSIG_MAT_MAT, coordsToGrid);
     mFunctions["interpolate"] = MatFuncDef(MATSIG_MAT_MAT, interpolate);
     mFunctions["select"] = MatFuncDef(MATSIG_MAT_MAT_MAT, selection);
+    mFunctions["assemble"] = MatFuncDef(MATSIG_MAT_MAT_MAT, assemble);
     mFunctions["polylength"] = MatFuncDef(MATSIG_MAT, polyLength);
 
     // For finding matrix functions
