@@ -31,9 +31,11 @@ class StringView;
 
 enum TIMESTAMP
 {
-    GET_ONLY_TIME = 1,
-    GET_AS_TIMESTAMP = 2,
-    GET_WITH_TEXT = 4
+    GET_ONLY_TIME = 0x1,
+    GET_AS_TIMESTAMP = 0x2,
+    GET_WITH_TEXT = 0x4,
+    GET_MILLISECONDS = 0x8,
+    GET_FULL_PRECISION = 0x10
 };
 
 enum ConvertibleType

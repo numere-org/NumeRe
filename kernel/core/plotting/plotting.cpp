@@ -3847,10 +3847,12 @@ void Plot::extractDataValues(const std::vector<std::string>& vDataPlots)
             }
 
             // Write the meshgrid data
+            #pragma omp parallel for
             for (size_t x = 0; x < samples[0]; x++)
             {
                 for (size_t y = 0; y < samples[1]; y++)
                 {
+#warning TODO (numere#4#03/05/22): The function getDataFromObject is quite inefficent
                     m_manager.assets[typeCounter].writeData(getDataFromObject(_accessParser.getDataObject(),
                                                             _idx.row[x],
                                                             _idx.col[y+2],

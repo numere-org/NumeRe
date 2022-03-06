@@ -438,6 +438,7 @@ wxThread::ExitCode NumeReTerminal::Entry()
 	string sCommand;
 	bool bCommandAvailable;
 	bool updateLibrary;
+	_kernel.initializeStackTracker();
 	_kernel.printVersionInfo();
 	_kernel.printPreFmt("|\n|<- ");
 

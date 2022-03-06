@@ -1259,6 +1259,8 @@ bool readImage(CommandLineParser& cmdParser)
 	// Create the image object
 	wxImage image;
 
+	g_logger.info("Loading image file '" + sFileName + "'.");
+
 	// Load the file to the image object (wxWidgets will try to autodetect the image file format)
 	// and throw an error, if it doesn't succeed
 	if (!image.LoadFile(sFileName, wxBITMAP_TYPE_ANY))
@@ -1285,13 +1287,16 @@ bool readImage(CommandLineParser& cmdParser)
     vIndices.push_back(_idx.col.min()+1);
     vIndices.push_back(_idx.col.max()+1);
 
+	int rowmax = _idx.row.subidx(0, nWidth).max();
+	Memory* _table = _data.getTable(sTargetCache);
+
     // Write the axes to the target cache
 	for (int i = 0; i < nWidth; i++)
 	{
 		if (_idx.row[i] == VectorIndex::INVALID)
 			break;
 
-		_data.writeToTable(_idx.row[i], _idx.col.front(), sTargetCache, i + 1);
+		_table->writeData(_idx.row[i], _idx.col.front(), i + 1);
 	}
 
 	for (int i = 0; i < nHeight; i++)
@@ -1299,30 +1304,38 @@ bool readImage(CommandLineParser& cmdParser)
 		if (_idx.row[i] == VectorIndex::INVALID)
 			break;
 
-		_data.writeToTable(_idx.row[i], _idx.col[1], sTargetCache, i + 1);
+		_table->writeData(_idx.row[i], _idx.col[1], i + 1);
+
+		if (sChannels == "grey")
+            _table->writeData(rowmax, _idx.col[2+i], 0.0);
+        else
+        {
+            for (size_t n = 0; n < sChannels.length(); n++)
+                _table->writeData(rowmax, _idx.col[2+i + n*nHeight], 0.0);
+        }
 	}
 
 	// Write headlines
 	_data.setHeadLineElement(_idx.col[0], sTargetCache, "x");
 	_data.setHeadLineElement(_idx.col[1], sTargetCache, "y");
 
-	// iData is a iterator over the image data
-	int iData;
+	g_logger.debug("Writing image data to table.");
 
 	// Copy the average of the RGB channels (grey scale) to the data object
+	#pragma omp parallel for
 	for (int j = 0; j < nHeight; j++)
 	{
-		iData = 0;
+		int iData = 0;
 
 		if (_idx.col[j+2] == VectorIndex::INVALID)
-			break;
+			continue;
 
         if (sChannels == "grey")
-            _data.setHeadLineElement(_idx.col[2+j], sTargetCache, "z(x(:),y(" + toString(j+1) + "))");
+            _table->setHeadLineElement(_idx.col[2+j], "z(x(:),y(" + toString(j+1) + "))");
         else
         {
             for (size_t n = 0; n < sChannels.length(); n++)
-                _data.setHeadLineElement(_idx.col[2+j + n*nHeight], sTargetCache, "z(x(:),y(" + toString(j) + "))_"+sChannels[n]);
+                _table->setHeadLineElement(_idx.col[2+j + n*nHeight], "z(x(:),y(" + toString(j) + "))_"+sChannels[n]);
         }
 
 		for (int i = 0; i < nWidth; i++)
@@ -1334,8 +1347,11 @@ bool readImage(CommandLineParser& cmdParser)
             if (sChannels == "grey")
             {
                 // Calculate the luminosity of the three channels and write it to the table
-                _data.writeToTable(_idx.row[i], _idx.col[2 + (nHeight - j - 1)], sTargetCache,
-                                   imageData[j * 3 * nWidth + iData] * 0.299 + imageData[j * 3 * nWidth + iData + 1] * 0.587 + imageData[j * 3 * nWidth + iData + 2] * 0.114);
+                _table->writeDataDirectUnsafe(_idx.row[i],
+                                              _idx.col[2 + (nHeight - j - 1)],
+                                              imageData[j * 3 * nWidth + iData] * 0.299
+                                                + imageData[j * 3 * nWidth + iData + 1] * 0.587
+                                                + imageData[j * 3 * nWidth + iData + 2] * 0.114);
             }
             else
             {
@@ -1345,13 +1361,19 @@ bool readImage(CommandLineParser& cmdParser)
                     switch (sChannels[n])
                     {
                         case 'r':
-                            _data.writeToTable(_idx.row[i], _idx.col[2 + (nHeight - j - 1) + n*nHeight], sTargetCache, imageData[j * 3 * nWidth + iData]);
+                            _table->writeDataDirectUnsafe(_idx.row[i],
+                                                          _idx.col[2 + (nHeight - j - 1) + n*nHeight],
+                                                          imageData[j * 3 * nWidth + iData]);
                             break;
                         case 'g':
-                            _data.writeToTable(_idx.row[i], _idx.col[2 + (nHeight - j - 1) + n*nHeight], sTargetCache, imageData[j * 3 * nWidth + iData + 1]);
+                            _table->writeDataDirectUnsafe(_idx.row[i],
+                                                          _idx.col[2 + (nHeight - j - 1) + n*nHeight],
+                                                          imageData[j * 3 * nWidth + iData + 1]);
                             break;
                         case 'b':
-                            _data.writeToTable(_idx.row[i], _idx.col[2 + (nHeight - j - 1) + n*nHeight], sTargetCache, imageData[j * 3 * nWidth + iData + 2]);
+                            _table->writeDataDirectUnsafe(_idx.row[i],
+                                                          _idx.col[2 + (nHeight - j - 1) + n*nHeight],
+                                                          imageData[j * 3 * nWidth + iData + 2]);
                             break;
                     }
                 }
@@ -1361,6 +1383,9 @@ bool readImage(CommandLineParser& cmdParser)
 			iData += 3;
 		}
 	}
+
+    _table->markModified();
+	g_logger.debug("Image file loaded.");
 
 	cmdParser.setReturnValue(vIndices);
 

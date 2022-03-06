@@ -529,6 +529,22 @@ void NumeReKernel::defineFunctions()
 
 
 /////////////////////////////////////////////////
+/// \brief Starts the stack tracker, which will
+/// prevent stack overflows.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
+void NumeReKernel::initializeStackTracker()
+{
+    // measure the current stack position
+    int stackMeasureVar;
+    baseStackPosition = &stackMeasureVar;
+    g_logger.debug("Base stack address = " + toHexString((int)baseStackPosition));
+}
+
+
+/////////////////////////////////////////////////
 /// \brief This member function prints the version
 /// headline and the version information to the
 /// console.
@@ -538,10 +554,6 @@ void NumeReKernel::defineFunctions()
 /////////////////////////////////////////////////
 void NumeReKernel::printVersionInfo()
 {
-    // measure the current stack position
-    int stackMeasureVar;
-    baseStackPosition = &stackMeasureVar;
-
     bWritingTable = true;
     make_hline(80);
     printPreFmt("| ");

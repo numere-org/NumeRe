@@ -368,6 +368,7 @@ class NumeReKernel
         std::vector<std::string> getPathSettings() const;
         std::vector<std::string> getInstalledPackages() const;
         std::map<std::string, std::string> getMenuMap() const;
+        void initializeStackTracker();
         void printVersionInfo();
         void updateLineLenght(int nLength);
         void sendErrorNotification();

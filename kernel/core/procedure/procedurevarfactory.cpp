@@ -1334,13 +1334,12 @@ void ProcedureVarFactory::createLocalTables(string sTableList)
 
     // Get the number of declared variables
     size_t nLocalTableSize = countVarListElements(sTableList);
-    std::string sCurrentValue;
 
     // Decode the variable list
     for (unsigned int i = 0; i < nLocalTableSize; i++)
     {
         std::string currentDef = getNextArgument(sTableList, true);
-
+        std::string sCurrentValue;
         std::string sSymbol = currentDef.substr(0, currentDef.find('='));
 
         if (!checkSymbolName(sSymbol))
@@ -1450,13 +1449,12 @@ void ProcedureVarFactory::createLocalClusters(string sClusterList)
 
     // Get the number of declared variables
     size_t nLocalClusterSize = countVarListElements(sClusterList);
-    std::string sCurrentValue;
 
     // Decode the variable list
     for (unsigned int i = 0; i < nLocalClusterSize; i++)
     {
         std::string currentDef = getNextArgument(sClusterList, true);
-
+        std::string sCurrentValue;
         std::string sSymbol = currentDef.substr(0, currentDef.find('='));
 
         if (!checkSymbolName(sSymbol))

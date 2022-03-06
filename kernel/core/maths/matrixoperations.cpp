@@ -22,6 +22,7 @@
 #include "parser_functions.hpp"
 #include "../../kernel.hpp"
 #include "../utils/stringtools.hpp"
+#include "../io/logger.hpp"
 #include <list>
 #include <cmath>
 
@@ -177,10 +178,16 @@ bool performMatrixOperation(string& sCmd, Parser& _parser, MemoryManager& _data,
             bAllowMatrixClearing = true;
     }
 
+    g_logger.debug("Start evalMatOp.");
     // Matrixmultiplikationen / Transpositionen / Invertierungen?
     // -> Submatrixoperationen ausfuehren
     Matrix _mResult = evalMatOp(sCmd, _parser, _data, _functions, _option, _cache);
+    g_logger.debug("Stop evalMatOp.");
     _assertionHandler.checkAssertion(_mResult);
+
+    // Safety check
+    if (!_mResult.size())
+        return false;
 
     // Target in Zielmatrix speichern
     if (!isCluster)
@@ -191,21 +198,35 @@ bool performMatrixOperation(string& sCmd, Parser& _parser, MemoryManager& _data,
 
         // Prepare the target size
         _data.resizeTable(_idx.col.front()+_mResult[0].size(), sTargetName);
+        Memory* _table = _data.getTable(sTargetName);
 
-        // Write the contents to the table
-        for (unsigned int i = 0; i < _mResult.size(); i++)
+        int maxrow = _idx.row.subidx(0, _mResult.size()).max();
+
+        for (size_t j = 0; j < _mResult[0].size(); j++)
         {
-            if (_idx.row[i] == VectorIndex::INVALID)
+            if (_idx.col[j] == VectorIndex::INVALID)
                 break;
 
-            for (unsigned int j = 0; j < _mResult[0].size(); j++)
+            _table->writeData(maxrow, _idx.col[j], 0.0);
+        }
+
+        // Write the contents to the table
+        #pragma omp parallel for
+        for (unsigned int j = 0; j < _mResult[0].size(); j++)
+        {
+            if (_idx.col[j] == VectorIndex::INVALID)
+                continue;
+
+            for (unsigned int i = 0; i < _mResult.size(); i++)
             {
-                if (_idx.col[j] == VectorIndex::INVALID)
+                if (_idx.row[i] == VectorIndex::INVALID)
                     break;
 
-                _data.writeToTable(_idx.row[i], _idx.col[j], sTargetName, _mResult[i][j]);
+                _table->writeDataDirectUnsafe(_idx.row[i], _idx.col[j], _mResult[i][j]);
             }
         }
+
+        _table->markModified();
     }
     else
     {
@@ -857,6 +878,8 @@ static Matrix evalMatOp(string& sCmd, Parser& _parser, MemoryManager& _data, Fun
         _mTarget[n][0] = v[n];
     }
 
+    g_logger.debug("Matrix loop.");
+
     // Get now the next columns as vectors
     // and evaluate the expression with their
     // values
@@ -912,6 +935,7 @@ static Matrix evalMatOp(string& sCmd, Parser& _parser, MemoryManager& _data, Fun
         }
 
         // Evaluate
+#warning TODO (numere#6#03/04/22): Needs parallelization for reasonable performance at this position.
         v = _parser.Eval(nResults);
 
         // Append the vector to the target matrix

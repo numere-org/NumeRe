@@ -77,3 +77,6 @@ Fixed	The from the dependency viewer generated DOT file is now correct and displ
 Added	The terminal now features also tooltips, which show the signatures of the current syntax element.
 Added	The editor may now show a vertical line right after a 100 character line length.
 Applied	The editor is now splittable horizontally or vertically. Use the tab's context menu and select the "cloning" functionalities.
+New	The matrix function "assemble()" was added to create a matrix from indices and values.
+Cleaned	Tables can now be copied using the syntax "TAB2() = TAB1()". This is also valid for procedure return values and local tables.
+Cleaned	A warning was added, when the user uses tables without ampersands as procedure arguments. These tables will be copied by default in future versions.

@@ -250,7 +250,14 @@ std::string toString(sys_time_point tp, int timeStampFlags)
     timeStream << std::setfill('0') << std::setw(2) << ltm.m_seconds.count();	// ss
 
     if (!(timeStampFlags & GET_AS_TIMESTAMP))
-        timeStream << "." << std::setfill('0') << std::setw(3) << ltm.m_millisecs.count();
+    {
+        if (timeStampFlags & (GET_MILLISECONDS | GET_FULL_PRECISION)
+            || ltm.m_millisecs.count())
+            timeStream << "." << std::setfill('0') << std::setw(3) << ltm.m_millisecs.count();
+
+        if (timeStampFlags & GET_FULL_PRECISION)
+            timeStream << std::setfill('0') << std::setw(3) << ltm.m_microsecs.count();
+    }
 
     return timeStream.str();
 }
@@ -506,7 +513,41 @@ std::complex<double> StrToCmplx(const std::string& sString)
     if (!isConvertible(sString, CONVTYPE_VALUE))
         return NAN;
 
-    std::stringstream in(sString);
+    size_t imagPos = 0;
+
+    // read 1st value
+    re = std::stod(sString, &imagPos);
+
+    // check whether next char is 'i' and advance
+    // over all whitespaces
+    while (imagPos < sString.length() && sString[imagPos] == ' ')
+        imagPos++;
+
+    if (imagPos >= sString.length())
+        return re; // End of Input
+
+    // Is it the actual imaginary value?
+    if (sString[imagPos] == 'i' || sString[imagPos] == 'I' || sString[imagPos] == '*')
+        return std::complex<double>(0.0, re);
+
+    size_t imagEnd;
+    im = std::stod(sString.substr(imagPos), &imagEnd);
+
+    imagEnd += imagPos;
+
+    // check whether next char is 'i' and advance
+    // over all whitespaces
+    while (imagEnd < sString.length() &&sString[imagEnd] == ' ')
+        imagEnd++;
+
+    if (sString[imagEnd] == EOF
+        || (sString[imagEnd] != 'i' && sString[imagEnd] != 'I' && sString[imagEnd] != '*'))
+    { // ERROR or premature end of input
+        return re;
+    }
+
+    return std::complex<double>(re, im);
+    /*std::stringstream in(sString);
 
     // read 1st value
     if (!(in >> re))
@@ -573,7 +614,7 @@ std::complex<double> StrToCmplx(const std::string& sString)
         return re;
     }
 
-    return std::complex<double>(re, im);
+    return std::complex<double>(re, im);*/
 }
 
 

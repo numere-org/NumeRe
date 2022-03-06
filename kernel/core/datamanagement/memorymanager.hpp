@@ -482,7 +482,7 @@ class MemoryManager : public NumeRe::FileAdapter, public StringMemory, public Nu
 		}
 
         // WRITE ACCESS METHODS
-		inline void writeToTable(int _nLine, int _nCol, const std::string& _sCache, mu::value_type _dData)
+		inline void writeToTable(int _nLine, int _nCol, const std::string& _sCache, const mu::value_type& _dData)
 		{
 			vMemory[findTable(_sCache)]->writeData(_nLine, _nCol, _dData);
 		}

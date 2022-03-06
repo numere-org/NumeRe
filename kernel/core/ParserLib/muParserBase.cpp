@@ -2172,6 +2172,7 @@ namespace mu
 					stVal.push(opt);
 					m_vRPN.AddVar( static_cast<value_type*>(opt.GetVar()) );
 
+#warning TODO (numere#5#03/04/22): Heres possibly the location to enbable multiprocessing in the parser
 					if (mVectorVars.size())
 					{
 						if (mVectorVars.find(opt.GetAsString()) != mVectorVars.end())

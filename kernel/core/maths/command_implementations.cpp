@@ -3653,11 +3653,14 @@ bool readAudioFile(CommandLineParser& cmdParser)
 
     Indices _targetIdx;
     std::string sTarget = cmdParser.getTargetTable(_targetIdx, "");
+    std::string sAudioFile = cmdParser.getExprAsFileName(".wav");
+
+    g_logger.info("Load audiofile '" + sAudioFile + "'.");
 
     // Read the whole table or only the metadata
     if (sTarget.length())
     {
-        std::unique_ptr<Audio::File> audiofile(Audio::getAudioFileByType(cmdParser.getExprAsFileName(".wav")));
+        std::unique_ptr<Audio::File> audiofile(Audio::getAudioFileByType(sAudioFile));
 
         if (!audiofile.get() || !audiofile.get()->isValid())
             return false;
@@ -3669,6 +3672,15 @@ bool readAudioFile(CommandLineParser& cmdParser)
         _data.resizeTable(nChannels > 1 && _targetIdx.col.size() > 1 ? _targetIdx.col.subidx(0, 2).max()+1 : _targetIdx.col.front()+1,
                           sTarget);
 
+        Memory* _table = _data.getTable(sTarget);
+        int rowmax = _targetIdx.row.subidx(0, nLen).max();
+
+        // Write the last row for preallocation
+        _table->writeData(rowmax, _targetIdx.col.front(), 0.0);
+
+        if (nChannels > 1 && _targetIdx.col.size() > 1)
+            _table->writeData(rowmax, _targetIdx.col[1], 0.0);
+
         for (size_t i = 0; i < nLen; i++)
         {
             Audio::Sample sample = audiofile.get()->read();
@@ -3676,11 +3688,13 @@ bool readAudioFile(CommandLineParser& cmdParser)
             if (_targetIdx.row.size() <= i)
                 break;
 
-            _data.writeToTable(_targetIdx.row[i], _targetIdx.col[0], sTarget, sample.leftOrMono);
+            _table->writeDataDirectUnsafe(_targetIdx.row[i], _targetIdx.col[0], sample.leftOrMono);
 
             if (nChannels > 1 && _targetIdx.col.size() > 1)
-                _data.writeToTable(_targetIdx.row[i], _targetIdx.col[1], sTarget, sample.right);
+                _table->writeDataDirectUnsafe(_targetIdx.row[i], _targetIdx.col[1], sample.right);
         }
+
+        _table->markModified();
 
         // Create the storage indices
         std::vector<mu::value_type> vIndices = {_targetIdx.row.min()+1,
@@ -3689,10 +3703,11 @@ bool readAudioFile(CommandLineParser& cmdParser)
             (nChannels > 1 && _targetIdx.col.size() > 1 ? _targetIdx.col.subidx(0, 2).max()+1 : _targetIdx.col.front()+1)};
 
         cmdParser.setReturnValue(vIndices);
+        g_logger.info("Audiofile read.");
     }
     else
     {
-        std::unique_ptr<Audio::File> audiofile(Audio::getAudioFileByType(cmdParser.getExprAsFileName(".wav")));
+        std::unique_ptr<Audio::File> audiofile(Audio::getAudioFileByType(sAudioFile));
 
         if (!audiofile.get() || !audiofile.get()->isValid())
             return false;
@@ -3706,6 +3721,7 @@ bool readAudioFile(CommandLineParser& cmdParser)
         std::vector<mu::value_type> vMetaData = {nLen, nChannels, nSampleRate, nLen / (double)nSampleRate};
 
         cmdParser.setReturnValue(vMetaData);
+        g_logger.info("Audiofile metadata read.");
     }
 
     return true;
@@ -3730,7 +3746,10 @@ bool seekInAudioFile(CommandLineParser& cmdParser)
     if (vSeekIndices.size() < 2)
         return false;
 
-    std::unique_ptr<Audio::File> audiofile(Audio::getAudioFileByType(cmdParser.getFileParameterValue(".wav")));
+    std::string sAudioFile = cmdParser.getFileParameterValue(".wav");
+
+    g_logger.info("Load audiofile '" + sAudioFile + "'.");
+    std::unique_ptr<Audio::File> audiofile(Audio::getAudioFileByType(sAudioFile));
 
     if (!audiofile.get() || !audiofile.get()->isValid())
         return false;
@@ -3750,6 +3769,15 @@ bool seekInAudioFile(CommandLineParser& cmdParser)
     _data.resizeTable(nChannels > 1 && _targetIdx.col.size() > 1 ? _targetIdx.col.subidx(0, 2).max()+1 : _targetIdx.col.front()+1,
                       sTarget);
 
+    Memory* _table = _data.getTable(sTarget);
+    int rowmax = _targetIdx.row.subidx(0, nLen).max();
+
+    // Write the last row for pre-allocation
+    _table->writeData(rowmax, _targetIdx.col.front(), 0.0);
+
+    if (nChannels > 1 && _targetIdx.col.size() > 1)
+        _table->writeData(rowmax, _targetIdx.col[1], 0.0);
+
     for (size_t i = 0; i < nLen; i++)
     {
         Audio::Sample sample = seekable.get()->read();
@@ -3757,13 +3785,15 @@ bool seekInAudioFile(CommandLineParser& cmdParser)
         if (_targetIdx.row.size() <= i)
             break;
 
-        _data.writeToTable(_targetIdx.row[i], _targetIdx.col[0], sTarget, sample.leftOrMono);
+        _table->writeDataDirectUnsafe(_targetIdx.row[i], _targetIdx.col[0], sample.leftOrMono);
 
         if (nChannels > 1 && _targetIdx.col.size() > 1)
-            _data.writeToTable(_targetIdx.row[i], _targetIdx.col[1], sTarget, sample.right);
+            _table->writeDataDirectUnsafe(_targetIdx.row[i], _targetIdx.col[1], sample.right);
     }
 
+    _table->markModified();
     cmdParser.setReturnValue(toString(nLen));
+    g_logger.info("Seeked portion read.");
 
     return true;
 }
@@ -4429,15 +4459,21 @@ void rotateTable(CommandLineParser& cmdParser)
         _idx.col = _idx.col.subidx(2);
     }
 
-    // Calculate the rotated grid
-    for (int i = 0; i < rows; i++)
-    {
-        if (_idx.row.size() <= (size_t)i)
-            break;
+    Memory* _table = _data.getTable(sTargetTable);
 
-        for (int j = 0; j < cols; j++)
+    // Prepare the needed number of columns
+    _table->resizeMemory(-1, _idx.col.subidx(0, cols).max()+1);
+
+    // Calculate the rotated grid
+    #pragma omp parallel for
+    for (int j = 0; j < cols; j++)
+    {
+        if (_idx.col.size() <= (size_t)j)
+            continue;
+
+        for (int i = 0; i < rows; i++)
         {
-            if (_idx.col.size() <= (size_t)j)
+            if (_idx.row.size() <= (size_t)i)
                 break;
 
             // Create a point in rotated source coordinates
@@ -4446,13 +4482,15 @@ void rotateTable(CommandLineParser& cmdParser)
             p.rotate(-dAlpha, origin);
 
             // Store the interpolated value in target coordinates
-            _data.writeToTable(_idx.row[i], _idx.col[j], sTargetTable, _source->readMemInterpolated(p.y, p.x));
+            _table->writeDataDirect(_idx.row[i], _idx.col[j], _source->readMemInterpolated(p.y, p.x));
         }
     }
 
     // clear the memory instance
     delete _source;
+    _table->markModified();
     _data.shrink(sTargetTable);
+    g_logger.debug("Dataset rotated.");
 
     if (NumeReKernel::getInstance()->getSettings().systemPrints())
         NumeReKernel::print(_lang.get("BUILTIN_CHECKKEYWORD_ROTATETABLE_SUCCESS", sTargetTable));

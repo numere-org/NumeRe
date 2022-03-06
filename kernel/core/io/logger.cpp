@@ -320,7 +320,7 @@ void DetachedLogger::push_line(Logger::LogLevel lvl, const std::string& sMessage
     if (lvl < m_level)
         return;
 
-    std::string sLevel = toString(sys_time_now(), 0) + "  ";
+    std::string sLevel = toString(sys_time_now(), GET_MILLISECONDS) + "  ";
 
     switch (lvl)
     {

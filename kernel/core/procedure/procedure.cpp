@@ -607,8 +607,12 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, F
     // that the current call won't exceed the
     // maximal stack size
     int stackMeasureVar;
+
     if ((stackMeasureVar = abs(&stackMeasureVar - NumeReKernel::baseStackPosition)) > MAX_PROCEDURE_STACK_SIZE)
+    {
+        g_logger.info("Stacksize: " + toString(abs(&stackMeasureVar - NumeReKernel::baseStackPosition) / 1024.0, 6) + " KiB.");
         throw SyntaxError(SyntaxError::PROCEDURE_STACK_OVERFLOW, "$" + sProc + "(" + sVarList + ")", SyntaxError::invalid_position, "\\$" + sProc, nth_procedure);
+    }
 
     StripSpaces(sProc);
     NumeReKernel::getInstance()->getDebugger().pushStackItem(sProc + "(" + sVarList + ")", this);

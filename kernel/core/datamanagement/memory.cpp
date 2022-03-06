@@ -901,6 +901,19 @@ void Memory::setMetaData(const NumeRe::TableMetaData& meta)
 
 
 /////////////////////////////////////////////////
+/// \brief Mark this table as modified.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
+void Memory::markModified()
+{
+    m_meta.modify();
+    nCalcLines = -1;
+}
+
+
+/////////////////////////////////////////////////
 /// \brief Returns the number of empty cells at
 /// the end of the selected columns.
 ///
@@ -1002,11 +1015,50 @@ void Memory::writeData(int _nLine, int _nCol, const mu::value_type& _dData)
     convert_if_empty(memArray[_nCol], _nCol, TableColumn::TYPE_VALUE);
     memArray[_nCol]->setValue(_nLine, _dData);
 
-    if (mu::isnan(_dData) || _nLine >= nCalcLines)
+    if (nCalcLines != -1 && (mu::isnan(_dData) || _nLine >= nCalcLines))
         nCalcLines = -1;
 
-    // --> Setze den Zeitstempel auf "jetzt", wenn der Memory eben noch gespeichert war <--
     m_meta.modify();
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This member function provides an
+/// unsafe but direct way of writing data to the
+/// table. It will not check for the existence of
+/// the needed amount of columns.
+///
+/// \param _nLine int
+/// \param _nCol int
+/// \param _dData const mu::value_type&
+/// \return void
+///
+/////////////////////////////////////////////////
+void Memory::writeDataDirect(int _nLine, int _nCol, const mu::value_type& _dData)
+{
+    convert_if_empty(memArray[_nCol], _nCol, TableColumn::TYPE_VALUE);
+    memArray[_nCol]->setValue(_nLine, _dData);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This member function provides an even
+/// more unsafe but direct way of writing data to
+/// the table. It will neither check for
+/// existence of the internal pointer nor for the
+/// existence of the needed amount of columns.
+/// Use this only, if real pre-allocation is
+/// possible.
+///
+/// \param _nLine int
+/// \param _nCol int
+/// \param _dData const mu::value_type&
+/// \return void
+///
+/////////////////////////////////////////////////
+void Memory::writeDataDirectUnsafe(int _nLine, int _nCol, const mu::value_type& _dData)
+{
+    memArray[_nCol]->setValue(_nLine, _dData);
 }
 
 
