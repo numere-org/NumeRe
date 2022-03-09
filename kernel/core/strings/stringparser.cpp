@@ -796,13 +796,15 @@ namespace NumeRe
     int StringParser::storeStringResults(StringResult& strRes, string __sObject)
     {
         // Only do something, if the target object is not empty
-        if (!__sObject.length())
+        size_t nBracePos;
+
+        if (!__sObject.length() || (nBracePos = __sObject.find_first_not_of(' ')) == std::string::npos)
             return 1;
 
         strRes.vNumericalValues.clear();
 
         // Handle remaining vector braces
-        if (__sObject.find('{') != string::npos)
+        if (__sObject[nBracePos] == '{')
             convertVectorToExpression(__sObject, _option);
 
         string sObject;

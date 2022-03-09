@@ -80,3 +80,4 @@ Applied	The editor is now splittable horizontally or vertically. Use the tab's c
 New	The matrix function "assemble()" was added to create a matrix from indices and values.
 Cleaned	Tables can now be copied using the syntax "TAB2() = TAB1()". This is also valid for procedure return values and local tables.
 Cleaned	A warning was added, when the user uses tables without ampersands as procedure arguments. These tables will be copied by default in future versions.
+Updated	Tooltips show now default values of functions as part of their signatures.

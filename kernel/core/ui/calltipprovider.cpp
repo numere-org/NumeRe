@@ -40,7 +40,21 @@ namespace NumeRe
     /////////////////////////////////////////////////
     static CallTip realignLangString(std::string sLine)
     {
-        size_t lastpos = sLine.find(' ');
+        size_t lastpos = std::string::npos;
+
+        for (size_t i = 0; i < sLine.length(); i++)
+        {
+            size_t pos;
+
+            if (sLine[i] == '(' && (pos = getMatchingParenthesis(StringView(sLine, i))) != std::string::npos)
+                i += getMatchingParenthesis(StringView(sLine, i));
+
+            if (sLine[i] == ' ')
+            {
+                lastpos = i;
+                break;
+            }
+        }
 
         if (lastpos == std::string::npos)
             return {sLine, "", 0, sLine.length()};

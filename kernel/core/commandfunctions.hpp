@@ -3683,7 +3683,7 @@ static CommandReturnValues cmd_save(string& sCmd)
         _functions.save(_option);
         return COMMAND_PROCESSED;
     }
-    else if (findParameter(sCmd, "set") || findParameter(sCmd, "settings"))
+    else if (findParameter(sCmd, "settings"))
     {
         _option.save(_option.getExePath());
         return COMMAND_PROCESSED;

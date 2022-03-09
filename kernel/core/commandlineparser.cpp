@@ -203,7 +203,11 @@ std::string CommandLineParser::parseFileName(std::string& sFileName, std::string
     FileSystem _fSys;
     _fSys.initializeFromKernel();
 
-    if (sBasePath.length() && sFileName.find("//") == std::string::npos && sFileName.find(':') == std::string::npos && sFileName.find('<') == std::string::npos)
+    if (sBasePath.length()
+        && sFileName.find("\\\\") == std::string::npos
+        && sFileName.find("//") == std::string::npos
+        && sFileName.find(':') == std::string::npos
+        && sFileName.find('<') == std::string::npos)
         sFileName.insert(0, sBasePath + "/");
 
     // If the filename contains a extension, extract it here and declare it as a valid file type
