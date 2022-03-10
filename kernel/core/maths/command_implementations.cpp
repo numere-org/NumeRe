@@ -4368,31 +4368,53 @@ void rotateTable(CommandLineParser& cmdParser)
 
     // Get the edges
     Point topLeft(0, 0);
-    Point topRight(_source->getCols(false), 0);
-    Point bottomLeft(0, _source->getLines(false));
-    Point bottomRight(_source->getCols(false), _source->getLines(false));
+    Point topRightS(_source->getCols(false), 0);
+    Point topRightP(_source->getCols(false)-1, 0);
+    Point bottomLeftS(0, _source->getLines(false));
+    Point bottomLeftP(0, _source->getLines(false)-1);
+    Point bottomRightS(_source->getCols(false), _source->getLines(false));
+    Point bottomRightP(_source->getCols(false)-1, _source->getLines(false)-1);
 
     // get the rotation origin
-    Point origin = (bottomRight + topLeft) / 2.0;
+    Point origin = (bottomRightS + topLeft) / 2.0;
 
     // Calculate their final positions
     topLeft.rotate(dAlpha, origin);
-    topRight.rotate(dAlpha, origin);
-    bottomLeft.rotate(dAlpha, origin);
-    bottomRight.rotate(dAlpha, origin);
+    topRightS.rotate(dAlpha, origin);
+    topRightP.rotate(dAlpha, origin);
+    bottomLeftS.rotate(dAlpha, origin);
+    bottomLeftP.rotate(dAlpha, origin);
+    bottomRightS.rotate(dAlpha, origin);
+    bottomRightP.rotate(dAlpha, origin);
 
     // Calculate the final image extent
-    double top   = std::min(topLeft.y, std::min(topRight.y, std::min(bottomLeft.y, bottomRight.y)));
-    double bot   = std::max(topLeft.y, std::max(topRight.y, std::max(bottomLeft.y, bottomRight.y)));
-    double left  = std::min(topLeft.x, std::min(topRight.x, std::min(bottomLeft.x, bottomRight.x)));
-    double right = std::max(topLeft.x, std::max(topRight.x, std::max(bottomLeft.x, bottomRight.x)));
+    double topS   = std::min(topLeft.y, std::min(topRightS.y, std::min(bottomLeftS.y, bottomRightS.y)));
+    double topP   = std::min(topLeft.y, std::min(topRightP.y, std::min(bottomLeftP.y, bottomRightP.y)));
+    double bot    = std::max(topLeft.y, std::max(topRightS.y, std::max(bottomLeftS.y, bottomRightS.y)));
+    double leftS  = std::min(topLeft.x, std::min(topRightS.x, std::min(bottomLeftS.x, bottomRightS.x)));
+    double leftP  = std::min(topLeft.x, std::min(topRightP.x, std::min(bottomLeftP.x, bottomRightP.x)));
+    double right  = std::max(topLeft.x, std::max(topRightS.x, std::max(bottomLeftS.x, bottomRightS.x)));
 
-    int rows = ceil(rotRound(bot) - rotRound(top)) + 1;
-    int cols = ceil(rotRound(right) - rotRound(left)) + 1;
+    g_logger.info("New corners: top=" + toString(topS, 6) + ", bot=" + toString(bot, 6) + ", left=" + toString(leftS, 6) + ", right=" + toString(right, 6));
+    g_logger.info("Topleft pix corner: " + toString(topP, 6) + ", " + toString(leftP, 6));
+    g_logger.info("Plain sizes: w=" + toString(right-leftS, 6) + ", h=" + toString(bot-topS, 6));
+
+//    int rows = ceil(rotRound(bot) - rotRound(top)) + 1;
+//    int cols = ceil(rotRound(right) - rotRound(left)) + 1;
+//
+//    // Compensate for ceil()
+//    top -= (ceil(rotRound(bot) - rotRound(top)) - (bot - top)) / 2.0;
+//    left -= (ceil(rotRound(right) - rotRound(left))- (right - left)) / 2.0;
+
+    int rows = ceil(bot - topS);// + ceil(rotRound(2*abs(sin(dAlpha*2))));
+    int cols = ceil(right - leftS);// + ceil(rotRound(2*abs(sin(dAlpha*2))));
+    g_logger.info("Calculated dims: cols=" + toString(cols) + ", rows=" + toString(rows));
+    g_logger.info("Diff of dims: cols=" + toString(cols - (right-leftS), 14) + ", rows=" + toString(rows - (bot-topS), 14));
 
     // Compensate for ceil()
-    top -= (ceil(rotRound(bot) - rotRound(top)) - (bot - top)) / 2.0;
-    left -= (ceil(rotRound(right) - rotRound(left))- (right - left)) / 2.0;
+    //top -= ((ceil(bot - top)) - (bot - top)) / 2.0;// + abs(sin(dAlpha*2));
+    //left -= ((ceil(right - left)) - (right - left)) / 2.0;// + abs(sin(dAlpha*2));
+    //g_logger.info("Compensated positions: top=" + toString(top, 6) + ", left=" + toString(left, 6));
 
     // Insert the axes, if necessary
     if (cmdParser.getCommand() == "imrot")
@@ -4429,7 +4451,7 @@ void rotateTable(CommandLineParser& cmdParser)
             if (_idx.row.size() <= (size_t)i)
                 break;
 
-            Point p(i+top, origin.y);
+            Point p(i+topP, origin.y);
             p.rotate(-dAlpha, origin);
 
             p.x = interpolateToGrid(source_x, p.x, true);
@@ -4445,7 +4467,7 @@ void rotateTable(CommandLineParser& cmdParser)
             if (_idx.row.size() <= (size_t)j)
                 break;
 
-            Point p(origin.x, j+left);
+            Point p(origin.x, j+leftP);
             p.rotate(-dAlpha, origin);
 
             p.x = interpolateToGrid(source_x, p.x, true);
@@ -4478,7 +4500,7 @@ void rotateTable(CommandLineParser& cmdParser)
 
             // Create a point in rotated source coordinates
             // and rotate it backwards
-            Point p(j + left, i + top);
+            Point p(j + leftP, i + topP);
             p.rotate(-dAlpha, origin);
 
             // Store the interpolated value in target coordinates

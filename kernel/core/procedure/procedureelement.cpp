@@ -98,6 +98,31 @@ ProcedureElement::ProcedureElement(const std::vector<std::string>& vProcedureCon
             }
         }
 
+        // skip empty lines
+        if (!sProcCommandLine.length())
+            continue;
+
+        // If the length is longer than 2, then it's possible
+        // that we have a line continuation at this point
+        if (sProcCommandLine.length() > 2)
+        {
+            if (sProcCommandLine.substr(sProcCommandLine.length() - 2, 2) == "\\\\")
+            {
+                // Add the current line to the current line cache
+                // and continue
+                sCurrentLineCache += sProcCommandLine.substr(0, sProcCommandLine.length() - 2);
+                continue;
+            }
+        }
+
+        // If the current line cache is not empty then simply
+        // append the current line and use the whole line as input
+        if (sCurrentLineCache.length())
+        {
+            sProcCommandLine = sCurrentLineCache + sProcCommandLine;
+            sCurrentLineCache.clear();
+        }
+
         // get the current command, if any
         sCurrentCommand = findCommand(sProcCommandLine).sString;
 
@@ -173,30 +198,7 @@ ProcedureElement::ProcedureElement(const std::vector<std::string>& vProcedureCon
             || sCurrentCommand == "script")
 			throw SyntaxError(SyntaxError::INSTALL_CMD_FOUND, "@" + toString(i+1) + ": " + sProcCommandLine, sCurrentCommand);
 
-        // skip empty lines
-        if (!sProcCommandLine.length())
-            continue;
 
-        // If the length is longer than 2, then it's possible
-        // that we have a line continuation at this point
-        if (sProcCommandLine.length() > 2)
-        {
-            if (sProcCommandLine.substr(sProcCommandLine.length() - 2, 2) == "\\\\")
-            {
-                // Add the current line to the current line cache
-                // and continue
-                sCurrentLineCache += sProcCommandLine.substr(0, sProcCommandLine.length() - 2);
-                continue;
-            }
-        }
-
-        // If the current line cache is not empty then simply
-        // append the current line and use the whole line as input
-        if (sCurrentLineCache.length())
-        {
-            sProcCommandLine = sCurrentLineCache + sProcCommandLine;
-            sCurrentLineCache.clear();
-        }
 
         // Ensure that the parentheses are valid
         if (sProcCommandLine.find('(') != std::string::npos || sProcCommandLine.find('{') != std::string::npos)

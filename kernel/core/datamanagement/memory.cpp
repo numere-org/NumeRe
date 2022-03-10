@@ -2659,7 +2659,7 @@ std::vector<mu::value_type> Memory::size(const VectorIndex& _vIndex, int dir) co
     if (dir == ALL)
         return std::vector<mu::value_type>({lines, cols});
     else if (dir == GRID)
-        return std::vector<mu::value_type>({lines, cols-2});
+        return std::vector<mu::value_type>({getElemsInColumn(0), getElemsInColumn(1)});
     else if (dir & LINES)
     {
         // Compute the sizes of the table rows
