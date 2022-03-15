@@ -952,7 +952,7 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
         {
             _option.enableSystemPrints(true);
             // --> Vernuenftig formatierte Fehlermeldungen <--
-            unsigned int nErrorPos = (int)e.GetPos();
+            unsigned int nErrorPos = e.GetPos();
             sendErrorNotification();
             make_hline();
             print(toUpperCase(_lang.get("ERR_MUP_HEAD")));
@@ -973,33 +973,36 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
              *     des Ausdrucks in der Laenge von etwa 63 Zeichen dar und markieren die Fehlerposition
              *     durch ein darunter angezeigten Zirkumflex "^" <--
              */
-            if (e.GetExpr().length() > 63 && nErrorPos > 31 && nErrorPos < e.GetExpr().length() - 32)
+            if (nErrorPos < e.GetExpr().length())
             {
-                printPreFmt("|   Position:  '..." + e.GetExpr().substr(nErrorPos - 29, 57) + "...'\n");
-                printPreFmt(pointToError(32));
-            }
-            else if (nErrorPos < 32)
-            {
-                string sErrorExpr = "|   Position:  '";
-                if (e.GetExpr().length() > 63)
-                    sErrorExpr += e.GetExpr().substr(0, 60) + "...'";
-                else
-                    sErrorExpr += e.GetExpr() + "'";
-                printPreFmt(sErrorExpr + "\n");
-                printPreFmt(pointToError(nErrorPos + 1));
-            }
-            else if (nErrorPos > e.GetExpr().length() - 32)
-            {
-                string sErrorExpr = "|   Position:  '";
-                if (e.GetExpr().length() > 63)
+                if (e.GetExpr().length() > 63 && nErrorPos > 31 && nErrorPos < e.GetExpr().length() - 32)
                 {
-                    printPreFmt(sErrorExpr + "..." + e.GetExpr().substr(e.GetExpr().length() - 60) + "'\n");
-                    printPreFmt(pointToError(65 - (e.GetExpr().length() - nErrorPos) - 2));
+                    printPreFmt("|   Position:  '..." + e.GetExpr().substr(nErrorPos - 29, 57) + "...'\n");
+                    printPreFmt(pointToError(32));
                 }
-                else
+                else if (nErrorPos < 32)
                 {
-                    printPreFmt(sErrorExpr + e.GetExpr() + "'\n");
-                    printPreFmt(pointToError(nErrorPos));
+                    string sErrorExpr = "|   Position:  '";
+                    if (e.GetExpr().length() > 63)
+                        sErrorExpr += e.GetExpr().substr(0, 60) + "...'";
+                    else
+                        sErrorExpr += e.GetExpr() + "'";
+                    printPreFmt(sErrorExpr + "\n");
+                    printPreFmt(pointToError(nErrorPos + 1));
+                }
+                else if (nErrorPos > e.GetExpr().length() - 32)
+                {
+                    string sErrorExpr = "|   Position:  '";
+                    if (e.GetExpr().length() > 63)
+                    {
+                        printPreFmt(sErrorExpr + "..." + e.GetExpr().substr(e.GetExpr().length() - 60) + "'\n");
+                        printPreFmt(pointToError(65 - (e.GetExpr().length() - nErrorPos) - 2));
+                    }
+                    else
+                    {
+                        printPreFmt(sErrorExpr + e.GetExpr() + "'\n");
+                        printPreFmt(pointToError(nErrorPos));
+                    }
                 }
             }
 

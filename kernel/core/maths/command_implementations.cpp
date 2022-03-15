@@ -4286,20 +4286,6 @@ bool calculateSplines(CommandLineParser& cmdParser)
 
 
 /////////////////////////////////////////////////
-/// \brief This is a static helper function to
-/// round a value to a single decimal.
-///
-/// \param d double
-/// \return double
-///
-/////////////////////////////////////////////////
-static double rotRound(double d)
-{
-    return rint(d*10.0) / 10.0;
-}
-
-
-/////////////////////////////////////////////////
 /// \brief This function rotates a table, an
 /// image or a datagrid around a specified angle.
 ///

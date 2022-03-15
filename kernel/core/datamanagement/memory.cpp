@@ -3559,16 +3559,8 @@ bool Memory::resample(VectorIndex _vLine, VectorIndex _vCol, std::pair<size_t,si
         {
             // Apply the resampling to the first two columns first:
             // These contain the axis values
-            if (bUseAppendedZeroes)
-            {
-                resample(_vLine, VectorIndex(_vCol[0]), samples, COLS);
-                resample(_vLine, VectorIndex(_vCol[1]), samples, COLS);
-            }
-            else
-            {
-                // Achsenwerte getrennt resamplen
-                resample(_vLine, _vCol.subidx(0, 2), samples, COLS);
-            }
+            resample(_vLine, VectorIndex(_vCol[0]), samples, COLS);
+            resample(_vLine, VectorIndex(_vCol[1]), std::make_pair(samples.second, samples.first), COLS);
 
             // Increment the first column
             _vCol = _vCol.subidx(2);

@@ -191,7 +191,7 @@ int FlowCtrl::for_loop(int nth_Cmd, int nth_loop)
     // Evaluate the whole for loop. The outer loop does the
     // loop index management (the actual "for" command), the
     // inner loop runs through the contained command lines
-    for (int __i = intCast(vVarArray[nVarAdress][1]); (nInc)*__i <= nInc * intCast(vVarArray[nVarAdress][2]); __i += nInc)
+    for (int __i = vVarArray[nVarAdress][1].real(); (nInc)*__i <= nInc * vVarArray[nVarAdress][2].real(); __i += nInc)
     {
         vVarArray[nVarAdress][0] = __i;
 
