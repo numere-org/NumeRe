@@ -1889,7 +1889,7 @@ void FlowCtrl::eval()
         bLockedPauseMode = true;
 
     if (!_parserRef->ActiveLoopMode() || !_parserRef->IsLockedPause())
-        _parserRef->ClearVectorVars();
+        _parserRef->ClearVectorVars(true);
 
     // Evaluate the user options
     if (_optionRef->useMaskDefault())
@@ -2151,13 +2151,12 @@ void FlowCtrl::reset()
 
     // Remove obsolete vector variables
     if (_parserRef && (!_parserRef->ActiveLoopMode() || !_parserRef->IsLockedPause()))
-        _parserRef->ClearVectorVars();
+        _parserRef->ClearVectorVars(true);
 
-    // Remove all temporary clusters defined for
-    // inlined procedures
-    if (_dataRef)
-        _dataRef->removeTemporaryClusters();
+    for (const auto& cst : inlineClusters)
+        _dataRef->removeCluster(cst.substr(0, cst.find('{')));
 
+    inlineClusters.clear();
     _parserRef = nullptr;
     _dataRef = nullptr;
     _outRef = nullptr;
@@ -3959,6 +3958,7 @@ void FlowCtrl::checkParsingModeAndExpandDefinitions()
 
                     for (size_t j = 0; j < vExpandedProcedure.size(); j++)
                     {
+                        //g_logger.info("Emplaced '" + vExpandedProcedure[j] + "'");
                         vCmdArray.emplace(vCmdArray.begin() + i + j, FlowCtrlCommand(vExpandedProcedure[j], nLine));
                     }
 

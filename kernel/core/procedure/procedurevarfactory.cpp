@@ -359,7 +359,7 @@ void ProcedureVarFactory::checkArgument(const string& sArgument, const string& s
     string sCommand = findCommand(sArgument).sString;
 
     // Was a keyword used as a argument?
-    if (sCommand == "var" || sCommand == "tab" || sCommand == "str")
+    if (sCommand == "var" || sCommand == "tab" || sCommand == "str" || sCommand == "cst")
     {
         // Free up memory
         mArguments.clear();
@@ -452,7 +452,7 @@ void ProcedureVarFactory::createLocalInlineVars(string sVarList)
     size_t nLocalVarMapSize = countVarListElements(sVarList);
 
     // Create a new temporary cluster
-    string sTempCluster = _dataRef->createTemporaryCluster();
+    string sTempCluster = _dataRef->createTemporaryCluster("var");
     sInlineVarDef = sTempCluster + " = {";
 
     sTempCluster.erase(sTempCluster.length()-2);
@@ -539,7 +539,7 @@ void ProcedureVarFactory::createLocalInlineStrings(string sStringList)
     size_t nLocalStrMapSize = countVarListElements(sStringList);
 
     // Create a new temporary cluster
-    string sTempCluster = _dataRef->createTemporaryCluster();
+    string sTempCluster = _dataRef->createTemporaryCluster("str");
     sInlineStringDef = sTempCluster + " = {";
     sTempCluster.erase(sTempCluster.length()-2);
 
@@ -946,7 +946,7 @@ void ProcedureVarFactory::evaluateProcedureArguments(std::string& currentArg, st
         }
         else if (inliningMode && (currentValue.length() < 3 || currentValue.substr(currentValue.length()-2) != "{}"))
         {
-            std::string sTempCluster = _dataRef->createTemporaryCluster();
+            std::string sTempCluster = _dataRef->createTemporaryCluster(currentArg.substr(0, currentArg.find('{')));
             vInlineArgDef.push_back(sTempCluster + " = " + currentValue + ";");
             currentValue = sTempCluster;
         }

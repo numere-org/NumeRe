@@ -2101,12 +2101,13 @@ namespace NumeRe
     /// temporary cluster with a unique name and
     /// returns this name to the calling function.
     ///
+    /// \param suffix const std::string&
     /// \return std::string
     ///
     /////////////////////////////////////////////////
-    std::string ClusterManager::createTemporaryCluster()
+    std::string ClusterManager::createTemporaryCluster(const std::string& suffix)
     {
-        std::string sTemporaryClusterName = "_~~TEMPCLUSTER_" + toString(mClusterMap.size()) + "_";
+        std::string sTemporaryClusterName = "_~~TEMPCLUSTER_" + toString(mClusterMap.size()) + "_" + suffix;
         mClusterMap[sTemporaryClusterName] = Cluster();
 
         return sTemporaryClusterName + "{}";

@@ -25,6 +25,7 @@
 #include <string>
 #include <vector>
 #include <map>
+#include <set>
 
 #include "../ParserLib/muParser.h"
 #include "../datamanagement/memorymanager.hpp"
@@ -122,6 +123,7 @@ class FlowCtrl
         bool bFunctionsReplaced;
         std::string sLoopPlotCompose;
         std::map<std::string,std::string> mVarMap;
+        std::set<std::string> inlineClusters;
         bool bSilent;
         bool bMask;
         bool bPrintedStatus;
