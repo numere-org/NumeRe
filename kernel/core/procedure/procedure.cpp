@@ -2343,7 +2343,15 @@ vector<string> Procedure::getInlined(const string& sProc, const string& sArgumen
     // If there are some argument copies needed, we'll
     // insert them now
     if (varFactory.vInlineArgDef.size())
+    {
         vProcCommandLines.insert(vProcCommandLines.end(), varFactory.vInlineArgDef.begin(), varFactory.vInlineArgDef.end());
+
+        for (const auto& sArgDef : varFactory.vInlineArgDef)
+        {
+            if (sArgDef.substr(0, 15) == "_~~TEMPCLUSTER_")
+            inlineClusters.insert(sArgDef.substr(0, sArgDef.find('{')));
+        }
+    }
 
     // Read each line, replace the arguments with their
     // values and push the result in the vector
@@ -2359,11 +2367,13 @@ vector<string> Procedure::getInlined(const string& sProc, const string& sArgumen
         {
             varFactory.createLocalVars(sCommandLine.substr(findCommand(sCommandLine).nPos + 4));
             sCommandLine = varFactory.sInlineVarDef + ";";
+            inlineClusters.insert(sCommandLine.substr(0, sCommandLine.find('{')));
         }
         else if (findCommand(sCommandLine).sString == "str")
         {
             varFactory.createLocalStrings(sCommandLine.substr(findCommand(sCommandLine).nPos + 4));
             sCommandLine = varFactory.sInlineStringDef + ";";
+            inlineClusters.insert(sCommandLine.substr(0, sCommandLine.find('{')));
         }
 
         // Insert a breakpoint, if the breakpoint manager
@@ -2410,9 +2420,10 @@ vector<string> Procedure::getInlined(const string& sProc, const string& sArgumen
                 if (nProcedures > 1)
                 {
                     // Save the return value in a cluster
-                    string sTempCluster = NumeReKernel::getInstance()->getMemoryManager().createTemporaryCluster();
+                    string sTempCluster = NumeReKernel::getInstance()->getMemoryManager().createTemporaryCluster("ret");
                     vProcCommandLines.push_back(sTempCluster + " = " + sCommandLine + ";");
                     vProcCommandLines.push_back(sTempCluster);
+                    inlineClusters.insert(sTempCluster.substr(0, sTempCluster.find('{')));
                 }
                 else
                     vProcCommandLines.push_back("{" + sCommandLine + "}");
@@ -2423,9 +2434,10 @@ vector<string> Procedure::getInlined(const string& sProc, const string& sArgumen
                 if (nProcedures > 1)
                 {
                     // Save the return value in a cluster
-                    string sTempCluster = NumeReKernel::getInstance()->getMemoryManager().createTemporaryCluster();
+                    string sTempCluster = NumeReKernel::getInstance()->getMemoryManager().createTemporaryCluster("ret");
                     vProcCommandLines.push_back(sTempCluster + " = " + sCommandLine + ";");
                     vProcCommandLines.push_back(sTempCluster);
+                    inlineClusters.insert(sTempCluster.substr(0, sTempCluster.find('{')));
                 }
                 else
                     vProcCommandLines.push_back("(" + sCommandLine + ")");

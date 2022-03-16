@@ -395,7 +395,7 @@ namespace NumeRe
             Cluster& newCluster(const std::string& sCluster);
             void appendCluster(const std::string& sCluster, const Cluster& cluster);
             void removeCluster(const std::string& sCluster);
-            std::string createTemporaryCluster();
+            std::string createTemporaryCluster(const std::string& suffix = "");
             void removeTemporaryClusters();
             void clearAllClusters();
             bool updateClusterSizeVariables(StringView sCluster);

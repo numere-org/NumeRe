@@ -639,6 +639,9 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
     sLine = sCommandLine;
     sCommandLine.clear();
     _parser.ClearVectorVars();
+    // Remove all temporary clusters defined for
+    // inlined procedures
+    _memoryManager.removeTemporaryClusters();
     _assertionHandler.resetStats();
     bSupressAnswer = false;
 
