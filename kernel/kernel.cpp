@@ -2569,24 +2569,24 @@ void NumeReKernel::printResult(const string& sLine, const string& sCmdCache, boo
     if (!m_parent)
         return;
 
-    if (sCmdCache.length() || bScriptRunning )
+    //if (sCmdCache.length() || bScriptRunning )
+    //{
+    if (bSupressAnswer)
+        return;
+
     {
-        if (bSupressAnswer)
-            return;
+        wxCriticalSectionLocker lock(m_parent->m_kernelCS);
+        m_parent->m_sAnswer += "|-> " + sLine + "\n";
 
-        {
-            wxCriticalSectionLocker lock(m_parent->m_kernelCS);
-            m_parent->m_sAnswer += "|-> " + sLine + "\n";
-
-            if (m_parent->m_KernelStatus < NumeReKernel::NUMERE_STATUSBAR_UPDATE || m_parent->m_KernelStatus == NumeReKernel::NUMERE_ANSWER_READ)
-                m_parent->m_KernelStatus = NumeReKernel::NUMERE_CALC_UPDATE;
-        }
-
-        wxQueueEvent(m_parent->GetEventHandler(), new wxThreadEvent());
-        Sleep(5);
+        if (m_parent->m_KernelStatus < NumeReKernel::NUMERE_STATUSBAR_UPDATE || m_parent->m_KernelStatus == NumeReKernel::NUMERE_ANSWER_READ)
+            m_parent->m_KernelStatus = NumeReKernel::NUMERE_CALC_UPDATE;
     }
-    else
-        sAnswer = sLine;
+
+    wxQueueEvent(m_parent->GetEventHandler(), new wxThreadEvent());
+    Sleep(5);
+    //}
+    //else
+    //    sAnswer = sLine;
 }
 
 

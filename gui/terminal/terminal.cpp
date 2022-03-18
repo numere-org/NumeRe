@@ -482,21 +482,22 @@ wxThread::ExitCode NumeReTerminal::Entry()
 			// enters the function, if a command was passed to the terminal.
 			m_KernelStatus = _kernel.MainLoop(sCommand);
 
-			if (m_KernelStatus > 0) // these are valid status values (0 = error, -1 = quit)
+			/*if (m_KernelStatus > 0) // these are valid status values (0 = error, -1 = quit)
 			{
 				wxCriticalSectionLocker lock(m_kernelCS);
 
 				switch (m_KernelStatus)
 				{
 					case NumeReKernel::NUMERE_DONE:
-						m_sAnswer = _kernel.ReadAnswer();
+						m_sAnswer += _kernel.ReadAnswer();
 						break;
 					default:
 						break;
 						//All others
 				}
 			}
-			else if (m_KernelStatus == NumeReKernel::NUMERE_QUIT) //quit
+			else */
+            if (m_KernelStatus == NumeReKernel::NUMERE_QUIT) //quit
 			{
 				break;
 			}
@@ -590,12 +591,13 @@ void NumeReTerminal::OnThreadUpdate(wxThreadEvent& event)
 			case NumeReKernel::NUMERE_PENDING_SPECIAL:
 				return;
 			// fallthrough is intended
-			case NumeReKernel::NUMERE_DONE:
-				sAnswer = "|-> " + m_sAnswer + "\n|\n|<- ";
-				done = true;
-				break;
+			//case NumeReKernel::NUMERE_DONE:
+			//	sAnswer = m_sAnswer + "\n|\n|<- ";
+			//	done = true;
+			//	break;
             // fallthrough is intended
 			case NumeReKernel::NUMERE_ERROR:
+			case NumeReKernel::NUMERE_DONE:
 			case NumeReKernel::NUMERE_DONE_KEYWORD:
 				sAnswer = m_sAnswer + "|\n|<- ";
 				done = true;
