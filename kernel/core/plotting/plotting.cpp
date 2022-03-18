@@ -3763,7 +3763,8 @@ void Plot::extractDataValues(const std::vector<std::string>& vDataPlots)
             bool isHbar = _pData.getSettings(PlotData::FLOAT_HBARS) != 0.0;
             bool isMultiDataSet = _pData.getSettings(PlotData::FLOAT_HBARS) != 0.0
                 || _pData.getSettings(PlotData::FLOAT_BARS) != 0.0
-                || _pData.getSettings(PlotData::LOG_BOXPLOT);
+                || _pData.getSettings(PlotData::LOG_BOXPLOT)
+                || !(_pData.getSettings(PlotData::LOG_XERROR) || _pData.getSettings(PlotData::LOG_YERROR));
 
 
             // Calculate the data ranges
