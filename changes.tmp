@@ -1,2 +1,3 @@
 Fixed	The suppression of some "print" statements near the end of a procedure and after some plotting command has been resolved.
 Fixed	The y intervals of curve sets are now again calculated correctly.
+Fixed	Tables and clusters will be deleted correctly, if one faces an error in a procedure argument list.

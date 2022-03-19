@@ -878,6 +878,10 @@ void ProcedureVarFactory::evaluateProcedureArguments(std::string& currentArg, st
                 {
                     _debugger.gatherInformations(this, sArgumentList, _currentProcedure->getCurrentProcedureName(), _currentProcedure->GetCurrentLine());
                     _debugger.showError(current_exception());
+
+                    if (_dataRef->isTable(sNewArgName))
+                        _dataRef->deleteTable(sNewArgName);
+
                     throw;
                 }
             }
@@ -935,6 +939,7 @@ void ProcedureVarFactory::evaluateProcedureArguments(std::string& currentArg, st
                 {
                     _debugger.gatherInformations(this, sArgumentList, _currentProcedure->getCurrentProcedureName(), _currentProcedure->GetCurrentLine());
                     _debugger.showError(current_exception());
+                    _dataRef->removeCluster(sNewArgName);
                     throw;
                 }
             }
@@ -1423,6 +1428,10 @@ void ProcedureVarFactory::createLocalTables(string sTableList)
         {
             NumeReKernel::getInstance()->getDebugger().gatherInformations(this, sTableList, _currentProcedure->getCurrentProcedureName(), _currentProcedure->GetCurrentLine());
             NumeReKernel::getInstance()->getDebugger().showError(current_exception());
+
+            if (_dataRef->isTable(currentVar))
+                _dataRef->deleteTable(currentVar);
+
             throw;
         }
 
@@ -1523,6 +1532,10 @@ void ProcedureVarFactory::createLocalClusters(string sClusterList)
         {
             NumeReKernel::getInstance()->getDebugger().gatherInformations(this, sClusterList, _currentProcedure->getCurrentProcedureName(), _currentProcedure->GetCurrentLine());
             NumeReKernel::getInstance()->getDebugger().showError(current_exception());
+
+            if (_dataRef->isCluster(currentVar))
+                _dataRef->removeCluster(currentVar);
+
             throw;
         }
 
