@@ -5412,17 +5412,18 @@ void NumeReEditor::AbstrahizeSection()
     // Get start and end position (i.e. the corresponding lines)
     int nStartPos = PositionFromLine(LineFromPosition(GetSelectionStart()));
     int nEndPos = GetLineEndPosition(LineFromPosition(GetSelectionEnd()));
+
     if (GetSelectionEnd() == PositionFromLine(LineFromPosition(GetSelectionEnd())))
         nEndPos = GetLineEndPosition(LineFromPosition(GetSelectionEnd()-1));
 
     int nCurrentBlockStart = 0;
     int nCurrentBlockEnd = GetLastPosition();
 
-    list<wxString> lInputTokens;
-    list<wxString> lOutputTokens;
+    std::list<wxString> lInputTokens;
+    std::list<wxString> lOutputTokens;
 
-    set<string> sArgumentListSet;
-    set<string> sMatlabReturnListSet;
+    std::set<std::string> sArgumentListSet;
+    std::set<std::string> sMatlabReturnListSet;
 
 
     // If we have a procedure file, consider scoping
@@ -5430,16 +5431,21 @@ void NumeReEditor::AbstrahizeSection()
     {
         nCurrentBlockStart = m_search->FindCurrentProcedureHead(nStartPos);
 
-        string sArgumentList = getFunctionArgumentList(LineFromPosition(nCurrentBlockStart)).ToStdString();
+        std::string sArgumentList = getFunctionArgumentList(LineFromPosition(nCurrentBlockStart)).ToStdString();
 
         // Split the argument list into single tokens
         while (sArgumentList.length())
         {
-            string sCurrentArg = getNextArgument(sArgumentList, true);
+            std::string sCurrentArg = getNextArgument(sArgumentList, true);
 
             // Remove possible default values
-            if (sCurrentArg.find_first_of(" =") != string::npos)
+            if (sCurrentArg.find_first_of(" =") != std::string::npos)
                 sCurrentArg.erase(sCurrentArg.find_first_of(" ="));
+
+            if (sCurrentArg.find('&') != std::string::npos)
+                sCurrentArg.erase(sCurrentArg.find('&'), 1);
+
+            StripSpaces(sCurrentArg);
 
             sArgumentListSet.insert(sCurrentArg);
         }
@@ -5448,18 +5454,17 @@ void NumeReEditor::AbstrahizeSection()
         // the function
         if (m_fileType == FILE_MATLAB)
         {
-            string sReturnList = getMatlabReturnList(LineFromPosition(nCurrentBlockStart)).ToStdString();
+            std::string sReturnList = getMatlabReturnList(LineFromPosition(nCurrentBlockStart)).ToStdString();
 
             // Split the return list into single tokens
             while (sReturnList.length())
             {
                 sMatlabReturnListSet.insert(getNextArgument(sReturnList, true));
             }
-
         }
 
         // Ensure that the end of the current block exists
-        vector<int> vBlock = BlockMatch(nCurrentBlockStart);
+        std::vector<int> vBlock = BlockMatch(nCurrentBlockStart);
 
         if (vBlock.back() != wxSTC_INVALID_POSITION && vBlock.back() > nEndPos)
             nCurrentBlockEnd = vBlock.back();
@@ -5494,20 +5499,27 @@ void NumeReEditor::AbstrahizeSection()
                 continue;
 
             // Find all occurences
-            vector<int> vMatch = m_search->FindAll(sCurrentToken, this->GetStyleAt(i), nCurrentBlockStart, nCurrentBlockEnd);
+            std::vector<int> vMatch = m_search->FindAll(sCurrentToken, this->GetStyleAt(i), nCurrentBlockStart, nCurrentBlockEnd);
 
             if (vMatch.size())
             {
                 // Determine, whether the token is used before
                 // or afer the current section
-                if (vMatch.front() < nStartPos || (sArgumentListSet.size() && sArgumentListSet.find(sCurrentToken.ToStdString()) != sArgumentListSet.end()))
+                if (vMatch.front() < nStartPos
+                    || (sArgumentListSet.size() && sArgumentListSet.find(sCurrentToken.ToStdString()) != sArgumentListSet.end()))
                     lInputTokens.push_back(sCurrentToken);
 
-                if (vMatch.back() > nEndPos && vMatch.front() < nStartPos && IsModifiedInSection(nStartPos, nEndPos, sCurrentToken, vMatch))
+                if (vMatch.back() > nEndPos
+                    && vMatch.front() < nStartPos
+                    && IsModifiedInSection(nStartPos, nEndPos, sCurrentToken, vMatch))
                     lOutputTokens.push_back(sCurrentToken);
-                else if (vMatch.back() > nEndPos && vMatch.front() >= nStartPos && sArgumentListSet.find(sCurrentToken.ToStdString()) == sArgumentListSet.end())
+                else if (vMatch.back() > nEndPos
+                         && vMatch.front() >= nStartPos
+                         && sArgumentListSet.find(sCurrentToken.ToStdString()) == sArgumentListSet.end())
                     lOutputTokens.push_back(sCurrentToken);
-                else if (sMatlabReturnListSet.size() && sMatlabReturnListSet.find(sCurrentToken.ToStdString()) != sMatlabReturnListSet.end() && IsModifiedInSection(nStartPos, nEndPos, sCurrentToken, vMatch))
+                else if (sMatlabReturnListSet.size()
+                         && sMatlabReturnListSet.find(sCurrentToken.ToStdString()) != sMatlabReturnListSet.end()
+                         && IsModifiedInSection(nStartPos, nEndPos, sCurrentToken, vMatch))
                     lOutputTokens.push_back(sCurrentToken);
             }
 
@@ -5531,7 +5543,7 @@ void NumeReEditor::AbstrahizeSection()
                 continue;
 
             // Find all occurences
-            vector<int> vMatch = m_search->FindAll(sCurrentToken, this->GetStyleAt(i), nCurrentBlockStart, nCurrentBlockEnd);
+            std::vector<int> vMatch = m_search->FindAll(sCurrentToken, this->GetStyleAt(i), nCurrentBlockStart, nCurrentBlockEnd);
 
             if (vMatch.size())
             {
@@ -5554,21 +5566,31 @@ void NumeReEditor::AbstrahizeSection()
             wxString sCurrentToken = GetTextRange(WordStartPosition(i, true), WordEndPosition(i, true));
 
             // Find all occurences
-            vector<int> vMatch = m_search->FindAll(sCurrentToken, this->GetStyleAt(i), nCurrentBlockStart, nCurrentBlockEnd);
+            std::vector<int> vMatch = m_search->FindAll(sCurrentToken, this->GetStyleAt(i), nCurrentBlockStart, nCurrentBlockEnd);
 
             if (vMatch.size())
             {
                 // Determine, whether the token is used before
-                // or afer the current section
+                // or after the current section
                 if (vMatch.front() < nStartPos
-                    || vMatch.back() > nEndPos
-                    || (sArgumentListSet.find(sCurrentToken.ToStdString() + "()") != sArgumentListSet.end() && GetStyleAt(i) == wxSTC_NSCR_CUSTOM_FUNCTION)
-                    || (sArgumentListSet.find(sCurrentToken.ToStdString() + "{}") != sArgumentListSet.end() && GetStyleAt(i) == wxSTC_NSCR_CLUSTER))
+                    || (sArgumentListSet.find(sCurrentToken.ToStdString() + "()") != sArgumentListSet.end()
+                        && GetStyleAt(i) == wxSTC_NSCR_CUSTOM_FUNCTION)
+                    || (sArgumentListSet.find(sCurrentToken.ToStdString() + "{}") != sArgumentListSet.end()
+                        && GetStyleAt(i) == wxSTC_NSCR_CLUSTER))
                 {
                     if (GetStyleAt(i) == wxSTC_NSCR_CLUSTER)
                         lInputTokens.push_back(sCurrentToken + "{}");
                     else
                         lInputTokens.push_back(sCurrentToken + "()");
+                }
+
+                if (vMatch.back() > nEndPos
+                    && IsModifiedInSection(nStartPos, nEndPos, sCurrentToken, vMatch))
+                {
+                    if (GetStyleAt(i) == wxSTC_NSCR_CLUSTER)
+                        lOutputTokens.push_back(sCurrentToken + "{}");
+                    else
+                        lOutputTokens.push_back(sCurrentToken + "()");
                 }
             }
 
@@ -5588,6 +5610,35 @@ void NumeReEditor::AbstrahizeSection()
     {
         lOutputTokens.sort();
         lOutputTokens.unique();
+    }
+
+    // If the output list is larger than one element
+    // and we're extracting NumeRe code, we have to ensure
+    // that it does not contain a table or a cluster, because
+    // this mixtures are not possible
+    if (lOutputTokens.size() > 1 && (m_fileType == FILE_NSCR || m_fileType == FILE_NPRC))
+    {
+        auto iter = lOutputTokens.begin();
+
+        while (iter != lOutputTokens.end())
+        {
+            if ((*iter).find("()") != std::string::npos
+                || (*iter).find("{}") != std::string::npos)
+            {
+                // We have a table or a cluster as a mixture
+                auto inputIter = std::find(lInputTokens.begin(), lInputTokens.end(), *iter);
+
+                if (inputIter != lInputTokens.end())
+                    *inputIter += "&";
+                else
+                    lInputTokens.push_back(*iter + "&");
+
+                iter = lOutputTokens.erase(iter);
+                continue;
+            }
+
+            ++iter;
+        }
     }
 
     wxString sInputList;
@@ -5659,19 +5710,28 @@ void NumeReEditor::CreateProcedureFromSection(int nStartPos, int nEndPos, const 
         edit->AddText("procedure $NEWPROCEDURE(" + sInputList + ")\r\n");
 
         // Write the actual section of code
-        edit->AddText(this->GetTextRange(nStartPos, nEndPos) + "\r\n");
+        wxString sCodeFragment = GetTextRange(nStartPos, nEndPos);
+        size_t nLastChar = sCodeFragment.find_last_not_of("\r\n \t");
+        bool hasReturn = false;
+
+        if (nLastChar != std::string::npos)
+            hasReturn = sCodeFragment.find("return", sCodeFragment.find_last_of("\r\n", nLastChar)) != std::string::npos;
+
+        edit->AddText(sCodeFragment + "\r\n");
 
         // Write the output list
         if (sOutputList.length())
         {
             edit->AddText("\t## " + _guilang.get("GUI_REFACTORING_RETURNVALUES") + "\r\n");
+
             if (sOutputList.find(',') != string::npos)
                 edit->AddText("return {" + sOutputList + "};\r\n");
             else
                 edit->AddText("return " + sOutputList + ";\r\n");
         }
-        else
+        else if (!hasReturn)
             edit->AddText("return void\r\n");
+
         edit->AddText("endprocedure\r\n");
         statusbar->SetStatusText(_guilang.get("GUI_STATUSBAR_NPRC"), 1);
     }
@@ -5686,6 +5746,7 @@ void NumeReEditor::CreateProcedureFromSection(int nStartPos, int nEndPos, const 
         edit->AddText("% " + _guilang.get("GUI_REFACTORING_NOTE") + "\r\n");
         edit->AddText("%\r\n");
         edit->AddText("% " + _guilang.get("GUI_REFACTORING_ARGUMENTLIST") + "\r\n");
+
         if (sOutputList.length())
             edit->AddText("% " + _guilang.get("GUI_REFACTORING_RETURNVALUES") + "\r\n");
 
@@ -5753,7 +5814,8 @@ bool NumeReEditor::IsModifiedInSection(int nSectionStart, int nSectionEnd, const
             break;
 
         // Ignore dynamic structure field accesses in MATLAB
-        if (isStyleType(STYLE_OPERATOR, vMatch[i]-1) && (GetCharAt(vMatch[i]-1) == '.' || (GetCharAt(vMatch[i]-2) == '.' && GetCharAt(vMatch[i]-1) == '(')))
+        if (isStyleType(STYLE_OPERATOR, vMatch[i]-1)
+            && (GetCharAt(vMatch[i]-1) == '.' || (GetCharAt(vMatch[i]-2) == '.' && GetCharAt(vMatch[i]-1) == '(')))
             continue;
 
         // Examine the code part left of the token, whether
