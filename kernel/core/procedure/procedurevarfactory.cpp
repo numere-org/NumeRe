@@ -21,9 +21,6 @@
 #include "procedure.hpp"
 #include "../../kernel.hpp"
 
-#define FLAG_EXPLICIT 1
-#define FLAG_INLINE 2
-
 
 /////////////////////////////////////////////////
 /// \brief Static helper function to detect free
@@ -755,7 +752,7 @@ void ProcedureVarFactory::evaluateProcedureArguments(std::string& currentArg, st
         && currentValue.find('(') != string::npos
         && currentArg.substr(currentArg.length()-2) != "()")
     {
-        if (_currentProcedure->getProcedureFlags() & FLAG_INLINE)
+        if (_currentProcedure->getProcedureFlags() & ProcedureCommandLine::FLAG_INLINE)
         {
             _debugger.gatherInformations(this, sArgumentList, _currentProcedure->getCurrentProcedureName(), _currentProcedure->GetCurrentLine());
             _debugger.throwException(SyntaxError(SyntaxError::INLINE_PROCEDURE_IS_NOT_INLINE, sArgumentList, SyntaxError::invalid_position));
@@ -806,6 +803,11 @@ void ProcedureVarFactory::evaluateProcedureArguments(std::string& currentArg, st
         }
         else if (!isRef && !isMacro) // Macros do the old copy-paste logic
         {
+#warning TODO (numere#1#02/27/22): This behavior will be deprecated with v1.1.5
+            if (_optionRef->getSetting(SETTING_B_FUTURE).active()
+                && _currentProcedure->getProcedureFlags() & ProcedureCommandLine::FLAG_INLINE)
+                throw SyntaxError(SyntaxError::INLINE_PROCEDURE_NEEDS_TABLE_REFERENCES, currentValue, "", currentArg + ")");
+
             // Create a local variable
             std::string sNewArgName = "_~"+sProcName+"_~A_"+toString((int)nth_procedure)+"_"+currentArg.substr(0, currentArg.length()-1);
 
@@ -813,7 +815,7 @@ void ProcedureVarFactory::evaluateProcedureArguments(std::string& currentArg, st
             if (currentValue.find('$') != string::npos
                 && currentValue.find('(') != string::npos)
             {
-                if (_currentProcedure->getProcedureFlags() & FLAG_INLINE)
+                if (_currentProcedure->getProcedureFlags() & ProcedureCommandLine::FLAG_INLINE)
                 {
                     _debugger.gatherInformations(this, sArgumentList, _currentProcedure->getCurrentProcedureName(), _currentProcedure->GetCurrentLine());
                     _debugger.throwException(SyntaxError(SyntaxError::INLINE_PROCEDURE_IS_NOT_INLINE, sArgumentList, SyntaxError::invalid_position));
@@ -1158,7 +1160,7 @@ void ProcedureVarFactory::createLocalVars(string sVarList)
 
             if (sVarValue.find('$') != string::npos && sVarValue.find('(') != string::npos)
             {
-                if (_currentProcedure->getProcedureFlags() & FLAG_INLINE)
+                if (_currentProcedure->getProcedureFlags() & ProcedureCommandLine::FLAG_INLINE)
                 {
                     _debugger.gatherInformations(this, sVarList, _currentProcedure->getCurrentProcedureName(), _currentProcedure->GetCurrentLine());
                     _debugger.throwException(SyntaxError(SyntaxError::INLINE_PROCEDURE_IS_NOT_INLINE, sVarList, SyntaxError::invalid_position));
@@ -1265,7 +1267,7 @@ void ProcedureVarFactory::createLocalStrings(string sStringList)
 
             if (sVarValue.find('$') != string::npos && sVarValue.find('(') != string::npos)
             {
-                if (_currentProcedure->getProcedureFlags() & FLAG_INLINE)
+                if (_currentProcedure->getProcedureFlags() & ProcedureCommandLine::FLAG_INLINE)
                 {
                     _debugger.gatherInformations(this, sStringList, _currentProcedure->getCurrentProcedureName(), _currentProcedure->GetCurrentLine());
                     _debugger.throwException(SyntaxError(SyntaxError::INLINE_PROCEDURE_IS_NOT_INLINE, sStringList, SyntaxError::invalid_position));
@@ -1373,7 +1375,7 @@ void ProcedureVarFactory::createLocalTables(string sTableList)
 
                 if (sCurrentValue.find('$') != string::npos && sCurrentValue.find('(', sCurrentValue.find('$')+1))
                 {
-                    if (_currentProcedure->getProcedureFlags() & FLAG_INLINE)
+                    if (_currentProcedure->getProcedureFlags() & ProcedureCommandLine::FLAG_INLINE)
                     {
                         throw SyntaxError(SyntaxError::INLINE_PROCEDURE_IS_NOT_INLINE, sTableList, SyntaxError::invalid_position);
                     }
@@ -1492,7 +1494,7 @@ void ProcedureVarFactory::createLocalClusters(string sClusterList)
 
                 if (sCurrentValue.find('$') != string::npos && sCurrentValue.find('(', sCurrentValue.find('$')+1))
                 {
-                    if (_currentProcedure->getProcedureFlags() & FLAG_INLINE)
+                    if (_currentProcedure->getProcedureFlags() & ProcedureCommandLine::FLAG_INLINE)
                     {
                         throw SyntaxError(SyntaxError::INLINE_PROCEDURE_IS_NOT_INLINE, sClusterList, SyntaxError::invalid_position);
                     }
