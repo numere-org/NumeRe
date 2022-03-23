@@ -3,3 +3,4 @@ Fixed	The y intervals of curve sets are now again calculated correctly.
 Fixed	Tables and clusters will be deleted correctly, if one faces an error in a procedure argument list.
 Fixed	The procedure extraction feature now considers references as output paths.
 Fixed	Tables, which are not passed via a reference to an inline procedure, will throw an error.
+Added	The concatenate functions hcat and vcat for matrices. Including documentation.
