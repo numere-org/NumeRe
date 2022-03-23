@@ -2889,6 +2889,70 @@ static Matrix interpolate(const MatFuncData& funcData, const MatFuncErrorInfo& e
 
 
 /////////////////////////////////////////////////
+/// \brief This static functions concatenates
+/// two matrices horizontally. This is, the number
+/// of rows stays the same and the columns are
+/// appended to the ones of the other matrix.
+///
+/// \param funcData const MatFuncData&
+/// \param errorInfo const MatFuncErrorInfo&
+/// \return Matrix
+///
+/////////////////////////////////////////////////
+static Matrix hcat(const MatFuncData& funcData, const MatFuncErrorInfo& errorInfo)
+{
+    // Check the dimensions of the two matrices
+    if (funcData.mat1.size() != funcData.mat2.size())
+        throw SyntaxError(SyntaxError::MATRIX_ROWS_NOT_EQUAL, errorInfo.command, errorInfo.position);
+
+    // Create the new matrix
+    size_t rows = funcData.mat1.size();
+    size_t cols = funcData.mat1[0].size() + funcData.mat2[0].size();
+    Matrix concated = createZeroesMatrix(rows, cols);
+
+    // Fill the new matrix with its elements
+    for (size_t i = 0; i < concated.size(); i++)
+    {
+        std::copy(funcData.mat1[i].begin(), funcData.mat1[i].end(), concated[i].begin());
+        std::copy(funcData.mat2[i].begin(), funcData.mat2[i].end(), concated[i].begin() + funcData.mat1[i].size());
+    }
+
+
+    return concated;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This static functions concatenates
+/// two matrices vertically. This is, the number
+/// of columns stays the same and the rows are
+/// appended to the ones of the other matrix.
+///
+/// \param funcData const MatFuncData&
+/// \param errorInfo const MatFuncErrorInfo&
+/// \return Matrix
+///
+/////////////////////////////////////////////////
+static Matrix vcat(const MatFuncData& funcData, const MatFuncErrorInfo& errorInfo)
+{
+    // Check the dimensions of the two matrices
+    if (funcData.mat1[0].size() != funcData.mat2[0].size())
+        throw SyntaxError(SyntaxError::MATRIX_COLS_NOT_EQUAL, errorInfo.command, errorInfo.position);
+
+    // Create the new matrix
+    size_t rows = funcData.mat1.size() + funcData.mat2.size();
+    size_t cols = funcData.mat1[0].size();
+    Matrix concated = createZeroesMatrix(rows, cols);
+
+    // Fill the new matrix with its elements
+    std::copy(funcData.mat1.begin(), funcData.mat1.end(), concated.begin());
+    std::copy(funcData.mat2.begin(), funcData.mat2.end(), concated.begin() + funcData.mat1.size());
+
+    return concated;
+}
+
+
+/////////////////////////////////////////////////
 /// \brief Extracts a selection from a matrix
 /// iterating through two matrices simultaneously.
 ///
@@ -3139,6 +3203,8 @@ static std::map<std::string,MatFuncDef> getMatrixFunctions()
     mFunctions["poltocyl"] = MatFuncDef(MATSIG_MAT, polarToCyl);
     mFunctions["coordstogrid"] = MatFuncDef(MATSIG_MAT_MAT, coordsToGrid);
     mFunctions["interpolate"] = MatFuncDef(MATSIG_MAT_MAT, interpolate);
+    mFunctions["hcat"] = MatFuncDef(MATSIG_MAT_MAT, hcat);
+    mFunctions["vcat"] = MatFuncDef(MATSIG_MAT_MAT, vcat);
     mFunctions["select"] = MatFuncDef(MATSIG_MAT_MAT_MAT, selection);
     mFunctions["assemble"] = MatFuncDef(MATSIG_MAT_MAT_MAT, assemble);
     mFunctions["polylength"] = MatFuncDef(MATSIG_MAT, polyLength);

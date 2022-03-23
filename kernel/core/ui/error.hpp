@@ -149,6 +149,8 @@ class SyntaxError
             MATRIX_IS_NOT_INVERTIBLE=2300,
             MATRIX_IS_NOT_SYMMETRIC,
             MATRIX_CANNOT_HAVE_ZERO_SIZE,
+            MATRIX_COLS_NOT_EQUAL,
+            MATRIX_ROWS_NOT_EQUAL,
             MISSING_DEFAULT_VALUE=2400,
             NO_CACHED_DATA=2500,
             NO_COLS,
