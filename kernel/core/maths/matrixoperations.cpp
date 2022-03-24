@@ -563,10 +563,7 @@ static Matrix evalMatOp(string& sCmd, Parser& _parser, MemoryManager& _data, Fun
                 else
                 {
                     __sCmd += sCmd.substr(pos_back, i-pos_back);
-                    bool isFunc = isalnum(__sCmd.back());
-
-                    if (isFunc)
-                        __sCmd += "(";
+                    __sCmd += "(";
 
                     // As this might be a usual function, evaluate each argument
                     // separately (if it is matrix expression) and combine them
@@ -587,8 +584,7 @@ static Matrix evalMatOp(string& sCmd, Parser& _parser, MemoryManager& _data, Fun
                             __sCmd += ",";
                     }
 
-                    if (isFunc)
-                        __sCmd += ")";
+                    __sCmd += ")";
                 }
 
                 pos_back = closing_par_pos+1;
