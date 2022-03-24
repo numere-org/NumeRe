@@ -4765,7 +4765,12 @@ void Plot::fitPlotRanges(size_t nPlotCompose, bool bNewSubPlot)
 
                 if (m_manager.hasDataPlots())
                 {
-                    _pInfo.ranges[YRANGE] = _pInfo.ranges[YRANGE].combine(funcIntLeft[ivlID]);
+                    // It might happen that all data plots are assigned to the secondary axis
+                    if (!isnan(dataRanges[YRANGE].front()))
+                        _pInfo.ranges[YRANGE] = _pInfo.ranges[YRANGE].combine(funcIntLeft[ivlID]);
+                    else
+                        _pInfo.ranges[YRANGE] = funcIntLeft[ivlID];
+
                     _pInfo.secranges[YRANGE] = _pInfo.secranges[YRANGE].combine(funcIntRight[ivlID]);
 
                     if (isCmplxPlane)

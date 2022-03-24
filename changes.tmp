@@ -6,3 +6,5 @@ Fixed	Tables, which are not passed via a reference to an inline procedure, will 
 Added	The concatenate functions hcat and vcat for matrices. Including documentation.
 Fixed	A critical bug in the matrix operations mode was resolved.
 Fixed	The function "getkeyval()" now also can handle numeric constants correctly.
+Fixed	It's now possible to use "max(c{})" as range within "addyaxis" and "addxaxis".
+Fixed	The rare case, where all data sets are assigned to the right axis and the left axis was calculated erroneously, was resolved.

@@ -962,10 +962,9 @@ void PlotData::setParams(const string& __sCmd, int nType)
 
             if (getNextArgument(sTemp, false).front() != '"')
             {
-                _parser.SetExpr(getNextArgument(sTemp, true));
-                mu::value_type minval = _parser.Eval();
-                _parser.SetExpr(getNextArgument(sTemp, true));
-                _AddAxes[0].ivl.reset(minval, _parser.Eval());
+                int nRes;
+                mu::value_type minval = evaluateNumerical(nRes, getNextArgument(sTemp, true))[0];
+                _AddAxes[0].ivl.reset(minval, evaluateNumerical(nRes, getNextArgument(sTemp, true))[0]);
 
                 if (getNextArgument(sTemp, false).length())
                 {
@@ -1008,10 +1007,9 @@ void PlotData::setParams(const string& __sCmd, int nType)
 
             if (getNextArgument(sTemp, false).front() != '"')
             {
-                _parser.SetExpr(getNextArgument(sTemp, true));
-                mu::value_type minval = _parser.Eval();
-                _parser.SetExpr(getNextArgument(sTemp, true));
-                _AddAxes[1].ivl.reset(minval, _parser.Eval());
+                int nRes;
+                mu::value_type minval = evaluateNumerical(nRes, getNextArgument(sTemp, true))[0];
+                _AddAxes[1].ivl.reset(minval, evaluateNumerical(nRes, getNextArgument(sTemp, true))[0]);
 
                 if (getNextArgument(sTemp, false).length())
                 {
