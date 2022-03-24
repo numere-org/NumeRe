@@ -104,6 +104,11 @@ string addQuotationMarks(const string& sString)
 /////////////////////////////////////////////////
 static bool isNumericValue(const string& sString)
 {
+    static const mu::valmap_type& constants = NumeReKernel::getInstance()->getParser().GetConst();
+
+    if (constants.find(sString) != constants.end())
+        return true;
+
     if (sString.find_first_not_of("0123456789.ieE+-(){}, ") != string::npos)
         return false;
 

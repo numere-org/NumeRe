@@ -5,3 +5,4 @@ Fixed	The procedure extraction feature now considers references as output paths.
 Fixed	Tables, which are not passed via a reference to an inline procedure, will throw an error.
 Added	The concatenate functions hcat and vcat for matrices. Including documentation.
 Fixed	A critical bug in the matrix operations mode was resolved.
+Fixed	The function "getkeyval()" now also can handle numeric constants correctly.
