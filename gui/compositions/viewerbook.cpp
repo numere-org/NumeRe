@@ -19,7 +19,7 @@
 #include "viewerbook.hpp"
 
 BEGIN_EVENT_TABLE(ViewerBook, wxNotebook)
-    EVT_ENTER_WINDOW(ViewerBook::OnEnter)
+//    EVT_ENTER_WINDOW(ViewerBook::OnEnter)
 END_EVENT_TABLE()
 
 void ViewerBook::OnEnter(wxMouseEvent& event)

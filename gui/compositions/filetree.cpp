@@ -20,7 +20,7 @@
 #include "../globals.hpp"
 
 BEGIN_EVENT_TABLE(FileTree, wxTreeCtrl)
-    EVT_ENTER_WINDOW    (FileTree::OnEnter)
+//    EVT_ENTER_WINDOW    (FileTree::OnEnter)
 END_EVENT_TABLE()
 
 void FileTree::OnEnter(wxMouseEvent& event)

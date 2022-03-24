@@ -23,7 +23,7 @@
 BEGIN_EVENT_TABLE(GraphViewer, ViewerFrame)
     EVT_KEY_DOWN        (ViewerFrame::OnKeyDown)
     EVT_SET_FOCUS       (ViewerFrame::OnFocus)
-    EVT_ENTER_WINDOW    (ViewerFrame::OnEnter)
+//    EVT_ENTER_WINDOW    (ViewerFrame::OnEnter)
     EVT_CLOSE           (ViewerFrame::OnClose)
 END_EVENT_TABLE()
 

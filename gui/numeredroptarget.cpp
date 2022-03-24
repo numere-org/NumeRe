@@ -147,6 +147,7 @@ wxDragResult NumeReDropTarget::OnData(wxCoord x, wxCoord y, wxDragResult default
                     return wxDragNone;
 
                 top->OpenSourceFile(filenames);
+                top->GetCurrentEditor()->SetFocus();
             }
             else if (m_type == CONSOLE)
             {
@@ -236,6 +237,8 @@ wxDragResult NumeReDropTarget::OnData(wxCoord x, wxCoord y, wxDragResult default
                 // Execute the executable files here
                 if (sExecutables.length())
                     top->getTerminal()->pass_command(sExecutables, false);
+
+                top->getTerminal()->SetFocus();
             }
             else if (m_type == FILETREE)
             {
@@ -362,6 +365,7 @@ wxDragResult NumeReDropTarget::OnData(wxCoord x, wxCoord y, wxDragResult default
                 wxTextDataObject* textdata = static_cast<wxTextDataObject*>(data);
                 NumeReEditor* edit = static_cast<NumeReEditor*>(m_owner);
                 edit->DoDropText(x, y, textdata->GetText());
+                edit->SetFocus();
             }
             else if (m_type == CONSOLE)
             {
@@ -380,6 +384,7 @@ wxDragResult NumeReDropTarget::OnData(wxCoord x, wxCoord y, wxDragResult default
 
                 NumeReWindow* top = static_cast<NumeReWindow*>(m_topWindow);
                 top->getTerminal()->ProcessInput(sText.length(), sText);
+                top->getTerminal()->SetFocus();
                 defaultDragResult = wxDragCopy;
             }
 

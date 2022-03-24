@@ -29,7 +29,7 @@ extern wxPageSetupData* g_pageSetupData;
 
 BEGIN_EVENT_TABLE(HelpViewer, wxHtmlWindow)
     EVT_KEY_DOWN        (HelpViewer::OnKeyDown)
-    EVT_ENTER_WINDOW    (HelpViewer::OnEnter)
+//    EVT_ENTER_WINDOW    (HelpViewer::OnEnter)
     EVT_HTML_LINK_CLICKED(-1, HelpViewer::OnLinkClick)
 END_EVENT_TABLE()
 

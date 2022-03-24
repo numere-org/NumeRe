@@ -8,3 +8,4 @@ Fixed	A critical bug in the matrix operations mode was resolved.
 Fixed	The function "getkeyval()" now also can handle numeric constants correctly.
 Fixed	It's now possible to use "max(c{})" as range within "addyaxis" and "addxaxis".
 Fixed	The rare case, where all data sets are assigned to the right axis and the left axis was calculated erroneously, was resolved.
+Removed	The automatic focusing of UI elements is now disabled.

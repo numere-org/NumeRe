@@ -34,7 +34,7 @@ BEGIN_EVENT_TABLE(FindReplaceDialog, wxDialog)
     EVT_UPDATE_UI(wxID_REPLACE, FindReplaceDialog::OnUpdateFindUI)
     EVT_UPDATE_UI(wxID_REPLACE_ALL, FindReplaceDialog::OnUpdateFindUI)
 
-    EVT_ENTER_WINDOW(FindReplaceDialog::OnEnter)
+//    EVT_ENTER_WINDOW(FindReplaceDialog::OnEnter)
     EVT_SET_FOCUS(FindReplaceDialog::OnGainFocus)
     //EVT_KILL_FOCUS(FindReplaceDialog::OnLoseFocus)
 

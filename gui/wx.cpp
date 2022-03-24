@@ -104,7 +104,7 @@ BEGIN_EVENT_TABLE(wxMGL, wxWindow)
     EVT_MOTION		(wxMGL::OnMouseMove)
     EVT_KEY_DOWN    (wxMGL::OnKeyDown)
     EVT_NAVIGATION_KEY(wxMGL::OnNavigationKey)
-    EVT_ENTER_WINDOW(wxMGL::OnEnter)
+//    EVT_ENTER_WINDOW(wxMGL::OnEnter)
     EVT_LEAVE_WINDOW(wxMGL::OnLeave)
     EVT_CLOSE       (wxMGL::OnClose)
 

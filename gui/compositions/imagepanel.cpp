@@ -37,7 +37,7 @@ BEGIN_EVENT_TABLE(ImagePanel, wxPanel)
  EVT_KEY_UP(wxImagePanel::keyReleased)
  EVT_MOUSEWHEEL(wxImagePanel::mouseWheelMoved)
  */
-    EVT_ENTER_WINDOW    (ImagePanel::OnEnter)
+//    EVT_ENTER_WINDOW    (ImagePanel::OnEnter)
     EVT_SET_FOCUS       (ImagePanel::OnFocus)
     EVT_KILL_FOCUS      (ImagePanel::OnLoseFocus)
     EVT_KEY_DOWN        (ImagePanel::keyPressed)

@@ -19,7 +19,7 @@
 #include "viewerpanel.hpp"
 
 BEGIN_EVENT_TABLE(ViewerPanel, wxPanel)
-    EVT_ENTER_WINDOW(ViewerPanel::OnEnter)
+//    EVT_ENTER_WINDOW(ViewerPanel::OnEnter)
 END_EVENT_TABLE()
 
 void ViewerPanel::OnEnter(wxMouseEvent& event)
