@@ -512,6 +512,8 @@
 		<Unit filename="kernel/core/procedure/dependency.hpp" />
 		<Unit filename="kernel/core/procedure/flowctrl.cpp" />
 		<Unit filename="kernel/core/procedure/flowctrl.hpp" />
+		<Unit filename="kernel/core/procedure/includer.cpp" />
+		<Unit filename="kernel/core/procedure/includer.hpp" />
 		<Unit filename="kernel/core/procedure/plugin.cpp" />
 		<Unit filename="kernel/core/procedure/plugin.hpp" />
 		<Unit filename="kernel/core/procedure/procedure.cpp" />

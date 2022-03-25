@@ -64,7 +64,7 @@ class Procedure : public FlowCtrl, public PackageManager
         fstream fProcedure;
         string sProcNames;
         string sCurrentProcedureName;
-        unsigned int nCurrentLine;
+        int nCurrentLine;
         string sNameSpace;
         string sCallingNameSpace;
         string sThisNameSpace;

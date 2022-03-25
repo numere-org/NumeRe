@@ -20,6 +20,9 @@
 #include "../utils/tools.hpp"
 #include "../symdef.hpp"
 #include "dependency.hpp"
+#include "includer.hpp"
+
+#include <memory>
 
 
 /////////////////////////////////////////////////
@@ -39,12 +42,31 @@ ProcedureElement::ProcedureElement(const std::vector<std::string>& vProcedureCon
     std::string sProcPlotCompose;
     bool bBlockComment = false;
     SymDefManager _symdefs;
+    std::unique_ptr<Includer> _includer;
+    size_t i = 0;
+    int currentLine = 0;
+    int includeOffset = 0;
 
     // Examine the contents of each line
-    for (size_t i = 0; i < vProcedureContents.size(); i++)
+    while (i < vProcedureContents.size())
     {
-        // get the current line
-        sProcCommandLine = vProcedureContents[i];
+        if (_includer && _includer->is_open())
+        {
+            includeOffset++;
+            currentLine = -includeOffset;
+            sProcCommandLine = _includer->getNextLine();
+        }
+        else
+        {
+            if (_includer)
+                _includer.reset();
+
+            // get the current line
+            sProcCommandLine = vProcedureContents[i];
+            currentLine = i;
+            i++;
+        }
+
         StripSpaces(sProcCommandLine);
 
         // skip easy cases
@@ -64,6 +86,12 @@ ProcedureElement::ProcedureElement(const std::vector<std::string>& vProcedureCon
             }
             else
                 continue;
+        }
+
+        if (Includer::is_including_syntax(sProcCommandLine))
+        {
+            _includer.reset(new Includer(sProcCommandLine));
+            continue;
         }
 
         // examine the string: consider also quotation marks
@@ -196,9 +224,8 @@ ProcedureElement::ProcedureElement(const std::vector<std::string>& vProcedureCon
         // Avoid "install" and "script" calls
         if (sCurrentCommand == "install"
             || sCurrentCommand == "script")
-			throw SyntaxError(SyntaxError::INSTALL_CMD_FOUND, "@" + toString(i+1) + ": " + sProcCommandLine, sCurrentCommand);
-
-
+			throw SyntaxError(SyntaxError::INSTALL_CMD_FOUND,
+                     "@" + toString(abs(currentLine)+1) + ": " + sProcCommandLine, sCurrentCommand);
 
         // Ensure that the parentheses are valid
         if (sProcCommandLine.find('(') != std::string::npos || sProcCommandLine.find('{') != std::string::npos)
@@ -255,7 +282,8 @@ ProcedureElement::ProcedureElement(const std::vector<std::string>& vProcedureCon
             }
 
             // Extract procedure name and argument list
-            if (sProcCommandLine.find('$') != std::string::npos && sProcCommandLine.find('(', sProcCommandLine.find('$')) != std::string::npos)
+            if (sProcCommandLine.find('$') != std::string::npos
+                && sProcCommandLine.find('(', sProcCommandLine.find('$')) != std::string::npos)
             {
                 std::string sProcName = sProcCommandLine.substr(sProcCommandLine.find('$'));
                 sProcName.erase(sProcName.find('('));
@@ -265,31 +293,42 @@ ProcedureElement::ProcedureElement(const std::vector<std::string>& vProcedureCon
 
                 // Ensure that the argument list is defined reasonable
                 if (findCommand(sArgumentList, "var").sString == "var")
-                    throw SyntaxError(SyntaxError::WRONG_ARG_NAME, "@" + toString(i+1) + ": " + sProcCommandLine, "var", "var");
+                    throw SyntaxError(SyntaxError::WRONG_ARG_NAME,
+                                      "@" + toString(abs(currentLine)+1) + ": " + sProcCommandLine, "var", "var");
 
                 if (findCommand(sArgumentList, "str").sString == "str")
-                    throw SyntaxError(SyntaxError::WRONG_ARG_NAME, "@" + toString(i+1) + ": " + sProcCommandLine, "str", "str");
+                    throw SyntaxError(SyntaxError::WRONG_ARG_NAME,
+                                      "@" + toString(abs(currentLine)+1) + ": " + sProcCommandLine, "str", "str");
 
                 if (findCommand(sArgumentList, "tab").sString == "tab")
-                    throw SyntaxError(SyntaxError::WRONG_ARG_NAME, "@" + toString(i+1) + ": " + sProcCommandLine, "tab", "tab");
+                    throw SyntaxError(SyntaxError::WRONG_ARG_NAME,
+                                      "@" + toString(abs(currentLine)+1) + ": " + sProcCommandLine, "tab", "tab");
 
                 if (findCommand(sArgumentList, "cst").sString == "cst")
-                    throw SyntaxError(SyntaxError::WRONG_ARG_NAME, "@" + toString(i+1) + ": " + sProcCommandLine, "cst", "cst");
+                    throw SyntaxError(SyntaxError::WRONG_ARG_NAME,
+                                      "@" + toString(abs(currentLine)+1) + ": " + sProcCommandLine, "cst", "cst");
 
                 sArgumentList = sProcCommandLine.substr(sProcCommandLine.find('(')+1);
                 sArgumentList = " " + sArgumentList.erase(sArgumentList.rfind(')')) + " ";
 
                 // Store the procedure name and the corresponding line in the
                 // procedure list map
-                mProcedureList[sProcName] = i;
+                mProcedureList[sProcName] = currentLine;
             }
 
-            mProcedureContents[i] = ProcedureCommandLine(nFlags, ProcedureCommandLine::TYPE_PROCEDURE_HEAD, sProcCommandLine, sArgumentList);
+            mProcedureContents.push_back(std::make_pair(currentLine, ProcedureCommandLine(nFlags,
+                                                                                          ProcedureCommandLine::TYPE_PROCEDURE_HEAD,
+                                                                                          sProcCommandLine,
+                                                                                          sArgumentList)));
         }
         else if (sCurrentCommand == "endprocedure")
-            mProcedureContents[i] = ProcedureCommandLine(ProcedureCommandLine::FLAG_NONE, ProcedureCommandLine::TYPE_PROCEDURE_FOOT, sProcCommandLine);
+            mProcedureContents.push_back(std::make_pair(currentLine, ProcedureCommandLine(ProcedureCommandLine::FLAG_NONE,
+                                                                                          ProcedureCommandLine::TYPE_PROCEDURE_FOOT,
+                                                                                          sProcCommandLine)));
         else
-            mProcedureContents[i] = ProcedureCommandLine(ProcedureCommandLine::FLAG_NONE, ProcedureCommandLine::TYPE_PROCEDURE_BODY, sProcCommandLine);
+            mProcedureContents.push_back(std::make_pair(currentLine, ProcedureCommandLine(ProcedureCommandLine::FLAG_NONE,
+                                                                                          ProcedureCommandLine::TYPE_PROCEDURE_BODY,
+                                                                                          sProcCommandLine)));
     }
 }
 
@@ -364,7 +403,7 @@ void ProcedureElement::cleanCurrentLine(std::string& sProcCommandLine, const std
 /////////////////////////////////////////////////
 std::pair<int, ProcedureCommandLine> ProcedureElement::getFirstLine()
 {
-    return *mProcedureContents.begin();
+    return mProcedureContents.front();
 }
 
 
@@ -381,10 +420,15 @@ std::pair<int, ProcedureCommandLine> ProcedureElement::getFirstLine()
 std::pair<int, ProcedureCommandLine> ProcedureElement::getCurrentLine(int nCurrentLine)
 {
     std::pair<int, ProcedureCommandLine> currentLine;
-    auto iter = mProcedureContents.find(nCurrentLine);
 
-    if (iter != mProcedureContents.end())
-        currentLine = *iter;
+    for (int i = mProcedureContents.size()-1; i >= 0; i--)
+    {
+        if (mProcedureContents[i].first == nCurrentLine)
+            return mProcedureContents[i];
+
+        //if (abs(mProcedureContents[i].first) < nCurrentLine)
+        //    break;
+    }
 
     return currentLine;
 }
@@ -404,14 +448,14 @@ std::pair<int, ProcedureCommandLine> ProcedureElement::getCurrentLine(int nCurre
 std::pair<int, ProcedureCommandLine> ProcedureElement::getNextLine(int nCurrentLine)
 {
     std::pair<int, ProcedureCommandLine> currentLine;
-    auto iter = mProcedureContents.find(nCurrentLine);
 
-    if (iter != mProcedureContents.end())
+    for (int i = mProcedureContents.size()-1; i >= 0; i--)
     {
-        iter++;
+        if (mProcedureContents[i].first == nCurrentLine && (size_t)i+1 < mProcedureContents.size())
+            return mProcedureContents[i+1];
 
-        if (iter != mProcedureContents.end())
-            currentLine = *iter;
+        //if (abs(mProcedureContents[i].first) < nCurrentLine)
+        //    break;
     }
 
     return currentLine;
@@ -429,17 +473,8 @@ std::pair<int, ProcedureCommandLine> ProcedureElement::getNextLine(int nCurrentL
 /////////////////////////////////////////////////
 bool ProcedureElement::isLastLine(int nCurrentLine)
 {
-    auto iter = mProcedureContents.find(nCurrentLine);
-
-    if (iter != mProcedureContents.end())
-    {
-        iter++;
-
-        if (iter != mProcedureContents.end())
-            return false;
-
+    if (mProcedureContents.back().first <= nCurrentLine)
         return true;
-    }
 
     return false;
 }
@@ -487,11 +522,13 @@ int ProcedureElement::gotoProcedure(const std::string& sProcedureName)
 /////////////////////////////////////////////////
 void ProcedureElement::setByteCode(int _nByteCode, int nCurrentLine)
 {
-    auto iter = mProcedureContents.find(nCurrentLine);
-
-    if (iter != mProcedureContents.end())
+    for (int i = mProcedureContents.size()-1; i >= 0; i--)
     {
-        iter->second.setByteCode(_nByteCode);
+        if (mProcedureContents[i].first == nCurrentLine)
+            mProcedureContents[i].second.setByteCode(_nByteCode);
+
+        //if (abs(mProcedureContents[i].first) < nCurrentLine)
+        //    break;
     }
 }
 

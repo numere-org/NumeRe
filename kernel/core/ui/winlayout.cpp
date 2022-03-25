@@ -20,8 +20,10 @@
 #include "../utils/tinyxml2.h"
 #include "../io/styledtextfile.hpp"
 #include "../../kernel.hpp"
+#include "../procedure/includer.hpp"
 
 #include <stack>
+#include <memory>
 
 std::string removeQuotationMarks(const std::string& sString);
 
@@ -237,6 +239,7 @@ static std::string parseLayoutScript(std::string& sLayoutScript, tinyxml2::XMLDo
     // Load the layoutscript as a StyledTextFile
     StyledTextFile layoutScript(sLayoutScript);
     SymDefManager _symDefs;
+    std::unique_ptr<Includer> _includer; // Pointer-based, because it might not be available each time
 
     std::string sFolderName = sLayoutScript.substr(0, sLayoutScript.rfind('/'));
     std::string sOnOpenEvent;
@@ -247,12 +250,41 @@ static std::string parseLayoutScript(std::string& sLayoutScript, tinyxml2::XMLDo
 
     std::stack<tinyxml2::XMLElement*> currentGroup;
     tinyxml2::XMLElement* currentChild = nullptr;
+    int i = 0;
 
     // Go through the layout script
-    for (int i = 0; i < layoutScript.getLinesCount(); i++)
+    while (i < layoutScript.getLinesCount())
     {
-        // Get the current line without comments
-        std::string line = layoutScript.getStrippedLine(i);
+        std::string line;
+
+        // If the includer is open, get the line from
+        // here
+        if (_includer && _includer->is_open())
+        {
+            line = _includer->getNextLine();
+
+            // Remove not necessary global statements
+            if (findCommand(line).sString == "global")
+                line.erase(0, findCommand(line).nPos+7);
+        }
+        else
+        {
+            // Free up the includer, if it is not necessary any more
+            if (_includer)
+                _includer.reset();
+
+            // Get the current line without comments
+            line = layoutScript.getStrippedLine(i);
+            i++;
+
+            // If this line contains an including syntax, create
+            // a new includer to resolve that
+            if (Includer::is_including_syntax(line) && !_includer)
+            {
+                _includer.reset(new Includer(line));
+                continue;
+            }
+        }
 
         // Resolve symbol declarations
         _symDefs.resolveSymbols(line);

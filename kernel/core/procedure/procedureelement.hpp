@@ -35,7 +35,7 @@ class Dependencies;
 class ProcedureElement
 {
     private:
-        std::map<int, ProcedureCommandLine> mProcedureContents;
+        std::vector<std::pair<int, ProcedureCommandLine>> mProcedureContents;
         std::map<std::string, int> mProcedureList;
         std::string sFileName;
         Dependencies* m_dependencies;

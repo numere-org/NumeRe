@@ -814,7 +814,9 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, F
                 // Obtain the current command from the command line
                 sCurrentCommand = findCommand(sProcCommandLine).sString;
 
-                if (_option.useDebugger() && _debugger.getBreakpointManager().isBreakpoint(sCurrentProcedureName, nCurrentLine) && sProcCommandLine.substr(0, 2) != "|>")
+                if (_option.useDebugger()
+                    && _debugger.getBreakpointManager().isBreakpoint(sCurrentProcedureName, nCurrentLine)
+                    && sProcCommandLine.substr(0, 2) != "|>")
                 {
                     sProcCommandLine.insert(0, "|> ");
                 }
@@ -2617,7 +2619,7 @@ unsigned int Procedure::GetCurrentLine() const
         return getCurrentLineNumber();
 
     // Use the internal line number
-    return nCurrentLine;
+    return std::max(0, nCurrentLine);
 }
 
 
@@ -3038,7 +3040,6 @@ void Procedure::readFromInclude(ifstream& fInclude, int nIncludeType, Parser& _p
         {
             if (nFlags & ProcedureCommandLine::FLAG_INLINE)
             {
-
                 throw SyntaxError(SyntaxError::INLINE_PROCEDURE_IS_NOT_INLINE, sProcCommandLine, SyntaxError::invalid_position);
             }
 

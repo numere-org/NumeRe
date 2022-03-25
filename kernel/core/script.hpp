@@ -23,18 +23,20 @@
 #define SCRIPT_HPP
 
 #include <string>
+#include <memory>
 
 #include "io/filesystem.hpp"
 #include "io/styledtextfile.hpp"
 #include "io/logger.hpp"
 #include "maths/define.hpp"
 #include "symdef.hpp"
+#include "procedure/includer.hpp"
 
 class Script : public FileSystem
 {
     private:
-        StyledTextFile* m_script;
-        StyledTextFile* m_include;
+        std::unique_ptr<StyledTextFile> m_script;
+        std::unique_ptr<Includer> m_include;
 
         enum
         {
@@ -49,8 +51,6 @@ class Script : public FileSystem
         bool bValidScript;
         bool bLastScriptCommand;
         int nLine;
-        int nIncludeLine;
-        int nIncludeType;
         int nInstallModeFlags;
         bool isInstallMode;
         bool isInInstallSection;
@@ -89,7 +89,7 @@ class Script : public FileSystem
             _localDef.setPredefinedFuncs(sPredefined);
         }
         inline unsigned int getCurrentLine() const
-            {return m_include ? nIncludeLine : nLine;}
+            {return m_include && m_include->is_open() ? m_include->getCurrentLine() : nLine;}
         void openScript(std::string& _sScriptFileName);
         void close();
         void returnCommand();
@@ -99,7 +99,7 @@ class Script : public FileSystem
                 return;
             }
         inline bool isOpen() const
-            {return m_script;};
+            {return m_script.get() != nullptr;};
         inline bool isValid() const
             {return bValidScript;};
         inline bool wasLastCommand()

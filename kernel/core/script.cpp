@@ -33,17 +33,12 @@
 /////////////////////////////////////////////////
 Script::Script() : FileSystem(), _localDef(true)
 {
-    m_script = nullptr;
-    m_include = nullptr;
-
     bValidScript = false;
     bLastScriptCommand = false;
     isInstallMode = false;
     nInstallModeFlags = ENABLE_DEFAULTS;
     nCurrentPackage = 0;
     nLine = 0;
-    nIncludeLine = 0;
-    nIncludeType = 0;
 }
 
 
@@ -78,7 +73,7 @@ void Script::openScript(string& _sScriptFileName)
     // Open the script, if the script file name exists
     if (_sScriptFileName.length())
     {
-        m_script = new StyledTextFile(_sScriptFileName);
+        m_script.reset(new StyledTextFile(_sScriptFileName));
 
         // Ensure that the script exists and is a valid file
         if (m_script->getLastPosition() == -1)
@@ -94,7 +89,6 @@ void Script::openScript(string& _sScriptFileName)
         sHelpID = "";
         sInstallID = "";
         nLine = 0;
-        nIncludeLine = 0;
         _localDef.reset();
         _symdefs.clear();
     }
@@ -114,14 +108,10 @@ void Script::close()
     if (m_script)
     {
         // Close the file streams
-        delete m_script;
-        m_script = nullptr;
+        m_script.reset();
 
         if (m_include)
-        {
-            delete m_include;
-            m_include = nullptr;
-        }
+            m_include.reset();
 
         // If the file stream of the installation log
         // is still open, add a installation failed message
@@ -871,101 +861,10 @@ std::string Script::getNextScriptCommandFromScript()
 /////////////////////////////////////////////////
 string Script::getNextScriptCommandFromInclude()
 {
-    string sScriptCommand;
+    if (m_include && m_include->is_open())
+        return m_include->getNextLine();
 
-    // Search for the next valid and non-empty line
-    // in the included script
-    while (nIncludeLine < m_include->getLinesCount() && !sScriptCommand.length())
-    {
-        string sCurrentLine;
-
-        // Compose lines, which were broken using the "\\" operator
-        do
-        {
-            sCurrentLine = m_include->getStrippedLine(nIncludeLine);
-            nIncludeLine++;
-            StripSpaces(sCurrentLine);
-
-            if (sScriptCommand.length() > 2 && sScriptCommand.substr(sScriptCommand.length()-2) == "\\\\")
-                sScriptCommand.erase(sScriptCommand.length()-2);
-
-            sScriptCommand += sCurrentLine;
-        }
-        while (nIncludeLine < m_include->getLinesCount() && sScriptCommand.length() > 2 && sScriptCommand.substr(sScriptCommand.length()-2) == "\\\\");
-
-        // Ignore empty lines
-        if (!sScriptCommand.length())
-            continue;
-
-        // Ignore non-global installation sections
-        if (sScriptCommand.substr(0,9) == "<install>"
-            || (findCommand(sScriptCommand).sString == "global" && sScriptCommand.find("<install>") != string::npos))
-        {
-            while (nIncludeLine < m_include->getLinesCount())
-            {
-                sScriptCommand = m_include->getStrippedLine(nIncludeLine);
-                nIncludeLine++;
-                StripSpaces(sScriptCommand);
-
-                if (sScriptCommand.substr(0,12) == "<endinstall>"
-                    || (findCommand(sScriptCommand).sString == "global" && sScriptCommand.find("<endinstall>") != string::npos))
-                    break;
-            }
-
-            sScriptCommand.clear();
-            continue;
-        }
-
-        // Ensure that the relevant commands are available
-        if (findCommand(sScriptCommand).sString != "define"
-            && findCommand(sScriptCommand).sString != "ifndef"
-            && findCommand(sScriptCommand).sString != "ifndefined"
-            && findCommand(sScriptCommand).sString != "redefine"
-            && findCommand(sScriptCommand).sString != "redef"
-            && findCommand(sScriptCommand).sString != "lclfunc"
-            && findCommand(sScriptCommand).sString != "global")
-        {
-            sScriptCommand.clear();
-            continue;
-        }
-
-        // Depending on the include type, only accept the
-        // corresponding commands
-        if (nIncludeType == 1
-            && findCommand(sScriptCommand).sString != "define"
-            && findCommand(sScriptCommand).sString != "ifndef"
-            && findCommand(sScriptCommand).sString != "ifndefined"
-            && findCommand(sScriptCommand).sString != "redefine"
-            && findCommand(sScriptCommand).sString != "redef"
-            && findCommand(sScriptCommand).sString != "lclfunc")
-        {
-            sScriptCommand.clear();
-            continue;
-        }
-        else if (nIncludeType == 2
-            && findCommand(sScriptCommand).sString != "global")
-        {
-            sScriptCommand.clear();
-            continue;
-        }
-        else if (nIncludeType == 3
-            && findCommand(sScriptCommand).sString != SYMDEF_COMMAND)
-        {
-            sScriptCommand.clear();
-            continue;
-        }
-    }
-
-    // If this is the last line, close the included file
-    if (nIncludeLine >= m_include->getLinesCount())
-    {
-        delete m_include;
-        m_include = nullptr;
-        nIncludeLine = 0;
-        nIncludeType = 0;
-    }
-
-    return sScriptCommand;
+    return "";
 }
 
 
@@ -982,62 +881,16 @@ string Script::handleIncludeSyntax(string& sScriptCommand)
 {
     // Only accept the including syntax, if we're currently
     // not from another included file
-    if (!m_include && sScriptCommand[0] == '@' && sScriptCommand[1] != ' ')
+    if (!m_include && Includer::is_including_syntax(sScriptCommand))
     {
-        std::string sIncludeFileName;
-
-        if (sScriptCommand[1] == '"')
-            sIncludeFileName = sScriptCommand.substr(2,sScriptCommand.find('"', 2)-2);
-        else
-            sIncludeFileName = sScriptCommand.substr(1,sScriptCommand.find(' ')-1);
-
-        // Determine the inclusion type
-        if (sScriptCommand.find(':') != string::npos)
-        {
-            if (sScriptCommand.find("defines", sScriptCommand.find(':')+1) != string::npos)
-            {
-                nIncludeType = 1;
-            }
-            else if (sScriptCommand.find("globals", sScriptCommand.find(':')+1) != string::npos)
-            {
-                nIncludeType = 2;
-            }
-            else if (sScriptCommand.find("declarations", sScriptCommand.find(':')+1) != string::npos)
-            {
-                nIncludeType = 3;
-            }
-        }
-
-        // Extract the actual file name
-        if (sIncludeFileName.find(':') != string::npos)
-        {
-            for (int __i = sIncludeFileName.length()-1; __i >= 0; __i--)
-            {
-                if (sIncludeFileName[__i] == ':'
-                    && (__i > 1
-                        || (__i == 1 && sIncludeFileName.length() > (unsigned int)__i+1 && sIncludeFileName[__i+1] != '/')))
-                {
-                    sIncludeFileName.erase(sIncludeFileName.find(':'));
-                    break;
-                }
-            }
-        }
-
-        // Get a valid file name
-        if (sIncludeFileName.length())
-            sIncludeFileName = FileSystem::ValidFileName(sIncludeFileName, ".nscr");
-        else
-            return "";
-
         // Open the include file
-        m_include = new StyledTextFile(sIncludeFileName);
+        m_include.reset(new Includer(sScriptCommand));
 
         // Ensure that the file is valid
-        if (m_include->getLastPosition() == -1)
+        if (!m_include->is_open())
         {
-            delete m_include;
-            m_include = nullptr;
-            throw SyntaxError(SyntaxError::SCRIPT_NOT_EXIST, sScriptCommand, SyntaxError::invalid_position, sIncludeFileName);
+            m_include.reset();
+            throw SyntaxError(SyntaxError::SCRIPT_NOT_EXIST, sScriptCommand, SyntaxError::invalid_position, sScriptCommand);
         }
 
         return "";
@@ -1100,8 +953,12 @@ string Script::getNextScriptCommand()
     // Get the next script command
     if (m_script)
     {
-        if (!m_include)
+        if (!m_include || !m_include->is_open())
         {
+            // Delete the includer, if it is not needed anymore
+            if (m_include)
+                m_include.reset();
+
             // Get the next script command from the currently opened script
             sScriptCommand = getNextScriptCommandFromScript();
         }
