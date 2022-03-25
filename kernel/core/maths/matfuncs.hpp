@@ -2937,7 +2937,7 @@ static Matrix vcat(const MatFuncData& funcData, const MatFuncErrorInfo& errorInf
 {
     // Check the dimensions of the two matrices
     if (funcData.mat1[0].size() != funcData.mat2[0].size())
-        throw SyntaxError(SyntaxError::MATRIX_COLS_NOT_EQUAL, errorInfo.command, errorInfo.position);
+        throw SyntaxError(SyntaxError::WRONG_MATRIX_DIMENSIONS_FOR_MATOP, errorInfo.command, errorInfo.position, printMatrixDim(funcData.mat1) + " vs. " + printMatrixDim(funcData.mat2));
 
     // Create the new matrix
     size_t rows = funcData.mat1.size() + funcData.mat2.size();
@@ -2964,7 +2964,7 @@ static Matrix vcat(const MatFuncData& funcData, const MatFuncErrorInfo& errorInf
 static Matrix selection(const MatFuncData& funcData, const MatFuncErrorInfo& errorInfo)
 {
     if (!funcData.mat1.size() || !funcData.mat1[0].size() || !funcData.mat2.size() || !funcData.mat2[0].size() || !funcData.mat3.size() || !funcData.mat3[0].size())
-        throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, errorInfo.command, errorInfo.position);
+        throw SyntaxError(SyntaxError::WRONG_MATRIX_DIMENSIONS_FOR_MATOP, errorInfo.command, errorInfo.position, printMatrixDim(funcData.mat1) + " vs. " + printMatrixDim(funcData.mat2));
 
     // Store the scalar state
     bool isScalar[2] = {funcData.mat2.size() == 1 && funcData.mat2[0].size() == 1, funcData.mat3.size() == 1 && funcData.mat3[0].size() == 1};
