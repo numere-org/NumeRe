@@ -11,4 +11,5 @@ Fixed	The rare case, where all data sets are assigned to the right axis and the 
 Removed	The automatic focusing of UI elements is now disabled.
 Added	"declares" are now includable in scripts, procedures and window layouts.
 Fixed	"repeat()" now returns an empty string, if the repeat count is less than 1.
-Cleaned	The secondary axes have now a little standoff to separate them from the graph. Their default color is now grey. They will automatically force a bounding box.
+Cleaned	The secondary axes have now a little standoff to separate them from the graph. They will automatically force a bounding box.
+Added	GUI layouts now feature a "combobox" as a new UI element.

@@ -236,6 +236,7 @@ BEGIN_EVENT_TABLE(CustomWindow, wxFrame)
     EVT_CHECKBOX(-1, CustomWindow::OnChange)
     EVT_RADIOBOX(-1, CustomWindow::OnChange)
     EVT_CHOICE(-1, CustomWindow::OnChange)
+    EVT_COMBOBOX(-1, CustomWindow::OnChange)
     EVT_TEXT(-1, CustomWindow::OnChange)
     EVT_TEXT_ENTER(-1, CustomWindow::OnChange)
     EVT_SPINCTRL(-1, CustomWindow::OnSpin)
@@ -590,6 +591,26 @@ void CustomWindow::layoutChild(const tinyxml2::XMLElement* currentChild, wxWindo
                 choice->Disable();
             else if (state == HIDDEN)
                 choice->Hide();
+        }
+        else if (string(currentChild->Value()) == "combobox")
+        {
+            // Add a combobox
+            wxComboBox* combo = _groupPanel->CreateComboBox(currParent, currSizer, getChoices(text), id, alignment);
+            m_windowItems[id] = std::make_pair(CustomWindow::COMBOBOX, combo);
+
+            if (currentChild->Attribute("value"))
+                combo->SetSelection(currentChild->IntAttribute("value")-1);
+
+            if (currentChild->Attribute("onchange"))
+                m_eventTable[id] = currentChild->Attribute("onchange");
+
+            if (currentChild->Attribute("color"))
+                combo->SetBackgroundColour(toWxColour(currentChild->Attribute("color")));
+
+            if (state == DISABLED)
+                combo->Disable();
+            else if (state == HIDDEN)
+                combo->Hide();
         }
         else if (string(currentChild->Value()) == "textfield")
         {
@@ -1241,6 +1262,21 @@ bool CustomWindow::getItemParameters(int windowItemID, WindowItemParams& params)
 
             break;
         }
+        case CustomWindow::COMBOBOX:
+        {
+            params.type = "combobox";
+            wxComboBox* combo = static_cast<wxComboBox*>(object.second);
+
+            if (combo->GetSelection() != wxNOT_FOUND)
+                params.value = convertToCodeString(combo->GetString(combo->GetSelection()));
+            else
+                params.value = convertToCodeString(combo->GetValue());
+
+            params.label = params.value;
+            params.color = toWxString(static_cast<wxComboBox*>(object.second)->GetBackgroundColour());
+
+            break;
+        }
         case CustomWindow::GAUGE:
             params.type = "gauge";
             params.value = wxString::Format("%d", static_cast<wxGauge*>(object.second)->GetValue());
@@ -1672,6 +1708,18 @@ bool CustomWindow::setItemValue(WindowItemValue& _value, int windowItemID)
 
             break;
         }
+        case CustomWindow::COMBOBOX:
+        {
+            wxComboBox* combo = static_cast<wxComboBox*>(object.second);
+            int sel = combo->FindString(removeQuotationMarks(_value.stringValue), true);
+
+            if (sel != wxNOT_FOUND)
+                combo->SetSelection(sel);
+            else
+                combo->SetValue(removeQuotationMarks(_value.stringValue));
+
+            break;
+        }
         case CustomWindow::IMAGE:
         {
             wxStaticBitmap* bitmap = static_cast<wxStaticBitmap*>(object.second);
@@ -1770,6 +1818,7 @@ bool CustomWindow::setItemLabel(const wxString& _label, int windowItemID)
             static_cast<wxMenuItem*>(object.second)->SetItemLabel(removeQuotationMarks(_label));
             break;
         case CustomWindow::DROPDOWN:
+        case CustomWindow::COMBOBOX:
         case CustomWindow::GAUGE:
         case CustomWindow::IMAGE:
         case CustomWindow::TABLE:
@@ -1880,6 +1929,9 @@ bool CustomWindow::setItemColor(const wxString& _color, int windowItemID)
             break;
         case CustomWindow::DROPDOWN:
             static_cast<wxChoice*>(object.second)->SetBackgroundColour(color);
+            break;
+        case CustomWindow::COMBOBOX:
+            static_cast<wxComboBox*>(object.second)->SetBackgroundColour(color);
             break;
         case CustomWindow::MENUITEM:
             static_cast<wxMenuItem*>(object.second)->SetTextColour(color);

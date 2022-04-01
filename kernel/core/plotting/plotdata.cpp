@@ -24,7 +24,7 @@
 #define STYLES_COUNT 20
 
 extern mglGraph _fontData;
-const char* SECAXIS_DEFAULT_COLOR = "h";
+const char* SECAXIS_DEFAULT_COLOR = "k";
 
 // Function prototype
 bool isNotEmptyExpression(const std::string& sExpr);

@@ -213,6 +213,7 @@ class GroupPanel : public wxScrolledWindow
         wxButton* CreateButton(wxWindow* parent, wxSizer* sizer, const wxString& description, int id = wxID_ANY, int alignment = wxALIGN_CENTER_VERTICAL);
         wxRadioBox* CreateRadioBox(wxWindow* parent, wxSizer* sizer, const wxString& description, const wxArrayString& choices, int style = wxHORIZONTAL, int id = wxID_ANY, int alignment = wxALIGN_CENTER_VERTICAL);
         wxChoice* CreateChoices(wxWindow* parent, wxSizer* sizer, const wxArrayString& choices, int id = wxID_ANY, int alignment = wxALIGN_CENTER_VERTICAL);
+        wxComboBox* CreateComboBox(wxWindow* parent, wxSizer* sizer, const wxArrayString& choices, int id = wxID_ANY, int alignment = wxALIGN_CENTER_VERTICAL);
         wxGauge* CreateGauge(wxWindow* parent, wxSizer* sizer, int style, int id = wxID_ANY, int alignment = wxALIGN_CENTER_VERTICAL);
         wxStaticBitmap* CreateBitmap(wxWindow* parent, wxSizer* sizer, const wxString& filename, int id = wxID_ANY, int alignment = wxALIGN_CENTER_VERTICAL);
         wxSlider* CreateSlider(wxWindow* parent, wxSizer* sizer, int nMin, int nMax, int nInitial, int style, int id = wxID_ANY, int alignment = wxALIGN_CENTER_VERTICAL);

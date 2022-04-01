@@ -242,6 +242,8 @@ namespace NumeRe
                 return m_customWindow->getWindowItems(CustomWindow::TEXTCTRL);
             else if (_selection == "dropdown")
                 return m_customWindow->getWindowItems(CustomWindow::DROPDOWN);
+            else if (_selection == "combobox")
+                return m_customWindow->getWindowItems(CustomWindow::COMBOBOX);
             else if (_selection == "radio")
                 return m_customWindow->getWindowItems(CustomWindow::RADIOGROUP);
             else if (_selection == "bitmap")

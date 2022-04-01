@@ -81,6 +81,7 @@ class CustomWindow : public wxFrame
             BUTTON,     // OK
             RADIOGROUP, // OK
             DROPDOWN,   // OK
+            COMBOBOX,
             GAUGE,      // OK
             IMAGE,      // OK
             TABLE,      // OK

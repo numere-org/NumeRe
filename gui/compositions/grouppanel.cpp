@@ -482,7 +482,7 @@ wxRadioBox* GroupPanel::CreateRadioBox(wxWindow* parent, wxSizer*sizer, const wx
 
 /////////////////////////////////////////////////
 /// \brief This member function creates the
-/// layout for dropdown list.
+/// layout for a dropdown list.
 ///
 /// \param parent wxWindow*
 /// \param wxSizer*sizer
@@ -495,6 +495,31 @@ wxRadioBox* GroupPanel::CreateRadioBox(wxWindow* parent, wxSizer*sizer, const wx
 wxChoice* GroupPanel::CreateChoices(wxWindow* parent, wxSizer*sizer, const wxArrayString& choices, int id, int alignment)
 {
     wxChoice* box = new wxChoice(parent, id, wxDefaultPosition, wxDefaultSize, choices);
+
+    if (dynamic_cast<wxBoxSizer*>(sizer) && dynamic_cast<wxBoxSizer*>(sizer)->GetOrientation() == wxHORIZONTAL)
+        sizer->Add(box, 1, alignment | wxALL | wxRESERVE_SPACE_EVEN_IF_HIDDEN, ELEMENT_BORDER);
+    else
+        sizer->Add(box, 0, alignment | wxALL | wxEXPAND | wxRESERVE_SPACE_EVEN_IF_HIDDEN, ELEMENT_BORDER);
+
+    return box;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This member function creates the
+/// layout for a combobox.
+///
+/// \param parent wxWindow*
+/// \param wxSizer*sizer
+/// \param choices const wxArrayString&
+/// \param id int
+/// \param alignment int
+/// \return wxComboBox*
+///
+/////////////////////////////////////////////////
+wxComboBox* GroupPanel::CreateComboBox(wxWindow* parent, wxSizer*sizer, const wxArrayString& choices, int id, int alignment)
+{
+    wxComboBox* box = new wxComboBox(parent, id, wxEmptyString, wxDefaultPosition, wxDefaultSize, choices);
 
     if (dynamic_cast<wxBoxSizer*>(sizer) && dynamic_cast<wxBoxSizer*>(sizer)->GetOrientation() == wxHORIZONTAL)
         sizer->Add(box, 1, alignment | wxALL | wxRESERVE_SPACE_EVEN_IF_HIDDEN, ELEMENT_BORDER);
