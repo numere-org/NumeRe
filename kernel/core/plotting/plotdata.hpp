@@ -32,6 +32,7 @@
 #include "../interval.hpp"
 #include "plotdef.hpp"
 
+extern const char* SECAXIS_DEFAULT_COLOR;
 
 /////////////////////////////////////////////////
 /// \brief This class contains all the plot
@@ -360,7 +361,7 @@ class PlotData : public FileSystem
         {
             Axis _Axis;
             _Axis.sLabel = "";
-            _Axis.sStyle = "k";
+            _Axis.sStyle = SECAXIS_DEFAULT_COLOR;
             _Axis.ivl.reset(NAN, NAN);
 
             if (i < 2)

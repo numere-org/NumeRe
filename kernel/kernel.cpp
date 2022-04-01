@@ -1991,7 +1991,7 @@ bool NumeReKernel::handleFlowControls(string& sLine, const string& sCmdCache, co
 /////////////////////////////////////////////////
 bool NumeReKernel::evaluateStrings(string& sLine, string& sCache, const string& sCmdCache, bool& bWriteToCache, KernelStatus& nReturnVal)
 {
-    if (_stringParser.isStringExpression(sLine))
+    if (_stringParser.isStringExpression(sLine) || _stringParser.isStringExpression(sCache))
     {
         auto retVal = _stringParser.evalAndFormat(sLine, sCache, false, true);
 

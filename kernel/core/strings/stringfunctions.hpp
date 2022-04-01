@@ -1224,15 +1224,12 @@ static string strfnc_substr(StringFuncArgs& funcArgs)
 /////////////////////////////////////////////////
 static string strfnc_repeat(StringFuncArgs& funcArgs)
 {
-    if (funcArgs.nArg1 <= 1)
-        return "\"" + funcArgs.sArg1 + "\"";
-    else
-    {
-        string sReturn;
-        for (int i = 0; i < funcArgs.nArg1; i++)
-            sReturn += funcArgs.sArg1;
-        return "\"" + sReturn + "\"";
-    }
+    string sReturn;
+
+    for (int i = 0; i < funcArgs.nArg1; i++)
+        sReturn += funcArgs.sArg1;
+
+    return "\"" + sReturn + "\"";
 }
 
 

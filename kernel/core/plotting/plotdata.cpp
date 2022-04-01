@@ -24,6 +24,7 @@
 #define STYLES_COUNT 20
 
 extern mglGraph _fontData;
+const char* SECAXIS_DEFAULT_COLOR = "h";
 
 // Function prototype
 bool isNotEmptyExpression(const std::string& sExpr);
@@ -975,7 +976,7 @@ void PlotData::setParams(const string& __sCmd, int nType)
                         _AddAxes[0].sStyle = getArgAtPos(getNextArgument(sTemp, true),0,STRINGEXTRACT);
 
                         if (!checkColorChars(_AddAxes[0].sStyle))
-                            _AddAxes[0].sStyle = "k";
+                            _AddAxes[0].sStyle = SECAXIS_DEFAULT_COLOR;
                     }
                 }
                 else
@@ -990,7 +991,7 @@ void PlotData::setParams(const string& __sCmd, int nType)
                     _AddAxes[0].sStyle = getArgAtPos(getNextArgument(sTemp, true),0,STRINGEXTRACT);
 
                     if (!checkColorChars(_AddAxes[0].sStyle))
-                        _AddAxes[0].sStyle = "k";
+                        _AddAxes[0].sStyle = SECAXIS_DEFAULT_COLOR;
                 }
             }
         }
@@ -1020,7 +1021,7 @@ void PlotData::setParams(const string& __sCmd, int nType)
                         _AddAxes[1].sStyle = getArgAtPos(getNextArgument(sTemp, true),0,STRINGEXTRACT);
 
                         if (!checkColorChars(_AddAxes[0].sStyle))
-                            _AddAxes[1].sStyle = "k";
+                            _AddAxes[1].sStyle = SECAXIS_DEFAULT_COLOR;
                     }
                 }
                 else
@@ -1035,7 +1036,7 @@ void PlotData::setParams(const string& __sCmd, int nType)
                     _AddAxes[1].sStyle = getArgAtPos(getNextArgument(sTemp, true),0,STRINGEXTRACT);
 
                     if (!checkColorChars(_AddAxes[1].sStyle))
-                        _AddAxes[1].sStyle = "k";
+                        _AddAxes[1].sStyle = SECAXIS_DEFAULT_COLOR;
                 }
             }
         }
@@ -1875,7 +1876,7 @@ void PlotData::reset()
     {
         _AddAxes[i].ivl.reset(NAN, NAN);
         _AddAxes[i].sLabel = "";
-        _AddAxes[i].sStyle = "k";
+        _AddAxes[i].sStyle = SECAXIS_DEFAULT_COLOR;
     }
 
     for (size_t i = 0; i < LOG_SETTING_SIZE; i++)
@@ -2009,7 +2010,7 @@ void PlotData::deleteData(bool bGraphFinished /* = false*/)
     {
         _AddAxes[i].ivl.reset(NAN, NAN);
         _AddAxes[i].sLabel = "";
-        _AddAxes[i].sStyle = "k";
+        _AddAxes[i].sStyle = SECAXIS_DEFAULT_COLOR;
     }
 }
 

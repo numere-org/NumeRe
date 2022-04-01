@@ -61,10 +61,10 @@ TableViewer::TableViewer(wxWindow* parent, wxWindowID id, wxStatusBar* statusbar
             : wxGrid(parent, id, pos, size, style, name), nHeight(600), nWidth(800), nFirstNumRow(1), readOnly(true)
 {
     // Bind enter window events dynamically to the local event handler funtion
-    GetGridWindow()->Bind(wxEVT_ENTER_WINDOW, &TableViewer::OnEnter, this);
-    GetGridRowLabelWindow()->Bind(wxEVT_ENTER_WINDOW, &TableViewer::OnEnter, this);
-    GetGridColLabelWindow()->Bind(wxEVT_ENTER_WINDOW, &TableViewer::OnEnter, this);
-    GetGridCornerLabelWindow()->Bind(wxEVT_ENTER_WINDOW, &TableViewer::OnEnter, this);
+    //GetGridWindow()->Bind(wxEVT_ENTER_WINDOW, &TableViewer::OnEnter, this);
+    //GetGridRowLabelWindow()->Bind(wxEVT_ENTER_WINDOW, &TableViewer::OnEnter, this);
+    //GetGridColLabelWindow()->Bind(wxEVT_ENTER_WINDOW, &TableViewer::OnEnter, this);
+    //GetGridCornerLabelWindow()->Bind(wxEVT_ENTER_WINDOW, &TableViewer::OnEnter, this);
 
     // Cells are always aligned right and centered vertically
     SetDefaultCellAlignment(wxALIGN_RIGHT, wxALIGN_CENTER);

@@ -109,7 +109,7 @@ string FileSystem::cleanPath(string sFilePath) const
         }
     }
 
-    const std::string sINVALID_CHARS = "\"#%&<>{|}";
+    const std::string sINVALID_CHARS = "\"#%&<>|";
 
     for (unsigned int i = 0; i < sFilePath.length(); i++)
     {

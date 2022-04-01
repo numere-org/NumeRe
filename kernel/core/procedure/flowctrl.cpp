@@ -2697,7 +2697,8 @@ int FlowCtrl::compile(string sLine, int nthCmd)
 
 
     // Evaluate string expressions
-    if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sLine))
+    if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sLine)
+        || NumeReKernel::getInstance()->getStringParser().isStringExpression(sCache))
     {
         // Do not add the byte code, if it was added ad-hoc
         if (!stringParserAdHoc)

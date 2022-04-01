@@ -5799,6 +5799,25 @@ mglData Plot::fmod(const mglData& _mData, double dDenominator)
 
 
 /////////////////////////////////////////////////
+/// \brief Static helper function to determine,
+/// whether a box is needed due to secondary
+/// axes.
+///
+/// \param _pData const PlotData&
+/// \param _pInfo const PlotInfo&
+/// \return bool
+///
+/////////////////////////////////////////////////
+static bool hasSecAxisBox(const PlotData& _pData, const PlotInfo& _pInfo)
+{
+    return isPlot1D(_pInfo.sCommand)
+        && _pData.getSettings(PlotData::INT_COORDS) == CARTESIAN
+        && !_pData.getSettings(PlotData::LOG_SCHEMATIC)
+        && (!isnan(_pData.getAddAxis(XCOORD).ivl.front()) || !isnan(_pData.getAddAxis(YCOORD).ivl.front()));
+}
+
+
+/////////////////////////////////////////////////
 /// \brief This member function applies axes and
 /// axis labels to the graph.
 ///
@@ -5923,6 +5942,7 @@ void Plot::CoordSettings()
         }
 
         if (_pData.getSettings(PlotData::LOG_BOX)
+            || hasSecAxisBox(_pData, _pInfo)
             || _pData.getSettings(PlotData::INT_COORDS) != CARTESIAN)
         {
             if (isPlot1D(_pInfo.sCommand)) // standard plot
@@ -5933,24 +5953,28 @@ void Plot::CoordSettings()
                     {
                         if (!isnan(_pData.getAddAxis(XCOORD).ivl.front()) || !isnan(_pData.getAddAxis(YCOORD).ivl.front()))
                         {
-                            Axis _axis;
-                            _graph->SetOrigin(_pInfo.ranges[XRANGE].max(), _pInfo.ranges[YRANGE].max());
+                            Axis _axis = _pData.getAddAxis(XCOORD);
+                            double dAspect = _pData.getSettings(PlotData::FLOAT_ASPECT);
 
-                            for (int i = XCOORD; i <= YCOORD; i++)
+                            if (_axis.sLabel.length())
                             {
-                                _axis = _pData.getAddAxis(i);
+                                _graph->SetRanges(_axis.ivl.min(), _axis.ivl.max(),
+                                                  _pInfo.ranges[YRANGE].min(), _pInfo.ranges[YRANGE].max());
+                                _graph->SetOrigin(_axis.ivl.max(), _pInfo.ranges[YRANGE].max() + _pInfo.ranges[YRANGE].range()*0.05);
+                                _graph->Axis("x", _axis.sStyle.c_str());
+                                _graph->Label('x', fromSystemCodePage("#" + _axis.sStyle + "{" + _axis.sLabel + "}").c_str(), 0);
+                            }
 
-                                if (_axis.sLabel.length())
-                                {
-                                    _graph->SetRange('x' + i, _axis.ivl.min(), _axis.ivl.max());
+                            _axis = _pData.getAddAxis(YCOORD);
 
-                                    if (!i)
-                                        _graph->Axis("x", _axis.sStyle.c_str());
-                                    else
-                                        _graph->Axis("y", _axis.sStyle.c_str());
+                            if (_axis.sLabel.length())
+                            {
+                                _graph->SetRanges(_pInfo.ranges[XRANGE].min(), _pInfo.ranges[XRANGE].max(),
+                                                  _axis.ivl.min(), _axis.ivl.max());
+                                _graph->SetOrigin(_pInfo.ranges[XRANGE].max() + _pInfo.ranges[XRANGE].range()*0.05 / dAspect, _axis.ivl.max());
 
-                                    _graph->Label('x' + i, fromSystemCodePage("#" + _axis.sStyle + "{" + _axis.sLabel + "}").c_str(), 0);
-                                }
+                                _graph->Axis("y", _axis.sStyle.c_str());
+                                _graph->Label('y', fromSystemCodePage("#" + _axis.sStyle + "{" + _axis.sLabel + "}").c_str(), 0);
                             }
 
                             _graph->SetRanges(_pInfo.ranges[XRANGE].min(), _pInfo.ranges[XRANGE].max(),
@@ -5958,6 +5982,7 @@ void Plot::CoordSettings()
                                               _pInfo.ranges[ZRANGE].min(), _pInfo.ranges[ZRANGE].max());
                             _graph->SetOrigin(_pInfo.ranges[XRANGE].min(), _pInfo.ranges[YRANGE].min());
                         }
+
                         _graph->Axis("xy");
                     }
                 }
@@ -6649,7 +6674,7 @@ void Plot::CoordSettings()
         else if (_pData.getSettings(PlotData::INT_GRID)) // Vektor-Grid
             _graph->Grid("xyzt", _pData.getFineGridStyle().c_str());
 
-        if (_pData.getSettings(PlotData::LOG_BOX))
+        if (_pData.getSettings(PlotData::LOG_BOX) || hasSecAxisBox(_pData, _pInfo))
         {
             if (!_pData.getSettings(PlotData::LOG_SCHEMATIC))
                 _graph->Box();
@@ -6659,22 +6684,10 @@ void Plot::CoordSettings()
 
         // --> Achsen beschriften <--
         if (_pData.getSettings(PlotData::LOG_AXIS)
-                && _pData.getSettings(PlotData::LOG_BOX)
-                && (!_pData.getSettings(PlotData::LOG_SCHEMATIC)
-                    || findParameter(_pInfo.sPlotParams, "xlabel", '=')
-                    || findParameter(_pInfo.sPlotParams, "ylabel", '=')
-                    || findParameter(_pInfo.sPlotParams, "zlabel", '=')))
-        {
-            _graph->Label('x', fromSystemCodePage(_pData.getAxisLabel(XCOORD)).c_str(), getLabelPosition(XCOORD));
-            _graph->Label('y', fromSystemCodePage(_pData.getAxisLabel(YCOORD)).c_str(), getLabelPosition(YCOORD));
-            _graph->Label('z', fromSystemCodePage(_pData.getAxisLabel(ZCOORD)).c_str(), getLabelPosition(ZCOORD));
-        }
-        else if (_pData.getSettings(PlotData::LOG_AXIS)
-                 && !_pData.getSettings(PlotData::LOG_BOX)
-                 && (!_pData.getSettings(PlotData::LOG_SCHEMATIC)
-                     || findParameter(_pInfo.sPlotParams, "xlabel", '=')
-                     || findParameter(_pInfo.sPlotParams, "ylabel", '=')
-                     || findParameter(_pInfo.sPlotParams, "zlabel", '=')))
+            && (!_pData.getSettings(PlotData::LOG_SCHEMATIC)
+                || findParameter(_pInfo.sPlotParams, "xlabel", '=')
+                || findParameter(_pInfo.sPlotParams, "ylabel", '=')
+                || findParameter(_pInfo.sPlotParams, "zlabel", '=')))
         {
             _graph->Label('x', fromSystemCodePage(_pData.getAxisLabel(XCOORD)).c_str(), getLabelPosition(XCOORD));
             _graph->Label('y', fromSystemCodePage(_pData.getAxisLabel(YCOORD)).c_str(), getLabelPosition(YCOORD));
@@ -6698,7 +6711,7 @@ double Plot::getLabelPosition(int nCoord)
 {
     if (_pData.getSettings(PlotData::INT_COORDS) == CARTESIAN)
     {
-        if (_pData.getSettings(PlotData::LOG_BOX))
+        if (_pData.getSettings(PlotData::LOG_BOX) || hasSecAxisBox(_pData, _pInfo))
             return 0.0;
         else
             return 1.1;
@@ -6776,7 +6789,9 @@ void Plot::applyGrid()
         _graph->Axis("_");
     }
 
-    if (_pData.getSettings(PlotData::LOG_BOX) || _pData.getSettings(PlotData::INT_COORDS) != CARTESIAN)
+    if (_pData.getSettings(PlotData::LOG_BOX)
+        || hasSecAxisBox(_pData, _pInfo)
+        || _pData.getSettings(PlotData::INT_COORDS) != CARTESIAN)
         _graph->Box();
 
     if (_pData.getSettings(PlotData::INT_GRID) == 1)
