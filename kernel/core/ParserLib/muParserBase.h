@@ -1,3 +1,6 @@
+#ifndef HEADER_B98039111D6377F3
+#define HEADER_B98039111D6377F3
+
 /*
                  __________
     _____   __ __\______   \_____  _______  ______  ____ _______
@@ -50,6 +53,9 @@ namespace mu
 	    \brief This file contains the class definition of the muparser engine.
 	*/
 
+    /** \brief Type used for storing an array of values. */
+    typedef std::vector<value_type> valbuf_type;
+
 	struct CachedDataAccess
 	{
 	    enum
@@ -64,6 +70,90 @@ namespace mu
 		std::string sCacheName; // needed for reading the data -> create a vector var
 		int flags;
 	};
+
+	struct State
+	{
+	    ParserByteCode m_byteCode;
+	    std::string m_expr;
+	    int m_valid;
+	    int m_numResults;
+	    valbuf_type m_stackBuffer;
+	    varmap_type m_usedVar;
+
+	    State() : m_valid(1), m_numResults(0) {}
+	};
+
+
+	struct Cache
+	{
+	    std::vector<CachedDataAccess> m_accesses;
+	    std::string m_expr;
+	    std::string m_target;
+	    bool m_enabled;
+
+	    void clear()
+	    {
+	        m_accesses.clear();
+	        m_expr.clear();
+	        m_target.clear();
+	        m_enabled = true;
+	    }
+
+	    Cache() : m_enabled(true) {}
+	};
+
+
+	struct LineStateStack
+	{
+	    std::vector<State> m_states;
+	    Cache m_cache;
+
+	    LineStateStack() : m_states(std::vector<State>(1)) {}
+
+	    void clear()
+	    {
+	        m_states.clear();
+	        m_cache.clear();
+	    }
+	};
+
+
+	struct StateStacks
+	{
+	    std::vector<LineStateStack> m_stacks;
+
+	    State& operator()(size_t i, size_t j)
+	    {
+	        if (i < m_stacks.size() && j < m_stacks[i].m_states.size())
+                return m_stacks[i].m_states[j];
+
+            return m_stacks.back().m_states.back();
+	    }
+
+	    LineStateStack& operator[](size_t i)
+	    {
+	        if (i < m_stacks.size())
+                return m_stacks[i];
+
+            return m_stacks.back();
+	    }
+
+	    void resize(size_t s)
+	    {
+	        m_stacks.resize(s);
+	    }
+
+	    void clear()
+	    {
+	        m_stacks.clear();
+	    }
+
+	    size_t size() const
+	    {
+	        return m_stacks.size();
+	    }
+	};
+
 
 	//--------------------------------------------------------------------------------------------------
 	/** \brief Mathematical expressions parser (base parser engine).
@@ -90,9 +180,6 @@ namespace mu
 			*/
 			typedef value_type (ParserBase::*ParseFunction)();
 
-			/** \brief Type used for storing an array of values. */
-			typedef std::vector<value_type> valbuf_type;
-
 			/** \brief Type for a vector of strings. */
 			typedef std::vector<string_type> stringbuf_type;
 
@@ -105,8 +192,8 @@ namespace mu
 			/** \brief Maximum number of threads spawned by OpenMP when using the bulk mode. */
 			static const int s_MaxNumOpenMPThreads = 4;
 
-			mutable std::map<std::string, std::vector<mu::value_type> > mVectorVars;
-			mutable std::map<std::string, std::vector<mu::value_type>* > mNonSingletonVectorVars;
+			mutable std::map<std::string,std::vector<mu::value_type>> mVectorVars;
+			mutable std::map<std::string,std::vector<mu::value_type>*> mNonSingletonVectorVars;
 
 			mutable varmap_type mTargets;
 			mutable string_type sTargets;
@@ -117,7 +204,7 @@ namespace mu
 			bool checkDelimiter(StringView sLine);
 			void evaluateVectorExpansion(MutableStringView sSubExpr, std::vector<mu::value_type>& vResults);
 			void expandVector(mu::value_type dFirst, const mu::value_type& dLast, const mu::value_type& dIncrement, std::vector<mu::value_type>& vResults);
-			void assignResultsToTarget(const varmap_type& varmap, int nFinalResults);
+			void assignResultsToTarget(const varmap_type& varmap, int nFinalResults, const valbuf_type& buffer);
 
 		public:
 
@@ -163,8 +250,6 @@ namespace mu
 			value_type  Eval();
 			value_type* Eval(int& nStackSize);
 			void Eval(value_type* results, int nBulkSize);
-
-			int GetNumResults() const;
 
 			void SetExpr(StringView a_sExpr);
 			MutableStringView PreEvaluateVectors(MutableStringView sExpr);
@@ -352,25 +437,18 @@ namespace mu
 			  Eval() calls the function whose address is stored there.
 			*/
 			mutable ParseFunction  m_pParseFormula;
-			mutable ParserByteCode m_vRPN;        ///< The Bytecode class.
-			mutable std::vector<std::vector<ParserByteCode> > vLoopByteCode;
-			mutable std::vector<std::vector<std::string> > vLoopString;
-			mutable std::vector<std::vector<int> > vValidByteCode;
-			mutable std::vector<std::vector<int> > vNumResultsIDX;
-			mutable std::vector<std::vector<valbuf_type> > vLoopStackBuf;
-			mutable std::vector<std::vector<varmap_type> > vUsedVar;
-			mutable std::vector<bool> vCanCacheAccess;
-			mutable std::vector<std::vector<CachedDataAccess> > vDataAccessCache;
-			mutable std::vector<std::string> vCachedEquation;
-			mutable std::vector<std::string> vCachedTarget;
+			mutable State m_compilingState;
+			mutable StateStacks m_stateStacks;
+			State& m_state = m_compilingState;
+
 			unsigned int nthLoopElement;
-			unsigned int nLoopLength;
 			unsigned int nthLoopPartEquation;
 			unsigned int nCurrVectorIndex;
 			bool bMakeLoopByteCode;
 			bool bPauseLoopByteCode;
 			bool bPauseLock;
 			bool bCompiling;
+
 			mutable stringbuf_type  m_vStringBuf; ///< String buffer, used for storing string function arguments
 			stringbuf_type  m_vStringVarBuf;
 
@@ -393,12 +471,12 @@ namespace mu
 			mutable int m_nIfElseCounter;  ///< Internal counter for keeping track of nested if-then-else clauses
 
 			// items merely used for caching state information
-			mutable valbuf_type m_vStackBuffer; ///< This is merely a buffer used for the stack in the cmd parsing routine
-			mutable int m_nFinalResultIdx;
 			const std::string EMPTYSTRING;
 	};
 
 } // namespace mu
 
 #endif
+
+#endif // header guard
 
