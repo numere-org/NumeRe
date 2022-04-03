@@ -56,6 +56,9 @@ namespace mu
     /** \brief Type used for storing an array of values. */
     typedef std::vector<value_type> valbuf_type;
 
+    typedef std::map<std::string,std::vector<value_type>> vectormap_type;
+    typedef std::map<std::string,std::vector<value_type>*> vectormapptr_type;
+
 	struct CachedDataAccess
 	{
 	    enum
@@ -70,6 +73,7 @@ namespace mu
 		std::string sCacheName; // needed for reading the data -> create a vector var
 		int flags;
 	};
+
 
 	struct State
 	{
@@ -192,8 +196,8 @@ namespace mu
 			/** \brief Maximum number of threads spawned by OpenMP when using the bulk mode. */
 			static const int s_MaxNumOpenMPThreads = 4;
 
-			mutable std::map<std::string,std::vector<mu::value_type>> mVectorVars;
-			mutable std::map<std::string,std::vector<mu::value_type>*> mNonSingletonVectorVars;
+			mutable vectormap_type mVectorVars;
+			mutable vectormapptr_type mNonSingletonVectorVars;
 
 			mutable varmap_type mTargets;
 			mutable string_type sTargets;
@@ -439,7 +443,8 @@ namespace mu
 			mutable ParseFunction  m_pParseFormula;
 			mutable State m_compilingState;
 			mutable StateStacks m_stateStacks;
-			State& m_state = m_compilingState;
+			State* m_state;
+			mutable valbuf_type m_buffer;
 
 			unsigned int nthLoopElement;
 			unsigned int nthLoopPartEquation;

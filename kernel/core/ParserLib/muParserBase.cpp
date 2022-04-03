@@ -149,8 +149,9 @@ namespace mu
 		bMakeLoopByteCode = false;
 		bPauseLoopByteCode = false;
 		bPauseLock = false;
+		m_state = &m_compilingState;
 
-		mVarMapPntr = 0;
+		mVarMapPntr = nullptr;
 	}
 
 	//---------------------------------------------------------------------------
@@ -182,8 +183,9 @@ namespace mu
 		bMakeLoopByteCode = false;
 		bPauseLoopByteCode = false;
 		bPauseLock = false;
+		m_state = &m_compilingState;
 
-		mVarMapPntr = 0;
+		mVarMapPntr = nullptr;
 
 		Assign(a_Parser);
 	}
@@ -231,7 +233,7 @@ namespace mu
 		m_VarDef          = a_Parser.m_VarDef;           // Copy user defined variables
 		m_bBuiltInOp      = a_Parser.m_bBuiltInOp;
 		m_vStringBuf      = a_Parser.m_vStringBuf;
-		m_compilingState      = a_Parser.m_compilingState;
+		m_compilingState  = a_Parser.m_compilingState;
 		m_StrVarDef       = a_Parser.m_StrVarDef;
 		m_vStringVarBuf   = a_Parser.m_vStringVarBuf;
 		m_nIfElseCounter  = a_Parser.m_nIfElseCounter;
@@ -612,12 +614,8 @@ namespace mu
 						SetExpr(sExpr.subview(i + 1, j - i - 1));
 						int nResults;
 						value_type* v = Eval(nResults);
-
 						// Store the results in the target vector
-						for (int n = 0; n < nResults; n++)
-						{
-							vResults.push_back(v[n]);
-						}
+						vResults.insert(vResults.end(), v, v+nResults);
 
 						// Determine, whether the current vector is a target vector or not
 						if (sExpr.find_first_not_of(' ') == i
@@ -635,7 +633,7 @@ namespace mu
 							// Set the special target vector variable
 							SetVectorVar("_~TRGTVCT[~]", vResults);
 							sExpr.replace(i, j + 1 - i, "_~TRGTVCT[~]");
-							mTargets = GetUsedVar();
+							mTargets = m_pTokenReader->GetUsedVar();
 						}
 						else
 						{
@@ -1272,15 +1270,16 @@ namespace mu
 	{
 		if (bMakeLoopByteCode && !bPauseLoopByteCode && m_stateStacks(nthLoopElement, nthLoopPartEquation).m_valid)
 		{
-			//std::cerr << vValidByteCode[nthLoopElement] << " / Expr[" << nthLoopElement << "]: \"" << vLoopString[nthLoopElement] << "\"" << endl;
 			if (g_DbgDumpStack)
                 NumeReKernel::print("Current Eq: \"" + m_stateStacks(nthLoopElement, nthLoopPartEquation).m_expr + "\"");
+
 			return m_stateStacks(nthLoopElement, nthLoopPartEquation).m_expr;
 		}
 		else
 		{
 		    if (g_DbgDumpStack)
                 NumeReKernel::print("Current Eq: \"" + m_pTokenReader->GetExpr() + "\"");
+
 			return m_pTokenReader->GetExpr();
 		}
 	}
@@ -1565,13 +1564,13 @@ namespace mu
 		value_type* Stack = 0;
 
 		Stack = ((nOffset == 0) && (nThreadID == 0))
-            ? &m_state.m_stackBuffer[0]
-            : &m_state.m_stackBuffer[nThreadID * (m_state.m_stackBuffer.size() / s_MaxNumOpenMPThreads)];
+            ? &m_state->m_stackBuffer[0]
+            : &m_state->m_stackBuffer[nThreadID * (m_state->m_stackBuffer.size() / s_MaxNumOpenMPThreads)];
 
 		value_type buf;
 		int sidx(0);
 
-        for (const SToken* pTok = m_state.m_byteCode.GetBase(); pTok->Cmd != cmEND ; ++pTok)
+        for (const SToken* pTok = m_state->m_byteCode.GetBase(); pTok->Cmd != cmEND ; ++pTok)
         {
             switch (pTok->Cmd)
             {
@@ -1847,7 +1846,7 @@ namespace mu
             } // switch CmdCode
         } // for all bytecode tokens
 
-		return Stack[m_state.m_numResults];
+		return Stack[m_state->m_numResults];
 	}
 
 	//---------------------------------------------------------------------------
@@ -1855,6 +1854,7 @@ namespace mu
 	{
 	    if (g_DbgDumpStack)
             NumeReKernel::print("Parsing: \"" + m_pTokenReader->GetExpr() + "\"");
+
 		if (!m_pTokenReader->GetExpr().length())
 			Error(ecUNEXPECTED_EOF, 0);
 
@@ -1912,6 +1912,7 @@ namespace mu
 
 				case cmELSE:
 					m_nIfElseCounter--;
+
 					if (m_nIfElseCounter < 0)
 						Error(ecMISPLACED_COLON, m_pTokenReader->GetPos());
 
@@ -2073,11 +2074,12 @@ namespace mu
 				break;
 			}
 
-			if (ParserBase::g_DbgDumpStack)
-			{
-				StackDump(stVal, stOpt);
-				m_compilingState.m_byteCode.AsciiDump();
-			}
+			// Commented out - might be necessary for deep debugging stuff
+			//if (ParserBase::g_DbgDumpStack)
+			//{
+			//	StackDump(stVal, stOpt);
+			//	m_compilingState.m_byteCode.AsciiDump();
+			//}
 		} // while (true)
 
 		if (ParserBase::g_DbgDumpCmdCode)
@@ -2088,7 +2090,9 @@ namespace mu
 
 		// get the last value (= final result) from the stack
 		MUP_ASSERT(stArgCount.size() == 1);
+
 		m_compilingState.m_numResults = stArgCount.top();
+
 		if (m_compilingState.m_numResults == 0)
 			Error(ecINTERNAL_ERROR, 9);
 
@@ -2126,10 +2130,10 @@ namespace mu
 
 		    StripSpaces(state.m_expr);
 
-		    m_state = state;
+		    m_state = &state;
 		}
 		else
-            m_state = m_compilingState;
+            m_state = &m_compilingState;
 
 		m_pParseFormula = &ParserBase::ParseCmdCode;
 		return (this->*m_pParseFormula)();
@@ -2542,10 +2546,7 @@ namespace mu
     /////////////////////////////////////////////////
     void ParserBase::assignResultsToTarget(const varmap_type& varmap, int nFinalResults, const valbuf_type& buffer)
 	{
-	    if (!mTargets.size() || varmap.find("_~TRGTVCT[~]") == varmap.end())
-            return;
-
-        std::string sTemp = sTargets;
+	    std::string sTemp = sTargets;
         size_t nthStackPos = 0;
 
         // As long as the list of the targets has a length
@@ -2554,9 +2555,9 @@ namespace mu
             if (mTargets.find(getNextVarObject(sTemp, false)) != mTargets.end())
             {
                 if (g_DbgDumpStack)
-                    NumeReKernel::printPreFmt("|-> Target: " + getNextVarObject(sTemp, false) + " = " + toString(m_state.m_stackBuffer[nthStackPos+1], 5) +  " (m_vStackBuffer[" +toString(nthStackPos+1)+ "])\n");
+                    NumeReKernel::printPreFmt("|-> Target: " + getNextVarObject(sTemp, false) + " = " + toString(m_state->m_stackBuffer[nthStackPos], 5) +  " (m_vStackBuffer[" +toString(nthStackPos)+ "])\n");
 
-                *(mTargets[getNextVarObject(sTemp, false)]) = buffer[nthStackPos+1];
+                *(mTargets[getNextVarObject(sTemp, false)]) = buffer[nthStackPos];
             }
 
             getNextVarObject(sTemp, true);
@@ -2586,18 +2587,20 @@ namespace mu
 		(this->*m_pParseFormula)();
 
 		//if (bMakeLoopByteCode && !bPauseLoopByteCode && m_stateStacks(nthLoopElement, nthLoopPartEquation).m_valid)
-		{
-			nStackSize = m_state.m_numResults;
-            size_t nVectorlength = 0;
-            valbuf_type buffer;
-            buffer.push_back(0.0); // erster Wert wird nicht mitgezaehlt
+		//{
+			nStackSize = m_state->m_numResults;
+
+            // Copy the actual results
+            m_buffer.assign(m_state->m_stackBuffer.begin()+1,
+                            m_state->m_stackBuffer.begin()+nStackSize+1);
 
 			if (g_DbgDumpStack)
-                NumeReKernel::printPreFmt("|-> EvalOpt LoopEl,PartEq = (" + toString(nthLoopElement) +","+ toString(nthLoopPartEquation) +") m_vStackBuffer[1] = " + toString(m_state.m_stackBuffer[1], 5));
+                NumeReKernel::printPreFmt("|-> EvalOpt LoopEl,PartEq = (" + toString(nthLoopElement) +","+ toString(nthLoopPartEquation) +") m_vStackBuffer[1] = " + toString(m_state->m_stackBuffer[1], 5));
 
 			if (mVectorVars.size())
 			{
-				varmap_type& vars = m_state.m_usedVar;
+                size_t nVectorlength = 0;
+				varmap_type& vars = m_state->m_usedVar;
 
 				// Get the maximal size of the used vectors
 				auto iterVector = mVectorVars.begin();
@@ -2628,11 +2631,6 @@ namespace mu
 				{
                     std::map<mu::value_type*, mu::value_type> mFirstVals;
 
-					// Copy the first elements
-					buffer.insert(buffer.end(),
-                                  m_state.m_stackBuffer.begin()+1,
-                                  m_state.m_stackBuffer.begin()+nStackSize+1);
-
                     // Redo the calculations for each component of the
                     // used vectors
 					for (size_t i = 0; i < nVectorlength; i++)
@@ -2662,9 +2660,9 @@ namespace mu
 						{
 							(this->*m_pParseFormula)();
 
-							buffer.insert(buffer.end(),
-                                          m_state.m_stackBuffer.begin()+1,
-                                          m_state.m_stackBuffer.begin()+nStackSize+1);
+							m_buffer.insert(m_buffer.end(),
+                                            m_state->m_stackBuffer.begin()+1,
+                                            m_state->m_stackBuffer.begin()+nStackSize+1);
 						}
 					}
 
@@ -2674,13 +2672,12 @@ namespace mu
 
 					nStackSize *= nVectorlength;
 				}
-				else
-                    buffer = m_state.m_stackBuffer;
 			}
 
 			// assign the results of the calculation to a possible
 			// temporary vector
-			assignResultsToTarget(m_state.m_usedVar, nStackSize, buffer);
+			if (mTargets.size() && m_state->m_usedVar.find("_~TRGTVCT[~]") == m_state->m_usedVar.end())
+                assignResultsToTarget(m_state->m_usedVar, nStackSize, m_buffer);
 
 			if (bMakeLoopByteCode && !bPauseLoopByteCode)
 			{
@@ -2690,14 +2687,14 @@ namespace mu
 				if (m_stateStacks[nthLoopElement].m_states.size() <= nthLoopPartEquation)
 				    m_stateStacks[nthLoopElement].m_states.push_back(State());
 
-                m_state = m_stateStacks(nthLoopElement, nthLoopPartEquation);
+                m_state = &m_stateStacks(nthLoopElement, nthLoopPartEquation);
 			}
 
 			if (g_DbgDumpStack)
-                NumeReKernel::printPreFmt(" Returning " + toString(buffer[1], 5) + "\n");
+                NumeReKernel::printPreFmt(" Returning " + toString(m_buffer[0], 5) + "\n");
 
-			return &buffer[1];
-		}
+			return &m_buffer[0];
+		//}
 		/*else
 		{
 			nStackSize = m_adHocState.m_numResults;
@@ -2875,7 +2872,7 @@ namespace mu
         nthLoopElement = _nLoopElement;
         nCurrVectorIndex = 0;
         nthLoopPartEquation = 0;
-        m_state = m_stateStacks(nthLoopElement, nthLoopPartEquation);
+        m_state = &m_stateStacks(nthLoopElement, nthLoopPartEquation);
     }
 
 
