@@ -194,8 +194,11 @@ void Assertion::assertionFail()
 /////////////////////////////////////////////////
 void Assertion::reset()
 {
-    assertionMode = false;
-    sAssertedExpression.clear();
+    if (assertionMode)
+    {
+        assertionMode = false;
+        sAssertedExpression.clear();
+    }
 }
 
 

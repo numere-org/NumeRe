@@ -172,9 +172,8 @@ namespace mu
 	*/
 	class ParserBase
 	{
-			friend class ParserTokenReader;
-
 		private:
+			friend class ParserTokenReader;
 
 			/** \brief Typedef for the parse functions.
 
@@ -182,7 +181,7 @@ namespace mu
 			  the function pointer to the parser function depending on
 			  which state it is in. (i.e. bytecode parser vs. string parser)
 			*/
-			typedef value_type (ParserBase::*ParseFunction)();
+			typedef void (ParserBase::*ParseFunction)();
 
 			/** \brief Type for a vector of strings. */
 			typedef std::vector<string_type> stringbuf_type;
@@ -192,23 +191,6 @@ namespace mu
 
 			/** \brief Type used for parser tokens. */
 			typedef ParserToken<value_type, string_type> token_type;
-
-			/** \brief Maximum number of threads spawned by OpenMP when using the bulk mode. */
-			static const int s_MaxNumOpenMPThreads = 4;
-
-			mutable vectormap_type mVectorVars;
-			mutable vectormapptr_type mNonSingletonVectorVars;
-
-			mutable varmap_type mTargets;
-			mutable string_type sTargets;
-			mutable int nVectorDimension;
-			mutable varmap_type vCurrentUsedVars;
-
-			void replaceLocalVars(std::string& sLine);
-			bool checkDelimiter(StringView sLine);
-			void evaluateVectorExpansion(MutableStringView sSubExpr, std::vector<mu::value_type>& vResults);
-			void expandVector(mu::value_type dFirst, const mu::value_type& dLast, const mu::value_type& dIncrement, std::vector<mu::value_type>& vResults);
-			void assignResultsToTarget(const varmap_type& varmap, int nFinalResults, const valbuf_type& buffer);
 
 		public:
 
@@ -392,7 +374,11 @@ namespace mu
 			};
 
 		private:
-
+			void replaceLocalVars(std::string& sLine);
+			bool checkDelimiter(StringView sLine);
+			void evaluateVectorExpansion(MutableStringView sSubExpr, std::vector<mu::value_type>& vResults);
+			void expandVector(mu::value_type dFirst, const mu::value_type& dLast, const mu::value_type& dIncrement, std::vector<mu::value_type>& vResults);
+			void assignResultsToTarget(const varmap_type& varmap, int nFinalResults, const valbuf_type& buffer);
 			string_type getNextVarObject(std::string& sArgList, bool bCut);
 			string_type getNextVectorVarIndex();
 			void Assign(const ParserBase& a_Parser);
@@ -424,9 +410,9 @@ namespace mu
 
 			void CreateRPN();
 
-			value_type ParseString();
-			value_type ParseCmdCode();
-			value_type ParseCmdCodeBulk(int nOffset, int nThreadID);
+			void ParseString();
+			void ParseCmdCode();
+			void ParseCmdCodeBulk(int nOffset, int nThreadID);
 
 			void  CheckName(const string_type& a_strName, const string_type& a_CharSet) const;
 			void  CheckOprt(const string_type& a_sName,
@@ -445,6 +431,17 @@ namespace mu
 			mutable StateStacks m_stateStacks;
 			State* m_state;
 			mutable valbuf_type m_buffer;
+
+			/** \brief Maximum number of threads spawned by OpenMP when using the bulk mode. */
+			static const int s_MaxNumOpenMPThreads = 4;
+
+			mutable vectormap_type mVectorVars;
+			mutable vectormapptr_type mNonSingletonVectorVars;
+
+			mutable varmap_type mTargets;
+			mutable string_type sTargets;
+			mutable int nVectorDimension;
+			mutable varmap_type vCurrentUsedVars;
 
 			unsigned int nthLoopElement;
 			unsigned int nthLoopPartEquation;

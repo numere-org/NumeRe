@@ -542,7 +542,9 @@ namespace mu
 			return;
 		}
 
+		NumeReKernel::toggleTableStatus();
 		NumeReKernel::print("Number of RPN tokens: " + toString(m_vRPN.size()));
+
 		for (std::size_t i = 0; i < m_vRPN.size() && m_vRPN[i].Cmd != cmEND; ++i)
 		{
 		    NumeReKernel::printPreFmt("|   " + toString(i) + " : \t");
@@ -643,6 +645,7 @@ namespace mu
 			} // switch cmdCode
 		} // while bytecode
 
+		NumeReKernel::toggleTableStatus();
 		NumeReKernel::printPreFmt("|   END\n");
 	}
 } // namespace mu
