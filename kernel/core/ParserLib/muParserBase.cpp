@@ -513,16 +513,13 @@ namespace mu
 		// Now check, whether the pre-evaluated formula was already parsed into the bytecode
 		// -> Return, if that is true
 		// -> Invalidate the bytecode for this formula, if necessary
-		if (bMakeLoopByteCode
-            && !bPauseLoopByteCode
-            && IsAlreadyParsed(a_sExpr)
-            && m_stateStacks(nthLoopElement, nthLoopPartEquation).m_valid)
+		if (IsAlreadyParsed(a_sExpr))
 			return;
 		else if (bMakeLoopByteCode
                  && !bPauseLoopByteCode
                  && this->GetExpr().length()
-                 && m_stateStacks(nthLoopElement, nthLoopPartEquation).m_valid)
-			m_stateStacks(nthLoopElement, nthLoopPartEquation).m_valid = 0;
+                 && m_state->m_valid)
+			m_state->m_valid = 0;
 
 		// reset vector dimension so that it will be evaluated at least once
 		nVectorDimension = 0;
@@ -552,11 +549,11 @@ namespace mu
     /////////////////////////////////////////////////
 	MutableStringView ParserBase::PreEvaluateVectors(MutableStringView sExpr)
 	{
-	    bool isPaused = bPauseLoopByteCode && bMakeLoopByteCode;
+	    //bool isPaused = bPauseLoopByteCode && bMakeLoopByteCode;
 
 	    // Pause the loop mode if it is active
-	    if (!isPaused)
-            PauseLoopMode();
+	    //if (!isPaused)
+        //    PauseLoopMode();
 
 		vector<mu::value_type> vResults;
 
@@ -648,8 +645,8 @@ namespace mu
 		}
 
 		// Re-enable the loop mode if it is used in the moment
-		if (!isPaused)
-            PauseLoopMode(false);
+		//if (!isPaused)
+        //    PauseLoopMode(false);
 
 		return sExpr;
 	}
@@ -1268,20 +1265,10 @@ namespace mu
 	/** \brief Retrieve the formula. */
 	const string_type& ParserBase::GetExpr() const
 	{
-		if (bMakeLoopByteCode && !bPauseLoopByteCode && m_stateStacks(nthLoopElement, nthLoopPartEquation).m_valid)
-		{
-			if (g_DbgDumpStack)
-                NumeReKernel::print("Current Eq: \"" + m_stateStacks(nthLoopElement, nthLoopPartEquation).m_expr + "\"");
+	    if (g_DbgDumpStack)
+            NumeReKernel::print("Current Eq: \"" + m_state->m_expr + "\"");
 
-			return m_stateStacks(nthLoopElement, nthLoopPartEquation).m_expr;
-		}
-		else
-		{
-		    if (g_DbgDumpStack)
-                NumeReKernel::print("Current Eq: \"" + m_pTokenReader->GetExpr() + "\"");
-
-			return m_pTokenReader->GetExpr();
-		}
+	    return m_state->m_expr;
 	}
 
 	//---------------------------------------------------------------------------
@@ -2226,18 +2213,15 @@ namespace mu
 	{
 		CreateRPN();
         m_compilingState.m_usedVar = m_pTokenReader->GetUsedVar();
+        m_compilingState.m_expr = m_pTokenReader->GetExpr();
+        StripSpaces(m_compilingState.m_expr);
 
 		if (bMakeLoopByteCode
             && !bPauseLoopByteCode
             && m_stateStacks(nthLoopElement, nthLoopPartEquation).m_valid)
 		{
 		    State& state = m_stateStacks(nthLoopElement, nthLoopPartEquation);
-
 		    state = m_compilingState;
-		    state.m_expr = m_pTokenReader->GetExpr();
-
-		    StripSpaces(state.m_expr);
-
 		    m_state = &state;
 		}
 		else
@@ -2963,6 +2947,7 @@ namespace mu
             bMakeLoopByteCode = false;
             bCompiling = false;
             m_stateStacks.clear();
+            m_state = &m_compilingState;
         }
     }
 
@@ -3237,7 +3222,12 @@ namespace mu
             bPauseLoopByteCode = _bPause;
 
             if (!_bPause)
+            {
+                m_state = &m_stateStacks(nthLoopElement, nthLoopPartEquation);
                 m_pParseFormula = &ParserBase::ParseCmdCode;
+            }
+            else
+                m_state = &m_compilingState;
         }
     }
 
@@ -3257,8 +3247,24 @@ namespace mu
         sNewEquation.strip();
 
         if (sNewEquation == sCurrentEquation
-            && (!bMakeLoopByteCode || bPauseLoopByteCode || m_stateStacks(nthLoopElement, nthLoopPartEquation).m_valid))
+            && (!bMakeLoopByteCode || bPauseLoopByteCode || m_state->m_valid))
             return true;
+
+        return false;
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Check, whether there are more elements
+    /// on the parsing stack remaining.
+    ///
+    /// \return bool
+    ///
+    /////////////////////////////////////////////////
+    bool ParserBase::IsNotLastStackItem() const
+    {
+        if (bMakeLoopByteCode && !bPauseLoopByteCode)
+            return nthLoopPartEquation+1 < m_stateStacks[nthLoopElement].m_states.size();
 
         return false;
     }

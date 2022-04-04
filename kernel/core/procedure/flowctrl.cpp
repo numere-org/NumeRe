@@ -1168,7 +1168,7 @@ int FlowCtrl::try_catch(int nth_Cmd, int nth_loop)
 value_type* FlowCtrl::evalHeader(int& nNum, string& sHeadExpression, bool bIsForHead, int nth_Cmd)
 {
     int nCurrentCalcType = nCalcType[nth_Cmd];
-    string sCache = "";
+    string sCache;
 
     // Update the parser index, if the loop parsing
     // mode was activated
@@ -1180,6 +1180,20 @@ value_type* FlowCtrl::evalHeader(int& nNum, string& sHeadExpression, bool bIsFor
     {
         if (!_functionRef->call(sHeadExpression))
             throw SyntaxError(SyntaxError::FUNCTION_ERROR, sHeadExpression, SyntaxError::invalid_position);
+    }
+
+    // If the expression is numerical-only, evaluate it here
+    if (nCurrentCalcType & CALCTYPE_NUMERICAL)
+    {
+        mu::value_type* v;
+
+        // Evaluate all remaining equations in the stack
+        do
+        {
+            v = _parserRef->Eval(nNum);
+        } while (_parserRef->IsNotLastStackItem());
+
+        return v;
     }
 
     // Include procedure and plugin calls
@@ -1288,6 +1302,9 @@ value_type* FlowCtrl::evalHeader(int& nNum, string& sHeadExpression, bool bIsFor
     // Evalute the already prepared equation
     if (!_parserRef->IsAlreadyParsed(sHeadExpression))
         _parserRef->SetExpr(sHeadExpression);
+
+    if (!nCalcType[nth_Cmd] && !nJumpTable[nth_Cmd][PROCEDURE_INTERFACE])
+        nCalcType[nth_Cmd] |= CALCTYPE_NUMERICAL;
 
     return _parserRef->Eval(nNum);
 }
@@ -2231,6 +2248,7 @@ int FlowCtrl::compile(string sLine, int nthCmd)
         sLine.erase(sLine.rfind(';'));
         bLoopSupressAnswer = true;
         nCalcType[nthCmd] |= CALCTYPE_SUPPRESSANSWER;
+        vCmdArray[nthCmd].sCommand.erase(vCmdArray[nthCmd].sCommand.rfind(';'));
     }
     else
         bLoopSupressAnswer = false;
@@ -2872,6 +2890,9 @@ int FlowCtrl::calc(string sLine, int nthCmd)
     if (!nCurrentCalcType)
         return compile(sLine, nthCmd);
 
+    bLoopSupressAnswer = nCurrentCalcType & CALCTYPE_SUPPRESSANSWER;
+    //return FLOWCTRL_OK;
+
     // Eval the assertion command
     if (nCurrentCalcType & CALCTYPE_ASSERT)
     {
@@ -2897,13 +2918,13 @@ int FlowCtrl::calc(string sLine, int nthCmd)
     }
 
     // Handle the suppression semicolon
-    if (nCurrentCalcType & CALCTYPE_SUPPRESSANSWER)
-    {
-        sLine.erase(sLine.rfind(';'));
-        bLoopSupressAnswer = true;
-    }
-    else
-        bLoopSupressAnswer = false;
+    //if (nCurrentCalcType & CALCTYPE_SUPPRESSANSWER)
+    //{
+    //    sLine.erase(sLine.rfind(';'));
+    //    bLoopSupressAnswer = true;
+    //}
+    //else
+    //    bLoopSupressAnswer = false;
 
     // Replace the custom defined functions, if it wasn't already done
     if (!(nCurrentCalcType & CALCTYPE_DEFINITION) && !bFunctionsReplaced)
@@ -2981,9 +3002,15 @@ int FlowCtrl::calc(string sLine, int nthCmd)
     if (nCurrentCalcType & CALCTYPE_NUMERICAL)
     {
         // Part of the condition disabled due to the slowness of the comparison
-        if (_parserRef->IsValidByteCode() == 1 /*&& _parserRef->IsAlreadyParsed(sLine)*/ && !bLockedPauseMode && bUseLoopParsingMode)
-        {
-            v = _parserRef->Eval(nNum);
+        //if (_parserRef->IsValidByteCode() == 1)// /*&& _parserRef->IsAlreadyParsed(sLine)*/ && !bLockedPauseMode && bUseLoopParsingMode)
+        //{
+            // Evaluate all remaining equations in the stack
+            do
+            {
+                v = _parserRef->Eval(nNum);
+            } while (_parserRef->IsNotLastStackItem());
+
+            // Check only the last expression
             _assertionHandler.checkAssertion(v, nNum);
 
             vAns = v[0];
@@ -2993,14 +3020,14 @@ int FlowCtrl::calc(string sLine, int nthCmd)
                 NumeReKernel::print(NumeReKernel::formatResultOutput(nNum, v));
 
             return FLOWCTRL_OK;
-        }
+        //}
     }
 
     // Does this contain a plot composition? Combine the
     // needed lines here. This is not necessary, if the lines
     // are read from a procedure, which will provide the compositon
     // in a single line
-    if (nCurrentCalcType & CALCTYPE_COMPOSE || sLoopPlotCompose.length())
+    if (nCurrentCalcType & CALCTYPE_COMPOSE)// || sLoopPlotCompose.length())
     {
         std::string sCommand = findCommand(sLine).sString;
 

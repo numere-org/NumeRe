@@ -224,6 +224,7 @@ namespace mu
 			void LockPause(bool _bLock = true);
 			void PauseLoopMode(bool _bPause = true);
 			bool IsAlreadyParsed(StringView sNewEquation);
+			bool IsNotLastStackItem() const;
 
 			static void EnableDebugDump(bool bDumpCmd, bool bDumpStack);
 
