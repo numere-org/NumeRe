@@ -60,6 +60,9 @@ mu::value_type parser_compare(const mu::value_type*, int);
 mu::value_type parser_Min(const mu::value_type*, int);
 mu::value_type parser_Max(const mu::value_type*, int);
 
+
+
+
 /** \file
     \brief This file contains the basic implementation of the muparser engine.
 */
@@ -88,13 +91,68 @@ namespace mu
         return vImag;
 	}
 
+
 	value_type rint(value_type v)
 	{
 	    return value_type(std::rint(v.real()), std::rint(v.imag()));
 	}
 
 
+    /////////////////////////////////////////////////
+    /// \brief Adaption of the logtoidx() function
+    /// for 1D data arrays.
+    ///
+    /// \param v const value_type*
+    /// \param n int
+    /// \return std::vector<value_type>
+    ///
+    /////////////////////////////////////////////////
+    std::vector<value_type> parser_logtoidx(const value_type* v, int n)
+    {
+        std::vector<value_type> vIdx;
 
+        for (int i = 0; i < n; i++)
+        {
+            if (v[i] != 0.0)
+                vIdx.push_back(i+1);
+        }
+
+        if (!vIdx.size())
+            vIdx.push_back(0.0);
+
+        return vIdx;
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Adaption of the idxtolog() function
+    /// for 1D data arrays.
+    ///
+    /// \param v const value_type*
+    /// \param n int
+    /// \return std::vector<value_type>
+    ///
+    /////////////////////////////////////////////////
+    std::vector<value_type> parser_idxtolog(const value_type* v, int n)
+    {
+        if (!n)
+            return std::vector<value_type>(1, 0.0);
+
+        value_type maxIdx = parser_Max(v, n);
+
+        if (std::isnan(maxIdx.real()))
+            return std::vector<value_type>(1, 0.0);
+
+        std::vector<value_type> vLogical(maxIdx.real(), 0.0);
+
+        for (int i = 0; i < n; i++)
+        {
+            if (v[i].real() > 0)
+                vLogical[v[i].real()-1] = 1.0;
+        }
+
+        return vLogical;
+    }
 
 
 
@@ -642,6 +700,12 @@ namespace mu
 					}
 				}
 			}
+
+			if (sExpr.subview(i, 9) == "logtoidx(" || sExpr.subview(i, 9) == "idxtolog(")
+            {
+                i += 8;
+                ResolveVectorsInMultiArgFunc(sExpr, i);
+            }
 		}
 
 		// Re-enable the loop mode if it is used in the moment
@@ -843,12 +907,21 @@ namespace mu
             value_type* v = Eval(nResults);
 
             // Apply the needed multi-argument function
-            ParserCallback pCallback = m_FunDef[sMultiArgFunc];
-            vResults.push_back(multfun_type(pCallback.GetAddr())(v, nResults));
+            if (m_FunDef.find(sMultiArgFunc) != m_FunDef.end())
+            {
+                ParserCallback pCallback = m_FunDef[sMultiArgFunc];
+                vResults.push_back(multfun_type(pCallback.GetAddr())(v, nResults));
+            }
+            else if (sMultiArgFunc == "logtoidx")
+                vResults = parser_logtoidx(v, nResults);
+            else if (sMultiArgFunc == "idxtolog")
+                vResults = parser_idxtolog(v, nResults);
 
             // Store the result in a new temporary vector
             string sVectorVarName = CreateTempVectorVar(vResults);
-            sExpr.replace(nMultiArgParens - sMultiArgFunc.length(), nClosingParens - nMultiArgParens + 1 + sMultiArgFunc.length(), sVectorVarName);
+            sExpr.replace(nMultiArgParens - sMultiArgFunc.length(),
+                          nClosingParens - nMultiArgParens + 1 + sMultiArgFunc.length(),
+                          sVectorVarName);
 
             // Set the position to the start of the multi-argument
             // function to avoid jumping over consecutive vectors
@@ -902,6 +975,11 @@ namespace mu
 				// Exclude the following functions
 				if (sFunc == "polynomial" || sFunc == "perlin")
                     continue;
+                else if (sFunc == "logtoidx" || sFunc == "idxtolog")
+                {
+                    sMultArgFunc = sFunc;
+                    return i;
+                }
 
 				// Compare the function with the set of known multi-argument functions
 				auto iter = m_FunDef.find(sFunc);
@@ -3496,6 +3574,17 @@ namespace mu
             if (nPos != string::npos && (!nPos || checkDelimiter(sExpr.subview(nPos-1, iter->first.length()+2))))
                 return true;
         }
+
+        static std::vector<std::string> vNDVECTFUNCS = {"logtoidx", "idxtolog"};
+
+        for (const auto& func : vNDVECTFUNCS)
+        {
+            size_t nPos = sExpr.find(func);
+
+            if (nPos != string::npos && (!nPos || checkDelimiter(sExpr.subview(nPos-1, func.length()+2))))
+                return true;
+        }
+
 
         return false;
 	}
