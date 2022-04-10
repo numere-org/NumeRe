@@ -1,3 +1,6 @@
+#ifndef HEADER_A34FD7D66ACE5465
+#define HEADER_A34FD7D66ACE5465
+
 /*
                  __________
     _____   __ __\______   \_____  _______  ______  ____ _______
@@ -286,34 +289,34 @@ namespace mu
     typedef value_type (*fun_type0)();
 
     /** \brief Callback type used for functions with a single arguments. */
-    typedef value_type (*fun_type1)(value_type);
+    typedef value_type (*fun_type1)(const value_type&);
 
     /** \brief Callback type used for functions with two arguments. */
-    typedef value_type (*fun_type2)(value_type, value_type);
+    typedef value_type (*fun_type2)(const value_type&, const value_type&);
 
     /** \brief Callback type used for functions with three arguments. */
-    typedef value_type (*fun_type3)(value_type, value_type, value_type);
+    typedef value_type (*fun_type3)(const value_type&, const value_type&, const value_type&);
 
     /** \brief Callback type used for functions with four arguments. */
-    typedef value_type (*fun_type4)(value_type, value_type, value_type, value_type);
+    typedef value_type (*fun_type4)(const value_type&, const value_type&, const value_type&, const value_type&);
 
     /** \brief Callback type used for functions with five arguments. */
-    typedef value_type (*fun_type5)(value_type, value_type, value_type, value_type, value_type);
+    typedef value_type (*fun_type5)(const value_type&, const value_type&, const value_type&, const value_type&, const value_type&);
 
     /** \brief Callback type used for functions with five arguments. */
-    typedef value_type (*fun_type6)(value_type, value_type, value_type, value_type, value_type, value_type);
+    typedef value_type (*fun_type6)(const value_type&, const value_type&, const value_type&, const value_type&, const value_type&, const value_type&);
 
     /** \brief Callback type used for functions with five arguments. */
-    typedef value_type (*fun_type7)(value_type, value_type, value_type, value_type, value_type, value_type, value_type);
+    typedef value_type (*fun_type7)(const value_type&, const value_type&, const value_type&, const value_type&, const value_type&, const value_type&, const value_type&);
 
     /** \brief Callback type used for functions with five arguments. */
-    typedef value_type (*fun_type8)(value_type, value_type, value_type, value_type, value_type, value_type, value_type, value_type);
+    typedef value_type (*fun_type8)(const value_type&, const value_type&, const value_type&, const value_type&, const value_type&, const value_type&, const value_type&, const value_type&);
 
     /** \brief Callback type used for functions with five arguments. */
-    typedef value_type (*fun_type9)(value_type, value_type, value_type, value_type, value_type, value_type, value_type, value_type, value_type);
+    typedef value_type (*fun_type9)(const value_type&, const value_type&, const value_type&, const value_type&, const value_type&, const value_type&, const value_type&, const value_type&, const value_type&);
 
     /** \brief Callback type used for functions with five arguments. */
-    typedef value_type (*fun_type10)(value_type, value_type, value_type, value_type, value_type, value_type, value_type, value_type, value_type, value_type);
+    typedef value_type (*fun_type10)(const value_type&, const value_type&, const value_type&, const value_type&, const value_type&, const value_type&, const value_type&, const value_type&, const value_type&, const value_type&);
 
     /** \brief Callback type used for functions without arguments. */
     typedef value_type (*bulkfun_type0)(int, int);
@@ -385,4 +388,6 @@ namespace mu
 
 #endif
 
+
+#endif // header guard 
 

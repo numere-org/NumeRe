@@ -1,3 +1,6 @@
+#ifndef HEADER_BB9C0F196E6E1873
+#define HEADER_BB9C0F196E6E1873
+
 /*
                  __________
     _____   __ __\______   \_____  _______  ______  ____ _______
@@ -67,38 +70,38 @@ namespace mu
   protected:
 
     // Trigonometric functions
-    static value_type  Sin(value_type);
-    static value_type  Cos(value_type);
-    static value_type  Tan(value_type);
-    static value_type  Tan2(value_type, value_type);
+    static value_type  Sin(const value_type&);
+    static value_type  Cos(const value_type&);
+    static value_type  Tan(const value_type&);
+    static value_type  Tan2(const value_type&, const value_type&);
     // arcus functions
-    static value_type  ASin(value_type);
-    static value_type  ACos(value_type);
-    static value_type  ATan(value_type);
-    static value_type  ATan2(value_type, value_type);
+    static value_type  ASin(const value_type&);
+    static value_type  ACos(const value_type&);
+    static value_type  ATan(const value_type&);
+    static value_type  ATan2(const value_type&, const value_type&);
 
     // hyperbolic functions
-    static value_type  Sinh(value_type);
-    static value_type  Cosh(value_type);
-    static value_type  Tanh(value_type);
+    static value_type  Sinh(const value_type&);
+    static value_type  Cosh(const value_type&);
+    static value_type  Tanh(const value_type&);
     // arcus hyperbolic functions
-    static value_type  ASinh(value_type);
-    static value_type  ACosh(value_type);
-    static value_type  ATanh(value_type);
+    static value_type  ASinh(const value_type&);
+    static value_type  ACosh(const value_type&);
+    static value_type  ATanh(const value_type&);
     // Logarithm functions
-    static value_type  Log2(value_type);  // Logarithm Base 2
-    static value_type  Log10(value_type); // Logarithm Base 10
-    static value_type  Ln(value_type);    // Logarithm Base e (natural logarithm)
+    static value_type  Log2(const value_type&);  // Logarithm Base 2
+    static value_type  Log10(const value_type&); // Logarithm Base 10
+    static value_type  Ln(const value_type&);    // Logarithm Base e (natural logarithm)
     // misc
-    static value_type  Exp(value_type);
-    static value_type  Abs(value_type);
-    static value_type  Sqrt(value_type);
-    static value_type  Rint(value_type);
-    static value_type  Sign(value_type);
+    static value_type  Exp(const value_type&);
+    static value_type  Abs(const value_type&);
+    static value_type  Sqrt(const value_type&);
+    static value_type  Rint(const value_type&);
+    static value_type  Sign(const value_type&);
 
     // Prefix operators
     // !!! Unary Minus is a MUST if you want to use negative signs !!!
-    static value_type  UnaryMinus(value_type);
+    static value_type  UnaryMinus(const value_type&);
 
     // Functions with variable number of arguments
     static value_type Sum(const value_type*, int);  // sum
@@ -111,4 +114,6 @@ namespace mu
 } // namespace mu
 
 #endif
+
+#endif // header guard 
 

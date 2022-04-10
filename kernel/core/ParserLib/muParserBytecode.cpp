@@ -111,6 +111,7 @@ namespace mu
 		tok.Val.ptr   = a_pVar;
 		tok.Val.data  = 1;
 		tok.Val.data2 = 0;
+		tok.Val.isVect = false;
 		m_vRPN.push_back(tok);
 	}
 
@@ -285,6 +286,7 @@ namespace mu
 							m_vRPN[sz - 2].Val.ptr    = (value_type*)((long long)(m_vRPN[sz - 2].Val.ptr) | (long long)(m_vRPN[sz - 1].Val.ptr)); // variable
 							m_vRPN[sz - 2].Val.data2 += ((a_Oprt == cmSUB) ? -1.0 : 1.0) * m_vRPN[sz - 1].Val.data2; // offset
 							m_vRPN[sz - 2].Val.data  += ((a_Oprt == cmSUB) ? -1.0 : 1.0) * m_vRPN[sz - 1].Val.data; // multiplikatior
+							m_vRPN[sz - 2].Val.isVect = false;
 							m_vRPN.pop_back();
 							bOptimized = true;
 						}
@@ -298,6 +300,7 @@ namespace mu
 							m_vRPN[sz - 2].Val.ptr    = (value_type*)((long long)(m_vRPN[sz - 2].Val.ptr) | (long long)(m_vRPN[sz - 1].Val.ptr));
 							m_vRPN[sz - 2].Val.data   = m_vRPN[sz - 2].Val.data2 + m_vRPN[sz - 1].Val.data2;
 							m_vRPN[sz - 2].Val.data2  = 0;
+							m_vRPN[sz - 2].Val.isVect  = false;
 							m_vRPN.pop_back();
 							bOptimized = true;
 						}
@@ -307,6 +310,7 @@ namespace mu
 							// Optimization: 2*(3*b+1) or (3*b+1)*2 -> 6*b+2
 							m_vRPN[sz - 2].Cmd     = cmVARMUL;
 							m_vRPN[sz - 2].Val.ptr = (value_type*)((long long)(m_vRPN[sz - 2].Val.ptr) | (long long)(m_vRPN[sz - 1].Val.ptr));
+							m_vRPN[sz - 2].Val.isVect = false;
 							if (m_vRPN[sz - 1].Cmd == cmVAL)
 							{
 								m_vRPN[sz - 2].Val.data  *= m_vRPN[sz - 1].Val.data2;
@@ -385,6 +389,7 @@ namespace mu
 		SToken tok;
 		tok.Cmd = cmASSIGN;
 		tok.Val.ptr = a_pVar;
+		tok.Val.isVect = false;
 		m_vRPN.push_back(tok);
 	}
 
@@ -493,6 +498,42 @@ namespace mu
 			}
 		}
 	}
+
+
+    /////////////////////////////////////////////////
+    /// \brief Changes all old variable pointers to
+    /// the new addresses. Will be used to compensate
+    /// for different local variable adresses in
+    /// different scopes.
+    ///
+    /// \param a_pOldVar value_type*
+    /// \param a_pNewVar value_type*
+    /// \param isVect bool
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
+	void ParserByteCode::ChangeVar(value_type* a_pOldVar, value_type* a_pNewVar, bool isVect)
+	{
+	    for (size_t i = 0; i < m_vRPN.size(); ++i)
+        {
+            switch (m_vRPN[i].Cmd)
+            {
+                case cmVAR:
+                case cmVARMUL:
+                case cmVARPOW2:
+                case cmVARPOW3:
+                case cmVARPOW4:
+                {
+                    if (m_vRPN[i].Val.ptr == a_pOldVar)
+                    {
+                        m_vRPN[i].Val.ptr = a_pNewVar;
+                        m_vRPN[i].Val.isVect = isVect;
+                    }
+                }
+            }
+        }
+	}
+
 
 	//---------------------------------------------------------------------------
 	const SToken* ParserByteCode::GetBase() const

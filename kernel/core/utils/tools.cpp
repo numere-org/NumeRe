@@ -1727,15 +1727,17 @@ long long int intCast(const std::complex<double>& number)
 
 
 // This function determines, if the passed character is a delimiter character
-bool isDelimiter(char cChar)
+bool isDelimiter(char c)
 {
+    // Characters converted to a single logical expression (should be faster in principle)
+    return c >= 32 && c <= 125 && c != 36 && c != 39 && c != 46 && (c < 48 || c > 57) && (c < 64 || c > 90) && (c < 95 || c > 122);
     // Only construct the string once
-    static string sDelimiter = "+-*/ ^&|!%<>,=\\#?:;()[]{}\"";
+    //static string sDelimiter = "+-*/ ^&|!%<>,=\\#?:;()[]{}\"";
 
     // Try to find the current character
-    if (sDelimiter.find(cChar) != string::npos)
+    /*if (sDelimiter.find(cChar) != string::npos)
         return true;
-    return false;
+    return false;*/
 }
 
 // --> Ergaenzt fehlende Legenden mit den gegebenen Ausdruecken <--

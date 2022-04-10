@@ -451,6 +451,7 @@ namespace mu
 			bool bPauseLoopByteCode;
 			bool bPauseLock;
 			bool bCompiling;
+			int nMaxThreads;
 
 			mutable stringbuf_type  m_vStringBuf; ///< String buffer, used for storing string function arguments
 			stringbuf_type  m_vStringVarBuf;

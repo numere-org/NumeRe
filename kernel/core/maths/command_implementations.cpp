@@ -4489,7 +4489,7 @@ void rotateTable(CommandLineParser& cmdParser)
 
 // Forward declaration to make this function usable by the
 // particle swarm optimizer (needs randomness)
-value_type parser_Random(value_type vRandMin, value_type vRandMax);
+value_type parser_Random(const value_type& vRandMin, const value_type& vRandMax);
 
 
 /////////////////////////////////////////////////

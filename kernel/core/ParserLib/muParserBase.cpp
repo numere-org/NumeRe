@@ -37,10 +37,7 @@
 #include <deque>
 #include <sstream>
 #include <locale>
-
-#ifdef MUP_USE_OPENMP
 #include <omp.h>
-#endif
 
 using namespace std;
 
@@ -66,6 +63,8 @@ mu::value_type parser_Max(const mu::value_type*, int);
 /** \file
     \brief This file contains the basic implementation of the muparser engine.
 */
+
+
 
 
 namespace mu
@@ -156,6 +155,49 @@ namespace mu
 
 
 
+    /////////////////////////////////////////////////
+    /// \brief Custom implementation for the complex
+    /// multiplication operator with a scalar
+    /// optimization.
+    ///
+    /// \param __x const value_type&
+    /// \param __y const value_type&
+    /// \return value_type
+    ///
+    /////////////////////////////////////////////////
+    inline value_type operator*(const value_type& __x, const value_type& __y)
+    {
+        if (__x.imag() == 0.0)
+            return value_type(__y.real()*__x.real(), __y.imag()*__x.real());
+        else if (__y.imag() == 0.0)
+            return value_type(__x.real()*__y.real(), __x.imag()*__y.real());
+
+        value_type __r = __x;
+        __r *= __y;
+        return __r;
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Custom implementation for the complex
+    /// division operator with a scalar optimization.
+    ///
+    /// \param __x const value_type&
+    /// \param __y const value_type&
+    /// \return value_type
+    ///
+    /////////////////////////////////////////////////
+    inline value_type operator/(const value_type& __x, const value_type& __y)
+    {
+        if (__y.imag() == 0.0)
+            return value_type(__x.real() / __y.real(), __x.imag() / __y.real());
+
+        value_type __r = __x;
+        __r /= __y;
+        return __r;
+    }
+
+
 
 	std::locale ParserBase::s_locale = std::locale(std::locale::classic(), new change_dec_sep<char_type>('.'));
 
@@ -208,6 +250,7 @@ namespace mu
 		bPauseLoopByteCode = false;
 		bPauseLock = false;
 		m_state = &m_compilingState;
+		nMaxThreads = omp_get_max_threads();// std::min(omp_get_max_threads(), s_MaxNumOpenMPThreads);
 
 		mVarMapPntr = nullptr;
 	}
@@ -242,6 +285,7 @@ namespace mu
 		bPauseLoopByteCode = false;
 		bPauseLock = false;
 		m_state = &m_compilingState;
+		nMaxThreads = std::min(omp_get_max_threads(), s_MaxNumOpenMPThreads);
 
 		mVarMapPntr = nullptr;
 
@@ -1622,7 +1666,7 @@ namespace mu
 	*/
 	void ParserBase::ParseCmdCodeBulk(int nOffset, int nThreadID)
 	{
-		assert(nThreadID <= s_MaxNumOpenMPThreads);
+		assert(nThreadID <= nMaxThreads);
 
 		// Note: The check for nOffset==0 and nThreadID here is not necessary but
 		//       brings a minor performance gain when not in bulk mode.
@@ -1630,7 +1674,7 @@ namespace mu
 
 		Stack = ((nOffset == 0) && (nThreadID == 0))
             ? &m_state->m_stackBuffer[0]
-            : &m_state->m_stackBuffer[nThreadID * (m_state->m_stackBuffer.size() / s_MaxNumOpenMPThreads)];
+            : &m_state->m_stackBuffer[nThreadID * (m_state->m_stackBuffer.size() / nMaxThreads)];
 
 		value_type buf;
 		int sidx(0);
@@ -1674,7 +1718,7 @@ namespace mu
                     continue;
                 case  cmMUL:
                     --sidx;
-                    Stack[sidx] *= Stack[1 + sidx];
+                    Stack[sidx] = Stack[sidx] * Stack[1 + sidx]; // Uses the optimized version
                     continue;
                 case  cmDIV:
                     --sidx;
@@ -1683,7 +1727,7 @@ namespace mu
                     if (Stack[1 + sidx] == 0)
                         Error(ecDIV_BY_ZERO);
 #endif
-                    Stack[sidx] /= Stack[1 + sidx];
+                    Stack[sidx] = Stack[sidx] / Stack[1 + sidx]; // Uses the optimized version
                     continue;
 
                 case  cmPOW:
@@ -1728,29 +1772,30 @@ namespace mu
 
                 // value and variable tokens
                 case  cmVAR:
-                    Stack[++sidx] = *(pTok->Val.ptr + nOffset);
+                    Stack[++sidx] = *(pTok->Val.ptr + pTok->Val.isVect*nOffset);
+                    //NumeReKernel::print(toString(*(pTok->Val.ptr + pTok->Val.isVect*nOffset), 14));
                     continue;
                 case  cmVAL:
                     Stack[++sidx] =  pTok->Val.data2;
                     continue;
 
                 case  cmVARPOW2:
-                    buf = *(pTok->Val.ptr + nOffset);
+                    buf = *(pTok->Val.ptr + pTok->Val.isVect*nOffset);
                     Stack[++sidx] = buf * buf;
                     continue;
 
                 case  cmVARPOW3:
-                    buf = *(pTok->Val.ptr + nOffset);
+                    buf = *(pTok->Val.ptr + pTok->Val.isVect*nOffset);
                     Stack[++sidx] = buf * buf * buf;
                     continue;
 
                 case  cmVARPOW4:
-                    buf = *(pTok->Val.ptr + nOffset);
+                    buf = *(pTok->Val.ptr + pTok->Val.isVect*nOffset);
                     Stack[++sidx] = buf * buf * buf * buf;
                     continue;
 
                 case  cmVARMUL:
-                    Stack[++sidx] = *(pTok->Val.ptr + nOffset) * pTok->Val.data + pTok->Val.data2;
+                    Stack[++sidx] = *(pTok->Val.ptr + pTok->Val.isVect*nOffset) * pTok->Val.data + pTok->Val.data2;
                     continue;
 
                 // Next is treatment of numeric functions
@@ -2275,7 +2320,7 @@ namespace mu
 		if (stVal.top().GetType() != tpDBL)
 			Error(ecSTR_RESULT);
 
-		m_compilingState.m_stackBuffer.resize(m_compilingState.m_byteCode.GetMaxStackSize() * s_MaxNumOpenMPThreads);
+		m_compilingState.m_stackBuffer.resize(m_compilingState.m_byteCode.GetMaxStackSize() * nMaxThreads);
 	}
 
 	//---------------------------------------------------------------------------
@@ -2766,7 +2811,98 @@ namespace mu
 
         if (mVectorVars.size())
         {
-            size_t nVectorlength = 0;
+            std::vector<std::vector<value_type>*> vUsedVectorVars;
+            std::vector<value_type*> vUsedVectorVarAddresses;
+            varmap_type& vars = m_state->m_usedVar;
+            size_t nVectorLength = 0;
+
+            // Get the maximal size of the used vectors
+            auto iterVector = mVectorVars.begin();
+            auto iterVar = vars.begin();
+
+            for ( ; iterVector != mVectorVars.end() && iterVar != vars.end(); )
+            {
+                if (iterVector->first == iterVar->first)
+                {
+                    if (iterVector->second.size() > 1 && iterVector->first != "_~TRGTVCT[~]")
+                    {
+                        vUsedVectorVarAddresses.push_back(iterVar->second);
+                        vUsedVectorVars.push_back(&(iterVector->second));
+                        nVectorLength = std::max(nVectorLength, iterVector->second.size());
+                    }
+
+                    ++iterVector;
+                    ++iterVar;
+                }
+                else
+                {
+                    if (iterVector->first < iterVar->first)
+                        ++iterVector;
+                    else
+                        ++iterVar;
+                }
+            }
+
+            // Any vectors larger than 1 element in this equation?
+            if (vUsedVectorVarAddresses.size())
+            {
+                // Replace all addresses and resize all vectors to fit
+                for (size_t i = 0; i < vUsedVectorVarAddresses.size(); i++)
+                {
+                    vUsedVectorVars[i]->resize(nVectorLength);
+                    m_state->m_byteCode.ChangeVar(vUsedVectorVarAddresses[i], vUsedVectorVars[i]->data(), true);
+                }
+
+                // Resize the target buffer correspondingly
+                m_buffer.resize(nStackSize * nVectorLength);
+
+                if (nVectorLength < 500)
+                {
+                    // Too few components -> run sequentially
+                    for (size_t i = 1; i < nVectorLength; ++i)
+                    {
+                        ParseCmdCodeBulk(i, 0);
+
+                        for (size_t j = 0; j < nStackSize; j++)
+                        {
+                            m_buffer[i*nStackSize + j] = m_state->m_stackBuffer[j + 1];
+                        }
+                    }
+                }
+                else
+                {
+                    // Run parallel
+                    size_t nBufferOffset = m_state->m_stackBuffer.size() / nMaxThreads;
+
+                    #pragma omp parallel for //schedule(static, (nVectorLength-1)/nMaxThreads)
+                    for (size_t i = 1; i < nVectorLength; ++i)
+                    {
+                        int nThreadID = omp_get_thread_num();
+                        ParseCmdCodeBulk(i, nThreadID);
+
+                        for (size_t j = 0; j < nStackSize; j++)
+                        {
+                            m_buffer[i*nStackSize + j] = m_state->m_stackBuffer[nThreadID*nBufferOffset + j + 1];
+                        }
+                    }
+                }
+
+
+                // Update the external variable
+                nStackSize *= nVectorLength;
+
+                // Replace all addresses (they are temporary!)
+                for (size_t i = 0; i < vUsedVectorVarAddresses.size(); i++)
+                {
+                    m_state->m_byteCode.ChangeVar(vUsedVectorVars[i]->data(), vUsedVectorVarAddresses[i], false);
+                }
+            }
+
+
+
+
+
+            /*size_t nVectorlength = 0;
             varmap_type& vars = m_state->m_usedVar;
 
             // Get the maximal size of the used vectors
@@ -2838,7 +2974,7 @@ namespace mu
                     *(iter->first) = iter->second;
 
                 nStackSize *= nVectorlength;
-            }
+            }*/
         }
 
         // assign the results of the calculation to a possible
@@ -3589,6 +3725,11 @@ namespace mu
         return false;
 	}
 
+	static bool isDelim(char c)
+	{
+	    // Characters converted to a single logical expression
+	    return c >= 32 && c <= 126 && c != 36 && c != 39 && c != 46 && (c < 48 || c > 57) && (c < 64 || c > 90) && (c < 95 || c > 122);
+	}
 
     /////////////////////////////////////////////////
     /// \brief This member function checks, whether
@@ -3600,10 +3741,11 @@ namespace mu
     /////////////////////////////////////////////////
 	bool ParserBase::checkDelimiter(StringView sLine)
 	{
-		static std::string sDelimiter = "+-*/ ()={}^&|!<>,\\%#~[]:";
-
-		// --> Gib die Auswertung dieses logischen Ausdrucks zurueck <--
-		return sDelimiter.find(sLine.front()) != std::string::npos && sDelimiter.find(sLine.back()) != std::string::npos;
+	    return isDelim(sLine.front()) && isDelim(sLine.back());
+	    //static std::string sDelimiter = "+-*/ ()={}^&|!<>,\\%#~[]:";
+        //
+		//// --> Gib die Auswertung dieses logischen Ausdrucks zurueck <--
+		//return sDelimiter.find(sLine.front()) != std::string::npos && sDelimiter.find(sLine.back()) != std::string::npos;
 	}
 
 

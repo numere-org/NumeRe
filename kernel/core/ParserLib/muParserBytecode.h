@@ -1,3 +1,6 @@
+#ifndef HEADER_EFB3392625639C26
+#define HEADER_EFB3392625639C26
+
 /*
                  __________
     _____   __ __\______   \_____  _______  ______  ____ _______
@@ -52,6 +55,7 @@ namespace mu
 				value_type* ptr;
 				value_type  data;
 				value_type  data2;
+				bool isVect;
 			} Val;
 
 			struct //SFunData
@@ -127,6 +131,7 @@ namespace mu
 			void EnableOptimizer(bool bStat);
 
 			void Finalize();
+			void ChangeVar(value_type* a_pOldVar, value_type* a_pNewVar, bool isVect);
 			void clear();
 			std::size_t GetMaxStackSize() const;
 			std::size_t GetSize() const;
@@ -139,4 +144,6 @@ namespace mu
 
 #endif
 
+
+#endif // header guard
 
