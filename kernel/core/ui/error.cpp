@@ -21,7 +21,7 @@
 #include "../strings/stringdatastructures.hpp"
 #include "../../kernel.hpp"
 
-size_t SyntaxError::invalid_position = string::npos;
+size_t SyntaxError::invalid_position = std::string::npos;
 int SyntaxError::invalid_index = INT_MIN;
 Assertion _assertionHandler;
 static std::string sLastErrorMessage;

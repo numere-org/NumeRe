@@ -924,7 +924,7 @@ namespace NumeRe
             /////////////////////////////////////////////////
             void seekg(size_t pos)
             {
-                fFileStream.seekg(pos, ios::beg);
+                fFileStream.seekg(pos, std::ios::beg);
             }
 
             /////////////////////////////////////////////////
@@ -937,7 +937,7 @@ namespace NumeRe
             /////////////////////////////////////////////////
             void seekp(size_t pos)
             {
-                fFileStream.seekp(pos, ios::beg);
+                fFileStream.seekp(pos, std::ios::beg);
             }
 
             /////////////////////////////////////////////////
@@ -1373,7 +1373,7 @@ namespace NumeRe
             /// \return string
             ///
             /////////////////////////////////////////////////
-            string getColumnHead(long long int col) const
+            std::string getColumnHead(long long int col) const
             {
                 if (m_file)
                 {
@@ -1650,7 +1650,7 @@ namespace NumeRe
     {
         private:
             void readFile();
-            double extractValueFromTag(const string& sTag);
+            double extractValueFromTag(const std::string& sTag);
 
         public:
             CassyLabx(const std::string& filename);

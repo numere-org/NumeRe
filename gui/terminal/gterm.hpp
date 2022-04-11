@@ -23,8 +23,6 @@
 #include "../../kernel/syntax.hpp"
 #include "../../kernel/core/ui/calltipprovider.hpp"
 
-using namespace std;
-
 #define MAXWIDTH 320
 #define MAXHEIGHT 500
 
@@ -96,7 +94,7 @@ class GenericTerminal
 
         // action parameters
         int nparam, param[30];
-        string sInput_Data;
+        std::string sInput_Data;
         int data_len;
         NumeReSyntax _syntax;
 
@@ -112,10 +110,10 @@ class GenericTerminal
         // autocomp params
         int nTabStartPos;
         int nCursorUpDownStartPos;
-        string sAutoCompWordStart;
-        string sAutoCompList;
+        std::string sAutoCompWordStart;
+        std::string sAutoCompList;
         void resetAutoComp(int mode);
-        string getProcNameSpace();
+        std::string getProcNameSpace();
 
         // non-printing characters
         void cr(), lf(), ff(), bell(), tab();
@@ -147,8 +145,8 @@ class GenericTerminal
         NumeRe::CallTipProvider* getProvider() {return &m_tipProvider;}
 
         // function to control terminal
-        virtual void ProcessInput(int len, const string& sData);
-        virtual void ProcessOutput(int len, const string& sData);
+        virtual void ProcessInput(int len, const std::string& sData);
+        virtual void ProcessOutput(int len, const std::string& sData);
         virtual void ResizeTerminal(int _width, int _height);
         int Width() const
         {
@@ -182,7 +180,7 @@ class GenericTerminal
 
         // manditory child-supplied functions
         virtual void DrawText(int fg_color, int bg_color, int flags,
-                              int x, int y, const string& sText) = 0;
+                              int x, int y, const std::string& sText) = 0;
         virtual void DrawCursor(int fg_color, int bg_color, int flags,
                                 int x, int y, unsigned char c) = 0;
 
@@ -202,7 +200,7 @@ class GenericTerminal
         virtual int IsSelected(int x, int y);
         virtual void Select(int x, int y, int select);
         virtual unsigned char GetChar(int x, int y);
-        string get_selected_text();
+        std::string get_selected_text();
 };
 
 #endif

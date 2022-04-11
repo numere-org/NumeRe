@@ -22,6 +22,8 @@
 // define the "End of transmission block" as string separator
 #define NEWSTRING (char)23
 
+using namespace std;
+
 string removeQuotationMarks(const string& sString);
 string addQuotationMarks(const string& sString);
 

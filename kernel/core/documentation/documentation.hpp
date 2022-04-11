@@ -30,16 +30,15 @@
 #include "../utils/tools.hpp"
 #include "../settings.hpp"
 
-using namespace std;
-extern const string sVersion;
+extern const std::string sVersion;
 
-void doc_Help(const string&, Settings&);
-string doc_HelpAsHTML(const string&, bool, Settings& _option);
-void doc_ReplaceTokens(string& sDocParagraph, Settings& _option);
-void doc_ReplaceTokensForHTML(string& sDocParagraph, bool generateFile, Settings& _option);
-void doc_ReplaceExprContentForHTML(string& sExpr, Settings& _option);
-vector<vector<string> > doc_readTokenTable(const string& sTable, Settings& _option);
-void doc_SearchFct(const string& sToLookFor, Settings& _option);
+void doc_Help(const std::string&, Settings&);
+std::string doc_HelpAsHTML(const std::string&, bool, Settings& _option);
+void doc_ReplaceTokens(std::string& sDocParagraph, Settings& _option);
+void doc_ReplaceTokensForHTML(std::string& sDocParagraph, bool generateFile, Settings& _option);
+void doc_ReplaceExprContentForHTML(std::string& sExpr, Settings& _option);
+std::vector<std::vector<std::string> > doc_readTokenTable(const std::string& sTable, Settings& _option);
+void doc_SearchFct(const std::string& sToLookFor, Settings& _option);
 void doc_FirstStart(const Settings& _option);
 
 

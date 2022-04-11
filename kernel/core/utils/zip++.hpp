@@ -30,7 +30,7 @@
 #include "zip.h"
 #include "unzip.h"
 
-using namespace std;
+
 class Zipfile
 {
     private:
@@ -41,13 +41,13 @@ class Zipfile
     public:
         Zipfile();
         ~Zipfile();
-        bool open(const string& sZipFilename, int nOpenmode = 0);
+        bool open(const std::string& sZipFilename, int nOpenmode = 0);
         inline bool is_open() const
             {return bIsOpen;}
         bool close();
-        bool addFile(const string& sFilename);
-        string getZipContent();
-        string getZipItem(const string& sFilename);
+        bool addFile(const std::string& sFilename);
+        std::string getZipContent();
+        std::string getZipItem(const std::string& sFilename);
 };
 
 #endif

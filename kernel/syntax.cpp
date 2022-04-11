@@ -51,10 +51,10 @@ NumeReSyntax::NumeReSyntax() : sPath("")
 /// the default constructor and will also load
 /// the syntax definitions.
 ///
-/// \param _sPath const string&
+/// \param _sPath const std::string&
 ///
 /////////////////////////////////////////////////
-NumeReSyntax::NumeReSyntax(const string& _sPath) : NumeReSyntax()
+NumeReSyntax::NumeReSyntax(const std::string& _sPath) : NumeReSyntax()
 {
     loadSyntax(_sPath);
 }
@@ -64,17 +64,17 @@ NumeReSyntax::NumeReSyntax(const string& _sPath) : NumeReSyntax()
 /// \brief Member function for loading the syntax
 /// element definitions.
 ///
-/// \param _sPath const string&
+/// \param _sPath const std::string&
 /// \return void
 ///
 /////////////////////////////////////////////////
-void NumeReSyntax::loadSyntax(const string& _sPath)
+void NumeReSyntax::loadSyntax(const std::string& _sPath)
 {
     if (_sPath.length() && !sPath.length())
         sPath = _sPath;
 
-    ifstream file_in;
-    string sLine;
+    std::ifstream file_in;
+    std::string sLine;
 
     // Open the file and check, whether the file stream is valid
     file_in.open(sPath + "lang\\syntaxelements.nlng");
@@ -86,7 +86,7 @@ void NumeReSyntax::loadSyntax(const string& _sPath)
     while (!file_in.eof())
     {
         // Get the current line
-        getline(file_in, sLine);
+        std::getline(file_in, sLine);
 
         // Ignore it, if it's empty or if it starts with a comment sign
         if (!sLine.length())
@@ -138,11 +138,11 @@ void NumeReSyntax::loadSyntax(const string& _sPath)
 /// settings in advance to restore the default
 /// state.
 ///
-/// \param vPlugins const vector<string>&
+/// \param vPlugins const std::vector<std::string>&
 /// \return void
 ///
 /////////////////////////////////////////////////
-void NumeReSyntax::addPlugins(const vector<string>& vPlugins)
+void NumeReSyntax::addPlugins(const std::vector<std::string>& vPlugins)
 {
     mAutoCompList.clear();
 
@@ -155,11 +155,11 @@ void NumeReSyntax::addPlugins(const vector<string>& vPlugins)
 /// \brief Set the procedure tree (used for
 /// autocompleting).
 ///
-/// \param vTree const vector<string>&
+/// \param vTree const std::vector<std::string>&
 /// \return void
 ///
 /////////////////////////////////////////////////
-void NumeReSyntax::setProcedureTree(const vector<string>& vTree)
+void NumeReSyntax::setProcedureTree(const std::vector<std::string>& vTree)
 {
     // Copy the tree
     vProcedureTree = vTree;
@@ -168,13 +168,13 @@ void NumeReSyntax::setProcedureTree(const vector<string>& vTree)
     // Also remove the file extensions
     for (size_t i = 0; i < vProcedureTree.size(); i++)
     {
-        while (vProcedureTree[i].find('/') != string::npos)
+        while (vProcedureTree[i].find('/') != std::string::npos)
             vProcedureTree[i][vProcedureTree[i].find('/')] = '~';
 
-        while (vProcedureTree[i].find('\\') != string::npos)
+        while (vProcedureTree[i].find('\\') != std::string::npos)
             vProcedureTree[i][vProcedureTree[i].find('\\')] = '~';
 
-        if (vProcedureTree[i].find(".nprc") != string::npos)
+        if (vProcedureTree[i].find(".nprc") != std::string::npos)
             vProcedureTree[i].erase(vProcedureTree[i].rfind(".nprc"));
     }
 }
@@ -184,13 +184,13 @@ void NumeReSyntax::setProcedureTree(const vector<string>& vTree)
 /// \brief Returns all block definitions as a
 /// folding string for the lexers.
 ///
-/// \return string
+/// \return std::string
 ///
 /////////////////////////////////////////////////
-string NumeReSyntax::getBlockDefs() const
+std::string NumeReSyntax::getBlockDefs() const
 {
-    string sReturn;
-    string endWords;
+    std::string sReturn;
+    std::string endWords;
 
     for (const SyntaxBlockDefinition& def : vBlockDefs)
     {
@@ -207,13 +207,13 @@ string NumeReSyntax::getBlockDefs() const
 /// passed vector elements to a whitespace-
 /// separated single string.
 ///
-/// \param vVector const vector<string>&
-/// \return string
+/// \param vVector const std::vector<std::string>&
+/// \return std::string
 ///
 /////////////////////////////////////////////////
-string NumeReSyntax::constructString(const vector<string>& vVector) const
+std::string NumeReSyntax::constructString(const std::vector<std::string>& vVector) const
 {
-    string sReturn = "";
+    std::string sReturn = "";
 
     // Concatenate all elements in vVector
     for (size_t i = 0; i < vVector.size(); i++)
@@ -229,13 +229,13 @@ string NumeReSyntax::constructString(const vector<string>& vVector) const
 /// \brief This function splits the passed string
 /// up into single string tokens.
 ///
-/// \param sString string
-/// \return vector<string>
+/// \param sString std::string
+/// \return std::vector<std::string>
 ///
 /////////////////////////////////////////////////
-vector<string> NumeReSyntax::splitString(string sString)
+std::vector<std::string> NumeReSyntax::splitString(std::string sString)
 {
-    vector<string> vReturn;
+    std::vector<std::string> vReturn;
 
     // As long as the string has a length
     while (sString.length())
@@ -245,7 +245,7 @@ vector<string> NumeReSyntax::splitString(string sString)
             sString.erase(0,1);
 
         // Separate at the whitespaces
-        if (sString.find(' ') != string::npos)
+        if (sString.find(' ') != std::string::npos)
         {
             // Push the current token
             vReturn.push_back(sString.substr(0,sString.find(' ')));
@@ -273,19 +273,19 @@ vector<string> NumeReSyntax::splitString(string sString)
 /// \brief Converts a block def string into
 /// actual syntax block definitions.
 ///
-/// \param sDefString string
-/// \return vector<SyntaxBlockDefinition>
+/// \param sDefString std::string
+/// \return std::vector<SyntaxBlockDefinition>
 ///
 /////////////////////////////////////////////////
-vector<SyntaxBlockDefinition> NumeReSyntax::splitDefs(string sDefString)
+std::vector<SyntaxBlockDefinition> NumeReSyntax::splitDefs(std::string sDefString)
 {
-    vector<SyntaxBlockDefinition> vDefs;
+    std::vector<SyntaxBlockDefinition> vDefs;
 
-    EndlessVector<string> defs = getAllSemiColonSeparatedTokens(sDefString);
+    EndlessVector<std::string> defs = getAllSemiColonSeparatedTokens(sDefString);
 
     for (size_t i = 0; i < defs.size(); i++)
     {
-        vector<string> words = splitString(defs[i]);
+        std::vector<std::string> words = splitString(defs[i]);
 
         // Block is at least two words
         if (words.size() < 2)
@@ -312,12 +312,12 @@ vector<SyntaxBlockDefinition> NumeReSyntax::splitDefs(string sDefString)
 /// \brief This function searches for a match of
 /// the passed string in the passed vector.
 ///
-/// \param vVector const vector<string>&
-/// \param sString const string&
+/// \param vVector const std::vector<std::string>&
+/// \param sString const std::string&
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool NumeReSyntax::matchItem(const vector<string>& vVector, const string& sString)
+bool NumeReSyntax::matchItem(const std::vector<std::string>& vVector, const std::string& sString)
 {
     for (size_t i = 0; i < vVector.size(); i++)
     {
@@ -336,11 +336,11 @@ bool NumeReSyntax::matchItem(const vector<string>& vVector, const string& sStrin
 /// colors to the command line (only used in the
 /// terminal).
 ///
-/// \param sCommandLine const string&
-/// \return string
+/// \param sCommandLine const std::string&
+/// \return std::string
 ///
 /////////////////////////////////////////////////
-string NumeReSyntax::highlightLine(const string& sCommandLine)
+std::string NumeReSyntax::highlightLine(const std::string& sCommandLine)
 {
     // Ensure that a command line with a length is available
     if (!sCommandLine.length())
@@ -356,7 +356,7 @@ string NumeReSyntax::highlightLine(const string& sCommandLine)
         return highlightWarning(sCommandLine);
 
     // Create a color string, which will only contain default colors
-    string colors;
+    std::string colors;
 
     // Fill the color string with the default colors
     colors.assign(sCommandLine.length(),'0'+SYNTAX_STD);
@@ -377,7 +377,7 @@ string NumeReSyntax::highlightLine(const string& sCommandLine)
         return colors;
 
     // Search for strings
-    if (sCommandLine.find('"') != string::npos)
+    if (sCommandLine.find('"') != std::string::npos)
     {
         char c_string = '0'+SYNTAX_STRING;
         char c_normal = '0'+SYNTAX_STD;
@@ -403,7 +403,7 @@ string NumeReSyntax::highlightLine(const string& sCommandLine)
     }
 
     // Search for procedures
-    if (sCommandLine.find('$') != string::npos)
+    if (sCommandLine.find('$') != std::string::npos)
     {
         int c_proc = '0'+SYNTAX_PROCEDURE;
         int c_normal = '0'+SYNTAX_STD;
@@ -475,11 +475,11 @@ string NumeReSyntax::highlightLine(const string& sCommandLine)
                 && colors[i+nLen] == '0'+SYNTAX_STD
                 && sCommandLine[i+nLen] != ' '
                 && sCommandLine[i+nLen] != '\''
-                && sSingleOperators.find(sCommandLine[i+nLen]) == string::npos)
+                && sSingleOperators.find(sCommandLine[i+nLen]) == std::string::npos)
                 nLen++;
 
             // color operators
-            if (sSingleOperators.find(sCommandLine[i+nLen]) != string::npos)
+            if (sSingleOperators.find(sCommandLine[i+nLen]) != std::string::npos)
             {
                 colors[i+nLen] = '0'+SYNTAX_OPERATOR;
             }
@@ -556,13 +556,13 @@ string NumeReSyntax::highlightLine(const string& sCommandLine)
 /// use the color of the operators (which is red
 /// as default).
 ///
-/// \param sCommandLine const string&
-/// \return string
+/// \param sCommandLine const std::string&
+/// \return std::string
 ///
 /////////////////////////////////////////////////
-string NumeReSyntax::highlightError(const string& sCommandLine)
+std::string NumeReSyntax::highlightError(const std::string& sCommandLine)
 {
-    string colors;
+    std::string colors;
     colors.assign(sCommandLine.length(),'0'+SYNTAX_OPERATOR);
     return colors;
 }
@@ -573,13 +573,13 @@ string NumeReSyntax::highlightError(const string& sCommandLine)
 /// use the color of numbers (which is orange as
 /// default).
 ///
-/// \param sCommandLine const string&
-/// \return string
+/// \param sCommandLine const std::string&
+/// \return std::string
 ///
 /////////////////////////////////////////////////
-string NumeReSyntax::highlightWarning(const string& sCommandLine)
+std::string NumeReSyntax::highlightWarning(const std::string& sCommandLine)
 {
-    string colors;
+    std::string colors;
     colors.assign(sCommandLine.length(),'0'+SYNTAX_NUMBER);
     return colors;
 }
@@ -589,14 +589,14 @@ string NumeReSyntax::highlightWarning(const string& sCommandLine)
 /// \brief This function returns the
 /// autocompletion list for the editor.
 ///
-/// \param sFirstChars string
-/// \param sType string
-/// \return string
+/// \param sFirstChars std::string
+/// \param sType std::string
+/// \return std::string
 ///
 /////////////////////////////////////////////////
-string NumeReSyntax::getAutoCompList(string sFirstChars, string sType)
+std::string NumeReSyntax::getAutoCompList(std::string sFirstChars, std::string sType)
 {
-    string sAutoCompList;
+    std::string sAutoCompList;
 
     // Only of the autocompletion map is not filled
     if (!mAutoCompList.size())
@@ -659,13 +659,13 @@ string NumeReSyntax::getAutoCompList(string sFirstChars, string sType)
 /// \brief The same as above but specialized for
 /// MATLAB commands.
 ///
-/// \param sFirstChars string
-/// \return string
+/// \param sFirstChars std::string
+/// \return std::string
 ///
 /////////////////////////////////////////////////
-string NumeReSyntax::getAutoCompListMATLAB(string sFirstChars)
+std::string NumeReSyntax::getAutoCompListMATLAB(std::string sFirstChars)
 {
-    string sAutoCompList;
+    std::string sAutoCompList;
 
     if (!mAutoCompListMATLAB.size())
     {
@@ -697,13 +697,13 @@ string NumeReSyntax::getAutoCompListMATLAB(string sFirstChars)
 /// \brief The same as above but specialized for
 /// C++ Commands.
 ///
-/// \param sFirstChars string
-/// \return string
+/// \param sFirstChars std::string
+/// \return std::string
 ///
 /////////////////////////////////////////////////
-string NumeReSyntax::getAutoCompListCPP(string sFirstChars)
+std::string NumeReSyntax::getAutoCompListCPP(std::string sFirstChars)
 {
-    string sAutoCompList;
+    std::string sAutoCompList;
 
     if (!mAutoCompListCPP.size())
     {
@@ -735,13 +735,13 @@ string NumeReSyntax::getAutoCompListCPP(string sFirstChars)
 /// \brief The same as above but specialized for
 /// LaTeX Commands.
 ///
-/// \param sFirstChars string
-/// \return string
+/// \param sFirstChars std::string
+/// \return std::string
 ///
 /////////////////////////////////////////////////
-string NumeReSyntax::getAutoCompListTeX(string sFirstChars)
+std::string NumeReSyntax::getAutoCompListTeX(std::string sFirstChars)
 {
-    string sAutoCompList;
+    std::string sAutoCompList;
 
     if (!mAutoCompListTeX.size())
     {
@@ -771,19 +771,19 @@ string NumeReSyntax::getAutoCompListTeX(string sFirstChars)
 /// autocompletion list for the procedures based
 /// upon the provided procedure tree.
 ///
-/// \param sFirstChars string
-/// \param sBaseNameSpace string
-/// \param sSelectedNameSpace string
-/// \return string
+/// \param sFirstChars std::string
+/// \param sBaseNameSpace std::string
+/// \param sSelectedNameSpace std::string
+/// \return std::string
 ///
 /////////////////////////////////////////////////
-string NumeReSyntax::getProcAutoCompList(string sFirstChars, string sBaseNameSpace, string sSelectedNameSpace)
+std::string NumeReSyntax::getProcAutoCompList(std::string sFirstChars, std::string sBaseNameSpace, std::string sSelectedNameSpace)
 {
     if (!vProcedureTree.size())
         return "";
 
-    string sProcName;
-    static string sStandardNamespaces[] = {"main~", "this~", "thisfile~"};
+    std::string sProcName;
+    static std::string sStandardNamespaces[] = {"main~", "this~", "thisfile~"};
 
     // Try to detect the actual name of the procedure including its namespace
     if (sSelectedNameSpace.length())
@@ -806,7 +806,7 @@ string NumeReSyntax::getProcAutoCompList(string sFirstChars, string sBaseNameSpa
     sFirstChars = toLowerCase(sFirstChars);
     sProcName = toLowerCase(sProcName);
 
-    string sAutoCompList = " ";
+    std::string sAutoCompList = " ";
 
     // If no namespace was pre-selected, provide the standard namespaces
     if (!sSelectedNameSpace.length())
@@ -818,7 +818,7 @@ string NumeReSyntax::getProcAutoCompList(string sFirstChars, string sBaseNameSpa
         }
     }
 
-    string sToken;
+    std::string sToken;
 
     // Go through the complete procedure tree
     for (size_t i = 0; i < vProcedureTree.size(); i++)
@@ -831,7 +831,7 @@ string NumeReSyntax::getProcAutoCompList(string sFirstChars, string sBaseNameSpa
             {
                 sToken = vProcedureTree[i].substr(sSelectedNameSpace.length());
 
-                if (sToken.find('~', sFirstChars.length()) != string::npos)
+                if (sToken.find('~', sFirstChars.length()) != std::string::npos)
                 {
                     sToken.erase(sToken.find('~', sFirstChars.length())+1);
                     sToken += "?" + toString((int)(SYNTAX_PROCEDURE)) + " ";
@@ -839,7 +839,7 @@ string NumeReSyntax::getProcAutoCompList(string sFirstChars, string sBaseNameSpa
                 else
                     sToken += "(?" + toString((int)(SYNTAX_PROCEDURE)) + " ";
             }
-            else if (vProcedureTree[i].find('~', sProcName.length()) != string::npos)
+            else if (vProcedureTree[i].find('~', sProcName.length()) != std::string::npos)
                 sToken = vProcedureTree[i].substr(0, vProcedureTree[i].find('~', sFirstChars.length())+1) + "?" + toString((int)(SYNTAX_PROCEDURE)) + " ";
             else
                 sToken = vProcedureTree[i] + "(?" + toString((int)(SYNTAX_PROCEDURE)) + " ";
@@ -855,7 +855,7 @@ string NumeReSyntax::getProcAutoCompList(string sFirstChars, string sBaseNameSpa
             }
 
             // Only add the current element to the autocompletion list, if it is not already available
-            if (sAutoCompList.find(" " + sToken) == string::npos)
+            if (sAutoCompList.find(" " + sToken) == std::string::npos)
                 sAutoCompList += sToken;
         }
     }
@@ -869,19 +869,19 @@ string NumeReSyntax::getProcAutoCompList(string sFirstChars, string sBaseNameSpa
 /// \brief This function returns the
 /// autocompletion list for the namespaces.
 ///
-/// \param sFirstChars string
-/// \return string
+/// \param sFirstChars std::string
+/// \return std::string
 ///
 /////////////////////////////////////////////////
-string NumeReSyntax::getNameSpaceAutoCompList(string sFirstChars)
+std::string NumeReSyntax::getNameSpaceAutoCompList(std::string sFirstChars)
 {
     if (!vProcedureTree.size())
         return "";
 
-    string sProcName;
-    static string sStandardNamespaces[] = {"main~", "this~", "thisfile~"};
+    std::string sProcName;
+    static std::string sStandardNamespaces[] = {"main~", "this~", "thisfile~"};
     sProcName = sFirstChars;
-    string sAutoCompList = " ";
+    std::string sAutoCompList = " ";
 
     // Provide the standard namespaces first
     for (size_t i = 0; i < 3; i++)
@@ -891,16 +891,16 @@ string NumeReSyntax::getNameSpaceAutoCompList(string sFirstChars)
     }
 
     // Append all available namespaces
-    string sToken;
+    std::string sToken;
 
     for (size_t i = 0; i < vProcedureTree.size(); i++)
     {
         if (vProcedureTree[i].substr(0, sProcName.length()) == sProcName)
         {
-            if (vProcedureTree[i].find('~', sProcName.length()) != string::npos)
+            if (vProcedureTree[i].find('~', sProcName.length()) != std::string::npos)
                 sToken = vProcedureTree[i].substr(0, vProcedureTree[i].find('~', sProcName.length())+1) + "?" + toString((int)(SYNTAX_PROCEDURE)) + " ";
 
-            if (sAutoCompList.find(" " + sToken) == string::npos)
+            if (sAutoCompList.find(" " + sToken) == std::string::npos)
                 sAutoCompList += sToken;
         }
     }

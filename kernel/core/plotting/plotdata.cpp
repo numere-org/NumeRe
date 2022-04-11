@@ -231,14 +231,14 @@ PlotData::PlotData() : FileSystem()
 /// \return void
 ///
 /////////////////////////////////////////////////
-void PlotData::setParams(const string& __sCmd, int nType)
+void PlotData::setParams(const std::string& __sCmd, int nType)
 {
     mu::Parser& _parser = NumeReKernel::getInstance()->getParser();
     static std::map<std::string,std::pair<PlotData::LogicalPlotSetting,PlotData::ParamType>> mGenericSwitches = getGenericSwitches();
     static std::map<std::string,std::string> mColorSchemes = getColorSchemes();
     constexpr int STRINGEXTRACT = ARGEXTRACT_ASSTRING | ARGEXTRACT_PARSED | ARGEXTRACT_STRIPPED;
 
-    string sCmd = toLowerCase(__sCmd);
+    std::string sCmd = toLowerCase(__sCmd);
 
     if (findParameter(sCmd, "reset") && (nType == ALL || nType & SUPERGLOBAL))
         reset();
@@ -419,14 +419,14 @@ void PlotData::setParams(const string& __sCmd, int nType)
     if (findParameter(sCmd, "t", '=') && (nType == ALL || nType & LOCAL))
     {
         int nPos = findParameter(sCmd, "t", '=')+1;
-        string sTemp_1 = getArgAtPos(__sCmd, nPos);
+        std::string sTemp_1 = getArgAtPos(__sCmd, nPos);
         ranges[TRANGE].reset(sTemp_1);
     }
 
     if (findParameter(sCmd, "colorrange", '=') && (nType == ALL || nType & GLOBAL))
     {
         unsigned int nPos = findParameter(sCmd, "colorrange", '=') + 10;
-        string sTemp_1 = getArgAtPos(__sCmd, nPos);
+        std::string sTemp_1 = getArgAtPos(__sCmd, nPos);
         ranges[CRANGE].reset(sTemp_1);
 
         if (ranges[CRANGE].front().real() > ranges[CRANGE].back().real())
@@ -439,8 +439,8 @@ void PlotData::setParams(const string& __sCmd, int nType)
     if (findParameter(sCmd, "rotate", '=') && (nType == ALL || nType & GLOBAL))
     {
         int nPos = findParameter(sCmd, "rotate", '=')+6;
-        string sTemp = getArgAtPos(__sCmd, nPos);
-        if (sTemp.find(",") != string::npos && sTemp.length() > 1)
+        std::string sTemp = getArgAtPos(__sCmd, nPos);
+        if (sTemp.find(",") != std::string::npos && sTemp.length() > 1)
         {
             if (sTemp.find(',') && sTemp.find(',') != sTemp.length()-1)
             {
@@ -489,8 +489,8 @@ void PlotData::setParams(const string& __sCmd, int nType)
     if (findParameter(sCmd, "origin", '=') && (nType == ALL || nType & GLOBAL))
     {
         int nPos = findParameter(sCmd, "origin", '=')+6;
-        string sTemp = getArgAtPos(__sCmd, nPos);
-        if (sTemp.find(',') != string::npos && sTemp.length() > 1)
+        std::string sTemp = getArgAtPos(__sCmd, nPos);
+        if (sTemp.find(',') != std::string::npos && sTemp.length() > 1)
         {
             int nResults = 0;
             mu::value_type* dTemp = evaluateNumerical(nResults, sTemp);
@@ -520,8 +520,8 @@ void PlotData::setParams(const string& __sCmd, int nType)
     if (findParameter(sCmd, "slices", '=') && (nType == ALL || nType & LOCAL))
     {
         int nPos = findParameter(sCmd, "slices", '=')+6;
-        string sTemp = getArgAtPos(__sCmd, nPos);
-        if (sTemp.find(',') != string::npos && sTemp.length() > 1)
+        std::string sTemp = getArgAtPos(__sCmd, nPos);
+        if (sTemp.find(',') != std::string::npos && sTemp.length() > 1)
         {
             int nResults;
             mu::value_type* dTemp = evaluateNumerical(nResults, sTemp);
@@ -547,8 +547,8 @@ void PlotData::setParams(const string& __sCmd, int nType)
     if (findParameter(sCmd, "streamto", '=') && (nType == ALL || nType & SUPERGLOBAL))
     {
         int nPos = findParameter(sCmd, "streamto", '=')+8;
-        string sTemp = getArgAtPos(__sCmd, nPos);
-        if (sTemp.find(',') != string::npos && sTemp.length() > 1)
+        std::string sTemp = getArgAtPos(__sCmd, nPos);
+        if (sTemp.find(',') != std::string::npos && sTemp.length() > 1)
         {
             int nResults = 0;
             mu::value_type* dTemp = evaluateNumerical(nResults, sTemp);
@@ -750,7 +750,7 @@ void PlotData::setParams(const string& __sCmd, int nType)
 
     if (findParameter(sCmd, "maxline", '=') && (nType == ALL || nType & LOCAL))
     {
-        string sTemp = getArgAtPos(__sCmd, findParameter(sCmd, "maxline", '=')+7);
+        std::string sTemp = getArgAtPos(__sCmd, findParameter(sCmd, "maxline", '=')+7);
         if (sTemp[0] == '(' && sTemp[sTemp.length()-1] == ')')
             sTemp = sTemp.substr(1,sTemp.length()-2);
         _lHlines[0].sDesc = getArgAtPos(getNextArgument(sTemp, true),0,STRINGEXTRACT);
@@ -761,7 +761,7 @@ void PlotData::setParams(const string& __sCmd, int nType)
 
     if (findParameter(sCmd, "minline", '=') && (nType == ALL || nType & LOCAL))
     {
-        string sTemp = getArgAtPos(__sCmd, findParameter(sCmd, "minline", '=')+7);
+        std::string sTemp = getArgAtPos(__sCmd, findParameter(sCmd, "minline", '=')+7);
         if (sTemp[0] == '(' && sTemp[sTemp.length()-1] == ')')
             sTemp = sTemp.substr(1,sTemp.length()-2);
         _lHlines[1].sDesc = getArgAtPos(getNextArgument(sTemp, true),0,STRINGEXTRACT);
@@ -772,12 +772,12 @@ void PlotData::setParams(const string& __sCmd, int nType)
 
     if ((findParameter(sCmd, "hline", '=') || findParameter(sCmd, "hlines", '=')) && (nType == ALL || nType & LOCAL))
     {
-        string sTemp;
+        std::string sTemp;
         if (findParameter(sCmd, "hline", '='))
             sTemp = getArgAtPos(__sCmd, findParameter(sCmd, "hline", '=')+5);
         else
             sTemp = getArgAtPos(__sCmd, findParameter(sCmd, "hlines", '=')+6);
-        if (sTemp.find(',') != string::npos)
+        if (sTemp.find(',') != std::string::npos)
         {
             if (sTemp[0] == '(' && sTemp[sTemp.length()-1] == ')')
                 sTemp = sTemp.substr(1,sTemp.length()-2);
@@ -794,7 +794,7 @@ void PlotData::setParams(const string& __sCmd, int nType)
                 _lHlines[i+2].dPos = v[i].real();
             }
 
-            string sDescList = getArgAtPos(getNextArgument(sTemp, true),0,ARGEXTRACT_ASSTRING | ARGEXTRACT_PARSED);
+            std::string sDescList = getArgAtPos(getNextArgument(sTemp, true),0,ARGEXTRACT_ASSTRING | ARGEXTRACT_PARSED);
 
             if (sDescList.front() == '{')
                 sDescList.erase(0,1);
@@ -810,7 +810,7 @@ void PlotData::setParams(const string& __sCmd, int nType)
 
             if (sTemp.length())
             {
-                string sStyles = getArgAtPos(getNextArgument(sTemp, true),0,ARGEXTRACT_ASSTRING | ARGEXTRACT_PARSED);
+                std::string sStyles = getArgAtPos(getNextArgument(sTemp, true),0,ARGEXTRACT_ASSTRING | ARGEXTRACT_PARSED);
                 if (sStyles.front() == '{')
                     sStyles.erase(0,1);
                 if (sStyles.back() == '}')
@@ -827,12 +827,12 @@ void PlotData::setParams(const string& __sCmd, int nType)
 
     if ((findParameter(sCmd, "vline", '=') || findParameter(sCmd, "vlines", '=')) && (nType == ALL || nType & LOCAL))
     {
-        string sTemp;
+        std::string sTemp;
         if (findParameter(sCmd, "vline", '='))
             sTemp = getArgAtPos(__sCmd, findParameter(sCmd, "vline", '=')+5);
         else
             sTemp = getArgAtPos(__sCmd, findParameter(sCmd, "vlines", '=')+6);
-        if (sTemp.find(',') != string::npos)
+        if (sTemp.find(',') != std::string::npos)
         {
             if (sTemp[0] == '(' && sTemp[sTemp.length()-1] == ')')
                 sTemp = sTemp.substr(1,sTemp.length()-2);
@@ -849,7 +849,7 @@ void PlotData::setParams(const string& __sCmd, int nType)
                 _lVLines[i+2].dPos = v[i].real();
             }
 
-            string sDescList = getArgAtPos(getNextArgument(sTemp, true),0, ARGEXTRACT_ASSTRING | ARGEXTRACT_PARSED);
+            std::string sDescList = getArgAtPos(getNextArgument(sTemp, true),0, ARGEXTRACT_ASSTRING | ARGEXTRACT_PARSED);
 
             if (sDescList.front() == '{')
                 sDescList.erase(0,1);
@@ -865,7 +865,7 @@ void PlotData::setParams(const string& __sCmd, int nType)
 
             if (sTemp.length())
             {
-                string sStyles = getArgAtPos(getNextArgument(sTemp, true),0, ARGEXTRACT_ASSTRING | ARGEXTRACT_PARSED);
+                std::string sStyles = getArgAtPos(getNextArgument(sTemp, true),0, ARGEXTRACT_ASSTRING | ARGEXTRACT_PARSED);
                 if (sStyles.front() == '{')
                     sStyles.erase(0,1);
                 if (sStyles.back() == '}')
@@ -882,13 +882,13 @@ void PlotData::setParams(const string& __sCmd, int nType)
 
     if (findParameter(sCmd, "timeaxes", '=') && (nType == ALL || nType & GLOBAL))
     {
-        string sTemp;
+        std::string sTemp;
         sTemp = getArgAtPos(__sCmd, findParameter(sCmd, "timeaxes", '=')+8);
 
         if (sTemp[0] == '(' && sTemp[sTemp.length()-1] == ')')
             sTemp = sTemp.substr(1,sTemp.length()-2);
 
-        string sAxesList = getArgAtPos(getNextArgument(sTemp, true), 0, ARGEXTRACT_ASSTRING | ARGEXTRACT_PARSED);
+        std::string sAxesList = getArgAtPos(getNextArgument(sTemp, true), 0, ARGEXTRACT_ASSTRING | ARGEXTRACT_PARSED);
 
         if (sAxesList.front() == '{')
             sAxesList.erase(0,1);
@@ -896,7 +896,7 @@ void PlotData::setParams(const string& __sCmd, int nType)
         if (sAxesList.back() == '}')
             sAxesList.erase(sAxesList.length()-1);
 
-        string sFormat;
+        std::string sFormat;
 
         if (sTemp.length())
         {
@@ -911,19 +911,19 @@ void PlotData::setParams(const string& __sCmd, int nType)
 
         while (sAxesList.length())
         {
-            string sAxis = removeSurroundingQuotationMarks(getNextArgument(sAxesList, true));
+            std::string sAxis = removeSurroundingQuotationMarks(getNextArgument(sAxesList, true));
 
             if (sAxis == "c")
                 _timeAxes[3].activate(removeSurroundingQuotationMarks(getNextArgument(sFormat, true)));
-            else if (sAxis.find_first_of("xyz") != string::npos)
+            else if (sAxis.find_first_of("xyz") != std::string::npos)
                 _timeAxes[sAxis[0]-'x'].activate(removeSurroundingQuotationMarks(getNextArgument(sFormat, true)));
         }
     }
 
     if (findParameter(sCmd, "lborder", '=') && (nType == ALL || nType & LOCAL))
     {
-        string sTemp = getArgAtPos(__sCmd, findParameter(sCmd, "lborder", '=')+7);
-        if (sTemp.find(',') != string::npos)
+        std::string sTemp = getArgAtPos(__sCmd, findParameter(sCmd, "lborder", '=')+7);
+        if (sTemp.find(',') != std::string::npos)
         {
             if (sTemp[0] == '(' && sTemp[sTemp.length()-1] == ')')
                 sTemp = sTemp.substr(1,sTemp.length()-2);
@@ -938,8 +938,8 @@ void PlotData::setParams(const string& __sCmd, int nType)
 
     if (findParameter(sCmd, "rborder", '=') && (nType == ALL || nType & LOCAL))
     {
-        string sTemp = getArgAtPos(__sCmd, findParameter(sCmd, "rborder", '=')+7);
-        if (sTemp.find(',') != string::npos)
+        std::string sTemp = getArgAtPos(__sCmd, findParameter(sCmd, "rborder", '=')+7);
+        if (sTemp.find(',') != std::string::npos)
         {
             if (sTemp[0] == '(' && sTemp[sTemp.length()-1] == ')')
                 sTemp = sTemp.substr(1,sTemp.length()-2);
@@ -954,9 +954,9 @@ void PlotData::setParams(const string& __sCmd, int nType)
 
     if (findParameter(sCmd, "addxaxis", '=') && (nType == ALL || nType & GLOBAL))
     {
-        string sTemp = getArgAtPos(__sCmd, findParameter(sCmd, "addxaxis", '=')+8);
+        std::string sTemp = getArgAtPos(__sCmd, findParameter(sCmd, "addxaxis", '=')+8);
 
-        if (sTemp.find(',') != string::npos || sTemp.find('"') != string::npos)
+        if (sTemp.find(',') != std::string::npos || sTemp.find('"') != std::string::npos)
         {
             if (sTemp[0] == '(' && sTemp[sTemp.length()-1] == ')')
                 sTemp = sTemp.substr(1,sTemp.length()-2);
@@ -999,9 +999,9 @@ void PlotData::setParams(const string& __sCmd, int nType)
 
     if (findParameter(sCmd, "addyaxis", '=') && (nType == ALL || nType & GLOBAL))
     {
-        string sTemp = getArgAtPos(__sCmd, findParameter(sCmd, "addyaxis", '=')+8);
+        std::string sTemp = getArgAtPos(__sCmd, findParameter(sCmd, "addyaxis", '=')+8);
 
-        if (sTemp.find(',') != string::npos || sTemp.find('"') != string::npos)
+        if (sTemp.find(',') != std::string::npos || sTemp.find('"') != std::string::npos)
         {
             if (sTemp[0] == '(' && sTemp[sTemp.length()-1] == ')')
                 sTemp = sTemp.substr(1,sTemp.length()-2);
@@ -1050,22 +1050,22 @@ void PlotData::setParams(const string& __sCmd, int nType)
 
         if (sTemp.front() == '"')
         {
-            string __sColorScheme = removeSurroundingQuotationMarks(sTemp);
+            std::string __sColorScheme = removeSurroundingQuotationMarks(sTemp);
             StripSpaces(__sColorScheme);
 
             if (!checkColorChars(__sColorScheme))
                 stringSettings[STR_COLORSCHEME] = mColorSchemes["std"];
             else
             {
-                if (__sColorScheme == "#" && stringSettings[STR_COLORSCHEME].find('#') == string::npos)
+                if (__sColorScheme == "#" && stringSettings[STR_COLORSCHEME].find('#') == std::string::npos)
                     stringSettings[STR_COLORSCHEME] += '#';
-                else if (__sColorScheme == "|" && stringSettings[STR_COLORSCHEME].find('|') == string::npos)
+                else if (__sColorScheme == "|" && stringSettings[STR_COLORSCHEME].find('|') == std::string::npos)
                     stringSettings[STR_COLORSCHEME] += '|';
-                else if ((__sColorScheme == "#|" || __sColorScheme == "|#") && (stringSettings[STR_COLORSCHEME].find('#') == string::npos || stringSettings[STR_COLORSCHEME].find('|') == string::npos))
+                else if ((__sColorScheme == "#|" || __sColorScheme == "|#") && (stringSettings[STR_COLORSCHEME].find('#') == std::string::npos || stringSettings[STR_COLORSCHEME].find('|') == std::string::npos))
                 {
-                    if (stringSettings[STR_COLORSCHEME].find('#') == string::npos && stringSettings[STR_COLORSCHEME].find('|') != string::npos)
+                    if (stringSettings[STR_COLORSCHEME].find('#') == std::string::npos && stringSettings[STR_COLORSCHEME].find('|') != std::string::npos)
                         stringSettings[STR_COLORSCHEME] += '#';
-                    else if (stringSettings[STR_COLORSCHEME].find('|') == string::npos && stringSettings[STR_COLORSCHEME].find('#') != string::npos)
+                    else if (stringSettings[STR_COLORSCHEME].find('|') == std::string::npos && stringSettings[STR_COLORSCHEME].find('#') != std::string::npos)
                         stringSettings[STR_COLORSCHEME] += '|';
                     else
                         stringSettings[STR_COLORSCHEME] += "#|";
@@ -1089,7 +1089,7 @@ void PlotData::setParams(const string& __sCmd, int nType)
         if (stringSettings[STR_COLORSCHEME].length() > 32)
             stringSettings[STR_COLORSCHEME] = mColorSchemes["std"];
 
-        while (stringSettings[STR_COLORSCHEME].find(' ') != string::npos)
+        while (stringSettings[STR_COLORSCHEME].find(' ') != std::string::npos)
         {
             stringSettings[STR_COLORSCHEME].erase(stringSettings[STR_COLORSCHEME].find(' '),1);
         }
@@ -1153,7 +1153,7 @@ void PlotData::setParams(const string& __sCmd, int nType)
 
         if (sTemp.front() == '"')
         {
-            string __sBGColorScheme = removeSurroundingQuotationMarks(sTemp);
+            std::string __sBGColorScheme = removeSurroundingQuotationMarks(sTemp);
             StripSpaces(__sBGColorScheme);
 
             if (!checkColorChars(__sBGColorScheme))
@@ -1161,20 +1161,20 @@ void PlotData::setParams(const string& __sCmd, int nType)
             else
             {
                 if (__sBGColorScheme == "#"
-                    && stringSettings[STR_BACKGROUNDCOLORSCHEME].find('#') == string::npos)
+                    && stringSettings[STR_BACKGROUNDCOLORSCHEME].find('#') == std::string::npos)
                     stringSettings[STR_BACKGROUNDCOLORSCHEME] += '#';
                 else if (__sBGColorScheme == "|"
-                         && stringSettings[STR_BACKGROUNDCOLORSCHEME].find('|') == string::npos)
+                         && stringSettings[STR_BACKGROUNDCOLORSCHEME].find('|') == std::string::npos)
                     stringSettings[STR_BACKGROUNDCOLORSCHEME] += '|';
                 else if ((__sBGColorScheme == "#|" || __sBGColorScheme == "|#")
-                         && (stringSettings[STR_BACKGROUNDCOLORSCHEME].find('#') == string::npos
-                             || stringSettings[STR_BACKGROUNDCOLORSCHEME].find('|') == string::npos))
+                         && (stringSettings[STR_BACKGROUNDCOLORSCHEME].find('#') == std::string::npos
+                             || stringSettings[STR_BACKGROUNDCOLORSCHEME].find('|') == std::string::npos))
                 {
-                    if (stringSettings[STR_BACKGROUNDCOLORSCHEME].find('#') == string::npos
-                        && stringSettings[STR_BACKGROUNDCOLORSCHEME].find('|') != string::npos)
+                    if (stringSettings[STR_BACKGROUNDCOLORSCHEME].find('#') == std::string::npos
+                        && stringSettings[STR_BACKGROUNDCOLORSCHEME].find('|') != std::string::npos)
                         stringSettings[STR_BACKGROUNDCOLORSCHEME] += '#';
-                    else if (stringSettings[STR_BACKGROUNDCOLORSCHEME].find('|') == string::npos
-                             && stringSettings[STR_BACKGROUNDCOLORSCHEME].find('#') != string::npos)
+                    else if (stringSettings[STR_BACKGROUNDCOLORSCHEME].find('|') == std::string::npos
+                             && stringSettings[STR_BACKGROUNDCOLORSCHEME].find('#') != std::string::npos)
                         stringSettings[STR_BACKGROUNDCOLORSCHEME] += '|';
                     else
                         stringSettings[STR_BACKGROUNDCOLORSCHEME] += "#|";
@@ -1200,7 +1200,7 @@ void PlotData::setParams(const string& __sCmd, int nType)
         if (stringSettings[STR_BACKGROUNDCOLORSCHEME].length() > 32)
             stringSettings[STR_BACKGROUNDCOLORSCHEME] = mColorSchemes["std"];
 
-        while (stringSettings[STR_BACKGROUNDCOLORSCHEME].find(' ') != string::npos)
+        while (stringSettings[STR_BACKGROUNDCOLORSCHEME].find(' ') != std::string::npos)
         {
             stringSettings[STR_BACKGROUNDCOLORSCHEME] = stringSettings[STR_BACKGROUNDCOLORSCHEME].substr(0, stringSettings[STR_BACKGROUNDCOLORSCHEME].find(' ')) + stringSettings[STR_BACKGROUNDCOLORSCHEME].substr(stringSettings[STR_BACKGROUNDCOLORSCHEME].find(' ')+1);
         }
@@ -1209,7 +1209,7 @@ void PlotData::setParams(const string& __sCmd, int nType)
     if (findParameter(sCmd, "plotcolors", '=') && (nType == ALL || nType & LOCAL))
     {
         unsigned int nPos = findParameter(sCmd, "plotcolors", '=')+10;
-        string sTemp = getArgAtPos(__sCmd, nPos, STRINGEXTRACT);
+        std::string sTemp = getArgAtPos(__sCmd, nPos, STRINGEXTRACT);
         if (checkColorChars(sTemp))
         {
             for (unsigned int i = 0; i < sTemp.length(); i++)
@@ -1226,7 +1226,7 @@ void PlotData::setParams(const string& __sCmd, int nType)
     if (findParameter(sCmd, "axisbind", '=') && (nType == ALL || nType & LOCAL))
     {
         unsigned int nPos = findParameter(sCmd, "axisbind", '=')+8;
-        string sTemp = getArgAtPos(__sCmd, nPos, STRINGEXTRACT);
+        std::string sTemp = getArgAtPos(__sCmd, nPos, STRINGEXTRACT);
         for (unsigned int i = 0; i < sTemp.length(); i++)
         {
             if (sTemp[i] == 'r' || sTemp[i] == 'l')
@@ -1271,7 +1271,7 @@ void PlotData::setParams(const string& __sCmd, int nType)
                 i++;
             }
         }
-        if (stringSettings[STR_AXISBIND].find('l') == string::npos && stringSettings[STR_AXISBIND].length())
+        if (stringSettings[STR_AXISBIND].find('l') == std::string::npos && stringSettings[STR_AXISBIND].length())
         {
             for (unsigned int i = 0; i < stringSettings[STR_AXISBIND].length(); i++)
             {
@@ -1279,7 +1279,7 @@ void PlotData::setParams(const string& __sCmd, int nType)
                     stringSettings[STR_AXISBIND][i] = 'l';
             }
         }
-        if (stringSettings[STR_AXISBIND].find('b') == string::npos && stringSettings[STR_AXISBIND].length())
+        if (stringSettings[STR_AXISBIND].find('b') == std::string::npos && stringSettings[STR_AXISBIND].length())
         {
             for (unsigned int i = 0; i < stringSettings[STR_AXISBIND].length(); i++)
             {
@@ -1292,7 +1292,7 @@ void PlotData::setParams(const string& __sCmd, int nType)
     if (findParameter(sCmd, "linestyles", '=') && (nType == ALL || nType & LOCAL))
     {
         unsigned int nPos = findParameter(sCmd, "linestyles", '=')+10;
-        string sTemp = getArgAtPos(__sCmd, nPos, STRINGEXTRACT);
+        std::string sTemp = getArgAtPos(__sCmd, nPos, STRINGEXTRACT);
         if (checkLineChars(sTemp))
         {
             for (unsigned int i = 0; i < sTemp.length(); i++)
@@ -1310,7 +1310,7 @@ void PlotData::setParams(const string& __sCmd, int nType)
     if (findParameter(sCmd, "linesizes", '=') && (nType == ALL || nType & LOCAL))
     {
         unsigned int nPos = findParameter(sCmd, "linesizes", '=')+9;
-        string sTemp = getArgAtPos(__sCmd, nPos, STRINGEXTRACT);
+        std::string sTemp = getArgAtPos(__sCmd, nPos, STRINGEXTRACT);
 
         for (unsigned int i = 0; i < sTemp.length(); i++)
         {
@@ -1328,11 +1328,11 @@ void PlotData::setParams(const string& __sCmd, int nType)
     if (findParameter(sCmd, "pointstyles", '=') && (nType == ALL || nType & LOCAL))
     {
         unsigned int nPos = findParameter(sCmd, "pointstyles", '=')+11;
-        string sTemp = getArgAtPos(__sCmd, nPos, STRINGEXTRACT);
+        std::string sTemp = getArgAtPos(__sCmd, nPos, STRINGEXTRACT);
         if (checkPointChars(sTemp))
         {
             int nChar = 0;
-            string sChar = "";
+            std::string sChar = "";
             for (unsigned int i = 0; i < sTemp.length(); i++)
             {
                 sChar = "";
@@ -1366,7 +1366,7 @@ void PlotData::setParams(const string& __sCmd, int nType)
     if (findParameter(sCmd, "styles", '=') && (nType == ALL || nType & LOCAL))
     {
         unsigned int nPos = findParameter(sCmd, "styles", '=')+6;
-        string sTemp = getArgAtPos(__sCmd, nPos, STRINGEXTRACT);
+        std::string sTemp = getArgAtPos(__sCmd, nPos, STRINGEXTRACT);
         unsigned int nJump = 0;
         unsigned int nStyle = 0;
         for (unsigned int i = 0; i < sTemp.length(); i += 4)
@@ -1374,7 +1374,7 @@ void PlotData::setParams(const string& __sCmd, int nType)
             nJump = 0;
             if (nStyle >= STYLES_COUNT)
                 break;
-            if (sTemp.substr(i,4).find('#') != string::npos)
+            if (sTemp.substr(i,4).find('#') != std::string::npos)
                 nJump = 1;
             for (unsigned int j = 0; j < 4+nJump; j++)
             {
@@ -1423,7 +1423,7 @@ void PlotData::setParams(const string& __sCmd, int nType)
     if (findParameter(sCmd, "gridstyle", '=') && (nType == ALL || nType & GLOBAL))
     {
         unsigned int nPos = findParameter(sCmd, "gridstyle", '=')+9;
-        string sTemp = getArgAtPos(__sCmd, nPos, STRINGEXTRACT);
+        std::string sTemp = getArgAtPos(__sCmd, nPos, STRINGEXTRACT);
         for (unsigned int i = 0; i < sTemp.length(); i += 3)
         {
             for (unsigned int j = 0; j < 3; j++)
@@ -1490,7 +1490,7 @@ void PlotData::setParams(const string& __sCmd, int nType)
 
     if (findParameter(sCmd, "font", '=') && (nType == ALL || nType & SUPERGLOBAL))
     {
-        string sTemp = getArgAtPos(sCmd, findParameter(sCmd, "font", '=')+4);
+        std::string sTemp = getArgAtPos(sCmd, findParameter(sCmd, "font", '=')+4);
         StripSpaces(sTemp);
 
         if (sTemp == "palatino")
@@ -1570,7 +1570,7 @@ void PlotData::setParams(const string& __sCmd, int nType)
 
         if (stringSettings[STR_FILENAME].length())
         {
-            string sExtension = "";
+            std::string sExtension = "";
 
             if (stringSettings[STR_FILENAME].length() > 4)
                 sExtension = stringSettings[STR_FILENAME].substr(stringSettings[STR_FILENAME].length()-4,4);
@@ -1592,7 +1592,7 @@ void PlotData::setParams(const string& __sCmd, int nType)
             else if (sExtension != ".gif" && findParameter(sCmd, "ogif", '='))
                 stringSettings[STR_FILENAME] += ".gif";
             else if ((findParameter(sCmd, "export", '=') || findParameter(sCmd, "save", '='))
-                     && stringSettings[STR_FILENAME].rfind('.') == string::npos)
+                     && stringSettings[STR_FILENAME].rfind('.') == std::string::npos)
                 stringSettings[STR_FILENAME] += ".png";
 
             stringSettings[STR_FILENAME] = FileSystem::ValidizeAndPrepareName(stringSettings[STR_FILENAME], stringSettings[STR_FILENAME].substr(stringSettings[STR_FILENAME].rfind('.')));
@@ -1648,7 +1648,7 @@ void PlotData::setParams(const string& __sCmd, int nType)
 
             if (stringSettings[STR_BACKGROUND].length())
             {
-                if (stringSettings[STR_BACKGROUND].find('.') == string::npos)
+                if (stringSettings[STR_BACKGROUND].find('.') == std::string::npos)
                     stringSettings[STR_BACKGROUND] += ".png";
                 else if (stringSettings[STR_BACKGROUND].substr(stringSettings[STR_BACKGROUND].rfind('.')) != ".png")
                     stringSettings[STR_BACKGROUND] = "";
@@ -1675,7 +1675,7 @@ void PlotData::setParams(const string& __sCmd, int nType)
         {
             sTickTemplate[0] = getArgAtPos(__sCmd, nPos+6, STRINGEXTRACT);
 
-            if (sTickTemplate[0].find('%') == string::npos && sTickTemplate[0].length())
+            if (sTickTemplate[0].find('%') == std::string::npos && sTickTemplate[0].length())
                 sTickTemplate[0] += "%g";
         }
 
@@ -1683,7 +1683,7 @@ void PlotData::setParams(const string& __sCmd, int nType)
         {
             sTickTemplate[1] = getArgAtPos(__sCmd, nPos+6, STRINGEXTRACT);
 
-            if (sTickTemplate[1].find('%') == string::npos && sTickTemplate[1].length())
+            if (sTickTemplate[1].find('%') == std::string::npos && sTickTemplate[1].length())
                 sTickTemplate[1] += "%g";
         }
 
@@ -1691,7 +1691,7 @@ void PlotData::setParams(const string& __sCmd, int nType)
         {
             sTickTemplate[2] = getArgAtPos(__sCmd, nPos+6, STRINGEXTRACT);
 
-            if (sTickTemplate[2].find('%') == string::npos && sTickTemplate[2].length())
+            if (sTickTemplate[2].find('%') == std::string::npos && sTickTemplate[2].length())
                 sTickTemplate[2] += "%g";
         }
 
@@ -1699,7 +1699,7 @@ void PlotData::setParams(const string& __sCmd, int nType)
         {
             sTickTemplate[3] = getArgAtPos(__sCmd, nPos+6, STRINGEXTRACT);
 
-            if (sTickTemplate[3].find('%') == string::npos && sTickTemplate[3].length())
+            if (sTickTemplate[3].find('%') == std::string::npos && sTickTemplate[3].length())
                 sTickTemplate[3] += "%g";
         }
     }
@@ -1762,20 +1762,20 @@ void PlotData::setParams(const string& __sCmd, int nType)
             sCustomTicks[3] = getArgAtPos(__sCmd, nPos+11, STRINGEXTRACT);
     }
 
-    if (sCmd.find('[') != string::npos && (nType == ALL || nType & GLOBAL))
+    if (sCmd.find('[') != std::string::npos && (nType == ALL || nType & GLOBAL))
     {
         unsigned int nPos = 0;
 
         do
         {
             nPos = sCmd.find('[', nPos);
-            if (nPos == string::npos)
+            if (nPos == std::string::npos)
                 break;
             nPos++;
         }
         while (isInQuotes(sCmd, nPos));
 
-        if (nPos != string::npos && sCmd.find(']', nPos) != string::npos)
+        if (nPos != std::string::npos && sCmd.find(']', nPos) != std::string::npos)
         {
             auto args = getAllArguments(__sCmd.substr(nPos, sCmd.find(']', nPos) - nPos));
 
@@ -1784,7 +1784,7 @@ void PlotData::setParams(const string& __sCmd, int nType)
                 if (i > 4)
                     break;
 
-                if (args[i].find(':') == string::npos || args[i] == ":")
+                if (args[i].find(':') == std::string::npos || args[i] == ":")
                     continue;
 
                 ranges[i].reset(args[i]);
@@ -2022,14 +2022,14 @@ void PlotData::deleteData(bool bGraphFinished /* = false*/)
 /// additional parameter.
 ///
 /// \param asstr bool
-/// \return string
+/// \return std::string
 ///
 /////////////////////////////////////////////////
-string PlotData::getParams(bool asstr) const
+std::string PlotData::getParams(bool asstr) const
 {
     const Settings& _option = NumeReKernel::getInstance()->getSettings();
-    string sReturn = "";
-    string sSepString = "; ";
+    std::string sReturn = "";
+    std::string sSepString = "; ";
     static std::map<std::string,std::pair<PlotData::LogicalPlotSetting,PlotData::ParamType>> mGenericSwitches = getGenericSwitches();
     static std::map<std::string,std::string> mColorSchemes = getColorSchemes();
 

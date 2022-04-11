@@ -26,8 +26,6 @@
 
 #include "../ui/error.hpp"
 
-using namespace std;
-
 // declare the namespace
 namespace NumeRe
 {
@@ -137,7 +135,7 @@ namespace NumeRe
 			}
 
 			// special vector constructor
-			Container(const vector<vector<T> >& extStorage) : Container()
+			Container(const std::vector<std::vector<T> >& extStorage) : Container()
 			{
 			    // Prepare the storage
 			    prepareStorage(extStorage.size(), extStorage[0].size());

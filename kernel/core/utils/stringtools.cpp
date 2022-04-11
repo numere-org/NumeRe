@@ -71,7 +71,7 @@ std::string toString(double dNumber, const Settings& _option)
 /////////////////////////////////////////////////
 std::string toString(double dNumber, int nPrecision)
 {
-    ostringstream Temp;
+    std::ostringstream Temp;
     Temp.precision(nPrecision);
     Temp << dNumber;
     return Temp.str();
@@ -88,21 +88,21 @@ std::string toString(double dNumber, int nPrecision)
 /////////////////////////////////////////////////
 std::string toString(const std::complex<double>& dNumber, int nPrecision)
 {
-    if (isnan(dNumber.real()) && isnan(dNumber.imag()))
+    if (std::isnan(dNumber.real()) && std::isnan(dNumber.imag()))
         return "nan";
 
-    ostringstream Temp;
-    Temp.precision(std::rint(nPrecision / (dNumber.real() != 0.0 && dNumber.imag() != 0.0 && !isnan(dNumber.imag()) ? 2 : 1)));
+    std::ostringstream Temp;
+    Temp.precision(std::rint(nPrecision / (dNumber.real() != 0.0 && dNumber.imag() != 0.0 && !std::isnan(dNumber.imag()) ? 2 : 1)));
 
     if (dNumber.real() || !dNumber.imag())
         Temp << dNumber.real();
 
     if (dNumber.imag())
     {
-        if ((dNumber.imag() > 0.0 || isnan(dNumber.imag())) && dNumber.real() != 0.0)
+        if ((dNumber.imag() > 0.0 || std::isnan(dNumber.imag())) && dNumber.real() != 0.0)
             Temp << "+";
 
-        Temp << dNumber.imag() << (isnan(dNumber.imag()) || isinf(dNumber.imag()) ? " i" : "i");
+        Temp << dNumber.imag() << (std::isnan(dNumber.imag()) || std::isinf(dNumber.imag()) ? " i" : "i");
     }
 
     return Temp.str();
@@ -155,7 +155,7 @@ std::string toString(__time64_t tTime, int timeStampFlags)
 
     time_zone tz = getCurrentTimeZone();
 
-    ostringstream timeStream;
+    std::ostringstream timeStream;
 
     if (!(timeStampFlags & GET_ONLY_TIME))
     {
@@ -210,7 +210,7 @@ std::string toString(sys_time_point tp, int timeStampFlags)
 {
     time_stamp ltm = getTimeStampFromTimePoint(tp);
     time_zone tz = getCurrentTimeZone();
-    ostringstream timeStream;
+    std::ostringstream timeStream;
 
     if (!(timeStampFlags & GET_ONLY_TIME))
     {
@@ -272,7 +272,7 @@ std::string toString(sys_time_point tp, int timeStampFlags)
 /////////////////////////////////////////////////
 std::string toString(long long int nNumber)
 {
-    ostringstream Temp;
+    std::ostringstream Temp;
     Temp << nNumber;
     return Temp.str();
 }
@@ -306,7 +306,7 @@ std::string toString(bool bBoolean)
 /////////////////////////////////////////////////
 std::string toCmdString(double dNumber)
 {
-    ostringstream Temp;
+    std::ostringstream Temp;
     Temp.precision(20);
     Temp << dNumber;
     return Temp.str();
@@ -337,7 +337,7 @@ std::string toCmdString(const std::complex<double>& dNumber)
 /////////////////////////////////////////////////
 std::string toHexString(int nNumber)
 {
-    ostringstream Temp;
+    std::ostringstream Temp;
     Temp << std::hex << nNumber;
     return "0x" + Temp.str();
 }
@@ -354,7 +354,7 @@ std::string toHexString(int nNumber)
 /////////////////////////////////////////////////
 std::string toString(const std::vector<int>& vVector)
 {
-    string sString;
+    std::string sString;
 
     for (size_t i = 0; i < vVector.size(); i++)
     {
@@ -381,7 +381,7 @@ std::string toString(const std::vector<int>& vVector)
 /////////////////////////////////////////////////
 std::vector<int> toVector(std::string sString)
 {
-    vector<int> vVector;
+    std::vector<int> vVector;
 
     if (sString == "{}" || !sString.length())
         return vVector;
@@ -411,11 +411,11 @@ std::vector<int> toVector(std::string sString)
 /////////////////////////////////////////////////
 std::string condenseText(const std::string& sText)
 {
-    string sReturn = sText;
-    string sToErase = " AaEeIiOoUuÄäÖöÜüßYy";
+    std::string sReturn = sText;
+    static std::string sToErase = " AaEeIiOoUuÄäÖöÜüßYy";
     for (unsigned int i = 0; i < sReturn.length(); i++)
     {
-        if (sToErase.find(sReturn[i]) != string::npos
+        if (sToErase.find(sReturn[i]) != std::string::npos
                 || sReturn[i] == 142
                 || sReturn[i] == 132
                 || sReturn[i] == 153
@@ -1384,7 +1384,7 @@ std::string replaceControlCharacters(std::string sToModify)
 /////////////////////////////////////////////////
 std::string replacePathSeparator(const std::string& __sPath)
 {
-    string sPath = __sPath;
+    std::string sPath = __sPath;
 
     // Go through the whole string
     for (unsigned int i = 0; i < sPath.length(); i++)

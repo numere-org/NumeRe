@@ -32,9 +32,6 @@
 #ifndef PROCEDUREVARFACTORY_HPP
 #define PROCEDUREVARFACTORY_HPP
 
-using namespace std;
-using namespace mu;
-
 // forward declaration of the procedure class
 class Procedure;
 
@@ -46,7 +43,7 @@ class Procedure;
 class ProcedureVarFactory
 {
     private:
-        Parser* _parserRef;
+        mu::Parser* _parserRef;
         MemoryManager* _dataRef;
         Settings* _optionRef;
         FunctionDefinitionManager* _functionRef;
@@ -56,7 +53,7 @@ class ProcedureVarFactory
 
         Procedure* _currentProcedure;
 
-        string sProcName;
+        std::string sProcName;
         unsigned int nth_procedure;
         bool inliningMode;
 
@@ -72,21 +69,21 @@ class ProcedureVarFactory
 
         void init();
 
-        string replaceProcedureName(string sProcedureName) const;
+        std::string replaceProcedureName(std::string sProcedureName) const;
         std::string createMangledArgName(const std::string& sDefinedName) const;
         std::string createMangledVarName(const std::string& sDefinedName) const;
 
-        string resolveArguments(string sProcedureCommandLine, size_t nMapSize = string::npos);
-        string resolveLocalVars(string sProcedureCommandLine, size_t nMapSize = string::npos);
-        string resolveLocalStrings(string sProcedureCommandLine, size_t nMapSize = string::npos);
-        string resolveLocalTables(string sProcedureCommandLine, size_t nMapSize = string::npos);
-        string resolveLocalClusters(string sProcedureCommandLine, size_t nMapSize = string::npos);
-        unsigned int countVarListElements(const string& sVarList);
-        void checkArgument(const string& sArgument, const string& sArgumentList, unsigned int nCurrentIndex);
-        void checkArgumentValue(const string& sArgument, const string& sArgumentList, unsigned int nCurrentIndex);
+        std::string resolveArguments(std::string sProcedureCommandLine, size_t nMapSize = std::string::npos);
+        std::string resolveLocalVars(std::string sProcedureCommandLine, size_t nMapSize = std::string::npos);
+        std::string resolveLocalStrings(std::string sProcedureCommandLine, size_t nMapSize = std::string::npos);
+        std::string resolveLocalTables(std::string sProcedureCommandLine, size_t nMapSize = std::string::npos);
+        std::string resolveLocalClusters(std::string sProcedureCommandLine, size_t nMapSize = std::string::npos);
+        unsigned int countVarListElements(const std::string& sVarList);
+        void checkArgument(const std::string& sArgument, const std::string& sArgumentList, unsigned int nCurrentIndex);
+        void checkArgumentValue(const std::string& sArgument, const std::string& sArgumentList, unsigned int nCurrentIndex);
         bool checkSymbolName(const std::string& sSymbolName) const;
-        void createLocalInlineVars(string sVarList);
-        void createLocalInlineStrings(string sVarList);
+        void createLocalInlineVars(std::string sVarList);
+        void createLocalInlineStrings(std::string sVarList);
         void evaluateProcedureArguments(std::string& currentArg, std::string& currentValue, const std::string& sArgumentList);
 
     public:
@@ -101,20 +98,20 @@ class ProcedureVarFactory
         std::vector<std::string> vInlineArgDef;
 
         ProcedureVarFactory();
-        ProcedureVarFactory(Procedure* _procedure, const string& sProc, unsigned int currentProc, bool _inliningMode = false);
+        ProcedureVarFactory(Procedure* _procedure, const std::string& sProc, unsigned int currentProc, bool _inliningMode = false);
         ~ProcedureVarFactory();
 
         void reset();
         bool delayDeletionOfReturnedTable(const std::string& sTableName);
         bool isReference(const std::string& sArgName) const;
-        map<string,string> createProcedureArguments(string sArgumentList, string sArgumentValues);
-        void createLocalVars(string sVarList);
-        void createLocalStrings(string sStringList);
-        void createLocalTables(string sTableList);
-        void createLocalClusters(string sClusterList);
+        std::map<std::string,std::string> createProcedureArguments(std::string sArgumentList, std::string sArgumentValues);
+        void createLocalVars(std::string sVarList);
+        void createLocalStrings(std::string sStringList);
+        void createLocalTables(std::string sTableList);
+        void createLocalClusters(std::string sClusterList);
         std::string createTestStatsCluster();
 
-        string resolveVariables(const string& sProcedureCommandLine)
+        std::string resolveVariables(const std::string& sProcedureCommandLine)
             {
                 return resolveLocalTables(resolveLocalClusters(resolveArguments(resolveLocalStrings(resolveLocalVars(sProcedureCommandLine)))));
             }

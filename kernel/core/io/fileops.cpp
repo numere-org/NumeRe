@@ -41,7 +41,7 @@ bool removeFile(CommandLineParser& cmdParser)
 
     bool bIgnore = cmdParser.hasParam("ignore") || cmdParser.hasParam("i");
     bool bAll = cmdParser.hasParam("all") || cmdParser.hasParam("a");
-    string _sCmd = "";
+    std::string _sCmd = "";
     FileSystem _fSys;
     _fSys.initializeFromKernel();
 
@@ -65,7 +65,7 @@ bool removeFile(CommandLineParser& cmdParser)
 
         if (!bIgnore)
         {
-            string c = "";
+            std::string c = "";
             NumeReKernel::print(LineBreak( _lang.get("BUILTIN_REMOVEFILE_CONFIRM", _sCmd), NumeReKernel::getInstance()->getSettings()) );
             NumeReKernel::printPreFmt("|\n|<- ");
             NumeReKernel::getline(c);
@@ -101,11 +101,11 @@ bool moveOrCopyFiles(CommandLineParser& cmdParser)
         return false;
 
     std::string sSource = cmdParser.getExpr();
-    string sTarget = "";
-    string _sTarget = "";
-    string sDummy = "";
-    string sFile = "";
-    vector<string> vFileList;
+    std::string sTarget = "";
+    std::string _sTarget = "";
+    std::string sDummy = "";
+    std::string sFile = "";
+    std::vector<std::string> vFileList;
 
     unsigned int nthFile = 1;
     bool bAll = cmdParser.hasParam("all") || cmdParser.hasParam("a");
@@ -156,9 +156,9 @@ bool moveOrCopyFiles(CommandLineParser& cmdParser)
         _sTarget = sTarget;
         sFile = vFileList[nFile];
 
-        if (sFile.find('.') != string::npos)
+        if (sFile.find('.') != std::string::npos)
         {
-            string sExt = sFile.substr(sFile.rfind('.'));
+            std::string sExt = sFile.substr(sFile.rfind('.'));
 
             if (sExt != ".exe" && sExt != ".sys" && sExt != ".dll")
                 _fSys.declareFileType(sExt);
@@ -173,24 +173,24 @@ bool moveOrCopyFiles(CommandLineParser& cmdParser)
             _sTarget = _sTarget.substr(0, _sTarget.length()-1) + sFile.substr(sFile.rfind('/'));
 
         // Prepare the file tags
-        if (_sTarget.find('<') != string::npos && _sTarget.find('>', _sTarget.find('<')) != string::npos)
+        if (_sTarget.find('<') != std::string::npos && _sTarget.find('>', _sTarget.find('<')) != std::string::npos)
         {
-            string sToken = "";
+            std::string sToken = "";
 
             for (unsigned int i = 0; i < _sTarget.length(); i++)
             {
                 if (_sTarget[i] == '<')
                 {
-                    if (_sTarget.find('>', i) == string::npos)
+                    if (_sTarget.find('>', i) == std::string::npos)
                         break;
 
                     sToken = _sTarget.substr(i, _sTarget.find('>', i)+1-i);
 
-                    if (sToken.find('#') != string::npos)
+                    if (sToken.find('#') != std::string::npos)
                     {
                         unsigned int nLength = 1;
 
-                        if (sToken.find('~') != string::npos)
+                        if (sToken.find('~') != std::string::npos)
                             nLength = sToken.rfind('~')-sToken.find('#')+1;
 
                         sToken.clear();
@@ -210,7 +210,7 @@ bool moveOrCopyFiles(CommandLineParser& cmdParser)
                     }
                 }
 
-                if (_sTarget.find('<',i) == string::npos)
+                if (_sTarget.find('<',i) == std::string::npos)
                     break;
             }
         }
@@ -249,7 +249,7 @@ bool moveOrCopyFiles(CommandLineParser& cmdParser)
 
         if (!bAll
             || (cmdParser.getCommandLine().find_first_of("?*") == std::string::npos)
-            || (sTarget.find('*') == string::npos && (sTarget[sTarget.length()-1] != '/' && sTarget.substr(sTarget.length()-2) != "/\"") && sTarget.find("<#") == string::npos && sTarget.find("<fname>") == string::npos))
+            || (sTarget.find('*') == std::string::npos && (sTarget[sTarget.length()-1] != '/' && sTarget.substr(sTarget.length()-2) != "/\"") && sTarget.find("<#") == std::string::npos && sTarget.find("<fname>") == std::string::npos))
         {
             cmdParser.setReturnValue(sFile);
             break;
@@ -260,12 +260,12 @@ bool moveOrCopyFiles(CommandLineParser& cmdParser)
 }
 
 
-bool generateTemplate(const string& sFile, const string& sTempl, const vector<string>& vTokens, Settings& _option)
+bool generateTemplate(const std::string& sFile, const std::string& sTempl, const std::vector<std::string>& vTokens, Settings& _option)
 {
-    ifstream iTempl_in;
-    ofstream oFile_out;
-    string sLine;
-    string sToken;
+    std::ifstream iTempl_in;
+    std::ofstream oFile_out;
+    std::string sLine;
+    std::string sToken;
 
     iTempl_in.open(_option.ValidFileName(sTempl, ".nlng").c_str());
     oFile_out.open(_option.ValidFileName(sFile, sFile.substr(sFile.rfind('.'))).c_str());
@@ -279,16 +279,16 @@ bool generateTemplate(const string& sFile, const string& sTempl, const vector<st
 
     while (!iTempl_in.eof())
     {
-        getline(iTempl_in, sLine);
+        std::getline(iTempl_in, sLine);
         for (unsigned int i = 0; i < vTokens.size(); i++)
         {
             sToken = "%%"+toString(i+1)+"%%";
-            while (sLine.find(sToken) != string::npos)
+            while (sLine.find(sToken) != std::string::npos)
             {
                 sLine.replace(sLine.find(sToken), sToken.length(), vTokens[i]);
             }
         }
-        oFile_out << sLine << endl;
+        oFile_out << sLine << std::endl;
     }
     iTempl_in.close();
     oFile_out.close();

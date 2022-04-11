@@ -206,7 +206,7 @@ namespace NumeRe
     /////////////////////////////////////////////////
     bool Cluster::isValue(int line, int col)
     {
-        if (vClusterArray[line]->getType() == ClusterItem::ITEMTYPE_DOUBLE && !isnan(vClusterArray[line]->getDouble().real()))
+        if (vClusterArray[line]->getType() == ClusterItem::ITEMTYPE_DOUBLE && !std::isnan(vClusterArray[line]->getDouble().real()))
             return true;
 
         if (vClusterArray[line]->getType() == ClusterItem::ITEMTYPE_STRING && vClusterArray[line]->getString() != "\"\"")
@@ -229,7 +229,7 @@ namespace NumeRe
     /////////////////////////////////////////////////
     void Cluster::reorderElements(std::vector<int> vIndex, int i1, int i2)
     {
-        vector<ClusterItem*> vSortVector = vClusterArray;
+        std::vector<ClusterItem*> vSortVector = vClusterArray;
 
         // Copy the contents directly from the
         // prepared in the new order
@@ -1089,7 +1089,7 @@ namespace NumeRe
         {
             if (_vLine[i] < 0 || _vLine[i] >= (int)vClusterArray.size())
                 nInvalid++;
-            else if (vClusterArray[_vLine[i]]->getType() != ClusterItem::ITEMTYPE_DOUBLE || isnan(std::abs(vClusterArray[_vLine[i]]->getDouble())))
+            else if (vClusterArray[_vLine[i]]->getType() != ClusterItem::ITEMTYPE_DOUBLE || std::isnan(std::abs(vClusterArray[_vLine[i]]->getDouble())))
                 nInvalid++;
             else
                 dStd += (dAvg - vClusterArray[_vLine[i]]->getDouble()) * conj(dAvg - vClusterArray[_vLine[i]]->getDouble());
@@ -1125,7 +1125,7 @@ namespace NumeRe
         {
             if (_vLine[i] < 0 || _vLine[i] >= (int)vClusterArray.size())
                 nInvalid++;
-            else if (vClusterArray[_vLine[i]]->getType() != ClusterItem::ITEMTYPE_DOUBLE || isnan(std::abs(vClusterArray[_vLine[i]]->getDouble())))
+            else if (vClusterArray[_vLine[i]]->getType() != ClusterItem::ITEMTYPE_DOUBLE || std::isnan(std::abs(vClusterArray[_vLine[i]]->getDouble())))
                 nInvalid++;
             else
                 dAvg += vClusterArray[_vLine[i]]->getDouble();
@@ -1161,10 +1161,10 @@ namespace NumeRe
             if (_vLine[i] < 0 || _vLine[i] >= (int)vClusterArray.size())
                 continue;
 
-            if (vClusterArray[_vLine[i]]->getType() != ClusterItem::ITEMTYPE_DOUBLE || isnan(vClusterArray[_vLine[i]]->getDouble().real()))
+            if (vClusterArray[_vLine[i]]->getType() != ClusterItem::ITEMTYPE_DOUBLE || std::isnan(vClusterArray[_vLine[i]]->getDouble().real()))
                 continue;
 
-            if (isnan(dMax))
+            if (std::isnan(dMax))
                 dMax = vClusterArray[_vLine[i]]->getDouble().real();
 
             if (dMax < vClusterArray[_vLine[i]]->getDouble().real())
@@ -1233,10 +1233,10 @@ namespace NumeRe
             if (_vLine[i] < 0 || _vLine[i] >= (int)vClusterArray.size())
                 continue;
 
-            if (vClusterArray[_vLine[i]]->getType() != ClusterItem::ITEMTYPE_DOUBLE || isnan(vClusterArray[_vLine[i]]->getDouble().real()))
+            if (vClusterArray[_vLine[i]]->getType() != ClusterItem::ITEMTYPE_DOUBLE || std::isnan(vClusterArray[_vLine[i]]->getDouble().real()))
                 continue;
 
-            if (isnan(dMin))
+            if (std::isnan(dMin))
                 dMin = vClusterArray[_vLine[i]]->getDouble().real();
 
             if (dMin > vClusterArray[_vLine[i]]->getDouble().real())
@@ -1305,7 +1305,7 @@ namespace NumeRe
             if (_vLine[i] < 0 || _vLine[i] >= (int)vClusterArray.size())
                 continue;
 
-            if (isnan(std::abs(vClusterArray[_vLine[i]]->getDouble())))
+            if (std::isnan(std::abs(vClusterArray[_vLine[i]]->getDouble())))
                 continue;
 
             dPrd *= vClusterArray[_vLine[i]]->getDouble();
@@ -1338,7 +1338,7 @@ namespace NumeRe
             if (_vLine[i] < 0 || _vLine[i] >= (int)vClusterArray.size())
                 continue;
 
-            if (vClusterArray[_vLine[i]]->getType() != ClusterItem::ITEMTYPE_DOUBLE || isnan(std::abs(vClusterArray[_vLine[i]]->getDouble())))
+            if (vClusterArray[_vLine[i]]->getType() != ClusterItem::ITEMTYPE_DOUBLE || std::isnan(std::abs(vClusterArray[_vLine[i]]->getDouble())))
                 continue;
 
             dSum += vClusterArray[_vLine[i]]->getDouble();
@@ -1401,7 +1401,7 @@ namespace NumeRe
         {
             if (_vLine[i] < 0 || _vLine[i] >= (int)vClusterArray.size())
                 nInvalid++;
-            else if (vClusterArray[_vLine[i]]->getType() == ClusterItem::ITEMTYPE_DOUBLE && isnan(vClusterArray[_vLine[i]]->getDouble().real()))
+            else if (vClusterArray[_vLine[i]]->getType() == ClusterItem::ITEMTYPE_DOUBLE && std::isnan(vClusterArray[_vLine[i]]->getDouble().real()))
                 nInvalid++;
             else if (vClusterArray[_vLine[i]]->getType() == ClusterItem::ITEMTYPE_STRING && vClusterArray[_vLine[i]]->getString() == "\"\"")
                 nInvalid++;
@@ -1433,14 +1433,14 @@ namespace NumeRe
             if (_vLine[i] < 0 || _vLine[i] >= (int)vClusterArray.size())
                 continue;
 
-            if (isnan(dRetVal))
+            if (std::isnan(dRetVal))
                 dRetVal = 1.0;
 
-            if (vClusterArray[_vLine[i]]->getType() != ClusterItem::ITEMTYPE_DOUBLE || isnan(vClusterArray[_vLine[i]]->getDouble().real()) || vClusterArray[_vLine[i]]->getDouble() == 0.0)
+            if (vClusterArray[_vLine[i]]->getType() != ClusterItem::ITEMTYPE_DOUBLE || std::isnan(vClusterArray[_vLine[i]]->getDouble().real()) || vClusterArray[_vLine[i]]->getDouble() == 0.0)
                 return 0.0;
         }
 
-        if (isnan(dRetVal))
+        if (std::isnan(dRetVal))
             return 0.0;
 
         return 1.0;
@@ -1468,7 +1468,7 @@ namespace NumeRe
                 continue;
 
             if (vClusterArray[_vLine[i]]->getType() == ClusterItem::ITEMTYPE_DOUBLE
-                && (isnan(vClusterArray[_vLine[i]]->getDouble().real()) || vClusterArray[_vLine[i]]->getDouble() != 0.0))
+                && (std::isnan(vClusterArray[_vLine[i]]->getDouble().real()) || vClusterArray[_vLine[i]]->getDouble() != 0.0))
                 return 1.0;
         }
 
@@ -1500,7 +1500,7 @@ namespace NumeRe
                 continue;
 
             if (vClusterArray[_vLine[i]]->getType() == ClusterItem::ITEMTYPE_DOUBLE
-                && (isnan(vClusterArray[_vLine[i]]->getDouble().real()) || vClusterArray[_vLine[i]]->getDouble() != 0.0))
+                && (std::isnan(vClusterArray[_vLine[i]]->getDouble().real()) || vClusterArray[_vLine[i]]->getDouble() != 0.0))
             {
                 if (!isTrue)
                     isTrue = true;
@@ -1566,7 +1566,7 @@ namespace NumeRe
             if (_vLine[i] < 0 || _vLine[i] >= (int)vClusterArray.size())
                 continue;
 
-            if (vClusterArray[_vLine[i]]->getType() != ClusterItem::ITEMTYPE_DOUBLE || isnan(std::abs(vClusterArray[_vLine[i]]->getDouble())))
+            if (vClusterArray[_vLine[i]]->getType() != ClusterItem::ITEMTYPE_DOUBLE || std::isnan(std::abs(vClusterArray[_vLine[i]]->getDouble())))
                 continue;
 
             dNorm += vClusterArray[_vLine[i]]->getDouble() * conj(vClusterArray[_vLine[i]]->getDouble());
@@ -1631,7 +1631,7 @@ namespace NumeRe
             if (_vLine[i] < 0 || _vLine[i] >= (int)vClusterArray.size())
                 continue;
 
-            if (vClusterArray[_vLine[i]]->getType() != ClusterItem::ITEMTYPE_DOUBLE || isnan(std::abs(vClusterArray[_vLine[i]]->getDouble())))
+            if (vClusterArray[_vLine[i]]->getType() != ClusterItem::ITEMTYPE_DOUBLE || std::isnan(std::abs(vClusterArray[_vLine[i]]->getDouble())))
                 continue;
 
             if (vClusterArray[_vLine[i]]->getDouble() == dRef)
@@ -1713,7 +1713,7 @@ namespace NumeRe
         {
             if (_vLine[i] < 0 || _vLine[i] >= (int)vClusterArray.size())
                 nInvalid++;
-            else if (vClusterArray[_vLine[i]]->getType() != ClusterItem::ITEMTYPE_DOUBLE || isnan(vClusterArray[_vLine[i]]->getDouble().real()))
+            else if (vClusterArray[_vLine[i]]->getType() != ClusterItem::ITEMTYPE_DOUBLE || std::isnan(vClusterArray[_vLine[i]]->getDouble().real()))
                 nInvalid++;
         }
 
@@ -1726,7 +1726,7 @@ namespace NumeRe
         // copy the data to the buffer
         for (unsigned int i = 0; i < _vLine.size(); i++)
         {
-            if (_vLine[i] < 0 || _vLine[i] >= (int)vClusterArray.size() || vClusterArray[_vLine[i]]->getType() != ClusterItem::ITEMTYPE_DOUBLE || isnan(vClusterArray[_vLine[i]]->getDouble().real()))
+            if (_vLine[i] < 0 || _vLine[i] >= (int)vClusterArray.size() || vClusterArray[_vLine[i]]->getType() != ClusterItem::ITEMTYPE_DOUBLE || std::isnan(vClusterArray[_vLine[i]]->getDouble().real()))
                 continue;
 
             dData[nCount] = vClusterArray[_vLine[i]]->getDouble().real();
@@ -1782,7 +1782,7 @@ namespace NumeRe
         {
             if (_vLine[i] < 0 || _vLine[i] >= (int)vClusterArray.size())
                 nInvalid++;
-            else if (vClusterArray[_vLine[i]]->getType() != ClusterItem::ITEMTYPE_DOUBLE || isnan(vClusterArray[_vLine[i]]->getDouble().real()))
+            else if (vClusterArray[_vLine[i]]->getType() != ClusterItem::ITEMTYPE_DOUBLE || std::isnan(vClusterArray[_vLine[i]]->getDouble().real()))
                 nInvalid++;
         }
 
@@ -1795,7 +1795,7 @@ namespace NumeRe
         // copy the data to the buffer
         for (unsigned int i = 0; i < _vLine.size(); i++)
         {
-            if (_vLine[i] < 0 || _vLine[i] >= (int)vClusterArray.size() || vClusterArray[_vLine[i]]->getType() != ClusterItem::ITEMTYPE_DOUBLE || isnan(vClusterArray[_vLine[i]]->getDouble().real()))
+            if (_vLine[i] < 0 || _vLine[i] >= (int)vClusterArray.size() || vClusterArray[_vLine[i]]->getType() != ClusterItem::ITEMTYPE_DOUBLE || std::isnan(vClusterArray[_vLine[i]]->getDouble().real()))
                 continue;
 
             dData[nCount] = vClusterArray[_vLine[i]]->getDouble().real();
@@ -1843,7 +1843,7 @@ namespace NumeRe
         std::string sClusterName = sCluster.substr(0, sCluster.find('{'));
         const static std::string sVALIDCHARACTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_~";
 
-        if ((sClusterName[0] >= '0' && sClusterName[0] <= '9') || sClusterName[0] == '~' || sClusterName.find_first_not_of(sVALIDCHARACTERS) != string::npos)
+        if ((sClusterName[0] >= '0' && sClusterName[0] <= '9') || sClusterName[0] == '~' || sClusterName.find_first_not_of(sVALIDCHARACTERS) != std::string::npos)
             throw SyntaxError(SyntaxError::INVALID_CLUSTER_NAME, "", SyntaxError::invalid_position, sClusterName);
 
         return sClusterName;
@@ -2055,7 +2055,7 @@ namespace NumeRe
     /////////////////////////////////////////////////
     Cluster& ClusterManager::newCluster(const std::string& sCluster)
     {
-        string sValidName = validateClusterName(sCluster);
+        std::string sValidName = validateClusterName(sCluster);
         mClusterMap[sValidName] = Cluster();
 
         return mClusterMap[sValidName];

@@ -21,8 +21,10 @@
 #include "../../kernel.hpp"
 
 
-value_type vAns;
+mu::value_type vAns;
 extern mglGraph _fontData;
+
+using namespace std;
 
 
 /////////////////////////////////////////////////

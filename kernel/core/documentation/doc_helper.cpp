@@ -24,6 +24,8 @@
 #include "../../kernel.hpp"
 #include <algorithm>
 
+using namespace std;
+
 
 /////////////////////////////////////////////////
 /// \brief Strips comments from the documentation

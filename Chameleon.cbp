@@ -135,7 +135,7 @@
 				<Compiler>
 					<Add option="-O3" />
 					<Add option="-Wall" />
-					<Add option="-std=gnu++11" />
+					<Add option="-std=gnu++2a" />
 					<Add option="-mthreads" />
 					<Add option="-fopenmp" />
 					<Add option="-DDLLVER_MAJOR_MASK" />

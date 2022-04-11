@@ -40,7 +40,7 @@ using namespace mu;
 
 struct FlowCtrlCommand
 {
-    string sCommand;
+    std::string sCommand;
     int nInputLine;
     bool bFlowCtrlStatement;
 
@@ -170,7 +170,7 @@ class FlowCtrl
         virtual int evalDebuggerBreakPoint(Parser& _parser, Settings& _option);
         virtual int getErrorInformationForDebugger();
         virtual std::vector<std::string> expandInlineProcedures(std::string& sLine);
-        virtual int catchExceptionForTest(exception_ptr e_ptr, bool bSupressAnswer_back, int nLine);
+        virtual int catchExceptionForTest(std::exception_ptr e_ptr, bool bSupressAnswer_back, int nLine);
 
     public:
         FlowCtrl();

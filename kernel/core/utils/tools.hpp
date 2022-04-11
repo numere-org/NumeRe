@@ -29,26 +29,25 @@
 #include "../settings.hpp"
 #include "stringtools.hpp"
 
-extern const string sVersion;
-using namespace std;
+extern const std::string sVersion;
 
 long long int intCast(double number);
 long long int intCast(const std::complex<double>& number);
 
-int findParameter(const string& sCmd, const string& sParam, const char cFollowing = ' ');
-bool getStringArgument(const string& sCmd, string& sArgument);
-string extractStringToken(const string& sCmd, size_t nPos);
+int findParameter(const std::string& sCmd, const std::string& sParam, const char cFollowing = ' ');
+bool getStringArgument(const std::string& sCmd, std::string& sArgument);
+std::string extractStringToken(const std::string& sCmd, size_t nPos);
 unsigned int getMatchingParenthesis(const StringView&);
-bool isMultiValue(const string& sExpr, bool bIgnoreClosingParenthesis = false);
-string replaceToTeX(const string& sString, bool replaceForTeXFile = false);
-Match findCommand(const string& sCmd, string sCommand = "");
-string extractCommandString(const string& sCmd, const Match& _mMatch);
-void removeArgSep(string&);
-void openExternally(const string&);
-void moveFile(const string&, const string&);
-void copyFile(const string&, const string&);
-void writeTeXMain(const string&);
-string addControlSymbols(const string&);
+bool isMultiValue(const std::string& sExpr, bool bIgnoreClosingParenthesis = false);
+std::string replaceToTeX(const std::string& sString, bool replaceForTeXFile = false);
+Match findCommand(const std::string& sCmd, std::string sCommand = "");
+std::string extractCommandString(const std::string& sCmd, const Match& _mMatch);
+void removeArgSep(std::string&);
+void openExternally(const std::string&);
+void moveFile(const std::string&, const std::string&);
+void copyFile(const std::string&, const std::string&);
+void writeTeXMain(const std::string&);
+std::string addControlSymbols(const std::string&);
 
 enum ArgExtraction
 {
@@ -59,32 +58,32 @@ enum ArgExtraction
     ARGEXTRACT_ASSTRING = 0x8
 };
 
-string getArgAtPos(const string& sCmd, unsigned int nPos, int extraction = ARGEXTRACT_STRIPPED);
+std::string getArgAtPos(const std::string& sCmd, unsigned int nPos, int extraction = ARGEXTRACT_STRIPPED);
 bool isInQuotes(StringView sExpr, unsigned int nPos, bool bIgnoreVarParser = false);
-bool isToStringArg(const string& sExpr, unsigned int nPos);
+bool isToStringArg(const std::string& sExpr, unsigned int nPos);
 bool isDelimiter(char cChar);
-bool addLegends(string&);
-bool checkDelimiter(const string& sToken, bool stringdelim = false);
+bool addLegends(std::string&);
+bool checkDelimiter(const std::string& sToken, bool stringdelim = false);
 std::vector<std::string> splitIntoLines(std::string sOutput, size_t lineWidth, bool bAllowDashBreaks = true, int nFirstIndent = 4, int nIndent = 4);
 std::string outputString(std::vector<std::string> stringInLines, int nFirstIndent, int nIndent);
-string LineBreak(string sOutput, const Settings& _option, bool bAllowDashBreaks = true, int nFirstIndent = 4, int nIndent = 4);
+std::string LineBreak(std::string sOutput, const Settings& _option, bool bAllowDashBreaks = true, int nFirstIndent = 4, int nIndent = 4);
 double Linearize(double x_0, double y_0, double x_1, double y_1);
 void make_hline(int nLength = -1);
-void make_progressBar(int nStep, int nFirstStep = 1, int nFinalStep = 100, const string& sType = "std");
-bool containsStrings(const string& sLine);
-bool fileExists(const string& sFilename);
-void reduceLogFilesize(const string& sFileName);
-string replaceToVectorname(const string& sExpression);
-void eraseToken(string& sExpr, const string& sToken, bool bTokenHasValue = false);
-string generateCacheName(const string& sFilename, Settings& _option) __attribute__ ((deprecated));
-string getFileInfo(const string& sFilename);
-string decodeNameSpace(string sCommandLine, const string& sThisNameSpace);
+void make_progressBar(int nStep, int nFirstStep = 1, int nFinalStep = 100, const std::string& sType = "std");
+bool containsStrings(const std::string& sLine);
+bool fileExists(const std::string& sFilename);
+void reduceLogFilesize(const std::string& sFileName);
+std::string replaceToVectorname(const std::string& sExpression);
+void eraseToken(std::string& sExpr, const std::string& sToken, bool bTokenHasValue = false);
+std::string generateCacheName(const std::string& sFilename, Settings& _option) __attribute__ ((deprecated));
+std::string getFileInfo(const std::string& sFilename);
+std::string decodeNameSpace(std::string sCommandLine, const std::string& sThisNameSpace);
 
 // This inline function checks, if the passed value is finite and
 // not a NAN value
 inline bool isValidValue(double d)
 {
-    return !isnan(d) && !isinf(d);
+    return !std::isnan(d) && !std::isinf(d);
 }
 
 /** \brief Checks, whether the number of parentheses is an even number
@@ -95,10 +94,10 @@ inline bool isValidValue(double d)
  * Doesn't check, whether the parentheses are ordered reasonable
  *
  */
-bool validateParenthesisNumber(const string& sCmd);
+bool validateParenthesisNumber(const std::string& sCmd);
 
-void addArgumentQuotes(string& sToAdd, const string& sParam);
-void addArgumentQuotes(string& sToAdd, size_t pos);
+void addArgumentQuotes(std::string& sToAdd, const std::string& sParam);
+void addArgumentQuotes(std::string& sToAdd, size_t pos);
 
 /** \brief Calculates the power of a number using an integer as exponent
  *
@@ -110,15 +109,15 @@ void addArgumentQuotes(string& sToAdd, size_t pos);
 double intPower(double dNumber, int nExponent);
 std::complex<double> intPower(const std::complex<double>& dNumber, int nExponent);
 
-string getNextArgument(string& sArgList, bool bCut = true);
-string getNextIndex(string& sArgList, bool bCut = true);
-string getNextSemiColonSeparatedToken(string& sArgList, bool bCut = true);
+std::string getNextArgument(std::string& sArgList, bool bCut = true);
+std::string getNextIndex(std::string& sArgList, bool bCut = true);
+std::string getNextSemiColonSeparatedToken(std::string& sArgList, bool bCut = true);
 StringView getNextViewedArgument(StringView& sView);
 StringView getNextViewedIndex(StringView& sView);
 EndlessVector<StringView> getAllArguments(StringView sArgList);
-EndlessVector<string> getAllArguments(string sArgList);
-EndlessVector<string> getAllIndices(string sArgList);
-EndlessVector<string> getAllSemiColonSeparatedTokens(string sArgList);
+EndlessVector<std::string> getAllArguments(std::string sArgList);
+EndlessVector<std::string> getAllIndices(std::string sArgList);
+EndlessVector<std::string> getAllSemiColonSeparatedTokens(std::string sArgList);
 
 
 /** \brief Checks, whether the "to_cmd()" function was used
@@ -128,12 +127,12 @@ EndlessVector<string> getAllSemiColonSeparatedTokens(string sArgList);
  * \return bool
  *
  */
-bool isToCmd(const string& sCmd, unsigned int nPos);
+bool isToCmd(const std::string& sCmd, unsigned int nPos);
 
-unsigned int countEscapeSymbols(const string& sLine);
-vector<string> getFileList(const string& sDirectory, const Settings& _option, int nFlags = 0);
-vector<string> getFolderList(const string& sDirectory, const Settings& _option, int nFlags = 0);
-string getClipboardText();
+unsigned int countEscapeSymbols(const std::string& sLine);
+std::vector<std::string> getFileList(const std::string& sDirectory, const Settings& _option, int nFlags = 0);
+std::vector<std::string> getFolderList(const std::string& sDirectory, const Settings& _option, int nFlags = 0);
+std::string getClipboardText();
 
 namespace little_endian_io
 {
@@ -173,10 +172,10 @@ namespace big_endian_io
 	}
 }
 
-void evalRecursiveExpressions(string& sExpr);
+void evalRecursiveExpressions(std::string& sExpr);
 
 size_t qSortDouble(double* dArray, size_t nlength);
-void replaceStringMethod(string& sLine, size_t nPos, size_t nLength, const string& sReplacement);
+void replaceStringMethod(std::string& sLine, size_t nPos, size_t nLength, const std::string& sReplacement);
 std::string shortenFileName(const std::string& sFullFileName);
 std::string incrementVersion(std::string _sVer);
 

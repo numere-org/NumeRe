@@ -34,10 +34,7 @@
 
 class DataAccessParser;
 
-using namespace std;
-using namespace mu;
-
-void createPlot(string& sCmd, MemoryManager& _data, Parser& _parser, Settings& _option, FunctionDefinitionManager& _functions, PlotData& _pData);
+void createPlot(std::string& sCmd, MemoryManager& _data, mu::Parser& _parser, Settings& _option, FunctionDefinitionManager& _functions, PlotData& _pData);
 
 
 
@@ -59,7 +56,7 @@ class Plot
         size_t nLegends;
 
         MemoryManager& _data;
-        Parser& _parser;
+        mu::Parser& _parser;
         Settings& _option;
         FunctionDefinitionManager& _functions;
         PlotData& _pData;
@@ -71,10 +68,10 @@ class Plot
         Plot& operator=(const Plot&) = delete;
 
     protected:
-        void determinePlottingDimensions(const string& sPlotCommand);
-        size_t createSubPlotSet(bool& bAnimateVar, vector<string>& vPlotCompose, size_t nSubPlotStart, size_t nMultiplots[2], size_t& nSubPlots, size_t& nSubPlotMap);
+        void determinePlottingDimensions(const std::string& sPlotCommand);
+        size_t createSubPlotSet(bool& bAnimateVar, std::vector<std::string>& vPlotCompose, size_t nSubPlotStart, size_t nMultiplots[2], size_t& nSubPlots, size_t& nSubPlotMap);
         void applyPlotSizeAndQualitySettings();
-        bool createPlotOrAnimation(size_t nPlotCompose, size_t nPlotComposeSize, bool bNewSubPlot, bool bAnimateVar, vector<string>& vDrawVector, const vector<string>& vDataPlots);
+        bool createPlotOrAnimation(size_t nPlotCompose, size_t nPlotComposeSize, bool bNewSubPlot, bool bAnimateVar, std::vector<std::string>& vDrawVector, const std::vector<std::string>& vDataPlots);
         void create2dPlot(size_t nPlotCompose, size_t nPlotComposeSize);
         bool plot2d(mglData& _mData, mglData& _mData2, mglData* _mAxisVals, mglData& _mContVec);
         void createStdPlot(size_t nPlotCompose, size_t nPlotComposeSize);
@@ -82,8 +79,8 @@ class Plot
         void create3dPlot();
         void create3dVect();
         void create2dVect();
-        void create2dDrawing(vector<string>& vDrawVector);
-        void create3dDrawing(vector<string>& vDrawVector);
+        void create2dDrawing(std::vector<std::string>& vDrawVector);
+        void create3dDrawing(std::vector<std::string>& vDrawVector);
         void createStd3dPlot(size_t nPlotCompose, size_t nPlotComposeSize);
         bool plotstd3d(mglData _mData[3], mglData _mData2[3], const short nType);
         bool checkMultiPlotArray(unsigned int nMultiPlot[2], unsigned int& nSubPlotMap, unsigned int nPlotPos, unsigned int nCols, unsigned int nLines);
@@ -91,13 +88,13 @@ class Plot
         void evaluatePlotParamString();
         void filename(size_t nPlotComposeSize, size_t nPlotCompose);
         void setStyles();
-        string expandStyleForCurveArray(const string& sCurrentStyle, bool expand);
-        void evaluateSubplot(string& sCmd, size_t nMultiplots[2], size_t& nSubPlots, size_t& nSubPlotMap);
+        std::string expandStyleForCurveArray(const std::string& sCurrentStyle, bool expand);
+        void evaluateSubplot(std::string& sCmd, size_t nMultiplots[2], size_t& nSubPlots, size_t& nSubPlotMap);
         void displayMessage(bool bAnimateVar);
         std::vector<std::string> separateFunctionsAndData();
         void extractDataValues(const std::vector<std::string>& vDataPlots);
         void createDataLegends();
-        string constructDataLegendElement(string& sColumnIndices, const string& sTableName);
+        std::string constructDataLegendElement(std::string& sColumnIndices, const std::string& sTableName);
         size_t countValidElements(const mglData& _mData);
         void prepareMemory();
         void defaultRanges(size_t nPlotCompose, bool bNewSubPlot);
@@ -112,16 +109,16 @@ class Plot
         mglPoint createMglPoint(int nCoords, double r, double phi, double theta, bool b3D = false);
         void setLogScale(bool bzLogscale);
         void directionalLight(double dPhi, double dTheta, int nId, char cColor = 'w', double dBrightness = 0.5);
-        string getLegendStyle(const string& sLegend);
+        std::string getLegendStyle(const std::string& sLegend);
         mglPoint CalcCutBox(double dPhi, int nEdge = 0, int nCoords = 0, bool b3D = false);
         double getProjBackground(double dPhi, int nEdge = 0);
         mglData fmod(const mglData& _mData, double dDenominator);
         void CoordSettings();
-        string CoordFunc(const std::string& sFuncDef, double dPhiScale = 1.0, double dThetaScale = 1.0);
-        string composeColoursForBarChart(long int nNum);
+        std::string CoordFunc(const std::string& sFuncDef, double dPhiScale = 1.0, double dThetaScale = 1.0);
+        std::string composeColoursForBarChart(long int nNum);
 
     public:
-        Plot(string& sCmd, MemoryManager& __data, Parser& __parser, Settings& __option, FunctionDefinitionManager& __functions, PlotData& __pData);
+        Plot(std::string& sCmd, MemoryManager& __data, mu::Parser& __parser, Settings& __option, FunctionDefinitionManager& __functions, PlotData& __pData);
         ~Plot();
         inline GraphHelper* createGraphHelper()
             {

@@ -92,7 +92,7 @@ std::string Package::getOptionValue(const std::string& sInstallInfoString, const
     if (findParameter(sInstallInfoString, sOption, '='))
     {
         // Get the value
-        string sOptionValue = getArgAtPos(sInstallInfoString, findParameter(sInstallInfoString, sOption, '=')+sOption.length());
+        std::string sOptionValue = getArgAtPos(sInstallInfoString, findParameter(sInstallInfoString, sOption, '=')+sOption.length());
         StripSpaces(sOptionValue);
 
         // Does it have a length? If no,
@@ -102,7 +102,7 @@ std::string Package::getOptionValue(const std::string& sInstallInfoString, const
             // If the default value has a non-zero length,
             // surround the extracted value using parentheses,
             // if it contains whitespaces or commas.
-            if (sDefault.length() && (sOptionValue.find(' ') != string::npos || sOptionValue.find(',') != string::npos))
+            if (sDefault.length() && (sOptionValue.find(' ') != std::string::npos || sOptionValue.find(',') != std::string::npos))
                 sOptionValue = "(" + sOptionValue + ")";
 
             return sOptionValue;
@@ -118,10 +118,10 @@ std::string Package::getOptionValue(const std::string& sInstallInfoString, const
 /// definition export string to be written to the
 /// plugin definition file.
 ///
-/// \return string
+/// \return std::string
 ///
 /////////////////////////////////////////////////
-string Package::exportDefinition() const
+std::string Package::exportDefinition() const
 {
     return sCommand + "," + sMainProcedure + "," + sArgumentList + "," + sType + "," + sName + "," + sVersion + "," + sAuthor + "," + sDescription + "," + sDocumentationIndexID + "," + sLicense + "," + sMenuEntry + ",";
 }
@@ -437,7 +437,7 @@ void PackageManager::updatePluginFile()
 {
     sPluginDefinitionFile = FileSystem::ValidFileName(sPluginDefinitionFile, ".plugins");
 
-    fPlugins.open(sPluginDefinitionFile.c_str(), ios_base::trunc | ios_base::out);
+    fPlugins.open(sPluginDefinitionFile.c_str(), std::ios_base::trunc | std::ios_base::out);
 
     // Ensure that the file is read and writeable
     if (fPlugins.fail())
@@ -446,7 +446,7 @@ void PackageManager::updatePluginFile()
     // Write the contents to file
     for (unsigned int i = 0; i < vPackageInfo.size(); i++)
     {
-        fPlugins << vPackageInfo[i].exportDefinition() << endl;
+        fPlugins << vPackageInfo[i].exportDefinition() << std::endl;
     }
 
     fPlugins.close();
@@ -464,7 +464,7 @@ void PackageManager::updatePluginFile()
 /////////////////////////////////////////////////
 bool PackageManager::loadPlugins()
 {
-    string sLine = "";
+    std::string sLine = "";
 
     sPluginDefinitionFile = FileSystem::ValidFileName(sPluginDefinitionFile, ".plugins");
 
@@ -477,7 +477,7 @@ bool PackageManager::loadPlugins()
     // Read the file's contents to memory
     while (!fPlugins.eof())
     {
-        getline(fPlugins, sLine);
+        std::getline(fPlugins, sLine);
         StripSpaces(sLine);
 
         if (sLine.length())
@@ -501,16 +501,16 @@ bool PackageManager::loadPlugins()
 /// a call to the corresponding plugin main
 /// procedure.
 ///
-/// \param sCmd string&
+/// \param sCmd std::string&
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool PackageManager::evalPluginCmd(string& sCmd)
+bool PackageManager::evalPluginCmd(std::string& sCmd)
 {
-    string sExpr = "";
-    string sParams = "";
-    string sCommand = "";
-    string sCommandLine = "";
+    std::string sExpr = "";
+    std::string sParams = "";
+    std::string sCommand = "";
+    std::string sCommandLine = "";
     Package _plugin;
 
     if (!vPackageInfo.size())
@@ -545,11 +545,11 @@ bool PackageManager::evalPluginCmd(string& sCmd)
     // If the argument list expects an expression, expression
     // and parameters are determined different than without
     // an expression
-    if (sPluginVarList.find("<EXPRESSION>") != string::npos)
+    if (sPluginVarList.find("<EXPRESSION>") != std::string::npos)
     {
-        if (sCommandLine.find("-set") != string::npos || sCommandLine.find("--") != string::npos)
+        if (sCommandLine.find("-set") != std::string::npos || sCommandLine.find("--") != std::string::npos)
         {
-            if (sCommandLine.find("-set") != string::npos)
+            if (sCommandLine.find("-set") != std::string::npos)
                 sParams = sCommandLine.substr(sCommandLine.find("-set"));
             else
                 sParams = sCommandLine.substr(sCommandLine.find("--"));
@@ -567,9 +567,9 @@ bool PackageManager::evalPluginCmd(string& sCmd)
         StripSpaces(sExpr);
         sParams = "\"" + sParams + "\"";
     }
-    else if (sPluginVarList.find("<PARAMSTRING>") != string::npos)
+    else if (sPluginVarList.find("<PARAMSTRING>") != std::string::npos)
     {
-        if (sCommandLine.find('-') != string::npos)
+        if (sCommandLine.find('-') != std::string::npos)
             sParams = sCommandLine.substr(sCommandLine.find('-', sCommandLine.find(_plugin.sCommand)));
 
         StripSpaces(sParams);
@@ -595,19 +595,19 @@ bool PackageManager::evalPluginCmd(string& sCmd)
 
     // Replace the procedure argument list with the
     // corresponding command line tags
-    while (sPluginVarList.find("<CMDSTRING>") != string::npos)
+    while (sPluginVarList.find("<CMDSTRING>") != std::string::npos)
         sPluginVarList.replace(sPluginVarList.find("<CMDSTRING>"), 11, sCommand);
 
-    while (sPluginVarList.find("<EXPRESSION>") != string::npos)
+    while (sPluginVarList.find("<EXPRESSION>") != std::string::npos)
         sPluginVarList.replace(sPluginVarList.find("<EXPRESSION>"), 12, sExpr);
 
-    while (sPluginVarList.find("<PARAMSTRING>") != string::npos)
+    while (sPluginVarList.find("<PARAMSTRING>") != std::string::npos)
         sPluginVarList.replace(sPluginVarList.find("<PARAMSTRING>"), 13, sParams);
 
     // If the plugin should have a return value,
     // add a corresponding tag to the command line
     // at the location of the call to the plugin.
-    if (_plugin.sType.find("TYPE_PLUGIN_WITH_RETURN_VALUE") != string::npos)
+    if (_plugin.sType.find("TYPE_PLUGIN_WITH_RETURN_VALUE") != std::string::npos)
         sCmd.replace(_match.nPos, sCommandLine.length(), "<<RETURNVAL>>");
     else
         sCmd.clear();
@@ -621,13 +621,13 @@ bool PackageManager::evalPluginCmd(string& sCmd)
 /// plugin from the passed install information
 /// string.
 ///
-/// \param sInstallInfoString const string&
+/// \param sInstallInfoString const std::string&
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool PackageManager::declareNewPackage(const string& sInstallInfoString)
+bool PackageManager::declareNewPackage(const std::string& sInstallInfoString)
 {
-    static string sProtectedCommands = ";quit;help;find;uninstall;install;credits;about;continue;break;var;tab;global;throw;namespace;return;abort;explicit;str;if;else;elseif;endif;while;endwhile;for;endfor;switch;case;default;endswitch;";
+    static std::string sProtectedCommands = ";quit;help;find;uninstall;install;credits;about;continue;break;var;tab;global;throw;namespace;return;abort;explicit;str;if;else;elseif;endif;while;endwhile;for;endfor;switch;case;default;endswitch;";
     bool bAllowOverride = false;
 
     // Create the new plugin
@@ -637,7 +637,7 @@ bool PackageManager::declareNewPackage(const string& sInstallInfoString)
     // allowed
     if (findParameter(sInstallInfoString, "flags", '='))
     {
-        if (getArgAtPos(sInstallInfoString, findParameter(sInstallInfoString, "flags", '=')+5).find("ENABLE_FORCE_OVERRIDE") != string::npos)
+        if (getArgAtPos(sInstallInfoString, findParameter(sInstallInfoString, "flags", '=')+5).find("ENABLE_FORCE_OVERRIDE") != std::string::npos)
             bAllowOverride = true;
     }
 
@@ -648,7 +648,7 @@ bool PackageManager::declareNewPackage(const string& sInstallInfoString)
         if (!_package.sCommand.length())
             throw SyntaxError(SyntaxError::PLUGIN_HAS_NO_CMD, "", SyntaxError::invalid_position);
 
-        if (sProtectedCommands.find(";" + _package.sCommand + ";") != string::npos)
+        if (sProtectedCommands.find(";" + _package.sCommand + ";") != std::string::npos)
             throw SyntaxError(SyntaxError::PLUGIN_MAY_NOT_OVERRIDE, "", SyntaxError::invalid_position, _package.sCommand);
 
         if (!_package.sMainProcedure.length())
@@ -726,15 +726,15 @@ bool PackageManager::declareNewPackage(const string& sInstallInfoString)
 /// documentation index ID to the plugin
 /// definition.
 ///
-/// \param _sPluginName const string&
-/// \param _sHelpId string
+/// \param _sPluginName const std::string&
+/// \param _sHelpId std::string
 /// \return void
 ///
 /////////////////////////////////////////////////
-void PackageManager::addHelpIndex(const string& _sPluginName, string _sHelpId)
+void PackageManager::addHelpIndex(const std::string& _sPluginName, std::string _sHelpId)
 {
     StripSpaces(_sHelpId);
-    string sPluginName = _sPluginName;
+    std::string sPluginName = _sPluginName;
     StripSpaces(sPluginName);
 
     if (!vPackageInfo.size() || !_sHelpId.length())
@@ -752,9 +752,9 @@ void PackageManager::addHelpIndex(const string& _sPluginName, string _sHelpId)
                 if (vPackageInfo[i].sDocumentationIndexID.length())
                 {
                     if (vPackageInfo[i].sDocumentationIndexID != _sHelpId
-                        && vPackageInfo[i].sDocumentationIndexID.find(";"+_sHelpId) == string::npos
-                        && vPackageInfo[i].sDocumentationIndexID.find(_sHelpId+";") == string::npos
-                        && vPackageInfo[i].sDocumentationIndexID.find(";"+_sHelpId+";") == string::npos)
+                        && vPackageInfo[i].sDocumentationIndexID.find(";"+_sHelpId) == std::string::npos
+                        && vPackageInfo[i].sDocumentationIndexID.find(_sHelpId+";") == std::string::npos
+                        && vPackageInfo[i].sDocumentationIndexID.find(";"+_sHelpId+";") == std::string::npos)
                     vPackageInfo[i].sDocumentationIndexID += ";" + _sHelpId;
                 }
                 else
@@ -786,11 +786,11 @@ void PackageManager::addHelpIndex(const string& _sPluginName, string _sHelpId)
 /// whether the passed command line contains a
 /// plugin command.
 ///
-/// \param sCmd const string&
+/// \param sCmd const std::string&
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool PackageManager::isPluginCmd(const string& sCmd) const
+bool PackageManager::isPluginCmd(const std::string& sCmd) const
 {
     if (findCommand(sCmd, "explicit").sString == "explicit")
         return false;
@@ -814,13 +814,13 @@ bool PackageManager::isPluginCmd(const string& sCmd) const
 /// set of definitions and returns the stored
 /// documentation index IDs.
 ///
-/// \param sPackage const string&
-/// \return string
+/// \param sPackage const std::string&
+/// \return std::string
 ///
 /////////////////////////////////////////////////
-string PackageManager::deletePackage(const string& sPackage)
+std::string PackageManager::deletePackage(const std::string& sPackage)
 {
-    string sHLPIDs = "<<NO_HLP_ENTRY>>";
+    std::string sHLPIDs = "<<NO_HLP_ENTRY>>";
 
     for (size_t i = 0; i < vPackageInfo.size(); i++)
     {
@@ -871,10 +871,10 @@ std::map<std::string, std::string> PackageManager::getMenuMap() const
 /// \brief This member function simply returns
 /// the plugin definition file path.
 ///
-/// \return string
+/// \return std::string
 ///
 /////////////////////////////////////////////////
-string PackageManager::getPluginInfoPath()
+std::string PackageManager::getPluginInfoPath()
 {
     return FileSystem::ValidFileName(sPluginDefinitionFile, ".plugins");
 }

@@ -29,8 +29,6 @@
 #include "../settings.hpp"
 #include "../datamanagement/memorymanager.hpp"
 
-using namespace std;
-
 namespace NumeRe
 {
     /////////////////////////////////////////////////
@@ -42,26 +40,26 @@ namespace NumeRe
     class StringParser : public StringLogicParser, public StringFuncHandler
     {
         private:
-            map<string, int> m_mStringParams;
+            std::map<std::string, int> m_mStringParams;
             mu::Parser& _parser;
             MemoryManager& _data;
             Settings& _option;
 
-            string getDataForString(string sLine, size_t n_pos);
-            string parseStringsInIndices(string sIndexExpression);
-            void replaceDataOccurence(string& sLine, const string& sOccurence);
-            string numToString(const string& sLine);
-            int storeStringResults(StringResult& strRes, string sObject);
-            string createStringOutput(StringResult& strRes, string& sLine, int parserFlags, bool bSilent);
-            string createTerminalOutput(StringResult& strRes, int parserFlags);
-            vector<bool> applyElementaryStringOperations(vector<string>& vFinal, bool& bReturningLogicals);
-            void storeStringToDataObjects(StringResult& strRes, string& sObject, size_t& nCurrentComponent, size_t nStrings);
-            void storeStringToStringObject(const vector<string>& vFinal, string& sObject, size_t& nCurrentComponent, size_t nStrings);
-            int decodeStringParams(string& sLine);
-            bool isSimpleString(const string& sLine);
-            bool isToken(const char* sToken, const string& sLine, size_t pos);
-            string maskControlCharacters(string sString);
-            virtual StringResult eval(string& sLine, string sCache, bool bParseNumericals = true) override;
+            std::string getDataForString(std::string sLine, size_t n_pos);
+            std::string parseStringsInIndices(std::string sIndexExpression);
+            void replaceDataOccurence(std::string& sLine, const std::string& sOccurence);
+            std::string numToString(const std::string& sLine);
+            int storeStringResults(StringResult& strRes, std::string sObject);
+            std::string createStringOutput(StringResult& strRes, std::string& sLine, int parserFlags, bool bSilent);
+            std::string createTerminalOutput(StringResult& strRes, int parserFlags);
+            std::vector<bool> applyElementaryStringOperations(std::vector<std::string>& vFinal, bool& bReturningLogicals);
+            void storeStringToDataObjects(StringResult& strRes, std::string& sObject, size_t& nCurrentComponent, size_t nStrings);
+            void storeStringToStringObject(const std::vector<std::string>& vFinal, std::string& sObject, size_t& nCurrentComponent, size_t nStrings);
+            int decodeStringParams(std::string& sLine);
+            bool isSimpleString(const std::string& sLine);
+            bool isToken(const char* sToken, const std::string& sLine, size_t pos);
+            std::string maskControlCharacters(std::string sString);
+            virtual StringResult eval(std::string& sLine, std::string sCache, bool bParseNumericals = true) override;
 
         public:
             enum StringParserRetVal
@@ -72,8 +70,8 @@ namespace NumeRe
 
             StringParser(mu::Parser& parser, MemoryManager& data, Settings& option);
             virtual ~StringParser() {}
-            StringParserRetVal evalAndFormat(string& sLine, string& sCache, bool bSilent = false, bool bCheckAssertions = false);
-            virtual bool isStringExpression(const string& sExpression) override;
+            StringParserRetVal evalAndFormat(std::string& sLine, std::string& sCache, bool bSilent = false, bool bCheckAssertions = false);
+            virtual bool isStringExpression(const std::string& sExpression) override;
     };
 }
 

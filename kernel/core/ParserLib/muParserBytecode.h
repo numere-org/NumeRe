@@ -1,6 +1,3 @@
-#ifndef HEADER_EFB3392625639C26
-#define HEADER_EFB3392625639C26
-
 /*
                  __________
     _____   __ __\______   \_____  _______  ______  ____ _______
@@ -143,7 +140,4 @@ namespace mu
 } // namespace mu
 
 #endif
-
-
-#endif // header guard
 

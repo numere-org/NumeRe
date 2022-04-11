@@ -27,18 +27,16 @@
 #include <map>
 #include <fstream>
 
-using namespace std;
-
 /////////////////////////////////////////////////
 /// \brief A simple structure to define a syntax
 /// block for folding, etc.
 /////////////////////////////////////////////////
 struct SyntaxBlockDefinition
 {
-    string startWord;
-    string endWord;
-    string middleWord1;
-    string middleWord2;
+    std::string startWord;
+    std::string endWord;
+    std::string middleWord1;
+    std::string middleWord2;
 };
 
 
@@ -56,36 +54,36 @@ struct SyntaxBlockDefinition
 class NumeReSyntax
 {
     private:
-        vector<string> vNSCRCommands;
-        vector<string> vNPRCCommands;
-        vector<string> vOptions;
-        vector<string> vFunctions;
-        vector<string> vMethods;
-        vector<string> vConstants;
-        vector<string> vSpecialValues;
-        vector<string> vOperators;
-        vector<string> vDocKeyWords;
-        vector<SyntaxBlockDefinition> vBlockDefs;
-        vector<string> vMatlabKeyWords;
-        vector<string> vMatlabFunctions;
-        vector<string> vCppKeyWords;
-        vector<string> vCppFunctions;
-        vector<string> vTeXKeyWords;
+        std::vector<std::string> vNSCRCommands;
+        std::vector<std::string> vNPRCCommands;
+        std::vector<std::string> vOptions;
+        std::vector<std::string> vFunctions;
+        std::vector<std::string> vMethods;
+        std::vector<std::string> vConstants;
+        std::vector<std::string> vSpecialValues;
+        std::vector<std::string> vOperators;
+        std::vector<std::string> vDocKeyWords;
+        std::vector<SyntaxBlockDefinition> vBlockDefs;
+        std::vector<std::string> vMatlabKeyWords;
+        std::vector<std::string> vMatlabFunctions;
+        std::vector<std::string> vCppKeyWords;
+        std::vector<std::string> vCppFunctions;
+        std::vector<std::string> vTeXKeyWords;
 
-        vector<string> vProcedureTree;
+        std::vector<std::string> vProcedureTree;
 
-        string sSingleOperators;
-        map<string, int> mAutoCompList;
-        map<string, int> mAutoCompListMATLAB;
-        map<string, int> mAutoCompListCPP;
-        map<string, int> mAutoCompListTeX;
+        std::string sSingleOperators;
+        std::map<std::string, int> mAutoCompList;
+        std::map<std::string, int> mAutoCompListMATLAB;
+        std::map<std::string, int> mAutoCompListCPP;
+        std::map<std::string, int> mAutoCompListTeX;
 
-        string sPath;
+        std::string sPath;
 
-        string constructString(const vector<string>& vVector) const;
-        vector<string> splitString(string sString);
-        vector<SyntaxBlockDefinition> splitDefs(string sDefString);
-        bool matchItem(const vector<string>& vVector, const string& sString);
+        std::string constructString(const std::vector<std::string>& vVector) const;
+        std::vector<std::string> splitString(std::string sString);
+        std::vector<SyntaxBlockDefinition> splitDefs(std::string sDefString);
+        bool matchItem(const std::vector<std::string>& vVector, const std::string& sString);
     public:
         enum SyntaxColors
         {
@@ -103,50 +101,50 @@ class NumeReSyntax
             SYNTAX_METHODS
         };
         NumeReSyntax();
-        NumeReSyntax(const string& _sPath);
+        NumeReSyntax(const std::string& _sPath);
 
-        void loadSyntax(const string& _sPath = "");
-        void addPlugins(const vector<string>& vPlugins);
-        void setProcedureTree(const vector<string>& vTree);
-        string getCommands() const
+        void loadSyntax(const std::string& _sPath = "");
+        void addPlugins(const std::vector<std::string>& vPlugins);
+        void setProcedureTree(const std::vector<std::string>& vTree);
+        std::string getCommands() const
             {return constructString(vNSCRCommands);}
-        string getNPRCCommands() const
+        std::string getNPRCCommands() const
             {return constructString(vNPRCCommands);}
-        string getOptions() const
+        std::string getOptions() const
             {return constructString(vOptions);}
-        string getFunctions() const
+        std::string getFunctions() const
             {return constructString(vFunctions);}
-        string getMethods() const
+        std::string getMethods() const
             {return constructString(vMethods);}
-        string getConstants() const
+        std::string getConstants() const
             {return constructString(vConstants);}
-        string getSpecial() const
+        std::string getSpecial() const
             {return constructString(vSpecialValues);}
-        string getOperators() const
+        std::string getOperators() const
             {return constructString(vOperators);}
-        string getDocKeyWords() const
+        std::string getDocKeyWords() const
             {return constructString(vDocKeyWords);}
-        string getBlockDefs() const;
-        string getMatlab() const
+        std::string getBlockDefs() const;
+        std::string getMatlab() const
             {return constructString(vMatlabKeyWords);}
-        string getMatlabFunctions() const
+        std::string getMatlabFunctions() const
             {return constructString(vMatlabFunctions);}
-        string getCpp() const
+        std::string getCpp() const
             {return constructString(vCppKeyWords);}
-        string getCppFunctions() const
+        std::string getCppFunctions() const
             {return constructString(vCppFunctions);}
-        string getAutoCompList(string sFirstChars, string sType = "NSCR");
-        string getAutoCompListMATLAB(string sFirstChars);
-        string getAutoCompListCPP(string sFirstChars);
-        string getAutoCompListTeX(string sFirstChars);
-        string getProcAutoCompList(string sFirstChars, string sBaseNameSpace, string sSelectedNameSpace);
-        string getNameSpaceAutoCompList(string sFirstChars);
+        std::string getAutoCompList(std::string sFirstChars, std::string sType = "NSCR");
+        std::string getAutoCompListMATLAB(std::string sFirstChars);
+        std::string getAutoCompListCPP(std::string sFirstChars);
+        std::string getAutoCompListTeX(std::string sFirstChars);
+        std::string getProcAutoCompList(std::string sFirstChars, std::string sBaseNameSpace, std::string sSelectedNameSpace);
+        std::string getNameSpaceAutoCompList(std::string sFirstChars);
 
-        string highlightLine(const string& sCommandLine);
-        string highlightError(const string& sCommandLine);
-        string highlightWarning(const string& sCommandLine);
+        std::string highlightLine(const std::string& sCommandLine);
+        std::string highlightError(const std::string& sCommandLine);
+        std::string highlightWarning(const std::string& sCommandLine);
 
-        vector<SyntaxBlockDefinition> getFullBlockDefs() const
+        std::vector<SyntaxBlockDefinition> getFullBlockDefs() const
             {return vBlockDefs;}
 
 };

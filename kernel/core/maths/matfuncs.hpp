@@ -188,11 +188,11 @@ static Matrix calcTrace(const MatFuncData& funcData, const MatFuncErrorInfo& err
 /// LaPlace algorithm.
 ///
 /// \param _mMatrix const Matrix&
-/// \param vRemovedLines vector<int>
+/// \param vRemovedLines std::vector<int>
 /// \return mu::value_type
 ///
 /////////////////////////////////////////////////
-static mu::value_type calcDeterminant(const Matrix& _mMatrix, vector<int> vRemovedLines)
+static mu::value_type calcDeterminant(const Matrix& _mMatrix, std::vector<int> vRemovedLines)
 {
     // simple Sonderfaelle
     if (_mMatrix.size() == 1)
@@ -298,7 +298,7 @@ static Matrix calcCrossProduct(const MatFuncData& funcData, const MatFuncErrorIn
         throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, errorInfo.command, errorInfo.position);
 
     Matrix _mResult = createFilledMatrix(funcData.mat1.size(), 1, 0.0);
-    vector<int> vRemovedLines(funcData.mat1.size(), 0);
+    std::vector<int> vRemovedLines(funcData.mat1.size(), 0);
 
     if (funcData.mat1.size() == 1)
         return _mResult;
@@ -736,8 +736,8 @@ static Matrix logToIndex(const MatFuncData& funcData, const MatFuncErrorInfo& er
     if (!funcData.mat1.size() || !funcData.mat1[0].size())
         throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, errorInfo.command, errorInfo.position);
 
-    vector<double> vLines;
-    vector<double> vRows;
+    std::vector<double> vLines;
+    std::vector<double> vRows;
 
     if (funcData.mat1.size() == 1 || funcData.mat1[0].size() == 1)
     {
@@ -947,8 +947,8 @@ static Matrix indexToLog(const MatFuncData& funcData, const MatFuncErrorInfo& er
     }
     else
     {
-        vector<double> vCol;
-        vector<double> vRow;
+        std::vector<double> vCol;
+        std::vector<double> vRow;
 
         if (funcData.mat1.size() == 2 && funcData.mat1[0].size() != 2)
         {
@@ -1779,9 +1779,9 @@ static Matrix matrixResize(const MatFuncData& funcData, const MatFuncErrorInfo& 
     Matrix _mReturn = createFilledMatrix(nLines, nCols, 0.0);
 
     #pragma omp parallel for
-    for (size_t i = 0; i < min(nLines, funcData.mat1.size()); i++)
+    for (size_t i = 0; i < std::min(nLines, funcData.mat1.size()); i++)
     {
-        for (size_t j = 0; j < min(nCols, funcData.mat1[0].size()); j++)
+        for (size_t j = 0; j < std::min(nCols, funcData.mat1[0].size()); j++)
         {
             _mReturn[i][j] = funcData.mat1[i][j];
         }
@@ -1814,8 +1814,8 @@ static Matrix correlation(const MatFuncData& funcData, const MatFuncErrorInfo& e
                           printMatrixDim(funcData.mat1) + ", " + printMatrixDim(funcData.mat2));
 
     // Resize the matrices to fit their counterparts
-    Matrix mMatrix1 = matrixResize(MatFuncData(funcData.mat1, mu::value_type(max(funcData.mat1.size(), funcData.mat2.size())), max(funcData.mat1[0].size(), funcData.mat2[0].size())), errorInfo);
-    Matrix mMatrix2 = matrixResize(MatFuncData(funcData.mat2, mu::value_type(max(funcData.mat1.size(), funcData.mat2.size())), max(funcData.mat1[0].size(), funcData.mat2[0].size())), errorInfo);
+    Matrix mMatrix1 = matrixResize(MatFuncData(funcData.mat1, mu::value_type(std::max(funcData.mat1.size(), funcData.mat2.size())), std::max(funcData.mat1[0].size(), funcData.mat2[0].size())), errorInfo);
+    Matrix mMatrix2 = matrixResize(MatFuncData(funcData.mat2, mu::value_type(std::max(funcData.mat1.size(), funcData.mat2.size())), std::max(funcData.mat1[0].size(), funcData.mat2[0].size())), errorInfo);
 
     int n = mMatrix1.size();
     int m = mMatrix1[0].size();
@@ -1831,13 +1831,13 @@ static Matrix correlation(const MatFuncData& funcData, const MatFuncErrorInfo& e
         for (int j1 = 0; j1 < (int)mCorrelation[0].size(); j1++)
         {
             // These loops shall indicate the number of elements
-            for (int i2 = 0; i2 < n + min(i1-n+1, n-i1-1); i2++)
+            for (int i2 = 0; i2 < n + std::min(i1-n+1, n-i1-1); i2++)
             {
-                for (int j2 = 0; j2 < m + min(j1-m+1, m-j1-1); j2++)
+                for (int j2 = 0; j2 < m + std::min(j1-m+1, m-j1-1); j2++)
                 {
                     // calculate the correlation of the current
                     // shift indicated by the other two loops
-                    mCorrelation[i1][j1] += mMatrix1[i2 + max(0, i1-n+1)][j2 + max(0, j1-m+1)] * mMatrix2[i2 + max(0, n-i1-1)][j2 + max(0, m-j1-1)];
+                    mCorrelation[i1][j1] += mMatrix1[i2 + std::max(0, i1-n+1)][j2 + std::max(0, j1-m+1)] * mMatrix2[i2 + std::max(0, n-i1-1)][j2 + std::max(0, m-j1-1)];
                 }
             }
         }
@@ -1913,7 +1913,7 @@ static Matrix normalize(const MatFuncData& funcData, const MatFuncErrorInfo& err
     Matrix _mMax = matrixMax(funcData, errorInfo);
     Matrix _mMin = matrixMin(funcData, errorInfo);
 
-    double dMax = max(fabs(_mMax[0][0]), fabs(_mMin[0][0]));
+    double dMax = std::max(fabs(_mMax[0][0]), fabs(_mMin[0][0]));
 
     #pragma omp parallel for
     for (size_t  i = 0; i < _mReturn.size(); i++)
@@ -2195,8 +2195,8 @@ static void solveLGSSymbolic(const Matrix& _mMatrix, const MatFuncErrorInfo& err
     if (!_mMatrix.size() || !_mMatrix[0].size())
         throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, errorInfo.command, errorInfo.position);
 
-    string sSolution = "sle(";
-    vector<string> vResult(_mMatrix[0].size()-1, "");
+    std::string sSolution = "sle(";
+    std::vector<std::string> vResult(_mMatrix[0].size()-1, "");
     bool bIsZeroesLine = true;
     unsigned int nVarCount = 0;
 
@@ -2204,7 +2204,7 @@ static void solveLGSSymbolic(const Matrix& _mMatrix, const MatFuncErrorInfo& err
     Matrix _mCoefficents = createFilledMatrix(_mMatrix[0].size()-1, _mMatrix[0].size(), 0.0);
 
     #pragma omp parallel for
-    for (unsigned int i = 0; i < min(_mMatrix.size(), _mMatrix[0].size()-1); i++)
+    for (unsigned int i = 0; i < std::min(_mMatrix.size(), _mMatrix[0].size()-1); i++)
     {
         for (unsigned int j = 0; j < _mMatrix[0].size(); j++)
         {
@@ -2271,7 +2271,7 @@ static void solveLGSSymbolic(const Matrix& _mMatrix, const MatFuncErrorInfo& err
         if (_mCoefficents[i][_mCoefficents[0].size()-1] != 0.0)
             vResult[i] += "+" + toString(_mCoefficents[i][_mCoefficents[0].size()-1], 5);
 
-        while (vResult[i].find("+-") != string::npos)
+        while (vResult[i].find("+-") != std::string::npos)
             vResult[i].erase(vResult[i].find("+-"),1);
     }
 
@@ -2404,7 +2404,7 @@ static Matrix solveLGS(const MatFuncData& funcData, const MatFuncErrorInfo& erro
         || _mToSolve.size()+1 > _mToSolve[0].size())
     {
         // Ggf. Nullzeilen nach unten tauschen
-        vector<bool> vIsZerosLine(_mToSolve.size(),true);
+        std::vector<bool> vIsZerosLine(_mToSolve.size(),true);
 
         for (unsigned int i = 0; i < _mToSolve.size(); i++)
         {

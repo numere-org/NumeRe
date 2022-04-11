@@ -1,6 +1,3 @@
-#ifndef HEADER_BB9C0F196E6E1873
-#define HEADER_BB9C0F196E6E1873
-
 /*
                  __________
     _____   __ __\______   \_____  _______  ______  ____ _______
@@ -115,5 +112,4 @@ namespace mu
 
 #endif
 
-#endif // header guard 
 

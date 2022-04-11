@@ -20,6 +20,7 @@
 #include "../../kernel.hpp"
 
 using namespace mu;
+using namespace std;
 
 //////////////////////////////////
 // CLASS FUNCTIONDEFINITION

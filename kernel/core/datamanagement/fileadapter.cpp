@@ -21,6 +21,8 @@
 #include "../io/logger.hpp"
 #include "memory.hpp"
 
+using namespace std;
+
 namespace NumeRe
 {
     /////////////////////////////////////////////////

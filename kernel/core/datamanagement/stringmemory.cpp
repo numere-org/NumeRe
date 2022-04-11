@@ -19,6 +19,7 @@
 #include "stringmemory.hpp"
 #include "../utils/tools.hpp"
 
+using namespace std;
 
 // STRINGINTERNALMEMORY IMPLEMENTATION
 

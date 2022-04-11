@@ -94,21 +94,23 @@ static bool has3DView(const std::string& sCommand)
 #define APPR_TWO 1.9999999
 #define STYLES_COUNT 20
 
+using namespace std;
+
 /////////////////////////////////////////////////
 /// \brief Wrapper function for creating plots.
 /// Will create an instance of the Plot class,
 /// which will handle the plotting process.
 ///
-/// \param sCmd string&
+/// \param sCmd std::string&
 /// \param _data Datafile&
-/// \param _parser Parser&
+/// \param _parser mu::Parser&
 /// \param _option Settings&
 /// \param _functions Define&
 /// \param _pData PlotData&
 /// \return void
 ///
 /////////////////////////////////////////////////
-void createPlot(string& sCmd, MemoryManager& _data, Parser& _parser, Settings& _option, FunctionDefinitionManager& _functions, PlotData& _pData)
+void createPlot(std::string& sCmd, MemoryManager& _data, mu::Parser& _parser, Settings& _option, FunctionDefinitionManager& _functions, PlotData& _pData)
 {
     Plot graph(sCmd, _data, _parser, _option, _functions, _pData);
 

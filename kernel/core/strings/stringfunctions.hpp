@@ -26,6 +26,7 @@
 // define the "End of transmission block" as string separator
 #define NEWSTRING (char)23
 
+using namespace std;
 
 /////////////////////////////////////////////////
 /// \brief This function removes the escape

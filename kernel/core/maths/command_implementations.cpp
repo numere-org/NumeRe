@@ -34,6 +34,8 @@
 #define TRAPEZOIDAL 1
 #define SIMPSON 2
 
+using namespace std;
+
 DefaultVariables _defVars;
 static mu::value_type localizeExtremum(string& sCmd, mu::value_type* dVarAdress, Parser& _parser, const Settings& _option, mu::value_type dLeft, mu::value_type dRight, double dEps = 1e-10, int nRecursion = 0);
 static mu::value_type localizeZero(string& sCmd, mu::value_type* dVarAdress, Parser& _parser, const Settings& _option, mu::value_type dLeft, mu::value_type dRight, double dEps = 1e-10, int nRecursion = 0);

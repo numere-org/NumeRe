@@ -1,6 +1,3 @@
-#ifndef HEADER_A34FD7D66ACE5465
-#define HEADER_A34FD7D66ACE5465
-
 /*
                  __________
     _____   __ __\______   \_____  _______  ______  ____ _______
@@ -389,5 +386,4 @@ namespace mu
 #endif
 
 
-#endif // header guard 
 

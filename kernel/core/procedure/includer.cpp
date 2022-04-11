@@ -133,7 +133,7 @@ std::string Includer::getNextLine()
     // in the included script
     while (nIncludeLine < m_include->getLinesCount() && !sIncludedLine.length())
     {
-        string sCurrentLine;
+        std::string sCurrentLine;
 
         // Compose lines, which were broken using the "\\" operator
         do
@@ -157,7 +157,7 @@ std::string Includer::getNextLine()
 
         // Ignore non-global installation sections
         if (sIncludedLine.substr(0,9) == "<install>"
-            || (findCommand(sIncludedLine).sString == "global" && sIncludedLine.find("<install>") != string::npos))
+            || (findCommand(sIncludedLine).sString == "global" && sIncludedLine.find("<install>") != std::string::npos))
         {
             while (nIncludeLine < m_include->getLinesCount())
             {
@@ -166,7 +166,7 @@ std::string Includer::getNextLine()
                 StripSpaces(sIncludedLine);
 
                 if (sIncludedLine.substr(0,12) == "<endinstall>"
-                    || (findCommand(sIncludedLine).sString == "global" && sIncludedLine.find("<endinstall>") != string::npos))
+                    || (findCommand(sIncludedLine).sString == "global" && sIncludedLine.find("<endinstall>") != std::string::npos))
                     break;
             }
 

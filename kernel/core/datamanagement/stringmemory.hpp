@@ -25,8 +25,6 @@
 #ifndef STRINGMEMORY_HPP
 #define STRINGMEMORY_HPP
 
-using namespace std;
-
 // Internal string memory implementation. Separated to be able to
 // use Sorter as base class for strings and for the DataFile object
 class StringInternalMemory : public Sorter
@@ -34,16 +32,16 @@ class StringInternalMemory : public Sorter
     private:
         bool bSortCaseInsensitive;
 
-        void reorderColumn(const vector<int>& vIndex, long long int i1, long long int i2, long long int j1 = 0);
+        void reorderColumn(const std::vector<int>& vIndex, long long int i1, long long int i2, long long int j1 = 0);
 		virtual int compare(int i, int j, int col) override;
 		virtual bool isValue(int line, int col) override;
 
     public:
         StringInternalMemory() : bSortCaseInsensitive(false) {}
 
-        vector<vector<string> > sStrings;
+        std::vector<std::vector<std::string> > sStrings;
 
-		vector<int> sortElements(long long int i1, long long int i2, long long int j1, long long int j2, const string& sSortingExpression);
+		std::vector<int> sortElements(long long int i1, long long int i2, long long int j1, long long int j2, const std::string& sSortingExpression);
 };
 
 
@@ -55,22 +53,22 @@ class StringMemory
         StringInternalMemory _stringIntMem;
 
     public:
-		bool writeString(const string& _sString, unsigned int _nthString = string::npos, unsigned int nCol = 0);
-		string readString(unsigned int _nthString = string::npos, unsigned int nCol = 0);
+		bool writeString(const std::string& _sString, unsigned int _nthString = std::string::npos, unsigned int nCol = 0);
+		std::string readString(unsigned int _nthString = std::string::npos, unsigned int nCol = 0);
 
-		string maxString(unsigned int i1 = 0, unsigned int i2 = string::npos, unsigned int nCol = 0);
-		string maxString(VectorIndex _vLine, VectorIndex _vCol);
-		string minString(unsigned int i1 = 0, unsigned int i2 = string::npos, unsigned int nCol = 0);
-		string minString(VectorIndex _vLine, VectorIndex _vCol);
-		string sumString(unsigned int i1 = 0, unsigned int i2 = string::npos, unsigned int nCol = 0);
-		string sumString(VectorIndex _vLine, VectorIndex _vCol);
+		std::string maxString(unsigned int i1 = 0, unsigned int i2 = std::string::npos, unsigned int nCol = 0);
+		std::string maxString(VectorIndex _vLine, VectorIndex _vCol);
+		std::string minString(unsigned int i1 = 0, unsigned int i2 = std::string::npos, unsigned int nCol = 0);
+		std::string minString(VectorIndex _vLine, VectorIndex _vCol);
+		std::string sumString(unsigned int i1 = 0, unsigned int i2 = std::string::npos, unsigned int nCol = 0);
+		std::string sumString(VectorIndex _vLine, VectorIndex _vCol);
 
 		// Returns the number of stored elements in either a
 		// specific column or the maximal line count of the
 		// whole object
-		inline unsigned int getStringElements(unsigned int nCol = string::npos) const
+		inline unsigned int getStringElements(unsigned int nCol = std::string::npos) const
 		{
-			if (nCol == string::npos)
+			if (nCol == std::string::npos)
 			{
 			    // No column selected. Return the maximal line count
 				unsigned int nCnt = 0;
@@ -121,9 +119,9 @@ class StringMemory
 
 		// Returns the size of a selected column or the whole
 		// object in bytes
-		inline int getStringSize(unsigned int nCol = string::npos) const
+		inline int getStringSize(unsigned int nCol = std::string::npos) const
 		{
-			if (nCol == string::npos)
+			if (nCol == std::string::npos)
 			{
 			    // No column selected. Return the total size
 				unsigned int nSize = 0;
@@ -158,7 +156,7 @@ class StringMemory
 		}
 
 		// Wrapper for the internal string sorting function
-		inline vector<int> sortStringElements(long long int i1, long long int i2, long long int j1, long long int j2, const string& sSortingExpression)
+		inline std::vector<int> sortStringElements(long long int i1, long long int i2, long long int j1, long long int j2, const std::string& sSortingExpression)
 		{
 		    return _stringIntMem.sortElements(i1, i2, j1, j2, sSortingExpression);
 		}

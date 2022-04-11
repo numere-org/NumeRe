@@ -22,6 +22,8 @@
 #include "../io/file.hpp"
 #include <cstdlib>
 
+using namespace std;
+
 
 /////////////////////////////////////////////////
 /// \brief This function searches the passed

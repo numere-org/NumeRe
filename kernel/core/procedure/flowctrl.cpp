@@ -41,6 +41,8 @@
 #define JUMP_TABLE_ELEMENTS 3 // The maximal number of elements
 extern value_type vAns;
 
+using namespace std;
+
 
 /////////////////////////////////////////////////
 /// \brief Default constructor.
@@ -146,9 +148,9 @@ int FlowCtrl::for_loop(int nth_Cmd, int nth_loop)
     int nVarAdress = 0;
     int nInc = 1;
     int nLoopCount = 0;
-    string sForHead = vCmdArray[nth_Cmd].sCommand.substr(vCmdArray[nth_Cmd].sCommand.find('=') + 1);
-    string sVar = vCmdArray[nth_Cmd].sCommand.substr(vCmdArray[nth_Cmd].sCommand.find(' ') + 1);
-    string sLine = "";
+    std::string sForHead = vCmdArray[nth_Cmd].sCommand.substr(vCmdArray[nth_Cmd].sCommand.find('=') + 1);
+    std::string sVar = vCmdArray[nth_Cmd].sCommand.substr(vCmdArray[nth_Cmd].sCommand.find(' ') + 1);
+    std::string sLine = "";
     bPrintedStatus = false;
     sVar = sVar.substr(0, sVar.find('='));
     StripSpaces(sVar);
@@ -245,7 +247,7 @@ int FlowCtrl::for_loop(int nth_Cmd, int nth_loop)
                 return nJumpTable[nth_Cmd][BLOCK_END];
             else if (!nCalcType[__j])
             {
-                string sCommand = findCommand(vCmdArray[__j].sCommand).sString;
+                std::string sCommand = findCommand(vCmdArray[__j].sCommand).sString;
 
                 // Evaluate the commands, store the bytecode
                 if (sCommand == "continue")

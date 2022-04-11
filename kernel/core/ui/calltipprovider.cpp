@@ -171,7 +171,7 @@ namespace NumeRe
     /////////////////////////////////////////////////
     static std::string CleanDocumentation(std::string sDocumentation, std::string& sReturns)
     {
-        if (sDocumentation.find_first_not_of(" \n") != string::npos)
+        if (sDocumentation.find_first_not_of(" \n") != std::string::npos)
         {
             // Clean whitespace before and after the documentation
             sDocumentation.erase(0, sDocumentation.find_first_not_of(" \n"));
@@ -182,7 +182,7 @@ namespace NumeRe
             size_t nPos = sDocumentation.find("\\param ");
 
             // Resolve "\param" keywords
-            if (nPos != string::npos)
+            if (nPos != std::string::npos)
             {
                 // Insert a headline above the first parameter
                 if (nPos > 5 && sDocumentation.substr(nPos-5, 5) != "\n    ")
@@ -190,7 +190,7 @@ namespace NumeRe
                 else
                     sDocumentation.insert(nPos, toUpperCase(_lang.get("GUI_EDITOR_CALLTIP_PROC_PARAMS")) + "\n    ");
 
-                while ((nPos = sDocumentation.find("\\param ")) != string::npos)
+                while ((nPos = sDocumentation.find("\\param ")) != std::string::npos)
                 {
                     sDocumentation.replace(nPos, 6, "-");
                     size_t spacePos = sDocumentation.find(' ', sDocumentation.find_first_not_of(' ', nPos+1));
@@ -228,11 +228,11 @@ namespace NumeRe
             }
 
             // Replace \remark
-            while ((nPos = sDocumentation.find("\\remark ")) != string::npos)
+            while ((nPos = sDocumentation.find("\\remark ")) != std::string::npos)
                 sDocumentation.replace(nPos, 7, toUpperCase(_lang.get("GUI_EDITOR_CALLTIP_PROC_REMARK"))+":");
 
             // Remove doubled exclamation marks
-            while ((nPos = sDocumentation.find("!!")) != string::npos)
+            while ((nPos = sDocumentation.find("!!")) != std::string::npos)
                 sDocumentation.erase(nPos, 2);
 
             // Replace \begin{} and \end{} with line breaks
@@ -240,7 +240,7 @@ namespace NumeRe
             // in NumeReEditor::AppendToDocumentation
             size_t nMatch = 0;
 
-            while ((nMatch = sDocumentation.find("\\begin{")) != string::npos)
+            while ((nMatch = sDocumentation.find("\\begin{")) != std::string::npos)
             {
                 sDocumentation.erase(nMatch, sDocumentation.find('}', nMatch) + 1 - nMatch);
 
@@ -248,7 +248,7 @@ namespace NumeRe
                     sDocumentation.erase(nMatch, 5);
             }
 
-            while ((nMatch = sDocumentation.find("\\end{")) != string::npos)
+            while ((nMatch = sDocumentation.find("\\end{")) != std::string::npos)
             {
                 sDocumentation.erase(nMatch, sDocumentation.find('}', nMatch) + 1 - nMatch + 1);
             }
@@ -424,7 +424,7 @@ namespace NumeRe
                     {
                         std::string sFlags = sProcCommandLine.substr(sProcCommandLine.find("::") + 2).c_str();
 
-                        if (sFlags.find("##") != string::npos)
+                        if (sFlags.find("##") != std::string::npos)
                             sFlags.erase(sFlags.find("##"));
 
                         StripSpaces(sFlags);

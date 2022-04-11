@@ -7,6 +7,8 @@
 
 extern Language _guilang;
 
+using namespace std;
+
 
 /////////////////////////////////////////////////
 /// \brief Returns the encoded color bitlist.

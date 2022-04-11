@@ -61,10 +61,6 @@
 #ifndef KERNEL_HPP
 #define KERNEL_HPP
 
-
-using namespace std;
-using namespace mu;
-
 // Forward declarations of the terminal class and
 // the task container used for communicating between
 // the kernel and the GUI
@@ -82,7 +78,7 @@ struct NumeReTask;
 /////////////////////////////////////////////////
 struct NumeReVariables
 {
-    vector<string> vVariables;
+    std::vector<std::string> vVariables;
     size_t nNumerics;
     size_t nStrings;
     size_t nTables;
@@ -139,9 +135,9 @@ class NumeReKernel
         };
 
     private:
-        string sCommandLine;
-        string sAnswer;
-        string sPlotCompose;
+        std::string sCommandLine;
+        std::string sAnswer;
+        std::string sPlotCompose;
         bool installing;
         bool refreshTree;
 
@@ -152,7 +148,7 @@ class NumeReKernel
         Settings _option;
         Output _out;
         MemoryManager _memoryManager;
-        Parser _parser;
+        mu::Parser _parser;
         NumeRe::StringParser _stringParser;
         FunctionDefinitionManager _functions;
         PlotData _pData;
@@ -163,21 +159,21 @@ class NumeReKernel
         NumeRe::Cluster* _ans;
 
         // private member functions for special tasks
-        void printResult(const string& sLine, const string& sCmdCache, bool bScriptRunning);
-        string maskProcedureSigns(string sLine);
-        bool handleCommandLineSource(string& sLine, const string& sCmdCache, string& sKeep);
-        bool getLineFromCommandCache(string& sLine, string& sCmdCache, const string& sCurrentCommand);
-        bool handleComposeBlock(string& sLine, const string& sCmdCache, const string& sCurrentCommand, KernelStatus& nReturnVal);
-        bool handleProcedureWrite(const string& sLine, const string& sCmdCache, const string& sCurrentCommand, KernelStatus& nReturnVal);
-        bool uninstallPlugin(const string& sLine, const string& sCurrentCommand);
-        void handleToCmd(string& sLine, string& sCache, string& sCurrentCommand);
-        bool evaluateProcedureCalls(string& sLine);
-        bool executePlugins(string& sLine);
-        bool handleFlowControls(string& sLine, const string& sCmdCache, const string& sCurrentCommand, KernelStatus& nReturnVal);
-        bool evaluateStrings(string& sLine, string& sCache, const string& sCmdCache, bool& bWriteToCache, KernelStatus& nReturnVal);
-        void createCalculationAnswer(int nNum, value_type* v, const string& sCmdCache);
-        void resetAfterError(string& sCmdCache);
-        string getGreeting();
+        void printResult(const std::string& sLine, const std::string& sCmdCache, bool bScriptRunning);
+        std::string maskProcedureSigns(std::string sLine);
+        bool handleCommandLineSource(std::string& sLine, const std::string& sCmdCache, std::string& sKeep);
+        bool getLineFromCommandCache(std::string& sLine, std::string& sCmdCache, const std::string& sCurrentCommand);
+        bool handleComposeBlock(std::string& sLine, const std::string& sCmdCache, const std::string& sCurrentCommand, KernelStatus& nReturnVal);
+        bool handleProcedureWrite(const std::string& sLine, const std::string& sCmdCache, const std::string& sCurrentCommand, KernelStatus& nReturnVal);
+        bool uninstallPlugin(const std::string& sLine, const std::string& sCurrentCommand);
+        void handleToCmd(std::string& sLine, std::string& sCache, std::string& sCurrentCommand);
+        bool evaluateProcedureCalls(std::string& sLine);
+        bool executePlugins(std::string& sLine);
+        bool handleFlowControls(std::string& sLine, const std::string& sCmdCache, const std::string& sCurrentCommand, KernelStatus& nReturnVal);
+        bool evaluateStrings(std::string& sLine, std::string& sCache, const std::string& sCmdCache, bool& bWriteToCache, KernelStatus& nReturnVal);
+        void createCalculationAnswer(int nNum, mu::value_type* v, const std::string& sCmdCache);
+        void resetAfterError(std::string& sCmdCache);
+        std::string getGreeting();
         void checkInternalStates();
 
         // Functions for initializing the numerical parser
@@ -191,7 +187,7 @@ class NumeReKernel
         // state and to communicate with the graphical layer
         static int* baseStackPosition;
         static NumeReTerminal* m_parent;
-        static queue<NumeReTask> taskQueue;
+        static std::queue<NumeReTask> taskQueue;
         static int nLINE_LENGTH;
         static bool bWritingTable;
         static bool bCancelSignal;
@@ -229,35 +225,35 @@ class NumeReKernel
 
         static void toggleTableStatus();
         static void flush();
-        static void print(const string& __sLine, bool printingEnabled = true);
-        static void printPreFmt(const string& __sLine, bool printingEnabled = true);
-        static string formatResultOutput(int nNum, value_type* v);
-        static string formatResultOutput(const vector<string>& vStringResults);
-        static void issueWarning(string sWarningMessage);
-        static void failMessage(string sFailMessage);
+        static void print(const std::string& __sLine, bool printingEnabled = true);
+        static void printPreFmt(const std::string& __sLine, bool printingEnabled = true);
+        static std::string formatResultOutput(int nNum, mu::value_type* v);
+        static std::string formatResultOutput(const std::vector<std::string>& vStringResults);
+        static void issueWarning(std::string sWarningMessage);
+        static void failMessage(std::string sFailMessage);
         static int numberOfNumbersPerLine();
-        static void progressBar(int nStep, int nFirstStep, int nFinalStep, const string& sType);
-        static void getline(string& sLine);
-        static void gotoLine(const string& sFile, unsigned int nLine = 0);
-        static void setDocumentation(const string& _sDocumentation);
+        static void progressBar(int nStep, int nFirstStep, int nFinalStep, const std::string& sType);
+        static void getline(std::string& sLine);
+        static void gotoLine(const std::string& sFile, unsigned int nLine = 0);
+        static void setDocumentation(const std::string& _sDocumentation);
         static void installationDone();
         static bool GetAsyncCancelState();
-        static void showTable(NumeRe::Table _table, string __name, bool openeditable = false);
-        static void showStringTable(NumeRe::Container<string> _stringtable, string __name, bool openeditable = false);
+        static void showTable(NumeRe::Table _table, std::string __name, bool openeditable = false);
+        static void showStringTable(NumeRe::Container<std::string> _stringtable, std::string __name, bool openeditable = false);
         void showWindow(const NumeRe::Window& window);
         static NumeRe::Table getTable();
-        NumeRe::Table getTable(const string& sTableName);
-        NumeRe::Container<string> getStringTable(const string& sStringTableName);
-        static void showDebugEvent(const string& sTitle, const vector<string>& vStacktrace);
+        NumeRe::Table getTable(const std::string& sTableName);
+        NumeRe::Container<std::string> getStringTable(const std::string& sStringTableName);
+        static void showDebugEvent(const std::string& sTitle, const std::vector<std::string>& vStacktrace);
         static int waitForContinue();
-        static int evalDebuggerBreakPoint(const string& sCurrentCommand = "");
+        static int evalDebuggerBreakPoint(const std::string& sCurrentCommand = "");
         static void clcTerminal();
         void refreshFunctionTree();
         void closeWindows(int type);
 
         // Public member functions
         // Main loop function
-        KernelStatus MainLoop(const string& sCommand);
+        KernelStatus MainLoop(const std::string& sCommand);
 
         FileSystem& getFileSystem()
         {
@@ -282,7 +278,7 @@ class NumeReKernel
             _ans = ans;
         }
 
-        Parser& getParser()
+        mu::Parser& getParser()
         {
             return _parser;
         }
@@ -338,13 +334,13 @@ class NumeReKernel
         }
 
         void displaySplash();
-        map<string,string> getPluginLanguageStrings();
-        map<string,string> getFunctionLanguageStrings();
-        vector<string> getPluginCommands();
+        std::map<std::string,std::string> getPluginLanguageStrings();
+        std::map<std::string,std::string> getFunctionLanguageStrings();
+        std::vector<std::string> getPluginCommands();
         int ReadOpenFileFlag();
-        string ReadAnswer();
-        string getDocumentation(const string& sCommand);
-        vector<string> getDocIndex();
+        std::string ReadAnswer();
+        std::string getDocumentation(const std::string& sCommand);
+        std::vector<std::string> getDocIndex();
         NumeReVariables getVariableList();
         bool SettingsModified();
         int getAutosaveInterval() const
@@ -356,7 +352,7 @@ class NumeReKernel
 			return _memoryManager.getLastSaved();
 		}
         void Autosave();
-        void StartUp(NumeReTerminal* _parent, const string& __sPath, const string& sPredefinedFunctions);
+        void StartUp(NumeReTerminal* _parent, const std::string& __sPath, const std::string& sPredefinedFunctions);
         void CloseSession();
         void CancelCalculation()
         {
@@ -382,12 +378,12 @@ class NumeReKernel
 /////////////////////////////////////////////////
 struct NumeReTask
 {
-    string sString;
+    std::string sString;
     size_t nLine;
-    vector<string> vDebugEvent;
+    std::vector<std::string> vDebugEvent;
     NumeRe::Table table;
     NumeRe::Window window;
-    NumeRe::Container<string> stringTable;
+    NumeRe::Container<std::string> stringTable;
     int taskType;
 
     NumeReTask() : sString(), nLine(0), vDebugEvent(), table(), window(), stringTable(), taskType(0) {}
@@ -402,19 +398,19 @@ struct NumeReTask
 /// the string will be shortened to the required
 /// size and '...' will be added.
 ///
-/// \param sString const string&
+/// \param sString const std::string&
 /// \param nWidth unsigned int
 /// \param cFill char
 /// \param limit bool
-/// \return string
+/// \return std::string
 ///
 /////////////////////////////////////////////////
-inline string strfill(const string& sString, unsigned int nWidth, char cFill = ' ', bool limit = false)
+inline std::string strfill(const std::string& sString, unsigned int nWidth, char cFill = ' ', bool limit = false)
 {
     if (!nWidth)
         return "";
 
-    string sReturn = sString;
+    std::string sReturn = sString;
 
     // Fill the string
     if (sString.length() < nWidth)
@@ -433,17 +429,17 @@ inline string strfill(const string& sString, unsigned int nWidth, char cFill = '
 /// up to the width nWidth with the characters
 /// cFill. The string will be aligned left.
 ///
-/// \param sString const string&
+/// \param sString const std::string&
 /// \param nWidth unsigned int
 /// \param cFill char
-/// \return string
+/// \return std::string
 ///
 /////////////////////////////////////////////////
-inline string strlfill(const string& sString, unsigned int nWidth, char cFill = ' ')
+inline std::string strlfill(const std::string& sString, unsigned int nWidth, char cFill = ' ')
 {
     if (!nWidth)
         return "";
-    string sReturn = sString;
+    std::string sReturn = sString;
     if (sString.length() < nWidth)
         sReturn.append(nWidth-sReturn.length(), cFill);
     return sReturn;
@@ -454,18 +450,20 @@ inline string strlfill(const string& sString, unsigned int nWidth, char cFill = 
 /// \brief This function provides a headline for
 /// the "windows" in the console.
 ///
-/// \param sString const string&
+/// \param sString const std::string&
 /// \param cHeadLineSep char
-/// \return string
+/// \return std::string
 ///
 /////////////////////////////////////////////////
-inline string sectionHeadline(const string& sString, char cHeadLineSep = '-')
+inline std::string sectionHeadline(const std::string& sString, char cHeadLineSep = '-')
 {
-    string sSectionHeadline = "|\n|   " + toUpperCase(sString);
+    std::string sSectionHeadline = "|\n|   " + toUpperCase(sString);
+
     if (sSectionHeadline.back() != ':')
         sSectionHeadline += ": ";
     else
         sSectionHeadline += " ";
+
     sSectionHeadline.append(NumeReKernel::nLINE_LENGTH-sSectionHeadline.length()+1, cHeadLineSep);
     sSectionHeadline += "\n";
     return sSectionHeadline;
@@ -478,12 +476,12 @@ inline string sectionHeadline(const string& sString, char cHeadLineSep = '-')
 /// below the error location.
 ///
 /// \param nPos unsigned int
-/// \return string
+/// \return std::string
 ///
 /////////////////////////////////////////////////
-inline string pointToError(unsigned int nPos)
+inline std::string pointToError(unsigned int nPos)
 {
-    string sErrorPointer = "|   ";
+    std::string sErrorPointer = "|   ";
     sErrorPointer += strfill("^^^", nPos+13) + "\n";
     return sErrorPointer;
 }

@@ -470,7 +470,7 @@ Interval Interval::combine(const Interval& _ivl) const
     else if (isnan(_ivl.m_vInterval.front()))
         return *this;
 
-    return Interval(::min(this->min(), _ivl.min()), ::max(this->max(), _ivl.max()));
+    return Interval(std::min(this->min(), _ivl.min()), std::max(this->max(), _ivl.max()));
 }
 
 

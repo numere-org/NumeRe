@@ -33,8 +33,6 @@
 #include "../io/filesystem.hpp"
 #include "../ui/error.hpp"
 
-using namespace std;
-
 
 /////////////////////////////////////////////////
 /// \brief This class implements a single
@@ -52,11 +50,11 @@ class Package
         /// \brief This private member function removes
         /// the surrounding parentheses, if available.
         ///
-        /// \param sString const string&
-        /// \return string
+        /// \param sString const std::string&
+        /// \return std::string
         ///
         /////////////////////////////////////////////////
-        string stripParentheses(const string& sString) const
+        std::string stripParentheses(const std::string& sString) const
         {
             if (sString.front() == '(' && sString.back() == ')')
                 return sString.substr(1, sString.length()-2);
@@ -112,12 +110,12 @@ class Package
 class PackageManager : public FileSystem
 {
     private:
-        fstream fPlugins;
-        vector<Package> vPackageInfo;
-        string sPluginDefinitionFile;
+        std::fstream fPlugins;
+        std::vector<Package> vPackageInfo;
+        std::string sPluginDefinitionFile;
 
-        string sPluginProcName;
-        string sPluginVarList;
+        std::string sPluginProcName;
+        std::string sPluginVarList;
         void assign(const PackageManager& _manager);
         void updatePluginFile();
 
@@ -128,10 +126,10 @@ class PackageManager : public FileSystem
         PackageManager& operator= (const PackageManager& _manager);
 
         bool loadPlugins();
-        bool evalPluginCmd(string& sCmd);
-        bool declareNewPackage(const string& sInstallInfoString);
-        bool isPluginCmd(const string& sCmd) const;
-        string deletePackage(const string& sPackage);
+        bool evalPluginCmd(std::string& sCmd);
+        bool declareNewPackage(const std::string& sInstallInfoString);
+        bool isPluginCmd(const std::string& sCmd) const;
+        std::string deletePackage(const std::string& sPackage);
         std::map<std::string, std::string> getMenuMap() const;
 
         /////////////////////////////////////////////////
@@ -144,19 +142,19 @@ class PackageManager : public FileSystem
         inline unsigned int getPackageCount() const
             {return vPackageInfo.size();}
 
-        string getPluginInfoPath();
-        void addHelpIndex(const string& _sPluginName, string _sHelpId);
+        std::string getPluginInfoPath();
+        void addHelpIndex(const std::string& _sPluginName, std::string _sHelpId);
 
         /////////////////////////////////////////////////
         /// \brief Returns the names of the installed
         /// plugins.
         ///
-        /// \return string
+        /// \return std::string
         ///
         /////////////////////////////////////////////////
-        inline string getPluginNames() const
+        inline std::string getPluginNames() const
         {
-            string sReturn = ";";
+            std::string sReturn = ";";
 
             for (unsigned int i = 0; i < vPackageInfo.size(); i++)
                 sReturn += vPackageInfo[i].getName() + ";";
@@ -168,20 +166,20 @@ class PackageManager : public FileSystem
         /// \brief Returns the current plugin's procedure
         /// name.
         ///
-        /// \return string
+        /// \return std::string
         ///
         /////////////////////////////////////////////////
-        inline string getPluginProcName() const
+        inline std::string getPluginProcName() const
             {return sPluginProcName;}
 
         /////////////////////////////////////////////////
         /// \brief Returns the current plugin's procedure
         /// argument list.
         ///
-        /// \return string
+        /// \return std::string
         ///
         /////////////////////////////////////////////////
-        inline string getPluginVarList() const
+        inline std::string getPluginVarList() const
             {return sPluginVarList;}
 
         /////////////////////////////////////////////////
@@ -189,10 +187,10 @@ class PackageManager : public FileSystem
         /// plugin.
         ///
         /// \param i unsigned int i
-        /// \return string
+        /// \return std::string
         ///
         /////////////////////////////////////////////////
-        inline string getPluginCommand(unsigned int i = 0) const
+        inline std::string getPluginCommand(unsigned int i = 0) const
         {
             if (i < vPackageInfo.size())
                 return vPackageInfo[i].sCommand;
@@ -205,10 +203,10 @@ class PackageManager : public FileSystem
         /// of the ith plugin.
         ///
         /// \param i unsigned int i
-        /// \return string
+        /// \return std::string
         ///
         /////////////////////////////////////////////////
-        inline string getPluginCommandSignature(unsigned int i = 0) const
+        inline std::string getPluginCommandSignature(unsigned int i = 0) const
         {
             if (i < vPackageInfo.size())
                 return vPackageInfo[i].getCommandSignature();
@@ -221,10 +219,10 @@ class PackageManager : public FileSystem
         /// plugin.
         ///
         /// \param i unsigned int
-        /// \return string
+        /// \return std::string
         ///
         /////////////////////////////////////////////////
-        inline string getPackageName(unsigned int i = 0) const
+        inline std::string getPackageName(unsigned int i = 0) const
         {
             if (i < vPackageInfo.size())
                 return vPackageInfo[i].getName();
@@ -237,10 +235,10 @@ class PackageManager : public FileSystem
         /// the ith plugin.
         ///
         /// \param i unsigned int
-        /// \return string
+        /// \return std::string
         ///
         /////////////////////////////////////////////////
-        inline string getPackageVersion(unsigned int i = 0) const
+        inline std::string getPackageVersion(unsigned int i = 0) const
         {
             if (i < vPackageInfo.size())
                 return vPackageInfo[i].sVersion;
@@ -252,10 +250,10 @@ class PackageManager : public FileSystem
         /// \brief Returns the author of the ith plugin.
         ///
         /// \param i unsigned int
-        /// \return string
+        /// \return std::string
         ///
         /////////////////////////////////////////////////
-        inline string getPackageAuthor(unsigned int i = 0) const
+        inline std::string getPackageAuthor(unsigned int i = 0) const
         {
             if (i < vPackageInfo.size())
                 return vPackageInfo[i].getAuthor();
@@ -268,10 +266,10 @@ class PackageManager : public FileSystem
         /// plugin.
         ///
         /// \param unsigned int i = 0
-        /// \return string
+        /// \return std::string
         ///
         /////////////////////////////////////////////////
-        inline string getPackageDescription(unsigned int i = 0) const
+        inline std::string getPackageDescription(unsigned int i = 0) const
         {
             if (i < vPackageInfo.size())
                 return vPackageInfo[i].getDescription();
@@ -284,10 +282,10 @@ class PackageManager : public FileSystem
         /// ith plugin.
         ///
         /// \param unsigned int i = 0
-        /// \return string
+        /// \return std::string
         ///
         /////////////////////////////////////////////////
-        inline string getPackageLicense(unsigned int i = 0) const
+        inline std::string getPackageLicense(unsigned int i = 0) const
         {
             if (i < vPackageInfo.size())
                 return vPackageInfo[i].getLicense();
@@ -300,10 +298,10 @@ class PackageManager : public FileSystem
         /// plugin.
         ///
         /// \param unsigned int i = 0
-        /// \return string
+        /// \return std::string
         ///
         /////////////////////////////////////////////////
-        inline string getPluginMenuEntry(unsigned int i = 0) const
+        inline std::string getPluginMenuEntry(unsigned int i = 0) const
         {
             if (i < vPackageInfo.size())
                 return vPackageInfo[i].getMenuEntry();

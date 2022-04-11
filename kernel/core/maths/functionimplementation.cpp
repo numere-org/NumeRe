@@ -45,6 +45,7 @@
 #include "../utils/tools.hpp"
 #include "../version.h"
 
+using namespace std;
 
 int nErrorIndices[2] = {-1,-1};
 string sErrorToken = "";

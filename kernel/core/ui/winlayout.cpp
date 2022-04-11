@@ -768,10 +768,10 @@ std::vector<std::string> getEventProcedures(const std::string& sLayoutFile)
 /////////////////////////////////////////////////
 void dialogCommand(CommandLineParser& cmdParser)
 {
-    const string& sParList = cmdParser.getParameterList();
-    string sMessage;
-    string sTitle = "NumeRe: Window";
-    string sExpression;
+    const std::string& sParList = cmdParser.getParameterList();
+    std::string sMessage;
+    std::string sTitle = "NumeRe: Window";
+    std::string sExpression;
     int nControls = NumeRe::CTRL_NONE;
     NumeReKernel* kernel = NumeReKernel::getInstance();
 
@@ -787,7 +787,7 @@ void dialogCommand(CommandLineParser& cmdParser)
     // use the message box as default value
     if (findParameter(sParList, "type", '='))
     {
-        string sType = getArgAtPos(sParList, findParameter(sParList, "type", '=')+4);
+        std::string sType = getArgAtPos(sParList, findParameter(sParList, "type", '=')+4);
 
         if (sType == "filedialog")
             nControls = NumeRe::CTRL_FILEDIALOG;
@@ -809,7 +809,7 @@ void dialogCommand(CommandLineParser& cmdParser)
     // created by wxWidgets. We don't have to do that here
     if (findParameter(sParList, "buttons", '='))
     {
-        string sButtons = getArgAtPos(sParList, findParameter(sParList, "buttons", '=')+7);
+        std::string sButtons = getArgAtPos(sParList, findParameter(sParList, "buttons", '=')+7);
 
         if (sButtons == "ok")
             nControls |= NumeRe::CTRL_OKBUTTON;
@@ -823,7 +823,7 @@ void dialogCommand(CommandLineParser& cmdParser)
     // created by wxWidgets. We don't have to do that here
     if (findParameter(sParList, "icon", '='))
     {
-        string sIcon = getArgAtPos(sParList, findParameter(sParList, "icon", '=')+4);
+        std::string sIcon = getArgAtPos(sParList, findParameter(sParList, "icon", '=')+4);
 
         if (sIcon == "erroricon")
             nControls |= NumeRe::CTRL_ICONERROR;
@@ -843,7 +843,7 @@ void dialogCommand(CommandLineParser& cmdParser)
     // tokens
     if (kernel->getStringParser().isStringExpression(sExpression))
     {
-        string sDummy;
+        std::string sDummy;
         kernel->getStringParser().evalAndFormat(sExpression, sDummy, true);
     }
 

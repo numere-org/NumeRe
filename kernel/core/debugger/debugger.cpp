@@ -26,6 +26,8 @@
 #define DEFAULT_NUM_PRECISION 7
 #define DEFAULT_MINMAX_PRECISION 5
 
+using namespace std;
+
 
 /////////////////////////////////////////////////
 /// \brief Constructor.

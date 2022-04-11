@@ -26,6 +26,8 @@ mu::value_type* Fitcontroller::xvar = 0;
 mu::value_type* Fitcontroller::yvar = 0;
 mu::value_type* Fitcontroller::zvar = 0;
 
+using namespace std;
+
 
 /////////////////////////////////////////////////
 /// \brief Default constructor

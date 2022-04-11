@@ -48,6 +48,8 @@ struct MatOpCache
     std::vector<MatOpDataAccess> vDataAccesses;
 };
 
+using namespace std;
+
 static Matrix evalMatOp(string& sCmd, Parser& _parser, MemoryManager& _data, FunctionDefinitionManager& _functions, const Settings& _option, MatOpCache& _cache);
 static size_t getPrevMatMultiOp(const string& sCmd, size_t nLastPos);
 static Matrix multiplyMatrices(const Matrix& _mLeft, const Matrix& _mRight, const string& sCmd, const string& sExpr, size_t position);

@@ -691,7 +691,7 @@ class MemoryManager : public NumeRe::FileAdapter, public StringMemory, public Nu
 
             if (sDir.find("cols") != std::string::npos)
                 return vMemory[findTable(sTable)]->maxpos(_idx, COLS | (sDir.find("grid") != std::string::npos ? GRID : 0));
-            else if (sDir.find("lines") != string::npos)
+            else if (sDir.find("lines") != std::string::npos)
                 return vMemory[findTable(sTable)]->maxpos(_idx, LINES | (sDir.find("grid") != std::string::npos ? GRID : 0));
             else
                 return vMemory[findTable(sTable)]->maxpos(VectorIndex(0, VectorIndex::OPEN_END), sDir.find("grid") != std::string::npos ? GRID : ALL);

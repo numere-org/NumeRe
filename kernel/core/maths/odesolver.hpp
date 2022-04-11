@@ -34,9 +34,6 @@
 #include "../settings.hpp"
 #include "../ui/error.hpp"
 
-using namespace std;
-using namespace mu;
-
 class Odesolver
 {
     private:
@@ -53,15 +50,15 @@ class Odesolver
             {return GSL_SUCCESS;}
 
     public:
-        static Parser* _odeParser;
+        static mu::Parser* _odeParser;
         static int nDimensions;
         static mu::varmap_type mVars;
 
         Odesolver();
-        Odesolver(Parser* _parser, MemoryManager* _data, FunctionDefinitionManager* _functions, Settings* _option);
+        Odesolver(mu::Parser* _parser, MemoryManager* _data, FunctionDefinitionManager* _functions, Settings* _option);
         ~Odesolver();
 
-        inline void setObjects(Parser* _parser, MemoryManager* _data, FunctionDefinitionManager* _functions, Settings* _option)
+        inline void setObjects(mu::Parser* _parser, MemoryManager* _data, FunctionDefinitionManager* _functions, Settings* _option)
             {
                 _odeParser = _parser;
                 _odeData = _data;
@@ -69,7 +66,7 @@ class Odesolver
                 _odeSettings = _option;
                 return;
             }
-        bool solve(const string& sCmd);
+        bool solve(const std::string& sCmd);
 };
 
 typedef int (Odesolver::*odeFunction)(double, const double*, double*, void*);

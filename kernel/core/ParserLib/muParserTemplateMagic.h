@@ -103,7 +103,7 @@ namespace mu
     static T Log(const T& v)   { return log(v); }
     static T Log2(const T& v)  { return log(v)/log((T)2.0); } // Logarithm base 2
     static T Log10(const T& v) { return log10(v); }         // Logarithm base 10
-    static T Exp(const T& v)   { return exp(v);}
+    static T Exp(const T& v)   { return v.imag() == 0 ? exp(v.real()) : exp(v);}
     static T Abs(const T& v)   { return (v>=0.0) ? v : -v; }
     static T Rint(const T& v)  { return floor(v + (T)0.5); }
     static T Sign(const T& v)  { return (T)((v<0.0) ? -1.0 : (v>0.0) ? 1.0 : 0.0); }

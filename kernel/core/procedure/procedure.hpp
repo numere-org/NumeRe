@@ -43,9 +43,6 @@
 #include "../io/output.hpp"
 #include "../script.hpp"
 
-using namespace std;
-using namespace mu;
-
 // forward declaration of the var factory
 class ProcedureVarFactory;
 
@@ -61,15 +58,15 @@ class Procedure : public FlowCtrl, public PackageManager
         friend class NumeReDebugger;
         friend class ProcedureVarFactory; // For FlowCtrl Enums
 
-        fstream fProcedure;
-        string sProcNames;
-        string sCurrentProcedureName;
+        std::fstream fProcedure;
+        std::string sProcNames;
+        std::string sCurrentProcedureName;
         int nCurrentLine;
-        string sNameSpace;
-        string sCallingNameSpace;
-        string sThisNameSpace;
-        string sLastWrittenProcedureFile;
-        string sProcCommandLine;
+        std::string sNameSpace;
+        std::string sCallingNameSpace;
+        std::string sThisNameSpace;
+        std::string sLastWrittenProcedureFile;
+        std::string sProcCommandLine;
         bool bProcSupressAnswer;
         bool bWritingTofile;
         int nFlags;
@@ -80,41 +77,41 @@ class Procedure : public FlowCtrl, public PackageManager
 
         void init();
 
-        Returnvalue ProcCalc(string sLine, string sCurrentCommand, int& nByteCode, Parser& _parser, FunctionDefinitionManager& _functions, MemoryManager& _data, Settings& _option, Output& _out, PlotData& _pData, Script& _script);
-        bool setProcName(const string& sProc, bool bInstallFileName = false);
-        void resetProcedure(Parser& _parser, bool bSupressAnswer);
-        void extractCurrentNamespace(const string& sProc);
-        bool handleVariableDefinitions(string& sProcCommandLine, const string& sCommand);
-        void readFromInclude(ifstream& fInclude, int nIncludeType, Parser& _parser, FunctionDefinitionManager& _functions, MemoryManager& _data, Output& _out, PlotData& _pData, Script& _script, Settings& _option, unsigned int nth_procedure);
-        int handleIncludeSyntax(string& sProcCommandLine, ifstream& fInclude, bool bReadingFromInclude);
-        void extractProcedureInformation(const string& sCmdLine, size_t nPos, string& sProcName, string& sArgList, string& sFileName);
+        Returnvalue ProcCalc(std::string sLine, std::string sCurrentCommand, int& nByteCode, mu::Parser& _parser, FunctionDefinitionManager& _functions, MemoryManager& _data, Settings& _option, Output& _out, PlotData& _pData, Script& _script);
+        bool setProcName(const std::string& sProc, bool bInstallFileName = false);
+        void resetProcedure(mu::Parser& _parser, bool bSupressAnswer);
+        void extractCurrentNamespace(const std::string& sProc);
+        bool handleVariableDefinitions(std::string& sProcCommandLine, const std::string& sCommand);
+        void readFromInclude(std::ifstream& fInclude, int nIncludeType, mu::Parser& _parser, FunctionDefinitionManager& _functions, MemoryManager& _data, Output& _out, PlotData& _pData, Script& _script, Settings& _option, unsigned int nth_procedure);
+        int handleIncludeSyntax(std::string& sProcCommandLine, std::ifstream& fInclude, bool bReadingFromInclude);
+        void extractProcedureInformation(const std::string& sCmdLine, size_t nPos, std::string& sProcName, std::string& sArgList, std::string& sFileName);
 
-        virtual int procedureCmdInterface(string& sLine) override;
-        virtual vector<string> expandInlineProcedures(string& sLine) override;
-        int isInlineable(const string& sProc, const string& sFileName, int* nInlineFlag = nullptr);
-        int applyInliningRuleset(const string& sCommandLine, const string& sArgumentList);
-        size_t countProceduresInLine(const string& sCommandLine);
-        vector<string> getInlined(const string& sProc, const string& sArgumentList, const string& sFileName, size_t nProcedures);
+        virtual int procedureCmdInterface(std::string& sLine) override;
+        virtual std::vector<std::string> expandInlineProcedures(std::string& sLine) override;
+        int isInlineable(const std::string& sProc, const std::string& sFileName, int* nInlineFlag = nullptr);
+        int applyInliningRuleset(const std::string& sCommandLine, const std::string& sArgumentList);
+        size_t countProceduresInLine(const std::string& sCommandLine);
+        std::vector<std::string> getInlined(const std::string& sProc, const std::string& sArgumentList, const std::string& sFileName, size_t nProcedures);
 
     public:
         Procedure();
         Procedure(const Procedure& _procedure);
         ~Procedure();
 
-        Returnvalue execute(string sProc, string sVarList, Parser& _parser, FunctionDefinitionManager& _functions, MemoryManager& _data, Settings& _option, Output& _out, PlotData& _pData, Script& _script, unsigned int nth_procedure = 0);
+        Returnvalue execute(std::string sProc, std::string sVarList, mu::Parser& _parser, FunctionDefinitionManager& _functions, MemoryManager& _data, Settings& _option, Output& _out, PlotData& _pData, Script& _script, unsigned int nth_procedure = 0);
         static std::string mangleName(std::string sProcedureName);
-        virtual FlowCtrl::ProcedureInterfaceRetVal procedureInterface(string& sLine, Parser& _parser, FunctionDefinitionManager& _functions, MemoryManager& _data, Output& _out, PlotData& _pData, Script& _script, Settings& _option, int nth_command = 0) override;
-        bool writeProcedure(string sProcedureLine);
-        virtual int isInline(const string& sProc) override;
-        virtual int evalDebuggerBreakPoint(Parser& _parser, Settings& _option) override;
+        virtual FlowCtrl::ProcedureInterfaceRetVal procedureInterface(std::string& sLine, mu::Parser& _parser, FunctionDefinitionManager& _functions, MemoryManager& _data, Output& _out, PlotData& _pData, Script& _script, Settings& _option, int nth_command = 0) override;
+        bool writeProcedure(std::string sProcedureLine);
+        virtual int isInline(const std::string& sProc) override;
+        virtual int evalDebuggerBreakPoint(mu::Parser& _parser, Settings& _option) override;
         virtual int getErrorInformationForDebugger() override;
-        virtual int catchExceptionForTest(exception_ptr e_ptr, bool bSupressAnswer_back, int nLine) override;
+        virtual int catchExceptionForTest(std::exception_ptr e_ptr, bool bSupressAnswer_back, int nLine) override;
 
-        inline void setPredefinedFuncs(const string& sPredefined)
+        inline void setPredefinedFuncs(const std::string& sPredefined)
             {
                 _localDef.setPredefinedFuncs(sPredefined);
             }
-        inline string getCurrentProcedureName() const
+        inline std::string getCurrentProcedureName() const
             {return sCurrentProcedureName;}
         unsigned int GetCurrentLine() const;
         inline int getReturnType() const
@@ -127,7 +124,7 @@ class Procedure : public FlowCtrl, public PackageManager
             {
                 return nDebuggerCode;
             }
-        size_t replaceReturnVal(string& sLine, Parser& _parser, const Returnvalue& _return, unsigned int nPos, unsigned int nPos2, const string& sReplaceName);
+        size_t replaceReturnVal(std::string& sLine, mu::Parser& _parser, const Returnvalue& _return, unsigned int nPos, unsigned int nPos2, const std::string& sReplaceName);
 };
 
 #endif // PROCEDURE_HPP

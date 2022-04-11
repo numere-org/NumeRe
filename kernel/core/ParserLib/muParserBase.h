@@ -1,6 +1,3 @@
-#ifndef HEADER_B98039111D6377F3
-#define HEADER_B98039111D6377F3
-
 /*
                  __________
     _____   __ __\______   \_____  _______  ______  ____ _______
@@ -482,5 +479,5 @@ namespace mu
 
 #endif
 
-#endif // header guard
+
 
