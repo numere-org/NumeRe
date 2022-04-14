@@ -1101,6 +1101,10 @@ namespace NumeRe
                 sCmdString = strRes.vResult[0];
             }
 
+            // Because the result might be a constructed table, we
+            // disable the access caching for this expression
+            _parser.DisableAccessCaching();
+
             sLine = sLine.substr(0, nStartPosition) + removeQuotationMarks(sCmdString) + sLine.substr(nEndPosition + 1);
             nStartPosition++;
         }
@@ -1135,6 +1139,10 @@ namespace NumeRe
                 // Create a new string vector variable
                 sToValue = createStringVectorVar(vToValueResults);
             }
+
+            // Because the result might be a constructed table, we
+            // disable the access caching for this expression
+            _parser.DisableAccessCaching();
 
             sLine = sLine.substr(0, nStartPosition) + sToValue + sLine.substr(nEndPosition + 1);
             nStartPosition++;
@@ -1197,6 +1205,10 @@ namespace NumeRe
 
             if (nType < -1 || nType > 2)
                 nType = 0;
+
+            // Because the object might be a constructed table, we
+            // disable the access caching for this expression
+            _parser.DisableAccessCaching();
 
             DataAccessParser _accessParser(_sObject);
 

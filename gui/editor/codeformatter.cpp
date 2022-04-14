@@ -19,6 +19,8 @@
 #include "codeformatter.hpp"
 #include "editor.h"
 
+using namespace std;
+
 /////////////////////////////////////////////////
 /// \brief Inserts text and returns the length of
 /// the insertion.

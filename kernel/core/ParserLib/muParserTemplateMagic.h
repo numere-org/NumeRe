@@ -86,66 +86,134 @@ namespace mu
   template<typename T>
   struct MathImpl
   {
-    static T Sin(const T& v)   { return sin(v);  }
-    static T Cos(const T& v)   { return cos(v);  }
-    static T Tan(const T& v)   { return tan(v);  }
-    static T ASin(const T& v)  { return asin(v); }
-    static T ACos(const T& v)  { return acos(v); }
-    static T ATan(const T& v)  { return isnan(v.real()) || isnan(v.imag()) ? NAN : atan(v); }
-    static T ATan2(const T& v1, const T& v2) { return atan2(v1, v2); }
-    static T Sinh(const T& v)  { return sinh(v); }
-    static T Cosh(const T& v)  { return cosh(v); }
-    static T Tanh(const T& v)  { return tanh(v); }
-    static T Sqrt(const T& v)  { return v.imag() == 0.0 ? std::sqrt(v.real()) : std::sqrt(v);  }
-    static T ASinh(const T& v) { return log(v + Sqrt(v * v + 1.0)); }
-    static T ACosh(const T& v) { return log(v + Sqrt(v * v - 1.0)); }
-    static T ATanh(const T& v) { return ((T)0.5 * log((1.0 + v) / (1.0 - v))); }
-    static T Log(const T& v)   { return log(v); }
-    static T Log2(const T& v)  { return log(v)/log((T)2.0); } // Logarithm base 2
-    static T Log10(const T& v) { return log10(v); }         // Logarithm base 10
-    static T Exp(const T& v)   { return v.imag() == 0 ? exp(v.real()) : exp(v);}
-    static T Abs(const T& v)   { return (v>=0.0) ? v : -v; }
-    static T Rint(const T& v)  { return floor(v + (T)0.5); }
-    static T Sign(const T& v)  { return (T)((v<0.0) ? -1.0 : (v>0.0) ? 1.0 : 0.0); }
-    static T Pow(const T& v1, const T& v2) { return v2.imag() == 0.0 && v2.real() == (int)v2.real() ? intPower(v1, v2.real()) : std::pow(v1, v2); }
+    inline static T Sin(const T& v)
+    {
+        return v.imag() == 0.0 ? std::sin(v.real()) : std::sin(v);
+    }
+
+
+    inline static T Cos(const T& v)
+    {
+        return v.imag() == 0.0 ? std::cos(v.real()) : std::cos(v);
+    }
+
+
+    inline static T Tan(const T& v)
+    {
+        return v.imag() == 0.0 ? std::tan(v.real()) : std::tan(v);
+    }
+
+    inline static T ASin(const T& v)
+    {
+        return v.imag() == 0.0 ? std::asin(v.real()) : std::asin(v);
+    }
+
+
+    inline static T ACos(const T& v)
+    {
+        return v.imag() == 0.0 ? std::acos(v.real()) : std::acos(v);
+    }
+
+
+    inline static T ATan(const T& v)
+    {
+        return std::isnan(v.real()) || std::isnan(v.imag())
+            ? NAN
+            : (v.imag() == 0.0 ? std::atan(v.real()) : std::atan(v));
+    }
+
+
+    inline static T ATan2(const T& v1, const T& v2)
+    {
+        return std::atan2(v1, v2); // only available for doubles
+    }
+
+
+    inline static T Sinh(const T& v)
+    {
+        return v.imag() == 0.0 ? std::sinh(v.real()) : std::sinh(v);
+    }
+
+
+    inline static T Cosh(const T& v)
+    {
+        return v.imag() == 0.0 ? std::cosh(v.real()) : std::cosh(v);
+    }
+
+
+    inline static T Tanh(const T& v)
+    {
+        return v.imag() == 0.0 ? std::tanh(v.real()) : std::tanh(v);
+    }
+
+
+    inline static T Sqrt(const T& v)
+    {
+        return v.imag() == 0.0 ? std::sqrt(v.real()) : std::sqrt(v);
+    }
+
+
+    inline static T Log(const T& v)
+    {
+        return v.imag() == 0.0 ? std::log(v.real()) : std::log(v);
+    }
+
+
+    inline static T Log2(const T& v)
+    {
+        return (v.imag() == 0.0 ? std::log(v.real()) : std::log(v))/std::log(2.0); // Logarithm base 2
+    }
+
+
+    inline static T Log10(const T& v)
+    {
+        return v.imag() == 0.0 ? std::log10(v.real()) : std::log10(v); // Logarithm base 10
+    }
+
+
+    inline static T ASinh(const T& v)
+    {
+        return Log(v + Sqrt(v * v + 1.0));
+    }
+
+
+    inline static T ACosh(const T& v)
+    {
+        return Log(v + Sqrt(v * v - 1.0));
+    }
+
+
+    inline static T ATanh(const T& v)
+    {
+        return (0.5 * Log((1.0 + v) / (1.0 - v)));
+    }
+
+
+    inline static T Exp(const T& v)
+    {
+        return v.imag() == 0 ? std::exp(v.real()) : std::exp(v);
+    }
+
+
+    inline static T Rint(const T& v)
+    {
+        return std::floor(v + (T)0.5);
+    }
+
+
+    inline static T Sign(const T& v)
+    {
+        return (T)((v<0.0) ? -1.0 : (v>0.0) ? 1.0 : 0.0);
+    }
+
+
+    inline static T Pow(const T& v1, const T& v2)
+    {
+        return v2.imag() == 0.0 && v2.real() == (int)v2.real()
+            ? intPower(v1, v2.real())
+            : (v1.imag() == 0.0 && v2.imag() == 0.0 ? std::pow(v1.real(), v2.real()) : std::pow(v1, v2));
+    }
   };
-
-  // Create (mostly) dummy math function definitions for integer types. They are mostly
-  // empty since they are not applicable for integer values.
-#define MAKE_MATH_DUMMY(TYPE)                    \
-  template<>                                     \
-  struct MathImpl<TYPE>                          \
-  {                                              \
-    static TYPE Sin(TYPE)          { throw ParserError(_nrT("unimplemented function.")); } \
-    static TYPE Cos(TYPE)          { throw ParserError(_nrT("unimplemented function.")); } \
-    static TYPE Tan(TYPE)          { throw ParserError(_nrT("unimplemented function.")); } \
-    static TYPE ASin(TYPE)         { throw ParserError(_nrT("unimplemented function.")); } \
-    static TYPE ACos(TYPE)         { throw ParserError(_nrT("unimplemented function.")); } \
-    static TYPE ATan(TYPE)         { throw ParserError(_nrT("unimplemented function.")); } \
-    static TYPE ATan2(TYPE, TYPE)  { throw ParserError(_nrT("unimplemented function.")); } \
-    static TYPE Sinh(TYPE)         { throw ParserError(_nrT("unimplemented function.")); } \
-    static TYPE Cosh(TYPE)         { throw ParserError(_nrT("unimplemented function.")); } \
-    static TYPE Tanh(TYPE)         { throw ParserError(_nrT("unimplemented function.")); } \
-    static TYPE ASinh(TYPE)        { throw ParserError(_nrT("unimplemented function.")); } \
-    static TYPE ACosh(TYPE)        { throw ParserError(_nrT("unimplemented function.")); } \
-    static TYPE ATanh(TYPE)        { throw ParserError(_nrT("unimplemented function.")); } \
-    static TYPE Log(TYPE)          { throw ParserError(_nrT("unimplemented function.")); } \
-    static TYPE Log2(TYPE)         { throw ParserError(_nrT("unimplemented function.")); } \
-    static TYPE Log10(TYPE)        { throw ParserError(_nrT("unimplemented function.")); } \
-    static TYPE Exp(TYPE)          { throw ParserError(_nrT("unimplemented function.")); } \
-    static TYPE Abs(TYPE)          { throw ParserError(_nrT("unimplemented function.")); } \
-    static TYPE Sqrt(TYPE)         { throw ParserError(_nrT("unimplemented function.")); } \
-    static TYPE Rint(TYPE)         { throw ParserError(_nrT("unimplemented function.")); } \
-    static TYPE Sign(TYPE v)          { return (TYPE)((v<0) ? -1 : (v>0) ? 1 : 0);     } \
-    static TYPE Pow(TYPE v1, TYPE v2) { return (TYPE)std::pow((double)v1, (double)v2); } \
-  };
-
-  MAKE_MATH_DUMMY(char)
-  MAKE_MATH_DUMMY(short)
-  MAKE_MATH_DUMMY(int)
-  MAKE_MATH_DUMMY(long)
-
-#undef MAKE_MATH_DUMMY
 }
 
 #endif

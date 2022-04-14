@@ -26,19 +26,17 @@
 #include <string>
 #include <map>
 
-using namespace std;
-
 class Filewatcher : public wxFileSystemWatcher
 {
     private:
-        vector<string> vDefaultPaths;
-        map<wxString,wxString> mWatchedFiles;
+        std::vector<std::string> vDefaultPaths;
+        std::map<wxString,wxString> mWatchedFiles;
         bool isDefaultPath(const wxFileName& path);
 
     public:
         Filewatcher() : wxFileSystemWatcher() {};
 
-        bool SetDefaultPaths(const vector<string>& vPaths);
+        bool SetDefaultPaths(const std::vector<std::string>& vPaths);
         bool Add(const wxFileName& path, int events = wxFSW_EVENT_ALL);
         bool Remove(const wxFileName& path);
 };

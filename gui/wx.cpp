@@ -1327,7 +1327,7 @@ void wxMGL::setBitmap()
 /////////////////////////////////////////////////
 wxString mglSetExtension(const wxString &fname, const wxString& ext)
 {
-    if (fname.find('.') == string::npos)
+    if (fname.find('.') == std::string::npos)
         return fname + "." + ext;
     return fname;
 }

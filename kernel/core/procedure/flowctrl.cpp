@@ -2724,16 +2724,16 @@ int FlowCtrl::compile(string sLine, int nthCmd)
         if (!stringParserAdHoc)
             nCalcType[nthCmd] |= CALCTYPE_STRING | CALCTYPE_DATAACCESS;
 
-        if (!bLockedPauseMode && bUseLoopParsingMode)
-            _parserRef->PauseLoopMode();
+        //if (!bLockedPauseMode && bUseLoopParsingMode)
+        //    _parserRef->PauseLoopMode();
 
         auto retVal = NumeReKernel::getInstance()->getStringParser().evalAndFormat(sLine, sCache, bLoopSupressAnswer, true);
         NumeReKernel::getInstance()->getStringParser().removeTempStringVectorVars();
 
         if (retVal == NumeRe::StringParser::STRING_SUCCESS)
         {
-            if (!bLockedPauseMode && bUseLoopParsingMode)
-                _parserRef->PauseLoopMode(false);
+            //if (!bLockedPauseMode && bUseLoopParsingMode)
+            //    _parserRef->PauseLoopMode(false);
 
             if (returnCommand)
             {
@@ -2750,8 +2750,8 @@ int FlowCtrl::compile(string sLine, int nthCmd)
         if (sCache.length() && _dataRef->containsTablesOrClusters(sCache) && !bWriteToCache)
             bWriteToCache = true;
 
-        if (!bLockedPauseMode && bUseLoopParsingMode)
-            _parserRef->PauseLoopMode(false);
+        //if (!bLockedPauseMode && bUseLoopParsingMode)
+        //    _parserRef->PauseLoopMode(false);
     }
 
     // Get the target indices of the target data object
@@ -3353,16 +3353,16 @@ int FlowCtrl::calc(string sLine, int nthCmd)
     // Evaluate string expressions
     if (nCurrentCalcType & CALCTYPE_STRING)
     {
-        if (!bLockedPauseMode && bUseLoopParsingMode)
-            _parserRef->PauseLoopMode();
+        //if (!bLockedPauseMode && bUseLoopParsingMode)
+        //    _parserRef->PauseLoopMode();
 
         auto retVal = NumeReKernel::getInstance()->getStringParser().evalAndFormat(sLine, sDataObject, bLoopSupressAnswer, true);
         NumeReKernel::getInstance()->getStringParser().removeTempStringVectorVars();
 
         if (retVal == NumeRe::StringParser::STRING_SUCCESS)
         {
-            if (!bLockedPauseMode && bUseLoopParsingMode)
-                _parserRef->PauseLoopMode(false);
+            //if (!bLockedPauseMode && bUseLoopParsingMode)
+            //    _parserRef->PauseLoopMode(false);
 
             if (nCurrentCalcType & CALCTYPE_RETURNCOMMAND)
             {
@@ -3379,8 +3379,8 @@ int FlowCtrl::calc(string sLine, int nthCmd)
         if (sDataObject.length() && _dataRef->containsTablesOrClusters(sDataObject) && !bWriteToCache)
             bWriteToCache = true;
 
-        if (!bLockedPauseMode && bUseLoopParsingMode)
-            _parserRef->PauseLoopMode(false);
+        //if (!bLockedPauseMode && bUseLoopParsingMode)
+        //    _parserRef->PauseLoopMode(false);
     }
 
     // Prepare the indices for storing the data

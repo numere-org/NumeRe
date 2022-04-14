@@ -3372,7 +3372,10 @@ double intPower(double dNumber, int nExponent)
 
 std::complex<double> intPower(const std::complex<double>& dNumber, int nExponent)
 {
-    std::complex<double> dResult = 1.0L;
+    if (dNumber.imag() == 0.0)
+        return intPower(dNumber.real(), nExponent);
+
+    std::complex<double> dResult = 1.0;
 
     // An exponent of zero returns always 1
     if (!nExponent)

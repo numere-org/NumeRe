@@ -11,8 +11,6 @@
 #include "../kernel/core/settings.hpp"
 #include "../kernel/core/utils/stringtools.hpp"
 
-using namespace std;
-
 // copied from stc.h
 // PrintColourMode - force black text on white background for printing.
 #define wxSTC_PRINT_BLACKONWHITE 2

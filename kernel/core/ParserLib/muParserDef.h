@@ -154,35 +154,36 @@ namespace mu
         // The following are codes for built in binary operators
         // apart from built in operators the user has the opportunity to
         // add user defined operators.
-        cmLE            = 0,   ///< Operator item:  less or equal
-        cmGE            = 1,   ///< Operator item:  greater or equal
-        cmNEQ           = 2,   ///< Operator item:  not equal
-        cmEQ            = 3,   ///< Operator item:  equals
-        cmLT            = 4,   ///< Operator item:  less than
-        cmGT            = 5,   ///< Operator item:  greater than
-        cmADD           = 6,   ///< Operator item:  add
-        cmSUB           = 7,   ///< Operator item:  subtract
-        cmMUL           = 8,   ///< Operator item:  multiply
-        cmDIV           = 9,   ///< Operator item:  division
-        cmPOW           = 10,  ///< Operator item:  y to the power of ...
-        cmLAND          = 11,
-        cmLOR           = 12,
-        cmASSIGN        = 13,  ///< Operator item:  Assignment operator
-        cmBO            = 14,  ///< Operator item:  opening bracket
-        cmBC            = 15,  ///< Operator item:  closing bracket
-        cmIF            = 16,  ///< For use in the ternary if-then-else operator
-        cmELSE          = 17,  ///< For use in the ternary if-then-else operator
-        cmENDIF         = 18,  ///< For use in the ternary if-then-else operator
-        cmARG_SEP       = 19,  ///< function argument separator
-        cmVAR           = 20,  ///< variable item
-        cmVAL           = 21,  ///< value item
+        cmLE,                  ///< Operator item:  less or equal
+        cmGE,                  ///< Operator item:  greater or equal
+        cmNEQ,                 ///< Operator item:  not equal
+        cmEQ,                  ///< Operator item:  equals
+        cmLT,                  ///< Operator item:  less than
+        cmGT,                  ///< Operator item:  greater than
+        cmADD,                 ///< Operator item:  add
+        cmSUB,                 ///< Operator item:  subtract
+        cmMUL,                 ///< Operator item:  multiply
+        cmDIV,                 ///< Operator item:  division
+        cmPOW,                 ///< Operator item:  y to the power of ...
+        cmLAND,
+        cmLOR,
+        cmASSIGN,              ///< Operator item:  Assignment operator
+        cmBO,                  ///< Operator item:  opening bracket
+        cmBC,                  ///< Operator item:  closing bracket
+        cmIF,                  ///< For use in the ternary if-then-else operator
+        cmELSE,                ///< For use in the ternary if-then-else operator
+        cmENDIF,               ///< For use in the ternary if-then-else operator
+        cmARG_SEP,             ///< function argument separator
+        cmVAL,                 ///< value item
 
-        // For optimization purposes
+        // Variable and optimization block
+        cmVAR,                 ///< variable item
         cmVARPOW2,
         cmVARPOW3,
         cmVARPOW4,
+        cmVARPOWN,
         cmVARMUL,
-        cmPOW2,
+        cmVAR_END,             ///< Only for identifying the end of the variable block
 
         // operators and functions
         cmFUNC,                ///< Code for a generic function item

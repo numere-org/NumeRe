@@ -193,14 +193,14 @@ class NumeReWindow : public wxFrame
         void openPDF(wxFileName filename);
         bool ShowHelp(const wxString& sDocId);
         void openHTML(wxString HTMLcontent);
-        void openTable(NumeRe::Container<string> _stringTable, const string& sTableName);
-        void openTable(NumeRe::Table _table, const string& sTableName);
-        void editTable(NumeRe::Container<string> _stringTable, const string& sTableName);
-        void editTable(NumeRe::Table _table, const string& sTableName);
+        void openTable(NumeRe::Container<std::string> _stringTable, const std::string& sTableName);
+        void openTable(NumeRe::Table _table, const std::string& sTableName);
+        void editTable(NumeRe::Container<std::string> _stringTable, const std::string& sTableName);
+        void editTable(NumeRe::Table _table, const std::string& sTableName);
         void showTable(const wxString& tableName, const wxString& tableDisplayName);
         void showWindow(NumeRe::Window& window);
         void pass_command(const wxString& command, bool isEvent = false);
-        void evaluateDebugInfo(const vector<string>& vDebugInfo);
+        void evaluateDebugInfo(const std::vector<std::string>& vDebugInfo);
         void createLaTeXFile();
         void runLaTeX();
         void compileLaTeX();
@@ -220,13 +220,13 @@ class NumeReWindow : public wxFrame
         wxString getProgramFolder();
         void AddToHistory(const wxString& sCommand);
         wxString GetDocContent(wxString docid);
-        vector<string> GetDocIndex();
+        std::vector<std::string> GetDocIndex();
         void forceHistoryPageDown();
 
-        string m_UnrecoverableFiles;
+        std::string m_UnrecoverableFiles;
 
         NumeReTerminal* getTerminal() {return m_terminal;}
-        vector<string> getPathDefs();
+        std::vector<std::string> getPathDefs();
 
         void addToReloadBlackList(const wxString& sFilename);
         void removeFromReloadBlackList(const wxString& sFilename);
@@ -277,7 +277,7 @@ class NumeReWindow : public wxFrame
         void OnRemoveFolder();
         void OnSaveSourceFile( int id );
         void OnOpenSourceFile( int id );
-        void OnExecuteFile(const string& sFileName, int id);
+        void OnExecuteFile(const std::string& sFileName, int id);
         void OnCalculateDependencies();
         void OnCreatePackage(const wxString& projectFile);
 
@@ -307,7 +307,7 @@ class NumeReWindow : public wxFrame
         void OnFindEvent(wxFindDialogEvent& event);
 
         void OnFileSystemEvent(wxFileSystemWatcherEvent& event);
-        void CreateProcedureTree(const string& sProcedurePath);
+        void CreateProcedureTree(const std::string& sProcedurePath);
 
         void showGraph(NumeRe::Window& window);
         void showFileDialog(NumeRe::Window& window);
@@ -357,7 +357,7 @@ class NumeReWindow : public wxFrame
         void setViewerFocus();
 
         void prepareFunctionTree();
-        string prepareTooltip(const string& sTooltiptext);
+        std::string prepareTooltip(const std::string& sTooltiptext);
 
         wxPrintData* setDefaultPrinterSettings();
         int* SelectIntVar(int variableName);

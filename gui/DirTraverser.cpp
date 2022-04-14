@@ -62,7 +62,7 @@ DirTraverser::DirTraverser(wxTreeCtrl* therootNode, IconManager* theiconmanager,
 /////////////////////////////////////////////////
 wxDirTraverseResult DirTraverser::OnFile(const wxString& filename)
 {
-    if (filename.find('.') == string::npos || filename.find(".revisions") != string::npos)
+    if (filename.find('.') == std::string::npos || filename.find(".revisions") != std::string::npos)
         return wxDIR_CONTINUE;
 
     wxString filespec;
@@ -88,7 +88,7 @@ wxDirTraverseResult DirTraverser::OnFile(const wxString& filename)
 
             filespec = "*.nscr;*.nprc;*.nlyt;*.ndat;*.npkp;*.nhlp;";
 
-            if (filespec.find("*."+extension+";") == string::npos)
+            if (filespec.find("*."+extension+";") == std::string::npos)
                 return wxDIR_CONTINUE;
 
             break;
@@ -98,7 +98,7 @@ wxDirTraverseResult DirTraverser::OnFile(const wxString& filename)
 
             filespec = "*.ndat;*.dat;*.xls;*.xlsx;*.ods;*.csv;*.txt;*.labx;*.ibw;*.jdx;*.jcm;*.dx;*.png;*.log;*.tex;*.pdf;*.m;*.cpp;*.cxx;*.c;*.hpp;*.hxx;*.h;*.xml;*.wav;";
 
-            if (filespec.find("*."+extension + ";") == string::npos)
+            if (filespec.find("*."+extension + ";") == std::string::npos)
                 return wxDIR_CONTINUE;
 
             break;
@@ -108,7 +108,7 @@ wxDirTraverseResult DirTraverser::OnFile(const wxString& filename)
 
             filespec = "*.png;*.jpg;*.jpeg;*.eps;*.svg;*.gif;*.bmp;*.tif;*.tiff;";
 
-            if (filespec.find("*."+extension+";") == string::npos)
+            if (filespec.find("*."+extension+";") == std::string::npos)
                 return wxDIR_CONTINUE;
 
             break;
@@ -149,7 +149,7 @@ wxDirTraverseResult DirTraverser::OnFile(const wxString& filename)
 /////////////////////////////////////////////////
 wxDirTraverseResult DirTraverser::OnDir(const wxString& dirname)
 {
-    if (dirname.find(".revisions") != string::npos)
+    if (dirname.find(".revisions") != std::string::npos)
         return wxDIR_IGNORE;
 
     unsigned int ndepth = 0;

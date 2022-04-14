@@ -36,8 +36,8 @@ extern Language _guilang;
 
 struct compare_index
 {
-	const vector<double> base_arr;
-	compare_index (const vector<double>& arr) : base_arr (arr)
+	const std::vector<double> base_arr;
+	compare_index (const std::vector<double>& arr) : base_arr (arr)
 	{}
 
 	bool operator () (int a, int b) const
@@ -134,12 +134,12 @@ void DuplicateCodeDialog::SetProgress(double dPercentage)
 		m_progressGauge->SetValue((int)(dPercentage));
 }
 
-void DuplicateCodeDialog::SetResult(const vector<string>& vResult)
+void DuplicateCodeDialog::SetResult(const std::vector<std::string>& vResult)
 {
 	for (size_t i = 0; i < vResult.size(); i++)
 	{
 		m_resultList->InsertItem(i, vResult[i].substr(0, vResult[i].find('[')));
-		string itemtext = m_resultList->GetItemText(i).ToStdString();
+		std::string itemtext = m_resultList->GetItemText(i).ToStdString();
 		int line1 = atoi(itemtext.substr(0, itemtext.find('-')).c_str());
 		int line2 = atoi(itemtext.substr(itemtext.find('-') + 1, itemtext.find('=') - itemtext.find('-') - 1).c_str());
 		m_resultList->SetItem(i, 1, vResult[i].substr(vResult[i].find('[')));
@@ -209,7 +209,7 @@ void DuplicateCodeDialog::OnItemRightClick(wxListEvent& event)
 
 void DuplicateCodeDialog::highlightSelection(const wxString& sSelection, bool firstMatch)
 {
-	string sItemText = sSelection.ToStdString();
+	std::string sItemText = sSelection.ToStdString();
 	int nStart1, nEnd1, nStart2, nEnd2, nSelection;
 
 	nStart1 = StrToInt(sItemText.substr(0, sItemText.find('-')));
@@ -250,11 +250,11 @@ void DuplicateCodeDialog::OnColumnHeaderClick(wxListEvent& event)
 	if (!m_resultList->GetItemCount())
 		return;
 
-	vector<double> vData;
-	vector<int> vIndex;
-	vector<wxString> vStringData;
+	std::vector<double> vData;
+	std::vector<int> vIndex;
+	std::vector<wxString> vStringData;
 
-	string sCurrentItem;
+	std::string sCurrentItem;
 
 	for (int i = 0; i < m_resultList->GetItemCount(); i++)
 	{
@@ -263,7 +263,7 @@ void DuplicateCodeDialog::OnColumnHeaderClick(wxListEvent& event)
 		switch (nCol)
 		{
 			case 0:
-				while (sCurrentItem.find_first_of("-= ") != string::npos)
+				while (sCurrentItem.find_first_of("-= ") != std::string::npos)
 					sCurrentItem.erase(sCurrentItem.find_first_of("-= "), 1);
 				vData.push_back(StrToDb(sCurrentItem));
 				break;

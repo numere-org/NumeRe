@@ -26,7 +26,6 @@
 #include <wx/spinctrl.h>
 #include <string>
 #include <vector>
-using namespace std;
 
 class DuplicateCodeDialog : public ViewerFrame
 {
@@ -48,7 +47,7 @@ class DuplicateCodeDialog : public ViewerFrame
         DuplicateCodeDialog(wxWindow* _parent, const wxString& title);
 
         void SetProgress(double dPercentage);
-        void SetResult(const vector<string>& vResult);
+        void SetResult(const std::vector<std::string>& vResult);
         void OnButtonOK(wxCommandEvent& event);
         void OnButtonStart(wxCommandEvent& event);
         void OnButtonCopy(wxCommandEvent& event);

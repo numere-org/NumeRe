@@ -2195,7 +2195,7 @@ static double ek(int k, int N)
     double sum = 0;
     static std::vector<double> vLookUp;
 
-    if (vLookUp.size() > k-1)
+    if ((int)vLookUp.size() > k-1)
         return vLookUp[k-1];
 
     for (int j = k; j <= N; j++)

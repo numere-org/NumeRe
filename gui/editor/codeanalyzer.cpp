@@ -29,6 +29,7 @@
 #define HIGHLIGHT_ANNOTATION 12
 
 extern Language _guilang;
+using namespace std;
 
 static void replaceDocStrings(std::string& sStr)
 {

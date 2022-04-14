@@ -443,12 +443,12 @@ void PackageDialog::autoDetect(const wxArrayString& mainfiles)
 /// itself to detect a whole branch of file
 /// dependencies.
 ///
-/// \param sFile const string&
-/// \param fileSet set<string>&
+/// \param sFile const std::string&
+/// \param fileSet std::set<std::string>&
 /// \return void
 ///
 /////////////////////////////////////////////////
-void PackageDialog::followBranch(const string& sFile, set<string>& fileSet)
+void PackageDialog::followBranch(const std::string& sFile, std::set<std::string>& fileSet)
 {
     // Add the current file to the set
     fileSet.insert(sFile);

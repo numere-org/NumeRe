@@ -1771,12 +1771,13 @@ namespace mu
                 //      continue;
 
                 // value and variable tokens
+                case  cmVAL:
+                    Stack[++sidx] =  pTok->Val.data2;
+                    continue;
+
                 case  cmVAR:
                     Stack[++sidx] = *(pTok->Val.ptr + pTok->Val.isVect*nOffset);
                     //NumeReKernel::print(toString(*(pTok->Val.ptr + pTok->Val.isVect*nOffset), 14));
-                    continue;
-                case  cmVAL:
-                    Stack[++sidx] =  pTok->Val.data2;
                     continue;
 
                 case  cmVARPOW2:
@@ -1792,6 +1793,10 @@ namespace mu
                 case  cmVARPOW4:
                     buf = *(pTok->Val.ptr + pTok->Val.isVect*nOffset);
                     Stack[++sidx] = buf * buf * buf * buf;
+                    continue;
+
+                case  cmVARPOWN:
+                    Stack[++sidx] = intPower(*(pTok->Val.ptr + pTok->Val.isVect*nOffset), pTok->Val.data.real());
                     continue;
 
                 case  cmVARMUL:

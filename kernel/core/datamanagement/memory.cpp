@@ -766,7 +766,7 @@ bool Memory::convertColumns(const VectorIndex& _vCol, const std::string& _sType)
 
     for (size_t i = 0; i < _vCol.size(); i++)
     {
-        if (_vCol[i] < 0 || _vCol[i] >= memArray.size())
+        if (_vCol[i] < 0 || _vCol[i] >= (int)memArray.size())
             continue;
 
         if (memArray[_vCol[i]] && memArray[_vCol[i]]->m_type != _type)
@@ -1130,7 +1130,7 @@ void Memory::writeData(Indices& _idx, mu::value_type* _dData, unsigned int _nNum
     {
         for (size_t j = 0; j < _idx.col.size(); j++)
         {
-            if (!i && _idx.col[j] >= memArray.size())
+            if (!i && _idx.col[j] >= (int)memArray.size())
                 resizeMemory(i, _idx.col[j]+1);
 
             if (!i)
@@ -1191,7 +1191,7 @@ void Memory::writeSingletonData(Indices& _idx, const mu::value_type& _dData)
     {
         for (size_t j = 0; j < _idx.col.size(); j++)
         {
-            if (!i && rewriteColumn && memArray.size() > _idx.col[j])
+            if (!i && rewriteColumn && (int)memArray.size() > _idx.col[j])
                 convert_for_overwrite(memArray[_idx.col[j]], _idx.col[j], TableColumn::TYPE_VALUE);
 
             writeData(_idx.row[i], _idx.col[j], _dData);
@@ -1240,7 +1240,7 @@ void Memory::writeData(Indices& _idx, const ValueVector& _values)
         {
             if (nDirection == COLS)
             {
-                if (!i && rewriteColumn && memArray.size() > _idx.col[j])
+                if (!i && rewriteColumn && (int)memArray.size() > _idx.col[j])
                     convert_for_overwrite(memArray[_idx.col[j]], _idx.col[j], TableColumn::TYPE_STRING);
 
                 if (_values.size() > i)
@@ -1281,7 +1281,7 @@ void Memory::writeSingletonData(Indices& _idx, const std::string& _sValue)
     {
         for (size_t j = 0; j < _idx.col.size(); j++)
         {
-            if (!i && rewriteColumn && memArray.size() > _idx.col[j])
+            if (!i && rewriteColumn && (int)memArray.size() > _idx.col[j])
                 convert_for_overwrite(memArray[_idx.col[j]], _idx.col[j], TableColumn::TYPE_STRING);
 
             writeData(_idx.row[i], _idx.col[j], _sValue);

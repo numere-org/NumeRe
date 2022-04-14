@@ -41,7 +41,7 @@ namespace NumeRe
         m_graph = nullptr;
         m_manager = nullptr;
         m_customWindow = nullptr;
-        nWindowID = string::npos;
+        nWindowID = std::string::npos;
         m_layout = nullptr;
     }
 
@@ -210,11 +210,11 @@ namespace NumeRe
     /// in the window manager for the current window.
     ///
     /// \param status int
-    /// \param _return const string&
+    /// \param _return const std::string&
     /// \return void
     ///
     /////////////////////////////////////////////////
-    void Window::updateWindowInformation(int status, const string& _return)
+    void Window::updateWindowInformation(int status, const std::string& _return)
     {
         if (m_manager)
             m_manager->updateWindowInformation(WindowInformation(nWindowID, status == STATUS_RUNNING ? this : nullptr, status, _return));
@@ -561,7 +561,7 @@ namespace NumeRe
     /////////////////////////////////////////////////
     size_t WindowManager::registerWindow(Window* window, size_t id)
     {
-        if (id == string::npos)
+        if (id == std::string::npos)
         {
             id = m_windowMap.size();
 

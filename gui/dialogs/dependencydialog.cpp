@@ -312,10 +312,10 @@ int DependencyDialog::calculateClusterLevel(const std::vector<std::string>& sCur
     int nNameSpaces = 0;
 
     // Go through the namespaces and compare them
-    for (; nNameSpaces < sCurrentNameSpace.size(); nNameSpaces++)
+    for (; nNameSpaces < (int)sCurrentNameSpace.size(); nNameSpaces++)
     {
         // New one is shorter? Return
-        if (sNewNameSpace.size() <= nNameSpaces)
+        if ((int)sNewNameSpace.size() <= nNameSpaces)
             return nNameSpaces+1;
 
         // Characters differ? Return
@@ -404,7 +404,7 @@ void DependencyDialog::CreateDotFile()
 
         vCurrentNameSpace = vNameSpace;
 
-        for (int i = nCurrentClusterLevel; i < vCurrentNameSpace.size(); i++)
+        for (int i = nCurrentClusterLevel; i < (int)vCurrentNameSpace.size(); i++)
         {
             // Write the cluster header
             if (vCurrentNameSpace[i].find("::thisfile") != std::string::npos)

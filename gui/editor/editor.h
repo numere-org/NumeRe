@@ -125,8 +125,8 @@ class NumeReEditor : public wxStyledTextCtrl, public wxThreadHelper
 		// asynch update calls
 		void HandleFunctionCallTip();
 		void UpdateProcedureViewer();
-		string GetCurrentFunctionContext(int& nStartingBrace);
-		string GetCurrentArgument(const string& sCallTip, int nStartingBrace, int& nArgStartPos);
+		std::string GetCurrentFunctionContext(int& nStartingBrace);
+		std::string GetCurrentArgument(const std::string& sCallTip, int nStartingBrace, int& nArgStartPos);
 
 		int CallTipStartPos();
 		void AdvCallTipShow(int pos, const wxString& definition);
@@ -134,9 +134,9 @@ class NumeReEditor : public wxStyledTextCtrl, public wxThreadHelper
 
 		void getMatchingBrace(int nPos);
 		void getMatchingBlock(int nPos);
-		vector<int> BlockMatch(int nPos);
-		vector<int> BlockMatchNSCR(int nPos);
-		vector<int> BlockMatchMATLAB(int nPos);
+		std::vector<int> BlockMatch(int nPos);
+		std::vector<int> BlockMatchNSCR(int nPos);
+		std::vector<int> BlockMatchMATLAB(int nPos);
 		void UpdateSyntaxHighlighting(bool forceUpdate = false);
 		void UpdateIndicators();
 		void FocusOnLine(int linenumber, bool showMarker = true);
@@ -258,8 +258,8 @@ class NumeReEditor : public wxStyledTextCtrl, public wxThreadHelper
 		 *
 		 */
 		void JumpToBookmark(bool down = true);
-		vector<int> getBookmarks();
-		void setBookmarks(const vector<int>& vBookmarks);
+		std::vector<int> getBookmarks();
+		void setBookmarks(const std::vector<int>& vBookmarks);
 		/** \brief Removes whitespaces depending on the passed type
 		 *
 		 * nType defines the type of whitespaces to be removed. This is either front, back
@@ -302,7 +302,7 @@ class NumeReEditor : public wxStyledTextCtrl, public wxThreadHelper
 
 		void FindAndOpenProcedure(const wxString& procedurename);
 		void FindAndOpenInclude(const wxString& includename);
-		vector<wxString> getProceduresInFile();
+		std::vector<wxString> getProceduresInFile();
 
 	protected:
 		Options* m_options;
@@ -342,9 +342,9 @@ class NumeReEditor : public wxStyledTextCtrl, public wxThreadHelper
 
 		bool isStyleType(StyleType _type, int nPos);
 
-		int countUmlauts(const string& sStr);
-		string realignLangString(string sLine, size_t& lastpos);
-		string addLinebreaks(const string& sLine, bool onlyDocumentation = false);
+		int countUmlauts(const std::string& sStr);
+		std::string realignLangString(std::string sLine, size_t& lastpos);
+		std::string addLinebreaks(const std::string& sLine, bool onlyDocumentation = false);
 
 		void markModified(int nLine);
 		void markSaved();
@@ -357,26 +357,26 @@ class NumeReEditor : public wxStyledTextCtrl, public wxThreadHelper
 
 		int GetLineForMarkerOperation();
 		void ResetRightClickLocation();
-		void ReplaceMatches(const vector<int>& vMatches, const wxString& sSymbol, const wxString& sNewSymbol);
+		void ReplaceMatches(const std::vector<int>& vMatches, const wxString& sSymbol, const wxString& sNewSymbol);
 		void RenameSymbols(int nPos);
 		void AbstrahizeSection();
 		void CreateProcedureFromSection(int nStartPos, int nEndPos, const wxString& sInputList, const wxString sOutputList);
-		bool IsModifiedInSection(int nSectionStart, int nSectionEnd, const wxString& sToken, const vector<int>& vMatch);
+		bool IsModifiedInSection(int nSectionStart, int nSectionEnd, const wxString& sToken, const std::vector<int>& vMatch);
 		wxString getFunctionArgumentList(int nFunctionStartLine);
 		wxString getMatlabReturnList(int nMatlabFunctionStartLine);
 		wxString getTemplateContent(const wxString& sFileName);
 
-		wxString generateAutoCompList(const wxString& wordstart, string sPreDefList);
+		wxString generateAutoCompList(const wxString& wordstart, std::string sPreDefList);
 
 		bool MarkerOnLine(int linenum, int nMarker);
 
 		void detectCodeDuplicates(int startline, int endline, int nDuplicateFlags, int nNumDuplicatedLines);
 		double compareCodeLines(int nLine1, int nLine2, int nDuplicateFlags);
-		string getSemanticLine(int nLine, int nDuplicateFlags);
-		string getSemanticLineNSCR(int nLine, int nDuplicateFlags);
-		string getSemanticLineMATLAB(int nLine, int nDuplicateFlags);
-		string getSemanticLineCPP(int nLine, int nDuplicateFlags);
-		map<int, int> getDifferences(int nStart1, int nEnd1, int nStart2, int nEnd2);
+		std::string getSemanticLine(int nLine, int nDuplicateFlags);
+		std::string getSemanticLineNSCR(int nLine, int nDuplicateFlags);
+		std::string getSemanticLineMATLAB(int nLine, int nDuplicateFlags);
+		std::string getSemanticLineCPP(int nLine, int nDuplicateFlags);
+		std::map<int, int> getDifferences(int nStart1, int nEnd1, int nStart2, int nEnd2);
 		wxString getNextToken(int& nPos);
 
 		NumeReWindow* m_mainFrame;
@@ -410,10 +410,10 @@ class NumeReEditor : public wxStyledTextCtrl, public wxThreadHelper
 
 		DuplicateCodeDialog* m_duplicateCode;
 		wxCriticalSection m_editorCS;
-		vector<string> vDuplicateCodeResults;
-		vector<string> vParsedSemanticCode;
-		vector<wxString> vRenameSymbolsChangeLog;
-		vector<SyntaxBlockDefinition> vBlockDefs;
+		std::vector<std::string> vDuplicateCodeResults;
+		std::vector<std::string> vParsedSemanticCode;
+		std::vector<wxString> vRenameSymbolsChangeLog;
+		std::vector<SyntaxBlockDefinition> vBlockDefs;
 		int m_nProcessValue;
 		int m_nDuplicateCodeFlag;
 		int m_nDuplicateCodeLines;
@@ -421,7 +421,7 @@ class NumeReEditor : public wxStyledTextCtrl, public wxThreadHelper
 		int m_nLastLine;
 		int m_nLastReleasedKey;
 		int m_nCallTipStart;
-		string m_sCallTipContent;
+		std::string m_sCallTipContent;
 
 		bool m_bLoadingFile;
 		bool m_bLastSavedRemotely;

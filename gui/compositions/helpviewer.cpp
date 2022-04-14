@@ -79,7 +79,7 @@ bool HelpViewer::ShowPageOnItem(wxString docID)
 
         docID.erase(0,10);
 
-        if (docID.find('?') != string::npos)
+        if (docID.find('?') != std::string::npos)
             docID.erase(docID.find('?'));
 
         // Redirect to the corresponding public interface functions
@@ -100,13 +100,13 @@ bool HelpViewer::ShowPageOnItem(wxString docID)
         //
         // Determine first, if the link shall be opened in the current
         // window or in a new one
-        if (docID.find("?frame=new") != string::npos)
+        if (docID.find("?frame=new") != std::string::npos)
             openself = false;
 
         // Extract the search keyword from the link
         docID.erase(0,7);
 
-        if (docID.find('?') != string::npos)
+        if (docID.find('?') != std::string::npos)
             docID.erase(docID.find('?'));
 
         // If the target is not the current window, redirect the the
@@ -136,7 +136,7 @@ bool HelpViewer::ShowPageOnItem(wxString docID)
         // This is a html page, display it directly
 		this->SetPage(docID);
     }
-    else if (docID.find("://") == string::npos)
+    else if (docID.find("://") == std::string::npos)
     {
         // This is a search keyword, get the contents from
         // the kernel
