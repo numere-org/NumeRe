@@ -2096,7 +2096,7 @@ static string strfnc_basetodec(StringFuncArgs& funcArgs)
     }
 
     stream << funcArgs.sArg2;
-    int ret;
+    long long int ret;
     stream >> ret;
 
     return toString(ret);

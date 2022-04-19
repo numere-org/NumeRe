@@ -43,15 +43,16 @@ struct FlowCtrlCommand
     std::string sCommand;
     int nInputLine;
     bool bFlowCtrlStatement;
+    std::string sFlowCtrlHeader;
+    int nVarIndex;
 
-    FlowCtrlCommand(const std::string& sCmd, int nLine, bool bStatement = false) : sCommand(sCmd), nInputLine(nLine), bFlowCtrlStatement(bStatement) {}
+    FlowCtrlCommand(const std::string& sCmd, int nLine, bool bStatement = false)
+        : sCommand(sCmd), nInputLine(nLine), bFlowCtrlStatement(bStatement), sFlowCtrlHeader(""), nVarIndex(-1) {}
 };
 
 class FlowCtrl
 {
     private:
-        std::string sVarName;
-        double* dVarAdress;
         bool bLoopSupressAnswer;
 
         Parser* _parserRef;
@@ -106,8 +107,8 @@ class FlowCtrl
         };
 
         std::vector<FlowCtrlCommand> vCmdArray;
-        value_type** vVarArray;
-        std::string* sVarArray;
+        std::vector<value_type> vVarArray;
+        std::vector<std::string> sVarArray;
         varmap_type vVars;
         std::vector<std::vector<int>> nJumpTable;
         std::vector<int> nCalcType;
@@ -115,7 +116,6 @@ class FlowCtrl
 
         int nFlowCtrlStatements[FC_COUNT];
 
-        int nVarArray;
         int nCurrentCommand;
         Returnvalue ReturnVal;
         bool bUseLoopParsingMode;
@@ -136,8 +136,6 @@ class FlowCtrl
 
         int nReturnType;
         bool bReturnSignal;
-        bool bBreakSignal;
-        bool bContinueSignal;
 
         int for_loop(int nth_Cmd = 0, int nth_Loop = 0);
         int while_loop(int nth_Cmd = 0, int nth_Loop = 0);

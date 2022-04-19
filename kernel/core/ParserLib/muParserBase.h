@@ -56,6 +56,11 @@ namespace mu
     typedef std::map<std::string,std::vector<value_type>> vectormap_type;
     typedef std::map<std::string,std::vector<value_type>*> vectormapptr_type;
 
+    /////////////////////////////////////////////////
+    /// \brief Describes an already evaluated data
+    /// access, which can be reconstructed from the
+    /// current parser state.
+    /////////////////////////////////////////////////
 	struct CachedDataAccess
 	{
 	    enum
@@ -72,6 +77,11 @@ namespace mu
 	};
 
 
+    /////////////////////////////////////////////////
+    /// \brief Defines a single parser state, which
+    /// contains all necessary information for
+    /// evaluating a single expression.
+    /////////////////////////////////////////////////
 	struct State
 	{
 	    ParserByteCode m_byteCode;
@@ -85,6 +95,11 @@ namespace mu
 	};
 
 
+    /////////////////////////////////////////////////
+    /// \brief Describes the cache of a single
+    /// expression. Might contain multiple cached
+    /// data accesses.
+    /////////////////////////////////////////////////
 	struct Cache
 	{
 	    std::vector<CachedDataAccess> m_accesses;
@@ -104,6 +119,11 @@ namespace mu
 	};
 
 
+    /////////////////////////////////////////////////
+    /// \brief This is the parser state stack for a
+    /// whole command line. Might contain multiple
+    /// single states and cached data accesses.
+    /////////////////////////////////////////////////
 	struct LineStateStack
 	{
 	    std::vector<State> m_states;
@@ -119,6 +139,11 @@ namespace mu
 	};
 
 
+    /////////////////////////////////////////////////
+    /// \brief This is a stack of all parser line
+    /// state stacks. Can be used to gather a bunch
+    /// of already parsed command lines together.
+    /////////////////////////////////////////////////
 	struct StateStacks
 	{
 	    std::vector<LineStateStack> m_stacks;
@@ -375,7 +400,10 @@ namespace mu
 			void replaceLocalVars(std::string& sLine);
 			bool checkDelimiter(StringView sLine);
 			void evaluateVectorExpansion(MutableStringView sSubExpr, std::vector<mu::value_type>& vResults);
-			void expandVector(mu::value_type dFirst, const mu::value_type& dLast, const mu::value_type& dIncrement, std::vector<mu::value_type>& vResults);
+            void expandVector(mu::value_type dFirst,
+                              const mu::value_type& dLast,
+                              const mu::value_type& dIncrement,
+                              std::vector<mu::value_type>& vResults);
 			void assignResultsToTarget(const varmap_type& varmap, int nFinalResults, const valbuf_type& buffer);
 			string_type getNextVarObject(std::string& sArgList, bool bCut);
 			string_type getNextVectorVarIndex();

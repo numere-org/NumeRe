@@ -42,12 +42,10 @@ bool isMultiValue(const std::string& sExpr, bool bIgnoreClosingParenthesis = fal
 std::string replaceToTeX(const std::string& sString, bool replaceForTeXFile = false);
 Match findCommand(const std::string& sCmd, std::string sCommand = "");
 std::string extractCommandString(const std::string& sCmd, const Match& _mMatch);
-void removeArgSep(std::string&);
 void openExternally(const std::string&);
 void moveFile(const std::string&, const std::string&);
 void copyFile(const std::string&, const std::string&);
 void writeTeXMain(const std::string&);
-std::string addControlSymbols(const std::string&);
 
 enum ArgExtraction
 {
@@ -75,7 +73,6 @@ bool fileExists(const std::string& sFilename);
 void reduceLogFilesize(const std::string& sFileName);
 std::string replaceToVectorname(const std::string& sExpression);
 void eraseToken(std::string& sExpr, const std::string& sToken, bool bTokenHasValue = false);
-std::string generateCacheName(const std::string& sFilename, Settings& _option) __attribute__ ((deprecated));
 std::string getFileInfo(const std::string& sFilename);
 std::string decodeNameSpace(std::string sCommandLine, const std::string& sThisNameSpace);
 
@@ -132,7 +129,6 @@ bool isToCmd(const std::string& sCmd, unsigned int nPos);
 unsigned int countEscapeSymbols(const std::string& sLine);
 std::vector<std::string> getFileList(const std::string& sDirectory, const Settings& _option, int nFlags = 0);
 std::vector<std::string> getFolderList(const std::string& sDirectory, const Settings& _option, int nFlags = 0);
-std::string getClipboardText();
 
 namespace little_endian_io
 {

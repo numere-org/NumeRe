@@ -49,12 +49,6 @@ using namespace std;
 /////////////////////////////////////////////////
 FlowCtrl::FlowCtrl()
 {
-    vVarArray = nullptr;
-    sVarArray = nullptr;
-    dVarAdress = nullptr;
-    sVarName = "";
-    nVarArray = 0;
-
     _parserRef = nullptr;
     _dataRef = nullptr;
     _outRef = nullptr;
@@ -86,8 +80,6 @@ FlowCtrl::FlowCtrl()
     bEvaluatingFlowControlStatements = false;
 
     nReturnType = 1;
-    bBreakSignal = false;
-    bContinueSignal = false;
     bReturnSignal = false;
 }
 
@@ -98,17 +90,6 @@ FlowCtrl::FlowCtrl()
 /////////////////////////////////////////////////
 FlowCtrl::~FlowCtrl()
 {
-    // Clean the variables array
-    if (vVarArray)
-    {
-        for (int i = 0; i < nVarArray; i++)
-        {
-            delete[] vVarArray[i];
-        }
-
-        delete[] vVarArray;
-        vVarArray = nullptr;
-    }
 }
 
 
@@ -148,39 +129,46 @@ int FlowCtrl::for_loop(int nth_Cmd, int nth_loop)
     int nVarAdress = 0;
     int nInc = 1;
     int nLoopCount = 0;
-    std::string sForHead = vCmdArray[nth_Cmd].sCommand.substr(vCmdArray[nth_Cmd].sCommand.find('=') + 1);
-    std::string sVar = vCmdArray[nth_Cmd].sCommand.substr(vCmdArray[nth_Cmd].sCommand.find(' ') + 1);
-    std::string sLine = "";
+    double dFirstVal;
+    double dLastVal;
     bPrintedStatus = false;
-    sVar = sVar.substr(0, sVar.find('='));
-    StripSpaces(sVar);
+
     int nNum = 0;
     value_type* v = 0;
 
-    // Get the variable address of the loop
-    // index
-    for (int i = 0; i < nVarArray; i++)
+    if (!vCmdArray[nth_Cmd].sFlowCtrlHeader.length())
     {
-        if (sVarArray[i] == sVar)
+        vCmdArray[nth_Cmd].sFlowCtrlHeader = vCmdArray[nth_Cmd].sCommand.substr(vCmdArray[nth_Cmd].sCommand.find('=') + 1);
+        std::string sVar = vCmdArray[nth_Cmd].sCommand.substr(vCmdArray[nth_Cmd].sCommand.find(' ') + 1);
+        sVar = sVar.substr(0, sVar.find('='));
+        StripSpaces(sVar);
+
+        // Get the variable address of the loop
+        // index
+        for (size_t i = 0; i < sVarArray.size(); i++)
         {
-            nVarAdress = i;
-            break;
+            if (sVarArray[i] == sVar)
+            {
+                vCmdArray[nth_Cmd].nVarIndex = i;
+                break;
+            }
         }
     }
 
+    std::string sHead = vCmdArray[nth_Cmd].sFlowCtrlHeader;
+    nVarAdress = vCmdArray[nth_Cmd].nVarIndex;
+
     // Evaluate the header of the for loop
-    v = evalHeader(nNum, sForHead, true, nth_Cmd);
+    v = evalHeader(nNum, sHead, true, nth_Cmd);
 
     // Store the left and right boundary of the
     // loop index
-    for (int i = 0; i < 2; i++)
-    {
-        vVarArray[nVarAdress][i + 1] = intCast(v[i]);
-    }
+    dFirstVal = intCast(v[0]);
+    dLastVal = intCast(v[1]);
 
     // Depending on the order of the boundaries, we
     // have to consider the incrementation variable
-    if (vVarArray[nVarAdress][2].real() < vVarArray[nVarAdress][1].real())
+    if (dLastVal < dFirstVal)
         nInc *= -1;
 
     // Print to the terminal, if needed
@@ -193,9 +181,9 @@ int FlowCtrl::for_loop(int nth_Cmd, int nth_loop)
     // Evaluate the whole for loop. The outer loop does the
     // loop index management (the actual "for" command), the
     // inner loop runs through the contained command lines
-    for (int __i = vVarArray[nVarAdress][1].real(); (nInc)*__i <= nInc * vVarArray[nVarAdress][2].real(); __i += nInc)
+    for (int __i = dFirstVal; (nInc)*__i <= nInc * dLastVal; __i += nInc)
     {
-        vVarArray[nVarAdress][0] = __i;
+        vVarArray[nVarAdress] = __i;
 
         // Ensure that the loop is aborted, if the
         // maximal number of repetitions has been
@@ -224,15 +212,9 @@ int FlowCtrl::for_loop(int nth_Cmd, int nth_loop)
                 if (nReturn == FLOWCTRL_ERROR || nReturn == FLOWCTRL_RETURN)
                     return nReturn;
                 else if (nReturn == FLOWCTRL_BREAK)
-                {
-                    bBreakSignal = false;
                     return nJumpTable[nth_Cmd][BLOCK_END];
-                }
                 else if (nReturn == FLOWCTRL_CONTINUE)
-                {
-                    bContinueSignal = false;
                     break;
-                }
                 else if (nReturn != FLOWCTRL_NO_CMD)
                     __j = nReturn;
 
@@ -282,7 +264,7 @@ int FlowCtrl::for_loop(int nth_Cmd, int nth_loop)
                 {
                     if (_optionRef->useDebugger())
                     {
-                        NumeReKernel::getInstance()->getDebugger().gatherLoopBasedInformations(vCmdArray[__j].sCommand, getCurrentLineNumber(), mVarMap, vVarArray, sVarArray, nVarArray);
+                        NumeReKernel::getInstance()->getDebugger().gatherLoopBasedInformations(vCmdArray[__j].sCommand, getCurrentLineNumber(), mVarMap, vVarArray, sVarArray);
                         getErrorInformationForDebugger();
                     }
 
@@ -296,7 +278,7 @@ int FlowCtrl::for_loop(int nth_Cmd, int nth_loop)
             {
                 if (_optionRef->useDebugger())
                 {
-                    NumeReKernel::getInstance()->getDebugger().gatherLoopBasedInformations(vCmdArray[__j].sCommand, getCurrentLineNumber(), mVarMap, vVarArray, sVarArray, nVarArray);
+                    NumeReKernel::getInstance()->getDebugger().gatherLoopBasedInformations(vCmdArray[__j].sCommand, getCurrentLineNumber(), mVarMap, vVarArray, sVarArray);
                     getErrorInformationForDebugger();
                 }
 
@@ -308,23 +290,23 @@ int FlowCtrl::for_loop(int nth_Cmd, int nth_loop)
 
         // The variable value might have been changed
         // snychronize the index
-        __i = intCast(vVarArray[nVarAdress][0]);
+        __i = intCast(vVarArray[nVarAdress]);
 
         // Print the status to the terminal, if it is required
         if (!nth_loop && !bMask && bSilent)
         {
-            if (abs(intCast(vVarArray[nVarAdress][2] - vVarArray[nVarAdress][1])) < 99999
-                    && abs(intCast((vVarArray[nVarAdress][0] - vVarArray[nVarAdress][1]) / (vVarArray[nVarAdress][2] - vVarArray[nVarAdress][1]) * 20.0))
-                    > abs(intCast((vVarArray[nVarAdress][0] - 1.0 - vVarArray[nVarAdress][1]) / (vVarArray[nVarAdress][2] - vVarArray[nVarAdress][1]) * 20.0)))
+            if (abs(intCast(dLastVal - dFirstVal)) < 99999
+                    && abs(intCast((vVarArray[nVarAdress] - dFirstVal) / (dLastVal - dFirstVal) * 20.0))
+                    > abs(intCast((vVarArray[nVarAdress] - 1.0 - dFirstVal) / (dLastVal - dFirstVal) * 20.0)))
             {
-                NumeReKernel::printPreFmt("\r|FOR> " + _lang.get("COMMON_EVALUATING") + " ... " + toString(abs(intCast((vVarArray[nVarAdress][0] - vVarArray[nVarAdress][1]) / (vVarArray[nVarAdress][2] - vVarArray[nVarAdress][1]) * 20.0)) * 5) + " %");
+                NumeReKernel::printPreFmt("\r|FOR> " + _lang.get("COMMON_EVALUATING") + " ... " + toString(abs(intCast((vVarArray[nVarAdress] - dFirstVal) / (dLastVal - dFirstVal) * 20.0)) * 5) + " %");
                 bPrintedStatus = true;
             }
-            else if (abs(intCast(vVarArray[nVarAdress][2] - vVarArray[nVarAdress][1])) >= 99999
-                     && abs(intCast((vVarArray[nVarAdress][0] - vVarArray[nVarAdress][1]) / (vVarArray[nVarAdress][2] - vVarArray[nVarAdress][1]) * 100.0))
-                     > abs(intCast((vVarArray[nVarAdress][0] - 1.0 - vVarArray[nVarAdress][1]) / (vVarArray[nVarAdress][2] - vVarArray[nVarAdress][1]) * 100.0)))
+            else if (abs(intCast(dLastVal - dFirstVal)) >= 99999
+                     && abs(intCast((vVarArray[nVarAdress] - dFirstVal) / (dLastVal - dFirstVal) * 100.0))
+                     > abs(intCast((vVarArray[nVarAdress] - 1.0 - dFirstVal) / (dLastVal - dFirstVal) * 100.0)))
             {
-                NumeReKernel::printPreFmt("\r|FOR> " + _lang.get("COMMON_EVALUATING") + " ... " + toString(abs(intCast((vVarArray[nVarAdress][0] - vVarArray[nVarAdress][1]) / (vVarArray[nVarAdress][2] - vVarArray[nVarAdress][1]) * 100.0))) + " %");
+                NumeReKernel::printPreFmt("\r|FOR> " + _lang.get("COMMON_EVALUATING") + " ... " + toString(abs(intCast((vVarArray[nVarAdress] - dFirstVal) / (dLastVal - dFirstVal) * 100.0))) + " %");
                 bPrintedStatus = true;
             }
         }
@@ -347,9 +329,12 @@ int FlowCtrl::for_loop(int nth_Cmd, int nth_loop)
 /////////////////////////////////////////////////
 int FlowCtrl::while_loop(int nth_Cmd, int nth_loop)
 {
-    string sWhile_Condition = vCmdArray[nth_Cmd].sCommand.substr(vCmdArray[nth_Cmd].sCommand.find('(') + 1, vCmdArray[nth_Cmd].sCommand.rfind(')') - vCmdArray[nth_Cmd].sCommand.find('(') - 1);
-    string sWhile_Condition_Back = sWhile_Condition;
-    string sLine = "";
+    if (!vCmdArray[nth_Cmd].sFlowCtrlHeader.length())
+        vCmdArray[nth_Cmd].sFlowCtrlHeader = vCmdArray[nth_Cmd].sCommand.substr(vCmdArray[nth_Cmd].sCommand.find('(') + 1,
+                                                                                vCmdArray[nth_Cmd].sCommand.rfind(')') - vCmdArray[nth_Cmd].sCommand.find('(') - 1);
+
+    std::string sWhile_Condition = vCmdArray[nth_Cmd].sFlowCtrlHeader;
+    std::string sWhile_Condition_Back = sWhile_Condition;
     bPrintedStatus = false;
     int nLoopCount = 0;
     value_type* v = 0;
@@ -386,9 +371,7 @@ int FlowCtrl::while_loop(int nth_Cmd, int nth_loop)
         // NaN and INF are no "true" values. Return the
         // end of the current block otherwise
         if (v[0] == 0.0 || isnan(v[0]) || isinf(v[0]))
-        {
             return nJumpTable[nth_Cmd][BLOCK_END];
-        }
 
         // This for loop handles the contained commands
         for (int __j = nth_Cmd+1; __j < nJumpTable[nth_Cmd][BLOCK_END]; __j++)
@@ -406,15 +389,9 @@ int FlowCtrl::while_loop(int nth_Cmd, int nth_loop)
                 if (nReturn == FLOWCTRL_ERROR || nReturn == FLOWCTRL_RETURN)
                     return nReturn;
                 else if (nReturn == FLOWCTRL_BREAK)
-                {
-                    bBreakSignal = false;
                     return nJumpTable[nth_Cmd][BLOCK_END];
-                }
                 else if (nReturn == FLOWCTRL_CONTINUE)
-                {
-                    bContinueSignal = false;
                     break;
-                }
                 else if (nReturn != FLOWCTRL_NO_CMD)
                     __j = nReturn;
 
@@ -429,7 +406,7 @@ int FlowCtrl::while_loop(int nth_Cmd, int nth_loop)
                 return nJumpTable[nth_Cmd][BLOCK_END];
             else if (!nCalcType[__j])
             {
-                string sCommand = findCommand(vCmdArray[__j].sCommand).sString;
+                std::string sCommand = findCommand(vCmdArray[__j].sCommand).sString;
 
                 // Evaluate the commands, store the bytecode
                 if (sCommand == "continue")
@@ -464,7 +441,7 @@ int FlowCtrl::while_loop(int nth_Cmd, int nth_loop)
                 {
                     if (_optionRef->useDebugger())
                     {
-                        NumeReKernel::getInstance()->getDebugger().gatherLoopBasedInformations(vCmdArray[__j].sCommand, getCurrentLineNumber(), mVarMap, vVarArray, sVarArray, nVarArray);
+                        NumeReKernel::getInstance()->getDebugger().gatherLoopBasedInformations(vCmdArray[__j].sCommand, getCurrentLineNumber(), mVarMap, vVarArray, sVarArray);
                         getErrorInformationForDebugger();
                     }
 
@@ -478,7 +455,7 @@ int FlowCtrl::while_loop(int nth_Cmd, int nth_loop)
             {
                 if (_optionRef->useDebugger())
                 {
-                    NumeReKernel::getInstance()->getDebugger().gatherLoopBasedInformations(vCmdArray[__j].sCommand, getCurrentLineNumber(), mVarMap, vVarArray, sVarArray, nVarArray);
+                    NumeReKernel::getInstance()->getDebugger().gatherLoopBasedInformations(vCmdArray[__j].sCommand, getCurrentLineNumber(), mVarMap, vVarArray, sVarArray);
                     getErrorInformationForDebugger();
                 }
 
@@ -492,10 +469,7 @@ int FlowCtrl::while_loop(int nth_Cmd, int nth_loop)
         // re-use the original condition to ensure that the result of
         // the condition is true
         if (sWhile_Condition != sWhile_Condition_Back || _dataRef->containsTablesOrClusters(sWhile_Condition_Back))
-        {
             sWhile_Condition = sWhile_Condition_Back;
-            //v = evalHeader(nNum, sWhile_Condition, false, nth_Cmd);
-        }
     }
 
     return vCmdArray.size();
@@ -515,10 +489,8 @@ int FlowCtrl::while_loop(int nth_Cmd, int nth_loop)
 /////////////////////////////////////////////////
 int FlowCtrl::if_fork(int nth_Cmd, int nth_loop)
 {
-    string sIf_Condition;
     int nElse = nJumpTable[nth_Cmd][BLOCK_MIDDLE]; // Position of next else/elseif
     int nEndif = nJumpTable[nth_Cmd][BLOCK_END];
-    string sLine = "";
     bPrintedStatus = false;
     value_type* v;
     int nNum = 0;
@@ -526,16 +498,20 @@ int FlowCtrl::if_fork(int nth_Cmd, int nth_loop)
     // As long as there are "if" or further "elseif"s
     // statements are found, otherwise jump to the else
     // statement
-    while (vCmdArray[nth_Cmd].sCommand.find(">>if") != string::npos || vCmdArray[nth_Cmd].sCommand.find(">>elseif") != string::npos)
+    while (vCmdArray[nth_Cmd].sCommand.find(">>if") != std::string::npos
+           || vCmdArray[nth_Cmd].sCommand.find(">>elseif") != std::string::npos)
     {
-        sIf_Condition = vCmdArray[nth_Cmd].sCommand.substr(vCmdArray[nth_Cmd].sCommand.find('(') + 1, vCmdArray[nth_Cmd].sCommand.rfind(')') - vCmdArray[nth_Cmd].sCommand.find('(') - 1);
+        if (!vCmdArray[nth_Cmd].sFlowCtrlHeader.length())
+            vCmdArray[nth_Cmd].sFlowCtrlHeader = vCmdArray[nth_Cmd].sCommand.substr(vCmdArray[nth_Cmd].sCommand.find('(') + 1,
+                                                                                    vCmdArray[nth_Cmd].sCommand.rfind(')') - vCmdArray[nth_Cmd].sCommand.find('(') - 1);
+
         nElse = nJumpTable[nth_Cmd][BLOCK_MIDDLE];
         nEndif = nJumpTable[nth_Cmd][BLOCK_END];
-        sLine = "";
         bPrintedStatus = false;
+        std::string sHead = vCmdArray[nth_Cmd].sFlowCtrlHeader;
 
         // Evaluate the header of the current elseif case
-        v = evalHeader(nNum, sIf_Condition, false, nth_Cmd);
+        v = evalHeader(nNum, sHead, false, nth_Cmd);
 
         // If the condition is true, enter the if-case
         if (v[0] != 0.0 && !isnan(v[0]) && !isinf(v[0]))
@@ -564,9 +540,7 @@ int FlowCtrl::if_fork(int nth_Cmd, int nth_loop)
                     if (nReturn == FLOWCTRL_ERROR || nReturn == FLOWCTRL_RETURN)
                         return nReturn;
                     else if (nReturn == FLOWCTRL_BREAK || nReturn == FLOWCTRL_CONTINUE)
-                    {
-                        return nEndif;
-                    }
+                        return nReturn;
                     else if (nReturn != FLOWCTRL_NO_CMD)
                         __i = nReturn;
 
@@ -576,33 +550,25 @@ int FlowCtrl::if_fork(int nth_Cmd, int nth_loop)
                 // Handle the "continue" and "break" flow
                 // control statements
                 if (nCalcType[__i] & CALCTYPE_CONTINUECMD)
-                {
-                    bContinueSignal = true;
-                    return nEndif;
-                }
+                    return FLOWCTRL_CONTINUE;
                 else if (nCalcType[__i] & CALCTYPE_BREAKCMD)
-                {
-                    bBreakSignal = true;
-                    return nEndif;
-                }
+                    return FLOWCTRL_BREAK;
                 else if (!nCalcType[__i])
                 {
-                    string sCommand = findCommand(vCmdArray[__i].sCommand).sString;
+                    std::string sCommand = findCommand(vCmdArray[__i].sCommand).sString;
 
                     // "continue" and "break" are both exiting the current
                     // condition, but they are yielding different signals
                     if (sCommand == "continue")
                     {
                         nCalcType[__i] = CALCTYPE_CONTINUECMD;
-                        bContinueSignal = true;
-                        return nEndif;
+                        return FLOWCTRL_CONTINUE;
                     }
 
                     if (sCommand == "break")
                     {
                         nCalcType[__i] = CALCTYPE_BREAKCMD;
-                        bBreakSignal = true;
-                        return nEndif;
+                        return FLOWCTRL_BREAK;
                     }
                 }
 
@@ -618,7 +584,7 @@ int FlowCtrl::if_fork(int nth_Cmd, int nth_loop)
                     {
                         if (_optionRef->useDebugger())
                         {
-                            NumeReKernel::getInstance()->getDebugger().gatherLoopBasedInformations(vCmdArray[__i].sCommand, getCurrentLineNumber(), mVarMap, vVarArray, sVarArray, nVarArray);
+                            NumeReKernel::getInstance()->getDebugger().gatherLoopBasedInformations(vCmdArray[__i].sCommand, getCurrentLineNumber(), mVarMap, vVarArray, sVarArray);
                             getErrorInformationForDebugger();
                         }
 
@@ -632,7 +598,7 @@ int FlowCtrl::if_fork(int nth_Cmd, int nth_loop)
                 {
                     if (_optionRef->useDebugger())
                     {
-                        NumeReKernel::getInstance()->getDebugger().gatherLoopBasedInformations(vCmdArray[__i].sCommand, getCurrentLineNumber(), mVarMap, vVarArray, sVarArray, nVarArray);
+                        NumeReKernel::getInstance()->getDebugger().gatherLoopBasedInformations(vCmdArray[__i].sCommand, getCurrentLineNumber(), mVarMap, vVarArray, sVarArray);
                         getErrorInformationForDebugger();
                     }
 
@@ -677,9 +643,7 @@ int FlowCtrl::if_fork(int nth_Cmd, int nth_loop)
             if (nReturn == FLOWCTRL_ERROR || nReturn == FLOWCTRL_RETURN)
                 return nReturn;
             else if (nReturn == FLOWCTRL_BREAK || nReturn == FLOWCTRL_CONTINUE)
-            {
-                return nEndif;
-            }
+                return nReturn;
             else if (nReturn != FLOWCTRL_NO_CMD)
                 __i = nReturn;
 
@@ -687,33 +651,25 @@ int FlowCtrl::if_fork(int nth_Cmd, int nth_loop)
         }
 
         if (nCalcType[__i] & CALCTYPE_CONTINUECMD)
-        {
-            bContinueSignal = true;
-            return nEndif;
-        }
+            return FLOWCTRL_CONTINUE;
         else if (nCalcType[__i] & CALCTYPE_BREAKCMD)
-        {
-            bBreakSignal = true;
-            return nEndif;
-        }
+            return FLOWCTRL_BREAK;
         else if (!nCalcType[__i])
         {
-            string sCommand = findCommand(vCmdArray[__i].sCommand).sString;
+            std::string sCommand = findCommand(vCmdArray[__i].sCommand).sString;
 
             // "continue" and "break" are both exiting the current
             // condition, but they are yielding different signals
             if (sCommand == "continue")
             {
                 nCalcType[__i] = CALCTYPE_CONTINUECMD;
-                bContinueSignal = true;
-                return nEndif;
+                return FLOWCTRL_CONTINUE;
             }
 
             if (sCommand == "break")
             {
                 nCalcType[__i] = CALCTYPE_BREAKCMD;
-                bBreakSignal = true;
-                return nEndif;
+                return FLOWCTRL_BREAK;
             }
         }
 
@@ -727,7 +683,7 @@ int FlowCtrl::if_fork(int nth_Cmd, int nth_loop)
             {
                 if (_optionRef->useDebugger())
                 {
-                    NumeReKernel::getInstance()->getDebugger().gatherLoopBasedInformations(vCmdArray[__i].sCommand, getCurrentLineNumber(), mVarMap, vVarArray, sVarArray, nVarArray);
+                    NumeReKernel::getInstance()->getDebugger().gatherLoopBasedInformations(vCmdArray[__i].sCommand, getCurrentLineNumber(), mVarMap, vVarArray, sVarArray);
                     getErrorInformationForDebugger();
                 }
 
@@ -741,7 +697,7 @@ int FlowCtrl::if_fork(int nth_Cmd, int nth_loop)
         {
             if (_optionRef->useDebugger())
             {
-                NumeReKernel::getInstance()->getDebugger().gatherLoopBasedInformations(vCmdArray[__i].sCommand, getCurrentLineNumber(), mVarMap, vVarArray, sVarArray, nVarArray);
+                NumeReKernel::getInstance()->getDebugger().gatherLoopBasedInformations(vCmdArray[__i].sCommand, getCurrentLineNumber(), mVarMap, vVarArray, sVarArray);
                 getErrorInformationForDebugger();
             }
 
@@ -768,10 +724,13 @@ int FlowCtrl::if_fork(int nth_Cmd, int nth_loop)
 /////////////////////////////////////////////////
 int FlowCtrl::switch_fork(int nth_Cmd, int nth_loop)
 {
-    string sSwitch_Condition = vCmdArray[nth_Cmd].sCommand.substr(vCmdArray[nth_Cmd].sCommand.find('(') + 1, vCmdArray[nth_Cmd].sCommand.rfind(')') - vCmdArray[nth_Cmd].sCommand.find('(') - 1);
+    if (!vCmdArray[nth_Cmd].sFlowCtrlHeader.length())
+        vCmdArray[nth_Cmd].sFlowCtrlHeader = vCmdArray[nth_Cmd].sCommand.substr(vCmdArray[nth_Cmd].sCommand.find('(') + 1,
+                                                                                vCmdArray[nth_Cmd].sCommand.rfind(')') - vCmdArray[nth_Cmd].sCommand.find('(') - 1);
+
+    std::string sSwitch_Condition = vCmdArray[nth_Cmd].sFlowCtrlHeader;
     int nNextCase = nJumpTable[nth_Cmd][BLOCK_MIDDLE]; // Position of next case/default
     int nSwitchEnd = nJumpTable[nth_Cmd][BLOCK_END];
-    string sLine = "";
     bPrintedStatus = false;
     value_type* v;
     int nNum = 0;
@@ -818,12 +777,13 @@ int FlowCtrl::switch_fork(int nth_Cmd, int nth_loop)
             // Handle the return value
             if (nReturn == FLOWCTRL_ERROR || nReturn == FLOWCTRL_RETURN)
                 return nReturn;
-            else if (nReturn == FLOWCTRL_BREAK || nReturn == FLOWCTRL_CONTINUE)
+            else if (nReturn == FLOWCTRL_BREAK)
             {
                 // We don't propagate the break signal
-                bBreakSignal = false;
                 return nSwitchEnd;
             }
+            else if (nReturn == FLOWCTRL_CONTINUE)
+                return FLOWCTRL_CONTINUE;
             else if (nReturn != FLOWCTRL_NO_CMD)
                 __i = nReturn;
 
@@ -833,10 +793,7 @@ int FlowCtrl::switch_fork(int nth_Cmd, int nth_loop)
         // Handle the "continue" and "break" flow
         // control statements
         if (nCalcType[__i] & CALCTYPE_CONTINUECMD)
-        {
-            bContinueSignal = true;
-            return nSwitchEnd;
-        }
+            return FLOWCTRL_CONTINUE;
         else if (nCalcType[__i] & CALCTYPE_BREAKCMD)
         {
             // We don't propagate the break signal in this case
@@ -844,15 +801,14 @@ int FlowCtrl::switch_fork(int nth_Cmd, int nth_loop)
         }
         else if (!nCalcType[__i])
         {
-            string sCommand = findCommand(vCmdArray[__i].sCommand).sString;
+            std::string sCommand = findCommand(vCmdArray[__i].sCommand).sString;
 
             // "continue" and "break" are both exiting the current
             // condition, but they are yielding different signals
             if (sCommand == "continue")
             {
                 nCalcType[__i] = CALCTYPE_CONTINUECMD;
-                bContinueSignal = true;
-                return nSwitchEnd;
+                return FLOWCTRL_CONTINUE;
             }
 
             if (sCommand == "break")
@@ -875,7 +831,7 @@ int FlowCtrl::switch_fork(int nth_Cmd, int nth_loop)
             {
                 if (_optionRef->useDebugger())
                 {
-                    NumeReKernel::getInstance()->getDebugger().gatherLoopBasedInformations(vCmdArray[__i].sCommand, getCurrentLineNumber(), mVarMap, vVarArray, sVarArray, nVarArray);
+                    NumeReKernel::getInstance()->getDebugger().gatherLoopBasedInformations(vCmdArray[__i].sCommand, getCurrentLineNumber(), mVarMap, vVarArray, sVarArray);
                     getErrorInformationForDebugger();
                 }
 
@@ -889,7 +845,7 @@ int FlowCtrl::switch_fork(int nth_Cmd, int nth_loop)
         {
             if (_optionRef->useDebugger())
             {
-                NumeReKernel::getInstance()->getDebugger().gatherLoopBasedInformations(vCmdArray[__i].sCommand, getCurrentLineNumber(), mVarMap, vVarArray, sVarArray, nVarArray);
+                NumeReKernel::getInstance()->getDebugger().gatherLoopBasedInformations(vCmdArray[__i].sCommand, getCurrentLineNumber(), mVarMap, vVarArray, sVarArray);
                 getErrorInformationForDebugger();
             }
 
@@ -915,7 +871,6 @@ int FlowCtrl::try_catch(int nth_Cmd, int nth_loop)
 {
     int nNextCatch = nJumpTable[nth_Cmd][BLOCK_MIDDLE]; // Position of next case/default
     int nTryEnd = nJumpTable[nth_Cmd][BLOCK_END];
-    string sLine = "";
     bPrintedStatus = false;
 
     // The inner loop goes through the contained
@@ -940,7 +895,7 @@ int FlowCtrl::try_catch(int nth_Cmd, int nth_loop)
             if (nReturn == FLOWCTRL_ERROR || nReturn == FLOWCTRL_RETURN)
                 return nReturn;
             else if (nReturn == FLOWCTRL_BREAK || nReturn == FLOWCTRL_CONTINUE)
-                return nTryEnd;
+                return nReturn;
             else if (nReturn != FLOWCTRL_NO_CMD)
                 __i = nReturn;
 
@@ -950,34 +905,26 @@ int FlowCtrl::try_catch(int nth_Cmd, int nth_loop)
         // Handle the "continue" and "break" flow
         // control statements
         if (nCalcType[__i] & CALCTYPE_CONTINUECMD)
-        {
-            bContinueSignal = true;
-            return nTryEnd;
-        }
+            return FLOWCTRL_CONTINUE;
         else if (nCalcType[__i] & CALCTYPE_BREAKCMD)
-        {
-            bBreakSignal = true;
-            return nTryEnd;
-        }
+            return FLOWCTRL_BREAK;
         else if (!nCalcType[__i])
         {
-            string sCommand = findCommand(vCmdArray[__i].sCommand).sString;
+            std::string sCommand = findCommand(vCmdArray[__i].sCommand).sString;
 
             // "continue" and "break" are both exiting the current
             // condition, but they are yielding different signals
             if (sCommand == "continue")
             {
                 nCalcType[__i] = CALCTYPE_CONTINUECMD;
-                bContinueSignal = true;
-                return nTryEnd;
+                return FLOWCTRL_CONTINUE;
             }
 
             if (sCommand == "break")
             {
                 // We don't propagate the break signal in this case
                 nCalcType[__i] = CALCTYPE_BREAKCMD;
-                bBreakSignal = true;
-                return nTryEnd;
+                return FLOWCTRL_BREAK;
             }
         }
 
@@ -993,7 +940,7 @@ int FlowCtrl::try_catch(int nth_Cmd, int nth_loop)
             {
                 if (_optionRef->useDebugger())
                 {
-                    NumeReKernel::getInstance()->getDebugger().gatherLoopBasedInformations(vCmdArray[__i].sCommand, getCurrentLineNumber(), mVarMap, vVarArray, sVarArray, nVarArray);
+                    NumeReKernel::getInstance()->getDebugger().gatherLoopBasedInformations(vCmdArray[__i].sCommand, getCurrentLineNumber(), mVarMap, vVarArray, sVarArray);
                     getErrorInformationForDebugger();
                 }
 
@@ -1007,7 +954,7 @@ int FlowCtrl::try_catch(int nth_Cmd, int nth_loop)
         {
             if (_optionRef->useDebugger())
             {
-                NumeReKernel::getInstance()->getDebugger().gatherLoopBasedInformations(vCmdArray[__i].sCommand, getCurrentLineNumber(), mVarMap, vVarArray, sVarArray, nVarArray);
+                NumeReKernel::getInstance()->getDebugger().gatherLoopBasedInformations(vCmdArray[__i].sCommand, getCurrentLineNumber(), mVarMap, vVarArray, sVarArray);
                 getErrorInformationForDebugger();
             }
 
@@ -1077,34 +1024,26 @@ int FlowCtrl::try_catch(int nth_Cmd, int nth_loop)
                 // Handle the "continue" and "break" flow
                 // control statements
                 if (nCalcType[__i] & CALCTYPE_CONTINUECMD)
-                {
-                    bContinueSignal = true;
-                    return nTryEnd;
-                }
+                    return FLOWCTRL_CONTINUE;
                 else if (nCalcType[__i] & CALCTYPE_BREAKCMD)
-                {
-                    bBreakSignal = true;
-                    return nTryEnd;
-                }
+                    return FLOWCTRL_BREAK;
                 else if (!nCalcType[__i])
                 {
-                    string sCommand = findCommand(vCmdArray[__i].sCommand).sString;
+                    std::string sCommand = findCommand(vCmdArray[__i].sCommand).sString;
 
                     // "continue" and "break" are both exiting the current
                     // condition, but they are yielding different signals
                     if (sCommand == "continue")
                     {
                         nCalcType[__i] = CALCTYPE_CONTINUECMD;
-                        bContinueSignal = true;
-                        return nTryEnd;
+                        return FLOWCTRL_CONTINUE;
                     }
 
                     if (sCommand == "break")
                     {
                         // We don't propagate the break signal in this case
                         nCalcType[__i] = CALCTYPE_BREAKCMD;
-                        bBreakSignal = true;
-                        return nTryEnd;
+                        return FLOWCTRL_BREAK;
                     }
                 }
 
@@ -1123,7 +1062,7 @@ int FlowCtrl::try_catch(int nth_Cmd, int nth_loop)
                     {
                         if (_optionRef->useDebugger())
                         {
-                            NumeReKernel::getInstance()->getDebugger().gatherLoopBasedInformations(vCmdArray[__i].sCommand, getCurrentLineNumber(), mVarMap, vVarArray, sVarArray, nVarArray);
+                            NumeReKernel::getInstance()->getDebugger().gatherLoopBasedInformations(vCmdArray[__i].sCommand, getCurrentLineNumber(), mVarMap, vVarArray, sVarArray);
                             getErrorInformationForDebugger();
                         }
 
@@ -1137,7 +1076,7 @@ int FlowCtrl::try_catch(int nth_Cmd, int nth_loop)
                 {
                     if (_optionRef->useDebugger())
                     {
-                        NumeReKernel::getInstance()->getDebugger().gatherLoopBasedInformations(vCmdArray[__i].sCommand, getCurrentLineNumber(), mVarMap, vVarArray, sVarArray, nVarArray);
+                        NumeReKernel::getInstance()->getDebugger().gatherLoopBasedInformations(vCmdArray[__i].sCommand, getCurrentLineNumber(), mVarMap, vVarArray, sVarArray);
                         getErrorInformationForDebugger();
                     }
 
@@ -1161,16 +1100,16 @@ int FlowCtrl::try_catch(int nth_Cmd, int nth_loop)
 /// used here.
 ///
 /// \param nNum int&
-/// \param sHeadExpression string&
+/// \param sHeadExpression std::string&
 /// \param bIsForHead bool
 /// \param nth_Cmd int
 /// \return value_type*
 ///
 /////////////////////////////////////////////////
-value_type* FlowCtrl::evalHeader(int& nNum, string& sHeadExpression, bool bIsForHead, int nth_Cmd)
+value_type* FlowCtrl::evalHeader(int& nNum, std::string& sHeadExpression, bool bIsForHead, int nth_Cmd)
 {
     int nCurrentCalcType = nCalcType[nth_Cmd];
-    string sCache;
+    std::string sCache;
 
     // Update the parser index, if the loop parsing
     // mode was activated
@@ -1238,12 +1177,15 @@ value_type* FlowCtrl::evalHeader(int& nNum, string& sHeadExpression, bool bIsFor
             if (!nCurrentCalcType)
                 nCalcType[nth_Cmd] |= CALCTYPE_DATAACCESS;
 
-            if (!_parserRef->HasCachedAccess() && _parserRef->CanCacheAccess() && !_parserRef->GetCachedEquation().length())
+            if (!_parserRef->HasCachedAccess()
+                && _parserRef->CanCacheAccess()
+                && !_parserRef->GetCachedEquation().length())
                 _parserRef->SetCompiling(true);
 
             sCache = getDataElements(sHeadExpression, *_parserRef, *_dataRef, *_optionRef);
 
-            if (_parserRef->IsCompiling() && _parserRef->CanCacheAccess())
+            if (_parserRef->IsCompiling()
+                && _parserRef->CanCacheAccess())
             {
                 _parserRef->CacheCurrentEquation(sHeadExpression);
                 _parserRef->CacheCurrentTarget(sCache);
@@ -1253,7 +1195,7 @@ value_type* FlowCtrl::evalHeader(int& nNum, string& sHeadExpression, bool bIsFor
         }
     }
 
-    // Evaluate strings
+    // Evaluate std::strings
     if (nCurrentCalcType & CALCTYPE_STRING || !nCurrentCalcType)
     {
         if (nCurrentCalcType || NumeReKernel::getInstance()->getStringParser().isStringExpression(sHeadExpression))
@@ -1264,7 +1206,7 @@ value_type* FlowCtrl::evalHeader(int& nNum, string& sHeadExpression, bool bIsFor
             if (!bLockedPauseMode && bUseLoopParsingMode)
                 _parserRef->PauseLoopMode();
 
-            // Call the string parser
+            // Call the std::string parser
             auto retVal = NumeReKernel::getInstance()->getStringParser().evalAndFormat(sHeadExpression, sCache, true);
 
             // Evaluate the return value
@@ -1275,7 +1217,7 @@ value_type* FlowCtrl::evalHeader(int& nNum, string& sHeadExpression, bool bIsFor
                 if (bIsForHead)
                 {
                     if (_optionRef->useDebugger())
-                        NumeReKernel::getInstance()->getDebugger().gatherLoopBasedInformations(sHeadExpression, getCurrentLineNumber(), mVarMap, vVarArray, sVarArray, nVarArray);
+                        NumeReKernel::getInstance()->getDebugger().gatherLoopBasedInformations(sHeadExpression, getCurrentLineNumber(), mVarMap, vVarArray, sVarArray);
 
                     NumeReKernel::getInstance()->getDebugger().throwException(SyntaxError(SyntaxError::CANNOT_EVAL_FOR, sHeadExpression, SyntaxError::invalid_position));
                 }
@@ -1291,7 +1233,7 @@ value_type* FlowCtrl::evalHeader(int& nNum, string& sHeadExpression, bool bIsFor
             }
 
             // It's possible that the user might have done
-            // something weird with string operations transformed
+            // something weird with std::string operations transformed
             // into a regular expression. Replace the local
             // variables here
             replaceLocalVars(sHeadExpression);
@@ -1330,65 +1272,15 @@ int FlowCtrl::evalLoopFlowCommands(int __j, int nth_loop)
 
     // Evaluate the possible flow control statements
     if (vCmdArray[__j].sCommand.substr(0, 3) == "for")
-    {
         return for_loop(__j, nth_loop + 1);
-    }
     else if (vCmdArray[__j].sCommand.substr(0, 5) == "while")
-    {
         return while_loop(__j, nth_loop + 1);
-    }
-    else if (vCmdArray[__j].sCommand.find(">>if") != string::npos)
-    {
-        __j = if_fork(__j, nth_loop + 1);
-
-        if (__j == FLOWCTRL_ERROR || __j == FLOWCTRL_RETURN || bReturnSignal)
-            return __j;
-
-        if (bContinueSignal)
-        {
-            return FLOWCTRL_CONTINUE;
-        }
-
-        if (bBreakSignal)
-        {
-            return FLOWCTRL_BREAK;
-        }
-
-        return __j;
-    }
-    else if (vCmdArray[__j].sCommand.find(">>try") != string::npos)
-    {
-        __j = try_catch(__j, nth_loop + 1);
-
-        if (__j == FLOWCTRL_ERROR || __j == FLOWCTRL_RETURN || bReturnSignal)
-            return __j;
-
-        if (bContinueSignal)
-        {
-            return FLOWCTRL_CONTINUE;
-        }
-
-        if (bBreakSignal)
-        {
-            return FLOWCTRL_BREAK;
-        }
-
-        return __j;
-    }
-    else if (vCmdArray[__j].sCommand.find(">>switch") != string::npos)
-    {
-        __j = switch_fork(__j, nth_loop + 1);
-
-        if (__j == FLOWCTRL_ERROR || __j == FLOWCTRL_RETURN || bReturnSignal)
-            return __j;
-
-        if (bContinueSignal)
-        {
-            return FLOWCTRL_CONTINUE;
-        }
-
-        return __j;
-    }
+    else if (vCmdArray[__j].sCommand.find(">>if") != std::string::npos)
+        return if_fork(__j, nth_loop + 1);
+    else if (vCmdArray[__j].sCommand.find(">>try") != std::string::npos)
+        return try_catch(__j, nth_loop + 1);
+    else if (vCmdArray[__j].sCommand.find(">>switch") != std::string::npos)
+        return switch_fork(__j, nth_loop + 1);
 
     return FLOWCTRL_NO_CMD;
 }
@@ -1453,48 +1345,12 @@ int FlowCtrl::evalForkFlowCommands(int __i, int nth_loop)
         else
             return while_loop(__i, nth_loop + 1);
     }
-    else if (vCmdArray[__i].sCommand.find(">>if") != string::npos)
-    {
-        __i = if_fork(__i, nth_loop + 1);
-
-        if (__i == FLOWCTRL_ERROR || __i == FLOWCTRL_RETURN || bReturnSignal)
-            return __i;
-
-        if (bContinueSignal)
-        {
-            return FLOWCTRL_CONTINUE;
-        }
-
-        return __i;
-    }
-    else if (vCmdArray[__i].sCommand.find(">>try") != string::npos)
-    {
-        __i = try_catch(__i, nth_loop + 1);
-
-        if (__i == FLOWCTRL_ERROR || __i == FLOWCTRL_RETURN || bReturnSignal)
-            return __i;
-
-        if (bContinueSignal)
-        {
-            return FLOWCTRL_CONTINUE;
-        }
-
-        return __i;
-    }
-    else if (vCmdArray[__i].sCommand.find(">>switch") != string::npos)
-    {
-        __i = switch_fork(__i, nth_loop + 1);
-
-        if (__i == FLOWCTRL_ERROR || __i == FLOWCTRL_RETURN || bReturnSignal)
-            return __i;
-
-        if (bContinueSignal)
-        {
-            return FLOWCTRL_CONTINUE;
-        }
-
-        return __i;
-    }
+    else if (vCmdArray[__i].sCommand.find(">>if") != std::string::npos)
+        return if_fork(__i, nth_loop + 1);
+    else if (vCmdArray[__i].sCommand.find(">>try") != std::string::npos)
+        return try_catch(__i, nth_loop + 1);
+    else if (vCmdArray[__i].sCommand.find(">>switch") != std::string::npos)
+        return switch_fork(__i, nth_loop + 1);
 
     return FLOWCTRL_NO_CMD;
 }
@@ -1506,15 +1362,15 @@ int FlowCtrl::evalForkFlowCommands(int __i, int nth_loop)
 /// control statement class. The internal flow
 /// control command buffer grows as needed.
 ///
-/// \param __sCmd string&
+/// \param __sCmd std::string&
 /// \param nCurrentLine int
 /// \return void
 ///
 /////////////////////////////////////////////////
-void FlowCtrl::setCommand(string& __sCmd, int nCurrentLine)
+void FlowCtrl::setCommand(std::string& __sCmd, int nCurrentLine)
 {
     bool bDebuggingBreakPoint = (__sCmd.substr(__sCmd.find_first_not_of(' '), 2) == "|>");
-    string sAppendedExpression = "";
+    std::string sAppendedExpression = "";
 
     // Remove the breakpoint syntax
     if (bDebuggingBreakPoint)
@@ -1543,7 +1399,7 @@ void FlowCtrl::setCommand(string& __sCmd, int nCurrentLine)
 
     // Find the command of the current command line
     // if there's any
-    string command =  findCommand(__sCmd).sString;
+    std::string command =  findCommand(__sCmd).sString;
 
     if (isAnyFlowCtrlStatement(command))
     {
@@ -1571,13 +1427,13 @@ void FlowCtrl::setCommand(string& __sCmd, int nCurrentLine)
             // because it can be parsed internally
             unsigned int nPos = __sCmd.find(':');
 
-            if (__sCmd.find('(', __sCmd.find('(') + 1) != string::npos && __sCmd.find('(', __sCmd.find('(') + 1) < nPos)
+            if (__sCmd.find('(', __sCmd.find('(') + 1) != std::string::npos && __sCmd.find('(', __sCmd.find('(') + 1) < nPos)
             {
                 nPos = getMatchingParenthesis(__sCmd.substr(__sCmd.find('(', __sCmd.find('(') + 1)));
                 nPos = __sCmd.find(':', nPos);
             }
 
-            if (nPos == string::npos)
+            if (nPos == std::string::npos)
             {
                 reset();
                 throw SyntaxError(SyntaxError::CANNOT_EVAL_FOR, __sCmd, SyntaxError::invalid_position);
@@ -1761,7 +1617,7 @@ void FlowCtrl::setCommand(string& __sCmd, int nCurrentLine)
         // If there's something after the current flow
         // control statement (i.e. a continued command
         // line), then cache this part here
-        if (__sCmd.find('(') != string::npos
+        if (__sCmd.find('(') != std::string::npos
             && (command == "for"
                 || command == "if"
                 || command == "elseif"
@@ -1773,15 +1629,15 @@ void FlowCtrl::setCommand(string& __sCmd, int nCurrentLine)
         }
         else if (command == "case" || command == "default" || command == "catch")
         {
-            if (__sCmd.find(':', 4) != string::npos
-                && __sCmd.find_first_not_of(": ", __sCmd.find(':', 4)) != string::npos)
+            if (__sCmd.find(':', 4) != std::string::npos
+                && __sCmd.find_first_not_of(": ", __sCmd.find(':', 4)) != std::string::npos)
             {
                 sAppendedExpression = __sCmd.substr(__sCmd.find(':', 4)+1);
                 __sCmd.erase(__sCmd.find(':', 4)+1);
             }
         }
-        else if (__sCmd.find(' ', 4) != string::npos
-            && __sCmd.find_first_not_of(' ', __sCmd.find(' ', 4)) != string::npos
+        else if (__sCmd.find(' ', 4) != std::string::npos
+            && __sCmd.find_first_not_of(' ', __sCmd.find(' ', 4)) != std::string::npos
             && __sCmd[__sCmd.find_first_not_of(' ', __sCmd.find(' ', 4))] != '-')
         {
             sAppendedExpression = __sCmd.substr(__sCmd.find(' ', 4));
@@ -1791,7 +1647,7 @@ void FlowCtrl::setCommand(string& __sCmd, int nCurrentLine)
         StripSpaces(sAppendedExpression);
         StripSpaces(__sCmd);
 
-        if (sAppendedExpression.find_first_not_of(";") == string::npos)
+        if (sAppendedExpression.find_first_not_of(";") == std::string::npos)
             sAppendedExpression.clear();
 
         // Store the current flow control statement
@@ -1800,7 +1656,7 @@ void FlowCtrl::setCommand(string& __sCmd, int nCurrentLine)
     else
     {
         // If there's a flow control statement somewhere
-        // in the current string, then store this part in
+        // in the current std::string, then store this part in
         // a temporary cache
         size_t nQuotes = 0;
 
@@ -1878,12 +1734,8 @@ void FlowCtrl::setCommand(string& __sCmd, int nCurrentLine)
 void FlowCtrl::eval()
 {
     nReturnType = 1;
-    bBreakSignal = false;
-    bContinueSignal = false;
     ReturnVal.clear();
-    string sVars = ";";
-    sVarName = "";
-    dVarAdress = nullptr;
+    std::string sVars = ";";
     bUseLoopParsingMode = false;
     bFunctionsReplaced = false;
     bEvaluatingFlowControlStatements = true;
@@ -2009,7 +1861,7 @@ void FlowCtrl::eval()
                     NumeReKernel::printPreFmt("|WHL> " + toSystemCodePage(_lang.get("COMMON_SUCCESS")) + ".\n");
             }
         }
-        else if (vCmdArray[0].sCommand.find(">>if") != string::npos)
+        else if (vCmdArray[0].sCommand.find(">>if") != std::string::npos)
         {
             if (if_fork() == FLOWCTRL_ERROR)
             {
@@ -2019,7 +1871,7 @@ void FlowCtrl::eval()
                 throw SyntaxError(SyntaxError::CANNOT_EVAL_IF, "", SyntaxError::invalid_position);
             }
         }
-        else if (vCmdArray[0].sCommand.find(">>switch") != string::npos)
+        else if (vCmdArray[0].sCommand.find(">>switch") != std::string::npos)
         {
             if (switch_fork() == FLOWCTRL_ERROR)
             {
@@ -2029,7 +1881,7 @@ void FlowCtrl::eval()
                 throw SyntaxError(SyntaxError::CANNOT_EVAL_SWITCH, "", SyntaxError::invalid_position);
             }
         }
-        else if (vCmdArray[0].sCommand.find(">>try") != string::npos)
+        else if (vCmdArray[0].sCommand.find(">>try") != std::string::npos)
         {
             if (try_catch() == FLOWCTRL_ERROR)
             {
@@ -2078,15 +1930,12 @@ void FlowCtrl::reset()
 {
     vCmdArray.clear();
 
-    if (vVarArray)
-    {
-        for (int i = 0; i < nVarArray; i++)
-            _parserRef->RemoveVar(sVarArray[i]);
-    }
+    for (size_t i = 0; i < sVarArray.size(); i++)
+        _parserRef->RemoveVar(sVarArray[i]);
 
-    if (mVarMap.size() && nVarArray && sVarArray)
+    if (mVarMap.size())
     {
-        for (int i = 0; i < nVarArray; i++)
+        for (size_t i = 0; i < sVarArray.size(); i++)
         {
             for (auto iter = mVarMap.begin(); iter != mVarMap.end(); ++iter)
             {
@@ -2110,51 +1959,32 @@ void FlowCtrl::reset()
         {
             _parserRef->DefineVar(item->first, item->second);
 
-            if (vVarArray)
+            for (size_t i = 0; i < sVarArray.size(); i++)
             {
-                for (int i = 0; i < nVarArray; i++)
-                {
-                    if (item->first == sVarArray[i])
-                        *item->second = vVarArray[i][0];
-                }
+                if (item->first == sVarArray[i])
+                    *item->second = vVarArray[i];
             }
         }
 
         vVars.clear();
     }
 
-    if (vVarArray)
-    {
-        for (int i = 0; i < nVarArray; i++)
-        {
-            delete[] vVarArray[i];
-        }
-
-        delete[] vVarArray;
-        delete[] sVarArray;
-        vVarArray = nullptr;
-        sVarArray = nullptr;
-    }
-
+    vVarArray.clear();
+    sVarArray.clear();
     nJumpTable.clear();
     nCalcType.clear();
 
     if (nDebuggerCode == NumeReKernel::DEBUGGER_STEPOVER)
         nDebuggerCode = NumeReKernel::DEBUGGER_STEP;
 
-    nVarArray = 0;
     nLoopSafety = -1;
 
     for (size_t i = 0; i < FC_COUNT; i++)
         nFlowCtrlStatements[i] = 0;
 
     bSilent = true;
-    bBreakSignal = false;
-    bContinueSignal = false;
     sLoopNames = "";
     sLoopPlotCompose = "";
-    dVarAdress = 0;
-    sVarName = "";
     bMask = false;
     nCurrentCommand = 0;
     bEvaluatingFlowControlStatements = false;
@@ -2190,20 +2020,20 @@ void FlowCtrl::reset()
 
 /////////////////////////////////////////////////
 /// \brief This member function does the hard
-/// work and compiles the numerical and string
+/// work and compiles the numerical and std::string
 /// results for the current command line to
 /// provide the bytecode for the usual
 /// calculation function.
 ///
-/// \param sLine string
+/// \param sLine std::string
 /// \param nthCmd int
 /// \return int
 ///
 /////////////////////////////////////////////////
-int FlowCtrl::compile(string sLine, int nthCmd)
+int FlowCtrl::compile(std::string sLine, int nthCmd)
 {
-    string sCache;
-    string sCommand;
+    std::string sCache;
+    std::string sCommand;
 
     value_type* v = 0;
     int nNum = 0;
@@ -2239,13 +2069,13 @@ int FlowCtrl::compile(string sLine, int nthCmd)
 
         if (_optionRef->useDebugger() && nDebuggerCode != NumeReKernel::DEBUGGER_LEAVE && nDebuggerCode != NumeReKernel::DEBUGGER_STEPOVER)
         {
-            NumeReKernel::getInstance()->getDebugger().gatherLoopBasedInformations(sLine, getCurrentLineNumber(), mVarMap, vVarArray, sVarArray, nVarArray);
+            NumeReKernel::getInstance()->getDebugger().gatherLoopBasedInformations(sLine, getCurrentLineNumber(), mVarMap, vVarArray, sVarArray);
             nDebuggerCode = evalDebuggerBreakPoint(*_parserRef, *_optionRef);
         }
     }
 
     // Handle the suppression semicolon
-    if (sLine.find_last_not_of(" \t") != string::npos && sLine[sLine.find_last_not_of(" \t")] == ';')
+    if (sLine.find_last_not_of(" \t") != std::string::npos && sLine[sLine.find_last_not_of(" \t")] == ';')
     {
         sLine.erase(sLine.rfind(';'));
         bLoopSupressAnswer = true;
@@ -2290,7 +2120,7 @@ int FlowCtrl::compile(string sLine, int nthCmd)
     // Handle the throw command
     if (sCommand == "throw" || sLine == "throw")
     {
-        string sErrorToken;
+        std::string sErrorToken;
 
         if (sLine.length() > 6 && NumeReKernel::getInstance()->getStringParser().isStringExpression(sLine))
         {
@@ -2311,7 +2141,7 @@ int FlowCtrl::compile(string sLine, int nthCmd)
     {
         nCalcType[nthCmd] |= CALCTYPE_RETURNCOMMAND;
 
-        string sReturnValue = sLine.substr(sLine.find("return") + 6);
+        std::string sReturnValue = sLine.substr(sLine.find("return") + 6);
         StripSpaces(sReturnValue);
 
         if (sReturnValue.back() == ';')
@@ -2421,7 +2251,7 @@ int FlowCtrl::compile(string sLine, int nthCmd)
     }
 
     // Handle the "to_cmd()" function here
-    if (sLine.find("to_cmd(") != string::npos)
+    if (sLine.find("to_cmd(") != std::string::npos)
     {
         nCalcType[nthCmd] |= CALCTYPE_TOCOMMAND | CALCTYPE_COMMAND | CALCTYPE_DATAACCESS | CALCTYPE_EXPLICIT | CALCTYPE_PROGRESS | CALCTYPE_RECURSIVEEXPRESSION;
 
@@ -2430,7 +2260,7 @@ int FlowCtrl::compile(string sLine, int nthCmd)
 
         unsigned int nPos = 0;
 
-        while (sLine.find("to_cmd(", nPos) != string::npos)
+        while (sLine.find("to_cmd(", nPos) != std::string::npos)
         {
             nPos = sLine.find("to_cmd(", nPos) + 6;
 
@@ -2439,10 +2269,10 @@ int FlowCtrl::compile(string sLine, int nthCmd)
 
             unsigned int nParPos = getMatchingParenthesis(sLine.substr(nPos));
 
-            if (nParPos == string::npos)
+            if (nParPos == std::string::npos)
                 throw SyntaxError(SyntaxError::UNMATCHED_PARENTHESIS, sLine, nPos);
 
-            string sCmdString = sLine.substr(nPos + 1, nParPos - 1);
+            std::string sCmdString = sLine.substr(nPos + 1, nParPos - 1);
             StripSpaces(sCmdString);
 
             if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sCmdString))
@@ -2470,8 +2300,8 @@ int FlowCtrl::compile(string sLine, int nthCmd)
         nCalcType[nthCmd] |= CALCTYPE_PROGRESS;
 
         value_type* vVals = 0;
-        string sExpr;
-        string sArgument;
+        std::string sExpr;
+        std::string sArgument;
         int nArgument;
 
         if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sLine))
@@ -2485,9 +2315,9 @@ int FlowCtrl::compile(string sLine, int nthCmd)
                 _parserRef->PauseLoopMode(false);
         }
 
-        if (sLine.find("-set") != string::npos || sLine.find("--") != string::npos)
+        if (sLine.find("-set") != std::string::npos || sLine.find("--") != std::string::npos)
         {
-            if (sLine.find("-set") != string::npos)
+            if (sLine.find("-set") != std::string::npos)
                 sArgument = sLine.substr(sLine.find("-set"));
             else
                 sArgument = sLine.substr(sLine.find("--"));
@@ -2520,7 +2350,7 @@ int FlowCtrl::compile(string sLine, int nthCmd)
                     if (bUseLoopParsingMode && !bLockedPauseMode)
                         _parserRef->PauseLoopMode();
 
-                    string sDummy;
+                    std::string sDummy;
                     NumeReKernel::getInstance()->getStringParser().evalAndFormat(sArgument, sDummy, true);
 
                     if (bUseLoopParsingMode && !bLockedPauseMode)
@@ -2553,7 +2383,7 @@ int FlowCtrl::compile(string sLine, int nthCmd)
     }
 
     // Display the prompt to the user
-    if (sLine.find("??") != string::npos)
+    if (sLine.find("??") != std::string::npos)
     {
         nCalcType[nthCmd] |= CALCTYPE_PROMPT | CALCTYPE_PROCEDURECMDINTERFACE | CALCTYPE_COMMAND | CALCTYPE_DATAACCESS | CALCTYPE_STRING | CALCTYPE_RECURSIVEEXPRESSION;
 
@@ -2629,7 +2459,7 @@ int FlowCtrl::compile(string sLine, int nthCmd)
 
     {
         bool bSupressAnswer_back = NumeReKernel::bSupressAnswer;
-        string sPreCommandLine = sLine;
+        std::string sPreCommandLine = sLine;
         NumeReKernel::bSupressAnswer = bLoopSupressAnswer;
 
         switch (commandHandler(sLine))
@@ -2637,7 +2467,7 @@ int FlowCtrl::compile(string sLine, int nthCmd)
             case NO_COMMAND:
                 {
                     StripSpaces(sPreCommandLine);
-                    string sCurrentLine = sLine;
+                    std::string sCurrentLine = sLine;
                     StripSpaces(sCurrentLine);
 
                     if (sPreCommandLine != sCurrentLine)
@@ -2716,7 +2546,7 @@ int FlowCtrl::compile(string sLine, int nthCmd)
     }
 
 
-    // Evaluate string expressions
+    // Evaluate std::string expressions
     if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sLine)
         || NumeReKernel::getInstance()->getStringParser().isStringExpression(sCache))
     {
@@ -2863,17 +2693,17 @@ int FlowCtrl::compile(string sLine, int nthCmd)
 
 /////////////////////////////////////////////////
 /// \brief This member function does the hard
-/// work and calculates the numerical and string
+/// work and calculates the numerical and std::string
 /// results for the current command line. It will
 /// use the previously determined bytecode
 /// whereever possible.
 ///
-/// \param sLine string
+/// \param sLine std::string
 /// \param nthCmd int
 /// \return int
 ///
 /////////////////////////////////////////////////
-int FlowCtrl::calc(string sLine, int nthCmd)
+int FlowCtrl::calc(std::string sLine, int nthCmd)
 {
     value_type* v = 0;
     int nNum = 0;
@@ -2914,19 +2744,10 @@ int FlowCtrl::calc(string sLine, int nthCmd)
 
         if (_optionRef->useDebugger() && nDebuggerCode != NumeReKernel::DEBUGGER_LEAVE && nDebuggerCode != NumeReKernel::DEBUGGER_STEPOVER)
         {
-            NumeReKernel::getInstance()->getDebugger().gatherLoopBasedInformations(sLine, getCurrentLineNumber(), mVarMap, vVarArray, sVarArray, nVarArray);
+            NumeReKernel::getInstance()->getDebugger().gatherLoopBasedInformations(sLine, getCurrentLineNumber(), mVarMap, vVarArray, sVarArray);
             nDebuggerCode = evalDebuggerBreakPoint(*_parserRef, *_optionRef);
         }
     }
-
-    // Handle the suppression semicolon
-    //if (nCurrentCalcType & CALCTYPE_SUPPRESSANSWER)
-    //{
-    //    sLine.erase(sLine.rfind(';'));
-    //    bLoopSupressAnswer = true;
-    //}
-    //else
-    //    bLoopSupressAnswer = false;
 
     // Replace the custom defined functions, if it wasn't already done
     if (!(nCurrentCalcType & CALCTYPE_DEFINITION) && !bFunctionsReplaced)
@@ -2938,7 +2759,7 @@ int FlowCtrl::calc(string sLine, int nthCmd)
     // Handle the throw command
     if (nCurrentCalcType & CALCTYPE_THROWCOMMAND)
     {
-        string sErrorToken;
+        std::string sErrorToken;
 
         if (sLine.length() > 6 && NumeReKernel::getInstance()->getStringParser().isStringExpression(sLine))
         {
@@ -2957,7 +2778,7 @@ int FlowCtrl::calc(string sLine, int nthCmd)
     // Handle the return command
     if (nCurrentCalcType & CALCTYPE_RETURNCOMMAND)
     {
-        string sReturnValue = sLine.substr(sLine.find("return") + 6);
+        std::string sReturnValue = sLine.substr(sLine.find("return") + 6);
         StripSpaces(sReturnValue);
 
         if (sReturnValue.back() == ';')
@@ -3077,7 +2898,7 @@ int FlowCtrl::calc(string sLine, int nthCmd)
 
         unsigned int nPos = 0;
 
-        while (sLine.find("to_cmd(", nPos) != string::npos)
+        while (sLine.find("to_cmd(", nPos) != std::string::npos)
         {
             nPos = sLine.find("to_cmd(", nPos) + 6;
 
@@ -3086,10 +2907,10 @@ int FlowCtrl::calc(string sLine, int nthCmd)
 
             unsigned int nParPos = getMatchingParenthesis(sLine.substr(nPos));
 
-            if (nParPos == string::npos)
+            if (nParPos == std::string::npos)
                 throw SyntaxError(SyntaxError::UNMATCHED_PARENTHESIS, sLine, nPos);
 
-            string sCmdString = sLine.substr(nPos + 1, nParPos - 1);
+            std::string sCmdString = sLine.substr(nPos + 1, nParPos - 1);
             StripSpaces(sCmdString);
 
             if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sCmdString))
@@ -3113,8 +2934,8 @@ int FlowCtrl::calc(string sLine, int nthCmd)
     if (nCurrentCalcType & CALCTYPE_PROGRESS)
     {
         value_type* vVals = 0;
-        string sExpr;
-        string sArgument;
+        std::string sExpr;
+        std::string sArgument;
         int nArgument;
 
         if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sLine))
@@ -3128,9 +2949,9 @@ int FlowCtrl::calc(string sLine, int nthCmd)
                 _parserRef->PauseLoopMode(false);
         }
 
-        if (sLine.find("-set") != string::npos || sLine.find("--") != string::npos)
+        if (sLine.find("-set") != std::string::npos || sLine.find("--") != std::string::npos)
         {
-            if (sLine.find("-set") != string::npos)
+            if (sLine.find("-set") != std::string::npos)
                 sArgument = sLine.substr(sLine.find("-set"));
             else
                 sArgument = sLine.substr(sLine.find("--"));
@@ -3163,7 +2984,7 @@ int FlowCtrl::calc(string sLine, int nthCmd)
                     if (bUseLoopParsingMode && !bLockedPauseMode)
                         _parserRef->PauseLoopMode();
 
-                    string sDummy;
+                    std::string sDummy;
                     NumeReKernel::getInstance()->getStringParser().evalAndFormat(sArgument, sDummy, true);
 
                     if (bUseLoopParsingMode && !bLockedPauseMode)
@@ -3270,7 +3091,7 @@ int FlowCtrl::calc(string sLine, int nthCmd)
 
         {
             bool bSupressAnswer_back = NumeReKernel::bSupressAnswer;
-            string sPreCommandLine = sLine;
+            std::string sPreCommandLine = sLine;
             NumeReKernel::bSupressAnswer = bLoopSupressAnswer;
 
             switch (commandHandler(sLine))
@@ -3350,7 +3171,7 @@ int FlowCtrl::calc(string sLine, int nthCmd)
             bWriteToCache = true;
     }
 
-    // Evaluate string expressions
+    // Evaluate std::string expressions
     if (nCurrentCalcType & CALCTYPE_STRING)
     {
         //if (!bLockedPauseMode && bUseLoopParsingMode)
@@ -3482,11 +3303,11 @@ int FlowCtrl::calc(string sLine, int nthCmd)
 /// replace variable occurences with their
 /// (auto-determined) internal name.
 ///
-/// \param sLine string&
+/// \param sLine std::string&
 /// \return void
 ///
 /////////////////////////////////////////////////
-void FlowCtrl::replaceLocalVars(string& sLine)
+void FlowCtrl::replaceLocalVars(std::string& sLine)
 {
     if (!mVarMap.size())
         return;
@@ -3515,18 +3336,18 @@ void FlowCtrl::replaceLocalVars(string& sLine)
 /// the passed flow control argument is valid or
 /// not.
 ///
-/// \param sFlowControlArgument const string&
+/// \param sFlowControlArgument const std::string&
 /// \param isForLoop bool
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool FlowCtrl::checkFlowControlArgument(const string& sFlowControlArgument, bool isForLoop)
+bool FlowCtrl::checkFlowControlArgument(const std::string& sFlowControlArgument, bool isForLoop)
 {
     // The argument shall be enclosed in parentheses
-    if (sFlowControlArgument.find('(') == string::npos)
+    if (sFlowControlArgument.find('(') == std::string::npos)
         return false;
 
-    string sArgument = sFlowControlArgument.substr(sFlowControlArgument.find('('));
+    std::string sArgument = sFlowControlArgument.substr(sFlowControlArgument.find('('));
     sArgument = sArgument.substr(1, getMatchingParenthesis(sArgument) - 1);
 
     // Ensure that the argument is not empty
@@ -3539,8 +3360,8 @@ bool FlowCtrl::checkFlowControlArgument(const string& sFlowControlArgument, bool
 
     // If it is a for loop, then it has to fulfill
     // another requirement: the index and its interval
-    if (sArgument.find('=') == string::npos
-        || sArgument.find(':', sArgument.find('=') + 1) == string::npos)
+    if (sArgument.find('=') == std::string::npos
+        || sArgument.find(':', sArgument.find('=') + 1) == std::string::npos)
         return false;
 
     // Everything seems to be OK
@@ -3552,14 +3373,14 @@ bool FlowCtrl::checkFlowControlArgument(const string& sFlowControlArgument, bool
 /// \brief This member function checks, whether
 /// the entered case definition is valid or not.
 ///
-/// \param sCaseDefinition const string&
+/// \param sCaseDefinition const std::string&
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool FlowCtrl::checkCaseValue(const string& sCaseDefinition)
+bool FlowCtrl::checkCaseValue(const std::string& sCaseDefinition)
 {
     // Colon operator is missing
-    if (sCaseDefinition.find(':') == string::npos)
+    if (sCaseDefinition.find(':') == std::string::npos)
         return false;
 
     // Check, whether there's a valid value between
@@ -3567,19 +3388,19 @@ bool FlowCtrl::checkCaseValue(const string& sCaseDefinition)
     if (sCaseDefinition.substr(0, 5) == "case ")
     {
         // Extract the value
-        string sValue = sCaseDefinition.substr(4);
+        std::string sValue = sCaseDefinition.substr(4);
         sValue.erase(sValue.find(':'));
 
         // Check, whether there are other characters
         // than the whitespace
-        if (sValue.find_first_not_of(' ') == string::npos)
+        if (sValue.find_first_not_of(' ') == std::string::npos)
             return false;
 
         // Cut of the first expression (in the possible list)
         getNextArgument(sValue, true);
 
         // Check for more than one value (only one allowed)
-        if (sValue.length() && sValue.find_first_not_of(' ') != string::npos)
+        if (sValue.length() && sValue.find_first_not_of(' ') != std::string::npos)
             return false;
     }
     // Everything seems to be OK
@@ -3592,13 +3413,15 @@ bool FlowCtrl::checkCaseValue(const string& sCaseDefinition)
 /// and extract the index variables and the flow
 /// control flags.
 ///
-/// \return string
+/// \return std::string
 ///
 /////////////////////////////////////////////////
 string FlowCtrl::extractFlagsAndIndexVariables()
 {
-    string sVars = ";";
-    string sVar;
+    std::string sVars = ";";
+    std::string sVar;
+    int nVarArray = 0;
+
     for (size_t i = 0; i < vCmdArray.size(); i++)
     {
         // No flow control statement
@@ -3612,7 +3435,7 @@ string FlowCtrl::extractFlagsAndIndexVariables()
             sVar = sVar.substr(0, sVar.find('='));
             StripSpaces(sVar);
 
-            if (sVars.find(";" + sVar + ";") == string::npos)
+            if (sVars.find(";" + sVar + ";") == std::string::npos)
             {
                 sVars += sVar + ";";
                 nVarArray++;
@@ -3623,19 +3446,19 @@ string FlowCtrl::extractFlagsAndIndexVariables()
         }
 
         // Extract the flow control flags
-        if (vCmdArray[i].sCommand.find("end") != string::npos && findParameter(vCmdArray[i].sCommand, "sv"))
+        if (vCmdArray[i].sCommand.find("end") != std::string::npos && findParameter(vCmdArray[i].sCommand, "sv"))
             bSilent = false;
 
-        if (vCmdArray[i].sCommand.find("end") != string::npos && findParameter(vCmdArray[i].sCommand, "mask"))
+        if (vCmdArray[i].sCommand.find("end") != std::string::npos && findParameter(vCmdArray[i].sCommand, "mask"))
             bMask = true;
 
-        if (vCmdArray[i].sCommand.find("end") != string::npos && findParameter(vCmdArray[i].sCommand, "sp"))
+        if (vCmdArray[i].sCommand.find("end") != std::string::npos && findParameter(vCmdArray[i].sCommand, "sp"))
             bMask = false;
 
-        if (vCmdArray[i].sCommand.find("end") != string::npos && findParameter(vCmdArray[i].sCommand, "lnumctrl"))
+        if (vCmdArray[i].sCommand.find("end") != std::string::npos && findParameter(vCmdArray[i].sCommand, "lnumctrl"))
             nLoopSafety = 1000;
 
-        if (vCmdArray[i].sCommand.find("end") != string::npos && findParameter(vCmdArray[i].sCommand, "lnumctrl", '='))
+        if (vCmdArray[i].sCommand.find("end") != std::string::npos && findParameter(vCmdArray[i].sCommand, "lnumctrl", '='))
         {
             _parserRef->SetExpr(getArgAtPos(vCmdArray[i].sCommand, findParameter(vCmdArray[i].sCommand, "lnumctrl", '=') + 8));
             nLoopSafety = intCast(_parserRef->Eval());
@@ -3644,6 +3467,10 @@ string FlowCtrl::extractFlagsAndIndexVariables()
                 nLoopSafety = 1000;
         }
     }
+
+    sVarArray.resize(nVarArray);
+    vVarArray.resize(nVarArray);
+
     return sVars;
 }
 
@@ -3712,9 +3539,9 @@ void FlowCtrl::fillJumpTableAndExpandRecursives()
                         nWhileCount++;
                 }
             }
-            else if (vCmdArray[i].sCommand.find(">>if") != string::npos)
+            else if (vCmdArray[i].sCommand.find(">>if") != std::string::npos)
             {
-                string sNth_If = vCmdArray[i].sCommand.substr(0, vCmdArray[i].sCommand.find(">>"));
+                std::string sNth_If = vCmdArray[i].sCommand.substr(0, vCmdArray[i].sCommand.find(">>"));
 
                 for (size_t j = i + 1; j < vCmdArray.size(); j++)
                 {
@@ -3732,9 +3559,9 @@ void FlowCtrl::fillJumpTableAndExpandRecursives()
                     }
                 }
             }
-            else if (vCmdArray[i].sCommand.find(">>elseif") != string::npos)
+            else if (vCmdArray[i].sCommand.find(">>elseif") != std::string::npos)
             {
-                string sNth_If = vCmdArray[i].sCommand.substr(0, vCmdArray[i].sCommand.find(">>"));
+                std::string sNth_If = vCmdArray[i].sCommand.substr(0, vCmdArray[i].sCommand.find(">>"));
 
                 for (size_t j = i + 1; j < vCmdArray.size(); j++)
                 {
@@ -3752,9 +3579,9 @@ void FlowCtrl::fillJumpTableAndExpandRecursives()
                     }
                 }
             }
-            else if (vCmdArray[i].sCommand.find(">>switch") != string::npos)
+            else if (vCmdArray[i].sCommand.find(">>switch") != std::string::npos)
             {
-                string sNth_Switch = vCmdArray[i].sCommand.substr(0, vCmdArray[i].sCommand.find(">>"));
+                std::string sNth_Switch = vCmdArray[i].sCommand.substr(0, vCmdArray[i].sCommand.find(">>"));
 
                 for (size_t j = i + 1; j < vCmdArray.size(); j++)
                 {
@@ -3778,9 +3605,9 @@ void FlowCtrl::fillJumpTableAndExpandRecursives()
                 // will jump into the first non-zero case
                 prepareSwitchExpression(i);
             }
-            else if (vCmdArray[i].sCommand.find(">>case") != string::npos)
+            else if (vCmdArray[i].sCommand.find(">>case") != std::string::npos)
             {
-                string sNth_Switch = vCmdArray[i].sCommand.substr(0, vCmdArray[i].sCommand.find(">>"));
+                std::string sNth_Switch = vCmdArray[i].sCommand.substr(0, vCmdArray[i].sCommand.find(">>"));
 
                 for (size_t j = i + 1; j < vCmdArray.size(); j++)
                 {
@@ -3798,9 +3625,9 @@ void FlowCtrl::fillJumpTableAndExpandRecursives()
                     }
                 }
             }
-            else if (vCmdArray[i].sCommand.find(">>try") != string::npos)
+            else if (vCmdArray[i].sCommand.find(">>try") != std::string::npos)
             {
-                string sNth_Try = vCmdArray[i].sCommand.substr(0, vCmdArray[i].sCommand.find(">>"));
+                std::string sNth_Try = vCmdArray[i].sCommand.substr(0, vCmdArray[i].sCommand.find(">>"));
 
                 for (size_t j = i + 1; j < vCmdArray.size(); j++)
                 {
@@ -3816,9 +3643,9 @@ void FlowCtrl::fillJumpTableAndExpandRecursives()
                     }
                 }
             }
-            else if (vCmdArray[i].sCommand.find(">>catch") != string::npos)
+            else if (vCmdArray[i].sCommand.find(">>catch") != std::string::npos)
             {
-                string sNth_Try = vCmdArray[i].sCommand.substr(0, vCmdArray[i].sCommand.find(">>"));
+                std::string sNth_Try = vCmdArray[i].sCommand.substr(0, vCmdArray[i].sCommand.find(">>"));
 
                 for (size_t j = i + 1; j < vCmdArray.size(); j++)
                 {
@@ -3847,13 +3674,13 @@ void FlowCtrl::fillJumpTableAndExpandRecursives()
             // if it is part of a matrix operation
             if (findCommand(vCmdArray[i].sCommand).sString != "matop"
                 && findCommand(vCmdArray[i].sCommand).sString != "mtrxop"
-                && (vCmdArray[i].sCommand.find("+=") != string::npos
-                    || vCmdArray[i].sCommand.find("-=") != string::npos
-                    || vCmdArray[i].sCommand.find("*=") != string::npos
-                    || vCmdArray[i].sCommand.find("/=") != string::npos
-                    || vCmdArray[i].sCommand.find("^=") != string::npos
-                    || vCmdArray[i].sCommand.find("++") != string::npos
-                    || vCmdArray[i].sCommand.find("--") != string::npos))
+                && (vCmdArray[i].sCommand.find("+=") != std::string::npos
+                    || vCmdArray[i].sCommand.find("-=") != std::string::npos
+                    || vCmdArray[i].sCommand.find("*=") != std::string::npos
+                    || vCmdArray[i].sCommand.find("/=") != std::string::npos
+                    || vCmdArray[i].sCommand.find("^=") != std::string::npos
+                    || vCmdArray[i].sCommand.find("++") != std::string::npos
+                    || vCmdArray[i].sCommand.find("--") != std::string::npos))
             {
                 // Store the breakpoint to insert
                 // it after expanding the recursive
@@ -3889,15 +3716,15 @@ void FlowCtrl::fillJumpTableAndExpandRecursives()
 void FlowCtrl::prepareSwitchExpression(int nSwitchStart)
 {
     // Extract the condition of the "switch"
-    string sSwitchArgument = vCmdArray[nSwitchStart].sCommand;
+    std::string sSwitchArgument = vCmdArray[nSwitchStart].sCommand;
     vCmdArray[nSwitchStart].sCommand.erase(sSwitchArgument.find('('));
     sSwitchArgument.erase(0, sSwitchArgument.find('(')+1);
     sSwitchArgument.erase(sSwitchArgument.rfind(')'));
 
-    string sArgument = "";
+    std::string sArgument = "";
 
     // Extract the switch level
-    string sNth_Switch = vCmdArray[nSwitchStart].sCommand.substr(0, vCmdArray[nSwitchStart].sCommand.find(">>"));
+    std::string sNth_Switch = vCmdArray[nSwitchStart].sCommand.substr(0, vCmdArray[nSwitchStart].sCommand.find(">>"));
 
     // Search for all cases, which belong to the current
     // switch level
@@ -3920,7 +3747,7 @@ void FlowCtrl::prepareSwitchExpression(int nSwitchStart)
     // operator to the switch condition
     if (sArgument.length())
     {
-        string sExpr = sSwitchArgument;
+        std::string sExpr = sSwitchArgument;
         sSwitchArgument.clear();
 
         while (sArgument.length())
@@ -3972,10 +3799,10 @@ void FlowCtrl::checkParsingModeAndExpandDefinitions()
         // Check for inline procedures and "to_cmd()"
         for (size_t i = 0; i < vCmdArray.size(); i++)
         {
-            if (vCmdArray[i].sCommand.find("to_cmd(") != string::npos)
+            if (vCmdArray[i].sCommand.find("to_cmd(") != std::string::npos)
                 bUseLoopParsingMode = false;
 
-            if (vCmdArray[i].sCommand.find('$') != string::npos)
+            if (vCmdArray[i].sCommand.find('$') != std::string::npos)
             {
                 int nInlining = 0;
 
@@ -3983,7 +3810,7 @@ void FlowCtrl::checkParsingModeAndExpandDefinitions()
                     bUseLoopParsingMode = false;
                 else if (!vCmdArray[i].bFlowCtrlStatement && nInlining != INLINING_GLOBALINRETURN)
                 {
-                    vector<string> vExpandedProcedure = expandInlineProcedures(vCmdArray[i].sCommand);
+                    std::vector<std::string> vExpandedProcedure = expandInlineProcedures(vCmdArray[i].sCommand);
                     int nLine = vCmdArray[i].nInputLine;
 
                     for (size_t j = 0; j < vExpandedProcedure.size(); j++)
@@ -4049,27 +3876,23 @@ void FlowCtrl::checkParsingModeAndExpandDefinitions()
 /// them in the command lines in the current
 /// command block.
 ///
-/// \param sVars string&
+/// \param sVars std::string&
 /// \return void
 ///
 /////////////////////////////////////////////////
-void FlowCtrl::prepareLocalVarsAndReplace(string& sVars)
+void FlowCtrl::prepareLocalVarsAndReplace(std::string& sVars)
 {
-    // Prepare the array for the local variables
-    vVarArray = new value_type*[nVarArray];
-    sVarArray = new string[nVarArray];
     sVars = sVars.substr(1, sVars.length() - 1);
 
     // If a loop variable was defined before the
     // current loop, this one is used. All others
     // are create locally and therefore get
     // special names
-    for (int i = 0; i < nVarArray; i++)
+    for (size_t i = 0; i < sVarArray.size(); i++)
     {
-        vVarArray[i] = new value_type[3];
         sVarArray[i] = sVars.substr(0, sVars.find(';'));
 
-        if (i + 1 != nVarArray)
+        if (sVars.find(';') != std::string::npos)
             sVars = sVars.substr(sVars.find(';') + 1);
 
         StripSpaces(sVarArray[i]);
@@ -4085,7 +3908,7 @@ void FlowCtrl::prepareLocalVarsAndReplace(string& sVars)
             sVarArray[i] = mVarMap[sVarArray[i]];
         }
 
-        _parserRef->DefineVar(sVarArray[i], &vVarArray[i][0]);
+        _parserRef->DefineVar(sVarArray[i], &vVarArray[i]);
     }
 
     _parserRef->mVarMapPntr = &mVarMap;
@@ -4167,7 +3990,7 @@ int FlowCtrl::getCurrentLineNumber() const
 /// current command line, which will or has been
 /// evaluated in the current line.
 ///
-/// \return string
+/// \return std::string
 ///
 /////////////////////////////////////////////////
 string FlowCtrl::getCurrentCommand() const
@@ -4228,7 +4051,7 @@ bool FlowCtrl::isAnyFlowCtrlStatement(const std::string& sCmd)
 /////////////////////////////////////////////////
 /// \brief Dummy implementation.
 ///
-/// \param sLine string&
+/// \param sLine std::string&
 /// \param _parser Parser&
 /// \param _functions Define&
 /// \param _data Datafile&
@@ -4240,7 +4063,7 @@ bool FlowCtrl::isAnyFlowCtrlStatement(const std::string& sCmd)
 /// \return ProcedureInterfaceRetVal
 ///
 /////////////////////////////////////////////////
-FlowCtrl::ProcedureInterfaceRetVal FlowCtrl::procedureInterface(string& sLine, Parser& _parser, FunctionDefinitionManager& _functions, MemoryManager& _data, Output& _out, PlotData& _pData, Script& _script, Settings& _option, int nth_command)
+FlowCtrl::ProcedureInterfaceRetVal FlowCtrl::procedureInterface(std::string& sLine, Parser& _parser, FunctionDefinitionManager& _functions, MemoryManager& _data, Output& _out, PlotData& _pData, Script& _script, Settings& _option, int nth_command)
 {
     return FlowCtrl::INTERFACE_NONE;
 }
@@ -4249,11 +4072,11 @@ FlowCtrl::ProcedureInterfaceRetVal FlowCtrl::procedureInterface(string& sLine, P
 /////////////////////////////////////////////////
 /// \brief Dummy implementation.
 ///
-/// \param sLine string&
+/// \param sLine std::string&
 /// \return int
 ///
 /////////////////////////////////////////////////
-int FlowCtrl::procedureCmdInterface(string& sLine)
+int FlowCtrl::procedureCmdInterface(std::string& sLine)
 {
     return 1;
 }
@@ -4262,11 +4085,11 @@ int FlowCtrl::procedureCmdInterface(string& sLine)
 /////////////////////////////////////////////////
 /// \brief Dummy implementation.
 ///
-/// \param sProc const string&
+/// \param sProc const std::string&
 /// \return int
 ///
 /////////////////////////////////////////////////
-int FlowCtrl::isInline(const string& sProc)
+int FlowCtrl::isInline(const std::string& sProc)
 {
     return true;
 }
@@ -4301,13 +4124,13 @@ int FlowCtrl::getErrorInformationForDebugger()
 /////////////////////////////////////////////////
 /// \brief Dummy implementation.
 ///
-/// \param sLine string&
-/// \return vector<string>
+/// \param sLine std::string&
+/// \return std::vector<std::string>
 ///
 /////////////////////////////////////////////////
-vector<string> FlowCtrl::expandInlineProcedures(string& sLine)
+vector<std::string> FlowCtrl::expandInlineProcedures(std::string& sLine)
 {
-    return vector<string>();
+    return std::vector<std::string>();
 }
 
 

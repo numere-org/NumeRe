@@ -139,7 +139,7 @@ class NumeReDebugger
                                 std::string** sArgumentMap, size_t nArgumentMapSize,
                                 const std::string& _sErraticCommand, const std::string& _sErraticModule, unsigned int _nLineNumber);
 
-        void gatherLoopBasedInformations(const std::string& _sErraticCommand, unsigned int _nLineNumber, std::map<std::string,std::string>& mVarMap, mu::value_type** vVarArray, std::string* sVarArray, int nVarArray);
+        void gatherLoopBasedInformations(const std::string& _sErraticCommand, unsigned int _nLineNumber, std::map<std::string,std::string>& mVarMap, const std::vector<mu::value_type>& vVarArray, const std::vector<std::string>& sVarArray);
 
         std::vector<std::string> getModuleInformations();
         std::vector<std::string> getStackTrace();
