@@ -45,6 +45,22 @@ using namespace std;
 
 
 /////////////////////////////////////////////////
+/// \brief A simple helper function to extract
+/// the header expression of control flow
+/// statements.
+///
+/// \param sExpr const std::string&
+/// \return std::string
+///
+/////////////////////////////////////////////////
+static std::string extractHeaderExpression(const std::string& sExpr)
+{
+    size_t p = sExpr.find('(');
+    return sExpr.substr(p + 1, sExpr.rfind(')') - p - 1);
+}
+
+
+/////////////////////////////////////////////////
 /// \brief Default constructor.
 /////////////////////////////////////////////////
 FlowCtrl::FlowCtrl()
@@ -203,10 +219,10 @@ int FlowCtrl::for_loop(int nth_Cmd, int nth_loop)
 
             // If this is not the first line of the command block
             // try to find control flow statements in the first column
-            if (vCmdArray[__j].bFlowCtrlStatement)
+            if (vCmdArray[__j].bFlowCtrlStatement && vCmdArray[__j].fcFn)
             {
                 // Evaluate the flow control commands
-                int nReturn = evalLoopFlowCommands(__j, nth_loop);
+                int nReturn = (this->*vCmdArray[__j].fcFn)(__j, nth_loop+1);
 
                 // Handle the return value
                 if (nReturn == FLOWCTRL_ERROR || nReturn == FLOWCTRL_RETURN)
@@ -264,7 +280,9 @@ int FlowCtrl::for_loop(int nth_Cmd, int nth_loop)
                 {
                     if (_optionRef->useDebugger())
                     {
-                        NumeReKernel::getInstance()->getDebugger().gatherLoopBasedInformations(vCmdArray[__j].sCommand, getCurrentLineNumber(), mVarMap, vVarArray, sVarArray);
+                        NumeReKernel::getInstance()->getDebugger().gatherLoopBasedInformations(vCmdArray[__j].sCommand,
+                                                                                               getCurrentLineNumber(),
+                                                                                               mVarMap, vVarArray, sVarArray);
                         getErrorInformationForDebugger();
                     }
 
@@ -278,7 +296,9 @@ int FlowCtrl::for_loop(int nth_Cmd, int nth_loop)
             {
                 if (_optionRef->useDebugger())
                 {
-                    NumeReKernel::getInstance()->getDebugger().gatherLoopBasedInformations(vCmdArray[__j].sCommand, getCurrentLineNumber(), mVarMap, vVarArray, sVarArray);
+                    NumeReKernel::getInstance()->getDebugger().gatherLoopBasedInformations(vCmdArray[__j].sCommand,
+                                                                                           getCurrentLineNumber(),
+                                                                                           mVarMap, vVarArray, sVarArray);
                     getErrorInformationForDebugger();
                 }
 
@@ -299,14 +319,18 @@ int FlowCtrl::for_loop(int nth_Cmd, int nth_loop)
                     && abs(intCast((vVarArray[nVarAdress] - dFirstVal) / (dLastVal - dFirstVal) * 20.0))
                     > abs(intCast((vVarArray[nVarAdress] - 1.0 - dFirstVal) / (dLastVal - dFirstVal) * 20.0)))
             {
-                NumeReKernel::printPreFmt("\r|FOR> " + _lang.get("COMMON_EVALUATING") + " ... " + toString(abs(intCast((vVarArray[nVarAdress] - dFirstVal) / (dLastVal - dFirstVal) * 20.0)) * 5) + " %");
+                NumeReKernel::printPreFmt("\r|FOR> " + _lang.get("COMMON_EVALUATING") + " ... "
+                                          + toString(abs(intCast((vVarArray[nVarAdress] - dFirstVal) / (dLastVal - dFirstVal) * 20.0)) * 5)
+                                          + " %");
                 bPrintedStatus = true;
             }
             else if (abs(intCast(dLastVal - dFirstVal)) >= 99999
                      && abs(intCast((vVarArray[nVarAdress] - dFirstVal) / (dLastVal - dFirstVal) * 100.0))
                      > abs(intCast((vVarArray[nVarAdress] - 1.0 - dFirstVal) / (dLastVal - dFirstVal) * 100.0)))
             {
-                NumeReKernel::printPreFmt("\r|FOR> " + _lang.get("COMMON_EVALUATING") + " ... " + toString(abs(intCast((vVarArray[nVarAdress] - dFirstVal) / (dLastVal - dFirstVal) * 100.0))) + " %");
+                NumeReKernel::printPreFmt("\r|FOR> " + _lang.get("COMMON_EVALUATING") + " ... "
+                                          + toString(abs(intCast((vVarArray[nVarAdress] - dFirstVal) / (dLastVal - dFirstVal) * 100.0)))
+                                          + " %");
                 bPrintedStatus = true;
             }
         }
@@ -330,8 +354,7 @@ int FlowCtrl::for_loop(int nth_Cmd, int nth_loop)
 int FlowCtrl::while_loop(int nth_Cmd, int nth_loop)
 {
     if (!vCmdArray[nth_Cmd].sFlowCtrlHeader.length())
-        vCmdArray[nth_Cmd].sFlowCtrlHeader = vCmdArray[nth_Cmd].sCommand.substr(vCmdArray[nth_Cmd].sCommand.find('(') + 1,
-                                                                                vCmdArray[nth_Cmd].sCommand.rfind(')') - vCmdArray[nth_Cmd].sCommand.find('(') - 1);
+        vCmdArray[nth_Cmd].sFlowCtrlHeader = extractHeaderExpression(vCmdArray[nth_Cmd].sCommand);
 
     std::string sWhile_Condition = vCmdArray[nth_Cmd].sFlowCtrlHeader;
     std::string sWhile_Condition_Back = sWhile_Condition;
@@ -343,7 +366,7 @@ int FlowCtrl::while_loop(int nth_Cmd, int nth_loop)
     // Show a working indicator, if it's necessary
     if (bSilent && !bMask && !nth_loop)
     {
-        NumeReKernel::printPreFmt("|WHL> " + toSystemCodePage(_lang.get("COMMON_EVALUATING")) + " ... ");
+        NumeReKernel::printPreFmt("|WHL> " + _lang.get("COMMON_EVALUATING") + " ... ");
         bPrintedStatus = true;
     }
 
@@ -364,13 +387,14 @@ int FlowCtrl::while_loop(int nth_Cmd, int nth_loop)
         {
             if (nLoopCount >= nLoopSafety)
                 return FLOWCTRL_ERROR;
+
             nLoopCount++;
         }
 
         // Check, whether the header condition is true.
         // NaN and INF are no "true" values. Return the
         // end of the current block otherwise
-        if (v[0] == 0.0 || isnan(v[0]) || isinf(v[0]))
+        if (v[0] == 0.0 || mu::isnan(v[0]))
             return nJumpTable[nth_Cmd][BLOCK_END];
 
         // This for loop handles the contained commands
@@ -380,10 +404,10 @@ int FlowCtrl::while_loop(int nth_Cmd, int nth_loop)
 
             // If this is not the first line of the command block
             // try to find control flow statements in the first column
-            if (vCmdArray[__j].bFlowCtrlStatement)
+            if (vCmdArray[__j].bFlowCtrlStatement && vCmdArray[__j].fcFn)
             {
                 // Evaluate the flow control commands
-                int nReturn = evalLoopFlowCommands(__j, nth_loop);
+                int nReturn =  (this->*vCmdArray[__j].fcFn)(__j, nth_loop+1);
 
                 // Handle the return value
                 if (nReturn == FLOWCTRL_ERROR || nReturn == FLOWCTRL_RETURN)
@@ -441,7 +465,9 @@ int FlowCtrl::while_loop(int nth_Cmd, int nth_loop)
                 {
                     if (_optionRef->useDebugger())
                     {
-                        NumeReKernel::getInstance()->getDebugger().gatherLoopBasedInformations(vCmdArray[__j].sCommand, getCurrentLineNumber(), mVarMap, vVarArray, sVarArray);
+                        NumeReKernel::getInstance()->getDebugger().gatherLoopBasedInformations(vCmdArray[__j].sCommand,
+                                                                                               getCurrentLineNumber(),
+                                                                                               mVarMap, vVarArray, sVarArray);
                         getErrorInformationForDebugger();
                     }
 
@@ -455,7 +481,9 @@ int FlowCtrl::while_loop(int nth_Cmd, int nth_loop)
             {
                 if (_optionRef->useDebugger())
                 {
-                    NumeReKernel::getInstance()->getDebugger().gatherLoopBasedInformations(vCmdArray[__j].sCommand, getCurrentLineNumber(), mVarMap, vVarArray, sVarArray);
+                    NumeReKernel::getInstance()->getDebugger().gatherLoopBasedInformations(vCmdArray[__j].sCommand,
+                                                                                           getCurrentLineNumber(),
+                                                                                           mVarMap, vVarArray, sVarArray);
                     getErrorInformationForDebugger();
                 }
 
@@ -495,15 +523,15 @@ int FlowCtrl::if_fork(int nth_Cmd, int nth_loop)
     value_type* v;
     int nNum = 0;
 
-    // As long as there are "if" or further "elseif"s
-    // statements are found, otherwise jump to the else
-    // statement
-    while (vCmdArray[nth_Cmd].sCommand.find(">>if") != std::string::npos
-           || vCmdArray[nth_Cmd].sCommand.find(">>elseif") != std::string::npos)
+    // The first command is always an "if", therefore always
+    // enter this section. The condition at the end will check
+    // whether a further iteration is needed to find the next
+    // "elseif" or directly leave the loop to continue with the
+    // "else" case.
+    do
     {
         if (!vCmdArray[nth_Cmd].sFlowCtrlHeader.length())
-            vCmdArray[nth_Cmd].sFlowCtrlHeader = vCmdArray[nth_Cmd].sCommand.substr(vCmdArray[nth_Cmd].sCommand.find('(') + 1,
-                                                                                    vCmdArray[nth_Cmd].sCommand.rfind(')') - vCmdArray[nth_Cmd].sCommand.find('(') - 1);
+            vCmdArray[nth_Cmd].sFlowCtrlHeader = extractHeaderExpression(vCmdArray[nth_Cmd].sCommand);
 
         nElse = nJumpTable[nth_Cmd][BLOCK_MIDDLE];
         nEndif = nJumpTable[nth_Cmd][BLOCK_END];
@@ -514,7 +542,7 @@ int FlowCtrl::if_fork(int nth_Cmd, int nth_loop)
         v = evalHeader(nNum, sHead, false, nth_Cmd);
 
         // If the condition is true, enter the if-case
-        if (v[0] != 0.0 && !isnan(v[0]) && !isinf(v[0]))
+        if (v[0] != 0.0 && !mu::isnan(v[0]))
         {
             // The inner loop goes through the contained
             // commands
@@ -537,9 +565,10 @@ int FlowCtrl::if_fork(int nth_Cmd, int nth_loop)
                     int nReturn = evalForkFlowCommands(__i, nth_loop);
 
                     // Handle the return value
-                    if (nReturn == FLOWCTRL_ERROR || nReturn == FLOWCTRL_RETURN)
-                        return nReturn;
-                    else if (nReturn == FLOWCTRL_BREAK || nReturn == FLOWCTRL_CONTINUE)
+                    if (nReturn == FLOWCTRL_ERROR
+                        || nReturn == FLOWCTRL_RETURN
+                        || nReturn == FLOWCTRL_BREAK
+                        || nReturn == FLOWCTRL_CONTINUE)
                         return nReturn;
                     else if (nReturn != FLOWCTRL_NO_CMD)
                         __i = nReturn;
@@ -584,7 +613,9 @@ int FlowCtrl::if_fork(int nth_Cmd, int nth_loop)
                     {
                         if (_optionRef->useDebugger())
                         {
-                            NumeReKernel::getInstance()->getDebugger().gatherLoopBasedInformations(vCmdArray[__i].sCommand, getCurrentLineNumber(), mVarMap, vVarArray, sVarArray);
+                            NumeReKernel::getInstance()->getDebugger().gatherLoopBasedInformations(vCmdArray[__i].sCommand,
+                                                                                                   getCurrentLineNumber(),
+                                                                                                   mVarMap, vVarArray, sVarArray);
                             getErrorInformationForDebugger();
                         }
 
@@ -598,7 +629,9 @@ int FlowCtrl::if_fork(int nth_Cmd, int nth_loop)
                 {
                     if (_optionRef->useDebugger())
                     {
-                        NumeReKernel::getInstance()->getDebugger().gatherLoopBasedInformations(vCmdArray[__i].sCommand, getCurrentLineNumber(), mVarMap, vVarArray, sVarArray);
+                        NumeReKernel::getInstance()->getDebugger().gatherLoopBasedInformations(vCmdArray[__i].sCommand,
+                                                                                               getCurrentLineNumber(),
+                                                                                               mVarMap, vVarArray, sVarArray);
                         getErrorInformationForDebugger();
                     }
 
@@ -614,14 +647,15 @@ int FlowCtrl::if_fork(int nth_Cmd, int nth_loop)
         {
             // Try to find the next elseif/else
             // statement of the current block
-            if (nElse == -1)
+            if (nElse == NO_FLOW_COMMAND)
                 return nEndif;
             else
                 nth_Cmd = nElse;
         }
-    }
+    } while (vCmdArray[nth_Cmd].sCommand.find(">>elseif") != std::string::npos);
 
-    // This is the else-case, if it is available
+    // This is the else-case, if it is available. Will enter this
+    // section, if the loop condition fails.
     for (int __i = nth_Cmd+1; __i < (int)vCmdArray.size(); __i++)
     {
         nCurrentCommand = __i;
@@ -640,9 +674,10 @@ int FlowCtrl::if_fork(int nth_Cmd, int nth_loop)
             int nReturn = evalForkFlowCommands(__i, nth_loop);
 
             // Handle the return value
-            if (nReturn == FLOWCTRL_ERROR || nReturn == FLOWCTRL_RETURN)
-                return nReturn;
-            else if (nReturn == FLOWCTRL_BREAK || nReturn == FLOWCTRL_CONTINUE)
+            if (nReturn == FLOWCTRL_ERROR
+                || nReturn == FLOWCTRL_RETURN
+                || nReturn == FLOWCTRL_BREAK
+                || nReturn == FLOWCTRL_CONTINUE)
                 return nReturn;
             else if (nReturn != FLOWCTRL_NO_CMD)
                 __i = nReturn;
@@ -683,7 +718,9 @@ int FlowCtrl::if_fork(int nth_Cmd, int nth_loop)
             {
                 if (_optionRef->useDebugger())
                 {
-                    NumeReKernel::getInstance()->getDebugger().gatherLoopBasedInformations(vCmdArray[__i].sCommand, getCurrentLineNumber(), mVarMap, vVarArray, sVarArray);
+                    NumeReKernel::getInstance()->getDebugger().gatherLoopBasedInformations(vCmdArray[__i].sCommand,
+                                                                                           getCurrentLineNumber(),
+                                                                                           mVarMap, vVarArray, sVarArray);
                     getErrorInformationForDebugger();
                 }
 
@@ -697,7 +734,9 @@ int FlowCtrl::if_fork(int nth_Cmd, int nth_loop)
         {
             if (_optionRef->useDebugger())
             {
-                NumeReKernel::getInstance()->getDebugger().gatherLoopBasedInformations(vCmdArray[__i].sCommand, getCurrentLineNumber(), mVarMap, vVarArray, sVarArray);
+                NumeReKernel::getInstance()->getDebugger().gatherLoopBasedInformations(vCmdArray[__i].sCommand,
+                                                                                       getCurrentLineNumber(),
+                                                                                       mVarMap, vVarArray, sVarArray);
                 getErrorInformationForDebugger();
             }
 
@@ -725,8 +764,7 @@ int FlowCtrl::if_fork(int nth_Cmd, int nth_loop)
 int FlowCtrl::switch_fork(int nth_Cmd, int nth_loop)
 {
     if (!vCmdArray[nth_Cmd].sFlowCtrlHeader.length())
-        vCmdArray[nth_Cmd].sFlowCtrlHeader = vCmdArray[nth_Cmd].sCommand.substr(vCmdArray[nth_Cmd].sCommand.find('(') + 1,
-                                                                                vCmdArray[nth_Cmd].sCommand.rfind(')') - vCmdArray[nth_Cmd].sCommand.find('(') - 1);
+        vCmdArray[nth_Cmd].sFlowCtrlHeader = extractHeaderExpression(vCmdArray[nth_Cmd].sCommand);
 
     std::string sSwitch_Condition = vCmdArray[nth_Cmd].sFlowCtrlHeader;
     int nNextCase = nJumpTable[nth_Cmd][BLOCK_MIDDLE]; // Position of next case/default
@@ -775,15 +813,15 @@ int FlowCtrl::switch_fork(int nth_Cmd, int nth_loop)
             int nReturn = evalForkFlowCommands(__i, nth_loop);
 
             // Handle the return value
-            if (nReturn == FLOWCTRL_ERROR || nReturn == FLOWCTRL_RETURN)
+            if (nReturn == FLOWCTRL_ERROR
+                || nReturn == FLOWCTRL_RETURN
+                || FLOWCTRL_CONTINUE)
                 return nReturn;
             else if (nReturn == FLOWCTRL_BREAK)
             {
                 // We don't propagate the break signal
                 return nSwitchEnd;
             }
-            else if (nReturn == FLOWCTRL_CONTINUE)
-                return FLOWCTRL_CONTINUE;
             else if (nReturn != FLOWCTRL_NO_CMD)
                 __i = nReturn;
 
@@ -831,7 +869,9 @@ int FlowCtrl::switch_fork(int nth_Cmd, int nth_loop)
             {
                 if (_optionRef->useDebugger())
                 {
-                    NumeReKernel::getInstance()->getDebugger().gatherLoopBasedInformations(vCmdArray[__i].sCommand, getCurrentLineNumber(), mVarMap, vVarArray, sVarArray);
+                    NumeReKernel::getInstance()->getDebugger().gatherLoopBasedInformations(vCmdArray[__i].sCommand,
+                                                                                           getCurrentLineNumber(),
+                                                                                           mVarMap, vVarArray, sVarArray);
                     getErrorInformationForDebugger();
                 }
 
@@ -845,7 +885,9 @@ int FlowCtrl::switch_fork(int nth_Cmd, int nth_loop)
         {
             if (_optionRef->useDebugger())
             {
-                NumeReKernel::getInstance()->getDebugger().gatherLoopBasedInformations(vCmdArray[__i].sCommand, getCurrentLineNumber(), mVarMap, vVarArray, sVarArray);
+                NumeReKernel::getInstance()->getDebugger().gatherLoopBasedInformations(vCmdArray[__i].sCommand,
+                                                                                       getCurrentLineNumber(),
+                                                                                       mVarMap, vVarArray, sVarArray);
                 getErrorInformationForDebugger();
             }
 
@@ -884,63 +926,66 @@ int FlowCtrl::try_catch(int nth_Cmd, int nth_loop)
         if (__i >= nTryEnd || (nNextCatch >= 0 && __i >= nNextCatch))
             return nTryEnd;
 
-        // If this is not the first line of the command block
-        // try to find control flow statements in the first column
-        if (vCmdArray[__i].bFlowCtrlStatement)
-        {
-            // Evaluate the flow control commands
-            int nReturn = evalForkFlowCommands(__i, nth_loop);
-
-            // Handle the return value
-            if (nReturn == FLOWCTRL_ERROR || nReturn == FLOWCTRL_RETURN)
-                return nReturn;
-            else if (nReturn == FLOWCTRL_BREAK || nReturn == FLOWCTRL_CONTINUE)
-                return nReturn;
-            else if (nReturn != FLOWCTRL_NO_CMD)
-                __i = nReturn;
-
-            continue;
-        }
-
-        // Handle the "continue" and "break" flow
-        // control statements
-        if (nCalcType[__i] & CALCTYPE_CONTINUECMD)
-            return FLOWCTRL_CONTINUE;
-        else if (nCalcType[__i] & CALCTYPE_BREAKCMD)
-            return FLOWCTRL_BREAK;
-        else if (!nCalcType[__i])
-        {
-            std::string sCommand = findCommand(vCmdArray[__i].sCommand).sString;
-
-            // "continue" and "break" are both exiting the current
-            // condition, but they are yielding different signals
-            if (sCommand == "continue")
-            {
-                nCalcType[__i] = CALCTYPE_CONTINUECMD;
-                return FLOWCTRL_CONTINUE;
-            }
-
-            if (sCommand == "break")
-            {
-                // We don't propagate the break signal in this case
-                nCalcType[__i] = CALCTYPE_BREAKCMD;
-                return FLOWCTRL_BREAK;
-            }
-        }
-
-        // Increment the parser index, if the loop parsing
-        // mode was activated
-        if (bUseLoopParsingMode && !bLockedPauseMode)
-            _parserRef->SetIndex(__i);
-
         try
         {
+            // If this is not the first line of the command block
+            // try to find control flow statements in the first column
+            if (vCmdArray[__i].bFlowCtrlStatement)
+            {
+                // Evaluate the flow control commands
+                int nReturn = evalForkFlowCommands(__i, nth_loop);
+
+                // Handle the return value
+                if (nReturn == FLOWCTRL_ERROR
+                    || nReturn == FLOWCTRL_RETURN
+                    || nReturn == FLOWCTRL_BREAK
+                    || nReturn == FLOWCTRL_CONTINUE)
+                    return nReturn;
+                else if (nReturn != FLOWCTRL_NO_CMD)
+                    __i = nReturn;
+
+                continue;
+            }
+
+            // Handle the "continue" and "break" flow
+            // control statements
+            if (nCalcType[__i] & CALCTYPE_CONTINUECMD)
+                return FLOWCTRL_CONTINUE;
+            else if (nCalcType[__i] & CALCTYPE_BREAKCMD)
+                return FLOWCTRL_BREAK;
+            else if (!nCalcType[__i])
+            {
+                std::string sCommand = findCommand(vCmdArray[__i].sCommand).sString;
+
+                // "continue" and "break" are both exiting the current
+                // condition, but they are yielding different signals
+                if (sCommand == "continue")
+                {
+                    nCalcType[__i] = CALCTYPE_CONTINUECMD;
+                    return FLOWCTRL_CONTINUE;
+                }
+
+                if (sCommand == "break")
+                {
+                    // We don't propagate the break signal in this case
+                    nCalcType[__i] = CALCTYPE_BREAKCMD;
+                    return FLOWCTRL_BREAK;
+                }
+            }
+
+            // Increment the parser index, if the loop parsing
+            // mode was activated
+            if (bUseLoopParsingMode && !bLockedPauseMode)
+                _parserRef->SetIndex(__i);
+
             // Evaluate the command line with the calc function
             if (calc(vCmdArray[__i].sCommand, __i) == FLOWCTRL_ERROR)
             {
                 if (_optionRef->useDebugger())
                 {
-                    NumeReKernel::getInstance()->getDebugger().gatherLoopBasedInformations(vCmdArray[__i].sCommand, getCurrentLineNumber(), mVarMap, vVarArray, sVarArray);
+                    NumeReKernel::getInstance()->getDebugger().gatherLoopBasedInformations(vCmdArray[__i].sCommand,
+                                                                                           getCurrentLineNumber(),
+                                                                                           mVarMap, vVarArray, sVarArray);
                     getErrorInformationForDebugger();
                 }
 
@@ -954,18 +999,20 @@ int FlowCtrl::try_catch(int nth_Cmd, int nth_loop)
         {
             if (_optionRef->useDebugger())
             {
-                NumeReKernel::getInstance()->getDebugger().gatherLoopBasedInformations(vCmdArray[__i].sCommand, getCurrentLineNumber(), mVarMap, vVarArray, sVarArray);
+                NumeReKernel::getInstance()->getDebugger().gatherLoopBasedInformations(vCmdArray[__i].sCommand,
+                                                                                       getCurrentLineNumber(),
+                                                                                       mVarMap, vVarArray, sVarArray);
                 getErrorInformationForDebugger();
             }
 
-            NumeReKernel::getInstance()->getDebugger().showError(current_exception());
+            NumeReKernel::getInstance()->getDebugger().showError(std::current_exception());
             nCalcType[__i] = CALCTYPE_NONE;
 
-            ErrorType type = getErrorType(current_exception());
+            ErrorType type = getErrorType(std::current_exception());
 
             // We won't catch every possible error
             if (type == TYPE_ABORT || type == TYPE_INTERNALERROR || type == TYPE_CRITICALERROR)
-                catchExceptionForTest(current_exception(), NumeReKernel::bSupressAnswer, getCurrentLineNumber());
+                catchExceptionForTest(std::current_exception(), NumeReKernel::bSupressAnswer, getCurrentLineNumber());
 
             // Search for the correct first(!) case
             while (nNextCatch >= 0)
@@ -982,7 +1029,7 @@ int FlowCtrl::try_catch(int nth_Cmd, int nth_loop)
 
             // Set the start index of the current switch case
             if (nNextCatch < 0)
-                catchExceptionForTest(current_exception(), NumeReKernel::bSupressAnswer, getCurrentLineNumber());
+                catchExceptionForTest(std::current_exception(), NumeReKernel::bSupressAnswer, getCurrentLineNumber());
 
             nth_Cmd = nNextCatch;
             NumeReKernel::getInstance()->getDebugger().finalizeCatched();
@@ -1010,10 +1057,11 @@ int FlowCtrl::try_catch(int nth_Cmd, int nth_loop)
                         int nReturn = evalForkFlowCommands(__i, nth_loop);
 
                         // Handle the return value
-                        if (nReturn == FLOWCTRL_ERROR || nReturn == FLOWCTRL_RETURN)
+                        if (nReturn == FLOWCTRL_ERROR
+                            || nReturn == FLOWCTRL_RETURN
+                            || nReturn == FLOWCTRL_BREAK
+                            || nReturn == FLOWCTRL_CONTINUE)
                             return nReturn;
-                        else if (nReturn == FLOWCTRL_BREAK || nReturn == FLOWCTRL_CONTINUE)
-                            return nTryEnd;
                         else if (nReturn != FLOWCTRL_NO_CMD)
                             __i = nReturn;
 
@@ -1062,7 +1110,9 @@ int FlowCtrl::try_catch(int nth_Cmd, int nth_loop)
                     {
                         if (_optionRef->useDebugger())
                         {
-                            NumeReKernel::getInstance()->getDebugger().gatherLoopBasedInformations(vCmdArray[__i].sCommand, getCurrentLineNumber(), mVarMap, vVarArray, sVarArray);
+                            NumeReKernel::getInstance()->getDebugger().gatherLoopBasedInformations(vCmdArray[__i].sCommand,
+                                                                                                   getCurrentLineNumber(),
+                                                                                                   mVarMap, vVarArray, sVarArray);
                             getErrorInformationForDebugger();
                         }
 
@@ -1076,7 +1126,9 @@ int FlowCtrl::try_catch(int nth_Cmd, int nth_loop)
                 {
                     if (_optionRef->useDebugger())
                     {
-                        NumeReKernel::getInstance()->getDebugger().gatherLoopBasedInformations(vCmdArray[__i].sCommand, getCurrentLineNumber(), mVarMap, vVarArray, sVarArray);
+                        NumeReKernel::getInstance()->getDebugger().gatherLoopBasedInformations(vCmdArray[__i].sCommand,
+                                                                                               getCurrentLineNumber(),
+                                                                                               mVarMap, vVarArray, sVarArray);
                         getErrorInformationForDebugger();
                     }
 
@@ -1147,7 +1199,9 @@ value_type* FlowCtrl::evalHeader(int& nNum, std::string& sHeadExpression, bool b
         }
 
         // Call the procedure interface function
-        ProcedureInterfaceRetVal nReturn = procedureInterface(sHeadExpression, *_parserRef, *_functionRef, *_dataRef, *_outRef, *_pDataRef, *_scriptRef, *_optionRef, nth_Cmd);
+        ProcedureInterfaceRetVal nReturn = procedureInterface(sHeadExpression, *_parserRef,
+                                                              *_functionRef, *_dataRef, *_outRef,
+                                                              *_pDataRef, *_scriptRef, *_optionRef, nth_Cmd);
 
         // Handle the return value
         if (nReturn == INTERFACE_ERROR)
@@ -1217,9 +1271,13 @@ value_type* FlowCtrl::evalHeader(int& nNum, std::string& sHeadExpression, bool b
                 if (bIsForHead)
                 {
                     if (_optionRef->useDebugger())
-                        NumeReKernel::getInstance()->getDebugger().gatherLoopBasedInformations(sHeadExpression, getCurrentLineNumber(), mVarMap, vVarArray, sVarArray);
+                        NumeReKernel::getInstance()->getDebugger().gatherLoopBasedInformations(sHeadExpression,
+                                                                                               getCurrentLineNumber(),
+                                                                                               mVarMap, vVarArray, sVarArray);
 
-                    NumeReKernel::getInstance()->getDebugger().throwException(SyntaxError(SyntaxError::CANNOT_EVAL_FOR, sHeadExpression, SyntaxError::invalid_position));
+                    NumeReKernel::getInstance()->getDebugger().throwException(SyntaxError(SyntaxError::CANNOT_EVAL_FOR,
+                                                                                          sHeadExpression,
+                                                                                          SyntaxError::invalid_position));
                 }
                 else
                 {
@@ -1257,38 +1315,6 @@ value_type* FlowCtrl::evalHeader(int& nNum, std::string& sHeadExpression, bool b
 /////////////////////////////////////////////////
 /// \brief This member function handles the
 /// evaluation of flow control statements from
-/// the viewpoint of a loop control flow.
-///
-/// \param __j int
-/// \param nth_loop int
-/// \return int
-///
-/////////////////////////////////////////////////
-int FlowCtrl::evalLoopFlowCommands(int __j, int nth_loop)
-{
-    // Do nothing, if here's no flow command
-    if (nJumpTable[__j][BLOCK_END] == NO_FLOW_COMMAND)
-        return FLOWCTRL_NO_CMD;
-
-    // Evaluate the possible flow control statements
-    if (vCmdArray[__j].sCommand.substr(0, 3) == "for")
-        return for_loop(__j, nth_loop + 1);
-    else if (vCmdArray[__j].sCommand.substr(0, 5) == "while")
-        return while_loop(__j, nth_loop + 1);
-    else if (vCmdArray[__j].sCommand.find(">>if") != std::string::npos)
-        return if_fork(__j, nth_loop + 1);
-    else if (vCmdArray[__j].sCommand.find(">>try") != std::string::npos)
-        return try_catch(__j, nth_loop + 1);
-    else if (vCmdArray[__j].sCommand.find(">>switch") != std::string::npos)
-        return switch_fork(__j, nth_loop + 1);
-
-    return FLOWCTRL_NO_CMD;
-}
-
-
-/////////////////////////////////////////////////
-/// \brief This member function handles the
-/// evaluation of flow control statements from
 /// the viewpoint of an if-else control flow.
 ///
 /// \param __i int
@@ -1299,60 +1325,49 @@ int FlowCtrl::evalLoopFlowCommands(int __j, int nth_loop)
 int FlowCtrl::evalForkFlowCommands(int __i, int nth_loop)
 {
     // Do nothing,if here's no flow command
-    if (nJumpTable[__i][BLOCK_END] == NO_FLOW_COMMAND)
+    if (nJumpTable[__i][BLOCK_END] == NO_FLOW_COMMAND || !vCmdArray[__i].fcFn)
         return FLOWCTRL_NO_CMD;
 
     // Evaluate the possible flow control statements.
     // In this case, we have to consider the possiblity
     // that we need to display a status
-    if (vCmdArray[__i].sCommand.substr(0, 3) == "for")
+    if (nth_loop <= -1)
     {
-        if (nth_loop <= -1)
+        if (vCmdArray[__i].sCommand.substr(0, 3) == "for")
         {
             bPrintedStatus = false;
-            __i = for_loop(__i);
+            __i = (this->*vCmdArray[__i].fcFn)(__i, nth_loop+1);
 
             if (!bReturnSignal && !bMask && __i != -1)
             {
                 if (bSilent)
-                    NumeReKernel::printPreFmt("\r|FOR> " + toSystemCodePage(_lang.get("COMMON_EVALUATING")) + " ... 100 %: " + toSystemCodePage(_lang.get("COMMON_SUCCESS")) + ".\n");
+                    NumeReKernel::printPreFmt("\r|FOR> " + _lang.get("COMMON_EVALUATING") + " ... 100 %: "
+                                              + _lang.get("COMMON_SUCCESS") + ".\n");
                 else
-                    NumeReKernel::printPreFmt("|FOR> " + toSystemCodePage(_lang.get("COMMON_SUCCESS")) + ".\n");
+                    NumeReKernel::printPreFmt("|FOR> " + _lang.get("COMMON_SUCCESS") + ".\n");
             }
 
             return __i;
         }
-        else
-            return for_loop(__i, nth_loop + 1);
-    }
-    else if (vCmdArray[__i].sCommand.substr(0, 5) == "while")
-    {
-        if (nth_loop <= -1)
+        else if (vCmdArray[__i].sCommand.substr(0, 5) == "while")
         {
             bPrintedStatus = false;
-            __i = while_loop(__i);
+            __i = (this->*vCmdArray[__i].fcFn)(__i, nth_loop+1);
 
             if (!bReturnSignal && !bMask && __i != -1)
             {
                 if (bSilent)
-                    NumeReKernel::printPreFmt("\r|WHL> " + toSystemCodePage(_lang.get("COMMON_EVALUATING")) + " ...: " + toSystemCodePage(_lang.get("COMMON_SUCCESS")) + ".\n");
+                    NumeReKernel::printPreFmt("\r|WHL> " + _lang.get("COMMON_EVALUATING") + " ...: "
+                                              + _lang.get("COMMON_SUCCESS") + ".\n");
                 else
-                    NumeReKernel::printPreFmt("|WHL> " + toSystemCodePage(_lang.get("COMMON_SUCCESS")) + ".\n");
+                    NumeReKernel::printPreFmt("|WHL> " + _lang.get("COMMON_SUCCESS") + ".\n");
             }
 
             return __i;
         }
-        else
-            return while_loop(__i, nth_loop + 1);
     }
-    else if (vCmdArray[__i].sCommand.find(">>if") != std::string::npos)
-        return if_fork(__i, nth_loop + 1);
-    else if (vCmdArray[__i].sCommand.find(">>try") != std::string::npos)
-        return try_catch(__i, nth_loop + 1);
-    else if (vCmdArray[__i].sCommand.find(">>switch") != std::string::npos)
-        return switch_fork(__i, nth_loop + 1);
 
-    return FLOWCTRL_NO_CMD;
+    return (this->*vCmdArray[__i].fcFn)(__i, nth_loop+1);
 }
 
 
@@ -1390,7 +1405,7 @@ void FlowCtrl::setCommand(std::string& __sCmd, int nCurrentLine)
     if (__sCmd == "abort")
     {
         reset();
-        NumeReKernel::print(toSystemCodePage(_lang.get("LOOP_SETCOMMAND_ABORT")));
+        NumeReKernel::print(_lang.get("LOOP_SETCOMMAND_ABORT"));
         return;
     }
 
@@ -1410,6 +1425,8 @@ void FlowCtrl::setCommand(std::string& __sCmd, int nCurrentLine)
             reset();
             throw SyntaxError(SyntaxError::UNMATCHED_PARENTHESIS, __sCmd, __sCmd.find('('));
         }
+
+        FlowCtrlFunction fn = nullptr;
 
         if (command == "for")
         {
@@ -1439,7 +1456,9 @@ void FlowCtrl::setCommand(std::string& __sCmd, int nCurrentLine)
                 throw SyntaxError(SyntaxError::CANNOT_EVAL_FOR, __sCmd, SyntaxError::invalid_position);
             }
 
+#warning TODO (numere#1#04/20/22): Change this line to enable vector-like for loops
             __sCmd.replace(nPos, 1, ",");
+            fn = FlowCtrl::for_loop;
         }
         else if (command == "while")
         {
@@ -1452,6 +1471,8 @@ void FlowCtrl::setCommand(std::string& __sCmd, int nCurrentLine)
                 reset();
                 throw SyntaxError(SyntaxError::CANNOT_EVAL_WHILE, __sCmd, SyntaxError::invalid_position);
             }
+
+            fn = FlowCtrl::while_loop;
         }
         else if (command == "if")
         {
@@ -1466,6 +1487,7 @@ void FlowCtrl::setCommand(std::string& __sCmd, int nCurrentLine)
             }
 
             __sCmd = toString(nFlowCtrlStatements[FC_IF]) + ">>" + __sCmd;
+            fn = FlowCtrl::if_fork;
         }
         else if (command == "else" || command == "elseif")
         {
@@ -1516,6 +1538,7 @@ void FlowCtrl::setCommand(std::string& __sCmd, int nCurrentLine)
             }
 
             __sCmd = toString(nFlowCtrlStatements[FC_SWITCH]) + ">>" + __sCmd;
+            fn = FlowCtrl::switch_fork;
         }
         else if (command == "case" || command == "default")
         {
@@ -1560,6 +1583,7 @@ void FlowCtrl::setCommand(std::string& __sCmd, int nCurrentLine)
             nFlowCtrlStatements[FC_TRY]++;
 
             __sCmd = toString(nFlowCtrlStatements[FC_TRY]) + ">>" + __sCmd;
+            fn = FlowCtrl::try_catch;
         }
         else if (command == "catch")
         {
@@ -1651,7 +1675,7 @@ void FlowCtrl::setCommand(std::string& __sCmd, int nCurrentLine)
             sAppendedExpression.clear();
 
         // Store the current flow control statement
-        vCmdArray.push_back(FlowCtrlCommand(__sCmd, nCurrentLine, true));
+        vCmdArray.push_back(FlowCtrlCommand(__sCmd, nCurrentLine, true, fn));
     }
     else
     {
@@ -1735,7 +1759,6 @@ void FlowCtrl::eval()
 {
     nReturnType = 1;
     ReturnVal.clear();
-    std::string sVars = ";";
     bUseLoopParsingMode = false;
     bFunctionsReplaced = false;
     bEvaluatingFlowControlStatements = true;
@@ -1769,7 +1792,7 @@ void FlowCtrl::eval()
     // Read the flow control statements only and
     // extract the index variables and the flow
     // control flags
-    sVars = extractFlagsAndIndexVariables();
+    std::string sVars = extractFlagsAndIndexVariables();
 
     // If already suppressed from somewhere else
     if (!_optionRef->systemPrints())
@@ -1839,9 +1862,9 @@ void FlowCtrl::eval()
             else if (!bReturnSignal && !bMask)
             {
                 if (bSilent)
-                    NumeReKernel::printPreFmt("\r|FOR> " + toSystemCodePage(_lang.get("COMMON_EVALUATING")) + " ... 100 %: " + toSystemCodePage(_lang.get("COMMON_SUCCESS")) + ".\n");
+                    NumeReKernel::printPreFmt("\r|FOR> " + _lang.get("COMMON_EVALUATING") + " ... 100 %: " + _lang.get("COMMON_SUCCESS") + ".\n");
                 else
-                    NumeReKernel::printPreFmt("|FOR> " + toSystemCodePage(_lang.get("COMMON_SUCCESS")) + ".\n");
+                    NumeReKernel::printPreFmt("|FOR> " + _lang.get("COMMON_SUCCESS") + ".\n");
             }
         }
         else if (vCmdArray[0].sCommand.substr(0, 5) == "while")
@@ -1856,9 +1879,9 @@ void FlowCtrl::eval()
             else if (!bReturnSignal && !bMask)
             {
                 if (bSilent)
-                    NumeReKernel::printPreFmt("\r|WHL> " + toSystemCodePage(_lang.get("COMMON_EVALUATING")) + " ...: " + toSystemCodePage(_lang.get("COMMON_SUCCESS")) + ".\n");
+                    NumeReKernel::printPreFmt("\r|WHL> " + _lang.get("COMMON_EVALUATING") + " ...: " + _lang.get("COMMON_SUCCESS") + ".\n");
                 else
-                    NumeReKernel::printPreFmt("|WHL> " + toSystemCodePage(_lang.get("COMMON_SUCCESS")) + ".\n");
+                    NumeReKernel::printPreFmt("|WHL> " + _lang.get("COMMON_SUCCESS") + ".\n");
             }
         }
         else if (vCmdArray[0].sCommand.find(">>if") != std::string::npos)
@@ -3548,11 +3571,16 @@ void FlowCtrl::fillJumpTableAndExpandRecursives()
                     if (!vCmdArray[j].bFlowCtrlStatement)
                         continue;
 
-                    if (vCmdArray[j].sCommand.length() && vCmdArray[j].sCommand.substr(0, (sNth_If + ">>else").length()) == sNth_If + ">>else" && nJumpTable[i][BLOCK_MIDDLE] == NO_FLOW_COMMAND)
+                    if (vCmdArray[j].sCommand.length()
+                        && vCmdArray[j].sCommand.substr(0, (sNth_If + ">>else").length()) == sNth_If + ">>else"
+                        && nJumpTable[i][BLOCK_MIDDLE] == NO_FLOW_COMMAND)
                         nJumpTable[i][BLOCK_MIDDLE] = j;
-                    else if (vCmdArray[j].sCommand.length() && vCmdArray[j].sCommand.substr(0, (sNth_If + ">>elseif").length()) == sNth_If + ">>elseif" && nJumpTable[i][BLOCK_MIDDLE] == NO_FLOW_COMMAND)
+                    else if (vCmdArray[j].sCommand.length()
+                             && vCmdArray[j].sCommand.substr(0, (sNth_If + ">>elseif").length()) == sNth_If + ">>elseif"
+                             && nJumpTable[i][BLOCK_MIDDLE] == NO_FLOW_COMMAND)
                         nJumpTable[i][BLOCK_MIDDLE] = j;
-                    else if (vCmdArray[j].sCommand.length() && vCmdArray[j].sCommand.substr(0, (sNth_If + ">>endif").length()) == sNth_If + ">>endif")
+                    else if (vCmdArray[j].sCommand.length()
+                             && vCmdArray[j].sCommand.substr(0, (sNth_If + ">>endif").length()) == sNth_If + ">>endif")
                     {
                         nJumpTable[i][BLOCK_END] = j;
                         break;
@@ -3568,11 +3596,16 @@ void FlowCtrl::fillJumpTableAndExpandRecursives()
                     if (!vCmdArray[j].bFlowCtrlStatement)
                         continue;
 
-                    if (vCmdArray[j].sCommand.length() && vCmdArray[j].sCommand.substr(0, (sNth_If + ">>else").length()) == sNth_If + ">>else" && nJumpTable[i][BLOCK_MIDDLE] == NO_FLOW_COMMAND)
+                    if (vCmdArray[j].sCommand.length()
+                        && vCmdArray[j].sCommand.substr(0, (sNth_If + ">>else").length()) == sNth_If + ">>else"
+                        && nJumpTable[i][BLOCK_MIDDLE] == NO_FLOW_COMMAND)
                         nJumpTable[i][BLOCK_MIDDLE] = j;
-                    else if (vCmdArray[j].sCommand.length() && vCmdArray[j].sCommand.substr(0, (sNth_If + ">>elseif").length()) == sNth_If + ">>elseif" && nJumpTable[i][BLOCK_MIDDLE] == NO_FLOW_COMMAND)
+                    else if (vCmdArray[j].sCommand.length()
+                             && vCmdArray[j].sCommand.substr(0, (sNth_If + ">>elseif").length()) == sNth_If + ">>elseif"
+                             && nJumpTable[i][BLOCK_MIDDLE] == NO_FLOW_COMMAND)
                         nJumpTable[i][BLOCK_MIDDLE] = j;
-                    else if (vCmdArray[j].sCommand.length() && vCmdArray[j].sCommand.substr(0, (sNth_If + ">>endif").length()) == sNth_If + ">>endif")
+                    else if (vCmdArray[j].sCommand.length()
+                             && vCmdArray[j].sCommand.substr(0, (sNth_If + ">>endif").length()) == sNth_If + ">>endif")
                     {
                         nJumpTable[i][BLOCK_END] = j;
                         break;
@@ -3588,11 +3621,16 @@ void FlowCtrl::fillJumpTableAndExpandRecursives()
                     if (!vCmdArray[j].bFlowCtrlStatement)
                         continue;
 
-                    if (vCmdArray[j].sCommand.length() && vCmdArray[j].sCommand.substr(0, (sNth_Switch + ">>case").length()) == sNth_Switch + ">>case" && nJumpTable[i][BLOCK_MIDDLE] == NO_FLOW_COMMAND)
+                    if (vCmdArray[j].sCommand.length()
+                        && vCmdArray[j].sCommand.substr(0, (sNth_Switch + ">>case").length()) == sNth_Switch + ">>case"
+                        && nJumpTable[i][BLOCK_MIDDLE] == NO_FLOW_COMMAND)
                         nJumpTable[i][BLOCK_MIDDLE] = j;
-                    else if (vCmdArray[j].sCommand.length() && vCmdArray[j].sCommand.substr(0, (sNth_Switch + ">>default").length()) == sNth_Switch + ">>default" && nJumpTable[i][BLOCK_MIDDLE] == NO_FLOW_COMMAND)
+                    else if (vCmdArray[j].sCommand.length()
+                             && vCmdArray[j].sCommand.substr(0, (sNth_Switch + ">>default").length()) == sNth_Switch + ">>default"
+                             && nJumpTable[i][BLOCK_MIDDLE] == NO_FLOW_COMMAND)
                         nJumpTable[i][BLOCK_MIDDLE] = j;
-                    else if (vCmdArray[j].sCommand.length() && vCmdArray[j].sCommand.substr(0, (sNth_Switch + ">>endswitch").length()) == sNth_Switch + ">>endswitch")
+                    else if (vCmdArray[j].sCommand.length()
+                             && vCmdArray[j].sCommand.substr(0, (sNth_Switch + ">>endswitch").length()) == sNth_Switch + ">>endswitch")
                     {
                         nJumpTable[i][BLOCK_END] = j;
                         break;
@@ -3614,11 +3652,16 @@ void FlowCtrl::fillJumpTableAndExpandRecursives()
                     if (!vCmdArray[j].bFlowCtrlStatement)
                         continue;
 
-                    if (vCmdArray[j].sCommand.length() && vCmdArray[j].sCommand.substr(0, (sNth_Switch + ">>case").length()) == sNth_Switch + ">>case" && nJumpTable[i][BLOCK_MIDDLE] == NO_FLOW_COMMAND)
+                    if (vCmdArray[j].sCommand.length()
+                        && vCmdArray[j].sCommand.substr(0, (sNth_Switch + ">>case").length()) == sNth_Switch + ">>case"
+                        && nJumpTable[i][BLOCK_MIDDLE] == NO_FLOW_COMMAND)
                         nJumpTable[i][BLOCK_MIDDLE] = j;
-                    else if (vCmdArray[j].sCommand.length() && vCmdArray[j].sCommand.substr(0, (sNth_Switch + ">>default").length()) == sNth_Switch + ">>default" && nJumpTable[i][BLOCK_MIDDLE] == NO_FLOW_COMMAND)
+                    else if (vCmdArray[j].sCommand.length()
+                             && vCmdArray[j].sCommand.substr(0, (sNth_Switch + ">>default").length()) == sNth_Switch + ">>default"
+                             && nJumpTable[i][BLOCK_MIDDLE] == NO_FLOW_COMMAND)
                         nJumpTable[i][BLOCK_MIDDLE] = j;
-                    else if (vCmdArray[j].sCommand.length() && vCmdArray[j].sCommand.substr(0, (sNth_Switch + ">>endswitch").length()) == sNth_Switch + ">>endswitch")
+                    else if (vCmdArray[j].sCommand.length()
+                             && vCmdArray[j].sCommand.substr(0, (sNth_Switch + ">>endswitch").length()) == sNth_Switch + ">>endswitch")
                     {
                         nJumpTable[i][BLOCK_END] = j;
                         break;
@@ -3634,9 +3677,12 @@ void FlowCtrl::fillJumpTableAndExpandRecursives()
                     if (!vCmdArray[j].bFlowCtrlStatement)
                         continue;
 
-                    if (vCmdArray[j].sCommand.length() && vCmdArray[j].sCommand.substr(0, (sNth_Try + ">>catch").length()) == sNth_Try + ">>catch" && nJumpTable[i][BLOCK_MIDDLE] == NO_FLOW_COMMAND)
+                    if (vCmdArray[j].sCommand.length()
+                        && vCmdArray[j].sCommand.substr(0, (sNth_Try + ">>catch").length()) == sNth_Try + ">>catch"
+                        && nJumpTable[i][BLOCK_MIDDLE] == NO_FLOW_COMMAND)
                         nJumpTable[i][BLOCK_MIDDLE] = j;
-                    else if (vCmdArray[j].sCommand.length() && vCmdArray[j].sCommand.substr(0, (sNth_Try + ">>endtry").length()) == sNth_Try + ">>endtry")
+                    else if (vCmdArray[j].sCommand.length()
+                             && vCmdArray[j].sCommand.substr(0, (sNth_Try + ">>endtry").length()) == sNth_Try + ">>endtry")
                     {
                         nJumpTable[i][BLOCK_END] = j;
                         break;
@@ -3652,9 +3698,12 @@ void FlowCtrl::fillJumpTableAndExpandRecursives()
                     if (!vCmdArray[j].bFlowCtrlStatement)
                         continue;
 
-                    if (vCmdArray[j].sCommand.length() && vCmdArray[j].sCommand.substr(0, (sNth_Try + ">>catch").length()) == sNth_Try + ">>catch" && nJumpTable[i][BLOCK_MIDDLE] == NO_FLOW_COMMAND)
+                    if (vCmdArray[j].sCommand.length()
+                        && vCmdArray[j].sCommand.substr(0, (sNth_Try + ">>catch").length()) == sNth_Try + ">>catch"
+                        && nJumpTable[i][BLOCK_MIDDLE] == NO_FLOW_COMMAND)
                         nJumpTable[i][BLOCK_MIDDLE] = j;
-                    else if (vCmdArray[j].sCommand.length() && vCmdArray[j].sCommand.substr(0, (sNth_Try + ">>endtry").length()) == sNth_Try + ">>endtry")
+                    else if (vCmdArray[j].sCommand.length()
+                             && vCmdArray[j].sCommand.substr(0, (sNth_Try + ">>endtry").length()) == sNth_Try + ">>endtry")
                     {
                         nJumpTable[i][BLOCK_END] = j;
                         break;

@@ -38,20 +38,13 @@
 
 using namespace mu;
 
-struct FlowCtrlCommand
-{
-    std::string sCommand;
-    int nInputLine;
-    bool bFlowCtrlStatement;
-    std::string sFlowCtrlHeader;
-    int nVarIndex;
+struct FlowCtrlCommand;
 
-    FlowCtrlCommand(const std::string& sCmd, int nLine, bool bStatement = false)
-        : sCommand(sCmd), nInputLine(nLine), bFlowCtrlStatement(bStatement), sFlowCtrlHeader(""), nVarIndex(-1) {}
-};
 
 class FlowCtrl
 {
+    friend FlowCtrlCommand;
+
     private:
         bool bLoopSupressAnswer;
 
@@ -143,10 +136,11 @@ class FlowCtrl
         int switch_fork(int nth_Cmd = 0, int nth_Loop = -1);
         int try_catch(int nth_Cmd = 0, int nth_Loop = -1);
 
+        typedef int(FlowCtrl::*FlowCtrlFunction)(int, int); ///< Definition of a generic FlowCtrl entry point
+
         int compile(std::string sLine, int nthCmd);
         int calc(std::string sLine, int nthCmd);
         value_type* evalHeader(int& nNum, std::string& sHeadExpression, bool bIsForHead, int nth_Cmd);
-        int evalLoopFlowCommands(int __j, int nth_loop);
         int evalForkFlowCommands(int __j, int nth_loop);
 
         void replaceLocalVars(std::string& sLine);
@@ -203,4 +197,21 @@ class FlowCtrl
 };
 
 
+struct FlowCtrlCommand
+{
+    std::string sCommand;
+    int nInputLine;
+    bool bFlowCtrlStatement;
+    std::string sFlowCtrlHeader;
+    int nVarIndex;
+
+    FlowCtrl::FlowCtrlFunction fcFn;
+
+
+    FlowCtrlCommand(const std::string& sCmd, int nLine, bool bStatement = false, FlowCtrl::FlowCtrlFunction fn = nullptr)
+        : sCommand(sCmd), nInputLine(nLine), bFlowCtrlStatement(bStatement), sFlowCtrlHeader(""), nVarIndex(-1), fcFn(fn) {}
+};
+
 #endif
+
+
