@@ -43,7 +43,7 @@
 /////////////////////////////////////////////////
 static inline std::string printMatrixDim(const Matrix& mat)
 {
-    return toString(mat.size()) + "x" + toString(mat[0].size());
+    return mat.printDims();
 }
 
 
@@ -60,13 +60,7 @@ static inline std::string printMatrixDim(const Matrix& mat)
 /////////////////////////////////////////////////
 static Matrix createFilledMatrix(size_t n, size_t m, const mu::value_type& val)
 {
-    Matrix mat;
-    std::vector<mu::value_type> vLine(m, val);
-
-    for (size_t i = 0; i < n; i++)
-        mat.push_back(vLine);
-
-    return mat;
+    return Matrix(n, m, val);
 }
 
 
@@ -132,21 +126,11 @@ static Matrix identityMatrix(const MatFuncData& funcData, const MatFuncErrorInfo
     if (!funcData.nVal)
         throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, errorInfo.command, errorInfo.position);
 
-    Matrix _mIdentity;
-    std::vector<mu::value_type> vLine;
+    Matrix _mIdentity(funcData.nVal, funcData.nVal, 0.0);
 
     for (int i = 0; i < funcData.nVal; i++)
     {
-        for (int j = 0; j < funcData.nVal; j++)
-        {
-            if (i == j)
-                vLine.push_back(1.0);
-            else
-                vLine.push_back(0.0);
-        }
-
-        _mIdentity.push_back(vLine);
-        vLine.clear();
+        _mIdentity(i, i) = 1.0;
     }
 
     return _mIdentity;
@@ -164,18 +148,18 @@ static Matrix identityMatrix(const MatFuncData& funcData, const MatFuncErrorInfo
 /////////////////////////////////////////////////
 static Matrix calcTrace(const MatFuncData& funcData, const MatFuncErrorInfo& errorInfo)
 {
-    if (!funcData.mat1.size() || !funcData.mat1[0].size())
+    if (funcData.mat1.isEmpty())
         throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, errorInfo.command, errorInfo.position);
 
-    if (funcData.mat1.size() != funcData.mat1[0].size())
+    if (!funcData.mat1.isSquare())
         throw SyntaxError(SyntaxError::WRONG_MATRIX_DIMENSIONS_FOR_MATOP, errorInfo.command, errorInfo.position,
                           printMatrixDim(funcData.mat1));
 
-    Matrix _mReturn = createFilledMatrix(1, 1, 0.0);
+    Matrix _mReturn(1, 1, 0.0);
 
-    for (unsigned int i = 0; i < funcData.mat1.size(); i++)
+    for (unsigned int i = 0; i < funcData.mat1.rows(); i++)
     {
-        _mReturn[0][0] += funcData.mat1[i][i];
+        _mReturn(0, 0) += funcData.mat1(i, i);
     }
 
     return _mReturn;
@@ -195,26 +179,26 @@ static Matrix calcTrace(const MatFuncData& funcData, const MatFuncErrorInfo& err
 static mu::value_type calcDeterminant(const Matrix& _mMatrix, std::vector<int> vRemovedLines)
 {
     // simple Sonderfaelle
-    if (_mMatrix.size() == 1)
-        return _mMatrix[0][0];
+    if (_mMatrix.rows() == 1)
+        return _mMatrix(0, 0);
 
-    if (_mMatrix.size() == 2)
-        return _mMatrix[0][0] * _mMatrix[1][1] - _mMatrix[1][0]*_mMatrix[0][1];
+    if (_mMatrix.rows() == 2)
+        return _mMatrix(0, 0) * _mMatrix(1, 1) - _mMatrix(1, 0)*_mMatrix(0, 1);
 
-    if (_mMatrix.size() == 3)
+    if (_mMatrix.rows() == 3)
     {
-        return _mMatrix[0][0]*_mMatrix[1][1]*_mMatrix[2][2]
-            + _mMatrix[0][1]*_mMatrix[1][2]*_mMatrix[2][0]
-            + _mMatrix[0][2]*_mMatrix[1][0]*_mMatrix[2][1]
-            - _mMatrix[0][2]*_mMatrix[1][1]*_mMatrix[2][0]
-            - _mMatrix[0][1]*_mMatrix[1][0]*_mMatrix[2][2]
-            - _mMatrix[0][0]*_mMatrix[1][2]*_mMatrix[2][1];
+        return _mMatrix(0, 0)*_mMatrix(1, 1)*_mMatrix(2, 2)
+            + _mMatrix(0, 1)*_mMatrix(1, 2)*_mMatrix(2, 0)
+            + _mMatrix(0, 2)*_mMatrix(1, 0)*_mMatrix(2, 1)
+            - _mMatrix(0, 2)*_mMatrix(1, 1)*_mMatrix(2, 0)
+            - _mMatrix(0, 1)*_mMatrix(1, 0)*_mMatrix(2, 2)
+            - _mMatrix(0, 0)*_mMatrix(1, 2)*_mMatrix(2, 1);
     }
 
     int nSign = 1;
     mu::value_type dDet = 0.0;
 
-    for (unsigned int i = 0; i < _mMatrix.size(); i++)
+    for (unsigned int i = 0; i < _mMatrix.rows(); i++)
     {
         // Noch nicht entfernte Zeile?
         if (!(vRemovedLines[i] & 1))
@@ -222,12 +206,12 @@ static mu::value_type calcDeterminant(const Matrix& _mMatrix, std::vector<int> v
             // entferne Zeile i
             vRemovedLines[i] += 1;
 
-            for (unsigned int j = 0; j < _mMatrix.size(); j++)
+            for (unsigned int j = 0; j < _mMatrix.rows(); j++)
             {
                 // Noch nicht entfernte Spalte?
                 if (!(vRemovedLines[j] & 2))
                 {
-                    if (_mMatrix[i][j] == 0.0)
+                    if (_mMatrix(i, j) == 0.0)
                     {
                         nSign *= -1;
                         continue;
@@ -236,10 +220,10 @@ static mu::value_type calcDeterminant(const Matrix& _mMatrix, std::vector<int> v
                     vRemovedLines[j] += 2;
 
                     // Berechne Determinante rekursiv
-                    if (i+1 < _mMatrix.size())
-                        dDet += (double)nSign * _mMatrix[i][j] * calcDeterminant(_mMatrix, vRemovedLines);
+                    if (i+1 < _mMatrix.rows())
+                        dDet += (double)nSign * _mMatrix(i, j) * calcDeterminant(_mMatrix, vRemovedLines);
                     else
-                        dDet += (double)nSign * _mMatrix[i][j];
+                        dDet += (double)nSign * _mMatrix(i, j);
 
                     // füge Spalte j wieder hinzu
                     vRemovedLines[j] -= 2;
@@ -268,18 +252,15 @@ static mu::value_type calcDeterminant(const Matrix& _mMatrix, std::vector<int> v
 /////////////////////////////////////////////////
 static Matrix getDeterminant(const MatFuncData& funcData, const MatFuncErrorInfo& errorInfo)
 {
-    if (!funcData.mat1.size() || !funcData.mat1[0].size())
+    if (funcData.mat1.isEmpty())
         throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, errorInfo.command, errorInfo.position);
 
-    Matrix _mReturn = identityMatrix(MatFuncData(1), errorInfo);
-    std::vector<int> vRemovedLines(funcData.mat1.size(), 0);
-
-    if (funcData.mat1.size() != funcData.mat1[0].size())
+    if (!funcData.mat1.isSquare())
         throw SyntaxError(SyntaxError::WRONG_MATRIX_DIMENSIONS_FOR_MATOP, errorInfo.command, errorInfo.position,
                           printMatrixDim(funcData.mat1));
 
-    _mReturn[0][0] = calcDeterminant(funcData.mat1, vRemovedLines);
-    return _mReturn;
+    std::vector<int> vRemovedLines(funcData.mat1.rows(), 0);
+    return Matrix(1, 1, calcDeterminant(funcData.mat1, vRemovedLines));
 }
 
 
@@ -294,53 +275,53 @@ static Matrix getDeterminant(const MatFuncData& funcData, const MatFuncErrorInfo
 /////////////////////////////////////////////////
 static Matrix calcCrossProduct(const MatFuncData& funcData, const MatFuncErrorInfo& errorInfo)
 {
-    if (!funcData.mat1.size() || !funcData.mat1[0].size())
+    if (funcData.mat1.isEmpty())
         throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, errorInfo.command, errorInfo.position);
 
-    Matrix _mResult = createFilledMatrix(funcData.mat1.size(), 1, 0.0);
-    std::vector<int> vRemovedLines(funcData.mat1.size(), 0);
+    Matrix _mResult = createFilledMatrix(funcData.mat1.rows(), 1, 0.0);
+    std::vector<int> vRemovedLines(funcData.mat1.rows(), 0);
 
-    if (funcData.mat1.size() == 1)
+    if (funcData.mat1.rows() == 1)
         return _mResult;
 
-    if (funcData.mat1.size()-1 != funcData.mat1[0].size())
+    if (funcData.mat1.rows()-1 != funcData.mat1.cols())
         throw SyntaxError(SyntaxError::WRONG_MATRIX_DIMENSIONS_FOR_MATOP, errorInfo.command, errorInfo.position,
                           printMatrixDim(funcData.mat1));
 
-    if (funcData.mat1.size() == 2)
+    if (funcData.mat1.rows() == 2)
     {
-        _mResult[0][0] = funcData.mat1[0][1];
-        _mResult[1][0] = -funcData.mat1[0][0];
+        _mResult(0) = funcData.mat1(0, 1);
+        _mResult(1) = -funcData.mat1(0, 0);
         return _mResult;
     }
 
-    if (funcData.mat1.size() == 3)
+    if (funcData.mat1.rows() == 3)
     {
-        _mResult[0][0] = funcData.mat1[1][0]*funcData.mat1[2][1] - funcData.mat1[2][0]*funcData.mat1[1][1];
-        _mResult[1][0] = funcData.mat1[2][0]*funcData.mat1[0][1] - funcData.mat1[0][0]*funcData.mat1[2][1];
-        _mResult[2][0] = funcData.mat1[0][0]*funcData.mat1[1][1] - funcData.mat1[1][0]*funcData.mat1[0][1];
+        _mResult(0) = funcData.mat1(1, 0)*funcData.mat1(2, 1) - funcData.mat1(2, 0)*funcData.mat1(1, 1);
+        _mResult(1) = funcData.mat1(2, 0)*funcData.mat1(0, 1) - funcData.mat1(0, 0)*funcData.mat1(2, 1);
+        _mResult(2) = funcData.mat1(0, 0)*funcData.mat1(1, 1) - funcData.mat1(1, 0)*funcData.mat1(0, 1);
         return _mResult;
     }
 
-    Matrix _mTemp = createFilledMatrix(funcData.mat1.size(), funcData.mat1[0].size()+1, 0.0);
+    Matrix _mTemp = createFilledMatrix(funcData.mat1.rows(), funcData.mat1.cols()+1, 0.0);
 
     #pragma omp parallel for
-    for (unsigned int i = 0; i < funcData.mat1.size(); i++)
+    for (unsigned int i = 0; i < funcData.mat1.rows(); i++)
     {
-        for (unsigned int j = 0; j < funcData.mat1[0].size(); j++)
+        for (unsigned int j = 0; j < funcData.mat1.cols(); j++)
         {
-            _mTemp[i][j+1] = funcData.mat1[i][j];
+            _mTemp(i, j+1) = funcData.mat1(i, j);
         }
     }
 
-    _mTemp[0][0] = 1.0;
-    _mResult[0][0] = calcDeterminant(_mTemp, vRemovedLines);
+    _mTemp(0, 0) = 1.0;
+    _mResult(0, 0) = calcDeterminant(_mTemp, vRemovedLines);
 
-    for (unsigned int i = 1; i < funcData.mat1.size(); i++)
+    for (unsigned int i = 1; i < funcData.mat1.rows(); i++)
     {
-        _mTemp[i-1][0] = 0.0;
-        _mTemp[i][0] = 1.0;
-        _mResult[i][0] = calcDeterminant(_mTemp, vRemovedLines);
+        _mTemp(i-1, 0) = 0.0;
+        _mTemp(i, 0) = 1.0;
+        _mResult(i, 0) = calcDeterminant(_mTemp, vRemovedLines);
     }
 
     return _mResult;
@@ -372,31 +353,27 @@ static Matrix calcCrossProduct(const MatFuncData& funcData, const MatFuncErrorIn
 /////////////////////////////////////////////////
 __attribute__((force_align_arg_pointer)) static Matrix calcEigenVectsAndValues(const Matrix& _mMatrix, int nReturnType, const MatFuncErrorInfo& errorInfo)
 {
-    if (!_mMatrix.size() || !_mMatrix[0].size())
+    if (_mMatrix.isEmpty())
         throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, errorInfo.command, errorInfo.position);
 
-    if (_mMatrix.size() != _mMatrix[0].size())
+    if (!_mMatrix.isSquare())
         throw SyntaxError(SyntaxError::WRONG_MATRIX_DIMENSIONS_FOR_MATOP, errorInfo.command, errorInfo.position,
                           printMatrixDim(_mMatrix));
 
     Matrix _mEigenVals;
     Matrix _mEigenVects;
 
-    Eigen::MatrixXcd mMatrix(_mMatrix.size(), _mMatrix.size());
+    Eigen::MatrixXcd mMatrix(_mMatrix.rows(), _mMatrix.rows());
 
     // Copy the passed matrix into an Eigen matrix
     #pragma omp parallel for
-    for (unsigned int i = 0; i < _mMatrix.size(); i++)
+    for (unsigned int i = 0; i < _mMatrix.rows(); i++)
     {
-        for (unsigned int j = 0; j < _mMatrix.size(); j++)
+        for (unsigned int j = 0; j < _mMatrix.rows(); j++)
         {
-            mMatrix(i,j) = _mMatrix[i][j];
+            mMatrix(i,j) = _mMatrix(i,j);
         }
     }
-
-    // Prepare return values
-    _mEigenVals = createFilledMatrix(_mMatrix.size(), 1, 0.0);
-    _mEigenVects = createFilledMatrix(_mMatrix.size(), _mMatrix.size(), 0.0);
 
     // Construct an Eigen eigenvalue solver
     Eigen::ComplexEigenSolver<Eigen::MatrixXcd> eSolver(mMatrix);
@@ -407,32 +384,35 @@ __attribute__((force_align_arg_pointer)) static Matrix calcEigenVectsAndValues(c
     if (nReturnType == EIGENVALUES)
     {
         Eigen::VectorXcd vEigenVals = eSolver.eigenvalues();
+        _mEigenVals.resize(_mMatrix.rows(), 1);
 
-        for (unsigned int i = 0; i < _mEigenVals.size(); i++)
+        for (unsigned int i = 0; i < _mEigenVals.rows(); i++)
         {
-            _mEigenVals[i][0] = vEigenVals(i,0);
+            _mEigenVals(i) = vEigenVals(i, 0);
         }
     }
     else if (nReturnType == EIGENVECTORS)
     {
         Eigen::EigenSolver<Eigen::MatrixXcd>::EigenvectorsType mEigenVects = eSolver.eigenvectors();
+        _mEigenVects.resize(_mMatrix.rows(), _mMatrix.cols());
 
         #pragma omp parallel for
-        for (unsigned int i = 0; i < _mEigenVects.size(); i++)
+        for (unsigned int i = 0; i < _mEigenVects.rows(); i++)
         {
-            for (unsigned int j = 0; j < _mEigenVects.size(); j++)
+            for (unsigned int j = 0; j < _mEigenVects.cols(); j++)
             {
-                _mEigenVects[i][j] = mEigenVects(i, j);
+                _mEigenVects(i, j) = mEigenVects(i, j);
             }
         }
     }
     else if (nReturnType == DIAGONALIZE)
     {
         Eigen::VectorXcd vEigenVals = eSolver.eigenvalues();
+        _mEigenVects.resize(_mMatrix.rows(), _mMatrix.cols());
 
-        for (unsigned int i = 0; i < _mEigenVects.size(); i++)
+        for (unsigned int i = 0; i < _mEigenVects.rows(); i++)
         {
-            _mEigenVects[i][i] = vEigenVals(i, 0);
+            _mEigenVects(i, i) = vEigenVals(i, 0);
         }
     }
 
@@ -518,7 +498,7 @@ static Matrix createShuffledMatrix(const MatFuncData& funcData, const MatFuncErr
 
     // Create the base (unshuffled) vector
     for (size_t i = 0; i < nBase; i++)
-        _mBase[i][0] = i+1;
+        _mBase(i) = i+1;
 
     // Initialize the random number engine using the
     // time and the last random number created by the
@@ -532,9 +512,9 @@ static Matrix createShuffledMatrix(const MatFuncData& funcData, const MatFuncErr
         std::uniform_real_distribution<double> randDist(i, nBase-1);
 
         int nIndex = rint(randDist(randGen));
-        mu::value_type dTemp = _mBase[i][0];
-        _mBase[i][0] = _mBase[nIndex][0];
-        _mBase[nIndex][0] = dTemp;
+        mu::value_type dTemp = _mBase(i);
+        _mBase(i) = _mBase(nIndex);
+        _mBase(nIndex) = dTemp;
     }
 
     std::uniform_real_distribution<double> randDist(1, nBase-1);
@@ -543,7 +523,8 @@ static Matrix createShuffledMatrix(const MatFuncData& funcData, const MatFuncErr
     dSeed = randDist(randGen);
 
     // Return only the requested vector length
-    return Matrix(_mBase.begin(), _mBase.begin()+nShuffle);
+    _mBase.resize(nShuffle, 1);
+    return _mBase;
 }
 
 
@@ -559,106 +540,106 @@ static Matrix createShuffledMatrix(const MatFuncData& funcData, const MatFuncErr
 /////////////////////////////////////////////////
 static Matrix invertMatrix(const MatFuncData& funcData, const MatFuncErrorInfo& errorInfo)
 {
-    if (!funcData.mat1.size() || !funcData.mat1[0].size())
+    if (funcData.mat1.isEmpty())
         throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, errorInfo.command, errorInfo.position);
 
-    if (funcData.mat1.size() != funcData.mat1[0].size())
+    if (!funcData.mat1.isSquare())
         throw SyntaxError(SyntaxError::WRONG_MATRIX_DIMENSIONS_FOR_MATOP, errorInfo.command, errorInfo.position,
                           printMatrixDim(funcData.mat1));
 
     // Gauss-Elimination???
-    Matrix _mInverse = identityMatrix(MatFuncData(funcData.mat1.size()), errorInfo);
+    Matrix _mInverse = identityMatrix(MatFuncData(funcData.mat1.rows()), errorInfo);
     Matrix _mToInvert = funcData.mat1;
 
-    mu::value_type dDet = getDeterminant(funcData, errorInfo)[0][0];
+    mu::value_type dDet = getDeterminant(funcData, errorInfo)(0);
 
     if (dDet == 0.0)
         throw SyntaxError(SyntaxError::MATRIX_IS_NOT_INVERTIBLE, errorInfo.command, errorInfo.position);
 
     //Spezialfaelle mit analytischem Ausdruck
-    if (_mToInvert.size() == 1)
+    if (_mToInvert.rows() == 1)
     {
         // eigentlich nicht zwangslaeufig existent... aber skalar und so...
-        _mInverse[0][0] /= _mToInvert[0][0];
+        _mInverse(0) /= _mToInvert(0);
         return _mInverse;
     }
-    else if (_mToInvert.size() == 2)
+    else if (_mToInvert.rows() == 2)
     {
         _mInverse = _mToInvert;
-        _mInverse[0][0] = _mToInvert[1][1];
-        _mInverse[1][1] = _mToInvert[0][0];
-        _mInverse[1][0] *= -1.0;
-        _mInverse[0][1] *= -1.0;
+        _mInverse(0, 0) = _mToInvert(1, 1);
+        _mInverse(1, 1) = _mToInvert(0, 0);
+        _mInverse(1, 0) *= -1.0;
+        _mInverse(0, 1) *= -1.0;
 
         for (unsigned int i = 0; i < 2; i++)
         {
-            _mInverse[i][0] /= dDet;
-            _mInverse[i][1] /= dDet;
+            _mInverse(i, 0) /= dDet;
+            _mInverse(i, 1) /= dDet;
         }
 
         return _mInverse;
     }
-    else if (_mToInvert.size() == 3)
+    else if (_mToInvert.rows() == 3)
     {
-        _mInverse[0][0] = (_mToInvert[1][1]*_mToInvert[2][2] - _mToInvert[2][1]*_mToInvert[1][2]) / dDet;
-        _mInverse[1][0] = -(_mToInvert[1][0]*_mToInvert[2][2] - _mToInvert[1][2]*_mToInvert[2][0]) / dDet;
-        _mInverse[2][0] = (_mToInvert[1][0]*_mToInvert[2][1] - _mToInvert[1][1]*_mToInvert[2][0]) / dDet;
+        _mInverse(0, 0) =  (_mToInvert(1, 1)*_mToInvert(2, 2) - _mToInvert(2, 1)*_mToInvert(1, 2)) / dDet;
+        _mInverse(1, 0) = -(_mToInvert(1, 0)*_mToInvert(2, 2) - _mToInvert(1, 2)*_mToInvert(2, 0)) / dDet;
+        _mInverse(1, 0) =  (_mToInvert(1, 0)*_mToInvert(2, 1) - _mToInvert(1, 1)*_mToInvert(2, 0)) / dDet;
 
-        _mInverse[0][1] = -(_mToInvert[0][1]*_mToInvert[2][2] - _mToInvert[0][2]*_mToInvert[2][1]) / dDet;
-        _mInverse[1][1] = (_mToInvert[0][0]*_mToInvert[2][2] - _mToInvert[0][2]*_mToInvert[2][0]) / dDet;
-        _mInverse[2][1] = -(_mToInvert[0][0]*_mToInvert[2][1] - _mToInvert[0][1]*_mToInvert[2][0]) / dDet;
+        _mInverse(0, 1) = -(_mToInvert(0, 1)*_mToInvert(2, 2) - _mToInvert(0, 2)*_mToInvert(2, 1)) / dDet;
+        _mInverse(1, 1) =  (_mToInvert(0, 0)*_mToInvert(2, 2) - _mToInvert(0, 2)*_mToInvert(2, 0)) / dDet;
+        _mInverse(2, 1) = -(_mToInvert(0, 0)*_mToInvert(2, 1) - _mToInvert(0, 1)*_mToInvert(2, 0)) / dDet;
 
-        _mInverse[0][2] = (_mToInvert[0][1]*_mToInvert[1][2] - _mToInvert[0][2]*_mToInvert[1][1]) / dDet;
-        _mInverse[1][2] = -(_mToInvert[0][0]*_mToInvert[1][2] - _mToInvert[0][2]*_mToInvert[1][0]) / dDet;
-        _mInverse[2][2] = (_mToInvert[0][0]*_mToInvert[1][1] - _mToInvert[0][1]*_mToInvert[1][0]) / dDet;
+        _mInverse(0, 2) =  (_mToInvert(0, 1)*_mToInvert(1, 2) - _mToInvert(0, 2)*_mToInvert(1, 1)) / dDet;
+        _mInverse(1, 2) = -(_mToInvert(0, 0)*_mToInvert(1, 2) - _mToInvert(0, 2)*_mToInvert(1, 0)) / dDet;
+        _mInverse(2, 2) =  (_mToInvert(0, 0)*_mToInvert(1, 1) - _mToInvert(0, 1)*_mToInvert(1, 0)) / dDet;
 
         return _mInverse;
     }
 
     // Allgemeiner Fall fuer n > 3
-    for (unsigned int j = 0; j < _mToInvert.size(); j++)
+    for (unsigned int j = 0; j < _mToInvert.cols(); j++)
     {
-        for (unsigned int i = j; i < _mToInvert.size(); i++)
+        for (unsigned int i = j; i < _mToInvert.rows(); i++)
         {
-            if (_mToInvert[i][j] != 0.0)
+            if (_mToInvert(i, j) != 0.0)
             {
                 if (i != j) //vertauschen
                 {
                     mu::value_type dElement;
 
-                    for (unsigned int _j = 0; _j < _mToInvert.size(); _j++)
+                    for (unsigned int _j = 0; _j < _mToInvert.cols(); _j++)
                     {
-                        dElement = _mToInvert[i][_j];
-                        _mToInvert[i][_j] = _mToInvert[j][_j];
-                        _mToInvert[j][_j] = dElement;
-                        dElement = _mInverse[i][_j];
-                        _mInverse[i][_j] = _mInverse[j][_j];
-                        _mInverse[j][_j] = dElement;
+                        dElement = _mToInvert(i, _j);
+                        _mToInvert(i, _j) = _mToInvert(j, _j);
+                        _mToInvert(j, _j) = dElement;
+                        dElement = _mInverse(i, _j);
+                        _mInverse(i, _j) = _mInverse(j, _j);
+                        _mInverse(j, _j) = dElement;
                     }
 
                     i = j-1;
                 }
                 else //Gauss-Elimination
                 {
-                    mu::value_type dPivot = _mToInvert[i][j];
+                    mu::value_type dPivot = _mToInvert(i, j);
 
-                    for (unsigned int _j = 0; _j < _mToInvert.size(); _j++)
+                    for (unsigned int _j = 0; _j < _mToInvert.cols(); _j++)
                     {
-                        _mToInvert[i][_j] /= dPivot;
-                        _mInverse[i][_j] /= dPivot;
+                        _mToInvert(i, _j) /= dPivot;
+                        _mInverse(i, _j) /= dPivot;
                     }
 
-                    for (unsigned int _i = i+1; _i < _mToInvert.size(); _i++)
+                    for (unsigned int _i = i+1; _i < _mToInvert.rows(); _i++)
                     {
-                        mu::value_type dFactor = _mToInvert[_i][j];
+                        mu::value_type dFactor = _mToInvert(_i, j);
 
                         if (dFactor == 0.0) // Bereits 0???
                             continue;
 
-                        for (unsigned int _j = 0; _j < _mToInvert.size(); _j++)
+                        for (unsigned int _j = 0; _j < _mToInvert.cols(); _j++)
                         {
-                            _mToInvert[_i][_j] -= _mToInvert[i][_j]*dFactor;
-                            _mInverse[_i][_j] -= _mInverse[i][_j]*dFactor;
+                            _mToInvert(_i, _j) -= _mToInvert(i, _j)*dFactor;
+                            _mInverse(_i, _j) -= _mInverse(i, _j)*dFactor;
                         }
                     }
 
@@ -669,25 +650,25 @@ static Matrix invertMatrix(const MatFuncData& funcData, const MatFuncErrorInfo& 
     }
 
     // die Matrix _mToInvert() sollte nun Dreiecksgestalt besitzen. Jetzt den Gauss von unten her umkehren
-    for (int j = (int)_mToInvert.size()-1; j >= 0; j--)
+    for (int j = (int)_mToInvert.rows()-1; j >= 0; j--)
     {
-        if (_mToInvert[j][j] == 0.0) // Hauptdiagonale ist ein Element == 0??
+        if (_mToInvert(j, j) == 0.0) // Hauptdiagonale ist ein Element == 0??
             throw SyntaxError(SyntaxError::MATRIX_IS_NOT_INVERTIBLE, errorInfo.command, errorInfo.position);
 
-        if (_mToInvert[j][j] != 1.0)
+        if (_mToInvert(j, j) != 1.0)
         {
-            for (unsigned int _j = 0; _j < _mInverse.size(); _j++)
-                _mInverse[j][_j] /= _mToInvert[j][j];
+            for (unsigned int _j = 0; _j < _mInverse.cols(); _j++)
+                _mInverse(j, _j) /= _mToInvert(j, j);
 
-            _mToInvert[j][j] = 1.0;
+            _mToInvert(j, j) = 1.0;
         }
 
         for (int i = 0; i < j; i++)
         {
-            for (unsigned int _j = 0; _j < _mInverse.size(); _j++)
-                _mInverse[i][_j] -= _mToInvert[i][j]*_mInverse[j][_j];
+            for (unsigned int _j = 0; _j < _mInverse.cols(); _j++)
+                _mInverse(i, _j) -= _mToInvert(i, j)*_mInverse(j, _j);
 
-            _mToInvert[i][j] -= _mToInvert[i][j]*_mToInvert[j][j];
+            _mToInvert(i, j) -= _mToInvert(i, j)*_mToInvert(j, j);
         }
     }
 
@@ -706,18 +687,8 @@ static Matrix invertMatrix(const MatFuncData& funcData, const MatFuncErrorInfo& 
 /////////////////////////////////////////////////
 static Matrix transposeMatrix(const MatFuncData& funcData, const MatFuncErrorInfo& errorInfo)
 {
-    Matrix _mTransposed;
-    std::vector<mu::value_type> vLine;
-
-    for (unsigned int j = 0; j < funcData.mat1[0].size(); j++)
-    {
-        for (unsigned int i = 0; i < funcData.mat1.size(); i++)
-            vLine.push_back(funcData.mat1[i][j]);
-
-        _mTransposed.push_back(vLine);
-        vLine.clear();
-    }
-
+    Matrix _mTransposed(funcData.mat1);
+    _mTransposed.transpose();
     return _mTransposed;
 }
 
@@ -733,19 +704,19 @@ static Matrix transposeMatrix(const MatFuncData& funcData, const MatFuncErrorInf
 /////////////////////////////////////////////////
 static Matrix logToIndex(const MatFuncData& funcData, const MatFuncErrorInfo& errorInfo)
 {
-    if (!funcData.mat1.size() || !funcData.mat1[0].size())
+    if (funcData.mat1.isEmpty())
         throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, errorInfo.command, errorInfo.position);
 
     std::vector<double> vLines;
     std::vector<double> vRows;
 
-    if (funcData.mat1.size() == 1 || funcData.mat1[0].size() == 1)
+    if (funcData.mat1.rows() == 1 || funcData.mat1.cols() == 1)
     {
-        for (size_t i = 0; i < funcData.mat1.size(); i++)
+        for (size_t i = 0; i < funcData.mat1.rows(); i++)
         {
-            for (size_t j = 0; j < funcData.mat1[0].size(); j++)
+            for (size_t j = 0; j < funcData.mat1.cols(); j++)
             {
-                if (funcData.mat1[i][j].real())
+                if (funcData.mat1(i, j).real())
                     vLines.push_back(i + j + 1);
             }
         }
@@ -756,17 +727,17 @@ static Matrix logToIndex(const MatFuncData& funcData, const MatFuncErrorInfo& er
         Matrix _mReturn = createFilledMatrix(vLines.size(), 1, 0.0);
 
         for (size_t i = 0; i < vLines.size(); i++)
-            _mReturn[i][0] = vLines[i];
+            _mReturn(i) = vLines[i];
 
         return _mReturn;
     }
     else
     {
-        for (size_t i = 0; i < funcData.mat1.size(); i++)
+        for (size_t i = 0; i < funcData.mat1.rows(); i++)
         {
-            for (size_t j = 0; j < funcData.mat1[0].size(); j++)
+            for (size_t j = 0; j < funcData.mat1.cols(); j++)
             {
-                if (funcData.mat1[i][j].real())
+                if (funcData.mat1(i, j).real())
                 {
                     vLines.push_back(i+1);
                     vRows.push_back(j+1);
@@ -781,8 +752,8 @@ static Matrix logToIndex(const MatFuncData& funcData, const MatFuncErrorInfo& er
 
         for (size_t i = 0; i < vLines.size(); i++)
         {
-            _mReturn[i][0] = vLines[i];
-            _mReturn[i][1] = vRows[i];
+            _mReturn(i, 0) = vLines[i];
+            _mReturn(i, 1) = vRows[i];
         }
 
         return _mReturn;
@@ -820,15 +791,15 @@ static mu::value_type calculateStats(const Matrix& mat, StatsLogic logic, int ro
         #pragma omp parallel for
         for (size_t i = 0; i < rowCount; i++)
         {
-            if (rowStart + (int)i < 0 || rowStart + i >= mat.size())
+            if (rowStart + (int)i < 0 || rowStart + i >= mat.rows())
                 continue;
 
             for (size_t j = 0; j < colCount; j++)
             {
-                if (colStart + (int)j < 0 || colStart + j >= mat[0].size())
+                if (colStart + (int)j < 0 || colStart + j >= mat.cols())
                     continue;
 
-                operation[i](mat[i+rowStart][j+colStart]);
+                operation[i](mat(i+rowStart, j+colStart));
             }
         }
     }
@@ -836,15 +807,15 @@ static mu::value_type calculateStats(const Matrix& mat, StatsLogic logic, int ro
     {
         for (size_t i = 0; i < rowCount; i++)
         {
-            if (rowStart + (int)i < 0 || rowStart + i >= mat.size())
+            if (rowStart + (int)i < 0 || rowStart + i >= mat.rows())
                 continue;
 
             for (size_t j = 0; j < colCount; j++)
             {
-                if (colStart + (int)j < 0 || colStart + j >= mat[0].size())
+                if (colStart + (int)j < 0 || colStart + j >= mat.cols())
                     continue;
 
-                operation[i](mat[i+rowStart][j+colStart]);
+                operation[i](mat(i+rowStart, j+colStart));
             }
         }
     }
@@ -869,11 +840,11 @@ static mu::value_type calculateStats(const Matrix& mat, StatsLogic logic, int ro
 /////////////////////////////////////////////////
 static Matrix matrixMax(const MatFuncData& funcData, const MatFuncErrorInfo& errorInfo)
 {
-    if (!funcData.mat1.size() || !funcData.mat1[0].size())
+    if (funcData.mat1.isEmpty())
         throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, errorInfo.command, errorInfo.position);
 
-    return createFilledMatrix(1, 1, calculateStats(funcData.mat1, StatsLogic(StatsLogic::OPERATION_MAX, funcData.mat1[0][0].real()),
-                                                   0, funcData.mat1.size(), 0, funcData.mat1[0].size()));
+    return createFilledMatrix(1, 1, calculateStats(funcData.mat1, StatsLogic(StatsLogic::OPERATION_MAX, funcData.mat1(0).real()),
+                                                   0, funcData.mat1.rows(), 0, funcData.mat1.cols()));
 }
 
 
@@ -888,21 +859,22 @@ static Matrix matrixMax(const MatFuncData& funcData, const MatFuncErrorInfo& err
 /////////////////////////////////////////////////
 static Matrix matrixMovMax(const MatFuncData& funcData, const MatFuncErrorInfo& errorInfo)
 {
-    if (!funcData.mat1.size() || !funcData.mat1[0].size())
+    if (funcData.mat1.isEmpty())
         throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, errorInfo.command, errorInfo.position);
 
-    if (funcData.nVal < 0 || funcData.mVal < 0 || 2*funcData.nVal+1 > funcData.mat1.size() || 2*funcData.mVal+1 > funcData.mat1[0].size())
+    if (funcData.nVal < 0 || funcData.mVal < 0
+        || 2*funcData.nVal+1 > (int)funcData.mat1.rows() || 2*funcData.mVal+1 > (int)funcData.mat1.cols())
         throw SyntaxError(SyntaxError::INVALID_STATS_WINDOW_SIZE, errorInfo.command, errorInfo.position);
 
-    Matrix _mResult = createFilledMatrix(funcData.mat1.size(), funcData.mat1[0].size(), NAN);
+    Matrix _mResult = createFilledMatrix(funcData.mat1.rows(), funcData.mat1.cols(), NAN);
 
     #pragma omp parallel for
-    for (int i = 0; i < (int)_mResult.size(); i++)
+    for (int i = 0; i < (int)_mResult.rows(); i++)
     {
-        for (int j = 0; j < (int)_mResult[0].size(); j++)
+        for (int j = 0; j < (int)_mResult.cols(); j++)
         {
-            if (!isnan(funcData.mat1[i][j]))
-                _mResult[i][j] = calculateStats(funcData.mat1, StatsLogic(StatsLogic::OPERATION_MAX, funcData.mat1[i][j].real()),
+            if (!isnan(funcData.mat1(i, j)))
+                _mResult(i, j) = calculateStats(funcData.mat1, StatsLogic(StatsLogic::OPERATION_MAX, funcData.mat1(i, j).real()),
                                                 i-funcData.nVal, 2*funcData.nVal+1, j-funcData.mVal, 2*funcData.mVal+1);
         }
     }
@@ -922,24 +894,24 @@ static Matrix matrixMovMax(const MatFuncData& funcData, const MatFuncErrorInfo& 
 /////////////////////////////////////////////////
 static Matrix indexToLog(const MatFuncData& funcData, const MatFuncErrorInfo& errorInfo)
 {
-    if (!funcData.mat1.size() || !funcData.mat1[0].size())
+    if (funcData.mat1.isEmpty())
         throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, errorInfo.command, errorInfo.position);
 
-    if (funcData.mat1.size() == 1 || funcData.mat1[0].size() == 1)
+    if (funcData.mat1.rows() == 1 || funcData.mat1.cols() == 1)
     {
         Matrix _mMatrixMax = matrixMax(funcData, errorInfo);
 
-        if (!_mMatrixMax[0][0].real() || _mMatrixMax[0][0].real() < 0)
+        if (!_mMatrixMax(0).real() || _mMatrixMax(0).real() < 0)
             return createFilledMatrix(1, 1, 0.0);
 
-        Matrix _mReturn = createFilledMatrix(_mMatrixMax[0][0].real(), 1, 0.0);
+        Matrix _mReturn = createFilledMatrix(_mMatrixMax(0).real(), 1, 0.0);
 
-        for (size_t i = 0; i < funcData.mat1.size(); i++)
+        for (size_t i = 0; i < funcData.mat1.rows(); i++)
         {
-            for (size_t j = 0; j < funcData.mat1[0].size(); j++)
+            for (size_t j = 0; j < funcData.mat1.cols(); j++)
             {
-                if (funcData.mat1[i][j].real() > 0)
-                    _mReturn[funcData.mat1[i][j].real()-1][0] = 1.0;
+                if (funcData.mat1(i, j).real() > 0)
+                    _mReturn(funcData.mat1(i, j).real()-1) = 1.0;
             }
         }
 
@@ -950,20 +922,20 @@ static Matrix indexToLog(const MatFuncData& funcData, const MatFuncErrorInfo& er
         std::vector<double> vCol;
         std::vector<double> vRow;
 
-        if (funcData.mat1.size() == 2 && funcData.mat1[0].size() != 2)
+        if (funcData.mat1.rows() == 2 && funcData.mat1.cols() != 2)
         {
-            for (size_t i = 0; i < funcData.mat1[0].size(); i++)
+            for (size_t i = 0; i < funcData.mat1.cols(); i++)
             {
-                vRow.push_back(funcData.mat1[0][i].real());
-                vCol.push_back(funcData.mat1[1][i].real());
+                vRow.push_back(funcData.mat1(0, i).real());
+                vCol.push_back(funcData.mat1(1, i).real());
             }
         }
-        else if (funcData.mat1.size() != 2 && funcData.mat1[0].size() == 2)
+        else if (funcData.mat1.rows() != 2 && funcData.mat1.cols() == 2)
         {
-            for (size_t i = 0; i < funcData.mat1.size(); i++)
+            for (size_t i = 0; i < funcData.mat1.rows(); i++)
             {
-                vRow.push_back(funcData.mat1[i][0].real());
-                vCol.push_back(funcData.mat1[i][1].real());
+                vRow.push_back(funcData.mat1(i, 0).real());
+                vCol.push_back(funcData.mat1(i, 1).real());
             }
         }
         else
@@ -989,7 +961,7 @@ static Matrix indexToLog(const MatFuncData& funcData, const MatFuncErrorInfo& er
         for (size_t i = 0; i < vRow.size(); i++)
         {
             if (vRow[i] > 0 && vCol[i] > 0)
-                _mReturn[vRow[i]-1][vCol[i]-1] = 1.0;
+                _mReturn(vRow[i]-1, vCol[i]-1) = 1.0;
         }
 
         return _mReturn;
@@ -1008,16 +980,16 @@ static Matrix indexToLog(const MatFuncData& funcData, const MatFuncErrorInfo& er
 /////////////////////////////////////////////////
 static Matrix matrixSize(const MatFuncData& funcData, const MatFuncErrorInfo& errorInfo)
 {
-    if (!funcData.mat1.size() || !funcData.mat1[0].size())
+    if (funcData.mat1.isEmpty())
         throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, errorInfo.command, errorInfo.position);
 
     Matrix _mReturn = createFilledMatrix(2, 1, 0.0);
 
-    if (funcData.mat1.size() == 1 && funcData.mat1[0].size() == 1 && isnan(funcData.mat1[0][0]))
+    if (funcData.mat1.rows() == 1 && funcData.mat1.cols() == 1 && isnan(funcData.mat1(0)))
         return _mReturn;
 
-    _mReturn[0][0] = funcData.mat1.size();
-    _mReturn[1][0] = funcData.mat1[0].size();
+    _mReturn(0) = funcData.mat1.rows();
+    _mReturn(1) = funcData.mat1.cols();
 
     return _mReturn;
 }
@@ -1034,14 +1006,14 @@ static Matrix matrixSize(const MatFuncData& funcData, const MatFuncErrorInfo& er
 /////////////////////////////////////////////////
 static Matrix matrixAnd(const MatFuncData& funcData, const MatFuncErrorInfo& errorInfo)
 {
-    if (!funcData.mat1.size() || !funcData.mat1[0].size())
+    if (funcData.mat1.isEmpty())
         throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, errorInfo.command, errorInfo.position);
 
-    for (size_t i = 0; i < funcData.mat1.size(); i++)
+    for (size_t i = 0; i < funcData.mat1.rows(); i++)
     {
-        for (size_t j = 0; j < funcData.mat1[i].size(); j++)
+        for (size_t j = 0; j < funcData.mat1.cols(); j++)
         {
-            if (funcData.mat1[i][j] == 0.0)
+            if (funcData.mat1(i, j) == 0.0)
                 return createFilledMatrix(1, 1, 0.0);
         }
     }
@@ -1061,14 +1033,14 @@ static Matrix matrixAnd(const MatFuncData& funcData, const MatFuncErrorInfo& err
 /////////////////////////////////////////////////
 static Matrix matrixOr(const MatFuncData& funcData, const MatFuncErrorInfo& errorInfo)
 {
-    if (!funcData.mat1.size() || !funcData.mat1[0].size())
+    if (funcData.mat1.isEmpty())
         throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, errorInfo.command, errorInfo.position);
 
-    for (size_t i = 0; i < funcData.mat1.size(); i++)
+    for (size_t i = 0; i < funcData.mat1.rows(); i++)
     {
-        for (size_t j = 0; j < funcData.mat1[i].size(); j++)
+        for (size_t j = 0; j < funcData.mat1.cols(); j++)
         {
-            if (funcData.mat1[i][j] != 0.0)
+            if (funcData.mat1(i, j) != 0.0)
                 return createFilledMatrix(1, 1, 1.0);
         }
     }
@@ -1088,16 +1060,16 @@ static Matrix matrixOr(const MatFuncData& funcData, const MatFuncErrorInfo& erro
 /////////////////////////////////////////////////
 static Matrix matrixXor(const MatFuncData& funcData, const MatFuncErrorInfo& errorInfo)
 {
-    if (!funcData.mat1.size() || !funcData.mat1[0].size())
+    if (funcData.mat1.isEmpty())
         throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, errorInfo.command, errorInfo.position);
 
     bool isTrue = false;
 
-    for (size_t i = 0; i < funcData.mat1.size(); i++)
+    for (size_t i = 0; i < funcData.mat1.rows(); i++)
     {
-        for (size_t j = 0; j < funcData.mat1[i].size(); j++)
+        for (size_t j = 0; j < funcData.mat1.cols(); j++)
         {
-            if (funcData.mat1[i][j] != 0.0)
+            if (funcData.mat1(i, j) != 0.0)
             {
                 if (!isTrue)
                     isTrue = true;
@@ -1125,11 +1097,11 @@ static Matrix matrixXor(const MatFuncData& funcData, const MatFuncErrorInfo& err
 /////////////////////////////////////////////////
 static Matrix matrixSum(const MatFuncData& funcData, const MatFuncErrorInfo& errorInfo)
 {
-    if (!funcData.mat1.size() || !funcData.mat1[0].size())
+    if (funcData.mat1.isEmpty())
         throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, errorInfo.command, errorInfo.position);
 
     return createFilledMatrix(1, 1, calculateStats(funcData.mat1, StatsLogic(StatsLogic::OPERATION_ADD),
-                                                   0, funcData.mat1.size(), 0, funcData.mat1[0].size()));
+                                                   0, funcData.mat1.rows(), 0, funcData.mat1.cols()));
 }
 
 
@@ -1144,21 +1116,22 @@ static Matrix matrixSum(const MatFuncData& funcData, const MatFuncErrorInfo& err
 /////////////////////////////////////////////////
 static Matrix matrixMovSum(const MatFuncData& funcData, const MatFuncErrorInfo& errorInfo)
 {
-    if (!funcData.mat1.size() || !funcData.mat1[0].size())
+    if (funcData.mat1.isEmpty())
         throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, errorInfo.command, errorInfo.position);
 
-    if (funcData.nVal < 0 || funcData.mVal < 0 || 2*funcData.nVal+1 > funcData.mat1.size() || 2*funcData.mVal+1 > funcData.mat1[0].size())
+    if (funcData.nVal < 0 || funcData.mVal < 0
+        || 2*funcData.nVal+1 > (int)funcData.mat1.rows() || 2*funcData.mVal+1 > (int)funcData.mat1.cols())
         throw SyntaxError(SyntaxError::INVALID_STATS_WINDOW_SIZE, errorInfo.command, errorInfo.position);
 
-    Matrix _mResult = createFilledMatrix(funcData.mat1.size(), funcData.mat1[0].size(), NAN);
+    Matrix _mResult = createFilledMatrix(funcData.mat1.rows(), funcData.mat1.cols(), NAN);
 
     #pragma omp parallel for
-    for (int i = 0; i < (int)_mResult.size(); i++)
+    for (int i = 0; i < (int)_mResult.rows(); i++)
     {
-        for (int j = 0; j < (int)_mResult[0].size(); j++)
+        for (int j = 0; j < (int)_mResult.cols(); j++)
         {
-            if (!isnan(funcData.mat1[i][j]))
-                _mResult[i][j] = calculateStats(funcData.mat1, StatsLogic(StatsLogic::OPERATION_ADD),
+            if (!isnan(funcData.mat1(i, j)))
+                _mResult(i, j) = calculateStats(funcData.mat1, StatsLogic(StatsLogic::OPERATION_ADD),
                                                 i-funcData.nVal, 2*funcData.nVal+1, j-funcData.mVal, 2*funcData.mVal+1);
         }
     }
@@ -1178,11 +1151,11 @@ static Matrix matrixMovSum(const MatFuncData& funcData, const MatFuncErrorInfo& 
 /////////////////////////////////////////////////
 static Matrix matrixNum(const MatFuncData& funcData, const MatFuncErrorInfo& errorInfo)
 {
-    if (!funcData.mat1.size() || !funcData.mat1[0].size())
+    if (funcData.mat1.isEmpty())
         throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, errorInfo.command, errorInfo.position);
 
     return createFilledMatrix(1, 1, calculateStats(funcData.mat1, StatsLogic(StatsLogic::OPERATION_NUM),
-                                                   0, funcData.mat1.size(), 0, funcData.mat1[0].size()));
+                                                   0, funcData.mat1.rows(), 0, funcData.mat1.cols()));
 }
 
 
@@ -1197,21 +1170,22 @@ static Matrix matrixNum(const MatFuncData& funcData, const MatFuncErrorInfo& err
 /////////////////////////////////////////////////
 static Matrix matrixMovNum(const MatFuncData& funcData, const MatFuncErrorInfo& errorInfo)
 {
-    if (!funcData.mat1.size() || !funcData.mat1[0].size())
+    if (funcData.mat1.isEmpty())
         throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, errorInfo.command, errorInfo.position);
 
-    if (funcData.nVal < 0 || funcData.mVal < 0 || 2*funcData.nVal+1 > funcData.mat1.size() || 2*funcData.mVal+1 > funcData.mat1[0].size())
+    if (funcData.nVal < 0 || funcData.mVal < 0
+        || 2*funcData.nVal+1 > (int)funcData.mat1.rows() || 2*funcData.mVal+1 > (int)funcData.mat1.cols())
         throw SyntaxError(SyntaxError::INVALID_STATS_WINDOW_SIZE, errorInfo.command, errorInfo.position);
 
-    Matrix _mResult = createFilledMatrix(funcData.mat1.size(), funcData.mat1[0].size(), NAN);
+    Matrix _mResult = createFilledMatrix(funcData.mat1.rows(), funcData.mat1.cols(), NAN);
 
     #pragma omp parallel for
-    for (int i = 0; i < (int)_mResult.size(); i++)
+    for (int i = 0; i < (int)_mResult.rows(); i++)
     {
-        for (int j = 0; j < (int)_mResult[0].size(); j++)
+        for (int j = 0; j < (int)_mResult.cols(); j++)
         {
-            if (!isnan(funcData.mat1[i][j]))
-                _mResult[i][j] = calculateStats(funcData.mat1, StatsLogic(StatsLogic::OPERATION_NUM),
+            if (!isnan(funcData.mat1(i, j)))
+                _mResult(i, j) = calculateStats(funcData.mat1, StatsLogic(StatsLogic::OPERATION_NUM),
                                                 i-funcData.nVal, 2*funcData.nVal+1, j-funcData.mVal, 2*funcData.mVal+1);
         }
     }
@@ -1231,13 +1205,13 @@ static Matrix matrixMovNum(const MatFuncData& funcData, const MatFuncErrorInfo& 
 /////////////////////////////////////////////////
 static Matrix matrixAvg(const MatFuncData& funcData, const MatFuncErrorInfo& errorInfo)
 {
-    if (!funcData.mat1.size() || !funcData.mat1[0].size())
+    if (funcData.mat1.isEmpty())
         throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, errorInfo.command, errorInfo.position);
 
     Matrix _mSum = matrixSum(funcData, errorInfo);
     Matrix _mNum = matrixNum(funcData, errorInfo);
 
-    return createFilledMatrix(1, 1, _mSum[0][0] / _mNum[0][0]);
+    return createFilledMatrix(1, 1, _mSum(0) / _mNum(0));
 }
 
 
@@ -1252,20 +1226,21 @@ static Matrix matrixAvg(const MatFuncData& funcData, const MatFuncErrorInfo& err
 /////////////////////////////////////////////////
 static Matrix matrixMovAvg(const MatFuncData& funcData, const MatFuncErrorInfo& errorInfo)
 {
-    if (!funcData.mat1.size() || !funcData.mat1[0].size())
+    if (funcData.mat1.isEmpty())
         throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, errorInfo.command, errorInfo.position);
 
-    if (funcData.nVal < 0 || funcData.mVal < 0 || 2*funcData.nVal+1 > funcData.mat1.size() || 2*funcData.mVal+1 > funcData.mat1[0].size())
+    if (funcData.nVal < 0 || funcData.mVal < 0
+        || 2*funcData.nVal+1 > (int)funcData.mat1.rows() || 2*funcData.mVal+1 > (int)funcData.mat1.cols())
         throw SyntaxError(SyntaxError::INVALID_STATS_WINDOW_SIZE, errorInfo.command, errorInfo.position);
 
-    Matrix _mResult = createFilledMatrix(funcData.mat1.size(), funcData.mat1[0].size(), NAN);
+    Matrix _mResult = createFilledMatrix(funcData.mat1.rows(), funcData.mat1.cols(), NAN);
 
     #pragma omp parallel for
-    for (int i = 0; i < (int)_mResult.size(); i++)
+    for (int i = 0; i < (int)_mResult.rows(); i++)
     {
-        for (int j = 0; j < (int)_mResult[0].size(); j++)
+        for (int j = 0; j < (int)_mResult.cols(); j++)
         {
-            if (!isnan(funcData.mat1[i][j]))
+            if (!isnan(funcData.mat1(i, j)))
             {
                 mu::value_type sum = calculateStats(funcData.mat1, StatsLogic(StatsLogic::OPERATION_ADD),
                                                     i-funcData.nVal, 2*funcData.nVal+1, j-funcData.mVal, 2*funcData.mVal+1);
@@ -1274,7 +1249,7 @@ static Matrix matrixMovAvg(const MatFuncData& funcData, const MatFuncErrorInfo& 
                                             i-funcData.nVal, 2*funcData.nVal+1, j-funcData.mVal, 2*funcData.mVal+1).real();
 
                 if (num > 0)
-                    _mResult[i][j] = sum / num;
+                    _mResult(i, j) = sum / num;
             }
         }
     }
@@ -1294,15 +1269,15 @@ static Matrix matrixMovAvg(const MatFuncData& funcData, const MatFuncErrorInfo& 
 /////////////////////////////////////////////////
 static Matrix matrixStd(const MatFuncData& funcData, const MatFuncErrorInfo& errorInfo)
 {
-    if (!funcData.mat1.size() || !funcData.mat1[0].size())
+    if (funcData.mat1.isEmpty())
         throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, errorInfo.command, errorInfo.position);
 
     Matrix _mAvg = matrixAvg(funcData, errorInfo);
     Matrix _mNum = matrixNum(funcData, errorInfo);
-    Matrix _mReturn = createFilledMatrix(1, 1, calculateStats(funcData.mat1, StatsLogic(StatsLogic::OPERATION_ADDSQSUB, 0.0, _mAvg[0][0]),
-                                                              0, funcData.mat1.size(), 0, funcData.mat1[0].size()));
+    Matrix _mReturn = createFilledMatrix(1, 1, calculateStats(funcData.mat1, StatsLogic(StatsLogic::OPERATION_ADDSQSUB, 0.0, _mAvg(0)),
+                                                              0, funcData.mat1.rows(), 0, funcData.mat1.cols()));
 
-    _mReturn[0][0] = sqrt(_mReturn[0][0]/(_mNum[0][0].real()-1.0));
+    _mReturn(0) = std::sqrt(_mReturn(0)/(_mNum(0).real()-1.0));
     return _mReturn;
 }
 
@@ -1318,20 +1293,21 @@ static Matrix matrixStd(const MatFuncData& funcData, const MatFuncErrorInfo& err
 /////////////////////////////////////////////////
 static Matrix matrixMovStd(const MatFuncData& funcData, const MatFuncErrorInfo& errorInfo)
 {
-    if (!funcData.mat1.size() || !funcData.mat1[0].size())
+    if (funcData.mat1.isEmpty())
         throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, errorInfo.command, errorInfo.position);
 
-    if (funcData.nVal < 0 || funcData.mVal < 0 || 2*funcData.nVal+1 > funcData.mat1.size() || 2*funcData.mVal+1 > funcData.mat1[0].size())
+    if (funcData.nVal < 0 || funcData.mVal < 0
+        || 2*funcData.nVal+1 > (int)funcData.mat1.rows() || 2*funcData.mVal+1 > (int)funcData.mat1.cols())
         throw SyntaxError(SyntaxError::INVALID_STATS_WINDOW_SIZE, errorInfo.command, errorInfo.position);
 
-    Matrix _mResult = createFilledMatrix(funcData.mat1.size(), funcData.mat1[0].size(), NAN);
+    Matrix _mResult = createFilledMatrix(funcData.mat1.rows(), funcData.mat1.cols(), NAN);
 
     #pragma omp parallel for
-    for (int i = 0; i < (int)_mResult.size(); i++)
+    for (int i = 0; i < (int)_mResult.rows(); i++)
     {
-        for (int j = 0; j < (int)_mResult[0].size(); j++)
+        for (int j = 0; j < (int)_mResult.cols(); j++)
         {
-            if (!isnan(funcData.mat1[i][j]))
+            if (!isnan(funcData.mat1(i, j)))
             {
                 mu::value_type sum = calculateStats(funcData.mat1, StatsLogic(StatsLogic::OPERATION_ADD),
                                                     i-funcData.nVal, 2*funcData.nVal+1, j-funcData.mVal, 2*funcData.mVal+1);
@@ -1343,7 +1319,7 @@ static Matrix matrixMovStd(const MatFuncData& funcData, const MatFuncErrorInfo& 
                                                     i-funcData.nVal, 2*funcData.nVal+1, j-funcData.mVal, 2*funcData.mVal+1);
 
                 if (num > 1)
-                    _mResult[i][j] = sqrt(std / (num - 1.0));
+                    _mResult(i, j) = std::sqrt(std / (num - 1.0));
             }
         }
     }
@@ -1363,11 +1339,11 @@ static Matrix matrixMovStd(const MatFuncData& funcData, const MatFuncErrorInfo& 
 /////////////////////////////////////////////////
 static Matrix matrixPrd(const MatFuncData& funcData, const MatFuncErrorInfo& errorInfo)
 {
-    if (!funcData.mat1.size() || !funcData.mat1[0].size())
+    if (funcData.mat1.isEmpty())
         throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, errorInfo.command, errorInfo.position);
 
     return createFilledMatrix(1, 1, calculateStats(funcData.mat1, StatsLogic(StatsLogic::OPERATION_MULT, 1.0),
-                                                   0, funcData.mat1.size(), 0, funcData.mat1[0].size()));
+                                                   0, funcData.mat1.rows(), 0, funcData.mat1.cols()));
 }
 
 
@@ -1382,21 +1358,22 @@ static Matrix matrixPrd(const MatFuncData& funcData, const MatFuncErrorInfo& err
 /////////////////////////////////////////////////
 static Matrix matrixMovPrd(const MatFuncData& funcData, const MatFuncErrorInfo& errorInfo)
 {
-    if (!funcData.mat1.size() || !funcData.mat1[0].size())
+    if (funcData.mat1.isEmpty())
         throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, errorInfo.command, errorInfo.position);
 
-    if (funcData.nVal < 0 || funcData.mVal < 0 || 2*funcData.nVal+1 > funcData.mat1.size() || 2*funcData.mVal+1 > funcData.mat1[0].size())
+    if (funcData.nVal < 0 || funcData.mVal < 0
+        || 2*funcData.nVal+1 > (int)funcData.mat1.rows() || 2*funcData.mVal+1 > (int)funcData.mat1.cols())
         throw SyntaxError(SyntaxError::INVALID_STATS_WINDOW_SIZE, errorInfo.command, errorInfo.position);
 
-    Matrix _mResult = createFilledMatrix(funcData.mat1.size(), funcData.mat1[0].size(), NAN);
+    Matrix _mResult = createFilledMatrix(funcData.mat1.rows(), funcData.mat1.cols(), NAN);
 
     #pragma omp parallel for
-    for (int i = 0; i < (int)_mResult.size(); i++)
+    for (int i = 0; i < (int)_mResult.rows(); i++)
     {
-        for (int j = 0; j < (int)_mResult[0].size(); j++)
+        for (int j = 0; j < (int)_mResult.cols(); j++)
         {
-            if (!isnan(funcData.mat1[i][j]))
-                _mResult[i][j] = calculateStats(funcData.mat1, StatsLogic(StatsLogic::OPERATION_MULT, 1.0),
+            if (!isnan(funcData.mat1(i, j)))
+                _mResult(i, j) = calculateStats(funcData.mat1, StatsLogic(StatsLogic::OPERATION_MULT, 1.0),
                                                 i-funcData.nVal, 2*funcData.nVal+1, j-funcData.mVal, 2*funcData.mVal+1);
         }
     }
@@ -1416,10 +1393,10 @@ static Matrix matrixMovPrd(const MatFuncData& funcData, const MatFuncErrorInfo& 
 /////////////////////////////////////////////////
 static Matrix matrixCnt(const MatFuncData& funcData, const MatFuncErrorInfo& errorInfo)
 {
-    if (!funcData.mat1.size() || !funcData.mat1[0].size())
+    if (funcData.mat1.isEmpty())
         throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, errorInfo.command, errorInfo.position);
 
-    return createFilledMatrix(1, 1, funcData.mat1.size() * funcData.mat1[0].size());
+    return createFilledMatrix(1, 1, funcData.mat1.rows() * funcData.mat1.cols());
 }
 
 
@@ -1434,13 +1411,13 @@ static Matrix matrixCnt(const MatFuncData& funcData, const MatFuncErrorInfo& err
 /////////////////////////////////////////////////
 static Matrix matrixNorm(const MatFuncData& funcData, const MatFuncErrorInfo& errorInfo)
 {
-    if (!funcData.mat1.size() || !funcData.mat1[0].size())
+    if (funcData.mat1.isEmpty())
         throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, errorInfo.command, errorInfo.position);
 
     Matrix _mReturn = createFilledMatrix(1, 1, calculateStats(funcData.mat1, StatsLogic(StatsLogic::OPERATION_ADDSQ),
-                                                              0, funcData.mat1.size(), 0, funcData.mat1[0].size()));
+                                                              0, funcData.mat1.rows(), 0, funcData.mat1.cols()));
 
-    _mReturn[0][0] = sqrt(_mReturn[0][0]);
+    _mReturn(0) = std::sqrt(_mReturn(0));
     return _mReturn;
 }
 
@@ -1456,22 +1433,23 @@ static Matrix matrixNorm(const MatFuncData& funcData, const MatFuncErrorInfo& er
 /////////////////////////////////////////////////
 static Matrix matrixMovNorm(const MatFuncData& funcData, const MatFuncErrorInfo& errorInfo)
 {
-    if (!funcData.mat1.size() || !funcData.mat1[0].size())
+    if (funcData.mat1.isEmpty())
         throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, errorInfo.command, errorInfo.position);
 
-    if (funcData.nVal < 0 || funcData.mVal < 0 || 2*funcData.nVal+1 > funcData.mat1.size() || 2*funcData.mVal+1 > funcData.mat1[0].size())
+    if (funcData.nVal < 0 || funcData.mVal < 0
+        || 2*funcData.nVal+1 > (int)funcData.mat1.rows() || 2*funcData.mVal+1 > (int)funcData.mat1.cols())
         throw SyntaxError(SyntaxError::INVALID_STATS_WINDOW_SIZE, errorInfo.command, errorInfo.position);
 
-    Matrix _mResult = createFilledMatrix(funcData.mat1.size(), funcData.mat1[0].size(), NAN);
+    Matrix _mResult = createFilledMatrix(funcData.mat1.rows(), funcData.mat1.cols(), NAN);
 
     #pragma omp parallel for
-    for (int i = 0; i < (int)_mResult.size(); i++)
+    for (int i = 0; i < (int)_mResult.rows(); i++)
     {
-        for (int j = 0; j < (int)_mResult[0].size(); j++)
+        for (int j = 0; j < (int)_mResult.cols(); j++)
         {
-            if (!isnan(funcData.mat1[i][j]))
-                _mResult[i][j] = sqrt(calculateStats(funcData.mat1, StatsLogic(StatsLogic::OPERATION_ADDSQ),
-                                                     i-funcData.nVal, 2*funcData.nVal+1, j-funcData.mVal, 2*funcData.mVal+1));
+            if (!isnan(funcData.mat1(i, j)))
+                _mResult(i, j) = std::sqrt(calculateStats(funcData.mat1, StatsLogic(StatsLogic::OPERATION_ADDSQ),
+                                                          i-funcData.nVal, 2*funcData.nVal+1, j-funcData.mVal, 2*funcData.mVal+1));
         }
     }
 
@@ -1490,11 +1468,11 @@ static Matrix matrixMovNorm(const MatFuncData& funcData, const MatFuncErrorInfo&
 /////////////////////////////////////////////////
 static Matrix matrixMin(const MatFuncData& funcData, const MatFuncErrorInfo& errorInfo)
 {
-    if (!funcData.mat1.size() || !funcData.mat1[0].size())
+    if (funcData.mat1.isEmpty())
         throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, errorInfo.command, errorInfo.position);
 
-    return createFilledMatrix(1, 1, calculateStats(funcData.mat1, StatsLogic(StatsLogic::OPERATION_MIN, funcData.mat1[0][0].real()),
-                                                   0, funcData.mat1.size(), 0, funcData.mat1[0].size()));
+    return createFilledMatrix(1, 1, calculateStats(funcData.mat1, StatsLogic(StatsLogic::OPERATION_MIN, funcData.mat1(0).real()),
+                                                   0, funcData.mat1.rows(), 0, funcData.mat1.cols()));
 }
 
 
@@ -1509,21 +1487,22 @@ static Matrix matrixMin(const MatFuncData& funcData, const MatFuncErrorInfo& err
 /////////////////////////////////////////////////
 static Matrix matrixMovMin(const MatFuncData& funcData, const MatFuncErrorInfo& errorInfo)
 {
-    if (!funcData.mat1.size() || !funcData.mat1[0].size())
+    if (funcData.mat1.isEmpty())
         throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, errorInfo.command, errorInfo.position);
 
-    if (funcData.nVal < 0 || funcData.mVal < 0 || 2*funcData.nVal+1 > funcData.mat1.size() || 2*funcData.mVal+1 > funcData.mat1[0].size())
+    if (funcData.nVal < 0 || funcData.mVal < 0
+        || 2*funcData.nVal+1 > (int)funcData.mat1.rows() || 2*funcData.mVal+1 > (int)funcData.mat1.cols())
         throw SyntaxError(SyntaxError::INVALID_STATS_WINDOW_SIZE, errorInfo.command, errorInfo.position);
 
-    Matrix _mResult = createFilledMatrix(funcData.mat1.size(), funcData.mat1[0].size(), NAN);
+    Matrix _mResult = createFilledMatrix(funcData.mat1.rows(), funcData.mat1.cols(), NAN);
 
     #pragma omp parallel for
-    for (int i = 0; i < (int)_mResult.size(); i++)
+    for (int i = 0; i < (int)_mResult.rows(); i++)
     {
-        for (int j = 0; j < (int)_mResult[0].size(); j++)
+        for (int j = 0; j < (int)_mResult.cols(); j++)
         {
-            if (!isnan(funcData.mat1[i][j]))
-                _mResult[i][j] = calculateStats(funcData.mat1, StatsLogic(StatsLogic::OPERATION_MIN, funcData.mat1[i][j].real()),
+            if (!isnan(funcData.mat1(i, j)))
+                _mResult(i, j) = calculateStats(funcData.mat1, StatsLogic(StatsLogic::OPERATION_MIN, funcData.mat1(i, j).real()),
                                                 i-funcData.nVal, 2*funcData.nVal+1, j-funcData.mVal, 2*funcData.mVal+1);
         }
     }
@@ -1543,55 +1522,55 @@ static Matrix matrixMovMin(const MatFuncData& funcData, const MatFuncErrorInfo& 
 /////////////////////////////////////////////////
 static Matrix matrixCmp(const MatFuncData& funcData, const MatFuncErrorInfo& errorInfo)
 {
-    if (!funcData.mat1.size() || !funcData.mat1[0].size())
+    if (funcData.mat1.isEmpty())
         throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, errorInfo.command, errorInfo.position);
 
     Matrix _mReturn = createFilledMatrix(1, 1, 0.0);
     Matrix _mCoords = createFilledMatrix(2, 1, 0.0);
-    _mCoords[0][0] = -1;
+    _mCoords(0) = -1;
 
     mu::value_type dValue = funcData.fVal;
     int nType = funcData.nVal;
     mu::value_type dKeep = dValue;
 
-    for (size_t i = 0; i < funcData.mat1.size(); i++)
+    for (size_t i = 0; i < funcData.mat1.rows(); i++)
     {
-        for (size_t j = 0; j < funcData.mat1[0].size(); j++)
+        for (size_t j = 0; j < funcData.mat1.cols(); j++)
         {
-            if (isnan(funcData.mat1[i][j]) || isinf(funcData.mat1[i][j]))
+            if (isnan(funcData.mat1(i, j)) || isinf(funcData.mat1(i, j)))
                 continue;
 
-            if (funcData.mat1[i][j] == dValue)
+            if (funcData.mat1(i, j) == dValue)
             {
                 if (!nType || abs(nType) <= 1)
                 {
-                    _mCoords[0][0] = i+1;
-                    _mCoords[1][0] = j+1;
+                    _mCoords(0) = i+1;
+                    _mCoords(1) = j+1;
                     return _mCoords;
                 }
                 else
-                    _mReturn[0][0] = funcData.mat1[i][j];
+                    _mReturn(0) = funcData.mat1(i, j);
 
                 return _mReturn;
             }
-            else if (nType > 0 && funcData.mat1[i][j].real() > dValue.real())
+            else if (nType > 0 && funcData.mat1(i, j).real() > dValue.real())
             {
-                if (_mCoords[0][0] == -1.0 || funcData.mat1[i][j].real() < dKeep.real())
+                if (_mCoords(0) == -1.0 || funcData.mat1(i, j).real() < dKeep.real())
                 {
-                    dKeep = funcData.mat1[i][j].real();
-                    _mCoords[0][0] = i+1;
-                    _mCoords[1][0] = j+1;
+                    dKeep = funcData.mat1(i, j).real();
+                    _mCoords(0) = i+1;
+                    _mCoords(1) = j+1;
                 }
                 else
                     continue;
             }
-            else if (nType < 0 && funcData.mat1[i][j].real() < dValue.real())
+            else if (nType < 0 && funcData.mat1(i, j).real() < dValue.real())
             {
-                if (_mCoords[0][0] == -1.0 || funcData.mat1[i][j].real() > dKeep.real())
+                if (_mCoords(0) == -1.0 || funcData.mat1(i, j).real() > dKeep.real())
                 {
-                    dKeep = funcData.mat1[i][j].real();
-                    _mCoords[0][0] = i+1;
-                    _mCoords[1][0] = j+1;
+                    dKeep = funcData.mat1(i, j).real();
+                    _mCoords(0) = i+1;
+                    _mCoords(1) = j+1;
                 }
                 else
                     continue;
@@ -1599,10 +1578,10 @@ static Matrix matrixCmp(const MatFuncData& funcData, const MatFuncErrorInfo& err
         }
     }
 
-    if (_mCoords[0][0] == -1.0)
-        _mReturn[0][0] = NAN;
+    if (_mCoords(0) == -1.0)
+        _mReturn(0) = NAN;
     else if (nType <= -2 || nType >= 2)
-        _mReturn[0][0] = dKeep;
+        _mReturn(0) = dKeep;
     else
     {
         return _mCoords;
@@ -1623,10 +1602,10 @@ static Matrix matrixCmp(const MatFuncData& funcData, const MatFuncErrorInfo& err
 /////////////////////////////////////////////////
 static Matrix matrixMinPos(const MatFuncData& funcData, const MatFuncErrorInfo& errorInfo)
 {
-    if (!funcData.mat1.size() || !funcData.mat1[0].size())
+    if (funcData.mat1.isEmpty())
         throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, errorInfo.command, errorInfo.position);
 
-    return matrixCmp(MatFuncData(funcData.mat1, matrixMin(funcData, errorInfo)[0][0], 0), errorInfo);
+    return matrixCmp(MatFuncData(funcData.mat1, matrixMin(funcData, errorInfo)(0), 0), errorInfo);
 }
 
 
@@ -1641,10 +1620,10 @@ static Matrix matrixMinPos(const MatFuncData& funcData, const MatFuncErrorInfo& 
 /////////////////////////////////////////////////
 static Matrix matrixMaxPos(const MatFuncData& funcData, const MatFuncErrorInfo& errorInfo)
 {
-    if (!funcData.mat1.size() || !funcData.mat1[0].size())
+    if (funcData.mat1.isEmpty())
         throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, errorInfo.command, errorInfo.position);
 
-    return matrixCmp(MatFuncData(funcData.mat1, matrixMax(funcData, errorInfo)[0][0], 0), errorInfo);
+    return matrixCmp(MatFuncData(funcData.mat1, matrixMax(funcData, errorInfo)(0), 0), errorInfo);
 }
 
 
@@ -1659,20 +1638,20 @@ static Matrix matrixMaxPos(const MatFuncData& funcData, const MatFuncErrorInfo& 
 /////////////////////////////////////////////////
 static Matrix matrixMed(const MatFuncData& funcData, const MatFuncErrorInfo& errorInfo)
 {
-    if (!funcData.mat1.size() || !funcData.mat1[0].size())
+    if (funcData.mat1.isEmpty())
         throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, errorInfo.command, errorInfo.position);
 
     Memory _mem;
 
-    for (size_t i = 0; i < funcData.mat1.size(); i++)
+    for (size_t i = 0; i < funcData.mat1.rows(); i++)
     {
-        for (size_t j = 0; j < funcData.mat1[0].size(); j++)
+        for (size_t j = 0; j < funcData.mat1.cols(); j++)
         {
-            _mem.writeData(j + i*funcData.mat1.size(), 0, funcData.mat1[i][j]);
+            _mem.writeData(j + i*funcData.mat1.rows(), 0, funcData.mat1(i, j));
         }
     }
 
-    return createFilledMatrix(1, 1, _mem.med(VectorIndex(0, funcData.mat1.size()*funcData.mat1[0].size()-1), VectorIndex(0)));
+    return createFilledMatrix(1, 1, _mem.med(VectorIndex(0, funcData.mat1.rows()*funcData.mat1.cols()-1), VectorIndex(0)));
 }
 
 
@@ -1687,38 +1666,39 @@ static Matrix matrixMed(const MatFuncData& funcData, const MatFuncErrorInfo& err
 /////////////////////////////////////////////////
 static Matrix matrixMovMed(const MatFuncData& funcData, const MatFuncErrorInfo& errorInfo)
 {
-    if (!funcData.mat1.size() || !funcData.mat1[0].size())
+    if (funcData.mat1.isEmpty())
         throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, errorInfo.command, errorInfo.position);
 
-    if (funcData.nVal < 0 || funcData.mVal < 0 || 2*funcData.nVal+1 > funcData.mat1.size() || 2*funcData.mVal+1 > funcData.mat1[0].size())
+    if (funcData.nVal < 0 || funcData.mVal < 0
+        || 2*funcData.nVal+1 > (int)funcData.mat1.rows() || 2*funcData.mVal+1 > (int)funcData.mat1.cols())
         throw SyntaxError(SyntaxError::INVALID_STATS_WINDOW_SIZE, errorInfo.command, errorInfo.position);
 
-    Matrix _mResult = createFilledMatrix(funcData.mat1.size(), funcData.mat1[0].size(), NAN);
+    Matrix _mResult = createFilledMatrix(funcData.mat1.rows(), funcData.mat1.cols(), NAN);
 
     #pragma omp parallel for
-    for (int i = 0; i < (int)_mResult.size(); i++)
+    for (int i = 0; i < (int)_mResult.rows(); i++)
     {
-        for (int j = 0; j < (int)_mResult[0].size(); j++)
+        for (int j = 0; j < (int)_mResult.cols(); j++)
         {
-            if (!isnan(funcData.mat1[i][j]))
+            if (!isnan(funcData.mat1(i, j)))
             {
                 Memory _mem;
 
                 for (int n = 0; n < 2*funcData.nVal+1; n++)
                 {
-                    if (i+n-funcData.nVal < 0 || i+n-funcData.nVal >= (int)funcData.mat1.size())
+                    if (i+n-funcData.nVal < 0 || i+n-funcData.nVal >= (int)funcData.mat1.rows())
                         continue;
 
                     for (int m = 0; m < 2*funcData.mVal+1; m++)
                     {
-                        if (j+m-funcData.mVal < 0 || j+m-funcData.mVal >= (int)funcData.mat1[0].size())
+                        if (j+m-funcData.mVal < 0 || j+m-funcData.mVal >= (int)funcData.mat1.cols())
                             continue;
 
-                        _mem.writeData(m + n*(2*funcData.mVal+1), 0, funcData.mat1[i+n-funcData.nVal][j+m-funcData.mVal]);
+                        _mem.writeData(m + n*(2*funcData.mVal+1), 0, funcData.mat1(i+n-funcData.nVal, j+m-funcData.mVal));
                     }
                 }
 
-                _mResult[i][j] = _mem.med(VectorIndex(0, (2*funcData.nVal+1)*(2*funcData.mVal+1)), VectorIndex(0));
+                _mResult(i, j) = _mem.med(VectorIndex(0, (2*funcData.nVal+1)*(2*funcData.mVal+1)), VectorIndex(0));
             }
         }
     }
@@ -1738,20 +1718,20 @@ static Matrix matrixMovMed(const MatFuncData& funcData, const MatFuncErrorInfo& 
 /////////////////////////////////////////////////
 static Matrix matrixPct(const MatFuncData& funcData, const MatFuncErrorInfo& errorInfo)
 {
-    if (!funcData.mat1.size() || !funcData.mat1[0].size())
+    if (funcData.mat1.isEmpty())
         throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, errorInfo.command, errorInfo.position);
 
     Memory _mem;
 
-    for (size_t i = 0; i < funcData.mat1.size(); i++)
+    for (size_t i = 0; i < funcData.mat1.rows(); i++)
     {
-        for (size_t j = 0; j < funcData.mat1[0].size(); j++)
+        for (size_t j = 0; j < funcData.mat1.cols(); j++)
         {
-            _mem.writeData(j + i*funcData.mat1.size(), 0, funcData.mat1[i][j]);
+            _mem.writeData(j + i*funcData.mat1.rows(), 0, funcData.mat1(i, j));
         }
     }
 
-    return createFilledMatrix(1, 1, _mem.pct(VectorIndex(0, (long long int)(funcData.mat1.size()*funcData.mat1[0].size())-1), VectorIndex(0), funcData.fVal));
+    return createFilledMatrix(1, 1, _mem.pct(VectorIndex(0, (long long int)(funcData.mat1.rows()*funcData.mat1.cols())-1), VectorIndex(0), funcData.fVal));
 }
 
 
@@ -1770,22 +1750,14 @@ static Matrix matrixResize(const MatFuncData& funcData, const MatFuncErrorInfo& 
     size_t nLines = funcData.fVal.real();
     size_t nCols = funcData.nVal;
 
-    if (!funcData.mat1.size() || !funcData.mat1[0].size() || !nLines || !nCols)
+    if (funcData.mat1.isEmpty() || !nLines || !nCols)
         throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, errorInfo.command, errorInfo.position);
 
-    if (nLines == funcData.mat1.size() && nCols == funcData.mat1[0].size())
+    if (nLines == funcData.mat1.rows() && nCols == funcData.mat1.cols())
         return funcData.mat1;
 
-    Matrix _mReturn = createFilledMatrix(nLines, nCols, 0.0);
-
-    #pragma omp parallel for
-    for (size_t i = 0; i < std::min(nLines, funcData.mat1.size()); i++)
-    {
-        for (size_t j = 0; j < std::min(nCols, funcData.mat1[0].size()); j++)
-        {
-            _mReturn[i][j] = funcData.mat1[i][j];
-        }
-    }
+    Matrix _mReturn(funcData.mat1);
+    _mReturn.resize(nLines, nCols);
 
     return _mReturn;
 }
@@ -1805,20 +1777,23 @@ static Matrix matrixResize(const MatFuncData& funcData, const MatFuncErrorInfo& 
 /////////////////////////////////////////////////
 static Matrix correlation(const MatFuncData& funcData, const MatFuncErrorInfo& errorInfo)
 {
-    if (!funcData.mat1.size() || !funcData.mat1[0].size() || !funcData.mat2.size() || !funcData.mat2[0].size())
+    if (funcData.mat1.isEmpty() || funcData.mat2.isEmpty())
         throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, errorInfo.command, errorInfo.position);
 
     // Ensure that the size is non-zero
-    if (!(funcData.mat1.size() && funcData.mat2.size()) || !(funcData.mat1[0].size() && funcData.mat2[0].size()))
+    if (!(funcData.mat1.rows() && funcData.mat2.rows()) || !(funcData.mat1.cols() && funcData.mat2.cols()))
         throw SyntaxError(SyntaxError::WRONG_MATRIX_DIMENSIONS_FOR_MATOP, errorInfo.command, errorInfo.position,
                           printMatrixDim(funcData.mat1) + ", " + printMatrixDim(funcData.mat2));
 
-    // Resize the matrices to fit their counterparts
-    Matrix mMatrix1 = matrixResize(MatFuncData(funcData.mat1, mu::value_type(std::max(funcData.mat1.size(), funcData.mat2.size())), std::max(funcData.mat1[0].size(), funcData.mat2[0].size())), errorInfo);
-    Matrix mMatrix2 = matrixResize(MatFuncData(funcData.mat2, mu::value_type(std::max(funcData.mat1.size(), funcData.mat2.size())), std::max(funcData.mat1[0].size(), funcData.mat2[0].size())), errorInfo);
+    int n = std::max(funcData.mat1.rows(), funcData.mat2.rows());
+    int m = std::max(funcData.mat1.cols(), funcData.mat2.cols());
 
-    int n = mMatrix1.size();
-    int m = mMatrix1[0].size();
+    // Resize the matrices to fit their counterparts
+    Matrix mMatrix1(funcData.mat1);
+    mMatrix1.resize(n, m);
+
+    Matrix mMatrix2(funcData.mat2);
+    mMatrix2.resize(n, m);
 
     // Create the target matrix
     Matrix mCorrelation = createFilledMatrix(2*n-1, 2*m-1, 0.0);
@@ -1826,9 +1801,9 @@ static Matrix correlation(const MatFuncData& funcData, const MatFuncErrorInfo& e
     // Calculate the elements of the matrix by applying
     // elementwise shifts to the matrices
     #pragma omp parallel for
-    for (int i1 = 0; i1 < (int)mCorrelation.size(); i1++)
+    for (int i1 = 0; i1 < (int)mCorrelation.rows(); i1++)
     {
-        for (int j1 = 0; j1 < (int)mCorrelation[0].size(); j1++)
+        for (int j1 = 0; j1 < (int)mCorrelation.cols(); j1++)
         {
             // These loops shall indicate the number of elements
             for (int i2 = 0; i2 < n + std::min(i1-n+1, n-i1-1); i2++)
@@ -1837,7 +1812,8 @@ static Matrix correlation(const MatFuncData& funcData, const MatFuncErrorInfo& e
                 {
                     // calculate the correlation of the current
                     // shift indicated by the other two loops
-                    mCorrelation[i1][j1] += mMatrix1[i2 + std::max(0, i1-n+1)][j2 + std::max(0, j1-m+1)] * mMatrix2[i2 + std::max(0, n-i1-1)][j2 + std::max(0, m-j1-1)];
+                    mCorrelation(i1, j1) += mMatrix1(i2 + std::max(0, i1-n+1), j2 + std::max(0, j1-m+1))
+                                            * mMatrix2(i2 + std::max(0, n-i1-1), j2 + std::max(0, m-j1-1));
                 }
             }
         }
@@ -1859,11 +1835,11 @@ static Matrix correlation(const MatFuncData& funcData, const MatFuncErrorInfo& e
 /////////////////////////////////////////////////
 static Matrix covariance(const MatFuncData& funcData, const MatFuncErrorInfo& errorInfo)
 {
-    if (!funcData.mat1.size() || !funcData.mat1[0].size() || !funcData.mat2.size() || !funcData.mat2[0].size())
+    if (funcData.mat1.isEmpty() || funcData.mat2.isEmpty())
         throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, errorInfo.command, errorInfo.position);
 
     // Ensure that their size is equal
-    if (funcData.mat1.size() != funcData.mat2.size() || funcData.mat1[0].size() != funcData.mat2[0].size() || !funcData.mat1.size() || !funcData.mat1[0].size())
+    if (funcData.mat1.rows() != funcData.mat2.rows() || funcData.mat1.cols() != funcData.mat2.cols())
         throw SyntaxError(SyntaxError::WRONG_MATRIX_DIMENSIONS_FOR_MATOP, errorInfo.command, errorInfo.position,
                           printMatrixDim(funcData.mat1) + " != " + printMatrixDim(funcData.mat2));
 
@@ -1877,17 +1853,17 @@ static Matrix covariance(const MatFuncData& funcData, const MatFuncErrorInfo& er
 
     // Calculate the covariance value for each
     // component and sum it up
-    for (size_t i = 0; i < funcData.mat1.size(); i++)
+    for (size_t i = 0; i < funcData.mat1.rows(); i++)
     {
-        for (size_t j = 0; j < funcData.mat2.size(); j++)
+        for (size_t j = 0; j < funcData.mat2.rows(); j++)
         {
-            mCovariance[0][0] += (funcData.mat1[i][j] - mAvg1[0][0]) * (funcData.mat2[i][j] - mAvg2[0][0]);
+            mCovariance(0) += (funcData.mat1(i, j) - mAvg1(0)) * (funcData.mat2(i, j) - mAvg2(0));
         }
     }
 
     // Normalize the covariance value using
     // the number of elements
-    mCovariance[0][0] /= (funcData.mat1.size() * funcData.mat1[0].size() - 1);
+    mCovariance(0) /= (funcData.mat1.rows() * funcData.mat1.cols() - 1);
 
     return mCovariance;
 }
@@ -1906,21 +1882,21 @@ static Matrix covariance(const MatFuncData& funcData, const MatFuncErrorInfo& er
 /////////////////////////////////////////////////
 static Matrix normalize(const MatFuncData& funcData, const MatFuncErrorInfo& errorInfo)
 {
-    if (!funcData.mat1.size() || !funcData.mat1[0].size())
+    if (funcData.mat1.isEmpty())
         throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, errorInfo.command, errorInfo.position);
 
     Matrix _mReturn = funcData.mat1;
     Matrix _mMax = matrixMax(funcData, errorInfo);
     Matrix _mMin = matrixMin(funcData, errorInfo);
 
-    double dMax = std::max(fabs(_mMax[0][0]), fabs(_mMin[0][0]));
+    double dMax = std::max(fabs(_mMax(0)), fabs(_mMin(0)));
 
     #pragma omp parallel for
-    for (size_t  i = 0; i < _mReturn.size(); i++)
+    for (size_t  i = 0; i < _mReturn.rows(); i++)
     {
-        for (size_t j = 0; j < _mReturn[i].size(); j++)
+        for (size_t j = 0; j < _mReturn.cols(); j++)
         {
-            _mReturn[i][j] /= dMax;
+            _mReturn(i, j) /= dMax;
         }
     }
 
@@ -1945,19 +1921,19 @@ static Matrix matrixReshape(const MatFuncData& funcData, const MatFuncErrorInfo&
     size_t nLines = funcData.fVal.real();
     size_t nCols = funcData.nVal;
 
-    if (!funcData.mat1.size() || !funcData.mat1[0].size() || !nLines || !nCols)
+    if (funcData.mat1.isEmpty() || !nLines || !nCols)
         throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, errorInfo.command, errorInfo.position);
 
-    if (nLines * nCols != funcData.mat1.size() * funcData.mat1[0].size())
+    if (nLines * nCols != funcData.mat1.rows() * funcData.mat1.cols())
         throw SyntaxError(SyntaxError::WRONG_MATRIX_DIMENSIONS_FOR_MATOP, errorInfo.command, errorInfo.position,
                           toString(nLines) + "x" + toString(nCols) + "=" + toString(nLines*nCols) +" vs. "
-                          + toString(funcData.mat1.size()) + "x" + toString(funcData.mat1[0].size()) + "=" + toString(funcData.mat1.size()*funcData.mat1[0].size()));
+                          + printMatrixDim(funcData.mat1) + "=" + toString(funcData.mat1.rows()*funcData.mat1.cols()));
 
     Matrix _mReturn = createFilledMatrix(nLines, nCols, 0.0);
 
     for (size_t i = 0; i < nLines*nCols; i++)
     {
-        _mReturn[i / nCols][i % nCols] = funcData.mat1[i / funcData.mat1[0].size()][i % funcData.mat1[0].size()];
+        _mReturn(i / nCols, i % nCols) = funcData.mat1(i / funcData.mat1.cols(), i % funcData.mat1.cols());
     }
 
     return _mReturn;
@@ -1984,21 +1960,21 @@ static Matrix matrixRepMat(const MatFuncData& funcData, const MatFuncErrorInfo& 
     if (m == 0)
         m++;
 
-    if ((n * funcData.mat1.size()) / funcData.mat1.size() != n || (m * funcData.mat1[0].size()) / funcData.mat1[0].size() != m)
+    if ((n * funcData.mat1.rows()) / funcData.mat1.rows() != n || (m * funcData.mat1.cols()) / funcData.mat1.cols() != m)
         throw SyntaxError(SyntaxError::TOO_LARGE_CACHE, errorInfo.command, errorInfo.position);
 
-    Matrix _mReturn = createFilledMatrix(n * funcData.mat1.size(), m * funcData.mat1[0].size(), 0.0);
+    Matrix _mReturn = createFilledMatrix(n * funcData.mat1.rows(), m * funcData.mat1.cols(), 0.0);
 
     #pragma omp parallel for
-    for (size_t i = 0; i < funcData.mat1.size(); i++)
+    for (size_t i = 0; i < funcData.mat1.rows(); i++)
     {
-        for (size_t j = 0; j < funcData.mat1[0].size(); j++)
+        for (size_t j = 0; j < funcData.mat1.cols(); j++)
         {
             for (size_t _n = 0; _n < n; _n++)
             {
                 for (size_t _m = 0; _m < m; _m++)
                 {
-                    _mReturn[i+_n*funcData.mat1.size()][j+_m*funcData.mat1[0].size()] = funcData.mat1[i][j];
+                    _mReturn(i+_n*funcData.mat1.rows(), j+_m*funcData.mat1.cols()) = funcData.mat1(i, j);
                 }
             }
         }
@@ -2070,37 +2046,6 @@ static std::vector<mu::value_type> getUniqueList(std::list<mu::value_type>& _lis
 
 
 /////////////////////////////////////////////////
-/// \brief This is a static helper function,
-/// which will add the elements in the rows of
-/// the passed matrix.
-///
-/// \param _mMatrix Matrix&
-/// \return void
-///
-/////////////////////////////////////////////////
-static void fillMissingMatrixElements(Matrix& _mMatrix)
-{
-    size_t lines = _mMatrix.size();
-    size_t columns = _mMatrix[0].size();
-
-    // Get the maximal column count
-    for (size_t i = 0; i < lines; i++)
-    {
-        if (_mMatrix[i].size() > columns)
-            columns = _mMatrix[i].size();
-    }
-
-    // Add the missing elements to all other
-    // rows
-    for (size_t i = 0; i < lines; i++)
-    {
-        while (_mMatrix[i].size() < columns)
-            _mMatrix[i].push_back(NAN);
-    }
-}
-
-
-/////////////////////////////////////////////////
 /// \brief This static function implements the
 /// \c unique(MAT,nDim) function.
 ///
@@ -2111,7 +2056,7 @@ static void fillMissingMatrixElements(Matrix& _mMatrix)
 /////////////////////////////////////////////////
 static Matrix matrixUnique(const MatFuncData& funcData, const MatFuncErrorInfo& errorInfo)
 {
-    if (!funcData.mat1.size() || !funcData.mat1[0].size())
+    if (funcData.mat1.isEmpty())
         throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, errorInfo.command, errorInfo.position);
 
     // Create a std::list and the return value
@@ -2120,22 +2065,19 @@ static Matrix matrixUnique(const MatFuncData& funcData, const MatFuncErrorInfo& 
 
     // Depending on the dimensions of the passed matrix, change
     // the evaluation method
-    if (funcData.mat1.size() == 1)
+    if (funcData.mat1.rows() == 1)
     {
         // Row vector
-        dataList.assign(funcData.mat1[0].begin(), funcData.mat1[0].end());
-        _mReturn.push_back(getUniqueList(dataList));
+        dataList.assign(funcData.mat1.data().begin(), funcData.mat1.data().end());
+        auto uniqueList = getUniqueList(dataList);
+        _mReturn.assign(1, uniqueList.size(), uniqueList);
     }
-    else if (funcData.mat1[0].size() == 1)
+    else if (funcData.mat1.cols() == 1)
     {
         // Column vector
-        for (size_t i = 0; i < funcData.mat1.size(); i++)
-        {
-            dataList.push_back(funcData.mat1[i][0]);
-        }
-
-        _mReturn.push_back(getUniqueList(dataList));
-        _mReturn = transposeMatrix(MatFuncData(_mReturn), errorInfo);
+        dataList.assign(funcData.mat1.data().begin(), funcData.mat1.data().end());
+        auto uniqueList = getUniqueList(dataList);
+        _mReturn.assign(uniqueList.size(), 1, uniqueList);
     }
     else
     {
@@ -2143,37 +2085,46 @@ static Matrix matrixUnique(const MatFuncData& funcData, const MatFuncErrorInfo& 
         if (!funcData.nVal)
         {
             // funcData.nVal == 0 -> Roll out the total matrix and return it as a overall row vector
-            Matrix retVal = matrixReshape(MatFuncData(funcData.mat1, mu::value_type(1.0), funcData.mat1.size()*funcData.mat1[0].size()), errorInfo);
-            dataList.assign(retVal[0].begin(), retVal[0].end());
-            _mReturn.push_back(getUniqueList(dataList));
+            Matrix retVal = matrixReshape(MatFuncData(funcData.mat1, mu::value_type(1.0), funcData.mat1.rows()*funcData.mat1.cols()),
+                                          errorInfo);
+            dataList.assign(retVal.data().begin(), retVal.data().end());
+            auto uniqueList = getUniqueList(dataList);
+            _mReturn.assign(uniqueList.size(), 1, uniqueList);
         }
         else if (funcData.nVal == 1)
         {
+            std::vector<std::vector<mu::value_type>> mBuffer;
+
             // Make the rows unique
-            for (size_t i = 0; i < funcData.mat1.size(); i++)
+            for (size_t i = 0; i < funcData.mat1.rows(); i++)
             {
                 dataList.clear();
-                dataList.assign(funcData.mat1[i].begin(), funcData.mat1[i].end());
-                _mReturn.push_back(getUniqueList(dataList));
+
+                for (size_t j = 0; j < funcData.mat1.cols(); j++)
+                    dataList.push_back(funcData.mat1(i, j));
+
+                mBuffer.push_back(getUniqueList(dataList));
             }
 
-            fillMissingMatrixElements(_mReturn);
+            _mReturn = Matrix(mBuffer);
         }
         else
         {
+            std::vector<std::vector<mu::value_type>> mBuffer;
+
             // Make the columns unique
-            for (size_t j = 0; j < funcData.mat1[0].size(); j++)
+            for (size_t j = 0; j < funcData.mat1.cols(); j++)
             {
                 dataList.clear();
 
-                for (size_t i = 0; i < funcData.mat1.size(); i++)
-                    dataList.push_back(funcData.mat1[i][j]);
+                for (size_t i = 0; i < funcData.mat1.rows(); i++)
+                    dataList.push_back(funcData.mat1(i, j));
 
-                _mReturn.push_back(getUniqueList(dataList));
+                mBuffer.push_back(getUniqueList(dataList));
             }
 
-            fillMissingMatrixElements(_mReturn);
-            _mReturn = transposeMatrix(MatFuncData(_mReturn), errorInfo);
+            _mReturn = Matrix(mBuffer);
+            _mReturn.transpose();
         }
     }
 
@@ -2192,33 +2143,33 @@ static Matrix matrixUnique(const MatFuncData& funcData, const MatFuncErrorInfo& 
 /////////////////////////////////////////////////
 static void solveLGSSymbolic(const Matrix& _mMatrix, const MatFuncErrorInfo& errorInfo)
 {
-    if (!_mMatrix.size() || !_mMatrix[0].size())
+    if (_mMatrix.isEmpty())
         throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, errorInfo.command, errorInfo.position);
 
     std::string sSolution = "sle(";
-    std::vector<std::string> vResult(_mMatrix[0].size()-1, "");
+    std::vector<std::string> vResult(_mMatrix.cols()-1, "");
     bool bIsZeroesLine = true;
     unsigned int nVarCount = 0;
 
-    Matrix _mToSolve = createFilledMatrix(_mMatrix[0].size()-1, _mMatrix[0].size(), 0.0);
-    Matrix _mCoefficents = createFilledMatrix(_mMatrix[0].size()-1, _mMatrix[0].size(), 0.0);
+    Matrix _mToSolve = createFilledMatrix(_mMatrix.cols()-1, _mMatrix.cols(), 0.0);
+    Matrix _mCoefficents = createFilledMatrix(_mMatrix.cols()-1, _mMatrix.cols(), 0.0);
 
     #pragma omp parallel for
-    for (unsigned int i = 0; i < std::min(_mMatrix.size(), _mMatrix[0].size()-1); i++)
+    for (unsigned int i = 0; i < std::min(_mMatrix.rows(), _mMatrix.cols()-1); i++)
     {
-        for (unsigned int j = 0; j < _mMatrix[0].size(); j++)
+        for (unsigned int j = 0; j < _mMatrix.cols(); j++)
         {
-            _mToSolve[i][j] = _mMatrix[i][j];
+            _mToSolve(i, j) = _mMatrix(i, j);
         }
     }
 
-    for (int i = _mToSolve.size()-1; i >= 0; i--)
+    for (int i = _mToSolve.rows()-1; i >= 0; i--)
     {
         bIsZeroesLine = true;
 
-        for (unsigned int j = 0; j < _mToSolve[0].size(); j++)
+        for (unsigned int j = 0; j < _mToSolve.cols(); j++)
         {
-            if (bIsZeroesLine && _mToSolve[i][j] == 0.0)
+            if (bIsZeroesLine && _mToSolve(i, j) == 0.0)
             {
                 bIsZeroesLine = false;
                 break;
@@ -2227,49 +2178,49 @@ static void solveLGSSymbolic(const Matrix& _mMatrix, const MatFuncErrorInfo& err
 
         if (bIsZeroesLine)
         {
-            _mCoefficents[i][i] = 1.0;
+            _mCoefficents(i, i) = 1.0;
             nVarCount++;
         }
         else
         {
             // Konstanter Term
-            _mCoefficents[i][_mCoefficents[0].size()-1] = _mToSolve[i][_mToSolve[0].size()-1];
+            _mCoefficents(i, _mCoefficents.cols()-1) = _mToSolve(i, _mToSolve.cols()-1);
 
-            for (unsigned int j = i+1; j < _mToSolve[0].size()-1; j++)
+            for (unsigned int j = i+1; j < _mToSolve.cols()-1; j++)
             {
-                if (_mToSolve[i][j] != 0.0)
+                if (_mToSolve(i, j) != 0.0)
                 {
                     // Konstanter Term
-                    _mCoefficents[i][_mCoefficents[0].size()-1] -= _mToSolve[i][j] * _mCoefficents[j][_mCoefficents[0].size()-1];
+                    _mCoefficents(i, _mCoefficents.cols()-1) -= _mToSolve(i, j) * _mCoefficents(j, _mCoefficents.cols()-1);
 
                     // Alle Koeffizienten
-                    for (unsigned int n = i+1; n < _mCoefficents[0].size()-1; n++)
+                    for (unsigned int n = i+1; n < _mCoefficents.cols()-1; n++)
                     {
-                        _mCoefficents[i][n] -= _mToSolve[i][j] * _mCoefficents[j][n];
+                        _mCoefficents(i, n) -= _mToSolve(i, j) * _mCoefficents(j, n);
                     }
                 }
             }
         }
     }
 
-    for (unsigned int i = 0; i < _mCoefficents.size(); i++)
+    for (unsigned int i = 0; i < _mCoefficents.rows(); i++)
     {
-        for (unsigned int j = 0; j < _mCoefficents[0].size()-1; j++)
+        for (unsigned int j = 0; j < _mCoefficents.cols()-1; j++)
         {
-            if (_mCoefficents[i][j] != 0.0)
+            if (_mCoefficents(i, j) != 0.0)
             {
-                if (fabs(_mCoefficents[i][j]) != 1.0)
-                    vResult[i] += toString(_mCoefficents[i][j], 5) + "*";
+                if (fabs(_mCoefficents(i, j)) != 1.0)
+                    vResult[i] += toString(_mCoefficents(i, j), 5) + "*";
 
-                if (_mCoefficents[i][j] == -1.0)
+                if (_mCoefficents(i, j) == -1.0)
                     vResult[i] += "-";
 
                 vResult[i] += ('z'-vResult.size()+1+j);
             }
         }
 
-        if (_mCoefficents[i][_mCoefficents[0].size()-1] != 0.0)
-            vResult[i] += "+" + toString(_mCoefficents[i][_mCoefficents[0].size()-1], 5);
+        if (_mCoefficents(i, _mCoefficents.cols()-1) != 0.0)
+            vResult[i] += "+" + toString(_mCoefficents(i, _mCoefficents.cols()-1), 5);
 
         while (vResult[i].find("+-") != std::string::npos)
             vResult[i].erase(vResult[i].find("+-"),1);
@@ -2328,58 +2279,58 @@ static void solveLGSSymbolic(const Matrix& _mMatrix, const MatFuncErrorInfo& err
 /////////////////////////////////////////////////
 static Matrix solveLGS(const MatFuncData& funcData, const MatFuncErrorInfo& errorInfo)
 {
-    if (!funcData.mat1.size() || !funcData.mat1[0].size())
+    if (funcData.mat1.isEmpty())
         throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, errorInfo.command, errorInfo.position);
 
-    Matrix _mResult = createFilledMatrix(funcData.mat1[0].size()-1, 1, 0.0);
+    Matrix _mResult = createFilledMatrix(funcData.mat1.cols()-1, 1, 0.0);
     Matrix _mToSolve = funcData.mat1;
 
-    if (_mToSolve.size() == 1)
+    if (_mToSolve.rows() == 1)
     {
-        _mResult[0][0] = _mToSolve[0][1]/_mToSolve[0][0];
+        _mResult(0) = _mToSolve(0, 1)/_mToSolve(0);
         return _mResult;
     }
 
     // Allgemeiner Fall fuer n > 2
-    for (unsigned int j = 0; j < _mToSolve[0].size()-1; j++)
+    for (unsigned int j = 0; j < _mToSolve.cols()-1; j++)
     {
-        for (unsigned int i = j; i < _mToSolve.size(); i++)
+        for (unsigned int i = j; i < _mToSolve.rows(); i++)
         {
-            if (_mToSolve[i][j] != 0.0)
+            if (_mToSolve(i, j) != 0.0)
             {
                 if (i != j) //vertauschen
                 {
                     mu::value_type dElement;
 
-                    for (unsigned int _j = 0; _j < _mToSolve[0].size(); _j++)
+                    for (unsigned int _j = 0; _j < _mToSolve.cols(); _j++)
                     {
-                        dElement = _mToSolve[i][_j];
-                        _mToSolve[i][_j] = _mToSolve[j][_j];
-                        _mToSolve[j][_j] = dElement;
+                        dElement = _mToSolve(i, _j);
+                        _mToSolve(i, _j) = _mToSolve(j, _j);
+                        _mToSolve(j, _j) = dElement;
                     }
 
                     i = j-1;
                 }
                 else //Gauss-Elimination
                 {
-                    mu::value_type dPivot = _mToSolve[i][j];
+                    mu::value_type dPivot = _mToSolve(i, j);
 
-                    for (unsigned int _j = 0; _j < _mToSolve[0].size(); _j++)
+                    for (unsigned int _j = 0; _j < _mToSolve.cols(); _j++)
                     {
-                        _mToSolve[i][_j] /= dPivot;
+                        _mToSolve(i, _j) /= dPivot;
                     }
 
                     #pragma omp parallel for
-                    for (unsigned int _i = i+1; _i < _mToSolve.size(); _i++)
+                    for (unsigned int _i = i+1; _i < _mToSolve.rows(); _i++)
                     {
-                        mu::value_type dFactor = _mToSolve[_i][j];
+                        mu::value_type dFactor = _mToSolve(_i, j);
 
                         if (dFactor == 0.0) // Bereits 0???
                             continue;
 
-                        for (unsigned int _j = 0; _j < _mToSolve[0].size(); _j++)
+                        for (unsigned int _j = 0; _j < _mToSolve.cols(); _j++)
                         {
-                            _mToSolve[_i][_j] -= _mToSolve[i][_j]*dFactor;
+                            _mToSolve(_i, _j) -= _mToSolve(i, _j)*dFactor;
                         }
                     }
 
@@ -2391,26 +2342,26 @@ static Matrix solveLGS(const MatFuncData& funcData, const MatFuncErrorInfo& erro
         }
     }
 
-    if ((_mToSolve[_mToSolve.size()-1][_mToSolve[0].size()-2] == 0.0 && _mToSolve[_mToSolve.size()-1][_mToSolve[0].size()-1] == 0.0)
-        || _mToSolve.size()+1 < _mToSolve[0].size())
+    if ((_mToSolve(_mToSolve.rows()-1, _mToSolve.cols()-2) == 0.0 && _mToSolve(_mToSolve.rows()-1, _mToSolve.cols()-1) == 0.0)
+        || _mToSolve.rows()+1 < _mToSolve.cols())
     {
         NumeReKernel::print(toSystemCodePage(_lang.get("ERR_NR_2101_0_LGS_HAS_NO_UNIQUE_SOLUTION")));
         solveLGSSymbolic(_mToSolve, errorInfo);
         return _mToSolve;
     }
-    else if (_mToSolve[_mToSolve.size()-1][_mToSolve[0].size()-2] == 0.0 && _mToSolve[_mToSolve.size()-1][_mToSolve[0].size()-1] != 0.0)
+    else if (_mToSolve(_mToSolve.rows()-1, _mToSolve.cols()-2) == 0.0 && _mToSolve(_mToSolve.rows()-1, _mToSolve.cols()-1) != 0.0)
         throw SyntaxError(SyntaxError::LGS_HAS_NO_SOLUTION, errorInfo.command, errorInfo.position);
-    else if ((_mToSolve[_mToSolve.size()-1][_mToSolve[0].size()-2] == 0.0 && _mToSolve[_mToSolve.size()-1][_mToSolve[0].size()-1] == 0.0)
-        || _mToSolve.size()+1 > _mToSolve[0].size())
+    else if ((_mToSolve(_mToSolve.rows()-1, _mToSolve.cols()-2) == 0.0 && _mToSolve(_mToSolve.rows()-1, _mToSolve.cols()-1) == 0.0)
+        || _mToSolve.rows()+1 > _mToSolve.cols())
     {
         // Ggf. Nullzeilen nach unten tauschen
-        std::vector<bool> vIsZerosLine(_mToSolve.size(),true);
+        std::vector<bool> vIsZerosLine(_mToSolve.rows(), true);
 
-        for (unsigned int i = 0; i < _mToSolve.size(); i++)
+        for (unsigned int i = 0; i < _mToSolve.rows(); i++)
         {
-            for (unsigned int j = 0; j < _mToSolve[0].size(); j++)
+            for (unsigned int j = 0; j < _mToSolve.cols(); j++)
             {
-                if (_mToSolve[i][j] != 0.0)
+                if (_mToSolve(i, j) != 0.0)
                 {
                     vIsZerosLine[i] = false;
                     break;
@@ -2428,11 +2379,11 @@ static Matrix solveLGS(const MatFuncData& funcData, const MatFuncErrorInfo& erro
                     {
                         mu::value_type dElement;
 
-                        for (unsigned int _j = 0; _j < _mToSolve[0].size(); _j++)
+                        for (unsigned int _j = 0; _j < _mToSolve.cols(); _j++)
                         {
-                            dElement = _mToSolve[i][_j];
-                            _mToSolve[i][_j] = _mToSolve[_i][_j];
-                            _mToSolve[_i][_j] = dElement;
+                            dElement = _mToSolve(i, _j);
+                            _mToSolve(i, _j) = _mToSolve(_i, _j);
+                            _mToSolve(_i, _j) = dElement;
                         }
 
                         vIsZerosLine[i] = false;
@@ -2443,39 +2394,39 @@ static Matrix solveLGS(const MatFuncData& funcData, const MatFuncErrorInfo& erro
             }
         }
 
-        if (_mToSolve[_mToSolve[0].size()-2][_mToSolve[0].size()-2] == 0.0 && _mToSolve[_mToSolve[2].size()-2][_mToSolve[0].size()-1] == 0.0)
+        if (_mToSolve(_mToSolve.cols()-2, _mToSolve.cols()-2) == 0.0 && _mToSolve(_mToSolve.cols()-2, _mToSolve.cols()-1) == 0.0)
         {
             NumeReKernel::print(toSystemCodePage(_lang.get("ERR_NR_2101_0_LGS_HAS_NO_UNIQUE_SOLUTION")));
             solveLGSSymbolic(_mToSolve, errorInfo);
             return _mToSolve;
         }
 
-        _mResult[_mResult[0].size()-2][0] = _mToSolve[_mToSolve[0].size()-2][_mToSolve[0].size()-1];
+        _mResult(_mResult.cols()-2, 0) = _mToSolve(_mToSolve.cols()-2, _mToSolve.cols()-1);
     }
     else
-        _mResult[_mResult.size()-1][0] = _mToSolve[_mToSolve.size()-1][_mToSolve[0].size()-1];
+        _mResult(_mResult.rows()-1, 0) = _mToSolve(_mToSolve.rows()-1, _mToSolve.cols()-1);
 
-    for (int i = _mToSolve[0].size()-3; i >= 0; i--)
+    for (int i = _mToSolve.cols()-3; i >= 0; i--)
     {
-        for (unsigned int j = 0; j < _mToSolve[0].size()-1; j++)
+        for (unsigned int j = 0; j < _mToSolve.cols()-1; j++)
         {
-            _mToSolve[i][_mToSolve[0].size()-1] -= _mToSolve[i][j]*_mResult[j][0];
+            _mToSolve(i, _mToSolve.cols()-1) -= _mToSolve(i, j)*_mResult(j, 0);
 
-            if (_mToSolve[i][j]*_mResult[j][0] != 0.0)
-                _mToSolve[i][j] = 0.0;
+            if (_mToSolve(i, j)*_mResult(j, 0) != 0.0)
+                _mToSolve(i, j) = 0.0;
         }
 
-        if (_mToSolve[i][i] == 0.0 && _mToSolve[i][_mToSolve[0].size()-1] == 0.0)
+        if (_mToSolve(i, i) == 0.0 && _mToSolve(i, _mToSolve.cols()-1) == 0.0)
         {
             NumeReKernel::print(toSystemCodePage(_lang.get("ERR_NR_2101_0_LGS_HAS_NO_UNIQUE_SOLUTION")));
             solveLGSSymbolic(_mToSolve, errorInfo);
             return _mToSolve;
         }
 
-        if (_mToSolve[i][i] == 0.0 && _mToSolve[i][_mToSolve[0].size()-1] != 0.0)
+        if (_mToSolve(i, i) == 0.0 && _mToSolve(i, _mToSolve.cols()-1) != 0.0)
             throw SyntaxError(SyntaxError::LGS_HAS_NO_SOLUTION, errorInfo.command, errorInfo.position);
 
-        _mResult[i][0] = _mToSolve[i][_mToSolve[0].size()-1];
+        _mResult(i, 0) = _mToSolve(i, _mToSolve.cols()-1);
     }
 
     return _mResult;
@@ -2493,15 +2444,16 @@ static Matrix solveLGS(const MatFuncData& funcData, const MatFuncErrorInfo& erro
 /////////////////////////////////////////////////
 static Matrix diagonalMatrix(const MatFuncData& funcData, const MatFuncErrorInfo& errorInfo)
 {
-    if (!funcData.mat1.size() || !funcData.mat1[0].size())
+    if (funcData.mat1.isEmpty())
         throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, errorInfo.command, errorInfo.position);
 
-    Matrix _reshapedMat = matrixReshape(MatFuncData(funcData.mat1, mu::value_type(funcData.mat1.size() * funcData.mat1[0].size()), 1), errorInfo);
-    Matrix _diagonalMat = createFilledMatrix(_reshapedMat.size(), _reshapedMat.size(), 0.0);
+    Matrix _reshapedMat = matrixReshape(MatFuncData(funcData.mat1, mu::value_type(funcData.mat1.rows() * funcData.mat1.cols()), 1),
+                                        errorInfo);
+    Matrix _diagonalMat = createFilledMatrix(_reshapedMat.rows(), _reshapedMat.rows(), 0.0);
 
-    for (size_t i = 0; i < _reshapedMat.size(); i++)
+    for (size_t i = 0; i < _reshapedMat.rows(); i++)
     {
-        _diagonalMat[i][i] = _reshapedMat[i][0];
+        _diagonalMat(i, i) = _reshapedMat(i);
     }
 
     return _diagonalMat;
@@ -2519,20 +2471,20 @@ static Matrix diagonalMatrix(const MatFuncData& funcData, const MatFuncErrorInfo
 /////////////////////////////////////////////////
 static Matrix cartToCyl(const MatFuncData& funcData, const MatFuncErrorInfo& errorInfo)
 {
-    if (!funcData.mat1.size() || !funcData.mat1[0].size())
+    if (funcData.mat1.isEmpty())
         throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, errorInfo.command, errorInfo.position);
 
-    if (funcData.mat1[0].size() > 3 || funcData.mat1[0].size() < 2)
+    if (funcData.mat1.cols() > 3 || funcData.mat1.cols() < 2)
         throw SyntaxError(SyntaxError::WRONG_MATRIX_DIMENSIONS_FOR_MATOP, errorInfo.command, errorInfo.position,
-                          printMatrixDim(funcData.mat1) + " vs. "+ toString(funcData.mat1.size()) + "x3");
+                          printMatrixDim(funcData.mat1) + " vs. "+ toString(funcData.mat1.rows()) + "x3");
 
     Matrix _mReturn = funcData.mat1;
 
     #pragma omp parallel for
-    for (size_t i = 0; i < _mReturn.size(); i++)
+    for (size_t i = 0; i < _mReturn.rows(); i++)
     {
-        _mReturn[i][0] = parser_Norm(&funcData.mat1[i][0], 2);
-        _mReturn[i][1] = parser_phi(funcData.mat1[i][0], funcData.mat1[i][1]);
+        _mReturn(i, 0) = std::sqrt(intPower(funcData.mat1(i, 0), 2) + intPower(funcData.mat1(i, 1), 2));
+        _mReturn(i, 1) = parser_phi(funcData.mat1(i, 0), funcData.mat1(i, 1));
     }
 
     return _mReturn;
@@ -2550,24 +2502,26 @@ static Matrix cartToCyl(const MatFuncData& funcData, const MatFuncErrorInfo& err
 /////////////////////////////////////////////////
 static Matrix cartToPolar(const MatFuncData& funcData, const MatFuncErrorInfo& errorInfo)
 {
-    if (!funcData.mat1.size() || !funcData.mat1[0].size())
+    if (funcData.mat1.isEmpty())
         throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, errorInfo.command, errorInfo.position);
 
-    if (funcData.mat1[0].size() > 3 || funcData.mat1[0].size() < 2)
+    if (funcData.mat1.cols() > 3 || funcData.mat1.cols() < 2)
         throw SyntaxError(SyntaxError::WRONG_MATRIX_DIMENSIONS_FOR_MATOP, errorInfo.command, errorInfo.position,
-                          printMatrixDim(funcData.mat1) + " vs. "+ toString(funcData.mat1.size()) + "x3");
+                          printMatrixDim(funcData.mat1) + " vs. "+ toString(funcData.mat1.rows()) + "x3");
 
-    if (funcData.mat1[0].size() == 2)
+    if (funcData.mat1.cols() == 2)
         return cartToCyl(funcData, errorInfo);
 
     Matrix _mReturn = funcData.mat1;
 
     #pragma omp parallel for
-    for (size_t i = 0; i < _mReturn.size(); i++)
+    for (size_t i = 0; i < _mReturn.rows(); i++)
     {
-        _mReturn[i][0] = parser_Norm(&funcData.mat1[i][0], 3);
-        _mReturn[i][1] = parser_phi(funcData.mat1[i][0], funcData.mat1[i][1]);
-        _mReturn[i][2] = parser_theta(funcData.mat1[i][0], funcData.mat1[i][1], funcData.mat1[i][2]);
+        _mReturn(i, 0) = std::sqrt(intPower(funcData.mat1(i, 0), 2)
+                                   + intPower(funcData.mat1(i, 1), 2)
+                                   + intPower(funcData.mat1(i, 2), 2));
+        _mReturn(i, 1) = parser_phi(funcData.mat1(i, 0), funcData.mat1(i, 1));
+        _mReturn(i, 2) = parser_theta(funcData.mat1(i, 0), funcData.mat1(i, 1), funcData.mat1(i, 2));
     }
 
     return _mReturn;
@@ -2585,20 +2539,20 @@ static Matrix cartToPolar(const MatFuncData& funcData, const MatFuncErrorInfo& e
 /////////////////////////////////////////////////
 static Matrix cylToCart(const MatFuncData& funcData, const MatFuncErrorInfo& errorInfo)
 {
-    if (!funcData.mat1.size() || !funcData.mat1[0].size())
+    if (funcData.mat1.isEmpty())
         throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, errorInfo.command, errorInfo.position);
 
-    if (funcData.mat1[0].size() > 3 || funcData.mat1[0].size() < 2)
+    if (funcData.mat1.cols() > 3 || funcData.mat1.cols() < 2)
         throw SyntaxError(SyntaxError::WRONG_MATRIX_DIMENSIONS_FOR_MATOP, errorInfo.command, errorInfo.position,
-                          printMatrixDim(funcData.mat1) + " vs. "+ toString(funcData.mat1.size()) + "x3");
+                          printMatrixDim(funcData.mat1) + " vs. "+ toString(funcData.mat1.rows()) + "x3");
 
     Matrix _mReturn = funcData.mat1;
 
     #pragma omp parallel for
-    for (size_t i = 0; i < _mReturn.size(); i++)
+    for (size_t i = 0; i < _mReturn.rows(); i++)
     {
-        _mReturn[i][0] = funcData.mat1[i][0] * cos(funcData.mat1[i][1]);
-        _mReturn[i][1] = funcData.mat1[i][0] * sin(funcData.mat1[i][1]);
+        _mReturn(i, 0) = funcData.mat1(i, 0) * cos(funcData.mat1(i, 1));
+        _mReturn(i, 1) = funcData.mat1(i, 0) * sin(funcData.mat1(i, 1));
     }
 
     return _mReturn;
@@ -2616,23 +2570,25 @@ static Matrix cylToCart(const MatFuncData& funcData, const MatFuncErrorInfo& err
 /////////////////////////////////////////////////
 static Matrix cylToPolar(const MatFuncData& funcData, const MatFuncErrorInfo& errorInfo)
 {
-    if (!funcData.mat1.size() || !funcData.mat1[0].size())
+    if (funcData.mat1.isEmpty())
         throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, errorInfo.command, errorInfo.position);
 
-    if (funcData.mat1[0].size() > 3 || funcData.mat1[0].size() < 2)
+    if (funcData.mat1.cols() > 3 || funcData.mat1.cols() < 2)
         throw SyntaxError(SyntaxError::WRONG_MATRIX_DIMENSIONS_FOR_MATOP, errorInfo.command, errorInfo.position,
-                          printMatrixDim(funcData.mat1) + " vs. "+ toString(funcData.mat1.size()) + "x3");
+                          printMatrixDim(funcData.mat1) + " vs. "+ toString(funcData.mat1.rows()) + "x3");
 
-    if (funcData.mat1[0].size() == 2)
+    if (funcData.mat1.cols() == 2)
         return funcData.mat1;
 
     Matrix _mReturn = funcData.mat1;
 
     #pragma omp parallel for
-    for (size_t i = 0; i < _mReturn.size(); i++)
+    for (size_t i = 0; i < _mReturn.rows(); i++)
     {
-        _mReturn[i][0] = sqrt(funcData.mat1[i][0] * funcData.mat1[i][0] + funcData.mat1[i][2] * funcData.mat1[i][2]);
-        _mReturn[i][2] = parser_theta(funcData.mat1[i][0] * cos(funcData.mat1[i][1]), funcData.mat1[i][0] * sin(funcData.mat1[i][1]), funcData.mat1[i][2]);
+        _mReturn(i, 0) = std::sqrt(intPower(funcData.mat1(i, 0), 2) + intPower(funcData.mat1(i, 2), 2));
+        _mReturn(i, 2) = parser_theta(funcData.mat1(i, 0) * cos(funcData.mat1(i, 1)),
+                                      funcData.mat1(i, 0) * sin(funcData.mat1(i, 1)),
+                                      funcData.mat1(i, 2));
     }
 
     return _mReturn;
@@ -2650,24 +2606,24 @@ static Matrix cylToPolar(const MatFuncData& funcData, const MatFuncErrorInfo& er
 /////////////////////////////////////////////////
 static Matrix polarToCart(const MatFuncData& funcData, const MatFuncErrorInfo& errorInfo)
 {
-    if (!funcData.mat1.size() || !funcData.mat1[0].size())
+    if (funcData.mat1.isEmpty())
         throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, errorInfo.command, errorInfo.position);
 
-    if (funcData.mat1[0].size() > 3 || funcData.mat1[0].size() < 2)
+    if (funcData.mat1.cols() > 3 || funcData.mat1.cols() < 2)
         throw SyntaxError(SyntaxError::WRONG_MATRIX_DIMENSIONS_FOR_MATOP, errorInfo.command, errorInfo.position,
-                          printMatrixDim(funcData.mat1) + " vs. "+ toString(funcData.mat1.size()) + "x3");
+                          printMatrixDim(funcData.mat1) + " vs. "+ toString(funcData.mat1.rows()) + "x3");
 
-    if (funcData.mat1[0].size() == 2)
+    if (funcData.mat1.cols() == 2)
         return cylToCart(funcData, errorInfo);
 
     Matrix _mReturn = funcData.mat1;
 
     #pragma omp parallel for
-    for (size_t i = 0; i < _mReturn.size(); i++)
+    for (size_t i = 0; i < _mReturn.rows(); i++)
     {
-        _mReturn[i][0] = funcData.mat1[i][0] * cos(funcData.mat1[i][1]) * sin(funcData.mat1[i][2]);
-        _mReturn[i][1] = funcData.mat1[i][0] * sin(funcData.mat1[i][1]) * sin(funcData.mat1[i][2]);
-        _mReturn[i][2] = funcData.mat1[i][0] * cos(funcData.mat1[i][2]);
+        _mReturn(i, 0) = funcData.mat1(i, 0) * cos(funcData.mat1(i, 1)) * sin(funcData.mat1(i, 2));
+        _mReturn(i, 1) = funcData.mat1(i, 0) * sin(funcData.mat1(i, 1)) * sin(funcData.mat1(i, 2));
+        _mReturn(i, 2) = funcData.mat1(i, 0) * cos(funcData.mat1(i, 2));
     }
 
     return _mReturn;
@@ -2685,22 +2641,22 @@ static Matrix polarToCart(const MatFuncData& funcData, const MatFuncErrorInfo& e
 /////////////////////////////////////////////////
 static Matrix polarToCyl(const MatFuncData& funcData, const MatFuncErrorInfo& errorInfo)
 {
-    if (!funcData.mat1.size() || !funcData.mat1[0].size())
+    if (funcData.mat1.isEmpty())
         throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, errorInfo.command, errorInfo.position);
 
-    if (funcData.mat1[0].size() > 3 || funcData.mat1[0].size() < 2)
+    if (funcData.mat1.cols() > 3 || funcData.mat1.cols() < 2)
         throw SyntaxError(SyntaxError::WRONG_MATRIX_DIMENSIONS_FOR_MATOP, errorInfo.command, errorInfo.position,
-                          printMatrixDim(funcData.mat1) + " vs. "+ toString(funcData.mat1.size()) + "x3");
+                          printMatrixDim(funcData.mat1) + " vs. "+ toString(funcData.mat1.rows()) + "x3");
 
     Matrix _mReturn = funcData.mat1;
 
     #pragma omp parallel for
-    for (size_t i = 0; i < _mReturn.size(); i++)
+    for (size_t i = 0; i < _mReturn.rows(); i++)
     {
-        _mReturn[i][0] = funcData.mat1[i][0] * sin(funcData.mat1[i][2]);
+        _mReturn(i, 0) = funcData.mat1(i, 0) * sin(funcData.mat1(i, 2));
 
-        if (funcData.mat1[0].size() == 3)
-            _mReturn[i][2] = funcData.mat1[i][0] * cos(funcData.mat1[i][2]);
+        if (funcData.mat1.cols() == 3)
+            _mReturn(i, 2) = funcData.mat1(i, 0) * cos(funcData.mat1(i, 2));
     }
 
     return _mReturn;
@@ -2719,11 +2675,11 @@ static Matrix polarToCyl(const MatFuncData& funcData, const MatFuncErrorInfo& er
 /////////////////////////////////////////////////
 static size_t findNearestLowerGridAxisValue(const Matrix& gaxes, size_t axis, double axisval)
 {
-    int sign = gaxes.front()[axis].real() > gaxes.back()[axis].real() ? -1 : 1;
+    int sign = gaxes(0, axis).real() > gaxes(gaxes.cols()-1, axis).real() ? -1 : 1;
 
-    for (size_t i = 0; i < gaxes.size(); i++)
+    for (size_t i = 0; i < gaxes.rows(); i++)
     {
-        if (sign * gaxes[i][axis].real() >= sign * axisval)
+        if (sign * gaxes(i, axis).real() >= sign * axisval)
         {
             if (i)
                 return i-1;
@@ -2732,7 +2688,7 @@ static size_t findNearestLowerGridAxisValue(const Matrix& gaxes, size_t axis, do
         }
     }
 
-    return gaxes.size()-1;
+    return gaxes.rows()-1;
 }
 
 
@@ -2748,33 +2704,35 @@ static size_t findNearestLowerGridAxisValue(const Matrix& gaxes, size_t axis, do
 /////////////////////////////////////////////////
 static Matrix coordsToGrid(const MatFuncData& funcData, const MatFuncErrorInfo& errorInfo)
 {
-    if (funcData.mat1.size() < 2 || !funcData.mat1[0].size() || !funcData.mat2.size() || !funcData.mat2[0].size())
+    if (funcData.mat1.rows() < 2 || !funcData.mat1.cols() || funcData.mat2.isEmpty())
         throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, errorInfo.command, errorInfo.position);
 
-    if (funcData.mat1[0].size() > 2)
+    if (funcData.mat1.cols() > 2)
         throw SyntaxError(SyntaxError::WRONG_MATRIX_DIMENSIONS_FOR_MATOP, errorInfo.command, errorInfo.position,
-                          printMatrixDim(funcData.mat1) + " vs. "+ toString(funcData.mat1.size()) + "x2");
+                          printMatrixDim(funcData.mat1) + " vs. "+ toString(funcData.mat1.rows()) + "x2");
 
-    if (funcData.mat2[0].size() > 2)
+    if (funcData.mat2.cols() > 2)
         throw SyntaxError(SyntaxError::WRONG_MATRIX_DIMENSIONS_FOR_MATOP, errorInfo.command, errorInfo.position,
-                          printMatrixDim(funcData.mat2) + " vs. "+ toString(funcData.mat2.size()) + "x2");
+                          printMatrixDim(funcData.mat2) + " vs. "+ toString(funcData.mat2.rows()) + "x2");
 
-    if (funcData.mat2[0].size() == 2 && funcData.mat1[0].size() < 2)
+    if (funcData.mat2.cols() == 2 && funcData.mat1.cols() < 2)
         throw SyntaxError(SyntaxError::WRONG_MATRIX_DIMENSIONS_FOR_MATOP, errorInfo.command, errorInfo.position,
-                          printMatrixDim(funcData.mat1) + " vs. "+ toString(funcData.mat2.size()) + "x2");
+                          printMatrixDim(funcData.mat1) + " vs. "+ toString(funcData.mat2.rows()) + "x2");
 
     Matrix gcoords = funcData.mat2;
 
     #pragma omp parallel for
-    for (size_t i = 0; i < gcoords.size(); i++)
+    for (size_t i = 0; i < gcoords.rows(); i++)
     {
-        for (size_t j = 0; j < gcoords[i].size(); j++)
+        for (size_t j = 0; j < gcoords.cols(); j++)
         {
-            size_t pos = findNearestLowerGridAxisValue(funcData.mat1, j, gcoords[i][j].real()); // find the lower grid axis value assuming sorted axis
-            mu::value_type off = gcoords[i][j] - funcData.mat1[pos][j]; // should be smaller than grid interval, but might be negative
-            mu::value_type interval = pos+1 < funcData.mat1.size() ? funcData.mat1[pos+1][j] - funcData.mat1[pos][j] : funcData.mat1[pos][j] - funcData.mat1[pos-1][j]; // the grid interval. Might also be negative
+            size_t pos = findNearestLowerGridAxisValue(funcData.mat1, j, gcoords(i, j).real()); // find the lower grid axis value assuming sorted axis
+            mu::value_type off = gcoords(i, j) - funcData.mat1(pos, j); // should be smaller than grid interval, but might be negative
+            mu::value_type interval = pos+1 < funcData.mat1.rows()
+                ? funcData.mat1(pos+1, j) - funcData.mat1(pos, j)
+                : funcData.mat1(pos, j) - funcData.mat1(pos-1, j); // the grid interval. Might also be negative
 
-            gcoords[i][j] = pos + 1 + off.real() / interval.real(); // if off == interval, then pos+1, else pos + (<1) and +1 due to zero-based coords
+            gcoords(i, j) = pos + 1 + off.real() / interval.real(); // if off == interval, then pos+1, else pos + (<1) and +1 due to zero-based coords
         }
     }
 
@@ -2794,8 +2752,8 @@ static Matrix coordsToGrid(const MatFuncData& funcData, const MatFuncErrorInfo& 
 /////////////////////////////////////////////////
 static mu::value_type readMat(const Matrix& mat, int row, int col)
 {
-    if (row < (int)mat.size() && col < (int)mat[0].size() && row >= 0 && col >= 0)
-        return mat[row][col];
+    if (row < (int)mat.rows() && col < (int)mat.cols() && row >= 0 && col >= 0)
+        return mat(row, col);
     else
         return NAN;
 }
@@ -2858,30 +2816,30 @@ static mu::value_type bilinearInterpolation(const Matrix& mat, double row, doubl
 /////////////////////////////////////////////////
 static Matrix interpolate(const MatFuncData& funcData, const MatFuncErrorInfo& errorInfo)
 {
-    if (!funcData.mat1.size() || !funcData.mat1[0].size() || !funcData.mat2.size() || !funcData.mat2[0].size())
+    if (funcData.mat1.isEmpty() || funcData.mat2.isEmpty())
         throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, errorInfo.command, errorInfo.position);
 
-    if (funcData.mat2[0].size() >= 2 && funcData.mat1[0].size() <= 2)
+    if (funcData.mat2.cols() >= 2 && funcData.mat1.cols() <= 2)
         throw SyntaxError(SyntaxError::WRONG_MATRIX_DIMENSIONS_FOR_MATOP, errorInfo.command, errorInfo.position,
-                          printMatrixDim(funcData.mat1) + " vs. "+ printMatrixDim(funcData.mat2));
+                          printMatrixDim(funcData.mat1) + " vs. " + printMatrixDim(funcData.mat2));
 
-    Matrix interp = createFilledMatrix(funcData.mat2.size(), std::max(1u, funcData.mat2[0].size()-1), 0.0);
+    Matrix interp = createFilledMatrix(funcData.mat2.rows(), std::max(1u, funcData.mat2.cols()-1), 0.0);
 
     // Interpolate all values in the matrix mat2. First
     // column contains the row values, all remaining contain
     // the corresponding col values
     #pragma omp parallel for
-    for (size_t i = 0; i < funcData.mat2.size(); i++)
+    for (size_t i = 0; i < funcData.mat2.rows(); i++)
     {
-        if (funcData.mat2[i].size() >= 2)
+        if (funcData.mat2.cols() >= 2)
         {
-            for (size_t j = 1; j < funcData.mat2[i].size(); j++)
+            for (size_t j = 1; j < funcData.mat2.cols(); j++)
             {
-                interp[i][j-1] = bilinearInterpolation(funcData.mat1, funcData.mat2[i][0].real()-1.0, funcData.mat2[i][j].real()-1.0);
+                interp(i, j-1) = bilinearInterpolation(funcData.mat1, funcData.mat2(i, 0).real()-1.0, funcData.mat2(i, j).real()-1.0);
             }
         }
         else
-            interp[i][0] = bilinearInterpolation(funcData.mat1, funcData.mat2[i][0].real()-1.0, 0.0);
+            interp(i, 0) = bilinearInterpolation(funcData.mat1, funcData.mat2(i, 0).real()-1.0, 0.0);
     }
 
     return interp;
@@ -2902,23 +2860,11 @@ static Matrix interpolate(const MatFuncData& funcData, const MatFuncErrorInfo& e
 static Matrix hcat(const MatFuncData& funcData, const MatFuncErrorInfo& errorInfo)
 {
     // Check the dimensions of the two matrices
-    if (funcData.mat1.size() != funcData.mat2.size())
-        throw SyntaxError(SyntaxError::MATRIX_ROWS_NOT_EQUAL, errorInfo.command, errorInfo.position);
+    if (funcData.mat1.rows() != funcData.mat2.rows())
+        throw SyntaxError(SyntaxError::WRONG_MATRIX_DIMENSIONS_FOR_MATOP, errorInfo.command, errorInfo.position,
+                          printMatrixDim(funcData.mat1) + " vs. " + printMatrixDim(funcData.mat2));
 
-    // Create the new matrix
-    size_t rows = funcData.mat1.size();
-    size_t cols = funcData.mat1[0].size() + funcData.mat2[0].size();
-    Matrix concated = createZeroesMatrix(rows, cols);
-
-    // Fill the new matrix with its elements
-    for (size_t i = 0; i < concated.size(); i++)
-    {
-        std::copy(funcData.mat1[i].begin(), funcData.mat1[i].end(), concated[i].begin());
-        std::copy(funcData.mat2[i].begin(), funcData.mat2[i].end(), concated[i].begin() + funcData.mat1[i].size());
-    }
-
-
-    return concated;
+    return funcData.mat1.hcat(funcData.mat2);
 }
 
 
@@ -2936,19 +2882,11 @@ static Matrix hcat(const MatFuncData& funcData, const MatFuncErrorInfo& errorInf
 static Matrix vcat(const MatFuncData& funcData, const MatFuncErrorInfo& errorInfo)
 {
     // Check the dimensions of the two matrices
-    if (funcData.mat1[0].size() != funcData.mat2[0].size())
-        throw SyntaxError(SyntaxError::WRONG_MATRIX_DIMENSIONS_FOR_MATOP, errorInfo.command, errorInfo.position, printMatrixDim(funcData.mat1) + " vs. " + printMatrixDim(funcData.mat2));
+    if (funcData.mat1.cols() != funcData.mat2.cols())
+        throw SyntaxError(SyntaxError::WRONG_MATRIX_DIMENSIONS_FOR_MATOP, errorInfo.command, errorInfo.position,
+                          printMatrixDim(funcData.mat1) + " vs. " + printMatrixDim(funcData.mat2));
 
-    // Create the new matrix
-    size_t rows = funcData.mat1.size() + funcData.mat2.size();
-    size_t cols = funcData.mat1[0].size();
-    Matrix concated = createZeroesMatrix(rows, cols);
-
-    // Fill the new matrix with its elements
-    std::copy(funcData.mat1.begin(), funcData.mat1.end(), concated.begin());
-    std::copy(funcData.mat2.begin(), funcData.mat2.end(), concated.begin() + funcData.mat1.size());
-
-    return concated;
+    return funcData.mat1.vcat(funcData.mat2);
 }
 
 
@@ -2963,44 +2901,52 @@ static Matrix vcat(const MatFuncData& funcData, const MatFuncErrorInfo& errorInf
 /////////////////////////////////////////////////
 static Matrix selection(const MatFuncData& funcData, const MatFuncErrorInfo& errorInfo)
 {
-    if (!funcData.mat1.size() || !funcData.mat1[0].size() || !funcData.mat2.size() || !funcData.mat2[0].size() || !funcData.mat3.size() || !funcData.mat3[0].size())
-        throw SyntaxError(SyntaxError::WRONG_MATRIX_DIMENSIONS_FOR_MATOP, errorInfo.command, errorInfo.position, printMatrixDim(funcData.mat1) + " vs. " + printMatrixDim(funcData.mat2));
+    if (funcData.mat1.isEmpty()
+        || funcData.mat2.isEmpty()
+        || funcData.mat3.isEmpty())
+        throw SyntaxError(SyntaxError::WRONG_MATRIX_DIMENSIONS_FOR_MATOP, errorInfo.command, errorInfo.position,
+                          printMatrixDim(funcData.mat1) + " vs. " + printMatrixDim(funcData.mat2));
 
     // Store the scalar state
-    bool isScalar[2] = {funcData.mat2.size() == 1 && funcData.mat2[0].size() == 1, funcData.mat3.size() == 1 && funcData.mat3[0].size() == 1};
+    bool isScalar[2] = {funcData.mat2.isScalar(),
+                        funcData.mat3.isScalar()};
 
-    if (!isScalar[0] && !isScalar[1] && (funcData.mat2.size() != funcData.mat3.size() || funcData.mat2[0].size() != funcData.mat3[0].size()))
+    if (!isScalar[0]
+        && !isScalar[1]
+        && (funcData.mat2.rows() != funcData.mat3.rows() || funcData.mat2.cols() != funcData.mat3.cols()))
         throw SyntaxError(SyntaxError::WRONG_MATRIX_DIMENSIONS_FOR_MATOP, errorInfo.command, errorInfo.position,
                           printMatrixDim(funcData.mat2) + " vs. " + printMatrixDim(funcData.mat3));
 
     // Prepare the return value
-    Matrix selected = createFilledMatrix(std::max(funcData.mat2.size(), funcData.mat3.size()), std::max(funcData.mat2[0].size(), funcData.mat3[0].size()), NAN);
+    Matrix selected = createFilledMatrix(std::max(funcData.mat2.rows(), funcData.mat3.rows()),
+                                         std::max(funcData.mat2.cols(), funcData.mat3.cols()), NAN);
 
     int row = 0;
     int col = 0;
 
     // Store the scalar values
     if (isScalar[0])
-        row = intCast(funcData.mat2[0][0])-1;
+        row = intCast(funcData.mat2(0))-1;
 
     if (isScalar[1])
-        col = intCast(funcData.mat3[0][0])-1;
+        col = intCast(funcData.mat3(0))-1;
 
     #pragma omp parallel for firstprivate(row,col)
-    for (size_t i = 0; i < selected.size(); i++)
+    for (size_t i = 0; i < selected.rows(); i++)
     {
-        for (size_t j = 0; j < selected[i].size(); j++)
+        for (size_t j = 0; j < selected.cols(); j++)
         {
             // Get the values, if they are no scalars
             if (!isScalar[0])
-                row = intCast(funcData.mat2[i][j])-1;
+                row = intCast(funcData.mat2(i, j))-1;
 
             if (!isScalar[1])
-                col = intCast(funcData.mat3[i][j])-1;
+                col = intCast(funcData.mat3(i, j))-1;
 
             // Extract the selected value
-            if (row >= 0 && row < funcData.mat1.size() && col >= 0 && col < funcData.mat1[0].size())
-                selected[i][j] = funcData.mat1[row][col];
+            if (row >= 0 && row < (int)funcData.mat1.rows()
+                && col >= 0 && col < (int)funcData.mat1.cols())
+                selected(i, j) = funcData.mat1(row, col);
         }
     }
 
@@ -3020,33 +2966,30 @@ static Matrix selection(const MatFuncData& funcData, const MatFuncErrorInfo& err
 /////////////////////////////////////////////////
 static Matrix assemble(const MatFuncData& funcData, const MatFuncErrorInfo& errorInfo)
 {
-    if (!funcData.mat1.size()
-        || !funcData.mat1[0].size()
-        || !funcData.mat2.size()
-        || !funcData.mat2[0].size()
-        || !funcData.mat3.size()
-        || !funcData.mat3[0].size())
+    if (funcData.mat1.isEmpty()
+        || funcData.mat2.isEmpty()
+        || funcData.mat3.isEmpty())
         throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, errorInfo.command, errorInfo.position);
 
     // Store the scalar state
-    bool isScalar[2] = {funcData.mat1.size() == 1 && funcData.mat1[0].size() == 1,
-                        funcData.mat2.size() == 1 && funcData.mat2[0].size() == 1};
+    bool isScalar[2] = {funcData.mat1.isScalar(),
+                        funcData.mat2.isScalar()};
 
     if (!isScalar[0]
         && !isScalar[1]
-        && (funcData.mat1.size() != funcData.mat2.size()
-            || funcData.mat1[0].size() != funcData.mat2[0].size()
-            || funcData.mat1.size() != funcData.mat3.size()
-            || funcData.mat1[0].size() != funcData.mat3[0].size()))
+        && (funcData.mat1.rows() != funcData.mat2.rows()
+            || funcData.mat1.cols() != funcData.mat2.cols()
+            || funcData.mat1.rows() != funcData.mat3.rows()
+            || funcData.mat1.cols() != funcData.mat3.cols()))
         throw SyntaxError(SyntaxError::WRONG_MATRIX_DIMENSIONS_FOR_MATOP, errorInfo.command, errorInfo.position,
                           printMatrixDim(funcData.mat1) + " vs. " + printMatrixDim(funcData.mat2) + " vs. " + printMatrixDim(funcData.mat3));
 
     // Prepare the return value
-    int rows = calculateStats(funcData.mat1, StatsLogic(StatsLogic::OPERATION_MAX, funcData.mat1[0][0].real()),
-                              0, funcData.mat1.size(), 0, funcData.mat1[0].size()).real();
+    int rows = calculateStats(funcData.mat1, StatsLogic(StatsLogic::OPERATION_MAX, funcData.mat1(0).real()),
+                              0, funcData.mat1.rows(), 0, funcData.mat1.cols()).real();
 
-    int cols = calculateStats(funcData.mat2, StatsLogic(StatsLogic::OPERATION_MAX, funcData.mat2[0][0].real()),
-                              0, funcData.mat2.size(), 0, funcData.mat2[0].size()).real();
+    int cols = calculateStats(funcData.mat2, StatsLogic(StatsLogic::OPERATION_MAX, funcData.mat2(0).real()),
+                              0, funcData.mat2.rows(), 0, funcData.mat2.cols()).real();
 
     // Prepare the filled matrix
     Matrix assembled = createFilledMatrix(rows, cols, NAN);
@@ -3056,24 +2999,24 @@ static Matrix assemble(const MatFuncData& funcData, const MatFuncErrorInfo& erro
 
     // Store the scalar values
     if (isScalar[0])
-        row = intCast(funcData.mat1[0][0])-1;
+        row = intCast(funcData.mat1(0))-1;
 
     if (isScalar[1])
-        col = intCast(funcData.mat2[0][0])-1;
+        col = intCast(funcData.mat2(0))-1;
 
     #pragma omp parallel for firstprivate(row,col)
-    for (size_t i = 0; i < funcData.mat3.size(); i++)
+    for (size_t i = 0; i < funcData.mat3.rows(); i++)
     {
-        for (size_t j = 0; j < funcData.mat3[0].size(); j++)
+        for (size_t j = 0; j < funcData.mat3.cols(); j++)
         {
             // Get the values, if they are no scalars
             if (!isScalar[0])
-                row = intCast(funcData.mat1[i][j])-1;
+                row = intCast(funcData.mat1(i, j))-1;
 
             if (!isScalar[1])
-                col = intCast(funcData.mat2[i][j])-1;
+                col = intCast(funcData.mat2(i, j))-1;
 
-            assembled[row][col] = funcData.mat3[i][j];
+            assembled(row, col) = funcData.mat3(i, j);
         }
     }
 
@@ -3094,25 +3037,25 @@ static Matrix assemble(const MatFuncData& funcData, const MatFuncErrorInfo& erro
 /////////////////////////////////////////////////
 static Matrix polyLength(const MatFuncData& funcData, const MatFuncErrorInfo& errorInfo)
 {
-    if (!funcData.mat1.size() || !funcData.mat1[0].size())
+    if (funcData.mat1.isEmpty())
         throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, errorInfo.command, errorInfo.position);
 
-    if (funcData.mat1[0].size() < 2)
+    if (funcData.mat1.cols() < 2)
         throw SyntaxError(SyntaxError::WRONG_MATRIX_DIMENSIONS_FOR_MATOP, errorInfo.command, errorInfo.position,
                           printMatrixDim(funcData.mat1));
 
     Matrix mRes = createZeroesMatrix(1, 1);
 
-    for (size_t i = 0; i < funcData.mat1.size()-1; i++)
+    for (size_t i = 0; i < funcData.mat1.rows()-1; i++)
     {
         double sum = 0;
 
-        for (size_t j = 0; j < funcData.mat1[0].size(); j++)
+        for (size_t j = 0; j < funcData.mat1.cols(); j++)
         {
-            sum += ((funcData.mat1[i+1][j] - funcData.mat1[i][j]) * conj(funcData.mat1[i+1][j] - funcData.mat1[i][j])).real();
+            sum += ((funcData.mat1(i+1, j) - funcData.mat1(i, j)) * conj(funcData.mat1(i+1, j) - funcData.mat1(i, j))).real();
         }
 
-        mRes[0][0] += sqrt(sum);
+        mRes(0) += sqrt(sum);
     }
 
     return mRes;

@@ -285,7 +285,7 @@ namespace mu
 		bPauseLoopByteCode = false;
 		bPauseLock = false;
 		m_state = &m_compilingState;
-		nMaxThreads = std::min(omp_get_max_threads(), s_MaxNumOpenMPThreads);
+		nMaxThreads = omp_get_max_threads(); //std::min(omp_get_max_threads(), s_MaxNumOpenMPThreads);
 
 		mVarMapPntr = nullptr;
 
@@ -727,12 +727,13 @@ namespace mu
 						{
 						    // This is a target vector
 						    // Store the variable names
+#warning TODO (numere#4#04/23/22): Those attributes might be also part of the parser state
 							sTargets = sExpr.subview(i + 1, j - i - 1).to_string();
 
 							// Set the special target vector variable
+							mTargets = m_pTokenReader->GetUsedVar();
 							SetVectorVar("_~TRGTVCT[~]", vResults);
 							sExpr.replace(i, j + 1 - i, "_~TRGTVCT[~]");
-							mTargets = m_pTokenReader->GetUsedVar();
 						}
 						else
 						{
@@ -2112,7 +2113,6 @@ namespace mu
 					stVal.push(opt);
 					m_compilingState.m_byteCode.AddVar( static_cast<value_type*>(opt.GetVar()) );
 
-#warning TODO (numere#5#03/04/22): Heres possibly the location to enbable multiprocessing in the parser
 					if (mVectorVars.size())
 					{
 						if (mVectorVars.find(opt.GetAsString()) != mVectorVars.end())
@@ -2984,7 +2984,7 @@ namespace mu
 
         // assign the results of the calculation to a possible
         // temporary vector
-        if (mTargets.size() && m_state->m_usedVar.find("_~TRGTVCT[~]") == m_state->m_usedVar.end())
+        if (mTargets.size() && m_state->m_usedVar.find("_~TRGTVCT[~]") != m_state->m_usedVar.end())
             assignResultsToTarget(m_state->m_usedVar, nStackSize, m_buffer);
 
         if (g_DbgDumpStack)

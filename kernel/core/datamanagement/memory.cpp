@@ -30,6 +30,7 @@
 #include "../version.h"
 #include "../maths/resampler.h"
 #include "../maths/statslogic.hpp"
+#include "../maths/matdatastructures.hpp"
 
 #define MAX_TABLE_SIZE 1e8
 #define MAX_TABLE_COLS 1e4
@@ -455,6 +456,54 @@ std::vector<mu::value_type> Memory::readMem(const VectorIndex& _vLine, const Vec
     }
 
     return vReturn;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This member function returns the
+/// elements stored at the selected positions as
+/// a Matrix.
+///
+/// \param _vLine const VectorIndex&
+/// \param _vCol const VectorIndex&
+/// \return Matrix
+///
+/////////////////////////////////////////////////
+Matrix Memory::readMemAsMatrix(const VectorIndex& _vLine, const VectorIndex& _vCol) const
+{
+    if (!memArray.size())
+        return Matrix(1, 1);
+
+    Matrix mat(_vLine.size(), _vCol.size());
+
+    for (size_t j = 0; j < _vCol.size(); j++)
+    {
+        if (_vCol[j] < 0)
+            continue;
+
+        int elems = getElemsInColumn(_vCol[j]);
+
+        if (!elems)
+            continue;
+
+        for (size_t i = 0; i < _vLine.size(); i++)
+        {
+            if (_vLine[i] < 0)
+                continue;
+
+            if (_vLine[i] >= elems)
+            {
+                if (_vLine.isExpanded() && _vLine.isOrdered())
+                    break;
+
+                continue;
+            }
+
+            mat(i, j) = memArray[_vCol[j]]->getValue(_vLine[i]);
+        }
+    }
+
+    return mat;
 }
 
 

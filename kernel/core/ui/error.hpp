@@ -530,6 +530,7 @@ struct AssertionStats
     }
 };
 
+class Matrix;
 
 /////////////////////////////////////////////////
 /// \brief This class handles assertions and
@@ -552,7 +553,7 @@ class Assertion
         void resetStats();
         void enable(const std::string& sExpr);
         void checkAssertion(mu::value_type* v, int nNum);
-        void checkAssertion(const std::vector<std::vector<mu::value_type>>& _mMatrix);
+        void checkAssertion(const Matrix& _mMatrix);
         void checkAssertion(const StringResult& strRes);
         AssertionStats getStats() const;
 };

@@ -54,7 +54,7 @@ static Matrix evalMatOp(string& sCmd, Parser& _parser, MemoryManager& _data, Fun
 static size_t getPrevMatMultiOp(const string& sCmd, size_t nLastPos);
 static Matrix multiplyMatrices(const Matrix& _mLeft, const Matrix& _mRight, const string& sCmd, const string& sExpr, size_t position);
 static Matrix getMatrixElements(string& sExpr, const Matrix& _mMatrix, Parser& _parser, MemoryManager& _data, FunctionDefinitionManager& _functions, const Settings& _option);
-static vector<mu::value_type> calcDeltasForMatFill(const Matrix& _mMatrix, unsigned int nLine);
+static vector<mu::value_type> calcDeltasForMatFill(const std::vector<std::vector<mu::value_type>>& _mMatrix, unsigned int nLine);
 static void showMatrixResult(const Matrix& _mResult, const Settings& _option);
 static Indices getIndicesForMatrix(const string& sCmd, const MatOpCache& _cache, Parser& _parser, MemoryManager& _data, const Settings& _option);
 static bool containsMatrices(const string& sExpr, MemoryManager& _data);
@@ -188,7 +188,7 @@ bool performMatrixOperation(string& sCmd, Parser& _parser, MemoryManager& _data,
     _assertionHandler.checkAssertion(_mResult);
 
     // Safety check
-    if (!_mResult.size())
+    if (_mResult.isEmpty())
         return false;
 
     // Target in Zielmatrix speichern
@@ -199,12 +199,12 @@ bool performMatrixOperation(string& sCmd, Parser& _parser, MemoryManager& _data,
             _data.deleteBulk(sTargetName, 0, _data.getLines(sTargetName, false) - 1, 0, _data.getCols(sTargetName, false) - 1);
 
         // Prepare the target size
-        _data.resizeTable(_idx.col.front()+_mResult[0].size(), sTargetName);
+        _data.resizeTable(_idx.col.front()+_mResult.cols(), sTargetName);
         Memory* _table = _data.getTable(sTargetName);
 
-        int maxrow = _idx.row.subidx(0, _mResult.size()).max();
+        int maxrow = _idx.row.subidx(0, _mResult.rows()).max();
 
-        for (size_t j = 0; j < _mResult[0].size(); j++)
+        for (size_t j = 0; j < _mResult.cols(); j++)
         {
             if (_idx.col[j] == VectorIndex::INVALID)
                 break;
@@ -214,17 +214,17 @@ bool performMatrixOperation(string& sCmd, Parser& _parser, MemoryManager& _data,
 
         // Write the contents to the table
         #pragma omp parallel for
-        for (unsigned int j = 0; j < _mResult[0].size(); j++)
+        for (unsigned int j = 0; j < _mResult.cols(); j++)
         {
             if (_idx.col[j] == VectorIndex::INVALID)
                 continue;
 
-            for (unsigned int i = 0; i < _mResult.size(); i++)
+            for (unsigned int i = 0; i < _mResult.rows(); i++)
             {
                 if (_idx.row[i] == VectorIndex::INVALID)
                     break;
 
-                _table->writeDataDirectUnsafe(_idx.row[i], _idx.col[j], _mResult[i][j]);
+                _table->writeDataDirectUnsafe(_idx.row[i], _idx.col[j], _mResult(i, j));
             }
         }
 
@@ -239,26 +239,26 @@ bool performMatrixOperation(string& sCmd, Parser& _parser, MemoryManager& _data,
             cluster.clear();
 
         // Assign either the first column or the first line
-        if (_mResult.size() == 1)
+        if (_mResult.rows() == 1)
         {
             // Assign the first line
-            for (size_t i = 0; i < _mResult[0].size(); i++)
+            for (size_t i = 0; i < _mResult.cols(); i++)
             {
                 if (_idx.row[i] == VectorIndex::INVALID)
                     break;
 
-                cluster.setDouble(_idx.row[i], _mResult[0][i]);
+                cluster.setDouble(_idx.row[i], _mResult(0, i));
             }
         }
         else
         {
             // Assign the first column
-            for (size_t i = 0; i < _mResult.size(); i++)
+            for (size_t i = 0; i < _mResult.rows(); i++)
             {
                 if (_idx.row[i] == VectorIndex::INVALID)
                     break;
 
-                cluster.setDouble(_idx.row[i], _mResult[i][0]);
+                cluster.setDouble(_idx.row[i], _mResult(i));
             }
         }
     }
@@ -599,11 +599,7 @@ static Matrix evalMatOp(string& sCmd, Parser& _parser, MemoryManager& _data, Fun
     if (pos_back < sCmd.length())
         __sCmd += sCmd.substr(pos_back);
 
-    vector<mu::value_type> vMatrixVector;
-    Matrix _mTarget;
-
     unsigned int nPos = 0;
-    unsigned int nColCount = 0;
 
     // Get the indices of the calls to the memory objects
     // all caches
@@ -672,7 +668,7 @@ static Matrix evalMatOp(string& sCmd, Parser& _parser, MemoryManager& _data, Fun
             // Write the contents to the matrix
             for (size_t i = 0; i < _idx.row.size(); i++)
             {
-                _mClusterMatrix[i][0] = iter->second.getDouble(_idx.row[i]);
+                _mClusterMatrix(i) = iter->second.getDouble(_idx.row[i]);
             }
 
             // Declare the cluster as a returned matrix (simplifies the
@@ -680,7 +676,8 @@ static Matrix evalMatOp(string& sCmd, Parser& _parser, MemoryManager& _data, Fun
             _cache.vReturnedMatrices.push_back(_mClusterMatrix);
 
             // Replace the current call with a standardized one
-            __sCmd.replace(nPos, getMatchingParenthesis(__sCmd.substr(nPos+(iter->first).length()))+(iter->first).length()+1, "_~returnedMatrix["+toString((int)_cache.vReturnedMatrices.size()-1)+"]");
+            __sCmd.replace(nPos, getMatchingParenthesis(__sCmd.substr(nPos+(iter->first).length()))+(iter->first).length()+1,
+                           "_~returnedMatrix["+toString((int)_cache.vReturnedMatrices.size()-1)+"]");
         }
     }
 
@@ -719,12 +716,12 @@ static Matrix evalMatOp(string& sCmd, Parser& _parser, MemoryManager& _data, Fun
                         nPositions[1] = i+__sCmd.find_first_not_of(' ', n+2);
                         g_logger.debug("sSubExpr = " + sSubExpr);
                         _mRight = evalMatOp(sSubExpr, _parser, _data, _functions, _option, _cache);
-                        g_logger.debug("_mRight.size() = " + toString(_mRight.size()) + "," + toString(_mRight[0].size()));
+                        g_logger.debug("_mRight.size() = " + _mRight.printDims());
                         break;
                     }
                 }
 
-                if (!_mRight.size())
+                if (_mRight.isEmpty())
                     throw SyntaxError(SyntaxError::NO_MATRIX_FOR_MATOP, sCmd, pos_back+1);
 
                 // Left handed matrix expression
@@ -746,19 +743,20 @@ static Matrix evalMatOp(string& sCmd, Parser& _parser, MemoryManager& _data, Fun
                         nPositions[0] = i;
                         g_logger.debug("sSubExpr = " + sSubExpr);
                         _mLeft = evalMatOp(sSubExpr, _parser, _data, _functions, _option, _cache);
-                        g_logger.debug("_mLeft.size() = " + toString(_mLeft.size()) + "," + toString(_mLeft[0].size()));
+                        g_logger.debug("_mLeft.size() = " + _mLeft.printDims());
                         break;
                     }
                 }
 
-                if (!_mLeft.size())
+                if (_mLeft.isEmpty())
                     throw SyntaxError(SyntaxError::NO_MATRIX_FOR_MATOP, sCmd, pos_back+1);
 
                 // Perform the actual matrix multiplication
                 _cache.vReturnedMatrices.push_back(multiplyMatrices(_mLeft, _mRight, sCmd, "", pos_back+1));
 
                 // Replace the current multiplication with its return value
-                __sCmd.replace(nPositions[0], nPositions[1]-nPositions[0], "_~returnedMatrix[" + toString((int)_cache.vReturnedMatrices.size()-1)+"]");
+                __sCmd.replace(nPositions[0], nPositions[1]-nPositions[0],
+                               "_~returnedMatrix[" + toString((int)_cache.vReturnedMatrices.size()-1)+"]");
                 n = nPositions[0];
             }
         }
@@ -768,6 +766,8 @@ static Matrix evalMatOp(string& sCmd, Parser& _parser, MemoryManager& _data, Fun
 
     std::map<size_t, std::string> mDataMatrices;
     std::map<size_t, std::string> mReturnedMatrices;
+    size_t nColCount = 1; // Minimal size of a matrix
+    size_t nRowCount = 1; // Minimal size of a matrix
 
     // We need the maximal number of columns for the regular
     // evaluation of the expression
@@ -784,8 +784,8 @@ static Matrix evalMatOp(string& sCmd, Parser& _parser, MemoryManager& _data, Fun
         mDataMatrices[i] = sMatrixName;
 
         // Get the column count from the dimensions of the indices
-        if (_cache.vDataAccesses[i].idx.col.size() > nColCount)
-            nColCount = _cache.vDataAccesses[i].idx.col.size();
+        nRowCount = std::max(nRowCount, _cache.vDataAccesses[i].idx.row.size());
+        nColCount = std::max(nColCount, _cache.vDataAccesses[i].idx.col.size());
     }
 
     // Examine now the return values available in the expression
@@ -797,24 +797,16 @@ static Matrix evalMatOp(string& sCmd, Parser& _parser, MemoryManager& _data, Fun
             continue;
 
         mReturnedMatrices[i] = sMatrixName;
-
-        if (_cache.vReturnedMatrices[i][0].size() > nColCount)
-            nColCount = _cache.vReturnedMatrices[i][0].size();
+        nRowCount = std::max(nRowCount, _cache.vReturnedMatrices[i].rows());
+        nColCount = std::max(nColCount, _cache.vReturnedMatrices[i].cols());
     }
 
     // Shortcut => only a single matrix
     if (mDataMatrices.size() == 1 && isEqualStripped(sCmd, mDataMatrices.begin()->second))
     {
         auto iter = mDataMatrices.begin();
-
-        for (size_t i = 0; i < _cache.vDataAccesses[iter->first].idx.row.size(); i++)
-        {
-            _mTarget.push_back(_data.getElement(VectorIndex(_cache.vDataAccesses[iter->first].idx.row[i]),
-                                                _cache.vDataAccesses[iter->first].idx.col,
-                                                _cache.vDataAccesses[iter->first].sName));
-        }
-
-        return _mTarget;
+        return _data.getTable(_cache.vDataAccesses[iter->first].sName)->readMemAsMatrix(_cache.vDataAccesses[iter->first].idx.row,
+                                                                                        _cache.vDataAccesses[iter->first].idx.col);
     }
 
     if (mReturnedMatrices.size() == 1 && isEqualStripped(sCmd, mReturnedMatrices.begin()->second))
@@ -826,127 +818,40 @@ static Matrix evalMatOp(string& sCmd, Parser& _parser, MemoryManager& _data, Fun
     // start with the memory accesses
     for (const auto& iter : mDataMatrices)
     {
-        if (vMatrixVector.size())
-            vMatrixVector.clear();
-
         // Get the values using the incdices
         const MatOpCache::MatOpDataAccess& _access = _cache.vDataAccesses[iter.first];
-        vMatrixVector = _data.getElement(_access.idx.row, VectorIndex(_access.idx.col.front()), _access.sName);
+        Matrix mat(_data.getTable(_access.sName)->readMemAsMatrix(_access.idx.row, _access.idx.col));
+
+        // Extend this matrix to have enough elements
+        mat.extend(nRowCount, nColCount);
 
         // Declare the corresponding vector variable
-        _parser.SetVectorVar(iter.second, vMatrixVector);
+        _parser.SetVectorVar(iter.second, mat.data());
     }
 
     // Get now the first columns of the returned values
     for (const auto& iter : mReturnedMatrices)
     {
-        if (vMatrixVector.size())
-            vMatrixVector.clear();
-
-        // Get the first column from the return values
-        if (!_cache.vReturnedMatrices[iter.first][0].size())
-            vMatrixVector.push_back(0.0);
-        else
-        {
-            for (unsigned int k = 0; k < _cache.vReturnedMatrices[iter.first].size(); k++)
-            {
-                vMatrixVector.push_back(_cache.vReturnedMatrices[iter.first][k][0]);
-            }
-        }
+        // Extend every matrix to have enough elements
+        _cache.vReturnedMatrices[iter.first].extend(nRowCount, nColCount);
 
         // Declare the corresponding vector variable
-        _parser.SetVectorVar(iter.second, vMatrixVector);
+        _parser.SetVectorVar(iter.second, _cache.vReturnedMatrices[iter.first].data());
     }
 
     // Set the expression in the parser
     _parser.SetExpr(sCmd);
 
+    g_logger.debug("Matrix calculation.");
+
     // Evaluate the first columns
     v = _parser.Eval(nResults);
 
-    // Ensure that the column dimension is at least 1
-    if (!nColCount && nResults)
-        nColCount = 1;
-
-    // Append the vector to the target matrix
-    _mTarget.resize(nResults, std::vector<mu::value_type>(nColCount, 0.0));
-
-    for (int n = 0; n < nResults; n++)
-    {
-        _mTarget[n][0] = v[n];
-    }
-
-    g_logger.debug("Matrix loop.");
-
-    // Get now the next columns as vectors
-    // and evaluate the expression with their
-    // values
-    for (unsigned int i = 1; i < nColCount; i++)
-    {
-        // Read the next columns of every matrix in the expression
-        // as vector for the parser
-        for (const auto& iter : mDataMatrices)
-        {
-            std::vector<mu::value_type>* currentVec = _parser.GetVectorVar(iter.second);
-
-            if (!currentVec)
-                continue;
-
-            const MatOpCache::MatOpDataAccess& _access = _cache.vDataAccesses[iter.first];
-
-            if (_access.idx.col.size() <= i && (_access.idx.col.size() > 1 || _access.idx.row.size() > 1))
-                currentVec->assign(1, _access.missingValues);
-            else if (_access.idx.row.size() >= 1 && _access.idx.col.size() == 1)
-                continue;
-            else
-                _data.copyElementsInto(currentVec, _access.idx.row, VectorIndex(_access.idx.col[i]), _access.sName);
-
-            _parser.UpdateVectorVar(iter.second);
-        }
-
-        // Get now the next columns of the returned values
-        for (const auto& iter : mReturnedMatrices)
-        {
-            std::vector<mu::value_type>* currentVec = _parser.GetVectorVar(iter.second);
-
-            if (!currentVec)
-                continue;
-
-            if (!_cache.vReturnedMatrices[iter.first][0].size())
-                currentVec->assign(1, 0.0);
-            else if (_cache.vReturnedMatrices[iter.first].size() >= 1 && _cache.vReturnedMatrices[iter.first][0].size() == 1)
-                continue;
-            else
-            {
-                currentVec->resize(_cache.vReturnedMatrices[iter.first].size(), 0.0);
-
-                for (unsigned int k = 0; k < _cache.vReturnedMatrices[iter.first].size(); k++)
-                {
-                    if (_cache.vReturnedMatrices[iter.first][0].size() <= i)
-                        (*currentVec)[k] = 0.0;
-                    else
-                        (*currentVec)[k] = _cache.vReturnedMatrices[iter.first][k][i];
-                }
-            }
-
-            _parser.UpdateVectorVar(iter.second);
-        }
-
-        // Evaluate
-#warning TODO (numere#6#03/04/22): Needs parallelization for reasonable performance at this position.
-        v = _parser.Eval(nResults);
-
-        // Append the vector to the target matrix
-        if (nResults > _mTarget.size())
-            _mTarget.resize(nResults, std::vector<mu::value_type>(nColCount, 0.0));
-
-        for (int n = 0; n < nResults; n++)
-        {
-            _mTarget[n][i] = v[n];
-        }
-    }
-
-    return _mTarget;
+    // Create and return a matrix from the calculated
+    // results
+    return Matrix((nResults > 1 && nRowCount == 1 && nColCount == 1) ? nResults : nRowCount, // special case for multiple return values
+                  nColCount,
+                  v, nResults);
 }
 
 
@@ -994,57 +899,14 @@ static size_t getPrevMatMultiOp(const string& sCmd, size_t nLastPos)
 /////////////////////////////////////////////////
 static Matrix multiplyMatrices(const Matrix& _mLeft, const Matrix& _mRight, const string& sCmd, const string& sExpr, size_t position)
 {
-    if (!_mLeft.size() || !_mLeft[0].size() || !_mRight.size() || !_mRight[0].size())
+    if (_mLeft.isEmpty() || _mRight.isEmpty())
         throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, sCmd, position);
 
-    Matrix _mResult;
-    vector<mu::value_type> vLine;
-    mu::value_type dEntry = 0.0;
+    if (_mRight.rows() != _mLeft.cols())
+        throw SyntaxError(SyntaxError::WRONG_MATRIX_DIMENSIONS_FOR_MATOP, sCmd, position,
+                          _mLeft.printDims() +" vs. "+ _mRight.printDims());
 
-    if (_mRight.size() == 1 && _mRight[0].size() && _mLeft.size() == 1 && _mLeft[0].size() == _mRight[0].size())
-    {
-        for (unsigned int i = 0; i < _mLeft[0].size(); i++)
-        {
-            dEntry += _mLeft[0][i]*_mRight[0][i];
-        }
-
-        vLine.push_back(dEntry);
-        _mResult.push_back(vLine);
-
-        return  _mResult;
-    }
-
-    if (_mRight[0].size() == 1 && _mRight.size() && _mLeft[0].size() == 1 && _mLeft.size() == _mRight.size())
-    {
-        for (unsigned int i = 0; i < _mLeft.size(); i++)
-        {
-            dEntry += _mLeft[i][0]*_mRight[i][0];
-        }
-
-        vLine.push_back(dEntry);
-        _mResult.push_back(vLine);
-
-        return  _mResult;
-    }
-
-    if (_mRight.size() != _mLeft[0].size())
-        throw SyntaxError(SyntaxError::WRONG_MATRIX_DIMENSIONS_FOR_MATOP, sCmd, position, toString(_mLeft.size()) +"x"+ toString(_mLeft[0].size()) +" vs. "+ toString(_mRight.size()) +"x"+ toString(_mRight[0].size()));
-
-    _mResult = createZeroesMatrix(_mLeft.size(), _mRight[0].size());
-
-    #pragma omp parallel for
-    for (unsigned int i = 0; i < _mLeft.size(); i++)
-    {
-        for (unsigned int j = 0; j < _mRight[0].size(); j++)
-        {
-            for (unsigned int k = 0; k < _mRight.size(); k++)
-            {
-                _mResult[i][j] += _mLeft[i][k]*_mRight[k][j];
-            }
-        }
-    }
-
-    return _mResult;
+    return _mLeft * _mRight;
 }
 
 
@@ -1136,7 +998,7 @@ static Matrix createMatFromColsFilled(string& sCmd, Parser& _parser, MemoryManag
 /////////////////////////////////////////////////
 static Matrix createMatFromLines(string& sCmd, Parser& _parser, MemoryManager& _data, FunctionDefinitionManager& _functions, const Settings& _option)
 {
-    Matrix _matfl;
+    std::vector<std::vector<mu::value_type>> _matfl;
     value_type* v = 0;
     int nResults = 0;
     unsigned int nLineLength = 0;
@@ -1176,7 +1038,7 @@ static Matrix createMatFromLines(string& sCmd, Parser& _parser, MemoryManager& _
         _matfl[i].resize(nLineLength, 0.0);
     }
 
-    return _matfl;
+    return Matrix(_matfl);
 }
 
 
@@ -1195,7 +1057,7 @@ static Matrix createMatFromLines(string& sCmd, Parser& _parser, MemoryManager& _
 /////////////////////////////////////////////////
 static Matrix createMatFromLinesFilled(string& sCmd, Parser& _parser, MemoryManager& _data, FunctionDefinitionManager& _functions, const Settings& _option)
 {
-    Matrix _matfl;
+    std::vector<std::vector<mu::value_type>> _matfl;
     value_type* v = 0;
     int nResults = 0;
     unsigned int nLineLength = 0;
@@ -1247,7 +1109,7 @@ static Matrix createMatFromLinesFilled(string& sCmd, Parser& _parser, MemoryMana
         }
     }
 
-    return _matfl;
+    return Matrix(_matfl);
 }
 
 
@@ -1256,14 +1118,14 @@ static Matrix createMatFromLinesFilled(string& sCmd, Parser& _parser, MemoryMana
 /// calculate the differences between consecutive
 /// matrix elements.
 ///
-/// \param _mMatrix const Matrix&
+/// \param _mMatrix const std::vector<std::vector<mu::value_type>>&
 /// \param nLine unsigned int
 /// \return vector<mu::value_type>
 ///
 /// This function is used by the \c matf*f()
 /// functions to derive the filling logic.
 /////////////////////////////////////////////////
-static vector<mu::value_type> calcDeltasForMatFill(const Matrix& _mMatrix, unsigned int nLine)
+static vector<mu::value_type> calcDeltasForMatFill(const std::vector<std::vector<mu::value_type>>& _mMatrix, unsigned int nLine)
 {
     vector<mu::value_type> vDeltas;
     for (unsigned int j = 1; j < _mMatrix[nLine].size(); j++)
@@ -1294,10 +1156,10 @@ static Matrix getMatrixElements(string& sExpr, const Matrix& _mMatrix, Parser& _
     Indices _idx = getIndices(sExpr, _mMatrix, _parser, _data, _option);
 
     if (_idx.row.isOpenEnd())
-        _idx.row.setRange(0, _mMatrix.size()-1);
+        _idx.row.setRange(0, _mMatrix.rows()-1);
 
     if (_idx.col.isOpenEnd())
-        _idx.col.setRange(0, _mMatrix[0].size()-1);
+        _idx.col.setRange(0, _mMatrix.cols()-1);
 
     _mReturn = createZeroesMatrix(_idx.row.size(), _idx.col.size());
 
@@ -1305,10 +1167,11 @@ static Matrix getMatrixElements(string& sExpr, const Matrix& _mMatrix, Parser& _
     {
         for (unsigned int j = 0; j < _idx.col.size(); j++)
         {
-            if (_idx.row[i] >= (int)_mMatrix.size() || _idx.col[j] >= (int)_mMatrix[0].size())
-                throw SyntaxError(SyntaxError::INVALID_INDEX, "", SyntaxError::invalid_position, _idx.row.to_string() + ", " + _idx.col.to_string());
+            if (_idx.row[i] >= (int)_mMatrix.rows() || _idx.col[j] >= (int)_mMatrix.cols())
+                throw SyntaxError(SyntaxError::INVALID_INDEX, "", SyntaxError::invalid_position,
+                                  _idx.row.to_string() + ", " + _idx.col.to_string());
 
-            _mReturn[i][j] = _mMatrix[_idx.row[i]][_idx.col[j]];
+            _mReturn(i, j) = _mMatrix(_idx.row[i], _idx.col[j]);
         }
     }
 
@@ -1324,19 +1187,19 @@ static std::string formatMatrixRow(const Matrix& _mResult, const Settings& _opti
 
     std::string sRow;
 
-    for (unsigned int col = 0; col < _mResult[row].size(); col++)
+    for (unsigned int col = 0; col < _mResult.cols(); col++)
     {
-        if (_mResult[row].size() > (_option.getWindow()-2-15) / FIELDLENGTH_W_FILLER
+        if (_mResult.cols() > (_option.getWindow()-2-15) / FIELDLENGTH_W_FILLER
             && (_option.getWindow()-2-15) / FIELDLENGTH_W_FILLER / 2 == col)
         {
             sRow += strfill("..., ", FIELDLENGTH_W_FILLER);
-            col = _mResult[row].size() - (_option.getWindow()-2-15) / FIELDLENGTH_W_FILLER / 2 - 1;
+            col = _mResult.cols() - (_option.getWindow()-2-15) / FIELDLENGTH_W_FILLER / 2 - 1;
             continue;
         }
 
-        sRow += strfill(toString(_mResult[row][col], PRECISION), FIELDLENGTH);
+        sRow += strfill(toString(_mResult(row, col), PRECISION), FIELDLENGTH);
 
-        if (col+1 < _mResult[row].size())
+        if (col+1 < _mResult.cols())
             sRow += ", ";
     }
 
@@ -1363,13 +1226,13 @@ static void showMatrixResult(const Matrix& _mResult, const Settings& _option)
 
     NumeReKernel::toggleTableStatus();
 
-    if (_mResult.size() > 10)
+    if (_mResult.rows() > 10)
     {
-        for (unsigned int i = 0; i < _mResult.size(); i++)
+        for (unsigned int i = 0; i < _mResult.rows(); i++)
         {
             if (!i)
                 NumeReKernel::printPreFmt("|   /");
-            else if (i+1 == _mResult.size())
+            else if (i+1 == _mResult.rows())
                 NumeReKernel::printPreFmt("|   \\");
             else if (i == 5)
                 NumeReKernel::printPreFmt("|-> |");
@@ -1378,53 +1241,53 @@ static void showMatrixResult(const Matrix& _mResult, const Settings& _option)
 
             if (i == 5)
             {
-                for (unsigned int j = 0; j < _mResult[0].size(); j++)
+                for (unsigned int j = 0; j < _mResult.cols(); j++)
                 {
-                    if (_mResult[0].size() > (_option.getWindow()-2-15) / FIELDLENGTH_W_FILLER
+                    if (_mResult.cols() > (_option.getWindow()-2-15) / FIELDLENGTH_W_FILLER
                         && (_option.getWindow()-2-15) / FIELDLENGTH_W_FILLER / 2 == j)
                     {
                         NumeReKernel::printPreFmt(strfill("..., ", FIELDLENGTH_W_FILLER));
-                        j = _mResult[0].size() - (_option.getWindow()-2-15) / FIELDLENGTH_W_FILLER / 2 - 1;
+                        j = _mResult.cols() - (_option.getWindow()-2-15) / FIELDLENGTH_W_FILLER / 2 - 1;
                         continue;
                     }
 
                     NumeReKernel::printPreFmt(strfill("...", FIELDLENGTH));
 
-                    if (j+1 < _mResult[0].size())
+                    if (j+1 < _mResult.cols())
                         NumeReKernel::printPreFmt(", ");
                 }
 
-                i = _mResult.size()-6;
+                i = _mResult.rows()-6;
             }
             else
                 NumeReKernel::printPreFmt(formatMatrixRow(_mResult, _option, i));
 
             if (!i)
                 NumeReKernel::printPreFmt(" \\\n");
-            else if (i+1 == _mResult.size())
+            else if (i+1 == _mResult.rows())
                 NumeReKernel::printPreFmt(" /\n");
             else
                 NumeReKernel::printPreFmt(" |\n");
         }
     }
-    else if (_mResult.size() == 1)
+    else if (_mResult.rows() == 1)
     {
-        if (_mResult[0].size() == 1)
-            NumeReKernel::print("(" + toString(_mResult[0][0], _option.getPrecision()) + ")");
+        if (_mResult.cols() == 1)
+            NumeReKernel::print("(" + toString(_mResult(0), _option.getPrecision()) + ")");
         else
             NumeReKernel::print("(" + formatMatrixRow(_mResult, _option, 0) + " )");
     }
     else
     {
-        for (unsigned int i = 0; i < _mResult.size(); i++)
+        for (unsigned int i = 0; i < _mResult.rows(); i++)
         {
-            if (!i && _mResult.size() == 2)
+            if (!i && _mResult.rows() == 2)
                 NumeReKernel::printPreFmt("|-> /");
             else if (!i)
                 NumeReKernel::printPreFmt("|   /");
-            else if (i+1 == _mResult.size())
+            else if (i+1 == _mResult.rows())
                 NumeReKernel::printPreFmt("|   \\");
-            else if (i == (_mResult.size()-1)/2)
+            else if (i == (_mResult.rows()-1)/2)
                 NumeReKernel::printPreFmt("|-> |");
             else
                 NumeReKernel::printPreFmt("|   |");
@@ -1433,7 +1296,7 @@ static void showMatrixResult(const Matrix& _mResult, const Settings& _option)
 
             if (!i)
                 NumeReKernel::printPreFmt(" \\\n");
-            else if (i+1 == _mResult.size())
+            else if (i+1 == _mResult.rows())
                 NumeReKernel::printPreFmt(" /\n");
             else
                 NumeReKernel::printPreFmt(" |\n");
@@ -1498,8 +1361,8 @@ Indices getIndices(const string& sCmd, const Matrix& _mMatrix, Parser& _parser, 
     // --> Kurzschreibweise!
     if (!sArgument.length())
     {
-        _idx.row = VectorIndex(0LL, _mMatrix.size());
-        _idx.col = VectorIndex(0LL, _mMatrix[0].size());
+        _idx.row = VectorIndex(0LL, _mMatrix.rows());
+        _idx.col = VectorIndex(0LL, _mMatrix.cols());
         return _idx;
     }
 
@@ -1602,7 +1465,7 @@ Indices getIndices(const string& sCmd, const Matrix& _mMatrix, Parser& _parser, 
             if (sI[n] == "<<EMPTY>>")
             {
                 if (n)
-                    _idx.row.back() = _mMatrix.size()-1;
+                    _idx.row.back() = _mMatrix.rows()-1;
                 else
                     _idx.row.front() = 0;
             }
@@ -1618,7 +1481,7 @@ Indices getIndices(const string& sCmd, const Matrix& _mMatrix, Parser& _parser, 
             if (sJ[n] == "<<EMPTY>>")
             {
                 if (n)
-                    _idx.col.back() = _mMatrix[0].size()-1;
+                    _idx.col.back() = _mMatrix.cols()-1;
                 else
                     _idx.col.front() = 0;
             }
@@ -1648,7 +1511,7 @@ Indices getIndices(const string& sCmd, const Matrix& _mMatrix, Parser& _parser, 
 /////////////////////////////////////////////////
 void showMatrix(const vector<vector<mu::value_type> >& _mMatrix)
 {
-    showMatrixResult(_mMatrix, NumeReKernel::getInstance()->getSettings());
+    showMatrixResult(Matrix(_mMatrix), NumeReKernel::getInstance()->getSettings());
 }
 
 /////////////////////////////////////////////////
@@ -1667,18 +1530,19 @@ static void parser_declareMatrixReturnValuesForIndices(const string& _sCmd, cons
     for (unsigned int j = 0; j < vReturnedMatrices.size(); j++)
     {
         vector<mu::value_type> v;
-        if (vReturnedMatrices[j].size() == 1 && vReturnedMatrices[j][0].size() == 1)
+        if (vReturnedMatrices[j].isScalar())
         {
-            v.push_back(vReturnedMatrices[j][0][0]);
+            v.push_back(vReturnedMatrices[j](0));
         }
-        else if (vReturnedMatrices[j].size() == 1 && vReturnedMatrices[j][0].size() > 1)
+        else if (vReturnedMatrices[j].rows() == 1
+                 || vReturnedMatrices[j].cols() == 1)
         {
-            v = vReturnedMatrices[j][0];
+            v = vReturnedMatrices[j].data();
         }
         else
         {
-            for (size_t i = 0; i < vReturnedMatrices[j].size(); i++)
-                v.push_back(vReturnedMatrices[j][i][0]);
+            for (size_t i = 0; i < vReturnedMatrices[j].rows(); i++)
+                v.push_back(vReturnedMatrices[j](i));
         }
 
         // Declare the corresponding vector variable
