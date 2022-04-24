@@ -1180,6 +1180,12 @@ value_type* FlowCtrl::evalHeader(int& nNum, std::string& sHeadExpression, bool b
     {
         mu::value_type* v;
 
+        // As long as bytecode parsing is not globally available,
+        // this condition has to stay at this place
+        if (!(bUseLoopParsingMode && !bLockedPauseMode)
+            && !_parserRef->IsAlreadyParsed(sHeadExpression))
+            _parserRef->SetExpr(sHeadExpression);
+
         // Evaluate all remaining equations in the stack
         do
         {
@@ -2847,26 +2853,28 @@ int FlowCtrl::calc(std::string sLine, int nthCmd)
     // parsed? Evaluate it here
     if (nCurrentCalcType & CALCTYPE_NUMERICAL)
     {
-        // Part of the condition disabled due to the slowness of the comparison
-        //if (_parserRef->IsValidByteCode() == 1)// /*&& _parserRef->IsAlreadyParsed(sLine)*/ && !bLockedPauseMode && bUseLoopParsingMode)
-        //{
-            // Evaluate all remaining equations in the stack
-            do
-            {
-                v = _parserRef->Eval(nNum);
-            } while (_parserRef->IsNotLastStackItem());
+        // As long as bytecode parsing is not globally available,
+        // this condition has to stay at this place
+        if (!(bUseLoopParsingMode && !bLockedPauseMode)
+            && !_parserRef->IsAlreadyParsed(sLine))
+            _parserRef->SetExpr(sLine);
 
-            // Check only the last expression
-            _assertionHandler.checkAssertion(v, nNum);
+        // Evaluate all remaining equations in the stack
+        do
+        {
+            v = _parserRef->Eval(nNum);
+        } while (_parserRef->IsNotLastStackItem());
 
-            vAns = v[0];
-            ans.setDoubleArray(nNum, v);
+        // Check only the last expression
+        _assertionHandler.checkAssertion(v, nNum);
 
-            if (!bLoopSupressAnswer)
-                NumeReKernel::print(NumeReKernel::formatResultOutput(nNum, v));
+        vAns = v[0];
+        ans.setDoubleArray(nNum, v);
 
-            return FLOWCTRL_OK;
-        //}
+        if (!bLoopSupressAnswer)
+            NumeReKernel::print(NumeReKernel::formatResultOutput(nNum, v));
+
+        return FLOWCTRL_OK;
     }
 
     // Does this contain a plot composition? Combine the
