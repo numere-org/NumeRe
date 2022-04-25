@@ -621,7 +621,7 @@ namespace mu
 		if (a_sExpr.find_first_of("{}") != string::npos || ContainsVectorVars(a_sExpr, true))
         {
             st = a_sExpr.to_string();
-            a_sExpr = PreEvaluateVectors(st);
+            a_sExpr = compileVectors(st);
 
             if (a_sExpr.find_first_of("{}") != string::npos)
                 Error(ecMISSING_PARENS, a_sExpr.to_string(), a_sExpr.find_first_of("{}"), "{}");
@@ -661,19 +661,9 @@ namespace mu
     /// \return MutableStringView
     ///
     /////////////////////////////////////////////////
-	MutableStringView ParserBase::PreEvaluateVectors(MutableStringView sExpr)
+	MutableStringView ParserBase::compileVectors(MutableStringView sExpr)
 	{
-#warning TODO (numere#1#04/25/22): Delegate all tasks to ParserBase::Eval using a special structure
-
-
-
-	    //bool isPaused = bPauseLoopByteCode && bMakeLoopByteCode;
-
-	    // Pause the loop mode if it is active
-	    //if (!isPaused)
-        //    PauseLoopMode();
-
-		vector<mu::value_type> vResults;
+		std::vector<mu::value_type> vResults;
 
 		// Resolve vectors, which are part of a multi-argument
 		// function's parentheses
@@ -687,7 +677,7 @@ namespace mu
             while ((match = sExpr.find(iter->first, match)) != string::npos)
             {
                 if (!match || checkDelimiter(sExpr.subview(match-1, iter->first.length()+2)))
-                    ResolveVectorsInMultiArgFunc(sExpr, match);
+                    compileVectorsInMultiArgFunc(sExpr, match);
 
                 match++;
             }
@@ -699,7 +689,7 @@ namespace mu
 		    // search for vector parentheses
 			if (sExpr[i] == '{' && sExpr.find('}', i) != string::npos)
 			{
-			    if (ResolveVectorsInMultiArgFunc(sExpr, i))
+			    if (compileVectorsInMultiArgFunc(sExpr, i))
                     continue;
 
                 vResults.clear();
@@ -717,7 +707,7 @@ namespace mu
                     string sVectorVarName = CreateTempVectorVar(vResults);
 
 				    // Get the expression and evaluate the expansion
-					evaluateVectorExpansion(sExpr.subview(i + 1, j - i - 1), sVectorVarName);
+					compileVectorExpansion(sExpr.subview(i + 1, j - i - 1), sVectorVarName);
 
 					sExpr.replace(i, j + 1 - i, sVectorVarName + " "); // Whitespace for constructs like {a:b}i
 				}
@@ -767,13 +757,9 @@ namespace mu
 			if (sExpr.subview(i, 9) == "logtoidx(" || sExpr.subview(i, 9) == "idxtolog(")
             {
                 i += 8;
-                ResolveVectorsInMultiArgFunc(sExpr, i);
+                compileVectorsInMultiArgFunc(sExpr, i);
             }
 		}
-
-		// Re-enable the loop mode if it is used in the moment
-		//if (!isPaused)
-        //    PauseLoopMode(false);
 
 		return sExpr;
 	}
@@ -788,10 +774,9 @@ namespace mu
     /// \return void
     ///
     /////////////////////////////////////////////////
-	void ParserBase::evaluateVectorExpansion(MutableStringView sSubExpr, const std::string& sVectorVarName)
+	void ParserBase::compileVectorExpansion(MutableStringView sSubExpr, const std::string& sVectorVarName)
 	{
 		int nResults = 0;
-		value_type* v = nullptr;
 
 		EndlessVector<StringView> args = getAllArguments(sSubExpr);
 		std::vector<int> vComponentType;
@@ -879,17 +864,18 @@ namespace mu
 	}
 
 
-    /** \brief This function expands the vector.
-     *
-     * \param dFirst const mu::value_type&
-     * \param dLast const mu::value_type&
-     * \param dIncrement const mu::value_type&
-     * \param vResults vector<mu::value_type>&
-     * \return void
-     *
-     * This function expands the vector. Private member used by ParserBase::evaluateVectorExpansion()
-     *
-     */
+    /////////////////////////////////////////////////
+    /// \brief This function expands the vector.
+    /// Private member used by
+    /// ParserBase::compileVectorExpansion().
+    ///
+    /// \param dFirst mu::value_type
+    /// \param dLast const mu::value_type&
+    /// \param dIncrement const mu::value_type&
+    /// \param vResults vector<mu::value_type>&
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
 	void ParserBase::expandVector(mu::value_type dFirst, const mu::value_type& dLast, const mu::value_type& dIncrement, vector<mu::value_type>& vResults)
 	{
 		// ignore impossible combinations. Store only
@@ -927,7 +913,7 @@ namespace mu
     /// \return bool
     ///
     /////////////////////////////////////////////////
-	bool ParserBase::ResolveVectorsInMultiArgFunc(MutableStringView& sExpr, size_t& nPos)
+	bool ParserBase::compileVectorsInMultiArgFunc(MutableStringView& sExpr, size_t& nPos)
 	{
         string sMultiArgFunc;
 	    // Try to find a multi-argument function. The size_t will store the start position of the function name
@@ -2738,46 +2724,87 @@ namespace mu
 
 
     /////////////////////////////////////////////////
-    /// \brief This member function assigns the
-    /// results of the calculation to the temporary
+    /// \brief This member function evaluates the
+    /// temporary vector expressions and assigns
+    /// their results to their corresponding target
     /// vector.
     ///
-    /// \param varmap const varmap_type&
-    /// \param nFinalResults int
-    /// \param buffer const valbuf_type&
+    /// \param vectEval const VectorEvaluation&
+    /// \param nStackSize int
     /// \return void
     ///
     /////////////////////////////////////////////////
-    void ParserBase::assignResultsToTarget(const varmap_type& varmap, int nFinalResults, const valbuf_type& buffer)
+    void ParserBase::evaluateTemporaryVectors(const VectorEvaluation& vectEval, int nStackSize)
 	{
-	    /*std::string sTemp = sTargets;
-        size_t nthStackPos = 0;
+        std::vector<mu::value_type>* vTgt = GetVectorVar(vectEval.m_targetVect);
 
-        // As long as the list of the targets has a length
-        while (sTemp.length())
+        switch (vectEval.m_type)
         {
-            if (mTargets.find(getNextVarObject(sTemp, false)) != mTargets.end())
+            case VectorEvaluation::EVALTYPE_VECTOR_EXPANSION:
             {
-                if (g_DbgDumpStack)
-                    NumeReKernel::printPreFmt("|-> Target: " + getNextVarObject(sTemp, false) + " = " + toString(m_state->m_stackBuffer[nthStackPos], 5) +  " (m_vStackBuffer[" +toString(nthStackPos)+ "])\n");
+                vTgt->clear();
 
-                *(mTargets[getNextVarObject(sTemp, false)]) = buffer[nthStackPos];
+                for (size_t i = 0, n = 0; i < m_state->m_vectEval.m_componentDefs.size(); i++, n++)
+                {
+                    if (m_state->m_vectEval.m_componentDefs[i] == 1)
+                        vTgt->push_back(m_buffer[n]);
+                    else
+                    {
+                        int nComps = m_state->m_vectEval.m_componentDefs[i];
+
+                        // This is an expansion. There are two possible cases
+                        if (nComps == 2)
+                        {
+                            mu::value_type diff = m_buffer[n+1] - m_buffer[n];
+                            diff.real(diff.real() > 0.0 ? 1.0 : (diff.real() < 0.0 ? -1.0 : 0.0));
+                            diff.imag(diff.imag() > 0.0 ? 1.0 : (diff.imag() < 0.0 ? -1.0 : 0.0));
+                            expandVector(m_buffer[n], m_buffer[n+1], diff, *vTgt);
+                        }
+                        else if (nComps == 3)
+                            expandVector(m_buffer[n], m_buffer[n+2], m_buffer[n+1], *vTgt);
+
+                        n += nComps-1;
+                    }
+                }
+
+                break;
             }
 
-            getNextVarObject(sTemp, true);
-
-            // Handle singleton results correctly
-            if (nFinalResults > 1)
-                nthStackPos++;
-
-            // Ensure that we don't read wrong values
-            if (nthStackPos >= (size_t)nFinalResults)
+            case VectorEvaluation::EVALTYPE_VECTOR:
+                vTgt->assign(m_buffer.begin(), m_buffer.begin() + nStackSize);
                 break;
-        }*/
 
+            case VectorEvaluation::EVALTYPE_MULTIARGFUNC:
+            {
+                // Apply the needed multi-argument function
+                if (m_FunDef.find(m_state->m_vectEval.m_mafunc) != m_FunDef.end())
+                {
+                    ParserCallback pCallback = m_FunDef[m_state->m_vectEval.m_mafunc];
+                    vTgt->assign(1, multfun_type(pCallback.GetAddr())(&m_buffer[0], nStackSize));
+                }
+                else if (m_state->m_vectEval.m_mafunc == "logtoidx")
+                    *vTgt = parser_logtoidx(&m_buffer[0], nStackSize);
+                else if (m_state->m_vectEval.m_mafunc == "idxtolog")
+                    *vTgt = parser_idxtolog(&m_buffer[0], nStackSize);
+
+                break;
+            }
+
+        }
+
+        UpdateVectorVar(m_state->m_vectEval.m_targetVect);
 	}
 
 
+    /////////////////////////////////////////////////
+    /// \brief Simple helper function to print the
+    /// buffer's contents.
+    ///
+    /// \param buffer const valbuf_type&
+    /// \param nElems int
+    /// \return std::string
+    ///
+    /////////////////////////////////////////////////
 	static std::string printVector(const valbuf_type& buffer, int nElems)
 	{
 	    std::string s;
@@ -2791,20 +2818,24 @@ namespace mu
 	}
 
 
-	//------------------------------------------------------------------------------
-	/** \brief Evaluate an expression containing comma seperated subexpressions
-	    \param [out] nStackSize The total number of results available
-	    \return Pointer to the array containing all expression results
-
-	    This member function can be used to retriev all results of an expression
-	    made up of multiple comma seperated subexpressions (i.e. "x+y,sin(x),cos(y)")
-	*/
+    /////////////////////////////////////////////////
+    /// \brief Evaluate an expression containing
+    /// comma seperated subexpressions.
+    ///
+    /// This member function can be used to retrieve
+    /// all results of an expression made up of
+    /// multiple comma seperated subexpressions (i.e.
+    /// "x+y,sin(x),cos(y)").
+    ///
+    /// \param nStackSize int&
+    /// \return value_type*
+    ///
+    /////////////////////////////////////////////////
 	value_type* ParserBase::Eval(int& nStackSize)
 	{
+	    // Run the evaluation
 		(this->*m_pParseFormula)();
 
-		//if (bMakeLoopByteCode && !bPauseLoopByteCode && m_stateStacks(nthLoopElement, nthLoopPartEquation).m_valid)
-		//{
         nStackSize = m_state->m_numResults;
 
         // Copy the actual results (ignore the 0-th term)
@@ -2910,54 +2941,7 @@ namespace mu
 
         // Temporary target vector
         if (m_state->m_vectEval.m_type != VectorEvaluation::EVALTYPE_NONE)
-        {
-            std::vector<mu::value_type>* vTgt = GetVectorVar(m_state->m_vectEval.m_targetVect);
-
-            if (m_state->m_vectEval.m_type == VectorEvaluation::EVALTYPE_VECTOR_EXPANSION)
-            {
-                vTgt->clear();
-
-                for (size_t i = 0, n = 0; i < m_state->m_vectEval.m_componentDefs.size(); i++, n++)
-                {
-                    if (m_state->m_vectEval.m_componentDefs[i] == 1)
-                        vTgt->push_back(m_buffer[n]);
-                    else
-                    {
-                        int nComps = m_state->m_vectEval.m_componentDefs[i];
-
-                        // This is an expansion. There are two possible cases
-                        if (nComps == 2)
-                        {
-                            mu::value_type diff = m_buffer[n+1] - m_buffer[n];
-                            diff.real(diff.real() > 0.0 ? 1.0 : (diff.real() < 0.0 ? -1.0 : 0.0));
-                            diff.imag(diff.imag() > 0.0 ? 1.0 : (diff.imag() < 0.0 ? -1.0 : 0.0));
-                            expandVector(m_buffer[n], m_buffer[n+1], diff, *vTgt);
-                        }
-                        else if (nComps == 3)
-                            expandVector(m_buffer[n], m_buffer[n+2], m_buffer[n+1], *vTgt);
-
-                        n += nComps-1;
-                    }
-                }
-            }
-            else if (m_state->m_vectEval.m_type == VectorEvaluation::EVALTYPE_VECTOR)
-                vTgt->assign(m_buffer.begin(), m_buffer.begin() + nStackSize);
-            else if (m_state->m_vectEval.m_type == VectorEvaluation::EVALTYPE_MULTIARGFUNC)
-            {
-                // Apply the needed multi-argument function
-                if (m_FunDef.find(m_state->m_vectEval.m_mafunc) != m_FunDef.end())
-                {
-                    ParserCallback pCallback = m_FunDef[m_state->m_vectEval.m_mafunc];
-                    vTgt->assign(1, multfun_type(pCallback.GetAddr())(&m_buffer[0], nStackSize));
-                }
-                else if (m_state->m_vectEval.m_mafunc == "logtoidx")
-                    *vTgt = parser_logtoidx(&m_buffer[0], nStackSize);
-                else if (m_state->m_vectEval.m_mafunc == "idxtolog")
-                    *vTgt = parser_idxtolog(&m_buffer[0], nStackSize);
-            }
-
-            UpdateVectorVar(m_state->m_vectEval.m_targetVect);
-        }
+            evaluateTemporaryVectors(m_state->m_vectEval, nStackSize);
 
         if (g_DbgDumpStack)
             NumeReKernel::print("ParserBase::Eval() @ ["
@@ -2976,106 +2960,16 @@ namespace mu
         }
 
         return &m_buffer[0];
-		//}
-		/*else
-		{
-			nStackSize = m_adHocState.m_numResults;
-            size_t nVectorlength = 0;
-
-			if (mVectorVars.size() && !(mVectorVars.size() == 1 && mTargets.size() && vCurrentUsedVars.find("_~TRGTVCT[~]") != vCurrentUsedVars.end()))
-			{
-				valbuf_type buffer;
-				std::map<mu::value_type*, mu::value_type> mFirstVals;
-				buffer.push_back(0.0);
-
-				// Get the maximal size of the used vectors
-				for (auto iter = mNonSingletonVectorVars.begin(); iter != mNonSingletonVectorVars.end(); ++iter)
-				{
-					if ((iter->second)->size() > nVectorlength
-                        && iter->first != "_~TRGTVCT[~]"
-                        && vCurrentUsedVars.find(iter->first) != vCurrentUsedVars.end())
-						nVectorlength = (iter->second)->size();
-				}
-
-				// Only do something, if the vector length is LARGER than 1
-				if (nVectorlength > 1)
-				{
-				    // Copy the first elements
-                    for (int j = 1; j < m_adHocState.m_numResults + 1; j++)
-                        buffer.push_back(m_adHocState.m_stackBuffer[j]);
-
-                    // Redo the calculations for each component of the
-                    // used vectors
-					for (unsigned int i = 0; i < nVectorlength; i++)
-					{
-						for (auto iter = mNonSingletonVectorVars.begin(); iter != mNonSingletonVectorVars.end(); ++iter)
-						{
-							// Modify the value of the used variables
-							if (vCurrentUsedVars.find(iter->first) != vCurrentUsedVars.end())
-							{
-								if (i == 0)
-								{
-									// Cache the values of the first component
-									// so that we may restore them later
-									mFirstVals[vCurrentUsedVars[iter->first]] = *(vCurrentUsedVars[iter->first]);
-									continue;
-								}
-
-								if ((iter->second)->size() > i)
-									*vCurrentUsedVars[iter->first] = (*(iter->second))[i];
-								else if ((iter->second)->size() != 1)
-									*vCurrentUsedVars[iter->first] = 0.0;
-							}
-						}
-
-						// Repeat the evaluation of the parser
-						if (i)
-						{
-							(this->*m_pParseFormula)();
-
-							for (int j = 1; j < m_adHocState.m_numResults + 1; j++)
-								buffer.push_back(m_adHocState.m_stackBuffer[j]);
-						}
-					}
-
-					m_adHocState.m_stackBuffer = buffer;
-
-					// Restore the first components of the used vectors
-					for (auto iter = mFirstVals.begin(); iter != mFirstVals.end(); ++iter)
-						*(iter->first) = iter->second;
-
-					nStackSize *= nVectorlength;
-				}
-			}
-
-			// assign the results of the calculation to a possible
-			// temporary vector
-			assignResultsToTarget(vCurrentUsedVars, max((unsigned)m_adHocState.m_numResults, nVectorlength));
-
-			// (for historic reasons the stack starts at position 1)
-			if (g_DbgDumpStack)
-                NumeReKernel::printPreFmt("|-> Eval LoopEl,PartEq = (" + toString(nthLoopElement) +","+ toString(nthLoopPartEquation) +") m_vStackBuffer[1] = " + toString(m_adHocState.m_stackBuffer[1], 5) + "\n");
-
-			return &m_adHocState.m_stackBuffer[1];
-		}*/
 	}
 
-	//---------------------------------------------------------------------------
-	/** \brief Calculate the result.
 
-	  A note on const correctness:
-	  I consider it important that Calc is a const function.
-	  Due to caching operations Calc changes only the state of internal variables with one exception
-	  m_UsedVar this is reset during string parsing and accessible from the outside. Instead of making
-	  Calc non const GetUsedVar is non const because it explicitely calls Eval() forcing this update.
-
-	  \pre A formula must be set.
-	  \pre Variables must have been set (if needed)
-
-	  \sa #m_pParseFormula
-	  \return The evaluation result
-	  \throw ParseException if no Formula is set or in case of any other error related to the formula.
-	*/
+    /////////////////////////////////////////////////
+    /// \brief Single-value wrapper around the
+    /// vectorized overload of this member function.
+    ///
+    /// \return value_type
+    ///
+    /////////////////////////////////////////////////
 	value_type ParserBase::Eval() // declared as deprecated
 	{
 	    value_type* v;

@@ -51,6 +51,10 @@ namespace mu
 	};
 
 
+    /////////////////////////////////////////////////
+    /// \brief This structure contains the necessary
+    /// data to resolve all preevaluated vectors.
+    /////////////////////////////////////////////////
 	struct VectorEvaluation
 	{
 	    enum EvalType
@@ -66,12 +70,29 @@ namespace mu
 	    std::string m_targetVect;
 	    std::vector<int> m_componentDefs;
 
+        /////////////////////////////////////////////////
+        /// \brief Create a standard vector pre-
+        /// evaluation.
+        ///
+        /// \param sTargetVect const std::string&
+        /// \return void
+        ///
+        /////////////////////////////////////////////////
 	    void create(const std::string& sTargetVect)
 	    {
 	        m_type = EVALTYPE_VECTOR;
 	        m_targetVect = sTargetVect;
 	    }
 
+        /////////////////////////////////////////////////
+        /// \brief Create a multi-argument function pre-
+        /// evaluation for vector arguments.
+        ///
+        /// \param sTargetVect const std::string&
+        /// \param sMaFunc const std::string&
+        /// \return void
+        ///
+        /////////////////////////////////////////////////
 	    void create(const std::string& sTargetVect, const std::string& sMaFunc)
 	    {
 	        m_type = EVALTYPE_MULTIARGFUNC;
@@ -79,6 +100,15 @@ namespace mu
 	        m_mafunc = sMaFunc;
 	    }
 
+        /////////////////////////////////////////////////
+        /// \brief Create a vector expansion pre-
+        /// evaluation.
+        ///
+        /// \param sTargetVect const std::string&
+        /// \param vCompDefs const std::vector<int>&
+        /// \return void
+        ///
+        /////////////////////////////////////////////////
 	    void create(const std::string& sTargetVect, const std::vector<int>& vCompDefs)
 	    {
 	        m_type = EVALTYPE_VECTOR_EXPANSION;

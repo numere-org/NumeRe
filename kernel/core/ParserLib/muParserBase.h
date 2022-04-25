@@ -135,9 +135,6 @@ namespace mu
 			void Eval(value_type* results, int nBulkSize);
 
 			void SetExpr(StringView a_sExpr);
-			MutableStringView PreEvaluateVectors(MutableStringView sExpr);
-			bool ResolveVectorsInMultiArgFunc(MutableStringView& sExpr, size_t& nPos);
-			size_t FindMultiArgFunc(StringView sExpr, size_t nPos, std::string& sMultArgFunc);
 			void SetVarFactory(facfun_type a_pFactory, void* pUserData = NULL);
 
 			void SetDecSep(char_type cDecSep);
@@ -273,12 +270,15 @@ namespace mu
 		private:
 			void replaceLocalVars(std::string& sLine);
 			bool checkDelimiter(StringView sLine);
-			void evaluateVectorExpansion(MutableStringView sSubExpr, const std::string& sVectorVarName);
+			MutableStringView compileVectors(MutableStringView sExpr);
+			bool compileVectorsInMultiArgFunc(MutableStringView& sExpr, size_t& nPos);
+			size_t FindMultiArgFunc(StringView sExpr, size_t nPos, std::string& sMultArgFunc);
+			void compileVectorExpansion(MutableStringView sSubExpr, const std::string& sVectorVarName);
             void expandVector(mu::value_type dFirst,
                               const mu::value_type& dLast,
                               const mu::value_type& dIncrement,
                               std::vector<mu::value_type>& vResults);
-			void assignResultsToTarget(const varmap_type& varmap, int nFinalResults, const valbuf_type& buffer);
+			void evaluateTemporaryVectors(const VectorEvaluation& vectEval, int nStackSize);
 			string_type getNextVarObject(std::string& sArgList, bool bCut);
 			string_type getNextVectorVarIndex();
 			void Assign(const ParserBase& a_Parser);

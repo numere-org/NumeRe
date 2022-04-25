@@ -22,6 +22,15 @@
 
 namespace mu
 {
+    /////////////////////////////////////////////////
+    /// \brief Create a expression target made up
+    /// from multiple variables.
+    ///
+    /// \param sTargets StringView
+    /// \param usedVars const varmap_type&
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
     void ExpressionTarget::create(StringView sTargets, const varmap_type& usedVars)
     {
         while (sTargets.length())
@@ -40,6 +49,15 @@ namespace mu
     }
 
 
+    /////////////////////////////////////////////////
+    /// \brief Assign the calculated values to the
+    /// target vector components.
+    ///
+    /// \param buffer const valbuf_type&
+    /// \param nResults int
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
     void ExpressionTarget::assign(const valbuf_type& buffer, int nResults)
     {
         // Assign the results to the target variables
