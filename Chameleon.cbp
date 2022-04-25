@@ -407,6 +407,8 @@
 		<Unit filename="kernel/core/ParserLib/muParserError.h" />
 		<Unit filename="kernel/core/ParserLib/muParserFixes.h" />
 		<Unit filename="kernel/core/ParserLib/muParserStack.h" />
+		<Unit filename="kernel/core/ParserLib/muParserState.cpp" />
+		<Unit filename="kernel/core/ParserLib/muParserState.hpp" />
 		<Unit filename="kernel/core/ParserLib/muParserTemplateMagic.h" />
 		<Unit filename="kernel/core/ParserLib/muParserToken.h" />
 		<Unit filename="kernel/core/ParserLib/muParserTokenReader.cpp" />

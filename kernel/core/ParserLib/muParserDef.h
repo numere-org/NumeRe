@@ -278,6 +278,9 @@ namespace mu
     /** \brief Type for assigning a string name to an index in the internal string table. */
     typedef std::map<string_type, std::size_t> strmap_type;
 
+    /** \brief Type used for storing an array of values. */
+    typedef std::vector<value_type> valbuf_type;
+
     // Parser callbacks
 
     /** \brief Callback type used for functions without arguments. */

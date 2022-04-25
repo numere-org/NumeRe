@@ -416,9 +416,24 @@ namespace mu
 	{
 		m_pParseFormula = &ParserBase::ParseString;
 		m_vStringBuf.clear();
-		m_compilingState.m_byteCode.clear();
+		m_compilingState.clear();
 		m_pTokenReader->ReInit();
 		m_nIfElseCounter = 0;
+	}
+
+    /////////////////////////////////////////////////
+    /// \brief Simple state-considering wrapper
+    /// around the ExpressionTarget structure.
+    ///
+    /// \return ExpressionTarget&
+    ///
+    /////////////////////////////////////////////////
+	ExpressionTarget& ParserBase::getTarget() const
+	{
+	    if (bMakeLoopByteCode && !bPauseLoopByteCode)
+            return m_stateStacks[nthLoopElement].m_target;
+
+        return m_compilingTarget;
 	}
 
 	//---------------------------------------------------------------------------
@@ -623,9 +638,6 @@ namespace mu
                  && m_state->m_valid)
 			m_state->m_valid = 0;
 
-		// reset vector dimension so that it will be evaluated at least once
-		nVectorDimension = 0;
-
 		string_type sBuf(a_sExpr.to_string() + " ");
 
 		if (mVarMapPntr)
@@ -651,6 +663,10 @@ namespace mu
     /////////////////////////////////////////////////
 	MutableStringView ParserBase::PreEvaluateVectors(MutableStringView sExpr)
 	{
+#warning TODO (numere#1#04/25/22): Delegate all tasks to ParserBase::Eval using a special structure
+
+
+
 	    //bool isPaused = bPauseLoopByteCode && bMakeLoopByteCode;
 
 	    // Pause the loop mode if it is active
@@ -697,11 +713,12 @@ namespace mu
 			    if (j != std::string::npos && sExpr.subview(i, j - i).find(':') != std::string::npos)
 				{
 				    // This is vector expansion: e.g. "{1:10}"
-				    // Get the expression and evaluate the expansion
-					evaluateVectorExpansion(sExpr.subview(i + 1, j - i - 1), vResults);
-
 					// Store the result in a new temporary vector
                     string sVectorVarName = CreateTempVectorVar(vResults);
+
+				    // Get the expression and evaluate the expansion
+					evaluateVectorExpansion(sExpr.subview(i + 1, j - i - 1), sVectorVarName);
+
 					sExpr.replace(i, j + 1 - i, sVectorVarName + " "); // Whitespace for constructs like {a:b}i
 				}
 				else
@@ -711,10 +728,6 @@ namespace mu
 					    // This is a normal vector, e.g. "{1,2,3}"
 					    // Set the sub expression and evaluate it
 						SetExpr(sExpr.subview(i + 1, j - i - 1));
-						int nResults;
-						value_type* v = Eval(nResults);
-						// Store the results in the target vector
-						vResults.insert(vResults.end(), v, v+nResults);
 
 						// Determine, whether the current vector is a target vector or not
 						if (sExpr.find_first_not_of(' ') == i
@@ -726,20 +739,25 @@ namespace mu
 								&& sExpr[sExpr.find('=', j) + 1] != '=')
 						{
 						    // This is a target vector
+                            int nResults;
+                            value_type* v = Eval(nResults);
+                            // Store the results in the target vector
+                            vResults.insert(vResults.end(), v, v+nResults);
 						    // Store the variable names
-#warning TODO (numere#4#04/23/22): Those attributes might be also part of the parser state
-							sTargets = sExpr.subview(i + 1, j - i - 1).to_string();
-
-							// Set the special target vector variable
-							mTargets = m_pTokenReader->GetUsedVar();
+						    getTarget().create(sExpr.subview(i + 1, j - i - 1), m_pTokenReader->GetUsedVar());
 							SetVectorVar("_~TRGTVCT[~]", vResults);
 							sExpr.replace(i, j + 1 - i, "_~TRGTVCT[~]");
 						}
 						else
 						{
 						    // This is a usual vector
-						    // Store the vector result as a new temporary vector variable
-                            string sVectorVarName = CreateTempVectorVar(vResults);
+						    // Create a new temporary vector name
+                            std::string sVectorVarName = CreateTempVectorVar(vResults);
+                            m_compilingState.m_vectEval.create(sVectorVarName);
+                            int nResults;
+                            // Calculate and store the results in the target vector
+                            Eval(nResults);
+						    // Update the expression
 							sExpr.replace(i, j + 1 - i, sVectorVarName + " "); // Whitespace for constructs like {a,b}i
 						}
 					}
@@ -766,102 +784,78 @@ namespace mu
     /// expansion, e.g. "{1:4}" = {1, 2, 3, 4}.
     ///
     /// \param sSubExpr MutableStringView
-    /// \param vResults vector<mu::value_type>&
+    /// \param sVectorVarName const std::string&
     /// \return void
     ///
     /////////////////////////////////////////////////
-	void ParserBase::evaluateVectorExpansion(MutableStringView sSubExpr, vector<mu::value_type>& vResults)
+	void ParserBase::evaluateVectorExpansion(MutableStringView sSubExpr, const std::string& sVectorVarName)
 	{
 		int nResults = 0;
 		value_type* v = nullptr;
 
 		EndlessVector<StringView> args = getAllArguments(sSubExpr);
-		std::string singletons;
+		std::vector<int> vComponentType;
+		std::string sCompiledExpression;
+		const int SINGLETON = 1;
 
+		// Determine the type of every part of the vector brace
 		for (size_t n = 0; n < args.size(); n++)
         {
             if (args[n].find(':') == std::string::npos)
             {
-                if (singletons.length())
-                    singletons += ",";
+                vComponentType.push_back(SINGLETON);
 
-                singletons += args[n].to_string();
+                if (sCompiledExpression.length())
+                    sCompiledExpression += ",";
 
-                // Is it the last one, then evaluate
-                // the singleton directly
-                if (n+1 == args.size())
-                {
-                    SetExpr(singletons);
-                    v = Eval(nResults);
-                    vResults.insert(vResults.end(), v, v+nResults);
-                    break;
-                }
-
-                continue;
-            }
-            else if (singletons.length())
-            {
-                SetExpr(singletons);
-                v = Eval(nResults);
-                vResults.insert(vResults.end(), v, v+nResults);
-                singletons.clear();
-            }
-
-            int isExpansion = -1;
-            MutableStringView sExpansion = args[n].make_mutable();
-
-            // Replace the colons with commas. But ensure that this is not a conditional statement
-            for (size_t i = 0; i < sExpansion.length(); i++)
-            {
-                if (sExpansion[i] == '(' || sExpansion[i] == '[' || sExpansion[i] == '{')
-                    i += getMatchingParenthesis(sSubExpr.subview(i));
-
-                if (sExpansion[i] == ':')
-                {
-                    if (isExpansion == -1)
-                        isExpansion = 1;
-
-                    // This is a conditional operator
-                    if (isExpansion == 0)
-                        continue;
-
-                    sExpansion[i] = ',';
-                }
-
-                // This is a conditional operator
-                if (sExpansion[i] == '?')
-                {
-                    if (isExpansion == -1)
-                        isExpansion = 0;
-
-                    if (isExpansion == 1)
-                        throw ParserError(ecUNEXPECTED_CONDITIONAL, "?", sExpansion.to_string(), i);
-                }
-            }
-
-            // set and evaluate the modified expression
-            SetExpr(sExpansion);
-            v = Eval(nResults);
-
-            if (isExpansion == 1)
-            {
-                // This is an expansion. There are two possible cases
-                if (nResults == 2)
-                {
-                    mu::value_type diff = v[1] - v[0];
-                    diff.real(diff.real() > 0.0 ? 1.0 : (diff.real() < 0.0 ? -1.0 : 0.0));
-                    diff.imag(diff.imag() > 0.0 ? 1.0 : (diff.imag() < 0.0 ? -1.0 : 0.0));
-                    expandVector(v[0], v[1], diff, vResults);
-                }
-                else if (nResults == 3)
-                    expandVector(v[0], v[2], v[1], vResults);
+                sCompiledExpression += args[n].to_string();
             }
             else
             {
-                // This is no expansion. Simply store the results
-                vResults.insert(vResults.end(), v, v+nResults);
+                int isExpansion = -1;
+                MutableStringView sExpansion = args[n].make_mutable();
+
+                // Replace the colons with commas. But ensure that this is not a conditional statement
+                for (size_t i = 0; i < sExpansion.length(); i++)
+                {
+                    if (sExpansion[i] == '(' || sExpansion[i] == '[' || sExpansion[i] == '{')
+                        i += getMatchingParenthesis(sSubExpr.subview(i));
+
+                    if (sExpansion[i] == ':')
+                    {
+                        if (isExpansion == -1)
+                            isExpansion = 1;
+
+                        // This is a conditional operator
+                        if (isExpansion == 0)
+                            continue;
+
+                        sExpansion[i] = ',';
+                    }
+
+                    // This is a conditional operator
+                    if (sExpansion[i] == '?')
+                    {
+                        if (isExpansion == -1)
+                            isExpansion = 0;
+
+                        if (isExpansion == 1)
+                            throw ParserError(ecUNEXPECTED_CONDITIONAL, "?", sExpansion.to_string(), i);
+                    }
+                }
+
+                if (sCompiledExpression.length())
+                    sCompiledExpression += ",";
+
+                sCompiledExpression += sExpansion.to_string();
+                vComponentType.push_back(getAllArguments(sExpansion).size());
             }
         }
+
+		// Evaluate
+		SetExpr(sCompiledExpression);
+		m_compilingState.m_vectEval.create(sVectorVarName, vComponentType);
+		Eval(nResults);
 	}
 
 
@@ -948,22 +942,12 @@ namespace mu
             // Set the argument of the function as expression and evaluate it recursively
             vector<mu::value_type> vResults;
             int nResults;
+            string sVectorVarName = CreateTempVectorVar(vResults);
             SetExpr(sExpr.subview(nMultiArgParens + 1, nClosingParens - nMultiArgParens - 1));
-            value_type* v = Eval(nResults);
-
-            // Apply the needed multi-argument function
-            if (m_FunDef.find(sMultiArgFunc) != m_FunDef.end())
-            {
-                ParserCallback pCallback = m_FunDef[sMultiArgFunc];
-                vResults.push_back(multfun_type(pCallback.GetAddr())(v, nResults));
-            }
-            else if (sMultiArgFunc == "logtoidx")
-                vResults = parser_logtoidx(v, nResults);
-            else if (sMultiArgFunc == "idxtolog")
-                vResults = parser_idxtolog(v, nResults);
+            m_compilingState.m_vectEval.create(sVectorVarName, sMultiArgFunc);
+            Eval(nResults);
 
             // Store the result in a new temporary vector
-            string sVectorVarName = CreateTempVectorVar(vResults);
             sExpr.replace(nMultiArgParens - sMultiArgFunc.length(),
                           nClosingParens - nMultiArgParens + 1 + sMultiArgFunc.length(),
                           sVectorVarName);
@@ -2088,7 +2072,7 @@ namespace mu
 		token_type val, tval;  // for storing value
 		string_type strBuf;    // buffer for string function arguments
 
-		ReInit();
+		//ReInit();
 
 		// The outermost counter counts the number of seperated items
 		// such as in "a=10,b=20,c=c+a"
@@ -2766,7 +2750,7 @@ namespace mu
     /////////////////////////////////////////////////
     void ParserBase::assignResultsToTarget(const varmap_type& varmap, int nFinalResults, const valbuf_type& buffer)
 	{
-	    std::string sTemp = sTargets;
+	    /*std::string sTemp = sTargets;
         size_t nthStackPos = 0;
 
         // As long as the list of the targets has a length
@@ -2789,8 +2773,21 @@ namespace mu
             // Ensure that we don't read wrong values
             if (nthStackPos >= (size_t)nFinalResults)
                 break;
-        }
+        }*/
 
+	}
+
+
+	static std::string printVector(const valbuf_type& buffer, int nElems)
+	{
+	    std::string s;
+
+	    for (int i = 0; i < nElems; i++)
+            s += toString(buffer[i], 5) + ",";
+
+        s.pop_back();
+
+        return s;
 	}
 
 
@@ -2868,7 +2865,7 @@ namespace mu
                     {
                         ParseCmdCodeBulk(i, 0);
 
-                        for (size_t j = 0; j < nStackSize; j++)
+                        for (int j = 0; j < nStackSize; j++)
                         {
                             m_buffer[i*nStackSize + j] = m_state->m_stackBuffer[j + 1];
                         }
@@ -2885,7 +2882,7 @@ namespace mu
                         int nThreadID = omp_get_thread_num();
                         ParseCmdCodeBulk(i, nThreadID);
 
-                        for (size_t j = 0; j < nStackSize; j++)
+                        for (int j = 0; j < nStackSize; j++)
                         {
                             m_buffer[i*nStackSize + j] = m_state->m_stackBuffer[nThreadID*nBufferOffset + j + 1];
                         }
@@ -2902,96 +2899,70 @@ namespace mu
                     m_state->m_byteCode.ChangeVar(vUsedVectorVars[i]->data(), vUsedVectorVarAddresses[i], false);
                 }
             }
-
-
-
-
-
-            /*size_t nVectorlength = 0;
-            varmap_type& vars = m_state->m_usedVar;
-
-            // Get the maximal size of the used vectors
-            auto iterVector = mVectorVars.begin();
-            auto iterVar = vars.begin();
-
-            for ( ; iterVector != mVectorVars.end() && iterVar != vars.end(); )
-            {
-                if (iterVector->first == iterVar->first)
-                {
-                    if (iterVector->second.size() > nVectorlength && iterVector->first != "_~TRGTVCT[~]")
-                        nVectorlength = iterVector->second.size();
-
-                    ++iterVector;
-                    ++iterVar;
-                }
-                else
-                {
-                    if (iterVector->first < iterVar->first)
-                        ++iterVector;
-                    else
-                        ++iterVar;
-                }
-            }
-
-            // Only do something, if there's at least one vector with
-            // an arbitrary length used
-            if (nVectorlength)
-            {
-                std::map<mu::value_type*, mu::value_type> mFirstVals;
-
-                // Redo the calculations for each component of the
-                // used vectors
-                for (size_t i = 0; i < nVectorlength; i++)
-                {
-                    for (auto iter = mVectorVars.begin(); iter != mVectorVars.end(); ++iter)
-                    {
-                        // Modify the value of the used variables
-                        if (vars.find(iter->first) != vars.end())
-                        {
-                            if (i == 0)
-                            {
-                                // Cache the values of the first component
-                                // so that we may restore them later
-                                mFirstVals[vars[iter->first]] = *(vars[iter->first]);
-                                continue;
-                            }
-
-                            if ((iter->second).size() > i)
-                                *vars[iter->first] = (iter->second)[i];
-                            else if ((iter->second).size() != 1)
-                                *vars[iter->first] = 0.0;
-                        }
-                    }
-
-                    // Repeat the evaluation of the parser
-                    if (i)
-                    {
-                        (this->*m_pParseFormula)();
-
-                        m_buffer.insert(m_buffer.end(),
-                                        m_state->m_stackBuffer.begin()+1,
-                                        m_state->m_stackBuffer.begin()+nStackSize+1);
-                    }
-                }
-
-                // Restore the first components of the used vectors
-                for (auto iter = mFirstVals.begin(); iter != mFirstVals.end(); ++iter)
-                    *(iter->first) = iter->second;
-
-                nStackSize *= nVectorlength;
-            }*/
         }
 
         // assign the results of the calculation to a possible
         // temporary vector
-        if (mTargets.size() && m_state->m_usedVar.find("_~TRGTVCT[~]") != m_state->m_usedVar.end())
-            assignResultsToTarget(m_state->m_usedVar, nStackSize, m_buffer);
+        ExpressionTarget& target = getTarget();
+
+        if (target.isValid() && m_state->m_usedVar.find("_~TRGTVCT[~]") != m_state->m_usedVar.end())
+            target.assign(m_buffer, nStackSize);
+
+        // Temporary target vector
+        if (m_state->m_vectEval.m_type != VectorEvaluation::EVALTYPE_NONE)
+        {
+            std::vector<mu::value_type>* vTgt = GetVectorVar(m_state->m_vectEval.m_targetVect);
+
+            if (m_state->m_vectEval.m_type == VectorEvaluation::EVALTYPE_VECTOR_EXPANSION)
+            {
+                vTgt->clear();
+
+                for (size_t i = 0, n = 0; i < m_state->m_vectEval.m_componentDefs.size(); i++, n++)
+                {
+                    if (m_state->m_vectEval.m_componentDefs[i] == 1)
+                        vTgt->push_back(m_buffer[n]);
+                    else
+                    {
+                        int nComps = m_state->m_vectEval.m_componentDefs[i];
+
+                        // This is an expansion. There are two possible cases
+                        if (nComps == 2)
+                        {
+                            mu::value_type diff = m_buffer[n+1] - m_buffer[n];
+                            diff.real(diff.real() > 0.0 ? 1.0 : (diff.real() < 0.0 ? -1.0 : 0.0));
+                            diff.imag(diff.imag() > 0.0 ? 1.0 : (diff.imag() < 0.0 ? -1.0 : 0.0));
+                            expandVector(m_buffer[n], m_buffer[n+1], diff, *vTgt);
+                        }
+                        else if (nComps == 3)
+                            expandVector(m_buffer[n], m_buffer[n+2], m_buffer[n+1], *vTgt);
+
+                        n += nComps-1;
+                    }
+                }
+            }
+            else if (m_state->m_vectEval.m_type == VectorEvaluation::EVALTYPE_VECTOR)
+                vTgt->assign(m_buffer.begin(), m_buffer.begin() + nStackSize);
+            else if (m_state->m_vectEval.m_type == VectorEvaluation::EVALTYPE_MULTIARGFUNC)
+            {
+                // Apply the needed multi-argument function
+                if (m_FunDef.find(m_state->m_vectEval.m_mafunc) != m_FunDef.end())
+                {
+                    ParserCallback pCallback = m_FunDef[m_state->m_vectEval.m_mafunc];
+                    vTgt->assign(1, multfun_type(pCallback.GetAddr())(&m_buffer[0], nStackSize));
+                }
+                else if (m_state->m_vectEval.m_mafunc == "logtoidx")
+                    *vTgt = parser_logtoidx(&m_buffer[0], nStackSize);
+                else if (m_state->m_vectEval.m_mafunc == "idxtolog")
+                    *vTgt = parser_idxtolog(&m_buffer[0], nStackSize);
+            }
+
+            UpdateVectorVar(m_state->m_vectEval.m_targetVect);
+        }
 
         if (g_DbgDumpStack)
             NumeReKernel::print("ParserBase::Eval() @ ["
                                 + toString(nthLoopElement) + "," + toString(nthLoopPartEquation)
-                                + "] stackBuffer[1] = " + toString(m_state->m_stackBuffer[1], 5)
-                                + " returns " + toString(m_buffer[0], 5));
+                                + "] m_buffer[:] = {" + printVector(m_buffer, nStackSize) + "}");
 
         if (bMakeLoopByteCode && !bPauseLoopByteCode)
         {
@@ -3560,9 +3531,12 @@ namespace mu
 	{
 	    string_type sTempVarName = "_~TV[" + getNextVectorVarIndex() + "]";
 
-	    SetVectorVar(sTempVarName, vVar, false);
+        if (!vVar.size())
+            SetVectorVar(sTempVarName, std::vector<mu::value_type>(1, 0.0), false);
+        else
+            SetVectorVar(sTempVarName, vVar, false);
 
-	    return sTempVarName;
+        return sTempVarName;
 	}
 
 
@@ -3684,11 +3658,10 @@ namespace mu
 		}
 
 		if (!bIgnoreProcedureVects || !mVectorVars.size())
-		{
+        {
 			mVectorVars.clear();
-			mTargets.clear();
-			sTargets.clear();
-		}
+            m_compilingTarget.clear();
+        }
 
 		return;
 	}

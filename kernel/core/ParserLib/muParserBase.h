@@ -40,6 +40,7 @@
 #include "muParserTokenReader.h"
 #include "muParserBytecode.h"
 #include "muParserError.h"
+#include "muParserState.hpp"
 
 class StringView;
 class MutableStringView;
@@ -50,135 +51,8 @@ namespace mu
 	    \brief This file contains the class definition of the muparser engine.
 	*/
 
-    /** \brief Type used for storing an array of values. */
-    typedef std::vector<value_type> valbuf_type;
-
     typedef std::map<std::string,std::vector<value_type>> vectormap_type;
     typedef std::map<std::string,std::vector<value_type>*> vectormapptr_type;
-
-    /////////////////////////////////////////////////
-    /// \brief Describes an already evaluated data
-    /// access, which can be reconstructed from the
-    /// current parser state.
-    /////////////////////////////////////////////////
-	struct CachedDataAccess
-	{
-	    enum
-	    {
-	        NO_FLAG = 0x0,
-	        IS_CLUSTER = 0x1,
-	        IS_TABLE_METHOD = 0x2
-	    };
-
-		std::string sAccessEquation; // Passed to parser_getIndices -> returns the indices for the current access
-		std::string sVectorName; // target of the created vector -> use SetVectorVar
-		std::string sCacheName; // needed for reading the data -> create a vector var
-		int flags;
-	};
-
-
-    /////////////////////////////////////////////////
-    /// \brief Defines a single parser state, which
-    /// contains all necessary information for
-    /// evaluating a single expression.
-    /////////////////////////////////////////////////
-	struct State
-	{
-	    ParserByteCode m_byteCode;
-	    std::string m_expr;
-	    int m_valid;
-	    int m_numResults;
-	    valbuf_type m_stackBuffer;
-	    varmap_type m_usedVar;
-
-	    State() : m_valid(1), m_numResults(0) {}
-	};
-
-
-    /////////////////////////////////////////////////
-    /// \brief Describes the cache of a single
-    /// expression. Might contain multiple cached
-    /// data accesses.
-    /////////////////////////////////////////////////
-	struct Cache
-	{
-	    std::vector<CachedDataAccess> m_accesses;
-	    std::string m_expr;
-	    std::string m_target;
-	    bool m_enabled;
-
-	    void clear()
-	    {
-	        m_accesses.clear();
-	        m_expr.clear();
-	        m_target.clear();
-	        m_enabled = true;
-	    }
-
-	    Cache() : m_enabled(true) {}
-	};
-
-
-    /////////////////////////////////////////////////
-    /// \brief This is the parser state stack for a
-    /// whole command line. Might contain multiple
-    /// single states and cached data accesses.
-    /////////////////////////////////////////////////
-	struct LineStateStack
-	{
-	    std::vector<State> m_states;
-	    Cache m_cache;
-
-	    LineStateStack() : m_states(std::vector<State>(1)) {}
-
-	    void clear()
-	    {
-	        m_states.clear();
-	        m_cache.clear();
-	    }
-	};
-
-
-    /////////////////////////////////////////////////
-    /// \brief This is a stack of all parser line
-    /// state stacks. Can be used to gather a bunch
-    /// of already parsed command lines together.
-    /////////////////////////////////////////////////
-	struct StateStacks
-	{
-	    std::vector<LineStateStack> m_stacks;
-
-	    State& operator()(size_t i, size_t j)
-	    {
-	        if (i < m_stacks.size() && j < m_stacks[i].m_states.size())
-                return m_stacks[i].m_states[j];
-
-            return m_stacks.back().m_states.back();
-	    }
-
-	    LineStateStack& operator[](size_t i)
-	    {
-	        if (i < m_stacks.size())
-                return m_stacks[i];
-
-            return m_stacks.back();
-	    }
-
-	    void resize(size_t s)
-	    {
-	        m_stacks.resize(s);
-	    }
-
-	    void clear()
-	    {
-	        m_stacks.clear();
-	    }
-
-	    size_t size() const
-	    {
-	        return m_stacks.size();
-	    }
-	};
 
 
 	//--------------------------------------------------------------------------------------------------
@@ -399,7 +273,7 @@ namespace mu
 		private:
 			void replaceLocalVars(std::string& sLine);
 			bool checkDelimiter(StringView sLine);
-			void evaluateVectorExpansion(MutableStringView sSubExpr, std::vector<mu::value_type>& vResults);
+			void evaluateVectorExpansion(MutableStringView sSubExpr, const std::string& sVectorVarName);
             void expandVector(mu::value_type dFirst,
                               const mu::value_type& dLast,
                               const mu::value_type& dIncrement,
@@ -410,6 +284,7 @@ namespace mu
 			void Assign(const ParserBase& a_Parser);
 			void InitTokenReader();
 			void ReInit();
+            ExpressionTarget& getTarget() const;
 
 			void AddCallback( const string_type& a_strName,
 							  const ParserCallback& a_Callback,
@@ -454,6 +329,7 @@ namespace mu
 			*/
 			mutable ParseFunction  m_pParseFormula;
 			mutable State m_compilingState;
+			mutable ExpressionTarget m_compilingTarget;
 			mutable StateStacks m_stateStacks;
 			State* m_state;
 			mutable valbuf_type m_buffer;
@@ -463,10 +339,6 @@ namespace mu
 
 			mutable vectormap_type mVectorVars;
 			mutable vectormapptr_type mNonSingletonVectorVars;
-
-			mutable varmap_type mTargets;
-			mutable string_type sTargets;
-			mutable int nVectorDimension;
 			mutable varmap_type vCurrentUsedVars;
 
 			unsigned int nthLoopElement;
