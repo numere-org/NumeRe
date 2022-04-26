@@ -1293,7 +1293,7 @@ namespace mu
 	/** \brief Return a map containing the used variables only. */
 	const varmap_type& ParserBase::GetUsedVar()
 	{
-		try
+		/*try
 		{
 			m_pTokenReader->IgnoreUndefVar(true);
 			CreateRPN(); // try to create bytecode, but don't use it for any further calculations since it
@@ -1308,7 +1308,7 @@ namespace mu
 			m_pParseFormula = &ParserBase::ParseString;
 			m_pTokenReader->IgnoreUndefVar(false);
 			throw;
-		}
+		}*/
 
 		return m_pTokenReader->GetUsedVar();
 	}
@@ -2383,6 +2383,7 @@ namespace mu
 	void ParserBase::RemoveVar(const string_type& a_strVarName)
 	{
 		varmap_type::iterator item = m_VarDef.find(a_strVarName);
+		//g_logger.debug("Trying to delete " + a_strVarName);
 
 		if (item != m_VarDef.end())
 		{
@@ -2736,6 +2737,7 @@ namespace mu
     /////////////////////////////////////////////////
     void ParserBase::evaluateTemporaryVectors(const VectorEvaluation& vectEval, int nStackSize)
 	{
+	    //g_logger.debug("Accessing " + vectEval.m_targetVect);
         std::vector<mu::value_type>* vTgt = GetVectorVar(vectEval.m_targetVect);
 
         switch (vectEval.m_type)
@@ -3450,6 +3452,8 @@ namespace mu
 		if (!vVar.size())
 			return;
 
+        //g_logger.debug("Declaring " + sVarName);
+
 		if (!bAddVectorType && mVectorVars.find(sVarName) == mVectorVars.end() && m_VarDef.find(sVarName) == m_VarDef.end())
 		{
 		    // Create the storage for a new variable
@@ -3466,13 +3470,6 @@ namespace mu
 			*(m_VarDef.find(sVarName)->second) = vVar[0];
 
 		mVectorVars[sVarName] = vVar;
-
-		if (vVar.size() > 1)
-			mNonSingletonVectorVars[sVarName] = &mVectorVars[sVarName];
-		else if (mNonSingletonVectorVars.find(sVarName) != mNonSingletonVectorVars.end())
-			mNonSingletonVectorVars.erase(mNonSingletonVectorVars.find(sVarName));
-
-		return;
 	}
 
 
@@ -3507,8 +3504,9 @@ namespace mu
 		if (mVectorVars.find(sVarName) == mVectorVars.end())
 			return;
 
+        //g_logger.debug("Updating " + sVarName + " Exists: " + toString(GetVar().find(sVarName) != GetVar().end()));
+
 		*(GetVar().find(sVarName)->second) = mVectorVars[sVarName][0];
-		return;
 	}
 
 
@@ -3544,20 +3542,14 @@ namespace mu
 			}
 			else
 				iter = mVectorVars.erase(iter); //iter++;
-
-			auto ns_iter = mNonSingletonVectorVars.find(siter);
-
-			if (ns_iter != mNonSingletonVectorVars.end())
-				mNonSingletonVectorVars.erase(ns_iter);
 		}
 
 		if (!bIgnoreProcedureVects || !mVectorVars.size())
         {
+            //g_logger.debug("Clearing vector vars and target.");
 			mVectorVars.clear();
             m_compilingTarget.clear();
         }
-
-		return;
 	}
 
 

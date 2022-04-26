@@ -52,7 +52,6 @@ namespace mu
 	*/
 
     typedef std::map<std::string,std::vector<value_type>> vectormap_type;
-    typedef std::map<std::string,std::vector<value_type>*> vectormapptr_type;
 
 
 	//--------------------------------------------------------------------------------------------------
@@ -338,8 +337,6 @@ namespace mu
 			static const int s_MaxNumOpenMPThreads = 4;
 
 			mutable vectormap_type mVectorVars;
-			mutable vectormapptr_type mNonSingletonVectorVars;
-			mutable varmap_type vCurrentUsedVars;
 
 			unsigned int nthLoopElement;
 			unsigned int nthLoopPartEquation;

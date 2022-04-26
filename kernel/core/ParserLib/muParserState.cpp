@@ -18,6 +18,7 @@
 
 #include "muParserState.hpp"
 #include "../utils/tools.hpp"
+#include "../io/logger.hpp"
 
 
 namespace mu
@@ -33,9 +34,12 @@ namespace mu
     /////////////////////////////////////////////////
     void ExpressionTarget::create(StringView sTargets, const varmap_type& usedVars)
     {
+        m_targets.clear();
+
         while (sTargets.length())
         {
             StringView sExpr = getNextViewedArgument(sTargets);
+            //g_logger.debug("Using " + sExpr.to_string());
 
             for (const auto& iter : usedVars)
             {
@@ -60,6 +64,7 @@ namespace mu
     /////////////////////////////////////////////////
     void ExpressionTarget::assign(const valbuf_type& buffer, int nResults)
     {
+        //g_logger.debug("Using target. Size = " + toString(m_targets.size()));
         // Assign the results to the target variables
         // and consider also singletons
         for (size_t i = 0; i < m_targets.size(); i++)

@@ -180,6 +180,11 @@ namespace mu
 	};
 
 
+    /////////////////////////////////////////////////
+    /// \brief This structure defines the overall
+    /// expression target, if it is composed out of a
+    /// temporary vector like {a,b}.
+    /////////////////////////////////////////////////
 	struct ExpressionTarget
 	{
 	    std::vector<mu::value_type*> m_targets;
