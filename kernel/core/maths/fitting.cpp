@@ -27,11 +27,11 @@
 // the (file static) helper routines
 struct FittingData
 {
-    vector<double> vx;
-    vector<double> vy;
-    vector<double> vy_w;
-    vector<vector<double> > vz;
-    vector<vector<double> > vz_w;
+    std::vector<double> vx;
+    std::vector<double> vy;
+    std::vector<double> vy_w;
+    std::vector<std::vector<double> > vz;
+    std::vector<std::vector<double> > vz_w;
 
     IntervalSet ivl;
     bool restricted[3];
@@ -45,27 +45,29 @@ struct FittingData
     double dPrecision;
     int nMaxIterations;
 
-    string sFitFunction;
-    string sRestrictions;
-    string sParams;
-    string sChiMap;
-    string sChiMap_Vars[2];
+    std::string sFitFunction;
+    std::string sRestrictions;
+    std::string sParams;
+    std::string sChiMap;
+    std::string sChiMap_Vars[2];
 };
 
 // These are the prototypes of the file static helper routines
-static vector<double> evaluateFittingParams(FittingData& fitData, string& sCmd, Indices& _idx, string& sTeXExportFile, bool& bTeXExport, bool& bMaskDialog);
-static mu::varmap_type getFittingParameters(FittingData& fitData, const mu::varmap_type& varMap, const string& sCmd);
-static int getDataForFit(const string& sCmd, string& sDimsForFitLog, FittingData& fitData);
-static void removeObsoleteParentheses(string& sFunction);
-static bool calculateChiMap(string sFunctionDefString, const string& sFuncDisplay, Indices& _idx, mu::varmap_type& varMap, mu::varmap_type& paramsMap, FittingData& fitData, vector<double> vInitialVals);
-static string applyFitAlgorithm(Fitcontroller& _fControl, FittingData& fitData, mu::varmap_type& paramsMap, const string& sFuncDisplay, const std::string& sCmd);
+static std::vector<double> evaluateFittingParams(FittingData& fitData, std::string& sCmd, Indices& _idx, std::string& sTeXExportFile, bool& bTeXExport, bool& bMaskDialog);
+static mu::varmap_type getFittingParameters(FittingData& fitData, const mu::varmap_type& varMap, const std::string& sCmd);
+static int getDataForFit(const std::string& sCmd, std::string& sDimsForFitLog, FittingData& fitData);
+static void removeObsoleteParentheses(std::string& sFunction);
+static bool calculateChiMap(std::string sFunctionDefString, const std::string& sFuncDisplay, Indices& _idx, mu::varmap_type& varMap, mu::varmap_type& paramsMap, FittingData& fitData, std::vector<double> vInitialVals);
+static std::string applyFitAlgorithm(Fitcontroller& _fControl, FittingData& fitData, mu::varmap_type& paramsMap, const std::string& sFuncDisplay, const std::string& sCmd);
 static void calculateCovarianceData(FittingData& fitData, double dChisq, size_t paramsMapSize);
-static string getFitOptionsTable(Fitcontroller& _fControl, FittingData& fitData, const string& sFuncDisplay, const string& sFittedFunction, const string& sDimsForFitLog, double dChisq, const mu::varmap_type& paramsMap, size_t nSize, bool forFitLog);
-static string getParameterTable(FittingData& fitData, mu::varmap_type& paramsMap, const vector<double>& vInitialVals, size_t windowSize, const string& sPMSign, bool forFitLog);
-static string constructCovarianceMatrix(FittingData& fitData, size_t paramsMapSize, bool forFitLog);
+static std::string getFitOptionsTable(Fitcontroller& _fControl, FittingData& fitData, const std::string& sFuncDisplay, const std::string& sFittedFunction, const std::string& sDimsForFitLog, double dChisq, const mu::varmap_type& paramsMap, size_t nSize, bool forFitLog);
+static std::string getParameterTable(FittingData& fitData, mu::varmap_type& paramsMap, const std::vector<double>& vInitialVals, size_t windowSize, const std::string& sPMSign, bool forFitLog);
+static std::string constructCovarianceMatrix(FittingData& fitData, size_t paramsMapSize, bool forFitLog);
 static double calculatePercentageAvgAndCreateParserVariables(FittingData& fitData, mu::varmap_type& paramsMap, double dChisq);
-static string getFitAnalysis(Fitcontroller& _fControl, FittingData& fitData, double dNormChisq, double dAverageErrorPercentage, bool noOverfitting);
-static void createTeXExport(Fitcontroller& _fControl, const string& sTeXExportFile, const string& sCmd, mu::varmap_type& paramsMap, FittingData& fitData, const vector<double>& vInitialVals, size_t nSize, const string& sFitAnalysis, const string& sFuncDisplay, const string& sFittedFunction, double dChisq);
+static std::string getFitAnalysis(Fitcontroller& _fControl, FittingData& fitData, double dNormChisq, double dAverageErrorPercentage, bool noOverfitting);
+static void createTeXExport(Fitcontroller& _fControl, const std::string& sTeXExportFile, const std::string& sCmd, mu::varmap_type& paramsMap, FittingData& fitData, const std::vector<double>& vInitialVals, size_t nSize, const std::string& sFitAnalysis, const std::string& sFuncDisplay, const std::string& sFittedFunction, double dChisq);
+
+using namespace std;
 
 // This is the fitting main routine
 bool fitDataSet(string& sCmd, Parser& _parser, MemoryManager& _data, FunctionDefinitionManager& _functions, const Settings& _option)
@@ -848,14 +850,16 @@ static int getDataForFit(const string& sCmd, string& sDimsForFitLog, FittingData
 
     if (isnan(fitData.ivl[1].front()) && !isCluster)
     {
-        fitData.ivl[1].reset(_data.min(sDataTable, _idx.row, VectorIndex(_idx.col[1])).real(),
-                             _data.max(sDataTable, _idx.row, VectorIndex(_idx.col[1])).real());
+        bool useLast = _idx.col.isExpanded() && nDim == 2;
+
+        fitData.ivl[1].reset(_data.min(sDataTable, _idx.row, VectorIndex(useLast ? _idx.col.last() : _idx.col[1])).real(),
+                             _data.max(sDataTable, _idx.row, VectorIndex(useLast ? _idx.col.last() : _idx.col[1])).real());
     }
 
     if (fitData.nFitVars & 2 && !isCluster && isnan(fitData.ivl[2].front()))
     {
-        fitData.ivl[2].reset(_data.min(sDataTable, _idx.row, VectorIndex(_idx.col.subidx(2))).real(),
-                             _data.max(sDataTable, _idx.row, VectorIndex(_idx.col.subidx(2))).real());
+        fitData.ivl[2].reset(_data.min(sDataTable, _idx.row, _idx.col.subidx(2)).real(),
+                             _data.max(sDataTable, _idx.row, _idx.col.subidx(2)).real());
     }
 
     if (nDim == 2 || isCluster)

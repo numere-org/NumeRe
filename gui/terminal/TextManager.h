@@ -24,8 +24,6 @@
 #include <deque>
 #include <string>
 
-using namespace std;
-
 class GenericTerminal;
 
 
@@ -197,9 +195,9 @@ struct ViewCursor
 /////////////////////////////////////////////////
 struct RenderedLine
 {
-	string sLine;
-	vector<unsigned short> colors;
-	vector<LogicalCursor> coords;
+	std::string sLine;
+	std::vector<unsigned short> colors;
+	std::vector<LogicalCursor> coords;
 };
 
 
@@ -317,18 +315,18 @@ struct Character
 /// string class, which contains the extended
 /// character class.
 /////////////////////////////////////////////////
-class CharacterVector : public vector<Character>
+class CharacterVector : public std::vector<Character>
 {
     private:
         Character m_dummy;
 
-        void assign(const string& sText)
+        void assign(const std::string& sText)
         {
             clear();
             append(sText);
         }
 
-        void append(const string& sText)
+        void append(const std::string& sText)
         {
             for (size_t i = 0; i < sText.length(); i++)
                 emplace_back(sText[i]);
@@ -337,12 +335,12 @@ class CharacterVector : public vector<Character>
     public:
         CharacterVector() : vector<Character>() {}
 
-        CharacterVector(const string& sText) : vector<Character>()
+        CharacterVector(const std::string& sText) : vector<Character>()
         {
             append(sText);
         }
 
-        CharacterVector(const string& sText, short flags) : vector<Character>()
+        CharacterVector(const std::string& sText, short flags) : vector<Character>()
         {
             append(sText);
 
@@ -353,7 +351,7 @@ class CharacterVector : public vector<Character>
             }
         }
 
-        CharacterVector& operator+=(const string& sText)
+        CharacterVector& operator+=(const std::string& sText)
         {
             append(sText);
             return *this;
@@ -365,7 +363,7 @@ class CharacterVector : public vector<Character>
             return *this;
         }
 
-        CharacterVector& operator=(const string& sText)
+        CharacterVector& operator=(const std::string& sText)
         {
             assign(sText);
             return *this;
@@ -419,9 +417,9 @@ class CharacterVector : public vector<Character>
             return vector<Character>::back();
         }
 
-        string toString() const
+        std::string toString() const
         {
-            string sRet;
+            std::string sRet;
 
             for (size_t i = 0; i < size(); i++)
                 sRet.append(1u, operator[](i).m_char);
@@ -429,20 +427,20 @@ class CharacterVector : public vector<Character>
             return sRet;
         }
 
-        string substr(size_t pos, size_t len = string::npos) const
+        std::string substr(size_t pos, size_t len = std::string::npos) const
         {
             return toString().substr(pos, len);
         }
 
-        vector<unsigned short> subcolors(size_t pos, size_t len = string::npos) const
+        std::vector<unsigned short> subcolors(size_t pos, size_t len = std::string::npos) const
         {
             if (pos >= size())
-                return vector<unsigned short>();
+                return std::vector<unsigned short>();
 
             if (pos+len >= size())
                 len = size() - pos;
 
-            vector<unsigned short> vect;
+            std::vector<unsigned short> vect;
 
             for (size_t i = 0; i < len; i++)
                 vect.push_back(operator[](pos+i).getColor());
@@ -456,7 +454,7 @@ class CharacterVector : public vector<Character>
             return size();
         }
 
-        iterator insert(size_t pos, const string& sText, short flags = 0)
+        iterator insert(size_t pos, const std::string& sText, short flags = 0)
         {
             return insert(pos, CharacterVector(sText, flags));
         }
@@ -464,14 +462,14 @@ class CharacterVector : public vector<Character>
         iterator insert(size_t pos, const CharacterVector& vect)
         {
             if (pos >= size())
-                return vector<Character>::insert(end(), vect.begin(), vect.end());
+                return std::vector<Character>::insert(end(), vect.begin(), vect.end());
 
-            return vector<Character>::insert(begin() + pos, vect.begin(), vect.end());
+            return std::vector<Character>::insert(begin() + pos, vect.begin(), vect.end());
         }
 
         void append(size_t n, char c)
         {
-            append(string(n, c));
+            append(std::string(n, c));
         }
 };
 
@@ -490,16 +488,16 @@ class TextManager
 		TextManager(GenericTerminal* parent = nullptr, int width = 80, int height = 24, int maxWidth = 160, int maxHeight = 300);
 		~TextManager();
 
-		void printOutput(const string& sLine);
-		void insertInput(const string& sLine, size_t logicalpos = string::npos);
+		void printOutput(const std::string& sLine);
+		void insertInput(const std::string& sLine, size_t logicalpos = std::string::npos);
 
 		ViewCursor toViewCursor(const LogicalCursor& logCursor) const;
 		ViewCursor getCurrentViewPos() const;
 		LogicalCursor toLogicalCursor(const ViewCursor& viewCursor) const;
 		LogicalCursor getCurrentLogicalPos() const;
 
-		string getRenderedString(size_t viewLine) const;
-		vector<unsigned short> getRenderedColors(size_t viewLine) const;
+		std::string getRenderedString(size_t viewLine) const;
+		std::vector<unsigned short> getRenderedColors(size_t viewLine) const;
 
 		size_t tab();
 		void newLine();
@@ -511,19 +509,19 @@ class TextManager
 		void unselectAll();
 		bool isSelected(const ViewCursor& viewCursor) const;
 		bool isSelectedLogical(const LogicalCursor& cursor) const;
-		string getSelectedText() const;
-		string getCurrentInputLine() const;
-		string getPreviousLine() const;
+		std::string getSelectedText() const;
+		std::string getCurrentInputLine() const;
+		std::string getPreviousLine() const;
 
 		int GetSize() const;
 		int GetMaxSize() const;
 		int GetHeight() const;
 		int GetNumLinesScrolled() const;
 		int GetLinesReceived() const;
-		string GetInputHistory(bool vcursorup = true);
-		string GetTextRange(int y, int x0, int x1) const;
-		string GetWordAt(int y, int x) const;
-		string GetWordStartAt(int y, int x) const;
+		std::string GetInputHistory(bool vcursorup = true);
+		std::string GetTextRange(int y, int x0, int x1) const;
+		std::string GetWordAt(int y, int x) const;
+		std::string GetWordStartAt(int y, int x) const;
 		char GetCharAdjusted(int y, int x) const;
 		char GetCharLogical(const LogicalCursor& cursor) const;
 		bool IsUserText(int y, int x) const;
@@ -545,7 +543,7 @@ class TextManager
 		void Resize(int width, int height);
 		void Reset();
 
-		string operator[](int index);
+		std::string operator[](int index);
 
 		int AdjustIndex(int index) const;
 
@@ -565,14 +563,14 @@ class TextManager
 		size_t m_tabLength;
 		size_t m_indentDepth;
 
-		deque<CharacterVector> m_managedText;
-		deque<RenderedLine> m_renderedBlock;
+		std::deque<CharacterVector> m_managedText;
+		std::deque<RenderedLine> m_renderedBlock;
 
 		int calc_color(int fg, int bg, int flags);
 		void updateColors(bool isErrorLine = false);
 		void renderLayout();
 		void synchronizeRenderedBlock(int linesToDelete);
-		size_t findNextLinebreak(const string& currentLine, size_t currentLinebreak) const;
+		size_t findNextLinebreak(const std::string& currentLine, size_t currentLinebreak) const;
 
 		enum
 		{

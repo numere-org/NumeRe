@@ -28,16 +28,13 @@
 #include <string>
 #include <vector>
 
-using namespace std;
-using namespace mu;
-
 bool integrate(CommandLineParser& cmdParser);
 bool integrate2d(CommandLineParser& cmdParser);
 bool differentiate(CommandLineParser& cmdParser);
 bool findExtrema(CommandLineParser& cmdParser);
 bool findZeroes(CommandLineParser& cmdParser);
 void taylor(CommandLineParser& cmdParser);
-bool fitDataSet(string& sCmd, Parser& _parser, MemoryManager& _data, FunctionDefinitionManager& _functions, const Settings& _option);
+bool fitDataSet(std::string& sCmd, mu::Parser& _parser, MemoryManager& _data, FunctionDefinitionManager& _functions, const Settings& _option);
 bool fastFourierTransform(CommandLineParser& cmdParser);
 bool fastWaveletTransform(CommandLineParser& cmdParser);
 bool evalPoints(CommandLineParser& cmdParser);

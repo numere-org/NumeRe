@@ -466,7 +466,7 @@ IntervalSet PlotAssetManager::getAxisIntervalsOfType(PlotType t) const
         if (assets[i].type != t)
             continue;
 
-        for (size_t c = 0; c < min(3u, assets[i].getDim()); c++)
+        for (size_t c = 0; c < std::min(3u, assets[i].getDim()); c++)
         {
             ivl[c] = ivl[c].combine(assets[i].getAxisInterval((PlotCoords)c));
         }
@@ -494,11 +494,11 @@ void PlotAssetManager::normalize(int t_animate)
         {
             IntervalSet ivl = ass.getDataIntervals(layer);
 
-            if (maxnorm.first < max(fabs(ivl[REAL].min()), fabs(ivl[REAL].max())))
-                maxnorm.first = max(fabs(ivl[REAL].min()), fabs(ivl[REAL].max()));
+            if (maxnorm.first < std::max(fabs(ivl[REAL].min()), fabs(ivl[REAL].max())))
+                maxnorm.first = std::max(fabs(ivl[REAL].min()), fabs(ivl[REAL].max()));
 
-            if (maxnorm.second < max(fabs(ivl[IMAG].min()), fabs(ivl[IMAG].max())))
-                maxnorm.second = max(fabs(ivl[IMAG].min()), fabs(ivl[IMAG].max()));
+            if (maxnorm.second < std::max(fabs(ivl[IMAG].min()), fabs(ivl[IMAG].max())))
+                maxnorm.second = std::max(fabs(ivl[IMAG].min()), fabs(ivl[IMAG].max()));
         }
     }
 

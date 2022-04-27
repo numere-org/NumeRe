@@ -44,10 +44,7 @@
 #ifndef COMMANDHANDLER_HPP
 #define COMMANDHANDLER_HPP
 
-using namespace std;
-using namespace mu;
-
-extern const string sVersion;
+extern const std::string sVersion;
 
 enum CommandReturnValues
 {
@@ -61,10 +58,10 @@ enum CommandReturnValues
  * Built-In-Funktionen
  * -> Diese Funktionen setzen die Basisfunktionen dieses Frameworks um
  */
-CommandReturnValues commandHandler(string& sCmd);
-string evaluateParameterValues(const string& sCmd);
-bool extractFirstParameterStringValue(const string& sCmd, string& sArgument);
-bool parseCmdArg(const string& sCmd, size_t nPos, Parser& _parser, size_t& nArgument);
+CommandReturnValues commandHandler(std::string& sCmd);
+std::string evaluateParameterValues(const std::string& sCmd);
+bool extractFirstParameterStringValue(const std::string& sCmd, std::string& sArgument);
+bool parseCmdArg(const std::string& sCmd, size_t nPos, mu::Parser& _parser, size_t& nArgument);
 
 
 #endif

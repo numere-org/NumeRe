@@ -20,6 +20,8 @@
 #include "editor.h"
 #include "../terminal/terminal.hpp"
 
+using namespace std;
+
 /////////////////////////////////////////////////
 /// \brief Creates a list of procedures in the current file
 ///

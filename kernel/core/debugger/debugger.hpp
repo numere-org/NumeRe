@@ -30,7 +30,6 @@
 #include "breakpointmanager.hpp"
 #include "../ParserLib/muParserDef.h"
 
-using namespace std;
 
 // stacktrace
 // line number
@@ -44,26 +43,26 @@ class NumeReDebugger
 {
     private:
         BreakpointManager _breakpointManager;
-        vector<pair<string, Procedure*> > vStackTrace;
+        std::vector<std::pair<std::string, Procedure*> > vStackTrace;
         unsigned int nLineNumber;
-        string sErraticCommand;
-        string sErraticModule;
-        string sErrorMessage;
-        map<string,mu::value_type> mLocalVars;
-        map<string,string> mLocalStrings;
-        map<string,string> mLocalTables;
-        map<string,string> mLocalClusters;
-        map<string,string> mArguments;
+        std::string sErraticCommand;
+        std::string sErraticModule;
+        std::string sErrorMessage;
+        std::map<std::string,mu::value_type> mLocalVars;
+        std::map<std::string,std::string> mLocalStrings;
+        std::map<std::string,std::string> mLocalTables;
+        std::map<std::string,std::string> mLocalClusters;
+        std::map<std::string,std::string> mArguments;
         bool bAlreadyThrown;
         bool bExceptionHandled;
         size_t nCurrentStackElement;
 
         bool bDebuggerActive;
 
-        int showEvent(const string& sTitle);
+        int showEvent(const std::string& sTitle);
         void resetBP();
         void formatMessage();
-        string decodeType(string& sArgumentValue, const std::string& sArgumentName = "");
+        std::string decodeType(std::string& sArgumentValue, const std::string& sArgumentName = "");
 
     public:
         NumeReDebugger();
@@ -87,11 +86,11 @@ class NumeReDebugger
             {
                 return nLineNumber;
             }
-        inline string getErrorModule() const
+        inline std::string getErrorModule() const
             {
                 return sErraticModule;
             }
-        inline string getErrorMessage() const
+        inline std::string getErrorMessage() const
             {
                 return sErrorMessage;
             }
@@ -112,44 +111,44 @@ class NumeReDebugger
             {
                 return _breakpointManager;
             }
-        void showError(const string& sTitle);
-        void showError(exception_ptr e_ptr);
+        void showError(const std::string& sTitle);
+        void showError(std::exception_ptr e_ptr);
         void throwException(SyntaxError error);
 
         int showBreakPoint();
 
         bool select(size_t nStackElement);
 
-        void pushStackItem(const string& sStackItem, Procedure* _currentProcedure);
+        void pushStackItem(const std::string& sStackItem, Procedure* _currentProcedure);
         void popStackItem();
 
         void gatherInformations(ProcedureVarFactory* _varFactory,
-                                const string& _sErraticCommand, const string& _sErraticModule, unsigned int _nLineNumber);
+                                const std::string& _sErraticCommand, const std::string& _sErraticModule, unsigned int _nLineNumber);
 
         void gatherInformations(const std::map<std::string, std::pair<std::string, mu::value_type*>>& _mLocalVars,
                                 const std::map<std::string, std::pair<std::string, std::string>>& _mLocalStrings,
                                 const std::map<std::string, std::string>& _mLocalTables,
                                 const std::map<std::string, std::string>& _mLocalClusters,
                                 const std::map<std::string, std::string>& _mArguments,
-                                const string& _sErraticCommand, const string& _sErraticModule, unsigned int _nLineNumber);
+                                const std::string& _sErraticCommand, const std::string& _sErraticModule, unsigned int _nLineNumber);
 
-        void gatherInformations(string** sLocalVars, size_t nLocalVarMapSize, mu::value_type* dLocalVars,
-                                string** sLocalStrings, size_t nLocalStrMapSize,
-                                string** sLocalTables, size_t nLocalTableMapSize,
-                                string** sLocalClusters, size_t nLocalClusterMapSize,
-                                string** sArgumentMap, size_t nArgumentMapSize,
-                                const string& _sErraticCommand, const string& _sErraticModule, unsigned int _nLineNumber);
+        void gatherInformations(std::string** sLocalVars, size_t nLocalVarMapSize, mu::value_type* dLocalVars,
+                                std::string** sLocalStrings, size_t nLocalStrMapSize,
+                                std::string** sLocalTables, size_t nLocalTableMapSize,
+                                std::string** sLocalClusters, size_t nLocalClusterMapSize,
+                                std::string** sArgumentMap, size_t nArgumentMapSize,
+                                const std::string& _sErraticCommand, const std::string& _sErraticModule, unsigned int _nLineNumber);
 
-        void gatherLoopBasedInformations(const string& _sErraticCommand, unsigned int _nLineNumber, map<string,string>& mVarMap, mu::value_type** vVarArray, string* sVarArray, int nVarArray);
+        void gatherLoopBasedInformations(const std::string& _sErraticCommand, unsigned int _nLineNumber, std::map<std::string,std::string>& mVarMap, const std::vector<mu::value_type>& vVarArray, const std::vector<std::string>& sVarArray);
 
-        vector<string> getModuleInformations();
-        vector<string> getStackTrace();
-        vector<string> getNumVars();
-        vector<string> getStringVars();
-        vector<string> getTables();
-        vector<string> getClusters();
-        vector<string> getArguments();
-        vector<string> getGlobals();
+        std::vector<std::string> getModuleInformations();
+        std::vector<std::string> getStackTrace();
+        std::vector<std::string> getNumVars();
+        std::vector<std::string> getStringVars();
+        std::vector<std::string> getTables();
+        std::vector<std::string> getClusters();
+        std::vector<std::string> getArguments();
+        std::vector<std::string> getGlobals();
 };
 
 

@@ -24,7 +24,6 @@
 #include "IconManager.h"
 #include "../common/datastructures.h"
 
-using namespace std;
 class wxTreeItemData;
 
 class FileNameTreeData : public wxTreeItemData
@@ -47,7 +46,7 @@ class DirTraverser : public wxDirTraverser
         wxTreeItemId id;
         FileFilterType fileSpec;
         wxString path;
-        vector<wxTreeItemId> vcurrentnodes;
+        std::vector<wxTreeItemId> vcurrentnodes;
         unsigned int ncurrentdepth;
     public:
         DirTraverser(wxTreeCtrl* therootNode, IconManager* theiconmanager, wxTreeItemId theid, const wxString& thepath, FileFilterType thefilespec);

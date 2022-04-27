@@ -25,8 +25,6 @@
 #include "stringdatastructures.hpp"
 #include "stringvarfactory.hpp"
 
-using namespace std;
-
 namespace NumeRe
 {
     /////////////////////////////////////////////////
@@ -37,40 +35,40 @@ namespace NumeRe
     class StringFuncHandler : public StringVarFactory
     {
         private:
-            map<string,StringFuncHandle> m_mStringFuncs;
+            std::map<std::string,StringFuncHandle> m_mStringFuncs;
 
-            string addMaskedStrings(const string& sString);
-            void evalFunction(string& sLine, const string& sFuncName, StringFuncHandle);
-            size_t argumentParser(const string&, n_vect&);
-            size_t argumentParser(const string&, d_vect&);
-            size_t argumentParser(const string&, s_vect&, bool& bLogicalOnly);
-            size_t argumentParser(const string&, s_vect&, d_vect&);
-            size_t argumentParser(const string&, s_vect&, n_vect&, n_vect&);
-            size_t argumentParser(const string&, s_vect&, n_vect&, n_vect&, s_vect&);
-            size_t argumentParser(const string&, s_vect&, s_vect&, n_vect&, n_vect&);
-            size_t argumentParser(const string&, s_vect&, s_vect&, s_vect&, n_vect&, n_vect&);
+            std::string addMaskedStrings(const std::string& sString);
+            void evalFunction(std::string& sLine, const std::string& sFuncName, StringFuncHandle);
+            size_t argumentParser(const std::string&, n_vect&);
+            size_t argumentParser(const std::string&, d_vect&);
+            size_t argumentParser(const std::string&, s_vect&, bool& bLogicalOnly);
+            size_t argumentParser(const std::string&, s_vect&, d_vect&);
+            size_t argumentParser(const std::string&, s_vect&, n_vect&, n_vect&);
+            size_t argumentParser(const std::string&, s_vect&, n_vect&, n_vect&, s_vect&);
+            size_t argumentParser(const std::string&, s_vect&, s_vect&, n_vect&, n_vect&);
+            size_t argumentParser(const std::string&, s_vect&, s_vect&, s_vect&, n_vect&, n_vect&);
 
-            vector<string> callFunction(StringFuncHandle, s_vect&, s_vect&, s_vect&, n_vect&, n_vect&, d_vect&, size_t);
-            vector<string> callFunctionParallel(StringFuncHandle, s_vect&, s_vect&, s_vect&, n_vect&, n_vect&, d_vect&, size_t);
-            vector<string> callMultiFunction(StringFuncHandle, s_vect&, s_vect&, s_vect&, n_vect&, n_vect&, d_vect&, size_t);
-            vector<string> callMultiFunctionParallel(StringFuncHandle, s_vect&, s_vect&, s_vect&, n_vect&, n_vect&, d_vect&, size_t);
+            std::vector<std::string> callFunction(StringFuncHandle, s_vect&, s_vect&, s_vect&, n_vect&, n_vect&, d_vect&, size_t);
+            std::vector<std::string> callFunctionParallel(StringFuncHandle, s_vect&, s_vect&, s_vect&, n_vect&, n_vect&, d_vect&, size_t);
+            std::vector<std::string> callMultiFunction(StringFuncHandle, s_vect&, s_vect&, s_vect&, n_vect&, n_vect&, d_vect&, size_t);
+            std::vector<std::string> callMultiFunctionParallel(StringFuncHandle, s_vect&, s_vect&, s_vect&, n_vect&, n_vect&, d_vect&, size_t);
 
         protected:
-            string applySpecialStringFuncs(string sLine);
-            string applyStringFuncs(string sLine);
-            void declareStringFuncs(const map<string,StringFuncHandle>& mStringFuncs);
-            size_t findNextFunction(const string& sFunc, const string& sLine, size_t nStartPos, size_t& nEndPosition, bool searchForMethods = false);
-            string getFunctionArgumentList(const string& sFunc, const string& sLine, size_t nStartPosition, size_t nEndPosition);
+            std::string applySpecialStringFuncs(std::string sLine);
+            std::string applyStringFuncs(std::string sLine);
+            void declareStringFuncs(const std::map<std::string,StringFuncHandle>& mStringFuncs);
+            size_t findNextFunction(const std::string& sFunc, const std::string& sLine, size_t nStartPos, size_t& nEndPosition, bool searchForMethods = false);
+            std::string getFunctionArgumentList(const std::string& sFunc, const std::string& sLine, size_t nStartPosition, size_t nEndPosition);
             std::string printValue(const mu::value_type& value);
             size_t getStringFuncMapSize() const
             {
                 return m_mStringFuncs.size();
             }
-            virtual StringResult eval(string& sLine, string sCache, bool bParseNumericals = true) = 0;
+            virtual StringResult eval(std::string& sLine, std::string sCache, bool bParseNumericals = true) = 0;
 
         public:
             virtual ~StringFuncHandler() {}
-            virtual bool isStringExpression(const string& sExpression) = 0;
+            virtual bool isStringExpression(const std::string& sExpression) = 0;
 
     };
 }

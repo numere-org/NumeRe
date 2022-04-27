@@ -31,8 +31,6 @@
 
 class TablePanel;
 
-using namespace std;
-
 /////////////////////////////////////////////////
 /// \brief This class is an adaption of the
 /// wxGrid class to present the tabular data in
@@ -70,14 +68,14 @@ class TableViewer : public wxGrid
         void updateFrame();
         void deleteSelection();
         int findLastElement(int nCol);
-        bool isNumerical(const string& sCell);
+        bool isNumerical(const std::string& sCell);
         bool isEmptyCol(int col);
         wxString replaceCtrlChars(const wxString& sStr);
         void copyContents();
         void pasteContents(bool useCursor = false);
         void highlightCursorPosition(int nRow, int nCol);
         void UpdateColumnAlignment(int col);
-        vector<wxString> getLinesFromPaste(const wxString& data);
+        std::vector<wxString> getLinesFromPaste(const wxString& data);
         void replaceDecimalSign(wxString& text);
         void replaceTabSign(wxString& text);
         void createZeroElementTable();
@@ -101,7 +99,7 @@ class TableViewer : public wxGrid
     public:
         TableViewer(wxWindow* parent, wxWindowID id, wxStatusBar* statusbar, TablePanel* parentPanel, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxDefaultSize, long style = wxWANTS_CHARS, const wxString& name = wxGridNameStr);
 
-        void SetData(NumeRe::Container<string>& _stringTable);
+        void SetData(NumeRe::Container<std::string>& _stringTable);
         void SetData(NumeRe::Table& _table);
         NumeRe::Table GetData();
         NumeRe::Table GetDataCopy();

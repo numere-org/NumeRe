@@ -22,6 +22,8 @@
 #include "../io/file.hpp"
 #include <cstdlib>
 
+using namespace std;
+
 
 /////////////////////////////////////////////////
 /// \brief This function searches the passed
@@ -339,7 +341,6 @@ string extractStringToken(const string& sCmd, size_t nPos)
 /// the function does not find the matching
 /// parenthesis, it returns string::npos
 /////////////////////////////////////////////////
-//unsigned int getMatchingParenthesis(const string& sLine)
 unsigned int getMatchingParenthesis(const StringView& sLine)
 {
     size_t pos = sLine.find_first_of("([{");
@@ -400,7 +401,16 @@ unsigned int getMatchingParenthesis(const StringView& sLine)
     return string::npos;
 }
 
-// Prueft, ob ein Ausdruck ein Mehrfachausdruck oder nur eine Multi-Argument-Funktion ist
+
+/////////////////////////////////////////////////
+/// \brief Determines, if a string contains
+/// multiple comma-separated expressions.
+///
+/// \param sExpr const string&
+/// \param bIgnoreClosingParenthesis bool
+/// \return bool
+///
+/////////////////////////////////////////////////
 bool isMultiValue(const string& sExpr, bool bIgnoreClosingParenthesis)
 {
     // --> Kein Komma? Auf jeden Fall kein Mehrfachausdruck! <--
@@ -828,7 +838,14 @@ string replaceToTeX(const string& sString, bool replaceForTeXFile) // bool-flag 
 }
 
 
-// This is a static helper function for the findCommand function further down
+/////////////////////////////////////////////////
+/// \brief This is a static helper function for
+/// the findCommand function.
+///
+/// \param sCmd const string&
+/// \return Match
+///
+/////////////////////////////////////////////////
 static Match findCasualCommand(const string& sCmd)
 {
     Match _mMatch;
@@ -915,7 +932,19 @@ static Match findCasualCommand(const string& sCmd)
     return _mMatch;
 }
 
-// This is a static helper function for the findCommandWithReturnValue function further down
+
+/////////////////////////////////////////////////
+/// \brief This is a static helper function for
+/// the findCommandWithReturnValue function.
+///
+/// \param _mMatch Match&
+/// \param position size_t
+/// \param character char
+/// \param sCmd const string&
+/// \param sCommand const string&
+/// \return bool
+///
+/////////////////////////////////////////////////
 static bool findShortestMatchForCommand(Match& _mMatch, size_t position, char character, const string& sCmd, const string& sCommand)
 {
     // Store the command string and the match position
@@ -960,7 +989,16 @@ static bool findShortestMatchForCommand(Match& _mMatch, size_t position, char ch
     }
 }
 
-// This is a static helper function for the findCommand function further down
+
+/////////////////////////////////////////////////
+/// \brief This is a static helper function for
+/// the findCommand function.
+///
+/// \param sCmd const string&
+/// \param sCommand const string&
+/// \return Match
+///
+/////////////////////////////////////////////////
 static Match findCommandWithReturnValue(const string& sCmd, const string& sCommand)
 {
     Match _mMatch;
@@ -1118,11 +1156,21 @@ static Match findCommandWithReturnValue(const string& sCmd, const string& sComma
 }
 
 
-
-// This function is very important for the command handler.
-// It extracts the command out of the complete command line.
-// It is also capable of finding an command, which is not at the start of the line (i.e.
-// commands, which are returning values)
+/////////////////////////////////////////////////
+/// \brief This function is very important for
+/// the command handler.
+///
+/// It extracts the command out of the complete
+/// command line. It is also capable of finding a
+/// command, which is not at the start of the
+/// line (i.e. commands, which are returning
+/// values).
+///
+/// \param sCmd const string&
+/// \param sCommand string
+/// \return Match
+///
+/////////////////////////////////////////////////
 Match findCommand(const string& sCmd, string sCommand)
 {
     Match _mMatch;
@@ -1163,7 +1211,16 @@ Match findCommand(const string& sCmd, string sCommand)
 }
 
 
-// --> extrahiert den gesamten Kommandostring aus einer Kommandozeile <--
+/////////////////////////////////////////////////
+/// \brief Extracts the whole command string from
+/// a command line (which might contain more than
+/// one).
+///
+/// \param sCmd const string&
+/// \param _mMatch const Match&
+/// \return string
+///
+/////////////////////////////////////////////////
 string extractCommandString(const string& sCmd, const Match& _mMatch)
 {
     string sCommandString = "";
@@ -1204,60 +1261,18 @@ string extractCommandString(const string& sCmd, const Match& _mMatch)
     return sCommandString;
 }
 
-// --> Entfernt ueberzaehlige Kommata in strings <--
-void removeArgSep(string& sToClear)
-{
-    int nSep = 0;
-    int nSpaces = -1;
 
-    // --> So lange nSep nicht mit 0 aus dem Schleifendurchlauf herauskommt, wiederhole ihn <--
-    do
-    {
-        // --> nSep und nSpaces zuruecksetzen <--
-        nSep = 0;
-        nSpaces = -1;
-
-        // --> Jedes Zeichen des Strings ueberpruefen <--
-        for (unsigned int i = 0; i < sToClear.length(); i++)
-        {
-            // --> Gefuehlt unendlich verschiedene Moeglichkeiten <--
-            if (sToClear[i] == ',' && !nSep && !nSpaces)
-                nSep++;
-            else if (sToClear[i] == ',' && !nSep && nSpaces)
-                sToClear[i] = ' ';
-            else if (sToClear[i] == ',' && nSep)
-                sToClear[i] = ' ';
-            else if (sToClear[i] != ' ' && nSep)
-                nSep--;
-            else if (sToClear[i] == ' ' && nSpaces == -1)
-                nSpaces = 1;
-            else if (sToClear[i] == ' ' && nSpaces)
-                nSpaces++;
-            else if (sToClear[i] != ' ' && nSpaces)
-                nSpaces = 0;
-        }
-
-        // --> Ist nSep ungleich 0? <--
-        if (nSep)
-        {
-            // --> Ersetze das letzte ',' durch eine Leerstelle <--
-            sToClear[sToClear.rfind(',')] = ' ';
-        }
-
-        // --> Umschliessende Leerzeichen entfernen <--
-        StripSpaces(sToClear);
-    }
-    while (nSep);
-    return;
-}
-
-// --> Eine Datei mit einem externen Programm oeffnen <--
+/////////////////////////////////////////////////
+/// \brief Opens a file with the program, which
+/// is associated by default within the Windows
+/// shell.
+///
+/// \param sFile const string&
+/// \return void
+///
+/////////////////////////////////////////////////
 void openExternally(const string& sFile)
 {
-    /* --> Dies simuliert im Wesentlichen einen cd zur Datei, den Aufruf mit dem anderen
-     *     Programm und die Rueckkehr zum alten Pfad (NumeRe-Stammverzeichnis) <--
-     */
-
     std::string _sFile;
 
     int nErrorCode = 0;
@@ -1373,41 +1388,6 @@ void writeTeXMain(const string& sTeXFile)
      */
     remove("mglmain.tex");
     return;
-}
-
-// --> Ergaenzt \ vor allen Anfuehrungszeichen in einem string <--
-string addControlSymbols(const string& sString)
-{
-    string sReturn = sString;
-    unsigned int nPos = 0;
-
-    // --> Keine '"' zu finden? <--
-    if (sReturn.find('"') == string::npos)
-        return sReturn;
-
-    // --> So lange '"' zu finden ist <--
-    while (sReturn.find('"', nPos) != string::npos)
-    {
-        // --> Speichere die Position des '"' <--
-        nPos = sReturn.find('"', nPos);
-
-        // --> Fuege '\' an dieser Stelle ein <--
-        if (sReturn[nPos - 1] != '\\')
-            sReturn.insert(nPos, 1, '\\');
-        else
-        {
-            nPos++;
-            continue;
-        }
-
-        // --> Schiebe den Positionsindex um 2 weiter (sonst wird das eben gefundene '"' gleich nochmal gefunden) <--
-        nPos += 2;
-
-        // --> String-Ende abfangen <--
-        if (nPos == sReturn.length())
-            break;
-    }
-    return sReturn;
 }
 
 
@@ -1577,7 +1557,17 @@ string getArgAtPos(const string& sCmd, unsigned int nPos, int extraction)
     return sArgument;
 }
 
-// --> Pruefen wir, ob die Position in dem String von Anfuehrungszeichen umgeben ist <--
+
+/////////////////////////////////////////////////
+/// \brief Checks, whether the position in the
+/// passed expression is part of a string literal.
+///
+/// \param sExpr StringView
+/// \param nPos unsigned int
+/// \param bool bIgnoreVarParser  = false
+/// \return bool
+///
+/////////////////////////////////////////////////
 bool isInQuotes(StringView sExpr, unsigned int nPos, bool bIgnoreVarParser /* = false*/)
 {
     int nQuotes = 0;
@@ -1660,8 +1650,18 @@ bool isInQuotes(StringView sExpr, unsigned int nPos, bool bIgnoreVarParser /* = 
     return false;
 }
 
-// This function determines, whether the current position is part of an argument of the three
-// value to string conversion functions
+
+/////////////////////////////////////////////////
+/// \brief This function determines, whether the
+/// current position is part of an argument of
+/// the three value to string conversion
+/// functions.
+///
+/// \param sExpr const string&
+/// \param nPos unsigned int
+/// \return bool
+///
+/////////////////////////////////////////////////
 bool isToStringArg(const string& sExpr, unsigned int nPos)
 {
     // Ensure that at least one of the three functions is available in the string
@@ -1726,19 +1726,37 @@ long long int intCast(const std::complex<double>& number)
 }
 
 
-// This function determines, if the passed character is a delimiter character
-bool isDelimiter(char cChar)
+/////////////////////////////////////////////////
+/// \brief This function determines, if the
+/// passed character is a delimiter character.
+///
+/// \param c char
+/// \return bool
+///
+/////////////////////////////////////////////////
+bool isDelimiter(char c)
 {
+    // Characters converted to a single logical expression (should be faster in principle)
+    return c >= 32 && c <= 125 && c != 36 && c != 39 && c != 46 && (c < 48 || c > 57) && (c < 64 || c > 90) && (c < 95 || c > 122);
     // Only construct the string once
-    static string sDelimiter = "+-*/ ^&|!%<>,=\\#?:;()[]{}\"";
+    //static string sDelimiter = "+-*/ ^&|!%<>,=\\#?:;()[]{}\"";
 
     // Try to find the current character
-    if (sDelimiter.find(cChar) != string::npos)
+    /*if (sDelimiter.find(cChar) != string::npos)
         return true;
-    return false;
+    return false;*/
 }
 
-// --> Ergaenzt fehlende Legenden mit den gegebenen Ausdruecken <--
+
+/////////////////////////////////////////////////
+/// \brief This function adds the missing legend
+/// strings to the expressions in the passed
+/// string.
+///
+/// \param sExpr string&
+/// \return bool
+///
+/////////////////////////////////////////////////
 bool addLegends(string& sExpr)
 {
     // Validate the number of parentheses
@@ -1835,7 +1853,17 @@ bool addLegends(string& sExpr)
     return true;
 }
 
-// --> Prueft, ob der erste und der letzte Char eines strings zu den Delimitern gehoert: z.B. zur Variablen-/Tokendetektion <--
+
+/////////////////////////////////////////////////
+/// \brief Checks, whether the first and the last
+/// character in the passed string is a delimiter
+/// character.
+///
+/// \param sString const string&
+/// \param stringdelim bool
+/// \return bool
+///
+/////////////////////////////////////////////////
 bool checkDelimiter(const string& sString, bool stringdelim)
 {
     // --> Gib die Auswertung dieses logischen Ausdrucks zurueck <--
@@ -2065,7 +2093,17 @@ std::string LineBreak(std::string sOutput, const Settings& _option, bool bAllowD
 }
 
 
-// --> Linearisiert die Funktion zwischen zwei Punkten (x_0,y_0) und (x_1,y_1) und gibt den Schnittpunkt mit der x-Achse zurueck <--
+/////////////////////////////////////////////////
+/// \brief Determines the root of the line
+/// connecting the two passed points.
+///
+/// \param x_0 double
+/// \param y_0 double
+/// \param x_1 double
+/// \param y_1 double
+/// \return double
+///
+/////////////////////////////////////////////////
 double Linearize(double x_0, double y_0, double x_1, double y_1)
 {
     double b = y_0;
@@ -2074,8 +2112,18 @@ double Linearize(double x_0, double y_0, double x_1, double y_1)
     return x_0 - b / m;
 }
 
-// This function gets the first argument in the passed argument list
-// if the boolean bCut is true then the argument is erased from the string
+
+/////////////////////////////////////////////////
+/// \brief This function gets the first argument
+/// in the passed argument list if the boolean
+/// bCut is true then the argument is erased from
+/// the string
+///
+/// \param sArgList StringView&
+/// \param cSep char
+/// \return StringView
+///
+/////////////////////////////////////////////////
 static StringView getNextCommandLineToken(StringView& sArgList, char cSep)
 {
     if (!sArgList.length())
@@ -2209,6 +2257,7 @@ EndlessVector<string> getAllArguments(string sArgList)
     return vArgs;
 }
 
+
 /////////////////////////////////////////////////
 /// \brief Splits up the complete index list
 /// and returns them as an EndlessVector.
@@ -2226,6 +2275,7 @@ EndlessVector<string> getAllIndices(string sArgList)
 
     return vIndices;
 }
+
 
 /////////////////////////////////////////////////
 /// \brief Splits up the complete index list
@@ -2245,13 +2295,35 @@ EndlessVector<string> getAllSemiColonSeparatedTokens(string sArgList)
     return vIndices;
 }
 
-// Wrapper for the static member function of the kernel
+
+/////////////////////////////////////////////////
+/// \brief Wrapper for the static member function
+/// of the kernel.
+///
+/// \param nStep int
+/// \param nFirstStep int
+/// \param nFinalStep int
+/// \param sType const string&
+/// \return void
+///
+/////////////////////////////////////////////////
 void make_progressBar(int nStep, int nFirstStep, int nFinalStep, const string& sType)
 {
     NumeReKernel::progressBar(nStep, nFirstStep, nFinalStep, sType);
     return;
 }
 
+
+/////////////////////////////////////////////////
+/// \brief This function is a static helper
+/// function for containsStrings to search
+/// through the list of known clusters for
+/// string-containing clusters.
+///
+/// \param sLine const string&
+/// \return bool
+///
+/////////////////////////////////////////////////
 static bool containsStringClusters(const string& sLine)
 {
     const map<string,NumeRe::Cluster>& mClusterMap = NumeReKernel::getInstance()->getMemoryManager().getClusterMap();
@@ -2270,7 +2342,16 @@ static bool containsStringClusters(const string& sLine)
     return false;
 }
 
-// This function checks, whether the passed expression contains strings or valtostring parser
+
+/////////////////////////////////////////////////
+/// \brief This function checks, whether the
+/// passed expression contains strings or
+/// valtostring parser.
+///
+/// \param sLine const string&
+/// \return bool
+///
+/////////////////////////////////////////////////
 bool containsStrings(const string& sLine)
 {
     if (!sLine.length())
@@ -2287,17 +2368,24 @@ bool containsStrings(const string& sLine)
         return true;
 
     return containsStringClusters(sLine);
-
-    //return false;
 }
 
-// This function checks, whether the file with the passed file name exists
+
+/////////////////////////////////////////////////
+/// \brief This function checks, whether the file
+/// with the passed file name exists.
+///
+/// \param sFilename const string&
+/// \return bool
+///
+/////////////////////////////////////////////////
 bool fileExists(const string& sFilename)
 {
     if (sFilename.length())
     {
         string _sFile = sFilename;
         _sFile = fromSystemCodePage(_sFile);
+
         // Open the ifstream (ifstream doesn't create a file)
         ifstream ifFile(_sFile.c_str());
         return ifFile.good(); // If the stream is good(), the file exists
@@ -2306,7 +2394,18 @@ bool fileExists(const string& sFilename)
         return false;
 }
 
-// This function erases option tokens from a parameter string
+
+/////////////////////////////////////////////////
+/// \brief This function erases option tokens
+/// including their possible value from a
+/// parameter string.
+///
+/// \param sExpr string&
+/// \param sToken const string&
+/// \param bTokenHasValue bool
+/// \return void
+///
+/////////////////////////////////////////////////
 void eraseToken(string& sExpr, const string& sToken, bool bTokenHasValue)
 {
     unsigned int nLength = sToken.length();
@@ -2351,11 +2450,19 @@ void eraseToken(string& sExpr, const string& sToken, bool bTokenHasValue)
         // Simply erase the token
         sExpr.erase(findParameter(sExpr, sToken) - 1, nLength);
     }
-    return;
 }
 
-// This function resolves the possibility to select multiple paths at once by inserting something
-// like this/is/a/<path|with|tokens>/which/will/search/at/different/locations
+
+/////////////////////////////////////////////////
+/// \brief This function resolves the possibility
+/// to select multiple paths at once by inserting
+/// something like this/is/a/<path|with|tokens>/which/will/search/at/different/locations
+///
+/// \param sDirectory const string&
+/// \param _option const Settings&
+/// \return vector<string>
+///
+/////////////////////////////////////////////////
 vector<string> resolveChooseTokens(const string& sDirectory, const Settings& _option)
 {
     vector<string> vResolved;
@@ -2550,7 +2657,17 @@ vector<string> resolveChooseTokens(const string& sDirectory, const Settings& _op
     return vResolved;
 }
 
-// This function is a static helper function for getFileList and getFolderList
+
+/////////////////////////////////////////////////
+/// \brief This function is a static helper
+/// function for getFileList and getFolderList.
+///
+/// \param sDir string&
+/// \param FindFileData WIN32_FIND_DATA*
+/// \param _option const Settings&
+/// \return HANDLE
+///
+/////////////////////////////////////////////////
 static HANDLE initializeFileHandle(string& sDir, WIN32_FIND_DATA* FindFileData, const Settings& _option)
 {
     HANDLE hFind = INVALID_HANDLE_VALUE;
@@ -2568,37 +2685,21 @@ static HANDLE initializeFileHandle(string& sDir, WIN32_FIND_DATA* FindFileData, 
     {
         // Get the default paths
         if (sDir.substr(0, 10) == "<loadpath>")
-        {
             sPath = _option.getLoadPath() + sDir.substr(sDir.find('>') + 1);
-        }
         else if (sDir.substr(0, 10) == "<savepath>")
-        {
             sPath = _option.getSavePath() + sDir.substr(sDir.find('>') + 1);
-        }
         else if (sDir.substr(0, 12) == "<scriptpath>")
-        {
             sPath = _option.getScriptPath() + sDir.substr(sDir.find('>') + 1);
-        }
         else if (sDir.substr(0, 10) == "<plotpath>")
-        {
             sPath = _option.getPlotPath() + sDir.substr(sDir.find('>') + 1);
-        }
         else if (sDir.substr(0, 10) == "<procpath>")
-        {
             sPath = _option.getProcPath() + sDir.substr(sDir.find('>') + 1);
-        }
         else if (sDir.substr(0, 2) == "<>")
-        {
             sPath = _option.getExePath() + sDir.substr(sDir.find('>') + 1);
-        }
         else if (sDir.substr(0, 6) == "<this>")
-        {
             sPath = _option.getExePath() + sDir.substr(sDir.find('>') + 1);
-        }
         else if (sDir.substr(0, 4) == "<wp>")
-        {
             sPath = _option.getWorkPath() + sDir.substr(sDir.find('>') + 1);
-        }
 
         // If the path has a length then initialize the file handle
         if (sPath.length())
@@ -2620,7 +2721,17 @@ static HANDLE initializeFileHandle(string& sDir, WIN32_FIND_DATA* FindFileData, 
     return hFind;
 }
 
-// This file returns a list of files (including their paths, if nFlags & 1)
+
+/////////////////////////////////////////////////
+/// \brief This function returns a list of files
+/// (including their paths, if nFlags & 1).
+///
+/// \param sDirectory const string&
+/// \param _option const Settings&
+/// \param nFlags int
+/// \return vector<string>
+///
+/////////////////////////////////////////////////
 vector<string> getFileList(const string& sDirectory, const Settings& _option, int nFlags)
 {
     vector<string> vFileList;
@@ -2681,7 +2792,18 @@ vector<string> getFileList(const string& sDirectory, const Settings& _option, in
     return vFileList;
 }
 
-// This file returns a list of directories (including their paths, if nFlags & 1)
+
+/////////////////////////////////////////////////
+/// \brief This function returns a list of
+/// directories (including their paths, if
+/// nFlags & 1).
+///
+/// \param sDirectory const string&
+/// \param _option const Settings&
+/// \param nFlags int
+/// \return vector<string>
+///
+/////////////////////////////////////////////////
 vector<string> getFolderList(const string& sDirectory, const Settings& _option, int nFlags)
 {
     vector<string> vFileList;
@@ -2745,7 +2867,16 @@ vector<string> getFolderList(const string& sDirectory, const Settings& _option, 
     return vFileList;
 }
 
-// This function is used to reduce the log file size from >= 100.000 to 20.000 lines
+
+/////////////////////////////////////////////////
+/// \brief This function is used to reduce the
+/// log file size from >= 100.000 to 20.000 lines
+/// to reduce the needed disk space.
+///
+/// \param sFileName const string&
+/// \return void
+///
+/////////////////////////////////////////////////
 void reduceLogFilesize(const string& sFileName)
 {
     fstream fFile;
@@ -2808,11 +2939,19 @@ void reduceLogFilesize(const string& sFileName)
         fTemp.close();
         remove("$~tempfile.txt");
     }
-    return;
 }
 
-// This function is a variable initializer for the function replaceToVector name
-// It will only be called once
+
+/////////////////////////////////////////////////
+/// \brief This function is a variable
+/// initializer for the function replaceToVector
+/// name. It will only be called once.
+///
+/// \param map<string
+/// \param mOprtRplc string>&
+/// \return void
+///
+/////////////////////////////////////////////////
 static void OprtRplc_setup(map<string, string>& mOprtRplc)
 {
     mOprtRplc["("] = "[";
@@ -2835,11 +2974,19 @@ static void OprtRplc_setup(map<string, string>& mOprtRplc)
     mOprtRplc[">"] = "\\g\\";
     mOprtRplc["<"] = "\\l\\";
     mOprtRplc["?"] = "\\q\\";
-    return;
 }
 
-// This function replaces a data access expression (i.e. the contents of the object argument parentheses)
-// into a vector name, which is valid for the parser
+
+/////////////////////////////////////////////////
+/// \brief This function replaces a data access
+/// expression (i.e. the contents of the object
+/// argument parentheses) into a vector name,
+/// which is valid for the parser.
+///
+/// \param sExpression const string&
+/// \return string
+///
+/////////////////////////////////////////////////
 string replaceToVectorname(const string& sExpression)
 {
     string sVectorName = sExpression;
@@ -2867,45 +3014,17 @@ string replaceToVectorname(const string& sExpression)
     return "_~" + sVectorName;
 }
 
-// This function accesses the windows clipboard and tries to convert the
-// contents into usual text
-string getClipboardText()
-{
-    // Try opening the clipboard
-    if (! OpenClipboard(nullptr))
-        return "";
 
-    // Get handle of clipboard object for ANSI text
-    HANDLE hData = GetClipboardData(CF_TEXT);
-    if (hData == nullptr)
-    {
-        CloseClipboard();
-        return "";
-    }
-
-    // Lock the handle to get the actual text pointer
-    char* pszText = static_cast<char*>( GlobalLock(hData) );
-    if (pszText == nullptr)
-    {
-        GlobalUnlock(hData);
-        CloseClipboard();
-        return "";
-    }
-
-    // Save text in a string class instance
-    string sText( pszText );
-
-    // Release the lock
-    GlobalUnlock( hData );
-
-    // Release the clipboard
-    CloseClipboard();
-
-    return sText;
-}
-
-
-// This function is a static helper function for evalRecursiveExpressions further down
+/////////////////////////////////////////////////
+/// \brief This function is a static helper
+/// function for evalRecursiveExpressions.
+///
+/// \param sExpr string&
+/// \param nPos size_t&
+/// \param nArgSepPos size_t&
+/// \return bool
+///
+/////////////////////////////////////////////////
 static bool handleRecursiveOperators(string& sExpr, size_t& nPos, size_t& nArgSepPos)
 {
     size_t nLength = 2;
@@ -3063,7 +3182,17 @@ static bool handleRecursiveOperators(string& sExpr, size_t& nPos, size_t& nArgSe
     return true;
 }
 
-// This function is a static helper function for evalRecursiveExpressions further down
+
+/////////////////////////////////////////////////
+/// \brief This function is a static helper
+/// function for evalRecursiveExpressions.
+///
+/// \param sExpr string&
+/// \param nPos size_t
+/// \param nArgSepPos size_t
+/// \return void
+///
+/////////////////////////////////////////////////
 static void handleIncAndDecOperators(string& sExpr, size_t nPos, size_t nArgSepPos)
 {
     if (!nArgSepPos)
@@ -3086,7 +3215,16 @@ static void handleIncAndDecOperators(string& sExpr, size_t nPos, size_t nArgSepP
     }
 }
 
-// This function converts the recursive assignments like VAR += VAL into VAR = VAR + (VAL)
+
+/////////////////////////////////////////////////
+/// \brief This function converts the recursive
+/// assignments like VAR += VAL into
+/// VAR = VAR + (VAL)
+///
+/// \param sExpr string&
+/// \return void
+///
+/////////////////////////////////////////////////
 void evalRecursiveExpressions(string& sExpr)
 {
     // Ignore flow control blocks
@@ -3176,46 +3314,17 @@ void evalRecursiveExpressions(string& sExpr)
     return;
 }
 
-// This function creates a valid cache name out of a file name
-string generateCacheName(const string& sFilename, Settings& _option)
-{
-    string sCacheName;
 
-    // Get a valid file name
-    if (sFilename.find('/') != string::npos)
-        sCacheName = _option.ValidFileName(sFilename);
-    else
-        sCacheName = _option.ValidFileName("<loadpath>/" + sFilename);
 
-    // Construct only once
-    static string sValidChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_";
-
-    // remove path and extensions from the filename
-    if (sCacheName.find('/') != string::npos)
-        sCacheName.erase(0, sCacheName.rfind('/') + 1);
-    if (sCacheName.find('.') != string::npos)
-        sCacheName.erase(sCacheName.rfind('.'));
-
-    // Avoid digits at the beginning of the cache name. Add an underscore as prefix
-    if (isdigit(sCacheName.front()))
-        sCacheName.insert(0, 1, '_');
-
-    // Replace all invalid characters with underscores
-    for (unsigned int i = 0; i < sCacheName.length(); i++)
-    {
-        if (sValidChars.find(sCacheName[i]) == string::npos)
-            sCacheName[i] = '_';
-    }
-
-    // Handle the special case
-    if (sCacheName == "data")
-        sCacheName = "loaded_data";
-
-    // Return the new cache name
-    return sCacheName;
-}
-
-// This function opens a NumeRe-Datafile file and reads the header of the file
+/////////////////////////////////////////////////
+/// \brief This function opens a NumeRe-Datafile
+/// file, reads its header and converts it to a
+/// human-readable string.
+///
+/// \param sFileName const string&
+/// \return string
+///
+/////////////////////////////////////////////////
 string getFileInfo(const string& sFileName)
 {
     NumeRe::NumeReDataFile file(sFileName);
@@ -3245,6 +3354,7 @@ string getFileInfo(const string& sFileName)
     return sFileInfo;
 }
 
+
 string decodeNameSpace(string sCommandLine, const string& sThisNameSpace)
 {
     string sNameSpace = "";
@@ -3271,8 +3381,16 @@ string decodeNameSpace(string sCommandLine, const string& sThisNameSpace)
     return sNameSpace;
 }
 
-// This function is used to validate the number of parentheses, i.e. whether there's
-// a closing parenthesis for each opened parenthesis
+
+/////////////////////////////////////////////////
+/// \brief This function is used to validate the
+/// number of parentheses, i.e. whether there's a
+/// closing parenthesis for each opened one.
+///
+/// \param sCmd const string&
+/// \return bool
+///
+/////////////////////////////////////////////////
 bool validateParenthesisNumber(const string& sCmd)
 {
     int nParCount = 0;
@@ -3281,7 +3399,7 @@ bool validateParenthesisNumber(const string& sCmd)
     int nQuotes = 0;
 
     // Go through the whole string
-    for (unsigned int i = 0; i < sCmd.length(); i++)
+    for (size_t i = 0; i < sCmd.length(); i++)
     {
         // This function counts the quotation marks by itself
         // because it's much faster
@@ -3305,17 +3423,22 @@ bool validateParenthesisNumber(const string& sCmd)
             else if (sCmd[i] == ']')
                 nBracketCount--;
         }
-
-        // If one of the counters is smaller than zero, something is wrong
-        if (nParCount < 0 || nVectCount < 0 || nBracketCount < 0)
-            return false;
     }
 
     // If one of the counters is nonzero, something is wrong
     return !((bool)nParCount || (bool)nVectCount || (bool)nBracketCount);
 }
 
-// This function adds quotation marks around the value of the specified parameter
+
+/////////////////////////////////////////////////
+/// \brief This function adds quotation marks
+/// around the value of the specified parameter.
+///
+/// \param sToAdd string&
+/// \param sParam const string&
+/// \return void
+///
+/////////////////////////////////////////////////
 void addArgumentQuotes(string& sToAdd, const string& sParam)
 {
     // Check, whether the parameter exists
@@ -3326,7 +3449,16 @@ void addArgumentQuotes(string& sToAdd, const string& sParam)
     }
 }
 
-// This function adds quotation marks around the value of the specified parameter
+
+/////////////////////////////////////////////////
+/// \brief This function adds quotation marks
+/// around the value of the specified parameter.
+///
+/// \param sToAdd string&
+/// \param pos size_t
+/// \return void
+///
+/////////////////////////////////////////////////
 void addArgumentQuotes(string& sToAdd, size_t pos)
 {
     // Jump over following whitespaces
@@ -3343,8 +3475,17 @@ void addArgumentQuotes(string& sToAdd, size_t pos)
     }
 }
 
-// This function calculates the power of a value with the specialization that
-// the exponent is an integer
+
+/////////////////////////////////////////////////
+/// \brief This function calculates the power of
+/// a value with the specialization that the
+/// exponent is an integer.
+///
+/// \param dNumber double
+/// \param nExponent int
+/// \return double
+///
+/////////////////////////////////////////////////
 double intPower(double dNumber, int nExponent)
 {
     long double dResult = 1.0L;
@@ -3366,9 +3507,24 @@ double intPower(double dNumber, int nExponent)
         return 1.0 / dResult;
 }
 
+
+/////////////////////////////////////////////////
+/// \brief This function calculates the power of
+/// a value with the specialization that the
+/// exponent is an integer. Function overload for
+/// complex-valued bases.
+///
+/// \param dNumber const std::complex<double>&
+/// \param nExponent int
+/// \return std::complex<double>
+///
+/////////////////////////////////////////////////
 std::complex<double> intPower(const std::complex<double>& dNumber, int nExponent)
 {
-    std::complex<double> dResult = 1.0L;
+    if (dNumber.imag() == 0.0)
+        return intPower(dNumber.real(), nExponent);
+
+    std::complex<double> dResult = 1.0;
 
     // An exponent of zero returns always 1
     if (!nExponent)
@@ -3388,7 +3544,16 @@ std::complex<double> intPower(const std::complex<double>& dNumber, int nExponent
 }
 
 
-// This function evaluates, whether the desired position is inside of a to_cmd() function
+/////////////////////////////////////////////////
+/// \brief This function evaluates, whether the
+/// desired position is part of the argument of a
+/// to_cmd() function.
+///
+/// \param sCmd const string&
+/// \param nPos unsigned int
+/// \return bool
+///
+/////////////////////////////////////////////////
 bool isToCmd(const string& sCmd, unsigned int nPos)
 {
     // Exclude border cases
@@ -3413,7 +3578,15 @@ bool isToCmd(const string& sCmd, unsigned int nPos)
     return false;
 }
 
-// This function counts the number of escaped dollar signs
+
+/////////////////////////////////////////////////
+/// \brief This function counts the number of
+/// escaped dollar signs.
+///
+/// \param sLine const string&
+/// \return unsigned int
+///
+/////////////////////////////////////////////////
 unsigned int countEscapeSymbols(const string& sLine)
 {
     unsigned int nCount = 0;
@@ -3431,32 +3604,43 @@ unsigned int countEscapeSymbols(const string& sLine)
 }
 
 
-// This is a static helper function for the standard qsort algorithm
+/////////////////////////////////////////////////
+/// \brief This is a static helper function for
+/// the standard qsort algorithm.
+///
+/// \param p1 const void*
+/// \param p2 const void*
+/// \return int
+///
+/////////////////////////////////////////////////
 static int compareDouble(const void* p1, const void* p2)
 {
     if (isnan(*(double*)p1) && isnan(*(double*)p2))
         return 0;
+
     if (isnan(*(double*)p1))
         return 1;
+
     if (isnan(*(double*)p2))
         return -1;
-    if (isinf(*(double*)p1) && isinf(*(double*)p2))
-        return 0;
-    if (isinf(*(double*)p1))
-        return 1;
-    if (isinf(*(double*)p2))
-        return -1;
-    if (*(double*)p1 < * (double*)p2)
-        return -1;
-    if (*(double*)p1 == *(double*)p2)
-        return 0;
-    if (*(double*)p1 > *(double*)p2)
-        return 1;
-    return 0;
+
+    return *(double*)p1 == *(double*)p2
+        ? 0
+        : -(*(double*)p1 < *(double*)p2) + (*(double*)p1 > *(double*)p2); // Returns -1 for smaller and +1 for larger
 }
 
-// This is a wrapper for the standard qsort algorithm
-// It returns the number of valid elements
+
+/////////////////////////////////////////////////
+/// \brief This is a wrapper for the standard
+/// qsort algorithm. It returns the number of
+/// valid elements and sorts the elements
+/// in-place.
+///
+/// \param dArray double*
+/// \param nlength size_t
+/// \return size_t
+///
+/////////////////////////////////////////////////
 size_t qSortDouble(double* dArray, size_t nlength)
 {
     // Sort the passed array using the compareDouble helper function
@@ -3471,8 +3655,21 @@ size_t qSortDouble(double* dArray, size_t nlength)
     return 0;
 }
 
-// This static function replaces all search-oriented methods
-// in the current string variable access
+
+/////////////////////////////////////////////////
+/// \brief This static function replaces all
+/// search-oriented methods in the current string
+/// variable access.
+///
+/// \param sLine string&
+/// \param nPos size_t
+/// \param nFinalPos size_t
+/// \param sReplacement const string&
+/// \param sMethod const string&
+/// \param sArgument string&
+/// \return void
+///
+/////////////////////////////////////////////////
 static void replaceSearchMethods(string& sLine, size_t nPos, size_t nFinalPos, const string& sReplacement, const string& sMethod, string& sArgument)
 {
     // Prepare the argument (use empty one or construct one
@@ -3509,8 +3706,22 @@ static void replaceSearchMethods(string& sLine, size_t nPos, size_t nFinalPos, c
         sLine.replace(nPos, nFinalPos-nPos, "str_not_rmatch" + sArgument);
 }
 
-// This static function replaces all access-oriented methods
-// and the string splitter in the current string variable access
+
+/////////////////////////////////////////////////
+/// \brief This static function replaces all
+/// access-oriented methods and the string
+/// splitter in the current string variable
+/// access.
+///
+/// \param sLine string&
+/// \param nPos size_t
+/// \param nFinalPos size_t
+/// \param sReplacement const string&
+/// \param sMethod const string&
+/// \param sArgument string&
+/// \return void
+///
+/////////////////////////////////////////////////
 static void replaceAccessMethods(string& sLine, size_t nPos, size_t nFinalPos, const string& sReplacement, const string& sMethod, string& sArgument)
 {
     // Prepare the argument (use empty one or construct one
@@ -3529,9 +3740,20 @@ static void replaceAccessMethods(string& sLine, size_t nPos, size_t nFinalPos, c
         sLine.replace(nPos, nFinalPos-nPos, "split" + sArgument);
 }
 
-// This function searches the indicated string
-// variable occurence for possible string methods and replaces
-// them with the standard string function.
+
+/////////////////////////////////////////////////
+/// \brief This function searches the indicated
+/// string variable occurence for possible string
+/// methods and replaces them with the standard
+/// string function.
+///
+/// \param sLine string&
+/// \param nPos size_t
+/// \param nLength size_t
+/// \param sReplacement const string&
+/// \return void
+///
+/////////////////////////////////////////////////
 void replaceStringMethod(string& sLine, size_t nPos, size_t nLength, const string& sReplacement)
 {
     // Does the string variable name end with a dot?
@@ -3580,12 +3802,19 @@ void replaceStringMethod(string& sLine, size_t nPos, size_t nLength, const strin
         // String length methods
         sLine.replace(nPos, nFinalPos-nPos, "strlen(" + sReplacement + ")");
     }
-    else if (sMethod == "at" || sMethod == "sub" || sMethod == "splt")
+    else if (sMethod == "at"
+             || sMethod == "sub"
+             || sMethod == "splt")
     {
         // Access methods and splitter
         replaceAccessMethods(sLine, nPos, nFinalPos, sReplacement, sMethod, sArgument);
     }
-    else if (sMethod == "fnd" || sMethod == "rfnd" || sMethod == "mtch" || sMethod == "rmtch" || sMethod == "nmtch" || sMethod == "nrmtch")
+    else if (sMethod == "fnd"
+             || sMethod == "rfnd"
+             || sMethod == "mtch"
+             || sMethod == "rmtch"
+             || sMethod == "nmtch"
+             || sMethod == "nrmtch")
     {
         // All search-oriented methods
         replaceSearchMethods(sLine, nPos, nFinalPos, sReplacement, sMethod, sArgument);

@@ -17,21 +17,21 @@
 ******************************************************************************/
 
 #include "filewatcher.hpp"
-string replacePathSeparator(const string&);
+std::string replacePathSeparator(const std::string&);
 
 
 bool Filewatcher::isDefaultPath(const wxFileName& path)
 {
-    string sPath = replacePathSeparator(path.GetPath().ToStdString());
+    std::string sPath = replacePathSeparator(path.GetPath().ToStdString());
     for (size_t i = 2; i < vDefaultPaths.size(); i++)
     {
-        if (sPath.find(vDefaultPaths[i]) != string::npos)
+        if (sPath.find(vDefaultPaths[i]) != std::string::npos)
             return true;
     }
     return false;
 }
 
-bool Filewatcher::SetDefaultPaths(const vector<string>& vPaths)
+bool Filewatcher::SetDefaultPaths(const std::vector<std::string>& vPaths)
 {
     vDefaultPaths = vPaths;
     if (this->GetWatchedPathsCount())

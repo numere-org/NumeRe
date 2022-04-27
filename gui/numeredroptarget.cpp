@@ -30,7 +30,7 @@
 
 #if wxUSE_DRAG_AND_DROP
 
-string replacePathSeparator(const string&);
+std::string replacePathSeparator(const std::string&);
 
 /////////////////////////////////////////////////
 /// \brief Constructor. Initializes the data objects, which correspond to the assigned wxWindow
@@ -122,7 +122,7 @@ wxDragResult NumeReDropTarget::OnData(wxCoord x, wxCoord y, wxDragResult default
             wxArrayString filenames = filedata->GetFilenames();
 
             NumeReWindow* top = static_cast<NumeReWindow*>(m_topWindow);
-            vector<string> vPaths = top->getPathDefs();
+            std::vector<std::string> vPaths = top->getPathDefs();
 
             // Select the current window type
             if (m_type == EDITOR)
@@ -153,8 +153,8 @@ wxDragResult NumeReDropTarget::OnData(wxCoord x, wxCoord y, wxDragResult default
             {
                 // Files are either executed or loaded to
                 // memory, if dragged onto the console
-                string sExecutables;
-                string sLoadables;
+                std::string sExecutables;
+                std::string sLoadables;
 
                 // clear out the passed filenames
                 for (size_t i = 0; i < filenames.size(); i++)
@@ -178,9 +178,9 @@ wxDragResult NumeReDropTarget::OnData(wxCoord x, wxCoord y, wxDragResult default
                             sExecutables += ";";
 
                         // Is the current file a script or a procedure?
-                        if (filenames[i].find(".nscr") != string::npos)
+                        if (filenames[i].find(".nscr") != std::string::npos)
                         {
-                            string sScriptName = replacePathSeparator(filenames[i].ToStdString());
+                            std::string sScriptName = replacePathSeparator(filenames[i].ToStdString());
                             sScriptName.erase(sScriptName.rfind(".nscr"));
 
                             if (sScriptName.substr(0, vPaths[SCRIPTPATH].length()) == vPaths[SCRIPTPATH])
@@ -189,14 +189,14 @@ wxDragResult NumeReDropTarget::OnData(wxCoord x, wxCoord y, wxDragResult default
                             while (sScriptName.front() == '/')
                                 sScriptName.erase(0,1);
 
-                            if (sScriptName.find(' ') != string::npos)
+                            if (sScriptName.find(' ') != std::string::npos)
                                 sScriptName = "\"" + sScriptName + "\"";
 
                             sExecutables += "start " + sScriptName;
                         }
                         else
                         {
-                            string sProcName = replacePathSeparator(filenames[i].ToStdString());
+                            std::string sProcName = replacePathSeparator(filenames[i].ToStdString());
                             sProcName.erase(sProcName.rfind(".nprc"));
 
                             if (sProcName.substr(0, vPaths[PROCPATH].length()) == vPaths[PROCPATH])
@@ -206,7 +206,7 @@ wxDragResult NumeReDropTarget::OnData(wxCoord x, wxCoord y, wxDragResult default
                                 while (sProcName.front() == '/')
                                     sProcName.erase(0,1);
 
-                                while (sProcName.find('/') != string::npos)
+                                while (sProcName.find('/') != std::string::npos)
                                     sProcName[sProcName.find('/')] = '~';
                             }
                             else
@@ -264,7 +264,7 @@ wxDragResult NumeReDropTarget::OnData(wxCoord x, wxCoord y, wxDragResult default
                         // mirror the operation for the revision file
                         if (manager.hasRevisions(filenames[0]))
                         {
-                            unique_ptr<FileRevisions> revisions(manager.getRevisions(filenames[0]));
+                            std::unique_ptr<FileRevisions> revisions(manager.getRevisions(filenames[0]));
 
                             if (revisions.get())
                             {
@@ -296,7 +296,7 @@ wxDragResult NumeReDropTarget::OnData(wxCoord x, wxCoord y, wxDragResult default
                         return wxDragNone;
 
                     fileType type = getFileType(filenames[i]);
-                    string sFileName = replacePathSeparator(filenames[i].ToStdString());
+                    std::string sFileName = replacePathSeparator(filenames[i].ToStdString());
 
                     if (type == TEXTFILE || type == BINARYFILE)
                     {
@@ -322,7 +322,7 @@ wxDragResult NumeReDropTarget::OnData(wxCoord x, wxCoord y, wxDragResult default
 
                         PathID pathID;
 
-                        if (sFileName.find(".nscr") != string::npos)
+                        if (sFileName.find(".nscr") != std::string::npos)
                             pathID = SCRIPTPATH;
                         else
                             pathID = PROCPATH;
@@ -372,14 +372,14 @@ wxDragResult NumeReDropTarget::OnData(wxCoord x, wxCoord y, wxDragResult default
                 // Text is copied into the console at the
                 // current position (not the selected one)
                 wxTextDataObject* textdata = static_cast<wxTextDataObject*>(data);
-                string sText = textdata->GetText().ToStdString();
+                std::string sText = textdata->GetText().ToStdString();
 
                 // Replace line break and tabulator characters,
                 // because they won't be parsed correctly
-                while (sText.find('\n') != string::npos)
+                while (sText.find('\n') != std::string::npos)
                     sText[sText.find('\n')] = ';';
 
-                while (sText.find('\t') != string::npos)
+                while (sText.find('\t') != std::string::npos)
                     sText[sText.find('\t')] = ' ';
 
                 NumeReWindow* top = static_cast<NumeReWindow*>(m_topWindow);
@@ -404,7 +404,7 @@ wxDragResult NumeReDropTarget::OnData(wxCoord x, wxCoord y, wxDragResult default
 /////////////////////////////////////////////////
 NumeReDropTarget::fileType NumeReDropTarget::getFileType(const wxString& filename)
 {
-    if (filename.find('.') == string::npos)
+    if (filename.find('.') == std::string::npos)
         return NOEXTENSION;
 
     // Declare the categories containing the
@@ -417,16 +417,16 @@ NumeReDropTarget::fileType NumeReDropTarget::getFileType(const wxString& filenam
     wxString extension = ";"+filename.substr(filename.rfind('.')+1)+";";
 
     // Identify the type of the file by its extensions
-    if (textExtensions.find(extension) != string::npos)
+    if (textExtensions.find(extension) != std::string::npos)
         return TEXTFILE;
 
-    if (binaryExtensions.find(extension) != string::npos)
+    if (binaryExtensions.find(extension) != std::string::npos)
         return BINARYFILE;
 
-    if (imageExtensions.find(extension) != string::npos)
+    if (imageExtensions.find(extension) != std::string::npos)
         return IMAGEFILE;
 
-    if (execExtensions.find(extension) != string::npos)
+    if (execExtensions.find(extension) != std::string::npos)
         return EXECUTABLE;
 
     return NOTSUPPORTED;

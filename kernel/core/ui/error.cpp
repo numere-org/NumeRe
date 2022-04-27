@@ -20,8 +20,9 @@
 #include "../utils/tools.hpp"
 #include "../strings/stringdatastructures.hpp"
 #include "../../kernel.hpp"
+#include "../maths/matdatastructures.hpp"
 
-size_t SyntaxError::invalid_position = string::npos;
+size_t SyntaxError::invalid_position = std::string::npos;
 int SyntaxError::invalid_index = INT_MIN;
 Assertion _assertionHandler;
 static std::string sLastErrorMessage;
@@ -194,8 +195,11 @@ void Assertion::assertionFail()
 /////////////////////////////////////////////////
 void Assertion::reset()
 {
-    assertionMode = false;
-    sAssertedExpression.clear();
+    if (assertionMode)
+    {
+        assertionMode = false;
+        sAssertedExpression.clear();
+    }
 }
 
 
@@ -260,26 +264,22 @@ void Assertion::checkAssertion(mu::value_type* v, int nNum)
 /// \brief Checks the return value of the matrix
 /// operation.
 ///
-/// \param _mMatrix const std::vector<std::vector<mu::value_type>>&
+/// \param _mMatrix const Matrix&
 /// \return void
 ///
 /////////////////////////////////////////////////
-void Assertion::checkAssertion(const std::vector<std::vector<mu::value_type>>& _mMatrix)
+void Assertion::checkAssertion(const Matrix& _mMatrix)
 {
     // Only do something, if the assertion mode is
     // active
     if (assertionMode)
     {
-        // Matrices are two-dimensional
-        for (const std::vector<mu::value_type>& vRow : _mMatrix)
+        for (const mu::value_type& val : _mMatrix.data())
         {
-            for (const mu::value_type& val : vRow)
-            {
-                // If a single value is zero,
-                // throw the assertion error
-                if (val == 0.0)
-                    assertionFail();
-            }
+            // If a single value is zero,
+            // throw the assertion error
+            if (val == 0.0)
+                assertionFail();
         }
 
         stats.succeeded();

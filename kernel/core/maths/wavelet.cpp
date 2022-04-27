@@ -96,7 +96,7 @@ void calculateWavelet(std::vector<double>& data, WaveletType _type, int k, int d
 }
 
 
-NumeRe::Table decodeWaveletData(const vector<double>& vWaveletData, const vector<double>& vAxisData)
+NumeRe::Table decodeWaveletData(const std::vector<double>& vWaveletData, const std::vector<double>& vAxisData)
 {
     int nLevels = log2(vWaveletData.size());
     int nTimePoints = vWaveletData.size() / 2;

@@ -27,8 +27,6 @@
 #include <algorithm>
 #include "interval.hpp"
 
-using namespace std;
-
 long long int intCast(const std::complex<double>&);
 std::string toString(int);
 std::string toString(long long int);
@@ -43,7 +41,7 @@ std::string toString(long long int);
 class VectorIndex
 {
     private:
-        mutable vector<int> vStorage;
+        mutable std::vector<int> vStorage;
         bool expand;
 
         /////////////////////////////////////////////////
@@ -143,7 +141,7 @@ class VectorIndex
             // using the intCast() function
             for (int i = 0; i < nResults; i++)
             {
-                if (!isnan(indices[i].real()) && !isinf(indices[i].real()))
+                if (!std::isnan(indices[i].real()) && !std::isinf(indices[i].real()))
                     vStorage.push_back(intCast(indices[i]) - 1);
             }
 
@@ -166,10 +164,10 @@ class VectorIndex
         /////////////////////////////////////////////////
         /// \brief Constructor from a STL vector.
         ///
-        /// \param vIndex const vector<int>&
+        /// \param vIndex const std::vector<int>&
         ///
         /////////////////////////////////////////////////
-        VectorIndex(const vector<int>& vIndex)
+        VectorIndex(const std::vector<int>& vIndex)
         {
             if (vIndex.size())
             {
@@ -202,11 +200,11 @@ class VectorIndex
         /// \brief Assignment operator overload for STL
         /// vectors.
         ///
-        /// \param vIndex const vector<int>&
+        /// \param vIndex const std::vector<int>&
         /// \return VectorIndex&
         ///
         /////////////////////////////////////////////////
-        VectorIndex& operator=(const vector<int>& vIndex)
+        VectorIndex& operator=(const std::vector<int>& vIndex)
         {
             if (vIndex.size())
             {
@@ -237,7 +235,7 @@ class VectorIndex
         /// \return VectorIndex
         ///
         /////////////////////////////////////////////////
-        VectorIndex subidx(size_t pos, size_t nLen = string::npos) const
+        VectorIndex subidx(size_t pos, size_t nLen = std::string::npos) const
         {
             // Consider some strange border cases
             if (pos >= size())
@@ -261,7 +259,7 @@ class VectorIndex
             // expanded. The last index is not decremented, because
             // terminating iterator always points after the last
             // element in the list
-            return VectorIndex(vector<int>(vStorage.begin()+pos, vStorage.begin()+pos+nLen));
+            return VectorIndex(std::vector<int>(vStorage.begin()+pos, vStorage.begin()+pos+nLen));
         }
 
         /////////////////////////////////////////////////
@@ -446,11 +444,11 @@ class VectorIndex
         /// internal storage is expanded first, if
         /// necessary.
         ///
-        /// \param vVector const vector<int>&
+        /// \param vVector const std::vector<int>&
         /// \return void
         ///
         /////////////////////////////////////////////////
-        void append(const vector<int>& vVector)
+        void append(const std::vector<int>& vVector)
         {
             if (expand)
             {
@@ -486,11 +484,11 @@ class VectorIndex
         /// vector. The internal storage is expanded
         /// first, if necessary.
         ///
-        /// \param vVector const vector<int>&
+        /// \param vVector const std::vector<int>&
         /// \return void
         ///
         /////////////////////////////////////////////////
-        void prepend(const vector<int>& vVector)
+        void prepend(const std::vector<int>& vVector)
         {
             if (expand)
             {
@@ -527,16 +525,16 @@ class VectorIndex
         /// single indices are expanded in the returned
         /// vector.
         ///
-        /// \return vector<int>
+        /// \return std::vector<int>
         ///
         /////////////////////////////////////////////////
-        vector<int> getVector() const
+        std::vector<int> getVector() const
         {
             // Expand the single indices stored internally
             // if needed
             if (expand)
             {
-                vector<int> vReturn;
+                std::vector<int> vReturn;
 
                 for (size_t i = 0; i < size(); i++)
                 {
@@ -562,7 +560,7 @@ class VectorIndex
             if (isOpenEnd())
                 return OPEN_END;
             else if (expand)
-                return ::max(vStorage.front(), vStorage.back());
+                return std::max(vStorage.front(), vStorage.back());
 
             return *std::max_element(vStorage.begin(), vStorage.end());
         }
@@ -580,7 +578,7 @@ class VectorIndex
             if (expand && isOpenEnd())
                 return vStorage.front();
             else if (expand)
-                return ::min(vStorage.front(), vStorage.back());
+                return std::min(vStorage.front(), vStorage.back());
 
             int nMin = vStorage.front();
 
@@ -836,7 +834,7 @@ class VectorIndex
 /// elements beyond its size.
 /////////////////////////////////////////////////
 template<class T>
-class EndlessVector : public vector<T>
+class EndlessVector : public std::vector<T>
 {
     private:
         T m_fallback;
@@ -844,7 +842,7 @@ class EndlessVector : public vector<T>
         /////////////////////////////////////////////////
         /// \brief Default constructor
         /////////////////////////////////////////////////
-        EndlessVector() : vector<T>(), m_fallback() {}
+        EndlessVector() : std::vector<T>(), m_fallback() {}
 
         /////////////////////////////////////////////////
         /// \brief Copy constructor from same.
@@ -852,7 +850,7 @@ class EndlessVector : public vector<T>
         /// \param vec const EndlessVector&
         ///
         /////////////////////////////////////////////////
-        EndlessVector(const EndlessVector& vec) : vector<T>(vec), m_fallback() {}
+        EndlessVector(const EndlessVector& vec) : std::vector<T>(vec), m_fallback() {}
 
         /////////////////////////////////////////////////
         /// \brief Assignment operator overload from
@@ -864,7 +862,7 @@ class EndlessVector : public vector<T>
         /////////////////////////////////////////////////
         EndlessVector& operator=(const EndlessVector& vec)
         {
-            vector<T>::operator=(vec);
+            std::vector<T>::operator=(vec);
             return *this;
         }
 
@@ -880,8 +878,8 @@ class EndlessVector : public vector<T>
         /////////////////////////////////////////////////
         T& operator[](size_t n)
         {
-            if (n < vector<T>::size())
-                return vector<T>::operator[](n);
+            if (n < std::vector<T>::size())
+                return std::vector<T>::operator[](n);
 
             return m_fallback;
         }
@@ -2122,7 +2120,7 @@ struct Indices
 {
     VectorIndex row;
     VectorIndex col;
-    string sCompiledAccessEquation;
+    std::string sCompiledAccessEquation;
 
     Indices() { }
     Indices(const Indices& _idx) : row(_idx.row), col(_idx.col), sCompiledAccessEquation(_idx.sCompiledAccessEquation)
@@ -2150,7 +2148,7 @@ struct Indices
 /////////////////////////////////////////////////
 struct Match
 {
-    string sString;
+    std::string sString;
     unsigned int nPos;
 };
 
@@ -2247,8 +2245,8 @@ struct Point
 /////////////////////////////////////////////////
 struct Returnvalue
 {
-    vector<mu::value_type> vNumVal;
-    vector<string> vStringVal;
+    std::vector<mu::value_type> vNumVal;
+    std::vector<std::string> vStringVal;
     std::string sReturnedTable;
     bool delayDelete;
 
@@ -2281,7 +2279,7 @@ struct Returnvalue
 /////////////////////////////////////////////////
 struct DefaultVariables
 {
-    string sName[4] = {"x", "y", "z", "t"};
+    std::string sName[4] = {"x", "y", "z", "t"};
     mu::value_type vValue[4][4];
 };
 

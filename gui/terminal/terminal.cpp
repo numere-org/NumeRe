@@ -200,7 +200,7 @@ NumeReTerminal::~NumeReTerminal()
 std::vector<std::string> NumeReTerminal::getPathSettings()
 {
 	wxCriticalSectionLocker lock(m_kernelCS);
-	vector<string> vPaths = _kernel.getPathSettings();
+	std::vector<std::string> vPaths = _kernel.getPathSettings();
 	return vPaths;
 }
 
@@ -254,12 +254,12 @@ void NumeReTerminal::passEditedTable(NumeRe::Table _table)
 /// to the passed file at the indicated line
 /// number.
 ///
-/// \param _sFilename const string&
+/// \param _sFilename const std::string&
 /// \param nLine size_t
 /// \return void
 ///
 /////////////////////////////////////////////////
-void NumeReTerminal::addBreakpoint(const string& _sFilename, size_t nLine)
+void NumeReTerminal::addBreakpoint(const std::string& _sFilename, size_t nLine)
 {
     wxCriticalSectionLocker lock(m_kernelCS);
     _kernel.getDebugger().getBreakpointManager().addBreakpoint(_sFilename, nLine);
@@ -271,12 +271,12 @@ void NumeReTerminal::addBreakpoint(const string& _sFilename, size_t nLine)
 /// breakpoint from the passed file at the
 /// indicated line number.
 ///
-/// \param _sFilename const string&
+/// \param _sFilename const std::string&
 /// \param nLine size_t
 /// \return void
 ///
 /////////////////////////////////////////////////
-void NumeReTerminal::removeBreakpoint(const string& _sFilename, size_t nLine)
+void NumeReTerminal::removeBreakpoint(const std::string& _sFilename, size_t nLine)
 {
     wxCriticalSectionLocker lock(m_kernelCS);
     _kernel.getDebugger().getBreakpointManager().removeBreakpoint(_sFilename, nLine);
@@ -287,11 +287,11 @@ void NumeReTerminal::removeBreakpoint(const string& _sFilename, size_t nLine)
 /// \brief This member function removes all
 /// breakpoints from the passed file.
 ///
-/// \param _sFilename const string&
+/// \param _sFilename const std::string&
 /// \return void
 ///
 /////////////////////////////////////////////////
-void NumeReTerminal::clearBreakpoints(const string& _sFilename)
+void NumeReTerminal::clearBreakpoints(const std::string& _sFilename)
 {
     wxCriticalSectionLocker lock(m_kernelCS);
     _kernel.getDebugger().getBreakpointManager().clearBreakpoints(_sFilename);
@@ -302,11 +302,11 @@ void NumeReTerminal::clearBreakpoints(const string& _sFilename)
 /// \brief Gets the desired documentation article
 /// as a HTML string.
 ///
-/// \param sCommand const string&
-/// \return string
+/// \param sCommand const std::string&
+/// \return std::string
 ///
 /////////////////////////////////////////////////
-string NumeReTerminal::getDocumentation(const string& sCommand)
+std::string NumeReTerminal::getDocumentation(const std::string& sCommand)
 {
 	wxCriticalSectionLocker lock(m_kernelCS);
 	return _kernel.getDocumentation(sCommand);
@@ -317,10 +317,10 @@ string NumeReTerminal::getDocumentation(const string& sCommand)
 /// \brief Gets the contents of the documentation
 /// index as a vector.
 ///
-/// \return vector<string>
+/// \return std::vector<std::string>
 ///
 /////////////////////////////////////////////////
-vector<string> NumeReTerminal::getDocIndex()
+std::vector<std::string> NumeReTerminal::getDocIndex()
 {
     wxCriticalSectionLocker lock(m_kernelCS);
     return _kernel.getDocIndex();
@@ -332,10 +332,10 @@ vector<string> NumeReTerminal::getDocIndex()
 /// for the plugins used by the language class
 /// for filling the symbols tree.
 ///
-/// \return map<string, string>
+/// \return std::map<std::string, std::string>
 ///
 /////////////////////////////////////////////////
-map<string, string> NumeReTerminal::getPluginLanguageStrings()
+std::map<std::string, std::string> NumeReTerminal::getPluginLanguageStrings()
 {
 	wxCriticalSectionLocker lock(m_kernelCS);
 	return _kernel.getPluginLanguageStrings();
@@ -347,10 +347,10 @@ map<string, string> NumeReTerminal::getPluginLanguageStrings()
 /// for the custom defined functions used by the
 /// language class for filling the symbols tree.
 ///
-/// \return map<string, string>
+/// \return std::map<std::string, std::string>
 ///
 /////////////////////////////////////////////////
-map<string, string> NumeReTerminal::getFunctionLanguageStrings()
+std::map<std::string, std::string> NumeReTerminal::getFunctionLanguageStrings()
 {
 	wxCriticalSectionLocker lock(m_kernelCS);
 	return _kernel.getFunctionLanguageStrings();
@@ -435,7 +435,7 @@ void NumeReTerminal::StartKernelTask()
 /////////////////////////////////////////////////
 wxThread::ExitCode NumeReTerminal::Entry()
 {
-	string sCommand;
+	std::string sCommand;
 	bool bCommandAvailable;
 	bool updateLibrary;
 	_kernel.initializeStackTracker();
@@ -574,8 +574,8 @@ void NumeReTerminal::OnThreadUpdate(wxThreadEvent& event)
 	bool changedSettings = false;
 	bool done = false;
 	bool refreshFunctionTree = false;
-	queue<NumeReTask> taskQueue;
-	string sAnswer = "";
+	std::queue<NumeReTask> taskQueue;
+	std::string sAnswer = "";
 
 	// Get the kernel status and read the variables
 	// correspondingly
@@ -649,11 +649,11 @@ void NumeReTerminal::OnThreadUpdate(wxThreadEvent& event)
         {
             case NumeReKernel::NUMERE_EDIT_FILE:
             {
-                if (task.sString.find(".png") != string::npos
-                        || task.sString.find(".jpg") != string::npos
-                        || task.sString.find(".jpeg") != string::npos
-                        || task.sString.find(".gif") != string::npos
-                        || task.sString.find(".bmp") != string::npos)
+                if (task.sString.find(".png") != std::string::npos
+                        || task.sString.find(".jpg") != std::string::npos
+                        || task.sString.find(".jpeg") != std::string::npos
+                        || task.sString.find(".gif") != std::string::npos
+                        || task.sString.find(".bmp") != std::string::npos)
                 {
                     m_wxParent->openImage(wxFileName(task.sString));
                 }
@@ -881,11 +881,11 @@ NumeReTerminal::SetCursorBlinkRate(int rate)
 /// will get the current input line from the
 /// internal buffer and sent it to the kernel.
 ///
-/// \param sCommand const string&
+/// \param sCommand const std::string&
 /// \return void
 ///
 /////////////////////////////////////////////////
-void NumeReTerminal::pipe_command(const string& sCommand)
+void NumeReTerminal::pipe_command(const std::string& sCommand)
 {
 	wxCriticalSectionLocker lock(m_kernelCS);
 
@@ -904,12 +904,12 @@ void NumeReTerminal::pipe_command(const string& sCommand)
 /// \brief  Pass the external command to the
 /// kernel without printing it to the console.
 ///
-/// \param command const string&
+/// \param command const std::string&
 /// \param isEvent bool Do not add to the history
 /// \return void
 ///
 /////////////////////////////////////////////////
-void NumeReTerminal::pass_command(const string& command, bool isEvent)
+void NumeReTerminal::pass_command(const std::string& command, bool isEvent)
 {
     // Don't do anything if the command is emoty
 	if (!command.length())
@@ -944,11 +944,11 @@ void NumeReTerminal::pass_command(const string& command, bool isEvent)
 /// table from the kernel to be shown in a GUI
 /// window.
 ///
-/// \param sTableName const string&
+/// \param sTableName const std::string&
 /// \return NumeRe::Table
 ///
 /////////////////////////////////////////////////
-NumeRe::Table NumeReTerminal::getTable(const string& sTableName)
+NumeRe::Table NumeReTerminal::getTable(const std::string& sTableName)
 {
     wxCriticalSectionLocker lock(m_kernelCS);
     return _kernel.getTable(sTableName);
@@ -959,11 +959,11 @@ NumeRe::Table NumeReTerminal::getTable(const string& sTableName)
 /// \brief This member function will return the
 /// named table containing strings.
 ///
-/// \param sStringTableName const string&
-/// \return NumeRe::Container<string>
+/// \param sStringTableName const std::string&
+/// \return NumeRe::Container<std::string>
 ///
 /////////////////////////////////////////////////
-NumeRe::Container<string> NumeReTerminal::getStringTable(const string& sStringTableName)
+NumeRe::Container<std::string> NumeReTerminal::getStringTable(const std::string& sStringTableName)
 {
     wxCriticalSectionLocker lock(m_kernelCS);
     return _kernel.getStringTable(sStringTableName);
@@ -1062,7 +1062,7 @@ bool NumeReTerminal::filterKeyCodes(int keyCode, bool ctrlDown)
         case WXK_RETURN:
             {
                 GenericTerminal::resetAutoComp(RESETCURSOR | RESETTAB);
-                string sCommand = GetTM()->getCurrentInputLine();
+                std::string sCommand = GetTM()->getCurrentInputLine();
                 GenericTerminal::cr();
                 GenericTerminal::lf();
                 GetTM()->ChangeEditableState();
@@ -1427,9 +1427,9 @@ NumeReTerminal::MarkSelection(bool bRectangular)
 	if (bRectangular)
 	{
 	    // Rectangular mode
-		for (y = min(m_sely1, m_sely2); y <= max(m_sely1, m_sely2); y++)
+		for (y = std::min(m_sely1, m_sely2); y <= std::max(m_sely1, m_sely2); y++)
 		{
-			for (x = min(m_selx1, m_selx2); x <= max(m_selx1, m_selx2); x++)
+			for (x = std::min(m_selx1, m_selx2); x <= std::max(m_selx1, m_selx2); x++)
 			{
 				Select(x, y, 1);
 			}
@@ -1441,7 +1441,7 @@ NumeReTerminal::MarkSelection(bool bRectangular)
 	    // More difficult
 		if (m_sely1 == m_sely2)
 		{
-            for (x = min(m_selx1, m_selx2); x <= max(m_selx1, m_selx2); x++)
+            for (x = std::min(m_selx1, m_selx2); x <= std::max(m_selx1, m_selx2); x++)
                 Select(x, m_sely1, 1);
 		}
 		else if (m_sely1 < m_sely2)
@@ -1520,14 +1520,14 @@ NumeReTerminal::GetSelection()
 ///  @param  flags    int             Modifiers for drawing the text
 ///  @param  x        int             The x position in character cells
 ///  @param  y        int             The y position in character cells
-///  @param  sText    const string&   The string containing the characters to draw
+///  @param  sText    const std::string&   The std::string containing the characters to draw
 ///
 ///  @return void
 ///
 ///  @author Derry Bryson @date 04-22-2004
 //////////////////////////////////////////////////////////////////////////////
 void
-NumeReTerminal::DrawText(int fg_color, int bg_color, int flags, int x, int y, const string& sText)
+NumeReTerminal::DrawText(int fg_color, int bg_color, int flags, int x, int y, const std::string& sText)
 {
 	int
 	t;
@@ -2063,11 +2063,11 @@ NumeReTerminal::ResizeTerminal(int width, int height)
 /** \brief Processes text received from the keybord or clipboard
  *
  * \param len int
- * \param sData const string&
+ * \param sData const std::string&
  * \return void
  *
  */
-void NumeReTerminal::ProcessInput(int len, const string& sData)
+void NumeReTerminal::ProcessInput(int len, const std::string& sData)
 {
 	scrollToInput();
 
@@ -2091,11 +2091,11 @@ void NumeReTerminal::ProcessInput(int len, const string& sData)
 /** \brief Processes text received from the kernel
  *
  * \param len int
- * \param sData const string&
+ * \param sData const std::string&
  * \return void
  *
  */
-void NumeReTerminal::ProcessOutput(int len, const string& sData)
+void NumeReTerminal::ProcessOutput(int len, const std::string& sData)
 {
 	if (HasSelection())
 		ClearSelection();

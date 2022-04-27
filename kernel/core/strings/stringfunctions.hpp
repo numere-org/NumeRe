@@ -26,6 +26,7 @@
 // define the "End of transmission block" as string separator
 #define NEWSTRING (char)23
 
+using namespace std;
 
 /////////////////////////////////////////////////
 /// \brief This function removes the escape
@@ -2095,7 +2096,7 @@ static string strfnc_basetodec(StringFuncArgs& funcArgs)
     }
 
     stream << funcArgs.sArg2;
-    int ret;
+    long long int ret;
     stream >> ret;
 
     return toString(ret);

@@ -37,12 +37,12 @@ class ProcedureViewer : public wxListView
         ProcedureViewer(wxWindow* parent);
 
         int nSortColumn;
-        vector<ProcedureViewerData> vData;
+        std::vector<ProcedureViewerData> vData;
 
         void setCurrentEditor(NumeReEditor* editor);
         void OnColumnClick(wxListEvent& event);
         void OnItemClick(wxListEvent& event);
-        void updateProcedureList(const vector<wxString>& vProcedures);
+        void updateProcedureList(const std::vector<wxString>& vProcedures);
 
         DECLARE_EVENT_TABLE();
 };

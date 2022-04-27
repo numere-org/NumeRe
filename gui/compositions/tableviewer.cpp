@@ -388,7 +388,7 @@ void TableViewer::updateFrame()
                 // Surrounding frame
                 SetCellBackgroundColour(i, j, FrameColor);
             }
-            else if (i < nFirstNumRow)
+            else if (i < (int)nFirstNumRow)
             {
                 // Headline
                 SetCellFont(i, j, this->GetCellFont(i, j).MakeBold());
@@ -488,14 +488,14 @@ void TableViewer::deleteSelection()
 /// determine, whether the entered cell value is
 /// a numerical value.
 ///
-/// \param sCell const string&
+/// \param sCell const std::string&
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool TableViewer::isNumerical(const string& sCell)
+bool TableViewer::isNumerical(const std::string& sCell)
 {
-    static string sNums = "0123456789,.eE+-* INFinf";
-    return sCell.find_first_not_of(sNums) == string::npos;
+    static std::string sNums = "0123456789,.eE+-* INFinf";
+    return sCell.find_first_not_of(sNums) == std::string::npos;
 }
 
 
@@ -536,7 +536,7 @@ wxString TableViewer::replaceCtrlChars(const wxString& sStr)
 {
     wxString sReturn = sStr;
 
-    while (sReturn.find('_') != string::npos)
+    while (sReturn.find('_') != std::string::npos)
         sReturn[sReturn.find('_')] = ' ';
 
     return sReturn;
@@ -659,7 +659,7 @@ void TableViewer::copyContents()
 /////////////////////////////////////////////////
 void TableViewer::pasteContents(bool useCursor)
 {
-    vector<wxString> vTableData;
+    std::vector<wxString> vTableData;
 
     // Get the data from the clipboard as a
     // vector table
@@ -1283,12 +1283,12 @@ void TableViewer::createZeroElementTable()
 /// like layout.
 ///
 /// \param data const wxString&
-/// \return vector<wxString>
+/// \return std::vector<wxString>
 ///
 /////////////////////////////////////////////////
-vector<wxString> TableViewer::getLinesFromPaste(const wxString& data)
+std::vector<wxString> TableViewer::getLinesFromPaste(const wxString& data)
 {
-    vector<wxString> vPaste;
+    std::vector<wxString> vPaste;
     wxString sClipboard = data;
     wxString sLine;
 
@@ -1313,7 +1313,7 @@ vector<wxString> TableViewer::getLinesFromPaste(const wxString& data)
             tabSeparated = true;
 
         // Remove the obtained line from the clipboard
-        if (sClipboard.find('\n') != string::npos)
+        if (sClipboard.find('\n') != std::string::npos)
             sClipboard.erase(0, sClipboard.find('\n')+1);
         else
             sClipboard.clear();
@@ -1336,15 +1336,15 @@ vector<wxString> TableViewer::getLinesFromPaste(const wxString& data)
         replaceTabSign(sLine);
 
         // Ignore empty lines
-        if (sLine.find_first_not_of(' ') == string::npos)
+        if (sLine.find_first_not_of(' ') == std::string::npos)
             continue;
 
         // Replace the decimal sign, if the line is numerical,
         // otherwise try to detect, whether the comma is used
         // to separate the columns
-        if (sLine.find(',') != string::npos && (sLine.find('.') == string::npos || tabSeparated))
+        if (sLine.find(',') != std::string::npos && (sLine.find('.') == std::string::npos || tabSeparated))
             replaceDecimalSign(sLine);
-        else if (!tabSeparated && sLine.find(',') != string::npos && sLine.find(';') != string::npos)
+        else if (!tabSeparated && sLine.find(',') != std::string::npos && sLine.find(';') != std::string::npos)
         {
             // The semicolon is used to separate the columns
             // in this case
@@ -1384,11 +1384,11 @@ vector<wxString> TableViewer::getLinesFromPaste(const wxString& data)
 /// \brief This member function is the data
 /// setter for string and cluster tables.
 ///
-/// \param _stringTable NumeRe::Container<string>&
+/// \param _stringTable NumeRe::Container<std::string>&
 /// \return void
 ///
 /////////////////////////////////////////////////
-void TableViewer::SetData(NumeRe::Container<string>& _stringTable)
+void TableViewer::SetData(NumeRe::Container<std::string>& _stringTable)
 {
     if (!_stringTable.getCols() || !_stringTable.getRows())
     {

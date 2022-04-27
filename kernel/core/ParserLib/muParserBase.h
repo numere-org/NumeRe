@@ -40,6 +40,7 @@
 #include "muParserTokenReader.h"
 #include "muParserBytecode.h"
 #include "muParserError.h"
+#include "muParserState.hpp"
 
 class StringView;
 class MutableStringView;
@@ -50,20 +51,8 @@ namespace mu
 	    \brief This file contains the class definition of the muparser engine.
 	*/
 
-	struct CachedDataAccess
-	{
-	    enum
-	    {
-	        NO_FLAG = 0x0,
-	        IS_CLUSTER = 0x1,
-	        IS_TABLE_METHOD = 0x2
-	    };
+    typedef std::map<std::string,std::vector<value_type>> vectormap_type;
 
-		std::string sAccessEquation; // Passed to parser_getIndices -> returns the indices for the current access
-		std::string sVectorName; // target of the created vector -> use SetVectorVar
-		std::string sCacheName; // needed for reading the data -> create a vector var
-		int flags;
-	};
 
 	//--------------------------------------------------------------------------------------------------
 	/** \brief Mathematical expressions parser (base parser engine).
@@ -78,9 +67,8 @@ namespace mu
 	*/
 	class ParserBase
 	{
-			friend class ParserTokenReader;
-
 		private:
+			friend class ParserTokenReader;
 
 			/** \brief Typedef for the parse functions.
 
@@ -88,10 +76,7 @@ namespace mu
 			  the function pointer to the parser function depending on
 			  which state it is in. (i.e. bytecode parser vs. string parser)
 			*/
-			typedef value_type (ParserBase::*ParseFunction)();
-
-			/** \brief Type used for storing an array of values. */
-			typedef std::vector<value_type> valbuf_type;
+			typedef void (ParserBase::*ParseFunction)();
 
 			/** \brief Type for a vector of strings. */
 			typedef std::vector<string_type> stringbuf_type;
@@ -101,23 +86,6 @@ namespace mu
 
 			/** \brief Type used for parser tokens. */
 			typedef ParserToken<value_type, string_type> token_type;
-
-			/** \brief Maximum number of threads spawned by OpenMP when using the bulk mode. */
-			static const int s_MaxNumOpenMPThreads = 4;
-
-			mutable std::map<std::string, std::vector<mu::value_type> > mVectorVars;
-			mutable std::map<std::string, std::vector<mu::value_type>* > mNonSingletonVectorVars;
-
-			mutable varmap_type mTargets;
-			mutable string_type sTargets;
-			mutable int nVectorDimension;
-			mutable varmap_type vCurrentUsedVars;
-
-			void replaceLocalVars(std::string& sLine);
-			bool checkDelimiter(StringView sLine);
-			void evaluateVectorExpansion(MutableStringView sSubExpr, std::vector<mu::value_type>& vResults);
-			void expandVector(mu::value_type dFirst, const mu::value_type& dLast, const mu::value_type& dIncrement, std::vector<mu::value_type>& vResults);
-			void assignResultsToTarget(const varmap_type& varmap, int nFinalResults);
 
 		public:
 
@@ -151,6 +119,7 @@ namespace mu
 			void LockPause(bool _bLock = true);
 			void PauseLoopMode(bool _bPause = true);
 			bool IsAlreadyParsed(StringView sNewEquation);
+			bool IsNotLastStackItem() const;
 
 			static void EnableDebugDump(bool bDumpCmd, bool bDumpStack);
 
@@ -164,12 +133,7 @@ namespace mu
 			value_type* Eval(int& nStackSize);
 			void Eval(value_type* results, int nBulkSize);
 
-			int GetNumResults() const;
-
 			void SetExpr(StringView a_sExpr);
-			MutableStringView PreEvaluateVectors(MutableStringView sExpr);
-			bool ResolveVectorsInMultiArgFunc(MutableStringView& sExpr, size_t& nPos);
-			size_t FindMultiArgFunc(StringView sExpr, size_t nPos, std::string& sMultArgFunc);
 			void SetVarFactory(facfun_type a_pFactory, void* pUserData = NULL);
 
 			void SetDecSep(char_type cDecSep);
@@ -303,12 +267,23 @@ namespace mu
 			};
 
 		private:
-
+			void replaceLocalVars(std::string& sLine);
+			bool checkDelimiter(StringView sLine);
+			MutableStringView compileVectors(MutableStringView sExpr);
+			bool compileVectorsInMultiArgFunc(MutableStringView& sExpr, size_t& nPos);
+			size_t FindMultiArgFunc(StringView sExpr, size_t nPos, std::string& sMultArgFunc);
+			void compileVectorExpansion(MutableStringView sSubExpr, const std::string& sVectorVarName);
+            void expandVector(mu::value_type dFirst,
+                              const mu::value_type& dLast,
+                              const mu::value_type& dIncrement,
+                              std::vector<mu::value_type>& vResults);
+			void evaluateTemporaryVectors(const VectorEvaluation& vectEval, int nStackSize);
 			string_type getNextVarObject(std::string& sArgList, bool bCut);
 			string_type getNextVectorVarIndex();
 			void Assign(const ParserBase& a_Parser);
 			void InitTokenReader();
 			void ReInit();
+            ExpressionTarget& getTarget() const;
 
 			void AddCallback( const string_type& a_strName,
 							  const ParserCallback& a_Callback,
@@ -335,9 +310,9 @@ namespace mu
 
 			void CreateRPN();
 
-			value_type ParseString();
-			value_type ParseCmdCode();
-			value_type ParseCmdCodeBulk(int nOffset, int nThreadID);
+			void ParseString();
+			void ParseCmdCode();
+			void ParseCmdCodeBulk(int nOffset, int nThreadID);
 
 			void  CheckName(const string_type& a_strName, const string_type& a_CharSet) const;
 			void  CheckOprt(const string_type& a_sName,
@@ -352,25 +327,26 @@ namespace mu
 			  Eval() calls the function whose address is stored there.
 			*/
 			mutable ParseFunction  m_pParseFormula;
-			mutable ParserByteCode m_vRPN;        ///< The Bytecode class.
-			mutable std::vector<std::vector<ParserByteCode> > vLoopByteCode;
-			mutable std::vector<std::vector<std::string> > vLoopString;
-			mutable std::vector<std::vector<int> > vValidByteCode;
-			mutable std::vector<std::vector<int> > vNumResultsIDX;
-			mutable std::vector<std::vector<valbuf_type> > vLoopStackBuf;
-			mutable std::vector<std::vector<varmap_type> > vUsedVar;
-			mutable std::vector<bool> vCanCacheAccess;
-			mutable std::vector<std::vector<CachedDataAccess> > vDataAccessCache;
-			mutable std::vector<std::string> vCachedEquation;
-			mutable std::vector<std::string> vCachedTarget;
+			mutable State m_compilingState;
+			mutable ExpressionTarget m_compilingTarget;
+			mutable StateStacks m_stateStacks;
+			State* m_state;
+			mutable valbuf_type m_buffer;
+
+			/** \brief Maximum number of threads spawned by OpenMP when using the bulk mode. */
+			static const int s_MaxNumOpenMPThreads = 4;
+
+			mutable vectormap_type mVectorVars;
+
 			unsigned int nthLoopElement;
-			unsigned int nLoopLength;
 			unsigned int nthLoopPartEquation;
 			unsigned int nCurrVectorIndex;
 			bool bMakeLoopByteCode;
 			bool bPauseLoopByteCode;
 			bool bPauseLock;
 			bool bCompiling;
+			int nMaxThreads;
+
 			mutable stringbuf_type  m_vStringBuf; ///< String buffer, used for storing string function arguments
 			stringbuf_type  m_vStringVarBuf;
 
@@ -393,12 +369,12 @@ namespace mu
 			mutable int m_nIfElseCounter;  ///< Internal counter for keeping track of nested if-then-else clauses
 
 			// items merely used for caching state information
-			mutable valbuf_type m_vStackBuffer; ///< This is merely a buffer used for the stack in the cmd parsing routine
-			mutable int m_nFinalResultIdx;
 			const std::string EMPTYSTRING;
 	};
 
 } // namespace mu
 
 #endif
+
+
 

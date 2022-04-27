@@ -26,6 +26,8 @@
 #define DEFAULT_NUM_PRECISION 7
 #define DEFAULT_MINMAX_PRECISION 5
 
+using namespace std;
+
 
 /////////////////////////////////////////////////
 /// \brief Constructor.
@@ -388,7 +390,7 @@ bool NumeReDebugger::select(size_t nStackElement)
     // statement, obtain the corresponding information here
     if (_curProcedure->bEvaluatingFlowControlStatements)
     {
-        gatherLoopBasedInformations(_curProcedure->getCurrentCommand(), _curProcedure->getCurrentLineNumber(), _curProcedure->mVarMap, _curProcedure->vVarArray, _curProcedure->sVarArray, _curProcedure->nVarArray);
+        gatherLoopBasedInformations(_curProcedure->getCurrentCommand(), _curProcedure->getCurrentLineNumber(), _curProcedure->mVarMap, _curProcedure->vVarArray, _curProcedure->sVarArray);
     }
 
     // Obtain the remaining information here
@@ -844,13 +846,12 @@ void NumeReDebugger::gatherInformations(string** sLocalVars, size_t nLocalVarMap
 /// \param _nLineNumber unsigned int
 /// \param map<string
 /// \param mVarMap string>&
-/// \param vVarArray mu::value_type**
-/// \param sVarArray string*
-/// \param nVarArray int
+/// \param vVarArray const std::vector<mu::value_type>&
+/// \param sVarArray const std::vector<std::string>&
 /// \return void
 ///
 /////////////////////////////////////////////////
-void NumeReDebugger::gatherLoopBasedInformations(const string& _sErraticCommand, unsigned int _nLineNumber, map<string, string>& mVarMap, mu::value_type** vVarArray, string* sVarArray, int nVarArray)
+void NumeReDebugger::gatherLoopBasedInformations(const string& _sErraticCommand, unsigned int _nLineNumber, map<string, string>& mVarMap, const std::vector<mu::value_type>& vVarArray, const std::vector<std::string>& sVarArray)
 {
     if (!bDebuggerActive)
         return;
@@ -866,12 +867,11 @@ void NumeReDebugger::gatherLoopBasedInformations(const string& _sErraticCommand,
         sErraticCommand.erase(sErraticCommand.find_first_not_of(' '), 2);
     }
 
-
     nLineNumber = _nLineNumber;
 
     // store variable names and replace their occurences with
     // their definitions
-    for (int i = 0; i < nVarArray; i++)
+    for (size_t i = 0; i < sVarArray.size(); i++)
     {
         for (auto iter = mVarMap.begin(); iter != mVarMap.end(); ++iter)
         {
@@ -879,7 +879,7 @@ void NumeReDebugger::gatherLoopBasedInformations(const string& _sErraticCommand,
             {
                 // Store the variables
                 //mLocalVars[iter->first + " @" + toHexString((int)&vVarArray[i][0]) + "\t" + iter->second] = vVarArray[i][0];
-                mLocalVars[iter->first + "\t" + iter->second] = vVarArray[i][0];
+                mLocalVars[iter->first + "\t" + iter->second] = vVarArray[i];
 
                 // Replace the variables
                 while (sErraticCommand.find(iter->second) != string::npos)
@@ -887,8 +887,6 @@ void NumeReDebugger::gatherLoopBasedInformations(const string& _sErraticCommand,
             }
         }
     }
-
-    return;
 }
 
 

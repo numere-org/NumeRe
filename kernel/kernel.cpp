@@ -29,7 +29,7 @@
 #define DEFAULT_NUM_PRECISION 7
 #define DEFAULT_MINMAX_PRECISION 5
 
-extern const string sVersion;
+extern const std::string sVersion;
 /* --> STATUS: Versionsname des Programms; Aktuell "Ampere", danach "Angstroem". Ab 1.0 Namen mit "B",
  *     z.B.: Biot(1774), Boltzmann(1844), Becquerel(1852), Bragg(1862), Bohr(1885), Brillouin(1889),
  *     de Broglie(1892, Bose(1894), Bloch(1905), Bethe(1906)) <--
@@ -47,7 +47,7 @@ __time64_t tTimeZero = _time64(0);
 NumeReKernel* NumeReKernel::kernelInstance = nullptr;
 int* NumeReKernel::baseStackPosition = nullptr;
 NumeReTerminal* NumeReKernel::m_parent = nullptr;
-queue<NumeReTask> NumeReKernel::taskQueue;
+std::queue<NumeReTask> NumeReKernel::taskQueue;
 int NumeReKernel::nLINE_LENGTH = 80;
 bool NumeReKernel::bWritingTable = false;
 int NumeReKernel::nOpenFileFlag = 0;
@@ -133,8 +133,8 @@ void NumeReKernel::Autosave()
 /// \brief This is the kernel "booting" function.
 ///
 /// \param _parent wxTerm*
-/// \param __sPath const string&
-/// \param sPredefinedFunctions const string&
+/// \param __sPath const std::string&
+/// \param sPredefinedFunctions const std::string&
 /// \return void
 ///
 /// This function sets all parameters, functions
@@ -142,15 +142,15 @@ void NumeReKernel::Autosave()
 /// loads possible available autosaves and
 /// definition files for functions and plugins.
 /////////////////////////////////////////////////
-void NumeReKernel::StartUp(NumeReTerminal* _parent, const string& __sPath, const string& sPredefinedFunctions)
+void NumeReKernel::StartUp(NumeReTerminal* _parent, const std::string& __sPath, const std::string& sPredefinedFunctions)
 {
     if (_parent && m_parent == nullptr)
         m_parent = _parent;
     //Do some start-up stuff here
 
-    string sTime = getTimeStamp(false);
-    string sLogFile = "numere.log";
-    string sPath = __sPath;
+    std::string sTime = getTimeStamp(false);
+    std::string sLogFile = "numere.log";
+    std::string sPath = __sPath;
 
     // Set the functions provided by the syntax object in the parent class
     _functions.setPredefinedFuncs(sPredefinedFunctions);
@@ -159,7 +159,7 @@ void NumeReKernel::StartUp(NumeReTerminal* _parent, const string& __sPath, const
     _procedure.setPredefinedFuncs(sPredefinedFunctions);
 
     // Make the path UNIX style
-    while (sPath.find('\\') != string::npos)
+    while (sPath.find('\\') != std::string::npos)
         sPath[sPath.find('\\')] = '/';
 
     // Set the path in the settings object and load the settings
@@ -233,7 +233,7 @@ void NumeReKernel::StartUp(NumeReTerminal* _parent, const string& __sPath, const
     g_logger.info("Loading kernel language files.");
     _lang.loadStrings(_option.useCustomLangFiles());
 
-    string sCacheFile = _option.getExePath() + "/numere.cache";
+    std::string sCacheFile = _option.getExePath() + "/numere.cache";
 
     // Load the plugin informations
     if (fileExists(_procedure.getPluginInfoPath()))
@@ -560,7 +560,7 @@ void NumeReKernel::printVersionInfo()
     displaySplash();
     printPreFmt("                                  |\n");
     printPreFmt("| Version: " + sVersion + strfill("Build: ", 79 - 22 - sVersion.length()) + AutoVersion::YEAR + "-" + AutoVersion::MONTH + "-" + AutoVersion::DATE + " |\n");
-    printPreFmt("| Copyright (c) 2013-" + string(AutoVersion::YEAR) + toSystemCodePage(", Erik A. Hänel et al.") + strfill(toSystemCodePage(_lang.get("MAIN_ABOUT_NBR")), 79 - 48) + " |\n");
+    printPreFmt("| Copyright (c) 2013-" + std::string(AutoVersion::YEAR) + toSystemCodePage(", Erik A. Hänel et al.") + strfill(toSystemCodePage(_lang.get("MAIN_ABOUT_NBR")), 79 - 48) + " |\n");
     make_hline(80);
 
     printPreFmt("|\n");
@@ -579,7 +579,7 @@ void NumeReKernel::printVersionInfo()
 /// \brief This is the main loop for the core of
 /// NumeRe.
 ///
-/// \param sCommand const string&
+/// \param sCommand const std::string&
 /// \return NumeReKernel::KernelStatus
 ///
 /// This function is called by the terminal to
@@ -589,18 +589,18 @@ void NumeReKernel::printVersionInfo()
 /// semicolon-separated list of commands
 /// automatically.
 /////////////////////////////////////////////////
-NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
+NumeReKernel::KernelStatus NumeReKernel::MainLoop(const std::string& sCommand)
 {
     if (!m_parent)
         return NUMERE_ERROR;
 
 
-    string sLine_Temp = "";     // Temporaerer String fuer die Eingabe
-    string sCache;         // Zwischenspeicher fuer die Cache-Koordinaten
-    string sKeep = "";          // Zwei '\' am Ende einer Zeile ermoeglichen es, dass die Eingabe auf mehrere Zeilen verteilt wird.
-    string sCmdCache = "";      // Die vorherige Zeile wird hierin zwischengespeichert
-    string sLine = "";          // The actual line
-    string sCurrentCommand = "";// The current command
+    std::string sLine_Temp = "";     // Temporaerer String fuer die Eingabe
+    std::string sCache;         // Zwischenspeicher fuer die Cache-Koordinaten
+    std::string sKeep = "";          // Zwei '\' am Ende einer Zeile ermoeglichen es, dass die Eingabe auf mehrere Zeilen verteilt wird.
+    std::string sCmdCache = "";      // Die vorherige Zeile wird hierin zwischengespeichert
+    std::string sLine = "";          // The actual line
+    std::string sCurrentCommand = "";// The current command
     mu::value_type* v = 0;          // Ergebnisarray
     int& nDebuggerCode = _procedure.getDebuggerCode();
     int nNum = 0;               // Zahl der Ergebnisse in value_type* v
@@ -759,7 +759,7 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
                 continue;
 
             // --> Gibt es "??"? Dann rufe die Prompt-Funktion auf <--
-            if (!_procedure.getCurrentBlockDepth() && sLine.find("??") != string::npos && sCurrentCommand != "help")
+            if (!_procedure.getCurrentBlockDepth() && sLine.find("??") != std::string::npos && sCurrentCommand != "help")
                 sLine = promptForUserInput(sLine);
 
             // Handle plugin commands
@@ -813,7 +813,7 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
                         // --> Sind ungesicherte Daten im Cache? Dann moechte der Nutzer diese vielleicht speichern <--
                         if (!_memoryManager.getSaveStatus()) // MAIN_UNSAVED_CACHE
                         {
-                            string c = "";
+                            std::string c = "";
                             print(LineBreak(_lang.get("MAIN_UNSAVED_CACHE"), _option));
                             printPreFmt("|\n|<- ");
                             NumeReKernel::getline(c);
@@ -865,7 +865,7 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
             }
 
             // --> Gibt es "??" ggf. nochmal? Dann rufe die Prompt-Funktion auf <--
-            if (sLine.find("??") != string::npos)
+            if (sLine.find("??") != std::string::npos)
                 sLine = promptForUserInput(sLine);
 
 			bool bWriteToCache = false;
@@ -878,14 +878,14 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
             {
                 sCache = getDataElements(sLine, _parser, _memoryManager, _option);
 
-                if (sCache.length() && sCache.find('#') == string::npos)
+                if (sCache.length() && sCache.find('#') == std::string::npos)
                     bWriteToCache = true;
             }
             else if (isClusterCandidate(sLine, sCache))
                 bWriteToCache = true;
 
             // Remove the definition operator
-            while (sLine.find(":=") != string::npos)
+            while (sLine.find(":=") != std::string::npos)
             {
                 sLine.erase(sLine.find(":="), 1);
             }
@@ -985,7 +985,7 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
                 }
                 else if (nErrorPos < 32)
                 {
-                    string sErrorExpr = "|   Position:  '";
+                    std::string sErrorExpr = "|   Position:  '";
                     if (e.GetExpr().length() > 63)
                         sErrorExpr += e.GetExpr().substr(0, 60) + "...'";
                     else
@@ -995,7 +995,7 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
                 }
                 else if (nErrorPos > e.GetExpr().length() - 32)
                 {
-                    string sErrorExpr = "|   Position:  '";
+                    std::string sErrorExpr = "|   Position:  '";
                     if (e.GetExpr().length() > 63)
                     {
                         printPreFmt(sErrorExpr + "..." + e.GetExpr().substr(e.GetExpr().length() - 60) + "'\n");
@@ -1046,7 +1046,7 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
             make_hline();
             print(toUpperCase(_lang.get("ERR_STD_INTERNAL_HEAD")));
             make_hline();
-            print(LineBreak(string(e.what()), _option));
+            print(LineBreak(std::string(e.what()), _option));
             print(LineBreak(_lang.get("ERR_STD_INTERNAL"), _option));
 
             resetAfterError(sCmdCache);
@@ -1090,9 +1090,9 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
                 }
                 else
                 {
-                    string sErrLine_0 = _lang.get("ERR_NR_" + toString((int)e.errorcode) + "_0_*", e.getToken(), toString(e.getIndices()[0]), toString(e.getIndices()[1]), toString(e.getIndices()[2]), toString(e.getIndices()[3]));
-                    string sErrLine_1 = _lang.get("ERR_NR_" + toString((int)e.errorcode) + "_1_*", e.getToken(), toString(e.getIndices()[0]), toString(e.getIndices()[1]), toString(e.getIndices()[2]), toString(e.getIndices()[3]));
-                    string sErrIDString = _lang.getKey("ERR_NR_" + toString((int)e.errorcode) + "_0_*");
+                    std::string sErrLine_0 = _lang.get("ERR_NR_" + toString((int)e.errorcode) + "_0_*", e.getToken(), toString(e.getIndices()[0]), toString(e.getIndices()[1]), toString(e.getIndices()[2]), toString(e.getIndices()[3]));
+                    std::string sErrLine_1 = _lang.get("ERR_NR_" + toString((int)e.errorcode) + "_1_*", e.getToken(), toString(e.getIndices()[0]), toString(e.getIndices()[1]), toString(e.getIndices()[2]), toString(e.getIndices()[3]));
+                    std::string sErrIDString = _lang.getKey("ERR_NR_" + toString((int)e.errorcode) + "_0_*");
 
                     if (sErrLine_0.substr(0, 7) == "ERR_NR_")
                     {
@@ -1118,7 +1118,7 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
                             }
                             else if (e.getPosition() < 32)
                             {
-                                string sErrorExpr = "|   Position:  '";
+                                std::string sErrorExpr = "|   Position:  '";
                                 if (e.getExpr().length() > 63)
                                     sErrorExpr += e.getExpr().substr(0, 60) + "...'";
                                 else
@@ -1128,7 +1128,7 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
                             }
                             else if (e.getPosition() > e.getExpr().length() - 32)
                             {
-                                string sErrorExpr = "|   Position:  '";
+                                std::string sErrorExpr = "|   Position:  '";
                                 if (e.getExpr().length() > 63)
                                 {
                                     printPreFmt(sErrorExpr + "..." + e.getExpr().substr(e.getExpr().length() - 60) + "'\n");
@@ -1217,13 +1217,13 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
 /// handle the command line input source and
 /// validate it, before the core will evaluate it.
 ///
-/// \param sLine string&
-/// \param sCmdCache const string&
-/// \param sKeep string&
+/// \param sLine std::string&
+/// \param sCmdCache const std::string&
+/// \param sKeep std::string&
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool NumeReKernel::handleCommandLineSource(string& sLine, const string& sCmdCache, string& sKeep)
+bool NumeReKernel::handleCommandLineSource(std::string& sLine, const std::string& sCmdCache, std::string& sKeep)
 {
     if (!sCmdCache.length())
     {
@@ -1277,7 +1277,7 @@ bool NumeReKernel::handleCommandLineSource(string& sLine, const string& sCmdCach
         if (findCommand(sLine).sString != "help"
                 && findCommand(sLine).sString != "find"
                 && findCommand(sLine).sString != "search"
-                && (sLine.find('(') != string::npos || sLine.find('{') != string::npos))
+                && (sLine.find('(') != std::string::npos || sLine.find('{') != std::string::npos))
         {
             if (!validateParenthesisNumber(sLine))
                 throw SyntaxError(SyntaxError::UNMATCHED_PARENTHESIS, sLine, sLine.find('('));
@@ -1293,16 +1293,16 @@ bool NumeReKernel::handleCommandLineSource(string& sLine, const string& sCmdCach
 /// cache (i.e. the list of commands separated by
 /// semicolons).
 ///
-/// \param sLine string&
-/// \param sCmdCache string&
-/// \param sCurrentCommand const string&
+/// \param sLine std::string&
+/// \param sCmdCache std::string&
+/// \param sCurrentCommand const std::string&
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool NumeReKernel::getLineFromCommandCache(string& sLine, string& sCmdCache, const string& sCurrentCommand)
+bool NumeReKernel::getLineFromCommandCache(std::string& sLine, std::string& sCmdCache, const std::string& sCurrentCommand)
 {
     // Only do something if the command cache is not empty or the current line contains a semicolon
-    if ((sCmdCache.length() || sLine.find(';') != string::npos) && !_procedure.is_writing() && sCurrentCommand != "procedure")
+    if ((sCmdCache.length() || sLine.find(';') != std::string::npos) && !_procedure.is_writing() && sCurrentCommand != "procedure")
     {
         if (sCmdCache.length())
         {
@@ -1312,7 +1312,7 @@ bool NumeReKernel::getLineFromCommandCache(string& sLine, string& sCmdCache, con
                 sCmdCache.erase(0, 1);
             if (!sCmdCache.length())
                 return false;
-            if (sCmdCache.find(';') != string::npos)
+            if (sCmdCache.find(';') != std::string::npos)
             {
                 // More than one task available
                 for (unsigned int i = 0; i < sCmdCache.length(); i++)
@@ -1354,7 +1354,7 @@ bool NumeReKernel::getLineFromCommandCache(string& sLine, string& sCmdCache, con
                 if (sLine[i] == '(' || sLine[i] == '[' || sLine[i] == '{')
                 {
                     size_t parens = getMatchingParenthesis(sLine.substr(i));
-                    if (parens != string::npos)
+                    if (parens != std::string::npos)
                         i += parens;
                 }
                 if (sLine[i] == ';' && !isInQuotes(sLine, i))
@@ -1381,14 +1381,14 @@ bool NumeReKernel::getLineFromCommandCache(string& sLine, string& sCmdCache, con
 /// different commands and return them, once the
 /// block is finished).
 ///
-/// \param sLine string&
-/// \param sCmdCache const string&
-/// \param sCurrentCommand const string&
+/// \param sLine std::string&
+/// \param sCmdCache const std::string&
+/// \param sCurrentCommand const std::string&
 /// \param nReturnVal KernelStatus&
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool NumeReKernel::handleComposeBlock(string& sLine, const string& sCmdCache, const string& sCurrentCommand, KernelStatus& nReturnVal)
+bool NumeReKernel::handleComposeBlock(std::string& sLine, const std::string& sCmdCache, const std::string& sCurrentCommand, KernelStatus& nReturnVal)
 {
     // Only do something, if the current command contains
     // a compose block syntax element
@@ -1459,7 +1459,7 @@ bool NumeReKernel::handleComposeBlock(string& sLine, const string& sCmdCache, co
         else if (findCommand(sLine).sString != "endcompose")
         {
             // add a new plotting command
-            string sCommand = findCommand(sLine).sString;
+            std::string sCommand = findCommand(sLine).sString;
             if (sCommand.substr(0, 4) == "plot"
                     || sCommand.substr(0, 7) == "subplot"
                     || sCommand.substr(0, 4) == "grad"
@@ -1528,14 +1528,14 @@ bool NumeReKernel::handleComposeBlock(string& sLine, const string& sCmdCache, co
 /// handle the writing of procedure lines to the
 /// corresponding file.
 ///
-/// \param sLine const string&
-/// \param sCmdCache const string&
-/// \param sCurrentCommand const string&
+/// \param sLine const std::string&
+/// \param sCmdCache const std::string&
+/// \param sCurrentCommand const std::string&
 /// \param nReturnVal KernelStatus&
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool NumeReKernel::handleProcedureWrite(const string& sLine, const string& sCmdCache, const string& sCurrentCommand, KernelStatus& nReturnVal)
+bool NumeReKernel::handleProcedureWrite(const std::string& sLine, const std::string& sCmdCache, const std::string& sCurrentCommand, KernelStatus& nReturnVal)
 {
     if (_procedure.is_writing() || sCurrentCommand == "procedure")
     {
@@ -1584,17 +1584,17 @@ bool NumeReKernel::handleProcedureWrite(const string& sLine, const string& sCmdC
 /// \brief This private member function uninstalls
 /// a previously installed plugin.
 ///
-/// \param sLine const string&
-/// \param sCurrentCommand const string&
+/// \param sLine const std::string&
+/// \param sCurrentCommand const std::string&
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool NumeReKernel::uninstallPlugin(const string& sLine, const string& sCurrentCommand)
+bool NumeReKernel::uninstallPlugin(const std::string& sLine, const std::string& sCurrentCommand)
 {
     if (sCurrentCommand == "uninstall")
     {
         // Ge the plugin name
-        string sPlugin = fromSystemCodePage(getArgAtPos(sLine, findCommand(sLine).nPos + 9));
+        std::string sPlugin = fromSystemCodePage(getArgAtPos(sLine, findCommand(sLine).nPos + 9));
 
         // Remove the plugin and get the help index ID
         sPlugin = _procedure.deletePackage(sPlugin);
@@ -1603,7 +1603,7 @@ bool NumeReKernel::uninstallPlugin(const string& sLine, const string& sCurrentCo
         {
             if (sPlugin != "<<NO_HLP_ENTRY>>")
             {
-                while (sPlugin.find(';') != string::npos)
+                while (sPlugin.find(';') != std::string::npos)
                     sPlugin[sPlugin.find(';')] = ',';
 
                 while (sPlugin.length())
@@ -1631,29 +1631,29 @@ bool NumeReKernel::uninstallPlugin(const string& sLine, const string& sCurrentCo
 /// the "to_cmd()" function, if it is part of
 /// the current command line.
 ///
-/// \param sLine string&
-/// \param sCache string&
-/// \param sCurrentCommand string&
+/// \param sLine std::string&
+/// \param sCache std::string&
+/// \param sCurrentCommand std::string&
 /// \return void
 ///
 /////////////////////////////////////////////////
-void NumeReKernel::handleToCmd(string& sLine, string& sCache, string& sCurrentCommand)
+void NumeReKernel::handleToCmd(std::string& sLine, std::string& sCache, std::string& sCurrentCommand)
 {
     // Do only something, if "to_cmd()" is located
-    if (sLine.find("to_cmd(") != string::npos && !_procedure.getCurrentBlockDepth())
+    if (sLine.find("to_cmd(") != std::string::npos && !_procedure.getCurrentBlockDepth())
     {
         unsigned int nPos = 0;
 
         // Find all "to_cmd()"'s
-        while (sLine.find("to_cmd(", nPos) != string::npos)
+        while (sLine.find("to_cmd(", nPos) != std::string::npos)
         {
             nPos = sLine.find("to_cmd(", nPos) + 6;
             if (isInQuotes(sLine, nPos))
                 continue;
             unsigned int nParPos = getMatchingParenthesis(sLine.substr(nPos));
-            if (nParPos == string::npos)
+            if (nParPos == std::string::npos)
                 throw SyntaxError(SyntaxError::UNMATCHED_PARENTHESIS, sLine, nPos);
-            string sCmdString = sLine.substr(nPos + 1, nParPos - 1);
+            std::string sCmdString = sLine.substr(nPos + 1, nParPos - 1);
             StripSpaces(sCmdString);
 
             // Evaluate the string part
@@ -1678,11 +1678,11 @@ void NumeReKernel::handleToCmd(string& sLine, string& sCache, string& sCurrentCo
 /// evaluate any calls to procedurs and replace
 /// their results in the current command line.
 ///
-/// \param sLine string&
+/// \param sLine std::string&
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool NumeReKernel::evaluateProcedureCalls(string& sLine)
+bool NumeReKernel::evaluateProcedureCalls(std::string& sLine)
 {
     // Only if there's a candidate for a procedure
     if (sLine.find('$') != std::string::npos && sLine.find('(', sLine.find('$')) != std::string::npos && !_procedure.getCurrentBlockDepth())
@@ -1750,7 +1750,7 @@ bool NumeReKernel::evaluateProcedureCalls(string& sLine)
         // Examine each occurence of a dollar sign
         while (isInQuotes(sLine, i))
         {
-            if (sLine.find('$', i + 1) != string::npos)
+            if (sLine.find('$', i + 1) != std::string::npos)
                 i = sLine.find('$', i + 1);
             else
             {
@@ -1776,11 +1776,11 @@ bool NumeReKernel::evaluateProcedureCalls(string& sLine)
 /// \brief This private member function will
 /// execute any call to a plugin.
 ///
-/// \param sLine string&
+/// \param sLine std::string&
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool NumeReKernel::executePlugins(string& sLine)
+bool NumeReKernel::executePlugins(std::string& sLine)
 {
     // If there's a plugin command
     if (_procedure.isPluginCmd(sLine) && !_procedure.getCurrentBlockDepth())
@@ -1794,9 +1794,9 @@ bool NumeReKernel::executePlugins(string& sLine)
             Returnvalue _rTemp = _procedure.execute(_procedure.getPluginProcName(), _procedure.getPluginVarList(), _parser, _functions, _memoryManager, _option, _out, _pData, _script);
 
             // Handle the return values
-            if (_rTemp.isString() && sLine.find("<<RETURNVAL>>") != string::npos)
+            if (_rTemp.isString() && sLine.find("<<RETURNVAL>>") != std::string::npos)
             {
-                string sReturn = "{";
+                std::string sReturn = "{";
                 for (unsigned int v = 0; v < _rTemp.vStringVal.size(); v++)
                     sReturn += _rTemp.vStringVal[v] + ",";
                 sReturn.back() = '}';
@@ -1843,7 +1843,7 @@ bool NumeReKernel::executePlugins(string& sLine)
                         _memoryManager.deleteTable(_rTemp.sReturnedTable);
                 }
             }
-            else if (_rTemp.isNumeric() && sLine.find("<<RETURNVAL>>") != string::npos)
+            else if (_rTemp.isNumeric() && sLine.find("<<RETURNVAL>>") != std::string::npos)
             {
                 sLine.replace(sLine.find("<<RETURNVAL>>"), 13, "_~PLUGIN[" + _procedure.getPluginProcName() + "~ROOT]");
                 _parser.SetVectorVar("_~PLUGIN[" + _procedure.getPluginProcName() + "~ROOT]", _rTemp.vNumVal);
@@ -1865,14 +1865,14 @@ bool NumeReKernel::executePlugins(string& sLine)
 /// \brief This private member function will
 /// handle used flow controls.
 ///
-/// \param sLine string&
-/// \param sCmdCache const string&
-/// \param sCurrentCommand const string&
+/// \param sLine std::string&
+/// \param sCmdCache const std::string&
+/// \param sCurrentCommand const std::string&
 /// \param nReturnVal KernelStatus&
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool NumeReKernel::handleFlowControls(string& sLine, const string& sCmdCache, const string& sCurrentCommand, KernelStatus& nReturnVal)
+bool NumeReKernel::handleFlowControls(std::string& sLine, const std::string& sCmdCache, const std::string& sCurrentCommand, KernelStatus& nReturnVal)
 {
     if (_procedure.getCurrentBlockDepth() || FlowCtrl::isFlowCtrlStatement(sCurrentCommand) )
     {
@@ -1981,15 +1981,15 @@ bool NumeReKernel::handleFlowControls(string& sLine, const string& sCmdCache, co
 /// \brief This private member function redirects
 /// the processing of strings to the string parser.
 ///
-/// \param sLine string&
-/// \param sCache string&
-/// \param sCmdCache const string&
+/// \param sLine std::string&
+/// \param sCache std::string&
+/// \param sCmdCache const std::string&
 /// \param bWriteToCache bool&
 /// \param nReturnVal KernelStatus&
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool NumeReKernel::evaluateStrings(string& sLine, string& sCache, const string& sCmdCache, bool& bWriteToCache, KernelStatus& nReturnVal)
+bool NumeReKernel::evaluateStrings(std::string& sLine, std::string& sCache, const std::string& sCmdCache, bool& bWriteToCache, KernelStatus& nReturnVal)
 {
     if (_stringParser.isStringExpression(sLine) || _stringParser.isStringExpression(sCache))
     {
@@ -2030,11 +2030,11 @@ bool NumeReKernel::evaluateStrings(string& sLine, string& sCache, const string& 
 ///
 /// \param nNum int
 /// \param v value_type*
-/// \param sCmdCache const string&
+/// \param sCmdCache const std::string&
 /// \return void
 ///
 /////////////////////////////////////////////////
-void NumeReKernel::createCalculationAnswer(int nNum, value_type* v, const string& sCmdCache)
+void NumeReKernel::createCalculationAnswer(int nNum, value_type* v, const std::string& sCmdCache)
 {
     vAns = v[0];
     getAns().setDoubleArray(nNum, v);
@@ -2049,11 +2049,11 @@ void NumeReKernel::createCalculationAnswer(int nNum, value_type* v, const string
 /// reset the kernel variables after an error had
 /// been handled.
 ///
-/// \param sCmdCache string&
+/// \param sCmdCache std::string&
 /// \return void
 ///
 /////////////////////////////////////////////////
-void NumeReKernel::resetAfterError(string& sCmdCache)
+void NumeReKernel::resetAfterError(std::string& sCmdCache)
 {
     _pData.setFileName("");
     if (sCmdCache.length())
@@ -2080,10 +2080,10 @@ void NumeReKernel::resetAfterError(string& sCmdCache)
 /// \brief Returns a random greeting string,
 /// which may be printed to the terminal later.
 ///
-/// \return string
+/// \return std::string
 ///
 /////////////////////////////////////////////////
-string NumeReKernel::getGreeting()
+std::string NumeReKernel::getGreeting()
 {
     NumeRe::DataBase greetingsDB("<>/docs/greetings.ndb");
 
@@ -2227,12 +2227,12 @@ void NumeReKernel::CloseSession()
 /// wrapper to read the kernel answer and reset
 /// it automatically.
 ///
-/// \return string
+/// \return std::string
 ///
 /////////////////////////////////////////////////
-string NumeReKernel::ReadAnswer()
+std::string NumeReKernel::ReadAnswer()
 {
-    string sAns = sAnswer;
+    std::string sAns = sAnswer;
     sAnswer.clear();
     return sAns;
 }
@@ -2257,18 +2257,18 @@ void NumeReKernel::displaySplash()
 /// which will be used by the global language
 /// object in the editor and the symbols browser.
 ///
-/// \return map<string, string>
+/// \return std::map<std::string, std::string>
 ///
 /////////////////////////////////////////////////
-map<string, string> NumeReKernel::getPluginLanguageStrings()
+std::map<std::string, std::string> NumeReKernel::getPluginLanguageStrings()
 {
-    map<string, string> mPluginLangStrings;
+    std::map<std::string, std::string> mPluginLangStrings;
     for (size_t i = 0; i < _procedure.getPackageCount(); i++)
     {
         if (!_procedure.getPluginCommand(i).length())
             continue;
 
-        string sDesc = _procedure.getPluginCommandSignature(i) + "     - " + _procedure.getPackageDescription(i);
+        std::string sDesc = _procedure.getPluginCommandSignature(i) + "     - " + _procedure.getPackageDescription(i);
         replaceAll(sDesc, "\\\"", "\"");
         mPluginLangStrings["PARSERFUNCS_LISTCMD_CMD_" + toUpperCase(_procedure.getPluginCommand(i)) + "_[PLUGINS]"] = sDesc;
     }
@@ -2282,16 +2282,16 @@ map<string, string> NumeReKernel::getPluginLanguageStrings()
 /// which will be used by the global language
 /// object in the editor and the symbols browser.
 ///
-/// \return map<string, string>
+/// \return std::map<std::string, std::string>
 ///
 /////////////////////////////////////////////////
-map<string, string> NumeReKernel::getFunctionLanguageStrings()
+std::map<std::string, std::string> NumeReKernel::getFunctionLanguageStrings()
 {
-    map<string, string> mFunctionLangStrings;
+    std::map<std::string, std::string> mFunctionLangStrings;
     for (size_t i = 0; i < _functions.getDefinedFunctions(); i++)
     {
-        string sDesc = _functions.getFunctionSignature(i) + "     ARG   - " + _functions.getComment(i);
-        while (sDesc.find("\\\"") != string::npos)
+        std::string sDesc = _functions.getFunctionSignature(i) + "     ARG   - " + _functions.getComment(i);
+        while (sDesc.find("\\\"") != std::string::npos)
             sDesc.erase(sDesc.find("\\\""), 1);
 
         mFunctionLangStrings["PARSERFUNCS_LISTFUNC_FUNC_" + toUpperCase(_functions.getFunctionSignature(i).substr(0, _functions.getFunctionSignature(i).rfind('('))) + "_[DEFINE]"] = sDesc;
@@ -2305,12 +2305,12 @@ map<string, string> NumeReKernel::getFunctionLanguageStrings()
 /// syntax highlighter to hightlight the plugin
 /// commands.
 ///
-/// \return vector<string>
+/// \return std::vector<std::string>
 ///
 /////////////////////////////////////////////////
-vector<string> NumeReKernel::getPluginCommands()
+std::vector<std::string> NumeReKernel::getPluginCommands()
 {
-    vector<string> vPluginCommands;
+    std::vector<std::string> vPluginCommands;
 
     for (size_t i = 0; i < _procedure.getPackageCount(); i++)
     {
@@ -2343,11 +2343,11 @@ int NumeReKernel::ReadOpenFileFlag()
 /// documentation for the passed command string
 /// as HTML string prepared for the help browser.
 ///
-/// \param sCommand const string&
-/// \return string
+/// \param sCommand const std::string&
+/// \return std::string
 ///
 /////////////////////////////////////////////////
-string NumeReKernel::getDocumentation(const string& sCommand)
+std::string NumeReKernel::getDocumentation(const std::string& sCommand)
 {
     return doc_HelpAsHTML(sCommand, false, _option);
 }
@@ -2359,10 +2359,10 @@ string NumeReKernel::getDocumentation(const string& sCommand)
 /// can be used to fill the tree in the
 /// documentation browser.
 ///
-/// \return vector<string>
+/// \return std::vector<std::string>
 ///
 /////////////////////////////////////////////////
-vector<string> NumeReKernel::getDocIndex()
+std::vector<std::string> NumeReKernel::getDocIndex()
 {
     return _option.getDocIndex();
 }
@@ -2405,10 +2405,10 @@ NumeReVariables NumeReKernel::getVariableList()
     NumeReVariables vars;
 
     mu::varmap_type varmap = _parser.GetVar();
-    const map<string, string>& stringmap = _stringParser.getStringVars();
-    map<string, std::pair<size_t, size_t>> tablemap = _memoryManager.getTableMap();
-    const map<string, NumeRe::Cluster>& clustermap = _memoryManager.getClusterMap();
-    string sCurrentLine;
+    const std::map<std::string, std::string>& stringmap = _stringParser.getStringVars();
+    std::map<std::string, std::pair<size_t, size_t>> tablemap = _memoryManager.getTableMap();
+    const std::map<std::string, NumeRe::Cluster>& clustermap = _memoryManager.getClusterMap();
+    std::string sCurrentLine;
 
     if (_memoryManager.getStringElements())
         tablemap["string"] = std::pair<size_t,size_t>(-1, -1);
@@ -2502,7 +2502,7 @@ bool NumeReKernel::SettingsModified()
 /// containing all currently declared paths in a
 /// distinct order.
 ///
-/// \return vector<string>
+/// \return std::vector<std::string>
 ///
 /////////////////////////////////////////////////
 std::vector<std::string> NumeReKernel::getPathSettings() const
@@ -2558,13 +2558,13 @@ std::map<std::string, std::string> NumeReKernel::getMenuMap() const
 /// formatted string to the buffer and informs the
 /// terminal that we have a new string to print.
 ///
-/// \param sLine const string&
-/// \param sCmdCache const string&
+/// \param sLine const std::string&
+/// \param sCmdCache const std::string&
 /// \param bScriptRunning bool
 /// \return void
 ///
 /////////////////////////////////////////////////
-void NumeReKernel::printResult(const string& sLine, const string& sCmdCache, bool bScriptRunning)
+void NumeReKernel::printResult(const std::string& sLine, const std::string& sCmdCache, bool bScriptRunning)
 {
     if (!m_parent)
         return;
@@ -2596,11 +2596,11 @@ void NumeReKernel::printResult(const string& sLine, const string& sCmdCache, boo
 /// breaking functions uses them as aliases for
 /// line breaks.
 ///
-/// \param sLine string
-/// \return string
+/// \param sLine std::string
+/// \return std::string
 ///
 /////////////////////////////////////////////////
-string NumeReKernel::maskProcedureSigns(string sLine)
+std::string NumeReKernel::maskProcedureSigns(std::string sLine)
 {
     for (size_t i = 0; i < sLine.length(); i++)
     {
@@ -2618,18 +2618,18 @@ string NumeReKernel::maskProcedureSigns(string sLine)
 /// buffer and informs the terminal that we have
 /// a new string to print.
 ///
-/// \param __sLine const string&
+/// \param __sLine const std::string&
 /// \param printingEnabled bool
 /// \return void
 ///
 /////////////////////////////////////////////////
-void NumeReKernel::print(const string& __sLine, bool printingEnabled)
+void NumeReKernel::print(const std::string& __sLine, bool printingEnabled)
 {
     if (!m_parent || !printingEnabled)
         return;
     else
     {
-        string sLine = __sLine;
+        std::string sLine = __sLine;
 
         if (bErrorNotification)
         {
@@ -2665,18 +2665,18 @@ void NumeReKernel::print(const string& __sLine, bool printingEnabled)
 /// formatted string to the buffer and informs the
 /// terminal that we have a new string to print.
 ///
-/// \param __sLine const string&
+/// \param __sLine const std::string&
 /// \param printingEnabled bool
 /// \return void
 ///
 /////////////////////////////////////////////////
-void NumeReKernel::printPreFmt(const string& __sLine, bool printingEnabled)
+void NumeReKernel::printPreFmt(const std::string& __sLine, bool printingEnabled)
 {
     if (!m_parent || !printingEnabled)
         return;
     else
     {
-        string sLine = __sLine;
+        std::string sLine = __sLine;
 
         if (bErrorNotification)
         {
@@ -2714,10 +2714,10 @@ void NumeReKernel::printPreFmt(const string& __sLine, bool printingEnabled)
 ///
 /// \param nNum int
 /// \param v value_type*
-/// \return string
+/// \return std::string
 ///
 /////////////////////////////////////////////////
-string NumeReKernel::formatResultOutput(int nNum, value_type* v)
+std::string NumeReKernel::formatResultOutput(int nNum, value_type* v)
 {
     Settings& _option = getInstance()->getSettings();
 
@@ -2727,7 +2727,7 @@ string NumeReKernel::formatResultOutput(int nNum, value_type* v)
         //
         // How many fit into one line?
         int nLineBreak = numberOfNumbersPerLine();
-        string sAns = "ans = {";
+        std::string sAns = "ans = {";
 
         // compose the result
         for (int i = 0; i < nNum; ++i)
@@ -2764,11 +2764,11 @@ string NumeReKernel::formatResultOutput(int nNum, value_type* v)
 /// and numerical results converted to a string
 /// vector.
 ///
-/// \param vStringResults const vector<string>&
-/// \return string
+/// \param vStringResults const std::vector<std::string>&
+/// \return std::string
 ///
 /////////////////////////////////////////////////
-string NumeReKernel::formatResultOutput(const vector<string>& vStringResults)
+std::string NumeReKernel::formatResultOutput(const std::vector<std::string>& vStringResults)
 {
     const Settings& _option = getInstance()->getSettings();
 
@@ -2778,7 +2778,7 @@ string NumeReKernel::formatResultOutput(const vector<string>& vStringResults)
         //
         // How many fit into one line?
         size_t nLineBreak = numberOfNumbersPerLine();
-        string sAns = "ans = {";
+        std::string sAns = "ans = {";
         size_t nNum = vStringResults.size();
 
         // compose the result
@@ -2816,11 +2816,11 @@ string NumeReKernel::formatResultOutput(const vector<string>& vStringResults)
 /// be printed by the terminal in a separate
 /// colour.
 ///
-/// \param sWarningMessage string
+/// \param sWarningMessage std::string
 /// \return void
 ///
 /////////////////////////////////////////////////
-void NumeReKernel::issueWarning(string sWarningMessage)
+void NumeReKernel::issueWarning(std::string sWarningMessage)
 {
     if (!m_parent)
         return;
@@ -2848,11 +2848,11 @@ void NumeReKernel::issueWarning(string sWarningMessage)
 /// \brief This static function may be used to
 /// print a test failure message in the terminal.
 ///
-/// \param sFailMessage string
+/// \param sFailMessage std::string
 /// \return void
 ///
 /////////////////////////////////////////////////
-void NumeReKernel::failMessage(string sFailMessage)
+void NumeReKernel::failMessage(std::string sFailMessage)
 {
     if (!m_parent)
         return;
@@ -2916,11 +2916,11 @@ void NumeReKernel::sendErrorNotification()
 /// \param nStep int
 /// \param nFirstStep int
 /// \param nFinalStep int
-/// \param sType const string&
+/// \param sType const std::string&
 /// \return void
 ///
 /////////////////////////////////////////////////
-void NumeReKernel::progressBar(int nStep, int nFirstStep, int nFinalStep, const string& sType)
+void NumeReKernel::progressBar(int nStep, int nFirstStep, int nFinalStep, const std::string& sType)
 {
     int nStatusVal = 0;
     const int BARLENGTH = 40;
@@ -3047,12 +3047,12 @@ void NumeReKernel::progressBar(int nStep, int nFirstStep, int nFinalStep, const 
 /// files and jumping to lines as requested by the
 /// kernel.
 ///
-/// \param sFile const string&
+/// \param sFile const std::string&
 /// \param nLine unsigned int
 /// \return void
 ///
 /////////////////////////////////////////////////
-void NumeReKernel::gotoLine(const string& sFile, unsigned int nLine)
+void NumeReKernel::gotoLine(const std::string& sFile, unsigned int nLine)
 {
     if (!m_parent)
         return;
@@ -3080,11 +3080,11 @@ void NumeReKernel::gotoLine(const string& sFile, unsigned int nLine)
 /// display of a documentation window as requested
 /// by the kernel.
 ///
-/// \param _sDocumentation const string&
+/// \param _sDocumentation const std::string&
 /// \return void
 ///
 /////////////////////////////////////////////////
-void NumeReKernel::setDocumentation(const string& _sDocumentation)
+void NumeReKernel::setDocumentation(const std::string& _sDocumentation)
 {
     if (!m_parent)
         return;
@@ -3140,12 +3140,12 @@ void NumeReKernel::installationDone()
 /// It also allows to create a table editor window.
 ///
 /// \param _table NumeRe::Table
-/// \param __name string
+/// \param __name std::string
 /// \param openeditable bool
 /// \return void
 ///
 /////////////////////////////////////////////////
-void NumeReKernel::showTable(NumeRe::Table _table, string __name, bool openeditable)
+void NumeReKernel::showTable(NumeRe::Table _table, std::string __name, bool openeditable)
 {
     if (!m_parent)
         return;
@@ -3178,13 +3178,13 @@ void NumeReKernel::showTable(NumeRe::Table _table, string __name, bool openedita
 /// table to the GUI to be displayed in the table
 /// viewer.
 ///
-/// \param _stringtable NumeRe::Container<string>
-/// \param __name string
+/// \param _stringtable NumeRe::Container<std::string>
+/// \param __name std::string
 /// \param openeditable bool
 /// \return void
 ///
 /////////////////////////////////////////////////
-void NumeReKernel::showStringTable(NumeRe::Container<string> _stringtable, string __name, bool openeditable)
+void NumeReKernel::showStringTable(NumeRe::Container<std::string> _stringtable, std::string __name, bool openeditable)
 {
     if (!m_parent)
         return;
@@ -3285,15 +3285,15 @@ NumeRe::Table NumeReKernel::getTable()
 /// \brief This member function creates the table
 /// container for the selected numerical table.
 ///
-/// \param sTableName const string&
+/// \param sTableName const std::string&
 /// \return NumeRe::Table
 ///
 /////////////////////////////////////////////////
-NumeRe::Table NumeReKernel::getTable(const string& sTableName)
+NumeRe::Table NumeReKernel::getTable(const std::string& sTableName)
 {
-    string sSelectedTable = sTableName;
+    std::string sSelectedTable = sTableName;
 
-    if (sSelectedTable.find("()") != string::npos)
+    if (sSelectedTable.find("()") != std::string::npos)
         sSelectedTable.erase(sSelectedTable.find("()"));
 
     if (!_memoryManager.isTable(sSelectedTable) || !_memoryManager.getCols(sSelectedTable))
@@ -3307,16 +3307,16 @@ NumeRe::Table NumeReKernel::getTable(const string& sTableName)
 /// \brief This member function creates the table
 /// container for the string table or the clusters.
 ///
-/// \param sStringTableName const string&
-/// \return NumeRe::Container<string>
+/// \param sStringTableName const std::string&
+/// \return NumeRe::Container<std::string>
 ///
 /////////////////////////////////////////////////
-NumeRe::Container<string> NumeReKernel::getStringTable(const string& sStringTableName)
+NumeRe::Container<std::string> NumeReKernel::getStringTable(const std::string& sStringTableName)
 {
     if (sStringTableName == "string()")
     {
         // Create the container for the string table
-        NumeRe::Container<string> stringTable(_memoryManager.getStringElements(), _memoryManager.getStringCols());
+        NumeRe::Container<std::string> stringTable(_memoryManager.getStringElements(), _memoryManager.getStringCols());
 
         for (size_t j = 0; j < _memoryManager.getStringCols(); j++)
         {
@@ -3332,7 +3332,7 @@ NumeRe::Container<string> NumeReKernel::getStringTable(const string& sStringTabl
     {
         // Create the container for the selected cluster
         NumeRe::Cluster& clust = _memoryManager.getCluster(sStringTableName.substr(0, sStringTableName.find("{}")));
-        NumeRe::Container<string> stringTable(clust.size(), 1);
+        NumeRe::Container<std::string> stringTable(clust.size(), 1);
 
         for (size_t i = 0; i < clust.size(); i++)
         {
@@ -3345,7 +3345,7 @@ NumeRe::Container<string> NumeReKernel::getStringTable(const string& sStringTabl
         return stringTable;
     }
 
-    return NumeRe::Container<string>();
+    return NumeRe::Container<std::string>();
 }
 
 
@@ -3354,12 +3354,12 @@ NumeRe::Container<string> NumeReKernel::getStringTable(const string& sStringTabl
 /// debugging information to the GUI to be
 /// displayed in the debugger window.
 ///
-/// \param sTitle const string&
-/// \param vStacktrace const vector<string>&
+/// \param sTitle const std::string&
+/// \param vStacktrace const std::vector<std::string>&
 /// \return void
 ///
 /////////////////////////////////////////////////
-void NumeReKernel::showDebugEvent(const string& sTitle, const vector<string>& vStacktrace)
+void NumeReKernel::showDebugEvent(const std::string& sTitle, const std::vector<std::string>& vStacktrace)
 {
     if (!m_parent)
         return;
@@ -3425,25 +3425,25 @@ int NumeReKernel::waitForContinue()
 /// script debugger breakpoint and returns the
 /// obtained debugger code.
 ///
-/// \param sCurrentCommand const string&
+/// \param sCurrentCommand const std::string&
 /// \return int
 ///
 /////////////////////////////////////////////////
-int NumeReKernel::evalDebuggerBreakPoint(const string& sCurrentCommand)
+int NumeReKernel::evalDebuggerBreakPoint(const std::string& sCurrentCommand)
 {
     if (!getInstance())
         return DEBUGGER_CONTINUE;
 
     mu::varmap_type varmap;
-    string** sLocalVars = nullptr;
+    std::string** sLocalVars = nullptr;
     mu::value_type* dLocalVars = nullptr;
     size_t nLocalVarMapSize = 0;
     size_t nLocalVarMapSkip = 0;
-    string** sLocalStrings = nullptr;
+    std::string** sLocalStrings = nullptr;
     size_t nLocalStringMapSize = 0;
-    string** sLocalTables = nullptr;
+    std::string** sLocalTables = nullptr;
     size_t nLocalTableMapSize = 0;
-    string** sLocalClusters = nullptr;
+    std::string** sLocalClusters = nullptr;
     size_t nLocalClusterMapSize = 0;
 
     // Obtain references to the debugger and the parser
@@ -3453,14 +3453,14 @@ int NumeReKernel::evalDebuggerBreakPoint(const string& sCurrentCommand)
     // Get the numerical variable map
     varmap = _parser.GetVar();
     nLocalVarMapSize = varmap.size();
-    sLocalVars = new string*[nLocalVarMapSize];
+    sLocalVars = new std::string*[nLocalVarMapSize];
     dLocalVars = new mu::value_type[nLocalVarMapSize];
     size_t i = 0;
 
     // Create the numerical variable set
     for (auto iter = varmap.begin(); iter != varmap.end(); ++iter)
     {
-        sLocalVars[i + nLocalVarMapSkip] = new string[2];
+        sLocalVars[i + nLocalVarMapSkip] = new std::string[2];
 
         if ((iter->first).substr(0, 2) == "_~")
         {
@@ -3475,19 +3475,19 @@ int NumeReKernel::evalDebuggerBreakPoint(const string& sCurrentCommand)
     }
 
     // Get the string variable map
-    map<string, string> sStringMap = getInstance()->getStringParser().getStringVars();
+    std::map<std::string, std::string> sStringMap = getInstance()->getStringParser().getStringVars();
 
     nLocalStringMapSize = sStringMap.size();
 
     // Create the string variable set
     if (nLocalStringMapSize)
     {
-        sLocalStrings = new string*[nLocalStringMapSize];
+        sLocalStrings = new std::string*[nLocalStringMapSize];
         i = 0;
 
         for (auto iter = sStringMap.begin(); iter != sStringMap.end(); ++iter)
         {
-            sLocalStrings[i] = new string[2];
+            sLocalStrings[i] = new std::string[2];
             sLocalStrings[i][0] = iter->first;
             sLocalStrings[i][1] = iter->first;
             i++;
@@ -3495,7 +3495,7 @@ int NumeReKernel::evalDebuggerBreakPoint(const string& sCurrentCommand)
     }
 
     // Get the table variable map
-    map<string, std::pair<size_t,size_t>> tableMap = getInstance()->getMemoryManager().getTableMap();
+    std::map<std::string, std::pair<size_t,size_t>> tableMap = getInstance()->getMemoryManager().getTableMap();
 
     if (getInstance()->getMemoryManager().getStringElements())
         tableMap["string"] = std::pair<size_t, size_t>(-1, -1);
@@ -3505,31 +3505,31 @@ int NumeReKernel::evalDebuggerBreakPoint(const string& sCurrentCommand)
     // Create the table variable set
     if (nLocalTableMapSize)
     {
-        sLocalTables = new string*[nLocalTableMapSize];
+        sLocalTables = new std::string*[nLocalTableMapSize];
         i = 0;
 
         for (auto iter = tableMap.begin(); iter != tableMap.end(); ++iter)
         {
-            sLocalTables[i] = new string[2];
+            sLocalTables[i] = new std::string[2];
             sLocalTables[i][0] = iter->first;
             sLocalTables[i][1] = iter->first;
             i++;
         }
     }
 
-    const map<string, NumeRe::Cluster>& clusterMap = getInstance()->getMemoryManager().getClusterMap();
+    const std::map<std::string, NumeRe::Cluster>& clusterMap = getInstance()->getMemoryManager().getClusterMap();
 
     nLocalClusterMapSize = clusterMap.size();
 
     // Create the cluster variable set
     if (nLocalClusterMapSize)
     {
-        sLocalClusters = new string*[nLocalClusterMapSize];
+        sLocalClusters = new std::string*[nLocalClusterMapSize];
         i = 0;
 
         for (auto iter = clusterMap.begin(); iter != clusterMap.end(); ++iter)
         {
-            sLocalClusters[i] = new string[2];
+            sLocalClusters[i] = new std::string[2];
             sLocalClusters[i][0] = iter->first;
             sLocalClusters[i][1] = iter->first;
             i++;
@@ -3661,11 +3661,11 @@ void NumeReKernel::closeWindows(int type)
 /// \brief This function is an implementation
 /// replacing the std::getline() function.
 ///
-/// \param sLine string&
+/// \param sLine std::string&
 /// \return void
 ///
 /////////////////////////////////////////////////
-void NumeReKernel::getline(string& sLine)
+void NumeReKernel::getline(std::string& sLine)
 {
     if (!m_parent)
         return;
@@ -3768,11 +3768,11 @@ bool NumeReKernel::GetAsyncCancelState()
 void make_hline(int nLength)
 {
     if (nLength == -1)
-        NumeReKernel::printPreFmt("\r" + strfill(string(1, '='), NumeReKernel::nLINE_LENGTH - 1, '=') + "\n");
+        NumeReKernel::printPreFmt("\r" + strfill(std::string(1, '='), NumeReKernel::nLINE_LENGTH - 1, '=') + "\n");
     else if (nLength < -1)
-        NumeReKernel::printPreFmt("\r" + strfill(string(1, '-'), NumeReKernel::nLINE_LENGTH - 1, '-') + "\n");
+        NumeReKernel::printPreFmt("\r" + strfill(std::string(1, '-'), NumeReKernel::nLINE_LENGTH - 1, '-') + "\n");
     else
-        NumeReKernel::printPreFmt("\r" + strfill(string(1, '='), nLength, '=') + "\n");
+        NumeReKernel::printPreFmt("\r" + strfill(std::string(1, '='), nLength, '=') + "\n");
 
     return;
 }

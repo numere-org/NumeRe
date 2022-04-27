@@ -117,13 +117,13 @@
 #include "icons/breakpoint_octagon_crossed.xpm"
 #include "icons/breakpoint_octagon_disable.xpm"
 
-const string sVersion = toString((int)AutoVersion::MAJOR) + "." + toString((int)AutoVersion::MINOR) + "." + toString((int)AutoVersion::BUILD) + " \"" + AutoVersion::STATUS + "\"";
+const std::string sVersion = toString((int)AutoVersion::MAJOR) + "." + toString((int)AutoVersion::MINOR) + "." + toString((int)AutoVersion::BUILD) + " \"" + AutoVersion::STATUS + "\"";
 
 // Forward declaration
-string removeMaskedStrings(const string& sString);
+std::string removeMaskedStrings(const std::string& sString);
 std::string removeQuotationMarks(const std::string&);
 
-string prepareStringsForDialog(const string& sString)
+std::string prepareStringsForDialog(const std::string& sString)
 {
     return removeMaskedStrings(removeQuotationMarks(sString));
 }
@@ -715,10 +715,10 @@ wxString NumeReWindow::GetDocContent(wxString docid)
 /// \brief This member function returns the
 /// documentation index as a vector.
 ///
-/// \return vector<string>
+/// \return std::vector<std::string>
 ///
 /////////////////////////////////////////////////
-vector<string> NumeReWindow::GetDocIndex()
+std::vector<std::string> NumeReWindow::GetDocIndex()
 {
     return m_terminal->getDocIndex();
 }
@@ -742,10 +742,10 @@ void NumeReWindow::forceHistoryPageDown()
 /// \brief This member function returns the
 /// standard path definitions as a vector.
 ///
-/// \return vector<string>
+/// \return std::vector<std::string>
 ///
 /////////////////////////////////////////////////
-vector<string> NumeReWindow::getPathDefs()
+std::vector<std::string> NumeReWindow::getPathDefs()
 {
     return m_terminal->getPathSettings();
 }
@@ -931,15 +931,15 @@ void NumeReWindow::prepareSession()
         // the session recovery
         m_loadingFilesDuringStartup = true;
         NewFile();
-        ifstream if_session;
-        vector<string> vSessionFile;
-        string sLine;
-        string sFileName;
+        std::ifstream if_session;
+        std::vector<std::string> vSessionFile;
+        std::string sLine;
+        std::string sFileName;
         int activefile = 0;
         int nId = 0;
         int nLine = 0;
         int nSetting = 0;
-        string sBookmarks;
+        std::string sBookmarks;
         bool modifiedFile = false;
         if_session.open((getProgramFolder().ToStdString()+"\\numere.session").c_str());
 
@@ -996,7 +996,7 @@ void NumeReWindow::prepareSession()
                 nLine = StrToInt(sLine.substr(0, sLine.find('\t')));
 
                 // Search for settings
-                if (sLine.find('\t') != string::npos)
+                if (sLine.find('\t') != std::string::npos)
                 {
                     // erase until setting
                     sLine.erase(0, sLine.find('\t')+1);
@@ -1006,7 +1006,7 @@ void NumeReWindow::prepareSession()
                     nSetting = 0;
 
                 // Search for bookmarks
-                if (sLine.find('\t') != string::npos && m_options->GetSaveBookmarksInSession())
+                if (sLine.find('\t') != std::string::npos && m_options->GetSaveBookmarksInSession())
                     sBookmarks = sLine.substr(sLine.rfind('\t')+1);
                 else
                     sBookmarks.clear();
@@ -1189,7 +1189,7 @@ void NumeReWindow::OnMenuEvent(wxCommandEvent &event)
         case ID_MENU_INSERT_IN_CONSOLE_FROM_TREE:
         {
             FileNameTreeData* data = static_cast <FileNameTreeData* > (m_functionTree->GetItemData(m_clickedTreeItem));
-            string command;
+            std::string command;
             if (data->isCommand)
                 command = (data->tooltip).substr(0, (data->tooltip).find(' ')).ToStdString() + " ";
             else if (data->isFunction)
@@ -1203,7 +1203,7 @@ void NumeReWindow::OnMenuEvent(wxCommandEvent &event)
         case ID_MENU_HELP_ON_ITEM:
         {
             FileNameTreeData* data = static_cast <FileNameTreeData* > (m_functionTree->GetItemData(m_clickedTreeItem));
-            string command = (data->tooltip).substr(0, (data->tooltip).find(' ')).ToStdString();
+            std::string command = (data->tooltip).substr(0, (data->tooltip).find(' ')).ToStdString();
             //openHTML(m_terminal->getDocumentation(command));
             ShowHelp(command);
             break;
@@ -1746,7 +1746,7 @@ void NumeReWindow::OnMenuEvent(wxCommandEvent &event)
                     return;
             }
 
-            string command = replacePathSeparator((m_book->getCurrentEditor()->GetFileName()).GetFullPath().ToStdString());
+            std::string command = replacePathSeparator((m_book->getCurrentEditor()->GetFileName()).GetFullPath().ToStdString());
             OnExecuteFile(command, id);
             break;
         }
@@ -1804,9 +1804,9 @@ void NumeReWindow::OnFileSystemEvent(wxFileSystemWatcherEvent& event)
     if ((type == wxFSW_EVENT_CREATE
          || type == wxFSW_EVENT_DELETE
          || type == wxFSW_EVENT_RENAME
-         || type == wxFSW_EVENT_MODIFY) && event.GetPath().GetFullPath().find(".revisions") == string::npos)
+         || type == wxFSW_EVENT_MODIFY) && event.GetPath().GetFullPath().find(".revisions") == std::string::npos)
     {
-        m_modifiedFiles.push_back(make_pair(type, event.GetPath().GetFullPath()));
+        m_modifiedFiles.push_back(std::make_pair(type, event.GetPath().GetFullPath()));
         m_dragDropSourceItem = wxTreeItemId();
         m_fileEventTimer->StartOnce(500);
     }
@@ -1819,16 +1819,16 @@ void NumeReWindow::OnFileSystemEvent(wxFileSystemWatcherEvent& event)
 /// them to the syntax autocompletion of the
 /// terminal.
 ///
-/// \param sProcedurePath const string&
+/// \param sProcedurePath const std::string&
 /// \return void
 ///
 /////////////////////////////////////////////////
-void NumeReWindow::CreateProcedureTree(const string& sProcedurePath)
+void NumeReWindow::CreateProcedureTree(const std::string& sProcedurePath)
 {
-    vector<string> vFolderTree(1, sProcedurePath);
-    vector<string> vProcedureTree;
-    vector<string> vCurrentTree;
-    string sPath = sProcedurePath;
+    std::vector<std::string> vFolderTree(1, sProcedurePath);
+    std::vector<std::string> vProcedureTree;
+    std::vector<std::string> vCurrentTree;
+    std::string sPath = sProcedurePath;
     Settings _option = m_terminal->getKernelSettings();
 
     // Find every folder first
@@ -1963,19 +1963,19 @@ void NumeReWindow::openHTML(wxString HTMLcontent)
 /// \brief This member function displays the
 /// contents of the "string()" table or a cluster.
 ///
-/// \param _stringTable NumeRe::Container<string>
-/// \param sTableName const string&
+/// \param _stringTable NumeRe::Container<std::string>
+/// \param sTableName const std::string&
 /// \return void
 ///
 /////////////////////////////////////////////////
-void NumeReWindow::openTable(NumeRe::Container<string> _stringTable, const string& sTableName)
+void NumeReWindow::openTable(NumeRe::Container<std::string> _stringTable, const std::string& sTableName)
 {
     ViewerFrame* frame = new ViewerFrame(this, "NumeRe: " + sTableName);
     registerWindow(frame, WT_TABLEVIEWER);
     frame->SetSize(800,600);
     TableViewer* grid = new TableViewer(frame, wxID_ANY, frame->CreateStatusBar(3), nullptr, wxDefaultPosition, wxDefaultSize, wxWANTS_CHARS | wxBORDER_STATIC);
     grid->SetData(_stringTable);
-    frame->SetSize(min(800u, grid->GetWidth()), max(min(600u, grid->GetHeight()+50), 300u));
+    frame->SetSize(std::min(800u, grid->GetWidth()), std::max(std::min(600u, grid->GetHeight()+50), 300u));
     frame->SetIcon(getStandardIcon());
     frame->Show();
     frame->SetFocus();
@@ -1987,18 +1987,18 @@ void NumeReWindow::openTable(NumeRe::Container<string> _stringTable, const strin
 /// contents of a usual table.
 ///
 /// \param _table NumeRe::Table
-/// \param sTableName const string&
+/// \param sTableName const std::string&
 /// \return void
 ///
 /////////////////////////////////////////////////
-void NumeReWindow::openTable(NumeRe::Table _table, const string& sTableName)
+void NumeReWindow::openTable(NumeRe::Table _table, const std::string& sTableName)
 {
     ViewerFrame* frame = new ViewerFrame(this, "NumeRe: " + sTableName);
     registerWindow(frame, WT_TABLEVIEWER);
     frame->SetSize(800,600);
     TablePanel* panel = new TablePanel(frame, wxID_ANY, frame->CreateStatusBar(3));
     panel->grid->SetData(_table);
-    frame->SetSize(min(800u, panel->grid->GetWidth()+200), max(min(600u, panel->grid->GetHeight()+50), 300u));
+    frame->SetSize(std::min(800u, panel->grid->GetWidth()+200), std::max(std::min(600u, panel->grid->GetHeight()+50), 300u));
     frame->SetIcon(getStandardIcon());
     frame->Show();
     frame->SetFocus();
@@ -2010,19 +2010,19 @@ void NumeReWindow::openTable(NumeRe::Table _table, const string& sTableName)
 /// contents of the "string()" table or a cluster
 /// and enables editing its contents.
 ///
-/// \param _stringTable NumeRe::Container<string>
-/// \param sTableName const string&
+/// \param _stringTable NumeRe::Container<std::string>
+/// \param sTableName const std::string&
 /// \return void
 ///
 /////////////////////////////////////////////////
-void NumeReWindow::editTable(NumeRe::Container<string> _stringTable, const string& sTableName)
+void NumeReWindow::editTable(NumeRe::Container<std::string> _stringTable, const std::string& sTableName)
 {
     ViewerFrame* frame = new ViewerFrame(this, _guilang.get("GUI_TABLEEDITOR") + " " + sTableName);
     frame->SetSize(800,600);
     TableEditPanel* panel = new TableEditPanel(frame, wxID_ANY, frame->CreateStatusBar(3));
     panel->SetTerminal(m_terminal);
     panel->grid->SetData(_stringTable);
-    frame->SetSize(min(800u, panel->grid->GetWidth()), max(min(600u, panel->grid->GetHeight()+50), 300u));
+    frame->SetSize(std::min(800u, panel->grid->GetWidth()), std::max(std::min(600u, panel->grid->GetHeight()+50), 300u));
     frame->SetIcon(getStandardIcon());
     frame->Show();
     frame->SetFocus();
@@ -2035,18 +2035,18 @@ void NumeReWindow::editTable(NumeRe::Container<string> _stringTable, const strin
 /// its contents.
 ///
 /// \param _table NumeRe::Table
-/// \param sTableName const string&
+/// \param sTableName const std::string&
 /// \return void
 ///
 /////////////////////////////////////////////////
-void NumeReWindow::editTable(NumeRe::Table _table, const string& sTableName)
+void NumeReWindow::editTable(NumeRe::Table _table, const std::string& sTableName)
 {
     ViewerFrame* frame = new ViewerFrame(this, _guilang.get("GUI_TABLEEDITOR") + " " + sTableName);
     frame->SetSize(800,600);
     TableEditPanel* panel = new TableEditPanel(frame, wxID_ANY, frame->CreateStatusBar(3));
     panel->SetTerminal(m_terminal);
     panel->grid->SetData(_table);
-    frame->SetSize(min(800u, panel->grid->GetWidth()+200), max(min(600u, panel->grid->GetHeight()+50), 300u));
+    frame->SetSize(std::min(800u, panel->grid->GetWidth()+200), std::max(std::min(600u, panel->grid->GetHeight()+50), 300u));
     frame->SetIcon(getStandardIcon());
     frame->Show();
     frame->SetFocus();
@@ -2065,7 +2065,7 @@ void NumeReWindow::editTable(NumeRe::Table _table, const string& sTableName)
 /////////////////////////////////////////////////
 void NumeReWindow::showTable(const wxString& tableName, const wxString& tableDisplayName)
 {
-    if (tableDisplayName == "string()" || tableDisplayName.find("{}") != string::npos)
+    if (tableDisplayName == "string()" || tableDisplayName.find("{}") != std::string::npos)
         openTable(m_terminal->getStringTable(tableName.ToStdString()), tableDisplayName.ToStdString());
     else
         openTable(m_terminal->getTable(tableName.ToStdString()), tableDisplayName.ToStdString());
@@ -2152,7 +2152,7 @@ void NumeReWindow::showGraph(NumeRe::Window& window)
 /////////////////////////////////////////////////
 void NumeReWindow::showFileDialog(NumeRe::Window& window)
 {
-    string sExpression = window.getWindowSettings().sExpression;
+    std::string sExpression = window.getWindowSettings().sExpression;
     std::string sDir = prepareStringsForDialog(getNextArgument(sExpression, true));
     std::string sDefFile = prepareStringsForDialog(getNextArgument(sExpression, true));
     std::string sWildCard = prepareStringsForDialog(getNextArgument(sExpression, true));
@@ -2177,7 +2177,7 @@ void NumeReWindow::showFileDialog(NumeRe::Window& window)
 /////////////////////////////////////////////////
 void NumeReWindow::showDirDialog(NumeRe::Window& window)
 {
-    string sExpression = window.getWindowSettings().sExpression;
+    std::string sExpression = window.getWindowSettings().sExpression;
     wxDirDialog dialog(this, window.getWindowSettings().sTitle, prepareStringsForDialog(getNextArgument(sExpression, true)));
     dialog.SetIcon(getStandardIcon());
     int ret = dialog.ShowModal();
@@ -2199,7 +2199,7 @@ void NumeReWindow::showDirDialog(NumeRe::Window& window)
 /////////////////////////////////////////////////
 void NumeReWindow::showTextEntry(NumeRe::Window& window)
 {
-    string sExpression = window.getWindowSettings().sExpression;
+    std::string sExpression = window.getWindowSettings().sExpression;
     wxTextEntryDialog dialog(this, prepareStringsForDialog(window.getWindowSettings().sMessage), window.getWindowSettings().sTitle, prepareStringsForDialog(getNextArgument(sExpression, true)));
     dialog.SetIcon(getStandardIcon());
     int ret = dialog.ShowModal();
@@ -2270,7 +2270,7 @@ void NumeReWindow::showMessageBox(NumeRe::Window& window)
 /////////////////////////////////////////////////
 void NumeReWindow::showListDialog(NumeRe::Window& window)
 {
-    string sExpression = window.getWindowSettings().sExpression;
+    std::string sExpression = window.getWindowSettings().sExpression;
     wxArrayString choices;
 
     while (sExpression.length())
@@ -2301,7 +2301,7 @@ void NumeReWindow::showListDialog(NumeRe::Window& window)
 /////////////////////////////////////////////////
 void NumeReWindow::showSelectionDialog(NumeRe::Window& window)
 {
-    string sExpression = window.getWindowSettings().sExpression;
+    std::string sExpression = window.getWindowSettings().sExpression;
     wxArrayString choices;
 
     while (sExpression.length())
@@ -2355,15 +2355,15 @@ void NumeReWindow::pass_command(const wxString& command, bool isEvent)
 /// this object does not yet exist, it will be
 /// created on-the-fly.
 ///
-/// \param vDebugInfo const vector<string>&
+/// \param vDebugInfo const std::vector<std::string>&
 /// \return void
 ///
 /////////////////////////////////////////////////
-void NumeReWindow::evaluateDebugInfo(const vector<string>& vDebugInfo)
+void NumeReWindow::evaluateDebugInfo(const std::vector<std::string>& vDebugInfo)
 {
     // initialize the debugger, if necessary and pass the new contents
-    string sTitle = vDebugInfo[0];
-    vector<string> vStack;
+    std::string sTitle = vDebugInfo[0];
+    std::vector<std::string> vStack;
 
     vStack.insert(vStack.begin(), vDebugInfo.begin()+1, vDebugInfo.end());
 
@@ -2551,7 +2551,7 @@ void NumeReWindow::renameFile()
 
     if (manager.hasRevisions(source_filename.GetFullPath()))
     {
-        unique_ptr<FileRevisions> revisions(manager.getRevisions(source_filename.GetFullPath()));
+        std::unique_ptr<FileRevisions> revisions(manager.getRevisions(source_filename.GetFullPath()));
 
         if (revisions.get())
             revisions->renameFile(source_filename.GetFullName(), target_filename.GetFullName(), manager.getRevisionPath(target_filename.GetFullPath()));
@@ -2637,7 +2637,7 @@ void NumeReWindow::OnTagCurrentRevision()
     FileNameTreeData* data = static_cast<FileNameTreeData*>(m_fileTree->GetItemData(m_clickedTreeItem));
     wxString filename = data->filename;
     VersionControlSystemManager manager(this);
-    unique_ptr<FileRevisions> revisions(manager.getRevisions(filename));
+    std::unique_ptr<FileRevisions> revisions(manager.getRevisions(filename));
 
     // Only do something, if the FileRevisions object exists
     if (revisions.get())
@@ -2728,10 +2728,10 @@ void NumeReWindow::EvaluateCommandLine(wxArrayString& wxArgV)
 
     for (size_t i = 1; i < wxArgV.size(); i++)
     {
-        if (wxArgV[i].find('.') == string::npos)
+        if (wxArgV[i].find('.') == std::string::npos)
             continue;
 
-        if (wxArgV[i].find(".exe") != string::npos)
+        if (wxArgV[i].find(".exe") != std::string::npos)
             continue;
 
         ext = toLowerCase(wxArgV[i].substr(wxArgV[i].rfind('.')).ToStdString());
@@ -2844,7 +2844,7 @@ void NumeReWindow::NewFile(FileFilterType _filetype, const wxString& defaultfile
     {
         wxString filename = defaultfilename;
 
-        vector<string> vPaths = m_terminal->getPathSettings();
+        std::vector<std::string> vPaths = m_terminal->getPathSettings();
 
         m_fileNum += 1;
 
@@ -2899,19 +2899,19 @@ void NumeReWindow::NewFile(FileFilterType _filetype, const wxString& defaultfile
             filename = defaultfilename;
 
         // Remove the dollar sign, if there is one
-        if (filename.find('$') != string::npos)
+        if (filename.find('$') != std::string::npos)
             filename.erase(filename.find('$'),1);
 
         // Remove the path parts from the file name
         // These are either the tilde, the slash or the
         // backslash
-        if (filename.find('~') != string::npos)
+        if (filename.find('~') != std::string::npos)
         {
             folder = filename.substr(0, filename.rfind('~')+1);
             filename.erase(0, filename.rfind('~')+1);
         }
 
-        if (filename.find('/') != string::npos)
+        if (filename.find('/') != std::string::npos)
         {
             if (folder.length())
                 folder += "/" + filename.substr(0, filename.rfind('/')+1);
@@ -2921,7 +2921,7 @@ void NumeReWindow::NewFile(FileFilterType _filetype, const wxString& defaultfile
             filename.erase(0, filename.rfind('/')+1);
         }
 
-        if (filename.find('\\') != string::npos)
+        if (filename.find('\\') != std::string::npos)
         {
             if (folder.length())
                 folder += "/" + filename.substr(0, filename.rfind('\\')+1);
@@ -2934,9 +2934,9 @@ void NumeReWindow::NewFile(FileFilterType _filetype, const wxString& defaultfile
         // Replace all path separators
         if (folder.length())
         {
-            while (folder.find('~') != string::npos)
+            while (folder.find('~') != std::string::npos)
                 folder[folder.find('~')] = '\\';
-            while (folder.find('/') != string::npos)
+            while (folder.find('/') != std::string::npos)
                 folder[folder.find('/')] = '\\';
         }
 
@@ -2999,7 +2999,7 @@ void NumeReWindow::NewFile(FileFilterType _filetype, const wxString& defaultfile
         else if (_filetype == FILE_NPRC)
             filename += ".nprc";
 
-        vector<string> vPaths = m_terminal->getPathSettings();
+        std::vector<std::string> vPaths = m_terminal->getPathSettings();
 
         m_fileNum += 1;
 
@@ -3294,7 +3294,7 @@ void NumeReWindow::EvaluateTab()
             return;
     }
 
-    string command = replacePathSeparator((edit->GetFileName()).GetFullPath().ToStdString());
+    std::string command = replacePathSeparator((edit->GetFileName()).GetFullPath().ToStdString());
     OnExecuteFile(command, 0);
 }
 
@@ -3379,9 +3379,9 @@ void NumeReWindow::CloseFile(int pageNr, bool askforsave)
 bool NumeReWindow::CloseAllFiles()
 {
     int cnt = m_book->GetPageCount();
-    ofstream of_session;
+    std::ofstream of_session;
     NumeReEditor* edit;
-    string sSession = "# numere.session: Session save file. Do not edit!\n# ACTIVEFILE\tFILEID\nACTIVEFILEID\t" + toString(m_book->GetSelection()) + "\n# FILENAME\t\tFILEID\t\tCHARPOSITION\t\tSETTING\t\tBOOKMARKS\n";
+    std::string sSession = "# numere.session: Session save file. Do not edit!\n# ACTIVEFILE\tFILEID\nACTIVEFILEID\t" + toString(m_book->GetSelection()) + "\n# FILENAME\t\tFILEID\t\tCHARPOSITION\t\tSETTING\t\tBOOKMARKS\n";
 
     for (int i = 0; i < cnt; i++)
     {
@@ -3424,7 +3424,7 @@ bool NumeReWindow::CloseAllFiles()
     if (m_appClosing && !m_sessionSaved && m_options->GetSaveSession())
     {
         g_logger.debug("Writing session file.");
-        of_session.open((getProgramFolder().ToStdString()+"/numere.session").c_str(), ios_base::out | ios_base::trunc);
+        of_session.open((getProgramFolder().ToStdString()+"/numere.session").c_str(), std::ios_base::out | std::ios_base::trunc);
 
         if (of_session.is_open())
         {
@@ -3794,9 +3794,9 @@ void NumeReWindow::OpenSourceFile(wxArrayString fnames, unsigned int nLine, int 
             g_logger.info("Loading file '" + fnames[n].ToStdString() + "'.");
             FileFilterType _fileType;
 
-            if (fnames[n].rfind(".nscr") != string::npos)
+            if (fnames[n].rfind(".nscr") != std::string::npos)
                 _fileType = FILE_NSCR;
-            else if (fnames[n].rfind(".nprc") != string::npos)
+            else if (fnames[n].rfind(".nprc") != std::string::npos)
                 _fileType = FILE_NPRC;
             else if (fnames[n].rfind(".xml") != std::string::npos || fnames[n].rfind(".nhlp") != std::string::npos)
                 _fileType = FILE_XML;
@@ -3930,7 +3930,7 @@ wxString NumeReWindow::getTreeFolderPath(const wxTreeItemId& itemId)
 
     if (!data)
     {
-        vector<string> vPaths = m_terminal->getPathSettings();
+        std::vector<std::string> vPaths = m_terminal->getPathSettings();
 
         for (size_t i = 0; i <= PLOTPATH-2; i++)
         {
@@ -4020,7 +4020,7 @@ bool NumeReWindow::SaveCurrentFile(bool saveas)
         // the last item in a filter's list will be the default extension if none is given
         // ie, right now, .cpp is the default extension for C++ files
         wxString title = _guilang.get("GUI_DLG_SAVEAS");
-        vector<string> vPaths = m_terminal->getPathSettings();
+        std::vector<std::string> vPaths = m_terminal->getPathSettings();
         int i = 0;
 
         if (edit->getFileType() == FILE_NSCR)
@@ -4074,7 +4074,7 @@ bool NumeReWindow::SaveCurrentFile(bool saveas)
         m_watcher->Add(wxFileName(filename));
 
         // Append the correct file extension
-        if (filename.find('.') == string::npos || filename.find('.', filename.rfind('\\')) == string::npos)
+        if (filename.find('.') == std::string::npos || filename.find('.', filename.rfind('\\')) == std::string::npos)
         {
             if (edit->getFileType() == FILE_NSCR)
                 filename += ".nscr";
@@ -4082,7 +4082,7 @@ bool NumeReWindow::SaveCurrentFile(bool saveas)
                 filename += ".nprc";
             else if (edit->getFileType() == FILE_DATAFILES)
             {
-                if (edit->GetFilenameString().find('.') != string::npos)
+                if (edit->GetFilenameString().find('.') != std::string::npos)
                     filename += edit->GetFilenameString().substr(edit->GetFilenameString().rfind('.'));
                 else
                     filename += ".dat";
@@ -4091,7 +4091,7 @@ bool NumeReWindow::SaveCurrentFile(bool saveas)
                 filename += ".tex";
             else if (edit->getFileType() == FILE_NONSOURCE)
             {
-                if (edit->GetFilenameString().find('.') != string::npos)
+                if (edit->GetFilenameString().find('.') != std::string::npos)
                     filename += edit->GetFilenameString().substr(edit->GetFilenameString().rfind('.'));
                 else
                     filename += ".txt";
@@ -4126,7 +4126,7 @@ bool NumeReWindow::SaveTab(int tab)
     wxString filename = edit->GetFileNameAndPath();
 
     // Make the folder, if it doesn't exist
-    string sPath = filename.ToStdString();
+    std::string sPath = filename.ToStdString();
     sPath = replacePathSeparator(sPath);
     sPath.erase(sPath.rfind('/'));
     FileSystem _fSys;
@@ -4387,14 +4387,14 @@ void NumeReWindow::OnFileEventTimer(wxTimerEvent& event)
     int selection = m_book->GetSelection();
 
     // Copy data and clear the cache
-    vector<pair<int,wxString> > modifiedFiles = m_modifiedFiles;
+    std::vector<std::pair<int,wxString> > modifiedFiles = m_modifiedFiles;
     m_modifiedFiles.clear();
 
     // Create the relevant objects
     const FileFilterType fileType[] = {FILE_DATAFILES, FILE_DATAFILES, FILE_NSCR, FILE_NPRC, FILE_IMAGEFILES};
     VersionControlSystemManager manager(this);
     bool refreshProcedureLibrary = false;
-    vector<string> vPaths = m_terminal->getPathSettings();
+    std::vector<std::string> vPaths = m_terminal->getPathSettings();
     std::array<bool, PATH_LAST-LOADPATH> pathsToRefresh;
 
     // Fill the refresh indicator with false values
@@ -4414,11 +4414,11 @@ void NumeReWindow::OnFileEventTimer(wxTimerEvent& event)
             // These event types require refreshing of
             // the created file trees and the procedure
             // library, if necessary
-            string sEventpath = replacePathSeparator(modifiedFiles[i].second.ToStdString());
+            std::string sEventpath = replacePathSeparator(modifiedFiles[i].second.ToStdString());
 
             for (size_t j = LOADPATH; j < vPaths.size(); j++)
             {
-                if (sEventpath.find(replacePathSeparator(vPaths[j])) != string::npos)
+                if (sEventpath.find(replacePathSeparator(vPaths[j])) != std::string::npos)
                 {
                     pathsToRefresh[j-LOADPATH] = true;
                     break;
@@ -4487,7 +4487,7 @@ void NumeReWindow::OnFileEventTimer(wxTimerEvent& event)
             // changes, even if the user disagrees with the reloading
             if (manager.hasRevisions(modifiedFiles[i].second) && m_options->GetKeepBackupFile())
             {
-                unique_ptr<FileRevisions> revisions(manager.getRevisions(modifiedFiles[i].second));
+                std::unique_ptr<FileRevisions> revisions(manager.getRevisions(modifiedFiles[i].second));
                 g_logger.info("Adding external revision to '" + modifiedFiles[i].second.ToStdString() + "'.");
 
                 if (revisions.get())
@@ -4653,7 +4653,7 @@ void NumeReWindow::UpdateStatusBar()
     wxString tabText = m_book->GetPageText(m_currentPage);
     wxString filename;
     wxString filetype;
-    string sExt = "";
+    std::string sExt = "";
 
     NumeReEditor* currEd = m_book->getCurrentEditor();
     NumeReEditor* focusEd = m_book->getFocusedEditor();
@@ -4663,7 +4663,7 @@ void NumeReWindow::UpdateStatusBar()
     if (currEd->defaultPage)
         filename = _guilang.get("GUI_STATUSBAR_WELCOMEPAGE");
 
-    if (filename.find('.') != string::npos)
+    if (filename.find('.') != std::string::npos)
         sExt = filename.substr(filename.rfind('.')+1).ToStdString();
 
 
@@ -4893,7 +4893,7 @@ void NumeReWindow::EvaluateOptions()
             m_fileTree->Toggle(m_fileTree->GetRootItem());
 
         // Fill the contents to the tree
-        vector<string> vPaths = m_terminal->getPathSettings();
+        std::vector<std::string> vPaths = m_terminal->getPathSettings();
         LoadFilesToTree(vPaths[LOADPATH], FILE_DATAFILES, m_projectFileFolders[0]);
         LoadFilesToTree(vPaths[SAVEPATH], FILE_DATAFILES, m_projectFileFolders[1]);
         LoadFilesToTree(vPaths[SCRIPTPATH], FILE_NSCR, m_projectFileFolders[2]);
@@ -5594,9 +5594,9 @@ void NumeReWindow::prepareFunctionTree()
     if (!m_functionTree->IsEmpty())
         m_functionTree->DeleteAllItems();
 
-    vector<string> vDirList;
-    vector<string> vKeyList;
-    string sKeyList = _guilang.get("GUI_TREE_CMD_KEYLIST");
+    std::vector<std::string> vDirList;
+    std::vector<std::string> vKeyList;
+    std::string sKeyList = _guilang.get("GUI_TREE_CMD_KEYLIST");
 
     while (sKeyList.length())
     {
@@ -5707,14 +5707,14 @@ void NumeReWindow::prepareFunctionTree()
 /// \brief This member function prepares the
 /// tooltip shown by the symbols tree.
 ///
-/// \param sTooltiptext const string&
-/// \return string
+/// \param sTooltiptext const std::string&
+/// \return std::string
 ///
 /////////////////////////////////////////////////
-string NumeReWindow::prepareTooltip(const string& sTooltiptext)
+std::string NumeReWindow::prepareTooltip(const std::string& sTooltiptext)
 {
     size_t nClosingParens = sTooltiptext.find(')');
-    string sTooltip = sTooltiptext;
+    std::string sTooltip = sTooltiptext;
 
     if (sTooltiptext.find(' ') < nClosingParens && sTooltiptext.find(' ') < sTooltiptext.find('('))
     {
@@ -5792,7 +5792,7 @@ void NumeReWindow::OnTreeItemRightClick(wxTreeEvent& event)
 
         fname_ext = fname_ext.substr(fname_ext.rfind('.')) + ";";
 
-        if (loadableExt.find(fname_ext) != string::npos)
+        if (loadableExt.find(fname_ext) != std::string::npos)
         {
             popupMenu.Append(ID_MENU_OPEN_FILE_FROM_TREE, _guilang.get("GUI_TREE_PUP_LOAD"));
             popupMenu.Append(ID_MENU_OPEN_FILE_FROM_TREE_TO_TABLE, _guilang.get("GUI_TREE_PUP_LOADTOTABLE"));
@@ -5802,10 +5802,10 @@ void NumeReWindow::OnTreeItemRightClick(wxTreeEvent& event)
         else if (fname_ext == ".nprc;")
             popupMenu.Append(ID_MENU_OPEN_FILE_FROM_TREE, _guilang.get("GUI_TREE_PUP_RUN"));
 
-        if (editableExt.find(fname_ext) != string::npos)
+        if (editableExt.find(fname_ext) != std::string::npos)
             popupMenu.Append(ID_MENU_EDIT_FILE_FROM_TREE, _guilang.get("GUI_TREE_PUP_EDIT"));
 
-        if (showableImgExt.find(fname_ext) != string::npos)
+        if (showableImgExt.find(fname_ext) != std::string::npos)
             popupMenu.Append(ID_MENU_OPEN_IMAGE_FROM_TREE, _guilang.get("GUI_TREE_PUP_OPENIMAGE"));
 
         if (manager.hasRevisions(data->filename))
@@ -5891,7 +5891,7 @@ void NumeReWindow::OnTreeItemActivated(wxTreeEvent &event)
                 m_fileTree->Toggle(item);
                 return;
             }
-            else if (data->filename.find('.') == string::npos || data->isDir)
+            else if (data->filename.find('.') == std::string::npos || data->isDir)
                 return;
 
             OpenFileByType(pathname);
@@ -5971,7 +5971,7 @@ void NumeReWindow::OnTreeItemToolTip(wxTreeEvent& event)
 
         if (manager.hasRevisions(pathname.GetFullPath()))
         {
-            unique_ptr<FileRevisions> revisions(manager.getRevisions(pathname.GetFullPath()));
+            std::unique_ptr<FileRevisions> revisions(manager.getRevisions(pathname.GetFullPath()));
 
             if (revisions.get())
                 tooltip += "\n(" + revisions->getCurrentRevision() + ")";
@@ -6003,7 +6003,7 @@ void NumeReWindow::OnTreeDragDrop(wxTreeEvent& event)
         wxString token = data->tooltip;
         token.erase(token.find(' '));
 
-        if (token.find('(') != string::npos)
+        if (token.find('(') != std::string::npos)
             token.erase(token.find('(')+1);
         else
             token += " ";
@@ -6025,7 +6025,7 @@ void NumeReWindow::OnTreeDragDrop(wxTreeEvent& event)
         wxFileName pathname = data->filename;
         wxString dragableExtensions = ";nscr;nprc;ndat;txt;dat;log;tex;csv;xls;xlsx;ods;jdx;jcm;dx;labx;ibw;png;jpg;jpeg;gif;bmp;eps;svg;m;cpp;cxx;c;hpp;hxx;h;";
 
-        if (dragableExtensions.find(";" + pathname.GetExt() + ";") != string::npos)
+        if (dragableExtensions.find(";" + pathname.GetExt() + ";") != std::string::npos)
         {
             wxFileDataObject _dataObject;
             _dataObject.AddFile(pathname.GetFullPath());
@@ -6054,7 +6054,7 @@ wxString NumeReWindow::addLinebreaks(const wxString& sLine)
 
     wxString sReturn = sLine;
 
-    while (sReturn.find("\\$") != string::npos)
+    while (sReturn.find("\\$") != std::string::npos)
         sReturn.erase(sReturn.find("\\$"),1);
 
     unsigned int nDescStart = sReturn.find("- ");
@@ -6566,20 +6566,20 @@ void NumeReWindow::OnSaveSourceFile( int id )
 /// \brief This function executes the file in the
 /// current editor.
 ///
-/// \param sFileName const string&
+/// \param sFileName const std::string&
 /// \param id int
 /// \return void
 ///
 /////////////////////////////////////////////////
-void NumeReWindow::OnExecuteFile(const string& sFileName, int id)
+void NumeReWindow::OnExecuteFile(const std::string& sFileName, int id)
 {
     if (!sFileName.length())
         return;
 
-    string command = replacePathSeparator(sFileName);
-    vector<string> vPaths = m_terminal->getPathSettings();
+    std::string command = replacePathSeparator(sFileName);
+    std::vector<std::string> vPaths = m_terminal->getPathSettings();
 
-    if (command.rfind(".nprc") != string::npos)
+    if (command.rfind(".nprc") != std::string::npos)
     {
         if (m_options->getSetting(SETTING_B_AUTOSAVEEXECUTION).active())
             SaveAll(true);
@@ -6593,7 +6593,7 @@ void NumeReWindow::OnExecuteFile(const string& sFileName, int id)
             while (command.front() == '/')
                 command.erase(0, 1);
 
-            while (command.find('/') != string::npos)
+            while (command.find('/') != std::string::npos)
                 command[command.find('/')] = '~';
         }
         else
@@ -6601,7 +6601,7 @@ void NumeReWindow::OnExecuteFile(const string& sFileName, int id)
 
         command = "$" + command + "()";
     }
-    else if (command.rfind(".nscr") != string::npos)
+    else if (command.rfind(".nscr") != std::string::npos)
     {
         if (m_options->getSetting(SETTING_B_AUTOSAVEEXECUTION).active())
             SaveAll(true);
@@ -6614,12 +6614,12 @@ void NumeReWindow::OnExecuteFile(const string& sFileName, int id)
         while (command.front() == '/')
             command.erase(0, 1);
 
-        if (command.find(' ') != string::npos)
+        if (command.find(' ') != std::string::npos)
             command = "\"" + command + "\"";
 
         command = "start " + command;
     }
-    else if (command.rfind(".nlyt") != string::npos)
+    else if (command.rfind(".nlyt") != std::string::npos)
     {
         if (m_options->getSetting(SETTING_B_AUTOSAVEEXECUTION).active())
             SaveAll(true);
@@ -6635,7 +6635,7 @@ void NumeReWindow::OnExecuteFile(const string& sFileName, int id)
         while (command.front() == '/')
             command.erase(0, 1);
 
-        if (command.find(' ') != string::npos)
+        if (command.find(' ') != std::string::npos)
             command = "\"" + command + "\"";
 
         command = "window " + command;
@@ -6707,7 +6707,7 @@ void NumeReWindow::OnCreatePackage(const wxString& projectFile)
             wxString installinfo = dlg.getInstallInfo();
             wxString identifier = dlg.getPackageIdentifier();
             wxArrayString procedures = dlg.getProcedures();
-            string sProcPath = m_terminal->getPathSettings()[PROCPATH];
+            std::string sProcPath = m_terminal->getPathSettings()[PROCPATH];
 
             // Ensure that the user provided at least a single
             // procedure for the new package

@@ -23,8 +23,6 @@
 #include <map>
 #include <vector>
 
-using namespace std;
-
 namespace NumeRe
 {
     /////////////////////////////////////////////////
@@ -34,32 +32,32 @@ namespace NumeRe
     class StringVarFactory
     {
         private:
-            map<string,vector<string> > m_mStringVectorVars;
-            map<string,vector<string> > m_mTempStringVectorVars;
-            map<string,string> m_mStringVars;
+            std::map<std::string,std::vector<std::string> > m_mStringVectorVars;
+            std::map<std::string,std::vector<std::string> > m_mTempStringVectorVars;
+            std::map<std::string,std::string> m_mStringVars;
 
-            bool isNumericCandidate(const string& sComponent);
-            bool checkStringvarDelimiter(const string& sToken) const;
-            void replaceStringVectorVars(map<string,vector<string> >& mVectorVarMap, string& currentline, size_t nCurrentComponent, bool& bHasComponents);
-            string findVectorInMap(const map<string,vector<string> >& mVectorVarMap, const vector<string>& vStringVector);
+            bool isNumericCandidate(const std::string& sComponent);
+            bool checkStringvarDelimiter(const std::string& sToken) const;
+            void replaceStringVectorVars(std::map<std::string,std::vector<std::string> >& mVectorVarMap, std::string& currentline, size_t nCurrentComponent, bool& bHasComponents);
+            std::string findVectorInMap(const std::map<std::string,std::vector<std::string> >& mVectorVarMap, const std::vector<std::string>& vStringVector);
 
         protected:
-            vector<string> evaluateStringVectors(string sLine);
-            void expandStringVectorComponents(vector<string>& vStringVector);
+            std::vector<std::string> evaluateStringVectors(std::string sLine);
+            void expandStringVectorComponents(std::vector<std::string>& vStringVector);
             void removeStringVectorVars();
-            string createStringVectorVar(const vector<string>& vStringVector);
+            std::string createStringVectorVar(const std::vector<std::string>& vStringVector);
 
         public:
-            bool containsStringVectorVars(const string& sLine);
-            string createTempStringVectorVar(const vector<string>& vStringVector);
+            bool containsStringVectorVars(const std::string& sLine);
+            std::string createTempStringVectorVar(const std::vector<std::string>& vStringVector);
             void removeTempStringVectorVars();
-            bool containsStringVars(const string& sLine) const;
-            void getStringValues(string& sLine, unsigned int nPos = 0);
-            void setStringValue(const string& sVar, const string& sValue);
-            void removeStringVar(const string& sVar);
+            bool containsStringVars(const std::string& sLine) const;
+            void getStringValues(std::string& sLine, unsigned int nPos = 0);
+            void setStringValue(const std::string& sVar, const std::string& sValue);
+            void removeStringVar(const std::string& sVar);
 
             // Returns a reference to the internal string variable map
-            inline const map<string, string>& getStringVars() const
+            inline const std::map<std::string, std::string>& getStringVars() const
             {
                 return m_mStringVars;
             }

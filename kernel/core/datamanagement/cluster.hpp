@@ -158,7 +158,7 @@ namespace NumeRe
             /////////////////////////////////////////////////
             virtual std::string getString() override
             {
-                if (isnan(std::abs(dData)))
+                if (std::isnan(std::abs(dData)))
                     return toExternalString("nan");
 
                 return toExternalString(toString(dData, 7));
@@ -261,7 +261,7 @@ namespace NumeRe
             mutable int nGlobalType;
 
             void assign(const Cluster& cluster);
-            void assign(const vector<mu::value_type>& vVals);
+            void assign(const std::vector<mu::value_type>& vVals);
             void assign(const std::vector<std::string>& vStrings);
             void assignVectorResults(Indices _idx, int nNum, mu::value_type* data);
             virtual int compare(int i, int j, int col) override;
@@ -326,7 +326,7 @@ namespace NumeRe
 
             mu::value_type getDouble(size_t i) const;
             void setDouble(size_t i, const mu::value_type& value);
-            vector<mu::value_type> getDoubleArray() const;
+            std::vector<mu::value_type> getDoubleArray() const;
             void insertDataInArray(std::vector<mu::value_type>* vTarget, const VectorIndex& _vLine);
             void setDoubleArray(const std::vector<mu::value_type>& vVals);
             void setDoubleArray(int nNum, mu::value_type* data);

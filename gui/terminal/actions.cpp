@@ -59,7 +59,7 @@ void GenericTerminal::normal_input()
 void GenericTerminal::normal_output()
 {
     // Get the output data
-    string sInput = sInput_Data;
+    std::string sInput = sInput_Data;
 
 #ifdef DO_LOG
     wxLogDebug("%s", sInput.c_str());
@@ -75,7 +75,7 @@ void GenericTerminal::normal_output()
         size_t nPos = sInput.find_first_of("\n\r\t");
 
         // If the position is valid
-        if (nPos != string::npos)
+        if (nPos != std::string::npos)
         {
             // Evalute the control character
             switch (sInput[nPos])
@@ -142,12 +142,12 @@ void GenericTerminal::resetAutoComp(int mode)
 /// namespace. Will only be called from
 /// GTerm::tab().
 ///
-/// \return string
+/// \return std::string
 ///
 /////////////////////////////////////////////////
-string GenericTerminal::getProcNameSpace()
+std::string GenericTerminal::getProcNameSpace()
 {
-    string sNameSpace;
+    std::string sNameSpace;
 
     // Get the position of the current autocompletion start
     int nNameSpacePos = nTabStartPos - 1;
@@ -162,7 +162,7 @@ string GenericTerminal::getProcNameSpace()
     // If the obtained namespace contains the (possible) procedure
     // name, then erase this part, because we only want to have the
     // current namespace
-    if (sNameSpace.find(sAutoCompWordStart) != string::npos)
+    if (sNameSpace.find(sAutoCompWordStart) != std::string::npos)
         sNameSpace.erase(sNameSpace.rfind(sAutoCompWordStart));
 
     // return the evaluted namespace
@@ -235,7 +235,7 @@ void GenericTerminal::tab()
         // There are different autocompletion lists for procedures and every other syntax element
         if (((tm.GetColorAdjusted(termCursor.y, termCursor.x - 1) >> 4) & 0xf) == NumeReSyntax::SYNTAX_PROCEDURE)
         {
-            string sNameSpace = getProcNameSpace();
+            std::string sNameSpace = getProcNameSpace();
             sAutoCompList = _syntax.getProcAutoCompList(sAutoCompWordStart, "", sNameSpace);
         }
         else
@@ -256,7 +256,7 @@ void GenericTerminal::tab()
         {
             if (((tm.GetColorAdjusted(termCursor.y, nTabStartPos - 1) >> 4) & 0xf) == NumeReSyntax::SYNTAX_PROCEDURE)
             {
-                string sNameSpace = getProcNameSpace();
+                std::string sNameSpace = getProcNameSpace();
                 sAutoCompList = _syntax.getProcAutoCompList(sAutoCompWordStart, "", sNameSpace);
             }
             else

@@ -25,7 +25,6 @@
 #include <vector>
 
 #include "core/datamanagement/table.hpp"
-using namespace std;
 
 // Global forward declarations
 class CustomWindow;
@@ -98,11 +97,11 @@ namespace NumeRe
     {
         int nControls;
         bool isModal;
-        string sMessage;
-        string sExpression;
-        string sTitle;
+        std::string sMessage;
+        std::string sExpression;
+        std::string sTitle;
 
-        WindowSettings(int ctrls = CTRL_NONE, bool modal = false, const string& message = "", const string& title = "NumeRe: Window", const string& expression = "") : nControls(ctrls), isModal(modal), sMessage(message), sExpression(expression), sTitle(title) {}
+        WindowSettings(int ctrls = CTRL_NONE, bool modal = false, const std::string& message = "", const std::string& title = "NumeRe: Window", const std::string& expression = "") : nControls(ctrls), isModal(modal), sMessage(message), sExpression(expression), sTitle(title) {}
     };
 
 
@@ -188,7 +187,7 @@ namespace NumeRe
                     return m_customWindow != nullptr;
                 }
 
-            void updateWindowInformation(int status, const string& _return);
+            void updateWindowInformation(int status, const std::string& _return);
             std::vector<int> getWindowItems(const std::string& _selection) const;
             bool closeWindow();
             WinItemValue getItemValue(int windowItemID) const;
@@ -217,9 +216,9 @@ namespace NumeRe
         size_t nWindowID;
         Window* window;
         int nStatus;
-        string sReturn;
+        std::string sReturn;
 
-        WindowInformation(size_t id = string::npos, Window* win = nullptr, int status = STATUS_RUNNING, const string& _return = "")
+        WindowInformation(size_t id = std::string::npos, Window* win = nullptr, int status = STATUS_RUNNING, const std::string& _return = "")
                             : nWindowID(id), window(win), nStatus(status), sReturn(_return) {}
     };
 
@@ -234,7 +233,7 @@ namespace NumeRe
         private:
             friend class Window;
 
-            map<size_t, WindowInformation> m_windowMap;
+            std::map<size_t, WindowInformation> m_windowMap;
 
             void updateWindowInformation(const WindowInformation& information);
 

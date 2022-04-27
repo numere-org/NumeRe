@@ -36,7 +36,6 @@
 #include "../utils/tools.hpp"
 #include "../ui/error.hpp"
 
-using namespace std;
 using namespace mu;
 
 /////////////////////////////////////////////////
@@ -79,21 +78,21 @@ class Fitcontroller
         static int fitfunctionrestricted(const gsl_vector* params, void* data, gsl_vector* fvals);
         static int fitjacobianrestricted(const gsl_vector* params, void* data, gsl_matrix* Jac);
         static int fitfuncjacrestricted(const gsl_vector* params, void* data, gsl_vector* fvals, gsl_matrix* Jac);
-        static double evalRestrictions(const value_type* v, int nVals);
+        static double evalRestrictions(const mu::value_type* v, int nVals);
         int nIterations;
         double dChiSqr;
-        string sExpr;
+        std::string sExpr;
         FitMatrix vCovarianceMatrix;
         static mu::value_type* xvar;
         static mu::value_type* yvar;
         static mu::value_type* zvar;
 
-        bool fitctrl(const string& __sExpr, const string& __sRestrictions, FitData& _fData, double __dPrecision, int nMaxIterations);
+        bool fitctrl(const std::string& __sExpr, const std::string& __sRestrictions, FitData& _fData, double __dPrecision, int nMaxIterations);
         static void removeNANVals(gsl_vector* fvals, unsigned int nSize);
         static void removeNANVals(gsl_matrix* Jac, unsigned int nLines, unsigned int nCols);
 
     public:
-        static Parser* _fitParser;
+        static mu::Parser* _fitParser;
         static int nDimensions;
         static mu::varmap_type mParams;
 
@@ -104,11 +103,11 @@ class Fitcontroller
         /////////////////////////////////////////////////
         /// \brief Register the parser.
         ///
-        /// \param _parser Parser*
+        /// \param _parser mu::Parser*
         /// \return void
         ///
         /////////////////////////////////////////////////
-        inline void setParser(Parser* _parser)
+        inline void setParser(mu::Parser* _parser)
             {
                 _fitParser = _parser;
                 mu::varmap_type mVars = _parser->GetVar();
@@ -123,21 +122,21 @@ class Fitcontroller
         ///
         /// \param vx FitVector&
         /// \param vy FitVector&
-        /// \param __sExpr const string&
-        /// \param __sRestrictions const string&
+        /// \param __sExpr const std::string&
+        /// \param __sRestrictions const std::string&
         /// \param mParamsMap mu::varmap_type&
         /// \param __dPrecision double
         /// \param nMaxIterations int
         /// \return bool
         ///
         /////////////////////////////////////////////////
-        inline bool fit(FitVector& vx, FitVector& vy, const string& __sExpr, const string& __sRestrictions, mu::varmap_type& mParamsMap, double __dPrecision = 1e-4, int nMaxIterations = 500)
+        inline bool fit(FitVector& vx, FitVector& vy, const std::string& __sExpr, const std::string& __sRestrictions, mu::varmap_type& mParamsMap, double __dPrecision = 1e-4, int nMaxIterations = 500)
             {
                 FitVector vy_w(vy.size(), 0.0);
                 return fit(vx,vy, vy_w, __sExpr, __sRestrictions, mParamsMap, __dPrecision, nMaxIterations);
             }
 
-        bool fit(FitVector& vx, FitVector& vy, FitVector& vy_w, const string& __sExpr, const string& __sRestrictions, mu::varmap_type& mParamsMap, double __dPrecision = 1e-4, int nMaxIterations = 500);
+        bool fit(FitVector& vx, FitVector& vy, FitVector& vy_w, const std::string& __sExpr, const std::string& __sRestrictions, mu::varmap_type& mParamsMap, double __dPrecision = 1e-4, int nMaxIterations = 500);
 
         /////////////////////////////////////////////////
         /// \brief Calculate an unweighted 2D-fit.
@@ -145,21 +144,21 @@ class Fitcontroller
         /// \param vx FitVector&
         /// \param vy FitVector&
         /// \param vz FitMatrix&
-        /// \param __sExpr const string&
-        /// \param __sRestrictions const string&
+        /// \param __sExpr const std::string&
+        /// \param __sRestrictions const std::string&
         /// \param mParamsMap mu::varmap_type&
         /// \param __dPrecision double
         /// \param nMaxIterations int
         /// \return bool
         ///
         /////////////////////////////////////////////////
-        inline bool fit(FitVector& vx, FitVector& vy, FitMatrix& vz, const string& __sExpr, const string& __sRestrictions, mu::varmap_type& mParamsMap, double __dPrecision = 1e-4, int nMaxIterations = 500)
+        inline bool fit(FitVector& vx, FitVector& vy, FitMatrix& vz, const std::string& __sExpr, const std::string& __sRestrictions, mu::varmap_type& mParamsMap, double __dPrecision = 1e-4, int nMaxIterations = 500)
             {
-                FitMatrix vz_w(vz.size(), vector<double>(vz[0].size(), 0.0));
+                FitMatrix vz_w(vz.size(), std::vector<double>(vz[0].size(), 0.0));
                 return fit(vx, vy, vz, vz_w, __sExpr, __sRestrictions, mParamsMap, __dPrecision, nMaxIterations);
             }
 
-        bool fit(FitVector& vx, FitVector& vy, FitMatrix& vz, FitMatrix& vz_w, const string& __sExpr, const string& __sRestrictions, mu::varmap_type& mParamsMap, double __dPrecision = 1e-4, int nMaxIterations = 500);
+        bool fit(FitVector& vx, FitVector& vy, FitMatrix& vz, FitMatrix& vz_w, const std::string& __sExpr, const std::string& __sRestrictions, mu::varmap_type& mParamsMap, double __dPrecision = 1e-4, int nMaxIterations = 500);
 
         /////////////////////////////////////////////////
         /// \brief Return the weighted sum of the
@@ -181,7 +180,7 @@ class Fitcontroller
         inline int getIterations() const
             {return nIterations;}
 
-        string getFitFunction();
+        std::string getFitFunction();
         FitMatrix getCovarianceMatrix() const;
 };
 

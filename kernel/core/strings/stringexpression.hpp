@@ -22,8 +22,6 @@
 #include <string>
 #include "../utils/tools.hpp"
 
-using namespace std;
-
 namespace NumeRe
 {
 
@@ -35,8 +33,8 @@ namespace NumeRe
     /////////////////////////////////////////////////
     struct StringExpression
     {
-        string& sLine;
-        string sAssignee;
+        std::string& sLine;
+        std::string sAssignee;
         size_t nEqPos;
 
 
@@ -44,11 +42,11 @@ namespace NumeRe
         /// \brief Constructor of this structure.
         /// Searches for the equal sign upon construction.
         ///
-        /// \param _sLine string&
-        /// \param sCache const string&
+        /// \param _sLine std::string&
+        /// \param sCache const std::string&
         ///
         /////////////////////////////////////////////////
-        StringExpression(string& _sLine, const string& sCache = "") : sLine(_sLine), sAssignee(sCache), nEqPos(1)
+        StringExpression(std::string& _sLine, const std::string& sCache = "") : sLine(_sLine), sAssignee(sCache), nEqPos(1)
         {
             findAssignmentOperator();
         }
@@ -90,7 +88,7 @@ namespace NumeRe
 
             nEqPos = 0;
 
-            if (sLine.find('=') == string::npos)
+            if (sLine.find('=') == std::string::npos)
                 return;
 
             size_t nQuotes = 0;

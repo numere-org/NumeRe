@@ -19,9 +19,11 @@
 #include "odesolver.hpp"
 #include "../../kernel.hpp"
 
+using namespace std;
+
 extern DefaultVariables _defVars;
 
-Parser* Odesolver::_odeParser = 0;
+mu::Parser* Odesolver::_odeParser = 0;
 int Odesolver::nDimensions = 0;
 mu::varmap_type Odesolver::mVars;
 

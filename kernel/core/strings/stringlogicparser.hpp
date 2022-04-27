@@ -22,8 +22,6 @@
 #include <string>
 #include <vector>
 
-using namespace std;
-
 namespace NumeRe
 {
     /////////////////////////////////////////////////
@@ -33,15 +31,15 @@ namespace NumeRe
     class StringLogicParser
     {
         private:
-            string evalStringTernary(string sLine);
-            vector<string> getStringTernaryExpression(string& sLine, size_t& nPos);
-            size_t detectPathTokens(const string& sString, size_t nPos);
-            string prepareComparisonValues(const std::string& _sLine);
+            std::string evalStringTernary(std::string sLine);
+            std::vector<std::string> getStringTernaryExpression(std::string& sLine, size_t& nPos);
+            size_t detectPathTokens(const std::string& sString, size_t nPos);
+            std::string prepareComparisonValues(const std::string& _sLine);
 
         protected:
-            bool detectStringLogicals(const string& sString);
-            string evalStringLogic(string sLine, bool& bReturningLogicals);
-            void concatenateStrings(string& sExpr);
+            bool detectStringLogicals(const std::string& sString);
+            std::string evalStringLogic(std::string sLine, bool& bReturningLogicals);
+            void concatenateStrings(std::string& sExpr);
     };
 }
 

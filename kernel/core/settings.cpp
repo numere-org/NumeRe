@@ -203,7 +203,7 @@ void Settings::save(const std::string& _sWhere, bool bMkBackUp)
 	Settings_ini << "# this and all other INI files in this directory. Delete also the numere.ini.back\n";
 	Settings_ini << "# file for a complete reset. All configuration values will of course get lost during\n";
 	Settings_ini << "# this process.\n#\n";
-	Settings_ini << "# (relative paths are anchored in NumeRe's root directory):" << endl;
+	Settings_ini << "# (relative paths are anchored in NumeRe's root directory):" << std::endl;
 
 	// Write the setting values to the file. The values
 	// are structured by their names and therefore will be
@@ -220,13 +220,13 @@ void Settings::save(const std::string& _sWhere, bool bMkBackUp)
             switch (iter->second.getType())
             {
                 case SettingsValue::BOOL:
-                    Settings_ini << (iter->second.active() ? "true" : "false") << endl;
+                    Settings_ini << (iter->second.active() ? "true" : "false") << std::endl;
                     break;
                 case SettingsValue::UINT:
-                    Settings_ini << iter->second.value() << endl;
+                    Settings_ini << iter->second.value() << std::endl;
                     break;
                 case SettingsValue::STRING:
-                    Settings_ini << replaceExePath(iter->second.stringval()) << endl;
+                    Settings_ini << replaceExePath(iter->second.stringval()) << std::endl;
                     break;
                 case SettingsValue::TYPELESS:
                     break;
@@ -235,7 +235,7 @@ void Settings::save(const std::string& _sWhere, bool bMkBackUp)
     }
 
     // Write a footer line
-	Settings_ini << "#\n# End of configuration file" << endl;
+	Settings_ini << "#\n# End of configuration file" << std::endl;
 
 	// Close the file stream
 	Settings_ini.close();
@@ -304,7 +304,7 @@ bool Settings::set(const std::string& _sOption)
 
         if (sSavePath.length())
         {
-            while (sSavePath.find('\\') != string::npos)
+            while (sSavePath.find('\\') != std::string::npos)
                 sSavePath[sSavePath.find('\\')] = '/';
 
             m_settings[SETTING_S_SAVEPATH].stringval() = sSavePath;
@@ -318,7 +318,7 @@ bool Settings::set(const std::string& _sOption)
 
         if (sLoadPath.length())
         {
-            while (sLoadPath.find('\\') != string::npos)
+            while (sLoadPath.find('\\') != std::string::npos)
                 sLoadPath[sLoadPath.find('\\')] = '/';
 
             m_settings[SETTING_S_LOADPATH].stringval() = sLoadPath;
@@ -332,7 +332,7 @@ bool Settings::set(const std::string& _sOption)
 
         if (sPlotOutputPath.length())
         {
-            while (sPlotOutputPath.find('\\') != string::npos)
+            while (sPlotOutputPath.find('\\') != std::string::npos)
                 sPlotOutputPath[sPlotOutputPath.find('\\')] = '/';
 
             m_settings[SETTING_S_PLOTPATH].stringval() = sPlotOutputPath;
@@ -346,7 +346,7 @@ bool Settings::set(const std::string& _sOption)
 
         if (sScriptpath.length())
         {
-            while (sScriptpath.find('\\') != string::npos)
+            while (sScriptpath.find('\\') != std::string::npos)
                 sScriptpath[sScriptpath.find('\\')] = '/';
 
             m_settings[SETTING_S_SCRIPTPATH].stringval() = sScriptpath;
@@ -360,7 +360,7 @@ bool Settings::set(const std::string& _sOption)
 
         if (sProcsPath.length())
         {
-            while (sProcsPath.find('\\') != string::npos)
+            while (sProcsPath.find('\\') != std::string::npos)
                 sProcsPath[sProcsPath.find('\\')] = '/';
 
             m_settings[SETTING_S_PROCPATH].stringval() = sProcsPath;
@@ -609,7 +609,7 @@ void Settings::load(const std::string& _sWhere)
 	{
         Settings_ini.close();
         Settings_ini.clear();
-        Settings_ini.open((sExecutablePath+".back").c_str(),ios_base::in);
+        Settings_ini.open((sExecutablePath+".back").c_str(), std::ios_base::in);
 
         if (Settings_ini.fail())
         {

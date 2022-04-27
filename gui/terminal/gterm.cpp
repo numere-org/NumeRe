@@ -33,7 +33,7 @@ void GenericTerminal::Update()
 ///
 ///  @author Timothy Miller @date 04-22-2004
 //////////////////////////////////////////////////////////////////////////////
-void GenericTerminal::ProcessInput(int len, const string& sData)
+void GenericTerminal::ProcessInput(int len, const std::string& sData)
 {
     // Copy the input
 	data_len = sData.length();
@@ -60,7 +60,7 @@ void GenericTerminal::ProcessInput(int len, const string& sData)
 /// \return void
 ///
 /////////////////////////////////////////////////
-void GenericTerminal::ProcessOutput(int len, const string& sData)
+void GenericTerminal::ProcessOutput(int len, const std::string& sData)
 {
     // Copy the input
 	data_len += sData.length();
@@ -242,10 +242,10 @@ unsigned char GenericTerminal::GetChar(int x, int y)
 /////////////////////////////////////////////////
 /// \brief Gets the selected text (if any).
 ///
-/// \return string
+/// \return std::string
 ///
 /////////////////////////////////////////////////
-string GenericTerminal::get_selected_text()
+std::string GenericTerminal::get_selected_text()
 {
 	return tm.getSelectedText();
 }

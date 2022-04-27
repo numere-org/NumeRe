@@ -33,7 +33,6 @@
 #include "../settings.hpp"
 #include "../utils/tools.hpp"
 
-using namespace std;
 
 /////////////////////////////////////////////////
 /// \brief This class implements a single
@@ -43,20 +42,20 @@ using namespace std;
 class FunctionDefinition
 {
     public:
-        string sName;
-        string sSignature;
-        string sDefinitionString;
-        string sParsedDefinitionString;
-        string sComment;
-        vector<string> vArguments;
+        std::string sName;
+        std::string sSignature;
+        std::string sDefinitionString;
+        std::string sParsedDefinitionString;
+        std::string sComment;
+        std::vector<std::string> vArguments;
 
-        FunctionDefinition(const string& _sDefinitionString = "");
+        FunctionDefinition(const std::string& _sDefinitionString = "");
         FunctionDefinition& operator=(const FunctionDefinition&);
-        string parse(const string& _sArgList);
-        string exportFunction() const;
-        bool importFunction(const string& _sExportedString);
-        string getDefinition() const;
-        bool appendComment(const string& _sComment);
+        std::string parse(const std::string& _sArgList);
+        std::string exportFunction() const;
+        bool importFunction(const std::string& _sExportedString);
+        std::string getDefinition() const;
+        bool appendComment(const std::string& _sComment);
 
     private:
         bool decodeDefinition();
@@ -74,41 +73,41 @@ class FunctionDefinition
 class FunctionDefinitionManager : public FileSystem
 {
     private:
-        map<string, FunctionDefinition> mFunctionsMap;
-        string sFileName;                   // Dateinamen fuer die Speichern-Funktion
+        std::map<std::string, FunctionDefinition> mFunctionsMap;
+        std::string sFileName;                   // Dateinamen fuer die Speichern-Funktion
 
-        string sBuilt_In;                   // String, der die Namen der Built-In-Funktionen speichert
-        string sCommands;                   // String, der alle NumeRe-Kommandos speichert
-        string sTables;
+        std::string sBuilt_In;                   // String, der die Namen der Built-In-Funktionen speichert
+        std::string sCommands;                   // String, der alle NumeRe-Kommandos speichert
+        std::string sTables;
         bool isLocal;
 
-        string resolveRecursiveDefinitions(string sDefinition);
-        map<string, FunctionDefinition>::const_iterator findItemById(size_t id) const;
+        std::string resolveRecursiveDefinitions(std::string sDefinition);
+        std::map<std::string, FunctionDefinition>::const_iterator findItemById(size_t id) const;
 
     public:
         FunctionDefinitionManager(bool _isLocal);                           // Standard-Konstruktor
         FunctionDefinitionManager(const FunctionDefinitionManager& _defined);           // Kopierkonstruktor
 
         // --> TRUE, wenn es eine Funktion mit dem angegeben Funktionsnamen gibt <--
-        bool isDefined(const string& sFunc);
+        bool isDefined(const std::string& sFunc);
 
         // --> Zentrale Methode: Definiert eine eigene Funktion <--
-        bool defineFunc(const string& sExpr, bool bRedefine = false, bool bFallback = false);
+        bool defineFunc(const std::string& sExpr, bool bRedefine = false, bool bFallback = false);
 
         // --> Entfernt eine definierte Funktion aus dem Funktionenspeicher <--
-        bool undefineFunc(const string& sFunc);
+        bool undefineFunc(const std::string& sFunc);
 
         // --> Ruft zuvor definierte Funktionen auf <--
-        bool call(string& sExpr, int nRecursion = 0);
+        bool call(std::string& sExpr, int nRecursion = 0);
 
         // --> Gibt die Zahl der definierten Funktionen zurueck <--
         size_t getDefinedFunctions() const;
 
         // --> Gibt die zur Definition der _i-ten Funktion verwendete Definition zurueck <--
-        string getDefinitionString(size_t _i) const;
-        string getFunctionSignature(size_t _i) const;
-        string getImplementation(size_t _i) const;
-        string getComment(size_t _i) const;
+        std::string getDefinitionString(size_t _i) const;
+        std::string getFunctionSignature(size_t _i) const;
+        std::string getImplementation(size_t _i) const;
+        std::string getComment(size_t _i) const;
 
         bool reset();
 
@@ -122,12 +121,12 @@ class FunctionDefinitionManager : public FileSystem
         /// \brief Returns a list of the names of the
         /// custom defined functions.
         ///
-        /// \return string
+        /// \return std::string
         ///
         /////////////////////////////////////////////////
-        inline string getNamesOfDefinedFunctions() const
+        inline std::string getNamesOfDefinedFunctions() const
         {
-            string sReturn = ";";
+            std::string sReturn = ";";
 
             for (auto iter = mFunctionsMap.begin(); iter != mFunctionsMap.end(); ++iter)
             {
@@ -142,25 +141,25 @@ class FunctionDefinitionManager : public FileSystem
         /// list is used to avoid redefinition of an
         /// already existing table as a function.
         ///
-        /// \param sTableList const string&
+        /// \param sTableList const std::string&
         /// \return void
         ///
         /////////////////////////////////////////////////
-        inline void setTableList(const string& sTableList)
+        inline void setTableList(const std::string& sTableList)
         {
             sTables = sTableList;
         }
 
-        void setPredefinedFuncs(const string& sPredefined);
+        void setPredefinedFuncs(const std::string& sPredefined);
 
         /////////////////////////////////////////////////
         /// \brief Return a list of the internal defined
         /// default functions.
         ///
-        /// \return string
+        /// \return std::string
         ///
         /////////////////////////////////////////////////
-        inline string getPredefinedFuncs() const
+        inline std::string getPredefinedFuncs() const
         {
             return sBuilt_In;
         }
@@ -169,7 +168,7 @@ class FunctionDefinitionManager : public FileSystem
         /// \brief Returns the numerical index of the
         /// selected custom defined functions.
         ///
-        /// \param sFuncName const string&
+        /// \param sFuncName const std::string&
         /// \return size_t
         /// \remark This index is only valid as long as
         /// the FunctionDefinitionManager object instance
@@ -177,7 +176,7 @@ class FunctionDefinitionManager : public FileSystem
         /// functions).
         ///
         /////////////////////////////////////////////////
-        inline size_t getFunctionIndex(const string& sFuncName)
+        inline size_t getFunctionIndex(const std::string& sFuncName)
         {
             if (!mFunctionsMap.size())
                 return (size_t)-1;

@@ -20,6 +20,8 @@
 #include "output.hpp"
 #include "../../kernel.hpp"
 
+using namespace std;
+
 /*
  * Realisierung der Klasse 'Output'
  */

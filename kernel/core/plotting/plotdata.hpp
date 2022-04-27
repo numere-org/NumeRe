@@ -176,7 +176,7 @@ class PlotData : public FileSystem
 
         void replaceControlChars(std::string& sString);
         std::string removeSurroundingQuotationMarks(const std::string& sString);
-        void rangeByPercentage(double* dData, size_t nLength, double dLowerPercentage, double dUpperPercentage, vector<double>& vRanges);
+        void rangeByPercentage(double* dData, size_t nLength, double dLowerPercentage, double dUpperPercentage, std::vector<double>& vRanges);
 
     public:
         PlotData();

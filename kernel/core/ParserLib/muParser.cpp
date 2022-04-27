@@ -55,93 +55,93 @@ namespace mu
 
     //---------------------------------------------------------------------------
     // Trigonometric function
-    value_type Parser::Sin(value_type v)
+    value_type Parser::Sin(const value_type& v)
     {
         return MathImpl<value_type>::Sin(v);
     }
-    value_type Parser::Cos(value_type v)
+    value_type Parser::Cos(const value_type& v)
     {
         return MathImpl<value_type>::Cos(v);
     }
-    value_type Parser::Tan(value_type v)
+    value_type Parser::Tan(const value_type& v)
     {
         return MathImpl<value_type>::Tan(v);
     }
-    value_type Parser::ASin(value_type v)
+    value_type Parser::ASin(const value_type& v)
     {
         return MathImpl<value_type>::ASin(v);
     }
-    value_type Parser::ACos(value_type v)
+    value_type Parser::ACos(const value_type& v)
     {
         return MathImpl<value_type>::ACos(v);
     }
-    value_type Parser::ATan(value_type v)
+    value_type Parser::ATan(const value_type& v)
     {
         return MathImpl<value_type>::ATan(v);
     }
-    value_type Parser::ATan2(value_type v1, value_type v2)
+    value_type Parser::ATan2(const value_type& v1, const value_type& v2)
     {
         return MathImpl<double>::ATan2(v1.real(), v2.real());
     }
-    value_type Parser::Sinh(value_type v)
+    value_type Parser::Sinh(const value_type& v)
     {
         return MathImpl<value_type>::Sinh(v);
     }
-    value_type Parser::Cosh(value_type v)
+    value_type Parser::Cosh(const value_type& v)
     {
         return MathImpl<value_type>::Cosh(v);
     }
-    value_type Parser::Tanh(value_type v)
+    value_type Parser::Tanh(const value_type& v)
     {
         return MathImpl<value_type>::Tanh(v);
     }
-    value_type Parser::ASinh(value_type v)
+    value_type Parser::ASinh(const value_type& v)
     {
         return MathImpl<value_type>::ASinh(v);
     }
-    value_type Parser::ACosh(value_type v)
+    value_type Parser::ACosh(const value_type& v)
     {
         return MathImpl<value_type>::ACosh(v);
     }
-    value_type Parser::ATanh(value_type v)
+    value_type Parser::ATanh(const value_type& v)
     {
         return MathImpl<value_type>::ATanh(v);
     }
 
     //---------------------------------------------------------------------------
     // Logarithm functions
-    value_type Parser::Log2(value_type v)
+    value_type Parser::Log2(const value_type& v)
     {
         return MathImpl<value_type>::Log2(v);     // Logarithm base 2
     }
-    value_type Parser::Log10(value_type v)
+    value_type Parser::Log10(const value_type& v)
     {
         return MathImpl<value_type>::Log10(v);    // Logarithm base 10
     }
-    value_type Parser::Ln(value_type v)
+    value_type Parser::Ln(const value_type& v)
     {
         return MathImpl<value_type>::Log(v);      // Logarithm base e (natural logarithm)
     }
 
     //---------------------------------------------------------------------------
     //  misc
-    value_type Parser::Exp(value_type v)
+    value_type Parser::Exp(const value_type& v)
     {
         return MathImpl<value_type>::Exp(v);
     }
-    value_type Parser::Abs(value_type v)
+    value_type Parser::Abs(const value_type& v)
     {
-        return std::abs(v); //MathImpl<value_type>::Abs(v);
+        return (v.real() == 0.0 || v.imag() == 0.0) ? (std::abs(v.real()) + std::abs(v.imag())) : std::abs(v); //MathImpl<value_type>::Abs(v);
     }
-    value_type Parser::Sqrt(value_type v)
+    value_type Parser::Sqrt(const value_type& v)
     {
         return MathImpl<value_type>::Sqrt(v);
     }
-    value_type Parser::Rint(value_type v)
+    value_type Parser::Rint(const value_type& v)
     {
         return value_type(MathImpl<double>::Rint(v.real()), MathImpl<double>::Rint(v.imag()));
     }
-    value_type Parser::Sign(value_type v)
+    value_type Parser::Sign(const value_type& v)
     {
         return value_type(MathImpl<double>::Sign(v.real()), MathImpl<double>::Sign(v.imag()));
     }
@@ -151,7 +151,7 @@ namespace mu
         \param v The value to negate
         \return -v
     */
-    value_type Parser::UnaryMinus(value_type v)
+    value_type Parser::UnaryMinus(const value_type& v)
     {
         return -v;
     }

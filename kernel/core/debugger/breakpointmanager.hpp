@@ -23,22 +23,20 @@
 #include <string>
 #include <vector>
 
-using namespace std;
-
 class BreakpointManager
 {
     private:
-        map<string,vector<size_t> > mBreakpoints;
+        std::map<std::string,std::vector<size_t> > mBreakpoints;
 
     public:
         BreakpointManager();
         BreakpointManager(const BreakpointManager& _messenger);
 
-        void addBreakpoint(const string& _sFilename, size_t nLine);
-        void removeBreakpoint(const string& _sFilename, size_t nLine);
-        void clearBreakpoints(const string& _sFilename);
-        void passBreakpoints(const map<string,vector<size_t> >& _mBreakpoints);
-        bool isBreakpoint(const string& _sFilename, size_t nLine);
+        void addBreakpoint(const std::string& _sFilename, size_t nLine);
+        void removeBreakpoint(const std::string& _sFilename, size_t nLine);
+        void clearBreakpoints(const std::string& _sFilename);
+        void passBreakpoints(const std::map<std::string,std::vector<size_t> >& _mBreakpoints);
+        bool isBreakpoint(const std::string& _sFilename, size_t nLine);
 };
 
 #endif // BREAKPOINTMANAGER_HPP

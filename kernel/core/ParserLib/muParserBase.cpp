@@ -37,10 +37,7 @@
 #include <deque>
 #include <sstream>
 #include <locale>
-
-#ifdef MUP_USE_OPENMP
 #include <omp.h>
-#endif
 
 using namespace std;
 
@@ -60,9 +57,14 @@ mu::value_type parser_compare(const mu::value_type*, int);
 mu::value_type parser_Min(const mu::value_type*, int);
 mu::value_type parser_Max(const mu::value_type*, int);
 
+
+
+
 /** \file
     \brief This file contains the basic implementation of the muparser engine.
 */
+
+
 
 
 namespace mu
@@ -88,14 +90,112 @@ namespace mu
         return vImag;
 	}
 
+
 	value_type rint(value_type v)
 	{
 	    return value_type(std::rint(v.real()), std::rint(v.imag()));
 	}
 
 
+    /////////////////////////////////////////////////
+    /// \brief Adaption of the logtoidx() function
+    /// for 1D data arrays.
+    ///
+    /// \param v const value_type*
+    /// \param n int
+    /// \return std::vector<value_type>
+    ///
+    /////////////////////////////////////////////////
+    std::vector<value_type> parser_logtoidx(const value_type* v, int n)
+    {
+        std::vector<value_type> vIdx;
+
+        for (int i = 0; i < n; i++)
+        {
+            if (v[i] != 0.0)
+                vIdx.push_back(i+1);
+        }
+
+        if (!vIdx.size())
+            vIdx.push_back(0.0);
+
+        return vIdx;
+    }
 
 
+    /////////////////////////////////////////////////
+    /// \brief Adaption of the idxtolog() function
+    /// for 1D data arrays.
+    ///
+    /// \param v const value_type*
+    /// \param n int
+    /// \return std::vector<value_type>
+    ///
+    /////////////////////////////////////////////////
+    std::vector<value_type> parser_idxtolog(const value_type* v, int n)
+    {
+        if (!n)
+            return std::vector<value_type>(1, 0.0);
+
+        value_type maxIdx = parser_Max(v, n);
+
+        if (std::isnan(maxIdx.real()))
+            return std::vector<value_type>(1, 0.0);
+
+        std::vector<value_type> vLogical(maxIdx.real(), 0.0);
+
+        for (int i = 0; i < n; i++)
+        {
+            if (v[i].real() > 0)
+                vLogical[v[i].real()-1] = 1.0;
+        }
+
+        return vLogical;
+    }
+
+
+
+    /////////////////////////////////////////////////
+    /// \brief Custom implementation for the complex
+    /// multiplication operator with a scalar
+    /// optimization.
+    ///
+    /// \param __x const value_type&
+    /// \param __y const value_type&
+    /// \return value_type
+    ///
+    /////////////////////////////////////////////////
+    inline value_type operator*(const value_type& __x, const value_type& __y)
+    {
+        if (__x.imag() == 0.0)
+            return value_type(__y.real()*__x.real(), __y.imag()*__x.real());
+        else if (__y.imag() == 0.0)
+            return value_type(__x.real()*__y.real(), __x.imag()*__y.real());
+
+        value_type __r = __x;
+        __r *= __y;
+        return __r;
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Custom implementation for the complex
+    /// division operator with a scalar optimization.
+    ///
+    /// \param __x const value_type&
+    /// \param __y const value_type&
+    /// \return value_type
+    ///
+    /////////////////////////////////////////////////
+    inline value_type operator/(const value_type& __x, const value_type& __y)
+    {
+        if (__y.imag() == 0.0)
+            return value_type(__x.real() / __y.real(), __x.imag() / __y.real());
+
+        value_type __r = __x;
+        __r /= __y;
+        return __r;
+    }
 
 
 
@@ -126,7 +226,7 @@ namespace mu
 	*/
 	ParserBase::ParserBase()
 		: m_pParseFormula(&ParserBase::ParseString)
-		, m_vRPN()
+		, m_compilingState()
 		, m_vStringBuf()
 		, m_pTokenReader()
 		, m_FunDef()
@@ -141,19 +241,18 @@ namespace mu
 		, m_sOprtChars()
 		, m_sInfixOprtChars()
 		, m_nIfElseCounter(0)
-		, m_vStackBuffer()
-		, m_nFinalResultIdx(0)
 	{
 		InitTokenReader();
 		nthLoopElement = 0;
 		nthLoopPartEquation = 0;
 		nCurrVectorIndex = 0;
-		nLoopLength = 0;
 		bMakeLoopByteCode = false;
 		bPauseLoopByteCode = false;
 		bPauseLock = false;
+		m_state = &m_compilingState;
+		nMaxThreads = omp_get_max_threads();// std::min(omp_get_max_threads(), s_MaxNumOpenMPThreads);
 
-		mVarMapPntr = 0;
+		mVarMapPntr = nullptr;
 	}
 
 	//---------------------------------------------------------------------------
@@ -164,7 +263,7 @@ namespace mu
 	*/
 	ParserBase::ParserBase(const ParserBase& a_Parser)
 		: m_pParseFormula(&ParserBase::ParseString)
-		, m_vRPN()
+		, m_compilingState()
 		, m_vStringBuf()
 		, m_pTokenReader()
 		, m_FunDef()
@@ -182,12 +281,13 @@ namespace mu
 	{
 		m_pTokenReader.reset(new token_reader_type(this));
 		nthLoopElement = 0;
-		nLoopLength = 0;
 		bMakeLoopByteCode = false;
 		bPauseLoopByteCode = false;
 		bPauseLock = false;
+		m_state = &m_compilingState;
+		nMaxThreads = omp_get_max_threads(); //std::min(omp_get_max_threads(), s_MaxNumOpenMPThreads);
 
-		mVarMapPntr = 0;
+		mVarMapPntr = nullptr;
 
 		Assign(a_Parser);
 	}
@@ -235,8 +335,7 @@ namespace mu
 		m_VarDef          = a_Parser.m_VarDef;           // Copy user defined variables
 		m_bBuiltInOp      = a_Parser.m_bBuiltInOp;
 		m_vStringBuf      = a_Parser.m_vStringBuf;
-		m_vStackBuffer    = a_Parser.m_vStackBuffer;
-		m_nFinalResultIdx = a_Parser.m_nFinalResultIdx;
+		m_compilingState  = a_Parser.m_compilingState;
 		m_StrVarDef       = a_Parser.m_StrVarDef;
 		m_vStringVarBuf   = a_Parser.m_vStringVarBuf;
 		m_nIfElseCounter  = a_Parser.m_nIfElseCounter;
@@ -317,9 +416,24 @@ namespace mu
 	{
 		m_pParseFormula = &ParserBase::ParseString;
 		m_vStringBuf.clear();
-		m_vRPN.clear();
+		m_compilingState.clear();
 		m_pTokenReader->ReInit();
 		m_nIfElseCounter = 0;
+	}
+
+    /////////////////////////////////////////////////
+    /// \brief Simple state-considering wrapper
+    /// around the ExpressionTarget structure.
+    ///
+    /// \return ExpressionTarget&
+    ///
+    /////////////////////////////////////////////////
+	ExpressionTarget& ParserBase::getTarget() const
+	{
+	    if (bMakeLoopByteCode && !bPauseLoopByteCode)
+            return m_stateStacks[nthLoopElement].m_target;
+
+        return m_compilingTarget;
 	}
 
 	//---------------------------------------------------------------------------
@@ -507,7 +621,7 @@ namespace mu
 		if (a_sExpr.find_first_of("{}") != string::npos || ContainsVectorVars(a_sExpr, true))
         {
             st = a_sExpr.to_string();
-            a_sExpr = PreEvaluateVectors(st);
+            a_sExpr = compileVectors(st);
 
             if (a_sExpr.find_first_of("{}") != string::npos)
                 Error(ecMISSING_PARENS, a_sExpr.to_string(), a_sExpr.find_first_of("{}"), "{}");
@@ -516,13 +630,13 @@ namespace mu
 		// Now check, whether the pre-evaluated formula was already parsed into the bytecode
 		// -> Return, if that is true
 		// -> Invalidate the bytecode for this formula, if necessary
-		if (bMakeLoopByteCode && !bPauseLoopByteCode && IsAlreadyParsed(a_sExpr) && vValidByteCode[nthLoopElement][nthLoopPartEquation])
+		if (IsAlreadyParsed(a_sExpr))
 			return;
-		else if (bMakeLoopByteCode && !bPauseLoopByteCode && this->GetExpr().length() && vValidByteCode[nthLoopElement][nthLoopPartEquation])
-			vValidByteCode[nthLoopElement][nthLoopPartEquation] = 0;
-
-		// reset vector dimension so that it will be evaluated at least once
-		nVectorDimension = 0;
+		else if (bMakeLoopByteCode
+                 && !bPauseLoopByteCode
+                 && this->GetExpr().length()
+                 && m_state->m_valid)
+			m_state->m_valid = 0;
 
 		string_type sBuf(a_sExpr.to_string() + " ");
 
@@ -547,15 +661,9 @@ namespace mu
     /// \return MutableStringView
     ///
     /////////////////////////////////////////////////
-	MutableStringView ParserBase::PreEvaluateVectors(MutableStringView sExpr)
+	MutableStringView ParserBase::compileVectors(MutableStringView sExpr)
 	{
-	    bool isPaused = bPauseLoopByteCode && bMakeLoopByteCode;
-
-	    // Pause the loop mode if it is active
-	    if (!isPaused)
-            PauseLoopMode();
-
-		vector<mu::value_type> vResults;
+		std::vector<mu::value_type> vResults;
 
 		// Resolve vectors, which are part of a multi-argument
 		// function's parentheses
@@ -569,7 +677,7 @@ namespace mu
             while ((match = sExpr.find(iter->first, match)) != string::npos)
             {
                 if (!match || checkDelimiter(sExpr.subview(match-1, iter->first.length()+2)))
-                    ResolveVectorsInMultiArgFunc(sExpr, match);
+                    compileVectorsInMultiArgFunc(sExpr, match);
 
                 match++;
             }
@@ -581,7 +689,7 @@ namespace mu
 		    // search for vector parentheses
 			if (sExpr[i] == '{' && sExpr.find('}', i) != string::npos)
 			{
-			    if (ResolveVectorsInMultiArgFunc(sExpr, i))
+			    if (compileVectorsInMultiArgFunc(sExpr, i))
                     continue;
 
                 vResults.clear();
@@ -595,11 +703,12 @@ namespace mu
 			    if (j != std::string::npos && sExpr.subview(i, j - i).find(':') != std::string::npos)
 				{
 				    // This is vector expansion: e.g. "{1:10}"
-				    // Get the expression and evaluate the expansion
-					evaluateVectorExpansion(sExpr.subview(i + 1, j - i - 1), vResults);
-
 					// Store the result in a new temporary vector
                     string sVectorVarName = CreateTempVectorVar(vResults);
+
+				    // Get the expression and evaluate the expansion
+					compileVectorExpansion(sExpr.subview(i + 1, j - i - 1), sVectorVarName);
+
 					sExpr.replace(i, j + 1 - i, sVectorVarName + " "); // Whitespace for constructs like {a:b}i
 				}
 				else
@@ -609,14 +718,6 @@ namespace mu
 					    // This is a normal vector, e.g. "{1,2,3}"
 					    // Set the sub expression and evaluate it
 						SetExpr(sExpr.subview(i + 1, j - i - 1));
-						int nResults;
-						value_type* v = Eval(nResults);
-
-						// Store the results in the target vector
-						for (int n = 0; n < nResults; n++)
-						{
-							vResults.push_back(v[n]);
-						}
 
 						// Determine, whether the current vector is a target vector or not
 						if (sExpr.find_first_not_of(' ') == i
@@ -628,29 +729,37 @@ namespace mu
 								&& sExpr[sExpr.find('=', j) + 1] != '=')
 						{
 						    // This is a target vector
+                            int nResults;
+                            value_type* v = Eval(nResults);
+                            // Store the results in the target vector
+                            vResults.insert(vResults.end(), v, v+nResults);
 						    // Store the variable names
-							sTargets = sExpr.subview(i + 1, j - i - 1).to_string();
-
-							// Set the special target vector variable
+						    getTarget().create(sExpr.subview(i + 1, j - i - 1), m_pTokenReader->GetUsedVar());
 							SetVectorVar("_~TRGTVCT[~]", vResults);
 							sExpr.replace(i, j + 1 - i, "_~TRGTVCT[~]");
-							mTargets = GetUsedVar();
 						}
 						else
 						{
 						    // This is a usual vector
-						    // Store the vector result as a new temporary vector variable
-                            string sVectorVarName = CreateTempVectorVar(vResults);
+						    // Create a new temporary vector name
+                            std::string sVectorVarName = CreateTempVectorVar(vResults);
+                            m_compilingState.m_vectEval.create(sVectorVarName);
+                            int nResults;
+                            // Calculate and store the results in the target vector
+                            Eval(nResults);
+						    // Update the expression
 							sExpr.replace(i, j + 1 - i, sVectorVarName + " "); // Whitespace for constructs like {a,b}i
 						}
 					}
 				}
 			}
-		}
 
-		// Re-enable the loop mode if it is used in the moment
-		if (!isPaused)
-            PauseLoopMode(false);
+			if (sExpr.subview(i, 9) == "logtoidx(" || sExpr.subview(i, 9) == "idxtolog(")
+            {
+                i += 8;
+                compileVectorsInMultiArgFunc(sExpr, i);
+            }
+		}
 
 		return sExpr;
 	}
@@ -661,102 +770,77 @@ namespace mu
     /// expansion, e.g. "{1:4}" = {1, 2, 3, 4}.
     ///
     /// \param sSubExpr MutableStringView
-    /// \param vResults vector<mu::value_type>&
+    /// \param sVectorVarName const std::string&
     /// \return void
     ///
     /////////////////////////////////////////////////
-	void ParserBase::evaluateVectorExpansion(MutableStringView sSubExpr, vector<mu::value_type>& vResults)
+	void ParserBase::compileVectorExpansion(MutableStringView sSubExpr, const std::string& sVectorVarName)
 	{
 		int nResults = 0;
-		value_type* v = nullptr;
 
 		EndlessVector<StringView> args = getAllArguments(sSubExpr);
-		std::string singletons;
+		std::vector<int> vComponentType;
+		std::string sCompiledExpression;
+		const int SINGLETON = 1;
 
+		// Determine the type of every part of the vector brace
 		for (size_t n = 0; n < args.size(); n++)
         {
             if (args[n].find(':') == std::string::npos)
             {
-                if (singletons.length())
-                    singletons += ",";
+                vComponentType.push_back(SINGLETON);
 
-                singletons += args[n].to_string();
+                if (sCompiledExpression.length())
+                    sCompiledExpression += ",";
 
-                // Is it the last one, then evaluate
-                // the singleton directly
-                if (n+1 == args.size())
-                {
-                    SetExpr(singletons);
-                    v = Eval(nResults);
-                    vResults.insert(vResults.end(), v, v+nResults);
-                    break;
-                }
-
-                continue;
-            }
-            else if (singletons.length())
-            {
-                SetExpr(singletons);
-                v = Eval(nResults);
-                vResults.insert(vResults.end(), v, v+nResults);
-                singletons.clear();
-            }
-
-            int isExpansion = -1;
-            MutableStringView sExpansion = args[n].make_mutable();
-
-            // Replace the colons with commas. But ensure that this is not a conditional statement
-            for (size_t i = 0; i < sExpansion.length(); i++)
-            {
-                if (sExpansion[i] == '(' || sExpansion[i] == '[' || sExpansion[i] == '{')
-                    i += getMatchingParenthesis(sSubExpr.subview(i));
-
-                if (sExpansion[i] == ':')
-                {
-                    if (isExpansion == -1)
-                        isExpansion = 1;
-
-                    // This is a conditional operator
-                    if (isExpansion == 0)
-                        continue;
-
-                    sExpansion[i] = ',';
-                }
-
-                // This is a conditional operator
-                if (sExpansion[i] == '?')
-                {
-                    if (isExpansion == -1)
-                        isExpansion = 0;
-
-                    if (isExpansion == 1)
-                        throw ParserError(ecUNEXPECTED_CONDITIONAL, "?", sExpansion.to_string(), i);
-                }
-            }
-
-            // set and evaluate the modified expression
-            SetExpr(sExpansion);
-            v = Eval(nResults);
-
-            if (isExpansion == 1)
-            {
-                // This is an expansion. There are two possible cases
-                if (nResults == 2)
-                {
-                    mu::value_type diff = v[1] - v[0];
-                    diff.real(diff.real() > 0.0 ? 1.0 : (diff.real() < 0.0 ? -1.0 : 0.0));
-                    diff.imag(diff.imag() > 0.0 ? 1.0 : (diff.imag() < 0.0 ? -1.0 : 0.0));
-                    expandVector(v[0], v[1], diff, vResults);
-                }
-                else if (nResults == 3)
-                    expandVector(v[0], v[2], v[1], vResults);
+                sCompiledExpression += args[n].to_string();
             }
             else
             {
-                // This is no expansion. Simply store the results
-                vResults.insert(vResults.end(), v, v+nResults);
+                int isExpansion = -1;
+                MutableStringView sExpansion = args[n].make_mutable();
+
+                // Replace the colons with commas. But ensure that this is not a conditional statement
+                for (size_t i = 0; i < sExpansion.length(); i++)
+                {
+                    if (sExpansion[i] == '(' || sExpansion[i] == '[' || sExpansion[i] == '{')
+                        i += getMatchingParenthesis(sSubExpr.subview(i));
+
+                    if (sExpansion[i] == ':')
+                    {
+                        if (isExpansion == -1)
+                            isExpansion = 1;
+
+                        // This is a conditional operator
+                        if (isExpansion == 0)
+                            continue;
+
+                        sExpansion[i] = ',';
+                    }
+
+                    // This is a conditional operator
+                    if (sExpansion[i] == '?')
+                    {
+                        if (isExpansion == -1)
+                            isExpansion = 0;
+
+                        if (isExpansion == 1)
+                            throw ParserError(ecUNEXPECTED_CONDITIONAL, "?", sExpansion.to_string(), i);
+                    }
+                }
+
+                if (sCompiledExpression.length())
+                    sCompiledExpression += ",";
+
+                sCompiledExpression += sExpansion.to_string();
+                vComponentType.push_back(getAllArguments(sExpansion).size());
             }
         }
+
+		// Evaluate
+		SetExpr(sCompiledExpression);
+		m_compilingState.m_vectEval.create(sVectorVarName, vComponentType);
+		Eval(nResults);
 	}
 
 
@@ -780,17 +864,18 @@ namespace mu
 	}
 
 
-    /** \brief This function expands the vector.
-     *
-     * \param dFirst const mu::value_type&
-     * \param dLast const mu::value_type&
-     * \param dIncrement const mu::value_type&
-     * \param vResults vector<mu::value_type>&
-     * \return void
-     *
-     * This function expands the vector. Private member used by ParserBase::evaluateVectorExpansion()
-     *
-     */
+    /////////////////////////////////////////////////
+    /// \brief This function expands the vector.
+    /// Private member used by
+    /// ParserBase::compileVectorExpansion().
+    ///
+    /// \param dFirst mu::value_type
+    /// \param dLast const mu::value_type&
+    /// \param dIncrement const mu::value_type&
+    /// \param vResults vector<mu::value_type>&
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
 	void ParserBase::expandVector(mu::value_type dFirst, const mu::value_type& dLast, const mu::value_type& dIncrement, vector<mu::value_type>& vResults)
 	{
 		// ignore impossible combinations. Store only
@@ -828,7 +913,7 @@ namespace mu
     /// \return bool
     ///
     /////////////////////////////////////////////////
-	bool ParserBase::ResolveVectorsInMultiArgFunc(MutableStringView& sExpr, size_t& nPos)
+	bool ParserBase::compileVectorsInMultiArgFunc(MutableStringView& sExpr, size_t& nPos)
 	{
         string sMultiArgFunc;
 	    // Try to find a multi-argument function. The size_t will store the start position of the function name
@@ -843,16 +928,15 @@ namespace mu
             // Set the argument of the function as expression and evaluate it recursively
             vector<mu::value_type> vResults;
             int nResults;
+            string sVectorVarName = CreateTempVectorVar(vResults);
             SetExpr(sExpr.subview(nMultiArgParens + 1, nClosingParens - nMultiArgParens - 1));
-            value_type* v = Eval(nResults);
-
-            // Apply the needed multi-argument function
-            ParserCallback pCallback = m_FunDef[sMultiArgFunc];
-            vResults.push_back(multfun_type(pCallback.GetAddr())(v, nResults));
+            m_compilingState.m_vectEval.create(sVectorVarName, sMultiArgFunc);
+            Eval(nResults);
 
             // Store the result in a new temporary vector
-            string sVectorVarName = CreateTempVectorVar(vResults);
-            sExpr.replace(nMultiArgParens - sMultiArgFunc.length(), nClosingParens - nMultiArgParens + 1 + sMultiArgFunc.length(), sVectorVarName);
+            sExpr.replace(nMultiArgParens - sMultiArgFunc.length(),
+                          nClosingParens - nMultiArgParens + 1 + sMultiArgFunc.length(),
+                          sVectorVarName);
 
             // Set the position to the start of the multi-argument
             // function to avoid jumping over consecutive vectors
@@ -906,6 +990,11 @@ namespace mu
 				// Exclude the following functions
 				if (sFunc == "polynomial" || sFunc == "perlin")
                     continue;
+                else if (sFunc == "logtoidx" || sFunc == "idxtolog")
+                {
+                    sMultArgFunc = sFunc;
+                    return i;
+                }
 
 				// Compare the function with the set of known multi-argument functions
 				auto iter = m_FunDef.find(sFunc);
@@ -1204,7 +1293,7 @@ namespace mu
 	/** \brief Return a map containing the used variables only. */
 	const varmap_type& ParserBase::GetUsedVar()
 	{
-		try
+		/*try
 		{
 			m_pTokenReader->IgnoreUndefVar(true);
 			CreateRPN(); // try to create bytecode, but don't use it for any further calculations since it
@@ -1219,7 +1308,7 @@ namespace mu
 			m_pParseFormula = &ParserBase::ParseString;
 			m_pTokenReader->IgnoreUndefVar(false);
 			throw;
-		}
+		}*/
 
 		return m_pTokenReader->GetUsedVar();
 	}
@@ -1269,19 +1358,10 @@ namespace mu
 	/** \brief Retrieve the formula. */
 	const string_type& ParserBase::GetExpr() const
 	{
-		if (bMakeLoopByteCode && !bPauseLoopByteCode && vValidByteCode[nthLoopElement][nthLoopPartEquation])
-		{
-			//std::cerr << vValidByteCode[nthLoopElement] << " / Expr[" << nthLoopElement << "]: \"" << vLoopString[nthLoopElement] << "\"" << endl;
-			if (g_DbgDumpStack)
-                NumeReKernel::print("Current Eq: \"" + vLoopString[nthLoopElement][nthLoopPartEquation] + "\"");
-			return vLoopString[nthLoopElement][nthLoopPartEquation];
-		}
-		else
-		{
-		    if (g_DbgDumpStack)
-                NumeReKernel::print("Current Eq: \"" + m_pTokenReader->GetExpr() + "\"");
-			return m_pTokenReader->GetExpr();
-		}
+	    if (g_DbgDumpStack)
+            NumeReKernel::print("Current Eq: \"" + m_state->m_expr + "\"");
+
+	    return m_state->m_expr;
 	}
 
 	//---------------------------------------------------------------------------
@@ -1326,7 +1406,7 @@ namespace mu
 		}
 
 		// string functions won't be optimized
-		m_vRPN.AddStrFun(pFunc, a_FunTok.GetArgCount(), a_vArg.back().GetIdx());
+		m_compilingState.m_byteCode.AddStrFun(pFunc, a_FunTok.GetArgCount(), a_vArg.back().GetIdx());
 
 		return valTok;
 	}
@@ -1397,7 +1477,7 @@ namespace mu
 				break;
 
 			case  cmFUNC_BULK:
-				m_vRPN.AddBulkFun(funTok.GetFuncAddr(), (int)stArg.size());
+				m_compilingState.m_byteCode.AddBulkFun(funTok.GetFuncAddr(), (int)stArg.size());
 				break;
 
 			case  cmOPRT_BIN:
@@ -1407,7 +1487,7 @@ namespace mu
 				if (funTok.GetArgCount() == -1 && iArgCount == 0)
 					Error(ecTOO_FEW_PARAMS, m_pTokenReader->GetPos(), funTok.GetAsString());
 
-				m_vRPN.AddFun(funTok.GetFuncAddr(), (funTok.GetArgCount() == -1) ? -iArgNumerical : iArgNumerical);
+				m_compilingState.m_byteCode.AddFun(funTok.GetFuncAddr(), (funTok.GetArgCount() == -1) ? -iArgNumerical : iArgNumerical);
 				break;
             default:
                 break;
@@ -1447,7 +1527,7 @@ namespace mu
 			MUP_ASSERT(opElse.GetCode() == cmELSE);
 			MUP_ASSERT(opIf.GetCode() == cmIF);
 
-			m_vRPN.AddIfElse(cmENDIF);
+			m_compilingState.m_byteCode.AddIfElse(cmENDIF);
 		} // while pending if-else-clause found
 	}
 
@@ -1480,10 +1560,10 @@ namespace mu
 				if (valTok2.GetCode() != cmVAR)
 					Error(ecUNEXPECTED_OPERATOR, -1, _nrT("="));
 
-				m_vRPN.AddAssignOp(valTok2.GetVar());
+				m_compilingState.m_byteCode.AddAssignOp(valTok2.GetVar());
 			}
 			else
-				m_vRPN.AddOp(optTok.GetCode());
+				m_compilingState.m_byteCode.AddOp(optTok.GetCode());
 
 			resTok.SetVal(1);
 			a_stVal.push(resTok);
@@ -1545,9 +1625,9 @@ namespace mu
 	    associated operators. The Stack is filled beginning from index one the
 	    value at index zero is not used at all.
 	*/
-	value_type ParserBase::ParseCmdCode()
+	void ParserBase::ParseCmdCode()
 	{
-		return ParseCmdCodeBulk(0, 0);
+		ParseCmdCodeBulk(0, 0);
 	}
 
 	//---------------------------------------------------------------------------
@@ -1555,582 +1635,412 @@ namespace mu
 	    \param nOffset The offset added to variable addresses (for bulk mode)
 	    \param nThreadID OpenMP Thread id of the calling thread
 	*/
-	value_type ParserBase::ParseCmdCodeBulk(int nOffset, int nThreadID)
+	void ParserBase::ParseCmdCodeBulk(int nOffset, int nThreadID)
 	{
-		assert(nThreadID <= s_MaxNumOpenMPThreads);
+		assert(nThreadID <= nMaxThreads);
 
 		// Note: The check for nOffset==0 and nThreadID here is not necessary but
 		//       brings a minor performance gain when not in bulk mode.
 		value_type* Stack = 0;
-		if (!bMakeLoopByteCode || bPauseLoopByteCode || !vValidByteCode[nthLoopElement][nthLoopPartEquation])
-			Stack = ((nOffset == 0) && (nThreadID == 0)) ? &m_vStackBuffer[0] : &m_vStackBuffer[nThreadID * (m_vStackBuffer.size() / s_MaxNumOpenMPThreads)];
-		else
-			Stack = ((nOffset == 0) && (nThreadID == 0)) ? &vLoopStackBuf[nthLoopElement][nthLoopPartEquation][0] : & vLoopStackBuf[nthLoopElement][nthLoopPartEquation][nThreadID * (vLoopStackBuf[nthLoopElement][nthLoopPartEquation].size() / s_MaxNumOpenMPThreads)];
+
+		Stack = ((nOffset == 0) && (nThreadID == 0))
+            ? &m_state->m_stackBuffer[0]
+            : &m_state->m_stackBuffer[nThreadID * (m_state->m_stackBuffer.size() / nMaxThreads)];
+
 		value_type buf;
 		int sidx(0);
-		if (!bMakeLoopByteCode || bPauseLoopByteCode || !vValidByteCode[nthLoopElement][nthLoopPartEquation])
-		{
-			//m_vRPN.AsciiDump();
-			for (const SToken* pTok = m_vRPN.GetBase(); pTok->Cmd != cmEND ; ++pTok)
-			{
-				switch (pTok->Cmd)
-				{
-					// built in binary operators
-					case  cmLE:
-						--sidx;
-						Stack[sidx]  = Stack[sidx].real() <= Stack[sidx + 1].real();
-						continue;
-					case  cmGE:
-						--sidx;
-						Stack[sidx]  = Stack[sidx].real() >= Stack[sidx + 1].real();
-						continue;
-					case  cmNEQ:
-						--sidx;
-						Stack[sidx]  = Stack[sidx] != Stack[sidx + 1];
-						continue;
-					case  cmEQ:
-						--sidx;
-						Stack[sidx]  = Stack[sidx] == Stack[sidx + 1];
-						continue;
-					case  cmLT:
-						--sidx;
-						Stack[sidx]  = Stack[sidx].real() < Stack[sidx + 1].real();
-						continue;
-					case  cmGT:
-						--sidx;
-						Stack[sidx]  = Stack[sidx].real() > Stack[sidx + 1].real();
-						continue;
-					case  cmADD:
-						--sidx;
-						Stack[sidx] += Stack[1 + sidx];
-						continue;
-					case  cmSUB:
-						--sidx;
-						Stack[sidx] -= Stack[1 + sidx];
-						continue;
-					case  cmMUL:
-						--sidx;
-						Stack[sidx] *= Stack[1 + sidx];
-						continue;
-					case  cmDIV:
-						--sidx;
+
+        for (const SToken* pTok = m_state->m_byteCode.GetBase(); pTok->Cmd != cmEND ; ++pTok)
+        {
+            switch (pTok->Cmd)
+            {
+                // built in binary operators
+                case  cmLE:
+                    --sidx;
+                    Stack[sidx]  = Stack[sidx].real() <= Stack[sidx + 1].real();
+                    continue;
+                case  cmGE:
+                    --sidx;
+                    Stack[sidx]  = Stack[sidx].real() >= Stack[sidx + 1].real();
+                    continue;
+                case  cmNEQ:
+                    --sidx;
+                    Stack[sidx]  = Stack[sidx] != Stack[sidx + 1];
+                    continue;
+                case  cmEQ:
+                    --sidx;
+                    Stack[sidx]  = Stack[sidx] == Stack[sidx + 1];
+                    continue;
+                case  cmLT:
+                    --sidx;
+                    Stack[sidx]  = Stack[sidx].real() < Stack[sidx + 1].real();
+                    continue;
+                case  cmGT:
+                    --sidx;
+                    Stack[sidx]  = Stack[sidx].real() > Stack[sidx + 1].real();
+                    continue;
+                case  cmADD:
+                    --sidx;
+                    Stack[sidx] += Stack[1 + sidx];
+                    continue;
+                case  cmSUB:
+                    --sidx;
+                    Stack[sidx] -= Stack[1 + sidx];
+                    continue;
+                case  cmMUL:
+                    --sidx;
+                    Stack[sidx] = Stack[sidx] * Stack[1 + sidx]; // Uses the optimized version
+                    continue;
+                case  cmDIV:
+                    --sidx;
 
 #if defined(MUP_MATH_EXCEPTIONS)
-						if (Stack[1 + sidx] == 0)
-							Error(ecDIV_BY_ZERO);
+                    if (Stack[1 + sidx] == 0)
+                        Error(ecDIV_BY_ZERO);
 #endif
-						Stack[sidx] /= Stack[1 + sidx];
-						continue;
+                    Stack[sidx] = Stack[sidx] / Stack[1 + sidx]; // Uses the optimized version
+                    continue;
 
-					case  cmPOW:
-					    --sidx;
-						Stack[sidx]  = MathImpl<value_type>::Pow(Stack[sidx], Stack[1 + sidx]);
-						continue;
+                case  cmPOW:
+                    --sidx;
+                    Stack[sidx]  = MathImpl<value_type>::Pow(Stack[sidx], Stack[1 + sidx]);
+                    continue;
 
-					case  cmLAND:
-						--sidx;
-						Stack[sidx]  = std::abs(Stack[sidx]) && std::abs(Stack[sidx + 1]);
-						continue;
-					case  cmLOR:
-						--sidx;
-						Stack[sidx]  = std::abs(Stack[sidx]) || std::abs(Stack[sidx + 1]);
-						continue;
+                case  cmLAND:
+                    --sidx;
+                    Stack[sidx]  = std::abs(Stack[sidx]) && std::abs(Stack[sidx + 1]);
+                    continue;
+                case  cmLOR:
+                    --sidx;
+                    Stack[sidx]  = std::abs(Stack[sidx]) || std::abs(Stack[sidx + 1]);
+                    continue;
 
-					case  cmASSIGN:
-						--sidx;
-						Stack[sidx] = *pTok->Oprt.ptr = Stack[sidx + 1];
-						continue;
+                case  cmASSIGN:
+                    --sidx;
+                    Stack[sidx] = *pTok->Oprt.ptr = Stack[sidx + 1];
+                    continue;
 
-					//case  cmBO:  // unused, listed for compiler optimization purposes
-					//case  cmBC:
-					//      MUP_FAIL(INVALID_CODE_IN_BYTECODE);
-					//      continue;
+                //case  cmBO:  // unused, listed for compiler optimization purposes
+                //case  cmBC:
+                //      MUP_FAIL(INVALID_CODE_IN_BYTECODE);
+                //      continue;
 
-					case  cmIF:
-						if (Stack[sidx--] == 0.0)
-							pTok += pTok->Oprt.offset;
-						continue;
+                case  cmIF:
+                    if (Stack[sidx--] == 0.0)
+                        pTok += pTok->Oprt.offset;
+                    continue;
 
-					case  cmELSE:
-						pTok += pTok->Oprt.offset;
-						continue;
+                case  cmELSE:
+                    pTok += pTok->Oprt.offset;
+                    continue;
 
-					case  cmENDIF:
-						continue;
+                case  cmENDIF:
+                    continue;
 
-					//case  cmARG_SEP:
-					//      MUP_FAIL(INVALID_CODE_IN_BYTECODE);
-					//      continue;
+                //case  cmARG_SEP:
+                //      MUP_FAIL(INVALID_CODE_IN_BYTECODE);
+                //      continue;
 
-					// value and variable tokens
-					case  cmVAR:
-						Stack[++sidx] = *(pTok->Val.ptr + nOffset);
-						continue;
-					case  cmVAL:
-						Stack[++sidx] =  pTok->Val.data2;
-						continue;
+                // value and variable tokens
+                case  cmVAL:
+                    Stack[++sidx] =  pTok->Val.data2;
+                    continue;
 
-					case  cmVARPOW2:
-						buf = *(pTok->Val.ptr + nOffset);
-						Stack[++sidx] = buf * buf;
-						continue;
+                case  cmVAR:
+                    Stack[++sidx] = *(pTok->Val.ptr + pTok->Val.isVect*nOffset);
+                    //NumeReKernel::print(toString(*(pTok->Val.ptr + pTok->Val.isVect*nOffset), 14));
+                    continue;
 
-					case  cmVARPOW3:
-						buf = *(pTok->Val.ptr + nOffset);
-						Stack[++sidx] = buf * buf * buf;
-						continue;
+                case  cmVARPOW2:
+                    buf = *(pTok->Val.ptr + pTok->Val.isVect*nOffset);
+                    Stack[++sidx] = buf * buf;
+                    continue;
 
-					case  cmVARPOW4:
-						buf = *(pTok->Val.ptr + nOffset);
-						Stack[++sidx] = buf * buf * buf * buf;
-						continue;
+                case  cmVARPOW3:
+                    buf = *(pTok->Val.ptr + pTok->Val.isVect*nOffset);
+                    Stack[++sidx] = buf * buf * buf;
+                    continue;
 
-					case  cmVARMUL:
-						Stack[++sidx] = *(pTok->Val.ptr + nOffset) * pTok->Val.data + pTok->Val.data2;
-						continue;
+                case  cmVARPOW4:
+                    buf = *(pTok->Val.ptr + pTok->Val.isVect*nOffset);
+                    Stack[++sidx] = buf * buf * buf * buf;
+                    continue;
 
-					// Next is treatment of numeric functions
-					case  cmFUNC:
-						{
-							int iArgCount = pTok->Fun.argc;
+                case  cmVARPOWN:
+                    Stack[++sidx] = intPower(*(pTok->Val.ptr + pTok->Val.isVect*nOffset), pTok->Val.data.real());
+                    continue;
 
-							// switch according to argument count
-							switch (iArgCount)
-							{
-								case 0:
-									sidx += 1;
-									Stack[sidx] = (*(fun_type0)pTok->Fun.ptr)();
-									continue;
-								case 1:
-									Stack[sidx] = (*(fun_type1)pTok->Fun.ptr)(Stack[sidx]);
-									continue;
-								case 2:
-									sidx -= 1;
-									Stack[sidx] = (*(fun_type2)pTok->Fun.ptr)(Stack[sidx], Stack[sidx + 1]);
-									continue;
-								case 3:
-									sidx -= 2;
-									Stack[sidx] = (*(fun_type3)pTok->Fun.ptr)(Stack[sidx], Stack[sidx + 1], Stack[sidx + 2]);
-									continue;
-								case 4:
-									sidx -= 3;
-									Stack[sidx] = (*(fun_type4)pTok->Fun.ptr)(Stack[sidx], Stack[sidx + 1], Stack[sidx + 2], Stack[sidx + 3]);
-									continue;
-								case 5:
-									sidx -= 4;
-									Stack[sidx] = (*(fun_type5)pTok->Fun.ptr)(Stack[sidx], Stack[sidx + 1], Stack[sidx + 2], Stack[sidx + 3], Stack[sidx + 4]);
-									continue;
-								case 6:
-									sidx -= 5;
-									Stack[sidx] = (*(fun_type6)pTok->Fun.ptr)(Stack[sidx], Stack[sidx + 1], Stack[sidx + 2], Stack[sidx + 3], Stack[sidx + 4], Stack[sidx + 5]);
-									continue;
-								case 7:
-									sidx -= 6;
-									Stack[sidx] = (*(fun_type7)pTok->Fun.ptr)(Stack[sidx], Stack[sidx + 1], Stack[sidx + 2], Stack[sidx + 3], Stack[sidx + 4], Stack[sidx + 5], Stack[sidx + 6]);
-									continue;
-								case 8:
-									sidx -= 7;
-									Stack[sidx] = (*(fun_type8)pTok->Fun.ptr)(Stack[sidx], Stack[sidx + 1], Stack[sidx + 2], Stack[sidx + 3], Stack[sidx + 4], Stack[sidx + 5], Stack[sidx + 6], Stack[sidx + 7]);
-									continue;
-								case 9:
-									sidx -= 8;
-									Stack[sidx] = (*(fun_type9)pTok->Fun.ptr)(Stack[sidx], Stack[sidx + 1], Stack[sidx + 2], Stack[sidx + 3], Stack[sidx + 4], Stack[sidx + 5], Stack[sidx + 6], Stack[sidx + 7], Stack[sidx + 8]);
-									continue;
-								case 10:
-									sidx -= 9;
-									Stack[sidx] = (*(fun_type10)pTok->Fun.ptr)(Stack[sidx], Stack[sidx + 1], Stack[sidx + 2], Stack[sidx + 3], Stack[sidx + 4], Stack[sidx + 5], Stack[sidx + 6], Stack[sidx + 7], Stack[sidx + 8], Stack[sidx + 9]);
-									continue;
-								default:
-									if (iArgCount > 0) // function with variable arguments store the number as a negative value
-										Error(ecINTERNAL_ERROR, 1);
+                case  cmVARMUL:
+                    Stack[++sidx] = *(pTok->Val.ptr + pTok->Val.isVect*nOffset) * pTok->Val.data + pTok->Val.data2;
+                    continue;
 
-									sidx -= -iArgCount - 1;
-									Stack[sidx] = (*(multfun_type)pTok->Fun.ptr)(&Stack[sidx], -iArgCount);
-									continue;
-							}
-						}
+                // Next is treatment of numeric functions
+                case  cmFUNC:
+                    {
+                        int iArgCount = pTok->Fun.argc;
 
-					// Next is treatment of string functions
-					case  cmFUNC_STR:
-						{
-							sidx -= pTok->Fun.argc - 1;
+                        // switch according to argument count
+                        switch (iArgCount)
+                        {
+                            case 0:
+                                sidx += 1;
+                                Stack[sidx] = (*(fun_type0)pTok->Fun.ptr)();
+                                continue;
+                            case 1:
+                                Stack[sidx] = (*(fun_type1)pTok->Fun.ptr)(Stack[sidx]);
+                                continue;
+                            case 2:
+                                sidx -= 1;
+                                Stack[sidx] = (*(fun_type2)pTok->Fun.ptr)(Stack[sidx],
+                                                                          Stack[sidx + 1]);
+                                continue;
+                            case 3:
+                                sidx -= 2;
+                                Stack[sidx] = (*(fun_type3)pTok->Fun.ptr)(Stack[sidx],
+                                                                          Stack[sidx + 1],
+                                                                          Stack[sidx + 2]);
+                                continue;
+                            case 4:
+                                sidx -= 3;
+                                Stack[sidx] = (*(fun_type4)pTok->Fun.ptr)(Stack[sidx],
+                                                                          Stack[sidx + 1],
+                                                                          Stack[sidx + 2],
+                                                                          Stack[sidx + 3]);
+                                continue;
+                            case 5:
+                                sidx -= 4;
+                                Stack[sidx] = (*(fun_type5)pTok->Fun.ptr)(Stack[sidx],
+                                                                          Stack[sidx + 1],
+                                                                          Stack[sidx + 2],
+                                                                          Stack[sidx + 3],
+                                                                          Stack[sidx + 4]);
+                                continue;
+                            case 6:
+                                sidx -= 5;
+                                Stack[sidx] = (*(fun_type6)pTok->Fun.ptr)(Stack[sidx],
+                                                                          Stack[sidx + 1],
+                                                                          Stack[sidx + 2],
+                                                                          Stack[sidx + 3],
+                                                                          Stack[sidx + 4],
+                                                                          Stack[sidx + 5]);
+                                continue;
+                            case 7:
+                                sidx -= 6;
+                                Stack[sidx] = (*(fun_type7)pTok->Fun.ptr)(Stack[sidx],
+                                                                          Stack[sidx + 1],
+                                                                          Stack[sidx + 2],
+                                                                          Stack[sidx + 3],
+                                                                          Stack[sidx + 4],
+                                                                          Stack[sidx + 5],
+                                                                          Stack[sidx + 6]);
+                                continue;
+                            case 8:
+                                sidx -= 7;
+                                Stack[sidx] = (*(fun_type8)pTok->Fun.ptr)(Stack[sidx],
+                                                                          Stack[sidx + 1],
+                                                                          Stack[sidx + 2],
+                                                                          Stack[sidx + 3],
+                                                                          Stack[sidx + 4],
+                                                                          Stack[sidx + 5],
+                                                                          Stack[sidx + 6],
+                                                                          Stack[sidx + 7]);
+                                continue;
+                            case 9:
+                                sidx -= 8;
+                                Stack[sidx] = (*(fun_type9)pTok->Fun.ptr)(Stack[sidx],
+                                                                          Stack[sidx + 1],
+                                                                          Stack[sidx + 2],
+                                                                          Stack[sidx + 3],
+                                                                          Stack[sidx + 4],
+                                                                          Stack[sidx + 5],
+                                                                          Stack[sidx + 6],
+                                                                          Stack[sidx + 7],
+                                                                          Stack[sidx + 8]);
+                                continue;
+                            case 10:
+                                sidx -= 9;
+                                Stack[sidx] = (*(fun_type10)pTok->Fun.ptr)(Stack[sidx],
+                                                                           Stack[sidx + 1],
+                                                                           Stack[sidx + 2],
+                                                                           Stack[sidx + 3],
+                                                                           Stack[sidx + 4],
+                                                                           Stack[sidx + 5],
+                                                                           Stack[sidx + 6],
+                                                                           Stack[sidx + 7],
+                                                                           Stack[sidx + 8],
+                                                                           Stack[sidx + 9]);
+                                continue;
+                            default:
+                                if (iArgCount > 0) // function with variable arguments store the number as a negative value
+                                    Error(ecINTERNAL_ERROR, 1);
 
-							// The index of the string argument in the string table
-							int iIdxStack = pTok->Fun.idx;
-							MUP_ASSERT( iIdxStack >= 0 && iIdxStack < (int)m_vStringBuf.size() );
+                                sidx -= -iArgCount - 1;
+                                Stack[sidx] = (*(multfun_type)pTok->Fun.ptr)(&Stack[sidx], -iArgCount);
+                                continue;
+                        }
+                    }
 
-							switch (pTok->Fun.argc) // switch according to argument count
-							{
-								case 0:
-									Stack[sidx] = (*(strfun_type1)pTok->Fun.ptr)(m_vStringBuf[iIdxStack].c_str());
-									continue;
-								case 1:
-									Stack[sidx] = (*(strfun_type2)pTok->Fun.ptr)(m_vStringBuf[iIdxStack].c_str(), Stack[sidx]);
-									continue;
-								case 2:
-									Stack[sidx] = (*(strfun_type3)pTok->Fun.ptr)(m_vStringBuf[iIdxStack].c_str(), Stack[sidx], Stack[sidx + 1]);
-									continue;
-							}
+                // Next is treatment of string functions
+                case  cmFUNC_STR:
+                    {
+                        sidx -= pTok->Fun.argc - 1;
 
-							continue;
-						}
+                        // The index of the string argument in the string table
+                        int iIdxStack = pTok->Fun.idx;
+                        MUP_ASSERT( iIdxStack >= 0 && iIdxStack < (int)m_vStringBuf.size() );
 
-					case  cmFUNC_BULK:
-						{
-							int iArgCount = pTok->Fun.argc;
+                        switch (pTok->Fun.argc) // switch according to argument count
+                        {
+                            case 0:
+                                Stack[sidx] = (*(strfun_type1)pTok->Fun.ptr)(m_vStringBuf[iIdxStack].c_str());
+                                continue;
+                            case 1:
+                                Stack[sidx] = (*(strfun_type2)pTok->Fun.ptr)(m_vStringBuf[iIdxStack].c_str(), Stack[sidx]);
+                                continue;
+                            case 2:
+                                Stack[sidx] = (*(strfun_type3)pTok->Fun.ptr)(m_vStringBuf[iIdxStack].c_str(), Stack[sidx], Stack[sidx + 1]);
+                                continue;
+                        }
 
-							// switch according to argument count
-							switch (iArgCount)
-							{
-								case 0:
-									sidx += 1;
-									Stack[sidx] = (*(bulkfun_type0 )pTok->Fun.ptr)(nOffset, nThreadID);
-									continue;
-								case 1:
-									Stack[sidx] = (*(bulkfun_type1 )pTok->Fun.ptr)(nOffset, nThreadID, Stack[sidx]);
-									continue;
-								case 2:
-									sidx -= 1;
-									Stack[sidx] = (*(bulkfun_type2 )pTok->Fun.ptr)(nOffset, nThreadID, Stack[sidx], Stack[sidx + 1]);
-									continue;
-								case 3:
-									sidx -= 2;
-									Stack[sidx] = (*(bulkfun_type3 )pTok->Fun.ptr)(nOffset, nThreadID, Stack[sidx], Stack[sidx + 1], Stack[sidx + 2]);
-									continue;
-								case 4:
-									sidx -= 3;
-									Stack[sidx] = (*(bulkfun_type4 )pTok->Fun.ptr)(nOffset, nThreadID, Stack[sidx], Stack[sidx + 1], Stack[sidx + 2], Stack[sidx + 3]);
-									continue;
-								case 5:
-									sidx -= 4;
-									Stack[sidx] = (*(bulkfun_type5 )pTok->Fun.ptr)(nOffset, nThreadID, Stack[sidx], Stack[sidx + 1], Stack[sidx + 2], Stack[sidx + 3], Stack[sidx + 4]);
-									continue;
-								case 6:
-									sidx -= 5;
-									Stack[sidx] = (*(bulkfun_type6 )pTok->Fun.ptr)(nOffset, nThreadID, Stack[sidx], Stack[sidx + 1], Stack[sidx + 2], Stack[sidx + 3], Stack[sidx + 4], Stack[sidx + 5]);
-									continue;
-								case 7:
-									sidx -= 6;
-									Stack[sidx] = (*(bulkfun_type7 )pTok->Fun.ptr)(nOffset, nThreadID, Stack[sidx], Stack[sidx + 1], Stack[sidx + 2], Stack[sidx + 3], Stack[sidx + 4], Stack[sidx + 5], Stack[sidx + 6]);
-									continue;
-								case 8:
-									sidx -= 7;
-									Stack[sidx] = (*(bulkfun_type8 )pTok->Fun.ptr)(nOffset, nThreadID, Stack[sidx], Stack[sidx + 1], Stack[sidx + 2], Stack[sidx + 3], Stack[sidx + 4], Stack[sidx + 5], Stack[sidx + 6], Stack[sidx + 7]);
-									continue;
-								case 9:
-									sidx -= 8;
-									Stack[sidx] = (*(bulkfun_type9 )pTok->Fun.ptr)(nOffset, nThreadID, Stack[sidx], Stack[sidx + 1], Stack[sidx + 2], Stack[sidx + 3], Stack[sidx + 4], Stack[sidx + 5], Stack[sidx + 6], Stack[sidx + 7], Stack[sidx + 8]);
-									continue;
-								case 10:
-									sidx -= 9;
-									Stack[sidx] = (*(bulkfun_type10)pTok->Fun.ptr)(nOffset, nThreadID, Stack[sidx], Stack[sidx + 1], Stack[sidx + 2], Stack[sidx + 3], Stack[sidx + 4], Stack[sidx + 5], Stack[sidx + 6], Stack[sidx + 7], Stack[sidx + 8], Stack[sidx + 9]);
-									continue;
-								default:
-									Error(ecINTERNAL_ERROR, 2);
-									continue;
-							}
-						}
+                        continue;
+                    }
 
-					//case  cmSTRING:
-					//case  cmOPRT_BIN:
-					//case  cmOPRT_POSTFIX:
-					//case  cmOPRT_INFIX:
-					//      MUP_FAIL(INVALID_CODE_IN_BYTECODE);
-					//      continue;
+                case  cmFUNC_BULK:
+                    {
+                        int iArgCount = pTok->Fun.argc;
 
-					//case  cmEND:
-					//     return Stack[m_nFinalResultIdx];
+                        // switch according to argument count
+                        switch (iArgCount)
+                        {
+                            case 0:
+                                sidx += 1;
+                                Stack[sidx] = (*(bulkfun_type0 )pTok->Fun.ptr)(nOffset,
+                                                                               nThreadID);
+                                continue;
+                            case 1:
+                                Stack[sidx] = (*(bulkfun_type1 )pTok->Fun.ptr)(nOffset,
+                                                                               nThreadID,
+                                                                               Stack[sidx]);
+                                continue;
+                            case 2:
+                                sidx -= 1;
+                                Stack[sidx] = (*(bulkfun_type2 )pTok->Fun.ptr)(nOffset,
+                                                                               nThreadID,
+                                                                               Stack[sidx],
+                                                                               Stack[sidx + 1]);
+                                continue;
+                            case 3:
+                                sidx -= 2;
+                                Stack[sidx] = (*(bulkfun_type3 )pTok->Fun.ptr)(nOffset,
+                                                                               nThreadID,
+                                                                               Stack[sidx],
+                                                                               Stack[sidx + 1],
+                                                                               Stack[sidx + 2]);
+                                continue;
+                            case 4:
+                                sidx -= 3;
+                                Stack[sidx] = (*(bulkfun_type4 )pTok->Fun.ptr)(nOffset,
+                                                                               nThreadID,
+                                                                               Stack[sidx],
+                                                                               Stack[sidx + 1],
+                                                                               Stack[sidx + 2],
+                                                                               Stack[sidx + 3]);
+                                continue;
+                            case 5:
+                                sidx -= 4;
+                                Stack[sidx] = (*(bulkfun_type5 )pTok->Fun.ptr)(nOffset,
+                                                                               nThreadID,
+                                                                               Stack[sidx],
+                                                                               Stack[sidx + 1],
+                                                                               Stack[sidx + 2],
+                                                                               Stack[sidx + 3],
+                                                                               Stack[sidx + 4]);
+                                continue;
+                            case 6:
+                                sidx -= 5;
+                                Stack[sidx] = (*(bulkfun_type6 )pTok->Fun.ptr)(nOffset,
+                                                                               nThreadID,
+                                                                               Stack[sidx],
+                                                                               Stack[sidx + 1],
+                                                                               Stack[sidx + 2],
+                                                                               Stack[sidx + 3],
+                                                                               Stack[sidx + 4],
+                                                                               Stack[sidx + 5]);
+                                continue;
+                            case 7:
+                                sidx -= 6;
+                                Stack[sidx] = (*(bulkfun_type7 )pTok->Fun.ptr)(nOffset,
+                                                                               nThreadID,
+                                                                               Stack[sidx],
+                                                                               Stack[sidx + 1],
+                                                                               Stack[sidx + 2],
+                                                                               Stack[sidx + 3],
+                                                                               Stack[sidx + 4],
+                                                                               Stack[sidx + 5],
+                                                                               Stack[sidx + 6]);
+                                continue;
+                            case 8:
+                                sidx -= 7;
+                                Stack[sidx] = (*(bulkfun_type8 )pTok->Fun.ptr)(nOffset,
+                                                                               nThreadID,
+                                                                               Stack[sidx],
+                                                                               Stack[sidx + 1],
+                                                                               Stack[sidx + 2],
+                                                                               Stack[sidx + 3],
+                                                                               Stack[sidx + 4],
+                                                                               Stack[sidx + 5],
+                                                                               Stack[sidx + 6],
+                                                                               Stack[sidx + 7]);
+                                continue;
+                            case 9:
+                                sidx -= 8;
+                                Stack[sidx] = (*(bulkfun_type9 )pTok->Fun.ptr)(nOffset,
+                                                                               nThreadID,
+                                                                               Stack[sidx],
+                                                                               Stack[sidx + 1],
+                                                                               Stack[sidx + 2],
+                                                                               Stack[sidx + 3],
+                                                                               Stack[sidx + 4],
+                                                                               Stack[sidx + 5],
+                                                                               Stack[sidx + 6],
+                                                                               Stack[sidx + 7],
+                                                                               Stack[sidx + 8]);
+                                continue;
+                            case 10:
+                                sidx -= 9;
+                                Stack[sidx] = (*(bulkfun_type10)pTok->Fun.ptr)(nOffset,
+                                                                               nThreadID,
+                                                                               Stack[sidx],
+                                                                               Stack[sidx + 1],
+                                                                               Stack[sidx + 2],
+                                                                               Stack[sidx + 3],
+                                                                               Stack[sidx + 4],
+                                                                               Stack[sidx + 5],
+                                                                               Stack[sidx + 6],
+                                                                               Stack[sidx + 7],
+                                                                               Stack[sidx + 8],
+                                                                               Stack[sidx + 9]);
+                                continue;
+                            default:
+                                Error(ecINTERNAL_ERROR, 2);
+                                continue;
+                        }
+                    }
 
-					default:
-						Error(ecINTERNAL_ERROR, 3);
-						return 0;
-				} // switch CmdCode
-			} // for all bytecode tokens
+                //case  cmSTRING:
+                //case  cmOPRT_BIN:
+                //case  cmOPRT_POSTFIX:
+                //case  cmOPRT_INFIX:
+                //      MUP_FAIL(INVALID_CODE_IN_BYTECODE);
+                //      continue;
 
-		}
-		else
-		{
-			m_nFinalResultIdx = vNumResultsIDX[nthLoopElement][nthLoopPartEquation];
-			//vLoopByteCode[nthLoopElement].AsciiDump();
-			for (const SToken* pTok = vLoopByteCode[nthLoopElement][nthLoopPartEquation].GetBase(); pTok->Cmd != cmEND ; ++pTok)
-			{
-				switch (pTok->Cmd)
-				{
-					// built in binary operators
-					case  cmLE:
-						--sidx;
-						Stack[sidx]  = Stack[sidx].real() <= Stack[sidx + 1].real();
-						continue;
-					case  cmGE:
-						--sidx;
-						Stack[sidx]  = Stack[sidx].real() >= Stack[sidx + 1].real();
-						continue;
-					case  cmNEQ:
-						--sidx;
-						Stack[sidx]  = Stack[sidx] != Stack[sidx + 1];
-						continue;
-					case  cmEQ:
-						--sidx;
-						Stack[sidx]  = Stack[sidx] == Stack[sidx + 1];
-						continue;
-					case  cmLT:
-						--sidx;
-						Stack[sidx]  = Stack[sidx].real() < Stack[sidx + 1].real();
-						continue;
-					case  cmGT:
-						--sidx;
-						Stack[sidx]  = Stack[sidx].real() > Stack[sidx + 1].real();
-						continue;
-					case  cmADD:
-						--sidx;
-						Stack[sidx] += Stack[1 + sidx];
-						continue;
-					case  cmSUB:
-						--sidx;
-						Stack[sidx] -= Stack[1 + sidx];
-						continue;
-					case  cmMUL:
-						--sidx;
-						Stack[sidx] *= Stack[1 + sidx];
-						continue;
-					case  cmDIV:
-						--sidx;
+                //case  cmEND:
+                //     return Stack[m_nFinalResultIdx];
 
-#if defined(MUP_MATH_EXCEPTIONS)
-						if (Stack[1 + sidx] == 0)
-							Error(ecDIV_BY_ZERO);
-#endif
-						Stack[sidx] /= Stack[1 + sidx];
-						continue;
-
-					case  cmPOW:
-					    --sidx;
-						Stack[sidx]  = MathImpl<value_type>::Pow(Stack[sidx], Stack[1 + sidx]);
-						continue;
-
-					case  cmLAND:
-						--sidx;
-						Stack[sidx]  = std::abs(Stack[sidx]) && std::abs(Stack[sidx + 1]);
-						continue;
-					case  cmLOR:
-						--sidx;
-						Stack[sidx]  = std::abs(Stack[sidx]) || std::abs(Stack[sidx + 1]);
-						continue;
-
-					case  cmASSIGN:
-						--sidx;
-						Stack[sidx] = *pTok->Oprt.ptr = Stack[sidx + 1];
-						continue;
-
-					//case  cmBO:  // unused, listed for compiler optimization purposes
-					//case  cmBC:
-					//      MUP_FAIL(INVALID_CODE_IN_BYTECODE);
-					//      continue;
-
-					case  cmIF:
-						if (Stack[sidx--] == 0.0)
-							pTok += pTok->Oprt.offset;
-						continue;
-
-					case  cmELSE:
-						pTok += pTok->Oprt.offset;
-						continue;
-
-					case  cmENDIF:
-						continue;
-
-					//case  cmARG_SEP:
-					//      MUP_FAIL(INVALID_CODE_IN_BYTECODE);
-					//      continue;
-
-					// value and variable tokens
-					case  cmVAR:
-						Stack[++sidx] = *(pTok->Val.ptr + nOffset);
-						continue;
-					case  cmVAL:
-						Stack[++sidx] =  pTok->Val.data2;
-						continue;
-
-					case  cmVARPOW2:
-						buf = *(pTok->Val.ptr + nOffset);
-						Stack[++sidx] = buf * buf;
-						continue;
-
-					case  cmVARPOW3:
-						buf = *(pTok->Val.ptr + nOffset);
-						Stack[++sidx] = buf * buf * buf;
-						continue;
-
-					case  cmVARPOW4:
-						buf = *(pTok->Val.ptr + nOffset);
-						Stack[++sidx] = buf * buf * buf * buf;
-						continue;
-
-					case  cmVARMUL:
-						Stack[++sidx] = *(pTok->Val.ptr + nOffset) * pTok->Val.data + pTok->Val.data2;
-						continue;
-
-					// Next is treatment of numeric functions
-					case  cmFUNC:
-						{
-							int iArgCount = pTok->Fun.argc;
-
-							// switch according to argument count
-							switch (iArgCount)
-							{
-								case 0:
-									sidx += 1;
-									Stack[sidx] = (*(fun_type0)pTok->Fun.ptr)();
-									continue;
-								case 1:
-									Stack[sidx] = (*(fun_type1)pTok->Fun.ptr)(Stack[sidx]);
-									continue;
-								case 2:
-									sidx -= 1;
-									Stack[sidx] = (*(fun_type2)pTok->Fun.ptr)(Stack[sidx], Stack[sidx + 1]);
-									continue;
-								case 3:
-									sidx -= 2;
-									Stack[sidx] = (*(fun_type3)pTok->Fun.ptr)(Stack[sidx], Stack[sidx + 1], Stack[sidx + 2]);
-									continue;
-								case 4:
-									sidx -= 3;
-									Stack[sidx] = (*(fun_type4)pTok->Fun.ptr)(Stack[sidx], Stack[sidx + 1], Stack[sidx + 2], Stack[sidx + 3]);
-									continue;
-								case 5:
-									sidx -= 4;
-									Stack[sidx] = (*(fun_type5)pTok->Fun.ptr)(Stack[sidx], Stack[sidx + 1], Stack[sidx + 2], Stack[sidx + 3], Stack[sidx + 4]);
-									continue;
-								case 6:
-									sidx -= 5;
-									Stack[sidx] = (*(fun_type6)pTok->Fun.ptr)(Stack[sidx], Stack[sidx + 1], Stack[sidx + 2], Stack[sidx + 3], Stack[sidx + 4], Stack[sidx + 5]);
-									continue;
-								case 7:
-									sidx -= 6;
-									Stack[sidx] = (*(fun_type7)pTok->Fun.ptr)(Stack[sidx], Stack[sidx + 1], Stack[sidx + 2], Stack[sidx + 3], Stack[sidx + 4], Stack[sidx + 5], Stack[sidx + 6]);
-									continue;
-								case 8:
-									sidx -= 7;
-									Stack[sidx] = (*(fun_type8)pTok->Fun.ptr)(Stack[sidx], Stack[sidx + 1], Stack[sidx + 2], Stack[sidx + 3], Stack[sidx + 4], Stack[sidx + 5], Stack[sidx + 6], Stack[sidx + 7]);
-									continue;
-								case 9:
-									sidx -= 8;
-									Stack[sidx] = (*(fun_type9)pTok->Fun.ptr)(Stack[sidx], Stack[sidx + 1], Stack[sidx + 2], Stack[sidx + 3], Stack[sidx + 4], Stack[sidx + 5], Stack[sidx + 6], Stack[sidx + 7], Stack[sidx + 8]);
-									continue;
-								case 10:
-									sidx -= 9;
-									Stack[sidx] = (*(fun_type10)pTok->Fun.ptr)(Stack[sidx], Stack[sidx + 1], Stack[sidx + 2], Stack[sidx + 3], Stack[sidx + 4], Stack[sidx + 5], Stack[sidx + 6], Stack[sidx + 7], Stack[sidx + 8], Stack[sidx + 9]);
-									continue;
-								default:
-									if (iArgCount > 0) // function with variable arguments store the number as a negative value
-										Error(ecINTERNAL_ERROR, 1);
-
-									sidx -= -iArgCount - 1;
-									Stack[sidx] = (*(multfun_type)pTok->Fun.ptr)(&Stack[sidx], -iArgCount);
-									continue;
-							}
-						}
-
-					// Next is treatment of string functions
-					case  cmFUNC_STR:
-						{
-							sidx -= pTok->Fun.argc - 1;
-
-							// The index of the string argument in the string table
-							int iIdxStack = pTok->Fun.idx;
-							MUP_ASSERT( iIdxStack >= 0 && iIdxStack < (int)m_vStringBuf.size() );
-
-							switch (pTok->Fun.argc) // switch according to argument count
-							{
-								case 0:
-									Stack[sidx] = (*(strfun_type1)pTok->Fun.ptr)(m_vStringBuf[iIdxStack].c_str());
-									continue;
-								case 1:
-									Stack[sidx] = (*(strfun_type2)pTok->Fun.ptr)(m_vStringBuf[iIdxStack].c_str(), Stack[sidx]);
-									continue;
-								case 2:
-									Stack[sidx] = (*(strfun_type3)pTok->Fun.ptr)(m_vStringBuf[iIdxStack].c_str(), Stack[sidx], Stack[sidx + 1]);
-									continue;
-							}
-
-							continue;
-						}
-
-					case  cmFUNC_BULK:
-						{
-							int iArgCount = pTok->Fun.argc;
-
-							// switch according to argument count
-							switch (iArgCount)
-							{
-								case 0:
-									sidx += 1;
-									Stack[sidx] = (*(bulkfun_type0 )pTok->Fun.ptr)(nOffset, nThreadID);
-									continue;
-								case 1:
-									Stack[sidx] = (*(bulkfun_type1 )pTok->Fun.ptr)(nOffset, nThreadID, Stack[sidx]);
-									continue;
-								case 2:
-									sidx -= 1;
-									Stack[sidx] = (*(bulkfun_type2 )pTok->Fun.ptr)(nOffset, nThreadID, Stack[sidx], Stack[sidx + 1]);
-									continue;
-								case 3:
-									sidx -= 2;
-									Stack[sidx] = (*(bulkfun_type3 )pTok->Fun.ptr)(nOffset, nThreadID, Stack[sidx], Stack[sidx + 1], Stack[sidx + 2]);
-									continue;
-								case 4:
-									sidx -= 3;
-									Stack[sidx] = (*(bulkfun_type4 )pTok->Fun.ptr)(nOffset, nThreadID, Stack[sidx], Stack[sidx + 1], Stack[sidx + 2], Stack[sidx + 3]);
-									continue;
-								case 5:
-									sidx -= 4;
-									Stack[sidx] = (*(bulkfun_type5 )pTok->Fun.ptr)(nOffset, nThreadID, Stack[sidx], Stack[sidx + 1], Stack[sidx + 2], Stack[sidx + 3], Stack[sidx + 4]);
-									continue;
-								case 6:
-									sidx -= 5;
-									Stack[sidx] = (*(bulkfun_type6 )pTok->Fun.ptr)(nOffset, nThreadID, Stack[sidx], Stack[sidx + 1], Stack[sidx + 2], Stack[sidx + 3], Stack[sidx + 4], Stack[sidx + 5]);
-									continue;
-								case 7:
-									sidx -= 6;
-									Stack[sidx] = (*(bulkfun_type7 )pTok->Fun.ptr)(nOffset, nThreadID, Stack[sidx], Stack[sidx + 1], Stack[sidx + 2], Stack[sidx + 3], Stack[sidx + 4], Stack[sidx + 5], Stack[sidx + 6]);
-									continue;
-								case 8:
-									sidx -= 7;
-									Stack[sidx] = (*(bulkfun_type8 )pTok->Fun.ptr)(nOffset, nThreadID, Stack[sidx], Stack[sidx + 1], Stack[sidx + 2], Stack[sidx + 3], Stack[sidx + 4], Stack[sidx + 5], Stack[sidx + 6], Stack[sidx + 7]);
-									continue;
-								case 9:
-									sidx -= 8;
-									Stack[sidx] = (*(bulkfun_type9 )pTok->Fun.ptr)(nOffset, nThreadID, Stack[sidx], Stack[sidx + 1], Stack[sidx + 2], Stack[sidx + 3], Stack[sidx + 4], Stack[sidx + 5], Stack[sidx + 6], Stack[sidx + 7], Stack[sidx + 8]);
-									continue;
-								case 10:
-									sidx -= 9;
-									Stack[sidx] = (*(bulkfun_type10)pTok->Fun.ptr)(nOffset, nThreadID, Stack[sidx], Stack[sidx + 1], Stack[sidx + 2], Stack[sidx + 3], Stack[sidx + 4], Stack[sidx + 5], Stack[sidx + 6], Stack[sidx + 7], Stack[sidx + 8], Stack[sidx + 9]);
-									continue;
-								default:
-									Error(ecINTERNAL_ERROR, 2);
-									continue;
-							}
-						}
-
-					//case  cmSTRING:
-					//case  cmOPRT_BIN:
-					//case  cmOPRT_POSTFIX:
-					//case  cmOPRT_INFIX:
-					//      MUP_FAIL(INVALID_CODE_IN_BYTECODE);
-					//      continue;
-
-					//case  cmEND:
-					//     return Stack[m_nFinalResultIdx];
-
-					default:
-						Error(ecINTERNAL_ERROR, 3);
-						return 0;
-				} // switch CmdCode
-			} // for all bytecode tokens
-
-		}
-
-		return Stack[m_nFinalResultIdx];
+                default:
+                    Error(ecINTERNAL_ERROR, 3);
+            } // switch CmdCode
+        } // for all bytecode tokens
 	}
 
 	//---------------------------------------------------------------------------
@@ -2138,6 +2048,7 @@ namespace mu
 	{
 	    if (g_DbgDumpStack)
             NumeReKernel::print("Parsing: \"" + m_pTokenReader->GetExpr() + "\"");
+
 		if (!m_pTokenReader->GetExpr().length())
 			Error(ecUNEXPECTED_EOF, 0);
 
@@ -2147,7 +2058,7 @@ namespace mu
 		token_type val, tval;  // for storing value
 		string_type strBuf;    // buffer for string function arguments
 
-		ReInit();
+		//ReInit();
 
 		// The outermost counter counts the number of seperated items
 		// such as in "a=10,b=20,c=c+a"
@@ -2170,9 +2081,8 @@ namespace mu
 
 				case cmVAR:
 					stVal.push(opt);
-					m_vRPN.AddVar( static_cast<value_type*>(opt.GetVar()) );
+					m_compilingState.m_byteCode.AddVar( static_cast<value_type*>(opt.GetVar()) );
 
-#warning TODO (numere#5#03/04/22): Heres possibly the location to enbable multiprocessing in the parser
 					if (mVectorVars.size())
 					{
 						if (mVectorVars.find(opt.GetAsString()) != mVectorVars.end())
@@ -2190,16 +2100,17 @@ namespace mu
 
 				case cmVAL:
 					stVal.push(opt);
-					m_vRPN.AddVal( opt.GetVal() );
+					m_compilingState.m_byteCode.AddVal( opt.GetVal() );
 					break;
 
 				case cmELSE:
 					m_nIfElseCounter--;
+
 					if (m_nIfElseCounter < 0)
 						Error(ecMISPLACED_COLON, m_pTokenReader->GetPos());
 
 					ApplyRemainingOprt(stOpt, stVal);
-					m_vRPN.AddIfElse(cmELSE);
+					m_compilingState.m_byteCode.AddIfElse(cmELSE);
 					stOpt.push(opt);
 					break;
 
@@ -2318,7 +2229,7 @@ namespace mu
 					} // while ( ... )
 
 					if (opt.GetCode() == cmIF)
-						m_vRPN.AddIfElse(opt.GetCode());
+						m_compilingState.m_byteCode.AddIfElse(opt.GetCode());
 
 					// The operator can't be evaluated right now, push back to the operator stack
 					stOpt.push(opt);
@@ -2352,27 +2263,30 @@ namespace mu
 
 			if ( opt.GetCode() == cmEND )
 			{
-				m_vRPN.Finalize();
+				m_compilingState.m_byteCode.Finalize();
 				break;
 			}
 
-			if (ParserBase::g_DbgDumpStack)
-			{
-				StackDump(stVal, stOpt);
-				m_vRPN.AsciiDump();
-			}
+			// Commented out - might be necessary for deep debugging stuff
+			//if (ParserBase::g_DbgDumpStack)
+			//{
+			//	StackDump(stVal, stOpt);
+			//	m_compilingState.m_byteCode.AsciiDump();
+			//}
 		} // while (true)
 
 		if (ParserBase::g_DbgDumpCmdCode)
-			m_vRPN.AsciiDump();
+			m_compilingState.m_byteCode.AsciiDump();
 
 		if (m_nIfElseCounter > 0)
 			Error(ecMISSING_ELSE_CLAUSE);
 
 		// get the last value (= final result) from the stack
 		MUP_ASSERT(stArgCount.size() == 1);
-		m_nFinalResultIdx = stArgCount.top();
-		if (m_nFinalResultIdx == 0)
+
+		m_compilingState.m_numResults = stArgCount.top();
+
+		if (m_compilingState.m_numResults == 0)
 			Error(ecINTERNAL_ERROR, 9);
 
 		if (stVal.size() == 0)
@@ -2381,7 +2295,7 @@ namespace mu
 		if (stVal.top().GetType() != tpDBL)
 			Error(ecSTR_RESULT);
 
-		m_vStackBuffer.resize(m_vRPN.GetMaxStackSize() * s_MaxNumOpenMPThreads);
+		m_compilingState.m_stackBuffer.resize(m_compilingState.m_byteCode.GetMaxStackSize() * nMaxThreads);
 	}
 
 	//---------------------------------------------------------------------------
@@ -2393,25 +2307,26 @@ namespace mu
 	  pointer #m_pParseFormula will be changed to the second parse routine the
 	  uses bytecode instead of string parsing.
 	*/
-	value_type ParserBase::ParseString()
+	void ParserBase::ParseString()
 	{
 		CreateRPN();
-		if (bMakeLoopByteCode && !bPauseLoopByteCode && vValidByteCode[nthLoopElement][nthLoopPartEquation])
+        m_compilingState.m_usedVar = m_pTokenReader->GetUsedVar();
+        m_compilingState.m_expr = m_pTokenReader->GetExpr();
+        StripSpaces(m_compilingState.m_expr);
+
+		if (bMakeLoopByteCode
+            && !bPauseLoopByteCode
+            && m_stateStacks(nthLoopElement, nthLoopPartEquation).m_valid)
 		{
-			vLoopByteCode[nthLoopElement][nthLoopPartEquation] = m_vRPN;
-			//vLoopByteCode[nthLoopElement].AsciiDump();
-			vLoopString[nthLoopElement][nthLoopPartEquation] = m_pTokenReader->GetExpr();
-			StripSpaces(vLoopString[nthLoopElement][nthLoopPartEquation]);
-			//std::cerr << vLoopString[nthLoopElement] << endl;
-			vNumResultsIDX[nthLoopElement][nthLoopPartEquation] = m_nFinalResultIdx;
-			vLoopStackBuf[nthLoopElement][nthLoopPartEquation].resize(m_vStackBuffer.size());
-			vLoopStackBuf[nthLoopElement][nthLoopPartEquation] = m_vStackBuffer;
-			vUsedVar[nthLoopElement][nthLoopPartEquation] = m_pTokenReader->GetUsedVar();
+		    State& state = m_stateStacks(nthLoopElement, nthLoopPartEquation);
+		    state = m_compilingState;
+		    m_state = &state;
 		}
 		else
-			vCurrentUsedVars = m_pTokenReader->GetUsedVar();
+            m_state = &m_compilingState;
+
 		m_pParseFormula = &ParserBase::ParseCmdCode;
-		return (this->*m_pParseFormula)();
+		(this->*m_pParseFormula)();
 	}
 
 	//---------------------------------------------------------------------------
@@ -2468,6 +2383,7 @@ namespace mu
 	void ParserBase::RemoveVar(const string_type& a_strVarName)
 	{
 		varmap_type::iterator item = m_VarDef.find(a_strVarName);
+		//g_logger.debug("Trying to delete " + a_strVarName);
 
 		if (item != m_VarDef.end())
 		{
@@ -2553,7 +2469,7 @@ namespace mu
 	*/
 	void ParserBase::EnableOptimizer(bool a_bIsOn)
 	{
-		m_vRPN.EnableOptimizer(a_bIsOn);
+		m_compilingState.m_byteCode.EnableOptimizer(a_bIsOn);
 		ReInit();
 	}
 
@@ -2809,305 +2725,253 @@ namespace mu
 
 
     /////////////////////////////////////////////////
-    /// \brief This member function assigns the
-    /// results of the calculation to the temporary
+    /// \brief This member function evaluates the
+    /// temporary vector expressions and assigns
+    /// their results to their corresponding target
     /// vector.
     ///
-    /// \param varmap const varmap_type&
-    /// \param nFinalResults int
+    /// \param vectEval const VectorEvaluation&
+    /// \param nStackSize int
     /// \return void
     ///
     /////////////////////////////////////////////////
-    void ParserBase::assignResultsToTarget(const varmap_type& varmap, int nFinalResults)
+    void ParserBase::evaluateTemporaryVectors(const VectorEvaluation& vectEval, int nStackSize)
 	{
-	    if (!mTargets.size() || varmap.find("_~TRGTVCT[~]") == varmap.end())
-            return;
+	    //g_logger.debug("Accessing " + vectEval.m_targetVect);
+        std::vector<mu::value_type>* vTgt = GetVectorVar(vectEval.m_targetVect);
 
-        std::string sTemp = sTargets;
-        size_t nthStackPos = 0;
-
-        // As long as the list of the targets has a length
-        while (sTemp.length())
+        switch (vectEval.m_type)
         {
-            if (mTargets.find(getNextVarObject(sTemp, false)) != mTargets.end())
+            case VectorEvaluation::EVALTYPE_VECTOR_EXPANSION:
             {
-                if (g_DbgDumpStack)
-                    NumeReKernel::printPreFmt("|-> Target: " + getNextVarObject(sTemp, false) + " = " + toString(m_vStackBuffer[nthStackPos+1], 5) +  " (m_vStackBuffer[" +toString(nthStackPos+1)+ "])\n");
-                *(mTargets[getNextVarObject(sTemp, false)]) = m_vStackBuffer[nthStackPos+1];
-            }
+                vTgt->clear();
 
-            getNextVarObject(sTemp, true);
-
-            // Handle singleton results correctly
-            if (nFinalResults > 1)
-                nthStackPos++;
-
-            // Ensure that we don't read wrong values
-            if (nthStackPos >= (size_t)nFinalResults)
-                break;
-        }
-
-	}
-
-
-	//------------------------------------------------------------------------------
-	/** \brief Evaluate an expression containing comma seperated subexpressions
-	    \param [out] nStackSize The total number of results available
-	    \return Pointer to the array containing all expression results
-
-	    This member function can be used to retriev all results of an expression
-	    made up of multiple comma seperated subexpressions (i.e. "x+y,sin(x),cos(y)")
-	*/
-	value_type* ParserBase::Eval(int& nStackSize)
-	{
-		(this->*m_pParseFormula)();
-
-		if (bMakeLoopByteCode && !bPauseLoopByteCode && vValidByteCode[nthLoopElement][nthLoopPartEquation])
-		{
-			nStackSize = vNumResultsIDX[nthLoopElement][nthLoopPartEquation];
-			m_vStackBuffer = vLoopStackBuf[nthLoopElement][nthLoopPartEquation];
-            size_t nVectorlength = 0;
-
-			if (g_DbgDumpStack)
-                NumeReKernel::printPreFmt("|-> EvalOpt LoopEl,PartEq = (" + toString(nthLoopElement) +","+ toString(nthLoopPartEquation) +") m_vStackBuffer[1] = " + toString(m_vStackBuffer[1], 5));
-
-			if (mVectorVars.size())
-			{
-				varmap_type& vars = vUsedVar[nthLoopElement][nthLoopPartEquation];
-
-				// Get the maximal size of the used vectors
-				//for (auto iter = mVectorVars.begin(); iter != mVectorVars.end(); ++iter)
-				//{
-				//	if (vars.find(iter->first) != vars.end()
-                //        && (iter->second).size() > nVectorlength
-                //        && iter->first != "_~TRGTVCT[~]")
-				//		nVectorlength = (iter->second).size();
-				//}
-
-				auto iterVector = mVectorVars.begin();
-				auto iterVar = vars.begin();
-
-				for ( ; iterVector != mVectorVars.end() && iterVar != vars.end(); )
+                for (size_t i = 0, n = 0; i < m_state->m_vectEval.m_componentDefs.size(); i++, n++)
                 {
-                    if (iterVector->first == iterVar->first)
-                    {
-                        if (iterVector->second.size() > nVectorlength && iterVector->first != "_~TRGTVCT[~]")
-                            nVectorlength = iterVector->second.size();
-
-                        ++iterVector;
-                        ++iterVar;
-                    }
+                    if (m_state->m_vectEval.m_componentDefs[i] == 1)
+                        vTgt->push_back(m_buffer[n]);
                     else
                     {
-                        if (iterVector->first < iterVar->first)
-                            ++iterVector;
-                        else
-                            ++iterVar;
+                        int nComps = m_state->m_vectEval.m_componentDefs[i];
+
+                        // This is an expansion. There are two possible cases
+                        if (nComps == 2)
+                        {
+                            mu::value_type diff = m_buffer[n+1] - m_buffer[n];
+                            diff.real(diff.real() > 0.0 ? 1.0 : (diff.real() < 0.0 ? -1.0 : 0.0));
+                            diff.imag(diff.imag() > 0.0 ? 1.0 : (diff.imag() < 0.0 ? -1.0 : 0.0));
+                            expandVector(m_buffer[n], m_buffer[n+1], diff, *vTgt);
+                        }
+                        else if (nComps == 3)
+                            expandVector(m_buffer[n], m_buffer[n+2], m_buffer[n+1], *vTgt);
+
+                        n += nComps-1;
                     }
                 }
 
-				// Only do something, if there's at least one vector with
-				// an arbitrary length used
-				if (nVectorlength)
-				{
-                    std::map<mu::value_type*, mu::value_type> mFirstVals;
-                    valbuf_type buffer;
-                    buffer.push_back(0.0); // erster Wert wird nicht mitgezaehlt
+                break;
+            }
 
-					// Copy the first elements
-					//for (int j = 1; j < nStackSize + 1; j++)
-                    //    buffer.push_back(vLoopStackBuf[nthLoopElement][nthLoopPartEquation][j]);
+            case VectorEvaluation::EVALTYPE_VECTOR:
+                vTgt->assign(m_buffer.begin(), m_buffer.begin() + nStackSize);
+                break;
 
-					buffer.insert(buffer.end(),
-                                  vLoopStackBuf[nthLoopElement][nthLoopPartEquation].begin()+1,
-                                  vLoopStackBuf[nthLoopElement][nthLoopPartEquation].begin()+nStackSize+1);
+            case VectorEvaluation::EVALTYPE_MULTIARGFUNC:
+            {
+                // Apply the needed multi-argument function
+                if (m_FunDef.find(m_state->m_vectEval.m_mafunc) != m_FunDef.end())
+                {
+                    ParserCallback pCallback = m_FunDef[m_state->m_vectEval.m_mafunc];
+                    vTgt->assign(1, multfun_type(pCallback.GetAddr())(&m_buffer[0], nStackSize));
+                }
+                else if (m_state->m_vectEval.m_mafunc == "logtoidx")
+                    *vTgt = parser_logtoidx(&m_buffer[0], nStackSize);
+                else if (m_state->m_vectEval.m_mafunc == "idxtolog")
+                    *vTgt = parser_idxtolog(&m_buffer[0], nStackSize);
 
-                    // Redo the calculations for each component of the
-                    // used vectors
-					for (size_t i = 0; i < nVectorlength; i++)
-					{
-						for (auto iter = mVectorVars.begin(); iter != mVectorVars.end(); ++iter)
-						{
-							// Modify the value of the used variables
-							if (vars.find(iter->first) != vars.end())
-							{
-								if (i == 0)
-								{
-									// Cache the values of the first component
-									// so that we may restore them later
-									mFirstVals[vars[iter->first]] = *(vars[iter->first]);
-									continue;
-								}
+                break;
+            }
 
-								if ((iter->second).size() > i)
-									*vars[iter->first] = (iter->second)[i];
-								else if ((iter->second).size() != 1)
-									*vars[iter->first] = 0.0;
-							}
-						}
+        }
 
-						// Repeat the evaluation of the parser
-						if (i)
-						{
-							(this->*m_pParseFormula)();
-
-							//for (int j = 1; j < nStackSize + 1; j++)
-							//	buffer.push_back(vLoopStackBuf[nthLoopElement][nthLoopPartEquation][j]);
-
-							buffer.insert(buffer.end(),
-                                          vLoopStackBuf[nthLoopElement][nthLoopPartEquation].begin()+1,
-                                          vLoopStackBuf[nthLoopElement][nthLoopPartEquation].begin()+nStackSize+1);
-						}
-					}
-
-					m_vStackBuffer = buffer;
-
-					// Restore the first components of the used vectors
-					for (auto iter = mFirstVals.begin(); iter != mFirstVals.end(); ++iter)
-						*(iter->first) = iter->second;
-
-					nStackSize *= nVectorlength;
-				}
-			}
-
-			// assign the results of the calculation to a possible
-			// temporary vector
-			assignResultsToTarget(vUsedVar[nthLoopElement][nthLoopPartEquation], max((unsigned)vNumResultsIDX[nthLoopElement][nthLoopPartEquation], nVectorlength));
-
-			if (bMakeLoopByteCode && !bPauseLoopByteCode)
-			{
-				nthLoopPartEquation++;
-				nCurrVectorIndex = 0;
-
-				if (vLoopByteCode[nthLoopElement].size() <= nthLoopPartEquation)
-				{
-					vLoopByteCode[nthLoopElement].push_back(ParserByteCode());
-					vLoopString[nthLoopElement].push_back("");
-					vValidByteCode[nthLoopElement].push_back(1);
-					vNumResultsIDX[nthLoopElement].push_back(0);
-					vLoopStackBuf[nthLoopElement].push_back(valbuf_type());
-					vUsedVar[nthLoopElement].push_back(varmap_type());
-				}
-			}
-
-			if (g_DbgDumpStack)
-                NumeReKernel::printPreFmt(" Returning " + toString(m_vStackBuffer[1], 5) + "\n");
-
-			return &m_vStackBuffer[1];
-		}
-		else
-		{
-			nStackSize = m_nFinalResultIdx;
-            size_t nVectorlength = 0;
-
-			if (mVectorVars.size() && !(mVectorVars.size() == 1 && mTargets.size() && vCurrentUsedVars.find("_~TRGTVCT[~]") != vCurrentUsedVars.end()))
-			{
-				valbuf_type buffer;
-				std::map<mu::value_type*, mu::value_type> mFirstVals;
-				buffer.push_back(0.0);
-
-				// Get the maximal size of the used vectors
-				for (auto iter = mNonSingletonVectorVars.begin(); iter != mNonSingletonVectorVars.end(); ++iter)
-				{
-					if ((iter->second)->size() > nVectorlength
-                        && iter->first != "_~TRGTVCT[~]"
-                        && vCurrentUsedVars.find(iter->first) != vCurrentUsedVars.end())
-						nVectorlength = (iter->second)->size();
-				}
-
-				// Only do something, if the vector length is LARGER than 1
-				if (nVectorlength > 1)
-				{
-				    // Copy the first elements
-                    for (int j = 1; j < m_nFinalResultIdx + 1; j++)
-                        buffer.push_back(m_vStackBuffer[j]);
-
-                    // Redo the calculations for each component of the
-                    // used vectors
-					for (unsigned int i = 0; i < nVectorlength; i++)
-					{
-						for (auto iter = mNonSingletonVectorVars.begin(); iter != mNonSingletonVectorVars.end(); ++iter)
-						{
-							// Modify the value of the used variables
-							if (vCurrentUsedVars.find(iter->first) != vCurrentUsedVars.end())
-							{
-								if (i == 0)
-								{
-									// Cache the values of the first component
-									// so that we may restore them later
-									mFirstVals[vCurrentUsedVars[iter->first]] = *(vCurrentUsedVars[iter->first]);
-									continue;
-								}
-
-								if ((iter->second)->size() > i)
-									*vCurrentUsedVars[iter->first] = (*(iter->second))[i];
-								else if ((iter->second)->size() != 1)
-									*vCurrentUsedVars[iter->first] = 0.0;
-							}
-						}
-
-						// Repeat the evaluation of the parser
-						if (i)
-						{
-							(this->*m_pParseFormula)();
-
-							for (int j = 1; j < m_nFinalResultIdx + 1; j++)
-								buffer.push_back(m_vStackBuffer[j]);
-						}
-					}
-
-					m_vStackBuffer = buffer;
-
-					// Restore the first components of the used vectors
-					for (auto iter = mFirstVals.begin(); iter != mFirstVals.end(); ++iter)
-						*(iter->first) = iter->second;
-
-					nStackSize *= nVectorlength;
-				}
-			}
-
-			// assign the results of the calculation to a possible
-			// temporary vector
-			assignResultsToTarget(vCurrentUsedVars, max((unsigned)m_nFinalResultIdx, nVectorlength));
-
-			// (for historic reasons the stack starts at position 1)
-			if (g_DbgDumpStack)
-                NumeReKernel::printPreFmt("|-> Eval LoopEl,PartEq = (" + toString(nthLoopElement) +","+ toString(nthLoopPartEquation) +") m_vStackBuffer[1] = " + toString(m_vStackBuffer[1], 5) + "\n");
-
-			return &m_vStackBuffer[1];
-		}
+        UpdateVectorVar(m_state->m_vectEval.m_targetVect);
 	}
 
-	//---------------------------------------------------------------------------
-	/** \brief Return the number of results on the calculation stack.
 
-	  If the expression contains comma seperated subexpressions (i.e. "sin(y), x+y").
-	  There mey be more than one return value. This function returns the number of
-	  available results.
-	*/
-	int ParserBase::GetNumResults() const
+    /////////////////////////////////////////////////
+    /// \brief Simple helper function to print the
+    /// buffer's contents.
+    ///
+    /// \param buffer const valbuf_type&
+    /// \param nElems int
+    /// \return std::string
+    ///
+    /////////////////////////////////////////////////
+	static std::string printVector(const valbuf_type& buffer, int nElems)
 	{
-		if (bMakeLoopByteCode && !bPauseLoopByteCode && vValidByteCode[nthLoopElement][nthLoopPartEquation])
-			return vNumResultsIDX[nthLoopElement][nthLoopPartEquation];
-		return m_nFinalResultIdx;
+	    std::string s;
+
+	    for (int i = 0; i < nElems; i++)
+            s += toString(buffer[i], 5) + ",";
+
+        s.pop_back();
+
+        return s;
 	}
 
-	//---------------------------------------------------------------------------
-	/** \brief Calculate the result.
 
-	  A note on const correctness:
-	  I consider it important that Calc is a const function.
-	  Due to caching operations Calc changes only the state of internal variables with one exception
-	  m_UsedVar this is reset during string parsing and accessible from the outside. Instead of making
-	  Calc non const GetUsedVar is non const because it explicitely calls Eval() forcing this update.
+    /////////////////////////////////////////////////
+    /// \brief Evaluate an expression containing
+    /// comma seperated subexpressions.
+    ///
+    /// This member function can be used to retrieve
+    /// all results of an expression made up of
+    /// multiple comma seperated subexpressions (i.e.
+    /// "x+y,sin(x),cos(y)").
+    ///
+    /// \param nStackSize int&
+    /// \return value_type*
+    ///
+    /////////////////////////////////////////////////
+	value_type* ParserBase::Eval(int& nStackSize)
+	{
+	    // Run the evaluation
+		(this->*m_pParseFormula)();
 
-	  \pre A formula must be set.
-	  \pre Variables must have been set (if needed)
+        nStackSize = m_state->m_numResults;
 
-	  \sa #m_pParseFormula
-	  \return The evaluation result
-	  \throw ParseException if no Formula is set or in case of any other error related to the formula.
-	*/
+        // Copy the actual results (ignore the 0-th term)
+        m_buffer.assign(m_state->m_stackBuffer.begin()+1,
+                        m_state->m_stackBuffer.begin()+nStackSize+1);
+
+        if (mVectorVars.size())
+        {
+            std::vector<std::vector<value_type>*> vUsedVectorVars;
+            std::vector<value_type*> vUsedVectorVarAddresses;
+            varmap_type& vars = m_state->m_usedVar;
+            size_t nVectorLength = 0;
+
+            // Get the maximal size of the used vectors
+            auto iterVector = mVectorVars.begin();
+            auto iterVar = vars.begin();
+
+            for ( ; iterVector != mVectorVars.end() && iterVar != vars.end(); )
+            {
+                if (iterVector->first == iterVar->first)
+                {
+                    if (iterVector->second.size() > 1 && iterVector->first != "_~TRGTVCT[~]")
+                    {
+                        vUsedVectorVarAddresses.push_back(iterVar->second);
+                        vUsedVectorVars.push_back(&(iterVector->second));
+                        nVectorLength = std::max(nVectorLength, iterVector->second.size());
+                    }
+
+                    ++iterVector;
+                    ++iterVar;
+                }
+                else
+                {
+                    if (iterVector->first < iterVar->first)
+                        ++iterVector;
+                    else
+                        ++iterVar;
+                }
+            }
+
+            // Any vectors larger than 1 element in this equation?
+            if (vUsedVectorVarAddresses.size())
+            {
+                // Replace all addresses and resize all vectors to fit
+                for (size_t i = 0; i < vUsedVectorVarAddresses.size(); i++)
+                {
+                    vUsedVectorVars[i]->resize(nVectorLength);
+                    m_state->m_byteCode.ChangeVar(vUsedVectorVarAddresses[i], vUsedVectorVars[i]->data(), true);
+                }
+
+                // Resize the target buffer correspondingly
+                m_buffer.resize(nStackSize * nVectorLength);
+
+                if (nVectorLength < 500)
+                {
+                    // Too few components -> run sequentially
+                    for (size_t i = 1; i < nVectorLength; ++i)
+                    {
+                        ParseCmdCodeBulk(i, 0);
+
+                        for (int j = 0; j < nStackSize; j++)
+                        {
+                            m_buffer[i*nStackSize + j] = m_state->m_stackBuffer[j + 1];
+                        }
+                    }
+                }
+                else
+                {
+                    // Run parallel
+                    size_t nBufferOffset = m_state->m_stackBuffer.size() / nMaxThreads;
+
+                    #pragma omp parallel for //schedule(static, (nVectorLength-1)/nMaxThreads)
+                    for (size_t i = 1; i < nVectorLength; ++i)
+                    {
+                        int nThreadID = omp_get_thread_num();
+                        ParseCmdCodeBulk(i, nThreadID);
+
+                        for (int j = 0; j < nStackSize; j++)
+                        {
+                            m_buffer[i*nStackSize + j] = m_state->m_stackBuffer[nThreadID*nBufferOffset + j + 1];
+                        }
+                    }
+                }
+
+
+                // Update the external variable
+                nStackSize *= nVectorLength;
+
+                // Replace all addresses (they are temporary!)
+                for (size_t i = 0; i < vUsedVectorVarAddresses.size(); i++)
+                {
+                    m_state->m_byteCode.ChangeVar(vUsedVectorVars[i]->data(), vUsedVectorVarAddresses[i], false);
+                }
+            }
+        }
+
+        // assign the results of the calculation to a possible
+        // temporary vector
+        ExpressionTarget& target = getTarget();
+
+        if (target.isValid() && m_state->m_usedVar.find("_~TRGTVCT[~]") != m_state->m_usedVar.end())
+            target.assign(m_buffer, nStackSize);
+
+        // Temporary target vector
+        if (m_state->m_vectEval.m_type != VectorEvaluation::EVALTYPE_NONE)
+            evaluateTemporaryVectors(m_state->m_vectEval, nStackSize);
+
+        if (g_DbgDumpStack)
+            NumeReKernel::print("ParserBase::Eval() @ ["
+                                + toString(nthLoopElement) + "," + toString(nthLoopPartEquation)
+                                + "] m_buffer[:] = {" + printVector(m_buffer, nStackSize) + "}");
+
+        if (bMakeLoopByteCode && !bPauseLoopByteCode)
+        {
+            nthLoopPartEquation++;
+            nCurrVectorIndex = 0;
+
+            if (m_stateStacks[nthLoopElement].m_states.size() <= nthLoopPartEquation)
+                m_stateStacks[nthLoopElement].m_states.push_back(State());
+
+            m_state = &m_stateStacks(nthLoopElement, nthLoopPartEquation);
+        }
+
+        return &m_buffer[0];
+	}
+
+
+    /////////////////////////////////////////////////
+    /// \brief Single-value wrapper around the
+    /// vectorized overload of this member function.
+    ///
+    /// \return value_type
+    ///
+    /////////////////////////////////////////////////
 	value_type ParserBase::Eval() // declared as deprecated
 	{
 	    value_type* v;
@@ -3143,21 +3007,10 @@ namespace mu
             nthLoopPartEquation = 0;
             bMakeLoopByteCode = true;
             DeactivateLoopMode();
-            nLoopLength = _nLoopLength;
             bMakeLoopByteCode = true;
             bCompiling = false;
-            vLoopByteCode.resize(nLoopLength, std::vector<ParserByteCode>(1));
-            vLoopString.resize(nLoopLength, std::vector<std::string>(1));
-            vValidByteCode.resize(nLoopLength, std::vector<int>(1, 1));
-            vNumResultsIDX.resize(nLoopLength, std::vector<int>(1, 0));
-            vLoopStackBuf.resize(nLoopLength, std::vector<valbuf_type>(1));
-            vUsedVar.resize(nLoopLength, std::vector<varmap_type>(1));
-            vCanCacheAccess.resize(nLoopLength, true);
-            vDataAccessCache.resize(nLoopLength, std::vector<CachedDataAccess>());
-            vCachedEquation.resize(nLoopLength, "");
-            vCachedTarget.resize(nLoopLength, "");
+            m_stateStacks.resize(_nLoopLength);
         }
-        return;
     }
 
 
@@ -3174,24 +3027,14 @@ namespace mu
         {
             if (g_DbgDumpStack)
                 NumeReKernel::print("DEBUG: Deactivated loop mode");
-            nLoopLength = 0;
             nthLoopElement = 0;
             nthLoopPartEquation = 0;
             nCurrVectorIndex = 0;
             bMakeLoopByteCode = false;
             bCompiling = false;
-            vLoopByteCode.clear();
-            vLoopString.clear();
-            vValidByteCode.clear();
-            vNumResultsIDX.clear();
-            vLoopStackBuf.clear();
-            vUsedVar.clear();
-            vCanCacheAccess.clear();
-            vDataAccessCache.clear();
-            vCachedEquation.clear();
-            vCachedTarget.clear();
+            m_stateStacks.clear();
+            m_state = &m_compilingState;
         }
-        return;
     }
 
 
@@ -3208,6 +3051,7 @@ namespace mu
         nthLoopElement = _nLoopElement;
         nCurrVectorIndex = 0;
         nthLoopPartEquation = 0;
+        m_state = &m_stateStacks(nthLoopElement, nthLoopPartEquation);
     }
 
 
@@ -3249,7 +3093,7 @@ namespace mu
     void ParserBase::CacheCurrentAccess(const CachedDataAccess& _access)
     {
         if (bMakeLoopByteCode && !bPauseLoopByteCode)
-            vDataAccessCache[nthLoopElement].push_back(_access);
+            m_stateStacks[nthLoopElement].m_cache.m_accesses.push_back(_access);
     }
 
 
@@ -3262,8 +3106,8 @@ namespace mu
     /////////////////////////////////////////////////
     size_t ParserBase::HasCachedAccess()
     {
-        if (bMakeLoopByteCode && !bPauseLoopByteCode && vCanCacheAccess[nthLoopElement])
-            return vDataAccessCache[nthLoopElement].size();
+        if (bMakeLoopByteCode && !bPauseLoopByteCode && m_stateStacks[nthLoopElement].m_cache.m_enabled)
+            return m_stateStacks[nthLoopElement].m_cache.m_accesses.size();
 
         return 0;
     }
@@ -3280,8 +3124,8 @@ namespace mu
     {
         if (bMakeLoopByteCode && !bPauseLoopByteCode)
         {
-            vCanCacheAccess[nthLoopElement] = false;
-            vDataAccessCache[nthLoopElement].clear();
+            m_stateStacks[nthLoopElement].m_cache.m_enabled = false;
+            m_stateStacks[nthLoopElement].m_cache.m_accesses.clear();
         }
     }
 
@@ -3296,7 +3140,7 @@ namespace mu
     bool ParserBase::CanCacheAccess()
     {
         if (bMakeLoopByteCode && !bPauseLoopByteCode)
-            return vCanCacheAccess[nthLoopElement];
+            return m_stateStacks[nthLoopElement].m_cache.m_enabled;
 
         return false;
     }
@@ -3312,8 +3156,8 @@ namespace mu
     /////////////////////////////////////////////////
     const CachedDataAccess& ParserBase::GetCachedAccess(size_t nthAccess)
     {
-        if (bMakeLoopByteCode && !bPauseLoopByteCode && vDataAccessCache[nthLoopElement].size() > nthAccess)
-            return vDataAccessCache[nthLoopElement][nthAccess];
+        if (bMakeLoopByteCode && !bPauseLoopByteCode && m_stateStacks[nthLoopElement].m_cache.m_accesses.size() > nthAccess)
+            return m_stateStacks[nthLoopElement].m_cache.m_accesses[nthAccess];
 
         return CachedDataAccess();
     }
@@ -3330,7 +3174,7 @@ namespace mu
     void ParserBase::CacheCurrentEquation(const string& sEquation)
     {
         if (bMakeLoopByteCode && !bPauseLoopByteCode)
-            vCachedEquation[nthLoopElement] = sEquation;
+            m_stateStacks[nthLoopElement].m_cache.m_expr = sEquation;
     }
 
 
@@ -3344,7 +3188,7 @@ namespace mu
     const std::string& ParserBase::GetCachedEquation() const
     {
         if (bMakeLoopByteCode && !bPauseLoopByteCode)
-            return vCachedEquation[nthLoopElement];
+            return m_stateStacks[nthLoopElement].m_cache.m_expr;
 
         return EMPTYSTRING;
     }
@@ -3361,7 +3205,7 @@ namespace mu
     void ParserBase::CacheCurrentTarget(const string& sEquation)
     {
         if (bMakeLoopByteCode && !bPauseLoopByteCode)
-            vCachedTarget[nthLoopElement] = sEquation;
+            m_stateStacks[nthLoopElement].m_cache.m_target = sEquation;
     }
 
 
@@ -3375,7 +3219,7 @@ namespace mu
     const std::string& ParserBase::GetCachedTarget() const
     {
         if (bMakeLoopByteCode && !bPauseLoopByteCode)
-            return vCachedTarget[nthLoopElement];
+            return m_stateStacks[nthLoopElement].m_cache.m_target;
 
         return EMPTYSTRING;
     }
@@ -3396,10 +3240,10 @@ namespace mu
         if (!bMakeLoopByteCode)
             return 0;
 
-        if (_nthLoopElement < nLoopLength)
-            return vValidByteCode[_nthLoopElement][_nthPartEquation];
+        if (_nthLoopElement < m_stateStacks.size())
+            return m_stateStacks(_nthLoopElement, _nthPartEquation).m_valid;
         else
-            return vValidByteCode[nthLoopElement][_nthPartEquation];
+            return m_stateStacks(nthLoopElement, _nthPartEquation).m_valid;
     }
 
 
@@ -3464,7 +3308,12 @@ namespace mu
             bPauseLoopByteCode = _bPause;
 
             if (!_bPause)
+            {
+                m_state = &m_stateStacks(nthLoopElement, nthLoopPartEquation);
                 m_pParseFormula = &ParserBase::ParseCmdCode;
+            }
+            else
+                m_state = &m_compilingState;
         }
     }
 
@@ -3484,8 +3333,24 @@ namespace mu
         sNewEquation.strip();
 
         if (sNewEquation == sCurrentEquation
-            && (!bMakeLoopByteCode || bPauseLoopByteCode || vValidByteCode[nthLoopElement][nthLoopPartEquation]))
+            && (!bMakeLoopByteCode || bPauseLoopByteCode || m_state->m_valid))
             return true;
+
+        return false;
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Check, whether there are more elements
+    /// on the parsing stack remaining.
+    ///
+    /// \return bool
+    ///
+    /////////////////////////////////////////////////
+    bool ParserBase::IsNotLastStackItem() const
+    {
+        if (bMakeLoopByteCode && !bPauseLoopByteCode)
+            return nthLoopPartEquation+1 < m_stateStacks[nthLoopElement].m_states.size();
 
         return false;
     }
@@ -3505,8 +3370,6 @@ namespace mu
 	{
 		CreateRPN();
 
-		int i = 0;
-
 #ifdef MUP_USE_OPENMP
 //#define DEBUG_OMP_STUFF
 #ifdef DEBUG_OMP_STUFF
@@ -3519,7 +3382,7 @@ namespace mu
 		omp_set_num_threads(nMaxThreads);
 
 		#pragma omp parallel for schedule(static, nBulkSize/nMaxThreads) private(nThreadID)
-		for (i = 0; i < nBulkSize; ++i)
+		for (int i = 0; i < nBulkSize; ++i)
 		{
 			nThreadID = omp_get_thread_num();
 			results[i] = ParseCmdCodeBulk(i, nThreadID);
@@ -3536,7 +3399,7 @@ namespace mu
 
 #ifdef DEBUG_OMP_STUFF
 		FILE* pFile = fopen("bulk_dbg.txt", "w");
-		for (i = 0; i < nBulkSize; ++i)
+		for (int i = 0; i < nBulkSize; ++i)
 		{
 			fprintf(pFile, "idx: %d  thread: %d \n", pIdx[i], pThread[i]);
 		}
@@ -3546,12 +3409,6 @@ namespace mu
 
 		fclose(pFile);
 #endif
-
-#else
-		for (i = 0; i < nBulkSize; ++i)
-		{
-			results[i] = ParseCmdCodeBulk(i, 0);
-		}
 #endif
 
 	}
@@ -3570,9 +3427,12 @@ namespace mu
 	{
 	    string_type sTempVarName = "_~TV[" + getNextVectorVarIndex() + "]";
 
-	    SetVectorVar(sTempVarName, vVar, false);
+        if (!vVar.size())
+            SetVectorVar(sTempVarName, std::vector<mu::value_type>(1, 0.0), false);
+        else
+            SetVectorVar(sTempVarName, vVar, false);
 
-	    return sTempVarName;
+        return sTempVarName;
 	}
 
 
@@ -3592,6 +3452,8 @@ namespace mu
 		if (!vVar.size())
 			return;
 
+        //g_logger.debug("Declaring " + sVarName);
+
 		if (!bAddVectorType && mVectorVars.find(sVarName) == mVectorVars.end() && m_VarDef.find(sVarName) == m_VarDef.end())
 		{
 		    // Create the storage for a new variable
@@ -3608,13 +3470,6 @@ namespace mu
 			*(m_VarDef.find(sVarName)->second) = vVar[0];
 
 		mVectorVars[sVarName] = vVar;
-
-		if (vVar.size() > 1)
-			mNonSingletonVectorVars[sVarName] = &mVectorVars[sVarName];
-		else if (mNonSingletonVectorVars.find(sVarName) != mNonSingletonVectorVars.end())
-			mNonSingletonVectorVars.erase(mNonSingletonVectorVars.find(sVarName));
-
-		return;
 	}
 
 
@@ -3649,8 +3504,9 @@ namespace mu
 		if (mVectorVars.find(sVarName) == mVectorVars.end())
 			return;
 
+        //g_logger.debug("Updating " + sVarName + " Exists: " + toString(GetVar().find(sVarName) != GetVar().end()));
+
 		*(GetVar().find(sVarName)->second) = mVectorVars[sVarName][0];
-		return;
 	}
 
 
@@ -3686,21 +3542,14 @@ namespace mu
 			}
 			else
 				iter = mVectorVars.erase(iter); //iter++;
-
-			auto ns_iter = mNonSingletonVectorVars.find(siter);
-
-			if (ns_iter != mNonSingletonVectorVars.end())
-				mNonSingletonVectorVars.erase(ns_iter);
 		}
 
 		if (!bIgnoreProcedureVects || !mVectorVars.size())
-		{
+        {
+            //g_logger.debug("Clearing vector vars and target.");
 			mVectorVars.clear();
-			mTargets.clear();
-			sTargets.clear();
-		}
-
-		return;
+            m_compilingTarget.clear();
+        }
 	}
 
 
@@ -3726,9 +3575,25 @@ namespace mu
                 return true;
         }
 
+        static std::vector<std::string> vNDVECTFUNCS = {"logtoidx", "idxtolog"};
+
+        for (const auto& func : vNDVECTFUNCS)
+        {
+            size_t nPos = sExpr.find(func);
+
+            if (nPos != string::npos && (!nPos || checkDelimiter(sExpr.subview(nPos-1, func.length()+2))))
+                return true;
+        }
+
+
         return false;
 	}
 
+	static bool isDelim(char c)
+	{
+	    // Characters converted to a single logical expression
+	    return c >= 32 && c <= 126 && c != 36 && c != 39 && c != 46 && (c < 48 || c > 57) && (c < 64 || c > 90) && (c < 95 || c > 122);
+	}
 
     /////////////////////////////////////////////////
     /// \brief This member function checks, whether
@@ -3740,10 +3605,11 @@ namespace mu
     /////////////////////////////////////////////////
 	bool ParserBase::checkDelimiter(StringView sLine)
 	{
-		static std::string sDelimiter = "+-*/ ()={}^&|!<>,\\%#~[]:";
-
-		// --> Gib die Auswertung dieses logischen Ausdrucks zurueck <--
-		return sDelimiter.find(sLine.front()) != std::string::npos && sDelimiter.find(sLine.back()) != std::string::npos;
+	    return isDelim(sLine.front()) && isDelim(sLine.back());
+	    //static std::string sDelimiter = "+-*/ ()={}^&|!<>,\\%#~[]:";
+        //
+		//// --> Gib die Auswertung dieses logischen Ausdrucks zurueck <--
+		//return sDelimiter.find(sLine.front()) != std::string::npos && sDelimiter.find(sLine.back()) != std::string::npos;
 	}
 
 

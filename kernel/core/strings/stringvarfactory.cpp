@@ -19,6 +19,8 @@
 #include "stringvarfactory.hpp"
 #include "../../kernel.hpp"
 
+using namespace std;
+
 namespace NumeRe
 {
     /////////////////////////////////////////////////

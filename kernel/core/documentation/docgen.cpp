@@ -830,7 +830,7 @@ std::string DocumentationGenerator::constructKeyWords(std::string sKeyWordList) 
 /////////////////////////////////////////////////
 void DocumentationGenerator::createStyleFile() const
 {
-    ifstream fHeaderTemplate;
+    std::ifstream fHeaderTemplate;
 
     // Open the header template
     fHeaderTemplate.open((NumeReKernel::getInstance()->getSettings().getExePath() + "/lang/tmpl_header.tex").c_str());
@@ -874,7 +874,7 @@ void DocumentationGenerator::createStyleFile() const
         sTemplate.replace(pos, 15, constructKeyWords(m_syntax->getSpecial()));
 
     // Now open the target header file
-    ofstream fHeader;
+    std::ofstream fHeader;
     fHeader.open((getPath() + "/numereheader.tex").c_str());
 
     // Ensure that the file is writable
@@ -908,39 +908,39 @@ std::string DocumentationGenerator::createMainFile(const std::string& sFileName,
         return "";
 
     // Write the preamble
-    fMain << "\\documentclass[DIV=17]{scrartcl}" << endl;
-    fMain << "% Main file for the documentation file " << sFileName << endl << endl;
-    fMain << "\\input{" << getPath() << "/numereheader}" << endl << endl;
-    fMain << "\\ohead{" << prepareFileNameForLaTeX(sFileName) << "}" << endl;
-    fMain << "\\ihead{Documentation}" << endl;
-    fMain << "\\ifoot{NumeRe: Free numerical software}" << endl;
-    fMain << "\\ofoot{Get it at: www.numere.org}" << endl;
-    fMain << "\\pagestyle{scrheadings}" << endl;
-    fMain << "\\subject{Documentation}" << endl;
-    fMain << "\\title{" << prepareFileNameForLaTeX(sFileName) << "}" << endl;
+    fMain << "\\documentclass[DIV=17]{scrartcl}" << std::endl;
+    fMain << "% Main file for the documentation file " << sFileName << std::endl << std::endl;
+    fMain << "\\input{" << getPath() << "/numereheader}" << std::endl << std::endl;
+    fMain << "\\ohead{" << prepareFileNameForLaTeX(sFileName) << "}" << std::endl;
+    fMain << "\\ihead{Documentation}" << std::endl;
+    fMain << "\\ifoot{NumeRe: Free numerical software}" << std::endl;
+    fMain << "\\ofoot{Get it at: www.numere.org}" << std::endl;
+    fMain << "\\pagestyle{scrheadings}" << std::endl;
+    fMain << "\\subject{Documentation}" << std::endl;
+    fMain << "\\title{" << prepareFileNameForLaTeX(sFileName) << "}" << std::endl;
 
     if (vFiles.size() > 1)
-        fMain << "\\subtitle{And all called procedures}" << endl;
+        fMain << "\\subtitle{And all called procedures}" << std::endl;
 
-    fMain << "\\begin{document}" << endl;
-    fMain << "    \\maketitle" << endl;
+    fMain << "\\begin{document}" << std::endl;
+    fMain << "    \\maketitle" << std::endl;
 
     // Create an overview, if necessary
     if (vFiles.size() > 1)
     {
-        fMain << "    \\addsec{Files included in this documentation}\n    \\begin{itemize}" << endl;
+        fMain << "    \\addsec{Files included in this documentation}\n    \\begin{itemize}" << std::endl;
 
         for (size_t i = 0; i < vFiles.size(); i++)
-            fMain << "        \\item " << prepareFileNameForLaTeX(vFiles[i]) << endl;
+            fMain << "        \\item " << prepareFileNameForLaTeX(vFiles[i]) << std::endl;
 
-        fMain << "    \\end{itemize}" << endl;
+        fMain << "    \\end{itemize}" << std::endl;
     }
 
     // Reference all created files
     for (size_t i = 0; i < vIncludesList.size(); i++)
-        fMain << "    \\input{" << vIncludesList[i] << "}" << endl;
+        fMain << "    \\input{" << vIncludesList[i] << "}" << std::endl;
 
-    fMain << "\\end{document}" << endl;
+    fMain << "\\end{document}" << std::endl;
 
     return sLaTeXMainFile;
 }

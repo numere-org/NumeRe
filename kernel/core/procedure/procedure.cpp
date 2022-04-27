@@ -25,6 +25,8 @@
 
 extern value_type vAns;
 
+using namespace std;
+
 
 /////////////////////////////////////////////////
 /// \brief Default constructor

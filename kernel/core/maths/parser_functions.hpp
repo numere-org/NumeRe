@@ -16,6 +16,8 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
+#ifndef PARSER_FUNCTIONS_HPP
+#define PARSER_FUNCTIONS_HPP
 
 #include <string>
 #include <vector>
@@ -26,23 +28,17 @@
 #include "define.hpp"
 #include "../datamanagement/dataaccess.hpp"
 
-using namespace std;
-using namespace mu;
-
-#ifndef PARSER_FUNCTIONS_HPP
-#define PARSER_FUNCTIONS_HPP
-
 // Tools & Stuff
-string evaluateTargetOptionInCommand(string& sCmd, const string& sDefaultTarget, Indices& _idx, Parser& _parser, MemoryManager& _data, const Settings& _option);
-size_t findVariableInExpression(const string& sExpr, const string& sVarName, size_t nPosStart = 0);
-void convertVectorToExpression(string&, const Settings&);
-string addMissingVectorComponent(const string&, const string&, const string&, bool);
-mu::value_type* getPointerToVariable(const string& sVarName, Parser& _parser);
-string promptForUserInput(const string& __sCommand);
+std::string evaluateTargetOptionInCommand(std::string& sCmd, const std::string& sDefaultTarget, Indices& _idx, mu::Parser& _parser, MemoryManager& _data, const Settings& _option);
+size_t findVariableInExpression(const std::string& sExpr, const std::string& sVarName, size_t nPosStart = 0);
+void convertVectorToExpression(std::string&, const Settings&);
+std::string addMissingVectorComponent(const std::string&, const std::string&, const std::string&, bool);
+mu::value_type* getPointerToVariable(const std::string& sVarName, mu::Parser& _parser);
+std::string promptForUserInput(const std::string& __sCommand);
 int integralFactorial(int nNumber);
-bool evaluateIndices(const string& sCache, Indices& _idx, MemoryManager& _data);
-vector<double> readAndParseIntervals(string& sExpr, Parser& _parser, MemoryManager& _data, FunctionDefinitionManager& _functions, const Settings& _option, bool bEraseInterval = false);
-unsigned int getPositionOfFirstDelimiter(const string&);
+bool evaluateIndices(const std::string& sCache, Indices& _idx, MemoryManager& _data);
+std::vector<double> readAndParseIntervals(std::string& sExpr, mu::Parser& _parser, MemoryManager& _data, FunctionDefinitionManager& _functions, const Settings& _option, bool bEraseInterval = false);
+unsigned int getPositionOfFirstDelimiter(const std::string&);
 
 #endif
 

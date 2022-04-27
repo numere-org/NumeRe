@@ -176,14 +176,14 @@ void DebugViewer::initializeToolbar()
 /// and changes the colour of the characters
 /// correspondingly.
 ///
-/// \param sLineNumber const string&
-/// \param sExpression const string&
+/// \param sLineNumber const std::string&
+/// \param sExpression const std::string&
 /// \return void
 ///
 /////////////////////////////////////////////////
-void DebugViewer::setExpression(const string& sLineNumber, const string& sExpression)
+void DebugViewer::setExpression(const std::string& sLineNumber, const std::string& sExpression)
 {
-    string sColours = m_terminal->getSyntax()->highlightLine("|<- " + sExpression).substr(4);
+    std::string sColours = m_terminal->getSyntax()->highlightLine("|<- " + sExpression).substr(4);
 
     m_lineNumber->Clear();
     m_lineNumber->SetDefaultStyle(wxTextAttr(wxColour(64, 64, 64)));
@@ -244,13 +244,13 @@ void DebugViewer::OnStackItemActivate(wxListEvent& event)
 /////////////////////////////////////////////////
 void DebugViewer::getInformationByStackId(size_t id)
 {
-    vector<string> vModuleInfo;
-    vector<string> vNumVars;
-    vector<string> vStringVars;
-    vector<string> vTables;
-    vector<string> vClusters;
-    vector<string> vArguments;
-    vector<string> vGlobals;
+    std::vector<std::string> vModuleInfo;
+    std::vector<std::string> vNumVars;
+    std::vector<std::string> vStringVars;
+    std::vector<std::string> vTables;
+    std::vector<std::string> vClusters;
+    std::vector<std::string> vArguments;
+    std::vector<std::string> vGlobals;
 
     // Read the information from the kernel by locking
     // the critical section
@@ -441,11 +441,11 @@ void DebugViewer::updateSettings()
 /// event (aka the new stack).
 ///
 /// \param title const wxString&
-/// \param vStack const vector<string>&
+/// \param vStack const std::vector<std::string>&
 /// \return void
 ///
 /////////////////////////////////////////////////
-void DebugViewer::setDebugInfo(const wxString& title, const vector<string>& vStack)
+void DebugViewer::setDebugInfo(const wxString& title, const std::vector<std::string>& vStack)
 {
     // Update the title
     this->SetTitle(title);

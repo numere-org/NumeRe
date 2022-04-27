@@ -23,8 +23,6 @@
 #include <string>
 #include <vector>
 
-using namespace std;
-
 class NumeReEditor;
 class NumeReTerminal;
 
@@ -41,14 +39,14 @@ class SearchController
 		wxString FindProcedureDefinitionInLocalFile(const wxString& procedurename);
 
 		void AppendToDocumentation(wxString& sDocumentation, const wxString& sNewDocLine);
-		string CleanDocumentation(const wxString& __sDoc);
+		std::string CleanDocumentation(const wxString& __sDoc);
 
 
     public:
         SearchController(NumeReEditor* edit, NumeReTerminal* terminal) : m_editor(edit), m_terminal(terminal) {}
 
-		vector<wxString> getProceduresInFile();
-		vector<int> FindAll(const wxString& sSymbol, int nStyle, int nStartPos = 0, int nEndPos = -1, bool bSearchInComments = false);
+		std::vector<wxString> getProceduresInFile();
+		std::vector<int> FindAll(const wxString& sSymbol, int nStyle, int nStartPos = 0, int nEndPos = -1, bool bSearchInComments = false);
 
         wxString FindClickedWord();
 		wxString FindClickedInclude();

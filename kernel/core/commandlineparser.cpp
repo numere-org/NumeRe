@@ -314,7 +314,7 @@ std::string CommandLineParser::getExprAsFileName(std::string sFileExt, const std
     // If there's a string in the file name, parse it here
     if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sFileName))
     {
-        string sDummy;
+        std::string sDummy;
         NumeReKernel::getInstance()->getStringParser().evalAndFormat(sFileName, sDummy, true);
     }
 
@@ -342,7 +342,7 @@ DataAccessParser CommandLineParser::getExprAsDataObject() const
     if (!NumeReKernel::getInstance()->getDefinitions().call(sExpr))
         throw SyntaxError(SyntaxError::FUNCTION_ERROR, m_commandLine, sExpr);
 
-    if (sExpr.find("??") != string::npos)
+    if (sExpr.find("??") != std::string::npos)
         sExpr = promptForUserInput(sExpr);
 
     return DataAccessParser(sExpr);
@@ -369,7 +369,7 @@ std::string CommandLineParser::getExprAsMathExpression(bool parseDataObjects) co
     if (!instance->getDefinitions().call(sExpr))
         throw SyntaxError(SyntaxError::FUNCTION_ERROR, m_commandLine, sExpr);
 
-    if (sExpr.find("??") != string::npos)
+    if (sExpr.find("??") != std::string::npos)
         sExpr = promptForUserInput(sExpr);
 
     if (parseDataObjects && instance->getMemoryManager().containsTablesOrClusters(sExpr))
@@ -404,13 +404,13 @@ std::string CommandLineParser::parseExprAsString() const
 
     StripSpaces(sExpr);
 
-    if (sExpr.find("??") != string::npos)
+    if (sExpr.find("??") != std::string::npos)
         sExpr = promptForUserInput(sExpr);
 
     if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sExpr))
     {
         sExpr += " -nq";
-        string sDummy;
+        std::string sDummy;
         NumeReKernel::getInstance()->getStringParser().evalAndFormat(sExpr, sDummy, true);
     }
 
@@ -438,7 +438,7 @@ std::vector<mu::value_type> CommandLineParser::parseExprAsNumericalValues() cons
     // Parse strings (if any)
     if (instance->getStringParser().isStringExpression(sValue))
     {
-        string sDummy = "";
+        std::string sDummy = "";
         instance->getStringParser().evalAndFormat(sValue, sDummy, true);
     }
 

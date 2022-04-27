@@ -24,8 +24,6 @@
 
 #include "plotdata.hpp"
 
-using namespace std;
-
 /////////////////////////////////////////////////
 /// \brief This class encapsulates the mglGraph
 /// object during transmission from the kernel to
@@ -39,7 +37,7 @@ class GraphHelper : public mglDraw
         bool bLightActive;
         bool bHires;
         double dAspect;
-        string sTitle;
+        std::string sTitle;
 
     public:
         GraphHelper(mglGraph* __graph, const PlotData& _pData);
@@ -59,7 +57,7 @@ class GraphHelper : public mglDraw
             {return dAspect;}
         void setAspect(double aspect)
             {dAspect = aspect;}
-        string getTitle()
+        std::string getTitle()
             {
                 if (sTitle.length())
                     return sTitle;

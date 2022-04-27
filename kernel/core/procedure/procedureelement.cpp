@@ -196,7 +196,7 @@ ProcedureElement::ProcedureElement(const std::vector<std::string>& vProcedureCon
             else if (sCurrentCommand != "endcompose")
             {
                 // An arbitrary command
-                string sCommand = findCommand(sProcCommandLine).sString;
+                std::string sCommand = findCommand(sProcCommandLine).sString;
 
                 if (sCommand.substr(0, 4) == "plot"
                         || sCommand.substr(0, 7) == "subplot"

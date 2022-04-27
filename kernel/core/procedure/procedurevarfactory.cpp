@@ -21,6 +21,7 @@
 #include "procedure.hpp"
 #include "../../kernel.hpp"
 
+using namespace std;
 
 /////////////////////////////////////////////////
 /// \brief Static helper function to detect free

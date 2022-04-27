@@ -21,6 +21,8 @@
 #include "../../kernel.hpp"
 #include "../datamanagement/database.hpp"
 
+using namespace std;
+
 static bool isValue(const string& sExpr, size_t nPos, size_t nLength)
 {
     return (!nPos || !isalpha(sExpr[nPos-1])) && (nPos+nLength == sExpr.length() || !isalpha(sExpr[nPos+nLength]));

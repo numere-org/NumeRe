@@ -350,7 +350,7 @@ void VariableViewer::OnNewTable()
     wxString tables = textEntry.GetValue();
 
     // Ensure that the user entered the necessary parentheses
-    if (tables.find(',') != string::npos)
+    if (tables.find(',') != std::string::npos)
     {
         wxString tablesTemp;
 
@@ -369,7 +369,7 @@ void VariableViewer::OnNewTable()
                 tablesTemp.insert(tablesTemp.find_last_not_of(' ')+1, "()");
 
             // Cut off the current table name
-            if (tables.find(',') != string::npos)
+            if (tables.find(',') != std::string::npos)
                 tables.erase(0, tables.find(',')+1);
             else
                 break;
@@ -377,7 +377,7 @@ void VariableViewer::OnNewTable()
 
         tables = tablesTemp;
     }
-    else if (tables.find("()") == string::npos)
+    else if (tables.find("()") == std::string::npos)
     {
         // Add the needed parentheses directly at the end of
         // the table name string
@@ -613,7 +613,7 @@ void VariableViewer::OnDoubleClick(wxTreeEvent& event)
         // also be viewable
         if (debuggerMode && (GetItemParent(event.GetItem()) == argumentRoot || GetItemParent(event.GetItem()) == globalRoot))
         {
-            if (GetItemText(event.GetItem()).find("()") != string::npos || GetItemText(event.GetItem()).find("{}") != string::npos)
+            if (GetItemText(event.GetItem()).find("()") != std::string::npos || GetItemText(event.GetItem()).find("{}") != std::string::npos)
                 OnShowTable(GetInternalName(event.GetItem()), GetItemText(event.GetItem()));
             else if (GetInternalName(event.GetItem()).find("{}") != std::string::npos) // Fix for macros and templates
                 OnShowTable(GetInternalName(event.GetItem()), GetItemText(event.GetItem()) + "@CST{}");

@@ -1,5 +1,7 @@
 #include "BasicExcel.hpp"
 
+using namespace std;
+
 namespace YCompoundFiles
 {
 /********************************** Start of Class Block *************************************/

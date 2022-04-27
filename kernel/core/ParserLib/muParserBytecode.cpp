@@ -111,6 +111,7 @@ namespace mu
 		tok.Val.ptr   = a_pVar;
 		tok.Val.data  = 1;
 		tok.Val.data2 = 0;
+		tok.Val.isVect = false;
 		m_vRPN.push_back(tok);
 	}
 
@@ -256,7 +257,12 @@ namespace mu
 								m_vRPN[sz - 2].Cmd = cmVARPOW3;
 							else if (m_vRPN[sz - 1].Val.data2 == 4.0)
 								m_vRPN[sz - 2].Cmd = cmVARPOW4;
-							else
+							else if (m_vRPN[sz - 1].Val.data2 == (double)intCast(m_vRPN[sz - 1].Val.data2.real()))
+							{
+							    m_vRPN[sz - 2].Cmd = cmVARPOWN;
+							    m_vRPN[sz - 2].Val.data = m_vRPN[sz - 1].Val.data2;
+							}
+                            else
 								break;
 
 							m_vRPN.pop_back();
@@ -268,60 +274,65 @@ namespace mu
 					case  cmADD:
 						// Simple optimization based on pattern recognition for a shitload of different
 						// bytecode combinations of addition/subtraction
-						if ( (m_vRPN[sz - 1].Cmd == cmVAR    && m_vRPN[sz - 2].Cmd == cmVAL)    ||
-								(m_vRPN[sz - 1].Cmd == cmVAL    && m_vRPN[sz - 2].Cmd == cmVAR)    ||
-								(m_vRPN[sz - 1].Cmd == cmVAL    && m_vRPN[sz - 2].Cmd == cmVARMUL) ||
-								(m_vRPN[sz - 1].Cmd == cmVARMUL && m_vRPN[sz - 2].Cmd == cmVAL)    ||
-								(m_vRPN[sz - 1].Cmd == cmVAR    && m_vRPN[sz - 2].Cmd == cmVAR    && m_vRPN[sz - 2].Val.ptr == m_vRPN[sz - 1].Val.ptr) ||
-								(m_vRPN[sz - 1].Cmd == cmVAR    && m_vRPN[sz - 2].Cmd == cmVARMUL && m_vRPN[sz - 2].Val.ptr == m_vRPN[sz - 1].Val.ptr) ||
-								(m_vRPN[sz - 1].Cmd == cmVARMUL && m_vRPN[sz - 2].Cmd == cmVAR    && m_vRPN[sz - 2].Val.ptr == m_vRPN[sz - 1].Val.ptr) ||
-								(m_vRPN[sz - 1].Cmd == cmVARMUL && m_vRPN[sz - 2].Cmd == cmVARMUL && m_vRPN[sz - 2].Val.ptr == m_vRPN[sz - 1].Val.ptr) )
+                        if ((m_vRPN[sz-1].Cmd == cmVAR && m_vRPN[sz-2].Cmd == cmVAL)
+                            || (m_vRPN[sz-1].Cmd == cmVAL && m_vRPN[sz-2].Cmd == cmVAR)
+                            || (m_vRPN[sz-1].Cmd == cmVAL && m_vRPN[sz-2].Cmd == cmVARMUL)
+                            || (m_vRPN[sz-1].Cmd == cmVARMUL && m_vRPN[sz-2].Cmd == cmVAL)
+                            || (m_vRPN[sz-1].Cmd == cmVAR && m_vRPN[sz-2].Cmd == cmVAR && m_vRPN[sz-2].Val.ptr == m_vRPN[sz-1].Val.ptr)
+                            || (m_vRPN[sz-1].Cmd == cmVAR && m_vRPN[sz-2].Cmd == cmVARMUL && m_vRPN[sz-2].Val.ptr == m_vRPN[sz-1].Val.ptr)
+                            || (m_vRPN[sz-1].Cmd == cmVARMUL && m_vRPN[sz-2].Cmd == cmVAR && m_vRPN[sz-2].Val.ptr == m_vRPN[sz-1].Val.ptr)
+                            || (m_vRPN[sz-1].Cmd == cmVARMUL && m_vRPN[sz-2].Cmd == cmVARMUL && m_vRPN[sz-2].Val.ptr == m_vRPN[sz-1].Val.ptr))
 						{
-							assert( (m_vRPN[sz - 2].Val.ptr == NULL && m_vRPN[sz - 1].Val.ptr != NULL) ||
-									(m_vRPN[sz - 2].Val.ptr != NULL && m_vRPN[sz - 1].Val.ptr == NULL) ||
-									(m_vRPN[sz - 2].Val.ptr == m_vRPN[sz - 1].Val.ptr) );
+                            assert((m_vRPN[sz-2].Val.ptr == NULL && m_vRPN[sz-1].Val.ptr != NULL)
+                                   || (m_vRPN[sz-2].Val.ptr != NULL && m_vRPN[sz-1].Val.ptr == NULL)
+                                   || (m_vRPN[sz-2].Val.ptr == m_vRPN[sz-1].Val.ptr));
 
-							m_vRPN[sz - 2].Cmd = cmVARMUL;
-							m_vRPN[sz - 2].Val.ptr    = (value_type*)((long long)(m_vRPN[sz - 2].Val.ptr) | (long long)(m_vRPN[sz - 1].Val.ptr)); // variable
-							m_vRPN[sz - 2].Val.data2 += ((a_Oprt == cmSUB) ? -1.0 : 1.0) * m_vRPN[sz - 1].Val.data2; // offset
-							m_vRPN[sz - 2].Val.data  += ((a_Oprt == cmSUB) ? -1.0 : 1.0) * m_vRPN[sz - 1].Val.data; // multiplikatior
+							m_vRPN[sz-2].Cmd = cmVARMUL;
+							m_vRPN[sz-2].Val.ptr = (value_type*)((long long)(m_vRPN[sz-2].Val.ptr) | (long long)(m_vRPN[sz-1].Val.ptr)); // variable
+							m_vRPN[sz-2].Val.data2 += ((a_Oprt == cmSUB) ? -1.0 : 1.0) * m_vRPN[sz-1].Val.data2; // offset
+							m_vRPN[sz-2].Val.data += ((a_Oprt == cmSUB) ? -1.0 : 1.0) * m_vRPN[sz-1].Val.data; // multiplikatior
+							m_vRPN[sz-2].Val.isVect = false;
 							m_vRPN.pop_back();
 							bOptimized = true;
 						}
 						break;
 
 					case  cmMUL:
-						if ( (m_vRPN[sz - 1].Cmd == cmVAR && m_vRPN[sz - 2].Cmd == cmVAL) ||
-								(m_vRPN[sz - 1].Cmd == cmVAL && m_vRPN[sz - 2].Cmd == cmVAR) )
+                        if ((m_vRPN[sz - 1].Cmd == cmVAR && m_vRPN[sz - 2].Cmd == cmVAL)
+                            || (m_vRPN[sz - 1].Cmd == cmVAL && m_vRPN[sz - 2].Cmd == cmVAR) )
 						{
-							m_vRPN[sz - 2].Cmd        = cmVARMUL;
-							m_vRPN[sz - 2].Val.ptr    = (value_type*)((long long)(m_vRPN[sz - 2].Val.ptr) | (long long)(m_vRPN[sz - 1].Val.ptr));
-							m_vRPN[sz - 2].Val.data   = m_vRPN[sz - 2].Val.data2 + m_vRPN[sz - 1].Val.data2;
-							m_vRPN[sz - 2].Val.data2  = 0;
+							m_vRPN[sz-2].Cmd = cmVARMUL;
+							m_vRPN[sz-2].Val.ptr = (value_type*)((long long)(m_vRPN[sz-2].Val.ptr) | (long long)(m_vRPN[sz-1].Val.ptr));
+							m_vRPN[sz-2].Val.data = m_vRPN[sz-2].Val.data2 + m_vRPN[sz-1].Val.data2;
+							m_vRPN[sz-2].Val.data2 = 0;
+							m_vRPN[sz-2].Val.isVect = false;
 							m_vRPN.pop_back();
 							bOptimized = true;
 						}
-						else if ( (m_vRPN[sz - 1].Cmd == cmVAL    && m_vRPN[sz - 2].Cmd == cmVARMUL) ||
-								  (m_vRPN[sz - 1].Cmd == cmVARMUL && m_vRPN[sz - 2].Cmd == cmVAL) )
+                        else if ((m_vRPN[sz-1].Cmd == cmVAL && m_vRPN[sz-2].Cmd == cmVARMUL)
+                                 || (m_vRPN[sz-1].Cmd == cmVARMUL && m_vRPN[sz-2].Cmd == cmVAL))
 						{
 							// Optimization: 2*(3*b+1) or (3*b+1)*2 -> 6*b+2
-							m_vRPN[sz - 2].Cmd     = cmVARMUL;
-							m_vRPN[sz - 2].Val.ptr = (value_type*)((long long)(m_vRPN[sz - 2].Val.ptr) | (long long)(m_vRPN[sz - 1].Val.ptr));
-							if (m_vRPN[sz - 1].Cmd == cmVAL)
+							m_vRPN[sz-2].Cmd = cmVARMUL;
+							m_vRPN[sz-2].Val.ptr = (value_type*)((long long)(m_vRPN[sz-2].Val.ptr) | (long long)(m_vRPN[sz-1].Val.ptr));
+							m_vRPN[sz-2].Val.isVect = false;
+
+							if (m_vRPN[sz-1].Cmd == cmVAL)
 							{
-								m_vRPN[sz - 2].Val.data  *= m_vRPN[sz - 1].Val.data2;
-								m_vRPN[sz - 2].Val.data2 *= m_vRPN[sz - 1].Val.data2;
+								m_vRPN[sz-2].Val.data  *= m_vRPN[sz-1].Val.data2;
+								m_vRPN[sz-2].Val.data2 *= m_vRPN[sz-1].Val.data2;
 							}
 							else
 							{
-								m_vRPN[sz - 2].Val.data  = m_vRPN[sz - 1].Val.data  * m_vRPN[sz - 2].Val.data2;
-								m_vRPN[sz - 2].Val.data2 = m_vRPN[sz - 1].Val.data2 * m_vRPN[sz - 2].Val.data2;
+								m_vRPN[sz-2].Val.data  = m_vRPN[sz-1].Val.data  * m_vRPN[sz-2].Val.data2;
+								m_vRPN[sz-2].Val.data2 = m_vRPN[sz-1].Val.data2 * m_vRPN[sz-2].Val.data2;
 							}
 							m_vRPN.pop_back();
 							bOptimized = true;
 						}
-						else if (m_vRPN[sz - 1].Cmd == cmVAR && m_vRPN[sz - 2].Cmd == cmVAR &&
-								 m_vRPN[sz - 1].Val.ptr == m_vRPN[sz - 2].Val.ptr)
+                        else if (m_vRPN[sz-1].Cmd == cmVAR
+                                 && m_vRPN[sz-2].Cmd == cmVAR
+                                 && m_vRPN[sz-1].Val.ptr == m_vRPN[sz-2].Val.ptr)
 						{
 							// Optimization: a*a -> a^2
 							m_vRPN[sz - 2].Cmd = cmVARPOW2;
@@ -331,7 +342,9 @@ namespace mu
 						break;
 
 					case cmDIV:
-						if (m_vRPN[sz - 1].Cmd == cmVAL && m_vRPN[sz - 2].Cmd == cmVARMUL && m_vRPN[sz - 1].Val.data2 != 0.0)
+                        if (m_vRPN[sz-1].Cmd == cmVAL
+                            && m_vRPN[sz-2].Cmd == cmVARMUL
+                            && m_vRPN[sz-1].Val.data2 != 0.0)
 						{
 							// Optimization: 4*a/2 -> 2*a
 							m_vRPN[sz - 2].Val.data  /= m_vRPN[sz - 1].Val.data2;
@@ -385,6 +398,7 @@ namespace mu
 		SToken tok;
 		tok.Cmd = cmASSIGN;
 		tok.Val.ptr = a_pVar;
+		tok.Val.isVect = false;
 		m_vRPN.push_back(tok);
 	}
 
@@ -494,6 +508,32 @@ namespace mu
 		}
 	}
 
+
+    /////////////////////////////////////////////////
+    /// \brief Changes all old variable pointers to
+    /// the new addresses. Will be used to compensate
+    /// for different local variable adresses in
+    /// different scopes.
+    ///
+    /// \param a_pOldVar value_type*
+    /// \param a_pNewVar value_type*
+    /// \param isVect bool
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
+	void ParserByteCode::ChangeVar(value_type* a_pOldVar, value_type* a_pNewVar, bool isVect)
+	{
+	    for (size_t i = 0; i < m_vRPN.size(); ++i)
+        {
+            if (m_vRPN[i].Cmd >= cmVAR && m_vRPN[i].Cmd < cmVAR_END && m_vRPN[i].Val.ptr == a_pOldVar)
+            {
+                m_vRPN[i].Val.ptr = a_pNewVar;
+                m_vRPN[i].Val.isVect = isVect;
+            }
+        }
+	}
+
+
 	//---------------------------------------------------------------------------
 	const SToken* ParserByteCode::GetBase() const
 	{
@@ -542,7 +582,9 @@ namespace mu
 			return;
 		}
 
+		NumeReKernel::toggleTableStatus();
 		NumeReKernel::print("Number of RPN tokens: " + toString(m_vRPN.size()));
+
 		for (std::size_t i = 0; i < m_vRPN.size() && m_vRPN[i].Cmd != cmEND; ++i)
 		{
 		    NumeReKernel::printPreFmt("|   " + toString(i) + " : \t");
@@ -643,6 +685,7 @@ namespace mu
 			} // switch cmdCode
 		} // while bytecode
 
+		NumeReKernel::toggleTableStatus();
 		NumeReKernel::printPreFmt("|   END\n");
 	}
 } // namespace mu

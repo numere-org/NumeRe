@@ -24,8 +24,6 @@
 #ifndef ERROR_HPP
 #define ERROR_HPP
 
-using namespace std;
-
 /////////////////////////////////////////////////
 /// \brief Common exception class for all
 /// exceptions thrown in NumeRe.
@@ -33,8 +31,8 @@ using namespace std;
 class SyntaxError
 {
     private:
-        string sFailingExpression;
-        string sErrorToken;
+        std::string sFailingExpression;
+        std::string sErrorToken;
         size_t nErrorPosition;
         int nErrorIndices[4];
 
@@ -249,11 +247,11 @@ class SyntaxError
         /// expression and position.
         ///
         /// \param _err ErrorCode
-        /// \param sExpr const string&
+        /// \param sExpr const std::string&
         /// \param n_pos size_t
         ///
         /////////////////////////////////////////////////
-        SyntaxError(ErrorCode _err, const string& sExpr, size_t n_pos) : SyntaxError()
+        SyntaxError(ErrorCode _err, const std::string& sExpr, size_t n_pos) : SyntaxError()
             {
                 sFailingExpression = sExpr;
                 nErrorPosition = n_pos;
@@ -266,12 +264,12 @@ class SyntaxError
         /// possibility to define an additional token.
         ///
         /// \param _err ErrorCode
-        /// \param sExpr const string&
+        /// \param sExpr const std::string&
         /// \param n_pos size_t
-        /// \param sToken const string&
+        /// \param sToken const std::string&
         ///
         /////////////////////////////////////////////////
-        SyntaxError(ErrorCode _err, const string& sExpr, size_t n_pos, const string& sToken) : SyntaxError()
+        SyntaxError(ErrorCode _err, const std::string& sExpr, size_t n_pos, const std::string& sToken) : SyntaxError()
             {
                 sFailingExpression = sExpr;
                 sErrorToken = sToken;
@@ -285,7 +283,7 @@ class SyntaxError
         /// possibility to set additional error indices.
         ///
         /// \param _err ErrorCode
-        /// \param sExpr const string&
+        /// \param sExpr const std::string&
         /// \param n_pos size_t
         /// \param nInd1 int
         /// \param nInd2 int
@@ -293,7 +291,7 @@ class SyntaxError
         /// \param nInd4 int
         ///
         /////////////////////////////////////////////////
-        SyntaxError(ErrorCode _err, const string& sExpr, size_t n_pos, int nInd1, int nInd2 = invalid_index, int nInd3 = invalid_index, int nInd4 = invalid_index) : sFailingExpression(sExpr), nErrorPosition(n_pos), errorcode(_err)
+        SyntaxError(ErrorCode _err, const std::string& sExpr, size_t n_pos, int nInd1, int nInd2 = invalid_index, int nInd3 = invalid_index, int nInd4 = invalid_index) : sFailingExpression(sExpr), nErrorPosition(n_pos), errorcode(_err)
             {
                 nErrorIndices[0] = nInd1;
                 nErrorIndices[1] = nInd2;
@@ -308,16 +306,16 @@ class SyntaxError
         /// the error indices.
         ///
         /// \param _err ErrorCode
-        /// \param sExpr const string&
+        /// \param sExpr const std::string&
         /// \param n_pos size_t
-        /// \param sToken const string&
+        /// \param sToken const std::string&
         /// \param nInd1 int
         /// \param nInd2 int
         /// \param nInd3 int
         /// \param nInd4 int
         ///
         /////////////////////////////////////////////////
-        SyntaxError(ErrorCode _err, const string& sExpr, size_t n_pos, const string& sToken, int nInd1, int nInd2 = invalid_index, int nInd3 = invalid_index, int nInd4 = invalid_index) : sFailingExpression(sExpr), sErrorToken(sToken), nErrorPosition(n_pos), errorcode(_err)
+        SyntaxError(ErrorCode _err, const std::string& sExpr, size_t n_pos, const std::string& sToken, int nInd1, int nInd2 = invalid_index, int nInd3 = invalid_index, int nInd4 = invalid_index) : sFailingExpression(sExpr), sErrorToken(sToken), nErrorPosition(n_pos), errorcode(_err)
             {
                 nErrorIndices[0] = nInd1;
                 nErrorIndices[1] = nInd2;
@@ -332,11 +330,11 @@ class SyntaxError
         /// expression.
         ///
         /// \param _err ErrorCode
-        /// \param sExpr const string&
-        /// \param sErrTok const string&
+        /// \param sExpr const std::string&
+        /// \param sErrTok const std::string&
         ///
         /////////////////////////////////////////////////
-        SyntaxError(ErrorCode _err, const string& sExpr, const string& sErrTok) : SyntaxError()
+        SyntaxError(ErrorCode _err, const std::string& sExpr, const std::string& sErrTok) : SyntaxError()
             {
                 sFailingExpression = sExpr;
                 errorcode = _err;
@@ -351,12 +349,12 @@ class SyntaxError
         /// with further information.
         ///
         /// \param _err ErrorCode
-        /// \param sExpr const string&
-        /// \param sErrTok const string&
-        /// \param sToken const string&
+        /// \param sExpr const std::string&
+        /// \param sErrTok const std::string&
+        /// \param sToken const std::string&
         ///
         /////////////////////////////////////////////////
-        SyntaxError(ErrorCode _err, const string& sExpr, const string& sErrTok, const string& sToken) : SyntaxError()
+        SyntaxError(ErrorCode _err, const std::string& sExpr, const std::string& sErrTok, const std::string& sToken) : SyntaxError()
             {
                 sFailingExpression = sExpr;
                 sErrorToken = sToken;
@@ -372,15 +370,15 @@ class SyntaxError
         /// of error indices.
         ///
         /// \param _err ErrorCode
-        /// \param sExpr const string&
-        /// \param sErrTok const string&
+        /// \param sExpr const std::string&
+        /// \param sErrTok const std::string&
         /// \param nInd1 int
         /// \param nInd2 int
         /// \param nInd3 int
         /// \param nInd4 int
         ///
         /////////////////////////////////////////////////
-        SyntaxError(ErrorCode _err, const string& sExpr, const string& sErrTok, int nInd1, int nInd2 = invalid_index, int nInd3 = invalid_index, int nInd4 = invalid_index) : sFailingExpression(sExpr), errorcode(_err)
+        SyntaxError(ErrorCode _err, const std::string& sExpr, const std::string& sErrTok, int nInd1, int nInd2 = invalid_index, int nInd3 = invalid_index, int nInd4 = invalid_index) : sFailingExpression(sExpr), errorcode(_err)
             {
                 nErrorPosition = sFailingExpression.find(sErrTok);
                 nErrorIndices[0] = nInd1;
@@ -398,16 +396,16 @@ class SyntaxError
         /// information about the issue.
         ///
         /// \param _err ErrorCode
-        /// \param sExpr const string&
-        /// \param sErrTok const string&
-        /// \param sToken const string&
+        /// \param sExpr const std::string&
+        /// \param sErrTok const std::string&
+        /// \param sToken const std::string&
         /// \param nInd1 int
         /// \param nInd2 int
         /// \param nInd3 int
         /// \param nInd4 int
         ///
         /////////////////////////////////////////////////
-        SyntaxError(ErrorCode _err, const string& sExpr, const string& sErrTok, const string& sToken, int nInd1, int nInd2 = invalid_index, int nInd3 = invalid_index, int nInd4 = invalid_index) : sFailingExpression(sExpr), sErrorToken(sToken), errorcode(_err)
+        SyntaxError(ErrorCode _err, const std::string& sExpr, const std::string& sErrTok, const std::string& sToken, int nInd1, int nInd2 = invalid_index, int nInd3 = invalid_index, int nInd4 = invalid_index) : sFailingExpression(sExpr), sErrorToken(sToken), errorcode(_err)
             {
                 nErrorPosition = sFailingExpression.find(sErrTok);
                 nErrorIndices[0] = nInd1;
@@ -419,20 +417,20 @@ class SyntaxError
         /////////////////////////////////////////////////
         /// \brief Returns the erroneous expression.
         ///
-        /// \return string
+        /// \return std::string
         ///
         /////////////////////////////////////////////////
-        string getExpr() const
+        std::string getExpr() const
             {return sFailingExpression;}
 
         /////////////////////////////////////////////////
         /// \brief Returns the error token containing
         /// additional information about the error.
         ///
-        /// \return string
+        /// \return std::string
         ///
         /////////////////////////////////////////////////
-        string getToken() const
+        std::string getToken() const
             {return sErrorToken;}
 
         /////////////////////////////////////////////////
@@ -532,6 +530,7 @@ struct AssertionStats
     }
 };
 
+class Matrix;
 
 /////////////////////////////////////////////////
 /// \brief This class handles assertions and
@@ -554,7 +553,7 @@ class Assertion
         void resetStats();
         void enable(const std::string& sExpr);
         void checkAssertion(mu::value_type* v, int nNum);
-        void checkAssertion(const std::vector<std::vector<mu::value_type>>& _mMatrix);
+        void checkAssertion(const Matrix& _mMatrix);
         void checkAssertion(const StringResult& strRes);
         AssertionStats getStats() const;
 };

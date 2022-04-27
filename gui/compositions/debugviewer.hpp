@@ -45,7 +45,7 @@ class DebugViewer : public ViewerFrame
         int nModuleColumn;
 
         void initializeToolbar();
-        void setExpression(const string& sLineNumber, const string& sExpression);
+        void setExpression(const std::string& sLineNumber, const std::string& sExpression);
 
         void getInformationByStackId(size_t id);
         void OnStackItemActivate(wxListEvent& event);
@@ -58,7 +58,7 @@ class DebugViewer : public ViewerFrame
 
         void updateSettings();
         void setTerminal(NumeReTerminal* term) {m_terminal = term;}
-        void setDebugInfo(const wxString& title, const vector<string>& vStack);
+        void setDebugInfo(const wxString& title, const std::vector<std::string>& vStack);
         void OnClose(wxCloseEvent& event);
         void OnExecutionFinished();
 

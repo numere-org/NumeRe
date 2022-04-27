@@ -23,7 +23,6 @@
 #include <cmath>
 #include <ctime>
 
-using namespace std;
 
 class MyTipProvider : public wxTipProvider
 {

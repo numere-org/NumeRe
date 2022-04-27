@@ -38,20 +38,14 @@
 
 using namespace mu;
 
-struct FlowCtrlCommand
-{
-    string sCommand;
-    int nInputLine;
-    bool bFlowCtrlStatement;
+struct FlowCtrlCommand;
 
-    FlowCtrlCommand(const std::string& sCmd, int nLine, bool bStatement = false) : sCommand(sCmd), nInputLine(nLine), bFlowCtrlStatement(bStatement) {}
-};
 
 class FlowCtrl
 {
+    friend FlowCtrlCommand;
+
     private:
-        std::string sVarName;
-        double* dVarAdress;
         bool bLoopSupressAnswer;
 
         Parser* _parserRef;
@@ -106,8 +100,8 @@ class FlowCtrl
         };
 
         std::vector<FlowCtrlCommand> vCmdArray;
-        value_type** vVarArray;
-        std::string* sVarArray;
+        std::vector<value_type> vVarArray;
+        std::vector<std::string> sVarArray;
         varmap_type vVars;
         std::vector<std::vector<int>> nJumpTable;
         std::vector<int> nCalcType;
@@ -115,7 +109,6 @@ class FlowCtrl
 
         int nFlowCtrlStatements[FC_COUNT];
 
-        int nVarArray;
         int nCurrentCommand;
         Returnvalue ReturnVal;
         bool bUseLoopParsingMode;
@@ -136,8 +129,6 @@ class FlowCtrl
 
         int nReturnType;
         bool bReturnSignal;
-        bool bBreakSignal;
-        bool bContinueSignal;
 
         int for_loop(int nth_Cmd = 0, int nth_Loop = 0);
         int while_loop(int nth_Cmd = 0, int nth_Loop = 0);
@@ -145,10 +136,11 @@ class FlowCtrl
         int switch_fork(int nth_Cmd = 0, int nth_Loop = -1);
         int try_catch(int nth_Cmd = 0, int nth_Loop = -1);
 
+        typedef int(FlowCtrl::*FlowCtrlFunction)(int, int); ///< Definition of a generic FlowCtrl entry point
+
         int compile(std::string sLine, int nthCmd);
         int calc(std::string sLine, int nthCmd);
         value_type* evalHeader(int& nNum, std::string& sHeadExpression, bool bIsForHead, int nth_Cmd);
-        int evalLoopFlowCommands(int __j, int nth_loop);
         int evalForkFlowCommands(int __j, int nth_loop);
 
         void replaceLocalVars(std::string& sLine);
@@ -170,7 +162,7 @@ class FlowCtrl
         virtual int evalDebuggerBreakPoint(Parser& _parser, Settings& _option);
         virtual int getErrorInformationForDebugger();
         virtual std::vector<std::string> expandInlineProcedures(std::string& sLine);
-        virtual int catchExceptionForTest(exception_ptr e_ptr, bool bSupressAnswer_back, int nLine);
+        virtual int catchExceptionForTest(std::exception_ptr e_ptr, bool bSupressAnswer_back, int nLine);
 
     public:
         FlowCtrl();
@@ -205,4 +197,21 @@ class FlowCtrl
 };
 
 
+struct FlowCtrlCommand
+{
+    std::string sCommand;
+    int nInputLine;
+    bool bFlowCtrlStatement;
+    std::string sFlowCtrlHeader;
+    int nVarIndex;
+
+    FlowCtrl::FlowCtrlFunction fcFn;
+
+
+    FlowCtrlCommand(const std::string& sCmd, int nLine, bool bStatement = false, FlowCtrl::FlowCtrlFunction fn = nullptr)
+        : sCommand(sCmd), nInputLine(nLine), bFlowCtrlStatement(bStatement), sFlowCtrlHeader(""), nVarIndex(-1), fcFn(fn) {}
+};
+
 #endif
+
+

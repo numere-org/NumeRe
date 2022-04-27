@@ -27,12 +27,11 @@
 #include "../settings.hpp"
 #include "../ParserLib/muParser.h"
 
-using namespace std;
 using namespace mu;
 
 bool removeFile(CommandLineParser& cmdParser);
 bool moveOrCopyFiles(CommandLineParser& cmdParser);
-bool generateTemplate(const string& sFile, const string& sTempl, const vector<string>& vTokens, Settings& _option);
+bool generateTemplate(const std::string& sFile, const std::string& sTempl, const std::vector<std::string>& vTokens, Settings& _option);
 
 
 #endif // FILEOPS_HPP

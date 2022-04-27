@@ -28,16 +28,13 @@
 #include "../settings.hpp"
 #include "matdatastructures.hpp"
 
-using namespace std;
-using namespace mu;
 
-
-bool performMatrixOperation(string& sCmd, Parser& _parser, MemoryManager& _data, FunctionDefinitionManager& _functions, const Settings& _option);
+bool performMatrixOperation(std::string& sCmd, mu::Parser& _parser, MemoryManager& _data, FunctionDefinitionManager& _functions, const Settings& _option);
 Matrix createZeroesMatrix(unsigned int nLines, unsigned int nCols);
 Matrix transposeMatrix(const Matrix& _mMatrix);
-Indices getIndices(const string& sCmd, const Matrix& _mMatrix, Parser& _parser, MemoryManager& _data, const Settings& _option);
+Indices getIndices(const std::string& sCmd, const Matrix& _mMatrix, mu::Parser& _parser, MemoryManager& _data, const Settings& _option);
 
-void showMatrix(const vector<vector<mu::value_type> >&);
+void showMatrix(const std::vector<std::vector<mu::value_type> >&);
 
 #endif // MATRIXOPERATIONS_HPP
 

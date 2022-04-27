@@ -135,7 +135,7 @@ namespace NumeRe
             {
                 // This expression avoids that someone tries to
                 // create a filter with a zero dimension.
-                m_windowSize = std::make_pair(max(row, 1u), max(col, 1u));
+                m_windowSize = std::make_pair(std::max(row, 1u), std::max(col, 1u));
             }
 
             /////////////////////////////////////////////////
@@ -276,9 +276,9 @@ namespace NumeRe
                 {
                     for (size_t j = 0; j < m_windowSize.second; j++)
                     {
-                        if (sqrt(pow2(i/((double)max(1u, m_windowSize.first-1))-mean_row) + pow2(j/((double)max(1u, m_windowSize.second-1))-mean_col)) <= 0.5)
+                        if (sqrt(pow2(i/((double)std::max(1u, m_windowSize.first-1))-mean_row) + pow2(j/((double)std::max(1u, m_windowSize.second-1))-mean_col)) <= 0.5)
                         {
-                            m_filterKernel[i][j] = fabs(sqrt(pow2(i/((double)max(1u, m_windowSize.first-1))-mean_row) + pow2(j/((double)max(1u, m_windowSize.second-1))-mean_col)) - 0.5);
+                            m_filterKernel[i][j] = fabs(sqrt(pow2(i/((double)std::max(1u, m_windowSize.first-1))-mean_row) + pow2(j/((double)std::max(1u, m_windowSize.second-1))-mean_col)) - 0.5);
                             sum += m_filterKernel[i][j];
                         }
                     }
@@ -868,9 +868,9 @@ namespace NumeRe
                 {
                     for (size_t j = 0; j < m_windowSize.second; j++)
                     {
-                        if (sqrt(pow2(i/((double)max(1u, m_windowSize.first-1))-mean_row) + pow2(j/((double)max(1u, m_windowSize.second-1))-mean_col)) <= 0.5)
+                        if (sqrt(pow2(i/((double)std::max(1u, m_windowSize.first-1))-mean_row) + pow2(j/((double)std::max(1u, m_windowSize.second-1))-mean_col)) <= 0.5)
                         {
-                            m_filterKernel[i][j] = fabs(sqrt(pow2(i/((double)max(1u, m_windowSize.first-1))-mean_row) + pow2(j/((double)max(1u, m_windowSize.second-1))-mean_col)) - 0.5);
+                            m_filterKernel[i][j] = fabs(sqrt(pow2(i/((double)std::max(1u, m_windowSize.first-1))-mean_row) + pow2(j/((double)std::max(1u, m_windowSize.second-1))-mean_col)) - 0.5);
                         }
                     }
                 }

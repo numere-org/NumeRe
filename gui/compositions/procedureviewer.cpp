@@ -123,7 +123,7 @@ ProcedureViewer::ProcedureViewer(wxWindow* parent) : wxListView(parent, wxID_ANY
 {
     m_currentEd = nullptr;
     nSortColumn = 0;
-    vData = vector<ProcedureViewerData>();
+    vData = std::vector<ProcedureViewerData>();
     AppendColumn("ID");
     AppendColumn("Flags");
     AppendColumn("Returns");
@@ -137,11 +137,11 @@ ProcedureViewer::ProcedureViewer(wxWindow* parent) : wxListView(parent, wxID_ANY
 // the passed string
 void ProcedureViewer::stripSpaces(wxString& sString)
 {
-    if (sString.find_first_not_of(' ') != string::npos)
+    if (sString.find_first_not_of(' ') != std::string::npos)
     {
         sString.erase(0, sString.find_first_not_of(' '));
 
-        if (sString.find_last_not_of(' ') != string::npos)
+        if (sString.find_last_not_of(' ') != std::string::npos)
             sString.erase(sString.find_last_not_of(' ')+1);
     }
     else
@@ -171,7 +171,7 @@ void ProcedureViewer::setCurrentEditor(NumeReEditor* editor)
 
 // This member function decodes the obtained procedure
 // list and updates the contents of this widget
-void ProcedureViewer::updateProcedureList(const vector<wxString>& vProcedures)
+void ProcedureViewer::updateProcedureList(const std::vector<wxString>& vProcedures)
 {
     // Clear the contents of the list
     if (GetItemCount())
@@ -193,12 +193,12 @@ void ProcedureViewer::updateProcedureList(const vector<wxString>& vProcedures)
 
         // Split the definition at the flags (if available)
         // and at the definition string (if available)
-        if (procdef.find("::") != string::npos)
+        if (procdef.find("::") != std::string::npos)
         {
             flags = procdef.substr(procdef.find("::")+2);
             procdef.erase(procdef.find("::"));
 
-            if (flags.find("\n") != string::npos)
+            if (flags.find("\n") != std::string::npos)
                 flags.erase(flags.find("\n"));
 
             if (flags.find("->") != std::string::npos)
@@ -211,7 +211,7 @@ void ProcedureViewer::updateProcedureList(const vector<wxString>& vProcedures)
         {
             flags.clear();
 
-            if (procdef.find("\n") != string::npos)
+            if (procdef.find("\n") != std::string::npos)
                 procdef.erase(procdef.find("\n"));
 
             if (procdef.find("->") != std::string::npos)
@@ -241,7 +241,7 @@ void ProcedureViewer::updateProcedureList(const vector<wxString>& vProcedures)
         // If the current procedure is not flagged as
         // "local" (which is done by the editor automatically)
         // then make its text bold
-        if (flags.find("local") == string::npos)
+        if (flags.find("local") == std::string::npos)
             SetItemFont(i, GetFont().MakeBold());
     }
 

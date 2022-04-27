@@ -24,7 +24,6 @@
 
 #include "../ParserLib/muParserDef.h"
 
-using namespace std;
 class Settings;
 
 /////////////////////////////////////////////////
@@ -50,7 +49,7 @@ typedef std::vector<mu::value_type> d_vect;
 /////////////////////////////////////////////////
 struct StringFuncArgs
 {
-	string sArg1, sArg2, sArg3;
+	std::string sArg1, sArg2, sArg3;
 	s_vect sMultiArg;
 	long long int nArg1, nArg2;
 	mu::value_type dArg1;
@@ -143,16 +142,16 @@ struct StringResult
 		bOnlyLogicals = false;
 	}
 
-	StringResult(vector<string>& _vResult, vector<bool>& _vNoStringVal, bool _bOnlyLogicals) : vResult(_vResult), vNoStringVal(_vNoStringVal), bOnlyLogicals(_bOnlyLogicals) {}
+	StringResult(std::vector<std::string>& _vResult, std::vector<bool>& _vNoStringVal, bool _bOnlyLogicals) : vResult(_vResult), vNoStringVal(_vNoStringVal), bOnlyLogicals(_bOnlyLogicals) {}
 
-	StringResult(const string& sRet, bool _bOnlyLogicals = false) : StringResult()
+	StringResult(const std::string& sRet, bool _bOnlyLogicals = false) : StringResult()
 	{
 		vResult.push_back(sRet);
-		vNoStringVal.push_back(sRet.find('"') == string::npos);
+		vNoStringVal.push_back(sRet.find('"') == std::string::npos);
 		bOnlyLogicals = _bOnlyLogicals;
 	}
 
-	StringResult(const string& sRet, mu::value_type* vals, int nvals) : StringResult()
+	StringResult(const std::string& sRet, mu::value_type* vals, int nvals) : StringResult()
 	{
 	    bOnlyLogicals = true;
 	    vResult.push_back(sRet);
@@ -160,9 +159,9 @@ struct StringResult
         vNumericalValues.assign(vals, vals+nvals);
 	}
 
-	vector<string> vResult;
-	vector<bool> vNoStringVal;
-	vector<mu::value_type> vNumericalValues;
+	std::vector<std::string> vResult;
+	std::vector<bool> vNoStringVal;
+	std::vector<mu::value_type> vNumericalValues;
 	bool bOnlyLogicals;
 };
 
@@ -188,8 +187,8 @@ enum StringParserFlags
 /////////////////////////////////////////////////
 struct Umlauts
 {
-    string lower;
-    string upper;
+    std::string lower;
+    std::string upper;
 
     // Constructor fills the fields with the corresponding
     // character codes (eg \x94 is a Hex value for (char)148)

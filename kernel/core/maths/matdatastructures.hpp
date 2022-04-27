@@ -22,13 +22,587 @@
 #include <vector>
 #include <string>
 #include <complex>
+#include <utility>
+
+#include "../ui/error.hpp"
+#include "../utils/stringtools.hpp"
+
+/////////////////////////////////////////////////
+/// \brief This class defines a dynamic size 2D
+/// matrix with a single 1D internal buffer. If
+/// the internal buffer is used directly within
+/// the parser, parallelisation is far more
+/// common.
+/////////////////////////////////////////////////
+class Matrix
+{
+    private:
+        std::vector<mu::value_type> m_storage;       ///< The internal buffer
+        size_t m_rows;                               ///< Number of rows
+        size_t m_cols;                               ///< Number of columns
+        bool m_transpose;                            ///< Is this Matrix transposed
+
+        /////////////////////////////////////////////////
+        /// \brief Unchecked method to access indexed
+        /// elements
+        ///
+        /// \param i size_t
+        /// \param j size_t
+        /// \return mu::value_type&
+        ///
+        /////////////////////////////////////////////////
+        mu::value_type& get(size_t i, size_t j)
+        {
+            return m_transpose ? m_storage[i*m_cols + j] : m_storage[i + j*m_rows];
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief Const declared overload to the indexed
+        /// access.
+        ///
+        /// \param i size_t
+        /// \param j size_t
+        /// \return const mu::value_type&
+        ///
+        /////////////////////////////////////////////////
+        const mu::value_type& get(size_t i, size_t j) const
+        {
+            return m_transpose ? m_storage[i*m_cols + j] : m_storage[i + j*m_rows];
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief Bakes the transposition by swapping
+        /// the actual elements instead of changing the
+        /// read order.
+        ///
+        /// \return void
+        ///
+        /////////////////////////////////////////////////
+        void bakeTransposition()
+        {
+            if (m_transpose)
+            {
+                std::vector<mu::value_type> buffer(m_cols*m_rows);
+
+                for (size_t i = 0; i < m_rows; i++)
+                {
+                    for (size_t j = 0; j < m_cols; j++)
+                    {
+                        buffer[i + j*m_rows] = m_storage[i*m_cols + j];
+                    }
+                }
+
+                std::swap(buffer, m_storage);
+                m_transpose = false;
+            }
+        }
+
+    public:
+        /////////////////////////////////////////////////
+        /// \brief Empty matrix default constructor.
+        /////////////////////////////////////////////////
+        Matrix() : m_rows(0u), m_cols(0u), m_transpose(false) {}
+
+        /////////////////////////////////////////////////
+        /// \brief Fill constructor
+        ///
+        /// \param r size_t
+        /// \param c size_t
+        /// \param init const mu::value_type&
+        ///
+        /////////////////////////////////////////////////
+        Matrix(size_t r, size_t c = 1u, const mu::value_type& init = NAN) : m_rows(r), m_cols(c), m_transpose(false)
+        {
+            m_storage.resize(r*c, init);
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief Matrix copy constructor.
+        ///
+        /// \param mat const Matrix&
+        ///
+        /////////////////////////////////////////////////
+        Matrix(const Matrix& mat)
+        {
+            assign(mat);
+        }
+
+        // We do not declare the move constructor by ourselves
+        Matrix(Matrix&& mat) = default;
+
+        /////////////////////////////////////////////////
+        /// \brief Construct a matrix from a vector
+        /// matrix.
+        ///
+        /// \param vectMatrix const std::vector<std::vector<mu::value_type>>&
+        ///
+        /////////////////////////////////////////////////
+        Matrix(const std::vector<std::vector<mu::value_type>>& vectMatrix) : Matrix()
+        {
+            m_rows = vectMatrix.size();
+            m_cols = vectMatrix[0].size();
+
+            for (size_t i = 1; i < m_rows; i++)
+            {
+                m_cols = std::max(m_cols, vectMatrix[i].size());
+            }
+
+            m_storage.resize(m_rows*m_cols, NAN);
+
+            for (size_t i = 0; i < m_rows; i++)
+            {
+                for (size_t j = 0; j < vectMatrix[i].size(); j++)
+                    get(i, j) = vectMatrix[i][j];
+            }
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief Assign constructor from large array.
+        ///
+        /// \param r size_t
+        /// \param c size_t
+        /// \param vVals mu::value_type*
+        /// \param nVals int
+        ///
+        /////////////////////////////////////////////////
+        Matrix(size_t r, size_t c, mu::value_type* vVals, int nVals)
+        {
+            assign(r, c, vVals, nVals);
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief Assignment operator overload.
+        ///
+        /// \param mat const Matrix&
+        /// \return Matrix&
+        ///
+        /////////////////////////////////////////////////
+        Matrix& operator=(const Matrix& mat)
+        {
+            assign(mat);
+            return *this;
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief Assign a matrix
+        ///
+        /// \param mat const Matrix&
+        /// \return void
+        ///
+        /////////////////////////////////////////////////
+        void assign(const Matrix& mat)
+        {
+            m_rows = mat.m_rows;
+            m_cols = mat.m_cols;
+            m_storage = mat.m_storage;
+            m_transpose = mat.m_transpose;
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief Assign a large array.
+        ///
+        /// \param r size_t
+        /// \param c size_t
+        /// \param vVals mu::value_type*
+        /// \param nVals int
+        /// \return void
+        ///
+        /////////////////////////////////////////////////
+        void assign(size_t r, size_t c, mu::value_type* vVals, int nVals)
+        {
+            m_storage.assign(vVals, vVals+std::min(r*c, (size_t)nVals));
+            m_rows = r;
+            m_cols = c;
+            m_storage.resize(m_rows*m_cols);
+            m_transpose = false;
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief Assign a vector.
+        ///
+        /// \param r size_t
+        /// \param c size_t
+        /// \param vVals const std::vector<mu::value_type>&
+        /// \return void
+        ///
+        /////////////////////////////////////////////////
+        void assign(size_t r, size_t c, const std::vector<mu::value_type>& vVals)
+        {
+            m_storage.assign(vVals.begin(), vVals.begin()+std::min(r*c, vVals.size()));
+            m_rows = r;
+            m_cols = c;
+            m_storage.resize(m_rows*m_cols);
+            m_transpose = false;
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief Get a reference to the internal data
+        /// structure.
+        ///
+        /// \return std::vector<mu::value_type>&
+        ///
+        /////////////////////////////////////////////////
+        std::vector<mu::value_type>& data()
+        {
+            return m_storage;
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief Get a const reference to the internal
+        /// data structure.
+        ///
+        /// \return const std::vector<mu::value_type>&
+        ///
+        /////////////////////////////////////////////////
+        const std::vector<mu::value_type>& data() const
+        {
+            return m_storage;
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief Transpose this matrix.
+        ///
+        /// \return void
+        ///
+        /////////////////////////////////////////////////
+        void transpose()
+        {
+            std::swap(m_rows, m_cols);
+            m_transpose = !m_transpose;
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief The rows of this matrix.
+        ///
+        /// \return size_t
+        ///
+        /////////////////////////////////////////////////
+        size_t rows() const
+        {
+            return m_rows;
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief The cols of this matrix.
+        ///
+        /// \return size_t
+        ///
+        /////////////////////////////////////////////////
+        size_t cols() const
+        {
+            return m_cols;
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief Get both dimensions at once.
+        ///
+        /// \return std::pair<size_t,size_t>
+        ///
+        /////////////////////////////////////////////////
+        std::pair<size_t,size_t> dims() const
+        {
+            return std::make_pair(m_rows, m_cols);
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief Check, whether this matrix is actually
+        /// a scalar.
+        ///
+        /// \return bool
+        ///
+        /////////////////////////////////////////////////
+        bool isScalar() const
+        {
+            return m_rows == 1 && m_cols == 1;
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief Simple function to identify square
+        /// matrices.
+        ///
+        /// \return bool
+        ///
+        /////////////////////////////////////////////////
+        bool isSquare() const
+        {
+            return m_rows == m_cols;
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief Simple function to identify empty
+        /// matrices.
+        ///
+        /// \return bool
+        ///
+        /////////////////////////////////////////////////
+        bool isEmpty() const
+        {
+            return !m_rows || !m_cols;
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief Convert the dimensions to a printable
+        /// string.
+        ///
+        /// \return std::string
+        ///
+        /////////////////////////////////////////////////
+        std::string printDims() const
+        {
+            return toString(m_rows) + "x" + toString(m_cols);
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief Get a reference to the indexed
+        /// element.
+        ///
+        /// \param i size_t
+        /// \param j size_t
+        /// \return mu::value_type&
+        ///
+        /////////////////////////////////////////////////
+        mu::value_type& operator()(size_t i, size_t j = 0u)
+        {
+            if (i >= m_rows || j >= m_cols)
+                throw SyntaxError(SyntaxError::INVALID_INDEX, "INTERNAL INDEXING ERROR",
+                                  SyntaxError::invalid_position,
+                                  "MAT(" + toString(i) + "," + toString(j) + ") vs. size = " + printDims());
+
+            return get(i, j);
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief Get a const reference to the indexed
+        /// element.
+        ///
+        /// \param i size_t
+        /// \param j size_t
+        /// \return const mu::value_type&
+        ///
+        /////////////////////////////////////////////////
+        const mu::value_type& operator()(size_t i, size_t j = 0u) const
+        {
+            if (i >= m_rows || j >= m_cols)
+                throw SyntaxError(SyntaxError::INVALID_INDEX, "INTERNAL INDEXING ERROR",
+                                  SyntaxError::invalid_position,
+                                  "MAT(" + toString(i) + "," + toString(j) + ") vs. size = " + printDims());
+
+            return get(i, j);
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief Resize the matrix to another
+        /// dimension. New elements will be
+        /// zero-initialized.
+        ///
+        /// \param r size_t
+        /// \param c size_t
+        /// \return void
+        ///
+        /////////////////////////////////////////////////
+        void resize(size_t r, size_t c)
+        {
+            if (r == m_rows && c == m_cols)
+                return;
+
+            // Use a buffer
+            std::vector<mu::value_type> buffer(r*c);
+
+            // Copy the remaining elements
+            #pragma omp parallel for
+            for (size_t i = 0; i < std::min(r, m_rows); i++)
+            {
+                for (size_t j = 0; j < std::min(c, m_cols); j++)
+                {
+                    buffer[i + j*r] = m_storage[i + j*m_rows];
+                }
+            }
+
+            // Swap storage with the buffer
+            std::swap(m_storage, buffer);
+
+            // Update the sizes
+            m_rows = r;
+            m_cols = c;
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief Extend this matrix to be prepared for
+        /// the acutal mathematical operation. Scalars
+        /// are not touched and vectors are repmat()-ed
+        /// to enable elementwise operations.
+        ///
+        /// \param r size_t
+        /// \param c size_t
+        /// \return void
+        ///
+        /////////////////////////////////////////////////
+        void extend(size_t r, size_t c)
+        {
+            if (isScalar())
+                return;
+
+            // We need to bake the transposition
+            bakeTransposition();
+
+            if (r != m_rows || c != m_cols)
+            {
+                // Keep the relevant scalar dimensions
+                bool rowScalar = m_rows == 1 && r > 1;
+                bool colScalar = m_cols == 1 && c > 1;
+
+                // Resize the matrix
+                resize(r, c);
+
+                if (rowScalar)
+                {
+                    for (size_t i = 1; i < m_rows; i++)
+                    {
+                        for (size_t j = 0; j < m_cols; j++)
+                        {
+                            get(i, j) = get(0, j);
+                        }
+                    }
+                }
+                else if (colScalar)
+                {
+                    for (size_t j = 1; j < m_cols; j++)
+                    {
+                        for (size_t i = 0; i < m_rows; i++)
+                        {
+                            get(i, j) = get(i, 0);
+                        }
+                    }
+                }
+            }
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief Multiply a matrix from the right to
+        /// this matrix.
+        ///
+        /// \param mat const Matrix&
+        /// \return Matrix&
+        ///
+        /////////////////////////////////////////////////
+        Matrix& operator*=(const Matrix& mat)
+        {
+            assign(operator*(mat));
+            return *this;
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief Multiply this matrix with a matrix
+        /// from the right.
+        ///
+        /// \param mat const Matrix&
+        /// \return Matrix
+        ///
+        /////////////////////////////////////////////////
+        Matrix operator*(const Matrix& mat) const
+        {
+            if (mat.m_rows != m_cols)
+                throw SyntaxError(SyntaxError::WRONG_MATRIX_DIMENSIONS_FOR_MATOP, "INTERNAL INDEXING ERROR",
+                                  SyntaxError::invalid_position,
+                                  printDims() + " vs. " + mat.printDims());
+
+            Matrix ret(m_rows, mat.m_cols, 0.0);
+
+            #pragma omp parallel for
+            for (size_t i = 0; i < ret.m_rows; i++)
+            {
+                for (size_t j = 0; j < ret.m_cols; j++)
+                {
+                    for (size_t k = 0; k < m_cols; k++)
+                    {
+                        // Using the private method avoids addressing
+                        // issues occuring with transposed matrices
+                        ret.get(i, j) += get(i, k) * mat.get(k, j);
+                    }
+                }
+            }
+
+            return ret;
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief Horizontally concatenate two matrices.
+        ///
+        /// \param mat const Matrix&
+        /// \return Matrix
+        ///
+        /////////////////////////////////////////////////
+        Matrix hcat(const Matrix& mat) const
+        {
+            size_t cols = m_cols + mat.m_cols;
+            size_t rows = std::max(m_rows, mat.m_rows);
+
+            Matrix mRet(rows, cols);
+
+            // Copy this matrix
+            for (size_t i = 0; i < m_rows; i++)
+            {
+                for (size_t j = 0; j < m_cols; j++)
+                {
+                    mRet.get(i, j) = get(i, j);
+                }
+            }
+
+            // Copy other matrix
+            for (size_t i = 0; i < mat.m_rows; i++)
+            {
+                for (size_t j = 0; j < mat.m_cols; j++)
+                {
+                    mRet.get(i, j+m_cols) = mat.get(i, j);
+                }
+            }
+
+            return mRet;
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief Vertically concatenate two matrices.
+        ///
+        /// \param mat const Matrix&
+        /// \return Matrix
+        ///
+        /////////////////////////////////////////////////
+        Matrix vcat(const Matrix& mat) const
+        {
+            size_t cols = std::max(m_cols, mat.m_cols);
+            size_t rows = m_rows + mat.m_rows;
+
+            Matrix mRet(rows, cols);
+
+            // Copy this matrix
+            for (size_t i = 0; i < m_rows; i++)
+            {
+                for (size_t j = 0; j < m_cols; j++)
+                {
+                    mRet.get(i, j) = get(i, j);
+                }
+            }
+
+            // Copy other matrix
+            for (size_t i = 0; i < mat.m_rows; i++)
+            {
+                for (size_t j = 0; j < mat.m_cols; j++)
+                {
+                    mRet.get(i+m_rows, j) = mat.get(i, j);
+                }
+            }
+
+            return mRet;
+        }
+};
+
 
 
 // Erster Index: No. of Line; zweiter Index: No. of Col (push_back verwendet dazu stets zeilen!)
 /////////////////////////////////////////////////
 /// \brief Defines a Matrix.
 /////////////////////////////////////////////////
-typedef std::vector<std::vector<std::complex<double>> > Matrix;
+//typedef std::vector<std::vector<std::complex<double>> > Matrix;
 
 
 /////////////////////////////////////////////////

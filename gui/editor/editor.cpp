@@ -2736,9 +2736,9 @@ static bool isOnlyActiveBlock(int nBlockID, std::vector<int> vBlocks)
 {
     for (size_t i = 0; i < vBlocks.size(); i++)
     {
-        if (i == nBlockID && vBlocks[i] != 1)
+        if ((int)i == nBlockID && vBlocks[i] != 1)
             return false;
-        else if (i != nBlockID && vBlocks[i])
+        else if ((int)i != nBlockID && vBlocks[i])
             return false;
     }
 

@@ -35,8 +35,6 @@
 
 #define EVT_TERM_RESIZE(id, fn) { wxEVT_COMMAND_TERM_RESIZE, id, -1, (wxObjectEventFunction) (wxEventFunction) (wxCommandEventFunction) &fn, (wxObject *)NULL },
 
-using namespace std;
-
 class TerminalCallTip;
 
 
@@ -135,7 +133,7 @@ class NumeReTerminal : public wxWindow, public GenericTerminal, public wxThreadH
 		}
 
 	private:
-		void pipe_command(const string& sCommand);
+		void pipe_command(const std::string& sCommand);
 		BOLDSTYLE
 		m_boldStyle;
 
@@ -173,8 +171,8 @@ class NumeReTerminal : public wxWindow, public GenericTerminal, public wxThreadH
 		bool m_bTableEditCanceled;
 		bool m_isBusy;
 		int m_nDebuggerCode;
-		string m_sCommandLine;
-		string m_sAnswer;
+		std::string m_sCommandLine;
+		std::string m_sAnswer;
 
 	public:
 	    // Constructor and destructor
@@ -187,9 +185,9 @@ class NumeReTerminal : public wxWindow, public GenericTerminal, public wxThreadH
 		virtual ~NumeReTerminal();
 
 		// Kernel communication functions
-		void pass_command(const string& command, bool isEvent);
-		NumeRe::Table getTable(const string& sTableName);
-		NumeRe::Container<string> getStringTable(const string& sStringTableName);
+		void pass_command(const std::string& command, bool isEvent);
+		NumeRe::Table getTable(const std::string& sTableName);
+		NumeRe::Container<std::string> getStringTable(const std::string& sStringTableName);
 		Settings getKernelSettings();
 		NumeReKernel& getKernel()
 		{
@@ -210,9 +208,9 @@ class NumeReTerminal : public wxWindow, public GenericTerminal, public wxThreadH
 			wxCriticalSectionLocker lock(m_kernelCS);
 			m_bTableEditCanceled = true;
 		}
-		void addBreakpoint(const string& _sFilename, size_t nLine);
-        void removeBreakpoint(const string& _sFilename, size_t nLine);
-        void clearBreakpoints(const string& _sFilename);
+		void addBreakpoint(const std::string& _sFilename, size_t nLine);
+        void removeBreakpoint(const std::string& _sFilename, size_t nLine);
+        void clearBreakpoints(const std::string& _sFilename);
 
 		void continueDebug()
 		{
@@ -234,10 +232,10 @@ class NumeReTerminal : public wxWindow, public GenericTerminal, public wxThreadH
 		    wxCriticalSectionLocker lock(m_kernelCS);
 		    m_nDebuggerCode = NumeReKernel::DEBUGGER_LEAVE;
 		}
-		string getDocumentation(const string& sCommand);
-		vector<string> getDocIndex();
-		map<string, string> getPluginLanguageStrings();
-		map<string, string> getFunctionLanguageStrings();
+		std::string getDocumentation(const std::string& sCommand);
+		std::vector<std::string> getDocIndex();
+		std::map<std::string, std::string> getPluginLanguageStrings();
+		std::map<std::string, std::string> getFunctionLanguageStrings();
 		void UpdateLibrary()
 		{
 			m_updateProcedureLibrary = true;
@@ -254,15 +252,15 @@ class NumeReTerminal : public wxWindow, public GenericTerminal, public wxThreadH
 		void SetCursorBlinkRate(int rate);
 
 		// Text printing functions
-		virtual void DrawText(int fg_color, int bg_color, int flags, int x, int y, const string& sText) override;
+		virtual void DrawText(int fg_color, int bg_color, int flags, int x, int y, const std::string& sText) override;
 		virtual void DrawCursor(int fg_color, int bg_color, int flags, int x, int y, unsigned char c) override;
 
 		virtual void Calltip(int x, int y, NumeRe::CallTip& _cTip) override;
         virtual void CalltipCancel() override;
 
 		virtual void ClearChars(int bg_color, int x, int y, int w, int h) override;
-		virtual void ProcessInput(int len, const string& sData) override;
-		virtual void ProcessOutput(int len, const string& sData) override;
+		virtual void ProcessInput(int len, const std::string& sData) override;
+		virtual void ProcessOutput(int len, const std::string& sData) override;
 
 		// Terminal control functions
 		void ScrollTerminal(int numLines, bool scrollUp = true);

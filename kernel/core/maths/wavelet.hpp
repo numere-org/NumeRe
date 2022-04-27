@@ -23,8 +23,6 @@
 #include <vector>
 #include "../datamanagement/table.hpp"
 
-using namespace std;
-
 enum WaveletType
 {
     Daubechies,
@@ -36,7 +34,7 @@ enum WaveletType
 };
 
 void calculateWavelet(std::vector<double>& data, WaveletType _type, int k, int dir);
-NumeRe::Table decodeWaveletData(const vector<double>& vWaveletData, const vector<double>& vAxisData);
+NumeRe::Table decodeWaveletData(const std::vector<double>& vWaveletData, const std::vector<double>& vAxisData);
 
 #endif // WAVELET_HPP
 

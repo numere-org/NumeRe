@@ -134,6 +134,7 @@ void getIndices(StringView sCmd, Indices& _idx,  Parser& _parser, MemoryManager&
     if (NumeReKernel::getInstance()->getStringParser().containsStringVectorVars(_idx.sCompiledAccessEquation))
     {
         EndlessVector<std::string> idc = getAllArguments(_idx.sCompiledAccessEquation);
+        g_logger.debug("_idx.sCompiledAccessEquation contains string vector vars " + _idx.sCompiledAccessEquation);
         _idx.sCompiledAccessEquation.clear();
 
         for (std::string& index : idc)

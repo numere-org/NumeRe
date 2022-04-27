@@ -35,7 +35,7 @@ Zipfile::~Zipfile()
     }
 }
 
-bool Zipfile::open(const string& sFilename, int nOpenmode)
+bool Zipfile::open(const std::string& sFilename, int nOpenmode)
 {
     if (bIsOpen && hZip != NULL)
     {
@@ -67,7 +67,7 @@ bool Zipfile::close()
     return !bIsOpen;
 }
 
-bool Zipfile::addFile(const string& sFilename)
+bool Zipfile::addFile(const std::string& sFilename)
 {
     if (bIsOpen && hZip != NULL)
     {
@@ -76,11 +76,11 @@ bool Zipfile::addFile(const string& sFilename)
     return false;
 }
 
-string Zipfile::getZipContent()
+std::string Zipfile::getZipContent()
 {
     if (bIsOpen && hZip != NULL)
     {
-        string sZipfilecontent = "";
+        std::string sZipfilecontent = "";
         char cBuffer[1024];
         int i = 0;
         unsigned long int totalsize = 0;
@@ -103,11 +103,11 @@ string Zipfile::getZipContent()
 }
 
 
-string Zipfile::getZipItem(const string& sFilename)
+std::string Zipfile::getZipItem(const std::string& sFilename)
 {
     if (bIsOpen && hZip != NULL)
     {
-        string sFilecontent = "";
+        std::string sFilecontent = "";
         //wstring wFilecontent = L"";
         //wchar_t* wBuffer = 0;
         char* cBuffer = 0;

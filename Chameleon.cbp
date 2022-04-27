@@ -22,9 +22,9 @@
 				<Option compiler="tdm-gcc" />
 				<Compiler>
 					<Add option="-Wall" />
+					<Add option="-std=gnu++2a" />
 					<Add option="-Og" />
 					<Add option="-g" />
-					<Add option="-std=gnu++11" />
 					<Add option="-mthreads" />
 					<Add option="-DDLLVER_MAJOR_MASK" />
 					<Add option="-DwxUSE_REGEX" />
@@ -79,7 +79,7 @@
 				<Compiler>
 					<Add option="-O3" />
 					<Add option="-Wall" />
-					<Add option="-std=gnu++11" />
+					<Add option="-std=gnu++2a" />
 					<Add option="-fopenmp" />
 					<Add option="-mthreads" />
 					<Add option="-DDLLVER_MAJOR_MASK" />
@@ -135,7 +135,7 @@
 				<Compiler>
 					<Add option="-O3" />
 					<Add option="-Wall" />
-					<Add option="-std=gnu++11" />
+					<Add option="-std=gnu++2a" />
 					<Add option="-mthreads" />
 					<Add option="-fopenmp" />
 					<Add option="-DDLLVER_MAJOR_MASK" />
@@ -188,7 +188,7 @@
 				<Option compiler="tdm-gcc" />
 				<Compiler>
 					<Add option="-Wall" />
-					<Add option="-std=gnu++11" />
+					<Add option="-std=gnu++2a" />
 					<Add option="-g" />
 					<Add option="-mthreads" />
 					<Add option="-ggdb3" />
@@ -407,6 +407,8 @@
 		<Unit filename="kernel/core/ParserLib/muParserError.h" />
 		<Unit filename="kernel/core/ParserLib/muParserFixes.h" />
 		<Unit filename="kernel/core/ParserLib/muParserStack.h" />
+		<Unit filename="kernel/core/ParserLib/muParserState.cpp" />
+		<Unit filename="kernel/core/ParserLib/muParserState.hpp" />
 		<Unit filename="kernel/core/ParserLib/muParserTemplateMagic.h" />
 		<Unit filename="kernel/core/ParserLib/muParserToken.h" />
 		<Unit filename="kernel/core/ParserLib/muParserTokenReader.cpp" />
