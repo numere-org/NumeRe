@@ -850,14 +850,16 @@ static int getDataForFit(const string& sCmd, string& sDimsForFitLog, FittingData
 
     if (isnan(fitData.ivl[1].front()) && !isCluster)
     {
-        fitData.ivl[1].reset(_data.min(sDataTable, _idx.row, VectorIndex(_idx.col[1])).real(),
-                             _data.max(sDataTable, _idx.row, VectorIndex(_idx.col[1])).real());
+        bool useLast = _idx.col.isExpanded() && nDim == 2;
+
+        fitData.ivl[1].reset(_data.min(sDataTable, _idx.row, VectorIndex(useLast ? _idx.col.last() : _idx.col[1])).real(),
+                             _data.max(sDataTable, _idx.row, VectorIndex(useLast ? _idx.col.last() : _idx.col[1])).real());
     }
 
     if (fitData.nFitVars & 2 && !isCluster && isnan(fitData.ivl[2].front()))
     {
-        fitData.ivl[2].reset(_data.min(sDataTable, _idx.row, VectorIndex(_idx.col.subidx(2))).real(),
-                             _data.max(sDataTable, _idx.row, VectorIndex(_idx.col.subidx(2))).real());
+        fitData.ivl[2].reset(_data.min(sDataTable, _idx.row, _idx.col.subidx(2)).real(),
+                             _data.max(sDataTable, _idx.row, _idx.col.subidx(2)).real());
     }
 
     if (nDim == 2 || isCluster)

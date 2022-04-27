@@ -34,7 +34,8 @@ namespace mu
     /////////////////////////////////////////////////
     void ExpressionTarget::create(StringView sTargets, const varmap_type& usedVars)
     {
-        m_targets.clear();
+        if (m_targets.size())
+            m_targets.clear();
 
         while (sTargets.length())
         {

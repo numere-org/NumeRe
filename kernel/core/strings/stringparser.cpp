@@ -25,8 +25,8 @@
 
 extern value_type vAns;
 
-string removeQuotationMarks(const string& sString);
-string addQuotationMarks(const string& sString);
+std::string removeQuotationMarks(const std::string& sString);
+std::string addQuotationMarks(const std::string& sString);
 
 namespace NumeRe
 {
@@ -56,21 +56,25 @@ namespace NumeRe
     /// contents of the data objects and expands them
     /// as a list.
     ///
-    /// \param sLine string
+    /// \param sLine std::string
     /// \param n_pos size_t
-    /// \return string
+    /// \return std::string
     ///
     /////////////////////////////////////////////////
-    string StringParser::getDataForString(string sLine, size_t n_pos)
+    std::string StringParser::getDataForString(std::string sLine, size_t n_pos)
     {
+        // We disable the caching here, because it is not supported for
+        // recursive evaluations
+        _parser.DisableAccessCaching();
+
         // Get the contents of "string()", "data()" and the other caches
         size_t nEndPosition;
 
-        if (sLine.find_first_of("({") == string::npos)
+        if (sLine.find_first_of("({") == std::string::npos)
             return sLine;
 
         // {str} = string(...)
-        while ((n_pos = findNextFunction("string(", sLine, n_pos, nEndPosition)) != string::npos)
+        while ((n_pos = findNextFunction("string(", sLine, n_pos, nEndPosition)) != std::string::npos)
         {
             // Check for arguments to parse and
             // get the indices afterwards
@@ -90,7 +94,7 @@ namespace NumeRe
             // the stored strings directly
             if (parser_CheckMultArgFunc(sLine.substr(0, n_pos), sLine.substr(nEndPosition + 1)))
             {
-                string sLeft = sLine.substr(0, n_pos);
+                std::string sLeft = sLine.substr(0, n_pos);
                 StripSpaces(sLeft);
 
                 if (sLeft.length() > 3 && sLeft.substr(sLeft.length() - 4) == "num(")
@@ -107,8 +111,8 @@ namespace NumeRe
                 // Create the string vector
                 if (_data.getStringElements(_idx.col.front()))
                 {
-                    string sString = "";
-                    vector<string> vStrings;
+                    std::string sString = "";
+                    std::vector<std::string> vStrings;
 
                     for (size_t i = 0; i < _idx.row.size(); i++)
                     {
@@ -125,28 +129,25 @@ namespace NumeRe
             n_pos++;
         }
 
-        if (sLine.find_first_of("({") == string::npos)
+        if (sLine.find_first_of("({") == std::string::npos)
             return sLine;
-
-        //getDataElements(sLine, NumeReKernel::getInstance()->getParser(), NumeReKernel::getInstance()->getMemoryManager(), NumeReKernel::getInstance()->getSettings());
-        //return sLine;
 
         // Replace calls to any table
         for (auto iter = _data.getTableMap().begin(); iter != _data.getTableMap().end(); ++iter)
         {
-            if (sLine.find('(') == string::npos)
+            if (sLine.find('(') == std::string::npos)
                 break;
 
             replaceDataOccurence(sLine, iter->first + "(");
         }
 
-        if (sLine.find('{') == string::npos)
+        if (sLine.find('{') == std::string::npos)
             return sLine;
 
         // Replace calls to any cluster
         for (auto iter = _data.getClusterMap().begin(); iter != _data.getClusterMap().end(); ++iter)
         {
-            if (sLine.find('{') == string::npos)
+            if (sLine.find('{') == std::string::npos)
                 break;
 
             replaceDataOccurence(sLine, iter->first + "{");
@@ -161,18 +162,18 @@ namespace NumeRe
     /// expressions so that they may used as numerical
     /// index expressions.
     ///
-    /// \param sIndexExpression string
-    /// \return string
+    /// \param sIndexExpression std::string
+    /// \return std::string
     ///
     /////////////////////////////////////////////////
-    string StringParser::parseStringsInIndices(string sIndexExpression)
+    std::string StringParser::parseStringsInIndices(std::string sIndexExpression)
     {
         // Ensure that this is an expression,
         // which actually contains strings
         if (!isStringExpression(sIndexExpression))
             return sIndexExpression;
 
-        string sParsedIndices;
+        std::string sParsedIndices;
 
         // As long as the passed index expression
         // still has a length
@@ -180,7 +181,7 @@ namespace NumeRe
         {
             // Get the next index pair and evaluate
             // its strings
-            string sIndexPairs = getNextArgument(sIndexExpression, true);
+            std::string sIndexPairs = getNextArgument(sIndexExpression, true);
 
             // If the current set of indices is
             // only the value parser, then ignore
@@ -206,7 +207,7 @@ namespace NumeRe
             // only strings
             if (strRes.bOnlyLogicals && strRes.vResult.size() > 1)
             {
-                vector<mu::value_type> vIndices;
+                std::vector<mu::value_type> vIndices;
 
                 // Convert the strings to doubles
                 for (size_t i = 0; i < strRes.vResult.size(); i++)
@@ -235,18 +236,18 @@ namespace NumeRe
     /// \brief Replaces all occurences of the passed
     /// data access occurence in the passed string.
     ///
-    /// \param sLine string&
-    /// \param sOccurence const string&
+    /// \param sLine std::string&
+    /// \param sOccurence const std::string&
     /// \return void
     ///
     /////////////////////////////////////////////////
-    void StringParser::replaceDataOccurence(string& sLine, const string& sOccurence)
+    void StringParser::replaceDataOccurence(std::string& sLine, const std::string& sOccurence)
     {
         size_t nStartPosition = 0;
         size_t nEndPosition;
 
         // Find the next occurence
-        while ((nStartPosition = findNextFunction(sOccurence, sLine, nStartPosition, nEndPosition, true)) != string::npos)
+        while ((nStartPosition = findNextFunction(sOccurence, sLine, nStartPosition, nEndPosition, true)) != std::string::npos)
         {
             size_t nStartPos = nStartPosition;
             size_t nEndPos = nEndPosition;
@@ -261,7 +262,7 @@ namespace NumeRe
                 nEndPos++;
             }
 
-            string sData = sLine.substr(nStartPos, nEndPos - nStartPos + 1);
+            std::string sData = sLine.substr(nStartPos, nEndPos - nStartPos + 1);
 
             // Is the current data access a method?
             if (sData.find("().") != std::string::npos)
@@ -269,7 +270,7 @@ namespace NumeRe
                 if (containsStringVectorVars(sData))
                 {
                     bool temp;
-                    std::vector<string> vRes = evaluateStringVectors(sData);
+                    std::vector<std::string> vRes = evaluateStringVectors(sData);
                     applyElementaryStringOperations(vRes, temp);
                     sData = vRes.front();
                 }
@@ -317,25 +318,25 @@ namespace NumeRe
     /// so-called value-to-string parser (called via
     /// \c #VAR in code).
     ///
-    /// \param sLine const string&
-    /// \return string
+    /// \param sLine const std::string&
+    /// \return std::string
     ///
     /////////////////////////////////////////////////
-    string StringParser::numToString(const string& sLine)
+    std::string StringParser::numToString(const std::string& sLine)
     {
         // Do nothing, if there's no #
-        if (sLine.find('#') == string::npos)
+        if (sLine.find('#') == std::string::npos)
             return sLine + " ";
 
         // Create a copy of the current line
-        string sLineToParsed = sLine + " ";
-        string sLineToParsedTemp;
+        std::string sLineToParsed = sLine + " ";
+        std::string sLineToParsedTemp;
 
         unsigned int nPos = 0;
         unsigned int n_pos = 0;
 
         // As long as there are further "#"
-        while (sLineToParsed.find('#', nPos) != string::npos)
+        while (sLineToParsed.find('#', nPos) != std::string::npos)
         {
             // Store its position
             nPos = sLineToParsed.find('#', nPos);
@@ -343,7 +344,7 @@ namespace NumeRe
             // Ensure that it is not in a string
             if (!isInQuotes(sLineToParsed, nPos, true))
             {
-                string sPrefix = "";
+                std::string sPrefix = "";
                 sLineToParsedTemp += sLineToParsed.substr(0, nPos);
                 sLineToParsed = sLineToParsed.substr(nPos + 1);
 
@@ -373,7 +374,7 @@ namespace NumeRe
                 if (sLineToParsed[0] == '(' || sLineToParsed[0] == '{')
                 {
                     // Get the contents of the current parenthesis
-                    string sExpr = sLineToParsed.substr(1, getMatchingParenthesis(sLineToParsed) - 1);
+                    std::string sExpr = sLineToParsed.substr(1, getMatchingParenthesis(sLineToParsed) - 1);
 
                     // Does it contain strings?
                     if (isStringExpression(sExpr))
@@ -426,7 +427,7 @@ namespace NumeRe
                 else if (sLineToParsed[0] == '"')
                 {
                     // Get the contents of the current string
-                    string sExpr = sLineToParsed.substr(1, sLineToParsed.find('"', 1) - 1);
+                    std::string sExpr = sLineToParsed.substr(1, sLineToParsed.find('"', 1) - 1);
 
                     // Add the zeros, if needed
                     while (sExpr.length() < sPrefix.length() + 2)
@@ -470,7 +471,7 @@ namespace NumeRe
                             sLineToParsedTemp += "\"" + replacePathSeparator(_option.getScriptPath()) + "\"";
                         sLineToParsed = sLineToParsed.substr(sLineToParsed.find('>') + 1);
                     }
-                    else if (sLineToParsed.find('>') != string::npos)
+                    else if (sLineToParsed.find('>') != std::string::npos)
                     {
                         // If no path token, only use the part in between of the angle brackets
                         sLineToParsedTemp += "\"" + sLineToParsed.substr(1, sLineToParsed.find('>') - 1) + "\"";
@@ -487,7 +488,7 @@ namespace NumeRe
                 else if (containsStringVectorVars(sLineToParsed.substr(0, getPositionOfFirstDelimiter(sLineToParsed.substr(n_pos)))))
                 {
                     // Here are string vector variables
-                    string sExpr = sLineToParsed.substr(0, getPositionOfFirstDelimiter(sLineToParsed.substr(n_pos)));
+                    std::string sExpr = sLineToParsed.substr(0, getPositionOfFirstDelimiter(sLineToParsed.substr(n_pos)));
 
                     // Parse the current line
                     StringResult strRes = eval(sExpr, "");
@@ -517,8 +518,8 @@ namespace NumeRe
 
                 int nResults = 0;
                 mu::value_type* v = 0;
-                vector<string> vResults;
-                string sElement = "";
+                std::vector<std::string> vResults;
+                std::string sElement = "";
 
                 // Evaluate the parsed expression
                 v = _parser.Eval(nResults);
@@ -556,7 +557,7 @@ namespace NumeRe
             sLineToParsedTemp += sLineToParsed;
 
         // Handle remaining vector braces
-        if (sLineToParsedTemp.find('{') != string::npos)
+        if (sLineToParsedTemp.find('{') != std::string::npos)
         {
             convertVectorToExpression(sLineToParsedTemp, _option);
         }
@@ -577,13 +578,13 @@ namespace NumeRe
     /// store the strings into the data tables.
     ///
     /// \param strRes StringResult&
-    /// \param sObject string&
+    /// \param sObject std::string&
     /// \param nCurrentComponent size_t&
     /// \param nStrings size_t
     /// \return void
     ///
     /////////////////////////////////////////////////
-    void StringParser::storeStringToDataObjects(StringResult& strRes, string& sObject, size_t& nCurrentComponent, size_t nStrings)
+    void StringParser::storeStringToDataObjects(StringResult& strRes, std::string& sObject, size_t& nCurrentComponent, size_t nStrings)
     {
         // Identify the correct table
         DataAccessParser _accessParser(sObject);
@@ -591,7 +592,7 @@ namespace NumeRe
         if (!_accessParser.getDataObject().length())
             return;
 
-        string sTableName = _accessParser.getDataObject();
+        std::string sTableName = _accessParser.getDataObject();
         Indices& _idx = _accessParser.getIndices();
 
         // Is the target a headline or is it a regular index?
@@ -755,14 +756,14 @@ namespace NumeRe
     /// StringParser::storeStringResults(). It will
     /// store the strings into the string object.
     ///
-    /// \param vFinal const vector<string>&
-    /// \param sObject string&
+    /// \param vFinal const std::vector<std::string>&
+    /// \param sObject std::string&
     /// \param nCurrentComponent size_t&
     /// \param nStrings size_t
     /// \return void
     ///
     /////////////////////////////////////////////////
-    void StringParser::storeStringToStringObject(const vector<string>& vFinal, string& sObject, size_t& nCurrentComponent, size_t nStrings)
+    void StringParser::storeStringToStringObject(const std::vector<std::string>& vFinal, std::string& sObject, size_t& nCurrentComponent, size_t nStrings)
     {
         Indices _idx = getIndices(sObject, _parser, _data, _option);
 
@@ -789,11 +790,11 @@ namespace NumeRe
     /// their desired targets.
     ///
     /// \param strRes StringResult&
-    /// \param __sObject string
+    /// \param __sObject std::string
     /// \return int
     ///
     /////////////////////////////////////////////////
-    int StringParser::storeStringResults(StringResult& strRes, string __sObject)
+    int StringParser::storeStringResults(StringResult& strRes, std::string __sObject)
     {
         // Only do something, if the target object is not empty
         size_t nBracePos;
@@ -807,7 +808,7 @@ namespace NumeRe
         if (__sObject[nBracePos] == '{')
             convertVectorToExpression(__sObject, _option);
 
-        string sObject;
+        std::string sObject;
         size_t nStrings = strRes.vResult.size();
         size_t nCurrentComponent = 0;
 
@@ -823,7 +824,7 @@ namespace NumeRe
                 // Store the strings into the data object
                 storeStringToDataObjects(strRes, sObject, nCurrentComponent, nStrings);
             }
-            else if (sObject.find("string(") != string::npos)
+            else if (sObject.find("string(") != std::string::npos)
             {
                 // Store the strings into the string object
                 storeStringToStringObject(strRes.vResult, sObject, nCurrentComponent, nStrings);
@@ -832,7 +833,7 @@ namespace NumeRe
             {
                 // Store the strings in string variables
                 StripSpaces(sObject);
-                if (sObject.find(' ') != string::npos)
+                if (sObject.find(' ') != std::string::npos)
                     return 0;
                 try
                 {
@@ -851,7 +852,7 @@ namespace NumeRe
             {
                 // Store the results as numerical values
                 StripSpaces(sObject);
-                if (sObject.find(' ') != string::npos)
+                if (sObject.find(' ') != std::string::npos)
                 {
                     return 0;
                 }
@@ -883,7 +884,7 @@ namespace NumeRe
                         {
                             vAns = v[0];
                             NumeReKernel::getInstance()->getAns().setDoubleArray(nResults, v);
-                            string sValues;
+                            std::string sValues;
                             strRes.vNumericalValues.insert(strRes.vNumericalValues.end(), v, v+nResults);
 
                             // Transform the results into a string
@@ -949,20 +950,20 @@ namespace NumeRe
     /// string, which is formatted for the console.
     ///
     /// \param StrRes StringResult&
-    /// \param sLine string&
+    /// \param sLine std::string&
     /// \param parserFlags int
     /// \param bSilent bool
-    /// \return string
+    /// \return std::string
     ///
     /////////////////////////////////////////////////
-    string StringParser::createStringOutput(StringResult& StrRes, string& sLine, int parserFlags, bool bSilent)
+    std::string StringParser::createStringOutput(StringResult& StrRes, std::string& sLine, int parserFlags, bool bSilent)
     {
         sLine.clear();
         NumeRe::Cluster& ans = NumeReKernel::getInstance()->getAns();
         ans.clear();
 
-        vector<string>& vFinal = StrRes.vResult;
-        vector<bool>& vIsNoStringValue = StrRes.vNoStringVal;
+        std::vector<std::string>& vFinal = StrRes.vResult;
+        std::vector<bool>& vIsNoStringValue = StrRes.vNoStringVal;
 
         // Catch the cases, where the results are
         // numerical only here
@@ -982,8 +983,8 @@ namespace NumeRe
             return sLine;
         }
 
-        string sConsoleOut;
-        string sCurrentComponent;
+        std::string sConsoleOut;
+        std::string sCurrentComponent;
 
         if (parserFlags & PEEK || !(NumeReKernel::bSupressAnswer || bSilent))
             sConsoleOut = createTerminalOutput(StrRes, parserFlags);
@@ -1078,7 +1079,7 @@ namespace NumeRe
                 _parser.SetExpr(vFinal[j]);
                 int nResults = 0;
                 mu::value_type* v = _parser.Eval(nResults);
-                string stres;
+                std::string stres;
 
                 for (int k = 0; k < nResults-1; k++)
                 {
@@ -1111,15 +1112,15 @@ namespace NumeRe
     ///
     /// \param strRes StringResult&
     /// \param parserFlags int
-    /// \return string
+    /// \return std::string
     ///
     /////////////////////////////////////////////////
-    string StringParser::createTerminalOutput(StringResult& strRes, int parserFlags)
+    std::string StringParser::createTerminalOutput(StringResult& strRes, int parserFlags)
     {
         // Shall the output be printed?
         if (parserFlags & NO_QUOTES && parserFlags & PEEK)
         {
-            string sConsoleOut = "|-> ";
+            std::string sConsoleOut = "|-> ";
             bool bLineBreaks = false;
 
             // Every result in the current return values
@@ -1179,7 +1180,7 @@ namespace NumeRe
                     _parser.SetExpr(strRes.vResult[j]);
                     int nResults = 0;
                     mu::value_type* v = _parser.Eval(nResults);
-                    string stres;
+                    std::string stres;
 
                     for (int k = 0; k < nResults-1; k++)
                     {
@@ -1210,7 +1211,7 @@ namespace NumeRe
         }
         else
         {
-            vector<string> vStringResult;
+            std::vector<std::string> vStringResult;
             // Every result in the current return values
             // is a single string result
             for (size_t j = 0; j < strRes.vResult.size(); j++)
@@ -1265,14 +1266,14 @@ namespace NumeRe
     /// all passed string expression parameters and
     /// removes them from the expression.
     ///
-    /// \param sLine string&
+    /// \param sLine std::string&
     /// \return int
     ///
     /////////////////////////////////////////////////
-    int StringParser::decodeStringParams(string& sLine)
+    int StringParser::decodeStringParams(std::string& sLine)
     {
         int parserFlags = NO_FLAG;
-        vector<int> vPositions;
+        std::vector<int> vPositions;
 
         // Search for every parameter and add the
         // corresponding flag, if the parameter was
@@ -1316,7 +1317,7 @@ namespace NumeRe
     /// the passed string is simple, i.e. it is a
     /// string literal without any operation.
     ///
-    /// \param sLine const string&
+    /// \param sLine const std::string&
     /// \return bool
     ///
     /// This function is called mainly first in the
@@ -1324,7 +1325,7 @@ namespace NumeRe
     /// calculations, because already evaluated string
     /// literals mainly do not need any processing.
     /////////////////////////////////////////////////
-    bool StringParser::isSimpleString(const string& sLine)
+    bool StringParser::isSimpleString(const std::string& sLine)
     {
         size_t nQuotes = 0;
 
@@ -1352,12 +1353,12 @@ namespace NumeRe
     /// can be found at the passed position.
     ///
     /// \param sToken const char*
-    /// \param sLine const string&
+    /// \param sLine const std::string&
     /// \param pos size_t
     /// \return bool
     ///
     /////////////////////////////////////////////////
-    bool StringParser::isToken(const char* sToken, const string& sLine, size_t pos)
+    bool StringParser::isToken(const char* sToken, const std::string& sLine, size_t pos)
     {
         size_t nLength = strlen(sToken);
 
@@ -1376,11 +1377,11 @@ namespace NumeRe
     /// break and the tabulator control characters for
     /// storing the processed results.
     ///
-    /// \param sString string
-    /// \return string
+    /// \param sString std::string
+    /// \return std::string
     ///
     /////////////////////////////////////////////////
-    string StringParser::maskControlCharacters(string sString)
+    std::string StringParser::maskControlCharacters(std::string sString)
     {
         replaceAll(sString, "\n", "\\n");
         replaceAll(sString, "\t", "\\t");
@@ -1393,14 +1394,14 @@ namespace NumeRe
     /// elementary string operations like concatenation
     /// to the string expression.
     ///
-    /// \param vFinal vector<string>&
+    /// \param vFinal std::vector<std::string>&
     /// \param bReturningLogicals bool&
-    /// \return vector<bool>
+    /// \return std::vector<bool>
     ///
     /////////////////////////////////////////////////
-    vector<bool> StringParser::applyElementaryStringOperations(vector<string>& vFinal, bool& bReturningLogicals)
+    std::vector<bool> StringParser::applyElementaryStringOperations(vector<std::string>& vFinal, bool& bReturningLogicals)
     {
-        vector<bool> vIsNoStringValue(vFinal.size(), false);
+        std::vector<bool> vIsNoStringValue(vFinal.size(), false);
 
         // Examine the whole passed vector
         for (unsigned int n = 0; n < vFinal.size(); n++)
@@ -1420,7 +1421,7 @@ namespace NumeRe
                 StripSpaces(vFinal[n]);
             }
 
-            // Concatenate the strings
+            // Concatenate the std::strings
             if (vFinal[n].front() == '"' || vFinal[n].back() == '"')
                 concatenateStrings(vFinal[n]);
 
@@ -1451,13 +1452,13 @@ namespace NumeRe
     /// the string parser core functionality and is
     /// the function, which is called recursively.
     ///
-    /// \param sLine string&
-    /// \param sCache string
+    /// \param sLine std::string&
+    /// \param sCache std::string
     /// \param bParseNumericals bool
     /// \return StringResult
     ///
     /////////////////////////////////////////////////
-    StringResult StringParser::eval(string& sLine, string sCache, bool bParseNumericals)
+    StringResult StringParser::eval(std::string& sLine, std::string sCache, bool bParseNumericals)
     {
         StringResult strRes;
 
@@ -1483,10 +1484,10 @@ namespace NumeRe
 
         // Recurse for multiple store targets
         // Nur Rekursionen durchfuehren, wenn auch '=' in dem String gefunden wurde. Nur dann ist sie naemlich noetig.
-        if (strExpr.nEqPos && strExpr.sLine.find(',') != string::npos)
+        if (strExpr.nEqPos && strExpr.sLine.find(',') != std::string::npos)
         {
             // Get the left part of the assignment
-            string sStringObject = strExpr.sLine.substr(0, strExpr.nEqPos);
+            std::string sStringObject = strExpr.sLine.substr(0, strExpr.nEqPos);
 
             // Ensure that the left part contains a data or a string object,
             // otherwise it is cleared
@@ -1499,7 +1500,7 @@ namespace NumeRe
                 nPos = strExpr.sLine.find('=', nPos);
 
                 // Ensure that it exists
-                if (nPos == string::npos)
+                if (nPos == std::string::npos)
                     throw SyntaxError(SyntaxError::STRING_ERROR, strExpr.sLine, SyntaxError::invalid_position);
 
                 // Get the data object including the assignment operator and
@@ -1519,8 +1520,8 @@ namespace NumeRe
             // If the current line contains more than one string expressions
             if (strExpr.sLine != getNextArgument(strExpr.sLine, false))
             {
-                string sRecursion = "";
-                vector<string> vResult;
+                std::string sRecursion = "";
+                std::vector<std::string> vResult;
 
                 // While the current line is not empty
                 while (strExpr.sLine.length())
@@ -1559,7 +1560,7 @@ namespace NumeRe
 
         // Does the current line contain candidates
         // for string functions?
-        if (strExpr.sLine.find('(') != string::npos)
+        if (strExpr.sLine.find('(') != std::string::npos)
         {
             //Timer timer("String function application");
             // Apply the standard string functions
@@ -1585,7 +1586,7 @@ namespace NumeRe
         if (!isStringExpression(strExpr.sLine) && !bObjectContainsTablesOrClusters)
         {
             // make sure that there are parseable characters between the operators
-            if (strExpr.sLine.find_first_not_of("+-*/:?!.,;%&<>=^ ") != string::npos && bParseNumericals)
+            if (strExpr.sLine.find_first_not_of("+-*/:?!.,;%&<>=^ ") != std::string::npos && bParseNumericals)
             {
                 int nResults = 0;
                 mu::value_type* v = 0;
@@ -1603,7 +1604,7 @@ namespace NumeRe
                 //strExpr.findAssignmentOperator();
 
                 // Remove the left part of the assignment, because it's already assigned
-                //if (eq_pos != string::npos
+                //if (eq_pos != std::string::npos
                 //    && eq_pos
                 //    && eq_pos < sLine.length() + 1
                 //    && isAssignmentOperator(sLine, eq_pos))
@@ -1636,7 +1637,7 @@ namespace NumeRe
 
         // If there are any opening parentheses, it is possible that we need
         // to pre-evaluate its contents
-        if (strExpr.sLine.find('(') != string::npos)
+        if (strExpr.sLine.find('(') != std::string::npos)
         {
             size_t nQuotes = 0;
 
@@ -1661,7 +1662,7 @@ namespace NumeRe
                         if (strExpr.sLine[j] == '"')
                             throw SyntaxError(SyntaxError::STRING_ERROR, strExpr.sLine, SyntaxError::invalid_position);
 
-                        if ((strExpr.sLine[j] == '(' || strExpr.sLine[j] == '{') && getMatchingParenthesis(strExpr.sLine.substr(j)) != string::npos)
+                        if ((strExpr.sLine[j] == '(' || strExpr.sLine[j] == '{') && getMatchingParenthesis(strExpr.sLine.substr(j)) != std::string::npos)
                             j += getMatchingParenthesis(sLine.substr(j));
 
                         if (strExpr.sLine[j] == ' ' || strExpr.sLine[j] == '+')
@@ -1682,7 +1683,7 @@ namespace NumeRe
                 if (strExpr.sLine[i] == '(' && !(nQuotes % 2))
                 {
                     // Ensure that its counterpart exists
-                    if (getMatchingParenthesis(strExpr.sLine.substr(i)) == string::npos)
+                    if (getMatchingParenthesis(strExpr.sLine.substr(i)) == std::string::npos)
                         throw SyntaxError(SyntaxError::UNMATCHED_PARENTHESIS, strExpr.sLine, i);
 
                     size_t nPos = getMatchingParenthesis(strExpr.sLine.substr(i)) + i;
@@ -1691,7 +1692,7 @@ namespace NumeRe
                     if (i < 6 || strExpr.sLine.substr(i - 6, 6) != "string")
                     {
                         // The contents of the parenthesis
-                        string sString = strExpr.sLine.substr(i + 1, nPos - i - 1);
+                        std::string sString = strExpr.sLine.substr(i + 1, nPos - i - 1);
 
                         // Pre-evaluate the contents of the parenthesis
                         if (i > 0 && !checkDelimiter(strExpr.sLine.substr(i - 1, nPos - i + 2))) // this is probably a numerical function. Keep the parentheses
@@ -1700,7 +1701,7 @@ namespace NumeRe
                             if (isStringExpression(sString))
                             {
                                 StringResult _res = eval(sString, "");
-                                string strvar = createStringVectorVar(_res.vResult);
+                                std::string strvar = createStringVectorVar(_res.vResult);
 
                                 if (!strvar.length())
                                     throw SyntaxError(SyntaxError::STRING_ERROR, strExpr.sLine, SyntaxError::invalid_position);
@@ -1714,7 +1715,7 @@ namespace NumeRe
                             if (isStringExpression(sString))
                             {
                                 StringResult _res = eval(sString, "");
-                                string strvar = createStringVectorVar(_res.vResult);
+                                std::string strvar = createStringVectorVar(_res.vResult);
 
                                 if (!strvar.length())
                                     throw SyntaxError(SyntaxError::STRING_ERROR, strExpr.sLine, SyntaxError::invalid_position);
@@ -1728,7 +1729,7 @@ namespace NumeRe
         }
 
         // Are there any vector braces left?
-        if (strExpr.sLine.find('{') != string::npos)
+        if (strExpr.sLine.find('{') != std::string::npos)
         {
             size_t nQuotes = 0;
 
@@ -1741,13 +1742,13 @@ namespace NumeRe
                 if (!(nQuotes % 2) && strExpr.sLine[i] == '{')
                 {
                     size_t nmatching = getMatchingParenthesis(strExpr.sLine.substr(i));
-                    string sVectorTemp = strExpr.sLine.substr(i+1, nmatching-1);
+                    std::string sVectorTemp = strExpr.sLine.substr(i+1, nmatching-1);
 
                     // Does the vector brace contain colons? Then it
                     // might be a numerical vector expansion if it
                     // is not a string expression.
                     // CAREFUL: Colons are also part of file paths!
-                    if (sVectorTemp.find(':') != string::npos)
+                    if (sVectorTemp.find(':') != std::string::npos)
                     {
                         if (!isStringExpression(sVectorTemp))
                         {
@@ -1759,12 +1760,12 @@ namespace NumeRe
 
                             // Store the result in a vector and
                             // create a temporary vector variable
-                            vector<mu::value_type> vRes(res, res + nRes);
+                            std::vector<mu::value_type> vRes(res, res + nRes);
                             strExpr.sLine.replace(i, nmatching+1, _parser.CreateTempVectorVar(vRes));
 
                             continue;
                         }
-                        else if (sVectorTemp.find('"') == string::npos && !containsStringVectorVars(sVectorTemp))
+                        else if (sVectorTemp.find('"') == std::string::npos && !containsStringVectorVars(sVectorTemp))
                             continue;
                     }
 
@@ -1778,7 +1779,7 @@ namespace NumeRe
 
                         // Store the result in a vector and
                         // create a temporary vector variable
-                        vector<mu::value_type> vRes(res, res + nRes);
+                        std::vector<mu::value_type> vRes(res, res + nRes);
                         strExpr.sLine.replace(i, nmatching+1, _parser.CreateTempVectorVar(vRes));
 
                         continue;
@@ -1804,7 +1805,7 @@ namespace NumeRe
 
                         // Store the result in a vector and
                         // create a temporary vector variable
-                        vector<mu::value_type> vRes(res, res + nRes);
+                        std::vector<mu::value_type> vRes(res, res + nRes);
                         sVectorTemp = _parser.CreateTempVectorVar(vRes);
                     }
 #warning TODO (numere#3#08/15/21):  What happens in the remaining case of multiple elements in tempres.vResult?
@@ -1820,12 +1821,12 @@ namespace NumeRe
         if (!strExpr.sLine.length())
             return StringResult("");
 
-        // If the current line doesn't contain any further string literals or return values
+        // If the current line doesn't contain any further std::string literals or return values
         // return it
-        if (strExpr.sLine.find('"') == string::npos && strExpr.sLine.find('#') == string::npos && !containsStringVectorVars(strExpr.sLine) && !bObjectContainsTablesOrClusters)
+        if (strExpr.sLine.find('"') == std::string::npos && strExpr.sLine.find('#') == std::string::npos && !containsStringVectorVars(strExpr.sLine) && !bObjectContainsTablesOrClusters)
         {
             // Ensure that this is no false positive
-            if (strExpr.sLine.find("string(") != string::npos || containsStringVars(strExpr.sLine))
+            if (strExpr.sLine.find("string(") != std::string::npos || containsStringVars(strExpr.sLine))
                 throw SyntaxError(SyntaxError::STRING_ERROR, strExpr.sLine, SyntaxError::invalid_position);
 
             // return the current line
@@ -1835,7 +1836,7 @@ namespace NumeRe
         // Apply the "#" parser to the string
         strExpr.sLine = numToString(strExpr.sLine);
 
-        // Split the list to a vector
+        // Split the list to a std::vector
         strRes.vResult = evaluateStringVectors(strExpr.sLine);
 
         // Ensure that there is at least one result
@@ -1859,14 +1860,14 @@ namespace NumeRe
     /// the passed string expression and formats the
     /// results for the console.
     ///
-    /// \param sLine string&
-    /// \param sCache string&
+    /// \param sLine std::string&
+    /// \param sCache std::string&
     /// \param bSilent bool
     /// \param bCheckAssertions bool
     /// \return StringParser::StringParserRetVal
     ///
     /////////////////////////////////////////////////
-    StringParser::StringParserRetVal StringParser::evalAndFormat(string& sLine, string& sCache, bool bSilent, bool bCheckAssertions)
+    StringParser::StringParserRetVal StringParser::evalAndFormat(std::string& sLine, std::string& sCache, bool bSilent, bool bCheckAssertions)
     {
         //Timer timer(sLine);
         sLine = " " + sLine + " ";
@@ -1892,7 +1893,7 @@ namespace NumeRe
         // The result of the string parser core has to be parsed, so that
         // it is readable in the terminal. This is done here in this
         // function
-        string sConsoleOut = createStringOutput(StrRes, sLine, parserFlags, bSilent);
+        std::string sConsoleOut = createStringOutput(StrRes, sLine, parserFlags, bSilent);
 
         // The output is probably not desired
         if (NumeReKernel::bSupressAnswer)
@@ -1925,27 +1926,27 @@ namespace NumeRe
     /// is an expression containing strings, string
     /// variables or string vector variables.
     ///
-    /// \param sExpression const string&
+    /// \param sExpression const std::string&
     /// \return bool
     ///
     /////////////////////////////////////////////////
-    bool StringParser::isStringExpression(const string& sExpression)
+    bool StringParser::isStringExpression(const std::string& sExpression)
     {
-        if (sExpression.find_first_of("\"#") != string::npos
-			|| sExpression.find("string(") != string::npos
-			|| sExpression.find("string_cast(") != string::npos
-			|| sExpression.find("char(") != string::npos
-			|| sExpression.find("getlasterror(") != string::npos
-			|| sExpression.find("valtostr(") != string::npos)
+        if (sExpression.find_first_of("\"#") != std::string::npos
+			|| sExpression.find("string(") != std::string::npos
+			|| sExpression.find("string_cast(") != std::string::npos
+			|| sExpression.find("char(") != std::string::npos
+			|| sExpression.find("getlasterror(") != std::string::npos
+			|| sExpression.find("valtostr(") != std::string::npos)
             return true;
 
 		if (containsStringVars(sExpression) || containsStringVectorVars(sExpression))
             return true;
 
-        if (sExpression.find('{') == string::npos)
+        if (sExpression.find('{') == std::string::npos)
             return false;
 
-        const map<string,NumeRe::Cluster>& mClusterMap = _data.getClusterMap();
+        const std::map<std::string,NumeRe::Cluster>& mClusterMap = _data.getClusterMap();
 
         for (auto iter = mClusterMap.begin(); iter != mClusterMap.end(); ++iter)
         {
@@ -1953,7 +1954,7 @@ namespace NumeRe
             {
                 size_t pos = sExpression.find(iter->first + "{");
 
-                if (pos != string::npos && (!pos || isDelimiter(sExpression[pos-1])))
+                if (pos != std::string::npos && (!pos || isDelimiter(sExpression[pos-1])))
                     return true;
             }
         }

@@ -13,3 +13,7 @@ Added	"declares" are now includable in scripts, procedures and window layouts.
 Fixed	"repeat()" now returns an empty string, if the repeat count is less than 1.
 Cleaned	The secondary axes have now a little standoff to separate them from the graph. They will automatically force a bounding box.
 Added	GUI layouts now feature a "combobox" as a new UI element.
+Added	"logtoidx()" and "idxtolog()" are now usable on vectors without the "matop" mode.
+Applied	Vector expansions are much faster now
+Applied	General speed-up due to parallelisation and reduce of additional overhead.
+Cleaned	Added performance improving implementations of multiplication and division operators for the "value_type" parser class (use of real-value based operations, where complex-valued operations are not necessary).
