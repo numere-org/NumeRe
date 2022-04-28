@@ -17,3 +17,4 @@ Added	"logtoidx()" and "idxtolog()" are now usable on vectors without the "matop
 Applied	Vector expansions are much faster now
 Applied	General speed-up due to parallelisation and reduce of additional overhead.
 Cleaned	Added performance improving implementations of multiplication and division operators for the "value_type" parser class (use of real-value based operations, where complex-valued operations are not necessary).
+Cleaned	The "enablefuture" setting was replaced with a more explicit "alwaysreferencetables" setting, which is now also available in the options window.

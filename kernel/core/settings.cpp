@@ -44,7 +44,7 @@ Settings::Settings() : Documentation()
     m_settings[SETTING_B_COMPACT] = SettingsValue(false);
     m_settings[SETTING_B_GREETING] = SettingsValue(true);
     m_settings[SETTING_B_DEFCONTROL] = SettingsValue(false);
-    m_settings[SETTING_B_FUTURE] = SettingsValue(false, SettingsValue::UIREFRESH | SettingsValue::SAVE);
+    m_settings[SETTING_B_TABLEREFS] = SettingsValue(true, SettingsValue::UIREFRESH | SettingsValue::SAVE);
     m_settings[SETTING_B_SYSTEMPRINTS] = SettingsValue(true, SettingsValue::HIDDEN);
     m_settings[SETTING_B_EXTENDEDFILEINFO] = SettingsValue(false, SettingsValue::UIREFRESH | SettingsValue::SAVE);
     m_settings[SETTING_B_LOGFILE] = SettingsValue(true);

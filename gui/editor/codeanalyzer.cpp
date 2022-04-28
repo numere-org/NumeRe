@@ -1236,7 +1236,7 @@ AnnotationCount CodeAnalyzer::analyseIdentifiers()
     // Return, if the current identifier is a data object
     if (m_editor->isStyleType(NumeReEditor::STYLE_DATAOBJECT, m_nCurPos))
     {
-        if (!m_options->getSetting(SETTING_B_FUTURE).active()
+        if (m_options->getSetting(SETTING_B_TABLEREFS).active()
             && m_hasProcedureDefinition
             && m_editor->GetStyleAt(wordstart) == wxSTC_NSCR_CUSTOM_FUNCTION
             && m_editor->GetCharAt(wordstart-1) != '&'

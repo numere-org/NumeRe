@@ -212,6 +212,7 @@ void OptionsDialog::CreateConfigPage()
     m_useMaskAsDefault = panel->CreateCheckBox(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_USEMASKASDEFAULT"));
     m_UseLogfile = panel->CreateCheckBox(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_LOGFILE"));
     m_useExecuteCommand = panel->CreateCheckBox(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_EXECUTECOMMAND"));
+    m_alwaysReferenceTables = panel->CreateCheckBox(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_ALWAYSREFERENCETABLES"));
     m_autosaveinterval = panel->CreateSpinControl(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_AUTOSAVE"), 10, 600, 30);
 
     // Enable scrolling for this page, because it might be very large
@@ -781,6 +782,7 @@ bool OptionsDialog::EvaluateOptions()
     mSettings[SETTING_B_EXTERNALDOCWINDOW].active() = m_UseExternalViewer->IsChecked();
     mSettings[SETTING_B_ENABLEEXECUTE].active() = m_useExecuteCommand->IsChecked();
     mSettings[SETTING_B_MASKDEFAULT].active() = m_useMaskAsDefault->IsChecked();
+    mSettings[SETTING_B_TABLEREFS].active() = m_alwaysReferenceTables->IsChecked();
     mSettings[SETTING_B_DECODEARGUMENTS].active() = m_debuggerDecodeArguments->IsChecked();
     mSettings[SETTING_S_LOADPATH].stringval() = m_LoadPath->GetValue().ToStdString();
     mSettings[SETTING_S_SAVEPATH].stringval() = m_SavePath->GetValue().ToStdString();
@@ -877,6 +879,7 @@ void OptionsDialog::InitializeDialog()
     m_UseExternalViewer->SetValue(mSettings[SETTING_B_EXTERNALDOCWINDOW].active());
     m_useExecuteCommand->SetValue(mSettings[SETTING_B_ENABLEEXECUTE].active());
     m_useMaskAsDefault->SetValue(mSettings[SETTING_B_MASKDEFAULT].active());
+    m_alwaysReferenceTables->SetValue(mSettings[SETTING_B_TABLEREFS].active());
     m_LoadPath->SetValue(mSettings[SETTING_S_LOADPATH].stringval());
     m_SavePath->SetValue(mSettings[SETTING_S_SAVEPATH].stringval());
     m_ScriptPath->SetValue(mSettings[SETTING_S_SCRIPTPATH].stringval());
