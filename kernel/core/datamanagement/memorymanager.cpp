@@ -751,6 +751,15 @@ vector<mu::value_type> MemoryManager::resolveMAF(const string& sTableName, strin
     // Find the "grid" parameter and use it as an offset
     long long int nGridOffset = sDir.find("grid") != string::npos ? 2 : 0;
 
+    // If a grid is required, get the grid dimensions
+    // of this table
+    if (nGridOffset)
+    {
+        std::vector<mu::value_type> vSize = vMemory[findTable(sTableName)]->size(VectorIndex(), GRID);
+        nlines = vSize.front().real();
+        ncols = vSize.back().real()+nGridOffset; // compensate the offset
+    }
+
     // Get the vector index corresponding to a possible
     // every definition
     VectorIndex _idx = parseEvery(sDir, sTableName);
