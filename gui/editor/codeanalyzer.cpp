@@ -1098,6 +1098,7 @@ AnnotationCount CodeAnalyzer::analyseFunctions(bool isContinuedLine)
              && sSyntaxElement != "clock()"
              && sSyntaxElement != "version()"
              && sSyntaxElement != "getlasterror()"
+             && sSyntaxElement != "getversioninfo()"
              && sSyntaxElement.find('(') != string::npos)
     {
         // Check for missing arguments

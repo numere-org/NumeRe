@@ -488,7 +488,7 @@ static Matrix evalMatOp(string& sCmd, Parser& _parser, MemoryManager& _data, Fun
             if (sCmd.substr(i,2) == "{{"
                 && (nMatchingParens = getMatchingParenthesis(StringView(sCmd, i))) != string::npos)
             {
-                string sSubExpr = sCmd.substr(i, nMatchingParens+1);
+                string sSubExpr = sCmd.substr(i+1, nMatchingParens-1);
                 __sCmd += sCmd.substr(pos_back, i-pos_back);
                 _cache.vReturnedMatrices.push_back(createMatFromCols(sSubExpr, _parser, _data, _functions, _option));
                 pos_back = i+nMatchingParens+1;

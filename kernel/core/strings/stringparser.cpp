@@ -1937,6 +1937,7 @@ namespace NumeRe
 			|| sExpression.find("string_cast(") != std::string::npos
 			|| sExpression.find("char(") != std::string::npos
 			|| sExpression.find("getlasterror(") != std::string::npos
+			|| sExpression.find("getversioninfo(") != std::string::npos
 			|| sExpression.find("valtostr(") != std::string::npos)
             return true;
 
