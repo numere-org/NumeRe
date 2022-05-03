@@ -22,3 +22,4 @@ Added	"datagrid" accepts now samples for both directions if passed as "samples={
 Fixed	Table methods with the ".grid" modifier consider now the actual grid dimensions for their starting and ending indices.
 New	The string function "getversioninfo()" returns version information about NumeRe as a key-value list.
 Fixed	Strings containing quotation marks may now be returned correctly.
+Fixed	The progress bar is not longer jumpy for small numbers.
