@@ -837,6 +837,31 @@ namespace NumeRe
 
 
     /////////////////////////////////////////////////
+    /// \brief Converts all contents of this cluster
+    /// to a vector of strings. Intended to be used
+    /// for data transfer.
+    ///
+    /// \return std::vector<std::string>
+    ///
+    /////////////////////////////////////////////////
+    std::vector<std::string> Cluster::to_string() const
+    {
+        std::vector<std::string> vString(vClusterArray.size());
+
+        // Append the contained data depending on its type
+        for (size_t i = 0; i < vClusterArray.size(); i++)
+        {
+            if (vClusterArray[i]->getType() == ClusterItem::ITEMTYPE_DOUBLE)
+                vString[i] = toCmdString(vClusterArray[i]->getDouble());
+            else
+                vString[i] = vClusterArray[i]->getString();
+        }
+
+        return vString;
+    }
+
+
+    /////////////////////////////////////////////////
     /// \brief This member function constructs a
     /// plain vector from the data in memory, which
     /// can be inserted in the commandline as a
@@ -853,13 +878,12 @@ namespace NumeRe
 
         std::string sVector = "{";
 
+        std::vector<std::string> vString = to_string();
+
         // Append the contained data depending on its type
-        for (size_t i = 0; i < vClusterArray.size(); i++)
+        for (const auto& component : vString)
         {
-            if (vClusterArray[i]->getType() == ClusterItem::ITEMTYPE_DOUBLE)
-                sVector += toCmdString(vClusterArray[i]->getDouble()) + ",";
-            else
-                sVector += vClusterArray[i]->getString() + ",";
+            sVector += component + ",";
         }
 
         // Replace the last comma with a closing brace

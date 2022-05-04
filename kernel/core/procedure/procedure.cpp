@@ -438,7 +438,7 @@ Returnvalue Procedure::ProcCalc(string sLine, string sCurrentCommand, int& nByte
             if (retVal == NumeRe::StringParser::STRING_SUCCESS)
             {
                 // Only strings
-                thisReturnVal.vStringVal = NumeReKernel::getInstance()->getAns().getStringArray();
+                thisReturnVal.vStringVal = NumeReKernel::getInstance()->getAns().to_string();
                 return thisReturnVal;
             }
 

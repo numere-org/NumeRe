@@ -225,14 +225,14 @@ ProcedureElement::ProcedureElement(const std::vector<std::string>& vProcedureCon
         if (sCurrentCommand == "install"
             || sCurrentCommand == "script")
 			throw SyntaxError(SyntaxError::INSTALL_CMD_FOUND,
-                     "@" + toString(abs(currentLine)+1) + ": " + sProcCommandLine, sCurrentCommand);
+                     "@ " + toString(abs(currentLine)+1) + ": " + sProcCommandLine, sCurrentCommand);
 
         // Ensure that the parentheses are valid
         if (sProcCommandLine.find('(') != std::string::npos || sProcCommandLine.find('{') != std::string::npos)
         {
             if (!validateParenthesisNumber(sProcCommandLine))
             {
-                sProcCommandLine.insert(0, "@" + toString(i+1) + ": ");
+                sProcCommandLine.insert(0, "@ " + toString(abs(currentLine)+1) + ": ");
 
                 for (size_t j = 0; j < sProcCommandLine.length(); j++)
                 {

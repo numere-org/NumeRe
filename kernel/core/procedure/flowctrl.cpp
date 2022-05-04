@@ -2596,7 +2596,7 @@ int FlowCtrl::compile(std::string sLine, int nthCmd)
 
             if (returnCommand)
             {
-                ReturnVal.vStringVal = NumeReKernel::getInstance()->getAns().getStringArray();
+                ReturnVal.vStringVal = NumeReKernel::getInstance()->getAns().to_string();
                 bReturnSignal = true;
                 return FLOWCTRL_RETURN;
             }
@@ -3219,7 +3219,7 @@ int FlowCtrl::calc(std::string sLine, int nthCmd)
             if (nCurrentCalcType & CALCTYPE_RETURNCOMMAND)
             {
                 bReturnSignal = true;
-                ReturnVal.vStringVal = NumeReKernel::getInstance()->getAns().getStringArray();
+                ReturnVal.vStringVal = NumeReKernel::getInstance()->getAns().to_string();
                 return FLOWCTRL_RETURN;
             }
 

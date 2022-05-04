@@ -23,3 +23,4 @@ Fixed	Table methods with the ".grid" modifier consider now the actual grid dimen
 New	The string function "getversioninfo()" returns version information about NumeRe as a key-value list.
 Fixed	Strings containing quotation marks may now be returned correctly.
 Fixed	The progress bar is not longer jumpy for small numbers.
+Fixed	Density data plots in combination with the "bars" option will now correctly display all data grid values.

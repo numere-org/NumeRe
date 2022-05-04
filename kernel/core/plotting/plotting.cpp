@@ -3830,17 +3830,28 @@ void Plot::extractDataValues(const std::vector<std::string>& vDataPlots)
         }
         else if (isMesh2D(_pInfo.sCommand))
         {
+            bool isBars = _pInfo.sCommand == "dens" && _pData.getSettings(PlotData::FLOAT_BARS) > 0;
             std::vector<size_t> samples = _accessParser.getDataGridDimensions();
+
+            // Density plots with bars enabled need
+            // one additional element per axis
+            if (isBars)
+            {
+                samples.front()++;
+                samples.back()++;
+            }
+
             m_manager.assets[typeCounter].create2DMesh(PT_DATA, samples, 1);
             m_manager.assets[typeCounter].boundAxes = "lb";
 
             if (m_manager.assets[typeCounter].type == PT_NONE)
                 throw SyntaxError(SyntaxError::PLOT_ERROR, _accessParser.getDataObject(), SyntaxError::invalid_position);
 
-            // Write the axes
+            // Write the axes (do not write the additional value for
+            // the bar-density mixture)
             for (size_t axis = 0; axis < samples.size(); axis++)
             {
-                for (size_t m = 0; m < samples[axis]; m++)
+                for (size_t m = 0; m < samples[axis] - isBars; m++)
                 {
                     m_manager.assets[typeCounter].writeAxis(getDataFromObject(_accessParser.getDataObject(),
                                                             _idx.row[m],
@@ -3849,11 +3860,26 @@ void Plot::extractDataValues(const std::vector<std::string>& vDataPlots)
                 }
             }
 
+            // For bars and density plots, we simply repeat the last
+            // axis step distance to add another axis value
+            if (isBars)
+            {
+                double diff = m_manager.assets[typeCounter].axes[XCOORD].a[samples.front()-2]
+                    - m_manager.assets[typeCounter].axes[XCOORD].a[samples.front()-3];
+                m_manager.assets[typeCounter].axes[XCOORD].a[samples.front()-1] = diff
+                    + m_manager.assets[typeCounter].axes[XCOORD].a[samples.front()-2];
+
+                diff = m_manager.assets[typeCounter].axes[YCOORD].a[samples.back()-2]
+                    - m_manager.assets[typeCounter].axes[YCOORD].a[samples.back()-3];
+                m_manager.assets[typeCounter].axes[YCOORD].a[samples.back()-1] = diff
+                    + m_manager.assets[typeCounter].axes[YCOORD].a[samples.back()-2];
+            }
+
             // Write the meshgrid data
             #pragma omp parallel for
-            for (size_t x = 0; x < samples[0]; x++)
+            for (size_t x = 0; x < samples[0]-isBars; x++)
             {
-                for (size_t y = 0; y < samples[1]; y++)
+                for (size_t y = 0; y < samples[1]-isBars; y++)
                 {
 #warning TODO (numere#4#03/05/22): The function getDataFromObject is quite inefficent
                     m_manager.assets[typeCounter].writeData(getDataFromObject(_accessParser.getDataObject(),
