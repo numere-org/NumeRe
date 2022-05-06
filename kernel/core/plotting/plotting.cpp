@@ -6390,14 +6390,20 @@ void Plot::CoordSettings()
                     default:
                     {
                         if (!_pData.getSettings(PlotData::LOG_SCHEMATIC))
+                        {
+                            _graph->SetOrigin(_pInfo.ranges[XRANGE].min(),
+                                              _pInfo.ranges[YRANGE].min(),
+                                              _pInfo.sCommand == "dens" && _pInfo.sCommand == "density" ? _pInfo.ranges[ZRANGE].max() : _pInfo.ranges[ZRANGE].min());
+
                             _graph->Axis();
+                        }
                     }
                 }
 
                 if (!_pData.getSettings(PlotData::LOG_SCHEMATIC)
-                        || findParameter(_pInfo.sPlotParams, "xlabel", '=')
-                        || findParameter(_pInfo.sPlotParams, "ylabel", '=')
-                        || findParameter(_pInfo.sPlotParams, "zlabel", '='))
+                    || findParameter(_pInfo.sPlotParams, "xlabel", '=')
+                    || findParameter(_pInfo.sPlotParams, "ylabel", '=')
+                    || findParameter(_pInfo.sPlotParams, "zlabel", '='))
                 {
                     _graph->Label('x', fromSystemCodePage(_pData.getAxisLabel(XCOORD)).c_str(), getLabelPosition(XCOORD));
                     _graph->Label('y', fromSystemCodePage(_pData.getAxisLabel(YCOORD)).c_str(), getLabelPosition(YCOORD));
@@ -6407,13 +6413,10 @@ void Plot::CoordSettings()
         }
         else if (isnan(_pData.getOrigin(XCOORD)) && isnan(_pData.getOrigin(YCOORD)) && isnan(_pData.getOrigin(ZCOORD)))
         {
-            if (_pInfo.ranges[XRANGE].min() <= 0.0
-                    && _pInfo.ranges[XRANGE].max() >= 0.0
-                    && _pInfo.ranges[YRANGE].min() <= 0.0
-                    && _pInfo.ranges[YRANGE].max() >= 0.0
-                    && _pInfo.ranges[ZRANGE].min() <= 0.0
-                    && _pInfo.ranges[ZRANGE].max() >= 0.0
-                    && _pInfo.nMaxPlotDim > 2 //(sCommand.find("3d") != string::npos || (_pInfo.b2D && sCommand != "dens"))
+            if (_pInfo.ranges[XRANGE].isInside(0.0)
+                && _pInfo.ranges[YRANGE].isInside(0.0)
+                && _pInfo.ranges[ZRANGE].isInside(0.0)
+                && _pInfo.nMaxPlotDim > 2 //(sCommand.find("3d") != string::npos || (_pInfo.b2D && sCommand != "dens"))
                )
             {
                 _graph->SetOrigin(0.0, 0.0, 0.0);
@@ -6429,17 +6432,14 @@ void Plot::CoordSettings()
                     _graph->Axis("AKDTVISO_");
                 }
             }
-            else if (_pInfo.ranges[XRANGE].min() <= 0.0
-                     && _pInfo.ranges[XRANGE].max() >= 0.0
-                     && _pInfo.ranges[YRANGE].min() <= 0.0
-                     && _pInfo.ranges[YRANGE].max() >= 0.0
+            else if (_pInfo.ranges[XRANGE].isInside(0.0)
+                     && _pInfo.ranges[YRANGE].isInside(0.0)
                      && _pInfo.nMaxPlotDim <= 2 //(sCommand.find("3d") == string::npos && !(_pInfo.b2D && sCommand != "dens"))
                     )
             {
-                if (_pInfo.sCommand == "dens" || _pInfo.sCommand == "density")
-                    _graph->SetOrigin(0.0, 0.0, _pInfo.ranges[ZRANGE].max());
-                else
-                    _graph->SetOrigin(0.0, 0.0, 0.0);
+                _graph->SetOrigin(0.0,
+                                  0.0,
+                                  _pInfo.sCommand == "dens" || _pInfo.sCommand == "density" ? _pInfo.ranges[ZRANGE].max() : 0.0);
 
                 if (!_pData.getSettings(PlotData::LOG_SCHEMATIC))
                     _graph->Axis("AKDTVISO");
@@ -6453,26 +6453,10 @@ void Plot::CoordSettings()
             }
             else if (_pInfo.nMaxPlotDim == 3)
             {
-                if (_pInfo.ranges[XRANGE].min() <= 0.0 && _pInfo.ranges[XRANGE].max() >= 0.0)
-                {
-                    if (_pInfo.ranges[YRANGE].min() <= 0.0 && _pInfo.ranges[YRANGE].max() >= 0.0)
-                        _graph->SetOrigin(0.0, 0.0, _pInfo.ranges[ZRANGE].min());
-                    else if (_pInfo.ranges[ZRANGE].min() <= 0.0 && _pInfo.ranges[ZRANGE].max() >= 0.0)
-                        _graph->SetOrigin(0.0, _pInfo.ranges[YRANGE].min(), 0.0);
-                    else
-                        _graph->SetOrigin(0.0, _pInfo.ranges[YRANGE].min(), _pInfo.ranges[ZRANGE].min());
-                }
-                else if (_pInfo.ranges[YRANGE].min() <= 0.0 && _pInfo.ranges[YRANGE].max() >= 0.0)
-                {
-                    if (_pInfo.ranges[ZRANGE].min() <= 0.0 && _pInfo.ranges[ZRANGE].max() >= 0.0)
-                        _graph->SetOrigin(_pInfo.ranges[XRANGE].min(), 0.0, 0.0);
-                    else
-                        _graph->SetOrigin(_pInfo.ranges[XRANGE].min(), 0.0, _pInfo.ranges[ZRANGE].min());
-                }
-                else if (_pInfo.ranges[ZRANGE].min() <= 0.0 && _pInfo.ranges[ZRANGE].max() >= 0.0)
-                    _graph->SetOrigin(_pInfo.ranges[XRANGE].min(), _pInfo.ranges[YRANGE].min(), 0.0);
-                else
-                    _graph->SetOrigin(_pInfo.ranges[XRANGE].min(), _pInfo.ranges[YRANGE].min(), _pInfo.ranges[ZRANGE].min());
+                // Set the origin to zero where possible
+                _graph->SetOrigin(_pInfo.ranges[XRANGE].isInside(0.0) ? 0.0 : _pInfo.ranges[XRANGE].min(),
+                                  _pInfo.ranges[YRANGE].isInside(0.0) ? 0.0 : _pInfo.ranges[YRANGE].min(),
+                                  _pInfo.ranges[ZRANGE].isInside(0.0) ? 0.0 : _pInfo.ranges[ZRANGE].min());
 
                 if (!_pData.getSettings(PlotData::LOG_SCHEMATIC))
                     _graph->Axis("AKDTVISO");
@@ -6488,22 +6472,12 @@ void Plot::CoordSettings()
             }
             else if (_pInfo.nMaxPlotDim <= 2)
             {
-                if (_pInfo.ranges[XRANGE].min() <= 0.0 && _pInfo.ranges[XRANGE].max() >= 0.0)
-                {
-                    if (_pInfo.sCommand == "dens" || _pInfo.sCommand == "density")
-                        _graph->SetOrigin(0.0, _pInfo.ranges[YRANGE].min(), _pInfo.ranges[ZRANGE].max());
-                    else
-                        _graph->SetOrigin(0.0, _pInfo.ranges[YRANGE].min());
-                }
-                else if (_pInfo.ranges[YRANGE].min() <= 0.0 && _pInfo.ranges[YRANGE].max() >= 0.0)
-                {
-                    if (_pInfo.sCommand == "dens" || _pInfo.sCommand == "density")
-                        _graph->SetOrigin(_pInfo.ranges[XRANGE].min(), 0.0, _pInfo.ranges[ZRANGE].max());
-                    else
-                        _graph->SetOrigin(_pInfo.ranges[XRANGE].min(), 0.0);
-                }
-                else
-                    _graph->SetOrigin(_pInfo.ranges[XRANGE].min(), _pInfo.ranges[YRANGE].min());
+                bool isDens = _pInfo.sCommand == "dens" || _pInfo.sCommand == "density";
+
+                // Set the origin to zero where possible
+                _graph->SetOrigin(_pInfo.ranges[XRANGE].isInside(0.0) ? 0.0 : _pInfo.ranges[XRANGE].min(),
+                                  _pInfo.ranges[YRANGE].isInside(0.0) ? 0.0 : _pInfo.ranges[YRANGE].min(),
+                                  isDens ? _pInfo.ranges[ZRANGE].max() : NAN);
 
                 if (!_pData.getSettings(PlotData::LOG_SCHEMATIC))
                     _graph->Axis("AKDTVISO");
@@ -6516,18 +6490,18 @@ void Plot::CoordSettings()
                 }
             }
         }
-        else if (_pData.getOrigin(XCOORD) != 0.0 || _pData.getOrigin(YCOORD) != 0.0 || _pData.getOrigin(ZCOORD) != 0.0)
+        else if (_pData.getOrigin(XCOORD) != 0.0
+                 || _pData.getOrigin(YCOORD) != 0.0
+                 || _pData.getOrigin(ZCOORD) != 0.0)
         {
-            if (_pInfo.ranges[XRANGE].min() <= _pData.getOrigin(XCOORD)
-                    && _pInfo.ranges[XRANGE].max() >= _pData.getOrigin(XCOORD)
-                    && _pInfo.ranges[YRANGE].min() <= _pData.getOrigin(YCOORD)
-                    && _pInfo.ranges[YRANGE].max() >= _pData.getOrigin(YCOORD)
-                    && _pInfo.ranges[ZRANGE].min() <= _pData.getOrigin(ZCOORD)
-                    && _pInfo.ranges[ZRANGE].max() >= _pData.getOrigin(ZCOORD)
-                    && _pInfo.nMaxPlotDim > 2
-               )
+            if (_pInfo.ranges[XRANGE].isInside(_pData.getOrigin(XCOORD))
+                && _pInfo.ranges[YRANGE].isInside(_pData.getOrigin(YCOORD))
+                && _pInfo.ranges[ZRANGE].isInside(_pData.getOrigin(ZCOORD))
+                && _pInfo.nMaxPlotDim > 2)
             {
-                _graph->SetOrigin(_pData.getOrigin(XCOORD), _pData.getOrigin(YCOORD), _pData.getOrigin(ZCOORD));
+                _graph->SetOrigin(_pData.getOrigin(XCOORD),
+                                  _pData.getOrigin(YCOORD),
+                                  _pData.getOrigin(ZCOORD));
 
                 if (!_pData.getSettings(PlotData::LOG_SCHEMATIC))
                     _graph->Axis("AKDTVISO");
@@ -6540,14 +6514,12 @@ void Plot::CoordSettings()
                     _graph->Axis("AKDTVISO_");
                 }
             }
-            else if (_pInfo.ranges[XRANGE].min() <= _pData.getOrigin(XCOORD)
-                     && _pInfo.ranges[XRANGE].max() >= _pData.getOrigin(XCOORD)
-                     && _pInfo.ranges[YRANGE].min() <= _pData.getOrigin(YCOORD)
-                     && _pInfo.ranges[YRANGE].max() >= _pData.getOrigin(YCOORD)
-                     && _pInfo.nMaxPlotDim <= 2
-                    )
+            else if (_pInfo.ranges[XRANGE].isInside(_pData.getOrigin(XCOORD))
+                     && _pInfo.ranges[YRANGE].isInside(_pData.getOrigin(YCOORD))
+                     && _pInfo.nMaxPlotDim <= 2)
             {
-                _graph->SetOrigin(_pData.getOrigin(XCOORD), _pData.getOrigin(YCOORD));
+                _graph->SetOrigin(_pData.getOrigin(XCOORD),
+                                  _pData.getOrigin(YCOORD));
 
                 if (!_pData.getSettings(PlotData::LOG_SCHEMATIC))
                     _graph->Axis("AKDTVISO");
@@ -6561,26 +6533,14 @@ void Plot::CoordSettings()
             }
             else if (_pInfo.nMaxPlotDim == 3)
             {
-                if (_pInfo.ranges[XRANGE].min() <= _pData.getOrigin(XCOORD) && _pInfo.ranges[XRANGE].max() >= _pData.getOrigin(XCOORD))
-                {
-                    if (_pInfo.ranges[YRANGE].min() <= _pData.getOrigin(YCOORD) && _pInfo.ranges[YRANGE].max() >= _pData.getOrigin(YCOORD))
-                        _graph->SetOrigin(_pData.getOrigin(XCOORD), _pData.getOrigin(YCOORD), _pInfo.ranges[ZRANGE].min());
-                    else if (_pInfo.ranges[ZRANGE].min() <= _pData.getOrigin(ZCOORD) && _pInfo.ranges[ZRANGE].max() >= _pData.getOrigin(ZCOORD))
-                        _graph->SetOrigin(_pData.getOrigin(XCOORD), _pInfo.ranges[YRANGE].min(), _pData.getOrigin(ZCOORD));
-                    else
-                        _graph->SetOrigin(_pData.getOrigin(XCOORD), _pInfo.ranges[YRANGE].min(), _pInfo.ranges[ZRANGE].min());
-                }
-                else if (_pInfo.ranges[YRANGE].min() <= _pData.getOrigin(YCOORD) && _pInfo.ranges[YRANGE].max() >= _pData.getOrigin(YCOORD))
-                {
-                    if (_pInfo.ranges[ZRANGE].min() <= _pData.getOrigin(ZCOORD) && _pInfo.ranges[ZRANGE].max() >= _pData.getOrigin(ZCOORD))
-                        _graph->SetOrigin(_pInfo.ranges[XRANGE].min(), _pData.getOrigin(YCOORD), _pData.getOrigin(ZCOORD));
-                    else
-                        _graph->SetOrigin(_pInfo.ranges[XRANGE].min(), _pData.getOrigin(YCOORD), _pInfo.ranges[ZRANGE].min());
-                }
-                else if (_pInfo.ranges[ZRANGE].min() <= _pData.getOrigin(ZCOORD) && _pInfo.ranges[ZRANGE].max() >= _pData.getOrigin(ZCOORD))
-                    _graph->SetOrigin(_pInfo.ranges[XRANGE].min(), _pInfo.ranges[YRANGE].min(), _pData.getOrigin(ZCOORD));
-                else
-                    _graph->SetOrigin(_pInfo.ranges[XRANGE].min(), _pInfo.ranges[YRANGE].min(), _pInfo.ranges[ZRANGE].min());
+                double or_x = _pData.getOrigin(XCOORD);
+                double or_y = _pData.getOrigin(YCOORD);
+                double or_z = _pData.getOrigin(ZCOORD);
+
+                // Set the origin to the desired point where possible
+                _graph->SetOrigin(_pInfo.ranges[XRANGE].isInside(or_x) ? or_x : _pInfo.ranges[XRANGE].min(),
+                                  _pInfo.ranges[YRANGE].isInside(or_y) ? or_y : _pInfo.ranges[YRANGE].min(),
+                                  _pInfo.ranges[ZRANGE].isInside(or_z) ? or_z : _pInfo.ranges[ZRANGE].min());
 
                 if (!_pData.getSettings(PlotData::LOG_SCHEMATIC))
                     _graph->Axis("AKDTVISO");
@@ -6595,12 +6555,12 @@ void Plot::CoordSettings()
             }
             else if (_pInfo.nMaxPlotDim <= 2)
             {
-                if (_pInfo.ranges[XRANGE].min() <= _pData.getOrigin(XCOORD) && _pInfo.ranges[XRANGE].max() >= _pData.getOrigin(XCOORD))
-                    _graph->SetOrigin(_pData.getOrigin(XCOORD), _pInfo.ranges[YRANGE].min());
-                else if (_pInfo.ranges[YRANGE].min() <= _pData.getOrigin(YCOORD) && _pInfo.ranges[YRANGE].max() >= _pData.getOrigin(YCOORD))
-                    _graph->SetOrigin(_pInfo.ranges[XRANGE].min(), _pData.getOrigin(YCOORD));
-                else
-                    _graph->SetOrigin(_pInfo.ranges[XRANGE].min(), _pInfo.ranges[YRANGE].min());
+                double or_x = _pData.getOrigin(XCOORD);
+                double or_y = _pData.getOrigin(YCOORD);
+
+                // Set the origin to the desired point where possible
+                _graph->SetOrigin(_pInfo.ranges[XRANGE].isInside(or_x) ? or_x : _pInfo.ranges[XRANGE].min(),
+                                  _pInfo.ranges[YRANGE].isInside(or_y) ? or_y : _pInfo.ranges[YRANGE].min());
 
                 if (!_pData.getSettings(PlotData::LOG_SCHEMATIC))
                     _graph->Axis("AKDTVISO");
@@ -6613,14 +6573,10 @@ void Plot::CoordSettings()
                 }
             }
         }
-        else if (_pInfo.ranges[XRANGE].min() <= 0.0
-                 && _pInfo.ranges[XRANGE].max() >= 0.0
-                 && _pInfo.ranges[YRANGE].min() <= 0.0
-                 && _pInfo.ranges[YRANGE].max() >= 0.0
-                 && _pInfo.ranges[ZRANGE].min() <= 0.0
-                 && _pInfo.ranges[ZRANGE].max() >= 0.0
-                 && _pInfo.nMaxPlotDim > 2
-                )
+        else if (_pInfo.ranges[XRANGE].isInside(0.0)
+                 && _pInfo.ranges[YRANGE].isInside(0.0)
+                 && _pInfo.ranges[ZRANGE].isInside(0.0)
+                 && _pInfo.nMaxPlotDim > 2)
         {
             _graph->SetOrigin(0.0, 0.0, 0.0);
 
@@ -6635,17 +6591,13 @@ void Plot::CoordSettings()
                 _graph->Axis("AKDTVISO_");
             }
         }
-        else if (_pInfo.ranges[XRANGE].min() <= 0.0
-                 && _pInfo.ranges[XRANGE].max() >= 0.0
-                 && _pInfo.ranges[YRANGE].min() <= 0.0
-                 && _pInfo.ranges[YRANGE].max() >= 0.0
-                 && _pInfo.nMaxPlotDim <= 2
-                )
+        else if (_pInfo.ranges[XRANGE].isInside(0.0)
+                 && _pInfo.ranges[YRANGE].isInside(0.0)
+                 && _pInfo.nMaxPlotDim <= 2)
         {
-            if (_pInfo.sCommand == "dens" || _pInfo.sCommand == "density")
-                _graph->SetOrigin(0.0, 0.0, _pInfo.ranges[ZRANGE].max());
-            else
-                _graph->SetOrigin(0.0, 0.0, 0.0);
+            _graph->SetOrigin(0.0,
+                              0.0,
+                              _pInfo.sCommand == "dens" || _pInfo.sCommand == "density" ? _pInfo.ranges[ZRANGE].max() : 0.0);
 
             if (!_pData.getSettings(PlotData::LOG_SCHEMATIC))
                 _graph->Axis("AKDTVISO");
@@ -6659,7 +6611,9 @@ void Plot::CoordSettings()
         }
         else if (_pInfo.nMaxPlotDim > 2)
         {
-            _graph->SetOrigin(_pInfo.ranges[XRANGE].min(), _pInfo.ranges[YRANGE].min(), _pInfo.ranges[ZRANGE].min());
+            _graph->SetOrigin(_pInfo.ranges[XRANGE].min(),
+                              _pInfo.ranges[YRANGE].min(),
+                              _pInfo.ranges[ZRANGE].min());
 
             if (!_pData.getSettings(PlotData::LOG_SCHEMATIC))
                 _graph->Axis("AKDTVISO");
@@ -6674,6 +6628,10 @@ void Plot::CoordSettings()
         }
         else
         {
+            _graph->SetOrigin(_pInfo.ranges[XRANGE].min(),
+                              _pInfo.ranges[YRANGE].min(),
+                              _pInfo.sCommand == "dens" || _pInfo.sCommand == "density" ? _pInfo.ranges[ZRANGE].max() : _pInfo.ranges[ZRANGE].min());
+
             if (!_pData.getSettings(PlotData::LOG_SCHEMATIC))
                 _graph->Axis("AKDTVISO");
             else

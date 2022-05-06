@@ -61,6 +61,8 @@ void PlotAsset::create(PlotType _t, size_t nDim, size_t nAxes, const std::vector
         data[l].second.Create(samples[XCOORD],
                               nDim >= 2 ? samples[YCOORD] : 1,
                               nDim == 3 ? samples[ZCOORD] : 1);
+        data[l].first.Put(NAN);
+        data[l].second.Put(NAN);
     }
 
     if (nAxes)
