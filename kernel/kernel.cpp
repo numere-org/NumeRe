@@ -271,6 +271,7 @@ void NumeReKernel::StartUp(NumeReTerminal* _parent, const std::string& __sPath, 
 
     // Declare the table dimension variables
     _parser.DefineVar("nlines", &_memoryManager.tableLinesCount);
+    _parser.DefineVar("nrows", &_memoryManager.tableLinesCount);
     _parser.DefineVar("ncols", &_memoryManager.tableColumnsCount);
     _parser.DefineVar("nlen", &_memoryManager.dClusterElementsCount);
 

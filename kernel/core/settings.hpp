@@ -88,6 +88,7 @@
 #define SETTING_B_BRACEAUTOCOMP       "editor.autocomp.braces"
 #define SETTING_B_QUOTEAUTOCOMP       "editor.autocomp.quotes"
 #define SETTING_B_BLOCKAUTOCOMP       "editor.autocomp.blocks"
+#define SETTING_B_SMARTSENSE          "editor.autocomp.smartsense"
 #define SETTING_S_EDITORFONT          "editor.font"
 #define SETTING_B_AN_START            "editor.analyzer._"
 #define SETTING_B_AN_USENOTES         "editor.analyzer.usenotes"

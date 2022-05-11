@@ -279,6 +279,7 @@ void OptionsDialog::CreateEditorPage()
     m_braceAutoComp = panel->CreateCheckBox(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_BRACE_AUTOCOMP"));
     m_quoteAutoComp = panel->CreateCheckBox(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_QUOTE_AUTOCOMP"));
     m_blockAutoComp = panel->CreateCheckBox(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_BLOCK_AUTOCOMP"));
+    m_smartSense = panel->CreateCheckBox(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_SMARTSENSE_AUTOCOMP"));
     m_homeEndCancels = panel->CreateCheckBox(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_HOME_END_CANCELS"));
 
     // Enable scrolling for this page, because it might be very large
@@ -816,6 +817,7 @@ bool OptionsDialog::EvaluateOptions()
     mSettings[SETTING_B_BRACEAUTOCOMP].active() = m_braceAutoComp->IsChecked();
     mSettings[SETTING_B_BLOCKAUTOCOMP].active() = m_blockAutoComp->IsChecked();
     mSettings[SETTING_B_QUOTEAUTOCOMP].active() = m_quoteAutoComp->IsChecked();
+    mSettings[SETTING_B_SMARTSENSE].active() = m_smartSense->IsChecked();
     mSettings[SETTING_B_AUTOSAVEEXECUTION].active() = m_saveBeforeExecuting->IsChecked();
     mSettings[SETTING_B_LINELENGTH].active() = m_lineLengthIndicator->IsChecked();
 
@@ -916,6 +918,7 @@ void OptionsDialog::InitializeDialog()
     m_braceAutoComp->SetValue(mSettings[SETTING_B_BRACEAUTOCOMP].active());
     m_blockAutoComp->SetValue(mSettings[SETTING_B_BLOCKAUTOCOMP].active());
     m_quoteAutoComp->SetValue(mSettings[SETTING_B_QUOTEAUTOCOMP].active());
+    m_smartSense->SetValue(mSettings[SETTING_B_SMARTSENSE].active());
     m_saveBeforeExecuting->SetValue(mSettings[SETTING_B_AUTOSAVEEXECUTION].active());
     m_lineLengthIndicator->SetValue(mSettings[SETTING_B_LINELENGTH].active());
 

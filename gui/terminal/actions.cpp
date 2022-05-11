@@ -238,8 +238,10 @@ void GenericTerminal::tab()
             std::string sNameSpace = getProcNameSpace();
             sAutoCompList = _syntax.getProcAutoCompList(sAutoCompWordStart, "", sNameSpace);
         }
+        else if (m_useSmartSense && tm.GetCharAdjusted(termCursor.y, nTabStartPos - sAutoCompWordStart.length()-1) == '.')
+            sAutoCompList = _syntax.getAutoCompList("." + sAutoCompWordStart, m_useSmartSense);
         else
-            sAutoCompList = _syntax.getAutoCompList(sAutoCompWordStart);
+            sAutoCompList = _syntax.getAutoCompList(sAutoCompWordStart, m_useSmartSense);
 
         // Reset the autocompletion, if no completion was found or the word start is too short
         if (!sAutoCompList.length() || !sAutoCompWordStart.length())
@@ -259,8 +261,10 @@ void GenericTerminal::tab()
                 std::string sNameSpace = getProcNameSpace();
                 sAutoCompList = _syntax.getProcAutoCompList(sAutoCompWordStart, "", sNameSpace);
             }
+            else if (m_useSmartSense && tm.GetCharAdjusted(termCursor.y, nTabStartPos - sAutoCompWordStart.length()-1) == '.')
+                sAutoCompList = _syntax.getAutoCompList("." + sAutoCompWordStart, m_useSmartSense);
             else
-                sAutoCompList = _syntax.getAutoCompList(sAutoCompWordStart);
+                sAutoCompList = _syntax.getAutoCompList(sAutoCompWordStart, m_useSmartSense);
         }
     }
 

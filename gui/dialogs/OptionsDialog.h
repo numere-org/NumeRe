@@ -205,6 +205,7 @@ class OptionsDialog: public wxDialog
         wxCheckBox* m_braceAutoComp;
         wxCheckBox* m_blockAutoComp;
         wxCheckBox* m_quoteAutoComp;
+        wxCheckBox* m_smartSense;
         wxCheckBox* m_lineLengthIndicator;
 
         wxSpinCtrl* m_debuggerFocusLine;

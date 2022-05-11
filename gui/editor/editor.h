@@ -311,6 +311,7 @@ class NumeReEditor : public wxStyledTextCtrl, public wxThreadHelper
 		enum StyleType
 		{
 			STYLE_DEFAULT,
+			STYLE_COMMENT,
 			STYLE_COMMENT_LINE,
 			STYLE_COMMENT_BLOCK,
 			STYLE_COMMENT_SECTION_LINE,
@@ -366,7 +367,7 @@ class NumeReEditor : public wxStyledTextCtrl, public wxThreadHelper
 		wxString getMatlabReturnList(int nMatlabFunctionStartLine);
 		wxString getTemplateContent(const wxString& sFileName);
 
-		wxString generateAutoCompList(const wxString& wordstart, std::string sPreDefList);
+		wxString generateAutoCompList(int wordstartpos, int currpos, std::string sPreDefList);
 
 		bool MarkerOnLine(int linenum, int nMarker);
 
@@ -378,6 +379,7 @@ class NumeReEditor : public wxStyledTextCtrl, public wxThreadHelper
 		std::string getSemanticLineCPP(int nLine, int nDuplicateFlags);
 		std::map<int, int> getDifferences(int nStart1, int nEnd1, int nStart2, int nEnd2);
 		wxString getNextToken(int& nPos);
+		std::pair<int,int> getCurrentContext(int line);
 
 		NumeReWindow* m_mainFrame;
 		ProcedureViewer* m_procedureViewer;

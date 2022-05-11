@@ -1855,7 +1855,7 @@ static Matrix covariance(const MatFuncData& funcData, const MatFuncErrorInfo& er
     // component and sum it up
     for (size_t i = 0; i < funcData.mat1.rows(); i++)
     {
-        for (size_t j = 0; j < funcData.mat2.rows(); j++)
+        for (size_t j = 0; j < funcData.mat1.cols(); j++)
         {
             mCovariance(0) += (funcData.mat1(i, j) - mAvg1(0)) * (funcData.mat2(i, j) - mAvg2(0));
         }

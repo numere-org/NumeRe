@@ -24,3 +24,7 @@ New	The string function "getversioninfo()" returns version information about Num
 Fixed	Strings containing quotation marks may now be returned correctly.
 Fixed	The progress bar is not longer jumpy for small numbers.
 Fixed	Density data plots in combination with the "bars" option will now correctly display all data grid values.
+Cleaned	Added the table method modifier ".rows" and the number of rows variable "nrow" due to language correctness.
+Applied	If local variables are highlighted, then they are highlighted everywhere in the procedure.
+Applied	Autocompletion now features "SmartSense", which will provide much better autocompletion predictions.
+Added	Variables, clusters and tables also have an icon in the autocompletion list now.

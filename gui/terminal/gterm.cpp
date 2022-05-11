@@ -151,7 +151,7 @@ void GenericTerminal::ResizeTerminal(int _width, int _height)
 /// \param h int
 ///
 /////////////////////////////////////////////////
-GenericTerminal::GenericTerminal(int w, int h) : width(w), height(h)
+GenericTerminal::GenericTerminal(int w, int h) : width(w), height(h), m_useSmartSense(false)
 {
 	doing_update = 0;
 

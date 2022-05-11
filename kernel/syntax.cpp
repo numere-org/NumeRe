@@ -30,6 +30,7 @@ NumeReSyntax::NumeReSyntax() : sPath("")
     vNPRCCommands.push_back("NO_SYNTAX_ELEMENTS");
     vFunctions.push_back("NO_SYNTAX_ELEMENTS");
     vMethods.push_back("NO_SYNTAX_ELEMENTS");
+    vMethodsArgs.push_back("NO_SYNTAX_ELEMENTS");
     vOptions.push_back("NO_SYNTAX_ELEMENTS");
     vConstants.push_back("NO_SYNTAX_ELEMENTS");
     vSpecialValues.push_back("NO_SYNTAX_ELEMENTS");
@@ -104,6 +105,8 @@ void NumeReSyntax::loadSyntax(const std::string& _sPath)
             vNPRCCommands = splitString(sLine.substr(sLine.find('=')+1));
         else if (sLine.substr(0, 9) == "FUNCTIONS")
             vFunctions = splitString(sLine.substr(sLine.find('=')+1));
+        else if (sLine.substr(0, 11) == "METHODSARGS")
+            vMethodsArgs = splitString(sLine.substr(sLine.find('=')+1));
         else if (sLine.substr(0, 7) == "METHODS")
             vMethods = splitString(sLine.substr(sLine.find('=')+1));
         else if (sLine.substr(0, 7) == "OPTIONS")
@@ -373,6 +376,8 @@ std::string NumeReSyntax::highlightLine(const std::string& sCommandLine)
         && sCommandLine.substr(0,5) != "|PROC"
         && sCommandLine.substr(0,5) != "|COMP"
         && sCommandLine.substr(0,3) != "|IF"
+        && sCommandLine.substr(0,4) != "|TRY"
+        && sCommandLine.substr(0,5) != "|CTCH"
         && sCommandLine.substr(0,4) != "|WHL")
         return colors;
 
@@ -430,7 +435,16 @@ std::string NumeReSyntax::highlightLine(const std::string& sCommandLine)
         // find the first relevant character
         if (!i && sCommandLine.substr(0,3) == "|<-")
             i += 3;
-        else if (!i && (sCommandLine.substr(0,5) == "|-\?\?>" || sCommandLine.substr(0,4) == "|FOR" || sCommandLine.substr(0,5) == "|ELSE" || sCommandLine.substr(0,5) == "|ELIF" || sCommandLine.substr(0,4) == "|WHL" || sCommandLine.substr(0,3) == "|IF" || sCommandLine.substr(0,5) == "|PROC" || sCommandLine.substr(0,5) == "|COMP"))
+        else if (!i && (sCommandLine.substr(0,5) == "|-\?\?>"
+                        || sCommandLine.substr(0,4) == "|FOR"
+                        || sCommandLine.substr(0,5) == "|ELSE"
+                        || sCommandLine.substr(0,5) == "|ELIF"
+                        || sCommandLine.substr(0,4) == "|WHL"
+                        || sCommandLine.substr(0,3) == "|IF"
+                        || sCommandLine.substr(0,4) == "|TRY"
+                        || sCommandLine.substr(0,5) == "|CTCH"
+                        || sCommandLine.substr(0,5) == "|PROC"
+                        || sCommandLine.substr(0,5) == "|COMP"))
             i += sCommandLine.find('>')+1;
         else if (!i && sCommandLine.substr(0,4) == "||<-")
             i += 4;
@@ -506,14 +520,16 @@ std::string NumeReSyntax::highlightLine(const std::string& sCommandLine)
                 {
                     if (sCommandLine[n] == '.')
                     {
-                        if (matchItem(vMethods, sCommandLine.substr(nPos, n-nPos)))
+                        if (matchItem(vMethods, sCommandLine.substr(nPos, n-nPos))
+                            || matchItem(vMethodsArgs, sCommandLine.substr(nPos, n-nPos)))
                             colors.replace(nPos, n-nPos, n-nPos, '0'+SYNTAX_METHODS);
                         nPos = n+1;
                     }
 
                     if (n+1 == i+nLen)
                     {
-                        if (matchItem(vMethods, sCommandLine.substr(nPos, n-nPos+1)))
+                        if (matchItem(vMethods, sCommandLine.substr(nPos, n-nPos+1))
+                            || matchItem(vMethodsArgs, sCommandLine.substr(nPos, n-nPos+1)))
                             colors.replace(nPos, n-nPos+1, n-nPos+1, '0'+SYNTAX_METHODS);
                         nPos = n+1;
                     }
@@ -590,11 +606,11 @@ std::string NumeReSyntax::highlightWarning(const std::string& sCommandLine)
 /// autocompletion list for the editor.
 ///
 /// \param sFirstChars std::string
-/// \param sType std::string
+/// \param useSmartSense bool
 /// \return std::string
 ///
 /////////////////////////////////////////////////
-std::string NumeReSyntax::getAutoCompList(std::string sFirstChars, std::string sType)
+std::string NumeReSyntax::getAutoCompList(std::string sFirstChars, bool useSmartSense)
 {
     std::string sAutoCompList;
 
@@ -603,48 +619,73 @@ std::string NumeReSyntax::getAutoCompList(std::string sFirstChars, std::string s
     {
         // Insert every element in the map
         for (size_t i = 0; i < vNSCRCommands.size(); i++)
-            mAutoCompList[toLowerCase(vNSCRCommands[i])+" |"+vNSCRCommands[i]] = SYNTAX_COMMAND;
+            mAutoCompList[toLowerCase(vNSCRCommands[i])] = std::make_pair(vNSCRCommands[i] + "?" + toString((int)SYNTAX_COMMAND),
+                                                                          SYNTAX_COMMAND);
 
         for (size_t i = 0; i < vNPRCCommands.size(); i++)
-            mAutoCompList[toLowerCase(vNPRCCommands[i])+" |"+vNPRCCommands[i]] = SYNTAX_COMMAND;
+            mAutoCompList[toLowerCase(vNPRCCommands[i])] = std::make_pair(vNPRCCommands[i] + "?" + toString((int)SYNTAX_COMMAND),
+                                                                          SYNTAX_COMMAND);
 
         for (size_t i = 0; i < vFunctions.size(); i++)
-            mAutoCompList[toLowerCase(vFunctions[i])+" |"+vFunctions[i]+"("] = SYNTAX_FUNCTION;
+            mAutoCompList[toLowerCase(vFunctions[i])+"("] = std::make_pair(vFunctions[i]+"(?" + toString((int)SYNTAX_FUNCTION),
+                                                                           SYNTAX_FUNCTION);
 
         for (size_t i = 0; i < vMethods.size(); i++)
-            mAutoCompList[toLowerCase(vMethods[i])+" |"+vMethods[i]+"("] = SYNTAX_METHODS;
+            mAutoCompList[toLowerCase(vMethods[i])+"."] = std::make_pair(vMethods[i]+"?" + toString((int)SYNTAX_METHODS),
+                                                                         SYNTAX_METHODS); // Methods shall not override functions
+
+        for (size_t i = 0; i < vMethodsArgs.size(); i++)
+            mAutoCompList[toLowerCase(vMethodsArgs[i])+"(."] = std::make_pair(vMethodsArgs[i]+"(?" + toString((int)SYNTAX_METHODS),
+                                                                              SYNTAX_METHODS); // Methods shall not override functions
 
         for (size_t i = 0; i < vOptions.size(); i++)
-            mAutoCompList[toLowerCase(vOptions[i])+" |"+vOptions[i]] = SYNTAX_OPTION;
+            mAutoCompList[toLowerCase(vOptions[i])] = std::make_pair(vOptions[i] + "?" + toString((int)SYNTAX_OPTION),
+                                                                     SYNTAX_OPTION);
 
         for (size_t i = 0; i < vConstants.size(); i++)
-            mAutoCompList[toLowerCase(vConstants[i])+" |"+vConstants[i]] = SYNTAX_CONSTANT;
+            mAutoCompList[toLowerCase(vConstants[i])] = std::make_pair(vConstants[i] + "?" + toString((int)SYNTAX_CONSTANT),
+                                                                       SYNTAX_CONSTANT);
 
         for (size_t i = 0; i < vSpecialValues.size(); i++)
-            mAutoCompList[toLowerCase(vSpecialValues[i])+" |"+vSpecialValues[i]] = SYNTAX_SPECIALVAL;
+        {
+            if (vSpecialValues[i] == "ans")
+                mAutoCompList["ans"] = std::make_pair("ans{?" + toString((int)SYNTAX_SPECIALVAL), SYNTAX_SPECIALVAL);
+            else if (vSpecialValues[i] == "table" || vSpecialValues[i] == "data" || vSpecialValues[i] == "string")
+                mAutoCompList[toLowerCase(vSpecialValues[i])] = std::make_pair(vSpecialValues[i] + "(?" + toString((int)SYNTAX_SPECIALVAL),
+                                                                               SYNTAX_SPECIALVAL);
+            else
+                mAutoCompList[toLowerCase(vSpecialValues[i])] = std::make_pair(vSpecialValues[i] + "?" + toString((int)SYNTAX_SPECIALVAL),
+                                                                               SYNTAX_SPECIALVAL);
+        }
 
         for (size_t i = 0; i < vOperators.size(); i++)
-            mAutoCompList[toLowerCase(vOperators[i])+" |"+vOperators[i]] = SYNTAX_OPERATOR;
+            mAutoCompList[toLowerCase(vOperators[i])] = std::make_pair(vOperators[i] + "?" + toString((int)SYNTAX_OPERATOR),
+                                                                       SYNTAX_OPERATOR);
     }
 
     // Transform the passed first characters to lower case to avoid case sensitivity
     sFirstChars = toLowerCase(sFirstChars);
+
+    bool selectMethods = useSmartSense && sFirstChars.front() == '.';
+
+    if (selectMethods)
+        sFirstChars.erase(0, 1);
 
     // Try to find the correspondig elements in the map
     for (auto iter = mAutoCompList.begin(); iter != mAutoCompList.end(); ++iter)
     {
         if ((iter->first).front() == sFirstChars.front())
         {
-            if (sType == "NSCR" && iter->second == SYNTAX_NPRC_COMMAND)
-                continue;
-
-            if (sFirstChars == (iter->first).substr(0,sFirstChars.length()))
+            if (useSmartSense)
             {
-                if (iter->second == SYNTAX_NPRC_COMMAND)
-                    sAutoCompList += (iter->first).substr((iter->first).find('|')+1) + "?" + toString((int)(SYNTAX_COMMAND)) + " ";
-                else
-                    sAutoCompList += (iter->first).substr((iter->first).find('|')+1) + "?" + toString((int)(iter->second)) + " ";
+                if (selectMethods && iter->second.second != SYNTAX_METHODS)
+                    continue;
+                else if (!selectMethods && iter->second.second == SYNTAX_METHODS)
+                    continue;
             }
+
+            if (sFirstChars == (iter->first).substr(0, sFirstChars.length()))
+                sAutoCompList += iter->second.first + " ";
         }
         else if ((iter->first).front() > sFirstChars.front())
             break;
