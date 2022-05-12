@@ -5762,7 +5762,7 @@ wxPrintData* NumeReWindow::setDefaultPrinterSettings()
 //////////////////////////////////////////////////////////////////////////////
 void NumeReWindow::OnTreeItemRightClick(wxTreeEvent& event)
 {
-    if (m_treeBook->GetCurrentPage() == m_filePanel)
+    if (event.GetId() == ID_PROJECTTREE)
     {
         VersionControlSystemManager manager(this);
         wxTreeItemId clickedItem = event.GetItem();
@@ -5867,7 +5867,7 @@ void NumeReWindow::OnTreeItemRightClick(wxTreeEvent& event)
 //////////////////////////////////////////////////////////////////////////////
 void NumeReWindow::OnTreeItemActivated(wxTreeEvent &event)
 {
-    if (m_treeBook->GetCurrentPage() == m_filePanel)
+    if (event.GetId() == ID_PROJECTTREE)
     {
         wxTreeItemId item = event.GetItem();
 
@@ -5940,7 +5940,7 @@ void NumeReWindow::OnTreeItemActivated(wxTreeEvent &event)
 /////////////////////////////////////////////////
 void NumeReWindow::OnTreeItemToolTip(wxTreeEvent& event)
 {
-    if (m_treeBook->GetCurrentPage() == m_functionPanel)
+    if (event.GetId() == ID_FUNCTIONTREE)
     {
         wxTreeItemId item = event.GetItem();
 
@@ -5994,7 +5994,7 @@ void NumeReWindow::OnTreeItemToolTip(wxTreeEvent& event)
 /////////////////////////////////////////////////
 void NumeReWindow::OnTreeDragDrop(wxTreeEvent& event)
 {
-    if (m_treeBook->GetCurrentPage() == m_functionPanel)
+    if (event.GetId() == ID_FUNCTIONTREE)
     {
         wxTreeItemId item = event.GetItem();
         FileNameTreeData* data = static_cast<FileNameTreeData*>(m_functionTree->GetItemData(item));
