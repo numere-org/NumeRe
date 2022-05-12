@@ -51,6 +51,7 @@
 					<Add library="wxexpat" />
 					<Add library="wxbase30u_xml" />
 					<Add library="wxbase30u_net" />
+					<Add library="wxmsw30u_aui" />
 					<Add library="wxmsw30u_core" />
 					<Add library="wxbase30u" />
 					<Add library="wxregexu" />
@@ -107,6 +108,7 @@
 					<Add library="wxexpat" />
 					<Add library="wxbase30u_xml" />
 					<Add library="wxbase30u_net" />
+					<Add library="wxmsw30u_aui" />
 					<Add library="wxmsw30u_core" />
 					<Add library="wxbase30u" />
 					<Add library="wxregexu" />
@@ -161,6 +163,7 @@
 					<Add library="wxexpat" />
 					<Add library="wxbase30u_xml" />
 					<Add library="wxbase30u_net" />
+					<Add library="wxmsw30u_aui" />
 					<Add library="wxmsw30u_core" />
 					<Add library="wxbase30u" />
 					<Add library="wxregexu" />
@@ -218,6 +221,7 @@
 					<Add library="wxexpat" />
 					<Add library="wxbase30u_xml" />
 					<Add library="wxbase30u_net" />
+					<Add library="wxmsw30u_aui" />
 					<Add library="wxmsw30u_core" />
 					<Add library="wxbase30u" />
 					<Add library="wxregexu" />

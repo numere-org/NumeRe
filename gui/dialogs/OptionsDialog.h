@@ -197,6 +197,7 @@ class OptionsDialog: public wxDialog
         wxCheckBox* m_formatBeforeSaving;
         wxCheckBox* m_saveBeforeExecuting;
         wxCheckBox* m_useMaskAsDefault;
+        wxCheckBox* m_alwaysReferenceTables;
         wxCheckBox* m_keepBackupFiles;
         wxCheckBox* m_foldDuringLoading;
         wxCheckBox* m_useTabs;
@@ -204,6 +205,7 @@ class OptionsDialog: public wxDialog
         wxCheckBox* m_braceAutoComp;
         wxCheckBox* m_blockAutoComp;
         wxCheckBox* m_quoteAutoComp;
+        wxCheckBox* m_smartSense;
         wxCheckBox* m_lineLengthIndicator;
 
         wxSpinCtrl* m_debuggerFocusLine;

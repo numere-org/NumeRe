@@ -438,7 +438,7 @@ Returnvalue Procedure::ProcCalc(string sLine, string sCurrentCommand, int& nByte
             if (retVal == NumeRe::StringParser::STRING_SUCCESS)
             {
                 // Only strings
-                thisReturnVal.vStringVal.push_back(sLine);
+                thisReturnVal.vStringVal = NumeReKernel::getInstance()->getAns().to_string();
                 return thisReturnVal;
             }
 
@@ -692,6 +692,7 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, F
 
     // Get the procedure head line
     currentLine = ProcElement->getCurrentLine(currentLine.first);
+    nCurrentLine = currentLine.first;
 
     // verify that this is a procedure headline
     if (currentLine.second.getType() != ProcedureCommandLine::TYPE_PROCEDURE_HEAD)
@@ -2561,7 +2562,7 @@ int Procedure::catchExceptionForTest(exception_ptr e_ptr, bool bSupressAnswer_ba
         {
             // Catch and convert parser errors
             NumeReKernel::getInstance()->getDebugger().finalizeCatched();
-            NumeReKernel::failMessage("@" + toString(nLine+1) + " | FAILED EXPRESSION: '" + e.GetExpr() + "'");
+            NumeReKernel::failMessage("@ " + toString(nLine+1) + " | FAILED EXPRESSION: '" + e.GetExpr() + "'");
         }
         catch (SyntaxError& e)
         {
@@ -2577,13 +2578,13 @@ int Procedure::catchExceptionForTest(exception_ptr e_ptr, bool bSupressAnswer_ba
             {
                 // Display custom errors with their message
                 NumeReKernel::getInstance()->getDebugger().finalizeCatched();
-                NumeReKernel::failMessage("@" + toString(nLine+1) + " | ERROR CAUGHT: " + e.getToken());
+                NumeReKernel::failMessage("@ " + toString(nLine+1) + " | ERROR CAUGHT: " + e.getToken());
             }
             else
             {
                 // Mark default errors only with the failing expression
                 NumeReKernel::getInstance()->getDebugger().finalizeCatched();
-                NumeReKernel::failMessage("@" + toString(nLine+1) + " | FAILED EXPRESSION: '" + e.getExpr() + "'");
+                NumeReKernel::failMessage("@ " + toString(nLine+1) + " | FAILED EXPRESSION: '" + e.getExpr() + "'");
             }
         }
         catch (...)

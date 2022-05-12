@@ -44,7 +44,7 @@ Settings::Settings() : Documentation()
     m_settings[SETTING_B_COMPACT] = SettingsValue(false);
     m_settings[SETTING_B_GREETING] = SettingsValue(true);
     m_settings[SETTING_B_DEFCONTROL] = SettingsValue(false);
-    m_settings[SETTING_B_FUTURE] = SettingsValue(false, SettingsValue::UIREFRESH | SettingsValue::SAVE);
+    m_settings[SETTING_B_TABLEREFS] = SettingsValue(true, SettingsValue::UIREFRESH | SettingsValue::SAVE);
     m_settings[SETTING_B_SYSTEMPRINTS] = SettingsValue(true, SettingsValue::HIDDEN);
     m_settings[SETTING_B_EXTENDEDFILEINFO] = SettingsValue(false, SettingsValue::UIREFRESH | SettingsValue::SAVE);
     m_settings[SETTING_B_LOGFILE] = SettingsValue(true);
@@ -95,6 +95,7 @@ Settings::Settings() : Documentation()
     m_settings[SETTING_B_BRACEAUTOCOMP] = SettingsValue(true, SettingsValue::SAVE | SettingsValue::IMMUTABLE);
     m_settings[SETTING_B_QUOTEAUTOCOMP] = SettingsValue(true, SettingsValue::SAVE | SettingsValue::IMMUTABLE);
     m_settings[SETTING_B_BLOCKAUTOCOMP] = SettingsValue(true, SettingsValue::SAVE | SettingsValue::IMMUTABLE);
+    m_settings[SETTING_B_SMARTSENSE] = SettingsValue(true, SettingsValue::SAVE | SettingsValue::IMMUTABLE);
     m_settings[SETTING_S_EDITORFONT] = SettingsValue("consolas 10 windows-1252", SettingsValue::SAVE | SettingsValue::IMMUTABLE);
     m_settings[SETTING_B_AN_START] = SettingsValue(true, SettingsValue::HIDDEN);
     m_settings[SETTING_B_AN_USENOTES] = SettingsValue(true, SettingsValue::SAVE | SettingsValue::HIDDEN);

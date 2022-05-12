@@ -2777,6 +2777,15 @@ std::vector<mu::value_type> Memory::minpos(const VectorIndex& _vIndex, int dir) 
     _vIndex.setOpenEndIndex(dir & COLS ? cols-1 : lines-1);
     int nGridOffset = 2*((dir & GRID) != 0);
 
+    // If a grid is required, get the grid dimensions
+    // of this table
+    if (nGridOffset)
+    {
+        std::vector<mu::value_type> vSize = size(VectorIndex(), GRID);
+        lines = vSize.front().real();
+        cols = vSize.back().real()+nGridOffset; // compensate the offset
+    }
+
     // A special case for the columns. We will compute the
     // results for ALL and GRID using the results for LINES
     if (dir & COLS)
@@ -2848,6 +2857,15 @@ std::vector<mu::value_type> Memory::maxpos(const VectorIndex& _vIndex, int dir) 
 
     _vIndex.setOpenEndIndex(dir & COLS ? cols-1 : lines-1);
     int nGridOffset = 2*((dir & GRID) != 0);
+
+    // If a grid is required, get the grid dimensions
+    // of this table
+    if (nGridOffset)
+    {
+        std::vector<mu::value_type> vSize = size(VectorIndex(), GRID);
+        lines = vSize.front().real();
+        cols = vSize.back().real()+nGridOffset; // compensate the offset
+    }
 
     // A special case for the columns. We will compute the
     // results for ALL and GRID using the results for LINES

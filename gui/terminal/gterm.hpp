@@ -114,6 +114,7 @@ class GenericTerminal
         std::string sAutoCompList;
         void resetAutoComp(int mode);
         std::string getProcNameSpace();
+        bool m_useSmartSense;
 
         // non-printing characters
         void cr(), lf(), ff(), bell(), tab();

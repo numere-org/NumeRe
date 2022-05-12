@@ -15,7 +15,7 @@
 #endif
 
 #include <wx/treectrl.h>
-#include <wx/notebook.h>
+#include <wx/aui/auibook.h>
 #include <wx/snglinst.h>
 #include <vector>
 #include <utility>
@@ -302,7 +302,7 @@ class NumeReWindow : public wxFrame
         wxString addLinebreaks(const wxString& sLine);
         wxString getFileDetails(const wxFileName& filename);
 
-        void OnPageChange(wxBookCtrlEvent& event);
+        void OnPageChange(wxAuiNotebookEvent& event);
 
         void OnFindEvent(wxFindDialogEvent& event);
 

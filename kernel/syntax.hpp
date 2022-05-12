@@ -59,6 +59,7 @@ class NumeReSyntax
         std::vector<std::string> vOptions;
         std::vector<std::string> vFunctions;
         std::vector<std::string> vMethods;
+        std::vector<std::string> vMethodsArgs;
         std::vector<std::string> vConstants;
         std::vector<std::string> vSpecialValues;
         std::vector<std::string> vOperators;
@@ -73,7 +74,7 @@ class NumeReSyntax
         std::vector<std::string> vProcedureTree;
 
         std::string sSingleOperators;
-        std::map<std::string, int> mAutoCompList;
+        std::map<std::string, std::pair<std::string, int>> mAutoCompList;
         std::map<std::string, int> mAutoCompListMATLAB;
         std::map<std::string, int> mAutoCompListCPP;
         std::map<std::string, int> mAutoCompListTeX;
@@ -98,7 +99,9 @@ class NumeReSyntax
             SYNTAX_PROCEDURE,
             SYNTAX_NUMBER,
             SYNTAX_NPRC_COMMAND,
-            SYNTAX_METHODS
+            SYNTAX_METHODS,
+            SYNTAX_CLUSTER,
+            SYNTAX_TABLE
         };
         NumeReSyntax();
         NumeReSyntax(const std::string& _sPath);
@@ -115,7 +118,7 @@ class NumeReSyntax
         std::string getFunctions() const
             {return constructString(vFunctions);}
         std::string getMethods() const
-            {return constructString(vMethods);}
+            {return constructString(vMethods) + " " + constructString(vMethodsArgs);}
         std::string getConstants() const
             {return constructString(vConstants);}
         std::string getSpecial() const
@@ -133,7 +136,7 @@ class NumeReSyntax
             {return constructString(vCppKeyWords);}
         std::string getCppFunctions() const
             {return constructString(vCppFunctions);}
-        std::string getAutoCompList(std::string sFirstChars, std::string sType = "NSCR");
+        std::string getAutoCompList(std::string sFirstChars, bool useSmartSense = false);
         std::string getAutoCompListMATLAB(std::string sFirstChars);
         std::string getAutoCompListCPP(std::string sFirstChars);
         std::string getAutoCompListTeX(std::string sFirstChars);

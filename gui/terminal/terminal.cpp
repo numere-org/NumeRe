@@ -131,6 +131,7 @@ NumeReTerminal::NumeReTerminal(wxWindow* parent, wxWindowID id, Options* _option
     // Start the kernel
 	_kernel.StartUp(this, sPath.ToStdString(), getSyntax()->getFunctions());
 	m_options->copySettings(_kernel.getKernelSettings());
+	m_useSmartSense = m_options->getSetting(SETTING_B_SMARTSENSE).active();
 
 	// Update the terminal colors
 	UpdateColors();
@@ -399,6 +400,7 @@ void NumeReTerminal::setKernelSettings(const Settings& _settings)
 {
 	wxCriticalSectionLocker lock(m_kernelCS);
 	_kernel.setKernelSettings(_settings);
+	m_useSmartSense = _settings.getSetting(SETTING_B_SMARTSENSE).active();
 }
 
 

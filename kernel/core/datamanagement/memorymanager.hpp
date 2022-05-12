@@ -590,8 +590,19 @@ class MemoryManager : public NumeRe::FileAdapter, public StringMemory, public Nu
 		std::vector<mu::value_type> cmp(const std::string& sTable, std::string sDir, mu::value_type dRef = 0.0, int nType = 0) const
         {
             std::vector<mu::value_type> vResults;
+            long long int nlines = getLines(sTable, false);
+            long long int ncols = getCols(sTable, false);
 
             long long int nGridOffset = sDir.find("grid") != std::string::npos ? 2 : 0;
+
+            // If a grid is required, get the grid dimensions
+            // of this table
+            if (nGridOffset)
+            {
+                std::vector<mu::value_type> vSize = vMemory[findTable(sTable)]->size(VectorIndex(), GRID);
+                nlines = vSize.front().real();
+                ncols = vSize.back().real()+nGridOffset; // compensate the offset
+            }
 
             VectorIndex _idx = parseEvery(sDir, sTable);
 
@@ -599,24 +610,24 @@ class MemoryManager : public NumeRe::FileAdapter, public StringMemory, public Nu
             {
                 for (size_t i = 0; i < _idx.size(); i++)
                 {
-                    if (_idx[i]+nGridOffset < 0 || _idx[i]+nGridOffset >= getCols(sTable, false))
+                    if (_idx[i]+nGridOffset < 0 || _idx[i]+nGridOffset >= ncols)
                         continue;
 
-                    vResults.push_back(cmp(sTable, 0, getLines(sTable, false)-1, _idx[i]+nGridOffset, -1, dRef.real(), nType));
+                    vResults.push_back(cmp(sTable, 0, nlines-1, _idx[i]+nGridOffset, -1, dRef.real(), nType));
                 }
             }
             else if (sDir.find("lines") != std::string::npos)
             {
                 for (size_t i = 0; i < _idx.size(); i++)
                 {
-                    if (_idx[i]+nGridOffset < 0 || _idx[i]+nGridOffset >= getLines(sTable, false))
+                    if (_idx[i]+nGridOffset < 0 || _idx[i]+nGridOffset >= nlines)
                         continue;
 
-                    vResults.push_back(cmp(sTable, _idx[i]+nGridOffset, -1, 0, getCols(sTable, false)-1, dRef.real(), nType));
+                    vResults.push_back(cmp(sTable, _idx[i]+nGridOffset, -1, 0, ncols-1, dRef.real(), nType));
                 }
             }
             else
-                vResults.push_back(cmp(sTable, 0, getLines(sTable, false)-1, nGridOffset, getCols(sTable, false)-1, dRef.real(), nType));
+                vResults.push_back(cmp(sTable, 0, nlines-1, nGridOffset, ncols-1, dRef.real(), nType));
 
             if (!vResults.size())
                 vResults.push_back(NAN);
@@ -627,8 +638,19 @@ class MemoryManager : public NumeRe::FileAdapter, public StringMemory, public Nu
 		std::vector<mu::value_type> pct(const std::string& sTable, std::string sDir, mu::value_type dPct = 0.5) const
         {
             std::vector<mu::value_type> vResults;
+            long long int nlines = getLines(sTable, false);
+            long long int ncols = getCols(sTable, false);
 
             long long int nGridOffset = sDir.find("grid") != std::string::npos ? 2 : 0;
+
+            // If a grid is required, get the grid dimensions
+            // of this table
+            if (nGridOffset)
+            {
+                std::vector<mu::value_type> vSize = vMemory[findTable(sTable)]->size(VectorIndex(), GRID);
+                nlines = vSize.front().real();
+                ncols = vSize.back().real()+nGridOffset; // compensate the offset
+            }
 
             VectorIndex _idx = parseEvery(sDir, sTable);
 
@@ -636,24 +658,24 @@ class MemoryManager : public NumeRe::FileAdapter, public StringMemory, public Nu
             {
                 for (size_t i = 0; i < _idx.size(); i++)
                 {
-                    if (_idx[i]+nGridOffset < 0 || _idx[i]+nGridOffset >= getCols(sTable, false))
+                    if (_idx[i]+nGridOffset < 0 || _idx[i]+nGridOffset >= ncols)
                         continue;
 
-                    vResults.push_back(pct(sTable, 0, getLines(sTable, false)-1, _idx[i]+nGridOffset, -1, dPct.real()));
+                    vResults.push_back(pct(sTable, 0, nlines-1, _idx[i]+nGridOffset, -1, dPct.real()));
                 }
             }
             else if (sDir.find("lines") != std::string::npos)
             {
                 for (size_t i = 0; i < _idx.size(); i++)
                 {
-                    if (_idx[i]+nGridOffset < 0 || _idx[i]+nGridOffset >= getLines(sTable, false))
+                    if (_idx[i]+nGridOffset < 0 || _idx[i]+nGridOffset >= nlines)
                         continue;
 
-                    vResults.push_back(pct(sTable, _idx[i]+nGridOffset, -1, 0, getCols(sTable, false)-1, dPct.real()));
+                    vResults.push_back(pct(sTable, _idx[i]+nGridOffset, -1, 0, ncols-1, dPct.real()));
                 }
             }
             else
-                vResults.push_back(pct(sTable, 0, getLines(sTable, false)-1, nGridOffset, getCols(sTable, false)-1, dPct.real()));
+                vResults.push_back(pct(sTable, 0, nlines-1, nGridOffset, ncols-1, dPct.real()));
 
             if (!vResults.size())
                 vResults.push_back(NAN);

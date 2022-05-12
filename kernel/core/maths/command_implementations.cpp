@@ -39,7 +39,7 @@ using namespace std;
 DefaultVariables _defVars;
 static mu::value_type localizeExtremum(string& sCmd, mu::value_type* dVarAdress, Parser& _parser, const Settings& _option, mu::value_type dLeft, mu::value_type dRight, double dEps = 1e-10, int nRecursion = 0);
 static mu::value_type localizeZero(string& sCmd, mu::value_type* dVarAdress, Parser& _parser, const Settings& _option, mu::value_type dLeft, mu::value_type dRight, double dEps = 1e-10, int nRecursion = 0);
-static std::vector<size_t> getSamplesForDatagrid(CommandLineParser& cmdParser, size_t nSamples);
+static std::vector<size_t> getSamplesForDatagrid(CommandLineParser& cmdParser, const std::vector<size_t>& nSamples);
 static void expandVectorToDatagrid(IntervalSet& ivl, std::vector<std::vector<mu::value_type>>& vZVals, size_t nSamples_x, size_t nSamples_y);
 
 
@@ -3276,6 +3276,7 @@ bool evalPoints(CommandLineParser& cmdParser)
 /////////////////////////////////////////////////
 bool createDatagrid(CommandLineParser& cmdParser)
 {
+    std::vector<size_t> vSamples = {100, 100};
     unsigned int nSamples = 100;
     bool bTranspose = cmdParser.hasParam("transpose");
 
@@ -3303,13 +3304,21 @@ bool createDatagrid(CommandLineParser& cmdParser)
     auto vParVal = cmdParser.getParameterValueAsNumericalValue("samples");
 
     if (vParVal.size())
-        nSamples = abs(intCast(vParVal.front()));
+    {
+        vSamples.front() = abs(intCast(vParVal.front()));
 
-    if (nSamples < 2)
+        if (vParVal.size() >= 2)
+            vSamples[1] = abs(intCast(vParVal[1]));
+        else
+            vSamples[1] = vSamples.front();
+
+    }
+
+    if (vSamples.front() < 2 || vSamples.back() < 2)
         throw SyntaxError(SyntaxError::TOO_FEW_DATAPOINTS, cmdParser.getCommandLine(), SyntaxError::invalid_position);
 
     // Get the samples
-    std::vector<size_t> vSamples = getSamplesForDatagrid(cmdParser, nSamples);
+    vSamples = getSamplesForDatagrid(cmdParser, vSamples);
 
     // extract samples from the interval set
     if (ivl[0].getSamples())
@@ -3442,13 +3451,13 @@ bool createDatagrid(CommandLineParser& cmdParser)
 /// of the datagrid for each spatial direction.
 ///
 /// \param cmdParser CommandLineParser&
-/// \param nSamples size_t
-/// \return vector<size_t>
+/// \param nSamples const std::vector<size_t>&
+/// \return std::vector<size_t>
 ///
 /////////////////////////////////////////////////
-static vector<size_t> getSamplesForDatagrid(CommandLineParser& cmdParser, size_t nSamples)
+static vector<size_t> getSamplesForDatagrid(CommandLineParser& cmdParser, const std::vector<size_t>& nSamples)
 {
-    vector<size_t> vSamples;
+    vector<size_t> vSamples = nSamples;
 
     // If the z vals are inside of a table then obtain the correct number of samples here
     if (cmdParser.exprContainsDataObjects())
@@ -3475,19 +3484,14 @@ static vector<size_t> getSamplesForDatagrid(CommandLineParser& cmdParser, size_t
         if (_idx.row.isOpenEnd())
             _idx.row.setRange(0, _data.getColElements(_idx.col, sZDatatable)-1);
 
-        vSamples.push_back(_idx.row.size());
-        vSamples.push_back(_idx.col.size());
+        vSamples.front() = _idx.row.size();
+        vSamples.back() = _idx.col.size();
 
         // Check for singletons
         if (vSamples[0] < 2 && vSamples[1] >= 2)
             vSamples[0] = vSamples[1];
         else if (vSamples[1] < 2 && vSamples[0] >= 2)
             vSamples[1] = vSamples[0];
-    }
-    else
-    {
-        vSamples.push_back(nSamples);
-        vSamples.push_back(nSamples);
     }
 
     if (vSamples.size() < 2 || vSamples[0] < 2 || vSamples[1] < 2)

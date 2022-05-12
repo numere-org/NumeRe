@@ -37,7 +37,7 @@ class TreePanel : public wxPanel
             vsizer->AddSpacer(2);
             vsizer->Add(tree, 1, wxEXPAND, 0);
 
-            hsizer->Add(vsizer, 1, wxEXPAND | wxRIGHT, 3);
+            hsizer->Add(vsizer, 1, wxEXPAND, 0);
             SetSizer(hsizer);
         }
 };

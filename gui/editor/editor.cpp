@@ -191,6 +191,9 @@ NumeReEditor::NumeReEditor(NumeReWindow* mframe, Options* options, wxWindow* par
     SetIndent(4);
     SetUseTabs(true);
 
+    AutoCompSetIgnoreCase(true);
+    AutoCompSetCaseInsensitiveBehaviour(wxSTC_CASEINSENSITIVEBEHAVIOUR_RESPECTCASE);
+
     SetMultipleSelection(true);
     SetVirtualSpaceOptions(wxSTC_SCVS_RECTANGULARSELECTION);
     SetAdditionalSelectionTyping(true);
@@ -206,14 +209,28 @@ NumeReEditor::NumeReEditor(NumeReWindow* mframe, Options* options, wxWindow* par
 
     wxFileName f(wxStandardPaths::Get().GetExecutablePath());
     //wxInitAllImageHandlers();
-    RegisterImage(NumeReSyntax::SYNTAX_COMMAND, wxBitmap(f.GetPath(wxPATH_GET_VOLUME | wxPATH_GET_SEPARATOR) + "icons\\cmd.png", wxBITMAP_TYPE_PNG));
-    RegisterImage(NumeReSyntax::SYNTAX_FUNCTION, wxBitmap(f.GetPath(wxPATH_GET_VOLUME | wxPATH_GET_SEPARATOR) + "icons\\fnc.png", wxBITMAP_TYPE_PNG));
-    RegisterImage(NumeReSyntax::SYNTAX_OPTION, wxBitmap(f.GetPath(wxPATH_GET_VOLUME | wxPATH_GET_SEPARATOR) + "icons\\opt.png", wxBITMAP_TYPE_PNG));
-    RegisterImage(NumeReSyntax::SYNTAX_CONSTANT, wxBitmap(f.GetPath(wxPATH_GET_VOLUME | wxPATH_GET_SEPARATOR) + "icons\\cnst.png", wxBITMAP_TYPE_PNG));
-    RegisterImage(NumeReSyntax::SYNTAX_SPECIALVAL, wxBitmap(f.GetPath(wxPATH_GET_VOLUME | wxPATH_GET_SEPARATOR) + "icons\\spv.png", wxBITMAP_TYPE_PNG));
-    RegisterImage(NumeReSyntax::SYNTAX_OPERATOR, wxBitmap(f.GetPath(wxPATH_GET_VOLUME | wxPATH_GET_SEPARATOR) + "icons\\opr.png", wxBITMAP_TYPE_PNG));
-    RegisterImage(NumeReSyntax::SYNTAX_METHODS, wxBitmap(f.GetPath(wxPATH_GET_VOLUME | wxPATH_GET_SEPARATOR) + "icons\\mthd.png", wxBITMAP_TYPE_PNG));
-    RegisterImage(NumeReSyntax::SYNTAX_PROCEDURE, wxBitmap(f.GetPath(wxPATH_GET_VOLUME | wxPATH_GET_SEPARATOR) + "icons\\prc.png", wxBITMAP_TYPE_PNG));
+    RegisterImage(NumeReSyntax::SYNTAX_COMMAND,
+                  wxBitmap(f.GetPath(wxPATH_GET_VOLUME | wxPATH_GET_SEPARATOR) + "icons\\cmd.png", wxBITMAP_TYPE_PNG));
+    RegisterImage(NumeReSyntax::SYNTAX_FUNCTION,
+                  wxBitmap(f.GetPath(wxPATH_GET_VOLUME | wxPATH_GET_SEPARATOR) + "icons\\fnc.png", wxBITMAP_TYPE_PNG));
+    RegisterImage(NumeReSyntax::SYNTAX_OPTION,
+                  wxBitmap(f.GetPath(wxPATH_GET_VOLUME | wxPATH_GET_SEPARATOR) + "icons\\opt.png", wxBITMAP_TYPE_PNG));
+    RegisterImage(NumeReSyntax::SYNTAX_CONSTANT,
+                  wxBitmap(f.GetPath(wxPATH_GET_VOLUME | wxPATH_GET_SEPARATOR) + "icons\\cnst.png", wxBITMAP_TYPE_PNG));
+    RegisterImage(NumeReSyntax::SYNTAX_SPECIALVAL,
+                  wxBitmap(f.GetPath(wxPATH_GET_VOLUME | wxPATH_GET_SEPARATOR) + "icons\\spv.png", wxBITMAP_TYPE_PNG));
+    RegisterImage(NumeReSyntax::SYNTAX_OPERATOR,
+                  wxBitmap(f.GetPath(wxPATH_GET_VOLUME | wxPATH_GET_SEPARATOR) + "icons\\opr.png", wxBITMAP_TYPE_PNG));
+    RegisterImage(NumeReSyntax::SYNTAX_METHODS,
+                  wxBitmap(f.GetPath(wxPATH_GET_VOLUME | wxPATH_GET_SEPARATOR) + "icons\\mthd.png", wxBITMAP_TYPE_PNG));
+    RegisterImage(NumeReSyntax::SYNTAX_PROCEDURE,
+                  wxBitmap(f.GetPath(wxPATH_GET_VOLUME | wxPATH_GET_SEPARATOR) + "icons\\prc.png", wxBITMAP_TYPE_PNG));
+    RegisterImage(NumeReSyntax::SYNTAX_STD,
+                  wxBitmap(f.GetPath(wxPATH_GET_VOLUME | wxPATH_GET_SEPARATOR) + "icons\\var.png", wxBITMAP_TYPE_PNG));
+    RegisterImage(NumeReSyntax::SYNTAX_CLUSTER,
+                  wxBitmap(f.GetPath(wxPATH_GET_VOLUME | wxPATH_GET_SEPARATOR) + "icons\\cst.png", wxBITMAP_TYPE_PNG));
+    RegisterImage(NumeReSyntax::SYNTAX_TABLE,
+                  wxBitmap(f.GetPath(wxPATH_GET_VOLUME | wxPATH_GET_SEPARATOR) + "icons\\tab.png", wxBITMAP_TYPE_PNG));
 
     wxFont font = m_options->GetEditorFont();
     StyleSetFont(wxSTC_STYLE_DEFAULT, font);
@@ -703,45 +720,43 @@ void NumeReEditor::OnChar( wxStyledTextEvent& event )
     }
 
     int lenEntered = currentPos - wordstartpos;
+    AutoCompSetAutoHide(!m_options->getSetting(SETTING_B_SMARTSENSE).active());
+    wxString sAutoCompList;
 
     if (lenEntered > 1
         && (m_fileType == FILE_NSCR || m_fileType == FILE_NPRC)
-        && !isStyleType(STYLE_COMMENT_LINE, wordstartpos)
-        && !isStyleType(STYLE_COMMENT_BLOCK, wordstartpos)
+        && !isStyleType(STYLE_COMMENT, wordstartpos)
         && !isStyleType(STYLE_STRING, wordstartpos)
         && !isStyleType(STYLE_PROCEDURE, wordstartpos))
     {
-        this->AutoCompSetIgnoreCase(true);
-        this->AutoCompSetCaseInsensitiveBehaviour(wxSTC_CASEINSENSITIVEBEHAVIOUR_IGNORECASE);
-        wxString sAutoCompList = generateAutoCompList(GetTextRange(wordstartpos, currentPos), _syntax->getAutoCompList(GetTextRange(wordstartpos, currentPos).ToStdString()));
+        int smartSenseWordStart = wordstartpos;
+
+        // SmartSense extension: match only methods
+        if (m_options->getSetting(SETTING_B_SMARTSENSE).active() && GetCharAt(wordstartpos-1) == '.')
+            smartSenseWordStart--;
+
+        sAutoCompList = generateAutoCompList(smartSenseWordStart, currentPos,
+                                             _syntax->getAutoCompList(GetTextRange(smartSenseWordStart, currentPos).ToStdString(),
+                                                                      m_options->getSetting(SETTING_B_SMARTSENSE).active()));
 
         if (sAutoCompList.length())
-            this->AutoCompShow(lenEntered, sAutoCompList);
+            AutoCompShow(lenEntered, sAutoCompList);
     }
     else if (lenEntered > 1
              && m_fileType == FILE_MATLAB
-             && GetStyleAt(wordstartpos) != wxSTC_MATLAB_COMMENT
-             && GetStyleAt(wordstartpos) != wxSTC_MATLAB_STRING)
+             && !isStyleType(STYLE_COMMENT, wordstartpos)
+             && !isStyleType(STYLE_STRING, wordstartpos))
     {
-        this->AutoCompSetIgnoreCase(true);
-        this->AutoCompSetCaseInsensitiveBehaviour(wxSTC_CASEINSENSITIVEBEHAVIOUR_IGNORECASE);
-        wxString sAutoCompList = generateAutoCompList(GetTextRange(wordstartpos, currentPos), _syntax->getAutoCompListMATLAB(GetTextRange(wordstartpos, currentPos).ToStdString()));
-
-        if (sAutoCompList.length())
-            this->AutoCompShow(lenEntered, sAutoCompList);
+        sAutoCompList = generateAutoCompList(wordstartpos, currentPos,
+                                             _syntax->getAutoCompListMATLAB(GetTextRange(wordstartpos, currentPos).ToStdString()));
     }
     else if (lenEntered > 1
              && m_fileType == FILE_CPP
-             && GetStyleAt(wordstartpos) != wxSTC_C_COMMENT
-             && GetStyleAt(wordstartpos) != wxSTC_C_COMMENTLINE
-             && GetStyleAt(wordstartpos) != wxSTC_C_STRING)
+             && !isStyleType(STYLE_COMMENT, wordstartpos)
+             && !isStyleType(STYLE_STRING, wordstartpos))
     {
-        this->AutoCompSetIgnoreCase(true);
-        this->AutoCompSetCaseInsensitiveBehaviour(wxSTC_CASEINSENSITIVEBEHAVIOUR_IGNORECASE);
-        wxString sAutoCompList = generateAutoCompList(GetTextRange(wordstartpos, currentPos), _syntax->getAutoCompListCPP(GetTextRange(wordstartpos, currentPos).ToStdString()));
-
-        if (sAutoCompList.length())
-            this->AutoCompShow(lenEntered, sAutoCompList);
+        sAutoCompList = generateAutoCompList(wordstartpos, currentPos,
+                                             _syntax->getAutoCompListCPP(GetTextRange(wordstartpos, currentPos).ToStdString()));
     }
     else if (lenEntered > 1
              && (m_fileType == FILE_NSCR || m_fileType == FILE_NPRC)
@@ -810,7 +825,10 @@ void NumeReEditor::OnChar( wxStyledTextEvent& event )
         }
         // If namespace == "thisfile~" then search for all procedures in the current file and use them as the
         // autocompletion list entries
-        else if (sNamespace == "thisfile" || sNamespace == "thisfile~" || sSelectedNamespace == "thisfile" || sSelectedNamespace == "thisfile~")
+        else if (sNamespace == "thisfile"
+                 || sNamespace == "thisfile~"
+                 || sSelectedNamespace == "thisfile"
+                 || sSelectedNamespace == "thisfile~")
         {
             this->AutoCompSetIgnoreCase(true);
             this->AutoCompSetCaseInsensitiveBehaviour(wxSTC_CASEINSENSITIVEBEHAVIOUR_IGNORECASE);
@@ -825,28 +843,23 @@ void NumeReEditor::OnChar( wxStyledTextEvent& event )
         else if (sSelectedNamespace == "main" || sSelectedNamespace == "main~" || sSelectedNamespace == "~")
             sSelectedNamespace = "";
 
-        this->AutoCompSetIgnoreCase(true);
-        this->AutoCompSetCaseInsensitiveBehaviour(wxSTC_CASEINSENSITIVEBEHAVIOUR_IGNORECASE);
-        this->AutoCompShow(lenEntered, _syntax->getProcAutoCompList(GetTextRange(wordstartpos, currentPos).ToStdString(), sNamespace.ToStdString(), sSelectedNamespace.ToStdString()));
-    }
-    else if (lenEntered > 1 && m_fileType == FILE_TEXSOURCE && GetStyleAt(wordstartpos) == wxSTC_TEX_COMMAND)
-    {
-        this->AutoCompSetIgnoreCase(true);
-        this->AutoCompSetCaseInsensitiveBehaviour(wxSTC_CASEINSENSITIVEBEHAVIOUR_IGNORECASE);
-        wxString sAutoCompList = generateAutoCompList(GetTextRange(wordstartpos, currentPos), _syntax->getAutoCompListTeX(GetTextRange(wordstartpos, currentPos).ToStdString()));
-
-        if (sAutoCompList.length())
-            this->AutoCompShow(lenEntered, sAutoCompList);
+        sAutoCompList = _syntax->getProcAutoCompList(GetTextRange(wordstartpos, currentPos).ToStdString(),
+                                                     sNamespace.ToStdString(), sSelectedNamespace.ToStdString());
     }
     else if (lenEntered > 1
-             && !(m_fileType == FILE_NSCR || m_fileType == FILE_NPRC))
+             && m_fileType == FILE_TEXSOURCE
+             && GetStyleAt(wordstartpos) == wxSTC_TEX_COMMAND)
     {
-        this->AutoCompSetIgnoreCase(true);
-        this->AutoCompSetCaseInsensitiveBehaviour(wxSTC_CASEINSENSITIVEBEHAVIOUR_IGNORECASE);
-        this->AutoCompShow(lenEntered, generateAutoCompList(GetTextRange(wordstartpos, currentPos), ""));
+        sAutoCompList = generateAutoCompList(wordstartpos, currentPos,
+                                             _syntax->getAutoCompListTeX(GetTextRange(wordstartpos, currentPos).ToStdString()));
     }
+    else if (lenEntered > 1)
+        sAutoCompList = generateAutoCompList(wordstartpos, currentPos, "");
 
-    this->Colourise(0, -1);
+    if (sAutoCompList.length())
+        AutoCompShow(lenEntered, sAutoCompList);
+
+    Colourise(0, -1);
 
     event.Skip();
 }
@@ -1359,7 +1372,9 @@ void NumeReEditor::OnKeyDn(wxKeyEvent& event)
             char chr = event.GetKeyCode();
             if (event.ShiftDown() && chr == '9')
             {
-                if (!isStyleType(STYLE_STRING, GetCurrentPos()) && GetCharAt(GetCurrentPos()) == ')' && BraceMatch(GetCurrentPos()) != wxSTC_INVALID_POSITION)
+                if (!isStyleType(STYLE_STRING, GetCurrentPos())
+                    && GetCharAt(GetCurrentPos()) == ')'
+                    && BraceMatch(GetCurrentPos()) != wxSTC_INVALID_POSITION)
                 {
                     GotoPos(GetCurrentPos()+1);
                     return;
@@ -1367,7 +1382,9 @@ void NumeReEditor::OnKeyDn(wxKeyEvent& event)
             }
             else if (event.ShiftDown() && chr == '2')
             {
-                if (isStyleType(STYLE_STRING, GetCurrentPos()-1) && GetCharAt(GetCurrentPos()) == '"' && GetCharAt(GetCurrentPos()-1) != '\\')
+                if (isStyleType(STYLE_STRING, GetCurrentPos()-1)
+                    && GetCharAt(GetCurrentPos()) == '"'
+                    && GetCharAt(GetCurrentPos()-1) != '\\')
                 {
                     GotoPos(GetCurrentPos()+1);
                     return;
@@ -1375,7 +1392,9 @@ void NumeReEditor::OnKeyDn(wxKeyEvent& event)
             }
             else if (event.ControlDown() && event.AltDown() && chr == '9') // Alt Gr means CTRL+ALT
             {
-                if (!isStyleType(STYLE_STRING, GetCurrentPos()) && GetCharAt(GetCurrentPos()) == ']' && BraceMatch(GetCurrentPos()) != wxSTC_INVALID_POSITION)
+                if (!isStyleType(STYLE_STRING, GetCurrentPos())
+                    && GetCharAt(GetCurrentPos()) == ']'
+                    && BraceMatch(GetCurrentPos()) != wxSTC_INVALID_POSITION)
                 {
                     GotoPos(GetCurrentPos()+1);
                     return;
@@ -1383,7 +1402,9 @@ void NumeReEditor::OnKeyDn(wxKeyEvent& event)
             }
             else if (event.ControlDown() && event.AltDown() && chr == '0')
             {
-                if (!isStyleType(STYLE_STRING, GetCurrentPos()) && GetCharAt(GetCurrentPos()) == '}' && BraceMatch(GetCurrentPos()) != wxSTC_INVALID_POSITION)
+                if (!isStyleType(STYLE_STRING, GetCurrentPos())
+                    && GetCharAt(GetCurrentPos()) == '}'
+                    && BraceMatch(GetCurrentPos()) != wxSTC_INVALID_POSITION)
                 {
                     GotoPos(GetCurrentPos()+1);
                     return;
@@ -1395,7 +1416,9 @@ void NumeReEditor::OnKeyDn(wxKeyEvent& event)
     // If the autocompletion dialog is open, we want the HOME and END
     // keys to automatically close it. Otherwise they are used
     // to navigate in the autocompletion list
-    if (AutoCompActive() && m_options->isEnabled(SETTING_B_HOMEENDCANCELS) && (event.GetKeyCode() == WXK_END || event.GetKeyCode() == WXK_HOME))
+    if (AutoCompActive()
+        && m_options->isEnabled(SETTING_B_HOMEENDCANCELS)
+        && (event.GetKeyCode() == WXK_END || event.GetKeyCode() == WXK_HOME))
         AutoCompCancel();
 
     // Pass the control to the internal OnKeyDown event
@@ -1850,8 +1873,25 @@ void NumeReEditor::OnAutoCompletion(wxStyledTextEvent& event)
     {
         // Ensure that there's actually a need for a new
         // parenthesis and insert a closed pair
-        if (m_options->getSetting(SETTING_B_BRACEAUTOCOMP).active() && (GetCharAt(GetCurrentPos()) != '(' || BraceMatch(GetCurrentPos()) == wxSTC_INVALID_POSITION))
+        if (m_options->getSetting(SETTING_B_BRACEAUTOCOMP).active()
+            && (GetCharAt(GetCurrentPos()) != '(' || BraceMatch(GetCurrentPos()) == wxSTC_INVALID_POSITION))
             InsertText(GetCurrentPos(), "()");
+
+        // Replace the current text with the function's
+        // name without the parenthesis
+        Replace(event.GetPosition(), GetCurrentPos(), event.GetText().substr(0, event.GetText().length()-1));
+
+        // Jump into the parenthesis
+        GotoPos(event.GetPosition() + event.GetText().length() - !m_options->getSetting(SETTING_B_BRACEAUTOCOMP).active());
+        AutoCompCancel();
+    }
+    else if (event.GetText()[event.GetText().length()-1] == '{')
+    {
+        // Ensure that there's actually a need for a new
+        // parenthesis and insert a closed pair
+        if (m_options->getSetting(SETTING_B_BRACEAUTOCOMP).active()
+            && (GetCharAt(GetCurrentPos()) != '{' || BraceMatch(GetCurrentPos()) == wxSTC_INVALID_POSITION))
+            InsertText(GetCurrentPos(), "{}");
 
         // Replace the current text with the function's
         // name without the parenthesis
@@ -3818,7 +3858,8 @@ void NumeReEditor::UpdateIndicators()
     // Indicator for highlighting local
     // variables
     IndicatorSetStyle(HIGHLIGHT_LOCALVARIABLES, wxSTC_INDIC_DOTS);
-    IndicatorSetForeground(HIGHLIGHT_LOCALVARIABLES, *wxBLACK);
+    IndicatorSetForeground(HIGHLIGHT_LOCALVARIABLES, wxColour(0, 0, 255));
+//    IndicatorSetForeground(HIGHLIGHT_LOCALVARIABLES, wxColour(255, 128, 128));
 
     // Indicators for highlighting differences in
     // the duplicated code analysis
@@ -4318,8 +4359,6 @@ void NumeReEditor::OnEditorModified(wxStyledTextEvent& event)
             this->markModified(nLine);
         else
             this->markModified(nLine);
-
-        //m_analyzerTimer->StartOnce(500);
     }
 
     event.Skip();
@@ -4405,15 +4444,15 @@ void NumeReEditor::markSections(bool bForceRefresh)
             if (isStyleType(STYLE_COMMENT_SECTION_LINE, GetLineIndentPosition(i))
                 || isStyleType(STYLE_COMMENT_SECTION_BLOCK, GetLineIndentPosition(i)))
             {
-                if (!this->MarkerOnLine(i, MARKER_SECTION))
-                    this->MarkerAdd(i, MARKER_SECTION);
+                if (!MarkerOnLine(i, MARKER_SECTION))
+                    MarkerAdd(i, MARKER_SECTION);
 
                 while (isStyleType(STYLE_COMMENT_SECTION_LINE, GetLineIndentPosition(i+1))
-                    || isStyleType(STYLE_COMMENT_SECTION_BLOCK, GetLineIndentPosition(i+1)))
+                       || isStyleType(STYLE_COMMENT_SECTION_BLOCK, GetLineIndentPosition(i+1)))
                     i++;
             }
-            else if (this->MarkerOnLine(i, MARKER_SECTION))
-                this->MarkerDelete(i, MARKER_SECTION);
+            else if (MarkerOnLine(i, MARKER_SECTION))
+                MarkerDelete(i, MARKER_SECTION);
         }
     }
 
@@ -4424,32 +4463,32 @@ void NumeReEditor::markSections(bool bForceRefresh)
         // the examination range and add markers to them
         for (int i = startline; i < endline; i++)
         {
-            for (int j = this->PositionFromLine(i); j < this->GetLineEndPosition(i) + 1; j++)
+            for (int j = PositionFromLine(i); j < GetLineEndPosition(i) + 1; j++)
             {
-                if (this->GetCharAt(j) == ' ' || this->GetCharAt(j) == '\t')
+                if (GetCharAt(j) == ' ' || GetCharAt(j) == '\t')
                     continue;
 
-                if (this->GetStyleAt(j) == wxSTC_TEX_COMMAND)
+                if (GetStyleAt(j) == wxSTC_TEX_COMMAND)
                 {
-                    int wordstart = this->WordStartPosition(j, false);
-                    int wordend = this->WordEndPosition(j, false);
+                    int wordstart = WordStartPosition(j, false);
+                    int wordend = WordEndPosition(j, false);
 
-                    wxString word = this->GetTextRange(wordstart, wordend);
+                    wxString word = GetTextRange(wordstart, wordend);
 
                     if (word == "maketitle"
-                            || word == "part"
-                            || word == "chapter"
-                            || word == "section"
-                            || word == "subsection"
-                            || word == "subsubsection"
-                            || word == "subsubsubsection"
-                            || word == "paragraph"
-                            || word == "subparagraph"
-                            || word == "addchap"
-                            || word == "addsec")
+                        || word == "part"
+                        || word == "chapter"
+                        || word == "section"
+                        || word == "subsection"
+                        || word == "subsubsection"
+                        || word == "subsubsubsection"
+                        || word == "paragraph"
+                        || word == "subparagraph"
+                        || word == "addchap"
+                        || word == "addsec")
                     {
-                        if (!this->MarkerOnLine(i, MARKER_SECTION))
-                            this->MarkerAdd(i, MARKER_SECTION);
+                        if (!MarkerOnLine(i, MARKER_SECTION))
+                            MarkerAdd(i, MARKER_SECTION);
                     }
 
                     j = wordend;
@@ -4459,7 +4498,7 @@ void NumeReEditor::markSections(bool bForceRefresh)
     }
 
     // Text file with advanced highlighting?
-    if (m_fileType == FILE_NONSOURCE && this->getEditorSetting(SETTING_USETXTADV))
+    if (m_fileType == FILE_NONSOURCE && getEditorSetting(SETTING_USETXTADV))
     {
         // Search for all headlines in the document and
         // add markers to them
@@ -4499,16 +4538,18 @@ void NumeReEditor::markSections(bool bForceRefresh)
 /////////////////////////////////////////////////
 void NumeReEditor::markLocalVariables(bool bForceRefresh)
 {
-    if (m_fileType != FILE_NPRC || !m_options->GetHighlightLocalVariables())
-        return;
-
     SetIndicatorCurrent(HIGHLIGHT_LOCALVARIABLES);
 
     // We clean everything, if need to refresh the indicators
     if (bForceRefresh)
         IndicatorClearRange(0, GetLastPosition());
-    else if (GetStyleAt(GetLineIndentPosition(GetCurrentLine())) != wxSTC_NPRC_COMMAND)
+
+    if (m_fileType != FILE_NPRC || !m_options->GetHighlightLocalVariables())
         return;
+
+    std::pair<int,int> context = getCurrentContext(GetCurrentLine());
+    IndicatorClearRange(PositionFromLine(context.first),
+                        GetLineEndPosition(context.second) - PositionFromLine(context.first));
 
     // Run the algorithm for every possible local variable declarator
     markLocalVariableOfType("var", bForceRefresh);
@@ -4533,24 +4574,32 @@ void NumeReEditor::markLocalVariables(bool bForceRefresh)
 /////////////////////////////////////////////////
 void NumeReEditor::markLocalVariableOfType(const wxString& command, bool bForceRefresh)
 {
-    vector<int> matches;
+    std::vector<int> matches;
+    std::pair<int, int> context = std::make_pair(0, GetLineCount());
 
     // Find the occurences of the variable declaration commands
     // in the corresponding scope
     if (!bForceRefresh)
     {
-        matches = m_search->FindAll(command, wxSTC_NPRC_COMMAND, PositionFromLine(GetCurrentLine()), GetLineEndPosition(GetCurrentLine()), false);
-
-        if (matches.size())
-            IndicatorClearRange(PositionFromLine(GetCurrentLine()), GetLineEndPosition(GetCurrentLine()));
+        context = getCurrentContext(GetCurrentLine());
+        matches = m_search->FindAll(command,
+                                    wxSTC_NPRC_COMMAND,
+                                    PositionFromLine(context.first),
+                                    GetLineEndPosition(context.second),
+                                    false);
     }
     else
-        matches = m_search->FindAll(command, wxSTC_NPRC_COMMAND, 0, GetLastPosition(), false);
+        matches = m_search->FindAll(command,
+                                    wxSTC_NPRC_COMMAND,
+                                    0,
+                                    GetLastPosition(),
+                                    false);
 
     // Run through all found occurences and extract the definitions
     // of the local variables
     for (size_t i = 0; i < matches.size(); i++)
     {
+        context = getCurrentContext(LineFromPosition(i));
         wxString line = GetTextRange(matches[i]+command.length(), GetLineEndPosition(LineFromPosition(matches[i])));
         int nPos = line.find_first_not_of(' ') + matches[i] + command.length();
 
@@ -4560,9 +4609,24 @@ void NumeReEditor::markLocalVariableOfType(const wxString& command, bool bForceR
 
             // If a separator character was found, highlight
             // the current word and find the next candidate
-            if (currentChar == ' ' || currentChar == '=' || currentChar == ',' || currentChar == '\r' || currentChar == '\n')
+            if (currentChar == ' '
+                || currentChar == '='
+                || currentChar == ','
+                || currentChar == '('
+                || currentChar == '{'
+                || currentChar == '\r'
+                || currentChar == '\n')
             {
-                IndicatorFillRange(nPos, j - nPos);
+                std::vector<int> localVars = m_search->FindAll(GetTextRange(nPos, j),
+                                                               GetStyleAt(nPos),
+                                                               nPos,
+                                                               GetLineEndPosition(context.second),
+                                                               false);
+
+                for (int n : localVars)
+                {
+                    IndicatorFillRange(n, j - nPos);
+                }
 
                 if (currentChar == ',')
                 {
@@ -4673,7 +4737,12 @@ void NumeReEditor::AsynchActions()
 
         // if not found -> return
         if (nParentline == wxNOT_FOUND)
-            nParentline = 0;
+        {
+            nParentline = std::max(nLine-10, 0);
+
+            if (GetFoldParent(nParentline) != wxNOT_FOUND)
+                nParentline = GetFoldParent(nParentline);
+        }
 
         ApplyAutoIndentation(nParentline, nLine + 1);
     }
@@ -6002,8 +6071,9 @@ wxString NumeReEditor::getTemplateContent(const wxString& sFileName)
 /// \brief Generates an autocompletion list based
 /// upon the file's contents.
 ///
-/// \param wordstart const wxString&
-/// \param sPreDefList string
+/// \param wordstartpos int
+/// \param currpos int
+/// \param sPreDefList std::string
 /// \return wxString
 ///
 /// The function combines the passed predefined
@@ -6012,11 +6082,11 @@ wxString NumeReEditor::getTemplateContent(const wxString& sFileName)
 /// completion candidates found in the text of the
 /// current file.
 /////////////////////////////////////////////////
-wxString NumeReEditor::generateAutoCompList(const wxString& wordstart, string sPreDefList)
+wxString NumeReEditor::generateAutoCompList(int wordstartpos, int currpos, std::string sPreDefList)
 {
-    map<wxString, int> mAutoCompMap;
+    std::map<wxString, int> mAutoCompMap;
     wxString wReturn = "";
-    string sCurrentWord;
+    std::string sCurrentWord;
 
     // Store the list of predefined values in the map
     if (sPreDefList.length())
@@ -6024,12 +6094,7 @@ wxString NumeReEditor::generateAutoCompList(const wxString& wordstart, string sP
         while (sPreDefList.length())
         {
             sCurrentWord = sPreDefList.substr(0, sPreDefList.find(' '));
-
-            if (sCurrentWord.find('(') != string::npos)
-                mAutoCompMap[toLowerCase(sCurrentWord.substr(0, sCurrentWord.find('('))) + " |" + sCurrentWord] = -1;
-            else
-                mAutoCompMap[toLowerCase(sCurrentWord.substr(0, sCurrentWord.find('?'))) + " |" + sCurrentWord] = -1;
-
+            mAutoCompMap[toUpperCase(sCurrentWord.substr(0, sCurrentWord.find_first_of("(?"))) + " |" + sCurrentWord] = -1;
             sPreDefList.erase(0, sPreDefList.find(' '));
 
             if (sPreDefList.front() == ' ')
@@ -6037,16 +6102,89 @@ wxString NumeReEditor::generateAutoCompList(const wxString& wordstart, string sP
         }
     }
 
-    unsigned int nPos = 0;
+    bool useSmartSense = m_options->getSetting(SETTING_B_SMARTSENSE).active();
+    bool searchMethod = GetCharAt(wordstartpos) == '.';
+    wxString wordstart = GetTextRange(searchMethod ? wordstartpos+1 : wordstartpos, currpos);
+    std::pair<int, int> context = std::make_pair(0, GetLineCount());
+
+    if (useSmartSense)
+        context = getCurrentContext(LineFromPosition(currpos));
+
+    unsigned int nPos = PositionFromLine(context.first);
+    bool findAll = !useSmartSense
+                || isStyleType(STYLE_COMMENT, wordstartpos)
+                || isStyleType(STYLE_STRING, wordstartpos);
+
+    int searchFlags = wxSTC_FIND_WORDSTART;
+
+    // If we use SmartSense, then we'll using RegEx and also
+    // accept leading underscores as possible matches
+    if (useSmartSense && !searchMethod)
+    {
+        wordstart.insert(0, "\\<_*");
+        searchFlags = wxSTC_FIND_REGEXP;
+    }
 
     // Find every occurence of the current word start
     // and store the possible completions in the map
-    while ((nPos = this->FindText(nPos, this->GetLastPosition(), wordstart, wxSTC_FIND_WORDSTART)) != string::npos)
+    while ((nPos = FindText(nPos, GetLineEndPosition(context.second), wordstart, searchFlags)) != std::string::npos)
     {
-        if (nPos > (size_t)this->GetCurrentPos() || WordEndPosition(nPos + 1, true) < this->GetCurrentPos())
-            mAutoCompMap[toLowerCase(this->GetTextRange(nPos, WordEndPosition(nPos + 1, true)).ToStdString()) + " |" + this->GetTextRange(nPos, WordEndPosition(nPos + 1, true))] = 1;
+        if ((nPos > (size_t)GetCurrentPos() || WordEndPosition(nPos + 1, true) < GetCurrentPos())
+            && (int)nPos == WordStartPosition(nPos, true)
+            && (findAll
+                || (!isStyleType(STYLE_COMMENT, nPos) && !isStyleType(STYLE_STRING, nPos))
+                || (searchMethod && GetCharAt(nPos-1) == '.')))
+        {
+            wxString sMatch = GetTextRange(nPos, WordEndPosition(nPos + 1, true));
+            wxString sFillUp;
+
+            // Append the needed opening parentheses, if the completed
+            // objects are data objects or functions
+            if (isStyleType(STYLE_CUSTOMFUNCTION, nPos))
+                sFillUp = "(?" + toString((int)NumeReSyntax::SYNTAX_TABLE);
+            else if (isStyleType(STYLE_DATAOBJECT, nPos))
+                sFillUp = "{?" + toString((int)NumeReSyntax::SYNTAX_CLUSTER);
+            else if (isStyleType(STYLE_IDENTIFIER, nPos))
+                sFillUp = "?" + toString((int)NumeReSyntax::SYNTAX_STD);
+
+            mAutoCompMap[toUpperCase(sMatch.ToStdString()) + " |" + sMatch+sFillUp] = 1;
+        }
 
         nPos++;
+    }
+
+    // Get all declares if we do not start on the first line
+    if (useSmartSense && context.first != 0 && !searchMethod)
+    {
+        // Find the declares in front of the current autocompletion part
+        std::vector<int> vMatches = m_search->FindAll("declare", wxSTC_NSCR_COMMAND, 0, PositionFromLine(context.first), false);
+
+        for (int pos : vMatches)
+        {
+            int lineEnd = GetLineEndPosition(LineFromPosition(pos));
+
+            // Find every occurence of the current word start
+            // and store the possible completions in the map
+            while ((pos = FindText(pos, lineEnd, wordstart, searchFlags)) != wxNOT_FOUND)
+            {
+                if ((int)nPos == WordStartPosition(nPos, true)
+                    && (findAll || (!isStyleType(STYLE_COMMENT, pos) && !isStyleType(STYLE_STRING, pos))))
+                {
+                    wxString sMatch = GetTextRange(pos, WordEndPosition(pos + 1, true));
+
+                    // Append the needed opening parentheses, if the completed
+                    // objects are data objects or functions
+                    if (isStyleType(STYLE_CUSTOMFUNCTION, pos))
+                        sMatch += "(";
+                    else if (isStyleType(STYLE_DATAOBJECT, pos))
+                        sMatch += "{";
+
+                    mAutoCompMap[toUpperCase(sMatch.ToStdString()) + " |" + sMatch] = 1;
+                }
+
+                pos++;
+            }
+        }
     }
 
     // remove duplicates
@@ -6054,7 +6192,7 @@ wxString NumeReEditor::generateAutoCompList(const wxString& wordstart, string sP
     {
         if (iter->second == -1)
         {
-            if ((iter->first).find('(') != string::npos)
+            if ((iter->first).find('(') != std::string::npos)
             {
                 if (mAutoCompMap.find((iter->first).substr(0, (iter->first).find('('))) != mAutoCompMap.end())
                 {
@@ -6074,8 +6212,8 @@ wxString NumeReEditor::generateAutoCompList(const wxString& wordstart, string sP
     }
 
     // Re-combine the autocompletion list
-    for (auto iter = mAutoCompMap.begin(); iter != mAutoCompMap.end(); ++iter)
-        wReturn += (iter->first).substr((iter->first).find('|') + 1) + " ";
+    for (const auto& iter : mAutoCompMap)
+        wReturn += iter.first.substr(iter.first.find('|') + 1) + " ";
 
     return wReturn;
 }
@@ -7655,6 +7793,38 @@ wxString NumeReEditor::getNextToken(int& nPos)
 
 
 /////////////////////////////////////////////////
+/// \brief Returns the start and end line of the
+/// current code context (i.e. the first and the
+/// last line of the current procedure).
+///
+/// \param line int
+/// \return std::pair<int,int>
+///
+/////////////////////////////////////////////////
+std::pair<int,int> NumeReEditor::getCurrentContext(int line)
+{
+    if (m_fileType != FILE_NPRC
+        && m_fileType != FILE_MATLAB
+        && m_fileType != FILE_CPP)
+        return std::make_pair(0, GetLineCount());
+
+    // Try to find the current procedure header
+    while (GetFoldParent(line) != wxNOT_FOUND)
+    {
+        line = GetFoldParent(line);
+    }
+
+    // Try to find the procedure foot
+    std::vector<int> vMatch = BlockMatch(GetLineIndentPosition(line));
+
+    if (vMatch.back() == wxNOT_FOUND)
+        return std::make_pair(line, GetLineCount());
+
+    return std::make_pair(line, LineFromPosition(vMatch.back()));
+}
+
+
+/////////////////////////////////////////////////
 /// \brief Wrapper for \c CodeFormatter.
 ///
 /// \param nFirstLine int
@@ -7683,7 +7853,7 @@ void NumeReEditor::ApplyAutoIndentation(int nFirstLine, int nLastLine)
 /////////////////////////////////////////////////
 bool NumeReEditor::isStyleType(StyleType _type, int nPos)
 {
-    switch (this->getFileType())
+    switch (getFileType())
     {
         case FILE_NSCR:
         case FILE_NPRC:
@@ -7691,40 +7861,46 @@ bool NumeReEditor::isStyleType(StyleType _type, int nPos)
                 switch (_type)
                 {
                     case STYLE_DEFAULT:
-                        return this->GetStyleAt(nPos) == wxSTC_NSCR_DEFAULT;
+                        return GetStyleAt(nPos) == wxSTC_NSCR_DEFAULT;
+                    case STYLE_COMMENT:
+                        return GetStyleAt(nPos) == wxSTC_NSCR_COMMENT_LINE
+                                || GetStyleAt(nPos) == wxSTC_NSCR_DOCCOMMENT_LINE
+                                || GetStyleAt(nPos) == wxSTC_NSCR_COMMENT_BLOCK
+                                || GetStyleAt(nPos) == wxSTC_NSCR_DOCCOMMENT_BLOCK
+                                || GetStyleAt(nPos) == wxSTC_NSCR_DOCKEYWORD;
                     case STYLE_COMMENT_LINE:
-                        return this->GetStyleAt(nPos) == wxSTC_NSCR_COMMENT_LINE
-                                || this->GetStyleAt(nPos) == wxSTC_NSCR_DOCCOMMENT_LINE;
+                        return GetStyleAt(nPos) == wxSTC_NSCR_COMMENT_LINE
+                                || GetStyleAt(nPos) == wxSTC_NSCR_DOCCOMMENT_LINE;
                     case STYLE_COMMENT_BLOCK:
-                        return this->GetStyleAt(nPos) == wxSTC_NSCR_COMMENT_BLOCK
-                                || this->GetStyleAt(nPos) == wxSTC_NSCR_DOCCOMMENT_BLOCK;
+                        return GetStyleAt(nPos) == wxSTC_NSCR_COMMENT_BLOCK
+                                || GetStyleAt(nPos) == wxSTC_NSCR_DOCCOMMENT_BLOCK;
                     case STYLE_COMMENT_SECTION_LINE:
-                        return this->GetStyleAt(nPos) == wxSTC_NSCR_DOCCOMMENT_LINE
-                                || this->GetStyleAt(nPos) == wxSTC_NSCR_DOCKEYWORD;
+                        return GetStyleAt(nPos) == wxSTC_NSCR_DOCCOMMENT_LINE
+                                || GetStyleAt(nPos) == wxSTC_NSCR_DOCKEYWORD;
                     case STYLE_COMMENT_SECTION_BLOCK:
-                        return this->GetStyleAt(nPos) == wxSTC_NSCR_DOCCOMMENT_BLOCK
-                                || this->GetStyleAt(nPos) == wxSTC_NSCR_DOCKEYWORD;
+                        return GetStyleAt(nPos) == wxSTC_NSCR_DOCCOMMENT_BLOCK
+                                || GetStyleAt(nPos) == wxSTC_NSCR_DOCKEYWORD;
                     case STYLE_COMMAND:
-                        return this->GetStyleAt(nPos) == wxSTC_NSCR_COMMAND
-                               || this->GetStyleAt(nPos) == wxSTC_NPRC_COMMAND;
+                        return GetStyleAt(nPos) == wxSTC_NSCR_COMMAND
+                               || GetStyleAt(nPos) == wxSTC_NPRC_COMMAND;
                     case STYLE_FUNCTION:
-                        return this->GetStyleAt(nPos) == wxSTC_NSCR_FUNCTION;
+                        return GetStyleAt(nPos) == wxSTC_NSCR_FUNCTION;
                     case STYLE_CUSTOMFUNCTION:
-                        return this->GetStyleAt(nPos) == wxSTC_NSCR_CUSTOM_FUNCTION;
+                        return GetStyleAt(nPos) == wxSTC_NSCR_CUSTOM_FUNCTION;
                     case STYLE_OPERATOR:
-                        return this->GetStyleAt(nPos) == wxSTC_NSCR_OPERATORS;
+                        return GetStyleAt(nPos) == wxSTC_NSCR_OPERATORS;
                     case STYLE_PROCEDURE:
-                        return this->GetStyleAt(nPos) == wxSTC_NSCR_PROCEDURES;
+                        return GetStyleAt(nPos) == wxSTC_NSCR_PROCEDURES;
                     case STYLE_IDENTIFIER:
-                        return this->GetStyleAt(nPos) == wxSTC_NSCR_IDENTIFIER;
+                        return GetStyleAt(nPos) == wxSTC_NSCR_IDENTIFIER;
                     case STYLE_DATAOBJECT:
-                        return this->GetStyleAt(nPos) == wxSTC_NSCR_CUSTOM_FUNCTION || this->GetStyleAt(nPos) == wxSTC_NSCR_CLUSTER;
+                        return GetStyleAt(nPos) == wxSTC_NSCR_CUSTOM_FUNCTION || GetStyleAt(nPos) == wxSTC_NSCR_CLUSTER;
                     case STYLE_NUMBER:
-                        return this->GetStyleAt(nPos) == wxSTC_NSCR_NUMBERS;
+                        return GetStyleAt(nPos) == wxSTC_NSCR_NUMBERS;
                     case STYLE_STRINGPARSER:
-                        return this->GetStyleAt(nPos) == wxSTC_NSCR_STRING_PARSER;
+                        return GetStyleAt(nPos) == wxSTC_NSCR_STRING_PARSER;
                     case STYLE_STRING:
-                        return this->GetStyleAt(nPos) == wxSTC_NSCR_STRING;
+                        return GetStyleAt(nPos) == wxSTC_NSCR_STRING;
                 }
                 break;
             }
@@ -7733,35 +7909,35 @@ bool NumeReEditor::isStyleType(StyleType _type, int nPos)
                 switch (_type)
                 {
                     case STYLE_DEFAULT:
-                        return this->GetStyleAt(nPos) == wxSTC_MATLAB_DEFAULT;
+                        return GetStyleAt(nPos) == wxSTC_MATLAB_DEFAULT;
+                    case STYLE_COMMENT:
                     case STYLE_COMMENT_LINE:
-                        return this->GetStyleAt(nPos) == wxSTC_MATLAB_COMMENT;
                     case STYLE_COMMENT_BLOCK:
-                        return this->GetStyleAt(nPos) == wxSTC_MATLAB_COMMENT;
+                        return GetStyleAt(nPos) == wxSTC_MATLAB_COMMENT;
                     case STYLE_COMMENT_SECTION_LINE:
-                        return this->GetStyleAt(nPos) == wxSTC_MATLAB_COMMENT && this->GetTextRange(nPos, nPos + 2) == "%%";
+                        return GetStyleAt(nPos) == wxSTC_MATLAB_COMMENT && GetTextRange(nPos, nPos + 2) == "%%";
                     case STYLE_COMMENT_SECTION_BLOCK:
-                        return this->GetStyleAt(nPos) == wxSTC_MATLAB_COMMENT && this->GetTextRange(nPos, nPos + 2) == "%%";
+                        return GetStyleAt(nPos) == wxSTC_MATLAB_COMMENT && GetTextRange(nPos, nPos + 2) == "%%";
                     case STYLE_COMMAND:
-                        return this->GetStyleAt(nPos) == wxSTC_MATLAB_KEYWORD;
+                        return GetStyleAt(nPos) == wxSTC_MATLAB_KEYWORD;
                     case STYLE_FUNCTION:
-                        return this->GetStyleAt(nPos) == wxSTC_MATLAB_FUNCTIONS;
+                        return GetStyleAt(nPos) == wxSTC_MATLAB_FUNCTIONS;
                     case STYLE_CUSTOMFUNCTION:
                         return false;
                     case STYLE_OPERATOR:
-                        return this->GetStyleAt(nPos) == wxSTC_MATLAB_OPERATOR;
+                        return GetStyleAt(nPos) == wxSTC_MATLAB_OPERATOR;
                     case STYLE_PROCEDURE:
                         return false;
                     case STYLE_IDENTIFIER:
-                        return this->GetStyleAt(nPos) == wxSTC_MATLAB_IDENTIFIER;
+                        return GetStyleAt(nPos) == wxSTC_MATLAB_IDENTIFIER;
                     case STYLE_DATAOBJECT:
                         return false;
                     case STYLE_NUMBER:
-                        return this->GetStyleAt(nPos) == wxSTC_MATLAB_NUMBER;
+                        return GetStyleAt(nPos) == wxSTC_MATLAB_NUMBER;
                     case STYLE_STRINGPARSER:
                         return false;
                     case STYLE_STRING:
-                        return this->GetStyleAt(nPos) == wxSTC_MATLAB_STRING;
+                        return GetStyleAt(nPos) == wxSTC_MATLAB_STRING;
                 }
                 break;
             }
@@ -7770,39 +7946,45 @@ bool NumeReEditor::isStyleType(StyleType _type, int nPos)
                 switch (_type)
                 {
                     case STYLE_DEFAULT:
-                        return this->GetStyleAt(nPos) == wxSTC_C_DEFAULT;
+                        return GetStyleAt(nPos) == wxSTC_C_DEFAULT;
+                    case STYLE_COMMENT:
+                        return GetStyleAt(nPos) == wxSTC_C_COMMENTLINE
+                                || GetStyleAt(nPos) == wxSTC_C_COMMENT
+                                || GetStyleAt(nPos) == wxSTC_C_COMMENTDOC
+                                || GetStyleAt(nPos) == wxSTC_C_COMMENTLINEDOC
+                                || GetStyleAt(nPos) == wxSTC_C_COMMENTDOCKEYWORD;
                     case STYLE_COMMENT_LINE:
-                        return this->GetStyleAt(nPos) == wxSTC_C_COMMENTLINE
-                                    || this->GetStyleAt(nPos) == wxSTC_C_COMMENTLINEDOC;
+                        return GetStyleAt(nPos) == wxSTC_C_COMMENTLINE
+                                || GetStyleAt(nPos) == wxSTC_C_COMMENTLINEDOC;
                     case STYLE_COMMENT_BLOCK:
-                        return this->GetStyleAt(nPos) == wxSTC_C_COMMENT
-                                    || this->GetStyleAt(nPos) == wxSTC_C_COMMENTDOC;
+                        return GetStyleAt(nPos) == wxSTC_C_COMMENT
+                                || GetStyleAt(nPos) == wxSTC_C_COMMENTDOC;
                     case STYLE_COMMENT_SECTION_LINE:
-                        return this->GetStyleAt(nPos) == wxSTC_C_COMMENTLINEDOC
-                               || this->GetStyleAt(nPos) == wxSTC_C_COMMENTDOCKEYWORD;
+                        return GetStyleAt(nPos) == wxSTC_C_COMMENTLINEDOC
+                               || GetStyleAt(nPos) == wxSTC_C_COMMENTDOCKEYWORD;
                     case STYLE_COMMENT_SECTION_BLOCK:
-                        return this->GetStyleAt(nPos) == wxSTC_C_COMMENTDOC
-                               || this->GetStyleAt(nPos) == wxSTC_C_COMMENTDOCKEYWORD;
+                        return GetStyleAt(nPos) == wxSTC_C_COMMENTDOC
+                               || GetStyleAt(nPos) == wxSTC_C_COMMENTDOCKEYWORD;
                     case STYLE_COMMAND:
-                        return this->GetStyleAt(nPos) == wxSTC_C_WORD;
+                        return GetStyleAt(nPos) == wxSTC_C_WORD;
                     case STYLE_FUNCTION:
-                        return this->GetStyleAt(nPos) == wxSTC_C_WORD2;
+                        return GetStyleAt(nPos) == wxSTC_C_WORD2;
                     case STYLE_CUSTOMFUNCTION:
                         return false;
                     case STYLE_OPERATOR:
-                        return this->GetStyleAt(nPos) == wxSTC_C_OPERATOR;
+                        return GetStyleAt(nPos) == wxSTC_C_OPERATOR;
                     case STYLE_PROCEDURE:
                         return false;
                     case STYLE_IDENTIFIER:
-                        return this->GetStyleAt(nPos) == wxSTC_C_IDENTIFIER;
+                        return GetStyleAt(nPos) == wxSTC_C_IDENTIFIER;
                     case STYLE_DATAOBJECT:
                         return false;
                     case STYLE_NUMBER:
-                        return this->GetStyleAt(nPos) == wxSTC_C_NUMBER;
+                        return GetStyleAt(nPos) == wxSTC_C_NUMBER;
                     case STYLE_STRINGPARSER:
                         return false;
                     case STYLE_STRING:
-                        return this->GetStyleAt(nPos) == wxSTC_C_STRING;
+                        return GetStyleAt(nPos) == wxSTC_C_STRING;
                 }
                 break;
             }

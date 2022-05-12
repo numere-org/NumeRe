@@ -18,14 +18,58 @@
 
 #include "viewerbook.hpp"
 
-BEGIN_EVENT_TABLE(ViewerBook, wxNotebook)
-//    EVT_ENTER_WINDOW(ViewerBook::OnEnter)
+BEGIN_EVENT_TABLE(ViewerBook, wxAuiNotebook)
+	EVT_AUINOTEBOOK_DRAG_MOTION     (-1, ViewerBook::OnTabMove)
 END_EVENT_TABLE()
 
-void ViewerBook::OnEnter(wxMouseEvent& event)
+
+/////////////////////////////////////////////////
+/// \brief This event handler fixes the issue
+/// that the control does not correctly update
+/// the selected page during moving a page.
+///
+/// \param event wxAuiNotebookEvent&
+/// \return void
+///
+/////////////////////////////////////////////////
+void ViewerBook::OnTabMove(wxAuiNotebookEvent& event)
 {
-    if (!m_skipFocus)
-        this->SetFocus();
+    int tab = GetTabFromPoint(wxGetMousePosition());
+
+    if (tab != wxNOT_FOUND)
+        ChangeSelection(tab);
+
     event.Skip();
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Returns the tab at the defined
+/// absolute coordinates. Actually more or less
+/// the same than the generic HitTest() member
+/// functions.
+///
+/// \param pt const wxPoint&
+/// \return int
+///
+/////////////////////////////////////////////////
+int ViewerBook::GetTabFromPoint(const wxPoint& pt)
+{
+    wxPoint client_pt = ScreenToClient(pt);
+    wxAuiTabCtrl* tabCtrl = GetTabCtrlFromPoint(client_pt);
+
+    if (!tabCtrl)
+    {
+        return wxNOT_FOUND;
+    }
+
+    wxPoint tl = tabCtrl->GetScreenRect().GetTopLeft();
+    wxWindow* win;
+    bool success = tabCtrl->TabHitTest(pt.x-tl.x, pt.y-tl.y, &win);
+
+	if (!success)
+        return wxNOT_FOUND;
+
+	return m_tabs.GetIdxFromWindow(win);
 }
 

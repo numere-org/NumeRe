@@ -337,6 +337,7 @@ namespace NumeRe
             std::vector<std::string> getStringArray() const;
             void setStringArray(const std::vector<std::string>& sVals);
 
+            std::vector<std::string> to_string() const;
             std::string getVectorRepresentation() const;
             std::string getShortVectorRepresentation() const;
 

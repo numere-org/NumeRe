@@ -965,7 +965,7 @@ static void handleMafDataAccess(string& sLine, const string& sMafAccess, Parser&
 /// \param _parser Parser&
 /// \return string
 ///
-/// Pass 'DATA().FNC().cols().lines().grid().every(a,b)'
+/// Pass 'DATA().FNC().cols().rows().grid().every(a,b)'
 /////////////////////////////////////////////////
 static string createMafDataAccessString(const string& sAccessString, Parser& _parser)
 {
@@ -976,6 +976,8 @@ static string createMafDataAccessString(const string& sAccessString, Parser& _pa
 	if (sAccessString.find(".cols") != string::npos)
 		sDataMaf += "cols";
 	if (sAccessString.find(".lines") != string::npos)
+		sDataMaf += "lines";
+	if (sAccessString.find(".rows") != string::npos)
 		sDataMaf += "lines";
 	if (sAccessString.find(".every(") != string::npos)
 		sDataMaf += createEveryDefinition(sAccessString, _parser);

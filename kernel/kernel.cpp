@@ -271,6 +271,7 @@ void NumeReKernel::StartUp(NumeReTerminal* _parent, const std::string& __sPath, 
 
     // Declare the table dimension variables
     _parser.DefineVar("nlines", &_memoryManager.tableLinesCount);
+    _parser.DefineVar("nrows", &_memoryManager.tableLinesCount);
     _parser.DefineVar("ncols", &_memoryManager.tableColumnsCount);
     _parser.DefineVar("nlen", &_memoryManager.dClusterElementsCount);
 
@@ -2910,6 +2911,23 @@ void NumeReKernel::sendErrorNotification()
 
 
 /////////////////////////////////////////////////
+/// \brief Simple static helper function to
+/// render the actual progress bar.
+///
+/// \param nValue int
+/// \param nLength size_t
+/// \param sProgressChar const std::string&
+/// \param sWhitespaceChar const std::string&
+/// \return std::string
+///
+/////////////////////////////////////////////////
+static std::string drawBar(int nValue, size_t nLength, const std::string& sProgressChar, const std::string& sWhitespaceChar)
+{
+    return "[" + strfill(sProgressChar, nValue, sProgressChar[0]) + strfill(sWhitespaceChar, nLength - nValue, sWhitespaceChar[0]) + "]";
+}
+
+
+/////////////////////////////////////////////////
 /// \brief This function displays a progress bar
 /// constructed from characters in the terminal.
 ///
@@ -2925,106 +2943,122 @@ void NumeReKernel::progressBar(int nStep, int nFirstStep, int nFinalStep, const 
     int nStatusVal = 0;
     const int BARLENGTH = 40;
     const double BARDIVISOR = 2.5;
+    int nDistance = std::abs(nFinalStep - nFirstStep);
+    double dRatio = std::abs(nStep - nFirstStep) / (double)nDistance; // 0-1
 
-    if (abs(nFinalStep - nFirstStep) < 9999
-        && abs((nStep - nFirstStep) / (double)(nFinalStep - nFirstStep) * BARLENGTH)
-        > abs((nStep - 1 - nFirstStep) / (double)(nFinalStep - nFirstStep) * BARLENGTH))
-    {
-        nStatusVal = abs((int)((nStep - nFirstStep) / (double)(nFinalStep - nFirstStep) * BARLENGTH)) * BARDIVISOR;
-    }
-    else if (abs(nFinalStep - nFirstStep) >= 9999
-        && abs((nStep - nFirstStep) / (double)(nFinalStep - nFirstStep) * 100)
-        > abs((nStep - 1 - nFirstStep) / (double)(nFinalStep - nFirstStep) * 100))
-    {
-        nStatusVal = abs((int)((nStep - nFirstStep) / (double)(nFinalStep - nFirstStep) * 100));
-    }
+    // Calculate the current status val in percent depending
+    // on the number of elements
+    if (nDistance < 9999
+        && dRatio * BARLENGTH > std::abs((nStep - 1 - nFirstStep) / (double)nDistance * BARLENGTH))
+        nStatusVal = intCast(dRatio * BARLENGTH) * BARDIVISOR;
+    else if (nDistance >= 9999
+        && dRatio * 100 > std::abs((nStep - 1 - nFirstStep) / (double)nDistance * 100))
+        nStatusVal = intCast(dRatio * 100);
 
+    // Do not update unless explicit necessary
     if (nLastStatusVal >= 0 && nLastStatusVal == nStatusVal && (sType != "cancel" && sType != "bcancel"))
         return;
 
     toggleTableStatus();
 
-    if (nLastLineLength > 0)
-        printPreFmt("\r");
-
+    // Show the progress depending on the selected type
     if (sType == "std")
     {
+        // Only value
         printPreFmt("\r|-> " + _lang.get("COMMON_EVALUATING") + " ... " + toString(nStatusVal) + " %");
         nLastLineLength = 14 + _lang.get("COMMON_EVALUATING").length();
     }
     else if (sType == "cancel")
     {
+        // Cancelation of only value
         printPreFmt("\r|-> " + _lang.get("COMMON_EVALUATING") + " ... " + _lang.get("COMMON_CANCEL"));
         nStep = nFinalStep;
     }
     else if (sType == "bar")
     {
-        printPreFmt("\r|-> [" + strfill("#", (int)(nStatusVal / BARDIVISOR), '#') + strfill(" ", BARLENGTH - (int)(nStatusVal / BARDIVISOR)) + "] (" + toString(nStatusVal) + " %)");
+        // Bar with value
+        printPreFmt("\r|-> " + drawBar(intCast(100*dRatio/BARDIVISOR), BARLENGTH, "#", " ") + " (" + toString(nStatusVal) + " %)");
         nLastLineLength = 14 + BARLENGTH;
     }
     else if (sType == "bcancel")
     {
-        printPreFmt("\r|-> [" + strfill("#", (int)(nLastStatusVal / BARDIVISOR), '#') + strfill(" ", BARLENGTH - (int)(nLastStatusVal / BARDIVISOR)) + "] (--- %)");
+        // Cancelation of bar with value
+        printPreFmt("\r|-> " + drawBar(intCast(nLastStatusVal/BARDIVISOR), BARLENGTH, "#", " ") + " (--- %)");
         nFinalStep = nStep;
     }
     else
     {
         nLastLineLength = 1;
-        printPreFmt("\r|");
 
+        // Create a buffer
+        std::string sLine = "\r|";
+
+        // This is the custom part, where special tokens define
+        // values or bars in different shapes and the remaining
+        // string is printed directly
         for (unsigned int i = 0; i < sType.length(); i++)
         {
+            // Standard bar
             if (sType.substr(i, 5) == "<bar>")
             {
-                printPreFmt("[" + strfill("#", (int)(nStatusVal / BARDIVISOR), '#') + strfill(" ", BARLENGTH - (int)(nStatusVal / BARDIVISOR)) + "]");
+                sLine += drawBar(intCast(100*dRatio/BARDIVISOR), BARLENGTH, "#", " ");
                 i += 4;
                 nLastLineLength += 2 + BARLENGTH;
                 continue;
             }
 
+            // Bar with minus sign as filler
             if (sType.substr(i, 5) == "<Bar>")
             {
-                printPreFmt("[" + strfill("#", (int)(nStatusVal / BARDIVISOR), '#') + strfill("-", BARLENGTH - (int)(nStatusVal / BARDIVISOR), '-') + "]");
+                sLine += drawBar(intCast(100*dRatio/BARDIVISOR), BARLENGTH, "#", "-");
                 i += 4;
                 nLastLineLength += 2 + BARLENGTH;
                 continue;
             }
 
+            // Bar with an equal sign as filler
             if (sType.substr(i, 5) == "<BAR>")
             {
-                printPreFmt("[" + strfill("#", (int)(nStatusVal / BARDIVISOR), '#') + strfill("=", BARLENGTH - (int)(nStatusVal / BARDIVISOR), '=') + "]");
+                sLine += drawBar(intCast(100*dRatio/BARDIVISOR), BARLENGTH, "#", "=");
                 i += 4;
                 nLastLineLength += 2 + BARLENGTH;
                 continue;
             }
 
+            // Only value
             if (sType.substr(i, 5) == "<val>")
             {
-                printPreFmt(toString(nStatusVal));
+                sLine += toString(nStatusVal);
                 i += 4;
                 nLastLineLength += 3;
                 continue;
             }
 
+            // Value with whitespace as filler
             if (sType.substr(i, 5) == "<Val>")
             {
-                printPreFmt(strfill(toString(nStatusVal), 3));
+                sLine += strfill(toString(nStatusVal), 3);
                 i += 4;
                 nLastLineLength += 3;
                 continue;
             }
 
+            // Value with zeroes as filler
             if (sType.substr(i, 5) == "<VAL>")
             {
-                printPreFmt(strfill(toString(nStatusVal), 3, '0'));
+                sLine += strfill(toString(nStatusVal), 3, '0');
                 i += 4;
                 nLastLineLength += 3;
                 continue;
             }
 
-            printPreFmt(sType.substr(i, 1));
+            // Append the remaining part
+            sLine += sType[i];
             nLastLineLength++;
         }
+
+        // Print the line buffer
+        printPreFmt(sLine);
     }
 
     if (nLastStatusVal == 0 || nLastStatusVal != nStatusVal)
