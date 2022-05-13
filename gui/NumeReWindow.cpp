@@ -441,7 +441,7 @@ NumeReWindow::NumeReWindow(const wxString& title, const wxPoint& pos, const wxSi
     m_splitCommandHistory = new wxProportionalSplitterWindow(m_splitEditorOutput, wxID_ANY, 0.75, wxDefaultPosition, wxDefaultSize, wxSP_3DSASH);
 
     // Create the different notebooks
-    m_book = new EditorNotebook(m_splitEditorOutput, ID_NOTEBOOK_ED, wxDefaultPosition, wxDefaultSize);
+    m_book = new EditorNotebook(m_splitEditorOutput, ID_NOTEBOOK_ED, m_iconManager);
     m_book->SetTopParent(this);
     m_noteTerm = new ViewerBook(m_splitCommandHistory, wxID_ANY, wxDefaultPosition, wxDefaultSize);
     m_treeBook = new ViewerBook(m_splitProjectEditor, wxID_ANY, wxDefaultPosition, wxDefaultSize);
@@ -4925,7 +4925,8 @@ void NumeReWindow::EvaluateOptions()
     if (m_debugViewer)
         m_debugViewer->updateSettings();
 
-    m_book->SetShowPathsOnTabs(m_options->GetShowPathOnTabs());
+    m_book->SetShowPathsOrIconsOnTabs(m_options->getSetting(SETTING_B_PATHSONTABS).active(),
+                                      m_options->getSetting(SETTING_B_ICONSONTABS).active());
 
     if (m_book->GetSelection() != wxNOT_FOUND)
         UpdateWindowTitle(m_book->GetPageText(m_book->GetSelection()));
@@ -5047,7 +5048,7 @@ void NumeReWindow::UpdateMenuBar()
     m_menuItems[ID_MENU_LINEWRAP] = menuView->Append(ID_MENU_LINEWRAP, _guilang.get("GUI_MENU_LINEWRAP"), _guilang.get("GUI_MENU_LINEWRAP_TTP"), wxITEM_CHECK);
     m_menuItems[ID_MENU_DISPCTRLCHARS] = menuView->Append(ID_MENU_DISPCTRLCHARS, _guilang.get("GUI_MENU_DISPCTRLCHARS"), _guilang.get("GUI_MENU_DISPCTRLCHARS_TTP"), wxITEM_CHECK);
     m_menuItems[ID_MENU_USETXTADV] = menuView->Append(ID_MENU_USETXTADV, _guilang.get("GUI_MENU_USETXTADV"), _guilang.get("GUI_MENU_USETXTADV_TTP"), wxITEM_CHECK);
-    m_menuItems[ID_MENU_TOGGLE_NOTEBOOK_MULTIROW] = menuView->Append(ID_MENU_TOGGLE_NOTEBOOK_MULTIROW, _guilang.get("GUI_MENU_MULTIROW"), _guilang.get("GUI_MENU_MULTIROW_TTP"), wxITEM_CHECK);
+    //m_menuItems[ID_MENU_TOGGLE_NOTEBOOK_MULTIROW] = menuView->Append(ID_MENU_TOGGLE_NOTEBOOK_MULTIROW, _guilang.get("GUI_MENU_MULTIROW"), _guilang.get("GUI_MENU_MULTIROW_TTP"), wxITEM_CHECK);
     m_menuItems[ID_MENU_USESECTIONS] = menuView->Append(ID_MENU_USESECTIONS, _guilang.get("GUI_MENU_USESECTIONS"), _guilang.get("GUI_MENU_USESECTIONS_TTP"), wxITEM_CHECK);
 
     menuBar->Append(menuView, _guilang.get("GUI_MENU_VIEW"));
@@ -5135,7 +5136,7 @@ void NumeReWindow::UpdateMenuBar()
         m_menuItems[ID_MENU_USEANALYZER]->Check(false);
     }
 
-    m_menuItems[ID_MENU_TOGGLE_NOTEBOOK_MULTIROW]->Check(m_multiRowState);
+    //m_menuItems[ID_MENU_TOGGLE_NOTEBOOK_MULTIROW]->Check(m_multiRowState);
     m_menuItems[ID_MENU_TOGGLE_DEBUGGER]->Check(m_terminal->getKernelSettings().useDebugger());
 
     // Update now the package menu (avoids code duplication)

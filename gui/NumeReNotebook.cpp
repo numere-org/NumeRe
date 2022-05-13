@@ -2,6 +2,7 @@
 #include "NumeReNotebook.h"
 #include "NumeReWindow.h"
 #include "numeredroptarget.hpp"
+#include "IconManager.h"
 
 #include "../common/vcsmanager.hpp"
 #include "editor/editor.h"
@@ -32,17 +33,20 @@ END_EVENT_TABLE()
 ///
 /// \param parent wxWindow*
 /// \param id wxWindowID
+/// \param icons IconManager*
 /// \param pos const wxPoint&
 /// \param size const wxSize&
 /// \param style long
-/// \param name const wxString&
 ///
 /////////////////////////////////////////////////
-EditorNotebook::EditorNotebook(wxWindow* parent, wxWindowID id, const wxPoint& pos, const wxSize& size, long style, const wxString& name) : wxAuiNotebook(parent, id, pos, size, style | wxAUI_NB_DEFAULT_STYLE | wxAUI_NB_WINDOWLIST_BUTTON /*, name*/)
+EditorNotebook::EditorNotebook(wxWindow* parent, wxWindowID id, IconManager* icons, const wxPoint& pos, const wxSize& size, long style) : wxAuiNotebook(parent, id, pos, size, style | wxAUI_NB_DEFAULT_STYLE | wxAUI_NB_WINDOWLIST_BUTTON /*, name*/)
 {
     m_mouseFocus = false;
     m_top_parent = nullptr;
     m_showPathsOnTabs = false;
+    m_showIconsOnTabs = false;
+    m_manager = icons;
+    SetImageList(icons->GetImageList());
 }
 
 
@@ -56,16 +60,18 @@ EditorNotebook::~EditorNotebook()
 
 /////////////////////////////////////////////////
 /// \brief This member function enables/disables
-/// the relative paths on the tab and refreshes
-/// the tab texts automatically.
+/// the relative paths or icons on the tab and
+/// refreshes the tab texts automatically.
 ///
 /// \param showText bool
+/// \param showIcons bool
 /// \return void
 ///
 /////////////////////////////////////////////////
-void EditorNotebook::SetShowPathsOnTabs(bool showText)
+void EditorNotebook::SetShowPathsOrIconsOnTabs(bool showText, bool showIcons)
 {
     m_showPathsOnTabs = showText;
+    m_showIconsOnTabs = showIcons;
 
     for (size_t i = 0; i < GetPageCount(); i++)
     {
@@ -98,6 +104,12 @@ void EditorNotebook::SetTabText(size_t nTab, const wxString& text)
         filetype = _guilang.get("GUI_STATUSBAR_UNKNOWN", toUpperCase(ext));
 
     SetPageToolTip(nTab, path + "\n" + filetype);
+
+    if (m_showIconsOnTabs)
+        SetPageImage(nTab, m_manager->GetIconIndex(ext));
+    else
+        SetPageBitmap(nTab, wxNullBitmap);
+
     std::vector<std::string> vPaths = m_top_parent->getPathDefs();
 
     if (m_showPathsOnTabs)

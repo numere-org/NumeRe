@@ -28,3 +28,6 @@ Cleaned	Added the table method modifier ".rows" and the number of rows variable 
 Applied	If local variables are highlighted, then they are highlighted everywhere in the procedure.
 Applied	Autocompletion now features "SmartSense", which will provide much better autocompletion predictions.
 Added	Variables, clusters and tables also have an icon in the autocompletion list now.
+New	Editor tabs are now draggable, reorderable and can be split into various ways. By dragging a tab to a window screen, a hint will be displayed to indicate a possible splitting location.
+Added	The editor tabs may now also show the file icons for better orientation
+Applied	The tabs of the file tree, the history viewer and the documentation browser have also been updated and can now also be splitted.

@@ -10,6 +10,7 @@
 
 class NumeReWindow;
 class NumeReEditor;
+class IconManager;
 
 /////////////////////////////////////////////////
 /// \brief This class represents the notebook
@@ -19,15 +20,15 @@ class EditorNotebook : public wxAuiNotebook
 {
     public:
         EditorNotebook(wxWindow* parent, wxWindowID id,
-                            const wxPoint& pos = wxDefaultPosition,
-                            const wxSize& size = wxDefaultSize, long style = 0,
-                            const wxString& name = "notebook");
+                       IconManager* icons,
+                       const wxPoint& pos = wxDefaultPosition,
+                       const wxSize& size = wxDefaultSize, long style = 0);
         ~EditorNotebook();
 
         void SetTopParent(NumeReWindow* window)
             {m_top_parent = window;}
 
-        void SetShowPathsOnTabs(bool showText);
+        void SetShowPathsOrIconsOnTabs(bool showText, bool showIcons);
         void SetTabText(size_t nTab, const wxString& text);
         NumeReEditor* createEditor(const wxString& text);
         NumeReEditor* getEditor(size_t pageNum, bool secondary = false);
@@ -55,10 +56,11 @@ class EditorNotebook : public wxAuiNotebook
         int GetTabFromPoint(const wxPoint& pt);
 
     private:
-
+        IconManager* m_manager;
         NumeReWindow* m_top_parent;
         bool m_mouseFocus;
         bool m_showPathsOnTabs;
+        bool m_showIconsOnTabs;
 
 
         DECLARE_EVENT_TABLE()

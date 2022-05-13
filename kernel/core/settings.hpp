@@ -73,6 +73,7 @@
 #define SETTING_B_FLASHTASKBAR        "debugger.flashtaskbar"
 #define SETTING_B_TOOLBARTEXT         "ui.showtoolbartext"
 #define SETTING_B_PATHSONTABS         "ui.showpathsontabs"
+#define SETTING_B_ICONSONTABS         "ui.showiconsontabs"
 #define SETTING_B_PRINTINCOLOR        "print.usecolor"
 #define SETTING_B_PRINTLINENUMBERS    "print.linenumbers"
 #define SETTING_B_SAVESESSION         "save.session"
