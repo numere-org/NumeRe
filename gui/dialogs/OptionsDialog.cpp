@@ -271,6 +271,7 @@ void OptionsDialog::CreateEditorPage()
 
     m_foldDuringLoading = panel->CreateCheckBox(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_FOLD_DURING_LOADING"));
     m_FilePathsInTabs = panel->CreateCheckBox(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_SHOW_FILEPATHS"));
+    m_IconsOnTabs = panel->CreateCheckBox(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_SHOW_ICONS_ON_TABS"));
     m_useTabs = panel->CreateCheckBox(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_USE_TABS"));
     m_lineLengthIndicator = panel->CreateCheckBox(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_SHOW_LINE_LENGTH_INDICATOR"));
     m_caretBlinkTime = panel->CreateSpinControl(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_CARET_BLINK_TIME"), 100, 2000, 500);
@@ -799,6 +800,7 @@ bool OptionsDialog::EvaluateOptions()
     mSettings[SETTING_S_LATEXROOT].stringval() = m_LaTeXRoot->GetValue().ToStdString();
     mSettings[SETTING_B_TOOLBARTEXT].active() = m_showToolbarText->IsChecked();
     mSettings[SETTING_B_PATHSONTABS].active() = m_FilePathsInTabs->IsChecked();
+    mSettings[SETTING_B_ICONSONTABS].active() = m_IconsOnTabs->IsChecked();
     mSettings[SETTING_B_PRINTLINENUMBERS].active() = m_cbPrintLineNumbers->IsChecked();
     mSettings[SETTING_B_SAVESESSION].active() = m_saveSession->IsChecked();
     mSettings[SETTING_B_SAVEBOOKMARKS].active() = m_saveBookmarksInSession->IsChecked();
@@ -865,6 +867,7 @@ void OptionsDialog::InitializeDialog()
 	m_caretBlinkTime->SetValue(mSettings[SETTING_V_CARETBLINKTIME].value());
 	m_showToolbarText->SetValue(mSettings[SETTING_B_TOOLBARTEXT].active());
 	m_FilePathsInTabs->SetValue(mSettings[SETTING_B_PATHSONTABS].active());
+	m_IconsOnTabs->SetValue(mSettings[SETTING_B_ICONSONTABS].active());
 	m_cbPrintLineNumbers->SetValue(mSettings[SETTING_B_PRINTLINENUMBERS].active());
     m_saveSession->SetValue(mSettings[SETTING_B_SAVESESSION].active());
     m_saveBookmarksInSession->SetValue(mSettings[SETTING_B_SAVEBOOKMARKS].active());

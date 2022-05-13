@@ -149,7 +149,8 @@ BEGIN_EVENT_TABLE(NumeReWindow, wxFrame)
 
     EVT_CLOSE						(NumeReWindow::OnClose)
 
-    EVT_NOTEBOOK_PAGE_CHANGED		(ID_NOTEBOOK_ED, NumeReWindow::OnPageChange)
+    //EVT_NOTEBOOK_PAGE_CHANGED		(ID_NOTEBOOK_ED, NumeReWindow::OnPageChange)
+    EVT_AUINOTEBOOK_PAGE_CHANGED	(ID_NOTEBOOK_ED, NumeReWindow::OnPageChange)
 
     EVT_SPLITTER_DCLICK				(ID_SPLITPROJECTEDITOR, NumeReWindow::OnSplitterDoubleClick)
     EVT_SPLITTER_DCLICK				(ID_SPLITEDITOROUTPUT, NumeReWindow::OnSplitterDoubleClick)
@@ -440,10 +441,10 @@ NumeReWindow::NumeReWindow(const wxString& title, const wxPoint& pos, const wxSi
     m_splitCommandHistory = new wxProportionalSplitterWindow(m_splitEditorOutput, wxID_ANY, 0.75, wxDefaultPosition, wxDefaultSize, wxSP_3DSASH);
 
     // Create the different notebooks
-    m_book = new EditorNotebook(m_splitEditorOutput, ID_NOTEBOOK_ED, wxDefaultPosition, wxDefaultSize, wxBORDER_STATIC);
+    m_book = new EditorNotebook(m_splitEditorOutput, ID_NOTEBOOK_ED, m_iconManager);
     m_book->SetTopParent(this);
-    m_noteTerm = new ViewerBook(m_splitCommandHistory, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxBORDER_STATIC);
-    m_treeBook = new ViewerBook(m_splitProjectEditor, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxBORDER_STATIC);
+    m_noteTerm = new ViewerBook(m_splitCommandHistory, wxID_ANY, wxDefaultPosition, wxDefaultSize);
+    m_treeBook = new ViewerBook(m_splitProjectEditor, wxID_ANY, wxDefaultPosition, wxDefaultSize);
 
     // Prepare the application settings
     m_options = new Options();
@@ -2838,6 +2839,7 @@ void NumeReWindow::NewFile(FileFilterType _filetype, const wxString& defaultfile
         edit->EmptyUndoBuffer();
         m_currentPage = m_book->GetPageCount()-1;
         edit->ToggleSettings(settings);
+        m_book->ChangeSelection(m_currentPage);
         m_book->SetSelection(m_currentPage);
     }
     else if (_filetype == FILE_DIFF)
@@ -2862,6 +2864,7 @@ void NumeReWindow::NewFile(FileFilterType _filetype, const wxString& defaultfile
         // Add a new tab for the editor
         m_book->SetTabText(m_currentPage, edit->GetFileNameAndPath());
         edit->ToggleSettings(settings);
+        m_book->ChangeSelection(m_currentPage);
         m_book->SetSelection(m_currentPage);
     }
     else
@@ -3029,6 +3032,7 @@ void NumeReWindow::NewFile(FileFilterType _filetype, const wxString& defaultfile
         // Add a new tab for the editor
         m_book->SetTabText(m_currentPage, edit->GetFileNameAndPath());
         edit->ToggleSettings(settings);
+        m_book->ChangeSelection(m_currentPage);
         m_book->SetSelection(m_currentPage);
     }
 }
@@ -3174,7 +3178,7 @@ void NumeReWindow::PageHasChanged (int pageNr)
         edit = m_book->getEditor(m_currentPage); // might need adaptions for the procedure viewer
         m_book->SetSelection(pageNr);
 
-        if (!m_book->GetMouseFocus())
+        //if (!m_book->GetMouseFocus())
             edit->SetFocus();
     }
     else
@@ -3492,7 +3496,7 @@ int NumeReWindow::GetPageNum(wxFileName fn,  bool compareWholePath, int starting
 ///
 ///  @author Mark Erikson @date 04-22-2004
 //////////////////////////////////////////////////////////////////////////////
-void NumeReWindow::OnPageChange (wxNotebookEvent &WXUNUSED(event))
+void NumeReWindow::OnPageChange (wxAuiNotebookEvent& event)
 {
     if (!m_setSelection)
     {
@@ -4641,16 +4645,14 @@ void NumeReWindow::ToolbarStatusUpdate()
 void NumeReWindow::UpdateStatusBar()
 {
     if (m_statusBar == NULL)
-    {
         return;
-    }
 
     int pageCount = m_book->GetPageCount();
-    if (pageCount < 1 || pageCount <= m_currentPage)
-    {
+
+    if (pageCount < 1)
         return;
-    }
-    wxString tabText = m_book->GetPageText(m_currentPage);
+
+    wxString tabText = m_book->GetPageText(m_book->GetSelection());
     wxString filename;
     wxString filetype;
     std::string sExt = "";
@@ -4923,7 +4925,8 @@ void NumeReWindow::EvaluateOptions()
     if (m_debugViewer)
         m_debugViewer->updateSettings();
 
-    m_book->SetShowPathsOnTabs(m_options->GetShowPathOnTabs());
+    m_book->SetShowPathsOrIconsOnTabs(m_options->getSetting(SETTING_B_PATHSONTABS).active(),
+                                      m_options->getSetting(SETTING_B_ICONSONTABS).active());
 
     if (m_book->GetSelection() != wxNOT_FOUND)
         UpdateWindowTitle(m_book->GetPageText(m_book->GetSelection()));
@@ -5045,7 +5048,7 @@ void NumeReWindow::UpdateMenuBar()
     m_menuItems[ID_MENU_LINEWRAP] = menuView->Append(ID_MENU_LINEWRAP, _guilang.get("GUI_MENU_LINEWRAP"), _guilang.get("GUI_MENU_LINEWRAP_TTP"), wxITEM_CHECK);
     m_menuItems[ID_MENU_DISPCTRLCHARS] = menuView->Append(ID_MENU_DISPCTRLCHARS, _guilang.get("GUI_MENU_DISPCTRLCHARS"), _guilang.get("GUI_MENU_DISPCTRLCHARS_TTP"), wxITEM_CHECK);
     m_menuItems[ID_MENU_USETXTADV] = menuView->Append(ID_MENU_USETXTADV, _guilang.get("GUI_MENU_USETXTADV"), _guilang.get("GUI_MENU_USETXTADV_TTP"), wxITEM_CHECK);
-    m_menuItems[ID_MENU_TOGGLE_NOTEBOOK_MULTIROW] = menuView->Append(ID_MENU_TOGGLE_NOTEBOOK_MULTIROW, _guilang.get("GUI_MENU_MULTIROW"), _guilang.get("GUI_MENU_MULTIROW_TTP"), wxITEM_CHECK);
+    //m_menuItems[ID_MENU_TOGGLE_NOTEBOOK_MULTIROW] = menuView->Append(ID_MENU_TOGGLE_NOTEBOOK_MULTIROW, _guilang.get("GUI_MENU_MULTIROW"), _guilang.get("GUI_MENU_MULTIROW_TTP"), wxITEM_CHECK);
     m_menuItems[ID_MENU_USESECTIONS] = menuView->Append(ID_MENU_USESECTIONS, _guilang.get("GUI_MENU_USESECTIONS"), _guilang.get("GUI_MENU_USESECTIONS_TTP"), wxITEM_CHECK);
 
     menuBar->Append(menuView, _guilang.get("GUI_MENU_VIEW"));
@@ -5133,7 +5136,7 @@ void NumeReWindow::UpdateMenuBar()
         m_menuItems[ID_MENU_USEANALYZER]->Check(false);
     }
 
-    m_menuItems[ID_MENU_TOGGLE_NOTEBOOK_MULTIROW]->Check(m_multiRowState);
+    //m_menuItems[ID_MENU_TOGGLE_NOTEBOOK_MULTIROW]->Check(m_multiRowState);
     m_menuItems[ID_MENU_TOGGLE_DEBUGGER]->Check(m_terminal->getKernelSettings().useDebugger());
 
     // Update now the package menu (avoids code duplication)
@@ -5760,7 +5763,7 @@ wxPrintData* NumeReWindow::setDefaultPrinterSettings()
 //////////////////////////////////////////////////////////////////////////////
 void NumeReWindow::OnTreeItemRightClick(wxTreeEvent& event)
 {
-    if (m_treeBook->GetCurrentPage() == m_filePanel)
+    if (event.GetId() == ID_PROJECTTREE)
     {
         VersionControlSystemManager manager(this);
         wxTreeItemId clickedItem = event.GetItem();
@@ -5865,7 +5868,7 @@ void NumeReWindow::OnTreeItemRightClick(wxTreeEvent& event)
 //////////////////////////////////////////////////////////////////////////////
 void NumeReWindow::OnTreeItemActivated(wxTreeEvent &event)
 {
-    if (m_treeBook->GetCurrentPage() == m_filePanel)
+    if (event.GetId() == ID_PROJECTTREE)
     {
         wxTreeItemId item = event.GetItem();
 
@@ -5938,7 +5941,7 @@ void NumeReWindow::OnTreeItemActivated(wxTreeEvent &event)
 /////////////////////////////////////////////////
 void NumeReWindow::OnTreeItemToolTip(wxTreeEvent& event)
 {
-    if (m_treeBook->GetCurrentPage() == m_functionPanel)
+    if (event.GetId() == ID_FUNCTIONTREE)
     {
         wxTreeItemId item = event.GetItem();
 
@@ -5992,7 +5995,7 @@ void NumeReWindow::OnTreeItemToolTip(wxTreeEvent& event)
 /////////////////////////////////////////////////
 void NumeReWindow::OnTreeDragDrop(wxTreeEvent& event)
 {
-    if (m_treeBook->GetCurrentPage() == m_functionPanel)
+    if (event.GetId() == ID_FUNCTIONTREE)
     {
         wxTreeItemId item = event.GetItem();
         FileNameTreeData* data = static_cast<FileNameTreeData*>(m_functionTree->GetItemData(item));

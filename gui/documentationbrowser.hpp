@@ -23,6 +23,7 @@
 #include <wx/splitter.h>
 #include <wx/notebook.h>
 #include "compositions/viewerframe.hpp"
+#include "compositions/viewerbook.hpp"
 #include "IconManager.h"
 
 class NumeReWindow;
@@ -38,7 +39,7 @@ class DocumentationBrowser : public ViewerFrame
     private:
         wxTreeCtrl* m_doctree;
         IconManager* m_manager;
-        wxNotebook* m_docTabs;
+        ViewerBook* m_docTabs;
         wxString m_titleTemplate;
 
         void prepareToolbar();
@@ -52,11 +53,11 @@ class DocumentationBrowser : public ViewerFrame
         bool SetStartPage(const wxString& docId);
         void OnTreeClick(wxTreeEvent& event);
         void OnToolbarEvent(wxCommandEvent& event);
-        void OnMiddleClick(wxMouseEvent& event);
 
         bool createNewPage(const wxString& docId);
         void setCurrentTabText(const wxString& text);
-        void onPageChange(wxBookCtrlEvent& event);
+        void onPageChange(wxAuiNotebookEvent& event);
+        void onPageClose(wxAuiNotebookEvent& event);
 
         DECLARE_EVENT_TABLE();
 };

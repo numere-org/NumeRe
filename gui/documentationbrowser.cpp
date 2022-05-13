@@ -34,7 +34,7 @@ using namespace std;
 BEGIN_EVENT_TABLE(DocumentationBrowser, ViewerFrame)
     EVT_TREE_SEL_CHANGED(-1, DocumentationBrowser::OnTreeClick)
     EVT_MENU_RANGE(EVENTID_HELP_START, EVENTID_HELP_END-1, DocumentationBrowser::OnToolbarEvent)
-    EVT_BOOKCTRL_PAGE_CHANGED(-1, DocumentationBrowser::onPageChange)
+    EVT_AUINOTEBOOK_PAGE_CHANGED(-1, DocumentationBrowser::onPageChange)
 END_EVENT_TABLE()
 
 
@@ -66,10 +66,15 @@ DocumentationBrowser::DocumentationBrowser(wxWindow* parent, const wxString& tit
     TreeSearchCtrl* treeSearchCtrl = new TreeSearchCtrl(treePanel, wxID_ANY, _guilang.get("GUI_SEARCH_DOCUMENTATION"), _guilang.get("GUI_SEARCH_CALLTIP_TREE"), m_doctree);
     treePanel->AddWindows(treeSearchCtrl, m_doctree);
 
-    m_docTabs = new wxNotebook(splitter, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxBORDER_STATIC);
+    m_docTabs = new ViewerBook(splitter,
+                               wxID_ANY,
+                               wxDefaultPosition,
+                               wxDefaultSize,
+                               wxAUI_NB_CLOSE_ON_ACTIVE_TAB | wxAUI_NB_MIDDLE_CLICK_CLOSE | wxAUI_NB_SCROLL_BUTTONS | wxAUI_NB_WINDOWLIST_BUTTON);
 
     // Bind the mouse middle event handler to this class
-    m_docTabs->Bind(wxEVT_MIDDLE_UP, &DocumentationBrowser::OnMiddleClick, this);
+    //m_docTabs->Bind(wxEVT_AUINOTEBOOK_TAB_MIDDLE_UP, &DocumentationBrowser::OnMiddleClick, this);
+    m_docTabs->Bind(wxEVT_AUINOTEBOOK_PAGE_CLOSE, &DocumentationBrowser::onPageClose, this);
     m_titleTemplate = titletemplate;
 
     // Set a reasonable window size and the window icon
@@ -248,34 +253,6 @@ void DocumentationBrowser::OnToolbarEvent(wxCommandEvent& event)
 
 
 /////////////////////////////////////////////////
-/// \brief Event handler for the middle click on
-/// the tabs.
-///
-/// \param event wxMouseEvent&
-/// \return void
-///
-/////////////////////////////////////////////////
-void DocumentationBrowser::OnMiddleClick(wxMouseEvent& event)
-{
-    wxPoint pt;
-	pt.x = event.GetX();
-	pt.y = event.GetY();
-
-	long flags = 0;
-	int pageNum = m_docTabs->HitTest(pt, &flags);
-
-	if (pageNum == wxNOT_FOUND)
-		return;
-
-    // Is this the only page?
-    if (m_docTabs->GetPageCount() == 1)
-        Close();
-
-    m_docTabs->DeletePage(pageNum);
-}
-
-
-/////////////////////////////////////////////////
 /// \brief Create a new viewer in a new page.
 ///
 /// \param docId const wxString&
@@ -330,13 +307,31 @@ void DocumentationBrowser::setCurrentTabText(const wxString& text)
 /// \brief Event handler function called, when
 /// the user switches the tabs.
 ///
-/// \param event wxBookCtrlEvent&
+/// \param event wxAuiNotebookEvent&
 /// \return void
 ///
 /////////////////////////////////////////////////
-void DocumentationBrowser::onPageChange(wxBookCtrlEvent& event)
+void DocumentationBrowser::onPageChange(wxAuiNotebookEvent& event)
 {
     SetTitle(wxString::Format(m_titleTemplate, m_docTabs->GetPageText(event.GetSelection())));
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Event handler called, when the user
+/// closes the tab in some way.
+///
+/// \param event wxAuiNotebookEvent&
+/// \return void
+///
+/////////////////////////////////////////////////
+void DocumentationBrowser::onPageClose(wxAuiNotebookEvent& event)
+{
+    // Is this the only page?
+    if (m_docTabs->GetPageCount() == 1)
+        Close();
+
+    event.Skip();
 }
 
 

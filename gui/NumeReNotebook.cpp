@@ -2,6 +2,7 @@
 #include "NumeReNotebook.h"
 #include "NumeReWindow.h"
 #include "numeredroptarget.hpp"
+#include "IconManager.h"
 
 #include "../common/vcsmanager.hpp"
 #include "editor/editor.h"
@@ -14,10 +15,13 @@
 
 #include "../common/datastructures.h"
 
-BEGIN_EVENT_TABLE(EditorNotebook, wxNotebook)
-	EVT_MIDDLE_UP	(EditorNotebook::OnTabMiddleClicked)
-	EVT_RIGHT_UP	(EditorNotebook::OnTabRightClicked)
-	EVT_MOUSEWHEEL  (EditorNotebook::OnTabScroll)
+BEGIN_EVENT_TABLE(EditorNotebook, wxAuiNotebook)
+	EVT_AUINOTEBOOK_BUTTON      	(-1, EditorNotebook::OnButtonClicked)
+	EVT_AUINOTEBOOK_TAB_MIDDLE_UP	(-1, EditorNotebook::OnTabMiddleClicked)
+	EVT_AUINOTEBOOK_TAB_RIGHT_UP	(-1, EditorNotebook::OnTabRightClicked)
+	EVT_AUINOTEBOOK_DRAG_MOTION     (-1, EditorNotebook::OnTabMove)
+	//EVT_RIGHT_UP	(EditorNotebook::OnTabRightClicked)
+	//EVT_MOUSEWHEEL  (EditorNotebook::OnTabScroll)
 	EVT_ENTER_WINDOW(EditorNotebook::OnEnter)
 	EVT_LEAVE_WINDOW(EditorNotebook::OnLeave)
 	EVT_SIZE        (EditorNotebook::OnSize)
@@ -29,17 +33,20 @@ END_EVENT_TABLE()
 ///
 /// \param parent wxWindow*
 /// \param id wxWindowID
+/// \param icons IconManager*
 /// \param pos const wxPoint&
 /// \param size const wxSize&
 /// \param style long
-/// \param name const wxString&
 ///
 /////////////////////////////////////////////////
-EditorNotebook::EditorNotebook(wxWindow* parent, wxWindowID id, const wxPoint& pos, const wxSize& size, long style, const wxString& name) : wxNotebook(parent, id, pos, size, style, name)
+EditorNotebook::EditorNotebook(wxWindow* parent, wxWindowID id, IconManager* icons, const wxPoint& pos, const wxSize& size, long style) : wxAuiNotebook(parent, id, pos, size, style | wxAUI_NB_DEFAULT_STYLE | wxAUI_NB_WINDOWLIST_BUTTON /*, name*/)
 {
     m_mouseFocus = false;
     m_top_parent = nullptr;
     m_showPathsOnTabs = false;
+    m_showIconsOnTabs = false;
+    m_manager = icons;
+    SetImageList(icons->GetImageList());
 }
 
 
@@ -53,16 +60,18 @@ EditorNotebook::~EditorNotebook()
 
 /////////////////////////////////////////////////
 /// \brief This member function enables/disables
-/// the relative paths on the tab and refreshes
-/// the tab texts automatically.
+/// the relative paths or icons on the tab and
+/// refreshes the tab texts automatically.
 ///
 /// \param showText bool
+/// \param showIcons bool
 /// \return void
 ///
 /////////////////////////////////////////////////
-void EditorNotebook::SetShowPathsOnTabs(bool showText)
+void EditorNotebook::SetShowPathsOrIconsOnTabs(bool showText, bool showIcons)
 {
     m_showPathsOnTabs = showText;
+    m_showIconsOnTabs = showIcons;
 
     for (size_t i = 0; i < GetPageCount(); i++)
     {
@@ -88,6 +97,19 @@ void EditorNotebook::SetTabText(size_t nTab, const wxString& text)
 {
     size_t pos = 0;
     std::string path = replacePathSeparator(text.ToStdString());
+    std::string ext = path.substr(path.find_last_of("/.")+1);
+    std::string filetype = _guilang.get("COMMON_FILETYPE_" + toUpperCase(ext));
+
+    if (filetype == "COMMON_FILETYPE_" + toUpperCase(ext))
+        filetype = _guilang.get("GUI_STATUSBAR_UNKNOWN", toUpperCase(ext));
+
+    SetPageToolTip(nTab, path + "\n" + filetype);
+
+    if (m_showIconsOnTabs)
+        SetPageImage(nTab, m_manager->GetIconIndex(ext));
+    else
+        SetPageBitmap(nTab, wxNullBitmap);
+
     std::vector<std::string> vPaths = m_top_parent->getPathDefs();
 
     if (m_showPathsOnTabs)
@@ -311,27 +333,24 @@ void EditorNotebook::OnUnsplit(wxSplitterEvent& event)
 }
 
 
-//////////////////////////////////////////////////////////////////////////////
-///  public OnTabActivate
-///  Pops up a menu when the user right-clicks a tab
+/////////////////////////////////////////////////
+/// \brief Shows the context menu for the current
+/// tab.
 ///
-///  @param  event wxMouseEvent & The generated menu event
+/// \param event wxAuiNotebookEvent&
+/// \return void
 ///
-///  @return void
-///
-///  @author Mark Erikson @date 04-22-2004
-//////////////////////////////////////////////////////////////////////////////
-void EditorNotebook::OnTabRightClicked(wxMouseEvent &event)
+/////////////////////////////////////////////////
+void EditorNotebook::OnTabRightClicked(wxAuiNotebookEvent& event)
 {
-	wxPoint pt;
-	pt.x = event.GetX();
-	pt.y = event.GetY();
+    wxPoint pt = wxGetMousePosition();
+	int pageNum = GetTabFromPoint(pt);
+	pt -= GetScreenRect().GetTopLeft();
 
-	long flags = 0;
-	int pageNum = this->HitTest(pt, &flags);
-
-	if (pageNum < 0)
+    if (pageNum < 0)
 		return;
+
+    g_logger.debug("Clicked on page " + toString(pageNum) + " with title " + GetPageText(pageNum).ToStdString());
 
     VersionControlSystemManager manager(m_top_parent);
     wxString filename = getEditor(pageNum)->GetFileNameAndPath();
@@ -365,6 +384,26 @@ void EditorNotebook::OnTabRightClicked(wxMouseEvent &event)
     }
 
 	PopupMenu(&popupMenu, pt);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This event handler fixes the issue
+/// that the control does not correctly update
+/// the selected page during moving a page.
+///
+/// \param event wxAuiNotebookEvent&
+/// \return void
+///
+/////////////////////////////////////////////////
+void EditorNotebook::OnTabMove(wxAuiNotebookEvent& event)
+{
+    int tab = GetTabFromPoint(wxGetMousePosition());
+
+    if (tab != wxNOT_FOUND)
+        ChangeSelection(tab);
+
+    event.Skip();
 }
 
 
@@ -452,6 +491,39 @@ void EditorNotebook::OnSize(wxSizeEvent &event)
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Returns the tab at the defined
+/// absolute coordinates. Actually more or less
+/// the same than the generic HitTest() member
+/// functions.
+///
+/// \param pt const wxPoint&
+/// \return int
+///
+/////////////////////////////////////////////////
+int EditorNotebook::GetTabFromPoint(const wxPoint& pt)
+{
+    wxPoint client_pt = ScreenToClient(pt);
+    wxAuiTabCtrl* tabCtrl = GetTabCtrlFromPoint(client_pt);
+
+    if (!tabCtrl)
+    {
+        g_logger.debug("Found page: false (out of bounds)");
+        return wxNOT_FOUND;
+    }
+
+    wxPoint tl = tabCtrl->GetScreenRect().GetTopLeft();
+    wxWindow* win;
+    bool success = tabCtrl->TabHitTest(pt.x-tl.x, pt.y-tl.y, &win);
+	g_logger.debug("Found page: " + toString(success));
+
+	if (!success)
+        return wxNOT_FOUND;
+
+	return m_tabs.GetIdxFromWindow(win);
+}
+
+
 //////////////////////////////////////////////////////////////////////////////
 ///  public FindPagePosition
 ///  Finds the index of a given notebook page
@@ -478,18 +550,37 @@ int EditorNotebook::FindPagePosition(wxNotebookPage* page)
 /// user clickes with the middle mouse button on
 /// a tab.
 ///
-/// \param event wxMouseEvent&
+/// \param event wxAuiNotebookEvent&
 /// \return void
 ///
 /////////////////////////////////////////////////
-void EditorNotebook::OnTabMiddleClicked( wxMouseEvent &event )
+void EditorNotebook::OnButtonClicked(wxAuiNotebookEvent& event)
 {
-	wxPoint pt;
-	pt.x = event.GetX();
-	pt.y = event.GetY();
+    int pageNum = GetTabFromPoint(wxGetMousePosition());
 
-	long flags = 0;
-	int pageNum = this->HitTest (pt, &flags);
+	if (pageNum < 0)
+		return;
+
+	m_top_parent->SetIntVar(VN_CLICKEDTAB, pageNum);
+
+	wxCommandEvent command;
+	command.SetId(ID_MENU_CLOSETAB);
+	command.SetEventType(wxEVT_MENU); //10019//wxEVT_MIDDLE_UP
+	m_top_parent->GetEventHandler()->ProcessEvent(command);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Executes the closing command, if the
+/// user clickes on the button of a tab.
+///
+/// \param event wxAuiNotebookEvent&
+/// \return void
+///
+/////////////////////////////////////////////////
+void EditorNotebook::OnTabMiddleClicked(wxAuiNotebookEvent& event)
+{
+    int pageNum = GetTabFromPoint(wxGetMousePosition());
 
 	if (pageNum < 0)
 		return;

@@ -20,15 +20,17 @@
 #ifndef VIEWERBOOK_HPP
 #define VIEWERBOOK_HPP
 #include <wx/wx.h>
-#include <wx/notebook.h>
+#include <wx/aui/auibook.h>
 
-class ViewerBook : public wxNotebook
+class ViewerBook : public wxAuiNotebook
 {
     public:
         ViewerBook(wxWindow* parent, wxWindowID id = wxID_ANY, const wxPoint& position = wxDefaultPosition, const wxSize& size = wxDefaultSize, int style = 0, const wxString& name = wxNotebookNameStr)
-            : wxNotebook(parent, id, position, size, style, name), m_skipFocus(false) {}
+            : wxAuiNotebook(parent, id, position, size, style | wxAUI_NB_TAB_MOVE | wxNB_TOP), m_skipFocus(false) {}
 
-        void OnEnter(wxMouseEvent& event);
+        void OnTabMove(wxAuiNotebookEvent& event);
+        int GetTabFromPoint(const wxPoint& pt);
+
         inline void toggleSkipFocus()
             {
                 m_skipFocus = !m_skipFocus;

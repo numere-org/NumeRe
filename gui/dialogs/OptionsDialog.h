@@ -174,6 +174,7 @@ class OptionsDialog: public wxDialog
         wxCheckBox* m_UseLogfile;
         wxCheckBox* m_UseExternalViewer;
         wxCheckBox* m_FilePathsInTabs;
+        wxCheckBox* m_IconsOnTabs;
         wxTextCtrl* m_LoadPath;
         wxTextCtrl* m_SavePath;
         wxTextCtrl* m_ScriptPath;
