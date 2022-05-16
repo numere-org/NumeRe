@@ -815,7 +815,7 @@ int FlowCtrl::switch_fork(int nth_Cmd, int nth_loop)
             // Handle the return value
             if (nReturn == FLOWCTRL_ERROR
                 || nReturn == FLOWCTRL_RETURN
-                || FLOWCTRL_CONTINUE)
+                || nReturn == FLOWCTRL_CONTINUE)
                 return nReturn;
             else if (nReturn == FLOWCTRL_BREAK)
             {
