@@ -367,6 +367,7 @@ class NumeReEditor : public wxStyledTextCtrl, public wxThreadHelper
 		wxString getMatlabReturnList(int nMatlabFunctionStartLine);
 		wxString getTemplateContent(const wxString& sFileName);
 
+		bool isValidAutoCompMatch(int nPos, bool findAll, bool searchMethod);
 		wxString generateAutoCompList(int wordstartpos, int currpos, std::string sPreDefList);
 
 		bool MarkerOnLine(int linenum, int nMarker);

@@ -4727,13 +4727,14 @@ void NumeReEditor::AsynchActions()
         && !HasSelection())
     {
         int nLine = GetCurrentLine();
+        int offset = 0;
 
         // Probably the current line is also a parent line -> take the parent
         if (GetFoldLevel(nLine) & wxSTC_FOLDLEVELHEADERFLAG)
-            nLine--;
+            offset--;
 
         // Get parent line
-        int nParentline = GetFoldParent(nLine);
+        int nParentline = GetFoldParent(nLine+offset);
 
         // if not found -> return
         if (nParentline == wxNOT_FOUND)
@@ -6068,6 +6069,39 @@ wxString NumeReEditor::getTemplateContent(const wxString& sFileName)
 
 
 /////////////////////////////////////////////////
+/// \brief Ensures that the current position
+/// follows all rules to be a valid
+/// autocompletion match.
+///
+/// \param nPos int
+/// \param findAll bool
+/// \param searchMethod bool
+/// \return bool
+///
+/////////////////////////////////////////////////
+bool NumeReEditor::isValidAutoCompMatch(int nPos, bool findAll, bool searchMethod)
+{
+    // Ignore self matches
+    if (nPos <= GetCurrentPos() && WordEndPosition(nPos+1, true) >= GetCurrentPos())
+        return false;
+
+    // Ignore matches not at the starting position
+    if (nPos != WordStartPosition(nPos, true))
+        return false;
+
+    // Check style conditions
+    if (findAll)
+        return true;
+    else if (!isStyleType(STYLE_COMMENT, nPos)
+             && !isStyleType(STYLE_STRING, nPos)
+             && (!searchMethod || GetCharAt(nPos-1) == '.'))
+        return true;
+
+    return false;
+}
+
+
+/////////////////////////////////////////////////
 /// \brief Generates an autocompletion list based
 /// upon the file's contents.
 ///
@@ -6129,11 +6163,7 @@ wxString NumeReEditor::generateAutoCompList(int wordstartpos, int currpos, std::
     // and store the possible completions in the map
     while ((nPos = FindText(nPos, GetLineEndPosition(context.second), wordstart, searchFlags)) != std::string::npos)
     {
-        if ((nPos > (size_t)GetCurrentPos() || WordEndPosition(nPos + 1, true) < GetCurrentPos())
-            && (int)nPos == WordStartPosition(nPos, true)
-            && (findAll
-                || (!isStyleType(STYLE_COMMENT, nPos) && !isStyleType(STYLE_STRING, nPos))
-                || (searchMethod && GetCharAt(nPos-1) == '.')))
+        if (isValidAutoCompMatch(nPos, findAll, searchMethod))
         {
             wxString sMatch = GetTextRange(nPos, WordEndPosition(nPos + 1, true));
             wxString sFillUp;
@@ -6167,19 +6197,21 @@ wxString NumeReEditor::generateAutoCompList(int wordstartpos, int currpos, std::
             // and store the possible completions in the map
             while ((pos = FindText(pos, lineEnd, wordstart, searchFlags)) != wxNOT_FOUND)
             {
-                if ((int)nPos == WordStartPosition(nPos, true)
-                    && (findAll || (!isStyleType(STYLE_COMMENT, pos) && !isStyleType(STYLE_STRING, pos))))
+                if (isValidAutoCompMatch(pos, findAll, searchMethod))
                 {
                     wxString sMatch = GetTextRange(pos, WordEndPosition(pos + 1, true));
+                    wxString sFillUp;
 
                     // Append the needed opening parentheses, if the completed
                     // objects are data objects or functions
                     if (isStyleType(STYLE_CUSTOMFUNCTION, pos))
-                        sMatch += "(";
+                        sFillUp = "(?" + toString((int)NumeReSyntax::SYNTAX_TABLE);
                     else if (isStyleType(STYLE_DATAOBJECT, pos))
-                        sMatch += "{";
+                        sFillUp = "{?" + toString((int)NumeReSyntax::SYNTAX_CLUSTER);
+                    else if (isStyleType(STYLE_IDENTIFIER, pos))
+                        sFillUp = "?" + toString((int)NumeReSyntax::SYNTAX_STD);
 
-                    mAutoCompMap[toUpperCase(sMatch.ToStdString()) + " |" + sMatch] = 1;
+                    mAutoCompMap[toUpperCase(sMatch.ToStdString()) + " |" + sMatch+sFillUp] = 1;
                 }
 
                 pos++;

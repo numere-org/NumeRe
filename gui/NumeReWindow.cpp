@@ -450,7 +450,7 @@ NumeReWindow::NumeReWindow(const wxString& title, const wxPoint& pos, const wxSi
     m_options = new Options();
 
     // Create container and the contained terminal
-    m_termContainer = new wxTermContainer(m_splitCommandHistory, ID_CONTAINER_TERM);
+    m_termContainer = new wxTermContainer(m_splitCommandHistory, ID_CONTAINER_TERM, wxDefaultPosition, wxDefaultSize, wxBORDER_THEME);
     g_logger.debug("Creating terminal and starting kernel session.");
     m_terminal = new NumeReTerminal(m_termContainer, ID_TERMINAL, m_options, programPath, wxPoint(0, 0));
     m_terminal->set_mode_flag(GenericTerminal::CURSORINVISIBLE);
