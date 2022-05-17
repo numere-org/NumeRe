@@ -4389,6 +4389,7 @@ void NumeReWindow::OnFileEventTimer(wxTimerEvent& event)
 {
     // store current selection
     int selection = m_book->GetSelection();
+    NumeReEditor* focusedEd = m_book->getFocusedEditor();
 
     // Copy data and clear the cache
     std::vector<std::pair<int,wxString> > modifiedFiles = m_modifiedFiles;
@@ -4575,7 +4576,13 @@ void NumeReWindow::OnFileEventTimer(wxTimerEvent& event)
     }
 
     // go back to previous selection
-    m_book->SetSelection(selection);
+    if (m_book->GetSelection() != selection)
+    {
+        m_book->SetSelection(selection);
+
+        if (focusedEd)
+            focusedEd->SetFocus();
+    }
 }
 
 
@@ -4721,7 +4728,6 @@ void NumeReWindow::UpdateStatusBar()
 void NumeReWindow::OnUpdateSaveUI()//wxUpdateUIEvent &event)
 {
     bool enable = m_book->getCurrentEditor()->Modified();
-
     int tabNum = m_book->GetSelection();
     wxString title = m_book->GetPageText(tabNum);
 
