@@ -1500,7 +1500,12 @@ void NumeReWindow::OnMenuEvent(wxCommandEvent &event)
 
         case ID_MENU_CLOSETAB:
         {
-            CloseTab();
+            CloseTab(false);
+            break;
+        }
+        case ID_MENU_CLOSETABFORCE:
+        {
+            CloseTab(true);
             break;
         }
         case ID_MENU_RUN_FROM_TAB:
@@ -3221,14 +3226,15 @@ void NumeReWindow::PageHasChanged (int pageNr)
 ///  private CloseTab
 ///  Closes a tab after the user right-clicks it and selects "Close"
 ///
+///  @param force bool
 ///  @return void
 ///
 ///  @author Mark Erikson @date 04-22-2004
 //////////////////////////////////////////////////////////////////////////////
-void NumeReWindow::CloseTab()
+void NumeReWindow::CloseTab(bool force)
 {
     int tab = GetIntVar(VN_CLICKEDTAB);
-    CloseFile(tab);
+    CloseFile(tab, !force);
     m_book->Refresh();
 }
 

@@ -561,10 +561,15 @@ void EditorNotebook::OnButtonClicked(wxAuiNotebookEvent& event)
 	if (pageNum < 0)
 		return;
 
-	m_top_parent->SetIntVar(VN_CLICKEDTAB, pageNum);
+    int evId = ID_MENU_CLOSETAB;
+
+    if (wxGetKeyState(WXK_SHIFT))
+        evId = ID_MENU_CLOSETABFORCE;
+
+    m_top_parent->SetIntVar(VN_CLICKEDTAB, pageNum);
 
 	wxCommandEvent command;
-	command.SetId(ID_MENU_CLOSETAB);
+	command.SetId(evId);
 	command.SetEventType(wxEVT_MENU); //10019//wxEVT_MIDDLE_UP
 	m_top_parent->GetEventHandler()->ProcessEvent(command);
 }
@@ -585,10 +590,15 @@ void EditorNotebook::OnTabMiddleClicked(wxAuiNotebookEvent& event)
 	if (pageNum < 0)
 		return;
 
-	m_top_parent->SetIntVar(VN_CLICKEDTAB, pageNum);
+    int evId = ID_MENU_CLOSETAB;
+
+    if (wxGetKeyState(WXK_SHIFT))
+        evId = ID_MENU_CLOSETABFORCE;
+
+    m_top_parent->SetIntVar(VN_CLICKEDTAB, pageNum);
 
 	wxCommandEvent command;
-	command.SetId(ID_MENU_CLOSETAB);
+	command.SetId(evId);
 	command.SetEventType(wxEVT_MENU); //10019//wxEVT_MIDDLE_UP
 	m_top_parent->GetEventHandler()->ProcessEvent(command);
 }

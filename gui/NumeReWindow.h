@@ -323,7 +323,7 @@ class NumeReWindow : public wxFrame
         bool SaveAll(bool refreshLibrary);
         void CloseFile(int pageNr = -1, bool askforsave = true);
         bool CloseAllFiles();
-        void CloseTab();
+        void CloseTab(bool force);
         void CloseOtherTabs();
         void OpenContainingFolder();
         void EvaluateTab();
