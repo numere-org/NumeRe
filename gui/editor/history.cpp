@@ -307,6 +307,11 @@ void NumeReHistory::loadHistory()
 void NumeReHistory::saveHistory()
 {
     wxString sFileName = m_mainframe->getProgramFolder() + "\\numere.history";
+
+    // only save the history, if it is necessary
+    if (getLastLine().substr(0, 7) == "## --- ")
+        return;
+
     this->SaveFile(sFileName);
 }
 
@@ -345,8 +350,7 @@ void NumeReHistory::AddToHistory(const wxString& commandstring)
     this->GotoPos(this->GetLastPosition());
 
     // Get last line
-    wxString lastline = this->GetLine(this->LineFromPosition(this->GetLastPosition()-1));
-    lastline.erase(lastline.find_first_of("\n\r"));
+    wxString lastline = getLastLine();
 
     // return, if last line is equal to the current one
     if (lastline == commandstring.substr(0, lastline.length()) && commandstring.find_first_not_of(' ', lastline.length()) == string::npos)
@@ -361,6 +365,16 @@ void NumeReHistory::AddToHistory(const wxString& commandstring)
     applyFoldPoints();
     this->SetReadOnly(true);
 }
+
+
+wxString NumeReHistory::getLastLine()
+{
+    wxString lastline = GetLine(LineFromPosition(GetLastPosition()-1));
+    lastline.erase(lastline.find_first_of("\n\r"));
+
+    return lastline;
+}
+
 
 void NumeReHistory::OnMarginClick( wxStyledTextEvent &event )
 {

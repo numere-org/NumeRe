@@ -31,3 +31,4 @@ Added	Variables, clusters and tables also have an icon in the autocompletion lis
 New	Editor tabs are now draggable, reorderable and can be split into various ways. By dragging a tab to a window screen, a hint will be displayed to indicate a possible splitting location.
 Added	The editor tabs may now also show the file icons for better orientation
 Applied	The tabs of the file tree, the history viewer and the documentation browser have also been updated and can now also be splitted.
+Cleaned	The history is not longer getting saved, if no commands were entered into the terminal.

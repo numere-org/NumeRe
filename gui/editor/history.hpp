@@ -44,6 +44,7 @@ public:
 
     void UpdateSyntaxHighlighting(bool forceUpdate = false);
     void AddToHistory(const wxString& commandstring);
+    wxString getLastLine();
     void OnMarginClick(wxStyledTextEvent &event);
     void OnMouseDblClk(wxMouseEvent& event);
     void OnMouseDn(wxMouseEvent &event);
