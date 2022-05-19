@@ -19,9 +19,11 @@
 
 #include "stringdatastructures.hpp"
 #include "../../kernel.hpp"
+#include "../utils/filecheck.hpp"
 #include <boost/tokenizer.hpp>
 #include <regex>
 #include <sstream>
+
 #define DEFAULT_NUM_ARG INT_MIN
 // define the "End of transmission block" as string separator
 #define NEWSTRING (char)23
@@ -461,6 +463,55 @@ static std::string strfnc_isdigit(StringFuncArgs& funcArgs)
         }
         if (i+1 < funcArgs.sArg1.length())
             sCodes += ",";
+    }
+    return sCodes;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Implementation of the is_dir()
+/// function.
+///
+/// \param funcArgs StringFuncArgs&
+/// \return std::string
+///
+/////////////////////////////////////////////////
+static std::string strfnc_isdir(StringFuncArgs& funcArgs)
+{
+    std::string sCodes = "";
+    funcArgs.sArg1 = removeMaskedStrings(funcArgs.sArg1);
+
+    if (is_dir(funcArgs.sArg1))
+    {
+        sCodes += "1";
+    }
+    else
+    {
+        sCodes += "0";
+    }
+    return sCodes;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Implementation of the is_file()
+/// function.
+///
+/// \param funcArgs StringFuncArgs&
+/// \return std::string
+///
+/////////////////////////////////////////////////
+static std::string strfnc_isfile(StringFuncArgs& funcArgs)
+{
+    std::string sCodes = "";
+    funcArgs.sArg1 = removeMaskedStrings(funcArgs.sArg1);
+    if (is_file(funcArgs.sArg1))
+    {
+        sCodes += "1";
+    }
+    else
+    {
+        sCodes += "0";
     }
     return sCodes;
 }
@@ -2243,6 +2294,8 @@ static std::map<std::string, StringFuncHandle> getStringFuncHandles()
     mHandleTable["is_blank"]            = StringFuncHandle(STR, strfnc_isblank, false);
     mHandleTable["is_cntrl"]            = StringFuncHandle(STR, strfnc_iscntrl, false);
     mHandleTable["is_digit"]            = StringFuncHandle(STR, strfnc_isdigit, false);
+    mHandleTable["is_dir"]              = StringFuncHandle(STR, strfnc_isdir, false);
+    mHandleTable["is_file"]             = StringFuncHandle(STR, strfnc_isfile, false);
     mHandleTable["is_graph"]            = StringFuncHandle(STR, strfnc_isgraph, false);
     mHandleTable["is_lower"]            = StringFuncHandle(STR, strfnc_islower, false);
     mHandleTable["is_print"]            = StringFuncHandle(STR, strfnc_isprint, false);
