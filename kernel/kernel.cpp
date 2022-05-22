@@ -2016,8 +2016,15 @@ bool NumeReKernel::evaluateStrings(std::string& sLine, std::string& sCache, cons
                 return false;
         }
 
-        if (sCache.length() && _memoryManager.containsTablesOrClusters(sCache) && !bWriteToCache)
-            bWriteToCache = true;
+#warning NOTE (erik.haenel#3#): This is changed due to double writes in combination with c{nlen+1} = VAL
+        //if (sCache.length() && _memoryManager.containsTablesOrClusters(sCache) && !bWriteToCache)
+        //    bWriteToCache = true;
+
+        if (sCache.length())
+        {
+            bWriteToCache = false;
+            sCache.clear();
+        }
     }
 
     return true;

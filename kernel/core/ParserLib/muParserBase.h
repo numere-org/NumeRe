@@ -334,7 +334,7 @@ namespace mu
 			mutable valbuf_type m_buffer;
 
 			/** \brief Maximum number of threads spawned by OpenMP when using the bulk mode. */
-			static const int s_MaxNumOpenMPThreads = 4;
+			//static const int s_MaxNumOpenMPThreads = 4;
 
 			mutable vectormap_type mVectorVars;
 

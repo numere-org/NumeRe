@@ -1818,6 +1818,10 @@ value_type parser_theta(const value_type& x, const value_type& y, const value_ty
 }
 
 
+/// Global instance as base random generator usable from multiple instances
+mt19937 randGenerator((double)time(0));
+
+
 /////////////////////////////////////////////////
 /// \brief This function returns a uniformly
 /// distributed random number between both
@@ -1833,25 +1837,8 @@ value_type parser_Random(const value_type& vRandMin, const value_type& vRandMax)
     if (isinf(vRandMin) || isnan(vRandMin) || isinf(vRandMax) || isnan(vRandMax))
         return NAN;
 
-    const int nRandSet = 1000;
-    static double dRandBuffer[nRandSet];
-    static int nRandPointer = -1;
-    nRandPointer++;
-
-    if (!nRandPointer || nRandPointer == nRandSet)
-    {
-        if (!nRandPointer || dRandBuffer[0] == 0.0)
-            dRandBuffer[0] = 1;
-
-        nRandPointer = 0;
-        default_random_engine randGen((dRandBuffer[0]*(double)time(0)));
-        uniform_real_distribution<double> randDist(0,1);
-
-        for (int i = 0; i < nRandSet; i++)
-            dRandBuffer[i] = randDist(randGen);
-    }
-
-    return dRandBuffer[nRandPointer]*(vRandMax-vRandMin)+vRandMin;//randDist(randGen);
+    static uniform_real_distribution<double> randDist(0, 1);
+    return randDist(randGenerator) * (vRandMax - vRandMin) + vRandMin;
 }
 
 
@@ -1870,25 +1857,8 @@ value_type parser_gRandom(const value_type& vRandAvg, const value_type& vRandstd
     if (isinf(vRandAvg) || isnan(vRandAvg) || isinf(vRandstd) || isnan(vRandstd))
         return NAN;
 
-    const int nRandSet = 1000;
-    static double dRandBuffer[nRandSet];
-    static int nRandPointer = -1;
-    nRandPointer++;
-
-    if (!nRandPointer || nRandPointer == nRandSet)
-    {
-        if (!nRandPointer || dRandBuffer[0] == 0.0)
-            dRandBuffer[0] = 1;
-
-        nRandPointer = 0;
-        default_random_engine randGen((dRandBuffer[0]*(double)time(0)));
-        normal_distribution<double> randDist(0,1);
-
-        for (int i = 0; i < nRandSet; i++)
-            dRandBuffer[i] = randDist(randGen);
-    }
-
-    return dRandBuffer[nRandPointer]*fabs(vRandstd)+vRandAvg;//randDist(randGen);
+    static normal_distribution<double> randDist(0, 1);
+    return randDist(randGenerator) * fabs(vRandstd) + vRandAvg;
 }
 
 

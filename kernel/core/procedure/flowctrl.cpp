@@ -2606,8 +2606,16 @@ int FlowCtrl::compile(std::string sLine, int nthCmd)
 
         replaceLocalVars(sLine);
 
-        if (sCache.length() && _dataRef->containsTablesOrClusters(sCache) && !bWriteToCache)
-            bWriteToCache = true;
+#warning NOTE (erik.haenel#3#): This is changed due to double writes in combination with c{nlen+1} = VAL
+        //if (sCache.length() && _dataRef->containsTablesOrClusters(sCache) && !bWriteToCache)
+        //    bWriteToCache = true;
+
+        if (sCache.length())
+        {
+            bWriteToCache = false;
+            sCache.clear();
+        }
+
 
         //if (!bLockedPauseMode && bUseLoopParsingMode)
         //    _parserRef->PauseLoopMode(false);
@@ -3228,8 +3236,15 @@ int FlowCtrl::calc(std::string sLine, int nthCmd)
 
         replaceLocalVars(sLine);
 
-        if (sDataObject.length() && _dataRef->containsTablesOrClusters(sDataObject) && !bWriteToCache)
-            bWriteToCache = true;
+#warning NOTE (erik.haenel#3#): This is changed due to double writes in combination with c{nlen+1} = VAL
+        //if (sDataObject.length() && _dataRef->containsTablesOrClusters(sDataObject) && !bWriteToCache)
+        //    bWriteToCache = true;
+
+        if (sDataObject.length())
+        {
+            bWriteToCache = false;
+            sDataObject.clear();
+        }
 
         //if (!bLockedPauseMode && bUseLoopParsingMode)
         //    _parserRef->PauseLoopMode(false);

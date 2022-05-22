@@ -22,9 +22,9 @@
 				<Option compiler="tdm-gcc" />
 				<Compiler>
 					<Add option="-Wall" />
-					<Add option="-std=gnu++2a" />
 					<Add option="-Og" />
 					<Add option="-g" />
+					<Add option="-std=gnu++2a" />
 					<Add option="-mthreads" />
 					<Add option="-DDLLVER_MAJOR_MASK" />
 					<Add option="-DwxUSE_REGEX" />
@@ -562,6 +562,8 @@
 		<Unit filename="kernel/core/utils/date/date.h" />
 		<Unit filename="kernel/core/utils/datetimetools.cpp" />
 		<Unit filename="kernel/core/utils/datetimetools.hpp" />
+		<Unit filename="kernel/core/utils/filecheck.cpp" />
+		<Unit filename="kernel/core/utils/filecheck.hpp" />
 		<Unit filename="kernel/core/utils/stringtools.cpp" />
 		<Unit filename="kernel/core/utils/stringtools.hpp" />
 		<Unit filename="kernel/core/utils/timer.hpp">

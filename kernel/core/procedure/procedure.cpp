@@ -442,9 +442,16 @@ Returnvalue Procedure::ProcCalc(string sLine, string sCurrentCommand, int& nByte
                 return thisReturnVal;
             }
 
+#warning NOTE (erik.haenel#3#): This is changed due to double writes in combination with c{nlen+1} = VAL
             // Other: numerical values
-            if (sCache.length() && _data.containsTablesOrClusters(sCache) && !bWriteToCache)
-                bWriteToCache = true;
+            //if (sCache.length() && _data.containsTablesOrClusters(sCache) && !bWriteToCache)
+            //    bWriteToCache = true;
+
+            if (sCache.length())
+            {
+                bWriteToCache = false;
+                sCache.clear();
+            }
 
             // Ensure that the correct variables are available, because
             // the user might have used "to_value()" or something similar
@@ -966,30 +973,33 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, F
             nByteCode |= ProcedureCommandLine::BYTECODE_FLOWCTRLSTATEMENT;
         }
 
-        // Handle breakpoints
-        if (_option.useDebugger()
+        // Handle breakpoints and always remove hardcoded ones
+        bool isBreakPoint = sProcCommandLine.substr(sProcCommandLine.find_first_not_of(' '), 2) == "|>";
+
+        if ((_option.useDebugger() || isBreakPoint)
             && !(nCurrentByteCode & ProcedureCommandLine::BYTECODE_FLOWCTRLSTATEMENT))
         {
-            if ((sProcCommandLine.substr(sProcCommandLine.find_first_not_of(' '), 2) == "|>" || nDebuggerCode == NumeReKernel::DEBUGGER_STEP)
+            if (isBreakPoint)
+            {
+                sProcCommandLine.erase(sProcCommandLine.find_first_not_of(' '), 2);
+                StripSpaces(sProcCommandLine);
+            }
+
+            if ((isBreakPoint || nDebuggerCode == NumeReKernel::DEBUGGER_STEP)
                 && !getCurrentBlockDepth())
             {
-                if (sProcCommandLine.substr(sProcCommandLine.find_first_not_of(' '), 2) == "|>")
-                {
-                    sProcCommandLine.erase(sProcCommandLine.find_first_not_of(' '), 2);
-                    StripSpaces(sProcCommandLine);
-                }
-
                 if (nDebuggerCode != NumeReKernel::DEBUGGER_LEAVE)
                 {
                     _debugger.gatherInformations(_varFactory, sProcCommandLine, sCurrentProcedureName, GetCurrentLine());
                     nDebuggerCode = evalDebuggerBreakPoint(_parser, _option);
                 }
 
-                if (!sProcCommandLine.length())
-                    continue;
-
-                sProcCommandLine.insert(0, 1, ' ');
             }
+
+            if (!sProcCommandLine.length())
+                continue;
+
+            sProcCommandLine.insert(0, 1, ' ');
         }
 
         // Handle the definition of local variables
@@ -1016,6 +1026,7 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, F
             if (!sProcCommandLine.length())
                 continue;
         }
+
         // Handle the definition of namespaces
         if (nCurrentByteCode == ProcedureCommandLine::BYTECODE_NOT_PARSED
             || (nCurrentByteCode & ProcedureCommandLine::BYTECODE_NAMESPACE
