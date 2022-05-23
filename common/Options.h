@@ -322,6 +322,7 @@ class Options : public Settings
             RESULT_SUPPRESSION,
             RESULT_ASSIGNMENT,
             TYPE_ORIENTATION,
+            MISLEADING_TYPE,
             ARGUMENT_UNDERSCORE,
             VARIABLE_LENGTH,
             UNUSED_VARIABLES,

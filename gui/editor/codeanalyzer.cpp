@@ -748,10 +748,12 @@ AnnotationCount CodeAnalyzer::analyseCommands()
 
     // Examine the current usage of the local variable declarators
     // Esp. ensure that the declared variables are used
-    if (m_editor->m_fileType == FILE_NPRC && (sSyntaxElement == "var" || sSyntaxElement == "str" || sSyntaxElement == "tab" || sSyntaxElement == "cst"))
+    if (m_editor->m_fileType == FILE_NPRC
+        && (sSyntaxElement == "var" || sSyntaxElement == "str" || sSyntaxElement == "tab" || sSyntaxElement == "cst"))
     {
         // Handle the special case "list -var"
-        if (sSyntaxElement == "var" && m_editor->GetTextRange(m_editor->PositionFromLine(m_nCurrentLine), m_editor->GetLineEndPosition(m_nCurrentLine)).find("list") < (size_t)(wordstart - m_editor->PositionFromLine(m_nCurrentLine)))
+        if (sSyntaxElement == "var"
+            && m_editor->GetTextRange(m_editor->PositionFromLine(m_nCurrentLine), m_editor->GetLineEndPosition(m_nCurrentLine)).find("list") < (size_t)(wordstart - m_editor->PositionFromLine(m_nCurrentLine)))
         {
             m_nCurPos = wordend;
             return AnnotCount;
@@ -761,7 +763,10 @@ AnnotationCount CodeAnalyzer::analyseCommands()
         int nNextLineStartPosition = m_editor->GetLineEndPosition(m_nCurrentLine) + 1;
 
         // Find the end of the current procedure
-        int nProcedureEndPosition = m_editor->FindText(nNextLineStartPosition, m_editor->GetLastPosition(), "endprocedure", wxSTC_FIND_MATCHCASE | wxSTC_FIND_WHOLEWORD);
+        int nProcedureEndPosition = m_editor->FindText(nNextLineStartPosition,
+                                                       m_editor->GetLastPosition(),
+                                                       "endprocedure",
+                                                       wxSTC_FIND_MATCHCASE | wxSTC_FIND_WHOLEWORD);
 
         int nStyle = wxSTC_NSCR_IDENTIFIER;
 
@@ -772,15 +777,20 @@ AnnotationCount CodeAnalyzer::analyseCommands()
 
         // extract the arguments and strip the spaces
         string sArgs = m_editor->GetTextRange(wordend, m_editor->GetLineEndPosition(m_nCurrentLine)).ToStdString();
+
         while (sArgs.back() == '\r' || sArgs.back() == '\n')
             sArgs.pop_back();
+
         StripSpaces(sArgs);
 
         // Ensure that the end of the procedure is available
         if (nProcedureEndPosition == -1)
         {
             nProcedureEndPosition = m_editor->GetLastPosition();
-            AnnotCount += addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE", highlightFoundOccurence(sSyntaxElement, wordstart, sSyntaxElement.length()), m_sError, _guilang.get("GUI_ANALYZER_MISSINGENDPROCEDURE")), ANNOTATION_ERROR);
+            AnnotCount += addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE",
+                                                       highlightFoundOccurence(sSyntaxElement, wordstart, sSyntaxElement.length()),
+                                                       m_sError,
+                                                       _guilang.get("GUI_ANALYZER_MISSINGENDPROCEDURE")), ANNOTATION_ERROR);
         }
 
         // If there are variables available
@@ -805,26 +815,55 @@ AnnotationCount CodeAnalyzer::analyseCommands()
                 if (!currentArg.length())
                     continue;
 
-                // Will this argument be overwritten by a declare?
+                // Will this variable be overwritten by a declare?
                 if (nStyle == wxSTC_NPRC_IDENTIFIER && m_symdefs.isSymbol(currentArg))
-                    AnnotCount += addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE", currentArg, m_sError, _guilang.get("GUI_ANALYZER_DECLAREOVERWRITES", currentArg)), ANNOTATION_ERROR);
+                    AnnotCount += addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE",
+                                                               currentArg,
+                                                               m_sError,
+                                                               _guilang.get("GUI_ANALYZER_DECLAREOVERWRITES", currentArg)), ANNOTATION_ERROR);
+
+                // Does this variable has a fitting type?
+                char cType = getVariableType(currentArg);
+                std::string sChars;
+
+                if (sSyntaxElement == "str")
+                    sChars = "s";
+                else if (sSyntaxElement == "var")
+                    sChars = "nfdbxyzt";
+
+                if (m_options->GetAnalyzerOption(Options::MISLEADING_TYPE)
+                    && cType != '\0'
+                    && sChars.find(cType) == std::string::npos)
+                    AnnotCount += addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE",
+                                                               currentArg,
+                                                               m_sWarn,
+                                                               _guilang.get("GUI_ANALYZER_MISLEADING_TYPE", currentArg)), ANNOTATION_WARN);
 
                 m_vLocalVariables.push_back(pair<string,int>(currentArg, nStyle));
 
                 // Try to find the variable in the remaining code
-                if (m_options->GetAnalyzerOption(Options::UNUSED_VARIABLES) && !m_editor->m_search->FindAll(currentArg, nStyle, nNextLineStartPosition, nProcedureEndPosition, false).size())
+                if (m_options->GetAnalyzerOption(Options::UNUSED_VARIABLES)
+                    && !m_editor->m_search->FindAll(currentArg, nStyle, nNextLineStartPosition, nProcedureEndPosition, false).size())
                 {
                     // No variable found
-                    AnnotCount += addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE", highlightFoundOccurence(currentArg, m_editor->FindText(wordstart, nProcedureEndPosition, currentArg, wxSTC_FIND_MATCHCASE | wxSTC_FIND_WHOLEWORD), currentArg.length()), m_sWarn, _guilang.get("GUI_ANALYZER_UNUSEDVARIABLE", currentArg)), ANNOTATION_WARN);
+                    AnnotCount += addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE",
+                                                               highlightFoundOccurence(currentArg, m_editor->FindText(wordstart, nProcedureEndPosition, currentArg, wxSTC_FIND_MATCHCASE | wxSTC_FIND_WHOLEWORD), currentArg.length()),
+                                                               m_sWarn,
+                                                               _guilang.get("GUI_ANALYZER_UNUSEDVARIABLE", currentArg)), ANNOTATION_WARN);
                 }
             }
         }
         else // No varibles are available
-            AnnotCount += addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE", highlightFoundOccurence(sSyntaxElement, wordstart, sSyntaxElement.length()), m_sError, _guilang.get("GUI_ANALYZER_NOVARIABLES")), ANNOTATION_ERROR);
+            AnnotCount += addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE",
+                                                       highlightFoundOccurence(sSyntaxElement, wordstart, sSyntaxElement.length()),
+                                                       m_sError,
+                                                       _guilang.get("GUI_ANALYZER_NOVARIABLES")), ANNOTATION_ERROR);
     }
 
     // Examine definitions
-    if (m_editor->m_fileType == FILE_NPRC && m_options->GetAnalyzerOption(Options::GLOBAL_VARIABLES) && (sSyntaxElement == "define" || sSyntaxElement == "ifndefined" || sSyntaxElement == "lclfunc" || sSyntaxElement == "def" || sSyntaxElement == "ifndef"))
+    if (m_editor->m_fileType == FILE_NPRC
+        && m_options->GetAnalyzerOption(Options::GLOBAL_VARIABLES)
+        && (sSyntaxElement == "define" || sSyntaxElement == "ifndefined" || sSyntaxElement == "lclfunc" || sSyntaxElement == "def" || sSyntaxElement == "ifndef"))
     {
         // extract the definition and strip the spaces
         string sDefinition = m_editor->GetTextRange(wordend, m_editor->GetLineEndPosition(m_nCurrentLine)).ToStdString();
@@ -1264,7 +1303,7 @@ AnnotationCount CodeAnalyzer::analyseIdentifiers()
         size_t shift = 0;
 
         // We want to start the procedures arguments with an underscore (not possible in MATLAB)
-        if (sSyntaxElement[0] == '_' && m_editor->m_fileType == FILE_NPRC)
+        while (sSyntaxElement[shift] == '_')
             shift++;
 
         // Because function names definitions are not highlighted different in MATLAB code, we leave the function
@@ -1274,25 +1313,37 @@ AnnotationCount CodeAnalyzer::analyseIdentifiers()
             m_nCurPos = wordend;
             return AnnotCount;
         }
-        // numerical/int string float standard vars (x,y,z,t)
-        string sFirstChars = "nsfbxyzt";
 
-        if (sFirstChars.find(sSyntaxElement[shift]) == string::npos
-            || ((sSyntaxElement[shift + 1] < 'A' || sSyntaxElement[shift + 1] > 'Z') && sSyntaxElement[shift + 1] != '_'))
+        if (getVariableType(sSyntaxElement) == '\0')
         {
             // var not type-oriented
             // Add and underscore to indicate the procedures arguments
-            if (m_options->GetAnalyzerOption(Options::ARGUMENT_UNDERSCORE) && m_hasProcedureDefinition && !shift && m_editor->m_fileType != FILE_MATLAB)
-                AnnotCount += addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE", highlightFoundOccurence(sSyntaxElement, wordstart, sSyntaxElement.length()), m_sNote, _guilang.get("GUI_ANALYZER_INDICATEARGUMENT")), ANNOTATION_NOTE);
+            if (m_options->GetAnalyzerOption(Options::ARGUMENT_UNDERSCORE)
+                && m_hasProcedureDefinition
+                && !shift
+                && m_editor->m_fileType != FILE_MATLAB)
+                AnnotCount += addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE",
+                                                           highlightFoundOccurence(sSyntaxElement, wordstart, sSyntaxElement.length()),
+                                                           m_sNote,
+                                                           _guilang.get("GUI_ANALYZER_INDICATEARGUMENT")), ANNOTATION_NOTE);
 
             // variable should begin with lowercase letter indicate its type
             if (m_options->GetAnalyzerOption(Options::TYPE_ORIENTATION))
-                AnnotCount += addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE", highlightFoundOccurence(sSyntaxElement, wordstart, sSyntaxElement.length()), m_sNote, _guilang.get("GUI_ANALYZER_VARNOTTYPEORIENTED", sSyntaxElement)), ANNOTATION_NOTE);
+                AnnotCount += addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE",
+                                                           highlightFoundOccurence(sSyntaxElement, wordstart, sSyntaxElement.length()),
+                                                           m_sNote,
+                                                           _guilang.get("GUI_ANALYZER_VARNOTTYPEORIENTED", sSyntaxElement)), ANNOTATION_NOTE);
         }
-        else if (m_options->GetAnalyzerOption(Options::ARGUMENT_UNDERSCORE) && m_hasProcedureDefinition && !shift && m_editor->m_fileType != FILE_MATLAB)
+        else if (m_options->GetAnalyzerOption(Options::ARGUMENT_UNDERSCORE)
+                 && m_hasProcedureDefinition
+                 && !shift
+                 && m_editor->m_fileType != FILE_MATLAB)
         {
             // Add and underscore to indicate the procedures arguments
-            AnnotCount += addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE", highlightFoundOccurence(sSyntaxElement, wordstart, sSyntaxElement.length()), m_sNote, _guilang.get("GUI_ANALYZER_INDICATEARGUMENT")), ANNOTATION_NOTE);
+            AnnotCount += addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE",
+                                                       highlightFoundOccurence(sSyntaxElement, wordstart, sSyntaxElement.length()),
+                                                       m_sNote,
+                                                       _guilang.get("GUI_ANALYZER_INDICATEARGUMENT")), ANNOTATION_NOTE);
         }
     }
 
@@ -1649,5 +1700,42 @@ int CodeAnalyzer::countNumberOfComments(int startline, int endline)
 	}
 
 	return nComments;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Returns the leading character, which
+/// indicates the type of this variable or a null
+/// character, if either the leading character is
+/// not known or if it does not fulfill the
+/// requirements.
+///
+/// \param sVarName const std::string&
+/// \return char
+///
+/////////////////////////////////////////////////
+char CodeAnalyzer::getVariableType(const std::string& sVarName)
+{
+    // Check some special cases first
+    if (sVarName.length() <= 2
+        || sVarName.find_first_not_of("\r\n") == std::string::npos
+        || sVarName.find('.') != std::string::npos)
+        return '\0';
+
+    size_t shift = 0;
+
+    // We want to start the procedures arguments with an underscore (not possible in MATLAB)
+    while (sVarName[shift] == '_')
+        shift++;
+
+    // numerical/int string float standard vars (x,y,z,t)
+    static std::string sFirstChars = "nsfbdxyzt";
+
+    if (((sVarName[shift+1] >= 'A' && sVarName[shift+1] <= 'Z')
+         || sVarName[shift+1] == '_')
+        && sFirstChars.find(sVarName[shift]) != std::string::npos)
+        return sVarName[shift];
+
+    return '\0';
 }
 

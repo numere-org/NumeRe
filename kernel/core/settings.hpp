@@ -105,6 +105,7 @@
 #define SETTING_B_AN_RESULTSUP        "editor.analyzer.result.suppression"
 #define SETTING_B_AN_RESULTASS        "editor.analyzer.result.assignment"
 #define SETTING_B_AN_TYPING           "editor.analyzer.variables.typing"
+#define SETTING_B_AN_MISLEADINGTYPE   "editor.analyzer.variables.misleadingtype"
 #define SETTING_B_AN_VARLENGTH        "editor.analyzer.variables.length"
 #define SETTING_B_AN_UNUSEDVARS       "editor.analyzer.variables.unused"
 #define SETTING_B_AN_GLOBALVARS       "editor.analyzer.variables.globals"

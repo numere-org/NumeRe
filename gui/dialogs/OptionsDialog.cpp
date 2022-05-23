@@ -474,6 +474,7 @@ void OptionsDialog::CreateAnalyzerPage()
     m_analyzer[Options::THISFILE_NAMESPACE] = panel->CreateCheckBox(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_ANALYZER_THISFILE_NAMESPACE"));
     m_analyzer[Options::SWITCH_FALLTHROUGH] = panel->CreateCheckBox(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_ANALYZER_SWITCH_FALLTHROUGH"));
     m_analyzer[Options::GLOBAL_VARIABLES] = panel->CreateCheckBox(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_ANALYZER_GLOBAL_VARIABLES"));
+    m_analyzer[Options::MISLEADING_TYPE] = panel->CreateCheckBox(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_ANALYZER_MISLEADING_TYPE"));
 
     // Create a group
     group = panel->createGroup(_guilang.get("GUI_OPTIONS_ANALYZER_STYLE"));

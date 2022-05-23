@@ -4614,6 +4614,7 @@ void NumeReEditor::markLocalVariableOfType(const wxString& command, bool bForceR
                 || currentChar == ','
                 || currentChar == '('
                 || currentChar == '{'
+                || currentChar == ';'
                 || currentChar == '\r'
                 || currentChar == '\n')
             {
@@ -4634,6 +4635,8 @@ void NumeReEditor::markLocalVariableOfType(const wxString& command, bool bForceR
                     while (GetCharAt(j) == ',' || GetCharAt(j) == ' ')
                         j++;
                 }
+                else if (currentChar == ';')
+                    break;
                 else
                 {
                     // This is also an initialization. Find the

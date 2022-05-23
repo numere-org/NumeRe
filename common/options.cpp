@@ -221,6 +221,7 @@ void Options::readAnalyzerOptionsFromConfig(wxFileConfig* _config)
         "RESULT_SUPPRESSION",
         "RESULT_ASSIGNMENT",
         "TYPE_ORIENTATION",
+        "MISLEADING_TYPE",
         "ARGUMENT_UNDERSCORE",
         "VARIABLE_LENGTH",
         "UNUSED_VARIABLES",
@@ -358,6 +359,8 @@ std::string Options::analyzerOptsToString(AnalyzerOptions opt) const
             return SETTING_B_AN_RESULTASS;
         case AnalyzerOptions::TYPE_ORIENTATION:
             return SETTING_B_AN_TYPING;
+        case AnalyzerOptions::MISLEADING_TYPE:
+            return SETTING_B_AN_MISLEADINGTYPE;
         case AnalyzerOptions::ARGUMENT_UNDERSCORE:
             return SETTING_B_AN_UNDERSCOREARGS;
         case AnalyzerOptions::VARIABLE_LENGTH:

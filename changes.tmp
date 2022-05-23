@@ -34,3 +34,4 @@ Applied	The tabs of the file tree, the history viewer and the documentation brow
 Cleaned	The history is not longer getting saved, if no commands were entered into the terminal.
 Added	Editor tabs may now be force-closed even if marked as modified, if the user presses the SHIFT key while clicking on the close button.
 Fixed	Resolved a multiprocessing data race, which could result in a crash.
+Added	The static code analyzer may now also detect misleading type prefixes.
