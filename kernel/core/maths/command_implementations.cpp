@@ -2736,12 +2736,12 @@ static void calculate2dFFT(MemoryManager& _data, Indices& _idx, const std::strin
                     _data.writeToTable(_idx.row[i + (i >= nElemsLines/2 ? -nElemsLines/2 : nElemsLines/2+nElemsLines % 2)],
                                        _idx.col[j+2 + (j >= nElemsCols/2 ? -nElemsCols/2 : nElemsCols/2+nElemsCols % 2)],
                                        sTargetTable,
-                                       _fft.bComplex ? _fftData.a[j+i*nElemsCols] : std::abs(_fftData.a[j+i*nElemsCols]));
+                                       _fft.bComplex ? _fftData.a[i+j*nElemsLines] : std::abs(_fftData.a[i+j*nElemsLines]));
                 else
                     _data.writeToTable(_idx.row[i],
                                        _idx.col[j+2],
                                        sTargetTable,
-                                       _fft.bComplex ? _fftData.a[j+i*nElemsCols] : std::abs(_fftData.a[j+i*nElemsCols]));
+                                       _fft.bComplex ? _fftData.a[i+j*nElemsLines] : std::abs(_fftData.a[i+j*nElemsLines]));
             }
         }
 
@@ -2785,7 +2785,7 @@ static void calculate2dFFT(MemoryManager& _data, Indices& _idx, const std::strin
             // Write the values
             for (int j = 0; j < nElemsCols; j++)
             {
-                _data.writeToTable(_idx.row[i], _idx.col[j+2], sTargetTable, _fftData.a[j+i*nElemsCols]);
+                _data.writeToTable(_idx.row[i], _idx.col[j+2], sTargetTable, _fftData.a[i+j*nElemsLines]);
             }
         }
 
@@ -2912,16 +2912,19 @@ bool fastFourierTransform(CommandLineParser& cmdParser)
             vAxis.push_back(i);
     }
 
+    // Lambda expression for catching and converting NaNs into zeros
+    auto nanguard = [](const mu::value_type& val) {return mu::isnan(val) ? mu::value_type(0.0) : val;};
+
     // Copy the data
     for (int i = 0; i < _fft.lines; i++)
     {
         if (_fft.cols == 2)
-            _fftData.a[i] = _mem->readMem(vAxis[i], 1); // Can be complex or not: does not matter
+            _fftData.a[i] = nanguard(_mem->readMem(vAxis[i], 1)); // Can be complex or not: does not matter
         else if (_fft.cols == 3 && _fft.bComplex)
-            _fftData.a[i] = dual(_mem->readMem(vAxis[i], 1).real(), _mem->readMem(vAxis[i], 2).real());
+            _fftData.a[i] = nanguard(dual(_mem->readMem(vAxis[i], 1).real(), _mem->readMem(vAxis[i], 2).real()));
         else if (_fft.cols == 3 && !_fft.bComplex)
-            _fftData.a[i] = dual(_mem->readMem(vAxis[i], 1).real() * cos(_mem->readMem(vAxis[i], 2).real()),
-                                 _mem->readMem(vAxis[i], 1).real() * sin(_mem->readMem(vAxis[i], 2).real()));
+            _fftData.a[i] = nanguard(dual(_mem->readMem(vAxis[i], 1).real() * cos(_mem->readMem(vAxis[i], 2).real()),
+                                          _mem->readMem(vAxis[i], 1).real() * sin(_mem->readMem(vAxis[i], 2).real())));
         else if (bIs2DFFT)
         {
             int nLines = _fft.lines;
@@ -2930,10 +2933,10 @@ bool fastFourierTransform(CommandLineParser& cmdParser)
             for (int j = 0; j < nCols; j++)
             {
                 if (_fft.bShiftAxis && _fft.bInverseTrafo)
-                    _fftData.a[j+i*nCols] = _mem->readMem(i + (i >= nLines/2 ? -nLines/2 : nLines/2 + nLines % 2),
-                                                          j+2 + (j >= nCols/2 ? -nCols/2 : nCols/2 + nCols % 2));
+                    _fftData.a[i+j*nLines] = nanguard(_mem->readMem(i + (i >= nLines/2 ? -nLines/2 : nLines/2 + nLines % 2),
+                                                                    j+2 + (j >= nCols/2 ? -nCols/2 : nCols/2 + nCols % 2)));
                 else
-                    _fftData.a[j+i*nCols] = _mem->readMem(i, j+2);
+                    _fftData.a[i+j*nLines] = nanguard(_mem->readMem(i, j+2));
             }
         }
     }
@@ -3277,7 +3280,6 @@ bool evalPoints(CommandLineParser& cmdParser)
 bool createDatagrid(CommandLineParser& cmdParser)
 {
     std::vector<size_t> vSamples = {100, 100};
-    unsigned int nSamples = 100;
     bool bTranspose = cmdParser.hasParam("transpose");
 
     Indices _iTargetIndex;

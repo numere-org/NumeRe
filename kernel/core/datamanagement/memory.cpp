@@ -630,6 +630,7 @@ Memory* Memory::extractRange(const VectorIndex& _vLine, const VectorIndex& _vCol
         }
     }
 
+    _memCopy->m_meta = m_meta;
     return _memCopy;
 }
 

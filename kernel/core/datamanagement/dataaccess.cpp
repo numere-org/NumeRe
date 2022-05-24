@@ -226,7 +226,7 @@ std::vector<size_t> DataAccessParser::getDataGridDimensions() const
 
 
 static void resolveTablesAndClusters(string& sLine, Parser& _parser, MemoryManager& _data, const Settings& _option, int options);
-static const string& handleCachedDataAccess(string& sLine, Parser& _parser, MemoryManager& _data, const Settings& _option);
+static const string handleCachedDataAccess(string& sLine, Parser& _parser, MemoryManager& _data, const Settings& _option);
 static void replaceEntityStringOccurence(string& sLine, const string& sEntityOccurence, const string& sEntityStringReplacement);
 static void replaceEntityOccurence(string& sLine, const string& sEntityOccurence, const string& sEntityName, const string& sEntityReplacement, const Indices& _idx, MemoryManager& _data, Parser& _parser, const Settings& _option, bool isCluster);
 static string createMafDataAccessString(const string& sAccessString, Parser& _parser);
@@ -646,7 +646,7 @@ void replaceDataEntities(string& sLine, const string& sEntity, MemoryManager& _d
 /// \return string
 ///
 /////////////////////////////////////////////////
-static const string& handleCachedDataAccess(string& sLine, Parser& _parser, MemoryManager& _data, const Settings& _option)
+static const string handleCachedDataAccess(string& sLine, Parser& _parser, MemoryManager& _data, const Settings& _option)
 {
 	for (size_t i = 0; i < _parser.HasCachedAccess(); i++)
 	{
@@ -687,10 +687,31 @@ static const string& handleCachedDataAccess(string& sLine, Parser& _parser, Memo
 
 		// Get new data (Parser::GetVectorVar returns a pointer to the vector var) and update the stored elements in the internal representation
 		if (isCluster)
-            _data.getCluster(_access.sCacheName).insertDataInArray(_parser.GetVectorVar(_access.sVectorName), _idx.row);
+        {
+            NumeRe::Cluster& clst = _data.getCluster(_access.sCacheName);
+
+            // Ensure that this cluster has only numerically
+            // interpretable values
+            if (!clst.isDouble())
+            {
+                _parser.DisableAccessCaching();
+                return getDataElements(sLine, _parser, _data, _option);
+            }
+
+            clst.insertDataInArray(_parser.GetVectorVar(_access.sVectorName), _idx.row);
+        }
         else
-#warning NOTE (numere#3#08/21/21): This might lead to problems, if the user switches the type of a column in a loop
+        {
+            // Ensure that the selected columns are actually numerically
+            // interpretable values
+            if (_data.getType(_idx.col, _access.sCacheName) >= TableColumn::STRINGLIKE)
+            {
+                _parser.DisableAccessCaching();
+                return getDataElements(sLine, _parser, _data, _option);
+            }
+
             _data.copyElementsInto(_parser.GetVectorVar(_access.sVectorName), _idx.row, _idx.col, _access.sCacheName);
+        }
 
 		_parser.UpdateVectorVar(_access.sVectorName);
 	}

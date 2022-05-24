@@ -2033,21 +2033,9 @@ static void copyDataToTemporaryTable(const string& sCmd, DataAccessParser& _acce
 
     // Copy the target data to a new table
     _accessParser.evalIndices();
-
-    _cache.resizeTable(_accessParser.getIndices().col.size(), "table");
-    _cache.setMetaData("table", _data.getMetaData(_accessParser.getDataObject()));
-
-    for (size_t i = 0; i < _accessParser.getIndices().row.size(); i++)
-    {
-        for (size_t j = 0; j < _accessParser.getIndices().col.size(); j++)
-        {
-            if (!i)
-                _cache.setHeadLineElement(j, "table", _data.getHeadLineElement(_accessParser.getIndices().col[j], _accessParser.getDataObject()));
-
-            if (_data.isValidElement(_accessParser.getIndices().row[i], _accessParser.getIndices().col[j], _accessParser.getDataObject()))
-                _cache.writeToTable(i, j, "table", _data.getElement(_accessParser.getIndices().row[i], _accessParser.getIndices().col[j], _accessParser.getDataObject()));
-        }
-    }
+    Memory* mem = _data.getTable(_accessParser.getDataObject())->extractRange(_accessParser.getIndices().row,
+                                                                              _accessParser.getIndices().col);
+    _cache.melt(mem, "table", true);
 }
 
 

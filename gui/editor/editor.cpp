@@ -695,6 +695,9 @@ void NumeReEditor::OnChar( wxStyledTextEvent& event )
         return;
     }
 
+    if ((isspace(chr) || (ispunct(chr) && chr != '_' && chr != '~')) && AutoCompActive())
+        AutoCompCancel();
+
     if (m_options->getSetting(SETTING_B_QUOTEAUTOCOMP).active() && chr == '"')
     {
         if (GetStyleAt(currentPos) != wxSTC_NSCR_STRING && GetStyleAt(currentPos) != wxSTC_NPRC_STRING)
