@@ -28,6 +28,7 @@
 #include <string>
 
 #include "history.hpp"
+#define HISTORYHEADERSTART "## --- "
 
 #define MARGIN_FOLD 3
 
@@ -291,17 +292,30 @@ void NumeReHistory::loadHistory()
 {
     wxString sFileName = m_mainframe->getProgramFolder() + "\\numere.history";
 
-    this->SetReadOnly(false);
+    SetReadOnly(false);
+
     if (fileExists(sFileName.ToStdString()))
     {
-        this->LoadFile(sFileName);
-        if (this->GetLineCount() > 10000)
-            this->DeleteRange(0, this->PositionFromLine(this->GetLineCount()-99999));
-        this->GotoPos(this->GetLastPosition());
+        LoadFile(sFileName);
+
+        // Clean history by deleting repeated history header lines
+        for (int i = 1; i < GetLineCount(); i++)
+        {
+            while (GetLine(i-1).substr(0, 7) == HISTORYHEADERSTART && GetLine(i).substr(0, 7) == HISTORYHEADERSTART)
+            {
+                DeleteRange(PositionFromLine(i-1), PositionFromLine(i)-PositionFromLine(i-1));
+            }
+        }
+
+        if (GetLineCount() > 10000)
+            DeleteRange(0, PositionFromLine(GetLineCount()-99999));
+
+        GotoPos(GetLastPosition());
     }
+
     addHeader();
     applyFoldPoints();
-    this->SetReadOnly(true);
+    SetReadOnly(true);
 }
 
 void NumeReHistory::saveHistory()
@@ -309,7 +323,7 @@ void NumeReHistory::saveHistory()
     wxString sFileName = m_mainframe->getProgramFolder() + "\\numere.history";
 
     // only save the history, if it is necessary
-    if (getLastLine().substr(0, 7) == "## --- ")
+    if (getLastLine().substr(0, 7) == HISTORYHEADERSTART)
         return;
 
     this->SaveFile(sFileName);
@@ -317,7 +331,7 @@ void NumeReHistory::saveHistory()
 
 void NumeReHistory::addHeader()
 {
-    this->AddText("## --- " + getTimeStamp(false) + " ---\n");
+    this->AddText(HISTORYHEADERSTART + getTimeStamp(false) + " ---\n");
 }
 
 void NumeReHistory::applyFoldPoints()
@@ -325,7 +339,7 @@ void NumeReHistory::applyFoldPoints()
     int zerolevel = wxSTC_FOLDLEVELBASE;
     for (int i = 0; i < this->GetLineCount(); i++)
     {
-        if (this->GetLine(i).substr(0,6) == "## ---")
+        if (this->GetLine(i).substr(0, 7) == HISTORYHEADERSTART)
         {
             if (!i)
             {
