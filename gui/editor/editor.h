@@ -140,6 +140,7 @@ class NumeReEditor : public wxStyledTextCtrl, public wxThreadHelper
 		void UpdateSyntaxHighlighting(bool forceUpdate = false);
 		void UpdateIndicators();
 		void FocusOnLine(int linenumber, bool showMarker = true);
+		void EnsureLineVisibility(int line);
 
 		FileFilterType GetFileType(const wxString& filename);
 

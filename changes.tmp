@@ -35,3 +35,4 @@ Cleaned	The history is not longer getting saved, if no commands were entered int
 Added	Editor tabs may now be force-closed even if marked as modified, if the user presses the SHIFT key while clicking on the close button.
 Fixed	Resolved a multiprocessing data race, which could result in a crash.
 Added	The static code analyzer may now also detect misleading type prefixes.
+Cleaned	The found search term in the editor is now always visible even if previously hidden or folded away.

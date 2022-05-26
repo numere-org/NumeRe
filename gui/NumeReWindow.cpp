@@ -6289,7 +6289,9 @@ int NumeReWindow::FindString(const wxString &findString, int start_pos, int flag
     {
         if (highlight)
         {
+            edit->GotoPos(pos+findString.length());
             edit->SetSelection(pos, pos + findString.length());
+            edit->EnsureLineVisibility(edit->GetCurrentLine());
             edit->EnsureCaretVisible();
         }
     }

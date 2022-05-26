@@ -5059,14 +5059,36 @@ void NumeReEditor::FocusOnLine(int linenumber, bool showMarker)
 {
     GotoLine(linenumber);
     SetFirstVisibleLine(VisibleFromDocLine(linenumber) - m_options->GetDebuggerFocusLine());
-    EnsureVisible(linenumber);
+    EnsureLineVisibility(linenumber);
+
+    if (showMarker)
+    {
+        MarkerDeleteAll(MARKER_FOCUSEDLINE);
+        MarkerAdd(linenumber, MARKER_FOCUSEDLINE);
+    }
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Ensures that the selected line is
+/// visible and not hidden bei either a code fold
+/// or a explicit line hiding. Does not move the
+/// cursor to the selected line.
+///
+/// \param line int
+/// \return void
+///
+/////////////////////////////////////////////////
+void NumeReEditor::EnsureLineVisibility(int line)
+{
+    EnsureVisible(line);
 
     // Unhide the lines, if the current line is part
     // of a hidden sectioon
-    if (!GetLineVisible(linenumber))
+    if (!GetLineVisible(line))
     {
-        int nFirstLine = linenumber-1;
-        int nLastLine = linenumber+1;
+        int nFirstLine = line-1;
+        int nLastLine = line+1;
 
         // Find the first unhidden line
         while (!GetLineVisible(nFirstLine))
@@ -5085,12 +5107,6 @@ void NumeReEditor::FocusOnLine(int linenumber, bool showMarker)
             MarkerDelete(i, MARKER_HIDDEN);
             MarkerDelete(i, MARKER_HIDDEN_MARGIN);
         }
-    }
-
-    if (showMarker)
-    {
-        MarkerDeleteAll(MARKER_FOCUSEDLINE);
-        MarkerAdd(linenumber, MARKER_FOCUSEDLINE);
     }
 }
 
