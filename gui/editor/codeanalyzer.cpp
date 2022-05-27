@@ -485,6 +485,7 @@ AnnotationCount CodeAnalyzer::analyseCommands()
             || sSyntaxElement == "append"
             || sSyntaxElement == "imread"
             || sSyntaxElement == "eval"
+            || sSyntaxElement == "taylor"
             || sSyntaxElement == "get"
             || sSyntaxElement == "read"
             || sSyntaxElement == "pulse"

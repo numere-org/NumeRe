@@ -36,3 +36,4 @@ Added	Editor tabs may now be force-closed even if marked as modified, if the use
 Fixed	Resolved a multiprocessing data race, which could result in a crash.
 Added	The static code analyzer may now also detect misleading type prefixes.
 Cleaned	The found search term in the editor is now always visible even if previously hidden or folded away.
+Applied	"taylor" will now additionally return the calculated polynomial coefficients.

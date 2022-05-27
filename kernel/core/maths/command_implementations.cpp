@@ -2304,6 +2304,7 @@ void taylor(CommandLineParser& cmdParser)
     size_t nSamples = 0;
     mu::value_type* dVar = 0;
     mu::value_type dVarValue = 0.0;
+    std::vector<mu::value_type> vCoeffs;
 
     // We cannot approximate string expressions
     if (containsStrings(sExpr))
@@ -2397,7 +2398,8 @@ void taylor(CommandLineParser& cmdParser)
     {
         // zero order polynomial
         *dVar = dVarValue;
-        sTaylor += toString(_parser.Eval(), _option.getPrecision());
+        vCoeffs.push_back(_parser.Eval());
+        sTaylor += toString(vCoeffs.back(), _option.getPrecision());
     }
     else
     {
@@ -2405,7 +2407,8 @@ void taylor(CommandLineParser& cmdParser)
         *dVar = dVarValue;
 
         // the constant term
-        sPolynom = toString(_parser.Eval(), _option.getPrecision()) + ",";
+        vCoeffs.push_back(_parser.Eval());
+        sPolynom = toString(vCoeffs.back(), _option.getPrecision()) + ",";
 
         nSamples = 6*nth_taylor + 1;
         const size_t nFILTERSIZE = 7;
@@ -2437,15 +2440,16 @@ void taylor(CommandLineParser& cmdParser)
                 vDiffValues[i] /= dPrec;
             }
 
-            sPolynom += toString(vDiffValues[vDiffValues.size()/2] / (double)integralFactorial(n+1), _option.getPrecision()) + ",";
+            vCoeffs.push_back(vDiffValues[vDiffValues.size()/2] / (double)integralFactorial(n+1));
+            sPolynom += toString(vCoeffs.back(), _option.getPrecision()) + ",";
             vValues = vDiffValues;
         }
 
         sTaylor += "polynomial(" + sArg + "," + sPolynom.substr(0, sPolynom.length()-1) + ")";
     }
 
-    if (_option.systemPrints())
-        NumeReKernel::print(LineBreak(sTaylor, _option, true, 0, 8));
+    //if (_option.systemPrints())
+    //    NumeReKernel::print(LineBreak(sTaylor, _option, true, 0, 8));
 
     sTaylor += " " + _lang.get("PARSERFUNCS_TAYLOR_DEFINESTRING", sExpr_cpy, sVarName, toString(dVarValue, 4), toString((int)nth_taylor));
 
@@ -2462,6 +2466,8 @@ void taylor(CommandLineParser& cmdParser)
         NumeReKernel::print(_lang.get("DEFINE_SUCCESS"), _option.systemPrints());
     else
         NumeReKernel::issueWarning(_lang.get("DEFINE_FAILURE"));
+
+    cmdParser.setReturnValue(vCoeffs);
 }
 
 

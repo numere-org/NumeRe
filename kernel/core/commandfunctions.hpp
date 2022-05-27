@@ -2993,7 +2993,11 @@ static CommandReturnValues cmd_taylor(string& sCmd)
     CommandLineParser cmdParser(sCmd, "taylor", CommandLineParser::CMD_EXPR_set_PAR);
 
     if (cmdParser.getExpr().length())
+    {
         taylor(cmdParser);
+        sCmd = cmdParser.getReturnValueStatement();
+        return COMMAND_HAS_RETURNVALUE;
+    }
     else
         doc_Help("taylor", NumeReKernel::getInstance()->getSettings());
 
@@ -5206,7 +5210,6 @@ static std::map<std::string,CommandFunc> getCommandFunctions()
     mCommandFuncMap["tabrot"] = cmd_rotate;
     mCommandFuncMap["imrot"] = cmd_rotate;
     mCommandFuncMap["gridrot"] = cmd_rotate;
-    mCommandFuncMap["taylor"] = cmd_taylor;
     mCommandFuncMap["undef"] = cmd_undefine;
     mCommandFuncMap["undefine"] = cmd_undefine;
     mCommandFuncMap["vect"] = cmd_plotting;
@@ -5252,6 +5255,7 @@ static std::map<std::string,CommandFunc> getCommandFunctionsWithReturnValues()
     mCommandFuncMap["seek"] = cmd_seek;
     mCommandFuncMap["sort"] = cmd_sort;
     mCommandFuncMap["stats"] = cmd_stats;
+    mCommandFuncMap["taylor"] = cmd_taylor;
     mCommandFuncMap["url"] = cmd_url;
     mCommandFuncMap["window"] = cmd_window;
     mCommandFuncMap["zeroes"] = cmd_zeroes;
