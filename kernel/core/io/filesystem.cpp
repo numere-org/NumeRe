@@ -80,7 +80,7 @@ FileSystem& FileSystem::assign(const FileSystem& _fSys)
 /// \return string
 ///
 /////////////////////////////////////////////////
-string FileSystem::cleanPath(string sFilePath) const
+string FileSystem::cleanPath(string sFilePath, bool checkInvalidChars) const
 {
     sFilePath = replacePathSeparator(removeQuotationMarks(sFilePath));
     StripSpaces(sFilePath);
@@ -108,6 +108,9 @@ string FileSystem::cleanPath(string sFilePath) const
                 sFilePath = sTokens[0][1] + sFilePath.substr(6);
         }
     }
+
+    if (!checkInvalidChars)
+        return sFilePath;
 
     const std::string sINVALID_CHARS = "\"#%&<>|";
 
@@ -274,12 +277,12 @@ int FileSystem::createFolders(const string& _sPath) const
 /// \return string
 ///
 /////////////////////////////////////////////////
-string FileSystem::ValidFileName(string _sFileName, const string sExtension, bool checkExtension) const
+string FileSystem::ValidFileName(string _sFileName, const string sExtension, bool checkExtension, bool doCleanPath) const
 {
     string sValid = "";
     sValidExtensions = toLowerCase(sValidExtensions);
 
-    _sFileName = cleanPath(_sFileName);
+    _sFileName = cleanPath(_sFileName, doCleanPath);
 
     // Find the position of the last colon in the string
     // should be directly after the drive letter
@@ -361,9 +364,9 @@ string FileSystem::ValidFileName(string _sFileName, const string sExtension, boo
 /// \return string
 ///
 /////////////////////////////////////////////////
-string FileSystem::ValidFolderName(string _sFileName) const
+string FileSystem::ValidFolderName(string _sFileName, bool doCleanPath) const
 {
-    _sFileName = cleanPath(_sFileName);
+    _sFileName = cleanPath(_sFileName, doCleanPath);
 
     // Find the position of the last colon in the string
     // should be directly after the drive letter

@@ -42,7 +42,7 @@ std::string fromSystemCodePage(std::string);
 class FileSystem
 {
     private:
-        std::string cleanPath(std::string sFilePath) const;
+        std::string cleanPath(std::string sFilePath, bool checkInvalidChars) const;
         void resolveWildCards(std::string& _sFileName, bool isFile) const;
 
 	protected:												// In allen CHILD-Klassen verfuegbar
@@ -58,8 +58,8 @@ class FileSystem
 
         FileSystem& assign(const FileSystem& _fSys);
 
-		std::string ValidFileName(std::string _sFileName, const std::string sExtension = ".dat", bool checkExtension = true) const;			// gibt einen gueltigen Dateinamen auf Basis von _sFileName zurueck
-		std::string ValidFolderName(std::string _sFileName) const;			// gibt einen gueltigen Ordnernamen auf Basis von _sFileName zurueck
+		std::string ValidFileName(std::string _sFileName, const std::string sExtension = ".dat", bool checkExtension = true, bool doCleanPath = true) const;			// gibt einen gueltigen Dateinamen auf Basis von _sFileName zurueck
+		std::string ValidFolderName(std::string _sFileName, bool doCleanPath = true) const;			// gibt einen gueltigen Ordnernamen auf Basis von _sFileName zurueck
 		std::string ValidizeAndPrepareName(const std::string& _sFileName, const std::string& sExtension = ".dat") const;
 		int setPath(std::string _sPath, bool bMkDir, std::string _sExePath);			// setzt sPath auf _sPath
 		void createRevisionsFolder();

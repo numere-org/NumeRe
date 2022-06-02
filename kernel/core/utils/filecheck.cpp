@@ -1,4 +1,29 @@
 #include <wx/filename.h>
+#include "../../kernel.hpp"
+
+
+/////////////////////////////////////////////////
+/// \brief This function checks for the invalid
+/// chars that can not appear in a valid directory
+/// name.
+///
+/// \param sPathname std::string
+/// \return bool
+///
+/////////////////////////////////////////////////
+static bool checkInvalidChars(std::string sPathname)
+{
+    // Define the invalid chars
+    const std::string sINVALID_CHARS = "\"#%&|*?";
+
+    // Go through all chars and check for invalid ones
+    for (size_t i = 0; i < sPathname.length(); i++)
+    {
+        if (sPathname[i] == '~' || sINVALID_CHARS.find(sPathname[i]) != std::string::npos)
+            return false;
+    }
+    return true;
+}
 
 
 /////////////////////////////////////////////////
@@ -11,16 +36,29 @@
 /////////////////////////////////////////////////
 bool is_dir(std::string sPathname)
 {
-    wxFileName sWxPathname(sPathname);
-    if (!sWxPathname.IsOk())
+    // Check for invalid chars
+    if (!checkInvalidChars(sPathname))
         return false;
 
-    return sWxPathname.DirExists();
+    // Get the FileSystem instance to replace symbols in the file name using an existing method
+    FileSystem& fileSystemInstance = NumeReKernel::getInstance()->getFileSystem();
+    sPathname = fileSystemInstance.ValidFolderName(sPathname, false);
+
+    // Check for double ':' at the beginning of the path or left over '<' '>' symbols
+    if (sPathname.find(':', 2) != std::string::npos || sPathname.find_first_of("<>") != std::string::npos)
+        return false;
+
+    // Check for a valid volume identifier (be of pattern "C:/" if not a network path)
+    if (sPathname[2] != '/' && !(sPathname.substr(0,2) == "//" && isalpha(sPathname[2])))
+        return false;
+
+    return true;
 }
 
 
 /////////////////////////////////////////////////
-/// \brief This function checks whether
+/// \brief This function checks whether a given
+/// string is a valid file path.
 ///
 /// \param sPathname std::string
 /// \return bool
@@ -28,10 +66,30 @@ bool is_dir(std::string sPathname)
 /////////////////////////////////////////////////
 bool is_file(std::string sPathname)
 {
-    wxFileName sWxFilename(sPathname);
-    if (!sWxFilename.IsOk())
+    // Check for invalid chars
+    if (!checkInvalidChars(sPathname))
         return false;
 
-    return sWxFilename.FileExists();
+    // Get the FileSystem instance to replace symbols in the file name using an existing method
+    FileSystem& fileSystemInstance = NumeReKernel::getInstance()->getFileSystem();
+    sPathname = fileSystemInstance.ValidFileName(sPathname, "", false, false);
+
+    // Check for double ':' at the beginning of the path or left over '<' '>' symbols
+    if (sPathname.find(':', 2) != std::string::npos || sPathname.find_first_of("<>") != std::string::npos)
+        return false;
+
+    // Check for a valid volume identifier (be of pattern "C:/" if not a network path)
+    if (sPathname[2] != '/' && !(sPathname.substr(0,2) == "//" && isalpha(sPathname[2])))
+        return false;
+
+    // Manually check if there is a file extension
+    if (sPathname.find_last_of(".") == std::string::npos || sPathname.back() == '.')
+        return false;
+
+    // Check if there is valid file name
+    if (!isalpha(sPathname[sPathname.find_last_of(".") - 1]))
+        return false;
+
+    return true;
 }
 
