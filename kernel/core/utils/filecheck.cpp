@@ -82,8 +82,14 @@ bool is_file(std::string sPathname)
     if (sPathname[2] != '/' && !(sPathname.substr(0,2) == "//" && isalpha(sPathname[2])))
         return false;
 
-    // Manually check if there is a file extension
+    // Manually check if there could be file extension. Check for a dot and if there are chars after it
     if (sPathname.find_last_of(".") == std::string::npos || sPathname.back() == '.')
+        return false;
+
+    // The file extension can not contain anything but alphabetical chars
+    size_t extStart = sPathname.find_last_of(".");
+    std::string ext = sPathname.substr(extStart + 1, sPathname.length() - extStart);
+    if (!std::all_of(ext.begin(), ext.end(), [](char const &c) { return std::isalnum(c);}))
         return false;
 
     // Check if there is valid file name
