@@ -160,20 +160,17 @@ void CommandLineParser::parse(const std::string& sCommandString, CommandLinePars
                 if (m_expr[i] == '"' && (!i || m_expr[i-1] != '\\'))
                     nQuotes++;
 
+                // Are we not in a string literal?
                 if (!(nQuotes % 2))
                 {
                     if (m_expr[i] == '(' || m_expr[i] == '{')
                         i += getMatchingParenthesis(m_expr.substr(i));
 
-                    if (m_expr[i] == ' ' || m_expr[i] == '-')
+                    // Is this the start of the parameter list?
+                    if (m_expr.substr(i, 2) == "--" || m_expr.substr(i, 5) == "-set ")
                     {
-                        size_t pos = std::min(m_expr.find("-set", i), m_expr.find("--", i));
-
-                        if (pos != std::string::npos)
-                        {
-                            m_parlist = m_expr.substr(pos);
-                            m_expr.erase(pos);
-                        }
+                        m_parlist = m_expr.substr(i);
+                        m_expr.erase(i);
 
                         break;
                     }

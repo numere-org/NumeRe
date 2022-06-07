@@ -82,7 +82,6 @@ class Procedure : public FlowCtrl, public PackageManager
         void resetProcedure(mu::Parser& _parser, bool bSupressAnswer);
         void extractCurrentNamespace(const std::string& sProc);
         bool handleVariableDefinitions(std::string& sProcCommandLine, const std::string& sCommand);
-        void readFromInclude(std::ifstream& fInclude, int nIncludeType, mu::Parser& _parser, FunctionDefinitionManager& _functions, MemoryManager& _data, Output& _out, PlotData& _pData, Script& _script, Settings& _option, unsigned int nth_procedure);
         int handleIncludeSyntax(std::string& sProcCommandLine, std::ifstream& fInclude, bool bReadingFromInclude);
         void extractProcedureInformation(const std::string& sCmdLine, size_t nPos, std::string& sProcName, std::string& sArgList, std::string& sFileName);
 

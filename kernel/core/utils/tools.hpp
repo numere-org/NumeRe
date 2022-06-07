@@ -23,6 +23,7 @@
 #include <string>
 #include <cstdlib>
 #include <vector>
+#include <random>
 
 #include "../structures.hpp"
 #include "../ui/error.hpp"
@@ -34,6 +35,7 @@ extern const std::string sVersion;
 long long int intCast(double number);
 long long int intCast(const std::complex<double>& number);
 
+std::mt19937& getRandGenInstance();
 int findParameter(const std::string& sCmd, const std::string& sParam, const char cFollowing = ' ');
 bool getStringArgument(const std::string& sCmd, std::string& sArgument);
 std::string extractStringToken(const std::string& sCmd, size_t nPos);
@@ -174,6 +176,7 @@ size_t qSortDouble(double* dArray, size_t nlength);
 void replaceStringMethod(std::string& sLine, size_t nPos, size_t nLength, const std::string& sReplacement);
 std::string shortenFileName(const std::string& sFullFileName);
 std::string incrementVersion(std::string _sVer);
+
 
 #endif
 

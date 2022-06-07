@@ -33,6 +33,9 @@
 #include "functionimplementation.hpp"
 #include "statslogic.hpp"
 
+// Forward declaration from tools.hpp
+std::mt19937& getRandGenInstance();
+
 /////////////////////////////////////////////////
 /// \brief Simple helper for printing the matrix
 /// dimensions to a string.
@@ -491,7 +494,6 @@ static Matrix createShuffledMatrix(const MatFuncData& funcData, const MatFuncErr
         throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, errorInfo.command, errorInfo.position);
 
     Matrix _mBase = createFilledMatrix(nBase, 1, 0.0);
-    static double dSeed = 1;
 
     if (nShuffle > nBase)
         nShuffle = nBase;
@@ -500,27 +502,17 @@ static Matrix createShuffledMatrix(const MatFuncData& funcData, const MatFuncErr
     for (size_t i = 0; i < nBase; i++)
         _mBase(i) = i+1;
 
-    // Initialize the random number engine using the
-    // time and the last random number created by the
-    // random engine
-    std::default_random_engine randGen((double)time(0)*dSeed);
-
     // Shuffle the vector by swapping the i-th shuffled
     // element with the i-th element
     for (size_t i = 0; i < nShuffle; i++)
     {
         std::uniform_real_distribution<double> randDist(i, nBase-1);
 
-        int nIndex = rint(randDist(randGen));
+        int nIndex = rint(randDist(getRandGenInstance()));
         mu::value_type dTemp = _mBase(i);
         _mBase(i) = _mBase(nIndex);
         _mBase(nIndex) = dTemp;
     }
-
-    std::uniform_real_distribution<double> randDist(1, nBase-1);
-
-    // Update the seed
-    dSeed = randDist(randGen);
 
     // Return only the requested vector length
     _mBase.resize(nShuffle, 1);
@@ -583,7 +575,7 @@ static Matrix invertMatrix(const MatFuncData& funcData, const MatFuncErrorInfo& 
     {
         _mInverse(0, 0) =  (_mToInvert(1, 1)*_mToInvert(2, 2) - _mToInvert(2, 1)*_mToInvert(1, 2)) / dDet;
         _mInverse(1, 0) = -(_mToInvert(1, 0)*_mToInvert(2, 2) - _mToInvert(1, 2)*_mToInvert(2, 0)) / dDet;
-        _mInverse(1, 0) =  (_mToInvert(1, 0)*_mToInvert(2, 1) - _mToInvert(1, 1)*_mToInvert(2, 0)) / dDet;
+        _mInverse(2, 0) =  (_mToInvert(1, 0)*_mToInvert(2, 1) - _mToInvert(1, 1)*_mToInvert(2, 0)) / dDet;
 
         _mInverse(0, 1) = -(_mToInvert(0, 1)*_mToInvert(2, 2) - _mToInvert(0, 2)*_mToInvert(2, 1)) / dDet;
         _mInverse(1, 1) =  (_mToInvert(0, 0)*_mToInvert(2, 2) - _mToInvert(0, 2)*_mToInvert(2, 0)) / dDet;

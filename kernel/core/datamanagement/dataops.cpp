@@ -1006,7 +1006,9 @@ bool writeToFile(CommandLineParser& cmdParser)
 			// Scripts, procedures and data files may not be written directly
 			// this avoids reloads during the execution and other unexpected
 			// behavior
-			if (sFileName.substr(sFileName.rfind('.')) == ".nprc" || sFileName.substr(sFileName.rfind('.')) == ".nscr" || sFileName.substr(sFileName.rfind('.')) == ".ndat")
+            if (sFileName.substr(sFileName.rfind('.')) == ".nprc"
+                || sFileName.substr(sFileName.rfind('.')) == ".nscr"
+                || sFileName.substr(sFileName.rfind('.')) == ".ndat")
 			{
 				string sErrorToken;
 

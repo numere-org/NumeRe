@@ -34,7 +34,6 @@
 #include <iomanip>
 #include <numeric>
 #include <ctime>
-#include <random>
 #include <csignal>
 #include <boost/math/common_factor.hpp>
 #include <gsl/gsl_sf.h>
@@ -1818,10 +1817,6 @@ value_type parser_theta(const value_type& x, const value_type& y, const value_ty
 }
 
 
-/// Global instance as base random generator usable from multiple instances
-mt19937 randGenerator((double)time(0));
-
-
 /////////////////////////////////////////////////
 /// \brief This function returns a uniformly
 /// distributed random number between both
@@ -1838,7 +1833,7 @@ value_type parser_Random(const value_type& vRandMin, const value_type& vRandMax)
         return NAN;
 
     static uniform_real_distribution<double> randDist(0, 1);
-    return randDist(randGenerator) * (vRandMax - vRandMin) + vRandMin;
+    return randDist(getRandGenInstance()) * (vRandMax - vRandMin) + vRandMin;
 }
 
 
@@ -1858,7 +1853,7 @@ value_type parser_gRandom(const value_type& vRandAvg, const value_type& vRandstd
         return NAN;
 
     static normal_distribution<double> randDist(0, 1);
-    return randDist(randGenerator) * fabs(vRandstd) + vRandAvg;
+    return randDist(getRandGenInstance()) * fabs(vRandstd) + vRandAvg;
 }
 
 

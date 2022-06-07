@@ -6391,9 +6391,13 @@ void Plot::CoordSettings()
                     {
                         if (!_pData.getSettings(PlotData::LOG_SCHEMATIC))
                         {
-                            _graph->SetOrigin(_pInfo.ranges[XRANGE].min(),
-                                              _pInfo.ranges[YRANGE].min(),
-                                              _pInfo.sCommand == "dens" && _pInfo.sCommand == "density" ? _pInfo.ranges[ZRANGE].max() : _pInfo.ranges[ZRANGE].min());
+                            // Change this settings only, if a density plot is requested
+                            if (_pInfo.sCommand == "dens" || _pInfo.sCommand == "density")
+                            {
+                                _graph->SetOrigin(_pInfo.ranges[XRANGE].min(),
+                                                  _pInfo.ranges[YRANGE].min(),
+                                                  _pInfo.ranges[ZRANGE].max());
+                            }
 
                             _graph->Axis();
                         }

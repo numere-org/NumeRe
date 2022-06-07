@@ -631,13 +631,9 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, F
     if (!setProcName(sProc))
         throw SyntaxError(SyntaxError::INVALID_PROCEDURE_NAME, "$" + sProc + "(" + sVarList + ")", SyntaxError::invalid_position);
 
-    ifstream fInclude;
-
     sProcCommandLine.clear();
-    string sCmdCache = "";
-    string sCurrentCommand = "";
-    bool bReadingFromInclude = false;
-    int nIncludeType = 0;
+    std::string sCmdCache = "";
+    std::string sCurrentCommand = "";
     int nByteCode = 0;
     int nCurrentByteCode = 0;
     Returnvalue _ReturnVal;
@@ -814,45 +810,20 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, F
         // command line sources
         if (!sCmdCache.length())
         {
-            if (!bReadingFromInclude)
+            currentLine = ProcElement->getNextLine(currentLine.first);
+            nCurrentLine = currentLine.first;
+            sProcCommandLine = currentLine.second.getCommandLine();
+            nCurrentByteCode = currentLine.second.getByteCode();
+            nByteCode = nCurrentByteCode;
+
+            // Obtain the current command from the command line
+            sCurrentCommand = findCommand(sProcCommandLine).sString;
+
+            if (_option.useDebugger()
+                && _debugger.getBreakpointManager().isBreakpoint(sCurrentProcedureName, nCurrentLine)
+                && sProcCommandLine.substr(0, 2) != "|>")
             {
-                currentLine = ProcElement->getNextLine(currentLine.first);
-                nCurrentLine = currentLine.first;
-                sProcCommandLine = currentLine.second.getCommandLine();
-                nCurrentByteCode = currentLine.second.getByteCode();
-                nByteCode = nCurrentByteCode;
-
-                // Obtain the current command from the command line
-                sCurrentCommand = findCommand(sProcCommandLine).sString;
-
-                if (_option.useDebugger()
-                    && _debugger.getBreakpointManager().isBreakpoint(sCurrentProcedureName, nCurrentLine)
-                    && sProcCommandLine.substr(0, 2) != "|>")
-                {
-                    sProcCommandLine.insert(0, "|> ");
-                }
-            }
-            else
-            {
-                // Get the next command line from the included script
-                try
-                {
-                    readFromInclude(fInclude, nIncludeType, _parser, _functions, _data, _out, _pData, _script, _option, nth_procedure);
-                }
-                catch (...)
-                {
-                    _debugger.gatherInformations(_varFactory, sProcCommandLine, sCurrentProcedureName, GetCurrentLine());
-                    _debugger.showError(current_exception());
-
-                    resetProcedure(_parser, bSupressAnswer_back);
-                    throw;
-                }
-
-                if (!fInclude.is_open())
-                {
-                    bReadingFromInclude = false;
-                    nIncludeType = 0;
-                }
+                sProcCommandLine.insert(0, "|> ");
             }
 
             // Stop the evaluation if the current procedure,
@@ -1044,35 +1015,6 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, F
 
                 sProcCommandLine = "";
                 continue;
-            }
-        }
-
-        // Handle include syntax
-        if (nCurrentByteCode == ProcedureCommandLine::BYTECODE_NOT_PARSED
-            || nCurrentByteCode & ProcedureCommandLine::BYTECODE_INCLUDE)
-        {
-            try
-            {
-                nIncludeType = handleIncludeSyntax(sProcCommandLine, fInclude, bReadingFromInclude);
-
-                if (fInclude.is_open())
-                    bReadingFromInclude = true;
-                else
-                    bReadingFromInclude = false;
-
-                if (bReadingFromInclude && nCurrentByteCode == ProcedureCommandLine::BYTECODE_NOT_PARSED)
-                    nByteCode |= ProcedureCommandLine::BYTECODE_INCLUDE;
-
-                if (!sProcCommandLine.length())
-                    continue;
-            }
-            catch (...)
-            {
-                _debugger.gatherInformations(_varFactory, sProcCommandLine, sCurrentProcedureName, GetCurrentLine());
-                _debugger.showError(current_exception());
-
-                resetProcedure(_parser, bSupressAnswer_back);
-                throw;
             }
         }
 
@@ -2886,217 +2828,6 @@ bool Procedure::handleVariableDefinitions(string& sProcCommandLine, const string
 
     // No local variable declaration in this command line
     return false;
-}
-
-
-/////////////////////////////////////////////////
-/// \brief This member function reads the lines
-/// from the included file. It acts quite
-/// independent from the rest of the procedure.
-///
-/// \param fInclude ifstream&
-/// \param nIncludeType int
-/// \param _parser Parser&
-/// \param _functions Define&
-/// \param _data Datafile&
-/// \param _out Output&
-/// \param _pData PlotData&
-/// \param _script Script&
-/// \param _option Settings&
-/// \param nth_procedure unsigned int
-/// \return void
-///
-/////////////////////////////////////////////////
-void Procedure::readFromInclude(ifstream& fInclude, int nIncludeType, Parser& _parser, FunctionDefinitionManager& _functions, MemoryManager& _data, Output& _out, PlotData& _pData, Script& _script, Settings& _option, unsigned int nth_procedure)
-{
-    string sProcCommandLine;
-    bool bSkipNextLine = false;
-    bool bAppendNextLine = false;
-    bool bBlockComment = false;
-    int nCurrentByteCode;
-
-    // Read as long as the end of the included script was not reached
-    while (!fInclude.eof())
-    {
-        nCurrentByteCode = 0;
-        getline(fInclude, sProcCommandLine);
-
-        StripSpaces(sProcCommandLine);
-
-        // Ignore empty lines and line comments
-        if (!sProcCommandLine.length())
-            continue;
-
-        if (sProcCommandLine.substr(0, 2) == "##")
-            continue;
-
-        // Ignore install sections
-        if (sProcCommandLine.substr(0, 9) == "<install>"
-            || (findCommand(sProcCommandLine).sString == "global" && sProcCommandLine.find("<install>") != string::npos))
-        {
-            while (!fInclude.eof())
-            {
-                getline(fInclude, sProcCommandLine);
-
-                StripSpaces(sProcCommandLine);
-
-                if (sProcCommandLine.substr(0, 12) == "<endinstall>"
-                        || (findCommand(sProcCommandLine).sString == "global" && sProcCommandLine.find("<endinstall>") != string::npos))
-                    break;
-            }
-
-            sProcCommandLine = "";
-            continue;
-        }
-
-        // Ignore remaining comments
-        if (sProcCommandLine.find("##") != string::npos)
-            sProcCommandLine = sProcCommandLine.substr(0, sProcCommandLine.find("##"));
-
-        if (sProcCommandLine.substr(0, 2) == "#*" && sProcCommandLine.find("*#", 2) == string::npos)
-        {
-            bBlockComment = true;
-            sProcCommandLine = "";
-            continue;
-        }
-
-        // Handle block comments
-        if (bBlockComment && sProcCommandLine.find("*#") != string::npos)
-        {
-            bBlockComment = false;
-
-            if (sProcCommandLine.find("*#") == sProcCommandLine.length() - 2)
-            {
-                sProcCommandLine = "";
-                continue;
-            }
-            else
-                sProcCommandLine = sProcCommandLine.substr(sProcCommandLine.find("*#") + 2);
-        }
-        else if (bBlockComment && sProcCommandLine.find("*#") == string::npos)
-        {
-            sProcCommandLine = "";
-            continue;
-        }
-
-        // Skip the next line, if the current one ends with a doubled backslash
-        if (bSkipNextLine && sProcCommandLine.length() > 2 && sProcCommandLine.substr(sProcCommandLine.length() - 2) == "\\\\")
-        {
-            sProcCommandLine = "";
-            continue;
-        }
-        else if (bSkipNextLine)
-        {
-            bSkipNextLine = false;
-            sProcCommandLine = "";
-            continue;
-        }
-
-        // If the current line doesn't contain any of the included commands
-        // ignore it
-        if (findCommand(sProcCommandLine).sString != "define"
-                && findCommand(sProcCommandLine).sString != "ifndef"
-                && findCommand(sProcCommandLine).sString != "ifndefined"
-                && findCommand(sProcCommandLine).sString != "redefine"
-                && findCommand(sProcCommandLine).sString != "redef"
-                && findCommand(sProcCommandLine).sString != "lclfunc"
-                && findCommand(sProcCommandLine).sString != "global"
-                && !bAppendNextLine)
-        {
-            if (sProcCommandLine.length() > 2 && sProcCommandLine.substr(sProcCommandLine.length() - 2) == "\\\\")
-                bSkipNextLine = true;
-
-            sProcCommandLine = "";
-            continue;
-        }
-
-        // Depending on the include type, ignore the other commands
-        if (nIncludeType == 1
-                && findCommand(sProcCommandLine).sString != "define"
-                && findCommand(sProcCommandLine).sString != "ifndef"
-                && findCommand(sProcCommandLine).sString != "ifndefined"
-                && findCommand(sProcCommandLine).sString != "redefine"
-                && findCommand(sProcCommandLine).sString != "redef"
-                && findCommand(sProcCommandLine).sString != "lclfunc"
-                && !bAppendNextLine)
-        {
-            if (sProcCommandLine.length() > 2 && sProcCommandLine.substr(sProcCommandLine.length() - 2) == "\\\\")
-                bSkipNextLine = true;
-
-            sProcCommandLine = "";
-            continue;
-        }
-        else if (nIncludeType == 2
-                 && findCommand(sProcCommandLine).sString != "global"
-                 && !bAppendNextLine)
-        {
-            if (sProcCommandLine.length() > 2 && sProcCommandLine.substr(sProcCommandLine.length() - 2) == "\\\\")
-                bSkipNextLine = true;
-
-            sProcCommandLine = "";
-            continue;
-        }
-
-        // Append the next line, if the current one ends with a doubled backslash
-        if (sProcCommandLine.length() > 2 && sProcCommandLine.substr(sProcCommandLine.length() - 2) == "\\\\")
-            bAppendNextLine = true;
-        else
-            bAppendNextLine = false;
-
-        // Handle the trailing semicolon
-        if (sProcCommandLine.back() == ';')
-        {
-            bProcSupressAnswer = true;
-            sProcCommandLine.pop_back();
-        }
-
-        // Execure procedures, if necessary
-        if (sProcCommandLine.find('$') != string::npos && sProcCommandLine.find('(', sProcCommandLine.find('$')) != string::npos)
-        {
-            if (nFlags & ProcedureCommandLine::FLAG_INLINE)
-            {
-                throw SyntaxError(SyntaxError::INLINE_PROCEDURE_IS_NOT_INLINE, sProcCommandLine, SyntaxError::invalid_position);
-            }
-
-            try
-            {
-                FlowCtrl::ProcedureInterfaceRetVal nReturn = procedureInterface(sProcCommandLine, _parser, _functions, _data, _out, _pData, _script, _option, nth_procedure);
-
-                if (nReturn == FlowCtrl::INTERFACE_ERROR)
-                    throw SyntaxError(SyntaxError::PROCEDURE_ERROR, sProcCommandLine, SyntaxError::invalid_position);
-                else if (nReturn == FlowCtrl::INTERFACE_EMPTY)
-                {
-                    sProcCommandLine = "";
-                    bProcSupressAnswer = false;
-                    continue;
-                }
-            }
-            catch (...)
-            {
-                throw;
-            }
-        }
-
-        // Evaluate the current line
-        try
-        {
-            ProcCalc(sProcCommandLine, findCommand(sProcCommandLine).sString, nCurrentByteCode, _parser, _functions, _data, _option, _out, _pData, _script);
-        }
-        catch (...)
-        {
-            throw;
-        }
-
-        sProcCommandLine = "";
-
-        if (bProcSupressAnswer)
-            bProcSupressAnswer = false;
-    }
-
-    if (fInclude.eof())
-    {
-        fInclude.close();
-    }
 }
 
 

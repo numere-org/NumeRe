@@ -24,6 +24,25 @@
 
 using namespace std;
 
+/// File static random number generator, which will be usable via the scoped getRandGenInstance
+/// function, which will return a reference to this random number generator
+static std::mt19937 randGenerator((double)time(0));
+
+
+/////////////////////////////////////////////////
+/// \brief Returns a reference to the central
+/// random number generator instance, which is
+/// globally accessible by all random number
+/// functions.
+///
+/// \return std::mt19937&
+///
+/////////////////////////////////////////////////
+std::mt19937& getRandGenInstance()
+{
+    return randGenerator;
+}
+
 
 /////////////////////////////////////////////////
 /// \brief This function searches the passed
