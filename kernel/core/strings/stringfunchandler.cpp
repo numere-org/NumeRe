@@ -1493,12 +1493,12 @@ namespace NumeRe
                 }
             }
 
+            // check for data sets in the evaluation of the `valtostr()` arguments
+            if (!isStringExpression(sExpr) && _data.containsTablesOrClusters(sExpr))
+                getDataElements(sExpr, _parser, _data, _option);
+
             if (!isStringExpression(sExpr))
             {
-                // check for data sets in the evaluation of the `valtostr()` arguments
-                if (_data.containsTablesOrClusters(sExpr))
-                    getDataElements(sExpr, _parser, _data, _option);
-
                 int nResults = 0;
                 value_type* v = 0;
                 _parser.SetExpr(sExpr);
@@ -1535,8 +1535,8 @@ namespace NumeRe
                     if (i < vCounts.size())
                         nLen = intCast(fabs(vCounts[i]));
 
-                    while (strRes.vResult[i].length() < nLen && sChar.length())
-                        strRes.vResult[i].insert(0, sChar);
+                    while (strRes.vResult[i].length() < nLen + 2*(strRes.vResult[i].front() == '"') && sChar.length())
+                        strRes.vResult[i].insert((strRes.vResult[i].front() == '"') ? 1 : 0, sChar);
 
                     // add quotation marks, if they are missing
                     strRes.vResult[i] = addQuotationMarks(strRes.vResult[i]);

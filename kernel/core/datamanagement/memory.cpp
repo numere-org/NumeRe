@@ -524,7 +524,8 @@ ValueVector Memory::readMixedMem(const VectorIndex& _vLine, const VectorIndex& _
         vReturn.push_back("");
     else
     {
-        vReturn.resize(_vLine.size()*_vCol.size(), "");
+#warning TODO (numere#1#06/08/22): Added escaped quotation marks to actually enable reading empty entries
+        vReturn.resize(_vLine.size()*_vCol.size(), "\"\"");
 
         //#pragma omp parallel for
         for (size_t j = 0; j < _vCol.size(); j++)

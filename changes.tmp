@@ -39,3 +39,5 @@ Cleaned	The found search term in the editor is now always visible even if previo
 Applied	"taylor" will now additionally return the calculated polynomial coefficients.
 Added	Added the functions "is_dir()" and "is_file()" that check if a string is a valid directory or file name.
 Fixed	"shuffle()" now also uses the common global random number generator.
+Fixed	The function "valtostr()" may now handle strings for their first argument correctly.
+Applied	The matrix functions "eigenvals()", "eigenvects()", "det()", and "diagonalize()" will now throw an error, if they face a matrix containing invalid values.

@@ -363,6 +363,9 @@ __attribute__((force_align_arg_pointer)) static Matrix calcEigenVectsAndValues(c
         throw SyntaxError(SyntaxError::WRONG_MATRIX_DIMENSIONS_FOR_MATOP, errorInfo.command, errorInfo.position,
                           printMatrixDim(_mMatrix));
 
+    if (_mMatrix.containsInvalidValues())
+        throw SyntaxError(SyntaxError::MATRIX_CONTAINS_INVALID_VALUES, errorInfo.command, errorInfo.position);
+
     Matrix _mEigenVals;
     Matrix _mEigenVects;
 
@@ -538,6 +541,9 @@ static Matrix invertMatrix(const MatFuncData& funcData, const MatFuncErrorInfo& 
     if (!funcData.mat1.isSquare())
         throw SyntaxError(SyntaxError::WRONG_MATRIX_DIMENSIONS_FOR_MATOP, errorInfo.command, errorInfo.position,
                           printMatrixDim(funcData.mat1));
+
+    if (funcData.mat1.containsInvalidValues())
+        throw SyntaxError(SyntaxError::MATRIX_CONTAINS_INVALID_VALUES, errorInfo.command, errorInfo.position);
 
     // Gauss-Elimination???
     Matrix _mInverse = identityMatrix(MatFuncData(funcData.mat1.rows()), errorInfo);

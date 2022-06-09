@@ -341,6 +341,24 @@ class Matrix
         }
 
         /////////////////////////////////////////////////
+        /// \brief Returns true, if this matrix contains
+        /// invalid values.
+        ///
+        /// \return bool
+        ///
+        /////////////////////////////////////////////////
+        bool containsInvalidValues() const
+        {
+            for (auto& v : m_storage)
+            {
+                if (mu::isnan(v) || mu::isinf(v))
+                    return true;
+            }
+
+            return false;
+        }
+
+        /////////////////////////////////////////////////
         /// \brief Convert the dimensions to a printable
         /// string.
         ///
