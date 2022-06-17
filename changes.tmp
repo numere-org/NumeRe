@@ -41,3 +41,6 @@ Added	Added the functions "is_dir()" and "is_file()" that check if a string is a
 Fixed	"shuffle()" now also uses the common global random number generator.
 Fixed	The function "valtostr()" may now handle strings for their first argument correctly.
 Applied	The matrix functions "eigenvals()", "eigenvects()", "det()", and "diagonalize()" will now throw an error, if they face a matrix containing invalid values.
+Fixed	"getkeyval()" was improved to handle more numerical cases.
+Fixed	An interal error during string value comparison containing escaped quotation marks ("\"") was resolved.
+Cleaned	Flow control headers are now also debuggable and interruptable. The contained expressions may however look a little bit weird.

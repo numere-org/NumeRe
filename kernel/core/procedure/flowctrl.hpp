@@ -140,7 +140,7 @@ class FlowCtrl
 
         int compile(std::string sLine, int nthCmd);
         int calc(std::string sLine, int nthCmd);
-        value_type* evalHeader(int& nNum, std::string& sHeadExpression, bool bIsForHead, int nth_Cmd);
+        value_type* evalHeader(int& nNum, std::string& sHeadExpression, bool bIsForHead, int nth_Cmd, const std::string& sHeadCommand);
         int evalForkFlowCommands(int __j, int nth_loop);
 
         void replaceLocalVars(std::string& sLine);

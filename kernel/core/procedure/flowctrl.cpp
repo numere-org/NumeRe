@@ -159,6 +159,14 @@ int FlowCtrl::for_loop(int nth_Cmd, int nth_loop)
         sVar = sVar.substr(0, sVar.find('='));
         StripSpaces(sVar);
 
+        if (sVar.substr(0, 2) == "|>")
+        {
+            vCmdArray[nth_Cmd].sFlowCtrlHeader.insert(0, "|>");
+            sVar.erase(0, 2);
+        }
+
+        StripSpaces(sVar);
+
         // Get the variable address of the loop
         // index
         for (size_t i = 0; i < sVarArray.size(); i++)
@@ -175,7 +183,7 @@ int FlowCtrl::for_loop(int nth_Cmd, int nth_loop)
     nVarAdress = vCmdArray[nth_Cmd].nVarIndex;
 
     // Evaluate the header of the for loop
-    v = evalHeader(nNum, sHead, true, nth_Cmd);
+    v = evalHeader(nNum, sHead, true, nth_Cmd, "for");
 
     // Store the left and right boundary of the
     // loop index
@@ -378,7 +386,7 @@ int FlowCtrl::while_loop(int nth_Cmd, int nth_loop)
     {
         // Evaluate the header (has to be done in every
         // run)
-        v = evalHeader(nNum, sWhile_Condition, false, nth_Cmd);
+        v = evalHeader(nNum, sWhile_Condition, false, nth_Cmd, "while");
 
         // Ensure that the loop is aborted, if the
         // maximal number of repetitions has been
@@ -522,6 +530,7 @@ int FlowCtrl::if_fork(int nth_Cmd, int nth_loop)
     bPrintedStatus = false;
     value_type* v;
     int nNum = 0;
+    std::string sHeadCommand = "if";
 
     // The first command is always an "if", therefore always
     // enter this section. The condition at the end will check
@@ -539,7 +548,7 @@ int FlowCtrl::if_fork(int nth_Cmd, int nth_loop)
         std::string sHead = vCmdArray[nth_Cmd].sFlowCtrlHeader;
 
         // Evaluate the header of the current elseif case
-        v = evalHeader(nNum, sHead, false, nth_Cmd);
+        v = evalHeader(nNum, sHead, false, nth_Cmd, sHeadCommand);
 
         // If the condition is true, enter the if-case
         if (v[0] != 0.0 && !mu::isnan(v[0]))
@@ -651,6 +660,8 @@ int FlowCtrl::if_fork(int nth_Cmd, int nth_loop)
                 return nEndif;
             else
                 nth_Cmd = nElse;
+
+            sHeadCommand = "elseif";
         }
     } while (vCmdArray[nth_Cmd].sCommand.find(">>elseif") != std::string::npos);
 
@@ -774,7 +785,7 @@ int FlowCtrl::switch_fork(int nth_Cmd, int nth_loop)
     int nNum = 0;
 
     // Evaluate the header of the current switch statement and its cases
-    v = evalHeader(nNum, sSwitch_Condition, false, nth_Cmd);
+    v = evalHeader(nNum, sSwitch_Condition, false, nth_Cmd, "switch");
 
     // Search for the correct first(!) case
     for (int i = 0; i < nNum; i++)
@@ -1155,13 +1166,48 @@ int FlowCtrl::try_catch(int nth_Cmd, int nth_loop)
 /// \param sHeadExpression std::string&
 /// \param bIsForHead bool
 /// \param nth_Cmd int
+/// \param sHeadCommand const std::string&
 /// \return value_type*
 ///
 /////////////////////////////////////////////////
-value_type* FlowCtrl::evalHeader(int& nNum, std::string& sHeadExpression, bool bIsForHead, int nth_Cmd)
+value_type* FlowCtrl::evalHeader(int& nNum, std::string& sHeadExpression, bool bIsForHead, int nth_Cmd, const std::string& sHeadCommand)
 {
     int nCurrentCalcType = nCalcType[nth_Cmd];
     std::string sCache;
+    nCurrentCommand = nth_Cmd;
+
+    // Eval the debugger breakpoint first
+    if (nCurrentCalcType & CALCTYPE_DEBUGBREAKPOINT
+        || sHeadExpression.substr(sHeadExpression.find_first_not_of(' '), 2) == "|>"
+        || nDebuggerCode == NumeReKernel::DEBUGGER_STEP)
+    {
+        if (sHeadExpression.substr(sHeadExpression.find_first_not_of(' '), 2) == "|>")
+            nCalcType[nth_Cmd] |= CALCTYPE_DEBUGBREAKPOINT;
+
+        if (sHeadExpression.substr(sHeadExpression.find_first_not_of(' '), 2) == "|>")
+        {
+            sHeadExpression.erase(sHeadExpression.find_first_not_of(' '), 2);
+            StripSpaces(sHeadExpression);
+        }
+
+        if (_optionRef->useDebugger()
+            && nDebuggerCode != NumeReKernel::DEBUGGER_LEAVE
+            && nDebuggerCode != NumeReKernel::DEBUGGER_STEPOVER)
+        {
+            NumeReKernel::getInstance()->getDebugger().gatherLoopBasedInformations(sHeadCommand + " (" + sHeadExpression + ")", getCurrentLineNumber(), mVarMap, vVarArray, sVarArray);
+            nDebuggerCode = evalDebuggerBreakPoint(*_parserRef, *_optionRef);
+        }
+    }
+
+    // Check, whether the user tried to abort the
+    // current evaluation
+    if (NumeReKernel::GetAsyncCancelState())
+    {
+        if (bPrintedStatus)
+            NumeReKernel::printPreFmt(" " + _lang.get("COMMON_CANCEL"));
+
+        throw SyntaxError(SyntaxError::PROCESS_ABORTED_BY_USER, "", SyntaxError::invalid_position);
+    }
 
     // Update the parser index, if the loop parsing
     // mode was activated
@@ -1656,6 +1702,9 @@ void FlowCtrl::setCommand(std::string& __sCmd, int nCurrentLine)
         {
             sAppendedExpression = __sCmd.substr(getMatchingParenthesis(__sCmd) + 1);
             __sCmd.erase(getMatchingParenthesis(__sCmd) + 1);
+
+            if (bDebuggingBreakPoint)
+                __sCmd.insert(__sCmd.find('(')+1, "|>");
         }
         else if (command == "case" || command == "default" || command == "catch")
         {
@@ -3479,6 +3528,10 @@ string FlowCtrl::extractFlagsAndIndexVariables()
         {
             sVar = vCmdArray[i].sCommand.substr(vCmdArray[i].sCommand.find('(') + 1);
             sVar = sVar.substr(0, sVar.find('='));
+
+            if (sVar.substr(0, 2) == "|>")
+                sVar.erase(0, 2);
+
             StripSpaces(sVar);
 
             if (sVars.find(";" + sVar + ";") == std::string::npos)

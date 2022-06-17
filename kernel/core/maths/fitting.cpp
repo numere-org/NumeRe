@@ -1492,7 +1492,8 @@ static string getParameterTable(FittingData& fitData, mu::varmap_type& paramsMap
         // Append the percentage of error compared to the final
         // value if the final value does exist
         if (fitData.vz_w[n][n])
-            sParameterTable += " " + strfill("(" + toString(abs(sqrt(abs(fitData.vz_w[n][n] / (*(pItem->second)))) * 100.0), 4) + "%)", 16) + "\n";
+            // Changed the position of the sqrt as it contained the parameter itself
+            sParameterTable += " " + strfill("(" + toString(abs(sqrt(abs(fitData.vz_w[n][n])) / (*(pItem->second)) * 100.0), 4) + "%)", 16) + "\n";
         else
             sParameterTable += "\n";
 

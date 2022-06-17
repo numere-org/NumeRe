@@ -2616,7 +2616,15 @@ static void calculate1dFFT(MemoryManager& _data, Indices& _idx, const std::strin
             if (i > _idx.row.size())
                 break;
 
-            _data.writeToTable(_idx.row[i], _idx.col.front(), sTargetTable, _fft.dFrequencyOffset + 2.0 * (double)(i)*_fft.dNyquistFrequency[0] / (double)(_fftData.GetNx()));
+            if (_fft.bShiftAxis)
+                _data.writeToTable(_idx.row[i], _idx.col.front(), sTargetTable,
+                                   _fft.dFrequencyOffset + 2.0 * (double)(i)*_fft.dNyquistFrequency[0] / (double)(_fftData.GetNx()));
+            else if (i <= nElements/2)
+                _data.writeToTable(_idx.row[i], _idx.col.front(), sTargetTable,
+                                   _fft.dFrequencyOffset + 2.0 * (double)(i)*_fft.dNyquistFrequency[0] / (double)(_fftData.GetNx()));
+            else
+                _data.writeToTable(_idx.row[i], _idx.col.front(), sTargetTable,
+                                   _fft.dFrequencyOffset + 2.0 * (double)(-(int)nElements+(int)i)*_fft.dNyquistFrequency[0] / (double)(_fftData.GetNx()));
 
             if (!_fft.bComplex)
             {
