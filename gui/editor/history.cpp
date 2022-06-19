@@ -89,9 +89,9 @@ NumeReHistory::NumeReHistory(NumeReWindow* mframe, Options* options, wxWindow* p
     this->StyleClearAll();
 
     this->SetMouseDwellTime(250);
-    loadHistory();
 
 	UpdateSyntaxHighlighting();
+    loadHistory();
 
 	SetEdgeMode(wxSTC_EDGE_NONE);
 	this->SetCaretLineVisible(false);
@@ -105,11 +105,23 @@ NumeReHistory::NumeReHistory(NumeReWindow* mframe, Options* options, wxWindow* p
     this->GotoPos(this->GetLastPosition());
 }
 
+
+/////////////////////////////////////////////////
+/// \brief Empty destructor
+/////////////////////////////////////////////////
 NumeReHistory::~NumeReHistory()
 {
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Update the syntax highlighting to
+/// represent the selected syntax colors.
+///
+/// \param forceUpdate bool
+/// \return void
+///
+/////////////////////////////////////////////////
 void NumeReHistory::UpdateSyntaxHighlighting(bool forceUpdate)
 {
 	this->StyleSetBackground(wxSTC_STYLE_DEFAULT, m_options->GetSyntaxStyle(Options::STANDARD).background);
@@ -248,6 +260,14 @@ void NumeReHistory::UpdateSyntaxHighlighting(bool forceUpdate)
     this->Colourise(0,-1);
 }
 
+
+/////////////////////////////////////////////////
+/// \brief Event handler for the context menu.
+///
+/// \param event wxCommandEvent&
+/// \return void
+///
+/////////////////////////////////////////////////
 void NumeReHistory::OnMenuEvent(wxCommandEvent& event)
 {
     switch (event.GetId())
@@ -261,6 +281,15 @@ void NumeReHistory::OnMenuEvent(wxCommandEvent& event)
     }
 }
 
+
+/////////////////////////////////////////////////
+/// \brief Ensure that the drag'n drop is handled
+/// consistently.
+///
+/// \param event wxMouseCaptureLostEvent&
+/// \return void
+///
+/////////////////////////////////////////////////
 void NumeReHistory::OnMouseCaptureLost(wxMouseCaptureLostEvent& event)
 {
     if (GetCapture() == this)
@@ -270,6 +299,13 @@ void NumeReHistory::OnMouseCaptureLost(wxMouseCaptureLostEvent& event)
     }
 }
 
+
+/////////////////////////////////////////////////
+/// \brief Delete the previously selected line.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
 void NumeReHistory::deleteLine()
 {
     this->SetReadOnly(false);
@@ -279,6 +315,14 @@ void NumeReHistory::deleteLine()
     this->SetReadOnly(true);
 }
 
+
+/////////////////////////////////////////////////
+/// \brief Copy the selected line to the
+/// clipboard.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
 void NumeReHistory::copyLine()
 {
     this->SetReadOnly(false);
@@ -288,6 +332,14 @@ void NumeReHistory::copyLine()
     this->SetReadOnly(true);
 }
 
+
+/////////////////////////////////////////////////
+/// \brief Load the history from the
+/// corresponding file.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
 void NumeReHistory::loadHistory()
 {
     wxString sFileName = m_mainframe->getProgramFolder() + "\\numere.history";
@@ -297,6 +349,7 @@ void NumeReHistory::loadHistory()
     if (fileExists(sFileName.ToStdString()))
     {
         LoadFile(sFileName);
+        Colourise(0, -1);
 
         // Clean history by deleting repeated history header lines
         for (int i = 1; i < GetLineCount(); i++)
@@ -304,6 +357,13 @@ void NumeReHistory::loadHistory()
             while (GetLine(i-1).substr(0, 7) == HISTORYHEADERSTART && GetLine(i).substr(0, 7) == HISTORYHEADERSTART)
             {
                 DeleteRange(PositionFromLine(i-1), PositionFromLine(i)-PositionFromLine(i-1));
+            }
+
+            // Resolve missing quotation marks
+            if (GetStyleAt(GetLineEndPosition(i)) == wxSTC_NSCR_STRING)
+            {
+                InsertText(GetLineEndPosition(i), "\"");
+                Colourise(PositionFromLine(i), -1);
             }
         }
 
@@ -318,6 +378,14 @@ void NumeReHistory::loadHistory()
     SetReadOnly(true);
 }
 
+
+/////////////////////////////////////////////////
+/// \brief Save the history to the corresponding
+/// file.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
 void NumeReHistory::saveHistory()
 {
     wxString sFileName = m_mainframe->getProgramFolder() + "\\numere.history";
@@ -329,11 +397,27 @@ void NumeReHistory::saveHistory()
     this->SaveFile(sFileName);
 }
 
+
+/////////////////////////////////////////////////
+/// \brief Add the history header presenting the
+/// current date and time.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
 void NumeReHistory::addHeader()
 {
     this->AddText(HISTORYHEADERSTART + getTimeStamp(false) + " ---\n");
 }
 
+
+/////////////////////////////////////////////////
+/// \brief Add fold points to hide previous
+/// sessions.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
 void NumeReHistory::applyFoldPoints()
 {
     int zerolevel = wxSTC_FOLDLEVELBASE;
@@ -356,31 +440,58 @@ void NumeReHistory::applyFoldPoints()
     }
 }
 
+
+/////////////////////////////////////////////////
+/// \brief Add the passed string at the end of
+/// the input history.
+///
+/// \param commandstring const wxString&
+/// \return void
+///
+/////////////////////////////////////////////////
 void NumeReHistory::AddToHistory(const wxString& commandstring)
 {
     if (!commandstring.length())
         return;
+
     this->SetReadOnly(false);
     this->GotoPos(this->GetLastPosition());
+
+    wxString cleaned = commandstring.substr(0, commandstring.find_last_not_of(' ')+1);
 
     // Get last line
     wxString lastline = getLastLine();
 
     // return, if last line is equal to the current one
-    if (lastline == commandstring.substr(0, lastline.length()) && commandstring.find_first_not_of(' ', lastline.length()) == string::npos)
+    if (lastline == cleaned)
     {
         this->SetReadOnly(true);
         return;
     }
+
     // add the new line to the history
-    this->AddText(commandstring.substr(0, commandstring.find_last_not_of(' ')+1));
+    this->AddText(cleaned);
+
     if (commandstring[commandstring.find_last_not_of(' ')] != '\n')
         this->AddText("\n");
+
+    Colourise(PositionFromLine(GetCurrentLine()-2), -1);
+
+    if (GetStyleAt(GetLastPosition()-1) == wxSTC_NSCR_STRING)
+        this->InsertText(GetLastPosition()-1, "\"");
+
     applyFoldPoints();
     this->SetReadOnly(true);
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Return the last line of the input
+/// history.
+///
+/// \return wxString
+///
+/////////////////////////////////////////////////
 wxString NumeReHistory::getLastLine()
 {
     wxString lastline = GetLine(LineFromPosition(GetLastPosition()-1));
@@ -390,6 +501,13 @@ wxString NumeReHistory::getLastLine()
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Event handler for folding.
+///
+/// \param event wxStyledTextEvent&
+/// \return void
+///
+/////////////////////////////////////////////////
 void NumeReHistory::OnMarginClick( wxStyledTextEvent &event )
 {
 	int position = event.GetPosition();
@@ -404,6 +522,16 @@ void NumeReHistory::OnMarginClick( wxStyledTextEvent &event )
     }
 }
 
+
+/////////////////////////////////////////////////
+/// \brief Double clicking event handler. Will
+/// re-execute the selected line or fold the
+/// session, if the user clicked on a header.
+///
+/// \param event wxMouseEvent&
+/// \return void
+///
+/////////////////////////////////////////////////
 void NumeReHistory::OnMouseDblClk(wxMouseEvent& event)
 {
     int clickedLine = LineFromPosition(PositionFromPoint(event.GetPosition()));
@@ -421,6 +549,15 @@ void NumeReHistory::OnMouseDblClk(wxMouseEvent& event)
         m_terminal->pass_command(line.ToStdString(), false);
 }
 
+
+/////////////////////////////////////////////////
+/// \brief Select the whole line, if the user
+/// clicks on a line.
+///
+/// \param event wxMouseEvent&
+/// \return void
+///
+/////////////////////////////////////////////////
 void NumeReHistory::OnMouseDn(wxMouseEvent& event)
 {
     int clickedLine = LineFromPosition(PositionFromPoint(event.GetPosition()));
@@ -430,6 +567,15 @@ void NumeReHistory::OnMouseDn(wxMouseEvent& event)
     event.Skip();
 }
 
+
+/////////////////////////////////////////////////
+/// \brief Event handler to display the context
+/// menu, if the user clicks right on a line.
+///
+/// \param event wxMouseEvent&
+/// \return void
+///
+/////////////////////////////////////////////////
 void NumeReHistory::OnRightClick(wxMouseEvent& event)
 {
     int clickedLine = LineFromPosition(PositionFromPoint(event.GetPosition()));
