@@ -4749,6 +4749,13 @@ void NumeReEditor::AsynchActions()
 
             if (GetFoldParent(nParentline) != wxNOT_FOUND)
                 nParentline = GetFoldParent(nParentline);
+            else if (isStyleType(STYLE_COMMENT, PositionFromLine(nParentline)))
+            {
+                // Do not use comments to determine the indentation
+                // level (if avoidable)
+                while (nParentline > 0 && isStyleType(STYLE_COMMENT, PositionFromLine(nParentline)))
+                    nParentline--;
+            }
         }
 
         ApplyAutoIndentation(nParentline, nLine + 1);

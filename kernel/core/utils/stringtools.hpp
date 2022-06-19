@@ -107,6 +107,7 @@ std::string utf8parser(const std::string& sString);
 std::string replacePathSeparator(const std::string& __sPath);
 std::string getTimeStamp(bool bGetStamp = true);
 std::vector<std::string> split(const std::string& sStr, char cSplit);
+std::string ellipsize(const std::string& sLongString, size_t nMaxStringLength = 1024);
 
 bool isEqualStripped(StringView str1, StringView str2);
 

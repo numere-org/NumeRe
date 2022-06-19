@@ -2411,6 +2411,7 @@ static std::string formatByteSize(double bytes)
 NumeReVariables NumeReKernel::getVariableList()
 {
     NumeReVariables vars;
+    constexpr size_t MAXSTRINGLENGTH = 1024;
 
     mu::varmap_type varmap = _parser.GetVar();
     const std::map<std::string, std::string>& stringmap = _stringParser.getStringVars();
@@ -2443,7 +2444,10 @@ NumeReVariables NumeReKernel::getVariableList()
         if ((iter->first).substr(0, 2) == "_~")
             continue;
 
-        sCurrentLine = iter->first + "\t1 x 1\tstring\t\"" + replaceControlCharacters(iter->second) + "\"\t" + iter->first + "\t" + formatByteSize(iter->second.length());
+        sCurrentLine = iter->first
+            + "\t1 x 1\tstring\t\""
+            + replaceControlCharacters(ellipsize(iter->second, MAXSTRINGLENGTH)) + "\"\t"
+            + iter->first + "\t" + formatByteSize(iter->second.length());
         vars.vVariables.push_back(sCurrentLine);
     }
 

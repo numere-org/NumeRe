@@ -25,6 +25,7 @@
 
 #define DEFAULT_NUM_PRECISION 7
 #define DEFAULT_MINMAX_PRECISION 5
+#define MAXSTRINGLENGTH 1024
 
 using namespace std;
 
@@ -598,7 +599,8 @@ void NumeReDebugger:: gatherInformations(const std::map<std::string, std::pair<s
         if (iter.first != iter.second.first)
             replaceAll(sErraticCommand, iter.second.first.c_str(), iter.first.c_str());
 
-        mLocalStrings[iter.first + "\t" + iter.second.first] = replaceControlCharacters(instance->getStringParser().getStringVars().at(iter.second.first));
+        const std::string& sValue = instance->getStringParser().getStringVars().at(iter.second.first);
+        mLocalStrings[iter.first + "\t" + iter.second.first] = replaceControlCharacters(ellipsize(sValue, MAXSTRINGLENGTH));
     }
 
     // Store the local tables and replace their
@@ -1093,9 +1095,7 @@ vector<string> NumeReDebugger::getGlobals()
     for (auto iter = _stringParser.getStringVars().begin(); iter != _stringParser.getStringVars().end(); ++iter)
     {
         if (iter->first.substr(0, 2) != "_~")
-        {
-            mGlobals[iter->first] = "1 x 1\tstring\t\"" + iter->second + "\"";
-        }
+            mGlobals[iter->first] = "1 x 1\tstring\t\"" + ellipsize(iter->second, MAXSTRINGLENGTH) + "\"";
     }
 
     // List all relevant numerical variables

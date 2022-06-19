@@ -44,3 +44,4 @@ Applied	The matrix functions "eigenvals()", "eigenvects()", "det()", and "diagon
 Fixed	"getkeyval()" was improved to handle more numerical cases.
 Fixed	An interal error during string value comparison containing escaped quotation marks ("\"") was resolved.
 Cleaned	Flow control headers are now also debuggable and interruptable. The contained expressions may however look a little bit weird.
+Fixed	Long strings are now shortened before they are displayed within the GUI.

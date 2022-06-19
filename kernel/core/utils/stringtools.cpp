@@ -1313,6 +1313,26 @@ std::vector<std::string> split(const std::string& sStr, char cSplit)
 
 
 /////////////////////////////////////////////////
+/// \brief Shortens the passed string by
+/// introducing a ellipsis in the middle of the
+/// string, if the string is longer than the
+/// maximal string length.
+///
+/// \param sLongString const std::string&
+/// \param nMaxStringLength size_t
+/// \return std::string
+///
+/////////////////////////////////////////////////
+std::string ellipsize(const std::string& sLongString, size_t nMaxStringLength)
+{
+    if (sLongString.length() > nMaxStringLength)
+        return sLongString.substr(0, nMaxStringLength/2-2) + "[...]" + sLongString.substr(sLongString.length()-nMaxStringLength+2);
+
+    return sLongString;
+}
+
+
+/////////////////////////////////////////////////
 /// \brief This function replaces all occurences
 /// of the string sToRep in the string sToModify
 /// with the new value sNewValue. The boundaries
