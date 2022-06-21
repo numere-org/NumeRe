@@ -794,7 +794,26 @@ std::string toInternalString(std::string sStr)
     if (sStr.front() == '"' && sStr.back() == '"')
         sStr = sStr.substr(1, sStr.length()-2);
 
-    replaceAll(sStr, "\\\"", "\"");
+    for (size_t i = 0; i < sStr.length(); i++)
+    {
+        if (sStr.compare(i, 2, "\\t") == 0
+            && sStr.compare(i, 4, "\\tau") != 0
+            && sStr.compare(i, 6, "\\theta") != 0
+            && sStr.compare(i, 6, "\\times") != 0)
+            sStr.replace(i, 2, "\t");
+
+        if (sStr.compare(i, 2, "\\n") == 0
+            && sStr.compare(i, 3, "\\nu") != 0
+            && sStr.compare(i, 4, "\\neq") != 0)
+            sStr.replace(i, 2, "\n");
+
+        if (sStr.compare(i, 2, "\\\"") == 0)
+            sStr.replace(i, 2, "\"");
+
+        if (sStr.compare(i, 2, "\\ ") == 0)
+            sStr.replace(i, 2, "\\");
+    }
+
     return sStr;
 }
 

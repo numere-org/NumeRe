@@ -23,8 +23,288 @@
 #include <vector>
 
 #include "../ParserLib/muParserDef.h"
+#include "../utils/stringtools.hpp"
+#include "../structures.hpp"
 
 class Settings;
+
+
+
+class StringArg : public std::string
+{
+    public:
+        StringArg() : std::string()
+        { }
+
+        StringArg(const std::string& sStr) : std::string(sStr)
+        { }
+
+        StringArg(const StringArg& sStr) : std::string(sStr)
+        { }
+
+        StringArg& operator=(const StringArg& sStr)
+        {
+            assign(sStr);
+            return *this;
+        }
+
+        StringArg& operator=(const std::string& sStr)
+        {
+            assign(sStr);
+            return *this;
+        }
+
+        bool is_string() const
+        {
+            return length() && front() == '"';
+        }
+
+        StringView getView() const
+        {
+            if (is_string())
+                return StringView(*this, 1, length()-2);
+
+            return StringView(*this);
+        }
+};
+
+
+/////////////////////////////////////////////////
+/// \brief This class is an extension to the
+/// std::vector<std::string> to provide the
+/// vector-like functionalities as requested by
+/// the string parser. It also provides the
+/// functionality to distinguish between a string
+/// and a numerical value.
+/////////////////////////////////////////////////
+class StringVector : public std::vector<std::string>
+{
+    private:
+        const std::string m_sDUMMY;
+
+        static StringView makePureString(StringView sStr)
+        {
+            if (sStr.length() && sStr.front() == '"')
+                return sStr.subview(1, sStr.length()-2);
+
+            return sStr;
+        }
+
+        static std::string makeLocalString(const std::string& sStr)
+        {
+            if (sStr.front() == '"')
+                return "\"" + toInternalString(sStr) + "\"";
+
+            return sStr;
+        }
+
+        StringView getVectorized(size_t i) const
+        {
+            if (size() == 1)
+                return makePureString(front());
+            else if (i < size())
+                return makePureString(at(i));
+
+            return StringView(m_sDUMMY);
+        }
+
+        void assign(const StringVector& sVect)
+        {
+            std::vector<std::string>::assign(sVect.begin(), sVect.end());
+        }
+
+        void assign(const std::vector<bool>& vect)
+        {
+            resize(vect.size());
+
+            for (size_t i = 0; i < vect.size(); i++)
+            {
+                std::vector<std::string>::operator[](i) = vect[i] ? "true" : "false";
+            }
+        }
+
+    public:
+        StringVector() : std::vector<std::string>()
+        { }
+
+        StringVector(const std::vector<std::string>& vect) : std::vector<std::string>(vect)
+        { }
+
+        StringVector(const std::string& sLiteral) : std::vector<std::string>(1, makeLocalString(sLiteral))
+        { }
+
+        StringVector(const StringVector& vect) : std::vector<std::string>()
+        {
+            assign(vect);
+        }
+
+        StringVector(const std::vector<bool>& vect) : std::vector<std::string>()
+        {
+            assign(vect);
+        }
+
+        StringVector(size_t n) : std::vector<std::string>(n)
+        { }
+
+        StringVector& operator=(const StringVector& sVect)
+        {
+            assign(sVect);
+            return *this;
+        }
+
+        StringVector& operator=(const std::vector<bool>& vect)
+        {
+            assign(vect);
+            return *this;
+        }
+
+        void push_back(const std::string& sLiteral)
+        {
+            std::vector<std::string>::push_back(makeLocalString(sLiteral));
+        }
+
+        bool is_string(size_t i) const
+        {
+            if (i < size())
+                return at(i).front() == '"';
+            else if (size() == 1)
+                return front().front() == '"';
+
+            return false;
+        }
+
+        StringView operator[](size_t i) const
+        {
+            if (i < size())
+                return makePureString(at(i));
+
+            return StringView(m_sDUMMY);
+        }
+
+        StringArg getArg(size_t i) const
+        {
+            if (i < size())
+                return StringArg(at(i));
+
+            return StringArg();
+        }
+
+        std::string getMasked(size_t i) const
+        {
+            if (i < size() && is_string(i))
+                return toExternalString(at(i));
+            else if (i < size())
+                return at(i);
+
+            return m_sDUMMY;
+        }
+
+        std::vector<bool> operator==(const StringVector& sVect) const
+        {
+            std::vector<bool> vRet(std::max(size(), sVect.size()));
+
+            for (size_t i = 0; i < vRet.size(); i++)
+            {
+                vRet[i] = getVectorized(i) == sVect.getVectorized(i);
+            }
+
+            return vRet;
+        }
+
+        std::vector<bool> operator!=(const StringVector& sVect) const
+        {
+            std::vector<bool> vRet(std::max(size(), sVect.size()));
+
+            for (size_t i = 0; i < vRet.size(); i++)
+            {
+                vRet[i] = getVectorized(i) != sVect.getVectorized(i);
+            }
+
+            return vRet;
+        }
+
+        std::vector<bool> operator<(const StringVector& sVect) const
+        {
+            std::vector<bool> vRet(std::max(size(), sVect.size()));
+
+            for (size_t i = 0; i < vRet.size(); i++)
+            {
+                vRet[i] = getVectorized(i) < sVect.getVectorized(i);
+            }
+
+            return vRet;
+        }
+
+        std::vector<bool> operator<=(const StringVector& sVect) const
+        {
+            std::vector<bool> vRet(std::max(size(), sVect.size()));
+
+            for (size_t i = 0; i < vRet.size(); i++)
+            {
+                vRet[i] = getVectorized(i) <= sVect.getVectorized(i);
+            }
+
+            return vRet;
+        }
+
+        std::vector<bool> operator>(const StringVector& sVect) const
+        {
+            std::vector<bool> vRet(std::max(size(), sVect.size()));
+
+            for (size_t i = 0; i < vRet.size(); i++)
+            {
+                vRet[i] = getVectorized(i) > sVect.getVectorized(i);
+            }
+
+            return vRet;
+        }
+
+        std::vector<bool> operator>=(const StringVector& sVect) const
+        {
+            std::vector<bool> vRet(std::max(size(), sVect.size()));
+
+            for (size_t i = 0; i < vRet.size(); i++)
+            {
+                vRet[i] = getVectorized(i) >= sVect.getVectorized(i);
+            }
+
+            return vRet;
+        }
+
+        StringVector operator+(const StringVector& sVect) const
+        {
+            StringVector vRet(std::max(size(), sVect.size()));
+
+            for (size_t i = 0; i < vRet.size(); i++)
+            {
+                if (is_string(i) && sVect.is_string(i))
+                    vRet[i] = "\"" + (getVectorized(i) + sVect.getVectorized(i)) + "\"";
+                else
+                    vRet[i] = getVectorized(i) + std::string(" + ") + sVect.getVectorized(i);
+            }
+
+            return vRet;
+        }
+
+        StringVector& operator+=(const StringVector& sVect)
+        {
+            assign(operator+(sVect));
+            return *this;
+        }
+
+        StringVector operator+(const std::string& sLiteral) const
+        {
+            return operator+(StringVector(sLiteral));
+        }
+
+        StringVector& operator+=(const std::string& sLiteral)
+        {
+            assign(operator+(StringVector(sLiteral)));
+            return *this;
+        }
+};
+
+
 
 /////////////////////////////////////////////////
 /// \brief Simple abbreviation
@@ -142,7 +422,7 @@ struct StringResult
 		bOnlyLogicals = false;
 	}
 
-	StringResult(std::vector<std::string>& _vResult, std::vector<bool>& _vNoStringVal, bool _bOnlyLogicals) : vResult(_vResult), vNoStringVal(_vNoStringVal), bOnlyLogicals(_bOnlyLogicals) {}
+	StringResult(s_vect& _vResult, std::vector<bool>& _vNoStringVal, bool _bOnlyLogicals) : vResult(_vResult), vNoStringVal(_vNoStringVal), bOnlyLogicals(_bOnlyLogicals) {}
 
 	StringResult(const std::string& sRet, bool _bOnlyLogicals = false) : StringResult()
 	{
@@ -159,7 +439,7 @@ struct StringResult
         vNumericalValues.assign(vals, vals+nvals);
 	}
 
-	std::vector<std::string> vResult;
+	s_vect vResult;
 	std::vector<bool> vNoStringVal;
 	std::vector<mu::value_type> vNumericalValues;
 	bool bOnlyLogicals;

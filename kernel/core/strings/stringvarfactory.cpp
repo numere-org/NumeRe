@@ -151,12 +151,6 @@ namespace NumeRe
                     string currentline = sCurrentComponent;
                     bool bHasComponents = false;
 
-                    // Replace all internal vectors
-                    replaceStringVectorVars(m_mStringVectorVars, currentline, nCurrentComponent, bHasComponents);
-
-                    // Replace all temporary vectors
-                    replaceStringVectorVars(m_mTempStringVectorVars, currentline, nCurrentComponent, bHasComponents);
-
                     // Replace all found numerical vectors with their nCurrentComponent-th component
                     for (auto iter = mNumVectorVars.begin(); iter != mNumVectorVars.end(); ++iter)
                     {
@@ -187,6 +181,12 @@ namespace NumeRe
                                 currentline.replace(nMatch, (iter->first).length(), "nan");
                         }
                     }
+
+                    // Replace all internal vectors
+                    replaceStringVectorVars(m_mStringVectorVars, currentline, nCurrentComponent, bHasComponents);
+
+                    // Replace all temporary vectors
+                    replaceStringVectorVars(m_mTempStringVectorVars, currentline, nCurrentComponent, bHasComponents);
 
                     // Break the loop, if there are no further vector components
                     if (!bHasComponents)
@@ -493,16 +493,23 @@ namespace NumeRe
         for (auto iter = m_mStringVars.begin(); iter != m_mStringVars.end(); ++iter)
         {
             __nPos = nPos;
+            std::string sVectVar;
 
             // Examine all occurences of the current variable in the
             // string
-            while (sLine.find(iter->first, __nPos) != string::npos)
+            while ((__nPos = sLine.find(iter->first, __nPos)) != string::npos)
             {
-                __nPos = sLine.find(iter->first, __nPos)+1;
+                __nPos++;
 
                 // Appended opening parenthesis indicates a function
-                if (sLine[__nPos+(iter->first).length()-1] == '(' || sLine[__nPos+(iter->first).length()-1] == '{')
+                if (sLine[__nPos+(iter->first).length()-1] == '('
+                    || sLine[__nPos+(iter->first).length()-1] == '{')
                     continue;
+
+                // Only create the variable, if it is actually needed
+                if (!sVectVar.length())
+                    sVectVar = createStringVectorVar(std::vector<std::string>(1, "\""+iter->second+"\""));
+                    //sVectVar = "\""+iter->second+"\"";
 
                 // Check, whether the found occurence is correctly
                 // delimited and replace it. If the match is at the
@@ -511,26 +518,28 @@ namespace NumeRe
                 if (__nPos == 1)
                 {
                     // Check with delimiter
-                    if (checkStringvarDelimiter(" " + sLine.substr(0, (iter->first).length()+1)) && !isInQuotes(sLine, 0, true))
+                    if (checkStringvarDelimiter(" " + sLine.substr(0, (iter->first).length()+1))
+                        && !isInQuotes(sLine, 0, true))
                     {
                         // Replace it with standard function signature or its value
                         if (sLine[(iter->first).length()] == '.')
-                            replaceStringMethod(sLine, 0, (iter->first).length(), "\"" + iter->second + "\"");
+                            replaceStringMethod(sLine, 0, (iter->first).length(), sVectVar);
                         else
-                            sLine.replace(0, (iter->first).length(), "\"" + iter->second + "\"");
+                            sLine.replace(0, (iter->first).length(), sVectVar);
                     }
 
                     continue;
                 }
 
                 // Check with delimiter
-                if (checkStringvarDelimiter(sLine.substr(__nPos-2, (iter->first).length()+2)) && !isInQuotes(sLine, __nPos-1, true))
+                if (checkStringvarDelimiter(sLine.substr(__nPos-2, (iter->first).length()+2))
+                    && !isInQuotes(sLine, __nPos-1, true))
                 {
                     // Replace it with standard function signature or its value
                     if (sLine[__nPos+(iter->first).length()-1] == '.')
-                        replaceStringMethod(sLine, __nPos-1, (iter->first).length(), "\"" + iter->second + "\"");
+                        replaceStringMethod(sLine, __nPos-1, (iter->first).length(), sVectVar);
                     else
-                        sLine.replace(__nPos-1, (iter->first).length(), "\"" + iter->second + "\"");
+                        sLine.replace(__nPos-1, (iter->first).length(), sVectVar);
                 }
             }
         }

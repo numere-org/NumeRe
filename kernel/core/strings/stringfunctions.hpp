@@ -40,9 +40,6 @@ using namespace std;
 /////////////////////////////////////////////////
 string removeMaskedStrings(const std::string& sString)
 {
-    if (sString.find("\\\"") == std::string::npos && sString.find("\\t") == std::string::npos && sString.find("\\n") == std::string::npos && sString.find("\\ ") == std::string::npos)
-        return sString;
-
     std::string sRet = sString;
 
     // Go through the string and remove all relevant escape characters
@@ -51,10 +48,17 @@ string removeMaskedStrings(const std::string& sString)
     {
         if (sRet.compare(i, 2, "\\\"") == 0)
             sRet.erase(i, 1);
-        if (sRet.compare(i, 2, "\\t") == 0 && sRet.compare(i, 4, "\\tau") != 0 && sRet.compare(i, 6, "\\theta") != 0 && sRet.compare(i, 6, "\\times") != 0)
-            sRet.replace(i, 2, "\t");
-        if (sRet.compare(i, 2, "\\n") == 0 && sRet.compare(i, 3, "\\nu") != 0)
-            sRet.replace(i, 2, "\n");
+
+        //if (sRet.compare(i, 2, "\\t") == 0
+        //    && sRet.compare(i, 4, "\\tau") != 0
+        //    && sRet.compare(i, 6, "\\theta") != 0
+        //    && sRet.compare(i, 6, "\\times") != 0)
+        //    sRet.replace(i, 2, "\t");
+        //
+        //if (sRet.compare(i, 2, "\\n") == 0
+        //    && sRet.compare(i, 3, "\\nu") != 0)
+        //    sRet.replace(i, 2, "\n");
+
         if (sRet.compare(i, 2, "\\ ") == 0)
             sRet.erase(i + 1, 1);
     }
@@ -107,12 +111,46 @@ string addQuotationMarks(const std::string& sString)
 /////////////////////////////////////////////////
 static bool isNumericValue(const std::string& sString)
 {
-    static const mu::valmap_type& constants = NumeReKernel::getInstance()->getParser().GetConst();
+    // We appended "+0.0E1" to all non-string values
+    if (sString.length() > 6 && sString.substr(sString.length()-6) == "+0.0E1")
+        return true;
+
+    return false;
+
+    /*static const mu::valmap_type& constants = NumeReKernel::getInstance()->getParser().GetConst();
+
+    // Examine each argument independently
+    if (sString.front() == '{' && sString.back() == '}')
+    {
+        EndlessVector<StringView> args = getAllArguments(StringView(sString, 1, sString.length()-2));
+
+        for (const auto& arg : args)
+        {
+            if (!isNumericValue(arg.to_string()))
+                return false;
+        }
+
+        return true;
+    }
 
     if (constants.find(sString) != constants.end())
         return true;
 
-    if (sString.find_first_not_of("0123456789.ieE+-(){}, ") != std::string::npos)
+    if (sString.find_first_not_of("0123456789.ieE+-(), ") != std::string::npos)
+        return false;
+
+#warning TODO (numere#1#06/09/22): Filter also version numbers an UTC dates
+    size_t pos = sString.find('.');
+
+    if (pos != std::string::npos
+        && sString.find('.', pos+1) != std::string::npos)
+        return false;
+
+    pos = sString.find('-');
+
+    if (pos != std::string::npos
+        && sString.find('-', pos+1) != std::string::npos
+        && sString.find_first_of("eE", pos) > sString.find('-', pos+1))
         return false;
 
     if (sString.find_first_of("1234567890") == std::string::npos)
@@ -121,7 +159,7 @@ static bool isNumericValue(const std::string& sString)
     if (tolower(sString.front()) == 'e' || tolower(sString.back()) == 'e')
         return false;
 
-    return true;
+    return true;*/
 }
 
 
@@ -142,6 +180,9 @@ static std::string strfnc_to_string(StringFuncArgs& funcArgs)
         return funcArgs.sArg1; // Already is a string
 
     // Is not a string
+    if (funcArgs.sArg1.length() > 6 && funcArgs.sArg1.substr(funcArgs.sArg1.length()-6) == "+0.0E1")
+        return "\"" + funcArgs.sArg1.substr(0, funcArgs.sArg1.length()-6) + "\"";
+
     return "\"" + funcArgs.sArg1 + "\"";
 }
 
@@ -337,7 +378,7 @@ static std::string strfnc_ascii(StringFuncArgs& funcArgs)
 /////////////////////////////////////////////////
 static std::string strfnc_isblank(StringFuncArgs& funcArgs)
 {
-   std::string sCodes = "";
+    std::string sCodes = "";
     funcArgs.sArg1 = removeMaskedStrings(funcArgs.sArg1);
     static Umlauts _umlauts;
 
@@ -365,7 +406,7 @@ static std::string strfnc_isblank(StringFuncArgs& funcArgs)
 /////////////////////////////////////////////////
 static std::string strfnc_isalnum(StringFuncArgs& funcArgs)
 {
-   std::string sCodes = "";
+    std::string sCodes = "";
     funcArgs.sArg1 = removeMaskedStrings(funcArgs.sArg1);
     static Umlauts _umlauts;
 
@@ -393,7 +434,7 @@ static std::string strfnc_isalnum(StringFuncArgs& funcArgs)
 /////////////////////////////////////////////////
 static std::string strfnc_isalpha(StringFuncArgs& funcArgs)
 {
-   std::string sCodes = "";
+    std::string sCodes = "";
     funcArgs.sArg1 = removeMaskedStrings(funcArgs.sArg1);
     static Umlauts _umlauts;
 
@@ -421,7 +462,7 @@ static std::string strfnc_isalpha(StringFuncArgs& funcArgs)
 /////////////////////////////////////////////////
 static std::string strfnc_iscntrl(StringFuncArgs& funcArgs)
 {
-   std::string sCodes = "";
+    std::string sCodes = "";
     funcArgs.sArg1 = removeMaskedStrings(funcArgs.sArg1);
     static Umlauts _umlauts;
 
@@ -449,7 +490,7 @@ static std::string strfnc_iscntrl(StringFuncArgs& funcArgs)
 /////////////////////////////////////////////////
 static std::string strfnc_isdigit(StringFuncArgs& funcArgs)
 {
-   std::string sCodes = "";
+    std::string sCodes = "";
     funcArgs.sArg1 = removeMaskedStrings(funcArgs.sArg1);
     for (unsigned int i = 0; i < funcArgs.sArg1.length(); i++)
     {
@@ -965,17 +1006,21 @@ static std::string strfnc_to_time(StringFuncArgs& funcArgs)
 /////////////////////////////////////////////////
 static std::string strfnc_strfnd(StringFuncArgs& funcArgs)
 {
+    g_logger.info("Enter strfnc_strfnd");
     if (!funcArgs.sArg2.length())
         return "0";
+
     if (funcArgs.nArg1 == DEFAULT_NUM_ARG || funcArgs.nArg1 <= 0 || funcArgs.sArg2.length() < (size_t)funcArgs.nArg1)
         funcArgs.nArg1 = 1;
 
+    g_logger.info("Remove masked strings");
     funcArgs.sArg1 = removeMaskedStrings(funcArgs.sArg1);
     funcArgs.sArg2 = removeMaskedStrings(funcArgs.sArg2);
 
     if (funcArgs.sArg2.front() == '"')
         funcArgs.sArg2 = funcArgs.sArg2.substr(funcArgs.sArg2.find('"') + 1, funcArgs.sArg2.rfind('"') - funcArgs.sArg2.find('"') - 1);
 
+    g_logger.info("Searching");
     return toString((int)funcArgs.sArg2.find(funcArgs.sArg1, funcArgs.nArg1 - 1) + 1);
 }
 
@@ -1721,9 +1766,9 @@ static std::string strfnc_getkeyval(StringFuncArgs& funcArgs)
         if (funcArgs.sMultiArg[i] == funcArgs.sArg2)
         {
             if (!isNumericValue(funcArgs.sMultiArg[i+1]))
-                sValues += "\"" + funcArgs.sMultiArg[i+1] + "\",";
+                sValues += "\"" + funcArgs.sMultiArg[i+1] + "\"" + NEWSTRING;
             else
-                sValues += funcArgs.sMultiArg[i+1] + ",";
+                sValues += funcArgs.sMultiArg[i+1] + NEWSTRING;
         }
     }
 

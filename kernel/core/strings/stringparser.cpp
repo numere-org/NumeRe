@@ -22,6 +22,7 @@
 #include <algorithm>
 
 #include "../utils/timer.hpp"
+#include "../structures.hpp"
 
 extern value_type vAns;
 
@@ -78,7 +79,7 @@ namespace NumeRe
         {
             // Check for arguments to parse and
             // get the indices afterwards
-            Indices _idx = getIndices("string(" + parseStringsInIndices(getFunctionArgumentList("string(", sLine, n_pos, nEndPosition)) + ")", _parser, _data, _option);
+            Indices _idx = getIndices("string(" + parseStringsInIndices(getFunctionArgumentList("string(", sLine, n_pos, nEndPosition).to_string()) + ")", _parser, _data, _option);
 
             // Pre-process the indices
             if (_idx.col.isOpenEnd())
@@ -279,7 +280,9 @@ namespace NumeRe
             }
             else
             {
-                sData.replace(nStartPosition-nStartPos+sOccurence.length(), nEndPosition-nStartPosition-sOccurence.length(), parseStringsInIndices(getFunctionArgumentList(sOccurence, sLine, nStartPosition, nEndPosition)));
+                sData.replace(nStartPosition-nStartPos+sOccurence.length(),
+                              nEndPosition-nStartPosition-sOccurence.length(),
+                              parseStringsInIndices(getFunctionArgumentList(sOccurence, sLine, nStartPosition, nEndPosition).to_string()));
 
                 // Get the data and parse string expressions
                 replaceDataEntities(sData, sOccurence, _data, _parser, _option, REPLACE_NAN | INSERT_STRINGS);
@@ -609,7 +612,7 @@ namespace NumeRe
                     || (_idx.col[n] == VectorIndex::INVALID))
                     break;
 
-                _data.setHeadLineElement(_idx.col[n], sTableName, removeQuotationMarks(maskControlCharacters(strRes.vResult[n])));
+                _data.setHeadLineElement(_idx.col[n], sTableName, removeQuotationMarks(strRes.vResult[n]));
             }
 
             nCurrentComponent = nStrings;
@@ -778,7 +781,7 @@ namespace NumeRe
             if (nCurrentComponent == nStrings)
                 return;
 
-            _data.writeString(removeQuotationMarks(maskControlCharacters(vFinal[nCurrentComponent])), _idx.row[i], _idx.col.front());
+            _data.writeString(removeQuotationMarks(vFinal[nCurrentComponent]), _idx.row[i], _idx.col.front());
             nCurrentComponent++;
         }
     }
@@ -840,7 +843,7 @@ namespace NumeRe
                     if (nCurrentComponent >= nStrings)
                         setStringValue(sObject, "");
                     else
-                        setStringValue(sObject, removeQuotationMarks(maskControlCharacters(strRes.vResult[nCurrentComponent])));
+                        setStringValue(sObject, removeQuotationMarks(strRes.vResult[nCurrentComponent]));
                     nCurrentComponent++;
                 }
                 catch (...)
@@ -929,7 +932,7 @@ namespace NumeRe
                     try
                     {
                         // Create a new string variable
-                        setStringValue(sObject, removeQuotationMarks(maskControlCharacters(strRes.vResult[nCurrentComponent])));
+                        setStringValue(sObject, removeQuotationMarks(strRes.vResult[nCurrentComponent]));
                         nCurrentComponent++;
                     }
                     catch (...)
@@ -1026,7 +1029,7 @@ namespace NumeRe
                     if (k + 1 < vFinal[j].length() && vFinal[j][k] == '\\')
                     {
                         //\not\neq\ni
-                        if (vFinal[j][k + 1] == 'n' && !isToken("nu", vFinal[j], k+1) && !isToken("neq", vFinal[j], k+1)) // Line break
+                        /*if (vFinal[j][k + 1] == 'n' && !isToken("nu", vFinal[j], k+1) && !isToken("neq", vFinal[j], k+1)) // Line break
                         {
                             sCurrentComponent += "\n";
                             k++;
@@ -1036,7 +1039,7 @@ namespace NumeRe
                             sCurrentComponent += "\t";
                             k++;
                         }
-                        else if (vFinal[j][k + 1] == '"') // quotation mark
+                        else*/ if (vFinal[j][k + 1] == '"') // quotation mark
                         {
                             if (!(parserFlags & KEEP_MASKED_QUOTES))
                                 sCurrentComponent += "\"";
@@ -1070,6 +1073,12 @@ namespace NumeRe
                 // if it is not a special case
                 if (!(parserFlags & NO_QUOTES) && !vIsNoStringValue[j])
                     sCurrentComponent += "\"";
+
+                if (parserFlags & KEEP_MASKED_CONTROL_CHARS)
+                {
+                    replaceAll(sCurrentComponent, "\n", "\\n");
+                    replaceAll(sCurrentComponent, "\t", "\\t");
+                }
 
                 ans.push_back(sCurrentComponent);
                 sLine += sCurrentComponent;
@@ -1139,7 +1148,7 @@ namespace NumeRe
                         if (k + 1 < strRes.vResult[j].length() && strRes.vResult[j][k] == '\\')
                         {
                             //\not\neq\ni
-                            if (strRes.vResult[j][k + 1] == 'n' && !isToken("nu", strRes.vResult[j], k+1) && !isToken("neq", strRes.vResult[j], k+1)) // Line break
+                            /*if (strRes.vResult[j][k + 1] == 'n' && !isToken("nu", strRes.vResult[j], k+1) && !isToken("neq", strRes.vResult[j], k+1)) // Line break
                             {
                                 sConsoleOut += "\n";
                                 bLineBreaks = true;
@@ -1150,7 +1159,7 @@ namespace NumeRe
                                 sConsoleOut += "\t";
                                 k++;
                             }
-                            else if (strRes.vResult[j][k + 1] == '"') // quotation mark
+                            else*/ if (strRes.vResult[j][k + 1] == '"') // quotation mark
                             {
                                 sConsoleOut += "\"";
                                 k++;
@@ -1461,8 +1470,24 @@ namespace NumeRe
     StringResult StringParser::eval(std::string& sLine, std::string sCache, bool bParseNumericals)
     {
         StringResult strRes;
-
         bool bObjectContainsTablesOrClusters = false;
+        g_logger.info("Enter eval. sLine = " + sLine.substr(0, 100));
+        // First step: convert the following escaped control characters into internal
+        // string representations: \t, \n
+        // \\ and \" will be kept
+        for (size_t i = 0; i < sLine.length(); i++)
+        {
+            if (sLine.compare(i, 2, "\\t") == 0
+                && sLine.compare(i, 4, "\\tau") != 0
+                && sLine.compare(i, 6, "\\theta") != 0
+                && sLine.compare(i, 6, "\\times") != 0)
+                sLine.replace(i, 2, "\t");
+
+            if (sLine.compare(i, 2, "\\n") == 0
+                && sLine.compare(i, 3, "\\nu") != 0
+                && sLine.compare(i, 4, "\\neq") != 0)
+                sLine.replace(i, 2, "\n");
+        }
 
         // If the current line is a simple string,
         // Strip the surrounding spaces and return directly
@@ -1562,13 +1587,16 @@ namespace NumeRe
         // for string functions?
         if (strExpr.sLine.find('(') != std::string::npos)
         {
+            g_logger.info("applyStringFuncs");
             //Timer timer("String function application");
             // Apply the standard string functions
             strExpr.sLine = applyStringFuncs(strExpr.sLine);
 
+            g_logger.info("applySpecialStringFuncs");
             // Apply the special string functions
             strExpr.sLine = applySpecialStringFuncs(strExpr.sLine);
 
+            g_logger.info("findAssignmentOperator");
             // Get the position of the equal sign after the
             // application of all string functions
             strExpr.findAssignmentOperator();
@@ -1823,7 +1851,10 @@ namespace NumeRe
 
         // If the current line doesn't contain any further std::string literals or return values
         // return it
-        if (strExpr.sLine.find('"') == std::string::npos && strExpr.sLine.find('#') == std::string::npos && !containsStringVectorVars(strExpr.sLine) && !bObjectContainsTablesOrClusters)
+        if (strExpr.sLine.find('"') == std::string::npos
+            && strExpr.sLine.find('#') == std::string::npos
+            && !containsStringVectorVars(strExpr.sLine)
+            && !bObjectContainsTablesOrClusters)
         {
             // Ensure that this is no false positive
             if (strExpr.sLine.find("string(") != std::string::npos || containsStringVars(strExpr.sLine))
@@ -1836,6 +1867,7 @@ namespace NumeRe
         // Apply the "#" parser to the string
         strExpr.sLine = numToString(strExpr.sLine);
 
+        g_logger.info("evaluateStringVectors");
         // Split the list to a std::vector
         strRes.vResult = evaluateStringVectors(strExpr.sLine);
 
@@ -1843,9 +1875,11 @@ namespace NumeRe
         if (!strRes.vResult.size())
             throw SyntaxError(SyntaxError::STRING_ERROR, strExpr.sLine, SyntaxError::invalid_position);
 
+        g_logger.info("applyElementaryStringOperations");
         // Apply some elementary operations such as concatenation and logical operations
         strRes.vNoStringVal = applyElementaryStringOperations(strRes.vResult, strRes.bOnlyLogicals);
 
+        g_logger.info("storeStringResults");
         // store the string results in the variables or inb "string()" respectively
         if (!storeStringResults(strRes, strExpr.sAssignee))
             throw SyntaxError(SyntaxError::STRING_ERROR, strExpr.sLine, SyntaxError::invalid_position);

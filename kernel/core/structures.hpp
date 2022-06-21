@@ -1086,6 +1086,40 @@ class StringViewBase
 
         /////////////////////////////////////////////////
         /// \brief This member function is an overload
+        /// for the less-equal operator using another
+        /// StringViewBase instance.
+        ///
+        /// \param view const StringViewBase&
+        /// \return bool
+        ///
+        /////////////////////////////////////////////////
+        inline bool operator<=(const StringViewBase& view) const
+        {
+            if (getData() && view.getData())
+                return getData()->compare(m_start, m_len, *view.getData(), view.m_start, view.m_len) <= 0;
+
+            return false;
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief This member function is an overload
+        /// for the less-equal operator using a const
+        /// std::string instance.
+        ///
+        /// \param sString const std::string&
+        /// \return bool
+        ///
+        /////////////////////////////////////////////////
+        inline bool operator<=(const std::string& sString) const
+        {
+            if (getData())
+                return getData()->compare(m_start, m_len, sString) <= 0;
+
+            return false;
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief This member function is an overload
         /// for the greater operator using another
         /// StringViewBase instance.
         ///
@@ -1116,6 +1150,74 @@ class StringViewBase
                 return getData()->compare(m_start, m_len, sString) > 0;
 
             return false;
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief This member function is an overload
+        /// for the greater-equal operator using another
+        /// StringViewBase instance.
+        ///
+        /// \param view const StringViewBase&
+        /// \return bool
+        ///
+        /////////////////////////////////////////////////
+        inline bool operator>=(const StringViewBase& view) const
+        {
+            if (getData() && view.getData())
+                return getData()->compare(m_start, m_len, *view.getData(), view.m_start, view.m_len) >= 0;
+
+            return false;
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief This member function is an overload
+        /// for the greater-equal operator using a const
+        /// std::string instance.
+        ///
+        /// \param sString const std::string&
+        /// \return bool
+        ///
+        /////////////////////////////////////////////////
+        inline bool operator>=(const std::string& sString) const
+        {
+            if (getData())
+                return getData()->compare(m_start, m_len, sString) >= 0;
+
+            return false;
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief This member function is an overload
+        /// for the concatenation operator using another
+        /// StringViewBase instance.
+        ///
+        /// \param view const StringViewBase&
+        /// \return std::string
+        ///
+        /////////////////////////////////////////////////
+        inline std::string operator+(const StringViewBase& view) const
+        {
+            if (getData() && view.getData())
+                return std::string(begin(), end()).append(view.begin(), view.end());
+
+            return "";
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief This member function is an overload
+        /// for the concatenation operator using a const
+        /// std::string instance.
+        ///
+        /// \param view const StringViewBase&
+        /// \return std::string
+        ///
+        /////////////////////////////////////////////////
+        inline std::string operator+(const std::string& sString) const
+        {
+            if (getData())
+                return std::string(begin(), end()).append(sString);
+
+            return "";
         }
 
         /////////////////////////////////////////////////
@@ -1488,6 +1590,22 @@ class StringViewBase
         }
 
 };
+
+
+/////////////////////////////////////////////////
+/// \brief Inverse concatenation operator for a
+/// string instance with a StringViewBase
+/// instance.
+///
+/// \param sString std::string
+/// \param view StringViewBase
+/// \return std::string
+///
+/////////////////////////////////////////////////
+std::string operator+(std::string sString, StringViewBase view)
+{
+    return sString.append(view.begin(), view.end());
+}
 
 
 // Forward declaration for friendship

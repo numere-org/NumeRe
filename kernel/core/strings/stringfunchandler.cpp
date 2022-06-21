@@ -18,6 +18,7 @@
 
 #include "stringfunchandler.hpp"
 #include "../../kernel.hpp"
+#include "../structures.hpp"
 #define DEFAULT_NUM_ARG INT_MIN
 // define the "End of transmission block" as string separator
 #define NEWSTRING (char)23
@@ -72,10 +73,10 @@ namespace NumeRe
             }
 
             // Escape tab and newlines
-            if (sRet[i] == '\t')
-                sRet.replace(i, 1, "\\t");
-            if (sRet[i] == '\n')
-                sRet.replace(i, 1, "\\n");
+            //if (sRet[i] == '\t')
+            //    sRet.replace(i, 1, "\\t");
+            //if (sRet[i] == '\n')
+            //    sRet.replace(i, 1, "\\n");
         }
         return sRet;
     }
@@ -85,8 +86,8 @@ namespace NumeRe
     /// \brief This member function evaluates the
     /// passed call sequence to the string function.
     ///
-    /// \param sLine string&
-    /// \param sFuncName const string&
+    /// \param sLine std::string&
+    /// \param sFuncName const std::string&
     /// \param funcHandle StringFuncHandle
     /// \return void
     ///
@@ -100,7 +101,7 @@ namespace NumeRe
     /// vector, which replaces the selected call to
     /// the string function.
     /////////////////////////////////////////////////
-    void StringFuncHandler::evalFunction(string& sLine, const string& sFuncName, StringFuncHandle funcHandle)
+    void StringFuncHandler::evalFunction(std::string& sLine, const std::string& sFuncName, StringFuncHandle funcHandle)
     {
         size_t nStartPosition = 0;
         size_t nEndPosition = 0;
@@ -109,7 +110,7 @@ namespace NumeRe
         while ((nStartPosition = findNextFunction(sFuncName, sLine, nStartPosition, nEndPosition)) != string::npos)
         {
             // Extract the argument of the current found function and process it
-            string sFunctionArgument = getFunctionArgumentList(sFuncName, sLine, nStartPosition, nEndPosition);
+            StringView sFunctionArgument = getFunctionArgumentList(sFuncName, sLine, nStartPosition, nEndPosition);
             vector<string> vReturnValues;
             StringFuncArgs stringArgs;
             stringArgs.opt = &NumeReKernel::getInstance()->getSettings();
@@ -127,9 +128,9 @@ namespace NumeRe
                 nMaxArgs = argumentParser(sFunctionArgument, nIntArg1);
             else if (funcHandle.fType >= PARSER_STRING && funcHandle.fType < PARSER_STRING_DOUBLE)
             {
-                if (sFuncName == "to_string(" && !isStringExpression(sFunctionArgument))
+                if (sFuncName == "to_string(" && !isStringExpression(sFunctionArgument.to_string()))
                 {
-                    sStringArg1.push_back(sFunctionArgument);
+                    sStringArg1.push_back(sFunctionArgument.to_string());
                     nMaxArgs = 1;
                 }
                 else
@@ -211,7 +212,7 @@ namespace NumeRe
     /// function argument parser for numerical
     /// arguments.
     ///
-    /// \param __sFuncArgument const string&
+    /// \param __sFuncArgument StringView
     /// \param nArg n_vect& a vector of numerical
     /// values as return value
     /// \return size_t
@@ -220,12 +221,12 @@ namespace NumeRe
     /// functions, which are called by all others
     /// depending on the signatures of their functions.
     /////////////////////////////////////////////////
-    size_t StringFuncHandler::argumentParser(const string& __sFuncArgument, n_vect& nArg)
+    size_t StringFuncHandler::argumentParser(StringView __sFuncArgument, n_vect& nArg)
     {
         Parser& _parser = NumeReKernel::getInstance()->getParser();
         MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
         Settings& _option = NumeReKernel::getInstance()->getSettings();
-        string sFuncArgument = __sFuncArgument;
+        std::string sFuncArgument = __sFuncArgument.to_string();
         value_type* v = 0;
         int nReturn = 0;
 
@@ -280,7 +281,7 @@ namespace NumeRe
     /// function argument parser for numerical
     /// arguments.
     ///
-    /// \param __sFuncArgument const string&
+    /// \param __sFuncArgument StringView
     /// \param dArg d_vect& a vector of numerical
     /// values as return value
     /// \return size_t
@@ -289,12 +290,12 @@ namespace NumeRe
     /// functions, which are called by all others
     /// depending on the signatures of their functions.
     /////////////////////////////////////////////////
-    size_t StringFuncHandler::argumentParser(const string& __sFuncArgument, d_vect& dArg)
+    size_t StringFuncHandler::argumentParser(StringView __sFuncArgument, d_vect& dArg)
     {
         Parser& _parser = NumeReKernel::getInstance()->getParser();
         MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
         Settings& _option = NumeReKernel::getInstance()->getSettings();
-        string sFuncArgument = __sFuncArgument;
+        std::string sFuncArgument = __sFuncArgument.to_string();
         value_type* v = 0;
         int nReturn = 0;
 
@@ -342,7 +343,7 @@ namespace NumeRe
     /// function argument parser for string
     /// arguments.
     ///
-    /// \param __sFuncArgument const string&
+    /// \param __sFuncArgument StringView
     /// \param sArg s_vect& a vector of string values
     /// as return value
     /// \param bLogicalOnly bool&
@@ -352,12 +353,12 @@ namespace NumeRe
     /// functions, which are called by all others
     /// depending on the signatures of their functions.
     /////////////////////////////////////////////////
-    size_t StringFuncHandler::argumentParser(const string& __sFuncArgument, s_vect& sArg, bool& bLogicalOnly)
+    size_t StringFuncHandler::argumentParser(StringView __sFuncArgument, s_vect& sArg, bool& bLogicalOnly)
     {
         Parser& _parser = NumeReKernel::getInstance()->getParser();
         MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
         Settings& _option = NumeReKernel::getInstance()->getSettings();
-        string sFuncArgument = __sFuncArgument;
+        std::string sFuncArgument = __sFuncArgument.to_string();
 
         // If the current function argument contains strings,
         // parse it correspondingly
@@ -368,7 +369,7 @@ namespace NumeRe
 
             // Use the returned values as function arguments
             for (size_t i = 0; i < strRes.vResult.size(); i++)
-                sArg.push_back(removeQuotationMarks(strRes.vResult[i]));
+                sArg.push_back(removeQuotationMarks(strRes.vResult[i]) + (strRes.vNoStringVal[i] ? "+0.0E1" : ""));
 
             bLogicalOnly = strRes.bOnlyLogicals;
             return strRes.vResult.size();
@@ -384,7 +385,7 @@ namespace NumeRe
 
                 // Use the returned values as function arguments
                 for (size_t i = 0; i < strRes.vResult.size(); i++)
-                    sArg.push_back(removeQuotationMarks(strRes.vResult[i]));
+                    sArg.push_back(removeQuotationMarks(strRes.vResult[i]) + (strRes.vNoStringVal[i] ? "+0.0E1" : ""));
 
                 bLogicalOnly = strRes.bOnlyLogicals;
                 return strRes.vResult.size();
@@ -400,10 +401,10 @@ namespace NumeRe
             // As long as the function argument has a length,
             // get the next argument and store it in the vector
             while (sFuncArgument.length())
-                sArg.push_back(removeQuotationMarks(getNextArgument(sFuncArgument, true)));
+                sArg.push_back(removeQuotationMarks(getNextArgument(sFuncArgument, true))+"+0.0E1");
         }
         else
-            sArg.push_back(removeQuotationMarks(sFuncArgument));
+            sArg.push_back(removeQuotationMarks(sFuncArgument)+"+0.0E1");
 
         // Declare argument as numerical only
         bLogicalOnly = true;
@@ -417,21 +418,20 @@ namespace NumeRe
     /// function argument parser for one string and
     /// one (optional) numerical argument.
     ///
-    /// \param __sFuncArgument const string&
+    /// \param __sFuncArgument StringView
     /// \param sArg1 s_vect&
     /// \param dArg1 d_vect&
     /// \return size_t
     ///
     /////////////////////////////////////////////////
-    size_t StringFuncHandler::argumentParser(const string& __sFuncArgument, s_vect& sArg1, d_vect& dArg1)
+    size_t StringFuncHandler::argumentParser(StringView __sFuncArgument, s_vect& sArg1, d_vect& dArg1)
     {
-        string sFuncArgument = __sFuncArgument;
         size_t nMaxLength = 0;
         bool bLogicalOnly = false;
 
         // Get the single arguments
-        string sString = getNextArgument(sFuncArgument, true);
-        string sNumVal = getNextArgument(sFuncArgument, true);
+        StringView sString = getNextViewedArgument(__sFuncArgument);
+        StringView sNumVal = getNextViewedArgument(__sFuncArgument);
 
         // Handle the arguments using the basic functions
         // and store the highets number of return values
@@ -460,23 +460,22 @@ namespace NumeRe
     /// function argument parser for one string and
     /// two (optional) numerical arguments.
     ///
-    /// \param __sFuncArgument const string&
+    /// \param __sFuncArgument StringView
     /// \param sArg1 s_vect&
     /// \param nArg1 n_vect&
     /// \param nArg2 n_vect&
     /// \return size_t
     ///
     /////////////////////////////////////////////////
-    size_t StringFuncHandler::argumentParser(const string& __sFuncArgument, s_vect& sArg1, n_vect& nArg1, n_vect& nArg2)
+    size_t StringFuncHandler::argumentParser(StringView __sFuncArgument, s_vect& sArg1, n_vect& nArg1, n_vect& nArg2)
     {
-        string sFuncArgument = __sFuncArgument;
         size_t nMaxLength = 0;
         bool bLogicalOnly = false;
 
         // Get the single arguments
-        string sString = getNextArgument(sFuncArgument, true);
-        string sNumVal1 = getNextArgument(sFuncArgument, true);
-        string sNumVal2 = getNextArgument(sFuncArgument, true);
+        StringView sString = getNextViewedArgument(__sFuncArgument);
+        StringView sNumVal1 = getNextViewedArgument(__sFuncArgument);
+        StringView sNumVal2 = getNextViewedArgument(__sFuncArgument);
 
         // Handle the arguments using the basic functions
         // and store the highets number of return values
@@ -520,7 +519,7 @@ namespace NumeRe
     /// string is the last argument. Every argument
     /// except of the first one is optional.
     ///
-    /// \param __sFuncArgument const string&
+    /// \param __sFuncArgument StringView
     /// \param sArg1 s_vect&
     /// \param nArg1 n_vect&
     /// \param nArg2 n_vect&
@@ -528,17 +527,16 @@ namespace NumeRe
     /// \return size_t
     ///
     /////////////////////////////////////////////////
-    size_t StringFuncHandler::argumentParser(const string& __sFuncArgument, s_vect& sArg1, n_vect& nArg1, n_vect& nArg2, s_vect& sArg2)
+    size_t StringFuncHandler::argumentParser(StringView __sFuncArgument, s_vect& sArg1, n_vect& nArg1, n_vect& nArg2, s_vect& sArg2)
     {
-        string sFuncArgument = __sFuncArgument;
         size_t nMaxLength = 0;
         bool bLogicalOnly = false;
 
         // Get the single arguments
-        string sString1 = getNextArgument(sFuncArgument, true);
-        string sNumVal1 = getNextArgument(sFuncArgument, true);
-        string sNumVal2 = getNextArgument(sFuncArgument, true);
-        string sString2 = getNextArgument(sFuncArgument, true);
+        StringView sString1 = getNextViewedArgument(__sFuncArgument);
+        StringView sNumVal1 = getNextViewedArgument(__sFuncArgument);
+        StringView sNumVal2 = getNextViewedArgument(__sFuncArgument);
+        StringView sString2 = getNextViewedArgument(__sFuncArgument);
 
         // Handle the arguments using the basic functions
         // and store the highets number of return values
@@ -594,7 +592,7 @@ namespace NumeRe
     /// and two numerical values. Every argument
     /// except of the first one is optional.
     ///
-    /// \param __sFuncArgument const string&
+    /// \param __sFuncArgument StringView
     /// \param sArg1 s_vect&
     /// \param sArg2 s_vect&
     /// \param nArg1 n_vect&
@@ -602,17 +600,16 @@ namespace NumeRe
     /// \return size_t
     ///
     /////////////////////////////////////////////////
-    size_t StringFuncHandler::argumentParser(const string& __sFuncArgument, s_vect& sArg1, s_vect& sArg2, n_vect& nArg1, n_vect& nArg2)
+    size_t StringFuncHandler::argumentParser(StringView __sFuncArgument, s_vect& sArg1, s_vect& sArg2, n_vect& nArg1, n_vect& nArg2)
     {
-        string sFuncArgument = __sFuncArgument;
         size_t nMaxLength = 0;
         bool bLogicalOnly = false;
 
         // Get the single arguments
-        string sString1 = getNextArgument(sFuncArgument, true);
-        string sString2 = getNextArgument(sFuncArgument, true);
-        string sNumVal1 = getNextArgument(sFuncArgument, true);
-        string sNumVal2 = getNextArgument(sFuncArgument, true);
+        StringView sString1 = getNextViewedArgument(__sFuncArgument);
+        StringView sString2 = getNextViewedArgument(__sFuncArgument);
+        StringView sNumVal1 = getNextViewedArgument(__sFuncArgument);
+        StringView sNumVal2 = getNextViewedArgument(__sFuncArgument);
 
         // Handle the arguments using the basic functions
         // and store the highets number of return values
@@ -668,7 +665,7 @@ namespace NumeRe
     /// and two numerical values. Every argument
     /// except of the first one is optional.
     ///
-    /// \param __sFuncArgument const string&
+    /// \param __sFuncArgument StringView
     /// \param sArg1 s_vect&
     /// \param sArg2 s_vect&
     /// \param sArg3 s_vect&
@@ -677,18 +674,17 @@ namespace NumeRe
     /// \return size_t
     ///
     /////////////////////////////////////////////////
-    size_t StringFuncHandler::argumentParser(const string& __sFuncArgument, s_vect& sArg1, s_vect& sArg2, s_vect& sArg3, n_vect& nArg1, n_vect& nArg2)
+    size_t StringFuncHandler::argumentParser(StringView __sFuncArgument, s_vect& sArg1, s_vect& sArg2, s_vect& sArg3, n_vect& nArg1, n_vect& nArg2)
     {
-        string sFuncArgument = __sFuncArgument;
         size_t nMaxLength = 0;
         bool bLogicalOnly = false;
 
         // Get the single arguments
-        string sString1 = getNextArgument(sFuncArgument, true);
-        string sString2 = getNextArgument(sFuncArgument, true);
-        string sString3 = getNextArgument(sFuncArgument, true);
-        string sNumVal1 = getNextArgument(sFuncArgument, true);
-        string sNumVal2 = getNextArgument(sFuncArgument, true);
+        StringView sString1 = getNextViewedArgument(__sFuncArgument);
+        StringView sString2 = getNextViewedArgument(__sFuncArgument);
+        StringView sString3 = getNextViewedArgument(__sFuncArgument);
+        StringView sNumVal1 = getNextViewedArgument(__sFuncArgument);
+        StringView sNumVal2 = getNextViewedArgument(__sFuncArgument);
 
         // Handle the arguments using the basic functions
         // and store the highets number of return values
@@ -1064,7 +1060,7 @@ namespace NumeRe
         // str string_cast(EXPR)
         while ((nStartPosition = findNextFunction("string_cast(", sLine, nStartPosition, nEndPosition)) != string::npos)
         {
-            string sToString = getFunctionArgumentList("string_cast(", sLine, nStartPosition, nEndPosition);
+            string sToString = getFunctionArgumentList("string_cast(", sLine, nStartPosition, nEndPosition).to_string();
 
             if (sToString.find('"') != string::npos || sToString.find('#') != string::npos)
             {
@@ -1087,7 +1083,7 @@ namespace NumeRe
         // cmd to_cmd(str)
         while ((nStartPosition = findNextFunction("to_cmd(", sLine, nStartPosition, nEndPosition)) != string::npos)
         {
-            string sCmdString = getFunctionArgumentList("to_cmd(", sLine, nStartPosition, nEndPosition);
+            string sCmdString = getFunctionArgumentList("to_cmd(", sLine, nStartPosition, nEndPosition).to_string();
             StripSpaces(sCmdString);
 
             if (isStringExpression(sCmdString))
@@ -1113,7 +1109,7 @@ namespace NumeRe
         // val to_value(str)
         while ((nStartPosition = findNextFunction("to_value(", sLine, nStartPosition, nEndPosition)) != string::npos)
         {
-            string sToValue = getFunctionArgumentList("to_value(", sLine, nStartPosition, nEndPosition);
+            string sToValue = getFunctionArgumentList("to_value(", sLine, nStartPosition, nEndPosition).to_string();
             StripSpaces(sToValue);
 
             if (isStringExpression(sToValue))
@@ -1152,7 +1148,7 @@ namespace NumeRe
         // log is_string(EXPR)
         while ((nStartPosition = findNextFunction("is_string(", sLine, nStartPosition, nEndPosition)) != string::npos)
         {
-            string sArgument = getFunctionArgumentList("is_string(", sLine, nStartPosition, nEndPosition);
+            string sArgument = getFunctionArgumentList("is_string(", sLine, nStartPosition, nEndPosition).to_string();
 
             if (isStringExpression(sArgument))
                 sLine = sLine.substr(0, nStartPosition) + "true" + sLine.substr(nEndPosition + 1);
@@ -1166,7 +1162,7 @@ namespace NumeRe
         // {val} = getindices(str, [val])
         while ((nStartPosition = findNextFunction("getindices(", sLine, nStartPosition, nEndPosition)) != string::npos)
         {
-            string _sObject = getFunctionArgumentList("getindices(", sLine, nStartPosition, nEndPosition);
+            string _sObject = getFunctionArgumentList("getindices(", sLine, nStartPosition, nEndPosition).to_string();
             StringResult strRes = eval(_sObject, "");
 
             if (!strRes.vResult.size())
@@ -1291,7 +1287,7 @@ namespace NumeRe
         // log = is_data(EXPR)
         while ((nStartPosition = findNextFunction("is_data(", sLine, nStartPosition, nEndPosition)) != string::npos)
         {
-            string sData = getFunctionArgumentList("is_data(", sLine, nStartPosition, nEndPosition);
+            string sData = getFunctionArgumentList("is_data(", sLine, nStartPosition, nEndPosition).to_string();
 
             if (isStringExpression(sData))
             {
@@ -1324,7 +1320,7 @@ namespace NumeRe
         // log = is_table(EXPR)
         while ((nStartPosition = findNextFunction("is_table(", sLine, nStartPosition, nEndPosition)) != string::npos)
         {
-            string sData = getFunctionArgumentList("is_table(", sLine, nStartPosition, nEndPosition);
+            string sData = getFunctionArgumentList("is_table(", sLine, nStartPosition, nEndPosition).to_string();
 
             if (isStringExpression(sData))
             {
@@ -1357,7 +1353,7 @@ namespace NumeRe
         // log = is_cluster(EXPR)
         while ((nStartPosition = findNextFunction("is_cluster(", sLine, nStartPosition, nEndPosition)) != string::npos)
         {
-            string sData = getFunctionArgumentList("is_cluster(", sLine, nStartPosition, nEndPosition);
+            string sData = getFunctionArgumentList("is_cluster(", sLine, nStartPosition, nEndPosition).to_string();
 
             if (isStringExpression(sData))
             {
@@ -1390,7 +1386,7 @@ namespace NumeRe
         // {var} = findcolumn("data","header")
         while ((nStartPosition = findNextFunction("findcolumn(", sLine, nStartPosition, nEndPosition)) != string::npos)
         {
-            string sData = getFunctionArgumentList("findcolumn(", sLine, nStartPosition, nEndPosition);
+            string sData = getFunctionArgumentList("findcolumn(", sLine, nStartPosition, nEndPosition).to_string();
             string sHeadline;
 
             if (isStringExpression(sData))
@@ -1458,7 +1454,7 @@ namespace NumeRe
         // str = valtostr(EXPR, [str])
         while ((nStartPosition = findNextFunction("valtostr(", sLine, nStartPosition, nEndPosition)) != string::npos)
         {
-            string sToString = getFunctionArgumentList("valtostr(", sLine, nStartPosition, nEndPosition);
+            string sToString = getFunctionArgumentList("valtostr(", sLine, nStartPosition, nEndPosition).to_string();
             string sExpr = getNextArgument(sToString, true);
             string sChar = "";
             std::vector<mu::value_type> vCounts;
@@ -1605,14 +1601,14 @@ namespace NumeRe
     /// position of the closing parenthesis.
     ///
     /// \param sFunc const string&
-    /// \param sLine const string&
+    /// \param sLine StringView
     /// \param nStartPos size_t
     /// \param nEndPosition size_t&
     /// \param searchForMethods bool
     /// \return size_t
     ///
     /////////////////////////////////////////////////
-    size_t StringFuncHandler::findNextFunction(const string& sFunc, const string& sLine, size_t nStartPos, size_t& nEndPosition, bool searchForMethods)
+    size_t StringFuncHandler::findNextFunction(const string& sFunc, StringView sLine, size_t nStartPos, size_t& nEndPosition, bool searchForMethods)
     {
         // Search for occurences of the passed function
         while ((nStartPos = sLine.find(sFunc, nStartPos)) != string::npos)
@@ -1625,8 +1621,8 @@ namespace NumeRe
             }
 
             // Find the matching parenthesis
-            if ((nEndPosition = getMatchingParenthesis(sLine.substr(nStartPos + sFunc.length() - 1))) == string::npos)
-                throw SyntaxError(SyntaxError::UNMATCHED_PARENTHESIS, sLine, nStartPos + sFunc.length() - 1);
+            if ((nEndPosition = getMatchingParenthesis(sLine.subview(nStartPos + sFunc.length() - 1))) == std::string::npos)
+                throw SyntaxError(SyntaxError::UNMATCHED_PARENTHESIS, sLine.to_string(), nStartPos + sFunc.length() - 1);
 
             // Update the end position and return the
             // starting position
@@ -1638,7 +1634,7 @@ namespace NumeRe
                 for (size_t i = nEndPosition+1; i < sLine.length(); i++)
                 {
                     if (sLine[i] == '(' || sLine[i] == '{')
-                        i += getMatchingParenthesis(sLine.substr(i));
+                        i += getMatchingParenthesis(sLine.subview(i));
                     else if (sLine[i] == ')' || sLine[i] == '}')
                     {
                         // This block will only get activated, if we find an unmatched
@@ -1669,16 +1665,17 @@ namespace NumeRe
     /// parentheses of the function starting at
     /// nStartPosition.
     ///
-    /// \param sFunc const string&
-    /// \param sLine const string&
+    /// \param sFunc const std::string&
+    /// \param sLine StringView
     /// \param nStartPosition size_t First character of the function
     /// \param nEndPosition size_t Position of the closing parenthesis
     /// \return string
     ///
     /////////////////////////////////////////////////
-    string StringFuncHandler::getFunctionArgumentList(const string& sFunc, const string& sLine, size_t nStartPosition, size_t nEndPosition)
+    StringView StringFuncHandler::getFunctionArgumentList(const std::string& sFunc, StringView sLine, size_t nStartPosition, size_t nEndPosition)
     {
-        return sLine.substr(nStartPosition + sFunc.length(), nEndPosition - nStartPosition - sFunc.length());
+        return sLine.subview(nStartPosition + sFunc.length(),
+                             nEndPosition - nStartPosition - sFunc.length());
     }
 
 

@@ -134,7 +134,7 @@ namespace NumeRe
     {
         bool bReturningLogicals = false;
 
-        string sLine = removeMaskedStrings(evalStringLogic(_sLine, bReturningLogicals));
+        string sLine = evalStringLogic(_sLine, bReturningLogicals);
         StripSpaces(sLine);
 
         if (sLine.front() == '"' && sLine.back() == '"')
@@ -143,7 +143,7 @@ namespace NumeRe
             sLine = sLine.substr(1, sLine.length() - 2);
         }
 
-        return sLine;
+        return removeMaskedStrings(sLine);
     }
 
 
@@ -486,29 +486,29 @@ namespace NumeRe
             // Search for the concatenation operator (aka "+")
             if (!(nQuotes % 2) && sExpr[i] == '+')
             {
-                string sLeft = sExpr.substr(0, i);
-                string sRight = sExpr.substr(i+1);
+                StringView sLeft(sExpr, 0, i);
+                StringView sRight(sExpr, i+1);
 
-                StripSpaces(sLeft);
-                StripSpaces(sRight);
+                sLeft.strip();
+                sRight.strip();
 
                 // Determine the correct concatenation process
                 if (sLeft == "\"\"" && sRight != "\"\"")
                 {
-                    sExpr = " " + sRight;
+                    sExpr = " " + sRight.to_string();
                     i = 0;
                 }
                 else if (sLeft != "\"\"" && sRight == "\"\"")
                 {
-                    sExpr = sLeft;
+                    sExpr = sLeft.to_string();
                     break;
                 }
                 else if (sLeft.back() == '"' && sRight.front() == '"')
                 {
-                    sExpr = sLeft.substr(0, sLeft.length()-1) + sRight.substr(1);
-
                     // We removed some characters
                     i = sLeft.length()-2;
+
+                    sExpr = sLeft.subview(0, sLeft.length()-1).to_string() + sRight.subview(1).to_string();
 
                     // We're now part of a string
                     nQuotes++;
@@ -516,7 +516,8 @@ namespace NumeRe
 
                 // Everything not catched here is a strange mixture
             }
-            else if (!(nQuotes % 2) && (isdigit(sExpr[i]) || sExpr.substr(i, 3) == "inf" || sExpr.substr(i, 3) == "nan")) // Numerical literals
+            else if (!(nQuotes % 2)
+                     && (isdigit(sExpr[i]) || sExpr.compare(i, 3, "inf") == 0 || sExpr.compare(i, 3, "nan") == 0)) // Numerical literals
             {
                 size_t nextPos = sExpr.find_first_not_of("0123456789Ee+-infa.", i);
 
