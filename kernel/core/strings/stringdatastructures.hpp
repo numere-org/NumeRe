@@ -30,41 +30,54 @@ class Settings;
 
 
 
-class StringArg : public std::string
+/////////////////////////////////////////////////
+/// \brief Simply container to provide the data
+/// for a StringView instance usable by all the
+/// string functions.
+/////////////////////////////////////////////////
+class StringArg
 {
+    private:
+        std::string m_data;
+
     public:
-        StringArg() : std::string()
+        StringArg()
         { }
 
-        StringArg(const std::string& sStr) : std::string(sStr)
+        StringArg(const std::string& sStr) : m_data(sStr)
         { }
 
-        StringArg(const StringArg& sStr) : std::string(sStr)
+        StringArg(const StringArg& sStr) : m_data(sStr.m_data)
         { }
 
         StringArg& operator=(const StringArg& sStr)
         {
-            assign(sStr);
+            m_data = sStr.m_data;
             return *this;
         }
 
         StringArg& operator=(const std::string& sStr)
         {
-            assign(sStr);
+            m_data = sStr;
             return *this;
         }
 
         bool is_string() const
         {
-            return length() && front() == '"';
+            return m_data.length() && m_data.front() == '"';
         }
 
-        StringView getView() const
+        StringView view() const
         {
             if (is_string())
-                return StringView(*this, 1, length()-2);
+                return StringView(m_data, 1, m_data.length()-2);
 
-            return StringView(*this);
+            return StringView(m_data);
+        }
+
+        std::string& getRef()
+        {
+            return m_data;
         }
 };
 
@@ -143,7 +156,7 @@ class StringVector : public std::vector<std::string>
             assign(vect);
         }
 
-        StringVector(size_t n) : std::vector<std::string>(n)
+        StringVector(size_t n, const std::string& sStr = std::string()) : std::vector<std::string>(n, sStr)
         { }
 
         StringVector& operator=(const StringVector& sVect)
@@ -173,6 +186,12 @@ class StringVector : public std::vector<std::string>
             return false;
         }
 
+        void convert_to_string(size_t i)
+        {
+            if (i < size() && !is_string(i))
+                std::vector<std::string>::operator[](i) = "\"" + std::vector<std::string>::operator[](i) + "\"";
+        }
+
         StringView operator[](size_t i) const
         {
             if (i < size())
@@ -185,6 +204,8 @@ class StringVector : public std::vector<std::string>
         {
             if (i < size())
                 return StringArg(at(i));
+            else if (size() == 1)
+                return StringArg(at(0));
 
             return StringArg();
         }
@@ -197,6 +218,14 @@ class StringVector : public std::vector<std::string>
                 return at(i);
 
             return m_sDUMMY;
+        }
+
+        std::string& getRef(size_t i)
+        {
+            if (i < size())
+                return std::vector<std::string>::operator[](i);
+
+            throw std::out_of_range("Requested element " + toString(i) + ", which is greater than this->size().");
         }
 
         std::vector<bool> operator==(const StringVector& sVect) const
@@ -309,7 +338,7 @@ class StringVector : public std::vector<std::string>
 /////////////////////////////////////////////////
 /// \brief Simple abbreviation
 /////////////////////////////////////////////////
-typedef std::vector<std::string> s_vect;
+typedef StringVector s_vect;
 
 /////////////////////////////////////////////////
 /// \brief Simple abbreviation
@@ -329,7 +358,7 @@ typedef std::vector<mu::value_type> d_vect;
 /////////////////////////////////////////////////
 struct StringFuncArgs
 {
-	std::string sArg1, sArg2, sArg3;
+	StringArg sArg1, sArg2, sArg3;
 	s_vect sMultiArg;
 	long long int nArg1, nArg2;
 	mu::value_type dArg1;

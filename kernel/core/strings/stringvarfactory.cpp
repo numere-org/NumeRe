@@ -118,15 +118,15 @@ namespace NumeRe
     /// components in separate vector components.
     ///
     /// \param sLine string
-    /// \return vector<string>
+    /// \return StringVector
     ///
     /// For each contained vector, the complete command
     /// line is evaluated and returned as a separate
     /// vector component.
     /////////////////////////////////////////////////
-    vector<string> StringVarFactory::evaluateStringVectors(string sLine)
+    StringVector StringVarFactory::evaluateStringVectors(string sLine)
     {
-        vector<string> vRes;
+        StringVector vRes;
         const map<string, vector<mu::value_type> >& mNumVectorVars = NumeReKernel::getInstance()->getParser().GetVectors();
 
         // As long as the current vector is not empty
@@ -209,7 +209,7 @@ namespace NumeRe
     /// separate components by enlarging the dimension
     /// of the vector.
     ///
-    /// \param vStringVector vector<string>&
+    /// \param vStringVector StringVector&
     /// \return void
     ///
     /// The components are evaluated and inserted into
@@ -218,16 +218,17 @@ namespace NumeRe
     /// which will enlarge the original vector by n-1
     /// new components.
     /////////////////////////////////////////////////
-    void StringVarFactory::expandStringVectorComponents(vector<string>& vStringVector)
+    void StringVarFactory::expandStringVectorComponents(StringVector& vStringVector)
     {
         // Examine each vector component
         for (size_t i = 0; i < vStringVector.size(); i++)
         {
+            std::string sComponent = vStringVector.getMasked(i);
+
             // If the next argument is not equal to the current component itself
-            if (getNextArgument(vStringVector[i], false) != vStringVector[i])
+            if (getNextArgument(sComponent, false) != sComponent)
             {
                 // Store the first part of the multi-expression in the current component
-                string sComponent = vStringVector[i];
                 vStringVector[i] = getNextArgument(sComponent, true);
                 size_t nComponent = 1;
 
@@ -343,14 +344,14 @@ namespace NumeRe
     /// passed map with their nCurrentComponent
     /// component.
     ///
-    /// \param mVectorVarMap map<string,vector<string> >&
+    /// \param mVectorVarMap map<string,StringVector>&
     /// \param currentline string&
     /// \param nCurrentComponent size_t
     /// \param bHasComponents bool&
     /// \return void
     ///
     /////////////////////////////////////////////////
-    void StringVarFactory::replaceStringVectorVars(map<string,vector<string> >& mVectorVarMap, string& currentline, size_t nCurrentComponent, bool& bHasComponents)
+    void StringVarFactory::replaceStringVectorVars(map<string,StringVector>& mVectorVarMap, string& currentline, size_t nCurrentComponent, bool& bHasComponents)
     {
         // Replace all found vectors with their nCurrentComponent-th component
         for (auto iter = mVectorVarMap.begin(); iter != mVectorVarMap.end(); ++iter)
@@ -365,17 +366,17 @@ namespace NumeRe
                 {
                     bHasComponents = true;
 
-                    if (isNumericCandidate((iter->second)[nCurrentComponent]))
-                        currentline.replace(nMatch, (iter->first).length(), "(" + (iter->second)[nCurrentComponent] + ")");
+                    if (!iter->second.is_string(nCurrentComponent))
+                        currentline.replace(nMatch, (iter->first).length(), "(" + (iter->second).getMasked(nCurrentComponent) + ")");
                     else
-                        currentline.replace(nMatch, (iter->first).length(), (iter->second)[nCurrentComponent]);
+                        currentline.replace(nMatch, (iter->first).length(), (iter->second).getMasked(nCurrentComponent));
                 }
                 else if ((iter->second).size() == 1)
                 {
-                    if (isNumericCandidate((iter->second)[0]))
-                        currentline.replace(nMatch, (iter->first).length(), "(" + (iter->second)[0] + ")");
+                    if (!iter->second.is_string(0))
+                        currentline.replace(nMatch, (iter->first).length(), "(" + (iter->second).getMasked(0) + ")");
                     else
-                        currentline.replace(nMatch, (iter->first).length(), (iter->second)[0]);
+                        currentline.replace(nMatch, (iter->first).length(), (iter->second).getMasked(0));
                 }
                 else
                     currentline.replace(nMatch, (iter->first).length(), "\"\"");
@@ -390,12 +391,12 @@ namespace NumeRe
     /// map, if anything found, otherwise an empty
     /// string.
     ///
-    /// \param mVectorVarMap map<string,vector<string> >&
+    /// \param mVectorVarMap map<string,StringVector>&
     /// \param vStringVector const vector<string>&
     /// \return string
     ///
     /////////////////////////////////////////////////
-    string StringVarFactory::findVectorInMap(const map<string,vector<string> >& mVectorVarMap, const vector<string>& vStringVector)
+    string StringVarFactory::findVectorInMap(const map<string,StringVector>& mVectorVarMap, const vector<string>& vStringVector)
     {
         // Go through the map
         for (auto iter = mVectorVarMap.begin(); iter != mVectorVarMap.end(); ++iter)
@@ -408,7 +409,7 @@ namespace NumeRe
                 for (size_t i = 1; i < vStringVector.size(); i++)
                 {
                     // Break if a component is not equal
-                    if (vStringVector[i] != iter->second[i])
+                    if (vStringVector[i] != iter->second.at(i))
                         break;
 
                     // Return the vector name, if all components

@@ -111,7 +111,7 @@ namespace NumeRe
         {
             // Extract the argument of the current found function and process it
             StringView sFunctionArgument = getFunctionArgumentList(sFuncName, sLine, nStartPosition, nEndPosition);
-            vector<string> vReturnValues;
+            s_vect vReturnValues;
             StringFuncArgs stringArgs;
             stringArgs.opt = &NumeReKernel::getInstance()->getSettings();
             bool bLogicalOnly = false;
@@ -368,8 +368,7 @@ namespace NumeRe
             StringResult strRes = eval(sFuncArgument, "", true);
 
             // Use the returned values as function arguments
-            for (size_t i = 0; i < strRes.vResult.size(); i++)
-                sArg.push_back(removeQuotationMarks(strRes.vResult[i]) + (strRes.vNoStringVal[i] ? "+0.0E1" : ""));
+            sArg = strRes.vResult;
 
             bLogicalOnly = strRes.bOnlyLogicals;
             return strRes.vResult.size();
@@ -384,8 +383,7 @@ namespace NumeRe
                 StringResult strRes = eval(sFuncArgument, "", true);
 
                 // Use the returned values as function arguments
-                for (size_t i = 0; i < strRes.vResult.size(); i++)
-                    sArg.push_back(removeQuotationMarks(strRes.vResult[i]) + (strRes.vNoStringVal[i] ? "+0.0E1" : ""));
+                sArg = strRes.vResult;
 
                 bLogicalOnly = strRes.bOnlyLogicals;
                 return strRes.vResult.size();
@@ -760,42 +758,25 @@ namespace NumeRe
     /// \param nIntArg2 n_vect&
     /// \param dValArg d_vect&
     /// \param nMaxArgs size_t
-    /// \return vector<string>
+    /// \return s_vect
     ///
     /////////////////////////////////////////////////
-    vector<string> StringFuncHandler::callFunction(StringFuncHandle funcHandle, s_vect& sStringArg1, s_vect& sStringArg2, s_vect& sStringArg3, n_vect& nIntArg1, n_vect& nIntArg2, d_vect& dValArg, size_t nMaxArgs)
+    s_vect StringFuncHandler::callFunction(StringFuncHandle funcHandle, s_vect& sStringArg1, s_vect& sStringArg2, s_vect& sStringArg3, n_vect& nIntArg1, n_vect& nIntArg2, d_vect& dValArg, size_t nMaxArgs)
     {
         StringFuncArgs stringArgs;
         stringArgs.opt = &NumeReKernel::getInstance()->getSettings();
 
         // Shortcut for empty function arguments
         if (!nMaxArgs)
-            return std::vector<std::string>(1, addMaskedStrings(funcHandle.fHandle(stringArgs)));
+            return s_vect(1, funcHandle.fHandle(stringArgs));
 
-        vector<string> vReturnValues(nMaxArgs);
+        s_vect vReturnValues(nMaxArgs);
 
         for (size_t i = 0; i < nMaxArgs; i++)
         {
-            if (i < sStringArg1.size())
-                stringArgs.sArg1 = sStringArg1[i];
-            else if (sStringArg1.size() == 1)
-                stringArgs.sArg1 = sStringArg1[0];
-            else
-                stringArgs.sArg1.clear();
-
-            if (i < sStringArg2.size())
-                stringArgs.sArg2 = sStringArg2[i];
-            else if (sStringArg2.size() == 1)
-                stringArgs.sArg2 = sStringArg2[0];
-            else
-                stringArgs.sArg2.clear();
-
-            if (i < sStringArg3.size())
-                stringArgs.sArg3 = sStringArg3[i];
-            else if (sStringArg3.size() == 1)
-                stringArgs.sArg3 = sStringArg3[0];
-            else
-                stringArgs.sArg3.clear();
+            stringArgs.sArg1 = sStringArg1.getArg(i);
+            stringArgs.sArg2 = sStringArg2.getArg(i);
+            stringArgs.sArg3 = sStringArg3.getArg(i);
 
             if (i < nIntArg1.size())
                 stringArgs.nArg1 = nIntArg1[i];
@@ -818,7 +799,7 @@ namespace NumeRe
             else
                 stringArgs.dArg1 = 0.0;
 
-            vReturnValues[i] = addMaskedStrings(funcHandle.fHandle(stringArgs));
+            vReturnValues.getRef(i) = funcHandle.fHandle(stringArgs);
         }
 
         return vReturnValues;
@@ -838,12 +819,12 @@ namespace NumeRe
     /// \param nIntArg2 n_vect&
     /// \param dValArg d_vect&
     /// \param nMaxArgs size_t
-    /// \return vector<string>
+    /// \return s_vect
     ///
     /////////////////////////////////////////////////
-    vector<string> StringFuncHandler::callFunctionParallel(StringFuncHandle funcHandle, s_vect& sStringArg1, s_vect& sStringArg2, s_vect& sStringArg3, n_vect& nIntArg1, n_vect& nIntArg2, d_vect& dValArg, size_t nMaxArgs)
+    s_vect StringFuncHandler::callFunctionParallel(StringFuncHandle funcHandle, s_vect& sStringArg1, s_vect& sStringArg2, s_vect& sStringArg3, n_vect& nIntArg1, n_vect& nIntArg2, d_vect& dValArg, size_t nMaxArgs)
     {
-        vector<string> vReturnValues(nMaxArgs);
+        s_vect vReturnValues(nMaxArgs);
 
         StringFuncArgs stringArgs;
         stringArgs.opt = &NumeReKernel::getInstance()->getSettings();
@@ -851,26 +832,9 @@ namespace NumeRe
         #pragma omp parallel for firstprivate(stringArgs)
         for (size_t i = 0; i < nMaxArgs; i++)
         {
-            if (i < sStringArg1.size())
-                stringArgs.sArg1 = sStringArg1[i];
-            else if (sStringArg1.size() == 1)
-                stringArgs.sArg1 = sStringArg1[0];
-            else
-                stringArgs.sArg1.clear();
-
-            if (i < sStringArg2.size())
-                stringArgs.sArg2 = sStringArg2[i];
-            else if (sStringArg2.size() == 1)
-                stringArgs.sArg2 = sStringArg2[0];
-            else
-                stringArgs.sArg2.clear();
-
-            if (i < sStringArg3.size())
-                stringArgs.sArg3 = sStringArg3[i];
-            else if (sStringArg3.size() == 1)
-                stringArgs.sArg3 = sStringArg3[0];
-            else
-                stringArgs.sArg3.clear();
+            stringArgs.sArg1 = sStringArg1.getArg(i);
+            stringArgs.sArg2 = sStringArg2.getArg(i);
+            stringArgs.sArg3 = sStringArg3.getArg(i);
 
             if (i < nIntArg1.size())
                 stringArgs.nArg1 = nIntArg1[i];
@@ -893,7 +857,7 @@ namespace NumeRe
             else
                 stringArgs.dArg1 = 0.0;
 
-            vReturnValues[i] = addMaskedStrings(funcHandle.fHandle(stringArgs));
+            vReturnValues.getRef(i) = funcHandle.fHandle(stringArgs);
         }
 
         return vReturnValues;
@@ -914,12 +878,12 @@ namespace NumeRe
     /// \param nIntArg2 n_vect&
     /// \param dValArg d_vect&
     /// \param nMaxArgs size_t
-    /// \return vector<string>
+    /// \return s_vect
     ///
     /////////////////////////////////////////////////
-    vector<string> StringFuncHandler::callMultiFunction(StringFuncHandle funcHandle, s_vect& sStringArg1, s_vect& sStringArg2, s_vect& sStringArg3, n_vect& nIntArg1, n_vect& nIntArg2, d_vect& dValArg, size_t nMaxArgs)
+    s_vect StringFuncHandler::callMultiFunction(StringFuncHandle funcHandle, s_vect& sStringArg1, s_vect& sStringArg2, s_vect& sStringArg3, n_vect& nIntArg1, n_vect& nIntArg2, d_vect& dValArg, size_t nMaxArgs)
     {
-        vector<string> vReturnValues(nMaxArgs);
+        s_vect vReturnValues(nMaxArgs);
 
         StringFuncArgs stringArgs;
         stringArgs.opt = &NumeReKernel::getInstance()->getSettings();
@@ -927,19 +891,8 @@ namespace NumeRe
 
         for (size_t i = 0; i < nMaxArgs; i++)
         {
-            if (i < sStringArg2.size())
-                stringArgs.sArg2 = sStringArg2[i];
-            else if (sStringArg2.size() == 1)
-                stringArgs.sArg2 = sStringArg2[0];
-            else
-                stringArgs.sArg2.clear();
-
-            if (i < sStringArg3.size())
-                stringArgs.sArg3 = sStringArg3[i];
-            else if (sStringArg3.size() == 1)
-                stringArgs.sArg3 = sStringArg3[0];
-            else
-                stringArgs.sArg3.clear();
+            stringArgs.sArg2 = sStringArg2.getArg(i);
+            stringArgs.sArg3 = sStringArg3.getArg(i);
 
             if (i < nIntArg1.size())
                 stringArgs.nArg1 = nIntArg1[i];
@@ -962,7 +915,7 @@ namespace NumeRe
             else
                 stringArgs.dArg1 = 0.0;
 
-            vReturnValues[i] = addMaskedStrings(funcHandle.fHandle(stringArgs));
+            vReturnValues.getRef(i) = funcHandle.fHandle(stringArgs);
         }
 
         return vReturnValues;
@@ -983,12 +936,12 @@ namespace NumeRe
     /// \param nIntArg2 n_vect&
     /// \param dValArg d_vect&
     /// \param nMaxArgs size_t
-    /// \return vector<string>
+    /// \return s_vect
     ///
     /////////////////////////////////////////////////
-    vector<string> StringFuncHandler::callMultiFunctionParallel(StringFuncHandle funcHandle, s_vect& sStringArg1, s_vect& sStringArg2, s_vect& sStringArg3, n_vect& nIntArg1, n_vect& nIntArg2, d_vect& dValArg, size_t nMaxArgs)
+    s_vect StringFuncHandler::callMultiFunctionParallel(StringFuncHandle funcHandle, s_vect& sStringArg1, s_vect& sStringArg2, s_vect& sStringArg3, n_vect& nIntArg1, n_vect& nIntArg2, d_vect& dValArg, size_t nMaxArgs)
     {
-        vector<string> vReturnValues(nMaxArgs);
+        s_vect vReturnValues(nMaxArgs);
 
         StringFuncArgs stringArgs;
         stringArgs.opt = &NumeReKernel::getInstance()->getSettings();
@@ -997,19 +950,8 @@ namespace NumeRe
         #pragma omp parallel for firstprivate(stringArgs)
         for (size_t i = 0; i < nMaxArgs; i++)
         {
-            if (i < sStringArg2.size())
-                stringArgs.sArg2 = sStringArg2[i];
-            else if (sStringArg2.size() == 1)
-                stringArgs.sArg2 = sStringArg2[0];
-            else
-                stringArgs.sArg2.clear();
-
-            if (i < sStringArg3.size())
-                stringArgs.sArg3 = sStringArg3[i];
-            else if (sStringArg3.size() == 1)
-                stringArgs.sArg3 = sStringArg3[0];
-            else
-                stringArgs.sArg3.clear();
+            stringArgs.sArg2 = sStringArg2.getArg(i);
+            stringArgs.sArg3 = sStringArg3.getArg(i);
 
             if (i < nIntArg1.size())
                 stringArgs.nArg1 = nIntArg1[i];
@@ -1032,7 +974,7 @@ namespace NumeRe
             else
                 stringArgs.dArg1 = 0.0;
 
-            vReturnValues[i] = addMaskedStrings(funcHandle.fHandle(stringArgs));
+            vReturnValues.getRef(i) = funcHandle.fHandle(stringArgs);
         }
 
         return vReturnValues;
@@ -1094,7 +1036,7 @@ namespace NumeRe
                     throw SyntaxError(SyntaxError::STRING_ERROR, sLine, SyntaxError::invalid_position);
 
                 // use only the first one
-                sCmdString = strRes.vResult[0];
+                sCmdString = strRes.vResult.front();
             }
 
             // Because the result might be a constructed table, we
@@ -1124,11 +1066,11 @@ namespace NumeRe
                 // Remove all quotation marks from the results TODO: Split the equations
                 for (size_t i = 0; i < strRes.vResult.size(); i++)
                 {
-                    strRes.vResult[i] = removeQuotationMarks(strRes.vResult[i]);
+                    std::string sComponent = strRes.vResult[i].to_string();
 
-                    while (strRes.vResult[i].length())
+                    while (sComponent.length())
                     {
-                        vToValueResults.push_back(getNextArgument(strRes.vResult[i], true));
+                        vToValueResults.push_back(getNextArgument(sComponent, true));
                     }
                 }
 
@@ -1169,7 +1111,7 @@ namespace NumeRe
                 throw SyntaxError(SyntaxError::STRING_ERROR, sLine, SyntaxError::invalid_position);
 
             // use only first one
-            string sType = strRes.vResult[0];
+            string sType = strRes.vResult[0].to_string();
             int nType = 0;
             _sObject = getNextArgument(sType, true);
 
@@ -1177,12 +1119,6 @@ namespace NumeRe
             {
                 sType = "0";
             }
-
-            if (_sObject[0] == '"')
-                _sObject.erase(0, 1);
-
-            if (_sObject[_sObject.length() - 1] == '"')
-                _sObject.erase(_sObject.length() - 1);
 
             StripSpaces(_sObject);
 
@@ -1193,7 +1129,7 @@ namespace NumeRe
                 if (!res.vResult.size())
                     throw SyntaxError(SyntaxError::STRING_ERROR, sLine, SyntaxError::invalid_position);
 
-                sType = res.vResult[0];
+                sType = res.vResult[0].to_string();
             }
 
             _parser.SetExpr(sType);
@@ -1297,14 +1233,8 @@ namespace NumeRe
                     throw SyntaxError(SyntaxError::STRING_ERROR, sLine, SyntaxError::invalid_position);
 
                 // use only first one
-                sData = strRes.vResult[0];
+                sData = strRes.vResult[0].to_string();
             }
-
-            if (sData[0] == '"')
-                sData.erase(0, 1);
-
-            if (sData[sData.length() - 1] == '"')
-                sData.erase(sData.length() - 1);
 
             StripSpaces(sData);
 
@@ -1330,14 +1260,8 @@ namespace NumeRe
                     throw SyntaxError(SyntaxError::STRING_ERROR, sLine, SyntaxError::invalid_position);
 
                 // use only first one
-                sData = strRes.vResult[0];
+                sData = strRes.vResult[0].to_string();
             }
-
-            if (sData[0] == '"')
-                sData.erase(0, 1);
-
-            if (sData[sData.length() - 1] == '"')
-                sData.erase(sData.length() - 1);
 
             StripSpaces(sData);
 
@@ -1363,14 +1287,8 @@ namespace NumeRe
                     throw SyntaxError(SyntaxError::STRING_ERROR, sLine, SyntaxError::invalid_position);
 
                 // use only first one
-                sData = strRes.vResult[0];
+                sData = strRes.vResult[0].to_string();
             }
-
-            if (sData[0] == '"')
-                sData.erase(0, 1);
-
-            if (sData[sData.length() - 1] == '"')
-                sData.erase(sData.length() - 1);
 
             StripSpaces(sData);
 
@@ -1397,27 +1315,14 @@ namespace NumeRe
                     throw SyntaxError(SyntaxError::STRING_ERROR, sLine, SyntaxError::invalid_position);
 
                 // use only first one
-                sData = strRes.vResult[0];
-                sHeadline = strRes.vResult[1];
+                sData = strRes.vResult[0].to_string();
+                sHeadline = strRes.vResult[1].to_string();
             }
 
             if (!sHeadline.length())
                 throw SyntaxError(SyntaxError::STRING_ERROR, sLine, SyntaxError::invalid_position);
 
-            if (sData[0] == '"')
-                sData.erase(0, 1);
-
-            if (sData[sData.length() - 1] == '"')
-                sData.erase(sData.length() - 1);
-
             StripSpaces(sData);
-
-            if (sHeadline.front() == '"')
-                sHeadline.erase(0, 1);
-
-            if (sHeadline.back() == '"')
-                sHeadline.erase(sHeadline.length() - 1);
-
             StripSpaces(sHeadline);
 
             if (_data.isTable(sData))
@@ -1471,7 +1376,7 @@ namespace NumeRe
                         throw SyntaxError(SyntaxError::STRING_ERROR, sLine, SyntaxError::invalid_position);
 
                     // use only first one
-                    sChar = removeQuotationMarks(strRes.vResult[0]);
+                    sChar = strRes.vResult[0].to_string();
                 }
 
                 string sCnt = getNextArgument(sToString, true);
@@ -1531,11 +1436,11 @@ namespace NumeRe
                     if (i < vCounts.size())
                         nLen = intCast(fabs(vCounts[i]));
 
-                    while (strRes.vResult[i].length() < nLen + 2*(strRes.vResult[i].front() == '"') && sChar.length())
-                        strRes.vResult[i].insert((strRes.vResult[i].front() == '"') ? 1 : 0, sChar);
+                    while (strRes.vResult[i].length() < nLen && sChar.length())
+                        strRes.vResult.getRef(i).insert(strRes.vResult.is_string(i) ? 1 : 0, sChar);
 
                     // add quotation marks, if they are missing
-                    strRes.vResult[i] = addQuotationMarks(strRes.vResult[i]);
+                    strRes.vResult.convert_to_string(i);
                 }
 
                 sToString = createStringVectorVar(strRes.vResult);

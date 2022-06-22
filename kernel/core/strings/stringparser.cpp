@@ -212,7 +212,7 @@ namespace NumeRe
 
                 // Convert the strings to doubles
                 for (size_t i = 0; i < strRes.vResult.size(); i++)
-                    vIndices.push_back(StrToDb(strRes.vResult[i]));
+                    vIndices.push_back(StrToDb(strRes.vResult[i].to_string()));
 
                 // Create a temporary vector
                 if (sParsedIndices.length())
@@ -223,9 +223,9 @@ namespace NumeRe
             else
             {
                 if (sParsedIndices.length())
-                    sParsedIndices += ", " + strRes.vResult[0];
+                    sParsedIndices += ", " + strRes.vResult[0].to_string();
                 else
-                    sParsedIndices = strRes.vResult[0];
+                    sParsedIndices = strRes.vResult[0].to_string();
             }
         }
 
@@ -393,7 +393,7 @@ namespace NumeRe
                             // result into a string
                             for (size_t i = 0; i < strRes.vResult.size(); i++)
                             {
-                                strRes.vResult[i] = addQuotationMarks(strRes.vResult[i]);
+                                strRes.vResult.convert_to_string(i);
                             }
 
                             // Create a vector variable from the return value
@@ -503,7 +503,7 @@ namespace NumeRe
                     // Add the needed quotation marks
                     for (size_t i = 0; i < strRes.vResult.size(); i++)
                     {
-                        strRes.vResult[i] = addQuotationMarks(strRes.vResult[i]);
+                        strRes.vResult.convert_to_string(i);
                     }
 
                     // Create a new string vector var, append it to the string and continue
@@ -612,7 +612,7 @@ namespace NumeRe
                     || (_idx.col[n] == VectorIndex::INVALID))
                     break;
 
-                _data.setHeadLineElement(_idx.col[n], sTableName, removeQuotationMarks(strRes.vResult[n]));
+                _data.setHeadLineElement(_idx.col[n], sTableName, strRes.vResult[n].to_string());
             }
 
             nCurrentComponent = nStrings;
@@ -634,19 +634,19 @@ namespace NumeRe
             for (size_t i = nCurrentComponent; i < strRes.vResult.size(); i++)
             {
                 // Set expression and evaluate it (not efficient but currently necessary)
-                if (strRes.vResult[i].front() == '"')
+                if (strRes.vResult.is_string(i))
                 {
                     // Special case: only one single value
                     if (_idx.row.size() == 1 && _idx.col.size() == 1)
                     {
-                        cluster.setString(_idx.row.front(), strRes.vResult[i]);
+                        cluster.setString(_idx.row.front(), strRes.vResult[i].to_string());
                         break;
                     }
 
                     if (_idx.row[nthComponent] == VectorIndex::INVALID)
                         break;
 
-                    cluster.setString(_idx.row[nthComponent], strRes.vResult[i]);
+                    cluster.setString(_idx.row[nthComponent], strRes.vResult[i].to_string());
                     nthComponent++;
                 }
                 else
@@ -696,14 +696,14 @@ namespace NumeRe
             for (size_t i = nCurrentComponent; i < strRes.vResult.size(); i++)
             {
                 // Set expression and evaluate it (not efficient but currently necessary)
-                if (strRes.vResult[i].front() == '"')
+                if (strRes.vResult.is_string(i))
                 {
                     if (_idx.row.size() == 1 && _idx.col.size() >= 1)
                     {
                         if (_idx.col[nthComponent] == VectorIndex::INVALID)
                             break;
 
-                        _data.writeToTable(_idx.row.front(), _idx.col[nthComponent], sTableName, strRes.vResult[i]);
+                        _data.writeToTable(_idx.row.front(), _idx.col[nthComponent], sTableName, strRes.vResult[i].to_string());
                     }
                     else if (_idx.row.size() > 1 && _idx.col.size() == 1)
                     {
@@ -713,7 +713,7 @@ namespace NumeRe
                         if (_idx.row[nthComponent] == VectorIndex::INVALID)
                             break;
 
-                        _data.writeToTable(_idx.row[nthComponent], _idx.col.front(), sTableName, strRes.vResult[i]);
+                        _data.writeToTable(_idx.row[nthComponent], _idx.col.front(), sTableName, strRes.vResult[i].to_string());
                     }
 
                     nthComponent++;
@@ -843,7 +843,7 @@ namespace NumeRe
                     if (nCurrentComponent >= nStrings)
                         setStringValue(sObject, "");
                     else
-                        setStringValue(sObject, removeQuotationMarks(strRes.vResult[nCurrentComponent]));
+                        setStringValue(sObject, strRes.vResult[nCurrentComponent].to_string());
                     nCurrentComponent++;
                 }
                 catch (...)
@@ -932,7 +932,7 @@ namespace NumeRe
                     try
                     {
                         // Create a new string variable
-                        setStringValue(sObject, removeQuotationMarks(strRes.vResult[nCurrentComponent]));
+                        setStringValue(sObject, strRes.vResult[nCurrentComponent].to_string());
                         nCurrentComponent++;
                     }
                     catch (...)
@@ -1136,8 +1136,6 @@ namespace NumeRe
             // is a single string result
             for (size_t j = 0; j < strRes.vResult.size(); j++)
             {
-                strRes.vResult[j] = removeQuotationMarks(strRes.vResult[j]);
-
                 if (!strRes.vNoStringVal[j])
                 {
                     // Go through the current string value
@@ -1226,9 +1224,9 @@ namespace NumeRe
             for (size_t j = 0; j < strRes.vResult.size(); j++)
             {
                 if (parserFlags & NO_QUOTES)
-                    vStringResult.push_back(removeQuotationMarks(strRes.vResult[j]));
+                    vStringResult.push_back(strRes.vResult[j].to_string());
                 else
-                    vStringResult.push_back(strRes.vResult[j]);
+                    vStringResult.push_back(strRes.vResult.getRef(j));
 
                 if (!strRes.vNoStringVal[j])
                 {
@@ -1559,7 +1557,7 @@ namespace NumeRe
                     StringResult _res = eval(sRecursion, "");
 
                     for (size_t n = 0; n < _res.vResult.size(); n++)
-                        vResult.push_back(_res.vResult[n]);
+                        vResult.push_back(_res.vResult.getRef(n));
                 }
 
                 // Create a new string vector variable from the results

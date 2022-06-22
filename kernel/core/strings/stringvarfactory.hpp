@@ -22,6 +22,7 @@
 #include <string>
 #include <map>
 #include <vector>
+#include "stringdatastructures.hpp"
 
 namespace NumeRe
 {
@@ -32,18 +33,18 @@ namespace NumeRe
     class StringVarFactory
     {
         private:
-            std::map<std::string,std::vector<std::string> > m_mStringVectorVars;
-            std::map<std::string,std::vector<std::string> > m_mTempStringVectorVars;
+            std::map<std::string,StringVector > m_mStringVectorVars;
+            std::map<std::string,StringVector> m_mTempStringVectorVars;
             std::map<std::string,std::string> m_mStringVars;
 
             bool isNumericCandidate(const std::string& sComponent);
             bool checkStringvarDelimiter(const std::string& sToken) const;
-            void replaceStringVectorVars(std::map<std::string,std::vector<std::string> >& mVectorVarMap, std::string& currentline, size_t nCurrentComponent, bool& bHasComponents);
-            std::string findVectorInMap(const std::map<std::string,std::vector<std::string> >& mVectorVarMap, const std::vector<std::string>& vStringVector);
+            void replaceStringVectorVars(std::map<std::string,StringVector>& mVectorVarMap, std::string& currentline, size_t nCurrentComponent, bool& bHasComponents);
+            std::string findVectorInMap(const std::map<std::string,StringVector>& mVectorVarMap, const std::vector<std::string>& vStringVector);
 
         protected:
-            std::vector<std::string> evaluateStringVectors(std::string sLine);
-            void expandStringVectorComponents(std::vector<std::string>& vStringVector);
+            StringVector evaluateStringVectors(std::string sLine);
+            void expandStringVectorComponents(StringVector& vStringVector);
             void removeStringVectorVars();
             std::string createStringVectorVar(const std::vector<std::string>& vStringVector);
 
