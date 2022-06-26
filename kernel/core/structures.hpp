@@ -1705,7 +1705,7 @@ class StringViewBase
 /// \return std::string
 ///
 /////////////////////////////////////////////////
-std::string operator+(std::string sString, StringViewBase view)
+inline std::string operator+(std::string sString, StringViewBase view)
 {
     return sString.append(view.begin(), view.end());
 }

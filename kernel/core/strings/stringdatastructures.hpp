@@ -41,32 +41,77 @@ class StringArg
         std::string m_data;
 
     public:
+        /////////////////////////////////////////////////
+        /// \brief Default constructor
+        /////////////////////////////////////////////////
         StringArg()
         { }
 
+        /////////////////////////////////////////////////
+        /// \brief Construct a StringArg instance from a
+        /// std::string instance.
+        ///
+        /// \param sStr const std::string
+        ///
+        /////////////////////////////////////////////////
         StringArg(const std::string& sStr) : m_data(sStr)
         { }
 
+        /////////////////////////////////////////////////
+        /// \brief Copy a StringArg instance.
+        ///
+        /// \param sStr const StringArg&
+        ///
+        /////////////////////////////////////////////////
         StringArg(const StringArg& sStr) : m_data(sStr.m_data)
         { }
 
+        /////////////////////////////////////////////////
+        /// \brief StringArg assignment operator
+        /// overload.
+        ///
+        /// \param sStr const StringArg&
+        /// \return StringArg&
+        ///
+        /////////////////////////////////////////////////
         StringArg& operator=(const StringArg& sStr)
         {
             m_data = sStr.m_data;
             return *this;
         }
 
+        /////////////////////////////////////////////////
+        /// \brief StringArg assignment operator overload
+        /// for a std::string instance.
+        ///
+        /// \param sStr const std::string&
+        /// \return StringArg&
+        ///
+        /////////////////////////////////////////////////
         StringArg& operator=(const std::string& sStr)
         {
             m_data = sStr;
             return *this;
         }
 
+        /////////////////////////////////////////////////
+        /// \brief Determine, whether the contained
+        /// string represents a string literal.
+        ///
+        /// \return bool
+        ///
+        /////////////////////////////////////////////////
         bool is_string() const
         {
             return m_data.length() && m_data.front() == '"';
         }
 
+        /////////////////////////////////////////////////
+        /// \brief Get a view to the contained string.
+        ///
+        /// \return StringView
+        ///
+        /////////////////////////////////////////////////
         StringView view() const
         {
             if (is_string())
@@ -75,6 +120,13 @@ class StringArg
             return StringView(m_data);
         }
 
+        /////////////////////////////////////////////////
+        /// \brief Get a reference to the contained
+        /// string.
+        ///
+        /// \return std::string&
+        ///
+        /////////////////////////////////////////////////
         std::string& getRef()
         {
             return m_data;
@@ -95,244 +147,58 @@ class StringVector : public std::vector<std::string>
     private:
         const std::string m_sDUMMY;
 
-        static StringView makePureString(StringView sStr)
-        {
-            if (sStr.length() && sStr.front() == '"')
-                return sStr.subview(1, sStr.length()-2);
-
-            return sStr;
-        }
-
-        static std::string makeLocalString(const std::string& sStr)
-        {
-            if (sStr.front() == '"')
-                return "\"" + toInternalString(sStr) + "\"";
-
-            return sStr;
-        }
-
-        StringView getVectorized(size_t i) const
-        {
-            if (size() == 1)
-                return makePureString(front());
-            else if (i < size())
-                return makePureString(at(i));
-
-            return StringView(m_sDUMMY);
-        }
-
-        void assign(const StringVector& sVect)
-        {
-            std::vector<std::string>::assign(sVect.begin(), sVect.end());
-        }
-
-        void assign(const std::vector<bool>& vect)
-        {
-            resize(vect.size());
-
-            for (size_t i = 0; i < vect.size(); i++)
-            {
-                std::vector<std::string>::operator[](i) = vect[i] ? "true" : "false";
-            }
-        }
+        static StringView makePureString(StringView sStr);
+        static std::string makeLocalString(const std::string& sStr);
+        StringView getVectorized(size_t i) const;
+        mu::value_type getNumericalVectorized(size_t i) const;
+        bool getBooleanVectorized(size_t i) const;
+        void assign(const StringVector& sVect);
+        void assign(const std::vector<bool>& vect);
 
     public:
-        StringVector() : std::vector<std::string>()
-        { }
-
-        StringVector(const std::vector<std::string>& vect) : std::vector<std::string>(vect)
-        { }
-
-        StringVector(const std::string& sLiteral) : std::vector<std::string>(1, makeLocalString(sLiteral))
-        { }
-
-        StringVector(const StringVector& vect) : std::vector<std::string>()
-        {
-            assign(vect);
-        }
-
-        StringVector(const std::vector<bool>& vect) : std::vector<std::string>()
-        {
-            assign(vect);
-        }
-
-        StringVector(size_t n, const std::string& sStr = std::string()) : std::vector<std::string>(n, sStr)
-        { }
-
-        StringVector& operator=(const StringVector& sVect)
-        {
-            assign(sVect);
-            return *this;
-        }
-
-        StringVector& operator=(const std::vector<bool>& vect)
-        {
-            assign(vect);
-            return *this;
-        }
-
-        void push_back(const std::string& sLiteral)
-        {
-            std::vector<std::string>::push_back(makeLocalString(sLiteral));
-        }
-
-        bool is_string(size_t i) const
-        {
-            if (i < size())
-                return at(i).front() == '"';
-            else if (size() == 1)
-                return front().front() == '"';
-
-            return false;
-        }
-
-        void convert_to_string(size_t i)
-        {
-            if (i < size() && !is_string(i))
-                std::vector<std::string>::operator[](i) = "\"" + std::vector<std::string>::operator[](i) + "\"";
-        }
-
-        StringView operator[](size_t i) const
-        {
-            if (i < size())
-                return makePureString(at(i));
-
-            return StringView(m_sDUMMY);
-        }
-
-        StringArg getArg(size_t i) const
-        {
-            if (i < size())
-                return StringArg(at(i));
-            else if (size() == 1)
-                return StringArg(at(0));
-
-            return StringArg();
-        }
-
-        std::string getMasked(size_t i) const
-        {
-            if (i < size() && is_string(i))
-                return toExternalString(at(i));
-            else if (i < size())
-                return at(i);
-
-            return m_sDUMMY;
-        }
-
-        std::string& getRef(size_t i)
-        {
-            if (i < size())
-                return std::vector<std::string>::operator[](i);
-
-            throw std::out_of_range("Requested element " + toString(i) + ", which is greater than this->size().");
-        }
-
-        std::vector<bool> operator==(const StringVector& sVect) const
-        {
-            std::vector<bool> vRet(std::max(size(), sVect.size()));
-
-            for (size_t i = 0; i < vRet.size(); i++)
-            {
-                vRet[i] = getVectorized(i) == sVect.getVectorized(i);
-            }
-
-            return vRet;
-        }
-
-        std::vector<bool> operator!=(const StringVector& sVect) const
-        {
-            std::vector<bool> vRet(std::max(size(), sVect.size()));
-
-            for (size_t i = 0; i < vRet.size(); i++)
-            {
-                vRet[i] = getVectorized(i) != sVect.getVectorized(i);
-            }
-
-            return vRet;
-        }
-
-        std::vector<bool> operator<(const StringVector& sVect) const
-        {
-            std::vector<bool> vRet(std::max(size(), sVect.size()));
-
-            for (size_t i = 0; i < vRet.size(); i++)
-            {
-                vRet[i] = getVectorized(i) < sVect.getVectorized(i);
-            }
-
-            return vRet;
-        }
-
-        std::vector<bool> operator<=(const StringVector& sVect) const
-        {
-            std::vector<bool> vRet(std::max(size(), sVect.size()));
-
-            for (size_t i = 0; i < vRet.size(); i++)
-            {
-                vRet[i] = getVectorized(i) <= sVect.getVectorized(i);
-            }
-
-            return vRet;
-        }
-
-        std::vector<bool> operator>(const StringVector& sVect) const
-        {
-            std::vector<bool> vRet(std::max(size(), sVect.size()));
-
-            for (size_t i = 0; i < vRet.size(); i++)
-            {
-                vRet[i] = getVectorized(i) > sVect.getVectorized(i);
-            }
-
-            return vRet;
-        }
-
-        std::vector<bool> operator>=(const StringVector& sVect) const
-        {
-            std::vector<bool> vRet(std::max(size(), sVect.size()));
-
-            for (size_t i = 0; i < vRet.size(); i++)
-            {
-                vRet[i] = getVectorized(i) >= sVect.getVectorized(i);
-            }
-
-            return vRet;
-        }
-
-        StringVector operator+(const StringVector& sVect) const
-        {
-            StringVector vRet(std::max(size(), sVect.size()));
-
-            for (size_t i = 0; i < vRet.size(); i++)
-            {
-                if (is_string(i) && sVect.is_string(i))
-                    vRet[i] = "\"" + (getVectorized(i) + sVect.getVectorized(i)) + "\"";
-                else
-                    vRet[i] = getVectorized(i) + std::string(" + ") + sVect.getVectorized(i);
-            }
-
-            return vRet;
-        }
-
-        StringVector& operator+=(const StringVector& sVect)
-        {
-            assign(operator+(sVect));
-            return *this;
-        }
-
-        StringVector operator+(const std::string& sLiteral) const
-        {
-            return operator+(StringVector(sLiteral));
-        }
-
-        StringVector& operator+=(const std::string& sLiteral)
-        {
-            assign(operator+(StringVector(sLiteral)));
-            return *this;
-        }
+        StringVector();
+        StringVector(const std::vector<std::string>& vect);
+        StringVector(const std::string& sLiteral);
+        StringVector(const StringVector& vect);
+        StringVector(const std::vector<bool>& vect);
+        StringVector(size_t n, const std::string& sStr = std::string());
+        StringVector& operator=(const StringVector& sVect);
+        StringVector& operator=(const std::vector<bool>& vect);
+        void push_back(const std::string& sLiteral);
+        bool is_string(size_t i) const;
+        void convert_to_string(size_t i);
+        StringView operator[](size_t i) const;
+        StringArg getArg(size_t i) const;
+        std::string getMasked(size_t i) const;
+        std::string& getRef(size_t i);
+        std::vector<bool> operator==(const StringVector& sVect) const;
+        std::vector<bool> operator!=(const StringVector& sVect) const;
+        std::vector<bool> operator<(const StringVector& sVect) const;
+        std::vector<bool> operator<=(const StringVector& sVect) const;
+        std::vector<bool> operator>(const StringVector& sVect) const;
+        std::vector<bool> operator>=(const StringVector& sVect) const;
+        std::vector<bool> and_f(const StringVector& sVect) const;
+        std::vector<bool> or_f(const StringVector& sVect) const;
+        std::vector<bool> xor_f(const StringVector& sVect) const;
+        StringVector operator+(const StringVector& sVect) const;
+        StringVector& operator+=(const StringVector& sVect);
+        StringVector operator+(const std::string& sLiteral) const;
+        StringVector& operator+=(const std::string& sLiteral);
+        StringVector& evalIfElse(const StringVector& sLogicals, const StringVector& sIfBranch, const StringVector& sElseBranch);
 };
 
+
+/////////////////////////////////////////////////
+/// \brief A simple container for a single item
+/// in the string expression RPN stack.
+/////////////////////////////////////////////////
+struct StringStackItem
+{
+    StringView m_data;
+    int m_val;
+
+    StringStackItem(StringView sView, int val = -1) : m_data(sView), m_val(val) {}
+};
 
 
 /////////////////////////////////////////////////

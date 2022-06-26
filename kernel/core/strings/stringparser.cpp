@@ -1397,6 +1397,465 @@ namespace NumeRe
 
 
     /////////////////////////////////////////////////
+    /// \brief Static function to obtain the passed
+    /// operator's precedence.
+    ///
+    /// \param oprt StringView
+    /// \return size_t
+    ///
+    /////////////////////////////////////////////////
+    static size_t getOperatorPrecedence(StringView oprt)
+    {
+        if (oprt == "+")
+            return 10;
+
+        if (oprt == ":")
+            return 7;
+
+        if (oprt == "==" || oprt == "!=" || oprt == "<" || oprt == ">" || oprt == "<=" || oprt == ">=")
+            return 5;
+
+        if (oprt == "&&" || oprt == "||" || oprt == "|||")
+            return 2;
+
+        return 0;
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Static function to finalize the
+    /// if-else logic in this stack.
+    ///
+    /// \param rpnStack std::vector<StringStackItem>&
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
+    static void finalizeStack(std::vector<StringStackItem>& rpnStack)
+    {
+        std::stack<size_t> stIf;
+        std::stack<size_t> stElse;
+        int idx = 0;
+        bool lastIsIf = false;
+
+        for (size_t j = 0; j < rpnStack.size(); j++)
+        {
+            if (rpnStack[j].m_data == "?")
+            {
+                stIf.push(j);
+                lastIsIf = true;
+            }
+
+            // Only consider ":" as part of a ? : , if
+            // there's already a ? in the stack
+            if (rpnStack[j].m_data == ":" && stIf.size())
+            {
+                if (!lastIsIf && stElse.size())
+                {
+                    // Finalize this ? : expression
+                    idx = stElse.top();
+                    stElse.pop();
+                    rpnStack[idx].m_val = j;
+                }
+
+                // Finalize the if part of the expression
+                stElse.push(j);
+                idx = stIf.top();
+                stIf.pop();
+                rpnStack[idx].m_val = j;
+                lastIsIf = false;
+            }
+        }
+
+        // Finalize all remaining ? : expressions
+        while (stElse.size())
+        {
+            idx = stElse.top();
+            stElse.pop();
+            rpnStack[idx].m_val = rpnStack.size();
+        }
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Static function to convert the tokens
+    /// to a RPN stack.
+    ///
+    /// \param vTokens const std::vector<StringView>&
+    /// \return std::vector<StringStackItem>
+    ///
+    /////////////////////////////////////////////////
+    static std::vector<StringStackItem> convertToStack(const std::vector<StringView>& vTokens)
+    {
+        std::vector<StringStackItem> rpnStack;
+        std::stack<StringView> operators;
+        int hasIf = 0;
+
+        // Now convert the tokens to the RPN stack
+        for (size_t i = 0; i < vTokens.size(); i++)
+        {
+            // Odd numbers are operators
+            if (i % 2)
+            {
+                // This case is special, because this is already
+                // in RPN
+                if (vTokens[i] == "?" || (vTokens[i] == ":" && hasIf > 0))
+                {
+                    // Clear all operators first
+                    while (operators.size())
+                    {
+                        rpnStack.push_back(StringStackItem(operators.top(), 0));
+                        operators.pop();
+                    }
+
+                    rpnStack.push_back(StringStackItem(vTokens[i], 0));
+                    hasIf += (vTokens[i] == "?") - (vTokens[i] == ":");
+                    continue;
+                }
+
+                // This case is special, because it creates an additional
+                // return value stack
+                if (vTokens[i] == "," && !hasIf)
+                {
+                    // Clear all operators first
+                    while (operators.size())
+                    {
+                        rpnStack.push_back(StringStackItem(operators.top(), 0));
+                        operators.pop();
+                    }
+
+                    rpnStack.push_back(StringStackItem(vTokens[i], 0));
+                    continue;
+                }
+
+                // Operators with larger or equal precedence
+                // have to be evaluated first. Remove them from
+                // the operator stack
+                while (operators.size()
+                       && getOperatorPrecedence(operators.top()) >= getOperatorPrecedence(vTokens[i]))
+                {
+                    rpnStack.push_back(StringStackItem(operators.top(), 0));
+                    operators.pop();
+                }
+
+                // Add the new operator to the operator stack
+                operators.push(vTokens[i]);
+            }
+            else
+                rpnStack.push_back(StringStackItem(vTokens[i]));
+        }
+
+        while (operators.size())
+        {
+            rpnStack.push_back(StringStackItem(operators.top(), 0));
+            operators.pop();
+        }
+
+        // Finalize the if-else logic
+        finalizeStack(rpnStack);
+
+        // Dump the stack
+        std::string sDump;
+
+        for (size_t i = 0; i < rpnStack.size(); i++)
+        {
+            sDump += "[" + rpnStack[i].m_data.to_string() + "]";
+        }
+
+        g_logger.info("RPNSTACK = " + sDump);
+
+        // Nothing more to do. Return the stack
+        return rpnStack;
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief This member function creates a stack
+    /// from the passed expression, which may then be
+    /// evaluated more easily.
+    ///
+    /// \param sExpr StringView
+    /// \return std::vector<StringStackItem>
+    ///
+    /////////////////////////////////////////////////
+    std::vector<StringStackItem> StringParser::createStack(StringView sExpr) const
+    {
+        std::vector<StringView> vTokens;
+
+        size_t nQuotes = 0;
+        int hasIf = 0;
+
+        // As long as the expression has a length
+        while (sExpr.length())
+        {
+            // Remove all surrounding whitespace
+            sExpr.strip();
+
+            // Go through the expression
+            for (size_t i = 0; i < sExpr.length(); i++)
+            {
+                // Count quotes
+                if (sExpr[i] == '"' && (!i || sExpr[i-1] != '\\'))
+                    nQuotes++;
+
+                if (nQuotes % 2)
+                    continue;
+
+                // Jump over possible parentheses
+                if (sExpr[i] == '(' || sExpr[i] == '[' || sExpr[i] == '{')
+                    i += getMatchingParenthesis(sExpr.subview(i));
+
+                // Detect operators
+                if (sExpr.subview(i, 3) == "|||")
+                {
+                    // Prepare the token
+                    StringView sToken = sExpr.subview(0, i);
+                    sToken.strip();
+
+                    // Store token and operator
+                    vTokens.push_back(sToken);
+                    vTokens.push_back(sExpr.subview(i, 3));
+
+                    // Remove the beginning and restart the loop
+                    sExpr.trim_front(i+3);
+                    break;
+                }
+                else if (sExpr.subview(i, 2) == "=="
+                    || sExpr.subview(i, 2) == "!="
+                    || sExpr.subview(i, 2) == "<="
+                    || sExpr.subview(i, 2) == ">="
+                    || sExpr.subview(i, 2) == "&&"
+                    || sExpr.subview(i, 2) == "||")
+                {
+                    // Prepare the token
+                    StringView sToken = sExpr.subview(0, i);
+                    sToken.strip();
+
+                    // Store token and operator
+                    vTokens.push_back(sToken);
+                    vTokens.push_back(sExpr.subview(i, 2));
+
+                    // Remove the beginning and restart the loop
+                    sExpr.trim_front(i+2);
+                    break;
+                }
+                else if (sExpr[i] == '+'
+                         || sExpr[i] == '?'
+                         || sExpr[i] == ':'
+                         || sExpr[i] == ','
+                         || sExpr[i] == '<'
+                         || sExpr[i] == '>')
+                {
+                    if (sExpr[i] == ':' && hasIf <= 0)
+                        continue;
+                    else if (sExpr[i] == ',' && hasIf > 0)
+                        continue;
+                    else if (sExpr[i] == ':')
+                        hasIf--;
+                    else if (sExpr[i] == '?')
+                        hasIf++;
+
+                    // Prepare the token
+                    StringView sToken = sExpr.subview(0, i);
+                    sToken.strip();
+
+                    // Store token and operator
+                    vTokens.push_back(sToken);
+                    vTokens.push_back(sExpr.subview(i, 1));
+
+                    // Remove the beginning and restart the loop
+                    sExpr.trim_front(i+1);
+                    break;
+                }
+
+                // Is this the last token?
+                if (i+1 == sExpr.length())
+                {
+                    vTokens.push_back(sExpr);
+
+                    // Now convert the tokens to the RPN stack
+                    // and return
+                    return convertToStack(vTokens);
+                }
+            }
+        }
+
+        // Return the stack (should actually never hit this line)
+        g_logger.warning("Returned from StringParser::createStack() from an unexpected statement.");
+        return std::vector<StringStackItem>();
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Evaluate the created RPN stack between
+    /// the selected start and end points.
+    ///
+    /// \param rpnStack const std::vector<StringStackItem>&
+    /// \param from size_t
+    /// \param to size_t
+    /// \return StringVector
+    ///
+    /////////////////////////////////////////////////
+    StringVector StringParser::evaluateStack(const std::vector<StringStackItem>& rpnStack, size_t from, size_t to)
+    {
+        std::stack<StringVector> valueStack;
+        size_t nReturnValues = 1;
+
+        for (size_t i = from; i < to; i++)
+        {
+            // This is a value/variable
+            if (rpnStack[i].m_val < 0)
+            {
+                std::string sValue = rpnStack[i].m_data.to_string();
+
+                if (isStringVectorVar(sValue))
+                    valueStack.push(getStringVectorVar(sValue));
+                else if (containsStringVectorVars(sValue) || _parser.ContainsVectorVars(sValue, false))
+                    valueStack.push(StringVector(evaluateStringVectors(sValue))); // TODO: Improve this
+                else
+                    valueStack.push(StringVector(sValue));
+            }
+            else
+            {
+                if (rpnStack[i].m_data == "+")
+                {
+                    StringVector op = valueStack.top();
+                    valueStack.pop();
+                    valueStack.top() += op;
+                }
+                else if (rpnStack[i].m_data == ",")
+                {
+                    nReturnValues++;
+                }
+                else if (rpnStack[i].m_data == "==")
+                {
+                    StringVector op = valueStack.top();
+                    valueStack.pop();
+                    valueStack.top() = valueStack.top() == op;
+                }
+                else if (rpnStack[i].m_data == "!=")
+                {
+                    StringVector op = valueStack.top();
+                    valueStack.pop();
+                    valueStack.top() = valueStack.top() != op;
+                }
+                else if (rpnStack[i].m_data == ">=")
+                {
+                    StringVector op = valueStack.top();
+                    valueStack.pop();
+                    valueStack.top() = valueStack.top() >= op;
+                }
+                else if (rpnStack[i].m_data == "<=")
+                {
+                    StringVector op = valueStack.top();
+                    valueStack.pop();
+                    valueStack.top() = valueStack.top() <= op;
+                }
+                else if (rpnStack[i].m_data == ">")
+                {
+                    StringVector op = valueStack.top();
+                    valueStack.pop();
+                    valueStack.top() = valueStack.top() > op;
+                }
+                else if (rpnStack[i].m_data == "<")
+                {
+                    StringVector op = valueStack.top();
+                    valueStack.pop();
+                    valueStack.top() = valueStack.top() < op;
+                }
+                else if (rpnStack[i].m_data == "&&")
+                {
+                    StringVector op = valueStack.top();
+                    valueStack.pop();
+                    valueStack.top() = valueStack.top().and_f(op);
+                }
+                else if (rpnStack[i].m_data == "||")
+                {
+                    StringVector op = valueStack.top();
+                    valueStack.pop();
+                    valueStack.top() = valueStack.top().or_f(op);
+                }
+                else if (rpnStack[i].m_data == "|||")
+                {
+                    StringVector op = valueStack.top();
+                    valueStack.pop();
+                    valueStack.top() = valueStack.top().xor_f(op);
+                }
+                else if (rpnStack[i].m_data == "?")
+                {
+                    // Get the absolute jump points
+                    size_t nIfEnd = rpnStack[i].m_val;
+                    size_t nElseEnd = rpnStack[nIfEnd].m_val;
+
+                    // Evaluate the results recursively (lazy is not possible within this logic)
+                    valueStack.top().evalIfElse(valueStack.top(),
+                                                evaluateStack(rpnStack, i+1, nIfEnd),
+                                                evaluateStack(rpnStack, nIfEnd+1, nElseEnd));
+                    // Jump this evaluation to the end of the else
+                    // statement (most probably also the end of the
+                    // end of the current stack)
+                    i = nElseEnd;
+                }
+            }
+
+            std::string stackTop;
+
+            for (size_t i = 0; i < valueStack.top().size(); i++)
+                stackTop += valueStack.top().getRef(i) + ",";
+
+            stackTop.pop_back();
+            g_logger.info("STACK.TOP() = " + stackTop);
+        }
+
+        // return the value on top of the stack
+        if (nReturnValues > valueStack.size())
+            throw std::out_of_range("Stack size (" + toString(valueStack.size()) + ") is smaller than the requested number of return values (" + toString(nReturnValues) + ").");
+
+        StringVector vRet = valueStack.top();
+        valueStack.pop();
+        nReturnValues--;
+
+        while (nReturnValues)
+        {
+            vRet.insert(vRet.begin(), valueStack.top().begin(), valueStack.top().end());
+            valueStack.pop();
+            nReturnValues--;
+        }
+
+        return vRet;
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Create a stack from the expression and
+    /// evaluate it.
+    ///
+    /// \param sExpr StringView
+    /// \return StringResult
+    ///
+    /////////////////////////////////////////////////
+    StringResult StringParser::createAndEvaluateStack(StringView sExpr)
+    {
+        std::vector<StringStackItem> rpnStack = createStack(sExpr);
+        StringResult res;
+
+        res.vResult = evaluateStack(rpnStack, 0, rpnStack.size());
+        res.vNoStringVal.resize(res.vResult.size());
+        res.bOnlyLogicals = true;
+
+        for (size_t i = 0; i < res.vResult.size(); i++)
+        {
+            res.vNoStringVal[i] = !res.vResult.is_string(i);
+            g_logger.info("STRRES = " + res.vResult.getRef(i));
+
+            if (!res.vNoStringVal[i])
+                res.bOnlyLogicals = false;
+        }
+
+        return res;
+    }
+
+
+    /////////////////////////////////////////////////
     /// \brief This member function applies some
     /// elementary string operations like concatenation
     /// to the string expression.
@@ -1470,22 +1929,6 @@ namespace NumeRe
         StringResult strRes;
         bool bObjectContainsTablesOrClusters = false;
         g_logger.info("Enter eval. sLine = " + sLine.substr(0, 100));
-        // First step: convert the following escaped control characters into internal
-        // string representations: \t, \n
-        // \\ and \" will be kept
-        for (size_t i = 0; i < sLine.length(); i++)
-        {
-            if (sLine.compare(i, 2, "\\t") == 0
-                && sLine.compare(i, 4, "\\tau") != 0
-                && sLine.compare(i, 6, "\\theta") != 0
-                && sLine.compare(i, 6, "\\times") != 0)
-                sLine.replace(i, 2, "\t");
-
-            if (sLine.compare(i, 2, "\\n") == 0
-                && sLine.compare(i, 3, "\\nu") != 0
-                && sLine.compare(i, 4, "\\neq") != 0)
-                sLine.replace(i, 2, "\n");
-        }
 
         // If the current line is a simple string,
         // Strip the surrounding spaces and return directly
@@ -1585,16 +2028,13 @@ namespace NumeRe
         // for string functions?
         if (strExpr.sLine.find('(') != std::string::npos)
         {
-            g_logger.info("applyStringFuncs");
             //Timer timer("String function application");
             // Apply the standard string functions
             strExpr.sLine = applyStringFuncs(strExpr.sLine);
 
-            g_logger.info("applySpecialStringFuncs");
             // Apply the special string functions
             strExpr.sLine = applySpecialStringFuncs(strExpr.sLine);
 
-            g_logger.info("findAssignmentOperator");
             // Get the position of the equal sign after the
             // application of all string functions
             strExpr.findAssignmentOperator();
@@ -1865,19 +2305,15 @@ namespace NumeRe
         // Apply the "#" parser to the string
         strExpr.sLine = numToString(strExpr.sLine);
 
-        g_logger.info("evaluateStringVectors");
-        // Split the list to a std::vector
-        strRes.vResult = evaluateStringVectors(strExpr.sLine);
+        //g_logger.info("createAndEvaluateStack");
+        // Evaluate the remaining expression
+        strRes = createAndEvaluateStack(strExpr.sLine);
 
         // Ensure that there is at least one result
         if (!strRes.vResult.size())
             throw SyntaxError(SyntaxError::STRING_ERROR, strExpr.sLine, SyntaxError::invalid_position);
 
-        g_logger.info("applyElementaryStringOperations");
-        // Apply some elementary operations such as concatenation and logical operations
-        strRes.vNoStringVal = applyElementaryStringOperations(strRes.vResult, strRes.bOnlyLogicals);
-
-        g_logger.info("storeStringResults");
+        //g_logger.info("storeStringResults");
         // store the string results in the variables or inb "string()" respectively
         if (!storeStringResults(strRes, strExpr.sAssignee))
             throw SyntaxError(SyntaxError::STRING_ERROR, strExpr.sLine, SyntaxError::invalid_position);

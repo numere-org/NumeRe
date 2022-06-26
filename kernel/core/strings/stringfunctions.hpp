@@ -1714,7 +1714,7 @@ static std::string strfnc_getkeyval(StringFuncArgs& funcArgs)
 
         if (arg == sView2)
         {
-            if (!funcArgs.sMultiArg.is_string(i+1))
+            if (funcArgs.sMultiArg.is_string(i+1))
                 sValues += "\"" + funcArgs.sMultiArg[i+1].to_string() + "\"" + NEWSTRING;
             else
                 sValues += funcArgs.sMultiArg[i+1].to_string() + NEWSTRING;

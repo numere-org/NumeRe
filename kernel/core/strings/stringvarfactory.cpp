@@ -77,6 +77,46 @@ namespace NumeRe
 
 
     /////////////////////////////////////////////////
+    /// \brief Check, whether the passed string
+    /// identifies a string vector variable.
+    ///
+    /// \param sVarName const std::string&
+    /// \return bool
+    ///
+    /////////////////////////////////////////////////
+    bool StringVarFactory::isStringVectorVar(const std::string& sVarName) const
+    {
+        return m_mStringVectorVars.find(sVarName) != m_mStringVectorVars.end()
+            || m_mTempStringVectorVars.find(sVarName) != m_mTempStringVectorVars.end();
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Return a reference to the identified
+    /// string vector variable or throw if it does
+    /// not exist.
+    ///
+    /// \param sVarName const std::string&
+    /// \return const StringVector&
+    ///
+    /////////////////////////////////////////////////
+    const StringVector& StringVarFactory::getStringVectorVar(const std::string& sVarName) const
+    {
+        auto iter = m_mStringVectorVars.find(sVarName);
+
+        if (iter != m_mStringVectorVars.end())
+            return iter->second;
+
+        iter = m_mTempStringVectorVars.find(sVarName);
+
+        if (iter != m_mTempStringVectorVars.end())
+            return iter->second;
+
+        throw std::out_of_range("Could not find " + sVarName + " in the string vectors.");
+    }
+
+
+    /////////////////////////////////////////////////
     /// \brief This member function determines, whether
     /// there are string vector variables in the passed
     /// command line
@@ -128,6 +168,7 @@ namespace NumeRe
     {
         StringVector vRes;
         const map<string, vector<mu::value_type> >& mNumVectorVars = NumeReKernel::getInstance()->getParser().GetVectors();
+        g_logger.info("Evaluating string vector for: " + sLine.substr(0, 100));
 
         // As long as the current vector is not empty
         while (sLine.length())
@@ -138,9 +179,9 @@ namespace NumeRe
             // If the current component does not contain any further
             // vectors, push it back.
             // Otherwise expand the contained vectors
-            if (!containsStringVectorVars(sCurrentComponent))
-                vRes.push_back(sCurrentComponent);
-            else
+            //if (!containsStringVectorVars(sCurrentComponent))
+            //    vRes.push_back(sCurrentComponent);
+            //else
             {
                 // Expand the contained vectors
                 size_t nCurrentComponent = 0;
@@ -229,7 +270,13 @@ namespace NumeRe
             if (getNextArgument(sComponent, false) != sComponent)
             {
                 // Store the first part of the multi-expression in the current component
-                vStringVector[i] = getNextArgument(sComponent, true);
+                std::string sNext = getNextArgument(sComponent, true);
+
+                if (sNext.front() == '"')
+                    vStringVector.getRef(i) = "\"" + toInternalString(sNext) + "\"";
+                else
+                    vStringVector.getRef(i) = sNext;
+
                 size_t nComponent = 1;
 
                 // As long as the component is not empty
@@ -237,7 +284,13 @@ namespace NumeRe
                 {
                     // Get the next argument and insert it after the
                     // previous argument into the string vector
-                    vStringVector.insert(vStringVector.begin() + i + nComponent, getNextArgument(sComponent, true));
+                    sNext = getNextArgument(sComponent, true);
+
+                    if (sNext.front() == '"')
+                        vStringVector.insert(vStringVector.begin() + i + nComponent, "\"" + toInternalString(sNext) + "\"");
+                    else
+                        vStringVector.insert(vStringVector.begin() + i + nComponent, sNext);
+
                     nComponent++;
                 }
 

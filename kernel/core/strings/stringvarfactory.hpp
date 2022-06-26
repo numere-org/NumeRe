@@ -33,7 +33,7 @@ namespace NumeRe
     class StringVarFactory
     {
         private:
-            std::map<std::string,StringVector > m_mStringVectorVars;
+            std::map<std::string,StringVector> m_mStringVectorVars;
             std::map<std::string,StringVector> m_mTempStringVectorVars;
             std::map<std::string,std::string> m_mStringVars;
 
@@ -47,6 +47,8 @@ namespace NumeRe
             void expandStringVectorComponents(StringVector& vStringVector);
             void removeStringVectorVars();
             std::string createStringVectorVar(const std::vector<std::string>& vStringVector);
+            bool isStringVectorVar(const std::string& sVarName) const;
+            const StringVector& getStringVectorVar(const std::string& sVarName) const;
 
         public:
             bool containsStringVectorVars(const std::string& sLine);

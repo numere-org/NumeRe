@@ -52,6 +52,9 @@ namespace NumeRe
             int storeStringResults(StringResult& strRes, std::string sObject);
             std::string createStringOutput(StringResult& strRes, std::string& sLine, int parserFlags, bool bSilent);
             std::string createTerminalOutput(StringResult& strRes, int parserFlags);
+            std::vector<StringStackItem> createStack(StringView sExpr) const;
+            StringVector evaluateStack(const std::vector<StringStackItem>& rpnStack, size_t from, size_t to);
+            StringResult createAndEvaluateStack(StringView sExpr);
             std::vector<bool> applyElementaryStringOperations(std::vector<std::string>& vFinal, bool& bReturningLogicals);
             void storeStringToDataObjects(StringResult& strRes, std::string& sObject, size_t& nCurrentComponent, size_t nStrings);
             void storeStringToStringObject(const std::vector<std::string>& vFinal, std::string& sObject, size_t& nCurrentComponent, size_t nStrings);

@@ -399,10 +399,10 @@ namespace NumeRe
             // As long as the function argument has a length,
             // get the next argument and store it in the vector
             while (sFuncArgument.length())
-                sArg.push_back(removeQuotationMarks(getNextArgument(sFuncArgument, true))+"+0.0E1");
+                sArg.push_back(removeQuotationMarks(getNextArgument(sFuncArgument, true)));
         }
         else
-            sArg.push_back(removeQuotationMarks(sFuncArgument)+"+0.0E1");
+            sArg.push_back(removeQuotationMarks(sFuncArgument));
 
         // Declare argument as numerical only
         bLogicalOnly = true;
