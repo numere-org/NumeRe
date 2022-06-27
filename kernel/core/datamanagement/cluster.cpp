@@ -745,6 +745,24 @@ namespace NumeRe
     std::string Cluster::getString(size_t i) const
     {
         if (vClusterArray.size() > i)
+            return vClusterArray[i]->getString();
+
+        return "\"\"";
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief This member function returns the data
+    /// of the i-th cluster item in memory as a
+    /// parser string.
+    ///
+    /// \param i size_t
+    /// \return std::string
+    ///
+    /////////////////////////////////////////////////
+    std::string Cluster::getParserString(size_t i) const
+    {
+        if (vClusterArray.size() > i)
             return vClusterArray[i]->getParserString();
 
         return "\"\"";

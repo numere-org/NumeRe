@@ -1031,7 +1031,7 @@ void ProcedureVarFactory::evaluateProcedureArguments(std::string& currentArg, st
                         {
                             if (newCluster.size() == 1)
                             {
-                                _stringParser.setStringValue(sNewArgName, newCluster.getString(0));
+                                _stringParser.setStringValue(sNewArgName, newCluster.getParserString(0));
                                 _dataRef->removeCluster(sNewArgName);
                                 currentValue = sNewArgName;
                                 mLocalArgs[sNewArgName] = STRINGTYPE;

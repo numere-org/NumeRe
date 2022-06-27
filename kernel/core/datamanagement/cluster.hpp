@@ -371,6 +371,7 @@ namespace NumeRe
             void assignResults(Indices _idx, int nNum, mu::value_type* data);
 
             std::string getString(size_t i) const;
+            std::string getParserString(size_t i) const;
             void setString(size_t i, const std::string& strval);
             std::vector<std::string> getStringArray() const;
             void setStringArray(const std::vector<std::string>& sVals);
