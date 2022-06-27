@@ -478,7 +478,7 @@ std::vector<bool> StringVector::operator<(const StringVector& sVect) const
 
     for (size_t i = 0; i < vRet.size(); i++)
     {
-        if (is_string(i) == sVect.is_string(i))
+        if (is_string(i) != sVect.is_string(i))
             vRet[i] = false;
         else if (is_string(i))
             vRet[i] = getVectorized(i) < sVect.getVectorized(i);

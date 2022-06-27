@@ -101,6 +101,18 @@ namespace NumeRe
             }
 
             /////////////////////////////////////////////////
+            /// \brief Base implementation. Returns a string
+            /// with quotation marks.
+            ///
+            /// \return virtual std::string
+            ///
+            /////////////////////////////////////////////////
+            virtual std::string getParserString()
+            {
+                return "\"" + getString() + "\"";
+            }
+
+            /////////////////////////////////////////////////
             /// \brief Base implementation. Does nothing.
             ///
             /// \param strval const std::string&
@@ -162,6 +174,21 @@ namespace NumeRe
                     return toExternalString("nan");
 
                 return toExternalString(toString(dData, 7));
+            }
+
+            /////////////////////////////////////////////////
+            /// \brief Returns the internal value converted
+            /// to a string.
+            ///
+            /// \return virtual std::string
+            ///
+            /////////////////////////////////////////////////
+            virtual std::string getParserString() override
+            {
+                if (std::isnan(std::abs(dData)))
+                    return "nan";
+
+                return toString(dData, 7);
             }
 
             /////////////////////////////////////////////////
@@ -229,6 +256,17 @@ namespace NumeRe
             virtual std::string getString() override
             {
                 return toExternalString(sData);
+            }
+
+            /////////////////////////////////////////////////
+            /// \brief Returns the string as parser string.
+            ///
+            /// \return virtual std::string
+            ///
+            /////////////////////////////////////////////////
+            virtual std::string getParserString() override
+            {
+                return "\"" + sData + "\"";
             }
 
             /////////////////////////////////////////////////

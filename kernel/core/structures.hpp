@@ -1700,14 +1700,14 @@ class StringViewBase
 /// string instance with a StringViewBase
 /// instance.
 ///
-/// \param sString std::string
-/// \param view StringViewBase
+/// \param sString const std::string&
+/// \param view const StringViewBase&
 /// \return std::string
 ///
 /////////////////////////////////////////////////
-inline std::string operator+(std::string sString, StringViewBase view)
+inline std::string operator+(const std::string& sString, const StringViewBase& view)
 {
-    return sString.append(view.begin(), view.end());
+    return sString + view.to_string();
 }
 
 

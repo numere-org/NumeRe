@@ -54,6 +54,20 @@ std::string ValueColumn::getValueAsInternalString(size_t elem) const
 
 
 /////////////////////////////////////////////////
+/// \brief Returns the contents as parser
+/// string (i.e. without quotation marks).
+///
+/// \param elem size_t
+/// \return std::string
+///
+/////////////////////////////////////////////////
+std::string ValueColumn::getValueAsParserString(size_t elem) const
+{
+    return getValueAsString(elem);
+}
+
+
+/////////////////////////////////////////////////
 /// \brief Returns the selected value as a
 /// numerical type or an invalid value, if it
 /// does not exist.
@@ -407,6 +421,20 @@ std::string DateTimeColumn::getValueAsString(size_t elem) const
 std::string DateTimeColumn::getValueAsInternalString(size_t elem) const
 {
     return getValueAsString(elem);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Returns the contents as parser
+/// string (i.e. with quotation marks).
+///
+/// \param elem size_t
+/// \return std::string
+///
+/////////////////////////////////////////////////
+std::string DateTimeColumn::getValueAsParserString(size_t elem) const
+{
+    return "\"" + getValueAsString(elem) + "\"";
 }
 
 
@@ -770,6 +798,20 @@ std::string StringColumn::getValueAsInternalString(size_t elem) const
         return m_data[elem];
 
     return "";
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Returns the contents as parser
+/// string (i.e. with quotation marks).
+///
+/// \param elem size_t
+/// \return std::string
+///
+/////////////////////////////////////////////////
+std::string StringColumn::getValueAsParserString(size_t elem) const
+{
+    return "\"" + getValueAsInternalString(elem) + "\"";
 }
 
 

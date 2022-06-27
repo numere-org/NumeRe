@@ -51,7 +51,7 @@ namespace NumeRe
             if (cluster.vClusterArray[i]->getType() == ClusterItem::ITEMTYPE_DOUBLE)
                 vClusterArray.push_back(new ClusterDoubleItem(cluster.vClusterArray[i]->getDouble()));
             else
-                vClusterArray.push_back(new ClusterStringItem(cluster.vClusterArray[i]->getString()));
+                vClusterArray.push_back(new ClusterStringItem(cluster.vClusterArray[i]->getParserString()));
         }
     }
 
@@ -163,18 +163,18 @@ namespace NumeRe
         {
             if (bSortCaseInsensitive)
             {
-                if (toLowerCase(vClusterArray[i]->getString()) < toLowerCase(vClusterArray[j]->getString()))
+                if (toLowerCase(vClusterArray[i]->getParserString()) < toLowerCase(vClusterArray[j]->getParserString()))
                     return -1;
 
-                if (toLowerCase(vClusterArray[i]->getString()) == toLowerCase(vClusterArray[j]->getString()))
+                if (toLowerCase(vClusterArray[i]->getParserString()) == toLowerCase(vClusterArray[j]->getParserString()))
                     return 0;
             }
             else
             {
-                if (vClusterArray[i]->getString() < vClusterArray[j]->getString())
+                if (vClusterArray[i]->getParserString() < vClusterArray[j]->getParserString())
                     return -1;
 
-                if (vClusterArray[i]->getString() == vClusterArray[j]->getString())
+                if (vClusterArray[i]->getParserString() == vClusterArray[j]->getParserString())
                     return 0;
             }
 
@@ -209,7 +209,7 @@ namespace NumeRe
         if (vClusterArray[line]->getType() == ClusterItem::ITEMTYPE_DOUBLE && !std::isnan(vClusterArray[line]->getDouble().real()))
             return true;
 
-        if (vClusterArray[line]->getType() == ClusterItem::ITEMTYPE_STRING && vClusterArray[line]->getString() != "\"\"")
+        if (vClusterArray[line]->getType() == ClusterItem::ITEMTYPE_STRING && vClusterArray[line]->getParserString() != "\"\"")
             return true;
 
         return false;
@@ -377,7 +377,7 @@ namespace NumeRe
             if (vClusterArray[i]->getType() == ClusterItem::ITEMTYPE_DOUBLE)
                 nBytes += sizeof(mu::value_type);
             else if (vClusterArray[i]->getType() == ClusterItem::ITEMTYPE_STRING)
-                nBytes += sizeof(char) * (vClusterArray[i]->getString().length()-2);
+                nBytes += sizeof(char) * (vClusterArray[i]->getParserString().length()-2);
         }
 
         return nBytes;
@@ -745,7 +745,7 @@ namespace NumeRe
     std::string Cluster::getString(size_t i) const
     {
         if (vClusterArray.size() > i)
-            return vClusterArray[i]->getString();
+            return vClusterArray[i]->getParserString();
 
         return "\"\"";
     }
@@ -795,7 +795,7 @@ namespace NumeRe
 
         for (size_t i = 0; i < vClusterArray.size(); i++)
         {
-            vArray.push_back(vClusterArray[i]->getString());
+            vArray.push_back(vClusterArray[i]->getParserString());
         }
 
         return vArray;
@@ -854,7 +854,7 @@ namespace NumeRe
             if (vClusterArray[i]->getType() == ClusterItem::ITEMTYPE_DOUBLE)
                 vString[i] = toCmdString(vClusterArray[i]->getDouble());
             else
-                vString[i] = vClusterArray[i]->getString();
+                vString[i] = vClusterArray[i]->getParserString();
         }
 
         return vString;
@@ -1224,10 +1224,10 @@ namespace NumeRe
                 continue;
 
             if (!sMax.length())
-                sMax = vClusterArray[_vLine[i]]->getString();
+                sMax = vClusterArray[_vLine[i]]->getParserString();
 
-            if (sMax < vClusterArray[_vLine[i]]->getString())
-                sMax = vClusterArray[_vLine[i]]->getString();
+            if (sMax < vClusterArray[_vLine[i]]->getParserString())
+                sMax = vClusterArray[_vLine[i]]->getParserString();
         }
 
         return sMax;
@@ -1296,10 +1296,10 @@ namespace NumeRe
                 continue;
 
             if (!sMin.length())
-                sMin = vClusterArray[_vLine[i]]->getString();
+                sMin = vClusterArray[_vLine[i]]->getParserString();
 
-            if (sMin > vClusterArray[_vLine[i]]->getString())
-                sMin = vClusterArray[_vLine[i]]->getString();
+            if (sMin > vClusterArray[_vLine[i]]->getParserString())
+                sMin = vClusterArray[_vLine[i]]->getParserString();
         }
 
         return sMin;
@@ -1396,7 +1396,7 @@ namespace NumeRe
             if (_vLine[i] < 0 || _vLine[i] >= (int)vClusterArray.size())
                 continue;
 
-            sSum += vClusterArray[_vLine[i]]->getString();
+            sSum += vClusterArray[_vLine[i]]->getParserString();
         }
 
         return sSum;
@@ -1427,7 +1427,7 @@ namespace NumeRe
                 nInvalid++;
             else if (vClusterArray[_vLine[i]]->getType() == ClusterItem::ITEMTYPE_DOUBLE && std::isnan(vClusterArray[_vLine[i]]->getDouble().real()))
                 nInvalid++;
-            else if (vClusterArray[_vLine[i]]->getType() == ClusterItem::ITEMTYPE_STRING && vClusterArray[_vLine[i]]->getString() == "\"\"")
+            else if (vClusterArray[_vLine[i]]->getType() == ClusterItem::ITEMTYPE_STRING && vClusterArray[_vLine[i]]->getParserString() == "\"\"")
                 nInvalid++;
         }
 

@@ -965,6 +965,9 @@ static void handleMafDataAccess(string& sLine, const string& sMafAccess, Parser&
 
     }
 
+#warning TODO (numere#7#06/27/22): Create a string vector from the return values
+
+
 	// Replace every occurence
 	while ((nPos = sLine.find(sMafAccess, nPos)) != string::npos)
 	{
