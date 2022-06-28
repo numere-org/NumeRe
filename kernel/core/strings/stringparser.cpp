@@ -1128,49 +1128,10 @@ namespace NumeRe
             {
                 if (!strRes.vNoStringVal[j])
                 {
-                    // Go through the current string value
-                    for (size_t k = 0; k < strRes.vResult[j].length(); k++)
-                    {
-                        // If there are escaped control characters,
-                        // Replace them with their actual value here
-                        if (k + 1 < strRes.vResult[j].length() && strRes.vResult[j][k] == '\\')
-                        {
-                            //\not\neq\ni
-                            /*if (strRes.vResult[j][k + 1] == 'n' && !isToken("nu", strRes.vResult[j], k+1) && !isToken("neq", strRes.vResult[j], k+1)) // Line break
-                            {
-                                sConsoleOut += "\n";
-                                bLineBreaks = true;
-                                k++;
-                            }
-                            else if (strRes.vResult[j][k + 1] == 't' && !isToken("tau", strRes.vResult[j], k+1) && !isToken("theta", strRes.vResult[j], k+1) && !isToken("times", strRes.vResult[j], k+1)) // tabulator
-                            {
-                                sConsoleOut += "\t";
-                                k++;
-                            }
-                            else*/ if (strRes.vResult[j][k + 1] == '"') // quotation mark
-                            {
-                                sConsoleOut += "\"";
-                                k++;
-                            }
-                            else if (strRes.vResult[j][k + 1] == ' ') // backslash itself
-                            {
-                                sConsoleOut += "\\";
-                                k++;
-                            }
-                            else
-                            {
-                                sConsoleOut += "\\";
-                            }
-                        }
-                        else
-                        {
-                            // Otherwise simply append the current character
-                            if (strRes.vResult[j][k] == '\n')
-                                bLineBreaks = true;
+                    if (strRes.vResult[j].find('\n') != std::string::npos)
+                        bLineBreaks = true;
 
-                            sConsoleOut += strRes.vResult[j][k];
-                        }
-                    }
+                    sConsoleOut = sConsoleOut + strRes.vResult[j];
                 }
                 else
                 {
@@ -1213,26 +1174,15 @@ namespace NumeRe
             // is a single string result
             for (size_t j = 0; j < strRes.vResult.size(); j++)
             {
-                if (parserFlags & NO_QUOTES)
-                    vStringResult.push_back(strRes.vResult[j].to_string());
-                else
-                    vStringResult.push_back(strRes.vResult.getRef(j));
-
                 if (!strRes.vNoStringVal[j])
                 {
-                    // Go through the current string value
-                    for (size_t k = 0; k < vStringResult[j].length(); k++)
-                    {
-                        // If there are escaped control characters,
-                        // Replace them with their actual value here
-                        if (k + 1 < vStringResult[j].length() && vStringResult[j][k] == '\\')
-                        {
-                            if (vStringResult[j][k + 1] == '"') // quotation mark
-                                vStringResult[j].erase(k, 1);
-                            else if (vStringResult[j][k + 1] == ' ') // backslash itself
-                                vStringResult[j].erase(k+1, 1);
-                        }
-                    }
+                    if (parserFlags & NO_QUOTES)
+                        vStringResult.push_back(strRes.vResult[j].to_string());
+                    else
+                        vStringResult.push_back(strRes.vResult.getRef(j));
+
+                    replaceAll(vStringResult.back(), "\n", "\\n");
+                    replaceAll(vStringResult.back(), "\t", "\\t");
                 }
                 else
                 {
@@ -1247,9 +1197,7 @@ namespace NumeRe
                     }
 
                     vStringResult.push_back(toString(v[nResults-1], _option.getPrecision()));
-
                 }
-
             }
 
             return "|-> " + NumeReKernel::formatResultOutput(vStringResult);

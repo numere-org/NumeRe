@@ -2482,7 +2482,8 @@ NumeReVariables NumeReKernel::getVariableList()
             continue;
 
         sCurrentLine = iter->first + "{}\t" + toString(iter->second.size()) + " x 1";
-        sCurrentLine += "\tcluster\t" + iter->second.getShortVectorRepresentation() + "\t" + iter->first + "{}\t" + formatByteSize(iter->second.getBytes());
+        sCurrentLine += "\tcluster\t" + replaceControlCharacters(iter->second.getShortVectorRepresentation())
+            + "\t" + iter->first + "{}\t" + formatByteSize(iter->second.getBytes());
 
         vars.vVariables.push_back(sCurrentLine);
     }
