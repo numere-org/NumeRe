@@ -2618,14 +2618,8 @@ size_t Procedure::replaceReturnVal(string& sLine, Parser& _parser, const Returnv
     {
         // String value, transform the return value
         // into a string vector
-        string sReturn = "{";
-
-        for (unsigned int v = 0; v < _return.vStringVal.size(); v++)
-            sReturn += _return.vStringVal[v] + ",";
-
-        sReturn.back() = '}';
+        string sReturn = NumeReKernel::getInstance()->getStringParser().createTempStringVectorVar(_return.vStringVal);
         sLine = sLine.substr(0, nPos) + sReturn + sLine.substr(nPos2);
-
         return sReturn.length();
     }
     else if (_return.sReturnedTable.length())

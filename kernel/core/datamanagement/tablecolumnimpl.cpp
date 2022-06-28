@@ -95,7 +95,7 @@ mu::value_type ValueColumn::getValue(size_t elem) const
 /////////////////////////////////////////////////
 void ValueColumn::setValue(size_t elem, const std::string& sValue)
 {
-    if (isConvertible(toInternalString(sValue), CONVTYPE_VALUE))
+    if (isConvertible(sValue, CONVTYPE_VALUE))
         setValue(elem, StrToCmplx(toInternalString(sValue)));
     else
         throw SyntaxError(SyntaxError::STRING_ERROR, sValue, sValue);
@@ -466,7 +466,7 @@ mu::value_type DateTimeColumn::getValue(size_t elem) const
 /////////////////////////////////////////////////
 void DateTimeColumn::setValue(size_t elem, const std::string& sValue)
 {
-    if (isConvertible(toInternalString(sValue), CONVTYPE_DATE_TIME))
+    if (isConvertible(sValue, CONVTYPE_DATE_TIME))
         setValue(elem, to_double(StrToTime(toInternalString(sValue))));
     else
         throw SyntaxError(SyntaxError::STRING_ERROR, sValue, sValue);
@@ -845,7 +845,7 @@ void StringColumn::setValue(size_t elem, const std::string& sValue)
     if (elem >= m_data.size())
         m_data.resize(elem+1);
 
-    m_data[elem] = toInternalString(sValue);
+    m_data[elem] = sValue;
 }
 
 

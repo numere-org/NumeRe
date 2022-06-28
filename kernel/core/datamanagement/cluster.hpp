@@ -101,6 +101,18 @@ namespace NumeRe
             }
 
             /////////////////////////////////////////////////
+            /// \brief Base implementation. Returns an empty
+            /// string.
+            ///
+            /// \return virtual std::string
+            ///
+            /////////////////////////////////////////////////
+            virtual std::string getInternalString()
+            {
+                return "";
+            }
+
+            /////////////////////////////////////////////////
             /// \brief Base implementation. Returns a string
             /// with quotation marks.
             ///
@@ -109,7 +121,7 @@ namespace NumeRe
             /////////////////////////////////////////////////
             virtual std::string getParserString()
             {
-                return "\"" + getString() + "\"";
+                return "\"" + getInternalString() + "\"";
             }
 
             /////////////////////////////////////////////////
@@ -183,12 +195,24 @@ namespace NumeRe
             /// \return virtual std::string
             ///
             /////////////////////////////////////////////////
-            virtual std::string getParserString() override
+            virtual std::string getInternalString() override
             {
                 if (std::isnan(std::abs(dData)))
                     return "nan";
 
                 return toString(dData, 7);
+            }
+
+            /////////////////////////////////////////////////
+            /// \brief Returns the internal value converted
+            /// to a string.
+            ///
+            /// \return virtual std::string
+            ///
+            /////////////////////////////////////////////////
+            virtual std::string getParserString() override
+            {
+                return getInternalString();
             }
 
             /////////////////////////////////////////////////
@@ -259,14 +283,14 @@ namespace NumeRe
             }
 
             /////////////////////////////////////////////////
-            /// \brief Returns the string as parser string.
+            /// \brief Returns the internal string.
             ///
             /// \return virtual std::string
             ///
             /////////////////////////////////////////////////
-            virtual std::string getParserString() override
+            virtual std::string getInternalString() override
             {
-                return "\"" + sData + "\"";
+                return sData;
             }
 
             /////////////////////////////////////////////////
@@ -278,7 +302,7 @@ namespace NumeRe
             /////////////////////////////////////////////////
             virtual void setString(const std::string& strval) override
             {
-                sData = toInternalString(strval);
+                sData = strval;
             }
     };
 

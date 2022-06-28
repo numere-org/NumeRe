@@ -965,7 +965,7 @@ namespace NumeRe
         NumeRe::Cluster& ans = NumeReKernel::getInstance()->getAns();
         ans.clear();
 
-        std::vector<std::string>& vFinal = StrRes.vResult;
+        s_vect& vFinal = StrRes.vResult;
         std::vector<bool>& vIsNoStringValue = StrRes.vNoStringVal;
 
         // Catch the cases, where the results are
@@ -977,17 +977,16 @@ namespace NumeRe
             else
             {
                 for (size_t i = 0; i < vFinal.size(); i++)
-                    sLine += vFinal[i] + ",";
+                    sLine += vFinal.getRef(i) + ",";
 
                 sLine.pop_back();
-
             }
 
             return sLine;
         }
 
         std::string sConsoleOut;
-        std::string sCurrentComponent;
+        //std::string sCurrentComponent;
 
         if (parserFlags & PEEK || !(NumeReKernel::bSupressAnswer || bSilent))
             sConsoleOut = createTerminalOutput(StrRes, parserFlags);
@@ -996,16 +995,14 @@ namespace NumeRe
         // is a single string result
         for (size_t j = 0; j < vFinal.size(); j++)
         {
-            vFinal[j] = removeQuotationMarks(vFinal[j]);
-
             // In this case, no conversions are done
             // the results are simply put together and returned
             if (parserFlags & KEEP_MASKED_CONTROL_CHARS && parserFlags & KEEP_MASKED_QUOTES)
             {
                 if (!(parserFlags & NO_QUOTES) && !vIsNoStringValue[j])
-                    sLine += "\"" + vFinal[j] + "\"";
+                    sLine += vFinal.getRef(j);
                 else
-                    sLine += vFinal[j];
+                    sLine += vFinal[j].to_string();
 
                 if (j < vFinal.size() - 1)
                     sLine += ",";
@@ -1015,7 +1012,7 @@ namespace NumeRe
 
             if (!vIsNoStringValue[j])
             {
-                sCurrentComponent.clear();
+                /*sCurrentComponent.clear();
                 // Start the current string value with a quotation mark
                 // if it is not a special case
                 if (!(parserFlags & NO_QUOTES))
@@ -1028,18 +1025,7 @@ namespace NumeRe
                     // Replace them with their actual value here
                     if (k + 1 < vFinal[j].length() && vFinal[j][k] == '\\')
                     {
-                        //\not\neq\ni
-                        /*if (vFinal[j][k + 1] == 'n' && !isToken("nu", vFinal[j], k+1) && !isToken("neq", vFinal[j], k+1)) // Line break
-                        {
-                            sCurrentComponent += "\n";
-                            k++;
-                        }
-                        else if (vFinal[j][k + 1] == 't' && !isToken("tau", vFinal[j], k+1) && !isToken("theta", vFinal[j], k+1) && !isToken("times", vFinal[j], k+1)) // tabulator
-                        {
-                            sCurrentComponent += "\t";
-                            k++;
-                        }
-                        else*/ if (vFinal[j][k + 1] == '"') // quotation mark
+                        if (vFinal[j][k + 1] == '"') // quotation mark
                         {
                             if (!(parserFlags & KEEP_MASKED_QUOTES))
                                 sCurrentComponent += "\"";
@@ -1078,10 +1064,14 @@ namespace NumeRe
                 {
                     replaceAll(sCurrentComponent, "\n", "\\n");
                     replaceAll(sCurrentComponent, "\t", "\\t");
-                }
+                }*/
 
-                ans.push_back(sCurrentComponent);
-                sLine += sCurrentComponent;
+                ans.push_back(vFinal[j].to_string());
+
+                if (parserFlags & NO_QUOTES)
+                    sLine += vFinal[j].to_string();
+                else
+                    sLine += vFinal.getRef(j);
             }
             else
             {
@@ -1725,6 +1715,7 @@ namespace NumeRe
                 else if (rpnStack[i].m_data == ",")
                 {
                     nReturnValues++;
+                    continue;
                 }
                 else if (rpnStack[i].m_data == "==")
                 {
@@ -1797,13 +1788,14 @@ namespace NumeRe
                 }
             }
 
-            std::string stackTop;
-
-            for (size_t i = 0; i < valueStack.top().size(); i++)
-                stackTop += valueStack.top().getRef(i) + ",";
-
-            stackTop.pop_back();
-            g_logger.info("STACK.TOP() = " + stackTop);
+            //std::string stackTop;
+            //
+            //for (size_t i = 0; i < valueStack.top().size(); i++)
+            //    stackTop += valueStack.top().getRef(i).substr(0, 100) + ",";
+            //
+            //stackTop.pop_back();
+            //g_logger.info("STACK.TOP() = " + stackTop);
+            g_logger.info("STACK.TOP() = " + valueStack.top().getRef(0).substr(0, 100));
         }
 
         // return the value on top of the stack
@@ -1845,7 +1837,7 @@ namespace NumeRe
         for (size_t i = 0; i < res.vResult.size(); i++)
         {
             res.vNoStringVal[i] = !res.vResult.is_string(i);
-            g_logger.info("STRRES = " + res.vResult.getRef(i));
+            //g_logger.info("STRRES = " + res.vResult.getRef(i));
 
             if (!res.vNoStringVal[i])
                 res.bOnlyLogicals = false;
@@ -2045,6 +2037,7 @@ namespace NumeRe
         if (strExpr.sAssignee.length() && _data.containsTablesOrClusters(strExpr.sAssignee))
             bObjectContainsTablesOrClusters = true;
 
+        g_logger.info("getDataForString");
         // Get the contents of "string()", "data()" and the other caches
         strExpr.sLine = getDataForString(strExpr.sLine, 0);
 
@@ -2302,10 +2295,11 @@ namespace NumeRe
             return StringResult(strExpr.sLine);
         }
 
+        g_logger.info("numToString");
         // Apply the "#" parser to the string
         strExpr.sLine = numToString(strExpr.sLine);
 
-        //g_logger.info("createAndEvaluateStack");
+        g_logger.info("createAndEvaluateStack");
         // Evaluate the remaining expression
         strRes = createAndEvaluateStack(strExpr.sLine);
 
@@ -2313,11 +2307,12 @@ namespace NumeRe
         if (!strRes.vResult.size())
             throw SyntaxError(SyntaxError::STRING_ERROR, strExpr.sLine, SyntaxError::invalid_position);
 
-        //g_logger.info("storeStringResults");
+        g_logger.info("storeStringResults");
         // store the string results in the variables or inb "string()" respectively
         if (!storeStringResults(strRes, strExpr.sAssignee))
             throw SyntaxError(SyntaxError::STRING_ERROR, strExpr.sLine, SyntaxError::invalid_position);
 
+        g_logger.info("Return strRes");
         // Return the evaluated string command line
         return strRes;
     }

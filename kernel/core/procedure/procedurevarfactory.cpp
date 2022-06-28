@@ -578,7 +578,7 @@ void ProcedureVarFactory::createLocalInlineStrings(string sStringList)
                 }
 
                 currentDef.erase(currentDef.find('='));
-                tempCluster.setString(i, sVarValue);
+                tempCluster.setString(i, toInternalString(sVarValue));
             }
             catch (...)
             {
@@ -593,7 +593,7 @@ void ProcedureVarFactory::createLocalInlineStrings(string sStringList)
         }
         else
         {
-            tempCluster.setString(i, "\"\"");
+            tempCluster.setString(i, "");
             sInlineStringDef += "\"\",";
         }
 

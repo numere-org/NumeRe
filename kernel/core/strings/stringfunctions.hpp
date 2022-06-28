@@ -961,7 +961,6 @@ static std::string strfnc_to_time(StringFuncArgs& funcArgs)
 /////////////////////////////////////////////////
 static std::string strfnc_strfnd(StringFuncArgs& funcArgs)
 {
-    g_logger.info("Enter strfnc_strfnd");
     std::string sStr = funcArgs.sArg1.view().to_string();
     StringView sView = funcArgs.sArg2.view();
 
@@ -971,7 +970,6 @@ static std::string strfnc_strfnd(StringFuncArgs& funcArgs)
     if (funcArgs.nArg1 == DEFAULT_NUM_ARG || funcArgs.nArg1 <= 0 || sView.length() < (size_t)funcArgs.nArg1)
         funcArgs.nArg1 = 1;
 
-    g_logger.info("Searching");
     return toString((int)sView.find(sStr, funcArgs.nArg1 - 1) + 1);
 }
 
@@ -2058,7 +2056,7 @@ static std::string strfnc_sum(StringFuncArgs& funcArgs)
         std::string sRet = "";
 
         for (size_t i = 0; i < funcArgs.sMultiArg.size(); i++)
-            sRet = sRet + funcArgs.sMultiArg[i];
+            sRet += funcArgs.sMultiArg[i].to_string();
 
         return "\"" + sRet + "\"";
     }

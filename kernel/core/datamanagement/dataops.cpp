@@ -1191,21 +1191,18 @@ bool readFromFile(CommandLineParser& cmdParser)
 		if (sInput.front() != '"')
 			sInput = '"' + sInput;
 
-		if (sInput.back() == '\\')
-			sInput += ' ';
-
 		if (sInput.back() != '"')
 			sInput += '"';
 
         // Escape backslashes
-		for (unsigned int i = 1; i < sInput.length() - 1; i++)
-		{
-			if (sInput[i] == '\\')
-				sInput.insert(i + 1, 1, ' ');
-
-			if (sInput[i] == '"' && sInput[i - 1] != '\\')
-				sInput.insert(i, 1, '\\');
-		}
+		//for (unsigned int i = 1; i < sInput.length() - 1; i++)
+		//{
+		//	if (sInput[i] == '\\')
+		//		sInput.insert(i + 1, 1, ' ');
+        //
+		//	if (sInput[i] == '"' && sInput[i - 1] != '\\')
+		//		sInput.insert(i, 1, '\\');
+		//}
 
 		// Append the parsed string to the vector
 		vFileContents.push_back(sInput);

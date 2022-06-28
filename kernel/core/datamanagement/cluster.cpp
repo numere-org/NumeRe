@@ -51,7 +51,7 @@ namespace NumeRe
             if (cluster.vClusterArray[i]->getType() == ClusterItem::ITEMTYPE_DOUBLE)
                 vClusterArray.push_back(new ClusterDoubleItem(cluster.vClusterArray[i]->getDouble()));
             else
-                vClusterArray.push_back(new ClusterStringItem(cluster.vClusterArray[i]->getParserString()));
+                vClusterArray.push_back(new ClusterStringItem(cluster.vClusterArray[i]->getInternalString()));
         }
     }
 

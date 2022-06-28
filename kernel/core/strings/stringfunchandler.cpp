@@ -193,9 +193,11 @@ namespace NumeRe
             // copy the return values to the final variable
             string sFuncReturnValue = "";
 
+            g_logger.info("expandStringVectorComponents");
             // Expand the string vector component, if needed
             expandStringVectorComponents(vReturnValues);
 
+            g_logger.info("createStringVectorVar");
             // Create a string vector variable for the function output
             sFuncReturnValue = createStringVectorVar(vReturnValues);
 
@@ -918,6 +920,7 @@ namespace NumeRe
             vReturnValues.getRef(i) = funcHandle.fHandle(stringArgs);
         }
 
+        g_logger.info("Leave callMultiFunction");
         return vReturnValues;
     }
 

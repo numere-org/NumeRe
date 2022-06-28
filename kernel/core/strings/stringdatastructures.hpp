@@ -162,7 +162,9 @@ class StringVector : public std::vector<std::string>
         StringVector(const StringVector& vect);
         StringVector(const std::vector<bool>& vect);
         StringVector(size_t n, const std::string& sStr = std::string());
+        StringVector(StringVector&& vect) = default;
         StringVector& operator=(const StringVector& sVect);
+        StringVector& operator=(StringVector&& sVect) = default;
         StringVector& operator=(const std::vector<bool>& vect);
         void push_back(const std::string& sLiteral);
         bool is_string(size_t i) const;
