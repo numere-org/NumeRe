@@ -357,7 +357,7 @@ StringArg StringVector::getArg(size_t i) const
 /////////////////////////////////////////////////
 std::string StringVector::getMasked(size_t i) const
 {
-    if (i < size() && is_string(i))
+    if (i < size())// && is_string(i))
     {
         const char NEWSTRING = (char)23;
         std::string sRet = at(i);
@@ -391,8 +391,8 @@ std::string StringVector::getMasked(size_t i) const
 
         return sRet;
     }
-    else if (i < size())
-        return at(i);
+    //else if (i < size())
+    //    return at(i);
 
     return m_sDUMMY;
 }
