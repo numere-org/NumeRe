@@ -206,7 +206,7 @@ wxString GridNumeReTable::GetValue(int row, int col)
     else if (row - getNumHeadlines() >= (int)_table.getLines() || col >= (int)_table.getCols())
         return "";
     else
-        return _table.getValueAsString(row - getNumHeadlines(), col);
+        return replaceControlCharacters(_table.getValueAsString(row - getNumHeadlines(), col));
 }
 
 
