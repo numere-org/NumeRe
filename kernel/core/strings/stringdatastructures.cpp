@@ -343,6 +343,20 @@ void StringVector::push_back(const std::string& sStr)
 
 
 /////////////////////////////////////////////////
+/// \brief Append a string to the end of this
+/// vector. Will be stored as local string.
+///
+/// \param sStr const char*
+/// \return void
+///
+/////////////////////////////////////////////////
+void StringVector::push_back(const char* sStr)
+{
+    std::vector<std::string>::push_back("\"" + std::string(sStr) + "\"");
+}
+
+
+/////////////////////////////////////////////////
 /// \brief Append a mu::value_type to the end of
 /// this vector.
 ///

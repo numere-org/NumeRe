@@ -174,6 +174,7 @@ class StringVector : public std::vector<std::string>
         StringVector& operator=(StringVector&& sVect) = default;
         StringVector& operator=(const std::vector<bool>& vect);
         void push_back(const std::string& sStr);
+        void push_back(const char* sStr);
         void push_back(const mu::value_type& vVal);
         void push_back(size_t nVal);
         void push_back(int nVal);

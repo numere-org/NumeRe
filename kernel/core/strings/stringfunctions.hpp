@@ -312,7 +312,7 @@ static StringVector strfnc_ascii(StringFuncArgs& funcArgs)
 /////////////////////////////////////////////////
 static StringVector strfnc_isblank(StringFuncArgs& funcArgs)
 {
-    StringVector sCodes = "";
+    StringVector sCodes;
     StringView sView = funcArgs.sArg1.view();
     static Umlauts _umlauts;
 
@@ -403,8 +403,8 @@ static StringVector strfnc_iscntrl(StringFuncArgs& funcArgs)
     for (unsigned int i = 0; i < sView.length(); i++)
     {
         if (iscntrl(sView[i])
-            || _umlauts.lower.find(sView[i]) != std::string::npos
-            || _umlauts.upper.find(sView[i]) != std::string::npos)
+            && _umlauts.lower.find(sView[i]) == std::string::npos
+            && _umlauts.upper.find(sView[i]) == std::string::npos)
             sCodes.push_back(true);
         else
             sCodes.push_back(false);
@@ -1185,8 +1185,8 @@ static StringVector strfnc_findparam(StringFuncArgs& funcArgs)
     else
         nMatch = findParameter(sView2.to_string(), sView1.to_string());
 
-    if (nMatch != std::string::npos)
-        return toString((int)(nMatch + 1));
+    if (nMatch)
+        return toString((int)nMatch); // findParameter returns already pos+1
     else
         return "0";
 }
