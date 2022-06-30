@@ -50,10 +50,10 @@ namespace NumeRe
             size_t argumentParser(StringView, s_vect&, s_vect&, n_vect&, n_vect&);
             size_t argumentParser(StringView, s_vect&, s_vect&, s_vect&, n_vect&, n_vect&);
 
-            s_vect callFunction(StringFuncHandle, s_vect&, s_vect&, s_vect&, n_vect&, n_vect&, d_vect&, size_t);
-            s_vect callFunctionParallel(StringFuncHandle, s_vect&, s_vect&, s_vect&, n_vect&, n_vect&, d_vect&, size_t);
-            s_vect callMultiFunction(StringFuncHandle, s_vect&, s_vect&, s_vect&, n_vect&, n_vect&, d_vect&, size_t);
-            s_vect callMultiFunctionParallel(StringFuncHandle, s_vect&, s_vect&, s_vect&, n_vect&, n_vect&, d_vect&, size_t);
+            std::vector<s_vect> callFunction(StringFuncHandle, s_vect&, s_vect&, s_vect&, n_vect&, n_vect&, d_vect&, size_t);
+            std::vector<s_vect> callFunctionParallel(StringFuncHandle, s_vect&, s_vect&, s_vect&, n_vect&, n_vect&, d_vect&, size_t);
+            std::vector<s_vect> callMultiFunction(StringFuncHandle, s_vect&, s_vect&, s_vect&, n_vect&, n_vect&, d_vect&, size_t);
+            std::vector<s_vect> callMultiFunctionParallel(StringFuncHandle, s_vect&, s_vect&, s_vect&, n_vect&, n_vect&, d_vect&, size_t);
 
         protected:
             std::string applySpecialStringFuncs(std::string sLine);

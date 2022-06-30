@@ -106,13 +106,13 @@ string addQuotationMarks(const std::string& sString)
 /// function.
 ///
 /// \param funcArgs StringFuncArgs&
-/// \return std::string
+/// \return StringVector
 ///
 /////////////////////////////////////////////////
-static std::string strfnc_to_string(StringFuncArgs& funcArgs)
+static StringVector strfnc_to_string(StringFuncArgs& funcArgs)
 {
     if (!funcArgs.sArg1.view().length())
-        return "\"\"";
+        return StringVector::empty_string();
 
     if (funcArgs.sArg1.is_string())
         return funcArgs.sArg1.getRef();
@@ -130,7 +130,7 @@ static std::string strfnc_to_string(StringFuncArgs& funcArgs)
 /// \return std::string
 ///
 /////////////////////////////////////////////////
-static std::string strfnc_to_uppercase(StringFuncArgs& funcArgs)
+static StringVector strfnc_to_uppercase(StringFuncArgs& funcArgs)
 {
     return "\"" + toUpperCase(funcArgs.sArg1.view().to_string()) + "\"";
 }
@@ -141,10 +141,10 @@ static std::string strfnc_to_uppercase(StringFuncArgs& funcArgs)
 /// function.
 ///
 /// \param funcArgs StringFuncArgs&
-/// \return std::string
+/// \return StringVector
 ///
 /////////////////////////////////////////////////
-static std::string strfnc_to_lowercase(StringFuncArgs& funcArgs)
+static StringVector strfnc_to_lowercase(StringFuncArgs& funcArgs)
 {
     return "\"" + toLowerCase(funcArgs.sArg1.view().to_string()) + "\"";
 }
@@ -155,18 +155,18 @@ static std::string strfnc_to_lowercase(StringFuncArgs& funcArgs)
 /// function.
 ///
 /// \param funcArgs StringFuncArgs&
-/// \return std::string
+/// \return StringVector
 ///
 /////////////////////////////////////////////////
-static std::string strfnc_getenvvar(StringFuncArgs& funcArgs)
+static StringVector strfnc_getenvvar(StringFuncArgs& funcArgs)
 {
     if (!funcArgs.sArg1.view().length())
-        return "\"\"";
+        return StringVector::empty_string();
 
     char* sVarValue = getenv(funcArgs.sArg1.view().to_string().c_str());
 
     if (!sVarValue)
-        return "\"\"";
+        return StringVector::empty_string();
     else
         return "\"" + std::string(sVarValue) + "\"";
 }
@@ -177,22 +177,21 @@ static std::string strfnc_getenvvar(StringFuncArgs& funcArgs)
 /// function.
 ///
 /// \param funcArgs StringFuncArgs&
-/// \return std::string
+/// \return StringVector
 ///
 /////////////////////////////////////////////////
-static std::string strfnc_getFileParts(StringFuncArgs& funcArgs)
+static StringVector strfnc_getFileParts(StringFuncArgs& funcArgs)
 {
     if (!funcArgs.sArg1.view().length())
         return "\"\"";
 
     std::vector<std::string> vFileParts = funcArgs.opt->getFileParts(funcArgs.sArg1.view().to_string());
 
-    std::string sReturnValue;
+    StringVector sReturnValue;
 
     for (size_t i = 0; i < vFileParts.size(); i++)
-        sReturnValue += "\"" + vFileParts[i] + "\"" + NEWSTRING;
+        sReturnValue.push_back(vFileParts[i]);
 
-    sReturnValue.pop_back();
     return sReturnValue;
 }
 
@@ -202,26 +201,26 @@ static std::string strfnc_getFileParts(StringFuncArgs& funcArgs)
 /// function.
 ///
 /// \param funcArgs StringFuncArgs&
-/// \return std::string
+/// \return StringVector
 ///
 /////////////////////////////////////////////////
-static std::string strfnc_getfilelist(StringFuncArgs& funcArgs)
+static StringVector strfnc_getfilelist(StringFuncArgs& funcArgs)
 {
     if (funcArgs.nArg1 == DEFAULT_NUM_ARG)
         funcArgs.nArg1 = 0;
 
     std::vector<std::string> vFileList = getFileList(funcArgs.sArg1.view().to_string(), *(funcArgs.opt), funcArgs.nArg1);
-    std::string sFileList = "";
+    StringVector sFileList;
+
     for (unsigned int i = 0; i < vFileList.size(); i++)
     {
-        sFileList += "\"" + vFileList[i] + "\"";
-        if (i < vFileList.size() - 1)
-            sFileList += NEWSTRING;
+        sFileList.push_back(vFileList[i]);
     }
-    if (!sFileList.length())
-        return "\"\"";
-    else
-        return sFileList;
+
+    if (!sFileList.size())
+        return StringVector::empty_string();
+
+    return sFileList;
 }
 
 
@@ -230,26 +229,26 @@ static std::string strfnc_getfilelist(StringFuncArgs& funcArgs)
 /// function.
 ///
 /// \param funcArgs StringFuncArgs&
-/// \return std::string
+/// \return StringVector
 ///
 /////////////////////////////////////////////////
-static std::string strfnc_getfolderlist(StringFuncArgs& funcArgs)
+static StringVector strfnc_getfolderlist(StringFuncArgs& funcArgs)
 {
     if (funcArgs.nArg1 == DEFAULT_NUM_ARG)
         funcArgs.nArg1 = 0;
 
     std::vector<std::string> vFolderList = getFolderList(funcArgs.sArg1.view().to_string(), *(funcArgs.opt), funcArgs.nArg1);
-    std::string sFolderList = "";
+    StringVector sFolderList;
+
     for (unsigned int i = 0; i < vFolderList.size(); i++)
     {
-        sFolderList += "\"" + vFolderList[i] + "\"";
-        if (i < vFolderList.size() - 1)
-            sFolderList += NEWSTRING;
+        sFolderList.push_back(vFolderList[i]);
     }
-    if (!sFolderList.length())
-        return "\"\"";
-    else
-        return sFolderList;
+
+    if (!sFolderList.size())
+        return StringVector::empty_string();
+
+    return sFolderList;
 }
 
 
@@ -258,10 +257,10 @@ static std::string strfnc_getfolderlist(StringFuncArgs& funcArgs)
 /// function.
 ///
 /// \param funcArgs StringFuncArgs&
-/// \return std::string
+/// \return StringVector
 ///
 /////////////////////////////////////////////////
-static std::string strfnc_strlen(StringFuncArgs& funcArgs)
+static StringVector strfnc_strlen(StringFuncArgs& funcArgs)
 {
     return toString((int)funcArgs.sArg1.view().length());
 }
@@ -272,10 +271,10 @@ static std::string strfnc_strlen(StringFuncArgs& funcArgs)
 /// function.
 ///
 /// \param funcArgs StringFuncArgs&
-/// \return std::string
+/// \return StringVector
 ///
 /////////////////////////////////////////////////
-static std::string strfnc_getmatchingparens(StringFuncArgs& funcArgs)
+static StringVector strfnc_getmatchingparens(StringFuncArgs& funcArgs)
 {
     return toString((int)getMatchingParenthesis(funcArgs.sArg1.view()) + 1);
 }
@@ -286,19 +285,19 @@ static std::string strfnc_getmatchingparens(StringFuncArgs& funcArgs)
 /// function.
 ///
 /// \param funcArgs StringFuncArgs&
-/// \return std::string
+/// \return StringVector
 ///
 /////////////////////////////////////////////////
-static std::string strfnc_ascii(StringFuncArgs& funcArgs)
+static StringVector strfnc_ascii(StringFuncArgs& funcArgs)
 {
-    std::string sCodes = "";
+    StringVector sCodes;
     StringView sView = funcArgs.sArg1.view();
+
     for (unsigned int i = 0; i < sView.length(); i++)
     {
-        sCodes += toString((int)sView[i]);
-        if (i + 1 < sView.length())
-            sCodes += ",";
+        sCodes.push_back((int)sView[i]);
     }
+
     return sCodes;
 }
 
@@ -308,12 +307,12 @@ static std::string strfnc_ascii(StringFuncArgs& funcArgs)
 /// function.
 ///
 /// \param funcArgs StringFuncArgs&
-/// \return std::string
+/// \return StringVector
 ///
 /////////////////////////////////////////////////
-static std::string strfnc_isblank(StringFuncArgs& funcArgs)
+static StringVector strfnc_isblank(StringFuncArgs& funcArgs)
 {
-    std::string sCodes = "";
+    StringVector sCodes = "";
     StringView sView = funcArgs.sArg1.view();
     static Umlauts _umlauts;
 
@@ -322,13 +321,11 @@ static std::string strfnc_isblank(StringFuncArgs& funcArgs)
         if (isblank(sView[i])
             && _umlauts.lower.find(sView[i]) == std::string::npos
             && _umlauts.upper.find(sView[i]) == std::string::npos)
-            sCodes += "1";
+            sCodes.push_back(true);
         else
-            sCodes += "0";
-
-        if (i+1 < sView.length())
-            sCodes += ",";
+            sCodes.push_back(false);
     }
+
     return sCodes;
 }
 
@@ -338,12 +335,12 @@ static std::string strfnc_isblank(StringFuncArgs& funcArgs)
 /// function.
 ///
 /// \param funcArgs StringFuncArgs&
-/// \return std::string
+/// \return StringVector
 ///
 /////////////////////////////////////////////////
-static std::string strfnc_isalnum(StringFuncArgs& funcArgs)
+static StringVector strfnc_isalnum(StringFuncArgs& funcArgs)
 {
-    std::string sCodes = "";
+    StringVector sCodes;
     StringView sView = funcArgs.sArg1.view();
     static Umlauts _umlauts;
 
@@ -352,13 +349,11 @@ static std::string strfnc_isalnum(StringFuncArgs& funcArgs)
         if (isalnum(sView[i])
             || _umlauts.lower.find(sView[i]) != std::string::npos
             || _umlauts.upper.find(sView[i]) != std::string::npos)
-            sCodes += "1";
+            sCodes.push_back(true);
         else
-            sCodes += "0";
-
-        if (i+1 < sView.length())
-            sCodes += ",";
+            sCodes.push_back(false);
     }
+
     return sCodes;
 }
 
@@ -368,12 +363,12 @@ static std::string strfnc_isalnum(StringFuncArgs& funcArgs)
 /// function.
 ///
 /// \param funcArgs StringFuncArgs&
-/// \return std::string
+/// \return StringVector
 ///
 /////////////////////////////////////////////////
-static std::string strfnc_isalpha(StringFuncArgs& funcArgs)
+static StringVector strfnc_isalpha(StringFuncArgs& funcArgs)
 {
-    std::string sCodes = "";
+    StringVector sCodes;
     StringView sView = funcArgs.sArg1.view();
     static Umlauts _umlauts;
 
@@ -382,13 +377,11 @@ static std::string strfnc_isalpha(StringFuncArgs& funcArgs)
         if (isalpha(sView[i])
             || _umlauts.lower.find(sView[i]) != std::string::npos
             || _umlauts.upper.find(sView[i]) != std::string::npos)
-            sCodes += "1";
+            sCodes.push_back(true);
         else
-            sCodes += "0";
-
-        if (i+1 < sView.length())
-            sCodes += ",";
+            sCodes.push_back(false);
     }
+
     return sCodes;
 }
 
@@ -398,12 +391,12 @@ static std::string strfnc_isalpha(StringFuncArgs& funcArgs)
 /// function.
 ///
 /// \param funcArgs StringFuncArgs&
-/// \return std::string
+/// \return StringVector
 ///
 /////////////////////////////////////////////////
-static std::string strfnc_iscntrl(StringFuncArgs& funcArgs)
+static StringVector strfnc_iscntrl(StringFuncArgs& funcArgs)
 {
-    std::string sCodes = "";
+    StringVector sCodes;
     StringView sView = funcArgs.sArg1.view();
     static Umlauts _umlauts;
 
@@ -412,13 +405,11 @@ static std::string strfnc_iscntrl(StringFuncArgs& funcArgs)
         if (iscntrl(sView[i])
             || _umlauts.lower.find(sView[i]) != std::string::npos
             || _umlauts.upper.find(sView[i]) != std::string::npos)
-            sCodes += "1";
+            sCodes.push_back(true);
         else
-            sCodes += "0";
-
-        if (i+1 < sView.length())
-            sCodes += ",";
+            sCodes.push_back(false);
     }
+
     return sCodes;
 }
 
@@ -428,26 +419,22 @@ static std::string strfnc_iscntrl(StringFuncArgs& funcArgs)
 /// function.
 ///
 /// \param funcArgs StringFuncArgs&
-/// \return std::string
+/// \return StringVector
 ///
 /////////////////////////////////////////////////
-static std::string strfnc_isdigit(StringFuncArgs& funcArgs)
+static StringVector strfnc_isdigit(StringFuncArgs& funcArgs)
 {
-    std::string sCodes = "";
+    StringVector sCodes;
     StringView sView = funcArgs.sArg1.view();
+
     for (unsigned int i = 0; i < sView.length(); i++)
     {
         if (isdigit(sView[i]))
-        {
-            sCodes += "1";
-        }
+            sCodes.push_back(true);
         else
-        {
-            sCodes += "0";
-        }
-        if (i+1 < sView.length())
-            sCodes += ",";
+            sCodes.push_back(false);
     }
+
     return sCodes;
 }
 
@@ -457,18 +444,17 @@ static std::string strfnc_isdigit(StringFuncArgs& funcArgs)
 /// function.
 ///
 /// \param funcArgs StringFuncArgs&
-/// \return std::string
+/// \return StringVector
 ///
 /////////////////////////////////////////////////
-static std::string strfnc_isdir(StringFuncArgs& funcArgs)
+static StringVector strfnc_isdir(StringFuncArgs& funcArgs)
 {
-    std::string sCodes = "";
     StringView sView = funcArgs.sArg1.view();
 
     if (is_dir(sView.to_string()))
-        return "1";
+        return true;
 
-    return "0";
+    return false;
 }
 
 
@@ -477,17 +463,17 @@ static std::string strfnc_isdir(StringFuncArgs& funcArgs)
 /// function.
 ///
 /// \param funcArgs StringFuncArgs&
-/// \return std::string
+/// \return StringVector
 ///
 /////////////////////////////////////////////////
-static std::string strfnc_isfile(StringFuncArgs& funcArgs)
+static StringVector strfnc_isfile(StringFuncArgs& funcArgs)
 {
-    std::string sCodes = "";
     StringView sView = funcArgs.sArg1.view();
-    if (is_file(sView.to_string()))
-        return "1";
 
-    return "0";
+    if (is_file(sView.to_string()))
+        return true;
+
+    return false;
 }
 
 
@@ -496,12 +482,12 @@ static std::string strfnc_isfile(StringFuncArgs& funcArgs)
 /// function.
 ///
 /// \param funcArgs StringFuncArgs&
-/// \return std::string
+/// \return StringVector
 ///
 /////////////////////////////////////////////////
-static std::string strfnc_isgraph(StringFuncArgs& funcArgs)
+static StringVector strfnc_isgraph(StringFuncArgs& funcArgs)
 {
-    std::string sCodes = "";
+    StringVector sCodes;
     StringView sView = funcArgs.sArg1.view();
     static Umlauts _umlauts;
 
@@ -510,13 +496,11 @@ static std::string strfnc_isgraph(StringFuncArgs& funcArgs)
         if (isgraph(sView[i])
             || _umlauts.lower.find(sView[i]) != std::string::npos
             || _umlauts.upper.find(sView[i]) != std::string::npos)
-            sCodes += "1";
+            sCodes.push_back(true);
         else
-            sCodes += "0";
-
-        if (i+1 < sView.length())
-            sCodes += ",";
+            sCodes.push_back(false);
     }
+
     return sCodes;
 }
 
@@ -526,12 +510,12 @@ static std::string strfnc_isgraph(StringFuncArgs& funcArgs)
 /// function.
 ///
 /// \param funcArgs StringFuncArgs&
-/// \return std::string
+/// \return StringVector
 ///
 /////////////////////////////////////////////////
-static std::string strfnc_islower(StringFuncArgs& funcArgs)
+static StringVector strfnc_islower(StringFuncArgs& funcArgs)
 {
-    std::string sCodes = "";
+    StringVector sCodes;
     StringView sView = funcArgs.sArg1.view();
     // Get an Umlauts structure instance and store it statically
     // (this variable will only be instantiated once and kept in
@@ -546,13 +530,11 @@ static std::string strfnc_islower(StringFuncArgs& funcArgs)
         // is not
         if (islower(sView[i])
             || _umlauts.lower.find(sView[i]) != std::string::npos)
-            sCodes += "1";
+            sCodes.push_back(true);
         else
-            sCodes += "0";
-
-        if (i+1 < sView.length())
-            sCodes += ",";
+            sCodes.push_back(false);
     }
+
     return sCodes;
 }
 
@@ -562,12 +544,12 @@ static std::string strfnc_islower(StringFuncArgs& funcArgs)
 /// function.
 ///
 /// \param funcArgs StringFuncArgs&
-/// \return std::string
+/// \return StringVector
 ///
 /////////////////////////////////////////////////
-static std::string strfnc_isprint(StringFuncArgs& funcArgs)
+static StringVector strfnc_isprint(StringFuncArgs& funcArgs)
 {
-    std::string sCodes = "";
+    StringVector sCodes;
     StringView sView = funcArgs.sArg1.view();
     static Umlauts _umlauts;
 
@@ -576,12 +558,11 @@ static std::string strfnc_isprint(StringFuncArgs& funcArgs)
         if (isprint(sView[i])
             || _umlauts.lower.find(sView[i]) != std::string::npos
             || _umlauts.upper.find(sView[i]) != std::string::npos)
-            sCodes += "1";
+            sCodes.push_back(true);
         else
-            sCodes += "0";
-        if (i+1 < sView.length())
-            sCodes += ",";
+            sCodes.push_back(false);
     }
+
     return sCodes;
 }
 
@@ -591,12 +572,12 @@ static std::string strfnc_isprint(StringFuncArgs& funcArgs)
 /// function.
 ///
 /// \param funcArgs StringFuncArgs&
-/// \return std::string
+/// \return StringVector
 ///
 /////////////////////////////////////////////////
-static std::string strfnc_ispunct(StringFuncArgs& funcArgs)
+static StringVector strfnc_ispunct(StringFuncArgs& funcArgs)
 {
-    std::string sCodes = "";
+    StringVector sCodes;
     StringView sView = funcArgs.sArg1.view();
 
     static Umlauts _umlauts;
@@ -606,12 +587,11 @@ static std::string strfnc_ispunct(StringFuncArgs& funcArgs)
         if (ispunct(sView[i])
             && _umlauts.lower.find(sView[i]) == std::string::npos
             && _umlauts.upper.find(sView[i]) == std::string::npos)
-            sCodes += "1";
+            sCodes.push_back(true);
         else
-            sCodes += "0";
-        if (i+1 < sView.length())
-            sCodes += ",";
+            sCodes.push_back(false);
     }
+
     return sCodes;
 }
 
@@ -621,12 +601,12 @@ static std::string strfnc_ispunct(StringFuncArgs& funcArgs)
 /// function.
 ///
 /// \param funcArgs StringFuncArgs&
-/// \return std::string
+/// \return StringVector
 ///
 /////////////////////////////////////////////////
-static std::string strfnc_isspace(StringFuncArgs& funcArgs)
+static StringVector strfnc_isspace(StringFuncArgs& funcArgs)
 {
-    std::string sCodes = "";
+    StringVector sCodes;
     StringView sView = funcArgs.sArg1.view();
 
     static Umlauts _umlauts;
@@ -636,12 +616,11 @@ static std::string strfnc_isspace(StringFuncArgs& funcArgs)
         if (isspace(sView[i])
             && _umlauts.lower.find(sView[i]) == std::string::npos
             && _umlauts.upper.find(sView[i]) == std::string::npos)
-            sCodes += "1";
+            sCodes.push_back(true);
         else
-            sCodes += "0";
-        if (i+1 < sView.length())
-            sCodes += ",";
+            sCodes.push_back(false);
     }
+
     return sCodes;
 }
 
@@ -651,12 +630,12 @@ static std::string strfnc_isspace(StringFuncArgs& funcArgs)
 /// function.
 ///
 /// \param funcArgs StringFuncArgs&
-/// \return std::string
+/// \return StringVector
 ///
 /////////////////////////////////////////////////
-static std::string strfnc_isupper(StringFuncArgs& funcArgs)
+static StringVector strfnc_isupper(StringFuncArgs& funcArgs)
 {
-    std::string sCodes = "";
+    StringVector sCodes;
     StringView sView = funcArgs.sArg1.view();
 
     static Umlauts _umlauts;
@@ -665,12 +644,11 @@ static std::string strfnc_isupper(StringFuncArgs& funcArgs)
     {
         if (isupper(sView[i])
             || _umlauts.upper.find(sView[i]) != std::string::npos)
-            sCodes += "1";
+            sCodes.push_back(true);
         else
-            sCodes += "0";
-        if (i+1 < sView.length())
-            sCodes += ",";
+            sCodes.push_back(false);
     }
+
     return sCodes;
 }
 
@@ -680,26 +658,22 @@ static std::string strfnc_isupper(StringFuncArgs& funcArgs)
 /// function.
 ///
 /// \param funcArgs StringFuncArgs&
-/// \return std::string
+/// \return StringVector
 ///
 /////////////////////////////////////////////////
-static std::string strfnc_isxdigit(StringFuncArgs& funcArgs)
+static StringVector strfnc_isxdigit(StringFuncArgs& funcArgs)
 {
-    std::string sCodes = "";
+    StringVector sCodes;
     StringView sView = funcArgs.sArg1.view();
+
     for (unsigned int i = 0; i < sView.length(); i++)
     {
         if (isxdigit(sView[i]))
-        {
-            sCodes += "1";
-        }
+            sCodes.push_back(true);
         else
-        {
-            sCodes += "0";
-        }
-        if (i+1 < sView.length())
-            sCodes += ",";
+            sCodes.push_back(false);
     }
+
     return sCodes;
 }
 
@@ -709,16 +683,18 @@ static std::string strfnc_isxdigit(StringFuncArgs& funcArgs)
 /// function.
 ///
 /// \param funcArgs StringFuncArgs&
-/// \return std::string
+/// \return StringVector
 ///
 /////////////////////////////////////////////////
-static std::string strfnc_to_char(StringFuncArgs& funcArgs)
+static StringVector strfnc_to_char(StringFuncArgs& funcArgs)
 {
     std::string sToChar = "";
+
     for (size_t i = 0; i < funcArgs.nMultiArg.size(); i++)
     {
         sToChar += (char)(funcArgs.nMultiArg[i]);
     }
+
     return "\"" + sToChar + "\"";
 }
 
@@ -728,19 +704,21 @@ static std::string strfnc_to_char(StringFuncArgs& funcArgs)
 /// function.
 ///
 /// \param funcArgs StringFuncArgs&
-/// \return std::string
+/// \return StringVector
 ///
 /////////////////////////////////////////////////
-static std::string strfnc_and(StringFuncArgs& funcArgs)
+static StringVector strfnc_and(StringFuncArgs& funcArgs)
 {
     if (!funcArgs.nMultiArg.size())
-        return "false";
+        return false;
+
     for (size_t i = 0; i < funcArgs.nMultiArg.size(); i++)
     {
         if (!funcArgs.nMultiArg[i])
-            return "false";
+            return false;
     }
-    return "true";
+
+    return true;
 }
 
 
@@ -749,17 +727,18 @@ static std::string strfnc_and(StringFuncArgs& funcArgs)
 /// function.
 ///
 /// \param funcArgs StringFuncArgs&
-/// \return std::string
+/// \return StringVector
 ///
 /////////////////////////////////////////////////
-static std::string strfnc_or(StringFuncArgs& funcArgs)
+static StringVector strfnc_or(StringFuncArgs& funcArgs)
 {
     for (size_t i = 0; i < funcArgs.nMultiArg.size(); i++)
     {
         if (funcArgs.nMultiArg[i])
-            return "true";
+            return true;
     }
-    return "false";
+
+    return false;
 }
 
 
@@ -768,12 +747,13 @@ static std::string strfnc_or(StringFuncArgs& funcArgs)
 /// function.
 ///
 /// \param funcArgs StringFuncArgs&
-/// \return std::string
+/// \return StringVector
 ///
 /////////////////////////////////////////////////
-static std::string strfnc_xor(StringFuncArgs& funcArgs)
+static StringVector strfnc_xor(StringFuncArgs& funcArgs)
 {
     bool isTrue = false;
+
     for (size_t i = 0; i < funcArgs.nMultiArg.size(); i++)
     {
         if (funcArgs.nMultiArg[i])
@@ -781,12 +761,11 @@ static std::string strfnc_xor(StringFuncArgs& funcArgs)
             if (!isTrue)
                 isTrue = true;
             else
-                return "false";
+                return false;
         }
     }
-    if (isTrue)
-        return "true";
-    return "false";
+
+    return isTrue;
 }
 
 
@@ -795,10 +774,10 @@ static std::string strfnc_xor(StringFuncArgs& funcArgs)
 /// function.
 ///
 /// \param funcArgs StringFuncArgs&
-/// \return std::string
+/// \return StringVector
 ///
 /////////////////////////////////////////////////
-static std::string strfnc_findfile(StringFuncArgs& funcArgs)
+static StringVector strfnc_findfile(StringFuncArgs& funcArgs)
 {
     StringView sView1 = funcArgs.sArg1.view();
     StringView sView2 = funcArgs.sArg2.view();
@@ -825,9 +804,9 @@ static std::string strfnc_findfile(StringFuncArgs& funcArgs)
     std::string sFile = _fSys.ValidFileName(sView1.to_string(), sExtension.to_string());
 
     if (fileExists(sFile))
-        return "true";
+        return true;
 
-    return "false";
+    return false;
 }
 
 
@@ -836,16 +815,16 @@ static std::string strfnc_findfile(StringFuncArgs& funcArgs)
 /// function.
 ///
 /// \param funcArgs StringFuncArgs&
-/// \return std::string
+/// \return StringVector
 ///
 /////////////////////////////////////////////////
-static std::string strfnc_split(StringFuncArgs& funcArgs)
+static StringVector strfnc_split(StringFuncArgs& funcArgs)
 {
-    std::string sSplittedString = "";
+    StringVector sSplittedString;
     std::string sSep = funcArgs.sArg2.view().to_string();
 
     if (!sSep.length())
-        return "\"\"";
+        return StringVector::empty_string();
 
     boost::char_separator<char> cSep(sSep.c_str());
 
@@ -854,12 +833,10 @@ static std::string strfnc_split(StringFuncArgs& funcArgs)
 
     for (boost::tokenizer<boost::char_separator<char> >::iterator iter = tok.begin(); iter != tok.end(); ++iter)
     {
-        if (sSplittedString.length())
-            sSplittedString += NEWSTRING;
-        sSplittedString += "\"" + std::string(*iter) + "\"";
+        sSplittedString.push_back(std::string(*iter));
     }
 
-    return /*addMaskedStrings*/ (sSplittedString);
+    return sSplittedString;
 }
 
 
@@ -868,10 +845,10 @@ static std::string strfnc_split(StringFuncArgs& funcArgs)
 /// function.
 ///
 /// \param funcArgs StringFuncArgs&
-/// \return std::string
+/// \return StringVector
 ///
 /////////////////////////////////////////////////
-static std::string strfnc_to_time(StringFuncArgs& funcArgs)
+static StringVector strfnc_to_time(StringFuncArgs& funcArgs)
 {
     std::string sTime = funcArgs.sArg2.view().to_string() + " ";
     std::string sPattern = funcArgs.sArg1.view().to_string() + " ";
@@ -956,10 +933,10 @@ static std::string strfnc_to_time(StringFuncArgs& funcArgs)
 /// function.
 ///
 /// \param funcArgs StringFuncArgs&
-/// \return std::string
+/// \return StringVector
 ///
 /////////////////////////////////////////////////
-static std::string strfnc_strfnd(StringFuncArgs& funcArgs)
+static StringVector strfnc_strfnd(StringFuncArgs& funcArgs)
 {
     std::string sStr = funcArgs.sArg1.view().to_string();
     StringView sView = funcArgs.sArg2.view();
@@ -979,10 +956,10 @@ static std::string strfnc_strfnd(StringFuncArgs& funcArgs)
 /// function.
 ///
 /// \param funcArgs StringFuncArgs&
-/// \return std::string
+/// \return StringVector
 ///
 /////////////////////////////////////////////////
-static std::string strfnc_strfndall(StringFuncArgs& funcArgs)
+static StringVector strfnc_strfndall(StringFuncArgs& funcArgs)
 {
     std::string sStr = funcArgs.sArg1.view().to_string();
     StringView sView = funcArgs.sArg2.view();
@@ -996,7 +973,7 @@ static std::string strfnc_strfndall(StringFuncArgs& funcArgs)
     if (funcArgs.nArg2 == DEFAULT_NUM_ARG || funcArgs.nArg2 <= 0 || sView.length() < (size_t)funcArgs.nArg2)
         funcArgs.nArg2 = sView.length();
 
-    std::string positions;
+    StringVector positions;
     size_t pos_start = funcArgs.nArg1 - 1;
     size_t pos_last = funcArgs.nArg2 - sStr.length();
 
@@ -1008,21 +985,18 @@ static std::string strfnc_strfndall(StringFuncArgs& funcArgs)
         {
             pos_start++;
 
-            if (positions.length())
-                positions += ",";
-
-            positions += toString(pos_start);
+            positions.push_back(pos_start);
         }
         else
         {
-            if (positions.length())
+            if (positions.size())
                 return positions;
 
             return "0";
         }
     }
 
-    if (!positions.length())
+    if (!positions.size())
         return "0";
 
     return positions;
@@ -1034,10 +1008,10 @@ static std::string strfnc_strfndall(StringFuncArgs& funcArgs)
 /// function.
 ///
 /// \param funcArgs StringFuncArgs&
-/// \return std::string
+/// \return StringVector
 ///
 /////////////////////////////////////////////////
-static std::string strfnc_strmatchall(StringFuncArgs& funcArgs)
+static StringVector strfnc_strmatchall(StringFuncArgs& funcArgs)
 {
     StringView sStr = funcArgs.sArg1.view();
     StringView sView = funcArgs.sArg2.view();
@@ -1051,7 +1025,7 @@ static std::string strfnc_strmatchall(StringFuncArgs& funcArgs)
     if (funcArgs.nArg2 == DEFAULT_NUM_ARG || funcArgs.nArg2 <= 0 || sView.length() < (size_t)funcArgs.nArg2)
         funcArgs.nArg2 = sView.length();
 
-    std::string positions;
+    StringVector positions;
     size_t pos_start = funcArgs.nArg1 - 1;
     size_t pos_last = funcArgs.nArg2 - 1;
 
@@ -1059,16 +1033,13 @@ static std::string strfnc_strmatchall(StringFuncArgs& funcArgs)
     {
         size_t match = sView.find(sStr[i], pos_start);
 
-        if (positions.length())
-            positions += ",";
-
         if (match <= pos_last)
-            positions += toString(match+1);
+            positions.push_back(match+1);
         else
-            positions += "0";
+            positions.push_back(0);
     }
 
-    if (!positions.length())
+    if (!positions.size())
         return "0";
 
     return positions;
@@ -1080,10 +1051,10 @@ static std::string strfnc_strmatchall(StringFuncArgs& funcArgs)
 /// function.
 ///
 /// \param funcArgs StringFuncArgs&
-/// \return std::string
+/// \return StringVector
 ///
 /////////////////////////////////////////////////
-static std::string strfnc_strmatch(StringFuncArgs& funcArgs)
+static StringVector strfnc_strmatch(StringFuncArgs& funcArgs)
 {
     std::string sStr = funcArgs.sArg1.view().to_string();
     StringView sView = funcArgs.sArg2.view();
@@ -1103,10 +1074,10 @@ static std::string strfnc_strmatch(StringFuncArgs& funcArgs)
 /// function.
 ///
 /// \param funcArgs StringFuncArgs&
-/// \return std::string
+/// \return StringVector
 ///
 /////////////////////////////////////////////////
-static std::string strfnc_str_not_match(StringFuncArgs& funcArgs)
+static StringVector strfnc_str_not_match(StringFuncArgs& funcArgs)
 {
     std::string sStr = funcArgs.sArg1.view().to_string();
     StringView sView = funcArgs.sArg2.view();
@@ -1126,10 +1097,10 @@ static std::string strfnc_str_not_match(StringFuncArgs& funcArgs)
 /// function.
 ///
 /// \param funcArgs StringFuncArgs&
-/// \return std::string
+/// \return StringVector
 ///
 /////////////////////////////////////////////////
-static std::string strfnc_strrfnd(StringFuncArgs& funcArgs)
+static StringVector strfnc_strrfnd(StringFuncArgs& funcArgs)
 {
     std::string sStr = funcArgs.sArg1.view().to_string();
     StringView sView = funcArgs.sArg2.view();
@@ -1149,10 +1120,10 @@ static std::string strfnc_strrfnd(StringFuncArgs& funcArgs)
 /// function.
 ///
 /// \param funcArgs StringFuncArgs&
-/// \return std::string
+/// \return StringVector
 ///
 /////////////////////////////////////////////////
-static std::string strfnc_strrmatch(StringFuncArgs& funcArgs)
+static StringVector strfnc_strrmatch(StringFuncArgs& funcArgs)
 {
     std::string sStr = funcArgs.sArg1.view().to_string();
     StringView sView = funcArgs.sArg2.view();
@@ -1172,10 +1143,10 @@ static std::string strfnc_strrmatch(StringFuncArgs& funcArgs)
 /// function.
 ///
 /// \param funcArgs StringFuncArgs&
-/// \return std::string
+/// \return StringVector
 ///
 /////////////////////////////////////////////////
-static std::string strfnc_str_not_rmatch(StringFuncArgs& funcArgs)
+static StringVector strfnc_str_not_rmatch(StringFuncArgs& funcArgs)
 {
     std::string sStr = funcArgs.sArg1.view().to_string();
     StringView sView = funcArgs.sArg2.view();
@@ -1195,10 +1166,10 @@ static std::string strfnc_str_not_rmatch(StringFuncArgs& funcArgs)
 /// function.
 ///
 /// \param funcArgs StringFuncArgs&
-/// \return std::string
+/// \return StringVector
 ///
 /////////////////////////////////////////////////
-static std::string strfnc_findparam(StringFuncArgs& funcArgs)
+static StringVector strfnc_findparam(StringFuncArgs& funcArgs)
 {
     StringView sView1 = funcArgs.sArg1.view();
     StringView sView2 = funcArgs.sArg2.view();
@@ -1226,21 +1197,21 @@ static std::string strfnc_findparam(StringFuncArgs& funcArgs)
 /// function.
 ///
 /// \param funcArgs StringFuncArgs&
-/// \return std::string
+/// \return StringVector
 ///
 /////////////////////////////////////////////////
-static std::string strfnc_substr(StringFuncArgs& funcArgs)
+static StringVector strfnc_substr(StringFuncArgs& funcArgs)
 {
     StringView sView = funcArgs.sArg1.view();
 
     if (!sView.length())
-        return "\"\"";
+        return StringVector::empty_string();
 
     if (funcArgs.nArg1 < 1)
         funcArgs.nArg1 = 1;
 
     if ((size_t)funcArgs.nArg1 > sView.length())
-        return "\"\"";
+        return StringVector::empty_string();
 
     if (funcArgs.nArg2 < 0)
         funcArgs.nArg2 = -1;
@@ -1254,10 +1225,10 @@ static std::string strfnc_substr(StringFuncArgs& funcArgs)
 /// function.
 ///
 /// \param funcArgs StringFuncArgs&
-/// \return std::string
+/// \return StringVector
 ///
 /////////////////////////////////////////////////
-static std::string strfnc_repeat(StringFuncArgs& funcArgs)
+static StringVector strfnc_repeat(StringFuncArgs& funcArgs)
 {
     std::string sReturn;
     std::string sStr = funcArgs.sArg1.view().to_string();
@@ -1290,10 +1261,10 @@ static std::string padWithZeros(int nTime, size_t nLength)
 /// function.
 ///
 /// \param funcArgs StringFuncArgs&
-/// \return std::string
+/// \return StringVector
 ///
 /////////////////////////////////////////////////
-static std::string strfnc_timeformat(StringFuncArgs& funcArgs)
+static StringVector strfnc_timeformat(StringFuncArgs& funcArgs)
 {
     std::string sFormattedTime = funcArgs.sArg1.view().to_string() + " "; // contains pattern
     sys_time_point nTime = to_timePoint(funcArgs.dArg1.real());
@@ -1364,10 +1335,10 @@ static std::string strfnc_timeformat(StringFuncArgs& funcArgs)
 /// function.
 ///
 /// \param funcArgs StringFuncArgs&
-/// \return std::string
+/// \return StringVector
 ///
 /////////////////////////////////////////////////
-static std::string strfnc_char(StringFuncArgs& funcArgs)
+static StringVector strfnc_char(StringFuncArgs& funcArgs)
 {
     std::string sStr = funcArgs.sArg1.view().to_string();
 
@@ -1386,10 +1357,10 @@ static std::string strfnc_char(StringFuncArgs& funcArgs)
 /// function.
 ///
 /// \param funcArgs StringFuncArgs&
-/// \return std::string
+/// \return StringVector
 ///
 /////////////////////////////////////////////////
-static std::string strfnc_getopt(StringFuncArgs& funcArgs)
+static StringVector strfnc_getopt(StringFuncArgs& funcArgs)
 {
     std::string sStr = funcArgs.sArg1.view().to_string();
 
@@ -1397,7 +1368,7 @@ static std::string strfnc_getopt(StringFuncArgs& funcArgs)
         funcArgs.nArg1 = 1;
 
     if ((size_t)funcArgs.nArg1 > sStr.length())
-        return "\"\"";
+        return StringVector::empty_string();
 
     return "\"" + getArgAtPos(sStr, funcArgs.nArg1 - 1) + "\"";
 }
@@ -1408,16 +1379,16 @@ static std::string strfnc_getopt(StringFuncArgs& funcArgs)
 /// function.
 ///
 /// \param funcArgs StringFuncArgs&
-/// \return std::string
+/// \return StringVector
 ///
 /////////////////////////////////////////////////
-static std::string strfnc_replace(StringFuncArgs& funcArgs)
+static StringVector strfnc_replace(StringFuncArgs& funcArgs)
 {
     StringView sView1 = funcArgs.sArg1.view();
     StringView sView2 = funcArgs.sArg2.view();
 
     if (!sView1.length())
-        return "\"\"";
+        return StringVector::empty_string();
 
     if (funcArgs.nArg1 < 1)
         funcArgs.nArg1 = 1;
@@ -1437,17 +1408,17 @@ static std::string strfnc_replace(StringFuncArgs& funcArgs)
 /// function.
 ///
 /// \param funcArgs StringFuncArgs&
-/// \return std::string
+/// \return StringVector
 ///
 /////////////////////////////////////////////////
-static std::string strfnc_textparse(StringFuncArgs& funcArgs)
+static StringVector strfnc_textparse(StringFuncArgs& funcArgs)
 {
     StringView sView1 = funcArgs.sArg1.view();
     StringView sView2 = funcArgs.sArg2.view();
 
     // Exclude border cases
     if (!sView1.length())
-        return "\"\"";
+        return StringVector::empty_string();
 
     if (!sView2.length())
         return "\"" + sView1.to_string() + "\"";
@@ -1457,7 +1428,7 @@ static std::string strfnc_textparse(StringFuncArgs& funcArgs)
         funcArgs.nArg1 = 1;
 
     if ((size_t)funcArgs.nArg1 > sView1.length())
-        return "\"\"";
+        return StringVector::empty_string();
 
     if (funcArgs.nArg2 == DEFAULT_NUM_ARG)
         funcArgs.nArg2 = -1;
@@ -1467,7 +1438,7 @@ static std::string strfnc_textparse(StringFuncArgs& funcArgs)
     // %s: %s VAL=%f
     // {sDate, sMessage, fValue} = textparse("2018-09-21: Message VAL=12452", "%s: %s VAL=%f");
 
-    std::string sParsedStrings;
+    StringVector sParsedStrings;
     size_t lastPosition = funcArgs.nArg1 - 1;
 
     // If the search string starts with whitespaces and the
@@ -1514,15 +1485,11 @@ static std::string strfnc_textparse(StringFuncArgs& funcArgs)
             if (pos > (size_t)funcArgs.nArg2 && (size_t)funcArgs.nArg2 < sView1.length())
                 break;
 
-            // Append a newstring character, if needed
-            if (sParsedStrings.length() && sView2.subview(i, 2) != "%a")
-                sParsedStrings += NEWSTRING;
-
             // Append the found token
             if (sView2.subview(i, 2) == "%s")
-                sParsedStrings += "\"" + sView1.subview(lastPosition, pos - lastPosition).to_string() + "\"";
+                sParsedStrings.push_back(sView1.subview(lastPosition, pos - lastPosition).to_string());
             else if (sView2.subview(i, 2) == "%f")
-                sParsedStrings += sView1.subview(lastPosition, pos - lastPosition).to_string();
+                sParsedStrings.push_back(StrToCmplx(sView1.subview(lastPosition, pos - lastPosition).to_string()));
 
             // Store the position of the separator
             lastPosition = pos;
@@ -1541,12 +1508,12 @@ static std::string strfnc_textparse(StringFuncArgs& funcArgs)
 /// function.
 ///
 /// \param funcArgs StringFuncArgs&
-/// \return std::string
+/// \return StringVector
 ///
 /////////////////////////////////////////////////
-static std::string strfnc_locate(StringFuncArgs& funcArgs)
+static StringVector strfnc_locate(StringFuncArgs& funcArgs)
 {
-    std::string sIds;
+    StringVector sIds;
 
     // Remove the masked strings
     StringView sView = funcArgs.sArg2.view();
@@ -1567,14 +1534,14 @@ static std::string strfnc_locate(StringFuncArgs& funcArgs)
             arg.strip();
 
             if (arg == sView)
-                sIds += toString(i+1) + ",";
+                sIds.push_back(i+1);
         }
         else if (funcArgs.nArg1 == 2)
         {
             // Take the first non-whitespace characters
             if (arg.find_first_not_of(' ') != std::string::npos
                 && arg.subview(arg.find_first_not_of(' '), sView.length()) == sView)
-                sIds += toString(i+1) + ",";
+                sIds.push_back(i+1);
         }
         else if (funcArgs.nArg1 == 3)
         {
@@ -1582,34 +1549,32 @@ static std::string strfnc_locate(StringFuncArgs& funcArgs)
             if (arg.find_last_not_of(' ') != std::string::npos
                 && arg.find_last_not_of(' ')+1 >= sView.length()
                 && arg.subview(arg.find_last_not_of(' ')-sView.length()+1, sView.length()) == sView)
-                sIds += toString(i+1) + ",";
+                sIds.push_back(i+1);
         }
         else if (funcArgs.nArg1 == 4)
         {
             // Search anywhere in the string
             if (arg.find(sView.to_string()) != std::string::npos)
-                sIds += toString(i+1) + ",";
+                sIds.push_back(i+1);
         }
         else if (funcArgs.nArg1 == 5)
         {
             // Search any of the characters in the string
             if (arg.find_first_of(sView.to_string()) != std::string::npos)
-                sIds += toString(i+1) + ",";
+                sIds.push_back(i+1);
         }
         else
         {
             // Simply compare
             if (arg == sView)
-                sIds += toString(i+1) + ",";
+                sIds.push_back(i+1);
         }
     }
 
     // Pop the trailing comma, if the string has a length.
     // Otherwise set the ID to 0 - nothing found
-    if (sIds.length())
-        sIds.pop_back();
-    else
-        sIds = "0";
+    if (!sIds.size())
+        return "0";
 
     return sIds;
 }
@@ -1620,16 +1585,16 @@ static std::string strfnc_locate(StringFuncArgs& funcArgs)
 /// function.
 ///
 /// \param funcArgs StringFuncArgs&
-/// \return std::string
+/// \return StringVector
 ///
 /////////////////////////////////////////////////
-static std::string strfnc_strunique(StringFuncArgs& funcArgs)
+static StringVector strfnc_strunique(StringFuncArgs& funcArgs)
 {
     // Set the default tolerance mode, if necessary
     if (funcArgs.nArg1 == DEFAULT_NUM_ARG)
         funcArgs.nArg1 = funcArgs.sMultiArg.size() > 1 ? 0 : 1;
 
-    std::string sUniqueStrings;
+    StringVector sUniqueStrings;
 
     // Separate unique strings from unique chars
     if (funcArgs.nArg1 == 0)
@@ -1645,10 +1610,7 @@ static std::string strfnc_strunique(StringFuncArgs& funcArgs)
         // Copy together
         for (auto it = vFuncArgs.begin(); it != iter; ++it)
         {
-            if (sUniqueStrings.length())
-                sUniqueStrings += NEWSTRING;
-
-            sUniqueStrings += *it; // Should already contain the surrounding quotation marks
+            sUniqueStrings.push_generic(*it); // Should already contain the surrounding quotation marks
         }
     }
     else
@@ -1663,14 +1625,8 @@ static std::string strfnc_strunique(StringFuncArgs& funcArgs)
             std::sort(sArg.begin(), sArg.end());
             auto iter = std::unique(sArg.begin(), sArg.end());
 
-            // Append a comma
-            if (sUniqueStrings.length())
-                sUniqueStrings += NEWSTRING;
-
             // Append the string with unique characters
-            sUniqueStrings += "\"";
-            sUniqueStrings.append(sArg.begin(), iter);
-            sUniqueStrings += "\"";
+            sUniqueStrings.push_back(std::string(sArg.begin(), iter));
         }
     }
 
@@ -1683,12 +1639,12 @@ static std::string strfnc_strunique(StringFuncArgs& funcArgs)
 /// function.
 ///
 /// \param funcArgs StringFuncArgs&
-/// \return std::string
+/// \return StringVector
 ///
 /////////////////////////////////////////////////
-static std::string strfnc_getkeyval(StringFuncArgs& funcArgs)
+static StringVector strfnc_getkeyval(StringFuncArgs& funcArgs)
 {
-    std::string sValues;
+    StringVector sValues;
 
     StringView sView2 = funcArgs.sArg2.view();
 
@@ -1711,28 +1667,17 @@ static std::string strfnc_getkeyval(StringFuncArgs& funcArgs)
         arg.strip();
 
         if (arg == sView2)
-        {
-            if (funcArgs.sMultiArg.is_string(i+1))
-                sValues += "\"" + funcArgs.sMultiArg[i+1].to_string() + "\"" + NEWSTRING;
-            else
-                sValues += funcArgs.sMultiArg[i+1].to_string() + NEWSTRING;
-        }
+            sValues.push_generic(funcArgs.sMultiArg.getRef(i+1));
     }
 
-    // Pop the trailing comma, if the string has a length.
-    // Otherwise set values to the default values and probably
-    // issue a warning
-    if (sValues.length())
-        sValues.pop_back();
-    else
+    // set values to the default values and probably
+    // issue a warning, if no values were found
+    if (!sValues.size())
     {
         if (funcArgs.nArg1)
             NumeReKernel::issueWarning(_lang.get("PARSERFUNCS_LISTFUNC_GETKEYVAL_WARNING", "\"" + sView2.to_string() + "\""));
 
-        if (funcArgs.sArg3.is_string())
-            sValues = funcArgs.sArg3.getRef();
-        else
-            sValues = funcArgs.sArg3.getRef();
+        sValues.push_generic(funcArgs.sArg3.getRef());
     }
 
     return sValues;
@@ -1744,10 +1689,10 @@ static std::string strfnc_getkeyval(StringFuncArgs& funcArgs)
 /// function.
 ///
 /// \param funcArgs StringFuncArgs&
-/// \return std::string
+/// \return StringVector
 ///
 /////////////////////////////////////////////////
-static std::string strfnc_findtoken(StringFuncArgs& funcArgs)
+static StringVector strfnc_findtoken(StringFuncArgs& funcArgs)
 {
     StringView sView1 = funcArgs.sArg1.view();
     std::string sStr2 = funcArgs.sArg2.view().to_string();
@@ -1768,8 +1713,10 @@ static std::string strfnc_findtoken(StringFuncArgs& funcArgs)
         {
             return toString(nMatch + 1);
         }
+
         nMatch++;
     }
+
     return "0";
 }
 
@@ -1779,17 +1726,17 @@ static std::string strfnc_findtoken(StringFuncArgs& funcArgs)
 /// function.
 ///
 /// \param funcArgs StringFuncArgs&
-/// \return std::string
+/// \return StringVector
 ///
 /////////////////////////////////////////////////
-static std::string strfnc_replaceall(StringFuncArgs& funcArgs)
+static StringVector strfnc_replaceall(StringFuncArgs& funcArgs)
 {
     std::string sStr1 = funcArgs.sArg1.view().to_string();
     std::string sStr2 = funcArgs.sArg2.view().to_string();
     std::string sStr3 = funcArgs.sArg3.view().to_string();
 
     if (!sStr1.length())
-        return "\"\"";
+        return StringVector::empty_string();
 
     if (funcArgs.nArg1 < 1)
         funcArgs.nArg1 = 1;
@@ -1814,17 +1761,17 @@ static std::string strfnc_replaceall(StringFuncArgs& funcArgs)
 /// function.
 ///
 /// \param funcArgs StringFuncArgs&
-/// \return std::string
+/// \return StringVector
 ///
 /////////////////////////////////////////////////
-static std::string strfnc_strip(StringFuncArgs& funcArgs)
+static StringVector strfnc_strip(StringFuncArgs& funcArgs)
 {
     StringView sView1 = funcArgs.sArg1.view();
     StringView sView2 = funcArgs.sArg2.view();
     StringView sView3 = funcArgs.sArg3.view();
 
     if (!sView1.length())
-        return "\"\"";
+        return StringVector::empty_string();
 
     while (sView2.length()
            && sView1.length() >= sView2.length()
@@ -1856,23 +1803,23 @@ static std::string strfnc_strip(StringFuncArgs& funcArgs)
 /// function.
 ///
 /// \param funcArgs StringFuncArgs&
-/// \return std::string
+/// \return StringVector
 ///
 /////////////////////////////////////////////////
-static std::string strfnc_regex(StringFuncArgs& funcArgs)
+static StringVector strfnc_regex(StringFuncArgs& funcArgs)
 {
     StringView sView1 = funcArgs.sArg1.view();
     StringView sView2 = funcArgs.sArg2.view();
 
     if (!sView1.length())
-        return "0,0";
+        return StringVector(2, "0");
 
     // Ensure that the indices are valid
     if (funcArgs.nArg1 < 1)
         funcArgs.nArg1 = 1;
 
     if ((size_t)funcArgs.nArg1 > sView2.length())
-        return "0,0";
+        return StringVector(2, "0");
 
     if (funcArgs.nArg2 == DEFAULT_NUM_ARG)
         funcArgs.nArg2 = -1;
@@ -1885,7 +1832,10 @@ static std::string strfnc_regex(StringFuncArgs& funcArgs)
 
         if (std::regex_search(sStr, match, expr))
         {
-            return toString(match.position(0) + funcArgs.nArg1) + "," + toString(match.length(0));
+            StringVector sRet;
+            sRet.push_back(match.position(0) + (size_t)funcArgs.nArg1);
+            sRet.push_back(match.length(0));
+            return sRet;
         }
     }
     catch (std::regex_error& e)
@@ -1939,7 +1889,7 @@ static std::string strfnc_regex(StringFuncArgs& funcArgs)
 
     }
 
-    return "0,0";
+    return StringVector(2, "0");
 }
 
 
@@ -1948,17 +1898,16 @@ static std::string strfnc_regex(StringFuncArgs& funcArgs)
 /// function.
 ///
 /// \param funcArgs StringFuncArgs&
-/// \return std::string
+/// \return StringVector
 ///
 /////////////////////////////////////////////////
-static std::string strfnc_cnt(StringFuncArgs& funcArgs)
+static StringVector strfnc_cnt(StringFuncArgs& funcArgs)
 {
     if (funcArgs.sMultiArg.size())
-    {
         return toString((int)funcArgs.sMultiArg.size());
-    }
     else if (funcArgs.nMultiArg.size())
         return toString((int)funcArgs.nMultiArg.size());
+
     return "0";
 }
 
@@ -1968,25 +1917,26 @@ static std::string strfnc_cnt(StringFuncArgs& funcArgs)
 /// function.
 ///
 /// \param funcArgs StringFuncArgs&
-/// \return std::string
+/// \return StringVector
 ///
 /////////////////////////////////////////////////
-static std::string strfnc_num(StringFuncArgs& funcArgs)
+static StringVector strfnc_num(StringFuncArgs& funcArgs)
 {
     if (funcArgs.sMultiArg.size())
     {
         int nRet = 0;
+
         for (size_t i = 0; i < funcArgs.sMultiArg.size(); i++)
         {
             if (funcArgs.sMultiArg[i].length())
                 nRet++;
         }
+
         return toString(nRet);
     }
     else if (funcArgs.nMultiArg.size())
-    {
         return toString((int)funcArgs.nMultiArg.size());
-    }
+
     return "0";
 }
 
@@ -1996,13 +1946,13 @@ static std::string strfnc_num(StringFuncArgs& funcArgs)
 /// function.
 ///
 /// \param funcArgs StringFuncArgs&
-/// \return std::string
+/// \return StringVector
 ///
 /////////////////////////////////////////////////
-static std::string strfnc_min(StringFuncArgs& funcArgs)
+static StringVector strfnc_min(StringFuncArgs& funcArgs)
 {
     if (!funcArgs.sMultiArg.size())
-        return "\"\"";
+        return StringVector::empty_string();
 
     StringView sMin = funcArgs.sMultiArg[0];
 
@@ -2021,13 +1971,13 @@ static std::string strfnc_min(StringFuncArgs& funcArgs)
 /// function.
 ///
 /// \param funcArgs StringFuncArgs&
-/// \return std::string
+/// \return StringVector
 ///
 /////////////////////////////////////////////////
-static std::string strfnc_max(StringFuncArgs& funcArgs)
+static StringVector strfnc_max(StringFuncArgs& funcArgs)
 {
     if (!funcArgs.sMultiArg.size())
-        return "\"\"";
+        return StringVector::empty_string();
 
     StringView sMax = funcArgs.sMultiArg[0];
 
@@ -2046,10 +1996,10 @@ static std::string strfnc_max(StringFuncArgs& funcArgs)
 /// function.
 ///
 /// \param funcArgs StringFuncArgs&
-/// \return std::string
+/// \return StringVector
 ///
 /////////////////////////////////////////////////
-static std::string strfnc_sum(StringFuncArgs& funcArgs)
+static StringVector strfnc_sum(StringFuncArgs& funcArgs)
 {
     if (funcArgs.sMultiArg.size())
     {
@@ -2070,7 +2020,7 @@ static std::string strfnc_sum(StringFuncArgs& funcArgs)
         return toString(nRet);
     }
 
-    return "\"\"";
+    return StringVector::empty_string();
 }
 
 
@@ -2079,10 +2029,10 @@ static std::string strfnc_sum(StringFuncArgs& funcArgs)
 /// function.
 ///
 /// \param funcArgs StringFuncArgs&
-/// \return std::string
+/// \return StringVector
 ///
 /////////////////////////////////////////////////
-static std::string strfnc_dectobase(StringFuncArgs& funcArgs)
+static StringVector strfnc_dectobase(StringFuncArgs& funcArgs)
 {
     StringView sView1 = funcArgs.sArg1.view();
     std::stringstream stream;
@@ -2126,10 +2076,10 @@ static std::string strfnc_dectobase(StringFuncArgs& funcArgs)
 /// function.
 ///
 /// \param funcArgs StringFuncArgs&
-/// \return std::string
+/// \return StringVector
 ///
 /////////////////////////////////////////////////
-static std::string strfnc_basetodec(StringFuncArgs& funcArgs)
+static StringVector strfnc_basetodec(StringFuncArgs& funcArgs)
 {
     StringView sView1 = funcArgs.sArg1.view();
     StringView sView2 = funcArgs.sArg2.view();
@@ -2167,12 +2117,12 @@ static std::string strfnc_basetodec(StringFuncArgs& funcArgs)
 /// all the same length.
 ///
 /// \param funcArgs StringFuncArgs&
-/// \return std::string
+/// \return StringVector
 ///
 /////////////////////////////////////////////////
-static std::string strfnc_justify(StringFuncArgs& funcArgs)
+static StringVector strfnc_justify(StringFuncArgs& funcArgs)
 {
-    std::string result;
+    StringVector result;
 
     // Set the default justification mode
     if (funcArgs.nArg1 == DEFAULT_NUM_ARG)
@@ -2214,12 +2164,9 @@ static std::string strfnc_justify(StringFuncArgs& funcArgs)
             sStr.append(rightSpace, ' ');
         }
 
-        // Append a comma
-        if (result.length())
-            result += NEWSTRING;
 
         // Append the string with the justified result
-        result += "\"" + sStr + "\"";
+        result.push_back(sStr);
     }
 
     return result;
@@ -2231,12 +2178,15 @@ static std::string strfnc_justify(StringFuncArgs& funcArgs)
 /// function.
 ///
 /// \param funcArgs StringFuncArgs&
-/// \return std::string
+/// \return StringVector
 ///
 /////////////////////////////////////////////////
-static std::string strfnc_getlasterror(StringFuncArgs& funcArgs)
+static StringVector strfnc_getlasterror(StringFuncArgs& funcArgs)
 {
-    return "\"" + errorTypeToString(getLastErrorType()) + "\"" + NEWSTRING + "\"" +getLastErrorMessage() + "\"";
+    StringVector sError;
+    sError.push_back(errorTypeToString(getLastErrorType()));
+    sError.push_back(getLastErrorMessage());
+    return sError;
 }
 
 
@@ -2245,10 +2195,10 @@ static std::string strfnc_getlasterror(StringFuncArgs& funcArgs)
 /// function.
 ///
 /// \param funcArgs StringFuncArgs&
-/// \return std::string
+/// \return StringVector
 ///
 /////////////////////////////////////////////////
-static std::string strfnc_getversioninfo(StringFuncArgs& funcArgs)
+static StringVector strfnc_getversioninfo(StringFuncArgs& funcArgs)
 {
     static std::string sBUILDDATE = std::string(AutoVersion::YEAR) + "-" + AutoVersion::MONTH + "-" + AutoVersion::DATE;
     static std::string sINTVERSION = toString((int)AutoVersion::MAJOR) + "."
@@ -2258,10 +2208,17 @@ static std::string strfnc_getversioninfo(StringFuncArgs& funcArgs)
     static std::string sINSTNAME = toString((int)AutoVersion::MAJOR) + toString((int)AutoVersion::MINOR) + toString((int)AutoVersion::BUILD)
         + (std::string(AutoVersion::STATUS_SHORT).find("rc") != std::string::npos ? AutoVersion::STATUS_SHORT : "");
 
-    return std::string("\"Version\"") + NEWSTRING + "\"" + sVersion + "\"" + NEWSTRING
-        + "\"BuildDate\"" + NEWSTRING + "\"" + sBUILDDATE + "\"" + NEWSTRING
-        + "\"FullVersion\"" + NEWSTRING + "\"" + sINTVERSION + "\"" + NEWSTRING
-        + "\"FileVersion\"" + NEWSTRING + "\"" + sINSTNAME + "\"";
+    StringVector sVersionInfo;
+    sVersionInfo.push_back("Version");
+    sVersionInfo.push_back(sVersion);
+    sVersionInfo.push_back("BuildDate");
+    sVersionInfo.push_back(sBUILDDATE);
+    sVersionInfo.push_back("FullVersion");
+    sVersionInfo.push_back(sINTVERSION);
+    sVersionInfo.push_back("FileVersion");
+    sVersionInfo.push_back(sINSTNAME);
+
+    return sVersionInfo;
 }
 
 

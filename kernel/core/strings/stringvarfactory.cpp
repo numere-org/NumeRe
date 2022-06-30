@@ -234,7 +234,7 @@ namespace NumeRe
                         break;
 
                     // Push back the current line and increment the component
-                    vRes.push_back(currentline);
+                    vRes.push_generic(currentline);
                     nCurrentComponent++;
                 }
             }
@@ -250,8 +250,8 @@ namespace NumeRe
     /// separate components by enlarging the dimension
     /// of the vector.
     ///
-    /// \param vStringVector StringVector&
-    /// \return void
+    /// \param vStringVector std::vector<StringVector>&
+    /// \return StringVector
     ///
     /// The components are evaluated and inserted into
     /// the original vector, replacing the original
@@ -259,45 +259,23 @@ namespace NumeRe
     /// which will enlarge the original vector by n-1
     /// new components.
     /////////////////////////////////////////////////
-    void StringVarFactory::expandStringVectorComponents(StringVector& vStringVector)
+    StringVector StringVarFactory::expandStringVectorComponents(std::vector<StringVector>& vStringVector)
     {
-        // Examine each vector component
-        for (size_t i = 0; i < vStringVector.size(); i++)
+        // If the vector contains only one element,
+        // then return it directly
+        if (vStringVector.size() == 1)
+            return vStringVector.front();
+
+        // Concatenate all embedded vectors to a single component
+        StringVector vRet = vStringVector.front();
+
+        for (size_t i = 1; i < vStringVector.size(); i++)
         {
-            std::string sComponent = vStringVector.getMasked(i);
-
-            // If the next argument is not equal to the current component itself
-            if (getNextArgument(sComponent, false) != sComponent)
-            {
-                // Store the first part of the multi-expression in the current component
-                std::string sNext = getNextArgument(sComponent, true);
-
-                if (sNext.front() == '"')
-                    vStringVector.getRef(i) = "\"" + toInternalString(sNext) + "\"";
-                else
-                    vStringVector.getRef(i) = sNext;
-
-                size_t nComponent = 1;
-
-                // As long as the component is not empty
-                while (sComponent.length())
-                {
-                    // Get the next argument and insert it after the
-                    // previous argument into the string vector
-                    sNext = getNextArgument(sComponent, true);
-
-                    if (sNext.front() == '"')
-                        vStringVector.insert(vStringVector.begin() + i + nComponent, "\"" + toInternalString(sNext) + "\"");
-                    else
-                        vStringVector.insert(vStringVector.begin() + i + nComponent, sNext);
-
-                    nComponent++;
-                }
-
-                // Jump over the already expanded components
-                i += nComponent;
-            }
+            vRet.insert(vRet.end(), vStringVector[i].begin(), vStringVector[i].end());
         }
+
+        // Return the concatenated result
+        return vRet;
     }
 
 

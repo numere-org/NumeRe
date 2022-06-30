@@ -154,19 +154,31 @@ class StringVector : public std::vector<std::string>
         bool getBooleanVectorized(size_t i) const;
         void assign(const StringVector& sVect);
         void assign(const std::vector<bool>& vect);
+        StringVector operator+(const std::string& sLiteral) const;
+        StringVector& operator+=(const std::string& sLiteral);
 
     public:
         StringVector();
+        StringVector(const std::string& sStr);
+        StringVector(const char* sStr);
+        StringVector(bool val);
         StringVector(const std::vector<std::string>& vect);
-        StringVector(const std::string& sLiteral);
         StringVector(const StringVector& vect);
         StringVector(const std::vector<bool>& vect);
         StringVector(size_t n, const std::string& sStr = std::string());
         StringVector(StringVector&& vect) = default;
+        static StringVector empty_string();
+        static StringVector convert_internal(const std::string& sInternal);
+        static StringVector convert_literal(const std::string& sLiteral);
         StringVector& operator=(const StringVector& sVect);
         StringVector& operator=(StringVector&& sVect) = default;
         StringVector& operator=(const std::vector<bool>& vect);
-        void push_back(const std::string& sLiteral);
+        void push_back(const std::string& sStr);
+        void push_back(const mu::value_type& vVal);
+        void push_back(size_t nVal);
+        void push_back(int nVal);
+        void push_back(bool nVal);
+        void push_generic(const std::string& sStr);
         bool is_string(size_t i) const;
         void convert_to_string(size_t i);
         StringView operator[](size_t i) const;
@@ -184,8 +196,6 @@ class StringVector : public std::vector<std::string>
         std::vector<bool> xor_f(const StringVector& sVect) const;
         StringVector operator+(const StringVector& sVect) const;
         StringVector& operator+=(const StringVector& sVect);
-        StringVector operator+(const std::string& sLiteral) const;
-        StringVector& operator+=(const std::string& sLiteral);
         StringVector& evalIfElse(const StringVector& sLogicals, const StringVector& sIfBranch, const StringVector& sElseBranch);
 };
 
@@ -241,7 +251,7 @@ struct StringFuncArgs
 /// \brief Defines the pointer to an arbitrary
 /// string function as StringFunc.
 /////////////////////////////////////////////////
-typedef std::string (*StringFunc)(StringFuncArgs&);
+typedef StringVector (*StringFunc)(StringFuncArgs&);
 
 
 /////////////////////////////////////////////////
@@ -323,7 +333,7 @@ struct StringResult
 
 	StringResult(const std::string& sRet, bool _bOnlyLogicals = false) : StringResult()
 	{
-		vResult.push_back(sRet);
+		vResult.push_generic(sRet);
 		vNoStringVal.push_back(sRet.find('"') == std::string::npos);
 		bOnlyLogicals = _bOnlyLogicals;
 	}
@@ -331,7 +341,7 @@ struct StringResult
 	StringResult(const std::string& sRet, mu::value_type* vals, int nvals) : StringResult()
 	{
 	    bOnlyLogicals = true;
-	    vResult.push_back(sRet);
+	    vResult.push_generic(sRet);
         vNoStringVal.resize(nvals, true);
         vNumericalValues.assign(vals, vals+nvals);
 	}

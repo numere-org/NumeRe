@@ -44,7 +44,7 @@ namespace NumeRe
 
         protected:
             StringVector evaluateStringVectors(std::string sLine);
-            void expandStringVectorComponents(StringVector& vStringVector);
+            StringVector expandStringVectorComponents(std::vector<StringVector>& vStringVector);
             void removeStringVectorVars();
             std::string createStringVectorVar(const std::vector<std::string>& vStringVector);
             bool isStringVectorVar(const std::string& sVarName) const;

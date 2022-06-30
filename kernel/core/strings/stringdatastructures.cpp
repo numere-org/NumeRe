@@ -189,12 +189,34 @@ StringVector::StringVector(const std::vector<std::string>& vect) : std::vector<s
 
 /////////////////////////////////////////////////
 /// \brief Create a StringVector instance from a
-/// string literal.
+/// string.
 ///
-/// \param sLiteral const std::string&
+/// \param sStr const std::string&
 ///
 /////////////////////////////////////////////////
-StringVector::StringVector(const std::string& sLiteral) : std::vector<std::string>(1, makeLocalString(sLiteral))
+StringVector::StringVector(const std::string& sStr) : std::vector<std::string>(1, sStr)
+{ }
+
+
+/////////////////////////////////////////////////
+/// \brief Create a StringVector instance from a
+/// string.
+///
+/// \param sStr const char*
+///
+/////////////////////////////////////////////////
+StringVector::StringVector(const char* sStr) : std::vector<std::string>(1, std::string(sStr))
+{ }
+
+
+/////////////////////////////////////////////////
+/// \brief Create a StringVector instance from a
+/// boolean.
+///
+/// \param sStr const std::string&
+///
+/////////////////////////////////////////////////
+StringVector::StringVector(bool val) : std::vector<std::string>(1, toString(val))
 { }
 
 
@@ -235,6 +257,48 @@ StringVector::StringVector(size_t n, const std::string& sStr) : std::vector<std:
 
 
 /////////////////////////////////////////////////
+/// \brief Static member function to create a
+/// StringVector with one component with zero
+/// length.
+///
+/// \return StringVector
+///
+/////////////////////////////////////////////////
+StringVector StringVector::empty_string()
+{
+    return convert_internal("");
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Static member function to create a
+/// StringVector instance from an internal string.
+///
+/// \param sInternal const std::string&
+/// \return StringVector
+///
+/////////////////////////////////////////////////
+StringVector StringVector::convert_internal(const std::string& sInternal)
+{
+    return StringVector("\"" + sInternal + "\"");
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Static member function to create a
+/// StringVector instance from a string literal.
+///
+/// \param sLiteral const std::string&
+/// \return StringVector
+///
+/////////////////////////////////////////////////
+StringVector StringVector::convert_literal(const std::string& sLiteral)
+{
+    return StringVector(makeLocalString(sLiteral));
+}
+
+
+/////////////////////////////////////////////////
 /// \brief Assignment operator overload for a
 /// StringVector instance.
 ///
@@ -265,16 +329,89 @@ StringVector& StringVector::operator=(const std::vector<bool>& vect)
 
 
 /////////////////////////////////////////////////
-/// \brief Append a string literal to the end of
-/// this vector.
+/// \brief Append a string to the end of this
+/// vector. Will be stored as local string.
 ///
-/// \param sLiteral const std::string&
+/// \param sStr const std::string&
 /// \return void
 ///
 /////////////////////////////////////////////////
-void StringVector::push_back(const std::string& sLiteral)
+void StringVector::push_back(const std::string& sStr)
 {
-    std::vector<std::string>::push_back(makeLocalString(sLiteral));
+    std::vector<std::string>::push_back("\"" + sStr + "\"");
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Append a mu::value_type to the end of
+/// this vector.
+///
+/// \param vVal const mu::value_type&
+/// \return void
+///
+/////////////////////////////////////////////////
+void StringVector::push_back(const mu::value_type& vVal)
+{
+    std::vector<std::string>::push_back(toString(vVal, 20));
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Append a size_t to the end of
+/// this vector.
+///
+/// \param nVal size_t
+/// \return void
+///
+/////////////////////////////////////////////////
+void StringVector::push_back(size_t nVal)
+{
+    std::vector<std::string>::push_back(toString(nVal));
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Append an int to the end of
+/// this vector.
+///
+/// \param nVal int
+/// \return void
+///
+/////////////////////////////////////////////////
+void StringVector::push_back(int nVal)
+{
+    std::vector<std::string>::push_back(toString(nVal));
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Append a boolean to the end of
+/// this vector.
+///
+/// \param nVal bool
+/// \return void
+///
+/////////////////////////////////////////////////
+void StringVector::push_back(bool nVal)
+{
+    std::vector<std::string>::push_back(toString(nVal));
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Append a generic string value to the
+/// end of this vector. Depending on the
+/// existence of surrounding quotation marks, it
+/// will be considered as local string or as a
+/// generic value.
+///
+/// \param sStr const std::string&
+/// \return void
+///
+/////////////////////////////////////////////////
+void StringVector::push_generic(const std::string& sStr)
+{
+    std::vector<std::string>::push_back(makeLocalString(sStr));
 }
 
 

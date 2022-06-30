@@ -111,7 +111,7 @@ namespace NumeRe
         {
             // Extract the argument of the current found function and process it
             StringView sFunctionArgument = getFunctionArgumentList(sFuncName, sLine, nStartPosition, nEndPosition);
-            s_vect vReturnValues;
+            std::vector<s_vect> vReturnValues;
             StringFuncArgs stringArgs;
             stringArgs.opt = &NumeReKernel::getInstance()->getSettings();
             bool bLogicalOnly = false;
@@ -130,7 +130,7 @@ namespace NumeRe
             {
                 if (sFuncName == "to_string(" && !isStringExpression(sFunctionArgument.to_string()))
                 {
-                    sStringArg1.push_back(sFunctionArgument.to_string());
+                    sStringArg1.push_generic(sFunctionArgument.to_string());
                     nMaxArgs = 1;
                 }
                 else
@@ -190,17 +190,11 @@ namespace NumeRe
                     vReturnValues = callFunctionParallel(funcHandle, sStringArg1, sStringArg2, sStringArg3, nIntArg1, nIntArg2, dValArg, nMaxArgs);
             }
 
-            // copy the return values to the final variable
-            string sFuncReturnValue = "";
-
-            g_logger.info("expandStringVectorComponents");
-            // Expand the string vector component, if needed
-            expandStringVectorComponents(vReturnValues);
-
             g_logger.info("createStringVectorVar");
             // Create a string vector variable for the function output
-            sFuncReturnValue = createStringVectorVar(vReturnValues);
+            std::string sFuncReturnValue = createStringVectorVar(expandStringVectorComponents(vReturnValues));
 
+            g_logger.info("sLine.replace");
             // replace the function with the return value
             sLine.replace(nStartPosition, nEndPosition + 1 - nStartPosition, sFuncReturnValue);
 
@@ -401,10 +395,10 @@ namespace NumeRe
             // As long as the function argument has a length,
             // get the next argument and store it in the vector
             while (sFuncArgument.length())
-                sArg.push_back(removeQuotationMarks(getNextArgument(sFuncArgument, true)));
+                sArg.push_generic(removeQuotationMarks(getNextArgument(sFuncArgument, true)));
         }
         else
-            sArg.push_back(removeQuotationMarks(sFuncArgument));
+            sArg.push_generic(removeQuotationMarks(sFuncArgument));
 
         // Declare argument as numerical only
         bLogicalOnly = true;
@@ -760,19 +754,19 @@ namespace NumeRe
     /// \param nIntArg2 n_vect&
     /// \param dValArg d_vect&
     /// \param nMaxArgs size_t
-    /// \return s_vect
+    /// \return std::vector<s_vect>
     ///
     /////////////////////////////////////////////////
-    s_vect StringFuncHandler::callFunction(StringFuncHandle funcHandle, s_vect& sStringArg1, s_vect& sStringArg2, s_vect& sStringArg3, n_vect& nIntArg1, n_vect& nIntArg2, d_vect& dValArg, size_t nMaxArgs)
+    std::vector<s_vect> StringFuncHandler::callFunction(StringFuncHandle funcHandle, s_vect& sStringArg1, s_vect& sStringArg2, s_vect& sStringArg3, n_vect& nIntArg1, n_vect& nIntArg2, d_vect& dValArg, size_t nMaxArgs)
     {
         StringFuncArgs stringArgs;
         stringArgs.opt = &NumeReKernel::getInstance()->getSettings();
 
         // Shortcut for empty function arguments
         if (!nMaxArgs)
-            return s_vect(1, funcHandle.fHandle(stringArgs));
+            return std::vector<s_vect>(1, funcHandle.fHandle(stringArgs));
 
-        s_vect vReturnValues(nMaxArgs);
+        std::vector<s_vect> vReturnValues(nMaxArgs);
 
         for (size_t i = 0; i < nMaxArgs; i++)
         {
@@ -801,7 +795,7 @@ namespace NumeRe
             else
                 stringArgs.dArg1 = 0.0;
 
-            vReturnValues.getRef(i) = funcHandle.fHandle(stringArgs);
+            vReturnValues[i] = funcHandle.fHandle(stringArgs);
         }
 
         return vReturnValues;
@@ -821,12 +815,12 @@ namespace NumeRe
     /// \param nIntArg2 n_vect&
     /// \param dValArg d_vect&
     /// \param nMaxArgs size_t
-    /// \return s_vect
+    /// \return std::vector<s_vect>
     ///
     /////////////////////////////////////////////////
-    s_vect StringFuncHandler::callFunctionParallel(StringFuncHandle funcHandle, s_vect& sStringArg1, s_vect& sStringArg2, s_vect& sStringArg3, n_vect& nIntArg1, n_vect& nIntArg2, d_vect& dValArg, size_t nMaxArgs)
+    std::vector<s_vect> StringFuncHandler::callFunctionParallel(StringFuncHandle funcHandle, s_vect& sStringArg1, s_vect& sStringArg2, s_vect& sStringArg3, n_vect& nIntArg1, n_vect& nIntArg2, d_vect& dValArg, size_t nMaxArgs)
     {
-        s_vect vReturnValues(nMaxArgs);
+        std::vector<s_vect> vReturnValues(nMaxArgs);
 
         StringFuncArgs stringArgs;
         stringArgs.opt = &NumeReKernel::getInstance()->getSettings();
@@ -859,7 +853,7 @@ namespace NumeRe
             else
                 stringArgs.dArg1 = 0.0;
 
-            vReturnValues.getRef(i) = funcHandle.fHandle(stringArgs);
+            vReturnValues[i] = funcHandle.fHandle(stringArgs);
         }
 
         return vReturnValues;
@@ -880,12 +874,12 @@ namespace NumeRe
     /// \param nIntArg2 n_vect&
     /// \param dValArg d_vect&
     /// \param nMaxArgs size_t
-    /// \return s_vect
+    /// \return std::vector<s_vect>
     ///
     /////////////////////////////////////////////////
-    s_vect StringFuncHandler::callMultiFunction(StringFuncHandle funcHandle, s_vect& sStringArg1, s_vect& sStringArg2, s_vect& sStringArg3, n_vect& nIntArg1, n_vect& nIntArg2, d_vect& dValArg, size_t nMaxArgs)
+    std::vector<s_vect> StringFuncHandler::callMultiFunction(StringFuncHandle funcHandle, s_vect& sStringArg1, s_vect& sStringArg2, s_vect& sStringArg3, n_vect& nIntArg1, n_vect& nIntArg2, d_vect& dValArg, size_t nMaxArgs)
     {
-        s_vect vReturnValues(nMaxArgs);
+        std::vector<s_vect> vReturnValues(nMaxArgs);
 
         StringFuncArgs stringArgs;
         stringArgs.opt = &NumeReKernel::getInstance()->getSettings();
@@ -917,7 +911,7 @@ namespace NumeRe
             else
                 stringArgs.dArg1 = 0.0;
 
-            vReturnValues.getRef(i) = funcHandle.fHandle(stringArgs);
+            vReturnValues[i] = funcHandle.fHandle(stringArgs);
         }
 
         g_logger.info("Leave callMultiFunction");
@@ -939,12 +933,12 @@ namespace NumeRe
     /// \param nIntArg2 n_vect&
     /// \param dValArg d_vect&
     /// \param nMaxArgs size_t
-    /// \return s_vect
+    /// \return std::vector<s_vect>
     ///
     /////////////////////////////////////////////////
-    s_vect StringFuncHandler::callMultiFunctionParallel(StringFuncHandle funcHandle, s_vect& sStringArg1, s_vect& sStringArg2, s_vect& sStringArg3, n_vect& nIntArg1, n_vect& nIntArg2, d_vect& dValArg, size_t nMaxArgs)
+    std::vector<s_vect> StringFuncHandler::callMultiFunctionParallel(StringFuncHandle funcHandle, s_vect& sStringArg1, s_vect& sStringArg2, s_vect& sStringArg3, n_vect& nIntArg1, n_vect& nIntArg2, d_vect& dValArg, size_t nMaxArgs)
     {
-        s_vect vReturnValues(nMaxArgs);
+        std::vector<s_vect> vReturnValues(nMaxArgs);
 
         StringFuncArgs stringArgs;
         stringArgs.opt = &NumeReKernel::getInstance()->getSettings();
@@ -977,7 +971,7 @@ namespace NumeRe
             else
                 stringArgs.dArg1 = 0.0;
 
-            vReturnValues.getRef(i) = funcHandle.fHandle(stringArgs);
+            vReturnValues[i] = funcHandle.fHandle(stringArgs);
         }
 
         return vReturnValues;

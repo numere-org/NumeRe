@@ -1650,7 +1650,7 @@ namespace NumeRe
                 else if (containsStringVectorVars(sValue) || _parser.ContainsVectorVars(sValue, false))
                     valueStack.push(StringVector(evaluateStringVectors(sValue))); // TODO: Improve this
                 else
-                    valueStack.push(StringVector(sValue));
+                    valueStack.push(StringVector::convert_literal(sValue));
             }
             else
             {
@@ -1879,7 +1879,7 @@ namespace NumeRe
 
             while (sLine.length())
             {
-                strRes.vResult.push_back(getNextArgument(sLine, true));
+                strRes.vResult.push_generic(getNextArgument(sLine, true));
                 strRes.vNoStringVal.push_back(false);
             }
 
@@ -2035,7 +2035,7 @@ namespace NumeRe
 
             while (strExpr.sLine.length())
             {
-                strRes.vResult.push_back(getNextArgument(strExpr.sLine, true));
+                strRes.vResult.push_generic(getNextArgument(strExpr.sLine, true));
                 strRes.vNoStringVal.push_back(false);
             }
 
