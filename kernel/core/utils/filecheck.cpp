@@ -93,7 +93,7 @@ bool is_file(std::string sPathname)
         return false;
 
     // Check if there is valid file name
-    if (!isalpha(sPathname[sPathname.find_last_of(".") - 1]))
+    if (!isalnum(sPathname[sPathname.find_last_of(".") - 1]))
         return false;
 
     return true;

@@ -2259,8 +2259,8 @@ static std::map<std::string, StringFuncHandle> getStringFuncHandles()
     mHandleTable["is_blank"]            = StringFuncHandle(STR, strfnc_isblank, false);
     mHandleTable["is_cntrl"]            = StringFuncHandle(STR, strfnc_iscntrl, false);
     mHandleTable["is_digit"]            = StringFuncHandle(STR, strfnc_isdigit, false);
-    mHandleTable["is_dir"]              = StringFuncHandle(STR, strfnc_isdir, false);
-    mHandleTable["is_file"]             = StringFuncHandle(STR, strfnc_isfile, false);
+    mHandleTable["is_dirpath"]          = StringFuncHandle(STR, strfnc_isdir, false);
+    mHandleTable["is_filepath"]         = StringFuncHandle(STR, strfnc_isfile, false);
     mHandleTable["is_graph"]            = StringFuncHandle(STR, strfnc_isgraph, false);
     mHandleTable["is_lower"]            = StringFuncHandle(STR, strfnc_islower, false);
     mHandleTable["is_print"]            = StringFuncHandle(STR, strfnc_isprint, false);
