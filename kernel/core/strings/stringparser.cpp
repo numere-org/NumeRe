@@ -1492,14 +1492,14 @@ namespace NumeRe
         finalizeStack(rpnStack);
 
         // Dump the stack
-        std::string sDump;
-
-        for (size_t i = 0; i < rpnStack.size(); i++)
-        {
-            sDump += "[" + rpnStack[i].m_data.to_string() + "]";
-        }
-
-        g_logger.info("RPNSTACK = " + sDump);
+        //std::string sDump;
+        //
+        //for (size_t i = 0; i < rpnStack.size(); i++)
+        //{
+        //    sDump += "[" + rpnStack[i].m_data.to_string() + "]";
+        //}
+        //
+        //g_logger.info("RPNSTACK = " + sDump);
 
         // Nothing more to do. Return the stack
         return rpnStack;
@@ -1743,7 +1743,7 @@ namespace NumeRe
             //
             //stackTop.pop_back();
             //g_logger.info("STACK.TOP() = " + stackTop);
-            g_logger.info("STACK.TOP() = " + valueStack.top().getRef(0).substr(0, 100));
+            //g_logger.info("STACK.TOP() = " + valueStack.top().getRef(0).substr(0, 100));
         }
 
         // return the value on top of the stack
@@ -1785,7 +1785,6 @@ namespace NumeRe
         for (size_t i = 0; i < res.vResult.size(); i++)
         {
             res.vNoStringVal[i] = !res.vResult.is_string(i);
-            //g_logger.info("STRRES = " + res.vResult.getRef(i));
 
             if (!res.vNoStringVal[i])
                 res.bOnlyLogicals = false;
@@ -1868,7 +1867,6 @@ namespace NumeRe
     {
         StringResult strRes;
         bool bObjectContainsTablesOrClusters = false;
-        g_logger.info("Enter eval. sLine = " + sLine.substr(0, 100));
 
         // If the current line is a simple string,
         // Strip the surrounding spaces and return directly
@@ -1985,7 +1983,6 @@ namespace NumeRe
         if (strExpr.sAssignee.length() && _data.containsTablesOrClusters(strExpr.sAssignee))
             bObjectContainsTablesOrClusters = true;
 
-        g_logger.info("getDataForString");
         // Get the contents of "string()", "data()" and the other caches
         strExpr.sLine = getDataForString(strExpr.sLine, 0);
 
@@ -2243,11 +2240,9 @@ namespace NumeRe
             return StringResult(strExpr.sLine);
         }
 
-        g_logger.info("numToString");
         // Apply the "#" parser to the string
         strExpr.sLine = numToString(strExpr.sLine);
 
-        g_logger.info("createAndEvaluateStack");
         // Evaluate the remaining expression
         strRes = createAndEvaluateStack(strExpr.sLine);
 
@@ -2255,12 +2250,10 @@ namespace NumeRe
         if (!strRes.vResult.size())
             throw SyntaxError(SyntaxError::STRING_ERROR, strExpr.sLine, SyntaxError::invalid_position);
 
-        g_logger.info("storeStringResults");
         // store the string results in the variables or inb "string()" respectively
         if (!storeStringResults(strRes, strExpr.sAssignee))
             throw SyntaxError(SyntaxError::STRING_ERROR, strExpr.sLine, SyntaxError::invalid_position);
 
-        g_logger.info("Return strRes");
         // Return the evaluated string command line
         return strRes;
     }

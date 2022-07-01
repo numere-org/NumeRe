@@ -190,11 +190,9 @@ namespace NumeRe
                     vReturnValues = callFunctionParallel(funcHandle, sStringArg1, sStringArg2, sStringArg3, nIntArg1, nIntArg2, dValArg, nMaxArgs);
             }
 
-            g_logger.info("createStringVectorVar");
             // Create a string vector variable for the function output
             std::string sFuncReturnValue = createStringVectorVar(expandStringVectorComponents(vReturnValues));
 
-            g_logger.info("sLine.replace");
             // replace the function with the return value
             sLine.replace(nStartPosition, nEndPosition + 1 - nStartPosition, sFuncReturnValue);
 
@@ -914,7 +912,6 @@ namespace NumeRe
             vReturnValues[i] = funcHandle.fHandle(stringArgs);
         }
 
-        g_logger.info("Leave callMultiFunction");
         return vReturnValues;
     }
 
