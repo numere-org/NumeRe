@@ -1415,7 +1415,7 @@ void TableViewer::SetData(NumeRe::Container<std::string>& _stringTable)
             }
 
             if (_stringTable.get(i, j).length())
-                this->SetCellValue(i, j, _stringTable.get(i, j));
+                this->SetCellValue(i, j, replaceControlCharacters(_stringTable.get(i, j)));
         }
     }
 

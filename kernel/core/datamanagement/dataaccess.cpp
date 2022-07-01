@@ -444,6 +444,7 @@ void replaceDataEntities(string& sLine, const string& sEntity, MemoryManager& _d
 	vector<mu::value_type> vEntityContents;
 	string sEntityReplacement = "";
 	string sEntityStringReplacement = "";
+	NumeRe::StringParser& _stringParser = NumeReKernel::getInstance()->getStringParser();
 
 
 	// handle MAF methods. sEntity already has "(" at its back
@@ -546,7 +547,7 @@ void replaceDataEntities(string& sLine, const string& sEntity, MemoryManager& _d
             for (size_t j = 0; j < _idx.col.size(); j++)
                 vStringContents.push_back("\"" + _data.getHeadLineElement(_idx.col[j], sEntityName) + "\"");
 
-            sEntityStringReplacement = NumeReKernel::getInstance()->getStringParser().createTempStringVectorVar(vStringContents);
+            sEntityStringReplacement = _stringParser.createTempStringVectorVar(vStringContents);
 		}
 		else if (!isCluster)
 		{
@@ -554,7 +555,7 @@ void replaceDataEntities(string& sLine, const string& sEntity, MemoryManager& _d
 			// create a vector containing the data
 #warning NOTE (numere#1#08/17/21): Might be the source of some bytecode issues
 			if (/*options & INSERT_STRINGS &&*/ _data.getType(_idx.col, sEntityName) > TableColumn::STRINGLIKE)
-                sEntityStringReplacement = NumeReKernel::getInstance()->getStringParser().createTempStringVectorVar(_data.getElementMixed(_idx.row, _idx.col, sEntityName));
+                sEntityStringReplacement = _stringParser.createTempStringVectorVar(_data.getElementMixed(_idx.row, _idx.col, sEntityName));
             else
                 vEntityContents = _data.getElement(_idx.row, _idx.col, sEntityName);
 		}
@@ -582,7 +583,7 @@ void replaceDataEntities(string& sLine, const string& sEntity, MemoryManager& _d
                     if (cluster.getType(_idx.row.front()) == NumeRe::ClusterItem::ITEMTYPE_DOUBLE)
                         vEntityContents.push_back(cluster.getDouble(_idx.row.front()));
                     else
-                        sEntityStringReplacement = cluster.getString(_idx.row.front());
+                        sEntityStringReplacement = _stringParser.createTempStringVectorVar({cluster.getParserString(_idx.row.front())});
                 }
                 else
                 {
@@ -596,10 +597,10 @@ void replaceDataEntities(string& sLine, const string& sEntity, MemoryManager& _d
                         if (cluster.getType(_idx.row[i]) == NumeRe::ClusterItem::ITEMTYPE_DOUBLE)
                             vStringContents.push_back(toCmdString(cluster.getDouble(_idx.row[i])));
                         else
-                            vStringContents.push_back(cluster.getString(_idx.row[i]));
+                            vStringContents.push_back(cluster.getParserString(_idx.row[i]));
                     }
 
-                    sEntityStringReplacement = NumeReKernel::getInstance()->getStringParser().createTempStringVectorVar(vStringContents);
+                    sEntityStringReplacement = _stringParser.createTempStringVectorVar(vStringContents);
                 }
             }
 		}
@@ -957,12 +958,27 @@ static void handleMafDataAccess(string& sLine, const string& sMafAccess, Parser&
 	if (!NumeReKernel::getInstance()->getStringParser().isStringExpression(sMafVectorName))
     {
         // Set the vector variable with its value for the parser
-        _parser.SetVectorVar(sMafVectorName, MafDataAccess(_data, getMafFromAccessString(sMafAccess), sMafAccess.substr(0, sMafAccess.find('(')), createMafDataAccessString(sMafAccess, _parser)));
+        _parser.SetVectorVar(sMafVectorName,
+                             MafDataAccess(_data,
+                                           getMafFromAccessString(sMafAccess),
+                                           sMafAccess.substr(0, sMafAccess.find('(')),
+                                           createMafDataAccessString(sMafAccess, _parser)));
 
         // Create a cached access and store it
-        mu::CachedDataAccess _access = {sMafAccess, sMafVectorName, sMafAccess.substr(0, sMafAccess.find('(')), mu::CachedDataAccess::IS_TABLE_METHOD};
+        mu::CachedDataAccess _access = {sMafAccess,
+                                        sMafVectorName,
+                                        sMafAccess.substr(0, sMafAccess.find('(')),
+                                        mu::CachedDataAccess::IS_TABLE_METHOD};
         _parser.CacheCurrentAccess(_access);
+    }
+    else
+    {
+        NumeRe::StringParser& _stringParser = NumeReKernel::getInstance()->getStringParser();
 
+        if (sMafVectorName.front() == '{')
+            sMafVectorName = _stringParser.createTempStringVectorVar(getAllArguments(sMafVectorName.substr(1, sMafVectorName.length()-2)));
+        else
+            sMafVectorName = _stringParser.createTempStringVectorVar({sMafVectorName});
     }
 
 	// Replace every occurence
@@ -973,6 +989,7 @@ static void handleMafDataAccess(string& sLine, const string& sMafAccess, Parser&
 			nPos++;
 			continue;
 		}
+
 		sLine.replace(nPos, sMafAccess.length(), sMafVectorName);
 	}
 }
@@ -994,12 +1011,16 @@ static string createMafDataAccessString(const string& sAccessString, Parser& _pa
 
 	if (sAccessString.find(".grid") != string::npos)
 		sDataMaf += "grid";
+
 	if (sAccessString.find(".cols") != string::npos)
 		sDataMaf += "cols";
+
 	if (sAccessString.find(".lines") != string::npos)
 		sDataMaf += "lines";
+
 	if (sAccessString.find(".rows") != string::npos)
 		sDataMaf += "lines";
+
 	if (sAccessString.find(".every(") != string::npos)
 		sDataMaf += createEveryDefinition(sAccessString, _parser);
 
@@ -1056,10 +1077,13 @@ static string getMafAccessString(const string& sLine, const string& sEntity)
 		{
 			if (sLine[i] == '(' || sLine[i] == '[' || sLine[i] == '{')
 				i += getMatchingParenthesis(sLine.substr(i)) + 1;
+
 			if (i >= sLine.length())
 				return sLine.substr(nPos);
+
 			if (sDelim.find(sLine[i]) != string::npos)
 				return sLine.substr(nPos, i - nPos);
+
 			if (i + 1 == sLine.length())
 				return sLine.substr(nPos, i - nPos + 1);
 		}
@@ -1154,7 +1178,19 @@ static string createEveryDefinition(const string& sLine, Parser& _parser)
 static std::string tableMethod_aliasof(const std::string& sTableName, std::string sMethodArguments)
 {
     // Might be necessary to resolve the contents of the reference
-    getDataElements(sMethodArguments, NumeReKernel::getInstance()->getParser(), NumeReKernel::getInstance()->getMemoryManager(), NumeReKernel::getInstance()->getSettings());
+    getDataElements(sMethodArguments,
+                    NumeReKernel::getInstance()->getParser(),
+                    NumeReKernel::getInstance()->getMemoryManager(),
+                    NumeReKernel::getInstance()->getSettings());
+
+    if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sMethodArguments))
+    {
+        std::string sDummy;
+        NumeRe::StringParser::StringParserRetVal res = NumeReKernel::getInstance()->getStringParser().evalAndFormat(sMethodArguments, sDummy, true);
+
+        if (res == NumeRe::StringParser::STRING_NUMERICAL)
+            sMethodArguments = "\"\"";
+    }
 
     NumeReKernel::getInstance()->getMemoryManager().addReference(sTableName, sMethodArguments.substr(1, sMethodArguments.length()-2));
 
@@ -1175,9 +1211,12 @@ static std::string tableMethod_convert(const std::string& sTableName, std::strin
     std::string sColumns = getNextArgument(sMethodArguments, true);
 
     // Might be necessary to resolve the contents of columns and conversions
-    getDataElements(sColumns, NumeReKernel::getInstance()->getParser(), NumeReKernel::getInstance()->getMemoryManager(), NumeReKernel::getInstance()->getSettings());
+    getDataElements(sColumns,
+                    NumeReKernel::getInstance()->getParser(),
+                    NumeReKernel::getInstance()->getMemoryManager(),
+                    NumeReKernel::getInstance()->getSettings());
 
-    if (containsStrings(sMethodArguments))
+    if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sMethodArguments))
     {
         std::string sDummy;
         sMethodArguments += " -nq";
@@ -1209,7 +1248,10 @@ static std::string tableMethod_convert(const std::string& sTableName, std::strin
 static std::string tableMethod_typeof(const std::string& sTableName, std::string sMethodArguments)
 {
     // Might be necessary to resolve the contents of columns and conversions
-    getDataElements(sMethodArguments, NumeReKernel::getInstance()->getParser(), NumeReKernel::getInstance()->getMemoryManager(), NumeReKernel::getInstance()->getSettings());
+    getDataElements(sMethodArguments,
+                    NumeReKernel::getInstance()->getParser(),
+                    NumeReKernel::getInstance()->getMemoryManager(),
+                    NumeReKernel::getInstance()->getSettings());
 
     int nResults = 0;
     NumeReKernel::getInstance()->getParser().SetExpr(sMethodArguments);
@@ -1248,12 +1290,23 @@ static std::string tableMethod_typeof(const std::string& sTableName, std::string
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Realizes the "describe()" method.
+///
+/// \param sTableName const std::string&
+/// \param sMethodArguments std::string
+/// \return std::string
+///
+/////////////////////////////////////////////////
 static std::string tableMethod_annotate(const std::string& sTableName, std::string sMethodArguments)
 {
     // Might be necessary to resolve the contents of columns and conversions
-    getDataElements(sMethodArguments, NumeReKernel::getInstance()->getParser(), NumeReKernel::getInstance()->getMemoryManager(), NumeReKernel::getInstance()->getSettings());
+    getDataElements(sMethodArguments,
+                    NumeReKernel::getInstance()->getParser(),
+                    NumeReKernel::getInstance()->getMemoryManager(),
+                    NumeReKernel::getInstance()->getSettings());
 
-    if (containsStrings(sMethodArguments))
+    if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sMethodArguments))
     {
         std::string sDummy;
         sMethodArguments += " -nq";

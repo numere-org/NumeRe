@@ -2975,24 +2975,24 @@ static void OprtRplc_setup(map<string, string>& mOprtRplc)
 {
     mOprtRplc["("] = "[";
     mOprtRplc[")"] = "]";
-    mOprtRplc[":"] = "~";
+    mOprtRplc[":"] = "~c~";
     mOprtRplc[","] = "_";
     mOprtRplc["."] = "_";
-    mOprtRplc["+"] = "\\p\\";
-    mOprtRplc["-"] = "\\m\\";
-    mOprtRplc["*"] = "\\ml\\";
-    mOprtRplc["/"] = "\\d\\";
-    mOprtRplc["^"] = "\\e\\";
-    mOprtRplc["{"] = "\\ob\\";
-    mOprtRplc["}"] = "\\cb\\";
-    mOprtRplc["&"] = "\\a\\";
-    mOprtRplc["|"] = "\\o\\";
-    mOprtRplc["%"] = "\\md\\";
-    mOprtRplc["!"] = "\\n\\";
-    mOprtRplc["="] = "\\eq\\";
-    mOprtRplc[">"] = "\\g\\";
-    mOprtRplc["<"] = "\\l\\";
-    mOprtRplc["?"] = "\\q\\";
+    mOprtRplc["+"] = "~p~";
+    mOprtRplc["-"] = "~m~";
+    mOprtRplc["*"] = "~ml~";
+    mOprtRplc["/"] = "~d~";
+    mOprtRplc["^"] = "~e~";
+    mOprtRplc["{"] = "~ob~";
+    mOprtRplc["}"] = "~cb~";
+    mOprtRplc["&"] = "~a~";
+    mOprtRplc["|"] = "~o~";
+    mOprtRplc["%"] = "~md~";
+    mOprtRplc["!"] = "~n~";
+    mOprtRplc["="] = "~eq~";
+    mOprtRplc[">"] = "~g~";
+    mOprtRplc["<"] = "~l~";
+    mOprtRplc["?"] = "~q~";
 }
 
 

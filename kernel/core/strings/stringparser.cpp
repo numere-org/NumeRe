@@ -22,6 +22,7 @@
 #include <algorithm>
 
 #include "../utils/timer.hpp"
+#include "../structures.hpp"
 
 extern value_type vAns;
 
@@ -78,7 +79,7 @@ namespace NumeRe
         {
             // Check for arguments to parse and
             // get the indices afterwards
-            Indices _idx = getIndices("string(" + parseStringsInIndices(getFunctionArgumentList("string(", sLine, n_pos, nEndPosition)) + ")", _parser, _data, _option);
+            Indices _idx = getIndices("string(" + parseStringsInIndices(getFunctionArgumentList("string(", sLine, n_pos, nEndPosition).to_string()) + ")", _parser, _data, _option);
 
             // Pre-process the indices
             if (_idx.col.isOpenEnd())
@@ -211,7 +212,7 @@ namespace NumeRe
 
                 // Convert the strings to doubles
                 for (size_t i = 0; i < strRes.vResult.size(); i++)
-                    vIndices.push_back(StrToDb(strRes.vResult[i]));
+                    vIndices.push_back(StrToDb(strRes.vResult[i].to_string()));
 
                 // Create a temporary vector
                 if (sParsedIndices.length())
@@ -222,9 +223,9 @@ namespace NumeRe
             else
             {
                 if (sParsedIndices.length())
-                    sParsedIndices += ", " + strRes.vResult[0];
+                    sParsedIndices += ", " + strRes.vResult[0].to_string();
                 else
-                    sParsedIndices = strRes.vResult[0];
+                    sParsedIndices = strRes.vResult[0].to_string();
             }
         }
 
@@ -279,7 +280,9 @@ namespace NumeRe
             }
             else
             {
-                sData.replace(nStartPosition-nStartPos+sOccurence.length(), nEndPosition-nStartPosition-sOccurence.length(), parseStringsInIndices(getFunctionArgumentList(sOccurence, sLine, nStartPosition, nEndPosition)));
+                sData.replace(nStartPosition-nStartPos+sOccurence.length(),
+                              nEndPosition-nStartPosition-sOccurence.length(),
+                              parseStringsInIndices(getFunctionArgumentList(sOccurence, sLine, nStartPosition, nEndPosition).to_string()));
 
                 // Get the data and parse string expressions
                 replaceDataEntities(sData, sOccurence, _data, _parser, _option, REPLACE_NAN | INSERT_STRINGS);
@@ -390,7 +393,7 @@ namespace NumeRe
                             // result into a string
                             for (size_t i = 0; i < strRes.vResult.size(); i++)
                             {
-                                strRes.vResult[i] = addQuotationMarks(strRes.vResult[i]);
+                                strRes.vResult.convert_to_string(i);
                             }
 
                             // Create a vector variable from the return value
@@ -500,7 +503,7 @@ namespace NumeRe
                     // Add the needed quotation marks
                     for (size_t i = 0; i < strRes.vResult.size(); i++)
                     {
-                        strRes.vResult[i] = addQuotationMarks(strRes.vResult[i]);
+                        strRes.vResult.convert_to_string(i);
                     }
 
                     // Create a new string vector var, append it to the string and continue
@@ -609,7 +612,7 @@ namespace NumeRe
                     || (_idx.col[n] == VectorIndex::INVALID))
                     break;
 
-                _data.setHeadLineElement(_idx.col[n], sTableName, removeQuotationMarks(maskControlCharacters(strRes.vResult[n])));
+                _data.setHeadLineElement(_idx.col[n], sTableName, strRes.vResult[n].to_string());
             }
 
             nCurrentComponent = nStrings;
@@ -631,19 +634,19 @@ namespace NumeRe
             for (size_t i = nCurrentComponent; i < strRes.vResult.size(); i++)
             {
                 // Set expression and evaluate it (not efficient but currently necessary)
-                if (strRes.vResult[i].front() == '"')
+                if (strRes.vResult.is_string(i))
                 {
                     // Special case: only one single value
                     if (_idx.row.size() == 1 && _idx.col.size() == 1)
                     {
-                        cluster.setString(_idx.row.front(), strRes.vResult[i]);
+                        cluster.setString(_idx.row.front(), strRes.vResult[i].to_string());
                         break;
                     }
 
                     if (_idx.row[nthComponent] == VectorIndex::INVALID)
                         break;
 
-                    cluster.setString(_idx.row[nthComponent], strRes.vResult[i]);
+                    cluster.setString(_idx.row[nthComponent], strRes.vResult[i].to_string());
                     nthComponent++;
                 }
                 else
@@ -693,14 +696,14 @@ namespace NumeRe
             for (size_t i = nCurrentComponent; i < strRes.vResult.size(); i++)
             {
                 // Set expression and evaluate it (not efficient but currently necessary)
-                if (strRes.vResult[i].front() == '"')
+                if (strRes.vResult.is_string(i))
                 {
                     if (_idx.row.size() == 1 && _idx.col.size() >= 1)
                     {
                         if (_idx.col[nthComponent] == VectorIndex::INVALID)
                             break;
 
-                        _data.writeToTable(_idx.row.front(), _idx.col[nthComponent], sTableName, strRes.vResult[i]);
+                        _data.writeToTable(_idx.row.front(), _idx.col[nthComponent], sTableName, strRes.vResult[i].to_string());
                     }
                     else if (_idx.row.size() > 1 && _idx.col.size() == 1)
                     {
@@ -710,7 +713,7 @@ namespace NumeRe
                         if (_idx.row[nthComponent] == VectorIndex::INVALID)
                             break;
 
-                        _data.writeToTable(_idx.row[nthComponent], _idx.col.front(), sTableName, strRes.vResult[i]);
+                        _data.writeToTable(_idx.row[nthComponent], _idx.col.front(), sTableName, strRes.vResult[i].to_string());
                     }
 
                     nthComponent++;
@@ -778,7 +781,7 @@ namespace NumeRe
             if (nCurrentComponent == nStrings)
                 return;
 
-            _data.writeString(removeQuotationMarks(maskControlCharacters(vFinal[nCurrentComponent])), _idx.row[i], _idx.col.front());
+            _data.writeString(removeQuotationMarks(vFinal[nCurrentComponent]), _idx.row[i], _idx.col.front());
             nCurrentComponent++;
         }
     }
@@ -840,7 +843,7 @@ namespace NumeRe
                     if (nCurrentComponent >= nStrings)
                         setStringValue(sObject, "");
                     else
-                        setStringValue(sObject, removeQuotationMarks(maskControlCharacters(strRes.vResult[nCurrentComponent])));
+                        setStringValue(sObject, strRes.vResult[nCurrentComponent].to_string());
                     nCurrentComponent++;
                 }
                 catch (...)
@@ -929,7 +932,7 @@ namespace NumeRe
                     try
                     {
                         // Create a new string variable
-                        setStringValue(sObject, removeQuotationMarks(maskControlCharacters(strRes.vResult[nCurrentComponent])));
+                        setStringValue(sObject, strRes.vResult[nCurrentComponent].to_string());
                         nCurrentComponent++;
                     }
                     catch (...)
@@ -962,7 +965,7 @@ namespace NumeRe
         NumeRe::Cluster& ans = NumeReKernel::getInstance()->getAns();
         ans.clear();
 
-        std::vector<std::string>& vFinal = StrRes.vResult;
+        s_vect& vFinal = StrRes.vResult;
         std::vector<bool>& vIsNoStringValue = StrRes.vNoStringVal;
 
         // Catch the cases, where the results are
@@ -974,17 +977,16 @@ namespace NumeRe
             else
             {
                 for (size_t i = 0; i < vFinal.size(); i++)
-                    sLine += vFinal[i] + ",";
+                    sLine += vFinal.getRef(i) + ",";
 
                 sLine.pop_back();
-
             }
 
             return sLine;
         }
 
         std::string sConsoleOut;
-        std::string sCurrentComponent;
+        //std::string sCurrentComponent;
 
         if (parserFlags & PEEK || !(NumeReKernel::bSupressAnswer || bSilent))
             sConsoleOut = createTerminalOutput(StrRes, parserFlags);
@@ -993,16 +995,14 @@ namespace NumeRe
         // is a single string result
         for (size_t j = 0; j < vFinal.size(); j++)
         {
-            vFinal[j] = removeQuotationMarks(vFinal[j]);
-
             // In this case, no conversions are done
             // the results are simply put together and returned
             if (parserFlags & KEEP_MASKED_CONTROL_CHARS && parserFlags & KEEP_MASKED_QUOTES)
             {
                 if (!(parserFlags & NO_QUOTES) && !vIsNoStringValue[j])
-                    sLine += "\"" + vFinal[j] + "\"";
+                    sLine += vFinal.getRef(j);
                 else
-                    sLine += vFinal[j];
+                    sLine += vFinal[j].to_string();
 
                 if (j < vFinal.size() - 1)
                     sLine += ",";
@@ -1012,7 +1012,7 @@ namespace NumeRe
 
             if (!vIsNoStringValue[j])
             {
-                sCurrentComponent.clear();
+                /*sCurrentComponent.clear();
                 // Start the current string value with a quotation mark
                 // if it is not a special case
                 if (!(parserFlags & NO_QUOTES))
@@ -1025,18 +1025,7 @@ namespace NumeRe
                     // Replace them with their actual value here
                     if (k + 1 < vFinal[j].length() && vFinal[j][k] == '\\')
                     {
-                        //\not\neq\ni
-                        if (vFinal[j][k + 1] == 'n' && !isToken("nu", vFinal[j], k+1) && !isToken("neq", vFinal[j], k+1)) // Line break
-                        {
-                            sCurrentComponent += "\n";
-                            k++;
-                        }
-                        else if (vFinal[j][k + 1] == 't' && !isToken("tau", vFinal[j], k+1) && !isToken("theta", vFinal[j], k+1) && !isToken("times", vFinal[j], k+1)) // tabulator
-                        {
-                            sCurrentComponent += "\t";
-                            k++;
-                        }
-                        else if (vFinal[j][k + 1] == '"') // quotation mark
+                        if (vFinal[j][k + 1] == '"') // quotation mark
                         {
                             if (!(parserFlags & KEEP_MASKED_QUOTES))
                                 sCurrentComponent += "\"";
@@ -1071,8 +1060,18 @@ namespace NumeRe
                 if (!(parserFlags & NO_QUOTES) && !vIsNoStringValue[j])
                     sCurrentComponent += "\"";
 
-                ans.push_back(sCurrentComponent);
-                sLine += sCurrentComponent;
+                if (parserFlags & KEEP_MASKED_CONTROL_CHARS)
+                {
+                    replaceAll(sCurrentComponent, "\n", "\\n");
+                    replaceAll(sCurrentComponent, "\t", "\\t");
+                }*/
+
+                ans.push_back(vFinal[j].to_string());
+
+                if (parserFlags & NO_QUOTES)
+                    sLine += vFinal[j].to_string();
+                else
+                    sLine += vFinal.getRef(j);
             }
             else
             {
@@ -1127,53 +1126,12 @@ namespace NumeRe
             // is a single string result
             for (size_t j = 0; j < strRes.vResult.size(); j++)
             {
-                strRes.vResult[j] = removeQuotationMarks(strRes.vResult[j]);
-
                 if (!strRes.vNoStringVal[j])
                 {
-                    // Go through the current string value
-                    for (size_t k = 0; k < strRes.vResult[j].length(); k++)
-                    {
-                        // If there are escaped control characters,
-                        // Replace them with their actual value here
-                        if (k + 1 < strRes.vResult[j].length() && strRes.vResult[j][k] == '\\')
-                        {
-                            //\not\neq\ni
-                            if (strRes.vResult[j][k + 1] == 'n' && !isToken("nu", strRes.vResult[j], k+1) && !isToken("neq", strRes.vResult[j], k+1)) // Line break
-                            {
-                                sConsoleOut += "\n";
-                                bLineBreaks = true;
-                                k++;
-                            }
-                            else if (strRes.vResult[j][k + 1] == 't' && !isToken("tau", strRes.vResult[j], k+1) && !isToken("theta", strRes.vResult[j], k+1) && !isToken("times", strRes.vResult[j], k+1)) // tabulator
-                            {
-                                sConsoleOut += "\t";
-                                k++;
-                            }
-                            else if (strRes.vResult[j][k + 1] == '"') // quotation mark
-                            {
-                                sConsoleOut += "\"";
-                                k++;
-                            }
-                            else if (strRes.vResult[j][k + 1] == ' ') // backslash itself
-                            {
-                                sConsoleOut += "\\";
-                                k++;
-                            }
-                            else
-                            {
-                                sConsoleOut += "\\";
-                            }
-                        }
-                        else
-                        {
-                            // Otherwise simply append the current character
-                            if (strRes.vResult[j][k] == '\n')
-                                bLineBreaks = true;
+                    if (strRes.vResult[j].find('\n') != std::string::npos)
+                        bLineBreaks = true;
 
-                            sConsoleOut += strRes.vResult[j][k];
-                        }
-                    }
+                    sConsoleOut = sConsoleOut + strRes.vResult[j];
                 }
                 else
                 {
@@ -1216,26 +1174,15 @@ namespace NumeRe
             // is a single string result
             for (size_t j = 0; j < strRes.vResult.size(); j++)
             {
-                if (parserFlags & NO_QUOTES)
-                    vStringResult.push_back(removeQuotationMarks(strRes.vResult[j]));
-                else
-                    vStringResult.push_back(strRes.vResult[j]);
-
                 if (!strRes.vNoStringVal[j])
                 {
-                    // Go through the current string value
-                    for (size_t k = 0; k < vStringResult[j].length(); k++)
-                    {
-                        // If there are escaped control characters,
-                        // Replace them with their actual value here
-                        if (k + 1 < vStringResult[j].length() && vStringResult[j][k] == '\\')
-                        {
-                            if (vStringResult[j][k + 1] == '"') // quotation mark
-                                vStringResult[j].erase(k, 1);
-                            else if (vStringResult[j][k + 1] == ' ') // backslash itself
-                                vStringResult[j].erase(k+1, 1);
-                        }
-                    }
+                    if (parserFlags & NO_QUOTES)
+                        vStringResult.push_back(strRes.vResult[j].to_string());
+                    else
+                        vStringResult.push_back(strRes.vResult.getRef(j));
+
+                    replaceAll(vStringResult.back(), "\n", "\\n");
+                    replaceAll(vStringResult.back(), "\t", "\\t");
                 }
                 else
                 {
@@ -1250,9 +1197,7 @@ namespace NumeRe
                     }
 
                     vStringResult.push_back(toString(v[nResults-1], _option.getPrecision()));
-
                 }
-
             }
 
             return "|-> " + NumeReKernel::formatResultOutput(vStringResult);
@@ -1390,6 +1335,466 @@ namespace NumeRe
 
 
     /////////////////////////////////////////////////
+    /// \brief Static function to obtain the passed
+    /// operator's precedence.
+    ///
+    /// \param oprt StringView
+    /// \return size_t
+    ///
+    /////////////////////////////////////////////////
+    static size_t getOperatorPrecedence(StringView oprt)
+    {
+        if (oprt == "+")
+            return 10;
+
+        if (oprt == ":")
+            return 7;
+
+        if (oprt == "==" || oprt == "!=" || oprt == "<" || oprt == ">" || oprt == "<=" || oprt == ">=")
+            return 5;
+
+        if (oprt == "&&" || oprt == "||" || oprt == "|||")
+            return 2;
+
+        return 0;
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Static function to finalize the
+    /// if-else logic in this stack.
+    ///
+    /// \param rpnStack std::vector<StringStackItem>&
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
+    static void finalizeStack(std::vector<StringStackItem>& rpnStack)
+    {
+        std::stack<size_t> stIf;
+        std::stack<size_t> stElse;
+        int idx = 0;
+        bool lastIsIf = false;
+
+        for (size_t j = 0; j < rpnStack.size(); j++)
+        {
+            if (rpnStack[j].m_data == "?")
+            {
+                stIf.push(j);
+                lastIsIf = true;
+            }
+
+            // Only consider ":" as part of a ? : , if
+            // there's already a ? in the stack
+            if (rpnStack[j].m_data == ":" && stIf.size())
+            {
+                if (!lastIsIf && stElse.size())
+                {
+                    // Finalize this ? : expression
+                    idx = stElse.top();
+                    stElse.pop();
+                    rpnStack[idx].m_val = j;
+                }
+
+                // Finalize the if part of the expression
+                stElse.push(j);
+                idx = stIf.top();
+                stIf.pop();
+                rpnStack[idx].m_val = j;
+                lastIsIf = false;
+            }
+        }
+
+        // Finalize all remaining ? : expressions
+        while (stElse.size())
+        {
+            idx = stElse.top();
+            stElse.pop();
+            rpnStack[idx].m_val = rpnStack.size();
+        }
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Static function to convert the tokens
+    /// to a RPN stack.
+    ///
+    /// \param vTokens const std::vector<StringView>&
+    /// \return std::vector<StringStackItem>
+    ///
+    /////////////////////////////////////////////////
+    static std::vector<StringStackItem> convertToStack(const std::vector<StringView>& vTokens)
+    {
+        std::vector<StringStackItem> rpnStack;
+        std::stack<StringView> operators;
+        int hasIf = 0;
+
+        // Now convert the tokens to the RPN stack
+        for (size_t i = 0; i < vTokens.size(); i++)
+        {
+            // Odd numbers are operators
+            if (i % 2)
+            {
+                // This case is special, because this is already
+                // in RPN
+                if (vTokens[i] == "?" || (vTokens[i] == ":" && hasIf > 0))
+                {
+                    // Clear all operators first
+                    while (operators.size())
+                    {
+                        rpnStack.push_back(StringStackItem(operators.top(), 0));
+                        operators.pop();
+                    }
+
+                    rpnStack.push_back(StringStackItem(vTokens[i], 0));
+                    hasIf += (vTokens[i] == "?") - (vTokens[i] == ":");
+                    continue;
+                }
+
+                // This case is special, because it creates an additional
+                // return value stack
+                if (vTokens[i] == "," && !hasIf)
+                {
+                    // Clear all operators first
+                    while (operators.size())
+                    {
+                        rpnStack.push_back(StringStackItem(operators.top(), 0));
+                        operators.pop();
+                    }
+
+                    rpnStack.push_back(StringStackItem(vTokens[i], 0));
+                    continue;
+                }
+
+                // Operators with larger or equal precedence
+                // have to be evaluated first. Remove them from
+                // the operator stack
+                while (operators.size()
+                       && getOperatorPrecedence(operators.top()) >= getOperatorPrecedence(vTokens[i]))
+                {
+                    rpnStack.push_back(StringStackItem(operators.top(), 0));
+                    operators.pop();
+                }
+
+                // Add the new operator to the operator stack
+                operators.push(vTokens[i]);
+            }
+            else
+                rpnStack.push_back(StringStackItem(vTokens[i]));
+        }
+
+        while (operators.size())
+        {
+            rpnStack.push_back(StringStackItem(operators.top(), 0));
+            operators.pop();
+        }
+
+        // Finalize the if-else logic
+        finalizeStack(rpnStack);
+
+        // Dump the stack
+        //std::string sDump;
+        //
+        //for (size_t i = 0; i < rpnStack.size(); i++)
+        //{
+        //    sDump += "[" + rpnStack[i].m_data.to_string() + "]";
+        //}
+        //
+        //g_logger.info("RPNSTACK = " + sDump);
+
+        // Nothing more to do. Return the stack
+        return rpnStack;
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief This member function creates a stack
+    /// from the passed expression, which may then be
+    /// evaluated more easily.
+    ///
+    /// \param sExpr StringView
+    /// \return std::vector<StringStackItem>
+    ///
+    /////////////////////////////////////////////////
+    std::vector<StringStackItem> StringParser::createStack(StringView sExpr) const
+    {
+        std::vector<StringView> vTokens;
+
+        size_t nQuotes = 0;
+        int hasIf = 0;
+
+        // As long as the expression has a length
+        while (sExpr.length())
+        {
+            // Remove all surrounding whitespace
+            sExpr.strip();
+
+            // Go through the expression
+            for (size_t i = 0; i < sExpr.length(); i++)
+            {
+                // Count quotes
+                if (sExpr[i] == '"' && (!i || sExpr[i-1] != '\\'))
+                    nQuotes++;
+
+                if (nQuotes % 2)
+                    continue;
+
+                // Jump over possible parentheses
+                if (sExpr[i] == '(' || sExpr[i] == '[' || sExpr[i] == '{')
+                    i += getMatchingParenthesis(sExpr.subview(i));
+
+                // Detect operators
+                if (sExpr.subview(i, 3) == "|||")
+                {
+                    // Prepare the token
+                    StringView sToken = sExpr.subview(0, i);
+                    sToken.strip();
+
+                    // Store token and operator
+                    vTokens.push_back(sToken);
+                    vTokens.push_back(sExpr.subview(i, 3));
+
+                    // Remove the beginning and restart the loop
+                    sExpr.trim_front(i+3);
+                    break;
+                }
+                else if (sExpr.subview(i, 2) == "=="
+                    || sExpr.subview(i, 2) == "!="
+                    || sExpr.subview(i, 2) == "<="
+                    || sExpr.subview(i, 2) == ">="
+                    || sExpr.subview(i, 2) == "&&"
+                    || sExpr.subview(i, 2) == "||")
+                {
+                    // Prepare the token
+                    StringView sToken = sExpr.subview(0, i);
+                    sToken.strip();
+
+                    // Store token and operator
+                    vTokens.push_back(sToken);
+                    vTokens.push_back(sExpr.subview(i, 2));
+
+                    // Remove the beginning and restart the loop
+                    sExpr.trim_front(i+2);
+                    break;
+                }
+                else if (sExpr[i] == '+'
+                         || sExpr[i] == '?'
+                         || sExpr[i] == ':'
+                         || sExpr[i] == ','
+                         || sExpr[i] == '<'
+                         || sExpr[i] == '>')
+                {
+                    if (sExpr[i] == ':' && hasIf <= 0)
+                        continue;
+                    else if (sExpr[i] == ',' && hasIf > 0)
+                        continue;
+                    else if (sExpr[i] == ':')
+                        hasIf--;
+                    else if (sExpr[i] == '?')
+                        hasIf++;
+
+                    // Prepare the token
+                    StringView sToken = sExpr.subview(0, i);
+                    sToken.strip();
+
+                    // Store token and operator
+                    vTokens.push_back(sToken);
+                    vTokens.push_back(sExpr.subview(i, 1));
+
+                    // Remove the beginning and restart the loop
+                    sExpr.trim_front(i+1);
+                    break;
+                }
+
+                // Is this the last token?
+                if (i+1 == sExpr.length())
+                {
+                    vTokens.push_back(sExpr);
+
+                    // Now convert the tokens to the RPN stack
+                    // and return
+                    return convertToStack(vTokens);
+                }
+            }
+        }
+
+        // Return the stack (should actually never hit this line)
+        g_logger.warning("Returned from StringParser::createStack() from an unexpected statement.");
+        return std::vector<StringStackItem>();
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Evaluate the created RPN stack between
+    /// the selected start and end points.
+    ///
+    /// \param rpnStack const std::vector<StringStackItem>&
+    /// \param from size_t
+    /// \param to size_t
+    /// \return StringVector
+    ///
+    /////////////////////////////////////////////////
+    StringVector StringParser::evaluateStack(const std::vector<StringStackItem>& rpnStack, size_t from, size_t to)
+    {
+        std::stack<StringVector> valueStack;
+        size_t nReturnValues = 1;
+
+        for (size_t i = from; i < to; i++)
+        {
+            // This is a value/variable
+            if (rpnStack[i].m_val < 0)
+            {
+                std::string sValue = rpnStack[i].m_data.to_string();
+
+                if (isStringVectorVar(sValue))
+                    valueStack.push(getStringVectorVar(sValue));
+                else if (containsStringVectorVars(sValue) || _parser.ContainsVectorVars(sValue, false))
+                    valueStack.push(StringVector(evaluateStringVectors(sValue))); // TODO: Improve this
+                else
+                    valueStack.push(StringVector::convert_literal(sValue));
+            }
+            else
+            {
+                if (rpnStack[i].m_data == "+")
+                {
+                    StringVector op = valueStack.top();
+                    valueStack.pop();
+                    valueStack.top() += op;
+                }
+                else if (rpnStack[i].m_data == ",")
+                {
+                    nReturnValues++;
+                    continue;
+                }
+                else if (rpnStack[i].m_data == "==")
+                {
+                    StringVector op = valueStack.top();
+                    valueStack.pop();
+                    valueStack.top() = valueStack.top() == op;
+                }
+                else if (rpnStack[i].m_data == "!=")
+                {
+                    StringVector op = valueStack.top();
+                    valueStack.pop();
+                    valueStack.top() = valueStack.top() != op;
+                }
+                else if (rpnStack[i].m_data == ">=")
+                {
+                    StringVector op = valueStack.top();
+                    valueStack.pop();
+                    valueStack.top() = valueStack.top() >= op;
+                }
+                else if (rpnStack[i].m_data == "<=")
+                {
+                    StringVector op = valueStack.top();
+                    valueStack.pop();
+                    valueStack.top() = valueStack.top() <= op;
+                }
+                else if (rpnStack[i].m_data == ">")
+                {
+                    StringVector op = valueStack.top();
+                    valueStack.pop();
+                    valueStack.top() = valueStack.top() > op;
+                }
+                else if (rpnStack[i].m_data == "<")
+                {
+                    StringVector op = valueStack.top();
+                    valueStack.pop();
+                    valueStack.top() = valueStack.top() < op;
+                }
+                else if (rpnStack[i].m_data == "&&")
+                {
+                    StringVector op = valueStack.top();
+                    valueStack.pop();
+                    valueStack.top() = valueStack.top().and_f(op);
+                }
+                else if (rpnStack[i].m_data == "||")
+                {
+                    StringVector op = valueStack.top();
+                    valueStack.pop();
+                    valueStack.top() = valueStack.top().or_f(op);
+                }
+                else if (rpnStack[i].m_data == "|||")
+                {
+                    StringVector op = valueStack.top();
+                    valueStack.pop();
+                    valueStack.top() = valueStack.top().xor_f(op);
+                }
+                else if (rpnStack[i].m_data == "?")
+                {
+                    // Get the absolute jump points
+                    size_t nIfEnd = rpnStack[i].m_val;
+                    size_t nElseEnd = rpnStack[nIfEnd].m_val;
+
+                    // Evaluate the results recursively (lazy is not possible within this logic)
+                    valueStack.top().evalIfElse(valueStack.top(),
+                                                evaluateStack(rpnStack, i+1, nIfEnd),
+                                                evaluateStack(rpnStack, nIfEnd+1, nElseEnd));
+                    // Jump this evaluation to the end of the else
+                    // statement (most probably also the end of the
+                    // end of the current stack)
+                    i = nElseEnd;
+                }
+            }
+
+            //std::string stackTop;
+            //
+            //for (size_t i = 0; i < valueStack.top().size(); i++)
+            //    stackTop += valueStack.top().getRef(i).substr(0, 100) + ",";
+            //
+            //stackTop.pop_back();
+            //g_logger.info("STACK.TOP() = " + stackTop);
+            //g_logger.info("STACK.TOP() = " + valueStack.top().getRef(0).substr(0, 100));
+        }
+
+        // return the value on top of the stack
+        if (nReturnValues > valueStack.size())
+            throw std::out_of_range("Stack size (" + toString(valueStack.size()) + ") is smaller than the requested number of return values (" + toString(nReturnValues) + ").");
+
+        StringVector vRet = valueStack.top();
+        valueStack.pop();
+        nReturnValues--;
+
+        while (nReturnValues)
+        {
+            vRet.insert(vRet.begin(), valueStack.top().begin(), valueStack.top().end());
+            valueStack.pop();
+            nReturnValues--;
+        }
+
+        return vRet;
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Create a stack from the expression and
+    /// evaluate it.
+    ///
+    /// \param sExpr StringView
+    /// \return StringResult
+    ///
+    /////////////////////////////////////////////////
+    StringResult StringParser::createAndEvaluateStack(StringView sExpr)
+    {
+        std::vector<StringStackItem> rpnStack = createStack(sExpr);
+        StringResult res;
+
+        res.vResult = evaluateStack(rpnStack, 0, rpnStack.size());
+        res.vNoStringVal.resize(res.vResult.size());
+        res.bOnlyLogicals = true;
+
+        for (size_t i = 0; i < res.vResult.size(); i++)
+        {
+            res.vNoStringVal[i] = !res.vResult.is_string(i);
+
+            if (!res.vNoStringVal[i])
+                res.bOnlyLogicals = false;
+        }
+
+        return res;
+    }
+
+
+    /////////////////////////////////////////////////
     /// \brief This member function applies some
     /// elementary string operations like concatenation
     /// to the string expression.
@@ -1461,7 +1866,6 @@ namespace NumeRe
     StringResult StringParser::eval(std::string& sLine, std::string sCache, bool bParseNumericals)
     {
         StringResult strRes;
-
         bool bObjectContainsTablesOrClusters = false;
 
         // If the current line is a simple string,
@@ -1473,7 +1877,7 @@ namespace NumeRe
 
             while (sLine.length())
             {
-                strRes.vResult.push_back(getNextArgument(sLine, true));
+                strRes.vResult.push_generic(getNextArgument(sLine, true));
                 strRes.vNoStringVal.push_back(false);
             }
 
@@ -1534,7 +1938,7 @@ namespace NumeRe
                     StringResult _res = eval(sRecursion, "");
 
                     for (size_t n = 0; n < _res.vResult.size(); n++)
-                        vResult.push_back(_res.vResult[n]);
+                        vResult.push_back(_res.vResult.getRef(n));
                 }
 
                 // Create a new string vector variable from the results
@@ -1628,7 +2032,7 @@ namespace NumeRe
 
             while (strExpr.sLine.length())
             {
-                strRes.vResult.push_back(getNextArgument(strExpr.sLine, true));
+                strRes.vResult.push_generic(getNextArgument(strExpr.sLine, true));
                 strRes.vNoStringVal.push_back(false);
             }
 
@@ -1823,7 +2227,10 @@ namespace NumeRe
 
         // If the current line doesn't contain any further std::string literals or return values
         // return it
-        if (strExpr.sLine.find('"') == std::string::npos && strExpr.sLine.find('#') == std::string::npos && !containsStringVectorVars(strExpr.sLine) && !bObjectContainsTablesOrClusters)
+        if (strExpr.sLine.find('"') == std::string::npos
+            && strExpr.sLine.find('#') == std::string::npos
+            && !containsStringVectorVars(strExpr.sLine)
+            && !bObjectContainsTablesOrClusters)
         {
             // Ensure that this is no false positive
             if (strExpr.sLine.find("string(") != std::string::npos || containsStringVars(strExpr.sLine))
@@ -1836,15 +2243,12 @@ namespace NumeRe
         // Apply the "#" parser to the string
         strExpr.sLine = numToString(strExpr.sLine);
 
-        // Split the list to a std::vector
-        strRes.vResult = evaluateStringVectors(strExpr.sLine);
+        // Evaluate the remaining expression
+        strRes = createAndEvaluateStack(strExpr.sLine);
 
         // Ensure that there is at least one result
         if (!strRes.vResult.size())
             throw SyntaxError(SyntaxError::STRING_ERROR, strExpr.sLine, SyntaxError::invalid_position);
-
-        // Apply some elementary operations such as concatenation and logical operations
-        strRes.vNoStringVal = applyElementaryStringOperations(strRes.vResult, strRes.bOnlyLogicals);
 
         // store the string results in the variables or inb "string()" respectively
         if (!storeStringResults(strRes, strExpr.sAssignee))

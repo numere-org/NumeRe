@@ -101,6 +101,30 @@ namespace NumeRe
             }
 
             /////////////////////////////////////////////////
+            /// \brief Base implementation. Returns an empty
+            /// string.
+            ///
+            /// \return virtual std::string
+            ///
+            /////////////////////////////////////////////////
+            virtual std::string getInternalString()
+            {
+                return "";
+            }
+
+            /////////////////////////////////////////////////
+            /// \brief Base implementation. Returns a string
+            /// with quotation marks.
+            ///
+            /// \return virtual std::string
+            ///
+            /////////////////////////////////////////////////
+            virtual std::string getParserString()
+            {
+                return "\"" + getInternalString() + "\"";
+            }
+
+            /////////////////////////////////////////////////
             /// \brief Base implementation. Does nothing.
             ///
             /// \param strval const std::string&
@@ -162,6 +186,33 @@ namespace NumeRe
                     return toExternalString("nan");
 
                 return toExternalString(toString(dData, 7));
+            }
+
+            /////////////////////////////////////////////////
+            /// \brief Returns the internal value converted
+            /// to a string.
+            ///
+            /// \return virtual std::string
+            ///
+            /////////////////////////////////////////////////
+            virtual std::string getInternalString() override
+            {
+                if (std::isnan(std::abs(dData)))
+                    return "nan";
+
+                return toString(dData, 7);
+            }
+
+            /////////////////////////////////////////////////
+            /// \brief Returns the internal value converted
+            /// to a string.
+            ///
+            /// \return virtual std::string
+            ///
+            /////////////////////////////////////////////////
+            virtual std::string getParserString() override
+            {
+                return getInternalString();
             }
 
             /////////////////////////////////////////////////
@@ -232,6 +283,17 @@ namespace NumeRe
             }
 
             /////////////////////////////////////////////////
+            /// \brief Returns the internal string.
+            ///
+            /// \return virtual std::string
+            ///
+            /////////////////////////////////////////////////
+            virtual std::string getInternalString() override
+            {
+                return sData;
+            }
+
+            /////////////////////////////////////////////////
             /// \brief Overwrites the internal string.
             ///
             /// \param strval const std::string&
@@ -240,7 +302,7 @@ namespace NumeRe
             /////////////////////////////////////////////////
             virtual void setString(const std::string& strval) override
             {
-                sData = toInternalString(strval);
+                sData = strval;
             }
     };
 
@@ -333,6 +395,7 @@ namespace NumeRe
             void assignResults(Indices _idx, int nNum, mu::value_type* data);
 
             std::string getString(size_t i) const;
+            std::string getParserString(size_t i) const;
             void setString(size_t i, const std::string& strval);
             std::vector<std::string> getStringArray() const;
             void setStringArray(const std::vector<std::string>& sVals);

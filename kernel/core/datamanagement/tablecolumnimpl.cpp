@@ -54,6 +54,20 @@ std::string ValueColumn::getValueAsInternalString(size_t elem) const
 
 
 /////////////////////////////////////////////////
+/// \brief Returns the contents as parser
+/// string (i.e. without quotation marks).
+///
+/// \param elem size_t
+/// \return std::string
+///
+/////////////////////////////////////////////////
+std::string ValueColumn::getValueAsParserString(size_t elem) const
+{
+    return getValueAsString(elem);
+}
+
+
+/////////////////////////////////////////////////
 /// \brief Returns the selected value as a
 /// numerical type or an invalid value, if it
 /// does not exist.
@@ -81,7 +95,7 @@ mu::value_type ValueColumn::getValue(size_t elem) const
 /////////////////////////////////////////////////
 void ValueColumn::setValue(size_t elem, const std::string& sValue)
 {
-    if (isConvertible(toInternalString(sValue), CONVTYPE_VALUE))
+    if (isConvertible(sValue, CONVTYPE_VALUE))
         setValue(elem, StrToCmplx(toInternalString(sValue)));
     else
         throw SyntaxError(SyntaxError::STRING_ERROR, sValue, sValue);
@@ -411,6 +425,20 @@ std::string DateTimeColumn::getValueAsInternalString(size_t elem) const
 
 
 /////////////////////////////////////////////////
+/// \brief Returns the contents as parser
+/// string (i.e. with quotation marks).
+///
+/// \param elem size_t
+/// \return std::string
+///
+/////////////////////////////////////////////////
+std::string DateTimeColumn::getValueAsParserString(size_t elem) const
+{
+    return "\"" + getValueAsString(elem) + "\"";
+}
+
+
+/////////////////////////////////////////////////
 /// \brief Returns the selected value as a
 /// numerical type or an invalid value, if it
 /// does not exist.
@@ -438,7 +466,7 @@ mu::value_type DateTimeColumn::getValue(size_t elem) const
 /////////////////////////////////////////////////
 void DateTimeColumn::setValue(size_t elem, const std::string& sValue)
 {
-    if (isConvertible(toInternalString(sValue), CONVTYPE_DATE_TIME))
+    if (isConvertible(sValue, CONVTYPE_DATE_TIME))
         setValue(elem, to_double(StrToTime(toInternalString(sValue))));
     else
         throw SyntaxError(SyntaxError::STRING_ERROR, sValue, sValue);
@@ -774,6 +802,20 @@ std::string StringColumn::getValueAsInternalString(size_t elem) const
 
 
 /////////////////////////////////////////////////
+/// \brief Returns the contents as parser
+/// string (i.e. with quotation marks).
+///
+/// \param elem size_t
+/// \return std::string
+///
+/////////////////////////////////////////////////
+std::string StringColumn::getValueAsParserString(size_t elem) const
+{
+    return "\"" + getValueAsInternalString(elem) + "\"";
+}
+
+
+/////////////////////////////////////////////////
 /// \brief Returns always NaN, because this
 /// conversion is not possible.
 ///
@@ -803,7 +845,7 @@ void StringColumn::setValue(size_t elem, const std::string& sValue)
     if (elem >= m_data.size())
         m_data.resize(elem+1);
 
-    m_data[elem] = toInternalString(sValue);
+    m_data[elem] = sValue;
 }
 
 

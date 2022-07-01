@@ -618,7 +618,8 @@ void NumeReDebugger:: gatherInformations(const std::map<std::string, std::pair<s
         if (iter.second == "string")
         {
             sTableData = toString(instance->getMemoryManager().getStringElements()) + " x " + toString(instance->getMemoryManager().getStringCols());
-            sTableData += "\tstring\t{\"" + replaceControlCharacters(instance->getMemoryManager().minString()) + "\", ..., \"" + replaceControlCharacters(instance->getMemoryManager().maxString()) + "\"}\tstring()";
+            sTableData += "\tstring\t{\"" + replaceControlCharacters(instance->getMemoryManager().minString()) + "\", ..., \""
+                + replaceControlCharacters(instance->getMemoryManager().maxString()) + "\"}\tstring()";
         }
         else
         {
@@ -642,7 +643,9 @@ void NumeReDebugger:: gatherInformations(const std::map<std::string, std::pair<s
         // Extract the minimal and maximal values of the tables
         // to display them in the variable viewer panel
         sTableData = toString(instance->getMemoryManager().getCluster(iter.second).size()) + " x 1";
-        sTableData += "\tcluster\t" + instance->getMemoryManager().getCluster(iter.second).getShortVectorRepresentation() + "\t" + iter.second + "{}";
+        sTableData += "\tcluster\t"
+            + replaceControlCharacters(instance->getMemoryManager().getCluster(iter.second).getShortVectorRepresentation()) + "\t"
+            + iter.second + "{}";
 
         mLocalClusters[iter.first + "{}"] = sTableData;
     }
@@ -678,164 +681,6 @@ void NumeReDebugger:: gatherInformations(const std::map<std::string, std::pair<s
             mArguments[iter.first + "\t" + iter.second] = iter.second;
         }
     }
-
-
-}
-
-
-/////////////////////////////////////////////////
-/// \brief This member function gathers all
-/// information from the current workspace and
-/// stores them internally to display them to the
-/// user.
-///
-/// \param sLocalVars string**
-/// \param nLocalVarMapSize size_t
-/// \param dLocalVars mu::value_type*
-/// \param sLocalStrings string**
-/// \param nLocalStrMapSize size_t
-/// \param sLocalTables string**
-/// \param nLocalTableMapSize size_t
-/// \param sLocalClusters string**
-/// \param nLocalClusterMapSize size_t
-/// \param sArgumentMap string**
-/// \param nArgumentMapSize size_t
-/// \param _sErraticCommand const string&
-/// \param _sErraticModule const string&
-/// \param _nLineNumber unsigned int
-/// \return void
-///
-/////////////////////////////////////////////////
-void NumeReDebugger::gatherInformations(string** sLocalVars, size_t nLocalVarMapSize, mu::value_type* dLocalVars, string** sLocalStrings, size_t nLocalStrMapSize, string** sLocalTables,
-                                        size_t nLocalTableMapSize, string** sLocalClusters, size_t nLocalClusterMapSize, string** sArgumentMap, size_t nArgumentMapSize,
-                                        const string& _sErraticCommand, const string& _sErraticModule, unsigned int _nLineNumber)
-{
-    if (!bDebuggerActive)
-        return;
-
-    if (bAlreadyThrown)
-        return;
-
-    // Get the instance of the kernel
-    NumeReKernel* instance = NumeReKernel::getInstance();
-
-    // If the instance is zero, something really bad happened
-    if (!instance)
-        return;
-
-    // Store the command line containing the error
-    if (!sErraticCommand.length())
-        sErraticCommand = _sErraticCommand;
-
-    // Removes the leading and trailing whitespaces
-    StripSpaces(sErraticCommand);
-
-    sErraticModule = _sErraticModule;
-
-    if (nLineNumber == string::npos)
-        nLineNumber = _nLineNumber;
-
-    bAlreadyThrown = true;
-
-    // Store the local numerical variables and replace their
-    // occurence with their definition in the command lines
-    for (unsigned int i = 0; i < nLocalVarMapSize; i++)
-    {
-        // Replace the occurences
-        if (sLocalVars[i][0] != sLocalVars[i][1])
-            replaceAll(sErraticCommand, sLocalVars[i][1].c_str(), sLocalVars[i][0].c_str());
-
-        mLocalVars[sLocalVars[i][0] + "\t" + sLocalVars[i][1]] = dLocalVars[i];
-    }
-
-    // Store the local string variables and replace their
-    // occurence with their definition in the command lines
-    for (unsigned int i = 0; i < nLocalStrMapSize; i++)
-    {
-        // Replace the occurences
-        if (sLocalStrings[i][0] != sLocalStrings[i][1])
-            replaceAll(sErraticCommand, sLocalStrings[i][1].c_str(), sLocalStrings[i][0].c_str());
-
-        mLocalStrings[sLocalStrings[i][0] + "\t" + sLocalStrings[i][1]] = replaceControlCharacters(instance->getStringParser().getStringVars().at(sLocalStrings[i][1]));
-    }
-
-    // Store the local tables and replace their
-    // occurence with their definition in the command lines
-    for (unsigned int i = 0; i < nLocalTableMapSize; i++)
-    {
-        // Replace the occurences
-        if (sLocalTables[i][0] != sLocalTables[i][1])
-            replaceAll(sErraticCommand, (sLocalTables[i][1] + (sLocalTables[i][1].back() == '(' ? "" : "(")).c_str(), (sLocalTables[i][0] + (sLocalTables[i][0].back() == '(' ? "" : "(")).c_str());
-
-        string sTableData;
-
-        // Extract the minimal and maximal values of the tables
-        // to display them in the variable viewer panel
-        if (sLocalTables[i][1] == "string")
-        {
-            sTableData = toString(instance->getMemoryManager().getStringElements()) + " x " + toString(instance->getMemoryManager().getStringCols());
-            sTableData += "\tstring\t{\"" + replaceControlCharacters(instance->getMemoryManager().minString()) + "\", ..., \"" + replaceControlCharacters(instance->getMemoryManager().maxString()) + "\"}\tstring()";
-        }
-        else
-        {
-            sTableData = toString(instance->getMemoryManager().getLines(sLocalTables[i][1], false)) + " x " + toString(instance->getMemoryManager().getCols(sLocalTables[i][1], false));
-            sTableData += "\ttable\t{" + toString(instance->getMemoryManager().min(sLocalTables[i][1], "")[0], DEFAULT_MINMAX_PRECISION) + ", ..., " + toString(instance->getMemoryManager().max(sLocalTables[i][1], "")[0], DEFAULT_MINMAX_PRECISION) + "}\t" + sLocalTables[i][1] + "()";
-        }
-
-        mLocalTables[sLocalTables[i][0] + "()"] = sTableData;
-    }
-
-    // Store the local clusters and replace their
-    // occurence with their definition in the command lines
-    for (unsigned int i = 0; i < nLocalClusterMapSize; i++)
-    {
-        // Replace the occurences
-        if (sLocalClusters[i][0] != sLocalClusters[i][1])
-            replaceAll(sErraticCommand, (sLocalClusters[i][1] + (sLocalClusters[i][1].back() == '{' ? "" : "{")).c_str(), (sLocalClusters[i][0] + (sLocalClusters[i][0].back() == '{' ? "" : "{")).c_str());
-
-        string sTableData;
-
-        // Extract the minimal and maximal values of the tables
-        // to display them in the variable viewer panel
-        sTableData = toString(instance->getMemoryManager().getCluster(sLocalClusters[i][1]).size()) + " x 1";
-        sTableData += "\tcluster\t" + instance->getMemoryManager().getCluster(sLocalClusters[i][1]).getShortVectorRepresentation() + "\t" + sLocalClusters[i][1] + "{}";
-
-        mLocalClusters[sLocalClusters[i][0] + "{}"] = sTableData;
-    }
-
-    // Is this procedure a macro?
-    bool isMacro = nCurrentStackElement < vStackTrace.size() ? vStackTrace[nCurrentStackElement].second->getProcedureFlags() & ProcedureCommandLine::FLAG_MACRO : false;
-
-    // Store the arguments
-    for (unsigned int i = 0; i < nArgumentMapSize; i++)
-    {
-        if (sArgumentMap[i][0].back() == '(')
-        {
-            // Replace the occurences
-            if (!isMacro && sArgumentMap[i][0] != sArgumentMap[i][1])
-                replaceAll(sErraticCommand, (sArgumentMap[i][1] + "(").c_str(), sArgumentMap[i][0].c_str());
-
-            mArguments[sArgumentMap[i][0] + ")\t" + sArgumentMap[i][1]] = sArgumentMap[i][1];
-        }
-        else if (sArgumentMap[i][0].back() == '{')
-        {
-            // Replace the occurences
-            if (!isMacro && sArgumentMap[i][0] != sArgumentMap[i][1])
-                replaceAll(sErraticCommand, (sArgumentMap[i][1] + "{").c_str(), sArgumentMap[i][0].c_str());
-
-            mArguments[sArgumentMap[i][0] + "}\t" + sArgumentMap[i][1]] = sArgumentMap[i][1];
-        }
-        else
-        {
-            // Replace the occurences
-            if (!isMacro && sArgumentMap[i][0] != sArgumentMap[i][1])
-                replaceAll(sErraticCommand, sArgumentMap[i][1].c_str(), sArgumentMap[i][0].c_str());
-
-            mArguments[sArgumentMap[i][0] + "\t" + sArgumentMap[i][1]] = sArgumentMap[i][1];
-        }
-    }
-
-    return;
 }
 
 
@@ -1069,7 +914,8 @@ vector<string> NumeReDebugger::getGlobals()
     if (_data.getStringElements())
     {
         mGlobals["string()"] = toString(_data.getStringElements()) + " x " + toString(_data.getStringCols())
-                               + "\tstring\t{\"" + _data.minString() + "\", ...,\"" + _data.maxString() + "\"}";
+                               + "\tstring\t{\"" + replaceControlCharacters(_data.minString()) + "\", ...,\""
+                               + replaceControlCharacters(_data.maxString()) + "\"}";
     }
 
     // List all relevant caches
@@ -1078,7 +924,8 @@ vector<string> NumeReDebugger::getGlobals()
         if (iter->first.substr(0, 2) != "_~")
         {
             mGlobals[iter->first + "()"] = toString(_data.getLines(iter->first, false)) + " x " + toString(_data.getCols(iter->first, false))
-                                           + "\ttable\t{" + toString(_data.min(iter->first, "")[0], DEFAULT_MINMAX_PRECISION) + ", ..., " + toString(_data.max(iter->first, "")[0], DEFAULT_MINMAX_PRECISION) + "}";
+                + "\ttable\t{" + toString(_data.min(iter->first, "")[0], DEFAULT_MINMAX_PRECISION) + ", ..., "
+                + toString(_data.max(iter->first, "")[0], DEFAULT_MINMAX_PRECISION) + "}";
         }
     }
 
@@ -1087,7 +934,8 @@ vector<string> NumeReDebugger::getGlobals()
     {
         if (iter->first.substr(0, 2) != "_~")
         {
-            mGlobals[iter->first + "{}"] = toString(iter->second.size()) + " x 1" + "\tcluster\t" + iter->second.getShortVectorRepresentation();
+            mGlobals[iter->first + "{}"] = toString(iter->second.size()) + " x 1" + "\tcluster\t"
+                + replaceControlCharacters(iter->second.getShortVectorRepresentation());
         }
     }
 
@@ -1095,7 +943,7 @@ vector<string> NumeReDebugger::getGlobals()
     for (auto iter = _stringParser.getStringVars().begin(); iter != _stringParser.getStringVars().end(); ++iter)
     {
         if (iter->first.substr(0, 2) != "_~")
-            mGlobals[iter->first] = "1 x 1\tstring\t\"" + ellipsize(iter->second, MAXSTRINGLENGTH) + "\"";
+            mGlobals[iter->first] = "1 x 1\tstring\t\"" + replaceControlCharacters(ellipsize(iter->second, MAXSTRINGLENGTH)) + "\"";
     }
 
     // List all relevant numerical variables

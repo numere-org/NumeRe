@@ -4734,9 +4734,9 @@ void urlExecute(CommandLineParser& cmdParser)
 
             // Replace all masked characters in the return value
             replaceAll(sUrlResponse, "\r\n", "\n");
-            replaceAll(sUrlResponse, "\\", "\\ ");
-            replaceAll(sUrlResponse, "\"", "\\\"");
-            cmdParser.setReturnValue("\"" + sUrlResponse + "\"");
+//            replaceAll(sUrlResponse, "\\", "\\ ");
+//            replaceAll(sUrlResponse, "\"", "\\\"");
+            cmdParser.setReturnValue(std::vector<std::string>({"\"" + sUrlResponse + "\""}));
         }
     }
     catch (url::Error& e)

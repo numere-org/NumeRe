@@ -535,6 +535,7 @@
 		<Unit filename="kernel/core/script.hpp" />
 		<Unit filename="kernel/core/settings.cpp" />
 		<Unit filename="kernel/core/settings.hpp" />
+		<Unit filename="kernel/core/strings/stringdatastructures.cpp" />
 		<Unit filename="kernel/core/strings/stringdatastructures.hpp" />
 		<Unit filename="kernel/core/strings/stringexpression.hpp" />
 		<Unit filename="kernel/core/strings/stringfunchandler.cpp" />

@@ -578,7 +578,7 @@ void ProcedureVarFactory::createLocalInlineStrings(string sStringList)
                 }
 
                 currentDef.erase(currentDef.find('='));
-                tempCluster.setString(i, sVarValue);
+                tempCluster.setString(i, toInternalString(sVarValue));
             }
             catch (...)
             {
@@ -593,7 +593,7 @@ void ProcedureVarFactory::createLocalInlineStrings(string sStringList)
         }
         else
         {
-            tempCluster.setString(i, "\"\"");
+            tempCluster.setString(i, "");
             sInlineStringDef += "\"\",";
         }
 
@@ -1031,7 +1031,7 @@ void ProcedureVarFactory::evaluateProcedureArguments(std::string& currentArg, st
                         {
                             if (newCluster.size() == 1)
                             {
-                                _stringParser.setStringValue(sNewArgName, newCluster.getString(0));
+                                _stringParser.setStringValue(sNewArgName, newCluster.getParserString(0));
                                 _dataRef->removeCluster(sNewArgName);
                                 currentValue = sNewArgName;
                                 mLocalArgs[sNewArgName] = STRINGTYPE;

@@ -2482,7 +2482,8 @@ NumeReVariables NumeReKernel::getVariableList()
             continue;
 
         sCurrentLine = iter->first + "{}\t" + toString(iter->second.size()) + " x 1";
-        sCurrentLine += "\tcluster\t" + iter->second.getShortVectorRepresentation() + "\t" + iter->first + "{}\t" + formatByteSize(iter->second.getBytes());
+        sCurrentLine += "\tcluster\t" + replaceControlCharacters(iter->second.getShortVectorRepresentation())
+            + "\t" + iter->first + "{}\t" + formatByteSize(iter->second.getBytes());
 
         vars.vVariables.push_back(sCurrentLine);
     }
@@ -3479,65 +3480,27 @@ int NumeReKernel::evalDebuggerBreakPoint(const std::string& sCurrentCommand)
     if (!getInstance())
         return DEBUGGER_CONTINUE;
 
-    mu::varmap_type varmap;
-    std::string** sLocalVars = nullptr;
-    mu::value_type* dLocalVars = nullptr;
-    size_t nLocalVarMapSize = 0;
-    size_t nLocalVarMapSkip = 0;
-    std::string** sLocalStrings = nullptr;
-    size_t nLocalStringMapSize = 0;
-    std::string** sLocalTables = nullptr;
-    size_t nLocalTableMapSize = 0;
-    std::string** sLocalClusters = nullptr;
-    size_t nLocalClusterMapSize = 0;
+    std::map<std::string, std::pair<std::string, mu::value_type*>> mLocalVars;
+    std::map<std::string, std::pair<std::string, std::string>> mLocalStrings;
+    std::map<std::string, std::string> mLocalTables;
+    std::map<std::string, std::string> mLocalClusters;
+    std::map<std::string, std::string> mArguments;
 
     // Obtain references to the debugger and the parser
     NumeReDebugger& _debugger = getInstance()->getDebugger();
     const Parser& _parser = getInstance()->getParser();
 
     // Get the numerical variable map
-    varmap = _parser.GetVar();
-    nLocalVarMapSize = varmap.size();
-    sLocalVars = new std::string*[nLocalVarMapSize];
-    dLocalVars = new mu::value_type[nLocalVarMapSize];
-    size_t i = 0;
+    const mu::varmap_type& varmap = _parser.GetVar();
 
-    // Create the numerical variable set
-    for (auto iter = varmap.begin(); iter != varmap.end(); ++iter)
-    {
-        sLocalVars[i + nLocalVarMapSkip] = new std::string[2];
-
-        if ((iter->first).substr(0, 2) == "_~")
-        {
-            nLocalVarMapSkip++;
-            continue;
-        }
-
-        sLocalVars[i][0] = iter->first;
-        sLocalVars[i][1] = iter->first;
-        dLocalVars[i] = *(iter->second);
-        i++;
-    }
+    for (auto iter : varmap)
+        mLocalVars[iter.first] = std::make_pair(iter.first, iter.second);
 
     // Get the string variable map
-    std::map<std::string, std::string> sStringMap = getInstance()->getStringParser().getStringVars();
+    const std::map<std::string, std::string>& sStringMap = getInstance()->getStringParser().getStringVars();
 
-    nLocalStringMapSize = sStringMap.size();
-
-    // Create the string variable set
-    if (nLocalStringMapSize)
-    {
-        sLocalStrings = new std::string*[nLocalStringMapSize];
-        i = 0;
-
-        for (auto iter = sStringMap.begin(); iter != sStringMap.end(); ++iter)
-        {
-            sLocalStrings[i] = new std::string[2];
-            sLocalStrings[i][0] = iter->first;
-            sLocalStrings[i][1] = iter->first;
-            i++;
-        }
-    }
+    for (const auto& iter : sStringMap)
+        mLocalStrings[iter.first] = std::make_pair(iter.first, iter.second);
 
     // Get the table variable map
     std::map<std::string, std::pair<size_t,size_t>> tableMap = getInstance()->getMemoryManager().getTableMap();
@@ -3545,80 +3508,19 @@ int NumeReKernel::evalDebuggerBreakPoint(const std::string& sCurrentCommand)
     if (getInstance()->getMemoryManager().getStringElements())
         tableMap["string"] = std::pair<size_t, size_t>(-1, -1);
 
-    nLocalTableMapSize = tableMap.size();
+    for (const auto& iter : tableMap)
+        mLocalTables[iter.first] = iter.first;
 
-    // Create the table variable set
-    if (nLocalTableMapSize)
-    {
-        sLocalTables = new std::string*[nLocalTableMapSize];
-        i = 0;
-
-        for (auto iter = tableMap.begin(); iter != tableMap.end(); ++iter)
-        {
-            sLocalTables[i] = new std::string[2];
-            sLocalTables[i][0] = iter->first;
-            sLocalTables[i][1] = iter->first;
-            i++;
-        }
-    }
-
+    // Get the cluster mao
     const std::map<std::string, NumeRe::Cluster>& clusterMap = getInstance()->getMemoryManager().getClusterMap();
 
-    nLocalClusterMapSize = clusterMap.size();
-
-    // Create the cluster variable set
-    if (nLocalClusterMapSize)
-    {
-        sLocalClusters = new std::string*[nLocalClusterMapSize];
-        i = 0;
-
-        for (auto iter = clusterMap.begin(); iter != clusterMap.end(); ++iter)
-        {
-            sLocalClusters[i] = new std::string[2];
-            sLocalClusters[i][0] = iter->first;
-            sLocalClusters[i][1] = iter->first;
-            i++;
-        }
-    }
+    for (const auto& iter : clusterMap)
+        mLocalClusters[iter.first] = iter.first;
 
 
     // Pass the created information to the debugger
-    _debugger.gatherInformations(sLocalVars, nLocalVarMapSize - nLocalVarMapSkip, dLocalVars, sLocalStrings, nLocalStringMapSize, sLocalTables, nLocalTableMapSize, sLocalClusters, nLocalClusterMapSize, nullptr, 0, sCurrentCommand,
-                                 getInstance()->getScript().getScriptFileName(), getInstance()->getScript().getCurrentLine() - 1);
-
-    // Clean up memory
-    if (sLocalVars)
-    {
-        for (i = 0; i < nLocalVarMapSize; i++)
-            delete[] sLocalVars[i];
-
-        delete[] sLocalVars;
-        delete[] dLocalVars;
-    }
-
-    if (sLocalStrings)
-    {
-        for (i = 0; i < nLocalStringMapSize; i++)
-            delete[] sLocalStrings[i];
-
-        delete[] sLocalStrings;
-    }
-
-    if (sLocalTables)
-    {
-        for (i = 0; i < nLocalTableMapSize; i++)
-            delete[] sLocalTables[i];
-
-        delete[] sLocalTables;
-    }
-
-    if (sLocalClusters)
-    {
-        for (i = 0; i < nLocalClusterMapSize; i++)
-            delete[] sLocalClusters[i];
-
-        delete[] sLocalClusters;
-    }
+    _debugger.gatherInformations(mLocalVars, mLocalStrings, mLocalTables, mLocalClusters, mArguments,
+                                 sCurrentCommand, getInstance()->getScript().getScriptFileName(), getInstance()->getScript().getCurrentLine()-1);
 
     // Show the breakpoint and wait for the
     // user interaction

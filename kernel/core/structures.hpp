@@ -1018,6 +1018,24 @@ class StringViewBase
 
         /////////////////////////////////////////////////
         /// \brief This member function is an overload
+        /// for the equality operator using a const char*.
+        ///
+        /// \param sString const char*
+        /// \return bool
+        ///
+        /////////////////////////////////////////////////
+        inline bool operator==(const char* sString) const
+        {
+            const std::string* thisString = getData();
+
+            if (thisString)
+                return thisString->compare(m_start, m_len, sString) == 0;
+
+            return false;
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief This member function is an overload
         /// for the inequality operator using another
         /// StringViewBase instance.
         ///
@@ -1043,6 +1061,23 @@ class StringViewBase
         ///
         /////////////////////////////////////////////////
         inline bool operator!=(const std::string& sString) const
+        {
+            if (getData())
+                return getData()->compare(m_start, m_len, sString) != 0;
+
+            return false;
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief This member function is an overload
+        /// for the inequality operator using a const
+        /// char*.
+        ///
+        /// \param sString const char*
+        /// \return bool
+        ///
+        /////////////////////////////////////////////////
+        inline bool operator!=(const char* sString) const
         {
             if (getData())
                 return getData()->compare(m_start, m_len, sString) != 0;
@@ -1086,6 +1121,40 @@ class StringViewBase
 
         /////////////////////////////////////////////////
         /// \brief This member function is an overload
+        /// for the less-equal operator using another
+        /// StringViewBase instance.
+        ///
+        /// \param view const StringViewBase&
+        /// \return bool
+        ///
+        /////////////////////////////////////////////////
+        inline bool operator<=(const StringViewBase& view) const
+        {
+            if (getData() && view.getData())
+                return getData()->compare(m_start, m_len, *view.getData(), view.m_start, view.m_len) <= 0;
+
+            return false;
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief This member function is an overload
+        /// for the less-equal operator using a const
+        /// std::string instance.
+        ///
+        /// \param sString const std::string&
+        /// \return bool
+        ///
+        /////////////////////////////////////////////////
+        inline bool operator<=(const std::string& sString) const
+        {
+            if (getData())
+                return getData()->compare(m_start, m_len, sString) <= 0;
+
+            return false;
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief This member function is an overload
         /// for the greater operator using another
         /// StringViewBase instance.
         ///
@@ -1116,6 +1185,74 @@ class StringViewBase
                 return getData()->compare(m_start, m_len, sString) > 0;
 
             return false;
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief This member function is an overload
+        /// for the greater-equal operator using another
+        /// StringViewBase instance.
+        ///
+        /// \param view const StringViewBase&
+        /// \return bool
+        ///
+        /////////////////////////////////////////////////
+        inline bool operator>=(const StringViewBase& view) const
+        {
+            if (getData() && view.getData())
+                return getData()->compare(m_start, m_len, *view.getData(), view.m_start, view.m_len) >= 0;
+
+            return false;
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief This member function is an overload
+        /// for the greater-equal operator using a const
+        /// std::string instance.
+        ///
+        /// \param sString const std::string&
+        /// \return bool
+        ///
+        /////////////////////////////////////////////////
+        inline bool operator>=(const std::string& sString) const
+        {
+            if (getData())
+                return getData()->compare(m_start, m_len, sString) >= 0;
+
+            return false;
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief This member function is an overload
+        /// for the concatenation operator using another
+        /// StringViewBase instance.
+        ///
+        /// \param view const StringViewBase&
+        /// \return std::string
+        ///
+        /////////////////////////////////////////////////
+        inline std::string operator+(const StringViewBase& view) const
+        {
+            if (getData() && view.getData())
+                return std::string(begin(), end()).append(view.begin(), view.end());
+
+            return "";
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief This member function is an overload
+        /// for the concatenation operator using a const
+        /// std::string instance.
+        ///
+        /// \param view const StringViewBase&
+        /// \return std::string
+        ///
+        /////////////////////////////////////////////////
+        inline std::string operator+(const std::string& sString) const
+        {
+            if (getData())
+                return std::string(begin(), end()).append(sString);
+
+            return "";
         }
 
         /////////////////////////////////////////////////
@@ -1399,6 +1536,28 @@ class StringViewBase
 
         /////////////////////////////////////////////////
         /// \brief Wrapper member function for
+        /// std::string::find_first_of()
+        ///
+        /// \param c char
+        /// \param pos size_t
+        /// \return size_t
+        ///
+        /////////////////////////////////////////////////
+        size_t find_first_of(char c, size_t pos = 0) const
+        {
+            if (getData())
+            {
+                size_t fnd = getData()->find_first_of(c, m_start + pos);
+
+                if (validAbsolutePosition(fnd))
+                    return fnd-m_start;
+            }
+
+            return std::string::npos;
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief Wrapper member function for
         /// std::string::find_first_not_of()
         ///
         /// \param findstr const std::string&
@@ -1466,6 +1625,29 @@ class StringViewBase
 
         /////////////////////////////////////////////////
         /// \brief Wrapper member function for
+        /// std::string::find_last_of()
+        ///
+        /// \param c char
+        /// \param pos size_t
+        /// \return size_t
+        ///
+        /////////////////////////////////////////////////
+        size_t find_last_of(char c, size_t pos = std::string::npos) const
+        {
+            if (getData())
+            {
+                pos = validizeLength(m_start, pos);
+                size_t fnd = getData()->find_last_of(c, m_start + pos);
+
+                if (validAbsolutePosition(fnd))
+                    return fnd-m_start;
+            }
+
+            return std::string::npos;
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief Wrapper member function for
         /// std::string::find_last_not_of()
         ///
         /// \param findstr const std::string&
@@ -1487,7 +1669,46 @@ class StringViewBase
             return std::string::npos;
         }
 
+        /////////////////////////////////////////////////
+        /// \brief Wrapper member function for
+        /// std::string::find_last_not_of()
+        ///
+        /// \param c char
+        /// \param pos size_t
+        /// \return size_t
+        ///
+        /////////////////////////////////////////////////
+        size_t find_last_not_of(char c, size_t pos = std::string::npos) const
+        {
+            if (getData())
+            {
+                pos = validizeLength(m_start, pos);
+                size_t fnd = getData()->find_last_not_of(c, m_start + pos);
+
+                if (validAbsolutePosition(fnd))
+                    return fnd-m_start;
+            }
+
+            return std::string::npos;
+        }
+
 };
+
+
+/////////////////////////////////////////////////
+/// \brief Inverse concatenation operator for a
+/// string instance with a StringViewBase
+/// instance.
+///
+/// \param sString const std::string&
+/// \param view const StringViewBase&
+/// \return std::string
+///
+/////////////////////////////////////////////////
+inline std::string operator+(const std::string& sString, const StringViewBase& view)
+{
+    return sString + view.to_string();
+}
 
 
 // Forward declaration for friendship

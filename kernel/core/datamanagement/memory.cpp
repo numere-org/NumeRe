@@ -551,10 +551,7 @@ ValueVector Memory::readMixedMem(const VectorIndex& _vLine, const VectorIndex& _
                     continue;
                 }
 
-                if (memArray[_vCol[j]]->m_type == TableColumn::TYPE_DATETIME)
-                    vReturn[j + i * _vCol.size()] = "\"" + memArray[_vCol[j]]->getValueAsString(_vLine[i]) + "\"";
-                else
-                    vReturn[j + i * _vCol.size()] = memArray[_vCol[j]]->getValueAsString(_vLine[i]);
+                vReturn[j + i * _vCol.size()] = memArray[_vCol[j]]->getValueAsParserString(_vLine[i]);
             }
         }
     }
