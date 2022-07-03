@@ -1732,11 +1732,63 @@ char CodeAnalyzer::getVariableType(const std::string& sVarName)
     // numerical/int string float standard vars (x,y,z,t)
     static std::string sFirstChars = "nsfbdxyzt";
 
-    if (((sVarName[shift+1] >= 'A' && sVarName[shift+1] <= 'Z')
-         || sVarName[shift+1] == '_')
+    if (sVarName.length() > shift+1
+        && (std::isupper(sVarName[shift+1]) || sVarName[shift+1] == '_')
         && sFirstChars.find(sVarName[shift]) != std::string::npos)
         return sVarName[shift];
 
     return '\0';
 }
+
+
+/////////////////////////////////////////////////
+/// \brief Checks, whether the passed type is a
+/// numeric type
+///
+/// \param c char
+/// \return bool
+///
+/////////////////////////////////////////////////
+static bool isNumericType(char c)
+{
+    return c == 'n' || c == 'd' || c == 'f' || c == 't';
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Change the variable's type to the
+/// passed type.
+///
+/// \param sVarName std::string&
+/// \param type char
+/// \return void
+///
+/////////////////////////////////////////////////
+void CodeAnalyzer::changeVariableType(std::string& sVarName, char type)
+{
+    char currentType = getVariableType(sVarName);
+
+    // floats and integers are not so sharply separated
+    if (currentType == type
+        || (isNumericType(currentType) && isNumericType(type)))
+        return;
+
+    size_t shift = 0;
+
+    // We want to start the procedures arguments with an underscore (not possible in MATLAB)
+    while (sVarName[shift] == '_')
+        shift++;
+
+    // Now create the fixed variable name
+    if (currentType) // Has already a type
+        sVarName[shift] = type;
+    else
+    {
+        if (!std::isupper(sVarName[shift]))
+            sVarName[shift] = std::toupper(sVarName[shift]);
+
+        sVarName.insert(shift, 1, type);
+    }
+}
+
 

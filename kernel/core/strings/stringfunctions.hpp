@@ -49,15 +49,15 @@ string removeMaskedStrings(const std::string& sString)
         if (sRet.compare(i, 2, "\\\"") == 0)
             sRet.erase(i, 1);
 
-        //if (sRet.compare(i, 2, "\\t") == 0
-        //    && sRet.compare(i, 4, "\\tau") != 0
-        //    && sRet.compare(i, 6, "\\theta") != 0
-        //    && sRet.compare(i, 6, "\\times") != 0)
-        //    sRet.replace(i, 2, "\t");
-        //
-        //if (sRet.compare(i, 2, "\\n") == 0
-        //    && sRet.compare(i, 3, "\\nu") != 0)
-        //    sRet.replace(i, 2, "\n");
+        if (sRet.compare(i, 2, "\\t") == 0
+            && sRet.compare(i, 4, "\\tau") != 0
+            && sRet.compare(i, 6, "\\theta") != 0
+            && sRet.compare(i, 6, "\\times") != 0)
+            sRet.replace(i, 2, "\t");
+
+        if (sRet.compare(i, 2, "\\n") == 0
+            && sRet.compare(i, 3, "\\nu") != 0)
+            sRet.replace(i, 2, "\n");
 
         if (sRet.compare(i, 2, "\\ ") == 0)
             sRet.erase(i + 1, 1);
@@ -1942,6 +1942,75 @@ static StringVector strfnc_num(StringFuncArgs& funcArgs)
 
 
 /////////////////////////////////////////////////
+/// \brief Implementation of the logtoidx()
+/// function.
+///
+/// \param funcArgs StringFuncArgs&
+/// \return StringVector
+///
+/////////////////////////////////////////////////
+static StringVector strfnc_logtoidx(StringFuncArgs& funcArgs)
+{
+    StringVector logtoidx;
+
+    if (funcArgs.sMultiArg.size())
+    {
+        for (size_t i = 0; i < funcArgs.sMultiArg.size(); i++)
+        {
+            if (funcArgs.sMultiArg.is_string(i) && funcArgs.sMultiArg[i].length())
+                logtoidx.push_back(i+1);
+            else if (!funcArgs.sMultiArg.is_string(i) && funcArgs.sMultiArg[i] != "false" && funcArgs.sMultiArg[i] != "0")
+                logtoidx.push_back(i+1);
+        }
+    }
+    else if (funcArgs.nMultiArg.size())
+    {
+        for (size_t i = 0; i < funcArgs.nMultiArg.size(); i++)
+        {
+            if (funcArgs.nMultiArg[i])
+                logtoidx.push_back(i+1);
+        }
+    }
+
+    if (logtoidx.size())
+        return logtoidx;
+
+    return "0";
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Implementation of the idxtolog()
+/// function.
+///
+/// \param funcArgs StringFuncArgs&
+/// \return StringVector
+///
+/////////////////////////////////////////////////
+static StringVector strfnc_idxtolog(StringFuncArgs& funcArgs)
+{
+    StringVector idxtolog;
+
+    if (funcArgs.nMultiArg.size())
+    {
+        auto iter = std::max_element(funcArgs.nMultiArg.begin(), funcArgs.nMultiArg.end());
+        idxtolog.resize(*iter, "false");
+
+        for (size_t i = 0; i < funcArgs.nMultiArg.size(); i++)
+        {
+            if (funcArgs.nMultiArg[i] > 0)
+                idxtolog.getRef(funcArgs.nMultiArg[i]-1) = "true";
+        }
+    }
+
+    if (idxtolog.size())
+        return idxtolog;
+
+    return "0";
+}
+
+
+/////////////////////////////////////////////////
 /// \brief Implementation of the min()
 /// function.
 ///
@@ -2254,6 +2323,7 @@ static std::map<std::string, StringFuncHandle> getStringFuncHandles()
     mHandleTable["getversioninfo"]      = StringFuncHandle(NOARGS, strfnc_getversioninfo, false);
     mHandleTable["getmatchingparens"]   = StringFuncHandle(STR, strfnc_getmatchingparens, false);
     mHandleTable["getopt"]              = StringFuncHandle(STR_VAL, strfnc_getopt, false);
+    mHandleTable["idxtolog"]            = StringFuncHandle(VAL, strfnc_idxtolog, true);
     mHandleTable["is_alnum"]            = StringFuncHandle(STR, strfnc_isalnum, false);
     mHandleTable["is_alpha"]            = StringFuncHandle(STR, strfnc_isalpha, false);
     mHandleTable["is_blank"]            = StringFuncHandle(STR, strfnc_isblank, false);
@@ -2270,6 +2340,7 @@ static std::map<std::string, StringFuncHandle> getStringFuncHandles()
     mHandleTable["is_xdigit"]           = StringFuncHandle(STR, strfnc_isxdigit, false);
     mHandleTable["justify"]             = StringFuncHandle(STR_VAL, strfnc_justify, true);
     mHandleTable["locate"]              = StringFuncHandle(STR_STR_VALOPT_VALOPT, strfnc_locate, true);
+    mHandleTable["logtoidx"]            = StringFuncHandle(STR, strfnc_logtoidx, true);
     mHandleTable["max"]                 = StringFuncHandle(STR, strfnc_max, true);
     mHandleTable["min"]                 = StringFuncHandle(STR, strfnc_min, true);
     mHandleTable["num"]                 = StringFuncHandle(STR, strfnc_num, true);

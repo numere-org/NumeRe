@@ -182,6 +182,7 @@ class NumeReEditor : public wxStyledTextCtrl, public wxThreadHelper
 		void OnUnhideAllFromMenu();
 		void OnRenameSymbols(wxCommandEvent& event);
 		void OnRenameSymbolsFromMenu();
+		void OnFixTypes(wxCommandEvent& event);
 		void OnAbstrahizeSection(wxCommandEvent& event);
 		void OnAbstrahizeSectionFromMenu();
 		void OnMenuEvent(wxCommandEvent& event);
@@ -282,6 +283,7 @@ class NumeReEditor : public wxStyledTextCtrl, public wxThreadHelper
 		 *
 		 */
 		void sortSelection(bool ascending = true);
+		void fixSymbolName(int pos);
 
 		FileFilterType getFileType()
 		{

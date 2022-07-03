@@ -101,11 +101,12 @@ class CodeAnalyzer
         int calculateCyclomaticComplexity(int startline, int endline);
         int calculateLinesOfCode(int startline, int endline);
         int countNumberOfComments(int startline, int endline);
-        char getVariableType(const std::string& sVarName);
 
     public:
         CodeAnalyzer(NumeReEditor* parent, Options* opts);
 
+        static char getVariableType(const std::string& sVarName);
+        static void changeVariableType(std::string& sVarName, char type);
         void run();
 };
 

@@ -14,6 +14,8 @@
 #include "icons/exe.xpm"
 #include "icons/doc.xpm"
 
+#include "../kernel/core/io/logger.hpp"
+
 
 
 
@@ -155,7 +157,7 @@ bool IconManager::AddIconToList(wxString iconInfo)
 	// wxTheMimeTypesManager is a wxWidgets-created global instance
 	wxFileType* fileType = wxTheMimeTypesManager->GetFileTypeFromExtension(iconInfo);
 
-	if(fileType == NULL)
+	if (fileType == NULL)
 	{
 		return false;
 	}
@@ -163,24 +165,23 @@ bool IconManager::AddIconToList(wxString iconInfo)
 	wxIconLocation iconLocation;
 
 	bool result = false;
-	if(fileType->GetIcon(&iconLocation))
+
+	if (fileType->GetIcon(&iconLocation))
 	{
 		wxIcon fileIcon;
-
 		wxString fullname = iconLocation.GetFileName();
-
-		if(fullname == wxEmptyString || fullname == "%1")
-		{
-			return false;
-		}
-
-		if ( iconLocation.GetIndex() )
-		{
-			fullname << _T(';') << iconLocation.GetIndex();
-		}
 
         while (fullname.find('"') != std::string::npos)
             fullname.erase(fullname.find('"'),1);
+
+		if (fullname == wxEmptyString || fullname == "%1" || fullname == "%2")
+		{
+		    m_iconExtensionMapping[iconInfo] = m_iconExtensionMapping["DEFAULTFILEEXTENSION"];
+			return true;
+		}
+
+		if (iconLocation.GetIndex())
+			fullname << _T(';') << iconLocation.GetIndex();
 
         bool res = false;
 
@@ -224,18 +225,18 @@ int IconManager::GetIconIndex(wxString iconInfo)
 {
 	int currentExtensionIconNumber;
 
-	if(iconInfo == wxEmptyString)
+	if (iconInfo == wxEmptyString)
 	{
 		return m_iconExtensionMapping["DEFAULTFILEEXTENSION"];
 	}
 
-	if(m_iconExtensionMapping.find(iconInfo) != m_iconExtensionMapping.end())
+	if (m_iconExtensionMapping.find(iconInfo) != m_iconExtensionMapping.end())
 	{
 		currentExtensionIconNumber = m_iconExtensionMapping[iconInfo];
 	}
 	else
 	{
-		if(AddIconToList(iconInfo))
+		if (AddIconToList(iconInfo))
 		{
 			currentExtensionIconNumber = m_iconExtensionMapping[iconInfo];
 		}

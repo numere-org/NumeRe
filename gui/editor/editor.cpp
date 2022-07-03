@@ -110,6 +110,7 @@ BEGIN_EVENT_TABLE(NumeReEditor, wxStyledTextCtrl)
     EVT_MENU            (ID_HIDE_SELECTION, NumeReEditor::OnHideSelection)
     EVT_MENU            (ID_MENU_HELP_ON_ITEM, NumeReEditor::OnHelpOnSelection)
     EVT_MENU            (ID_RENAME_SYMBOLS, NumeReEditor::OnRenameSymbols)
+    EVT_MENU            (ID_FIX_TYPE, NumeReEditor::OnFixTypes)
     EVT_MENU            (ID_ABSTRAHIZE_SECTION, NumeReEditor::OnAbstrahizeSection)
     EVT_MENU            (ID_MENU_COPY, NumeReEditor::OnMenuEvent)
     EVT_MENU            (ID_MENU_CUT, NumeReEditor::OnMenuEvent)
@@ -280,8 +281,15 @@ NumeReEditor::NumeReEditor(NumeReWindow* mframe, Options* options, wxWindow* par
     SetCaretPeriod(m_options->GetCaretBlinkTime());
 
     m_refactoringMenu = new wxMenu();
-    m_refactoringMenu->Append(ID_RENAME_SYMBOLS, _guilang.get("GUI_MENU_EDITOR_RENAME_SYMBOLS"));
-    m_refactoringMenu->Append(ID_ABSTRAHIZE_SECTION, _guilang.get("GUI_MENU_EDITOR_ABSTRAHIZE_SECTION"));
+    m_refactoringMenu->Append(ID_RENAME_SYMBOLS,
+                              _guilang.get("GUI_MENU_EDITOR_RENAME_SYMBOLS"),
+                              _guilang.get("GUI_MENU_EDITOR_RENAME_SYMBOLS_TTP"));
+    m_refactoringMenu->Append(ID_FIX_TYPE,
+                              _guilang.get("GUI_MENU_EDITOR_FIX_TYPE"),
+                              _guilang.get("GUI_MENU_EDITOR_FIX_TYPE_TTP"));
+    m_refactoringMenu->Append(ID_ABSTRAHIZE_SECTION,
+                              _guilang.get("GUI_MENU_EDITOR_ABSTRAHIZE_SECTION"),
+                              _guilang.get("GUI_MENU_EDITOR_ABSTRAHIZE_SECTION_TTP"));
 
     m_popupMenu.Append(ID_MENU_CUT, _guilang.get("GUI_MENU_EDITOR_CUT"));
     m_popupMenu.Append(ID_MENU_COPY, _guilang.get("GUI_MENU_EDITOR_COPY"));
@@ -2534,6 +2542,292 @@ void NumeReEditor::sortSelection(bool ascending)
 
 
 /////////////////////////////////////////////////
+/// \brief Apply the function heuristics to
+/// detect the current symbol's type.
+///
+/// \param func const std::string&
+/// \return char
+///
+/////////////////////////////////////////////////
+static char applyFunctionHeuristics(const std::string& func)
+{
+    // Check the following special cases
+    if (func == "time" || func == "clock" || func == "to_time")
+        return 't';
+
+    // Find the key for the corresponding language string
+    std::string sKey = _guilang.getKey("PARSERFUNCS_LISTFUNC_FUNC_" + toUpperCase(func) + "_[*]");
+    std::string sRetVal = _guilang.get(sKey);
+    sRetVal.erase(0, sRetVal.find_first_not_of(' ', sRetVal.find(')')+1));
+    sRetVal.erase(sRetVal.find_first_of(" -"));
+
+    // Use the documented return value to determine the type
+    // of the variable
+    if (sRetVal == "VAL" || sRetVal == "{VAL}" || sRetVal == "MAT" || sRetVal == "VEC")
+        return 'f';
+    else if (sRetVal == "LOG" || sRetVal == "{LOG}")
+        return 'b';
+    else if (sRetVal == "STR" || sRetVal == "{STR}")
+        return 's';
+    else if (sRetVal == "ARG" || sRetVal == "{ARG}")
+        return 0; // Not detectable here
+
+    return 'f';
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Apply the command heuristics to
+/// detect the current symbol's type.
+///
+/// \param command const std::string&
+/// \return char
+///
+/////////////////////////////////////////////////
+static char applyCommandHeuristics(const std::string& command)
+{
+    // Find the key for the corresponding language string
+    std::string sKey = _guilang.getKey("PARSERFUNCS_LISTCMD_CMD_" + toUpperCase(command) + "_[*]");
+    std::string sRetVal = _guilang.get(sKey);
+
+    if (sRetVal.find("->") == std::string::npos)
+        return 0; // s.th.s is clearly wrong here
+
+    sRetVal.erase(0, sRetVal.find_first_not_of(' ', sRetVal.find("->")+2));
+    sRetVal.erase(sRetVal.find_first_of(" -"));
+
+    // Use the documented return value to determine the type
+    // of the variable
+    if (sRetVal == "VAL" || sRetVal == "{VAL}" || sRetVal == "MAT" || sRetVal == "VEC")
+        return 'f';
+    else if (sRetVal == "LOG" || sRetVal == "{LOG}")
+        return 'b';
+    else if (sRetVal == "STR" || sRetVal == "{STR}")
+        return 's';
+    else if (sRetVal == "ARG" || sRetVal == "{ARG}")
+        return 0; // Not detectable here
+
+    return 'f';
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Apply the value heuristics to detect
+/// the current symbol's type.
+///
+/// \param val std::string
+/// \return char
+///
+/////////////////////////////////////////////////
+static char applyValueHeuristics(std::string val)
+{
+    val = getNextArgument(val);
+
+    if (val.find("##") != std::string::npos)
+        val.erase(val.find("##"));
+
+    // We most probably have additional closing
+    // parentheses
+    if (!validateParenthesisNumber(val))
+    {
+        for (size_t i = 0; i < val.size(); i++)
+        {
+            if (val[i] == '(' || val[i] == '[' || val[i] == '{')
+            {
+                size_t pos = getMatchingParenthesis(StringView(val, i));
+
+                // S.th. is wrong
+                if (pos == std::string::npos)
+                    return 0;
+
+                i += pos;
+                continue;
+            }
+
+            // These have to be unmatched
+            if (val[i] == ')' || val[i] == ']' || val[i] == '}')
+            {
+                val.erase(i);
+                break;
+            }
+        }
+    }
+
+    StripSpaces(val);
+
+    if (val.back() == ';')
+        val.pop_back();
+
+    if (val == "true" || val == "false")
+        return 'b';
+    else if (val.find_first_not_of("0123456789^, ") == std::string::npos)
+    {
+        if (val == "0") // 0 is too common
+            return 0;
+
+        return 'n';
+    }
+    else if (val.find_first_of("/^'") != std::string::npos)
+        return 'f';
+    else if (val.length() > 2 && val[0] == '_' && std::islower(val[1]) && std::isupper(val[2]))
+        return val[1];
+    else if (val.length() > 1 && std::islower(val[0]) && std::isupper(val[1]))
+        return val[0];
+
+    return 'f';
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Fixes the symbol's type depending on
+/// either the declaration point or the first
+/// assigned value.
+///
+/// \param pos int
+/// \return void
+///
+/////////////////////////////////////////////////
+void NumeReEditor::fixSymbolName(int pos)
+{
+    if (m_fileType != FILE_NSCR && m_fileType != FILE_NPRC/* && m_fileType != FILE_MATLAB*/)
+        return;
+
+    if (!isStyleType(STYLE_IDENTIFIER, pos))
+        return;
+
+    // Get context
+    std::pair<int, int> context = getCurrentContext(LineFromPosition(pos));
+
+    // Get the symbol's name below the cursor
+    std::string sSymbol = GetTextRange(WordStartPosition(pos, true), WordEndPosition(pos, true)).ToStdString();
+    std::string sOldName = sSymbol;
+
+    // Find all occurences
+    std::vector<int> vMatches = m_search->FindAll(sSymbol, GetStyleAt(pos),
+                                                  PositionFromLine(context.first), GetLineEndPosition(context.second), false);
+
+    // Examine the first occurence
+    wxString lineContent = GetLine(LineFromPosition(vMatches.front())).Strip(wxString::both);
+
+    // this character will contain the type of
+    // this symbol once detected
+    char type = 'f';
+
+    // Is it a variable definition?
+    if (lineContent.StartsWith("str "))
+        type = 's';
+    else
+    {
+        // In all other cases, we need to examine the first assigned
+        // value
+        for (int match : vMatches)
+        {
+            match += sSymbol.length();
+            int lineStartPosition = PositionFromLine(LineFromPosition(match));
+            lineContent = GetLine(LineFromPosition(match)).Strip(wxString::both);
+
+            // This match is probably in a vector brace
+            if (lineContent.rfind('{', match-lineStartPosition) != std::string::npos
+                && lineContent.find('}', match-lineStartPosition) != std::string::npos)
+            {
+                int pos = match;
+
+                while (GetCharAt(pos) != '{')
+                    pos--;
+
+                pos = BraceMatch(pos);
+
+                // If the position is farther than the match, then
+                // the match is part of a vector brace. We'll search
+                // after the brace
+                if (pos > match)
+                    match = pos+1;
+            }
+
+            // Increment and decrement operators
+            if (GetTextRange(match, match+2) == "++" || GetTextRange(match, match+2) == "--")
+            {
+                type = 'n';
+                break;
+            }
+
+            // Find the next character, which is no whitespace and not the initial
+            // character of a definition
+            while (GetCharAt(match) == ' ' || GetCharAt(match) == '\t' || GetCharAt(match) == ':')
+                match++;
+
+            // Is it an assignment operator?
+            if (GetCharAt(match) == '=' && GetCharAt(match+1) != '=')
+            {
+                // Move one char forward
+                match++;
+
+                // Find the value
+                while (GetCharAt(match) == ' ' || GetCharAt(match) == '\t')
+                    match++;
+
+                // Determine the type of the value. We'll default to
+                // float
+                if (isStyleType(STYLE_STRING, match) || GetStyleAt(match) == wxSTC_NSCR_STRING_PARSER)
+                    type = 's';
+                else if (GetStyleAt(match) == wxSTC_NSCR_CONSTANTS)
+                    type = 'f';
+                else if (isStyleType(STYLE_FUNCTION, match))
+                {
+                    char funcType = applyFunctionHeuristics(GetTextRange(match, WordEndPosition(match, true)).ToStdString());
+
+                    if (!funcType)
+                        continue;
+
+                    type = funcType;
+                }
+                else if (isStyleType(STYLE_COMMAND, match))
+                {
+                    char commandType = applyCommandHeuristics(GetTextRange(match, WordEndPosition(match, true)).ToStdString());
+
+                    if (!commandType)
+                        continue;
+
+                    type = commandType;
+                }
+                else
+                {
+                    char valtype = applyValueHeuristics(GetTextRange(match, GetLineEndPosition(LineFromPosition(match))).ToStdString());
+
+                    if (!valtype)
+                        continue;
+
+                    type = valtype;
+                }
+
+                // We have our information
+                break;
+            }
+        }
+    }
+
+    // Now create the fixed variable name
+    CodeAnalyzer::changeVariableType(sSymbol, type);
+
+    if (sSymbol != sOldName)
+    {
+        int ret = wxMessageBox(_guilang.get("GUI_EDITOR_FIX_TYPE_MESSAGE", sOldName, sSymbol),
+                               _guilang.get("GUI_EDITOR_FIX_TYPE_TITLE"),
+                               wxCENTER | wxYES_NO,
+                               this);
+
+        if (ret == wxNO)
+            return;
+
+        BeginUndoAction();
+        // Now replace it everywhere
+        ReplaceMatches(vMatches, sOldName, sSymbol);
+        EndUndoAction();
+    }
+}
+
+
+/////////////////////////////////////////////////
 /// \brief Notifies the editor that the duplicated
 /// code dialog had been closed.
 ///
@@ -4193,6 +4487,7 @@ void NumeReEditor::OnRightClick(wxMouseEvent& event)
     {
         m_refactoringMenu->Enable(ID_RENAME_SYMBOLS, false);
         m_refactoringMenu->Enable(ID_ABSTRAHIZE_SECTION, false);
+        m_refactoringMenu->Enable(ID_FIX_TYPE, false);
         m_popupMenu.Remove(ID_REFACTORING_MENU);
     }
 
@@ -4257,8 +4552,14 @@ void NumeReEditor::OnRightClick(wxMouseEvent& event)
             // Show the refactoring menu
             m_popupMenu.Insert(nINSERTIONPOINT, m_menuRefactoring);
 
-            if (this->isStyleType(STYLE_DEFAULT, charpos) || this->isStyleType(STYLE_IDENTIFIER, charpos) || this->isStyleType(STYLE_DATAOBJECT, charpos) || this->isStyleType(STYLE_FUNCTION, charpos))
+            if (isStyleType(STYLE_DEFAULT, charpos)
+                || isStyleType(STYLE_IDENTIFIER, charpos)
+                || isStyleType(STYLE_DATAOBJECT, charpos)
+                || isStyleType(STYLE_FUNCTION, charpos))
                 m_refactoringMenu->Enable(ID_RENAME_SYMBOLS, true);
+
+            if (isStyleType(STYLE_IDENTIFIER, charpos))
+                m_refactoringMenu->Enable(ID_FIX_TYPE, true);
 
             if (HasSelection())
                 m_refactoringMenu->Enable(ID_ABSTRAHIZE_SECTION, true);
@@ -6515,6 +6816,19 @@ void NumeReEditor::OnRenameSymbolsFromMenu()
 
     if (this->isStyleType(STYLE_DEFAULT, charpos) || this->isStyleType(STYLE_IDENTIFIER, charpos) || this->isStyleType(STYLE_DATAOBJECT, charpos) || this->isStyleType(STYLE_FUNCTION, charpos))
         this->RenameSymbols(charpos);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Event wrapper for \c fixSymbolName.
+///
+/// \param event wxCommandEvent&
+/// \return void
+///
+/////////////////////////////////////////////////
+void NumeReEditor::OnFixTypes(wxCommandEvent& event)
+{
+    fixSymbolName(this->PositionFromPoint(m_lastRightClick));
 }
 
 
