@@ -886,7 +886,8 @@ string Script::handleIncludeSyntax(string& sScriptCommand)
     if (!m_include && Includer::is_including_syntax(sScriptCommand))
     {
         // Open the include file
-        m_include.reset(new Includer(sScriptCommand));
+        std::string sFileName = m_script->getFileName();
+        m_include.reset(new Includer(sScriptCommand, sFileName.substr(0, sFileName.rfind('/'))));
 
         // Ensure that the file is valid
         if (!m_include->is_open())

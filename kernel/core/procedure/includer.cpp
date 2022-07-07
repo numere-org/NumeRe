@@ -69,7 +69,7 @@ void Includer::openIncludedFile(const std::string& sIncludingString)
 
         // Get a valid file name
         if (sIncludeFileName.length())
-            sIncludeFileName = FileSystem::ValidFileName(sIncludeFileName, ".nscr");
+            sIncludeFileName = FileSystem::ValidFileName(sIncludeFileName+"*", ".nscr");
         else
             return;
 
@@ -81,7 +81,7 @@ void Includer::openIncludedFile(const std::string& sIncludingString)
         {
             delete m_include;
             m_include = nullptr;
-            throw SyntaxError(SyntaxError::SCRIPT_NOT_EXIST, sIncludingString, SyntaxError::invalid_position, sIncludeFileName);
+            throw SyntaxError(SyntaxError::INCLUDE_NOT_EXIST, sIncludingString, SyntaxError::invalid_position, sIncludeFileName);
         }
     }
 }
@@ -93,12 +93,14 @@ void Includer::openIncludedFile(const std::string& sIncludingString)
 /// string.
 ///
 /// \param sIncludingString const std::string&
+/// \param sSearchPath const std::string&
 ///
 /////////////////////////////////////////////////
-Includer::Includer(const std::string& sIncludingString) : m_include(nullptr), nIncludeLine(-1), m_type(Includer::INCLUDE_ALL)
+Includer::Includer(const std::string& sIncludingString, const std::string& sSearchPath) : m_include(nullptr), nIncludeLine(-1), m_type(Includer::INCLUDE_ALL)
 {
     initializeFromKernel();
-    setPath(NumeReKernel::getInstance()->getScript().getPath(), false, getProgramPath());
+    //setPath(NumeReKernel::getInstance()->getScript().getPath(), false, getProgramPath());
+    setPath(sSearchPath, false, getProgramPath());
 
     openIncludedFile(sIncludingString);
 }

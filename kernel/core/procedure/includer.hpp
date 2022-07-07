@@ -47,7 +47,7 @@ class Includer : public FileSystem
         void openIncludedFile(const std::string& sIncludingString);
 
     public:
-        Includer(const std::string& sIncludingString);
+        Includer(const std::string& sIncludingString, const std::string& sSearchPath);
         ~Includer();
 
         int getCurrentLine() const
