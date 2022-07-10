@@ -99,7 +99,6 @@ void Includer::openIncludedFile(const std::string& sIncludingString)
 Includer::Includer(const std::string& sIncludingString, const std::string& sSearchPath) : m_include(nullptr), nIncludeLine(-1), m_type(Includer::INCLUDE_ALL)
 {
     initializeFromKernel();
-    //setPath(NumeReKernel::getInstance()->getScript().getPath(), false, getProgramPath());
     setPath(sSearchPath, false, getProgramPath());
 
     openIncludedFile(sIncludingString);
