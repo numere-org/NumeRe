@@ -627,7 +627,7 @@ bool PackageManager::evalPluginCmd(std::string& sCmd)
 /////////////////////////////////////////////////
 bool PackageManager::declareNewPackage(const std::string& sInstallInfoString)
 {
-    static std::string sProtectedCommands = ";quit;help;find;uninstall;install;credits;about;continue;break;var;tab;global;throw;namespace;return;abort;explicit;str;if;else;elseif;endif;while;endwhile;for;endfor;switch;case;default;endswitch;";
+    static std::string sProtectedCommands = ";quit;help;find;uninstall;install;include;credits;about;continue;break;var;cst;tab;global;throw;namespace;return;abort;explicit;str;if;else;elseif;endif;while;endwhile;for;endfor;switch;case;default;endswitch;";
     bool bAllowOverride = false;
 
     // Create the new plugin

@@ -619,6 +619,11 @@ void NumeReTerminal::OnThreadUpdate(wxThreadEvent& event)
 		// clear the communication variables
 		m_sAnswer.clear();
 		changedSettings = _kernel.SettingsModified();
+
+		// Warnings may be issued without kernel interaction
+		if (m_KernelStatus == NumeReKernel::NUMERE_ISSUE_WARNING && !m_isBusy)
+            sAnswer += "|\n|<- ";
+
 		m_KernelStatus = NumeReKernel::NUMERE_ANSWER_READ;
 	}
 

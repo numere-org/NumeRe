@@ -24,6 +24,8 @@
 #include "../../kernel/core/utils/tools.hpp"
 #include "../../kernel/core/utils/tinyxml2.h"
 #include "../../kernel/core/procedure/dependency.hpp"
+#include "../../kernel/core/procedure/includer.hpp"
+#include "../../kernel/core/io/styledtextfile.hpp"
 #include "../../common/vcsmanager.hpp"
 #include "../../common/filerevisions.hpp"
 #include "../../common/datastructures.h"
@@ -229,10 +231,8 @@ void PackageDialog::OnAddItems(wxCommandEvent& event)
         {
             if (m_fileList->FindItem(-1, replacePathSeparator(files[i].ToStdString()), false) == -1)
             {
-                if (files[i].rfind(".nlyt") == std::string::npos)
-                    m_fileList->InsertItem(m_fileList->GetItemCount(), replacePathSeparator(files[i].ToStdString()), m_icons->GetIconIndex(".nprc"));
-                else
-                    m_fileList->InsertItem(m_fileList->GetItemCount(), replacePathSeparator(files[i].ToStdString()), m_icons->GetIconIndex(".nlyt"));
+                wxString sExt = files[i].substr(files[i].rfind('.'));
+                m_fileList->InsertItem(m_fileList->GetItemCount(), replacePathSeparator(files[i].ToStdString()), m_icons->GetIconIndex(sExt));
             }
         }
 
@@ -400,6 +400,40 @@ void PackageDialog::SaveOnClose()
 
 
 /////////////////////////////////////////////////
+/// \brief Static function to resolve the
+/// includes in the passed set and add them to
+/// the set afterwards.
+///
+/// \param fileSet std::set<std::string>&
+/// \return void
+///
+/////////////////////////////////////////////////
+static void resolveIncludes(std::set<std::string>& fileSet)
+{
+    std::vector<std::string> vIncludes;
+
+    for (auto iter = fileSet.begin(); iter != fileSet.end(); ++iter)
+    {
+        StyledTextFile depFile(*iter);
+        std::string sSearchPath = depFile.getFileName();
+        sSearchPath.erase(sSearchPath.find_last_of("/\\"));
+
+        for (int i = 0; i < depFile.getLinesCount(); i++)
+        {
+            if (Includer::is_including_syntax(depFile.getStrippedLine(i)))
+            {
+                Includer incl(depFile.getStrippedLine(i), sSearchPath);
+                vIncludes.push_back(incl.getIncludedFileName());
+            }
+        }
+    }
+
+    for (const auto& incl : vIncludes)
+        fileSet.insert(incl);
+}
+
+
+/////////////////////////////////////////////////
 /// \brief This function autodetects the
 /// dependencies of the passed files by calling
 /// the PackageDialog::followBranch() function
@@ -427,11 +461,16 @@ void PackageDialog::autoDetect(const wxArrayString& mainfiles)
             findLayoutDependencies(replacePathSeparator(mainfiles[i].ToStdString()), fileSet);
     }
 
+    resolveIncludes(fileSet);
+
     // Insert only unique file names into the list view
     for (auto iter = fileSet.begin(); iter != fileSet.end(); ++iter)
     {
         if (m_fileList->FindItem(-1, *iter, false) == -1)
-            m_fileList->InsertItem(m_fileList->GetItemCount(), *iter, m_icons->GetIconIndex(".nprc"));
+        {
+            std::string sExt = (*iter).substr((*iter).rfind('.'));
+            m_fileList->InsertItem(m_fileList->GetItemCount(), *iter, m_icons->GetIconIndex(sExt));
+        }
     }
 
     markUnsaved();
@@ -569,7 +608,12 @@ void PackageDialog::loadProjectFile(const wxString& filename)
             m_fileList->InsertItem(m_fileList->GetItemCount(), "(!) " + std::string(file->GetText()), m_icons->GetIconIndex(""));
         }
         else
-            m_fileList->InsertItem(m_fileList->GetItemCount(), file->GetText(), std::string(file->GetText()).find(".nprc") != std::string::npos ? m_icons->GetIconIndex(".nprc") : m_icons->GetIconIndex(".nlyt"));
+        {
+            std::string sExt = file->GetText();
+            sExt = sExt.substr(sExt.rfind('.'));
+
+            m_fileList->InsertItem(m_fileList->GetItemCount(), file->GetText(), m_icons->GetIconIndex(sExt));
+        }
 
 
         file = file->NextSiblingElement();

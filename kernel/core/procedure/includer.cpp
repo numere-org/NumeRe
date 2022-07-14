@@ -32,23 +32,29 @@
 /////////////////////////////////////////////////
 void Includer::openIncludedFile(const std::string& sIncludingString)
 {
+    Match _mMatch = findCommand(sIncludingString);
+    std::string sIncludeFileName;
+
     if (sIncludingString.front() == '@' && sIncludingString[1] != ' ')
     {
-        std::string sIncludeFileName;
+        // This syntax is deprecated
+        NumeReKernel::issueWarning(_lang.get("COMMON_SYNTAX_DEPRECATED", sIncludingString));
 
         if (sIncludingString[1] == '"')
             sIncludeFileName = sIncludingString.substr(2, sIncludingString.find('"', 2)-2);
         else
             sIncludeFileName = sIncludingString.substr(1, sIncludingString.find(' ')-1);
 
+        size_t offset = 4; // Corresponds to '@"C:...'
+
         // Determine the inclusion type
-        if (sIncludingString.find(':') != std::string::npos)
+        if (sIncludingString.find(':', offset) != std::string::npos)
         {
-            if (sIncludingString.find("defines", sIncludingString.find(':')+1) != std::string::npos)
+            if (sIncludingString.find("defines", sIncludingString.find(':', offset)+1) != std::string::npos)
                 m_type = INCLUDE_DEFINES;
-            else if (sIncludingString.find("globals", sIncludingString.find(':')+1) != std::string::npos)
+            else if (sIncludingString.find("globals", sIncludingString.find(':', offset)+1) != std::string::npos)
                 m_type = INCLUDE_GLOBALS;
-            else if (sIncludingString.find("declarations", sIncludingString.find(':')+1) != std::string::npos)
+            else if (sIncludingString.find("declarations", sIncludingString.find(':', offset)+1) != std::string::npos)
                 m_type = INCLUDE_DECLARATIONS;
         }
 
@@ -61,7 +67,7 @@ void Includer::openIncludedFile(const std::string& sIncludingString)
                     && (__i > 1
                         || (__i == 1 && sIncludeFileName.length() > (unsigned int)__i+1 && sIncludeFileName[__i+1] != '/')))
                 {
-                    sIncludeFileName.erase(sIncludeFileName.find(':'));
+                    sIncludeFileName.erase(__i);
                     break;
                 }
             }
@@ -69,20 +75,52 @@ void Includer::openIncludedFile(const std::string& sIncludingString)
 
         // Get a valid file name
         if (sIncludeFileName.length())
-            sIncludeFileName = FileSystem::ValidFileName(sIncludeFileName+"*", ".nscr");
+            sIncludeFileName = FileSystem::ValidFileName(sIncludeFileName, ".nscr");
         else
             return;
+    }
+    else if (_mMatch.sString == "include")
+    {
+        sIncludeFileName = sIncludingString.substr(_mMatch.nPos+1+_mMatch.sString.length());
 
-        // Open the include file
-        m_include = new StyledTextFile(sIncludeFileName);
+        // Extract the actual file name
+        if (sIncludeFileName.find("::") != std::string::npos)
+            sIncludeFileName.erase(sIncludeFileName.find("::"));
 
-        // Ensure that the file is valid
-        if (m_include->getLastPosition() == -1)
+        StripSpaces(sIncludeFileName);
+
+        if (sIncludeFileName.front() == '"')
+            sIncludeFileName = sIncludeFileName.substr(1, sIncludeFileName.find('"', 1)-1);
+
+        size_t offset = _mMatch.nPos+1+_mMatch.sString.length()+3; // Corresponds to 'include "C:...'
+
+        // Determine the inclusion type
+        if (sIncludingString.find("::", offset) != std::string::npos)
         {
-            delete m_include;
-            m_include = nullptr;
-            throw SyntaxError(SyntaxError::INCLUDE_NOT_EXIST, sIncludingString, SyntaxError::invalid_position, sIncludeFileName);
+            if (sIncludingString.find("defines", sIncludingString.find("::", offset)+1) != std::string::npos)
+                m_type |= INCLUDE_DEFINES;
+            else if (sIncludingString.find("globals", sIncludingString.find("::", offset)+1) != std::string::npos)
+                m_type |= INCLUDE_GLOBALS;
+            else if (sIncludingString.find("declarations", sIncludingString.find("::", offset)+1) != std::string::npos)
+                m_type |= INCLUDE_DECLARATIONS;
         }
+
+        // Get a valid file name
+        if (sIncludeFileName.length())
+            sIncludeFileName = FileSystem::ValidFileName(sIncludeFileName+".*", ".nscr");
+        else
+            return;
+    }
+
+    // Open the include file
+    m_include = new StyledTextFile(sIncludeFileName);
+
+    // Ensure that the file is valid
+    if (m_include->getLastPosition() == -1)
+    {
+        delete m_include;
+        m_include = nullptr;
+        throw SyntaxError(SyntaxError::INCLUDE_NOT_EXIST, sIncludingString, SyntaxError::invalid_position, sIncludeFileName);
     }
 }
 
@@ -99,7 +137,11 @@ void Includer::openIncludedFile(const std::string& sIncludingString)
 Includer::Includer(const std::string& sIncludingString, const std::string& sSearchPath) : m_include(nullptr), nIncludeLine(-1), m_type(Includer::INCLUDE_ALL)
 {
     initializeFromKernel();
-    setPath(sSearchPath, false, getProgramPath());
+
+    if (sIncludingString.front() == '@')
+        setPath(NumeReKernel::getInstance()->getScript().getPath(), false, getProgramPath());
+    else
+        setPath(sSearchPath, false, getProgramPath());
 
     openIncludedFile(sIncludingString);
 }
@@ -194,28 +236,31 @@ std::string Includer::getNextLine()
 
         // Depending on the include type, only accept the
         // corresponding commands
-        if (m_type == INCLUDE_DEFINES
-            && _mMatch.sString != "define"
-            && _mMatch.sString != "ifndef"
-            && _mMatch.sString != "ifndefined"
-            && _mMatch.sString != "redefine"
-            && _mMatch.sString != "redef"
-            && _mMatch.sString != "lclfunc")
+        if (m_type)
         {
-            sIncludedLine.clear();
-            continue;
-        }
-        else if (m_type == INCLUDE_GLOBALS
-            && _mMatch.sString != "global")
-        {
-            sIncludedLine.clear();
-            continue;
-        }
-        else if (m_type == INCLUDE_DECLARATIONS
-            && _mMatch.sString != SYMDEF_COMMAND)
-        {
-            sIncludedLine.clear();
-            continue;
+            if (!(m_type & INCLUDE_DEFINES)
+                && (_mMatch.sString == "define"
+                    || _mMatch.sString == "ifndef"
+                    || _mMatch.sString == "ifndefined"
+                    || _mMatch.sString == "redefine"
+                    || _mMatch.sString == "redef"
+                    || _mMatch.sString == "lclfunc"))
+            {
+                sIncludedLine.clear();
+                continue;
+            }
+            else if (!(m_type & INCLUDE_GLOBALS)
+                     && _mMatch.sString == "global")
+            {
+                sIncludedLine.clear();
+                continue;
+            }
+            else if (!(m_type & INCLUDE_DECLARATIONS)
+                     && _mMatch.sString == SYMDEF_COMMAND)
+            {
+                sIncludedLine.clear();
+                continue;
+            }
         }
     }
 
@@ -247,6 +292,21 @@ bool Includer::is_open() const
 
 
 /////////////////////////////////////////////////
+/// \brief Returns the embedded file name.
+///
+/// \return std::string
+///
+/////////////////////////////////////////////////
+std::string Includer::getIncludedFileName() const
+{
+    if (is_open())
+        return m_include->getFileName();
+
+    return "";
+}
+
+
+/////////////////////////////////////////////////
 /// \brief Static member function which
 /// determines, whether the passed line is
 /// actually a including syntax.
@@ -258,6 +318,9 @@ bool Includer::is_open() const
 bool Includer::is_including_syntax(const std::string& sLine)
 {
     if (sLine.length() > 1 && sLine.front() == '@' && sLine[1] != ' ')
+        return true;
+
+    if (findCommand(sLine).sString == "include")
         return true;
 
     return false;

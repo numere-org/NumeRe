@@ -448,6 +448,7 @@ AnnotationCount CodeAnalyzer::analyseCommands()
             && sSyntaxElement != "catch"
             && sSyntaxElement != "otherwise"
             && sSyntaxElement != "throw"
+            && sSyntaxElement != "rethrow"
             && sSyntaxElement != "namespace" //warning
        )
     {

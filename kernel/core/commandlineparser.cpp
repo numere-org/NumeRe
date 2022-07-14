@@ -409,6 +409,7 @@ std::string CommandLineParser::parseExprAsString() const
         sExpr += " -nq";
         std::string sDummy;
         NumeReKernel::getInstance()->getStringParser().evalAndFormat(sExpr, sDummy, true);
+        return toInternalString(sExpr);
     }
 
     return sExpr;
