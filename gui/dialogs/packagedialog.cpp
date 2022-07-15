@@ -218,7 +218,12 @@ void PackageDialog::OnAddItems(wxCommandEvent& event)
 {
     // Create a file dialog focused on procedure files. The user may
     // select multiple files
-    wxFileDialog dlg(this, _guilang.get("GUI_PKGDLG_SELECT_FILES"), m_terminal->getPathSettings()[PROCPATH], wxEmptyString, _guilang.get("GUI_FILTER_INSTALLABLES") + " (*.nprc, *.nlyt)|*.nprc;*.nlyt|" + _guilang.get("COMMON_FILETYPE_NPRC") + " (*.nprc)|*.nprc|" + _guilang.get("COMMON_FILETYPE_NLYT") + " (*.nlyt)|*.nlyt", wxFD_MULTIPLE);
+    wxFileDialog dlg(this, _guilang.get("GUI_PKGDLG_SELECT_FILES"), m_terminal->getPathSettings()[PROCPATH], wxEmptyString,
+                     _guilang.get("GUI_FILTER_INSTALLABLES") + " (*.nprc, *.nlyt)|*.nprc;*.nlyt|"
+                     + _guilang.get("COMMON_FILETYPE_NPRC") + " (*.nprc)|*.nprc|"
+                     + _guilang.get("COMMON_FILETYPE_NLYT") + " (*.nlyt)|*.nlyt|"
+                     + _guilang.get("COMMON_FILETYPE_NSCR") + " (*.nscr)|*.nscr",
+                     wxFD_MULTIPLE);
 
     if (dlg.ShowModal() == wxID_OK)
     {
