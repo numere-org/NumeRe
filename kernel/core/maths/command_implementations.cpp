@@ -979,7 +979,7 @@ bool differentiate(CommandLineParser& cmdParser)
             // Shall the x values be calculated?
             if (cmdParser.hasParam("xvals"))
             {
-                NumeReKernel::getInstance()->issueWarning(_lang.get("COMMON_SYNTAX_DEPRECATED"));
+                NumeReKernel::getInstance()->issueWarning(_lang.get("COMMON_SYNTAX_DEPRECATED", cmdParser.getCommandLine()));
 
                 // The x values are approximated to be in the
                 // middle of the two samplex

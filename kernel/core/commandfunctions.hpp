@@ -4521,7 +4521,7 @@ static CommandReturnValues cmd_retouch(string& sCmd)
 
     // DEPRECATED: Declared at v1.1.2rc1
     if (findCommand(sCmd).sString == "retoque")
-        NumeReKernel::issueWarning(_lang.get("COMMON_COMMAND_DEPRECATED"));
+        NumeReKernel::issueWarning(_lang.get("COMMON_COMMAND_DEPRECATED", sCmd));
 
     DataAccessParser _access(sCmd);
 
@@ -5113,6 +5113,21 @@ static CommandReturnValues cmd_url(string& sCmd)
 
 
 /////////////////////////////////////////////////
+/// \brief This static function implements the
+/// "include" command.
+///
+/// \param sCmd string&
+/// \return CommandReturnValues
+///
+/////////////////////////////////////////////////
+static CommandReturnValues cmd_include(string& sCmd)
+{
+    // Command is not usable in this context
+    throw SyntaxError(SyntaxError::INVALID_COMMAND, sCmd, "include", "include");
+}
+
+
+/////////////////////////////////////////////////
 /// \brief This static function returns a map of
 /// commands linked to their function
 /// implementation.
@@ -5166,6 +5181,7 @@ static std::map<std::string,CommandFunc> getCommandFunctions()
     mCommandFuncMap["ifndef"] = cmd_ifndefined;
     mCommandFuncMap["ifndefined"] = cmd_ifndefined;
     mCommandFuncMap["implot"] = cmd_plotting;
+    mCommandFuncMap["include"] = cmd_include;
     mCommandFuncMap["info"] = cmd_credits;
     mCommandFuncMap["install"] = cmd_install;
     mCommandFuncMap["list"] = cmd_list;

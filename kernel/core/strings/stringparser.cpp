@@ -1012,60 +1012,6 @@ namespace NumeRe
 
             if (!vIsNoStringValue[j])
             {
-                /*sCurrentComponent.clear();
-                // Start the current string value with a quotation mark
-                // if it is not a special case
-                if (!(parserFlags & NO_QUOTES))
-                    sCurrentComponent += "\"";
-
-                // Go through the current string value
-                for (size_t k = 0; k < vFinal[j].length(); k++)
-                {
-                    // If there are escaped control characters,
-                    // Replace them with their actual value here
-                    if (k + 1 < vFinal[j].length() && vFinal[j][k] == '\\')
-                    {
-                        if (vFinal[j][k + 1] == '"') // quotation mark
-                        {
-                            if (!(parserFlags & KEEP_MASKED_QUOTES))
-                                sCurrentComponent += "\"";
-                            else
-                                sCurrentComponent += "\\\"";
-
-                            k++;
-                        }
-                        else if (vFinal[j][k + 1] == ' ') // backslash itself
-                        {
-                            if (!(parserFlags & KEEP_MASKED_CONTROL_CHARS))
-                                sCurrentComponent += "\\";
-                            else
-                                sCurrentComponent += "\\ ";
-
-                            k++;
-                        }
-                        else
-                        {
-                            sCurrentComponent += "\\";
-                        }
-                    }
-                    else
-                    {
-                        // Otherwise simply append the current character
-                        sCurrentComponent += vFinal[j][k];
-                    }
-                }
-
-                // End the current string value with a quotation mark
-                // if it is not a special case
-                if (!(parserFlags & NO_QUOTES) && !vIsNoStringValue[j])
-                    sCurrentComponent += "\"";
-
-                if (parserFlags & KEEP_MASKED_CONTROL_CHARS)
-                {
-                    replaceAll(sCurrentComponent, "\n", "\\n");
-                    replaceAll(sCurrentComponent, "\t", "\\t");
-                }*/
-
                 ans.push_back(vFinal[j].to_string());
 
                 if (parserFlags & NO_QUOTES)
@@ -1177,17 +1123,23 @@ namespace NumeRe
                 if (!strRes.vNoStringVal[j])
                 {
                     if (parserFlags & NO_QUOTES)
+                    {
                         vStringResult.push_back(strRes.vResult[j].to_string());
+                        replaceAll(vStringResult.back(), "\"", "\\\"");
+                    }
                     else
+                    {
                         vStringResult.push_back(strRes.vResult.getRef(j));
+                        replaceAll(vStringResult.back(), "\"", "\\\"", 1, vStringResult.back().length()-1);
+                    }
 
                     replaceAll(vStringResult.back(), "\n", "\\n");
                     replaceAll(vStringResult.back(), "\t", "\\t");
                 }
                 else
                 {
-                    _parser.SetExpr(vStringResult[j]);
-                    vStringResult.pop_back();
+                    _parser.SetExpr(strRes.vResult[j]);
+                    //vStringResult.pop_back();
                     int nResults = 0;
                     mu::value_type* v = _parser.Eval(nResults);
 

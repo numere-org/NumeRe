@@ -48,3 +48,4 @@ Fixed	Long strings are now shortened before they are displayed within the GUI.
 Fixed	String literals missing a quotation mark will now get one appended by the history automatically to avoid the string "leakage" effect over the following lines.
 Cleaned	String functions are now much faster for larger strings.
 Added	A context menu functionality was added to the editor to automatically detect and resolve variable type prefixes.
+New	The command "include" will replace the old "@" syntax for inclusion of external files in the near future. NumeRe will display a warning for all old-fashioned "@" to simplify the replacing process.

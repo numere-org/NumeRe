@@ -281,7 +281,7 @@ static std::string parseLayoutScript(std::string& sLayoutScript, tinyxml2::XMLDo
             // a new includer to resolve that
             if (Includer::is_including_syntax(line) && !_includer)
             {
-                _includer.reset(new Includer(line));
+                _includer.reset(new Includer(line, sLayoutScript.substr(0, sLayoutScript.rfind('/'))));
                 continue;
             }
         }

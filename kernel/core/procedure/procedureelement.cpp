@@ -90,7 +90,7 @@ ProcedureElement::ProcedureElement(const std::vector<std::string>& vProcedureCon
 
         if (Includer::is_including_syntax(sProcCommandLine))
         {
-            _includer.reset(new Includer(sProcCommandLine));
+            _includer.reset(new Includer(sProcCommandLine, sFolderPath));
             continue;
         }
 

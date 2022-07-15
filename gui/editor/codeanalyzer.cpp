@@ -21,6 +21,7 @@
 #include "searchcontroller.hpp"
 #include "../../common/Options.h"
 #include "../../kernel/core/ui/language.hpp"
+#include "../../kernel/core/procedure/includer.hpp"
 
 #define ANNOTATION_NOTE wxSTC_NSCR_PROCEDURE_COMMANDS+1
 #define ANNOTATION_WARN wxSTC_NSCR_PROCEDURE_COMMANDS+2
@@ -448,6 +449,7 @@ AnnotationCount CodeAnalyzer::analyseCommands()
             && sSyntaxElement != "catch"
             && sSyntaxElement != "otherwise"
             && sSyntaxElement != "throw"
+            && sSyntaxElement != "rethrow"
             && sSyntaxElement != "namespace" //warning
        )
     {
@@ -864,7 +866,11 @@ AnnotationCount CodeAnalyzer::analyseCommands()
     // Examine definitions
     if (m_editor->m_fileType == FILE_NPRC
         && m_options->GetAnalyzerOption(Options::GLOBAL_VARIABLES)
-        && (sSyntaxElement == "define" || sSyntaxElement == "ifndefined" || sSyntaxElement == "lclfunc" || sSyntaxElement == "def" || sSyntaxElement == "ifndef"))
+        && (sSyntaxElement == "define"
+            || sSyntaxElement == "ifndefined"
+            || sSyntaxElement == "lclfunc"
+            || sSyntaxElement == "def"
+            || sSyntaxElement == "ifndef"))
     {
         // extract the definition and strip the spaces
         string sDefinition = m_editor->GetTextRange(wordend, m_editor->GetLineEndPosition(m_nCurrentLine)).ToStdString();
@@ -914,9 +920,67 @@ AnnotationCount CodeAnalyzer::analyseCommands()
         return AnnotCount;
     }
 
+    // Handle includes by resolving them and loading all definitions and declares
+    // if they are imported in this file
+    if (sSyntaxElement == "include")
+    {
+        try
+        {
+            // Creating this instance might fail
+            Includer incl(m_editor->GetTextRange(wordstart, m_editor->GetLineEndPosition(m_nCurrentLine)).ToStdString(),
+                          m_editor->GetFileName().GetPath().ToStdString());
+
+            // Go through all included lines in this file
+            while (incl.is_open())
+            {
+                std::string sLine = incl.getNextLine();
+                Match _mMatch = findCommand(sLine);
+
+                // Is it a declare?
+                if (_mMatch.sString == SYMDEF_COMMAND)
+                    m_symdefs.createSymbol(sLine.substr(_mMatch.nPos + _mMatch.sString.length()));
+
+                // Is it a define?
+                if (_mMatch.sString == "define"
+                    || _mMatch.sString == "ifndefined"
+                    || _mMatch.sString == "lclfunc"
+                    || _mMatch.sString == "def"
+                    || _mMatch.sString == "ifndef")
+                {
+                    std::string sDefinition = sLine.substr(_mMatch.nPos + _mMatch.sString.length());
+                    StripSpaces(sDefinition);
+
+                    // If there is a declaration available
+                    if (sDefinition.length())
+                    {
+                        // remove assignments and parentheses and strip the spaces
+                        if (sDefinition.find('=') != string::npos)
+                            sDefinition.erase(sDefinition.find('='));
+
+                        if (sDefinition.find_first_of("({") != string::npos)
+                            sDefinition.erase(sDefinition.find_first_of("({"));
+
+                        StripSpaces(sDefinition);
+
+                        m_vLocalVariables.push_back(pair<string,int>(sDefinition, wxSTC_NSCR_CUSTOM_FUNCTION));
+                    }
+                }
+            }
+        }
+        catch (SyntaxError& e)
+        {
+            AnnotCount += addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE", sSyntaxElement, m_sError,
+                                                       _guilang.get("ERR_NR_2022_0_INCLUDE_NOT_EXIST", e.getToken())), ANNOTATION_ERROR);
+        }
+
+        m_nCurPos = m_editor->GetLineEndPosition(m_editor->LineFromPosition(m_nCurPos));
+        return AnnotCount;
+    }
+
     // Examine the procedure / MATLAB function starting at m_editor position
     // This includes esp. the calculation of the standard coding metrics
-    if ((m_editor->m_fileType == FILE_NPRC && sSyntaxElement == "procedure") || (m_editor->m_fileType == FILE_MATLAB && sSyntaxElement == "function"))
+    if ((m_editor->m_fileType == FILE_NPRC && sSyntaxElement == "procedure")
+        || (m_editor->m_fileType == FILE_MATLAB && sSyntaxElement == "function"))
     {
         // Use the block match function, which is capable of doing both: NumeRe and MATLAB syntax
         vector<int> vBlock = m_editor->BlockMatch(m_nCurPos);

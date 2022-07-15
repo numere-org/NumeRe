@@ -33,21 +33,21 @@ class Includer : public FileSystem
     public:
         enum IncludeType
         {
-            INCLUDE_ALL,
-            INCLUDE_DEFINES,
-            INCLUDE_DECLARATIONS,
-            INCLUDE_GLOBALS
+            INCLUDE_ALL = 0x0,
+            INCLUDE_DEFINES = 0x1,
+            INCLUDE_DECLARATIONS = 0x2,
+            INCLUDE_GLOBALS = 0x4
         };
 
     private:
         StyledTextFile* m_include;
         int nIncludeLine;
-        IncludeType m_type;
+        int m_type;
 
         void openIncludedFile(const std::string& sIncludingString);
 
     public:
-        Includer(const std::string& sIncludingString);
+        Includer(const std::string& sIncludingString, const std::string& sSearchPath);
         ~Includer();
 
         int getCurrentLine() const
@@ -55,13 +55,14 @@ class Includer : public FileSystem
             return nIncludeLine;
         }
 
-        IncludeType getIncludedType() const
+        int getIncludedType() const
         {
             return m_type;
         }
 
         std::string getNextLine();
         bool is_open() const;
+        std::string getIncludedFileName() const;
         static bool is_including_syntax(const std::string& sLine);
 };
 

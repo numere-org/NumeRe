@@ -1369,6 +1369,7 @@ void replaceAll(std::string& sToModify, const char* sToRep, const char* sNewValu
 {
     size_t nRepLength = strlen(sToRep);
     size_t nNewLength = strlen(sNewValue);
+    int nOffSet = nNewLength - nRepLength;
     // Ensure the values are correct
     if (!sToModify.length() || !nRepLength)
         return;
@@ -1381,14 +1382,15 @@ void replaceAll(std::string& sToModify, const char* sToRep, const char* sNewValu
         nEnd = sToModify.length();
 
     // Process the replacing
-    for (size_t i = nStart; i < nEnd; i++)
+    for (size_t i = nStart; i <= nEnd-nRepLength; i++)
     {
-        if (i == sToModify.length())
+        if (i >= sToModify.length())
             break;
-        if (sToModify.substr(i, nRepLength) == sToRep)
+
+        if (!sToModify.compare(i, nRepLength, sToRep))
         {
             sToModify.replace(i, nRepLength, sNewValue);
-            nEnd += nNewLength - nRepLength + 1;
+            nEnd += nOffSet;
             i += nNewLength - 1;
         }
     }
