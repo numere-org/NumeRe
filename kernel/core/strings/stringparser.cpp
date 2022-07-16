@@ -1912,7 +1912,7 @@ namespace NumeRe
 
         // Get the string variables
         if (containsStringVars(strExpr.sLine.substr(n_pos)))
-            getStringValues(strExpr.sLine, n_pos);
+            getStringValuesAsInternalVar(strExpr.sLine, n_pos);
 
         // Does the current line contain candidates
         // for string functions?

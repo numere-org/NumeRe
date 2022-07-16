@@ -501,16 +501,17 @@ namespace NumeRe
     /////////////////////////////////////////////////
     /// \brief This public member function resolves
     /// all string variable occurences and replaces
-    /// them with their value or the standard string
+    /// them with an internal string vector variable
+    /// or the standard string
     /// function signature, if the string variable
     /// is connected to a method.
     ///
-    /// \param sLine string&
+    /// \param sLine std::string&
     /// \param nPos unsigned int
     /// \return void
     ///
     /////////////////////////////////////////////////
-    void StringVarFactory::getStringValues(string& sLine, unsigned int nPos)
+    void StringVarFactory::getStringValuesAsInternalVar(std::string& sLine, unsigned int nPos)
     {
         // Do nothing, if no string variables were declared
         if (!m_mStringVars.size())
@@ -574,8 +575,82 @@ namespace NumeRe
                 }
             }
         }
+    }
 
-        return;
+    /////////////////////////////////////////////////
+    /// \brief This public member function resolves
+    /// all string variable occurences and replaces
+    /// them with their value or the standard string
+    /// function signature, if the string variable
+    /// is connected to a method.
+    ///
+    /// \param sLine std::string&
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
+    void StringVarFactory::getStringValues(std::string& sLine)
+    {
+        // Do nothing, if no string variables were declared
+        if (!m_mStringVars.size())
+            return;
+
+        unsigned int __nPos;
+        sLine += " ";
+
+        // Try to find every string variable into the passed string and
+        // replace it correspondingly
+        for (auto iter = m_mStringVars.begin(); iter != m_mStringVars.end(); ++iter)
+        {
+            __nPos = 0;
+            std::string sVectVar;
+
+            // Examine all occurences of the current variable in the
+            // string
+            while ((__nPos = sLine.find(iter->first, __nPos)) != string::npos)
+            {
+                __nPos++;
+
+                // Appended opening parenthesis indicates a function
+                if (sLine[__nPos+(iter->first).length()-1] == '('
+                    || sLine[__nPos+(iter->first).length()-1] == '{')
+                    continue;
+
+                // Only create the variable, if it is actually needed
+                if (!sVectVar.length())
+                    sVectVar = "\""+iter->second+"\"";
+
+                // Check, whether the found occurence is correctly
+                // delimited and replace it. If the match is at the
+                // beginning of the command line, it serves a special
+                // treatment
+                if (__nPos == 1)
+                {
+                    // Check with delimiter
+                    if (checkStringvarDelimiter(" " + sLine.substr(0, (iter->first).length()+1))
+                        && !isInQuotes(sLine, 0, true))
+                    {
+                        // Replace it with standard function signature or its value
+                        if (sLine[(iter->first).length()] == '.')
+                            replaceStringMethod(sLine, 0, (iter->first).length(), sVectVar);
+                        else
+                            sLine.replace(0, (iter->first).length(), sVectVar);
+                    }
+
+                    continue;
+                }
+
+                // Check with delimiter
+                if (checkStringvarDelimiter(sLine.substr(__nPos-2, (iter->first).length()+2))
+                    && !isInQuotes(sLine, __nPos-1, true))
+                {
+                    // Replace it with standard function signature or its value
+                    if (sLine[__nPos+(iter->first).length()-1] == '.')
+                        replaceStringMethod(sLine, __nPos-1, (iter->first).length(), sVectVar);
+                    else
+                        sLine.replace(__nPos-1, (iter->first).length(), sVectVar);
+                }
+            }
+        }
     }
 
 

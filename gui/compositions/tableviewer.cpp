@@ -86,7 +86,7 @@ TableViewer::TableViewer(wxWindow* parent, wxWindowID id, wxStatusBar* statusbar
 
     if (m_statusBar)
     {
-        int widths[3] = {-1, -1, -3};
+        int widths[3] = {120, 120, -1};
         m_statusBar->SetStatusWidths(3, widths);
     }
 }

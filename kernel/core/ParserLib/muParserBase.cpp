@@ -2931,6 +2931,9 @@ namespace mu
                 {
                     m_state->m_byteCode.ChangeVar(vUsedVectorVars[i]->data(), vUsedVectorVarAddresses[i], false);
                 }
+
+                // Repeat the first component to resolve possible overwrites (needs additional time)
+                (this->*m_pParseFormula)();
             }
         }
 

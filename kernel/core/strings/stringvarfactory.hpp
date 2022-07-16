@@ -49,13 +49,14 @@ namespace NumeRe
             std::string createStringVectorVar(const std::vector<std::string>& vStringVector);
             bool isStringVectorVar(const std::string& sVarName) const;
             const StringVector& getStringVectorVar(const std::string& sVarName) const;
+            void getStringValuesAsInternalVar(std::string& sLine, unsigned int nPos = 0);
 
         public:
             bool containsStringVectorVars(const std::string& sLine);
             std::string createTempStringVectorVar(const std::vector<std::string>& vStringVector);
             void removeTempStringVectorVars();
             bool containsStringVars(const std::string& sLine) const;
-            void getStringValues(std::string& sLine, unsigned int nPos = 0);
+            void getStringValues(std::string& sLine);
             void setStringValue(const std::string& sVar, const std::string& sValue);
             void removeStringVar(const std::string& sVar);
 
