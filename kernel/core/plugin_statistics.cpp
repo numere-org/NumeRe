@@ -245,10 +245,10 @@ static void createStatsFile(Output& _out, const std::vector<std::vector<double>>
         {
             if (sHeadline.length())
             {
-                sOut[i][j] = sHeadline.substr(0, sHeadline.find("\\n"));
+                sOut[i][j] = sHeadline.substr(0, sHeadline.find('\n'));
 
-                if (sHeadline.find("\\n") != std::string::npos)
-                    sHeadline.erase(0, sHeadline.find("\\n") + 2);
+                if (sHeadline.find('\n') != std::string::npos)
+                    sHeadline.erase(0, sHeadline.find('\n') + 1);
                 else
                     break;
             }
@@ -341,10 +341,10 @@ static void createStatsOutput(Output& _out, const std::vector<std::vector<double
         {
             if (sHeadline.length())
             {
-                sOverview[i][j+1] = sHeadline.substr(0, sHeadline.find("\\n"));
+                sOverview[i][j+1] = sHeadline.substr(0, sHeadline.find('\n'));
 
-                if (sHeadline.find("\\n") != std::string::npos)
-                    sHeadline.erase(0, sHeadline.find("\\n") + 2);
+                if (sHeadline.find('\n') != std::string::npos)
+                    sHeadline.erase(0, sHeadline.find('\n') + 1);
                 else
                     break;
             }

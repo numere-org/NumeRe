@@ -266,12 +266,12 @@ namespace NumeRe
         for (int j = 0; j < getHeadCount(); j++)
         {
             if (j == (int)part)
-                head += _sHead + "\\n";
+                head += _sHead + '\n';
             else
-                head += getCleanHeadPart(i, j) + "\\n";
+                head += getCleanHeadPart(i, j) + '\n';
         }
 
-        head.erase(head.find_last_not_of("\\n")+1);
+        head.pop_back();
 
         vTableData[i]->m_sHeadLine = head;
     }
@@ -414,7 +414,7 @@ namespace NumeRe
                 continue;
 
             // No linebreak? Continue
-            if (vTableData[j]->m_sHeadLine.find("\\n") == std::string::npos)
+            if (vTableData[j]->m_sHeadLine.find('\n') == std::string::npos)
                 continue;
 
             int nLinebreak = 0;
@@ -422,7 +422,7 @@ namespace NumeRe
             // Count all linebreaks
             for (unsigned int n = 0; n < vTableData[j]->m_sHeadLine.length() - 2; n++)
             {
-                if (vTableData[j]->m_sHeadLine.substr(n, 2) == "\\n")
+                if (vTableData[j]->m_sHeadLine[n] == '\n')
                     nLinebreak++;
             }
 
@@ -464,11 +464,7 @@ namespace NumeRe
     std::string Table::getCleanHead(size_t i) const
     {
         if (vTableData.size() > i && vTableData[i])
-        {
-            std::string head = vTableData[i]->m_sHeadLine;
-            replaceAll(head, "\\n", "\n");
-            return head;
-        }
+            return vTableData[i]->m_sHeadLine;
 
         return TableColumn::getDefaultColumnHead(i);
     }

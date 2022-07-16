@@ -1966,29 +1966,33 @@ void Plot::create3dVect()
 {
     if (sFunc.length())
     {
-        mglData& _mData_x = m_manager.assets[0].data[XCOORD].first;
-        mglData& _mData_y = m_manager.assets[0].data[YCOORD].first;
-        mglData& _mData_z = m_manager.assets[0].data[ZCOORD].first;
-
         if (_pData.getSettings(PlotData::LOG_CUTBOX))
         {
             _graph->SetCutBox(CalcCutBox(_pData.getRotateAngle(1),  0, _pData.getSettings(PlotData::INT_COORDS), true),
                               CalcCutBox(_pData.getRotateAngle(1), 1, _pData.getSettings(PlotData::INT_COORDS), true));
         }
-        // --> Entsprechend dem gewuenschten Plotting-Style plotten <--
-        if (_pData.getSettings(PlotData::LOG_FLOW))
-            _graph->Flow(_mData_x, _mData_y, _mData_z, _pData.getColorScheme("v").c_str());
-        else if (_pData.getSettings(PlotData::LOG_PIPE))
-            _graph->Pipe(_mData_x, _mData_y, _mData_z, _pData.getColorScheme().c_str());
-        else if (_pData.getSettings(PlotData::LOG_FIXEDLENGTH))
-            _graph->Vect(_mData_x, _mData_y, _mData_z, _pData.getColorScheme("f").c_str());
-        else if (!_pData.getSettings(PlotData::LOG_FIXEDLENGTH))
-            _graph->Vect(_mData_x, _mData_y, _mData_z, _pData.getColorScheme().c_str());
-        else
+
+        for (size_t i = 0; i < m_manager.assets.size(); i++)
         {
-            // --> Den gibt's nicht: Speicher freigeben und zurueck! <--
-            clearData();
-            return;
+            mglData& _mData_x = m_manager.assets[i].data[XCOORD].first;
+            mglData& _mData_y = m_manager.assets[i].data[YCOORD].first;
+            mglData& _mData_z = m_manager.assets[i].data[ZCOORD].first;
+
+            // --> Entsprechend dem gewuenschten Plotting-Style plotten <--
+            if (_pData.getSettings(PlotData::LOG_FLOW))
+                _graph->Flow(_mData_x, _mData_y, _mData_z, _pData.getColorScheme("v").c_str());
+            else if (_pData.getSettings(PlotData::LOG_PIPE))
+                _graph->Pipe(_mData_x, _mData_y, _mData_z, _pData.getColorScheme().c_str());
+            else if (_pData.getSettings(PlotData::LOG_FIXEDLENGTH))
+                _graph->Vect(_mData_x, _mData_y, _mData_z, _pData.getColorScheme("f").c_str());
+            else if (!_pData.getSettings(PlotData::LOG_FIXEDLENGTH))
+                _graph->Vect(_mData_x, _mData_y, _mData_z, _pData.getColorScheme().c_str());
+            else
+            {
+                // --> Den gibt's nicht: Speicher freigeben und zurueck! <--
+                clearData();
+                return;
+            }
         }
 
         if (_pData.getSettings(PlotData::LOG_CUTBOX))
@@ -2008,23 +2012,26 @@ void Plot::create2dVect()
 {
     if (sFunc.length())
     {
-        mglData& _mData_x = m_manager.assets[0].data[XCOORD].first;
-        mglData& _mData_y = m_manager.assets[0].data[YCOORD].first;
-
-        // --> Entsprechend dem gewuenschten Plotting-Style plotten <--
-        if (_pData.getSettings(PlotData::LOG_FLOW))
-            _graph->Flow(_mData_x, _mData_y, _pData.getColorScheme("v").c_str());
-        else if (_pData.getSettings(PlotData::LOG_PIPE))
-            _graph->Pipe(_mData_x, _mData_y, _pData.getColorScheme().c_str());
-        else if (_pData.getSettings(PlotData::LOG_FIXEDLENGTH))
-            _graph->Vect(_mData_x, _mData_y, _pData.getColorScheme("f").c_str());
-        else if (!_pData.getSettings(PlotData::LOG_FIXEDLENGTH))
-            _graph->Vect(_mData_x, _mData_y, _pData.getColorScheme().c_str());
-        else
+        for (size_t i = 0; i < m_manager.assets.size(); i++)
         {
-            // --> Den gibt's nicht: Speicher freigeben und zurueck! <--
-            clearData();
-            return;
+            mglData& _mData_x = m_manager.assets[i].data[XCOORD].first;
+            mglData& _mData_y = m_manager.assets[i].data[YCOORD].first;
+
+            // --> Entsprechend dem gewuenschten Plotting-Style plotten <--
+            if (_pData.getSettings(PlotData::LOG_FLOW))
+                _graph->Flow(_mData_x, _mData_y, _pData.getColorScheme("v").c_str());
+            else if (_pData.getSettings(PlotData::LOG_PIPE))
+                _graph->Pipe(_mData_x, _mData_y, _pData.getColorScheme().c_str());
+            else if (_pData.getSettings(PlotData::LOG_FIXEDLENGTH))
+                _graph->Vect(_mData_x, _mData_y, _pData.getColorScheme("f").c_str());
+            else if (!_pData.getSettings(PlotData::LOG_FIXEDLENGTH))
+                _graph->Vect(_mData_x, _mData_y, _pData.getColorScheme().c_str());
+            else
+            {
+                // --> Den gibt's nicht: Speicher freigeben und zurueck! <--
+                clearData();
+                return;
+            }
         }
     }
 }
@@ -4679,11 +4686,15 @@ void Plot::fillData(double dt_max, int t_animate)
                     _defVars.vValue[YCOORD][0] = _pInfo.ranges[YRANGE](y, _pInfo.nSamples);
                     vResults = _parser.Eval(_pInfo.nFunctions);
 
-                    for (int i = 0; i < _pInfo.nFunctions; i++)
+                    for (int i = 0; i < 2; i++)
                     {
                         m_manager.assets[vFuncMap[k]].writeAxis(_defVars.vValue[XCOORD][0].real(), x, XCOORD);
                         m_manager.assets[vFuncMap[k]].writeAxis(_defVars.vValue[YCOORD][0].real(), y, YCOORD);
-                        m_manager.assets[vFuncMap[k]].writeData(vResults[i], i, x, y);
+
+                        if (_pInfo.nFunctions <= i) // Always fill missing dimensions with zero
+                            m_manager.assets[vFuncMap[k]].writeData(0.0, i, x, y);
+                        else
+                            m_manager.assets[vFuncMap[k]].writeData(vResults[i], i, x, y);
                     }
                 }
             }
@@ -4713,12 +4724,16 @@ void Plot::fillData(double dt_max, int t_animate)
                         _defVars.vValue[ZCOORD][0] = _pInfo.ranges[ZRANGE](z, _pInfo.nSamples);
                         vResults = _parser.Eval(_pInfo.nFunctions);
 
-                        for (int i = 0; i < _pInfo.nFunctions; i++)
+                        for (int i = 0; i < 3; i++)
                         {
                             m_manager.assets[vFuncMap[k]].writeAxis(_defVars.vValue[XCOORD][0].real(), x, XCOORD);
                             m_manager.assets[vFuncMap[k]].writeAxis(_defVars.vValue[YCOORD][0].real(), y, YCOORD);
                             m_manager.assets[vFuncMap[k]].writeAxis(_defVars.vValue[ZCOORD][0].real(), z, ZCOORD);
-                            m_manager.assets[vFuncMap[k]].writeData(vResults[i], i, x, y, z);
+
+                            if (_pInfo.nFunctions <= i) // Always fill missing dimensions with zero
+                                m_manager.assets[vFuncMap[k]].writeData(0.0, i, x, y, z);
+                            else
+                                m_manager.assets[vFuncMap[k]].writeData(vResults[i], i, x, y, z);
                         }
                     }
                 }

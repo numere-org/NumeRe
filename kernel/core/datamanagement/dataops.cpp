@@ -272,7 +272,7 @@ string** make_stringmatrix(MemoryManager& _data, Output& _out, Settings& _option
                     // Truncate the headlines, if they are too long
 					sOut[i][j].replace(8, string::npos, "...");
 				}
-				else if (nHeadlineCount > 1 && sOut[i][j].find("\\n") != string::npos)
+				else if (nHeadlineCount > 1 && sOut[i][j].find('\n') != string::npos)
 				{
 				    // Store the complete headlines separated into the different rows
 					string sHead = sOut[i][j];
@@ -280,10 +280,10 @@ string** make_stringmatrix(MemoryManager& _data, Output& _out, Settings& _option
 
 					for (unsigned int n = 0; n < sHead.length(); n++)
 					{
-						if (sHead.substr(n, 2) == "\\n")
+						if (sHead[n] == '\n')
 						{
 							sOut[i + nCount][j] = sHead.substr(0, n);
-							sHead.erase(0, n + 2);
+							sHead.erase(0, n + 1);
 							n = 0;
 							nCount++;
 						}

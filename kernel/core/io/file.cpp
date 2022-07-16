@@ -749,7 +749,7 @@ namespace NumeRe
                                     vHeadline[j] = utf8parser(vLine[j]);
                                 else
                                 {
-                                    vHeadline[j] += "\\n";
+                                    vHeadline[j] += "\n";
                                     vHeadline[j] += utf8parser(vLine[j]);
                                 }
                             }
@@ -3121,7 +3121,7 @@ namespace NumeRe
                 if (!fileData->at(j)->m_sHeadLine.length())
                     fileData->at(j)->m_sHeadLine = sEntry;
                 else if (fileData->at(j)->m_sHeadLine != sEntry)
-                    fileData->at(j)->m_sHeadLine += "\\n" + sEntry;
+                    fileData->at(j)->m_sHeadLine += "\n" + sEntry;
             }
         }
 
@@ -3386,18 +3386,15 @@ namespace NumeRe
 
                     // Replace line break characters with their
                     // corresponding masked character
-                    while (sEntry.find('\n') != string::npos)
-                        sEntry.replace(sEntry.find('\n'), 1, "\\n");
-
                     while (sEntry.find((char)10) != string::npos)
-                        sEntry.replace(sEntry.find((char)10), 1, "\\n");
+                        sEntry.replace(sEntry.find((char)10), 1, "\n");
 
                     // Append the string to the current table
                     // column head, if it is not empty
                     if (!fileData->at(j+nOffset)->m_sHeadLine.length())
                         fileData->at(j+nOffset)->m_sHeadLine = sEntry;
                     else if (fileData->at(j+nOffset)->m_sHeadLine != sEntry)
-                        fileData->at(j+nOffset)->m_sHeadLine += "\\n" + sEntry;
+                        fileData->at(j+nOffset)->m_sHeadLine += "\n" + sEntry;
                 }
             }
 
@@ -3494,8 +3491,8 @@ namespace NumeRe
                 sHeadLine = fileData->at(j)->m_sHeadLine;
 
             // Replace newlines with the corresponding character code
-            while (sHeadLine.find("\\n") != string::npos)
-                sHeadLine.replace(sHeadLine.find("\\n"), 2, 1, (char)10);
+            while (sHeadLine.find('\n') != string::npos)
+                sHeadLine.replace(sHeadLine.find('\n'), 2, 1, (char)10);
 
             // Write the headline
             _cell->SetString(sHeadLine.c_str());
@@ -3794,7 +3791,7 @@ namespace NumeRe
                                     if (!fileData->at(nCol+nOffset)->m_sHeadLine.length())
                                         fileData->at(nCol+nOffset)->m_sHeadLine = sEntry;
                                     else if (fileData->at(nCol+nOffset)->m_sHeadLine != sEntry)
-                                        fileData->at(nCol+nOffset)->m_sHeadLine += "\\n" + sEntry;
+                                        fileData->at(nCol+nOffset)->m_sHeadLine += "\n" + sEntry;
                                 }
                                 else
                                     fileData->at(nCol+nOffset)->setValue(nLine-vCommentLines[i], sEntry);

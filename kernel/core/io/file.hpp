@@ -239,7 +239,7 @@ namespace NumeRe
 
                         nLastLineBreak = i;
                     }
-                    else if (sContents.substr(i, 2) == "\\n")
+                    /*else if (sContents.substr(i, 2) == "\\n")
                     {
                         // Increment the number of lines
                         pCellExtents.second++;
@@ -250,7 +250,7 @@ namespace NumeRe
                             pCellExtents.first = i - nLastLineBreak;
 
                         nLastLineBreak = i+1;
-                    }
+                    }*/
                 }
 
                 // Examine the last part of the string, which won't be
@@ -303,7 +303,7 @@ namespace NumeRe
                         nLineNumber--;
                         nLastLineBreak = i+1;
                     }
-                    else if (sHeadLine.substr(i, 2) == "\\n")
+                    /*else if (sHeadLine.substr(i, 2) == "\\n")
                     {
                         // If this is the correct line number, return
                         // the corresponding substring
@@ -314,7 +314,7 @@ namespace NumeRe
                         // position of the current line break
                         nLineNumber--;
                         nLastLineBreak = i+2;
-                    }
+                    }*/
                 }
 
                 // Catch the last part of the string, which is not found by

@@ -461,7 +461,7 @@ class MemoryManager : public NumeRe::FileAdapter, public StringMemory, public Nu
 
 		std::string getTopHeadLineElement(int _i, const std::string& _sTable) const
         {
-            return getHeadLineElement(_i, _sTable).substr(0, getHeadLineElement(_i, _sTable).find("\\n"));
+            return getHeadLineElement(_i, _sTable).substr(0, getHeadLineElement(_i, _sTable).find('\n'));
         }
 
 		int getAppendedZeroes(int _i, const std::string& _sTable) const

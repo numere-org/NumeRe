@@ -2572,6 +2572,8 @@ struct FFTData
 /////////////////////////////////////////////////
 static void calculate1dFFT(MemoryManager& _data, Indices& _idx, const std::string& sTargetTable, mglDataC& _fftData, std::vector<size_t>& vAxis, FFTData& _fft)
 {
+    _fftData.Save("D:/Software/NumeRe/save/fftdata.txt");
+
     if (!_fft.bInverseTrafo)
     {
         _fftData.FFT("x");
@@ -2585,7 +2587,7 @@ static void calculate1dFFT(MemoryManager& _data, Indices& _idx, const std::strin
     }
     else
     {
-        double samples = _fftData.GetNx()/2;
+        double samples = _fftData.GetNx()/2.0;
 
         _fftData.a[0] *= dual(2*samples, 0.0);
 
@@ -2860,8 +2862,8 @@ bool fastFourierTransform(CommandLineParser& cmdParser)
 
     DataAccessParser accessParser = cmdParser.getExprAsDataObject();
 
-    // get the data from the data object
-    std::unique_ptr<Memory> _mem(extractRange(cmdParser.getCommandLine(), accessParser, bIs2DFFT ? -1 : 2, true));
+    // get the data from the data object and sort only for the forward transformation
+    std::unique_ptr<Memory> _mem(extractRange(cmdParser.getCommandLine(), accessParser, bIs2DFFT ? -1 : 2, !_fft.bInverseTrafo));
 
     if (!_mem)
         throw SyntaxError(SyntaxError::TABLE_DOESNT_EXIST, cmdParser.getCommandLine(), accessParser.getDataObject() + "(", accessParser.getDataObject() + "()");
@@ -2875,7 +2877,7 @@ bool fastFourierTransform(CommandLineParser& cmdParser)
         _fft.lines--;
 
     _fft.dNyquistFrequency[0] = _fft.lines / (_mem->readMem(_fft.lines - 1, 0).real() - _mem->readMem(0, 0).real()) / 2.0;
-    _fft.dTimeInterval[0] = (_fft.lines - 1) / (_mem->readMem(_fft.lines - 1, 0).real());
+    _fft.dTimeInterval[0] = (_fft.lines - 1) / (_mem->max(VectorIndex(0, VectorIndex::OPEN_END), VectorIndex(0)).real() - _mem->min(VectorIndex(0, VectorIndex::OPEN_END), VectorIndex(0)).real());
 
     if (bIs2DFFT)
     {
@@ -2953,6 +2955,7 @@ bool fastFourierTransform(CommandLineParser& cmdParser)
                     _fftData.a[i+j*nLines] = nanguard(_mem->readMem(i, j+2));
             }
         }
+
     }
 
     // Calculate the actual transformation and apply some
@@ -3851,8 +3854,8 @@ bool regularizeDataSet(CommandLineParser& cmdParser)
     if (!_mem)
         throw SyntaxError(SyntaxError::TABLE_DOESNT_EXIST, cmdParser.getCommandLine(), accessParser.getDataObject() + "(", accessParser.getDataObject() + "()");
 
-    sColHeaders[0] = _mem->getHeadLineElement(0) + "\\n(regularized)";
-    sColHeaders[1] = _mem->getHeadLineElement(1) + "\\n(regularized)";
+    sColHeaders[0] = _mem->getHeadLineElement(0) + "\n(regularized)";
+    sColHeaders[1] = _mem->getHeadLineElement(1) + "\n(regularized)";
 
     long long int nLines = _mem->getLines();
 

@@ -994,7 +994,7 @@ size_t Memory::getHeadlineCount() const
     for (const TblColPtr& col : memArray)
     {
         // No linebreak? Continue
-        if (!col || col->m_sHeadLine.find("\\n") == std::string::npos)
+        if (!col || col->m_sHeadLine.find('\n') == std::string::npos)
             continue;
 
         size_t nLinebreak = 0;
@@ -1002,7 +1002,7 @@ size_t Memory::getHeadlineCount() const
         // Count all linebreaks
         for (size_t n = 0; n < col->m_sHeadLine.length() - 2; n++)
         {
-            if (col->m_sHeadLine.substr(n, 2) == "\\n")
+            if (col->m_sHeadLine[n] == '\n')
                 nLinebreak++;
         }
 

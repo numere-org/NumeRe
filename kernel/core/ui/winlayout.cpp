@@ -486,7 +486,7 @@ static void getParametersFromWindow(CommandLineParser& cmdParser, const std::str
     else if (findParameter(sParList, "label"))
         cmdParser.setReturnValue(winInfo.window->getItemLabel(itemID));
     else if (findParameter(sParList, "state"))
-        cmdParser.setReturnValue(winInfo.window->getItemState(itemID));
+        cmdParser.setReturnValue("\"" + winInfo.window->getItemState(itemID) + "\"");
     else if (findParameter(sParList, "color"))
         cmdParser.setReturnValue(winInfo.window->getItemColor(itemID));
 }
