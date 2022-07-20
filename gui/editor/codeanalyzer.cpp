@@ -659,16 +659,21 @@ AnnotationCount CodeAnalyzer::analyseCommands()
         // whole block
         for (size_t i = 0; i < vBlock.size(); i++)
         {
-            // Is m_editor the correct position?
+            // Is this the correct position?
             if (vBlock[i] == wordstart)
             {
-                if (vBlock[i+1] != wxSTC_INVALID_POSITION && m_editor->GetTextRange(vBlock[i+1], m_editor->WordEndPosition(vBlock[i+1], true)) != "endswitch")
+                if (vBlock[i+1] != wxSTC_INVALID_POSITION
+                    && m_editor->GetTextRange(vBlock[i+1], m_editor->WordEndPosition(vBlock[i+1], true)) != "endswitch")
                 {
                     // Search all occurences of the "break"
                     // command between the two statements
                     vector<int> vMatches = m_editor->m_search->FindAll("break", wxSTC_NSCR_COMMAND, wordend, vBlock[i+1], false);
 
-                    // Ensure that there's one "break"
+                    // Search also for "return"s as an alternative
+                    if (!vMatches.size())
+                        vMatches = m_editor->m_search->FindAll("return", wxSTC_NSCR_COMMAND, wordend, vBlock[i+1], false);
+
+                    // Ensure that there's one "break" or "return"
                     // statement
                     if (m_options->GetAnalyzerOption(Options::SWITCH_FALLTHROUGH) && !vMatches.size())
                     {

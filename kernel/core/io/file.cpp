@@ -3799,10 +3799,10 @@ namespace NumeRe
 
                             continue;
                         }
-                        else if (_element->FirstChildElement("v"))
-                        {
-                            fileData->at(nCol+nOffset)->setValue(nLine-vCommentLines[i], _element->FirstChildElement("v")->GetText());
-                        }
+                    }
+                    else if (_element->FirstChildElement("v"))
+                    {
+                        fileData->at(nCol+nOffset)->setValue(nLine-vCommentLines[i], _element->FirstChildElement("v")->GetText());
                     }
                 }
                 while ((_element = _element->NextSiblingElement()));
