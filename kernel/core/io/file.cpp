@@ -2063,6 +2063,8 @@ namespace NumeRe
                 cSep = '\t';
             else if (vTextData[0].find(' ') != string::npos)
                 cSep = ' ';
+            else
+                cSep = ','; // Fallback if this file does only contain a single column
 
             size_t cols = 0;
 

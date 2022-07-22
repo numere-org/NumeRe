@@ -82,21 +82,21 @@ void StyledTextFile::lex()
             // Are we currently in default mode?
             if (lastStyle == DEFAULT)
             {
-                if (vFileContents[i].second.substr(j, sDocCommentLine.length()) == sDocCommentLine)
+                if (sDocCommentLine.length() && vFileContents[i].second.substr(j, sDocCommentLine.length()) == sDocCommentLine)
                 {
                     for (; j < vStyles[i].size(); j++)
                         vStyles[i][j] = COMMENT_DOC_LINE;
                 }
-                else if (vFileContents[i].second.substr(j, sCommentLine.length()) == sCommentLine)
+                else if (sCommentLine.length() && vFileContents[i].second.substr(j, sCommentLine.length()) == sCommentLine)
                 {
                     for (; j < vStyles[i].size(); j++)
                         vStyles[i][j] = COMMENT_LINE;
                 }
                 else if (vFileContents[i].second[j] == '"')
                     lastStyle = STRING;
-                else if (vFileContents[i].second.substr(j, sDocCommentBlockStart.length()) == sDocCommentBlockStart)
+                else if (sDocCommentBlockStart.length() && vFileContents[i].second.substr(j, sDocCommentBlockStart.length()) == sDocCommentBlockStart)
                     lastStyle = COMMENT_DOC_BLOCK;
-                else if (vFileContents[i].second.substr(j, sCommentBlockStart.length()) == sCommentBlockStart)
+                else if (sCommentBlockStart.length() && vFileContents[i].second.substr(j, sCommentBlockStart.length()) == sCommentBlockStart)
                     lastStyle = COMMENT_BLOCK;
 
                 // Increment the position, if the current
@@ -464,9 +464,9 @@ void StyledTextFile::reStyle(const std::string& sComLine, const std::string& sDo
 {
     sCommentLine = sComLine;
     sDocCommentLine = sDocComLine;
-    sCommentBlockStart = sComBlockStart;
-    sDocCommentBlockStart = sDocComBlockStart;
-    sBlockEnd = sComBlockEnd;
+    sCommentBlockStart = sComBlockEnd.length() ? sComBlockStart : "";
+    sDocCommentBlockStart = sComBlockEnd.length() ? sDocComBlockStart : "";
+    sBlockEnd = sComBlockStart.length() ? sComBlockEnd : "";
 
     lex();
 }

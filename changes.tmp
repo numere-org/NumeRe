@@ -50,3 +50,4 @@ Cleaned	String functions are now much faster for larger strings.
 Added	A context menu functionality was added to the editor to automatically detect and resolve variable type prefixes.
 New	The command "include" will replace the old "@" syntax for inclusion of external files in the near future. NumeRe will display a warning for all old-fashioned "@" to simplify the replacing process.
 Removed	"vect" and "vect3d" do not longer support vector fields without vector braces.
+Added	"read" can now also filter out block comments.

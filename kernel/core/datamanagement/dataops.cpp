@@ -27,6 +27,7 @@
 #include "../structures.hpp"
 #include "../built-in.hpp"
 #include "../maths/parser_functions.hpp"
+std::string removeQuotationMarks(const std::string&);
 
 using namespace std;
 
@@ -1132,16 +1133,13 @@ bool writeToFile(CommandLineParser& cmdParser)
 /////////////////////////////////////////////////
 bool readFromFile(CommandLineParser& cmdParser)
 {
-	string sInput = "";
-	string sCommentEscapeSequence = cmdParser.getParameterValueAsString("comments", "");
-	ifstream fFile;
+	std::string sInput = "";
+	std::string sCommentEscapeSequence = cmdParser.getParameterValueAsString("comments", "");
 
 	bool bKeepEmptyLines = cmdParser.hasParam("keepdim") || cmdParser.hasParam("k");
 
     if (sCommentEscapeSequence != " ")
         StripSpaces(sCommentEscapeSequence);
-    while (sCommentEscapeSequence.find("\\t") != string::npos)
-        sCommentEscapeSequence.replace(sCommentEscapeSequence.find("\\t"), 2, "\t");
 
 	// Get the source file name from the command string or the parameter list
     std::string sFileName = cmdParser.getExprAsFileName(".txt");
@@ -1151,62 +1149,49 @@ bool readFromFile(CommandLineParser& cmdParser)
 		throw SyntaxError(SyntaxError::NO_FILENAME, cmdParser.getCommandLine(), SyntaxError::invalid_position);
 
 	// Open the file and ensure that it is readable
-	fFile.open(sFileName.c_str());
+	StyledTextFile fFile(sFileName);
 
-	if (fFile.fail())
+	if (!fFile.getLinesCount())
 		throw SyntaxError(SyntaxError::CANNOT_READ_FILE, cmdParser.getCommandLine(), SyntaxError::invalid_position, sFileName);
+
+    if (sCommentEscapeSequence.length())
+    {
+        replaceAll(sCommentEscapeSequence, "\\t", "\t");
+        EndlessVector<std::string> args = getAllArguments(sCommentEscapeSequence);
+        fFile.reStyle(removeQuotationMarks(args[0]),
+                      removeQuotationMarks(args[0]),
+                      removeQuotationMarks(args[1]),
+                      removeQuotationMarks(args[1]),
+                      removeQuotationMarks(args[2]));
+    }
 
 	// create a new vector for the file's contents
 	vector<string> vFileContents;
 
 	// Read the complete file, where each line is a separate string expression
-	while (!fFile.eof())
-	{
-		getline(fFile, sInput);
+	for (int i = 0; i < fFile.getLinesCount(); i++)
+    {
+        std::string sLine = sCommentEscapeSequence.length() ? fFile.getStrippedLine(i) : fFile.getLine(i);
 
-		// Omit empty lines
-		if (!sInput.length() || sInput == "\"\"" || sInput == "\"")
+        // Omit empty lines
+		if (!sLine.length() || sLine == "\"\"" || sLine == "\"")
         {
-            if (bKeepEmptyLines && !fFile.eof())
+            if (bKeepEmptyLines && i+1 < fFile.getLinesCount())
                 vFileContents.push_back("\"\"");
 
 			continue;
         }
 
-        // Remove comments from the read lines (only line comments are supported)
-		if (sCommentEscapeSequence.length() && sInput.find(sCommentEscapeSequence) != string::npos)
-		{
-			sInput.erase(sInput.find(sCommentEscapeSequence));
+        // Add the missing quotation marks
+		if (sLine.front() != '"')
+			sLine = '"' + sLine;
 
-			if (!sInput.length() || sInput == "\"\"" || sInput == "\"")
-            {
-                if (bKeepEmptyLines && !fFile.eof())
-                    vFileContents.push_back("\"\"");
-
-				continue;
-            }
-		}
-
-		// Add the missing quotation marks
-		if (sInput.front() != '"')
-			sInput = '"' + sInput;
-
-		if (sInput.back() != '"')
-			sInput += '"';
-
-        // Escape backslashes
-		//for (unsigned int i = 1; i < sInput.length() - 1; i++)
-		//{
-		//	if (sInput[i] == '\\')
-		//		sInput.insert(i + 1, 1, ' ');
-        //
-		//	if (sInput[i] == '"' && sInput[i - 1] != '\\')
-		//		sInput.insert(i, 1, '\\');
-		//}
+		if (sLine.back() != '"')
+			sLine += '"';
 
 		// Append the parsed string to the vector
-		vFileContents.push_back(sInput);
-	}
+		vFileContents.push_back(sLine);
+    }
 
     // Create a new temporary variable, if we actually
     // read something from the file
@@ -1214,9 +1199,6 @@ bool readFromFile(CommandLineParser& cmdParser)
         cmdParser.setReturnValue(vFileContents);
 	else
 		cmdParser.setReturnValue("\"\"");
-
-    // Close the file
-	fFile.close();
 
 	// return true
 	return true;
