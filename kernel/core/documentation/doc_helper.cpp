@@ -651,12 +651,22 @@ std::vector<std::string> Documentation::getDocIndex() const
     // key list
     for (size_t i = 0; i < vDocIndexTable.size(); i++)
     {
+        std::string sKeyWords;
+
+        // Connect all keywords
+        for (const auto& iter : mDocumentationIndex)
+        {
+            if (iter.second == (int)i)
+                sKeyWords += " " + iter.first;
+        }
+
         EndlessVector<std::string> keylist = getAllArguments(vDocIndexTable[i].sIdxKeys);
 
         for (const std::string& key : keylist)
         {
-            if (std::find(vReturn.begin(), vReturn.end(), key) == vReturn.end())
-                vReturn.push_back(key);
+            // Append the keywords to the key
+            if (std::find(vReturn.begin(), vReturn.end(), key+sKeyWords) == vReturn.end())
+                vReturn.push_back(key+sKeyWords);
         }
     }
 

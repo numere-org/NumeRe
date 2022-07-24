@@ -485,7 +485,7 @@ NumeReWindow::NumeReWindow(const wxString& title, const wxPoint& pos, const wxSi
 
     m_functionPanel = new TreePanel(m_treeBook, wxID_ANY);
     m_functionTree = new FileTree(m_functionPanel, ID_FUNCTIONTREE, wxDefaultPosition, wxDefaultSize, wxTR_TWIST_BUTTONS | wxTR_HAS_BUTTONS | wxTR_NO_LINES | wxTR_FULL_ROW_HIGHLIGHT | wxTR_HIDE_ROOT);
-    TreeSearchCtrl* functionSearchCtrl = new TreeSearchCtrl(m_functionPanel, wxID_ANY, _guilang.get("GUI_SEARCH_SYMBOLS"), _guilang.get("GUI_SEARCH_CALLTIP_TREE"), m_functionTree);
+    TreeSearchCtrl* functionSearchCtrl = new TreeSearchCtrl(m_functionPanel, wxID_ANY, _guilang.get("GUI_SEARCH_SYMBOLS"), _guilang.get("GUI_SEARCH_CALLTIP_TREE"), m_functionTree, true);
     m_functionPanel->AddWindows(functionSearchCtrl, m_functionTree);
     m_treeBook->AddPage(m_functionPanel, _guilang.get("GUI_FUNCTIONTREE"));
     m_treeBook->Hide();

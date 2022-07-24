@@ -17,26 +17,13 @@
 ******************************************************************************/
 
 
-#include "wx/wx.h"
+#include "controls/treedata.hpp"
 #include "wx/dir.h"
 #include <string>
 #include <vector>
 #include "IconManager.h"
 #include "../common/datastructures.h"
 
-class wxTreeItemData;
-
-class FileNameTreeData : public wxTreeItemData
-{
-    public:
-        FileNameTreeData() : isDir(false), isFunction(false), isCommand(false), isConstant(false) {};
-        bool isDir;
-        bool isFunction;
-        bool isCommand;
-        bool isConstant;
-        wxString filename;
-        wxString tooltip;
-};
 
 class DirTraverser : public wxDirTraverser
 {

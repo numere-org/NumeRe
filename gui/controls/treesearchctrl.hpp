@@ -33,6 +33,7 @@ class TreeSearchCtrl : public SearchCtrl
 {
     private:
         wxTreeCtrl* m_associatedCtrl;
+        bool m_searchToolTip;
 
     protected:
         // Interaction functions with the wxTreeCtrl
@@ -42,7 +43,7 @@ class TreeSearchCtrl : public SearchCtrl
         wxArrayString getChildCandidates(const wxString& enteredText, wxTreeItemId node);
 
     public:
-        TreeSearchCtrl(wxWindow* parent, wxWindowID id, const wxString& hint = wxEmptyString, const wxString& calltip = wxEmptyString, wxTreeCtrl* associatedCtrl = nullptr) : SearchCtrl(parent, id, wxEmptyString), m_associatedCtrl(associatedCtrl)
+        TreeSearchCtrl(wxWindow* parent, wxWindowID id, const wxString& hint = wxEmptyString, const wxString& calltip = wxEmptyString, wxTreeCtrl* associatedCtrl = nullptr, bool searchToolTip = false) : SearchCtrl(parent, id, wxEmptyString), m_associatedCtrl(associatedCtrl), m_searchToolTip(searchToolTip)
         {
             // Provide a neat hint to the user, what he
             // may expect from this control

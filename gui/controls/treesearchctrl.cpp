@@ -17,6 +17,7 @@
 ******************************************************************************/
 
 #include "treesearchctrl.hpp"
+#include "treedata.hpp"
 
 
 /////////////////////////////////////////////////
@@ -156,7 +157,15 @@ wxArrayString TreeSearchCtrl::getChildCandidates(const wxString& enteredText, wx
     {
         // Append the current label, if it contains the
         // searched string
-        if (m_associatedCtrl->GetItemText(node).Lower().find(enteredText) != std::string::npos)
+        if (m_searchToolTip)
+        {
+            ToolTipTreeData* data = static_cast<ToolTipTreeData*>(m_associatedCtrl->GetItemData(node));
+
+            if ((data && data->tooltip.Lower().find(enteredText) != std::string::npos)
+                || m_associatedCtrl->GetItemText(node).Lower().find(enteredText) != std::string::npos)
+                stringArray.Add(m_associatedCtrl->GetItemText(node));
+        }
+        else if (m_associatedCtrl->GetItemText(node).Lower().find(enteredText) != std::string::npos)
             stringArray.Add(m_associatedCtrl->GetItemText(node));
 
         // Find the first child of the current node

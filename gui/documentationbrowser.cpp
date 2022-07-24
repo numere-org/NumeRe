@@ -21,6 +21,7 @@
 #include "NumeReWindow.h"
 #include "../common/datastructures.h"
 #include "controls/treesearchctrl.hpp"
+#include "controls/treedata.hpp"
 #include "compositions/treepanel.hpp"
 #include "../kernel/core/ui/language.hpp"
 #include <vector>
@@ -63,7 +64,12 @@ DocumentationBrowser::DocumentationBrowser(wxWindow* parent, const wxString& tit
     TreePanel* treePanel = new TreePanel(splitter, wxID_ANY);
     m_doctree = new wxTreeCtrl(treePanel, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTR_SINGLE | wxTR_FULL_ROW_HIGHLIGHT | wxTR_NO_LINES | wxTR_TWIST_BUTTONS);
     m_doctree->SetImageList(m_manager->GetImageList());
-    TreeSearchCtrl* treeSearchCtrl = new TreeSearchCtrl(treePanel, wxID_ANY, _guilang.get("GUI_SEARCH_DOCUMENTATION"), _guilang.get("GUI_SEARCH_CALLTIP_TREE"), m_doctree);
+    TreeSearchCtrl* treeSearchCtrl = new TreeSearchCtrl(treePanel,
+                                                        wxID_ANY,
+                                                        _guilang.get("GUI_SEARCH_DOCUMENTATION"),
+                                                        _guilang.get("GUI_SEARCH_CALLTIP_TREE"),
+                                                        m_doctree,
+                                                        true);
     treePanel->AddWindows(treeSearchCtrl, m_doctree);
 
     m_docTabs = new ViewerBook(splitter,
@@ -153,7 +159,7 @@ void DocumentationBrowser::prepareToolbar()
 void DocumentationBrowser::fillDocTree(NumeReWindow* mainwindow)
 {
     // Get the documentation index from the kernel
-    vector<string> vIndex = mainwindow->GetDocIndex();
+    std::vector<std::string> vIndex = mainwindow->GetDocIndex();
 
     // Search for the icon ID of the document icon and prepare the tree root
     int iconId = m_manager->GetIconIndex("DOCUMENT");
@@ -161,7 +167,10 @@ void DocumentationBrowser::fillDocTree(NumeReWindow* mainwindow)
 
     // Append the index items using the document icon
     for (size_t i = 0; i < vIndex.size(); i++)
-        m_doctree->AppendItem(root, vIndex[i], iconId);
+        m_doctree->AppendItem(root,
+                              vIndex[i].substr(0, vIndex[i].find(' ')),
+                              iconId, iconId,
+                              new ToolTipTreeData(vIndex[i].substr(vIndex[i].find(' ')+1)));
 
     // Expand the top-level node
     m_doctree->Expand(root);
