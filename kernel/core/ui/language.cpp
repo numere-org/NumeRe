@@ -116,6 +116,14 @@ map<string,string> Language::getLangFileContent(const string& sFile) const
         while (sLine.find("%%LINEBREAK%%") != string::npos)
             sLine.replace(sLine.find("%%LINEBREAK%%"), 13, "\n");
 
+        // Replace linebreaks
+        while (sLine.find("%%ITEMIZE%%") != string::npos)
+            sLine.replace(sLine.find("%%ITEMIZE%%"), 11, "\n    - ");
+
+        // Replace linebreaks
+        while (sLine.find("%%ITEMIZE_END%%") != string::npos)
+            sLine.replace(sLine.find("%%ITEMIZE_END%%"), 15, "\n    ");
+
         // Store the token in the map
         mLangFileContent[sLine.substr(0, sLine.find('='))] = sLine.substr(sLine.find_first_not_of(' ', sLine.find('=')+1));
     }

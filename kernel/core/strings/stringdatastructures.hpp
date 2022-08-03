@@ -178,6 +178,7 @@ class StringVector : public std::vector<std::string>
         void push_back(const mu::value_type& vVal);
         void push_back(size_t nVal);
         void push_back(int nVal);
+        void push_back(long long int nVal);
         void push_back(bool nVal);
         void push_generic(const std::string& sStr);
         bool is_string(size_t i) const;

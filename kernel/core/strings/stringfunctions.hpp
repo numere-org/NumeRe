@@ -1403,6 +1403,58 @@ static StringVector strfnc_replace(StringFuncArgs& funcArgs)
 }
 
 
+enum NumberBase
+{
+    LOG,
+    BIN,
+    OCT,
+    HEX
+};
+
+
+/////////////////////////////////////////////////
+/// \brief Static helper function for converting
+/// number bases into the decimal base.
+///
+/// \param value StringView
+/// \param base ValueBase
+/// \return long long int
+///
+/////////////////////////////////////////////////
+static long long int convertBaseToDecimal(StringView value, NumberBase base)
+{
+    std::stringstream stream;
+    long long int ret = 0;
+
+    if (base == HEX)
+        stream.setf(std::ios::hex, std::ios::basefield);
+    else if (base == OCT)
+        stream.setf(std::ios::oct, std::ios::basefield);
+    else if (base == BIN)
+    {
+        for (int i = value.length() - 1; i >= 0; i--)
+        {
+            if (value[i] == '1')
+                ret += intPower(2, value.length()-1 - i);
+        }
+
+        return ret;
+    }
+    else if (base == LOG)
+    {
+        if (toLowerCase(value.to_string()) == "true" || value == "1")
+            return 1LL;
+
+        return 0LL;
+    }
+
+    stream << value.to_string();
+    stream >> ret;
+
+    return ret;
+}
+
+
 /////////////////////////////////////////////////
 /// \brief Implementation of the textparse()
 /// function.
@@ -1440,6 +1492,7 @@ static StringVector strfnc_textparse(StringFuncArgs& funcArgs)
 
     StringVector sParsedStrings;
     size_t lastPosition = funcArgs.nArg1 - 1;
+    static std::string sIDENTIFIERCHARS = "sfaLlthbo";
 
     // If the search string starts with whitespaces and the
     // pattern doesn't start with a percentage sign, search
@@ -1457,14 +1510,14 @@ static StringVector strfnc_textparse(StringFuncArgs& funcArgs)
             break;
 
         // Find the identifiers
-        if (sView2.subview(i, 2) == "%s" || sView2.subview(i, 2) == "%f" || sView2.subview(i, 2) == "%a")
+        if (i+1 < sView2.length() && sView2[i] == '%' && sIDENTIFIERCHARS.find(sView2[i+1]) != std::string::npos)
         {
             // Find the following identifier
             size_t pos = std::string::npos;
 
             for (size_t j = i+2; j < sView2.length(); j++)
             {
-                if (sView2.subview(j, 2) == "%s" || sView2.subview(j, 2) == "%f" || sView2.subview(j, 2) == "%a")
+                if (j+1 < sView2.length() && sView2[j] == '%' && sIDENTIFIERCHARS.find(sView2[j+1]) != std::string::npos)
                 {
                     pos = j;
                     break;
@@ -1475,6 +1528,7 @@ static StringVector strfnc_textparse(StringFuncArgs& funcArgs)
             // separator at the end of the current
             // token
             std::string sSearchPattern = sView2.subview(i+2, pos - i - 2).to_string();
+
             if (!sSearchPattern.length())
                 pos = std::string::npos;
             else
@@ -1488,8 +1542,75 @@ static StringVector strfnc_textparse(StringFuncArgs& funcArgs)
             // Append the found token
             if (sView2.subview(i, 2) == "%s")
                 sParsedStrings.push_back(sView1.subview(lastPosition, pos - lastPosition).to_string());
+            else if (sView2.subview(i, 2) == "%h")
+                sParsedStrings.push_back(convertBaseToDecimal(sView1.subview(lastPosition, pos - lastPosition), HEX));
+            else if (sView2.subview(i, 2) == "%o")
+                sParsedStrings.push_back(convertBaseToDecimal(sView1.subview(lastPosition, pos - lastPosition), OCT));
+            else if (sView2.subview(i, 2) == "%b")
+                sParsedStrings.push_back(convertBaseToDecimal(sView1.subview(lastPosition, pos - lastPosition), BIN));
+            else if (sView2.subview(i, 2) == "%l")
+                sParsedStrings.push_back(convertBaseToDecimal(sView1.subview(lastPosition, pos - lastPosition), LOG));
+            else if (sView2.subview(i, 2) == "%t")
+                sParsedStrings.push_back(mu::value_type(to_double(StrToTime(sView1.subview(lastPosition, pos - lastPosition).to_string()))));
             else if (sView2.subview(i, 2) == "%f")
-                sParsedStrings.push_back(StrToCmplx(sView1.subview(lastPosition, pos - lastPosition).to_string()));
+            {
+                std::string sFloatingPoint = sView1.subview(lastPosition, pos - lastPosition).to_string();
+
+                if (sFloatingPoint.find('.') == std::string::npos)
+                    replaceAll(sFloatingPoint, ",", ".");
+
+                sParsedStrings.push_back(StrToCmplx(sFloatingPoint));
+            }
+            else if (sView2.subview(i, 2) == "%L")
+            {
+                std::string sLaTeXFormatted = sView1.subview(lastPosition, pos - lastPosition).to_string();
+                StripSpaces(sLaTeXFormatted);
+
+                if (sLaTeXFormatted.front() == '$' && sLaTeXFormatted.back() == '$')
+                {
+                    sLaTeXFormatted = sLaTeXFormatted.substr(1, sLaTeXFormatted.length()-2);
+                    StripSpaces(sLaTeXFormatted);
+                }
+
+                replaceAll(sLaTeXFormatted, "{,}", ".");
+                replaceAll(sLaTeXFormatted, "\\times", "*");
+                replaceAll(sLaTeXFormatted, "\\cdot", "*");
+                replaceAll(sLaTeXFormatted, "2\\pi", "6.283185");
+                replaceAll(sLaTeXFormatted, "\\pi", "3.1415926");
+                replaceAll(sLaTeXFormatted, "\\,", " ");
+                // 1.0*10^{-5} 1.0*10^2 1.0*10^3 2.5^{0.5}
+
+                if (sLaTeXFormatted.find('^') != std::string::npos)
+                {
+                    size_t nOpPos = sLaTeXFormatted.find_first_of("*^");
+                    mu::value_type vVal = StrToCmplx(sLaTeXFormatted.substr(0, nOpPos));
+
+                    if (sLaTeXFormatted[nOpPos] == '*')
+                    {
+                        sLaTeXFormatted.erase(0, nOpPos+1);
+                        nOpPos = sLaTeXFormatted.find('^');
+                        mu::value_type vBase = StrToCmplx(sLaTeXFormatted.substr(0, nOpPos));
+
+                        if (sLaTeXFormatted.find('{') != std::string::npos)
+                            vVal *= std::pow(vBase, std::stod(sLaTeXFormatted.substr(sLaTeXFormatted.find('{')+1)));
+                        else
+                            vVal *= std::pow(vBase, std::stod(sLaTeXFormatted));
+                    }
+                    else
+                    {
+                        sLaTeXFormatted.erase(0, nOpPos+1);
+
+                        if (sLaTeXFormatted.find('{') != std::string::npos)
+                            vVal = std::pow(vVal, std::stod(sLaTeXFormatted.substr(sLaTeXFormatted.find('{')+1)));
+                        else
+                            vVal = std::pow(vVal, std::stod(sLaTeXFormatted));
+                    }
+
+                    sParsedStrings.push_back(vVal);
+                }
+                else // This can handle simple multiplications
+                    sParsedStrings.push_back(StrToCmplx(sLaTeXFormatted));
+            }
 
             // Store the position of the separator
             lastPosition = pos;
@@ -2155,27 +2276,13 @@ static StringVector strfnc_basetodec(StringFuncArgs& funcArgs)
     std::stringstream stream;
 
     if (sView1 == "hex")
-        stream.setf(std::ios::hex, std::ios::basefield);
+        return toString(convertBaseToDecimal(sView2, HEX));
     else if (sView1 == "oct")
-        stream.setf(std::ios::oct, std::ios::basefield);
+        return toString(convertBaseToDecimal(sView2, OCT));
     else if (sView1 == "bin")
-    {
-        int ret = 0;
+        return toString(convertBaseToDecimal(sView2, BIN));
 
-        for (int i = sView2.length() - 1; i >= 0; i--)
-        {
-            if (sView2[i] == '1')
-                ret += intPower(2, sView2.length()-1 - i);
-        }
-
-        return toString(ret);
-    }
-
-    stream << sView2.to_string();
-    long long int ret;
-    stream >> ret;
-
-    return toString(ret);
+    return sView2.to_string();
 }
 
 

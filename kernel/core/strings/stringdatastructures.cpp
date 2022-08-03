@@ -399,6 +399,20 @@ void StringVector::push_back(int nVal)
 
 
 /////////////////////////////////////////////////
+/// \brief Append a long long int to the end of
+/// this vector.
+///
+/// \param nVal long long int
+/// \return void
+///
+/////////////////////////////////////////////////
+void StringVector::push_back(long long int nVal)
+{
+    std::vector<std::string>::push_back(toString(nVal));
+}
+
+
+/////////////////////////////////////////////////
 /// \brief Append a boolean to the end of
 /// this vector.
 ///

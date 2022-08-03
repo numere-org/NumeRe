@@ -6073,9 +6073,9 @@ wxString NumeReWindow::addLinebreaks(const wxString& sLine)
         sReturn.erase(sReturn.find("\\$"),1);
 
     unsigned int nDescStart = sReturn.find("- ");
-    unsigned int nIndentPos = 6;//
+    unsigned int nIndentPos = 4;//
     unsigned int nLastLineBreak = 0;
-    sReturn.replace(nDescStart, 2,"\n      ");
+    sReturn.replace(nDescStart, 2,"\n    ");
     nLastLineBreak = nDescStart;
 
     for (unsigned int i = nDescStart; i < sReturn.length(); i++)
