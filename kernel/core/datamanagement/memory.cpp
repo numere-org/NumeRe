@@ -293,6 +293,24 @@ int Memory::getElemsInColumn(size_t col) const
 
 
 /////////////////////////////////////////////////
+/// \brief Returns the number of filled elements
+/// in the selected column without the trailing
+/// but with the internal invalid values.
+///
+/// \param col size_t
+/// \return int
+///
+/////////////////////////////////////////////////
+int Memory::getFilledElemsInColumn(size_t col) const
+{
+    if (memArray.size() > col && memArray[col])
+        return memArray[col]->getNumFilledElements();
+
+    return 0;
+}
+
+
+/////////////////////////////////////////////////
 /// \brief Returns the overall used number of
 /// bytes for this table.
 ///
@@ -2707,7 +2725,7 @@ std::vector<mu::value_type> Memory::size(const VectorIndex& _vIndex, int dir) co
     if (dir == ALL)
         return std::vector<mu::value_type>({lines, cols});
     else if (dir == GRID)
-        return std::vector<mu::value_type>({getElemsInColumn(0), getElemsInColumn(1)});
+        return std::vector<mu::value_type>({getFilledElemsInColumn(0), getFilledElemsInColumn(1)});
     else if (dir & LINES)
     {
         // Compute the sizes of the table rows

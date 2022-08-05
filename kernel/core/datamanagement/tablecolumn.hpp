@@ -84,6 +84,7 @@ struct TableColumn
 
     virtual size_t size() const = 0;
     virtual size_t getBytes() const = 0;
+    size_t getNumFilledElements() const;
 
     virtual TableColumn* convert(ColumnType type = TableColumn::TYPE_NONE) = 0;
 

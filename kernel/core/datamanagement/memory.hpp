@@ -104,6 +104,7 @@ class Memory : public Sorter
 		bool convertColumns(const VectorIndex& _vCol, const std::string& _sType);
 		int getLines(bool _bFull = false) const;
 		int getElemsInColumn(size_t col) const;
+		int getFilledElemsInColumn(size_t col) const;
 		int getCols(bool _bFull = false) const;
         size_t getSize() const;
 

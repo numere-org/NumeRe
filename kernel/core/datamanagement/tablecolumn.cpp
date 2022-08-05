@@ -191,6 +191,26 @@ void TableColumn::shrink()
 
 
 /////////////////////////////////////////////////
+/// \brief Return the number of actual filled
+/// elements in this column, which can be
+/// different from the actual size of the column.
+///
+/// \return size_t
+///
+/////////////////////////////////////////////////
+size_t TableColumn::getNumFilledElements() const
+{
+    for (size_t i = size(); i > 0; i--)
+    {
+        if (isValid(i-1))
+            return i;
+    }
+
+    return 0;
+}
+
+
+/////////////////////////////////////////////////
 /// \brief Creates a default column headline for
 /// a column, which can be used without an
 /// instance of this class.
