@@ -686,33 +686,6 @@ namespace NumeRe
             m_mStringVars[sVar] = sValue.substr(1,sValue.length()-2);
         else
             m_mStringVars[sVar] = sValue;
-
-        // If the current string variables value contains further
-        // quotation marks, mask them correctly
-        if (m_mStringVars[sVar].find('"') != string::npos)
-        {
-            unsigned int nPos = 0;
-
-            while (m_mStringVars[sVar].find('"', nPos) != string::npos)
-            {
-                nPos = m_mStringVars[sVar].find('"', nPos);
-
-                // Is the found quotation mark masked by a backslash?
-                if (m_mStringVars[sVar][nPos-1] == '\\')
-                {
-                    nPos++;
-                    continue;
-                }
-                else
-                {
-                    m_mStringVars[sVar].insert(nPos,1,'\\');
-                    nPos += 2;
-                    continue;
-                }
-            }
-        }
-
-        return;
     }
 
 

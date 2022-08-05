@@ -2445,8 +2445,8 @@ NumeReVariables NumeReKernel::getVariableList()
             continue;
 
         sCurrentLine = iter->first
-            + "\t1 x 1\tstring\t\""
-            + replaceControlCharacters(ellipsize(iter->second, MAXSTRINGLENGTH)) + "\"\t"
+            + "\t1 x 1\tstring\t"
+            + replaceControlCharacters(ellipsize(toExternalString(iter->second), MAXSTRINGLENGTH)) + "\t"
             + iter->first + "\t" + formatByteSize(iter->second.length());
         vars.vVariables.push_back(sCurrentLine);
     }

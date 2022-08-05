@@ -599,7 +599,7 @@ void NumeReDebugger:: gatherInformations(const std::map<std::string, std::pair<s
         if (iter.first != iter.second.first)
             replaceAll(sErraticCommand, iter.second.first.c_str(), iter.first.c_str());
 
-        const std::string& sValue = instance->getStringParser().getStringVars().at(iter.second.first);
+        const std::string sValue = toExternalString(instance->getStringParser().getStringVars().at(iter.second.first));
         mLocalStrings[iter.first + "\t" + iter.second.first] = replaceControlCharacters(ellipsize(sValue, MAXSTRINGLENGTH));
     }
 
@@ -822,7 +822,7 @@ vector<string> NumeReDebugger::getStringVars()
 
     for (auto iter = mLocalStrings.begin(); iter != mLocalStrings.end(); ++iter)
     {
-        vStringVars.push_back((iter->first).substr(0, (iter->first).find('\t')) + "\t1 x 1\tstring\t\"" + iter->second + "\"" + (iter->first).substr((iter->first).find('\t')));
+        vStringVars.push_back((iter->first).substr(0, (iter->first).find('\t')) + "\t1 x 1\tstring\t" + iter->second + (iter->first).substr((iter->first).find('\t')));
     }
 
     return vStringVars;
@@ -943,7 +943,7 @@ vector<string> NumeReDebugger::getGlobals()
     for (auto iter = _stringParser.getStringVars().begin(); iter != _stringParser.getStringVars().end(); ++iter)
     {
         if (iter->first.substr(0, 2) != "_~")
-            mGlobals[iter->first] = "1 x 1\tstring\t\"" + replaceControlCharacters(ellipsize(iter->second, MAXSTRINGLENGTH)) + "\"";
+            mGlobals[iter->first] = "1 x 1\tstring\t" + replaceControlCharacters(ellipsize(toExternalString(iter->second), MAXSTRINGLENGTH));
     }
 
     // List all relevant numerical variables
