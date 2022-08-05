@@ -4933,7 +4933,8 @@ void Plot::fitPlotRanges(size_t nPlotCompose, bool bNewSubPlot)
 
         if (isPlot1D(_pInfo.sCommand))
         {
-            _pInfo.secranges[YRANGE].expand(1.1, (_pData.getLogscale(YRANGE) || _pData.getSettings(PlotData::INT_COORDS) != CARTESIAN ? 0.0 : -INFINITY));
+            if (std::isnan(_pData.getAddAxis(YCOORD).ivl.min()))
+                _pInfo.secranges[YRANGE].expand(1.1, (_pData.getLogscale(YRANGE) || _pData.getSettings(PlotData::INT_COORDS) != CARTESIAN ? 0.0 : -INFINITY));
 
             for (int i = XRANGE; i <= YRANGE; i++)
                 _pData.setAddAxis(i, _pInfo.secranges[i]);
