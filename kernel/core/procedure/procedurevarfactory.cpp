@@ -895,6 +895,12 @@ void ProcedureVarFactory::evaluateProcedureArguments(std::string& currentArg, st
             currentValue = sNewArgName;
             mLocalArgs[sNewArgName] = TABLETYPE;
         }
+        else if (inliningMode) // Only for checking, whether the table is a reference
+        {
+            #warning TODO (numere#1#02/27/22): This behavior will be deprecated with v1.1.5
+            if (!_optionRef->getSetting(SETTING_B_TABLEREFS).active())
+                throw SyntaxError(SyntaxError::INLINE_PROCEDURE_NEEDS_TABLE_REFERENCES, currentValue, "", currentArg + ")");
+        }
     }
     else if (currentArg.length() > 2 && currentArg.substr(currentArg.length()-2) == "{}")
     {
