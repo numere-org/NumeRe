@@ -168,6 +168,9 @@ namespace NumeRe
     {
         StringVector vRes;
         const map<string, vector<mu::value_type> >& mNumVectorVars = NumeReKernel::getInstance()->getParser().GetVectors();
+        g_logger.info("Evaluating string vector for '" + sLine + "'");
+        g_logger.info("Contains vars: " + toString(containsStringVectorVars(sLine)));
+        g_logger.info("Contains parser vars: " + toString(NumeReKernel::getInstance()->getParser().ContainsVectorVars(sLine, false)));
 
         // As long as the current vector is not empty
         while (sLine.length())

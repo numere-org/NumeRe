@@ -1597,10 +1597,12 @@ namespace NumeRe
             {
                 std::string sValue = rpnStack[i].m_data.to_string();
 
-                if (isStringVectorVar(sValue))
+                if (sValue.front() == '"') // This is needed because the math parser does not handle string literals
+                    valueStack.push(StringVector::convert_literal(sValue));
+                else if (isStringVectorVar(sValue))
                     valueStack.push(getStringVectorVar(sValue));
                 else if (containsStringVectorVars(sValue) || _parser.ContainsVectorVars(sValue, false))
-                    valueStack.push(StringVector(evaluateStringVectors(sValue))); // TODO: Improve this
+                    valueStack.push(evaluateStringVectors(sValue));
                 else
                     valueStack.push(StringVector::convert_literal(sValue));
             }
