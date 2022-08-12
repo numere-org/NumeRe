@@ -1339,8 +1339,13 @@ bool NumeReKernel::getLineFromCommandCache(std::string& sLine, const std::string
                 commandQueue.back().pop_back();
 
             sLine = commandQueue.front();
-            sLine.pop_back();
-            bSupressAnswer = true;
+
+            if (sLine.back() == ';')
+            {
+                sLine.pop_back();
+                bSupressAnswer = true;
+            }
+
             commandQueue.pop();
         }
     }

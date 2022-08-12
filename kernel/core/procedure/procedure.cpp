@@ -886,8 +886,13 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, F
                     commandQueue.back().pop_back();
 
                 sProcCommandLine = commandQueue.front();
-                sProcCommandLine.pop_back();
-                bProcSupressAnswer = true;
+
+                if (sProcCommandLine.back() == ';')
+                {
+                    sProcCommandLine.pop_back();
+                    bProcSupressAnswer = true;
+                }
+
                 commandQueue.pop();
             }
         }
