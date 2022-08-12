@@ -21,12 +21,62 @@
 #include "../../kernel.hpp"
 #include "../io/file.hpp"
 #include <cstdlib>
+#include <omp.h>
 
-using namespace std;
+
+/////////////////////////////////////////////////
+/// \brief This class represents a thread safe
+/// random number generator (it is a container
+/// for multiple generator instances, each for
+/// every possible OMP thread).
+/////////////////////////////////////////////////
+class ThreadsafeRandGen
+{
+    private:
+        std::vector<std::mt19937> m_randGenArray;
+
+    public:
+        /////////////////////////////////////////////////
+        /// \brief Create an instance of this thread safe
+        /// random number generator by filling the
+        /// internal array with the number of maximal
+        /// possible OMP threads.
+        /////////////////////////////////////////////////
+        ThreadsafeRandGen()
+        {
+            double t = time(0);
+
+            for (int i = 0; i < omp_get_max_threads(); i++)
+            {
+                m_randGenArray.push_back(std::mt19937(t+i));
+            }
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief Returns an instance of a random number
+        /// generator for the current thread.
+        ///
+        /// \return std::mt19937&
+        ///
+        /////////////////////////////////////////////////
+        std::mt19937& getGenerator()
+        {
+            int threadId = omp_get_thread_num();
+
+            if (threadId >= (int)m_randGenArray.size())
+                throw std::out_of_range("Requested a random number generator for thread " + std::to_string(threadId)
+                                        + ", which is larger than the number of available generators (i.e. "
+                                        + std::to_string(m_randGenArray.size()) + ")");
+
+            return m_randGenArray[threadId];
+        }
+
+};
+
 
 /// File static random number generator, which will be usable via the scoped getRandGenInstance
 /// function, which will return a reference to this random number generator
-static std::mt19937 randGenerator((double)time(0));
+static ThreadsafeRandGen randGenerator;
 
 
 /////////////////////////////////////////////////
@@ -40,9 +90,10 @@ static std::mt19937 randGenerator((double)time(0));
 /////////////////////////////////////////////////
 std::mt19937& getRandGenInstance()
 {
-    return randGenerator;
+    return randGenerator.getGenerator();
 }
 
+using namespace std;
 
 /////////////////////////////////////////////////
 /// \brief This function searches the passed
