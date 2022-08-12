@@ -36,7 +36,7 @@ class ProcedureLibrary
         std::map<std::string, ProcedureElement*> mLibraryEntries;
 
         ProcedureElement* constructProcedureElement(const std::string& sProcedureFileName);
-        std::vector<std::string> getFileContents(const std::string& sProcedureFileName);
+        StyledTextFile getFileContents(const std::string& sProcedureFileName);
 
     public:
         ~ProcedureLibrary();

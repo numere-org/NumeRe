@@ -632,15 +632,7 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, F
         throw SyntaxError(SyntaxError::INVALID_PROCEDURE_NAME, "$" + sProc + "(" + sVarList + ")", SyntaxError::invalid_position);
 
     sProcCommandLine.clear();
-    std::string sCmdCache = "";
-    std::string sCurrentCommand = "";
-    int nByteCode = 0;
-    int nCurrentByteCode = 0;
-    Returnvalue _ReturnVal;
-
-    NumeReDebugger& _debugger = NumeReKernel::getInstance()->getDebugger();
-
-    sThisNameSpace = "";
+    sThisNameSpace.clear();
     nCurrentLine = 0;
     nFlags = 0;
     nReturnType = 1;
@@ -648,17 +640,12 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, F
     nthRecursion = nth_procedure;
     bool bSupressAnswer_back = NumeReKernel::bSupressAnswer;
 
-    // Prepare the procedure command line elements
-    ProcedureElement* ProcElement;
-    pair<int, ProcedureCommandLine> currentLine;
-    currentLine.first = -1;
-
     // Prepare the var factory and obtain the current procedure file
     if (_varFactory)
         delete _varFactory;
 
     _varFactory = new ProcedureVarFactory(this, mangleName(sProc), nth_procedure);
-    ProcElement = NumeReKernel::ProcLibrary.getProcedureContents(sCurrentProcedureName);
+    ProcedureElement*ProcElement = NumeReKernel::ProcLibrary.getProcedureContents(sCurrentProcedureName);
 
     // add spaces in front of and at the end of sVarList
     sVarList = " " + sVarList + " ";
@@ -673,13 +660,19 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, F
     // Separate the procedure name from the namespace
     if (sProc.find('~') != string::npos)
         sProc = sProc.substr(sProc.rfind('~') + 1);
+
     if (sProc.find('/') != string::npos)
         sProc = sProc.substr(sProc.rfind('/') + 1);
+
     if (sProc.find('\\') != string::npos)
         sProc = sProc.substr(sProc.rfind('\\') + 1);
 
-    // find the current procedure line
+    // Prepare the procedure command line elements
+    // and find the current procedure line
+    pair<int, ProcedureCommandLine> currentLine;
     currentLine.first = ProcElement->gotoProcedure("$" + sProc);
+
+    NumeReDebugger& _debugger = NumeReKernel::getInstance()->getDebugger();
 
     // if the procedure was not found, throw an error
     if (currentLine.first == -1)
@@ -719,9 +712,9 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, F
         string sErrorToken;
 
         if (sCallingNameSpace == "main")
-            sErrorToken = "\"" + sThisNameSpace + "\" aus dem globalen Namensraum";
+            sErrorToken = "\"" + sThisNameSpace + "\" (caller namespace: global)";
         else
-            sErrorToken = "\"" + sThisNameSpace + "\" aus dem Namensraum \"" + sCallingNameSpace + "\"";
+            sErrorToken = "\"" + sThisNameSpace + "\" (caller namespace:" + sCallingNameSpace + ")";
 
         if (_option.useDebugger())
             _debugger.popStackItem();
@@ -795,6 +788,12 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, F
         baseline = _assertionHandler.getStats();
     }
 
+    std::queue<std::string> commandQueue;
+    std::string sCurrentCommand = "";
+    int nByteCode = 0;
+    int nCurrentByteCode = 0;
+    Returnvalue _ReturnVal;
+
     // As long as we didn't find the last line,
     // read the next line from the procedure and execute
     // this line
@@ -808,7 +807,7 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, F
 
         // Get the next line from one of the current active
         // command line sources
-        if (!sCmdCache.length())
+        if (!commandQueue.size())
         {
             currentLine = ProcElement->getNextLine(currentLine.first);
             nCurrentLine = currentLine.first;
@@ -850,73 +849,46 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, F
         }
 
         // Handle the command line cache
-        if (sCmdCache.length() || sProcCommandLine.find(';') != string::npos)
+        if (commandQueue.size() || sProcCommandLine.find(';') != string::npos)
         {
-            if (sCmdCache.length())
+            if (commandQueue.size())
             {
-                while (sCmdCache.front() == ';' || sCmdCache.front() == ' ')
-                    sCmdCache.erase(0, 1);
+                // The command cache is not empty
+                // Get the next task from the command cache
+                sProcCommandLine = commandQueue.front();
 
-                if (!sCmdCache.length())
-                    continue;
-
-                if (sCmdCache.find(';') != string::npos)
+                if (sProcCommandLine.back() == ';')
                 {
-                    for (unsigned int i = 0; i < sCmdCache.length(); i++)
-                    {
-                        if (sCmdCache[i] == ';' && !isInQuotes(sCmdCache, i))
-                        {
-                            bProcSupressAnswer = true;
-                            sProcCommandLine = sCmdCache.substr(0, i);
-                            sCmdCache.erase(0, i + 1);
-                            break;
-                        }
+                    sProcCommandLine.pop_back();
+                    bProcSupressAnswer = true;
+                }
 
-                        if (i == sCmdCache.length() - 1)
-                        {
-                            sProcCommandLine = sCmdCache;
-                            sCmdCache.clear();
-                            break;
-                        }
-                    }
-                }
-                else
-                {
-                    sProcCommandLine = sCmdCache;
-                    sCmdCache.clear();
-                }
+                commandQueue.pop();
             }
-            else if (sProcCommandLine.back() == ';')
+            else if (sProcCommandLine.find(';') == sProcCommandLine.length() - 1)
             {
+                // Only remove the trailing semicolon -> used to suppress the output of the current line
                 bProcSupressAnswer = true;
                 sProcCommandLine.pop_back();
             }
             else
             {
-                for (unsigned int i = 0; i < sProcCommandLine.length(); i++)
+                // Use only the first task from the command line and cache the remaining
+                // part in the command cache
+                EndlessVector<std::string> expressions = getAllSemiColonSeparatedTokens(sProcCommandLine);
+
+                for (const auto& expr : expressions)
                 {
-                    if (sProcCommandLine[i] == '(' || sProcCommandLine[i] == '[' || sProcCommandLine[i] == '{')
-                    {
-                        size_t parens = getMatchingParenthesis(sProcCommandLine.substr(i));
-
-                        if (parens != string::npos)
-                            i += parens;
-                    }
-
-                    if (sProcCommandLine[i] == ';' && !isInQuotes(sProcCommandLine, i))
-                    {
-                        if (i != sProcCommandLine.length() - 1)
-                            sCmdCache = sProcCommandLine.substr(i + 1);
-
-                        sProcCommandLine.erase(i);
-                        bProcSupressAnswer = true;
-                    }
-
-                    if (i == sProcCommandLine.length() - 1)
-                    {
-                        break;
-                    }
+                    commandQueue.push(expr + ";");
                 }
+
+                if (sProcCommandLine.back() != ';')
+                    commandQueue.back().pop_back();
+
+                sProcCommandLine = commandQueue.front();
+                sProcCommandLine.pop_back();
+                bProcSupressAnswer = true;
+                commandQueue.pop();
             }
         }
 
@@ -1735,6 +1707,8 @@ bool Procedure::writeProcedure(string sProcedureLine)
         }
         else if (sProcedureLine.find(':', 5) != string::npos
                  && (sProcedureLine.substr(0, 5) == "case "
+                     || sProcedureLine.substr(0, 6) == "catch "
+                     || sProcedureLine.substr(0, 6) == "catch:"
                      || sProcedureLine.substr(0, 8) == "default "
                      || sProcedureLine.substr(0, 8) == "default:")
                  && sProcedureLine.find_first_not_of(' ', sProcedureLine.find(':', 5)) != string::npos)
@@ -1745,6 +1719,7 @@ bool Procedure::writeProcedure(string sProcedureLine)
         else if (sProcedureLine.find(' ', 4) != string::npos
                  && (sProcedureLine.substr(0, 5) == "else "
                      || sProcedureLine.substr(0, 6) == "endif "
+                     || sProcedureLine.substr(0, 7) == "endtry "
                      || sProcedureLine.substr(0, 10) == "endswitch "
                      || sProcedureLine.substr(0, 7) == "endfor "
                      || sProcedureLine.substr(0, 9) == "endwhile ")
@@ -1768,6 +1743,9 @@ bool Procedure::writeProcedure(string sProcedureLine)
                  || sProcedureLine.find(" case") != string::npos
                  || sProcedureLine.find(" default") != string::npos
                  || sProcedureLine.find(" endswitch") != string::npos
+                 || sProcedureLine.find(" try") != string::npos
+                 || sProcedureLine.find(" catch") != string::npos
+                 || sProcedureLine.find(" endtry") != string::npos
                  || sProcedureLine.find(" while ") != string::npos
                  || sProcedureLine.find(" while(") != string::npos
                  || sProcedureLine.find(" endwhile") != string::npos)
@@ -1791,6 +1769,10 @@ bool Procedure::writeProcedure(string sProcedureLine)
                             || sProcedureLine.substr(n, 9) == " default "
                             || sProcedureLine.substr(n, 9) == " default:"
                             || sProcedureLine.substr(n, 10) == " endswitch"
+                            || sProcedureLine.substr(n, 5) == " try "
+                            || sProcedureLine.substr(n, 7) == " catch "
+                            || sProcedureLine.substr(n, 7) == " catch:"
+                            || sProcedureLine.substr(n, 7) == " endtry"
                             || sProcedureLine.substr(n, 7) == " while "
                             || sProcedureLine.substr(n, 7) == " while("
                             || sProcedureLine.substr(n, 9) == " endwhile")
@@ -1808,6 +1790,8 @@ bool Procedure::writeProcedure(string sProcedureLine)
         if (findCommand(sProcedureLine).sString == "endif"
                 || findCommand(sProcedureLine).sString == "endwhile"
                 || findCommand(sProcedureLine).sString == "endfor"
+                || findCommand(sProcedureLine).sString == "endtry"
+                || findCommand(sProcedureLine).sString == "catch"
                 || findCommand(sProcedureLine).sString == "endcompose"
                 || findCommand(sProcedureLine).sString == "endswitch"
                 || findCommand(sProcedureLine).sString == "case"
@@ -1829,6 +1813,8 @@ bool Procedure::writeProcedure(string sProcedureLine)
         if (findCommand(sProcedureLine).sString == "if"
                 || findCommand(sProcedureLine).sString == "while"
                 || findCommand(sProcedureLine).sString == "for"
+                || findCommand(sProcedureLine).sString == "try"
+                || findCommand(sProcedureLine).sString == "catch"
                 || findCommand(sProcedureLine).sString == "compose"
                 || findCommand(sProcedureLine).sString == "switch"
                 || findCommand(sProcedureLine).sString == "case"

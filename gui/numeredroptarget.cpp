@@ -376,11 +376,20 @@ wxDragResult NumeReDropTarget::OnData(wxCoord x, wxCoord y, wxDragResult default
 
                 // Replace line break and tabulator characters,
                 // because they won't be parsed correctly
-                while (sText.find('\n') != std::string::npos)
-                    sText[sText.find('\n')] = ';';
+                size_t pos;
 
-                while (sText.find('\t') != std::string::npos)
-                    sText[sText.find('\t')] = ' ';
+                while ((pos = sText.find('\n')) != std::string::npos)
+                {
+                    if (pos
+                        && sText.find_last_not_of(" \t", pos-1) != std::string::npos
+                        && sText[sText.find_last_not_of(" \t", pos-1)] != ';')
+                        sText[pos] = ';';
+                    else
+                        sText[pos] = ' ';
+                }
+
+                while ((pos = sText.find('\t')) != std::string::npos)
+                    sText[pos] = ' ';
 
                 NumeReWindow* top = static_cast<NumeReWindow*>(m_topWindow);
                 top->getTerminal()->ProcessInput(sText.length(), sText);

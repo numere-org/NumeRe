@@ -595,13 +595,13 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const std::string& sCommand)
     if (!m_parent)
         return NUMERE_ERROR;
 
-
     std::string sLine_Temp = "";     // Temporaerer String fuer die Eingabe
     std::string sCache;         // Zwischenspeicher fuer die Cache-Koordinaten
     std::string sKeep = "";          // Zwei '\' am Ende einer Zeile ermoeglichen es, dass die Eingabe auf mehrere Zeilen verteilt wird.
-    std::string sCmdCache = "";      // Die vorherige Zeile wird hierin zwischengespeichert
     std::string sLine = "";          // The actual line
     std::string sCurrentCommand = "";// The current command
+    std::queue<std::string> emptyQueue;
+    commandQueue.swap(emptyQueue);
     mu::value_type* v = 0;          // Ergebnisarray
     int& nDebuggerCode = _procedure.getDebuggerCode();
     int nNum = 0;               // Zahl der Ergebnisse in value_type* v
@@ -669,7 +669,7 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const std::string& sCommand)
         try
         {
             // Handle command line sources and validate the input
-            if (!handleCommandLineSource(sLine, sCmdCache, sKeep))
+            if (!handleCommandLineSource(sLine, sKeep))
                 continue;
 
             // Search for the "assert" command decoration
@@ -685,7 +685,7 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const std::string& sCommand)
 
             // Get the tasks from the command cache or add
             // the current line to the command cache
-            if (!getLineFromCommandCache(sLine, sCmdCache, sCurrentCommand))
+            if (!getLineFromCommandCache(sLine, sCurrentCommand))
                 continue;
 
             // Eval debugger breakpoints from scripts
@@ -720,7 +720,7 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const std::string& sCommand)
 
             // Handle the compose block
             nReturnVal = NUMERE_ERROR;
-            if (!handleComposeBlock(sLine, sCmdCache, sCurrentCommand, nReturnVal))
+            if (!handleComposeBlock(sLine, sCurrentCommand, nReturnVal))
             {
                 // returns false either when the loop shall return
                 // or it shall continue
@@ -742,7 +742,7 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const std::string& sCommand)
 
             // Handle the writing of procedures
             nReturnVal = NUMERE_ERROR;
-            if (!handleProcedureWrite(sLine, sCmdCache, sCurrentCommand, nReturnVal))
+            if (!handleProcedureWrite(sLine, sCurrentCommand, nReturnVal))
             {
                 // returns false either when the loop shall return
                 // or it shall continue
@@ -794,7 +794,7 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const std::string& sCommand)
                     case COMMAND_HAS_RETURNVALUE:
                         break; // Kein Keyword: Mit dem Parser auswerten
                     case COMMAND_PROCESSED:        // Keyword: Naechster Schleifendurchlauf!
-                        if (!sCmdCache.length() && !(_script.isValid() && _script.isOpen()))
+                        if (!commandQueue.size() && !(_script.isValid() && _script.isOpen()))
                         {
                             if (_script.wasLastCommand())
                             {
@@ -856,7 +856,7 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const std::string& sCommand)
 
             // Handle the flow controls like "if", "while", "for"
             nReturnVal = NUMERE_ERROR;
-            if (!handleFlowControls(sLine, sCmdCache, sCurrentCommand, nReturnVal))
+            if (!handleFlowControls(sLine, sCurrentCommand, nReturnVal))
             {
                 // returns false either when the loop shall return
                 // or it shall continue
@@ -894,7 +894,7 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const std::string& sCommand)
             // evaluate strings
             nReturnVal = NUMERE_ERROR;
 
-            if (!evaluateStrings(sLine, sCache, sCmdCache, bWriteToCache, nReturnVal))
+            if (!evaluateStrings(sLine, sCache, bWriteToCache, nReturnVal))
             {
                 // returns false either when the loop shall return
                 // or it shall continue
@@ -937,7 +937,7 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const std::string& sCommand)
 
             // Create the answer of the calculation and print it
             // to the command line, if not suppressed
-            createCalculationAnswer(nNum, v, sCmdCache);
+            createCalculationAnswer(nNum, v);
 
             if (bWriteToCache)
             {
@@ -1010,7 +1010,7 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const std::string& sCommand)
                 }
             }
 
-            resetAfterError(sCmdCache);
+            resetAfterError();
 
             make_hline();
             g_logger.error(toUpperCase(_lang.get("ERR_ERROR")) + ": " + e.GetMsg());
@@ -1031,7 +1031,7 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const std::string& sCommand)
             print(toUpperCase(_lang.get("ERR_STD_BA_HEAD")));
             make_hline();
             print(LineBreak(_lang.get("ERR_STD_BADALLOC", sVersion), _option));
-            resetAfterError(sCmdCache);
+            resetAfterError();
 
             make_hline();
             g_logger.error("ERROR: CRITICAL ACCESS VIOLATION");
@@ -1050,7 +1050,7 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const std::string& sCommand)
             print(LineBreak(std::string(e.what()), _option));
             print(LineBreak(_lang.get("ERR_STD_INTERNAL"), _option));
 
-            resetAfterError(sCmdCache);
+            resetAfterError();
 
             g_logger.error(toUpperCase(_lang.get("ERR_ERROR")) + ": " + e.what());
             make_hline();
@@ -1147,7 +1147,7 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const std::string& sCommand)
                     g_logger.error(toUpperCase(_lang.get("ERR_ERROR")) + ": " + sErrIDString);
                 }
             }
-            resetAfterError(sCmdCache);
+            resetAfterError();
 
             make_hline();
             sendErrorNotification();
@@ -1166,7 +1166,7 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const std::string& sCommand)
             make_hline();
             print(LineBreak(_lang.get("ERR_CATCHALL"), _option));
 
-            resetAfterError(sCmdCache);
+            resetAfterError();
             make_hline();
 
             g_logger.error("ERROR: UNKNOWN EXCEPTION");
@@ -1184,14 +1184,14 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const std::string& sCommand)
 
             checkInternalStates();
 
-            if (!sCmdCache.length())
+            if (!commandQueue.size())
             {
                 bCancelSignal = false;
                 return NUMERE_DONE_KEYWORD;
             }
         }
     }
-    while ((_script.isValid() && _script.isOpen()) || sCmdCache.length());
+    while ((_script.isValid() && _script.isOpen()) || commandQueue.size());
 
     bCancelSignal = false;
     nDebuggerCode = 0;
@@ -1219,14 +1219,13 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const std::string& sCommand)
 /// validate it, before the core will evaluate it.
 ///
 /// \param sLine std::string&
-/// \param sCmdCache const std::string&
 /// \param sKeep std::string&
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool NumeReKernel::handleCommandLineSource(std::string& sLine, const std::string& sCmdCache, std::string& sKeep)
+bool NumeReKernel::handleCommandLineSource(std::string& sLine, std::string& sKeep)
 {
-    if (!sCmdCache.length())
+    if (!commandQueue.size())
     {
         // --> Wenn gerade ein Script aktiv ist, lese dessen naechste Zeile, sonst nehme eine Zeile von std::cin <--
         if (_script.isValid() && _script.isOpen())
@@ -1295,50 +1294,29 @@ bool NumeReKernel::handleCommandLineSource(std::string& sLine, const std::string
 /// semicolons).
 ///
 /// \param sLine std::string&
-/// \param sCmdCache std::string&
 /// \param sCurrentCommand const std::string&
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool NumeReKernel::getLineFromCommandCache(std::string& sLine, std::string& sCmdCache, const std::string& sCurrentCommand)
+bool NumeReKernel::getLineFromCommandCache(std::string& sLine, const std::string& sCurrentCommand)
 {
     // Only do something if the command cache is not empty or the current line contains a semicolon
-    if ((sCmdCache.length() || sLine.find(';') != std::string::npos) && !_procedure.is_writing() && sCurrentCommand != "procedure")
+    if ((commandQueue.size() || sLine.find(';') != std::string::npos)
+        && !_procedure.is_writing() && sCurrentCommand != "procedure")
     {
-        if (sCmdCache.length())
+        if (commandQueue.size())
         {
             // The command cache is not empty
             // Get the next task from the command cache
-            while (sCmdCache.front() == ';' || sCmdCache.front() == ' ')
-                sCmdCache.erase(0, 1);
-            if (!sCmdCache.length())
-                return false;
-            if (sCmdCache.find(';') != std::string::npos)
+            sLine = commandQueue.front();
+
+            if (sLine.back() == ';')
             {
-                // More than one task available
-                for (unsigned int i = 0; i < sCmdCache.length(); i++)
-                {
-                    if (sCmdCache[i] == ';' && !isInQuotes(sCmdCache, i))
-                    {
-                        bSupressAnswer = true;
-                        sLine = sCmdCache.substr(0, i);
-                        sCmdCache.erase(0, i + 1);
-                        break;
-                    }
-                    if (i == sCmdCache.length() - 1)
-                    {
-                        sLine = sCmdCache;
-                        sCmdCache.clear();
-                        break;
-                    }
-                }
+                sLine.pop_back();
+                bSupressAnswer = true;
             }
-            else
-            {
-                // Only one task available
-                sLine = sCmdCache;
-                sCmdCache.clear();
-            }
+
+            commandQueue.pop();
         }
         else if (sLine.find(';') == sLine.length() - 1)
         {
@@ -1350,28 +1328,23 @@ bool NumeReKernel::getLineFromCommandCache(std::string& sLine, std::string& sCmd
         {
             // Use only the first task from the command line and cache the remaining
             // part in the command cache
-            for (unsigned int i = 0; i < sLine.length(); i++)
+            EndlessVector<std::string> expressions = getAllSemiColonSeparatedTokens(sLine);
+
+            for (const auto& expr : expressions)
             {
-                if (sLine[i] == '(' || sLine[i] == '[' || sLine[i] == '{')
-                {
-                    size_t parens = getMatchingParenthesis(sLine.substr(i));
-                    if (parens != std::string::npos)
-                        i += parens;
-                }
-                if (sLine[i] == ';' && !isInQuotes(sLine, i))
-                {
-                    if (i != sLine.length() - 1)
-                        sCmdCache = sLine.substr(i + 1);
-                    sLine.erase(i);
-                    bSupressAnswer = true;
-                }
-                if (i == sLine.length() - 1)
-                {
-                    break;
-                }
+                commandQueue.push(expr + ";");
             }
+
+            if (sLine.back() != ';')
+                commandQueue.back().pop_back();
+
+            sLine = commandQueue.front();
+            sLine.pop_back();
+            bSupressAnswer = true;
+            commandQueue.pop();
         }
     }
+
     return true;
 }
 
@@ -1383,13 +1356,12 @@ bool NumeReKernel::getLineFromCommandCache(std::string& sLine, std::string& sCmd
 /// block is finished).
 ///
 /// \param sLine std::string&
-/// \param sCmdCache const std::string&
 /// \param sCurrentCommand const std::string&
 /// \param nReturnVal KernelStatus&
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool NumeReKernel::handleComposeBlock(std::string& sLine, const std::string& sCmdCache, const std::string& sCurrentCommand, KernelStatus& nReturnVal)
+bool NumeReKernel::handleComposeBlock(std::string& sLine, const std::string& sCurrentCommand, KernelStatus& nReturnVal)
 {
     // Only do something, if the current command contains
     // a compose block syntax element
@@ -1413,7 +1385,7 @@ bool NumeReKernel::handleComposeBlock(std::string& sLine, const std::string& sCm
 
             // If the block wasn't started from a script, then ask the user
             // to complete it
-            if (!(_script.isValid() && _script.isOpen()) && !sCmdCache.length())
+            if (!(_script.isValid() && _script.isOpen()) && !commandQueue.size())
             {
                 if (_procedure.getCurrentBlockDepth())
                 {
@@ -1474,7 +1446,7 @@ bool NumeReKernel::handleComposeBlock(std::string& sLine, const std::string& sCm
                 sPlotCompose += sLine + " <<COMPOSE>> ";
                 // If the block wasn't started from a script, then ask the user
                 // to complete it
-                if (!(_script.isValid() && _script.isOpen()) && !sCmdCache.length())
+                if (!(_script.isValid() && _script.isOpen()) && !commandQueue.size())
                 {
                     if (_procedure.getCurrentBlockDepth())
                     {
@@ -1530,19 +1502,19 @@ bool NumeReKernel::handleComposeBlock(std::string& sLine, const std::string& sCm
 /// corresponding file.
 ///
 /// \param sLine const std::string&
-/// \param sCmdCache const std::string&
 /// \param sCurrentCommand const std::string&
 /// \param nReturnVal KernelStatus&
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool NumeReKernel::handleProcedureWrite(const std::string& sLine, const std::string& sCmdCache, const std::string& sCurrentCommand, KernelStatus& nReturnVal)
+bool NumeReKernel::handleProcedureWrite(const std::string& sLine, const std::string& sCurrentCommand, KernelStatus& nReturnVal)
 {
     if (_procedure.is_writing() || sCurrentCommand == "procedure")
     {
         if (!_procedure.writeProcedure(sLine))
             print(LineBreak(_lang.get("PARSER_CANNOTCREATEPROC"), _option));
-        if (!(_script.isValid() && _script.isOpen()) && !sCmdCache.length())
+
+        if (!(_script.isValid() && _script.isOpen()) && !commandQueue.size())
         {
             if (_procedure.getCurrentBlockDepth())
             {
@@ -1562,6 +1534,7 @@ bool NumeReKernel::handleProcedureWrite(const std::string& sLine, const std::str
                     if (_procedure.getCurrentBlockDepth() > 1)
                         printPreFmt("--");
                 }
+
                 printPreFmt(strfill("> ", 2 * _procedure.getCurrentBlockDepth(), '-'));
             }
             else if (_procedure.is_writing())
@@ -1572,11 +1545,14 @@ bool NumeReKernel::handleProcedureWrite(const std::string& sLine, const std::str
             {
                 printPreFmt("|COMP> ");
             }
+
             nReturnVal = NUMERE_PENDING_SPECIAL;
             return false;
         }
+
         return false;
     }
+
     return true;
 }
 
@@ -1867,13 +1843,12 @@ bool NumeReKernel::executePlugins(std::string& sLine)
 /// handle used flow controls.
 ///
 /// \param sLine std::string&
-/// \param sCmdCache const std::string&
 /// \param sCurrentCommand const std::string&
 /// \param nReturnVal KernelStatus&
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool NumeReKernel::handleFlowControls(std::string& sLine, const std::string& sCmdCache, const std::string& sCurrentCommand, KernelStatus& nReturnVal)
+bool NumeReKernel::handleFlowControls(std::string& sLine, const std::string& sCurrentCommand, KernelStatus& nReturnVal)
 {
     if (_procedure.getCurrentBlockDepth() || FlowCtrl::isFlowCtrlStatement(sCurrentCommand) )
     {
@@ -1884,7 +1859,7 @@ bool NumeReKernel::handleFlowControls(std::string& sLine, const std::string& sCm
         /* --> So lange wir im Loop sind und nicht endfor aufgerufen wurde, braucht die Zeile nicht an den Parser
          *     weitergegeben werden. Wir ignorieren daher den Rest dieser for(;;)-Schleife <--
          */
-        if (!(_script.isValid() && _script.isOpen()) && !sCmdCache.length())
+        if (!(_script.isValid() && _script.isOpen()) && !commandQueue.size())
         {
             if (_procedure.getCurrentBlockDepth())
             {
@@ -1984,13 +1959,12 @@ bool NumeReKernel::handleFlowControls(std::string& sLine, const std::string& sCm
 ///
 /// \param sLine std::string&
 /// \param sCache std::string&
-/// \param sCmdCache const std::string&
 /// \param bWriteToCache bool&
 /// \param nReturnVal KernelStatus&
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool NumeReKernel::evaluateStrings(std::string& sLine, std::string& sCache, const std::string& sCmdCache, bool& bWriteToCache, KernelStatus& nReturnVal)
+bool NumeReKernel::evaluateStrings(std::string& sLine, std::string& sCache, bool& bWriteToCache, KernelStatus& nReturnVal)
 {
     if (_stringParser.isStringExpression(sLine) || _stringParser.isStringExpression(sCache))
     {
@@ -1998,7 +1972,7 @@ bool NumeReKernel::evaluateStrings(std::string& sLine, std::string& sCache, cons
 
         if (retVal == NumeRe::StringParser::STRING_SUCCESS)
         {
-            if (!sCmdCache.length() && !(_script.isValid() && _script.isOpen()))
+            if (!commandQueue.size() && !(_script.isValid() && _script.isOpen()))
             {
                 if (_script.wasLastCommand())
                 {
@@ -2038,17 +2012,16 @@ bool NumeReKernel::evaluateStrings(std::string& sLine, std::string& sCache, cons
 ///
 /// \param nNum int
 /// \param v value_type*
-/// \param sCmdCache const std::string&
 /// \return void
 ///
 /////////////////////////////////////////////////
-void NumeReKernel::createCalculationAnswer(int nNum, value_type* v, const std::string& sCmdCache)
+void NumeReKernel::createCalculationAnswer(int nNum, value_type* v)
 {
     vAns = v[0];
     getAns().setDoubleArray(nNum, v);
 
     if (!bSupressAnswer)
-        printResult(formatResultOutput(nNum, v), sCmdCache, _script.isValid() && _script.isOpen());
+        printResult(formatResultOutput(nNum, v), _script.isValid() && _script.isOpen());
 }
 
 
@@ -2057,15 +2030,18 @@ void NumeReKernel::createCalculationAnswer(int nNum, value_type* v, const std::s
 /// reset the kernel variables after an error had
 /// been handled.
 ///
-/// \param sCmdCache std::string&
 /// \return void
 ///
 /////////////////////////////////////////////////
-void NumeReKernel::resetAfterError(std::string& sCmdCache)
+void NumeReKernel::resetAfterError()
 {
     _pData.setFileName("");
-    if (sCmdCache.length())
-        sCmdCache.clear();
+
+    if (commandQueue.size())
+    {
+        std::queue<std::string> emptyQueue;
+        commandQueue.swap(emptyQueue);
+    }
     _parser.DeactivateLoopMode();
     sCommandLine.clear();
     bCancelSignal = false;
@@ -2572,18 +2548,15 @@ std::map<std::string, std::string> NumeReKernel::getMenuMap() const
 /// terminal that we have a new string to print.
 ///
 /// \param sLine const std::string&
-/// \param sCmdCache const std::string&
 /// \param bScriptRunning bool
 /// \return void
 ///
 /////////////////////////////////////////////////
-void NumeReKernel::printResult(const std::string& sLine, const std::string& sCmdCache, bool bScriptRunning)
+void NumeReKernel::printResult(const std::string& sLine, bool bScriptRunning)
 {
     if (!m_parent)
         return;
 
-    //if (sCmdCache.length() || bScriptRunning )
-    //{
     if (bSupressAnswer)
         return;
 
@@ -2597,9 +2570,6 @@ void NumeReKernel::printResult(const std::string& sLine, const std::string& sCmd
 
     wxQueueEvent(m_parent->GetEventHandler(), new wxThreadEvent());
     Sleep(5);
-    //}
-    //else
-    //    sAnswer = sLine;
 }
 
 

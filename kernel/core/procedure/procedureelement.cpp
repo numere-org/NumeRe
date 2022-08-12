@@ -29,26 +29,26 @@
 /// \brief Procedure element constructor. This
 /// class is always heap allocated.
 ///
-/// \param vProcedureContents const std::vector<std::string>&
+/// \param procedureContents const StyledTextFile&
 /// \param sFilePath const std::string&
 ///
 /////////////////////////////////////////////////
-ProcedureElement::ProcedureElement(const std::vector<std::string>& vProcedureContents, const std::string& sFilePath) : sFileName(sFilePath), m_dependencies(nullptr)
+ProcedureElement::ProcedureElement(const StyledTextFile& procedureContents, const std::string& sFilePath) : sFileName(sFilePath), m_dependencies(nullptr)
 {
     std::string sFolderPath = sFileName.substr(0, sFileName.rfind('/'));
     std::string sProcCommandLine;
     std::string sCurrentCommand;
     std::string sCurrentLineCache;
     std::string sProcPlotCompose;
-    bool bBlockComment = false;
+
     SymDefManager _symdefs;
     std::unique_ptr<Includer> _includer;
-    size_t i = 0;
+    int i = 0;
     int currentLine = 0;
     int includeOffset = 0;
 
     // Examine the contents of each line
-    while (i < vProcedureContents.size())
+    while (i < procedureContents.getLinesCount())
     {
         if (_includer && _includer->is_open())
         {
@@ -62,7 +62,7 @@ ProcedureElement::ProcedureElement(const std::vector<std::string>& vProcedureCon
                 _includer.reset();
 
             // get the current line
-            sProcCommandLine = vProcedureContents[i];
+            sProcCommandLine = procedureContents.getStrippedLine(i);
             currentLine = i;
             i++;
         }
@@ -73,62 +73,11 @@ ProcedureElement::ProcedureElement(const std::vector<std::string>& vProcedureCon
         if (!sProcCommandLine.length())
             continue;
 
-        if (sProcCommandLine.substr(0,2) == "##")
-            continue;
-
-        // Already inside of a block comment?
-        if (bBlockComment)
-        {
-            if (sProcCommandLine.find("*#") != std::string::npos)
-            {
-                sProcCommandLine.erase(0, sProcCommandLine.find("*#")+2);
-                bBlockComment = false;
-            }
-            else
-                continue;
-        }
-
         if (Includer::is_including_syntax(sProcCommandLine))
         {
             _includer.reset(new Includer(sProcCommandLine, sFolderPath));
             continue;
         }
-
-        // examine the string: consider also quotation marks
-        int nQuotes = 0;
-
-        for (size_t j = 0; j < sProcCommandLine.length(); j++)
-        {
-            // count the quotation marks
-            if (sProcCommandLine[j] == '"' && (!j || sProcCommandLine[j-1] != '\\'))
-                nQuotes++;
-
-            if (!(nQuotes % 2) && sProcCommandLine.substr(j,2) == "##")
-            {
-                // that's a standard line comment
-                sProcCommandLine.erase(j);
-                break;
-            }
-
-            if (!(nQuotes % 2) && sProcCommandLine.substr(j,2) == "#*")
-            {
-                // this is a block comment
-                if (sProcCommandLine.find("*#", j+2) != std::string::npos)
-                {
-                    sProcCommandLine.erase(j, sProcCommandLine.find("*#", j+2)-j+2);
-                }
-                else
-                {
-                    sProcCommandLine.erase(j);
-                    bBlockComment = true;
-                    break;
-                }
-            }
-        }
-
-        // skip empty lines
-        if (!sProcCommandLine.length())
-            continue;
 
         // If the length is longer than 2, then it's possible
         // that we have a line continuation at this point

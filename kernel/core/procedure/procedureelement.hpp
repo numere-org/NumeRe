@@ -20,6 +20,7 @@
 #include <map>
 #include <vector>
 #include "procedurecommandline.hpp"
+#include "../io/styledtextfile.hpp"
 
 #ifndef PROCEDUREELEMENT_HPP
 #define PROCEDUREELEMENT_HPP
@@ -43,7 +44,7 @@ class ProcedureElement
         void cleanCurrentLine(std::string& sProcCommandLine, const std::string& sCurrentCommand, const std::string& sFilePath);
 
     public:
-        ProcedureElement(const std::vector<std::string>& vProcedureContents, const std::string& sFolderPath);
+        ProcedureElement(const StyledTextFile& procedureContents, const std::string& sFolderPath);
         ~ProcedureElement();
 
         std::pair<int, ProcedureCommandLine> getFirstLine();

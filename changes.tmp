@@ -53,3 +53,4 @@ Removed	"vect" and "vect3d" do not longer support vector fields without vector b
 Added	"read" can now also filter out block comments.
 Added	The search bar of the documentation browser will now also search through internal keywords. Furthermore, the search bar of the symbols tree will now search through the tooltip's contents.
 Applied	The "textparse()" function has been improved to support further data types.
+Fixed	Semicolon separated expressions are now evaluated correctly.

@@ -278,6 +278,7 @@ std::string StyledTextFile::getStrippedLine(size_t line) const
     return "";
 }
 
+
 /////////////////////////////////////////////////
 /// \brief Returns the last printable character
 /// position in the currently loaded file.

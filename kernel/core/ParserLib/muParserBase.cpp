@@ -687,7 +687,7 @@ namespace mu
 		for (size_t i = 0; i < sExpr.length(); i++)
 		{
 		    // search for vector parentheses
-			if (sExpr[i] == '{' && sExpr.find('}', i) != string::npos)
+			if (sExpr[i] == '{' && (!i || isDelimiter(sExpr[i-1])) && sExpr.find('}', i) != string::npos)
 			{
 			    if (compileVectorsInMultiArgFunc(sExpr, i))
                     continue;
@@ -700,7 +700,9 @@ namespace mu
 				if (j != std::string::npos)
 					j += i; // if one is found, add the current position
 
-			    if (j != std::string::npos && sExpr.subview(i, j - i).find(':') != std::string::npos)
+                if (i+1 == j) // This is an empty brace
+                    sExpr.replace(i, 2, "nan");
+			    else if (j != std::string::npos && sExpr.subview(i, j - i).find(':') != std::string::npos)
 				{
 				    // This is vector expansion: e.g. "{1:10}"
 					// Store the result in a new temporary vector

@@ -138,6 +138,7 @@ class NumeReKernel
         std::string sCommandLine;
         std::string sAnswer;
         std::string sPlotCompose;
+        std::queue<std::string> commandQueue;
         bool installing;
         bool refreshTree;
 
@@ -159,20 +160,20 @@ class NumeReKernel
         NumeRe::Cluster* _ans;
 
         // private member functions for special tasks
-        void printResult(const std::string& sLine, const std::string& sCmdCache, bool bScriptRunning);
+        void printResult(const std::string& sLine, bool bScriptRunning);
         std::string maskProcedureSigns(std::string sLine);
-        bool handleCommandLineSource(std::string& sLine, const std::string& sCmdCache, std::string& sKeep);
-        bool getLineFromCommandCache(std::string& sLine, std::string& sCmdCache, const std::string& sCurrentCommand);
-        bool handleComposeBlock(std::string& sLine, const std::string& sCmdCache, const std::string& sCurrentCommand, KernelStatus& nReturnVal);
-        bool handleProcedureWrite(const std::string& sLine, const std::string& sCmdCache, const std::string& sCurrentCommand, KernelStatus& nReturnVal);
+        bool handleCommandLineSource(std::string& sLine, std::string& sKeep);
+        bool getLineFromCommandCache(std::string& sLine, const std::string& sCurrentCommand);
+        bool handleComposeBlock(std::string& sLine, const std::string& sCurrentCommand, KernelStatus& nReturnVal);
+        bool handleProcedureWrite(const std::string& sLine, const std::string& sCurrentCommand, KernelStatus& nReturnVal);
         bool uninstallPlugin(const std::string& sLine, const std::string& sCurrentCommand);
         void handleToCmd(std::string& sLine, std::string& sCache, std::string& sCurrentCommand);
         bool evaluateProcedureCalls(std::string& sLine);
         bool executePlugins(std::string& sLine);
-        bool handleFlowControls(std::string& sLine, const std::string& sCmdCache, const std::string& sCurrentCommand, KernelStatus& nReturnVal);
-        bool evaluateStrings(std::string& sLine, std::string& sCache, const std::string& sCmdCache, bool& bWriteToCache, KernelStatus& nReturnVal);
-        void createCalculationAnswer(int nNum, mu::value_type* v, const std::string& sCmdCache);
-        void resetAfterError(std::string& sCmdCache);
+        bool handleFlowControls(std::string& sLine, const std::string& sCurrentCommand, KernelStatus& nReturnVal);
+        bool evaluateStrings(std::string& sLine, std::string& sCache, bool& bWriteToCache, KernelStatus& nReturnVal);
+        void createCalculationAnswer(int nNum, mu::value_type* v);
+        void resetAfterError();
         std::string getGreeting();
         void checkInternalStates();
 

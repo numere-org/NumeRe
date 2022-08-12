@@ -57,27 +57,17 @@ ProcedureElement* ProcedureLibrary::constructProcedureElement(const std::string&
 /// and returns it as a std::vector.
 ///
 /// \param sProcedureFileName const std::string&
-/// \return std::vector<std::string>
+/// \return StyledTextFile
 ///
 /////////////////////////////////////////////////
-std::vector<std::string> ProcedureLibrary::getFileContents(const std::string& sProcedureFileName)
+StyledTextFile ProcedureLibrary::getFileContents(const std::string& sProcedureFileName)
 {
-    std::ifstream proc_in;
-    std::vector<std::string> vProcContents;
-    std::string currentline;
+    StyledTextFile procFile(sProcedureFileName);
 
-    proc_in.open(sProcedureFileName.c_str());
-
-    if (proc_in.fail())
+    if (!procFile.getLinesCount())
         throw SyntaxError(SyntaxError::FILE_NOT_EXIST, sProcedureFileName, SyntaxError::invalid_position, sProcedureFileName);
 
-    while (!proc_in.eof())
-    {
-        std::getline(proc_in, currentline);
-        vProcContents.push_back(currentline);
-    }
-
-    return vProcContents;
+    return procFile;
 }
 
 
