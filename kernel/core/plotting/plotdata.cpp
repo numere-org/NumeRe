@@ -166,6 +166,7 @@ static std::map<std::string,std::pair<PlotData::LogicalPlotSetting,PlotData::Par
     mGenericSwitches.emplace("crust", std::make_pair(PlotData::LOG_CRUST, PlotData::LOCAL));
     mGenericSwitches.emplace("reconstruct", std::make_pair(PlotData::LOG_CRUST, PlotData::LOCAL));
     mGenericSwitches.emplace("valtab", std::make_pair(PlotData::LOG_TABLE, PlotData::GLOBAL));
+    mGenericSwitches.emplace("parametric", std::make_pair(PlotData::LOG_PARAMETRIC, PlotData::LOCAL));
 
     return mGenericSwitches;
 }
@@ -1046,7 +1047,7 @@ void PlotData::setParams(const std::string& __sCmd, int nType)
     if (findParameter(sCmd, "colorscheme", '=') && (nType == ALL || nType & LOCAL))
     {
         unsigned int nPos = findParameter(sCmd, "colorscheme", '=') + 11;
-        std::string sTemp = getArgAtPos(sCmd, nPos, ARGEXTRACT_ASSTRING | ARGEXTRACT_PARSED);
+        std::string sTemp = getArgAtPos(__sCmd, nPos, ARGEXTRACT_ASSTRING | ARGEXTRACT_PARSED);
 
         if (sTemp.front() == '"')
         {
@@ -1149,7 +1150,7 @@ void PlotData::setParams(const std::string& __sCmd, int nType)
     if (findParameter(sCmd, "bgcolorscheme", '=') && (nType == ALL || nType & LOCAL))
     {
         unsigned int nPos = findParameter(sCmd, "bgcolorscheme", '=') + 13;
-        std::string sTemp = getArgAtPos(sCmd, nPos, ARGEXTRACT_ASSTRING | ARGEXTRACT_PARSED);
+        std::string sTemp = getArgAtPos(__sCmd, nPos, ARGEXTRACT_ASSTRING | ARGEXTRACT_PARSED);
 
         if (sTemp.front() == '"')
         {
@@ -1990,6 +1991,7 @@ void PlotData::deleteData(bool bGraphFinished /* = false*/)
     if (!logicalSettings[LOG_ALLHIGHRES])
         intSettings[INT_HIGHRESLEVEL] = 0;
 
+    logicalSettings[LOG_PARAMETRIC] = false;
     nRequestedLayers = 1;
     intSettings[INT_LEGENDSTYLE] = 0;
 

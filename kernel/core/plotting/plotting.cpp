@@ -1124,21 +1124,32 @@ void Plot::create2dPlot(size_t nPlotCompose, size_t nPlotComposeSize)
 
     for (int n = 0; n < (int)m_manager.assets.size(); n++)
     {
-        StripSpaces(m_manager.assets[n].legend);
+        int nDataOffset = 0;
 
-        _mPlotAxes[XCOORD].Link(m_manager.assets[n].axes[XCOORD]);
-        _mPlotAxes[YCOORD].Link(m_manager.assets[n].axes[YCOORD]);
+        if (_pData.getSettings(PlotData::LOG_PARAMETRIC) && m_manager.assets.size() > n+2)
+        {
+            _mPlotAxes[XCOORD].Link(m_manager.assets[n].data[0].first);
+            _mPlotAxes[YCOORD].Link(m_manager.assets[n+1].data[0].first);
+            nDataOffset = 2;
+        }
+        else
+        {
+            _mPlotAxes[XCOORD].Link(m_manager.assets[n].axes[XCOORD]);
+            _mPlotAxes[YCOORD].Link(m_manager.assets[n].axes[YCOORD]);
+        }
+
+        StripSpaces(m_manager.assets[n+nDataOffset].legend);
 
         if (isComplexPlaneMode)
-            _mData = m_manager.assets[n].norm(0);
+            _mData = m_manager.assets[n+nDataOffset].norm(0);
         else
-            _mData.Link(useImag ? m_manager.assets[n].data[0].second : m_manager.assets[n].data[0].first);
+            _mData.Link(useImag ? m_manager.assets[n+nDataOffset].data[0].second : m_manager.assets[n+nDataOffset].data[0].first);
 
         if ((_pData.getSettings(PlotData::LOG_COLORMASK) || _pData.getSettings(PlotData::LOG_ALPHAMASK))
-            && n+1 < (int)m_manager.assets.size())
-            _mData2.Link(useImag ? m_manager.assets[n+1].data[0].second : m_manager.assets[n+1].data[0].first);
+            && n+nDataOffset+1 < (int)m_manager.assets.size())
+            _mData2.Link(useImag ? m_manager.assets[n+nDataOffset+1].data[0].second : m_manager.assets[n+nDataOffset+1].data[0].first);
         else if (isComplexPlaneMode)
-            _mData2 = m_manager.assets[n].arg(0);
+            _mData2 = m_manager.assets[n+nDataOffset].arg(0);
         else if (_pData.getSettings(PlotData::LOG_COLORMASK) || _pData.getSettings(PlotData::LOG_ALPHAMASK))
             _mData2.Create(_pInfo.nSamples, _pInfo.nSamples);
 
@@ -1151,9 +1162,9 @@ void Plot::create2dPlot(size_t nPlotCompose, size_t nPlotComposeSize)
 
         // Do only present legend entries, if there are more than two
         // data sets or more than two composed data sets to be displayed
-        if (m_manager.assets.size() > 2
+        if (m_manager.assets.size() > 2+nDataOffset
             || _pData.getSettings(PlotData::INT_COMPLEXMODE) == CPLX_REIM
-            || (m_manager.assets.size() >= 2 && !(_pData.getSettings(PlotData::LOG_COLORMASK) || _pData.getSettings(PlotData::LOG_ALPHAMASK))))
+            || (m_manager.assets.size() >= 2+nDataOffset && !(_pData.getSettings(PlotData::LOG_COLORMASK) || _pData.getSettings(PlotData::LOG_ALPHAMASK))))
         {
             if (_pData.getSettings(PlotData::LOG_CONTLABELS) && _pInfo.sCommand.substr(0, 4) != "cont")
                 _graph->Cont(_mPlotAxes[0], _mPlotAxes[1], _mData,
@@ -1162,7 +1173,7 @@ void Plot::create2dPlot(size_t nPlotCompose, size_t nPlotComposeSize)
                 _graph->Cont(_mPlotAxes[0], _mPlotAxes[1], _mData,
                              _pInfo.sContStyles[_pInfo.nStyle].c_str(), ("val " + toString(_pData.getSettings(PlotData::INT_CONTLINES))).c_str());
 
-            sConvLegends = m_manager.assets[n].legend + " -nq";
+            sConvLegends = m_manager.assets[n+nDataOffset].legend + " -nq";
             NumeReKernel::getInstance()->getStringParser().evalAndFormat(sConvLegends, sDummy, true);
 
             if (_pData.getSettings(PlotData::INT_COMPLEXMODE) == CPLX_REIM && sConvLegends.length())
@@ -1188,8 +1199,13 @@ void Plot::create2dPlot(size_t nPlotCompose, size_t nPlotComposeSize)
                 n--;
             }
             else
+            {
                 useImag = false;
+                n += nDataOffset;
+            }
         }
+        else
+            n += nDataOffset;
 
         if ((_pData.getSettings(PlotData::LOG_COLORMASK) || _pData.getSettings(PlotData::LOG_ALPHAMASK))
             && n+1 < (int)m_manager.assets.size()
@@ -1388,23 +1404,32 @@ void Plot::createStdPlot(size_t nPlotCompose, size_t nPlotComposeSize)
 
     for (int n = 0; n < (int)m_manager.assets.size(); n++)
     {
-        StripSpaces(m_manager.assets[n].legend);
+        int nDataOffset = 0;
 
-        _mData.Link(useImag || isCplxPlaneMode ? m_manager.assets[n].data[0].second : m_manager.assets[n].data[0].first);
-        _mPlotAxes.Link(isCplxPlaneMode ? m_manager.assets[n].data[0].first : m_manager.assets[n].axes[XCOORD]);
+        if (_pData.getSettings(PlotData::LOG_PARAMETRIC) && n+1 < m_manager.assets.size() && !isCplxPlaneMode)
+        {
+            _mPlotAxes.Link(m_manager.assets[n].data[0].first);
+            nDataOffset = 1;
+        }
+        else
+            _mPlotAxes.Link(isCplxPlaneMode ? m_manager.assets[n].data[0].first : m_manager.assets[n].axes[XCOORD]);
 
-        if (_pData.getSettings(PlotData::LOG_REGION) && n+1 < (int)m_manager.assets.size())
-            _mData2[0].Link(useImag || isCplxPlaneMode ? m_manager.assets[n+1].data[0].second : m_manager.assets[n+1].data[0].first);
+        StripSpaces(m_manager.assets[n+nDataOffset].legend);
+
+        _mData.Link(useImag || isCplxPlaneMode ? m_manager.assets[n+nDataOffset].data[0].second : m_manager.assets[n+nDataOffset].data[0].first);
+
+        if (_pData.getSettings(PlotData::LOG_REGION) && n+nDataOffset+1 < (int)m_manager.assets.size())
+            _mData2[0].Link(useImag || isCplxPlaneMode ? m_manager.assets[n+nDataOffset+1].data[0].second : m_manager.assets[n+nDataOffset+1].data[0].first);
         else
             _mData2[0] = 0.0 * _mData;
 
         // Copy the data to the relevant memory
-        if (m_manager.assets[n].type == PT_FUNCTION)
+        if (m_manager.assets[n+nDataOffset].type == PT_FUNCTION)
         {
-            if (m_manager.assets[n].boundAxes.find('r') != std::string::npos)
+            if (m_manager.assets[n+nDataOffset].boundAxes.find('r') != std::string::npos)
                 _mData = scaleSecondaryToPrimaryInterval(_mData, _pInfo.ranges[YRANGE], _pInfo.secranges[YRANGE]);
 
-            if (_pData.getSettings(PlotData::LOG_REGION) && m_manager.assets[n+1].boundAxes.find('r') != std::string::npos)
+            if (_pData.getSettings(PlotData::LOG_REGION) && m_manager.assets[n+nDataOffset+1].boundAxes.find('r') != std::string::npos)
                 _mData2[0] = scaleSecondaryToPrimaryInterval(_mData2[0], _pInfo.ranges[YRANGE], _pInfo.secranges[YRANGE]);
         }
         else
@@ -1412,22 +1437,22 @@ void Plot::createStdPlot(size_t nPlotCompose, size_t nPlotComposeSize)
             if (_pData.getSettings(PlotData::LOG_BOXPLOT))
             {
                 // Create the boxplot axis (count of elements has to be one element larger)
-                _mData2[0].Create(m_manager.assets[n].getLayers()+1);
+                _mData2[0].Create(m_manager.assets[n+nDataOffset].getLayers()+1);
 
-                for (size_t col = 0; col < m_manager.assets[n].getLayers()+1; col++)
+                for (size_t col = 0; col < m_manager.assets[n+nDataOffset].getLayers()+1; col++)
                 {
                     // Create the axis by adding previous layers to shift
                     // the current box plots to the right
                     _mData2[0].a[col] = nPrevDataLayers + 0.5 + col;
                 }
 
-                nPrevDataLayers += m_manager.assets[n].getLayers();
-                _mData = m_manager.assets[n].vectorsToMatrix();
+                nPrevDataLayers += m_manager.assets[n+nDataOffset].getLayers();
+                _mData = m_manager.assets[n+nDataOffset].vectorsToMatrix();
                 _mData.Transpose();
             }
             else if (_pData.getSettings(PlotData::FLOAT_BARS)
                      || _pData.getSettings(PlotData::FLOAT_HBARS))
-                _mData = m_manager.assets[n].vectorsToMatrix();
+                _mData = m_manager.assets[n+nDataOffset].vectorsToMatrix();
             else
             {
                 if (_pData.getSettings(PlotData::LOG_INTERPOLATE) && getNN(_mData) >= _pData.getSettings(PlotData::INT_SAMPLES))
@@ -1436,8 +1461,8 @@ void Plot::createStdPlot(size_t nPlotCompose, size_t nPlotComposeSize)
                     {
                         // If the current data dimension is higher than 2, then we
                         // expand it into an array of curves
-                        if (m_manager.assets[n].getLayers() > 1)
-                            _mData = m_manager.assets[n].vectorsToMatrix();
+                        if (m_manager.assets[n+nDataOffset].getLayers() > 1)
+                            _mData = m_manager.assets[n+nDataOffset].vectorsToMatrix();
 
                         // Create an zero-error data set
                         _mData2[0] = 0.0 * _mData;
@@ -1447,24 +1472,24 @@ void Plot::createStdPlot(size_t nPlotCompose, size_t nPlotComposeSize)
                 {
                     size_t layer = 1;
 
-                    if (_pData.getSettings(PlotData::LOG_XERROR) && m_manager.assets[n].getLayers() > layer)
+                    if (_pData.getSettings(PlotData::LOG_XERROR) && m_manager.assets[n+nDataOffset].getLayers() > layer)
                     {
-                        _mData2[XCOORD].Link(m_manager.assets[n].data[layer].first);
+                        _mData2[XCOORD].Link(m_manager.assets[n+nDataOffset].data[layer].first);
                         layer++;
                     }
                     else
                         _mData2[XCOORD] = 0.0 * _mData;
 
-                    if (_pData.getSettings(PlotData::LOG_YERROR) && m_manager.assets[n].getLayers() > layer)
-                        _mData2[YCOORD].Link(m_manager.assets[n].data[layer].first);
+                    if (_pData.getSettings(PlotData::LOG_YERROR) && m_manager.assets[n+nDataOffset].getLayers() > layer)
+                        _mData2[YCOORD].Link(m_manager.assets[n+nDataOffset].data[layer].first);
                     else
                         _mData2[YCOORD] = 0.0 * _mData;
                 }
-                else if (m_manager.assets[n].getLayers() > 1)
-                    _mData = m_manager.assets[n].vectorsToMatrix();
+                else if (m_manager.assets[n+nDataOffset].getLayers() > 1)
+                    _mData = m_manager.assets[n+nDataOffset].vectorsToMatrix();
             }
 
-            if (m_manager.assets[n].boundAxes.find('t') != std::string::npos)
+            if (m_manager.assets[n+nDataOffset].boundAxes.find('t') != std::string::npos)
             {
                 for (int i = 0; i < getNN(_mPlotAxes); i++)
                 {
@@ -1483,16 +1508,16 @@ void Plot::createStdPlot(size_t nPlotCompose, size_t nPlotComposeSize)
                 }
             }
 
-            if (m_manager.assets[n].boundAxes.find('r') != std::string::npos)
+            if (m_manager.assets[n+nDataOffset].boundAxes.find('r') != std::string::npos)
                 _mData = scaleSecondaryToPrimaryInterval(_mData, _pInfo.ranges[YRANGE], _pInfo.secranges[YRANGE]);
 
-            if (_pData.getSettings(PlotData::LOG_REGION) && m_manager.assets[n+1].boundAxes.find('r') != std::string::npos && getNN(_mData2[0]) > 1)
+            if (_pData.getSettings(PlotData::LOG_REGION) && m_manager.assets[n+nDataOffset+1].boundAxes.find('r') != std::string::npos && getNN(_mData2[0]) > 1)
                 _mData2[0] = scaleSecondaryToPrimaryInterval(_mData2[0], _pInfo.ranges[YRANGE], _pInfo.secranges[YRANGE]);
 
-            if (_pData.getSettings(PlotData::LOG_YERROR) && m_manager.assets[n].boundAxes.find('r') != std::string::npos)
+            if (_pData.getSettings(PlotData::LOG_YERROR) && m_manager.assets[n+nDataOffset].boundAxes.find('r') != std::string::npos)
                 _mData2[1] = scaleSecondaryToPrimaryInterval(_mData2[1], _pInfo.ranges[YRANGE], _pInfo.secranges[YRANGE]);
 
-            if (_pData.getSettings(PlotData::LOG_XERROR) && m_manager.assets[n].boundAxes.find('t') != std::string::npos)
+            if (_pData.getSettings(PlotData::LOG_XERROR) && m_manager.assets[n+nDataOffset].boundAxes.find('t') != std::string::npos)
                 _mData2[0] = scaleSecondaryToPrimaryInterval(_mData2[0], _pInfo.ranges[XRANGE], _pInfo.secranges[XRANGE]);
         }
 
@@ -1500,7 +1525,7 @@ void Plot::createStdPlot(size_t nPlotCompose, size_t nPlotComposeSize)
         nCurrentStyle = _pInfo.nStyle;
 
         // Create the plot
-        if (!plotstd(_mData, _mPlotAxes, _mData2, m_manager.assets[n].type))
+        if (!plotstd(_mData, _mPlotAxes, _mData2, m_manager.assets[n+nDataOffset].type))
         {
             // --> Den gibt's nicht: Speicher freigeben und zurueck! <--
             clearData();
@@ -1512,10 +1537,10 @@ void Plot::createStdPlot(size_t nPlotCompose, size_t nPlotComposeSize)
 
         // Create the legend
         if (_pData.getSettings(PlotData::LOG_REGION) && getNN(_mData2[0]) > 1)
-            sConvLegends = "\"" + removeQuotationMarks(m_manager.assets[n].legend) + "\n"
-                            + removeQuotationMarks(m_manager.assets[n].legend) + "\" -nq";
+            sConvLegends = "\"" + removeQuotationMarks(m_manager.assets[n+nDataOffset].legend) + "\n"
+                            + removeQuotationMarks(m_manager.assets[n+nDataOffset].legend) + "\" -nq";
         else
-            sConvLegends = m_manager.assets[n].legend + " -nq";
+            sConvLegends = m_manager.assets[n+nDataOffset].legend + " -nq";
 
         // Apply the string parser
         NumeReKernel::getInstance()->getStringParser().evalAndFormat(sConvLegends, sDummy, true);
@@ -1542,7 +1567,7 @@ void Plot::createStdPlot(size_t nPlotCompose, size_t nPlotComposeSize)
             {
                 std::string sLegendStyle;
 
-                if (m_manager.assets[n].type == PT_FUNCTION)
+                if (m_manager.assets[n+nDataOffset].type == PT_FUNCTION)
                     sLegendStyle = getLegendStyle(_pInfo.sLineStyles[nCurrentStyle]);
                 else
                 {
@@ -1550,12 +1575,12 @@ void Plot::createStdPlot(size_t nPlotCompose, size_t nPlotComposeSize)
                         sLegendStyle = getLegendStyle(_pInfo.sLineStyles[nCurrentStyle]);
                     else if (!_pData.getSettings(PlotData::LOG_XERROR) && !_pData.getSettings(PlotData::LOG_YERROR))
                     {
-                        if ((_pData.getSettings(PlotData::LOG_INTERPOLATE) && m_manager.assets[n].axes[0].nx >= _pInfo.nSamples)
+                        if ((_pData.getSettings(PlotData::LOG_INTERPOLATE) && m_manager.assets[n+nDataOffset].axes[0].nx >= _pInfo.nSamples)
                             || _pData.getSettings(PlotData::FLOAT_BARS)
                             || _pData.getSettings(PlotData::FLOAT_HBARS))
                             sLegendStyle = getLegendStyle(_pInfo.sLineStyles[nCurrentStyle]);
                         else if (_pData.getSettings(PlotData::LOG_CONNECTPOINTS)
-                                 || (_pData.getSettings(PlotData::LOG_INTERPOLATE) && m_manager.assets[n].axes[0].nx >= 0.9 * _pInfo.nSamples))
+                                 || (_pData.getSettings(PlotData::LOG_INTERPOLATE) && m_manager.assets[n+nDataOffset].axes[0].nx >= 0.9 * _pInfo.nSamples))
                             sLegendStyle = getLegendStyle(_pInfo.sConPointStyles[nCurrentStyle]);
                         else if (_pData.getSettings(PlotData::LOG_STEPPLOT))
                             sLegendStyle = getLegendStyle(_pInfo.sLineStyles[nCurrentStyle]);
@@ -1577,7 +1602,7 @@ void Plot::createStdPlot(size_t nPlotCompose, size_t nPlotComposeSize)
         }
 
         if (_pData.getSettings(PlotData::LOG_REGION)
-            && n+1 < (int)m_manager.assets.size()
+            && n+nDataOffset+1 < (int)m_manager.assets.size()
             && (useImag || _pData.getSettings(PlotData::INT_COMPLEXMODE) != CPLX_REIM))
             n++;
 
@@ -1592,8 +1617,13 @@ void Plot::createStdPlot(size_t nPlotCompose, size_t nPlotComposeSize)
                 n--;
             }
             else
+            {
                 useImag = false;
+                n += nDataOffset;
+            }
         }
+        else
+            n += nDataOffset;
     }
 
     double AutoRangeX = _pData.getLogscale(XRANGE) ? log10(_pInfo.ranges[XRANGE].range()) : _pInfo.ranges[XRANGE].range();
@@ -2693,18 +2723,30 @@ void Plot::createStd3dPlot(size_t nPlotCompose, size_t nPlotComposeSize)
 
     for (size_t n = 0; n < m_manager.assets.size(); n++)
     {
-        StripSpaces(m_manager.assets[n].legend);
+        int nDataOffset = 0;
 
-        _mData[XCOORD].Link(useImag ? m_manager.assets[n].data[XCOORD].second : m_manager.assets[n].data[XCOORD].first);
-        _mData[YCOORD].Link(useImag ? m_manager.assets[n].data[YCOORD].second : m_manager.assets[n].data[YCOORD].first);
-        _mData[ZCOORD].Link(useImag ? m_manager.assets[n].data[ZCOORD].second : m_manager.assets[n].data[ZCOORD].first);
+        if (_pData.getSettings(PlotData::LOG_PARAMETRIC) && n+2 < m_manager.assets.size())
+        {
+            _mData[XCOORD].Link(useImag ? m_manager.assets[n].data[0].second : m_manager.assets[n].data[0].first);
+            _mData[YCOORD].Link(useImag ? m_manager.assets[n+1].data[0].second : m_manager.assets[n+1].data[0].first);
+            _mData[ZCOORD].Link(useImag ? m_manager.assets[n+2].data[0].second : m_manager.assets[n+2].data[0].first);
+            nDataOffset = 2;
+        }
+        else
+        {
+            _mData[XCOORD].Link(useImag ? m_manager.assets[n].data[XCOORD].second : m_manager.assets[n].data[XCOORD].first);
+            _mData[YCOORD].Link(useImag ? m_manager.assets[n].data[YCOORD].second : m_manager.assets[n].data[YCOORD].first);
+            _mData[ZCOORD].Link(useImag ? m_manager.assets[n].data[ZCOORD].second : m_manager.assets[n].data[ZCOORD].first);
+        }
+
+        StripSpaces(m_manager.assets[n+nDataOffset].legend);
 
         if (_pData.getSettings(PlotData::LOG_REGION)
-            && n+1 < m_manager.assets.size())
+            && n+nDataOffset+1 < m_manager.assets.size())
         {
-            _mData2[XCOORD].Link(useImag ? m_manager.assets[n+1].data[XCOORD].second : m_manager.assets[n+1].data[XCOORD].first);
-            _mData2[YCOORD].Link(useImag ? m_manager.assets[n+1].data[YCOORD].second : m_manager.assets[n+1].data[YCOORD].first);
-            _mData2[ZCOORD].Link(useImag ? m_manager.assets[n+1].data[ZCOORD].second : m_manager.assets[n+1].data[ZCOORD].first);
+            _mData2[XCOORD].Link(useImag ? m_manager.assets[n+nDataOffset+1].data[XCOORD].second : m_manager.assets[n+nDataOffset+1].data[XCOORD].first);
+            _mData2[YCOORD].Link(useImag ? m_manager.assets[n+nDataOffset+1].data[YCOORD].second : m_manager.assets[n+nDataOffset+1].data[YCOORD].first);
+            _mData2[ZCOORD].Link(useImag ? m_manager.assets[n+nDataOffset+1].data[ZCOORD].second : m_manager.assets[n+nDataOffset+1].data[ZCOORD].first);
         }
         else
         {
@@ -2714,7 +2756,7 @@ void Plot::createStd3dPlot(size_t nPlotCompose, size_t nPlotComposeSize)
             }
         }
 
-        if (m_manager.assets[n].type == PT_DATA)
+        if (m_manager.assets[n+nDataOffset].type == PT_DATA)
         {
             for (int j = XRANGE; j <= ZRANGE; j++)
             {
@@ -2727,26 +2769,26 @@ void Plot::createStd3dPlot(size_t nPlotCompose, size_t nPlotComposeSize)
 
             if (_pData.getSettings(PlotData::LOG_XERROR) && _pData.getSettings(PlotData::LOG_YERROR))
             {
-                _mData2[XCOORD].Link(m_manager.assets[n].data[XCOORD+3].first);
-                _mData2[YCOORD].Link(m_manager.assets[n].data[YCOORD+3].first);
-                _mData2[ZCOORD].Link(m_manager.assets[n].data[ZCOORD+3].first);
+                _mData2[XCOORD].Link(m_manager.assets[n+nDataOffset].data[XCOORD+3].first);
+                _mData2[YCOORD].Link(m_manager.assets[n+nDataOffset].data[YCOORD+3].first);
+                _mData2[ZCOORD].Link(m_manager.assets[n+nDataOffset].data[ZCOORD+3].first);
             }
         }
 
         // Create the actual 3D trajectory plot
-        if (!plotstd3d(_mData, _mData2, m_manager.assets[n].type))
+        if (!plotstd3d(_mData, _mData2, m_manager.assets[n+nDataOffset].type))
         {
             clearData();
             return;
         }
 
-        if (m_manager.assets[n].type == PT_FUNCTION)
+        if (m_manager.assets[n+nDataOffset].type == PT_FUNCTION)
         {
-            if (_pData.getSettings(PlotData::LOG_REGION) && n+1 < m_manager.assets.size())
+            if (_pData.getSettings(PlotData::LOG_REGION) && n+nDataOffset+1 < m_manager.assets.size())
             {
                 for (int k = 0; k < 2; k++)
                 {
-                    sConvLegends = m_manager.assets[n].legend + " -nq";
+                    sConvLegends = m_manager.assets[n+nDataOffset].legend + " -nq";
                     NumeReKernel::getInstance()->getStringParser().evalAndFormat(sConvLegends, sDummy, true);
                     sConvLegends = "\"" + sConvLegends + "\"";
 
@@ -2773,7 +2815,7 @@ void Plot::createStd3dPlot(size_t nPlotCompose, size_t nPlotComposeSize)
             }
             else
             {
-                sConvLegends = m_manager.assets[n].legend + " -nq";
+                sConvLegends = m_manager.assets[n+nDataOffset].legend + " -nq";
                 NumeReKernel::getInstance()->getStringParser().evalAndFormat(sConvLegends, sDummy, true);
 
                 if (_pData.getSettings(PlotData::INT_COMPLEXMODE) == CPLX_REIM && sConvLegends.length())
@@ -2792,7 +2834,7 @@ void Plot::createStd3dPlot(size_t nPlotCompose, size_t nPlotComposeSize)
         }
         else
         {
-            sConvLegends = m_manager.assets[n].legend + " -nq";
+            sConvLegends = m_manager.assets[n+nDataOffset].legend + " -nq";
             NumeReKernel::getInstance()->getStringParser().evalAndFormat(sConvLegends, sDummy, true);
 
             if (_pData.getSettings(PlotData::INT_COMPLEXMODE) == CPLX_REIM && sConvLegends.length())
@@ -2830,7 +2872,7 @@ void Plot::createStd3dPlot(size_t nPlotCompose, size_t nPlotComposeSize)
         _pInfo.nStyle = _pInfo.nextStyle();
 
         if (_pData.getSettings(PlotData::LOG_REGION)
-            && n+1 < m_manager.assets.size()
+            && n+nDataOffset+1 < m_manager.assets.size()
             && (useImag || _pData.getSettings(PlotData::INT_COMPLEXMODE) != CPLX_REIM))
             n++;
 
@@ -2845,8 +2887,13 @@ void Plot::createStd3dPlot(size_t nPlotCompose, size_t nPlotComposeSize)
                 n--;
             }
             else
+            {
                 useImag = false;
+                n += nDataOffset;
+            }
         }
+        else
+            n += nDataOffset;
     }
 
     if (_pData.getSettings(PlotData::LOG_CUTBOX))
@@ -3777,21 +3824,38 @@ void Plot::extractDataValues(const std::vector<std::string>& vDataPlots)
 
 
             // Calculate the data ranges
-            Interval axisrange = m_manager.assets[typeCounter].getAxisInterval(XCOORD);
-
-            if (m_manager.assets[typeCounter].boundAxes.find('t') != std::string::npos)
-                secDataRanges[XRANGE+isHbar] = secDataRanges[XRANGE+isHbar].combine(axisrange);
-            else
-                dataRanges[XRANGE+isHbar] = dataRanges[XRANGE+isHbar].combine(axisrange);
-
-            for (size_t layer = 0; layer < std::max(1u, isMultiDataSet*m_manager.assets[typeCounter].getLayers()); layer++)
+            if (_pData.getSettings(PlotData::LOG_PARAMETRIC) && typeCounter < (m_manager.assets.size() / 2) * 2)
             {
-                IntervalSet datIvl = m_manager.assets[typeCounter].getDataIntervals(layer);
+                Interval range = m_manager.assets[typeCounter].getDataIntervals(0)[datIvlID];
 
-                if (m_manager.assets[typeCounter].boundAxes.find('r') != std::string::npos)
-                    secDataRanges[YRANGE-isHbar] = secDataRanges[YRANGE-isHbar].combine(datIvl[datIvlID]);
+                for (size_t layer = 1; layer < std::max(1u, isMultiDataSet*m_manager.assets[typeCounter].getLayers()); layer++)
+                {
+                    range = range.combine(m_manager.assets[typeCounter].getDataIntervals(layer)[datIvlID]);
+                }
+
+                if (!(typeCounter % 2) && m_manager.assets[typeCounter].boundAxes.find('t') != std::string::npos)
+                    secDataRanges[XRANGE+isHbar] = secDataRanges[XRANGE+isHbar].combine(range);
+
+                dataRanges[(typeCounter+isHbar) % 2] = dataRanges[(typeCounter+isHbar) % 2].combine(range);
+            }
+            else
+            {
+                Interval axisrange = m_manager.assets[typeCounter].getAxisInterval(XCOORD);
+
+                if (m_manager.assets[typeCounter].boundAxes.find('t') != std::string::npos)
+                    secDataRanges[XRANGE+isHbar] = secDataRanges[XRANGE+isHbar].combine(axisrange);
                 else
-                    dataRanges[YRANGE-isHbar] = dataRanges[YRANGE-isHbar].combine(datIvl[datIvlID]);
+                    dataRanges[XRANGE+isHbar] = dataRanges[XRANGE+isHbar].combine(axisrange);
+
+                for (size_t layer = 0; layer < std::max(1u, isMultiDataSet*m_manager.assets[typeCounter].getLayers()); layer++)
+                {
+                    IntervalSet datIvl = m_manager.assets[typeCounter].getDataIntervals(layer);
+
+                    if (m_manager.assets[typeCounter].boundAxes.find('r') != std::string::npos)
+                        secDataRanges[YRANGE-isHbar] = secDataRanges[YRANGE-isHbar].combine(datIvl[datIvlID]);
+                    else
+                        dataRanges[YRANGE-isHbar] = dataRanges[YRANGE-isHbar].combine(datIvl[datIvlID]);
+                }
             }
         }
         else if (isPlot3D(_pInfo.sCommand))
@@ -3831,9 +3895,14 @@ void Plot::extractDataValues(const std::vector<std::string>& vDataPlots)
                 }
             }
 
-            // Calculated the data ranges
-            for (size_t c = XCOORD; c <= ZCOORD; c++)
-                dataRanges[c] = dataRanges[c].combine(m_manager.assets[typeCounter].getDataIntervals(c)[datIvlID]);
+            // Calculate the data ranges
+            if (_pData.getSettings(PlotData::LOG_PARAMETRIC) && typeCounter < (m_manager.assets.size() / 3) * 3)
+                dataRanges[typeCounter%3] = dataRanges[typeCounter%3].combine(m_manager.assets[typeCounter].getDataIntervals(0)[datIvlID3D]);
+            else
+            {
+                for (size_t c = XCOORD; c <= ZCOORD; c++)
+                    dataRanges[c] = dataRanges[c].combine(m_manager.assets[typeCounter].getDataIntervals(c)[datIvlID]);
+            }
         }
         else if (isMesh2D(_pInfo.sCommand))
         {
@@ -3896,14 +3965,19 @@ void Plot::extractDataValues(const std::vector<std::string>& vDataPlots)
                 }
             }
 
-            // Calculated the data ranges
-            dataRanges[XCOORD] = dataRanges[XCOORD].combine(m_manager.assets[typeCounter].getAxisInterval(XCOORD));
-            dataRanges[YRANGE] = dataRanges[YRANGE].combine(m_manager.assets[typeCounter].getAxisInterval(YCOORD));
-
-            if (_pInfo.sCommand == "implot")
-                dataRanges[ZRANGE] = dataRanges[ZRANGE].combine(Interval(0.0, 255.0));
+            // Calculate the data ranges
+            if (_pData.getSettings(PlotData::LOG_PARAMETRIC) && typeCounter < (m_manager.assets.size() / 3) * 3)
+                dataRanges[typeCounter%3] = dataRanges[typeCounter%3].combine(m_manager.assets[typeCounter].getDataIntervals(0)[datIvlID3D]);
             else
-                dataRanges[ZRANGE] = dataRanges[ZRANGE].combine(m_manager.assets[typeCounter].getDataIntervals(0)[datIvlID3D]);
+            {
+                dataRanges[XRANGE] = dataRanges[XRANGE].combine(m_manager.assets[typeCounter].getAxisInterval(XCOORD));
+                dataRanges[YRANGE] = dataRanges[YRANGE].combine(m_manager.assets[typeCounter].getAxisInterval(YCOORD));
+
+                if (_pInfo.sCommand == "implot")
+                    dataRanges[ZRANGE] = dataRanges[ZRANGE].combine(Interval(0.0, 255.0));
+                else
+                    dataRanges[ZRANGE] = dataRanges[ZRANGE].combine(m_manager.assets[typeCounter].getDataIntervals(0)[datIvlID3D]);
+            }
         }
         else
             throw SyntaxError(SyntaxError::PLOT_ERROR, _accessParser.getDataObject(), SyntaxError::invalid_position);

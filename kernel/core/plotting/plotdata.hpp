@@ -84,6 +84,7 @@ class PlotData : public FileSystem
             LOG_YERROR,
             LOG_OPENIMAGE,
             LOG_ORTHOPROJECT,
+            LOG_PARAMETRIC,
             LOG_PIPE,
             LOG_REGION,
             LOG_SCHEMATIC,
