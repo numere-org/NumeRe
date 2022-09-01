@@ -2462,10 +2462,14 @@ value_type parser_lcm(const value_type& n, const value_type& k)
 /////////////////////////////////////////////////
 value_type parser_Mod(const value_type& v1, const value_type& v2)
 {
-    if (isinf(v1.real()) || isnan(v1.real()) || isinf(v2.real()) || isnan(v2.real()))
+    if (std::isinf(v2.real()) || std::isnan(v2.real()) || std::isinf(v2.imag()) || std::isnan(v2.imag()))
         return NAN;
 
-    return intCast(v1) % intCast(v2);
+    mu::value_type div = v1 / v2;
+    div = mu::value_type(std::floor(div.real()),
+                         std::floor(div.imag()));
+
+    return v1 - div * v2;
 }
 
 

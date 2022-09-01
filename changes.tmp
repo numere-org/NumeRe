@@ -55,3 +55,5 @@ Added	The search bar of the documentation browser will now also search through i
 Applied	The "textparse()" function has been improved to support further data types.
 Fixed	Semicolon separated expressions are now evaluated correctly.
 Fixed	A possible multi-threading issue in combination with random numbers has been resolved.
+Added	The modulo operator is now a complex value-aware fmod() operator.
+Added	Tables now support the date schemes "DD/MM/YYYY" and "D/M/YY(YY)" as well.

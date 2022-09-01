@@ -616,15 +616,15 @@ sys_time_point StrToTime(const std::string& sString)
         }
     }
 
-    // Contains DD.MM.YY
+    // Contains DD.MM.YY or DD/MM/YYYY
     if (format & TD_DDMM || format & TD_DDMMYY)
     {
-        std::vector<std::string> toks = split(sString, '.');
+        std::vector<std::string> toks = split(sString, format & TD_SEP_SLASH ? '/' : '.');
         date::year y(timeStruct.m_ymd.year());
         date::month m(0);
         date::day d(0);
 
-        bool isFirst = sString.find('.') < 3 + pos;
+        bool isFirst = sString.find(format & TD_SEP_SLASH ? '/' : '.') < 3 + pos;
 
         for (size_t i = 0; i < toks.size(); i++)
         {
@@ -960,10 +960,17 @@ static int isDatePattern_US(const std::string& sStr, size_t i)
         return TD_NONE;
 
     // Detects these candidates:
-    // YY-MM-DD, yy-m-d, YY/MM/DD, YY/M/D,
+    // YY-MM-DD, yy-m-d, YY/MM/DD, YY/M/D, DD/MM/YYYY, D/M/YY(YY)
     if ((i+3 < sStr.length() && sStr[i+3] == sStr[i])
         || (i+2 < sStr.length() && sStr[i+2] == sStr[i]))
+    {
+        // Special case for DD/MM/YYYY, D/M/YY(YY) (note that the year has more characters)
+        if ((sStr[i+3] == '/' && i+6 < sStr.length() && isdigit(sStr[i+6]))
+            || (sStr[i+2] == '/' && i+4 < sStr.length() && isdigit(sStr[i+4])))
+            return TD_DDMMYY | TD_SEP_SLASH;
+
         return TD_YYMMDD | (sStr[i] == '-' ? TD_SEP_MINUS : TD_SEP_SLASH);
+    }
 
     return TD_NONE;
 }
@@ -1047,7 +1054,7 @@ int detectTimeDateFormat(const std::string& sStr)
         for (size_t i = pos; i < sStr.length()-1; i++)
         {
             // Detects these candidates:
-            // (YY)YY-MM-DD, (yy)yy-m-d, (YY)YY/MM/DD, (YY)YY/M/D
+            // (YY)YY-MM-DD, (yy)yy-m-d, (YY)YY/MM/DD, (YY)YY/M/D, DD/MM/YYYY, D/M/YYYY
             if (sStr[i] == '-' || sStr[i] == '/')
                 format |= isDatePattern_US(sStr, i);
             // DD.MM.YY(YY), d.m.yy(yy), d.m., dd.mm.
