@@ -57,3 +57,4 @@ Fixed	Semicolon separated expressions are now evaluated correctly.
 Fixed	A possible multi-threading issue in combination with random numbers has been resolved.
 Added	The modulo operator is now a complex value-aware fmod() operator.
 Added	Tables now support the date schemes "DD/MM/YYYY" and "D/M/YY(YY)" as well.
+Added	Plots now support parametric coordinates via "coords=parametric", which allows passing plot like in MATLAB(R).

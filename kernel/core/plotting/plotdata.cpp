@@ -166,7 +166,6 @@ static std::map<std::string,std::pair<PlotData::LogicalPlotSetting,PlotData::Par
     mGenericSwitches.emplace("crust", std::make_pair(PlotData::LOG_CRUST, PlotData::LOCAL));
     mGenericSwitches.emplace("reconstruct", std::make_pair(PlotData::LOG_CRUST, PlotData::LOCAL));
     mGenericSwitches.emplace("valtab", std::make_pair(PlotData::LOG_TABLE, PlotData::GLOBAL));
-    mGenericSwitches.emplace("parametric", std::make_pair(PlotData::LOG_PARAMETRIC, PlotData::LOCAL));
 
     return mGenericSwitches;
 }
@@ -1473,6 +1472,9 @@ void PlotData::setParams(const std::string& __sCmd, int nType)
         int nPos = findParameter(sCmd, "coords", '=')+6;
         std::string sCoords = getArgAtPos(sCmd, nPos);
 
+        if (sCoords.find('-') != std::string::npos)
+            sCoords.erase(sCoords.find('-'));
+
         if (sCoords == "cartesian" || sCoords == "std")
             intSettings[INT_COORDS] = CARTESIAN;
         else if (sCoords == "polar" || sCoords == "polar_pz" || sCoords == "cylindrical")
@@ -1487,6 +1489,18 @@ void PlotData::setParams(const std::string& __sCmd, int nType)
             intSettings[INT_COORDS] = SPHERICAL_RP;
         else if (sCoords == "spherical_rt")
             intSettings[INT_COORDS] = SPHERICAL_RT;
+    }
+
+    if (findParameter(sCmd, "coords", '=') && (nType == ALL || nType & LOCAL))
+    {
+        int nPos = findParameter(sCmd, "coords", '=')+6;
+        std::string sCoords = getArgAtPos(sCmd, nPos);
+
+        if (sCoords.find('-') != std::string::npos)
+            sCoords.erase(0, sCoords.find('-')+1);
+
+        if (sCoords == "parametric")
+            logicalSettings[LOG_PARAMETRIC] = true;
     }
 
     if (findParameter(sCmd, "font", '=') && (nType == ALL || nType & SUPERGLOBAL))
