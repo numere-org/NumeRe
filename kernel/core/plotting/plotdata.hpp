@@ -107,6 +107,8 @@ class PlotData : public FileSystem
             INT_LIGHTING,
             INT_MARKS,
             INT_SAMPLES,
+            INT_SIZE_X,
+            INT_SIZE_Y,
             INT_SETTING_SIZE
         };
 

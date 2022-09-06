@@ -861,7 +861,10 @@ void Plot::applyPlotSizeAndQualitySettings()
     // Apply the quality and image dimension settings to the overall result
     // image. This affects also a whole multiplot and is therefore done before
     // the first plot is rendered.
-    if (_pData.getSettings(PlotData::LOG_SILENTMODE) || !_pData.getSettings(PlotData::LOG_OPENIMAGE))
+    // If the user requests a specific size, we'll preferably using this
+    if (_pData.getSettings(PlotData::INT_SIZE_X) > 0 && _pData.getSettings(PlotData::INT_SIZE_Y) > 0)
+        _graph->SetSize(_pData.getSettings(PlotData::INT_SIZE_X), _pData.getSettings(PlotData::INT_SIZE_Y));
+    else if (_pData.getSettings(PlotData::LOG_SILENTMODE) || !_pData.getSettings(PlotData::LOG_OPENIMAGE))
     {
         // Switch between fullHD and the normal resolution
         if (_pData.getSettings(PlotData::INT_HIGHRESLEVEL) == 2)

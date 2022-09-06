@@ -561,6 +561,31 @@ void PlotData::setParams(const std::string& __sCmd, int nType)
         }
     }
 
+    if (findParameter(sCmd, "size", '=') && (nType == ALL || nType & SUPERGLOBAL))
+    {
+        int nPos = findParameter(sCmd, "size", '=')+4;
+        std::string sTemp = getArgAtPos(__sCmd, nPos);
+        if (sTemp.find(',') != std::string::npos && sTemp.length() > 1)
+        {
+            int nResults = 0;
+            mu::value_type* dTemp = evaluateNumerical(nResults, sTemp);
+
+            if (nResults >= 2)
+            {
+                intSettings[INT_SIZE_X] = intCast(dTemp[0]);
+                intSettings[INT_SIZE_Y] = intCast(dTemp[1]);
+
+                if (intSettings[INT_SIZE_X] > 0 && intSettings[INT_SIZE_Y] > 0)
+                    floatSettings[FLOAT_ASPECT] = intSettings[INT_SIZE_X] / (double)intSettings[INT_SIZE_Y];
+                else
+                {
+                    intSettings[INT_SIZE_X] = 0;
+                    intSettings[INT_SIZE_Y] = 0;
+                }
+            }
+        }
+    }
+
     if (findParameter(sCmd, "hires") && (nType == ALL || nType & SUPERGLOBAL))
         intSettings[INT_HIGHRESLEVEL] = 2;
 
