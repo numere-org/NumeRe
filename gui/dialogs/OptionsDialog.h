@@ -172,7 +172,7 @@ class OptionsDialog: public wxDialog
         wxCheckBox* m_CustomLanguage;
         wxCheckBox* m_ESCinScripts;
         wxCheckBox* m_UseLogfile;
-        wxCheckBox* m_UseExternalViewer;
+        //wxCheckBox* m_UseExternalViewer;
         wxCheckBox* m_FilePathsInTabs;
         wxCheckBox* m_IconsOnTabs;
         wxTextCtrl* m_LoadPath;

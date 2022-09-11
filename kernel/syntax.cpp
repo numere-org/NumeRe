@@ -62,6 +62,23 @@ NumeReSyntax::NumeReSyntax(const std::string& _sPath) : NumeReSyntax()
 
 
 /////////////////////////////////////////////////
+/// \brief Specialized constructor. Delegates to
+/// the default constructor and will also load
+/// the syntax definitions. Afterwards, the
+/// plugin commands are added to the list of
+/// known commands.
+///
+/// \param _sPath const std::string&
+/// \param vPlugins const std::vector<std::string>&
+///
+/////////////////////////////////////////////////
+NumeReSyntax::NumeReSyntax(const std::string& _sPath, const std::vector<std::string>& vPlugins) : NumeReSyntax(_sPath)
+{
+    vNSCRCommands.insert(vNSCRCommands.end(), vPlugins.begin(), vPlugins.end());
+}
+
+
+/////////////////////////////////////////////////
 /// \brief Member function for loading the syntax
 /// element definitions.
 ///
@@ -482,6 +499,46 @@ std::string NumeReSyntax::highlightLine(const std::string& sCommandLine)
         // Only enter this block, if it is only default-highlighted
         if (colors[i] == '0'+SYNTAX_STD)
         {
+            // Highlight line comments
+            if (sCommandLine.substr(i, 2) == "##")
+            {
+                size_t len = sCommandLine.find("\\n", i+2);
+
+                if (len == std::string::npos)
+                {
+                    len = colors.length() - i;
+                    colors.replace(i, len, len, '0'+SYNTAX_COMMENT);
+                    break;
+                }
+                else
+                {
+                    len -= i;
+                    colors.replace(i, len, len, '0'+SYNTAX_COMMENT);
+                    i = len;
+                }
+
+            }
+
+            // Highlight block comments
+            if (sCommandLine.substr(i, 2) == "#*")
+            {
+                size_t len = sCommandLine.find("*#", i+2);
+
+                if (len == std::string::npos)
+                {
+                    len = colors.length() - i;
+                    colors.replace(i, len, len, '0'+SYNTAX_COMMENT);
+                    break;
+                }
+                else
+                {
+                    len -= i;
+                    colors.replace(i, len+2, len+2, '0'+SYNTAX_COMMENT);
+                    i = len+2;
+                }
+
+            }
+
             unsigned int nLen = 0;
 
             // Find the end of the current syntax element

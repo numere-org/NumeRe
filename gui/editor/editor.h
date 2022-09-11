@@ -121,6 +121,7 @@ class NumeReEditor : public wxStyledTextCtrl, public wxThreadHelper
 		void ClearDblClkIndicator();
 		void MakeBraceCheck();
 		void MakeBlockCheck();
+		bool isWrappedLine(int line);
 
 		// asynch update calls
 		void HandleFunctionCallTip();

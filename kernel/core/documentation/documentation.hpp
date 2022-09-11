@@ -20,26 +20,14 @@
 #ifndef DOCUMENTATION_HPP
 #define DOCUMENTATION_HPP
 
-#include <iostream>
-#include <iomanip>
 #include <string>
-#include <vector>
-#include <fstream>
-
-#include "../ui/error.hpp"
-#include "../utils/tools.hpp"
 #include "../settings.hpp"
 
 extern const std::string sVersion;
 
 void doc_Help(const std::string&, Settings&);
 std::string doc_HelpAsHTML(const std::string&, bool, Settings& _option);
-void doc_ReplaceTokens(std::string& sDocParagraph, Settings& _option);
-void doc_ReplaceTokensForHTML(std::string& sDocParagraph, bool generateFile, Settings& _option);
-void doc_ReplaceExprContentForHTML(std::string& sExpr, Settings& _option);
-std::vector<std::vector<std::string> > doc_readTokenTable(const std::string& sTable, Settings& _option);
 void doc_SearchFct(const std::string& sToLookFor, Settings& _option);
-void doc_FirstStart(const Settings& _option);
 
 
 #endif

@@ -101,10 +101,13 @@ class NumeReSyntax
             SYNTAX_NPRC_COMMAND,
             SYNTAX_METHODS,
             SYNTAX_CLUSTER,
-            SYNTAX_TABLE
+            SYNTAX_TABLE,
+            SYNTAX_COMMENT
         };
+
         NumeReSyntax();
         NumeReSyntax(const std::string& _sPath);
+        NumeReSyntax(const std::string& _sPath, const std::vector<std::string>& vPlugins);
 
         void loadSyntax(const std::string& _sPath = "");
         void addPlugins(const std::vector<std::string>& vPlugins);

@@ -201,7 +201,7 @@ void OptionsDialog::CreateConfigPage()
     m_ExtendedInfo = panel->CreateCheckBox(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_EXTENDEDINFO"));
     m_CustomLanguage = panel->CreateCheckBox(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_CUSTOMLANG"));
     m_ESCinScripts = panel->CreateCheckBox(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_ESCINSCRIPTS"));
-    m_UseExternalViewer = panel->CreateCheckBox(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_EXTERNALVIEWER"));
+    //m_UseExternalViewer = panel->CreateCheckBox(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_EXTERNALVIEWER"));
     m_showToolbarText = panel->CreateCheckBox(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_SHOW_TOOLBARTEXT"));
 
     // Create a group
@@ -782,7 +782,7 @@ bool OptionsDialog::EvaluateOptions()
     mSettings[SETTING_B_USECUSTOMLANG].active() = m_CustomLanguage->IsChecked();
     mSettings[SETTING_B_USEESCINSCRIPTS].active() = m_ESCinScripts->IsChecked();
     mSettings[SETTING_B_LOGFILE].active() = m_UseLogfile->IsChecked();
-    mSettings[SETTING_B_EXTERNALDOCWINDOW].active() = m_UseExternalViewer->IsChecked();
+    //mSettings[SETTING_B_EXTERNALDOCWINDOW].active() = m_UseExternalViewer->IsChecked();
     mSettings[SETTING_B_ENABLEEXECUTE].active() = m_useExecuteCommand->IsChecked();
     mSettings[SETTING_B_MASKDEFAULT].active() = m_useMaskAsDefault->IsChecked();
     mSettings[SETTING_B_TABLEREFS].active() = m_alwaysReferenceTables->IsChecked();
@@ -882,7 +882,7 @@ void OptionsDialog::InitializeDialog()
     m_CustomLanguage->SetValue(mSettings[SETTING_B_USECUSTOMLANG].active());
     m_ESCinScripts->SetValue(mSettings[SETTING_B_USEESCINSCRIPTS].active());
     m_UseLogfile->SetValue(mSettings[SETTING_B_LOGFILE].active());
-    m_UseExternalViewer->SetValue(mSettings[SETTING_B_EXTERNALDOCWINDOW].active());
+    //m_UseExternalViewer->SetValue(mSettings[SETTING_B_EXTERNALDOCWINDOW].active());
     m_useExecuteCommand->SetValue(mSettings[SETTING_B_ENABLEEXECUTE].active());
     m_useMaskAsDefault->SetValue(mSettings[SETTING_B_MASKDEFAULT].active());
     m_alwaysReferenceTables->SetValue(mSettings[SETTING_B_TABLEREFS].active());

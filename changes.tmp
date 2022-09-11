@@ -59,3 +59,6 @@ Added	The modulo operator is now a complex value-aware fmod() operator.
 Added	Tables now support the date schemes "DD/MM/YYYY" and "D/M/YY(YY)" as well.
 Added	Plots now support parametric coordinates via "coords=parametric", which allows passing plot like in MATLAB(R).
 Added	The image dimensions of plots can now be modified using the "size={xpix,ypix}" plot option.
+Fixed	The autoindentation does not longer use wrapped lines to determine the indentation level.
+Added	Documentation articles may now start with a short "syntax overview" to improve the user experience.
+Applied	Code block ins documentation articles are now lexed and styled to enhance readability.

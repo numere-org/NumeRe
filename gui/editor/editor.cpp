@@ -5015,6 +5015,31 @@ bool NumeReEditor::isNoAutoIndentionKey(int keycode)
 
 
 /////////////////////////////////////////////////
+/// \brief This member function checks, whether a
+/// line has been syntactically wrapped around.
+///
+/// \param line int
+/// \return bool
+///
+/////////////////////////////////////////////////
+bool NumeReEditor::isWrappedLine(int line)
+{
+    if (line <= 0)
+        return false;
+
+    wxString lastLine = GetLine(line-1);
+    lastLine.erase(lastLine.find_last_not_of("\r\n\t ")+1);
+
+    if (m_fileType == FILE_MATLAB)
+        return lastLine.EndsWith("...");
+    else if (m_fileType == FILE_NSCR || m_fileType == FILE_NPRC)
+        return lastLine.EndsWith("\\\\");
+
+    return false;
+}
+
+
+/////////////////////////////////////////////////
 /// \brief Performs asynchronous actions and is
 /// called automatically.
 ///
@@ -5050,13 +5075,11 @@ void NumeReEditor::AsynchActions()
 
             if (GetFoldParent(nParentline) != wxNOT_FOUND)
                 nParentline = GetFoldParent(nParentline);
-            else if (isStyleType(STYLE_COMMENT, PositionFromLine(nParentline)))
-            {
-                // Do not use comments to determine the indentation
-                // level (if avoidable)
-                while (nParentline > 0 && isStyleType(STYLE_COMMENT, PositionFromLine(nParentline)))
-                    nParentline--;
-            }
+
+            // Do not use comments or syntactial wrapped lines
+            // to determine the indentation level (if avoidable)
+            while (nParentline > 0 && (isStyleType(STYLE_COMMENT, PositionFromLine(nParentline)) || isWrappedLine(nParentline)))
+                nParentline--;
         }
 
         ApplyAutoIndentation(nParentline, nLine + 1);
