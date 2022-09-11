@@ -1399,6 +1399,103 @@ static Matrix matrixCnt(const MatFuncData& funcData, const MatFuncErrorInfo& err
 
 
 /////////////////////////////////////////////////
+/// \brief This static function applies a
+/// threshold to the complete matrix as
+/// specified by the arguments.
+///
+/// \param funcData const MatFuncData&
+/// \param errorInfo const MatFuncErrorInfo&
+/// \return Matrix
+///
+/////////////////////////////////////////////////
+static Matrix matrixCutoff(const MatFuncData& funcData, const MatFuncErrorInfo& errorInfo)
+{
+    // Define the thresholds
+    double thresHigh(NAN);
+    double thresLow(NAN);
+
+    // Get the input values
+    double thresInput = funcData.fVal.real();
+    int mode = funcData.nVal;
+
+    // Check if the mode is within the acceptable range
+    if(std::abs(mode) > 2)
+        throw SyntaxError(SyntaxError::CUTOFF_MODE_INVALID, errorInfo.command, errorInfo.position);
+
+    // Get the min and max values of the matrix for the threshold calculation
+    double matMin = 0;
+    double matMax = 0;
+
+    // If necessary get the min and max values of the matrices
+    if(std::abs(mode) < 2)
+    {
+        matMin = real(calculateStats(funcData.mat1, StatsLogic(StatsLogic::OPERATION_MIN, funcData.mat1(0).real()),
+                                            0, funcData.mat1.rows(), 0, funcData.mat1.cols()));
+        matMax = real(calculateStats(funcData.mat1, StatsLogic(StatsLogic::OPERATION_MAX, funcData.mat1(0).real()),
+                                            0, funcData.mat1.rows(), 0, funcData.mat1.cols()));
+    }
+
+    // Set the thresholds and the data to insert
+    switch(mode)
+    {
+        case -2:
+            // Absolut value, cut all values below
+            {
+                thresHigh = NAN;
+                thresLow = thresInput;
+            }
+            break;
+        case 2:
+            // Absolut value, cut all values above
+            {
+                thresHigh = thresInput;
+                thresLow = NAN;
+            }
+            break;
+        case -1:
+            // Percentage value, cut all values below
+            {
+                thresHigh = matMin + (matMax - matMin) * thresInput;
+                thresLow = NAN;
+            }
+            break;
+        case 1:
+            // Percentage value, cut all values above
+            {
+                thresHigh = NAN;
+                thresLow = matMin + (matMax - matMin) * thresInput;
+            }
+            break;
+        case 0:
+            // Central percent of values
+            {
+                thresHigh = matMin + (matMax - matMin) / 2 + (matMax - matMin) * thresInput / 2.0;
+                thresLow = matMin + (matMax - matMin) / 2 - (matMax - matMin) * thresInput / 2.0;
+            }
+            break;
+    }
+
+    // Get a copy of the matrix to process
+    Matrix cutMatrix = funcData.mat1;
+
+    // Apply the calculated threshold to all matrix elements
+    for (size_t i = 0; i < cutMatrix.rows(); i++)
+    {
+        for (size_t j = 0; j < cutMatrix.cols(); j++)
+        {
+            // Only the real part is considered, imaginary component is discarded
+            if(!std::isnan(thresLow) && cutMatrix(i, j).real() < thresLow)
+                cutMatrix(i, j) = thresLow;
+            if(!std::isnan(thresHigh) && cutMatrix(i, j).real() > thresHigh)
+                cutMatrix(i, j) = thresHigh;
+        }
+    }
+
+    return cutMatrix;
+}
+
+
+/////////////////////////////////////////////////
 /// \brief This static function applies the
 /// \c norm() function on the matrix elements.
 ///
@@ -3105,6 +3202,7 @@ static std::map<std::string,MatFuncDef> getMatrixFunctions()
     mFunctions["avg"] = MatFuncDef(MATSIG_MAT, matrixAvg, false);
     mFunctions["prd"] = MatFuncDef(MATSIG_MAT, matrixPrd, false);
     mFunctions["cnt"] = MatFuncDef(MATSIG_MAT, matrixCnt, false);
+    mFunctions["cutoff"] = MatFuncDef(MATSIG_MAT_F_N, matrixCutoff);
     mFunctions["num"] = MatFuncDef(MATSIG_MAT, matrixNum, false);
     mFunctions["norm"] = MatFuncDef(MATSIG_MAT, matrixNorm, false);
     mFunctions["min"] = MatFuncDef(MATSIG_MAT, matrixMin, false);

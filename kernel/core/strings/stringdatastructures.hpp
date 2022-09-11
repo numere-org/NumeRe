@@ -268,6 +268,9 @@ enum FunctionSignatureType
 	PARSER_INT,
 	VAL,
 
+	PARSER_DOUBLE,
+	DBL_VALOPT,
+
 	PARSER_STRING,
 	STR,
 

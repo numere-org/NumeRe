@@ -89,6 +89,8 @@ class SyntaxError
             CANNOT_EVAL_TRY,
             /// INSERT HERE
             COL_COUNTS_DOESNT_MATCH=200,
+            CUTOFF_MODE_INVALID,
+            /// INSERT HERE
             DATAFILE_NOT_EXIST=300,
             DATAPOINTS_CANNOT_BE_MODIFIED_WHILE_PLOTTING=400,
             DIFF_VAR_NOT_FOUND=500,

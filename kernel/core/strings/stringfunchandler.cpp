@@ -124,8 +124,10 @@ namespace NumeRe
 
             // Apply the parser as specified by the function signature. After that call the corresponding
             // string function with the returned arguments as many times as it's needed
-            if (funcHandle.fType >= PARSER_INT && funcHandle.fType < PARSER_STRING)
+            if (funcHandle.fType >= PARSER_INT && funcHandle.fType < PARSER_DOUBLE)
                 nMaxArgs = argumentParser(sFunctionArgument, nIntArg1);
+            else if (funcHandle.fType >= PARSER_DOUBLE && funcHandle.fType < PARSER_STRING)
+                nMaxArgs = argumentParser(sFunctionArgument, dValArg, nIntArg1);
             else if (funcHandle.fType >= PARSER_STRING && funcHandle.fType < PARSER_STRING_DOUBLE)
             {
                 if (sFuncName == "to_string(" && !isStringExpression(sFunctionArgument.to_string()))
@@ -329,6 +331,52 @@ namespace NumeRe
         dArg.insert(dArg.end(), v, v+nReturn);
 
         return (size_t)nReturn;
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief This member function is the string
+    /// function argument parser for double and
+    /// numeric values.
+    ///
+    /// \param __sFuncArgument StringView
+    /// \param dArg d_vect& a vector of numerical
+    /// values as return value
+    /// \param nArg n_vect& a vector of numerical
+    /// values as return value
+    /// \return size_t
+    ///
+    /// It is one of the two basic argument parser
+    /// functions, which are called by all others
+    /// depending on the signatures of their functions.
+    /////////////////////////////////////////////////
+    size_t StringFuncHandler::argumentParser(StringView __sFuncArgument, d_vect& dArg, n_vect& nArg)
+    {
+        size_t nMaxLength = 0;
+
+        // Get the single arguments
+        StringView sDouble = getNextViewedArgument(__sFuncArgument);
+        StringView sNumVal = getNextViewedArgument(__sFuncArgument);
+
+        // Handle the arguments using the basic functions
+        // and store the highest number of return values
+        nMaxLength = argumentParser(sDouble, dArg);
+
+        if (!nMaxLength)
+            return 0;
+
+        if (sNumVal.length())
+        {
+            size_t nReturn = argumentParser(sNumVal, nArg);
+
+            if (!nReturn)
+                return 0;
+
+            if (nMaxLength < nReturn)
+                nMaxLength = nReturn;
+        }
+
+        return nMaxLength;
     }
 
 

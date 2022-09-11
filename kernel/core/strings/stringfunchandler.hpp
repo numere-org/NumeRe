@@ -43,6 +43,7 @@ namespace NumeRe
             void evalFunction(std::string& sLine, const std::string& sFuncName, StringFuncHandle);
             size_t argumentParser(StringView, n_vect&);
             size_t argumentParser(StringView, d_vect&);
+            size_t argumentParser(StringView, d_vect&, n_vect&);
             size_t argumentParser(StringView, s_vect&, bool& bLogicalOnly);
             size_t argumentParser(StringView, s_vect&, d_vect&);
             size_t argumentParser(StringView, s_vect&, n_vect&, n_vect&);
