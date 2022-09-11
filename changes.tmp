@@ -62,3 +62,4 @@ Added	The image dimensions of plots can now be modified using the "size={xpix,yp
 Fixed	The autoindentation does not longer use wrapped lines to determine the indentation level.
 Added	Documentation articles may now start with a short "syntax overview" to improve the user experience.
 Applied	Code block ins documentation articles are now lexed and styled to enhance readability.
+Added	There is a cutoff matop operator that allows to cutoff matrices using different modes and a given threshold.
