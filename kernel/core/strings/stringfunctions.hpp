@@ -131,10 +131,10 @@ static StringVector strfnc_to_string(StringFuncArgs& funcArgs)
 /// \return string
 ///
 /////////////////////////////////////////////////
-string formatNumberToTex(const mu::value_type& number, size_t precision = INT_MIN)
+string formatNumberToTex(const mu::value_type& number, size_t precision = 0)
 {
     // Use the default precision if precision is default value
-    if (precision == INT_MIN)
+    if (precision == 0)
         precision = NumeReKernel::getInstance()->getSettings().getPrecision();
 
     string sNumber = toString(number, precision);
@@ -1641,6 +1641,9 @@ static StringVector strfnc_textparse(StringFuncArgs& funcArgs)
                 replaceAll(sLaTeXFormatted, "\\cdot", "*");
                 replaceAll(sLaTeXFormatted, "2\\pi", "6.283185");
                 replaceAll(sLaTeXFormatted, "\\pi", "3.1415926");
+                replaceAll(sLaTeXFormatted, "\\infty", "inf");
+                replaceAll(sLaTeXFormatted, "-\\infty", "-inf");
+                replaceAll(sLaTeXFormatted, "---", "nan");
                 replaceAll(sLaTeXFormatted, "\\,", " ");
                 // 1.0*10^{-5} 1.0*10^2 1.0*10^3 2.5^{0.5}
 
