@@ -2434,7 +2434,8 @@ bool containsStrings(const string& sLine)
             || sLine.find("string(") != string::npos
             || sLine.find("string_cast(") != string::npos
             || sLine.find("char(") != string::npos
-            || sLine.find("valtostr(") != string::npos)
+            || sLine.find("valtostr(") != string::npos
+            || sLine.find("to_tex(") != std::string::npos)
         return true;
 
     return containsStringClusters(sLine);

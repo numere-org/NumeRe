@@ -123,11 +123,75 @@ static StringVector strfnc_to_string(StringFuncArgs& funcArgs)
 
 
 /////////////////////////////////////////////////
+/// \brief This function converts a number
+/// into a tex string.
+///
+/// \param number const mu::value_type&
+/// \param precision size_t
+/// \return string
+///
+/////////////////////////////////////////////////
+string formatNumberToTex(const mu::value_type& number, size_t precision = INT_MIN)
+{
+    // Use the default precision if precision is default value
+    if (precision == INT_MIN)
+        precision = NumeReKernel::getInstance()->getSettings().getPrecision();
+
+    string sNumber = toString(number, precision);
+
+    // Handle floating point numbers with
+    // exponents correctly
+    while (sNumber.find('e') != std::string::npos)
+    {
+        sNumber = sNumber.substr(0, sNumber.find('e'))
+                + "\\cdot10^{"
+                + (sNumber[sNumber.find('e')+1] == '-' ? "-" : "")
+                + sNumber.substr(sNumber.find_first_not_of('0', sNumber.find('e')+2))
+                + "}";
+    }
+
+    // Consider some special values
+    if (sNumber == "inf")
+        sNumber = "\\infty";
+
+    if (sNumber == "-inf")
+        sNumber = "-\\infty";
+
+    if (sNumber == "nan")
+        return "---";
+
+    // Return the formatted string in math mode
+    return "$" + sNumber + "$";
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Implementation of the to_tex()
+/// function.
+///
+/// \param funcArgs StringFuncArgs&
+/// \return StringVector
+///
+/////////////////////////////////////////////////
+static StringVector strfnc_to_tex(StringFuncArgs& funcArgs)
+{
+    //funcArgs.dArg1 contains Float that is to be converted
+    //funcArgs.nArg1 contains Precision of the conversion
+
+    // Convert the mu type to a latex string using the specified precision
+    std::string sToChar = formatNumberToTex(funcArgs.dArg1, funcArgs.nArg1);
+
+    // Return the result
+    return "\"" + sToChar + "\"";
+}
+
+
+/////////////////////////////////////////////////
 /// \brief Implementation of the to_uppercase()
 /// function.
 ///
 /// \param funcArgs StringFuncArgs&
-/// \return std::string
+/// \return StringVector
 ///
 /////////////////////////////////////////////////
 static StringVector strfnc_to_uppercase(StringFuncArgs& funcArgs)
@@ -2475,6 +2539,7 @@ static std::map<std::string, StringFuncHandle> getStringFuncHandles()
     mHandleTable["to_char"]             = StringFuncHandle(VAL, strfnc_to_char, true);
     mHandleTable["to_lowercase"]        = StringFuncHandle(STR, strfnc_to_lowercase, false);
     mHandleTable["to_string"]           = StringFuncHandle(STR, strfnc_to_string, false);
+    mHandleTable["to_tex"]              = StringFuncHandle(DBL_VALOPT, strfnc_to_tex, false);
     mHandleTable["to_time"]             = StringFuncHandle(STR_STR, strfnc_to_time, false);
     mHandleTable["to_uppercase"]        = StringFuncHandle(STR, strfnc_to_uppercase, false);
     mHandleTable["xor"]                 = StringFuncHandle(VAL, strfnc_xor, true);

@@ -2296,7 +2296,8 @@ namespace NumeRe
 			|| sExpression.find("char(") != std::string::npos
 			|| sExpression.find("getlasterror(") != std::string::npos
 			|| sExpression.find("getversioninfo(") != std::string::npos
-			|| sExpression.find("valtostr(") != std::string::npos)
+			|| sExpression.find("valtostr(") != std::string::npos
+            || sExpression.find("to_tex(") != std::string::npos)
             return true;
 
 		if (containsStringVars(sExpression) || containsStringVectorVars(sExpression))
