@@ -63,3 +63,4 @@ Fixed	The autoindentation does not longer use wrapped lines to determine the ind
 Added	Documentation articles may now start with a short "syntax overview" to improve the user experience.
 Applied	Code block ins documentation articles are now lexed and styled to enhance readability.
 Added	There is a cutoff matop operator that allows to cutoff matrices using different modes and a given threshold.
+Added	The to_tex() function allows to convert given complex numeric inputs into a tex format string with a defined precision.
