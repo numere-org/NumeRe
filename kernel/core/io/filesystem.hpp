@@ -34,6 +34,55 @@ std::string fromSystemCodePage(std::string);
  */
 
 /////////////////////////////////////////////////
+/// \brief This structure contains all relevant
+/// information about a file path.
+/////////////////////////////////////////////////
+struct FileInfo
+{
+    std::string drive;
+    std::string path;
+    std::string name;
+    std::string ext;
+    size_t filesize;
+    size_t fileAttributes;
+    double creationTime;
+    double modificationTime;
+
+    enum Attributes
+    {
+        ATTR_READONLY = 0x1,
+        ATTR_HIDDEN = 0x2,
+        ATTR_SYSTEM = 0x4,
+        ATTR_DIRECTORY = 0x10,
+        ATTR_ARCHIVE = 0x20,
+        ATTR_DEVICE = 0x40,
+        ATTR_NORMAL = 0x80,
+        ATTR_TEMPORARY = 0x100,
+        ATTR_SPARSE_FILE = 0x200,
+        ATTR_REPARSE_POINT = 0x400,
+        ATTR_COMPRESSED = 0x800,
+        ATTR_OFFLINE = 0x1000,
+        ATTR_NOT_CONTENT_INDEXED = 0x2000,
+        ATTR_ENCRYPTED = 0x4000,
+        ATTR_INTEGRITY_STREAM = 0x8000,
+        ATTR_VIRTUAL = 0x10000,
+        ATTR_NO_SCRUB_DATA = 0x20000,
+        ATTR_RECALL_ON_OPEN = 0x40000,
+        ATTR_PINNED = 0x80000,
+        ATTR_UNPINNED = 0x100000,
+        ATTR_RECALL_ON_DATA_ACCESS = 0x400000
+    };
+
+    FileInfo()
+    {
+        filesize = 0;
+        fileAttributes = 0;
+        creationTime = 0.0;
+        modificationTime = 0.0;
+    }
+};
+
+/////////////////////////////////////////////////
 /// \brief This class implements the basic input/
 /// output file system and provides
 /// functionalities to work with filenames and
@@ -43,10 +92,10 @@ class FileSystem
 {
     private:
         std::string cleanPath(std::string sFilePath, bool checkInvalidChars) const;
-        void resolveWildCards(std::string& _sFileName, bool isFile) const;
+        void resolveWildCards(std::string& _sFileName, bool isFile, bool checkExtension = true) const;
 
-	protected:												// In allen CHILD-Klassen verfuegbar
-		std::string sPath;										// String-Variable fuer den Dateipfad
+	protected:
+		std::string sPath;
 		std::string sExecutablePath;
 		std::string sTokens[7][2];
 		mutable std::string sValidExtensions;
@@ -58,32 +107,38 @@ class FileSystem
 
         FileSystem& assign(const FileSystem& _fSys);
 
-		std::string ValidFileName(std::string _sFileName, const std::string sExtension = ".dat", bool checkExtension = true, bool doCleanPath = true) const;			// gibt einen gueltigen Dateinamen auf Basis von _sFileName zurueck
-		std::string ValidFolderName(std::string _sFileName, bool doCleanPath = true) const;			// gibt einen gueltigen Ordnernamen auf Basis von _sFileName zurueck
+		std::string ValidFileName(std::string _sFileName, const std::string sExtension = ".dat", bool checkExtension = true, bool doCleanPath = true) const;
+		std::string ValidFolderName(std::string _sFileName, bool doCleanPath = true, bool appendTrailingSeparator = true) const;
 		std::string ValidizeAndPrepareName(const std::string& _sFileName, const std::string& sExtension = ".dat") const;
-		int setPath(std::string _sPath, bool bMkDir, std::string _sExePath);			// setzt sPath auf _sPath
+		int setPath(std::string _sPath, bool bMkDir, std::string _sExePath);
 		void createRevisionsFolder();
-		std::string getPath() const;								// gibt sPath zurueck
+		std::string getPath() const;
 		std::vector<std::string> getFileParts(const std::string& sFilePath) const;
-        inline void setProgramPath(std::string _sExePath)
-            {
-                sExecutablePath = _sExePath;
-            }
-        inline std::string getProgramPath() const
-            {return sExecutablePath;}
-        inline void declareFileType(const std::string& sFileType)
-            {
-                if (sValidExtensions.find(sFileType) == std::string::npos)
-                {
-                    if (sFileType[0] == '.')
-                        sValidExtensions += sFileType + ";";
-                    else
-                        sValidExtensions += "." + sFileType + ";";
-                }
-            }
+		FileInfo getFileInfo(const std::string& sFilePath) const;
         void setTokens(std::string _sTokens);
         bool isFile(const std::string& _sPath) const;
         void initializeFromKernel();
+
+        inline void setProgramPath(std::string _sExePath)
+        {
+            sExecutablePath = _sExePath;
+        }
+
+        inline std::string getProgramPath() const
+        {
+            return sExecutablePath;
+        }
+
+        inline void declareFileType(const std::string& sFileType)
+        {
+            if (sValidExtensions.find(sFileType) == std::string::npos)
+            {
+                if (sFileType[0] == '.')
+                    sValidExtensions += sFileType + ";";
+                else
+                    sValidExtensions += "." + sFileType + ";";
+            }
+        }
 };
 
 #endif

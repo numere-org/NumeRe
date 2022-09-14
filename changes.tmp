@@ -61,6 +61,8 @@ Added	Plots now support parametric coordinates via "coords=parametric", which al
 Added	The image dimensions of plots can now be modified using the "size={xpix,ypix}" plot option.
 Fixed	The autoindentation does not longer use wrapped lines to determine the indentation level.
 Added	Documentation articles may now start with a short "syntax overview" to improve the user experience.
-Applied	Code block ins documentation articles are now lexed and styled to enhance readability.
+Applied	Code blocks in documentation articles are now lexed and styled to enhance readability.
 Added	There is a cutoff matop operator that allows to cutoff matrices using different modes and a given threshold.
 Added	The to_tex() function allows to convert given complex numeric inputs into a tex format string with a defined precision.
+Fixed	It is now possible to enter "inf" and "nan" into table cells in edit mode.
+Added	The function "getfileinfo()" returns meta information about files, i.e. size, attributes and creation/modification times.

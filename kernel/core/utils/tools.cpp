@@ -2429,11 +2429,12 @@ bool containsStrings(const string& sLine)
 
     // It's only necessary to check the following functions.
     // All other string functions need strings as input
-    if (sLine.find('"') != string::npos
-            || sLine.find('#') != string::npos
+    if (sLine.find_first_of("\"#") != string::npos
             || sLine.find("string(") != string::npos
             || sLine.find("string_cast(") != string::npos
             || sLine.find("char(") != string::npos
+            || sLine.find("getlasterror(") != string::npos
+            || sLine.find("getversioninfo(") != string::npos
             || sLine.find("valtostr(") != string::npos
             || sLine.find("to_tex(") != std::string::npos)
         return true;

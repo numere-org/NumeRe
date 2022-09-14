@@ -226,7 +226,10 @@ namespace NumeRe
             /////////////////////////////////////////////////
             virtual void setString(const std::string& strval) override
             {
-                dData = StrToCmplx(toInternalString(strval));
+                if (isConvertible(strval, CONVTYPE_VALUE))
+                    dData = StrToCmplx(toInternalString(strval));
+                else
+                    dData = NAN;
             }
     };
 
@@ -254,7 +257,10 @@ namespace NumeRe
             /////////////////////////////////////////////////
             virtual mu::value_type getDouble() override
             {
-                return StrToCmplx(sData.c_str());
+                if (isConvertible(sData, CONVTYPE_VALUE))
+                    return StrToCmplx(sData);
+
+                return NAN;
             }
 
             /////////////////////////////////////////////////

@@ -19,6 +19,19 @@
 #include "datetimetools.hpp"
 #include "windows.h"
 
+/////////////////////////////////////////////////
+/// \brief Default constructor for
+/// zero-initialisation.
+/////////////////////////////////////////////////
+time_stamp::time_stamp()
+{
+    m_hours = std::chrono::hours(0);
+    m_minutes = std::chrono::minutes(0);
+    m_seconds = std::chrono::seconds(0);
+    m_millisecs = std::chrono::milliseconds(0);
+    m_microsecs = std::chrono::microseconds(0);
+}
+
 
 /////////////////////////////////////////////////
 /// \brief Returns the current time as a

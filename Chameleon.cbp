@@ -248,7 +248,6 @@
 			<Add option="-D__MSVCRT_VERSION__=0x0601" />
 		</Compiler>
 		<Linker>
-			<Add option="-static-libstdc++" />
 			<Add option="-lmgl" />
 			<Add option="-lgsl" />
 			<Add option="-lnoise" />
@@ -564,6 +563,15 @@
 		<Unit filename="kernel/core/utils/date/date.h" />
 		<Unit filename="kernel/core/utils/datetimetools.cpp" />
 		<Unit filename="kernel/core/utils/datetimetools.hpp" />
+		<Unit filename="kernel/core/utils/fast_float/ascii_number.h" />
+		<Unit filename="kernel/core/utils/fast_float/bigint.h" />
+		<Unit filename="kernel/core/utils/fast_float/decimal_to_binary.h" />
+		<Unit filename="kernel/core/utils/fast_float/digit_comparison.h" />
+		<Unit filename="kernel/core/utils/fast_float/fast_float.h" />
+		<Unit filename="kernel/core/utils/fast_float/fast_table.h" />
+		<Unit filename="kernel/core/utils/fast_float/float_common.h" />
+		<Unit filename="kernel/core/utils/fast_float/parse_number.h" />
+		<Unit filename="kernel/core/utils/fast_float/simple_decimal_conversion.h" />
 		<Unit filename="kernel/core/utils/filecheck.cpp" />
 		<Unit filename="kernel/core/utils/filecheck.hpp" />
 		<Unit filename="kernel/core/utils/stringtools.cpp" />

@@ -23,10 +23,9 @@
 
 #include "filesystem.hpp"
 #include "../../kernel.hpp"
+#include "../utils/datetimetools.hpp"
 
 std::string removeQuotationMarks(const std::string& sString);
-
-using namespace std;
 
 
 /////////////////////////////////////////////////
@@ -76,11 +75,11 @@ FileSystem& FileSystem::assign(const FileSystem& _fSys)
 /// umlauts, replaces path separators and path
 /// placeholders.
 ///
-/// \param sFilePath string
-/// \return string
+/// \param sFilePath std::string
+/// \return std::string
 ///
 /////////////////////////////////////////////////
-string FileSystem::cleanPath(string sFilePath, bool checkInvalidChars) const
+std::string FileSystem::cleanPath(std::string sFilePath, bool checkInvalidChars) const
 {
     sFilePath = replacePathSeparator(removeQuotationMarks(sFilePath));
     StripSpaces(sFilePath);
@@ -151,19 +150,20 @@ string FileSystem::cleanPath(string sFilePath, bool checkInvalidChars) const
 /// wildcards, which may be found in the passed
 /// filename.
 ///
-/// \param _sFileName string&
+/// \param _sFileName std::string&
 /// \param isFile bool
+/// \param checkExtenstion bool
 /// \return void
 ///
 /////////////////////////////////////////////////
-void FileSystem::resolveWildCards(string& _sFileName, bool isFile) const
+void FileSystem::resolveWildCards(std::string& _sFileName, bool isFile, bool checkExtension) const
 {
-    if (_sFileName.find('*') != string::npos || _sFileName.find('?') != string::npos)
+    if (_sFileName.find_first_of("*?") != std::string::npos)
     {
         WIN32_FIND_DATA FindFileData;
         HANDLE hFind = INVALID_HANDLE_VALUE;
         hFind = FindFirstFile(_sFileName.c_str(), &FindFileData);
-        string sNewFileName = "";
+        std::string sNewFileName = "";
 
         do
         {
@@ -178,10 +178,10 @@ void FileSystem::resolveWildCards(string& _sFileName, bool isFile) const
             sNewFileName = FindFileData.cFileName;
 
             if (sNewFileName.length() > 4
-                && sNewFileName.find('.') != string::npos
-                && sValidExtensions.find(";"+toLowerCase(sNewFileName.substr(sNewFileName.rfind('.')))+";") != string::npos)
+                && sNewFileName.find('.') != std::string::npos
+                && (!checkExtension || sValidExtensions.find(";"+toLowerCase(sNewFileName.substr(sNewFileName.rfind('.')))+";") != std::string::npos))
                 break;
-            else if (sNewFileName.find('.') != string::npos)
+            else if (sNewFileName.find('.') != std::string::npos)
                 sNewFileName = "";
             else
                 sNewFileName += ".*";
@@ -192,20 +192,20 @@ void FileSystem::resolveWildCards(string& _sFileName, bool isFile) const
 
         if (sNewFileName.length() > 4)
         {
-            string sPathTemp = _sFileName;
+            std::string sPathTemp = _sFileName;
 
-            if (sPathTemp.rfind('/') != string::npos && sPathTemp.rfind('\\') != string::npos)
+            if (sPathTemp.rfind('/') != std::string::npos && sPathTemp.rfind('\\') != std::string::npos)
             {
                 if (sPathTemp.rfind('/') < sPathTemp.rfind('\\'))
                     sPathTemp = sPathTemp.substr(0, sPathTemp.rfind('\\'));
                 else
                     sPathTemp = sPathTemp.substr(0, sPathTemp.rfind('/'));
             }
-            else if (sPathTemp.rfind('/') != string::npos)
+            else if (sPathTemp.rfind('/') != std::string::npos)
             {
                 sPathTemp = sPathTemp.substr(0, sPathTemp.rfind('/'));
             }
-            else if (sPathTemp.rfind('\\') != string::npos)
+            else if (sPathTemp.rfind('\\') != std::string::npos)
             {
                 sPathTemp = sPathTemp.substr(0, sPathTemp.rfind('\\'));
             }
@@ -227,11 +227,11 @@ void FileSystem::resolveWildCards(string& _sFileName, bool isFile) const
 /// \brief This member function creates all
 /// missing directories in the passed path.
 ///
-/// \param _sPath const string&
+/// \param _sPath const std::string&
 /// \return int
 ///
 /////////////////////////////////////////////////
-int FileSystem::createFolders(const string& _sPath) const
+int FileSystem::createFolders(const std::string& _sPath) const
 {
     // Create the folder (returns false, if there's more
     // than one folder to be created)
@@ -271,15 +271,15 @@ int FileSystem::createFolders(const string& _sPath) const
 /// filename. One may supply a preferred filename
 /// extension.
 ///
-/// \param _sFileName string
-/// \param sExtension const string
+/// \param _sFileName std::string
+/// \param sExtension const std::string
 /// \param checkExtension bool
-/// \return string
+/// \return std::string
 ///
 /////////////////////////////////////////////////
-string FileSystem::ValidFileName(string _sFileName, const string sExtension, bool checkExtension, bool doCleanPath) const
+std::string FileSystem::ValidFileName(std::string _sFileName, const std::string sExtension, bool checkExtension, bool doCleanPath) const
 {
-    string sValid = "";
+    std::string sValid = "";
     sValidExtensions = toLowerCase(sValidExtensions);
 
     _sFileName = cleanPath(_sFileName, doCleanPath);
@@ -290,14 +290,14 @@ string FileSystem::ValidFileName(string _sFileName, const string sExtension, boo
 
     // If there's no colon in the current path, then it is a
     // network address
-    if (nPos == string::npos)
+    if (nPos == std::string::npos)
     {
         if (_sFileName.substr(0, 2) != "//")
             _sFileName = sPath.substr(1, sPath.length()-2) + "/" + _sFileName;
     }
 
     // Resolve wildcards in the passed file name
-    resolveWildCards(_sFileName, true);
+    resolveWildCards(_sFileName, true, checkExtension);
 
     // Find the last dot to identify the extension
     nPos = _sFileName.find_last_of(".");
@@ -307,9 +307,9 @@ string FileSystem::ValidFileName(string _sFileName, const string sExtension, boo
     // consecutive character should be a path
     // separator. In this case, we'll add the
     // default extension
-    if (nPos == string::npos
+    if (nPos == std::string::npos
         || (nPos == 0 || nPos == 1)
-        || (_sFileName.find('/', nPos) != string::npos || _sFileName.find('\\', nPos) != string::npos))
+        || (_sFileName.find('/', nPos) != std::string::npos || _sFileName.find('\\', nPos) != std::string::npos))
         sValid = _sFileName + sExtension;
     else if (checkExtension)
     {
@@ -325,7 +325,7 @@ string FileSystem::ValidFileName(string _sFileName, const string sExtension, boo
         // Ensure that the found extension is valid.
         // Otherwise the extension will be exchanged
         // automatically
-        if (sValidExtensions.find(";"+toLowerCase(sValid)+";") != string::npos)
+        if (sValidExtensions.find(";"+toLowerCase(sValid)+";") != std::string::npos)
         {
             sValid = _sFileName;
         }
@@ -342,7 +342,7 @@ string FileSystem::ValidFileName(string _sFileName, const string sExtension, boo
 
     // It's possible, that a new wildcard was added to the
     // file path. Resolve it here
-    resolveWildCards(sValid, true);
+    resolveWildCards(sValid, true, checkExtension);
 
     // Ensure that the file path separators are unix-like
     for (unsigned int i = 0; i < sValid.length(); i++)
@@ -360,11 +360,13 @@ string FileSystem::ValidFileName(string _sFileName, const string sExtension, boo
 /// whether the passed foldername is a valid
 /// foldername.
 ///
-/// \param _sFileName string
-/// \return string
+/// \param _sFileName std::string
+/// \param doCleanPath bool
+/// \param appendTrailingSeparator bool
+/// \return std::string
 ///
 /////////////////////////////////////////////////
-string FileSystem::ValidFolderName(string _sFileName, bool doCleanPath) const
+std::string FileSystem::ValidFolderName(std::string _sFileName, bool doCleanPath, bool appendTrailingSeparator) const
 {
     _sFileName = cleanPath(_sFileName, doCleanPath);
 
@@ -374,7 +376,7 @@ string FileSystem::ValidFolderName(string _sFileName, bool doCleanPath) const
 
     // If there's no colon in the current path, then it is a
     // network address
-    if (nPos == string::npos)
+    if (nPos == std::string::npos)
     {
         if (_sFileName.substr(0,2) != "//")
             _sFileName = sPath.substr(1, sPath.length()-2) + "/" + _sFileName;
@@ -383,6 +385,11 @@ string FileSystem::ValidFolderName(string _sFileName, bool doCleanPath) const
     // Resolve wildcards in the passed file name
     resolveWildCards(_sFileName, false);
 
+    // Fallback for the case that this is actually a
+    // file and not a folder
+    if (_sFileName.find_first_of("*?") != std::string::npos)
+        resolveWildCards(_sFileName, true, false);
+
     // Ensure that the file path separators are unix-like
     for (unsigned int i = 0; i < _sFileName.length(); i++)
     {
@@ -390,9 +397,15 @@ string FileSystem::ValidFolderName(string _sFileName, bool doCleanPath) const
             _sFileName[i] = '/';
     }
 
+    // Catch the case, where the file detection may have failed
+    if (fileExists(_sFileName))
+        return _sFileName;
+
     // Append a trailing path separator, if it is missing
-    if (_sFileName.back() != '/')
+    if (appendTrailingSeparator && _sFileName.back() != '/')
         _sFileName += "/";
+    else if (!appendTrailingSeparator && _sFileName.back() == '/')
+        _sFileName.pop_back();
 
     return _sFileName;
 }
@@ -403,14 +416,14 @@ string FileSystem::ValidFolderName(string _sFileName, bool doCleanPath) const
 /// passed file name and creates the needed
 /// folders on-the-fly.
 ///
-/// \param _sFileName const string&
-/// \param sExtension const string&
-/// \return string
+/// \param _sFileName const std::string&
+/// \param sExtension const std::string&
+/// \return std::string
 ///
 /////////////////////////////////////////////////
-string FileSystem::ValidizeAndPrepareName(const string& _sFileName, const string& sExtension) const
+std::string FileSystem::ValidizeAndPrepareName(const std::string& _sFileName, const std::string& sExtension) const
 {
-    string sValid = ValidFileName(_sFileName, sExtension);
+    std::string sValid = ValidFileName(_sFileName, sExtension);
     createFolders(sValid.substr(0, sValid.rfind('/')));
     return sValid;
 }
@@ -421,13 +434,13 @@ string FileSystem::ValidizeAndPrepareName(const string& _sFileName, const string
 /// set the preferred file path of the current
 /// FileSystem instance.
 ///
-/// \param _sPath string
+/// \param _sPath std::string
 /// \param bMkDir bool
-/// \param _sExePath string
+/// \param _sExePath std::string
 /// \return int
 ///
 /////////////////////////////////////////////////
-int FileSystem::setPath(string _sPath, bool bMkDir, string _sExePath)
+int FileSystem::setPath(std::string _sPath, bool bMkDir, std::string _sExePath)
 {
 
     sExecutablePath = fromSystemCodePage(_sExePath);
@@ -440,16 +453,16 @@ int FileSystem::setPath(string _sPath, bool bMkDir, string _sExePath)
 
     sPath = fromSystemCodePage(_sPath);
 
-    if (sPath.find('<') != string::npos)
+    if (sPath.find('<') != std::string::npos)
     {
         for (unsigned int i = 0; i < 6; i++)
         {
-            if (sPath.find(sTokens[i][0]) != string::npos)
+            if (sPath.find(sTokens[i][0]) != std::string::npos)
                 sPath.replace(sPath.find(sTokens[i][0]), sTokens[i][0].length(), sTokens[i][1]);
         }
     }
 
-    if (sPath.find('~') != string::npos)
+    if (sPath.find('~') != std::string::npos)
     {
         for (unsigned int i = 0; i < sPath.length(); i++)
         {
@@ -458,10 +471,10 @@ int FileSystem::setPath(string _sPath, bool bMkDir, string _sExePath)
         }
     }
 
-    while (sPath.find('\\') != string::npos)
+    while (sPath.find('\\') != std::string::npos)
         sPath[sPath.find('\\')] = '/';
 
-    if (sPath.find(':') == string::npos)
+    if (sPath.find(':') == std::string::npos)
     {
         if (sPath.length() > 3 && sPath.substr(0,3) != "..\\" && sPath.substr(0,3) != "../" && sPath.substr(0,2) != ".\\" && sPath.substr(0,2) != "./")
             sPath = "\"" + sExecutablePath + "\\" + sPath + "\"";
@@ -471,7 +484,7 @@ int FileSystem::setPath(string _sPath, bool bMkDir, string _sExePath)
         {
             while (sPath.length() > 3 && (sPath.substr(0,3) == "..\\" || sPath.substr(0,3) == "../"))
             {
-                if (sExecutablePath.find('\\') != string::npos)
+                if (sExecutablePath.find('\\') != std::string::npos)
                     sExecutablePath = sExecutablePath.substr(0,sExecutablePath.rfind('\\'));
                 else
                 {
@@ -518,7 +531,7 @@ int FileSystem::setPath(string _sPath, bool bMkDir, string _sExePath)
 /////////////////////////////////////////////////
 void FileSystem::createRevisionsFolder()
 {
-    string sRevisionsPath = sPath.substr(1, sPath.length()-2) + "/.revisions";
+    std::string sRevisionsPath = sPath.substr(1, sPath.length()-2) + "/.revisions";
     createFolders(sRevisionsPath);
     SetFileAttributesA(sRevisionsPath.c_str(), FILE_ATTRIBUTE_HIDDEN | FILE_ATTRIBUTE_NOT_CONTENT_INDEXED);
 }
@@ -528,10 +541,10 @@ void FileSystem::createRevisionsFolder()
 /// \brief Returns the default path of this
 /// FileSystem instance.
 ///
-/// \return string
+/// \return std::string
 ///
 /////////////////////////////////////////////////
-string FileSystem::getPath() const
+std::string FileSystem::getPath() const
 {
     if (sPath[0] == '"' && sPath[sPath.length()-1] == '"')
         return sPath.substr(1,sPath.length()-2);
@@ -546,15 +559,15 @@ string FileSystem::getPath() const
 /// This function may also handle folder paths
 /// and network paths.
 ///
-/// \param sFilePath const string&
-/// \return vector<string>
+/// \param sFilePath const std::string&
+/// \return std::vector<std::string>
 ///
 /////////////////////////////////////////////////
-vector<string> FileSystem::getFileParts(const string& sFilePath) const
+std::vector<std::string> FileSystem::getFileParts(const std::string& sFilePath) const
 {
-    vector<string> vFileParts;
+    std::vector<std::string> vFileParts;
     // Create a valid file path first
-    string sValidName = sFilePath;
+    std::string sValidName = sFilePath;
 
     if (isFile(sValidName))
         sValidName = ValidFileName(sValidName, ".dat", false);
@@ -568,7 +581,8 @@ vector<string> FileSystem::getFileParts(const string& sFilePath) const
         vFileParts.push_back(sValidName.substr(0, 1));
         // extract everything from the fourth character
         // to the last path separator
-        vFileParts.push_back(sValidName.substr(3, sValidName.rfind('/') - 3));
+        if (sValidName.length() > 2)
+            vFileParts.push_back(sValidName.substr(3, sValidName.rfind('/') - 3));
     }
     else
     {
@@ -577,7 +591,7 @@ vector<string> FileSystem::getFileParts(const string& sFilePath) const
     }
 
     // Is it a file or a folder?
-    if (sValidName.find('.') != string::npos)
+    if (sValidName.find('.') != std::string::npos && sValidName.rfind('/')+1 < sValidName.rfind('.'))
     {
         // file
         vFileParts.push_back(sValidName.substr(sValidName.rfind('/')+1, sValidName.rfind('.') - sValidName.rfind('/')-1));
@@ -596,15 +610,88 @@ vector<string> FileSystem::getFileParts(const string& sFilePath) const
 
 
 /////////////////////////////////////////////////
+/// \brief Static function to convert Windows UTC
+/// system time to a double.
+///
+/// \param stUTC SYSTEMTIME
+/// \return double
+///
+/////////////////////////////////////////////////
+static double windowSystemTimeToDouble(SYSTEMTIME stUTC)
+{
+    time_stamp timeStamp;
+
+    //NumeReKernel::print(toString(stUTC.wYear) + "/" + toString(stUTC.wMonth) + "/" + toString(stUTC.wDay) + ", " + toString(stUTC.wHour) + ":" + toString(stUTC.wMinute));
+    timeStamp.m_ymd = date::year_month_day(date::year(stUTC.wYear), date::month(stUTC.wMonth), date::day(stUTC.wDay));
+    timeStamp.m_hours = std::chrono::hours(stUTC.wHour);
+    timeStamp.m_minutes = std::chrono::minutes(stUTC.wMinute);
+    timeStamp.m_seconds = std::chrono::seconds(stUTC.wSecond);
+
+    return to_double(getTimePointFromTimeStamp(timeStamp));
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Return the file information about the
+/// passed file path.
+///
+/// \param sFilePath const std::string&
+/// \return FileInfo
+///
+/////////////////////////////////////////////////
+FileInfo FileSystem::getFileInfo(const std::string& sFilePath) const
+{
+    FileInfo fInfo;
+    std::vector<std::string> vFileParts = getFileParts(sFilePath);
+
+    // Insert the splitted path
+    fInfo.drive = vFileParts[0];
+    fInfo.path = vFileParts[1];
+    fInfo.name = vFileParts[2];
+    fInfo.ext = vFileParts[3];
+
+    WIN32_FIND_DATA FindFileData;
+    HANDLE hFind = INVALID_HANDLE_VALUE;
+
+    if (isFile(sFilePath))
+        hFind = FindFirstFile(ValidFileName(sFilePath, ".dat", false).c_str(), &FindFileData);
+    else
+        hFind = FindFirstFile(ValidFolderName(sFilePath, true, false).c_str(), &FindFileData);
+
+    // Only fill in the remainig information, if a corresponding
+    // file could be found
+    if (hFind != INVALID_HANDLE_VALUE)
+    {
+        // Insert the file information
+        LARGE_INTEGER fileSize;
+        fileSize.LowPart = FindFileData.nFileSizeLow;
+        fileSize.HighPart = FindFileData.nFileSizeHigh;
+        fInfo.filesize = size_t(fileSize.QuadPart);
+
+        SYSTEMTIME stUTC;
+        FileTimeToSystemTime(&FindFileData.ftCreationTime, &stUTC);
+        fInfo.creationTime = windowSystemTimeToDouble(stUTC);
+        FileTimeToSystemTime(&FindFileData.ftLastWriteTime, &stUTC);
+        fInfo.modificationTime = windowSystemTimeToDouble(stUTC);
+
+        fInfo.fileAttributes = FindFileData.dwFileAttributes;
+        FindClose(hFind);
+    }
+
+    return fInfo;
+}
+
+
+/////////////////////////////////////////////////
 /// \brief This member function may be used to
 /// update the path placeholders of the current
 /// FileSystem instance.
 ///
-/// \param _sTokens string
+/// \param _sTokens std::string
 /// \return void
 ///
 /////////////////////////////////////////////////
-void FileSystem::setTokens(string _sTokens)
+void FileSystem::setTokens(std::string _sTokens)
 {
     for (int i = 0; i < 7; i++)
     {
@@ -622,29 +709,29 @@ void FileSystem::setTokens(string _sTokens)
 /// \brief This function determines, whether a
 /// path name indicates a file or a folder.
 ///
-/// \param _sPath const string&
+/// \param _sPath const std::string&
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool FileSystem::isFile(const string& _sPath) const
+bool FileSystem::isFile(const std::string& _sPath) const
 {
     if (fileExists(_sPath))
         return true;
 
-    if (_sPath.rfind('.') != string::npos)
+    if (_sPath.rfind('.') != std::string::npos)
     {
-        string sExt = _sPath.substr(_sPath.rfind('.'));
+        std::string sExt = _sPath.substr(_sPath.rfind('.'));
 
-        if (sValidExtensions.find(";" + sExt + ";") != string::npos)
+        if (sValidExtensions.find(";" + sExt + ";") != std::string::npos)
             return true;
 
-        if (sExt.find('/') != string::npos || sExt.find('\\') != string::npos)
+        if (sExt.find('/') != std::string::npos || sExt.find('\\') != std::string::npos)
             return false;
 
         if (sExt.length() < 6 || sExt == ".*")
             return true;
 
-        if (_sPath.find_last_of("\\/", _sPath.length() - sExt.length()) != string::npos)
+        if (_sPath.find_last_of("\\/", _sPath.length() - sExt.length()) != std::string::npos)
             return true;
     }
 

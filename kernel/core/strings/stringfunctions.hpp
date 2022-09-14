@@ -131,13 +131,13 @@ static StringVector strfnc_to_string(StringFuncArgs& funcArgs)
 /// \return string
 ///
 /////////////////////////////////////////////////
-string formatNumberToTex(const mu::value_type& number, size_t precision = 0)
+static std::string formatNumberToTex(const mu::value_type& number, size_t precision = 0)
 {
     // Use the default precision if precision is default value
     if (precision == 0)
         precision = NumeReKernel::getInstance()->getSettings().getPrecision();
 
-    string sNumber = toString(number, precision);
+    std::string sNumber = toString(number, precision);
 
     // Handle floating point numbers with
     // exponents correctly
@@ -179,7 +179,7 @@ static StringVector strfnc_to_tex(StringFuncArgs& funcArgs)
     //funcArgs.nArg1 contains Precision of the conversion
 
     // Convert the mu type to a latex string using the specified precision
-    std::string sToChar = formatNumberToTex(funcArgs.dArg1, funcArgs.nArg1);
+    std::string sToChar = formatNumberToTex(funcArgs.dArg1, funcArgs.nArg1 == INT_MIN ? 0 : funcArgs.nArg1);
 
     // Return the result
     return "\"" + sToChar + "\"";
@@ -1623,7 +1623,7 @@ static StringVector strfnc_textparse(StringFuncArgs& funcArgs)
                 if (sFloatingPoint.find('.') == std::string::npos)
                     replaceAll(sFloatingPoint, ",", ".");
 
-                sParsedStrings.push_back(StrToCmplx(sFloatingPoint));
+                sParsedStrings.push_back(isConvertible(sFloatingPoint, CONVTYPE_VALUE) ? StrToCmplx(sFloatingPoint) : NAN);
             }
             else if (sView2.subview(i, 2) == "%L")
             {
@@ -1642,7 +1642,6 @@ static StringVector strfnc_textparse(StringFuncArgs& funcArgs)
                 replaceAll(sLaTeXFormatted, "2\\pi", "6.283185");
                 replaceAll(sLaTeXFormatted, "\\pi", "3.1415926");
                 replaceAll(sLaTeXFormatted, "\\infty", "inf");
-                replaceAll(sLaTeXFormatted, "-\\infty", "-inf");
                 replaceAll(sLaTeXFormatted, "---", "nan");
                 replaceAll(sLaTeXFormatted, "\\,", " ");
                 // 1.0*10^{-5} 1.0*10^2 1.0*10^3 2.5^{0.5}
@@ -2466,6 +2465,57 @@ static StringVector strfnc_getversioninfo(StringFuncArgs& funcArgs)
 
 
 /////////////////////////////////////////////////
+/// \brief Implementation of the getfileinfo()
+/// function.
+///
+/// \param funcArgs StringFuncArgs&
+/// \return StringVector
+///
+/////////////////////////////////////////////////
+static StringVector strfnc_getfileinfo(StringFuncArgs& funcArgs)
+{
+    FileInfo fInfo = NumeReKernel::getInstance()->getFileSystem().getFileInfo(funcArgs.sArg1.view().to_string());
+
+    StringVector sFileInfo;
+    sFileInfo.push_back("Drive");
+    sFileInfo.push_back(fInfo.drive);
+    sFileInfo.push_back("Path");
+    sFileInfo.push_back(fInfo.path);
+    sFileInfo.push_back("Name");
+    sFileInfo.push_back(fInfo.name);
+    sFileInfo.push_back("FileExt");
+    sFileInfo.push_back(fInfo.ext);
+    sFileInfo.push_back("Size");
+    sFileInfo.push_back(fInfo.filesize);
+
+    std::string sAttr = fInfo.fileAttributes & FileInfo::ATTR_READONLY ? "readonly," : "";
+    sAttr += fInfo.fileAttributes & FileInfo::ATTR_HIDDEN ? "hidden," : "";
+    sAttr += fInfo.fileAttributes & FileInfo::ATTR_SYSTEM ? "systemfile," : "";
+    sAttr += fInfo.fileAttributes & FileInfo::ATTR_DIRECTORY ? "directory," : "";
+    //sAttr += fInfo.fileAttributes & FileInfo::ATTR_ARCHIVE ? "archive," : "";
+    //sAttr += fInfo.fileAttributes & FileInfo::ATTR_DEVICE ? "device," : "";
+    sAttr += fInfo.fileAttributes & FileInfo::ATTR_TEMPORARY ? "temp," : "";
+    sAttr += fInfo.fileAttributes & FileInfo::ATTR_COMPRESSED ? "compressed," : "";
+    sAttr += fInfo.fileAttributes & FileInfo::ATTR_OFFLINE ? "offline," : "";
+    sAttr += fInfo.fileAttributes & FileInfo::ATTR_ENCRYPTED ? "encrypted," : "";
+
+    if (sAttr.length())
+        sAttr.pop_back();
+    else
+        sAttr = "none";
+
+    sFileInfo.push_back("Attributes");
+    sFileInfo.push_back(sAttr);
+    sFileInfo.push_back("CreationTime");
+    sFileInfo.push_generic(toCmdString(fInfo.creationTime));
+    sFileInfo.push_back("ModificationTime");
+    sFileInfo.push_generic(toCmdString(fInfo.modificationTime));
+
+    return sFileInfo;
+}
+
+
+/////////////////////////////////////////////////
 /// \brief This static function is used to construct
 /// the string map.
 ///
@@ -2493,9 +2543,10 @@ static std::map<std::string, StringFuncHandle> getStringFuncHandles()
     mHandleTable["getfileparts"]        = StringFuncHandle(STR, strfnc_getFileParts, false);
     mHandleTable["getfolderlist"]       = StringFuncHandle(STR_VALOPT, strfnc_getfolderlist, false);
     mHandleTable["getkeyval"]           = StringFuncHandle(STR_STR_STR_VALOPT_VALOPT, strfnc_getkeyval, true);
+    mHandleTable["getfileinfo"]         = StringFuncHandle(STR, strfnc_getfileinfo, false);
     mHandleTable["getlasterror"]        = StringFuncHandle(NOARGS, strfnc_getlasterror, false);
-    mHandleTable["getversioninfo"]      = StringFuncHandle(NOARGS, strfnc_getversioninfo, false);
     mHandleTable["getmatchingparens"]   = StringFuncHandle(STR, strfnc_getmatchingparens, false);
+    mHandleTable["getversioninfo"]      = StringFuncHandle(NOARGS, strfnc_getversioninfo, false);
     mHandleTable["getopt"]              = StringFuncHandle(STR_VAL, strfnc_getopt, false);
     mHandleTable["idxtolog"]            = StringFuncHandle(VAL, strfnc_idxtolog, true);
     mHandleTable["is_alnum"]            = StringFuncHandle(STR, strfnc_isalnum, false);

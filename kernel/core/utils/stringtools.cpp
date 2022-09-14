@@ -19,6 +19,7 @@
 #include "stringtools.hpp"
 #include "../settings.hpp"
 #include "../structures.hpp"
+#include "fast_float/fast_float.h"
 
 #include <cstring>
 #include <sstream>
@@ -510,43 +511,89 @@ std::complex<double> StrToCmplx(const std::string& sString)
 {
     double re, im;
 
-    if (!isConvertible(sString, CONVTYPE_VALUE))
+    //if (!isConvertible(sString, CONVTYPE_VALUE) || sString == "---") <-- Should be obsolete due to the fact that it should be checked in advance
+    if (sString == "---")
         return NAN;
 
-    size_t imagPos = 0;
-
-    // read 1st value
-    re = std::stod(sString, &imagPos);
+    const char* pStart = sString.c_str();
+    const char* pEnd = pStart + sString.length();
+    int oprt = 0;
 
     // check whether next char is 'i' and advance
     // over all whitespaces
-    while (imagPos < sString.length() && sString[imagPos] == ' ')
-        imagPos++;
+    while (pStart < pEnd && (*pStart == ' ' || *pStart == '+'))
+        pStart++;
 
-    if (imagPos >= sString.length())
+    if (pStart >= pEnd)
+        return NAN; // End of Input
+
+    // read 1st value
+    fast_float::from_chars_result res = fast_float::from_chars(pStart, pEnd, re);
+
+    // Error code might imply "i" or "-i"
+    if (res.ec == std::errc::invalid_argument)
+    {
+        // Check, if there are other characters
+        while (res.ptr < pEnd && (*res.ptr == '-' || *res.ptr == ' ' || tolower(*res.ptr) == 'i'))
+            res.ptr++;
+
+        // Did we find any? If no, it is +/-i
+        if (res.ptr >= pEnd)
+            return std::complex<double>(0, *pStart == '-' ? -1 : 1);
+
+        // We did find other character sequences
+        return NAN;
+    }
+
+    // check whether next char is 'i' and advance
+    // over all whitespaces
+    while (res.ptr < pEnd && *res.ptr == ' ')
+        res.ptr++;
+
+    if (res.ptr >= pEnd)
+        return re; // End of Input
+
+    if (*res.ptr == '-' || *res.ptr == '+')
+    {
+        oprt = *res.ptr == '-' ? -1 : 1;
+        res.ptr++;
+    }
+
+    // check whether next char is 'i' and advance
+    // over all whitespaces
+    while (res.ptr < pEnd && *res.ptr == ' ')
+        res.ptr++;
+
+    if (res.ptr >= pEnd)
         return re; // End of Input
 
     // Is it the actual imaginary value?
-    if (sString[imagPos] == 'i' || sString[imagPos] == 'I' || sString[imagPos] == '*')
+    if (tolower(*res.ptr) == 'i'
+        && oprt
+        && (res.ptr+1 >= pEnd || tolower(*(res.ptr+1)) != 'n'))
+        return std::complex<double>(re, oprt);
+
+    if ((tolower(*res.ptr) == 'i' && (res.ptr+1 >= pEnd || tolower(*(res.ptr+1)) != 'n')) || *res.ptr == '*')
         return std::complex<double>(0.0, re);
 
-    size_t imagEnd;
-    im = std::stod(sString.substr(imagPos), &imagEnd);
+    // read 2nd value
+    res = fast_float::from_chars(res.ptr, pEnd, im);
 
-    imagEnd += imagPos;
+    // Error
+    if (res.ec == std::errc::invalid_argument)
+        return re;
 
     // check whether next char is 'i' and advance
     // over all whitespaces
-    while (imagEnd < sString.length() &&sString[imagEnd] == ' ')
-        imagEnd++;
+    while (res.ptr < pEnd && *res.ptr == ' ')
+        res.ptr++;
 
-    if (sString[imagEnd] == EOF
-        || (sString[imagEnd] != 'i' && sString[imagEnd] != 'I' && sString[imagEnd] != '*'))
+    if (tolower(*res.ptr) != 'i' && *res.ptr != '*')
     { // ERROR or premature end of input
         return re;
     }
 
-    return std::complex<double>(re, im);
+    return std::complex<double>(re, oprt*im);
 }
 
 

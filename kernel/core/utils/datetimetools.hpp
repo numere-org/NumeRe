@@ -36,6 +36,8 @@ struct time_stamp
     std::chrono::seconds m_seconds;
     std::chrono::milliseconds m_millisecs;
     std::chrono::microseconds m_microsecs;
+
+    time_stamp();
 };
 
 
