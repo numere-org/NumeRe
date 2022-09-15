@@ -151,14 +151,9 @@ static std::string formatNumberToTex(const mu::value_type& number, size_t precis
     }
 
     // Consider some special values
-    if (sNumber == "inf")
-        sNumber = "\\infty";
-
-    if (sNumber == "-inf")
-        sNumber = "-\\infty";
-
-    if (sNumber == "nan")
-        return "---";
+    replaceAll(sNumber, "inf", "\\infty");
+    replaceAll(sNumber, "-inf", "-\\infty");
+    replaceAll(sNumber, "nan", "---");
 
     // Return the formatted string in math mode
     return "$" + sNumber + "$";
@@ -175,8 +170,8 @@ static std::string formatNumberToTex(const mu::value_type& number, size_t precis
 /////////////////////////////////////////////////
 static StringVector strfnc_to_tex(StringFuncArgs& funcArgs)
 {
-    //funcArgs.dArg1 contains Float that is to be converted
-    //funcArgs.nArg1 contains Precision of the conversion
+    //funcArgs.dArg1 contains complex double to convert
+    //funcArgs.nArg1 contains precision of the conversion
 
     // Convert the mu type to a latex string using the specified precision
     std::string sToChar = formatNumberToTex(funcArgs.dArg1, funcArgs.nArg1 == INT_MIN ? 0 : funcArgs.nArg1);
