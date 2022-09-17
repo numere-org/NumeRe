@@ -1452,15 +1452,15 @@ static Matrix matrixCutoff(const MatFuncData& funcData, const MatFuncErrorInfo& 
                 thresLow = NAN;
             }
             break;
-        case -1:
-            // Percentage value, cut all values below
+        case 1:
+            // Percentage value, cut all values above
             {
                 thresHigh = matMin + (matMax - matMin) * thresInput;
                 thresLow = NAN;
             }
             break;
-        case 1:
-            // Percentage value, cut all values above
+        case -1:
+            // Percentage value, cut all values below
             {
                 thresHigh = NAN;
                 thresLow = matMin + (matMax - matMin) * thresInput;
