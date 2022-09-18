@@ -389,7 +389,7 @@ static Matrix evalMatOp(string& sCmd, Parser& _parser, MemoryManager& _data, Fun
                             _parser.SetExpr(sSubExpr);
                             v = _parser.Eval(nResults);
                             mu::value_type fVal = v[0];
-                            int n = intCast(v[1]);
+                            int n = nResults > 1 ? intCast(v[1]) : 0;
 
                             _cache.vReturnedMatrices.push_back(fIter->second.func(MatFuncData(evalMatOp(sMatrix, _parser, _data, _functions, _option, _cache), fVal, n), errorInfo));
                             break;
