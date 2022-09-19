@@ -143,11 +143,17 @@ static std::string formatNumberToTex(const mu::value_type& number, size_t precis
     // exponents correctly
     while (sNumber.find('e') != std::string::npos)
     {
-        sNumber = sNumber.substr(0, sNumber.find('e'))
+        // Find first exponent start and value
+        size_t firstExp = sNumber.find('e');
+        size_t expBegin = sNumber.find_first_not_of('0', firstExp + 2);
+
+        // Get the modified string where the first exponent is replaced by the tex string format
+        sNumber = sNumber.substr(0, firstExp)
                 + "\\cdot10^{"
-                + (sNumber[sNumber.find('e')+1] == '-' ? "-" : "")
-                + sNumber.substr(sNumber.find_first_not_of('0', sNumber.find('e')+2))
-                + "}";
+                + (sNumber[firstExp+1] == '-' ? "-" : "")
+                + sNumber.substr(expBegin, sNumber.find_first_not_of("0123456789", expBegin + 1) - expBegin)
+                + "}"
+                + sNumber.substr(sNumber.find_first_not_of("0123456789", expBegin + 1));
     }
 
     // Consider some special values
@@ -1643,31 +1649,52 @@ static StringVector strfnc_textparse(StringFuncArgs& funcArgs)
 
                 if (sLaTeXFormatted.find('^') != std::string::npos)
                 {
-                    size_t nOpPos = sLaTeXFormatted.find_first_of("*^");
-                    mu::value_type vVal = StrToCmplx(sLaTeXFormatted.substr(0, nOpPos));
+                    mu::value_type vVal = 0;
+                    mu::value_type vValFinal = 0;
+                    std::string complexFact = "";
 
-                    if (sLaTeXFormatted[nOpPos] == '*')
+                    size_t nOpPos = std::string::npos;
+
+                    // Go through all exponents and parse them into complex double format
+                    while (sLaTeXFormatted.find('^') != std::string::npos)
                     {
-                        sLaTeXFormatted.erase(0, nOpPos+1);
-                        nOpPos = sLaTeXFormatted.find('^');
-                        mu::value_type vBase = StrToCmplx(sLaTeXFormatted.substr(0, nOpPos));
+                        nOpPos = sLaTeXFormatted.find_first_of("*^");
+                        complexFact = 1;
 
-                        if (sLaTeXFormatted.find('{') != std::string::npos)
-                            vVal *= std::pow(vBase, std::stod(sLaTeXFormatted.substr(sLaTeXFormatted.find('{')+1)));
+                        // Check if the value is complex
+                        if (sLaTeXFormatted[sLaTeXFormatted.find('}')+1] == 'i')
+                            complexFact = "*i";
+
+                        vVal = StrToCmplx(sLaTeXFormatted.substr(0, nOpPos) + complexFact);
+
+                        if (sLaTeXFormatted[nOpPos] == '*')
+                        {
+                            sLaTeXFormatted.erase(0, nOpPos+1);
+                            nOpPos = sLaTeXFormatted.find('^');
+                            mu::value_type vBase = StrToCmplx(sLaTeXFormatted.substr(0, nOpPos));
+
+                            if (sLaTeXFormatted.find('{') != std::string::npos)
+                                vVal *= std::pow(vBase, std::stod(sLaTeXFormatted.substr(sLaTeXFormatted.find('{')+1, sLaTeXFormatted.find('}'))));
+                            else
+                                vVal *= std::pow(vBase, std::stod(sLaTeXFormatted));
+                        }
                         else
-                            vVal *= std::pow(vBase, std::stod(sLaTeXFormatted));
-                    }
-                    else
-                    {
-                        sLaTeXFormatted.erase(0, nOpPos+1);
+                        {
+                            sLaTeXFormatted.erase(0, nOpPos+1);
 
-                        if (sLaTeXFormatted.find('{') != std::string::npos)
-                            vVal = std::pow(vVal, std::stod(sLaTeXFormatted.substr(sLaTeXFormatted.find('{')+1)));
-                        else
-                            vVal = std::pow(vVal, std::stod(sLaTeXFormatted));
+                            if (sLaTeXFormatted.find('{') != std::string::npos)
+                                vVal = std::pow(vVal, std::stod(sLaTeXFormatted.substr(sLaTeXFormatted.find('{')+1, sLaTeXFormatted.find('}'))));
+                            else
+                                vVal = std::pow(vVal, std::stod(sLaTeXFormatted));
+                        }
+
+                        // Remove the parsed values and add the result to the final result
+                        sLaTeXFormatted.erase(0, sLaTeXFormatted.find('}')+1);
+                        vValFinal += vVal;
                     }
 
-                    sParsedStrings.push_back(vVal);
+
+                    sParsedStrings.push_back(vValFinal);
                 }
                 else // This can handle simple multiplications
                     sParsedStrings.push_back(StrToCmplx(sLaTeXFormatted));
