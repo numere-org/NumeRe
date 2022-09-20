@@ -92,7 +92,7 @@ void StyledTextFile::lex()
                     for (; j < vStyles[i].size(); j++)
                         vStyles[i][j] = COMMENT_LINE;
                 }
-                else if (vFileContents[i].second[j] == '"')
+                else if (useStrings && vFileContents[i].second[j] == '"')
                     lastStyle = STRING;
                 else if (sDocCommentBlockStart.length() && vFileContents[i].second.substr(j, sDocCommentBlockStart.length()) == sDocCommentBlockStart)
                     lastStyle = COMMENT_DOC_BLOCK;
@@ -173,6 +173,7 @@ StyledTextFile::StyledTextFile(const std::string& fileName) : sFileName(fileName
     sCommentBlockStart = "#*";
     sDocCommentBlockStart = "#*!";
     sBlockEnd = "*#";
+    useStrings = true;
 
     load();
     lex();
@@ -458,16 +459,18 @@ char StyledTextFile::getCharAt(size_t pos) const
 /// \param sComBlockStart const std::string&
 /// \param sDocComBlockStart const std::string&
 /// \param sComBlockEnd const std::string&
+/// \param strings bool
 /// \return void
 ///
 /////////////////////////////////////////////////
-void StyledTextFile::reStyle(const std::string& sComLine, const std::string& sDocComLine, const std::string& sComBlockStart, const std::string& sDocComBlockStart, const std::string& sComBlockEnd)
+void StyledTextFile::reStyle(const std::string& sComLine, const std::string& sDocComLine, const std::string& sComBlockStart, const std::string& sDocComBlockStart, const std::string& sComBlockEnd, bool strings)
 {
     sCommentLine = sComLine;
     sDocCommentLine = sDocComLine;
     sCommentBlockStart = sComBlockEnd.length() ? sComBlockStart : "";
     sDocCommentBlockStart = sComBlockEnd.length() ? sDocComBlockStart : "";
     sBlockEnd = sComBlockStart.length() ? sComBlockEnd : "";
+    useStrings = strings;
 
     lex();
 }

@@ -1162,7 +1162,8 @@ bool readFromFile(CommandLineParser& cmdParser)
                       removeQuotationMarks(args[0]),
                       removeQuotationMarks(args[1]),
                       removeQuotationMarks(args[1]),
-                      removeQuotationMarks(args[2]));
+                      removeQuotationMarks(args[2]),
+                      false);
     }
 
 	// create a new vector for the file's contents
