@@ -3,7 +3,7 @@ Fixed	The y intervals of curve sets are now again calculated correctly.
 Fixed	Tables and clusters will be deleted correctly, if one faces an error in a procedure argument list.
 Fixed	The procedure extraction feature now considers references as output paths.
 Fixed	Tables, which are not passed via a reference to an inline procedure, will throw an error.
-Added	The concatenate functions hcat and vcat for matrices. Including documentation.
+Added	The concatenate functions "hcat()" and "vcat()" for matrices. Including documentation.
 Fixed	A critical bug in the matrix operations mode was resolved.
 Fixed	The function "getkeyval()" now also can handle numeric constants correctly.
 Fixed	It's now possible to use "max(c{})" as range within "addyaxis" and "addxaxis".
@@ -37,7 +37,7 @@ Fixed	Resolved a multiprocessing data race, which could result in a crash.
 Added	The static code analyzer may now also detect misleading type prefixes.
 Cleaned	The found search term in the editor is now always visible even if previously hidden or folded away.
 Applied	"taylor" will now additionally return the calculated polynomial coefficients.
-Added	Added the functions "is_dir()" and "is_file()" that check if a string is a valid directory or file name.
+Added	Added the functions "is_dirpath()" and "is_filepath()" that check if a string is a valid directory or file name.
 Fixed	"shuffle()" now also uses the common global random number generator.
 Fixed	The function "valtostr()" may now handle strings for their first argument correctly.
 Applied	The matrix functions "eigenvals()", "eigenvects()", "det()", and "diagonalize()" will now throw an error, if they face a matrix containing invalid values.
@@ -62,7 +62,7 @@ Added	The image dimensions of plots can now be modified using the "size={xpix,yp
 Fixed	The autoindentation does not longer use wrapped lines to determine the indentation level.
 Added	Documentation articles may now start with a short "syntax overview" to improve the user experience.
 Applied	Code blocks in documentation articles are now lexed and styled to enhance readability.
-Added	There is a cutoff matop operator that allows to cutoff matrices using different modes and a given threshold.
-Added	The to_tex() function allows to convert given complex numeric inputs into a tex format string with a defined precision.
+Added	There is a "cutoff()" matop function that allows to cutoff matrices using different modes and a given threshold.
+Added	The "to_tex()" function allows to convert given complex numeric inputs into a tex format string with a defined precision.
 Fixed	It is now possible to enter "inf" and "nan" into table cells in edit mode.
 Added	The function "getfileinfo()" returns meta information about files, i.e. size, attributes and creation/modification times.

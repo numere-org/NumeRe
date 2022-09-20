@@ -123,6 +123,21 @@ static StringVector strfnc_to_string(StringFuncArgs& funcArgs)
 
 
 /////////////////////////////////////////////////
+/// \brief Simple helper to create a LaTeX
+/// exponent from a string.
+///
+/// \param sExp const std::string&
+/// \param negative bool
+/// \return std::string
+///
+/////////////////////////////////////////////////
+static std::string createLaTeXExponent(const std::string& sExp, bool negative)
+{
+    return "\\cdot10^{" + (negative ? "-"+sExp : sExp) + "}";
+}
+
+
+/////////////////////////////////////////////////
 /// \brief This function converts a number
 /// into a tex string.
 ///
@@ -146,14 +161,11 @@ static std::string formatNumberToTex(const mu::value_type& number, size_t precis
         // Find first exponent start and value
         size_t firstExp = sNumber.find('e');
         size_t expBegin = sNumber.find_first_not_of('0', firstExp + 2);
+        size_t expEnd = sNumber.find_first_not_of("0123456789", expBegin);
 
         // Get the modified string where the first exponent is replaced by the tex string format
-        sNumber = sNumber.substr(0, firstExp)
-                + "\\cdot10^{"
-                + (sNumber[firstExp+1] == '-' ? "-" : "")
-                + sNumber.substr(expBegin, sNumber.find_first_not_of("0123456789", expBegin + 1) - expBegin)
-                + "}"
-                + sNumber.substr(sNumber.find_first_not_of("0123456789", expBegin + 1));
+        sNumber.replace(firstExp, expEnd-firstExp,
+                        createLaTeXExponent(sNumber.substr(expBegin, expEnd-expBegin), sNumber[firstExp+1] == '-'));
     }
 
     // Consider some special values
@@ -1521,6 +1533,35 @@ static long long int convertBaseToDecimal(StringView value, NumberBase base)
 
 
 /////////////////////////////////////////////////
+/// \brief Simple helper to parse the exponents
+/// in LaTeX format.
+///
+/// \param sExpr std::string&
+/// \return double
+///
+/////////////////////////////////////////////////
+static double extractLaTeXExponent(std::string& sExpr)
+{
+    double val;
+
+    if (sExpr.find('{') != std::string::npos)
+    {
+        // a^{xyz}
+        val = std::stod(sExpr.substr(sExpr.find('{')+1, sExpr.find('}')));
+        sExpr.erase(0, sExpr.find('}')+1);
+    }
+    else
+    {
+        // a^b
+        val = std::stod(sExpr.substr(sExpr.find_first_not_of("^ "), 1));
+        sExpr.erase(0, sExpr.find_first_not_of("^ ")+1);
+    }
+
+    return val;
+}
+
+
+/////////////////////////////////////////////////
 /// \brief Implementation of the textparse()
 /// function.
 ///
@@ -1651,46 +1692,40 @@ static StringVector strfnc_textparse(StringFuncArgs& funcArgs)
                 {
                     mu::value_type vVal = 0;
                     mu::value_type vValFinal = 0;
-                    std::string complexFact = "";
 
                     size_t nOpPos = std::string::npos;
 
                     // Go through all exponents and parse them into complex double format
-                    while (sLaTeXFormatted.find('^') != std::string::npos)
+                    while (sLaTeXFormatted.length())
                     {
                         nOpPos = sLaTeXFormatted.find_first_of("*^");
-                        complexFact = 1;
-
-                        // Check if the value is complex
-                        if (sLaTeXFormatted[sLaTeXFormatted.find('}')+1] == 'i')
-                            complexFact = "*i";
-
-                        vVal = StrToCmplx(sLaTeXFormatted.substr(0, nOpPos) + complexFact);
+                        vVal = StrToCmplx(sLaTeXFormatted.substr(0, nOpPos));
 
                         if (sLaTeXFormatted[nOpPos] == '*')
                         {
                             sLaTeXFormatted.erase(0, nOpPos+1);
                             nOpPos = sLaTeXFormatted.find('^');
                             mu::value_type vBase = StrToCmplx(sLaTeXFormatted.substr(0, nOpPos));
-
-                            if (sLaTeXFormatted.find('{') != std::string::npos)
-                                vVal *= std::pow(vBase, std::stod(sLaTeXFormatted.substr(sLaTeXFormatted.find('{')+1, sLaTeXFormatted.find('}'))));
-                            else
-                                vVal *= std::pow(vBase, std::stod(sLaTeXFormatted));
+                            sLaTeXFormatted.erase(0, nOpPos+1);
+                            vVal *= std::pow(vBase, extractLaTeXExponent(sLaTeXFormatted));
                         }
                         else
                         {
                             sLaTeXFormatted.erase(0, nOpPos+1);
-
-                            if (sLaTeXFormatted.find('{') != std::string::npos)
-                                vVal = std::pow(vVal, std::stod(sLaTeXFormatted.substr(sLaTeXFormatted.find('{')+1, sLaTeXFormatted.find('}'))));
-                            else
-                                vVal = std::pow(vVal, std::stod(sLaTeXFormatted));
+                            vVal = std::pow(vVal, extractLaTeXExponent(sLaTeXFormatted));
                         }
 
-                        // Remove the parsed values and add the result to the final result
-                        sLaTeXFormatted.erase(0, sLaTeXFormatted.find('}')+1);
+                        if (sLaTeXFormatted.find_first_not_of(" *") != std::string::npos
+                            && tolower(sLaTeXFormatted[sLaTeXFormatted.find_first_not_of(" *")]) == 'i')
+                        {
+                            vVal = mu::value_type(vVal.imag(), vVal.real());
+                            sLaTeXFormatted.erase(0, sLaTeXFormatted.find_first_of("iI")+1);
+                        }
+
                         vValFinal += vVal;
+
+                        if (sLaTeXFormatted.find_first_not_of(' ') == std::string::npos)
+                            break;
                     }
 
 
