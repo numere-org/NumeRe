@@ -49,7 +49,7 @@
 #include <wx/filename.h>
 #include <wx/artprov.h>
 #include <fstream>
-#include <wx/msw/helpchm.h>
+#include <wx/clipbrd.h>
 #include <array>
 
 
@@ -1238,6 +1238,9 @@ void NumeReWindow::OnMenuEvent(wxCommandEvent &event)
             break;
         case ID_MENU_REMOVE_FOLDER_FROM_TREE:
             OnRemoveFolder();
+            break;
+        case ID_MENU_COPY_AS_PATH:
+            OnCopyAsPath();
             break;
         case ID_MENU_OPEN_IN_EXPLORER:
             OnOpenInExplorer();
@@ -2565,6 +2568,28 @@ void NumeReWindow::renameFile()
 
     wxRenameFile(source_filename.GetFullPath(), target_filename.GetFullPath());
     UpdateLocationIfOpen(source_filename, target_filename);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief The member function copies the path of
+/// the selected tree item to the clipboard, so
+/// that it can be inserted in scripts and
+/// similar.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
+void NumeReWindow::OnCopyAsPath()
+{
+    std::string fileName = replacePathSeparator(getTreeFolderPath(m_clickedTreeItem).ToStdString());
+
+    if (fileName.length() && wxTheClipboard->Open())
+    {
+        // Add the path to the clipboard
+        wxTheClipboard->SetData(new wxTextDataObject("\"" + fileName + "\""));
+        wxTheClipboard->Close();
+    }
 }
 
 
@@ -3951,7 +3976,7 @@ wxString NumeReWindow::getTreeFolderPath(const wxTreeItemId& itemId)
             }
         }
     }
-    else if (data->isDir)
+    else// if (data->isDir)
         pathName = data->filename;
 
     return pathName;
@@ -5799,6 +5824,8 @@ void NumeReWindow::OnTreeItemRightClick(wxTreeEvent& event)
                 popupMenu.Append(ID_MENU_REMOVE_FOLDER_FROM_TREE, _guilang.get("GUI_TREE_PUP_REMOVEFOLDER"));
 
             popupMenu.AppendSeparator();
+            popupMenu.Append(ID_MENU_COPY_AS_PATH, _guilang.get("GUI_TREE_PUP_COPYASPATH"));
+            popupMenu.AppendSeparator();
             popupMenu.Append(ID_MENU_OPEN_IN_EXPLORER, _guilang.get("GUI_TREE_PUP_OPENINEXPLORER"));
             wxPoint p = event.GetPoint();
             m_fileTree->PopupMenu(&popupMenu, p);
@@ -5830,6 +5857,8 @@ void NumeReWindow::OnTreeItemRightClick(wxTreeEvent& event)
             popupMenu.Append(ID_MENU_TAG_CURRENT_REVISION, _guilang.get("GUI_TREE_PUP_TAGCURRENTREVISION"));
         }
 
+        popupMenu.AppendSeparator();
+        popupMenu.Append(ID_MENU_COPY_AS_PATH, _guilang.get("GUI_TREE_PUP_COPYASPATH"));
         popupMenu.AppendSeparator();
         popupMenu.Append(ID_MENU_DELETE_FILE_FROM_TREE, _guilang.get("GUI_TREE_PUP_DELETEFILE"));
         popupMenu.Append(ID_MENU_COPY_FILE_FROM_TREE, _guilang.get("GUI_TREE_PUP_COPYFILE"));
