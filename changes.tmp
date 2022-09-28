@@ -1,1 +1,2 @@
 Added	The context menu of the file tree now offers the possibility to copy the file or folder paths to the clipboard.
+Added	It is now possible to copy text with its styling information to insert it into MS-Word or MS-PowerPoint.

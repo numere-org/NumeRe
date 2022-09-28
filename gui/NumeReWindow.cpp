@@ -1696,6 +1696,11 @@ void NumeReWindow::OnMenuEvent(wxCommandEvent &event)
             m_book->getFocusedEditor()->OnExtractAsHTML();
             break;
         }
+        case ID_MENU_EXPORT_FORMATTED:
+        {
+            m_book->getFocusedEditor()->OnExtractFormatted();
+            break;
+        }
         case ID_MENU_PLUGINBROWSER:
         {
             PackageRepoBrowser* repobrowser = new PackageRepoBrowser(this, m_terminal, m_iconManager);
@@ -5113,6 +5118,11 @@ void NumeReWindow::UpdateMenuBar()
     menuAnalyzer->Append(ID_MENU_FIND_DUPLICATES, _guilang.get("GUI_MENU_FIND_DUPLICATES"), _guilang.get("GUI_MENU_FIND_DUPLICATES_TTP"));
     menuAnalyzer->Append(ID_MENU_SHOW_DEPENDENCY_REPORT, _guilang.get("GUI_MENU_SHOW_DEPENDENCY_REPORT"), _guilang.get("GUI_MENU_SHOW_DEPENDENCY_REPORT_TTP"));
 
+    // Create exporter menu
+    wxMenu* menuExporter = new wxMenu();
+    menuExporter->Append(ID_MENU_EXPORT_AS_HTML, _guilang.get("GUI_MENU_EXPORT_AS_HTML"), _guilang.get("GUI_MENU_EXPORT_AS_HTML_TTP"));
+    menuExporter->Append(ID_MENU_EXPORT_FORMATTED, _guilang.get("GUI_MENU_EXPORT_FORMATTED"), _guilang.get("GUI_MENU_EXPORT_FORMATTED_TTP"));
+
     // Create tools menu
     wxMenu* menuTools = new wxMenu();
 
@@ -5127,7 +5137,7 @@ void NumeReWindow::UpdateMenuBar()
 
     menuTools->Append(ID_MENU_CREATE_DOCUMENTATION, _guilang.get("GUI_MENU_CREATE_DOCUMENTATION"), _guilang.get("GUI_MENU_CREATE_DOCUMENTATION_TTP"));
     menuTools->Append(wxID_ANY, _guilang.get("GUI_MENU_LATEX"), menuLaTeX);
-    menuTools->Append(ID_MENU_EXPORT_AS_HTML, _guilang.get("GUI_MENU_EXPORT_AS_HTML"), _guilang.get("GUI_MENU_EXPORT_AS_HTML_TTP"));
+    menuTools->Append(wxID_ANY, _guilang.get("GUI_MENU_EXPORT"), menuExporter);
 
     menuTools->AppendSeparator();
     menuTools->Append(wxID_ANY, _guilang.get("GUI_MENU_ANALYSIS"), menuAnalyzer);
