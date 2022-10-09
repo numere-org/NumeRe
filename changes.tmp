@@ -1,2 +1,4 @@
 Added	The context menu of the file tree now offers the possibility to copy the file or folder paths to the clipboard.
 Added	It is now possible to copy text with its styling information to insert it into MS-Word or MS-PowerPoint.
+Fixed	Dragging a file in the file tree won't accidentally delete the file any more, if it enters the same directory as before.
+Added	The character sequences "NA" and "N/A" are now also considered as NaN in text file-based data sets.

@@ -1870,7 +1870,7 @@ namespace NumeRe
 
         // Define the set of valid letters numeric and
         // append the separator character
-        string sValidSymbols = "0123456789.,;-+eE INFAinfa";
+        string sValidSymbols = "0123456789.,;-+eE INFAinfa/";
         sValidSymbols += cSep;
 
         // Search for non-numeric characters in the first

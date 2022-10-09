@@ -2587,7 +2587,7 @@ void NumeReWindow::renameFile()
 /////////////////////////////////////////////////
 void NumeReWindow::OnCopyAsPath()
 {
-    std::string fileName = replacePathSeparator(getTreeFolderPath(m_clickedTreeItem).ToStdString());
+    std::string fileName = replacePathSeparator(getTreePath(m_clickedTreeItem).ToStdString());
 
     if (fileName.length() && wxTheClipboard->Open())
     {
@@ -3953,6 +3953,42 @@ wxTreeItemId NumeReWindow::getDragDropSourceItem()
 
 /////////////////////////////////////////////////
 /// \brief This member function returns the paths
+/// connected to a specific file or directory in
+/// the file tree.
+///
+/// \param itemId const wxTreeItemId&
+/// \return wxString
+///
+/////////////////////////////////////////////////
+wxString NumeReWindow::getTreePath(const wxTreeItemId& itemId)
+{
+    if (!itemId.IsOk())
+        return wxString();
+
+    FileNameTreeData* data = static_cast<FileNameTreeData*>(m_fileTree->GetItemData(itemId));
+    wxString pathName;
+
+    if (!data)
+    {
+        std::vector<std::string> vPaths = m_terminal->getPathSettings();
+
+        for (size_t i = 0; i <= PLOTPATH-2; i++)
+        {
+            if (itemId == m_projectFileFolders[i])
+            {
+                pathName = vPaths[i+2];
+                break;
+            }
+        }
+    }
+    else
+        pathName = data->filename;
+
+    return pathName;
+}
+
+/////////////////////////////////////////////////
+/// \brief This member function returns the paths
 /// connected to a specific directory in the file
 /// tree.
 ///
@@ -3981,7 +4017,7 @@ wxString NumeReWindow::getTreeFolderPath(const wxTreeItemId& itemId)
             }
         }
     }
-    else// if (data->isDir)
+    else if (data->isDir)
         pathName = data->filename;
 
     return pathName;
