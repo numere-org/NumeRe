@@ -889,11 +889,24 @@ void TableViewer::UpdateColumnAlignment(int col)
     for (int i = nFirstNumRow; i < GetNumberRows(); i++)
     {
         if (isGridNumeReTable && (int)vTypes.size() > col && vTypes[col] == TableColumn::TYPE_STRING)
+        {
             SetCellAlignment(wxALIGN_LEFT, i, col);
+            SetCellRenderer(i, col, new wxGridCellStringRenderer);
+        }
+        else if (isGridNumeReTable && (int)vTypes.size() > col && vTypes[col] == TableColumn::TYPE_LOGICAL)
+        {
+            SetCellAlignment(wxALIGN_CENTER, i, col);
+
+            if (!std::isnan(static_cast<GridNumeReTable*>(GetTable())->GetValueAsDouble(i, col)))
+                SetCellRenderer(i, col, new wxGridCellBoolRenderer);
+        }
         else if (!isGridNumeReTable && GetCellValue(i, col)[0] == '"')
             SetCellAlignment(wxALIGN_LEFT, i, col);
         else
+        {
             SetCellAlignment(wxALIGN_RIGHT, i, col);
+            SetCellRenderer(i, col, new wxGridCellStringRenderer);
+        }
     }
 }
 

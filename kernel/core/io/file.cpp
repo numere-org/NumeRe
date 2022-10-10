@@ -987,7 +987,13 @@ namespace NumeRe
             std::vector<mu::value_type> values = col->getValue(VectorIndex(0, VectorIndex::OPEN_END));
             writeNumBlock<mu::value_type>(&values[0], values.size());
         }
-        if (col->m_type == TableColumn::TYPE_DATETIME)
+        else if (col->m_type == TableColumn::TYPE_LOGICAL)
+        {
+            writeStringField("DTYPE=LOGICAL");
+            std::vector<mu::value_type> values = col->getValue(VectorIndex(0, VectorIndex::OPEN_END));
+            writeNumBlock<mu::value_type>(&values[0], values.size());
+        }
+        else if (col->m_type == TableColumn::TYPE_DATETIME)
         {
             writeStringField("DTYPE=DATETIME");
             std::vector<mu::value_type> values = col->getValue(VectorIndex(0, VectorIndex::OPEN_END));
@@ -996,6 +1002,12 @@ namespace NumeRe
         else if (col->m_type == TableColumn::TYPE_STRING)
         {
             writeStringField("DTYPE=STRING");
+            std::vector<std::string> values = col->getValueAsInternalString(VectorIndex(0, VectorIndex::OPEN_END));
+            writeStringBlock(&values[0], values.size());
+        }
+        else if (col->m_type == TableColumn::TYPE_CATEGORICAL)
+        {
+            writeStringField("DTYPE=CATEGORICAL");
             std::vector<std::string> values = col->getValueAsInternalString(VectorIndex(0, VectorIndex::OPEN_END));
             writeStringBlock(&values[0], values.size());
         }
@@ -1221,6 +1233,15 @@ namespace NumeRe
             col->setValue(VectorIndex(0, VectorIndex::OPEN_END), std::vector<mu::value_type>(values, values+size));
             delete[] values;
         }
+        else if (sDataType == "DTYPE=LOGICAL")
+        {
+            col.reset(new LogicalColumn);
+            col->m_sHeadLine = sHeadLine;
+            long long int size = 0;
+            mu::value_type* values = readNumBlock<mu::value_type>(size);
+            col->setValue(VectorIndex(0, VectorIndex::OPEN_END), std::vector<mu::value_type>(values, values+size));
+            delete[] values;
+        }
         else if (sDataType == "DTYPE=DATETIME")
         {
             col.reset(new DateTimeColumn);
@@ -1233,6 +1254,15 @@ namespace NumeRe
         else if (sDataType == "DTYPE=STRING")
         {
             col.reset(new StringColumn);
+            col->m_sHeadLine = sHeadLine;
+            long long int size = 0;
+            std::string* strings = readStringBlock(size);
+            col->setValue(VectorIndex(0, VectorIndex::OPEN_END), std::vector<std::string>(strings, strings+size));
+            delete[] strings;
+        }
+        else if (sDataType == "DTYPE=CATEGORICAL")
+        {
+            col.reset(new CategoricalColumn);
             col->m_sHeadLine = sHeadLine;
             long long int size = 0;
             std::string* strings = readStringBlock(size);
@@ -1870,7 +1900,7 @@ namespace NumeRe
 
         // Define the set of valid letters numeric and
         // append the separator character
-        string sValidSymbols = "0123456789.,;-+eE INFAinfa";
+        string sValidSymbols = "0123456789.,;-+eE INFAinfa/";
         sValidSymbols += cSep;
 
         // Search for non-numeric characters in the first

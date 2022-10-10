@@ -234,6 +234,7 @@ class NumeReWindow : public wxFrame
         bool GetFileContents(wxString fileToLoad, wxString &fileContents, wxString &fileName);
 
         wxTreeItemId getDragDropSourceItem();
+        wxString getTreePath(const wxTreeItemId& itemId);
         wxString getTreeFolderPath(const wxTreeItemId& itemId);
 
         void Ready();
@@ -269,6 +270,7 @@ class NumeReWindow : public wxFrame
         void OnPrintPage();
         void OnOptions();
         void OnFindReplace(int id );
+        void OnCopyAsPath();
         void OnOpenInExplorer();
         void OnShowRevisions();
         void OnShowRevisionsFromTab();

@@ -64,6 +64,8 @@ class StyledTextFile
         std::string sDocCommentBlockStart;
         std::string sBlockEnd;
 
+        bool useStrings;
+
         void load();
         void lex();
 
@@ -90,7 +92,8 @@ class StyledTextFile
                      const std::string& sDocComLine,
                      const std::string& sComBlockStart,
                      const std::string& sDocComBlockStart,
-                     const std::string& sComBlockEnd);
+                     const std::string& sComBlockEnd,
+                     bool strings = true);
 };
 
 #endif // STYLEDTEXTFILE_HPP

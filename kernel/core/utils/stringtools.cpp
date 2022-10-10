@@ -500,6 +500,25 @@ double StrToDb(const std::string& sString)
 
 
 /////////////////////////////////////////////////
+/// \brief Converts a string into a double
+/// considering logical values.
+///
+/// \param sString const std::string&
+/// \return double
+///
+/////////////////////////////////////////////////
+double StrToLogical(const std::string& sString)
+{
+    if (toLowerCase(sString) == "true" || sString == "1")
+        return 1.0;
+    else if (toLowerCase(sString) == "false" || sString == "0")
+        return 0.0;
+
+    return StrToCmplx(sString).real();
+}
+
+
+/////////////////////////////////////////////////
 /// \brief Converts a string into a complex
 /// number.
 ///
@@ -512,7 +531,8 @@ std::complex<double> StrToCmplx(const std::string& sString)
     double re, im;
 
     //if (!isConvertible(sString, CONVTYPE_VALUE) || sString == "---") <-- Should be obsolete due to the fact that it should be checked in advance
-    if (sString == "---")
+    if (sString == "---"
+        || (sString.length() < 4 && (toLowerCase(sString) == "na" || toLowerCase(sString) == "n/a")))
         return NAN;
 
     const char* pStart = sString.c_str();
@@ -939,7 +959,7 @@ bool isConvertible(const std::string& sStr, ConvertibleType type)
     {
         // Apply the simplest heuristic: mostly every numerical valid character
         // and ignore characters, which cannot represent a value by themselves
-        if (sStr.find_first_not_of(" 0123456789.,eianfEIANF+-*\t") != std::string::npos
+        if (sStr.find_first_not_of(" 0123456789.,eianfEIANF+-*/\t") != std::string::npos
             || (sStr.find_first_not_of("+-* .,\teE") == std::string::npos && sStr.find("---") == std::string::npos))
             return false;
 
@@ -947,12 +967,24 @@ bool isConvertible(const std::string& sStr, ConvertibleType type)
         if (tolower(sStr.front()) == 'e'
             || tolower(sStr.front()) == 'a'
             || tolower(sStr.front()) == 'f'
-            || tolower(sStr.back()) == 'e'
-            || tolower(sStr.back()) == 'a')
+            || tolower(sStr.back()) == 'e')
             return false;
 
         // Try to detect dates
         return !isConvertible(sStr, CONVTYPE_DATE_TIME);
+    }
+    else if (type == CONVTYPE_LOGICAL)
+    {
+        // Apply the simplest heuristic: mostly every numerical valid character
+        // and ignore characters, which cannot represent a value by themselves
+        if (toLowerCase(sStr) == "true"
+            || toLowerCase(sStr) == "false"
+            || sStr == "0"
+            || sStr == "1")
+            return true;
+
+        // Try to detect values
+        return isConvertible(sStr, CONVTYPE_VALUE);
     }
     else if (type == CONVTYPE_DATE_TIME)
     {

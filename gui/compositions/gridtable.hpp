@@ -53,6 +53,7 @@ class GridNumeReTable : public wxGridTableBase
 
         virtual bool CanGetValueAs(int row, int col, const wxString& sTypeName);
         virtual double GetValueAsDouble(int row, int col);
+        virtual bool GetValueAsBool(int row, int col);
         virtual void* GetValueAsCustom(int row, int col, const wxString& sTypeName);
 
         virtual wxString GetValue(int row, int col);

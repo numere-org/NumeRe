@@ -1265,17 +1265,7 @@ static std::string tableMethod_typeof(const std::string& sTableName, std::string
             sRet += ",";
 
         TableColumn::ColumnType type = NumeReKernel::getInstance()->getMemoryManager().getType(VectorIndex(intCast(v[i])-1), sTableName);
-
-        if (type == TableColumn::TYPE_NONE)
-            sRet += "\"none\"";
-        else if (type == TableColumn::TYPE_VALUE)
-            sRet += "\"value\"";
-        else if (type == TableColumn::TYPE_STRING)
-            sRet += "\"string\"";
-        else if (type == TableColumn::TYPE_DATETIME)
-            sRet += "\"datetime\"";
-        else
-            sRet += "\"unknown\"";
+        sRet += "\"" + TableColumn::typeToString(type) + "\"";
     }
 
     if (sRet.length())

@@ -140,6 +140,11 @@ bool GridNumeReTable::CanGetValueAs(int row, int col, const wxString& sTypeName)
         && (_table.getValue(row-getNumHeadlines(), col).imag() == 0 || mu::isnan(_table.getValue(row-getNumHeadlines(), col))))
         return true;
 
+    if (sTypeName == wxGRID_VALUE_BOOL
+        && _table.getColumnType(col) == TableColumn::TYPE_LOGICAL
+        && _table.getColumn(col)->isValid(row-getNumHeadlines()))
+        return true;
+
     if (sTypeName == "plain" && _table.getColumnType(col) == TableColumn::TYPE_STRING)
         return true;
 
@@ -169,6 +174,28 @@ double GridNumeReTable::GetValueAsDouble(int row, int col)
         return NAN;
 
     return _table.getValue(row - getNumHeadlines(), col).real();
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This virtual member function returns
+/// the selected cell value as a bool.
+///
+/// \param row int
+/// \param col int
+/// \return bool
+///
+/////////////////////////////////////////////////
+bool GridNumeReTable::GetValueAsBool(int row, int col)
+{
+    // Return NAN, if this is not a numeric cell
+    if (row < getNumHeadlines())
+        return false;
+
+    if (row - getNumHeadlines() >= (int)_table.getLines() || col >= (int)_table.getCols())
+        return false;
+
+    return _table.getValue(row - getNumHeadlines(), col).real() != 0.0;
 }
 
 

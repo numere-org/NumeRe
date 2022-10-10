@@ -42,7 +42,8 @@ enum ConvertibleType
 {
     CONVTYPE_NONE,
     CONVTYPE_VALUE,
-    CONVTYPE_DATE_TIME
+    CONVTYPE_DATE_TIME,
+    CONVTYPE_LOGICAL
 };
 
 enum TimeDateFormat
@@ -91,6 +92,7 @@ std::string toLowerCase(const std::string& sUpperCase);
 std::string toUpperCase(const std::string& sLowerCase);
 int StrToInt(const std::string&);
 double StrToDb(const std::string&);
+double StrToLogical(const std::string&);
 std::complex<double> StrToCmplx(const std::string&);
 sys_time_point StrToTime(const std::string&);
 

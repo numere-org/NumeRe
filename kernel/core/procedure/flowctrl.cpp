@@ -2205,7 +2205,7 @@ int FlowCtrl::compile(std::string sLine, int nthCmd)
             if (NumeReKernel::getInstance()->getStringParser().containsStringVars(sLine))
                 NumeReKernel::getInstance()->getStringParser().getStringValues(sLine);
 
-            getStringArgument(sLine, sErrorToken);
+            sErrorToken = sLine.substr(findCommand(sLine).nPos+6);
             sErrorToken += " -nq";
             NumeReKernel::getInstance()->getStringParser().evalAndFormat(sErrorToken, sCache, true);
         }
@@ -2852,7 +2852,7 @@ int FlowCtrl::calc(std::string sLine, int nthCmd)
             if (NumeReKernel::getInstance()->getStringParser().containsStringVars(sLine))
                 NumeReKernel::getInstance()->getStringParser().getStringValues(sLine);
 
-            getStringArgument(sLine, sErrorToken);
+            sErrorToken = sLine.substr(findCommand(sLine).nPos+6);
             sErrorToken += " -nq";
             std::string sDummy;
             NumeReKernel::getInstance()->getStringParser().evalAndFormat(sErrorToken, sDummy, true);

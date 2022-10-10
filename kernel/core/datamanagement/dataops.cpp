@@ -1099,12 +1099,12 @@ bool writeToFile(CommandLineParser& cmdParser)
 			continue;
 
         // Remove escaped characters
-		while (sArgument.find("\\\"") != string::npos)
-		{
-			sArgument.erase(sArgument.find("\\\""), 1);
-		}
-		if (sArgument.length() >= 2 && sArgument.substr(sArgument.length() - 2) == "\\ ")
-			sArgument.pop_back();
+		//while (sArgument.find("\\\"") != string::npos)
+		//{
+		//	sArgument.erase(sArgument.find("\\\""), 1);
+		//}
+		//if (sArgument.length() >= 2 && sArgument.substr(sArgument.length() - 2) == "\\ ")
+		//	sArgument.pop_back();
 
         // Pass the curent argument to the file stream
 		fFile << sArgument << endl;
@@ -1162,7 +1162,8 @@ bool readFromFile(CommandLineParser& cmdParser)
                       removeQuotationMarks(args[0]),
                       removeQuotationMarks(args[1]),
                       removeQuotationMarks(args[1]),
-                      removeQuotationMarks(args[2]));
+                      removeQuotationMarks(args[2]),
+                      false);
     }
 
 	// create a new vector for the file's contents

@@ -259,6 +259,13 @@ wxDragResult NumeReDropTarget::OnData(wxCoord x, wxCoord y, wxDragResult default
                     {
                         wxString filename = pathname + "\\" + filenames[0].substr(filenames[0].rfind('\\')+1);
 
+                        // Do not drag files on themselves
+                        if (wxFileName(filename) == wxFileName(filenames[0]))
+                        {
+                            tree->SetDnDHighlight(wxTreeItemId());
+                            return wxDragNone;
+                        }
+
                         // If the current file already has revisions,
                         // add this file operation to the revision and
                         // mirror the operation for the revision file
@@ -273,8 +280,10 @@ wxDragResult NumeReDropTarget::OnData(wxCoord x, wxCoord y, wxDragResult default
                         }
 
                         top->UpdateLocationIfOpen(filenames[0], filename);
-                        wxCopyFile(filenames[0], filename, true);
-                        wxRemoveFile(filenames[0]);
+
+                        if (wxCopyFile(filenames[0], filename, true))
+                            wxRemoveFile(filenames[0]);
+
                         tree->SetDnDHighlight(wxTreeItemId());
                         return defaultDragResult;
                     }

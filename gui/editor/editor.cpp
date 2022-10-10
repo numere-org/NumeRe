@@ -6955,7 +6955,50 @@ void NumeReEditor::OnExtractAsHTML()
             nLastLine--;
     }
 
-    ExtractAsHTML(nFirstLine, nLastLine);
+    wxString sHtml = ExtractAsHTML(nFirstLine, nLastLine);
+
+    if (wxTheClipboard->Open())
+    {
+        wxTheClipboard->SetData(new wxTextDataObject(sHtml));
+        wxTheClipboard->Close();
+    }
+}
+
+
+/////////////////////////////////////////////////
+/// \brief On MenuEvent handler for the extract
+/// as formatted text functionality of the editor.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
+void NumeReEditor::OnExtractFormatted()
+{
+    int nFirstLine = 0;
+    int nLastLine = -1;
+
+    if (HasSelection())
+    {
+        nFirstLine = LineFromPosition(GetSelectionStart());
+        nLastLine = LineFromPosition(GetSelectionEnd());
+
+        // Decrement, if first position is selected
+        if (GetSelectionEnd() == PositionFromLine(nLastLine))
+            nLastLine--;
+    }
+
+    wxString sHtml = ExtractAsHTML(nFirstLine, nLastLine);
+
+    sHtml.Replace("  ", "&nbsp;&nbsp;");
+    sHtml.Replace("\r\n", "\n");
+    sHtml.Replace("\n\n", "<br>&nbsp;<br>");
+    sHtml.Replace("\n", "<br>");
+
+    if (wxTheClipboard->Open())
+    {
+        wxTheClipboard->SetData(new wxHTMLDataObject(sHtml));
+        wxTheClipboard->Close();
+    }
 }
 
 
@@ -8679,14 +8722,14 @@ void NumeReEditor::Transpose(int nFirstLine, int nLastLine)
 
 /////////////////////////////////////////////////
 /// \brief Extracts the selected lines as pre-
-/// formatted HTML.
+/// formatted HTML and returns it
 ///
 /// \param nFirstLine int
 /// \param nLastLine int
-/// \return void
+/// \return wxString
 ///
 /////////////////////////////////////////////////
-void NumeReEditor::ExtractAsHTML(int nFirstLine, int nLastLine)
+wxString NumeReEditor::ExtractAsHTML(int nFirstLine, int nLastLine)
 {
     wxString sHtml = "<pre style=\"display: block; overflow-x: auto; padding: 0.5em; background-color: rgb(244, 244, 244); color: rgb(0, 0, 0); font-family: consolas, monospace;\">";
 
@@ -8748,11 +8791,7 @@ void NumeReEditor::ExtractAsHTML(int nFirstLine, int nLastLine)
 
     sHtml.Replace("\t", "    ");
 
-    if (wxTheClipboard->Open())
-    {
-        wxTheClipboard->SetData(new wxTextDataObject(sHtml));
-        wxTheClipboard->Close();
-    }
+    return sHtml;
 }
 
 

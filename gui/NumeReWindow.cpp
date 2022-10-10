@@ -49,7 +49,7 @@
 #include <wx/filename.h>
 #include <wx/artprov.h>
 #include <fstream>
-#include <wx/msw/helpchm.h>
+#include <wx/clipbrd.h>
 #include <array>
 
 
@@ -1239,6 +1239,9 @@ void NumeReWindow::OnMenuEvent(wxCommandEvent &event)
         case ID_MENU_REMOVE_FOLDER_FROM_TREE:
             OnRemoveFolder();
             break;
+        case ID_MENU_COPY_AS_PATH:
+            OnCopyAsPath();
+            break;
         case ID_MENU_OPEN_IN_EXPLORER:
             OnOpenInExplorer();
             break;
@@ -1691,6 +1694,11 @@ void NumeReWindow::OnMenuEvent(wxCommandEvent &event)
         case ID_MENU_EXPORT_AS_HTML:
         {
             m_book->getFocusedEditor()->OnExtractAsHTML();
+            break;
+        }
+        case ID_MENU_EXPORT_FORMATTED:
+        {
+            m_book->getFocusedEditor()->OnExtractFormatted();
             break;
         }
         case ID_MENU_PLUGINBROWSER:
@@ -2565,6 +2573,28 @@ void NumeReWindow::renameFile()
 
     wxRenameFile(source_filename.GetFullPath(), target_filename.GetFullPath());
     UpdateLocationIfOpen(source_filename, target_filename);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief The member function copies the path of
+/// the selected tree item to the clipboard, so
+/// that it can be inserted in scripts and
+/// similar.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
+void NumeReWindow::OnCopyAsPath()
+{
+    std::string fileName = replacePathSeparator(getTreePath(m_clickedTreeItem).ToStdString());
+
+    if (fileName.length() && wxTheClipboard->Open())
+    {
+        // Add the path to the clipboard
+        wxTheClipboard->SetData(new wxTextDataObject("\"" + fileName + "\""));
+        wxTheClipboard->Close();
+    }
 }
 
 
@@ -3923,6 +3953,42 @@ wxTreeItemId NumeReWindow::getDragDropSourceItem()
 
 /////////////////////////////////////////////////
 /// \brief This member function returns the paths
+/// connected to a specific file or directory in
+/// the file tree.
+///
+/// \param itemId const wxTreeItemId&
+/// \return wxString
+///
+/////////////////////////////////////////////////
+wxString NumeReWindow::getTreePath(const wxTreeItemId& itemId)
+{
+    if (!itemId.IsOk())
+        return wxString();
+
+    FileNameTreeData* data = static_cast<FileNameTreeData*>(m_fileTree->GetItemData(itemId));
+    wxString pathName;
+
+    if (!data)
+    {
+        std::vector<std::string> vPaths = m_terminal->getPathSettings();
+
+        for (size_t i = 0; i <= PLOTPATH-2; i++)
+        {
+            if (itemId == m_projectFileFolders[i])
+            {
+                pathName = vPaths[i+2];
+                break;
+            }
+        }
+    }
+    else
+        pathName = data->filename;
+
+    return pathName;
+}
+
+/////////////////////////////////////////////////
+/// \brief This member function returns the paths
 /// connected to a specific directory in the file
 /// tree.
 ///
@@ -5088,6 +5154,11 @@ void NumeReWindow::UpdateMenuBar()
     menuAnalyzer->Append(ID_MENU_FIND_DUPLICATES, _guilang.get("GUI_MENU_FIND_DUPLICATES"), _guilang.get("GUI_MENU_FIND_DUPLICATES_TTP"));
     menuAnalyzer->Append(ID_MENU_SHOW_DEPENDENCY_REPORT, _guilang.get("GUI_MENU_SHOW_DEPENDENCY_REPORT"), _guilang.get("GUI_MENU_SHOW_DEPENDENCY_REPORT_TTP"));
 
+    // Create exporter menu
+    wxMenu* menuExporter = new wxMenu();
+    menuExporter->Append(ID_MENU_EXPORT_AS_HTML, _guilang.get("GUI_MENU_EXPORT_AS_HTML"), _guilang.get("GUI_MENU_EXPORT_AS_HTML_TTP"));
+    menuExporter->Append(ID_MENU_EXPORT_FORMATTED, _guilang.get("GUI_MENU_EXPORT_FORMATTED"), _guilang.get("GUI_MENU_EXPORT_FORMATTED_TTP"));
+
     // Create tools menu
     wxMenu* menuTools = new wxMenu();
 
@@ -5102,7 +5173,7 @@ void NumeReWindow::UpdateMenuBar()
 
     menuTools->Append(ID_MENU_CREATE_DOCUMENTATION, _guilang.get("GUI_MENU_CREATE_DOCUMENTATION"), _guilang.get("GUI_MENU_CREATE_DOCUMENTATION_TTP"));
     menuTools->Append(wxID_ANY, _guilang.get("GUI_MENU_LATEX"), menuLaTeX);
-    menuTools->Append(ID_MENU_EXPORT_AS_HTML, _guilang.get("GUI_MENU_EXPORT_AS_HTML"), _guilang.get("GUI_MENU_EXPORT_AS_HTML_TTP"));
+    menuTools->Append(wxID_ANY, _guilang.get("GUI_MENU_EXPORT"), menuExporter);
 
     menuTools->AppendSeparator();
     menuTools->Append(wxID_ANY, _guilang.get("GUI_MENU_ANALYSIS"), menuAnalyzer);
@@ -5799,6 +5870,8 @@ void NumeReWindow::OnTreeItemRightClick(wxTreeEvent& event)
                 popupMenu.Append(ID_MENU_REMOVE_FOLDER_FROM_TREE, _guilang.get("GUI_TREE_PUP_REMOVEFOLDER"));
 
             popupMenu.AppendSeparator();
+            popupMenu.Append(ID_MENU_COPY_AS_PATH, _guilang.get("GUI_TREE_PUP_COPYASPATH"));
+            popupMenu.AppendSeparator();
             popupMenu.Append(ID_MENU_OPEN_IN_EXPLORER, _guilang.get("GUI_TREE_PUP_OPENINEXPLORER"));
             wxPoint p = event.GetPoint();
             m_fileTree->PopupMenu(&popupMenu, p);
@@ -5830,6 +5903,8 @@ void NumeReWindow::OnTreeItemRightClick(wxTreeEvent& event)
             popupMenu.Append(ID_MENU_TAG_CURRENT_REVISION, _guilang.get("GUI_TREE_PUP_TAGCURRENTREVISION"));
         }
 
+        popupMenu.AppendSeparator();
+        popupMenu.Append(ID_MENU_COPY_AS_PATH, _guilang.get("GUI_TREE_PUP_COPYASPATH"));
         popupMenu.AppendSeparator();
         popupMenu.Append(ID_MENU_DELETE_FILE_FROM_TREE, _guilang.get("GUI_TREE_PUP_DELETEFILE"));
         popupMenu.Append(ID_MENU_COPY_FILE_FROM_TREE, _guilang.get("GUI_TREE_PUP_COPYFILE"));

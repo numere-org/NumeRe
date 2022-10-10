@@ -1091,12 +1091,12 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, F
             {
                 string sErrorToken;
 
-                if (sProcCommandLine.length() > 7 && NumeReKernel::getInstance()->getStringParser().isStringExpression(sProcCommandLine))
+                if (sProcCommandLine.length() > 6 && NumeReKernel::getInstance()->getStringParser().isStringExpression(sProcCommandLine))
                 {
                     if (NumeReKernel::getInstance()->getStringParser().containsStringVars(sProcCommandLine))
                         NumeReKernel::getInstance()->getStringParser().getStringValues(sProcCommandLine);
 
-                    getStringArgument(sProcCommandLine, sErrorToken);
+                    sErrorToken = sProcCommandLine.substr(findCommand(sProcCommandLine).nPos+6);
                     sErrorToken += " -nq";
                     string sDummy = "";
                     NumeReKernel::getInstance()->getStringParser().evalAndFormat(sErrorToken, sDummy, true);

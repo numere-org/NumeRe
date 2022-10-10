@@ -332,6 +332,11 @@ namespace NumeRe
             convert_if_needed(vTableData[j], j, TableColumn::TYPE_VALUE);
             vTableData[j]->setValue(i, StrToCmplx(_sValue));
         }
+        else if (isConvertible(_sValue, CONVTYPE_LOGICAL))
+        {
+            convert_if_needed(vTableData[j], j, TableColumn::TYPE_LOGICAL);
+            vTableData[j]->setValue(i, StrToLogical(_sValue));
+        }
         else
         {
             convert_if_needed(vTableData[j], j, TableColumn::TYPE_STRING);

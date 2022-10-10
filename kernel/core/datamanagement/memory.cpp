@@ -179,6 +179,12 @@ Memory& Memory::operator=(const Memory& other)
             case TableColumn::TYPE_STRING:
                 memArray[i].reset(new StringColumn);
                 break;
+            case TableColumn::TYPE_LOGICAL:
+                memArray[i].reset(new LogicalColumn);
+                break;
+            case TableColumn::TYPE_CATEGORICAL:
+                memArray[i].reset(new CategoricalColumn);
+                break;
 
             // These labels are only for getting warnings
             // if new column types are added
@@ -814,17 +820,10 @@ void Memory::convert()
 /////////////////////////////////////////////////
 bool Memory::convertColumns(const VectorIndex& _vCol, const std::string& _sType)
 {
-    if (_sType != "value" && _sType != "string" && _sType != "datetime")
+    TableColumn::ColumnType _type = TableColumn::stringToType(_sType);
+
+    if (_type == TableColumn::TYPE_NONE)
         return false;
-
-    TableColumn::ColumnType _type = TableColumn::TYPE_NONE;
-
-    if (_sType == "value")
-        _type = TableColumn::TYPE_VALUE;
-    else if (_sType == "string")
-        _type = TableColumn::TYPE_STRING;
-    else if (_sType == "datetime")
-        _type = TableColumn::TYPE_DATETIME;
 
     _vCol.setOpenEndIndex(memArray.size()-1);
 
