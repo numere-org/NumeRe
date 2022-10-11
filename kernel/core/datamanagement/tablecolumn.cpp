@@ -250,7 +250,7 @@ std::string TableColumn::typeToString(TableColumn::ColumnType type)
     case TYPE_CATEGORICAL:
         return "category";
     default:
-        return "unknown"
+        return "unknown";
     }
 
     return "";

@@ -1673,7 +1673,7 @@ TableColumn* StringColumn::convert(ColumnType type)
 /////////////////////////////////////////////////
 std::string CategoricalColumn::getValueAsString(size_t elem) const
 {
-    return toExternalString(getValueAsInternalString(elem));
+    return getValueAsInternalString(elem);
 }
 
 
@@ -1719,7 +1719,7 @@ std::string CategoricalColumn::getValueAsParserString(size_t elem) const
 mu::value_type CategoricalColumn::getValue(size_t elem) const
 {
     if (elem < m_data.size() && m_data[elem] != CATEGORICAL_NAN)
-        return m_data[elem];
+        return m_data[elem]+1;
 
     return NAN;
 }
@@ -1766,7 +1766,15 @@ void CategoricalColumn::setValue(size_t elem, const mu::value_type& vValue)
     if (elem >= m_data.size() && mu::isnan(vValue))
         return;
 
-    setValue(elem, toString(vValue, NumeReKernel::getInstance()->getSettings().getPrecision()));
+    if (elem >= m_data.size())
+        m_data.resize(elem+1, CATEGORICAL_NAN);
+
+    if (isInt(vValue) && (size_t)intCast(vValue) <= m_categories.size())
+        m_data[elem] = intCast(vValue)-1;
+    else if (mu::isnan(vValue))
+        m_data[elem] = CATEGORICAL_NAN;
+    else
+        setValue(elem, toString(vValue, NumeReKernel::getInstance()->getSettings().getPrecision()));
 }
 
 

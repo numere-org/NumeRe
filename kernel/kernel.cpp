@@ -569,7 +569,7 @@ void NumeReKernel::printVersionInfo()
     if (_option.showGreeting() && fileExists(_option.getExePath() + "\\numere.ini"))
         printPreFmt(toSystemCodePage(getGreeting()) + "|\n");
 
-    print(LineBreak(_lang.get("PARSER_INTRO"), _option));
+    print(LineBreak(_lang.get("PARSER_INTRO", wxGetUserName().ToStdString()), _option));
     flush();
     bWritingTable = false;
 

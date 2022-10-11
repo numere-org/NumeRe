@@ -138,6 +138,17 @@ void TableViewer::layoutGrid()
             {
                 SetCellAlignment(wxALIGN_LEFT, i, j);
             }
+            else if (isGridNumeReTable && (int)vTypes.size() > j && vTypes[j] == TableColumn::TYPE_CATEGORICAL)
+            {
+                SetCellAlignment(wxALIGN_CENTER, i, j);
+            }
+            else if (isGridNumeReTable && (int)vTypes.size() > j && vTypes[j] == TableColumn::TYPE_LOGICAL)
+            {
+                SetCellAlignment(wxALIGN_CENTER, i, j);
+
+                if (!std::isnan(static_cast<GridNumeReTable*>(GetTable())->GetValueAsDouble(i, j)))
+                    SetCellRenderer(i, j, new wxGridCellBoolRenderer);
+            }
             else if (!isGridNumeReTable && GetCellValue(i, j)[0] == '"')
             {
                 SetCellAlignment(wxALIGN_LEFT, i, j);
@@ -891,6 +902,11 @@ void TableViewer::UpdateColumnAlignment(int col)
         if (isGridNumeReTable && (int)vTypes.size() > col && vTypes[col] == TableColumn::TYPE_STRING)
         {
             SetCellAlignment(wxALIGN_LEFT, i, col);
+            SetCellRenderer(i, col, new wxGridCellStringRenderer);
+        }
+        else if (isGridNumeReTable && (int)vTypes.size() > col && vTypes[col] == TableColumn::TYPE_CATEGORICAL)
+        {
+            SetCellAlignment(wxALIGN_CENTER, i, col);
             SetCellRenderer(i, col, new wxGridCellStringRenderer);
         }
         else if (isGridNumeReTable && (int)vTypes.size() > col && vTypes[col] == TableColumn::TYPE_LOGICAL)
