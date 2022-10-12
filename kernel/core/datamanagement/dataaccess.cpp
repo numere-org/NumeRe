@@ -1281,6 +1281,46 @@ static std::string tableMethod_typeof(const std::string& sTableName, std::string
 
 
 /////////////////////////////////////////////////
+/// \brief Realizes the "categories()" table
+/// method.
+///
+/// \param sTableName const std::string&
+/// \param sMethodArguments std::string
+/// \return std::string
+///
+/////////////////////////////////////////////////
+static std::string tableMethod_categories(const std::string& sTableName, std::string sMethodArguments)
+{
+    // Might be necessary to resolve the contents of columns and conversions
+    getDataElements(sMethodArguments,
+                    NumeReKernel::getInstance()->getParser(),
+                    NumeReKernel::getInstance()->getMemoryManager(),
+                    NumeReKernel::getInstance()->getSettings());
+
+    int nResults = 0;
+    NumeReKernel::getInstance()->getParser().SetExpr(sMethodArguments);
+    mu::value_type* v = NumeReKernel::getInstance()->getParser().Eval(nResults);
+
+    ValueVector vCategories = NumeReKernel::getInstance()->getMemoryManager().getCategoryList(VectorIndex(v, nResults, 0), sTableName);
+
+    if (!vCategories.size())
+        return "\"\"";
+
+    std::string sRet;
+
+    for (size_t i = 0; i < vCategories.size(); i+=2)
+    {
+        if (sRet.length())
+            sRet += ",";
+
+        sRet += "\"" + vCategories[i] + "\"," + vCategories[i+1];
+    }
+
+    return "{" + sRet + "}";
+}
+
+
+/////////////////////////////////////////////////
 /// \brief Realizes the "describe()" method.
 ///
 /// \param sTableName const std::string&
@@ -1332,6 +1372,7 @@ static std::map<std::string, TableMethod> getInplaceTableMethods()
     mTableMethods["convert"] = tableMethod_convert;
     mTableMethods["typeof"] = tableMethod_typeof;
     mTableMethods["describe"] = tableMethod_annotate;
+    mTableMethods["categories"] = tableMethod_categories;
 
     return mTableMethods;
 }

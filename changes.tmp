@@ -2,3 +2,7 @@ Added	The context menu of the file tree now offers the possibility to copy the f
 Added	It is now possible to copy text with its styling information to insert it into MS-Word or MS-PowerPoint.
 Fixed	Dragging a file in the file tree won't accidentally delete the file any more, if it enters the same directory as before.
 Added	The character sequences "NA" and "N/A" are now also considered as NaN in text file-based data sets.
+Added	Tables may now contain "logical" columns, which are restricted to boolean values.
+Added	Tables may now contain "category" columns, which enumerate string values to make them usable in numerical calcutions.
+Added	The table method "TAB().categories()" returns the enumerated categories of the selected categorial columns as a key-value list.
+Cleaned	Date-time columns are no longer completely overwritten by real-only values (which allows for time modifications).

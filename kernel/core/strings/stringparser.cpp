@@ -735,7 +735,9 @@ namespace NumeRe
                         }
                         else if (_idx.row.size() > 1 && _idx.col.size() == 1)
                         {
-                            if (i == nCurrentComponent && rewriteColumn)
+                            if (i == nCurrentComponent
+                                && rewriteColumn
+                                && (_data.getType(_idx.col.subidx(0, 1), sTableName) != TableColumn::TYPE_DATETIME || !mu::isreal(v, nResults)))
                                 _data.overwriteColumn(_idx.col.front(), sTableName, TableColumn::TYPE_VALUE);
 
                             if (_idx.row[nthComponent] == VectorIndex::INVALID)

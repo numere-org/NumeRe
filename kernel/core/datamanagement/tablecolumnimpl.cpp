@@ -1704,6 +1704,10 @@ std::string CategoricalColumn::getValueAsInternalString(size_t elem) const
 /////////////////////////////////////////////////
 std::string CategoricalColumn::getValueAsParserString(size_t elem) const
 {
+//    if (elem < m_data.size() && m_data[elem] != CATEGORICAL_NAN)
+//        return toString(m_data[elem]+1);
+//
+//    return "nan";
     return "\"" + getValueAsInternalString(elem) + "\"";
 }
 
@@ -1797,7 +1801,9 @@ CategoricalColumn* CategoricalColumn::copy(const VectorIndex& idx) const
     for (size_t i = 0; i < idx.size(); i++)
     {
         if (idx[i] >= 0 && idx[i] < (int)m_data.size())
-            col->setValue(i, getValueAsInternalString(idx[i]));
+            col->m_data[i] = m_data[idx[i]];
+
+        col->m_categories = m_categories;
     }
 
     return col;

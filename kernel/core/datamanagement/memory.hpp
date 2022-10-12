@@ -116,6 +116,7 @@ class Memory : public Sorter
 		Matrix readMemAsMatrix(const VectorIndex& _vLine, const VectorIndex& _vCol) const;
 		ValueVector readMixedMem(const VectorIndex& _vLine, const VectorIndex& _vCol) const;
 		TableColumn::ColumnType getType(const VectorIndex& _vCol) const;
+		ValueVector getCategoryList(const VectorIndex& _vCol) const;
 		Memory* extractRange(const VectorIndex& _vLine, const VectorIndex& _vCol) const;
 		void copyElementsInto(std::vector<mu::value_type>* vTarget, const VectorIndex& _vLine, const VectorIndex& _vCol) const;
 		std::string getHeadLineElement(size_t _i) const;

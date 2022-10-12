@@ -426,6 +426,19 @@ class CategoricalColumn : public TableColumn
         }
 
         virtual TableColumn* convert(ColumnType type = TableColumn::TYPE_NONE) override;
+
+        /////////////////////////////////////////////////
+        /// \brief Returns the list of internal
+        /// categories to be used within expressions and
+        /// code.
+        ///
+        /// \return const std::vector<std::string>&
+        ///
+        /////////////////////////////////////////////////
+        const std::vector<std::string>& getCategories() const
+        {
+            return m_categories;
+        }
 };
 
 

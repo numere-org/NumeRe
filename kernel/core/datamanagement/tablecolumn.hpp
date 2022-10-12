@@ -39,9 +39,9 @@ struct TableColumn
         TYPE_VALUE,
         TYPE_DATETIME,
         TYPE_LOGICAL,
+        TYPE_CATEGORICAL,
         STRINGLIKE,
         TYPE_STRING,
-        TYPE_CATEGORICAL,
         TYPE_MIXED
     };
 
