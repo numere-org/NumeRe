@@ -516,6 +516,14 @@ void NumeReKernel::defineFunctions()
     _parser.DefineFun("to_polar", parser_rect2polar, true);                     // to_polar(x)
     _parser.DefineFun("conj", parser_conj, true);                               // conj(x)
     _parser.DefineFun("complex", parser_complex, true);                         // complex(re,im)
+    _parser.DefineFun("sec", parser_sec, true);                                 // sec(x)
+    _parser.DefineFun("csc", parser_csc, true);                                 // csc(x)
+    _parser.DefineFun("asec", parser_asec, true);                               // asec(x)
+    _parser.DefineFun("acsc", parser_acsc, true);                               // acsc(x)
+    _parser.DefineFun("sech", parser_sech, true);                               // sech(x)
+    _parser.DefineFun("csch", parser_csch, true);                               // csch(x)
+    _parser.DefineFun("asech", parser_asech, true);                             // asech(x)
+    _parser.DefineFun("acsch", parser_acsch, true);                             // acsch(x)
 
     /////////////////////////////////////////////////////////////////////
     // NOTE:

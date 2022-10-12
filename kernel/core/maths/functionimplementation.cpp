@@ -2748,3 +2748,114 @@ value_type* parser_AddVariable(const char_type* a_szName, void* a_pUserData)
 }
 
 
+/////////////////////////////////////////////////
+/// \brief This function returns the secant of
+/// the passed value.
+///
+/// \param x const value_type&
+/// \return value_type
+///
+/////////////////////////////////////////////////
+value_type parser_sec(const value_type& x)
+{
+    return 1.0 / std::cos(x);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This function returns the cosecant of
+/// the passed value.
+///
+/// \param x const value_type&
+/// \return value_type
+///
+/////////////////////////////////////////////////
+value_type parser_csc(const value_type& x)
+{
+    return 1.0 / std::sin(x);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This function returns the inverse
+/// secant of the passed value.
+///
+/// \param x const value_type&
+/// \return value_type
+///
+/////////////////////////////////////////////////
+value_type parser_asec(const value_type& x)
+{
+    return std::acos(1.0 / x);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This function returns the inverse
+/// cosecant of the passed value.
+///
+/// \param x const value_type&
+/// \return value_type
+///
+/////////////////////////////////////////////////
+value_type parser_acsc(const value_type& x)
+{
+    return std::asin(1.0 / x);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This function returns the hyperbolic
+/// secant of the passed value.
+///
+/// \param x const value_type&
+/// \return value_type
+///
+/////////////////////////////////////////////////
+value_type parser_sech(const value_type& x)
+{
+    return 1.0 / std::cosh(x);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This function returns the hyperbolic
+/// cosecant of the passed value.
+///
+/// \param x const value_type&
+/// \return value_type
+///
+/////////////////////////////////////////////////
+value_type parser_csch(const value_type& x)
+{
+    return 1.0 / std::sinh(x);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This function returns the inverse
+/// hyperbolic secant of the passed value.
+///
+/// \param x const value_type&
+/// \return value_type
+///
+/////////////////////////////////////////////////
+value_type parser_asech(const value_type& x)
+{
+    return std::acosh(1.0 / x);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This function returns the inverse
+/// hyperbolic cosecant of the passed value.
+///
+/// \param x const value_type&
+/// \return value_type
+///
+/////////////////////////////////////////////////
+value_type parser_acsch(const value_type& x)
+{
+    return std::asinh(1.0 / x);
+}
+

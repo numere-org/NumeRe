@@ -148,6 +148,14 @@ value_type parser_numereversion();
 value_type parser_cot(const value_type&);
 value_type parser_sleep(const value_type&);
 value_type parser_log_b(const value_type&, const value_type&);
+value_type parser_sec(const value_type&);
+value_type parser_csc(const value_type&);
+value_type parser_asec(const value_type&);
+value_type parser_acsc(const value_type&);
+value_type parser_sech(const value_type&);
+value_type parser_csch(const value_type&);
+value_type parser_asech(const value_type&);
+value_type parser_acsch(const value_type&);
 
 // Operator functions
 value_type parser_Not(const value_type&);
