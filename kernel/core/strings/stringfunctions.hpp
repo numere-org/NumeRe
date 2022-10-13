@@ -1994,7 +1994,8 @@ static StringVector strfnc_replaceall(StringFuncArgs& funcArgs)
     if (!sStr2.length())
         return "\"" + sStr1 + "\"";
 
-    replaceAll(sStr1, sStr2.c_str(), sStr3.c_str(), funcArgs.nArg1-1, funcArgs.nArg2-1);
+    // Using the slower version to enable replacement of null characters
+    replaceAll(sStr1, sStr2, sStr3, funcArgs.nArg1-1, funcArgs.nArg2-1);
 
     return "\"" + sStr1 + "\"";
 }

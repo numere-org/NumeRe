@@ -6,3 +6,4 @@ Added	Tables may now contain "logical" columns, which are restricted to boolean 
 Added	Tables may now contain "category" columns, which enumerate string values to make them usable in numerical calcutions.
 Added	The table method "TAB().categories()" returns the enumerated categories of the selected categorial columns as a key-value list.
 Cleaned	Date-time columns are no longer completely overwritten by real-only values (which allows for time modifications).
+Fixed	The function "replaceall()" can now also replace null characters.

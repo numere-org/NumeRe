@@ -1420,6 +1420,53 @@ void replaceAll(std::string& sToModify, const char* sToRep, const char* sNewValu
 
 
 /////////////////////////////////////////////////
+/// \brief This function replaces all occurences
+/// of the string sToRep in the string sToModify
+/// with the new value sNewValue. The boundaries
+/// limit the range of processing. This function
+/// is a (slower) overload for std::strings.
+///
+/// \param sToModify std::string&
+/// \param sToRep const std::string&
+/// \param sNewValue const std::string&
+/// \param nStart size_t
+/// \param nEnd size_t
+/// \return void
+///
+/////////////////////////////////////////////////
+void replaceAll(std::string& sToModify, const std::string& sToRep, const std::string& sNewValue, size_t nStart /*= 0*/, size_t nEnd /*= string::npos*/)
+{
+    size_t nRepLength = sToRep.length();
+    size_t nNewLength = sNewValue.length();
+    int nOffSet = nNewLength - nRepLength;
+    // Ensure the values are correct
+    if (!sToModify.length() || !nRepLength)
+        return;
+
+    // check the boundaries
+    if ((size_t)nStart > sToModify.length())
+        return;
+
+    if (nEnd == std::string::npos)
+        nEnd = sToModify.length();
+
+    // Process the replacing
+    for (size_t i = nStart; i <= nEnd-nRepLength; i++)
+    {
+        if (i >= sToModify.length())
+            break;
+
+        if (!sToModify.compare(i, nRepLength, sToRep))
+        {
+            sToModify.replace(i, nRepLength, sNewValue);
+            nEnd += nOffSet;
+            i += nNewLength - 1;
+        }
+    }
+}
+
+
+/////////////////////////////////////////////////
 /// \brief This function is a simple wrapper for
 /// replaceAll() and specialized to remove
 /// control characters from strings.
