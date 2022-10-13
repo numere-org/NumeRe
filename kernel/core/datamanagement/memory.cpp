@@ -889,6 +889,54 @@ bool Memory::convertColumns(const VectorIndex& _vCol, const std::string& _sType)
 
 
 /////////////////////////////////////////////////
+/// \brief Updates the categories of a
+/// categorical column and switches the column
+/// type if necessary.
+///
+/// \param _vCol const VectorIndex&
+/// \param vCategories const std::vector<std::string>&
+/// \return bool
+///
+/////////////////////////////////////////////////
+bool Memory::setCategories(const VectorIndex& _vCol, const std::vector<std::string>& vCategories)
+{
+    bool success = true;
+    _vCol.setOpenEndIndex(memArray.size()-1);
+
+    for (size_t i = 0; i < _vCol.size(); i++)
+    {
+        if (_vCol[i] < 0 || _vCol[i] >= (int)memArray.size())
+            continue;
+
+        if (memArray[_vCol[i]])
+        {
+            if (memArray[_vCol[i]]->m_type != TableColumn::TYPE_CATEGORICAL)
+            {
+                TableColumn* col = memArray[_vCol[i]]->convert(TableColumn::TYPE_CATEGORICAL);
+
+                // Only valid conversions return a non-zero
+                // pointer
+                if (col && col != memArray[_vCol[i]].get())
+                {
+                    memArray[_vCol[i]].reset(col);
+                    static_cast<CategoricalColumn*>(col)->setCategories(vCategories);
+                }
+                else
+                    success = false;
+            }
+            else
+                static_cast<CategoricalColumn*>(memArray[_vCol[i]].get())->setCategories(vCategories);
+        }
+    }
+
+    if (success)
+        m_meta.modify();
+
+    return success;
+}
+
+
+/////////////////////////////////////////////////
 /// \brief Returns, whether the contents of the
 /// current table are already saved into either
 /// a usual file or into the cache file.

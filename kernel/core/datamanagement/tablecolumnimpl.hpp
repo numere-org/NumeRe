@@ -439,6 +439,8 @@ class CategoricalColumn : public TableColumn
         {
             return m_categories;
         }
+
+        void setCategories(const std::vector<std::string>& vCategories);
 };
 
 

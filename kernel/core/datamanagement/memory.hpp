@@ -102,6 +102,7 @@ class Memory : public Sorter
 		bool shrink();
 		void convert();
 		bool convertColumns(const VectorIndex& _vCol, const std::string& _sType);
+		bool setCategories(const VectorIndex& _vCol, const std::vector<std::string>& vCategories);
 		int getLines(bool _bFull = false) const;
 		int getElemsInColumn(size_t col) const;
 		int getFilledElemsInColumn(size_t col) const;

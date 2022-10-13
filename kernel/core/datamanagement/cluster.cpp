@@ -821,6 +821,26 @@ namespace NumeRe
 
 
     /////////////////////////////////////////////////
+    /// \brief This member function returns the data
+    /// of all cluster items memory as a value vector.
+    ///
+    /// \return std::vector<std::string>
+    ///
+    /////////////////////////////////////////////////
+    std::vector<std::string> Cluster::getInternalStringArray() const
+    {
+        std::vector<std::string> vArray;
+
+        for (size_t i = 0; i < vClusterArray.size(); i++)
+        {
+            vArray.push_back(vClusterArray[i]->getInternalString());
+        }
+
+        return vArray;
+    }
+
+
+    /////////////////////////////////////////////////
     /// \brief This member function assigns values as
     /// data for the all cluster items in memory. The
     /// type of the cluster items is adapted

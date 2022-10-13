@@ -2157,6 +2157,40 @@ TableColumn* CategoricalColumn::convert(ColumnType type)
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Replaces the internal categories with
+/// new categories.
+///
+/// \param vCategories const std::vector<std::string>&
+/// \return void
+///
+/////////////////////////////////////////////////
+void CategoricalColumn::setCategories(const std::vector<std::string>& vCategories)
+{
+    // If the number of new categories is higher or equal to
+    // the previous one: simply overwrite
+    if (vCategories.size() >= m_categories.size())
+        m_categories = vCategories;
+    else
+    {
+        // Otherwise replace only the new ones. But consider the
+        // case that the user might only want to reorder the categories
+        for (size_t i = 0; i < vCategories.size(); i++)
+        {
+            // Try to find the new category in the current list
+            auto iter = std::find(m_categories.begin(), m_categories.end(), vCategories[i]);
+
+            // If the category was found and is different to the current
+            // one: swap them. Otherwise simply overwrite
+            if (iter != m_categories.end() && iter-m_categories.begin() != i)
+                std::swap(m_categories[i], *iter);
+            else
+                m_categories[i] = vCategories[i];
+        }
+    }
+}
+
+
 
 
 

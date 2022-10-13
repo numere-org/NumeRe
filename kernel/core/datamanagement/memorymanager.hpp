@@ -338,6 +338,11 @@ class MemoryManager : public NumeRe::FileAdapter, public StringMemory, public Nu
 		    return vMemory[findTable(_sTable)]->convertColumns(_vCol, _sType);
 		}
 
+        inline bool setCategories(const std::string& _sTable, const VectorIndex& _vCol, const std::vector<std::string>& vCategories)
+		{
+		    return vMemory[findTable(_sTable)]->setCategories(_vCol, vCategories);
+		}
+
 
 
 

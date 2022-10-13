@@ -404,6 +404,7 @@ namespace NumeRe
             std::string getParserString(size_t i) const;
             void setString(size_t i, const std::string& strval);
             std::vector<std::string> getStringArray() const;
+            std::vector<std::string> getInternalStringArray() const;
             void setStringArray(const std::vector<std::string>& sVals);
 
             std::vector<std::string> to_string() const;
