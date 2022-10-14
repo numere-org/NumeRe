@@ -25,9 +25,99 @@
 #include <wx/clipbrd.h>
 #include <wx/dataobj.h>
 #include <wx/tokenzr.h>
+#include <wx/renderer.h>
 
 #define STATUSBAR_PRECISION 5
 #define MAXIMAL_RENDERING_SIZE 5000
+
+
+class AdvBooleanCellRenderer : public wxGridCellStringRenderer
+{
+    public:
+    // draw a check mark or nothing
+        virtual void Draw(wxGrid& grid,
+                          wxGridCellAttr& attr,
+                          wxDC& dc,
+                          const wxRect& rect,
+                          int row, int col,
+                          bool isSelected)
+        {
+            if (grid.GetTable()->CanGetValueAs(row, col, wxGRID_VALUE_BOOL))
+            {
+                wxGridCellRenderer::Draw(grid, attr, dc, rect, row, col, isSelected);
+
+                // draw a check mark in the centre (ignoring alignment - TODO)
+                wxSize size = GetBestSize(grid, attr, dc, row, col);
+
+                // don't draw outside the cell
+                wxCoord minSize = wxMin(rect.width, rect.height);
+                if ( size.x >= minSize || size.y >= minSize )
+                {
+                    // and even leave (at least) 1 pixel margin
+                    size.x = size.y = minSize;
+                }
+
+                // draw a border around checkmark
+                int vAlign, hAlign;
+                attr.GetAlignment(&hAlign, &vAlign);
+
+                wxRect rectBorder;
+                if (hAlign == wxALIGN_CENTRE)
+                {
+                    rectBorder.x = rect.x + rect.width / 2 - size.x / 2;
+                    rectBorder.y = rect.y + rect.height / 2 - size.y / 2;
+                    rectBorder.width = size.x;
+                    rectBorder.height = size.y;
+                }
+                else if (hAlign == wxALIGN_LEFT)
+                {
+                    rectBorder.x = rect.x + 2;
+                    rectBorder.y = rect.y + rect.height / 2 - size.y / 2;
+                    rectBorder.width = size.x;
+                    rectBorder.height = size.y;
+                }
+                else if (hAlign == wxALIGN_RIGHT)
+                {
+                    rectBorder.x = rect.x + rect.width - size.x - 2;
+                    rectBorder.y = rect.y + rect.height / 2 - size.y / 2;
+                    rectBorder.width = size.x;
+                    rectBorder.height = size.y;
+                }
+
+                bool value = grid.GetTable()->GetValueAsBool(row, col);
+                int flags = 0;
+
+                if (value)
+                    flags |= wxCONTROL_CHECKED;
+
+                wxRendererNative::Get().DrawCheckBox( &grid, dc, rectBorder, flags );
+            }
+            else
+                wxGridCellStringRenderer::Draw(grid, attr, dc, rect, row, col, isSelected);
+        }
+
+        // return the checkmark size
+        virtual wxSize GetBestSize(wxGrid& grid,
+                                   wxGridCellAttr& attr,
+                                   wxDC& dc,
+                                   int row, int col)
+        {
+            // Calculate only once bc, "---" is wider than the checkmark
+            if (!bestSize.x)
+                bestSize = DoGetBestSize(attr, dc, "---");
+
+            return bestSize;
+        }
+
+        virtual wxGridCellRenderer *Clone() const
+            { return new AdvBooleanCellRenderer; }
+
+    private:
+        static wxSize bestSize;
+};
+
+wxSize AdvBooleanCellRenderer::bestSize;
+
 
 extern Language _guilang;
 
@@ -121,9 +211,25 @@ void TableViewer::layoutGrid()
     {
         for (int j = 0; j < GetNumberCols(); j++)
         {
+            if (!i && isGridNumeReTable && (int)vTypes.size() > j)
+            {
+                if (vTypes[j] == TableColumn::TYPE_STRING)
+                    SetColAttr(j, new wxGridCellAttr(*wxBLACK, *wxWHITE, this->GetDefaultCellFont(), wxALIGN_LEFT, wxALIGN_CENTER));
+                else if (vTypes[j] == TableColumn::TYPE_CATEGORICAL)
+                    SetColAttr(j, new wxGridCellAttr(*wxBLACK, *wxWHITE, this->GetDefaultCellFont(), wxALIGN_CENTER, wxALIGN_CENTER));
+                else if (vTypes[j] == TableColumn::TYPE_LOGICAL)
+                {
+                    wxGridCellAttr* attr = new wxGridCellAttr(*wxBLACK, *wxWHITE, this->GetDefaultCellFont(),
+                                                              wxALIGN_CENTER, wxALIGN_CENTER);
+                    attr->SetRenderer(new AdvBooleanCellRenderer);
+                    SetColAttr(j, attr);
+                }
+            }
+
             if (i < (int)nFirstNumRow && j < GetNumberCols()-1)
             {
                 // Headlines
+                SetCellRenderer(i, j, new wxGridCellStringRenderer);
                 SetCellFont(i, j, GetCellFont(i, j).MakeBold());
                 SetCellBackgroundColour(i, j, HeadlineColor);
                 SetCellAlignment(wxALIGN_LEFT, i, j);
@@ -133,21 +239,6 @@ void TableViewer::layoutGrid()
             {
                 // Surrounding frame
                 this->SetCellBackgroundColour(i, j, FrameColor);
-            }
-            else if (isGridNumeReTable && (int)vTypes.size() > j && vTypes[j] == TableColumn::TYPE_STRING)
-            {
-                SetCellAlignment(wxALIGN_LEFT, i, j);
-            }
-            else if (isGridNumeReTable && (int)vTypes.size() > j && vTypes[j] == TableColumn::TYPE_CATEGORICAL)
-            {
-                SetCellAlignment(wxALIGN_CENTER, i, j);
-            }
-            else if (isGridNumeReTable && (int)vTypes.size() > j && vTypes[j] == TableColumn::TYPE_LOGICAL)
-            {
-                SetCellAlignment(wxALIGN_CENTER, i, j);
-
-                if (!std::isnan(static_cast<GridNumeReTable*>(GetTable())->GetValueAsDouble(i, j)))
-                    SetCellRenderer(i, j, new wxGridCellBoolRenderer);
             }
             else if (!isGridNumeReTable && GetCellValue(i, j)[0] == '"')
             {
@@ -894,35 +985,60 @@ void TableViewer::UpdateColumnAlignment(int col)
     {
         GridNumeReTable* gridtab = static_cast<GridNumeReTable*>(GetTable());
         vTypes = gridtab->getColumnTypes();
+
+        if (col < (int)vTypes.size())
+        {
+            if (vTypes[col] == TableColumn::TYPE_STRING)
+            {
+                wxGridCellAttr* attr = new wxGridCellAttr(*wxBLACK, *wxWHITE, this->GetDefaultCellFont(),
+                                                          wxALIGN_LEFT, wxALIGN_CENTER);
+                attr->SetRenderer(new wxGridCellStringRenderer);
+                SetColAttr(col, attr);
+            }
+            else if (vTypes[col] == TableColumn::TYPE_CATEGORICAL)
+            {
+                wxGridCellAttr* attr = new wxGridCellAttr(*wxBLACK, *wxWHITE, this->GetDefaultCellFont(),
+                                                          wxALIGN_CENTER, wxALIGN_CENTER);
+                attr->SetRenderer(new wxGridCellStringRenderer);
+                SetColAttr(col, attr);
+            }
+            else if (vTypes[col] == TableColumn::TYPE_LOGICAL)
+            {
+                wxGridCellAttr* attr = new wxGridCellAttr(*wxBLACK, *wxWHITE, this->GetDefaultCellFont(),
+                                                          wxALIGN_CENTER, wxALIGN_CENTER);
+                attr->SetRenderer(new AdvBooleanCellRenderer);
+                SetColAttr(col, attr);
+            }
+            else // All other cases
+            {
+                wxGridCellAttr* attr = new wxGridCellAttr(*wxBLACK, *wxWHITE, this->GetDefaultCellFont(),
+                                                          wxALIGN_RIGHT, wxALIGN_CENTER);
+                attr->SetRenderer(new wxGridCellStringRenderer);
+                SetColAttr(col, attr);
+            }
+        }
     }
 
     // Search the boundaries and color the frame correspondingly
-    for (int i = nFirstNumRow; i < GetNumberRows(); i++)
+    for (int i = 0; i < GetNumberRows(); i++)
     {
-        if (isGridNumeReTable && (int)vTypes.size() > col && vTypes[col] == TableColumn::TYPE_STRING)
+        if (i < (int)nFirstNumRow && col+1 < GetNumberCols())
         {
-            SetCellAlignment(wxALIGN_LEFT, i, col);
+            // Headlines
             SetCellRenderer(i, col, new wxGridCellStringRenderer);
-        }
-        else if (isGridNumeReTable && (int)vTypes.size() > col && vTypes[col] == TableColumn::TYPE_CATEGORICAL)
-        {
-            SetCellAlignment(wxALIGN_CENTER, i, col);
-            SetCellRenderer(i, col, new wxGridCellStringRenderer);
-        }
-        else if (isGridNumeReTable && (int)vTypes.size() > col && vTypes[col] == TableColumn::TYPE_LOGICAL)
-        {
-            SetCellAlignment(wxALIGN_CENTER, i, col);
-
-            if (!std::isnan(static_cast<GridNumeReTable*>(GetTable())->GetValueAsDouble(i, col)))
-                SetCellRenderer(i, col, new wxGridCellBoolRenderer);
-        }
-        else if (!isGridNumeReTable && GetCellValue(i, col)[0] == '"')
+            SetCellFont(i, col, GetCellFont(i, col).MakeBold());
+            SetCellBackgroundColour(i, col, HeadlineColor);
             SetCellAlignment(wxALIGN_LEFT, i, col);
+        }
+        else if (!isGridNumeReTable) // The other case is handled column-wise
+        {
+            if (GetCellValue(i, col)[0] == '"')
+                SetCellAlignment(wxALIGN_LEFT, i, col);
+            else
+                SetCellAlignment(wxALIGN_RIGHT, i, col);
+        }
         else
-        {
-            SetCellAlignment(wxALIGN_RIGHT, i, col);
-            SetCellRenderer(i, col, new wxGridCellStringRenderer);
-        }
+            break;
     }
 }
 

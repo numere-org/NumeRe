@@ -8,3 +8,5 @@ Added	The table method "TAB().categorylist()" returns the enumerated categories 
 Cleaned	Date-time columns are no longer completely overwritten by real-only values (which allows for time modifications).
 Fixed	The function "replaceall()" can now also replace null characters.
 Added	The table method "TAB().categorize()" can be used to rename the during conversion automatically detected categories.
+Fixed	Rendering times of large tables in the table viewer have been greatly reduced.
+Fixed	The hang after a very long string was evaluated has been resolved.

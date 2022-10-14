@@ -937,10 +937,11 @@ namespace NumeRe
     /// in memory, which is used to display a preview
     /// of the contained data in the variable viewers.
     ///
+    /// \param maxStringLength size_t
     /// \return std::string
     ///
     /////////////////////////////////////////////////
-    std::string Cluster::getShortVectorRepresentation() const
+    std::string Cluster::getShortVectorRepresentation(size_t maxStringLength) const
     {
         // Return an empty brace pair, if no data is
         // available
@@ -956,6 +957,8 @@ namespace NumeRe
         {
             if (vClusterArray[i]->getType() == ClusterItem::ITEMTYPE_DOUBLE)
                 sVector += toString(vClusterArray[i]->getDouble(), 5) + ", ";
+            else if (maxStringLength < std::string::npos)
+                sVector += ellipsize(vClusterArray[i]->getString(), maxStringLength/4) + ", ";
             else
                 sVector += vClusterArray[i]->getString() + ", ";
 

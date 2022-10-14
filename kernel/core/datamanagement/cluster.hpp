@@ -409,7 +409,7 @@ namespace NumeRe
 
             std::vector<std::string> to_string() const;
             std::string getVectorRepresentation() const;
-            std::string getShortVectorRepresentation() const;
+            std::string getShortVectorRepresentation(size_t maxStringLength) const;
 
             std::vector<int> sortElements(long long int i1, long long int i2, const std::string& sSortingExpression);
             void deleteItems(long long int i1, long long int i2);
