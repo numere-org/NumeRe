@@ -1190,35 +1190,9 @@ NumeReTerminal::OnKeyDown(wxKeyEvent& event)
 		{
 		    // Copy or paste
 			if (event.GetKeyCode() == 'C' && HasSelection())
-			{
-			    // Get the selection and store it in the clipboard
-				wxString sSelection = GetSelection();
-
-				if (!sSelection.length())
-					return;
-
-				if (wxTheClipboard->Open())
-				{
-					wxTheClipboard->SetData(new wxTextDataObject(sSelection));
-					wxTheClipboard->Close();
-				}
-			}
+			    copyText();
 			else if (event.GetKeyCode() == 'V')
-			{
-			    // Get the text from the clipboard and process it as new input
-				if (wxTheClipboard->Open())
-				{
-					if (wxTheClipboard->IsSupported(wxDF_TEXT))
-					{
-						wxTextDataObject data;
-						wxTheClipboard->GetData(data);
-						NumeReTerminal::ProcessInput(data.GetTextLength(), data.GetText().ToStdString());
-						Refresh();
-					}
-
-					wxTheClipboard->Close();
-				}
-			}
+			    pasteText();
 
 			return;
 		}
@@ -1514,6 +1488,67 @@ NumeReTerminal::GetSelection()
 	wxString sel = get_selected_text();
 
 	return sel;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Implements copy to clip board.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
+void NumeReTerminal::copyText()
+{
+    // Get the selection and store it in the clipboard
+    wxString sSelection = GetSelection();
+
+    if (!sSelection.length())
+        return;
+
+    if (wxTheClipboard->Open())
+    {
+        wxTheClipboard->SetData(new wxTextDataObject(sSelection));
+        wxTheClipboard->Close();
+    }
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Implements paste from clip board.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
+void NumeReTerminal::pasteText()
+{
+    // Get the text from the clipboard and process it as new input
+    if (wxTheClipboard->Open())
+    {
+        if (wxTheClipboard->IsSupported(wxDF_TEXT))
+        {
+            wxTextDataObject data;
+            wxTheClipboard->GetData(data);
+            NumeReTerminal::ProcessInput(data.GetTextLength(), data.GetText().ToStdString());
+            Refresh();
+        }
+
+        wxTheClipboard->Close();
+    }
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Implements copy to clip board and
+/// deleting the selection.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
+void NumeReTerminal::cutText()
+{
+    this->copyText();
+    delSelected();
+    ClearSelection();
 }
 
 

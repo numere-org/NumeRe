@@ -251,6 +251,11 @@ class NumeReTerminal : public wxWindow, public GenericTerminal, public wxThreadH
 		}
 		void SetCursorBlinkRate(int rate);
 
+		// Copy-pasting
+		void copyText();
+		void pasteText();
+		void cutText();
+
 		// Text printing functions
 		virtual void DrawText(int fg_color, int bg_color, int flags, int x, int y, const std::string& sText) override;
 		virtual void DrawCursor(int fg_color, int bg_color, int flags, int x, int y, unsigned char c) override;
