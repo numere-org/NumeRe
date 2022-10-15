@@ -638,6 +638,7 @@ struct MatFuncData
 
     MatFuncData() : mat1(Matrix()), mat2(Matrix()), mat3(Matrix()), fVal(NAN), nVal(0), mVal(0) {}
     MatFuncData(const Matrix& _mat, int n = 0) : mat1(_mat), mat2(Matrix()), mat3(Matrix()), fVal(NAN), nVal(n), mVal(0) {}
+    MatFuncData(const Matrix& _mat1, const Matrix& _mat2, int n) : mat1(_mat1), mat2(_mat2), mat3(Matrix()), fVal(NAN), nVal(n), mVal(0) {}
     MatFuncData(const Matrix& _mat1, const Matrix& _mat2) : mat1(_mat1), mat2(_mat2), mat3(Matrix()), fVal(NAN), nVal(0), mVal(0) {}
     MatFuncData(const Matrix& _mat1, const Matrix& _mat2, const Matrix& _mat3) : mat1(_mat1), mat2(_mat2), mat3(_mat3), fVal(NAN), nVal(0), mVal(0) {}
     MatFuncData(const Matrix& _mat, mu::value_type f) : mat1(_mat), mat2(Matrix()), mat3(Matrix()), fVal(f), nVal(0), mVal(0) {}
@@ -678,6 +679,7 @@ enum MatFuncSignature
     MATSIG_MAT_NOPT,
     MATSIG_MAT_MAT,
     MATSIG_MAT_MAT_MAT,
+    MATSIG_MAT_MAT_N,
     MATSIG_MAT_F,
     MATSIG_MAT_F_N,
     MATSIG_MAT_N_MOPT,

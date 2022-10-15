@@ -3158,6 +3158,105 @@ static Matrix polyLength(const MatFuncData& funcData, const MatFuncErrorInfo& er
 
 
 /////////////////////////////////////////////////
+/// \brief This static helper function applies
+/// the kernel to the subset of a matrix using
+/// the provided indices.
+///
+/// \param kernel const Matrix&
+/// \param inMatrix const Matrix&
+/// \param rows const VectorIndex&
+/// \param cols const VectorIndex&
+/// \return mu::value_type
+///
+/////////////////////////////////////////////////
+static mu::value_type applyKernel(const Matrix& kernel, const Matrix& inMatrix, const VectorIndex& rows, const VectorIndex& cols, const size_t startRow, const size_t startCol)
+{
+    // Init the result to zero
+    mu::value_type result(0);
+
+    // Perform element wise multiplication and sum up each result
+    for (size_t i = 0; i < kernel.rows(); i++)
+    {
+        for (size_t j = 0; j < kernel.cols(); j++)
+        {
+            result += kernel(i, j) * inMatrix(rows[startRow + i], cols[startCol + j]);
+        }
+    }
+
+    return result;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Function that allows the user to apply
+/// a customer filter kernel to a matrix while
+/// applying different boundary conditions.
+///
+/// \param funcData const MatFuncData&
+/// \param errorInfo const MatFuncErrorInfo&
+/// \return Matrix
+///
+/////////////////////////////////////////////////
+static Matrix matrixFilter(const MatFuncData& funcData, const MatFuncErrorInfo& errorInfo)
+{
+    // mat1 -> matrix to filter, mat2 -> filter kernel, nVal -> boundary mode
+
+    // Check that matrix and the filter are not empty
+    if (funcData.mat1.isEmpty() || funcData.mat2.isEmpty())
+        throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, errorInfo.command, errorInfo.position);
+
+    // Check if mode is valid
+    if (funcData.nVal < 0 || funcData.nVal > 1)
+        throw SyntaxError(SyntaxError::INVALID_MODE, errorInfo.command, errorInfo.position);
+
+    // Check if filter size is valid for the given matrix, check that filter has an uneven number of rows and cols
+    if (funcData.mat2.rows() > funcData.mat1.rows() || funcData.mat2.cols() > funcData.mat1.cols() || !(funcData.mat2.rows() % 2) || !(funcData.mat2.cols() % 2))
+        throw SyntaxError(SyntaxError::INVALID_FILTER_SIZE, errorInfo.command, errorInfo.position);
+
+    // Define the offset that is half the filter size
+    size_t offsetRows = (funcData.mat2.rows() - 1) / 2;
+    size_t offsetCols = (funcData.mat2.cols() - 1) / 2;
+
+    // Generate the vectors with indices that represent the matrix rows and cols
+    VectorIndex rows(0, funcData.mat1.rows() - 1);
+    VectorIndex cols(0, funcData.mat1.cols() - 1);
+
+    // Add additional indices that represent the boundary condition
+    switch (funcData.nVal)
+    {
+        case 0: // boundary clamp
+            rows.prepend(std::vector<int>(offsetRows, 0));
+            rows.append(std::vector<int>(offsetRows, funcData.mat2.rows() - 1));
+            cols.prepend(std::vector<int>(offsetCols, 0));
+            cols.append(std::vector<int>(offsetCols, funcData.mat2.cols() - 1));
+            break;
+        case 1: // boundary reflect
+            rows.prepend(VectorIndex(offsetRows, 1));
+            rows.append(VectorIndex(funcData.mat2.rows() - 1, funcData.mat2.rows() - offsetRows));
+            cols.prepend(VectorIndex(offsetCols, 1));
+            cols.append(VectorIndex(funcData.mat2.rows() - 1, funcData.mat2.rows() - offsetRows));
+            break;
+    }
+
+    // Generate the result matrix
+    Matrix _mResult = createFilledMatrix(funcData.mat1.rows(), funcData.mat1.cols(), NAN);
+
+    // Calculate the results
+    #pragma omp parallel for
+    for (int i = 0; i < (int)_mResult.rows(); i++)
+    {
+        for (int j = 0; j < (int)_mResult.cols(); j++)
+        {
+            // Multiply the two matrices using a helper function
+            _mResult(i, j) = applyKernel(funcData.mat2, funcData.mat1, rows, cols, i, j);
+        }
+    }
+
+    return _mResult;
+}
+
+
+/////////////////////////////////////////////////
 /// \brief Static invalid matrix function, which
 /// will always throw an error.
 ///
@@ -3247,6 +3346,7 @@ static std::map<std::string,MatFuncDef> getMatrixFunctions()
     mFunctions["select"] = MatFuncDef(MATSIG_MAT_MAT_MAT, selection);
     mFunctions["assemble"] = MatFuncDef(MATSIG_MAT_MAT_MAT, assemble);
     mFunctions["polylength"] = MatFuncDef(MATSIG_MAT, polyLength);
+    mFunctions["filter"] = MatFuncDef(MATSIG_MAT_MAT_N, matrixFilter);
 
     // For finding matrix functions
     mFunctions["matfl"] = MatFuncDef(MATSIG_INVALID, invalidMatrixFunction);

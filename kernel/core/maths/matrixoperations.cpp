@@ -371,6 +371,16 @@ static Matrix evalMatOp(string& sCmd, Parser& _parser, MemoryManager& _data, Fun
                             _cache.vReturnedMatrices.push_back(fIter->second.func(MatFuncData(evalMatOp(sMatrix1, _parser, _data, _functions, _option, _cache), evalMatOp(sMatrix2, _parser, _data, _functions, _option, _cache), evalMatOp(sSubExpr, _parser, _data, _functions, _option, _cache)), errorInfo));
                             break;
                         }
+                        case MATSIG_MAT_MAT_N:
+                        {
+                            std::string sMatrix1 = getNextArgument(sSubExpr, true);
+                            std::string sMatrix2 = getNextArgument(sSubExpr, true);
+                            _parser.SetExpr(sSubExpr);
+                            v = _parser.Eval(nResults);
+                            int n = intCast(v[0]); // int n = nResults > 1 ? intCast(v[1]) : 0;
+                            _cache.vReturnedMatrices.push_back(fIter->second.func(MatFuncData(evalMatOp(sMatrix1, _parser, _data, _functions, _option, _cache), evalMatOp(sMatrix2, _parser, _data, _functions, _option, _cache), n), errorInfo));
+                            break;
+                        }
                         case MATSIG_MAT_F:
                         {
                             std::string sMatrix = getNextArgument(sSubExpr, true);

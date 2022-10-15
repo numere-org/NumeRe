@@ -144,6 +144,8 @@ class SyntaxError
             INVALID_STATS_WINDOW_SIZE,
             INVALID_COMMAND,
             INCLUDE_NOT_EXIST,
+            INVALID_MODE,
+            INVALID_FILTER_SIZE,
             /// INSERT HERE
             LGS_HAS_NO_SOLUTION=2100,
             LGS_HAS_NO_UNIQUE_SOLUTION,
