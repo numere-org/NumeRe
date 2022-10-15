@@ -11,3 +11,4 @@ Added	The table method "TAB().categorize()" can be used to rename the during con
 Fixed	Rendering times of large tables in the table viewer have been greatly reduced.
 Fixed	The hang after a very long string was evaluated has been resolved.
 Cleaned	Copy, cutting and pasting text in the teminal does now work with the usual CTRL-C, CTRL-V and CTRL-X command key sequences.
+Updated	The rendering of values in tables has been generally improved.
