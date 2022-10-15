@@ -34,6 +34,7 @@ extern const std::string sVersion;
 
 long long int intCast(double number);
 long long int intCast(const std::complex<double>& number);
+bool isInt(const std::complex<double>& number);
 
 std::mt19937& getRandGenInstance();
 int findParameter(const std::string& sCmd, const std::string& sParam, const char cFollowing = ' ');

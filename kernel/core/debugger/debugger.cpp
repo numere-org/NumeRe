@@ -277,7 +277,7 @@ string NumeReDebugger::decodeType(string& sArgumentValue, const std::string& sAr
 
         // Replace the value with its actual value and mark the
         // argument type as reference
-        sArgumentValue = cluster.getShortVectorRepresentation();
+        sArgumentValue = cluster.getShortVectorRepresentation(MAXSTRINGLENGTH);
 
         // Determine whether this is a reference or a templated
         // variable
@@ -644,7 +644,7 @@ void NumeReDebugger:: gatherInformations(const std::map<std::string, std::pair<s
         // to display them in the variable viewer panel
         sTableData = toString(instance->getMemoryManager().getCluster(iter.second).size()) + " x 1";
         sTableData += "\tcluster\t"
-            + replaceControlCharacters(instance->getMemoryManager().getCluster(iter.second).getShortVectorRepresentation()) + "\t"
+            + replaceControlCharacters(instance->getMemoryManager().getCluster(iter.second).getShortVectorRepresentation(MAXSTRINGLENGTH)) + "\t"
             + iter.second + "{}";
 
         mLocalClusters[iter.first + "{}"] = sTableData;
@@ -935,7 +935,7 @@ vector<string> NumeReDebugger::getGlobals()
         if (iter->first.substr(0, 2) != "_~")
         {
             mGlobals[iter->first + "{}"] = toString(iter->second.size()) + " x 1" + "\tcluster\t"
-                + replaceControlCharacters(iter->second.getShortVectorRepresentation());
+                + replaceControlCharacters(iter->second.getShortVectorRepresentation(MAXSTRINGLENGTH));
         }
     }
 

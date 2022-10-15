@@ -38,6 +38,8 @@ struct TableColumn
         VALUELIKE,
         TYPE_VALUE,
         TYPE_DATETIME,
+        TYPE_LOGICAL,
+        TYPE_CATEGORICAL,
         STRINGLIKE,
         TYPE_STRING,
         TYPE_MIXED
@@ -89,6 +91,8 @@ struct TableColumn
     virtual TableColumn* convert(ColumnType type = TableColumn::TYPE_NONE) = 0;
 
     static std::string getDefaultColumnHead(size_t colNo);
+    static std::string typeToString(ColumnType type);
+    static ColumnType stringToType(const std::string& sType);
 };
 
 

@@ -1265,17 +1265,7 @@ static std::string tableMethod_typeof(const std::string& sTableName, std::string
             sRet += ",";
 
         TableColumn::ColumnType type = NumeReKernel::getInstance()->getMemoryManager().getType(VectorIndex(intCast(v[i])-1), sTableName);
-
-        if (type == TableColumn::TYPE_NONE)
-            sRet += "\"none\"";
-        else if (type == TableColumn::TYPE_VALUE)
-            sRet += "\"value\"";
-        else if (type == TableColumn::TYPE_STRING)
-            sRet += "\"string\"";
-        else if (type == TableColumn::TYPE_DATETIME)
-            sRet += "\"datetime\"";
-        else
-            sRet += "\"unknown\"";
+        sRet += "\"" + TableColumn::typeToString(type) + "\"";
     }
 
     if (sRet.length())
@@ -1284,6 +1274,106 @@ static std::string tableMethod_typeof(const std::string& sTableName, std::string
             return "{" + sRet + "}";
 
         return sRet;
+    }
+
+    return "\"\"";
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Realizes the "categories()" table
+/// method.
+///
+/// \param sTableName const std::string&
+/// \param sMethodArguments std::string
+/// \return std::string
+///
+/////////////////////////////////////////////////
+static std::string tableMethod_categories(const std::string& sTableName, std::string sMethodArguments)
+{
+    // Might be necessary to resolve the contents of columns and conversions
+    getDataElements(sMethodArguments,
+                    NumeReKernel::getInstance()->getParser(),
+                    NumeReKernel::getInstance()->getMemoryManager(),
+                    NumeReKernel::getInstance()->getSettings());
+
+    int nResults = 0;
+    NumeReKernel::getInstance()->getParser().SetExpr(sMethodArguments);
+    mu::value_type* v = NumeReKernel::getInstance()->getParser().Eval(nResults);
+
+    ValueVector vCategories = NumeReKernel::getInstance()->getMemoryManager().getCategoryList(VectorIndex(v, nResults, 0), sTableName);
+
+    if (!vCategories.size())
+        return "\"\"";
+
+    std::string sRet;
+
+    for (size_t i = 0; i < vCategories.size(); i+=2)
+    {
+        if (sRet.length())
+            sRet += ",";
+
+        sRet += "\"" + vCategories[i] + "\"," + vCategories[i+1];
+    }
+
+    return "{" + sRet + "}";
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Realizes the "categorize()" table
+/// method.
+///
+/// \param sTableName const std::string&
+/// \param sMethodArguments std::string
+/// \return std::string
+///
+/////////////////////////////////////////////////
+static std::string tableMethod_categorize(const std::string& sTableName, std::string sMethodArguments)
+{
+    std::string sColumns = getNextArgument(sMethodArguments, true);
+    std::vector<std::string> vCategories;
+
+    // Might be necessary to resolve the contents of columns and conversions
+    getDataElements(sColumns,
+                    NumeReKernel::getInstance()->getParser(),
+                    NumeReKernel::getInstance()->getMemoryManager(),
+                    NumeReKernel::getInstance()->getSettings());
+
+    if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sMethodArguments))
+    {
+        std::string sDummy;
+        sMethodArguments += " -nq";
+        NumeRe::StringParser::StringParserRetVal res = NumeReKernel::getInstance()->getStringParser().evalAndFormat(sMethodArguments, sDummy, true);
+
+        if (res == NumeRe::StringParser::STRING_NUMERICAL)
+            return "\"\"";
+
+        vCategories = NumeReKernel::getInstance()->getAns().getInternalStringArray();
+    }
+
+    int nResults = 0;
+    NumeReKernel::getInstance()->getParser().SetExpr(sColumns);
+    mu::value_type* v = NumeReKernel::getInstance()->getParser().Eval(nResults);
+
+    if (NumeReKernel::getInstance()->getMemoryManager().setCategories(sTableName, VectorIndex(v, nResults, 0), vCategories))
+    {
+        vCategories = NumeReKernel::getInstance()->getMemoryManager().getCategoryList(VectorIndex(v, nResults, 0), sTableName);
+
+        if (!vCategories.size())
+            return "\"\"";
+
+        std::string sRet;
+
+        for (size_t i = 0; i < vCategories.size(); i+=2)
+        {
+            if (sRet.length())
+                sRet += ",";
+
+            sRet += "\"" + vCategories[i] + "\"," + vCategories[i+1];
+        }
+
+        return "{" + sRet + "}";
     }
 
     return "\"\"";
@@ -1342,6 +1432,8 @@ static std::map<std::string, TableMethod> getInplaceTableMethods()
     mTableMethods["convert"] = tableMethod_convert;
     mTableMethods["typeof"] = tableMethod_typeof;
     mTableMethods["describe"] = tableMethod_annotate;
+    mTableMethods["categorylist"] = tableMethod_categories;
+    mTableMethods["categorize"] = tableMethod_categorize;
 
     return mTableMethods;
 }

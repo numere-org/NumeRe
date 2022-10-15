@@ -500,6 +500,25 @@ double StrToDb(const std::string& sString)
 
 
 /////////////////////////////////////////////////
+/// \brief Converts a string into a double
+/// considering logical values.
+///
+/// \param sString const std::string&
+/// \return double
+///
+/////////////////////////////////////////////////
+double StrToLogical(const std::string& sString)
+{
+    if (toLowerCase(sString) == "true" || sString == "1")
+        return 1.0;
+    else if (toLowerCase(sString) == "false" || sString == "0")
+        return 0.0;
+
+    return StrToCmplx(sString).real();
+}
+
+
+/////////////////////////////////////////////////
 /// \brief Converts a string into a complex
 /// number.
 ///
@@ -954,6 +973,19 @@ bool isConvertible(const std::string& sStr, ConvertibleType type)
         // Try to detect dates
         return !isConvertible(sStr, CONVTYPE_DATE_TIME);
     }
+    else if (type == CONVTYPE_LOGICAL)
+    {
+        // Apply the simplest heuristic: mostly every numerical valid character
+        // and ignore characters, which cannot represent a value by themselves
+        if (toLowerCase(sStr) == "true"
+            || toLowerCase(sStr) == "false"
+            || sStr == "0"
+            || sStr == "1")
+            return true;
+
+        // Try to detect values
+        return isConvertible(sStr, CONVTYPE_VALUE);
+    }
     else if (type == CONVTYPE_DATE_TIME)
     {
         // Apply the simplest heuristic: only digits and separators
@@ -1359,6 +1391,53 @@ void replaceAll(std::string& sToModify, const char* sToRep, const char* sNewValu
 {
     size_t nRepLength = strlen(sToRep);
     size_t nNewLength = strlen(sNewValue);
+    int nOffSet = nNewLength - nRepLength;
+    // Ensure the values are correct
+    if (!sToModify.length() || !nRepLength)
+        return;
+
+    // check the boundaries
+    if ((size_t)nStart > sToModify.length())
+        return;
+
+    if (nEnd == std::string::npos)
+        nEnd = sToModify.length();
+
+    // Process the replacing
+    for (size_t i = nStart; i <= nEnd-nRepLength; i++)
+    {
+        if (i >= sToModify.length())
+            break;
+
+        if (!sToModify.compare(i, nRepLength, sToRep))
+        {
+            sToModify.replace(i, nRepLength, sNewValue);
+            nEnd += nOffSet;
+            i += nNewLength - 1;
+        }
+    }
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This function replaces all occurences
+/// of the string sToRep in the string sToModify
+/// with the new value sNewValue. The boundaries
+/// limit the range of processing. This function
+/// is a (slower) overload for std::strings.
+///
+/// \param sToModify std::string&
+/// \param sToRep const std::string&
+/// \param sNewValue const std::string&
+/// \param nStart size_t
+/// \param nEnd size_t
+/// \return void
+///
+/////////////////////////////////////////////////
+void replaceAll(std::string& sToModify, const std::string& sToRep, const std::string& sNewValue, size_t nStart /*= 0*/, size_t nEnd /*= string::npos*/)
+{
+    size_t nRepLength = sToRep.length();
+    size_t nNewLength = sNewValue.length();
     int nOffSet = nNewLength - nRepLength;
     // Ensure the values are correct
     if (!sToModify.length() || !nRepLength)

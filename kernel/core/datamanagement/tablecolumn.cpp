@@ -224,3 +224,60 @@ std::string TableColumn::getDefaultColumnHead(size_t colNo)
     return _lang.get("COMMON_COL") + "_" + toString(colNo+1);
 }
 
+
+/////////////////////////////////////////////////
+/// \brief Converts the passed ColumnType value
+/// to a string representation.
+///
+/// \param type TableColumn::ColumnType
+/// \return std::string
+///
+/////////////////////////////////////////////////
+std::string TableColumn::typeToString(TableColumn::ColumnType type)
+{
+    switch (type)
+    {
+    case TYPE_NONE:
+        return "none";
+    case TYPE_VALUE:
+        return "value";
+    case TYPE_STRING:
+        return "string";
+    case TYPE_DATETIME:
+        return "datetime";
+    case TYPE_LOGICAL:
+        return "logical";
+    case TYPE_CATEGORICAL:
+        return "category";
+    default:
+        return "unknown";
+    }
+
+    return "";
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Converts the passed string
+/// representation to a ColumnType value.
+///
+/// \param sType const std::string&
+/// \return TableColumn::ColumnType
+///
+/////////////////////////////////////////////////
+TableColumn::ColumnType TableColumn::stringToType(const std::string& sType)
+{
+    if (sType == "value")
+        return TYPE_VALUE;
+    else if (sType == "string")
+        return TYPE_STRING;
+    else if (sType == "datetime")
+        return TYPE_DATETIME;
+    else if (sType == "logical")
+        return TYPE_LOGICAL;
+    else if (sType == "category")
+        return TYPE_CATEGORICAL;
+
+    return TYPE_NONE;
+}
+

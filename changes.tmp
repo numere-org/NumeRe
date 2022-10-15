@@ -3,3 +3,13 @@ Added	It is now possible to copy text with its styling information to insert it 
 Fixed	Dragging a file in the file tree won't accidentally delete the file any more, if it enters the same directory as before.
 Added	The character sequences "NA" and "N/A" are now also considered as NaN in text file-based data sets.
 Added	Added the filter function that allows filtering a matrix with any filter kernel.
+Added	Tables may now contain "logical" columns, which are restricted to boolean values.
+Added	Tables may now contain "category" columns, which enumerate string values to make them usable in numerical calcutions.
+Added	The table method "TAB().categorylist()" returns the enumerated categories of the selected categorial columns as a key-value list.
+Cleaned	Date-time columns are no longer completely overwritten by real-only values (which allows for time modifications).
+Fixed	The function "replaceall()" can now also replace null characters.
+Added	The table method "TAB().categorize()" can be used to rename the during conversion automatically detected categories.
+Fixed	Rendering times of large tables in the table viewer have been greatly reduced.
+Fixed	The hang after a very long string was evaluated has been resolved.
+Cleaned	Copy, cutting and pasting text in the teminal does now work with the usual CTRL-C, CTRL-V and CTRL-X command key sequences.
+Updated	The rendering of values in tables has been generally improved.

@@ -821,6 +821,26 @@ namespace NumeRe
 
 
     /////////////////////////////////////////////////
+    /// \brief This member function returns the data
+    /// of all cluster items memory as a value vector.
+    ///
+    /// \return std::vector<std::string>
+    ///
+    /////////////////////////////////////////////////
+    std::vector<std::string> Cluster::getInternalStringArray() const
+    {
+        std::vector<std::string> vArray;
+
+        for (size_t i = 0; i < vClusterArray.size(); i++)
+        {
+            vArray.push_back(vClusterArray[i]->getInternalString());
+        }
+
+        return vArray;
+    }
+
+
+    /////////////////////////////////////////////////
     /// \brief This member function assigns values as
     /// data for the all cluster items in memory. The
     /// type of the cluster items is adapted
@@ -917,10 +937,11 @@ namespace NumeRe
     /// in memory, which is used to display a preview
     /// of the contained data in the variable viewers.
     ///
+    /// \param maxStringLength size_t
     /// \return std::string
     ///
     /////////////////////////////////////////////////
-    std::string Cluster::getShortVectorRepresentation() const
+    std::string Cluster::getShortVectorRepresentation(size_t maxStringLength) const
     {
         // Return an empty brace pair, if no data is
         // available
@@ -936,6 +957,8 @@ namespace NumeRe
         {
             if (vClusterArray[i]->getType() == ClusterItem::ITEMTYPE_DOUBLE)
                 sVector += toString(vClusterArray[i]->getDouble(), 5) + ", ";
+            else if (maxStringLength < std::string::npos)
+                sVector += ellipsize(vClusterArray[i]->getString(), maxStringLength/4) + ", ";
             else
                 sVector += vClusterArray[i]->getString() + ", ";
 

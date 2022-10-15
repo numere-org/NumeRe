@@ -179,6 +179,12 @@ Memory& Memory::operator=(const Memory& other)
             case TableColumn::TYPE_STRING:
                 memArray[i].reset(new StringColumn);
                 break;
+            case TableColumn::TYPE_LOGICAL:
+                memArray[i].reset(new LogicalColumn);
+                break;
+            case TableColumn::TYPE_CATEGORICAL:
+                memArray[i].reset(new CategoricalColumn);
+                break;
 
             // These labels are only for getting warnings
             // if new column types are added
@@ -607,6 +613,39 @@ TableColumn::ColumnType Memory::getType(const VectorIndex& _vCol) const
 
 
 /////////////////////////////////////////////////
+/// \brief Returns a key-value list containing
+/// the categories and their respective index.
+///
+/// \param _vCol const VectorIndex&
+/// \return ValueVector
+///
+/////////////////////////////////////////////////
+ValueVector Memory::getCategoryList(const VectorIndex& _vCol) const
+{
+    ValueVector vRet;
+
+    for (size_t i = 0; i < _vCol.size(); i++)
+    {
+        if (_vCol[i] >= 0 && (int)memArray.size() > _vCol[i] && memArray[_vCol[i]])
+        {
+            if (memArray[_vCol[i]]->m_type == TableColumn::TYPE_CATEGORICAL)
+            {
+                const std::vector<std::string>& vCategories = static_cast<CategoricalColumn*>(memArray[_vCol[i]].get())->getCategories();
+
+                for (size_t c = 0; c < vCategories.size(); c++)
+                {
+                    vRet.push_back(vCategories[c]);
+                    vRet.push_back(toString(c+1));
+                }
+            }
+        }
+    }
+
+    return vRet;
+}
+
+
+/////////////////////////////////////////////////
 /// \brief This member function extracts a range
 /// of this table and returns it as a new Memory
 /// instance.
@@ -814,17 +853,10 @@ void Memory::convert()
 /////////////////////////////////////////////////
 bool Memory::convertColumns(const VectorIndex& _vCol, const std::string& _sType)
 {
-    if (_sType != "value" && _sType != "string" && _sType != "datetime")
+    TableColumn::ColumnType _type = TableColumn::stringToType(_sType);
+
+    if (_type == TableColumn::TYPE_NONE)
         return false;
-
-    TableColumn::ColumnType _type = TableColumn::TYPE_NONE;
-
-    if (_sType == "value")
-        _type = TableColumn::TYPE_VALUE;
-    else if (_sType == "string")
-        _type = TableColumn::TYPE_STRING;
-    else if (_sType == "datetime")
-        _type = TableColumn::TYPE_DATETIME;
 
     _vCol.setOpenEndIndex(memArray.size()-1);
 
@@ -847,6 +879,58 @@ bool Memory::convertColumns(const VectorIndex& _vCol, const std::string& _sType)
                 success = false;
         }
     }
+
+    // If successful: mark the whole table as modified
+    if (success)
+        m_meta.modify();
+
+    return success;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Updates the categories of a
+/// categorical column and switches the column
+/// type if necessary.
+///
+/// \param _vCol const VectorIndex&
+/// \param vCategories const std::vector<std::string>&
+/// \return bool
+///
+/////////////////////////////////////////////////
+bool Memory::setCategories(const VectorIndex& _vCol, const std::vector<std::string>& vCategories)
+{
+    bool success = true;
+    _vCol.setOpenEndIndex(memArray.size()-1);
+
+    for (size_t i = 0; i < _vCol.size(); i++)
+    {
+        if (_vCol[i] < 0 || _vCol[i] >= (int)memArray.size())
+            continue;
+
+        if (memArray[_vCol[i]])
+        {
+            if (memArray[_vCol[i]]->m_type != TableColumn::TYPE_CATEGORICAL)
+            {
+                TableColumn* col = memArray[_vCol[i]]->convert(TableColumn::TYPE_CATEGORICAL);
+
+                // Only valid conversions return a non-zero
+                // pointer
+                if (col && col != memArray[_vCol[i]].get())
+                {
+                    memArray[_vCol[i]].reset(col);
+                    static_cast<CategoricalColumn*>(col)->setCategories(vCategories);
+                }
+                else
+                    success = false;
+            }
+            else
+                static_cast<CategoricalColumn*>(memArray[_vCol[i]].get())->setCategories(vCategories);
+        }
+    }
+
+    if (success)
+        m_meta.modify();
 
     return success;
 }
@@ -1204,7 +1288,9 @@ void Memory::writeData(Indices& _idx, mu::value_type* _dData, unsigned int _nNum
 
             if (nDirection == COLS)
             {
-                if (!i && rewriteColumn)
+                if (!i
+                    && rewriteColumn
+                    && (memArray[_idx.col[j]]->m_type != TableColumn::TYPE_DATETIME || !mu::isreal(_dData, _nNum)))
                     convert_for_overwrite(memArray[_idx.col[j]], _idx.col[j], TableColumn::TYPE_VALUE);
 
                 if (_nNum > i)
@@ -1257,7 +1343,10 @@ void Memory::writeSingletonData(Indices& _idx, const mu::value_type& _dData)
     {
         for (size_t j = 0; j < _idx.col.size(); j++)
         {
-            if (!i && rewriteColumn && (int)memArray.size() > _idx.col[j])
+            if (!i
+                && rewriteColumn
+                && (int)memArray.size() > _idx.col[j]
+                && (_dData.imag() || memArray[_idx.col[j]]->m_type != TableColumn::TYPE_DATETIME))
                 convert_for_overwrite(memArray[_idx.col[j]], _idx.col[j], TableColumn::TYPE_VALUE);
 
             writeData(_idx.row[i], _idx.col[j], _dData);

@@ -25,9 +25,217 @@
 #include <wx/clipbrd.h>
 #include <wx/dataobj.h>
 #include <wx/tokenzr.h>
+#include <wx/renderer.h>
 
 #define STATUSBAR_PRECISION 5
 #define MAXIMAL_RENDERING_SIZE 5000
+
+// Define the standard colors
+static wxColour HeadlineColor = wxColour(192, 192, 192);
+static wxColour FrameColor = wxColour(230, 230, 230);
+static wxColour HighlightColor = wxColour(192, 227, 248);
+static wxColour HighlightHeadlineColor = wxColour(131, 200, 241);
+
+/////////////////////////////////////////////////
+/// \brief This class represents an extension to
+/// the usual cell string renderer to provide
+/// functionalities to highlight the cursor
+/// position and automatically update the
+/// surrounding frame.
+/////////////////////////////////////////////////
+class AdvStringCellRenderer : public wxGridCellStringRenderer
+{
+    protected:
+        bool isHeadLine(const wxGrid& grid, int row)
+        {
+            return grid.GetRowLabelValue(row) == "#";
+        }
+
+        bool isFrame(const wxGrid& grid, int row, int col)
+        {
+            return col+1 == grid.GetNumberCols() || row+1 == grid.GetNumberRows();
+        }
+
+        bool isPartOfCursor(const wxGrid& grid, int row, int col)
+        {
+            return (grid.GetCursorColumn() == col || grid.GetCursorRow() == row)
+                && !isFrame(grid, row, col);
+        }
+
+        wxGridCellAttr* createHighlightedAttr(const wxGridCellAttr& attr, bool isHeadLine)
+        {
+            wxGridCellAttr* highlightAttr = attr.Clone();
+
+            if (isHeadLine)
+                highlightAttr->SetBackgroundColour(HighlightHeadlineColor);
+            else
+                highlightAttr->SetBackgroundColour(HighlightColor);
+
+            return highlightAttr;
+        }
+
+        wxGridCellAttr* createFrameAttr(const wxGridCellAttr& attr)
+        {
+            wxGridCellAttr* frameAttr = attr.Clone();
+            frameAttr->SetBackgroundColour(FrameColor);
+            return frameAttr;
+        }
+
+        wxGridCellAttr* createHeadlineAttr(const wxGridCellAttr& attr)
+        {
+            wxGridCellAttr* headlineAttr = attr.Clone();
+            headlineAttr->SetBackgroundColour(HeadlineColor);
+            return headlineAttr;
+        }
+
+    public:
+        virtual void Draw(wxGrid& grid,
+                          wxGridCellAttr& attr,
+                          wxDC& dc,
+                          const wxRect& rect,
+                          int row, int col,
+                          bool isSelected)
+        {
+            if (isPartOfCursor(grid, row, col))
+            {
+                wxGridCellAttr* newAttr = createHighlightedAttr(attr, isHeadLine(grid, row));
+                wxGridCellStringRenderer::Draw(grid, *newAttr, dc, rect, row, col, isSelected);
+                newAttr->DecRef();
+            }
+            else if (isFrame(grid, row, col))
+            {
+                wxGridCellAttr* newAttr = createFrameAttr(attr);
+                wxGridCellStringRenderer::Draw(grid, *newAttr, dc, rect, row, col, isSelected);
+                newAttr->DecRef();
+            }
+            else if (isHeadLine(grid, row))
+            {
+                wxGridCellAttr* newAttr = createHeadlineAttr(attr);
+                wxGridCellStringRenderer::Draw(grid, *newAttr, dc, rect, row, col, isSelected);
+                newAttr->DecRef();
+            }
+            else
+                wxGridCellStringRenderer::Draw(grid, attr, dc, rect, row, col, isSelected);
+        }
+
+        virtual wxGridCellRenderer *Clone() const
+            { return new AdvStringCellRenderer; }
+};
+
+
+/////////////////////////////////////////////////
+/// \brief This class represents a special
+/// renderer for three-state booleans, i.e.
+/// booleans, which may have a undefined (e.g.
+/// NAN) value.
+/////////////////////////////////////////////////
+class AdvBooleanCellRenderer : public AdvStringCellRenderer
+{
+    public:
+    // draw a check mark or nothing
+        virtual void Draw(wxGrid& grid,
+                          wxGridCellAttr& attr,
+                          wxDC& dc,
+                          const wxRect& rect,
+                          int row, int col,
+                          bool isSelected)
+        {
+            if (grid.GetTable()->CanGetValueAs(row, col, wxGRID_VALUE_BOOL))
+            {
+                if (isPartOfCursor(grid, row, col))
+                {
+                    wxGridCellAttr* newAttr = createHighlightedAttr(attr, isHeadLine(grid, row));
+                    wxGridCellRenderer::Draw(grid, *newAttr, dc, rect, row, col, isSelected);
+                    newAttr->DecRef();
+                }
+                else if (isFrame(grid, row, col))
+                {
+                    wxGridCellAttr* newAttr = createFrameAttr(attr);
+                    wxGridCellRenderer::Draw(grid, *newAttr, dc, rect, row, col, isSelected);
+                    newAttr->DecRef();
+                }
+                else if (isHeadLine(grid, row))
+                {
+                    wxGridCellAttr* newAttr = createHeadlineAttr(attr);
+                    wxGridCellRenderer::Draw(grid, *newAttr, dc, rect, row, col, isSelected);
+                    newAttr->DecRef();
+                }
+                else
+                    wxGridCellRenderer::Draw(grid, attr, dc, rect, row, col, isSelected);
+
+                // draw a check mark in the centre (ignoring alignment - TODO)
+                wxSize size = GetBestSize(grid, attr, dc, row, col);
+
+                // don't draw outside the cell
+                wxCoord minSize = wxMin(rect.width, rect.height);
+                if ( size.x >= minSize || size.y >= minSize )
+                {
+                    // and even leave (at least) 1 pixel margin
+                    size.x = size.y = minSize;
+                }
+
+                // draw a border around checkmark
+                int vAlign, hAlign;
+                attr.GetAlignment(&hAlign, &vAlign);
+
+                wxRect rectBorder;
+                if (hAlign == wxALIGN_CENTRE)
+                {
+                    rectBorder.x = rect.x + rect.width / 2 - size.x / 2;
+                    rectBorder.y = rect.y + rect.height / 2 - size.y / 2;
+                    rectBorder.width = size.x;
+                    rectBorder.height = size.y;
+                }
+                else if (hAlign == wxALIGN_LEFT)
+                {
+                    rectBorder.x = rect.x + 2;
+                    rectBorder.y = rect.y + rect.height / 2 - size.y / 2;
+                    rectBorder.width = size.x;
+                    rectBorder.height = size.y;
+                }
+                else if (hAlign == wxALIGN_RIGHT)
+                {
+                    rectBorder.x = rect.x + rect.width - size.x - 2;
+                    rectBorder.y = rect.y + rect.height / 2 - size.y / 2;
+                    rectBorder.width = size.x;
+                    rectBorder.height = size.y;
+                }
+
+                bool value = grid.GetTable()->GetValueAsBool(row, col);
+                int flags = 0;
+
+                if (value)
+                    flags |= wxCONTROL_CHECKED;
+
+                wxRendererNative::Get().DrawCheckBox( &grid, dc, rectBorder, flags );
+            }
+            else
+                AdvStringCellRenderer::Draw(grid, attr, dc, rect, row, col, isSelected);
+        }
+
+        // return the checkmark size
+        virtual wxSize GetBestSize(wxGrid& grid,
+                                   wxGridCellAttr& attr,
+                                   wxDC& dc,
+                                   int row, int col)
+        {
+            // Calculate only once bc, "---" is wider than the checkmark
+            if (!bestSize.x)
+                bestSize = DoGetBestSize(attr, dc, "---");
+
+            return bestSize;
+        }
+
+        virtual wxGridCellRenderer *Clone() const
+            { return new AdvBooleanCellRenderer; }
+
+    private:
+        static wxSize bestSize;
+};
+
+
+wxSize AdvBooleanCellRenderer::bestSize;
+
 
 extern Language _guilang;
 
@@ -60,20 +268,8 @@ END_EVENT_TABLE()
 TableViewer::TableViewer(wxWindow* parent, wxWindowID id, wxStatusBar* statusbar, TablePanel* parentPanel, const wxPoint& pos, const wxSize& size, long style, const wxString& name)
             : wxGrid(parent, id, pos, size, style, name), nHeight(600), nWidth(800), nFirstNumRow(1), readOnly(true)
 {
-    // Bind enter window events dynamically to the local event handler funtion
-    //GetGridWindow()->Bind(wxEVT_ENTER_WINDOW, &TableViewer::OnEnter, this);
-    //GetGridRowLabelWindow()->Bind(wxEVT_ENTER_WINDOW, &TableViewer::OnEnter, this);
-    //GetGridColLabelWindow()->Bind(wxEVT_ENTER_WINDOW, &TableViewer::OnEnter, this);
-    //GetGridCornerLabelWindow()->Bind(wxEVT_ENTER_WINDOW, &TableViewer::OnEnter, this);
-
     // Cells are always aligned right and centered vertically
     SetDefaultCellAlignment(wxALIGN_RIGHT, wxALIGN_CENTER);
-
-    // DEfine the standard functions
-    FrameColor = wxColor(230, 230, 230);
-    HeadlineColor = *wxLIGHT_GREY;
-    HighlightColor = wxColor(192, 227, 248);
-    HighlightHeadlineColor = wxColor(131, 200, 241);
 
     // Prepare the context menu
     m_popUpMenu.Append(ID_MENU_COPY, _guilang.get("GUI_COPY_TABLE_CONTENTS"));
@@ -121,21 +317,52 @@ void TableViewer::layoutGrid()
     {
         for (int j = 0; j < GetNumberCols(); j++)
         {
+            if (!i && isGridNumeReTable && (int)vTypes.size() > j)
+            {
+                wxGridCellAttr* attr = nullptr;
+
+                if (vTypes[j] == TableColumn::TYPE_STRING)
+                {
+                    attr = new wxGridCellAttr(*wxBLACK, *wxWHITE, this->GetDefaultCellFont(),
+                                              wxALIGN_LEFT, wxALIGN_CENTER);
+                    attr->SetRenderer(new AdvStringCellRenderer);
+                }
+                else if (vTypes[j] == TableColumn::TYPE_CATEGORICAL)
+                {
+                    attr = new wxGridCellAttr(*wxBLACK, *wxWHITE, this->GetDefaultCellFont(),
+                                              wxALIGN_CENTER, wxALIGN_CENTER);
+                    attr->SetRenderer(new AdvStringCellRenderer);
+                }
+                else if (vTypes[j] == TableColumn::TYPE_LOGICAL)
+                {
+                    attr = new wxGridCellAttr(*wxBLACK, *wxWHITE, this->GetDefaultCellFont(),
+                                              wxALIGN_CENTER, wxALIGN_CENTER);
+                    attr->SetRenderer(new AdvBooleanCellRenderer);
+                }
+                else
+                {
+                    attr = new wxGridCellAttr(*wxBLACK, *wxWHITE, this->GetDefaultCellFont(),
+                                              wxALIGN_RIGHT, wxALIGN_CENTER);
+                    attr->SetRenderer(new AdvStringCellRenderer);
+                }
+
+                SetColAttr(j, attr);
+            }
+
+            if (!i && j+1 == GetNumberCols())
+            {
+                wxGridCellAttr* attr = new wxGridCellAttr(*wxBLACK, *wxWHITE, this->GetDefaultCellFont(),
+                                                          wxALIGN_RIGHT, wxALIGN_CENTER);
+                attr->SetRenderer(new AdvStringCellRenderer);
+                SetColAttr(j, attr);
+            }
+
             if (i < (int)nFirstNumRow && j < GetNumberCols()-1)
             {
                 // Headlines
+                SetCellRenderer(i, j, new AdvStringCellRenderer);
                 SetCellFont(i, j, GetCellFont(i, j).MakeBold());
                 SetCellBackgroundColour(i, j, HeadlineColor);
-                SetCellAlignment(wxALIGN_LEFT, i, j);
-            }
-            else if (GetNumberCols() < MAXIMAL_RENDERING_SIZE && GetNumberRows() < MAXIMAL_RENDERING_SIZE
-                     && (i == GetNumberRows()-1 || j == GetNumberCols()-1))
-            {
-                // Surrounding frame
-                this->SetCellBackgroundColour(i, j, FrameColor);
-            }
-            else if (isGridNumeReTable && (int)vTypes.size() > j && vTypes[j] == TableColumn::TYPE_STRING)
-            {
                 SetCellAlignment(wxALIGN_LEFT, i, j);
             }
             else if (!isGridNumeReTable && GetCellValue(i, j)[0] == '"')
@@ -269,7 +496,6 @@ void TableViewer::OnCellChange(wxGridEvent& event)
     SetCellValue(event.GetRow(), event.GetCol(), event.GetString());
 
     updateFrame();
-    //highlightCursorPosition(GetGridCursorRow()+1, GetGridCursorCol());
     UpdateColumnAlignment(GetGridCursorCol());
     event.Veto();
 }
@@ -286,9 +512,9 @@ void TableViewer::OnCellChange(wxGridEvent& event)
 /////////////////////////////////////////////////
 void TableViewer::OnCellSelect(wxGridEvent& event)
 {
-    highlightCursorPosition(event.GetRow(), event.GetCol());
     wxGridCellCoords coords(event.GetRow(), event.GetCol());
     updateStatusBar(coords, coords, &coords);
+    Refresh();
     event.Skip();
 }
 
@@ -403,11 +629,6 @@ void TableViewer::updateFrame()
             }
         }
     }
-
-    //lastCursorPosition = wxGridCellCoords();
-
-    // Highlight the position of the cursor
-    //highlightCursorPosition(this->GetCursorRow(), this->GetCursorColumn());
 }
 
 
@@ -747,124 +968,6 @@ void TableViewer::pasteContents(bool useCursor)
 
 
 /////////////////////////////////////////////////
-/// \brief This member function draws the
-/// coloured columns, which shall indicate the
-/// position of the cursor.
-///
-/// \param nRow int
-/// \param nCol int
-/// \return void
-///
-/////////////////////////////////////////////////
-void TableViewer::highlightCursorPosition(int nRow, int nCol)
-{
-    if (GetRows() > MAXIMAL_RENDERING_SIZE || GetCols() > MAXIMAL_RENDERING_SIZE)
-        return;
-
-    BeginBatch();
-
-    // Restore the previously coloured lines to their
-    // original colour (white and grey). This only has
-    // to be done, if there was a cursor previously.
-    if (!lastCursorPosition)
-    {
-        // Needed, because wxGridCellCoords do not
-        // declare a operatorbool
-    }
-    else
-    {
-        // New column is different
-        if (nCol != lastCursorPosition.GetCol())
-        {
-            for (int i = 0; i < this->GetRows()-1; i++)
-            {
-                if (i == nRow && lastCursorPosition.GetCol()+1 != this->GetCols())
-                    continue;
-
-                if (this->GetRowLabelValue(i) == "#" && lastCursorPosition.GetCol()+1 != this->GetCols())
-                    this->SetCellBackgroundColour(i, lastCursorPosition.GetCol(), HeadlineColor);
-                else if (lastCursorPosition.GetCol()+1 == this->GetCols())
-                    this->SetCellBackgroundColour(i, lastCursorPosition.GetCol(), FrameColor);
-                else
-                    this->SetCellBackgroundColour(i, lastCursorPosition.GetCol(), *wxWHITE);
-            }
-        }
-
-        // New row is different
-        if (nRow != lastCursorPosition.GetRow())
-        {
-            for (int j = 0; j < this->GetCols()-1; j++)
-            {
-                if (j == nCol && lastCursorPosition.GetRow()+1 != this->GetRows())
-                    continue;
-
-                if (this->GetRowLabelValue(lastCursorPosition.GetRow()) == "#")
-                    this->SetCellBackgroundColour(lastCursorPosition.GetRow(), j, HeadlineColor);
-                else if (lastCursorPosition.GetRow()+1 == this->GetRows())
-                    this->SetCellBackgroundColour(lastCursorPosition.GetRow(), j, FrameColor);
-                else
-                    this->SetCellBackgroundColour(lastCursorPosition.GetRow(), j, *wxWHITE);
-            }
-        }
-    }
-
-    // Colour the newly selected column or row (mostly it is only one
-    // of both, which has to drawn. This saves time).
-    if (!lastCursorPosition)
-    {
-        // In this case, no column was selected. Colour the
-        // column first
-        for (int i = 0; i < this->GetRows()-1; i++)
-        {
-            if (this->GetRowLabelValue(i) == "#")
-                this->SetCellBackgroundColour(i, nCol, HighlightHeadlineColor);
-            else
-                this->SetCellBackgroundColour(i, nCol, HighlightColor);
-        }
-
-        // Colour the row
-        for (int j = 0; j < this->GetCols()-1; j++)
-        {
-            if (this->GetRowLabelValue(nRow) == "#")
-                this->SetCellBackgroundColour(nRow, j, HighlightHeadlineColor);
-            else
-                this->SetCellBackgroundColour(nRow, j, HighlightColor);
-        }
-    }
-    else
-    {
-        // In this case the column is different
-        if (lastCursorPosition.GetCol() != nCol)
-        {
-            for (int i = 0; i < this->GetRows()-1; i++)
-            {
-                if (this->GetRowLabelValue(i) == "#")
-                    this->SetCellBackgroundColour(i, nCol, HighlightHeadlineColor);
-                else
-                    this->SetCellBackgroundColour(i, nCol, HighlightColor);
-            }
-        }
-
-        // In this case the row is different
-        if (lastCursorPosition.GetRow() != nRow)
-        {
-            for (int j = 0; j < this->GetCols()-1; j++)
-            {
-                if (this->GetRowLabelValue(nRow) == "#")
-                    this->SetCellBackgroundColour(nRow, j, HighlightHeadlineColor);
-                else
-                    this->SetCellBackgroundColour(nRow, j, HighlightColor);
-            }
-        }
-    }
-
-    lastCursorPosition = wxGridCellCoords(nRow, nCol);
-    EndBatch();
-    this->Refresh();
-}
-
-
-/////////////////////////////////////////////////
 /// \brief Changes the alignment of a whole
 /// column to reflect its internal type.
 ///
@@ -883,17 +986,60 @@ void TableViewer::UpdateColumnAlignment(int col)
     {
         GridNumeReTable* gridtab = static_cast<GridNumeReTable*>(GetTable());
         vTypes = gridtab->getColumnTypes();
+
+        if (col < (int)vTypes.size())
+        {
+            if (vTypes[col] == TableColumn::TYPE_STRING)
+            {
+                wxGridCellAttr* attr = new wxGridCellAttr(*wxBLACK, *wxWHITE, this->GetDefaultCellFont(),
+                                                          wxALIGN_LEFT, wxALIGN_CENTER);
+                attr->SetRenderer(new AdvStringCellRenderer);
+                SetColAttr(col, attr);
+            }
+            else if (vTypes[col] == TableColumn::TYPE_CATEGORICAL)
+            {
+                wxGridCellAttr* attr = new wxGridCellAttr(*wxBLACK, *wxWHITE, this->GetDefaultCellFont(),
+                                                          wxALIGN_CENTER, wxALIGN_CENTER);
+                attr->SetRenderer(new AdvStringCellRenderer);
+                SetColAttr(col, attr);
+            }
+            else if (vTypes[col] == TableColumn::TYPE_LOGICAL)
+            {
+                wxGridCellAttr* attr = new wxGridCellAttr(*wxBLACK, *wxWHITE, this->GetDefaultCellFont(),
+                                                          wxALIGN_CENTER, wxALIGN_CENTER);
+                attr->SetRenderer(new AdvBooleanCellRenderer);
+                SetColAttr(col, attr);
+            }
+            else // All other cases
+            {
+                wxGridCellAttr* attr = new wxGridCellAttr(*wxBLACK, *wxWHITE, this->GetDefaultCellFont(),
+                                                          wxALIGN_RIGHT, wxALIGN_CENTER);
+                attr->SetRenderer(new AdvStringCellRenderer);
+                SetColAttr(col, attr);
+            }
+        }
     }
 
     // Search the boundaries and color the frame correspondingly
-    for (int i = nFirstNumRow; i < GetNumberRows(); i++)
+    for (int i = 0; i < GetNumberRows(); i++)
     {
-        if (isGridNumeReTable && (int)vTypes.size() > col && vTypes[col] == TableColumn::TYPE_STRING)
+        if (i < (int)nFirstNumRow && col+1 < GetNumberCols())
+        {
+            // Headlines
+            SetCellRenderer(i, col, new AdvStringCellRenderer);
+            SetCellFont(i, col, GetCellFont(i, col).MakeBold());
+            SetCellBackgroundColour(i, col, HeadlineColor);
             SetCellAlignment(wxALIGN_LEFT, i, col);
-        else if (!isGridNumeReTable && GetCellValue(i, col)[0] == '"')
-            SetCellAlignment(wxALIGN_LEFT, i, col);
+        }
+        else if (!isGridNumeReTable) // The other case is handled column-wise
+        {
+            if (GetCellValue(i, col)[0] == '"')
+                SetCellAlignment(wxALIGN_LEFT, i, col);
+            else
+                SetCellAlignment(wxALIGN_RIGHT, i, col);
+        }
         else
-            SetCellAlignment(wxALIGN_RIGHT, i, col);
+            break;
     }
 }
 

@@ -338,6 +338,11 @@ class MemoryManager : public NumeRe::FileAdapter, public StringMemory, public Nu
 		    return vMemory[findTable(_sTable)]->convertColumns(_vCol, _sType);
 		}
 
+        inline bool setCategories(const std::string& _sTable, const VectorIndex& _vCol, const std::vector<std::string>& vCategories)
+		{
+		    return vMemory[findTable(_sTable)]->setCategories(_vCol, vCategories);
+		}
+
 
 
 
@@ -428,6 +433,14 @@ class MemoryManager : public NumeRe::FileAdapter, public StringMemory, public Nu
                 return vMemory[findTable(_sTable)]->getType(_vCol);
 
             return TableColumn::TYPE_NONE;
+		}
+
+		ValueVector getCategoryList(const VectorIndex& _vCol, const std::string& _sTable) const
+		{
+		    if (exists(_sTable))
+                return vMemory[findTable(_sTable)]->getCategoryList(_vCol);
+
+            return ValueVector();
 		}
 
 		void copyElementsInto(std::vector<mu::value_type>* vTarget, const VectorIndex& _vLine, const VectorIndex& _vCol, const std::string& _sTable) const

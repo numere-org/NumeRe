@@ -1606,8 +1606,9 @@ void NumeReWindow::OnMenuEvent(wxCommandEvent &event)
         {
             if (m_book->getFocusedEditor()->HasFocus())
                 m_book->getFocusedEditor()->Copy();
-            else
-                event.Skip();
+            else if (m_terminal->HasFocus())
+                m_terminal->copyText();
+
             break;
         }
 
@@ -1615,6 +1616,8 @@ void NumeReWindow::OnMenuEvent(wxCommandEvent &event)
         {
             if (m_book->getFocusedEditor()->HasFocus())
                 m_book->getFocusedEditor()->Cut();
+            else if (m_terminal->HasFocus())
+                m_terminal->cutText();
 
             break;
         }
@@ -1623,6 +1626,8 @@ void NumeReWindow::OnMenuEvent(wxCommandEvent &event)
         {
             if (m_book->getFocusedEditor()->HasFocus())
                 m_book->getFocusedEditor()->Paste();
+            else if (m_terminal->HasFocus())
+                m_terminal->pasteText();
 
             break;
         }

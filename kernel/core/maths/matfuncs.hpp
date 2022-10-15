@@ -1737,13 +1737,15 @@ static Matrix matrixMed(const MatFuncData& funcData, const MatFuncErrorInfo& err
         throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, errorInfo.command, errorInfo.position);
 
     Memory _mem;
+    size_t nElems = funcData.mat1.data().size();
 
-    for (size_t i = 0; i < funcData.mat1.rows(); i++)
+    // Preallocate
+    _mem.writeData(nElems-1, 0, 0.0);
+
+    //#pragma omp parallel for
+    for (size_t i = 0; i < nElems; i++)
     {
-        for (size_t j = 0; j < funcData.mat1.cols(); j++)
-        {
-            _mem.writeData(j + i*funcData.mat1.rows(), 0, funcData.mat1(i, j));
-        }
+        _mem.writeDataDirectUnsafe(i, 0, funcData.mat1.data()[i]);
     }
 
     return createFilledMatrix(1, 1, _mem.med(VectorIndex(0, funcData.mat1.rows()*funcData.mat1.cols()-1), VectorIndex(0)));
@@ -1817,13 +1819,15 @@ static Matrix matrixPct(const MatFuncData& funcData, const MatFuncErrorInfo& err
         throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, errorInfo.command, errorInfo.position);
 
     Memory _mem;
+    size_t nElems = funcData.mat1.data().size();
 
-    for (size_t i = 0; i < funcData.mat1.rows(); i++)
+    // Preallocate
+    _mem.writeData(nElems-1, 0, 0.0);
+
+    //#pragma omp parallel for
+    for (size_t i = 0; i < nElems; i++)
     {
-        for (size_t j = 0; j < funcData.mat1.cols(); j++)
-        {
-            _mem.writeData(j + i*funcData.mat1.rows(), 0, funcData.mat1(i, j));
-        }
+        _mem.writeDataDirectUnsafe(i, 0, funcData.mat1.data()[i]);
     }
 
     return createFilledMatrix(1, 1, _mem.pct(VectorIndex(0, (long long int)(funcData.mat1.rows()*funcData.mat1.cols())-1), VectorIndex(0), funcData.fVal));

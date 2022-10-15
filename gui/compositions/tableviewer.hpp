@@ -45,10 +45,6 @@ class TableViewer : public wxGrid
         size_t nFirstNumRow;
         bool readOnly;
         bool isGridNumeReTable;
-        wxColor HeadlineColor;
-        wxColor FrameColor;
-        wxColor HighlightColor;
-        wxColor HighlightHeadlineColor;
         wxGridCellCoords lastCursorPosition;
         wxGridCellCoordsArray selectedCells;
 
@@ -73,7 +69,6 @@ class TableViewer : public wxGrid
         wxString replaceCtrlChars(const wxString& sStr);
         void copyContents();
         void pasteContents(bool useCursor = false);
-        void highlightCursorPosition(int nRow, int nCol);
         void UpdateColumnAlignment(int col);
         std::vector<wxString> getLinesFromPaste(const wxString& data);
         void replaceDecimalSign(wxString& text);

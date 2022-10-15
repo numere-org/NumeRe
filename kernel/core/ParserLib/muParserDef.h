@@ -381,6 +381,17 @@ namespace mu
 	    return v != v;
 	}
 
+	inline bool isreal(value_type* v, int nElem)
+	{
+	    for (int i = 0; i < nElem; i++)
+        {
+            if (v[i].imag())
+                return false;
+        }
+
+        return true;
+	}
+
     std::vector<double> real(const std::vector<value_type>& vVec);
     std::vector<double> imag(const std::vector<value_type>& vVec);
     value_type rint(value_type v);

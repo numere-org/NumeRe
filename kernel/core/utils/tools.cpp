@@ -1797,6 +1797,20 @@ long long int intCast(const std::complex<double>& number)
 
 
 /////////////////////////////////////////////////
+/// \brief Determines, whether the content of a
+/// complex value is actually a regular integer.
+///
+/// \param number const std::complex<double>&
+/// \return bool
+///
+/////////////////////////////////////////////////
+bool isInt(const std::complex<double>& number)
+{
+    return number.imag() == 0.0 && fabs(number.real() - rint(number.real())) < 1e-12;
+}
+
+
+/////////////////////////////////////////////////
 /// \brief This function determines, if the
 /// passed character is a delimiter character.
 ///
