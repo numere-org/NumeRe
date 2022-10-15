@@ -3207,7 +3207,10 @@ static Matrix matrixFilter(const MatFuncData& funcData, const MatFuncErrorInfo& 
 
     // Check if mode is valid
     if (funcData.nVal < 0 || funcData.nVal > 1)
-        throw SyntaxError(SyntaxError::INVALID_MODE, errorInfo.command, errorInfo.position);
+    {
+        std::string sMode = std::to_string(funcData.nVal);
+        throw SyntaxError(SyntaxError::INVALID_MODE, errorInfo.command, errorInfo.position, sMode);
+    }
 
     // Check if filter size is valid for the given matrix, check that filter has an uneven number of rows and cols
     if (funcData.mat2.rows() > funcData.mat1.rows() || funcData.mat2.cols() > funcData.mat1.cols() || !(funcData.mat2.rows() % 2) || !(funcData.mat2.cols() % 2))
