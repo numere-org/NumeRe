@@ -13,3 +13,5 @@ Fixed	Rendering times of large tables in the table viewer have been greatly redu
 Fixed	The hang after a very long string was evaluated has been resolved.
 Cleaned	Copy, cutting and pasting text in the teminal does now work with the usual CTRL-C, CTRL-V and CTRL-X command key sequences.
 Updated	The rendering of values in tables has been generally improved.
+New	The string function "sha256()" can be used to calculate the SHA-256 of strings and files.
+Added	The new v4 NDAT und CACHE files have now a SHA-256 checksum to detect possible file corruption.

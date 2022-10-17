@@ -16,6 +16,8 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
+#include <libsha.hpp>
+
 #include "file.hpp"
 #include "../datamanagement/tablecolumnimpl.hpp"
 #include "../IgorLib/ReadWave.h"
@@ -888,6 +890,10 @@ namespace NumeRe
 
         writeNumField(fileSpecVersionMajor);
         writeNumField(fileSpecVersionMinor);
+        checkPos = tellp();
+        writeStringField("SHA-256:" + sha256(""));
+        writeNumField<size_t>(10);
+        checkStart = tellp();
         writeStringField(getTableName());
         writeStringField(sComment);
 
@@ -926,9 +932,9 @@ namespace NumeRe
     {
         writeNumField(1LL);
         writeNumField(1LL);
-        writeStringField("THIS_FILE_NEEDS_AT_LEAST_VERSION_v1.1.4 ");
+        writeStringField("THIS_FILE_NEEDS_AT_LEAST_VERSION_v1.1.5 ");
         long long int appZeros = 0;
-        double data = 1.14;
+        double data = 1.15;
         bool valid = true;
         fFileStream.write((char*)&appZeros, sizeof(long long int));
         fFileStream.write((char*)&data, sizeof(double));
@@ -952,7 +958,7 @@ namespace NumeRe
         // the cache file would be overwritten by each
         // table in memory completely)
         if (!is_open())
-            open(ios::binary | ios::out | ios::trunc);
+            open(ios::binary | ios::in | ios::out | ios::trunc);
 
         // Write the file header
         writeHeader();
@@ -960,6 +966,19 @@ namespace NumeRe
         // Write the columns
         for (TblColPtr& col : *fileData)
             writeColumn(col);
+
+        size_t posEnd = tellp();
+
+        seekp(checkStart);
+        std::string checkSum = sha256(fFileStream, checkStart, posEnd-checkStart);
+
+        // Update the checksum and file end
+        seekp(checkPos);
+        writeStringField("SHA-256:" + checkSum);
+        writeNumField<size_t>(posEnd);
+
+        // Go back to the end
+        seekp(posEnd);
     }
 
 
@@ -981,35 +1000,56 @@ namespace NumeRe
 
         writeStringField(col->m_sHeadLine);
 
-        if (col->m_type == TableColumn::TYPE_VALUE)
+        if (col->m_type == TableColumn::TYPE_VALUE
+            || col->m_type == TableColumn::TYPE_DATETIME
+            || col->m_type == TableColumn::TYPE_LOGICAL)
         {
+            // All these colums write complex values
             writeStringField("DTYPE=COMPLEX");
+
+            // Note the type of the column
+            if (col->m_type == TableColumn::TYPE_VALUE)
+                writeStringField("CTYPE=VALUE");
+            else if (col->m_type == TableColumn::TYPE_DATETIME)
+                writeStringField("CTYPE=DATETIME");
+            else if (col->m_type == TableColumn::TYPE_LOGICAL)
+                writeStringField("CTYPE=LOGICAL");
+
+            size_t lenPos = tellp();
+            // Store the position of the next column
+            writeNumField<size_t>(lenPos);
+
             std::vector<mu::value_type> values = col->getValue(VectorIndex(0, VectorIndex::OPEN_END));
             writeNumBlock<mu::value_type>(&values[0], values.size());
+
+            size_t endPos = tellp();
+            seekp(lenPos);
+            writeNumField<size_t>(endPos-lenPos);
+            seekp(endPos);
         }
-        else if (col->m_type == TableColumn::TYPE_LOGICAL)
+        else if (col->m_type == TableColumn::TYPE_STRING
+                 || col->m_type == TableColumn::TYPE_CATEGORICAL)
         {
-            writeStringField("DTYPE=LOGICAL");
-            std::vector<mu::value_type> values = col->getValue(VectorIndex(0, VectorIndex::OPEN_END));
-            writeNumBlock<mu::value_type>(&values[0], values.size());
-        }
-        else if (col->m_type == TableColumn::TYPE_DATETIME)
-        {
-            writeStringField("DTYPE=DATETIME");
-            std::vector<mu::value_type> values = col->getValue(VectorIndex(0, VectorIndex::OPEN_END));
-            writeNumBlock<mu::value_type>(&values[0], values.size());
-        }
-        else if (col->m_type == TableColumn::TYPE_STRING)
-        {
+            // All these colums write strings as values
             writeStringField("DTYPE=STRING");
+
+            // Note the type of the column
+            if (col->m_type == TableColumn::TYPE_STRING)
+                writeStringField("CTYPE=STRING");
+            else if (col->m_type == TableColumn::TYPE_CATEGORICAL)
+                writeStringField("CTYPE=CATEGORICAL");
+
+            size_t lenPos = tellp();
+            // Store the position of the next column
+            writeNumField<size_t>(lenPos);
+
             std::vector<std::string> values = col->getValueAsInternalString(VectorIndex(0, VectorIndex::OPEN_END));
             writeStringBlock(&values[0], values.size());
-        }
-        else if (col->m_type == TableColumn::TYPE_CATEGORICAL)
-        {
-            writeStringField("DTYPE=CATEGORICAL");
-            std::vector<std::string> values = col->getValueAsInternalString(VectorIndex(0, VectorIndex::OPEN_END));
-            writeStringBlock(&values[0], values.size());
+
+            size_t endPos = tellp();
+            seekp(lenPos);
+            writeNumField<size_t>(endPos-lenPos);
+            seekp(endPos);
         }
         else if (col->m_type == TableColumn::TYPE_NONE)
         {
@@ -1064,6 +1104,23 @@ namespace NumeRe
         // changes shall be downwards compatible)
         if (fileVerMajor > fileSpecVersionMajor)
             throw SyntaxError(SyntaxError::INSUFFICIENT_NUMERE_VERSION, sFileName, SyntaxError::invalid_position, sFileName);
+
+        // Read checksum
+        if (fileVersionRead >= 4.0)
+        {
+            std::string sha_check = readStringField();
+            size_t fileEnd = readNumField<size_t>();
+
+            size_t checkStart = tellg();
+
+            std::string sha = "SHA-256:" + sha256(fFileStream, checkStart, fileEnd-checkStart);
+
+            // Is it corrupted?
+            if (sha_check != sha)
+                NumeReKernel::issueWarning(_lang.get("COMMON_DATAFILE_CORRUPTED", sFileName));
+
+            seekg(checkStart);
+        }
 
         // Read the table name and the comment
         sTableName = readStringField();
@@ -1164,8 +1221,21 @@ namespace NumeRe
         // Create empty storage
         createStorage();
 
-        // Version 3.0 introduces column-like layout
-        if (fileVersionRead >= 3.00)
+        // Version 3.0 introduces column-like layout and v4.0 added
+        // more columns and improved backwards compatibility
+        if (fileVersionRead >= 4.00)
+        {
+            if (fileData)
+            {
+                for (TblColPtr& col : *fileData)
+                {
+                    readColumnV4(col);
+                }
+            }
+
+            return;
+        }
+        else if (fileVersionRead >= 3.00)
         {
             if (fileData)
             {
@@ -1268,6 +1338,76 @@ namespace NumeRe
             std::string* strings = readStringBlock(size);
             col->setValue(VectorIndex(0, VectorIndex::OPEN_END), std::vector<std::string>(strings, strings+size));
             delete[] strings;
+        }
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Reads a single column from file in v4
+    /// format.
+    ///
+    /// \param col TblColPtr&
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
+    void NumeReDataFile::readColumnV4(TblColPtr& col)
+    {
+        std::string sHeadLine = readStringField();
+        std::string sDataType = readStringField();
+
+        if (sDataType == "DTYPE=NONE")
+            return;
+
+        if (sDataType == "DTYPE=COMPLEX")
+        {
+            // Get the actual column type
+            std::string sColType = readStringField();
+
+            // Jump over the colum end information
+            readNumField<size_t>();
+
+            // Create the column for the corresponding CTYPE
+            if (sColType == "CTYPE=VALUE")
+                col.reset(new ValueColumn);
+            else if (sColType == "CTYPE=DATETIME")
+                col.reset(new DateTimeColumn);
+            else if (sColType == "CTYPE=LOGICAL")
+                col.reset(new LogicalColumn);
+            else // All others fall back to a generic value column
+                col.reset(new ValueColumn);
+
+            col->m_sHeadLine = sHeadLine;
+            long long int size = 0;
+            mu::value_type* values = readNumBlock<mu::value_type>(size);
+            col->setValue(VectorIndex(0, VectorIndex::OPEN_END), std::vector<mu::value_type>(values, values+size));
+            delete[] values;
+        }
+        else if (sDataType == "DTYPE=STRING")
+        {
+            // Get the actual column type
+            std::string sColType = readStringField();
+
+            // Jump over the colum end information
+            readNumField<size_t>();
+
+            // Create the column for the corresponding CTYPE
+            if (sColType == "CTYPE=STRING")
+                col.reset(new StringColumn);
+            else if (sColType == "CTYPE=CATEGORICAL")
+                col.reset(new CategoricalColumn);
+            else // All others fall back to a generic string column
+                col.reset(new StringColumn);
+
+            col->m_sHeadLine = sHeadLine;
+            long long int size = 0;
+            std::string* strings = readStringBlock(size);
+            col->setValue(VectorIndex(0, VectorIndex::OPEN_END), std::vector<std::string>(strings, strings+size));
+            delete[] strings;
+        }
+        else
+        {
+            // In all other cases: just jump over this column
+            seekg(readNumField<size_t>());
         }
     }
 
@@ -1618,7 +1758,7 @@ namespace NumeRe
 
         // Read the file version information
         short fileVerMajor = readNumField<short>();
-        short fileVerMinor = readNumField<short>();
+        readNumField<short>();
 
         // Ensure that the file major version is
         // not larger than the one currently
@@ -1656,7 +1796,7 @@ namespace NumeRe
     {
         // Open the file in binary mode and truncate
         // all its contents
-        open(ios::binary | ios::out | ios::trunc);
+        open(ios::binary | ios::in | ios::out | ios::trunc);
 
         writeNumField(AutoVersion::MAJOR);
         writeNumField(AutoVersion::MINOR);

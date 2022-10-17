@@ -1448,9 +1448,11 @@ namespace NumeRe
             long int versionMajor;
             long int versionMinor;
             long int versionBuild;
-            const short fileSpecVersionMajor = 3;
-            const short fileSpecVersionMinor = 1;
+            const short fileSpecVersionMajor = 4;
+            const short fileSpecVersionMinor = 0;
             float fileVersionRead;
+            size_t checkPos;
+            size_t checkStart;
 
             void writeHeader();
             void writeDummyHeader();
@@ -1460,6 +1462,7 @@ namespace NumeRe
             void skipDummyHeader();
             void readFile();
             void readColumn(TblColPtr& col);
+            void readColumnV4(TblColPtr& col);
             void readLegacyFormat();
             void* readGenericField(std::string& type, long long int& size);
             void deleteGenericData(void* data, const std::string& type);

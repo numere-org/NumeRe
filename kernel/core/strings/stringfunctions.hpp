@@ -23,6 +23,7 @@
 #include <boost/tokenizer.hpp>
 #include <regex>
 #include <sstream>
+#include <libsha.hpp>
 
 #define DEFAULT_NUM_ARG INT_MIN
 // define the "End of transmission block" as string separator
@@ -2574,6 +2575,34 @@ static StringVector strfnc_getfileinfo(StringFuncArgs& funcArgs)
 
 
 /////////////////////////////////////////////////
+/// \brief Implementation of the sha256()
+/// function.
+///
+/// \param funcArgs StringFuncArgs&
+/// \return StringVector
+///
+/////////////////////////////////////////////////
+static StringVector strfnc_sha256(StringFuncArgs& funcArgs)
+{
+    if (funcArgs.nArg1 == DEFAULT_NUM_ARG)
+        return "\"" + sha256(funcArgs.sArg1.view().to_string()) + "\"";
+    else if (funcArgs.nArg1 == 1)
+    {
+        std::string sFileName = NumeReKernel::getInstance()->getFileSystem().ValidFileName(funcArgs.sArg1.view().to_string(),
+                                                                                           ".dat", false, true);
+
+        // Ensure that the file actually exist
+        if (fileExists(sFileName))
+        {
+            std::fstream file(sFileName, std::ios_base::in | std::ios_base::binary);
+            return "\"" + sha256(file) + "\"";
+        }
+    }
+
+    return "\"\"";
+}
+
+/////////////////////////////////////////////////
 /// \brief This static function is used to construct
 /// the string map.
 ///
@@ -2632,6 +2661,7 @@ static std::map<std::string, StringFuncHandle> getStringFuncHandles()
     mHandleTable["repeat"]              = StringFuncHandle(STR_VAL, strfnc_repeat, false);
     mHandleTable["replace"]             = StringFuncHandle(STR_VAL_VALOPT_STROPT, strfnc_replace, false);
     mHandleTable["replaceall"]          = StringFuncHandle(STR_STR_STR_VALOPT_VALOPT, strfnc_replaceall, false);
+    mHandleTable["sha256"]              = StringFuncHandle(STR_VALOPT, strfnc_sha256, false);
     mHandleTable["split"]               = StringFuncHandle(STR_STR, strfnc_split, false);
     mHandleTable["str_not_match"]       = StringFuncHandle(STR_STR_VALOPT, strfnc_str_not_match, false);
     mHandleTable["str_not_rmatch"]      = StringFuncHandle(STR_STR_VALOPT, strfnc_str_not_rmatch, false);

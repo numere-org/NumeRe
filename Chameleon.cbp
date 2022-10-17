@@ -252,6 +252,7 @@
 			<Add option="-lgsl" />
 			<Add option="-lnoise" />
 			<Add option="-lcurl" />
+			<Add option="-lsha" />
 			<Add option="-lgslcblas" />
 			<Add option="-Wl,--stack,8388608" />
 			<Add option="-fopenmp" />
