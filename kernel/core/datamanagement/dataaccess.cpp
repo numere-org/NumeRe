@@ -554,7 +554,9 @@ void replaceDataEntities(string& sLine, const string& sEntity, MemoryManager& _d
 			// This is a usual data access
 			// create a vector containing the data
 #warning NOTE (numere#1#08/17/21): Might be the source of some bytecode issues
-			if (/*options & INSERT_STRINGS &&*/ _data.getType(_idx.col, sEntityName) > TableColumn::STRINGLIKE)
+			if (options & INSERT_STRINGS)
+                sEntityStringReplacement = _stringParser.createTempStringVectorVar(_data.getElementAsString(_idx.row, _idx.col, sEntityName));
+			else if (_data.getType(_idx.col, sEntityName) > TableColumn::STRINGLIKE)
                 sEntityStringReplacement = _stringParser.createTempStringVectorVar(_data.getElementMixed(_idx.row, _idx.col, sEntityName));
             else
                 vEntityContents = _data.getElement(_idx.row, _idx.col, sEntityName);
@@ -1032,25 +1034,43 @@ static string createMafDataAccessString(const string& sAccessString, Parser& _pa
 /// \brief This function returns the name of the
 /// MAF.
 ///
-/// \param sAccessString const string&
-/// \return string
+/// \param sAccessString const std::string&
+/// \return std::string
 ///
 /////////////////////////////////////////////////
-static string getMafFromAccessString(const string& sAccessString)
+static std::string getMafFromAccessString(const std::string& sAccessString)
 {
 	// Store these values statically
 	static const int sMafListLength = 16;
-	static string sMafList[sMafListLength] = {"std", "avg", "prd", "sum", "min", "max", "norm", "num", "cnt", "med", "and", "or", "xor", "size", "maxpos", "minpos"};
+	static std::string sMafList[sMafListLength] = {"std", "avg", "prd", "sum", "min", "max", "norm", "num", "cnt", "med", "and", "or", "xor", "size", "maxpos", "minpos"};
 	size_t pos = 0;
 
 	for (int i = 0; i < sMafListLength; i++)
 	{
 	    pos = sAccessString.find("." + sMafList[i]);
 
-		if (pos != string::npos
+		if (pos != std::string::npos
             && (pos + sMafList[i].length() + 1 >= sAccessString.length() || sAccessString[pos+sMafList[i].length()+1] == '.' || isDelimiter(sAccessString[pos+sMafList[i].length()+1])))
 			return sMafList[i];
 	}
+
+	// Special case: we only have TAB().rows or TAB().cols
+	if ((pos = sAccessString.find(".rows")) != std::string::npos)
+    {
+		if (pos + 4 + 1 >= sAccessString.length()
+            || sAccessString[pos+4+1] == '.'
+            || isDelimiter(sAccessString[pos+4+1]))
+			return "rows";
+
+    }
+	else if ((pos = sAccessString.find(".cols")) != std::string::npos)
+    {
+		if (pos + 4 + 1 >= sAccessString.length()
+            || sAccessString[pos+4+1] == '.'
+            || isDelimiter(sAccessString[pos+4+1]))
+			return "cols";
+
+    }
 
 	return "";
 }
@@ -1109,34 +1129,55 @@ static vector<mu::value_type> MafDataAccess(MemoryManager& _data, const string& 
 {
 	if (sMafname == "std")
 		return _data.std(sCache, sMafAccess);
+
 	if (sMafname == "avg")
 		return _data.avg(sCache, sMafAccess);
+
 	if (sMafname == "prd")
 		return _data.prd(sCache, sMafAccess);
+
 	if (sMafname == "sum")
 		return _data.sum(sCache, sMafAccess);
+
 	if (sMafname == "min")
 		return _data.min(sCache, sMafAccess);
+
 	if (sMafname == "max")
 		return _data.max(sCache, sMafAccess);
+
 	if (sMafname == "norm")
 		return _data.norm(sCache, sMafAccess);
+
 	if (sMafname == "num")
 		return _data.num(sCache, sMafAccess);
+
 	if (sMafname == "cnt")
 		return _data.cnt(sCache, sMafAccess);
+
 	if (sMafname == "med")
 		return _data.med(sCache, sMafAccess);
+
 	if (sMafname == "and")
 		return _data.and_func(sCache, sMafAccess);
+
 	if (sMafname == "or")
 		return _data.or_func(sCache, sMafAccess);
+
 	if (sMafname == "xor")
 		return _data.xor_func(sCache, sMafAccess);
+
 	if (sMafname == "size")
 		return _data.size(sCache, sMafAccess);
+
+	if (sMafname == "rows")
+		return std::vector<mu::value_type>(1, _data.size(sCache, sMafAccess.find("grid") != std::string::npos ? "grid" : "").front());
+
+	if (sMafname == "cols")
+		return std::vector<mu::value_type>(1, _data.size(sCache, sMafAccess.find("grid") != std::string::npos ? "grid" : "").back());
+
 	if (sMafname == "maxpos")
 		return _data.maxpos(sCache, sMafAccess);
+
 	if (sMafname == "minpos")
 		return _data.minpos(sCache, sMafAccess);
 

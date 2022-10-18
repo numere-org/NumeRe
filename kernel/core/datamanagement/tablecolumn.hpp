@@ -58,6 +58,7 @@ struct TableColumn
     virtual std::string getValueAsString(size_t elem) const = 0;
     virtual std::string getValueAsInternalString(size_t elem) const = 0;
     virtual std::string getValueAsParserString(size_t elem) const = 0;
+    virtual std::string getValueAsStringLiteral(size_t elem) const = 0;
     virtual mu::value_type getValue(size_t elem) const = 0;
 
     void setValue(const VectorIndex& idx, const std::vector<std::string>& vValue);

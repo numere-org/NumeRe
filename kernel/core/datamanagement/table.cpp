@@ -567,7 +567,7 @@ namespace NumeRe
             if (!vTableData[j]->isValid(i))
                 return "---";
 
-            return vTableData[j]->getValueAsString(i);
+            return vTableData[j]->getValueAsStringLiteral(i);
         }
 
         return "---";

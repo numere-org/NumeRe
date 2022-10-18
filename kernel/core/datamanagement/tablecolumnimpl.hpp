@@ -60,6 +60,7 @@ class ValueColumn : public TableColumn
         virtual std::string getValueAsString(size_t elem) const override;
         virtual std::string getValueAsInternalString(size_t elem) const override;
         virtual std::string getValueAsParserString(size_t elem) const override;
+        virtual std::string getValueAsStringLiteral(size_t elem) const override;
         virtual mu::value_type getValue(size_t elem) const override;
 
         virtual void setValue(size_t elem, const std::string& sValue) override;
@@ -143,6 +144,7 @@ class DateTimeColumn : public TableColumn
         virtual std::string getValueAsString(size_t elem) const override;
         virtual std::string getValueAsInternalString(size_t elem) const override;
         virtual std::string getValueAsParserString(size_t elem) const override;
+        virtual std::string getValueAsStringLiteral(size_t elem) const override;
         virtual mu::value_type getValue(size_t elem) const override;
 
         virtual void setValue(size_t elem, const std::string& sValue) override;
@@ -233,6 +235,7 @@ class LogicalColumn : public TableColumn
         virtual std::string getValueAsString(size_t elem) const override;
         virtual std::string getValueAsInternalString(size_t elem) const override;
         virtual std::string getValueAsParserString(size_t elem) const override;
+        virtual std::string getValueAsStringLiteral(size_t elem) const override;
         virtual mu::value_type getValue(size_t elem) const override;
 
         virtual void setValue(size_t elem, const std::string& sValue) override;
@@ -316,6 +319,7 @@ class StringColumn : public TableColumn
         virtual std::string getValueAsString(size_t elem) const override;
         virtual std::string getValueAsInternalString(size_t elem) const override;
         virtual std::string getValueAsParserString(size_t elem) const override;
+        virtual std::string getValueAsStringLiteral(size_t elem) const override;
         virtual mu::value_type getValue(size_t elem) const override;
 
         virtual void setValue(size_t elem, const std::string& sValue) override;
@@ -392,6 +396,7 @@ class CategoricalColumn : public TableColumn
         virtual std::string getValueAsString(size_t elem) const override;
         virtual std::string getValueAsInternalString(size_t elem) const override;
         virtual std::string getValueAsParserString(size_t elem) const override;
+        virtual std::string getValueAsStringLiteral(size_t elem) const override;
         virtual mu::value_type getValue(size_t elem) const override;
 
         virtual void setValue(size_t elem, const std::string& sValue) override;

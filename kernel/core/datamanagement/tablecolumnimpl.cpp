@@ -68,6 +68,20 @@ std::string ValueColumn::getValueAsParserString(size_t elem) const
 
 
 /////////////////////////////////////////////////
+/// \brief Returns the contents as parser
+/// string (i.e. without quotation marks).
+///
+/// \param elem size_t
+/// \return std::string
+///
+/////////////////////////////////////////////////
+std::string ValueColumn::getValueAsStringLiteral(size_t elem) const
+{
+    return getValueAsString(elem);
+}
+
+
+/////////////////////////////////////////////////
 /// \brief Returns the selected value as a
 /// numerical type or an invalid value, if it
 /// does not exist.
@@ -428,7 +442,7 @@ TableColumn* ValueColumn::convert(ColumnType type)
 std::string DateTimeColumn::getValueAsString(size_t elem) const
 {
     if (elem < m_data.size() && !mu::isnan(m_data[elem]))
-        return toString(to_timePoint(m_data[elem]), 0);
+        return toCmdString(m_data[elem]);
 
     return "nan";
 }
@@ -444,7 +458,10 @@ std::string DateTimeColumn::getValueAsString(size_t elem) const
 /////////////////////////////////////////////////
 std::string DateTimeColumn::getValueAsInternalString(size_t elem) const
 {
-    return getValueAsString(elem);
+    if (elem < m_data.size() && !mu::isnan(m_data[elem]))
+        return toString(to_timePoint(m_data[elem]), 0);
+
+    return "nan";
 }
 
 
@@ -458,7 +475,21 @@ std::string DateTimeColumn::getValueAsInternalString(size_t elem) const
 /////////////////////////////////////////////////
 std::string DateTimeColumn::getValueAsParserString(size_t elem) const
 {
-    return "\"" + getValueAsString(elem) + "\"";
+    return "\"" + getValueAsInternalString(elem) + "\"";
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Returns the contents as parser
+/// string (i.e. with quotation marks).
+///
+/// \param elem size_t
+/// \return std::string
+///
+/////////////////////////////////////////////////
+std::string DateTimeColumn::getValueAsStringLiteral(size_t elem) const
+{
+    return getValueAsInternalString(elem);
 }
 
 
@@ -855,6 +886,20 @@ std::string LogicalColumn::getValueAsParserString(size_t elem) const
 
 
 /////////////////////////////////////////////////
+/// \brief Returns the contents as parser
+/// string (i.e. without quotation marks).
+///
+/// \param elem size_t
+/// \return std::string
+///
+/////////////////////////////////////////////////
+std::string LogicalColumn::getValueAsStringLiteral(size_t elem) const
+{
+    return getValueAsString(elem);
+}
+
+
+/////////////////////////////////////////////////
 /// \brief Returns the selected value as a
 /// numerical type or an invalid value, if it
 /// does not exist.
@@ -1202,7 +1247,7 @@ TableColumn* LogicalColumn::convert(ColumnType type)
 /////////////////////////////////////////////////
 std::string StringColumn::getValueAsString(size_t elem) const
 {
-    return toExternalString(getValueAsInternalString(elem));
+    return getValueAsParserString(elem);
 }
 
 
@@ -1234,6 +1279,20 @@ std::string StringColumn::getValueAsInternalString(size_t elem) const
 std::string StringColumn::getValueAsParserString(size_t elem) const
 {
     return "\"" + getValueAsInternalString(elem) + "\"";
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Returns the contents as parser
+/// string (i.e. with quotation marks).
+///
+/// \param elem size_t
+/// \return std::string
+///
+/////////////////////////////////////////////////
+std::string StringColumn::getValueAsStringLiteral(size_t elem) const
+{
+    return toExternalString(getValueAsInternalString(elem));
 }
 
 
@@ -1673,7 +1732,10 @@ TableColumn* StringColumn::convert(ColumnType type)
 /////////////////////////////////////////////////
 std::string CategoricalColumn::getValueAsString(size_t elem) const
 {
-    return getValueAsInternalString(elem);
+    if (elem < m_data.size() && m_data[elem] != CATEGORICAL_NAN)
+        return toString(m_data[elem]+1);
+
+    return "nan";
 }
 
 
@@ -1704,11 +1766,21 @@ std::string CategoricalColumn::getValueAsInternalString(size_t elem) const
 /////////////////////////////////////////////////
 std::string CategoricalColumn::getValueAsParserString(size_t elem) const
 {
-//    if (elem < m_data.size() && m_data[elem] != CATEGORICAL_NAN)
-//        return toString(m_data[elem]+1);
-//
-//    return "nan";
     return "\"" + getValueAsInternalString(elem) + "\"";
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Returns the contents as parser
+/// string (i.e. with quotation marks).
+///
+/// \param elem size_t
+/// \return std::string
+///
+/////////////////////////////////////////////////
+std::string CategoricalColumn::getValueAsStringLiteral(size_t elem) const
+{
+    return getValueAsInternalString(elem);
 }
 
 

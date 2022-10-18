@@ -427,6 +427,14 @@ class MemoryManager : public NumeRe::FileAdapter, public StringMemory, public Nu
             return ValueVector();
 		}
 
+		ValueVector getElementAsString(const VectorIndex& _vLine, const VectorIndex& _vCol, const std::string& _sTable) const
+		{
+		    if (exists(_sTable))
+                return vMemory[findTable(_sTable)]->readMemAsString(_vLine, _vCol);
+
+            return ValueVector();
+		}
+
 		TableColumn::ColumnType getType(const VectorIndex& _vCol, const std::string& _sTable) const
 		{
 		    if (exists(_sTable))

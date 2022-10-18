@@ -466,13 +466,18 @@ bool StringVector::is_string(size_t i) const
 /// \brief Convert the i-th element to a string.
 ///
 /// \param i size_t
+/// \param minChars size_t Only used for
+/// non-string values
 /// \return void
 ///
 /////////////////////////////////////////////////
-void StringVector::convert_to_string(size_t i)
+void StringVector::convert_to_string(size_t i, size_t minChars)
 {
     if (i < size() && !is_string(i))
-        std::vector<std::string>::operator[](i) = "\"" + std::vector<std::string>::operator[](i) + "\"";
+    {
+        size_t len = std::vector<std::string>::operator[](i).length();
+        std::vector<std::string>::operator[](i) = "\"" + (len < minChars ? std::string(minChars-len, '0') : "") + std::vector<std::string>::operator[](i) + "\"";
+    }
 }
 
 

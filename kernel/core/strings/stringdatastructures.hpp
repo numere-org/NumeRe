@@ -182,7 +182,7 @@ class StringVector : public std::vector<std::string>
         void push_back(bool nVal);
         void push_generic(const std::string& sStr);
         bool is_string(size_t i) const;
-        void convert_to_string(size_t i);
+        void convert_to_string(size_t i, size_t minChars = 0);
         StringView operator[](size_t i) const;
         StringArg getArg(size_t i) const;
         std::string getMasked(size_t i) const;

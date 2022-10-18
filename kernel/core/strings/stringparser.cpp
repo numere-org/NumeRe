@@ -285,7 +285,8 @@ namespace NumeRe
                               parseStringsInIndices(getFunctionArgumentList(sOccurence, sLine, nStartPosition, nEndPosition).to_string()));
 
                 // Get the data and parse string expressions
-                replaceDataEntities(sData, sOccurence, _data, _parser, _option, REPLACE_NAN | INSERT_STRINGS);
+                replaceDataEntities(sData, sOccurence, _data, _parser, _option,
+                                    REPLACE_NAN | (nStartPos && (sLine[nStartPos-1] == '#' || sLine[nStartPos-1] == '~') ? INSERT_STRINGS : 0));
             }
 
             // Strip the spaces, which have been added during the
@@ -393,7 +394,7 @@ namespace NumeRe
                             // result into a string
                             for (size_t i = 0; i < strRes.vResult.size(); i++)
                             {
-                                strRes.vResult.convert_to_string(i);
+                                strRes.vResult.convert_to_string(i, sPrefix.length());
                             }
 
                             // Create a vector variable from the return value
@@ -503,12 +504,13 @@ namespace NumeRe
                     // Add the needed quotation marks
                     for (size_t i = 0; i < strRes.vResult.size(); i++)
                     {
-                        strRes.vResult.convert_to_string(i);
+                        strRes.vResult.convert_to_string(i, sPrefix.length());
                     }
 
                     // Create a new string vector var, append it to the string and continue
                     sExpr = createStringVectorVar(strRes.vResult);
                     sLineToParsedTemp += sExpr;
+
                     if (getPositionOfFirstDelimiter(sLineToParsed.substr(n_pos)) < sLineToParsed.length())
                         sLineToParsed = sLineToParsed.substr(getPositionOfFirstDelimiter(sLineToParsed.substr(n_pos)));
                     else

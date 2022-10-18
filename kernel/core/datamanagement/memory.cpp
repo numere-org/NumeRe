@@ -575,6 +575,59 @@ ValueVector Memory::readMixedMem(const VectorIndex& _vLine, const VectorIndex& _
                     continue;
                 }
 
+                vReturn[j + i * _vCol.size()] = memArray[_vCol[j]]->getValueAsString(_vLine[i]);
+            }
+        }
+    }
+
+    return vReturn;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This member function returns the
+/// elements stored at the selected positions.
+///
+/// \param _vLine const VectorIndex&
+/// \param _vCol const VectorIndex&
+/// \return ValueVector
+///
+/////////////////////////////////////////////////
+ValueVector Memory::readMemAsString(const VectorIndex& _vLine, const VectorIndex& _vCol) const
+{
+    ValueVector vReturn;
+
+    if ((_vLine.size() > 1 && _vCol.size() > 1) || !memArray.size())
+        vReturn.push_back("");
+    else
+    {
+#warning TODO (numere#1#06/08/22): Added escaped quotation marks to actually enable reading empty entries
+        vReturn.resize(_vLine.size()*_vCol.size(), "\"\"");
+
+        //#pragma omp parallel for
+        for (size_t j = 0; j < _vCol.size(); j++)
+        {
+            if (_vCol[j] < 0)
+                continue;
+
+            int elems = getElemsInColumn(_vCol[j]);
+
+            if (!elems)
+                continue;
+
+            for (size_t i = 0; i < _vLine.size(); i++)
+            {
+                if (_vLine[i] < 0)
+                    continue;
+
+                if (_vLine[i] >= elems)
+                {
+                    if (_vLine.isExpanded() && _vLine.isOrdered())
+                        break;
+
+                    continue;
+                }
+
                 vReturn[j + i * _vCol.size()] = memArray[_vCol[j]]->getValueAsParserString(_vLine[i]);
             }
         }

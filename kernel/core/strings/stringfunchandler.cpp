@@ -417,7 +417,7 @@ namespace NumeRe
         }
         else if (_data.containsTablesOrClusters(sFuncArgument))
         {
-            getDataElements(sFuncArgument, _parser, _data, _option, INSERT_STRINGS);
+            getDataElements(sFuncArgument, _parser, _data, _option, 0);
 
             if (isStringExpression(sFuncArgument))
             {
@@ -1561,7 +1561,8 @@ namespace NumeRe
         while ((nStartPos = sLine.find(sFunc, nStartPos)) != string::npos)
         {
             // Ignore false positives
-            if ((nStartPos && !isDelimiter(sLine[nStartPos-1])) || isInQuotes(sLine, nStartPos, true))
+            if ((nStartPos && !(isDelimiter(sLine[nStartPos-1]) || sLine[nStartPos-1] == '~'))
+                || isInQuotes(sLine, nStartPos, true))
             {
                 nStartPos++;
                 continue;
