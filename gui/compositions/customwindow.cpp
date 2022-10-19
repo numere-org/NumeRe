@@ -304,7 +304,16 @@ void CustomWindow::layout()
     // Evaluate the user-supplied icon or use
     // the standard icon
     if (layoutGroup->Attribute("icon"))
-        SetIcon(wxIcon(layoutGroup->Attribute("icon"), wxICON_DEFAULT_TYPE));
+    {
+        wxFileName iconfile(layoutGroup->Attribute("icon"));
+
+        if (iconfile.GetExt() == "ico")
+            SetIcon(wxIcon(layoutGroup->Attribute("icon"), wxBITMAP_TYPE_ICO));
+        else if (iconfile.GetExt() == "png")
+            SetIcon(wxIcon(layoutGroup->Attribute("icon"), wxBITMAP_TYPE_PNG));
+        else if (iconfile.GetExt() == "bmp")
+            SetIcon(wxIcon(layoutGroup->Attribute("icon"), wxBITMAP_TYPE_BMP));
+    }
     else
         SetIcon(static_cast<NumeReWindow*>(m_parent)->getStandardIcon());
 

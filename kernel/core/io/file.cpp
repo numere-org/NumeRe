@@ -3504,11 +3504,11 @@ namespace NumeRe
                 nCommentLines++;
             }
 
-            vCommentLines.push_back(nCommentLines);
+            vCommentLines.push_back(nCommentLines != 0);
 
             // Find the maximal number of needed rows
-            if (nExcelLines < _sheet->GetTotalRows()-nCommentLines)
-                nExcelLines = _sheet->GetTotalRows()-nCommentLines;
+            if (nExcelLines < _sheet->GetTotalRows()-(nCommentLines != 0))
+                nExcelLines = _sheet->GetTotalRows()-(nCommentLines != 0);
 
             // Add the number of columns of the current
             // sheet to the total number of columns
@@ -3558,8 +3558,8 @@ namespace NumeRe
 
                     // Replace line break characters with their
                     // corresponding masked character
-                    while (sEntry.find((char)10) != string::npos)
-                        sEntry.replace(sEntry.find((char)10), 1, "\n");
+                    while (sEntry.find((char)13) != string::npos)
+                        sEntry.replace(sEntry.find((char)13), 1, "\n");
 
                     // Append the string to the current table
                     // column head, if it is not empty

@@ -17,3 +17,6 @@ New	The string function "sha256()" can be used to calculate the SHA-256 of strin
 Added	The new v4 NDAT und CACHE files have now a SHA-256 checksum to detect possible file corruption.
 New	The table method modifiers "TAB().rows" and "TAB().cols" can now be used solely and return the number of table rows or columns, respectively.
 Cleaned	The valtostring parser operator "#" behaves now a bit different compared to the "valtostr()" function: logical, categorical and datetime table columns will return their values formatted as strings ("true"/"false", the category name or the formatted time value).
+Fixed	Excel files containing only strings are now readable correctly.
+Fixed	Excel files containing line breaks in cells are now readable correctly.
+Fixed	Setting icons for layouts is now possible.

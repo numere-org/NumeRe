@@ -308,6 +308,7 @@ static std::string parseLayoutScript(std::string& sLayoutScript, tinyxml2::XMLDo
                 // Start of the layout block
                 currentGroup.push(layout->NewElement("layout"));
                 layout->InsertFirstChild(currentGroup.top());
+                replaceAll(line, "<this>", sFolderName.c_str());
 
                 if (findParameter(line, "size", '='))
                     currentGroup.top()->SetAttribute("size", parseNumOpt(line, findParameter(line, "size", '=')+4).c_str());
