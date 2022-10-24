@@ -959,19 +959,23 @@ static void handleMafDataAccess(string& sLine, const string& sMafAccess, Parser&
 	// Only store the value, if it is not a string literal (i.e. the name)
 	if (!NumeReKernel::getInstance()->getStringParser().isStringExpression(sMafVectorName))
     {
-        // Set the vector variable with its value for the parser
-        _parser.SetVectorVar(sMafVectorName,
-                             MafDataAccess(_data,
-                                           getMafFromAccessString(sMafAccess),
-                                           sMafAccess.substr(0, sMafAccess.find('(')),
-                                           createMafDataAccessString(sMafAccess, _parser)));
+        // If the return value is not already a numerical vector
+        if (!_parser.ContainsVectorVars(sMafVectorName, false))
+        {
+            // Set the vector variable with its value for the parser
+            _parser.SetVectorVar(sMafVectorName,
+                                 MafDataAccess(_data,
+                                               getMafFromAccessString(sMafAccess),
+                                               sMafAccess.substr(0, sMafAccess.find('(')),
+                                               createMafDataAccessString(sMafAccess, _parser)));
 
-        // Create a cached access and store it
-        mu::CachedDataAccess _access = {sMafAccess,
-                                        sMafVectorName,
-                                        sMafAccess.substr(0, sMafAccess.find('(')),
-                                        mu::CachedDataAccess::IS_TABLE_METHOD};
-        _parser.CacheCurrentAccess(_access);
+            // Create a cached access and store it
+            mu::CachedDataAccess _access = {sMafAccess,
+                                            sMafVectorName,
+                                            sMafAccess.substr(0, sMafAccess.find('(')),
+                                            mu::CachedDataAccess::IS_TABLE_METHOD};
+            _parser.CacheCurrentAccess(_access);
+        }
     }
     else
     {
@@ -1422,6 +1426,164 @@ static std::string tableMethod_categorize(const std::string& sTableName, std::st
 
 
 /////////////////////////////////////////////////
+/// \brief Realizes the "fndcols()" table method.
+///
+/// \param sTableName const std::string&
+/// \param sMethodArguments std::string
+/// \return std::string
+///
+/////////////////////////////////////////////////
+static std::string tableMethod_findCols(const std::string& sTableName, std::string sMethodArguments)
+{
+    std::string sColumns = getNextArgument(sMethodArguments, true);
+
+    // Might be necessary to resolve the contents of columns and conversions
+    getDataElements(sColumns,
+                    NumeReKernel::getInstance()->getParser(),
+                    NumeReKernel::getInstance()->getMemoryManager(),
+                    NumeReKernel::getInstance()->getSettings());
+
+    std::vector<std::string> vColNames;
+
+    if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sColumns))
+    {
+        std::string sDummy;
+        sColumns += " -nq";
+        NumeRe::StringParser::StringParserRetVal res = NumeReKernel::getInstance()->getStringParser().evalAndFormat(sColumns, sDummy, true);
+
+        if (res == NumeRe::StringParser::STRING_NUMERICAL)
+            return "nan";
+
+        vColNames = NumeReKernel::getInstance()->getAns().getInternalStringArray();
+    }
+
+    std::vector<mu::value_type> vCols = NumeReKernel::getInstance()->getMemoryManager().findCols(sTableName, vColNames);
+
+    return NumeReKernel::getInstance()->getParser().CreateTempVectorVar(vCols);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Realizes the "countif()" table method.
+///
+/// \param sTableName const std::string&
+/// \param sMethodArguments std::string
+/// \return std::string
+///
+/////////////////////////////////////////////////
+static std::string tableMethod_counteq(const std::string& sTableName, std::string sMethodArguments)
+{
+    NumeReKernel* _kernel = NumeReKernel::getInstance();
+    std::string sColumns = getNextArgument(sMethodArguments, true);
+
+    // Might be necessary to resolve the contents of columns and conversions
+    getDataElements(sColumns,
+                    _kernel->getParser(),
+                    _kernel->getMemoryManager(),
+                    _kernel->getSettings());
+
+    int nResults = 0;
+    _kernel->getParser().SetExpr(sColumns);
+    mu::value_type* v = _kernel->getParser().Eval(nResults);
+    VectorIndex vCols(v, nResults, 0);
+
+    std::vector<mu::value_type> vResults;
+
+    if (_kernel->getStringParser().isStringExpression(sMethodArguments))
+    {
+        std::string sDummy;
+        sMethodArguments += " -nq";
+        NumeRe::StringParser::StringParserRetVal res = _kernel->getStringParser().evalAndFormat(sMethodArguments, sDummy, true);
+
+        if (res == NumeRe::StringParser::STRING_NUMERICAL)
+        {
+            _kernel->getParser().SetExpr(sMethodArguments);
+            v = _kernel->getParser().Eval(nResults);
+
+            vResults = _kernel->getMemoryManager().countIfEqual(sTableName, vCols,
+                                                                std::vector<mu::value_type>(v, v+nResults),
+                                                                std::vector<std::string>());
+        }
+        else
+            vResults = _kernel->getMemoryManager().countIfEqual(sTableName, vCols,
+                                                                std::vector<mu::value_type>(),
+                                                                _kernel->getAns().getInternalStringArray());
+    }
+    else
+    {
+        _kernel->getParser().SetExpr(sMethodArguments);
+        v = _kernel->getParser().Eval(nResults);
+
+        vResults = _kernel->getMemoryManager().countIfEqual(sTableName, vCols,
+                                                            std::vector<mu::value_type>(v, v+nResults),
+                                                            std::vector<std::string>());
+    }
+
+    return _kernel->getParser().CreateTempVectorVar(vResults);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Realizes the "index()" table method.
+///
+/// \param sTableName const std::string&
+/// \param sMethodArguments std::string
+/// \return std::string
+///
+/////////////////////////////////////////////////
+static std::string tableMethod_index(const std::string& sTableName, std::string sMethodArguments)
+{
+    NumeReKernel* _kernel = NumeReKernel::getInstance();
+    std::string sColumns = getNextArgument(sMethodArguments, true);
+
+    // Might be necessary to resolve the contents of columns and conversions
+    getDataElements(sColumns,
+                    _kernel->getParser(),
+                    _kernel->getMemoryManager(),
+                    _kernel->getSettings());
+
+    int nResults = 0;
+    _kernel->getParser().SetExpr(sColumns);
+    mu::value_type* v = _kernel->getParser().Eval(nResults);
+    size_t col = intCast(v[0])-1;
+
+    std::vector<mu::value_type> vResults;
+
+    if (_kernel->getStringParser().isStringExpression(sMethodArguments))
+    {
+        std::string sDummy;
+        sMethodArguments += " -nq";
+        NumeRe::StringParser::StringParserRetVal res = _kernel->getStringParser().evalAndFormat(sMethodArguments, sDummy, true);
+
+        if (res == NumeRe::StringParser::STRING_NUMERICAL)
+        {
+            _kernel->getParser().SetExpr(sMethodArguments);
+            v = _kernel->getParser().Eval(nResults);
+
+            vResults = _kernel->getMemoryManager().getIndex(sTableName, col,
+                                                            std::vector<mu::value_type>(v, v+nResults),
+                                                            std::vector<std::string>());
+        }
+        else
+            vResults = _kernel->getMemoryManager().getIndex(sTableName, col,
+                                                            std::vector<mu::value_type>(),
+                                                            _kernel->getAns().getInternalStringArray());
+    }
+    else
+    {
+        _kernel->getParser().SetExpr(sMethodArguments);
+        v = _kernel->getParser().Eval(nResults);
+
+        vResults = _kernel->getMemoryManager().getIndex(sTableName, col,
+                                                        std::vector<mu::value_type>(v, v+nResults),
+                                                        std::vector<std::string>());
+    }
+
+    return _kernel->getParser().CreateTempVectorVar(vResults);
+}
+
+
+/////////////////////////////////////////////////
 /// \brief Realizes the "describe()" method.
 ///
 /// \param sTableName const std::string&
@@ -1475,6 +1637,9 @@ static std::map<std::string, TableMethod> getInplaceTableMethods()
     mTableMethods["describe"] = tableMethod_annotate;
     mTableMethods["categorylist"] = tableMethod_categories;
     mTableMethods["categorize"] = tableMethod_categorize;
+    mTableMethods["fndcols"] = tableMethod_findCols;
+    mTableMethods["countif"] = tableMethod_counteq;
+    mTableMethods["index"] = tableMethod_index;
 
     return mTableMethods;
 }
@@ -1492,13 +1657,14 @@ static std::map<std::string, TableMethod> getInplaceTableMethods()
 static string createMafVectorName(string sAccessString)
 {
     static std::map<std::string, TableMethod> mMethods = getInplaceTableMethods();
+    std::string sTableName = sAccessString.substr(0, sAccessString.find("()."));
 
     for (auto& method : mMethods)
     {
-        if (sAccessString.find("." + method.first + "(") != std::string::npos)
+        if (sAccessString.compare(0, sTableName.length()+method.first.length()+4, sTableName+"()."+method.first+"(") == 0)
         {
-            std::string sTableName = sAccessString.substr(0, sAccessString.find("()."));
-            std::string sMethodArguments = sAccessString.substr(sAccessString.find("." + method.first + "(") + 1 + method.first.length());
+            //std::string sMethodArguments = sAccessString.substr(sAccessString.find("." + method.first + "(") + 1 + method.first.length());
+            std::string sMethodArguments = sAccessString.substr(sTableName.length()+method.first.length()+3);
             sMethodArguments.erase(getMatchingParenthesis(sMethodArguments)+1);
             sMethodArguments = sMethodArguments.substr(1, sMethodArguments.length()-2);
 

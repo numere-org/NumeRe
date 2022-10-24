@@ -3079,6 +3079,184 @@ std::vector<mu::value_type> Memory::maxpos(const VectorIndex& _vIndex, int dir) 
 
 
 /////////////////////////////////////////////////
+/// \brief Static helper function to ensure that
+/// two doubles are actually close enough to be
+/// considered equal.
+///
+/// \param d1 double
+/// \param d2 double
+/// \return bool
+///
+/////////////////////////////////////////////////
+static bool closeEnough(double d1, double d2)
+{
+    return abs(d1 - d2) < 1e-16 * max(1.0, min(abs(d1), abs(d2)));
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Static helper function to ensure that
+/// two complex values are actually close enough
+/// to be considered equal.
+///
+/// \param v1 const mu::value_type&
+/// \param v2 const mu::value_type&
+/// \return bool
+///
+/////////////////////////////////////////////////
+static bool closeEnough(const mu::value_type& v1, const mu::value_type& v2)
+{
+    return closeEnough(v1.real(), v2.real()) && closeEnough(v1.imag(), v2.imag());
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Finds the columns IDs, whose headlines
+/// match to the passed strings. Can return
+/// multiple column IDs per string.
+///
+/// \param vColNames const std::vector<std::string>&
+/// \return std::vector<mu::value_type>
+///
+/////////////////////////////////////////////////
+std::vector<mu::value_type> Memory::findCols(const std::vector<std::string>& vColNames) const
+{
+    std::vector<mu::value_type> vColIndices;
+
+    for (const auto& sName : vColNames)
+    {
+        for (size_t i = 0; i < memArray.size(); i++)
+        {
+            if (memArray[i] && memArray[i]->m_sHeadLine == sName)
+                vColIndices.push_back(i+1.0);
+        }
+    }
+
+    if (!vColIndices.size())
+        vColIndices.push_back(NAN);
+
+    return vColIndices;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Counts all values in the selected
+/// columns, which match to the passed values
+/// (either numerically or string values) and
+/// returns the corresponding sums.
+///
+/// \param _vCols const VectorIndex&
+/// \param vValues const std::vector<mu::value_type>&
+/// \param vStringValues const std::vector<std::string>&
+/// \return std::vector<mu::value_type>
+///
+/////////////////////////////////////////////////
+std::vector<mu::value_type> Memory::countIfEqual(const VectorIndex& _vCols, const std::vector<mu::value_type>& vValues,
+                                                 const std::vector<std::string>& vStringValues) const
+{
+    std::vector<mu::value_type> vCounted;
+
+    for (size_t j = 0; j < _vCols.size(); j++)
+    {
+        if (_vCols[j] >= memArray.size() || !memArray[_vCols[j]])
+            continue;
+
+        if (vValues.size())
+        {
+            for (const auto& val : vValues)
+            {
+                size_t count = 0;
+
+                for (size_t i = 0; i < memArray[_vCols[j]]->size(); i++)
+                {
+                    if (closeEnough(memArray[_vCols[j]]->getValue(i), val))
+                        count++;
+                }
+
+                vCounted.push_back(count);
+            }
+        }
+        else
+        {
+            for (const auto& sVal : vStringValues)
+            {
+                size_t count = 0;
+
+                for (size_t i = 0; i < memArray[_vCols[j]]->size(); i++)
+                {
+                    if (memArray[_vCols[j]]->getValueAsInternalString(i) == sVal)
+                        count++;
+                }
+
+                vCounted.push_back(count);
+            }
+        }
+    }
+
+    if (!vCounted.size())
+        vCounted.push_back(NAN);
+
+    return vCounted;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Determines the positions of all
+/// elements, which correspond to the passed
+/// values (either numerically or string values),
+/// and returns them as an index.
+///
+/// \param col size_t
+/// \param vValues const std::vector<mu::value_type>&
+/// \param vStringValues const std::vector<std::string>&
+/// \return std::vector<mu::value_type>
+///
+/////////////////////////////////////////////////
+std::vector<mu::value_type> Memory::getIndex(size_t col, const std::vector<mu::value_type>& vValues,
+                                             const std::vector<std::string>& vStringValues) const
+{
+    std::vector<mu::value_type> vIndex;
+
+    if (col >= memArray.size() || !memArray[col])
+        return std::vector<mu::value_type>(1, NAN);
+
+    if (vValues.size())
+    {
+        for (const auto& val : vValues)
+        {
+            if (vIndex.size())
+                vIndex.push_back(NAN);
+
+            for (size_t i = 0; i < memArray[col]->size(); i++)
+            {
+                if (closeEnough(memArray[col]->getValue(i), val))
+                    vIndex.push_back(i+1);
+            }
+        }
+    }
+    else
+    {
+        for (const auto& sVal : vStringValues)
+        {
+            if (vIndex.size())
+                vIndex.push_back(NAN);
+
+            for (size_t i = 0; i < memArray[col]->size(); i++)
+            {
+                if (memArray[col]->getValueAsInternalString(i) == sVal)
+                    vIndex.push_back(i+1);
+            }
+        }
+    }
+
+    if (!vIndex.size())
+        vIndex.push_back(NAN);
+
+    return vIndex;
+}
+
+
+/////////////////////////////////////////////////
 /// \brief This method is the retouching main
 /// method. It will redirect the control into the
 /// specialized member functions.

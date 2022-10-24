@@ -20,3 +20,4 @@ Cleaned	The valtostring parser operator "#" behaves now a bit different compared
 Fixed	Excel files containing only strings are now readable correctly.
 Fixed	Excel files containing line breaks in cells are now readable correctly.
 Fixed	Setting icons for layouts is now possible.
+Added	Created new table methods: "TAB().fndcols()" (searches columns for headlines), "TAB().index()" (creates indices for columns for selected values) and "TAB().countif()" (counts occurences of values).

@@ -276,7 +276,8 @@ namespace NumeRe
                     sData = vRes.front();
                 }
 
-                getDataElements(sData, _parser, _data, _option, true);
+                getDataElements(sData, _parser, _data, _option,
+                                REPLACE_NAN | (nStartPos && (sLine[nStartPos-1] == '#' || sLine[nStartPos-1] == '~') ? INSERT_STRINGS : 0));
             }
             else
             {

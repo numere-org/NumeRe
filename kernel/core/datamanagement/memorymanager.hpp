@@ -343,6 +343,24 @@ class MemoryManager : public NumeRe::FileAdapter, public StringMemory, public Nu
 		    return vMemory[findTable(_sTable)]->setCategories(_vCol, vCategories);
 		}
 
+        std::vector<mu::value_type> findCols(const std::string& sTable, const std::vector<std::string>& vCols) const
+        {
+            return vMemory[findTable(sTable)]->findCols(vCols);
+        }
+
+        std::vector<mu::value_type> countIfEqual(const std::string& sTable, const VectorIndex& _vCols,
+                                                 const std::vector<mu::value_type>& vValues,
+                                                 const std::vector<std::string>& vStringValues) const
+        {
+            return vMemory[findTable(sTable)]->countIfEqual(_vCols, vValues, vStringValues);
+        }
+
+        std::vector<mu::value_type> getIndex(const std::string& sTable, size_t nCol,
+                                             const std::vector<mu::value_type>& vValues,
+                                             const std::vector<std::string>& vStringValues) const
+        {
+            return vMemory[findTable(sTable)]->getIndex(nCol, vValues, vStringValues);
+        }
 
 
 
