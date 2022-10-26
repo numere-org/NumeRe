@@ -1181,6 +1181,16 @@ void NumeReWindow::OnMenuEvent(wxCommandEvent &event)
                 command = (data->tooltip).substr(0, (data->tooltip).find('(')+1);
             else if (data->isConstant)
                 command = (data->tooltip).substr(0, (data->tooltip).find(' '));
+            else if (data->isMethod)
+            {
+                size_t dot = (data->tooltip).find('.');
+                size_t endPos = (data->tooltip).find_first_of("( ", dot);
+
+                if ((data->tooltip)[endPos] == '(')
+                    endPos++;
+
+                command = (data->tooltip).substr(dot, endPos-dot);
+            }
 
             NumeReEditor* edit = m_book->getFocusedEditor();
             edit->InsertText(edit->GetCurrentPos(), command);
@@ -1197,6 +1207,17 @@ void NumeReWindow::OnMenuEvent(wxCommandEvent &event)
                 command = (data->tooltip).substr(0, (data->tooltip).find('(')+1).ToStdString();
             else if (data->isConstant)
                 command = (data->tooltip).substr(0, (data->tooltip).find(' ')).ToStdString();
+            else if (data->isMethod)
+            {
+                size_t dot = (data->tooltip).find('.');
+                size_t endPos = (data->tooltip).find_first_of("( ", dot);
+
+                if ((data->tooltip)[endPos] == '(')
+                    endPos++;
+
+                command = (data->tooltip).substr(dot, endPos-dot);
+            }
+
             showConsole();
             m_terminal->ProcessInput(command.length(), command);
             break;
@@ -5701,11 +5722,15 @@ void NumeReWindow::prepareFunctionTree()
     int idxFunctions = m_iconManager->GetIconIndex("FUNCTIONS");
     int idxCommands = m_iconManager->GetIconIndex("COMMANDS");
     int idxConstants = m_iconManager->GetIconIndex("CONSTANTS");
+    int idxMethods = m_iconManager->GetIconIndex("METHODS");
+
     wxTreeItemId rootNode = m_functionTree->AddRoot(_guilang.get("GUI_TREE_WORKSPACE"), m_iconManager->GetIconIndex("WORKPLACE"));
     FileNameTreeData* root = new FileNameTreeData();
     wxTreeItemId commandNode = m_functionTree->AppendItem(rootNode, _guilang.get("GUI_TREE_COMMANDS"), m_iconManager->GetIconIndex("WORKPLACE"), -1, root);
     root = new FileNameTreeData();
     wxTreeItemId functionNode = m_functionTree->AppendItem(rootNode, _guilang.get("GUI_TREE_FUNCTIONS"), m_iconManager->GetIconIndex("WORKPLACE"), -1, root);
+    root = new FileNameTreeData();
+    wxTreeItemId methodNode = m_functionTree->AppendItem(rootNode, _guilang.get("GUI_TREE_METHODS"), m_iconManager->GetIconIndex("WORKPLACE"), -1, root);
     root = new FileNameTreeData();
     wxTreeItemId constNode = m_functionTree->AppendItem(rootNode, _guilang.get("GUI_TREE_CONSTANTS"), m_iconManager->GetIconIndex("WORKPLACE"), -1, root);
     wxTreeItemId currentNode;
@@ -5760,6 +5785,38 @@ void NumeReWindow::prepareFunctionTree()
 
     m_functionTree->Toggle(functionNode);
 
+    // methods
+    sKeyList = _guilang.get("GUI_TREE_METHOD_KEYLIST");
+    vKeyList.clear();
+
+    while (sKeyList.length())
+    {
+        vKeyList.push_back(sKeyList.substr(0, sKeyList.find(' ')));
+        sKeyList.erase(0, sKeyList.find(' '));
+
+        while (sKeyList.front() == ' ')
+            sKeyList.erase(0,1);
+    }
+
+    for (size_t i = 0; i < vKeyList.size(); i++)
+    {
+        FileNameTreeData* dir = new FileNameTreeData();
+        dir->isDir = true;
+        currentNode = m_functionTree->AppendItem(methodNode, _guilang.get("PARSERFUNCS_LISTFUNC_METHODS_TYPE_" + toUpperCase(vKeyList[i])), idxFolderOpen, -1, dir);
+        vDirList = _guilang.getList("PARSERFUNCS_LISTFUNC_METHOD_*_[" + toUpperCase(vKeyList[i]) + "]");
+        std::string sPrefix = vKeyList[i] == "data" ? "TABLE()" : "STRINGVAR";
+
+        for (size_t j = 0; j < vDirList.size(); j++)
+        {
+            FileNameTreeData* data = new FileNameTreeData();
+            data->isMethod = true;
+            data->tooltip = sPrefix + prepareTooltip("." + vDirList[j]);
+            m_functionTree->AppendItem(currentNode, sPrefix + "." + vDirList[j].substr(0, vDirList[j].find("  ")), idxMethods, -1, data);
+        }
+    }
+
+    m_functionTree->Toggle(methodNode);
+
     // Constants
     sKeyList = _guilang.get("GUI_TREE_CONST_KEYLIST");
     vKeyList.clear();
@@ -5807,7 +5864,12 @@ std::string NumeReWindow::prepareTooltip(const std::string& sTooltiptext)
     size_t nClosingParens = sTooltiptext.find(')');
     std::string sTooltip = sTooltiptext;
 
-    if (sTooltiptext.find(' ') < nClosingParens && sTooltiptext.find(' ') < sTooltiptext.find('('))
+    if (sTooltiptext.front() == '.')
+    {
+        nClosingParens = sTooltip.find("  ");
+        sTooltip.replace(nClosingParens, sTooltip.find_first_not_of(' ', nClosingParens)-nClosingParens, "  ->  ");
+    }
+    else if (sTooltiptext.find(' ') < nClosingParens && sTooltiptext.find(' ') < sTooltiptext.find('('))
     {
         nClosingParens = sTooltiptext.find(' ')-1;
         sTooltip.replace(nClosingParens+1, sTooltip.find_first_not_of(' ', nClosingParens+1)-nClosingParens-1, "   ");
@@ -6013,6 +6075,17 @@ void NumeReWindow::OnTreeItemActivated(wxTreeEvent &event)
             edit->InsertText(edit->GetCurrentPos(), (data->tooltip).substr(0, (data->tooltip).find('(')+1));
             edit->GotoPos(edit->GetCurrentPos()+(data->tooltip).find('(')+1);
         }
+        else if (data->isMethod)
+        {
+            size_t dot = (data->tooltip).find('.');
+            size_t endPos = (data->tooltip).find_first_of("( ", dot);
+
+            if ((data->tooltip)[endPos] == '(')
+                endPos++;
+
+            edit->InsertText(edit->GetCurrentPos(), (data->tooltip).substr(dot, endPos-dot));
+            edit->GotoPos(edit->GetCurrentPos()+endPos-dot);
+        }
         else if (data->isConstant)
         {
             edit->InsertText(edit->GetCurrentPos(), (data->tooltip).substr(0, (data->tooltip).find(' ')));
@@ -6041,7 +6114,7 @@ void NumeReWindow::OnTreeItemToolTip(wxTreeEvent& event)
 
         if (data->isDir)
             return;
-        else if (data->isFunction || data->isCommand)
+        else if (data->isFunction || data->isCommand || data->isMethod)
             event.SetToolTip(this->addLinebreaks(data->tooltip));
         else if (data->isConstant)
             event.SetToolTip(data->tooltip);
@@ -6092,16 +6165,30 @@ void NumeReWindow::OnTreeDragDrop(wxTreeEvent& event)
         wxTreeItemId item = event.GetItem();
         FileNameTreeData* data = static_cast<FileNameTreeData*>(m_functionTree->GetItemData(item));
 
-        if (!data->isCommand && !data->isFunction && !data->isConstant)
+        if (!data->isCommand && !data->isFunction && !data->isConstant && !data->isMethod)
             return;
 
         wxString token = data->tooltip;
-        token.erase(token.find(' '));
 
-        if (token.find('(') != std::string::npos)
-            token.erase(token.find('(')+1);
+        if (data->isMethod)
+        {
+            size_t dot = token.find('.');
+            size_t endPos = token.find_first_of("( ", dot);
+
+            if (token[endPos] == '(')
+                endPos++;
+
+            token = token.substr(dot, endPos-dot);
+        }
         else
-            token += " ";
+        {
+            token.erase(token.find(' '));
+
+            if (token.find('(') != std::string::npos)
+                token.erase(token.find('(')+1);
+            else
+                token += " ";
+        }
 
         wxTextDataObject _dataObject(token);
         wxDropSource dragSource(this);

@@ -41,10 +41,11 @@ class ToolTipTreeData : public wxTreeItemData
 class FileNameTreeData : public ToolTipTreeData
 {
     public:
-        FileNameTreeData() : ToolTipTreeData(), isDir(false), isFunction(false), isCommand(false), isConstant(false) {};
+        FileNameTreeData() : ToolTipTreeData(), isDir(false), isFunction(false), isCommand(false), isConstant(false), isMethod(false) {};
         bool isDir;
         bool isFunction;
         bool isCommand;
         bool isConstant;
+        bool isMethod;
         wxString filename;
 };

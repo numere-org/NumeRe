@@ -56,6 +56,10 @@ IconManager::IconManager(const wxString& programPath)
 	m_iconExtensionMapping["CONSTANTS"] = m_images->GetImageCount();
 	m_images->Add(constants);
 
+	wxIcon methods(programPath + "/icons/mthd.png", wxBITMAP_TYPE_PNG);
+	m_iconExtensionMapping["METHODS"] = m_images->GetImageCount();
+	m_images->Add(methods);
+
 	wxIcon NSCR(programPath + "/icons/nscr.ico", wxBITMAP_TYPE_ICO);
 	m_iconExtensionMapping["nscr"] = m_images->GetImageCount();
 	m_iconExtensionMapping[".nscr"] = m_images->GetImageCount();
