@@ -309,7 +309,6 @@ bool MyApp::OnInit()
         wxMessageBox(_guilang.get("GUI_DLG_SESSION_RECREATIONERROR", NumeReMainFrame->m_UnrecoverableFiles), _guilang.get("GUI_DLG_SESSION_ERROR"), wxICON_ERROR);
     }
 
-
     return true;
 }
 

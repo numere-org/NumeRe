@@ -22,3 +22,4 @@ Fixed	Excel files containing line breaks in cells are now readable correctly.
 Fixed	Setting icons for layouts is now possible.
 Added	Created new table methods: "TAB().fndcols()" (searches columns for headlines), "TAB().index()" (creates indices for columns for selected values) and "TAB().countif()" (counts occurences of values).
 Applied	Table and string methods are now also part of the symbols tree and can be dragged into the editor or the terminal.
+Added	NumeRe now supports Zygo MetroPro(r) *.dat files as well.

@@ -1866,7 +1866,7 @@ namespace NumeRe
 
 
     /////////////////////////////////////////////////
-    /// \brief This class resemblers an Igor binary
+    /// \brief This class resembles an Igor binary
     /// wave file format (*.ibw). The data is read by
     /// the WaveMetrics implementation of the file
     /// format. Only reading is supported by this
@@ -1911,6 +1911,36 @@ namespace NumeRe
                 bXZSlice = true;
             }
     };
+
+
+    /////////////////////////////////////////////////
+    /// \brief This class implements a Zygo MetroPro
+    /// binary dat file. The data is read by
+    /// accessing the ZygoLib.
+    /////////////////////////////////////////////////
+    class ZygoDat : public GenericFile
+    {
+        private:
+            void readFile();
+
+        public:
+            ZygoDat(const std::string& filename);
+            ZygoDat(const ZygoDat& file);
+            virtual ~ZygoDat();
+
+            virtual bool read() override
+            {
+                readFile();
+                return true;
+            }
+
+            virtual bool write() override
+            {
+                return false;
+            }
+
+            ZygoDat& operator=(const ZygoDat& file);
+        };
 }
 
 

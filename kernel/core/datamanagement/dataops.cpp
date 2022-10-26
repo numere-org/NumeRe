@@ -373,6 +373,7 @@ void append_data(CommandLineParser& cmdParser)
         {
             // Load the data. The melting of multiple files
             // is processed automatically
+            _data.setbLoadEmptyColsInNextFile(cmdParser.hasParam("keepdim") || cmdParser.hasParam("complete"));
             _data.openFile(vFilelist[i]);
         }
 
@@ -385,6 +386,7 @@ void append_data(CommandLineParser& cmdParser)
 
     NumeRe::FileHeaderInfo info;
 
+    _data.setbLoadEmptyColsInNextFile(cmdParser.hasParam("keepdim") || cmdParser.hasParam("complete"));
     // Simply load the data directly -> Melting is done automatically
     if (cmdParser.hasParam("head") || cmdParser.hasParam("h"))
     {

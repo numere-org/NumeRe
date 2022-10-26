@@ -17,6 +17,7 @@
 ******************************************************************************/
 
 #include <libsha.hpp>
+#include <libzygo.hpp>
 
 #include "file.hpp"
 #include "../datamanagement/tablecolumnimpl.hpp"
@@ -52,6 +53,9 @@ namespace NumeRe
         // Create an instance of the selected file type
         if (sExt == "ndat")
             return new NumeReDataFile(filename);
+
+        if (sExt == "dat" && ZygoLib::DatFile::isDatFile(filename))
+            return new ZygoDat(filename);
 
         if (sExt == "txt" || sExt == "dat" || !sExt.length())
             return new TextDataFile(filename);
@@ -4286,6 +4290,137 @@ namespace NumeRe
         assign(file);
         bXZSlice = file.bXZSlice;
 
+        return *this;
+    }
+
+
+    //////////////////////////////////////////////
+    // class ZygoDat
+    //////////////////////////////////////////////
+    //
+    ZygoDat::ZygoDat(const string& filename) : GenericFile(filename)
+    {
+        // Empty constructor
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief This copy constructor extends the copy
+    /// constructor of the GenericFile class.
+    ///
+    /// \param file const ZygoDat&
+    ///
+    /////////////////////////////////////////////////
+    ZygoDat::ZygoDat(const ZygoDat& file) : GenericFile(file)
+    {
+        // Empty constructor
+    }
+
+
+    ZygoDat::~ZygoDat()
+    {
+        // Empty destructor
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief This member function is used to read
+    /// the contents of the Zygo Dat file into the
+    /// internal storage. We use the Zygo library to
+    /// read the binary file.
+    ///
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
+    void ZygoDat::readFile()
+    {
+        // Use the ZygoLib to open the file
+        ZygoLib::DatFile zygofile(sFileName, false);
+        std::vector<ZygoLib::InterferogramData> fileContent;
+
+        // Try to read its contents
+        try
+        {
+            fileContent = zygofile.read();
+        }
+        catch (...)
+        {
+            throw SyntaxError(SyntaxError::CANNOT_READ_FILE, sFileName, SyntaxError::invalid_position, sFileName);
+        }
+
+        // Determine the needed dimensions for the final
+        // storage
+        for (const ZygoLib::InterferogramData& layer : fileContent)
+        {
+            if (std::max(layer.header.cn_height, layer.header.cn_width) > nRows)
+                nRows = std::max(layer.header.cn_height, layer.header.cn_width);
+
+            nCols += 2+layer.header.cn_height;
+        }
+
+        // Ensure that we actually read something
+        if (!nRows)
+            throw SyntaxError(SyntaxError::FILE_IS_EMPTY, sFileName, SyntaxError::invalid_position, sFileName);
+
+        // Create the internal storage using the
+        // final dimensions
+        createStorage();
+
+        // We create plain value column tables
+        for (long long int j = 0; j < nCols; j++)
+        {
+            fileData->at(j).reset(new ValueColumn);
+        }
+
+        uint16_t colOffset = 0;
+
+        // Copy each layer to the target data
+        for (const ZygoLib::InterferogramData& layer : fileContent)
+        {
+            fileData->at(colOffset)->m_sHeadLine = "x";
+            fileData->at(colOffset+1)->m_sHeadLine = "y";
+
+            // Write the x column
+            for (uint16_t i = 0; i < layer.header.cn_width; i++)
+            {
+                fileData->at(colOffset)->setValue(i, i * layer.header.camera_res);
+            }
+
+            // Write the y column
+            for (uint16_t j = 0; j < layer.header.cn_height; j++)
+            {
+                fileData->at(colOffset+1)->setValue(j, j * layer.header.camera_res);
+            }
+
+            // Write the phase data and consider the needed transposition of height and width
+            for (uint16_t i = 0; i < layer.header.cn_width; i++)
+            {
+                for (uint16_t j = 0; j < layer.header.cn_height; j++)
+                {
+                    if (!i)
+                        fileData->at(j+colOffset+2)->m_sHeadLine = "z(x(:),y(" + toString(j+1) + "))";
+
+                    fileData->at(j+colOffset+2)->setValue(i, layer.phaseMatrix[j][i]);
+                }
+            }
+
+            // The layers are put next to each other
+            colOffset += 2+layer.header.cn_height;
+        }
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief This is an overload for the assignment
+    /// operator of the GenericFile class.
+    ///
+    /// \param file const ZygoDat&
+    /// \return ZygoDat&
+    ///
+    /////////////////////////////////////////////////
+    ZygoDat& ZygoDat::operator=(const ZygoDat& file)
+    {
+        assign(file);
         return *this;
     }
 }
