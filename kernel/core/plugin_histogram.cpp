@@ -691,10 +691,15 @@ static void createPlotForHist1D(HistogramParameters& _histParams, mglData& _mAxi
     // Create the axes
     if (_pData.getSettings(PlotData::LOG_AXIS))
     {
-        if (!_pData.getLogscale(XRANGE))
+        if (!_pData.getLogscale(XRANGE) && _pData.getTimeAxis(XRANGE).use)
+            _histGraph->SetTicksTime('x', 0, _pData.getTimeAxis(XRANGE).sTimeFormat.c_str());
+        else if (!_pData.getLogscale(XRANGE))
             _histGraph->SetTicksVal('x', _mAxisVals, sTicks.c_str());
 
-        if (!_pData.getSettings(PlotData::LOG_BOX) && _histParams.ranges.x[0] <= 0.0 && _histParams.ranges.x[1] >= 0.0 && !_pData.getLogscale(YRANGE))
+        if (!_pData.getSettings(PlotData::LOG_BOX)
+            && _histParams.ranges.x[0] <= 0.0
+            && _histParams.ranges.x[1] >= 0.0
+            && !_pData.getLogscale(YRANGE))
         {
             //_histGraph->SetOrigin(0.0,0.0);
             if (_histParams.nBin > 40)
@@ -727,9 +732,11 @@ static void createPlotForHist1D(HistogramParameters& _histParams, mglData& _mAxi
     {
         _histGraph->Label('x', _histParams.sBinLabel.c_str(), 0.0);
 
-        if (sCommonExponent.length() && !_pData.getLogscale(XRANGE))
+        if (sCommonExponent.length() && !_pData.getLogscale(XRANGE) && !_pData.getTimeAxis(XRANGE).use)
         {
-            _histGraph->Puts(mglPoint(_histParams.ranges.x[1] + (_histParams.ranges.x[1] - _histParams.ranges.x[0]) / 10.0), mglPoint(_histParams.ranges.x[1] + (_histParams.ranges.x[1] - _histParams.ranges.x[0]) / 10.0 + 1), sCommonExponent.c_str(), ":TL", -1.3);
+            _histGraph->Puts(mglPoint(_histParams.ranges.x[1] + (_histParams.ranges.x[1] - _histParams.ranges.x[0]) / 10.0),
+                             mglPoint(_histParams.ranges.x[1] + (_histParams.ranges.x[1] - _histParams.ranges.x[0]) / 10.0 + 1),
+                             sCommonExponent.c_str(), ":TL", -1.3);
         }
 
         if (_pData.getSettings(PlotData::LOG_BOX))
@@ -1314,6 +1321,9 @@ static void createPlotsForHist2D(const std::string& sCmd, HistogramParameters& _
     else
         _histGraph->SetRanges(_histParams.ranges.x[0], _histParams.ranges.x[1], _barHistData.Minimal() - _histParams.binWidth[0] / 20.0, _barHistData.Maximal() + _histParams.binWidth[0] / 20.0);
 
+    if (!_pData.getLogscale(XRANGE) && _pData.getTimeAxis(XRANGE).use)
+        _histGraph->SetTicksTime('x', 0, _pData.getTimeAxis(XRANGE).sTimeFormat.c_str());
+
     _histGraph->Box();
     _histGraph->Axis();
 
@@ -1358,6 +1368,12 @@ static void createPlotsForHist2D(const std::string& sCmd, HistogramParameters& _
     }
     else
         _histGraph->SetRanges(_histParams.ranges.x[0], _histParams.ranges.x[1], _histParams.ranges.y[0], _histParams.ranges.y[1], _hist2DData[2].Minimal(), _hist2DData[2].Maximal());
+
+    if (!_pData.getLogscale(XRANGE) && _pData.getTimeAxis(XRANGE).use)
+        _histGraph->SetTicksTime('x', 0, _pData.getTimeAxis(XRANGE).sTimeFormat.c_str());
+
+    if (!_pData.getLogscale(YRANGE) && _pData.getTimeAxis(YRANGE).use)
+        _histGraph->SetTicksTime('y', 0, _pData.getTimeAxis(YRANGE).sTimeFormat.c_str());
 
     _histGraph->Box();
     _histGraph->Axis("xy");
@@ -1410,6 +1426,9 @@ static void createPlotsForHist2D(const std::string& sCmd, HistogramParameters& _
     }
     else
         _histGraph->SetRanges(_hBarHistData.Minimal() - _histParams.binWidth[0] / 20.0, _hBarHistData.Maximal() + _histParams.binWidth[0] / 20.0, _histParams.ranges.y[0], _histParams.ranges.y[1]);
+
+    if (!_pData.getLogscale(YRANGE) && _pData.getTimeAxis(YRANGE).use)
+        _histGraph->SetTicksTime('y', 0, _pData.getTimeAxis(YRANGE).sTimeFormat.c_str());
 
     _histGraph->Box();
     _histGraph->Axis("xy");

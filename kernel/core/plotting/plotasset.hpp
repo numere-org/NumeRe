@@ -215,7 +215,7 @@ class PlotAssetManager
         IntervalSet getDataAxes() const;
         void weightedRange(int coord, Interval& ivl) const;
         bool hasDataPlots() const;
-        void applyCoordSys(CoordinateSystem coords);
+        void applyCoordSys(CoordinateSystem coords, size_t every = 1);
 };
 
 #endif // PLOTASSET_HPP

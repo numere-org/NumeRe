@@ -681,34 +681,35 @@ bool PlotAssetManager::hasDataPlots() const
 /// assets.
 ///
 /// \param coords CoordinateSystem
+/// \param every size_t
 /// \return void
 ///
 /////////////////////////////////////////////////
-void PlotAssetManager::applyCoordSys(CoordinateSystem coords)
+void PlotAssetManager::applyCoordSys(CoordinateSystem coords, size_t every)
 {
     // Do not apply cartesian coordinates
     if (coords == CARTESIAN)
         return;
 
-    for (PlotAsset& ass : assets)
+    for (size_t i = 0; i < assets.size(); i += every)
     {
         // Special case for 1D plots, as there are only two
         // possible valid combinations
-        if (ass.getDim() == 1)
+        if (assets[i].getDim() == 1)
         {
             switch (coords)
             {
                 case POLAR_PZ:
                 case SPHERICAL_PT:
-                    ass.applyModulus(XCOORD, 2.0*M_PI);
-                    ass.removeNegativeValues(YCOORD);
+                    assets[i].applyModulus(XCOORD, 2.0*M_PI);
+                    assets[i].removeNegativeValues(YCOORD);
                     break;
                 case POLAR_RP:
                 case POLAR_RZ:
                 case SPHERICAL_RP:
                 case SPHERICAL_RT:
-                    ass.applyModulus(YCOORD, 2.0*M_PI);
-                    ass.removeNegativeValues(XCOORD);
+                    assets[i].applyModulus(YCOORD, 2.0*M_PI);
+                    assets[i].removeNegativeValues(XCOORD);
                     break;
                 case CARTESIAN: break;
             }
@@ -718,31 +719,31 @@ void PlotAssetManager::applyCoordSys(CoordinateSystem coords)
             switch (coords)
             {
                 case POLAR_PZ:
-                    ass.applyModulus(XCOORD, 2.0*M_PI);
-                    ass.removeNegativeValues(ZCOORD);
+                    assets[i].applyModulus(XCOORD, 2.0*M_PI);
+                    assets[i].removeNegativeValues(ZCOORD);
                     break;
                 case POLAR_RP:
-                    ass.applyModulus(YCOORD, 2.0*M_PI);
-                    ass.removeNegativeValues(XCOORD);
+                    assets[i].applyModulus(YCOORD, 2.0*M_PI);
+                    assets[i].removeNegativeValues(XCOORD);
                     break;
                 case POLAR_RZ:
-                    ass.applyModulus(ZCOORD, 2.0*M_PI);
-                    ass.removeNegativeValues(XCOORD);
+                    assets[i].applyModulus(ZCOORD, 2.0*M_PI);
+                    assets[i].removeNegativeValues(XCOORD);
                     break;
                 case SPHERICAL_PT:
-                    ass.applyModulus(XCOORD, 2.0*M_PI);
-                    ass.applyModulus(YCOORD, 1.00001*M_PI);
-                    ass.removeNegativeValues(ZCOORD);
+                    assets[i].applyModulus(XCOORD, 2.0*M_PI);
+                    assets[i].applyModulus(YCOORD, 1.00001*M_PI);
+                    assets[i].removeNegativeValues(ZCOORD);
                     break;
                 case SPHERICAL_RP:
-                    ass.applyModulus(YCOORD, 2.0*M_PI);
-                    ass.applyModulus(ZCOORD, 1.00001*M_PI);
-                    ass.removeNegativeValues(XCOORD);
+                    assets[i].applyModulus(YCOORD, 2.0*M_PI);
+                    assets[i].applyModulus(ZCOORD, 1.00001*M_PI);
+                    assets[i].removeNegativeValues(XCOORD);
                     break;
                 case SPHERICAL_RT:
-                    ass.applyModulus(ZCOORD, 2.0*M_PI);
-                    ass.applyModulus(YCOORD, 1.00001*M_PI);
-                    ass.removeNegativeValues(XCOORD);
+                    assets[i].applyModulus(ZCOORD, 2.0*M_PI);
+                    assets[i].applyModulus(YCOORD, 1.00001*M_PI);
+                    assets[i].removeNegativeValues(XCOORD);
                     break;
                 case CARTESIAN: break;
             }

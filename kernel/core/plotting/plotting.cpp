@@ -1123,7 +1123,9 @@ void Plot::create2dPlot(size_t nPlotCompose, size_t nPlotComposeSize)
         _mContVec.a[_pData.getSettings(PlotData::INT_CONTLINES)/2] = _pInfo.ranges[ZRANGE].middle();
 
     // Apply curvilinear coordinates
-    m_manager.applyCoordSys((CoordinateSystem)_pData.getSettings(PlotData::INT_COORDS));
+    if (!_pData.getSettings(PlotData::LOG_PARAMETRIC))
+        m_manager.applyCoordSys((CoordinateSystem)_pData.getSettings(PlotData::INT_COORDS),
+                                (_pData.getSettings(PlotData::LOG_COLORMASK) || _pData.getSettings(PlotData::LOG_ALPHAMASK)) ? 2 : 1);
 
     for (int n = 0; n < (int)m_manager.assets.size(); n++)
     {

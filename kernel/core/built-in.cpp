@@ -385,21 +385,21 @@ string evaluateParameterValues(const string& sCmd)
 		if (vInterval.size() >= 2)
 		{
 			if (!isnan(vInterval[0]) && !isnan(vInterval[1]))
-				sReturn += " -x=" + toString(vInterval[0], 7) + ":" + toString(vInterval[1], 7);
+				sReturn += " -x=" + toCmdString(vInterval[0]) + ":" + toCmdString(vInterval[1]);
 		}
 
 		// y interval
 		if (vInterval.size() >= 4)
 		{
 			if (!isnan(vInterval[2]) && !isnan(vInterval[3]))
-				sReturn += " -y=" + toString(vInterval[2], 7) + ":" + toString(vInterval[3], 7);
+				sReturn += " -y=" + toCmdString(vInterval[2]) + ":" + toCmdString(vInterval[3]);
 		}
 
 		// z interval
 		if (vInterval.size() >= 6)
 		{
 			if (!isnan(vInterval[4]) && !isnan(vInterval[5]))
-				sReturn += " -z=" + toString(vInterval[4], 7) + ":" + toString(vInterval[5], 7);
+				sReturn += " -z=" + toCmdString(vInterval[4]) + ":" + toCmdString(vInterval[5]);
 		}
 	}
 

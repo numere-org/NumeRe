@@ -1042,7 +1042,7 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const std::string& sCommand)
             resetAfterError();
 
             make_hline();
-            g_logger.error("ERROR: CRITICAL ACCESS VIOLATION");
+            g_logger.error("ERROR: BAD ALLOC");
             sendErrorNotification();
 
             return NUMERE_ERROR;
