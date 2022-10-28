@@ -25,3 +25,4 @@ Applied	Table and string methods are now also part of the symbols tree and can b
 Added	NumeRe now supports Zygo MetroPro(r) *.dat files as well.
 Added	"hist" may now use time axes in its plot.
 Cleaned	The error message for bad alloc was rephrased to reflect the actual issue.
+Applied	"to_time()" and "timeformat()" will now use automatic pattern (detection), if the pattern is an empty string.

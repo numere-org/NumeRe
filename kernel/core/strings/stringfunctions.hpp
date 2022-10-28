@@ -929,6 +929,10 @@ static StringVector strfnc_split(StringFuncArgs& funcArgs)
 static StringVector strfnc_to_time(StringFuncArgs& funcArgs)
 {
     std::string sTime = funcArgs.sArg2.view().to_string() + " ";
+
+    if (!funcArgs.sArg1.view().length() && isConvertible(sTime, CONVTYPE_DATE_TIME))
+        return toCmdString(to_double(StrToTime(sTime)));
+
     std::string sPattern = funcArgs.sArg1.view().to_string() + " ";
 
     if (sTime.length() != sPattern.length())
@@ -1344,6 +1348,9 @@ static std::string padWithZeros(int nTime, size_t nLength)
 /////////////////////////////////////////////////
 static StringVector strfnc_timeformat(StringFuncArgs& funcArgs)
 {
+    if (!funcArgs.sArg1.view().length())
+        return "\"" + toString(to_timePoint(funcArgs.dArg1.real()), 0) + "\"";
+
     std::string sFormattedTime = funcArgs.sArg1.view().to_string() + " "; // contains pattern
     sys_time_point nTime = to_timePoint(funcArgs.dArg1.real());
     time_stamp timeStruct = getTimeStampFromTimePoint(nTime);
