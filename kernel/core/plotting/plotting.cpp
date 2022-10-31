@@ -1184,7 +1184,7 @@ void Plot::create2dPlot(size_t nPlotCompose, size_t nPlotComposeSize)
             if (_pData.getSettings(PlotData::INT_COMPLEXMODE) == CPLX_REIM && sConvLegends.length())
                 sConvLegends = useImag ? "Im(" + sConvLegends + ")" : "Re(" + sConvLegends + ")";
 
-            sConvLegends + "\"" + sConvLegends + "\"";
+            sConvLegends = "\"" + sConvLegends + "\"";
 
             if (sConvLegends != "\"\"")
             {
@@ -3500,14 +3500,14 @@ void Plot::displayMessage(bool bAnimateVar)
             || _pInfo.sCommand.substr(0, 6) == "grad3d")
     {
         _pInfo.b3D = true;
-        if (_pInfo.nSamples > 51)
+        if (_pInfo.nSamples > 71)
         {
             if (_pData.getSettings(PlotData::INT_HIGHRESLEVEL) == 2 && _pInfo.nSamples > 151)
                 _pInfo.nSamples = 151;
-            else if ((_pData.getSettings(PlotData::INT_HIGHRESLEVEL) == 1 || !_option.isDraftMode()) && _pInfo.nSamples > 151)
-                _pInfo.nSamples = 151;
+            else if ((_pData.getSettings(PlotData::INT_HIGHRESLEVEL) == 1 || !_option.isDraftMode()) && _pInfo.nSamples > 100)
+                _pInfo.nSamples = std::min(121, _pInfo.nSamples);
             else
-                _pInfo.nSamples = 51;
+                _pInfo.nSamples = 71;
         }
         if (!_pData.getSettings(PlotData::LOG_SILENTMODE) && _option.systemPrints() && _pInfo.sCommand.substr(0, 4) == "surf")
             NumeReKernel::printPreFmt("3D-" + toSystemCodePage(_lang.get("PLOT_SURFACE")) + "-");

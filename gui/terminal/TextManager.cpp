@@ -359,6 +359,8 @@ void TextManager::updateColors(bool isErrorLine /*= false*/)
                  || (int)(sColors[i] - '0') == NumeReSyntax::SYNTAX_METHODS
                  || (int)(sColors[i] - '0') == NumeReSyntax::SYNTAX_PROCEDURE)
             m_managedText.back()[i].setColor(calc_color((int)(sColors[i] - '0'), 0, GenericTerminal::BOLD));
+        else if ((int)(sColors[i] - '0') == NumeReSyntax::SYNTAX_COMMENT)
+            m_managedText.back()[i].setColor(calc_color((int)(sColors[i] - '0'), 0, GenericTerminal::BOLD));
         else
             m_managedText.back()[i].setColor(calc_color((int)(sColors[i] - '0'), 0, 0));
     }

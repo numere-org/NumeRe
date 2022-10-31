@@ -643,6 +643,39 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const std::string& sCommand)
         return NUMERE_PENDING;
     }
 
+    // Check for comments
+    size_t nQuotes = 0;
+
+    for (size_t i = 0; i < sCommandLine.length(); i++)
+    {
+        if (sCommandLine[i] == '"' && (!i || sCommandLine[i-1] != '\\'))
+            nQuotes++;
+
+        if (nQuotes % 2)
+            continue;
+
+        if (sCommandLine.substr(i, 2) == "##")
+        {
+            sCommandLine.erase(i);
+            break;
+        }
+
+        if (sCommandLine.substr(i, 2) == "#*")
+        {
+            for (size_t j = i+2; j < sCommandLine.length(); j++)
+            {
+                if (sCommandLine.substr(j, 2) == "*#")
+                {
+                    sCommandLine.erase(i, j+2-i);
+                    break;
+                }
+
+                if (j+1 == sCommandLine.length())
+                    return NUMERE_PENDING;
+            }
+        }
+    }
+
     // Pass the combined command line to the internal variable and clear the contents of the class
     // member variable (we don't want to repeat the tasks entered last time)
     sLine = sCommandLine;
@@ -1358,7 +1391,7 @@ bool NumeReKernel::getLineFromCommandCache(std::string& sLine, const std::string
         }
     }
 
-    return true;
+    return sLine.length() != 0;
 }
 
 

@@ -793,7 +793,7 @@ NumeReTerminal::GetDefColors(wxColour colors[16], NumeReTerminal::BOLDSTYLE bold
     //
     // We could also use a simple array to get the correct index, however
     // using this switch with the correct enumerators is probably more safe.
-	for (size_t i = 0; i <= NumeReSyntax::SYNTAX_METHODS; i++)
+	for (size_t i = 0; i < 16; i++)
 	{
 		switch (i)
 		{
@@ -836,13 +836,13 @@ NumeReTerminal::GetDefColors(wxColour colors[16], NumeReTerminal::BOLDSTYLE bold
 			case NumeReSyntax::SYNTAX_METHODS:
 				colors[NumeReSyntax::SYNTAX_METHODS] = m_options->GetSyntaxStyle(Options::METHODS).foreground;
 				break;
+			case NumeReSyntax::SYNTAX_COMMENT:
+				colors[NumeReSyntax::SYNTAX_COMMENT] = m_options->GetSyntaxStyle(Options::COMMENT).foreground;
+				break;
+            default:
+                colors[i] = *wxBLACK;
 		}
 	}
-
-	// remaining, free colours
-	colors[13] = wxColour(255, 255, 0);
-	colors[14] = wxColour(0, 255, 255);
-	colors[15] = wxColour(0, 0, 0);
 }
 
 

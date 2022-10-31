@@ -1673,8 +1673,12 @@ value_type parser_AssociatedLaguerrePolynomial(const value_type& vn, const value
         return NAN;
     int n = intCast(fabs(vn));
     int k = intCast(fabs(vk));
-    if (k > n)
-        return NAN;
+//    if (k > n)
+//        return NAN;
+
+    if (n == 0)
+        return 1.0;
+
     value_type dResult = 0.0;
     value_type vFaculty = parser_Faculty(n+k);
     for (int m = 0; m <= n; m++)

@@ -26,3 +26,6 @@ Added	NumeRe now supports Zygo MetroPro(r) *.dat files as well.
 Added	"hist" may now use time axes in its plot.
 Cleaned	The error message for bad alloc was rephrased to reflect the actual issue.
 Applied	"to_time()" and "timeformat()" will now use automatic pattern (detection), if the pattern is an empty string.
+Cleaned	It is now possible to drag code with comments to the terminal. The code will be executed normally.
+Fixed	Resolved a small bug in "legendre_a()" hindering from using it in the hydrogen orbital wave functions.
+Cleaned	The cloudplot uses now more samples than before and will take a bit longer to render. However, the result is visually more appealing.

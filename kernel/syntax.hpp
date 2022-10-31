@@ -100,9 +100,9 @@ class NumeReSyntax
             SYNTAX_NUMBER,
             SYNTAX_NPRC_COMMAND,
             SYNTAX_METHODS,
+            SYNTAX_COMMENT,
             SYNTAX_CLUSTER,
-            SYNTAX_TABLE,
-            SYNTAX_COMMENT
+            SYNTAX_TABLE
         };
 
         NumeReSyntax();
