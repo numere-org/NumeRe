@@ -26,6 +26,11 @@
 
 class NumeReWindow;
 
+/////////////////////////////////////////////////
+/// \brief This class represents the dialog
+/// listing the file revisions of the current
+/// selected file.
+/////////////////////////////////////////////////
 class RevisionDialog : public wxDialog
 {
     private:
@@ -33,7 +38,8 @@ class RevisionDialog : public wxDialog
         wxcode::wxTreeListCtrl* revisionList;
         wxTreeItemId clickedItem;
         NumeReWindow* mainWindow;
-        wxString currentFile;
+        wxString currentFilePath;
+        wxString currentFileName;
 
         void populateRevisionList();
         void showRevision(const wxString& revString);
@@ -45,7 +51,7 @@ class RevisionDialog : public wxDialog
         void OnMenuEvent(wxCommandEvent& event);
 
     public:
-        RevisionDialog(wxWindow* parent, FileRevisions* rev, const wxString& currentFileName);
+        RevisionDialog(wxWindow* parent, FileRevisions* rev, const wxString& fileNameAndPath);
 
         ~RevisionDialog()
         {

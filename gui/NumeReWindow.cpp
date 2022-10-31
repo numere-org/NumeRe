@@ -2657,7 +2657,7 @@ void NumeReWindow::OnShowRevisions()
     // Only display the dialog, if the FileRevisions object exists
     if (revisions)
     {
-        RevisionDialog* dialog = new RevisionDialog(this, revisions, m_fileTree->GetItemText(m_clickedTreeItem));
+        RevisionDialog* dialog = new RevisionDialog(this, revisions, filename);
         dialog->Show();
     }
 }
@@ -2680,7 +2680,7 @@ void NumeReWindow::OnShowRevisionsFromTab()
     // Only display the dialog, if the FileRevisions object exists
     if (revisions)
     {
-        RevisionDialog* dialog = new RevisionDialog(this, revisions, edit->GetFilenameString());
+        RevisionDialog* dialog = new RevisionDialog(this, revisions, edit->GetFileNameAndPath());
         dialog->Show();
     }
 }
@@ -4600,54 +4600,7 @@ void NumeReWindow::OnFileEventTimer(wxTimerEvent& event)
             if (isOnReloadBlackList(modifiedFiles[i].second))
                 continue;
 
-            NumeReEditor* edit;
-            wxString fileContents;
-            wxString fileNameNoPath;
-
-            if (!GetFileContents(modifiedFiles[i].second, fileContents, fileNameNoPath))
-                continue;
-
-            // Search the file in the list of currently
-            // opened files
-            for (size_t j = 0; j < m_book->GetPageCount(); j++)
-            {
-                edit = m_book->getEditor(j);
-
-                // Found it?
-                if (edit && edit->GetFileNameAndPath() == modifiedFiles[i].second)
-                {
-                    g_logger.info("Reloading '" + modifiedFiles[i].second.ToStdString() + "' to editor.");
-                    m_filesLastSaveTime[modifiedFiles[i].second] = 0;
-
-                    // If the user has modified the file, as
-                    // him to reload the file, otherwise re-
-                    // load automatically
-                    if (edit->IsModified())
-                    {
-                        m_book->SetSelection(j);
-                        int answer = wxMessageBox(_guilang.get("GUI_DLG_FILEMODIFIED_QUESTION", modifiedFiles[i].second.ToStdString()), _guilang.get("GUI_DLG_FILEMODIFIED"), wxYES_NO | wxICON_QUESTION, this);
-
-                        if (answer == wxYES)
-                        {
-                            int pos = m_book->getFocusedEditor()->GetCurrentPos();
-                            m_book->getCurrentEditor()->LoadFileText(fileContents);
-                            m_book->getCurrentEditor()->MarkerDeleteAll(MARKER_SAVED);
-                            m_book->getFocusedEditor()->GotoPos(pos);
-                            m_filesLastSaveTime[modifiedFiles[i].second] = time(0);
-                        }
-                    }
-                    else
-                    {
-                        int pos = edit->GetCurrentPos();
-                        edit->LoadFileText(fileContents);
-                        edit->MarkerDeleteAll(MARKER_SAVED);
-                        edit->GotoPos(pos);
-                        m_filesLastSaveTime[modifiedFiles[i].second] = time(0);
-                    }
-
-                    break;
-                }
-            }
+            reloadFileIfOpen(modifiedFiles[i].second, false);
         }
     }
 
@@ -6585,6 +6538,68 @@ void NumeReWindow::UpdateLocationIfOpen(const wxFileName& fname, const wxFileNam
         m_book->SetTabText(num, edit->GetFileNameAndPath());
         m_book->Refresh();
         UpdateWindowTitle(m_book->GetPageText(m_book->GetSelection()));
+    }
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Reloads a file if it is open in any
+/// editor.
+///
+/// \param fname const wxString&
+/// \param force bool
+/// \return void
+///
+/////////////////////////////////////////////////
+void NumeReWindow::reloadFileIfOpen(const wxString& fname, bool force)
+{
+    NumeReEditor* edit;
+    wxString fileContents;
+    wxString fileNameNoPath;
+
+    if (!GetFileContents(fname, fileContents, fileNameNoPath))
+        return;
+
+    // Search the file in the list of currently
+    // opened files
+    for (size_t j = 0; j < m_book->GetPageCount(); j++)
+    {
+        edit = m_book->getEditor(j);
+
+        // Found it?
+        if (edit && edit->GetFileNameAndPath() == fname)
+        {
+            g_logger.info("Reloading '" + fname.ToStdString() + "' to editor.");
+            m_filesLastSaveTime[fname] = 0;
+
+            // If the user has modified the file, as
+            // him to reload the file, otherwise re-
+            // load automatically
+            if (edit->IsModified() && !force)
+            {
+                m_book->SetSelection(j);
+                int answer = wxMessageBox(_guilang.get("GUI_DLG_FILEMODIFIED_QUESTION", fname.ToStdString()), _guilang.get("GUI_DLG_FILEMODIFIED"), wxYES_NO | wxICON_QUESTION, this);
+
+                if (answer == wxYES)
+                {
+                    int pos = m_book->getFocusedEditor()->GetCurrentPos();
+                    m_book->getCurrentEditor()->LoadFileText(fileContents);
+                    m_book->getCurrentEditor()->MarkerDeleteAll(MARKER_SAVED);
+                    m_book->getFocusedEditor()->GotoPos(pos);
+                    m_filesLastSaveTime[fname] = time(0);
+                }
+            }
+            else
+            {
+                int pos = edit->GetCurrentPos();
+                edit->LoadFileText(fileContents);
+                edit->MarkerDeleteAll(MARKER_SAVED);
+                edit->GotoPos(pos);
+                m_filesLastSaveTime[fname] = time(0);
+            }
+
+            return;
+        }
     }
 }
 

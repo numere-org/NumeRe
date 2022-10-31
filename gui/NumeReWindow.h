@@ -246,6 +246,7 @@ class NumeReWindow : public wxFrame
         void FindAndOpenProcedure(const wxString& procedureName);
 
         void UpdateLocationIfOpen(const wxFileName& fname, const wxFileName& newFName);
+        void reloadFileIfOpen(const wxString& fname, bool force = false);
 
         void registerWindow(wxWindow* window, WindowType type);
         void unregisterWindow(wxWindow* window);

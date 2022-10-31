@@ -678,6 +678,8 @@ void FileRevisions::restoreRevision(size_t nRevision, const wxString& targetFile
     wxFile restoredFile;
     restoredFile.Open(targetFile, wxFile::write);
     restoredFile.Write(revision);
+
+    createNewRevision(convertLineEndings(revision), "RESTORE: rev" + toString(nRevision));
 }
 
 
@@ -698,6 +700,8 @@ void FileRevisions::restoreRevision(const wxString& revString, const wxString& t
     wxFile restoredFile;
     restoredFile.Open(targetFile, wxFile::write);
     restoredFile.Write(revision);
+
+    createNewRevision(convertLineEndings(revision), "RESTORE: " + revString);
 }
 
 

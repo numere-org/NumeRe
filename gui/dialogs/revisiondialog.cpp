@@ -34,20 +34,22 @@ extern Language _guilang;
 ///
 /// \param parent wxWindow*
 /// \param rev FileRevisions*
-/// \param currentFileName const wxString&
+/// \param fileNameAndPath const wxString&
 ///
 /////////////////////////////////////////////////
-RevisionDialog::RevisionDialog(wxWindow* parent, FileRevisions* rev, const wxString& currentFileName)
-    : wxDialog(parent, wxID_ANY, _guilang.get("GUI_DLG_REVISIONDIALOG_TITLE"), wxDefaultPosition, wxSize(750, 500), wxRESIZE_BORDER | wxCAPTION | wxCLOSE_BOX), revisions(rev), currentFile(currentFileName)
+RevisionDialog::RevisionDialog(wxWindow* parent, FileRevisions* rev, const wxString& fileNameAndPath)
+    : wxDialog(parent, wxID_ANY, _guilang.get("GUI_DLG_REVISIONDIALOG_TITLE"), wxDefaultPosition, wxSize(750, 500), wxRESIZE_BORDER | wxCAPTION | wxCLOSE_BOX), revisions(rev)
 {
     mainWindow = static_cast<NumeReWindow*>(parent);
+    currentFileName = fileNameAndPath.substr(fileNameAndPath.find_last_of("/\\")+1);
+    currentFilePath = fileNameAndPath.substr(0, fileNameAndPath.find_last_of("/\\")+1);
 
     wxBoxSizer* vsizer = new wxBoxSizer(wxVERTICAL);
     revisionList = new wxcode::wxTreeListCtrl(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTR_TWIST_BUTTONS | wxTR_FULL_ROW_HIGHLIGHT | wxTR_EXTENDED | wxTR_MULTIPLE);
     revisionList->AddColumn(_guilang.get("GUI_DLG_REVISIONDIALOG_REV"), 150);
     revisionList->AddColumn(_guilang.get("GUI_DLG_REVISIONDIALOG_DATE"), 150);
     revisionList->AddColumn(_guilang.get("GUI_DLG_REVISIONDIALOG_COMMENT"), 450);
-    revisionList->AddRoot(currentFile);
+    revisionList->AddRoot(currentFileName);
 
     populateRevisionList();
 
@@ -99,6 +101,9 @@ void RevisionDialog::populateRevisionList()
             if (revisionList->GetItemText(currentItem, 2).substr(0, 7) == "RENAME:")
                 revisionList->SetItemTextColour(currentItem, wxColour(0, 128, 0));
 
+            if (revisionList->GetItemText(currentItem, 2).substr(0, 8) == "RESTORE:")
+                revisionList->SetItemTextColour(currentItem, wxColour(0, 128, 128));
+
             // Do not display the "DIFF" comment identifier
             if (revisionList->GetItemText(currentItem, 2).substr(0, 4) == "DIFF")
                 revisionList->SetItemText(currentItem, 2, "");
@@ -125,7 +130,7 @@ void RevisionDialog::populateRevisionList()
 void RevisionDialog::showRevision(const wxString& revString)
 {
     wxString revision = revisions->getRevision(revString);
-    mainWindow->ShowRevision(revString + "-" + currentFile, revision);
+    mainWindow->ShowRevision(revString + "-" + currentFileName, revision);
 }
 
 
@@ -141,7 +146,7 @@ void RevisionDialog::showRevision(const wxString& revString)
 /////////////////////////////////////////////////
 void RevisionDialog::compareRevisions(const wxString& rev1, const wxString& rev2)
 {
-    mainWindow->ShowRevision(rev1 + "-" + rev2 + "-" + currentFile + ".diff", revisions->compareRevisions(rev1, rev2));
+    mainWindow->ShowRevision(rev1 + "-" + rev2 + "-" + currentFileName + ".diff", revisions->compareRevisions(rev1, rev2));
 }
 
 
@@ -252,12 +257,18 @@ void RevisionDialog::OnMenuEvent(wxCommandEvent& event)
         case ID_REVISIONDIALOG_RESTORE:
             {
                 // Restore the right-clicked revision. Display
-                // a file dialog to ask for the target file.
-                wxFileDialog filedialog(this, _guilang.get("GUI_DLG_REVISIONDIALOG_RESTOREFILE"), wxGetCwd(), currentFile, wxFileSelectorDefaultWildcardStr, wxFD_SAVE | wxFD_OVERWRITE_PROMPT);
-                int ret = filedialog.ShowModal();
+                // a message box to confirm the overwrite
+                int ret = wxMessageBox(_guilang.get("GUI_DLG_REVISIONDIALOG_CONFIRM_RESTORE", revID.ToStdString()), _guilang.get("GUI_DLG_REVISIONDIALOG_CONFIRM_RESTORE_HEAD"), wxOK | wxCANCEL | wxCENTER | wxICON_QUESTION, this);
 
-                if (ret == wxID_OK)
-                    revisions->restoreRevision(revID, filedialog.GetPath());
+                if (ret == wxOK)
+                {
+                    revisions->restoreRevision(revID, currentFilePath+currentFileName);
+                    mainWindow->reloadFileIfOpen(currentFilePath+currentFileName, true);
+
+                    // Refresh the contents of the revision list
+                    revisionList->DeleteChildren(revisionList->GetRootItem());
+                    populateRevisionList();
+                }
 
                 break;
             }
