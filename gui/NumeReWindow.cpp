@@ -103,6 +103,7 @@
 #include "../common/ipc.hpp"
 
 #include "../common/http.h"
+#include "../common/compareFiles.hpp"
 
 #include "controls/treesearchctrl.hpp"
 #include "controls/toolbarsearchctrl.hpp"
@@ -1704,6 +1705,11 @@ void NumeReWindow::OnMenuEvent(wxCommandEvent &event)
         case ID_MENU_SHOW_DEPENDENCY_REPORT:
         {
             OnCalculateDependencies();
+            break;
+        }
+        case ID_MENU_COMPARE_FILES:
+        {
+            OnCompareFiles();
             break;
         }
         case ID_MENU_CREATE_PACKAGE:
@@ -5131,6 +5137,7 @@ void NumeReWindow::UpdateMenuBar()
     m_menuItems[ID_MENU_USEANALYZER] = menuAnalyzer->Append(ID_MENU_USEANALYZER, _guilang.get("GUI_MENU_ANALYZER"), _guilang.get("GUI_MENU_ANALYZER_TTP"), wxITEM_CHECK);
     menuAnalyzer->Append(ID_MENU_FIND_DUPLICATES, _guilang.get("GUI_MENU_FIND_DUPLICATES"), _guilang.get("GUI_MENU_FIND_DUPLICATES_TTP"));
     menuAnalyzer->Append(ID_MENU_SHOW_DEPENDENCY_REPORT, _guilang.get("GUI_MENU_SHOW_DEPENDENCY_REPORT"), _guilang.get("GUI_MENU_SHOW_DEPENDENCY_REPORT_TTP"));
+    menuAnalyzer->Append(ID_MENU_COMPARE_FILES, _guilang.get("GUI_MENU_COMPARE_FILES"), _guilang.get("GUI_MENU_COMPARE_FILES_TTP"));
 
     // Create exporter menu
     wxMenu* menuExporter = new wxMenu();
@@ -6971,6 +6978,43 @@ void NumeReWindow::OnCreatePackage(const wxString& projectFile)
                      _guilang.get("ERR_NR_HEAD"),
                      wxCENTER | wxICON_ERROR | wxOK);
     }
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Event handler for comparing two files
+/// using the diff functionalities.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
+void NumeReWindow::OnCompareFiles()
+{
+    // Search first file
+    std::string file1 = wxFileSelector(_guilang.get("GUI_DLG_COMPARE_FILE_1"), "", wxEmptyString, wxEmptyString,
+                                       wxFileSelectorDefaultWildcardStr, wxFD_OPEN | wxFD_FILE_MUST_EXIST, this).ToStdString();
+
+    // Abort, if the user clicked cancel
+    if (!file1.length())
+        return;
+
+    // Search second file
+    std::string file2 = wxFileSelector(_guilang.get("GUI_DLG_COMPARE_FILE_1"), "", wxEmptyString, wxEmptyString,
+                                       wxFileSelectorDefaultWildcardStr, wxFD_OPEN | wxFD_FILE_MUST_EXIST, this).ToStdString();
+
+    // Abort, if the user clicked cancel
+    if (!file2.length())
+        return;
+
+    // Calculate the unified diff of both files
+    std::string diff = compareFiles(file1, file2);
+
+    wxFileName fn1(file1);
+    wxFileName fn2(file2);
+
+    // Show the calculated diff with the names of both files
+    // as "file name"
+    ShowRevision(fn1.GetName() + "." + fn1.GetExt() + "-" + fn2.GetName() + "." + fn2.GetExt() + ".diff", diff);
 }
 
 

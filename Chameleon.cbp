@@ -263,6 +263,8 @@
 		</Unit>
 		<Unit filename="common/CommonHeaders.h" />
 		<Unit filename="common/Options.h" />
+		<Unit filename="common/compareFiles.cpp" />
+		<Unit filename="common/compareFiles.hpp" />
 		<Unit filename="common/datastructures.h" />
 		<Unit filename="common/dtl/Diff.hpp" />
 		<Unit filename="common/dtl/Diff3.hpp" />

@@ -283,6 +283,7 @@ class NumeReWindow : public wxFrame
         void OnExecuteFile(const std::string& sFileName, int id);
         void OnCalculateDependencies();
         void OnCreatePackage(const wxString& projectFile);
+        void OnCompareFiles();
 
         void OnClose(wxCloseEvent& event);
         void Test(wxCommandEvent& event);
