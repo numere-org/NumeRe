@@ -19,6 +19,7 @@
 #include "tableviewer.hpp"
 #include "gridtable.hpp"
 #include "tableeditpanel.hpp"
+#include "cellvalueshader.hpp"
 #include "../../kernel/core/ui/language.hpp"
 #include "../../kernel/core/utils/tools.hpp"
 #include "../../kernel/core/datamanagement/tablecolumn.hpp"
@@ -36,6 +37,7 @@ static wxColour FrameColor = wxColour(230, 230, 230);
 static wxColour HighlightColor = wxColour(192, 227, 248);
 static wxColour HighlightHeadlineColor = wxColour(131, 200, 241);
 
+
 /////////////////////////////////////////////////
 /// \brief This class represents an extension to
 /// the usual cell string renderer to provide
@@ -46,6 +48,8 @@ static wxColour HighlightHeadlineColor = wxColour(131, 200, 241);
 class AdvStringCellRenderer : public wxGridCellStringRenderer
 {
     protected:
+        CellValueShader m_shader;
+
         bool isHeadLine(const wxGrid& grid, int row)
         {
             return grid.GetRowLabelValue(row) == "#";
@@ -60,6 +64,11 @@ class AdvStringCellRenderer : public wxGridCellStringRenderer
         {
             return (grid.GetCursorColumn() == col || grid.GetCursorRow() == row)
                 && !isFrame(grid, row, col);
+        }
+
+        bool hasCustomColor()
+        {
+            return m_shader.isActive();
         }
 
         wxGridCellAttr* createHighlightedAttr(const wxGridCellAttr& attr, bool isHeadLine)
@@ -88,7 +97,35 @@ class AdvStringCellRenderer : public wxGridCellStringRenderer
             return headlineAttr;
         }
 
+        wxGridCellAttr* createCustomColorAttr(const wxGridCellAttr& attr, const wxGrid& grid, int row, int col)
+        {
+            wxGridCellAttr* customAttr = attr.Clone();
+
+            if (grid.GetTable()->CanGetValueAs(row, col, "complex"))
+                customAttr->SetBackgroundColour(m_shader.getColour(*static_cast<mu::value_type*>(grid.GetTable()->GetValueAsCustom(row, col, "complex"))));
+            else if (grid.GetTable()->CanGetValueAs(row, col, wxGRID_VALUE_NUMBER) || grid.GetTable()->CanGetValueAs(row, col, "datetime"))
+                customAttr->SetBackgroundColour(m_shader.getColour(mu::value_type(grid.GetTable()->GetValueAsDouble(row, col))));
+            else if (grid.GetTable()->CanGetValueAs(row, col, wxGRID_VALUE_BOOL))
+                customAttr->SetBackgroundColour(m_shader.getColour(mu::value_type(grid.GetTable()->GetValueAsBool(row, col))));
+            else
+                customAttr->SetBackgroundColour(m_shader.getColour(grid.GetTable()->GetValue(row, col)));
+
+            // Calculate luminosity and correct text colour, if necessary
+            const wxColour& bgColour = customAttr->GetBackgroundColour();
+            double luminosity = bgColour.Red() * 0.299 + bgColour.Green() * 0.587 + bgColour.Blue() * 0.114;
+
+            if (luminosity < 128)
+            {
+                luminosity = 255;//std::min(255.0, 255 - luminosity + 10);
+                customAttr->SetTextColour(wxColour(luminosity, luminosity, luminosity));
+            }
+
+            return customAttr;
+        }
+
     public:
+        AdvStringCellRenderer(const CellValueShader shader = CellValueShader()) : m_shader(shader) {}
+
         virtual void Draw(wxGrid& grid,
                           wxGridCellAttr& attr,
                           wxDC& dc,
@@ -114,12 +151,18 @@ class AdvStringCellRenderer : public wxGridCellStringRenderer
                 wxGridCellStringRenderer::Draw(grid, *newAttr, dc, rect, row, col, isSelected);
                 newAttr->DecRef();
             }
+            else if (hasCustomColor())
+            {
+                wxGridCellAttr* newAttr = createCustomColorAttr(attr, grid, row, col);
+                wxGridCellStringRenderer::Draw(grid, *newAttr, dc, rect, row, col, isSelected);
+                newAttr->DecRef();
+            }
             else
                 wxGridCellStringRenderer::Draw(grid, attr, dc, rect, row, col, isSelected);
         }
 
         virtual wxGridCellRenderer *Clone() const
-            { return new AdvStringCellRenderer; }
+            { return new AdvStringCellRenderer(m_shader); }
 };
 
 
@@ -132,6 +175,8 @@ class AdvStringCellRenderer : public wxGridCellStringRenderer
 class AdvBooleanCellRenderer : public AdvStringCellRenderer
 {
     public:
+        AdvBooleanCellRenderer(const CellValueShader& shader = CellValueShader()) : AdvStringCellRenderer(shader) {}
+
     // draw a check mark or nothing
         virtual void Draw(wxGrid& grid,
                           wxGridCellAttr& attr,
@@ -157,6 +202,12 @@ class AdvBooleanCellRenderer : public AdvStringCellRenderer
                 else if (isHeadLine(grid, row))
                 {
                     wxGridCellAttr* newAttr = createHeadlineAttr(attr);
+                    wxGridCellRenderer::Draw(grid, *newAttr, dc, rect, row, col, isSelected);
+                    newAttr->DecRef();
+                }
+                else if (hasCustomColor())
+                {
+                    wxGridCellAttr* newAttr = createCustomColorAttr(attr, grid, row, col);
                     wxGridCellRenderer::Draw(grid, *newAttr, dc, rect, row, col, isSelected);
                     newAttr->DecRef();
                 }
@@ -227,7 +278,7 @@ class AdvBooleanCellRenderer : public AdvStringCellRenderer
         }
 
         virtual wxGridCellRenderer *Clone() const
-            { return new AdvBooleanCellRenderer; }
+            { return new AdvBooleanCellRenderer(m_shader); }
 
     private:
         static wxSize bestSize;
@@ -246,7 +297,7 @@ BEGIN_EVENT_TABLE(TableViewer, wxGrid)
     EVT_GRID_CELL_RIGHT_CLICK   (TableViewer::OnCellRightClick)
     EVT_GRID_LABEL_RIGHT_CLICK  (TableViewer::OnLabelRightClick)
     EVT_GRID_LABEL_LEFT_DCLICK  (TableViewer::OnLabelDoubleClick)
-    EVT_MENU_RANGE              (ID_MENU_INSERT_ROW, ID_MENU_PASTE_HERE, TableViewer::OnMenu)
+    EVT_MENU_RANGE              (ID_MENU_INSERT_ROW, ID_MENU_CVS, TableViewer::OnMenu)
     EVT_GRID_SELECT_CELL        (TableViewer::OnCellSelect)
     EVT_GRID_RANGE_SELECT       (TableViewer::OnCellRangeSelect)
 END_EVENT_TABLE()
@@ -270,8 +321,11 @@ TableViewer::TableViewer(wxWindow* parent, wxWindowID id, wxStatusBar* statusbar
 {
     // Cells are always aligned right and centered vertically
     SetDefaultCellAlignment(wxALIGN_RIGHT, wxALIGN_CENTER);
+    SetDefaultRenderer(new AdvStringCellRenderer);
 
     // Prepare the context menu
+    m_popUpMenu.Append(ID_MENU_CVS, _guilang.get("GUI_TABLE_CVS"));
+    m_popUpMenu.AppendSeparator();
     m_popUpMenu.Append(ID_MENU_COPY, _guilang.get("GUI_COPY_TABLE_CONTENTS"));
 
     // prepare the status bar
@@ -1774,6 +1828,161 @@ void TableViewer::OnMenu(wxCommandEvent& event)
         case ID_MENU_PASTE_HERE:
             pasteContents(true);
             break;
+        case ID_MENU_CVS:
+        {
+            double minVal;
+            double maxVal;
+            std::vector<int> vTypes;
+
+            if (isGridNumeReTable)
+                vTypes = static_cast<GridNumeReTable*>(GetTable())->getColumnTypes();
+
+            // More diffcult: more than one cell selected
+            if (GetSelectedCells().size())
+            {
+                // Non-block selection
+                //wxGridCellCoordsArray cellarray = GetSelectedCells();
+                //
+                //for (size_t i = 0; i < cellarray.size(); i++)
+                //{
+                //    sSelection += copyCell(cellarray[i].GetRow(), cellarray[i].GetCol());
+                //
+                //    if (i < cellarray.size()-1)
+                //        sSelection += "\t";
+                //}
+            }
+            else if (GetSelectionBlockTopLeft().size() && GetSelectionBlockBottomRight().size())
+            {
+                // Block selection
+                wxGridCellCoordsArray topleftarray = GetSelectionBlockTopLeft();
+                wxGridCellCoordsArray bottomrightarray = GetSelectionBlockBottomRight();
+
+                minVal = calculateMin(topleftarray[0], bottomrightarray[0]);
+                maxVal = calculateMax(topleftarray[0], bottomrightarray[0]);
+
+                CellValueShaderDialog dialog(this, minVal, maxVal);
+
+                if (dialog.ShowModal() == wxID_OK)
+                {
+                    // Whole columns are selected
+                    if (topleftarray[0].GetRow() <= nFirstNumRow && bottomrightarray[0].GetRow()+1 == GetRows())
+                    {
+                        for (int j = topleftarray[0].GetCol(); j < bottomrightarray[0].GetCol(); j++)
+                        {
+                            wxGridCellAttr* attr = GetCellAttr(nFirstNumRow, j);
+
+                            if (vTypes.size() > j && vTypes[j] == TableColumn::TYPE_LOGICAL)
+                                attr->SetRenderer(new AdvBooleanCellRenderer(dialog.getShader()));
+                            else
+                                attr->SetRenderer(new AdvStringCellRenderer(dialog.getShader()));
+
+                            SetColAttr(j, attr);
+
+                            for (size_t i = 0; i < nFirstNumRow; i++)
+                                SetCellRenderer(i, j, new AdvStringCellRenderer);
+                        }
+                    }
+                    else
+                    {
+                        for (int i = topleftarray[0].GetRow(); i <= bottomrightarray[0].GetRow(); i++)
+                        {
+                            for (int j = topleftarray[0].GetCol(); j <= bottomrightarray[0].GetCol(); j++)
+                            {
+                                if (vTypes.size() > j && vTypes[j] == TableColumn::TYPE_LOGICAL)
+                                    SetCellRenderer(i, j, new AdvBooleanCellRenderer(dialog.getShader()));
+                                else
+                                    SetCellRenderer(i, j, new AdvStringCellRenderer(dialog.getShader()));
+                            }
+                        }
+                    }
+
+                }
+
+            }
+            else if (GetSelectedCols().size())
+            {
+                // Multiple selected columns
+                wxArrayInt colarray = GetSelectedCols();
+
+                minVal = calculateMin(wxGridCellCoords(0, colarray[0]), wxGridCellCoords(GetRows()-1, colarray[colarray.size()-1]));
+                maxVal = calculateMax(wxGridCellCoords(0, colarray[0]), wxGridCellCoords(GetRows()-1, colarray[colarray.size()-1]));
+
+                CellValueShaderDialog dialog(this, minVal, maxVal);
+
+                if (dialog.ShowModal() == wxID_OK)
+                {
+                    // Whole columns are selected
+                    for (size_t j = 0; j < colarray.size(); j++)
+                    {
+                        wxGridCellAttr* attr = GetCellAttr(nFirstNumRow, colarray[j]);
+
+                        if (vTypes.size() > colarray[j] && vTypes[colarray[j]] == TableColumn::TYPE_LOGICAL)
+                            attr->SetRenderer(new AdvBooleanCellRenderer(dialog.getShader()));
+                        else
+                            attr->SetRenderer(new AdvStringCellRenderer(dialog.getShader()));
+
+                        SetColAttr(colarray[j], attr);
+
+                        for (size_t i = 0; i < nFirstNumRow; i++)
+                            SetCellRenderer(i, colarray[j], new AdvStringCellRenderer);
+                    }
+                }
+            }
+            else if (GetSelectedRows().size())
+            {
+                // Multiple selected rows
+                wxArrayInt rowarray = GetSelectedRows();
+
+                minVal = calculateMin(wxGridCellCoords(rowarray[0], 0), wxGridCellCoords(rowarray[rowarray.size()-1], GetCols()-1));
+                maxVal = calculateMax(wxGridCellCoords(rowarray[0], 0), wxGridCellCoords(rowarray[rowarray.size()-1], GetCols()-1));
+
+                CellValueShaderDialog dialog(this, minVal, maxVal);
+
+                if (dialog.ShowModal() == wxID_OK)
+                {
+                    for (size_t i = 0; i < rowarray.size(); i++)
+                    {
+                        for (int j = 0; j < GetCols()-1; j++)
+                        {
+                            if (vTypes.size() > j && vTypes[j] == TableColumn::TYPE_LOGICAL)
+                                SetCellRenderer(rowarray[i], j, new AdvBooleanCellRenderer(dialog.getShader()));
+                            else
+                                SetCellRenderer(rowarray[i], j, new AdvStringCellRenderer(dialog.getShader()));
+                        }
+                    }
+                }
+            }
+            else
+            {
+                minVal = calculateMin(wxGridCellCoords(0, 0), wxGridCellCoords(GetRows()-1, GetCols()-1));
+                maxVal = calculateMax(wxGridCellCoords(0, 0), wxGridCellCoords(GetRows()-1, GetCols()-1));
+
+                CellValueShaderDialog dialog(this, minVal, maxVal);
+
+                if (dialog.ShowModal() == wxID_OK)
+                {
+                    // Whole columns are selected
+                    for (int j = 0; j < GetCols()-1; j++)
+                    {
+                        wxGridCellAttr* attr = GetCellAttr(nFirstNumRow, j);
+
+                        if (vTypes.size() > j && vTypes[j] == TableColumn::TYPE_LOGICAL)
+                            attr->SetRenderer(new AdvBooleanCellRenderer(dialog.getShader()));
+                        else
+                            attr->SetRenderer(new AdvStringCellRenderer(dialog.getShader()));
+
+                        SetColAttr(j, attr);
+
+                        for (size_t i = 0; i < nFirstNumRow; i++)
+                            SetCellRenderer(i, j, new AdvStringCellRenderer);
+                    }
+                }
+            }
+
+            Refresh();
+
+            break;
+        }
     }
 }
 

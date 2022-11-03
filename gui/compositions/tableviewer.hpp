@@ -123,7 +123,8 @@ class TableViewer : public wxGrid
             ID_MENU_REMOVE_CELL,
             ID_MENU_COPY,
             ID_MENU_PASTE,
-            ID_MENU_PASTE_HERE
+            ID_MENU_PASTE_HERE,
+            ID_MENU_CVS
         };
 
         DECLARE_EVENT_TABLE();
