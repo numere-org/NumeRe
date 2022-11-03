@@ -47,7 +47,8 @@ struct CellValueShaderCondition
         CT_INTERVAL_IM_EXCL,
         CT_CONTAINS_VAL,
         CT_CONTAINS_STR,
-        CT_FIND_STR
+        CT_FIND_STR,
+        CT_NOT_FIND_STR
     };
 
     ConditionType m_type;
@@ -168,6 +169,16 @@ class CellValueShader
                         return m_colorArray.front();
                 }
             }
+            else if (m_condition.m_type == CellValueShaderCondition::CT_NOT_FIND_STR)
+            {
+                for (const auto& sStr : m_condition.m_strs)
+                {
+                    if (strVal.find(sStr) != std::string::npos)
+                        return *wxWHITE;
+                }
+
+                return m_colorArray.front();
+            }
 
             return *wxWHITE;
         }
@@ -219,6 +230,7 @@ class CellValueShaderDialog : public wxDialog
             lt_gt.Add(">");
             lt_gt.Add("==");
             lt_gt.Add("CONTAINS");
+            lt_gt.Add("NOT CONTAINS");
             m_lt_gt_choice = _panel->CreateChoices(hsizer->GetStaticBox(), hsizer, lt_gt);
             m_lt_gt_choice->SetSelection(0);
             m_lt_gt_value = _panel->CreateTextInput(hsizer->GetStaticBox(), hsizer, _guilang.get("GUI_DLG_CVS_LT_GT_EQ_VALUE"), wxEmptyString, 0, wxID_ANY, wxSize(240, -1));
@@ -236,7 +248,7 @@ class CellValueShaderDialog : public wxDialog
 
             wxStaticBoxSizer* hsizer = _panel->createGroup(_guilang.get("GUI_DLG_CVS_CONDITION"), wxHORIZONTAL, _panel,  _panel->getMainSizer(), 0);
             m_interval_start = _panel->CreateTextInput(hsizer->GetStaticBox(), hsizer, _guilang.get("GUI_DLG_CVS_INTERVAL_START"), toString(minVal, 5), 0, wxID_ANY, wxSize(FIELDWIDTH, -1));
-            _panel->AddStaticText(hsizer->GetStaticBox(), hsizer, "<   " + _guilang.get("GUI_DLG_CVS_VALUES") + "   <");
+            _panel->AddStaticText(hsizer->GetStaticBox(), hsizer, "<=   " + _guilang.get("GUI_DLG_CVS_VALUES") + "   <=");
             m_interval_end = _panel->CreateTextInput(hsizer->GetStaticBox(), hsizer, _guilang.get("GUI_DLG_CVS_INTERVAL_END"), toString(maxVal, 5), 0, wxID_ANY, wxSize(FIELDWIDTH, -1));
 
             wxBoxSizer* colorSizer = _panel->createGroup(wxHORIZONTAL, _panel->getMainSizer(), 0);
@@ -260,7 +272,7 @@ class CellValueShaderDialog : public wxDialog
 
             wxStaticBoxSizer* hsizer = _panel->createGroup(_guilang.get("GUI_DLG_CVS_CONDITION"), wxHORIZONTAL, _panel,  _panel->getMainSizer(), 0);
             m_interval_start_excl = _panel->CreateTextInput(hsizer->GetStaticBox(), hsizer, _guilang.get("GUI_DLG_CVS_INTERVAL_EXCL_START"), toString(minVal, 5), 0, wxID_ANY, wxSize(FIELDWIDTH, -1));
-            _panel->AddStaticText(hsizer->GetStaticBox(), hsizer, "<   " + _guilang.get("GUI_DLG_CVS_VALUES") + "   <");
+            _panel->AddStaticText(hsizer->GetStaticBox(), hsizer, "<=   " + _guilang.get("GUI_DLG_CVS_VALUES") + "   <=");
             m_interval_end_excl = _panel->CreateTextInput(hsizer->GetStaticBox(), hsizer, _guilang.get("GUI_DLG_CVS_INTERVAL_EXCL_END"), toString(maxVal, 5), 0, wxID_ANY, wxSize(FIELDWIDTH, -1));
 
             wxBoxSizer* colorSizer = _panel->createGroup(wxHORIZONTAL, _panel->getMainSizer(), 0);
@@ -285,7 +297,7 @@ class CellValueShaderDialog : public wxDialog
         {
             wxBoxSizer* vsizer = new wxBoxSizer(wxVERTICAL);
             SetSizer(vsizer);
-            m_book = new wxNotebook(this, wxID_ANY, wxDefaultPosition, wxSize(700*g_pixelScale, 480*g_pixelScale));
+            m_book = new wxNotebook(this, wxID_ANY, wxDefaultPosition, wxSize(700*g_pixelScale, 320*g_pixelScale));
 
             createLtGtPage();
             createIntervalPage(minVal, maxVal);
@@ -331,6 +343,8 @@ class CellValueShaderDialog : public wxDialog
                             cond.m_type = CellValueShaderCondition::CT_CONTAINS_STR;
                         else if (condType == "CONTAINS")
                             cond.m_type = CellValueShaderCondition::CT_FIND_STR;
+                        else if (condType == "NOT CONTAINS")
+                            cond.m_type = CellValueShaderCondition::CT_NOT_FIND_STR;
 
                         if (isConvertible(val, CONVTYPE_DATE_TIME))
                             cond.m_vals.push_back(to_double(StrToTime(val)));
@@ -426,7 +440,7 @@ END_EVENT_TABLE()
 
 
 wxColour CellValueShaderDialog::LEVELCOLOUR  = wxColour(128,128,255);
-wxColour CellValueShaderDialog::LOWERCOLOUR  = wxColour(0,128,255);
+wxColour CellValueShaderDialog::LOWERCOLOUR  = wxColour(128,128,255);
 wxColour CellValueShaderDialog::MINCOLOUR    = wxColour(128,255,255);
 wxColour CellValueShaderDialog::MEDCOLOUR    = wxColour(128,255,128);
 wxColour CellValueShaderDialog::MAXCOLOUR    = wxColour(255,255,128);
