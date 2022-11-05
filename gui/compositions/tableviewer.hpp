@@ -47,6 +47,7 @@ class TableViewer : public wxGrid
         bool isGridNumeReTable;
         wxGridCellCoords lastCursorPosition;
         wxGridCellCoordsArray selectedCells;
+        std::vector<int> m_currentColTypes;
 
         // External window elements
         TablePanel* m_parentPanel;

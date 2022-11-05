@@ -377,25 +377,51 @@ std::string toString(const std::vector<int>& vVector)
 /// passed as "{x,y,z,...}"
 ///
 /// \param sString std::string
-/// \return std::vector<int>
+/// \return std::vector<std::string>
 ///
 /////////////////////////////////////////////////
-std::vector<int> toVector(std::string sString)
+std::vector<std::string> toStrVector(std::string sString)
 {
-    std::vector<int> vVector;
+    std::vector<std::string> vVector;
 
     if (sString == "{}" || !sString.length())
         return vVector;
 
     if (sString.front() == '{' && sString.back() == '}')
     {
-        sString.front() = ' ';
-        sString.back() = ' ';
+        sString.erase(0, 1);
+        sString.pop_back();
     }
 
     while (sString.length())
     {
-        vVector.push_back(StrToInt(getNextArgument(sString, true)));
+        vVector.push_back(getNextArgument(sString, true));
+    }
+
+    return vVector;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This function converts a std::string
+/// into a std::vector, where the string shall be
+/// passed as "{x,y,z,...}"
+///
+/// \param sString std::string
+/// \return std::vector<int>
+///
+/////////////////////////////////////////////////
+std::vector<int> toIntVector(std::string sString)
+{
+    std::vector<int> vVector;
+    std::vector<std::string> vStrVect = toStrVector(sString);
+
+    if (!vStrVect.size())
+        return vVector;
+
+    for (const auto& s : vStrVect)
+    {
+        vVector.push_back(StrToInt(s));
     }
 
     return vVector;

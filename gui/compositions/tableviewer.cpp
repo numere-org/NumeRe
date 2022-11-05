@@ -37,6 +37,11 @@ static wxColour FrameColor = wxColour(230, 230, 230);
 static wxColour HighlightColor = wxColour(192, 227, 248);
 static wxColour HighlightHeadlineColor = wxColour(131, 200, 241);
 
+static double calculateLuminosity(const wxColour& c)
+{
+    return c.Red() * 0.299 + c.Green() * 0.587 + c.Blue() * 0.114;
+}
+
 
 /////////////////////////////////////////////////
 /// \brief This class represents an extension to
@@ -71,14 +76,34 @@ class AdvStringCellRenderer : public wxGridCellStringRenderer
             return m_shader.isActive();
         }
 
-        wxGridCellAttr* createHighlightedAttr(const wxGridCellAttr& attr, bool isHeadLine)
+        wxGridCellAttr* createHighlightedAttr(const wxGridCellAttr& attr, const wxGrid& grid, int row, int col)
         {
-            wxGridCellAttr* highlightAttr = attr.Clone();
+            wxGridCellAttr* highlightAttr;
 
-            if (isHeadLine)
+            if (isHeadLine(grid, row))
+            {
+                highlightAttr = attr.Clone();
                 highlightAttr->SetBackgroundColour(HighlightHeadlineColor);
+                highlightAttr->SetFont(highlightAttr->GetFont().Bold());
+                highlightAttr->SetAlignment(wxALIGN_LEFT, wxALIGN_CENTER);
+            }
+            else if (hasCustomColor())
+            {
+                highlightAttr = createCustomColorAttr(attr, grid, row, col);
+                //static double highlightLuminosity = calculateLuminosity(HighlightColor);
+                double bgLuminosity = calculateLuminosity(highlightAttr->GetBackgroundColour());
+//                double factor = (bgLuminosity/highlightLuminosity-1.0)*0.8 + 1.0;
+                double factor = ((bgLuminosity / 255.0 * 0.8) + 0.2);
+
+                highlightAttr->SetBackgroundColour(wxColour(std::min(255.0, HighlightColor.Red() * factor),
+                                                            std::min(255.0, HighlightColor.Green() * factor),
+                                                            std::min(255.0, HighlightColor.Blue() * factor)));
+            }
             else
+            {
+                highlightAttr = attr.Clone();
                 highlightAttr->SetBackgroundColour(HighlightColor);
+            }
 
             return highlightAttr;
         }
@@ -94,6 +119,8 @@ class AdvStringCellRenderer : public wxGridCellStringRenderer
         {
             wxGridCellAttr* headlineAttr = attr.Clone();
             headlineAttr->SetBackgroundColour(HeadlineColor);
+            headlineAttr->SetFont(headlineAttr->GetFont().Bold());
+            headlineAttr->SetAlignment(wxALIGN_LEFT, wxALIGN_CENTER);
             return headlineAttr;
         }
 
@@ -112,7 +139,7 @@ class AdvStringCellRenderer : public wxGridCellStringRenderer
 
             // Calculate luminosity and correct text colour, if necessary
             const wxColour& bgColour = customAttr->GetBackgroundColour();
-            double luminosity = bgColour.Red() * 0.299 + bgColour.Green() * 0.587 + bgColour.Blue() * 0.114;
+            double luminosity = calculateLuminosity(bgColour);
 
             if (luminosity < 128)
             {
@@ -135,7 +162,7 @@ class AdvStringCellRenderer : public wxGridCellStringRenderer
         {
             if (isPartOfCursor(grid, row, col))
             {
-                wxGridCellAttr* newAttr = createHighlightedAttr(attr, isHeadLine(grid, row));
+                wxGridCellAttr* newAttr = createHighlightedAttr(attr, grid, row, col);
                 wxGridCellStringRenderer::Draw(grid, *newAttr, dc, rect, row, col, isSelected);
                 newAttr->DecRef();
             }
@@ -189,7 +216,7 @@ class AdvBooleanCellRenderer : public AdvStringCellRenderer
             {
                 if (isPartOfCursor(grid, row, col))
                 {
-                    wxGridCellAttr* newAttr = createHighlightedAttr(attr, isHeadLine(grid, row));
+                    wxGridCellAttr* newAttr = createHighlightedAttr(attr, grid, row, col);
                     wxGridCellRenderer::Draw(grid, *newAttr, dc, rect, row, col, isSelected);
                     newAttr->DecRef();
                 }
@@ -358,12 +385,10 @@ void TableViewer::layoutGrid()
     // set to read-only mode
     EnableEditing(!readOnly);
 
-    std::vector<int> vTypes;
-
     if (isGridNumeReTable)
     {
         GridNumeReTable* gridtab = static_cast<GridNumeReTable*>(GetTable());
-        vTypes = gridtab->getColumnTypes();
+        m_currentColTypes = gridtab->getColumnTypes();
     }
 
     // Search the boundaries and color the frame correspondingly
@@ -371,23 +396,23 @@ void TableViewer::layoutGrid()
     {
         for (int j = 0; j < GetNumberCols(); j++)
         {
-            if (!i && isGridNumeReTable && (int)vTypes.size() > j)
+            if (!i && isGridNumeReTable && (int)m_currentColTypes.size() > j)
             {
                 wxGridCellAttr* attr = nullptr;
 
-                if (vTypes[j] == TableColumn::TYPE_STRING)
+                if (m_currentColTypes[j] == TableColumn::TYPE_STRING)
                 {
                     attr = new wxGridCellAttr(*wxBLACK, *wxWHITE, this->GetDefaultCellFont(),
                                               wxALIGN_LEFT, wxALIGN_CENTER);
                     attr->SetRenderer(new AdvStringCellRenderer);
                 }
-                else if (vTypes[j] == TableColumn::TYPE_CATEGORICAL)
+                else if (m_currentColTypes[j] == TableColumn::TYPE_CATEGORICAL)
                 {
                     attr = new wxGridCellAttr(*wxBLACK, *wxWHITE, this->GetDefaultCellFont(),
                                               wxALIGN_CENTER, wxALIGN_CENTER);
                     attr->SetRenderer(new AdvStringCellRenderer);
                 }
-                else if (vTypes[j] == TableColumn::TYPE_LOGICAL)
+                else if (m_currentColTypes[j] == TableColumn::TYPE_LOGICAL)
                 {
                     attr = new wxGridCellAttr(*wxBLACK, *wxWHITE, this->GetDefaultCellFont(),
                                               wxALIGN_CENTER, wxALIGN_CENTER);
@@ -415,9 +440,6 @@ void TableViewer::layoutGrid()
             {
                 // Headlines
                 SetCellRenderer(i, j, new AdvStringCellRenderer);
-                SetCellFont(i, j, GetCellFont(i, j).MakeBold());
-                SetCellBackgroundColour(i, j, HeadlineColor);
-                SetCellAlignment(wxALIGN_LEFT, i, j);
             }
             else if (!isGridNumeReTable && GetCellValue(i, j)[0] == '"')
             {
@@ -501,6 +523,9 @@ void TableViewer::OnKeyDown(wxKeyEvent& event)
 /////////////////////////////////////////////////
 void TableViewer::OnChar(wxKeyEvent& event)
 {
+    if (readOnly)
+        return;
+
     // Is this the last column?
     if (this->GetCursorColumn()+1 == this->GetCols())
     {
@@ -549,7 +574,7 @@ void TableViewer::OnCellChange(wxGridEvent& event)
 {
     SetCellValue(event.GetRow(), event.GetCol(), event.GetString());
 
-    updateFrame();
+    //updateFrame();
     UpdateColumnAlignment(GetGridCursorCol());
     event.Veto();
 }
@@ -1043,35 +1068,40 @@ void TableViewer::UpdateColumnAlignment(int col)
 
         if (col < (int)vTypes.size())
         {
-            if (vTypes[col] == TableColumn::TYPE_STRING)
+            if (col >= (int)m_currentColTypes.size() || m_currentColTypes[col] != vTypes[col])
             {
-                wxGridCellAttr* attr = new wxGridCellAttr(*wxBLACK, *wxWHITE, this->GetDefaultCellFont(),
-                                                          wxALIGN_LEFT, wxALIGN_CENTER);
-                attr->SetRenderer(new AdvStringCellRenderer);
-                SetColAttr(col, attr);
-            }
-            else if (vTypes[col] == TableColumn::TYPE_CATEGORICAL)
-            {
-                wxGridCellAttr* attr = new wxGridCellAttr(*wxBLACK, *wxWHITE, this->GetDefaultCellFont(),
-                                                          wxALIGN_CENTER, wxALIGN_CENTER);
-                attr->SetRenderer(new AdvStringCellRenderer);
-                SetColAttr(col, attr);
-            }
-            else if (vTypes[col] == TableColumn::TYPE_LOGICAL)
-            {
-                wxGridCellAttr* attr = new wxGridCellAttr(*wxBLACK, *wxWHITE, this->GetDefaultCellFont(),
-                                                          wxALIGN_CENTER, wxALIGN_CENTER);
-                attr->SetRenderer(new AdvBooleanCellRenderer);
-                SetColAttr(col, attr);
-            }
-            else // All other cases
-            {
-                wxGridCellAttr* attr = new wxGridCellAttr(*wxBLACK, *wxWHITE, this->GetDefaultCellFont(),
-                                                          wxALIGN_RIGHT, wxALIGN_CENTER);
-                attr->SetRenderer(new AdvStringCellRenderer);
-                SetColAttr(col, attr);
+                if (vTypes[col] == TableColumn::TYPE_STRING)
+                {
+                    wxGridCellAttr* attr = new wxGridCellAttr(*wxBLACK, *wxWHITE, this->GetDefaultCellFont(),
+                                                              wxALIGN_LEFT, wxALIGN_CENTER);
+                    attr->SetRenderer(new AdvStringCellRenderer);
+                    SetColAttr(col, attr);
+                }
+                else if (vTypes[col] == TableColumn::TYPE_CATEGORICAL)
+                {
+                    wxGridCellAttr* attr = new wxGridCellAttr(*wxBLACK, *wxWHITE, this->GetDefaultCellFont(),
+                                                              wxALIGN_CENTER, wxALIGN_CENTER);
+                    attr->SetRenderer(new AdvStringCellRenderer);
+                    SetColAttr(col, attr);
+                }
+                else if (vTypes[col] == TableColumn::TYPE_LOGICAL)
+                {
+                    wxGridCellAttr* attr = new wxGridCellAttr(*wxBLACK, *wxWHITE, this->GetDefaultCellFont(),
+                                                              wxALIGN_CENTER, wxALIGN_CENTER);
+                    attr->SetRenderer(new AdvBooleanCellRenderer);
+                    SetColAttr(col, attr);
+                }
+                else // All other cases
+                {
+                    wxGridCellAttr* attr = new wxGridCellAttr(*wxBLACK, *wxWHITE, this->GetDefaultCellFont(),
+                                                              wxALIGN_RIGHT, wxALIGN_CENTER);
+                    attr->SetRenderer(new AdvStringCellRenderer);
+                    SetColAttr(col, attr);
+                }
             }
         }
+
+        m_currentColTypes = vTypes;
     }
 
     // Search the boundaries and color the frame correspondingly
@@ -1832,10 +1862,6 @@ void TableViewer::OnMenu(wxCommandEvent& event)
         {
             double minVal;
             double maxVal;
-            std::vector<int> vTypes;
-
-            if (isGridNumeReTable)
-                vTypes = static_cast<GridNumeReTable*>(GetTable())->getColumnTypes();
 
             // More diffcult: more than one cell selected
             if (GetSelectedCells().size())
@@ -1865,18 +1891,22 @@ void TableViewer::OnMenu(wxCommandEvent& event)
                 if (dialog.ShowModal() == wxID_OK)
                 {
                     // Whole columns are selected
-                    if (topleftarray[0].GetRow() <= nFirstNumRow && bottomrightarray[0].GetRow()+1 == GetRows())
+                    if (topleftarray[0].GetRow() <= (int)nFirstNumRow && bottomrightarray[0].GetRow()+2 >= GetRows())
                     {
-                        for (int j = topleftarray[0].GetCol(); j < bottomrightarray[0].GetCol(); j++)
+                        for (int j = topleftarray[0].GetCol(); j <= bottomrightarray[0].GetCol(); j++)
                         {
-                            wxGridCellAttr* attr = GetCellAttr(nFirstNumRow, j);
+                            int h_align, v_align;
+                            GetCellAlignment(nFirstNumRow, j, &h_align, &v_align);
 
-                            if (vTypes.size() > j && vTypes[j] == TableColumn::TYPE_LOGICAL)
+                            wxGridCellAttr* attr = new wxGridCellAttr(*wxBLACK, *wxWHITE, this->GetDefaultCellFont(),
+                                                                      h_align, wxALIGN_CENTER);
+
+                            if (m_currentColTypes.size() > (size_t)j && m_currentColTypes[j] == TableColumn::TYPE_LOGICAL)
                                 attr->SetRenderer(new AdvBooleanCellRenderer(dialog.getShader()));
                             else
                                 attr->SetRenderer(new AdvStringCellRenderer(dialog.getShader()));
 
-                            SetColAttr(j, attr);
+                            SetColAttr(j, attr, true);
 
                             for (size_t i = 0; i < nFirstNumRow; i++)
                                 SetCellRenderer(i, j, new AdvStringCellRenderer);
@@ -1888,7 +1918,7 @@ void TableViewer::OnMenu(wxCommandEvent& event)
                         {
                             for (int j = topleftarray[0].GetCol(); j <= bottomrightarray[0].GetCol(); j++)
                             {
-                                if (vTypes.size() > j && vTypes[j] == TableColumn::TYPE_LOGICAL)
+                                if (m_currentColTypes.size() > (size_t)j && m_currentColTypes[j] == TableColumn::TYPE_LOGICAL)
                                     SetCellRenderer(i, j, new AdvBooleanCellRenderer(dialog.getShader()));
                                 else
                                     SetCellRenderer(i, j, new AdvStringCellRenderer(dialog.getShader()));
@@ -1914,14 +1944,18 @@ void TableViewer::OnMenu(wxCommandEvent& event)
                     // Whole columns are selected
                     for (size_t j = 0; j < colarray.size(); j++)
                     {
-                        wxGridCellAttr* attr = GetCellAttr(nFirstNumRow, colarray[j]);
+                        int h_align, v_align;
+                        GetCellAlignment(nFirstNumRow, j, &h_align, &v_align);
 
-                        if (vTypes.size() > colarray[j] && vTypes[colarray[j]] == TableColumn::TYPE_LOGICAL)
+                        wxGridCellAttr* attr = new wxGridCellAttr(*wxBLACK, *wxWHITE, this->GetDefaultCellFont(),
+                                                                  h_align, wxALIGN_CENTER);
+
+                        if (m_currentColTypes.size() > (size_t)colarray[j] && m_currentColTypes[colarray[j]] == TableColumn::TYPE_LOGICAL)
                             attr->SetRenderer(new AdvBooleanCellRenderer(dialog.getShader()));
                         else
                             attr->SetRenderer(new AdvStringCellRenderer(dialog.getShader()));
 
-                        SetColAttr(colarray[j], attr);
+                        SetColAttr(colarray[j], attr, true);
 
                         for (size_t i = 0; i < nFirstNumRow; i++)
                             SetCellRenderer(i, colarray[j], new AdvStringCellRenderer);
@@ -1944,7 +1978,7 @@ void TableViewer::OnMenu(wxCommandEvent& event)
                     {
                         for (int j = 0; j < GetCols()-1; j++)
                         {
-                            if (vTypes.size() > j && vTypes[j] == TableColumn::TYPE_LOGICAL)
+                            if (m_currentColTypes.size() > (size_t)j && m_currentColTypes[j] == TableColumn::TYPE_LOGICAL)
                                 SetCellRenderer(rowarray[i], j, new AdvBooleanCellRenderer(dialog.getShader()));
                             else
                                 SetCellRenderer(rowarray[i], j, new AdvStringCellRenderer(dialog.getShader()));
@@ -1964,14 +1998,18 @@ void TableViewer::OnMenu(wxCommandEvent& event)
                     // Whole columns are selected
                     for (int j = 0; j < GetCols()-1; j++)
                     {
-                        wxGridCellAttr* attr = GetCellAttr(nFirstNumRow, j);
+                        int h_align, v_align;
+                        GetCellAlignment(nFirstNumRow, j, &h_align, &v_align);
 
-                        if (vTypes.size() > j && vTypes[j] == TableColumn::TYPE_LOGICAL)
+                        wxGridCellAttr* attr = new wxGridCellAttr(*wxBLACK, *wxWHITE, this->GetDefaultCellFont(),
+                                                                  h_align, wxALIGN_CENTER);
+
+                        if (m_currentColTypes.size() > (size_t)j && m_currentColTypes[j] == TableColumn::TYPE_LOGICAL)
                             attr->SetRenderer(new AdvBooleanCellRenderer(dialog.getShader()));
                         else
                             attr->SetRenderer(new AdvStringCellRenderer(dialog.getShader()));
 
-                        SetColAttr(j, attr);
+                        SetColAttr(j, attr, true);
 
                         for (size_t i = 0; i < nFirstNumRow; i++)
                             SetCellRenderer(i, j, new AdvStringCellRenderer);

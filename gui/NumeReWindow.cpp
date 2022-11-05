@@ -1036,7 +1036,7 @@ void NumeReWindow::prepareSession()
                     currentEd->GotoPos(nLine);
                     currentEd->ToggleSettings(nSetting);
                     currentEd->EnsureVisible(currentEd->LineFromPosition(nLine));
-                    currentEd->setBookmarks(toVector(sBookmarks));
+                    currentEd->setBookmarks(toIntVector(sBookmarks));
                 }
                 else
                 {

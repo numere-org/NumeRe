@@ -31,3 +31,4 @@ Fixed	Resolved a small bug in "legendre_a()" hindering from using it in the hydr
 Cleaned	The cloudplot uses now more samples than before and will take a bit longer to render. However, the result is visually more appealing.
 Cleaned	The restore functionality of the revisions dialog now chooses the current file for overwriting automatically. The restore creates also a new revision to undo the restore.
 New	A menu option was added to compare two files and display the comparison result as a unified diff.
+New	It is now possible to apply conditional cell background colours to tables opened with the table viewer.
