@@ -26,6 +26,7 @@
 #include <vector>
 #include <string>
 
+#include "gridcellcoordscontainer.hpp"
 #include "../../kernel/core/datamanagement/container.hpp"
 #include "../../kernel/core/datamanagement/table.hpp"
 
@@ -70,6 +71,7 @@ class TableViewer : public wxGrid
         wxString replaceCtrlChars(const wxString& sStr);
         void copyContents();
         void pasteContents(bool useCursor = false);
+        void applyConditionalCellColourScheme();
         void UpdateColumnAlignment(int col);
         std::vector<wxString> getLinesFromPaste(const wxString& data);
         void replaceDecimalSign(wxString& text);
@@ -79,12 +81,12 @@ class TableViewer : public wxGrid
 
         mu::value_type CellToCmplx(int row, int col);
 
-        double calculateMin(const wxGridCellCoords& topLeft, const wxGridCellCoords& bottomRight);
-        double calculateMax(const wxGridCellCoords& topLeft, const wxGridCellCoords& bottomRight);
-        mu::value_type calculateSum(const wxGridCellCoords& topLeft, const wxGridCellCoords& bottomRight);
-        mu::value_type calculateAvg(const wxGridCellCoords& topLeft, const wxGridCellCoords& bottomRight);
+        double calculateMin(const wxGridCellCoordsContainer& coords);
+        double calculateMax(const wxGridCellCoordsContainer& coords);
+        mu::value_type calculateSum(const wxGridCellCoordsContainer& coords);
+        mu::value_type calculateAvg(const wxGridCellCoordsContainer& coords);
 
-        void updateStatusBar(const wxGridCellCoords& topLeft, const wxGridCellCoords& bottomRight, wxGridCellCoords* cursor = nullptr);
+        void updateStatusBar(const wxGridCellCoordsContainer& coords, wxGridCellCoords* cursor = nullptr);
 
         wxString copyCell(int row, int col);
 

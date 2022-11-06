@@ -37,6 +37,14 @@ static wxColour FrameColor = wxColour(230, 230, 230);
 static wxColour HighlightColor = wxColour(192, 227, 248);
 static wxColour HighlightHeadlineColor = wxColour(131, 200, 241);
 
+/////////////////////////////////////////////////
+/// \brief Calculates the luminosity of the
+/// passed colour.
+///
+/// \param c const wxColour&
+/// \return double
+///
+/////////////////////////////////////////////////
 static double calculateLuminosity(const wxColour& c)
 {
     return c.Red() * 0.299 + c.Green() * 0.587 + c.Blue() * 0.114;
@@ -212,7 +220,7 @@ class AdvBooleanCellRenderer : public AdvStringCellRenderer
                           int row, int col,
                           bool isSelected)
         {
-            if (grid.GetTable()->CanGetValueAs(row, col, wxGRID_VALUE_BOOL))
+            if (grid.GetTable()->CanGetValueAs(row, col, wxGRID_VALUE_BOOL) && !isHeadLine(grid, row))
             {
                 if (isPartOfCursor(grid, row, col))
                 {
@@ -223,12 +231,6 @@ class AdvBooleanCellRenderer : public AdvStringCellRenderer
                 else if (isFrame(grid, row, col))
                 {
                     wxGridCellAttr* newAttr = createFrameAttr(attr);
-                    wxGridCellRenderer::Draw(grid, *newAttr, dc, rect, row, col, isSelected);
-                    newAttr->DecRef();
-                }
-                else if (isHeadLine(grid, row))
-                {
-                    wxGridCellAttr* newAttr = createHeadlineAttr(attr);
                     wxGridCellRenderer::Draw(grid, *newAttr, dc, rect, row, col, isSelected);
                     newAttr->DecRef();
                 }
@@ -313,7 +315,6 @@ class AdvBooleanCellRenderer : public AdvStringCellRenderer
 
 
 wxSize AdvBooleanCellRenderer::bestSize;
-
 
 extern Language _guilang;
 
@@ -426,22 +427,10 @@ void TableViewer::layoutGrid()
                 }
 
                 SetColAttr(j, attr);
+                break;
             }
 
-            if (!i && j+1 == GetNumberCols())
-            {
-                wxGridCellAttr* attr = new wxGridCellAttr(*wxBLACK, *wxWHITE, this->GetDefaultCellFont(),
-                                                          wxALIGN_RIGHT, wxALIGN_CENTER);
-                attr->SetRenderer(new AdvStringCellRenderer);
-                SetColAttr(j, attr);
-            }
-
-            if (i < (int)nFirstNumRow && j < GetNumberCols()-1)
-            {
-                // Headlines
-                SetCellRenderer(i, j, new AdvStringCellRenderer);
-            }
-            else if (!isGridNumeReTable && GetCellValue(i, j)[0] == '"')
+            if (!isGridNumeReTable && i >= (int)nFirstNumRow && GetCellValue(i, j)[0] == '"')
             {
                 SetCellAlignment(wxALIGN_LEFT, i, j);
             }
@@ -592,7 +581,7 @@ void TableViewer::OnCellChange(wxGridEvent& event)
 void TableViewer::OnCellSelect(wxGridEvent& event)
 {
     wxGridCellCoords coords(event.GetRow(), event.GetCol());
-    updateStatusBar(coords, coords, &coords);
+    updateStatusBar(wxGridCellCoordsContainer(coords, coords), &coords);
     Refresh();
     event.Skip();
 }
@@ -611,20 +600,15 @@ void TableViewer::OnCellRangeSelect(wxGridRangeSelectEvent& event)
 {
     if (event.Selecting())
     {
-        if (selectedCells.size() < 2)
+        for (int i = event.GetTopLeftCoords().GetRow(); i <= event.GetBottomRightCoords().GetRow(); i++)
         {
-            selectedCells.Add(event.GetTopLeftCoords());
-            selectedCells.Add(event.GetBottomRightCoords());
-        }
-        else
-        {
-            selectedCells[0].Set(std::min(selectedCells[0].GetRow(), event.GetTopLeftCoords().GetRow()),
-                                 std::min(selectedCells[0].GetCol(), event.GetTopLeftCoords().GetCol()));
-            selectedCells[1].Set(std::max(selectedCells[1].GetRow(), event.GetBottomRightCoords().GetRow()),
-                                 std::max(selectedCells[1].GetCol(), event.GetBottomRightCoords().GetCol()));
+            for (int j = event.GetTopLeftCoords().GetCol(); j <= event.GetBottomRightCoords().GetCol(); j++)
+            {
+                selectedCells.Add(wxGridCellCoords(i, j));
+            }
         }
 
-        updateStatusBar(selectedCells[0], selectedCells[1]);
+        updateStatusBar(wxGridCellCoordsContainer(selectedCells));
     }
     else
         selectedCells.Clear();
@@ -721,63 +705,34 @@ void TableViewer::updateFrame()
 /////////////////////////////////////////////////
 void TableViewer::deleteSelection()
 {
-    // Simple case: only one cell
-    if (!(GetSelectedCells().size()
-        || GetSelectedCols().size()
-        || GetSelectedRows().size()
-        || GetSelectionBlockTopLeft().size()
-        || GetSelectionBlockBottomRight().size()))
-        this->SetCellValue(this->GetCursorRow(), this->GetCursorColumn(), "");
+    wxGridCellCoordsContainer coordsContainer;
 
-    // More difficult: multiple selections
-    if (GetSelectedCells().size())
-    {
-        // not a block layout
-        wxGridCellCoordsArray cellarray = GetSelectedCells();
-
-        for (size_t i = 0; i < cellarray.size(); i++)
-        {
-            this->SetCellValue(cellarray[i], "");
-        }
-    }
-    else if (GetSelectionBlockTopLeft().size() && GetSelectionBlockBottomRight().size())
-    {
-        // block layout
-        wxGridCellCoordsArray topleftarray = GetSelectionBlockTopLeft();
-        wxGridCellCoordsArray bottomrightarray = GetSelectionBlockBottomRight();
-
-        for (int i = topleftarray[0].GetRow(); i <= bottomrightarray[0].GetRow(); i++)
-        {
-            for (int j = topleftarray[0].GetCol(); j <= bottomrightarray[0].GetCol(); j++)
-            {
-                this->SetCellValue(i,j, "");
-            }
-        }
-    }
-    else if (GetSelectedCols().size())
-    {
-        // multiple selected columns
-        wxArrayInt colarray = GetSelectedCols();
-
-        for (int i = 0; i < GetRows(); i++)
-        {
-            for (size_t j = 0; j < colarray.size(); j++)
-            {
-                this->SetCellValue(i, colarray[j], "");
-            }
-        }
-    }
+    // Handle all possible selection types
+    if (GetSelectedCells().size()) // not a block layout
+        coordsContainer = wxGridCellCoordsContainer(GetSelectedCells());
+    else if (GetSelectionBlockTopLeft().size() && GetSelectionBlockBottomRight().size()) // block layout
+        coordsContainer = wxGridCellCoordsContainer(GetSelectionBlockTopLeft()[0], GetSelectionBlockBottomRight()[0]);
+    else if (GetSelectedCols().size()) // multiple selected columns
+        coordsContainer = wxGridCellCoordsContainer(GetSelectedCols(), GetRows()-1, false);
+    else if (GetSelectedRows().size()) // multiple selected rows
+        coordsContainer = wxGridCellCoordsContainer(GetSelectedRows(), GetCols()-1, true);
     else
     {
-        // multiple selected rows
-        wxArrayInt rowarray = GetSelectedRows();
+        // single cell: overwrite and return
+        SetCellValue(GetCursorRow(), GetCursorColumn(), "");
+        return;
+    }
 
-        for (size_t i = 0; i < rowarray.size(); i++)
+    // Get the extent of the container
+    const wxGridCellsExtent& cellsExtent = coordsContainer.getExtent();
+
+    // Go through the extent and handle all selected columns
+    for (int i = cellsExtent.m_topleft.GetRow(); i <= cellsExtent.m_bottomright.GetRow(); i++)
+    {
+        for (int j = cellsExtent.m_topleft.GetCol(); j <= cellsExtent.m_bottomright.GetCol(); j++)
         {
-            for (int j = 0; j < GetCols(); j++)
-            {
-                this->SetCellValue(rowarray[i], j, "");
-            }
+            if (coordsContainer.contains(i, j))
+                SetCellValue(i, j, "");
         }
     }
 }
@@ -1047,6 +1002,86 @@ void TableViewer::pasteContents(bool useCursor)
 
 
 /////////////////////////////////////////////////
+/// \brief Apply a conditional cell colour scheme
+/// to the selected cells.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
+void TableViewer::applyConditionalCellColourScheme()
+{
+    wxGridCellCoordsContainer coordsContainer;
+
+    // Handle all possible selection types
+    if (GetSelectedCells().size()) // not a block layout
+        coordsContainer = wxGridCellCoordsContainer(GetSelectedCells());
+    else if (GetSelectionBlockTopLeft().size() && GetSelectionBlockBottomRight().size()) // block layout
+        coordsContainer = wxGridCellCoordsContainer(GetSelectionBlockTopLeft()[0], GetSelectionBlockBottomRight()[0]);
+    else if (GetSelectedCols().size()) // multiple selected columns
+        coordsContainer = wxGridCellCoordsContainer(GetSelectedCols(), GetRows()-1, false);
+    else if (GetSelectedRows().size()) // multiple selected rows
+        coordsContainer = wxGridCellCoordsContainer(GetSelectedRows(), GetCols()-1, true);
+    else
+        coordsContainer = wxGridCellCoordsContainer(wxGridCellCoords(0, 0), wxGridCellCoords(GetRows()-1, GetCols()-1));
+
+    double minVal = calculateMin(coordsContainer);
+    double maxVal = calculateMax(coordsContainer);
+
+    CellValueShaderDialog dialog(this, minVal, maxVal);
+
+    if (dialog.ShowModal() == wxID_OK)
+    {
+        // Get the extent of the container
+        const wxGridCellsExtent& cellsExtent = coordsContainer.getExtent();
+
+        // Whole columns are selected
+        if ((coordsContainer.isBlock() || coordsContainer.columnsSelected())
+            && cellsExtent.m_topleft.GetRow() <= (int)nFirstNumRow
+            && cellsExtent.m_bottomright.GetRow()+2 >= GetRows())
+        {
+            for (int j = cellsExtent.m_topleft.GetCol(); j <= cellsExtent.m_bottomright.GetCol(); j++)
+            {
+                if (!coordsContainer.contains(cellsExtent.m_topleft.GetRow(), j))
+                    continue;
+
+                int h_align, v_align;
+                GetCellAlignment(nFirstNumRow, j, &h_align, &v_align);
+
+                wxGridCellAttr* attr = new wxGridCellAttr(*wxBLACK, *wxWHITE, this->GetDefaultCellFont(),
+                                                          h_align, wxALIGN_CENTER);
+
+                if (m_currentColTypes.size() > (size_t)j && m_currentColTypes[j] == TableColumn::TYPE_LOGICAL)
+                    attr->SetRenderer(new AdvBooleanCellRenderer(dialog.getShader()));
+                else
+                    attr->SetRenderer(new AdvStringCellRenderer(dialog.getShader()));
+
+                SetColAttr(j, attr, true);
+            }
+        }
+        else
+        {
+            for (int i = cellsExtent.m_topleft.GetRow(); i <= cellsExtent.m_bottomright.GetRow(); i++)
+            {
+                for (int j = cellsExtent.m_topleft.GetCol(); j <= cellsExtent.m_bottomright.GetCol(); j++)
+                {
+                    if (!coordsContainer.contains(i, j))
+                        continue;
+
+                    if (m_currentColTypes.size() > (size_t)j && m_currentColTypes[j] == TableColumn::TYPE_LOGICAL)
+                        SetCellRenderer(i, j, new AdvBooleanCellRenderer(dialog.getShader()));
+                    else
+                        SetCellRenderer(i, j, new AdvStringCellRenderer(dialog.getShader()));
+                }
+            }
+        }
+
+        // Refresh the window to redraw all cells
+        Refresh();
+    }
+}
+
+
+/////////////////////////////////////////////////
 /// \brief Changes the alignment of a whole
 /// column to reflect its internal type.
 ///
@@ -1103,27 +1138,16 @@ void TableViewer::UpdateColumnAlignment(int col)
 
         m_currentColTypes = vTypes;
     }
-
-    // Search the boundaries and color the frame correspondingly
-    for (int i = 0; i < GetNumberRows(); i++)
+    else
     {
-        if (i < (int)nFirstNumRow && col+1 < GetNumberCols())
-        {
-            // Headlines
-            SetCellRenderer(i, col, new AdvStringCellRenderer);
-            SetCellFont(i, col, GetCellFont(i, col).MakeBold());
-            SetCellBackgroundColour(i, col, HeadlineColor);
-            SetCellAlignment(wxALIGN_LEFT, i, col);
-        }
-        else if (!isGridNumeReTable) // The other case is handled column-wise
+        // Search the boundaries and color the frame correspondingly
+        for (int i = (int)nFirstNumRow; i < GetNumberRows(); i++)
         {
             if (GetCellValue(i, col)[0] == '"')
                 SetCellAlignment(wxALIGN_LEFT, i, col);
             else
                 SetCellAlignment(wxALIGN_RIGHT, i, col);
         }
-        else
-            break;
     }
 }
 
@@ -1247,22 +1271,25 @@ mu::value_type TableViewer::CellToCmplx(int row, int col)
 /// \brief This member function calculates the
 /// minimal value of the selected cells.
 ///
-/// \param topLeft const wxGridCellCoords&
-/// \param bottomRight const wxGridCellCoords&
+/// \param coords const wxGridCellCoordsContainer&
 /// \return double
 ///
 /////////////////////////////////////////////////
-double TableViewer::calculateMin(const wxGridCellCoords& topLeft, const wxGridCellCoords& bottomRight)
+double TableViewer::calculateMin(const wxGridCellCoordsContainer& coords)
 {
     if (isGridNumeReTable)
-        return static_cast<GridNumeReTable*>(GetTable())->min(topLeft.GetRow(), topLeft.GetCol(), bottomRight.GetRow(), bottomRight.GetCol());
+        return static_cast<GridNumeReTable*>(GetTable())->min(coords);
 
+    const wxGridCellsExtent& cellExtent = coords.getExtent();
     double dMin = NAN;
 
-    for (int i = topLeft.GetRow(); i <= bottomRight.GetRow(); i++)
+    for (int i = cellExtent.m_topleft.GetRow(); i <= cellExtent.m_bottomright.GetRow(); i++)
     {
-        for (int j = topLeft.GetCol(); j<= bottomRight.GetCol(); j++)
+        for (int j = cellExtent.m_topleft.GetCol(); j <= cellExtent.m_bottomright.GetCol(); j++)
         {
+            if (!coords.contains(i, j))
+                continue;
+
             if (isnan(dMin) || CellToCmplx(i, j).real() < dMin)
                 dMin = CellToCmplx(i, j).real();
         }
@@ -1276,22 +1303,25 @@ double TableViewer::calculateMin(const wxGridCellCoords& topLeft, const wxGridCe
 /// \brief This member function calculates the
 /// maximal value of the selected cells.
 ///
-/// \param topLeft const wxGridCellCoords&
-/// \param bottomRight const wxGridCellCoords&
+/// \param coords const wxGridCellCoordsContainer&
 /// \return double
 ///
 /////////////////////////////////////////////////
-double TableViewer::calculateMax(const wxGridCellCoords& topLeft, const wxGridCellCoords& bottomRight)
+double TableViewer::calculateMax(const wxGridCellCoordsContainer& coords)
 {
     if (isGridNumeReTable)
-        return static_cast<GridNumeReTable*>(GetTable())->max(topLeft.GetRow(), topLeft.GetCol(), bottomRight.GetRow(), bottomRight.GetCol());
+        return static_cast<GridNumeReTable*>(GetTable())->max(coords);
 
+    const wxGridCellsExtent& cellExtent = coords.getExtent();
     double dMax = NAN;
 
-    for (int i = topLeft.GetRow(); i <= bottomRight.GetRow(); i++)
+    for (int i = cellExtent.m_topleft.GetRow(); i <= cellExtent.m_bottomright.GetRow(); i++)
     {
-        for (int j = topLeft.GetCol(); j<= bottomRight.GetCol(); j++)
+        for (int j = cellExtent.m_topleft.GetCol(); j <= cellExtent.m_bottomright.GetCol(); j++)
         {
+            if (!coords.contains(i, j))
+                continue;
+
             if (isnan(dMax) || CellToCmplx(i, j).real() > dMax)
                 dMax = CellToCmplx(i,j).real();
         }
@@ -1305,22 +1335,25 @@ double TableViewer::calculateMax(const wxGridCellCoords& topLeft, const wxGridCe
 /// \brief This member function calculates the
 /// sum of the selected cells.
 ///
-/// \param topLeft const wxGridCellCoords&
-/// \param bottomRight const wxGridCellCoords&
+/// \param coords const wxGridCellCoordsContainer&
 /// \return mu::value_type
 ///
 /////////////////////////////////////////////////
-mu::value_type TableViewer::calculateSum(const wxGridCellCoords& topLeft, const wxGridCellCoords& bottomRight)
+mu::value_type TableViewer::calculateSum(const wxGridCellCoordsContainer& coords)
 {
     if (isGridNumeReTable)
-        return static_cast<GridNumeReTable*>(GetTable())->sum(topLeft.GetRow(), topLeft.GetCol(), bottomRight.GetRow(), bottomRight.GetCol());
+        return static_cast<GridNumeReTable*>(GetTable())->sum(coords);
 
+    const wxGridCellsExtent& cellExtent = coords.getExtent();
     mu::value_type dSum = 0;
 
-    for (int i = topLeft.GetRow(); i <= bottomRight.GetRow(); i++)
+    for (int i = cellExtent.m_topleft.GetRow(); i <= cellExtent.m_bottomright.GetRow(); i++)
     {
-        for (int j = topLeft.GetCol(); j<= bottomRight.GetCol(); j++)
+        for (int j = cellExtent.m_topleft.GetCol(); j <= cellExtent.m_bottomright.GetCol(); j++)
         {
+            if (!coords.contains(i, j))
+                continue;
+
             if (!mu::isnan(CellToCmplx(i, j)))
                 dSum += CellToCmplx(i,j);
         }
@@ -1334,23 +1367,26 @@ mu::value_type TableViewer::calculateSum(const wxGridCellCoords& topLeft, const 
 /// \brief This member function calculates the
 /// average of the selected cells.
 ///
-/// \param topLeft const wxGridCellCoords&
-/// \param bottomRight const wxGridCellCoords&
+/// \param coords const wxGridCellCoordsContainer&
 /// \return mu::value_type
 ///
 /////////////////////////////////////////////////
-mu::value_type TableViewer::calculateAvg(const wxGridCellCoords& topLeft, const wxGridCellCoords& bottomRight)
+mu::value_type TableViewer::calculateAvg(const wxGridCellCoordsContainer& coords)
 {
     if (isGridNumeReTable)
-        return static_cast<GridNumeReTable*>(GetTable())->avg(topLeft.GetRow(), topLeft.GetCol(), bottomRight.GetRow(), bottomRight.GetCol());
+        return static_cast<GridNumeReTable*>(GetTable())->avg(coords);
 
+    const wxGridCellsExtent& cellExtent = coords.getExtent();
     mu::value_type dSum = 0;
     int nCount = 0;
 
-    for (int i = topLeft.GetRow(); i <= bottomRight.GetRow(); i++)
+    for (int i = cellExtent.m_topleft.GetRow(); i <= cellExtent.m_bottomright.GetRow(); i++)
     {
-        for (int j = topLeft.GetCol(); j <= bottomRight.GetCol(); j++)
+        for (int j = cellExtent.m_topleft.GetCol(); j <= cellExtent.m_bottomright.GetCol(); j++)
         {
+            if (!coords.contains(i, j))
+                continue;
+
             if (!mu::isnan(CellToCmplx(i, j)))
             {
                 nCount++;
@@ -1376,14 +1412,14 @@ mu::value_type TableViewer::calculateAvg(const wxGridCellCoords& topLeft, const 
 /// \return void
 ///
 /////////////////////////////////////////////////
-void TableViewer::updateStatusBar(const wxGridCellCoords& topLeft, const wxGridCellCoords& bottomRight, wxGridCellCoords* cursor /*= nullptr*/)
+void TableViewer::updateStatusBar(const wxGridCellCoordsContainer& coords, wxGridCellCoords* cursor /*= nullptr*/)
 {
     if (!m_statusBar)
         return;
 
     // Get the dimensions
     wxString dim = "Dim: ";
-    dim << this->GetRowLabelValue(this->GetRows()-2) << "x" << this->GetCols()-1;
+    dim << this->GetRowLabelValue(GetRows()-2) << "x" << GetCols()-1;
 
     // Get the current cursor position
     wxString sel = "Cur: ";
@@ -1393,10 +1429,10 @@ void TableViewer::updateStatusBar(const wxGridCellCoords& topLeft, const wxGridC
         sel << "--,--";
 
     // Calculate the simple statistics
-    wxString statustext = "Min: " + toString(calculateMin(topLeft, bottomRight), STATUSBAR_PRECISION);
-    statustext << " | Max: " << toString(calculateMax(topLeft, bottomRight), STATUSBAR_PRECISION);
-    statustext << " | Sum: " << toString(calculateSum(topLeft, bottomRight), 2*STATUSBAR_PRECISION);
-    statustext << " | Avg: " << toString(calculateAvg(topLeft, bottomRight), 2*STATUSBAR_PRECISION);
+    wxString statustext = "Min: " + toString(calculateMin(coords), STATUSBAR_PRECISION);
+    statustext << " | Max: " << toString(calculateMax(coords), STATUSBAR_PRECISION);
+    statustext << " | Sum: " << toString(calculateSum(coords), 2*STATUSBAR_PRECISION);
+    statustext << " | Avg: " << toString(calculateAvg(coords), 2*STATUSBAR_PRECISION);
 
     // Set the status bar valuey
     m_statusBar->SetStatusText(dim);
@@ -1503,7 +1539,7 @@ void TableViewer::createZeroElementTable()
 
     layoutGrid();
 
-    updateStatusBar(wxGridCellCoords(0,0), wxGridCellCoords(this->GetRows()-1, this->GetCols()-1));
+    updateStatusBar(wxGridCellCoordsContainer(wxGridCellCoords(0,0), wxGridCellCoords(this->GetRows()-1, this->GetCols()-1)));
 }
 
 
@@ -1651,7 +1687,7 @@ void TableViewer::SetData(NumeRe::Container<std::string>& _stringTable)
 
     layoutGrid();
 
-    updateStatusBar(wxGridCellCoords(0,0), wxGridCellCoords(this->GetRows()-1, this->GetCols()-1));
+    updateStatusBar(wxGridCellCoordsContainer(wxGridCellCoords(0,0), wxGridCellCoords(this->GetRows()-1, this->GetCols()-1)));
 }
 
 
@@ -1685,7 +1721,7 @@ void TableViewer::SetData(NumeRe::Table& _table)
 
     layoutGrid();
 
-    updateStatusBar(wxGridCellCoords(0,0), wxGridCellCoords(this->GetRows()-1, this->GetCols()-1));
+    updateStatusBar(wxGridCellCoordsContainer(wxGridCellCoords(0,0), wxGridCellCoords(this->GetRows()-1, this->GetCols()-1)));
 }
 
 
@@ -1859,168 +1895,8 @@ void TableViewer::OnMenu(wxCommandEvent& event)
             pasteContents(true);
             break;
         case ID_MENU_CVS:
-        {
-            double minVal;
-            double maxVal;
-
-            // More diffcult: more than one cell selected
-            if (GetSelectedCells().size())
-            {
-                // Non-block selection
-                //wxGridCellCoordsArray cellarray = GetSelectedCells();
-                //
-                //for (size_t i = 0; i < cellarray.size(); i++)
-                //{
-                //    sSelection += copyCell(cellarray[i].GetRow(), cellarray[i].GetCol());
-                //
-                //    if (i < cellarray.size()-1)
-                //        sSelection += "\t";
-                //}
-            }
-            else if (GetSelectionBlockTopLeft().size() && GetSelectionBlockBottomRight().size())
-            {
-                // Block selection
-                wxGridCellCoordsArray topleftarray = GetSelectionBlockTopLeft();
-                wxGridCellCoordsArray bottomrightarray = GetSelectionBlockBottomRight();
-
-                minVal = calculateMin(topleftarray[0], bottomrightarray[0]);
-                maxVal = calculateMax(topleftarray[0], bottomrightarray[0]);
-
-                CellValueShaderDialog dialog(this, minVal, maxVal);
-
-                if (dialog.ShowModal() == wxID_OK)
-                {
-                    // Whole columns are selected
-                    if (topleftarray[0].GetRow() <= (int)nFirstNumRow && bottomrightarray[0].GetRow()+2 >= GetRows())
-                    {
-                        for (int j = topleftarray[0].GetCol(); j <= bottomrightarray[0].GetCol(); j++)
-                        {
-                            int h_align, v_align;
-                            GetCellAlignment(nFirstNumRow, j, &h_align, &v_align);
-
-                            wxGridCellAttr* attr = new wxGridCellAttr(*wxBLACK, *wxWHITE, this->GetDefaultCellFont(),
-                                                                      h_align, wxALIGN_CENTER);
-
-                            if (m_currentColTypes.size() > (size_t)j && m_currentColTypes[j] == TableColumn::TYPE_LOGICAL)
-                                attr->SetRenderer(new AdvBooleanCellRenderer(dialog.getShader()));
-                            else
-                                attr->SetRenderer(new AdvStringCellRenderer(dialog.getShader()));
-
-                            SetColAttr(j, attr, true);
-
-                            for (size_t i = 0; i < nFirstNumRow; i++)
-                                SetCellRenderer(i, j, new AdvStringCellRenderer);
-                        }
-                    }
-                    else
-                    {
-                        for (int i = topleftarray[0].GetRow(); i <= bottomrightarray[0].GetRow(); i++)
-                        {
-                            for (int j = topleftarray[0].GetCol(); j <= bottomrightarray[0].GetCol(); j++)
-                            {
-                                if (m_currentColTypes.size() > (size_t)j && m_currentColTypes[j] == TableColumn::TYPE_LOGICAL)
-                                    SetCellRenderer(i, j, new AdvBooleanCellRenderer(dialog.getShader()));
-                                else
-                                    SetCellRenderer(i, j, new AdvStringCellRenderer(dialog.getShader()));
-                            }
-                        }
-                    }
-
-                }
-
-            }
-            else if (GetSelectedCols().size())
-            {
-                // Multiple selected columns
-                wxArrayInt colarray = GetSelectedCols();
-
-                minVal = calculateMin(wxGridCellCoords(0, colarray[0]), wxGridCellCoords(GetRows()-1, colarray[colarray.size()-1]));
-                maxVal = calculateMax(wxGridCellCoords(0, colarray[0]), wxGridCellCoords(GetRows()-1, colarray[colarray.size()-1]));
-
-                CellValueShaderDialog dialog(this, minVal, maxVal);
-
-                if (dialog.ShowModal() == wxID_OK)
-                {
-                    // Whole columns are selected
-                    for (size_t j = 0; j < colarray.size(); j++)
-                    {
-                        int h_align, v_align;
-                        GetCellAlignment(nFirstNumRow, j, &h_align, &v_align);
-
-                        wxGridCellAttr* attr = new wxGridCellAttr(*wxBLACK, *wxWHITE, this->GetDefaultCellFont(),
-                                                                  h_align, wxALIGN_CENTER);
-
-                        if (m_currentColTypes.size() > (size_t)colarray[j] && m_currentColTypes[colarray[j]] == TableColumn::TYPE_LOGICAL)
-                            attr->SetRenderer(new AdvBooleanCellRenderer(dialog.getShader()));
-                        else
-                            attr->SetRenderer(new AdvStringCellRenderer(dialog.getShader()));
-
-                        SetColAttr(colarray[j], attr, true);
-
-                        for (size_t i = 0; i < nFirstNumRow; i++)
-                            SetCellRenderer(i, colarray[j], new AdvStringCellRenderer);
-                    }
-                }
-            }
-            else if (GetSelectedRows().size())
-            {
-                // Multiple selected rows
-                wxArrayInt rowarray = GetSelectedRows();
-
-                minVal = calculateMin(wxGridCellCoords(rowarray[0], 0), wxGridCellCoords(rowarray[rowarray.size()-1], GetCols()-1));
-                maxVal = calculateMax(wxGridCellCoords(rowarray[0], 0), wxGridCellCoords(rowarray[rowarray.size()-1], GetCols()-1));
-
-                CellValueShaderDialog dialog(this, minVal, maxVal);
-
-                if (dialog.ShowModal() == wxID_OK)
-                {
-                    for (size_t i = 0; i < rowarray.size(); i++)
-                    {
-                        for (int j = 0; j < GetCols()-1; j++)
-                        {
-                            if (m_currentColTypes.size() > (size_t)j && m_currentColTypes[j] == TableColumn::TYPE_LOGICAL)
-                                SetCellRenderer(rowarray[i], j, new AdvBooleanCellRenderer(dialog.getShader()));
-                            else
-                                SetCellRenderer(rowarray[i], j, new AdvStringCellRenderer(dialog.getShader()));
-                        }
-                    }
-                }
-            }
-            else
-            {
-                minVal = calculateMin(wxGridCellCoords(0, 0), wxGridCellCoords(GetRows()-1, GetCols()-1));
-                maxVal = calculateMax(wxGridCellCoords(0, 0), wxGridCellCoords(GetRows()-1, GetCols()-1));
-
-                CellValueShaderDialog dialog(this, minVal, maxVal);
-
-                if (dialog.ShowModal() == wxID_OK)
-                {
-                    // Whole columns are selected
-                    for (int j = 0; j < GetCols()-1; j++)
-                    {
-                        int h_align, v_align;
-                        GetCellAlignment(nFirstNumRow, j, &h_align, &v_align);
-
-                        wxGridCellAttr* attr = new wxGridCellAttr(*wxBLACK, *wxWHITE, this->GetDefaultCellFont(),
-                                                                  h_align, wxALIGN_CENTER);
-
-                        if (m_currentColTypes.size() > (size_t)j && m_currentColTypes[j] == TableColumn::TYPE_LOGICAL)
-                            attr->SetRenderer(new AdvBooleanCellRenderer(dialog.getShader()));
-                        else
-                            attr->SetRenderer(new AdvStringCellRenderer(dialog.getShader()));
-
-                        SetColAttr(j, attr, true);
-
-                        for (size_t i = 0; i < nFirstNumRow; i++)
-                            SetCellRenderer(i, j, new AdvStringCellRenderer);
-                    }
-                }
-            }
-
-            Refresh();
-
+            applyConditionalCellColourScheme();
             break;
-        }
     }
 }
 

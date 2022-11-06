@@ -304,6 +304,7 @@
 		<Unit filename="gui/compositions/debugviewer.hpp" />
 		<Unit filename="gui/compositions/filetree.cpp" />
 		<Unit filename="gui/compositions/filetree.hpp" />
+		<Unit filename="gui/compositions/gridcellcoordscontainer.hpp" />
 		<Unit filename="gui/compositions/gridtable.cpp" />
 		<Unit filename="gui/compositions/gridtable.hpp" />
 		<Unit filename="gui/compositions/grouppanel.cpp" />

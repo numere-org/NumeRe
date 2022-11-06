@@ -16,8 +16,10 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
-#include "../../kernel/core/datamanagement/table.hpp"
 #include <wx/grid.h>
+
+#include "../../kernel/core/datamanagement/table.hpp"
+#include "gridcellcoordscontainer.hpp"
 
 #ifndef GRIDTABLE_HPP
 #define GRIDTABLE_HPP
@@ -70,10 +72,10 @@ class GridNumeReTable : public wxGridTableBase
         virtual wxString GetRowLabelValue(int row);
         virtual wxString GetColLabelValue(int col);
 
-        double min(int r1, int c1, int r2, int c2) const;
-        double max(int r1, int c1, int r2, int c2) const;
-        mu::value_type avg(int r1, int c1, int r2, int c2) const;
-        mu::value_type sum(int r1, int c1, int r2, int c2) const;
+        double min(const wxGridCellCoordsContainer& coords) const;
+        double max(const wxGridCellCoordsContainer& coords) const;
+        mu::value_type avg(const wxGridCellCoordsContainer& coords) const;
+        mu::value_type sum(const wxGridCellCoordsContainer& coords) const;
 
         std::vector<int> getColumnTypes() const;
 };

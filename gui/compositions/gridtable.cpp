@@ -486,22 +486,23 @@ wxString GridNumeReTable::GetColLabelValue(int col)
 /// \brief This member function calculates the
 /// minimal value in the range (r1,c1)->(r2,c2).
 ///
-/// \param r1 int
-/// \param c1 int
-/// \param r2 int
-/// \param c2 int
+/// \param coords const wxGridCellCoordsContainer&
 /// \return double
 ///
 /////////////////////////////////////////////////
-double GridNumeReTable::min(int r1, int c1, int r2, int c2) const
+double GridNumeReTable::min(const wxGridCellCoordsContainer& coords) const
 {
     double dMin = NAN;
     const int nHeadLines = getNumHeadlines();
+    const wxGridCellsExtent& cellExtent = coords.getExtent();
 
-    for (int i = r1; i <= r2; i++)
+    for (int i = cellExtent.m_topleft.GetRow(); i <= cellExtent.m_bottomright.GetRow(); i++)
     {
-        for (int j = c1; j <= c2; j++)
+        for (int j = cellExtent.m_topleft.GetCol(); j <= cellExtent.m_bottomright.GetCol(); j++)
         {
+            if (!coords.contains(i, j))
+                continue;
+
             double val = _table.getValue(i - nHeadLines, j).real();
 
             if (isnan(dMin) || val < dMin)
@@ -517,22 +518,23 @@ double GridNumeReTable::min(int r1, int c1, int r2, int c2) const
 /// \brief This member function calculates the
 /// maximal value in the range (r1,c1)->(r2,c2).
 ///
-/// \param r1 int
-/// \param c1 int
-/// \param r2 int
-/// \param c2 int
+/// \param coords const wxGridCellCoordsContainer&
 /// \return double
 ///
 /////////////////////////////////////////////////
-double GridNumeReTable::max(int r1, int c1, int r2, int c2) const
+double GridNumeReTable::max(const wxGridCellCoordsContainer& coords) const
 {
     double dMax = NAN;
     const int nHeadLines = getNumHeadlines();
+    const wxGridCellsExtent& cellExtent = coords.getExtent();
 
-    for (int i = r1; i <= r2; i++)
+    for (int i = cellExtent.m_topleft.GetRow(); i <= cellExtent.m_bottomright.GetRow(); i++)
     {
-        for (int j = c1; j <= c2; j++)
+        for (int j = cellExtent.m_topleft.GetCol(); j <= cellExtent.m_bottomright.GetCol(); j++)
         {
+            if (!coords.contains(i, j))
+                continue;
+
             double val = _table.getValue(i - nHeadLines, j).real();
 
             if (isnan(dMax) || val > dMax)
@@ -548,23 +550,24 @@ double GridNumeReTable::max(int r1, int c1, int r2, int c2) const
 /// \brief This member function calculates the
 /// average value of the range (r1,c1)->(r2,c2).
 ///
-/// \param r1 int
-/// \param c1 int
-/// \param r2 int
-/// \param c2 int
+/// \param coords const wxGridCellCoordsContainer&
 /// \return mu::value_type
 ///
 /////////////////////////////////////////////////
-mu::value_type GridNumeReTable::avg(int r1, int c1, int r2, int c2) const
+mu::value_type GridNumeReTable::avg(const wxGridCellCoordsContainer& coords) const
 {
     mu::value_type dSum = 0;
     size_t nCount = 0;
     const int nHeadLines = getNumHeadlines();
+    const wxGridCellsExtent& cellExtent = coords.getExtent();
 
-    for (int i = r1; i <= r2; i++)
+    for (int i = cellExtent.m_topleft.GetRow(); i <= cellExtent.m_bottomright.GetRow(); i++)
     {
-        for (int j = c1; j <= c2; j++)
+        for (int j = cellExtent.m_topleft.GetCol(); j <= cellExtent.m_bottomright.GetCol(); j++)
         {
+            if (!coords.contains(i, j))
+                continue;
+
             mu::value_type val = _table.getValue(i - nHeadLines, j);
 
             if (!mu::isnan(val))
@@ -586,22 +589,23 @@ mu::value_type GridNumeReTable::avg(int r1, int c1, int r2, int c2) const
 /// \brief This member function calculates the
 /// sum of the range (r1,c1)->(r2,c2).
 ///
-/// \param r1 int
-/// \param c1 int
-/// \param r2 int
-/// \param c2 int
+/// \param coords const wxGridCellCoordsContainer&
 /// \return mu::value_type
 ///
 /////////////////////////////////////////////////
-mu::value_type GridNumeReTable::sum(int r1, int c1, int r2, int c2) const
+mu::value_type GridNumeReTable::sum(const wxGridCellCoordsContainer& coords) const
 {
     mu::value_type dSum = 0;
     const int nHeadLines = getNumHeadlines();
+    const wxGridCellsExtent& cellExtent = coords.getExtent();
 
-    for (int i = r1; i <= r2; i++)
+    for (int i = cellExtent.m_topleft.GetRow(); i <= cellExtent.m_bottomright.GetRow(); i++)
     {
-        for (int j = c1; j <= c2; j++)
+        for (int j = cellExtent.m_topleft.GetCol(); j <= cellExtent.m_bottomright.GetCol(); j++)
         {
+            if (!coords.contains(i, j))
+                continue;
+
             mu::value_type val = _table.getValue(i - nHeadLines, j);
 
             if (!mu::isnan(val))
