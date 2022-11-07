@@ -3401,7 +3401,7 @@ NumeRe::Container<std::string> NumeReKernel::getStringTable(const std::string& s
             if (clust.getType(i) == NumeRe::ClusterItem::ITEMTYPE_STRING)
                 stringTable.set(i, 0, clust.getString(i));
             else
-                stringTable.set(i, 0, toString(clust.getDouble(i), 5));
+                stringTable.set(i, 0, mu::isnan(clust.getDouble(i)) ? "---" : toString(clust.getDouble(i), 5));
         }
 
         return stringTable;

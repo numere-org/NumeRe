@@ -297,12 +297,14 @@
 		<Unit filename="gui/NumeReStatusbar.hpp" />
 		<Unit filename="gui/NumeReWindow.cpp" />
 		<Unit filename="gui/NumeReWindow.h" />
+		<Unit filename="gui/compositions/cellvalueshader.hpp" />
 		<Unit filename="gui/compositions/customwindow.cpp" />
 		<Unit filename="gui/compositions/customwindow.hpp" />
 		<Unit filename="gui/compositions/debugviewer.cpp" />
 		<Unit filename="gui/compositions/debugviewer.hpp" />
 		<Unit filename="gui/compositions/filetree.cpp" />
 		<Unit filename="gui/compositions/filetree.hpp" />
+		<Unit filename="gui/compositions/gridcellcoordscontainer.hpp" />
 		<Unit filename="gui/compositions/gridtable.cpp" />
 		<Unit filename="gui/compositions/gridtable.hpp" />
 		<Unit filename="gui/compositions/grouppanel.cpp" />

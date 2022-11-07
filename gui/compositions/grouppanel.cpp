@@ -462,7 +462,7 @@ wxButton* GroupPanel::CreateButton(wxWindow* parent, wxSizer* sizer, const wxStr
 /// layout for a radio box.
 ///
 /// \param parent wxWindow*
-/// \param wxSizer*sizer
+/// \param sizer wxSizer*
 /// \param description const wxString&
 /// \param choices const wxArrayString&
 /// \param style int
@@ -471,7 +471,7 @@ wxButton* GroupPanel::CreateButton(wxWindow* parent, wxSizer* sizer, const wxStr
 /// \return wxRadioBox*
 ///
 /////////////////////////////////////////////////
-wxRadioBox* GroupPanel::CreateRadioBox(wxWindow* parent, wxSizer*sizer, const wxString& description, const wxArrayString& choices, int style, int id, int alignment)
+wxRadioBox* GroupPanel::CreateRadioBox(wxWindow* parent, wxSizer* sizer, const wxString& description, const wxArrayString& choices, int style, int id, int alignment)
 {
     wxRadioBox* box = new wxRadioBox(parent, id, description, wxDefaultPosition, wxDefaultSize, choices, 0, style);
     sizer->Add(box, 0, alignment | wxALL | wxEXPAND | wxRESERVE_SPACE_EVEN_IF_HIDDEN, ELEMENT_BORDER);

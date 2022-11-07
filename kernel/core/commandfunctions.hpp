@@ -3949,7 +3949,7 @@ static CommandReturnValues cmd_show(string& sCmd)
                 if (cluster.getType(i) == NumeRe::ClusterItem::ITEMTYPE_STRING)
                     _stringTable.set(i, 0, cluster.getString(_accessParser.getIndices().row[i]));
                 else
-                    _stringTable.set(i, 0, toString(cluster.getDouble(_accessParser.getIndices().row[i]), 5));
+                    _stringTable.set(i, 0, mu::isnan(cluster.getDouble(_accessParser.getIndices().row[i])) ? "---" : toString(cluster.getDouble(_accessParser.getIndices().row[i]), 5));
             }
 
             // Redirect control

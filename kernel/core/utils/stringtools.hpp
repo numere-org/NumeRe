@@ -78,7 +78,8 @@ std::string toCmdString(const std::complex<double>& dNumber);
 std::string toString(bool bBoolean);
 std::string toHexString(int nNumber);
 std::string toString(const std::vector<int>& vVector);
-std::vector<int> toVector(std::string sString);
+std::vector<std::string> toStrVector(std::string sString);
+std::vector<int> toIntVector(std::string sString);
 std::string condenseText(const std::string& sText);
 std::string truncString(const std::string& sText, size_t nMaxChars);
 

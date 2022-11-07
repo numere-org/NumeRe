@@ -1,0 +1,45 @@
+#**********************************************************************************************
+ * SCRIPTNAME: build_wxwidgets 
+ * ============================================================================================
+ * Hinzugefügt: 2019-04-21, um 14:57:16 *#
+
+## The root paths needed for this script. Change the two upper
+## base paths to fit your configuration
+
+sCodeBasePathStc = "<this>/wxScintilla";
+sCodeBasePathGrid = "<this>/wxGrid";
+
+## Find the compiler directory
+paths{} = split(getenvvar("PATH"), ";");
+paths{} = replaceall(paths{locate(paths{}, "TDM-GCC-32", 4)}, "\ ", "/");
+sLibBasePath = substr(paths{1}, 1, strrfnd("/", paths{1})) + "wxWidgets-3.0.2";
+
+sLibSrcBasePathStc = sLibBasePath + "/src/stc";
+sLibIncludeBasePathStc = sLibBasePath + "/include/wx/stc";
+sLibSrcBasePathGrid = sLibBasePath + "/src/generic";
+sLibIncludeBasePathGrid = sLibBasePath + "/include/wx/generic";
+
+## Copy all files in the numere-source folder into the
+## wxWidgets target directory
+
+## The Scintilla specific files
+copy sCodeBasePathStc + "/stc.h" -target=sLibIncludeBasePathStc + "/*"
+copy sCodeBasePathStc + "/Catalogue.cxx" -target=sLibSrcBasePathStc + "/scintilla/src/*"
+copy sCodeBasePathStc + "/LexMatlab.cxx" -target=sLibSrcBasePathStc + "/scintilla/lexers/*"
+copy sCodeBasePathStc + "/LexOthers.cxx" -target=sLibSrcBasePathStc + "/scintilla/lexers/*"
+copy sCodeBasePathStc + "/SciLexer.h" -target=sLibSrcBasePathStc + "/scintilla/include/*"
+copy sCodeBasePathStc + "/ScintillaWX.cpp" -target=sLibSrcBasePathStc + "/*"
+
+## The wxGrid specific files
+copy sCodeBasePathGrid + "/grid.cpp" -target=sLibSrcBasePathGrid + "/*"
+copy sCodeBasePathGrid + "/grid.h" -target=sLibIncludeBasePathGrid + "/*"
+copy sCodeBasePathGrid + "/private/grid.h" -target=sLibIncludeBasePathGrid + "/private/*"
+
+## Run the build script
+execute "mingw32-make" -set params="SHELL=CMD.exe -j4 -f makefile.gcc BUILD=release UNICODE=1 SHARED=0" -wp=sLibBasePath + "/build/msw" wait
+
+
+#**Ende der Datei
+ * NumeRe: Framework für Numerische Rechnungen | Freie numerische Software unter der GNU GPL v3
+ * https://sites.google.com/site/numereframework/
+ **********************************************************************************************#
