@@ -17,7 +17,7 @@ sLibBasePath = substr(paths{1}, 1, strrfnd("/", paths{1})) + "wxWidgets-3.0.2";
 sLibSrcBasePathStc = sLibBasePath + "/src/stc";
 sLibIncludeBasePathStc = sLibBasePath + "/include/wx/stc";
 sLibSrcBasePathGrid = sLibBasePath + "/src/generic";
-sLibIncludeBasePathGrid = sLibBasePath + "include/wx/generic";
+sLibIncludeBasePathGrid = sLibBasePath + "/include/wx/generic";
 
 ## Copy all files in the numere-source folder into the
 ## wxWidgets target directory
