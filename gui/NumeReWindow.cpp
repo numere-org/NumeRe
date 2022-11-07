@@ -6819,10 +6819,7 @@ void NumeReWindow::OnExecuteFile(const std::string& sFileName, int id)
         while (command.front() == '/')
             command.erase(0, 1);
 
-        if (command.find(' ') != std::string::npos)
-            command = "\"" + command + "\"";
-
-        command = "start " + command;
+        command = "start \"" + command + "\"";
     }
     else if (command.rfind(".nlyt") != std::string::npos)
     {
@@ -6840,10 +6837,7 @@ void NumeReWindow::OnExecuteFile(const std::string& sFileName, int id)
         while (command.front() == '/')
             command.erase(0, 1);
 
-        if (command.find(' ') != std::string::npos)
-            command = "\"" + command + "\"";
-
-        command = "window " + command;
+        command = "window \"" + command + "\"";
     }
     else if (id == ID_MENU_OPEN_FILE_FROM_TREE_TO_TABLE)
         command = "load \"" + command + "\" -totable";
