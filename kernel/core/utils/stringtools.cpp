@@ -345,33 +345,6 @@ std::string toHexString(int nNumber)
 
 
 /////////////////////////////////////////////////
-/// \brief This function converts a std::vector
-/// into a std::string, where the components are
-/// translated into "{x,y,z...}"
-///
-/// \param vVector const std::vector<int>&
-/// \return std::string
-///
-/////////////////////////////////////////////////
-std::string toString(const std::vector<int>& vVector)
-{
-    std::string sString;
-
-    for (size_t i = 0; i < vVector.size(); i++)
-    {
-        sString += toString(vVector[i]) + ",";
-    }
-
-    if (!sString.size())
-        return "{}";
-
-    sString.back() = '}';
-
-    return "{" + sString;
-}
-
-
-/////////////////////////////////////////////////
 /// \brief This function converts a std::string
 /// into a std::vector, where the string shall be
 /// passed as "{x,y,z,...}"

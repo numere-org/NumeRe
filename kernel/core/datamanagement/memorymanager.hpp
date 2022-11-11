@@ -362,6 +362,42 @@ class MemoryManager : public NumeRe::FileAdapter, public StringMemory, public Nu
             return vMemory[findTable(sTable)]->getIndex(nCol, vValues, vStringValues);
         }
 
+        AnovaResult getOneWayAnova(const std::string& sTable,
+                                   size_t colCategories, size_t colValues, const VectorIndex& _vIndex, double significance) const
+        {
+            return vMemory[findTable(sTable)]->getOneWayAnova(colCategories, colValues, _vIndex, significance);
+        }
+
+        mu::value_type getCovariance(const std::string& sTable,
+                                     size_t col1, const VectorIndex& _vIndex1, size_t col2, const VectorIndex& _vIndex2) const
+        {
+            return vMemory[findTable(sTable)]->getCovariance(col1, _vIndex1, col2, _vIndex2);
+        }
+
+        mu::value_type getPearsonCorr(const std::string& sTable,
+                                      size_t col1, const VectorIndex& _vIndex1, size_t col2, const VectorIndex& _vIndex2) const
+        {
+            return vMemory[findTable(sTable)]->getPearsonCorr(col1, _vIndex1, col2, _vIndex2);
+        }
+
+        mu::value_type getSpearmanCorr(const std::string& sTable,
+                                       size_t col1, const VectorIndex& _vIndex1, size_t col2, const VectorIndex& _vIndex2) const
+        {
+            return vMemory[findTable(sTable)]->getSpearmanCorr(col1, _vIndex1, col2, _vIndex2);
+        }
+
+        std::vector<mu::value_type> getRank(const std::string& sTable,
+                                            size_t col, const VectorIndex& _vIndex, Memory::RankingStrategy _strat) const
+        {
+            return vMemory[findTable(sTable)]->getRank(col, _vIndex, _strat);
+        }
+
+        std::vector<mu::value_type> getZScore(const std::string& sTable,
+                                              size_t col, const VectorIndex& _vIndex) const
+        {
+            return vMemory[findTable(sTable)]->getZScore(col, _vIndex);
+        }
+
 
 
 		// DIMENSION ACCESS METHODS

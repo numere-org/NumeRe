@@ -340,7 +340,7 @@ namespace NumeRe
                 {
                     if (fileData->at(j)->m_type == TableColumn::TYPE_VALUE)
                         fFileStream << toString(fileData->at(j)->getValue(i), DEFAULT_PRECISION);
-                    else if (fileData->at(j)->m_type == TableColumn::TYPE_STRING || fileData->at(j)->m_type == TableColumn::TYPE_DATETIME)
+                    else
                         fFileStream << fileData->at(j)->getValueAsInternalString(i);
                 }
             }
@@ -2186,7 +2186,7 @@ namespace NumeRe
                 {
                     if (fileData->at(j)->m_type == TableColumn::TYPE_VALUE)
                         fFileStream << toString(fileData->at(j)->getValue(i), DEFAULT_PRECISION);
-                    else if (fileData->at(j)->m_type == TableColumn::TYPE_STRING || fileData->at(j)->m_type == TableColumn::TYPE_DATETIME)
+                    else
                         fFileStream << fileData->at(j)->getValueAsInternalString(i);
                 }
 
@@ -2445,7 +2445,7 @@ namespace NumeRe
                     fFileStream << "---";
                 else if (fileData->at(j)->m_type == TableColumn::TYPE_VALUE)
                     fFileStream << formatNumber(fileData->at(j)->getValue(i));
-                else if (fileData->at(j)->m_type == TableColumn::TYPE_STRING || fileData->at(j)->m_type == TableColumn::TYPE_DATETIME)
+                else
                     fFileStream << fileData->at(j)->getValueAsInternalString(i);
 
                 if (j+1 < nCols)
@@ -3690,10 +3690,10 @@ namespace NumeRe
                     continue;
                 }
 
-                if (fileData->at(j)->m_type == TableColumn::TYPE_STRING || fileData->at(j)->m_type == TableColumn::TYPE_DATETIME)
-                    _cell->SetString(fileData->at(j)->getValueAsInternalString(i).c_str());
-                else if (fileData->at(j)->m_type == TableColumn::TYPE_VALUE)
+                if (fileData->at(j)->m_type == TableColumn::TYPE_VALUE || fileData->at(j)->m_type == TableColumn::TYPE_LOGICAL)
                     _cell->SetDouble(fileData->at(j)->getValue(i).real());
+                else
+                    _cell->SetString(fileData->at(j)->getValueAsInternalString(i).c_str());
             }
         }
 

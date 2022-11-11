@@ -390,14 +390,10 @@ void TableViewer::layoutGrid()
     {
         GridNumeReTable* gridtab = static_cast<GridNumeReTable*>(GetTable());
         m_currentColTypes = gridtab->getColumnTypes();
-    }
 
-    // Search the boundaries and color the frame correspondingly
-    for (int i = 0; i < GetNumberRows(); i++)
-    {
         for (int j = 0; j < GetNumberCols(); j++)
         {
-            if (!i && isGridNumeReTable && (int)m_currentColTypes.size() > j)
+            if ((int)m_currentColTypes.size() > j)
             {
                 wxGridCellAttr* attr = nullptr;
 
@@ -427,15 +423,23 @@ void TableViewer::layoutGrid()
                 }
 
                 SetColAttr(j, attr);
-                break;
-            }
-
-            if (!isGridNumeReTable && i >= (int)nFirstNumRow && GetCellValue(i, j)[0] == '"')
-            {
-                SetCellAlignment(wxALIGN_LEFT, i, j);
             }
         }
     }
+    else
+    {
+        // Search the boundaries and color the frame correspondingly
+        for (int i = 0; i < GetNumberRows(); i++)
+        {
+            for (int j = 0; j < GetNumberCols(); j++)
+            {
+                if (i >= (int)nFirstNumRow && GetCellValue(i, j)[0] == '"')
+                    SetCellAlignment(wxALIGN_LEFT, i, j);
+            }
+        }
+
+    }
+
 
     // Define the minimal size of the window depending
     // on the number of columns. The maximal size is defined

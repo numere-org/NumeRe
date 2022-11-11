@@ -66,8 +66,8 @@ enum TimeDateFormat
 
 std::string toString(int nNumber, const Settings& _option);
 std::string toString(double dNumber, const Settings& _option);
-std::string toString(double dNumber, int nPrecision);
-std::string toString(const std::complex<double>& dNumber, int nPrecision);
+std::string toString(double dNumber, int nPrecision = 7);
+std::string toString(const std::complex<double>& dNumber, int nPrecision = 7);
 std::string toString(int);
 std::string toString(__time64_t tTime, int timeStampFlags);
 std::string toString(sys_time_point tp, int timeStampFlags);
@@ -77,7 +77,34 @@ std::string toCmdString(double dNumber);
 std::string toCmdString(const std::complex<double>& dNumber);
 std::string toString(bool bBoolean);
 std::string toHexString(int nNumber);
-std::string toString(const std::vector<int>& vVector);
+
+/////////////////////////////////////////////////
+/// \brief This function converts a std::vector
+/// into a std::string, where the components are
+/// translated into "{x,y,z...}"
+///
+/// \param vVector const std::vector<T>&
+/// \return std::string
+///
+/////////////////////////////////////////////////
+template <class T>
+std::string toString(const std::vector<T>& vVector)
+{
+    std::string sString;
+
+    for (size_t i = 0; i < vVector.size(); i++)
+    {
+        sString += toString(vVector[i]) + ",";
+    }
+
+    if (!sString.size())
+        return "{}";
+
+    sString.back() = '}';
+
+    return "{" + sString;
+}
+
 std::vector<std::string> toStrVector(std::string sString);
 std::vector<int> toIntVector(std::string sString);
 std::string condenseText(const std::string& sText);

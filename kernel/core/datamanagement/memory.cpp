@@ -19,6 +19,7 @@
 #include <memory>
 #include <gsl/gsl_statistics.h>
 #include <gsl/gsl_sort.h>
+#include <gsl/gsl_cdf.h>
 
 #include "memory.hpp"
 #include "tablecolumnimpl.hpp"
@@ -1852,6 +1853,15 @@ void Memory::importTable(NumeRe::Table _table, const VectorIndex& lines, const V
                 memArray[cols[j]].reset(new DateTimeColumn);
             else if (tabCol->m_type == TableColumn::TYPE_STRING)
                 memArray[cols[j]].reset(new StringColumn);
+            else if (tabCol->m_type == TableColumn::TYPE_LOGICAL)
+                memArray[cols[j]].reset(new LogicalColumn);
+            else if (tabCol->m_type == TableColumn::TYPE_CATEGORICAL)
+                memArray[cols[j]].reset(new CategoricalColumn);
+            else
+            {
+                NumeReKernel::issueWarning("In Memory::importTable(): TableColumn::ColumnType not implemented.");
+                continue;
+            }
         }
 
         memArray[cols[j]]->insert(lines, tabCol);
@@ -3158,7 +3168,7 @@ std::vector<mu::value_type> Memory::countIfEqual(const VectorIndex& _vCols, cons
 
     for (size_t j = 0; j < _vCols.size(); j++)
     {
-        if (_vCols[j] >= memArray.size() || !memArray[_vCols[j]])
+        if (_vCols[j] >= (int)memArray.size() || !memArray[_vCols[j]])
             continue;
 
         if (vValues.size())
@@ -3253,6 +3263,322 @@ std::vector<mu::value_type> Memory::getIndex(size_t col, const std::vector<mu::v
         vIndex.push_back(NAN);
 
     return vIndex;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Calculates the simples form of a ANOVA
+/// F test
+///
+/// \param colCategories size_t
+/// \param colValues size_t
+/// \param _vIndex const VectorIndex&
+/// \param significance double
+/// \return AnovaResult
+///
+/////////////////////////////////////////////////
+AnovaResult Memory::getOneWayAnova(size_t colCategories, size_t colValues, const VectorIndex& _vIndex, double significance) const
+{
+    // Get indices
+    if (colCategories > memArray.size()
+        || !memArray[colCategories]
+        || memArray[colCategories]->m_type != TableColumn::TYPE_CATEGORICAL
+        || significance >= 1.0
+        || significance <= 0.0)
+    {
+        AnovaResult res;
+        res.m_FRatio = NAN;
+        return res;
+    }
+
+    _vIndex.setOpenEndIndex(getElemsInColumn(colCategories)-1);
+    Memory _mem(2);
+    _mem.memArray[0].reset(memArray[colCategories]->copy(_vIndex));
+    _mem.memArray[1].reset(memArray[colValues]->copy(_vIndex));
+
+    const std::vector<std::string>& vCategories = static_cast<CategoricalColumn*>(_mem.memArray[0].get())->getCategories();
+
+    // Copy into different columns
+    for (const auto& cat : vCategories)
+    {
+        std::vector<mu::value_type> catIndex = _mem.getIndex(0, std::vector<mu::value_type>(), std::vector<std::string>(1, cat));
+
+        if (mu::isnan(catIndex.front()))
+            continue;
+
+        _mem.memArray.push_back(TblColPtr(_mem.memArray[1]->copy(VectorIndex(&catIndex[0], catIndex.size(), 0))));
+    }
+
+    // Prepare vectors for each group
+    std::vector<mu::value_type> vAvg;
+    std::vector<mu::value_type> vVar;
+    std::vector<mu::value_type> vNum;
+
+    // Get the values for each group
+    for (size_t j = 2; j < _mem.memArray.size(); j++)
+    {
+        vAvg.push_back(_mem.avg(VectorIndex(0, VectorIndex::OPEN_END), VectorIndex(j)));
+        vNum.push_back(_mem.num(VectorIndex(0, VectorIndex::OPEN_END), VectorIndex(j)));
+        vVar.push_back(intPower(_mem.std(VectorIndex(0, VectorIndex::OPEN_END), VectorIndex(j)), 2));
+    }
+
+    // Calculate the overall values
+    mu::value_type overallAvg = _mem.avg(VectorIndex(0, VectorIndex::OPEN_END), VectorIndex(2, VectorIndex::OPEN_END));
+    mu::value_type overallNum = _mem.num(VectorIndex(0, VectorIndex::OPEN_END), VectorIndex(2, VectorIndex::OPEN_END));
+    mu::value_type overallVariance;
+
+    // Pretend that each group contains n equal measurements
+    // to calculate the ideal overall variance
+    for (size_t i = 0; i < vAvg.size(); i++)
+    {
+        overallVariance += vNum[i] * intPower(vAvg[i]-overallAvg, 2);
+    }
+
+    // Calculate the average group variance
+    mu::value_type avgGroupVariance = std::accumulate(vVar.begin(), vVar.end(), mu::value_type()) / (double)vVar.size();
+
+    double overallDOF = vVar.size() - 1.0;
+    double sumOfGroupDOFs = overallNum.real() - vVar.size();
+
+    // Normalize only the ideal overall variance as
+    // the squared STDEVs are already group-normalized
+    overallVariance /= overallDOF;
+    //avgGroupVariance /= (double)vVar.size();
+
+    // Sum up all information
+    AnovaResult res;
+    res.m_FRatio = overallVariance / avgGroupVariance;
+    res.m_significanceVal = gsl_cdf_fdist_Pinv(1.0 - significance, overallDOF, sumOfGroupDOFs);
+    res.m_significance = significance;
+    res.m_isSignificant = res.m_FRatio.real() >= res.m_significanceVal.real();
+    res.m_numCategories = vVar.size();
+
+    return res;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Implements the cov() table method and
+/// calculates the covariance of the two selected
+/// columns.
+///
+/// \param col1 size_t
+/// \param _vIndex1 const VectorIndex&
+/// \param col2 size_t
+/// \param _vIndex2 const VectorIndex&
+/// \return mu::value_type
+///
+/////////////////////////////////////////////////
+mu::value_type Memory::getCovariance(size_t col1, const VectorIndex& _vIndex1, size_t col2, const VectorIndex& _vIndex2) const
+{
+    _vIndex1.setOpenEndIndex(getElemsInColumn(col1)-1);
+    _vIndex2.setOpenEndIndex(getElemsInColumn(col2)-1);
+
+    size_t minSize = std::min(_vIndex1.size(), _vIndex2.size());
+
+    mu::value_type vAvg1 = avg(_vIndex1.subidx(0, minSize), VectorIndex(col1));
+    mu::value_type vAvg2 = avg(_vIndex2.subidx(0, minSize), VectorIndex(col2));
+
+    mu::value_type vCov = 0.0;
+
+    for (size_t i = 0; i < minSize; i++)
+    {
+        vCov += (readMem(_vIndex1[i], col1) - vAvg1) * (readMem(_vIndex2[i], col2) - vAvg2);
+    }
+
+    return vCov;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Implements the pcorr() table method
+/// and calculates the pearson correlation
+/// coefficient of the two selected columns.
+///
+/// \param col1 size_t
+/// \param _vIndex1 const VectorIndex&
+/// \param col2 size_t
+/// \param _vIndex2 const VectorIndex&
+/// \return mu::value_type
+///
+/////////////////////////////////////////////////
+mu::value_type Memory::getPearsonCorr(size_t col1, const VectorIndex& _vIndex1, size_t col2, const VectorIndex& _vIndex2) const
+{
+    _vIndex1.setOpenEndIndex(getElemsInColumn(col1)-1);
+    _vIndex2.setOpenEndIndex(getElemsInColumn(col2)-1);
+
+    size_t minSize = std::min(_vIndex1.size(), _vIndex2.size());
+
+    return getCovariance(col1, _vIndex1, col2, _vIndex2)
+        / ((minSize-1.0) * std(_vIndex1.subidx(0, minSize), VectorIndex(col1)) * std(_vIndex2.subidx(0, minSize), VectorIndex(col2)));
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Implements the scorr() table method
+/// and calculates the spearman correlation
+/// coefficient of the two selected columns.
+///
+/// \param col1 size_t
+/// \param _vIndex1 const VectorIndex&
+/// \param col2 size_t
+/// \param _vIndex2 const VectorIndex&
+/// \return mu::value_type
+///
+/////////////////////////////////////////////////
+mu::value_type Memory::getSpearmanCorr(size_t col1, const VectorIndex& _vIndex1, size_t col2, const VectorIndex& _vIndex2) const
+{
+    _vIndex1.setOpenEndIndex(getElemsInColumn(col1)-1);
+    _vIndex2.setOpenEndIndex(getElemsInColumn(col2)-1);
+
+    size_t minSize = std::min(_vIndex1.size(), _vIndex2.size());
+
+    Memory _mem(2);
+
+    _mem.memArray[0].reset(new ValueColumn(minSize));
+    _mem.memArray[0]->setValue(VectorIndex(0, minSize), getRank(col1, _vIndex1.subidx(0, minSize), RANK_FRACTIONAL));
+    _mem.memArray[1].reset(new ValueColumn(minSize));
+    _mem.memArray[1]->setValue(VectorIndex(0, minSize), getRank(col2, _vIndex2.subidx(0, minSize), RANK_FRACTIONAL));
+
+    return _mem.getPearsonCorr(0, VectorIndex(0, VectorIndex::OPEN_END), 1, VectorIndex(0, VectorIndex::OPEN_END));
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Evaluate the identical ranked values
+/// according the selected ranking strategy.
+///
+/// \param vRank std::vector<mu::value_type>&
+/// \param nEqualRanks size_t&
+/// \param _strat Memory::RankingStrategy
+/// \return void
+///
+/////////////////////////////////////////////////
+static void evaluateRankingStrategy(std::vector<mu::value_type>& vRank, size_t& nEqualRanks, Memory::RankingStrategy _strat)
+{
+    switch (_strat)
+    {
+        case Memory::RANK_DENSE:
+            vRank.insert(vRank.end(), nEqualRanks, vRank.back());
+            vRank.push_back(vRank.back()+1.0);
+            break;
+        case Memory::RANK_COMPETETIVE:
+            vRank.insert(vRank.end(), nEqualRanks, vRank.back());
+            vRank.push_back(vRank.back()+(nEqualRanks+1.0));
+            break;
+        case Memory::RANK_FRACTIONAL:
+        {
+            mu::value_type val = vRank.back();
+            vRank.pop_back();
+            vRank.insert(vRank.end(), nEqualRanks+1, val+0.5*nEqualRanks);
+            vRank.push_back(val+(nEqualRanks+1.0));
+            break;
+        }
+    }
+
+    nEqualRanks = 0;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Rank the selected column according the
+/// selected ranking strategy.
+///
+/// \param col size_t
+/// \param _vIndex const VectorIndex&
+/// \param _strat Memory::RankingStrategy
+/// \return std::vector<mu::value_type>
+///
+/////////////////////////////////////////////////
+std::vector<mu::value_type> Memory::getRank(size_t col, const VectorIndex& _vIndex, Memory::RankingStrategy _strat) const
+{
+    _vIndex.setOpenEndIndex(getElemsInColumn(col)-1);
+
+    Memory _mem(1);
+    _mem.memArray.back().reset(memArray[col]->copy(_vIndex));
+
+    std::vector<int> vIndex = _mem.sortElements(0, _mem.getLines(false)-1, 0, -1, "-index");
+    std::vector<mu::value_type> vRank(1, 1.0);
+    size_t nEqualRanks = 0;
+
+    if (_mem.memArray.back()->m_type < TableColumn::TYPE_CATEGORICAL)
+    {
+        for (size_t i = 1; i < vIndex.size(); i++)
+        {
+            // Indices are already 1-based and NANs are always at the end
+            if (mu::isnan(_mem.readMem(vIndex[i]-1, 0)))
+                vRank.push_back(NAN);
+            else if (_mem.readMem(vIndex[i]-1, 0) != _mem.readMem(vIndex[i-1]-1, 0))
+            {
+                if (nEqualRanks)
+                    evaluateRankingStrategy(vRank, nEqualRanks, _strat);
+                else
+                    vRank.push_back(vRank.back()+1.0);
+            }
+            else
+                nEqualRanks++;
+        }
+    }
+    else
+    {
+        TableColumn* col = _mem.memArray.back().get();
+
+        for (size_t i = 1; i < vIndex.size(); i++)
+        {
+            // Indices are already 1-based
+            if (col->getValueAsInternalString(vIndex[i]-1) != col->getValueAsInternalString(vIndex[i-1]-1))
+            {
+                if (nEqualRanks)
+                    evaluateRankingStrategy(vRank, nEqualRanks, _strat);
+                else
+                    vRank.push_back(vRank.back()+1.0);
+            }
+            else
+                nEqualRanks++;
+        }
+    }
+
+    if (nEqualRanks)
+    {
+        evaluateRankingStrategy(vRank, nEqualRanks, _strat);
+        vRank.pop_back();
+    }
+
+    std::vector<mu::value_type> vRankReordered(vRank);
+
+    for (size_t i = 0; i < vIndex.size(); i++)
+    {
+        vRankReordered[vIndex[i]-1] = vRank[i];
+    }
+
+    return vRankReordered;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Calculate the standardized values of
+/// the selected column.
+///
+/// \param col size_t
+/// \param _vIndex const VectorIndex&
+/// \return std::vector<mu::value_type>
+///
+/////////////////////////////////////////////////
+std::vector<mu::value_type> Memory::getZScore(size_t col, const VectorIndex& _vIndex) const
+{
+    _vIndex.setOpenEndIndex(getElemsInColumn(col)-1);
+
+    std::vector<mu::value_type> vZScore;
+
+    mu::value_type avgVal = avg(_vIndex, VectorIndex(col));
+    mu::value_type stdVal = std(_vIndex, VectorIndex(col));
+
+    for (size_t i = 0; i < _vIndex.size(); i++)
+    {
+        vZScore.push_back((readMem(_vIndex[i], col) - avgVal) / stdVal);
+    }
+
+    return vZScore;
 }
 
 

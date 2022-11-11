@@ -1272,6 +1272,7 @@ static std::string tableMethod_convert(const std::string& sTableName, std::strin
     }
 
     int nResults = 0;
+    NumeReKernel::getInstance()->getMemoryManager().updateDimensionVariables(sTableName);
     NumeReKernel::getInstance()->getParser().SetExpr(sColumns);
     mu::value_type* v = NumeReKernel::getInstance()->getParser().Eval(nResults);
 
@@ -1299,6 +1300,7 @@ static std::string tableMethod_typeof(const std::string& sTableName, std::string
                     NumeReKernel::getInstance()->getSettings());
 
     int nResults = 0;
+    NumeReKernel::getInstance()->getMemoryManager().updateDimensionVariables(sTableName);
     NumeReKernel::getInstance()->getParser().SetExpr(sMethodArguments);
     mu::value_type* v = NumeReKernel::getInstance()->getParser().Eval(nResults);
 
@@ -1343,6 +1345,7 @@ static std::string tableMethod_categories(const std::string& sTableName, std::st
                     NumeReKernel::getInstance()->getSettings());
 
     int nResults = 0;
+    NumeReKernel::getInstance()->getMemoryManager().updateDimensionVariables(sTableName);
     NumeReKernel::getInstance()->getParser().SetExpr(sMethodArguments);
     mu::value_type* v = NumeReKernel::getInstance()->getParser().Eval(nResults);
 
@@ -1398,6 +1401,7 @@ static std::string tableMethod_categorize(const std::string& sTableName, std::st
     }
 
     int nResults = 0;
+    NumeReKernel::getInstance()->getMemoryManager().updateDimensionVariables(sTableName);
     NumeReKernel::getInstance()->getParser().SetExpr(sColumns);
     mu::value_type* v = NumeReKernel::getInstance()->getParser().Eval(nResults);
 
@@ -1483,6 +1487,7 @@ static std::string tableMethod_counteq(const std::string& sTableName, std::strin
                     _kernel->getSettings());
 
     int nResults = 0;
+    _kernel->getMemoryManager().updateDimensionVariables(sTableName);
     _kernel->getParser().SetExpr(sColumns);
     mu::value_type* v = _kernel->getParser().Eval(nResults);
     VectorIndex vCols(v, nResults, 0);
@@ -1584,6 +1589,383 @@ static std::string tableMethod_index(const std::string& sTableName, std::string 
 
 
 /////////////////////////////////////////////////
+/// \brief Realizes the "cov()" table method.
+///
+/// \param sTableName const std::string&
+/// \param sMethodArguments std::string
+/// \return std::string
+///
+/////////////////////////////////////////////////
+static std::string tableMethod_cov(const std::string& sTableName, std::string sMethodArguments)
+{
+    NumeReKernel* _kernel = NumeReKernel::getInstance();
+    std::string sCols = getNextArgument(sMethodArguments, true);
+    sCols += "," + getNextArgument(sMethodArguments, true);
+
+    // Might be necessary to resolve the contents of columns and conversions
+    getDataElements(sCols,
+                    _kernel->getParser(),
+                    _kernel->getMemoryManager(),
+                    _kernel->getSettings());
+
+    int nResults = 0;
+    _kernel->getMemoryManager().updateDimensionVariables(sTableName);
+    _kernel->getParser().SetExpr(sCols);
+    mu::value_type* v = _kernel->getParser().Eval(nResults);
+
+    if (nResults < 2)
+        throw SyntaxError(SyntaxError::TOO_FEW_COLS, sTableName + "().cov()", ".cov(", ".cov(");
+
+    size_t col1 = intCast(v[0])-1;
+    size_t col2 = intCast(v[1])-1;
+
+    std::vector<mu::value_type> vResults;
+    VectorIndex vIndex1(0, VectorIndex::OPEN_END);
+    VectorIndex vIndex2(0, VectorIndex::OPEN_END);
+
+    if (sMethodArguments.length())
+    {
+        getDataElements(sMethodArguments,
+                        _kernel->getParser(),
+                        _kernel->getMemoryManager(),
+                        _kernel->getSettings());
+
+        _kernel->getMemoryManager().updateDimensionVariables(sTableName);
+        _kernel->getParser().SetExpr(getNextArgument(sMethodArguments, true));
+        v = _kernel->getParser().Eval(nResults);
+        vIndex1 = VectorIndex(v, nResults, 0);
+
+        if (sMethodArguments.length())
+        {
+            _kernel->getMemoryManager().updateDimensionVariables(sTableName);
+            _kernel->getParser().SetExpr(getNextArgument(sMethodArguments, true));
+            v = _kernel->getParser().Eval(nResults);
+            vIndex2 = VectorIndex(v, nResults, 0);
+        }
+    }
+
+    vResults.push_back(_kernel->getMemoryManager().getCovariance(sTableName, col1, vIndex1, col2, vIndex2));
+
+    return _kernel->getParser().CreateTempVectorVar(vResults);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Realizes the "pcorr()" table method.
+///
+/// \param sTableName const std::string&
+/// \param sMethodArguments std::string
+/// \return std::string
+///
+/////////////////////////////////////////////////
+static std::string tableMethod_pcorr(const std::string& sTableName, std::string sMethodArguments)
+{
+    NumeReKernel* _kernel = NumeReKernel::getInstance();
+    std::string sCols = getNextArgument(sMethodArguments, true);
+    sCols += "," + getNextArgument(sMethodArguments, true);
+
+    // Might be necessary to resolve the contents of columns and conversions
+    getDataElements(sCols,
+                    _kernel->getParser(),
+                    _kernel->getMemoryManager(),
+                    _kernel->getSettings());
+
+    int nResults = 0;
+    _kernel->getMemoryManager().updateDimensionVariables(sTableName);
+    _kernel->getParser().SetExpr(sCols);
+    mu::value_type* v = _kernel->getParser().Eval(nResults);
+
+    if (nResults < 2)
+        throw SyntaxError(SyntaxError::TOO_FEW_COLS, sTableName + "().pcorr()", ".pcorr(", ".pcorr(");
+
+    size_t col1 = intCast(v[0])-1;
+    size_t col2 = intCast(v[1])-1;
+
+    std::vector<mu::value_type> vResults;
+    VectorIndex vIndex1(0, VectorIndex::OPEN_END);
+    VectorIndex vIndex2(0, VectorIndex::OPEN_END);
+
+    if (sMethodArguments.length())
+    {
+        getDataElements(sMethodArguments,
+                        _kernel->getParser(),
+                        _kernel->getMemoryManager(),
+                        _kernel->getSettings());
+
+        _kernel->getMemoryManager().updateDimensionVariables(sTableName);
+        _kernel->getParser().SetExpr(getNextArgument(sMethodArguments, true));
+        v = _kernel->getParser().Eval(nResults);
+        vIndex1 = VectorIndex(v, nResults, 0);
+
+        if (sMethodArguments.length())
+        {
+            _kernel->getMemoryManager().updateDimensionVariables(sTableName);
+            _kernel->getParser().SetExpr(getNextArgument(sMethodArguments, true));
+            v = _kernel->getParser().Eval(nResults);
+            vIndex2 = VectorIndex(v, nResults, 0);
+        }
+    }
+
+    vResults.push_back(_kernel->getMemoryManager().getPearsonCorr(sTableName, col1, vIndex1, col2, vIndex2));
+
+    return _kernel->getParser().CreateTempVectorVar(vResults);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Realizes the "scorr()" table method.
+///
+/// \param sTableName const std::string&
+/// \param sMethodArguments std::string
+/// \return std::string
+///
+/////////////////////////////////////////////////
+static std::string tableMethod_scorr(const std::string& sTableName, std::string sMethodArguments)
+{
+    NumeReKernel* _kernel = NumeReKernel::getInstance();
+    std::string sCols = getNextArgument(sMethodArguments, true);
+    sCols += "," + getNextArgument(sMethodArguments, true);
+
+    // Might be necessary to resolve the contents of columns and conversions
+    getDataElements(sCols,
+                    _kernel->getParser(),
+                    _kernel->getMemoryManager(),
+                    _kernel->getSettings());
+
+    int nResults = 0;
+    _kernel->getMemoryManager().updateDimensionVariables(sTableName);
+    _kernel->getParser().SetExpr(sCols);
+    mu::value_type* v = _kernel->getParser().Eval(nResults);
+
+    if (nResults < 2)
+        throw SyntaxError(SyntaxError::TOO_FEW_COLS, sTableName + "().scorr()", ".scorr(", ".scorr(");
+
+    size_t col1 = intCast(v[0])-1;
+    size_t col2 = intCast(v[1])-1;
+
+    std::vector<mu::value_type> vResults;
+    VectorIndex vIndex1(0, VectorIndex::OPEN_END);
+    VectorIndex vIndex2(0, VectorIndex::OPEN_END);
+
+    if (sMethodArguments.length())
+    {
+        getDataElements(sMethodArguments,
+                        _kernel->getParser(),
+                        _kernel->getMemoryManager(),
+                        _kernel->getSettings());
+
+        _kernel->getMemoryManager().updateDimensionVariables(sTableName);
+        _kernel->getParser().SetExpr(getNextArgument(sMethodArguments, true));
+        v = _kernel->getParser().Eval(nResults);
+        vIndex1 = VectorIndex(v, nResults, 0);
+
+        if (sMethodArguments.length())
+        {
+            _kernel->getMemoryManager().updateDimensionVariables(sTableName);
+            _kernel->getParser().SetExpr(getNextArgument(sMethodArguments, true));
+            v = _kernel->getParser().Eval(nResults);
+            vIndex2 = VectorIndex(v, nResults, 0);
+        }
+    }
+
+    vResults.push_back(_kernel->getMemoryManager().getSpearmanCorr(sTableName, col1, vIndex1, col2, vIndex2));
+
+    return _kernel->getParser().CreateTempVectorVar(vResults);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Realizes the "zscore()" table method.
+///
+/// \param sTableName const std::string&
+/// \param sMethodArguments std::string
+/// \return std::string
+///
+/////////////////////////////////////////////////
+static std::string tableMethod_zscore(const std::string& sTableName, std::string sMethodArguments)
+{
+    NumeReKernel* _kernel = NumeReKernel::getInstance();
+    std::string sCols = getNextArgument(sMethodArguments, true);
+
+    // Might be necessary to resolve the contents of columns and conversions
+    getDataElements(sCols,
+                    _kernel->getParser(),
+                    _kernel->getMemoryManager(),
+                    _kernel->getSettings());
+
+    int nResults = 0;
+    _kernel->getMemoryManager().updateDimensionVariables(sTableName);
+    _kernel->getParser().SetExpr(sCols);
+    mu::value_type* v = _kernel->getParser().Eval(nResults);
+    size_t col = intCast(v[0])-1;
+
+    std::vector<mu::value_type> vResults;
+    VectorIndex vIndex(0, VectorIndex::OPEN_END);
+
+    if (sMethodArguments.length())
+    {
+        getDataElements(sMethodArguments,
+                        _kernel->getParser(),
+                        _kernel->getMemoryManager(),
+                        _kernel->getSettings());
+
+        _kernel->getMemoryManager().updateDimensionVariables(sTableName);
+        _kernel->getParser().SetExpr(getNextArgument(sMethodArguments, true));
+        v = _kernel->getParser().Eval(nResults);
+        vIndex = VectorIndex(v, nResults, 0);
+    }
+
+    vResults = _kernel->getMemoryManager().getZScore(sTableName, col, vIndex);
+
+    return _kernel->getParser().CreateTempVectorVar(vResults);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Realizes the "anova()" table method.
+///
+/// \param sTableName const std::string&
+/// \param sMethodArguments std::string
+/// \return std::string
+///
+/////////////////////////////////////////////////
+static std::string tableMethod_anova(const std::string& sTableName, std::string sMethodArguments)
+{
+    NumeReKernel* _kernel = NumeReKernel::getInstance();
+    std::string sCols = getNextArgument(sMethodArguments, true);
+    sCols += "," + getNextArgument(sMethodArguments, true);
+
+    // Might be necessary to resolve the contents of columns and conversions
+    getDataElements(sCols,
+                    _kernel->getParser(),
+                    _kernel->getMemoryManager(),
+                    _kernel->getSettings());
+
+    int nResults = 0;
+    _kernel->getMemoryManager().updateDimensionVariables(sTableName);
+    _kernel->getParser().SetExpr(sCols);
+    mu::value_type* v = _kernel->getParser().Eval(nResults);
+
+    if (nResults < 2)
+        throw SyntaxError(SyntaxError::TOO_FEW_COLS, sTableName + "().anovafor()", ".anovafor(", ".anovafor(");
+
+    size_t col1 = intCast(v[0])-1;
+    size_t col2 = intCast(v[1])-1;
+
+    VectorIndex vIndex(0, VectorIndex::OPEN_END);
+    double significance = 0.05;
+
+    if (sMethodArguments.length())
+    {
+        getDataElements(sMethodArguments,
+                        _kernel->getParser(),
+                        _kernel->getMemoryManager(),
+                        _kernel->getSettings());
+
+        _kernel->getMemoryManager().updateDimensionVariables(sTableName);
+        _kernel->getParser().SetExpr(getNextArgument(sMethodArguments, true));
+        v = _kernel->getParser().Eval(nResults);
+        significance = v[0].real();
+
+        if (sMethodArguments.length())
+        {
+            getDataElements(sMethodArguments,
+                            _kernel->getParser(),
+                            _kernel->getMemoryManager(),
+                            _kernel->getSettings());
+
+            _kernel->getMemoryManager().updateDimensionVariables(sTableName);
+            _kernel->getParser().SetExpr(getNextArgument(sMethodArguments, true));
+            v = _kernel->getParser().Eval(nResults);
+            vIndex = VectorIndex(v, nResults, 0);
+        }
+    }
+
+    AnovaResult res = _kernel->getMemoryManager().getOneWayAnova(sTableName, col1, col2, vIndex, significance);
+
+    std::string sRet = "{";
+
+    sRet += "\"FisherRatio\"," + toString(res.m_FRatio) + ",";
+    sRet += "\"FisherSignificanceVal\"," + toString(res.m_significanceVal) + ",";
+    sRet += "\"SignificanceLevel\"," + toString(res.m_significance) + ",";
+    sRet += "\"SignificantVariation\"," + toString(res.m_isSignificant) + ",";
+    sRet += "\"Categories\"," + toString(res.m_numCategories) + "}";
+
+    return sRet;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Realizes the "rankof()" table method.
+///
+/// \param sTableName const std::string&
+/// \param sMethodArguments std::string
+/// \return std::string
+///
+/////////////////////////////////////////////////
+static std::string tableMethod_rank(const std::string& sTableName, std::string sMethodArguments)
+{
+    NumeReKernel* _kernel = NumeReKernel::getInstance();
+    std::string sCols = getNextArgument(sMethodArguments, true);
+
+    // Might be necessary to resolve the contents of columns and conversions
+    getDataElements(sCols,
+                    _kernel->getParser(),
+                    _kernel->getMemoryManager(),
+                    _kernel->getSettings());
+
+    int nResults = 0;
+    _kernel->getMemoryManager().updateDimensionVariables(sTableName);
+    _kernel->getParser().SetExpr(sCols);
+    mu::value_type* v = _kernel->getParser().Eval(nResults);
+    size_t col = intCast(v[0])-1;
+
+    std::vector<mu::value_type> vResults;
+    VectorIndex vIndex(0, VectorIndex::OPEN_END);
+    Memory::RankingStrategy _strat = Memory::RANK_COMPETETIVE;
+
+    if (sMethodArguments.length())
+    {
+        sCols = getNextArgument(sMethodArguments, true);
+
+        if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sCols))
+        {
+            std::string sDummy;
+            sCols += " -nq";
+            NumeRe::StringParser::StringParserRetVal res = NumeReKernel::getInstance()->getStringParser().evalAndFormat(sCols, sDummy, true);
+
+            if (res == NumeRe::StringParser::STRING_NUMERICAL)
+                return "nan";
+
+            std::string sStrat = NumeReKernel::getInstance()->getAns().getInternalStringArray().front();
+
+            if (sStrat == "f")
+                _strat = Memory::RANK_FRACTIONAL;
+            else if (sStrat == "d")
+                _strat = Memory::RANK_DENSE;
+        }
+
+        if (sMethodArguments.length())
+        {
+            getDataElements(sMethodArguments,
+                            _kernel->getParser(),
+                            _kernel->getMemoryManager(),
+                            _kernel->getSettings());
+
+            _kernel->getMemoryManager().updateDimensionVariables(sTableName);
+            _kernel->getParser().SetExpr(getNextArgument(sMethodArguments, true));
+            v = _kernel->getParser().Eval(nResults);
+            vIndex = VectorIndex(v, nResults, 0);
+        }
+    }
+
+    vResults = _kernel->getMemoryManager().getRank(sTableName, col, vIndex, _strat);
+
+    return _kernel->getParser().CreateTempVectorVar(vResults);
+}
+
+
+/////////////////////////////////////////////////
 /// \brief Realizes the "describe()" method.
 ///
 /// \param sTableName const std::string&
@@ -1635,11 +2017,17 @@ static std::map<std::string, TableMethod> getInplaceTableMethods()
     mTableMethods["convert"] = tableMethod_convert;
     mTableMethods["typeof"] = tableMethod_typeof;
     mTableMethods["describe"] = tableMethod_annotate;
-    mTableMethods["categorylist"] = tableMethod_categories;
+    mTableMethods["categoriesof"] = tableMethod_categories;
     mTableMethods["categorize"] = tableMethod_categorize;
     mTableMethods["fndcols"] = tableMethod_findCols;
     mTableMethods["countif"] = tableMethod_counteq;
-    mTableMethods["index"] = tableMethod_index;
+    mTableMethods["indexof"] = tableMethod_index;
+    mTableMethods["covarof"] = tableMethod_cov;
+    mTableMethods["pcorrof"] = tableMethod_pcorr;
+    mTableMethods["scorrof"] = tableMethod_scorr;
+    mTableMethods["rankof"] = tableMethod_rank;
+    mTableMethods["zscoreof"] = tableMethod_zscore;
+    mTableMethods["anovaof"] = tableMethod_anova;
 
     return mTableMethods;
 }

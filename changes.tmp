@@ -5,7 +5,7 @@ Added	The character sequences "NA" and "N/A" are now also considered as NaN in t
 Added	Added the filter function that allows filtering a matrix with any filter kernel.
 Added	Tables may now contain "logical" columns, which are restricted to boolean values.
 Added	Tables may now contain "category" columns, which enumerate string values to make them usable in numerical calcutions.
-Added	The table method "TAB().categorylist()" returns the enumerated categories of the selected categorial columns as a key-value list.
+Added	The table method "TAB().categoriesof()" returns the enumerated categories of the selected categorial columns as a key-value list.
 Cleaned	Date-time columns are no longer completely overwritten by real-only values (which allows for time modifications).
 Fixed	The function "replaceall()" can now also replace null characters.
 Added	The table method "TAB().categorize()" can be used to rename the during conversion automatically detected categories.
@@ -20,7 +20,7 @@ Cleaned	The valtostring parser operator "#" behaves now a bit different compared
 Fixed	Excel files containing only strings are now readable correctly.
 Fixed	Excel files containing line breaks in cells are now readable correctly.
 Fixed	Setting icons for layouts is now possible.
-Added	Created new table methods: "TAB().fndcols()" (searches columns for headlines), "TAB().index()" (creates indices for columns for selected values) and "TAB().countif()" (counts occurences of values).
+Added	Created new table methods: "TAB().fndcols()" (searches columns for headlines), "TAB().indexof()" (creates indices for columns for selected values) and "TAB().countif()" (counts occurences of values).
 Applied	Table and string methods are now also part of the symbols tree and can be dragged into the editor or the terminal.
 Added	NumeRe now supports Zygo MetroPro(r) *.dat files as well.
 Added	"hist" may now use time axes in its plot.
@@ -33,3 +33,4 @@ Cleaned	The restore functionality of the revisions dialog now chooses the curren
 New	A menu option was added to compare two files and display the comparison result as a unified diff.
 New	It is now possible to apply conditional cell background colours to tables opened with the table viewer.
 Fixed	If single cells are selected in the table viewer, their statistics are now calculated correctly.
+Added	A whole bunch of new table methods were added: "pcorrof()", "scorrof()", "covarof()", "*rankof()", "zscoreof()", "anovaof()"

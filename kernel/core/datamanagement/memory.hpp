@@ -32,6 +32,19 @@ class MemoryManager;
 class Matrix;
 struct StatsLogic;
 
+/////////////////////////////////////////////////
+/// \brief Contains the relevant results of the
+/// ANOVA F test.
+/////////////////////////////////////////////////
+struct AnovaResult
+{
+    mu::value_type m_FRatio;
+    mu::value_type m_significanceVal;
+    mu::value_type m_significance;
+    bool m_isSignificant;
+    size_t m_numCategories;
+};
+
 namespace NumeRe
 {
     class FileAdapter;
@@ -60,6 +73,13 @@ class Memory : public Sorter
             LINES = 0x1,
             COLS = 0x2,
             GRID = 0x4
+        };
+
+        enum RankingStrategy
+        {
+            RANK_DENSE,
+            RANK_COMPETETIVE,
+            RANK_FRACTIONAL
         };
 
 	private:
@@ -174,6 +194,12 @@ class Memory : public Sorter
         std::vector<mu::value_type> findCols(const std::vector<std::string>& vColNames) const;
         std::vector<mu::value_type> countIfEqual(const VectorIndex& _vCols, const std::vector<mu::value_type>& vValues, const std::vector<std::string>& vStringValues) const;
         std::vector<mu::value_type> getIndex(size_t col, const std::vector<mu::value_type>& vValues, const std::vector<std::string>& vStringValues) const;
+        AnovaResult getOneWayAnova(size_t colCategories, size_t colValues, const VectorIndex& _vIndex, double significance) const;
+        mu::value_type getCovariance(size_t col1, const VectorIndex& _vIndex1, size_t col2, const VectorIndex& _vIndex2) const;
+        mu::value_type getPearsonCorr(size_t col1, const VectorIndex& _vIndex1, size_t col2, const VectorIndex& _vIndex2) const;
+        mu::value_type getSpearmanCorr(size_t col1, const VectorIndex& _vIndex1, size_t col2, const VectorIndex& _vIndex2) const;
+        std::vector<mu::value_type> getRank(size_t col, const VectorIndex& _vIndex, RankingStrategy _strat) const;
+        std::vector<mu::value_type> getZScore(size_t col, const VectorIndex& _vIndex) const;
 
         bool smooth(VectorIndex _vLine, VectorIndex _vCol, NumeRe::FilterSettings _settings, AppDir Direction = ALL);
         bool retouch(VectorIndex _vLine, VectorIndex _vCol, AppDir Direction = ALL);
