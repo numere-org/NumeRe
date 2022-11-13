@@ -34,3 +34,4 @@ New	A menu option was added to compare two files and display the comparison resu
 New	It is now possible to apply conditional cell background colours to tables opened with the table viewer.
 Fixed	If single cells are selected in the table viewer, their statistics are now calculated correctly.
 Added	A whole bunch of new table methods were added: "pcorrof()", "scorrof()", "covarof()", "*rankof()", "zscoreof()", "anovaof()"
+Added	External files now feature the complete version control timeline now. The corresponding "*.revisions" file is stored in the same folder.

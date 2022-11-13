@@ -47,7 +47,9 @@ wxString VersionControlSystemManager::getRevisionPath(const wxString& currentFil
             return vDefaultPaths[i] + "/.revisions" + currentPath.substr(vDefaultPaths[i].length()) + ".revisions";
     }
 
-    return "";
+    // All other files' revisions are located next to them in the
+    // same folder.
+    return currentFilePath + ".revisions";
 }
 
 
