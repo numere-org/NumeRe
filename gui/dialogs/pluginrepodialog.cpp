@@ -267,6 +267,7 @@ wxArrayString PackageListSearchCtrl::getChildCandidates(const wxString& enteredT
 
 #define INSTALLEDCOLOUR wxColour(220,255,220)
 #define UPDATECOLOUR wxColour(220,220,255)
+#define NEWERCOLOUR wxColour(255,255,160)
 
 extern Language _guilang;
 
@@ -370,14 +371,21 @@ void PackageRepoBrowser::DetectInstalledPackages()
         {
             if (vInstalled[i].substr(0, packagenamelength+1) == m_listCtrl->GetItemText(item) + "\t")
             {
+                size_t nRepoVersion = versionToInt(m_listCtrl->GetItemText(item, REPOCOLUMN).ToStdString());
+                size_t nInstalledVersion = versionToInt(vInstalled[i].substr(packagenamelength+1));
                 // Colourize the line backgrounds correspondingly,
                 // if a match had been found
-                if (m_listCtrl->GetItemText(item, REPOCOLUMN) > "v" + vInstalled[i].substr(packagenamelength+1))
+                if (nRepoVersion > nInstalledVersion)
                 {
                     m_listCtrl->SetItemBackgroundColour(item, UPDATECOLOUR);
                     m_listCtrl->SetItemText(item, INSTALLEDCOLUMN, "v" + vInstalled[i].substr(packagenamelength+1) + " (Updateable)");
                 }
-                else
+                else if (nRepoVersion < nInstalledVersion) // the installed version is newer
+                {
+                    m_listCtrl->SetItemBackgroundColour(item, NEWERCOLOUR);
+                    m_listCtrl->SetItemText(item, INSTALLEDCOLUMN, "v" + vInstalled[i].substr(packagenamelength+1) + " (Newer)");
+                }
+                else // both are equal
                 {
                     m_listCtrl->SetItemBackgroundColour(item, INSTALLEDCOLOUR);
                     m_listCtrl->SetItemText(item, INSTALLEDCOLUMN, "v" + vInstalled[i].substr(packagenamelength+1));

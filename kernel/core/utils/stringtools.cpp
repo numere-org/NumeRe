@@ -780,6 +780,54 @@ sys_time_point StrToTime(const std::string& sString)
 
 
 /////////////////////////////////////////////////
+/// \brief Converts a version string into a
+/// multi-digit integer
+///
+/// \param sVersion std::string
+/// \return size_t
+///
+/////////////////////////////////////////////////
+size_t versionToInt(std::string sVersion)
+{
+    size_t nVOffset = 0;
+
+    if (sVersion.front() == 'v')
+        nVOffset = 1;
+
+    replaceAll(sVersion, ".", "");
+    return StrToInt(sVersion.substr(nVOffset));
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Converts a multi-digit integer into a
+/// verison string.
+///
+/// \param nVersionDigits size_t
+/// \return std::string
+///
+/////////////////////////////////////////////////
+std::string intToVersion(size_t nVersionDigits)
+{
+    std::string _sVer = toString(nVersionDigits);
+
+    // Prepend zeroes, if the length is shorter than
+    // three
+    if (_sVer.length() < 3)
+        _sVer.insert(0, 3-_sVer.length(), '0');
+
+    // Convert the version string into the M.m.b format
+    for (size_t n = 1; n < _sVer.length(); n++)
+    {
+        if (n % 2)
+            _sVer.insert(n, 1, '.');
+    }
+
+    return _sVer;
+}
+
+
+/////////////////////////////////////////////////
 /// \brief Converts a string literal to the
 /// internal representation in tables and
 /// clusters.

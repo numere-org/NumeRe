@@ -278,6 +278,30 @@ bool Script::handleInstallInformation(string& sScriptCommand)
     sScriptCommand = sScriptCommand.substr(sScriptCommand.find("<endinfo>")+9);
     sInstallID = getArgAtPos(sInstallInfoString, sInstallInfoString.find("name=")+5);
 
+    // Check whether it is necessary to install this package
+    if (sInstallInfoString.find("-version=") != std::string::npos)
+    {
+        size_t nPackageVersion = versionToInt(getArgAtPos(sInstallInfoString, sInstallInfoString.find("-version=")+9));
+
+        // Get all installed packages
+        std::vector<std::string> vInstalledPackages = NumeReKernel::getInstance()->getInstalledPackages();
+
+        // Try to detect a match
+        for (const auto& package : vInstalledPackages)
+        {
+            if (package.substr(0, package.find('\t')) == sInstallID)
+            {
+                if (versionToInt(package.substr(package.find('\t')+1)) >= nPackageVersion)
+                {
+                    isInInstallSection = false;
+                    return false;
+                }
+
+                break;
+            }
+        }
+    }
+
     // Determine, whether the current installation needs additional packages
     if (sInstallInfoString.find("requirepackages=") != string::npos)
     {
@@ -313,14 +337,7 @@ bool Script::handleInstallInformation(string& sScriptCommand)
 
     // Determine, whether a version of NumeRe is required
     if (sInstallInfoString.find("requireversion=") != string::npos)
-    {
-        string sTemp = getArgAtPos(sInstallInfoString, sInstallInfoString.find("requireversion=")+15);
-
-        while (sTemp.find('.') != string::npos)
-            sTemp.erase(sTemp.find('.'),1);
-
-        nRequiredVersion = (unsigned int)StrToInt(sTemp);
-    }
+        nRequiredVersion = versionToInt(getArgAtPos(sInstallInfoString, sInstallInfoString.find("requireversion=")+15));
 
     // Throw an error, if the current version if NumeRe is too old
     if (nRequiredVersion > nNumereVersion)
@@ -779,14 +796,92 @@ std::string Script::getNextScriptCommandFromScript()
         {
             // Execute the installation section
             if (!startInstallation(sScriptCommand))
+            {
+                // Obviously already installed
+                if (!isInInstallSection)
+                {
+                    bool shallReturn = false;
+
+                    // jump over the installation section
+                    while (nLine < m_script->getLinesCount())
+                    {
+                        sScriptCommand = m_script->getStrippedLine(nLine);
+                        nLine++;
+                        StripSpaces(sScriptCommand);
+
+                        if (sScriptCommand.substr(0,12) == "<endinstall>")
+                            break;
+
+                        if (findCommand(sScriptCommand).sString == "return")
+                            shallReturn = true;
+                        else if (sScriptCommand.length())
+                            shallReturn = false;
+                    }
+
+                    if (m_logger.is_open())
+                    {
+                        m_logger.push("--- NOT INSTALLED: NEWER OR SAME VERSION ALREADY AVAILABLE ---\n\n\n");
+                        m_logger.close();
+                    }
+
+                    if (shallReturn)
+                    {
+                        bLastScriptCommand = true;
+                        close();
+                        return "";
+                    }
+
+                    sScriptCommand.clear();
+                }
+
                 continue;
+            }
         }
 
         // Get the installation information
         if (sScriptCommand.substr(0,6) == "<info>" && isInstallMode && isInInstallSection)
         {
             if (!handleInstallInformation(sScriptCommand))
+            {
+                // Obviously already installed
+                if (!isInInstallSection)
+                {
+                    bool shallReturn = false;
+
+                    // jump over the installation section
+                    while (nLine < m_script->getLinesCount())
+                    {
+                        sScriptCommand = m_script->getStrippedLine(nLine);
+                        nLine++;
+                        StripSpaces(sScriptCommand);
+
+                        if (sScriptCommand.substr(0,12) == "<endinstall>")
+                            break;
+
+                        if (findCommand(sScriptCommand).sString == "return")
+                            shallReturn = true;
+                        else if (sScriptCommand.length())
+                            shallReturn = false;
+                    }
+
+                    if (m_logger.is_open())
+                    {
+                        m_logger.push("--- NOT INSTALLED: NEWER OR SAME VERSION ALREADY AVAILABLE ---\n\n\n");
+                        m_logger.close();
+                    }
+
+                    if (shallReturn)
+                    {
+                        bLastScriptCommand = true;
+                        close();
+                        return "";
+                    }
+
+                    sScriptCommand.clear();
+                }
+
                 continue;
+            }
         }
 
         // Write a whole file from script to file

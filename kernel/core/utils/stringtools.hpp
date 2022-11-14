@@ -123,6 +123,8 @@ double StrToDb(const std::string&);
 double StrToLogical(const std::string&);
 std::complex<double> StrToCmplx(const std::string&);
 sys_time_point StrToTime(const std::string&);
+size_t versionToInt(std::string);
+std::string intToVersion(size_t);
 
 bool isConvertible(const std::string& sStr, ConvertibleType type = CONVTYPE_VALUE);
 int detectTimeDateFormat(const std::string&);

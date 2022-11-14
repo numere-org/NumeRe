@@ -404,7 +404,11 @@ bool NumeReEditor::SaveFile( const wxString& filename )
     }
 
     VersionControlSystemManager manager(m_mainFrame);
-    std::unique_ptr<FileRevisions> revisions(manager.getRevisions(filename));
+    std::unique_ptr<FileRevisions> revisions;
+
+    // The history does not need a real revision
+    if (filename.find("numere.history") == string::npos)
+        revisions.reset(manager.getRevisions(filename));
 
     if (revisions.get())
     {

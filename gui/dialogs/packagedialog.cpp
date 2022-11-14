@@ -908,6 +908,21 @@ wxString PackageDialog::getPackageIdentifier()
 
 
 /////////////////////////////////////////////////
+/// \brief Returns the version of the defined
+/// package as a simple string.
+///
+/// \return wxString
+///
+/////////////////////////////////////////////////
+wxString PackageDialog::getPackageVersion()
+{
+    if (m_packageProperties->GetPropertyByName("-version")->GetValueAsString() == "<AUTO>")
+        return "0.0.1";
+
+    return m_packageProperties->GetPropertyByName("-version")->GetValueAsString();
+}
+
+/////////////////////////////////////////////////
 /// \brief Returns the user-chosen documentation
 /// file.
 ///

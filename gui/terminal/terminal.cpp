@@ -235,6 +235,22 @@ std::map<std::string, std::string> NumeReTerminal::getMenuMap()
 
 
 /////////////////////////////////////////////////
+/// \brief Updates an installed package with new
+/// information after the user created a package
+/// with the package creator dialog.
+///
+/// \param package const std::string&
+/// \return void
+///
+/////////////////////////////////////////////////
+void NumeReTerminal::updatePackage(const std::string& package)
+{
+    wxCriticalSectionLocker lock(m_kernelCS);
+    _kernel.getProcedureInterpreter().declareNewPackage(package);
+}
+
+
+/////////////////////////////////////////////////
 /// \brief Passes a table (as a container) to the
 /// kernel.
 ///

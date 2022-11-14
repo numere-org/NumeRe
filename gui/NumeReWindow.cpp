@@ -6964,6 +6964,37 @@ void NumeReWindow::OnCreatePackage(const wxString& projectFile)
             // Deactivate the indent on type in this case
             if (edit->getEditorSetting(NumeReEditor::SETTING_INDENTONTYPE))
                 edit->ToggleSettings(NumeReEditor::SETTING_INDENTONTYPE);
+
+            // Check, whether this package is already installed and
+            // ask the user to synchronize the package versions
+            std::vector<std::string> vPackages = m_terminal->getInstalledPackages();
+            std::string sPackageName = dlg.getPackageName().ToStdString();
+
+            for (const auto& package : vPackages)
+            {
+                if (package.substr(0, package.find('\t')) == sPackageName)
+                {
+                    size_t nInstalledVersion = versionToInt(package.substr(package.find('\t')+1));
+
+                    // Compare the installed version with the currently
+                    // packed version and ask the user, whether we shall
+                    // synchronize those two
+                    if (nInstalledVersion < versionToInt(dlg.getPackageVersion().ToStdString())
+                        && wxYES == wxMessageBox(_guilang.get("GUI_PKGDLG_UPDATEINSTALLED", sPackageName),
+                                                 _guilang.get("GUI_PKGDLG_UPDATEINSTALLED_HEAD"), wxYES_NO | wxICON_QUESTION, this))
+                    {
+                        std::string sPackage = installinfo.ToStdString();
+                        replaceAll(sPackage, "\r\n", " ");
+                        replaceAll(sPackage, "\t", " ");
+                        replaceAll(sPackage, "<info>", "");
+                        replaceAll(sPackage, "<endinfo>", "");
+
+                        m_terminal->updatePackage(sPackage);
+                    }
+
+                    break;
+                }
+            }
         }
     }
     catch (SyntaxError& e)

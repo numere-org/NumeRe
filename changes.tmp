@@ -35,3 +35,5 @@ New	It is now possible to apply conditional cell background colours to tables op
 Fixed	If single cells are selected in the table viewer, their statistics are now calculated correctly.
 Added	A whole bunch of new table methods were added: "pcorrof()", "scorrof()", "covarof()", "*rankof()", "zscoreof()", "anovaof()"
 Added	External files now feature the complete version control timeline now. The corresponding "*.revisions" file is stored in the same folder.
+Cleaned	Already installed packages with the same or a newer version won't now be overwritten by a package install or its dependencies.
+Added	If a package is created and it is also already installed, the package creator will now ask, whether the installed version shall be synchronized with the created one (e.g. will update the version number).
