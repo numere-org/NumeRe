@@ -37,3 +37,4 @@ Added	A whole bunch of new table methods were added: "pcorrof()", "scorrof()", "
 Added	External files now feature the complete version control timeline now. The corresponding "*.revisions" file is stored in the same folder.
 Cleaned	Already installed packages with the same or a newer version won't now be overwritten by a package install or its dependencies.
 Added	If a package is created and it is also already installed, the package creator will now ask, whether the installed version shall be synchronized with the created one (e.g. will update the version number).
+Fixed	Handling of the "is_CHARTYPE" functions for empty strings is now defined as return FALSE.

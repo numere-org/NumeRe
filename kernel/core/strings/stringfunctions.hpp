@@ -460,6 +460,10 @@ static StringVector strfnc_isalpha(StringFuncArgs& funcArgs)
             sCodes.push_back(false);
     }
 
+    // Handle empty strings
+    if (sCodes.empty())
+        sCodes.push_back(false);
+
     return sCodes;
 }
 
@@ -488,6 +492,10 @@ static StringVector strfnc_iscntrl(StringFuncArgs& funcArgs)
             sCodes.push_back(false);
     }
 
+    // Handle empty strings
+    if (sCodes.empty())
+        sCodes.push_back(false);
+
     return sCodes;
 }
 
@@ -512,6 +520,10 @@ static StringVector strfnc_isdigit(StringFuncArgs& funcArgs)
         else
             sCodes.push_back(false);
     }
+
+    // Handle empty strings
+    if (sCodes.empty())
+        sCodes.push_back(false);
 
     return sCodes;
 }
@@ -613,6 +625,10 @@ static StringVector strfnc_islower(StringFuncArgs& funcArgs)
             sCodes.push_back(false);
     }
 
+    // Handle empty strings
+    if (sCodes.empty())
+        sCodes.push_back(false);
+
     return sCodes;
 }
 
@@ -640,6 +656,10 @@ static StringVector strfnc_isprint(StringFuncArgs& funcArgs)
         else
             sCodes.push_back(false);
     }
+
+    // Handle empty strings
+    if (sCodes.empty())
+        sCodes.push_back(false);
 
     return sCodes;
 }
@@ -670,6 +690,10 @@ static StringVector strfnc_ispunct(StringFuncArgs& funcArgs)
             sCodes.push_back(false);
     }
 
+    // Handle empty strings
+    if (sCodes.empty())
+        sCodes.push_back(false);
+
     return sCodes;
 }
 
@@ -699,6 +723,10 @@ static StringVector strfnc_isspace(StringFuncArgs& funcArgs)
             sCodes.push_back(false);
     }
 
+    // Handle empty strings
+    if (sCodes.empty())
+        sCodes.push_back(false);
+
     return sCodes;
 }
 
@@ -727,6 +755,10 @@ static StringVector strfnc_isupper(StringFuncArgs& funcArgs)
             sCodes.push_back(false);
     }
 
+    // Handle empty strings
+    if (sCodes.empty())
+        sCodes.push_back(false);
+
     return sCodes;
 }
 
@@ -751,6 +783,10 @@ static StringVector strfnc_isxdigit(StringFuncArgs& funcArgs)
         else
             sCodes.push_back(false);
     }
+
+    // Handle empty strings
+    if (sCodes.empty())
+        sCodes.push_back(false);
 
     return sCodes;
 }
