@@ -38,3 +38,4 @@ Added	External files now feature the complete version control timeline now. The 
 Cleaned	Already installed packages with the same or a newer version won't now be overwritten by a package install or its dependencies.
 Added	If a package is created and it is also already installed, the package creator will now ask, whether the installed version shall be synchronized with the created one (e.g. will update the version number).
 Fixed	Handling of the "is_CHARTYPE" functions for empty strings is now defined as return FALSE.
+Applied	The tooltips of procedures in the file tree will now contain the documentation and signature of the main procedure in this file.

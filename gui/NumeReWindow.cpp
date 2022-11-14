@@ -95,6 +95,7 @@
 #include "../kernel/core/documentation/docgen.hpp"
 #include "../kernel/core/ui/error.hpp"
 #include "../kernel/core/io/logger.hpp"
+#include "../kernel/core/ui/calltipprovider.hpp"
 
 #include "../common/recycler.hpp"
 #include "../common/Options.h"
@@ -6087,21 +6088,42 @@ void NumeReWindow::OnTreeItemToolTip(wxTreeEvent& event)
         if (!data || data->isDir)
             return;
 
-        wxFileName pathname = data->filename;
-        wxString tooltip = _guilang.get("COMMON_FILETYPE_" + toUpperCase(pathname.GetExt().ToStdString()));
-
-        if (pathname.GetExt() == "ndat")
-            tooltip += getFileDetails(pathname);
-
         // Show revision count (if any)
         VersionControlSystemManager manager(this);
 
-        if (manager.hasRevisions(pathname.GetFullPath()))
-        {
-            std::unique_ptr<FileRevisions> revisions(manager.getRevisions(pathname.GetFullPath()));
+        wxFileName pathname = data->filename;
+        wxString tooltip;
 
-            if (revisions.get())
-                tooltip += "\n(" + revisions->getCurrentRevision() + ")";
+        if (pathname.GetExt() == "nprc")
+        {
+            NumeRe::CallTip _cTip = NumeRe::addLinebreaks(NumeRe::FindProcedureDefinition((pathname.GetPath() + "\\" + pathname.GetName()).ToStdString(), "$" + pathname.GetName().ToStdString()), 70);
+
+            tooltip = _cTip.sDefinition;
+
+            if (manager.hasRevisions(pathname.GetFullPath()))
+            {
+                std::unique_ptr<FileRevisions> revisions(manager.getRevisions(pathname.GetFullPath()));
+
+                if (revisions.get())
+                    tooltip += "  @" + revisions->getCurrentRevision();
+            }
+
+            tooltip += "\n" + _cTip.sDocumentation;
+        }
+        else
+        {
+            tooltip = _guilang.get("COMMON_FILETYPE_" + toUpperCase(pathname.GetExt().ToStdString()));
+
+            if (pathname.GetExt() == "ndat")
+                tooltip += getFileDetails(pathname);
+
+            if (manager.hasRevisions(pathname.GetFullPath()))
+            {
+                std::unique_ptr<FileRevisions> revisions(manager.getRevisions(pathname.GetFullPath()));
+
+                if (revisions.get())
+                    tooltip += "\n(" + revisions->getCurrentRevision() + ")";
+            }
         }
 
         event.SetToolTip(tooltip);
