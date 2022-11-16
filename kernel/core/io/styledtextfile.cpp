@@ -454,7 +454,7 @@ char StyledTextFile::getCharAt(size_t pos) const
     return '\0';
 }
 
-#include "logger.hpp"
+
 /////////////////////////////////////////////////
 /// \brief Can be used to change the code style
 /// detection sequences and to re-apply the lexer
