@@ -1137,11 +1137,14 @@ bool readFromFile(CommandLineParser& cmdParser)
 {
 	std::string sInput = "";
 	std::string sCommentEscapeSequence = cmdParser.getParameterValueAsString("comments", "");
+	std::string sStringSequence = cmdParser.getParameterValueAsString("qmarks", "");
 
 	bool bKeepEmptyLines = cmdParser.hasParam("keepdim") || cmdParser.hasParam("k");
 
     if (sCommentEscapeSequence != " ")
         StripSpaces(sCommentEscapeSequence);
+
+    StripSpaces(sStringSequence);
 
 	// Get the source file name from the command string or the parameter list
     std::string sFileName = cmdParser.getExprAsFileName(".txt");
@@ -1159,13 +1162,16 @@ bool readFromFile(CommandLineParser& cmdParser)
     if (sCommentEscapeSequence.length())
     {
         replaceAll(sCommentEscapeSequence, "\\t", "\t");
+        replaceAll(sStringSequence, "\\\"", "\"");
+
         EndlessVector<std::string> args = getAllArguments(sCommentEscapeSequence);
         fFile.reStyle(removeQuotationMarks(args[0]),
                       removeQuotationMarks(args[0]),
                       removeQuotationMarks(args[1]),
                       removeQuotationMarks(args[1]),
                       removeQuotationMarks(args[2]),
-                      false);
+                      sStringSequence,
+                      sStringSequence.length() != 0);
     }
 
 	// create a new vector for the file's contents

@@ -40,3 +40,5 @@ Added	If a package is created and it is also already installed, the package crea
 Fixed	Handling of the "is_CHARTYPE" functions for empty strings is now defined as return FALSE.
 Applied	The tooltips of procedures in the file tree will now contain the documentation and signature of the main procedure in this file.
 New	The functions "weekday()" and "weeknum()" can be used to obtain the number of the weekday and the number of the (ISO) calendar week.
+Fixed	The wrong order of opening and closing character sequences for block comments for "read" was resolved.
+Added	"read" may now also consider string delimiters to actually ignore comments character sequences within strings.

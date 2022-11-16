@@ -63,6 +63,7 @@ class StyledTextFile
         std::string sCommentBlockStart;
         std::string sDocCommentBlockStart;
         std::string sBlockEnd;
+        std::string sStringMarks;
 
         bool useStrings;
 
@@ -93,6 +94,7 @@ class StyledTextFile
                      const std::string& sComBlockStart,
                      const std::string& sDocComBlockStart,
                      const std::string& sComBlockEnd,
+                     const std::string& sStrMarks = "",
                      bool strings = true);
 };
 

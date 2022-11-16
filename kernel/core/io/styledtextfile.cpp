@@ -82,21 +82,26 @@ void StyledTextFile::lex()
             // Are we currently in default mode?
             if (lastStyle == DEFAULT)
             {
-                if (sDocCommentLine.length() && vFileContents[i].second.substr(j, sDocCommentLine.length()) == sDocCommentLine)
+                if (sDocCommentLine.length()
+                    && vFileContents[i].second.substr(j, sDocCommentLine.length()) == sDocCommentLine)
                 {
                     for (; j < vStyles[i].size(); j++)
                         vStyles[i][j] = COMMENT_DOC_LINE;
                 }
-                else if (sCommentLine.length() && vFileContents[i].second.substr(j, sCommentLine.length()) == sCommentLine)
+                else if (sCommentLine.length()
+                         && vFileContents[i].second.substr(j, sCommentLine.length()) == sCommentLine)
                 {
                     for (; j < vStyles[i].size(); j++)
                         vStyles[i][j] = COMMENT_LINE;
                 }
-                else if (useStrings && vFileContents[i].second[j] == '"')
+                else if (useStrings
+                         && vFileContents[i].second.substr(j, sStringMarks.length()) == sStringMarks)
                     lastStyle = STRING;
-                else if (sDocCommentBlockStart.length() && vFileContents[i].second.substr(j, sDocCommentBlockStart.length()) == sDocCommentBlockStart)
+                else if (sDocCommentBlockStart.length()
+                         && vFileContents[i].second.substr(j, sDocCommentBlockStart.length()) == sDocCommentBlockStart)
                     lastStyle = COMMENT_DOC_BLOCK;
-                else if (sCommentBlockStart.length() && vFileContents[i].second.substr(j, sCommentBlockStart.length()) == sCommentBlockStart)
+                else if (sCommentBlockStart.length()
+                         && vFileContents[i].second.substr(j, sCommentBlockStart.length()) == sCommentBlockStart)
                     lastStyle = COMMENT_BLOCK;
 
                 // Increment the position, if the current
@@ -124,7 +129,7 @@ void StyledTextFile::lex()
                     blockEndLength = 1;
                     pos = j;
 
-                    while ((pos = vFileContents[i].second.find('"', pos)) != std::string::npos)
+                    while ((pos = vFileContents[i].second.find(sStringMarks, pos)) != std::string::npos)
                     {
                         if (!pos || vFileContents[i].second[pos-1] != '\\')
                             break;
@@ -173,6 +178,7 @@ StyledTextFile::StyledTextFile(const std::string& fileName) : sFileName(fileName
     sCommentBlockStart = "#*";
     sDocCommentBlockStart = "#*!";
     sBlockEnd = "*#";
+    sStringMarks = "\"";
     useStrings = true;
 
     load();
@@ -448,7 +454,7 @@ char StyledTextFile::getCharAt(size_t pos) const
     return '\0';
 }
 
-
+#include "logger.hpp"
 /////////////////////////////////////////////////
 /// \brief Can be used to change the code style
 /// detection sequences and to re-apply the lexer
@@ -459,17 +465,25 @@ char StyledTextFile::getCharAt(size_t pos) const
 /// \param sComBlockStart const std::string&
 /// \param sDocComBlockStart const std::string&
 /// \param sComBlockEnd const std::string&
+/// \param sStrMarks const std::string&
 /// \param strings bool
 /// \return void
 ///
 /////////////////////////////////////////////////
-void StyledTextFile::reStyle(const std::string& sComLine, const std::string& sDocComLine, const std::string& sComBlockStart, const std::string& sDocComBlockStart, const std::string& sComBlockEnd, bool strings)
+void StyledTextFile::reStyle(const std::string& sComLine,
+                             const std::string& sDocComLine,
+                             const std::string& sComBlockStart,
+                             const std::string& sDocComBlockStart,
+                             const std::string& sComBlockEnd,
+                             const std::string& sStrMarks,
+                             bool strings)
 {
     sCommentLine = sComLine;
     sDocCommentLine = sDocComLine;
-    sCommentBlockStart = sComBlockEnd.length() ? sComBlockStart : "";
-    sDocCommentBlockStart = sComBlockEnd.length() ? sDocComBlockStart : "";
-    sBlockEnd = sComBlockStart.length() ? sComBlockEnd : "";
+    sCommentBlockStart = sComBlockStart;
+    sDocCommentBlockStart = sComBlockStart;
+    sBlockEnd = sComBlockEnd;
+    sStringMarks = sStrMarks;
     useStrings = strings;
 
     lex();
