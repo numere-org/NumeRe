@@ -6098,17 +6098,19 @@ void NumeReWindow::OnTreeItemToolTip(wxTreeEvent& event)
         {
             NumeRe::CallTip _cTip = NumeRe::addLinebreaks(NumeRe::FindProcedureDefinition((pathname.GetPath() + "\\" + pathname.GetName()).ToStdString(), "$" + pathname.GetName().ToStdString()), 70);
 
-            tooltip = _cTip.sDefinition;
+            tooltip = _guilang.get("COMMON_FILETYPE_NPRC");
 
             if (manager.hasRevisions(pathname.GetFullPath()))
             {
                 std::unique_ptr<FileRevisions> revisions(manager.getRevisions(pathname.GetFullPath()));
 
                 if (revisions.get())
-                    tooltip += "  @" + revisions->getCurrentRevision();
+                    tooltip += " (" + revisions->getCurrentRevision() + ")";
             }
 
-            tooltip += "\n" + _cTip.sDocumentation;
+            tooltip += "\n";
+            tooltip.append(80u, '-');
+            tooltip += "\n" + _cTip.sDefinition + "\n" + _cTip.sDocumentation;
         }
         else
         {
