@@ -142,6 +142,7 @@ value_type parser_is_string(const value_type&);
 value_type parser_time();
 value_type parser_clock();
 value_type parser_date(const value_type&, const value_type&);
+value_type parser_weeknum(const value_type&);
 value_type parser_isnan(const value_type&);
 value_type parser_interval(const value_type&, const value_type&, const value_type&);
 value_type parser_numereversion();

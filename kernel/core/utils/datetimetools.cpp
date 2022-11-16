@@ -17,6 +17,7 @@
 ******************************************************************************/
 
 #include "datetimetools.hpp"
+#include "date/iso_week.h"
 #include "windows.h"
 
 /////////////////////////////////////////////////
@@ -190,6 +191,37 @@ sys_time_point to_timePoint(double d)
     tp += std::chrono::microseconds((int64_t)std::rint(d * std::micro::den / std::micro::num));
 
     return tp;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Returns the weekday of the selected
+/// timepoint as an unsigned integer with Monday
+/// being 1u and Sunday 7u.
+///
+/// \param tp sys_time_point
+/// \return size_t
+///
+/////////////////////////////////////////////////
+size_t getWeekDay(sys_time_point tp)
+{
+    date::sys_days _sys_days = std::chrono::time_point_cast<date::days>(tp);
+    return date::weekday(_sys_days).iso_encoding();
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Returns the weeknum of the selected
+/// timepoint as an unsigned integer.
+///
+/// \param tp sys_time_point
+/// \return size_t
+///
+/////////////////////////////////////////////////
+size_t getWeekNum(sys_time_point tp)
+{
+    date::sys_days _sys_days = std::chrono::time_point_cast<date::days>(tp);
+    return unsigned(iso_week::year_weeknum_weekday(_sys_days).weeknum());
 }
 
 

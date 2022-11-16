@@ -2671,6 +2671,20 @@ value_type parser_date(const value_type& vTime, const value_type& vType)
 
 
 /////////////////////////////////////////////////
+/// \brief This function returns the calendar
+/// week associated with the passed time value.
+///
+/// \param vTime const value_type&
+/// \return value_type
+///
+/////////////////////////////////////////////////
+value_type parser_weeknum(const value_type& vTime)
+{
+    return getWeekNum(to_timePoint(vTime.real()));
+}
+
+
+/////////////////////////////////////////////////
 /// \brief Returns, whether the selected value is
 /// NaN.
 ///

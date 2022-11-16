@@ -2450,6 +2450,7 @@ bool containsStrings(const string& sLine)
             || sLine.find("getlasterror(") != string::npos
             || sLine.find("getversioninfo(") != string::npos
             || sLine.find("valtostr(") != string::npos
+            || sLine.find("weekday(") != string::npos
             || sLine.find("to_tex(") != std::string::npos)
         return true;
 

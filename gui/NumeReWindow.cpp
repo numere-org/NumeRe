@@ -6096,7 +6096,7 @@ void NumeReWindow::OnTreeItemToolTip(wxTreeEvent& event)
 
         if (pathname.GetExt() == "nprc")
         {
-            NumeRe::CallTip _cTip = NumeRe::addLinebreaks(NumeRe::FindProcedureDefinition((pathname.GetPath() + "\\" + pathname.GetName()).ToStdString(), "$" + pathname.GetName().ToStdString()), 70);
+            NumeRe::CallTip _cTip = NumeRe::addLinebreaks(NumeRe::FindProcedureDefinition((pathname.GetPath() + "\\" + pathname.GetName()).ToStdString(), "$" + pathname.GetName().ToStdString()), 75);
 
             tooltip = _guilang.get("COMMON_FILETYPE_NPRC");
 

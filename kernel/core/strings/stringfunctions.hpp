@@ -1452,6 +1452,32 @@ static StringVector strfnc_timeformat(StringFuncArgs& funcArgs)
 
 
 /////////////////////////////////////////////////
+/// \brief Implementation of the weekday()
+/// function.
+///
+/// \param funcArgs StringFuncArgs&
+/// \return StringVector
+///
+/////////////////////////////////////////////////
+static StringVector strfnc_weekday(StringFuncArgs& funcArgs)
+{
+    sys_time_point nTime = to_timePoint(funcArgs.dArg1.real());
+
+    size_t day =  getWeekDay(nTime);
+
+    if (funcArgs.nArg1 == DEFAULT_NUM_ARG || funcArgs.nArg1 == 0)
+        return to_string(day);
+
+    std::vector<std::string> weekdays = _lang.getList("COMMON_WEEKDAY_*");
+
+    if (weekdays.size() >= 7)
+        return "\"" + weekdays[day-1] + "\"";
+
+    return "\"UNDEFINED\"";
+}
+
+
+/////////////////////////////////////////////////
 /// \brief Implementation of the char()
 /// function.
 ///
@@ -2727,6 +2753,7 @@ static std::map<std::string, StringFuncHandle> getStringFuncHandles()
     mHandleTable["to_tex"]              = StringFuncHandle(DBL_VALOPT, strfnc_to_tex, false);
     mHandleTable["to_time"]             = StringFuncHandle(STR_STR, strfnc_to_time, false);
     mHandleTable["to_uppercase"]        = StringFuncHandle(STR, strfnc_to_uppercase, false);
+    mHandleTable["weekday"]             = StringFuncHandle(DBL_VALOPT, strfnc_weekday, false);
     mHandleTable["xor"]                 = StringFuncHandle(VAL, strfnc_xor, true);
 
     return mHandleTable;

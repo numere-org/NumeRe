@@ -2302,6 +2302,7 @@ namespace NumeRe
 			|| sExpression.find("getlasterror(") != std::string::npos
 			|| sExpression.find("getversioninfo(") != std::string::npos
 			|| sExpression.find("valtostr(") != std::string::npos
+			|| sExpression.find("weekday(") != std::string::npos
             || sExpression.find("to_tex(") != std::string::npos)
             return true;
 

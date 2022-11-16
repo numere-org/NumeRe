@@ -74,6 +74,9 @@ __time64_t getTime_tFromTimeStamp(const time_stamp& ts);
 double to_double(sys_time_point tp);
 sys_time_point to_timePoint(double d);
 
+size_t getWeekDay(sys_time_point tp);
+size_t getWeekNum(sys_time_point tp);
+
 time_zone getCurrentTimeZone();
 
 #endif // DATETIMETOOLS_HPP
