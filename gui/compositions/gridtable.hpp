@@ -49,6 +49,7 @@ class GridNumeReTable : public wxGridTableBase
         }
 
         NumeRe::Table getTableCopy();
+        NumeRe::Table& getTableRef();
 
         virtual int GetNumberRows();
         virtual int GetNumberCols();
@@ -78,6 +79,7 @@ class GridNumeReTable : public wxGridTableBase
         mu::value_type sum(const wxGridCellCoordsContainer& coords) const;
 
         std::vector<int> getColumnTypes() const;
+        std::vector<std::string> getCategories(int col) const;
 };
 
 

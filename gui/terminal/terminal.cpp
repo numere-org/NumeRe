@@ -694,10 +694,10 @@ void NumeReTerminal::OnThreadUpdate(wxThreadEvent& event)
                 m_wxParent->ShowHelp(task.sString);
                 break;
             case NumeReKernel::NUMERE_SHOW_TABLE:
-                m_wxParent->openTable(task.table, task.sString);
+                m_wxParent->openTable(task.table, task.sString, task.sString);
                 break;
             case NumeReKernel::NUMERE_SHOW_STRING_TABLE:
-                m_wxParent->openTable(task.stringTable, task.sString);
+                m_wxParent->openTable(task.stringTable, task.sString, task.sString);
                 break;
             case NumeReKernel::NUMERE_EDIT_TABLE:
                 m_wxParent->editTable(task.table, task.sString);

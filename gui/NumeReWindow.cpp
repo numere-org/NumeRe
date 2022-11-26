@@ -2010,17 +2010,18 @@ void NumeReWindow::openHTML(wxString HTMLcontent)
 /// contents of the "string()" table or a cluster.
 ///
 /// \param _stringTable NumeRe::Container<std::string>
-/// \param sTableName const std::string&
+/// \param tableDisplayName const std::string&
+/// \param sIntName const std::string&
 /// \return void
 ///
 /////////////////////////////////////////////////
-void NumeReWindow::openTable(NumeRe::Container<std::string> _stringTable, const std::string& sTableName)
+void NumeReWindow::openTable(NumeRe::Container<std::string> _stringTable, const std::string& tableDisplayName, const std::string& sIntName)
 {
-    ViewerFrame* frame = new ViewerFrame(this, "NumeRe: " + sTableName);
+    ViewerFrame* frame = new ViewerFrame(this, "NumeRe: " + tableDisplayName);
     registerWindow(frame, WT_TABLEVIEWER);
     frame->SetSize(800,600);
     TableViewer* grid = new TableViewer(frame, wxID_ANY, frame->CreateStatusBar(3), nullptr, wxDefaultPosition, wxDefaultSize, wxWANTS_CHARS | wxBORDER_STATIC);
-    grid->SetData(_stringTable);
+    grid->SetData(_stringTable, tableDisplayName, sIntName);
     frame->SetSize(std::min(800u, grid->GetWidth()), std::max(std::min(600u, grid->GetHeight()+50), 300u));
     frame->SetIcon(getStandardIcon());
     frame->Show();
@@ -2033,17 +2034,19 @@ void NumeReWindow::openTable(NumeRe::Container<std::string> _stringTable, const 
 /// contents of a usual table.
 ///
 /// \param _table NumeRe::Table
-/// \param sTableName const std::string&
+/// \param tableDisplayName const std::string&
+/// \param sIntName const std::string&
 /// \return void
 ///
 /////////////////////////////////////////////////
-void NumeReWindow::openTable(NumeRe::Table _table, const std::string& sTableName)
+void NumeReWindow::openTable(NumeRe::Table _table, const std::string& tableDisplayName, const std::string& sIntName)
 {
-    ViewerFrame* frame = new ViewerFrame(this, "NumeRe: " + sTableName);
+    ViewerFrame* frame = new ViewerFrame(this, "NumeRe: " + tableDisplayName);
     registerWindow(frame, WT_TABLEVIEWER);
     frame->SetSize(800,600);
     TablePanel* panel = new TablePanel(frame, wxID_ANY, frame->CreateStatusBar(3));
-    panel->grid->SetData(_table);
+    panel->SetTerminal(m_terminal);
+    panel->grid->SetData(_table, tableDisplayName, sIntName);
     frame->SetSize(std::min(800u, panel->grid->GetWidth()+200), std::max(std::min(600u, panel->grid->GetHeight()+50), 300u));
     frame->SetIcon(getStandardIcon());
     frame->Show();
@@ -2057,17 +2060,17 @@ void NumeReWindow::openTable(NumeRe::Table _table, const std::string& sTableName
 /// and enables editing its contents.
 ///
 /// \param _stringTable NumeRe::Container<std::string>
-/// \param sTableName const std::string&
+/// \param tableDisplayName const std::string&
 /// \return void
 ///
 /////////////////////////////////////////////////
-void NumeReWindow::editTable(NumeRe::Container<std::string> _stringTable, const std::string& sTableName)
+void NumeReWindow::editTable(NumeRe::Container<std::string> _stringTable, const std::string& tableDisplayName)
 {
-    ViewerFrame* frame = new ViewerFrame(this, _guilang.get("GUI_TABLEEDITOR") + " " + sTableName);
+    ViewerFrame* frame = new ViewerFrame(this, _guilang.get("GUI_TABLEEDITOR") + " " + tableDisplayName);
     frame->SetSize(800,600);
     TableEditPanel* panel = new TableEditPanel(frame, wxID_ANY, frame->CreateStatusBar(3));
     panel->SetTerminal(m_terminal);
-    panel->grid->SetData(_stringTable);
+    panel->grid->SetData(_stringTable, tableDisplayName, "");
     frame->SetSize(std::min(800u, panel->grid->GetWidth()), std::max(std::min(600u, panel->grid->GetHeight()+50), 300u));
     frame->SetIcon(getStandardIcon());
     frame->Show();
@@ -2081,17 +2084,17 @@ void NumeReWindow::editTable(NumeRe::Container<std::string> _stringTable, const 
 /// its contents.
 ///
 /// \param _table NumeRe::Table
-/// \param sTableName const std::string&
+/// \param tableDisplayName const std::string&
 /// \return void
 ///
 /////////////////////////////////////////////////
-void NumeReWindow::editTable(NumeRe::Table _table, const std::string& sTableName)
+void NumeReWindow::editTable(NumeRe::Table _table, const std::string& tableDisplayName)
 {
-    ViewerFrame* frame = new ViewerFrame(this, _guilang.get("GUI_TABLEEDITOR") + " " + sTableName);
+    ViewerFrame* frame = new ViewerFrame(this, _guilang.get("GUI_TABLEEDITOR") + " " + tableDisplayName);
     frame->SetSize(800,600);
     TableEditPanel* panel = new TableEditPanel(frame, wxID_ANY, frame->CreateStatusBar(3));
     panel->SetTerminal(m_terminal);
-    panel->grid->SetData(_table);
+    panel->grid->SetData(_table, tableDisplayName, "");
     frame->SetSize(std::min(800u, panel->grid->GetWidth()+200), std::max(std::min(600u, panel->grid->GetHeight()+50), 300u));
     frame->SetIcon(getStandardIcon());
     frame->Show();
@@ -2112,9 +2115,9 @@ void NumeReWindow::editTable(NumeRe::Table _table, const std::string& sTableName
 void NumeReWindow::showTable(const wxString& tableName, const wxString& tableDisplayName)
 {
     if (tableDisplayName == "string()" || tableDisplayName.find("{}") != std::string::npos)
-        openTable(m_terminal->getStringTable(tableName.ToStdString()), tableDisplayName.ToStdString());
+        openTable(m_terminal->getStringTable(tableName.ToStdString()), tableDisplayName.ToStdString(), tableName.ToStdString());
     else
-        openTable(m_terminal->getTable(tableName.ToStdString()), tableDisplayName.ToStdString());
+        openTable(m_terminal->getTable(tableName.ToStdString()), tableDisplayName.ToStdString(), tableName.ToStdString());
 }
 
 

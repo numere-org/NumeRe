@@ -114,6 +114,7 @@ namespace NumeRe
             void setValue(size_t i, size_t j, const mu::value_type& _dValue);
             void setValueAsString(size_t i, size_t j, const std::string& _sValue);
             void setColumn(size_t j, TableColumn* column);
+            bool setColumnType(size_t j, TableColumn::ColumnType _type);
 
             std::string getName() const;
             std::string getComment() const;
@@ -126,6 +127,7 @@ namespace NumeRe
             std::string getValueAsString(size_t i, size_t j) const;
             TableColumn* getColumn(size_t j) const;
             TableColumn::ColumnType getColumnType(size_t j) const;
+            TableColumnArray& getTableData() {return vTableData;};
 
             size_t getLines() const;
             size_t getCols() const;

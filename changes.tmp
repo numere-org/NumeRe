@@ -42,3 +42,4 @@ Applied	The tooltips of procedures in the file tree will now contain the documen
 New	The functions "weekday()" and "weeknum()" can be used to obtain the number of the weekday and the number of the (ISO) calendar week.
 Fixed	The wrong order of opening and closing character sequences for block comments for "read" was resolved.
 Added	"read" may now also consider string delimiters to actually ignore comments character sequences within strings.
+Added	The table viewer has now many more functionalities accessible via the new menu bar. It can save the table directly, convert column types and refresh the displayed contents from the kernel.

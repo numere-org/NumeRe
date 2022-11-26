@@ -760,12 +760,12 @@ void CustomWindow::layoutChild(const tinyxml2::XMLElement* currentChild, wxWindo
                 sSize.substr(0, sSize.find(',')).ToLong(&x);
                 sSize.substr(sSize.find(',')+1).ToLong(&y);
                 NumeRe::Table data(x,y);
-                table->SetData(data);
+                table->SetData(data, "", "");
             }
             else
             {
                 NumeRe::Table data(1,1);
-                table->SetData(data);
+                table->SetData(data, "", "");
             }
 
             if (currentChild->Attribute("onclick"))
@@ -1738,7 +1738,7 @@ bool CustomWindow::setItemValue(WindowItemValue& _value, int windowItemID)
         case CustomWindow::TABLE:
         {
             TableViewer* table = static_cast<TableViewer*>(object.second);
-            table->SetData(_value.tableValue);
+            table->SetData(_value.tableValue, "", "");
             break;
         }
         case CustomWindow::TREELIST:

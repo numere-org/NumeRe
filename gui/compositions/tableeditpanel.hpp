@@ -41,12 +41,18 @@ class TablePanel : public wxPanel
         wxStaticText* m_lastSaveText;
         bool finished;
 
+        NumeReTerminal* m_terminal;
+
     public:
         TableViewer* grid;
 
         TablePanel(wxFrame* parent, wxWindowID id, wxStatusBar* statusbar, bool readOnly = true);
         void update(const NumeRe::TableMetaData& meta);
+        void SetTerminal(NumeReTerminal* term) {m_terminal = term;}
+        NumeReTerminal* GetTerminal() {return m_terminal;};
         std::string getComment() const;
+        wxMenuBar* getMenuBar();
+        wxFrame* getFrame();
 
         void OnClose(wxCloseEvent& event);
 
@@ -62,13 +68,8 @@ class TablePanel : public wxPanel
 /////////////////////////////////////////////////
 class TableEditPanel : public TablePanel
 {
-    private:
-        NumeReTerminal* m_terminal;
-
     public:
         TableEditPanel(wxFrame* parent, wxWindowID id, wxStatusBar* statusbar);
-
-        void SetTerminal(NumeReTerminal* term) {m_terminal = term;}
 
         void OnButtonOk(wxCommandEvent& event);
         void OnButtonCancel(wxCommandEvent& event);

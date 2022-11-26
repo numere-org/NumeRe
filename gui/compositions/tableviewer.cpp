@@ -19,302 +19,21 @@
 #include "tableviewer.hpp"
 #include "gridtable.hpp"
 #include "tableeditpanel.hpp"
-#include "cellvalueshader.hpp"
 #include "../../kernel/core/ui/language.hpp"
 #include "../../kernel/core/utils/tools.hpp"
 #include "../../kernel/core/datamanagement/tablecolumn.hpp"
+#include "../../kernel/core/io/file.hpp"
 #include <wx/clipbrd.h>
 #include <wx/dataobj.h>
 #include <wx/tokenzr.h>
-#include <wx/renderer.h>
+
+#include <memory>
+
+#include "cellattributes.hpp"
 
 #define STATUSBAR_PRECISION 5
 #define MAXIMAL_RENDERING_SIZE 5000
 
-// Define the standard colors
-static wxColour HeadlineColor = wxColour(192, 192, 192);
-static wxColour FrameColor = wxColour(230, 230, 230);
-static wxColour HighlightColor = wxColour(192, 227, 248);
-static wxColour HighlightHeadlineColor = wxColour(131, 200, 241);
-
-/////////////////////////////////////////////////
-/// \brief Calculates the luminosity of the
-/// passed colour.
-///
-/// \param c const wxColour&
-/// \return double
-///
-/////////////////////////////////////////////////
-static double calculateLuminosity(const wxColour& c)
-{
-    return c.Red() * 0.299 + c.Green() * 0.587 + c.Blue() * 0.114;
-}
-
-
-/////////////////////////////////////////////////
-/// \brief This class represents an extension to
-/// the usual cell string renderer to provide
-/// functionalities to highlight the cursor
-/// position and automatically update the
-/// surrounding frame.
-/////////////////////////////////////////////////
-class AdvStringCellRenderer : public wxGridCellStringRenderer
-{
-    protected:
-        CellValueShader m_shader;
-
-        bool isHeadLine(const wxGrid& grid, int row)
-        {
-            return grid.GetRowLabelValue(row) == "#";
-        }
-
-        bool isFrame(const wxGrid& grid, int row, int col)
-        {
-            return col+1 == grid.GetNumberCols() || row+1 == grid.GetNumberRows();
-        }
-
-        bool isPartOfCursor(const wxGrid& grid, int row, int col)
-        {
-            return (grid.GetCursorColumn() == col || grid.GetCursorRow() == row)
-                && !isFrame(grid, row, col);
-        }
-
-        bool hasCustomColor()
-        {
-            return m_shader.isActive();
-        }
-
-        wxGridCellAttr* createHighlightedAttr(const wxGridCellAttr& attr, const wxGrid& grid, int row, int col)
-        {
-            wxGridCellAttr* highlightAttr;
-
-            if (isHeadLine(grid, row))
-            {
-                highlightAttr = attr.Clone();
-                highlightAttr->SetBackgroundColour(HighlightHeadlineColor);
-                highlightAttr->SetFont(highlightAttr->GetFont().Bold());
-                highlightAttr->SetAlignment(wxALIGN_LEFT, wxALIGN_CENTER);
-            }
-            else if (hasCustomColor())
-            {
-                highlightAttr = createCustomColorAttr(attr, grid, row, col);
-                //static double highlightLuminosity = calculateLuminosity(HighlightColor);
-                double bgLuminosity = calculateLuminosity(highlightAttr->GetBackgroundColour());
-//                double factor = (bgLuminosity/highlightLuminosity-1.0)*0.8 + 1.0;
-                double factor = ((bgLuminosity / 255.0 * 0.8) + 0.2);
-
-                highlightAttr->SetBackgroundColour(wxColour(std::min(255.0, HighlightColor.Red() * factor),
-                                                            std::min(255.0, HighlightColor.Green() * factor),
-                                                            std::min(255.0, HighlightColor.Blue() * factor)));
-            }
-            else
-            {
-                highlightAttr = attr.Clone();
-                highlightAttr->SetBackgroundColour(HighlightColor);
-            }
-
-            return highlightAttr;
-        }
-
-        wxGridCellAttr* createFrameAttr(const wxGridCellAttr& attr)
-        {
-            wxGridCellAttr* frameAttr = attr.Clone();
-            frameAttr->SetBackgroundColour(FrameColor);
-            return frameAttr;
-        }
-
-        wxGridCellAttr* createHeadlineAttr(const wxGridCellAttr& attr)
-        {
-            wxGridCellAttr* headlineAttr = attr.Clone();
-            headlineAttr->SetBackgroundColour(HeadlineColor);
-            headlineAttr->SetFont(headlineAttr->GetFont().Bold());
-            headlineAttr->SetAlignment(wxALIGN_LEFT, wxALIGN_CENTER);
-            return headlineAttr;
-        }
-
-        wxGridCellAttr* createCustomColorAttr(const wxGridCellAttr& attr, const wxGrid& grid, int row, int col)
-        {
-            wxGridCellAttr* customAttr = attr.Clone();
-
-            if (grid.GetTable()->CanGetValueAs(row, col, "complex"))
-                customAttr->SetBackgroundColour(m_shader.getColour(*static_cast<mu::value_type*>(grid.GetTable()->GetValueAsCustom(row, col, "complex"))));
-            else if (grid.GetTable()->CanGetValueAs(row, col, wxGRID_VALUE_NUMBER) || grid.GetTable()->CanGetValueAs(row, col, "datetime"))
-                customAttr->SetBackgroundColour(m_shader.getColour(mu::value_type(grid.GetTable()->GetValueAsDouble(row, col))));
-            else if (grid.GetTable()->CanGetValueAs(row, col, wxGRID_VALUE_BOOL))
-                customAttr->SetBackgroundColour(m_shader.getColour(mu::value_type(grid.GetTable()->GetValueAsBool(row, col))));
-            else
-                customAttr->SetBackgroundColour(m_shader.getColour(grid.GetTable()->GetValue(row, col)));
-
-            // Calculate luminosity and correct text colour, if necessary
-            const wxColour& bgColour = customAttr->GetBackgroundColour();
-            double luminosity = calculateLuminosity(bgColour);
-
-            if (luminosity < 128)
-            {
-                luminosity = 255;//std::min(255.0, 255 - luminosity + 10);
-                customAttr->SetTextColour(wxColour(luminosity, luminosity, luminosity));
-            }
-
-            return customAttr;
-        }
-
-    public:
-        AdvStringCellRenderer(const CellValueShader shader = CellValueShader()) : m_shader(shader) {}
-
-        virtual void Draw(wxGrid& grid,
-                          wxGridCellAttr& attr,
-                          wxDC& dc,
-                          const wxRect& rect,
-                          int row, int col,
-                          bool isSelected)
-        {
-            if (isPartOfCursor(grid, row, col))
-            {
-                wxGridCellAttr* newAttr = createHighlightedAttr(attr, grid, row, col);
-                wxGridCellStringRenderer::Draw(grid, *newAttr, dc, rect, row, col, isSelected);
-                newAttr->DecRef();
-            }
-            else if (isFrame(grid, row, col))
-            {
-                wxGridCellAttr* newAttr = createFrameAttr(attr);
-                wxGridCellStringRenderer::Draw(grid, *newAttr, dc, rect, row, col, isSelected);
-                newAttr->DecRef();
-            }
-            else if (isHeadLine(grid, row))
-            {
-                wxGridCellAttr* newAttr = createHeadlineAttr(attr);
-                wxGridCellStringRenderer::Draw(grid, *newAttr, dc, rect, row, col, isSelected);
-                newAttr->DecRef();
-            }
-            else if (hasCustomColor())
-            {
-                wxGridCellAttr* newAttr = createCustomColorAttr(attr, grid, row, col);
-                wxGridCellStringRenderer::Draw(grid, *newAttr, dc, rect, row, col, isSelected);
-                newAttr->DecRef();
-            }
-            else
-                wxGridCellStringRenderer::Draw(grid, attr, dc, rect, row, col, isSelected);
-        }
-
-        virtual wxGridCellRenderer *Clone() const
-            { return new AdvStringCellRenderer(m_shader); }
-};
-
-
-/////////////////////////////////////////////////
-/// \brief This class represents a special
-/// renderer for three-state booleans, i.e.
-/// booleans, which may have a undefined (e.g.
-/// NAN) value.
-/////////////////////////////////////////////////
-class AdvBooleanCellRenderer : public AdvStringCellRenderer
-{
-    public:
-        AdvBooleanCellRenderer(const CellValueShader& shader = CellValueShader()) : AdvStringCellRenderer(shader) {}
-
-    // draw a check mark or nothing
-        virtual void Draw(wxGrid& grid,
-                          wxGridCellAttr& attr,
-                          wxDC& dc,
-                          const wxRect& rect,
-                          int row, int col,
-                          bool isSelected)
-        {
-            if (grid.GetTable()->CanGetValueAs(row, col, wxGRID_VALUE_BOOL) && !isHeadLine(grid, row))
-            {
-                if (isPartOfCursor(grid, row, col))
-                {
-                    wxGridCellAttr* newAttr = createHighlightedAttr(attr, grid, row, col);
-                    wxGridCellRenderer::Draw(grid, *newAttr, dc, rect, row, col, isSelected);
-                    newAttr->DecRef();
-                }
-                else if (isFrame(grid, row, col))
-                {
-                    wxGridCellAttr* newAttr = createFrameAttr(attr);
-                    wxGridCellRenderer::Draw(grid, *newAttr, dc, rect, row, col, isSelected);
-                    newAttr->DecRef();
-                }
-                else if (hasCustomColor())
-                {
-                    wxGridCellAttr* newAttr = createCustomColorAttr(attr, grid, row, col);
-                    wxGridCellRenderer::Draw(grid, *newAttr, dc, rect, row, col, isSelected);
-                    newAttr->DecRef();
-                }
-                else
-                    wxGridCellRenderer::Draw(grid, attr, dc, rect, row, col, isSelected);
-
-                // draw a check mark in the centre (ignoring alignment - TODO)
-                wxSize size = GetBestSize(grid, attr, dc, row, col);
-
-                // don't draw outside the cell
-                wxCoord minSize = wxMin(rect.width, rect.height);
-                if ( size.x >= minSize || size.y >= minSize )
-                {
-                    // and even leave (at least) 1 pixel margin
-                    size.x = size.y = minSize;
-                }
-
-                // draw a border around checkmark
-                int vAlign, hAlign;
-                attr.GetAlignment(&hAlign, &vAlign);
-
-                wxRect rectBorder;
-                if (hAlign == wxALIGN_CENTRE)
-                {
-                    rectBorder.x = rect.x + rect.width / 2 - size.x / 2;
-                    rectBorder.y = rect.y + rect.height / 2 - size.y / 2;
-                    rectBorder.width = size.x;
-                    rectBorder.height = size.y;
-                }
-                else if (hAlign == wxALIGN_LEFT)
-                {
-                    rectBorder.x = rect.x + 2;
-                    rectBorder.y = rect.y + rect.height / 2 - size.y / 2;
-                    rectBorder.width = size.x;
-                    rectBorder.height = size.y;
-                }
-                else if (hAlign == wxALIGN_RIGHT)
-                {
-                    rectBorder.x = rect.x + rect.width - size.x - 2;
-                    rectBorder.y = rect.y + rect.height / 2 - size.y / 2;
-                    rectBorder.width = size.x;
-                    rectBorder.height = size.y;
-                }
-
-                bool value = grid.GetTable()->GetValueAsBool(row, col);
-                int flags = 0;
-
-                if (value)
-                    flags |= wxCONTROL_CHECKED;
-
-                wxRendererNative::Get().DrawCheckBox( &grid, dc, rectBorder, flags );
-            }
-            else
-                AdvStringCellRenderer::Draw(grid, attr, dc, rect, row, col, isSelected);
-        }
-
-        // return the checkmark size
-        virtual wxSize GetBestSize(wxGrid& grid,
-                                   wxGridCellAttr& attr,
-                                   wxDC& dc,
-                                   int row, int col)
-        {
-            // Calculate only once bc, "---" is wider than the checkmark
-            if (!bestSize.x)
-                bestSize = DoGetBestSize(attr, dc, "---");
-
-            return bestSize;
-        }
-
-        virtual wxGridCellRenderer *Clone() const
-            { return new AdvBooleanCellRenderer(m_shader); }
-
-    private:
-        static wxSize bestSize;
-};
-
-
-wxSize AdvBooleanCellRenderer::bestSize;
 
 extern Language _guilang;
 
@@ -325,7 +44,7 @@ BEGIN_EVENT_TABLE(TableViewer, wxGrid)
     EVT_GRID_CELL_RIGHT_CLICK   (TableViewer::OnCellRightClick)
     EVT_GRID_LABEL_RIGHT_CLICK  (TableViewer::OnLabelRightClick)
     EVT_GRID_LABEL_LEFT_DCLICK  (TableViewer::OnLabelDoubleClick)
-    EVT_MENU_RANGE              (ID_MENU_INSERT_ROW, ID_MENU_CVS, TableViewer::OnMenu)
+    EVT_MENU_RANGE              (ID_MENU_SAVE, ID_MENU_CVS, TableViewer::OnMenu)
     EVT_GRID_SELECT_CELL        (TableViewer::OnCellSelect)
     EVT_GRID_RANGE_SELECT       (TableViewer::OnCellRangeSelect)
 END_EVENT_TABLE()
@@ -366,6 +85,7 @@ TableViewer::TableViewer(wxWindow* parent, wxWindowID id, wxStatusBar* statusbar
     {
         int widths[3] = {120, 120, -1};
         m_statusBar->SetStatusWidths(3, widths);
+        createMenuBar();
     }
 }
 
@@ -425,6 +145,9 @@ void TableViewer::layoutGrid()
                 SetColAttr(j, attr);
             }
         }
+
+        // Set the default editor for this grid
+        SetDefaultEditor(new CombinedCellEditor(this));
     }
     else
     {
@@ -604,15 +327,36 @@ void TableViewer::OnCellRangeSelect(wxGridRangeSelectEvent& event)
 {
     if (event.Selecting())
     {
-        for (int i = event.GetTopLeftCoords().GetRow(); i <= event.GetBottomRightCoords().GetRow(); i++)
+        if (event.GetTopLeftCoords() == wxGridCellCoords(0, 0)
+            && event.GetBottomRightCoords() == wxGridCellCoords(GetRows()-1, GetCols()-1))
         {
-            for (int j = event.GetTopLeftCoords().GetCol(); j <= event.GetBottomRightCoords().GetCol(); j++)
-            {
-                selectedCells.Add(wxGridCellCoords(i, j));
-            }
+            updateStatusBar(wxGridCellCoordsContainer(event.GetTopLeftCoords(), event.GetBottomRightCoords()));
+            selectedCells.Clear();
         }
+        else if (!selectedCells.size())
+        {
+            for (int i = event.GetTopLeftCoords().GetRow(); i <= event.GetBottomRightCoords().GetRow(); i++)
+            {
+                for (int j = event.GetTopLeftCoords().GetCol(); j <= event.GetBottomRightCoords().GetCol(); j++)
+                {
+                    selectedCells.Add(wxGridCellCoords(i, j));
+                }
+            }
 
-        updateStatusBar(wxGridCellCoordsContainer(selectedCells));
+            updateStatusBar(wxGridCellCoordsContainer(event.GetTopLeftCoords(), event.GetBottomRightCoords()));
+        }
+        else
+        {
+            for (int i = event.GetTopLeftCoords().GetRow(); i <= event.GetBottomRightCoords().GetRow(); i++)
+            {
+                for (int j = event.GetTopLeftCoords().GetCol(); j <= event.GetBottomRightCoords().GetCol(); j++)
+                {
+                    selectedCells.Add(wxGridCellCoords(i, j));
+                }
+            }
+
+            updateStatusBar(wxGridCellCoordsContainer(selectedCells));
+        }
     }
     else
         selectedCells.Clear();
@@ -1446,6 +1190,58 @@ void TableViewer::updateStatusBar(const wxGridCellCoordsContainer& coords, wxGri
 
 
 /////////////////////////////////////////////////
+/// \brief Creates a menu bar in the top frame.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
+void TableViewer::createMenuBar()
+{
+    if (!m_parentPanel)
+        return;
+
+    wxMenuBar* menuBar = m_parentPanel->getMenuBar();
+
+    // Create the file menu
+    wxMenu* menuFile = new wxMenu();
+
+    menuFile->Append(ID_MENU_SAVE, _guilang.get("GUI_MENU_SAVEFILE"));
+    menuFile->Append(ID_MENU_SAVE_AS, _guilang.get("GUI_MENU_SAVEFILEAS"));
+
+    menuBar->Append(menuFile, _guilang.get("GUI_MENU_FILE"));
+
+    // Create the edit menu
+    wxMenu* menuEdit = new wxMenu();
+
+    menuEdit->Append(ID_MENU_COPY, _guilang.get("GUI_COPY_TABLE_CONTENTS") + "\tCtrl-C");
+    menuEdit->Append(ID_MENU_PASTE, _guilang.get("GUI_PASTE_TABLE_CONTENTS") + "\tCtrl-V");
+    menuEdit->Append(ID_MENU_PASTE_HERE, _guilang.get("GUI_PASTE_TABLE_CONTENTS_HERE") + "\tCtrl-Shift-V");
+    menuEdit->AppendSeparator();
+    menuEdit->Append(ID_MENU_INSERT_ROW, _guilang.get("GUI_INSERT_TABLE_ROW"));
+    menuEdit->Append(ID_MENU_INSERT_COL, _guilang.get("GUI_INSERT_TABLE_COL"));
+    menuEdit->Append(ID_MENU_INSERT_CELL, _guilang.get("GUI_INSERT_TABLE_CELL"));
+    menuEdit->AppendSeparator();
+    menuEdit->Append(ID_MENU_REMOVE_ROW, _guilang.get("GUI_REMOVE_TABLE_ROW"));
+    menuEdit->Append(ID_MENU_REMOVE_COL, _guilang.get("GUI_REMOVE_TABLE_COL"));
+    menuEdit->Append(ID_MENU_REMOVE_CELL, _guilang.get("GUI_REMOVE_TABLE_CELL"));
+
+    menuBar->Append(menuEdit, _guilang.get("GUI_MENU_EDIT"));
+
+    // Create the tools menu
+    wxMenu* menuTools = new wxMenu();
+
+    menuTools->Append(ID_MENU_RELOAD, _guilang.get("GUI_TABLE_RELOAD") + "\tCtrl-R");
+    menuTools->Append(ID_MENU_CHANGE_COL_TYPE, _guilang.get("GUI_TABLE_CHANGE_COL_TYPE") + "\tCtrl-T");
+    menuTools->Append(ID_MENU_CVS, _guilang.get("GUI_TABLE_CVS") + "\tCtrl-Shift-F");
+
+    menuBar->Append(menuTools, _guilang.get("GUI_MENU_TOOLS"));
+
+    wxFrame* parFrame = m_parentPanel->getFrame();
+    parFrame->Bind(wxEVT_MENU, &TableViewer::OnMenu, this);
+}
+
+
+/////////////////////////////////////////////////
 /// \brief This member function returns the
 /// contents of the selected cells and replaces
 /// whitespaces with underscores on-the-fly.
@@ -1655,11 +1451,16 @@ std::vector<wxString> TableViewer::getLinesFromPaste(const wxString& data)
 /// setter for string and cluster tables.
 ///
 /// \param _stringTable NumeRe::Container<std::string>&
+/// \param sName const std::string&
+/// \param sIntName const std::string&
 /// \return void
 ///
 /////////////////////////////////////////////////
-void TableViewer::SetData(NumeRe::Container<std::string>& _stringTable)
+void TableViewer::SetData(NumeRe::Container<std::string>& _stringTable, const std::string& sName, const std::string& sIntName)
 {
+    m_displayName = sName;
+    m_intName = sIntName;
+
     if (!_stringTable.getCols() || !_stringTable.getRows())
     {
         createZeroElementTable();
@@ -1689,6 +1490,16 @@ void TableViewer::SetData(NumeRe::Container<std::string>& _stringTable)
         }
     }
 
+    if (m_parentPanel)
+    {
+        wxMenuBar* menuBar = m_parentPanel->getMenuBar();
+
+        wxMenu* toolsMenu = menuBar->GetMenu(menuBar->FindMenu(_guilang.get("GUI_MENU_TOOLS")));
+
+        if (toolsMenu)
+            toolsMenu->Enable(ID_MENU_CHANGE_COL_TYPE, false);
+    }
+
     layoutGrid();
 
     updateStatusBar(wxGridCellCoordsContainer(wxGridCellCoords(0,0), wxGridCellCoords(this->GetRows()-1, this->GetCols()-1)));
@@ -1702,13 +1513,17 @@ void TableViewer::SetData(NumeRe::Container<std::string>& _stringTable)
 /// the data for the grid.
 ///
 /// \param _table NumeRe::Table&
+/// \param sName const std::string&
 /// \return void
 ///
 /////////////////////////////////////////////////
-void TableViewer::SetData(NumeRe::Table& _table)
+void TableViewer::SetData(NumeRe::Table& _table, const std::string& sName, const std::string& sIntName)
 {
     if (m_parentPanel)
         m_parentPanel->update(_table.getMetaData());
+
+    m_displayName = sName;
+    m_intName = sIntName;
 
     // Create an empty table, if necessary
     if (_table.isEmpty() || !_table.getLines())
@@ -1755,6 +1570,34 @@ void TableViewer::SetTableReadOnly(bool isReadOnly)
         m_popUpMenu.Append(ID_MENU_REMOVE_ROW, _guilang.get("GUI_REMOVE_TABLE_ROW"));
         m_popUpMenu.Append(ID_MENU_REMOVE_COL, _guilang.get("GUI_REMOVE_TABLE_COL"));
         m_popUpMenu.Append(ID_MENU_REMOVE_CELL, _guilang.get("GUI_REMOVE_TABLE_CELL"));
+
+        if (m_parentPanel)
+        {
+            wxMenuBar* menuBar = m_parentPanel->getMenuBar();
+
+            wxMenu* toolsMenu = menuBar->GetMenu(menuBar->FindMenu(_guilang.get("GUI_MENU_TOOLS")));
+
+            if (toolsMenu)
+                toolsMenu->Enable(ID_MENU_RELOAD, false);
+        }
+    }
+    else if (m_parentPanel)
+    {
+        wxMenuBar* menuBar = m_parentPanel->getMenuBar();
+
+        wxMenu* editMenu = menuBar->GetMenu(menuBar->FindMenu(_guilang.get("GUI_MENU_EDIT")));
+
+        if (editMenu)
+        {
+            editMenu->Enable(ID_MENU_PASTE, false);
+            editMenu->Enable(ID_MENU_PASTE_HERE, false);
+            editMenu->Enable(ID_MENU_INSERT_ROW, false);
+            editMenu->Enable(ID_MENU_INSERT_COL, false);
+            editMenu->Enable(ID_MENU_INSERT_CELL, false);
+            editMenu->Enable(ID_MENU_REMOVE_ROW, false);
+            editMenu->Enable(ID_MENU_REMOVE_COL, false);
+            editMenu->Enable(ID_MENU_REMOVE_CELL, false);
+        }
     }
 }
 
@@ -1771,30 +1614,31 @@ void TableViewer::SetTableReadOnly(bool isReadOnly)
 /////////////////////////////////////////////////
 void TableViewer::SetDefaultSize(size_t rows, size_t cols)
 {
-    this->CreateGrid(rows+1,cols+1);
+    CreateGrid(rows+1,cols+1);
+
     for (size_t i = 0; i < rows+1; i++)
     {
-        this->SetRowLabelValue(i, GetRowLabelValue(i));
+        SetRowLabelValue(i, GetRowLabelValue(i));
+
         for (size_t j = 0; j < cols+1; j++)
         {
             if (i < 1)
             {
-                this->SetCellAlignment(i, j, wxALIGN_RIGHT, wxALIGN_CENTRE);
-                this->SetCellFont(i, j, this->GetCellFont(i, j).MakeBold());
-                this->SetCellBackgroundColour(i, j, *wxLIGHT_GREY);
+                SetCellAlignment(i, j, wxALIGN_RIGHT, wxALIGN_CENTRE);
+                SetCellFont(i, j, this->GetCellFont(i, j).MakeBold());
+                SetCellBackgroundColour(i, j, *wxLIGHT_GREY);
             }
             else if (i == rows || j == cols)
             {
-                this->SetColLabelValue(j, GetColLabelValue(j));
-                this->SetCellBackgroundColour(i, j, wxColor(230,230,230));
-                this->SetReadOnly(i, j, readOnly);
+                SetColLabelValue(j, GetColLabelValue(j));
+                SetCellBackgroundColour(i, j, wxColor(230,230,230));
+                SetReadOnly(i, j, readOnly);
                 continue;
             }
             else
-            {
-                this->SetCellAlignment(i, j, wxALIGN_RIGHT, wxALIGN_CENTER);
-            }
-            this->SetReadOnly(i, j, readOnly);
+                SetCellAlignment(i, j, wxALIGN_RIGHT, wxALIGN_CENTER);
+
+            SetReadOnly(i, j, readOnly);
         }
     }
 }
@@ -1810,7 +1654,7 @@ void TableViewer::SetDefaultSize(size_t rows, size_t cols)
 /////////////////////////////////////////////////
 void TableViewer::OnCellRightClick(wxGridEvent& event)
 {
-    m_lastRightClick = wxGridCellCoords(event.GetRow(), event.GetCol());
+    m_lastRightClick.Set(event.GetRow(), event.GetCol());
 
     if (!readOnly)
     {
@@ -1820,7 +1664,15 @@ void TableViewer::OnCellRightClick(wxGridEvent& event)
         m_popUpMenu.Enable(ID_MENU_PASTE_HERE, true);
     }
 
-    PopupMenu(&m_popUpMenu, event.GetPosition());
+    int id = GetPopupMenuSelectionFromUser(m_popUpMenu, event.GetPosition());
+
+    if (id == wxID_NONE)
+        m_lastRightClick.Set(-1, -1);
+    else
+    {
+        wxCommandEvent evt(wxEVT_MENU, id);
+        GetEventHandler()->ProcessEvent(evt);
+    }
 }
 
 
@@ -1834,7 +1686,7 @@ void TableViewer::OnCellRightClick(wxGridEvent& event)
 /////////////////////////////////////////////////
 void TableViewer::OnLabelRightClick(wxGridEvent& event)
 {
-    m_lastRightClick = wxGridCellCoords(event.GetRow(), event.GetCol());
+    m_lastRightClick.Set(event.GetRow(), event.GetCol());
 
     if (!readOnly)
     {
@@ -1860,7 +1712,15 @@ void TableViewer::OnLabelRightClick(wxGridEvent& event)
         m_popUpMenu.Enable(ID_MENU_PASTE_HERE, false);
     }
 
-    PopupMenu(&m_popUpMenu, event.GetPosition());
+    int id = GetPopupMenuSelectionFromUser(m_popUpMenu, event.GetPosition());
+
+    if (id == wxID_NONE)
+        m_lastRightClick.Set(-1, -1);
+    else
+    {
+        wxCommandEvent evt(wxEVT_MENU, id);
+        GetEventHandler()->ProcessEvent(evt);
+    }
 }
 
 
@@ -1876,8 +1736,17 @@ void TableViewer::OnLabelRightClick(wxGridEvent& event)
 /////////////////////////////////////////////////
 void TableViewer::OnMenu(wxCommandEvent& event)
 {
+    if (m_lastRightClick.GetRow() == -1 && m_lastRightClick.GetCol() == -1)
+        m_lastRightClick.Set(GetCursorRow(), GetCursorColumn());
+
     switch (event.GetId())
     {
+        case ID_MENU_SAVE:
+            saveTable();
+            break;
+        case ID_MENU_SAVE_AS:
+            saveTable(true);
+            break;
         // fallthrough intended
         case ID_MENU_INSERT_ROW:
         case ID_MENU_INSERT_COL:
@@ -1898,10 +1767,18 @@ void TableViewer::OnMenu(wxCommandEvent& event)
         case ID_MENU_PASTE_HERE:
             pasteContents(true);
             break;
+        case ID_MENU_RELOAD:
+            reloadTable();
+            break;
+        case ID_MENU_CHANGE_COL_TYPE:
+            changeColType();
+            break;
         case ID_MENU_CVS:
             applyConditionalCellColourScheme();
             break;
     }
+
+    m_lastRightClick.Set(-1, -1);
 }
 
 
@@ -1988,6 +1865,180 @@ void TableViewer::removeElement(int id)
     }
 
     updateFrame();
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Saves the currently displayed table
+/// directly to the selected file.
+///
+/// \param saveAs bool
+/// \return void
+///
+/////////////////////////////////////////////////
+void TableViewer::saveTable(bool saveAs)
+{
+    if (!isGridNumeReTable || !m_parentPanel)
+        return;
+
+    NumeReTerminal* term = m_parentPanel->GetTerminal();
+    std::vector<std::string> vPaths = term->getPathSettings();
+    std::string filename = m_displayName.substr(0, m_displayName.find_first_of("({")) + ".ndat";
+
+    // Get the filename from the user
+    if (saveAs || !filename.length())
+    {
+        wxFileDialog fd(this, _guilang.get("GUI_VARVIEWER_SAVENAME"), vPaths[SAVEPATH], filename,
+                        _guilang.get("COMMON_FILETYPE_NDAT") + " (*.ndat)|*.ndat|"
+                        + _guilang.get("COMMON_FILETYPE_DAT") + " (*.dat)|*.dat|"
+                        + _guilang.get("COMMON_FILETYPE_TXT") + " (*.txt)|*.txt|"
+                        + _guilang.get("COMMON_FILETYPE_CSV") + " (*.csv)|*.csv|"
+                        + _guilang.get("COMMON_FILETYPE_XLS") + " (*.xls)|*.xls|"
+                        + _guilang.get("COMMON_FILETYPE_TEX") + " (*.tex)|*.tex",
+                        wxFD_SAVE | wxFD_OVERWRITE_PROMPT);
+
+        if (fd.ShowModal() == wxID_CANCEL)
+            return;
+
+        filename = fd.GetPath().ToStdString();
+    }
+    else
+        filename = vPaths[SAVEPATH ] + "/" + filename;
+
+    // Try to open the file type
+    std::unique_ptr<NumeRe::GenericFile> file(NumeRe::getFileByType(filename));
+
+    if (!file)
+    {
+        wxMessageBox("Cannot save to this file: " + filename, "NumeRe: Error", wxID_OK | wxICON_ERROR, this);
+        return;
+    }
+
+    // Get a reference to the table and copy the
+    // necessary fields to the file
+    NumeRe::Table& table = static_cast<GridNumeReTable*>(GetTable())->getTableRef();
+    file->setDimensions(table.getLines(), table.getCols());
+    file->setData(&table.getTableData(), table.getLines(), table.getCols());
+    file->setTableName(m_displayName.substr(0, m_displayName.find_first_of("({")));
+    file->setTextfilePrecision(7);
+
+    if (file->getExtension() == "ndat")
+        static_cast<NumeRe::NumeReDataFile*>(file.get())->setComment(table.getMetaData().comment);
+
+    // Try to write to the file
+    try
+    {
+        file->write();
+    }
+    catch (...)
+    {
+        wxMessageBox("Cannot save to this file: " + filename, "NumeRe: Error", wxID_OK | wxICON_ERROR, this);
+        return;
+    }
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Reloads the currently displayed table
+/// data from the kernel.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
+void TableViewer::reloadTable()
+{
+    if (!m_parentPanel)
+        return;
+
+    NumeReTerminal* term = m_parentPanel->GetTerminal();
+
+    if (isGridNumeReTable)
+    {
+        NumeRe::Table _tab = term->getTable(m_intName);
+        SetData(_tab, m_displayName, m_intName);
+    }
+    else
+    {
+        NumeRe::Container<std::string> _strTab = term->getStringTable(m_intName);
+        SetData(_strTab, m_displayName, m_intName);
+    }
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Enables the switching of the column
+/// types of the selected columns.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
+void TableViewer::changeColType()
+{
+    if (!isGridNumeReTable)
+        return;
+
+    wxGridCellCoordsContainer coordsContainer;
+
+    // Handle all possible selection types
+    if (GetSelectionBlockTopLeft().size() && GetSelectionBlockBottomRight().size()) // block layout
+        coordsContainer = wxGridCellCoordsContainer(GetSelectionBlockTopLeft()[0], GetSelectionBlockBottomRight()[0]);
+    else if (GetSelectedCols().size()) // multiple selected columns
+        coordsContainer = wxGridCellCoordsContainer(GetSelectedCols(), GetRows()-1, false);
+    else if (GetSelectedCells().size())
+        coordsContainer = wxGridCellCoordsContainer(GetSelectedCells());
+    else
+        coordsContainer = wxGridCellCoordsContainer(wxArrayInt(1, GetCursorColumn()), GetRows()-1, false);
+
+    // Get the target column type
+    std::vector<std::string> vTypes = TableColumn::getTypesAsString();
+    wxArrayString types;
+
+    for (const auto& t : vTypes)
+    {
+        types.Add(t);
+    }
+
+    wxString strType = wxGetSingleChoice(_guilang.get("GUI_TABLE_CHANGE_TYPE"), _guilang.get("GUI_TABLE_CHANGE_TYPE_HEAD"), types, 0, this);
+
+    if (!strType.length())
+        return;
+
+    // Get the type ID
+    TableColumn::ColumnType type = TableColumn::stringToType(strType.ToStdString());
+
+    // Change the column types
+    wxGridCellsExtent _extent = coordsContainer.getExtent();
+    NumeRe::Table& _table = static_cast<GridNumeReTable*>(GetTable())->getTableRef();
+
+    for (int j = _extent.m_topleft.GetCol(); j <= _extent.m_bottomright.GetCol(); j++)
+    {
+        if (!coordsContainer.contains(0, j))
+            continue;
+
+        // Change the typ of this column
+        if (_table.setColumnType(j, type))
+        {
+            // We have to refresh the alignment and to update the
+            // renderers as well
+            UpdateColumnAlignment(j);
+        }
+    }
+
+    // Refresh now, bc. we probably changed the renderers
+    Refresh();
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Ensure that the editors are all
+/// closed.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
+void TableViewer::finalize()
+{
+    SaveEditControlValue();
 }
 
 

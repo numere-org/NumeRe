@@ -94,6 +94,7 @@ struct TableColumn
     static std::string getDefaultColumnHead(size_t colNo);
     static std::string typeToString(ColumnType type);
     static ColumnType stringToType(const std::string& sType);
+    static std::vector<std::string> getTypesAsString();
 };
 
 

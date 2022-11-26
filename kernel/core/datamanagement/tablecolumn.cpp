@@ -281,3 +281,16 @@ TableColumn::ColumnType TableColumn::stringToType(const std::string& sType)
     return TYPE_NONE;
 }
 
+
+/////////////////////////////////////////////////
+/// \brief Returns a list of all available column
+/// types as strings.
+///
+/// \return std::vector<std::string>
+///
+/////////////////////////////////////////////////
+std::vector<std::string> TableColumn::getTypesAsString()
+{
+    return {"value", "string", "datetime", "logical", "category"};
+}
+

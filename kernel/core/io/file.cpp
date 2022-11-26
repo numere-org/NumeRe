@@ -339,7 +339,7 @@ namespace NumeRe
                 else
                 {
                     if (fileData->at(j)->m_type == TableColumn::TYPE_VALUE)
-                        fFileStream << toString(fileData->at(j)->getValue(i), DEFAULT_PRECISION);
+                        fFileStream << toString(fileData->at(j)->getValue(i), nPrecFields);
                     else
                         fFileStream << fileData->at(j)->getValueAsInternalString(i);
                 }
@@ -2451,7 +2451,7 @@ namespace NumeRe
                 if (j+1 < nCols)
                     fFileStream << " &";
                 else
-                    fFileStream << "\\\n";
+                    fFileStream << "\\\\\n";
             }
         }
 

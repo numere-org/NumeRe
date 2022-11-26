@@ -44,9 +44,10 @@ END_EVENT_TABLE()
 /// \param readOnly bool
 ///
 /////////////////////////////////////////////////
-TablePanel::TablePanel(wxFrame* parent, wxWindowID id, wxStatusBar* statusbar, bool readOnly) : wxPanel(parent, id)
+TablePanel::TablePanel(wxFrame* parent, wxWindowID id, wxStatusBar* statusbar, bool readOnly) : wxPanel(parent, id, wxDefaultPosition, wxDefaultSize, wxBORDER_STATIC | wxTAB_TRAVERSAL)
 {
     finished = false;
+    m_terminal = nullptr;
 
     vsizer = new wxBoxSizer(wxVERTICAL);
     hsizer = new wxBoxSizer(wxHORIZONTAL);
@@ -68,7 +69,8 @@ TablePanel::TablePanel(wxFrame* parent, wxWindowID id, wxStatusBar* statusbar, b
     hsizer->Add(vsizer, 0, wxEXPAND | wxALL, 5);
     hsizer->Add(grid, 1, wxALIGN_CENTER_HORIZONTAL | wxEXPAND | wxALL, 5);
 
-    this->SetSizer(hsizer);
+    SetSizer(hsizer);
+    PostSizeEvent();
 }
 
 
@@ -102,6 +104,40 @@ std::string TablePanel::getComment() const
 
 
 /////////////////////////////////////////////////
+/// \brief Returns a pointer to the menu bar of
+/// the parent frame. If no menu bar exists, a
+/// new one is created.
+///
+/// \return wxMenuBar*
+///
+/////////////////////////////////////////////////
+wxMenuBar* TablePanel::getMenuBar()
+{
+    wxMenuBar* menuBar = static_cast<wxFrame*>(m_parent)->GetMenuBar();
+
+    if (!menuBar)
+    {
+        menuBar = new wxMenuBar();
+        static_cast<wxFrame*>(m_parent)->SetMenuBar(menuBar);
+    }
+
+    return menuBar;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Returns a pointer to the parent frame.
+///
+/// \return wxFrame*
+///
+/////////////////////////////////////////////////
+wxFrame* TablePanel::getFrame()
+{
+    return static_cast<wxFrame*>(m_parent);
+}
+
+
+/////////////////////////////////////////////////
 /// \brief Event handler for the CLOSE event.
 ///
 /// \param event wxCloseEvent&
@@ -110,6 +146,8 @@ std::string TablePanel::getComment() const
 /////////////////////////////////////////////////
 void TablePanel::OnClose(wxCloseEvent& event)
 {
+    grid->finalize();
+
     if (!finished)
     {
         finished = true;
@@ -134,8 +172,6 @@ void TablePanel::OnClose(wxCloseEvent& event)
 /////////////////////////////////////////////////
 TableEditPanel::TableEditPanel(wxFrame* parent, wxWindowID id, wxStatusBar* statusbar) : TablePanel(parent, id, statusbar, false)
 {
-	m_terminal = nullptr;
-
     wxBoxSizer* buttonsizer = new wxBoxSizer(wxHORIZONTAL);
 
     wxButton* button_ok = new wxButton(this, ID_TABLEEDIT_OK, _guilang.get("GUI_OPTIONS_OK"));
@@ -158,6 +194,7 @@ TableEditPanel::TableEditPanel(wxFrame* parent, wxWindowID id, wxStatusBar* stat
 /////////////////////////////////////////////////
 void TableEditPanel::OnButtonOk(wxCommandEvent& event)
 {
+    grid->finalize();
     m_terminal->passEditedTable(grid->GetData());
     finished = true;
     m_parent->Close();
@@ -173,6 +210,7 @@ void TableEditPanel::OnButtonOk(wxCommandEvent& event)
 /////////////////////////////////////////////////
 void TableEditPanel::OnButtonCancel(wxCommandEvent& event)
 {
+    grid->finalize();
     m_terminal->cancelTableEdit();
     finished = true;
     m_parent->Close();
@@ -188,6 +226,8 @@ void TableEditPanel::OnButtonCancel(wxCommandEvent& event)
 /////////////////////////////////////////////////
 void TableEditPanel::OnClose(wxCloseEvent& event)
 {
+    grid->finalize();
+
     if (!finished)
     {
         m_terminal->cancelTableEdit();
@@ -195,6 +235,7 @@ void TableEditPanel::OnClose(wxCloseEvent& event)
         m_parent->Close();
         event.Skip();
     }
+
 }
 
 

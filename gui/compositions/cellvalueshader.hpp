@@ -524,6 +524,10 @@ class CellValueShaderDialog : public wxDialog
                         // Extract the value and convert multiple values into
                         // a vector
                         std::string val = m_lt_gt_value->GetValue().ToStdString();
+
+                        if (!val.length())
+                            break;
+
                         std::vector<std::string> vecVal;
 
                         if (val.front() == '{' && val.back() == '}')

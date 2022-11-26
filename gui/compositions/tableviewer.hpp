@@ -49,6 +49,8 @@ class TableViewer : public wxGrid
         wxGridCellCoords lastCursorPosition;
         wxGridCellCoordsArray selectedCells;
         std::vector<int> m_currentColTypes;
+        std::string m_displayName;
+        std::string m_intName;
 
         // External window elements
         TablePanel* m_parentPanel;
@@ -87,6 +89,7 @@ class TableViewer : public wxGrid
         mu::value_type calculateAvg(const wxGridCellCoordsContainer& coords);
 
         void updateStatusBar(const wxGridCellCoordsContainer& coords, wxGridCellCoords* cursor = nullptr);
+        void createMenuBar();
 
         wxString copyCell(int row, int col);
 
@@ -97,8 +100,8 @@ class TableViewer : public wxGrid
     public:
         TableViewer(wxWindow* parent, wxWindowID id, wxStatusBar* statusbar, TablePanel* parentPanel, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxDefaultSize, long style = wxWANTS_CHARS, const wxString& name = wxGridNameStr);
 
-        void SetData(NumeRe::Container<std::string>& _stringTable);
-        void SetData(NumeRe::Table& _table);
+        void SetData(NumeRe::Container<std::string>& _stringTable, const std::string& sName, const std::string& sIntName);
+        void SetData(NumeRe::Table& _table, const std::string& sName, const std::string& sIntName);
         NumeRe::Table GetData();
         NumeRe::Table GetDataCopy();
 
@@ -109,6 +112,10 @@ class TableViewer : public wxGrid
         void OnMenu(wxCommandEvent& event);
         void insertElement(int id);
         void removeElement(int id);
+        void saveTable(bool saveAs = false);
+        void reloadTable();
+        void changeColType();
+        void finalize();
 
         wxString getSelectedValues();
 
@@ -118,7 +125,9 @@ class TableViewer : public wxGrid
 
         enum TableViewerIDs
         {
-            ID_MENU_INSERT_ROW = 15000,
+            ID_MENU_SAVE = 15000,
+            ID_MENU_SAVE_AS,
+            ID_MENU_INSERT_ROW,
             ID_MENU_INSERT_COL,
             ID_MENU_INSERT_CELL,
             ID_MENU_REMOVE_ROW,
@@ -127,6 +136,8 @@ class TableViewer : public wxGrid
             ID_MENU_COPY,
             ID_MENU_PASTE,
             ID_MENU_PASTE_HERE,
+            ID_MENU_RELOAD,
+            ID_MENU_CHANGE_COL_TYPE,
             ID_MENU_CVS
         };
 

@@ -18,6 +18,7 @@
 
 #include "gridtable.hpp"
 #include "../../kernel/core/utils/stringtools.hpp"
+#include "../../kernel/core/datamanagement/tablecolumnimpl.hpp"
 
 
 /////////////////////////////////////////////////
@@ -81,6 +82,19 @@ NumeRe::Table GridNumeReTable::getTableCopy()
 {
     NumeRe::Table tableCopy(_table);
     return tableCopy;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This member function returns a
+/// reference to the internal table.
+///
+/// \return NumeRe::Table
+///
+/////////////////////////////////////////////////
+NumeRe::Table& GridNumeReTable::getTableRef()
+{
+    return _table;
 }
 
 
@@ -631,5 +645,22 @@ std::vector<int> GridNumeReTable::getColumnTypes() const
         vTypes.push_back(_table.getColumnType(i));
 
     return vTypes;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Returns the categories in the selected
+/// column, if this is a categorical column.
+///
+/// \param col int
+/// \return std::vector<std::string>
+///
+/////////////////////////////////////////////////
+std::vector<std::string> GridNumeReTable::getCategories(int col) const
+{
+    if (_table.getColumnType(col) == TableColumn::TYPE_CATEGORICAL)
+        return static_cast<CategoricalColumn*>(_table.getColumn(col))->getCategories();
+
+    return std::vector<std::string>();
 }
 

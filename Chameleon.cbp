@@ -297,6 +297,7 @@
 		<Unit filename="gui/NumeReStatusbar.hpp" />
 		<Unit filename="gui/NumeReWindow.cpp" />
 		<Unit filename="gui/NumeReWindow.h" />
+		<Unit filename="gui/compositions/cellattributes.hpp" />
 		<Unit filename="gui/compositions/cellvalueshader.hpp" />
 		<Unit filename="gui/compositions/customwindow.cpp" />
 		<Unit filename="gui/compositions/customwindow.hpp" />

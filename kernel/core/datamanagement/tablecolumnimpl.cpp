@@ -2319,26 +2319,31 @@ void convert_if_empty(TblColPtr& col, size_t colNo, TableColumn::ColumnType type
 /// \param col TblColPtr&
 /// \param colNo size_t
 /// \param type TableColumn::ColumnType
-/// \return void
+/// \return bool
 ///
 /////////////////////////////////////////////////
-void convert_if_needed(TblColPtr& col, size_t colNo, TableColumn::ColumnType type)
+bool convert_if_needed(TblColPtr& col, size_t colNo, TableColumn::ColumnType type)
 {
     if (!col || (!col->size() && col->m_type != type))
     {
         convert_if_empty(col, colNo, type);
-        return;
+        return true;
     }
 
     if (col->m_type == type
         || (type == TableColumn::TYPE_CATEGORICAL && col->m_type == TableColumn::TYPE_STRING)
         || (type == TableColumn::TYPE_STRING && col->m_type == TableColumn::TYPE_CATEGORICAL))
-        return;
+        return true;
 
     TableColumn* convertedCol = col->convert(type);
 
-    if (convertedCol && convertedCol != col.get())
+    if (!convertedCol)
+        return false;
+
+    if (convertedCol != col.get())
         col.reset(convertedCol);
+
+    return true;
 }
 
 

@@ -364,6 +364,24 @@ namespace NumeRe
 
 
     /////////////////////////////////////////////////
+    /// \brief Tries to change the column type of the
+    /// selected column.
+    ///
+    /// \param j size_t
+    /// \param _type TableColumn::ColumnType
+    /// \return bool
+    ///
+    /////////////////////////////////////////////////
+    bool Table::setColumnType(size_t j, TableColumn::ColumnType _type)
+    {
+        if (j >= vTableData.size())
+            return false;
+
+        return convert_if_needed(vTableData[j], j, _type);
+    }
+
+
+    /////////////////////////////////////////////////
     /// \brief Getter function for the table name.
     ///
     /// \return string

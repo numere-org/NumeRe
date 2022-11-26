@@ -1153,32 +1153,34 @@ namespace NumeRe
                 throw SyntaxError(SyntaxError::STRING_ERROR, sLine, SyntaxError::invalid_position);
 
             // use only first one
-            string sType = strRes.vResult[0].to_string();
+            _sObject = strRes.vResult[0].to_string();
             int nType = 0;
-            _sObject = getNextArgument(sType, true);
 
-            if (!sType.length())
+            if (strRes.vResult.size() > 1)
             {
-                sType = "0";
+                std::string sType = strRes.vResult[1].to_string();
+
+                if (sType.length())
+                {
+                    StripSpaces(_sObject);
+
+                    if (isStringExpression(sType))
+                    {
+                        StringResult res = eval(sType, "");
+
+                        if (!res.vResult.size())
+                            throw SyntaxError(SyntaxError::STRING_ERROR, sLine, SyntaxError::invalid_position);
+
+                        sType = res.vResult[0].to_string();
+                    }
+
+                    _parser.SetExpr(sType);
+                    nType = intCast(_parser.Eval());
+
+                    if (nType < -1 || nType > 2)
+                        nType = 0;
+                }
             }
-
-            StripSpaces(_sObject);
-
-            if (isStringExpression(sType))
-            {
-                StringResult res = eval(sType, "");
-
-                if (!res.vResult.size())
-                    throw SyntaxError(SyntaxError::STRING_ERROR, sLine, SyntaxError::invalid_position);
-
-                sType = res.vResult[0].to_string();
-            }
-
-            _parser.SetExpr(sType);
-            nType = intCast(_parser.Eval());
-
-            if (nType < -1 || nType > 2)
-                nType = 0;
 
             // Because the object might be a constructed table, we
             // disable the access caching for this expression
@@ -1196,54 +1198,50 @@ namespace NumeRe
             if (nType > -1)
             {
                 if (nType == 2 && _accessParser.getIndices().row.isOpenEnd())
-                {
-                    _accessParser.getIndices().row.setRange(_accessParser.getIndices().row.front(), _accessParser.getIndices().row.front() + 1);
-                }
+                    _accessParser.getIndices().row.setRange(_accessParser.getIndices().row.front(),
+                                                            _accessParser.getIndices().row.front() + 1);
                 else if (nType == 1 && _accessParser.getIndices().col.isOpenEnd())
+                    _accessParser.getIndices().col.setRange(_accessParser.getIndices().col.front(),
+                                                            _accessParser.getIndices().col.front() + 1);
+
+                if (_accessParser.isCluster())
                 {
-                    _accessParser.getIndices().col.setRange(_accessParser.getIndices().col.front(), _accessParser.getIndices().col.front() + 1);
+                    if (_accessParser.getIndices().row.isOpenEnd())
+                        _accessParser.getIndices().row.setRange(0, _data.getCluster(_accessParser.getDataObject()).size()-1);
+
+                    if (_accessParser.getIndices().col.isOpenEnd())
+                        _accessParser.getIndices().col.back() = VectorIndex::INVALID;
                 }
-                else if (!nType)
+                else if (_accessParser.getDataObject() == "string")
                 {
-                    if (_accessParser.isCluster())
+                    if (_accessParser.getIndices().row.isOpenEnd())
                     {
-                        if (_accessParser.getIndices().row.isOpenEnd())
-                            _accessParser.getIndices().row.setRange(0, _data.getCluster(_accessParser.getDataObject()).size()-1);
-
-                        if (_accessParser.getIndices().col.isOpenEnd())
-                            _accessParser.getIndices().col.back() = VectorIndex::INVALID;
-                    }
-                    else if (_accessParser.getDataObject() == "string")
-                    {
-                        if (_accessParser.getIndices().row.isOpenEnd())
+                        if (_accessParser.getIndices().col.size() == 1)
                         {
-                            if (_accessParser.getIndices().col.size() == 1)
-                            {
-                                if (_data.getStringElements(_accessParser.getIndices().col.front()))
-                                    _accessParser.getIndices().row.setRange(0, _data.getStringElements(_accessParser.getIndices().col.front())-1);
-                                else
-                                    _accessParser.getIndices().row.setRange(0, 0);
-                            }
+                            if (_data.getStringElements(_accessParser.getIndices().col.front()))
+                                _accessParser.getIndices().row.setRange(0, _data.getStringElements(_accessParser.getIndices().col.front())-1);
                             else
-                            {
-                                if (_data.getStringElements())
-                                    _accessParser.getIndices().row.setRange(0, _data.getStringElements()-1);
-                                else
-                                    _accessParser.getIndices().row.setRange(0, 0);
-                            }
+                                _accessParser.getIndices().row.setRange(0, 0);
                         }
-
-                        if (_accessParser.getIndices().col.isOpenEnd())
-                            _accessParser.getIndices().col.setRange(0, _data.getStringCols()-1);
+                        else
+                        {
+                            if (_data.getStringElements())
+                                _accessParser.getIndices().row.setRange(0, _data.getStringElements()-1);
+                            else
+                                _accessParser.getIndices().row.setRange(0, 0);
+                        }
                     }
-                    else
-                    {
-                        if (_accessParser.getIndices().row.isOpenEnd())
-                            _accessParser.getIndices().row.setRange(0, _data.getLines(_accessParser.getDataObject(), false)-1);
 
-                        if (_accessParser.getIndices().col.isOpenEnd())
-                            _accessParser.getIndices().col.setRange(0, _data.getCols(_accessParser.getDataObject(), false)-1);
-                    }
+                    if (_accessParser.getIndices().col.isOpenEnd())
+                        _accessParser.getIndices().col.setRange(0, _data.getStringCols()-1);
+                }
+                else
+                {
+                    if (_accessParser.getIndices().row.isOpenEnd())
+                        _accessParser.getIndices().row.setRange(0, _data.getLines(_accessParser.getDataObject(), false)-1);
+
+                    if (_accessParser.getIndices().col.isOpenEnd())
+                        _accessParser.getIndices().col.setRange(0, _data.getCols(_accessParser.getDataObject(), false)-1);
                 }
             }
 
