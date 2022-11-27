@@ -278,44 +278,44 @@ namespace mu
         else
         {
             // trigonometric functions
-            DefineFun(_nrT("sin"), Sin);
-            DefineFun(_nrT("cos"), Cos);
-            DefineFun(_nrT("tan"), Tan);
+            DefineFun("sin", Sin);
+            DefineFun("cos", Cos);
+            DefineFun("tan", Tan);
             // arcus functions
-            DefineFun(_nrT("asin"), ASin);
-            DefineFun(_nrT("arcsin"), ASin);
-            DefineFun(_nrT("acos"), ACos);
-            DefineFun(_nrT("arccos"), ACos);
-            DefineFun(_nrT("atan"), ATan);
-            DefineFun(_nrT("arctan"), ATan);
-            DefineFun(_nrT("atan2"), ATan2);
+            DefineFun("asin", ASin);
+            DefineFun("arcsin", ASin);
+            DefineFun("acos", ACos);
+            DefineFun("arccos", ACos);
+            DefineFun("atan", ATan);
+            DefineFun("arctan", ATan);
+            DefineFun("atan2", ATan2);
             // hyperbolic functions
-            DefineFun(_nrT("sinh"), Sinh);
-            DefineFun(_nrT("cosh"), Cosh);
-            DefineFun(_nrT("tanh"), Tanh);
+            DefineFun("sinh", Sinh);
+            DefineFun("cosh", Cosh);
+            DefineFun("tanh", Tanh);
             // arcus hyperbolic functions
-            DefineFun(_nrT("asinh"), ASinh);
-            DefineFun(_nrT("arsinh"), ASinh);
-            DefineFun(_nrT("acosh"), ACosh);
-            DefineFun(_nrT("arcosh"), ACosh);
-            DefineFun(_nrT("atanh"), ATanh);
-            DefineFun(_nrT("artanh"), ATanh);
+            DefineFun("asinh", ASinh);
+            DefineFun("arsinh", ASinh);
+            DefineFun("acosh", ACosh);
+            DefineFun("arcosh", ACosh);
+            DefineFun("atanh", ATanh);
+            DefineFun("artanh", ATanh);
             // Logarithm functions
-            DefineFun(_nrT("log2"), Log2);
-            DefineFun(_nrT("log10"), Log10);
-            DefineFun(_nrT("log"), Log10);
-            DefineFun(_nrT("ln"), Ln);
+            DefineFun("log2", Log2);
+            DefineFun("log10", Log10);
+            DefineFun("log", Log10);
+            DefineFun("ln", Ln);
             // misc
-            DefineFun(_nrT("exp"), Exp);
-            DefineFun(_nrT("sqrt"), Sqrt);
-            DefineFun(_nrT("sign"), Sign);
-            DefineFun(_nrT("rint"), Rint);
-            DefineFun(_nrT("abs"), Abs);
+            DefineFun("exp", Exp);
+            DefineFun("sqrt", Sqrt);
+            DefineFun("sign", Sign);
+            DefineFun("rint", Rint);
+            DefineFun("abs", Abs);
             // Functions with variable number of arguments
-            DefineFun(_nrT("sum"), Sum);
-            DefineFun(_nrT("avg"), Avg);
-            DefineFun(_nrT("min"), Min);
-            DefineFun(_nrT("max"), Max);
+            DefineFun("sum", Sum);
+            DefineFun("avg", Avg);
+            DefineFun("min", Min);
+            DefineFun("max", Max);
         }
     }
 
@@ -327,8 +327,7 @@ namespace mu
     */
     void Parser::InitConst()
     {
-        DefineConst(_nrT("_pi"), (value_type)PARSER_CONST_PI);
-        //DefineConst(_nrT("_e"), (value_type)PARSER_CONST_E);
+        DefineConst("_pi", (value_type)PARSER_CONST_PI);
     }
 
     //---------------------------------------------------------------------------
@@ -338,7 +337,7 @@ namespace mu
     */
     void Parser::InitOprt()
     {
-        DefineInfixOprt(_nrT("-"), UnaryMinus);
+        DefineInfixOprt("-", UnaryMinus);
     }
 
     //---------------------------------------------------------------------------

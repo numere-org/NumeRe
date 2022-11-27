@@ -136,7 +136,7 @@ namespace mu
 		// If optimization does not apply
 		SToken tok;
 		tok.Cmd = cmVAL;
-		tok.Val.ptr   = NULL;
+		tok.Val.ptr   = nullptr;
 		tok.Val.data  = 0;
 		tok.Val.data2 = a_fVal;
 		m_vRPN.push_back(tok);
@@ -408,24 +408,159 @@ namespace mu
 	    \param a_iArgc Number of arguments, negative numbers indicate multiarg functions.
 	    \param a_pFun Pointer to function callback.
 	*/
-	void ParserByteCode::AddFun(generic_fun_type a_pFun, int a_iArgc)
+	void ParserByteCode::AddFun(generic_fun_type a_pFun, int a_iArgc, bool optimizeAway)
 	{
-		if (a_iArgc >= 0)
+		if (m_bEnableOptimizer && optimizeAway)
 		{
-			m_iStackPos = m_iStackPos - a_iArgc + 1;
-		}
-		else
-		{
-			// function with unlimited number of arguments
-			m_iStackPos = m_iStackPos + a_iArgc + 1;
-		}
-		m_iMaxStackSize = std::max(m_iMaxStackSize, (size_t)m_iStackPos);
+			std::size_t sz = m_vRPN.size();
+			std::size_t nArg = std::abs(a_iArgc);
 
-		SToken tok;
-		tok.Cmd = cmFUNC;
-		tok.Fun.argc = a_iArgc;
-		tok.Fun.ptr = a_pFun;
-		m_vRPN.push_back(tok);
+			if (sz < nArg)
+                throw ParserError(ecINTERNAL_ERROR);
+
+            // Check, whether all arguments are constant
+            // values
+            for (size_t s = sz-nArg; s < sz; s++)
+            {
+                // If not a constant value, deactivate the optimizer flag
+                if (m_vRPN[s].Cmd != cmVAL)
+                {
+                    optimizeAway = false;
+                    break;
+                }
+            }
+
+            // Can we still optimize?
+            if (optimizeAway)
+            {
+                // switch according to argument count
+                switch (a_iArgc)
+                {
+                    case 0:
+                        AddVal((*(fun_type0)a_pFun)());
+                        break;
+                    case 1:
+                        m_vRPN[sz-1].Val.data2 = (*(fun_type1)a_pFun)(m_vRPN[sz-1].Val.data2);
+                        break;
+                    case 2:
+                        m_vRPN[sz-2].Val.data2 = (*(fun_type2)a_pFun)(m_vRPN[sz-2].Val.data2,
+                                                                      m_vRPN[sz-1].Val.data2);
+                        m_vRPN.pop_back();
+                        break;
+                    case 3:
+                        m_vRPN[sz-3].Val.data2 = (*(fun_type3)a_pFun)(m_vRPN[sz-3].Val.data2,
+                                                                      m_vRPN[sz-2].Val.data2,
+                                                                      m_vRPN[sz-1].Val.data2);
+                        m_vRPN.resize(sz-2);
+                        break;
+                    case 4:
+                        m_vRPN[sz-4].Val.data2 = (*(fun_type4)a_pFun)(m_vRPN[sz-4].Val.data2,
+                                                                      m_vRPN[sz-3].Val.data2,
+                                                                      m_vRPN[sz-2].Val.data2,
+                                                                      m_vRPN[sz-1].Val.data2);
+                        m_vRPN.resize(sz-3);
+                        break;
+                    case 5:
+                        m_vRPN[sz-5].Val.data2 = (*(fun_type5)a_pFun)(m_vRPN[sz-5].Val.data2,
+                                                                      m_vRPN[sz-4].Val.data2,
+                                                                      m_vRPN[sz-3].Val.data2,
+                                                                      m_vRPN[sz-2].Val.data2,
+                                                                      m_vRPN[sz-1].Val.data2);
+                        m_vRPN.resize(sz-4);
+                        break;
+                    case 6:
+                        m_vRPN[sz-6].Val.data2 = (*(fun_type6)a_pFun)(m_vRPN[sz-6].Val.data2,
+                                                                      m_vRPN[sz-5].Val.data2,
+                                                                      m_vRPN[sz-4].Val.data2,
+                                                                      m_vRPN[sz-3].Val.data2,
+                                                                      m_vRPN[sz-2].Val.data2,
+                                                                      m_vRPN[sz-1].Val.data2);
+                        m_vRPN.resize(sz-5);
+                        break;
+                    case 7:
+                        m_vRPN[sz-7].Val.data2 = (*(fun_type7)a_pFun)(m_vRPN[sz-7].Val.data2,
+                                                                      m_vRPN[sz-6].Val.data2,
+                                                                      m_vRPN[sz-5].Val.data2,
+                                                                      m_vRPN[sz-4].Val.data2,
+                                                                      m_vRPN[sz-3].Val.data2,
+                                                                      m_vRPN[sz-2].Val.data2,
+                                                                      m_vRPN[sz-1].Val.data2);
+                        m_vRPN.resize(sz-6);
+                        break;
+                    case 8:
+                        m_vRPN[sz-8].Val.data2 = (*(fun_type8)a_pFun)(m_vRPN[sz-8].Val.data2,
+                                                                      m_vRPN[sz-7].Val.data2,
+                                                                      m_vRPN[sz-6].Val.data2,
+                                                                      m_vRPN[sz-5].Val.data2,
+                                                                      m_vRPN[sz-4].Val.data2,
+                                                                      m_vRPN[sz-3].Val.data2,
+                                                                      m_vRPN[sz-2].Val.data2,
+                                                                      m_vRPN[sz-1].Val.data2);
+                        m_vRPN.resize(sz-7);
+                        break;
+                    case 9:
+                        m_vRPN[sz-9].Val.data2 = (*(fun_type9)a_pFun)(m_vRPN[sz-9].Val.data2,
+                                                                      m_vRPN[sz-8].Val.data2,
+                                                                      m_vRPN[sz-7].Val.data2,
+                                                                      m_vRPN[sz-6].Val.data2,
+                                                                      m_vRPN[sz-5].Val.data2,
+                                                                      m_vRPN[sz-4].Val.data2,
+                                                                      m_vRPN[sz-3].Val.data2,
+                                                                      m_vRPN[sz-2].Val.data2,
+                                                                      m_vRPN[sz-1].Val.data2);
+                        m_vRPN.resize(sz-8);
+                        break;
+                    case 10:
+                        m_vRPN[sz-10].Val.data2 = (*(fun_type10)a_pFun)(m_vRPN[sz-10].Val.data2,
+                                                                        m_vRPN[sz-9].Val.data2,
+                                                                        m_vRPN[sz-8].Val.data2,
+                                                                        m_vRPN[sz-7].Val.data2,
+                                                                        m_vRPN[sz-6].Val.data2,
+                                                                        m_vRPN[sz-5].Val.data2,
+                                                                        m_vRPN[sz-4].Val.data2,
+                                                                        m_vRPN[sz-3].Val.data2,
+                                                                        m_vRPN[sz-2].Val.data2,
+                                                                        m_vRPN[sz-1].Val.data2);
+                        m_vRPN.resize(sz-9);
+                        break;
+                    default:
+                    {
+                        if (a_iArgc > 0) // function with variable arguments store the number as a negative value
+                            throw ParserError(ecINTERNAL_ERROR);
+
+                        std::vector<mu::value_type> vStack;
+
+                        for (size_t s = sz-nArg; s < sz; s++)
+                        {
+                            vStack.push_back(m_vRPN[s].Val.data2);
+                        }
+
+                        m_vRPN[sz-nArg].Val.data2 = (*(multfun_type)a_pFun)(&vStack[0], nArg);
+                        m_vRPN.resize(sz-nArg+1);
+                    }
+                }
+            }
+		}
+
+		// If optimization can't be applied just write the value
+		if (!optimizeAway)
+		{
+            if (a_iArgc >= 0)
+                m_iStackPos = m_iStackPos - a_iArgc + 1;
+            else
+                // function with unlimited number of arguments
+                m_iStackPos = m_iStackPos + a_iArgc + 1;
+
+            m_iMaxStackSize = std::max(m_iMaxStackSize, (size_t)m_iStackPos);
+
+            SToken tok;
+            tok.Cmd = cmFUNC;
+            tok.Fun.argc = a_iArgc;
+            tok.Fun.ptr = a_pFun;
+            m_vRPN.push_back(tok);
+		}
+
+
 	}
 
 	//---------------------------------------------------------------------------

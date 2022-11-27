@@ -146,28 +146,28 @@ namespace mu
 			bool HasBuiltInOprt() const;
 			void AddValIdent(identfun_type a_pCallback);
 
-			/** \fn void mu::ParserBase::DefineFun(const string_type &a_strName, fun_type0 a_pFun, bool a_bAllowOpt = true)
+			/** \fn void mu::ParserBase::DefineFun(const string_type &a_strName, fun_type0 a_pFun, bool optimizeAway = true)
 			    \brief Define a parser function without arguments.
 			    \param a_strName Name of the function
 			    \param a_pFun Pointer to the callback function
-			    \param a_bAllowOpt A flag indicating this function may be optimized
+			    \param optimizeAway A flag indicating this function may be optimized
 			*/
 			template<typename T>
-			void DefineFun(const string_type& a_strName, T a_pFun, bool a_bAllowOpt = true)
+			void DefineFun(const string_type& a_strName, T a_pFun, bool optimizeAway = true)
 			{
-				AddCallback( a_strName, ParserCallback(a_pFun, a_bAllowOpt), m_FunDef, ValidNameChars() );
+				AddCallback( a_strName, ParserCallback(a_pFun, optimizeAway), m_FunDef, ValidNameChars() );
 			}
 
 			void DefineOprt(const string_type& a_strName,
 							fun_type2 a_pFun,
 							unsigned a_iPri = 0,
 							EOprtAssociativity a_eAssociativity = oaLEFT,
-							bool a_bAllowOpt = false);
+							bool optimizeAway = true);
 			void DefineConst(const string_type& a_sName, value_type a_fVal);
 			void DefineStrConst(const string_type& a_sName, const string_type& a_strVal);
 			void DefineVar(const string_type& a_sName, value_type* a_fVar);
-			void DefinePostfixOprt(const string_type& a_strFun, fun_type1 a_pOprt, bool a_bAllowOpt = true);
-			void DefineInfixOprt(const string_type& a_strName, fun_type1 a_pOprt, int a_iPrec = prINFIX, bool a_bAllowOpt = true);
+			void DefinePostfixOprt(const string_type& a_strFun, fun_type1 a_pOprt, bool optimizeAway = true);
+			void DefineInfixOprt(const string_type& a_strName, fun_type1 a_pOprt, int a_iPrec = prINFIX, bool optimizeAway = true);
 
 			// Clear user defined variables, constants or functions
 			void ClearVar();

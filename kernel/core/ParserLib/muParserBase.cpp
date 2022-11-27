@@ -1086,10 +1086,10 @@ namespace mu
 	*/
 	void ParserBase::DefinePostfixOprt(const string_type& a_sName,
 									   fun_type1 a_pFun,
-									   bool a_bAllowOpt)
+									   bool optimizeAway)
 	{
 		AddCallback(a_sName,
-					ParserCallback(a_pFun, a_bAllowOpt, prPOSTFIX, cmOPRT_POSTFIX),
+					ParserCallback(a_pFun, optimizeAway, prPOSTFIX, cmOPRT_POSTFIX),
 					m_PostOprtDef,
 					ValidOprtChars() );
 	}
@@ -1113,16 +1113,16 @@ namespace mu
 	    \param [in] a_sName  operator Identifier
 	    \param [in] a_pFun  Operator callback function
 	    \param [in] a_iPrec  Operator Precedence (default=prSIGN)
-	    \param [in] a_bAllowOpt  True if operator is volatile (default=false)
+	    \param [in] optimizeAway  True if operator is volatile (default=false)
 	    \sa EPrec
 	*/
 	void ParserBase::DefineInfixOprt(const string_type& a_sName,
 									 fun_type1 a_pFun,
 									 int a_iPrec,
-									 bool a_bAllowOpt)
+									 bool optimizeAway)
 	{
 		AddCallback(a_sName,
-					ParserCallback(a_pFun, a_bAllowOpt, a_iPrec, cmOPRT_INFIX),
+					ParserCallback(a_pFun, optimizeAway, a_iPrec, cmOPRT_INFIX),
 					m_InfixOprtDef,
 					ValidInfixOprtChars() );
 	}
@@ -1142,7 +1142,7 @@ namespace mu
 								 fun_type2 a_pFun,
 								 unsigned a_iPrec,
 								 EOprtAssociativity a_eAssociativity,
-								 bool a_bAllowOpt )
+								 bool optimizeAway )
 	{
 		// Check for conflicts with built in operator names
 		for (int i = 0; m_bBuiltInOp && i < cmENDIF; ++i)
@@ -1150,7 +1150,7 @@ namespace mu
 				Error(ecBUILTIN_OVERLOAD, -1, a_sName);
 
 		AddCallback(a_sName,
-					ParserCallback(a_pFun, a_bAllowOpt, a_iPrec, a_eAssociativity),
+					ParserCallback(a_pFun, optimizeAway, a_iPrec, a_eAssociativity),
 					m_OprtDef,
 					ValidOprtChars() );
 	}
@@ -1489,7 +1489,9 @@ namespace mu
 				if (funTok.GetArgCount() == -1 && iArgCount == 0)
 					Error(ecTOO_FEW_PARAMS, m_pTokenReader->GetPos(), funTok.GetAsString());
 
-				m_compilingState.m_byteCode.AddFun(funTok.GetFuncAddr(), (funTok.GetArgCount() == -1) ? -iArgNumerical : iArgNumerical);
+                m_compilingState.m_byteCode.AddFun(funTok.GetFuncAddr(),
+                                                   (funTok.GetArgCount() == -1) ? -iArgNumerical : iArgNumerical,
+                                                   funTok.IsOptimizable());
 				break;
             default:
                 break;

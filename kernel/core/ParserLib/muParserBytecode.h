@@ -121,7 +121,7 @@ namespace mu
 			void AddOp(ECmdCode a_Oprt);
 			void AddIfElse(ECmdCode a_Oprt);
 			void AddAssignOp(value_type* a_pVar);
-			void AddFun(generic_fun_type a_pFun, int a_iArgc);
+			void AddFun(generic_fun_type a_pFun, int a_iArgc, bool optimizeAway);
 			void AddBulkFun(generic_fun_type a_pFun, int a_iArgc);
 			void AddStrFun(generic_fun_type a_pFun, int a_iArgc, int a_iIdx);
 
