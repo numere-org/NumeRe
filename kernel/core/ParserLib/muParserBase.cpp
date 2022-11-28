@@ -1645,7 +1645,7 @@ namespace mu
 
 		// Note: The check for nOffset==0 and nThreadID here is not necessary but
 		//       brings a minor performance gain when not in bulk mode.
-		value_type* Stack = 0;
+		value_type* Stack = nullptr;
 
 		Stack = ((nOffset == 0) && (nThreadID == 0))
             ? &m_state->m_stackBuffer[0]
@@ -1712,11 +1712,11 @@ namespace mu
 
                 case  cmLAND:
                     --sidx;
-                    Stack[sidx]  = std::abs(Stack[sidx]) && std::abs(Stack[sidx + 1]);
+                    Stack[sidx]  = Stack[sidx] != 0.0 && Stack[sidx + 1] != 0.0;
                     continue;
                 case  cmLOR:
                     --sidx;
-                    Stack[sidx]  = std::abs(Stack[sidx]) || std::abs(Stack[sidx + 1]);
+                    Stack[sidx]  = Stack[sidx] != 0.0 || Stack[sidx + 1] != 0.0;
                     continue;
 
                 case  cmASSIGN:
@@ -2910,6 +2910,7 @@ namespace mu
                 }
                 else
                 {
+                    g_logger.info("Start parallel run");
                     // Run parallel
                     size_t nBufferOffset = m_state->m_stackBuffer.size() / nMaxThreads;
 
@@ -2924,6 +2925,7 @@ namespace mu
                             m_buffer[i*nStackSize + j] = m_state->m_stackBuffer[nThreadID*nBufferOffset + j + 1];
                         }
                     }
+                    g_logger.info("Ran parallel");
                 }
 
 

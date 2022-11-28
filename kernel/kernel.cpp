@@ -3713,10 +3713,9 @@ void NumeReKernel::flush()
 /////////////////////////////////////////////////
 bool NumeReKernel::GetAsyncCancelState()
 {
-    bool bCancel = bCancelSignal;
+    bool b = bCancelSignal;
     bCancelSignal = false;
-
-    return bCancel;
+    return b;
 }
 
 

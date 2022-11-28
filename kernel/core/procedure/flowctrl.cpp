@@ -2795,6 +2795,7 @@ int FlowCtrl::calc(std::string sLine, int nthCmd)
     int nNum = 0;
     NumeRe::Cluster& ans = NumeReKernel::getInstance()->getAns();
 
+    // No great impact on calctime
     _assertionHandler.reset();
     updateTestStats();
 
@@ -2912,8 +2913,7 @@ int FlowCtrl::calc(std::string sLine, int nthCmd)
     {
         // As long as bytecode parsing is not globally available,
         // this condition has to stay at this place
-        if (!(bUseLoopParsingMode && !bLockedPauseMode)
-            && !_parserRef->IsAlreadyParsed(sLine))
+        if (!(bUseLoopParsingMode && !bLockedPauseMode) && !_parserRef->IsAlreadyParsed(sLine))
             _parserRef->SetExpr(sLine);
 
         // Evaluate all remaining equations in the stack

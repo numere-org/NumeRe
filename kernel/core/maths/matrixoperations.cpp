@@ -85,6 +85,7 @@ static Matrix createMatFromLinesFilled(string& sCmd, Parser& _parser, MemoryMana
 /////////////////////////////////////////////////
 bool performMatrixOperation(string& sCmd, Parser& _parser, MemoryManager& _data, FunctionDefinitionManager& _functions, const Settings& _option)
 {
+    g_logger.setLoggingLevel(Logger::LVL_DEBUG);
     // Create the cache
     MatOpCache _cache;
     string sTargetName = "";
@@ -524,7 +525,7 @@ static Matrix evalMatOp(string& sCmd, Parser& _parser, MemoryManager& _data, Fun
             && sCmd[i] == '('
             && i == pos_back // only true, if the last iteration evaluated a subexpression
             && sCmd.find_last_not_of(' ',i-1) != string::npos
-            && __sCmd.back() == ']') //...returnedMatrix[N](:,:)
+            && (__sCmd.back() == ']' || __sCmd.back() == ')')) //...returnedMatrix[N](:,:)
         {
             int nMatrix = 0;
             nMatrix = StrToInt(__sCmd.substr(__sCmd.rfind('[')+1, __sCmd.rfind(']')-__sCmd.rfind('[')-1));
@@ -542,12 +543,14 @@ static Matrix evalMatOp(string& sCmd, Parser& _parser, MemoryManager& _data, Fun
         if (sCmd[i] == '(')
         {
             nMatchingParens = getMatchingParenthesis(StringView(sCmd, i));
-            size_t nLastDelimiter;
+            //size_t nLastDelimiter;
 
             if (sCmd.substr(i, nMatchingParens).find("**") != string::npos
-                || (i > 1
-                    && (nLastDelimiter = sCmd.find_last_of(" +-*/!^%&|#(){}?:,<>=", i-1)) != std::string::npos
-                    && !_data.isTable(sCmd.substr(nLastDelimiter+1, i-nLastDelimiter-1))))
+                || (sCmd.length() > i+nMatchingParens+1 && sCmd[i+nMatchingParens+1] == '('))
+                // Removed this due to unnecessary double evaluation (might be necessary tough!)
+                /*|| (i > 1
+                    && (nLastDelimiter = sCmd.find_last_of(" /+-*!^%&|#(){}?:,<>=", i-1)) != std::string::npos
+                    && !_data.isTable(sCmd.substr(nLastDelimiter+1, i-nLastDelimiter-1))))*/
             {
                 string sSubExpr = sCmd.substr(i+1, nMatchingParens-1);
                 size_t closing_par_pos = i+nMatchingParens;
@@ -852,7 +855,7 @@ static Matrix evalMatOp(string& sCmd, Parser& _parser, MemoryManager& _data, Fun
     // Set the expression in the parser
     _parser.SetExpr(sCmd);
 
-    g_logger.debug("Matrix calculation.");
+    g_logger.debug("Matrix calculation");
 
     // Evaluate the first columns
     v = _parser.Eval(nResults);

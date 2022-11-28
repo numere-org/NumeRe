@@ -151,11 +151,11 @@ namespace mu
 		switch (a_Oprt)
 		{
 			case cmLAND:
-				x = std::abs(x) && std::abs(y);
+				x = x != 0.0 && y != 0.0;
 				m_vRPN.pop_back();
 				break;
 			case cmLOR:
-				x = std::abs(x) || std::abs(y);
+				x = x != 0.0 || y != 0.0;
 				m_vRPN.pop_back();
 				break;
 			case cmLT:
@@ -402,19 +402,26 @@ namespace mu
 		m_vRPN.push_back(tok);
 	}
 
-	//---------------------------------------------------------------------------
-	/** \brief Add function to bytecode.
 
-	    \param a_iArgc Number of arguments, negative numbers indicate multiarg functions.
-	    \param a_pFun Pointer to function callback.
-	*/
+    /////////////////////////////////////////////////
+    /// \brief Add a function to the bytecode.
+    ///
+    /// \param a_pFun generic_fun_type
+    /// \param a_iArgc int
+    /// \param optimizeAway bool
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
 	void ParserByteCode::AddFun(generic_fun_type a_pFun, int a_iArgc, bool optimizeAway)
 	{
+	    // Shall we try to optimize?
 		if (m_bEnableOptimizer && optimizeAway)
 		{
 			std::size_t sz = m_vRPN.size();
 			std::size_t nArg = std::abs(a_iArgc);
 
+			// Ensure that we have enough entries in the
+			// bytecode available
 			if (sz < nArg)
                 throw ParserError(ecINTERNAL_ERROR);
 
@@ -433,7 +440,9 @@ namespace mu
             // Can we still optimize?
             if (optimizeAway)
             {
-                // switch according to argument count
+                // switch according to argument count. Call the corresponding
+                // function and replace the first value with the result. Remove
+                // all other values afterwards
                 switch (a_iArgc)
                 {
                     case 0:
@@ -530,6 +539,7 @@ namespace mu
 
                         std::vector<mu::value_type> vStack;
 
+                        // Copy the values to the temporary stack
                         for (size_t s = sz-nArg; s < sz; s++)
                         {
                             vStack.push_back(m_vRPN[s].Val.data2);
@@ -542,7 +552,7 @@ namespace mu
             }
 		}
 
-		// If optimization can't be applied just write the value
+		// If optimization can't be applied just add the call to the function
 		if (!optimizeAway)
 		{
             if (a_iArgc >= 0)
