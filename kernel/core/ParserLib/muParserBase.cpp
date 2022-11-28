@@ -2047,6 +2047,430 @@ namespace mu
         } // for all bytecode tokens
 	}
 
+
+    /////////////////////////////////////////////////
+    /// \brief OpenMP optimized parallel bytecode
+    /// executor.
+    ///
+    /// \param nVectorLength size_t
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
+	void ParserBase::ParseCmdCodeBulkParallel(size_t nVectorLength)
+	{
+	    size_t nBufferOffset = m_state->m_stackBuffer.size() / nMaxThreads;
+	    int nStackSize = m_state->m_numResults;
+
+        #pragma omp parallel for //schedule(static, (nVectorLength-1)/nMaxThreads)
+        for (size_t nOffset = 1; nOffset < nVectorLength; ++nOffset)
+        {
+            int nThreadID = omp_get_thread_num();
+            value_type* Stack = &m_state->m_stackBuffer[nThreadID * nBufferOffset];
+            value_type buf;
+            int sidx(0);
+
+            // Run the bytecode
+            for (const SToken* pTok = m_state->m_byteCode.GetBase(); pTok->Cmd != cmEND ; ++pTok)
+            {
+                switch (pTok->Cmd)
+                {
+                    // built in binary operators
+                    case  cmLE:
+                        --sidx;
+                        Stack[sidx]  = Stack[sidx].real() <= Stack[sidx + 1].real();
+                        continue;
+                    case  cmGE:
+                        --sidx;
+                        Stack[sidx]  = Stack[sidx].real() >= Stack[sidx + 1].real();
+                        continue;
+                    case  cmNEQ:
+                        --sidx;
+                        Stack[sidx]  = Stack[sidx] != Stack[sidx + 1];
+                        continue;
+                    case  cmEQ:
+                        --sidx;
+                        Stack[sidx]  = Stack[sidx] == Stack[sidx + 1];
+                        continue;
+                    case  cmLT:
+                        --sidx;
+                        Stack[sidx]  = Stack[sidx].real() < Stack[sidx + 1].real();
+                        continue;
+                    case  cmGT:
+                        --sidx;
+                        Stack[sidx]  = Stack[sidx].real() > Stack[sidx + 1].real();
+                        continue;
+                    case  cmADD:
+                        --sidx;
+                        Stack[sidx] += Stack[1 + sidx];
+                        continue;
+                    case  cmSUB:
+                        --sidx;
+                        Stack[sidx] -= Stack[1 + sidx];
+                        continue;
+                    case  cmMUL:
+                        --sidx;
+                        Stack[sidx] = Stack[sidx] * Stack[1 + sidx]; // Uses the optimized version
+                        continue;
+                    case  cmDIV:
+                        --sidx;
+
+    #if defined(MUP_MATH_EXCEPTIONS)
+                        if (Stack[1 + sidx] == 0)
+                            Error(ecDIV_BY_ZERO);
+    #endif
+                        Stack[sidx] = Stack[sidx] / Stack[1 + sidx]; // Uses the optimized version
+                        continue;
+
+                    case  cmPOW:
+                        --sidx;
+                        Stack[sidx]  = MathImpl<value_type>::Pow(Stack[sidx], Stack[1 + sidx]);
+                        continue;
+
+                    case  cmLAND:
+                        --sidx;
+                        Stack[sidx]  = Stack[sidx] != 0.0 && Stack[sidx + 1] != 0.0;
+                        continue;
+                    case  cmLOR:
+                        --sidx;
+                        Stack[sidx]  = Stack[sidx] != 0.0 || Stack[sidx + 1] != 0.0;
+                        continue;
+
+                    case  cmASSIGN:
+                        --sidx;
+                        Stack[sidx] = *pTok->Oprt.ptr = Stack[sidx + 1];
+                        continue;
+
+                    //case  cmBO:  // unused, listed for compiler optimization purposes
+                    //case  cmBC:
+                    //      MUP_FAIL(INVALID_CODE_IN_BYTECODE);
+                    //      continue;
+
+                    case  cmIF:
+                        if (Stack[sidx--] == 0.0)
+                            pTok += pTok->Oprt.offset;
+                        continue;
+
+                    case  cmELSE:
+                        pTok += pTok->Oprt.offset;
+                        continue;
+
+                    case  cmENDIF:
+                        continue;
+
+                    //case  cmARG_SEP:
+                    //      MUP_FAIL(INVALID_CODE_IN_BYTECODE);
+                    //      continue;
+
+                    // value and variable tokens
+                    case  cmVAL:
+                        Stack[++sidx] =  pTok->Val.data2;
+                        continue;
+
+                    case  cmVAR:
+                        Stack[++sidx] = *(pTok->Val.ptr + pTok->Val.isVect*nOffset);
+                        //NumeReKernel::print(toString(*(pTok->Val.ptr + pTok->Val.isVect*nOffset), 14));
+                        continue;
+
+                    case  cmVARPOW2:
+                        buf = *(pTok->Val.ptr + pTok->Val.isVect*nOffset);
+                        Stack[++sidx] = buf * buf;
+                        continue;
+
+                    case  cmVARPOW3:
+                        buf = *(pTok->Val.ptr + pTok->Val.isVect*nOffset);
+                        Stack[++sidx] = buf * buf * buf;
+                        continue;
+
+                    case  cmVARPOW4:
+                        buf = *(pTok->Val.ptr + pTok->Val.isVect*nOffset);
+                        Stack[++sidx] = buf * buf * buf * buf;
+                        continue;
+
+                    case  cmVARPOWN:
+                        Stack[++sidx] = intPower(*(pTok->Val.ptr + pTok->Val.isVect*nOffset), pTok->Val.data.real());
+                        continue;
+
+                    case  cmVARMUL:
+                        Stack[++sidx] = *(pTok->Val.ptr + pTok->Val.isVect*nOffset) * pTok->Val.data + pTok->Val.data2;
+                        continue;
+
+                    // Next is treatment of numeric functions
+                    case  cmFUNC:
+                        {
+                            int iArgCount = pTok->Fun.argc;
+
+                            // switch according to argument count
+                            switch (iArgCount)
+                            {
+                                case 0:
+                                    sidx += 1;
+                                    Stack[sidx] = (*(fun_type0)pTok->Fun.ptr)();
+                                    continue;
+                                case 1:
+                                    Stack[sidx] = (*(fun_type1)pTok->Fun.ptr)(Stack[sidx]);
+                                    continue;
+                                case 2:
+                                    sidx -= 1;
+                                    Stack[sidx] = (*(fun_type2)pTok->Fun.ptr)(Stack[sidx],
+                                                                              Stack[sidx + 1]);
+                                    continue;
+                                case 3:
+                                    sidx -= 2;
+                                    Stack[sidx] = (*(fun_type3)pTok->Fun.ptr)(Stack[sidx],
+                                                                              Stack[sidx + 1],
+                                                                              Stack[sidx + 2]);
+                                    continue;
+                                case 4:
+                                    sidx -= 3;
+                                    Stack[sidx] = (*(fun_type4)pTok->Fun.ptr)(Stack[sidx],
+                                                                              Stack[sidx + 1],
+                                                                              Stack[sidx + 2],
+                                                                              Stack[sidx + 3]);
+                                    continue;
+                                case 5:
+                                    sidx -= 4;
+                                    Stack[sidx] = (*(fun_type5)pTok->Fun.ptr)(Stack[sidx],
+                                                                              Stack[sidx + 1],
+                                                                              Stack[sidx + 2],
+                                                                              Stack[sidx + 3],
+                                                                              Stack[sidx + 4]);
+                                    continue;
+                                case 6:
+                                    sidx -= 5;
+                                    Stack[sidx] = (*(fun_type6)pTok->Fun.ptr)(Stack[sidx],
+                                                                              Stack[sidx + 1],
+                                                                              Stack[sidx + 2],
+                                                                              Stack[sidx + 3],
+                                                                              Stack[sidx + 4],
+                                                                              Stack[sidx + 5]);
+                                    continue;
+                                case 7:
+                                    sidx -= 6;
+                                    Stack[sidx] = (*(fun_type7)pTok->Fun.ptr)(Stack[sidx],
+                                                                              Stack[sidx + 1],
+                                                                              Stack[sidx + 2],
+                                                                              Stack[sidx + 3],
+                                                                              Stack[sidx + 4],
+                                                                              Stack[sidx + 5],
+                                                                              Stack[sidx + 6]);
+                                    continue;
+                                case 8:
+                                    sidx -= 7;
+                                    Stack[sidx] = (*(fun_type8)pTok->Fun.ptr)(Stack[sidx],
+                                                                              Stack[sidx + 1],
+                                                                              Stack[sidx + 2],
+                                                                              Stack[sidx + 3],
+                                                                              Stack[sidx + 4],
+                                                                              Stack[sidx + 5],
+                                                                              Stack[sidx + 6],
+                                                                              Stack[sidx + 7]);
+                                    continue;
+                                case 9:
+                                    sidx -= 8;
+                                    Stack[sidx] = (*(fun_type9)pTok->Fun.ptr)(Stack[sidx],
+                                                                              Stack[sidx + 1],
+                                                                              Stack[sidx + 2],
+                                                                              Stack[sidx + 3],
+                                                                              Stack[sidx + 4],
+                                                                              Stack[sidx + 5],
+                                                                              Stack[sidx + 6],
+                                                                              Stack[sidx + 7],
+                                                                              Stack[sidx + 8]);
+                                    continue;
+                                case 10:
+                                    sidx -= 9;
+                                    Stack[sidx] = (*(fun_type10)pTok->Fun.ptr)(Stack[sidx],
+                                                                               Stack[sidx + 1],
+                                                                               Stack[sidx + 2],
+                                                                               Stack[sidx + 3],
+                                                                               Stack[sidx + 4],
+                                                                               Stack[sidx + 5],
+                                                                               Stack[sidx + 6],
+                                                                               Stack[sidx + 7],
+                                                                               Stack[sidx + 8],
+                                                                               Stack[sidx + 9]);
+                                    continue;
+                                default:
+                                    if (iArgCount > 0) // function with variable arguments store the number as a negative value
+                                        Error(ecINTERNAL_ERROR, 1);
+
+                                    sidx -= -iArgCount - 1;
+                                    Stack[sidx] = (*(multfun_type)pTok->Fun.ptr)(&Stack[sidx], -iArgCount);
+                                    continue;
+                            }
+                        }
+
+                    // Next is treatment of string functions
+                   /* case  cmFUNC_STR:
+                        {
+                            sidx -= pTok->Fun.argc - 1;
+
+                            // The index of the string argument in the string table
+                            int iIdxStack = pTok->Fun.idx;
+                            MUP_ASSERT( iIdxStack >= 0 && iIdxStack < (int)m_vStringBuf.size() );
+
+                            switch (pTok->Fun.argc) // switch according to argument count
+                            {
+                                case 0:
+                                    Stack[sidx] = (*(strfun_type1)pTok->Fun.ptr)(m_vStringBuf[iIdxStack].c_str());
+                                    continue;
+                                case 1:
+                                    Stack[sidx] = (*(strfun_type2)pTok->Fun.ptr)(m_vStringBuf[iIdxStack].c_str(), Stack[sidx]);
+                                    continue;
+                                case 2:
+                                    Stack[sidx] = (*(strfun_type3)pTok->Fun.ptr)(m_vStringBuf[iIdxStack].c_str(), Stack[sidx], Stack[sidx + 1]);
+                                    continue;
+                            }
+
+                            continue;
+                        }
+
+                    case  cmFUNC_BULK:
+                        {
+                            int iArgCount = pTok->Fun.argc;
+
+                            // switch according to argument count
+                            switch (iArgCount)
+                            {
+                                case 0:
+                                    sidx += 1;
+                                    Stack[sidx] = (*(bulkfun_type0 )pTok->Fun.ptr)(nOffset,
+                                                                                   nThreadID);
+                                    continue;
+                                case 1:
+                                    Stack[sidx] = (*(bulkfun_type1 )pTok->Fun.ptr)(nOffset,
+                                                                                   nThreadID,
+                                                                                   Stack[sidx]);
+                                    continue;
+                                case 2:
+                                    sidx -= 1;
+                                    Stack[sidx] = (*(bulkfun_type2 )pTok->Fun.ptr)(nOffset,
+                                                                                   nThreadID,
+                                                                                   Stack[sidx],
+                                                                                   Stack[sidx + 1]);
+                                    continue;
+                                case 3:
+                                    sidx -= 2;
+                                    Stack[sidx] = (*(bulkfun_type3 )pTok->Fun.ptr)(nOffset,
+                                                                                   nThreadID,
+                                                                                   Stack[sidx],
+                                                                                   Stack[sidx + 1],
+                                                                                   Stack[sidx + 2]);
+                                    continue;
+                                case 4:
+                                    sidx -= 3;
+                                    Stack[sidx] = (*(bulkfun_type4 )pTok->Fun.ptr)(nOffset,
+                                                                                   nThreadID,
+                                                                                   Stack[sidx],
+                                                                                   Stack[sidx + 1],
+                                                                                   Stack[sidx + 2],
+                                                                                   Stack[sidx + 3]);
+                                    continue;
+                                case 5:
+                                    sidx -= 4;
+                                    Stack[sidx] = (*(bulkfun_type5 )pTok->Fun.ptr)(nOffset,
+                                                                                   nThreadID,
+                                                                                   Stack[sidx],
+                                                                                   Stack[sidx + 1],
+                                                                                   Stack[sidx + 2],
+                                                                                   Stack[sidx + 3],
+                                                                                   Stack[sidx + 4]);
+                                    continue;
+                                case 6:
+                                    sidx -= 5;
+                                    Stack[sidx] = (*(bulkfun_type6 )pTok->Fun.ptr)(nOffset,
+                                                                                   nThreadID,
+                                                                                   Stack[sidx],
+                                                                                   Stack[sidx + 1],
+                                                                                   Stack[sidx + 2],
+                                                                                   Stack[sidx + 3],
+                                                                                   Stack[sidx + 4],
+                                                                                   Stack[sidx + 5]);
+                                    continue;
+                                case 7:
+                                    sidx -= 6;
+                                    Stack[sidx] = (*(bulkfun_type7 )pTok->Fun.ptr)(nOffset,
+                                                                                   nThreadID,
+                                                                                   Stack[sidx],
+                                                                                   Stack[sidx + 1],
+                                                                                   Stack[sidx + 2],
+                                                                                   Stack[sidx + 3],
+                                                                                   Stack[sidx + 4],
+                                                                                   Stack[sidx + 5],
+                                                                                   Stack[sidx + 6]);
+                                    continue;
+                                case 8:
+                                    sidx -= 7;
+                                    Stack[sidx] = (*(bulkfun_type8 )pTok->Fun.ptr)(nOffset,
+                                                                                   nThreadID,
+                                                                                   Stack[sidx],
+                                                                                   Stack[sidx + 1],
+                                                                                   Stack[sidx + 2],
+                                                                                   Stack[sidx + 3],
+                                                                                   Stack[sidx + 4],
+                                                                                   Stack[sidx + 5],
+                                                                                   Stack[sidx + 6],
+                                                                                   Stack[sidx + 7]);
+                                    continue;
+                                case 9:
+                                    sidx -= 8;
+                                    Stack[sidx] = (*(bulkfun_type9 )pTok->Fun.ptr)(nOffset,
+                                                                                   nThreadID,
+                                                                                   Stack[sidx],
+                                                                                   Stack[sidx + 1],
+                                                                                   Stack[sidx + 2],
+                                                                                   Stack[sidx + 3],
+                                                                                   Stack[sidx + 4],
+                                                                                   Stack[sidx + 5],
+                                                                                   Stack[sidx + 6],
+                                                                                   Stack[sidx + 7],
+                                                                                   Stack[sidx + 8]);
+                                    continue;
+                                case 10:
+                                    sidx -= 9;
+                                    Stack[sidx] = (*(bulkfun_type10)pTok->Fun.ptr)(nOffset,
+                                                                                   nThreadID,
+                                                                                   Stack[sidx],
+                                                                                   Stack[sidx + 1],
+                                                                                   Stack[sidx + 2],
+                                                                                   Stack[sidx + 3],
+                                                                                   Stack[sidx + 4],
+                                                                                   Stack[sidx + 5],
+                                                                                   Stack[sidx + 6],
+                                                                                   Stack[sidx + 7],
+                                                                                   Stack[sidx + 8],
+                                                                                   Stack[sidx + 9]);
+                                    continue;
+                                default:
+                                    Error(ecINTERNAL_ERROR, 2);
+                                    continue;
+                            }
+                        }*/
+
+                    //case  cmSTRING:
+                    //case  cmOPRT_BIN:
+                    //case  cmOPRT_POSTFIX:
+                    //case  cmOPRT_INFIX:
+                    //      MUP_FAIL(INVALID_CODE_IN_BYTECODE);
+                    //      continue;
+
+                    //case  cmEND:
+                    //     return Stack[m_nFinalResultIdx];
+
+                    default:
+                        Error(ecINTERNAL_ERROR, 3);
+                } // switch CmdCode
+            } // for all bytecode tokens
+
+            // Copy the results
+            for (int j = 0; j < nStackSize; j++)
+            {
+                m_buffer[nOffset*nStackSize + j] = m_state->m_stackBuffer[nThreadID*nBufferOffset + j + 1];
+            }
+        }
+
+	}
+
 	//---------------------------------------------------------------------------
 	void ParserBase::CreateRPN()
 	{
@@ -2912,7 +3336,10 @@ namespace mu
                 {
                     g_logger.info("Start parallel run");
                     // Run parallel
-                    size_t nBufferOffset = m_state->m_stackBuffer.size() / nMaxThreads;
+
+                    ParseCmdCodeBulkParallel(nVectorLength);
+
+                    /*size_t nBufferOffset = m_state->m_stackBuffer.size() / nMaxThreads;
 
                     #pragma omp parallel for //schedule(static, (nVectorLength-1)/nMaxThreads)
                     for (size_t i = 1; i < nVectorLength; ++i)
@@ -2924,7 +3351,7 @@ namespace mu
                         {
                             m_buffer[i*nStackSize + j] = m_state->m_stackBuffer[nThreadID*nBufferOffset + j + 1];
                         }
-                    }
+                    }*/
                     g_logger.info("Ran parallel");
                 }
 
