@@ -85,7 +85,6 @@ static Matrix createMatFromLinesFilled(string& sCmd, Parser& _parser, MemoryMana
 /////////////////////////////////////////////////
 bool performMatrixOperation(string& sCmd, Parser& _parser, MemoryManager& _data, FunctionDefinitionManager& _functions, const Settings& _option)
 {
-    g_logger.setLoggingLevel(Logger::LVL_DEBUG);
     // Create the cache
     MatOpCache _cache;
     string sTargetName = "";

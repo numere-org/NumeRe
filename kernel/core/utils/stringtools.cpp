@@ -640,7 +640,7 @@ sys_time_point StrToTime(const std::string& sString)
     timeStruct.m_millisecs = std::chrono::milliseconds::zero();
     timeStruct.m_microsecs = std::chrono::microseconds::zero();
 
-    const char* DIGITS = "0123456789 ";
+    const char* DIGITS = "0123456789";
 
     // Contains time
     if (format & TD_HHMM || format & TD_HHMMSS)
@@ -652,12 +652,13 @@ sys_time_point StrToTime(const std::string& sString)
         for (size_t i = 0; i < toks.size(); i++)
         {
             // Catch milliseconds written as s.i or ss.iii
+            StripSpaces(toks[i]);
+
             if (i == 2 && toks[i].length() >= 3 && (toks[i][1] == '.' || toks[i][2] == '.'))
             {
                 size_t dot = toks[i].find('.');
-                auto iter = toks.insert(toks.begin()+i+1, toks[i].substr(dot+1));
+                toks.insert(toks.begin()+i+1, toks[i].substr(dot+1));
                 toks[i].erase(dot);
-                StripSpaces(*iter);
             }
 
             // Remove leading of trailing non-time characters
@@ -695,6 +696,8 @@ sys_time_point StrToTime(const std::string& sString)
 
         for (size_t i = 0; i < toks.size(); i++)
         {
+            StripSpaces(toks[i]);
+
             // Remove leading or trailing non-date chars
             if (toks[i].find_first_not_of(DIGITS) != std::string::npos)
             {
@@ -747,6 +750,8 @@ sys_time_point StrToTime(const std::string& sString)
 
         for (size_t i = 0; i < toks.size(); i++)
         {
+            StripSpaces(toks[i]);
+
             // Remove leading or trailing non-date chars
             if (toks[i].find_first_not_of(DIGITS) != std::string::npos)
             {
