@@ -501,12 +501,22 @@ Matrix Memory::readMemAsMatrix(const VectorIndex& _vLine, const VectorIndex& _vC
 
     Matrix mat(_vLine.size(), _vCol.size());
 
+    #pragma omp parallel for
     for (size_t j = 0; j < _vCol.size(); j++)
     {
         if (_vCol[j] < 0)
             continue;
 
-        int elems = getElemsInColumn(_vCol[j]);
+        // Get the complete column as a whole because it seems
+        // to be much faster (VTABLE issues? Cache locality?)
+        std::vector<mu::value_type> vEntries = memArray[_vCol[j]]->getValue(_vLine);
+
+        for (size_t i = 0; i < vEntries.size(); i++)
+        {
+            mat(i, j) = vEntries[i];
+        }
+
+        /*int elems = getElemsInColumn(_vCol[j]);
 
         if (!elems)
             continue;
@@ -525,7 +535,7 @@ Matrix Memory::readMemAsMatrix(const VectorIndex& _vLine, const VectorIndex& _vC
             }
 
             mat(i, j) = memArray[_vCol[j]]->getValue(_vLine[i]);
-        }
+        }*/
     }
 
     return mat;
