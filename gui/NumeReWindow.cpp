@@ -5061,7 +5061,7 @@ void NumeReWindow::EvaluateOptions()
         // navigator tree
         if (!m_treeBook->IsShown())
         {
-            m_splitProjectEditor->SplitVertically(m_treeBook, m_splitEditorOutput, m_splitProjectEditor->GetSashPosition());
+            m_splitProjectEditor->SplitVertically(m_treeBook, m_splitEditorOutput, m_options->getSetting(SETTING_V_POS_SASH_V).value());
             m_splitProjectEditor->SetMinimumPaneSize(30);
             m_treeBook->Show();
         }
