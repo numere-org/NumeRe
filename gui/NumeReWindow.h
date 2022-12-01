@@ -126,7 +126,7 @@ class wxTimer;
 class wxListCtrl;
 class CompilerOutputPanel;
 class IconManager;
-class wxProportionalSplitterWindow;
+class ProportionalSplitterWindow;
 class wxCHMHelpController;
 class DebugViewer;
 
@@ -399,9 +399,9 @@ class NumeReWindow : public wxFrame
         NumeReStatusbar* m_statusBar;
         //wxPanel* panelEd;
         /*! Holds the editor/project group and the output notebook */
-        wxProportionalSplitterWindow* m_splitEditorOutput;
+        ProportionalSplitterWindow* m_splitEditorOutput;
         /*! Holds the command window and the history window*/
-        wxProportionalSplitterWindow* m_splitCommandHistory;
+        ProportionalSplitterWindow* m_splitCommandHistory;
         /*! Holds the project tree and the editor notebook */
         wxSplitterWindow* m_splitProjectEditor;
         /*! Displays the output from the compiler */
@@ -418,7 +418,7 @@ class NumeReWindow : public wxFrame
         wxPanel* m_watchPanelContainer;
         wxPanel* m_container1;
         wxPanel* m_container2;
-        wxProportionalSplitterWindow* m_watchPanelSplitter;
+        ProportionalSplitterWindow* m_watchPanelSplitter;
 
         // dialogs
         OptionsDialog*  m_optionsDialog;
@@ -452,9 +452,6 @@ class NumeReWindow : public wxFrame
         /*! The last clicked tab in the editor notebook */
         int m_clickedTabNum;
         int m_splitterPos;
-
-        float fSplitPercentage;
-        float fVerticalSplitPercentage;
 
         bool m_appClosing;
         bool m_sessionSaved;

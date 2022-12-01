@@ -50,6 +50,7 @@
 #include <wx/artprov.h>
 #include <fstream>
 #include <wx/clipbrd.h>
+#include <wx/display.h>
 #include <array>
 
 
@@ -172,6 +173,70 @@ BEGIN_EVENT_TABLE(NumeReWindow, wxFrame)
 END_EVENT_TABLE()
 
 IMPLEMENT_APP(MyApp)
+
+
+/////////////////////////////////////////////////
+/// \brief Static helper function to determine
+/// the window size and position if necessary.
+///
+/// \param sWinSize std::string&
+/// \return wxRect
+///
+/////////////////////////////////////////////////
+static wxRect determineWindowSize(std::string& sWinSize)
+{
+    wxRect winRect;
+
+    if (sWinSize == "{}")
+        return winRect;
+
+    EndlessVector<StringView> vArgs = getAllArguments(StringView(sWinSize, 1, sWinSize.length()-2));
+
+    if (vArgs.size() < 4)
+        sWinSize = "{}";
+    else
+    {
+        winRect.x = StrToInt(vArgs[0].subview(2).to_string());
+        winRect.y = StrToInt(vArgs[1].subview(2).to_string());
+        winRect.width = StrToInt(vArgs[2].subview(2).to_string());
+        winRect.height = StrToInt(vArgs[3].subview(2).to_string());
+
+        int currDisplay = wxNOT_FOUND;
+        wxRect dispdim;
+
+        // Find the correct display
+        for (size_t i = 0; i < wxDisplay::GetCount(); i++)
+        {
+            dispdim = wxDisplay(i).GetGeometry();
+
+            if (dispdim.Contains(winRect.x+10, winRect.y+10))
+            {
+                currDisplay = i;
+                break;
+            }
+        }
+
+        g_logger.info("User-selected display: " + toString(currDisplay) + " @ {x=" + toString(winRect.x) + " y=" + toString(winRect.y)+"}");
+
+        if (currDisplay == wxNOT_FOUND)
+        {
+            sWinSize = "{}";
+            return winRect;
+        }
+
+        winRect.width = std::min(dispdim.width-winRect.x+dispdim.x, winRect.width);
+        winRect.height = std::min(dispdim.height-winRect.y+dispdim.y, winRect.height);
+
+        g_logger.info("Final window dimensions: w=" + toString(winRect.width) + " h=" + toString(winRect.height));
+
+        if (winRect.width < 200 || winRect.height < 200)
+            sWinSize = "{}";
+    }
+
+    return winRect;
+}
+
+
 //----------------------------------------------------------------------
 /////////////////////////////////////////////////
 /// \brief "Main program" equivalent: the program
@@ -263,9 +328,24 @@ bool MyApp::OnInit()
     m_DDEServer = new DDE::Server(NumeReMainFrame);
     m_DDEServer->Create(DDE_SERVICE);
 
+    g_logger.debug("Determining window size.");
+
+    if (NumeReMainFrame->getOptions()->getSetting(SETTING_B_SAVEWINDOWSIZE).active())
+    {
+        std::string sWinSize = NumeReMainFrame->getOptions()->getSetting(SETTING_S_WINDOWSIZE).stringval();
+        g_logger.info("User-selected window size: " + sWinSize);
+        wxRect winRect = determineWindowSize(sWinSize);
+
+        if (sWinSize != "{}")
+            NumeReMainFrame->SetSize(winRect);
+        else
+            NumeReMainFrame->Maximize();
+    }
+    else
+        NumeReMainFrame->Maximize();
+
     g_logger.debug("Showing main frame.");
     NumeReMainFrame->Show(true);
-    NumeReMainFrame->Maximize();
 
     // Passed commandline items
     wxArrayString wxArgV;
@@ -401,13 +481,11 @@ NumeReWindow::NumeReWindow(const wxString& title, const wxPoint& pos, const wxSi
        : wxFrame((wxFrame *)nullptr, -1, title, pos, size)
 {
     // should be approximately 80x15 for the terminal
-    this->SetSize(1024, 768);
+    SetMinSize(wxSize(1024, 768));
 
     m_debugViewer = nullptr;
     m_currentView = nullptr;
     m_statusBar = nullptr;
-    fSplitPercentage = -0.65f;
-    fVerticalSplitPercentage = 0.7f; // positive number to deactivate internal default algorithm
 
     m_copiedTreeItem = 0;
     m_multiRowState = false;
@@ -438,8 +516,8 @@ NumeReWindow::NumeReWindow(const wxString& title, const wxPoint& pos, const wxSi
     g_logger.debug("Creating window elements.");
     // Create the main frame splitters
     m_splitProjectEditor = new wxSplitterWindow(this, ID_SPLITPROJECTEDITOR, wxDefaultPosition, wxDefaultSize, wxBORDER_THEME);
-    m_splitEditorOutput = new wxProportionalSplitterWindow(m_splitProjectEditor, ID_SPLITEDITOROUTPUT, 0.75, wxDefaultPosition, wxDefaultSize, wxSP_3DSASH);
-    m_splitCommandHistory = new wxProportionalSplitterWindow(m_splitEditorOutput, wxID_ANY, 0.75, wxDefaultPosition, wxDefaultSize, wxSP_3DSASH);
+    m_splitEditorOutput = new ProportionalSplitterWindow(m_splitProjectEditor, ID_SPLITEDITOROUTPUT, 0.75, wxDefaultPosition, wxDefaultSize, wxSP_3DSASH);
+    m_splitCommandHistory = new ProportionalSplitterWindow(m_splitEditorOutput, wxID_ANY, 0.75, wxDefaultPosition, wxDefaultSize, wxSP_3DSASH);
 
     // Create the different notebooks
     m_book = new EditorNotebook(m_splitEditorOutput, ID_NOTEBOOK_ED, m_iconManager);
@@ -553,6 +631,13 @@ NumeReWindow::NumeReWindow(const wxString& title, const wxPoint& pos, const wxSi
 
     g_logger.info("Evaluating options.");
     EvaluateOptions();
+
+    if (m_options->getSetting(SETTING_B_SAVESASHS).active())
+    {
+        m_splitProjectEditor->SetSashPosition(m_options->getSetting(SETTING_V_POS_SASH_V).value());
+        m_splitCommandHistory->SetSashPositionFloat(m_options->getSetting(SETTING_V_POS_SASH_T).value() / 100.0);
+        m_splitEditorOutput->SetSashPositionFloat(m_options->getSetting(SETTING_V_POS_SASH_H).value() / 100.0);
+    }
 
     // Recreate the last session or
     // create a new empty file
@@ -1090,6 +1175,7 @@ void NumeReWindow::OnClose(wxCloseEvent &event)
     m_appClosing = true;
     g_logger.info("Closing NumeRe.");
 
+
     if (!CloseAllFiles())
     {
         if (event.CanVeto())
@@ -1118,6 +1204,31 @@ void NumeReWindow::OnClose(wxCloseEvent &event)
 
     if (m_terminal->IsWorking())
     {
+        m_options->copySettings(m_terminal->getKernelSettings());
+
+        if (m_options->getSetting(SETTING_B_SAVESASHS).active())
+        {
+            m_options->getSetting(SETTING_V_POS_SASH_H).value() = 100 * m_splitEditorOutput->GetSplitPercentage();
+            m_options->getSetting(SETTING_V_POS_SASH_V).value() = m_splitProjectEditor->GetSashPosition();
+            m_options->getSetting(SETTING_V_POS_SASH_T).value() = 100 * m_splitCommandHistory->GetSplitPercentage();
+        }
+
+        if (m_options->getSetting(SETTING_B_SAVEWINDOWSIZE).active())
+        {
+            wxRect winRect = GetScreenRect();
+
+            if (IsMaximized())
+                m_options->getSetting(SETTING_S_WINDOWSIZE).stringval() = "{}";
+            else
+                m_options->getSetting(SETTING_S_WINDOWSIZE).stringval() = wxString::Format("{x=%d,y=%d,w=%d,h=%d}",
+                                                                                           winRect.x, winRect.y,
+                                                                                           winRect.width, winRect.height);
+        }
+
+        // Update the settings for the last time
+        m_terminal->setKernelSettings(*m_options);
+        wxMilliSleep(200);
+
         g_logger.info("Stopping Kernel.");
         m_terminal->EndKernelTask();
         wxMilliSleep(200);
@@ -5396,12 +5507,12 @@ void NumeReWindow::UpdateTerminalNotebook()
 
     if (!m_splitEditorOutput->IsSplit())
     {
-        m_splitEditorOutput->SplitHorizontally(m_book, m_splitCommandHistory, fSplitPercentage);//-260);//-200);
+        m_splitEditorOutput->SplitHorizontally(m_book, m_splitCommandHistory, m_options->getSetting(SETTING_V_POS_SASH_H).value()/100.0);
         m_splitEditorOutput->SetMinimumPaneSize(20);
 
         if (!m_splitCommandHistory->IsSplit())
         {
-            m_splitCommandHistory->SplitVertically(m_termContainer, m_noteTerm, fVerticalSplitPercentage);
+            m_splitCommandHistory->SplitVertically(m_termContainer, m_noteTerm, m_options->getSetting(SETTING_V_POS_SASH_T).value()/100.0);
         }
 
         m_terminal->UpdateSize();
@@ -5462,12 +5573,12 @@ void NumeReWindow::toggleConsole()
     {
         m_termContainer->Hide();
         m_noteTerm->Hide();
-        fSplitPercentage = m_splitEditorOutput->GetSplitPercentage();
+        m_options->getSetting(SETTING_V_POS_SASH_H).value() = 100 * m_splitEditorOutput->GetSplitPercentage();
         m_splitEditorOutput->Unsplit(m_splitCommandHistory);
     }
     else
     {
-        m_splitEditorOutput->SplitHorizontally(m_book, m_splitCommandHistory, fSplitPercentage);
+        m_splitEditorOutput->SplitHorizontally(m_book, m_splitCommandHistory, m_options->getSetting(SETTING_V_POS_SASH_H).value() / 100.0);
         m_splitEditorOutput->SetMinimumPaneSize(20);
         m_terminal->UpdateSize();
         m_termContainer->Show();
@@ -5492,11 +5603,12 @@ void NumeReWindow::toggleFiletree()
     if (m_treeBook->IsShown())
     {
         m_treeBook->Hide();
+        m_options->getSetting(SETTING_V_POS_SASH_V).value() = m_splitProjectEditor->GetSashPosition();
         m_splitProjectEditor->Unsplit(m_treeBook);
     }
     else
     {
-        m_splitProjectEditor->SplitVertically(m_treeBook, m_splitEditorOutput, 200);
+        m_splitProjectEditor->SplitVertically(m_treeBook, m_splitEditorOutput, m_options->getSetting(SETTING_V_POS_SASH_V).value());
         m_splitProjectEditor->SetMinimumPaneSize(30);
         m_treeBook->Show();
     }
@@ -5520,12 +5632,12 @@ void NumeReWindow::toggleHistory()
     if (m_noteTerm->IsShown())
     {
         m_noteTerm->Hide();
-        fVerticalSplitPercentage = m_splitCommandHistory->GetSplitPercentage();
+        m_options->getSetting(SETTING_V_POS_SASH_T).value() = 100 * m_splitCommandHistory->GetSplitPercentage();
         m_splitCommandHistory->Unsplit(m_noteTerm);
     }
     else
     {
-        m_splitCommandHistory->SplitVertically(m_termContainer, m_noteTerm, fVerticalSplitPercentage);
+        m_splitCommandHistory->SplitVertically(m_termContainer, m_noteTerm, m_options->getSetting(SETTING_V_POS_SASH_T).value() / 100.0);
         m_noteTerm->Show();
     }
 

@@ -420,12 +420,17 @@ void OptionsDialog::CreateMiscPage()
 
     m_saveSession = panel->CreateCheckBox(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_SAVE_SESSION"));
     m_saveBookmarksInSession = panel->CreateCheckBox(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_SAVE_BOOKMARKS_IN_SESSION"));
+    m_saveSashPositions = panel->CreateCheckBox(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_SAVE_SASH_POSITIONS"));
+    m_saveWindowPosition = panel->CreateCheckBox(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_SAVE_WINDOW_POSITION"));
     m_showGreeting = panel->CreateCheckBox(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_GREETING"));
     m_ShowHints = panel->CreateCheckBox(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_HINTS"));
 
     // Those are not part of any group
     m_termHistory = panel->CreateSpinControl(panel, panel->getVerticalSizer(), _guilang.get("GUI_OPTIONS_HISTORY_LINES"), 100, 1000, 100);
     m_precision = panel->CreateSpinControl(panel, panel->getVerticalSizer(), _guilang.get("GUI_OPTIONS_PRECISION"), 1, 14, 7);
+
+    // Enable scrolling for this page
+    panel->SetScrollbars(0, 20, 0, 200);
 
     // Add the grouped page to the notebook
     m_optionsNotebook->AddPage(panel, _guilang.get("GUI_OPTIONS_MISC"));
@@ -823,6 +828,8 @@ bool OptionsDialog::EvaluateOptions()
     mSettings[SETTING_B_SMARTSENSE].active() = m_smartSense->IsChecked();
     mSettings[SETTING_B_AUTOSAVEEXECUTION].active() = m_saveBeforeExecuting->IsChecked();
     mSettings[SETTING_B_LINELENGTH].active() = m_lineLengthIndicator->IsChecked();
+    mSettings[SETTING_B_SAVESASHS].active() = m_saveSashPositions->IsChecked();
+    mSettings[SETTING_B_SAVEWINDOWSIZE].active() = m_saveWindowPosition->IsChecked();
 
     wxString selectedPrintStyleString = m_printStyle->GetValue();
 
@@ -925,6 +932,8 @@ void OptionsDialog::InitializeDialog()
     m_smartSense->SetValue(mSettings[SETTING_B_SMARTSENSE].active());
     m_saveBeforeExecuting->SetValue(mSettings[SETTING_B_AUTOSAVEEXECUTION].active());
     m_lineLengthIndicator->SetValue(mSettings[SETTING_B_LINELENGTH].active());
+    m_saveSashPositions->SetValue(mSettings[SETTING_B_SAVESASHS].active());
+    m_saveWindowPosition->SetValue(mSettings[SETTING_B_SAVEWINDOWSIZE].active());
 
     m_debuggerFocusLine->SetValue(mSettings[SETTING_V_FOCUSEDLINE].value());
     m_debuggerDecodeArguments->SetValue(mSettings[SETTING_B_DECODEARGUMENTS].active());

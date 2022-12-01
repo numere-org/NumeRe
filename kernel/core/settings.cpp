@@ -83,6 +83,12 @@ Settings::Settings() : Documentation()
     m_settings[SETTING_B_TOOLBARTEXT] = SettingsValue(false, SettingsValue::SAVE | SettingsValue::HIDDEN);
     m_settings[SETTING_B_PATHSONTABS] = SettingsValue(false, SettingsValue::SAVE | SettingsValue::IMMUTABLE);
     m_settings[SETTING_B_ICONSONTABS] = SettingsValue(false, SettingsValue::SAVE | SettingsValue::IMMUTABLE);
+    m_settings[SETTING_V_POS_SASH_V] = SettingsValue(200u, 0u, -1u, SettingsValue::SAVE | SettingsValue::IMMUTABLE | SettingsValue::HIDDEN);
+    m_settings[SETTING_V_POS_SASH_H] = SettingsValue(75u, 1u, 99u, SettingsValue::SAVE | SettingsValue::IMMUTABLE | SettingsValue::HIDDEN);
+    m_settings[SETTING_V_POS_SASH_T] = SettingsValue(75u, 1u, 99u, SettingsValue::SAVE | SettingsValue::IMMUTABLE | SettingsValue::HIDDEN);
+    m_settings[SETTING_S_WINDOWSIZE] = SettingsValue("{}", SettingsValue::SAVE | SettingsValue::IMMUTABLE | SettingsValue::HIDDEN);
+    m_settings[SETTING_B_SAVESASHS] = SettingsValue(false, SettingsValue::SAVE | SettingsValue::IMMUTABLE);
+    m_settings[SETTING_B_SAVEWINDOWSIZE] = SettingsValue(false, SettingsValue::SAVE | SettingsValue::IMMUTABLE);
     m_settings[SETTING_B_PRINTLINENUMBERS] = SettingsValue(false, SettingsValue::SAVE | SettingsValue::IMMUTABLE);
     m_settings[SETTING_B_SAVESESSION] = SettingsValue(false, SettingsValue::SAVE | SettingsValue::IMMUTABLE);
     m_settings[SETTING_B_SAVEBOOKMARKS] = SettingsValue(false, SettingsValue::SAVE | SettingsValue::IMMUTABLE);

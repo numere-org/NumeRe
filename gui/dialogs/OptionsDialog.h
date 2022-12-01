@@ -192,6 +192,8 @@ class OptionsDialog: public wxDialog
         wxCheckBox* m_showToolbarText;
         wxCheckBox* m_saveSession;
         wxCheckBox* m_saveBookmarksInSession;
+        wxCheckBox* m_saveSashPositions;
+        wxCheckBox* m_saveWindowPosition;
         wxSpinCtrl* m_termHistory;
         wxSpinCtrl* m_caretBlinkTime;
         wxCheckBox* m_useExecuteCommand;

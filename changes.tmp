@@ -45,3 +45,4 @@ Added	"read" may now also consider string delimiters to actually ignore comments
 Added	The table viewer has now many more functionalities accessible via the new menu bar. It can save the table directly, convert column types and refresh the displayed contents from the kernel.
 Applied	Constant value function folding has been added to the numeric parser improving the calculation speed by 10-20% (depending on the amount of used constant values).
 Fixed	A not necessary recursion in the "matop" command has been removed and a memory read bottleneck was resolved improving the calculation speed of large matrices to a factor of 4.
+New	It is now possible to store the window splitters' positions as well as the window size and position and restore that after a restart. Both options can be enabled in the settings.
