@@ -1212,6 +1212,12 @@ void NumeReWindow::OnClose(wxCloseEvent &event)
             m_options->getSetting(SETTING_V_POS_SASH_V).value() = m_splitProjectEditor->GetSashPosition();
             m_options->getSetting(SETTING_V_POS_SASH_T).value() = 100 * m_splitCommandHistory->GetSplitPercentage();
         }
+        else
+        {
+            m_options->getSetting(SETTING_V_POS_SASH_H).value() = 75;
+            m_options->getSetting(SETTING_V_POS_SASH_V).value() = 200;
+            m_options->getSetting(SETTING_V_POS_SASH_T).value() = 75;
+        }
 
         if (m_options->getSetting(SETTING_B_SAVEWINDOWSIZE).active())
         {
@@ -5055,7 +5061,7 @@ void NumeReWindow::EvaluateOptions()
         // navigator tree
         if (!m_treeBook->IsShown())
         {
-            m_splitProjectEditor->SplitVertically(m_treeBook, m_splitEditorOutput, 200);
+            m_splitProjectEditor->SplitVertically(m_treeBook, m_splitEditorOutput, m_splitProjectEditor->GetSashPosition());
             m_splitProjectEditor->SetMinimumPaneSize(30);
             m_treeBook->Show();
         }
