@@ -2298,8 +2298,8 @@ vector<string> Procedure::getInlined(const string& sProc, const string& sArgumen
 
         for (const auto& sArgDef : varFactory.vInlineArgDef)
         {
-            if (sArgDef.substr(0, 15) == "_~~TEMPCLUSTER_")
-            inlineClusters.insert(sArgDef.substr(0, sArgDef.find('{')));
+            if (sArgDef.substr(0, 6) == "_~~TC_")
+                inlineClusters.insert(sArgDef.substr(0, sArgDef.find('{')));
         }
     }
 

@@ -729,7 +729,8 @@ AnnotationCount CodeAnalyzer::analyseCommands()
                 }
 
                 // Important parts of the argument are missing?
-                if (sArgument.find(':') == string::npos || sArgument.find('=') == string::npos)
+                if ((sArgument.find('=') >= sArgument.length()-1 && sArgument.find("->") >= sArgument.length()-2)
+                    || (!isalpha(sArgument.front()) && sArgument.front() != '_'))
                 {
                     AnnotCount += addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE", highlightFoundOccurence(sSyntaxElement, j+1, sArgument.length()), m_sError, _guilang.get("GUI_ANALYZER_FOR_INTERVALERROR")), ANNOTATION_ERROR);
                 }
@@ -740,7 +741,9 @@ AnnotationCount CodeAnalyzer::analyseCommands()
                 {
                     for (int i = j+1; i < nPos; i++)
                     {
-                        if (m_editor->GetStyleAt(i) == wxSTC_NPRC_IDENTIFIER || m_editor->GetStyleAt(i) == wxSTC_NPRC_CUSTOM_FUNCTION || m_editor->GetStyleAt(i) == wxSTC_NPRC_CLUSTER)
+                        if (m_editor->GetStyleAt(i) == wxSTC_NPRC_IDENTIFIER
+                            || m_editor->GetStyleAt(i) == wxSTC_NPRC_CUSTOM_FUNCTION
+                            || m_editor->GetStyleAt(i) == wxSTC_NPRC_CLUSTER)
                         {
                             // Store it and break directly
                             m_vLocalVariables.push_back(pair<string,int>(m_editor->GetTextRange(m_editor->WordStartPosition(i, true), m_editor->WordEndPosition(i, true)).ToStdString(), m_editor->GetStyleAt(i)));

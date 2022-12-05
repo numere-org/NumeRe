@@ -3511,13 +3511,19 @@ int NumeReKernel::evalDebuggerBreakPoint(const std::string& sCurrentCommand)
     const mu::varmap_type& varmap = _parser.GetVar();
 
     for (auto iter : varmap)
-        mLocalVars[iter.first] = std::make_pair(iter.first, iter.second);
+    {
+        if (iter.first.substr(0, 2) != "_~")
+            mLocalVars[iter.first] = std::make_pair(iter.first, iter.second);
+    }
 
     // Get the string variable map
     const std::map<std::string, std::string>& sStringMap = getInstance()->getStringParser().getStringVars();
 
     for (const auto& iter : sStringMap)
-        mLocalStrings[iter.first] = std::make_pair(iter.first, iter.second);
+    {
+        if (iter.first.substr(0, 2) != "_~")
+            mLocalStrings[iter.first] = std::make_pair(iter.first, iter.second);
+    }
 
     // Get the table variable map
     std::map<std::string, std::pair<size_t,size_t>> tableMap = getInstance()->getMemoryManager().getTableMap();
@@ -3532,7 +3538,10 @@ int NumeReKernel::evalDebuggerBreakPoint(const std::string& sCurrentCommand)
     const std::map<std::string, NumeRe::Cluster>& clusterMap = getInstance()->getMemoryManager().getClusterMap();
 
     for (const auto& iter : clusterMap)
-        mLocalClusters[iter.first] = iter.first;
+    {
+        if (iter.first.substr(0, 2) != "_~")
+            mLocalClusters[iter.first] = iter.first;
+    }
 
 
     // Pass the created information to the debugger
