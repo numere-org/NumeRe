@@ -425,25 +425,34 @@ int FlowCtrl::range_based_for_loop(int nth_Cmd, int nth_loop)
     // assign the result to the iterator
     NumeRe::Cluster range = evalRangeBasedHeader(sHead, nth_Cmd, "for");
 
+    // Shall we declare a new iterator variable? Otherwise try
+    // to detect the type of the already created iterator variable
     if (varType == DECLARE_NEW_VAR)
     {
         if (sVarArray[nVarAdress].front() == '{')
         {
             EndlessVector<std::string> vIters = getAllArguments(sVarArray[nVarAdress].substr(1, sVarArray[nVarAdress].length()-2));
+
+            // Create a temporary cluster for all iterators and remove
+            // the trailing closing brace to change that to individual
+            // indices for every iterator
             std::string sTempCluster = _dataRef->createTemporaryCluster(vIters.front());
             sTempCluster.pop_back();
 
+            // Create single calls for every single iterator
             for (size_t i = 0; i < vIters.size(); i++)
             {
                 mVarMap[vIters[i]] = sTempCluster + toString(i+1) + "}";
                 replaceLocalVars(vIters[i], mVarMap[vIters[i]], nth_Cmd, nJumpTable[nth_Cmd][BLOCK_END]);
 
+                // Add or replace the iterators in the list of iterators
                 if (i)
                     sVarArray.push_back(mVarMap[vIters[i]]);
                 else
                     sVarArray[nVarAdress] = mVarMap[vIters[0]];
             }
 
+            // Note the needed iterator stepping
             vCmdArray[nth_Cmd].nRFStepping = vIters.size()-1;
             varType = CLUSTERVAR;
         }
@@ -467,6 +476,8 @@ int FlowCtrl::range_based_for_loop(int nth_Cmd, int nth_loop)
         }
         else
         {
+            // Create a cluster in all other cases as this is the
+            // only variant type available
             mVarMap[sVarArray[nVarAdress]] = _dataRef->createTemporaryCluster(sVarArray[nVarAdress]);
             replaceLocalVars(sVarArray[nVarAdress], mVarMap[sVarArray[nVarAdress]], nth_Cmd, nJumpTable[nth_Cmd][BLOCK_END]);
             sVarArray[nVarAdress] = mVarMap[sVarArray[nVarAdress]];
@@ -475,7 +486,7 @@ int FlowCtrl::range_based_for_loop(int nth_Cmd, int nth_loop)
     }
     else
     {
-        // Find the type of the current variable
+        // Find the type of the current iterator variable
         if (sVarArray[nVarAdress].find('{') != std::string::npos)
             varType = CLUSTERVAR;
         else if (_stringParser.isStringVar(sVarArray[nVarAdress]))
@@ -497,23 +508,28 @@ int FlowCtrl::range_based_for_loop(int nth_Cmd, int nth_loop)
     for (size_t i = 0; i < range.size(); i++)
     {
         // Set the value in the correct variable type
-        if (varType == NUMVAR)
-            vVarArray[nVarAdress] = range.getDouble(i);
-        else if (varType == STRINGVAR)
-            _stringParser.setStringValue(sVarArray[nVarAdress], range.getInternalString(i));
-        else
+        switch (varType)
         {
-            NumeRe::Cluster& iterCluster = _dataRef->getCluster(sVarArray[nVarAdress]);
-
-            for (size_t n = 0; n <= vCmdArray[nth_Cmd].nRFStepping; n++)
+            case NUMVAR:
+                vVarArray[nVarAdress] = range.getDouble(i);
+                break;
+            case STRINGVAR:
+                _stringParser.setStringValue(sVarArray[nVarAdress], range.getInternalString(i));
+                break;
+            default:
             {
-                if (range.getType(i+n) == NumeRe::ClusterItem::ITEMTYPE_DOUBLE)
-                    iterCluster.setDouble(n, range.getDouble(i+n));
-                else
-                    iterCluster.setString(n, range.getInternalString(i+n));
-            }
+                NumeRe::Cluster& iterCluster = _dataRef->getCluster(sVarArray[nVarAdress]);
 
-            i += vCmdArray[nth_Cmd].nRFStepping;
+                for (size_t n = 0; n <= vCmdArray[nth_Cmd].nRFStepping; n++)
+                {
+                    if (range.getType(i+n) == NumeRe::ClusterItem::ITEMTYPE_DOUBLE)
+                        iterCluster.setDouble(n, range.getDouble(i+n));
+                    else
+                        iterCluster.setString(n, range.getInternalString(i+n));
+                }
+
+                i += vCmdArray[nth_Cmd].nRFStepping;
+            }
         }
 
         // Ensure that the loop is aborted, if the

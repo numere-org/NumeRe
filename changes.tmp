@@ -49,3 +49,5 @@ New	It is now possible to store the window splitters' positions as well as the w
 New	Added a range-based for loop with a new syntax: "for (iter -> RANGEOBJECT)"
 Added	The range-based for loop may now accept combined iterators like "for ({key,val} -> keyvallist{})"
 Fixed	Swapping aliased tables will now correctly update all aliases. This is also valid for aliased tables used as return value.
+Cleaned	Calling "is_string()" on a vectorized expression will now return the type for every component instead for the whole expression.
+Cleaned	Enabled the loading and listing of "DIFF" files in the editor.

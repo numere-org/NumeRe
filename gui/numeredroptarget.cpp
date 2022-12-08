@@ -461,7 +461,7 @@ NumeReDropTarget::fileType NumeReDropTarget::getFileType(const wxString& filenam
 
     // Declare the categories containing the
     // corresponding file extensions
-    static wxString textExtensions = ";txt;dat;log;tex;csv;jdx;jcm;dx;nhlp;nlyt;ndb;nlng;def;ini;hlpidx;m;cpp;hpp;c;h;cxx;hxx;xml;";
+    static wxString textExtensions = ";txt;dat;log;tex;csv;jdx;jcm;dx;nhlp;nlyt;ndb;nlng;def;ini;hlpidx;m;cpp;hpp;c;h;cxx;hxx;xml;diff;";
     static wxString binaryExtensions = ";ndat;xls;xlsx;ods;labx;ibw;";
     static wxString imageExtensions = ";png;gif;jpg;jpeg;bmp;eps;svg;";
     static wxString execExtensions = ";nscr;nprc;";

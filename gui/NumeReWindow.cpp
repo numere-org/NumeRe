@@ -3872,7 +3872,8 @@ void NumeReWindow::OpenFileByType(const wxFileName& filename)
         || filename.GetExt() == "hxx"
         || filename.GetExt() == "h"
         || filename.GetExt() == "xml"
-        || filename.GetExt() == "tex")
+        || filename.GetExt() == "tex"
+        || filename.GetExt() == "diff")
     {
         wxArrayString filesToOpen;
         filesToOpen.Add(filename.GetFullPath());
