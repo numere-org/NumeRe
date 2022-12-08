@@ -713,6 +713,7 @@ void NumeReDebugger::gatherLoopBasedInformations(const string& _sErraticCommand,
         sErraticCommand.erase(sErraticCommand.find_first_not_of(' '), 2);
 
     nLineNumber = _nLineNumber;
+    NumeReKernel* instance = NumeReKernel::getInstance();
 
     // store variable names and replace their occurences with
     // their definitions
@@ -722,21 +723,26 @@ void NumeReDebugger::gatherLoopBasedInformations(const string& _sErraticCommand,
         {
             if (iter->second == sVarArray[i])
             {
-                if (sVarArray[i].find("{}") != std::string::npos)
-                {
-                    NumeRe::Cluster& iterData = NumeReKernel::getInstance()->getMemoryManager().getCluster(sVarArray[i]);
+                size_t nBracePos = sVarArray[i].find('{');
 
-                    if (iterData.getType(0) == NumeRe::ClusterItem::ITEMTYPE_DOUBLE)
-                        mLocalVars[iter->first + "@" + iter->second] = iterData.getDouble(0);
-                    else if (iterData.getType(0) == NumeRe::ClusterItem::ITEMTYPE_STRING)
-                        mLocalStrings[iter->first + "@" + iter->second] = iterData.getString(0);
-                }
-                else
+                // Store the variables
+                if (nBracePos != std::string::npos)
                 {
-                    // Store the variables
-                    //mLocalVars[iter->first + " @" + toHexString((int)&vVarArray[i][0]) + "\t" + iter->second] = vVarArray[i][0];
-                    mLocalVars[iter->first + "\t" + iter->second] = vVarArray[i];
+                    NumeRe::Cluster& iterData = instance->getMemoryManager().getCluster(sVarArray[i]);
+                    size_t nItem = 0;
+
+                    if (nBracePos < sVarArray[i].length()-2)
+                        nItem = StrToInt(sVarArray[i].substr(nBracePos+1, sVarArray[i].length()-1-nBracePos-1))-1;
+
+                    if (iterData.getType(nItem) == NumeRe::ClusterItem::ITEMTYPE_DOUBLE)
+                        mLocalVars[iter->first + "@" + iter->second] = iterData.getDouble(nItem);
+                    else if (iterData.getType(nItem) == NumeRe::ClusterItem::ITEMTYPE_STRING)
+                        mLocalStrings[iter->first + "@" + iter->second] = iterData.getString(nItem);
                 }
+                else if (instance->getStringParser().isStringVar(sVarArray[i]))
+                    mLocalStrings[iter->first + "\t" + iter->second] = toExternalString(instance->getStringParser().getStringValue(sVarArray[i]));
+                else
+                    mLocalVars[iter->first + "\t" + iter->second] = vVarArray[i];
 
                 // Replace the variables
                 while (sErraticCommand.find(iter->second) != string::npos)

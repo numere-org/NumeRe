@@ -502,6 +502,20 @@ namespace NumeRe
 
 
     /////////////////////////////////////////////////
+    /// \brief Determine, whether the passed string
+    /// is the identifier of a string variable.
+    ///
+    /// \param sVarName const std::string&
+    /// \return bool
+    ///
+    /////////////////////////////////////////////////
+    bool StringVarFactory::isStringVar(const std::string& sVarName) const
+    {
+        return m_mStringVars.find(sVarName) != m_mStringVars.end();
+    }
+
+
+    /////////////////////////////////////////////////
     /// \brief This public member function resolves
     /// all string variable occurences and replaces
     /// them with an internal string vector variable
@@ -580,6 +594,7 @@ namespace NumeRe
         }
     }
 
+
     /////////////////////////////////////////////////
     /// \brief This public member function resolves
     /// all string variable occurences and replaces
@@ -654,6 +669,25 @@ namespace NumeRe
                 }
             }
         }
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Returns the value of the selected
+    /// string variable.
+    ///
+    /// \param sVar const std::string&
+    /// \return std::string
+    ///
+    /////////////////////////////////////////////////
+    std::string StringVarFactory::getStringValue(const std::string& sVar) const
+    {
+        auto iter = m_mStringVars.find(sVar);
+
+        if (iter == m_mStringVars.end())
+            return "";
+
+        return iter->second;
     }
 
 

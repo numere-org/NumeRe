@@ -882,7 +882,7 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, F
                     commandQueue.push(expr + ";");
                 }
 
-                if (sProcCommandLine.back() != ';')
+                if (bProcSupressAnswer == false)
                     commandQueue.back().pop_back();
 
                 sProcCommandLine = commandQueue.front();

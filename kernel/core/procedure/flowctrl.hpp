@@ -146,6 +146,7 @@ class FlowCtrl
         int evalForkFlowCommands(int __j, int nth_loop);
 
         void replaceLocalVars(std::string& sLine);
+        void replaceLocalVars(const std::string& sOldVar, const std::string& sNewVar, size_t from = 0, size_t to = std::string::npos);
 
         bool checkFlowControlArgument(const std::string& sFlowControlArgument, bool isForLoop = false);
         bool checkCaseValue(const std::string& sCaseDefinition);
@@ -206,12 +207,13 @@ struct FlowCtrlCommand
     bool bFlowCtrlStatement;
     std::string sFlowCtrlHeader;
     int nVarIndex;
+    size_t nRFStepping;
 
     FlowCtrl::FlowCtrlFunction fcFn;
 
 
     FlowCtrlCommand(const std::string& sCmd, int nLine, bool bStatement = false, FlowCtrl::FlowCtrlFunction fn = nullptr)
-        : sCommand(sCmd), nInputLine(nLine), bFlowCtrlStatement(bStatement), sFlowCtrlHeader(""), nVarIndex(-1), fcFn(fn) {}
+        : sCommand(sCmd), nInputLine(nLine), bFlowCtrlStatement(bStatement), sFlowCtrlHeader(""), nVarIndex(-1), nRFStepping(0u), fcFn(fn) {}
 };
 
 #endif

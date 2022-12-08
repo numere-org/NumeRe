@@ -349,6 +349,20 @@ int FlowCtrl::for_loop(int nth_Cmd, int nth_loop)
 
 
 /////////////////////////////////////////////////
+/// \brief Simple enum to make the variable types
+/// of the range based for loop more readable.
+/////////////////////////////////////////////////
+enum RangeForVarType
+{
+    DECLARE_NEW_VAR = -1,
+    DETECT_VAR_TYPE,
+    NUMVAR,
+    STRINGVAR,
+    CLUSTERVAR
+};
+
+
+/////////////////////////////////////////////////
 /// \brief This member function realizes the FOR
 /// control flow statement for range based
 /// indices. The return value is either an error
@@ -365,12 +379,13 @@ int FlowCtrl::range_based_for_loop(int nth_Cmd, int nth_loop)
     int nVarAdress = 0;
     int nLoopCount = 0;
     bPrintedStatus = false;
+    RangeForVarType varType = DETECT_VAR_TYPE;
 
     if (!vCmdArray[nth_Cmd].sFlowCtrlHeader.length())
     {
         vCmdArray[nth_Cmd].sFlowCtrlHeader = vCmdArray[nth_Cmd].sCommand.substr(vCmdArray[nth_Cmd].sCommand.find("->") + 2);
         std::string sVar = vCmdArray[nth_Cmd].sCommand.substr(vCmdArray[nth_Cmd].sCommand.find(' ') + 1);
-        sVar = sVar.substr(0, sVar.find("->"));
+        sVar.erase(sVar.find("->")+2);
         StripSpaces(sVar);
 
         if (sVar.substr(0, 2) == "|>")
@@ -388,6 +403,11 @@ int FlowCtrl::range_based_for_loop(int nth_Cmd, int nth_loop)
             if (sVarArray[i] == sVar)
             {
                 vCmdArray[nth_Cmd].nVarIndex = i;
+                sVarArray[i].erase(sVarArray[i].find("->"));
+                StripSpaces(sVarArray[i]);
+
+                // The variable has not been declared yet
+                varType = DECLARE_NEW_VAR;
                 break;
             }
         }
@@ -395,11 +415,74 @@ int FlowCtrl::range_based_for_loop(int nth_Cmd, int nth_loop)
 
     std::string sHead = vCmdArray[nth_Cmd].sFlowCtrlHeader;
     nVarAdress = vCmdArray[nth_Cmd].nVarIndex;
-    NumeRe::Cluster& iterCluster = _dataRef->getCluster(sVarArray[nVarAdress]);
+
+    if (nVarAdress < 0)
+        return FLOWCTRL_ERROR;
+
+    NumeRe::StringParser& _stringParser = NumeReKernel::getInstance()->getStringParser();
 
     // Evaluate the header of the for loop and
     // assign the result to the iterator
     NumeRe::Cluster range = evalRangeBasedHeader(sHead, nth_Cmd, "for");
+
+    if (varType == DECLARE_NEW_VAR)
+    {
+        if (sVarArray[nVarAdress].front() == '{')
+        {
+            EndlessVector<std::string> vIters = getAllArguments(sVarArray[nVarAdress].substr(1, sVarArray[nVarAdress].length()-2));
+            std::string sTempCluster = _dataRef->createTemporaryCluster(vIters.front());
+            sTempCluster.pop_back();
+
+            for (size_t i = 0; i < vIters.size(); i++)
+            {
+                mVarMap[vIters[i]] = sTempCluster + toString(i+1) + "}";
+                replaceLocalVars(vIters[i], mVarMap[vIters[i]], nth_Cmd, nJumpTable[nth_Cmd][BLOCK_END]);
+
+                if (i)
+                    sVarArray.push_back(mVarMap[vIters[i]]);
+                else
+                    sVarArray[nVarAdress] = mVarMap[vIters[0]];
+            }
+
+            vCmdArray[nth_Cmd].nRFStepping = vIters.size()-1;
+            varType = CLUSTERVAR;
+        }
+        else if (range.isDouble())
+        {
+            // Create a local variable
+            mVarMap[sVarArray[nVarAdress]] = "_~LOOP_" + sVarArray[nVarAdress] + "_" + toString(nthRecursion);
+            replaceLocalVars(sVarArray[nVarAdress], mVarMap[sVarArray[nVarAdress]], nth_Cmd, nJumpTable[nth_Cmd][BLOCK_END]);
+            sVarArray[nVarAdress] = mVarMap[sVarArray[nVarAdress]];
+            _parserRef->DefineVar(sVarArray[nVarAdress], &vVarArray[nVarAdress]);
+            varType = NUMVAR;
+        }
+        else if (range.isString())
+        {
+            // Create a local string variable
+            mVarMap[sVarArray[nVarAdress]] = "_~LOOP_" + sVarArray[nVarAdress] + "_" + toString(nthRecursion);
+            replaceLocalVars(sVarArray[nVarAdress], mVarMap[sVarArray[nVarAdress]], nth_Cmd, nJumpTable[nth_Cmd][BLOCK_END]);
+            sVarArray[nVarAdress] = mVarMap[sVarArray[nVarAdress]];
+            _stringParser.setStringValue(sVarArray[nVarAdress], "");
+            varType = STRINGVAR;
+        }
+        else
+        {
+            mVarMap[sVarArray[nVarAdress]] = _dataRef->createTemporaryCluster(sVarArray[nVarAdress]);
+            replaceLocalVars(sVarArray[nVarAdress], mVarMap[sVarArray[nVarAdress]], nth_Cmd, nJumpTable[nth_Cmd][BLOCK_END]);
+            sVarArray[nVarAdress] = mVarMap[sVarArray[nVarAdress]];
+            varType = CLUSTERVAR;
+        }
+    }
+    else
+    {
+        // Find the type of the current variable
+        if (sVarArray[nVarAdress].find('{') != std::string::npos)
+            varType = CLUSTERVAR;
+        else if (_stringParser.isStringVar(sVarArray[nVarAdress]))
+            varType = STRINGVAR;
+        else
+            varType = NUMVAR;
+    }
 
     // Print to the terminal, if needed
     if (bSilent && !nth_loop && !bMask)
@@ -413,10 +496,25 @@ int FlowCtrl::range_based_for_loop(int nth_Cmd, int nth_loop)
     // inner loop runs through the contained command lines
     for (size_t i = 0; i < range.size(); i++)
     {
-        if (range.getType(i) == NumeRe::ClusterItem::ITEMTYPE_DOUBLE)
-            iterCluster.setDouble(0, range.getDouble(i));
+        // Set the value in the correct variable type
+        if (varType == NUMVAR)
+            vVarArray[nVarAdress] = range.getDouble(i);
+        else if (varType == STRINGVAR)
+            _stringParser.setStringValue(sVarArray[nVarAdress], range.getInternalString(i));
         else
-            iterCluster.setString(0, range.getInternalString(i));
+        {
+            NumeRe::Cluster& iterCluster = _dataRef->getCluster(sVarArray[nVarAdress]);
+
+            for (size_t n = 0; n <= vCmdArray[nth_Cmd].nRFStepping; n++)
+            {
+                if (range.getType(i+n) == NumeRe::ClusterItem::ITEMTYPE_DOUBLE)
+                    iterCluster.setDouble(n, range.getDouble(i+n));
+                else
+                    iterCluster.setString(n, range.getInternalString(i+n));
+            }
+
+            i += vCmdArray[nth_Cmd].nRFStepping;
+        }
 
         // Ensure that the loop is aborted, if the
         // maximal number of repetitions has been
@@ -2423,8 +2521,13 @@ void FlowCtrl::reset()
 
     for (size_t i = 0; i < sVarArray.size(); i++)
     {
-        if (sVarArray[i].find("{}") == std::string::npos)
-            _parserRef->RemoveVar(sVarArray[i]);
+        if (sVarArray[i].find('{') == std::string::npos && sVarArray[i].find("->") == std::string::npos)
+        {
+            if (NumeReKernel::getInstance()->getStringParser().isStringVar(sVarArray[i]))
+                NumeReKernel::getInstance()->getStringParser().removeStringVar(sVarArray[i]);
+            else
+                _parserRef->RemoveVar(sVarArray[i]);
+        }
     }
 
     if (mVarMap.size())
@@ -3837,8 +3940,48 @@ void FlowCtrl::replaceLocalVars(std::string& sLine)
             }
         }
     }
+}
 
-    return;
+
+/////////////////////////////////////////////////
+/// \brief Replaces all occurences of the
+/// selected variable in the range of the
+/// selected lines with the new name.
+///
+/// \param sOldVar const std::string&
+/// \param sNewVar const std::string&
+/// \param from size_t
+/// \param to size_t
+/// \return void
+///
+/////////////////////////////////////////////////
+void FlowCtrl::replaceLocalVars(const std::string& sOldVar, const std::string& sNewVar, size_t from, size_t to)
+{
+    for (size_t i = from; i < std::min(to, vCmdArray.size()); i++)
+    {
+        // Replace it in the flow control
+        // statements
+        if (vCmdArray[i].sCommand.length())
+        {
+            vCmdArray[i].sCommand += " ";
+
+            for (unsigned int j = 0; j < vCmdArray[i].sCommand.length(); j++)
+            {
+                if (vCmdArray[i].sCommand.substr(j, sOldVar.length()) == sOldVar)
+                {
+                    if (((!j && checkDelimiter(" " + vCmdArray[i].sCommand.substr(j, sOldVar.length() + 1)))
+                        || (j && checkDelimiter(vCmdArray[i].sCommand.substr(j - 1, sOldVar.length() + 2))))
+                        && !isInQuotes(vCmdArray[i].sCommand, j, true))
+                    {
+                        vCmdArray[i].sCommand.replace(j, sOldVar.length(), sNewVar);
+                        j += sNewVar.length() - sOldVar.length();
+                    }
+                }
+            }
+
+            StripSpaces(vCmdArray[i].sCommand);
+        }
+    }
 }
 
 
@@ -4435,13 +4578,7 @@ void FlowCtrl::prepareLocalVarsAndReplace(std::string& sVars)
     for (size_t i = 0; i < sVarArray.size(); i++)
     {
         sVarArray[i] = sVars.substr(0, sVars.find(';'));
-        bool isRangeBased = false;
-
-        if (sVarArray[i].find("->") != std::string::npos)
-        {
-            isRangeBased = true;
-            sVarArray[i].erase(sVarArray[i].find("->"));
-        }
+        bool isRangeBased = sVarArray[i].find("->") != std::string::npos;
 
         if (sVars.find(';') != std::string::npos)
             sVars = sVars.substr(sVars.find(';') + 1);
@@ -4456,11 +4593,10 @@ void FlowCtrl::prepareLocalVarsAndReplace(std::string& sVars)
         {
             // Create a local variable otherwise
             if (!isRangeBased)
+            {
                 mVarMap[sVarArray[i]] = "_~LOOP_" + sVarArray[i] + "_" + toString(nthRecursion);
-            else
-                mVarMap[sVarArray[i]] = _dataRef->createTemporaryCluster(sVarArray[i]);
-
-            sVarArray[i] = mVarMap[sVarArray[i]];
+                sVarArray[i] = mVarMap[sVarArray[i]];
+            }
         }
 
         if (!isRangeBased)
@@ -4474,31 +4610,7 @@ void FlowCtrl::prepareLocalVarsAndReplace(std::string& sVars)
     // statement
     for (auto iter = mVarMap.begin(); iter != mVarMap.end(); ++iter)
     {
-        for (size_t i = 0; i < vCmdArray.size(); i++)
-        {
-            // Replace it in the flow control
-            // statements
-            if (vCmdArray[i].sCommand.length())
-            {
-                vCmdArray[i].sCommand += " ";
-
-                for (unsigned int j = 0; j < vCmdArray[i].sCommand.length(); j++)
-                {
-                    if (vCmdArray[i].sCommand.substr(j, (iter->first).length()) == iter->first)
-                    {
-                        if (((!j && checkDelimiter(" " + vCmdArray[i].sCommand.substr(j, (iter->first).length() + 1)))
-                            || (j && checkDelimiter(vCmdArray[i].sCommand.substr(j - 1, (iter->first).length() + 2))))
-                            && !isInQuotes(vCmdArray[i].sCommand, j, true))
-                        {
-                            vCmdArray[i].sCommand.replace(j, (iter->first).length(), iter->second);
-                            j += (iter->second).length() - (iter->first).length();
-                        }
-                    }
-                }
-
-                StripSpaces(vCmdArray[i].sCommand);
-            }
-        }
+        replaceLocalVars(iter->first, iter->second);
     }
 }
 

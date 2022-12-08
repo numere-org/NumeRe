@@ -46,3 +46,6 @@ Added	The table viewer has now many more functionalities accessible via the new 
 Applied	Constant value function folding has been added to the numeric parser improving the calculation speed by 10-20% (depending on the amount of used constant values).
 Fixed	A not necessary recursion in the "matop" command has been removed and a memory read bottleneck was resolved improving the calculation speed of large matrices to a factor of 4.
 New	It is now possible to store the window splitters' positions as well as the window size and position and restore that after a restart. Both options can be enabled in the settings.
+New	Added a range-based for loop with a new syntax: "for (iter -> RANGEOBJECT)"
+Added	The range-based for loop may now accept combined iterators like "for ({key,val} -> keyvallist{})"
+Fixed	Swapping aliased tables will now correctly update all aliases. This is also valid for aliased tables used as return value.

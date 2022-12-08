@@ -259,17 +259,29 @@ class MemoryManager : public NumeRe::FileAdapter, public StringMemory, public Nu
 			setSaveStatus(false);
 		}
 
-		inline void swapTables(const std::string& sCache1, const std::string& sCache2)
+		inline void swapTables(std::string sTable1, std::string sTable2)
 		{
-			if (!isTable(sCache1))
-				throw SyntaxError(SyntaxError::CACHE_DOESNT_EXIST, "", SyntaxError::invalid_position, sCache1);
+			if (!isTable(sTable1))
+				throw SyntaxError(SyntaxError::CACHE_DOESNT_EXIST, "", SyntaxError::invalid_position, sTable1);
 
-			if (!isTable(sCache2))
-				throw SyntaxError(SyntaxError::CACHE_DOESNT_EXIST, "", SyntaxError::invalid_position, sCache2);
+			if (!isTable(sTable2))
+				throw SyntaxError(SyntaxError::CACHE_DOESNT_EXIST, "", SyntaxError::invalid_position, sTable2);
 
-			std::pair<size_t,size_t> temp = mCachesMap[sCache1];
-			mCachesMap[sCache1] = mCachesMap[sCache2];
-			mCachesMap[sCache2] = temp;
+            size_t tab1 = mCachesMap[sTable1].second;
+            size_t tab2 = mCachesMap[sTable2].second;
+
+            for (auto& iter : mCachesMap)
+            {
+                if (iter.second.first == tab1)
+                    iter.second.first = tab2;
+                else if (iter.second.first == tab2)
+                    iter.second.first = tab1;
+
+                if (iter.second.second == tab1)
+                    iter.second.second = tab2;
+                else if (iter.second.second == tab2)
+                    iter.second.second = tab1;
+            }
 		}
 
 		void addReference(const std::string& sTable, const std::string& sReference)

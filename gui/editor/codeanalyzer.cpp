@@ -709,10 +709,14 @@ AnnotationCount CodeAnalyzer::analyseCommands()
             {
                 // Examine the argument
                 int nPos = m_editor->BraceMatch(j);
+                size_t nOpPos = std::string::npos;
+
                 if (nPos < 0)
                 {
                     // Missing parenthesis
-                    AnnotCount += addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE", highlightFoundOccurence(sSyntaxElement, j, 1), m_sError, _guilang.get("GUI_ANALYZER_MISSINGPARENTHESIS")), ANNOTATION_ERROR);
+                    AnnotCount += addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE",
+                                                               highlightFoundOccurence(sSyntaxElement, j, 1),
+                                                               m_sError, _guilang.get("GUI_ANALYZER_MISSINGPARENTHESIS")), ANNOTATION_ERROR);
                     break;
                 }
 
@@ -724,30 +728,58 @@ AnnotationCount CodeAnalyzer::analyseCommands()
                 // Argument is empty?
                 if (!sArgument.length())
                 {
-                    AnnotCount += addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE", highlightFoundOccurence(sSyntaxElement, j, 2), m_sError, _guilang.get("GUI_ANALYZER_MISSINGARGUMENT")), ANNOTATION_ERROR);
+                    AnnotCount += addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE",
+                                                               highlightFoundOccurence(sSyntaxElement, j, 2),
+                                                               m_sError, _guilang.get("GUI_ANALYZER_MISSINGARGUMENT")), ANNOTATION_ERROR);
                     break;
                 }
 
                 // Important parts of the argument are missing?
-                if ((sArgument.find('=') >= sArgument.length()-1 && sArgument.find("->") >= sArgument.length()-2)
-                    || (!isalpha(sArgument.front()) && sArgument.front() != '_'))
+                if ((nOpPos = sArgument.find("->")) != std::string::npos)
                 {
-                    AnnotCount += addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE", highlightFoundOccurence(sSyntaxElement, j+1, sArgument.length()), m_sError, _guilang.get("GUI_ANALYZER_FOR_INTERVALERROR")), ANNOTATION_ERROR);
+                    // Range-based for loop
+                    if (nOpPos >= sArgument.length()-2
+                        || (!isalpha(sArgument.front()) && sArgument.front() != '_' && sArgument.front() != '{'))
+                    {
+                        AnnotCount += addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE",
+                                                                   highlightFoundOccurence(sSyntaxElement, j+1, sArgument.length()),
+                                                                   m_sError,
+                                                                   _guilang.get("GUI_ANALYZER_FOR_INTERVALERROR")), ANNOTATION_ERROR);
+                    }
+                }
+                else
+                {
+                    nOpPos = sArgument.find('=');
+
+                    // Normal for loop
+                    if (nOpPos >= sArgument.length()-1
+                        || (!isalpha(sArgument.front()) && sArgument.front() != '_'))
+                    {
+                        AnnotCount += addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE",
+                                                                   highlightFoundOccurence(sSyntaxElement, j+1, sArgument.length()),
+                                                                   m_sError,
+                                                                   _guilang.get("GUI_ANALYZER_FOR_INTERVALERROR")), ANNOTATION_ERROR);
+                    }
                 }
 
                 // Store the for index variable in the list of known
                 // local variables
-                if (m_editor->m_fileType == FILE_NPRC)
+                if (m_editor->m_fileType == FILE_NPRC && nOpPos != std::string::npos)
                 {
-                    for (int i = j+1; i < nPos; i++)
+                    nOpPos += j+1;
+
+                    for (int i = j+1; i < (int)nOpPos; i++)
                     {
                         if (m_editor->GetStyleAt(i) == wxSTC_NPRC_IDENTIFIER
                             || m_editor->GetStyleAt(i) == wxSTC_NPRC_CUSTOM_FUNCTION
                             || m_editor->GetStyleAt(i) == wxSTC_NPRC_CLUSTER)
                         {
                             // Store it and break directly
-                            m_vLocalVariables.push_back(pair<string,int>(m_editor->GetTextRange(m_editor->WordStartPosition(i, true), m_editor->WordEndPosition(i, true)).ToStdString(), m_editor->GetStyleAt(i)));
-                            break;
+                            m_vLocalVariables.push_back(pair<string,int>(m_editor->GetTextRange(m_editor->WordStartPosition(i, true),
+                                                                                                m_editor->WordEndPosition(i, true)).ToStdString(),
+                                                                         m_editor->GetStyleAt(i)));
+
+                            i = m_editor->WordEndPosition(i, true);
                         }
                     }
                 }
