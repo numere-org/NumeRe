@@ -689,7 +689,7 @@ static void createPlotForHist1D(HistogramParameters& _histParams, mglData& _mAxi
         _histGraph->SetRanges(_histParams.ranges.x[0], _histParams.ranges.x[1], 0.0, 1.05 * (double)nMax);
 
     // Create the axes
-    if (_pData.getSettings(PlotData::LOG_AXIS))
+    if (_pData.getSettings(PlotData::INT_AXIS) != AXIS_NONE)
     {
         if (!_pData.getLogscale(XRANGE) && _pData.getTimeAxis(XRANGE).use)
             _histGraph->SetTicksTime('x', 0, _pData.getTimeAxis(XRANGE).sTimeFormat.c_str());
@@ -728,7 +728,7 @@ static void createPlotForHist1D(HistogramParameters& _histParams, mglData& _mAxi
         _histGraph->Box();
 
     // Write the axis labels
-    if (_pData.getSettings(PlotData::LOG_AXIS))
+    if (_pData.getSettings(PlotData::INT_AXIS) != AXIS_NONE)
     {
         _histGraph->Label('x', _histParams.sBinLabel.c_str(), 0.0);
 

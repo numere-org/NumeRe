@@ -5071,6 +5071,57 @@ void Plot::clearData()
 
 
 /////////////////////////////////////////////////
+/// \brief Apply the needed interval modification
+/// to switch to an optical "nice" and well
+/// readable interval.
+///
+/// \param ivl Interval&
+/// \param isLogarithmic bool
+/// \return void
+///
+/////////////////////////////////////////////////
+static void applyNiceAxis(Interval& ivl, bool isLogarithmic)
+{
+    if (isnan(ivl.front()))
+        return;
+
+    double absmax = std::max(std::abs(ivl.min()), std::abs(ivl.max()));
+    double dScale = intPower(10.0, std::ceil(std::log10(absmax)));
+    double dMin = ivl.min() / dScale;
+    double dMax = ivl.max() / dScale;
+
+    // This factor determines the number of "ticks" we'll
+    // allow in the current interval. This default to 2
+    double factor = 2.0; // 0 - 5 - 10
+
+    // Switch to a different factor based upon the current range
+    // of the interval
+    if (ivl.range() < 0.2 * dScale)
+        factor = 20.0; // 0 - 0.5 - 1 - ... - 10
+    else if (ivl.range() < 0.5 * dScale)
+        factor = 10.0; // 0 - 1 - 2 - ... - 10
+    else if (ivl.range() < 0.8 * dScale)
+        factor = 5.0; // 0 - 2 - 4 - ... - 10
+
+    // <1.5 -> 1
+    // <3 -> 2
+    // <7 -> 5
+    // <10 -> 10
+
+    // Calculate the new minimal and maximal interval boundaries
+    dMin = std::floor(dMin * factor) / factor * dScale;
+    dMax = std::ceil(dMax * factor) / factor * dScale;
+
+    // Logarithmic axes cannot be negative. We'll use the previously
+    // selected lower boundary
+    if (isLogarithmic && dMin <= 0.0)
+        dMin = ivl.min();
+
+    ivl.reset(dMin, dMax);
+}
+
+
+/////////////////////////////////////////////////
 /// \brief This member function informs the
 /// mglGraph object about the new plotting
 /// interval ranges.
@@ -5089,6 +5140,31 @@ void Plot::passRangesToGraph()
             nLayers += m_manager.assets[i].getLayers();
 
         _pInfo.ranges[XRANGE].reset(0, nLayers+1);
+    }
+
+    // INSERT HERE AXIS LOGIC
+    if (_pData.getSettings(PlotData::INT_AXIS) == AXIS_NICE)
+    {
+        for (size_t i = YRANGE; i <= ZRANGE; i++)
+        {
+            if (!_pData.getRangeSetting(i))
+                applyNiceAxis(_pInfo.ranges[i], _pData.getLogscale(i));
+        }
+    }
+    else if (_pData.getSettings(PlotData::INT_AXIS) == AXIS_EQUAL)
+    {
+        double range = _pInfo.ranges[XRANGE].range();
+        double aspect = _pData.getSettings(PlotData::FLOAT_ASPECT);
+
+        for (size_t i = YRANGE; i <= ZRANGE; i++)
+        {
+            if (!_pData.getRangeSetting(i) && !isnan(_pInfo.ranges[i].front()))
+            {
+                double newRange = range / aspect - _pInfo.ranges[i].range();
+                _pInfo.ranges[i].reset(_pInfo.ranges[i].min() - 0.5*newRange,
+                                       _pInfo.ranges[i].max() + 0.5*newRange);
+            }
+        }
     }
 
     if (_pData.getInvertion(XCOORD))
@@ -5214,28 +5290,16 @@ void Plot::passRangesToGraph()
         if ((_pInfo.b2DVect || _pInfo.b3DVect) && (_pData.getSettings(PlotData::LOG_FLOW) || _pData.getSettings(PlotData::LOG_PIPE)))
         {
             if (_pData.getLogscale(CRANGE))
-            {
                 _graph->SetRange('c', 1e-3, 1.05);
-                _pInfo.ranges[CRANGE].reset(1e-3, 1.05);
-            }
             else
-            {
                 _graph->SetRange('c', -1.05, 1.05);
-                _pInfo.ranges[CRANGE].reset(-1.05, 1.05);
-            }
         }
         else if (_pInfo.b2DVect || _pInfo.b3DVect)
         {
             if (_pData.getLogscale(CRANGE))
-            {
                 _graph->SetRange('c', 1e-3, 1.05);
-                _pInfo.ranges[CRANGE].reset(1e-3, 1.05);
-            }
             else
-            {
                 _graph->SetRange('c', -0.05, 1.05);
-                _pInfo.ranges[CRANGE].reset(-0.05, 1.05);
-            }
         }
         else
         {
@@ -5255,26 +5319,26 @@ void Plot::passRangesToGraph()
             {
                 _pInfo.ranges[CRANGE].reset(dMax * 1e-3 / _pData.getAxisScale(CRANGE),
                                             (dMax + 0.05 * (dMax - dMin)) / _pData.getAxisScale(CRANGE));
-                _graph->SetRange('c', _pInfo.ranges[CRANGE].min(), _pInfo.ranges[CRANGE].max());
             }
             else if (_pData.getLogscale(CRANGE) && (_pInfo.b2D || _pInfo.sCommand == "plot3d" || _pInfo.b3D || _pInfo.b3DVect))
             {
                 _pInfo.ranges[CRANGE].reset(dMin * 0.95 / _pData.getAxisScale(CRANGE),
                                             dMax * 1.05 / _pData.getAxisScale(CRANGE));
-                _graph->SetRange('c', _pInfo.ranges[CRANGE].min(), _pInfo.ranges[CRANGE].max());
             }
             else if (_pData.getSettings(PlotData::INT_COMPLEXMODE) == CPLX_PLANE)
-            {
                 _pInfo.ranges[CRANGE].reset(-M_PI, M_PI);
-                _graph->SetRange('c', -M_PI, M_PI);
-            }
             else
             {
                 _pInfo.ranges[CRANGE].reset((dMin - 0.05 * (dMax - dMin)) / _pData.getAxisScale(CRANGE),
                                             (dMax + 0.05 * (dMax - dMin)) / _pData.getAxisScale(CRANGE));
-                _graph->SetRange('c', _pInfo.ranges[CRANGE].min(), _pInfo.ranges[CRANGE].max());
             }
         }
+
+        if (_pData.getSettings(PlotData::INT_AXIS) == AXIS_NICE
+            && _pData.getSettings(PlotData::INT_COMPLEXMODE) != CPLX_PLANE)
+            applyNiceAxis(_pInfo.ranges[CRANGE], _pData.getLogscale(CRANGE));
+
+        _graph->SetRange('c', _pInfo.ranges[CRANGE].min(), _pInfo.ranges[CRANGE].max());
     }
     // --> Andere Parameter setzen (die i. A. von den bestimmten Ranges abghaengen) <--
     // --> Gitter-, Koordinaten- und Achsenbeschriftungen <--
@@ -5949,7 +6013,7 @@ static bool hasSecAxisBox(const PlotData& _pData, const PlotInfo& _pInfo)
 /////////////////////////////////////////////////
 void Plot::CoordSettings()
 {
-    if (_pData.getSettings(PlotData::LOG_AXIS))
+    if (_pData.getSettings(PlotData::INT_AXIS) != AXIS_NONE)
     {
         for (int i = XRANGE; i <= CRANGE; i++)
         {
@@ -6768,7 +6832,7 @@ void Plot::CoordSettings()
         }
 
         // --> Achsen beschriften <--
-        if (_pData.getSettings(PlotData::LOG_AXIS)
+        if (_pData.getSettings(PlotData::INT_AXIS) != AXIS_NONE
             && (!_pData.getSettings(PlotData::LOG_SCHEMATIC)
                 || findParameter(_pInfo.sPlotParams, "xlabel", '=')
                 || findParameter(_pInfo.sPlotParams, "ylabel", '=')

@@ -64,7 +64,6 @@ class PlotData : public FileSystem
             LOG_ALPHAMASK,
             LOG_ANIMATE,
             LOG_AREA,
-            LOG_AXIS,
             LOG_BOX,
             LOG_BOXPLOT,
             LOG_CLOUDPLOT,
@@ -97,6 +96,7 @@ class PlotData : public FileSystem
         enum IntPlotSetting
         {
             INT_ANIMATESAMPLES,
+            INT_AXIS,
             INT_COMPLEXMODE,
             INT_CONTLINES,
             INT_COORDS,

@@ -142,7 +142,6 @@ static std::map<std::string,std::pair<PlotData::LogicalPlotSetting,PlotData::Par
 {
     std::map<std::string,std::pair<PlotData::LogicalPlotSetting,PlotData::ParamType>> mGenericSwitches;
 
-    mGenericSwitches.emplace("axis", std::make_pair(PlotData::LOG_AXIS, PlotData::GLOBAL));
     mGenericSwitches.emplace("box", std::make_pair(PlotData::LOG_BOX, PlotData::GLOBAL));
     mGenericSwitches.emplace("xerrorbars", std::make_pair(PlotData::LOG_XERROR, PlotData::LOCAL));
     mGenericSwitches.emplace("yerrorbars", std::make_pair(PlotData::LOG_YERROR, PlotData::LOCAL));
@@ -295,6 +294,22 @@ void PlotData::setParams(const std::string& __sCmd, int nType)
 
     if ((findParameter(sCmd, "noalpha") || findParameter(sCmd, "notransparency")) && (nType == ALL || nType & LOCAL))
         logicalSettings[LOG_ALPHA] = false;
+
+    if (findParameter(sCmd, "axis") && (nType == ALL || nType & GLOBAL))
+    {
+        intSettings[INT_AXIS] = AXIS_STD;
+
+        if (findParameter(sCmd, "axis", '='))
+        {
+            if (getArgAtPos(sCmd, findParameter(sCmd, "axis", '=')+4) == "nice")
+                intSettings[INT_AXIS] = AXIS_NICE;
+            else if (getArgAtPos(sCmd, findParameter(sCmd, "axis", '=')+4) == "equal")
+                intSettings[INT_AXIS] = AXIS_EQUAL;
+        }
+    }
+
+    if (findParameter(sCmd, "noaxis") && (nType == ALL || nType & GLOBAL))
+        intSettings[INT_AXIS] = AXIS_NONE;
 
     if (findParameter(sCmd, "light") && (nType == ALL || nType & LOCAL))
         intSettings[INT_LIGHTING] = 1;
@@ -1924,7 +1939,6 @@ void PlotData::reset()
         logicalSettings[i] = false;
     }
 
-    logicalSettings[LOG_AXIS] = true;
     logicalSettings[LOG_OPENIMAGE] = true;
     logicalSettings[LOG_COLORBAR] = true;
 
@@ -1933,6 +1947,7 @@ void PlotData::reset()
         intSettings[i] = 0;
     }
 
+    intSettings[INT_AXIS] = AXIS_STD;
     intSettings[INT_SAMPLES] = 100;
     intSettings[INT_CONTLINES] = 35;
     intSettings[INT_ANIMATESAMPLES] = 50;

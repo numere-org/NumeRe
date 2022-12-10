@@ -67,5 +67,13 @@ enum CoordinateSystem
 };
 
 
+enum AxisType
+{
+    AXIS_NONE,
+    AXIS_STD,
+    AXIS_NICE,
+    AXIS_EQUAL
+};
+
 #endif // PLOTDEF_HPP
 
