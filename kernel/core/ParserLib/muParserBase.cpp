@@ -1192,10 +1192,15 @@ namespace mu
 
 		CheckName(a_sName, ValidNameChars());
 
-		//if (m_VarDef.find(a_sName) != m_VarDef.end())
-		//	Error(ecNAME_CONFLICT);
+		bool makeReInit = false;
+
+		if (m_VarDef.find(a_sName) != m_VarDef.end())
+            makeReInit = true;
+
 		m_VarDef[a_sName] = a_pVar;
-		ReInit();
+
+		if (makeReInit)
+            ReInit();
 	}
 
 	//---------------------------------------------------------------------------

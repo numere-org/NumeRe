@@ -131,6 +131,7 @@ class FlowCtrl
         bool bReturnSignal;
 
         int for_loop(int nth_Cmd = 0, int nth_Loop = 0);
+        int range_based_for_loop(int nth_Cmd = 0, int nth_Loop = 0);
         int while_loop(int nth_Cmd = 0, int nth_Loop = 0);
         int if_fork(int nth_Cmd = 0, int nth_Loop = -1);
         int switch_fork(int nth_Cmd = 0, int nth_Loop = -1);
@@ -141,9 +142,11 @@ class FlowCtrl
         int compile(std::string sLine, int nthCmd);
         int calc(std::string sLine, int nthCmd);
         value_type* evalHeader(int& nNum, std::string& sHeadExpression, bool bIsForHead, int nth_Cmd, const std::string& sHeadCommand);
+        NumeRe::Cluster evalRangeBasedHeader(std::string& sHeadExpression, int nth_Cmd, const std::string& sHeadCommand);
         int evalForkFlowCommands(int __j, int nth_loop);
 
         void replaceLocalVars(std::string& sLine);
+        void replaceLocalVars(const std::string& sOldVar, const std::string& sNewVar, size_t from = 0, size_t to = std::string::npos);
 
         bool checkFlowControlArgument(const std::string& sFlowControlArgument, bool isForLoop = false);
         bool checkCaseValue(const std::string& sCaseDefinition);
@@ -204,12 +207,13 @@ struct FlowCtrlCommand
     bool bFlowCtrlStatement;
     std::string sFlowCtrlHeader;
     int nVarIndex;
+    size_t nRFStepping;
 
     FlowCtrl::FlowCtrlFunction fcFn;
 
 
     FlowCtrlCommand(const std::string& sCmd, int nLine, bool bStatement = false, FlowCtrl::FlowCtrlFunction fn = nullptr)
-        : sCommand(sCmd), nInputLine(nLine), bFlowCtrlStatement(bStatement), sFlowCtrlHeader(""), nVarIndex(-1), fcFn(fn) {}
+        : sCommand(sCmd), nInputLine(nLine), bFlowCtrlStatement(bStatement), sFlowCtrlHeader(""), nVarIndex(-1), nRFStepping(0u), fcFn(fn) {}
 };
 
 #endif

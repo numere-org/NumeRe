@@ -754,6 +754,24 @@ namespace NumeRe
     /////////////////////////////////////////////////
     /// \brief This member function returns the data
     /// of the i-th cluster item in memory as a
+    /// string.
+    ///
+    /// \param i size_t
+    /// \return std::string
+    ///
+    /////////////////////////////////////////////////
+    std::string Cluster::getInternalString(size_t i) const
+    {
+        if (vClusterArray.size() > i)
+            return vClusterArray[i]->getInternalString();
+
+        return "";
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief This member function returns the data
+    /// of the i-th cluster item in memory as a
     /// parser string.
     ///
     /// \param i size_t
@@ -2058,7 +2076,7 @@ namespace NumeRe
     /////////////////////////////////////////////////
     Cluster& ClusterManager::getCluster(StringView sCluster)
     {
-        auto iter = mapStringViewFind(sCluster);
+        auto iter = mapStringViewFind(sCluster.subview(0, sCluster.find('{')));
 
         if (iter == mClusterMap.end())
             throw SyntaxError(SyntaxError::CLUSTER_DOESNT_EXIST, sCluster.to_string(), sCluster.to_string());
@@ -2078,7 +2096,7 @@ namespace NumeRe
     /////////////////////////////////////////////////
     Cluster& ClusterManager::getCluster(const std::string& sCluster)
     {
-        auto iter = mClusterMap.find(sCluster);
+        auto iter = mClusterMap.find(sCluster.substr(0, sCluster.find('{')));
 
         if (iter == mClusterMap.end())
             throw SyntaxError(SyntaxError::CLUSTER_DOESNT_EXIST, sCluster, sCluster);
@@ -2100,7 +2118,7 @@ namespace NumeRe
     /////////////////////////////////////////////////
     const Cluster& ClusterManager::getCluster(const std::string& sCluster) const
     {
-        auto iter = mClusterMap.find(sCluster);
+        auto iter = mClusterMap.find(sCluster.substr(0, sCluster.find('{')));
 
         if (iter == mClusterMap.end())
             throw SyntaxError(SyntaxError::CLUSTER_DOESNT_EXIST, sCluster, sCluster);
@@ -2172,7 +2190,7 @@ namespace NumeRe
     /////////////////////////////////////////////////
     std::string ClusterManager::createTemporaryCluster(const std::string& suffix)
     {
-        std::string sTemporaryClusterName = "_~~TEMPCLUSTER_" + toString(mClusterMap.size()) + "_" + suffix;
+        std::string sTemporaryClusterName = "_~~TC_" + toString(mClusterMap.size()) + "_" + suffix;
         mClusterMap[sTemporaryClusterName] = Cluster();
 
         return sTemporaryClusterName + "{}";
@@ -2194,10 +2212,8 @@ namespace NumeRe
 
         while (iter != mClusterMap.end())
         {
-            if (iter->first.substr(0, 15) == "_~~TEMPCLUSTER_")
-            {
+            if (iter->first.substr(0, 6) == "_~~TC_")
                 iter = mClusterMap.erase(iter);
-            }
             else
                 ++iter;
         }

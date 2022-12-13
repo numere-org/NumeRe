@@ -1134,12 +1134,37 @@ namespace NumeRe
         {
             string sArgument = getFunctionArgumentList("is_string(", sLine, nStartPosition, nEndPosition).to_string();
 
-            if (isStringExpression(sArgument))
-                sLine = sLine.substr(0, nStartPosition) + "true" + sLine.substr(nEndPosition + 1);
-            else
-                sLine = sLine.substr(0, nStartPosition) + "false" + sLine.substr(nEndPosition + 1);
+            // check for data sets in the evaluation of the `valtostr()` arguments
+            if (!isStringExpression(sArgument) && _data.containsTablesOrClusters(sArgument))
+                getDataElements(sArgument, _parser, _data, _option);
 
-            nStartPosition++;
+            if (!isStringExpression(sArgument))
+            {
+                int nResults = 0;
+                _parser.SetExpr(sArgument);
+                _parser.Eval(nResults);
+                std::vector<std::string> vIsString(nResults, "false");
+                sArgument = createStringVectorVar(vIsString);
+            }
+            else
+            {
+                StringResult strRes = eval(sArgument, "");
+
+                if (!strRes.vResult.size())
+                    throw SyntaxError(SyntaxError::STRING_ERROR, sLine, SyntaxError::invalid_position);
+
+                std::vector<std::string> vIsString;
+
+                for (size_t i = 0; i < strRes.vResult.size(); i++)
+                {
+                    vIsString.push_back(strRes.vResult.is_string(i) ? "true" : "false");
+                }
+
+                sArgument = createStringVectorVar(vIsString);
+            }
+
+            sLine = sLine.substr(0, nStartPosition) + sArgument + sLine.substr(nEndPosition + 1);
+            nStartPosition += sArgument.length();
         }
 
         nStartPosition = 0;

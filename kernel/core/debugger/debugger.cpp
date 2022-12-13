@@ -710,11 +710,10 @@ void NumeReDebugger::gatherLoopBasedInformations(const string& _sErraticCommand,
     sErraticCommand = _sErraticCommand;
 
     if (sErraticCommand.substr(sErraticCommand.find_first_not_of(' '), 2) == "|>")
-    {
         sErraticCommand.erase(sErraticCommand.find_first_not_of(' '), 2);
-    }
 
     nLineNumber = _nLineNumber;
+    NumeReKernel* instance = NumeReKernel::getInstance();
 
     // store variable names and replace their occurences with
     // their definitions
@@ -724,9 +723,26 @@ void NumeReDebugger::gatherLoopBasedInformations(const string& _sErraticCommand,
         {
             if (iter->second == sVarArray[i])
             {
+                size_t nBracePos = sVarArray[i].find('{');
+
                 // Store the variables
-                //mLocalVars[iter->first + " @" + toHexString((int)&vVarArray[i][0]) + "\t" + iter->second] = vVarArray[i][0];
-                mLocalVars[iter->first + "\t" + iter->second] = vVarArray[i];
+                if (nBracePos != std::string::npos)
+                {
+                    NumeRe::Cluster& iterData = instance->getMemoryManager().getCluster(sVarArray[i]);
+                    size_t nItem = 0;
+
+                    if (nBracePos < sVarArray[i].length()-2)
+                        nItem = StrToInt(sVarArray[i].substr(nBracePos+1, sVarArray[i].length()-1-nBracePos-1))-1;
+
+                    if (iterData.getType(nItem) == NumeRe::ClusterItem::ITEMTYPE_DOUBLE)
+                        mLocalVars[iter->first + "@" + iter->second] = iterData.getDouble(nItem);
+                    else if (iterData.getType(nItem) == NumeRe::ClusterItem::ITEMTYPE_STRING)
+                        mLocalStrings[iter->first + "@" + iter->second] = iterData.getString(nItem);
+                }
+                else if (instance->getStringParser().isStringVar(sVarArray[i]))
+                    mLocalStrings[iter->first + "\t" + iter->second] = toExternalString(instance->getStringParser().getStringValue(sVarArray[i]));
+                else
+                    mLocalVars[iter->first + "\t" + iter->second] = vVarArray[i];
 
                 // Replace the variables
                 while (sErraticCommand.find(iter->second) != string::npos)
@@ -799,10 +815,16 @@ vector<string> NumeReDebugger::getNumVars()
 
     for (auto iter = mLocalVars.begin(); iter != mLocalVars.end(); ++iter)
     {
+        char sepChar = (iter->first.find('@') != std::string::npos ? '@' : '\t');
+
         if (iter->second.imag() && !(isnan(iter->second.real()) && isnan(iter->second.imag())))
-            vNumVars.push_back((iter->first).substr(0, (iter->first).find('\t')) + "\t1 x 1\tcomplex\t" + toString(iter->second, 2*DEFAULT_NUM_PRECISION) + (iter->first).substr((iter->first).find('\t')));
+            vNumVars.push_back((iter->first).substr(0, (iter->first).find(sepChar))
+                               + (sepChar == '@' ? "\t1 x 1\t(@) complex\t" : "\t1 x 1\tcomplex\t")
+                               + toString(iter->second, 2*DEFAULT_NUM_PRECISION) + "\t" + (iter->first).substr((iter->first).find(sepChar)+1));
         else
-            vNumVars.push_back((iter->first).substr(0, (iter->first).find('\t')) + "\t1 x 1\tdouble\t" + toString(iter->second, DEFAULT_NUM_PRECISION) + (iter->first).substr((iter->first).find('\t')));
+            vNumVars.push_back((iter->first).substr(0, (iter->first).find(sepChar))
+                               + (sepChar == '@' ? "\t1 x 1\t(@) double\t" : "\t1 x 1\tdouble\t")
+                               + toString(iter->second, DEFAULT_NUM_PRECISION) + "\t" + (iter->first).substr((iter->first).find(sepChar)+1));
     }
 
     return vNumVars;
@@ -822,7 +844,10 @@ vector<string> NumeReDebugger::getStringVars()
 
     for (auto iter = mLocalStrings.begin(); iter != mLocalStrings.end(); ++iter)
     {
-        vStringVars.push_back((iter->first).substr(0, (iter->first).find('\t')) + "\t1 x 1\tstring\t" + iter->second + (iter->first).substr((iter->first).find('\t')));
+        char sepChar = (iter->first.find('@') != std::string::npos ? '@' : '\t');
+        vStringVars.push_back((iter->first).substr(0, (iter->first).find(sepChar))
+                              + (sepChar == '@' ? "\t1 x 1\t(@) string\t" : "\t1 x 1\tstring\t")
+                              + iter->second + "\t" + (iter->first).substr((iter->first).find(sepChar)+1));
     }
 
     return vStringVars;

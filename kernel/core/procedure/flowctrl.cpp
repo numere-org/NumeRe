@@ -349,6 +349,323 @@ int FlowCtrl::for_loop(int nth_Cmd, int nth_loop)
 
 
 /////////////////////////////////////////////////
+/// \brief Simple enum to make the variable types
+/// of the range based for loop more readable.
+/////////////////////////////////////////////////
+enum RangeForVarType
+{
+    DECLARE_NEW_VAR = -1,
+    DETECT_VAR_TYPE,
+    NUMVAR,
+    STRINGVAR,
+    CLUSTERVAR
+};
+
+
+/////////////////////////////////////////////////
+/// \brief This member function realizes the FOR
+/// control flow statement for range based
+/// indices. The return value is either an error
+/// value or the end of the current flow control
+/// statement.
+///
+/// \param nth_Cmd int
+/// \param nth_loop int
+/// \return int
+///
+/////////////////////////////////////////////////
+int FlowCtrl::range_based_for_loop(int nth_Cmd, int nth_loop)
+{
+    int nVarAdress = 0;
+    int nLoopCount = 0;
+    bPrintedStatus = false;
+    RangeForVarType varType = DETECT_VAR_TYPE;
+
+    if (!vCmdArray[nth_Cmd].sFlowCtrlHeader.length())
+    {
+        vCmdArray[nth_Cmd].sFlowCtrlHeader = vCmdArray[nth_Cmd].sCommand.substr(vCmdArray[nth_Cmd].sCommand.find("->") + 2);
+        std::string sVar = vCmdArray[nth_Cmd].sCommand.substr(vCmdArray[nth_Cmd].sCommand.find(' ') + 1);
+        sVar.erase(sVar.find("->")+2);
+        StripSpaces(sVar);
+
+        if (sVar.substr(0, 2) == "|>")
+        {
+            vCmdArray[nth_Cmd].sFlowCtrlHeader.insert(0, "|>");
+            sVar.erase(0, 2);
+        }
+
+        StripSpaces(sVar);
+
+        // Get the variable address of the loop
+        // index
+        for (size_t i = 0; i < sVarArray.size(); i++)
+        {
+            if (sVarArray[i] == sVar)
+            {
+                vCmdArray[nth_Cmd].nVarIndex = i;
+                sVarArray[i].erase(sVarArray[i].find("->"));
+                StripSpaces(sVarArray[i]);
+
+                // The variable has not been declared yet
+                varType = DECLARE_NEW_VAR;
+                break;
+            }
+        }
+    }
+
+    std::string sHead = vCmdArray[nth_Cmd].sFlowCtrlHeader;
+    nVarAdress = vCmdArray[nth_Cmd].nVarIndex;
+
+    if (nVarAdress < 0)
+        return FLOWCTRL_ERROR;
+
+    NumeRe::StringParser& _stringParser = NumeReKernel::getInstance()->getStringParser();
+
+    // Evaluate the header of the for loop and
+    // assign the result to the iterator
+    NumeRe::Cluster range = evalRangeBasedHeader(sHead, nth_Cmd, "for");
+
+    // Shall we declare a new iterator variable? Otherwise try
+    // to detect the type of the already created iterator variable
+    if (varType == DECLARE_NEW_VAR)
+    {
+        if (sVarArray[nVarAdress].front() == '{')
+        {
+            EndlessVector<std::string> vIters = getAllArguments(sVarArray[nVarAdress].substr(1, sVarArray[nVarAdress].length()-2));
+
+            // Create a temporary cluster for all iterators and remove
+            // the trailing closing brace to change that to individual
+            // indices for every iterator
+            std::string sTempCluster = _dataRef->createTemporaryCluster(vIters.front());
+            sTempCluster.pop_back();
+
+            // Create single calls for every single iterator
+            for (size_t i = 0; i < vIters.size(); i++)
+            {
+                mVarMap[vIters[i]] = sTempCluster + toString(i+1) + "}";
+                replaceLocalVars(vIters[i], mVarMap[vIters[i]], nth_Cmd, nJumpTable[nth_Cmd][BLOCK_END]);
+
+                // Add or replace the iterators in the list of iterators
+                if (i)
+                    sVarArray.push_back(mVarMap[vIters[i]]);
+                else
+                    sVarArray[nVarAdress] = mVarMap[vIters[0]];
+            }
+
+            // Note the needed iterator stepping
+            vCmdArray[nth_Cmd].nRFStepping = vIters.size()-1;
+            varType = CLUSTERVAR;
+        }
+        else if (range.isDouble())
+        {
+            // Create a local variable
+            mVarMap[sVarArray[nVarAdress]] = "_~LOOP_" + sVarArray[nVarAdress] + "_" + toString(nthRecursion);
+            replaceLocalVars(sVarArray[nVarAdress], mVarMap[sVarArray[nVarAdress]], nth_Cmd, nJumpTable[nth_Cmd][BLOCK_END]);
+            sVarArray[nVarAdress] = mVarMap[sVarArray[nVarAdress]];
+            _parserRef->DefineVar(sVarArray[nVarAdress], &vVarArray[nVarAdress]);
+            varType = NUMVAR;
+        }
+        else if (range.isString())
+        {
+            // Create a local string variable
+            mVarMap[sVarArray[nVarAdress]] = "_~LOOP_" + sVarArray[nVarAdress] + "_" + toString(nthRecursion);
+            replaceLocalVars(sVarArray[nVarAdress], mVarMap[sVarArray[nVarAdress]], nth_Cmd, nJumpTable[nth_Cmd][BLOCK_END]);
+            sVarArray[nVarAdress] = mVarMap[sVarArray[nVarAdress]];
+            _stringParser.setStringValue(sVarArray[nVarAdress], "");
+            varType = STRINGVAR;
+        }
+        else
+        {
+            // Create a cluster in all other cases as this is the
+            // only variant type available
+            mVarMap[sVarArray[nVarAdress]] = _dataRef->createTemporaryCluster(sVarArray[nVarAdress]);
+            replaceLocalVars(sVarArray[nVarAdress], mVarMap[sVarArray[nVarAdress]], nth_Cmd, nJumpTable[nth_Cmd][BLOCK_END]);
+            sVarArray[nVarAdress] = mVarMap[sVarArray[nVarAdress]];
+            varType = CLUSTERVAR;
+        }
+    }
+    else
+    {
+        // Find the type of the current iterator variable
+        if (sVarArray[nVarAdress].find('{') != std::string::npos)
+            varType = CLUSTERVAR;
+        else if (_stringParser.isStringVar(sVarArray[nVarAdress]))
+            varType = STRINGVAR;
+        else
+            varType = NUMVAR;
+    }
+
+    // Print to the terminal, if needed
+    if (bSilent && !nth_loop && !bMask)
+    {
+        NumeReKernel::printPreFmt("|FOR> " + _lang.get("COMMON_EVALUATING") + " ... 0 %");
+        bPrintedStatus = true;
+    }
+
+    // Evaluate the whole for loop. The outer loop does the
+    // loop index management (the actual "for" command), the
+    // inner loop runs through the contained command lines
+    for (size_t i = 0; i < range.size(); i++)
+    {
+        // Set the value in the correct variable type
+        switch (varType)
+        {
+            case NUMVAR:
+                vVarArray[nVarAdress] = range.getDouble(i);
+                break;
+            case STRINGVAR:
+                _stringParser.setStringValue(sVarArray[nVarAdress], range.getInternalString(i));
+                break;
+            default:
+            {
+                NumeRe::Cluster& iterCluster = _dataRef->getCluster(sVarArray[nVarAdress]);
+
+                for (size_t n = 0; n <= vCmdArray[nth_Cmd].nRFStepping; n++)
+                {
+                    if (range.getType(i+n) == NumeRe::ClusterItem::ITEMTYPE_DOUBLE)
+                        iterCluster.setDouble(n, range.getDouble(i+n));
+                    else
+                        iterCluster.setString(n, range.getInternalString(i+n));
+                }
+
+                i += vCmdArray[nth_Cmd].nRFStepping;
+            }
+        }
+
+        // Ensure that the loop is aborted, if the
+        // maximal number of repetitions has been
+        // performed
+        if (nLoopSafety > 0)
+        {
+            if (nLoopCount >= nLoopSafety)
+                return FLOWCTRL_ERROR;
+
+            nLoopCount++;
+        }
+
+        // This for loop handles the contained commands
+        for (int __j = nth_Cmd+1; __j < nJumpTable[nth_Cmd][BLOCK_END]; __j++)
+        {
+            nCurrentCommand = __j;
+
+            // If this is not the first line of the command block
+            // try to find control flow statements in the first column
+            if (vCmdArray[__j].bFlowCtrlStatement && vCmdArray[__j].fcFn)
+            {
+                // Evaluate the flow control commands
+                int nReturn = (this->*vCmdArray[__j].fcFn)(__j, nth_loop+1);
+
+                // Handle the return value
+                if (nReturn == FLOWCTRL_ERROR || nReturn == FLOWCTRL_RETURN)
+                    return nReturn;
+                else if (nReturn == FLOWCTRL_BREAK)
+                    return nJumpTable[nth_Cmd][BLOCK_END];
+                else if (nReturn == FLOWCTRL_CONTINUE)
+                    break;
+                else if (nReturn != FLOWCTRL_NO_CMD)
+                    __j = nReturn;
+
+                continue;
+            }
+
+            // Handle the "continue" and "break" flow
+            // control statements
+            if (nCalcType[__j] & CALCTYPE_CONTINUECMD)
+                break;
+            else if (nCalcType[__j] & CALCTYPE_BREAKCMD)
+                return nJumpTable[nth_Cmd][BLOCK_END];
+            else if (!nCalcType[__j])
+            {
+                std::string sCommand = findCommand(vCmdArray[__j].sCommand).sString;
+
+                // Evaluate the commands, store the bytecode
+                if (sCommand == "continue")
+                {
+                    nCalcType[__j] = CALCTYPE_CONTINUECMD;
+
+                    // "continue" is a break of the inner loop
+                    break;
+                }
+
+                if (sCommand == "break")
+                {
+                    nCalcType[__j] = CALCTYPE_BREAKCMD;
+
+                    // "break" requires to leave the current
+                    // for loop. Therefore it is realized as
+                    // return statement, returning the end index
+                    // of the current block
+                    return nJumpTable[nth_Cmd][BLOCK_END];
+                }
+            }
+
+            // Increment the parser index, if the loop parsing
+            // mode was activated
+            if (bUseLoopParsingMode)
+                _parserRef->SetIndex(__j);
+
+            try
+            {
+                // Evaluate the command line with the calc function
+                if (calc(vCmdArray[__j].sCommand, __j) == FLOWCTRL_ERROR)
+                {
+                    if (_optionRef->useDebugger())
+                    {
+                        NumeReKernel::getInstance()->getDebugger().gatherLoopBasedInformations(vCmdArray[__j].sCommand,
+                                                                                               getCurrentLineNumber(),
+                                                                                               mVarMap, vVarArray, sVarArray);
+                        getErrorInformationForDebugger();
+                    }
+
+                    return FLOWCTRL_ERROR;
+                }
+
+                if (bReturnSignal)
+                    return FLOWCTRL_RETURN;
+            }
+            catch (...)
+            {
+                if (_optionRef->useDebugger())
+                {
+                    NumeReKernel::getInstance()->getDebugger().gatherLoopBasedInformations(vCmdArray[__j].sCommand,
+                                                                                           getCurrentLineNumber(),
+                                                                                           mVarMap, vVarArray, sVarArray);
+                    getErrorInformationForDebugger();
+                }
+
+                NumeReKernel::getInstance()->getDebugger().showError(current_exception());
+                nCalcType[__j] = CALCTYPE_NONE;
+                catchExceptionForTest(current_exception(), NumeReKernel::bSupressAnswer, getCurrentLineNumber());
+            }
+        }
+
+        // Print the status to the terminal, if it is required
+        if (!nth_loop && !bMask && bSilent)
+        {
+            if (range.size() < 99999
+                    && intCast(i / (double)range.size() * 20.0) > intCast((i-1) / (double)range.size() * 20.0))
+            {
+                NumeReKernel::printPreFmt("\r|FOR> " + _lang.get("COMMON_EVALUATING") + " ... "
+                                          + toString(intCast(i / (double)range.size() * 20.0) * 5)
+                                          + " %");
+                bPrintedStatus = true;
+            }
+            else if (range.size() >= 99999
+                     && intCast(i / (double)range.size() * 100.0) > intCast((i-1) / (double)range.size() * 100.0))
+            {
+                NumeReKernel::printPreFmt("\r|FOR> " + _lang.get("COMMON_EVALUATING") + " ... "
+                                          + toString(intCast(i / (double)range.size() * 100.0))
+                                          + " %");
+                bPrintedStatus = true;
+            }
+        }
+    }
+
+    return nJumpTable[nth_Cmd][BLOCK_END];
+}
+
+
+/////////////////////////////////////////////////
 /// \brief This member function realizes the
 /// WHILE control flow statement. The return
 /// value is either an error value or the end of
@@ -1366,6 +1683,200 @@ value_type* FlowCtrl::evalHeader(int& nNum, std::string& sHeadExpression, bool b
 
 /////////////////////////////////////////////////
 /// \brief This member function handles the
+/// evaluation of the range-based flow control
+/// headers. It will return a cluster of the
+/// evaluated return values.
+///
+/// \param sHeadExpression std::string&
+/// \param nth_Cmd int
+/// \param sHeadCommand const std::string&
+/// \return NumeRe::Cluster
+///
+/////////////////////////////////////////////////
+NumeRe::Cluster FlowCtrl::evalRangeBasedHeader(std::string& sHeadExpression, int nth_Cmd, const std::string& sHeadCommand)
+{
+    NumeRe::Cluster result;
+    mu::value_type* v;
+    int nNum;
+    int nCurrentCalcType = nCalcType[nth_Cmd];
+    std::string sCache;
+    nCurrentCommand = nth_Cmd;
+
+    // Eval the debugger breakpoint first
+    if (nCurrentCalcType & CALCTYPE_DEBUGBREAKPOINT
+        || sHeadExpression.substr(sHeadExpression.find_first_not_of(' '), 2) == "|>"
+        || nDebuggerCode == NumeReKernel::DEBUGGER_STEP)
+    {
+        if (sHeadExpression.substr(sHeadExpression.find_first_not_of(' '), 2) == "|>")
+            nCalcType[nth_Cmd] |= CALCTYPE_DEBUGBREAKPOINT;
+
+        if (sHeadExpression.substr(sHeadExpression.find_first_not_of(' '), 2) == "|>")
+        {
+            sHeadExpression.erase(sHeadExpression.find_first_not_of(' '), 2);
+            StripSpaces(sHeadExpression);
+        }
+
+        if (_optionRef->useDebugger()
+            && nDebuggerCode != NumeReKernel::DEBUGGER_LEAVE
+            && nDebuggerCode != NumeReKernel::DEBUGGER_STEPOVER)
+        {
+            NumeReKernel::getInstance()->getDebugger().gatherLoopBasedInformations(sHeadCommand + " (" + sHeadExpression + ")", getCurrentLineNumber(), mVarMap, vVarArray, sVarArray);
+            nDebuggerCode = evalDebuggerBreakPoint(*_parserRef, *_optionRef);
+        }
+    }
+
+    // Check, whether the user tried to abort the
+    // current evaluation
+    if (NumeReKernel::GetAsyncCancelState())
+    {
+        if (bPrintedStatus)
+            NumeReKernel::printPreFmt(" " + _lang.get("COMMON_CANCEL"));
+
+        throw SyntaxError(SyntaxError::PROCESS_ABORTED_BY_USER, "", SyntaxError::invalid_position);
+    }
+
+    // Update the parser index, if the loop parsing
+    // mode was activated
+    if (bUseLoopParsingMode && !bLockedPauseMode)
+        _parserRef->SetIndex(nth_Cmd);
+
+    // Replace the function definitions, if not already done
+    if (!bFunctionsReplaced)
+    {
+        if (!_functionRef->call(sHeadExpression))
+            throw SyntaxError(SyntaxError::FUNCTION_ERROR, sHeadExpression, SyntaxError::invalid_position);
+    }
+
+    // If the expression is numerical-only, evaluate it here
+    if (nCurrentCalcType & CALCTYPE_NUMERICAL)
+    {
+        // As long as bytecode parsing is not globally available,
+        // this condition has to stay at this place
+        if (!(bUseLoopParsingMode && !bLockedPauseMode)
+            && !_parserRef->IsAlreadyParsed(sHeadExpression))
+            _parserRef->SetExpr(sHeadExpression);
+
+        // Evaluate all remaining equations in the stack
+        do
+        {
+            v = _parserRef->Eval(nNum);
+        } while (_parserRef->IsNotLastStackItem());
+
+        result.setDoubleArray(nNum, v);
+        return result;
+    }
+
+    // Include procedure and plugin calls
+    if (nJumpTable[nth_Cmd][PROCEDURE_INTERFACE])
+    {
+        if (!bLockedPauseMode && bUseLoopParsingMode)
+        {
+            _parserRef->PauseLoopMode();
+            _parserRef->LockPause();
+        }
+
+        // Call the procedure interface function
+        ProcedureInterfaceRetVal nReturn = procedureInterface(sHeadExpression, *_parserRef,
+                                                              *_functionRef, *_dataRef, *_outRef,
+                                                              *_pDataRef, *_scriptRef, *_optionRef, nth_Cmd);
+
+        // Handle the return value
+        if (nReturn == INTERFACE_ERROR)
+            throw SyntaxError(SyntaxError::PROCEDURE_ERROR, sHeadExpression, SyntaxError::invalid_position);
+        else if (nReturn == INTERFACE_EMPTY)
+            sHeadExpression = "false";
+
+        if (!bLockedPauseMode && bUseLoopParsingMode)
+        {
+            _parserRef->PauseLoopMode(false);
+            _parserRef->LockPause(false);
+        }
+
+        if (nReturn == INTERFACE_EMPTY || nReturn == INTERFACE_VALUE)
+            nJumpTable[nth_Cmd][PROCEDURE_INTERFACE] = 1;
+        else
+            nJumpTable[nth_Cmd][PROCEDURE_INTERFACE] = 0;
+    }
+
+    // Catch and evaluate all data and cache calls
+    if (nCurrentCalcType & CALCTYPE_DATAACCESS || !nCurrentCalcType)
+    {
+        if ((nCurrentCalcType && !(nCurrentCalcType & CALCTYPE_STRING))
+            || (_dataRef->containsTablesOrClusters(sHeadExpression)
+                && !NumeReKernel::getInstance()->getStringParser().isStringExpression(sHeadExpression)))
+        {
+            if (!nCurrentCalcType)
+                nCalcType[nth_Cmd] |= CALCTYPE_DATAACCESS;
+
+            if (!_parserRef->HasCachedAccess()
+                && _parserRef->CanCacheAccess()
+                && !_parserRef->GetCachedEquation().length())
+                _parserRef->SetCompiling(true);
+
+            sCache = getDataElements(sHeadExpression, *_parserRef, *_dataRef, *_optionRef);
+
+            if (_parserRef->IsCompiling()
+                && _parserRef->CanCacheAccess())
+            {
+                _parserRef->CacheCurrentEquation(sHeadExpression);
+                _parserRef->CacheCurrentTarget(sCache);
+            }
+
+            _parserRef->SetCompiling(false);
+        }
+    }
+
+    // Evaluate std::strings
+    if (nCurrentCalcType & CALCTYPE_STRING || !nCurrentCalcType)
+    {
+        if (nCurrentCalcType || NumeReKernel::getInstance()->getStringParser().isStringExpression(sHeadExpression))
+        {
+            if (!nCurrentCalcType)
+                nCalcType[nth_Cmd] |= CALCTYPE_STRING;
+
+            if (!bLockedPauseMode && bUseLoopParsingMode)
+                _parserRef->PauseLoopMode();
+
+            // Call the std::string parser
+            auto retVal = NumeReKernel::getInstance()->getStringParser().evalAndFormat(sHeadExpression, sCache, true);
+
+            // Evaluate the return value
+            if (retVal != NumeRe::StringParser::STRING_NUMERICAL)
+            {
+                result = NumeReKernel::getInstance()->getAns();
+
+                if (!bLockedPauseMode && bUseLoopParsingMode)
+                    _parserRef->PauseLoopMode(false);
+
+                return result;
+            }
+
+            // It's possible that the user might have done
+            // something weird with std::string operations transformed
+            // into a regular expression. Replace the local
+            // variables here
+            replaceLocalVars(sHeadExpression);
+
+            if (!bLockedPauseMode && bUseLoopParsingMode)
+                _parserRef->PauseLoopMode(false);
+        }
+    }
+
+    // Evalute the already prepared equation
+    if (!_parserRef->IsAlreadyParsed(sHeadExpression))
+        _parserRef->SetExpr(sHeadExpression);
+
+    if (!nCalcType[nth_Cmd] && !nJumpTable[nth_Cmd][PROCEDURE_INTERFACE])
+        nCalcType[nth_Cmd] |= CALCTYPE_NUMERICAL;
+
+    v = _parserRef->Eval(nNum);
+    result.setDoubleArray(nNum, v);
+    return result;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This member function handles the
 /// evaluation of flow control statements from
 /// the viewpoint of an if-else control flow.
 ///
@@ -1485,6 +1996,8 @@ void FlowCtrl::setCommand(std::string& __sCmd, int nCurrentLine)
             sLoopNames += ";FOR";
             nFlowCtrlStatements[FC_FOR]++;
 
+            bool isRangeBased = __sCmd.find("->") != std::string::npos;
+
             // Check the flow control argument for completeness
             if (!checkFlowControlArgument(__sCmd, true))
             {
@@ -1494,23 +2007,37 @@ void FlowCtrl::setCommand(std::string& __sCmd, int nCurrentLine)
 
             // Replace the colon operator with a comma, which is faster
             // because it can be parsed internally
-            unsigned int nPos = __sCmd.find(':');
+            size_t nQuotes = 0;
+            size_t nPos = std::string::npos;
 
-            if (__sCmd.find('(', __sCmd.find('(') + 1) != std::string::npos && __sCmd.find('(', __sCmd.find('(') + 1) < nPos)
+            for (size_t i = __sCmd.find('(')+1; i < getMatchingParenthesis(__sCmd); i++)
             {
-                nPos = getMatchingParenthesis(__sCmd.substr(__sCmd.find('(', __sCmd.find('(') + 1)));
-                nPos = __sCmd.find(':', nPos);
+                if (__sCmd[i] == '"' && __sCmd[i-1] != '\\')
+                    nQuotes++;
+
+                if (!(nQuotes % 2))
+                {
+                    if (__sCmd[i] == '(' || __sCmd[i] == '{' || __sCmd[i] == '[')
+                        i += getMatchingParenthesis(StringView(__sCmd, i));
+
+                    if (__sCmd[i] == ':')
+                    {
+                        nPos = i;
+                        break;
+                    }
+                }
             }
 
-            if (nPos == std::string::npos)
+            if (nPos == std::string::npos && isRangeBased)
+                fn = FlowCtrl::range_based_for_loop;
+            else
             {
-                reset();
-                throw SyntaxError(SyntaxError::CANNOT_EVAL_FOR, __sCmd, SyntaxError::invalid_position);
-            }
+                if (nPos != std::string::npos)
+                    __sCmd[nPos] = ',';
 
-#warning TODO (numere#1#04/20/22): Change this line to enable vector-like for loops
-            __sCmd.replace(nPos, 1, ",");
-            fn = FlowCtrl::for_loop;
+                replaceAll(__sCmd, "->", "=");
+                fn = FlowCtrl::for_loop;
+            }
         }
         else if (command == "while")
         {
@@ -1907,7 +2434,7 @@ void FlowCtrl::eval()
         // function for evaluation
         if (vCmdArray[0].sCommand.substr(0, 3) == "for")
         {
-            if (for_loop() == FLOWCTRL_ERROR)
+            if ((this->*vCmdArray[0].fcFn)(0, 0) == FLOWCTRL_ERROR)
             {
                 if (bSilent || bMask)
                     NumeReKernel::printPreFmt("\n");
@@ -2009,7 +2536,15 @@ void FlowCtrl::reset()
     vCmdArray.clear();
 
     for (size_t i = 0; i < sVarArray.size(); i++)
-        _parserRef->RemoveVar(sVarArray[i]);
+    {
+        if (sVarArray[i].find('{') == std::string::npos && sVarArray[i].find("->") == std::string::npos)
+        {
+            if (NumeReKernel::getInstance()->getStringParser().isStringVar(sVarArray[i]))
+                NumeReKernel::getInstance()->getStringParser().removeStringVar(sVarArray[i]);
+            else
+                _parserRef->RemoveVar(sVarArray[i]);
+        }
+    }
 
     if (mVarMap.size())
     {
@@ -3421,8 +3956,48 @@ void FlowCtrl::replaceLocalVars(std::string& sLine)
             }
         }
     }
+}
 
-    return;
+
+/////////////////////////////////////////////////
+/// \brief Replaces all occurences of the
+/// selected variable in the range of the
+/// selected lines with the new name.
+///
+/// \param sOldVar const std::string&
+/// \param sNewVar const std::string&
+/// \param from size_t
+/// \param to size_t
+/// \return void
+///
+/////////////////////////////////////////////////
+void FlowCtrl::replaceLocalVars(const std::string& sOldVar, const std::string& sNewVar, size_t from, size_t to)
+{
+    for (size_t i = from; i < std::min(to, vCmdArray.size()); i++)
+    {
+        // Replace it in the flow control
+        // statements
+        if (vCmdArray[i].sCommand.length())
+        {
+            vCmdArray[i].sCommand += " ";
+
+            for (unsigned int j = 0; j < vCmdArray[i].sCommand.length(); j++)
+            {
+                if (vCmdArray[i].sCommand.substr(j, sOldVar.length()) == sOldVar)
+                {
+                    if (((!j && checkDelimiter(" " + vCmdArray[i].sCommand.substr(j, sOldVar.length() + 1)))
+                        || (j && checkDelimiter(vCmdArray[i].sCommand.substr(j - 1, sOldVar.length() + 2))))
+                        && !isInQuotes(vCmdArray[i].sCommand, j, true))
+                    {
+                        vCmdArray[i].sCommand.replace(j, sOldVar.length(), sNewVar);
+                        j += sNewVar.length() - sOldVar.length();
+                    }
+                }
+            }
+
+            StripSpaces(vCmdArray[i].sCommand);
+        }
+    }
 }
 
 
@@ -3455,8 +4030,7 @@ bool FlowCtrl::checkFlowControlArgument(const std::string& sFlowControlArgument,
 
     // If it is a for loop, then it has to fulfill
     // another requirement: the index and its interval
-    if (sArgument.find('=') == std::string::npos
-        || sArgument.find(':', sArgument.find('=') + 1) == std::string::npos)
+    if (sArgument.find('=') == std::string::npos && sArgument.find("->") == std::string::npos)
         return false;
 
     // Everything seems to be OK
@@ -3527,7 +4101,11 @@ string FlowCtrl::extractFlagsAndIndexVariables()
         if (vCmdArray[i].sCommand.substr(0, 3) == "for")
         {
             sVar = vCmdArray[i].sCommand.substr(vCmdArray[i].sCommand.find('(') + 1);
-            sVar = sVar.substr(0, sVar.find('='));
+
+            if (sVar.find("->") != std::string::npos)
+                sVar.erase(sVar.find("->")+2); // Has the arrow appended
+            else
+                sVar.erase(sVar.find('='));
 
             if (sVar.substr(0, 2) == "|>")
                 sVar.erase(0, 2);
@@ -4016,6 +4594,7 @@ void FlowCtrl::prepareLocalVarsAndReplace(std::string& sVars)
     for (size_t i = 0; i < sVarArray.size(); i++)
     {
         sVarArray[i] = sVars.substr(0, sVars.find(';'));
+        bool isRangeBased = sVarArray[i].find("->") != std::string::npos;
 
         if (sVars.find(';') != std::string::npos)
             sVars = sVars.substr(sVars.find(';') + 1);
@@ -4029,11 +4608,15 @@ void FlowCtrl::prepareLocalVarsAndReplace(std::string& sVars)
         else
         {
             // Create a local variable otherwise
-            mVarMap[sVarArray[i]] = "_~LOOP_" + sVarArray[i] + "_" + toString(nthRecursion);
-            sVarArray[i] = mVarMap[sVarArray[i]];
+            if (!isRangeBased)
+            {
+                mVarMap[sVarArray[i]] = "_~LOOP_" + sVarArray[i] + "_" + toString(nthRecursion);
+                sVarArray[i] = mVarMap[sVarArray[i]];
+            }
         }
 
-        _parserRef->DefineVar(sVarArray[i], &vVarArray[i]);
+        if (!isRangeBased)
+            _parserRef->DefineVar(sVarArray[i], &vVarArray[i]);
     }
 
     _parserRef->mVarMapPntr = &mVarMap;
@@ -4043,31 +4626,7 @@ void FlowCtrl::prepareLocalVarsAndReplace(std::string& sVars)
     // statement
     for (auto iter = mVarMap.begin(); iter != mVarMap.end(); ++iter)
     {
-        for (size_t i = 0; i < vCmdArray.size(); i++)
-        {
-            // Replace it in the flow control
-            // statements
-            if (vCmdArray[i].sCommand.length())
-            {
-                vCmdArray[i].sCommand += " ";
-
-                for (unsigned int j = 0; j < vCmdArray[i].sCommand.length(); j++)
-                {
-                    if (vCmdArray[i].sCommand.substr(j, (iter->first).length()) == iter->first)
-                    {
-                        if (((!j && checkDelimiter(" " + vCmdArray[i].sCommand.substr(j, (iter->first).length() + 1)))
-                            || (j && checkDelimiter(vCmdArray[i].sCommand.substr(j - 1, (iter->first).length() + 2))))
-                            && !isInQuotes(vCmdArray[i].sCommand, j, true))
-                        {
-                            vCmdArray[i].sCommand.replace(j, (iter->first).length(), iter->second);
-                            j += (iter->second).length() - (iter->first).length();
-                        }
-                    }
-                }
-
-                StripSpaces(vCmdArray[i].sCommand);
-            }
-        }
+        replaceLocalVars(iter->first, iter->second);
     }
 }
 

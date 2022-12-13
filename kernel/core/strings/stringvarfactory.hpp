@@ -56,7 +56,9 @@ namespace NumeRe
             std::string createTempStringVectorVar(const std::vector<std::string>& vStringVector);
             void removeTempStringVectorVars();
             bool containsStringVars(const std::string& sLine) const;
+            bool isStringVar(const std::string& sVarName) const;
             void getStringValues(std::string& sLine);
+            std::string getStringValue(const std::string& sVar) const;
             void setStringValue(const std::string& sVar, const std::string& sValue);
             void removeStringVar(const std::string& sVar);
 
