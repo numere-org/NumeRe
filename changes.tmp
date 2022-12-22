@@ -52,3 +52,4 @@ Added	The range-based for loop may now accept combined iterators like "for ({key
 Fixed	Swapping aliased tables will now correctly update all aliases. This is also valid for aliased tables used as return value.
 Cleaned	Calling "is_string()" on a vectorized expression will now return the type for every component instead for the whole expression.
 Cleaned	Enabled the loading and listing of "DIFF" files in the editor.
+Applied	Enabled vector plots from complex functions and complex-valued data grids.

@@ -2045,28 +2045,36 @@ void Plot::create3dVect()
 /////////////////////////////////////////////////
 void Plot::create2dVect()
 {
-    if (sFunc.length())
-    {
-        for (size_t i = 0; i < m_manager.assets.size(); i++)
-        {
-            mglData& _mData_x = m_manager.assets[i].data[XCOORD].first;
-            mglData& _mData_y = m_manager.assets[i].data[YCOORD].first;
+    mglData* _mData_x = nullptr;
+    mglData* _mData_y = nullptr;
 
-            // --> Entsprechend dem gewuenschten Plotting-Style plotten <--
-            if (_pData.getSettings(PlotData::LOG_FLOW))
-                _graph->Flow(_mData_x, _mData_y, _pData.getColorScheme("v").c_str());
-            else if (_pData.getSettings(PlotData::LOG_PIPE))
-                _graph->Pipe(_mData_x, _mData_y, _pData.getColorScheme().c_str());
-            else if (_pData.getSettings(PlotData::LOG_FIXEDLENGTH))
-                _graph->Vect(_mData_x, _mData_y, _pData.getColorScheme("f").c_str());
-            else if (!_pData.getSettings(PlotData::LOG_FIXEDLENGTH))
-                _graph->Vect(_mData_x, _mData_y, _pData.getColorScheme().c_str());
-            else
-            {
-                // --> Den gibt's nicht: Speicher freigeben und zurueck! <--
-                clearData();
-                return;
-            }
+    for (size_t i = 0; i < m_manager.assets.size(); i++)
+    {
+        if (!m_manager.assets[i].isComplex(0) && m_manager.assets[i].type == PT_FUNCTION)
+        {
+            _mData_x = &m_manager.assets[i].data[XCOORD].first;
+            _mData_y = &m_manager.assets[i].data[YCOORD].first;
+        }
+        else
+        {
+            _mData_x = &m_manager.assets[i].data[XCOORD].first;
+            _mData_y = &m_manager.assets[i].data[XCOORD].second;
+        }
+
+        // --> Entsprechend dem gewuenschten Plotting-Style plotten <--
+        if (_pData.getSettings(PlotData::LOG_FLOW))
+            _graph->Flow(*_mData_x, *_mData_y, _pData.getColorScheme("v").c_str());
+        else if (_pData.getSettings(PlotData::LOG_PIPE))
+            _graph->Pipe(*_mData_x, *_mData_y, _pData.getColorScheme().c_str());
+        else if (_pData.getSettings(PlotData::LOG_FIXEDLENGTH))
+            _graph->Vect(*_mData_x, *_mData_y, _pData.getColorScheme("f").c_str());
+        else if (!_pData.getSettings(PlotData::LOG_FIXEDLENGTH))
+            _graph->Vect(*_mData_x, *_mData_y, _pData.getColorScheme().c_str());
+        else
+        {
+            // --> Den gibt's nicht: Speicher freigeben und zurueck! <--
+            clearData();
+            return;
         }
     }
 }
@@ -3771,12 +3779,13 @@ void Plot::extractDataValues(const std::vector<std::string>& vDataPlots)
             }
             else
             {
-                for (size_t n = 0; n < _idx.row.size(); n++)
+                std::vector<mu::value_type> vAxis = getDataFromObject(_accessParser.getDataObject(),
+                                                                      _idx.row, _idx.col.front(),
+                                                                      _accessParser.isCluster());
+
+                for (size_t n = 0; n < vAxis.size(); n++)
                 {
-                    m_manager.assets[typeCounter].writeAxis(getDataFromObject(_accessParser.getDataObject(),
-                                                            _idx.row[n],
-                                                            _idx.col.front(),
-                                                            _accessParser.isCluster()).real(), n, XCOORD);
+                    m_manager.assets[typeCounter].writeAxis(vAxis[n].real(), n, XCOORD);
                 }
             }
 
@@ -3784,12 +3793,13 @@ void Plot::extractDataValues(const std::vector<std::string>& vDataPlots)
             // referenced data object
             if (datarows == 1 && _idx.col.numberOfNodes() == 2 && !openEnd)
             {
-                for (size_t n = 0; n < _idx.row.size(); n++)
+                std::vector<mu::value_type> vVals = getDataFromObject(_accessParser.getDataObject(),
+                                                                      _idx.row, _idx.col.last(),
+                                                                      _accessParser.isCluster());
+
+                for (size_t n = 0; n < vVals.size(); n++)
                 {
-                    m_manager.assets[typeCounter].writeData(getDataFromObject(_accessParser.getDataObject(),
-                                                            _idx.row[n],
-                                                            _idx.col.last(),
-                                                            _accessParser.isCluster()), 0, n);
+                    m_manager.assets[typeCounter].writeData(vVals[n], 0, n);
                 }
             }
             else
@@ -3810,12 +3820,13 @@ void Plot::extractDataValues(const std::vector<std::string>& vDataPlots)
                     }
                     else
                     {
-                        for (size_t n = 0; n < _idx.row.size(); n++)
+                        std::vector<mu::value_type> vVals = getDataFromObject(_accessParser.getDataObject(),
+                                                                              _idx.row, _idx.col[q+1],
+                                                                              _accessParser.isCluster());
+
+                        for (size_t n = 0; n < vVals.size(); n++)
                         {
-                            m_manager.assets[typeCounter].writeData(getDataFromObject(_accessParser.getDataObject(),
-                                                                    _idx.row[n],
-                                                                    _idx.col[q+1],
-                                                                    _accessParser.isCluster()), q, n);
+                            m_manager.assets[typeCounter].writeData(vVals[n], q, n);
                         }
                     }
                 }
@@ -3890,12 +3901,13 @@ void Plot::extractDataValues(const std::vector<std::string>& vDataPlots)
                 }
                 else
                 {
-                    for (size_t t = 0; t < _idx.row.size(); t++)
+                    std::vector<mu::value_type> vVals = getDataFromObject(_accessParser.getDataObject(),
+                                                                          _idx.row, _idx.col[q],
+                                                                          _accessParser.isCluster());
+
+                    for (size_t t = 0; t < vVals.size(); t++)
                     {
-                        m_manager.assets[typeCounter].writeData(getDataFromObject(_accessParser.getDataObject(),
-                                                                                  _idx.row[t],
-                                                                                  _idx.col[q],
-                                                                                  _accessParser.isCluster()), q, t);
+                        m_manager.assets[typeCounter].writeData(vVals[t], q, t);
                     }
                 }
             }
@@ -3932,12 +3944,13 @@ void Plot::extractDataValues(const std::vector<std::string>& vDataPlots)
             // the bar-density mixture)
             for (size_t axis = 0; axis < samples.size(); axis++)
             {
-                for (size_t m = 0; m < samples[axis] - isBars; m++)
+                std::vector<mu::value_type> vAxis = getDataFromObject(_accessParser.getDataObject(),
+                                                                      _idx.row, _idx.col[axis],
+                                                                      _accessParser.isCluster());
+
+                for (size_t m = 0; m < std::min(samples[axis]-isBars, vAxis.size()); m++)
                 {
-                    m_manager.assets[typeCounter].writeAxis(getDataFromObject(_accessParser.getDataObject(),
-                                                            _idx.row[m],
-                                                            _idx.col[axis],
-                                                            _accessParser.isCluster()).real(), m, (PlotCoords)axis);
+                    m_manager.assets[typeCounter].writeAxis(vAxis[m].real(), m, (PlotCoords)axis);
                 }
             }
 
@@ -3958,15 +3971,15 @@ void Plot::extractDataValues(const std::vector<std::string>& vDataPlots)
 
             // Write the meshgrid data
             #pragma omp parallel for
-            for (size_t x = 0; x < samples[0]-isBars; x++)
+            for (size_t y = 0; y < samples[1]-isBars; y++)
             {
-                for (size_t y = 0; y < samples[1]-isBars; y++)
+                std::vector<mu::value_type> vVals = getDataFromObject(_accessParser.getDataObject(),
+                                                                      _idx.row, _idx.col[y+2],
+                                                                      _accessParser.isCluster());
+
+                for (size_t x = 0; x < std::min(samples[0]-isBars, vVals.size()); x++)
                 {
-#warning TODO (numere#4#03/05/22): The function getDataFromObject is quite inefficent
-                    m_manager.assets[typeCounter].writeData(getDataFromObject(_accessParser.getDataObject(),
-                                                            _idx.row[x],
-                                                            _idx.col[y+2],
-                                                            _accessParser.isCluster()), 0, x, y);
+                    m_manager.assets[typeCounter].writeData(vVals[x], 0, x, y);
                 }
             }
 
@@ -3983,6 +3996,54 @@ void Plot::extractDataValues(const std::vector<std::string>& vDataPlots)
                 else
                     dataRanges[ZRANGE] = dataRanges[ZRANGE].combine(m_manager.assets[typeCounter].getDataIntervals(0)[datIvlID3D]);
             }
+        }
+        else if (isVect2D(_pInfo.sCommand))
+        {
+
+            std::vector<size_t> samples = _accessParser.getDataGridDimensions();
+
+            m_manager.assets[typeCounter].create2DMesh(PT_DATA, samples, 1);
+            m_manager.assets[typeCounter].boundAxes = "lb";
+
+            if (m_manager.assets[typeCounter].type == PT_NONE)
+                throw SyntaxError(SyntaxError::PLOT_ERROR, _accessParser.getDataObject(), SyntaxError::invalid_position);
+
+            // Write the axes
+            for (size_t axis = 0; axis < samples.size(); axis++)
+            {
+                std::vector<mu::value_type> vAxis = getDataFromObject(_accessParser.getDataObject(),
+                                                                      _idx.row, _idx.col[axis],
+                                                                      _accessParser.isCluster());
+
+                for (size_t m = 0; m < std::min(samples[axis], vAxis.size()); m++)
+                {
+                    m_manager.assets[typeCounter].writeAxis(vAxis[m].real(), m, (PlotCoords)axis);
+                }
+            }
+
+            // Write the complex vector data
+            #pragma omp parallel for
+            for (size_t y = 0; y < samples[1]; y++)
+            {
+                std::vector<mu::value_type> vVals = getDataFromObject(_accessParser.getDataObject(),
+                                                                      _idx.row, _idx.col[y+2],
+                                                                      _accessParser.isCluster());
+
+                for (size_t x = 0; x < std::min(samples[0], vVals.size()); x++)
+                {
+                    m_manager.assets[typeCounter].writeData(vVals[x], 0, x, y);
+                }
+            }
+
+            // Calculate the data ranges
+            //if (_pData.getSettings(PlotData::LOG_PARAMETRIC) && typeCounter < (m_manager.assets.size() / 3) * 3)
+            //    dataRanges[typeCounter%3] = dataRanges[typeCounter%3].combine(m_manager.assets[typeCounter].getDataIntervals(0)[datIvlID3D]);
+            //else
+            //{
+                dataRanges[XRANGE] = dataRanges[XRANGE].combine(m_manager.assets[typeCounter].getAxisInterval(XCOORD));
+                dataRanges[YRANGE] = dataRanges[YRANGE].combine(m_manager.assets[typeCounter].getAxisInterval(YCOORD));
+                dataRanges[ZRANGE] = dataRanges[ZRANGE].combine(m_manager.assets[typeCounter].getDataIntervals(0)[datIvlID3D]);
+            //}
         }
         else
             throw SyntaxError(SyntaxError::PLOT_ERROR, _accessParser.getDataObject(), SyntaxError::invalid_position);

@@ -504,7 +504,7 @@ Matrix Memory::readMemAsMatrix(const VectorIndex& _vLine, const VectorIndex& _vC
     #pragma omp parallel for
     for (size_t j = 0; j < _vCol.size(); j++)
     {
-        if (_vCol[j] < 0)
+        if (_vCol[j] < 0 || !memArray[_vCol[j]])
             continue;
 
         // Get the complete column as a whole because it seems

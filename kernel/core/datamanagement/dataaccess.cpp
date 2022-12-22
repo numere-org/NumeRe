@@ -2330,17 +2330,17 @@ bool isClusterCandidate(string& sLine, string& sCluster, bool doCut)
 /// the selected object and switches
 /// automatically between tables and clusters.
 ///
-/// \param sObject const string&
+/// \param sObject const std::string&
 /// \param i long longint
 /// \param j long longint
 /// \param isCluster bool
 /// \return mu::value_type
 ///
 /////////////////////////////////////////////////
-mu::value_type getDataFromObject(const string& sObject, long long int i, long long int j, bool isCluster)
+mu::value_type getDataFromObject(const std::string& sObject, long long int i, long long int j, bool isCluster)
 {
     // Get a reference to the datafile object
-    MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
+    static MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
 
     // Fallback to ensure that valid indices are read
     if (i < 0 || j < 0)
@@ -2349,6 +2349,46 @@ mu::value_type getDataFromObject(const string& sObject, long long int i, long lo
     // return the data depending on the passed isCluster
     // boolean, the object name and its indices
     return isCluster ? _data.getCluster(sObject).getDouble(i) : _data.getElement(i, j, sObject);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This function returns the data from
+/// the selected object and switches
+/// automatically between tables and clusters.
+///
+/// \param sObject const std::string&
+/// \param vRows const VectorIndex&
+/// \param j long longint
+/// \param isCluster bool
+/// \return std::vector<mu::value_type>
+///
+/////////////////////////////////////////////////
+std::vector<mu::value_type> getDataFromObject(const std::string& sObject, const VectorIndex& vRows, long long int j, bool isCluster)
+{
+    // Get a reference to the datafile object
+    static MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
+
+    // Fallback to ensure that valid indices are read
+    if (vRows.front() == VectorIndex::INVALID || j < 0)
+        return std::vector(1u, mu::value_type(NAN));
+
+    // return the data depending on the passed isCluster
+    // boolean, the object name and its indices
+    if (isCluster)
+    {
+        NumeRe::Cluster& clst = _data.getCluster(sObject);
+        std::vector<mu::value_type> vRes;
+
+        for (int i = 0; i < vRows.size(); i++)
+        {
+            vRes.push_back(clst.getDouble(vRows[i]));
+        }
+
+        return vRes;
+    }
+
+    return _data.getElement(vRows, VectorIndex(j), sObject);
 }
 
 
