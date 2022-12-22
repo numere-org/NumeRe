@@ -4757,7 +4757,14 @@ void NumeReEditor::markSections(bool bForceRefresh)
 
                 while (isStyleType(STYLE_COMMENT_SECTION_LINE, GetLineIndentPosition(i+1))
                        || isStyleType(STYLE_COMMENT_SECTION_BLOCK, GetLineIndentPosition(i+1)))
+                {
                     i++;
+
+                    // Only keep the very first section. Should also remove erroneously
+                    // placed markers
+                    if (MarkerOnLine(i, MARKER_SECTION))
+                        MarkerDelete(i, MARKER_SECTION);
+                }
             }
             else if (MarkerOnLine(i, MARKER_SECTION))
                 MarkerDelete(i, MARKER_SECTION);
