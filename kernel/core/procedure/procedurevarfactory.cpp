@@ -1193,7 +1193,7 @@ void ProcedureVarFactory::createLocalVars(string sVarList)
 
             try
             {
-                sVarValue = resolveLocalVars(sVarValue, i);
+                sVarValue = resolveLocalVars(sVarValue+" ", i); // Needs a terminating separator
 
                 if (!NumeReKernel::getInstance()->getStringParser().isStringExpression(sVarValue) &&  _dataRef->containsTablesOrClusters(sVarValue))
                 {
@@ -1298,7 +1298,7 @@ void ProcedureVarFactory::createLocalStrings(string sStringList)
                 }
             }
 
-            sVarValue = resolveLocalStrings(sVarValue, i);
+            sVarValue = resolveLocalStrings(sVarValue + " ", i); // Needs a terminating separator
 
             if (_dataRef->containsTablesOrClusters(sVarValue))
                 getDataElements(sVarValue, *_parserRef, *_dataRef, *_optionRef);

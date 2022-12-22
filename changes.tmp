@@ -54,3 +54,4 @@ Cleaned	Calling "is_string()" on a vectorized expression will now return the typ
 Cleaned	Enabled the loading and listing of "DIFF" files in the editor.
 Applied	Enabled vector plots from complex functions and complex-valued data grids.
 Cleaned	Resolved a glitch, where empty lines in a documentation block could create persistent section marks, which would only be removed after disabling the sectioning feature and re-enabling it again.
+Fixed	It is now possible to use already declared local variables as values for the following variable definitions in the same line.
