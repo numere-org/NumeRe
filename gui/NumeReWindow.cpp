@@ -1857,6 +1857,17 @@ void NumeReWindow::OnMenuEvent(wxCommandEvent &event)
             repobrowser->Show();
             break;
         }
+        case ID_MENU_INSTALLPLUGINFROMFILE:
+        {
+            std::string packageFile = wxFileSelector(_guilang.get("GUI_SELECT_PACKAGE_FOR_INSTALL"),
+                                                     m_terminal->getPathSettings()[SCRIPTPATH] + "/packages",
+                                                     "", "*.nscr", "Packages (*.nscr)|*.nscr", wxFD_OPEN, this).ToStdString();
+
+            if (packageFile.length())
+                m_terminal->pass_command("install \"" + packageFile + "\"", false);
+
+            break;
+        }
 
         case ID_MENU_PRINT_PAGE:
         {
@@ -5293,6 +5304,7 @@ void NumeReWindow::UpdateMenuBar()
 
     menuPackages->Append(ID_MENU_CREATE_PACKAGE, _guilang.get("GUI_MENU_CREATE_PACKAGE"), _guilang.get("GUI_MENU_CREATE_PACKAGE_TTP"));
     menuPackages->Append(ID_MENU_PLUGINBROWSER, _guilang.get("GUI_MENU_SHOW_PACKAGE_BROWSER"), _guilang.get("GUI_MENU_SHOW_PACKAGE_BROWSER_TTP"));
+    menuPackages->Append(ID_MENU_INSTALLPLUGINFROMFILE, _guilang.get("GUI_MENU_INSTALL_PACKAGE_FILE"), _guilang.get("GUI_MENU_INSTALL_PACKAGE_FILE_TTP"));
     menuPackages->AppendSeparator();
     wxMenuItem* item = menuPackages->Append(EVENTID_PLUGIN_MENU_END, _guilang.get("GUI_MENU_NO_PLUGINS_INSTALLED"));
     item->Enable(false);
