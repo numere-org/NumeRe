@@ -56,3 +56,4 @@ Applied	Enabled vector plots from complex functions and complex-valued data grid
 Cleaned	Resolved a glitch, where empty lines in a documentation block could create persistent section marks, which would only be removed after disabling the sectioning feature and re-enabling it again.
 Fixed	It is now possible to use already declared local variables as values for the following variable definitions in the same line.
 Fixed	NLYT files are now draggable in the and from the file tree.
+Cleaned	Resolved the glitch that if the mouse cursor enters the tooltip, the tooltip was hidden. Now it is persistent and hides itself once the mouse clicks on another text or window element.

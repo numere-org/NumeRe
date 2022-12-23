@@ -1626,8 +1626,8 @@ void NumeReEditor::OnEnter(wxMouseEvent& event)
 /////////////////////////////////////////////////
 void NumeReEditor::OnLeave(wxMouseEvent& event)
 {
-    if (this->CallTipActive())
-        this->AdvCallTipCancel();
+   // if (this->CallTipActive())
+   //     this->AdvCallTipCancel();
 
     event.Skip();
 }
