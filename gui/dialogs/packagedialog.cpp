@@ -119,6 +119,8 @@ PackageDialog::PackageDialog(wxWindow* parent, NumeReTerminal* terminal, IconMan
     license.Add("MPL-2.0");
     m_packageProperties->Append(new wxEditEnumProperty(_guilang.get("GUI_PKGDLG_LICENSE"), "-license", license, wxArrayInt(), license[0]));
     m_packageProperties->Append(new wxLongStringProperty(_guilang.get("GUI_PKGDLG_PLUGINDESC"), "-desc"));
+    m_packageProperties->Append(new wxLongStringProperty(_guilang.get("GUI_PKGDLG_KEYWORDS"), "-keywords"));
+    m_packageProperties->Append(new wxLongStringProperty(_guilang.get("GUI_PKGDLG_CHANGESLOG"), "-changelog"));
     m_packageProperties->Append(new wxStringProperty(_guilang.get("GUI_PKGDLG_DEPENDENCIES"), "-requirepackages"));
 
     // Add a validator to the package command to enssure that the user

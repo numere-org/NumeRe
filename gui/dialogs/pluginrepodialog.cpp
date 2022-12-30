@@ -264,10 +264,14 @@ wxArrayString PackageListSearchCtrl::getChildCandidates(const wxString& enteredT
 #define PACKAGCOLUMN 0
 #define REPOCOLUMN 1
 #define INSTALLEDCOLUMN 2
+#define CHANGELOGLENGTH 750
 
 #define INSTALLEDCOLOUR wxColour(220,255,220)
 #define UPDATECOLOUR wxColour(220,220,255)
 #define NEWERCOLOUR wxColour(255,255,160)
+#define OUTDATEDVERSIONCOLOUR wxColour(255,220,220)
+#define LOCALCOLOUR NEWERCOLOUR
+//#define LOCALCOLOUR wxColour(160,255,160)
 
 extern Language _guilang;
 
@@ -323,7 +327,7 @@ PackageRepoBrowser::PackageRepoBrowser(wxWindow* parent, NumeReTerminal* termina
 
     m_listCtrl->AddColumn("Packages", 300);
     m_listCtrl->AddColumn("Repository", 500);
-    m_listCtrl->AddColumn("Installed", 150);
+    m_listCtrl->AddColumn("Installed", 145);
 
     PackageListSearchCtrl* treesearch = new PackageListSearchCtrl(panel, wxID_ANY, "Search packages ...", wxEmptyString, m_listCtrl);
     panel->getMainSizer()->Prepend(treesearch, 0, wxALL | wxEXPAND, 5);
@@ -355,40 +359,73 @@ PackageRepoBrowser::PackageRepoBrowser(wxWindow* parent, NumeReTerminal* termina
 /////////////////////////////////////////////////
 void PackageRepoBrowser::DetectInstalledPackages()
 {
-    std::vector<std::string> vInstalled = m_terminal->getInstalledPackages();
+    const std::vector<Package>& vInstalled = m_terminal->getInstalledPackages();
+    std::vector<bool> vRemotePackage(vInstalled.size(), false);
 
     wxTreeItemIdValue cookie;
     wxTreeItemId item = m_listCtrl->GetFirstChild(m_listCtrl->GetRootItem(), cookie);
+    size_t nNumeReVersion = versionToInt(sVersion);
 
     while (item.IsOk())
     {
-        size_t packagenamelength = m_listCtrl->GetItemText(item).length();
         m_listCtrl->SetItemBackgroundColour(item, *wxWHITE);
         m_listCtrl->SetItemText(item, INSTALLEDCOLUMN, "");
+
+        size_t nRequiredVersion = 0u;
+        std::string sReqVersion = getEntry(item, "Required NumeRe version");
+
+        if (sReqVersion.length())
+            nRequiredVersion = versionToInt(sReqVersion);
+
+        // Ensure that the current NumeRe version is sufficient to handle
+        // this package
+        if (nRequiredVersion > nNumeReVersion)
+        {
+            m_listCtrl->SetItemBackgroundColour(item, OUTDATEDVERSIONCOLOUR);
+
+            if (m_listCtrl->GetItemText(item, REPOCOLUMN).find("(Requires newer NumeRe version)") == std::string::npos)
+                m_listCtrl->SetItemText(item, REPOCOLUMN, m_listCtrl->GetItemText(item, REPOCOLUMN) + " (Requires newer NumeRe version)");
+
+            item = m_listCtrl->GetNextSibling(item);
+            continue;
+        }
 
         // Find already installed versions
         for (size_t i = 0; i < vInstalled.size(); i++)
         {
-            if (vInstalled[i].substr(0, packagenamelength+1) == m_listCtrl->GetItemText(item) + "\t")
+            if (vInstalled[i].getName() == m_listCtrl->GetItemText(item))
             {
+                vRemotePackage[i] = true;
+
+                // If this is a re-run of this function, we already have the locals
+                // in place, so that means, we have to consider the case that this
+                // package has not remote information
+                if (m_listCtrl->GetItemText(item, REPOCOLUMN) == "---")
+                {
+                    m_listCtrl->SetItemBackgroundColour(item, LOCALCOLOUR);
+                    m_listCtrl->SetItemText(item, INSTALLEDCOLUMN, "v" + vInstalled[i].sVersion + " (Local)");
+                    continue;
+                }
+
                 size_t nRepoVersion = versionToInt(m_listCtrl->GetItemText(item, REPOCOLUMN).ToStdString());
-                size_t nInstalledVersion = versionToInt(vInstalled[i].substr(packagenamelength+1));
+                size_t nInstalledVersion = versionToInt(vInstalled[i].sVersion);
+
                 // Colourize the line backgrounds correspondingly,
                 // if a match had been found
                 if (nRepoVersion > nInstalledVersion)
                 {
                     m_listCtrl->SetItemBackgroundColour(item, UPDATECOLOUR);
-                    m_listCtrl->SetItemText(item, INSTALLEDCOLUMN, "v" + vInstalled[i].substr(packagenamelength+1) + " (Updateable)");
+                    m_listCtrl->SetItemText(item, INSTALLEDCOLUMN, "v" + vInstalled[i].sVersion + " (Update)");
                 }
                 else if (nRepoVersion < nInstalledVersion) // the installed version is newer
                 {
                     m_listCtrl->SetItemBackgroundColour(item, NEWERCOLOUR);
-                    m_listCtrl->SetItemText(item, INSTALLEDCOLUMN, "v" + vInstalled[i].substr(packagenamelength+1) + " (Newer)");
+                    m_listCtrl->SetItemText(item, INSTALLEDCOLUMN, "v" + vInstalled[i].sVersion + " (Newer)");
                 }
                 else // both are equal
                 {
                     m_listCtrl->SetItemBackgroundColour(item, INSTALLEDCOLOUR);
-                    m_listCtrl->SetItemText(item, INSTALLEDCOLUMN, "v" + vInstalled[i].substr(packagenamelength+1));
+                    m_listCtrl->SetItemText(item, INSTALLEDCOLUMN, "v" + vInstalled[i].sVersion);
                 }
 
                 break;
@@ -398,6 +435,97 @@ void PackageRepoBrowser::DetectInstalledPackages()
         item = m_listCtrl->GetNextSibling(item);
     }
 
+    // Delete all obsolete and local entries
+    item = m_listCtrl->GetFirstChild(m_listCtrl->GetRootItem(), cookie);
+
+    while (item.IsOk())
+    {
+        if (m_listCtrl->GetItemBackgroundColour(item) == *wxWHITE && m_listCtrl->GetItemText(item, REPOCOLUMN) == "---")
+        {
+            wxTreeItemId itemToDelete = item;
+            item = m_listCtrl->GetNextSibling(item);
+            m_listCtrl->Delete(itemToDelete);
+        }
+        else
+            item = m_listCtrl->GetNextSibling(item);
+    }
+
+    // Add all local installed packages
+    for (size_t i = 0; i < vRemotePackage.size(); i++)
+    {
+        if (!vRemotePackage[i])
+        {
+            wxTreeItemId currPackage = m_listCtrl->AppendItem(m_listCtrl->GetRootItem(), vInstalled[i].getName());
+            m_listCtrl->SetItemText(currPackage, INSTALLEDCOLUMN, "v" + vInstalled[i].sVersion + " (Local)");
+            m_listCtrl->SetItemText(currPackage, REPOCOLUMN, "---");
+            m_listCtrl->SetItemBold(currPackage, true);
+            m_listCtrl->SetItemBackgroundColour(currPackage, LOCALCOLOUR);
+            m_listCtrl->SetItemImage(currPackage, PACKAGCOLUMN, m_icons->GetIconIndex("nscr"));
+
+            wxTreeItemId currPackageInfo = m_listCtrl->AppendItem(currPackage, "Author");
+            m_listCtrl->SetItemText(currPackageInfo, REPOCOLUMN, vInstalled[i].getAuthor());
+
+            currPackageInfo = m_listCtrl->AppendItem(currPackage, "Type");
+            m_listCtrl->SetItemText(currPackageInfo, REPOCOLUMN, vInstalled[i].sType.find("PLUGIN") != std::string::npos ? "Plugin" : "Package");
+
+            currPackageInfo = m_listCtrl->AppendItem(currPackage, "Description");
+            std::string sDesc = vInstalled[i].getDescription();
+            replaceAll(sDesc, "\\\"", "\"");
+            replaceAll(sDesc, "\\n", "\n");
+
+            if (!sDesc.length() || sDesc == "Description")
+                sDesc = "[No description. Please provide a description using the \"desc=DESC\" install info field.]";
+
+            m_listCtrl->SetItemText(currPackageInfo, REPOCOLUMN, sDesc);
+            m_listCtrl->SetItemToolTip(currPackageInfo, sDesc);
+            m_listCtrl->SetItemToolTip(currPackage, sDesc);
+
+            if (sDesc.front() == '[')
+                m_listCtrl->SetItemTextColour(currPackageInfo, *wxRED);
+
+            if (!vInstalled[i].getKeyWords().length() || vInstalled[i].getKeyWords() != "NONE")
+            {
+                currPackageInfo = m_listCtrl->AppendItem(currPackage, "Keywords");
+                m_listCtrl->SetItemText(currPackageInfo, REPOCOLUMN, vInstalled[i].getKeyWords());
+                m_listCtrl->SetItemToolTip(currPackageInfo, vInstalled[i].getKeyWords());
+            }
+
+            if (!vInstalled[i].getChangesLog().length() || vInstalled[i].getChangesLog() != "NONE")
+            {
+                std::string sChangesLog = vInstalled[i].getChangesLog();
+                replaceAll(sChangesLog, "\\\"", "\"");
+                replaceAll(sChangesLog, "\\n", "\n");
+                currPackageInfo = m_listCtrl->AppendItem(currPackage, "Changelog");
+                m_listCtrl->SetItemText(currPackageInfo, REPOCOLUMN, sChangesLog);
+
+                if (sChangesLog.length() > CHANGELOGLENGTH)
+                    sChangesLog = sChangesLog.substr(0, CHANGELOGLENGTH) + "[...]";
+
+                m_listCtrl->SetItemToolTip(currPackageInfo, sChangesLog);
+            }
+
+            std::string sLicense = vInstalled[i].getLicense();
+
+            currPackageInfo = m_listCtrl->AppendItem(currPackage, "License");
+
+            if (sLicense.length() && sLicense != "???")
+                m_listCtrl->SetItemText(currPackageInfo, REPOCOLUMN, sLicense);
+            else
+            {
+                m_listCtrl->SetItemText(currPackageInfo, REPOCOLUMN, "[License unknown. Please provide a license using the \"license=LICENSE\" install info field.]");
+                m_listCtrl->SetItemTextColour(currPackageInfo, *wxRED);
+            }
+        }
+    }
+
+    // Sort the packages to be alphabetically ordered
+    m_listCtrl->SortChildren(m_listCtrl->GetRootItem());
+
+    if (m_progress->GetValue() < 1)
+    {
+        m_statusText->SetLabel("Status: Process finished.");
+        m_progress->SetValue(m_progress->GetRange());
+    }
 }
 
 
@@ -486,7 +614,7 @@ wxThread::ExitCode PackageRepoBrowser::Entry()
             m_filesLoaded = success;
 
             if (success)
-                m_statusText->SetLabel("Status: Packages successfully downloaded.");
+                m_statusText->SetLabel("Status: Packages successfully downloaded. Waiting for completion ... (You might need to accept licences in terminal)");
             else
                 m_statusText->SetLabel("Status: One or more packages could not be downloaded.");
         }
@@ -531,6 +659,9 @@ void PackageRepoBrowser::OnThreadUpdate(wxThreadEvent& event)
 
             item = m_listCtrl->GetNextSibling(item);
         }
+
+        m_progress->SetValue(0);
+        m_progress->Pulse();
 
         m_terminal->pass_command("install \"packages/" + m_fileNameToInstall + "\"", false);
     }
@@ -619,9 +750,9 @@ void PackageRepoBrowser::populatePackageList(const std::string& sUrl)
     {
         std::vector<std::string> vRepoContents = getRepoList(sUrl);
 
-        for (const std::string& url : vRepoContents)
+        for (const std::string& _url : vRepoContents)
         {
-            populatePackageList(url);
+            populatePackageList(_url);
         }
 
         return;
@@ -675,6 +806,7 @@ void PackageRepoBrowser::populatePackageList(const std::string& sUrl)
         sDesc = getTagValue(sInfo, "plugindesc");
 
     replaceAll(sDesc, "\\\"", "\"");
+    replaceAll(sDesc, "\\n", "\n");
 
     if (!sDesc.length())
         sDesc = "[No description. Please provide a description using the \"desc=DESC\" install info field.]";
@@ -685,6 +817,31 @@ void PackageRepoBrowser::populatePackageList(const std::string& sUrl)
 
     if (sDesc.front() == '[')
         m_listCtrl->SetItemTextColour(currPackageInfo, *wxRED);
+
+    std::string sKeyWords = getTagValue(sInfo, "keywords");
+
+    if (sKeyWords.length())
+    {
+        currPackageInfo = m_listCtrl->AppendItem(currPackage, "Keywords");
+        m_listCtrl->SetItemText(currPackageInfo, REPOCOLUMN, sKeyWords);
+        m_listCtrl->SetItemToolTip(currPackageInfo, sKeyWords);
+    }
+
+    std::string sChangesLog = getTagValue(sInfo, "changelog");
+
+    if (sChangesLog.length())
+    {
+        replaceAll(sChangesLog, "\\\"", "\"");
+        replaceAll(sChangesLog, "\\n", "\n");
+
+        currPackageInfo = m_listCtrl->AppendItem(currPackage, "Changelog");
+        m_listCtrl->SetItemText(currPackageInfo, REPOCOLUMN, sChangesLog);
+
+        if (sChangesLog.length() > CHANGELOGLENGTH)
+            sChangesLog = sChangesLog.substr(0, CHANGELOGLENGTH) + "[...]";
+
+        m_listCtrl->SetItemToolTip(currPackageInfo, sChangesLog);
+    }
 
     std::string sLicense = getTagValue(sInfo, "license");
 
@@ -789,7 +946,10 @@ void PackageRepoBrowser::OnItemSelect(wxTreeEvent& event)
     m_installButton->Disable();
     m_uninstallButton->Disable();
 
-    if (m_task == TASK_NONE && item.IsOk() && m_listCtrl->HasChildren(item))
+    if (m_task == TASK_NONE
+        && item.IsOk()
+        && m_listCtrl->HasChildren(item)
+        && m_listCtrl->GetItemBackgroundColour(item) != OUTDATEDVERSIONCOLOUR)
     {
         if (isInstallable(item) || isUpdateable(item))
             m_installButton->Enable();

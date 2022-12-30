@@ -30,7 +30,7 @@
 /////////////////////////////////////////////////
 /// \brief Default constructor.
 /////////////////////////////////////////////////
-Package::Package() : sCommand(""), sMainProcedure(""), sArgumentList(""), sType("TYPE_UNSPECIFIED"), sLicense(""), sName("Plugin"), sVersion("<AUTO>"), sAuthor("User"), sDescription("Description"), sMenuEntry(""), sDocumentationIndexID("")
+Package::Package() : sCommand(""), sMainProcedure(""), sArgumentList(""), sType("TYPE_UNSPECIFIED"), sLicense(""), sName("Plugin"), sVersion("<AUTO>"), sAuthor("User"), sDescription("Description"), sMenuEntry(""), sDocumentationIndexID(""), sKeyWords("NONE"), sChangesLog("NONE")
 { }
 
 
@@ -52,8 +52,10 @@ Package::Package(const std::string& sInstallInfoString) : Package()
     sType = getOptionValue(sInstallInfoString, "type", "TYPE_UNSPECIFIED");
     sLicense = getOptionValue(sInstallInfoString, "license", "???");
     sName = getOptionValue(sInstallInfoString, "name", "Plugin");
-    sVersion = getOptionValue(sInstallInfoString, "version", "<AUTO>");
+    sVersion = getOptionValue(sInstallInfoString, "version", "0.0.1");
     sAuthor = getOptionValue(sInstallInfoString, "author", "User");
+    sKeyWords = getOptionValue(sInstallInfoString, "keywords", "NONE");
+    sChangesLog = getOptionValue(sInstallInfoString, "changelog", "NONE");
     sDescription = getOptionValue(sInstallInfoString, "desc", "Description");
 
     if (!sDescription.length())
@@ -123,7 +125,7 @@ std::string Package::getOptionValue(const std::string& sInstallInfoString, const
 /////////////////////////////////////////////////
 std::string Package::exportDefinition() const
 {
-    return sCommand + "," + sMainProcedure + "," + sArgumentList + "," + sType + "," + sName + "," + sVersion + "," + sAuthor + "," + sDescription + "," + sDocumentationIndexID + "," + sLicense + "," + sMenuEntry + ",";
+    return sCommand + "," + sMainProcedure + "," + sArgumentList + "," + sType + "," + sName + "," + sVersion + "," + sAuthor + "," + sDescription + "," + sDocumentationIndexID + "," + sLicense + "," + sMenuEntry + "," + sKeyWords + "," + sChangesLog + ",";
 }
 
 
@@ -176,6 +178,16 @@ void Package::importDefinition(std::string sDefinitionString)
         return;
 
     sMenuEntry = getNextArgument(sDefinitionString, true);
+
+    if (!sDefinitionString.length())
+        return;
+
+    sKeyWords = getNextArgument(sDefinitionString, true);
+
+    if (!sDefinitionString.length())
+        return;
+
+    sChangesLog = getNextArgument(sDefinitionString, true);
 }
 
 
@@ -299,6 +311,18 @@ std::string Package::getDescription() const
 
 
 /////////////////////////////////////////////////
+/// \brief Returns the package keywords.
+///
+/// \return std::string
+///
+/////////////////////////////////////////////////
+std::string Package::getKeyWords() const
+{
+    return stripParentheses(sKeyWords);
+}
+
+
+/////////////////////////////////////////////////
 /// \brief Returns the package license.
 ///
 /// \return std::string
@@ -350,6 +374,18 @@ std::string Package::getCommandSignature() const
         sSignature += "-> ARG";
 
     return sSignature;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Returns the package changeslog.
+///
+/// \return std::string
+///
+/////////////////////////////////////////////////
+std::string Package::getChangesLog() const
+{
+    return stripParentheses(sChangesLog);
 }
 
 

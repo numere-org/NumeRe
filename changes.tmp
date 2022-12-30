@@ -58,3 +58,4 @@ Fixed	It is now possible to use already declared local variables as values for t
 Fixed	NLYT files are now draggable in the and from the file tree.
 Cleaned	Resolved the glitch that if the mouse cursor enters the tooltip, the tooltip was hidden. Now it is persistent and hides itself once the mouse clicks on another text or window element.
 Added	Installing a local package can now also be done using the entry in the "Packages" menu.
+Updated	Greatly improved the "Package Repository Browser", which is now called "Package Manager" as it better describes its purpose.

@@ -210,10 +210,10 @@ std::vector<std::string> NumeReTerminal::getPathSettings()
 /// \brief Returns the installed plugins as a
 /// STL vector.
 ///
-/// \return std::vector<std::string>
+/// \return const std::vector<Package>&
 ///
 /////////////////////////////////////////////////
-std::vector<std::string> NumeReTerminal::getInstalledPackages()
+const std::vector<Package>& NumeReTerminal::getInstalledPackages()
 {
     wxCriticalSectionLocker lock(m_kernelCS);
     return _kernel.getInstalledPackages();

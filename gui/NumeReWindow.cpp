@@ -1864,7 +1864,7 @@ void NumeReWindow::OnMenuEvent(wxCommandEvent &event)
                                                      "", "*.nscr", "Packages (*.nscr)|*.nscr", wxFD_OPEN, this).ToStdString();
 
             if (packageFile.length())
-                m_terminal->pass_command("install \"" + packageFile + "\"", false);
+                m_terminal->pass_command("install \"" + replacePathSeparator(packageFile) + "\"", false);
 
             break;
         }
@@ -5302,8 +5302,9 @@ void NumeReWindow::UpdateMenuBar()
     // Create packages menu
     wxMenu* menuPackages = new wxMenu();
 
-    menuPackages->Append(ID_MENU_CREATE_PACKAGE, _guilang.get("GUI_MENU_CREATE_PACKAGE"), _guilang.get("GUI_MENU_CREATE_PACKAGE_TTP"));
     menuPackages->Append(ID_MENU_PLUGINBROWSER, _guilang.get("GUI_MENU_SHOW_PACKAGE_BROWSER"), _guilang.get("GUI_MENU_SHOW_PACKAGE_BROWSER_TTP"));
+    menuPackages->AppendSeparator();
+    menuPackages->Append(ID_MENU_CREATE_PACKAGE, _guilang.get("GUI_MENU_CREATE_PACKAGE"), _guilang.get("GUI_MENU_CREATE_PACKAGE_TTP"));
     menuPackages->Append(ID_MENU_INSTALLPLUGINFROMFILE, _guilang.get("GUI_MENU_INSTALL_PACKAGE_FILE"), _guilang.get("GUI_MENU_INSTALL_PACKAGE_FILE_TTP"));
     menuPackages->AppendSeparator();
     wxMenuItem* item = menuPackages->Append(EVENTID_PLUGIN_MENU_END, _guilang.get("GUI_MENU_NO_PLUGINS_INSTALLED"));
@@ -7123,36 +7124,50 @@ void NumeReWindow::OnCreatePackage(const wxString& projectFile)
             if (edit->getEditorSetting(NumeReEditor::SETTING_INDENTONTYPE))
                 edit->ToggleSettings(NumeReEditor::SETTING_INDENTONTYPE);
 
-            // Check, whether this package is already installed and
-            // ask the user to synchronize the package versions
-            std::vector<std::string> vPackages = m_terminal->getInstalledPackages();
             std::string sPackageName = dlg.getPackageName().ToStdString();
 
-            for (const auto& package : vPackages)
+            if (wxYES == wxMessageBox(_guilang.get("GUI_PKGDLG_UPDATEINSTALLED", sPackageName),
+                                      _guilang.get("GUI_PKGDLG_UPDATEINSTALLED_HEAD"), wxYES_NO | wxICON_QUESTION, this))
             {
-                if (package.substr(0, package.find('\t')) == sPackageName)
-                {
-                    size_t nInstalledVersion = versionToInt(package.substr(package.find('\t')+1));
+                std::string sPackage = installinfo.ToStdString();
+                replaceAll(sPackage, "\r\n", " ");
+                replaceAll(sPackage, "\t", " ");
+                replaceAll(sPackage, "<info>", "");
+                replaceAll(sPackage, "<endinfo>", "");
 
-                    // Compare the installed version with the currently
-                    // packed version and ask the user, whether we shall
-                    // synchronize those two
-                    if (nInstalledVersion < versionToInt(dlg.getPackageVersion().ToStdString())
-                        && wxYES == wxMessageBox(_guilang.get("GUI_PKGDLG_UPDATEINSTALLED", sPackageName),
-                                                 _guilang.get("GUI_PKGDLG_UPDATEINSTALLED_HEAD"), wxYES_NO | wxICON_QUESTION, this))
-                    {
-                        std::string sPackage = installinfo.ToStdString();
-                        replaceAll(sPackage, "\r\n", " ");
-                        replaceAll(sPackage, "\t", " ");
-                        replaceAll(sPackage, "<info>", "");
-                        replaceAll(sPackage, "<endinfo>", "");
-
-                        m_terminal->updatePackage(sPackage);
-                    }
-
-                    break;
-                }
+                m_terminal->updatePackage(sPackage);
             }
+
+            // Check, whether this package is already installed and
+            // ask the user to synchronize the package versions
+            //const std::vector<Package>& vPackages = m_terminal->getInstalledPackages();
+            //std::string sPackageName = dlg.getPackageName().ToStdString();
+            //
+            //for (const auto& package : vPackages)
+            //{
+            //    if (package.getName() == sPackageName)
+            //    {
+            //        size_t nInstalledVersion = versionToInt(package.sVersion);
+            //
+            //        // Compare the installed version with the currently
+            //        // packed version and ask the user, whether we shall
+            //        // synchronize those two
+            //        if (nInstalledVersion < versionToInt(dlg.getPackageVersion().ToStdString())
+            //            && wxYES == wxMessageBox(_guilang.get("GUI_PKGDLG_UPDATEINSTALLED", sPackageName),
+            //                                     _guilang.get("GUI_PKGDLG_UPDATEINSTALLED_HEAD"), wxYES_NO | wxICON_QUESTION, this))
+            //        {
+            //            std::string sPackage = installinfo.ToStdString();
+            //            replaceAll(sPackage, "\r\n", " ");
+            //            replaceAll(sPackage, "\t", " ");
+            //            replaceAll(sPackage, "<info>", "");
+            //            replaceAll(sPackage, "<endinfo>", "");
+            //
+            //            m_terminal->updatePackage(sPackage);
+            //        }
+            //
+            //        break;
+            //    }
+            //}
         }
     }
     catch (SyntaxError& e)

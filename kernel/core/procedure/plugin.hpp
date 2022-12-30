@@ -74,6 +74,8 @@ class Package
         std::string sDescription;
         std::string sMenuEntry;
         std::string sDocumentationIndexID;
+        std::string sKeyWords;
+        std::string sChangesLog;
 
         Package();
         Package(const std::string& sInstallInfoString);
@@ -89,9 +91,11 @@ class Package
         std::string getName() const;
         std::string getAuthor() const;
         std::string getDescription() const;
+        std::string getKeyWords() const;
         std::string getLicense() const;
         std::string getMenuEntry() const;
         std::string getCommandSignature() const;
+        std::string getChangesLog() const;
 };
 
 
@@ -144,6 +148,18 @@ class PackageManager : public FileSystem
 
         std::string getPluginInfoPath();
         void addHelpIndex(const std::string& _sPluginName, std::string _sHelpId);
+
+        /////////////////////////////////////////////////
+        /// \brief Returns a const reference to the
+        /// currently installed packages.
+        ///
+        /// \return const std::vector<Package>&
+        ///
+        /////////////////////////////////////////////////
+        const std::vector<Package>& getPackages() const
+        {
+            return vPackageInfo;
+        }
 
         /////////////////////////////////////////////////
         /// \brief Returns the names of the installed
