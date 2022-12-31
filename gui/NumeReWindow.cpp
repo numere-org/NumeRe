@@ -7271,7 +7271,14 @@ void NumeReWindow::OnOptions()
         m_terminal->setKernelSettings(*m_options);
         EvaluateOptions();
         m_history->UpdateSyntaxHighlighting();
+        m_terminal->SetFont(m_options->toFont(m_options->getSetting(SETTING_S_TERMINALFONT).stringval()));
         m_terminal->UpdateColors();
+
+        m_splitEditorOutput->SetCharHeigth(m_terminal->GetCharHeight());
+        m_splitCommandHistory->SetCharHeigth(m_terminal->GetCharHeight());
+        m_splitEditorOutput->SetSashPositionFloat(m_splitEditorOutput->GetSplitPercentage());
+        m_splitCommandHistory->SetSashPositionFloat(m_splitCommandHistory->GetSplitPercentage());
+
         m_termContainer->SetBackgroundColour(m_options->GetSyntaxStyle(Options::CONSOLE_STD).background);
         m_termContainer->Refresh();
 

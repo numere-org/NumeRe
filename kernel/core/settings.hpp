@@ -52,6 +52,8 @@
 #define SETTING_V_WINDOW_X            "terminal.windowsize.x"
 #define SETTING_V_WINDOW_Y            "terminal.windowsize.y"
 #define SETTING_V_BUFFERSIZE          "terminal.buffersize"
+#define SETTING_S_TERMINALFONT        "terminal.font"
+#define SETTING_S_HISTORYFONT         "history.font"
 #define SETTING_V_AUTOSAVE            "table.autosave"
 #define SETTING_S_EXEPATH             "path.exepath"
 #define SETTING_S_SAVEPATH            "path.savepath"

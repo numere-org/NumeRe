@@ -116,22 +116,16 @@ NumeReTerminal::NumeReTerminal(wxWindow* parent, wxWindowID id, Options* _option
 	*/
 	wxClientDC
 	dc(this);
-    wxFont monospacedFont(8, wxMODERN, wxNORMAL, wxNORMAL, false, "Consolas");//10
-	SetFont(monospacedFont);
-	// Initialize the relevant fonts
-	m_normalFont = GetFont();
-	m_underlinedFont = GetFont();
-	m_underlinedFont.SetUnderlined(true);
-	m_boldFont = GetFont();
-	m_boldFont.SetWeight(wxBOLD);
-	m_boldUnderlinedFont = m_boldFont;
-	m_boldUnderlinedFont.SetUnderlined(true);
+
 	SetCursor(wxCursor(wxCURSOR_IBEAM));
 
     // Start the kernel
 	_kernel.StartUp(this, sPath.ToStdString(), getSyntax()->getFunctions());
 	m_options->copySettings(_kernel.getKernelSettings());
 	m_useSmartSense = m_options->getSetting(SETTING_B_SMARTSENSE).active();
+
+	// Initialize the relevant fonts
+	SetFont(m_options->toFont(m_options->getSetting(SETTING_S_TERMINALFONT).stringval()));
 
 	// Update the terminal colors
 	UpdateColors();
@@ -761,28 +755,31 @@ void NumeReTerminal::OnThreadUpdate(wxThreadEvent& event)
 bool
 NumeReTerminal::SetFont(const wxFont& font)
 {
-	m_init = 1;
+    if (font == m_normalFont)
+        return true;
+
+    m_init = 1;
 
     // Set the passed font to all internal member variables
-	wxWindow::SetFont(font);
-	m_normalFont = font;
-	m_underlinedFont = font;
-	m_underlinedFont.SetUnderlined(true);
-	m_boldFont = GetFont();
-	m_boldFont.SetWeight(wxBOLD);
-	m_boldUnderlinedFont = m_boldFont;
-	m_boldUnderlinedFont.SetUnderlined(true);
+    wxWindow::SetFont(font);
+    m_normalFont = font;
+    m_underlinedFont = font;
+    m_underlinedFont.SetUnderlined(true);
+    m_boldFont = GetFont();
+    m_boldFont.SetWeight(wxBOLD);
+    m_boldUnderlinedFont = m_boldFont;
+    m_boldUnderlinedFont.SetUnderlined(true);
 
-	m_init = 0;
+    m_init = 0;
 
-	// Resize the terminal, because the new
-	// font might have a new text extent
-	ResizeTerminal(m_width, m_height);
+    // Resize the terminal, because the new
+    // font might have a new text extent
+    ResizeTerminal(m_width, m_height);
 
-	// Refresh the GUI element
-	Refresh();
+    // Refresh the GUI element
+    Refresh();
 
-	return true;
+    return true;
 }
 
 

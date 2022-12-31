@@ -345,15 +345,27 @@ void OptionsDialog::CreateStylePage()
     // Create a group
     group = panel->createGroup(_guilang.get("GUI_OPTIONS_FONTS"), wxHORIZONTAL);
 
-    wxBoxSizer* editorFontSizer = new wxBoxSizer(wxVERTICAL);
+    wxBoxSizer* fontSizer = new wxBoxSizer(wxVERTICAL);
     wxBoxSizer* plotFontSizer = new wxBoxSizer(wxVERTICAL);
 
     wxStaticText* editorFontStaticText = new wxStaticText(group->GetStaticBox(), wxID_STATIC, _guilang.get("GUI_OPTIONS_EDITORFONT"), wxDefaultPosition, wxDefaultSize, 0);
-    editorFontSizer->Add(editorFontStaticText, 0, wxALIGN_LEFT | wxLEFT | wxRIGHT | wxTOP | wxADJUST_MINSIZE, 0);
+    fontSizer->Add(editorFontStaticText, 0, wxALIGN_LEFT | wxLEFT | wxRIGHT | wxTOP | wxADJUST_MINSIZE, 0);
     wxFont font;
 	font.SetNativeFontInfoUserDesc("Consolas 10");
-    m_fontPicker = new wxFontPickerCtrl(group->GetStaticBox(), wxID_ANY, font, wxDefaultPosition, wxDefaultSize, wxFNTP_DEFAULT_STYLE);
-    editorFontSizer->Add(m_fontPicker, 0, wxALIGN_LEFT | wxLEFT | wxRIGHT| wxBOTTOM, 0);
+    m_fontPicker = new wxFontPickerCtrl(group->GetStaticBox(), wxID_ANY, font, wxDefaultPosition, wxSize(200,-1), wxFNTP_DEFAULT_STYLE);
+    fontSizer->Add(m_fontPicker, 0, wxALIGN_LEFT | wxLEFT | wxRIGHT| wxBOTTOM, 0);
+
+    wxStaticText* terminalFontStaticText = new wxStaticText(group->GetStaticBox(), wxID_STATIC, _guilang.get("GUI_OPTIONS_TERMINALFONT"), wxDefaultPosition, wxDefaultSize, 0);
+    fontSizer->Add(terminalFontStaticText, 0, wxALIGN_LEFT | wxLEFT | wxRIGHT | wxTOP | wxADJUST_MINSIZE, 0);
+	font.SetNativeFontInfoUserDesc("Consolas 8");
+    m_fontPickerTerminal = new wxFontPickerCtrl(group->GetStaticBox(), wxID_ANY, font, wxDefaultPosition, wxSize(200,-1), wxFNTP_DEFAULT_STYLE);
+    fontSizer->Add(m_fontPickerTerminal, 0, wxALIGN_LEFT | wxLEFT | wxRIGHT| wxBOTTOM, 0);
+
+    wxStaticText* historyFontStaticText = new wxStaticText(group->GetStaticBox(), wxID_STATIC, _guilang.get("GUI_OPTIONS_HISTORYFONT"), wxDefaultPosition, wxDefaultSize, 0);
+    fontSizer->Add(historyFontStaticText, 0, wxALIGN_LEFT | wxLEFT | wxRIGHT | wxTOP | wxADJUST_MINSIZE, 0);
+    m_fontPickerHistory = new wxFontPickerCtrl(group->GetStaticBox(), wxID_ANY, font, wxDefaultPosition, wxSize(200,-1), wxFNTP_DEFAULT_STYLE);
+    fontSizer->Add(m_fontPickerHistory, 0, wxALIGN_LEFT | wxLEFT | wxRIGHT| wxBOTTOM, 0);
+
 
     wxStaticText* defaultFontStaticText = new wxStaticText(group->GetStaticBox(), wxID_STATIC, _(_guilang.get("GUI_OPTIONS_DEFAULTFONT")), wxDefaultPosition, wxDefaultSize, 0);
     plotFontSizer->Add(defaultFontStaticText, 0, wxALIGN_LEFT | wxLEFT | wxRIGHT | wxTOP | wxADJUST_MINSIZE, 0);
@@ -368,11 +380,11 @@ void OptionsDialog::CreateStylePage()
     defaultFont.Add("schola");
     defaultFont.Add("termes");
 
-    m_defaultFont = new wxComboBox(group->GetStaticBox(), ID_PRINTSTYLE, "pagella", wxDefaultPosition, wxDefaultSize, defaultFont, wxCB_READONLY );
+    m_defaultFont = new wxComboBox(group->GetStaticBox(), ID_PRINTSTYLE, "pagella", wxDefaultPosition, wxSize(200,-1), defaultFont, wxCB_READONLY );
     m_defaultFont->SetStringSelection("pagella");
     plotFontSizer->Add(m_defaultFont, 0, wxALIGN_LEFT | wxLEFT | wxRIGHT | wxBOTTOM, 0);
 
-    group->Add(editorFontSizer, 0, wxALIGN_LEFT | wxALL, ELEMENT_BORDER);
+    group->Add(fontSizer, 0, wxALIGN_LEFT | wxALL, ELEMENT_BORDER);
     group->Add(plotFontSizer, 0, wxALIGN_LEFT | wxALL, ELEMENT_BORDER);
 
     // Add the grouped page to the notebook
@@ -838,7 +850,9 @@ bool OptionsDialog::EvaluateOptions()
     else
         m_options->SetPrintStyle(wxSTC_PRINT_BLACKONWHITE);
 
-    m_options->SetEditorFont(m_fontPicker->GetSelectedFont());
+    mSettings[SETTING_S_EDITORFONT].stringval() = Options::toString(m_fontPicker->GetSelectedFont());
+    mSettings[SETTING_S_TERMINALFONT].stringval() = Options::toString(m_fontPickerTerminal->GetSelectedFont());
+    mSettings[SETTING_S_HISTORYFONT].stringval() = Options::toString(m_fontPickerHistory->GetSelectedFont());
 
     for (int i = 0; i < Options::ANALYZER_OPTIONS_END; i++)
     {
@@ -919,7 +933,9 @@ void OptionsDialog::InitializeDialog()
     m_defaultBackground->SetValue(style.defaultbackground);
     m_backColor->Enable(!m_defaultBackground->GetValue());
 
-    m_fontPicker->SetSelectedFont(m_options->GetEditorFont());
+    m_fontPicker->SetSelectedFont(Options::toFont(mSettings[SETTING_S_EDITORFONT].stringval()));
+    m_fontPickerTerminal->SetSelectedFont(Options::toFont(mSettings[SETTING_S_TERMINALFONT].stringval()));
+    m_fontPickerHistory->SetSelectedFont(Options::toFont(mSettings[SETTING_S_HISTORYFONT].stringval()));
 
     m_keepBackupFiles->SetValue(mSettings[SETTING_B_USEREVISIONS].active());
     m_foldDuringLoading->SetValue(mSettings[SETTING_B_FOLDLOADEDFILE].active());
