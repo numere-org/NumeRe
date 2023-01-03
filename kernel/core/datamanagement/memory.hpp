@@ -200,6 +200,7 @@ class Memory : public Sorter
         mu::value_type getSpearmanCorr(size_t col1, const VectorIndex& _vIndex1, size_t col2, const VectorIndex& _vIndex2) const;
         std::vector<mu::value_type> getRank(size_t col, const VectorIndex& _vIndex, RankingStrategy _strat) const;
         std::vector<mu::value_type> getZScore(size_t col, const VectorIndex& _vIndex) const;
+        std::vector<mu::value_type> getBins(size_t col, size_t nBins) const;
 
         bool smooth(VectorIndex _vLine, VectorIndex _vCol, NumeRe::FilterSettings _settings, AppDir Direction = ALL);
         bool retouch(VectorIndex _vLine, VectorIndex _vCol, AppDir Direction = ALL);

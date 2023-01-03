@@ -3593,6 +3593,82 @@ std::vector<mu::value_type> Memory::getZScore(size_t col, const VectorIndex& _vI
 
 
 /////////////////////////////////////////////////
+/// \brief Calculate the number of elements per
+/// bin in the selected column.
+///
+/// \param col size_t
+/// \param nBins size_t
+/// \return std::vector<mu::value_type>
+///
+/////////////////////////////////////////////////
+std::vector<mu::value_type> Memory::getBins(size_t col, size_t nBins) const
+{
+    std::vector<mu::value_type> vBins;
+
+    // Ensure that we have data
+    if (memArray.size() <= col || !memArray[col])
+    {
+        vBins.resize(!nBins || nBins >= memArray[col]->size() ? 1 : nBins, NAN);
+        return vBins;
+    }
+
+    // Get the column type
+    TableColumn::ColumnType type = memArray[col]->m_type;
+
+    // Handle different column types differently
+    if (type == TableColumn::TYPE_CATEGORICAL)
+    {
+        // We use the categories as bins and ignore user settings
+        std::vector<std::string> vCategories = static_cast<CategoricalColumn*>(memArray[col].get())->getCategories();
+        nBins = vCategories.size();
+        vBins.resize(nBins, 0.0);
+
+        for (size_t i = 0; i < memArray[col]->size(); i++)
+        {
+            if (memArray[col]->getValue(i).real() > 0.0)
+                vBins[memArray[col]->getValue(i).real()-1] += 1.0;
+        }
+    }
+    else if (type == TableColumn::TYPE_LOGICAL)
+    {
+        // We use the logical values as bins and ignore user settings
+        nBins = 2;
+        vBins.resize(nBins, 0.0);
+
+        for (size_t i = 0; i < memArray[col]->size(); i++)
+        {
+            if (memArray[col]->getValue(i) == 1.0)
+                vBins[0] += 1.0;
+            else if (memArray[col]->getValue(i) == 0.0)
+                vBins[1] += 1.0;
+        }
+    }
+    else if (type == TableColumn::TYPE_STRING)
+        vBins.resize(!nBins || nBins >= memArray[col]->size() ? 1 : nBins, NAN); // Strings are not binnable
+    else
+    {
+        // Calculate the bins following the (simple) Sturges rule
+        if (!nBins || nBins >= memArray[col]->size() )
+            nBins = (int)std::rint(1.0 + 3.3 * std::log10(num(VectorIndex(0, VectorIndex::OPEN_END), VectorIndex(col)).real()));
+
+        // Calculate min, max and range of the data. We'll only consider real values
+        vBins.resize(nBins, 0.0);
+        double dMin = min(VectorIndex(0, VectorIndex::OPEN_END), VectorIndex(col)).real();
+        double dMax = max(VectorIndex(0, VectorIndex::OPEN_END), VectorIndex(col)).real();
+        double dRange = dMax - dMin;
+
+        for (size_t i = 0; i < memArray[col]->size(); i++)
+        {
+            if (!mu::isnan(memArray[col]->getValue(i)))
+                vBins[std::min(nBins-1.0, nBins * (memArray[col]->getValue(i).real()-dMin) / dRange)] += 1.0;
+        }
+    }
+
+    return vBins;
+}
+
+
+/////////////////////////////////////////////////
 /// \brief This method is the retouching main
 /// method. It will redirect the control into the
 /// specialized member functions.

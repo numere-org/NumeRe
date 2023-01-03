@@ -50,6 +50,7 @@ void WinMessageBeep();
 #define CURSOR_BLINK_DEFAULT_TIMEOUT	500
 #define CURSOR_BLINK_MAX_TIMEOUT	2000
 #define KERNEL_THREAD_STACK_SIZE 4194304 // Bytes
+#define MEASURING_STRING "The quick brown fox jumps over a lazy dog."
 
 BEGIN_EVENT_TABLE(NumeReTerminal, wxWindow)
 	EVT_PAINT						(NumeReTerminal::OnPaint)
@@ -109,13 +110,7 @@ NumeReTerminal::NumeReTerminal(wxWindow* parent, wxWindowID id, Options* _option
 	m_height = height;
 	m_bitmap = nullptr;
 	m_wxParent = nullptr;
-
-
-	/*
-	**  Determine window size from current font
-	*/
-	wxClientDC
-	dc(this);
+	m_callTip = nullptr;
 
 	SetCursor(wxCursor(wxCURSOR_IBEAM));
 
@@ -124,19 +119,14 @@ NumeReTerminal::NumeReTerminal(wxWindow* parent, wxWindowID id, Options* _option
 	m_options->copySettings(_kernel.getKernelSettings());
 	m_useSmartSense = m_options->getSetting(SETTING_B_SMARTSENSE).active();
 
-	// Initialize the relevant fonts
-	SetFont(m_options->toFont(m_options->getSetting(SETTING_S_TERMINALFONT).stringval()));
-
 	// Update the terminal colors
 	UpdateColors();
 
-    // Calculate text extents
-	int w, h;
-	dc.SetFont(m_boldFont);
-	dc.GetTextExtent("M", &m_charWidth, &h); // EKHL: Changed because Height made no sense
-	dc.GetTextExtent("My", &w, &m_charHeight);
+	// Initialize the relevant fonts
+	SetFont(m_options->toFont(m_options->getSetting(SETTING_S_TERMINALFONT).stringval()));
 
 	m_callTip = new TerminalCallTip(this, wxSize(100*m_charWidth, 2*m_charHeight));
+	m_callTip->ChangeFont(m_options->toFont(m_options->getSetting(SETTING_S_TERMINALFONT).stringval()));
 	SetClientSize(m_charsInLine * 8, m_linesDisplayed * 16);
 	// 10pt Courier New is 8 pixels wide and 16 pixels high... set up
 	// a default client size to match
@@ -769,6 +759,9 @@ NumeReTerminal::SetFont(const wxFont& font)
     m_boldFont.SetWeight(wxBOLD);
     m_boldUnderlinedFont = m_boldFont;
     m_boldUnderlinedFont.SetUnderlined(true);
+
+    if (m_callTip)
+        m_callTip->ChangeFont(font);
 
     m_init = 0;
 
@@ -1857,7 +1850,7 @@ void NumeReTerminal::Calltip(int x, int y, NumeRe::CallTip& _cTip)
         y = (y+1) * m_charHeight;
 
     m_callTip->PopUp(wxPoint(x, y), _cTip.sDefinition);
-    m_callTip->Resize(wxSize(m_charWidth * (_cTip.sDefinition.length()+1), m_charHeight));
+    m_callTip->Resize(wxSize(m_charWidth * (_cTip.sDefinition.length()+1.5), m_charHeight));
     m_callTip->Highlight(_cTip.nStart, _cTip.nEnd-_cTip.nStart);
 }
 
@@ -1966,7 +1959,7 @@ void NumeReTerminal::UpdateSize()
 	}
 
 	m_inUpdateSize = true;
-	int charWidth, charHeight, w, h;
+	int charWidth, charHeight;
 	wxClientDC* dc = nullptr;
 
 	if (!m_curDC)
@@ -1981,8 +1974,8 @@ void NumeReTerminal::UpdateSize()
 	dc->SetFont(m_boldFont);
 
 	// Calculate the correct text extent
-	dc->GetTextExtent("M", &charWidth, &h); // EKHL: Changed because Heigth made no sense
-	dc->GetTextExtent("My", &w, &charHeight);
+	dc->GetTextExtent(MEASURING_STRING, &charWidth, &charHeight); // EKHL: Changed because Heigth made no sense
+	charWidth = std::rint(charWidth / (double)strlen(MEASURING_STRING));
 
 	wxSize currentClientSize = GetClientSize();
 
@@ -2070,10 +2063,10 @@ NumeReTerminal::ResizeTerminal(int width, int height)
 	wxClientDC
 	dc(this);
 
-	// Calualte the correct text extents
+    // Calculate text extents
 	dc.SetFont(m_boldFont);
-	dc.GetTextExtent("M", &m_charWidth, &h); // EKHL: Changed because Heigth made no sense
-	dc.GetTextExtent("My", &w, &m_charHeight);
+	dc.GetTextExtent(MEASURING_STRING, &m_charWidth, &m_charHeight); // EKHL: Changed because Height made no sense
+	m_charWidth = std::rint(m_charWidth / (double)strlen(MEASURING_STRING));
 
 	w = width * m_charWidth;
 	h = height * m_charHeight;

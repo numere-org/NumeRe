@@ -851,7 +851,10 @@ bool OptionsDialog::EvaluateOptions()
         m_options->SetPrintStyle(wxSTC_PRINT_BLACKONWHITE);
 
     mSettings[SETTING_S_EDITORFONT].stringval() = Options::toString(m_fontPicker->GetSelectedFont());
-    mSettings[SETTING_S_TERMINALFONT].stringval() = Options::toString(m_fontPickerTerminal->GetSelectedFont());
+
+    if (m_fontPickerTerminal->GetSelectedFont().IsFixedWidth())
+        mSettings[SETTING_S_TERMINALFONT].stringval() = Options::toString(m_fontPickerTerminal->GetSelectedFont());
+
     mSettings[SETTING_S_HISTORYFONT].stringval() = Options::toString(m_fontPickerHistory->GetSelectedFont());
 
     for (int i = 0; i < Options::ANALYZER_OPTIONS_END; i++)

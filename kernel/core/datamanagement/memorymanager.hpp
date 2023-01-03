@@ -410,6 +410,12 @@ class MemoryManager : public NumeRe::FileAdapter, public StringMemory, public Nu
             return vMemory[findTable(sTable)]->getZScore(col, _vIndex);
         }
 
+        std::vector<mu::value_type> getBins(const std::string& sTable,
+                                            size_t col, size_t nBins) const
+        {
+            return vMemory[findTable(sTable)]->getBins(col, nBins);
+        }
+
 
 
 		// DIMENSION ACCESS METHODS

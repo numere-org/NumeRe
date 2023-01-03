@@ -1896,6 +1896,43 @@ static std::string tableMethod_anova(const std::string& sTableName, std::string 
 
 
 /////////////////////////////////////////////////
+/// \brief Realizes the "binsof()" table method.
+///
+/// \param sTableName const std::string&
+/// \param sMethodArguments std::string
+/// \return std::string
+///
+/////////////////////////////////////////////////
+static std::string tableMethod_binsof(const std::string& sTableName, std::string sMethodArguments)
+{
+    NumeReKernel* _kernel = NumeReKernel::getInstance();
+    std::string sCols = getNextArgument(sMethodArguments, true);
+
+    if (sMethodArguments.length())
+        sCols += "," + getNextArgument(sMethodArguments, true);
+
+    // Might be necessary to resolve the contents of columns and conversions
+    getDataElements(sCols,
+                    _kernel->getParser(),
+                    _kernel->getMemoryManager(),
+                    _kernel->getSettings());
+
+    int nResults = 0;
+    _kernel->getMemoryManager().updateDimensionVariables(sTableName);
+    _kernel->getParser().SetExpr(sCols);
+    mu::value_type* v = _kernel->getParser().Eval(nResults);
+
+    size_t col = intCast(v[0])-1;
+    size_t nBins = 0;
+
+    if (nResults > 1)
+        nBins = intCast(v[1]);
+
+    return _kernel->getParser().CreateTempVectorVar(_kernel->getMemoryManager().getBins(sTableName, col, nBins));
+}
+
+
+/////////////////////////////////////////////////
 /// \brief Realizes the "rankof()" table method.
 ///
 /// \param sTableName const std::string&
@@ -2028,6 +2065,7 @@ static std::map<std::string, TableMethod> getInplaceTableMethods()
     mTableMethods["rankof"] = tableMethod_rank;
     mTableMethods["zscoreof"] = tableMethod_zscore;
     mTableMethods["anovaof"] = tableMethod_anova;
+    mTableMethods["binsof"] = tableMethod_binsof;
 
     return mTableMethods;
 }
