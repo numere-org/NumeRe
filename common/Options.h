@@ -230,9 +230,7 @@ class Options : public Settings
 		// Accessors:  (inlined)
 		wxFont GetEditorFont() const
             {
-                wxFont font;
-                font.SetNativeFontInfoUserDesc(m_settings.at(SETTING_S_EDITORFONT).stringval());
-                return font;
+                return toFont(m_settings.at(SETTING_S_EDITORFONT).stringval());
             }
 		int GetPrintStyle() const
             {return m_settings.at(SETTING_B_PRINTINCOLOR).active() ? wxSTC_PRINT_COLOURONWHITE : wxSTC_PRINT_BLACKONWHITE;}
@@ -346,6 +344,19 @@ class Options : public Settings
 
         wxArrayString GetStyleIdentifier() const;
         size_t GetIdByIdentifier(const wxString& identifier) const;
+
+        static wxFont toFont(const std::string& sFontDescr)
+        {
+            wxFont font;
+            font.SetNativeFontInfoUserDesc(sFontDescr);
+            return font;
+        }
+
+        static std::string toString(wxFont font)
+        {
+            font.SetEncoding(wxFONTENCODING_CP1252);
+            return font.GetNativeFontInfoUserDesc().ToStdString();
+        }
 
 	private:
 		std::string analyzerOptsToString(AnalyzerOptions opt) const;

@@ -912,11 +912,11 @@ string replaceToTeX(const string& sString, bool replaceForTeXFile) // bool-flag 
 /// \brief This is a static helper function for
 /// the findCommand function.
 ///
-/// \param sCmd const string&
+/// \param sCmd StringView
 /// \return Match
 ///
 /////////////////////////////////////////////////
-static Match findCasualCommand(const string& sCmd)
+static Match findCasualCommand(StringView sCmd)
 {
     Match _mMatch;
     _mMatch.sString = "";
@@ -924,14 +924,14 @@ static Match findCasualCommand(const string& sCmd)
     size_t nStart = 0;
 
     // Jump over breakpoints
-    if (sCmd.substr(0,2) == "|>")
+    if (sCmd.subview(0,2) == "|>")
         nStart = 2;
 
     // Go through the complete command line
     for (unsigned int i = nStart; i < sCmd.length(); i++)
     {
         // Break the loop, if one recognizes typical initializers of the parameter list
-        if ((sCmd.substr(i, 2) == "--" || sCmd.substr(i, 5) == "-set ") && !isInQuotes(sCmd, i))
+        if ((sCmd.subview(i, 2) == "--" || sCmd.subview(i, 5) == "-set ") && !isInQuotes(sCmd, i))
             break;
 
         // Jump over some special characters, if one didn't find any command yet
@@ -949,7 +949,7 @@ static Match findCasualCommand(const string& sCmd)
             }
 
             // Store the command string
-            _mMatch.sString = sCmd.substr(_mMatch.nPos, i - _mMatch.nPos);
+            _mMatch.sString = sCmd.subview(_mMatch.nPos, i - _mMatch.nPos).to_string();
 
             // Ensure that this is not inside of quotation marks
             if (isInQuotes(sCmd, (i - _mMatch.nPos) / 2))
@@ -965,7 +965,7 @@ static Match findCasualCommand(const string& sCmd)
         {
             // We found an opening parenthesis although we already found a match position
             // Store the command string
-            _mMatch.sString = sCmd.substr(_mMatch.nPos, i - _mMatch.nPos);
+            _mMatch.sString = sCmd.subview(_mMatch.nPos, i - _mMatch.nPos).to_string();
 
             // Ensure that this is not inside of quotation marks
             // Also ensure that the found command string is one of the
@@ -994,9 +994,9 @@ static Match findCasualCommand(const string& sCmd)
     // Special case: We walked through the complete command line and didn't find
     // the end of the command. Simply use the rest of the command line as the command
     if (_mMatch.nPos != string::npos)
-        _mMatch.sString = sCmd.substr(_mMatch.nPos);
+        _mMatch.sString = sCmd.subview(_mMatch.nPos).to_string();
     else
-        _mMatch.sString = sCmd;
+        _mMatch.sString = sCmd.to_string();
 
     // Return the found match
     return _mMatch;
@@ -1010,15 +1010,15 @@ static Match findCasualCommand(const string& sCmd)
 /// \param _mMatch Match&
 /// \param position size_t
 /// \param character char
-/// \param sCmd const string&
-/// \param sCommand const string&
+/// \param sCmd StringView
+/// \param sCommand const std::string&
 /// \return bool
 ///
 /////////////////////////////////////////////////
-static bool findShortestMatchForCommand(Match& _mMatch, size_t position, char character, const string& sCmd, const string& sCommand)
+static bool findShortestMatchForCommand(Match& _mMatch, size_t position, char character, StringView sCmd, const std::string& sCommand)
 {
     // Store the command string and the match position
-    _mMatch.sString = sCmd.substr(position, sCmd.find(character, position + sCommand.length()) - position);
+    _mMatch.sString = sCmd.subview(position, sCmd.find(character, position + sCommand.length()) - position).to_string();
     _mMatch.nPos = position;
 
     // If there's a whitespace in the match string, erase it end everything after it
@@ -1027,14 +1027,14 @@ static bool findShortestMatchForCommand(Match& _mMatch, size_t position, char ch
 
     // Ensure that the found command is a single word
     if (!isInQuotes(sCmd, position)
-        && ((position && checkDelimiter(sCmd.substr(position - 1, _mMatch.sString.length() + 2)))
-            || (!position && checkDelimiter(" " + sCmd.substr(position, _mMatch.sString.length() + 1)))))
+        && isDelimiter(sCmd[position+_mMatch.sString.length()])
+        && (!position || isDelimiter(sCmd[position-1])))
     {
         // If the command line is longer than the match position and the length of both strings
         if (sCmd.length() >= sCommand.length() + _mMatch.nPos + _mMatch.sString.length())
         {
             // Try to find the command further back by calling findCommand recursively
-            Match _mTemp = findCommand(sCmd.substr(_mMatch.nPos + _mMatch.sString.length()), sCommand);
+            Match _mTemp = findCommand(sCmd.subview(_mMatch.nPos + _mMatch.sString.length()), sCommand);
 
             // If a match was found and it's length is shorter than the current one
             // then use the new match
@@ -1064,12 +1064,12 @@ static bool findShortestMatchForCommand(Match& _mMatch, size_t position, char ch
 /// \brief This is a static helper function for
 /// the findCommand function.
 ///
-/// \param sCmd const string&
+/// \param sCmd StringView
 /// \param sCommand const string&
 /// \return Match
 ///
 /////////////////////////////////////////////////
-static Match findCommandWithReturnValue(const string& sCmd, const string& sCommand)
+static Match findCommandWithReturnValue(StringView sCmd, const string& sCommand)
 {
     Match _mMatch;
     _mMatch.sString = "";
@@ -1077,14 +1077,14 @@ static Match findCommandWithReturnValue(const string& sCmd, const string& sComma
     size_t nStart = 0;
 
     // Jump over breakpoints
-    if (sCmd.substr(0,2) == "|>")
+    if (sCmd.subview(0,2) == "|>")
         nStart = 2;
 
     // Go through the complete command line
     for (unsigned int i = nStart; i < sCmd.length(); i++)
     {
         // Break the loop, if we find typical parameter string initializers
-        if ((sCmd.substr(i, 2) == "--" || sCmd.substr(i, 5) == "-set ") && !isInQuotes(sCmd, i))
+        if ((sCmd.subview(i, 2) == "--" || sCmd.subview(i, 5) == "-set ") && !isInQuotes(sCmd, i))
             break;
 
         // Jump over some special characters
@@ -1092,17 +1092,17 @@ static Match findCommandWithReturnValue(const string& sCmd, const string& sComma
             continue;
 
         // Jump, if this is not our searched command
-        if (sCmd.substr(i, sCommand.length()) != sCommand)
+        if (sCmd.subview(i, sCommand.length()) != sCommand)
             continue;
 
         // This is our command and it is not at the beginning of the line
-        if (sCmd.substr(i, sCommand.length()) == sCommand && i)
+        if (sCmd.subview(i, sCommand.length()) == sCommand && i)
         {
             // Is the command filling the rest of the command line?
             if (i + sCommand.length() == sCmd.length() - 1)
             {
                 // Store the command string with the previous character
-                _mMatch.sString = sCmd.substr(i - 1) + " ";
+                _mMatch.sString = sCmd.subview(i - 1).to_string() + " ";
 
                 // Store the position
                 _mMatch.nPos = i;
@@ -1160,7 +1160,7 @@ static Match findCommandWithReturnValue(const string& sCmd, const string& sComma
         }
 
         // This is our command and it is at the beginning of the line
-        if (sCmd.substr(i, sCommand.length()) == sCommand && !i)
+        if (sCmd.subview(i, sCommand.length()) == sCommand && !i)
         {
             // If the command lenght and the command line length are nearly the same
             if (sCommand.length() == sCmd.length() - 1)
@@ -1236,12 +1236,12 @@ static Match findCommandWithReturnValue(const string& sCmd, const string& sComma
 /// line (i.e. commands, which are returning
 /// values).
 ///
-/// \param sCmd const string&
-/// \param sCommand string
+/// \param sCmd StringView
+/// \param sCommand const std::string&
 /// \return Match
 ///
 /////////////////////////////////////////////////
-Match findCommand(const string& sCmd, string sCommand)
+Match findCommand(StringView sCmd, const std::string& sCommand)
 {
     Match _mMatch;
     _mMatch.sString = "";
@@ -1258,7 +1258,7 @@ Match findCommand(const string& sCmd, string sCommand)
     else if (sCommand.length() && (sCmd == sCommand || sCmd == sCommand + " "))
     {
         // the command line is identical to the searched command
-        _mMatch.sString = sCmd;
+        _mMatch.sString = sCmd.to_string();
         StripSpaces(_mMatch.sString);
         _mMatch.nPos = 0;
 

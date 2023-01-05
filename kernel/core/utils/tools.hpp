@@ -43,7 +43,7 @@ std::string extractStringToken(const std::string& sCmd, size_t nPos);
 unsigned int getMatchingParenthesis(const StringView&);
 bool isMultiValue(const std::string& sExpr, bool bIgnoreClosingParenthesis = false);
 std::string replaceToTeX(const std::string& sString, bool replaceForTeXFile = false);
-Match findCommand(const std::string& sCmd, std::string sCommand = "");
+Match findCommand(StringView sCmd, const std::string& sCommand = "");
 std::string extractCommandString(const std::string& sCmd, const Match& _mMatch);
 void openExternally(const std::string&);
 void moveFile(const std::string&, const std::string&);

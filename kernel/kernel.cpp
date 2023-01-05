@@ -190,7 +190,6 @@ void NumeReKernel::StartUp(NumeReTerminal* _parent, const std::string& __sPath, 
 
     // Set the current line length
     nLINE_LENGTH = _option.getWindow();
-    installing = false;
     refreshTree = false;
 
     // Set the default paths for all objects
@@ -616,7 +615,6 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const std::string& sCommand)
     int nNum = 0;               // Zahl der Ergebnisse in value_type* v
     nLastStatusVal = -1;
     nLastLineLength = 0;
-    installing = false;
     refreshTree = false;
 
     // Needed for some handler functions
@@ -770,10 +768,6 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const std::string& sCommand)
                     return nReturnVal;
                 continue;
             }
-
-            // Evaluate the install info string
-            if (_script.isValid() && _script.isOpen() && _script.installProcedures())
-                installing = true;
 
             // Get the current command
             sCurrentCommand = findCommand(sLine).sString;
@@ -2139,12 +2133,6 @@ std::string NumeReKernel::getGreeting()
 /////////////////////////////////////////////////
 void NumeReKernel::checkInternalStates()
 {
-    if (installing)
-    {
-        installing = false;
-        installationDone();
-    }
-
     if (refreshTree)
     {
         refreshTree = false;
@@ -2560,19 +2548,12 @@ std::vector<std::string> NumeReKernel::getPathSettings() const
 /// \brief Returns a vector containing the names
 /// and the version info of each installed plugin.
 ///
-/// \return std::vector<std::string>
+/// \return const std::vector<Package>&
 ///
 /////////////////////////////////////////////////
-std::vector<std::string> NumeReKernel::getInstalledPackages() const
+const std::vector<Package>& NumeReKernel::getInstalledPackages() const
 {
-    std::vector<std::string> vPackages;
-
-    for (size_t i = 0; i < _procedure.getPackageCount(); i++)
-    {
-        vPackages.push_back(_procedure.getPackageName(i) + "\t" + _procedure.getPackageVersion(i));
-    }
-
-    return vPackages;
+    return _procedure.getPackages();
 }
 
 

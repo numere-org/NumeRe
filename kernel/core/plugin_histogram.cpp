@@ -163,9 +163,9 @@ static void prepareIntervalsForHist(const std::string& sCmd, double& dMin, doubl
     {
         dMin = dDataMin;
         dMax = dDataMax;
-        double dIntervall = dMax - dMin;
-        dMax += dIntervall / 10.0;
-        dMin -= dIntervall / 10.0;
+       //double dIntervall = dMax - dMin;
+       //dMax += dIntervall / 10.0;
+       //dMin -= dIntervall / 10.0;
     }
     else if (isnan(dMin))
         dMin = dDataMin;
@@ -242,13 +242,13 @@ static std::vector<std::vector<double>> calculateHist1dData(MemoryManager& _data
                     if (isXLog)
                     {
                         if (_data.getElement(_idx.row[l], _idx.col[i], _histParams.sTable).real() >= pow(10.0, log10(_histParams.ranges.z[0]) + k * _histParams.binWidth[0])
-                                && _data.getElement(_idx.row[l], _idx.col[i], _histParams.sTable).real() < pow(10.0, log10(_histParams.ranges.z[0]) + (k + 1) * _histParams.binWidth[0]))
+                            && _data.getElement(_idx.row[l], _idx.col[i], _histParams.sTable).real() < pow(10.0, log10(_histParams.ranges.z[0]) + (k + 1) * _histParams.binWidth[0]))
                             nCount++;
                     }
                     else
                     {
                         if (_data.getElement(_idx.row[l], _idx.col[i], _histParams.sTable).real() >= _histParams.ranges.z[0] + k * _histParams.binWidth[0]
-                                && _data.getElement(_idx.row[l], _idx.col[i], _histParams.sTable).real() < _histParams.ranges.z[0] + (k + 1) * _histParams.binWidth[0])
+                            && _data.getElement(_idx.row[l], _idx.col[i], _histParams.sTable).real() < _histParams.ranges.z[0] + (k + 1) * _histParams.binWidth[0])
                             nCount++;
                     }
                 }
@@ -285,16 +285,18 @@ static std::vector<std::vector<double>> calculateHist1dData(MemoryManager& _data
                 // are part of the current bin interval
                 for (size_t l = 0; l < _idx.row.size(); l++)
                 {
+                    mu::value_type val = _data.getElement(_idx.row[l], _idx.col[i], _histParams.sTable);
+
                     if (isXLog)
                     {
-                        if (_data.getElement(_idx.row[l], _idx.col[i], _histParams.sTable).real() >= pow(10.0, log10(_histParams.ranges.x[0]) + k * _histParams.binWidth[0])
-                                && _data.getElement(_idx.row[l], _idx.col[i], _histParams.sTable).real() < pow(10.0, log10(_histParams.ranges.x[0]) + (k + 1) * _histParams.binWidth[0]))
+                        if (std::floor((val.real() - std::pow(10.0, _histParams.ranges.x[0])) / _histParams.binWidth[0]) == k
+                            || (val.real() == std::pow(10.0, _histParams.ranges.x[1]) && k+1 == _histParams.nBin))
                             nCount++;
                     }
                     else
                     {
-                        if (_data.getElement(_idx.row[l], _idx.col[i], _histParams.sTable).real() >= _histParams.ranges.x[0] + k * _histParams.binWidth[0]
-                                && _data.getElement(_idx.row[l], _idx.col[i], _histParams.sTable).real() < _histParams.ranges.x[0] + (k + 1) * _histParams.binWidth[0])
+                        if (std::floor((val.real() - _histParams.ranges.x[0]) / _histParams.binWidth[0]) == k
+                            || (val.real() == _histParams.ranges.x[1] && k+1 == _histParams.nBin))
                             nCount++;
                     }
                 }

@@ -80,10 +80,7 @@ NumeReHistory::NumeReHistory(NumeReWindow* mframe, Options* options, wxWindow* p
     this->SetMarginType(0, wxSTC_MARGIN_NUMBER);
     this->SetMarginWidth(1,0);
 
-    //wxFont font(10, wxMODERN, wxNORMAL, wxNORMAL);
-    wxFont font;
-    font.SetNativeFontInfoUserDesc("Consolas 8 WINDOWS-1252");
-
+    wxFont font = options->toFont(options->getSetting(SETTING_S_HISTORYFONT).stringval());
     this->StyleSetFont(wxSTC_STYLE_DEFAULT, font);
 
     this->StyleClearAll();
@@ -124,6 +121,10 @@ NumeReHistory::~NumeReHistory()
 /////////////////////////////////////////////////
 void NumeReHistory::UpdateSyntaxHighlighting(bool forceUpdate)
 {
+    wxFont font = m_options->toFont(m_options->getSetting(SETTING_S_HISTORYFONT).stringval());
+    this->StyleSetFont(wxSTC_STYLE_DEFAULT, font);
+    this->StyleClearAll();
+
 	this->StyleSetBackground(wxSTC_STYLE_DEFAULT, m_options->GetSyntaxStyle(Options::STANDARD).background);
 
     this->SetLexer(wxSTC_LEX_NSCR);

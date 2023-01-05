@@ -39,6 +39,7 @@ class TerminalCallTip : public wxWindow
         void PopUp(const wxPoint& pos, const wxString& text);
         void Dismiss();
         void Resize(const wxSize& s);
+        void ChangeFont(const wxFont& font);
 
         void Highlight(size_t start, size_t len);
 

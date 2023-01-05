@@ -4,7 +4,7 @@
 #include <windows.h>
 #include <shellapi.h>
 
-class Recycler : public SHFILEOPSTRUCT
+class Recycler : public SHFILEOPSTRUCTA
 {
 	public:
 		Recycler();

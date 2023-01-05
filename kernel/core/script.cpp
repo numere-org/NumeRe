@@ -122,6 +122,7 @@ void Script::close()
         {
             m_logger.push("--- INSTALLATION FAILED ---\n\n\n");
             m_logger.close();
+            NumeReKernel::installationDone();
         }
 
         // If this is a chained installation (a.k.a. installing
@@ -140,7 +141,10 @@ void Script::close()
         }
 
         if (vInstallPackages.size())
+        {
             sScriptFileName = vInstallPackages[0];
+            NumeReKernel::installationDone();
+        }
 
         // This was the last package
         vInstallPackages.clear();
@@ -180,6 +184,8 @@ void Script::returnCommand()
 
             if (!(nInstallModeFlags & DISABLE_SCREEN_OUTPUT))
                 NumeReKernel::print(toSystemCodePage(_lang.get("SCRIPT_INSTALL_SUCCESS")));
+
+            NumeReKernel::installationDone();
         }
 
         close();
@@ -284,14 +290,14 @@ bool Script::handleInstallInformation(string& sScriptCommand)
         size_t nPackageVersion = versionToInt(getArgAtPos(sInstallInfoString, sInstallInfoString.find("-version=")+9));
 
         // Get all installed packages
-        std::vector<std::string> vInstalledPackages = NumeReKernel::getInstance()->getInstalledPackages();
+        const std::vector<Package>& vInstalledPackages = NumeReKernel::getInstance()->getInstalledPackages();
 
         // Try to detect a match
         for (const auto& package : vInstalledPackages)
         {
-            if (package.substr(0, package.find('\t')) == sInstallID)
+            if (package.getName() == sInstallID)
             {
-                if (versionToInt(package.substr(package.find('\t')+1)) >= nPackageVersion)
+                if (versionToInt(package.sVersion) >= nPackageVersion)
                 {
                     isInInstallSection = false;
                     return false;
@@ -748,7 +754,7 @@ std::string Script::getNextScriptCommandFromScript()
 
     // Search for the next valid and non-empty line
     // in the current script
-    while (nLine < m_script->getLinesCount() && !sScriptCommand.length())
+    while (m_script && nLine < m_script->getLinesCount() && !sScriptCommand.length())
     {
         string sCurrentLine;
 
@@ -926,6 +932,8 @@ std::string Script::getNextScriptCommandFromScript()
 
                 if (!(nInstallModeFlags & DISABLE_SCREEN_OUTPUT))
                     NumeReKernel::print(toSystemCodePage(_lang.get("SCRIPT_INSTALL_SUCCESS")));
+
+                NumeReKernel::installationDone();
             }
 
             isInInstallSection = false;
@@ -939,7 +947,7 @@ std::string Script::getNextScriptCommandFromScript()
     }
 
     // close the script, if this is the last command
-    if (nLine >= m_script->getLinesCount())
+    if (!m_script || nLine >= m_script->getLinesCount())
     {
         bLastScriptCommand = true;
         Script::close();

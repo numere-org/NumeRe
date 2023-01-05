@@ -33,8 +33,6 @@ TerminalCallTip::TerminalCallTip(wxWindow* parent, const wxSize& s)
     SetBackgroundColour(wxColour(245, 245, 245));
 
     m_text = new wxTextCtrl(this, wxID_ANY, "STANDARDTEXT", wxDefaultPosition, s, wxTE_MULTILINE | wxTE_READONLY | wxTE_RICH | wxBORDER_NONE);
-
-    m_text->SetFont(wxFont(8, wxMODERN, wxNORMAL, wxNORMAL, false, "Consolas"));
     m_text->SetBackgroundColour(wxColour(245, 245, 245));
 
     Hide();
@@ -84,8 +82,21 @@ void TerminalCallTip::Dismiss()
 /////////////////////////////////////////////////
 void TerminalCallTip::Resize(const wxSize& s)
 {
-    SetSize(s+wxSize(2,2));
+    SetSize(s+wxSize(4,2));
     m_text->SetSize(s);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Changes the font of the calltip.
+///
+/// \param font const wxFont&
+/// \return void
+///
+/////////////////////////////////////////////////
+void TerminalCallTip::ChangeFont(const wxFont& font)
+{
+    m_text->SetDefaultStyle(wxTextAttr(wxNullColour, wxNullColour, font));
 }
 
 

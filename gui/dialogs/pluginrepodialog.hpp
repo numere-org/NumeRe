@@ -19,7 +19,7 @@
 #ifndef PLUGINREPODIALOG_HPP
 #define PLUGINREPODIALOG_HPP
 
-#define PACKAGE_REPO_BROWSER_TITLE "NumeRe: Package Repository Browser"
+#define PACKAGE_REPO_BROWSER_TITLE "NumeRe: Package Manager"
 
 #include <wx/wx.h>
 #include <wx/thread.h>

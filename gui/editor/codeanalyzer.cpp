@@ -1194,7 +1194,7 @@ AnnotationCount CodeAnalyzer::analyseFunctions(bool isContinuedLine)
             AnnotCount += addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE", highlightFoundOccurence(sSyntaxElement + "()", wordstart, wordend-wordstart), m_sError, _guilang.get("GUI_ANALYZER_STRINGFUNCTION", sSyntaxElement + "()")), ANNOTATION_ERROR);
 
         // ignore modifiers, i.e. method without parentheses
-        static string sMODIFIER = ",len,cols,lines,grid,avg,std,min,max,med,sum,prd,cnt,num,norm,and,or,xor,name,size,minpos,maxpos,description,";
+        static string sMODIFIER = ",len,cols,lines,rows,grid,avg,std,min,max,med,sum,prd,cnt,num,norm,and,or,xor,name,size,minpos,maxpos,description,";
 
         if (sMODIFIER.find("," + sSyntaxElement + ",") == string::npos)
             sSyntaxElement += "()";
@@ -1229,7 +1229,7 @@ AnnotationCount CodeAnalyzer::analyseFunctions(bool isContinuedLine)
     }
 
     // There's a missing parenthesis?
-    if (m_editor->BraceMatch(wordend) < 0 && sSyntaxElement.find('(') != string::npos)
+    if (m_editor->BraceMatch(wordend) < wordend && sSyntaxElement.find('(') != string::npos)
     {
         // MATLAB doesn't require a parenthesis pair for empty arguments.
         // However, issue a warning as it is good practice to visually distinguish between variables and functions

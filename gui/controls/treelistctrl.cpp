@@ -6128,13 +6128,13 @@ Recurse:
     {
         // do the comparison here and not in m_main_win in order to allow
         // override in child class
-        return wxStrcmp(GetItemText(item1), GetItemText(item2));
+        return wxStricmp(GetItemText(item1), GetItemText(item2));
     }
     int wxTreeListCtrl::OnCompareItems(const wxTreeItemId& item1, const wxTreeItemId& item2, int column)
     {
         // do the comparison here and not in m_main_win in order to allow
         // override in child class
-        return wxStrcmp(GetItemText(item1, column), GetItemText(item2, column));
+        return wxStricmp(GetItemText(item1, column), GetItemText(item2, column));
     }
 
     void wxTreeListCtrl::SortChildren(const wxTreeItemId& item, int column, bool reverseOrder)

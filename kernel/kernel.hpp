@@ -139,7 +139,6 @@ class NumeReKernel
         std::string sAnswer;
         std::string sPlotCompose;
         std::queue<std::string> commandQueue;
-        bool installing;
         bool refreshTree;
 
         static NumeReKernel* kernelInstance;
@@ -363,7 +362,7 @@ class NumeReKernel
         Settings getKernelSettings();
         void setKernelSettings(const Settings& _settings);
         std::vector<std::string> getPathSettings() const;
-        std::vector<std::string> getInstalledPackages() const;
+        const std::vector<Package>& getInstalledPackages() const;
         std::map<std::string, std::string> getMenuMap() const;
         void initializeStackTracker();
         void printVersionInfo();
