@@ -7184,6 +7184,7 @@ int NumeReEditor::isBlockStart(const wxString& sWord, bool allowIntermediate)
     else if (m_fileType == FILE_MATLAB)
         return sWord == "if"
             || sWord == "for"
+            || sWord == "do"
             || sWord == "while"
             || sWord == "classdef"
             || sWord == "properties"

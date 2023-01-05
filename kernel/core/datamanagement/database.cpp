@@ -415,8 +415,7 @@ namespace NumeRe
         vector<string> vKeyWords;
         string sTemp = _sSearchString;
         map<double,vector<size_t>> mRelevance;
-#warning TODO (numere#3#12/19/21): This should be moved to a language file
-        static const std::string sIGNOREWORDS = " of this the a an their der die das ein des dies eine einer eines einen den ";
+        static std::string sIGNOREWORDS = " " + _lang.get("COMMON_SEARCH_IGNOREWORDS") + " ";
 
         if (sTemp.back() != ' ')
             sTemp += " ";

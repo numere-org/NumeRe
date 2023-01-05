@@ -39,6 +39,9 @@ class CodeFormatter
         void ApplyAutoFormatNSCR(int nFirstLine, int nLastLine);
         void ApplyAutoFormatMATLAB(int nFirstLine, int nLastLine);
         void ApplyAutoFormatCPP(int nFirstLine, int nLastLine);
+        int formatFunctionParentheses(int& pos, int operatorStyleNum);
+        int formatOperators(int pos, char prevChar, char currentChar, char nextChar, bool isNSCR);
+        int formatStrings(int pos, bool isNSCR);
 
         int insertTextAndMove(int nPosition, const wxString& sText);
 

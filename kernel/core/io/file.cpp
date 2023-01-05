@@ -764,18 +764,6 @@ namespace NumeRe
                                 break;
                         }
 
-                        // Remove all empty columns from the list of
-                        // column headings
-#warning FIXME (numere#3#08/22/21): This section might be necessary for multi-line headlines
-                        //for (auto iter = vHeadline.begin(); iter != vHeadline.end(); ++iter)
-                        //{
-                        //    if (!(iter->length()))
-                        //    {
-                        //        iter = vHeadline.erase(iter);
-                        //        iter--;
-                        //    }
-                        //}
-
                         // Copy the decoded column headings to
                         // the internal memory
                         for (size_t col = 0; col < std::min(vHeadline.size(), (size_t)nCols); col++)
@@ -785,9 +773,6 @@ namespace NumeRe
 
                             fileData->at(col)->m_sHeadLine = vHeadline[col];
                         }
-                        //if (vHeadline.size() <= nCols)
-                        //{
-                        //}
 
                         // Return here
                         return;
