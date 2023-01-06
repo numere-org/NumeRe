@@ -766,18 +766,29 @@ bool differentiate(CommandLineParser& cmdParser)
     mu::value_type* v = 0;
     int nResults = 0;
     int nSamples = 100;
-    vector<mu::value_type> vInterval;
-    vector<mu::value_type> vResult;
+    size_t order = 1;
+    std::vector<mu::value_type> vInterval;
+    std::vector<mu::value_type> vResult;
+    std::vector<mu::value_type> paramVal;
 
     // Strings cannot be differentiated
     if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sExpr))
         throw SyntaxError(SyntaxError::STRINGS_MAY_NOT_BE_EVALUATED_WITH_CMD, cmdParser.getCommandLine(), SyntaxError::invalid_position, "diff");
 
+    // Get the order of the differntiation
+    paramVal = cmdParser.getParameterValueAsNumericalValue("order");
+
+    if (paramVal.size())
+    {
+        order = intCast(paramVal.front());
+        order = std::min(order, 3u);
+    }
+
     // Numerical expressions and data sets are handled differently
     if (!_data.containsTablesOrClusters(sExpr) && cmdParser.getParameterList().length())
     {
         // Is the "eps" parameter available?
-        std::vector<mu::value_type> paramVal = cmdParser.getParameterValueAsNumericalValue("eps");
+        paramVal = cmdParser.getParameterValueAsNumericalValue("eps");
 
         if (paramVal.size())
             dEps = fabs(paramVal.front());
@@ -859,10 +870,6 @@ bool differentiate(CommandLineParser& cmdParser)
         if (!dVar)
             throw SyntaxError(SyntaxError::NO_DIFF_VAR, cmdParser.getCommandLine(), SyntaxError::invalid_position);
 
-        // Define a reasonable precision if no precision was set
-        if (!dEps)
-            dEps = 1e-7;
-
         // Store the expression
         string sCompl_Expr = sExpr;
 
@@ -882,7 +889,7 @@ bool differentiate(CommandLineParser& cmdParser)
                 for (unsigned int i = 0; i < vInterval.size(); i++)
                 {
                     dPos = vInterval[i];
-                    vResult.push_back(_parser.Diff(dVar, dPos, dEps));
+                    vResult.push_back(_parser.Diff(dVar, dPos, dEps, order));
                 }
             }
             else
@@ -891,7 +898,7 @@ bool differentiate(CommandLineParser& cmdParser)
                 for (int i = 0; i < nSamples; i++)
                 {
                     dPos = vInterval[0] + (vInterval[1] - vInterval[0]) / (double)(nSamples - 1) * (double)i;
-                    vResult.push_back(_parser.Diff(dVar, dPos, dEps));
+                    vResult.push_back(_parser.Diff(dVar, dPos, dEps, order));
                 }
             }
         }
@@ -904,10 +911,18 @@ bool differentiate(CommandLineParser& cmdParser)
         DataAccessParser accessParser = cmdParser.getExprAsDataObject();
         Indices& _idx = accessParser.getIndices();
         std::string sTableName = accessParser.getDataObject();
-#warning TODO (numere#3#11/02/21): Provide an interface for higher filter lengths
-        const size_t nFILTERSIZE = 5;
-#warning TODO (numere#3#11/02/21): Provide an interface to higher order derivations
-        NumeRe::SavitzkyGolayDiffFilter diff(nFILTERSIZE, 1);
+        size_t nFilterSize = 5;
+        paramVal = cmdParser.getParameterValueAsNumericalValue("points");
+
+        if (paramVal.size())
+        {
+            nFilterSize = intCast(paramVal.front());
+
+            if (!(nFilterSize % 2))
+                nFilterSize++;
+        }
+
+        NumeRe::SavitzkyGolayDiffFilter diff(nFilterSize, order);
 
         // Validate the indices
         if (!isValidIndexSet(_idx))
@@ -921,7 +936,7 @@ bool differentiate(CommandLineParser& cmdParser)
 
         // If shorter than filter's size return an invalid
         // value
-        if (_idx.row.size() < nFILTERSIZE)
+        if (_idx.row.size() < nFilterSize)
         {
             vResult.push_back(NAN);
             cmdParser.setReturnValue(vResult);
@@ -944,20 +959,20 @@ bool differentiate(CommandLineParser& cmdParser)
             //
             // Jump over NaNs and get the difference of the neighbouring
             // values, which is identical to the derivative in this case
-            for (size_t i = nFILTERSIZE/2; i < _idx.row.size() - nFILTERSIZE/2; i++)
+            for (size_t i = nFilterSize/2; i < _idx.row.size() - nFilterSize/2; i++)
             {
-                for (int j = 0; j < (int)nFILTERSIZE; j++)
+                for (int j = 0; j < (int)nFilterSize; j++)
                 {
-                    if (_data.isValidElement(_idx.row[i + j - nFILTERSIZE/2], _idx.col.front(), sTableName))
-                        vResult[i] += diff.apply(j, 0, _data.getElement(_idx.row[i + j - nFILTERSIZE/2], _idx.col.front(), sTableName));
+                    if (_data.isValidElement(_idx.row[i + j - nFilterSize/2], _idx.col.front(), sTableName))
+                        vResult[i] += diff.apply(j, 0, _data.getElement(_idx.row[i + j - nFilterSize/2], _idx.col.front(), sTableName));
                 }
             }
 
             // Repeat the first and last values
-            for (size_t i = 0; i < nFILTERSIZE/2; i++)
+            for (size_t i = 0; i < nFilterSize/2; i++)
             {
-                vResult[i] = vResult[nFILTERSIZE/2];
-                vResult[vResult.size()-1-i] = vResult[vResult.size()-1-nFILTERSIZE/2];
+                vResult[i] = vResult[nFilterSize/2];
+                vResult[vResult.size()-1-i] = vResult[vResult.size()-1-nFilterSize/2];
             }
         }
         else
@@ -1000,22 +1015,22 @@ bool differentiate(CommandLineParser& cmdParser)
 
                 // We calculate the derivative of the data
                 // by approximating it linearily
-                for (int i = nFILTERSIZE/2; i < _cache.getLines("table", false) - (int)nFILTERSIZE/2; i++)
+                for (int i = nFilterSize/2; i < _cache.getLines("table", false) - (int)nFilterSize/2; i++)
                 {
                     std::pair<mu::value_type, size_t> avgDiff(0.0, 0);
 
-                    for (int j = 0; j < (int)nFILTERSIZE; j++)
+                    for (int j = 0; j < (int)nFilterSize; j++)
                     {
-                        if (_cache.isValidElement(i + j - nFILTERSIZE/2, 0, "table")
-                            && _cache.isValidElement(i + j - nFILTERSIZE/2, 1, "table"))
+                        if (_cache.isValidElement(i + j - nFilterSize/2, 0, "table")
+                            && _cache.isValidElement(i + j - nFilterSize/2, 1, "table"))
                         {
-                            vResult[i] += diff.apply(j, 0, _cache.getElement(i + j - nFILTERSIZE/2, 1, "table"));
+                            vResult[i] += diff.apply(j, 0, _cache.getElement(i + j - nFilterSize/2, 1, "table"));
 
                             // Calculate the average difference
-                            if (_cache.isValidElement(i + j - nFILTERSIZE/2 - 1, 0, "table"))
+                            if (_cache.isValidElement(i + j - nFilterSize/2 - 1, 0, "table"))
                             {
-                                avgDiff.first += _cache.getElement(i + j - nFILTERSIZE/2, 0, "table")
-                                                - _cache.getElement(i + j - nFILTERSIZE/2 - 1, 0, "table");
+                                avgDiff.first += _cache.getElement(i + j - nFilterSize/2, 0, "table")
+                                                - _cache.getElement(i + j - nFilterSize/2 - 1, 0, "table");
                                 avgDiff.second++;
                             }
                         }
@@ -1028,10 +1043,10 @@ bool differentiate(CommandLineParser& cmdParser)
                 }
 
                 // Repeat the first and last values
-                for (size_t i = 0; i < nFILTERSIZE/2; i++)
+                for (size_t i = 0; i < nFilterSize/2; i++)
                 {
-                    vResult[i] = vResult[nFILTERSIZE/2];
-                    vResult[vResult.size()-1-i] = vResult[vResult.size()-1-nFILTERSIZE/2];
+                    vResult[i] = vResult[nFilterSize/2];
+                    vResult[vResult.size()-1-i] = vResult[vResult.size()-1-nFilterSize/2];
                 }
             }
         }

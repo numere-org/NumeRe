@@ -325,8 +325,6 @@ Plot::Plot(string& sCmd, MemoryManager& __data, Parser& __parser, Settings& __op
         // then use the "GLOBAL" parameter flag, otherwise use the "SUPERGLOBAL" flag
         if (_pInfo.sPlotParams.length())
         {
-            //evaluatePlotParamString();
-
             if (nMultiplots[0]) // if this is a multiplot layout, then we will only evaluate the SUPERGLOBAL parameters
                 _pData.setParams(_pInfo.sPlotParams, PlotData::SUPERGLOBAL);
             else
@@ -399,7 +397,6 @@ Plot::Plot(string& sCmd, MemoryManager& __data, Parser& __parser, Settings& __op
             // Apply the global parameters for this single subplot
             if (_pInfo.sPlotParams.length())
             {
-                //evaluatePlotParamString();
                 _pData.setParams(_pInfo.sPlotParams, PlotData::GLOBAL);
                 _pInfo.sPlotParams.clear();
             }
@@ -591,8 +588,6 @@ size_t Plot::createSubPlotSet(bool& bAnimateVar, vector<string>& vPlotCompose, s
         // also parsed at this location
         if (_pInfo.sPlotParams.length())
         {
-            //evaluatePlotParamString();
-
             // Apply the parameters locally (for a plot composition) or globally, if
             // this is a single plot command
             if (vPlotCompose.size() > 1)
@@ -3058,101 +3053,6 @@ long Plot::getNN(const mglData& _mData)
 
 
 /////////////////////////////////////////////////
-/// \brief This member function evaluates the
-/// current plot parameter string if it contains
-/// actual string expressions.
-///
-/// \return void
-///
-/////////////////////////////////////////////////
-#warning TODO (numere#3#02/25/22): Maybe unused
-void Plot::evaluatePlotParamString()
-{
-    std::string sDummy;
-
-    if (_pInfo.sPlotParams.find("??") != string::npos)
-        _pInfo.sPlotParams = promptForUserInput(_pInfo.sPlotParams);
-
-    if (!_functions.call(_pInfo.sPlotParams))
-        throw SyntaxError(SyntaxError::FUNCTION_ERROR, _pInfo.sPlotParams, SyntaxError::invalid_position);
-
-    NumeReKernel* instance = NumeReKernel::getInstance();
-
-    if (_pInfo.sPlotParams.find('=') != string::npos)
-    {
-        unsigned int nPos = 0;
-
-        if (instance->getStringParser().containsStringVars(_pInfo.sPlotParams))
-            instance->getStringParser().getStringValues(_pInfo.sPlotParams);
-
-        // Search for all option values in the current string
-        while ((nPos = _pInfo.sPlotParams.find('=', nPos)) != string::npos)
-        {
-            nPos++;
-
-            if (nPos >= _pInfo.sPlotParams.length())
-                break;
-
-            if (isInQuotes(_pInfo.sPlotParams, nPos))
-                continue;
-
-            // Find the actual value (jump over white spaces)
-            while (_pInfo.sPlotParams[nPos] == ' ')
-                nPos++;
-
-            std::string sOptionValue = extractStringToken(_pInfo.sPlotParams, nPos);
-            size_t nLength = sOptionValue.length();
-
-            if (!instance->getStringParser().isStringExpression(sOptionValue)
-                && instance->getMemoryManager().containsTablesOrClusters(_pInfo.sPlotParams))
-                getDataElements(sOptionValue, instance->getParser(), instance->getMemoryManager(), instance->getSettings());
-
-            if (instance->getStringParser().isStringExpression(sOptionValue))
-            {
-                std::string sParsedString;
-                StripSpaces(sOptionValue);
-
-                // Remove surrounding parentheses
-                if (sOptionValue.front() == '(' && sOptionValue.back() == ')')
-                {
-                    sOptionValue.erase(0, 1);
-                    sOptionValue.pop_back();
-                }
-
-                // Parse the current option value and consider
-                // vector braces
-                while (sOptionValue.length())
-                {
-                    string sCurrentString = getNextArgument(sOptionValue, true);
-                    bool bVector = sCurrentString.find('{') != string::npos;
-
-                    if (containsStrings(sCurrentString))
-                        instance->getStringParser().evalAndFormat(sCurrentString, sDummy, true);
-
-                    if (bVector && sCurrentString.find('{') == string::npos)
-                        sCurrentString = "{" + sCurrentString + "}";
-
-                    if (sParsedString.length())
-                        sParsedString += "," + sCurrentString;
-                    else
-                        sParsedString = sCurrentString;
-                }
-
-                if (_pInfo.sPlotParams[nPos] == '(' && sParsedString.front() != '(')
-                    sParsedString = "(" + sParsedString + ")";
-
-                // Replace the parsed string
-                _pInfo.sPlotParams.replace(nPos, nLength, sParsedString);
-            }
-            else
-                // Replace the parsed string
-                _pInfo.sPlotParams.replace(nPos, nLength, sOptionValue);
-        }
-    }
-}
-
-
-/////////////////////////////////////////////////
 /// \brief This member function creates a default
 /// plot file name based upon the currently used
 /// plotting command.
@@ -3774,7 +3674,6 @@ void Plot::extractDataValues(const std::vector<std::string>& vDataPlots)
             if (_idx.col.front() == VectorIndex::INVALID)
             {
                 for (size_t n = 0; n < _idx.row.size(); n++)
-#warning TODO (numere#1#11/26/21): Changed this from _idx.row[n]+1 to n+1
                     m_manager.assets[typeCounter].writeAxis(n+1.0, n, XCOORD);
             }
             else
@@ -3815,7 +3714,6 @@ void Plot::extractDataValues(const std::vector<std::string>& vDataPlots)
                     else if (_idx.col[q+1] == VectorIndex::INVALID)
                     {
                         for (size_t n = 0; n < _idx.row.size(); n++)
-#warning TODO (numere#1#11/26/21): Changes this from _idx.row[n]+1 to n+1
                             m_manager.assets[typeCounter].writeData(n+1.0, q, n);
                     }
                     else

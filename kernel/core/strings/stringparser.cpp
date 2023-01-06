@@ -2171,7 +2171,8 @@ namespace NumeRe
                         std::vector<mu::value_type> vRes(res, res + nRes);
                         sVectorTemp = _parser.CreateTempVectorVar(vRes);
                     }
-#warning TODO (numere#3#08/15/21):  What happens in the remaining case of multiple elements in tempres.vResult?
+                    else // Should in fact never reach this point
+                        continue;
 
                     strExpr.sLine.replace(i, nmatching+1, sVectorTemp);
                 }

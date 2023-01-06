@@ -4633,7 +4633,6 @@ void FlowCtrl::prepareLocalVarsAndReplace(std::string& sVars)
         StripSpaces(sVarArray[i]);
 
         // Is it already defined?
-#warning TODO (numere#5#08/15/21): Evaluate this monkey patch (might be resolved already)
         if (sVarArray[i].substr(0, 2) == "_~" && getPointerToVariable(sVarArray[i], *_parserRef))
             vVars[sVarArray[i]] = getPointerToVariable(sVarArray[i], *_parserRef);
         else
