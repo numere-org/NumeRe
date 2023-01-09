@@ -272,6 +272,12 @@ NumeReEditor::NumeReEditor(NumeReWindow* mframe, Options* options, wxWindow* par
     MarkerDefine(MARKER_HIDDEN_MARGIN, wxSTC_MARK_DOTDOTDOT);
     MarkerSetBackground(MARKER_HIDDEN_MARGIN, wxColour(128, 128, 128));
 
+    MarkerDefine(MARKER_DUPLICATEINDICATOR_ONE, wxSTC_MARK_BACKGROUND);
+    MarkerSetBackground(MARKER_DUPLICATEINDICATOR_ONE, wxColour(220, 255, 220));
+
+    MarkerDefine(MARKER_DUPLICATEINDICATOR_TWO, wxSTC_MARK_BACKGROUND);
+    MarkerSetBackground(MARKER_DUPLICATEINDICATOR_TWO, wxColour(255, 220, 220));
+
     SetMarginSensitive(1, true);
 
     UsePopUp(false);
@@ -1660,7 +1666,6 @@ void NumeReEditor::OnLoseFocus(wxFocusEvent& event)
 /// depending upon the syntax element below the
 /// mouse pointer.
 ///
-/// \todo HAS TO BE REFACTORED
 /////////////////////////////////////////////////
 void NumeReEditor::OnMouseDwell(wxStyledTextEvent& event)
 {
@@ -1677,17 +1682,18 @@ void NumeReEditor::OnMouseDwell(wxStyledTextEvent& event)
 
     if (GetStyleAt(charpos) == wxSTC_NSCR_FUNCTION)
         _cTip = _provider.getFunction(selection.ToStdString());
-    else if (GetStyleAt(charpos) == wxSTC_NSCR_COMMAND || this->GetStyleAt(charpos) == wxSTC_NSCR_PROCEDURE_COMMANDS)
+    else if (GetStyleAt(charpos) == wxSTC_NSCR_COMMAND
+             || GetStyleAt(charpos) == wxSTC_NSCR_PROCEDURE_COMMANDS)
     {
         // Is it a block?
         int id = getBlockID(selection);
 
         if (id != wxNOT_FOUND)
         {
-            if (this->CallTipActive() && m_nCallTipStart == startPosition)
+            if (CallTipActive() && m_nCallTipStart == startPosition)
                 return;
-            else
-                this->AdvCallTipCancel();
+
+            AdvCallTipCancel();
 
             size_t lastpos = 0;
             size_t nLength = 0;
@@ -1697,7 +1703,9 @@ void NumeReEditor::OnMouseDwell(wxStyledTextEvent& event)
             SyntaxBlockDefinition blockDef = vBlockDefs[id];
 
             // Construct the tooltip
-            std::string sBlock = addLinebreaks(realignLangString(_guilang.get("PARSERFUNCS_LISTCMD_CMD_" + toUpperCase(blockDef.startWord) + "_*"), lastpos)) + "\n  [...]\n";
+            std::string sBlock = addLinebreaks(realignLangString(_guilang.get("PARSERFUNCS_LISTCMD_CMD_"
+                                                                              + toUpperCase(blockDef.startWord)
+                                                                              + "_*"), lastpos)) + "\n  [...]\n";
 
             if (selection != blockDef.startWord)
                 nLength = sBlock.length() + countUmlauts(sBlock);
@@ -1705,7 +1713,9 @@ void NumeReEditor::OnMouseDwell(wxStyledTextEvent& event)
             // Include middle words
             if (blockDef.middleWord1.length())
             {
-                sBlock += addLinebreaks(realignLangString(_guilang.get("PARSERFUNCS_LISTCMD_CMD_" + toUpperCase(blockDef.middleWord1) + "_*"), lastpos2)) + "\n  [...]\n";
+                sBlock += addLinebreaks(realignLangString(_guilang.get("PARSERFUNCS_LISTCMD_CMD_"
+                                                                       + toUpperCase(blockDef.middleWord1)
+                                                                       + "_*"), lastpos2)) + "\n  [...]\n";
 
                 if (selection != blockDef.startWord && selection != blockDef.middleWord1)
                     nLength = sBlock.length() + countUmlauts(sBlock);
@@ -1714,14 +1724,18 @@ void NumeReEditor::OnMouseDwell(wxStyledTextEvent& event)
             // Include middle words
             if (blockDef.middleWord2.length())
             {
-                sBlock += addLinebreaks(_guilang.get("PARSERFUNCS_LISTCMD_CMD_" + toUpperCase(blockDef.middleWord2) + "_*")) + "\n  [...]\n";
+                sBlock += addLinebreaks(_guilang.get("PARSERFUNCS_LISTCMD_CMD_"
+                                                     + toUpperCase(blockDef.middleWord2) + "_*"))
+                                                     + "\n  [...]\n";
 
                 if (selection != blockDef.startWord && selection != blockDef.middleWord1 && selection != blockDef.middleWord2)
                     nLength = sBlock.length() + countUmlauts(sBlock);
             }
 
             // Add the last word
-            sBlock += addLinebreaks(realignLangString(_guilang.get("PARSERFUNCS_LISTCMD_CMD_" + toUpperCase(blockDef.endWord) + "_*"), lastpos));
+            sBlock += addLinebreaks(realignLangString(_guilang.get("PARSERFUNCS_LISTCMD_CMD_"
+                                                                   + toUpperCase(blockDef.endWord)
+                                                                   + "_*"), lastpos));
 
             // Display the tooltip and highlight the corresponding positions
             AdvCallTipShow(startPosition, sBlock);
@@ -1736,10 +1750,10 @@ void NumeReEditor::OnMouseDwell(wxStyledTextEvent& event)
         if (GetCharAt(charpos) != '$')
             startPosition--;
 
-        if (this->CallTipActive() && m_nCallTipStart == startPosition)
+        if (CallTipActive() && m_nCallTipStart == startPosition)
             return;
-        else
-            this->AdvCallTipCancel();
+
+        AdvCallTipCancel();
 
         wxString proc = m_search->FindMarkedProcedure(charpos);
 
@@ -1752,37 +1766,36 @@ void NumeReEditor::OnMouseDwell(wxStyledTextEvent& event)
         if (!procdef.length())
             procdef = m_clickedProcedure + "(...)";
 
-        if (procdef.find("::") != string::npos)
+        size_t nSepPos = std::string::npos;
+
+        if (procdef.find("::") != std::string::npos)
+            nSepPos = procdef.find("::");
+        else if (procdef.find(" -> ") != std::string::npos)
+            nSepPos = procdef.find(" -> ");
+        else if (procdef.find('\n') != std::string::npos)
+            nSepPos = procdef.find('\n');
+
+        if (nSepPos != std::string::npos)
         {
-            flags = procdef.substr(procdef.find("::"));
-            procdef.erase(procdef.find("::"));
-        }
-        else if (procdef.find(" -> ") != string::npos)
-        {
-            flags = procdef.substr(procdef.find(" -> "));
-            procdef.erase(procdef.find(" -> "));
-        }
-        else if (procdef.find('\n') != string::npos)
-        {
-            flags = procdef.substr(procdef.find('\n'));
-            procdef.erase(procdef.find('\n'));
+            flags = procdef.substr(nSepPos);
+            procdef.erase(nSepPos);
         }
 
         if (flags.find('\n') != string::npos)
-            this->AdvCallTipShow(startPosition, procdef + flags);
+            AdvCallTipShow(startPosition, procdef + flags);
         else
-            this->AdvCallTipShow(startPosition, procdef + flags + "\n    " + _guilang.get("GUI_EDITOR_CALLTIP_PROC2"));
+            AdvCallTipShow(startPosition, procdef + flags + "\n    " + _guilang.get("GUI_EDITOR_CALLTIP_PROC2"));
 
-        this->CallTipSetHighlight(0, procdef.length());
+        CallTipSetHighlight(0, procdef.length());
         return;
     }
-    else if (this->GetStyleAt(charpos) == wxSTC_NSCR_OPTION)
+    else if (GetStyleAt(charpos) == wxSTC_NSCR_OPTION)
         _cTip = _provider.getOption(selection.ToStdString());
-    else if (this->GetStyleAt(charpos) == wxSTC_NSCR_METHOD)
+    else if (GetStyleAt(charpos) == wxSTC_NSCR_METHOD)
         _cTip = _provider.getMethod(selection.ToStdString());
-    else if (this->GetStyleAt(charpos) == wxSTC_NSCR_PREDEFS)
+    else if (GetStyleAt(charpos) == wxSTC_NSCR_PREDEFS)
         _cTip = _provider.getPredef(selection.ToStdString());
-    else if (this->GetStyleAt(charpos) == wxSTC_NSCR_CONSTANTS)
+    else if (GetStyleAt(charpos) == wxSTC_NSCR_CONSTANTS)
         _cTip = _provider.getConstant(selection.ToStdString());
 
     if (_cTip.sDefinition.length())
@@ -1951,7 +1964,6 @@ void NumeReEditor::OnAutoCompletion(wxStyledTextEvent& event)
 /// commented and uncomments lines, which are
 /// commented.
 ///
-/// \todo HAS TO BE REFACTORED
 /////////////////////////////////////////////////
 void NumeReEditor::ToggleCommentLine()
 {
@@ -1962,7 +1974,40 @@ void NumeReEditor::ToggleCommentLine()
     int nLastLine = 0;
     int nSelectionStart = -1;
     int nSelectionEnd = 0;
+    int nCommentStyle = 0;
+    int nCommentCharSequenceLen = 0;
+    wxString sLineCommentCharSequence;
 
+    // Determine the parameters for line comments
+    if (m_fileType == FILE_NSCR || m_fileType == FILE_NPRC)
+    {
+        sLineCommentCharSequence = "## ";
+        nCommentStyle = wxSTC_NSCR_COMMENT_LINE;
+    }
+    else if (m_fileType == FILE_TEXSOURCE)
+    {
+        sLineCommentCharSequence = "% ";
+        nCommentStyle = wxSTC_TEX_DEFAULT;
+    }
+    else if (m_fileType == FILE_DATAFILES)
+    {
+        sLineCommentCharSequence = "# ";
+        nCommentStyle = wxSTC_MATLAB_COMMENT;
+    }
+    else if (m_fileType == FILE_MATLAB)
+    {
+        sLineCommentCharSequence = "% ";
+        nCommentStyle = wxSTC_MATLAB_COMMENT;
+    }
+    else if (m_fileType == FILE_CPP)
+    {
+        sLineCommentCharSequence = "// ";
+        nCommentStyle = wxSTC_C_COMMENTLINE;
+    }
+
+    nCommentCharSequenceLen = sLineCommentCharSequence.length();
+
+    // Get start and end of the commenting
     if (HasSelection())
     {
         nSelectionStart = GetSelectionStart();
@@ -1978,6 +2023,7 @@ void NumeReEditor::ToggleCommentLine()
 
     BeginUndoAction();
 
+    // Go through the code section and toggle every comment line
     for (int i = nFirstLine; i <= nLastLine; i++)
     {
         int position = PositionFromLine(i);
@@ -1987,171 +2033,44 @@ void NumeReEditor::ToggleCommentLine()
 
         int style = GetStyleAt(position);
 
-        if ((m_fileType == FILE_NSCR || m_fileType == FILE_NPRC)
-                && (style == wxSTC_NPRC_COMMENT_LINE || style == wxSTC_NSCR_COMMENT_LINE))
+        // TeX file syntax highlighting requires a special handling
+        if ((m_fileType == FILE_TEXSOURCE && GetStyleAt(position + 1) == wxSTC_TEX_DEFAULT && GetCharAt(position) == '%')
+            || (m_fileType != FILE_TEXSOURCE && style == nCommentStyle))
         {
-            if (this->GetCharAt(position + 2) == ' ')
+            // Remove the line comment characters
+            if (GetCharAt(position + nCommentCharSequenceLen-1) == ' ')
             {
-                if (i == nFirstLine && nSelectionStart >= 0 && nSelectionStart >= position + 3)
-                    nSelectionStart -= 3;
+                // With the separating whitespace
+                if (i == nFirstLine && nSelectionStart >= 0 && nSelectionStart >= position + nCommentCharSequenceLen)
+                    nSelectionStart -= nCommentCharSequenceLen;
                 else if (i == nFirstLine && nSelectionStart >= 0)
                     nSelectionStart = position;
 
-                this->DeleteRange(position, 3);
-                nSelectionEnd -= 3;
+                DeleteRange(position, nCommentCharSequenceLen);
+                nSelectionEnd -= nCommentCharSequenceLen;
             }
             else
             {
-                if (i == nFirstLine && nSelectionStart >= 0 && nSelectionStart >= position + 2)
-                    nSelectionStart -= 2;
+                // Without the separating whitespace
+                if (i == nFirstLine && nSelectionStart >= 0 && nSelectionStart >= position + nCommentCharSequenceLen-1)
+                    nSelectionStart -= nCommentCharSequenceLen-1;
                 else if (i == nFirstLine && nSelectionStart >= 0)
                     nSelectionStart = position;
 
-                this->DeleteRange(position, 2);
-                nSelectionEnd -= 2;
+                DeleteRange(position, nCommentCharSequenceLen-1);
+                nSelectionEnd -= nCommentCharSequenceLen-1;
             }
         }
-        else if ((m_fileType == FILE_NSCR || m_fileType == FILE_NPRC)
-                 && !(style == wxSTC_NPRC_COMMENT_LINE || style == wxSTC_NSCR_COMMENT_LINE))
+        else if ((m_fileType == FILE_TEXSOURCE && (GetStyleAt(position + 1) != wxSTC_TEX_DEFAULT || GetCharAt(position) != '%'))
+                 || (m_fileType != FILE_TEXSOURCE && style != nCommentStyle))
         {
-            this->InsertText(this->PositionFromLine(i), "## " );
+            // Add line comment characters
+            InsertText(PositionFromLine(i), sLineCommentCharSequence);
 
             if (nSelectionStart >= 0)
             {
-                nSelectionStart += 3;
-                nSelectionEnd += 3;
-            }
-        }
-        else if (m_fileType == FILE_TEXSOURCE && GetStyleAt(position + 1) == wxSTC_TEX_DEFAULT && GetCharAt(position) == '%')
-        {
-            if (this->GetCharAt(position + 1) == ' ')
-            {
-                if (i == nFirstLine && nSelectionStart >= 0 && nSelectionStart >= position + 2)
-                    nSelectionStart -= 2;
-                else if (i == nFirstLine && nSelectionStart >= 0)
-                    nSelectionStart = position;
-
-                this->DeleteRange(position, 2);
-                nSelectionEnd -= 2;
-            }
-            else
-            {
-                if (i == nFirstLine && nSelectionStart >= 0 && nSelectionStart >= position + 1)
-                    nSelectionStart -= 1;
-                else if (i == nFirstLine && nSelectionStart >= 0)
-                    nSelectionStart = position;
-
-                this->DeleteRange(position, 1);
-                nSelectionEnd -= 1;
-            }
-        }
-        else if (m_fileType == FILE_TEXSOURCE && GetStyleAt(position + 1) != wxSTC_TEX_DEFAULT && GetCharAt(position) != '%')
-        {
-            this->InsertText(this->PositionFromLine(i), "% " );
-
-            if (nSelectionStart >= 0)
-            {
-                nSelectionStart += 2;
-                nSelectionEnd += 2;
-            }
-        }
-        else if (m_fileType == FILE_DATAFILES && style == wxSTC_MATLAB_COMMENT)
-        {
-            if (this->GetCharAt(position + 1) == ' ')
-            {
-                if (i == nFirstLine && nSelectionStart >= 0 && nSelectionStart >= position + 2)
-                    nSelectionStart -= 2;
-                else if (i == nFirstLine && nSelectionStart >= 0)
-                    nSelectionStart = position;
-
-                this->DeleteRange(position, 2);
-                nSelectionEnd -= 2;
-            }
-            else
-            {
-                if (i == nFirstLine && nSelectionStart >= 0 && nSelectionStart >= position + 1)
-                    nSelectionStart -= 1;
-                else if (i == nFirstLine && nSelectionStart >= 0)
-                    nSelectionStart = position;
-
-                this->DeleteRange(position, 1);
-                nSelectionEnd -= 1;
-            }
-        }
-        else if (m_fileType == FILE_DATAFILES && style != wxSTC_MATLAB_COMMENT)
-        {
-            this->InsertText(this->PositionFromLine(i), "# " );
-
-            if (nSelectionStart >= 0)
-            {
-                nSelectionStart += 2;
-                nSelectionEnd += 2;
-            }
-        }
-        else if (m_fileType == FILE_MATLAB && style == wxSTC_MATLAB_COMMENT)
-        {
-            if (this->GetCharAt(position + 1) == ' ')
-            {
-                if (i == nFirstLine && nSelectionStart >= 0 && nSelectionStart >= position + 2)
-                    nSelectionStart -= 2;
-                else if (i == nFirstLine && nSelectionStart >= 0)
-                    nSelectionStart = position;
-
-                this->DeleteRange(position, 2);
-                nSelectionEnd -= 2;
-            }
-            else
-            {
-                if (i == nFirstLine && nSelectionStart >= 0 && nSelectionStart >= position + 1)
-                    nSelectionStart -= 1;
-                else if (i == nFirstLine && nSelectionStart >= 0)
-                    nSelectionStart = position;
-
-                this->DeleteRange(position, 1);
-                nSelectionEnd -= 1;
-            }
-        }
-        else if (m_fileType == FILE_MATLAB && style != wxSTC_MATLAB_COMMENT)
-        {
-            this->InsertText(this->PositionFromLine(i), "% " );
-
-            if (nSelectionStart >= 0)
-            {
-                nSelectionStart += 2;
-                nSelectionEnd += 2;
-            }
-        }
-        else if (m_fileType == FILE_CPP && style == wxSTC_C_COMMENTLINE)
-        {
-            if (this->GetCharAt(position + 1) == ' ')
-            {
-                if (i == nFirstLine && nSelectionStart >= 0 && nSelectionStart >= position + 2)
-                    nSelectionStart -= 2;
-                else if (i == nFirstLine && nSelectionStart >= 0)
-                    nSelectionStart = position;
-
-                this->DeleteRange(position, 3);
-                nSelectionEnd -= 2;
-            }
-            else
-            {
-                if (i == nFirstLine && nSelectionStart >= 0 && nSelectionStart >= position + 1)
-                    nSelectionStart -= 1;
-                else if (i == nFirstLine && nSelectionStart >= 0)
-                    nSelectionStart = position;
-
-                this->DeleteRange(position, 2);
-                nSelectionEnd -= 1;
-            }
-        }
-        else if (m_fileType == FILE_CPP && style != wxSTC_C_COMMENTLINE)
-        {
-            this->InsertText(this->PositionFromLine(i), "// " );
-
-            if (nSelectionStart >= 0)
-            {
-                nSelectionStart += 3;
-                nSelectionEnd += 3;
+                nSelectionStart += nCommentCharSequenceLen;
+                nSelectionEnd += nCommentCharSequenceLen;
             }
         }
     }
@@ -2173,81 +2092,105 @@ void NumeReEditor::ToggleCommentLine()
 /// are commented. This function uses the block
 /// comment style for this feature.
 ///
-/// \todo HAS TO BE REFACTORED
 /////////////////////////////////////////////////
 void NumeReEditor::ToggleCommentSelection()
 {
     if (m_fileType == FILE_NONSOURCE)
         return;
 
+    // Only works, if the user selected some code
     if (!HasSelection())
         return;
 
-    int nFirstPosition = this->GetSelectionStart();
-    int nLastPosition = this->GetSelectionEnd();
+    int nFirstPosition = GetSelectionStart();
+    int nLastPosition = GetSelectionEnd();
     int nSelectionStart = nFirstPosition;
     int nSelectionEnd = nLastPosition;
     int style = GetStyleAt(nFirstPosition);
+    int nCommentStyle = wxSTC_NSCR_COMMENT_BLOCK;
+    wxString sBlockCommentStart = "#* ";
+    wxString sBlockCommentEnd = " *#";
 
-    if (m_fileType != FILE_NSCR && m_fileType != FILE_NPRC)
+    // Some code segments do not have block comments
+    if (m_fileType != FILE_NSCR
+        && m_fileType != FILE_NPRC
+        && m_fileType != FILE_XML
+        && m_fileType != FILE_CPP)
     {
         ToggleCommentLine();
         return;
     }
 
+    // Change characters and style for C++ or XML files
+    if (m_fileType == FILE_CPP)
+    {
+        sBlockCommentEnd = " */";
+        sBlockCommentStart = "/* ";
+        nCommentStyle = wxSTC_C_COMMENT;
+    }
+    else if (m_fileType == FILE_XML)
+    {
+        sBlockCommentEnd = " -->";
+        sBlockCommentStart = "<!-- ";
+        nCommentStyle = wxSTC_H_COMMENT;
+    }
+
     BeginUndoAction();
 
-    if (style == wxSTC_NPRC_COMMENT_BLOCK || style == wxSTC_NSCR_COMMENT_BLOCK)
+    if (style == nCommentStyle)
     {
         // Position before
-        while (nFirstPosition && (GetStyleAt(nFirstPosition - 1) == wxSTC_NPRC_COMMENT_BLOCK || GetStyleAt(nFirstPosition - 1) == wxSTC_NSCR_COMMENT_BLOCK))
+        while (nFirstPosition && GetStyleAt(nFirstPosition - 1) == nCommentStyle)
             nFirstPosition--;
 
-        if (GetStyleAt(nLastPosition) != wxSTC_NPRC_COMMENT_BLOCK || GetStyleAt(nLastPosition) != wxSTC_NSCR_COMMENT_BLOCK)
+        if (GetStyleAt(nLastPosition) != nCommentStyle)
             nLastPosition = nFirstPosition;
 
         // Position after
-        while (nLastPosition < this->GetLastPosition() && (GetStyleAt(nLastPosition) == wxSTC_NPRC_COMMENT_BLOCK || GetStyleAt(nLastPosition) == wxSTC_NSCR_COMMENT_BLOCK))
+        while (nLastPosition < GetLastPosition() && GetStyleAt(nLastPosition) == nCommentStyle)
             nLastPosition++;
 
-        if (this->GetTextRange(nLastPosition - 3, nLastPosition) == " *#")
+        // Remove the trailing block comment sequence
+        if (GetTextRange(nLastPosition - sBlockCommentEnd.length(), nLastPosition) == sBlockCommentEnd)
         {
-            if (nSelectionEnd > nLastPosition - 3)
-                nSelectionEnd -= 3;
+            if (nSelectionEnd > nLastPosition - (int)sBlockCommentEnd.length())
+                nSelectionEnd -= sBlockCommentEnd.length();
 
-            this->DeleteRange(nLastPosition - 3, 3);
+            DeleteRange(nLastPosition - sBlockCommentEnd.length(), sBlockCommentEnd.length());
         }
         else
         {
-            if (nSelectionEnd > nLastPosition - 2)
-                nSelectionEnd -= 2;
+            if (nSelectionEnd > nLastPosition - (int)sBlockCommentEnd.length() + 1)
+                nSelectionEnd -= sBlockCommentEnd.length() - 1;
 
-            this->DeleteRange(nFirstPosition - 2, 2);
+            DeleteRange(nFirstPosition - sBlockCommentEnd.length() + 1, sBlockCommentEnd.length() - 1);
         }
 
-        if (this->GetTextRange(nFirstPosition, nFirstPosition + 3) == "#* ")
+        // Remove the leading block comment sequence
+        if (GetTextRange(nFirstPosition, nFirstPosition + sBlockCommentStart.length()) == sBlockCommentStart)
         {
             if (nFirstPosition != nSelectionStart)
-                nSelectionStart -= 3;
+                nSelectionStart -= sBlockCommentStart.length();
 
-            this->DeleteRange(nFirstPosition, 3);
-            nSelectionEnd -= 3;
+            DeleteRange(nFirstPosition, sBlockCommentStart.length());
+            nSelectionEnd -= sBlockCommentStart.length();
         }
         else
         {
             if (nFirstPosition != nSelectionStart)
-                nSelectionStart -= 2;
+                nSelectionStart -= sBlockCommentStart.length() - 1;
 
-            this->DeleteRange(nFirstPosition, 2);
-            nSelectionEnd -= 2;
+            DeleteRange(nFirstPosition, sBlockCommentStart.length() - 1);
+            nSelectionEnd -= sBlockCommentStart.length() - 1;
         }
     }
-    else if (!(style == wxSTC_NPRC_COMMENT_LINE || style == wxSTC_NSCR_COMMENT_LINE))
+    else
     {
-        this->InsertText(nFirstPosition, "#* ");
-        this->InsertText(nLastPosition + 3, " *#");
-        nSelectionEnd += 3;
-        nSelectionStart += 3;
+        // Embed the selection into a block comment
+        InsertText(nFirstPosition, sBlockCommentStart);
+        InsertText(nLastPosition + sBlockCommentStart.length(), sBlockCommentEnd);
+        nSelectionEnd += sBlockCommentEnd.length();
+        nSelectionStart += sBlockCommentStart.length();
     }
 
     EndUndoAction();
@@ -7103,14 +7046,9 @@ void NumeReEditor::OnThreadUpdate(wxThreadEvent& event)
 /// two blocks of code including the wordwise
 /// differences in the lines.
 ///
-/// \todo Move the marker and indicator definitions.
 /////////////////////////////////////////////////
 void NumeReEditor::IndicateDuplicatedLine(int nStart1, int nEnd1, int nStart2, int nEnd2, int nSelectionLine)
 {
-    MarkerDefine(MARKER_DUPLICATEINDICATOR_ONE, wxSTC_MARK_BACKGROUND);
-    MarkerSetBackground(MARKER_DUPLICATEINDICATOR_ONE, wxColour(220, 255, 220));
-    MarkerDefine(MARKER_DUPLICATEINDICATOR_TWO, wxSTC_MARK_BACKGROUND);
-    MarkerSetBackground(MARKER_DUPLICATEINDICATOR_TWO, wxColour(255, 220, 220));
     MarkerDeleteAll(MARKER_DUPLICATEINDICATOR_ONE);
     MarkerDeleteAll(MARKER_DUPLICATEINDICATOR_TWO);
 
