@@ -125,75 +125,6 @@ void load_data(MemoryManager& _data, Settings& _option, Parser& _parser, string 
 
 
 /////////////////////////////////////////////////
-/// \brief This function presents the passed data
-/// to the user in a visual way.
-///
-/// \param _data Datafile&
-/// \param _out Output&
-/// \param _option Settings&
-/// \param _sCache const string&
-/// \param nPrecision size_t
-/// \return void
-///
-/////////////////////////////////////////////////
-void show_data(MemoryManager& _data, Output& _out, Settings& _option, const string& _sCache, size_t nPrecision)
-{
-	string sCache = _sCache;
-	string sFileName;
-
-	// Do only stuff, if data is available
-	if (_data.isValid())		// Sind ueberhaupt Daten vorhanden?
-	{
-		if (_option.useExternalDocWindow())
-        {
-            NumeReKernel::showTable(_data.extractTable(sCache), sCache.substr(sCache.front() == '*' ? 1 : 0));
-			return;
-        }
-
-		long long int nLine = 0;
-		long long int nCol = 0;
-		int nHeadlineCount = 0;
-
-		// Get the string matrix
-		string** sOut = make_stringmatrix(_data, _out, _option, sCache, nLine, nCol, nHeadlineCount, nPrecision, false);
-
-        // Remove the possible asterisk at the front of the cache name
-		if (sCache.front() == '*')
-			sCache.erase(0, 1); // Vorangestellten Unterstrich wieder entfernen
-
-        _out.setPrefix(sCache);
-
-		// Set the "plugin origin"
-		_out.setPluginName("Datenanzeige der Daten aus " + _data.getDataFileName(sCache)); // Anzeige-Plugin-Parameter: Nur Kosmetik
-
-        // Print the table to the console: write the headline
-        NumeReKernel::toggleTableStatus();
-        make_hline();
-        NumeReKernel::print("NUMERE: " + toUpperCase(sCache) + "()");
-        make_hline();
-
-        // Format the table (either for the console or for the target file)
-        _out.format(sOut, nCol, nLine, _option, true, nHeadlineCount);		// Eigentliche Ausgabe
-        _out.reset();
-
-        // Print the table to the console: write the footer
-        NumeReKernel::toggleTableStatus();
-        make_hline();
-
-        // Clear the created memory
-        for (long long int i = 0; i < nLine; i++)
-        {
-            delete[] sOut[i];		// WICHTIG: Speicher immer freigeben!
-        }
-
-        delete[] sOut;
-	}
-	else
-        throw SyntaxError(SyntaxError::NO_CACHED_DATA, "", SyntaxError::invalid_position);
-}
-
-
-/////////////////////////////////////////////////
 /// \brief This function transforms the data into
 /// a string matrix and returns the corresponding
 /// pointer.
@@ -214,7 +145,7 @@ void show_data(MemoryManager& _data, Output& _out, Settings& _option, const stri
 ///
 /////////////////////////////////////////////////
 #warning TODO (numere#1#08/16/21): This function does not correspond to the current design
-string** make_stringmatrix(MemoryManager& _data, Output& _out, Settings& _option, const string& sCache, long long int& nLines, long long int& nCols, int& nHeadlineCount, size_t nPrecision, bool bSave)
+static std::string** make_stringmatrix(MemoryManager& _data, Output& _out, Settings& _option, const std::string& sCache, long long int& nLines, long long int& nCols, int& nHeadlineCount, size_t nPrecision, bool bSave)
 {
 	nHeadlineCount = 1;
 
@@ -333,6 +264,77 @@ string** make_stringmatrix(MemoryManager& _data, Output& _out, Settings& _option
 	}
 	// return the string table
 	return sOut;
+}
+
+
+
+
+/////////////////////////////////////////////////
+/// \brief This function presents the passed data
+/// to the user in a visual way.
+///
+/// \param _data Datafile&
+/// \param _out Output&
+/// \param _option Settings&
+/// \param _sCache const string&
+/// \param nPrecision size_t
+/// \return void
+///
+/////////////////////////////////////////////////
+void show_data(MemoryManager& _data, Output& _out, Settings& _option, const string& _sCache, size_t nPrecision)
+{
+	string sCache = _sCache;
+	string sFileName;
+
+	// Do only stuff, if data is available
+	if (_data.isValid())		// Sind ueberhaupt Daten vorhanden?
+	{
+		if (_option.useExternalDocWindow())
+        {
+            NumeReKernel::showTable(_data.extractTable(sCache), sCache.substr(sCache.front() == '*' ? 1 : 0));
+			return;
+        }
+
+		long long int nLine = 0;
+		long long int nCol = 0;
+		int nHeadlineCount = 0;
+
+		// Get the string matrix
+		string** sOut = make_stringmatrix(_data, _out, _option, sCache, nLine, nCol, nHeadlineCount, nPrecision, false);
+
+        // Remove the possible asterisk at the front of the cache name
+		if (sCache.front() == '*')
+			sCache.erase(0, 1); // Vorangestellten Unterstrich wieder entfernen
+
+        _out.setPrefix(sCache);
+
+		// Set the "plugin origin"
+		_out.setPluginName("Datenanzeige der Daten aus " + _data.getDataFileName(sCache)); // Anzeige-Plugin-Parameter: Nur Kosmetik
+
+        // Print the table to the console: write the headline
+        NumeReKernel::toggleTableStatus();
+        make_hline();
+        NumeReKernel::print("NUMERE: " + toUpperCase(sCache) + "()");
+        make_hline();
+
+        // Format the table (either for the console or for the target file)
+        _out.format(sOut, nCol, nLine, _option, true, nHeadlineCount);		// Eigentliche Ausgabe
+        _out.reset();
+
+        // Print the table to the console: write the footer
+        NumeReKernel::toggleTableStatus();
+        make_hline();
+
+        // Clear the created memory
+        for (long long int i = 0; i < nLine; i++)
+        {
+            delete[] sOut[i];		// WICHTIG: Speicher immer freigeben!
+        }
+
+        delete[] sOut;
+	}
+	else
+        throw SyntaxError(SyntaxError::NO_CACHED_DATA, "", SyntaxError::invalid_position);
 }
 
 

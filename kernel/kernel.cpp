@@ -20,7 +20,6 @@
 
 #include "wx/wx.h"
 #include "../gui/terminal/terminal.hpp"
-#include "core/datamanagement/dataops.hpp" // for make_stringmatrix()
 #include "core/datamanagement/database.hpp"
 #include "core/io/logger.hpp"
 

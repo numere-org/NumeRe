@@ -2254,7 +2254,7 @@ void CategoricalColumn::setCategories(const std::vector<std::string>& vCategorie
 
             // If the category was found and is different to the current
             // one: swap them. Otherwise simply overwrite
-            if (iter != m_categories.end() && iter-m_categories.begin() != i)
+            if (iter != m_categories.end() && iter-m_categories.begin() != (int)i)
                 std::swap(m_categories[i], *iter);
             else
                 m_categories[i] = vCategories[i];
