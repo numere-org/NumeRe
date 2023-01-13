@@ -716,17 +716,17 @@ namespace NumeRe
                     double I = (int)i - floor(m/2.0);
 
                     if (nthDerivative == 1)
-                        m_filterKernel[i] = (5.0*(3.0*pow4(m) - 18.0*pow2(m) + 31.0)*I - 28.0*(3.0*pow2(m)-7.0)*pow3(I))
-                                             / (m * (pow2(m) - 1.0)*(3.0*pow4(m) - 39.0*pow2(m) + 108.0) / 15.0);
+                        m_filterKernel[i] = 15.0 * (5.0*(3.0*pow4(m) - 18.0*pow2(m) + 31.0)*I - 28.0*(3.0*pow2(m)-7.0)*pow3(I))
+                                             / (m * (pow2(m) - 1.0)*(3.0*pow4(m) - 39.0*pow2(m) + 108.0));
                     else if (nthDerivative == 2)
-                        m_filterKernel[i] = (12.0*m*pow2(I) - m * (pow2(m) - 1.0))
-                                             / (pow2(m) * (pow2(m) - 1.0) * (pow2(m) - 4.0) / 30.0);
+                        m_filterKernel[i] = 30.0 * (12.0*m*pow2(I) - m * (pow2(m) - 1.0))
+                                             / (pow2(m) * (pow2(m) - 1.0) * (pow2(m) - 4.0));
                     else if (nthDerivative == 3)
-                        m_filterKernel[i] = (-(3.0*pow2(m) - 7.0)*I + 20.0*pow3(I))
-                                             / (m * (pow2(m) - 1.0)*(3.0*pow4(m)-39.0*pow2(m) + 108.0) / 420.0);
+                        m_filterKernel[i] = 6 * 420.0 * (-(3.0*pow2(m) - 7.0)*I + 20.0*pow3(I))
+                                             / (m * (pow2(m) - 1.0)*(3.0*pow4(m) - 39.0*pow2(m) + 108.0));
                     else
-                        m_filterKernel[i] = (5.0*(3.0*pow4(m) - 18.0*pow2(m) + 31.0)*I - 28.0*(3.0*pow2(m)-7.0)*pow3(I))
-                                             / (m * (pow2(m) - 1.0)*(3.0*pow4(m) - 39.0*pow2(m) + 108.0) / 15.0);
+                        m_filterKernel[i] = 15.0 * (5.0*(3.0*pow4(m) - 18.0*pow2(m) + 31.0)*I - 28.0*(3.0*pow2(m)-7.0)*pow3(I))
+                                             / (m * (pow2(m) - 1.0)*(3.0*pow4(m) - 39.0*pow2(m) + 108.0));
                 }
             }
 

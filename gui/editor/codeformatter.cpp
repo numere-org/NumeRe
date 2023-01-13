@@ -405,7 +405,7 @@ void CodeFormatter::ApplyAutoFormatNSCR(int nFirstLine, int nLastLine)
             }
             else if (currentChar == '<' || currentChar == '>' || currentChar == '!' || currentChar == '=')
             {
-                static std::string sLeadingChars = " (=+-!*/^<>:";
+                static std::string sLeadingChars = " (=+-!*/^<>:|";
 
                 if (currentChar == '='
                         && (m_editor->GetStyleAt(i - 1) == wxSTC_NSCR_OPTION
@@ -1023,6 +1023,8 @@ int CodeFormatter::formatFunctionParentheses(int& pos, int operatorStyleNum)
 /////////////////////////////////////////////////
 int CodeFormatter::formatOperators(int pos, char prevChar, char currentChar, char nextChar, bool isNSCR)
 {
+    int offset = 0;
+
     if (currentChar == '+' || currentChar == '-')
     {
         if (nextChar != ' '
@@ -1039,7 +1041,7 @@ int CodeFormatter::formatOperators(int pos, char prevChar, char currentChar, cha
                             && m_editor->GetStyleAt(pos - 1) != wxSTC_NSCR_COMMAND
                             && m_editor->GetStyleAt(pos - 1) != wxSTC_NSCR_OPTION
                             && nextChar != '>')))
-            return insertTextAndMove(pos + 1, " ");
+            offset += insertTextAndMove(pos + 1, " ");
 
         if (prevChar != ' '
             && prevChar != currentChar
@@ -1047,24 +1049,24 @@ int CodeFormatter::formatOperators(int pos, char prevChar, char currentChar, cha
             && prevChar != '('
             && prevChar != '['
             && prevChar != '{')
-            return insertTextAndMove(pos, " ");
+            offset += insertTextAndMove(pos, " ");
     }
     else if (currentChar == '&' || currentChar == '|')
     {
-        if (nextChar != ' ' && nextChar != currentChar)
-            return insertTextAndMove(pos + 1, " ");
+        if (nextChar != ' ' && nextChar != currentChar && (!isNSCR || nextChar != '>'))
+            offset += insertTextAndMove(pos + 1, " ");
 
         if (prevChar != ' ' && prevChar != currentChar)
-            return insertTextAndMove(pos, " ");
+            offset += insertTextAndMove(pos, " ");
     }
     else if ((currentChar == '*' || currentChar == '/' || currentChar == '^')
              && nextChar == '='
              && prevChar != ' '
              && nextChar != currentChar
              && prevChar != currentChar)
-        return insertTextAndMove(pos, " ");
+        offset += insertTextAndMove(pos, " ");
 
-    return 0;
+    return offset;
 }
 
 

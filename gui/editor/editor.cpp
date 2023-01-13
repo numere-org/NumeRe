@@ -7120,17 +7120,21 @@ int NumeReEditor::isBlockStart(const wxString& sWord, bool allowIntermediate)
         }
     }
     else if (m_fileType == FILE_MATLAB)
-        return sWord == "if"
-            || sWord == "for"
-            || sWord == "do"
-            || sWord == "while"
-            || sWord == "classdef"
-            || sWord == "properties"
-            || sWord == "function"
-            || sWord == "methods"
-            || sWord == "try"
-            || sWord == "switch"
-            || (allowIntermediate && (sWord == "elseif" || sWord == "else" || sWord == "case" || sWord == "otherwise" || sWord == "catch"));
+        return (sWord == "if"
+                || sWord == "for"
+                || sWord == "do"
+                || sWord == "while"
+                || sWord == "classdef"
+                || sWord == "properties"
+                || sWord == "function"
+                || sWord == "methods"
+                || sWord == "try"
+                || sWord == "switch"
+                || (allowIntermediate && (sWord == "elseif"
+                                          || sWord == "else"
+                                          || sWord == "case"
+                                          || sWord == "otherwise"
+                                          || sWord == "catch"))) ? 1 : wxNOT_FOUND;
 
     return wxNOT_FOUND;
 }
@@ -7158,7 +7162,7 @@ int NumeReEditor::isBlockEnd(const wxString& sWord)
         }
     }
     else if (m_fileType == FILE_MATLAB)
-        return sWord == "end";
+        return sWord == "end" ? 1 : wxNOT_FOUND;
 
     return wxNOT_FOUND;
 }
@@ -7184,7 +7188,7 @@ int NumeReEditor::isBlockMiddle(const wxString& sWord)
             return id;
     }
     else if (m_fileType == FILE_MATLAB)
-        return sWord == "elseif" || sWord == "else" || sWord == "case" || sWord == "otherwise" || sWord == "catch";
+        return (sWord == "elseif" || sWord == "else" || sWord == "case" || sWord == "otherwise" || sWord == "catch") ? 1 : wxNOT_FOUND;
 
     return wxNOT_FOUND;
 }

@@ -6039,7 +6039,7 @@ void NumeReWindow::OnTreeItemRightClick(wxTreeEvent& event)
             return;
         }
 
-        fname_ext = fname_ext.substr(fname_ext.rfind('.')) + ";";
+        fname_ext = fname_ext.substr(fname_ext.rfind('.')).Lower() + ";";
 
         if (loadableExt.find(fname_ext) != std::string::npos)
         {
@@ -6324,7 +6324,7 @@ void NumeReWindow::OnTreeDragDrop(wxTreeEvent& event)
         wxFileName pathname = data->filename;
         wxString dragableExtensions = ";nscr;nprc;ndat;nlyt;txt;dat;log;tex;csv;xls;xlsx;ods;jdx;jcm;dx;labx;ibw;png;jpg;jpeg;gif;bmp;eps;svg;m;cpp;cxx;c;hpp;hxx;h;";
 
-        if (dragableExtensions.find(";" + pathname.GetExt() + ";") != std::string::npos)
+        if (dragableExtensions.find(";" + pathname.GetExt().Lower() + ";") != std::string::npos)
         {
             wxFileDataObject _dataObject;
             _dataObject.AddFile(pathname.GetFullPath());

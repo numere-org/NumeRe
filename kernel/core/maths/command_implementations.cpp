@@ -1039,7 +1039,7 @@ bool differentiate(CommandLineParser& cmdParser)
                     if (!avgDiff.second)
                         vResult[i] = NAN;
                     else
-                        vResult[i] /= avgDiff.first/(double)avgDiff.second;
+                        vResult[i] /= intPower(avgDiff.first/(double)avgDiff.second, order);
                 }
 
                 // Repeat the first and last values

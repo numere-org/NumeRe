@@ -135,16 +135,15 @@ void load_data(MemoryManager& _data, Settings& _option, Parser& _parser, string 
 /// \param _data Datafile&
 /// \param _out Output&
 /// \param _option Settings&
-/// \param sCache const string&
+/// \param sCache const std::string&
 /// \param nLines long longint&
 /// \param nCols long longint&
 /// \param nHeadlineCount int&
 /// \param nPrecision size_t
 /// \param bSave bool
-/// \return string**
+/// \return std::string**
 ///
 /////////////////////////////////////////////////
-#warning TODO (numere#1#08/16/21): This function does not correspond to the current design
 static std::string** make_stringmatrix(MemoryManager& _data, Output& _out, Settings& _option, const std::string& sCache, long long int& nLines, long long int& nCols, int& nHeadlineCount, size_t nPrecision, bool bSave)
 {
 	nHeadlineCount = 1;
@@ -175,11 +174,11 @@ static std::string** make_stringmatrix(MemoryManager& _data, Output& _out, Setti
         nLines++;
 
     // Create the formatting memory
-	string** sOut = new string*[nLines];		// die eigentliche Ausgabematrix. Wird spaeter gefuellt an Output::format(string**,int,int,Output&) uebergeben
+	string** sOut = new std::string*[nLines];		// die eigentliche Ausgabematrix. Wird spaeter gefuellt an Output::format(string**,int,int,Output&) uebergeben
 
 	for (long long int i = 0; i < nLines; i++)
 	{
-		sOut[i] = new string[nCols];			// Vollstaendig Allozieren!
+		sOut[i] = new std::string[nCols];			// Vollstaendig Allozieren!
 	}
 
 	// create a character buffer for sprintf
@@ -202,7 +201,7 @@ static std::string** make_stringmatrix(MemoryManager& _data, Output& _out, Setti
 				if (_out.isCompact() && (int)sOut[i][j].length() > 11 && !bSave)
 				{
                     // Truncate the headlines, if they are too long
-					sOut[i][j].replace(8, string::npos, "...");
+					sOut[i][j].replace(8, std::string::npos, "...");
 				}
 				else if (nHeadlineCount > 1 && sOut[i][j].find('\n') != string::npos)
 				{
@@ -265,8 +264,6 @@ static std::string** make_stringmatrix(MemoryManager& _data, Output& _out, Setti
 	// return the string table
 	return sOut;
 }
-
-
 
 
 /////////////////////////////////////////////////
