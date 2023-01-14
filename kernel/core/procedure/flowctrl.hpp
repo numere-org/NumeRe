@@ -140,7 +140,7 @@ class FlowCtrl
         typedef int(FlowCtrl::*FlowCtrlFunction)(int, int); ///< Definition of a generic FlowCtrl entry point
 
         int compile(std::string sLine, int nthCmd);
-        int calc(std::string sLine, int nthCmd);
+        int calc(StringView sLine, int nthCmd);
         value_type* evalHeader(int& nNum, std::string& sHeadExpression, bool bIsForHead, int nth_Cmd, const std::string& sHeadCommand);
         NumeRe::Cluster evalRangeBasedHeader(std::string& sHeadExpression, int nth_Cmd, const std::string& sHeadCommand);
         int evalForkFlowCommands(int __j, int nth_loop);

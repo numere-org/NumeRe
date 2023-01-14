@@ -125,6 +125,148 @@ void load_data(MemoryManager& _data, Settings& _option, Parser& _parser, string 
 
 
 /////////////////////////////////////////////////
+/// \brief This function transforms the data into
+/// a string matrix and returns the corresponding
+/// pointer.
+///
+/// \note The calling function is responsible to
+/// clear the allocated memory.
+///
+/// \param _data Datafile&
+/// \param _out Output&
+/// \param _option Settings&
+/// \param sCache const std::string&
+/// \param nLines long longint&
+/// \param nCols long longint&
+/// \param nHeadlineCount int&
+/// \param nPrecision size_t
+/// \param bSave bool
+/// \return std::string**
+///
+/////////////////////////////////////////////////
+static std::string** make_stringmatrix(MemoryManager& _data, Output& _out, Settings& _option, const std::string& sCache, long long int& nLines, long long int& nCols, int& nHeadlineCount, size_t nPrecision, bool bSave)
+{
+	nHeadlineCount = 1;
+
+	// Deactivate the compact flag, if the user uses the external viewer
+	if (_option.useExternalDocWindow())
+		_out.setCompact(false);
+
+    // If the compact flag is not set
+	if (!_out.isCompact())
+	{
+	    // Get the dimensions of the complete headline (i.e. including possible linebreaks)
+		nHeadlineCount = _data.getHeadlineCount(sCache);
+	}
+
+	// Get the dimensions of the data and add the needed headlins
+	nLines = _data.getLines(sCache) + nHeadlineCount;		// Wir muessen Zeilen fuer die Kopfzeile hinzufuegen
+	nCols = _data.getCols(sCache);
+
+	// Check for a reasonable dimension
+	if (!nCols)
+		throw SyntaxError(SyntaxError::NO_CACHED_DATA, "", SyntaxError::invalid_position);
+
+	if (_option.isDeveloperMode())
+		NumeReKernel::print("DEBUG: nLine = " + toString(nLines) + ", nCol = " + toString(nCols) );
+
+    if (nLines == nHeadlineCount)
+        nLines++;
+
+    // Create the formatting memory
+	string** sOut = new std::string*[nLines];		// die eigentliche Ausgabematrix. Wird spaeter gefuellt an Output::format(string**,int,int,Output&) uebergeben
+
+	for (long long int i = 0; i < nLines; i++)
+	{
+		sOut[i] = new std::string[nCols];			// Vollstaendig Allozieren!
+	}
+
+	// create a character buffer for sprintf
+	char cBuffer[50];
+
+	// Format the table
+	for (long long int i = 0; i < nLines; i++)
+	{
+		for (long long int j = 0; j < nCols; j++)
+		{
+		    // The first line (at least) is reserved for the headline
+			if (!i)						// Erste Zeile? -> Kopfzeilen uebertragen
+			{
+			    // Get the headlines
+				if (_out.isCompact())
+					sOut[i][j] = _data.getTopHeadLineElement(j, sCache);
+				else
+					sOut[i][j] = _data.getHeadLineElement(j, sCache);
+
+				if (_out.isCompact() && (int)sOut[i][j].length() > 11 && !bSave)
+				{
+                    // Truncate the headlines, if they are too long
+					sOut[i][j].replace(8, std::string::npos, "...");
+				}
+				else if (nHeadlineCount > 1 && sOut[i][j].find('\n') != string::npos)
+				{
+				    // Store the complete headlines separated into the different rows
+					string sHead = sOut[i][j];
+					int nCount = 0;
+
+					for (unsigned int n = 0; n < sHead.length(); n++)
+					{
+						if (sHead[n] == '\n')
+						{
+							sOut[i + nCount][j] = sHead.substr(0, n);
+							sHead.erase(0, n + 1);
+							n = 0;
+							nCount++;
+						}
+					}
+
+					sOut[i + nCount][j] = sHead;
+				}
+
+				// If this is the last column, then set the line counter to the last headline row
+				if (j == nCols - 1)
+					i = nHeadlineCount - 1;
+				continue;
+			}
+
+			// Handle invalid numbers
+			if (!_data.isValidElement(i - nHeadlineCount, j, sCache))
+			{
+				sOut[i][j] = "---";			// Nullzeile? -> Da steht ja in Wirklichkeit auch kein Wert drin...
+				continue;
+			}
+
+			// Handle infinity
+			if (isinf(abs(_data.getElement(i - nHeadlineCount, j, sCache))) && _data.getElement(i - nHeadlineCount, j, sCache).real() > 0)
+            {
+                sOut[i][j] = "inf";
+                continue;
+            }
+
+            // Handle negative infinity
+			if (isinf(abs(_data.getElement(i - nHeadlineCount, j, sCache))) && _data.getElement(i - nHeadlineCount, j, sCache).real() < 0)
+            {
+                sOut[i][j] = "-inf";
+                continue;
+            }
+
+			// Transform the data to strings and write it to the string table
+			// We use the C-style conversion function sprintf(), because it is 4 times faster than
+			// using the stringstream conversion way.
+            if (_out.isCompact() && !bSave)
+                sprintf(cBuffer, "%.*g", 4, _data.getElement(i - nHeadlineCount, j, sCache).real());
+            else
+                sprintf(cBuffer, "%.*g", nPrecision, _data.getElement(i - nHeadlineCount, j, sCache).real());
+
+            sOut[i][j] = cBuffer;
+		}
+	}
+	// return the string table
+	return sOut;
+}
+
+
+/////////////////////////////////////////////////
 /// \brief This function presents the passed data
 /// to the user in a visual way.
 ///
@@ -190,149 +332,6 @@ void show_data(MemoryManager& _data, Output& _out, Settings& _option, const stri
 	}
 	else
         throw SyntaxError(SyntaxError::NO_CACHED_DATA, "", SyntaxError::invalid_position);
-}
-
-
-/////////////////////////////////////////////////
-/// \brief This function transforms the data into
-/// a string matrix and returns the corresponding
-/// pointer.
-///
-/// \note The calling function is responsible to
-/// clear the allocated memory.
-///
-/// \param _data Datafile&
-/// \param _out Output&
-/// \param _option Settings&
-/// \param sCache const string&
-/// \param nLines long longint&
-/// \param nCols long longint&
-/// \param nHeadlineCount int&
-/// \param nPrecision size_t
-/// \param bSave bool
-/// \return string**
-///
-/////////////////////////////////////////////////
-#warning TODO (numere#1#08/16/21): This function does not correspond to the current design
-string** make_stringmatrix(MemoryManager& _data, Output& _out, Settings& _option, const string& sCache, long long int& nLines, long long int& nCols, int& nHeadlineCount, size_t nPrecision, bool bSave)
-{
-	nHeadlineCount = 1;
-
-	// Deactivate the compact flag, if the user uses the external viewer
-	if (_option.useExternalDocWindow())
-		_out.setCompact(false);
-
-    // If the compact flag is not set
-	if (!_out.isCompact())
-	{
-	    // Get the dimensions of the complete headline (i.e. including possible linebreaks)
-		nHeadlineCount = _data.getHeadlineCount(sCache);
-	}
-
-	// Get the dimensions of the data and add the needed headlins
-	nLines = _data.getLines(sCache) + nHeadlineCount;		// Wir muessen Zeilen fuer die Kopfzeile hinzufuegen
-	nCols = _data.getCols(sCache);
-
-	// Check for a reasonable dimension
-	if (!nCols)
-		throw SyntaxError(SyntaxError::NO_CACHED_DATA, "", SyntaxError::invalid_position);
-
-	if (_option.isDeveloperMode())
-		NumeReKernel::print("DEBUG: nLine = " + toString(nLines) + ", nCol = " + toString(nCols) );
-
-    if (nLines == nHeadlineCount)
-        nLines++;
-
-    // Create the formatting memory
-	string** sOut = new string*[nLines];		// die eigentliche Ausgabematrix. Wird spaeter gefuellt an Output::format(string**,int,int,Output&) uebergeben
-
-	for (long long int i = 0; i < nLines; i++)
-	{
-		sOut[i] = new string[nCols];			// Vollstaendig Allozieren!
-	}
-
-	// create a character buffer for sprintf
-	char cBuffer[50];
-
-	// Format the table
-	for (long long int i = 0; i < nLines; i++)
-	{
-		for (long long int j = 0; j < nCols; j++)
-		{
-		    // The first line (at least) is reserved for the headline
-			if (!i)						// Erste Zeile? -> Kopfzeilen uebertragen
-			{
-			    // Get the headlines
-				if (_out.isCompact())
-					sOut[i][j] = _data.getTopHeadLineElement(j, sCache);
-				else
-					sOut[i][j] = _data.getHeadLineElement(j, sCache);
-
-				if (_out.isCompact() && (int)sOut[i][j].length() > 11 && !bSave)
-				{
-                    // Truncate the headlines, if they are too long
-					sOut[i][j].replace(8, string::npos, "...");
-				}
-				else if (nHeadlineCount > 1 && sOut[i][j].find('\n') != string::npos)
-				{
-				    // Store the complete headlines separated into the different rows
-					string sHead = sOut[i][j];
-					int nCount = 0;
-
-					for (unsigned int n = 0; n < sHead.length(); n++)
-					{
-						if (sHead[n] == '\n')
-						{
-							sOut[i + nCount][j] = sHead.substr(0, n);
-							sHead.erase(0, n + 1);
-							n = 0;
-							nCount++;
-						}
-					}
-
-					sOut[i + nCount][j] = sHead;
-				}
-
-				// If this is the last column, then set the line counter to the last headline row
-				if (j == nCols - 1)
-					i = nHeadlineCount - 1;
-				continue;
-			}
-
-			// Handle invalid numbers
-			if (!_data.isValidElement(i - nHeadlineCount, j, sCache))
-			{
-				sOut[i][j] = "---";			// Nullzeile? -> Da steht ja in Wirklichkeit auch kein Wert drin...
-				continue;
-			}
-
-			// Handle infinity
-			if (isinf(abs(_data.getElement(i - nHeadlineCount, j, sCache))) && _data.getElement(i - nHeadlineCount, j, sCache).real() > 0)
-            {
-                sOut[i][j] = "inf";
-                continue;
-            }
-
-            // Handle negative infinity
-			if (isinf(abs(_data.getElement(i - nHeadlineCount, j, sCache))) && _data.getElement(i - nHeadlineCount, j, sCache).real() < 0)
-            {
-                sOut[i][j] = "-inf";
-                continue;
-            }
-
-			// Transform the data to strings and write it to the string table
-			// We use the C-style conversion function sprintf(), because it is 4 times faster than
-			// using the stringstream conversion way.
-            if (_out.isCompact() && !bSave)
-                sprintf(cBuffer, "%.*g", 4, _data.getElement(i - nHeadlineCount, j, sCache).real());
-            else
-                sprintf(cBuffer, "%.*g", nPrecision, _data.getElement(i - nHeadlineCount, j, sCache).real());
-
-            sOut[i][j] = cBuffer;
-		}
-	}
-	// return the string table
-	return sOut;
 }
 
 

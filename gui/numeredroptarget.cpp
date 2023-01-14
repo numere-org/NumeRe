@@ -466,7 +466,7 @@ NumeReDropTarget::fileType NumeReDropTarget::getFileType(const wxString& filenam
     static wxString imageExtensions = ";png;gif;jpg;jpeg;bmp;eps;svg;";
     static wxString execExtensions = ";nscr;nprc;";
 
-    wxString extension = ";"+filename.substr(filename.rfind('.')+1)+";";
+    wxString extension = ";"+filename.substr(filename.rfind('.')+1).Lower()+";";
 
     // Identify the type of the file by its extensions
     if (textExtensions.find(extension) != std::string::npos)

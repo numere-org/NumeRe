@@ -366,7 +366,7 @@ class CategoricalColumn : public TableColumn
     private:
         enum {CATEGORICAL_NAN = -1};
 
-        std::vector<size_t> m_data;
+        std::vector<int> m_data;
         std::vector<std::string> m_categories;
 
     public:

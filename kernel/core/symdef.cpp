@@ -52,7 +52,6 @@ void SymDefManager::resolveSymbols(std::string& sCommandLine) const
         size_t pos = 0;
 
         // Find all occurences of the current variable
-#warning TODO (numere#1#12/05/21): If it's expected that variables with methods are replaced, then this won't work
         while ((pos = findVariableInExpression(sCommandLine, iter->first, pos)) != std::string::npos)
         {
             sCommandLine.replace(pos, iter->first.length(), iter->second);

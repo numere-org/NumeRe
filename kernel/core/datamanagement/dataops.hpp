@@ -28,7 +28,6 @@
 #include "../io/output.hpp"
 #include "../maths/define.hpp"
 
-std::string** make_stringmatrix(MemoryManager& _data, Output& _out, Settings& _option, const std::string& sCache, long long int& nLines, long long int& nCols, int& nHeadlineCount, size_t nPrecision, bool bSave = true);
 void load_data(MemoryManager& _data, Settings& _option, mu::Parser& _parser, std::string sFileName = "");
 void show_data(MemoryManager& _data, Output& _out, Settings& _option, const std::string& _sCache, size_t nPrecision);
 void append_data(CommandLineParser& cmdParser);

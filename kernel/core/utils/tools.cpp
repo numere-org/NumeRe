@@ -516,35 +516,176 @@ bool isMultiValue(const string& sExpr, bool bIgnoreClosingParenthesis)
     return false;
 }
 
-// This function is a static helper function for the function replaceToTeX further down
-static void handleTeXIndicesAndExponents(string& sReturn, string sCodepage[][2] /* The way 2D arrays are passed into a function */, size_t nSymbols)
+
+/////////////////////////////////////////////////
+/// \brief Static helper returning the TeX code
+/// page.
+///
+/// \return std::map<std::string, std::string>
+///
+/////////////////////////////////////////////////
+static std::map<std::string, std::string> getTeXCodePage()
 {
-    string sDelimiter = "+-*/, #()&|!_'";
+    std::map<std::string, std::string> mCodePage;
+
+    mCodePage["_pi"] = "\\pi ";
+    mCodePage["_hbar"] = "\\hbar ";
+    mCodePage["_k_boltz"] = "k_B";
+    mCodePage["_2pi"] = "2\\cdot \\pi ";
+    mCodePage["_elek_feldkonst"] = "\\varepsilon ";
+    mCodePage["_elem_ladung"] = "e";
+    mCodePage["_m_elektron"] = "m_{e}";
+    mCodePage["_m_neutron"] = "m_{n}";
+    mCodePage["_m_proton"] = "m_{p}";
+    mCodePage["_m_sonne"] = "m_{Sonne}";
+    mCodePage["_m_erde"] = "m_{Erde}";
+    mCodePage["_m_muon"] = "m_{\\mu}";
+    mCodePage["_m_tau"] = "m_{\\tau}";
+    mCodePage["_magn_feldkonst"] = "\\mu ";
+    mCodePage["_n_avogadro"] = "N_A";
+    mCodePage["_r_erde"] = "r_{Erde}";
+    mCodePage["_r_sonne"] = "r_{Sonne}";
+    mCodePage["_c"] = "c_{Licht}";
+    mCodePage["_e"] = "e";
+    mCodePage["_g"] = "g";
+    mCodePage["_h"] = "h";
+    mCodePage["_R"] = "R";
+    mCodePage["_alpha_fs"] = "\\alpha_{FS}";
+    mCodePage["_mu_bohr"] = "\\mu_{B}";
+    mCodePage["_mu_kern"] = "\\mu_{K}";
+    mCodePage["_m_amu"] = "m_u";
+    mCodePage["_r_bohr"] = "a_0";
+    mCodePage["_G"] = "G";
+    mCodePage["_theta_weinberg"] = "\\theta_{W}";
+    mCodePage["_mu_e"] = "\\mu_{e}";
+    mCodePage["_mu_p"] = "\\mu_{p}";
+    mCodePage["_mu_n"] = "\\mu_{n}";
+    mCodePage["_gamma_e"] = "\\gamma_{e}";
+    mCodePage["_gamma_p"] = "\\gamma_{p}";
+    mCodePage["_gamma_n"] = "\\gamma_{n}";
+    mCodePage["_stefan_boltzmann"] = "\\sigma ";
+    mCodePage["_rydberg"] = "R_{\\infty}";
+    mCodePage["_hartree"] = "E_{h}";
+    mCodePage["_wien"] = "b_{Energie}";
+    mCodePage["_lande_e"] = "g_{e}";
+    mCodePage["_feigenbaum_alpha"] = "\\alpha ";
+    mCodePage["_feigenbaum_delta"] = "\\delta ";
+    mCodePage["inf"] = "\\infty";
+    mCodePage["alpha"] = "\\alpha ";
+    mCodePage["Alpha"] = "\\Alpha ";
+    mCodePage["beta"] = "\\beta ";
+    mCodePage["Beta"] = "\\Beta ";
+    mCodePage["gamma"] = "\\gamma ";
+    mCodePage["Gamma"] = "\\Gamma ";
+    mCodePage["delta"] = "\\delta ";
+    mCodePage["Delta"] = "\\Delta ";
+    mCodePage["epsilon"] = "\\varepsilon ";
+    mCodePage["Epsilon"] = "\\Epsilon ";
+    mCodePage["zeta"] = "\\zeta ";
+    mCodePage["Zeta"] = "\\Zeta ";
+    mCodePage["eta"] = "\\eta ";
+    mCodePage["Eta"] = "\\Eta ";
+    mCodePage["\theta"] = "\\theta ";
+    mCodePage["theta"] = "\\vartheta ";
+    mCodePage["Theta"] = "\\Theta ";
+    mCodePage["iota"] = "\\iota ";
+    mCodePage["Iota"] = "\\Iota ";
+    mCodePage["kappa"] = "\\kappa ";
+    mCodePage["Kappa"] = "\\Kappa ";
+    mCodePage["lambda"] = "\\lambda ";
+    mCodePage["Lambda"] = "\\Lambda ";
+    mCodePage["mu"] = "\\mu";
+    mCodePage["Mu"] = "\\Mu ";
+    mCodePage["\nu"] = "\\nu ";
+    mCodePage["nu"] = "\\nu ";
+    mCodePage["Nu"] = "\\Nu ";
+    mCodePage["xi"] = "\\xi ";
+    mCodePage["Xi"] = "\\Xi ";
+    mCodePage["omikron"] = "o ";
+    mCodePage["Omikron"] = "O ";
+    mCodePage["pi"] = "\\pi ";
+    mCodePage["Pi"] = "\\Pi ";
+    mCodePage["rho"] = "\\rho ";
+    mCodePage["Rho"] = "\\Rho ";
+    mCodePage["sigma"] = "\\sigma ";
+    mCodePage["Sigma"] = "\\Sigma ";
+    mCodePage["\tau"] = "\\tau ";
+    mCodePage["tau"] = "\\tau ";
+    mCodePage["Tau"] = "\\Tau ";
+    mCodePage["ypsilon"] = "\\upsilon ";
+    mCodePage["Ypsilon"] = "\\Upsilon ";
+    mCodePage["phi"] = "\\varphi ";
+    mCodePage["Phi"] = "\\Phi";
+    mCodePage["chi"] = "\\chi ";
+    mCodePage["Chi"] = "\\Chi ";
+    mCodePage["psi"] = "\\psi ";
+    mCodePage["Psi"] = "\\Psi ";
+    mCodePage["omega"] = "\\omega ";
+    mCodePage["Omega"] = "\\Omega ";
+    mCodePage["heaviside"] = "\\Theta";
+    mCodePage["Li2"] = "Li_2";
+    mCodePage["Cl2"] = "Cl_2";
+
+    return mCodePage;
+}
+
+
+static std::map<std::string, std::string> getTeXCodePageSpecial()
+{
+    std::map<std::string, std::string> mCodePage;
+
+    mCodePage["*"] = "\\cdot  ";
+    mCodePage["+"] = " + ";
+    mCodePage["-"] = " -- ";
+    mCodePage[","] = ", ";
+    mCodePage["x"] = "{\\i x}";
+    mCodePage["y"] = "{\\i y}";
+    mCodePage["z"] = "{\\i z}";
+    mCodePage["t"] = "{\\i t}";
+
+    return mCodePage;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This function is a static helper
+/// function for the function replaceToTeX
+/// further down
+///
+/// \param sReturn std::string&
+/// \param std::map<std::string const
+/// \param mCodePage std::string>&
+/// \return void
+///
+/////////////////////////////////////////////////
+static void handleTeXIndicesAndExponents(std::string& sReturn, const std::map<std::string,std::string>& mCodePage)
+{
+    static std::string sDelimiter = "+-*/, #()&|!_'";
 
     // Handle the exponents
-    for (unsigned int i = 0; i < sReturn.length() - 1; i++)
+    for (size_t i = 0; i < sReturn.length() - 1; i++)
     {
         // Insert braces
         if (sReturn[i] == '^' && sReturn[i + 1] != '{' && sReturn[i + 1] != '(')
         {
             i++;
             sReturn = sReturn.substr(0, i) + "{" + sReturn.substr(i);
+
             if (sReturn[i + 1] == '-' || sReturn[i + 1] == '+')
                 i++;
+
             i++;
 
             // Find the end of the current brace
-            for (unsigned int j = i + 1; j < sReturn.length(); j++)
+            for (size_t j = i + 1; j < sReturn.length(); j++)
             {
-                if (sDelimiter.find(sReturn[j]) != string::npos)
+                if (sDelimiter.find(sReturn[j]) != std::string::npos)
                 {
                     sReturn = sReturn.substr(0, j) + "}" + sReturn.substr(j);
                     break;
                 }
                 else if (j + 1 == sReturn.length())
-                {
                     sReturn += "}";
-                }
             }
         }
     }
@@ -553,16 +694,18 @@ static void handleTeXIndicesAndExponents(string& sReturn, string sCodepage[][2] 
     sDelimiter[sDelimiter.length() - 1] = '^';
 
     // Handle the indices
-    for (unsigned int i = 0; i < sReturn.length() - 1; i++)
+    for (size_t i = 0; i < sReturn.length() - 1; i++)
     {
-        // Handle constants
+        // Ignore constants
         if (sReturn[i] == '_' && sReturn[i + 1] != '{')
         {
-            for (unsigned int j = 8; j < nSymbols; j++)
+            for (const auto& iter : mCodePage)
             {
-                if (sCodepage[j][0][0] != '_')
+                if (iter.first.front() != '_')
                     break;
-                if (sReturn.substr(i, sCodepage[j][0].length()) == sCodepage[j][0] && (sDelimiter.find(sReturn[i + sCodepage[j][0].length()]) != string::npos || sReturn[i + sCodepage[j][0].length()] == '_'))
+
+                if (sReturn.substr(i, iter.first.length()) == iter.first
+                    && sDelimiter.find(sReturn[i + iter.first.length()]) != std::string::npos)
                 {
                     i++;
                     break;
@@ -580,7 +723,7 @@ static void handleTeXIndicesAndExponents(string& sReturn, string sCodepage[][2] 
             // Find the end of the current brace
             for (unsigned int j = i + 1; j < sReturn.length(); j++)
             {
-                if (sDelimiter.find(sReturn[j]) != string::npos)
+                if (sDelimiter.find(sReturn[j]) != std::string::npos)
                 {
                     sReturn = sReturn.substr(0, j) + "}" + sReturn.substr(j);
                     break;
@@ -595,311 +738,199 @@ static void handleTeXIndicesAndExponents(string& sReturn, string sCodepage[][2] 
 }
 
 
-// --> Ersetzt Tokens in einem String mit dem entsprechenden TeX-Befehl <--
-#warning TODO (numere#3#08/15/21): Rework this function
-string replaceToTeX(const string& sString, bool replaceForTeXFile) // bool-flag for true TeX files. The graph needs more tweaking
+/////////////////////////////////////////////////
+/// \brief Replace the special tokens with their
+/// TeX counterparts, so that they can be handled
+/// by a LaTeX interpreter (like such in the
+/// plotting lib).
+///
+/// \param sString const std::string&
+/// \param replaceForTeXFile bool true for TeX
+/// files. Will replace fewer characters.
+/// \return std::string
+///
+/////////////////////////////////////////////////
+std::string replaceToTeX(const std::string& sString, bool replaceForTeXFile)
 {
-    string sReturn = " " + sString + " ";            // Rueckgabe-String
-    string sTemp = "";                               // Temporaerer String, erleichert das Einfuegen von strings
-    static const unsigned int nSymbols = 105;        // Anzahl an bekannten Symbolen
-    unsigned int nPos = 0;                           // Positions-Index-Variable
-    unsigned int nPos_2 = 0;                         // Positions-Index-Variable
+    std::string sReturn = " " + sString + " ";            // Rueckgabe-String
+    size_t nPos = 0;                           // Positions-Index-Variable
 
-    // --> 2D-String-Array: links das zu ersetzende Token, rechts die Ersetzung <--
-    // The order is essentially: all constants have to be in a group starting from position 8
-    static string sCodepage[nSymbols][2] =
-    {
-        {"*", "\\cdot  "},
-        {"+", " + "},
-        {"-", " -- "},
-        {",", ", "},
-        {"x", "{\\i x}"},
-        {"y", "{\\i y}"},
-        {"z", "{\\i z}"},
-        {"t", "{\\i t}"},
-        {"_pi", "\\pi "},
-        {"_hbar", "\\hbar "},
-        {"_k_boltz", "k_B"},
-        {"_2pi", "2\\cdot \\pi "},
-        {"_elek_feldkonst", "\\varepsilon "},
-        {"_elem_ladung", "e"},
-        {"_m_elektron", "m_{e}"},
-        {"_m_neutron", "m_{n}"},
-        {"_m_proton", "m_{p}"},
-        {"_m_sonne", "m_{Sonne}"},
-        {"_m_erde", "m_{Erde}"},
-        {"_m_muon", "m_{\\mu}"},
-        {"_m_tau", "m_{\\tau}"},
-        {"_magn_feldkonst", "\\mu "},
-        {"_n_avogadro", "N_A"},
-        {"_r_erde", "r_{Erde}"},
-        {"_r_sonne", "r_{Sonne}"},
-        {"_c", "c_{Licht}"},
-        {"_e", "e"},
-        {"_g", "g"},
-        {"_h", "h"},
-        {"_R", "R"},
-        {"_alpha_fs", "\\alpha_{FS}"},
-        {"_mu_bohr", "\\mu_{B}"},
-        {"_mu_kern", "\\mu_{K}"},
-        {"_m_amu", "m_u"},
-        {"_r_bohr", "a_0"},
-        {"_G", "G"},
-        {"_theta_weinberg", "\\theta_{W}"},
-        {"_mu_e", "\\mu_{e}"},
-        {"_mu_p", "\\mu_{p}"},
-        {"_mu_n", "\\mu_{n}"},
-        {"_gamma_e", "\\gamma_{e}"},
-        {"_gamma_p", "\\gamma_{p}"},
-        {"_gamma_n", "\\gamma_{n}"},
-        {"_stefan_boltzmann", "\\sigma "},
-        {"_rydberg", "R_{\\infty}"},
-        {"_hartree", "E_{h}"},
-        {"_wien", "b_{Energie}"},
-        {"_lande_e", "g_{e}"},
-        {"_feigenbaum_alpha", "\\alpha "},
-        {"_feigenbaum_delta", "\\delta "},
-        {"inf", "\\infty"},
-        {"alpha", "\\alpha "},
-        {"Alpha", "\\Alpha "},
-        {"beta", "\\beta "},
-        {"Beta", "\\Beta "},
-        {"gamma", "\\gamma "},
-        {"Gamma", "\\Gamma "},
-        {"delta", "\\delta "},
-        {"Delta", "\\Delta "},
-        {"epsilon", "\\varepsilon "},
-        {"Epsilon", "\\Epsilon "},
-        {"zeta", "\\zeta "},
-        {"Zeta", "\\Zeta "},
-        {"eta", "\\eta "},
-        {"Eta", "\\Eta "},
-        {"\theta", "\\theta "},
-        {"theta", "\\vartheta "},
-        {"Theta", "\\Theta "},
-        {"iota", "\\iota "},
-        {"Iota", "\\Iota "},
-        {"kappa", "\\kappa "},
-        {"Kappa", "\\Kappa "},
-        {"lambda", "\\lambda "},
-        {"Lambda", "\\Lambda "},
-        {"mu", "\\mu"},
-        {"Mu", "\\Mu "},
-        {"\nu", "\\nu "},
-        {"nu", "\\nu "},
-        {"Nu", "\\Nu "},
-        {"xi", "\\xi "},
-        {"Xi", "\\Xi "},
-        {"omikron", "o "},
-        {"Omikron", "O "},
-        {"pi", "\\pi "},
-        {"Pi", "\\Pi "},
-        {"rho", "\\rho "},
-        {"Rho", "\\Rho "},
-        {"sigma", "\\sigma "},
-        {"Sigma", "\\Sigma "},
-        {"\tau", "\\tau "},
-        {"tau", "\\tau "},
-        {"Tau", "\\Tau "},
-        {"ypsilon", "\\upsilon "},
-        {"Ypsilon", "\\Upsilon "},
-        {"phi", "\\varphi "},
-        {"Phi", "\\Phi"},
-        {"chi", "\\chi "},
-        {"Chi", "\\Chi "},
-        {"psi", "\\psi "},
-        {"Psi", "\\Psi "},
-        {"omega", "\\omega "},
-        {"Omega", "\\Omega "},
-        {"heaviside", "\\Theta"},
-        {"Li2", "Li_2"},
-        {"Cl2", "Cl_2"}
-    };
-
+    static std::map<std::string, std::string> mCodePage = getTeXCodePage();
+    static std::map<std::string, std::string> mSpecialSymbols = getTeXCodePageSpecial();
 
     // --> Ersetze zunaechst die gamma-Funktion <--
-    while (sReturn.find("gamma(", nPos) != string::npos)
+    while ((nPos = sReturn.find("gamma(", nPos)) != std::string::npos)
     {
-        nPos = sReturn.find("gamma(", nPos);
-        sReturn = sReturn.substr(0, nPos) + "\\Gamma(" + sReturn.substr(nPos + 6);
+        if (nPos && !isDelimiter(sReturn[nPos-1]))
+        {
+            nPos++;
+            continue;
+        }
+
+        sReturn.replace(nPos, nPos+6, "\\Gamma(");
         nPos += 7;
     }
 
-    nPos = 0;
     // --> Laufe durch alle bekannten Symbole <--
-    for (unsigned int i = 0; i < nSymbols; i++)
+    for (const auto& iter : mCodePage)
     {
         // --> Positions-Indices zuruecksetzen <--
         nPos = 0;
-        nPos_2 = 0;
-
-        // Jump over the operators and the variables
-        // if replacing the tokens for a TeX file
-        if (replaceForTeXFile)
-        {
-            if (i == 1)
-                i = 8;
-        }
 
         // --> So lange in dem String ab der Position nPos das Token auftritt <--
-        while (sReturn.find(sCodepage[i][0], nPos) != string::npos)
+        while ((nPos = sReturn.find(iter.first, nPos)) != string::npos)
         {
-            // --> Position des Treffers speichern <--
-            nPos_2 = sReturn.find(sCodepage[i][0], nPos);
             // --> Falls vor dem Token schon ein '\' ist, wurde das hier schon mal ersetzt <--
-            if (sReturn[nPos_2 - 1] == '\\')
+            if (sReturn[nPos - 1] == '\\')
             {
                 // --> Positionsindex um die Laenge des Tokens weitersetzen <--
-                nPos = nPos_2 + sCodepage[i][0].length();
+                nPos += iter.first.length();
                 continue;
             }
-            else if (i < 4) // only operators
+
+            if (sReturn[nPos + iter.first.length()] == '_')
+            {
+                // Wird das Token von '_' abgeschlossen? Pruefen wir, ob es von vorne auch begrenzt ist <--
+                if (!isDelimiter(sReturn[nPos-1]))
+                {
+                    // --> Nein? Den Positionsindex um die Laenge des Tokens weitersetzen <--
+                    nPos += iter.first.length();
+                    continue;
+                }
+            }
+            else if (!checkDelimiter(sReturn.substr(nPos - 1, iter.first.length() + 2)))
+            {
+                // --> Pruefen wir auch getrennt den Fall, ob das Token ueberhaupt begrenzt ist ('_' zaehlt nicht zu den Delimitern) <--
+                nPos += iter.first.length();
+                continue;
+            }
+
+            sReturn.replace(nPos, iter.first.length(), iter.second);
+            nPos += iter.second.length();
+        }
+    }
+
+    for (const auto& iter : mSpecialSymbols)
+    {
+        // --> Positions-Indices zuruecksetzen <--
+        nPos = 0;
+
+        // --> So lange in dem String ab der Position nPos das Token auftritt <--
+        while ((nPos = sReturn.find(iter.first, nPos)) != string::npos)
+        {
+            // --> Falls vor dem Token schon ein '\' ist, wurde das hier schon mal ersetzt <--
+            if (sReturn[nPos - 1] == '\\')
+            {
+                // --> Positionsindex um die Laenge des Tokens weitersetzen <--
+                nPos += iter.first.length();
+                continue;
+            }
+
+            if (iter.first == "*"
+                || (!replaceForTeXFile && !isalpha(iter.first.front())))
             {
                 // remove obsolete whitespaces around the operators
                 // first in front of the operator
-                while (nPos_2 > 0 && sReturn[nPos_2 - 1] == ' ')
+                if (sReturn[nPos - 1] == ' ')
                 {
-                    sReturn = sReturn.substr(0, nPos_2 - 1) + sReturn.substr(nPos_2);
-                    nPos_2--;
+                    size_t nPos_2 = sReturn.find_last_not_of(' ', nPos-1)+1;
+                    sReturn.erase(nPos_2, nPos - nPos_2);
+                    nPos = nPos_2;
                 }
 
                 // after the operator
-                while (nPos_2 < sReturn.length() - 2 && sReturn[nPos_2 + 1] == ' ')
-                {
-                    sReturn = sReturn.substr(0, nPos_2 + 1) + sReturn.substr(nPos_2 + 2);
-                }
+                if (sReturn[nPos + 1] == ' ')
+                    sReturn.erase(nPos, sReturn.find_first_not_of(' ', nPos+1) - nPos);
 
                 // Identify exponents and ignore them
-                if ((i == 1 || i == 2)
-                        && (sReturn[nPos_2 - 1] == 'e' || sReturn[nPos_2 - 1] == 'E'))
+                if (iter.first == "+" || iter.first == "-")
                 {
-                    if ((int)sReturn[nPos_2 - 2] <= (int)'9' && (int)sReturn[nPos_2 - 2] >= (int)'0'
-                            && (int)sReturn[nPos_2 + 1] <= (int)'9' && (int)sReturn[nPos_2 + 1] >= (int)'0')
+                    if (sReturn[nPos-1] == 'e' || sReturn[nPos-1] == 'E')
                     {
-                        nPos = nPos_2 + 1;
+                        if (isdigit(sReturn[nPos-2]) && isdigit(sReturn[nPos+1]) )
+                        {
+                            nPos++;
+                            continue;
+                        }
+                    }
+
+                    // Don't insert whitespaces directly after opening parentheses and commas
+                    if (!nPos
+                        || sReturn[nPos-1] == '('
+                        || sReturn[nPos-1] == '['
+                        || sReturn[nPos-1] == '{'
+                        || sReturn[nPos-1] == ',')
+                    {
+                        if (iter.first == "-")
+                        {
+                            sReturn.insert(nPos, 1, '-');
+                            nPos++;
+                        }
+
+                        nPos++;
                         continue;
                     }
                 }
-
-                // Don't insert whitespaces directly after opening parentheses and commas
-                if ((i == 1 || i == 2)
-                        && (sReturn[nPos_2 - 1] == '(' || sReturn[nPos_2 - 1] == '[' || sReturn[nPos_2 - 1] == '{' || sReturn[nPos_2 - 1] == ',' || !nPos_2))
-                {
-                    if (i == 2)
-                    {
-                        sReturn.insert(nPos_2, 1, '-');
-                        nPos_2++;
-                    }
-                    nPos = nPos_2 + 1;
-                    continue;
-                }
             }
-            else if (i > 3 && sReturn[nPos_2 + sCodepage[i][0].length()] == '_')
+            else if (sReturn[nPos + iter.first.length()] == '_')
             {
                 // Wird das Token von '_' abgeschlossen? Pruefen wir, ob es von vorne auch begrenzt ist <--
-                if (!checkDelimiter(sReturn.substr(nPos_2 - 1, sCodepage[i][0].length() + 1) + " "))
+                if (!isDelimiter(sReturn[nPos-1]))
                 {
                     // --> Nein? Den Positionsindex um die Laenge des Tokens weitersetzen <--
-                    nPos = nPos_2 + sCodepage[i][0].length();
+                    nPos += iter.first.length();
                     continue;
                 }
             }
-            else if (i > 2 && !checkDelimiter(sReturn.substr(nPos_2 - 1, sCodepage[i][0].length() + 2)))
+            else if (!checkDelimiter(sReturn.substr(nPos - 1, iter.first.length() + 2)))
             {
                 // --> Pruefen wir auch getrennt den Fall, ob das Token ueberhaupt begrenzt ist ('_' zaehlt nicht zu den Delimitern) <--
-                nPos = nPos_2 + sCodepage[i][0].length();
+                nPos += iter.first.length();
                 continue;
             }
 
-            // --> Das war alles nicht der Fall? Schieb den Index um die Laenge der Ersetzung weiter <--
-            nPos_2 += sCodepage[i][1].length();
-
-            // --> Kopiere den Teil nach dem Token in sTemp <--
-            sTemp = sReturn.substr(sReturn.find(sCodepage[i][0], nPos) + sCodepage[i][0].length());
-
-            // --> Kopiere den Teil vor dem Token, die Ersetzung und sTemp in sReturn <--
-            sReturn = sReturn.substr(0, sReturn.find(sCodepage[i][0], nPos)) + sCodepage[i][1] + sTemp;
-
-            // --> Setze den Hauptindex auf nPos_2 <--
-            nPos = nPos_2;
+            sReturn.replace(nPos, iter.first.length(), iter.second);
+            nPos += iter.second.length();
         }
     }
 
     // --> Ersetze nun lange Indices "_INDEX" durch "_{INDEX}" <--
-    handleTeXIndicesAndExponents(sReturn, sCodepage, nSymbols);
+    handleTeXIndicesAndExponents(sReturn, mCodePage);
 
-    // --> Setze nun den Hauptindex zurueck <--
     nPos = 0;
 
-    // --> Pruefe nun kompliziertere Tokens: zuerst die Wurzel "sqrt()" <--
-    while (sReturn.find("sqrt(", nPos) != string::npos)
+    // replace "sqrt()"
+    while ((nPos = sReturn.find("sqrt(", nPos)) != string::npos)
     {
-        // --> Speichere die Position der Klammer <--
-        nPos_2 = sReturn.find("sqrt(", nPos) + 4;
-
-        // --> Kopiere den Teil ab der Klammer in sTemp <--
-        sTemp = sReturn.substr(sReturn.find("sqrt(", nPos) + 4);
-
-        // --> Kopiere den Teil vor "sqrt(" in sReturn und haenge "@{\\sqrt{" an <--
-        sReturn = sReturn.substr(0, sReturn.find("sqrt(", nPos)) + "@{\\sqrt{";
-
-        // --> Haenge sTemp an sReturn an, wobei die passende schliessende Klammer durch '}}' ersetzt werden muss <--
-        sReturn += sTemp.substr(1, getMatchingParenthesis(sTemp) - 1) + "}}" + sTemp.substr(getMatchingParenthesis(sTemp) + 1);
-
-        // --> nPos auf nPos_2 setzen <--
-        nPos = nPos_2;
+        size_t len = getMatchingParenthesis(StringView(sReturn, nPos+4));
+        sReturn.replace(nPos, len + 6, "@{\\sqrt{" + sReturn.substr(nPos+5, len) + "}}");
     }
 
-    // --> Nun "norm(x,y,z,...)" <--
-    while (sReturn.find("norm(", nPos) != string::npos)
-    {
-        // --> Speichere die Position der Klammer <--
-        nPos_2 = sReturn.find("norm(", nPos) + 4;
-
-        // --> Kopiere den Teil ab der Klammer in sTemp <--
-        sTemp = sReturn.substr(sReturn.find("norm(", nPos) + 4);
-
-        // --> Kopiere den Teil vor "norm(" in sReturn und haenge "|" an <--
-        sReturn = sReturn.substr(0, sReturn.find("norm(", nPos)) + "|";
-
-        // --> Haenge sTemp an sReturn an, wobei die passende schliessende Klammer durch '|' ersetzt werden muss <--
-        sReturn += sTemp.substr(1, getMatchingParenthesis(sTemp) - 1) + "|" + sTemp.substr(getMatchingParenthesis(sTemp) + 1);
-
-        // --> nPos auf nPos_2 setzen <--
-        nPos = nPos_2;
-    }
-
-    // --> Nun "abs(x,y,z,...)" <--
-    while (sReturn.find("abs(", nPos) != string::npos)
-    {
-        // --> Speichere die Position der Klammer <--
-        nPos_2 = sReturn.find("abs(", nPos) + 3;
-
-        // --> Kopiere den Teil ab der Klammer in sTemp <--
-        sTemp = sReturn.substr(sReturn.find("abs(", nPos) + 3);
-
-        // --> Kopiere den Teil vor "abs(" in sReturn und haenge "|" an <--
-        sReturn = sReturn.substr(0, sReturn.find("abs(", nPos)) + "|";
-
-        // --> Haenge sTemp an sReturn an, wobei die passende schliessende Klammer durch '|' ersetzt werden muss <--
-        sReturn += sTemp.substr(1, getMatchingParenthesis(sTemp) - 1) + "|" + sTemp.substr(getMatchingParenthesis(sTemp) + 1);
-
-        // --> nPos auf nPos_2 setzen <--
-        nPos = nPos_2;
-    }
-
-    // --> Hauptindex zuruecksetzen <--
     nPos = 0;
 
-    // --> Ersetzte nun lange Hochzahlen "^(ZAHL)" durch "^{ZAHL}" <--
-    while (sReturn.find("^(", nPos) != string::npos)
+    // replace "norm()"
+    while ((nPos = sReturn.find("norm(", nPos)) != string::npos)
     {
-        nPos_2 = sReturn.find("^(", nPos) + 1;
-        sTemp = sReturn.substr(nPos_2);
-        sReturn = sReturn.substr(0, nPos_2) + "{";
-        sReturn += sTemp.substr(1, getMatchingParenthesis(sTemp) - 1) + "}" + sTemp.substr(getMatchingParenthesis(sTemp) + 1);
+        size_t len = getMatchingParenthesis(StringView(sReturn, nPos+4));
+        sReturn.replace(nPos, len + 6, "|" + sReturn.substr(nPos+5, len) + "|");
+    }
 
-        nPos = nPos_2;
+    nPos = 0;
+
+    // replace "abs()"
+    while ((nPos = sReturn.find("abs(", nPos)) != string::npos)
+    {
+        size_t len = getMatchingParenthesis(StringView(sReturn, nPos+3));
+        sReturn.replace(nPos, len + 5, "|" + sReturn.substr(nPos+4, len) + "|");
+    }
+
+    nPos = 0;
+
+    // Long exponents
+    while ((nPos = sReturn.find("^(", nPos)) != string::npos)
+    {
+        size_t len = getMatchingParenthesis(StringView(sReturn, nPos+1));
+        sReturn.replace(nPos+1, len + 2, "{" + sReturn.substr(nPos+2, len) + "}");
     }
 
     // --> Entferne die Leerzeichen am Anfang und Ende und gib sReturn zurueck <--
@@ -912,11 +943,11 @@ string replaceToTeX(const string& sString, bool replaceForTeXFile) // bool-flag 
 /// \brief This is a static helper function for
 /// the findCommand function.
 ///
-/// \param sCmd const string&
+/// \param sCmd StringView
 /// \return Match
 ///
 /////////////////////////////////////////////////
-static Match findCasualCommand(const string& sCmd)
+static Match findCasualCommand(StringView sCmd)
 {
     Match _mMatch;
     _mMatch.sString = "";
@@ -924,14 +955,14 @@ static Match findCasualCommand(const string& sCmd)
     size_t nStart = 0;
 
     // Jump over breakpoints
-    if (sCmd.substr(0,2) == "|>")
+    if (sCmd.subview(0,2) == "|>")
         nStart = 2;
 
     // Go through the complete command line
     for (unsigned int i = nStart; i < sCmd.length(); i++)
     {
         // Break the loop, if one recognizes typical initializers of the parameter list
-        if ((sCmd.substr(i, 2) == "--" || sCmd.substr(i, 5) == "-set ") && !isInQuotes(sCmd, i))
+        if ((sCmd.subview(i, 2) == "--" || sCmd.subview(i, 5) == "-set ") && !isInQuotes(sCmd, i))
             break;
 
         // Jump over some special characters, if one didn't find any command yet
@@ -949,7 +980,7 @@ static Match findCasualCommand(const string& sCmd)
             }
 
             // Store the command string
-            _mMatch.sString = sCmd.substr(_mMatch.nPos, i - _mMatch.nPos);
+            _mMatch.sString = sCmd.subview(_mMatch.nPos, i - _mMatch.nPos).to_string();
 
             // Ensure that this is not inside of quotation marks
             if (isInQuotes(sCmd, (i - _mMatch.nPos) / 2))
@@ -965,7 +996,7 @@ static Match findCasualCommand(const string& sCmd)
         {
             // We found an opening parenthesis although we already found a match position
             // Store the command string
-            _mMatch.sString = sCmd.substr(_mMatch.nPos, i - _mMatch.nPos);
+            _mMatch.sString = sCmd.subview(_mMatch.nPos, i - _mMatch.nPos).to_string();
 
             // Ensure that this is not inside of quotation marks
             // Also ensure that the found command string is one of the
@@ -994,9 +1025,9 @@ static Match findCasualCommand(const string& sCmd)
     // Special case: We walked through the complete command line and didn't find
     // the end of the command. Simply use the rest of the command line as the command
     if (_mMatch.nPos != string::npos)
-        _mMatch.sString = sCmd.substr(_mMatch.nPos);
+        _mMatch.sString = sCmd.subview(_mMatch.nPos).to_string();
     else
-        _mMatch.sString = sCmd;
+        _mMatch.sString = sCmd.to_string();
 
     // Return the found match
     return _mMatch;
@@ -1010,15 +1041,15 @@ static Match findCasualCommand(const string& sCmd)
 /// \param _mMatch Match&
 /// \param position size_t
 /// \param character char
-/// \param sCmd const string&
-/// \param sCommand const string&
+/// \param sCmd StringView
+/// \param sCommand const std::string&
 /// \return bool
 ///
 /////////////////////////////////////////////////
-static bool findShortestMatchForCommand(Match& _mMatch, size_t position, char character, const string& sCmd, const string& sCommand)
+static bool findShortestMatchForCommand(Match& _mMatch, size_t position, char character, StringView sCmd, const std::string& sCommand)
 {
     // Store the command string and the match position
-    _mMatch.sString = sCmd.substr(position, sCmd.find(character, position + sCommand.length()) - position);
+    _mMatch.sString = sCmd.subview(position, sCmd.find(character, position + sCommand.length()) - position).to_string();
     _mMatch.nPos = position;
 
     // If there's a whitespace in the match string, erase it end everything after it
@@ -1027,14 +1058,14 @@ static bool findShortestMatchForCommand(Match& _mMatch, size_t position, char ch
 
     // Ensure that the found command is a single word
     if (!isInQuotes(sCmd, position)
-        && ((position && checkDelimiter(sCmd.substr(position - 1, _mMatch.sString.length() + 2)))
-            || (!position && checkDelimiter(" " + sCmd.substr(position, _mMatch.sString.length() + 1)))))
+        && isDelimiter(sCmd[position+_mMatch.sString.length()])
+        && (!position || isDelimiter(sCmd[position-1])))
     {
         // If the command line is longer than the match position and the length of both strings
         if (sCmd.length() >= sCommand.length() + _mMatch.nPos + _mMatch.sString.length())
         {
             // Try to find the command further back by calling findCommand recursively
-            Match _mTemp = findCommand(sCmd.substr(_mMatch.nPos + _mMatch.sString.length()), sCommand);
+            Match _mTemp = findCommand(sCmd.subview(_mMatch.nPos + _mMatch.sString.length()), sCommand);
 
             // If a match was found and it's length is shorter than the current one
             // then use the new match
@@ -1064,12 +1095,12 @@ static bool findShortestMatchForCommand(Match& _mMatch, size_t position, char ch
 /// \brief This is a static helper function for
 /// the findCommand function.
 ///
-/// \param sCmd const string&
+/// \param sCmd StringView
 /// \param sCommand const string&
 /// \return Match
 ///
 /////////////////////////////////////////////////
-static Match findCommandWithReturnValue(const string& sCmd, const string& sCommand)
+static Match findCommandWithReturnValue(StringView sCmd, const string& sCommand)
 {
     Match _mMatch;
     _mMatch.sString = "";
@@ -1077,14 +1108,14 @@ static Match findCommandWithReturnValue(const string& sCmd, const string& sComma
     size_t nStart = 0;
 
     // Jump over breakpoints
-    if (sCmd.substr(0,2) == "|>")
+    if (sCmd.subview(0,2) == "|>")
         nStart = 2;
 
     // Go through the complete command line
     for (unsigned int i = nStart; i < sCmd.length(); i++)
     {
         // Break the loop, if we find typical parameter string initializers
-        if ((sCmd.substr(i, 2) == "--" || sCmd.substr(i, 5) == "-set ") && !isInQuotes(sCmd, i))
+        if ((sCmd.subview(i, 2) == "--" || sCmd.subview(i, 5) == "-set ") && !isInQuotes(sCmd, i))
             break;
 
         // Jump over some special characters
@@ -1092,17 +1123,17 @@ static Match findCommandWithReturnValue(const string& sCmd, const string& sComma
             continue;
 
         // Jump, if this is not our searched command
-        if (sCmd.substr(i, sCommand.length()) != sCommand)
+        if (sCmd.subview(i, sCommand.length()) != sCommand)
             continue;
 
         // This is our command and it is not at the beginning of the line
-        if (sCmd.substr(i, sCommand.length()) == sCommand && i)
+        if (sCmd.subview(i, sCommand.length()) == sCommand && i)
         {
             // Is the command filling the rest of the command line?
             if (i + sCommand.length() == sCmd.length() - 1)
             {
                 // Store the command string with the previous character
-                _mMatch.sString = sCmd.substr(i - 1) + " ";
+                _mMatch.sString = sCmd.subview(i - 1).to_string() + " ";
 
                 // Store the position
                 _mMatch.nPos = i;
@@ -1160,7 +1191,7 @@ static Match findCommandWithReturnValue(const string& sCmd, const string& sComma
         }
 
         // This is our command and it is at the beginning of the line
-        if (sCmd.substr(i, sCommand.length()) == sCommand && !i)
+        if (sCmd.subview(i, sCommand.length()) == sCommand && !i)
         {
             // If the command lenght and the command line length are nearly the same
             if (sCommand.length() == sCmd.length() - 1)
@@ -1236,12 +1267,12 @@ static Match findCommandWithReturnValue(const string& sCmd, const string& sComma
 /// line (i.e. commands, which are returning
 /// values).
 ///
-/// \param sCmd const string&
-/// \param sCommand string
+/// \param sCmd StringView
+/// \param sCommand const std::string&
 /// \return Match
 ///
 /////////////////////////////////////////////////
-Match findCommand(const string& sCmd, string sCommand)
+Match findCommand(StringView sCmd, const std::string& sCommand)
 {
     Match _mMatch;
     _mMatch.sString = "";
@@ -1258,7 +1289,7 @@ Match findCommand(const string& sCmd, string sCommand)
     else if (sCommand.length() && (sCmd == sCommand || sCmd == sCommand + " "))
     {
         // the command line is identical to the searched command
-        _mMatch.sString = sCmd;
+        _mMatch.sString = sCmd.to_string();
         StripSpaces(_mMatch.sString);
         _mMatch.nPos = 0;
 

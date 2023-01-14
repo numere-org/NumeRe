@@ -66,7 +66,7 @@ wxDirTraverseResult DirTraverser::OnFile(const wxString& filename)
         return wxDIR_CONTINUE;
 
     wxString filespec;
-    wxString extension = filename.substr(filename.rfind('.')+1);
+    wxString extension = filename.substr(filename.rfind('.')+1).Lower();
 
     // Determine, whether the current file matches to the
     // selected file filter types

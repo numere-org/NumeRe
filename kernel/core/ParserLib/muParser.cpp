@@ -371,6 +371,7 @@ namespace mu
         \param [in] a_Var Pointer to the differentiation variable.
         \param [in] a_fPos Position at which the differentiation should take place.
         \param [in] a_fEpsilon Epsilon used for the numerical differentiation.
+        \param [in] order Gives the order of differentiation
 
       Numerical differentiation uses a 5 point operator yielding a 4th order
       formula. The default value for epsilon is 0.00074 which is
@@ -381,29 +382,38 @@ namespace mu
     */
     value_type Parser::Diff(value_type* a_Var,
                             value_type  a_fPos,
-                            value_type  a_fEpsilon)
+                            value_type  a_fEpsilon,
+                            size_t order)
     {
-        value_type fRes(0),
-                   fBuf(*a_Var),
-                   f[4] = {0, 0, 0, 0},
-                          fEpsilon(a_fEpsilon);
+        value_type fBuf(*a_Var),
+                   fEpsilon(a_fEpsilon),
+                   fRes;
+        std::array<value_type, 5> f;
+        std::array<double, 5> factors = {-2, -1, 0, 1, 2};
 
         // Backwards compatible calculation of epsilon inc case the user doesnt provide
         // his own epsilon
         if (fEpsilon == 0.0)
-            fEpsilon = (a_fPos == 0.0) ? (value_type)1e-10 : (value_type)1e-7 * a_fPos;
+            fEpsilon = (a_fPos == 0.0) ? (value_type)1e-10 : (value_type)(1e-7*std::abs(a_fPos)*intPower(10, 2*(order-1)));
 
-        *a_Var = a_fPos + 2.0 * fEpsilon;
-        f[0] = Eval();
-        *a_Var = a_fPos + 1.0 * fEpsilon;
-        f[1] = Eval();
-        *a_Var = a_fPos - 1.0 * fEpsilon;
-        f[2] = Eval();
-        *a_Var = a_fPos - 2.0 * fEpsilon;
-        f[3] = Eval();
+
+        for (size_t i = 0; i < f.size(); i++)
+        {
+            *a_Var = a_fPos + factors[i] * fEpsilon;
+            f[i] = Eval();
+        }
+
+        // Reference: https://web.media.mit.edu/~crtaylor/calculator.html
+        if (order == 1)
+            fRes = ( f[0]  - 8.0 * f[1]              + 8.0 * f[3] - f[4]) / (12.0 * fEpsilon);
+        else if (order == 2)
+            fRes = (-f[0] + 16.0 * f[1] - 30.0*f[2] + 16.0 * f[3] - f[4]) / (12.0 * fEpsilon * fEpsilon);
+        else if (order == 3)
+            fRes = (-f[0]  + 2.0 * f[1]              - 2.0 * f[3] + f[4]) / (2.0 * fEpsilon * fEpsilon * fEpsilon);
+        else
+            return NAN;
+
         *a_Var = fBuf; // restore variable
-
-        fRes = (-f[0] + 8.0 * f[1] - 8.0 * f[2] + f[3]) / (12.0 * fEpsilon);
         return fRes;
     }
 } // namespace mu

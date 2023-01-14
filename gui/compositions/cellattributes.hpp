@@ -825,8 +825,6 @@ class CombinedCellEditor : public wxGridCellEditor
 
             // Make the edit control large enough to allow for internal margins
             //
-            // TODO: remove this if the text ctrl sizing is improved esp. for unix
-            //
             if (textRect.x == 0)
                 textRect.x += 2;
             else

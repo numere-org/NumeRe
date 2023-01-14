@@ -61,7 +61,8 @@ namespace mu
 
     value_type Diff(value_type *a_Var,
                     value_type a_fPos,
-                    value_type a_fEpsilon = 0);
+                    value_type a_fEpsilon = 0,
+                    size_t order = 1);
 
   protected:
 

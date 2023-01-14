@@ -22,10 +22,11 @@
 #include <wx/treelist.h>
 #include <wx/collpane.h>
 
-#include "../controls/treelistctrl.h"
-
 #ifndef GROUPPANEL_HPP
 #define GROUPPANEL_HPP
+
+#include "../controls/treelistctrl.h"
+
 
 
 /////////////////////////////////////////////////

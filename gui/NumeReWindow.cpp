@@ -5784,11 +5784,35 @@ NumeReEditor* NumeReWindow::GetCurrentEditor()
 
 
 /////////////////////////////////////////////////
+/// \brief Static helper function to tokenize the
+/// whitespace-separated list of keys.
+///
+/// \param sKeyList std::string
+/// \return std::vector<std::string>
+///
+/////////////////////////////////////////////////
+static std::vector<std::string> tokenize(std::string sKeyList)
+{
+    std::vector<std::string> vKeyList;
+
+    while (sKeyList.length())
+    {
+        vKeyList.push_back(sKeyList.substr(0, sKeyList.find(' ')));
+        sKeyList.erase(0, sKeyList.find(' '));
+
+        while (sKeyList.front() == ' ')
+            sKeyList.erase(0,1);
+    }
+
+    return vKeyList;
+}
+
+
+/////////////////////////////////////////////////
 /// \brief This member function creates the
 /// contents of the symbols tree.
 ///
 /// \return void
-/// \todo Rework this function. It contains duplicates.
 ///
 /////////////////////////////////////////////////
 void NumeReWindow::prepareFunctionTree()
@@ -5801,41 +5825,43 @@ void NumeReWindow::prepareFunctionTree()
     if (!m_functionTree->IsEmpty())
         m_functionTree->DeleteAllItems();
 
-    std::vector<std::string> vDirList;
-    std::vector<std::string> vKeyList;
-    std::string sKeyList = _guilang.get("GUI_TREE_CMD_KEYLIST");
-
-    while (sKeyList.length())
-    {
-        vKeyList.push_back(sKeyList.substr(0, sKeyList.find(' ')));
-        sKeyList.erase(0, sKeyList.find(' '));
-        while (sKeyList.front() == ' ')
-            sKeyList.erase(0,1);
-    }
-
     int idxFolderOpen = m_iconManager->GetIconIndex("FOLDEROPEN");
     int idxFunctions = m_iconManager->GetIconIndex("FUNCTIONS");
     int idxCommands = m_iconManager->GetIconIndex("COMMANDS");
     int idxConstants = m_iconManager->GetIconIndex("CONSTANTS");
     int idxMethods = m_iconManager->GetIconIndex("METHODS");
 
+    // Create the root node
     wxTreeItemId rootNode = m_functionTree->AddRoot(_guilang.get("GUI_TREE_WORKSPACE"), m_iconManager->GetIconIndex("WORKPLACE"));
-    FileNameTreeData* root = new FileNameTreeData();
-    wxTreeItemId commandNode = m_functionTree->AppendItem(rootNode, _guilang.get("GUI_TREE_COMMANDS"), m_iconManager->GetIconIndex("WORKPLACE"), -1, root);
-    root = new FileNameTreeData();
-    wxTreeItemId functionNode = m_functionTree->AppendItem(rootNode, _guilang.get("GUI_TREE_FUNCTIONS"), m_iconManager->GetIconIndex("WORKPLACE"), -1, root);
-    root = new FileNameTreeData();
-    wxTreeItemId methodNode = m_functionTree->AppendItem(rootNode, _guilang.get("GUI_TREE_METHODS"), m_iconManager->GetIconIndex("WORKPLACE"), -1, root);
-    root = new FileNameTreeData();
-    wxTreeItemId constNode = m_functionTree->AppendItem(rootNode, _guilang.get("GUI_TREE_CONSTANTS"), m_iconManager->GetIconIndex("WORKPLACE"), -1, root);
+
+    // Create the sections
+    FileNameTreeData* rootData = new FileNameTreeData();
+    wxTreeItemId commandNode = m_functionTree->AppendItem(rootNode, _guilang.get("GUI_TREE_COMMANDS"),
+                                                          m_iconManager->GetIconIndex("WORKPLACE"), -1, rootData);
+
+    rootData = new FileNameTreeData();
+    wxTreeItemId functionNode = m_functionTree->AppendItem(rootNode, _guilang.get("GUI_TREE_FUNCTIONS"),
+                                                           m_iconManager->GetIconIndex("WORKPLACE"), -1, rootData);
+
+    rootData = new FileNameTreeData();
+    wxTreeItemId methodNode = m_functionTree->AppendItem(rootNode, _guilang.get("GUI_TREE_METHODS"),
+                                                         m_iconManager->GetIconIndex("WORKPLACE"), -1, rootData);
+
+    rootData = new FileNameTreeData();
+    wxTreeItemId constNode = m_functionTree->AppendItem(rootNode, _guilang.get("GUI_TREE_CONSTANTS"),
+                                                        m_iconManager->GetIconIndex("WORKPLACE"), -1, rootData);
+
     wxTreeItemId currentNode;
+    std::vector<std::string> vDirList;
+    std::vector<std::string> vKeyList = tokenize(_guilang.get("GUI_TREE_CMD_KEYLIST"));
 
     // commands
     for (size_t i = 0; i < vKeyList.size(); i++)
     {
         FileNameTreeData* dir = new FileNameTreeData();
         dir->isDir = true;
-        currentNode = m_functionTree->AppendItem(commandNode, _guilang.get("PARSERFUNCS_LISTCMD_TYPE_" + toUpperCase(vKeyList[i])), idxFolderOpen, -1, dir);
+        currentNode = m_functionTree->AppendItem(commandNode, _guilang.get("PARSERFUNCS_LISTCMD_TYPE_" + toUpperCase(vKeyList[i])),
+                                                 idxFolderOpen, -1, dir);
         vDirList = _guilang.getList("PARSERFUNCS_LISTCMD_CMD_*_[" + toUpperCase(vKeyList[i]) + "]");
 
         for (size_t j = 0; j < vDirList.size(); j++)
@@ -5850,23 +5876,14 @@ void NumeReWindow::prepareFunctionTree()
     m_functionTree->Toggle(commandNode);
 
     // functions
-    sKeyList = _guilang.get("GUI_TREE_FUNC_KEYLIST");
-    vKeyList.clear();
-
-    while (sKeyList.length())
-    {
-        vKeyList.push_back(sKeyList.substr(0, sKeyList.find(' ')));
-        sKeyList.erase(0, sKeyList.find(' '));
-
-        while (sKeyList.front() == ' ')
-            sKeyList.erase(0,1);
-    }
+    vKeyList = tokenize(_guilang.get("GUI_TREE_FUNC_KEYLIST"));
 
     for (size_t i = 0; i < vKeyList.size(); i++)
     {
         FileNameTreeData* dir = new FileNameTreeData();
         dir->isDir = true;
-        currentNode = m_functionTree->AppendItem(functionNode, _guilang.get("PARSERFUNCS_LISTFUNC_TYPE_" + toUpperCase(vKeyList[i])), idxFolderOpen, -1, dir);
+        currentNode = m_functionTree->AppendItem(functionNode, _guilang.get("PARSERFUNCS_LISTFUNC_TYPE_" + toUpperCase(vKeyList[i])),
+                                                 idxFolderOpen, -1, dir);
         vDirList = _guilang.getList("PARSERFUNCS_LISTFUNC_FUNC_*_[" + toUpperCase(vKeyList[i]) + "]");
 
         for (size_t j = 0; j < vDirList.size(); j++)
@@ -5881,23 +5898,14 @@ void NumeReWindow::prepareFunctionTree()
     m_functionTree->Toggle(functionNode);
 
     // methods
-    sKeyList = _guilang.get("GUI_TREE_METHOD_KEYLIST");
-    vKeyList.clear();
-
-    while (sKeyList.length())
-    {
-        vKeyList.push_back(sKeyList.substr(0, sKeyList.find(' ')));
-        sKeyList.erase(0, sKeyList.find(' '));
-
-        while (sKeyList.front() == ' ')
-            sKeyList.erase(0,1);
-    }
+    vKeyList = tokenize(_guilang.get("GUI_TREE_METHOD_KEYLIST"));
 
     for (size_t i = 0; i < vKeyList.size(); i++)
     {
         FileNameTreeData* dir = new FileNameTreeData();
         dir->isDir = true;
-        currentNode = m_functionTree->AppendItem(methodNode, _guilang.get("PARSERFUNCS_LISTFUNC_METHODS_TYPE_" + toUpperCase(vKeyList[i])), idxFolderOpen, -1, dir);
+        currentNode = m_functionTree->AppendItem(methodNode, _guilang.get("PARSERFUNCS_LISTFUNC_METHODS_TYPE_" + toUpperCase(vKeyList[i])),
+                                                 idxFolderOpen, -1, dir);
         vDirList = _guilang.getList("PARSERFUNCS_LISTFUNC_METHOD_*_[" + toUpperCase(vKeyList[i]) + "]");
         std::string sPrefix = vKeyList[i] == "data" ? "TABLE()" : "STRINGVAR";
 
@@ -5913,23 +5921,14 @@ void NumeReWindow::prepareFunctionTree()
     m_functionTree->Toggle(methodNode);
 
     // Constants
-    sKeyList = _guilang.get("GUI_TREE_CONST_KEYLIST");
-    vKeyList.clear();
-
-    while (sKeyList.length())
-    {
-        vKeyList.push_back(sKeyList.substr(0, sKeyList.find(' ')));
-        sKeyList.erase(0, sKeyList.find(' '));
-
-        while (sKeyList.front() == ' ')
-            sKeyList.erase(0,1);
-    }
+    vKeyList = tokenize(_guilang.get("GUI_TREE_CONST_KEYLIST"));
 
     for (size_t i = 0; i < vKeyList.size(); i++)
     {
         FileNameTreeData* dir = new FileNameTreeData();
         dir->isDir = true;
-        currentNode = m_functionTree->AppendItem(constNode, _guilang.get("PARSERFUNCS_LISTCONST_TYPE_" + toUpperCase(vKeyList[i])), idxFolderOpen, -1, dir);
+        currentNode = m_functionTree->AppendItem(constNode, _guilang.get("PARSERFUNCS_LISTCONST_TYPE_" + toUpperCase(vKeyList[i])),
+                                                 idxFolderOpen, -1, dir);
         vDirList = _guilang.getList("GUI_EDITOR_CALLTIP_CONST_*_[" + toUpperCase(vKeyList[i]) + "]");
 
         for (size_t j = 0; j < vDirList.size(); j++)
@@ -6040,7 +6039,7 @@ void NumeReWindow::OnTreeItemRightClick(wxTreeEvent& event)
             return;
         }
 
-        fname_ext = fname_ext.substr(fname_ext.rfind('.')) + ";";
+        fname_ext = fname_ext.substr(fname_ext.rfind('.')).Lower() + ";";
 
         if (loadableExt.find(fname_ext) != std::string::npos)
         {
@@ -6325,7 +6324,7 @@ void NumeReWindow::OnTreeDragDrop(wxTreeEvent& event)
         wxFileName pathname = data->filename;
         wxString dragableExtensions = ";nscr;nprc;ndat;nlyt;txt;dat;log;tex;csv;xls;xlsx;ods;jdx;jcm;dx;labx;ibw;png;jpg;jpeg;gif;bmp;eps;svg;m;cpp;cxx;c;hpp;hxx;h;";
 
-        if (dragableExtensions.find(";" + pathname.GetExt() + ";") != std::string::npos)
+        if (dragableExtensions.find(";" + pathname.GetExt().Lower() + ";") != std::string::npos)
         {
             wxFileDataObject _dataObject;
             _dataObject.AddFile(pathname.GetFullPath());

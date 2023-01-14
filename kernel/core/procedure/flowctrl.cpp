@@ -145,8 +145,8 @@ int FlowCtrl::for_loop(int nth_Cmd, int nth_loop)
     int nVarAdress = 0;
     int nInc = 1;
     int nLoopCount = 0;
-    double dFirstVal;
-    double dLastVal;
+    int nFirstVal;
+    int nLastVal;
     bPrintedStatus = false;
 
     int nNum = 0;
@@ -187,12 +187,12 @@ int FlowCtrl::for_loop(int nth_Cmd, int nth_loop)
 
     // Store the left and right boundary of the
     // loop index
-    dFirstVal = intCast(v[0]);
-    dLastVal = intCast(v[1]);
+    nFirstVal = intCast(v[0]);
+    nLastVal = intCast(v[1]);
 
     // Depending on the order of the boundaries, we
     // have to consider the incrementation variable
-    if (dLastVal < dFirstVal)
+    if (nLastVal < nFirstVal)
         nInc *= -1;
 
     // Print to the terminal, if needed
@@ -205,7 +205,7 @@ int FlowCtrl::for_loop(int nth_Cmd, int nth_loop)
     // Evaluate the whole for loop. The outer loop does the
     // loop index management (the actual "for" command), the
     // inner loop runs through the contained command lines
-    for (int __i = dFirstVal; (nInc)*__i <= nInc * dLastVal; __i += nInc)
+    for (int __i = nFirstVal; (nInc)*__i <= nInc * nLastVal; __i += nInc)
     {
         vVarArray[nVarAdress] = __i;
 
@@ -227,7 +227,7 @@ int FlowCtrl::for_loop(int nth_Cmd, int nth_loop)
 
             // If this is not the first line of the command block
             // try to find control flow statements in the first column
-            if (vCmdArray[__j].bFlowCtrlStatement && vCmdArray[__j].fcFn)
+            if (vCmdArray[__j].fcFn)
             {
                 // Evaluate the flow control commands
                 int nReturn = (this->*vCmdArray[__j].fcFn)(__j, nth_loop+1);
@@ -251,7 +251,7 @@ int FlowCtrl::for_loop(int nth_Cmd, int nth_loop)
                 break;
             else if (nCalcType[__j] & CALCTYPE_BREAKCMD)
                 return nJumpTable[nth_Cmd][BLOCK_END];
-            else if (!nCalcType[__j])
+            else if (__i == nFirstVal && !nCalcType[__j])
             {
                 std::string sCommand = findCommand(vCmdArray[__j].sCommand).sString;
 
@@ -323,21 +323,21 @@ int FlowCtrl::for_loop(int nth_Cmd, int nth_loop)
         // Print the status to the terminal, if it is required
         if (!nth_loop && !bMask && bSilent)
         {
-            if (abs(intCast(dLastVal - dFirstVal)) < 99999
-                    && abs(intCast((vVarArray[nVarAdress] - dFirstVal) / (dLastVal - dFirstVal) * 20.0))
-                    > abs(intCast((vVarArray[nVarAdress] - 1.0 - dFirstVal) / (dLastVal - dFirstVal) * 20.0)))
+            if (abs(nLastVal - nFirstVal) < 99999
+                    && abs(intCast((__i - nFirstVal) / double(nLastVal - nFirstVal) * 20.0))
+                    > abs(intCast((__i - 1.0 - nFirstVal) / double(nLastVal - nFirstVal) * 20.0)))
             {
                 NumeReKernel::printPreFmt("\r|FOR> " + _lang.get("COMMON_EVALUATING") + " ... "
-                                          + toString(abs(intCast((vVarArray[nVarAdress] - dFirstVal) / (dLastVal - dFirstVal) * 20.0)) * 5)
+                                          + toString(abs(intCast((__i - nFirstVal) / double(nLastVal - nFirstVal) * 20.0)) * 5)
                                           + " %");
                 bPrintedStatus = true;
             }
-            else if (abs(intCast(dLastVal - dFirstVal)) >= 99999
-                     && abs(intCast((vVarArray[nVarAdress] - dFirstVal) / (dLastVal - dFirstVal) * 100.0))
-                     > abs(intCast((vVarArray[nVarAdress] - 1.0 - dFirstVal) / (dLastVal - dFirstVal) * 100.0)))
+            else if (abs(nLastVal - nFirstVal) >= 99999
+                     && abs(intCast((__i - nFirstVal) / double(nLastVal - nFirstVal) * 100.0))
+                     > abs(intCast((__i - 1.0 - nFirstVal) / double(nLastVal - nFirstVal) * 100.0)))
             {
                 NumeReKernel::printPreFmt("\r|FOR> " + _lang.get("COMMON_EVALUATING") + " ... "
-                                          + toString(abs(intCast((vVarArray[nVarAdress] - dFirstVal) / (dLastVal - dFirstVal) * 100.0)))
+                                          + toString(abs(intCast((__i - nFirstVal) / double(nLastVal - nFirstVal) * 100.0)))
                                           + " %");
                 bPrintedStatus = true;
             }
@@ -550,7 +550,7 @@ int FlowCtrl::range_based_for_loop(int nth_Cmd, int nth_loop)
 
             // If this is not the first line of the command block
             // try to find control flow statements in the first column
-            if (vCmdArray[__j].bFlowCtrlStatement && vCmdArray[__j].fcFn)
+            if (vCmdArray[__j].fcFn)
             {
                 // Evaluate the flow control commands
                 int nReturn = (this->*vCmdArray[__j].fcFn)(__j, nth_loop+1);
@@ -729,7 +729,7 @@ int FlowCtrl::while_loop(int nth_Cmd, int nth_loop)
 
             // If this is not the first line of the command block
             // try to find control flow statements in the first column
-            if (vCmdArray[__j].bFlowCtrlStatement && vCmdArray[__j].fcFn)
+            if (vCmdArray[__j].fcFn)
             {
                 // Evaluate the flow control commands
                 int nReturn =  (this->*vCmdArray[__j].fcFn)(__j, nth_loop+1);
@@ -2665,6 +2665,8 @@ int FlowCtrl::compile(std::string sLine, int nthCmd)
         _assertionHandler.enable(sLine);
         sLine.erase(findCommand(sLine, "assert").nPos, 6);
         StripSpaces(sLine);
+        vCmdArray[nthCmd].sCommand.erase(findCommand(vCmdArray[nthCmd].sCommand, "assert").nPos, 6);
+        StripSpaces(vCmdArray[nthCmd].sCommand);
     }
 
 
@@ -2678,6 +2680,8 @@ int FlowCtrl::compile(std::string sLine, int nthCmd)
         {
             sLine.erase(sLine.find_first_not_of(' '), 2);
             StripSpaces(sLine);
+            vCmdArray[nthCmd].sCommand.erase(vCmdArray[nthCmd].sCommand.find_first_not_of(' ', 2));
+            StripSpaces(vCmdArray[nthCmd].sCommand);
         }
 
         if (_optionRef->useDebugger() && nDebuggerCode != NumeReKernel::DEBUGGER_LEAVE && nDebuggerCode != NumeReKernel::DEBUGGER_STEPOVER)
@@ -3324,7 +3328,7 @@ int FlowCtrl::compile(std::string sLine, int nthCmd)
 /// \return int
 ///
 /////////////////////////////////////////////////
-int FlowCtrl::calc(std::string sLine, int nthCmd)
+int FlowCtrl::calc(StringView sLine, int nthCmd)
 {
     value_type* v = 0;
     int nNum = 0;
@@ -3342,31 +3346,24 @@ int FlowCtrl::calc(std::string sLine, int nthCmd)
     // bytecode, we can omit many checks at the next
     // iteration
     if (!nCurrentCalcType)
-        return compile(sLine, nthCmd);
+        return compile(sLine.to_string(), nthCmd);
 
     bLoopSupressAnswer = nCurrentCalcType & CALCTYPE_SUPPRESSANSWER;
     //return FLOWCTRL_OK;
 
+    std::string sBuffer;
+
     // Eval the assertion command
     if (nCurrentCalcType & CALCTYPE_ASSERT)
-    {
-        _assertionHandler.enable(sLine);
-        sLine.erase(findCommand(sLine, "assert").nPos, 6);
-        StripSpaces(sLine);
-    }
+        _assertionHandler.enable("assert " + sLine);
 
     // Eval the debugger breakpoint first
     if (nCurrentCalcType & CALCTYPE_DEBUGBREAKPOINT || nDebuggerCode == NumeReKernel::DEBUGGER_STEP)
     {
-        if (sLine.substr(sLine.find_first_not_of(' '), 2) == "|>")
-        {
-            sLine.erase(sLine.find_first_not_of(' '), 2);
-            StripSpaces(sLine);
-        }
-
         if (_optionRef->useDebugger() && nDebuggerCode != NumeReKernel::DEBUGGER_LEAVE && nDebuggerCode != NumeReKernel::DEBUGGER_STEPOVER)
         {
-            NumeReKernel::getInstance()->getDebugger().gatherLoopBasedInformations(sLine, getCurrentLineNumber(), mVarMap, vVarArray, sVarArray);
+            NumeReKernel::getInstance()->getDebugger().gatherLoopBasedInformations(sLine.to_string(), getCurrentLineNumber(),
+                                                                                   mVarMap, vVarArray, sVarArray);
             nDebuggerCode = evalDebuggerBreakPoint(*_parserRef, *_optionRef);
         }
     }
@@ -3374,33 +3371,39 @@ int FlowCtrl::calc(std::string sLine, int nthCmd)
     // Replace the custom defined functions, if it wasn't already done
     if (!(nCurrentCalcType & CALCTYPE_DEFINITION) && !bFunctionsReplaced)
     {
-        if (!_functionRef->call(sLine))
-            throw SyntaxError(SyntaxError::FUNCTION_ERROR, sLine, SyntaxError::invalid_position);
+        sBuffer = sLine.to_string();
+
+        if (!_functionRef->call(sBuffer))
+            throw SyntaxError(SyntaxError::FUNCTION_ERROR, sBuffer, SyntaxError::invalid_position);
+
+        sLine = StringView(sBuffer);
     }
 
     // Handle the throw command
     if (nCurrentCalcType & CALCTYPE_THROWCOMMAND)
     {
         std::string sErrorToken;
+        sBuffer = sLine.to_string();
 
-        if (sLine.length() > 6 && NumeReKernel::getInstance()->getStringParser().isStringExpression(sLine))
+        if (sLine.length() > 6 && NumeReKernel::getInstance()->getStringParser().isStringExpression(sBuffer))
         {
-            if (NumeReKernel::getInstance()->getStringParser().containsStringVars(sLine))
-                NumeReKernel::getInstance()->getStringParser().getStringValues(sLine);
+            if (NumeReKernel::getInstance()->getStringParser().containsStringVars(sBuffer))
+                NumeReKernel::getInstance()->getStringParser().getStringValues(sBuffer);
 
-            sErrorToken = sLine.substr(findCommand(sLine).nPos+6);
+            sErrorToken = sBuffer.substr(findCommand(sBuffer).nPos+6);
             sErrorToken += " -nq";
             std::string sDummy;
             NumeReKernel::getInstance()->getStringParser().evalAndFormat(sErrorToken, sDummy, true);
         }
 
-        throw SyntaxError(SyntaxError::LOOP_THROW, sLine, SyntaxError::invalid_position, sErrorToken);
+        throw SyntaxError(SyntaxError::LOOP_THROW, sBuffer, SyntaxError::invalid_position, sErrorToken);
     }
 
     // Handle the return command
     if (nCurrentCalcType & CALCTYPE_RETURNCOMMAND)
     {
-        std::string sReturnValue = sLine.substr(sLine.find("return") + 6);
+
+        std::string sReturnValue = sLine.subview(sLine.find("return") + 6).to_string();
         StripSpaces(sReturnValue);
 
         if (sReturnValue.back() == ';')
@@ -3429,7 +3432,8 @@ int FlowCtrl::calc(std::string sLine, int nthCmd)
             return FLOWCTRL_RETURN;
         }
 
-        sLine = sReturnValue;
+        sBuffer = sReturnValue;
+        sLine = StringView(sBuffer);
     }
 
     // Check, whether the user tried to abort the
@@ -3477,10 +3481,9 @@ int FlowCtrl::calc(std::string sLine, int nthCmd)
     {
         std::string sCommand = findCommand(sLine).sString;
 
-        if ((sCommand == "compose"
+        if (sCommand == "compose"
             || sCommand == "endcompose"
             || sLoopPlotCompose.length())
-            && sCommand != "quit")
         {
             if (!sLoopPlotCompose.length() && sCommand == "compose")
             {
@@ -3501,13 +3504,14 @@ int FlowCtrl::calc(std::string sLine, int nthCmd)
                     || sCommand.substr(0, 4) == "cont"
                     || sCommand.substr(0, 4) == "surf"
                     || sCommand.substr(0, 4) == "mesh")
-                    sLoopPlotCompose += sLine + " <<COMPOSE>> ";
+                    sLoopPlotCompose += sLine.to_string() + " <<COMPOSE>> ";
 
                 return FLOWCTRL_OK;
             }
             else
             {
-                sLine = sLoopPlotCompose;
+                sBuffer = sLoopPlotCompose;
+                sLine = StringView(sBuffer);
                 sLoopPlotCompose = "";
             }
         }
@@ -3520,20 +3524,21 @@ int FlowCtrl::calc(std::string sLine, int nthCmd)
             _parserRef->PauseLoopMode();
 
         unsigned int nPos = 0;
+        sBuffer = sLine.to_string();
 
-        while (sLine.find("to_cmd(", nPos) != std::string::npos)
+        while (sBuffer.find("to_cmd(", nPos) != std::string::npos)
         {
-            nPos = sLine.find("to_cmd(", nPos) + 6;
+            nPos = sBuffer.find("to_cmd(", nPos) + 6;
 
-            if (isInQuotes(sLine, nPos))
+            if (isInQuotes(sBuffer, nPos))
                 continue;
 
-            unsigned int nParPos = getMatchingParenthesis(sLine.substr(nPos));
+            unsigned int nParPos = getMatchingParenthesis(sBuffer.substr(nPos));
 
             if (nParPos == std::string::npos)
-                throw SyntaxError(SyntaxError::UNMATCHED_PARENTHESIS, sLine, nPos);
+                throw SyntaxError(SyntaxError::UNMATCHED_PARENTHESIS, sBuffer, nPos);
 
-            std::string sCmdString = sLine.substr(nPos + 1, nParPos - 1);
+            std::string sCmdString = sBuffer.substr(nPos + 1, nParPos - 1);
             StripSpaces(sCmdString);
 
             if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sCmdString))
@@ -3543,11 +3548,12 @@ int FlowCtrl::calc(std::string sLine, int nthCmd)
                 NumeReKernel::getInstance()->getStringParser().evalAndFormat(sCmdString, sDummy, true);
             }
 
-            sLine = sLine.substr(0, nPos - 6) + sCmdString + sLine.substr(nPos + nParPos + 1);
+            sBuffer = sBuffer.substr(0, nPos - 6) + sCmdString + sBuffer.substr(nPos + nParPos + 1);
             nPos -= 5;
         }
 
-        replaceLocalVars(sLine);
+        replaceLocalVars(sBuffer);
+        sLine = StringView(sBuffer);
 
         if (!bLockedPauseMode && bUseLoopParsingMode)
             _parserRef->PauseLoopMode(false);
@@ -3560,26 +3566,27 @@ int FlowCtrl::calc(std::string sLine, int nthCmd)
         std::string sExpr;
         std::string sArgument;
         int nArgument;
+        sBuffer = sLine.to_string();
 
-        if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sLine))
+        if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sBuffer))
         {
             if (bUseLoopParsingMode && !bLockedPauseMode)
                 _parserRef->PauseLoopMode();
 
-            sLine = evaluateParameterValues(sLine);
+            sBuffer = evaluateParameterValues(sBuffer);
 
             if (bUseLoopParsingMode && !bLockedPauseMode)
                 _parserRef->PauseLoopMode(false);
         }
 
-        if (sLine.find("-set") != std::string::npos || sLine.find("--") != std::string::npos)
+        if (sBuffer.find("-set") != std::string::npos || sBuffer.find("--") != std::string::npos)
         {
-            if (sLine.find("-set") != std::string::npos)
-                sArgument = sLine.substr(sLine.find("-set"));
+            if (sBuffer.find("-set") != std::string::npos)
+                sArgument = sBuffer.substr(sBuffer.find("-set"));
             else
-                sArgument = sLine.substr(sLine.find("--"));
+                sArgument = sBuffer.substr(sBuffer.find("--"));
 
-            sLine.erase(sLine.find(sArgument));
+            sBuffer.erase(sBuffer.find(sArgument));
 
             if (findParameter(sArgument, "first", '='))
             {
@@ -3623,15 +3630,15 @@ int FlowCtrl::calc(std::string sLine, int nthCmd)
             sExpr = "1,100";
         }
 
-        while (sLine.length() && (sLine[sLine.length() - 1] == ' ' || sLine[sLine.length() - 1] == '-'))
-            sLine.pop_back();
+        while (sBuffer.length() && (sBuffer[sBuffer.length() - 1] == ' ' || sBuffer[sBuffer.length() - 1] == '-'))
+            sBuffer.pop_back();
 
-        if (!sLine.length())
+        if (!sBuffer.length())
             return FLOWCTRL_OK;
 
-        if (!_parserRef->IsAlreadyParsed(sLine.substr(findCommand(sLine).nPos + 8) + "," + sExpr))
+        if (!_parserRef->IsAlreadyParsed(sBuffer.substr(findCommand(sBuffer).nPos + 8) + "," + sExpr))
         {
-            _parserRef->SetExpr(sLine.substr(findCommand(sLine).nPos + 8) + "," + sExpr);
+            _parserRef->SetExpr(sBuffer.substr(findCommand(sBuffer).nPos + 8) + "," + sExpr);
         }
 
         vVals = _parserRef->Eval(nArgument);
@@ -3645,7 +3652,9 @@ int FlowCtrl::calc(std::string sLine, int nthCmd)
         if (bPrintedStatus)
             NumeReKernel::printPreFmt("\n");
 
-        sLine = promptForUserInput(sLine);
+        sBuffer = sLine.to_string();
+        sBuffer = promptForUserInput(sBuffer);
+        sLine = StringView(sBuffer);
         bPrintedStatus = false;
     }
 
@@ -3658,10 +3667,12 @@ int FlowCtrl::calc(std::string sLine, int nthCmd)
             _parserRef->LockPause();
         }
 
-        if (nCurrentCalcType & CALCTYPE_RETURNCOMMAND)
-            sLine.insert(0, "return ");
+        sBuffer = sLine.to_string();
 
-        ProcedureInterfaceRetVal nReturn = procedureInterface(sLine, *_parserRef, *_functionRef, *_dataRef, *_outRef, *_pDataRef, *_scriptRef, *_optionRef, nthCmd);
+        if (nCurrentCalcType & CALCTYPE_RETURNCOMMAND)
+            sBuffer.insert(0, "return ");
+
+        ProcedureInterfaceRetVal nReturn = procedureInterface(sBuffer, *_parserRef, *_functionRef, *_dataRef, *_outRef, *_pDataRef, *_scriptRef, *_optionRef, nthCmd);
 
         if (!bLockedPauseMode && bUseLoopParsingMode)
         {
@@ -3677,18 +3688,21 @@ int FlowCtrl::calc(std::string sLine, int nthCmd)
         if (bReturnSignal)
             return FLOWCTRL_RETURN;
         else if (nCurrentCalcType & CALCTYPE_RETURNCOMMAND)
-            sLine.erase(0, 7);
+            sBuffer.erase(0, 7);
 
         if (nReturn == INTERFACE_ERROR)
             return FLOWCTRL_ERROR;
         else if (nReturn == INTERFACE_EMPTY)
             return FLOWCTRL_OK;
+
+        sLine = StringView(sBuffer);
     }
 
     // Handle the procedure commands like "namespace" here
     if (nCurrentCalcType & CALCTYPE_PROCEDURECMDINTERFACE)
     {
-        int nProcedureCmd = procedureCmdInterface(sLine);
+        sBuffer = sLine.to_string();
+        int nProcedureCmd = procedureCmdInterface(sBuffer);
 
         if (nProcedureCmd)
         {
@@ -3697,13 +3711,17 @@ int FlowCtrl::calc(std::string sLine, int nthCmd)
         }
         else
             return FLOWCTRL_ERROR;
+
+        sLine = StringView(sBuffer);
     }
 
     // Remove the "explicit" command here
     if (nCurrentCalcType & CALCTYPE_EXPLICIT)
     {
-        sLine.erase(findCommand(sLine).nPos, 8);
-        StripSpaces(sLine);
+        sBuffer = sLine.to_string();
+        sBuffer.erase(findCommand(sBuffer).nPos, 8);
+        sLine = StringView(sBuffer);
+        sLine.strip();
     }
 
     // Evaluate the command, if this is a command
@@ -3714,10 +3732,11 @@ int FlowCtrl::calc(std::string sLine, int nthCmd)
 
         {
             bool bSupressAnswer_back = NumeReKernel::bSupressAnswer;
-            std::string sPreCommandLine = sLine;
+            std::string sPreCommandLine = sLine.to_string();
+            sBuffer = sLine.to_string();
             NumeReKernel::bSupressAnswer = bLoopSupressAnswer;
 
-            switch (commandHandler(sLine))
+            switch (commandHandler(sBuffer))
             {
                 case NO_COMMAND:
                     break;
@@ -3740,8 +3759,10 @@ int FlowCtrl::calc(std::string sLine, int nthCmd)
 
             // It may be possible that some procedure occures at this
             // position. Handle them here
-            if (sLine.find('$') != std::string::npos)
-                procedureInterface(sLine, *_parserRef, *_functionRef, *_dataRef, *_outRef, *_pDataRef, *_scriptRef, *_optionRef, nthCmd);
+            if (sBuffer.find('$') != std::string::npos)
+                procedureInterface(sBuffer, *_parserRef, *_functionRef, *_dataRef, *_outRef, *_pDataRef, *_scriptRef, *_optionRef, nthCmd);
+
+            sLine = StringView(sBuffer);
         }
 
         if (!bLockedPauseMode && bUseLoopParsingMode)
@@ -3750,7 +3771,11 @@ int FlowCtrl::calc(std::string sLine, int nthCmd)
 
     // Expand recursive expressions, if not already done
     if (nCurrentCalcType & CALCTYPE_RECURSIVEEXPRESSION)
-        evalRecursiveExpressions(sLine);
+    {
+        sBuffer = sLine.to_string();
+        evalRecursiveExpressions(sBuffer);
+        sLine = StringView(sBuffer);
+    }
 
     // Declare all further necessary variables
     std::string sDataObject;
@@ -3761,10 +3786,11 @@ int FlowCtrl::calc(std::string sLine, int nthCmd)
     // Get the data from the used data object
     if (nCurrentCalcType & CALCTYPE_DATAACCESS)
     {
+        sBuffer = sLine.to_string();
         // --> Datafile/Cache! <--
         if (!(nCurrentCalcType & CALCTYPE_STRING)
-            || (!NumeReKernel::getInstance()->getStringParser().isStringExpression(sLine)
-                && _dataRef->containsTablesOrClusters(sLine)))
+            || (!NumeReKernel::getInstance()->getStringParser().isStringExpression(sBuffer)
+                && _dataRef->containsTablesOrClusters(sBuffer)))
         {
             if (!_parserRef->HasCachedAccess() && _parserRef->CanCacheAccess() && !_parserRef->GetCachedEquation().length())
             {
@@ -3772,26 +3798,28 @@ int FlowCtrl::calc(std::string sLine, int nthCmd)
                 _parserRef->SetCompiling(true);
             }
 
-            sDataObject = getDataElements(sLine, *_parserRef, *_dataRef, *_optionRef);
+            sDataObject = getDataElements(sBuffer, *_parserRef, *_dataRef, *_optionRef);
 
             if (sDataObject.length())
                 bWriteToCache = true;
 
             // Ad-hoc bytecode adaption
 #warning NOTE (numere#1#08/21/21): Might need some adaption, if bytecode issues are experienced
-            if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sLine))
+            if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sBuffer))
                 nCurrentCalcType |= CALCTYPE_STRING;
 
             if (_parserRef->IsCompiling() && _parserRef->CanCacheAccess())
             {
-                _parserRef->CacheCurrentEquation(sLine);
+                _parserRef->CacheCurrentEquation(sBuffer);
                 _parserRef->CacheCurrentTarget(sDataObject);
             }
 
             _parserRef->SetCompiling(false);
         }
-        else if (isClusterCandidate(sLine, sDataObject))
+        else if (isClusterCandidate(sBuffer, sDataObject))
             bWriteToCache = true;
+
+        sLine = StringView(sBuffer);
     }
 
     // Evaluate std::string expressions
@@ -3800,7 +3828,8 @@ int FlowCtrl::calc(std::string sLine, int nthCmd)
         //if (!bLockedPauseMode && bUseLoopParsingMode)
         //    _parserRef->PauseLoopMode();
 
-        auto retVal = NumeReKernel::getInstance()->getStringParser().evalAndFormat(sLine, sDataObject, bLoopSupressAnswer, true);
+        sBuffer = sLine.to_string();
+        auto retVal = NumeReKernel::getInstance()->getStringParser().evalAndFormat(sBuffer, sDataObject, bLoopSupressAnswer, true);
         NumeReKernel::getInstance()->getStringParser().removeTempStringVectorVars();
 
         if (retVal == NumeRe::StringParser::STRING_SUCCESS)
@@ -3818,7 +3847,7 @@ int FlowCtrl::calc(std::string sLine, int nthCmd)
             return FLOWCTRL_OK;
         }
 
-        replaceLocalVars(sLine);
+        replaceLocalVars(sBuffer);
 
 #warning NOTE (erik.haenel#3#): This is changed due to double writes in combination with c{nlen+1} = VAL
         //if (sDataObject.length() && _dataRef->containsTablesOrClusters(sDataObject) && !bWriteToCache)
@@ -3832,6 +3861,8 @@ int FlowCtrl::calc(std::string sLine, int nthCmd)
 
         //if (!bLockedPauseMode && bUseLoopParsingMode)
         //    _parserRef->PauseLoopMode(false);
+
+        sLine = StringView(sBuffer);
     }
 
     // Prepare the indices for storing the data
@@ -4602,7 +4633,6 @@ void FlowCtrl::prepareLocalVarsAndReplace(std::string& sVars)
         StripSpaces(sVarArray[i]);
 
         // Is it already defined?
-#warning TODO (numere#5#08/15/21): Evaluate this monkey patch (might be resolved already)
         if (sVarArray[i].substr(0, 2) == "_~" && getPointerToVariable(sVarArray[i], *_parserRef))
             vVars[sVarArray[i]] = getPointerToVariable(sVarArray[i], *_parserRef);
         else

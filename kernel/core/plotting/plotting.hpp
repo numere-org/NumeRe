@@ -85,7 +85,6 @@ class Plot
         bool plotstd3d(mglData _mData[3], mglData _mData2[3], const short nType);
         bool checkMultiPlotArray(unsigned int nMultiPlot[2], unsigned int& nSubPlotMap, unsigned int nPlotPos, unsigned int nCols, unsigned int nLines);
         long getNN(const mglData& _mData);
-        void evaluatePlotParamString();
         void filename(size_t nPlotComposeSize, size_t nPlotCompose);
         void setStyles();
         std::string expandStyleForCurveArray(const std::string& sCurrentStyle, bool expand);

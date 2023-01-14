@@ -2926,7 +2926,7 @@ namespace mu
 	value_type* ParserBase::Eval(int& nStackSize)
 	{
 	    // Run the evaluation
-		(this->*m_pParseFormula)();
+        (this->*m_pParseFormula)();
 
         nStackSize = m_state->m_numResults;
 

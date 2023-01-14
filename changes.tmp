@@ -61,3 +61,4 @@ Added	Installing a local package can now also be done using the entry in the "Pa
 Updated	Greatly improved the "Package Repository Browser", which is now called "Package Manager" as it better describes its purpose.
 Added	It's now possible to select the font of the history and the terminal as well.
 Added	The table method "binsof()" may be used to calculate a simple histogram of a selected column.
+Added	The command "diff" can now differentiate up to the third order.
