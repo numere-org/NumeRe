@@ -86,7 +86,11 @@ void CodeAnalyzer::run()
 	m_editor->IndicatorSetForeground(HIGHLIGHT_ANNOTATION, wxColor(0, 0, 255));
 
 	// Ensure that the correct file type is used and that the setting is active
-	if (!m_editor->getEditorSetting(NumeReEditor::SETTING_USEANALYZER) || (m_editor->m_fileType != FILE_NSCR && m_editor->m_fileType != FILE_NPRC && m_editor->m_fileType != FILE_MATLAB && m_editor->m_fileType != FILE_CPP))
+    if (!m_editor->getEditorSetting(NumeReEditor::SETTING_USEANALYZER)
+        || (m_editor->m_fileType != FILE_NSCR
+            && m_editor->m_fileType != FILE_NPRC
+            && m_editor->m_fileType != FILE_MATLAB
+            && m_editor->m_fileType != FILE_CPP))
 		return;
 
     // Determine the annotation style
@@ -112,7 +116,8 @@ void CodeAnalyzer::run()
 	for (m_nCurPos = 0; m_nCurPos < m_editor->GetLastPosition(); m_nCurPos++)
 	{
 	    // Ignore comments
-		if (m_editor->isStyleType(NumeReEditor::STYLE_COMMENT_BLOCK, m_nCurPos) || m_editor->isStyleType(NumeReEditor::STYLE_COMMENT_LINE, m_nCurPos))
+        if (m_editor->isStyleType(NumeReEditor::STYLE_COMMENT_BLOCK, m_nCurPos)
+            || m_editor->isStyleType(NumeReEditor::STYLE_COMMENT_LINE, m_nCurPos))
 			continue;
 
 		// It's a new line? Then finalize the contents of the last line
@@ -124,7 +129,10 @@ void CodeAnalyzer::run()
 			StripSpaces(sLine);
 
             // catch constant expressions
-			if (m_options->GetAnalyzerOption(Options::CONSTANT_EXPRESSION) && sLine.length() && sLine.find_first_not_of("\n\r\t") != string::npos && sLine.find_first_not_of("0123456789eE+-*/.,;^(){} \t\r\n") == string::npos)
+            if (m_options->GetAnalyzerOption(Options::CONSTANT_EXPRESSION)
+                && sLine.length()
+                && sLine.find_first_not_of("\n\r\t") != string::npos
+                && sLine.find_first_not_of("0123456789eE+-*/.,;^(){} \t\r\n") == string::npos)
 				AnnotCount += addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE", sLine.substr(0, sLine.find_last_not_of("0123456789eE+-*/.,;^()")), m_sWarn, _guilang.get("GUI_ANALYZER_CONSTEXPR")), ANNOTATION_WARN);
 
 			// Handle line continuations
@@ -247,8 +255,9 @@ void CodeAnalyzer::run()
 		    // Handle commands
 		    AnnotCount += analyseCommands();
 		}
-		else if (m_editor->isStyleType(NumeReEditor::STYLE_FUNCTION, m_nCurPos)
-           || ((m_editor->m_fileType == FILE_NSCR || m_editor->m_fileType == FILE_NPRC) && m_editor->GetStyleAt(m_nCurPos) == wxSTC_NSCR_METHOD))
+        else if (m_editor->isStyleType(NumeReEditor::STYLE_FUNCTION, m_nCurPos)
+                 || ((m_editor->m_fileType == FILE_NSCR || m_editor->m_fileType == FILE_NPRC)
+                     && m_editor->GetStyleAt(m_nCurPos) == wxSTC_NSCR_METHOD))
 		{
 		    if (m_options->GetAnalyzerOption(Options::RESULT_SUPPRESSION) && !isSuppressed)
             {
@@ -264,7 +273,8 @@ void CodeAnalyzer::run()
 		    // Handle NumeRe procedure calls (NumeRe only)
 		    AnnotCount += analyseProcedures();
 		}
-		else if ((m_editor->isStyleType(NumeReEditor::STYLE_IDENTIFIER, m_nCurPos) || m_editor->isStyleType(NumeReEditor::STYLE_DATAOBJECT, m_nCurPos))
+        else if ((m_editor->isStyleType(NumeReEditor::STYLE_IDENTIFIER, m_nCurPos)
+                  || m_editor->isStyleType(NumeReEditor::STYLE_DATAOBJECT, m_nCurPos))
 				 && m_editor->GetCharAt(m_nCurPos) != ' '
 				 && m_editor->GetCharAt(m_nCurPos) != '\t'
 				 && m_editor->GetCharAt(m_nCurPos) != '\r'
@@ -294,6 +304,11 @@ void CodeAnalyzer::run()
 		    // Handle numbers
 		    AnnotCount += analyseNumbers();
 		}
+        else if ((m_editor->m_fileType == FILE_NSCR || m_editor->m_fileType == FILE_NPRC)
+                 && m_editor->GetStyleAt(m_nCurPos) == wxSTC_NSCR_PREDEFS)
+        {
+            AnnotCount += analysePreDefs();
+        }
 	}
 
 	// Clear the annotation and style cache
@@ -904,42 +919,36 @@ AnnotationCount CodeAnalyzer::analyseCommands()
     }
 
     // Examine definitions
-    if (m_editor->m_fileType == FILE_NPRC
-        && m_options->GetAnalyzerOption(Options::GLOBAL_VARIABLES)
-        && (sSyntaxElement == "define"
-            || sSyntaxElement == "ifndefined"
-            || sSyntaxElement == "lclfunc"
-            || sSyntaxElement == "def"
-            || sSyntaxElement == "ifndef"))
+    if (sSyntaxElement == "define"
+        || sSyntaxElement == "ifndefined"
+        || sSyntaxElement == "lclfunc"
+        || sSyntaxElement == "def"
+        || sSyntaxElement == "ifndef")
     {
-        // extract the definition and strip the spaces
-        string sDefinition = m_editor->GetTextRange(wordend, m_editor->GetLineEndPosition(m_nCurrentLine)).ToStdString();
+        // According Scintilla docu this shall return the start of the next word
+        int definitionStart = m_editor->WordEndPosition(wordend, false);
+        int definitionEnd = m_editor->WordEndPosition(definitionStart, true);
+        std::string sDefinitionName = m_editor->GetTextRange(definitionStart, definitionEnd).ToStdString();
 
-        while (sDefinition.back() == '\r' || sDefinition.back() == '\n')
-            sDefinition.pop_back();
-
-        StripSpaces(sDefinition);
-
-        // If there is a declaration available
-        if (sDefinition.length())
+        if (m_editor->GetStyleAt(definitionStart) == wxSTC_NSCR_FUNCTION)
         {
-            // remove assignments and parentheses and strip the spaces
-            if (sDefinition.find('=') != string::npos)
-                sDefinition.erase(sDefinition.find('='));
-
-            if (sDefinition.find_first_of("({") != string::npos)
-                sDefinition.erase(sDefinition.find_first_of("({"));
-
-            StripSpaces(sDefinition);
-
-            m_vLocalVariables.push_back(pair<string,int>(sDefinition, wxSTC_NSCR_CUSTOM_FUNCTION));
-
-            // increment the position variable to the last position
-            // in the current line, so that we may jump over the definition
-            // in the following
-            m_nCurPos = m_editor->GetLineEndPosition(m_editor->LineFromPosition(m_nCurPos));
-            return AnnotCount;
+            AnnotCount += addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE",
+                                                       highlightFoundOccurence(sDefinitionName, definitionStart, sDefinitionName.length()),
+                                                       m_sError,
+                                                       _guilang.get("GUI_ANALYZER_STDFUNC_REDEF", sDefinitionName)), ANNOTATION_ERROR);
         }
+        else if (m_editor->m_fileType == FILE_NPRC
+                 && m_options->GetAnalyzerOption(Options::GLOBAL_VARIABLES))
+        {
+            // Use the definition names as local variables
+            m_vLocalVariables.push_back(pair<string,int>(sDefinitionName, wxSTC_NSCR_CUSTOM_FUNCTION));
+        }
+
+        // increment the position variable to the last position
+        // in the current line, so that we may jump over the definition
+        // in the following
+        m_nCurPos = m_editor->GetLineEndPosition(m_editor->LineFromPosition(m_nCurPos));
+        return AnnotCount;
     }
 
     // Examine symbol declarations
@@ -1530,6 +1539,114 @@ AnnotationCount CodeAnalyzer::analyseNumbers()
     }
 
     // Return the number of gathered annotations
+    return AnnotCount;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Analyses occurences of special
+/// predefined variables.
+///
+/// \return AnnotationCount
+///
+/////////////////////////////////////////////////
+AnnotationCount CodeAnalyzer::analysePreDefs()
+{
+    AnnotationCount AnnotCount;
+
+    int wordstart = m_editor->WordStartPosition(m_nCurPos, true);
+    int wordend = m_editor->WordEndPosition(m_nCurPos, true);
+
+    // Get the corresponding syntax element
+    std::string sSyntaxElement = m_editor->GetTextRange(wordstart, wordend).ToStdString();
+
+    int contextPoint = 0;
+
+    for (int i = m_nCurPos; i > m_editor->PositionFromLine(m_nCurrentLine); i--)
+    {
+        if ((m_editor->GetCharAt(i) == '(' || m_editor->GetCharAt(i) == '{')
+            && (m_editor->BraceMatch(i) >= m_nCurPos || m_editor->BraceMatch(i) == -1) // either no brace (yet) or the brace further right
+            && (m_editor->GetStyleAt(i - 1) == wxSTC_NSCR_CLUSTER
+                || m_editor->GetStyleAt(i - 1) == wxSTC_NSCR_CUSTOM_FUNCTION
+                || m_editor->GetStyleAt(i - 1) == wxSTC_NSCR_PREDEFS)) // table() or data()
+        {
+            contextPoint = i;
+            break;
+        }
+    }
+
+    if (!contextPoint)
+    {
+        m_nCurPos = wordend;
+
+        // No context point means used outside of data elements,
+        // i.e. also a misuse
+        if (sSyntaxElement == "nlen"
+            || sSyntaxElement == "nrows"
+            || sSyntaxElement == "ncols"
+            || sSyntaxElement == "nlines")
+        {
+            AnnotCount += addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE",
+                                                       highlightFoundOccurence(sSyntaxElement, wordstart, sSyntaxElement.length()),
+                                                       m_sWarn,
+                                                       _guilang.get("GUI_ANALYZER_DIMVAR_MISUSE", sSyntaxElement)),
+                                          ANNOTATION_WARN);
+        }
+
+        return AnnotCount;
+    }
+
+    // Check dimensionality variables and their corresponding
+    // positions in the data element accesses
+    if (sSyntaxElement == "nlen")
+    {
+        // Should only be used in clusters
+        if (m_editor->GetStyleAt(contextPoint - 1) != wxSTC_NSCR_CLUSTER)
+            AnnotCount += addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE",
+                                                       highlightFoundOccurence(sSyntaxElement, wordstart, sSyntaxElement.length()),
+                                                       m_sWarn,
+                                                       _guilang.get("GUI_ANALYZER_DIMVAR_MISUSE", sSyntaxElement)),
+                                          ANNOTATION_WARN);
+    }
+    else if (sSyntaxElement == "nrows"
+             || sSyntaxElement == "ncols"
+             || sSyntaxElement == "nlines")
+    {
+        // Should only be used in tables. Additionally,
+        // their order might be mixed up
+        if (m_editor->GetStyleAt(contextPoint - 1) != wxSTC_NSCR_CUSTOM_FUNCTION
+            && m_editor->GetStyleAt(contextPoint - 1) != wxSTC_NSCR_PREDEFS)
+            AnnotCount += addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE",
+                                                       highlightFoundOccurence(sSyntaxElement, wordstart, sSyntaxElement.length()),
+                                                       m_sWarn,
+                                                       _guilang.get("GUI_ANALYZER_DIMVAR_MISUSE", sSyntaxElement)),
+                                          ANNOTATION_WARN);
+
+        // Now, check for mixed up orientations
+        int contextEnd = m_editor->BraceMatch(contextPoint);
+
+        if (contextEnd == wxNOT_FOUND)
+            contextEnd = m_editor->GetLineEndPosition(m_nCurrentLine);
+
+        // Get the context content and split it up into
+        // the single arguments
+        std::string sContext = m_editor->GetTextRange(contextPoint+1, contextEnd).ToStdString();
+        EndlessVector<std::string> args = getAllArguments(sContext);
+
+        // Check, whether the dimension vars can be found in the
+        // opposite dimension
+        if ((sSyntaxElement == "ncols" && findVariableInExpression(args[0], sSyntaxElement, 0u) != std::string::npos)
+            || (sSyntaxElement != "ncols" && findVariableInExpression(args[1], sSyntaxElement, 0u) != std::string::npos))
+            AnnotCount += addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE",
+                                                       highlightFoundOccurence(sSyntaxElement, wordstart, sSyntaxElement.length()),
+                                                       m_sWarn,
+                                                       _guilang.get("GUI_ANALYZER_DIMVAR_MIXUP", sSyntaxElement)),
+                                          ANNOTATION_WARN);
+    }
+
+    m_nCurPos = wordend;
+
+    // Return the gathered number of annotations
     return AnnotCount;
 }
 

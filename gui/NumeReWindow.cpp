@@ -1920,8 +1920,14 @@ void NumeReWindow::OnMenuEvent(wxCommandEvent &event)
                     return;
             }
 
-            std::string command = replacePathSeparator((m_book->getCurrentEditor()->GetFileName()).GetFullPath().ToStdString());
-            OnExecuteFile(command, id);
+            if (m_book->getCurrentEditor()->getFileType() == FILE_TEXSOURCE)
+                compileLaTeX();
+            else
+            {
+                std::string command = replacePathSeparator((m_book->getCurrentEditor()->GetFileName()).GetFullPath().ToStdString());
+                OnExecuteFile(command, id);
+            }
+
             break;
         }
         case ID_MENU_STOP_EXECUTION:
@@ -2616,7 +2622,8 @@ void NumeReWindow::runLaTeX()
                       sMain.substr(0, sMain.rfind('/')).c_str(),
                       SW_SHOW);
     else
-        wxMessageBox(_guilang.get("GUI_DLG_NOTEXBIN_ERROR", m_options->GetLaTeXRoot().ToStdString()), _guilang.get("GUI_DLG_NOTEXBIN"), wxCENTER | wxOK | wxICON_ERROR, this);
+        wxMessageBox(_guilang.get("GUI_DLG_NOTEXBIN_ERROR", m_options->GetLaTeXRoot().ToStdString()),
+                     _guilang.get("GUI_DLG_NOTEXBIN"), wxCENTER | wxOK | wxICON_ERROR, this);
 }
 
 
@@ -2635,7 +2642,17 @@ void NumeReWindow::compileLaTeX()
     if (fileType == FILE_TEXSOURCE)
     {
         wxFileName filename = m_book->getCurrentEditor()->GetFileName();
-        ShellExecuteA(NULL, "open", (m_options->GetLaTeXRoot()+"/xelatex.exe").ToStdString().c_str(), (filename.GetName().ToStdString() + " -interaction=nonstopmode").c_str(), filename.GetPath().ToStdString().c_str(), SW_SHOW);
+
+        if (fileExists((m_options->GetLaTeXRoot() + "/xelatex.exe").ToStdString()))
+            ShellExecuteA(NULL,
+                          "open",
+                          (m_options->GetLaTeXRoot()+"/xelatex.exe").ToStdString().c_str(),
+                          (filename.GetName().ToStdString() + " -interaction=nonstopmode").c_str(),
+                          filename.GetPath().ToStdString().c_str(),
+                          SW_SHOW);
+        else
+            wxMessageBox(_guilang.get("GUI_DLG_NOTEXBIN_ERROR", m_options->GetLaTeXRoot().ToStdString()),
+                         _guilang.get("GUI_DLG_NOTEXBIN"), wxCENTER | wxOK | wxICON_ERROR, this);
     }
 }
 

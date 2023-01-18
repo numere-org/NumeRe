@@ -94,6 +94,7 @@ class CodeAnalyzer
         AnnotationCount analyseIdentifiers();
         AnnotationCount analyseOperators();
         AnnotationCount analyseNumbers();
+        AnnotationCount analysePreDefs();
         AnnotationCount addToAnnotation(const std::string& sMessage, int nStyle);
 
         std::string highlightFoundOccurence(const std::string& sElement, int nPos, int nLength);
