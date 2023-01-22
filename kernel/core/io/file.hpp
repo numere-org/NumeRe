@@ -1751,7 +1751,10 @@ namespace NumeRe
     class JcampDX : public GenericFile
     {
         private:
+            struct MetaData;
+
             void readFile();
+            size_t readTable(std::vector<std::string>& vFileContents, size_t nTableStart, MetaData);
             void parseLabel(std::string& sLine);
             std::vector<double> parseLine(const std::string& sLine);
 
