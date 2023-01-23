@@ -2737,6 +2737,19 @@ namespace NumeRe
 		for (size_t i = 0; i < vFileContents.size(); i++)
         {
             StripSpaces(vFileContents[i]);
+
+            // Copy all meta data before the actual table into
+            // a common string
+            if (vFileContents[i].substr(0, 2) == "##"
+                && !nTableStart
+                && vFileContents[i].substr(0, 6) != "##END=")
+            {
+                if (sComment.length())
+                    sComment += "\n";
+
+                sComment += vFileContents[i].substr(2);
+            }
+
             parseLabel(vFileContents[i]);
 
             // Here starts a n-tuples table
@@ -2750,9 +2763,21 @@ namespace NumeRe
                 EndlessVector<std::string> lastVal;
                 EndlessVector<std::string> factor;
 
-                for (size_t j = i; j < vFileContents.size(); j++)
+                for (size_t j = i+1; j < vFileContents.size(); j++)
                 {
                     StripSpaces(vFileContents[j]);
+
+                    // Copy all meta data before the actual table into
+                    // a common string
+                    if (vFileContents[j].substr(0, 2) == "##"
+                        && vFileContents[j].substr(0, 7) != "##PAGE=")
+                    {
+                        if (sComment.length())
+                            sComment += "\n";
+
+                        sComment += vFileContents[j].substr(2);
+                    }
+
                     parseLabel(vFileContents[j]);
 
                     if (vFileContents[j].substr(0, 9) == "##SYMBOL=")
