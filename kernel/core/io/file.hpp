@@ -71,6 +71,7 @@ namespace NumeRe
             std::string sFileExtension;
             std::string sFileName;
             std::string sTableName;
+            std::string sComment;
             long long int nRows;
             long long int nCols;
             unsigned short nPrecFields;
@@ -803,6 +804,7 @@ namespace NumeRe
                 sFileName = file.sFileName;
                 sFileExtension = file.sFileExtension;
                 sTableName = file.sTableName;
+                sComment = file.sComment;
 
                 // Creates only the vector but leaves the
                 // actual columns untouched
@@ -997,6 +999,31 @@ namespace NumeRe
             }
 
             /////////////////////////////////////////////////
+            /// \brief Returns the comment stored with the
+            /// referenced file.
+            ///
+            /// \return std::string
+            ///
+            /////////////////////////////////////////////////
+            std::string getComment()
+            {
+                return sComment;
+            }
+
+            /////////////////////////////////////////////////
+            /// \brief Sets the comment to be written to the
+            /// referencedfile.
+            ///
+            /// \param comment const std::string&
+            /// \return void
+            ///
+            /////////////////////////////////////////////////
+            void setComment(const std::string& comment)
+            {
+                sComment = comment;
+            }
+
+            /////////////////////////////////////////////////
             /// \brief Returns the number of rows.
             ///
             /// \return long long int
@@ -1034,6 +1061,7 @@ namespace NumeRe
                 info.sFileExtension = sFileExtension;
                 info.sFileName = sFileName;
                 info.sTableName = getTableName();
+                info.sComment = sComment;
 
                 return info;
             }
@@ -1444,7 +1472,6 @@ namespace NumeRe
         protected:
             bool isLegacy;
             __time64_t timeStamp;
-            std::string sComment;
             long int versionMajor;
             long int versionMinor;
             long int versionBuild;
@@ -1530,31 +1557,6 @@ namespace NumeRe
             }
 
             std::string getVersionString();
-
-            /////////////////////////////////////////////////
-            /// \brief Returns the comment stored with the
-            /// referenced file.
-            ///
-            /// \return std::string
-            ///
-            /////////////////////////////////////////////////
-            std::string getComment()
-            {
-                return sComment;
-            }
-
-            /////////////////////////////////////////////////
-            /// \brief Sets the comment to be written to the
-            /// referencedfile.
-            ///
-            /// \param comment const std::string&
-            /// \return void
-            ///
-            /////////////////////////////////////////////////
-            void setComment(const std::string& comment)
-            {
-                sComment = comment;
-            }
     };
 
 
@@ -1751,7 +1753,10 @@ namespace NumeRe
     class JcampDX : public GenericFile
     {
         private:
+            struct MetaData;
+
             void readFile();
+            size_t readTable(std::vector<std::string>& vFileContents, size_t nTableStart, MetaData);
             void parseLabel(std::string& sLine);
             std::vector<double> parseLine(const std::string& sLine);
 

@@ -505,6 +505,16 @@ static bool searchAndDeleteTable(const string& sCache, Parser& _parser, MemoryMa
             // The indices are vectors
             _data.deleteBulk(iter->first, _iDeleteIndex.row, _iDeleteIndex.col);
 
+            // If everything is deleted, reset the meta data as well
+            if (_data.isEmpty(iter->first))
+            {
+                NumeRe::TableMetaData meta = _data.getMetaData(iter->first);
+                meta.comment.clear();
+                meta.source.clear();
+                meta.modify();
+                _data.setMetaData(iter->first, meta);
+            }
+
             // Return true
             return true;
         }

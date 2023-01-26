@@ -2674,6 +2674,37 @@ namespace NumeRe
 
 
     /////////////////////////////////////////////////
+    /// \brief Structure for storing the JCAMP-DX
+    /// meta data.
+    /////////////////////////////////////////////////
+    struct JcampDX::MetaData
+    {
+        enum DataFormat
+        {
+            NO_FORMAT,
+            XY, // (XY), (X,Y)
+            XY_XY, // (XY..XY), (X,Y..X,Y)
+            XppY_Y, // ((X++)(Y..Y))
+            XPPY_Y // (X++(Y..Y))
+        };
+
+        size_t m_points;
+        DataFormat m_format;
+        double m_xFactor;
+        double m_yFactor;
+        double m_firstX;
+        double m_lastX;
+        double m_deltaX;
+
+        std::string m_xUnit;
+        std::string m_yUnit;
+        std::string m_symbol;
+
+        MetaData() : m_points(0), m_format(NO_FORMAT), m_xFactor(1), m_yFactor(1), m_firstX(0), m_lastX(0), m_deltaX(0) {}
+    };
+
+
+    /////////////////////////////////////////////////
     /// \brief This member function is used to read
     /// the conents of the JCAMP-DX file to the
     /// internal storage.
@@ -2687,12 +2718,15 @@ namespace NumeRe
         open(ios::in);
 
         // Create some temporary buffer variables
-		long long int nComment = 0;
-		vector<double> vLine;
+		size_t nTableStart = 0;
+        std::vector<MetaData> vMeta(1u);
+
+		nRows = 0;
+		nCols = 0;
 
 		// Read the contents of the file to the
 		// vector variable
-		vector<string> vFileContents = readTextFile(true);
+		std::vector<std::string> vFileContents = readTextFile(true);
 
 		// Ensure that contents are available
 		if (!vFileContents.size())
@@ -2702,8 +2736,122 @@ namespace NumeRe
         // all following lines
 		for (size_t i = 0; i < vFileContents.size(); i++)
         {
-            stripTrailingSpaces(vFileContents[i]);
+            StripSpaces(vFileContents[i]);
+
+            // Copy all meta data before the actual table into
+            // a common string
+            if (vFileContents[i].substr(0, 2) == "##"
+                && !nTableStart
+                && vFileContents[i].substr(0, 6) != "##END=")
+            {
+                if (sComment.length())
+                    sComment += "\n";
+
+                sComment += vFileContents[i].substr(2);
+            }
+
             parseLabel(vFileContents[i]);
+
+            // Here starts a n-tuples table
+            if (vFileContents[i].substr(0, 10) == "##NTUPLES=")
+            {
+                EndlessVector<std::string> symbol;
+                EndlessVector<std::string> varType;
+                EndlessVector<std::string> varDim;
+                EndlessVector<std::string> units;
+                EndlessVector<std::string> firstVal;
+                EndlessVector<std::string> lastVal;
+                EndlessVector<std::string> factor;
+
+                for (size_t j = i+1; j < vFileContents.size(); j++)
+                {
+                    StripSpaces(vFileContents[j]);
+
+                    // Copy all meta data before the actual table into
+                    // a common string
+                    if (vFileContents[j].substr(0, 2) == "##"
+                        && vFileContents[j].substr(0, 7) != "##PAGE=")
+                    {
+                        if (sComment.length())
+                            sComment += "\n";
+
+                        sComment += vFileContents[j].substr(2);
+                    }
+
+                    parseLabel(vFileContents[j]);
+
+                    if (vFileContents[j].substr(0, 9) == "##SYMBOL=")
+                        symbol = getAllArguments(vFileContents[j].substr(9));
+                    else if (vFileContents[j].substr(0, 10) == "##VARTYPE=")
+                        varType = getAllArguments(vFileContents[j].substr(10));
+                    else if (vFileContents[j].substr(0, 9) == "##VARDIM=")
+                        varDim = getAllArguments(vFileContents[j].substr(9));
+                    else if (vFileContents[j].substr(0, 8) == "##UNITS=")
+                        units = getAllArguments(vFileContents[j].substr(8));
+                    else if (vFileContents[j].substr(0, 8) == "##FIRST=")
+                        firstVal = getAllArguments(vFileContents[j].substr(8));
+                    else if (vFileContents[j].substr(0, 7) == "##LAST=")
+                        lastVal = getAllArguments(vFileContents[j].substr(7));
+                    else if (vFileContents[j].substr(0, 9) == "##FACTOR=")
+                        factor = getAllArguments(vFileContents[j].substr(9));
+                    else if (vFileContents[j].substr(0, 7) == "##PAGE=")
+                    {
+                        nTableStart = j;
+                        i = j;
+
+                        // Decode the read meta table
+                        size_t dependentCount = 0;
+
+                        // Create MetaData objects for all dependent
+                        // variables first
+                        for (size_t n = 0; n < varType.size(); n++)
+                        {
+                            if (varType[n] == "DEPENDENT")
+                            {
+                                dependentCount++;
+
+                                if (dependentCount > vMeta.size())
+                                    vMeta.push_back(MetaData());
+
+                                vMeta.back().m_symbol = symbol[n];
+                                vMeta.back().m_yUnit = units[n];
+
+                                if (varDim[n].size())
+                                    vMeta.back().m_points = StrToInt(varDim[n]);
+
+                                if (factor[n].size())
+                                    vMeta.back().m_yFactor = StrToDb(factor[n]);
+                            }
+                        }
+
+                        // Insert the values of the main independent variable
+                        // into the MetaData objects for all dependent variables
+                        for (size_t n = 0; n < varType.size(); n++)
+                        {
+                            if (varType[n] == "INDEPENDENT" && symbol[n] == "X")
+                            {
+                                for (MetaData& meta : vMeta)
+                                {
+                                    meta.m_xUnit = units[n];
+
+                                    if (factor[n].size())
+                                        meta.m_xFactor = StrToDb(factor[n]);
+
+                                    if (firstVal[n].size())
+                                        meta.m_firstX = StrToDb(firstVal[n]);
+
+                                    if (lastVal[n].size())
+                                        meta.m_lastX = StrToDb(lastVal[n]);
+                                }
+
+                                break;
+                            }
+                        }
+
+                        break;
+                    }
+                }
+            }
 
             // Erase everything after the end tag
             if (vFileContents[i].substr(0, 6) == "##END=")
@@ -2713,44 +2861,109 @@ namespace NumeRe
             }
         }
 
-        // Count the number of labels (comments) in
-        // the current file
-        for (unsigned int i = 0; i < vFileContents.size(); i++)
+        size_t page = 0;
+
+        // Read all pages available in the file
+        do
         {
-            if (vFileContents[i].substr(0,2) == "##")
-                nComment++;
+            nTableStart = readTable(vFileContents, nTableStart, vMeta.size() > page ? vMeta[page] : vMeta.front());
+            page++;
+        }
+        while (nTableStart + 1 < vFileContents.size());
+
+        // Find maximal number of rows
+        for (long long int j = 0; j < nCols; j++)
+        {
+            if (fileData->at(j)->size() > nRows)
+                nRows = fileData->at(j)->size();
+        }
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Reads a single table from the
+    /// currently opened JCAMP-DX file.
+    ///
+    /// \param vFileContents std::vector<std::string>&
+    /// \param nTableStart size_t
+    /// \param meta JcampDX::MetaData
+    /// \return size_t
+    ///
+    /////////////////////////////////////////////////
+    size_t JcampDX::readTable(std::vector<std::string>& vFileContents, size_t nTableStart, JcampDX::MetaData meta)
+    {
+        std::vector<double> vLine;
+		long long int nPageOffset = nCols;
+		size_t nDataStart = 0;
+
+        // Find the start of the data table
+        for (size_t i = nTableStart; i < vFileContents.size(); i++)
+        {
+            // Determine the needed number of rows
+            if (vFileContents[i].substr(0, 10) == "##NPOINTS=")
+                meta.m_points = StrToInt(vFileContents[i].substr(10));
+
+            if (vFileContents[i].substr(0,11) == "##XYPOINTS="
+                || vFileContents[i].substr(0, 9) == "##XYDATA="
+                || vFileContents[i].substr(0, 12) == "##PEAKTABLE="
+                || vFileContents[i].substr(0, 12) == "##DATATABLE=")
+            {
+                nDataStart = i+1;
+                std::string sXYScheme = vFileContents[i].substr(vFileContents[i].find('=')+1);
+                StripSpaces(sXYScheme);
+
+                // Remove all internal whitespaces
+                while (sXYScheme.find(' ') != std::string::npos)
+                    sXYScheme.erase(sXYScheme.find(' '), 1);
+
+                // Remove all trailing information like "PEAKS"
+                if (sXYScheme.rfind(')')+1 < sXYScheme.length())
+                    sXYScheme.erase(sXYScheme.rfind(')')+1);
+
+                // If other variables are used than Y, replace them here
+                if (sXYScheme.find('Y') == std::string::npos && meta.m_symbol.length())
+                    replaceAll(sXYScheme, meta.m_symbol.c_str(), "Y");
+
+                // Detect the data format
+                if (sXYScheme == "(XY..XY)" || sXYScheme == "(X,Y..X,Y)")
+                    meta.m_format = MetaData::XY_XY;
+                else if (sXYScheme == "(XY)" || sXYScheme == "(X,Y)")
+                    meta.m_format = MetaData::XY;
+                else if (sXYScheme == "(X++(Y..Y))")
+                    meta.m_format = MetaData::XPPY_Y;
+                else if (sXYScheme == "(X++)(Y..Y)")
+                    meta.m_format = MetaData::XppY_Y;
+
+                break;
+            }
         }
 
-        // Determine the dimensions of the data
-        // set using the comments and the decoded
-        // last line of the tags (we ignore the closing
-        // "##END=" tag
-        nRows = vFileContents.size() - nComment;
-        nCols = parseLine(vFileContents[nComment-1]).size();
+        if (!meta.m_points || !nDataStart || meta.m_format == MetaData::NO_FORMAT)
+            throw SyntaxError(SyntaxError::CANNOT_READ_FILE, sFileName, SyntaxError::invalid_position, sFileName);
+
+        // Determine the number of needed columns based upon the data
+        // table type and the first row, if necessary
+        nCols += 2;
 
         // Prepare the internal storage
-        createStorage();
+        if (!fileData)
+            fileData = new TableColumnArray;
+
+        fileData->resize(nCols);
 
         // We only create numerical columns for this data type
-        for (long long int j = 0; j < nCols; j++)
+        for (long long int j = nPageOffset; j < nCols; j++)
         {
             fileData->at(j).reset(new ValueColumn);
         }
 
         // Prepare some decoding variables
-        double dXFactor = 1.0;
-        double dYFactor = 1.0;
-
-        string sXUnit = "";
-        string sYUnit = "";
-
-        string sDataType = "";
-        string sXYScheme = "";
+        std::string sDataType = "";
 
         // Go through the label section first
         // and decode the header information of
         // the data set
-        for (long long int j = 0; j < nComment-1; j++)
+        for (size_t j = nTableStart; j < nDataStart-1; j++)
         {
             // Omit comments
             if (vFileContents[j].find("$$") != string::npos)
@@ -2758,48 +2971,29 @@ namespace NumeRe
 
             // Get the x and y scaling factors
             if (vFileContents[j].substr(0,10) == "##XFACTOR=")
-                dXFactor = StrToDb(vFileContents[j].substr(10));
+                meta.m_xFactor = StrToDb(vFileContents[j].substr(10));
 
             if (vFileContents[j].substr(0,10) == "##YFACTOR=")
-                dYFactor = StrToDb(vFileContents[j].substr(10));
+                meta.m_yFactor = StrToDb(vFileContents[j].substr(10));
+
+            if (vFileContents[j].substr(0,9) == "##FIRSTX=")
+                meta.m_firstX = StrToDb(vFileContents[j].substr(9));
+
+            if (vFileContents[j].substr(0,8) == "##LASTX=")
+                meta.m_lastX = StrToDb(vFileContents[j].substr(8));
 
             // Extract the x units
             if (vFileContents[j].substr(0,9) == "##XUNITS=")
             {
-                sXUnit = vFileContents[j].substr(9);
-                StripSpaces(sXUnit);
-
-                if (toUpperCase(sXUnit) == "1/CM")
-                    sXUnit = "Wellenzahl k [cm^-1]";
-                else if (toUpperCase(sXUnit) == "MICROMETERS")
-                    sXUnit = "Wellenlänge lambda [mu m]";
-                else if (toUpperCase(sXUnit) == "NANOMETERS")
-                    sXUnit = "Wellenlänge lambda [nm]";
-                else if (toUpperCase(sXUnit) == "SECONDS")
-                    sXUnit = "Zeit t [s]";
-                else if (toUpperCase(sXUnit) == "1/S" || toUpperCase(sXUnit) == "1/SECONDS")
-                    sXUnit = "Frequenz f [Hz]";
-                else
-                    sXUnit = "[" + sXUnit + "]";
-
+                meta.m_xUnit = vFileContents[j].substr(9);
+                StripSpaces(meta.m_xUnit);
             }
 
             // Extract the y units
             if (vFileContents[j].substr(0,9) == "##YUNITS=")
             {
-                sYUnit = vFileContents[j].substr(9);
-                StripSpaces(sYUnit);
-
-                if (toUpperCase(sYUnit) == "TRANSMITTANCE")
-                    sYUnit = "Transmission";
-                else if (toUpperCase(sYUnit) == "REFLECTANCE")
-                    sYUnit = "Reflexion";
-                else if (toUpperCase(sYUnit) == "ABSORBANCE")
-                    sYUnit = "Absorbtion";
-                else if (toUpperCase(sYUnit) == "KUBELKA-MUNK")
-                    sYUnit = "Kubelka-Munk";
-                else if (toUpperCase(sYUnit) == "ARBITRARY UNITS" || sYUnit.substr(0,9) == "Intensity")
-                    sYUnit = "Intensität";
+                meta.m_yUnit = vFileContents[j].substr(9);
+                StripSpaces(meta.m_yUnit);
             }
 
             // Get the data type (currently unused)
@@ -2808,50 +3002,116 @@ namespace NumeRe
                 sDataType = vFileContents[j].substr(11);
                 StripSpaces(sDataType);
             }
-
-            // Get the data encoding scheme (currently
-            // unused as well)
-            if (vFileContents[j].substr(0,11) == "##XYPOINTS=")
-            {
-                sXYScheme = vFileContents[j].substr(11);
-                StripSpaces(sXYScheme);
-            }
         }
+
+        if (meta.m_xUnit.length())
+        {
+            if (toUpperCase(meta.m_xUnit) == "1/CM")
+                meta.m_xUnit = "Wellenzahl k [cm^-1]";
+            else if (toUpperCase(meta.m_xUnit) == "MICROMETERS")
+                meta.m_xUnit = "Wellenlänge lambda [mu m]";
+            else if (toUpperCase(meta.m_xUnit) == "NANOMETERS")
+                meta.m_xUnit = "Wellenlänge lambda [nm]";
+            else if (toUpperCase(meta.m_xUnit) == "SECONDS")
+                meta.m_xUnit = "Zeit t [s]";
+            else if (toUpperCase(meta.m_xUnit) == "1/S" || toUpperCase(meta.m_xUnit) == "1/SECONDS")
+                meta.m_xUnit = "Frequenz f [Hz]";
+            else
+                meta.m_xUnit = "[" + meta.m_xUnit + "]";
+        }
+
+        if (meta.m_yUnit.length())
+        {
+            if (toUpperCase(meta.m_yUnit) == "TRANSMITTANCE")
+                meta.m_yUnit = "Transmission";
+            else if (toUpperCase(meta.m_yUnit) == "REFLECTANCE")
+                meta.m_yUnit = "Reflexion";
+            else if (toUpperCase(meta.m_yUnit) == "ABSORBANCE")
+                meta.m_yUnit = "Absorbtion";
+            else if (toUpperCase(meta.m_yUnit) == "KUBELKA-MUNK")
+                meta.m_yUnit = "Kubelka-Munk";
+            else if (toUpperCase(meta.m_yUnit) == "ARBITRARY UNITS" || meta.m_yUnit.substr(0,9) == "Intensity")
+                meta.m_yUnit = "Intensität";
+        }
+
+        meta.m_deltaX = (meta.m_lastX - meta.m_firstX) / (meta.m_points - 1);
+        size_t currentRow = 0;
+        fileData->at(nPageOffset + 0)->m_sHeadLine = meta.m_xUnit;
+        fileData->at(nPageOffset + 1)->m_sHeadLine = meta.m_yUnit;
 
         // Now go through the actual data section
         // of the file and convert it into
         // numerical values
-        for (long long int j = nComment-1; j < vFileContents.size() - 1; j++)
+        for (size_t j = nDataStart; j < vFileContents.size() - 1; j++)
         {
+            // Abort at the end tag
+            if (vFileContents[j].substr(0, 6) == "##END="
+                || vFileContents[j].substr(0, 7) == "##PAGE=")
+                return j;
+
             // Ignore lables
             if (vFileContents[j].substr(0, 2) == "##")
                 continue;
 
-            // Abort at the end tag
-            if (vFileContents[j].substr(0, 6) == "##END=")
-                break;
+            // Omit comments
+            if (vFileContents[j].find("$$") != string::npos)
+            {
+                vFileContents[j].erase(vFileContents[j].find("$$"));
+                StripSpaces(vFileContents[j]);
+            }
 
-            // Abort, if we read enough lines
-            if (j - nComment + 1 == nRows)
-                break;
+            // Abort, if we have enough lines
+            if (currentRow >= meta.m_points)
+                return j;
 
             // Decode the current line
             vLine = parseLine(vFileContents[j]);
 
-            for (unsigned int k = 0; k < vLine.size(); k++)
+            if (!vLine.size())
             {
-                if (k == nCols)
-                    break;
+                NumeReKernel::issueWarning("Parsing of line " + toString(j+1) + " yield no result.");
+                continue;
+            }
 
-                // Store the table column heads
-                if (j == nComment-1)
-                    fileData->at(k)->m_sHeadLine = (k % 2 ? sYUnit : sXUnit);
+            // Interpret the line depending on the JDX format
+            if (meta.m_format == MetaData::XY || meta.m_format == MetaData::XY_XY) // XY pairs
+            {
+                for (size_t k = 0; k < vLine.size(); k++)
+                {
+                    fileData->at(nPageOffset + k % 2)->setValue(currentRow, vLine[k] * (k % 2 ? meta.m_yFactor : meta.m_xFactor));
+                    currentRow += k % 2;
+                }
+            }
+            else if (meta.m_format == MetaData::XPPY_Y) // first value has to be identical to calculated one
+            {
+                if (std::abs(meta.m_firstX+meta.m_deltaX*currentRow - vLine[0]*meta.m_xFactor) > std::abs(meta.m_deltaX) * 1e-1)
+                    NumeReKernel::issueWarning("Missing points in JCAMP-DX file in line " + toString(j+1)
+                                               + ". Expected: " + toString(meta.m_firstX+meta.m_deltaX*currentRow)
+                                               + " Found: " + toString(vLine[0]*meta.m_xFactor));
 
-                // Write the data to the internal
-                // storage
-                fileData->at(k)->setValue(j-nComment+1, vLine[k] * (k % 2 ? dYFactor : dXFactor));
+                fileData->at(nPageOffset + 0)->setValue(currentRow, meta.m_firstX + meta.m_deltaX * currentRow);
+                fileData->at(nPageOffset + 1)->setValue(currentRow, vLine[1] * meta.m_yFactor);
+                currentRow++;
+
+                for (size_t k = 2; k < vLine.size(); k++)
+                {
+                    fileData->at(nPageOffset + 0)->setValue(currentRow, meta.m_firstX + meta.m_deltaX * currentRow);
+                    fileData->at(nPageOffset + 1)->setValue(currentRow, vLine[k] * meta.m_yFactor);
+                    currentRow++;
+                }
+            }
+            else if (meta.m_format == MetaData::XppY_Y) // No X value
+            {
+                for (size_t k = 0; k < vLine.size(); k++)
+                {
+                    fileData->at(nPageOffset + 0)->setValue(currentRow, meta.m_firstX + meta.m_deltaX * currentRow);
+                    fileData->at(nPageOffset + 1)->setValue(currentRow, vLine[k] * meta.m_yFactor);
+                    currentRow++;
+                }
             }
         }
+
+        return vFileContents.size();
     }
 
 
@@ -2900,33 +3160,36 @@ namespace NumeRe
     /// storage space.
     /// Reference: http://www.jcamp-dx.org/protocols.html
     ///
-    /// \param sLine const string&
-    /// \return vector<double>
+    /// \param sLine const std::string&
+    /// \return std::vector<double>
     ///
     /////////////////////////////////////////////////
-    vector<double> JcampDX::parseLine(const string& sLine)
+    std::vector<double> JcampDX::parseLine(const std::string& sLine)
     {
-        vector<double> vLine;
-        string sValue = "";
-        const string sNumericChars = "0123456789.+-";
+        std::vector<double> vLine;
+        std::string sValue = "";
+        const std::string sNumericChars = "0123456789.+-";
+        double lastDiff = 0;
 
         // Go through the complete line and uncompress
         // the data into usual text strings, which will
         // be stored in another string
-        for (unsigned int i = 0; i < sLine.length(); i++)
+        for (size_t i = sLine.find_first_not_of(" \t"); i < sLine.length(); i++)
         {
             // The first three cases are the simplest
             // cases, where the data is not compressed
             if ((sLine[i] >= '0' && sLine[i] <= '9') || sLine[i] == '.')
                 sValue += sLine[i];
             else if (sValue.length()
-                && (sLine[i] == 'e' || sLine[i] == 'E')
-                && sNumericChars.find(sValue[0]) != string::npos)
+                     && (sLine[i] == 'e' || sLine[i] == 'E')
+                     && sLine.length() > i+2
+                     && (sLine[i] == '+' || sLine[i] == '-')
+                     && sNumericChars.find(sValue[0]) != std::string::npos)
                 sValue += sLine[i];
             else if (sValue.length()
-                && (sLine[i] == '+' || sLine[i] == '-')
-                && sNumericChars.find(sValue[0]) != string::npos
-                && (sValue[sValue.length()-1] == 'e' || sValue[sValue.length()-1] == 'E'))
+                     && (sLine[i] == '+' || sLine[i] == '-')
+                     && sNumericChars.find(sValue[0]) != std::string::npos
+                     && (sValue[sValue.length()-1] == 'e' || sValue[sValue.length()-1] == 'E'))
                 sValue += sLine[i];
             else
             {
@@ -2939,36 +3202,42 @@ namespace NumeRe
                     {
                         // Positive DIF digits
                         sValue[0] = toString(sValue[0]-'J'+1)[0];
-                        vLine.push_back(vLine.back()+StrToDb(sValue));
+                        lastDiff = StrToDb(sValue);
+                        vLine.push_back(vLine.back()+lastDiff);
                     }
                     else if ((sValue[0] >= 'j' && sValue[0] <= 'r'))
                     {
                         // Negative DIF digits
                         sValue[0] = toString(sValue[0]-'j'+1)[0];
-                        vLine.push_back(vLine.back()-StrToDb(sValue));
+                        lastDiff = -StrToDb(sValue);
+                        vLine.push_back(vLine.back()+lastDiff);
                     }
                     else if (sValue[0] == '%')
                     {
                         // A zero
-                        sValue[0] = '0';
-                        vLine.push_back(vLine.back()+StrToDb(sValue));
+                        lastDiff = 0;
+                        vLine.push_back(vLine.back());
                     }
-                    else if ((sValue[0] >= 'S' && sValue[0] >= 'Z') || sValue[0] == 's')
+                    else if ((sValue[0] >= 'S' && sValue[0] <= 'Z') || sValue[0] == 's')
                     {
                         // DUP digits
                         if (sValue[0] == 's')
-                        {
-                            for (int j = 0; j < 9; j++)
-                                vLine.push_back(vLine.back());
-                        }
+                            sValue[0] = '9';
                         else
-                        {
-                            for (int j = 0; j <= sValue[0]-'S'; j++)
-                                vLine.push_back(vLine.back());
-                        }
+                            sValue[0] = sValue[0]-'S'+'1';
+
+                        int iter = StrToInt(sValue);
+
+                        for (int j = 0; j < iter-1; j++)
+                            vLine.push_back(vLine.back()+lastDiff);
+
+                        lastDiff = 0;
                     }
                     else
+                    {
+                        lastDiff = 0;
                         vLine.push_back(StrToDb(sValue)); // Simply convert into a double
+                    }
 
                     sValue.clear();
                 }
@@ -2978,11 +3247,17 @@ namespace NumeRe
                 if (sLine[i] >= 'A' && sLine[i] <= 'I')
                     sValue += toString(sLine[i]-'A'+1)[0];
                 else if (sLine[i] >= 'a' && sLine[i] <= 'i')
-                    sValue += toString(sLine[i]-'a'+1)[0];
+                    sValue += toString('a'-sLine[i]-1);
+                else if (sLine[i] == '@')
+                    vLine.push_back(0);
+                else if (sLine[i] == '%' && vLine.size() && sLine.size() > i+1)
+                {
+                    vLine.push_back(vLine.back());
+                    lastDiff = 0;
+                }
                 else if ((vLine.size()
                     && ((sLine[i] >= 'J' && sLine[i] <= 'R')
                         || (sLine[i] >= 'j' && sLine[i] <= 'r')
-                        || sLine[i] == '%'
                         || (sLine[i] >= 'S' && sLine[i] <= 'Z')
                         || sLine[i] == 's'))
                     || sLine[i] == '+'
@@ -2996,39 +3271,48 @@ namespace NumeRe
         // is compressed
         if (sValue.length())
         {
-            if ((sValue[0] >= 'J' && sValue[0] <= 'R'))
+            if (vLine.size() == 1)
             {
-                // Positive DIF digits
-                sValue[0] = toString(sValue[0]-'J'+1)[0];
-                vLine.push_back(vLine.back()+StrToDb(sValue));
+                if ((sValue[0] >= 'J' && sValue[0] <= 'R'))
+                {
+                    // Positive DIF digits
+                    sValue[0] = toString(sValue[0]-'J'+1)[0];
+                    vLine.push_back(vLine.back()+StrToDb(sValue));
+                }
+                else if ((sValue[0] >= 'j' && sValue[0] <= 'r'))
+                {
+                    // Negative DIF digits
+                    sValue[0] = toString(sValue[0]-'j'+1)[0];
+                    vLine.push_back(vLine.back()-StrToDb(sValue));
+                }
+                else if (sValue[0] == '%')
+                {
+                    // A zero
+                    vLine.push_back(vLine.back());
+                }
             }
-            else if ((sValue[0] >= 'j' && sValue[0] <= 'r'))
-            {
-                // Negative DIF digits
-                sValue[0] = toString(sValue[0]-'j'+1)[0];
-                vLine.push_back(vLine.back()-StrToDb(sValue));
-            }
-            else if (sValue[0] == '%')
-            {
-                // A zero
-                sValue[0] = '0';
-                vLine.push_back(vLine.back()+StrToDb(sValue));
-            }
-            else if ((sValue[0] >= 'S' && sValue[0] >= 'Z') || sValue[0] == 's')
+
+            if ((sValue[0] >= 'S' && sValue[0] <= 'Z') || sValue[0] == 's')
             {
                 // DUP digits
                 if (sValue[0] == 's')
-                {
-                    for (int j = 0; j < 9; j++)
-                        vLine.push_back(vLine.back());
-                }
+                    sValue[0] = '9';
+                else
+                    sValue[0] = sValue[0]-'S'+'1';
+
+                int iter = StrToInt(sValue);
+
+                if (iter == 1)
+                    vLine.pop_back();
                 else
                 {
-                    for (int j = 0; j <= sValue[0]-'S'; j++)
-                        vLine.push_back(vLine.back());
+                    for (int j = 0; j < iter-2; j++)
+                        vLine.push_back(vLine.back()+lastDiff);
                 }
+
+                lastDiff = 0;
             }
-            else
+            else if (isdigit(sValue[0]) || sValue[0] == '+' || sValue[0] == '-')
                 vLine.push_back(StrToDb(sValue)); // Simply convert into a double
 
             sValue.clear();

@@ -2232,6 +2232,156 @@ static Matrix matrixUnique(const MatFuncData& funcData, const MatFuncErrorInfo& 
 
 
 /////////////////////////////////////////////////
+/// \brief This static function implements the
+/// \c cumsum(MAT,nDim) function.
+///
+/// \param funcData const MatFuncData&
+/// \param errorInfo const MatFuncErrorInfo&
+/// \return Matrix
+///
+/////////////////////////////////////////////////
+static Matrix matrixCumSum(const MatFuncData& funcData, const MatFuncErrorInfo& errorInfo)
+{
+    if (funcData.mat1.isEmpty())
+        throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, errorInfo.command, errorInfo.position);
+
+    // Create a std::list and the return value
+    Matrix _mReturn;
+
+    // Depending on the dimensions of the passed matrix, change
+    // the evaluation method
+    if (funcData.mat1.rows() == 1 || funcData.mat1.cols() == 1)
+    {
+        _mReturn = funcData.mat1;
+
+        // (Any) vector
+        std::vector<mu::value_type>& dat = _mReturn.data();
+
+        for (size_t i = 1; i < dat.size(); i++)
+        {
+            dat[i] += dat[i-1];
+        }
+    }
+    else
+    {
+        // Matrix
+        if (!funcData.nVal)
+        {
+            // funcData.nVal == 0 -> Roll out the total matrix and return it as a overall row vector
+            _mReturn = matrixReshape(MatFuncData(funcData.mat1, mu::value_type(1.0), funcData.mat1.rows()*funcData.mat1.cols()),
+                                     errorInfo);
+            // (Any) vector
+            std::vector<mu::value_type>& dat = _mReturn.data();
+
+            for (size_t i = 1; i < dat.size(); i++)
+            {
+                dat[i] += dat[i-1];
+            }
+        }
+        else if (funcData.nVal == 1)
+        {
+            _mReturn = funcData.mat1;
+
+            // Calculate the cumsum along the rows
+            for (size_t i = 0; i < _mReturn.rows(); i++)
+            {
+                for (size_t j = 1; j < _mReturn.cols(); j++)
+                    _mReturn(i, j) += _mReturn(i, j-1);
+            }
+        }
+        else
+        {
+            _mReturn = funcData.mat1;
+
+            // Calculate the cumsum along the columns
+            for (size_t j = 0; j < _mReturn.cols(); j++)
+            {
+                for (size_t i = 1; i < _mReturn.rows(); i++)
+                    _mReturn(i, j) += _mReturn(i-1, j);
+            }
+        }
+    }
+
+    return _mReturn;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This static function implements the
+/// \c cumprd(MAT,nDim) function.
+///
+/// \param funcData const MatFuncData&
+/// \param errorInfo const MatFuncErrorInfo&
+/// \return Matrix
+///
+/////////////////////////////////////////////////
+static Matrix matrixCumPrd(const MatFuncData& funcData, const MatFuncErrorInfo& errorInfo)
+{
+    if (funcData.mat1.isEmpty())
+        throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, errorInfo.command, errorInfo.position);
+
+    // Create a std::list and the return value
+    Matrix _mReturn;
+
+    // Depending on the dimensions of the passed matrix, change
+    // the evaluation method
+    if (funcData.mat1.rows() == 1 || funcData.mat1.cols() == 1)
+    {
+        _mReturn = funcData.mat1;
+
+        // (Any) vector
+        std::vector<mu::value_type>& dat = _mReturn.data();
+
+        for (size_t i = 1; i < dat.size(); i++)
+        {
+            dat[i] *= dat[i-1];
+        }
+    }
+    else
+    {
+        // Matrix
+        if (!funcData.nVal)
+        {
+            // funcData.nVal == 0 -> Roll out the total matrix and return it as a overall row vector
+            _mReturn = matrixReshape(MatFuncData(funcData.mat1, mu::value_type(1.0), funcData.mat1.rows()*funcData.mat1.cols()),
+                                     errorInfo);
+            // (Any) vector
+            std::vector<mu::value_type>& dat = _mReturn.data();
+
+            for (size_t i = 1; i < dat.size(); i++)
+            {
+                dat[i] *= dat[i-1];
+            }
+        }
+        else if (funcData.nVal == 1)
+        {
+            _mReturn = funcData.mat1;
+
+            // Calculate the cumsum along the rows
+            for (size_t i = 0; i < _mReturn.rows(); i++)
+            {
+                for (size_t j = 1; j < _mReturn.cols(); j++)
+                    _mReturn(i, j) *= _mReturn(i, j-1);
+            }
+        }
+        else
+        {
+            _mReturn = funcData.mat1;
+
+            // Calculate the cumsum along the columns
+            for (size_t j = 0; j < _mReturn.cols(); j++)
+            {
+                for (size_t i = 1; i < _mReturn.rows(); i++)
+                    _mReturn(i, j) *= _mReturn(i-1, j);
+            }
+        }
+    }
+
+    return _mReturn;
+}
+
+
+/////////////////////////////////////////////////
 /// \brief This static function solves the system
 /// of linear equations symbolically.
 ///
@@ -3338,6 +3488,8 @@ static std::map<std::string,MatFuncDef> getMatrixFunctions()
     mFunctions["resize"] = MatFuncDef(MATSIG_MAT_F_N, matrixResize);
     mFunctions["repmat"] = MatFuncDef(MATSIG_MAT_F_N, matrixRepMat);
     mFunctions["unique"] = MatFuncDef(MATSIG_MAT_NOPT, matrixUnique);
+    mFunctions["cumsum"] = MatFuncDef(MATSIG_MAT_NOPT, matrixCumSum);
+    mFunctions["cumprd"] = MatFuncDef(MATSIG_MAT_NOPT, matrixCumPrd);
     mFunctions["solve"] = MatFuncDef(MATSIG_MAT, solveLGS);
     mFunctions["diag"] = MatFuncDef(MATSIG_MAT, diagonalMatrix);
     mFunctions["carttocyl"] = MatFuncDef(MATSIG_MAT, cartToCyl);

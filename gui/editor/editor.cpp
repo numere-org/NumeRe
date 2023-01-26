@@ -4262,7 +4262,7 @@ FileFilterType NumeReEditor::GetFileType(const wxString& filename)
 {
 	wxFileName file(filename);
 
-	wxString extension = file.GetExt();
+	wxString extension = file.GetExt().Lower();
 
 	FileFilterType fileType = FILE_NONSOURCE;
 
