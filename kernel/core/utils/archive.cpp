@@ -18,6 +18,7 @@
 
 #include "archive.hpp"
 #include "stringtools.hpp"
+#include "../io/logger.hpp"
 
 #include <wx/zipstrm.h>
 #include <wx/tarstrm.h>
@@ -30,13 +31,14 @@
 #include <cstring>
 #include <memory>
 
+#include "../../kernel.hpp"
 
 static ArchiveType detectArchiveType(const std::string& sArchiveFileName)
 {
     std::ifstream file(sArchiveFileName, std::ios_base::binary);
 
-    static const char ZIPHEADER[] = {0x50, 0x4b, 0x03, 0x04};
-    static const char GZHEADER[] = {0x1f, 0x8b, 0x08};
+    static const char ZIPHEADER[] = {0x50, 0x4b, 0x03, 0x04, 0};
+    static const char GZHEADER[] = {0x1f, 0x8b, 0x08, 0};
 
     if (!file.good() || file.eof())
     {
@@ -51,6 +53,7 @@ static ArchiveType detectArchiveType(const std::string& sArchiveFileName)
     char magicNumber[5] = {0,0,0,0,0};
 
     file.read(magicNumber, 4);
+    g_logger.info("magicNumber = '" + std::string(magicNumber) + "'");
 
     if (strcmp(magicNumber, ZIPHEADER) == 0)
         return ARCHIVE_ZIP;
@@ -66,6 +69,8 @@ void packArchive(const std::vector<std::string>& vFileList, const std::string& s
     if (type == ARCHIVE_AUTO)
         type = detectArchiveType(sTargetFile);
 
+    const Settings& _option = NumeReKernel::getInstance()->getSettings();
+
     if (type == ARCHIVE_ZIP)
     {
         wxFFileOutputStream out(sTargetFile);
@@ -73,12 +78,42 @@ void packArchive(const std::vector<std::string>& vFileList, const std::string& s
 
         for (size_t i = 0; i < vFileList.size(); i++)
         {
-            wxFFileInputStream file(vFileList[i]);
-            wxZipEntry* newEntry = new wxZipEntry(vFileList[i].substr(vFileList[i].find_last_of("/\\")+1));
+            if (!fileExists(vFileList[i]))
+            {
+                // Handle the recursion
+                g_logger.info("Including directory: " + vFileList[i]);
+                std::string sDirectory = vFileList[i] + "/*";
+                std::vector<std::string> vFiles = getFileList(sDirectory, _option, 1);
 
-            outzip.PutNextEntry(newEntry);
-            outzip.Write(file);
-            outzip.CloseEntry();
+                while (vFiles.size() || getFolderList(sDirectory, _option).size() > 2)
+                {
+                    for (size_t j = 0; j < vFiles.size(); j++)
+                    {
+                        // Files are simple packed together without additional paths
+                        g_logger.info("Including file: " + vFiles[j]);
+                        wxFFileInputStream file(vFiles[j]);
+                        wxZipEntry* newEntry = new wxZipEntry(vFiles[j].substr(vFileList[i].find_last_of("/\\")+1));
+
+                        outzip.PutNextEntry(newEntry);
+                        outzip.Write(file);
+                        outzip.CloseEntry();
+                    }
+
+                    sDirectory += "/*";
+                    vFiles = getFileList(sDirectory, _option, 1);
+                }
+            }
+            else
+            {
+                // Files are simple packed together without additional paths
+                g_logger.info("Including file: " + vFileList[i]);
+                wxFFileInputStream file(vFileList[i]);
+                wxZipEntry* newEntry = new wxZipEntry(vFileList[i].substr(vFileList[i].find_last_of("/\\")+1));
+
+                outzip.PutNextEntry(newEntry);
+                outzip.Write(file);
+                outzip.CloseEntry();
+            }
         }
     }
 }
@@ -87,6 +122,7 @@ void packArchive(const std::vector<std::string>& vFileList, const std::string& s
 void unpackArchive(const std::string& sArchiveName, const std::string& sTargetPath)
 {
     ArchiveType type = detectArchiveType(sArchiveName);
+    FileSystem& _fSys = NumeReKernel::getInstance()->getFileSystem();
 
     if (type == ARCHIVE_ZIP)
     {
@@ -96,13 +132,12 @@ void unpackArchive(const std::string& sArchiveName, const std::string& sTargetPa
 
         while (entry.reset(zip.GetNextEntry()), entry.get() != nullptr)
         {
-            if (entry->IsDir())
-                wxDir::Make(sTargetPath + "/" + entry->GetName());
-            else
-            {
-                wxFileOutputStream stream(sTargetPath + "/" + entry->GetName());
-                zip.Read(stream);
-            }
+            std::string entryName = entry->GetName().ToStdString();
+            entryName = _fSys.ValidizeAndPrepareName(sTargetPath + "/" + entryName, "");
+
+            g_logger.info("Entry name: " + entryName);
+            wxFileOutputStream stream(sTargetPath + "/" + entry->GetName());
+            zip.Read(stream);
         }
     }
 }

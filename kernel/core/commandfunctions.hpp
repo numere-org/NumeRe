@@ -30,6 +30,7 @@
 #include "ui/winlayout.hpp"
 #include "io/logger.hpp"
 #include "utils/tools.hpp"
+#include "utils/archive.hpp"
 
 #include "commandlineparser.hpp"
 
@@ -4205,6 +4206,55 @@ static CommandReturnValues cmd_move(string& sCmd)
 }
 
 
+static CommandReturnValues cmd_pack(string& sCmd)
+{
+    CommandLineParser cmdParser(sCmd, "pack", CommandLineParser::CMD_EXPR_set_PAR);
+
+    if (cmdParser.getExpr().length() && cmdParser.hasParam("file"))
+    {
+        std::string sTargetPathName = cmdParser.getFileParameterValueForSaving("", "<savepath>", "");
+        std::string sExpression = cmdParser.getExpr();
+
+        if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sExpression)
+            || NumeReKernel::getInstance()->getMemoryManager().containsClusters(sExpression))
+        {
+            sExpression += " -komq";
+            std::string sDummy = "";
+            NumeReKernel::getInstance()->getStringParser().evalAndFormat(sExpression, sDummy, true);
+        }
+
+        std::vector<std::string> vFileNames;
+
+        while (sExpression.length())
+        {
+            vFileNames.push_back(NumeReKernel::getInstance()->getFileSystem().ValidFileName(removeQuotationMarks(getNextArgument(sExpression)), "", false, false));
+        }
+
+        packArchive(vFileNames, sTargetPathName, ARCHIVE_AUTO);
+    }
+
+    return COMMAND_PROCESSED;
+}
+
+
+static CommandReturnValues cmd_unpack(string& sCmd)
+{
+    CommandLineParser cmdParser(sCmd, "unpack", CommandLineParser::CMD_EXPR_set_PAR);
+
+    if (cmdParser.getExpr().length() && cmdParser.hasParam("target"))
+    {
+        std::string sArchiveFileName = cmdParser.getExprAsFileName(".zip", "<loadpath>");
+        std::string sTargetPathName = replacePathSeparator(cmdParser.getParameterValueAsString("target", ""));
+
+        sTargetPathName = NumeReKernel::getInstance()->getFileSystem().ValidFolderName(sTargetPathName, true, false);
+
+        unpackArchive(sArchiveFileName, sTargetPathName);
+    }
+
+    return COMMAND_PROCESSED;
+}
+
+
 /////////////////////////////////////////////////
 /// \brief This static function implements the
 /// "hline" command.
@@ -5195,6 +5245,7 @@ static std::map<std::string,CommandFunc> getCommandFunctions()
     mCommandFuncMap["new"] = cmd_new;
     mCommandFuncMap["odesolve"] = cmd_odesolve;
     mCommandFuncMap["open"] = cmd_edit;
+    mCommandFuncMap["pack"] = cmd_pack;
     mCommandFuncMap["plot"] = cmd_plotting;
     mCommandFuncMap["plot3d"] = cmd_plotting;
     mCommandFuncMap["plotcompose"] = cmd_plotting;
@@ -5228,6 +5279,7 @@ static std::map<std::string,CommandFunc> getCommandFunctions()
     mCommandFuncMap["gridrot"] = cmd_rotate;
     mCommandFuncMap["undef"] = cmd_undefine;
     mCommandFuncMap["undefine"] = cmd_undefine;
+    mCommandFuncMap["unpack"] = cmd_unpack;
     mCommandFuncMap["vect"] = cmd_plotting;
     mCommandFuncMap["vect3d"] = cmd_plotting;
     mCommandFuncMap["vector"] = cmd_plotting;
