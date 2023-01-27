@@ -17,6 +17,8 @@
 ******************************************************************************/
 
 #include "archive.hpp"
+#include "stringtools.hpp"
+
 #include <wx/zipstrm.h>
 #include <wx/tarstrm.h>
 #include <wx/zstream.h>
@@ -36,8 +38,15 @@ static ArchiveType detectArchiveType(const std::string& sArchiveFileName)
     static const char ZIPHEADER[] = {0x50, 0x4b, 0x03, 0x04};
     static const char GZHEADER[] = {0x1f, 0x8b, 0x08};
 
-    if (!file.good())
+    if (!file.good() || file.eof())
+    {
+        if (sArchiveFileName.find('.') != std::string::npos && toLowerCase(sArchiveFileName.substr(sArchiveFileName.rfind('.'))) == ".zip")
+            return ARCHIVE_ZIP;
+        else if (sArchiveFileName.find('.') != std::string::npos && toLowerCase(sArchiveFileName.substr(sArchiveFileName.rfind('.'))) == ".tar")
+            return ARCHIVE_TAR;
+
         return ARCHIVE_NONE;
+    }
 
     char magicNumber[5] = {0,0,0,0,0};
 
@@ -54,7 +63,24 @@ static ArchiveType detectArchiveType(const std::string& sArchiveFileName)
 
 void packArchive(const std::vector<std::string>& vFileList, const std::string& sTargetFile, ArchiveType type)
 {
-    //
+    if (type == ARCHIVE_AUTO)
+        type = detectArchiveType(sTargetFile);
+
+    if (type == ARCHIVE_ZIP)
+    {
+        wxFFileOutputStream out(sTargetFile);
+        wxZipOutputStream outzip(out, 6);
+
+        for (size_t i = 0; i < vFileList.size(); i++)
+        {
+            wxFFileInputStream file(vFileList[i]);
+            wxZipEntry* newEntry = new wxZipEntry(vFileList[i].substr(vFileList[i].find_last_of("/\\")+1));
+
+            outzip.PutNextEntry(newEntry);
+            outzip.Write(file);
+            outzip.CloseEntry();
+        }
+    }
 }
 
 
