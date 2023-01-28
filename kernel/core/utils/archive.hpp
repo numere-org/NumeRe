@@ -22,17 +22,22 @@
 #include <string>
 #include <vector>
 
-enum ArchiveType
+namespace Archive
 {
-    ARCHIVE_AUTO,
-    ARCHIVE_TAR,
-    ARCHIVE_TAR_GZ,
-    ARCHIVE_ZIP,
-    ARCHIVE_NONE
-};
+    enum Type
+    {
+        ARCHIVE_AUTO,
+        ARCHIVE_TAR,
+        ARCHIVE_GZ,
+        ARCHIVE_ZLIB,
+        ARCHIVE_ZIP,
+        ARCHIVE_NONE
+    };
 
-void packArchive(const std::vector<std::string>& vFileList, const std::string& sTargetFile, ArchiveType type = ARCHIVE_AUTO);
-void unpackArchive(const std::string& sArchiveName, const std::string& sTargetPath);
+    Type detectType(const std::string& sArchiveFileName);
+    void pack(const std::vector<std::string>& vFileList, const std::string& sTargetFile, Type type = ARCHIVE_AUTO);
+    std::vector<std::string> unpack(const std::string& sArchiveName, const std::string& sTargetPath);
+}
 
 #endif // ARCHIVE_HPP
 

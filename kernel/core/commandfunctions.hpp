@@ -4230,7 +4230,7 @@ static CommandReturnValues cmd_pack(string& sCmd)
             vFileNames.push_back(NumeReKernel::getInstance()->getFileSystem().ValidFileName(removeQuotationMarks(getNextArgument(sExpression)), "", false, false));
         }
 
-        packArchive(vFileNames, sTargetPathName, ARCHIVE_AUTO);
+        Archive::pack(vFileNames, sTargetPathName, Archive::ARCHIVE_AUTO);
     }
 
     return COMMAND_PROCESSED;
@@ -4241,14 +4241,29 @@ static CommandReturnValues cmd_unpack(string& sCmd)
 {
     CommandLineParser cmdParser(sCmd, "unpack", CommandLineParser::CMD_EXPR_set_PAR);
 
-    if (cmdParser.getExpr().length() && cmdParser.hasParam("target"))
+    if (cmdParser.getExpr().length())
     {
         std::string sArchiveFileName = cmdParser.getExprAsFileName(".zip", "<loadpath>");
         std::string sTargetPathName = replacePathSeparator(cmdParser.getParameterValueAsString("target", ""));
 
-        sTargetPathName = NumeReKernel::getInstance()->getFileSystem().ValidFolderName(sTargetPathName, true, false);
+        if (sTargetPathName.length())
+            sTargetPathName = NumeReKernel::getInstance()->getFileSystem().ValidFolderName(sTargetPathName, true, false);
 
-        unpackArchive(sArchiveFileName, sTargetPathName);
+        std::vector<std::string> vFiles = Archive::unpack(sArchiveFileName, sTargetPathName);
+
+        if (vFiles.size())
+        {
+            for (auto& file : vFiles)
+            {
+                file.insert(0, 1, '"');
+                file += '"';
+            }
+
+            cmdParser.setReturnValue(vFiles);
+
+            sCmd = cmdParser.getReturnValueStatement();
+            return COMMAND_HAS_RETURNVALUE;
+        }
     }
 
     return COMMAND_PROCESSED;
@@ -5279,7 +5294,6 @@ static std::map<std::string,CommandFunc> getCommandFunctions()
     mCommandFuncMap["gridrot"] = cmd_rotate;
     mCommandFuncMap["undef"] = cmd_undefine;
     mCommandFuncMap["undefine"] = cmd_undefine;
-    mCommandFuncMap["unpack"] = cmd_unpack;
     mCommandFuncMap["vect"] = cmd_plotting;
     mCommandFuncMap["vect3d"] = cmd_plotting;
     mCommandFuncMap["vector"] = cmd_plotting;
@@ -5324,6 +5338,7 @@ static std::map<std::string,CommandFunc> getCommandFunctionsWithReturnValues()
     mCommandFuncMap["sort"] = cmd_sort;
     mCommandFuncMap["stats"] = cmd_stats;
     mCommandFuncMap["taylor"] = cmd_taylor;
+    mCommandFuncMap["unpack"] = cmd_unpack;
     mCommandFuncMap["url"] = cmd_url;
     mCommandFuncMap["window"] = cmd_window;
     mCommandFuncMap["zeroes"] = cmd_zeroes;
