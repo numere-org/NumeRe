@@ -2674,13 +2674,11 @@ int FlowCtrl::compile(std::string sLine, int nthCmd)
     if (sLine.substr(sLine.find_first_not_of(' '), 2) == "|>" || nDebuggerCode == NumeReKernel::DEBUGGER_STEP)
     {
         if (sLine.substr(sLine.find_first_not_of(' '), 2) == "|>")
-            nCalcType[nthCmd] |= CALCTYPE_DEBUGBREAKPOINT;
-
-        if (sLine.substr(sLine.find_first_not_of(' '), 2) == "|>")
         {
-            sLine.erase(sLine.find_first_not_of(' '), 2);
+            nCalcType[nthCmd] |= CALCTYPE_DEBUGBREAKPOINT;
+            sLine.erase(sLine.find("|>"), 2);
             StripSpaces(sLine);
-            vCmdArray[nthCmd].sCommand.erase(vCmdArray[nthCmd].sCommand.find_first_not_of(' ', 2));
+            vCmdArray[nthCmd].sCommand.erase(vCmdArray[nthCmd].sCommand.find("|>"), 2);
             StripSpaces(vCmdArray[nthCmd].sCommand);
         }
 
