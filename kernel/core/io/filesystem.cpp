@@ -311,7 +311,7 @@ std::string FileSystem::ValidFileName(std::string _sFileName, const std::string 
         || (nPos == 0 || nPos == 1)
         || (_sFileName.find('/', nPos) != std::string::npos || _sFileName.find('\\', nPos) != std::string::npos))
         sValid = _sFileName + sExtension;
-    else if (checkExtension)
+    else if (checkExtension && sExtension.length())
     {
         // Extract the string part after the last
         // dot in the file path
@@ -423,7 +423,7 @@ std::string FileSystem::ValidFolderName(std::string _sFileName, bool doCleanPath
 /////////////////////////////////////////////////
 std::string FileSystem::ValidizeAndPrepareName(const std::string& _sFileName, const std::string& sExtension) const
 {
-    std::string sValid = ValidFileName(_sFileName, sExtension);
+    std::string sValid = ValidFileName(_sFileName, sExtension, sExtension.length());
     createFolders(sValid.substr(0, sValid.rfind('/')));
     return sValid;
 }

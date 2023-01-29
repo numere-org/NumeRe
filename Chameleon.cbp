@@ -567,6 +567,8 @@
 		<Unit filename="kernel/core/ui/winlayout.hpp" />
 		<Unit filename="kernel/core/utils/BasicExcel.cpp" />
 		<Unit filename="kernel/core/utils/BasicExcel.hpp" />
+		<Unit filename="kernel/core/utils/archive.cpp" />
+		<Unit filename="kernel/core/utils/archive.hpp" />
 		<Unit filename="kernel/core/utils/date/date.h" />
 		<Unit filename="kernel/core/utils/date/iso_week.h" />
 		<Unit filename="kernel/core/utils/datetimetools.cpp" />
