@@ -35,6 +35,16 @@
 
 namespace Archive
 {
+    /////////////////////////////////////////////////
+    /// \brief Detects the type of the archive based
+    /// upon the magic numbers in their header
+    /// sections or upon the file names extension, if
+    /// the file does not yet exist.
+    ///
+    /// \param sArchiveFileName const std::string&
+    /// \return Type
+    ///
+    /////////////////////////////////////////////////
     Type detectType(const std::string& sArchiveFileName)
     {
         std::ifstream file(sArchiveFileName, std::ios_base::binary);
@@ -52,7 +62,7 @@ namespace Archive
         // type only upon the file extension
         if (!file.good() || file.eof())
         {
-            if (sExt == ".zip")
+            if (sExt == ".zip" || sExt == ".xlsx" || sExt == ".ods")
                 return ARCHIVE_ZIP;
             else if (sExt == ".tar")
                 return ARCHIVE_TAR;
@@ -67,7 +77,7 @@ namespace Archive
         char magicNumber[6] = {0,0,0,0,0,0};
 
         file.read(magicNumber, 4);
-        g_logger.info("magicNumber = '" + std::string(magicNumber) + "'");
+        g_logger.debug("magicNumber = '" + std::string(magicNumber) + "'");
 
         // Test for zip and gzip
         if (magicNumber == ZIPHEADER)
@@ -78,7 +88,7 @@ namespace Archive
         // try to detect TAR
         file.seekg(257, std::ios_base::beg);
         file.read(magicNumber, TARMAGIC.length());
-        g_logger.info("magicNumber = '" + std::string(magicNumber) + "'");
+        g_logger.debug("magicNumber = '" + std::string(magicNumber) + "'");
 
         if (magicNumber == TARMAGIC)
             return ARCHIVE_TAR;
@@ -87,6 +97,15 @@ namespace Archive
     }
 
 
+    /////////////////////////////////////////////////
+    /// \brief Static helper function to read a
+    /// possible available file name in the GZIP
+    /// header section.
+    ///
+    /// \param sArchiveFileName const std::string&
+    /// \return std::string
+    ///
+    /////////////////////////////////////////////////
     static std::string getGZipFileName(const std::string& sArchiveFileName)
     {
         std::ifstream gzip(sArchiveFileName, std::ios_base::binary);
@@ -94,14 +113,18 @@ namespace Archive
         if (!gzip.good() || gzip.eof())
             return "";
 
+        // Search for the GZIP flags
         gzip.seekg(3, std::ios_base::beg);
         std::uint8_t flg;
         gzip >> flg;
 
+        // Does it contain a file name?
         if (flg & 8)
         {
             gzip.seekg(10, std::ios_base::beg);
 
+            // Extra fields may be possible and are located
+            // before the file name
             if (flg & 4)
             {
                 uint16_t xlen;
@@ -113,6 +136,7 @@ namespace Archive
             char c;
             gzip >> c;
 
+            // Read until we reach a null character
             while (c != 0)
             {
                 fileName += c;
@@ -125,12 +149,29 @@ namespace Archive
         return "";
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Pack a set of files or folders into an
+    /// archive file type with the specified file
+    /// name. If the type of the archive is not
+    /// specified then its automatically detected
+    /// based upon the file extension or from an
+    /// already existing file at the specified
+    /// location.
+    ///
+    /// \param vFileList const std::vector<std::string>&
+    /// \param sTargetFile const std::string&
+    /// \param type Type
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
     void pack(const std::vector<std::string>& vFileList, const std::string& sTargetFile, Type type)
     {
         if (type == ARCHIVE_AUTO)
             type = detectType(sTargetFile);
 
-        // TODO Throw an error if type undetectable
+        if (type == ARCHIVE_NONE)
+            throw SyntaxError(SyntaxError::INVALID_FILETYPE, sTargetFile, sTargetFile.substr(sTargetFile.rfind('.')), sTargetFile);
 
         const Settings& _option = NumeReKernel::getInstance()->getSettings();
 
@@ -144,7 +185,7 @@ namespace Archive
                 if (!fileExists(vFileList[i]))
                 {
                     // Handle the recursion
-                    g_logger.info("Including directory: " + vFileList[i]);
+                    g_logger.debug("Including directory: " + vFileList[i]);
                     std::string sDirectory = vFileList[i] + "/*";
                     std::vector<std::string> vFiles = getFileList(sDirectory, _option, 1);
 
@@ -153,7 +194,7 @@ namespace Archive
                         for (size_t j = 0; j < vFiles.size(); j++)
                         {
                             // Files are simple packed together without additional paths
-                            g_logger.info("Including file: " + vFiles[j]);
+                            g_logger.debug("Including file: " + vFiles[j]);
                             wxFFileInputStream file(vFiles[j]);
                             wxZipEntry* newEntry = new wxZipEntry(vFiles[j].substr(vFileList[i].find_last_of("/\\")+1));
 
@@ -169,7 +210,7 @@ namespace Archive
                 else
                 {
                     // Files are simple packed together without additional paths
-                    g_logger.info("Including file: " + vFileList[i]);
+                    g_logger.debug("Including file: " + vFileList[i]);
                     wxFFileInputStream file(vFileList[i]);
                     wxZipEntry* newEntry = new wxZipEntry(vFileList[i].substr(vFileList[i].find_last_of("/\\")+1));
 
@@ -189,7 +230,7 @@ namespace Archive
                 if (!fileExists(vFileList[i]))
                 {
                     // Handle the recursion
-                    g_logger.info("Including directory: " + vFileList[i]);
+                    g_logger.debug("Including directory: " + vFileList[i]);
                     std::string sDirectory = vFileList[i] + "/*";
                     std::vector<std::string> vFiles = getFileList(sDirectory, _option, 1);
 
@@ -198,7 +239,7 @@ namespace Archive
                         for (size_t j = 0; j < vFiles.size(); j++)
                         {
                             // Files are simple packed together without additional paths
-                            g_logger.info("Including file: " + vFiles[j]);
+                            g_logger.debug("Including file: " + vFiles[j]);
                             wxFFileInputStream file(vFiles[j]);
                             wxTarEntry* newEntry = new wxTarEntry(vFiles[j].substr(vFileList[i].find_last_of("/\\")+1));
 
@@ -214,7 +255,7 @@ namespace Archive
                 else
                 {
                     // Files are simple packed together without additional paths
-                    g_logger.info("Including file: " + vFileList[i]);
+                    g_logger.debug("Including file: " + vFileList[i]);
                     wxFFileInputStream file(vFileList[i]);
                     wxTarEntry* newEntry = new wxTarEntry(vFileList[i].substr(vFileList[i].find_last_of("/\\")+1));
 
@@ -240,7 +281,7 @@ namespace Archive
             wxFFileOutputStream out(sTargetFile);
             wxZlibOutputStream outzlib(out, -1, wxZLIB_GZIP);
 
-            g_logger.info("Including file: " + sFile);
+            g_logger.debug("Including file: " + sFile);
             wxFFileInputStream file(sFile);
             outzlib.Write(file);
 
@@ -250,19 +291,37 @@ namespace Archive
     }
 
 
+    /////////////////////////////////////////////////
+    /// \brief Unpacks an archive file format into
+    /// its folder structure at the specified
+    /// location. The archive file type is detected
+    /// automatically. If no target is specified then
+    /// only the names of the contained files are
+    /// returned.
+    ///
+    /// \param sArchiveName const std::string&
+    /// \param sTargetPath const std::string&
+    /// \return std::vector<std::string>
+    ///
+    /////////////////////////////////////////////////
     std::vector<std::string> unpack(const std::string& sArchiveName, const std::string& sTargetPath)
     {
+        if (!fileExists(sArchiveName))
+            throw SyntaxError(SyntaxError::FILE_NOT_EXIST, sArchiveName, sArchiveName, sArchiveName);
+
         Type type = detectType(sArchiveName);
 
-        // TODO Throw an error if type undetectable
+        if (type == ARCHIVE_NONE)
+            throw SyntaxError(SyntaxError::INVALID_FILETYPE, sArchiveName, sArchiveName.substr(sArchiveName.rfind('.')), sArchiveName);
+
         if (type == ARCHIVE_ZIP)
-            g_logger.info("ZIP detected.");
+            g_logger.debug("ZIP detected.");
         else if (type == ARCHIVE_TAR)
-            g_logger.info("TAR detected.");
+            g_logger.debug("TAR detected.");
         else if (type == ARCHIVE_GZ)
-            g_logger.info("GZIP detected.");
+            g_logger.debug("GZIP detected.");
         else if (type == ARCHIVE_ZLIB)
-            g_logger.info("ZLIB detected.");
+            g_logger.debug("ZLIB detected.");
 
         FileSystem& _fSys = NumeReKernel::getInstance()->getFileSystem();
         std::vector<std::string> vFiles;
@@ -281,7 +340,8 @@ namespace Archive
                 {
                     entryName = _fSys.ValidizeAndPrepareName(sTargetPath + "/" + entryName, "");
 
-                    g_logger.info("Entry name: " + entryName);
+                    g_logger.debug("Entry name: " + entryName);
+                    vFiles.push_back(entryName);
                     wxFileOutputStream stream(sTargetPath + "/" + entry->GetName());
                     zip.Read(stream);
                 }
@@ -306,7 +366,8 @@ namespace Archive
                 {
                     entryName = _fSys.ValidizeAndPrepareName(sTargetPath + "/" + entryName, "");
 
-                    g_logger.info("Entry name: " + entryName);
+                    g_logger.debug("Entry name: " + entryName);
+                    vFiles.push_back(entryName);
                     wxFileOutputStream stream(sTargetPath + "/" + entry->GetName());
                     tar.Read(stream);
                 }
@@ -331,7 +392,8 @@ namespace Archive
                 else
                     sUnpackedName = _fSys.ValidizeAndPrepareName(sTargetPath + "/" + sUnpackedName, "");
 
-                g_logger.info("Entry name: " + sUnpackedName);
+                g_logger.debug("Entry name: " + sUnpackedName);
+                vFiles.push_back(sUnpackedName);
 
                 wxFileOutputStream stream(sUnpackedName);
                 zlib.Read(stream);
@@ -342,5 +404,6 @@ namespace Archive
 
         return vFiles;
     }
-
 }
+
+

@@ -4206,37 +4206,68 @@ static CommandReturnValues cmd_move(string& sCmd)
 }
 
 
+/////////////////////////////////////////////////
+/// \brief This static function implements the
+/// "pack" command.
+///
+/// \param sCmd string&
+/// \return CommandReturnValues
+///
+/////////////////////////////////////////////////
 static CommandReturnValues cmd_pack(string& sCmd)
 {
     CommandLineParser cmdParser(sCmd, "pack", CommandLineParser::CMD_EXPR_set_PAR);
+    NumeReKernel* instance = NumeReKernel::getInstance();
 
     if (cmdParser.getExpr().length() && cmdParser.hasParam("file"))
     {
         std::string sTargetPathName = cmdParser.getFileParameterValueForSaving("", "<savepath>", "");
         std::string sExpression = cmdParser.getExpr();
+        Archive::Type type = Archive::ARCHIVE_AUTO;
 
-        if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sExpression)
-            || NumeReKernel::getInstance()->getMemoryManager().containsClusters(sExpression))
+        if (cmdParser.hasParam("type"))
+        {
+            std::string sType = cmdParser.getParameterValue("type");
+
+            if (sType == "ziparchive")
+                type = Archive::ARCHIVE_ZIP;
+            else if (sType == "gzarchive")
+                type = Archive::ARCHIVE_GZ;
+            else if (sType == "tarchive")
+                type = Archive::ARCHIVE_TAR;
+        }
+
+        if (instance->getStringParser().isStringExpression(sExpression)
+            || instance->getMemoryManager().containsClusters(sExpression))
         {
             sExpression += " -komq";
             std::string sDummy = "";
-            NumeReKernel::getInstance()->getStringParser().evalAndFormat(sExpression, sDummy, true);
+            instance->getStringParser().evalAndFormat(sExpression, sDummy, true);
         }
 
         std::vector<std::string> vFileNames;
 
         while (sExpression.length())
         {
-            vFileNames.push_back(NumeReKernel::getInstance()->getFileSystem().ValidFileName(removeQuotationMarks(getNextArgument(sExpression)), "", false, false));
+            vFileNames.push_back(instance->getFileSystem().ValidFileName(removeQuotationMarks(getNextArgument(sExpression)), "", false, false));
         }
 
-        Archive::pack(vFileNames, sTargetPathName, Archive::ARCHIVE_AUTO);
+
+        Archive::pack(vFileNames, sTargetPathName, type);
     }
 
     return COMMAND_PROCESSED;
 }
 
 
+/////////////////////////////////////////////////
+/// \brief This static function implements the
+/// "unpack" command.
+///
+/// \param sCmd string&
+/// \return CommandReturnValues
+///
+/////////////////////////////////////////////////
 static CommandReturnValues cmd_unpack(string& sCmd)
 {
     CommandLineParser cmdParser(sCmd, "unpack", CommandLineParser::CMD_EXPR_set_PAR);
@@ -4832,6 +4863,8 @@ static std::string getTargetTable(const std::string& sCmd)
         sTargetTable = getArgAtPos(sCmd, findParameter(sCmd, "totable", '=')+7);
     else if (findParameter(sCmd, "tocache", '='))
         sTargetTable = getArgAtPos(sCmd, findParameter(sCmd, "tocache", '=')+7);
+    else if (findParameter(sCmd, "target", '='))
+        sTargetTable = getArgAtPos(sCmd, findParameter(sCmd, "target", '=')+6);
 
     if (sTargetTable.find('(') != std::string::npos)
         return sTargetTable.substr(0, sTargetTable.find('('));
@@ -4893,7 +4926,7 @@ static CommandReturnValues cmd_load(string& sCmd)
 
             _data.setbLoadEmptyColsInNextFile(cmdParser.hasParam("keepdim") || cmdParser.hasParam("complete"));
 
-            if ((cmdParser.hasParam("tocache") || cmdParser.hasParam("totable")) && !cmdParser.hasParam("all"))
+            if ((cmdParser.hasParam("tocache") || cmdParser.hasParam("totable") || cmdParser.hasParam("target")) && !cmdParser.hasParam("all"))
             {
                 // Single file directly to cache
                 std::string sTargetTable = getTargetTable(cmdParser.getParameterList());
@@ -4913,7 +4946,7 @@ static CommandReturnValues cmd_load(string& sCmd)
 
                 return COMMAND_PROCESSED;
             }
-            else if ((cmdParser.hasParam("tocache") || cmdParser.hasParam("totable")) && cmdParser.hasParam("all") && (sFileName.find('*') != string::npos || sFileName.find('?') != string::npos))
+            else if ((cmdParser.hasParam("tocache") || cmdParser.hasParam("totable") || cmdParser.hasParam("target")) && cmdParser.hasParam("all") && (sFileName.find('*') != string::npos || sFileName.find('?') != string::npos))
             {
                 // multiple files directly to cache
                 if (sFileName.find('/') == string::npos)
