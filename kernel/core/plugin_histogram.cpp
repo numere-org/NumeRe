@@ -1758,6 +1758,9 @@ void plugin_histogram(std::string& sCmd)
         _idx.col = VectorIndex(nDataRow, nDataRowFinal-1);
     }
 
+    if (!_data.isValueLike(_idx.col, _histParams.sTable))
+        throw SyntaxError(SyntaxError::WRONG_COLUMN_TYPE, sCmd, _histParams.sTable+"(", _histParams.sTable);
+
     _histParams.nBin = intCast(StrToDb(getParameterValue(sCmd, "bins", "b", "0")));
     _histParams.binWidth[0] = StrToDb(getParameterValue(sCmd, "width", "w", "0"));
     std::string sTargettable = getParameterValue(sCmd, "tocache", "totable", "");

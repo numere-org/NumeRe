@@ -776,6 +776,9 @@ static int getDataForFit(const string& sCmd, string& sDimsForFitLog, FittingData
         _idx.col.setRange(0, _data.getCols(sDataTable, false)-1);
     }
 
+    if (!isCluster && !_data.isValueLike(_idx.col, sDataTable))
+        throw SyntaxError(SyntaxError::WRONG_COLUMN_TYPE, sCmd, sDataTable+"(", sDataTable);
+
     if (!isCluster)
     {
         if (_idx.row.back() > _data.getLines(sDataTable, false))

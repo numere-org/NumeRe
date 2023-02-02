@@ -675,6 +675,30 @@ TableColumn::ColumnType Memory::getType(const VectorIndex& _vCol) const
 
 
 /////////////////////////////////////////////////
+/// \brief Returns true, if all selected columns
+/// are either empty or do not contain
+/// string-like data.
+///
+/// \param _vCol const VectorIndex&
+/// \return bool
+///
+/////////////////////////////////////////////////
+bool Memory::isValueLike(const VectorIndex& _vCol) const
+{
+    for (size_t i = 0; i < _vCol.size(); i++)
+    {
+        if (_vCol[i] >= 0 && (int)memArray.size() > _vCol[i] && memArray[_vCol[i]])
+        {
+            if (memArray[_vCol[i]]->m_type >= TableColumn::STRINGLIKE)
+                return false;
+        }
+    }
+
+    return true;
+}
+
+
+/////////////////////////////////////////////////
 /// \brief Returns a key-value list containing
 /// the categories and their respective index.
 ///

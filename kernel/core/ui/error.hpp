@@ -227,6 +227,7 @@ class SyntaxError
             WRONG_MATRIX_DIMENSIONS_FOR_MATOP,
             WRONG_PLOT_INTERVAL_FOR_LOGSCALE,
             WRONG_DATA_SIZE,
+            WRONG_COLUMN_TYPE,
             /// INSERT HERE
             ZEROES_VAR_NOT_FOUND=4200,
         };

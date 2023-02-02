@@ -718,7 +718,7 @@ void NumeReEditor::OnChar( wxStyledTextEvent& event )
 
     if (m_options->getSetting(SETTING_B_QUOTEAUTOCOMP).active() && chr == '"')
     {
-        if (GetStyleAt(currentPos) != wxSTC_NSCR_STRING && GetStyleAt(currentPos) != wxSTC_NPRC_STRING)
+        if (GetStyleAt(currentPos) != wxSTC_NSCR_STRING)
             InsertText(currentPos, "\"");
     }
 
@@ -1315,13 +1315,16 @@ void NumeReEditor::OnKeyDn(wxKeyEvent& event)
         && event.GetKeyCode() != WXK_UP
         && event.GetKeyCode() != WXK_DOWN)
     {
+        bool shift = event.ShiftDown();
+        bool altgr = event.ControlDown() && event.AltDown();
+
         if (this->HasSelection())
         {
             // Selection case: extract the position of the
             // end of the selection and insert the parenthesis
             // characters around the selection
             char chr = event.GetKeyCode();
-            if (event.ShiftDown() && (chr == '8' || chr == '9'))
+            if (shift && (chr == '8' || chr == '9'))
             {
                 this->BeginUndoAction();
                 int selStart = this->GetSelectionStart();
@@ -1337,7 +1340,7 @@ void NumeReEditor::OnKeyDn(wxKeyEvent& event)
                 MakeBlockCheck();
                 return;
             }
-            else if (event.ShiftDown() && chr == '2')
+            else if (shift && chr == '2')
             {
                 this->BeginUndoAction();
                 int selStart = this->GetSelectionStart();
@@ -1350,7 +1353,7 @@ void NumeReEditor::OnKeyDn(wxKeyEvent& event)
                 MakeBlockCheck();
                 return;
             }
-            else if (event.ControlDown() && event.AltDown() && (chr == '8' || chr == '9')) // Alt Gr means CTRL+ALT
+            else if (altgr && (chr == '8' || chr == '9')) // Alt Gr means CTRL+ALT
             {
                 this->BeginUndoAction();
                 int selStart = this->GetSelectionStart();
@@ -1366,7 +1369,7 @@ void NumeReEditor::OnKeyDn(wxKeyEvent& event)
                 MakeBlockCheck();
                 return;
             }
-            else if (event.ControlDown() && event.AltDown() && (chr == '7' || chr == '0'))
+            else if (altgr && (chr == '7' || chr == '0'))
             {
                 this->BeginUndoAction();
                 int selStart = this->GetSelectionStart();
@@ -1391,7 +1394,8 @@ void NumeReEditor::OnKeyDn(wxKeyEvent& event)
             // algorithm will not work in strings, because
             // parenthesis matching in strings is not necessary
             char chr = event.GetKeyCode();
-            if (event.ShiftDown() && chr == '9')
+
+            if (shift && chr == '9')
             {
                 if (!isStyleType(STYLE_STRING, GetCurrentPos())
                     && GetCharAt(GetCurrentPos()) == ')'
@@ -1401,7 +1405,7 @@ void NumeReEditor::OnKeyDn(wxKeyEvent& event)
                     return;
                 }
             }
-            else if (event.ShiftDown() && chr == '2')
+            else if (shift && chr == '2')
             {
                 if (isStyleType(STYLE_STRING, GetCurrentPos()-1)
                     && GetCharAt(GetCurrentPos()) == '"'
@@ -1411,7 +1415,7 @@ void NumeReEditor::OnKeyDn(wxKeyEvent& event)
                     return;
                 }
             }
-            else if (event.ControlDown() && event.AltDown() && chr == '9') // Alt Gr means CTRL+ALT
+            else if (altgr && chr == '9') // Alt Gr means CTRL+ALT
             {
                 if (!isStyleType(STYLE_STRING, GetCurrentPos())
                     && GetCharAt(GetCurrentPos()) == ']'
@@ -1421,7 +1425,7 @@ void NumeReEditor::OnKeyDn(wxKeyEvent& event)
                     return;
                 }
             }
-            else if (event.ControlDown() && event.AltDown() && chr == '0')
+            else if (altgr && chr == '0')
             {
                 if (!isStyleType(STYLE_STRING, GetCurrentPos())
                     && GetCharAt(GetCurrentPos()) == '}'

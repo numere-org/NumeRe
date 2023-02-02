@@ -594,6 +594,9 @@ namespace NumeRe
     {
         // Identify the correct table
         DataAccessParser _accessParser(sObject);
+        //NumeReKernel::print(sObject);
+        //NumeReKernel::print(_accessParser.getIndices().row.to_string());
+        //NumeReKernel::print(_accessParser.getIndices().sCompiledAccessEquation);
 
         if (!_accessParser.getDataObject().length())
             return;
@@ -606,19 +609,17 @@ namespace NumeRe
         {
             // If the first element is non-zero but the second is,
             // we use the number of elements as upper boundary
-            if (_idx.col.isOpenEnd())
-                _idx.col.setRange(0, _idx.col.front() + nStrings - nCurrentComponent - 1);
+            _idx.col.setOpenEndIndex(_idx.col.front() + nStrings-nCurrentComponent-1);
 
-            for (int n = nCurrentComponent; n < (int)nStrings; n++)
+            for (size_t i = 0; i < _idx.col.size(); i++)
             {
-                if (!strRes.vResult[n].length()
-                    || (_idx.col[n] == VectorIndex::INVALID))
+                if ((i + nCurrentComponent >= nStrings && nStrings > 1)
+                    || _idx.col[i] == VectorIndex::INVALID)
                     break;
 
-                _data.setHeadLineElement(_idx.col[n], sTableName, strRes.vResult[n].to_string());
+                _data.setHeadLineElement(_idx.col[i], sTableName,
+                                         strRes.vResult[nStrings > 1 ? i+nCurrentComponent : 0].to_string());
             }
-
-            nCurrentComponent = nStrings;
         }
         else if (_accessParser.isCluster())
         {
@@ -626,60 +627,43 @@ namespace NumeRe
             // parsing them
             mu::value_type* v = nullptr;
             int nResults = 0;
-            int nthComponent = 0;
             NumeRe::Cluster& cluster = _data.getCluster(sTableName);
 
             // Clusters are overwritten, if the last index
             // is not explictly set
-            if (_idx.row.back() == -2 && _idx.row.front() == 0)
+            if ((_idx.row.isOpenEnd() || (_idx.row.isExpanded() && _idx.row.last() == (int)cluster.size()-1)) && _idx.row.front() == 0)
                 cluster.clear();
 
-            for (size_t i = nCurrentComponent; i < strRes.vResult.size(); i++)
+            _idx.row.setOpenEndIndex(_idx.row.front() + nStrings-nCurrentComponent-1);
+
+            for (size_t i = 0; i < _idx.row.size(); i++)
             {
+                if (_idx.row[i] == VectorIndex::INVALID
+                    || (nStrings > 1 && nCurrentComponent+i >= nStrings))
+                    break;
+
                 // Set expression and evaluate it (not efficient but currently necessary)
-                if (strRes.vResult.is_string(i))
-                {
-                    // Special case: only one single value
-                    if (_idx.row.size() == 1 && _idx.col.size() == 1)
-                    {
-                        cluster.setString(_idx.row.front(), strRes.vResult[i].to_string());
-                        break;
-                    }
-
-                    if (_idx.row[nthComponent] == VectorIndex::INVALID)
-                        break;
-
-                    cluster.setString(_idx.row[nthComponent], strRes.vResult[i].to_string());
-                    nthComponent++;
-                }
+                if (strRes.vResult.is_string(nStrings > 1 ? i + nCurrentComponent : 0))
+                    cluster.setString(_idx.row[i],
+                                      strRes.vResult[nStrings > 1 ? i + nCurrentComponent : 0].to_string());
                 else
                 {
-                    _parser.SetExpr(strRes.vResult[i]);
+                    _parser.SetExpr(strRes.vResult[nStrings > 1 ? i + nCurrentComponent : 0]);
                     v = _parser.Eval(nResults);
                     strRes.vNumericalValues.insert(strRes.vNumericalValues.end(), v, v+nResults);
-
-                    // Special case: only one single value
-                    if (_idx.row.size() == 1 && _idx.col.size() == 1)
-                    {
-                        cluster.setDouble(_idx.row.front(), v[0]);
-
-                        break;
-                    }
 
                     // Write the single values
                     for (int j = 0; j < nResults; j++)
                     {
-                        if (_idx.row[nthComponent] == VectorIndex::INVALID)
+                        if (_idx.row[j+i] == VectorIndex::INVALID || j+i >= _idx.row.size())
                             break;
 
-                        cluster.setDouble(_idx.row[nthComponent], v[j]);
-
-                        nthComponent++;
+                        cluster.setDouble(_idx.row[j+i], v[j]);
                     }
+
+                    i += nResults-1;
                 }
             }
-
-            nCurrentComponent = nStrings;
         }
         else
         {
@@ -687,43 +671,45 @@ namespace NumeRe
             // parsing them
             mu::value_type* v = nullptr;
             int nResults = 0;
-            int nthComponent = 0;
 
-            bool rewriteColumn = false;
+            bool rewriteColumn = _idx.row.front() == 0 && (_idx.row.isOpenEnd()
+                                                           || (_idx.row.isExpanded()
+                                                               && _idx.row.last() == _data.getColElements(_idx.col.subidx(0,1),sTableName)-1));
 
-            if (_idx.row.front() == 0 && _idx.row.isOpenEnd())
-                rewriteColumn = true;
+            _idx.row.setOpenEndIndex(_idx.row.front() + nStrings-nCurrentComponent-1);
+            _idx.col.setOpenEndIndex(_idx.col.front() + nStrings-nCurrentComponent-1);
 
-
-
-            for (size_t i = nCurrentComponent; i < strRes.vResult.size(); i++)
+            for (size_t i = 0; i < std::max(_idx.row.size(), _idx.col.size()); i++)
             {
+                if (nStrings > 1 && nCurrentComponent+i >= nStrings)
+                    break;
+
                 // Set expression and evaluate it (not efficient but currently necessary)
-                if (strRes.vResult.is_string(i))
+                if (strRes.vResult.is_string(nStrings > 1 ? i + nCurrentComponent : 0))
                 {
                     if (_idx.row.size() == 1 && _idx.col.size() >= 1)
                     {
-                        if (_idx.col[nthComponent] == VectorIndex::INVALID)
+                        if (_idx.col[i] == VectorIndex::INVALID)
                             break;
 
-                        _data.writeToTable(_idx.row.front(), _idx.col[nthComponent], sTableName, strRes.vResult[i].to_string());
+                        _data.writeToTable(_idx.row.front(), _idx.col[i], sTableName,
+                                           strRes.vResult[nStrings > 1 ? i + nCurrentComponent : 0].to_string());
                     }
                     else if (_idx.row.size() > 1 && _idx.col.size() == 1)
                     {
-                        if (i == nCurrentComponent && rewriteColumn)
+                        if (!i && rewriteColumn)
                             _data.overwriteColumn(_idx.col.front(), sTableName, TableColumn::TYPE_STRING);
 
-                        if (_idx.row[nthComponent] == VectorIndex::INVALID)
+                        if (_idx.row[i] == VectorIndex::INVALID)
                             break;
 
-                        _data.writeToTable(_idx.row[nthComponent], _idx.col.front(), sTableName, strRes.vResult[i].to_string());
+                        _data.writeToTable(_idx.row[i], _idx.col.front(), sTableName,
+                                           strRes.vResult[nStrings > 1 ? i + nCurrentComponent : 0].to_string());
                     }
-
-                    nthComponent++;
                 }
                 else
                 {
-                    _parser.SetExpr(strRes.vResult[i]);
+                    _parser.SetExpr(strRes.vResult[nStrings > 1 ? i + nCurrentComponent : 0]);
                     v = _parser.Eval(nResults);
                     strRes.vNumericalValues.insert(strRes.vNumericalValues.end(), v, v+nResults);
 
@@ -731,31 +717,31 @@ namespace NumeRe
                     {
                         if (_idx.row.size() == 1 && _idx.col.size() >= 1)
                         {
-                            if (_idx.col[nthComponent] == VectorIndex::INVALID)
+                            if (_idx.col[i+j] == VectorIndex::INVALID || j+i >= _idx.col.size())
                                 break;
 
-                            _data.writeToTable(_idx.row.front(), _idx.col[nthComponent], sTableName, v[j]);
+                            _data.writeToTable(_idx.row.front(), _idx.col[i+j], sTableName, v[j]);
                         }
                         else if (_idx.row.size() > 1 && _idx.col.size() == 1)
                         {
-                            if (i == nCurrentComponent
+                            if (!i
                                 && rewriteColumn
                                 && (_data.getType(_idx.col.subidx(0, 1), sTableName) != TableColumn::TYPE_DATETIME || !mu::isreal(v, nResults)))
                                 _data.overwriteColumn(_idx.col.front(), sTableName, TableColumn::TYPE_VALUE);
 
-                            if (_idx.row[nthComponent] == VectorIndex::INVALID)
+                            if (_idx.row[i] == VectorIndex::INVALID || j+i >= _idx.row.size())
                                 break;
 
-                            _data.writeToTable(_idx.row[nthComponent], _idx.col.front(), sTableName, v[j]);
+                            _data.writeToTable(_idx.row[i+j], _idx.col.front(), sTableName, v[j]);
                         }
-
-                        nthComponent++;
                     }
+
+                    i += nResults-1;
                 }
             }
-
-            nCurrentComponent = nStrings;
         }
+
+        nCurrentComponent = nStrings;
     }
 
 
@@ -841,109 +827,89 @@ namespace NumeRe
             {
                 // Store the strings in string variables
                 StripSpaces(sObject);
+
                 if (sObject.find(' ') != std::string::npos)
                     return 0;
-                try
-                {
-                    if (nCurrentComponent >= nStrings)
-                        setStringValue(sObject, "");
-                    else
-                        setStringValue(sObject, strRes.vResult[nCurrentComponent].to_string());
+
+                if (nCurrentComponent >= nStrings)
+                    setStringValue(sObject, "");
+                else
+                    setStringValue(sObject, strRes.vResult[nCurrentComponent].to_string());
+
+                // Do not increment singletons
+                if (nStrings > 1)
                     nCurrentComponent++;
-                }
-                catch (...)
-                {
-                    throw;
-                }
             }
             else
             {
                 // Store the results as numerical values
                 StripSpaces(sObject);
+
                 if (sObject.find(' ') != std::string::npos)
-                {
                     return 0;
-                }
 
                 // Search for the adress of the current variable
                 if (getPointerToVariable(sObject, _parser))
                 {
                     if (strRes.vNoStringVal.size() > nCurrentComponent && !strRes.vNoStringVal[nCurrentComponent])
-                    {
                         return 0;
-                    }
                 }
 
                 // If this is a numerical value
                 if (strRes.vNoStringVal.size() > nCurrentComponent && strRes.vNoStringVal[nCurrentComponent])
                 {
-                    try
+                    // Parse and store it
+                    int nResults = 0;
+                    mu::value_type* v = 0;
+                    _parser.SetExpr(sObject + " = " + strRes.vResult[nCurrentComponent]);
+                    v = _parser.Eval(nResults);
+
+                    // Replace the evaluated expression with its result,
+                    // which will be shown in the terminal. The actual precision
+                    // remains untouched!
+                    if (nResults)
                     {
-                        // Parse and store it
-                        int nResults = 0;
-                        mu::value_type* v = 0;
-                        _parser.SetExpr(sObject + " = " + strRes.vResult[nCurrentComponent]);
-                        v = _parser.Eval(nResults);
+                        vAns = v[0];
+                        NumeReKernel::getInstance()->getAns().setDoubleArray(nResults, v);
+                        std::string sValues;
+                        strRes.vNumericalValues.insert(strRes.vNumericalValues.end(), v, v+nResults);
 
-                        // Replace the evaluated expression with its result,
-                        // which will be shown in the terminal. The actual precision
-                        // remains untouched!
-                        if (nResults)
+                        // Transform the results into a string
+                        for (int n = 0; n < nResults; n++)
                         {
-                            vAns = v[0];
-                            NumeReKernel::getInstance()->getAns().setDoubleArray(nResults, v);
-                            std::string sValues;
-                            strRes.vNumericalValues.insert(strRes.vNumericalValues.end(), v, v+nResults);
-
-                            // Transform the results into a string
-                            for (int n = 0; n < nResults; n++)
-                            {
-                                sValues += toString(v[n], _option.getPrecision()) + ",";
-                            }
-                            sValues.pop_back();
-
-                            // replace the current expression
-                            strRes.vResult[nCurrentComponent] = sValues;
+                            sValues += toString(v[n], _option.getPrecision()) + ",";
                         }
 
+                        sValues.pop_back();
+
+                        // replace the current expression
+                        strRes.vResult[nCurrentComponent] = sValues;
+                    }
+
+                    // Do not increment singletons
+                    if (nStrings > 1)
                         nCurrentComponent++;
-                    }
-                    catch (...)
-                    {
-                        throw;
-                    }
                 }
-                else if (strRes.vNoStringVal.size() <= nCurrentComponent)
+                else if (strRes.vNoStringVal.size() <= nCurrentComponent && nStrings > 1)
                 {
                     // Fallback: try to find the variable address
                     // although it doesn't seem to be a numerical value
                     if (!getPointerToVariable(sObject, _parser))
                     {
-                        try
-                        {
-                            // If there's no numerical value, create
-                            // a new string variable
-                            setStringValue(sObject, "");
-                            nCurrentComponent++;
-                        }
-                        catch (...)
-                        {
-                            throw;
-                        }
+                        // If there's no numerical value, create
+                        // a new string variable
+                        setStringValue(sObject, "");
+                        nCurrentComponent++;
                     }
                 }
                 else
                 {
-                    try
-                    {
-                        // Create a new string variable
-                        setStringValue(sObject, strRes.vResult[nCurrentComponent].to_string());
+                    // Create a new string variable
+                    setStringValue(sObject, strRes.vResult[nCurrentComponent].to_string());
+
+                    // Do not increment singletons
+                    if (nStrings > 1)
                         nCurrentComponent++;
-                    }
-                    catch (...)
-                    {
-                        throw;
-                    }
                 }
             }
         }
@@ -2106,6 +2072,12 @@ namespace NumeRe
                 {
                     size_t nmatching = getMatchingParenthesis(strExpr.sLine.substr(i));
                     std::string sVectorTemp = strExpr.sLine.substr(i+1, nmatching-1);
+
+                    if (!sVectorTemp.length()) // Empty brace == nan
+                    {
+                        strExpr.sLine.replace(i, nmatching+1, "nan");
+                        continue;
+                    }
 
                     // Does the vector brace contain colons? Then it
                     // might be a numerical vector expansion if it

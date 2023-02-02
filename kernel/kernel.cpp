@@ -557,10 +557,11 @@ void NumeReKernel::initializeStackTracker()
 /// headline and the version information to the
 /// console.
 ///
+/// \param shortInfo bool
 /// \return void
 ///
 /////////////////////////////////////////////////
-void NumeReKernel::printVersionInfo()
+void NumeReKernel::printVersionInfo(bool shortInfo)
 {
     bWritingTable = true;
     make_hline(80);
@@ -571,12 +572,16 @@ void NumeReKernel::printVersionInfo()
     printPreFmt("| Copyright (c) 2013-" + std::string(AutoVersion::YEAR) + toSystemCodePage(", Erik A. Hänel et al.") + strfill(toSystemCodePage(_lang.get("MAIN_ABOUT_NBR")), 79 - 48) + " |\n");
     make_hline(80);
 
-    printPreFmt("|\n");
+    if (!shortInfo)
+    {
+        printPreFmt("|\n");
 
-    if (_option.showGreeting() && fileExists(_option.getExePath() + "\\numere.ini"))
-        printPreFmt(toSystemCodePage(getGreeting()) + "|\n");
+        if (_option.showGreeting())
+            printPreFmt(toSystemCodePage(getGreeting()) + "|\n");
 
-    print(LineBreak(_lang.get("PARSER_INTRO", wxGetUserName().ToStdString()), _option));
+        print(LineBreak(_lang.get("PARSER_INTRO", wxGetUserName().ToStdString()), _option));
+    }
+
     flush();
     bWritingTable = false;
 

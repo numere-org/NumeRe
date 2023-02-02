@@ -2295,5 +2295,5 @@ void NumeReTerminal::clearTerminal()
     GetTM()->Reset();
 
     // Print the version info same as during start of program
-    _kernel.printVersionInfo();
+    _kernel.printVersionInfo(true);
 }

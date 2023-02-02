@@ -307,7 +307,7 @@ string NumeReDebugger::decodeType(string& sArgumentValue, const std::string& sAr
     {
         // Replace the value with its actual value and mark the
         // argument type as reference
-        sArgumentValue = "\"" + (_stringParser.getStringVars().find(sArgumentValue)->second) + "\"";
+        sArgumentValue = replaceControlCharacters(ellipsize(toExternalString(_stringParser.getStringVars().find(sArgumentValue)->second), MAXSTRINGLENGTH));
         return "\t1 x 1\t" + isRef + "string\t";
     }
 

@@ -1146,6 +1146,8 @@ bool readFromFile(CommandLineParser& cmdParser)
 {
 	std::string sInput = "";
 	std::string sCommentEscapeSequence = cmdParser.getParameterValueAsString("comments", "");
+	// Kind of a hack
+	NumeRe::Cluster comments = NumeReKernel::getInstance()->getAns();
 	std::string sStringSequence = cmdParser.getParameterValueAsString("qmarks", "");
 
 	bool bKeepEmptyLines = cmdParser.hasParam("keepdim") || cmdParser.hasParam("k");
@@ -1173,12 +1175,15 @@ bool readFromFile(CommandLineParser& cmdParser)
         replaceAll(sCommentEscapeSequence, "\\t", "\t");
         replaceAll(sStringSequence, "\\\"", "\"");
 
-        EndlessVector<std::string> args = getAllArguments(sCommentEscapeSequence);
-        fFile.reStyle(removeQuotationMarks(args[0]),
-                      removeQuotationMarks(args[0]),
-                      removeQuotationMarks(args[1]),
-                      removeQuotationMarks(args[1]),
-                      removeQuotationMarks(args[2]),
+        //EndlessVector<std::string> args = getAllArguments(sCommentEscapeSequence);
+        EndlessVector<std::string> args;
+        std::vector<std::string> strArr = comments.getInternalStringArray();
+        args.assign(strArr.begin(), strArr.end());
+        fFile.reStyle(args[0],
+                      args[0],
+                      args[1],
+                      args[1],
+                      args[2],
                       sStringSequence,
                       sStringSequence.length() != 0);
     }
@@ -1201,14 +1206,14 @@ bool readFromFile(CommandLineParser& cmdParser)
         }
 
         // Add the missing quotation marks
-		if (sLine.front() != '"')
-			sLine = '"' + sLine;
-
-		if (sLine.back() != '"')
-			sLine += '"';
+		//if (sLine.front() != '"')
+		//	sLine = '"' + sLine;
+        //
+		//if (sLine.back() != '"')
+		//	sLine += '"';
 
 		// Append the parsed string to the vector
-		vFileContents.push_back(sLine);
+		vFileContents.push_back("\"" + sLine + "\"");
     }
 
     // Create a new temporary variable, if we actually

@@ -515,6 +515,14 @@ class MemoryManager : public NumeRe::FileAdapter, public StringMemory, public Nu
             return TableColumn::TYPE_NONE;
 		}
 
+		bool isValueLike(const VectorIndex& _vCol, const std::string& _sTable) const
+		{
+		    if (exists(_sTable))
+                return vMemory[findTable(_sTable)]->isValueLike(_vCol);
+
+            return false;
+		}
+
 		ValueVector getCategoryList(const VectorIndex& _vCol, const std::string& _sTable) const
 		{
 		    if (exists(_sTable))

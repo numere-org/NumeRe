@@ -1092,7 +1092,8 @@ void ProcedureVarFactory::evaluateProcedureArguments(std::string& currentArg, st
 
                         if (ret == NumeRe::StringParser::STRING_SUCCESS)
                         {
-                            _stringParser.setStringValue(sNewArgName, getNextArgument(currentValue));
+                            NumeRe::Cluster& ans = NumeReKernel::getInstance()->getAns();
+                            _stringParser.setStringValue(sNewArgName, ans.getParserString(0));
                             currentValue = sNewArgName;
                             mLocalArgs[sNewArgName] = STRINGTYPE;
                             mArguments[currentArg] = currentValue;

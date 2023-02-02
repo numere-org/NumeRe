@@ -3596,6 +3596,9 @@ static CommandReturnValues cmd_stats(string& sCmd)
         if (_accessParser.getDataObject() != "table")
             _cache.renameTable("table", _accessParser.getDataObject(), true);
 
+        if (!_cache.isValueLike(VectorIndex(0, _cache.getCols(_accessParser.getDataObject())-1), _accessParser.getDataObject()))
+            throw SyntaxError(SyntaxError::WRONG_COLUMN_TYPE, sCmd, _accessParser.getDataObject()+"(", _accessParser.getDataObject());
+
         if (NumeReKernel::getInstance()->getStringParser().containsStringVars(sCmd))
             NumeReKernel::getInstance()->getStringParser().getStringValues(sCmd);
 
@@ -4073,9 +4076,12 @@ static CommandReturnValues cmd_smooth(string& sCmd)
     if (_access.getDataObject().length())
     {
         if (!isValidIndexSet(_access.getIndices()))
-            throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd, _access.getDataObject(), _access.getIndexString());
+            throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd, _access.getDataObject()+"(", _access.getIndexString());
 
         _access.evalIndices();
+
+        if (!_data.isValueLike(_access.getIndices().col, _access.getDataObject()))
+            throw SyntaxError(SyntaxError::WRONG_COLUMN_TYPE, cmdParser.getCommandLine(), _access.getDataObject()+"(", _access.getDataObject());
 
         bool success = false;
 
@@ -4431,9 +4437,12 @@ static CommandReturnValues cmd_resample(string& sCmd)
         }
 
         if (!isValidIndexSet(_access.getIndices()))
-            throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd, _access.getDataObject(), _access.getIndexString());
+            throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd, _access.getDataObject()+"(", _access.getIndexString());
 
         _access.evalIndices();
+
+        if (!_data.isValueLike(_access.getIndices().col, _access.getDataObject()))
+            throw SyntaxError(SyntaxError::WRONG_COLUMN_TYPE, cmdParser.getCommandLine(), _access.getDataObject()+"(", _access.getDataObject());
 
         MemoryManager::AppDir dir = MemoryManager::ALL;
 
@@ -4624,13 +4633,16 @@ static CommandReturnValues cmd_retouch(string& sCmd)
     if (_access.getDataObject().length())
     {
         if (!isValidIndexSet(_access.getIndices()))
-            throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd, _access.getDataObject(), _access.getIndexString());
+            throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd, _access.getDataObject()+"(", _access.getIndexString());
 
         if (_access.getIndices().row.isOpenEnd())
             _access.getIndices().row.setRange(0, _data.getLines(_access.getDataObject(), false)-1);
 
         if (_access.getIndices().col.isOpenEnd())
             _access.getIndices().col.setRange(0, _data.getCols(_access.getDataObject())-1);
+
+        if (!_data.isValueLike(_access.getIndices().col, _access.getDataObject()))
+            throw SyntaxError(SyntaxError::WRONG_COLUMN_TYPE, sCmd, _access.getDataObject()+"(", _access.getDataObject());
 
         MemoryManager::AppDir dir = MemoryManager::ALL;
 

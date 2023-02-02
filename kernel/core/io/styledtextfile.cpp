@@ -82,6 +82,8 @@ void StyledTextFile::lex()
             // Are we currently in default mode?
             if (lastStyle == DEFAULT)
             {
+                size_t offset = 0;
+
                 if (sDocCommentLine.length()
                     && vFileContents[i].second.substr(j, sDocCommentLine.length()) == sDocCommentLine)
                 {
@@ -96,22 +98,30 @@ void StyledTextFile::lex()
                 }
                 else if (useStrings
                          && vFileContents[i].second.substr(j, sStringMarks.length()) == sStringMarks)
+                {
                     lastStyle = STRING;
+                    offset = sStringMarks.length();
+                }
                 else if (sDocCommentBlockStart.length()
                          && vFileContents[i].second.substr(j, sDocCommentBlockStart.length()) == sDocCommentBlockStart)
+                {
                     lastStyle = COMMENT_DOC_BLOCK;
+                    offset = sDocCommentBlockStart.length();
+                }
                 else if (sCommentBlockStart.length()
                          && vFileContents[i].second.substr(j, sCommentBlockStart.length()) == sCommentBlockStart)
+                {
                     lastStyle = COMMENT_BLOCK;
+                    offset = sCommentBlockStart.length();
+                }
 
                 // Increment the position, if the current
                 // style starts a block style
                 if (lastStyle > BLOCK_START)
                 {
-                    vStyles[i][j] = lastStyle;
-                    j++;
+                    for (size_t n = 0; n < offset; j++, n++)
+                        vStyles[i][j] = lastStyle;
                 }
-
             }
 
             // Is the current style part of any

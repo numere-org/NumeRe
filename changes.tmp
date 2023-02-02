@@ -67,3 +67,7 @@ Added	Some new detection points for the static code analyzer were added.
 Updated	NumeRe may now import far more different JCAMP-DX files than before.
 Added	The two new matrix functions "cumsum()" and "cumprd()" calculate the cumulative sum or product of the passed matrix or vector, respectively
 New	NumeRe may now "pack" and "unpack" archives with the corresponding commands.
+Fixed	NumeRe will now check, whether the selected columns of the used table contain the necessary data types.
+Fixed	Enabled to write scalar strings into multiple components of a table or a cluster.
+Cleaned	Improved the behavior of "clc".
+Cleaned	Improved reading of Python code files (not executing) with "read".

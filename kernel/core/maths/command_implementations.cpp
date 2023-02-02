@@ -177,6 +177,9 @@ static vector<mu::value_type> integrateSingleDimensionData(CommandLineParser& cm
     Indices& _idx = accessParser.getIndices();
     std::string sDatatable = accessParser.getDataObject();
 
+    if (!_data.isValueLike(accessParser.getIndices().col, accessParser.getDataObject()))
+        throw SyntaxError(SyntaxError::WRONG_COLUMN_TYPE, cmdParser.getCommandLine(), accessParser.getDataObject()+"(", accessParser.getDataObject());
+
     // The indices are vectors
     //
     // If it is a single column or row, then we simply
@@ -934,6 +937,9 @@ bool differentiate(CommandLineParser& cmdParser)
         if (_idx.col.isOpenEnd())
             _idx.col.setRange(0, _idx.col.front()+1);
 
+        if (!_data.isValueLike(accessParser.getIndices().col, accessParser.getDataObject()))
+            throw SyntaxError(SyntaxError::WRONG_COLUMN_TYPE, cmdParser.getCommandLine(), accessParser.getDataObject()+"(", accessParser.getDataObject());
+
         // If shorter than filter's size return an invalid
         // value
         if (_idx.row.size() < nFilterSize)
@@ -1442,6 +1448,9 @@ bool findExtrema(CommandLineParser& cmdParser)
     if (_data.containsTablesOrClusters(sExpr))
         getDataElements(sExpr, _parser, _data, instance->getSettings(), false);
 
+    if (instance->getStringParser().isStringExpression(sExpr))
+        throw SyntaxError(SyntaxError::STRINGS_MAY_NOT_BE_EVALUATED_WITH_CMD, cmdParser.getCommandLine(), SyntaxError::invalid_position, "extrema");
+
     if (_data.containsTablesOrClusters(sParams))
         getDataElements(sParams, _parser, _data, instance->getSettings(), false);
 
@@ -1898,6 +1907,9 @@ bool findZeroes(CommandLineParser& cmdParser)
     // data elements, get their values here
     if (_data.containsTablesOrClusters(sExpr))
         getDataElements(sExpr, _parser, _data, NumeReKernel::getInstance()->getSettings(), false);
+
+    if (instance->getStringParser().isStringExpression(sExpr))
+        throw SyntaxError(SyntaxError::STRINGS_MAY_NOT_BE_EVALUATED_WITH_CMD, cmdParser.getCommandLine(), SyntaxError::invalid_position, "zeroes");
 
     if (_data.containsTablesOrClusters(sParams))
         getDataElements(sParams, _parser, _data, NumeReKernel::getInstance()->getSettings(), false);
@@ -2883,6 +2895,9 @@ bool fastFourierTransform(CommandLineParser& cmdParser)
     if (!_mem)
         throw SyntaxError(SyntaxError::TABLE_DOESNT_EXIST, cmdParser.getCommandLine(), accessParser.getDataObject() + "(", accessParser.getDataObject() + "()");
 
+    if (!_mem->isValueLike(VectorIndex(0, _mem->getCols()-1)))
+        throw SyntaxError(SyntaxError::WRONG_COLUMN_TYPE, cmdParser.getCommandLine(), accessParser.getDataObject()+"(", accessParser.getDataObject());
+
     _mem->shrink();
 
     _fft.lines = _mem->getElemsInColumn(0);
@@ -3041,6 +3056,9 @@ bool fastWaveletTransform(CommandLineParser& cmdParser)
 
     if (!_mem)
         throw SyntaxError(SyntaxError::TABLE_DOESNT_EXIST, cmdParser.getCommandLine(), accessParser.getDataObject() + "(", accessParser.getDataObject() + "()");
+
+    if (!_mem->isValueLike(VectorIndex(0, _mem->getCols()-1)))
+        throw SyntaxError(SyntaxError::WRONG_COLUMN_TYPE, cmdParser.getCommandLine(), accessParser.getDataObject()+"(", accessParser.getDataObject());
 
     if (_option.systemPrints())
     {
@@ -3370,6 +3388,9 @@ bool createDatagrid(CommandLineParser& cmdParser)
         if (!_accessParser.getDataObject().length() || _accessParser.isCluster())
             throw SyntaxError(SyntaxError::TABLE_DOESNT_EXIST, cmdParser.getCommandLine(), SyntaxError::invalid_position);
 
+        if (!_data.isValueLike(_accessParser.getIndices().col, _accessParser.getDataObject()))
+            throw SyntaxError(SyntaxError::WRONG_COLUMN_TYPE, cmdParser.getCommandLine(), _accessParser.getDataObject()+"(", _accessParser.getDataObject());
+
         Indices& _idx = _accessParser.getIndices();
 
         // identify the table
@@ -3645,6 +3666,9 @@ bool writeAudioFile(CommandLineParser& cmdParser)
     if (_idx.col.isOpenEnd())
         _idx.col.setRange(0, _idx.col.front() + 1);
 
+    if (!_data.isValueLike(_idx.col, _accessParser.getDataObject()))
+        throw SyntaxError(SyntaxError::WRONG_COLUMN_TYPE, cmdParser.getCommandLine(), _accessParser.getDataObject()+"(", _accessParser.getDataObject());
+
     _accessParser.evalIndices();
 
     if (_idx.col.size() > 2)
@@ -3869,6 +3893,9 @@ bool regularizeDataSet(CommandLineParser& cmdParser)
     if (!_mem)
         throw SyntaxError(SyntaxError::TABLE_DOESNT_EXIST, cmdParser.getCommandLine(), accessParser.getDataObject() + "(", accessParser.getDataObject() + "()");
 
+    if (!_mem->isValueLike(VectorIndex(0, _mem->getCols()-1)))
+        throw SyntaxError(SyntaxError::WRONG_COLUMN_TYPE, cmdParser.getCommandLine(), accessParser.getDataObject()+"(", accessParser.getDataObject());
+
     sColHeaders[0] = _mem->getHeadLineElement(0) + "\n(regularized)";
     sColHeaders[1] = _mem->getHeadLineElement(1) + "\n(regularized)";
 
@@ -3926,6 +3953,9 @@ bool analyzePulse(CommandLineParser& cmdParser)
 
     if (!_mem)
         throw SyntaxError(SyntaxError::TABLE_DOESNT_EXIST, cmdParser.getCommandLine(), accessParser.getDataObject() + "(", accessParser.getDataObject() + "()");
+
+    if (!_mem->isValueLike(VectorIndex(0, _mem->getCols()-1)))
+        throw SyntaxError(SyntaxError::WRONG_COLUMN_TYPE, cmdParser.getCommandLine(), accessParser.getDataObject()+"(", accessParser.getDataObject());
 
     long long int nLines = _mem->getLines();
 
@@ -4005,6 +4035,9 @@ bool shortTimeFourierAnalysis(CommandLineParser& cmdParser)
     DataAccessParser _accessParser = cmdParser.getExprAsDataObject();
     _accessParser.evalIndices();
     Indices& _idx = _accessParser.getIndices();
+
+    if (!_data.isValueLike(_accessParser.getIndices().col, _accessParser.getDataObject()))
+        throw SyntaxError(SyntaxError::WRONG_COLUMN_TYPE, cmdParser.getCommandLine(), _accessParser.getDataObject()+"(", _accessParser.getDataObject());
 
     dXmin = _data.min(_accessParser.getDataObject(), _idx.row, _idx.col.subidx(0, 1)).real();
     dXmax = _data.max(_accessParser.getDataObject(), _idx.row, _idx.col.subidx(0, 1)).real();
@@ -4170,6 +4203,9 @@ void boneDetection(CommandLineParser& cmdParser)
     if (_idx.col.isOpenEnd())
         _idx.col.setRange(0, _idx.col.front() + _data.getLines(accessParser.getDataObject(), true) - _data.getAppendedZeroes(_idx.col[1], accessParser.getDataObject()) + 1);
 
+    if (!_data.isValueLike(_idx.col, accessParser.getDataObject()))
+        throw SyntaxError(SyntaxError::WRONG_COLUMN_TYPE, cmdParser.getCommandLine(), accessParser.getDataObject()+"(", accessParser.getDataObject());
+
     // Get x and y axis for the final scaling
     std::vector<mu::value_type> vX = _data.getElement(_idx.row, _idx.col.subidx(0, 1), accessParser.getDataObject());
     std::vector<mu::value_type> vY = _data.getElement(_idx.row, _idx.col.subidx(1, 1), accessParser.getDataObject());
@@ -4264,6 +4300,9 @@ bool calculateSplines(CommandLineParser& cmdParser)
     if (!_mem)
         throw SyntaxError(SyntaxError::TABLE_DOESNT_EXIST, cmdParser.getCommandLine(), accessParser.getDataObject() + "(", accessParser.getDataObject() + "()");
 
+    if (!_mem->isValueLike(VectorIndex(0, _mem->getCols()-1)))
+        throw SyntaxError(SyntaxError::WRONG_COLUMN_TYPE, cmdParser.getCommandLine(), accessParser.getDataObject()+"(", accessParser.getDataObject());
+
     int nLines = _mem->getLines();
 
     if (nLines < 2)
@@ -4354,6 +4393,9 @@ void rotateTable(CommandLineParser& cmdParser)
 
     _accessParser.getIndices().row.setOpenEndIndex(_data.getLines(_accessParser.getDataObject())-1);
     _accessParser.getIndices().col.setOpenEndIndex(_data.getCols(_accessParser.getDataObject())-1);
+
+    if (!_data.isValueLike(_accessParser.getIndices().col, _accessParser.getDataObject()))
+        throw SyntaxError(SyntaxError::WRONG_COLUMN_TYPE, cmdParser.getCommandLine(), _accessParser.getDataObject()+"(", _accessParser.getDataObject());
 
     // Handle the image and datagrid cases
     if (cmdParser.getCommand() == "imrot" || cmdParser.getCommand() == "gridrot")

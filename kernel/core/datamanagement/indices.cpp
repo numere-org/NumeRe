@@ -131,7 +131,7 @@ void getIndices(StringView sCmd, Indices& _idx,  Parser& _parser, MemoryManager&
         //return;
 
 #warning TODO (numere#3#08/15/21): Checking for string variables here is inefficient
-    if (NumeReKernel::getInstance()->getStringParser().containsStringVectorVars(_idx.sCompiledAccessEquation))
+    if (NumeReKernel::getInstance()->getStringParser().isStringExpression(_idx.sCompiledAccessEquation))
     {
         EndlessVector<std::string> idc = getAllArguments(_idx.sCompiledAccessEquation);
         g_logger.debug("_idx.sCompiledAccessEquation contains string vector vars " + _idx.sCompiledAccessEquation);
@@ -139,13 +139,12 @@ void getIndices(StringView sCmd, Indices& _idx,  Parser& _parser, MemoryManager&
 
         for (std::string& index : idc)
         {
-            if (NumeReKernel::getInstance()->getStringParser().containsStringVectorVars(index))
+            if (index != "#" && NumeReKernel::getInstance()->getStringParser().isStringExpression(index))
             {
                 std::string sDummy;
-                bool isVector = index.front() == '{' && index.back() == '}';
                 NumeReKernel::getInstance()->getStringParser().evalAndFormat(index, sDummy, true);
 
-                if (isVector)
+                if (index.find(',') != std::string::npos)
                     index = "{" + index + "}";
             }
 
