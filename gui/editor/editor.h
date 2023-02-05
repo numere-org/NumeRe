@@ -400,6 +400,9 @@ class NumeReEditor : public wxStyledTextCtrl, public wxThreadHelper
 		wxString m_dblclkString;
 		wxDateTime m_filetime;
 
+		wxString m_currSelection;
+		wxChar m_nextChar;
+
 		wxArrayInt m_breakpoints;
 		wxPoint m_lastRightClick;
 		wxString m_clickedWord;

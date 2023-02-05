@@ -160,9 +160,7 @@ NumeReEditor::NumeReEditor(NumeReWindow* mframe, Options* options, wxWindow* par
     m_braceIndicatorActive = false;
     m_blockIndicatorActive = false;
 
-    m_watchedString = "";
-    m_dblclkString = "";
-
+    m_nextChar = 0;
     m_nEditorSetting = 0;
     m_fileType = FILE_NOTYPE;
 
@@ -645,6 +643,40 @@ bool NumeReEditor::Modified ()
 }
 
 
+static bool isBrace(wxChar chr)
+{
+    return chr == '(' || chr == '[' || chr == '{' || chr == ')' || chr == ']' || chr == '}';
+}
+
+
+static bool isOpeningBrace(wxChar chr)
+{
+    return chr == '(' || chr == '[' || chr == '{';
+}
+
+
+static wxChar getBracePartner(wxChar chr)
+{
+    switch (chr)
+    {
+    case '(':
+        return ')';
+    case ')':
+        return '(';
+    case '{':
+        return '}';
+    case '}':
+        return '{';
+    case '[':
+        return ']';
+    case ']':
+        return '[';
+    }
+
+    return 0;
+}
+
+
 //////////////////////////////////////////////////////////////////////////////
 ///  public OnChar
 ///  Handles auto-indentation and such whenever the user enters a character
@@ -691,6 +723,8 @@ void NumeReEditor::OnChar( wxStyledTextEvent& event )
 
     if (chr == '\n')
     {
+        m_currSelection.clear();
+        m_nextChar = 0;
         markModified(currentLine);
         int previousLineInd = 0;
 
@@ -718,27 +752,32 @@ void NumeReEditor::OnChar( wxStyledTextEvent& event )
 
     if (m_options->getSetting(SETTING_B_QUOTEAUTOCOMP).active() && chr == '"')
     {
-        if (GetStyleAt(currentPos) != wxSTC_NSCR_STRING)
+        if (m_currSelection.length())
+            InsertText(currentPos-1, "\"" + m_currSelection);
+        else if (m_nextChar == '"') // Jump over partners
+            DeleteRange(currentPos, 1);
+        else if (GetStyleAt(currentPos) != wxSTC_NSCR_STRING)
             InsertText(currentPos, "\"");
     }
 
-    if (m_options->getSetting(SETTING_B_BRACEAUTOCOMP).active() && (chr == '(' || chr == '[' || chr == '{'))
+    if (m_options->getSetting(SETTING_B_BRACEAUTOCOMP).active() && isBrace(chr))
     {
-        int nMatchingPos = currentPos;
-
-        if (this->HasSelection())
-            nMatchingPos = this->GetSelectionEnd();
-
-        if (this->BraceMatch(currentPos - 1) == wxSTC_INVALID_POSITION)
+        if (m_currSelection.length())
         {
-            if (chr == '(')
-                InsertText(nMatchingPos, ")");
-            else if (chr == '[')
-                InsertText(nMatchingPos, "]");
+            if (isOpeningBrace(chr))
+                InsertText(currentPos, m_currSelection + getBracePartner(chr));
             else
-                InsertText(nMatchingPos, "}");
+                InsertText(currentPos-1, getBracePartner(chr) + m_currSelection);
         }
+        else if (m_nextChar == chr && !isOpeningBrace(chr)) // Jump over closing partners
+            DeleteRange(currentPos, 1);
+        else if (isOpeningBrace(chr)
+                 && (BraceMatch(currentPos-1) == wxSTC_INVALID_POSITION || GetCharAt(currentPos) == getBracePartner(chr)))
+            InsertText(currentPos, wxString(getBracePartner(chr)));
     }
+
+    m_currSelection.clear();
+    m_nextChar = 0;
 
     int lenEntered = currentPos - wordstartpos;
     AutoCompSetAutoHide(!m_options->getSetting(SETTING_B_SMARTSENSE).active());
@@ -1315,126 +1354,14 @@ void NumeReEditor::OnKeyDn(wxKeyEvent& event)
         && event.GetKeyCode() != WXK_UP
         && event.GetKeyCode() != WXK_DOWN)
     {
-        bool shift = event.ShiftDown();
-        bool altgr = event.ControlDown() && event.AltDown();
-
-        if (this->HasSelection())
-        {
-            // Selection case: extract the position of the
-            // end of the selection and insert the parenthesis
-            // characters around the selection
-            char chr = event.GetKeyCode();
-            if (shift && (chr == '8' || chr == '9'))
-            {
-                this->BeginUndoAction();
-                int selStart = this->GetSelectionStart();
-                int selEnd = this->GetSelectionEnd() + 1;
-                this->InsertText(selStart, "(");
-                this->InsertText(selEnd, ")");
-                if (chr == '8')
-                    this->GotoPos(selStart);
-                else
-                    this->GotoPos(selEnd + 1);
-                this->EndUndoAction();
-                MakeBraceCheck();
-                MakeBlockCheck();
-                return;
-            }
-            else if (shift && chr == '2')
-            {
-                this->BeginUndoAction();
-                int selStart = this->GetSelectionStart();
-                int selEnd = this->GetSelectionEnd() + 1;
-                this->InsertText(selStart, "\"");
-                this->InsertText(selEnd, "\"");
-                this->GotoPos(selEnd + 1);
-                this->EndUndoAction();
-                MakeBraceCheck();
-                MakeBlockCheck();
-                return;
-            }
-            else if (altgr && (chr == '8' || chr == '9')) // Alt Gr means CTRL+ALT
-            {
-                this->BeginUndoAction();
-                int selStart = this->GetSelectionStart();
-                int selEnd = this->GetSelectionEnd() + 1;
-                this->InsertText(selStart, "[");
-                this->InsertText(selEnd, "]");
-                if (chr == '8')
-                    this->GotoPos(selStart);
-                else
-                    this->GotoPos(selEnd + 1);
-                this->EndUndoAction();
-                MakeBraceCheck();
-                MakeBlockCheck();
-                return;
-            }
-            else if (altgr && (chr == '7' || chr == '0'))
-            {
-                this->BeginUndoAction();
-                int selStart = this->GetSelectionStart();
-                int selEnd = this->GetSelectionEnd() + 1;
-                this->InsertText(selStart, "{");
-                this->InsertText(selEnd, "}");
-                if (chr == '7')
-                    this->GotoPos(selStart);
-                else
-                    this->GotoPos(selEnd + 1);
-                this->EndUndoAction();
-                MakeBraceCheck();
-                MakeBlockCheck();
-                return;
-            }
-        }
+        if (HasSelection())
+            m_currSelection = GetSelectedText();
         else
         {
-            // Matching partner case: if the matching partner
-            // is right to the current input position, simply
-            // jump one position to the right. Note that this
-            // algorithm will not work in strings, because
-            // parenthesis matching in strings is not necessary
-            char chr = event.GetKeyCode();
+            m_nextChar = GetCharAt(GetCurrentPos());
 
-            if (shift && chr == '9')
-            {
-                if (!isStyleType(STYLE_STRING, GetCurrentPos())
-                    && GetCharAt(GetCurrentPos()) == ')'
-                    && BraceMatch(GetCurrentPos()) != wxSTC_INVALID_POSITION)
-                {
-                    GotoPos(GetCurrentPos()+1);
-                    return;
-                }
-            }
-            else if (shift && chr == '2')
-            {
-                if (isStyleType(STYLE_STRING, GetCurrentPos()-1)
-                    && GetCharAt(GetCurrentPos()) == '"'
-                    && GetCharAt(GetCurrentPos()-1) != '\\')
-                {
-                    GotoPos(GetCurrentPos()+1);
-                    return;
-                }
-            }
-            else if (altgr && chr == '9') // Alt Gr means CTRL+ALT
-            {
-                if (!isStyleType(STYLE_STRING, GetCurrentPos())
-                    && GetCharAt(GetCurrentPos()) == ']'
-                    && BraceMatch(GetCurrentPos()) != wxSTC_INVALID_POSITION)
-                {
-                    GotoPos(GetCurrentPos()+1);
-                    return;
-                }
-            }
-            else if (altgr && chr == '0')
-            {
-                if (!isStyleType(STYLE_STRING, GetCurrentPos())
-                    && GetCharAt(GetCurrentPos()) == '}'
-                    && BraceMatch(GetCurrentPos()) != wxSTC_INVALID_POSITION)
-                {
-                    GotoPos(GetCurrentPos()+1);
-                    return;
-                }
-            }
+            if (!(isStyleType(STYLE_STRING, GetCurrentPos()) && m_nextChar == '"') && !isStyleType(STYLE_OPERATOR, GetCurrentPos()))
+                m_nextChar = 0;
         }
     }
 

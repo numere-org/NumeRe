@@ -71,3 +71,4 @@ Fixed	NumeRe will now check, whether the selected columns of the used table cont
 Fixed	Enabled to write scalar strings into multiple components of a table or a cluster.
 Cleaned	Improved the behavior of "clc".
 Cleaned	Improved reading of Python code files (not executing) with "read".
+Fixed	Autocompletion of braces should now work as expected on non-german keyboard layouts.
