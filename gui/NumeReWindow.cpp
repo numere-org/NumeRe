@@ -86,6 +86,7 @@
 #include "dialogs/dependencydialog.hpp"
 #include "dialogs/revisiondialog.hpp"
 #include "dialogs/pluginrepodialog.hpp"
+#include "dialogs/newfiledialog.hpp"
 
 #include "terminal/terminal.hpp"
 
@@ -7412,49 +7413,12 @@ void NumeReWindow::OnPrintSetup()
 /////////////////////////////////////////////////
 void NumeReWindow::OnAskForNewFile()
 {
-    // Create a list of possible file types
-    wxArrayString choices;
-    choices.Add(_guilang.get("GUI_MENU_NEW_EMPTYFILE"));
-    choices.Add(_guilang.get("GUI_MENU_NEW_NSCR"));
-    choices.Add(_guilang.get("GUI_MENU_NEW_NPRC"));
-    choices.Add(_guilang.get("GUI_MENU_NEW_PLUGIN"));
-    choices.Add(_guilang.get("GUI_MENU_NEW_LAYOUT"));
-
-    // Remove obsolete menu string items
-    for (size_t i = 0; i < choices.size(); i++)
-    {
-        if (choices[i].find('\t') != std::string::npos)
-            choices[i].erase(choices[i].find('\t'));
-
-        if (choices[i].find('&') != std::string::npos)
-            choices[i].erase(choices[i].find('&'), 1);
-    }
-
-    wxSingleChoiceDialog dialog(this, _guilang.get("GUI_TB_NEW_SELECT"), "NumeRe: " + _guilang.get("GUI_TB_NEW"), choices);
+    NewFileDialog dialog(this, getProgramFolder() + "/icons");
     dialog.SetIcon(getStandardIcon());
     int ret = dialog.ShowModal();
 
     if (ret != wxID_CANCEL)
-    {
-        switch (dialog.GetSelection())
-        {
-        case 0:
-            NewFile();
-            break;
-        case 1:
-            NewFile(FILE_NSCR);
-            break;
-        case 2:
-            NewFile(FILE_NPRC);
-            break;
-        case 3:
-            NewFile(FILE_PLUGIN);
-            break;
-        case 4:
-            NewFile(FILE_NLYT);
-            break;
-        }
-    }
+        NewFile(dialog.GetSelection());
 }
 
 

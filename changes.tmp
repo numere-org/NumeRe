@@ -72,3 +72,4 @@ Fixed	Enabled to write scalar strings into multiple components of a table or a c
 Cleaned	Improved the behavior of "clc".
 Cleaned	Improved reading of Python code files (not executing) with "read".
 Fixed	Autocompletion of braces should now work as expected on non-german keyboard layouts.
+Updated	The new file selection dialog should now be much more helpful.

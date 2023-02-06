@@ -247,6 +247,10 @@ enum WindowID
     ID_DEPENDENCYDIALOG_UNFOLDALL,
     ID_DEPENDENCYDIALOG_EXPORTDOT,
 
+    // New file dialog IDs
+    ID_NEWFILE_OK,
+    ID_NEWFILE_ABORT,
+
 	// edit menu items
 	ID_INDENT,
 	ID_UNINDENT,

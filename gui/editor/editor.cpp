@@ -643,18 +643,43 @@ bool NumeReEditor::Modified ()
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Static helper function to determine,
+/// whether a character is an actual brace
+/// character.
+///
+/// \param chr wxChar
+/// \return bool
+///
+/////////////////////////////////////////////////
 static bool isBrace(wxChar chr)
 {
     return chr == '(' || chr == '[' || chr == '{' || chr == ')' || chr == ']' || chr == '}';
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Static helper function to determine,
+/// whether a brace is an opening brace.
+///
+/// \param chr wxChar
+/// \return bool
+///
+/////////////////////////////////////////////////
 static bool isOpeningBrace(wxChar chr)
 {
     return chr == '(' || chr == '[' || chr == '{';
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Static helper function to get the
+/// pairing brace character to the selected one.
+///
+/// \param chr wxChar
+/// \return wxChar
+///
+/////////////////////////////////////////////////
 static wxChar getBracePartner(wxChar chr)
 {
     switch (chr)

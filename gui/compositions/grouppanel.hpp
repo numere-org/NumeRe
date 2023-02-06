@@ -114,7 +114,7 @@ class TextField : public wxTextCtrl
     public:
         wxStaticText* m_label;
 
-        TextField(wxWindow* parent, wxWindowID id, const wxString& sDefault,const wxSize& size, int nStyle) : wxTextCtrl(parent, id, sDefault, wxDefaultPosition, size, nStyle), m_label(nullptr)
+        TextField(wxWindow* parent, wxWindowID id, const wxString& sDefault, const wxSize& size, int nStyle) : wxTextCtrl(parent, id, sDefault, wxDefaultPosition, size, nStyle), m_label(nullptr), m_highlightColour(*wxBLUE)
         {}
 
         /////////////////////////////////////////////////
@@ -175,6 +175,24 @@ class TextField : public wxTextCtrl
 
             return wxTextCtrl::Enable(enable);
         }
+
+        void SetMarkupText(const wxString& text);
+
+        /////////////////////////////////////////////////
+        /// \brief Set the highlight colour for markup
+        /// link styles.
+        ///
+        /// \param col const wxColour&
+        /// \return void
+        ///
+        /////////////////////////////////////////////////
+        void SetHighlightColour(const wxColour& col)
+        {
+            m_highlightColour = col;
+        }
+
+    private:
+        wxColour m_highlightColour;
 };
 
 

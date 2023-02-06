@@ -19,6 +19,109 @@
 #include "grouppanel.hpp"
 #include "../../kernel/core/ui/language.hpp"
 
+/////////////////////////////////////////////////
+/// \brief Handle simple markup styled text in
+/// this control. Implemented as simple state
+/// machine.
+///
+/// \param text const wxString&
+/// \return void
+///
+/////////////////////////////////////////////////
+void TextField::SetMarkupText(const wxString& text)
+{
+    if (!HasFlag(wxTE_RICH) && HasFlag(wxTE_RICH2))
+    {
+        SetValue(text);
+        return;
+    }
+
+    wxFont defaultFont = GetFont();
+    wxTextAttr attr;
+    attr.SetFont(defaultFont);
+    attr.SetTextColour(*wxBLACK);
+    SetDefaultStyle(attr);
+    size_t level = 0;
+    size_t lastPos = 0;
+
+    for (size_t i = 0; i < text.size(); i++)
+    {
+        if (text[i] == '[')
+        {
+            AppendText(text.substr(lastPos, i - lastPos));
+            lastPos = i;
+            attr.SetTextColour(m_highlightColour);
+            SetDefaultStyle(attr);
+        }
+        else if (text[i] == ']')
+        {
+            AppendText(text.substr(lastPos, i + 1 - lastPos));
+            lastPos = i+1;
+            attr.SetTextColour(*wxBLACK);
+            SetDefaultStyle(attr);
+        }
+        else if (text.substr(i, 3) == "***")
+        {
+            AppendText(text.substr(lastPos, i - lastPos));
+            lastPos = i+3;
+
+            if (level == 0)
+            {
+                level = 3;
+                attr.SetFont(defaultFont.Bold().Italic());
+            }
+            else if (level == 3)
+            {
+                level = 0;
+                attr.SetFont(defaultFont);
+            }
+
+            SetDefaultStyle(attr);
+            i += 2;
+        }
+        else if (text.substr(i, 2) == "**")
+        {
+            AppendText(text.substr(lastPos, i - lastPos));
+            lastPos = i+2;
+
+            if (level == 0)
+            {
+                level = 2;
+                attr.SetFont(defaultFont.Bold());
+            }
+            else if (level == 2)
+            {
+                level = 0;
+                attr.SetFont(defaultFont);
+            }
+
+            SetDefaultStyle(attr);
+            i++;
+        }
+        else if (text[i] == '*')
+        {
+            AppendText(text.substr(lastPos, i - lastPos));
+            lastPos = i+1;
+
+            if (level == 0)
+            {
+                level = 1;
+                attr.SetFont(defaultFont.Italic());
+            }
+            else if (level == 1)
+            {
+                level = 0;
+                attr.SetFont(defaultFont);
+            }
+
+            SetDefaultStyle(attr);
+        }
+    }
+
+    AppendText(text.substr(lastPos));
+}
+
+
 extern Language _guilang;
 #define ELEMENT_BORDER 5
 
