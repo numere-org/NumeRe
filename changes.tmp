@@ -73,3 +73,4 @@ Cleaned	Improved the behavior of "clc".
 Cleaned	Improved reading of Python code files (not executing) with "read".
 Fixed	Autocompletion of braces should now work as expected on non-german keyboard layouts.
 Updated	The new file selection dialog should now be much more helpful.
+Added	Misused context-specific commands throw now a more understandable error and are also detected by the static code analyzer.

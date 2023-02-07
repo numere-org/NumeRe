@@ -389,6 +389,15 @@ AnnotationCount CodeAnalyzer::analyseCommands()
     // check the namespace command
     if (sSyntaxElement == "namespace")
     {
+        if (m_editor->m_fileType == FILE_NSCR)
+        {
+            // Not usable command here
+            AnnotCount += addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE",
+                                          highlightFoundOccurence(sSyntaxElement, wordstart, sSyntaxElement.length()),
+                                          m_sError, _guilang.get("GUI_ANALYZER_NOTALLOWED")), ANNOTATION_ERROR);
+            return AnnotCount;
+        }
+
         string sArgs = m_editor->GetTextRange(wordend, m_editor->GetLineEndPosition(m_nCurrentLine)).ToStdString();
         while (sArgs.back() == '\r' || sArgs.back() == '\n')
             sArgs.pop_back();
@@ -407,7 +416,7 @@ AnnotationCount CodeAnalyzer::analyseCommands()
         return AnnotCount;
     }
 
-    // The progress command needs extra runtime (2-4 times). Inform the user about m_editor issue
+    // The progress command needs extra runtime (2-4 times). Inform the user about this issue
     if (m_options->GetAnalyzerOption(Options::PROGRESS_RUNTIME) && sSyntaxElement == "progress")
     {
         AnnotCount += addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE", highlightFoundOccurence(sSyntaxElement, wordstart, sSyntaxElement.length()), m_sNote, _guilang.get("GUI_ANALYZER_PROGRESS_RUNTIME")), ANNOTATION_NOTE);
@@ -916,6 +925,19 @@ AnnotationCount CodeAnalyzer::analyseCommands()
                                                        highlightFoundOccurence(sSyntaxElement, wordstart, sSyntaxElement.length()),
                                                        m_sError,
                                                        _guilang.get("GUI_ANALYZER_NOVARIABLES")), ANNOTATION_ERROR);
+    }
+    else if (m_editor->m_fileType == FILE_NSCR
+             && (sSyntaxElement == "var"
+                 || sSyntaxElement == "str"
+                 || sSyntaxElement == "tab"
+                 || sSyntaxElement == "cst"
+                 || sSyntaxElement == "procedure"
+                 || sSyntaxElement == "endprocedure"))
+    {
+        // Not usable command here
+        AnnotCount += addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE",
+                                      highlightFoundOccurence(sSyntaxElement, wordstart, sSyntaxElement.length()),
+                                      m_sError, _guilang.get("GUI_ANALYZER_NOTALLOWED")), ANNOTATION_ERROR);
     }
 
     // Examine definitions

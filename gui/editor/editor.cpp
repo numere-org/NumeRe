@@ -8233,7 +8233,8 @@ bool NumeReEditor::isStyleType(StyleType _type, int nPos)
                                 || GetStyleAt(nPos) == wxSTC_NSCR_DOCKEYWORD;
                     case STYLE_COMMAND:
                         return GetStyleAt(nPos) == wxSTC_NSCR_COMMAND
-                               || GetStyleAt(nPos) == wxSTC_NPRC_COMMAND;
+                               || GetStyleAt(nPos) == wxSTC_NPRC_COMMAND
+                               || GetStyleAt(nPos) == wxSTC_NSCR_PROCEDURE_COMMANDS;
                     case STYLE_FUNCTION:
                         return GetStyleAt(nPos) == wxSTC_NSCR_FUNCTION;
                     case STYLE_CUSTOMFUNCTION:

@@ -5238,6 +5238,22 @@ static CommandReturnValues cmd_include(string& sCmd)
 
 
 /////////////////////////////////////////////////
+/// \brief This static function catches context
+/// specific commands and throws an error.
+///
+/// \param sCmd string&
+/// \return CommandReturnValues
+///
+/////////////////////////////////////////////////
+static CommandReturnValues cmd_context_specific(string& sCmd)
+{
+    CommandLineParser cmdParser(sCmd, CommandLineParser::CMD_EXPR_set_PAR);
+    // Command is not usable in this context
+    throw SyntaxError(SyntaxError::INVALID_COMMAND, sCmd, cmdParser.getCommand(), cmdParser.getCommand());
+}
+
+
+/////////////////////////////////////////////////
 /// \brief This static function returns a map of
 /// commands linked to their function
 /// implementation.
@@ -5347,6 +5363,48 @@ static std::map<std::string,CommandFunc> getCommandFunctions()
     mCommandFuncMap["warn"] = cmd_warn;
     mCommandFuncMap["workpath"] = cmd_workpath;
     mCommandFuncMap["write"] = cmd_write;
+
+    // Invalid, i.e. context specific commands, which cannot and shall
+    // not appear here
+    mCommandFuncMap["tab"] = cmd_context_specific;
+    mCommandFuncMap["var"] = cmd_context_specific;
+    mCommandFuncMap["str"] = cmd_context_specific;
+    mCommandFuncMap["csr"] = cmd_context_specific;
+    mCommandFuncMap["namespace"] = cmd_context_specific;
+    mCommandFuncMap["layout"] = cmd_context_specific;
+    mCommandFuncMap["endlayout"] = cmd_context_specific;
+    mCommandFuncMap["group"] = cmd_context_specific;
+    mCommandFuncMap["endgroup"] = cmd_context_specific;
+    mCommandFuncMap["else"] = cmd_context_specific;
+    mCommandFuncMap["elseif"] = cmd_context_specific;
+    mCommandFuncMap["endif"] = cmd_context_specific;
+    mCommandFuncMap["endfor"] = cmd_context_specific;
+    mCommandFuncMap["endwhile"] = cmd_context_specific;
+    mCommandFuncMap["case"] = cmd_context_specific;
+    mCommandFuncMap["default"] = cmd_context_specific;
+    mCommandFuncMap["endswitch"] = cmd_context_specific;
+    mCommandFuncMap["catch"] = cmd_context_specific;
+    mCommandFuncMap["endtry"] = cmd_context_specific;
+    mCommandFuncMap["explicit"] = cmd_context_specific;
+    mCommandFuncMap["throw"] = cmd_context_specific;
+    mCommandFuncMap["rethrow"] = cmd_context_specific;
+    mCommandFuncMap["button"] = cmd_context_specific;
+    mCommandFuncMap["statictext"] = cmd_context_specific;
+    mCommandFuncMap["checkbox"] = cmd_context_specific;
+    mCommandFuncMap["radio"] = cmd_context_specific;
+    mCommandFuncMap["textfield"] = cmd_context_specific;
+    mCommandFuncMap["dropdown"] = cmd_context_specific;
+    mCommandFuncMap["combobox"] = cmd_context_specific;
+    mCommandFuncMap["gauge"] = cmd_context_specific;
+    mCommandFuncMap["bitmap"] = cmd_context_specific;
+    mCommandFuncMap["spinbut"] = cmd_context_specific;
+    mCommandFuncMap["slider"] = cmd_context_specific;
+    mCommandFuncMap["tablegrid"] = cmd_context_specific;
+    mCommandFuncMap["grapher"] = cmd_context_specific;
+    mCommandFuncMap["treelist"] = cmd_context_specific;
+    mCommandFuncMap["menuitem"] = cmd_context_specific;
+    mCommandFuncMap["separator"] = cmd_context_specific;
+    mCommandFuncMap["prop"] = cmd_context_specific;
 
     return mCommandFuncMap;
 }
