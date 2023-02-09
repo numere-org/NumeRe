@@ -790,7 +790,10 @@ void NumeReEditor::OnChar( wxStyledTextEvent& event )
         if (m_currSelection.length())
         {
             if (isOpeningBrace(chr))
+            {
                 InsertText(currentPos, m_currSelection + getBracePartner(chr));
+                GotoPos(currentPos-1);
+            }
             else
                 InsertText(currentPos-1, getBracePartner(chr) + m_currSelection);
         }
