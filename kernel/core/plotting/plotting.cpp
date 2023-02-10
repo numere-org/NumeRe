@@ -127,14 +127,14 @@ void createPlot(std::string& sCmd, MemoryManager& _data, mu::Parser& _parser, Se
             {
                 delete _graphHelper;
                 _pData.deleteData(true);
-                throw SyntaxError(SyntaxError::INVALID_WINDOW_ID, sCmd, "streamto");
+                throw SyntaxError(SyntaxError::INVALID_WINDOW_ID, sCmd, "streamto", "streamto");
             }
 
             if (!window.window->setItemGraph(_graphHelper, _pData.getTargetGUI()[1]))
             {
                 delete _graphHelper;
                 _pData.deleteData(true);
-                throw SyntaxError(SyntaxError::INVALID_WINDOW_ITEM_ID, sCmd, "streamto");
+                throw SyntaxError(SyntaxError::INVALID_WINDOW_ITEM_ID, sCmd, "streamto", "streamto");
             }
         }
         else
@@ -532,6 +532,7 @@ size_t Plot::createSubPlotSet(bool& bAnimateVar, vector<string>& vPlotCompose, s
     {
         m_types.clear();
         sCmd = vPlotCompose[nPlotCompose];
+        sCurrentExpr = sCmd;
         _pInfo.sPlotParams = "";
 
         // Clean the memory, if this is not the first
@@ -608,7 +609,7 @@ size_t Plot::createSubPlotSet(bool& bAnimateVar, vector<string>& vPlotCompose, s
         if (!sFunc.length() && vPlotCompose.size() > 1 && _pInfo.sCommand != "subplot")
             continue;
         else if (!sFunc.length() && _pInfo.sCommand != "subplot")
-            throw SyntaxError(SyntaxError::PLOT_ERROR, sCmd, SyntaxError::invalid_position);
+            throw SyntaxError(SyntaxError::PLOT_ERROR, sCurrentExpr, sCurrentExpr.length());
 
         setStyles();
 
@@ -699,7 +700,7 @@ size_t Plot::createSubPlotSet(bool& bAnimateVar, vector<string>& vPlotCompose, s
 
         // Replace the custom defined functions with their definition
         if (!_functions.call(sFunc))
-            throw SyntaxError(SyntaxError::FUNCTION_ERROR, sCmd, SyntaxError::invalid_position);
+            throw SyntaxError(SyntaxError::FUNCTION_ERROR, sCurrentExpr, SyntaxError::invalid_position);
 
         // Call the input prompt, if one of the function definition requires this
         if (sFunc.find("??") != string::npos)
@@ -740,14 +741,14 @@ size_t Plot::createSubPlotSet(bool& bAnimateVar, vector<string>& vPlotCompose, s
 
         // Ensure that either functions or data plots are available
         if (!m_manager.assets.size() && !isDraw(_pInfo.sCommand))
-            throw SyntaxError(SyntaxError::PLOT_ERROR, sCmd, SyntaxError::invalid_position);
+            throw SyntaxError(SyntaxError::PLOT_ERROR, sCurrentExpr, sCurrentExpr.find(' '));
 
         // Ensure that the functions do not contain any strings, because strings
         // cannot be plotted
         if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sFunc) && !(_pInfo.bDraw3D || _pInfo.bDraw))
         {
             clearData();
-            throw SyntaxError(SyntaxError::CANNOT_PLOT_STRINGS, sCmd, SyntaxError::invalid_position);
+            throw SyntaxError(SyntaxError::CANNOT_PLOT_STRINGS, sCurrentExpr, SyntaxError::invalid_position);
         }
 
         // Determine, whether the function string is empty. If it is and the current
@@ -769,7 +770,7 @@ size_t Plot::createSubPlotSet(bool& bAnimateVar, vector<string>& vPlotCompose, s
                 if ((_pData.getSettings(PlotData::LOG_COLORMASK) || _pData.getSettings(PlotData::LOG_ALPHAMASK))
                     && _pInfo.b2D
                     && m_types.size() % 2)
-                    throw SyntaxError(SyntaxError::NUMBER_OF_FUNCTIONS_NOT_MATCHING, sCmd, SyntaxError::invalid_position);
+                    throw SyntaxError(SyntaxError::NUMBER_OF_FUNCTIONS_NOT_MATCHING, sCurrentExpr, sCurrentExpr.find(' '));
             }
             catch (...)
             {
@@ -3599,15 +3600,18 @@ std::vector<std::string> Plot::separateFunctionsAndData()
 
         if (_data.containsTablesOrClusters(sToken))
         {
+            std::string sErrTok = sToken.substr(0, sToken.find_first_of("#\"", getMatchingParenthesis(sToken)));
+            StripSpaces(sErrTok);
+
             if (_data.containsTablesOrClusters(sToken.substr(0, sToken.find_first_of("({") + 1))
                 && !_data.isTable(sToken.substr(0, sToken.find_first_of("({")))
                 && !_data.isCluster(sToken.substr(0, sToken.find_first_of("({"))))
-                throw SyntaxError(SyntaxError::DATAPOINTS_CANNOT_BE_MODIFIED_WHILE_PLOTTING, "", SyntaxError::invalid_position, sToken);
+                throw SyntaxError(SyntaxError::DATAPOINTS_CANNOT_BE_MODIFIED_WHILE_PLOTTING, sCurrentExpr, sErrTok, sToken);
 
             string sSubstr = sToken.substr(getMatchingParenthesis(sToken.substr(sToken.find_first_of("({"))) + sToken.find_first_of("({") + 1);
 
             if (sSubstr[sSubstr.find_first_not_of(' ')] != '"' && sSubstr[sSubstr.find_first_not_of(' ')] != '#')
-                throw SyntaxError(SyntaxError::DATAPOINTS_CANNOT_BE_MODIFIED_WHILE_PLOTTING, "", SyntaxError::invalid_position, sToken);
+                throw SyntaxError(SyntaxError::DATAPOINTS_CANNOT_BE_MODIFIED_WHILE_PLOTTING, sCurrentExpr, sErrTok, sToken);
         }
     }
 
@@ -3621,6 +3625,10 @@ std::vector<std::string> Plot::separateFunctionsAndData()
     {
         sToken = getNextArgument(sFuncTemp, true);
         size_t nPos = sToken.find_first_of("#\"");
+
+        // Ensure we don't have a string expression right here
+        if (!nPos || NumeReKernel::getInstance()->getStringParser().isStringExpression(sToken.substr(0, nPos)))
+            throw SyntaxError(SyntaxError::CANNOT_PLOT_STRINGS, sCurrentExpr, sToken, sToken);
 
         if (_data.containsTablesOrClusters(sToken))
         {
@@ -3689,7 +3697,7 @@ void Plot::extractDataValues(const std::vector<std::string>& vDataPlots)
             typeCounter++;
 
         if (nParPos == string::npos || m_types[typeCounter] != PT_DATA)
-            throw SyntaxError(SyntaxError::INVALID_DATA_ACCESS, vDataPlots[i] , vDataPlots[i]);
+            throw SyntaxError(SyntaxError::INVALID_DATA_ACCESS, sCurrentExpr, vDataPlots[i], vDataPlots[i]);
 
         // Get the indices for the current data plot object optimized
         // for the plotting algorithm
@@ -3721,13 +3729,13 @@ void Plot::extractDataValues(const std::vector<std::string>& vDataPlots)
         if (_accessParser.isCluster())
         {
             if (_idx.row.front() >= (int)_data.getCluster(sDataTable).size())
-                throw SyntaxError(SyntaxError::INVALID_INDEX, sDataTable, SyntaxError::invalid_position, _idx.row.to_string() + ", " + _idx.col.to_string());
+                throw SyntaxError(SyntaxError::INVALID_INDEX, sCurrentExpr, sDataTable, _idx.row.to_string() + ", " + _idx.col.to_string());
         }
         else
         {
             if (_idx.row.front() >= _data.getLines(sDataTable, false)
                 || (_idx.col.front() >= _data.getCols(sDataTable) && _pInfo.sCommand != "plot3d"))
-                throw SyntaxError(SyntaxError::INVALID_INDEX, sDataTable, SyntaxError::invalid_position, _idx.row.to_string() + ", " + _idx.col.to_string());
+                throw SyntaxError(SyntaxError::INVALID_INDEX, sCurrentExpr, sDataTable, _idx.row.to_string() + ", " + _idx.col.to_string());
         }
 
         if (isPlot1D(_pInfo.sCommand))
@@ -3744,7 +3752,7 @@ void Plot::extractDataValues(const std::vector<std::string>& vDataPlots)
             m_manager.assets[typeCounter].create1DPlot(PT_DATA, _idx.row.size(), datarows);
 
             if (m_manager.assets[typeCounter].type == PT_NONE)
-                throw SyntaxError(SyntaxError::PLOT_ERROR, _accessParser.getDataObject(), SyntaxError::invalid_position);
+                throw SyntaxError(SyntaxError::PLOT_ERROR, sCurrentExpr, _accessParser.getDataObject(), _accessParser.getDataObject());
 
             // A vector index was used. Insert a column index
             // if the current plot is a boxplot or an axis coordinate
@@ -3866,7 +3874,7 @@ void Plot::extractDataValues(const std::vector<std::string>& vDataPlots)
             m_manager.assets[typeCounter].boundAxes = "lb";
 
             if (m_manager.assets[typeCounter].type == PT_NONE)
-                throw SyntaxError(SyntaxError::PLOT_ERROR, _accessParser.getDataObject(), SyntaxError::invalid_position);
+                throw SyntaxError(SyntaxError::PLOT_ERROR, sCurrentExpr, _accessParser.getDataObject(), _accessParser.getDataObject());
 
             for (size_t q = 0; q < 3*datarows; q++)
             {
@@ -3917,7 +3925,7 @@ void Plot::extractDataValues(const std::vector<std::string>& vDataPlots)
             m_manager.assets[typeCounter].boundAxes = "lb";
 
             if (m_manager.assets[typeCounter].type == PT_NONE)
-                throw SyntaxError(SyntaxError::PLOT_ERROR, _accessParser.getDataObject(), SyntaxError::invalid_position);
+                throw SyntaxError(SyntaxError::PLOT_ERROR, sCurrentExpr, _accessParser.getDataObject(), _accessParser.getDataObject());
 
             // Write the axes (do not write the additional value for
             // the bar-density mixture)
@@ -3985,7 +3993,7 @@ void Plot::extractDataValues(const std::vector<std::string>& vDataPlots)
             m_manager.assets[typeCounter].boundAxes = "lb";
 
             if (m_manager.assets[typeCounter].type == PT_NONE)
-                throw SyntaxError(SyntaxError::PLOT_ERROR, _accessParser.getDataObject(), SyntaxError::invalid_position);
+                throw SyntaxError(SyntaxError::PLOT_ERROR, sCurrentExpr, _accessParser.getDataObject(), _accessParser.getDataObject());
 
             // Write the axes
             for (size_t axis = 0; axis < samples.size(); axis++)
@@ -4025,7 +4033,7 @@ void Plot::extractDataValues(const std::vector<std::string>& vDataPlots)
             //}
         }
         else
-            throw SyntaxError(SyntaxError::PLOT_ERROR, _accessParser.getDataObject(), SyntaxError::invalid_position);
+            throw SyntaxError(SyntaxError::PLOT_ERROR, sCurrentExpr, _accessParser.getDataObject(), _accessParser.getDataObject());
 
         typeCounter++;
     }
@@ -4058,7 +4066,7 @@ void Plot::createDataLegends()
         {
             // Ensure that the referenced data object contains valid data
             if (_data.containsTablesOrClusters(sTemp) && !_data.isValid())
-                throw SyntaxError(SyntaxError::NO_DATA_AVAILABLE, sTemp, SyntaxError::invalid_position);
+                throw SyntaxError(SyntaxError::NO_DATA_AVAILABLE, sCurrentExpr, sTemp, sTemp);
 
             // Strip all spaces and extract the table name
             StripSpaces(sTemp);
@@ -4439,10 +4447,10 @@ void Plot::defaultRanges(size_t nPlotCompose, bool bNewSubPlot)
 
             if (m_manager.hasDataPlots() && (_pData.getGivenRanges() < i + 1 || !_pData.getRangeSetting(i)))
             {
-                if ((isinf(dataRanges[i].front()) || isnan(dataRanges[i].front())) && (unsigned)i < _pInfo.nMaxPlotDim)
+                if ((isinf(dataRanges[i].front()) || isnan(dataRanges[i].front())) && (unsigned)i < std::max(2u, _pInfo.nMaxPlotDim))
                 {
                     clearData();
-                    throw SyntaxError(SyntaxError::PLOTDATA_IS_NAN, "", SyntaxError::invalid_position);
+                    throw SyntaxError(SyntaxError::PLOTDATA_IS_NAN, sCurrentExpr, sCurrentExpr.find(' ')+1);
                 }
                 else if (!(isinf(dataRanges[i].front()) || isnan(dataRanges[i].front())))
                     _pInfo.ranges[i] = dataRanges[i];
@@ -4480,7 +4488,7 @@ void Plot::defaultRanges(size_t nPlotCompose, bool bNewSubPlot)
                 else if (_pInfo.ranges[i].min() < 0 && _pInfo.ranges[i].max() <= 0)
                 {
                     clearData();
-                    throw SyntaxError(SyntaxError::WRONG_PLOT_INTERVAL_FOR_LOGSCALE, "", SyntaxError::invalid_position);
+                    throw SyntaxError(SyntaxError::WRONG_PLOT_INTERVAL_FOR_LOGSCALE, sCurrentExpr, SyntaxError::invalid_position);
                 }
             }
 
@@ -4619,7 +4627,7 @@ void Plot::fillData(double dt_max, int t_animate)
             vResults = _parser.Eval(_pInfo.nFunctions);
 
             if ((size_t)_pInfo.nFunctions != vFuncMap.size())
-                throw SyntaxError(SyntaxError::PLOT_ERROR, "", "");
+                throw SyntaxError(SyntaxError::PLOT_ERROR, sCurrentExpr, sCurrentExpr.find(' ')+1);
 
             for (int i = 0; i < _pInfo.nFunctions; i++)
             {
@@ -4729,7 +4737,7 @@ void Plot::fillData(double dt_max, int t_animate)
                 vResults = _parser.Eval(_pInfo.nFunctions);
 
                 if ((size_t)_pInfo.nFunctions != vFuncMap.size())
-                    throw SyntaxError(SyntaxError::PLOT_ERROR, "", "");
+                    throw SyntaxError(SyntaxError::PLOT_ERROR, sCurrentExpr, sCurrentExpr.find(' ')+1);
 
                 for (size_t i = 0; i < vFuncMap.size(); i++)
                 {
@@ -4772,7 +4780,7 @@ void Plot::fillData(double dt_max, int t_animate)
                     vResults = _parser.Eval(_pInfo.nFunctions);
 
                     if ((size_t)_pInfo.nFunctions != vFuncMap.size())
-                        throw SyntaxError(SyntaxError::PLOT_ERROR, "", "");
+                        throw SyntaxError(SyntaxError::PLOT_ERROR, sCurrentExpr, sCurrentExpr.find(' ')+1);
 
                     for (size_t i = 0; i < vFuncMap.size(); i++)
                     {
@@ -4893,7 +4901,7 @@ void Plot::fitPlotRanges(size_t nPlotCompose, bool bNewSubPlot)
             || isinf(functionIntervals[0].back()))
         {
             clearData();
-            throw SyntaxError(SyntaxError::PLOTDATA_IS_NAN, "", SyntaxError::invalid_position);
+            throw SyntaxError(SyntaxError::PLOTDATA_IS_NAN, sCurrentExpr, sCurrentExpr.find(' ')+1);
         }
     }
 
@@ -5087,7 +5095,7 @@ void Plot::fitPlotRanges(size_t nPlotCompose, bool bNewSubPlot)
                 if ((_pInfo.ranges[i].min() <= 0 && _pInfo.ranges[i].max() <= 0) || _pData.getAxisScale(i) <= 0.0)
                 {
                     clearData();
-                    throw SyntaxError(SyntaxError::WRONG_PLOT_INTERVAL_FOR_LOGSCALE, "", SyntaxError::invalid_position);
+                    throw SyntaxError(SyntaxError::WRONG_PLOT_INTERVAL_FOR_LOGSCALE, sCurrentExpr, SyntaxError::invalid_position);
                 }
                 else if (_pInfo.ranges[i].min() <= 0)
                     _pInfo.ranges[i].reset(_pInfo.ranges[i].max() * 1e-3, _pInfo.ranges[i].max());
@@ -5263,7 +5271,7 @@ void Plot::passRangesToGraph()
         if (_pData.getLogscale(CRANGE) && ((_pInfo.ranges[CRANGE].min() <= 0.0 && _pInfo.ranges[CRANGE].max() <= 0.0) || _pData.getAxisScale(CRANGE) <= 0.0))
         {
             clearData();
-            throw SyntaxError(SyntaxError::WRONG_PLOT_INTERVAL_FOR_LOGSCALE, "", SyntaxError::invalid_position);
+            throw SyntaxError(SyntaxError::WRONG_PLOT_INTERVAL_FOR_LOGSCALE, sCurrentExpr, SyntaxError::invalid_position);
         }
         else if (_pData.getLogscale(CRANGE) && _pInfo.ranges[CRANGE].min() <= 0.0)
         {
@@ -5295,7 +5303,7 @@ void Plot::passRangesToGraph()
         if (_pData.getLogscale(CRANGE) && (_pInfo.b2D || _pInfo.sCommand == "plot3d" || _pInfo.b3D || _pInfo.b3DVect) && dColorMin <= 0.0 && dColorMax <= 0.0)
         {
             clearData();
-            throw SyntaxError(SyntaxError::WRONG_PLOT_INTERVAL_FOR_LOGSCALE, "", SyntaxError::invalid_position);
+            throw SyntaxError(SyntaxError::WRONG_PLOT_INTERVAL_FOR_LOGSCALE, sCurrentExpr, SyntaxError::invalid_position);
         }
         else if (_pData.getLogscale(CRANGE) && (_pInfo.b2D || _pInfo.sCommand == "plot3d" || _pInfo.b3D || _pInfo.b3DVect) && dColorMin <= 0.0)
         {
@@ -5353,7 +5361,7 @@ void Plot::passRangesToGraph()
                 && ((dMin <= 0.0 && dMax) || _pData.getAxisScale(3) <= 0.0))
             {
                 clearData();
-                throw SyntaxError(SyntaxError::WRONG_PLOT_INTERVAL_FOR_LOGSCALE, "", SyntaxError::invalid_position);
+                throw SyntaxError(SyntaxError::WRONG_PLOT_INTERVAL_FOR_LOGSCALE, sCurrentExpr, SyntaxError::invalid_position);
             }
             else if (_pData.getLogscale(CRANGE) && (_pInfo.b2D || _pInfo.sCommand == "plot3d" || _pInfo.b3D || _pInfo.b3DVect) && dMin <= 0.0)
             {
@@ -5467,7 +5475,7 @@ void Plot::passRangesToGraph()
             if (_pData.getLogscale(CRANGE) && (_pInfo.b2D || _pInfo.sCommand == "plot3d" || _pInfo.b3D || _pInfo.b3DVect) && dColorMin <= 0.0 && dColorMax <= 0.0)
             {
                 clearData();
-                throw SyntaxError(SyntaxError::WRONG_PLOT_INTERVAL_FOR_LOGSCALE, "", SyntaxError::invalid_position);
+                throw SyntaxError(SyntaxError::WRONG_PLOT_INTERVAL_FOR_LOGSCALE, sCurrentExpr, SyntaxError::invalid_position);
             }
             else if (_pData.getLogscale(CRANGE) && (_pInfo.b2D || _pInfo.sCommand == "plot3d" || _pInfo.b3D || _pInfo.b3DVect) && dColorMin <= 0.0)
             {
@@ -5495,7 +5503,7 @@ void Plot::passRangesToGraph()
             if (_pData.getLogscale(CRANGE) && (_pInfo.b2D || _pInfo.sCommand == "plot3d" || _pInfo.b3D || _pInfo.b3DVect) && dMin <= 0.0 && dMax)
             {
                 clearData();
-                throw SyntaxError(SyntaxError::WRONG_PLOT_INTERVAL_FOR_LOGSCALE, "", SyntaxError::invalid_position);
+                throw SyntaxError(SyntaxError::WRONG_PLOT_INTERVAL_FOR_LOGSCALE, sCurrentExpr, SyntaxError::invalid_position);
             }
             else if (_pData.getLogscale(CRANGE) && (_pInfo.b2D || _pInfo.sCommand == "plot3d" || _pInfo.b3D || _pInfo.b3DVect) && dMin <= 0.0)
                 _pInfo.ranges[CRANGE].reset(dMax*1e-3, dMax + 0.05 * (dMax - dMin));

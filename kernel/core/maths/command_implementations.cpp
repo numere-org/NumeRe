@@ -4308,6 +4308,9 @@ bool calculateSplines(CommandLineParser& cmdParser)
     if (nLines < 2)
         throw SyntaxError(SyntaxError::TOO_FEW_DATAPOINTS, cmdParser.getCommandLine(), accessParser.getDataObject());
 
+    if (_mem->getCols() < 2)
+        throw SyntaxError(SyntaxError::TOO_FEW_COLS, cmdParser.getCommandLine(), accessParser.getDataObject());
+
     for (int i = 0; i < nLines; i++)
     {
         xVect.push_back(_mem->readMem(i, 0).real());
@@ -4315,7 +4318,8 @@ bool calculateSplines(CommandLineParser& cmdParser)
     }
 
     // Set the points for the spline to calculate
-    _spline.set_points(xVect, yVect);
+    if (!_spline.set_points(xVect, yVect))
+        throw SyntaxError(SyntaxError::CANNOT_SORT_CACHE, cmdParser.getCommandLine(), accessParser.getDataObject());
 
     string sDefinition = "Spline(x) := ";
 

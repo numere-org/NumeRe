@@ -139,7 +139,7 @@ namespace NumeRe
                     nMaxArgs = argumentParser(sFunctionArgument, sStringArg1, bLogicalOnly);
 
                 if (!nMaxArgs)
-                    throw SyntaxError(SyntaxError::STRING_ERROR, sLine, SyntaxError::invalid_position);
+                    throw SyntaxError(SyntaxError::STRING_ERROR, sLine, nStartPosition, _lang.get("ERR_NR_3603_TOO_FEW_ARGS"));
 
                 // These five multiargument functions are also defined for numerical values.
                 // If the return value for the current functions arguments is an only logical
@@ -164,7 +164,7 @@ namespace NumeRe
 
             // Ensure that at least a single argument is available
             if (!nMaxArgs && funcHandle.fType != NOARGS)
-                throw SyntaxError(SyntaxError::STRING_ERROR, sLine, SyntaxError::invalid_position);
+                throw SyntaxError(SyntaxError::STRING_ERROR, sLine, nStartPosition, _lang.get("ERR_NR_3603_TOO_FEW_ARGS"));
 
             // Evaluate the function calls
             if (funcHandle.bTakesMultiArguments)
@@ -1051,7 +1051,7 @@ namespace NumeRe
                 StringResult strRes = eval(sToString, "");
 
                 if (!strRes.vResult.size())
-                    throw SyntaxError(SyntaxError::STRING_ERROR, sLine, SyntaxError::invalid_position);
+                    throw SyntaxError(SyntaxError::STRING_ERROR, sLine, nStartPosition, _lang.get("ERR_NR_3603_INTERNAL"));
 
                 sToString = createStringVectorVar(strRes.vResult);
             }
@@ -1075,7 +1075,7 @@ namespace NumeRe
                 StringResult strRes = eval(sCmdString, "");
 
                 if (!strRes.vResult.size())
-                    throw SyntaxError(SyntaxError::STRING_ERROR, sLine, SyntaxError::invalid_position);
+                    throw SyntaxError(SyntaxError::STRING_ERROR, sLine, nStartPosition, _lang.get("ERR_NR_3603_INTERNAL"));
 
                 // use only the first one
                 sCmdString = strRes.vResult.front();
@@ -1101,7 +1101,7 @@ namespace NumeRe
                 StringResult strRes = eval(sToValue, "");
 
                 if (!strRes.vResult.size())
-                    throw SyntaxError(SyntaxError::STRING_ERROR, sLine, SyntaxError::invalid_position);
+                    throw SyntaxError(SyntaxError::STRING_ERROR, sLine, nStartPosition, _lang.get("ERR_NR_3603_INTERNAL"));
 
                 vector<string> vToValueResults;
 
@@ -1129,12 +1129,53 @@ namespace NumeRe
         }
 
         nStartPosition = 0;
+        // str to_string(EXPR)
+        while ((nStartPosition = findNextFunction("to_string(", sLine, nStartPosition, nEndPosition)) != string::npos)
+        {
+            string sArgument = getFunctionArgumentList("to_string(", sLine, nStartPosition, nEndPosition).to_string();
+
+            if (!isStringExpression(sArgument))
+                sArgument = createStringVectorVar(std::vector<std::string>(1u, "\"" + sArgument + "\""));
+            else
+            {
+                string sBack = sArgument;
+
+                try
+                {
+                    StringResult strRes = eval(sArgument, "");
+
+                    if (!strRes.vResult.size())
+                        throw SyntaxError(SyntaxError::STRING_ERROR, sLine, nStartPosition, _lang.get("ERR_NR_3603_INTERNAL"));
+
+                    std::vector<std::string> vIsString;
+
+                    for (size_t i = 0; i < strRes.vResult.size(); i++)
+                    {
+                        if (strRes.vResult.is_string(i))
+                            vIsString.push_back(strRes.vResult.getRef(i));
+                        else
+                            vIsString.push_back("\"" + strRes.vResult.getRef(i) + "\"");
+                    }
+
+                    sArgument = createStringVectorVar(vIsString);
+                }
+                catch (...)
+                {
+                    sArgument = createStringVectorVar(std::vector<std::string>(1u, "\"" + sBack + "\""));
+                }
+            }
+
+            sLine = sLine.substr(0, nStartPosition) + sArgument + sLine.substr(nEndPosition + 1);
+            nStartPosition += sArgument.length();
+        }
+
+        nStartPosition = 0;
         // log is_string(EXPR)
         while ((nStartPosition = findNextFunction("is_string(", sLine, nStartPosition, nEndPosition)) != string::npos)
         {
             string sArgument = getFunctionArgumentList("is_string(", sLine, nStartPosition, nEndPosition).to_string();
 
-            // check for data sets in the evaluation of the `valtostr()` arguments
+            // check for data sets in the evaluation of the `is_string()` arguments
             if (!isStringExpression(sArgument) && _data.containsTablesOrClusters(sArgument))
                 getDataElements(sArgument, _parser, _data, _option);
 
@@ -1151,7 +1192,7 @@ namespace NumeRe
                 StringResult strRes = eval(sArgument, "");
 
                 if (!strRes.vResult.size())
-                    throw SyntaxError(SyntaxError::STRING_ERROR, sLine, SyntaxError::invalid_position);
+                    throw SyntaxError(SyntaxError::STRING_ERROR, sLine, nStartPosition, _lang.get("ERR_NR_3603_INTERNAL"));
 
                 std::vector<std::string> vIsString;
 
@@ -1175,7 +1216,7 @@ namespace NumeRe
             StringResult strRes = eval(_sObject, "");
 
             if (!strRes.vResult.size())
-                throw SyntaxError(SyntaxError::STRING_ERROR, sLine, SyntaxError::invalid_position);
+                throw SyntaxError(SyntaxError::STRING_ERROR, sLine, nStartPosition, _lang.get("ERR_NR_3603_INTERNAL"));
 
             // use only first one
             _sObject = strRes.vResult[0].to_string();
@@ -1194,7 +1235,7 @@ namespace NumeRe
                         StringResult res = eval(sType, "");
 
                         if (!res.vResult.size())
-                            throw SyntaxError(SyntaxError::STRING_ERROR, sLine, SyntaxError::invalid_position);
+                            throw SyntaxError(SyntaxError::STRING_ERROR, sLine, nStartPosition, _lang.get("ERR_NR_3603_INTERNAL"));
 
                         sType = res.vResult[0].to_string();
                     }
@@ -1295,7 +1336,7 @@ namespace NumeRe
                 StringResult strRes = eval(sData, "");
 
                 if (!strRes.vResult.size())
-                    throw SyntaxError(SyntaxError::STRING_ERROR, sLine, SyntaxError::invalid_position);
+                    throw SyntaxError(SyntaxError::STRING_ERROR, sLine, nStartPosition, _lang.get("ERR_NR_3603_INTERNAL"));
 
                 // use only first one
                 sData = strRes.vResult[0].to_string();
@@ -1322,7 +1363,7 @@ namespace NumeRe
                 StringResult strRes = eval(sData, "");
 
                 if (!strRes.vResult.size())
-                    throw SyntaxError(SyntaxError::STRING_ERROR, sLine, SyntaxError::invalid_position);
+                    throw SyntaxError(SyntaxError::STRING_ERROR, sLine, nStartPosition, _lang.get("ERR_NR_3603_INTERNAL"));
 
                 // use only first one
                 sData = strRes.vResult[0].to_string();
@@ -1349,7 +1390,7 @@ namespace NumeRe
                 StringResult strRes = eval(sData, "");
 
                 if (!strRes.vResult.size())
-                    throw SyntaxError(SyntaxError::STRING_ERROR, sLine, SyntaxError::invalid_position);
+                    throw SyntaxError(SyntaxError::STRING_ERROR, sLine, nStartPosition, _lang.get("ERR_NR_3603_INTERNAL"));
 
                 // use only first one
                 sData = strRes.vResult[0].to_string();
@@ -1377,7 +1418,7 @@ namespace NumeRe
                 StringResult strRes = eval(sData, "");
 
                 if (!strRes.vResult.size())
-                    throw SyntaxError(SyntaxError::STRING_ERROR, sLine, SyntaxError::invalid_position);
+                    throw SyntaxError(SyntaxError::STRING_ERROR, sLine, nStartPosition, _lang.get("ERR_NR_3603_INTERNAL"));
 
                 // use only first one
                 sData = strRes.vResult[0].to_string();
@@ -1385,7 +1426,7 @@ namespace NumeRe
             }
 
             if (!sHeadline.length())
-                throw SyntaxError(SyntaxError::STRING_ERROR, sLine, SyntaxError::invalid_position);
+                throw SyntaxError(SyntaxError::STRING_ERROR, sLine, nStartPosition, _lang.get("ERR_NR_3603_INTERNAL"));
 
             StripSpaces(sData);
             StripSpaces(sHeadline);
@@ -1438,7 +1479,7 @@ namespace NumeRe
                     StringResult strRes = eval(sChar, "");
 
                     if (!strRes.vResult.size())
-                        throw SyntaxError(SyntaxError::STRING_ERROR, sLine, SyntaxError::invalid_position);
+                        throw SyntaxError(SyntaxError::STRING_ERROR, sLine, nStartPosition, _lang.get("ERR_NR_3603_INTERNAL"));
 
                     // use only first one
                     sChar = strRes.vResult[0].to_string();
@@ -1494,7 +1535,7 @@ namespace NumeRe
                 size_t nLen = 0;
 
                 if (!strRes.vResult.size())
-                    throw SyntaxError(SyntaxError::STRING_ERROR, sLine, SyntaxError::invalid_position);
+                    throw SyntaxError(SyntaxError::STRING_ERROR, sLine, nStartPosition, _lang.get("ERR_NR_3603_INTERNAL"));
 
                 for (size_t i = 0; i < strRes.vResult.size(); i++)
                 {

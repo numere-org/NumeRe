@@ -535,6 +535,7 @@ void OptionsDialog::CreateDebuggerPage()
 
     // Those are not part of any group
     m_debuggerFlashTaskbar = panel->CreateCheckBox(panel, panel->getVerticalSizer(), _guilang.get("GUI_OPTIONS_DEBUGGER_FLASH_TASKBAR"));
+    m_alwaysPointToError = panel->CreateCheckBox(panel, panel->getVerticalSizer(), _guilang.get("GUI_OPTIONS_DEBUGGER_POINT_TO_ERROR"));
     m_debuggerFocusLine = panel->CreateSpinControl(panel, panel->getVerticalSizer(), _guilang.get("GUI_OPTIONS_DEBUGGER_FOCUS_LINE"), 1, 30, 10);
 
     // Add the grouped page to the notebook
@@ -840,6 +841,7 @@ bool OptionsDialog::EvaluateOptions()
     mSettings[SETTING_B_SMARTSENSE].active() = m_smartSense->IsChecked();
     mSettings[SETTING_B_AUTOSAVEEXECUTION].active() = m_saveBeforeExecuting->IsChecked();
     mSettings[SETTING_B_LINELENGTH].active() = m_lineLengthIndicator->IsChecked();
+    mSettings[SETTING_B_POINTTOERROR].active() = m_alwaysPointToError->IsChecked();
     mSettings[SETTING_B_SAVESASHS].active() = m_saveSashPositions->IsChecked();
     mSettings[SETTING_B_SAVEWINDOWSIZE].active() = m_saveWindowPosition->IsChecked();
 
@@ -951,6 +953,7 @@ void OptionsDialog::InitializeDialog()
     m_smartSense->SetValue(mSettings[SETTING_B_SMARTSENSE].active());
     m_saveBeforeExecuting->SetValue(mSettings[SETTING_B_AUTOSAVEEXECUTION].active());
     m_lineLengthIndicator->SetValue(mSettings[SETTING_B_LINELENGTH].active());
+    m_alwaysPointToError->SetValue(mSettings[SETTING_B_POINTTOERROR].active());
     m_saveSashPositions->SetValue(mSettings[SETTING_B_SAVESASHS].active());
     m_saveWindowPosition->SetValue(mSettings[SETTING_B_SAVEWINDOWSIZE].active());
 

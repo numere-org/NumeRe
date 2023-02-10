@@ -172,6 +172,7 @@ class NumeReKernel
         bool handleFlowControls(std::string& sLine, const std::string& sCurrentCommand, KernelStatus& nReturnVal);
         bool evaluateStrings(std::string& sLine, std::string& sCache, bool& bWriteToCache, KernelStatus& nReturnVal);
         void createCalculationAnswer(int nNum, mu::value_type* v);
+        void printErrorMessage(const std::string& errMsg, const std::string& errDesc, const std::string& expr, size_t pos);
         void resetAfterError();
         std::string getGreeting();
         void checkInternalStates();
@@ -247,6 +248,7 @@ class NumeReKernel
         static void showDebugEvent(const std::string& sTitle, const std::vector<std::string>& vStacktrace);
         static int waitForContinue();
         static int evalDebuggerBreakPoint(const std::string& sCurrentCommand = "");
+        std::pair<std::string, size_t> getErrorLocation();
         static void clcTerminal();
         void refreshFunctionTree();
         void closeWindows(int type);
@@ -469,22 +471,6 @@ inline std::string sectionHeadline(const std::string& sString, char cHeadLineSep
     return sSectionHeadline;
 }
 
-
-/////////////////////////////////////////////////
-/// \brief This function points to the error
-/// indicated by nPos. It draws three circumflexes
-/// below the error location.
-///
-/// \param nPos unsigned int
-/// \return std::string
-///
-/////////////////////////////////////////////////
-inline std::string pointToError(unsigned int nPos)
-{
-    std::string sErrorPointer = "|   ";
-    sErrorPointer += strfill("^^^", nPos+13) + "\n";
-    return sErrorPointer;
-}
 
 
 #endif // KERNEL_HPP

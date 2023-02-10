@@ -515,7 +515,7 @@ void NumeReDebugger::popStackItem()
 /////////////////////////////////////////////////
 void NumeReDebugger::gatherInformations(ProcedureVarFactory* _varFactory, const string& _sErraticCommand, const string& _sErraticModule, unsigned int _nLineNumber)
 {
-    if (!bDebuggerActive || bAlreadyThrown)
+    if (bAlreadyThrown)
         return;
 
     if (!_varFactory)
@@ -553,8 +553,7 @@ void NumeReDebugger:: gatherInformations(const std::map<std::string, std::pair<s
                                          const std::map<std::string, std::string>& _mArguments,
                                          const string& _sErraticCommand, const string& _sErraticModule, unsigned int _nLineNumber)
 {
-    if (!bDebuggerActive)
-        return;
+
 
     if (bAlreadyThrown)
         return;
@@ -579,6 +578,9 @@ void NumeReDebugger:: gatherInformations(const std::map<std::string, std::pair<s
         nLineNumber = _nLineNumber;
 
     bAlreadyThrown = true;
+
+    if (!bDebuggerActive)
+        return;
 
     // Store the local numerical variables and replace their
     // occurence with their definition in the command lines
@@ -700,9 +702,6 @@ void NumeReDebugger:: gatherInformations(const std::map<std::string, std::pair<s
 /////////////////////////////////////////////////
 void NumeReDebugger::gatherLoopBasedInformations(const string& _sErraticCommand, unsigned int _nLineNumber, map<string, string>& mVarMap, const std::vector<mu::value_type>& vVarArray, const std::vector<std::string>& sVarArray)
 {
-    if (!bDebuggerActive)
-        return;
-
     if (bAlreadyThrown)
         return;
 
@@ -713,6 +712,10 @@ void NumeReDebugger::gatherLoopBasedInformations(const string& _sErraticCommand,
         sErraticCommand.erase(sErraticCommand.find_first_not_of(' '), 2);
 
     nLineNumber = _nLineNumber;
+
+    if (!bDebuggerActive)
+        return;
+
     NumeReKernel* instance = NumeReKernel::getInstance();
 
     // store variable names and replace their occurences with

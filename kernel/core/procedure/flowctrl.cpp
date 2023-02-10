@@ -286,14 +286,10 @@ int FlowCtrl::for_loop(int nth_Cmd, int nth_loop)
                 // Evaluate the command line with the calc function
                 if (calc(vCmdArray[__j].sCommand, __j) == FLOWCTRL_ERROR)
                 {
-                    if (_optionRef->useDebugger())
-                    {
-                        NumeReKernel::getInstance()->getDebugger().gatherLoopBasedInformations(vCmdArray[__j].sCommand,
-                                                                                               getCurrentLineNumber(),
-                                                                                               mVarMap, vVarArray, sVarArray);
-                        getErrorInformationForDebugger();
-                    }
-
+                    NumeReKernel::getInstance()->getDebugger().gatherLoopBasedInformations(vCmdArray[__j].sCommand,
+                                                                                           getCurrentLineNumber(),
+                                                                                           mVarMap, vVarArray, sVarArray);
+                    getErrorInformationForDebugger();
                     return FLOWCTRL_ERROR;
                 }
 
@@ -302,14 +298,10 @@ int FlowCtrl::for_loop(int nth_Cmd, int nth_loop)
             }
             catch (...)
             {
-                if (_optionRef->useDebugger())
-                {
-                    NumeReKernel::getInstance()->getDebugger().gatherLoopBasedInformations(vCmdArray[__j].sCommand,
-                                                                                           getCurrentLineNumber(),
-                                                                                           mVarMap, vVarArray, sVarArray);
-                    getErrorInformationForDebugger();
-                }
-
+                NumeReKernel::getInstance()->getDebugger().gatherLoopBasedInformations(vCmdArray[__j].sCommand,
+                                                                                       getCurrentLineNumber(),
+                                                                                       mVarMap, vVarArray, sVarArray);
+                getErrorInformationForDebugger();
                 NumeReKernel::getInstance()->getDebugger().showError(current_exception());
                 nCalcType[__j] = CALCTYPE_NONE;
                 catchExceptionForTest(current_exception(), NumeReKernel::bSupressAnswer, getCurrentLineNumber());
@@ -609,14 +601,10 @@ int FlowCtrl::range_based_for_loop(int nth_Cmd, int nth_loop)
                 // Evaluate the command line with the calc function
                 if (calc(vCmdArray[__j].sCommand, __j) == FLOWCTRL_ERROR)
                 {
-                    if (_optionRef->useDebugger())
-                    {
-                        NumeReKernel::getInstance()->getDebugger().gatherLoopBasedInformations(vCmdArray[__j].sCommand,
-                                                                                               getCurrentLineNumber(),
-                                                                                               mVarMap, vVarArray, sVarArray);
-                        getErrorInformationForDebugger();
-                    }
-
+                    NumeReKernel::getInstance()->getDebugger().gatherLoopBasedInformations(vCmdArray[__j].sCommand,
+                                                                                           getCurrentLineNumber(),
+                                                                                           mVarMap, vVarArray, sVarArray);
+                    getErrorInformationForDebugger();
                     return FLOWCTRL_ERROR;
                 }
 
@@ -625,14 +613,10 @@ int FlowCtrl::range_based_for_loop(int nth_Cmd, int nth_loop)
             }
             catch (...)
             {
-                if (_optionRef->useDebugger())
-                {
-                    NumeReKernel::getInstance()->getDebugger().gatherLoopBasedInformations(vCmdArray[__j].sCommand,
-                                                                                           getCurrentLineNumber(),
-                                                                                           mVarMap, vVarArray, sVarArray);
-                    getErrorInformationForDebugger();
-                }
-
+                NumeReKernel::getInstance()->getDebugger().gatherLoopBasedInformations(vCmdArray[__j].sCommand,
+                                                                                       getCurrentLineNumber(),
+                                                                                       mVarMap, vVarArray, sVarArray);
+                getErrorInformationForDebugger();
                 NumeReKernel::getInstance()->getDebugger().showError(current_exception());
                 nCalcType[__j] = CALCTYPE_NONE;
                 catchExceptionForTest(current_exception(), NumeReKernel::bSupressAnswer, getCurrentLineNumber());
@@ -788,14 +772,10 @@ int FlowCtrl::while_loop(int nth_Cmd, int nth_loop)
                 // Evaluate the command line with the calc function
                 if (calc(vCmdArray[__j].sCommand, __j) == FLOWCTRL_ERROR)
                 {
-                    if (_optionRef->useDebugger())
-                    {
-                        NumeReKernel::getInstance()->getDebugger().gatherLoopBasedInformations(vCmdArray[__j].sCommand,
-                                                                                               getCurrentLineNumber(),
-                                                                                               mVarMap, vVarArray, sVarArray);
-                        getErrorInformationForDebugger();
-                    }
-
+                    NumeReKernel::getInstance()->getDebugger().gatherLoopBasedInformations(vCmdArray[__j].sCommand,
+                                                                                           getCurrentLineNumber(),
+                                                                                           mVarMap, vVarArray, sVarArray);
+                    getErrorInformationForDebugger();
                     return FLOWCTRL_ERROR;
                 }
 
@@ -804,14 +784,10 @@ int FlowCtrl::while_loop(int nth_Cmd, int nth_loop)
             }
             catch (...)
             {
-                if (_optionRef->useDebugger())
-                {
-                    NumeReKernel::getInstance()->getDebugger().gatherLoopBasedInformations(vCmdArray[__j].sCommand,
-                                                                                           getCurrentLineNumber(),
-                                                                                           mVarMap, vVarArray, sVarArray);
-                    getErrorInformationForDebugger();
-                }
-
+                NumeReKernel::getInstance()->getDebugger().gatherLoopBasedInformations(vCmdArray[__j].sCommand,
+                                                                                       getCurrentLineNumber(),
+                                                                                       mVarMap, vVarArray, sVarArray);
+                getErrorInformationForDebugger();
                 NumeReKernel::getInstance()->getDebugger().showError(current_exception());
                 nCalcType[__j] = CALCTYPE_NONE;
                 catchExceptionForTest(current_exception(), NumeReKernel::bSupressAnswer, getCurrentLineNumber());
@@ -937,15 +913,10 @@ int FlowCtrl::if_fork(int nth_Cmd, int nth_loop)
                     // Evaluate the command line with the calc function
                     if (calc(vCmdArray[__i].sCommand, __i) == FLOWCTRL_ERROR)
                     {
-                        if (_optionRef->useDebugger())
-                        {
-                            NumeReKernel::getInstance()->getDebugger().gatherLoopBasedInformations(vCmdArray[__i].sCommand,
-                                                                                                   getCurrentLineNumber(),
-                                                                                                   mVarMap, vVarArray, sVarArray);
-                            getErrorInformationForDebugger();
-                        }
-
-                        return FLOWCTRL_ERROR;
+                        NumeReKernel::getInstance()->getDebugger().gatherLoopBasedInformations(vCmdArray[__i].sCommand,
+                                                                                               getCurrentLineNumber(),
+                                                                                               mVarMap, vVarArray, sVarArray);
+                        getErrorInformationForDebugger();
                     }
 
                     if (bReturnSignal)
@@ -953,14 +924,10 @@ int FlowCtrl::if_fork(int nth_Cmd, int nth_loop)
                 }
                 catch (...)
                 {
-                    if (_optionRef->useDebugger())
-                    {
-                        NumeReKernel::getInstance()->getDebugger().gatherLoopBasedInformations(vCmdArray[__i].sCommand,
-                                                                                               getCurrentLineNumber(),
-                                                                                               mVarMap, vVarArray, sVarArray);
-                        getErrorInformationForDebugger();
-                    }
-
+                    NumeReKernel::getInstance()->getDebugger().gatherLoopBasedInformations(vCmdArray[__i].sCommand,
+                                                                                           getCurrentLineNumber(),
+                                                                                           mVarMap, vVarArray, sVarArray);
+                    getErrorInformationForDebugger();
                     NumeReKernel::getInstance()->getDebugger().showError(current_exception());
                     nCalcType[__i] = CALCTYPE_NONE;
                     catchExceptionForTest(current_exception(), NumeReKernel::bSupressAnswer, getCurrentLineNumber());
@@ -1044,14 +1011,10 @@ int FlowCtrl::if_fork(int nth_Cmd, int nth_loop)
             // Evaluate the command line with the calc function
             if (calc(vCmdArray[__i].sCommand, __i) == FLOWCTRL_ERROR)
             {
-                if (_optionRef->useDebugger())
-                {
-                    NumeReKernel::getInstance()->getDebugger().gatherLoopBasedInformations(vCmdArray[__i].sCommand,
-                                                                                           getCurrentLineNumber(),
-                                                                                           mVarMap, vVarArray, sVarArray);
-                    getErrorInformationForDebugger();
-                }
-
+                NumeReKernel::getInstance()->getDebugger().gatherLoopBasedInformations(vCmdArray[__i].sCommand,
+                                                                                       getCurrentLineNumber(),
+                                                                                       mVarMap, vVarArray, sVarArray);
+                getErrorInformationForDebugger();
                 return FLOWCTRL_ERROR;
             }
 
@@ -1060,14 +1023,10 @@ int FlowCtrl::if_fork(int nth_Cmd, int nth_loop)
         }
         catch (...)
         {
-            if (_optionRef->useDebugger())
-            {
-                NumeReKernel::getInstance()->getDebugger().gatherLoopBasedInformations(vCmdArray[__i].sCommand,
-                                                                                       getCurrentLineNumber(),
-                                                                                       mVarMap, vVarArray, sVarArray);
-                getErrorInformationForDebugger();
-            }
-
+            NumeReKernel::getInstance()->getDebugger().gatherLoopBasedInformations(vCmdArray[__i].sCommand,
+                                                                                   getCurrentLineNumber(),
+                                                                                   mVarMap, vVarArray, sVarArray);
+            getErrorInformationForDebugger();
             NumeReKernel::getInstance()->getDebugger().showError(current_exception());
             nCalcType[__i] = CALCTYPE_NONE;
             catchExceptionForTest(current_exception(), NumeReKernel::bSupressAnswer, getCurrentLineNumber());
@@ -1195,14 +1154,10 @@ int FlowCtrl::switch_fork(int nth_Cmd, int nth_loop)
             // Evaluate the command line with the calc function
             if (calc(vCmdArray[__i].sCommand, __i) == FLOWCTRL_ERROR)
             {
-                if (_optionRef->useDebugger())
-                {
-                    NumeReKernel::getInstance()->getDebugger().gatherLoopBasedInformations(vCmdArray[__i].sCommand,
-                                                                                           getCurrentLineNumber(),
-                                                                                           mVarMap, vVarArray, sVarArray);
-                    getErrorInformationForDebugger();
-                }
-
+                NumeReKernel::getInstance()->getDebugger().gatherLoopBasedInformations(vCmdArray[__i].sCommand,
+                                                                                       getCurrentLineNumber(),
+                                                                                       mVarMap, vVarArray, sVarArray);
+                getErrorInformationForDebugger();
                 return FLOWCTRL_ERROR;
             }
 
@@ -1211,14 +1166,10 @@ int FlowCtrl::switch_fork(int nth_Cmd, int nth_loop)
         }
         catch (...)
         {
-            if (_optionRef->useDebugger())
-            {
-                NumeReKernel::getInstance()->getDebugger().gatherLoopBasedInformations(vCmdArray[__i].sCommand,
-                                                                                       getCurrentLineNumber(),
-                                                                                       mVarMap, vVarArray, sVarArray);
-                getErrorInformationForDebugger();
-            }
-
+            NumeReKernel::getInstance()->getDebugger().gatherLoopBasedInformations(vCmdArray[__i].sCommand,
+                                                                                   getCurrentLineNumber(),
+                                                                                   mVarMap, vVarArray, sVarArray);
+            getErrorInformationForDebugger();
             NumeReKernel::getInstance()->getDebugger().showError(current_exception());
             nCalcType[__i] = CALCTYPE_NONE;
             catchExceptionForTest(current_exception(), NumeReKernel::bSupressAnswer, getCurrentLineNumber());
@@ -1309,14 +1260,10 @@ int FlowCtrl::try_catch(int nth_Cmd, int nth_loop)
             // Evaluate the command line with the calc function
             if (calc(vCmdArray[__i].sCommand, __i) == FLOWCTRL_ERROR)
             {
-                if (_optionRef->useDebugger())
-                {
-                    NumeReKernel::getInstance()->getDebugger().gatherLoopBasedInformations(vCmdArray[__i].sCommand,
-                                                                                           getCurrentLineNumber(),
-                                                                                           mVarMap, vVarArray, sVarArray);
-                    getErrorInformationForDebugger();
-                }
-
+                NumeReKernel::getInstance()->getDebugger().gatherLoopBasedInformations(vCmdArray[__i].sCommand,
+                                                                                       getCurrentLineNumber(),
+                                                                                       mVarMap, vVarArray, sVarArray);
+                getErrorInformationForDebugger();
                 return FLOWCTRL_ERROR;
             }
 
@@ -1325,14 +1272,10 @@ int FlowCtrl::try_catch(int nth_Cmd, int nth_loop)
         }
         catch (...)
         {
-            if (_optionRef->useDebugger())
-            {
-                NumeReKernel::getInstance()->getDebugger().gatherLoopBasedInformations(vCmdArray[__i].sCommand,
-                                                                                       getCurrentLineNumber(),
-                                                                                       mVarMap, vVarArray, sVarArray);
-                getErrorInformationForDebugger();
-            }
-
+            NumeReKernel::getInstance()->getDebugger().gatherLoopBasedInformations(vCmdArray[__i].sCommand,
+                                                                                   getCurrentLineNumber(),
+                                                                                   mVarMap, vVarArray, sVarArray);
+            getErrorInformationForDebugger();
             NumeReKernel::getInstance()->getDebugger().showError(std::current_exception());
             nCalcType[__i] = CALCTYPE_NONE;
 
@@ -1436,14 +1379,10 @@ int FlowCtrl::try_catch(int nth_Cmd, int nth_loop)
                     // Evaluate the command line with the calc function
                     if (calc(vCmdArray[__i].sCommand, __i) == FLOWCTRL_ERROR)
                     {
-                        if (_optionRef->useDebugger())
-                        {
-                            NumeReKernel::getInstance()->getDebugger().gatherLoopBasedInformations(vCmdArray[__i].sCommand,
-                                                                                                   getCurrentLineNumber(),
-                                                                                                   mVarMap, vVarArray, sVarArray);
-                            getErrorInformationForDebugger();
-                        }
-
+                        NumeReKernel::getInstance()->getDebugger().gatherLoopBasedInformations(vCmdArray[__i].sCommand,
+                                                                                               getCurrentLineNumber(),
+                                                                                               mVarMap, vVarArray, sVarArray);
+                        getErrorInformationForDebugger();
                         return FLOWCTRL_ERROR;
                     }
 
@@ -1452,14 +1391,10 @@ int FlowCtrl::try_catch(int nth_Cmd, int nth_loop)
                 }
                 catch (...)
                 {
-                    if (_optionRef->useDebugger())
-                    {
-                        NumeReKernel::getInstance()->getDebugger().gatherLoopBasedInformations(vCmdArray[__i].sCommand,
-                                                                                               getCurrentLineNumber(),
-                                                                                               mVarMap, vVarArray, sVarArray);
-                        getErrorInformationForDebugger();
-                    }
-
+                    NumeReKernel::getInstance()->getDebugger().gatherLoopBasedInformations(vCmdArray[__i].sCommand,
+                                                                                           getCurrentLineNumber(),
+                                                                                           mVarMap, vVarArray, sVarArray);
+                    getErrorInformationForDebugger();
                     NumeReKernel::getInstance()->getDebugger().showError(current_exception());
                     nCalcType[__i] = CALCTYPE_NONE;
                     catchExceptionForTest(current_exception(), NumeReKernel::bSupressAnswer, getCurrentLineNumber());
@@ -1639,10 +1574,9 @@ value_type* FlowCtrl::evalHeader(int& nNum, std::string& sHeadExpression, bool b
 
                 if (bIsForHead)
                 {
-                    if (_optionRef->useDebugger())
-                        NumeReKernel::getInstance()->getDebugger().gatherLoopBasedInformations(sHeadExpression,
-                                                                                               getCurrentLineNumber(),
-                                                                                               mVarMap, vVarArray, sVarArray);
+                    NumeReKernel::getInstance()->getDebugger().gatherLoopBasedInformations(sHeadExpression,
+                                                                                           getCurrentLineNumber(),
+                                                                                           mVarMap, vVarArray, sVarArray);
 
                     NumeReKernel::getInstance()->getDebugger().throwException(SyntaxError(SyntaxError::CANNOT_EVAL_FOR,
                                                                                           sHeadExpression,

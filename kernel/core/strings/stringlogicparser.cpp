@@ -527,7 +527,7 @@ namespace NumeRe
                 i += nextPos;
             }
             else if (!(nQuotes % 2) && isalpha(sExpr[i])) // Unexpected variables
-                throw SyntaxError(SyntaxError::STRING_ERROR, sExpr, i, sExpr);
+                throw SyntaxError(SyntaxError::STRING_ERROR, sExpr, i, _lang.get("ERR_NR_3603_UNEXPECTED_VAR"));
         }
 
         StripSpaces(sExpr);

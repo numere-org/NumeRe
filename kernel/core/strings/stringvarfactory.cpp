@@ -64,10 +64,10 @@ namespace NumeRe
 
         // Does it already exist?
         if (m_mStringVectorVars.find(strVectName) != m_mStringVectorVars.end())
-            throw SyntaxError(SyntaxError::STRING_ERROR, strVectName, SyntaxError::invalid_position);
+            throw SyntaxError(SyntaxError::STRING_ERROR, strVectName, SyntaxError::invalid_position, _lang.get("ERR_NR_3603_OVERWRITE"));
 
         if (vStringVector.size() == 1 && vStringVector.front().find(strVectName) != std::string::npos)
-            throw SyntaxError(SyntaxError::STRING_ERROR, strVectName, SyntaxError::invalid_position);
+            throw SyntaxError(SyntaxError::STRING_ERROR, strVectName, SyntaxError::invalid_position, _lang.get("ERR_NR_3603_INCOMPLETE"));
 
         // save the vector
         m_mStringVectorVars[strVectName] = vStringVector;
@@ -168,9 +168,9 @@ namespace NumeRe
     {
         StringVector vRes;
         const map<string, vector<mu::value_type> >& mNumVectorVars = NumeReKernel::getInstance()->getParser().GetVectors();
-        g_logger.info("Evaluating string vector for '" + sLine + "'");
-        g_logger.info("Contains vars: " + toString(containsStringVectorVars(sLine)));
-        g_logger.info("Contains parser vars: " + toString(NumeReKernel::getInstance()->getParser().ContainsVectorVars(sLine, false)));
+        //g_logger.info("Evaluating string vector for '" + sLine + "'");
+        //g_logger.info("Contains vars: " + toString(containsStringVectorVars(sLine)));
+        //g_logger.info("Contains parser vars: " + toString(NumeReKernel::getInstance()->getParser().ContainsVectorVars(sLine, false)));
 
         // As long as the current vector is not empty
         while (sLine.length())

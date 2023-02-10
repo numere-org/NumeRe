@@ -103,27 +103,6 @@ string addQuotationMarks(const std::string& sString)
 
 
 /////////////////////////////////////////////////
-/// \brief Implementation of the to_string()
-/// function.
-///
-/// \param funcArgs StringFuncArgs&
-/// \return StringVector
-///
-/////////////////////////////////////////////////
-static StringVector strfnc_to_string(StringFuncArgs& funcArgs)
-{
-    if (!funcArgs.sArg1.view().length())
-        return StringVector::empty_string();
-
-    if (funcArgs.sArg1.is_string())
-        return funcArgs.sArg1.getRef();
-
-    // Is not a string
-    return "\"" + funcArgs.sArg1.getRef() + "\"";
-}
-
-
-/////////////////////////////////////////////////
 /// \brief Simple helper to create a LaTeX
 /// exponent from a string.
 ///
@@ -2749,7 +2728,7 @@ static std::map<std::string, StringFuncHandle> getStringFuncHandles()
     mHandleTable["timeformat"]          = StringFuncHandle(STR_DBL, strfnc_timeformat, false);
     mHandleTable["to_char"]             = StringFuncHandle(VAL, strfnc_to_char, true);
     mHandleTable["to_lowercase"]        = StringFuncHandle(STR, strfnc_to_lowercase, false);
-    mHandleTable["to_string"]           = StringFuncHandle(STR, strfnc_to_string, false);
+    //mHandleTable["to_string"]           = StringFuncHandle(STR, strfnc_to_string, false);
     mHandleTable["to_tex"]              = StringFuncHandle(DBL_VALOPT, strfnc_to_tex, false);
     mHandleTable["to_time"]             = StringFuncHandle(STR_STR, strfnc_to_time, false);
     mHandleTable["to_uppercase"]        = StringFuncHandle(STR, strfnc_to_uppercase, false);

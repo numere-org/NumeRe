@@ -202,7 +202,7 @@ namespace NumeRe
             StringResult strRes = eval(sIndexPairs, "", false);
 
             if (!strRes.vResult.size())
-                throw SyntaxError(SyntaxError::STRING_ERROR, sIndexPairs, SyntaxError::invalid_position);
+                throw SyntaxError(SyntaxError::STRING_ERROR, sIndexPairs, SyntaxError::invalid_position, _lang.get("ERR_NR_3603_INTERNAL"));
 
             // Check, if the return values are
             // only strings
@@ -386,7 +386,7 @@ namespace NumeRe
                     {
                         StringResult strRes = eval(sExpr, "");
                         if (!strRes.vResult.size())
-                            throw SyntaxError(SyntaxError::STRING_ERROR, sLine, SyntaxError::invalid_position);
+                            throw SyntaxError(SyntaxError::STRING_ERROR, sLine, SyntaxError::invalid_position, _lang.get("ERR_NR_3603_INTERNAL"));
 
                         // Examine, whether the return value is logical only
                         if (!strRes.bOnlyLogicals)
@@ -485,7 +485,7 @@ namespace NumeRe
                     else
                     {
                         // Throw an error
-                        throw SyntaxError(SyntaxError::STRING_ERROR, sLine, SyntaxError::invalid_position);
+                        throw SyntaxError(SyntaxError::STRING_ERROR, sLine, SyntaxError::invalid_position, _lang.get("ERR_NR_3603_INVALID_PATHIDENTIFIER"));
                     }
                     nPos = 0;
                     continue;
@@ -500,7 +500,7 @@ namespace NumeRe
 
                     // Ensure that the result exists
                     if (!strRes.vResult.size())
-                        throw SyntaxError(SyntaxError::STRING_ERROR, sLine, SyntaxError::invalid_position);
+                        throw SyntaxError(SyntaxError::STRING_ERROR, sLine, SyntaxError::invalid_position, _lang.get("ERR_NR_3603_INTERNAL"));
 
                     // Add the needed quotation marks
                     for (size_t i = 0; i < strRes.vResult.size(); i++)
@@ -1442,6 +1442,7 @@ namespace NumeRe
     {
         std::vector<StringView> vTokens;
 
+        const std::string BINARYOPS = "+?:<>!=&|,";
         size_t nQuotes = 0;
         int hasIf = 0;
 
@@ -1456,14 +1457,40 @@ namespace NumeRe
             {
                 // Count quotes
                 if (sExpr[i] == '"' && (!i || sExpr[i-1] != '\\'))
+                {
                     nQuotes++;
+
+                    if (!(nQuotes % 2))
+                    {
+                        // The next non-whitespace character should be
+                        // a valid operator or the end of the line
+                        size_t nextChar = sExpr.find_first_not_of(' ', i+1);
+
+                        if (nextChar != std::string::npos && BINARYOPS.find(sExpr[nextChar]) == std::string::npos)
+                            throw SyntaxError(SyntaxError::STRING_ERROR, sExpr.get_viewed_string(),
+                                              nextChar+sExpr.get_offset(), _lang.get("ERR_NR_3603_MISSING_OPERATOR"));
+                    }
+                    else if (i) // If the quotation mark is not the first element, s.th. is wrong
+                        throw SyntaxError(SyntaxError::STRING_ERROR, sExpr.get_viewed_string(),
+                                          i+sExpr.get_offset(), _lang.get("ERR_NR_3603_MISSING_OPERATOR"));
+                }
 
                 if (nQuotes % 2)
                     continue;
 
                 // Jump over possible parentheses
                 if (sExpr[i] == '(' || sExpr[i] == '[' || sExpr[i] == '{')
+                {
                     i += getMatchingParenthesis(sExpr.subview(i));
+
+                    // The next non-whitespace character should be
+                    // a valid operator or the end of the line
+                    size_t nextChar = sExpr.find_first_not_of(' ', i+1);
+
+                    if (nextChar != std::string::npos && (isalnum(sExpr[nextChar]) || sExpr[nextChar] == '"'))
+                        throw SyntaxError(SyntaxError::STRING_ERROR, sExpr.get_viewed_string(),
+                                          nextChar+sExpr.get_offset(), _lang.get("ERR_NR_3603_MISSING_OPERATOR"));
+                }
 
                 // Detect operators
                 if (sExpr.subview(i, 3) == "|||")
@@ -1830,7 +1857,7 @@ namespace NumeRe
 
                 // Ensure that it exists
                 if (nPos == std::string::npos)
-                    throw SyntaxError(SyntaxError::STRING_ERROR, strExpr.sLine, SyntaxError::invalid_position);
+                    throw SyntaxError(SyntaxError::STRING_ERROR, strExpr.sLine, getMatchingParenthesis(strExpr.sLine), _lang.get("ERR_NR_3603_MISSING_ASSIGNMENT"));
 
                 // Get the data object including the assignment operator and
                 // cut this part from the original line
@@ -1989,7 +2016,7 @@ namespace NumeRe
                     for (size_t j = i; j < strExpr.sLine.length(); j++)
                     {
                         if (strExpr.sLine[j] == '"')
-                            throw SyntaxError(SyntaxError::STRING_ERROR, strExpr.sLine, SyntaxError::invalid_position);
+                            throw SyntaxError(SyntaxError::STRING_ERROR, strExpr.sLine, j, _lang.get("ERR_NR_3603_UNEXPECTED_LITERAL"));
 
                         if ((strExpr.sLine[j] == '(' || strExpr.sLine[j] == '{') && getMatchingParenthesis(strExpr.sLine.substr(j)) != std::string::npos)
                             j += getMatchingParenthesis(sLine.substr(j));
@@ -2033,7 +2060,7 @@ namespace NumeRe
                                 std::string strvar = createStringVectorVar(_res.vResult);
 
                                 if (!strvar.length())
-                                    throw SyntaxError(SyntaxError::STRING_ERROR, strExpr.sLine, SyntaxError::invalid_position);
+                                    throw SyntaxError(SyntaxError::STRING_ERROR, strExpr.sLine, SyntaxError::invalid_position, _lang.get("ERR_NR_3603_INTERNAL"));
 
                                 strExpr.sLine = strExpr.sLine.substr(0, i + 1) + strvar + strExpr.sLine.substr(nPos);
                             }
@@ -2047,7 +2074,7 @@ namespace NumeRe
                                 std::string strvar = createStringVectorVar(_res.vResult);
 
                                 if (!strvar.length())
-                                    throw SyntaxError(SyntaxError::STRING_ERROR, strExpr.sLine, SyntaxError::invalid_position);
+                                    throw SyntaxError(SyntaxError::STRING_ERROR, strExpr.sLine, SyntaxError::invalid_position, _lang.get("ERR_NR_3603_INTERNAL"));
 
                                 strExpr.sLine = strExpr.sLine.substr(0, i) + strvar + strExpr.sLine.substr(nPos + 1);
                             }
@@ -2123,7 +2150,7 @@ namespace NumeRe
                     StringResult tempres = eval(sVectorTemp, "");
 
                     if (!tempres.vResult.size())
-                        throw SyntaxError(SyntaxError::STRING_ERROR, strExpr.sLine, SyntaxError::invalid_position);
+                        throw SyntaxError(SyntaxError::STRING_ERROR, strExpr.sLine, SyntaxError::invalid_position, _lang.get("ERR_NR_3603_INTERNAL"));
 
                     // Create a string vector variable from the returned vector
                     // if it is a string. Otherwise we create a new temporary
@@ -2166,7 +2193,7 @@ namespace NumeRe
         {
             // Ensure that this is no false positive
             if (strExpr.sLine.find("string(") != std::string::npos || containsStringVars(strExpr.sLine))
-                throw SyntaxError(SyntaxError::STRING_ERROR, strExpr.sLine, SyntaxError::invalid_position);
+                throw SyntaxError(SyntaxError::STRING_ERROR, strExpr.sLine, SyntaxError::invalid_position, _lang.get("ERR_NR_3603_INCOMPLETE"));
 
             // return the current line
             return StringResult(strExpr.sLine);
@@ -2180,11 +2207,11 @@ namespace NumeRe
 
         // Ensure that there is at least one result
         if (!strRes.vResult.size())
-            throw SyntaxError(SyntaxError::STRING_ERROR, strExpr.sLine, SyntaxError::invalid_position);
+            throw SyntaxError(SyntaxError::STRING_ERROR, strExpr.sLine, SyntaxError::invalid_position, _lang.get("ERR_NR_3603_STACK"));
 
         // store the string results in the variables or inb "string()" respectively
         if (!storeStringResults(strRes, strExpr.sAssignee))
-            throw SyntaxError(SyntaxError::STRING_ERROR, strExpr.sLine, SyntaxError::invalid_position);
+            throw SyntaxError(SyntaxError::STRING_ERROR, strExpr.sLine, SyntaxError::invalid_position, _lang.get("ERR_NR_3603_ASSIGNMENT"));
 
         // Return the evaluated string command line
         return strRes;

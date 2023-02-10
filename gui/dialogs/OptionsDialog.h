@@ -212,6 +212,7 @@ class OptionsDialog: public wxDialog
         wxCheckBox* m_quoteAutoComp;
         wxCheckBox* m_smartSense;
         wxCheckBox* m_lineLengthIndicator;
+        wxCheckBox* m_alwaysPointToError;
 
         wxSpinCtrl* m_debuggerFocusLine;
         wxCheckBox* m_debuggerShowLineNumbers;

@@ -1189,7 +1189,7 @@ static void listFunctions(const Settings& _option, const string& sType) //PRSRFU
     // Print the obtained function list on the terminal
 	for (unsigned int i = 0; i < vFuncs.size(); i++)
 	{
-		NumeReKernel::printPreFmt(LineBreak("|   " + vFuncs[i], _option, false, 0, 60) + "\n");
+		NumeReKernel::printPreFmt(LineBreak("|   " + vFuncs[i], _option, false, 0, 75) + "\n");
 	}
 	NumeReKernel::printPreFmt("|\n");
 	NumeReKernel::print(LineBreak(_lang.get("PARSERFUNCS_LISTFUNC_FOOTNOTE1"), _option));

@@ -995,68 +995,20 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const std::string& sCommand)
         catch (mu::Parser::exception_type& e)
         {
             _option.enableSystemPrints(true);
-            // --> Vernuenftig formatierte Fehlermeldungen <--
-            unsigned int nErrorPos = e.GetPos();
             sendErrorNotification();
             make_hline();
             print(toUpperCase(_lang.get("ERR_MUP_HEAD")));
             make_hline();
-
-            // --> Eigentliche Fehlermeldung <--
-            print(LineBreak(e.GetMsg(), _option));
-            print(LineBreak(_lang.get("ERR_EXPRESSION", maskProcedureSigns(e.GetExpr())), _option, true, 4, 15));
-
-            /* --> Ausdruecke, die laenger als 63 Zeichen sind, passen nicht in die Zeile. Wir stellen nur die ersten
-             *     60 Zeichen gefolgt von "..." dar <--
-             */
-            // --> Fehlerhaftes/Unerwartetes Objekt <--
-            if (e.GetToken().length())
-                print(toSystemCodePage(_lang.get("ERR_OBJECT", e.GetToken())));
-
-            /* --> Position des Fehlers im Ausdruck: Wir stellen um den Fehler nur einen Ausschnitt
-             *     des Ausdrucks in der Laenge von etwa 63 Zeichen dar und markieren die Fehlerposition
-             *     durch ein darunter angezeigten Zirkumflex "^" <--
-             */
-            if (nErrorPos < e.GetExpr().length())
-            {
-                if (e.GetExpr().length() > 63 && nErrorPos > 31 && nErrorPos < e.GetExpr().length() - 32)
-                {
-                    printPreFmt("|   Position:  '..." + e.GetExpr().substr(nErrorPos - 29, 57) + "...'\n");
-                    printPreFmt(pointToError(32));
-                }
-                else if (nErrorPos < 32)
-                {
-                    std::string sErrorExpr = "|   Position:  '";
-                    if (e.GetExpr().length() > 63)
-                        sErrorExpr += e.GetExpr().substr(0, 60) + "...'";
-                    else
-                        sErrorExpr += e.GetExpr() + "'";
-                    printPreFmt(sErrorExpr + "\n");
-                    printPreFmt(pointToError(nErrorPos + 1));
-                }
-                else if (nErrorPos > e.GetExpr().length() - 32)
-                {
-                    std::string sErrorExpr = "|   Position:  '";
-                    if (e.GetExpr().length() > 63)
-                    {
-                        printPreFmt(sErrorExpr + "..." + e.GetExpr().substr(e.GetExpr().length() - 60) + "'\n");
-                        printPreFmt(pointToError(65 - (e.GetExpr().length() - nErrorPos) - 2));
-                    }
-                    else
-                    {
-                        printPreFmt(sErrorExpr + e.GetExpr() + "'\n");
-                        printPreFmt(pointToError(nErrorPos));
-                    }
-                }
-            }
-
-            resetAfterError();
-
+            std::string sMsg = e.GetMsg();
+            printErrorMessage(sMsg.substr(0, sMsg.find('$')),
+                              sMsg.find('$') != std::string::npos ? sMsg.substr(sMsg.find('$')+1) : "",
+                              e.GetExpr(),
+                              e.GetPos());
             make_hline();
-            g_logger.error(toUpperCase(_lang.get("ERR_ERROR")) + ": " + e.GetMsg());
-
-
             sendErrorNotification();
+
+            g_logger.error(toUpperCase(_lang.get("ERR_ERROR")) + ": " + e.GetMsg());
+            resetAfterError();
             return NUMERE_ERROR;
         }
         catch (const std::bad_alloc& e)
@@ -1070,13 +1022,12 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const std::string& sCommand)
             make_hline();
             print(toUpperCase(_lang.get("ERR_STD_BA_HEAD")));
             make_hline();
-            print(LineBreak(_lang.get("ERR_STD_BADALLOC", sVersion), _option));
-            resetAfterError();
-
+            print(_lang.get("ERR_STD_BADALLOC", sVersion));
             make_hline();
-            g_logger.error("ERROR: BAD ALLOC");
             sendErrorNotification();
 
+            g_logger.error("ERROR: BAD ALLOC");
+            resetAfterError();
             return NUMERE_ERROR;
         }
         catch (const std::exception& e)
@@ -1087,15 +1038,13 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const std::string& sCommand)
             make_hline();
             print(toUpperCase(_lang.get("ERR_STD_INTERNAL_HEAD")));
             make_hline();
-            print(LineBreak(std::string(e.what()), _option));
-            print(LineBreak(_lang.get("ERR_STD_INTERNAL"), _option));
-
-            resetAfterError();
-
-            g_logger.error(toUpperCase(_lang.get("ERR_ERROR")) + ": " + e.what());
+            print(std::string(e.what()));
+            print(_lang.get("ERR_STD_INTERNAL"));
             make_hline();
             sendErrorNotification();
 
+            g_logger.error(toUpperCase(_lang.get("ERR_ERROR")) + ": " + e.what());
+            resetAfterError();
             return NUMERE_ERROR;
         }
         catch (SyntaxError& e)
@@ -1103,21 +1052,13 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const std::string& sCommand)
             _option.enableSystemPrints(true);
             sendErrorNotification();
             make_hline();
+
             if (e.errorcode == SyntaxError::PROCESS_ABORTED_BY_USER)
             {
                 print(toUpperCase(_lang.get("ERR_PROCESS_CANCELLED_HEAD")));
                 make_hline();
-                print(LineBreak(_lang.get("ERR_NR_3200_0_PROCESS_ABORTED_BY_USER"), _option, false));
-                //cerr << LineBreak("|-> Siehe auch \"help procedure\"", _option) << endl;
-
+                print(_lang.get("ERR_NR_3200_0_PROCESS_ABORTED_BY_USER"));
                 g_logger.warning("Process was cancelled by user");
-                // --> Wenn ein Script ausgefuehrt wird, lesen wir den Index der letzten eingelesenen Zeile und geben diesen hier aus <--
-                if (_script.isValid() && _script.isOpen())
-                {
-                    print(LineBreak(_lang.get("ERR_SCRIPTABORT", toString((int)_script.getCurrentLine())), _option));
-                    // --> Script beenden! Mit einem Fehler ist es unsinnig weiterzurechnen <--
-                    _script.close();
-                }
             }
             else
             {
@@ -1126,13 +1067,28 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const std::string& sCommand)
 
                 if (e.getToken().length() && (e.errorcode == SyntaxError::PROCEDURE_THROW || e.errorcode == SyntaxError::LOOP_THROW))
                 {
-                    print(LineBreak(e.getToken(), _option));
+                    print(e.getToken());
+
+                    auto errorLoc = getErrorLocation();
+
+                    if (errorLoc.second != -1u)
+                    {
+                        print(_lang.get("DBG_FILE") + ": " + errorLoc.first + " @ " + toString(errorLoc.second+1));
+
+                        if ((!_debugger.isActive() || _script.isOpen()) && _option.getSetting(SETTING_B_POINTTOERROR).active())
+                            gotoLine(errorLoc.first, errorLoc.second);
+                    }
+
                     g_logger.error(toUpperCase(_lang.get("ERR_ERROR")) + ": " + e.getToken());
                 }
                 else
                 {
-                    std::string sErrLine_0 = _lang.get("ERR_NR_" + toString((int)e.errorcode) + "_0_*", e.getToken(), toString(e.getIndices()[0]), toString(e.getIndices()[1]), toString(e.getIndices()[2]), toString(e.getIndices()[3]));
-                    std::string sErrLine_1 = _lang.get("ERR_NR_" + toString((int)e.errorcode) + "_1_*", e.getToken(), toString(e.getIndices()[0]), toString(e.getIndices()[1]), toString(e.getIndices()[2]), toString(e.getIndices()[3]));
+                    std::string sErrLine_0 = _lang.get("ERR_NR_" + toString((int)e.errorcode) + "_0_*", e.getToken(),
+                                                       toString(e.getIndices()[0]), toString(e.getIndices()[1]),
+                                                       toString(e.getIndices()[2]), toString(e.getIndices()[3]));
+                    std::string sErrLine_1 = _lang.get("ERR_NR_" + toString((int)e.errorcode) + "_1_*", e.getToken(),
+                                                       toString(e.getIndices()[0]), toString(e.getIndices()[1]),
+                                                       toString(e.getIndices()[2]), toString(e.getIndices()[3]));
                     std::string sErrIDString = _lang.getKey("ERR_NR_" + toString((int)e.errorcode) + "_0_*");
 
                     if (sErrLine_0.substr(0, 7) == "ERR_NR_")
@@ -1141,57 +1097,17 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const std::string& sCommand)
                         sErrLine_1 = _lang.get("ERR_GENERIC_1");
                         sErrIDString = "ERR_GENERIC";
                     }
-                    print(LineBreak(sErrLine_0, _option));
-                    print(LineBreak(sErrLine_1, _option));
-                    if (e.getExpr().length())
-                    {
-                        print(LineBreak(_lang.get("ERR_EXPRESSION", maskProcedureSigns(e.getExpr())), _option, true, 4, 15));
-                        if (e.getPosition() != SyntaxError::invalid_position)
-                        {
-                            /* --> Position des Fehlers im Ausdruck: Wir stellen um den Fehler nur einen Ausschnitt
-                             *     des Ausdrucks in der Laenge von etwa 63 Zeichen dar und markieren die Fehlerposition
-                             *     durch ein darunter angezeigten Zirkumflex "^" <--
-                             */
-                            if (e.getExpr().length() > 63 && e.getPosition() > 31 && e.getPosition() < e.getExpr().length() - 32)
-                            {
-                                printPreFmt("|   Position:  '..." + e.getExpr().substr(e.getPosition() - 29, 57) + "...'\n");
-                                printPreFmt(pointToError(32));
-                            }
-                            else if (e.getPosition() < 32)
-                            {
-                                std::string sErrorExpr = "|   Position:  '";
-                                if (e.getExpr().length() > 63)
-                                    sErrorExpr += e.getExpr().substr(0, 60) + "...'";
-                                else
-                                    sErrorExpr += e.getExpr() + "'";
-                                printPreFmt(sErrorExpr + "\n");
-                                printPreFmt(pointToError(e.getPosition() + 1));
-                            }
-                            else if (e.getPosition() > e.getExpr().length() - 32)
-                            {
-                                std::string sErrorExpr = "|   Position:  '";
-                                if (e.getExpr().length() > 63)
-                                {
-                                    printPreFmt(sErrorExpr + "..." + e.getExpr().substr(e.getExpr().length() - 60) + "'\n");
-                                    printPreFmt(pointToError(65 - (e.getExpr().length() - e.getPosition()) - 2));
-                                }
-                                else
-                                {
-                                    printPreFmt(sErrorExpr + e.getExpr() + "'\n");
-                                    printPreFmt(pointToError(e.getPosition()));
-                                }
-                            }
-                        }
-                    }
 
+                    printErrorMessage(sErrLine_0, sErrLine_1, e.getExpr(), e.getPosition());
                     g_logger.error(toUpperCase(_lang.get("ERR_ERROR")) + ": " + sErrIDString);
                 }
             }
-            resetAfterError();
+
 
             make_hline();
             sendErrorNotification();
 
+            resetAfterError();
             return NUMERE_ERROR;
         }
         catch (...)
@@ -1204,14 +1120,12 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const std::string& sCommand)
             make_hline();
             print(toUpperCase(_lang.get("ERR_CATCHALL_HEAD")));
             make_hline();
-            print(LineBreak(_lang.get("ERR_CATCHALL"), _option));
-
-            resetAfterError();
+            print(_lang.get("ERR_CATCHALL"));
             make_hline();
-
-            g_logger.error("ERROR: UNKNOWN EXCEPTION");
             sendErrorNotification();
 
+            g_logger.error("ERROR: UNKNOWN EXCEPTION");
+            resetAfterError();
             return NUMERE_ERROR;
         }
 
@@ -1219,7 +1133,7 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const std::string& sCommand)
 
         if (_script.wasLastCommand())
         {
-            print(LineBreak(_lang.get("PARSER_SCRIPT_FINISHED", _script.getScriptFileName()), _option, true, 4));
+            print(_lang.get("PARSER_SCRIPT_FINISHED", _script.getScriptFileName()));
             _memoryManager.setPluginCommands(_procedure.getPluginNames());
 
             checkInternalStates();
@@ -1238,7 +1152,7 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const std::string& sCommand)
 
     if (_script.wasLastCommand())
     {
-        print(LineBreak(_lang.get("PARSER_SCRIPT_FINISHED", _script.getScriptFileName()), _option, true, 4));
+        print(_lang.get("PARSER_SCRIPT_FINISHED", _script.getScriptFileName()));
         _memoryManager.setPluginCommands(_procedure.getPluginNames());
 
         checkInternalStates();
@@ -1248,8 +1162,103 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const std::string& sCommand)
 
     if (bSupressAnswer || !sLine.length())
         return NUMERE_DONE_KEYWORD;
-    return NUMERE_DONE;
 
+    return NUMERE_DONE;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This function points to the error
+/// indicated by nPos. It draws three circumflexes
+/// below the error location.
+///
+/// \param nPos unsigned int
+/// \return std::string
+///
+/////////////////////////////////////////////////
+static std::string pointToError(unsigned int nPos)
+{
+    std::string sErrorPointer = "|       ";
+    sErrorPointer += strfill("^^^", nPos+14) + "\n";
+    return sErrorPointer;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Formats and prints the error message
+/// for parser errors and syntax errors and
+/// points to the error location. Jumps also to
+/// the file and line, if activated.
+///
+/// \param errMsg const std::string&
+/// \param errDesc const std::string&
+/// \param expr const std::string&
+/// \param pos size_t
+/// \return void
+///
+/////////////////////////////////////////////////
+void NumeReKernel::printErrorMessage(const std::string& errMsg, const std::string& errDesc, const std::string& expr, size_t pos)
+{
+    // Get the file position if available
+    auto errorLoc = getErrorLocation();
+
+    // Print the message first
+    print(LineBreak(errMsg, _option, true, 4));
+
+    // Apply the empty line if necessary
+    if (errorLoc.second != SyntaxError::invalid_position || expr.length())
+        printPreFmt("|\n");
+
+    if (errorLoc.second != SyntaxError::invalid_position)
+    {
+        printPreFmt("|       " + _lang.get("ERR_MODULE", errorLoc.first + " @ Line " + toString(errorLoc.second+1)) + "\n");
+
+        if ((!_debugger.isActive() || _script.isOpen()) && _option.getSetting(SETTING_B_POINTTOERROR).active())
+            gotoLine(errorLoc.first, errorLoc.second);
+    }
+
+    if (expr.length())
+    {
+        printPreFmt("|       " + LineBreak(_lang.get("ERR_EXPRESSION", maskProcedureSigns(expr)), _option, true, 8, 20) + "\n");
+
+        if (pos != SyntaxError::invalid_position)
+        {
+            std::string sErrorExpr = "|       ";
+
+            if (expr.length() > 63 && pos > 31 && pos < expr.length() - 32)
+            {
+                sErrorExpr += _lang.get("ERR_POSITION", "..." + expr.substr(pos - 29, 57) + "...");
+                pos = 32;
+            }
+            else if (pos < 32)
+            {
+                if (expr.length() > 63)
+                    sErrorExpr += _lang.get("ERR_POSITION", expr.substr(0, 60) + "...");
+                else
+                    sErrorExpr += _lang.get("ERR_POSITION", expr);
+
+                pos++;
+            }
+            else if (pos > expr.length() - 32)
+            {
+                if (expr.length() > 63)
+                {
+                    sErrorExpr += _lang.get("ERR_POSITION", "..." + expr.substr(expr.length() - 60));
+                    pos = 65 - (expr.length() - pos) - 2;
+                }
+                else
+                    sErrorExpr += _lang.get("ERR_POSITION", expr);
+            }
+
+            printPreFmt(sErrorExpr + "\n");
+            printPreFmt(pointToError(pos));
+        }
+        else
+            printPreFmt("|\n");
+    }
+
+    if (errDesc.length())
+        print(LineBreak(errDesc, _option, true, 4));
 }
 
 
@@ -2093,15 +2102,33 @@ void NumeReKernel::resetAfterError()
 
     // If script is still open, close it
     if (_script.isOpen() && _script.isValid())
-    {
-        print(LineBreak(_lang.get("ERR_SCRIPTCATCH", toString((int)_script.getCurrentLine())), _option));
         _script.close();
-    }
 
     // Reset the debugger, if not already done
     _debugger.finalize();
     _procedure.reset();
     _stringParser.removeTempStringVectorVars();
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This member function returns the file
+/// and the line position, if any.
+///
+/// \return std::pair<std::string, size_t>
+///
+/////////////////////////////////////////////////
+std::pair<std::string, size_t> NumeReKernel::getErrorLocation()
+{
+    // Find it in a script
+    if (_script.isOpen() && _script.isValid())
+        return std::make_pair(_script.getScriptFileName(), _debugger.getLineNumber() != -1u ? _debugger.getLineNumber() : _script.getCurrentLine()-1);
+
+    // Find it in a procedure
+    if (_debugger.getErrorModule().length())
+        return std::make_pair(_debugger.getErrorModule(), _debugger.getLineNumber());
+
+    return std::make_pair(std::string(""), -1u);
 }
 
 

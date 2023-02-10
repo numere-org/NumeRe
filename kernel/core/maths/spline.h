@@ -109,7 +109,7 @@ namespace
 				void set_boundary(bd_type left, double left_value,
 								  bd_type right, double right_value,
 								  bool force_linear_extrapolation = false);
-				void set_points(const std::vector<double>& x,
+				bool set_points(const std::vector<double>& x,
 								const std::vector<double>& y, bool cubic_spline = true);
 				double operator() (double x) const;
 				double deriv(int order, double x) const;
@@ -297,18 +297,19 @@ namespace
 		}
 
 
-		void spline::set_points(const std::vector<double>& x,
+		bool spline::set_points(const std::vector<double>& x,
 								const std::vector<double>& y, bool cubic_spline)
 		{
-			assert(x.size() == y.size());
-			assert(x.size() > 2);
+		    if (x.size() != y.size() || x.size() <= 2)
+                return false;
 			m_x = x;
 			m_y = y;
 			int   n = x.size();
 
 			for (int i = 0; i < n - 1; i++)
 			{
-				assert(m_x[i] <= m_x[i + 1]);
+				if (m_x[i] > m_x[i + 1])
+                    return false;
 			}
 
 			double dAvg = 0.0;
@@ -429,6 +430,8 @@ namespace
 			m_c[n - 1] = 3.0 * m_a[n - 2] * h * h + 2.0 * m_b[n - 2] * h + m_c[n - 2]; // = f'_{n-2}(x_{n-1})
 			if (m_force_linear_extrapolation == true)
 				m_b[n - 1] = 0.0;
+
+            return true;
 		}
 
 		double spline::operator() (double x) const

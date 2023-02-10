@@ -2040,10 +2040,10 @@ void PlotData::deleteData(bool bGraphFinished /* = false*/)
         stringSettings[STR_COMPOSEDTITLE].clear();
         nTargetGUI[0] = -1;
         nTargetGUI[1] = -1;
-    }
 
-    if (!logicalSettings[LOG_ALLHIGHRES])
-        intSettings[INT_HIGHRESLEVEL] = 0;
+        if (!logicalSettings[LOG_ALLHIGHRES])
+            intSettings[INT_HIGHRESLEVEL] = 0;
+    }
 
     logicalSettings[LOG_PARAMETRIC] = false;
     nRequestedLayers = 1;

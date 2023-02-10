@@ -112,7 +112,7 @@ void ValueColumn::setValue(size_t elem, const std::string& sValue)
     if (isConvertible(sValue, CONVTYPE_VALUE))
         setValue(elem, StrToCmplx(toInternalString(sValue)));
     else
-        throw SyntaxError(SyntaxError::STRING_ERROR, sValue, sValue);
+        throw SyntaxError(SyntaxError::STRING_ERROR, sValue, sValue, _lang.get("ERR_NR_3603_INCONVERTIBLE_STRING"));
 }
 
 
@@ -524,7 +524,7 @@ void DateTimeColumn::setValue(size_t elem, const std::string& sValue)
     if (isConvertible(sValue, CONVTYPE_DATE_TIME))
         setValue(elem, to_double(StrToTime(toInternalString(sValue))));
     else
-        throw SyntaxError(SyntaxError::STRING_ERROR, sValue, sValue);
+        throw SyntaxError(SyntaxError::STRING_ERROR, sValue, sValue, _lang.get("ERR_NR_3603_INCONVERTIBLE_STRING"));
 }
 
 
@@ -930,7 +930,7 @@ void LogicalColumn::setValue(size_t elem, const std::string& sValue)
     if (isConvertible(sValue, CONVTYPE_LOGICAL))
         setValue(elem, StrToLogical(toInternalString(sValue)));
     else
-        throw SyntaxError(SyntaxError::STRING_ERROR, sValue, sValue);
+        throw SyntaxError(SyntaxError::STRING_ERROR, sValue, sValue, _lang.get("ERR_NR_3603_INCONVERTIBLE_STRING"));
 }
 
 

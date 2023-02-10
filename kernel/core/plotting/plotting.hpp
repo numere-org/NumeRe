@@ -53,6 +53,7 @@ class Plot
         bool bOutputDesired;
         std::string sFunc;
         std::string sOutputName;
+        std::string sCurrentExpr;
         size_t nLegends;
 
         MemoryManager& _data;

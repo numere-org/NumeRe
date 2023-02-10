@@ -1423,6 +1423,34 @@ class StringViewBase
         }
 
         /////////////////////////////////////////////////
+        /// \brief Returns the complete viewed string
+        /// from its original source.
+        ///
+        /// \return std::string
+        ///
+        /////////////////////////////////////////////////
+        inline std::string get_viewed_string() const
+        {
+            if (getData())
+                return *getData();
+
+            return "";
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief Returns the offset between the
+        /// complete viewed string the current string
+        /// view.
+        ///
+        /// \return size_t
+        ///
+        /////////////////////////////////////////////////
+        inline size_t get_offset() const
+        {
+            return m_start;
+        }
+
+        /////////////////////////////////////////////////
         /// \brief Wrapper member function for
         /// std::string::find()
         ///
