@@ -24,6 +24,7 @@
 #define FUNCTIONIMPLEMENTATION_HPP
 
 #include "../ParserLib/muParser.h"
+#include <gsl/gsl_rng.h> //NOTE: Is it valid to include it here just for the type def gsl_rng?
 
 using namespace mu;
 
@@ -157,6 +158,35 @@ value_type parser_sech(const value_type&);
 value_type parser_csch(const value_type&);
 value_type parser_asech(const value_type&);
 value_type parser_acsch(const value_type&);
+
+// Distribution functions
+value_type parser_rd_laplace_rd(const value_type& sigma);
+value_type parser_rd_laplace_cdf_p(const value_type& x, const value_type& sigma);
+value_type parser_rd_laplace_cdf_q(const value_type& x, const value_type& sigma);
+value_type parser_rd_laplace_inv_p(const value_type& p, const value_type& sigma);
+value_type parser_rd_laplace_inv_q(const value_type& q, const value_type& sigma);
+value_type parser_rd_cauchy_rd(const value_type& a);
+value_type parser_rd_cauchy_cdf_p(const value_type& x, const value_type& a);
+value_type parser_rd_cauchy_cdf_q(const value_type& x, const value_type& a);
+value_type parser_rd_cauchy_inv_p(const value_type& p, const value_type& a);
+value_type parser_rd_cauchy_inv_q(const value_type& q, const value_type& a);
+value_type parser_rd_rayleigh_rd(const value_type& sigma);
+value_type parser_rd_rayleigh_cdf_p(const value_type& x, const value_type& sigma);
+value_type parser_rd_rayleigh_cdf_q(const value_type& x, const value_type& sigma);
+value_type parser_rd_rayleigh_inv_p(const value_type& p, const value_type& sigma);
+value_type parser_rd_rayleigh_inv_q(const value_type& q, const value_type& sigma);
+value_type parser_rd_landau_rd();
+value_type parser_rd_levyAlphaStable_rd(const value_type& c, const value_type& alpha);
+value_type parser_rd_fisher_f_rd(const value_type& nu1, const value_type& nu2);
+value_type parser_rd_fisher_f_cdf_p(const value_type& x, const value_type& nu1, const value_type& nu2);
+value_type parser_rd_fisher_f_cdf_q(const value_type& x, const value_type& nu1, const value_type& nu2);
+value_type parser_rd_fisher_f_inv_p(const value_type& p, const value_type& nu1, const value_type& nu2);
+value_type parser_rd_fisher_f_inv_q(const value_type& q, const value_type& nu1, const value_type& nu2);
+value_type parser_rd_student_t_rd(const value_type& nu);
+value_type parser_rd_student_t_cdf_p(const value_type& x, const value_type& nu);
+value_type parser_rd_student_t_cdf_q(const value_type& x, const value_type& nu);
+value_type parser_rd_student_t_inv_p(const value_type& p, const value_type& nu);
+value_type parser_rd_student_t_inv_q(const value_type& q, const value_type& nu);
 
 // Operator functions
 value_type parser_Not(const value_type&);

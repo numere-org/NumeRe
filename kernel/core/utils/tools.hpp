@@ -24,6 +24,7 @@
 #include <cstdlib>
 #include <vector>
 #include <random>
+#include <gsl/gsl_rng.h>
 
 #include "../structures.hpp"
 #include "../ui/error.hpp"
@@ -37,6 +38,7 @@ long long int intCast(const std::complex<double>& number);
 bool isInt(const std::complex<double>& number);
 
 std::mt19937& getRandGenInstance();
+const gsl_rng* getGslRandGenInstance();
 int findParameter(const std::string& sCmd, const std::string& sParam, const char cFollowing = ' ');
 bool getStringArgument(const std::string& sCmd, std::string& sArgument);
 std::string extractStringToken(const std::string& sCmd, size_t nPos);

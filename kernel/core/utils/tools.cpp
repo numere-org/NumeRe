@@ -93,6 +93,81 @@ std::mt19937& getRandGenInstance()
     return randGenerator.getGenerator();
 }
 
+
+/////////////////////////////////////////////////
+/// \brief This class represents a thread safe
+/// GSL random number generator (it is a container
+/// for multiple generator instances, each for
+/// every possible OMP thread).
+/////////////////////////////////////////////////
+class ThreadsafeGslRandGen
+{
+    private:
+        std::vector<const gsl_rng*> m_randGenArray;
+
+    public:
+        /////////////////////////////////////////////////
+        /// \brief Create an instance of this thread safe
+        /// random number generator by filling the
+        /// internal array with the number of maximal
+        /// possible OMP threads.
+        /////////////////////////////////////////////////
+        ThreadsafeGslRandGen()
+        {
+            double seed = time(0);
+
+            const gsl_rng_type* T = gsl_rng_default;
+            const gsl_rng* r = gsl_rng_alloc(T);
+            gsl_rng_set(r, seed);
+
+            for (int i = 0; i < omp_get_max_threads(); i++)
+            {
+                m_randGenArray.push_back(r);
+            }
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief Returns an instance of a random number
+        /// generator for the current thread.
+        ///
+        /// \return gsl_rng
+        ///
+        /////////////////////////////////////////////////
+        const gsl_rng* getGenerator()
+        {
+            int threadId = omp_get_thread_num();
+
+            if (threadId >= (int)m_randGenArray.size())
+                throw std::out_of_range("Requested a random number generator for thread " + std::to_string(threadId)
+                                        + ", which is larger than the number of available generators (i.e. "
+                                        + std::to_string(m_randGenArray.size()) + ")");
+
+            return m_randGenArray[threadId];
+        }
+
+};
+
+
+/// File static GSL random number generator, which will be usable via the scoped getRandGenInstance
+/// function, which will return a reference to this random number generator
+static ThreadsafeGslRandGen gslRandGenerator;
+
+
+/////////////////////////////////////////////////
+/// \brief Returns a reference to the central
+/// random number generator instance, which is
+/// globally accessible by all random number
+/// functions.
+///
+/// \return gsl_rng
+///
+/////////////////////////////////////////////////
+const gsl_rng* getGslRandGenInstance()
+{
+    return gslRandGenerator.getGenerator();
+}
+
+
 using namespace std;
 
 /////////////////////////////////////////////////
