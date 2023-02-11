@@ -24,7 +24,6 @@
 #define FUNCTIONIMPLEMENTATION_HPP
 
 #include "../ParserLib/muParser.h"
-#include <gsl/gsl_rng.h> //NOTE: Is it valid to include it here just for the type def gsl_rng?
 
 using namespace mu;
 

@@ -41,7 +41,6 @@
 #include <gsl/gsl_randist.h>
 #include <gsl/gsl_cdf.h>
 #include <noise/noise.h>
-#include <sys/time.h> //TODO: time is already included
 
 #include "student_t.hpp"
 #include "../datamanagement/memorymanager.hpp"
@@ -2920,7 +2919,7 @@ value_type parser_rd_laplace_cdf_q(const value_type& x, const value_type& a)
 value_type parser_rd_laplace_inv_p(const value_type& p, const value_type& a)
 {
     // Check the input values
-    if (mu::isnan(p) || mu::isnan(a) || p.imag() != 0 || a.imag() != 0 || a.real() <= 0 || p.real() <= 0)  //TODO: Check result of p >> 1 (not defined depending on a, behaviour of function unclear)
+    if (mu::isnan(p) || mu::isnan(a) || p.imag() != 0 || a.imag() != 0 || a.real() <= 0 || p.real() < 0)
         return NAN;
 
     // Get the value from the probability density function
@@ -2941,17 +2940,8 @@ value_type parser_rd_cauchy_rd(const value_type& a)
     if (mu::isnan(a) || a.imag() != 0 || a.real() <= 0)
         return NAN;
 
-    // Initialise the random number generator  //TODO externalize
-    struct timeval tv; // Seed generation based on time
-    gettimeofday(&tv,0);
-    unsigned long mySeed = tv.tv_sec + tv.tv_usec;
-
-    const gsl_rng_type* T = gsl_rng_default;
-    const gsl_rng* r = gsl_rng_alloc(T);
-    gsl_rng_set(r, mySeed);
-
     // Get the value from the probability density function
-    return gsl_ran_cauchy(r, a.real());
+    return gsl_ran_cauchy(getGslRandGenInstance(), a.real());
 }
 
 
@@ -2976,7 +2966,7 @@ value_type parser_rd_cauchy_cdf_q(const value_type& x, const value_type& a)
 value_type parser_rd_cauchy_inv_p(const value_type& p, const value_type& a)
 {
     // Check the input values
-    if (mu::isnan(p) || mu::isnan(a) || p.imag() != 0 || a.imag() != 0 || a.real() <= 0 || p.real() <= 0)  //TODO: Check result of p >> 1 (not defined depending on a, behaviour of function unclear)
+    if (mu::isnan(p) || mu::isnan(a) || p.imag() != 0 || a.imag() != 0 || a.real() <= 0 || p.real() < 0)
         return NAN;
 
     // Get the value from the probability density function
@@ -2998,24 +2988,15 @@ value_type parser_rd_rayleigh_rd(const value_type& sigma)
     if (mu::isnan(sigma) || sigma.imag() != 0 || sigma.real() <= 0)
         return NAN;
 
-    // Initialise the random number generator  //TODO externalize
-    struct timeval tv; // Seed generation based on time
-    gettimeofday(&tv,0);
-    unsigned long mySeed = tv.tv_sec + tv.tv_usec;
-
-    const gsl_rng_type* T = gsl_rng_default;
-    const gsl_rng* r = gsl_rng_alloc(T);
-    gsl_rng_set(r, mySeed);
-
     // Get the value from the probability density function
-    return gsl_ran_rayleigh(r, sigma.real());
+    return gsl_ran_rayleigh(getGslRandGenInstance(), sigma.real());
 }
 
 
 value_type parser_rd_rayleigh_cdf_p(const value_type& x, const value_type& sigma)
 {
     // Check the input values
-    if (mu::isnan(x) || mu::isnan(sigma) || x.imag() != 0 || sigma.imag() != 0 || sigma.real() <= 0 || x.real() < 0)  //TODO: Evalute what happens with x = 0
+    if (mu::isnan(x) || mu::isnan(sigma) || x.imag() != 0 || sigma.imag() != 0 || sigma.real() <= 0 || x.real() < 0)
         return NAN;
 
     // Get the value from the probability density function
@@ -3033,7 +3014,7 @@ value_type parser_rd_rayleigh_cdf_q(const value_type& x, const value_type& sigma
 value_type parser_rd_rayleigh_inv_p(const value_type& p, const value_type& sigma)
 {
     // Check the input values
-    if (mu::isnan(p) || mu::isnan(sigma) || p.imag() != 0 || sigma.imag() != 0 || sigma.real() <= 0 || p.real() <= 0)  //TODO: Check result of p >> 1 (not defined depending on a, behaviour of function unclear)
+    if (mu::isnan(p) || mu::isnan(sigma) || p.imag() != 0 || sigma.imag() != 0 || sigma.real() <= 0 || p.real() < 0)
         return NAN;
 
     // Get the value from the probability density function
@@ -3051,17 +3032,8 @@ value_type parser_rd_rayleigh_inv_q(const value_type& q, const value_type& sigma
 // Landau
 value_type parser_rd_landau_rd()
 {
-    // Initialise the random number generator  //TODO externalize
-    struct timeval tv; // Seed generation based on time
-    gettimeofday(&tv,0);
-    unsigned long mySeed = tv.tv_sec + tv.tv_usec;
-
-    const gsl_rng_type* T = gsl_rng_default;
-    const gsl_rng* r = gsl_rng_alloc(T);
-    gsl_rng_set(r, mySeed);
-
     // Get the value from the probability density function
-    return gsl_ran_landau(r);
+    return gsl_ran_landau(getGslRandGenInstance());
 }
 
 
@@ -3072,17 +3044,8 @@ value_type parser_rd_levyAlphaStable_rd(const value_type& c, const value_type& a
     if (mu::isnan(c) || c.imag() != 0 || c.real() < 0 || mu::isnan(alpha) || alpha.imag() != 0 || alpha.real() <= 0 || alpha.real() > 2)
         return NAN;
 
-    // Initialise the random number generator  //TODO externalize
-    struct timeval tv; // Seed generation based on time
-    gettimeofday(&tv,0);
-    unsigned long mySeed = tv.tv_sec + tv.tv_usec;
-
-    const gsl_rng_type* T = gsl_rng_default;
-    const gsl_rng* r = gsl_rng_alloc(T);
-    gsl_rng_set(r, mySeed);
-
     // Get the value from the probability density function
-    return gsl_ran_levy(r, c.real(), alpha.real());
+    return gsl_ran_levy(getGslRandGenInstance(), c.real(), alpha.real());
 }
 
 
@@ -3093,17 +3056,8 @@ value_type parser_rd_fisher_f_rd(const value_type& nu1, const value_type& nu2)
     if (mu::isnan(nu1) || nu1.imag() != 0 || nu1.real() <= 0 || mu::isnan(nu2) || nu2.imag() != 0 || nu2.real() <= 0)
         return NAN;
 
-    // Initialise the random number generator  //TODO externalize
-    struct timeval tv; // Seed generation based on time
-    gettimeofday(&tv,0);
-    unsigned long mySeed = tv.tv_sec + tv.tv_usec;
-
-    const gsl_rng_type* T = gsl_rng_default;
-    const gsl_rng* r = gsl_rng_alloc(T);
-    gsl_rng_set(r, mySeed);
-
     // Get the value from the probability density function
-    return gsl_ran_fdist(r, nu1.real(), nu2.real());
+    return gsl_ran_fdist(getGslRandGenInstance(), nu1.real(), nu2.real());
 }
 
 
@@ -3128,7 +3082,7 @@ value_type parser_rd_fisher_f_cdf_q(const value_type& x, const value_type& nu1, 
 value_type parser_rd_fisher_f_inv_p(const value_type& p, const value_type& nu1, const value_type& nu2)
 {
     // Check the input values
-    if (mu::isnan(p) || mu::isnan(nu1) || mu::isnan(nu2) || p.imag() != 0 || nu1.imag() != 0 || nu2.imag() != 0 || nu1.real() <= 0 || nu2.real() <= 0)  //TODO: Check result of p >> 1 (not defined depending on a, behaviour of function unclear)
+    if (mu::isnan(p) || mu::isnan(nu1) || mu::isnan(nu2) || p.imag() != 0 || nu1.imag() != 0 || nu2.imag() != 0 || p.real() < 0 || nu1.real() <= 0 || nu2.real() <= 0)
         return NAN;
 
     // Get the value from the probability density function
@@ -3150,17 +3104,8 @@ value_type parser_rd_student_t_rd(const value_type& nu)
     if (mu::isnan(nu) || nu.imag() != 0 || nu.real() <= 0)
         return NAN;
 
-    // Initialise the random number generator  //TODO externalize
-    struct timeval tv; // Seed generation based on time
-    gettimeofday(&tv,0);
-    unsigned long mySeed = tv.tv_sec + tv.tv_usec;
-
-    const gsl_rng_type* T = gsl_rng_default;
-    const gsl_rng* r = gsl_rng_alloc(T);
-    gsl_rng_set(r, mySeed);
-
     // Get the value from the probability density function
-    return gsl_ran_tdist(r, nu.real());
+    return gsl_ran_tdist(getGslRandGenInstance(), nu.real());
 }
 
 
@@ -3185,7 +3130,7 @@ value_type parser_rd_student_t_cdf_q(const value_type& x, const value_type& nu)
 value_type parser_rd_student_t_inv_p(const value_type& p, const value_type& nu)
 {
     // Check the input values
-    if (mu::isnan(p) || mu::isnan(nu) || p.imag() != 0 || nu.imag() != 0 || nu.real() <= 0)  //TODO: Check result of p >> 1 (not defined depending on a, behaviour of function unclear)
+    if (mu::isnan(p) || mu::isnan(nu) || p.imag() != 0 || nu.imag() != 0 || p.real() < 0 || nu.real() <= 0)
         return NAN;
 
     // Get the value from the probability density function
