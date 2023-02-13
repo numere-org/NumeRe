@@ -2971,8 +2971,12 @@ value_type parser_rd_laplace_inv_p(const value_type& p, const value_type& a)
 /////////////////////////////////////////////////
 value_type parser_rd_laplace_inv_q(const value_type& q, const value_type& a)
 {
-    // Get the result from the existing p variant
-    return mu::value_type(1) - parser_rd_laplace_inv_p(q, a);
+    // Check the input values
+    if (mu::isnan(q) || mu::isnan(a) || q.imag() != 0 || a.imag() != 0 || a.real() <= 0 || q.real() < 0 || q.real() > 1)
+        return NAN;
+
+    // Get the value from the probability density function
+    return gsl_cdf_laplace_Qinv(q.real(), a.real());
 }
 
 
@@ -3066,8 +3070,12 @@ value_type parser_rd_cauchy_inv_p(const value_type& p, const value_type& a)
 /////////////////////////////////////////////////
 value_type parser_rd_cauchy_inv_q(const value_type& q, const value_type& a)
 {
-    // Get the result from the existing p variant
-    return mu::value_type(1) - parser_rd_cauchy_inv_p(q, a);
+    // Check the input values
+    if (mu::isnan(q) || mu::isnan(a) || q.imag() != 0 || a.imag() != 0 || a.real() <= 0 || q.real() < 0 || q.real() > 1)
+        return NAN;
+
+    // Get the value from the probability density function
+    return gsl_cdf_cauchy_Qinv(q.real(), a.real());
 }
 
 
@@ -3161,8 +3169,12 @@ value_type parser_rd_rayleigh_inv_p(const value_type& p, const value_type& sigma
 /////////////////////////////////////////////////
 value_type parser_rd_rayleigh_inv_q(const value_type& q, const value_type& sigma)
 {
-    // Get the result from the existing p variant
-    return mu::value_type(1) - parser_rd_rayleigh_inv_p(q, sigma);
+    // Check the input values
+    if (mu::isnan(q) || mu::isnan(sigma) || q.imag() != 0 || sigma.imag() != 0 || sigma.real() <= 0 || q.real() < 0 || q.real() > 1)
+        return NAN;
+
+    // Get the value from the probability density function
+    return gsl_cdf_rayleigh_Qinv(q.real(), sigma.real());
 }
 
 
@@ -3216,7 +3228,7 @@ value_type parser_rd_fisher_f_rd(const value_type& nu1, const value_type& nu2)
         return NAN;
 
     // Get the value from the probability density function
-    return gsl_ran_fdist(getGslRandGenInstance(), nu1.real(), nu2.real());
+    return gsl_ran_fdist(getGslRandGenInstance(), intCast(nu1.real()), intCast(nu2.real()));
 }
 
 
@@ -3238,7 +3250,7 @@ value_type parser_rd_fisher_f_cdf_p(const value_type& x, const value_type& nu1, 
         return NAN;
 
     // Get the value from the probability density function
-    return gsl_cdf_fdist_P(x.real(), nu1.real(), nu2.real());
+    return gsl_cdf_fdist_P(x.real(), intCast(nu1.real()), intCast(nu2.real()));
 }
 
 
@@ -3278,7 +3290,7 @@ value_type parser_rd_fisher_f_inv_p(const value_type& p, const value_type& nu1, 
         return NAN;
 
     // Get the value from the probability density function
-    return gsl_cdf_fdist_Pinv(p.real(), nu1.real(), nu2.real());
+    return gsl_cdf_fdist_Pinv(p.real(), intCast(nu1.real()), intCast(nu2.real()));
 }
 
 
@@ -3295,8 +3307,12 @@ value_type parser_rd_fisher_f_inv_p(const value_type& p, const value_type& nu1, 
 /////////////////////////////////////////////////
 value_type parser_rd_fisher_f_inv_q(const value_type& q, const value_type& nu1, const value_type& nu2)
 {
-    // Get the result from the existing p variant
-    return mu::value_type(1) - parser_rd_fisher_f_inv_p(q, nu1, nu2);
+    // Check the input values
+    if (mu::isnan(q) || mu::isnan(nu1) || mu::isnan(nu2) || q.imag() != 0 || nu1.imag() != 0 || nu2.imag() != 0 || q.real() < 0 || q.real() > 1 || nu1.real() <= 0 || nu2.real() <= 0 || !isInt(nu1.real()) || !isInt(nu2.real()))
+        return NAN;
+
+    // Get the value from the probability density function
+    return gsl_cdf_fdist_Qinv(q.real(), intCast(nu1.real()), intCast(nu2.real()));
 }
 
 
@@ -3315,7 +3331,7 @@ value_type parser_rd_student_t_rd(const value_type& nu)
         return NAN;
 
     // Get the value from the probability density function
-    return gsl_ran_tdist(getGslRandGenInstance(), nu.real());
+    return gsl_ran_tdist(getGslRandGenInstance(), intCast(nu.real()));
 }
 
 
@@ -3336,7 +3352,7 @@ value_type parser_rd_student_t_cdf_p(const value_type& x, const value_type& nu)
         return NAN;
 
     // Get the value from the probability density function
-    return gsl_cdf_tdist_P(x.real(), nu.real());
+    return gsl_cdf_tdist_P(x.real(), intCast(nu.real()));
 }
 
 
@@ -3374,7 +3390,7 @@ value_type parser_rd_student_t_inv_p(const value_type& p, const value_type& nu)
         return NAN;
 
     // Get the value from the probability density function
-    return gsl_cdf_tdist_Pinv(p.real(), nu.real());
+    return gsl_cdf_tdist_Pinv(p.real(), intCast(nu.real()));
 }
 
 
@@ -3390,6 +3406,10 @@ value_type parser_rd_student_t_inv_p(const value_type& p, const value_type& nu)
 /////////////////////////////////////////////////
 value_type parser_rd_student_t_inv_q(const value_type& q, const value_type& nu)
 {
-    // Get the result from the existing p variant
-    return mu::value_type(1) - parser_rd_student_t_inv_p(q, nu);
+    // Check the input values
+    if (mu::isnan(q) || mu::isnan(nu) || q.imag() != 0 || nu.imag() != 0 || q.real() < 0 || q.real() > 1 || nu.real() <= 0 || !isInt(nu.real()))
+        return NAN;
+
+    // Get the value from the probability density function
+    return gsl_cdf_tdist_Qinv(q.real(), intCast(nu.real()));
 }
