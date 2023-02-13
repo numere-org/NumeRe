@@ -2881,12 +2881,14 @@ value_type parser_acsch(const value_type& x)
 }
 
 
-
-// Verteilungsfunktionen ->
-// Laplace, Cauchy, Rayleigh, Landau, Levy, F-Distribution, t-Distribution (rd und inv(ist automatisch inv von cdf) und cdf) (je nach Verteilung auch P und Q)
-// Prüfen von Inputs (zB nans), Intervalle
-
-// Laplace
+/////////////////////////////////////////////////
+/// \brief This function returns a random value
+/// from the Laplace distribution function.
+///
+/// \param a const value_type&
+/// \return value_type
+///
+/////////////////////////////////////////////////
 value_type parser_rd_laplace_rd(const value_type& a)
 {
     // Check the input values
@@ -2898,6 +2900,16 @@ value_type parser_rd_laplace_rd(const value_type& a)
 }
 
 
+/////////////////////////////////////////////////
+/// \brief This function computes the cumulative
+/// density function p at a given position for the
+/// Laplace distribution function.
+///
+/// \param x const value_type&
+/// \param a const value_type&
+/// \return value_type
+///
+/////////////////////////////////////////////////
 value_type parser_rd_laplace_cdf_p(const value_type& x, const value_type& a)
 {
     // Check the input values
@@ -2909,6 +2921,16 @@ value_type parser_rd_laplace_cdf_p(const value_type& x, const value_type& a)
 }
 
 
+/////////////////////////////////////////////////
+/// \brief This function computes the cumulative
+/// density function q at a given position for the
+/// Laplace distribution function.
+///
+/// \param x const value_type&
+/// \param a const value_type&
+/// \return value_type
+///
+/////////////////////////////////////////////////
 value_type parser_rd_laplace_cdf_q(const value_type& x, const value_type& a)
 {
     // Get the result from the existing p variant
@@ -2916,10 +2938,20 @@ value_type parser_rd_laplace_cdf_q(const value_type& x, const value_type& a)
 }
 
 
+/////////////////////////////////////////////////
+/// \brief This function computes the inverse of
+/// the cumulative density function p at a given
+/// position for the Laplace distribution function.
+///
+/// \param p const value_type&
+/// \param a const value_type&
+/// \return value_type
+///
+/////////////////////////////////////////////////
 value_type parser_rd_laplace_inv_p(const value_type& p, const value_type& a)
 {
     // Check the input values
-    if (mu::isnan(p) || mu::isnan(a) || p.imag() != 0 || a.imag() != 0 || a.real() <= 0 || p.real() < 0)
+    if (mu::isnan(p) || mu::isnan(a) || p.imag() != 0 || a.imag() != 0 || a.real() <= 0 || p.real() < 0 || p.real() > 1)
         return NAN;
 
     // Get the value from the probability density function
@@ -2927,13 +2959,31 @@ value_type parser_rd_laplace_inv_p(const value_type& p, const value_type& a)
 }
 
 
+/////////////////////////////////////////////////
+/// \brief This function computes the inverse of
+/// the cumulative density function q at a given
+/// position for the Laplace distribution function.
+///
+/// \param q const value_type&
+/// \param a const value_type&
+/// \return value_type
+///
+/////////////////////////////////////////////////
 value_type parser_rd_laplace_inv_q(const value_type& q, const value_type& a)
 {
     // Get the result from the existing p variant
     return mu::value_type(1) - parser_rd_laplace_inv_p(q, a);
 }
 
-// Cauchy
+
+/////////////////////////////////////////////////
+/// \brief This function returns a random value
+/// from the Cauchy distribution function.
+///
+/// \param a const value_type&
+/// \return value_type
+///
+/////////////////////////////////////////////////
 value_type parser_rd_cauchy_rd(const value_type& a)
 {
     // Check the input values
@@ -2945,6 +2995,16 @@ value_type parser_rd_cauchy_rd(const value_type& a)
 }
 
 
+/////////////////////////////////////////////////
+/// \brief This function computes the cumulative
+/// density function p at a given position for the
+/// Cauchy distribution function.
+///
+/// \param x const value_type&
+/// \param a const value_type&
+/// \return value_type
+///
+/////////////////////////////////////////////////
 value_type parser_rd_cauchy_cdf_p(const value_type& x, const value_type& a)
 {
     // Check the input values
@@ -2956,6 +3016,16 @@ value_type parser_rd_cauchy_cdf_p(const value_type& x, const value_type& a)
 }
 
 
+/////////////////////////////////////////////////
+/// \brief This function computes the cumulative
+/// density function q at a given position for the
+/// Cauchy distribution function.
+///
+/// \param x const value_type&
+/// \param a const value_type&
+/// \return value_type
+///
+/////////////////////////////////////////////////
 value_type parser_rd_cauchy_cdf_q(const value_type& x, const value_type& a)
 {
     // Get the result from the existing p variant
@@ -2963,10 +3033,20 @@ value_type parser_rd_cauchy_cdf_q(const value_type& x, const value_type& a)
 }
 
 
+/////////////////////////////////////////////////
+/// \brief This function computes the inverse of
+/// the cumulative density function p at a given
+/// position for the Cauchy distribution function.
+///
+/// \param p const value_type&
+/// \param a const value_type&
+/// \return value_type
+///
+/////////////////////////////////////////////////
 value_type parser_rd_cauchy_inv_p(const value_type& p, const value_type& a)
 {
     // Check the input values
-    if (mu::isnan(p) || mu::isnan(a) || p.imag() != 0 || a.imag() != 0 || a.real() <= 0 || p.real() < 0)
+    if (mu::isnan(p) || mu::isnan(a) || p.imag() != 0 || a.imag() != 0 || a.real() <= 0 || p.real() < 0 || p.real() > 1)
         return NAN;
 
     // Get the value from the probability density function
@@ -2974,6 +3054,16 @@ value_type parser_rd_cauchy_inv_p(const value_type& p, const value_type& a)
 }
 
 
+/////////////////////////////////////////////////
+/// \brief This function computes the inverse of
+/// the cumulative density function q at a given
+/// position for the Cauchy distribution function.
+///
+/// \param q const value_type&
+/// \param a const value_type&
+/// \return value_type
+///
+/////////////////////////////////////////////////
 value_type parser_rd_cauchy_inv_q(const value_type& q, const value_type& a)
 {
     // Get the result from the existing p variant
@@ -2981,7 +3071,14 @@ value_type parser_rd_cauchy_inv_q(const value_type& q, const value_type& a)
 }
 
 
-// Rayleigh
+/////////////////////////////////////////////////
+/// \brief This function returns a random value
+/// from the Rayleigh distribution function.
+///
+/// \param sigma const value_type&
+/// \return value_type
+///
+/////////////////////////////////////////////////
 value_type parser_rd_rayleigh_rd(const value_type& sigma)
 {
     // Check the input values
@@ -2993,6 +3090,16 @@ value_type parser_rd_rayleigh_rd(const value_type& sigma)
 }
 
 
+/////////////////////////////////////////////////
+/// \brief This function computes the cumulative
+/// density function p at a given position for the
+/// Rayleigh distribution function.
+///
+/// \param x const value_type&
+/// \param sigma const value_type&
+/// \return value_type
+///
+/////////////////////////////////////////////////
 value_type parser_rd_rayleigh_cdf_p(const value_type& x, const value_type& sigma)
 {
     // Check the input values
@@ -3004,6 +3111,16 @@ value_type parser_rd_rayleigh_cdf_p(const value_type& x, const value_type& sigma
 }
 
 
+/////////////////////////////////////////////////
+/// \brief This function computes the cumulative
+/// density function q at a given position for the
+/// Rayleigh distribution function.
+///
+/// \param x const value_type&
+/// \param sigma const value_type&
+/// \return value_type
+///
+/////////////////////////////////////////////////
 value_type parser_rd_rayleigh_cdf_q(const value_type& x, const value_type& sigma)
 {
     // Get the result from the existing p variant
@@ -3011,10 +3128,20 @@ value_type parser_rd_rayleigh_cdf_q(const value_type& x, const value_type& sigma
 }
 
 
+/////////////////////////////////////////////////
+/// \brief This function computes the inverse of
+/// the cumulative density function p at a given
+/// position for the Rayleigh distribution function.
+///
+/// \param p const value_type&
+/// \param sigma const value_type&
+/// \return value_type
+///
+/////////////////////////////////////////////////
 value_type parser_rd_rayleigh_inv_p(const value_type& p, const value_type& sigma)
 {
     // Check the input values
-    if (mu::isnan(p) || mu::isnan(sigma) || p.imag() != 0 || sigma.imag() != 0 || sigma.real() <= 0 || p.real() < 0)
+    if (mu::isnan(p) || mu::isnan(sigma) || p.imag() != 0 || sigma.imag() != 0 || sigma.real() <= 0 || p.real() < 0 || p.real() > 1)
         return NAN;
 
     // Get the value from the probability density function
@@ -3022,6 +3149,16 @@ value_type parser_rd_rayleigh_inv_p(const value_type& p, const value_type& sigma
 }
 
 
+/////////////////////////////////////////////////
+/// \brief This function computes the inverse of
+/// the cumulative density function q at a given
+/// position for the Rayleigh distribution function.
+///
+/// \param q const value_type&
+/// \param sigma const value_type&
+/// \return value_type
+///
+/////////////////////////////////////////////////
 value_type parser_rd_rayleigh_inv_q(const value_type& q, const value_type& sigma)
 {
     // Get the result from the existing p variant
@@ -3029,7 +3166,13 @@ value_type parser_rd_rayleigh_inv_q(const value_type& q, const value_type& sigma
 }
 
 
-// Landau
+/////////////////////////////////////////////////
+/// \brief This function returns a random value
+/// from the Landau distribution function.
+///
+/// \return value_type
+///
+/////////////////////////////////////////////////
 value_type parser_rd_landau_rd()
 {
     // Get the value from the probability density function
@@ -3037,7 +3180,15 @@ value_type parser_rd_landau_rd()
 }
 
 
-// Levy alpha-stable
+/////////////////////////////////////////////////
+/// \brief This function returns a random value
+/// from the Levy alpha-stable distribution function.
+///
+/// \param c const value_type&
+/// \param alpha const value_type&
+/// \return value_type
+///
+/////////////////////////////////////////////////
 value_type parser_rd_levyAlphaStable_rd(const value_type& c, const value_type& alpha)
 {
     // Check the input values
@@ -3049,11 +3200,19 @@ value_type parser_rd_levyAlphaStable_rd(const value_type& c, const value_type& a
 }
 
 
-// F-Distribution
+/////////////////////////////////////////////////
+/// \brief This function returns a random value
+/// from the Fisher F-distribution function.
+///
+/// \param nu1 const value_type&
+/// \param nu2 const value_type&
+/// \return value_type
+///
+/////////////////////////////////////////////////
 value_type parser_rd_fisher_f_rd(const value_type& nu1, const value_type& nu2)
 {
     // Check the input values
-    if (mu::isnan(nu1) || nu1.imag() != 0 || nu1.real() <= 0 || mu::isnan(nu2) || nu2.imag() != 0 || nu2.real() <= 0)
+    if (mu::isnan(nu1) || nu1.imag() != 0 || nu1.real() <= 0 || mu::isnan(nu2) || nu2.imag() != 0 || nu2.real() <= 0 || !isInt(nu1.real()) || !isInt(nu2.real()))
         return NAN;
 
     // Get the value from the probability density function
@@ -3061,10 +3220,21 @@ value_type parser_rd_fisher_f_rd(const value_type& nu1, const value_type& nu2)
 }
 
 
+/////////////////////////////////////////////////
+/// \brief This function computes the cumulative
+/// density function p at a given position for the
+/// Fisher F-distribution function.
+///
+/// \param x const value_type&
+/// \param nu1 const value_type&
+/// \param nu2 const value_type&
+/// \return value_type
+///
+/////////////////////////////////////////////////
 value_type parser_rd_fisher_f_cdf_p(const value_type& x, const value_type& nu1, const value_type& nu2)
 {
     // Check the input values
-    if (mu::isnan(x) || mu::isnan(nu1) || mu::isnan(nu2) || x.imag() != 0 || nu1.imag() != 0 || nu2.imag() != 0 || nu1.real() <= 0 || nu2.real() <= 0 || x.real() <= 0)
+    if (mu::isnan(x) || mu::isnan(nu1) || mu::isnan(nu2) || x.imag() != 0 || nu1.imag() != 0 || nu2.imag() != 0 || nu1.real() <= 0 || nu2.real() <= 0 || x.real() < 0 || !isInt(nu1.real()) || !isInt(nu2.real()))
         return NAN;
 
     // Get the value from the probability density function
@@ -3072,6 +3242,17 @@ value_type parser_rd_fisher_f_cdf_p(const value_type& x, const value_type& nu1, 
 }
 
 
+/////////////////////////////////////////////////
+/// \brief This function computes the cumulative
+/// density function q at a given position for the
+/// Fisher F-distribution function.
+///
+/// \param x const value_type&
+/// \param nu1 const value_type&
+/// \param nu2 const value_type&
+/// \return value_type
+///
+/////////////////////////////////////////////////
 value_type parser_rd_fisher_f_cdf_q(const value_type& x, const value_type& nu1, const value_type& nu2)
 {
     // Get the result from the existing p variant
@@ -3079,10 +3260,21 @@ value_type parser_rd_fisher_f_cdf_q(const value_type& x, const value_type& nu1, 
 }
 
 
+/////////////////////////////////////////////////
+/// \brief This function computes the inverse of
+/// the cumulative density function p at a given
+/// position for the Fisher F-distribution function.
+///
+/// \param p const value_type&
+/// \param nu1 const value_type&
+/// \param nu2 const value_type&
+/// \return value_type
+///
+/////////////////////////////////////////////////
 value_type parser_rd_fisher_f_inv_p(const value_type& p, const value_type& nu1, const value_type& nu2)
 {
     // Check the input values
-    if (mu::isnan(p) || mu::isnan(nu1) || mu::isnan(nu2) || p.imag() != 0 || nu1.imag() != 0 || nu2.imag() != 0 || p.real() < 0 || nu1.real() <= 0 || nu2.real() <= 0)
+    if (mu::isnan(p) || mu::isnan(nu1) || mu::isnan(nu2) || p.imag() != 0 || nu1.imag() != 0 || nu2.imag() != 0 || p.real() < 0 || p.real() > 1 || nu1.real() <= 0 || nu2.real() <= 0 || !isInt(nu1.real()) || !isInt(nu2.real()))
         return NAN;
 
     // Get the value from the probability density function
@@ -3090,6 +3282,17 @@ value_type parser_rd_fisher_f_inv_p(const value_type& p, const value_type& nu1, 
 }
 
 
+/////////////////////////////////////////////////
+/// \brief This function computes the inverse of
+/// the cumulative density function q at a given
+/// position for the Fisher F-distribution function.
+///
+/// \param q const value_type&
+/// \param nu1 const value_type&
+/// \param nu2 const value_type&
+/// \return value_type
+///
+/////////////////////////////////////////////////
 value_type parser_rd_fisher_f_inv_q(const value_type& q, const value_type& nu1, const value_type& nu2)
 {
     // Get the result from the existing p variant
@@ -3097,11 +3300,18 @@ value_type parser_rd_fisher_f_inv_q(const value_type& q, const value_type& nu1, 
 }
 
 
-// t-Distribution
+/////////////////////////////////////////////////
+/// \brief This function returns a random value
+/// from the Student t-distribution function.
+///
+/// \param nu const value_type&
+/// \return value_type
+///
+/////////////////////////////////////////////////
 value_type parser_rd_student_t_rd(const value_type& nu)
 {
     // Check the input values
-    if (mu::isnan(nu) || nu.imag() != 0 || nu.real() <= 0)
+    if (mu::isnan(nu) || nu.imag() != 0 || nu.real() <= 0 || !isInt(nu.real()))
         return NAN;
 
     // Get the value from the probability density function
@@ -3109,10 +3319,20 @@ value_type parser_rd_student_t_rd(const value_type& nu)
 }
 
 
+/////////////////////////////////////////////////
+/// \brief This function computes the cumulative
+/// density function p at a given position for the
+/// Student t-distribution function.
+///
+/// \param x const value_type&
+/// \param nu const value_type&
+/// \return value_type
+///
+/////////////////////////////////////////////////
 value_type parser_rd_student_t_cdf_p(const value_type& x, const value_type& nu)
 {
     // Check the input values
-    if (mu::isnan(x) || mu::isnan(nu) || x.imag() != 0 || nu.imag() != 0 || nu.real() <= 0 || x.real() <= 0)
+    if (mu::isnan(x) || mu::isnan(nu) || x.imag() != 0 || nu.imag() != 0 || nu.real() <= 0 || !isInt(nu.real()))
         return NAN;
 
     // Get the value from the probability density function
@@ -3120,6 +3340,16 @@ value_type parser_rd_student_t_cdf_p(const value_type& x, const value_type& nu)
 }
 
 
+/////////////////////////////////////////////////
+/// \brief This function computes the cumulative
+/// density function q at a given position for the
+/// Student t-distribution function.
+///
+/// \param x const value_type&
+/// \param nu const value_type&
+/// \return value_type
+///
+/////////////////////////////////////////////////
 value_type parser_rd_student_t_cdf_q(const value_type& x, const value_type& nu)
 {
     // Get the result from the existing p variant
@@ -3127,10 +3357,20 @@ value_type parser_rd_student_t_cdf_q(const value_type& x, const value_type& nu)
 }
 
 
+/////////////////////////////////////////////////
+/// \brief This function computes the inverse of
+/// the cumulative density function p at a given
+/// position for the Student t-distribution function.
+///
+/// \param p const value_type&
+/// \param nu const value_type&
+/// \return value_type
+///
+/////////////////////////////////////////////////
 value_type parser_rd_student_t_inv_p(const value_type& p, const value_type& nu)
 {
     // Check the input values
-    if (mu::isnan(p) || mu::isnan(nu) || p.imag() != 0 || nu.imag() != 0 || p.real() < 0 || nu.real() <= 0)
+    if (mu::isnan(p) || mu::isnan(nu) || p.imag() != 0 || nu.imag() != 0 || p.real() < 0 || p.real() > 1 || nu.real() <= 0 || !isInt(nu.real()))
         return NAN;
 
     // Get the value from the probability density function
@@ -3138,6 +3378,16 @@ value_type parser_rd_student_t_inv_p(const value_type& p, const value_type& nu)
 }
 
 
+/////////////////////////////////////////////////
+/// \brief This function computes the inverse of
+/// the cumulative density function q at a given
+/// position for the Student t-distribution function.
+///
+/// \param q const value_type&
+/// \param nu const value_type&
+/// \return value_type
+///
+/////////////////////////////////////////////////
 value_type parser_rd_student_t_inv_q(const value_type& q, const value_type& nu)
 {
     // Get the result from the existing p variant

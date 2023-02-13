@@ -103,7 +103,7 @@ std::mt19937& getRandGenInstance()
 class ThreadsafeGslRandGen
 {
     private:
-        std::vector<const gsl_rng*> m_randGenArray;
+        std::vector<gsl_rng*> m_randGenArray;
 
     public:
         /////////////////////////////////////////////////
@@ -114,15 +114,30 @@ class ThreadsafeGslRandGen
         /////////////////////////////////////////////////
         ThreadsafeGslRandGen()
         {
+            // Get the current time as a seed value
             double seed = time(0);
-
             const gsl_rng_type* T = gsl_rng_default;
-            const gsl_rng* r = gsl_rng_alloc(T);
-            gsl_rng_set(r, seed);
-
             for (int i = 0; i < omp_get_max_threads(); i++)
             {
+                // Allocate the random number generator
+                gsl_rng* r = gsl_rng_alloc(T);
+                gsl_rng_set(r, seed + i);
+                // Push the generator into the array
                 m_randGenArray.push_back(r);
+            }
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief Destructor for the thread safe
+        /// random number generator that removes the
+        /// rngs from memory.
+        /////////////////////////////////////////////////
+        ~ThreadsafeGslRandGen()
+        {
+            for (size_t i = 0; i < m_randGenArray.size(); i++)
+            {
+                // Free the memory
+                gsl_rng_free(m_randGenArray[i]);
             }
         }
 
