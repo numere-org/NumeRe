@@ -383,6 +383,10 @@ static StringVector strfnc_isblank(StringFuncArgs& funcArgs)
             sCodes.push_back(false);
     }
 
+    // Handle empty strings
+    if (sCodes.empty())
+        sCodes.push_back(false);
+
     return sCodes;
 }
 
@@ -410,6 +414,10 @@ static StringVector strfnc_isalnum(StringFuncArgs& funcArgs)
         else
             sCodes.push_back(false);
     }
+
+    // Handle empty strings
+    if (sCodes.empty())
+        sCodes.push_back(false);
 
     return sCodes;
 }
@@ -569,6 +577,10 @@ static StringVector strfnc_isgraph(StringFuncArgs& funcArgs)
         else
             sCodes.push_back(false);
     }
+
+    // Handle empty strings
+    if (sCodes.empty())
+        sCodes.push_back(false);
 
     return sCodes;
 }

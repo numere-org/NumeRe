@@ -472,7 +472,7 @@ NumeReWindow::NumeReWindow(const wxString& title, const wxPoint& pos, const wxSi
        : wxFrame((wxFrame *)nullptr, -1, title, pos, size)
 {
     // should be approximately 80x15 for the terminal
-    SetMinSize(wxSize(1024, 768));
+    SetMinSize(wxSize(1280, 768));
 
     m_debugViewer = nullptr;
     m_currentView = nullptr;
