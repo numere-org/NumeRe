@@ -56,7 +56,7 @@ DocumentationBrowser::DocumentationBrowser(wxWindow* parent, const wxString& tit
 
     // Create the status bar and the window splitter
     this->CreateStatusBar();
-    prepareToolbar();
+    prepareToolbar(mainwindow);
     wxSplitterWindow* splitter = new wxSplitterWindow(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxSP_3D | wxBORDER_THEME);
 
     // Create the tree and the viewer objects as childs
@@ -125,22 +125,24 @@ bool DocumentationBrowser::SetStartPage(const wxString& docId)
 /// \brief Private member function to prepare the
 /// toolbar of the main frame.
 ///
+/// \param mainwindow NumeReWindow*
 /// \return void
 ///
 /////////////////////////////////////////////////
-void DocumentationBrowser::prepareToolbar()
+void DocumentationBrowser::prepareToolbar(NumeReWindow* mainwindow)
 {
     // Create a new tool bar
     wxToolBar* tb = this->CreateToolBar();
+    tb->SetBackgroundColour(*wxWHITE);
 
     // Fill the tool bar with tools
-    tb->AddTool(ID_HELP_HOME, _guilang.get("GUI_TB_DOCBROWSER_HOME"), wxArtProvider::GetBitmap(wxART_GO_HOME, wxART_TOOLBAR), _guilang.get("GUI_TB_DOCBROWSER_HOME"));
-    tb->AddTool(ID_HELP_INDEX, _guilang.get("GUI_TB_DOCBROWSER_INDEX"), wxArtProvider::GetBitmap(wxART_LIST_VIEW, wxART_TOOLBAR), _guilang.get("GUI_TB_DOCBROWSER_INDEX"));
+    tb->AddTool(ID_HELP_HOME, _guilang.get("GUI_TB_DOCBROWSER_HOME"), mainwindow->getToolbarIcon("home"), _guilang.get("GUI_TB_DOCBROWSER_HOME"));
+    tb->AddTool(ID_HELP_INDEX, _guilang.get("GUI_TB_DOCBROWSER_INDEX"), mainwindow->getToolbarIcon("index"), _guilang.get("GUI_TB_DOCBROWSER_INDEX"));
     tb->AddSeparator();
-    tb->AddTool(ID_HELP_GO_BACK, _guilang.get("GUI_TB_DOCBROWSER_BACK"), wxArtProvider::GetBitmap(wxART_GO_BACK, wxART_TOOLBAR), _guilang.get("GUI_TB_DOCBROWSER_BACK"));
-    tb->AddTool(ID_HELP_GO_FORWARD, _guilang.get("GUI_TB_DOCBROWSER_FORWARD"), wxArtProvider::GetBitmap(wxART_GO_FORWARD, wxART_TOOLBAR), _guilang.get("GUI_TB_DOCBROWSER_FORWARD"));
+    tb->AddTool(ID_HELP_GO_BACK, _guilang.get("GUI_TB_DOCBROWSER_BACK"), mainwindow->getToolbarIcon("back"), _guilang.get("GUI_TB_DOCBROWSER_BACK"));
+    tb->AddTool(ID_HELP_GO_FORWARD, _guilang.get("GUI_TB_DOCBROWSER_FORWARD"), mainwindow->getToolbarIcon("forward"), _guilang.get("GUI_TB_DOCBROWSER_FORWARD"));
     tb->AddSeparator();
-    tb->AddTool(ID_HELP_PRINT, _guilang.get("GUI_TB_DOCBROWSER_PRINT"), wxArtProvider::GetBitmap(wxART_PRINT, wxART_TOOLBAR), _guilang.get("GUI_TB_DOCBROWSER_PRINT"));
+    tb->AddTool(ID_HELP_PRINT, _guilang.get("GUI_TB_DOCBROWSER_PRINT"), mainwindow->getToolbarIcon("print"), _guilang.get("GUI_TB_DOCBROWSER_PRINT"));
 //    tb->AddTool(ID_HELP_HOME, _guilang.get("GUI_TB_DOCBROWSER_FORWARD"), wxArtProvider::GetBitmap(wxART_GO_FORWARD, wxART_TOOLBAR));
 
     // Display the toolbar

@@ -202,7 +202,20 @@ void OptionsDialog::CreateConfigPage()
     m_CustomLanguage = panel->CreateCheckBox(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_CUSTOMLANG"));
     m_ESCinScripts = panel->CreateCheckBox(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_ESCINSCRIPTS"));
     //m_UseExternalViewer = panel->CreateCheckBox(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_EXTERNALVIEWER"));
+
+    group = panel->createGroup(_guilang.get("GUI_OPTIONS_TOOLBAR"));
     m_showToolbarText = panel->CreateCheckBox(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_SHOW_TOOLBARTEXT"));
+    m_enableToolbarStretch = panel->CreateCheckBox(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_ENABLE_TOOLBARSTRETCH"));
+    wxStaticText* iconStyleText = new wxStaticText(group->GetStaticBox(), wxID_STATIC, _guilang.get("GUI_OPTIONS_ICONSTYLE"), wxDefaultPosition, wxDefaultSize, 0);
+    group->Add(iconStyleText, 0, wxALIGN_LEFT | wxLEFT | wxRIGHT | wxTOP | wxADJUST_MINSIZE, 5);
+    wxArrayString iconStyles;
+    iconStyles.Add("Purist");
+    iconStyles.Add("Focused");
+    iconStyles.Add("Colorful");
+
+    m_iconStyle = new wxComboBox( group->GetStaticBox(), wxID_ANY, "Focused", wxDefaultPosition, wxDefaultSize, iconStyles, wxCB_READONLY );
+    m_iconStyle->SetStringSelection("Focused");
+    group->Add(m_iconStyle, 0, wxALIGN_LEFT | wxLEFT | wxRIGHT | wxBOTTOM, ELEMENT_BORDER);
 
     // Create a group
     group = panel->createGroup(_guilang.get("GUI_OPTIONS_INTERNALS"));
@@ -818,6 +831,7 @@ bool OptionsDialog::EvaluateOptions()
     mSettings[SETTING_V_CARETBLINKTIME].value() = m_caretBlinkTime->GetValue();
     mSettings[SETTING_S_LATEXROOT].stringval() = m_LaTeXRoot->GetValue().ToStdString();
     mSettings[SETTING_B_TOOLBARTEXT].active() = m_showToolbarText->IsChecked();
+    mSettings[SETTING_B_TOOLBARSTRETCH].active() = m_enableToolbarStretch->IsChecked();
     mSettings[SETTING_B_PATHSONTABS].active() = m_FilePathsInTabs->IsChecked();
     mSettings[SETTING_B_ICONSONTABS].active() = m_IconsOnTabs->IsChecked();
     mSettings[SETTING_B_PRINTLINENUMBERS].active() = m_cbPrintLineNumbers->IsChecked();
@@ -844,6 +858,7 @@ bool OptionsDialog::EvaluateOptions()
     mSettings[SETTING_B_POINTTOERROR].active() = m_alwaysPointToError->IsChecked();
     mSettings[SETTING_B_SAVESASHS].active() = m_saveSashPositions->IsChecked();
     mSettings[SETTING_B_SAVEWINDOWSIZE].active() = m_saveWindowPosition->IsChecked();
+    mSettings[SETTING_S_TOOLBARICONSTYLE].stringval() = m_iconStyle->GetValue();
 
     wxString selectedPrintStyleString = m_printStyle->GetValue();
 
@@ -890,9 +905,11 @@ void OptionsDialog::InitializeDialog()
 	std::map<std::string, SettingsValue>& mSettings = m_options->getSettings();
 
 	m_printStyle->SetValue(printStyleString);
+	m_iconStyle->SetValue(mSettings[SETTING_S_TOOLBARICONSTYLE].stringval());
 	m_termHistory->SetValue(mSettings[SETTING_V_BUFFERSIZE].value());
 	m_caretBlinkTime->SetValue(mSettings[SETTING_V_CARETBLINKTIME].value());
 	m_showToolbarText->SetValue(mSettings[SETTING_B_TOOLBARTEXT].active());
+	m_enableToolbarStretch->SetValue(mSettings[SETTING_B_TOOLBARSTRETCH].active());
 	m_FilePathsInTabs->SetValue(mSettings[SETTING_B_PATHSONTABS].active());
 	m_IconsOnTabs->SetValue(mSettings[SETTING_B_ICONSONTABS].active());
 	m_cbPrintLineNumbers->SetValue(mSettings[SETTING_B_PRINTLINENUMBERS].active());

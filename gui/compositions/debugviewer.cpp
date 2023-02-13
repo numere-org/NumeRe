@@ -142,28 +142,31 @@ DebugViewer::DebugViewer(wxWindow* parent, Options* _options, const wxString& ti
 /////////////////////////////////////////////////
 void DebugViewer::initializeToolbar()
 {
+    // Delete toolbar if available
+    if (GetToolBar())
+    {
+        wxToolBar* t = GetToolBar();
+        delete t;
+        SetToolBar(nullptr);
+    }
+
     // Get the frame toolbar
     wxToolBar* tb = CreateToolBar(wxTB_HORZ_TEXT);
+    tb->SetBackgroundColour(*wxWHITE);
 
     // Get the application path
-    wxString appPath = static_cast<NumeReWindow*>(GetParent())->getProgramFolder();
-
-    wxBitmap dbgContinue(appPath + "\\icons\\dbgrun.png", wxBITMAP_TYPE_PNG);
-    wxBitmap dbgStep(appPath + "\\icons\\dbgrunto.png", wxBITMAP_TYPE_PNG);
-    wxBitmap dbgLeave(appPath + "\\icons\\dbgstepout.png", wxBITMAP_TYPE_PNG);
-    wxBitmap dbgStepOver(appPath + "\\icons\\dbgnexti.png", wxBITMAP_TYPE_PNG);
-    wxBitmap dbgAbort(appPath + "\\icons\\dbgstop.png", wxBITMAP_TYPE_PNG);
+    NumeReWindow* app = static_cast<NumeReWindow*>(GetParent());
 
     tb->AddSeparator();
-    tb->AddTool(ID_DEBUG_CONTINUE, _guilang.get("DBG_CONTINUE"), dbgContinue, dbgContinue, wxITEM_NORMAL, _guilang.get("DBG_CONTINUE_HLP"), _guilang.get("DBG_CONTINUE_HLP"));
+    tb->AddTool(ID_DEBUG_CONTINUE, _guilang.get("DBG_CONTINUE"), app->getToolbarIcon("continue"), _guilang.get("DBG_CONTINUE_HLP"));
     tb->AddSeparator();
-    tb->AddTool(ID_DEBUG_STEP, _guilang.get("DBG_STEP"), dbgStep, dbgStep, wxITEM_NORMAL, _guilang.get("DBG_STEP_HLP"), _guilang.get("DBG_STEP_HLP"));
+    tb->AddTool(ID_DEBUG_STEP, _guilang.get("DBG_STEP"), app->getToolbarIcon("step-forward"), _guilang.get("DBG_STEP_HLP"));
     tb->AddSeparator();
-    tb->AddTool(ID_DEBUG_STEPOVER, _guilang.get("DBG_STEPOVER"), dbgStepOver, dbgStepOver, wxITEM_NORMAL, _guilang.get("DBG_STEPOVER_HLP"), _guilang.get("DBG_STEPOVER_HLP"));
+    tb->AddTool(ID_DEBUG_STEPOVER, _guilang.get("DBG_STEPOVER"), app->getToolbarIcon("step-over"), _guilang.get("DBG_STEPOVER_HLP"));
     tb->AddSeparator();
-    tb->AddTool(ID_DEBUG_LEAVE, _guilang.get("DBG_LEAVE"), dbgLeave, dbgLeave, wxITEM_NORMAL, _guilang.get("DBG_LEAVE_HLP"), _guilang.get("DBG_LEAVE_HLP"));
+    tb->AddTool(ID_DEBUG_LEAVE, _guilang.get("DBG_LEAVE"), app->getToolbarIcon("step-out"), _guilang.get("DBG_LEAVE_HLP"));
     tb->AddStretchableSpace();
-    tb->AddTool(ID_DEBUG_CANCEL, _guilang.get("GUI_OPTIONS_CANCEL"), dbgAbort);
+    tb->AddTool(ID_DEBUG_CANCEL, _guilang.get("GUI_OPTIONS_CANCEL"), app->getToolbarIcon("cancel-debugger"));
 
     // Actually create the toolbar
     tb->Realize();

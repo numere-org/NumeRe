@@ -82,6 +82,9 @@ Settings::Settings() : Documentation()
     m_settings[SETTING_B_PROCEDUREARGS] = SettingsValue(false, SettingsValue::SAVE | SettingsValue::IMMUTABLE);
     m_settings[SETTING_B_FLASHTASKBAR] = SettingsValue(false, SettingsValue::SAVE | SettingsValue::IMMUTABLE);
     m_settings[SETTING_B_TOOLBARTEXT] = SettingsValue(false, SettingsValue::SAVE | SettingsValue::HIDDEN);
+    m_settings[SETTING_B_TOOLBARSTRETCH] = SettingsValue(false, SettingsValue::SAVE | SettingsValue::HIDDEN);
+    m_settings[SETTING_S_TOOLBARICONSTYLE] = SettingsValue("Focused", SettingsValue::SAVE | SettingsValue::HIDDEN);
+    m_settings[SETTING_B_TOOLBARTEXT] = SettingsValue(false, SettingsValue::SAVE | SettingsValue::HIDDEN);
     m_settings[SETTING_B_PATHSONTABS] = SettingsValue(false, SettingsValue::SAVE | SettingsValue::IMMUTABLE);
     m_settings[SETTING_B_ICONSONTABS] = SettingsValue(false, SettingsValue::SAVE | SettingsValue::IMMUTABLE);
     m_settings[SETTING_V_POS_SASH_V] = SettingsValue(200u, 0u, -1u, SettingsValue::SAVE | SettingsValue::IMMUTABLE | SettingsValue::HIDDEN);

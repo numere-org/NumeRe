@@ -111,16 +111,6 @@
 #include "controls/treesearchctrl.hpp"
 #include "controls/toolbarsearchctrl.hpp"
 
-#include "icons/newstart1.xpm"
-#include "icons/newcontinue1.xpm"
-#include "icons/newstop1.xpm"
-#include "icons/gtk-apply.xpm"
-#include "icons/stepnext.xpm"
-#include "icons/wraparound.xpm"
-#include "icons/breakpoint_octagon.xpm"
-#include "icons/breakpoint_octagon_crossed.xpm"
-#include "icons/breakpoint_octagon_disable.xpm"
-
 const std::string sVersion = toString((int)AutoVersion::MAJOR) + "." + toString((int)AutoVersion::MINOR) + "." + toString((int)AutoVersion::BUILD) + " \"" + AutoVersion::STATUS + "\"";
 
 // Forward declaration
@@ -2066,33 +2056,32 @@ void NumeReWindow::openImage(wxFileName filename)
     registerWindow(frame, WT_IMAGEVIEWER);
     wxBoxSizer* sizer = new wxBoxSizer(wxHORIZONTAL);
 
-    ImagePanel* _panel = nullptr;
+    ImagePanel* _panel = new ImagePanel(frame);
+    // Apply the settings for the image viewer
+    sizer->Add(_panel, 1, wxEXPAND);
+    frame->SetSizer(sizer);
+    frame->SetIcon(getStandardIcon());
+    m_currentView = frame;
 
     // Create the image panel
     if (filename.GetExt() == "png")
-        _panel = new ImagePanel(frame, filename.GetFullPath(), wxBITMAP_TYPE_PNG);
+        _panel->showImage(filename.GetFullPath(), wxBITMAP_TYPE_PNG);
     else if (filename.GetExt() == "bmp")
-        _panel = new ImagePanel(frame, filename.GetFullPath(), wxBITMAP_TYPE_BMP);
+        _panel->showImage(filename.GetFullPath(), wxBITMAP_TYPE_BMP);
     else if (filename.GetExt() == "gif")
-        _panel = new ImagePanel(frame, filename.GetFullPath(), wxBITMAP_TYPE_GIF);
+        _panel->showImage(filename.GetFullPath(), wxBITMAP_TYPE_GIF);
     else if (filename.GetExt() == "jpg" || filename.GetExt() == "jpeg")
-        _panel = new ImagePanel(frame, filename.GetFullPath(), wxBITMAP_TYPE_JPEG);
+        _panel->showImage(filename.GetFullPath(), wxBITMAP_TYPE_JPEG);
     else if (filename.GetExt() == "tif" || filename.GetExt() == "tiff")
-        _panel = new ImagePanel(frame, filename.GetFullPath(), wxBITMAP_TYPE_TIF);
+        _panel->showImage(filename.GetFullPath(), wxBITMAP_TYPE_TIF);
     else
     {
-        delete frame;
-        delete sizer;
+        frame->Destroy();
         return;
     }
 
-    // Apply the settings for the image viewer
-    sizer->Add(_panel, 1, wxEXPAND);
-    _panel->SetSize(_panel->getRelation()*600,600);
-    frame->SetSizer(sizer);
-    frame->SetClientSize(_panel->GetSize());
-    frame->SetIcon(getStandardIcon());
-    m_currentView = frame;
+    //_panel->SetSize(_panel->getRelation()*600,600);
+    //frame->SetClientSize(_panel->GetSize());
     frame->Show();
     frame->SetFocus();
 }
@@ -4034,6 +4023,7 @@ void NumeReWindow::OpenSourceFile(wxArrayString fnames, unsigned int nLine, int 
             {
                 edit->LoadFileText(fileContents);
                 edit->SetFilename(newFileName, m_remoteMode);
+                edit->UpdateSyntaxHighlighting(true);
                 m_book->SetTabText(m_currentPage, edit->GetFileNameAndPath());
             }
             // need to create a new buffer for the file
@@ -4047,12 +4037,11 @@ void NumeReWindow::OpenSourceFile(wxArrayString fnames, unsigned int nLine, int 
                 int settings = CopyEditorSettings(_fileType);
                 m_currentPage = m_book->GetPageCount()-1;
                 edit->SetFilename(newFileName, m_remoteMode);
+                edit->UpdateSyntaxHighlighting(true);
                 edit->ToggleSettings(settings);
                 m_book->SetTabText(m_currentPage, edit->GetFileNameAndPath());
                 m_book->SetSelection(m_currentPage);
             }
-
-            m_book->getCurrentEditor()->UpdateSyntaxHighlighting();
 
             if (m_options->GetFoldDuringLoading())
             {
@@ -5415,6 +5404,47 @@ void NumeReWindow::UpdatePackageMenu()
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Returns the bitmap corresponding to
+/// the current icon style.
+///
+/// \param iconName const wxString&
+/// \return wxBitmap
+///
+/////////////////////////////////////////////////
+wxBitmap NumeReWindow::getToolbarIcon(const wxString& iconName)
+{
+    static wxString sAppIconFolder = getProgramFolder() + "/icons";
+    std::string style = m_lastIconStyle;
+
+    if (style == "Purist")
+        return wxBitmap(sAppIconFolder + "/bw/" + iconName + ".png", wxBITMAP_TYPE_PNG);
+    else if (style == "Colorful")
+        return wxBitmap(sAppIconFolder + "/color/" + iconName + ".png", wxBITMAP_TYPE_PNG);
+    else if (style == "Focused")
+    {
+        if (iconName == "run"
+            || iconName == "stop"
+            || iconName == "add-bp"
+            || iconName == "remove-bp"
+            || iconName == "clear-bp"
+            || iconName == "debugger"
+            || iconName == "continue"
+            || iconName == "cancel-debugger"
+            || iconName == "back"
+            || iconName == "forward"
+            || iconName == "save"
+            || iconName == "analyzer")
+            return wxBitmap(sAppIconFolder + "/color/" + iconName + ".png", wxBITMAP_TYPE_PNG);
+
+        return wxBitmap(sAppIconFolder + "/bw/" + iconName + ".png", wxBITMAP_TYPE_PNG);
+    }
+
+    return wxNullBitmap;
+}
+
+
+
 //////////////////////////////////////////////////////////////////////////////
 ///  private UpdateToolbar
 ///  Recreates the toolbar, based on the current permissions
@@ -5428,20 +5458,30 @@ void NumeReWindow::UpdateToolbar()
     int style = wxTB_FLAT | wxTB_HORIZONTAL;
 
     bool showText = m_options->GetShowToolbarText();
-    if (showText)
-    {
-        style |= wxTB_TEXT;
-    }
 
-    if (GetToolBar() && GetToolBar()->GetWindowStyle() == style)
+    if (showText)
+        style |= wxTB_TEXT;
+
+    // Only update the toolbar if it is really necessary
+    if (GetToolBar()
+        && GetToolBar()->GetWindowStyle() == style
+        && m_lastIconStyle == m_options->getSetting(SETTING_S_TOOLBARICONSTYLE).stringval()
+        && m_lastToolbarStretchState == m_options->getSetting(SETTING_B_TOOLBARSTRETCH).active())
         return;
+
+    // Update the buffer vars
+    m_lastIconStyle = m_options->getSetting(SETTING_S_TOOLBARICONSTYLE).stringval();
+    m_lastToolbarStretchState = m_options->getSetting(SETTING_B_TOOLBARSTRETCH).active();
 
     wxToolBar* t = GetToolBar();
     delete t;
     SetToolBar(nullptr);
     t = CreateToolBar(style);//new wxToolBar(this, -1, wxDefaultPosition, wxDefaultSize, style);
+    t->SetBackgroundColour(*wxWHITE);
+    //t->SetBackgroundColour(wxColour(221,230,255));
 
-    t->AddTool(ID_MENU_NEW_ASK, _guilang.get("GUI_TB_NEW"), wxArtProvider::GetBitmap(wxART_NEW, wxART_TOOLBAR), _guilang.get("GUI_TB_NEW_TTP"), wxITEM_DROPDOWN);
+    t->AddTool(ID_MENU_NEW_ASK, _guilang.get("GUI_TB_NEW"), getToolbarIcon("new-file"), _guilang.get("GUI_TB_NEW_TTP"), wxITEM_DROPDOWN);
+
     wxMenu* menuNewFile = new wxMenu();
     menuNewFile->Append(ID_MENU_NEW_EMPTY, _guilang.get("GUI_MENU_NEW_EMPTYFILE"), _guilang.get("GUI_MENU_NEW_EMPTYFILE_TTP"));
     menuNewFile->AppendSeparator();
@@ -5451,80 +5491,85 @@ void NumeReWindow::UpdateToolbar()
     menuNewFile->Append(ID_MENU_NEW_LAYOUT, _guilang.get("GUI_MENU_NEW_LAYOUT"), _guilang.get("GUI_MENU_NEW_LAYOUT_TTP"));
     t->SetDropdownMenu(ID_MENU_NEW_ASK, menuNewFile);
 
-    t->AddTool(ID_MENU_OPEN_SOURCE_LOCAL, _guilang.get("GUI_TB_OPEN"), wxArtProvider::GetBitmap(wxART_FILE_OPEN, wxART_TOOLBAR), _guilang.get("GUI_TB_OPEN_TTP"));
+    t->AddTool(ID_MENU_OPEN_SOURCE_LOCAL, _guilang.get("GUI_TB_OPEN"), getToolbarIcon("open"), _guilang.get("GUI_TB_OPEN_TTP"));
+    t->AddTool(ID_MENU_SAVE, _guilang.get("GUI_TB_SAVE"), getToolbarIcon("save"), _guilang.get("GUI_TB_SAVE_TTP"));
 
-    t->AddTool(ID_MENU_SAVE, _guilang.get("GUI_TB_SAVE"), wxArtProvider::GetBitmap(wxART_FILE_SAVE, wxART_TOOLBAR), _guilang.get("GUI_TB_SAVE_TTP"));
+    t->AddSeparator();
+
+    t->AddTool(ID_MENU_UNDO, _guilang.get("GUI_TB_UNDO"), getToolbarIcon("undo"), _guilang.get("GUI_TB_UNDO"));
+    t->AddTool(ID_MENU_REDO, _guilang.get("GUI_TB_REDO"), getToolbarIcon("redo"), _guilang.get("GUI_TB_REDO"));
 
     t->AddSeparator();
 
-    t->AddTool(ID_MENU_UNDO, _guilang.get("GUI_TB_UNDO"), wxArtProvider::GetBitmap(wxART_UNDO, wxART_TOOLBAR), _guilang.get("GUI_TB_UNDO"));
-
-    t->AddTool(ID_MENU_REDO, _guilang.get("GUI_TB_REDO"), wxArtProvider::GetBitmap(wxART_REDO, wxART_TOOLBAR), _guilang.get("GUI_TB_REDO"));
-
-    t->AddSeparator();
-    t->AddTool(ID_MENU_CUT, _guilang.get("GUI_TB_CUT"), wxArtProvider::GetBitmap(wxART_CUT, wxART_TOOLBAR), _guilang.get("GUI_TB_CUT"));
-    t->AddTool(ID_MENU_COPY, _guilang.get("GUI_TB_COPY"), wxArtProvider::GetBitmap(wxART_COPY, wxART_TOOLBAR), _guilang.get("GUI_TB_COPY"));
-    t->AddTool(ID_MENU_PASTE, _guilang.get("GUI_TB_PASTE"), wxArtProvider::GetBitmap(wxART_PASTE, wxART_TOOLBAR), _guilang.get("GUI_TB_PASTE"));
+    t->AddTool(ID_MENU_CUT, _guilang.get("GUI_TB_CUT"), getToolbarIcon("cut"), _guilang.get("GUI_TB_CUT"));
+    t->AddTool(ID_MENU_COPY, _guilang.get("GUI_TB_COPY"), getToolbarIcon("copy"), _guilang.get("GUI_TB_COPY"));
+    t->AddTool(ID_MENU_PASTE, _guilang.get("GUI_TB_PASTE"), getToolbarIcon("paste"), _guilang.get("GUI_TB_PASTE"));
 
     t->AddSeparator();
-    t->AddTool(ID_MENU_FIND, _guilang.get("GUI_TB_SEARCH"), wxArtProvider::GetBitmap(wxART_FIND, wxART_TOOLBAR), _guilang.get("GUI_TB_SEARCH"));
-    t->AddTool(ID_MENU_REPLACE, _guilang.get("GUI_TB_REPLACE"), wxArtProvider::GetBitmap(wxART_FIND_AND_REPLACE, wxART_TOOLBAR), _guilang.get("GUI_TB_REPLACE"));
+
+    t->AddTool(ID_MENU_FIND, _guilang.get("GUI_TB_SEARCH"), getToolbarIcon("search"), _guilang.get("GUI_TB_SEARCH"));
+    t->AddTool(ID_MENU_REPLACE, _guilang.get("GUI_TB_REPLACE"), getToolbarIcon("replace"), _guilang.get("GUI_TB_REPLACE"));
 
     t->AddSeparator();
-    wxBitmap bmIndent(stepnext_xpm);
-    t->AddTool(ID_MENU_INDENTONTYPE, _guilang.get("GUI_TB_INDENTONTYPE"), bmIndent, _guilang.get("GUI_TB_INDENTONTYPE_TTP"), wxITEM_CHECK);
+
+    t->AddTool(ID_MENU_INDENTONTYPE, _guilang.get("GUI_TB_INDENTONTYPE"), getToolbarIcon("indent"),
+               _guilang.get("GUI_TB_INDENTONTYPE_TTP"), wxITEM_CHECK);
     t->ToggleTool(ID_MENU_INDENTONTYPE, false);
     t->EnableTool(ID_MENU_INDENTONTYPE, false);
-    wxBitmap bmWrapAround(wraparound_xpm);
-    t->AddTool(ID_MENU_LINEWRAP, _guilang.get("GUI_TB_LINEWRAP"), bmWrapAround, _guilang.get("GUI_TB_LINEWRAP_TTP"), wxITEM_CHECK);
+    t->AddTool(ID_MENU_LINEWRAP, _guilang.get("GUI_TB_LINEWRAP"), getToolbarIcon("wrap-around"),
+               _guilang.get("GUI_TB_LINEWRAP_TTP"), wxITEM_CHECK);
+
+    if (m_lastToolbarStretchState)
+        t->AddStretchableSpace();
+    else
+        t->AddSeparator();
+
+    t->AddTool(ID_MENU_EXECUTE, _guilang.get("GUI_TB_RUN"), getToolbarIcon("run"), _guilang.get("GUI_TB_RUN_TTP"));
+    t->AddTool(ID_MENU_STOP_EXECUTION, _guilang.get("GUI_TB_STOP"), getToolbarIcon("stop"), _guilang.get("GUI_TB_STOP_TTP"));
 
     t->AddSeparator();
-    wxBitmap bmStart(newstart1_xpm);
-    t->AddTool(ID_MENU_EXECUTE, _guilang.get("GUI_TB_RUN"), bmStart, _guilang.get("GUI_TB_RUN_TTP"));
 
-    wxBitmap bmStop(newstop1_xpm);
-    t->AddTool(ID_MENU_STOP_EXECUTION, _guilang.get("GUI_TB_STOP"), bmStop, _guilang.get("GUI_TB_STOP_TTP"));
-
-    t->AddSeparator();
-
-    wxBitmap bmStartDebugger(newcontinue1_xpm);
-    t->AddTool(ID_MENU_TOGGLE_DEBUGGER, _guilang.get("GUI_TB_DEBUGGER"), bmStartDebugger, _guilang.get("GUI_TB_DEBUGGER_TTP"), wxITEM_CHECK);
+    t->AddTool(ID_MENU_TOGGLE_DEBUGGER, _guilang.get("GUI_TB_DEBUGGER"), getToolbarIcon("debugger"),
+               _guilang.get("GUI_TB_DEBUGGER_TTP"), wxITEM_CHECK);
     t->ToggleTool(ID_MENU_TOGGLE_DEBUGGER, m_terminal->getKernelSettings().useDebugger());
-
-    wxBitmap bmAddBreakpoint(breakpoint_xpm);
-    t->AddTool(ID_MENU_ADDEDITORBREAKPOINT, _guilang.get("GUI_TB_ADD"), bmAddBreakpoint,
-        _guilang.get("GUI_TB_ADD_TTP"));
-
-    wxBitmap bmRemoveBreakpoint(breakpoint_octagon_disable_xpm);
-    t->AddTool(ID_MENU_REMOVEEDITORBREAKPOINT, _guilang.get("GUI_TB_REMOVE"), bmRemoveBreakpoint,
-        _guilang.get("GUI_TB_REMOVE_TTP"));
-
-    wxBitmap bmClearBreakpoint(breakpoint_crossed_xpm);
-    t->AddTool(ID_MENU_CLEAREDITORBREAKPOINTS, _guilang.get("GUI_TB_CLEAR"), bmClearBreakpoint,
-        _guilang.get("GUI_TB_CLEAR_TTP"));
-
-    /*for(int i = ID_DEBUG_IDS_FIRST; i < ID_DEBUG_IDS_LAST; i++)
-    {
-        t->EnableTool(i, false);
-    }*/
+    t->AddTool(ID_MENU_ADDEDITORBREAKPOINT, _guilang.get("GUI_TB_ADD"), getToolbarIcon("add-bp"),
+               _guilang.get("GUI_TB_ADD_TTP"));
+    t->AddTool(ID_MENU_REMOVEEDITORBREAKPOINT, _guilang.get("GUI_TB_REMOVE"), getToolbarIcon("remove-bp"),
+               _guilang.get("GUI_TB_REMOVE_TTP"));
+    t->AddTool(ID_MENU_CLEAREDITORBREAKPOINTS, _guilang.get("GUI_TB_CLEAR"), getToolbarIcon("clear-bp"),
+               _guilang.get("GUI_TB_CLEAR_TTP"));
 
     t->AddSeparator();
-    wxBitmap bmAnalyzer(gtk_apply_xpm);
-    t->AddTool(ID_MENU_USEANALYZER, _guilang.get("GUI_TB_ANALYZER"), bmAnalyzer, _guilang.get("GUI_TB_ANALYZER_TTP"), wxITEM_CHECK);
+
+    t->AddTool(ID_MENU_USEANALYZER, _guilang.get("GUI_TB_ANALYZER"), getToolbarIcon("analyzer"),
+               _guilang.get("GUI_TB_ANALYZER_TTP"), wxITEM_CHECK);
     t->ToggleTool(ID_MENU_USEANALYZER, false);
     t->EnableTool(ID_MENU_USEANALYZER, false);
 
-    t->AddSeparator();
+    if (m_lastToolbarStretchState)
+        t->AddStretchableSpace();
+    else
+        t->AddSeparator();
+
+    t->AddTool(ID_MENU_OPTIONS, _guilang.get("GUI_MENU_OPTIONS"), getToolbarIcon("settings"), _guilang.get("GUI_MENU_OPTIONS"));
+    t->AddTool(ID_MENU_HELP, _guilang.get("GUI_MENU_HELP"), getToolbarIcon("help"), _guilang.get("GUI_MENU_HELP"));
+
     NumeRe::DataBase db("<>/docs/find.ndb");
 
     if (m_options->useCustomLangFiles() && fileExists(m_options->ValidFileName("<>/user/docs/find.ndb", ".ndb")))
         db.addData("<>/user/docs/find.ndb");
 
-    t->AddControl(new ToolBarSearchCtrl(t, wxID_ANY, db, this, m_terminal, _guilang.get("GUI_SEARCH_TELLME"), _guilang.get("GUI_SEARCH_CALLTIP_TOOLBAR"), _guilang.get("GUI_SEARCH_CALLTIP_TOOLBAR_HIGHLIGHT")), wxEmptyString);
+    t->AddControl(new ToolBarSearchCtrl(t, wxID_ANY, db, this, m_terminal, _guilang.get("GUI_SEARCH_TELLME"),
+                                        _guilang.get("GUI_SEARCH_CALLTIP_TOOLBAR"), _guilang.get("GUI_SEARCH_CALLTIP_TOOLBAR_HIGHLIGHT"),
+                                        300, m_lastToolbarStretchState ? -200 : 200),
+                  wxEmptyString);
 
     t->Realize();
 
     ToolbarStatusUpdate();
+
+    if (m_debugViewer != nullptr)
+        m_debugViewer->initializeToolbar();
 }
 
 

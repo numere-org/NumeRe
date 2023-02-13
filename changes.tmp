@@ -75,3 +75,4 @@ Fixed	Autocompletion of braces should now work as expected on non-german keyboar
 Updated	The new file selection dialog should now be much more helpful.
 Added	Misused context-specific commands throw now a more understandable error and are also detected by the static code analyzer.
 Applied	Error messages have been improved in clearness and helpfulness. Feel free to report error messages, which are still unclear.
+Updated	Toolbar icons have been changed and can now be customized. Three styles are available (Purist, Focused (default), Colourful) and it is also possible to stretch the toolbar over the whole window width.

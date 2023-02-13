@@ -58,7 +58,13 @@ class ToolBarSearchCtrl : public SearchCtrl
             // Define size and additional extent
             // (20 additional pixels for the scroll bar)
             SetSize(wxSize(width, -1));
-            SetPopupExtents(0, extension+20);
+            if (extension < 0)
+            {
+                extension *= -1;
+                SetPopupExtents(extension+20, 0);
+            }
+            else
+                SetPopupExtents(0, extension+20);
 
             // Define the number of columns
             wxArrayInt sizes;

@@ -44,7 +44,6 @@ class DebugViewer : public ViewerFrame
         int nLineColumn;
         int nModuleColumn;
 
-        void initializeToolbar();
         void setExpression(const std::string& sLineNumber, const std::string& sExpression);
 
         void getInformationByStackId(size_t id);
@@ -56,6 +55,7 @@ class DebugViewer : public ViewerFrame
     public:
         DebugViewer(wxWindow* parent, Options* _options, const wxString& title = "NumeRe: Debugger");
 
+        void initializeToolbar();
         void updateSettings();
         void setTerminal(NumeReTerminal* term) {m_terminal = term;}
         void setDebugInfo(const wxString& title, const std::vector<std::string>& vStack);

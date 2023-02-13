@@ -192,6 +192,8 @@ class OptionsDialog: public wxDialog
         wxComboBox* m_printStyle;
         wxCheckBox* m_cbPrintLineNumbers;
         wxCheckBox* m_showToolbarText;
+        wxCheckBox* m_enableToolbarStretch;
+        wxComboBox* m_iconStyle;
         wxCheckBox* m_saveSession;
         wxCheckBox* m_saveBookmarksInSession;
         wxCheckBox* m_saveSashPositions;

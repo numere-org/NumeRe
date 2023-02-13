@@ -124,6 +124,7 @@ class wxTermContainer;
 class VariableWatchPanel;
 class wxTimer;
 class wxListCtrl;
+class wxBitmap;
 class CompilerOutputPanel;
 class IconManager;
 class ProportionalSplitterWindow;
@@ -252,6 +253,7 @@ class NumeReWindow : public wxFrame
         void unregisterWindow(wxWindow* window);
         void closeWindows(WindowType type = WT_ALL);
         wxIcon getStandardIcon();
+        wxBitmap getToolbarIcon(const wxString& iconName);
 
         void notifyInstallationDone();
 
@@ -478,6 +480,9 @@ class NumeReWindow : public wxFrame
         wxString m_filterTeXSource;
         wxString m_filterNonsource;
         wxString m_filterSupportedFiles;
+
+        std::string m_lastIconStyle;
+        bool m_lastToolbarStretchState;
 
         std::map<wxString, __time64_t> m_filesLastSaveTime;
         wxString m_fileToRefresh;

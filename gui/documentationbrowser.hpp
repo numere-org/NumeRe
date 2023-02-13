@@ -42,7 +42,7 @@ class DocumentationBrowser : public ViewerFrame
         ViewerBook* m_docTabs;
         wxString m_titleTemplate;
 
-        void prepareToolbar();
+        void prepareToolbar(NumeReWindow* mainwindow);
         void fillDocTree(NumeReWindow* mainwindow);
         bool findAndSelectPage(const wxString& title);
 

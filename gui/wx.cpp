@@ -37,15 +37,6 @@
 #include "terminal/terminal.hpp"
 #include "graphviewer.hpp"
 
-#include "icons/addtext.xpm"
-#include "icons/addline.xpm"
-#include "icons/addrect.xpm"
-#include "icons/addcirc.xpm"
-#include "icons/rotate_new.xpm"
-#include "icons/zoom_new.xpm"
-#include "icons/newstart1.xpm"
-#include "icons/newstop1.xpm"
-
 extern Language _guilang;
 
 //-----------------------------------------------------------------------------
@@ -259,35 +250,31 @@ void wxMGL::InitializeToolbar()
     if (!m_parentFrame)
         return;
 
+    NumeReWindow* app = static_cast<NumeReWindow*>(m_parentFrame->GetParent());
+
     toptoolbar = m_parentFrame->CreateToolBar(wxTB_HORIZONTAL | wxTB_FLAT);
-    toptoolbar->AddTool(ID_GRAPH_EXPORT, _guilang.get("GUI_GRAPH_EXPORT"), wxArtProvider::GetBitmap(wxART_FILE_SAVE, wxART_TOOLBAR), _guilang.get("GUI_GRAPH_EXPORT"));
-    toptoolbar->AddTool(ID_GRAPH_COPY, _guilang.get("GUI_GRAPH_COPY"), wxArtProvider::GetBitmap(wxART_COPY, wxART_TOOLBAR), _guilang.get("GUI_GRAPH_COPY"));
+    toptoolbar->SetBackgroundColour(*wxWHITE);
+
+    toptoolbar->AddTool(ID_GRAPH_EXPORT, _guilang.get("GUI_GRAPH_EXPORT"), app->getToolbarIcon("save"), _guilang.get("GUI_GRAPH_EXPORT"));
+    toptoolbar->AddTool(ID_GRAPH_COPY, _guilang.get("GUI_GRAPH_COPY"), app->getToolbarIcon("copy"), _guilang.get("GUI_GRAPH_COPY"));
     toptoolbar->AddSeparator();
 
-    wxBitmap bm_rotate(rotate_new_xpm);
-    toptoolbar->AddTool(ID_GRAPH_ROTATE, _guilang.get("GUI_GRAPH_ROTATE"), bm_rotate, _guilang.get("GUI_GRAPH_ROTATE"), wxITEM_CHECK);
-    wxBitmap bm_zoom(zoom_new_xpm);
-    toptoolbar->AddTool(ID_GRAPH_ZOOM, _guilang.get("GUI_GRAPH_ZOOM"), bm_zoom, _guilang.get("GUI_GRAPH_ZOOM"), wxITEM_CHECK);
-    toptoolbar->AddTool(ID_GRAPH_RESET, _guilang.get("GUI_GRAPH_RESET"), wxArtProvider::GetBitmap(wxART_UNDO, wxART_TOOLBAR), _guilang.get("GUI_GRAPH_RESET"));
+    toptoolbar->AddTool(ID_GRAPH_ROTATE, _guilang.get("GUI_GRAPH_ROTATE"), app->getToolbarIcon("rotate"), _guilang.get("GUI_GRAPH_ROTATE"), wxITEM_CHECK);
+    toptoolbar->AddTool(ID_GRAPH_ZOOM, _guilang.get("GUI_GRAPH_ZOOM"), app->getToolbarIcon("zoom"), _guilang.get("GUI_GRAPH_ZOOM"), wxITEM_CHECK);
+    toptoolbar->AddTool(ID_GRAPH_RESET, _guilang.get("GUI_GRAPH_RESET"), app->getToolbarIcon("undo"), _guilang.get("GUI_GRAPH_RESET"));
     toptoolbar->AddSeparator();
 
-    toptoolbar->AddTool(ID_GRAPH_PREVIOUS, _guilang.get("GUI_GRAPH_PREVIOUS"), wxArtProvider::GetBitmap(wxART_GO_BACK, wxART_TOOLBAR), _guilang.get("GUI_GRAPH_PREVIOUS"));
-    toptoolbar->AddTool(ID_GRAPH_NEXT, _guilang.get("GUI_GRAPH_NEXT"), wxArtProvider::GetBitmap(wxART_GO_FORWARD, wxART_TOOLBAR), _guilang.get("GUI_GRAPH_NEXT"));
-    wxBitmap bm_run(newstart1_xpm);
-    toptoolbar->AddTool(ID_GRAPH_RUN, _guilang.get("GUI_GRAPH_RUN"), bm_run, _guilang.get("GUI_GRAPH_RUN"));
-    wxBitmap bm_stop(newstop1_xpm);
-    toptoolbar->AddTool(ID_GRAPH_STOP, _guilang.get("GUI_GRAPH_STOP"), bm_stop, _guilang.get("GUI_GRAPH_STOP"));
+    toptoolbar->AddTool(ID_GRAPH_PREVIOUS, _guilang.get("GUI_GRAPH_PREVIOUS"), app->getToolbarIcon("back"), _guilang.get("GUI_GRAPH_PREVIOUS"));
+    toptoolbar->AddTool(ID_GRAPH_NEXT, _guilang.get("GUI_GRAPH_NEXT"), app->getToolbarIcon("forward"), _guilang.get("GUI_GRAPH_NEXT"));
+    toptoolbar->AddTool(ID_GRAPH_RUN, _guilang.get("GUI_GRAPH_RUN"), app->getToolbarIcon("run"), _guilang.get("GUI_GRAPH_RUN"));
+    toptoolbar->AddTool(ID_GRAPH_STOP, _guilang.get("GUI_GRAPH_STOP"), app->getToolbarIcon("stop"), _guilang.get("GUI_GRAPH_STOP"));
     toptoolbar->EnableTool(ID_GRAPH_STOP, false);
     toptoolbar->AddSeparator();
 
-    wxBitmap bm_addline(addline);
-    toptoolbar->AddTool(ID_GRAPH_LINE, _guilang.get("GUI_GRAPH_LINE"),  bm_addline, _guilang.get("GUI_GRAPH_LINE"), wxITEM_CHECK);
-    wxBitmap bm_addrect(addrect);
-    toptoolbar->AddTool(ID_GRAPH_RECT, _guilang.get("GUI_GRAPH_RECT"),  bm_addrect, _guilang.get("GUI_GRAPH_RECT"), wxITEM_CHECK);
-    wxBitmap bm_addcirc(addcirc);
-    toptoolbar->AddTool(ID_GRAPH_CIRCLE, _guilang.get("GUI_GRAPH_CIRCLE"),  bm_addcirc, _guilang.get("GUI_GRAPH_CIRCLE"), wxITEM_CHECK);
-    wxBitmap bm_addtext(addtext);
-    toptoolbar->AddTool(ID_GRAPH_TEXT, _guilang.get("GUI_GRAPH_TEXT"), bm_addtext, _guilang.get("GUI_GRAPH_TEXT"), wxITEM_CHECK);
+    toptoolbar->AddTool(ID_GRAPH_LINE, _guilang.get("GUI_GRAPH_LINE"),  app->getToolbarIcon("add-line"), _guilang.get("GUI_GRAPH_LINE"), wxITEM_CHECK);
+    toptoolbar->AddTool(ID_GRAPH_RECT, _guilang.get("GUI_GRAPH_RECT"),  app->getToolbarIcon("add-rect"), _guilang.get("GUI_GRAPH_RECT"), wxITEM_CHECK);
+    toptoolbar->AddTool(ID_GRAPH_CIRCLE, _guilang.get("GUI_GRAPH_CIRCLE"),  app->getToolbarIcon("add-circ"), _guilang.get("GUI_GRAPH_CIRCLE"), wxITEM_CHECK);
+    toptoolbar->AddTool(ID_GRAPH_TEXT, _guilang.get("GUI_GRAPH_TEXT"), app->getToolbarIcon("add-text"), _guilang.get("GUI_GRAPH_TEXT"), wxITEM_CHECK);
 
     styling = new wxTextCtrl(toptoolbar, wxID_ANY, "B-__");
 

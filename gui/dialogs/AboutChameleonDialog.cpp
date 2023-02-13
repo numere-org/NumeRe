@@ -219,7 +219,7 @@ void AboutChameleonDialog::CreateControls()
     aboutDialogNoteBook->AddPage(statsPanel, "Stats");
 
     // JOIN PAGE
-    wxPanel* joinPanel = new wxPanel(aboutDialogNoteBook, ID_STATSPANEL, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
+    wxPanel* joinPanel = new wxPanel(aboutDialogNoteBook, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
     joinPanel->SetForegroundColour(wxColour(0, 0, 0));
     joinPanel->SetBackgroundColour(wxColour(255, 255, 255));
     wxBoxSizer* joinBoxSizer = new wxBoxSizer(wxVERTICAL);
@@ -229,6 +229,18 @@ void AboutChameleonDialog::CreateControls()
     joinBoxSizer->Add(joinTextCtrl, 1, wxGROW | wxEXPAND | wxALL, 5);
 
     aboutDialogNoteBook->AddPage(joinPanel, "Contribute");
+
+    // Legal PAGE
+    wxPanel* legalPanel = new wxPanel(aboutDialogNoteBook, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
+    legalPanel->SetForegroundColour(wxColour(0, 0, 0));
+    legalPanel->SetBackgroundColour(wxColour(255, 255, 255));
+    wxBoxSizer* legalBoxSizer = new wxBoxSizer(wxVERTICAL);
+    legalPanel->SetSizer(legalBoxSizer);
+
+    AboutDialogTextCtrl* legalTextCtrl = new AboutDialogTextCtrl(legalPanel, _guilang.get("GUI_ABOUT_LEGAL"));
+    legalBoxSizer->Add(legalTextCtrl, 1, wxGROW | wxEXPAND | wxALL, 5);
+
+    aboutDialogNoteBook->AddPage(legalPanel, "Legal");
 
 #if !wxCHECK_VERSION(2,5,2)
     itemBoxSizer2->Add(itemNotebook3Sizer, 0, wxGROW|wxALL, 5);

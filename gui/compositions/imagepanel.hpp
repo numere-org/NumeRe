@@ -30,12 +30,11 @@ class ImagePanel : public wxPanel
     wxFrame* parentFrame;
     int w, h, sized_w, sized_h;
     wxArrayString getFileList(const wxString& dirname);
-    void LoadImage(const wxString& filename, wxBitmapType = wxBITMAP_TYPE_ANY, bool doUpdateFrame = true);
     bool LoadNextImage(const wxFileName& filename);
 
 
 public:
-    ImagePanel(wxFrame* parent, wxString file, wxBitmapType format);
+    ImagePanel(wxFrame* parent);
 
     void paintEvent(wxPaintEvent & evt);
     void paintNow();
@@ -62,6 +61,7 @@ public:
     void OnLoseFocus(wxFocusEvent& event);
     //void keyReleased(wxKeyEvent& event);
 
+    void showImage(const wxString& filename, wxBitmapType = wxBITMAP_TYPE_ANY, bool doUpdateFrame = true);
     void OnSaveAs(wxCommandEvent& event);
     void OnCopy(wxCommandEvent& event);
     void OnNextImage(wxCommandEvent& event);

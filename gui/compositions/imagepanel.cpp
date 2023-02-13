@@ -22,6 +22,7 @@
 #include <wx/clipbrd.h>
 #include "imagepanel.hpp"
 #include "../../kernel/core/ui/language.hpp"
+#include "../NumeReWindow.h"
 
 extern Language _guilang;
 
@@ -59,24 +60,23 @@ END_EVENT_TABLE()
 /// \brief ImagePanel constructor
 ///
 /// \param parent wxFrame*
-/// \param file wxString
-/// \param format wxBitmapType
 ///
 /////////////////////////////////////////////////
-ImagePanel::ImagePanel(wxFrame* parent, wxString file, wxBitmapType format) : wxPanel(parent)
+ImagePanel::ImagePanel(wxFrame* parent) : wxPanel(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxBORDER_THEME)
 {
     // load the file... ideally add a check to see if loading was successful
     wxInitAllImageHandlers();
     parentFrame = parent;
-
-    this->LoadImage(file, format, false);
+    NumeReWindow* app = static_cast<NumeReWindow*>(parent->GetParent());
 
     toptoolbar = parentFrame->CreateToolBar(wxTB_HORIZONTAL | wxTB_FLAT);
-    toptoolbar->AddTool(ID_SAVEIMAGE, _guilang.get("GUI_TB_SAVE"), wxArtProvider::GetBitmap(wxART_FILE_SAVE, wxART_TOOLBAR), _guilang.get("GUI_TB_SAVE_TTP"));
-    toptoolbar->AddTool(ID_COPYIMAGE, _guilang.get("GUI_TB_COPY"), wxArtProvider::GetBitmap(wxART_COPY, wxART_TOOLBAR), _guilang.get("GUI_TB_COPY"));
+    toptoolbar->SetBackgroundColour(*wxWHITE);
+
+    toptoolbar->AddTool(ID_SAVEIMAGE, _guilang.get("GUI_TB_SAVE"), app->getToolbarIcon("save"), _guilang.get("GUI_TB_SAVE_TTP"));
+    toptoolbar->AddTool(ID_COPYIMAGE, _guilang.get("GUI_TB_COPY"), app->getToolbarIcon("copy"), _guilang.get("GUI_TB_COPY"));
     toptoolbar->AddSeparator();
-    toptoolbar->AddTool(ID_PREVIOUSIMAGE, _guilang.get("GUI_TB_PREVIOUSIMAGE"), wxArtProvider::GetBitmap(wxART_GO_BACK, wxART_TOOLBAR), _guilang.get("GUI_TB_PREVIOUSIMAGE"));
-    toptoolbar->AddTool(ID_NEXTIMAGE, _guilang.get("GUI_TB_NEXTIMAGE"), wxArtProvider::GetBitmap(wxART_GO_FORWARD, wxART_TOOLBAR), _guilang.get("GUI_TB_NEXTIMAGE"));
+    toptoolbar->AddTool(ID_PREVIOUSIMAGE, _guilang.get("GUI_TB_PREVIOUSIMAGE"), app->getToolbarIcon("back"), _guilang.get("GUI_TB_PREVIOUSIMAGE"));
+    toptoolbar->AddTool(ID_NEXTIMAGE, _guilang.get("GUI_TB_NEXTIMAGE"), app->getToolbarIcon("forward"), _guilang.get("GUI_TB_NEXTIMAGE"));
     toptoolbar->Realize();
 
     parentFrame->Bind(wxEVT_MENU, &ImagePanel::OnSaveAs, this, ID_SAVEIMAGE);
@@ -97,7 +97,7 @@ ImagePanel::ImagePanel(wxFrame* parent, wxString file, wxBitmapType format) : wx
 /// \return void
 ///
 /////////////////////////////////////////////////
-void ImagePanel::LoadImage(const wxString& filename, wxBitmapType format, bool doUpdateFrame)
+void ImagePanel::showImage(const wxString& filename, wxBitmapType format, bool doUpdateFrame)
 {
     image.LoadFile(filename, format);
     w = image.GetWidth();
@@ -108,10 +108,16 @@ void ImagePanel::LoadImage(const wxString& filename, wxBitmapType format, bool d
 
     if (doUpdateFrame)
     {
-        this->SetSize(this->getRelation()*600,600);
-        parentFrame->SetClientSize(this->GetSize());
+        if (h > 1000)
+            SetClientSize(getRelation() * 1000, 1000);
+        else if (w > 1500)
+            SetClientSize(1500, 1500 / getRelation());
+        else
+            SetClientSize(w, h);
+
+        parentFrame->SetClientSize(GetSize());
         parentFrame->SetTitle("NumeRe-ImageViewer: " + wxFileName(filename).GetName());
-        this->paintNow();
+        paintNow();
     }
 }
 
@@ -127,7 +133,13 @@ void ImagePanel::LoadImage(const wxString& filename, wxBitmapType format, bool d
 /////////////////////////////////////////////////
 bool ImagePanel::LoadNextImage(const wxFileName& filename)
 {
-    if (filename.GetExt() == "png" || filename.GetExt() == "bmp" || filename.GetExt() == "jpg"  || filename.GetExt() == "jpeg" || filename.GetExt() == "gif" || filename.GetExt() == "tif" || filename.GetExt() == "tiff")
+    if (filename.GetExt() == "png"
+        || filename.GetExt() == "bmp"
+        || filename.GetExt() == "jpg"
+        || filename.GetExt() == "jpeg"
+        || filename.GetExt() == "gif"
+        || filename.GetExt() == "tif"
+        || filename.GetExt() == "tiff")
     {
         wxBitmapType format;
 
@@ -143,7 +155,7 @@ bool ImagePanel::LoadNextImage(const wxFileName& filename)
             format = wxBITMAP_TYPE_TIF;
 
         //wxFileName current(currentFile);
-        LoadImage(filename.GetFullPath(), format);
+        showImage(filename.GetFullPath(), format);
         return true;
     }
 
@@ -227,22 +239,27 @@ void ImagePanel::render(wxDC&  dc)
     {
         if (neww/(double)newh > w/(double)h)
         {
-            sized_w = w/(double)h*newh;
+            sized_w = std::rint(w/(double)h*newh);
             sized_h = newh;
         }
         else
         {
             sized_w = neww;
-            sized_h = h/(double)w*neww;
+            sized_h = std::rint(h/(double)w*neww);
         }
-        // BICUBIC may be slow, but in this case it doesn't have to be fast. However, in most cases the images will be mase smaller and the default quality is bad in this case
-        resized = wxBitmap(image.Scale(sized_w, sized_h, wxIMAGE_QUALITY_BICUBIC));
+
+        // BICUBIC may be slow, but in this case it doesn't have to be fast. However,
+        // in most cases the images will be mase smaller and the default quality
+        // is bad in this case
+        if (sized_w != w || sized_h != h)
+            resized = wxBitmap(image.Scale(sized_w, sized_h, wxIMAGE_QUALITY_BICUBIC));
+        else
+            resized = wxBitmap(image);
+
         dc.DrawBitmap( resized, 0, 0, false );
     }
     else
-    {
         dc.DrawBitmap( resized, 0, 0, false );
-    }
 }
 
 
