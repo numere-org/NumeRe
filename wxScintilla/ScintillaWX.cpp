@@ -516,7 +516,7 @@ void ScintillaWX::Paste() {
         int len = strlen(buf);
 		
 		if (sel.IsRectangular())
-			PasteRectangular(sel.Last(), buf, len);
+			PasteRectangular(sel.First(), buf, len);
 		else
 			InsertPaste(SelectionPosition(sel.MainCaret()), buf, len);
     }

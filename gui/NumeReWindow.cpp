@@ -5167,12 +5167,14 @@ void NumeReWindow::UpdateMenuBar()
     // Create new file menu
     wxMenu* menuNewFile = new wxMenu();
 
-    menuNewFile->Append(ID_MENU_NEW_EMPTY, _guilang.get("GUI_MENU_NEW_EMPTYFILE"), _guilang.get("GUI_MENU_NEW_EMPTYFILE_TTP"));
+    menuNewFile->Append(ID_MENU_NEW_ASK, _guilang.get("GUI_MENU_NEWFILE_DLG"), _guilang.get("GUI_MENU_NEWFILE_TTP"));
     menuNewFile->AppendSeparator();
     menuNewFile->Append(ID_MENU_NEW_SCRIPT, _guilang.get("GUI_MENU_NEW_NSCR"), _guilang.get("GUI_MENU_NEW_NSCR_TTP"));
     menuNewFile->Append(ID_MENU_NEW_PROCEDURE, _guilang.get("GUI_MENU_NEW_NPRC"), _guilang.get("GUI_MENU_NEW_NPRC_TTP"));
-    menuNewFile->Append(ID_MENU_NEW_PLUGIN, _guilang.get("GUI_MENU_NEW_PLUGIN"), _guilang.get("GUI_MENU_NEW_PLUGIN_TTP"));
     menuNewFile->Append(ID_MENU_NEW_LAYOUT, _guilang.get("GUI_MENU_NEW_LAYOUT"), _guilang.get("GUI_MENU_NEW_LAYOUT_TTP"));
+    menuNewFile->Append(ID_MENU_NEW_PLUGIN, _guilang.get("GUI_MENU_NEW_PLUGIN"), _guilang.get("GUI_MENU_NEW_PLUGIN_TTP"));
+    menuNewFile->AppendSeparator();
+    menuNewFile->Append(ID_MENU_NEW_EMPTY, _guilang.get("GUI_MENU_NEW_EMPTYFILE"), _guilang.get("GUI_MENU_NEW_EMPTYFILE_TTP"));
 
     // Create file menu
     wxMenu* menuFile = new wxMenu();
@@ -5483,12 +5485,12 @@ void NumeReWindow::UpdateToolbar()
     t->AddTool(ID_MENU_NEW_ASK, _guilang.get("GUI_TB_NEW"), getToolbarIcon("new-file"), _guilang.get("GUI_TB_NEW_TTP"), wxITEM_DROPDOWN);
 
     wxMenu* menuNewFile = new wxMenu();
-    menuNewFile->Append(ID_MENU_NEW_EMPTY, _guilang.get("GUI_MENU_NEW_EMPTYFILE"), _guilang.get("GUI_MENU_NEW_EMPTYFILE_TTP"));
-    menuNewFile->AppendSeparator();
     menuNewFile->Append(ID_MENU_NEW_SCRIPT, _guilang.get("GUI_MENU_NEW_NSCR"), _guilang.get("GUI_MENU_NEW_NSCR_TTP"));
     menuNewFile->Append(ID_MENU_NEW_PROCEDURE, _guilang.get("GUI_MENU_NEW_NPRC"), _guilang.get("GUI_MENU_NEW_NPRC_TTP"));
-    menuNewFile->Append(ID_MENU_NEW_PLUGIN, _guilang.get("GUI_MENU_NEW_PLUGIN"), _guilang.get("GUI_MENU_NEW_PLUGIN_TTP"));
     menuNewFile->Append(ID_MENU_NEW_LAYOUT, _guilang.get("GUI_MENU_NEW_LAYOUT"), _guilang.get("GUI_MENU_NEW_LAYOUT_TTP"));
+    //menuNewFile->Append(ID_MENU_NEW_PLUGIN, _guilang.get("GUI_MENU_NEW_PLUGIN"), _guilang.get("GUI_MENU_NEW_PLUGIN_TTP"));
+    menuNewFile->AppendSeparator();
+    menuNewFile->Append(ID_MENU_NEW_EMPTY, _guilang.get("GUI_MENU_NEW_EMPTYFILE"), _guilang.get("GUI_MENU_NEW_EMPTYFILE_TTP"));
     t->SetDropdownMenu(ID_MENU_NEW_ASK, menuNewFile);
 
     t->AddTool(ID_MENU_OPEN_SOURCE_LOCAL, _guilang.get("GUI_TB_OPEN"), getToolbarIcon("open"), _guilang.get("GUI_TB_OPEN_TTP"));
