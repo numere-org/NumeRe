@@ -159,11 +159,11 @@ value_type parser_asech(const value_type&);
 value_type parser_acsch(const value_type&);
 
 // Distribution functions
-value_type parser_rd_laplace_rd(const value_type& sigma);
-value_type parser_rd_laplace_cdf_p(const value_type& x, const value_type& sigma);
-value_type parser_rd_laplace_cdf_q(const value_type& x, const value_type& sigma);
-value_type parser_rd_laplace_inv_p(const value_type& p, const value_type& sigma);
-value_type parser_rd_laplace_inv_q(const value_type& q, const value_type& sigma);
+value_type parser_rd_laplace_rd(const value_type& a);
+value_type parser_rd_laplace_cdf_p(const value_type& x, const value_type& a);
+value_type parser_rd_laplace_cdf_q(const value_type& x, const value_type& a);
+value_type parser_rd_laplace_inv_p(const value_type& p, const value_type& a);
+value_type parser_rd_laplace_inv_q(const value_type& q, const value_type& a);
 value_type parser_rd_cauchy_rd(const value_type& a);
 value_type parser_rd_cauchy_cdf_p(const value_type& x, const value_type& a);
 value_type parser_rd_cauchy_cdf_q(const value_type& x, const value_type& a);
