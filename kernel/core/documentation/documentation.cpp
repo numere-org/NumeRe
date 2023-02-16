@@ -23,6 +23,7 @@
 #include "../../kernel.hpp"
 #include "../datamanagement/database.hpp"
 #include "../ui/error.hpp"
+#include "../ui/calltipprovider.hpp"
 #include "../utils/tools.hpp"
 #include "../../syntax.hpp"
 
@@ -287,6 +288,131 @@ static void doc_ReplaceTokensForHTML(std::string& sDocParagraph, bool generateFi
 
 
 /////////////////////////////////////////////////
+/// \brief Splits an itemized list into the
+/// external NHLP xml-ish file structure.
+///
+/// \param sDefinition const std::string&
+/// \param vDoc std::vector<std::string>&
+/// \return void
+///
+/////////////////////////////////////////////////
+static void doc_splitDocumentation(const std::string& sDefinition, std::vector<std::string>& vDoc)
+{
+    bool isInList = false;
+    std::vector<std::string> vSplitted = split(sDefinition, '\n');
+
+    for (size_t i = 0; i < vSplitted.size(); i++)
+    {
+        if (vSplitted[i][4] != '-')
+        {
+            if (isInList)
+            {
+                vDoc.push_back("</list>");
+                isInList = false;
+            }
+
+            vDoc.push_back(vSplitted[i].substr(4));
+        }
+        else
+        {
+            if (!isInList)
+            {
+                vDoc.push_back("<list>");
+                isInList = true;
+            }
+
+            std::string sNode = "*";
+            std::string sText;
+
+            if (vSplitted[i].find(": ") != std::string::npos)
+            {
+                sText = vSplitted[i].substr(vSplitted[i].find(": ")+2);
+                sNode = vSplitted[i].substr(5, vSplitted[i].find(": ")-5);
+                replaceAll(sNode, "\"", "");
+            }
+            else
+                sText = vSplitted[i].substr(5);
+
+            StripSpaces(sNode);
+            StripSpaces(sText);
+
+            vDoc.push_back("<item node=\"" + sNode + "\">" + sText + "</item>");
+        }
+    }
+
+    if (isInList)
+        vDoc.push_back("</list>");
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Tries to get the function
+/// documentation strings from the language file
+/// by the use of a CallTipProvider instance.
+///
+/// \param sToken std::string
+/// \return std::vector<std::string>
+///
+/////////////////////////////////////////////////
+static std::vector<std::string> doc_findFunctionDocumentation(std::string sToken)
+{
+    static NumeRe::CallTipProvider tipProvider(std::string::npos, false);
+
+    if (sToken.find('(') != std::string::npos)
+        sToken.erase(sToken.find('('));
+
+    std::vector<std::string> vDoc;
+    NumeRe::CallTip _ctip = tipProvider.getFunction(sToken);
+
+    if (_ctip.sDefinition.length())
+    {
+        vDoc.push_back(sToken + "(...)");
+        vDoc.push_back("<syntax>");
+        vDoc.push_back(_ctip.sDefinition);
+        vDoc.push_back("</syntax>");
+
+        doc_splitDocumentation(_ctip.sDocumentation, vDoc);
+        return vDoc;
+    }
+
+    _ctip = tipProvider.getProcedure(sToken);
+
+    if (_ctip.sDefinition.length())
+    {
+        vDoc.push_back(sToken + "(...)");
+        vDoc.push_back("<syntax>");
+        vDoc.push_back(_ctip.sDefinition);
+        vDoc.push_back("</syntax>");
+
+        doc_splitDocumentation(_ctip.sDocumentation, vDoc);
+        return vDoc;
+    }
+
+    _ctip = tipProvider.getMethod(sToken);
+
+    if (_ctip.sDefinition.length())
+    {
+        sToken = _ctip.sDefinition;
+
+        if (sToken.find('(', sToken.find('.')))
+            sToken.replace(sToken.find('(', sToken.find('.')), std::string::npos, "(...)");
+        else
+            sToken.erase(sToken.find(' '));
+
+        vDoc.push_back(sToken);
+        vDoc.push_back("<syntax>");
+        vDoc.push_back(_ctip.sDefinition);
+        vDoc.push_back("</syntax>");
+
+        doc_splitDocumentation(_ctip.sDocumentation, vDoc);
+        return vDoc;
+    }
+
+    return vDoc;
+}
+
+
+/////////////////////////////////////////////////
 /// \brief This function shows the content of a
 /// documentation article based upon the passed
 /// topic. The content is displayed in terminal
@@ -301,7 +427,7 @@ static void doc_ReplaceTokensForHTML(std::string& sDocParagraph, bool generateFi
 /////////////////////////////////////////////////
 void doc_Help(const std::string& __sTopic, Settings& _option)
 {
-    std::string sTopic = toLowerCase(__sTopic);
+    std::string sTopic = __sTopic;
 
     if (findParameter(sTopic, "html"))
         eraseToken(sTopic, "html", false);
@@ -317,6 +443,15 @@ void doc_Help(const std::string& __sTopic, Settings& _option)
 
     StripSpaces(sTopic);
 
+    // Check for function documentation first
+    if (doc_findFunctionDocumentation(sTopic).size())
+    {
+        bool generateFile = (bool)findParameter(__sTopic, "html");
+        std::string sHTML = doc_HelpAsHTML(sTopic, generateFile, _option);
+        NumeReKernel::setDocumentation(sHTML);
+        return;
+    }
+
     std::vector<std::string> vDocArticle = _option.getHelpArticle(sTopic);
 
     if (vDocArticle[0] == "NO_ENTRY_FOUND") // Nix gefunden
@@ -325,7 +460,7 @@ void doc_Help(const std::string& __sTopic, Settings& _option)
         NumeReKernel::print(LineBreak(_lang.get("DOC_HELP_NO_ENTRY_FOUND", sTopic), _option));
         make_hline();
     }
-    else //if (findParameter(__sTopic, "html") || _option.useExternalDocWindow()) // HTML-Export generieren
+    else
     {
         bool generateFile = (bool)findParameter(__sTopic, "html");
         std::string sHTML = doc_HelpAsHTML(sTopic, generateFile, _option);
@@ -347,358 +482,7 @@ void doc_Help(const std::string& __sTopic, Settings& _option)
         else
             NumeReKernel::setDocumentation(sHTML);
     }
-    /*else // Hilfeartikel anzeigen
-    {
-        NumeReKernel::toggleTableStatus();
-        make_hline();
 
-        for (unsigned int i = 0; i < vDocArticle.size(); i++)
-        {
-            if (!i)
-            {
-                NumeReKernel::print(toSystemCodePage(toUpperCase(_lang.get("DOC_HELP_HEADLINE", vDocArticle[i]))));
-                make_hline();
-                continue;
-            }
-
-            if (vDocArticle[i].find("<example ") != std::string::npos) // Beispiel-Tags
-            {
-                bool bVerb = false;
-
-                if (vDocArticle[i].find("type=") && Documentation::getArgAtPos(vDocArticle[i], vDocArticle[i].find("type=")+5) == "verbatim")
-                    bVerb = true;
-
-                doc_ReplaceTokens(vDocArticle[i], _option);
-                NumeReKernel::print(_lang.get("DOC_HELP_EXAMPLE", Documentation::getArgAtPos(vDocArticle[i], vDocArticle[i].find("desc=")+5)));
-                NumeReKernel::printPreFmt("|\n");
-
-                for (unsigned int j = i+1; j < vDocArticle.size(); j++)
-                {
-                    if (vDocArticle[j].find("</example>") != std::string::npos)
-                    {
-                        i = j;
-
-                        if (i+1 < vDocArticle.size())
-                            NumeReKernel::printPreFmt("|\n");
-
-                        break;
-                    }
-
-                    if (vDocArticle[j] == "[...]")
-                    {
-                        NumeReKernel::printPreFmt("|[...]\n");
-                        continue;
-                    }
-
-                    doc_ReplaceTokens(vDocArticle[j], _option);
-
-                    if (!bVerb)
-                    {
-                        if (((i+1) % 2 && j % 2) || (!((i+1) % 2) && !(j % 2)))
-                           NumeReKernel::printPreFmt("||<- " + LineBreak(vDocArticle[j], _option, false, 5) + "\n");
-                        else
-                        {
-                            NumeReKernel::printPreFmt("||-> " + LineBreak(vDocArticle[j], _option, false, 5) + "\n");
-
-                            if (vDocArticle[j+1].find("</example>") == std::string::npos)
-                                NumeReKernel::printPreFmt("||\n");
-                        }
-                    }
-                    else
-                        NumeReKernel::printPreFmt("|" + toSystemCodePage(vDocArticle[j])+"\n");
-                }
-            }
-            else if (vDocArticle[i].find("<exprblock>") != std::string::npos) // EXPRBLOCK-Tags
-            {
-                if (vDocArticle[i].find("</exprblock>", vDocArticle[i].find("<exprblock>")) != std::string::npos)
-                {
-                    doc_ReplaceTokens(vDocArticle[i], _option);
-
-                    while (vDocArticle[i].find("</exprblock>", vDocArticle[i].find("<exprblock>")) != std::string::npos)
-                    {
-                        std::string sExprBlock = vDocArticle[i].substr(vDocArticle[i].find("<exprblock>")+11, vDocArticle[i].find("</exprblock>")-vDocArticle[i].find("<exprblock>")-11);
-
-                        for (unsigned int k = 0; k < sExprBlock.length(); k++)
-                        {
-                            if (!k && sExprBlock[k] == '$')
-                                sExprBlock.insert(0,"\\");
-
-                            if (sExprBlock[k] == '$' && sExprBlock[k-1] != '\\')
-                                sExprBlock.insert(k,"\\");
-
-                            if (sExprBlock.substr(k,2) == "\\n")
-                                sExprBlock.replace(k,2,"$  ");
-
-                            if (sExprBlock.substr(k,2) == "\\t")
-                                sExprBlock.replace(k,2,"    ");
-                        }
-
-                        vDocArticle[i].replace(vDocArticle[i].find("<exprblock>"), vDocArticle[i].find("</exprblock>")+12-vDocArticle[i].find("<exprblock>"), "$$  " + sExprBlock + "$$");
-                    }
-
-                    if (vDocArticle[i].substr(vDocArticle[i].length()-2) == "$$")
-                        vDocArticle[i].pop_back();
-
-                    NumeReKernel::print(vDocArticle[i]);
-                }
-                else
-                {
-                    if (vDocArticle[i] != "<exprblock>")
-                        NumeReKernel::print(vDocArticle[i].substr(0,vDocArticle[i].find("<exprblock>")));
-
-                    NumeReKernel::printPreFmt("|\n");
-
-                    for (unsigned int j = i+1; j < vDocArticle.size(); j++)
-                    {
-                        if (vDocArticle[j].find("</exprblock>") != std::string::npos)
-                        {
-                            i = j;
-
-                            if (i+1 < vDocArticle.size())
-                                NumeReKernel::printPreFmt("|\n");
-
-                            break;
-                        }
-
-                        doc_ReplaceTokens(vDocArticle[j], _option);
-
-                        while (vDocArticle[j].find("\\t") != std::string::npos)
-                            vDocArticle[j].replace(vDocArticle[j].find("\\t"), 2, "    ");
-
-                        NumeReKernel::printPreFmt("|     " + toSystemCodePage(vDocArticle[j]) + "\n");
-                    }
-                }
-            }
-            else if (vDocArticle[i].find("<codeblock>") != std::string::npos) // CODEBLOCK-Tags
-            {
-                if (vDocArticle[i].find("</codeblock>", vDocArticle[i].find("<codeblock>")) != std::string::npos)
-                {
-                    doc_ReplaceTokens(vDocArticle[i], _option);
-
-                    while (vDocArticle[i].find("</codeblock>", vDocArticle[i].find("<codeblock>")) != std::string::npos)
-                    {
-                        std::string sExprBlock = vDocArticle[i].substr(vDocArticle[i].find("<codeblock>")+11, vDocArticle[i].find("</codeblock>")-vDocArticle[i].find("<codeblock>")-11);
-
-                        for (unsigned int k = 0; k < sExprBlock.length(); k++)
-                        {
-                            if (!k && sExprBlock[k] == '$')
-                                sExprBlock.insert(0,"\\");
-
-                            if (sExprBlock[k] == '$' && sExprBlock[k-1] != '\\')
-                                sExprBlock.insert(k,"\\");
-
-                            if (sExprBlock.substr(k,2) == "\\n")
-                                sExprBlock.replace(k,2,"$  ");
-
-                            if (sExprBlock.substr(k,2) == "\\t")
-                                sExprBlock.replace(k,2,"    ");
-                        }
-
-                        vDocArticle[i].replace(vDocArticle[i].find("<codeblock>"), vDocArticle[i].find("</codeblock>")+12-vDocArticle[i].find("<codeblock>"), "$$  " + sExprBlock + "$$");
-                    }
-
-                    if (vDocArticle[i].substr(vDocArticle[i].length()-2) == "$$")
-                        vDocArticle[i].pop_back();
-
-                    NumeReKernel::print(vDocArticle[i]);
-                }
-                else
-                {
-                    if (vDocArticle[i] != "<codeblock>")
-                        NumeReKernel::print(vDocArticle[i].substr(0,vDocArticle[i].find("<codeblock>")));
-
-                    NumeReKernel::printPreFmt("|\n");
-
-                    for (unsigned int j = i+1; j < vDocArticle.size(); j++)
-                    {
-                        if (vDocArticle[j].find("</codeblock>") != std::string::npos)
-                        {
-                            i = j;
-
-                            if (i+1 < vDocArticle.size())
-                                NumeReKernel::printPreFmt("|\n");
-
-                            break;
-                        }
-
-                        doc_ReplaceTokens(vDocArticle[j], _option);
-
-                        while (vDocArticle[j].find("\\t") != std::string::npos)
-                            vDocArticle[j].replace(vDocArticle[j].find("\\t"), 2, "    ");
-
-                        NumeReKernel::printPreFmt("|     " + toSystemCodePage(vDocArticle[j])+"\n");
-                    }
-                }
-            }
-            else if (vDocArticle[i].find("<list>") != std::string::npos) // Standard-LIST-Tags
-            {
-                unsigned int nLengthMax = 0;
-
-                for (unsigned int j = i+1; j < vDocArticle.size(); j++)
-                {
-                    if (vDocArticle[j].find("</list>") != std::string::npos)
-                    {
-                        std::string sLine = "";
-                        std::string sNode = "";
-                        std::string sRemainingLine = "";
-                        std::string sFinalLine = "";
-                        int nIndent = 0;
-
-                        for (unsigned int k = i+1; k < j; k++)
-                        {
-                            nIndent = 0;
-                            sNode = Documentation::getArgAtPos(vDocArticle[k], vDocArticle[k].find("node=")+5);
-                            sRemainingLine = vDocArticle[k].substr(vDocArticle[k].find('>', vDocArticle[k].find("node=")+5+Documentation::getArgAtPos(vDocArticle[k], vDocArticle[k].find("node=")+5).length()+2)+1, vDocArticle[k].find("</item>")-1-vDocArticle[k].find('>', vDocArticle[k].find("node=")+5+Documentation::getArgAtPos(vDocArticle[k], vDocArticle[k].find("node=")+5).length()+2));
-                            sFinalLine = "";
-
-                            if (vDocArticle[k].find("type=") != std::string::npos && Documentation::getArgAtPos(vDocArticle[k], vDocArticle[k].find("type=")+5) == "verbatim")
-                            {
-                                NumeReKernel::printPreFmt("|     " + sNode);
-                                nIndent = sNode.length()+6;
-                                sLine.append(nLengthMax+9-nIndent, ' ');
-                                sLine += "- " + sRemainingLine;
-
-                                if (sLine.find('~') == std::string::npos && sLine.find('%') == std::string::npos)
-                                    NumeReKernel::printPreFmt(LineBreak(sLine, _option, true, nIndent, nLengthMax+11) + "\n");
-                                else
-                                    NumeReKernel::printPreFmt(LineBreak(sLine, _option, false, nIndent, nLengthMax+11) + "\n");
-                            }
-                            else
-                            {
-                                for (unsigned int n = 0; n < sNode.length(); n++)
-                                {
-                                    if (n && sNode[n] == '$' && sNode[n-1] != '\\')
-                                    {
-                                        sLine = "|     " + sNode.substr(0,n);
-                                        sNode.erase(0,n+1);
-                                        n = -1;
-                                        sLine.append(nLengthMax+9-sLine.length()+countEscapeSymbols(sLine), ' ');
-
-                                        if (!sFinalLine.length())
-                                            sLine += "- " + sRemainingLine;
-                                        else
-                                            sLine += "  " + sRemainingLine;
-
-                                        if (sLine.find('~') == std::string::npos && sLine.find('%') == std::string::npos)
-                                            sLine = LineBreak(sLine, _option, true, nIndent, nLengthMax+11);
-                                        else
-                                            sLine = LineBreak(sLine, _option, false, nIndent, nLengthMax+11);
-
-                                        sFinalLine += sLine.substr(0,sLine.find('\n'));
-
-                                        if (sLine.find('\n') != std::string::npos)
-                                            sFinalLine += '\n';
-
-                                        sRemainingLine.erase(0,sLine.substr(nLengthMax+11, sLine.find('\n')-nLengthMax-11).length());
-
-                                        if (sRemainingLine.front() == ' ')
-                                            sRemainingLine.erase(0,1);
-                                    }
-                                }
-
-                                sLine = "|     " + sNode;
-                                sLine.append(nLengthMax+9-sLine.length()+countEscapeSymbols(sLine), ' ');
-
-                                if (!sFinalLine.length())
-                                    sLine += "- " + sRemainingLine;
-                                else
-                                    sLine += "  " + sRemainingLine;
-
-                                if (sLine.find('~') == std::string::npos && sLine.find('%') == std::string::npos)
-                                    sFinalLine += LineBreak(sLine, _option, true, nIndent, nLengthMax+11);
-                                else
-                                    sFinalLine += LineBreak(sLine, _option, false, nIndent, nLengthMax+11);
-
-                                NumeReKernel::printPreFmt(sFinalLine + "\n");
-                            }
-                        }
-
-                        i = j;
-                        break;
-                    }
-                    else
-                    {
-                        doc_ReplaceTokens(vDocArticle[j], _option);
-
-                        std::string sNode = Documentation::getArgAtPos(vDocArticle[j], vDocArticle[j].find("node=")+5);
-
-                        for (unsigned int k = 0; k < sNode.length(); k++)
-                        {
-                            if (sNode[k] == '$' && k && sNode[k-1] != '\\')
-                            {
-                                if (nLengthMax < k-countEscapeSymbols(sNode.substr(0,k)))
-                                    nLengthMax = k-countEscapeSymbols(sNode.substr(0,k));
-
-                                sNode.erase(0,k+1);
-                                k = -1;
-                            }
-                        }
-
-                        if (nLengthMax < sNode.length()-countEscapeSymbols(sNode))
-                            nLengthMax = sNode.length()-countEscapeSymbols(sNode);
-                    }
-                }
-            }
-            else if (vDocArticle[i].find("<table") != std::string::npos) // TABLE-Tags
-            {
-                std::string sTable = vDocArticle[i].substr(vDocArticle[i].find("<table"));
-
-                for (unsigned int j = i+1; j < vDocArticle.size(); j++)
-                {
-                    if (vDocArticle[j].find("</table>") != std::string::npos)
-                    {
-                        sTable += vDocArticle[j].substr(0,vDocArticle[j].find("</table>")+8);
-                        // Send the whole content to the table reader and render the obtained table on the screen.
-                        std::vector<std::vector<std::string> > vTable = doc_readTokenTable(sTable, _option);
-                        std::vector<size_t> vFieldSizes;
-
-                        for (size_t v = 0; v < vTable.size(); v++)
-                        {
-                            for (size_t w = 0; w < vTable[v].size(); w++)
-                            {
-                                if (vFieldSizes.size() < w+1)
-                                    vFieldSizes.push_back(vTable[v][w].length());
-                                else
-                                {
-                                    if (vFieldSizes[w] < vTable[v][w].length())
-                                        vFieldSizes[w] = vTable[v][w].length();
-                                }
-                            }
-                        }
-
-                        for (size_t v = 0; v < vTable.size(); v++)
-                        {
-                            NumeReKernel::printPreFmt("|     ");
-
-                            for (size_t w = 0; w < vTable[v].size(); w++)
-                            {
-                                NumeReKernel::printPreFmt(strlfill(vTable[v][w], vFieldSizes[w]+2));
-                            }
-
-                            NumeReKernel::printPreFmt("\n");
-                        }
-
-                        i = j;
-                        break;
-                    }
-                    else
-                        sTable += vDocArticle[j];
-                }
-            }
-            else // Normaler Paragraph
-            {
-                doc_ReplaceTokens(vDocArticle[i], _option);
-
-                if (vDocArticle[i].find('~') == std::string::npos && vDocArticle[i].find('%') == std::string::npos)
-                    NumeReKernel::print(LineBreak(vDocArticle[i], _option));
-                else
-                    NumeReKernel::print(LineBreak(vDocArticle[i], _option, false));
-            }
-        }
-
-        NumeReKernel::toggleTableStatus();
-        make_hline();
-    }*/
 }
 
 
@@ -915,6 +699,47 @@ static std::string formatCodeBlock(std::string sCode, bool generateFile, bool ve
     return VIEWER_CODEBLOCK_START + sCode + VIEWER_CODEBLOCK_END;
 }
 
+
+/////////////////////////////////////////////////
+/// \brief Parses a list into a two-column
+/// structure, which can be converted into a HTML
+/// table.
+///
+/// \param vDocArticle std::vector<std::string>&
+/// \param i size_t&
+/// \param generateFile bool
+/// \param _option Settings&
+/// \return std::vector<std::pair<std::string, std::string>>
+///
+/////////////////////////////////////////////////
+static std::vector<std::pair<std::string, std::string>> parseList(std::vector<std::string>& vDocArticle, size_t& i, bool generateFile, Settings& _option)
+{
+    std::vector<std::pair<std::string, std::string>> vList;
+
+    for (unsigned int j = i+1; j < vDocArticle.size(); j++)
+    {
+        if (vDocArticle[j].find("</list>") != std::string::npos)
+        {
+            i = j;
+            break;
+        }
+        else
+        {
+            doc_ReplaceTokensForHTML(vDocArticle[j], generateFile, _option);
+            size_t pos = vDocArticle[j].find("node=")+5;
+            std::string& sLine = vDocArticle[j];
+            std::string sNode = Documentation::getArgAtPos(sLine, pos);
+
+            vList.push_back(std::make_pair(sNode,
+                                           sLine.substr(sLine.find('>', pos+sNode.length()+2)+1,
+                                                        sLine.find("</item>")-1-sLine.find('>', pos+sNode.length()+2))));
+        }
+    }
+
+    return vList;
+}
+
+
 /////////////////////////////////////////////////
 /// \brief This function returns the
 /// documentation article for the selected topic
@@ -935,7 +760,10 @@ std::string doc_HelpAsHTML(const std::string& __sTopic, bool generateFile, Setti
     StripSpaces(sTopic);
 
     // Get the article contents
-    std::vector<std::string> vDocArticle = _option.getHelpArticle(sTopic);
+    std::vector<std::string> vDocArticle = doc_findFunctionDocumentation(sTopic);
+
+    if (!vDocArticle.size())
+        vDocArticle = _option.getHelpArticle(toLowerCase(sTopic));
 
     if (vDocArticle[0] == "NO_ENTRY_FOUND") // Nix gefunden
         return "";
@@ -1242,60 +1070,62 @@ std::string doc_HelpAsHTML(const std::string& __sTopic, bool generateFile, Setti
         }
         else if (vDocArticle[i].find("<list") != std::string::npos) // Alle LIST-Tags (umgewandelt zu TABLE)
         {
-            if (generateFile)
+            std::vector<std::pair<std::string, std::string>> vList = parseList(vDocArticle, i, generateFile, _option);
+            bool isUList = true;
+
+
+            for (const auto& iter : vList)
             {
-                sHTML += "<h4>"+ _lang.get("DOC_HELP_OPTIONS_HEADLINE") +"</h4>\n";
-                sHTML += "<table style=\"border-collapse:collapse; border-color:rgb(136,136,136);border-width:1px\" border=\"1\" bordercolor=\"#888\" cellspacing=\"0\">\n  <tbody>\n";
+                if (iter.first != "*")
+                {
+                    isUList = false;
+                    break;
+                }
+            }
+
+            if (isUList)
+            {
+                sHTML += "<ul>\n";
+
+                for (const auto& iter : vList)
+                {
+                    sHTML += "  <li>" + iter.second + "</li>\n";
+                }
+
+                sHTML += "</ul>\n";
             }
             else
             {
-                sHTML += "<table border=\"1\" bordercolor=\"#888\" cellspacing=\"0\">\n  <tbody>\n";
-            }
-
-            for (unsigned int j = i+1; j < vDocArticle.size(); j++)
-            {
-                if (vDocArticle[j].find("</list>") != std::string::npos)
+                if (generateFile)
                 {
-                    sHTML += "  </tbody>\n</table>\n";
-
-                    i = j;
-                    break;
+                    sHTML += "<h4>"+ _lang.get("DOC_HELP_OPTIONS_HEADLINE") +"</h4>\n";
+                    sHTML += "<table style=\"border-collapse:collapse; border-color:rgb(136,136,136);border-width:1px\" border=\"1\" bordercolor=\"#888\" cellspacing=\"0\">\n  <tbody>\n";
                 }
                 else
-                {
-                    doc_ReplaceTokensForHTML(vDocArticle[j], generateFile, _option);
+                    sHTML += "<table border=\"1\" bordercolor=\"#888\" cellspacing=\"0\">\n  <tbody>\n";
 
+                for (const auto& iter : vList)
+                {
                     if (generateFile)
                     {
-                        sHTML += "    <tr>\n";
-                        sHTML += "      <td style=\"width:200px;height:19px\"><code><span style=\"color:#00008B;\">"
-                             + (Documentation::getArgAtPos(vDocArticle[j], vDocArticle[j].find("node=")+5))
-                             + "</span></code></td>\n"
-                             + "      <td style=\"width:400px;height:19px\">"
-                             + (vDocArticle[j].substr(vDocArticle[j].find('>', vDocArticle[j].find("node=")+5+Documentation::getArgAtPos(vDocArticle[j], vDocArticle[j].find("node=")+5).length()+2)+1, vDocArticle[j].find("</item>")-1-vDocArticle[j].find('>', vDocArticle[j].find("node=")+5+Documentation::getArgAtPos(vDocArticle[j], vDocArticle[j].find("node=")+5).length()+2)))
-                             + "</td>\n";
-                        sHTML += "    </tr>\n";
+                        sHTML += "    <tr>\n      <td style=\"width:200px;height:19px\"><code><span style=\"color:#00008B;\">"
+                              + iter.first + "</span></code></td>\n"
+                              + "      <td style=\"width:400px;height:19px\">" + iter.second + "</td>\n    </tr>\n";
+                    }
+                    else if (isIndex)
+                    {
+                        sHTML += "    <tr>\n      <td width=\"200\"><a href=\"nhlp://"
+                              + iter.first + "?frame=self\"><code><span style=\"color:#00008B;\">"
+                              + iter.first + "</span></code></a></td>\n      <td>" + iter.second + "</td>\n    </tr>\n";
                     }
                     else
                     {
-                        if (isIndex)
-                        {
-                            sHTML += "    <tr>\n      <td width=\"200\"><a href=\"nhlp://"+Documentation::getArgAtPos(vDocArticle[j], vDocArticle[j].find("node=")+5)+"?frame=self\"><code><span style=\"color:#00008B;\">"
-                                  + Documentation::getArgAtPos(vDocArticle[j], vDocArticle[j].find("node=")+5)
-                                  + "</span></code></a></td>\n      <td>"
-                                  + vDocArticle[j].substr(vDocArticle[j].find('>', vDocArticle[j].find("node=")+5+Documentation::getArgAtPos(vDocArticle[j], vDocArticle[j].find("node=")+5).length()+2)+1, vDocArticle[j].find("</item>")-1-vDocArticle[j].find('>', vDocArticle[j].find("node=")+5+Documentation::getArgAtPos(vDocArticle[j], vDocArticle[j].find("node=")+5).length()+2))
-                                  + "</td>\n    </tr>\n";
-                        }
-                        else
-                        {
-                            sHTML += "    <tr>\n      <td width=\"200\"><code><span style=\"color:#00008B;\">"
-                                  + Documentation::getArgAtPos(vDocArticle[j], vDocArticle[j].find("node=")+5)
-                                  + "</span></code></td>\n      <td>"
-                                  + vDocArticle[j].substr(vDocArticle[j].find('>', vDocArticle[j].find("node=")+5+Documentation::getArgAtPos(vDocArticle[j], vDocArticle[j].find("node=")+5).length()+2)+1, vDocArticle[j].find("</item>")-1-vDocArticle[j].find('>', vDocArticle[j].find("node=")+5+Documentation::getArgAtPos(vDocArticle[j], vDocArticle[j].find("node=")+5).length()+2))
-                                  + "</td>\n    </tr>\n";
-                        }
+                        sHTML += "    <tr>\n      <td width=\"200\"><code><span style=\"color:#00008B;\">"
+                                  + iter.first + "</span></code></td>\n      <td>" + iter.second + "</td>\n    </tr>\n";
                     }
                 }
+
+                sHTML += "  </tbody>\n</table>\n";
             }
         }
         else if (vDocArticle[i].find("<table") != std::string::npos) // Table-Tags

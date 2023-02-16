@@ -5562,7 +5562,7 @@ void NumeReWindow::UpdateToolbar()
         db.addData("<>/user/docs/find.ndb");
 
     t->AddControl(new ToolBarSearchCtrl(t, wxID_ANY, db, this, m_terminal, _guilang.get("GUI_SEARCH_TELLME"),
-                                        _guilang.get("GUI_SEARCH_CALLTIP_TOOLBAR"), _guilang.get("GUI_SEARCH_CALLTIP_TOOLBAR_HIGHLIGHT"),
+                                        _guilang.get("GUI_SEARCH_CALLTIP_TOOLBAR"), _guilang.get("GUI_SEARCH_CALLTIP_TOOLBAR"),
                                         300, m_lastToolbarStretchState ? -200 : 200),
                   wxEmptyString);
 
@@ -6866,6 +6866,25 @@ void NumeReWindow::unregisterWindow(wxWindow* window)
 
 
 /////////////////////////////////////////////////
+/// \brief Find a window of a specified type.
+///
+/// \param type WindowType
+/// \return wxWindow*
+///
+/////////////////////////////////////////////////
+wxWindow* NumeReWindow::findWindow(WindowType type)
+{
+    for (const auto& iter : m_openedWindows)
+    {
+        if (iter.second == type)
+            return iter.first;
+    }
+
+    return nullptr;
+}
+
+
+/////////////////////////////////////////////////
 /// \brief Close all windows of the selected
 /// WindowType or simply use WT_ALL to close all
 /// terminal-closable floating windows at once.
@@ -7492,6 +7511,18 @@ void NumeReWindow::OnHelp()
 /////////////////////////////////////////////////
 bool NumeReWindow::ShowHelp(const wxString& sDocId)
 {
+    wxWindow* openedBrowser = findWindow(WT_DOCVIEWER);
+
+    if (openedBrowser)
+    {
+        DocumentationBrowser* browser = static_cast<DocumentationBrowser*>(openedBrowser);
+
+        if (browser->IsIconized())
+            browser->Restore();
+
+        return browser->createNewPage(sDocId);
+    }
+
     DocumentationBrowser* browser = new DocumentationBrowser(this, _guilang.get("DOC_HELP_HEADLINE", "%s"), this);
     registerWindow(browser, WT_DOCVIEWER);
     return browser->SetStartPage(sDocId);

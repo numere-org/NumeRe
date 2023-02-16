@@ -45,11 +45,7 @@ bool ToolBarSearchCtrl::selectItem(const wxString& value)
     if (sTermInput.substr(0, 5) == "help ")
         m_mainframe->ShowHelp(sTermInput.substr(5));
     else
-    {
-        NumeReEditor* edit = m_mainframe->GetCurrentEditor();
-        edit->InsertText(edit->GetCurrentPos(), sTermInput);
-        edit->GotoPos(edit->GetCurrentPos()+sTermInput.length());
-    }
+        m_mainframe->ShowHelp(sTermInput);
 
     return true;
 }

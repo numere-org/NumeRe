@@ -652,7 +652,11 @@ namespace NumeRe
         else if (sToken == "artanh")
             sToken = "atanh";
 
-        return addLinebreaks(realignLangString(_lang.get("PARSERFUNCS_LISTFUNC_FUNC_" + toUpperCase(sToken) + "_[*")), m_maxLineLength);
+        if (m_returnUnmatchedTokens
+            || _lang.get("PARSERFUNCS_LISTFUNC_FUNC_" + toUpperCase(sToken) + "_[*") != "PARSERFUNCS_LISTFUNC_FUNC_" + toUpperCase(sToken) + "_[*")
+            return addLinebreaks(realignLangString(_lang.get("PARSERFUNCS_LISTFUNC_FUNC_" + toUpperCase(sToken) + "_[*")), m_maxLineLength);
+
+        return CallTip();
     }
 
 
@@ -751,6 +755,10 @@ namespace NumeRe
     /////////////////////////////////////////////////
     CallTip CallTipProvider::getMethod(std::string sToken) const
     {
+        if (!m_returnUnmatchedTokens
+            && _lang.get("PARSERFUNCS_LISTFUNC_METHOD_" + toUpperCase(sToken) + "_*") == "PARSERFUNCS_LISTFUNC_METHOD_" + toUpperCase(sToken) + "_*")
+            return CallTip();
+
         if (_lang.get("PARSERFUNCS_LISTFUNC_METHOD_" + toUpperCase(sToken) + "_[STRING]") != "PARSERFUNCS_LISTFUNC_METHOD_" + toUpperCase(sToken) + "_[STRING]")
             sToken = "STRINGVAR." + _lang.get("PARSERFUNCS_LISTFUNC_METHOD_" + toUpperCase(sToken) + "_[STRING]");
         else

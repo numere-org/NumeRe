@@ -342,6 +342,7 @@ void SearchCtrlPopup::OnDragStart(wxListEvent& event)
         return;
     }
 
+    m_combo->Clear();
     wxTextDataObject _dataObject(token);
     wxDropSource dragSource(this);
     dragSource.SetData(_dataObject);

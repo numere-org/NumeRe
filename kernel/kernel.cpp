@@ -539,7 +539,7 @@ void NumeReKernel::defineFunctions()
     _parser.DefineFun("rayleigh_inv_p", parser_rd_rayleigh_inv_p);            // rayleigh_inv_p(p, sigma)
     _parser.DefineFun("rayleigh_inv_q", parser_rd_rayleigh_inv_q);            // rayleigh_inv_q(q, sigma)
     _parser.DefineFun("landau_rd", parser_rd_landau_rd, false);               // landau_rd()
-    _parser.DefineFun("levyAlphaStable_rd", parser_rd_levyAlphaStable_rd, false);   // levyAlphaStable_rd(c, alpha)
+    _parser.DefineFun("alpha_stable_rd", parser_rd_levyAlphaStable_rd, false);   // levyAlphaStable_rd(c, alpha)
     _parser.DefineFun("fisher_f_rd", parser_rd_fisher_f_rd, false); // fisher_f_rd(nu1, nu2)
     _parser.DefineFun("fisher_f_cdf_p", parser_rd_fisher_f_cdf_p);  // fisher_f_cdf_p(x, nu1, nu2)
     _parser.DefineFun("fisher_f_cdf_q", parser_rd_fisher_f_cdf_q);  // fisher_f_cdf_q(x, nu1, nu2)
@@ -823,7 +823,7 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const std::string& sCommand)
 
             // Handle procedure calls at this location
             // Will return false, if the command line was cleared completely
-            if (!evaluateProcedureCalls(sLine))
+            if (sCurrentCommand != "help" && !evaluateProcedureCalls(sLine))
                 continue;
 
             // --> Gibt es "??"? Dann rufe die Prompt-Funktion auf <--

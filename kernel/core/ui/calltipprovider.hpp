@@ -55,9 +55,11 @@ namespace NumeRe
     {
         private:
             size_t m_maxLineLength;
+            bool m_returnUnmatchedTokens;
 
         public:
-            CallTipProvider(size_t nMaxLineLength = 100u) : m_maxLineLength(nMaxLineLength) {}
+            CallTipProvider(size_t nMaxLineLength = 100u, bool returnUnmatched = true)
+                : m_maxLineLength(nMaxLineLength), m_returnUnmatchedTokens(returnUnmatched) {}
 
             CallTip getCommand(std::string sToken) const;
             CallTip getFunction(std::string sToken) const;
