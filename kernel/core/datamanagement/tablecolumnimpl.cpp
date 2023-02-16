@@ -2239,26 +2239,35 @@ TableColumn* CategoricalColumn::convert(ColumnType type)
 /////////////////////////////////////////////////
 void CategoricalColumn::setCategories(const std::vector<std::string>& vCategories)
 {
-    // If the number of new categories is higher or equal to
-    // the previous one: simply overwrite
-    if (vCategories.size() >= m_categories.size())
-        m_categories = vCategories;
-    else
-    {
-        // Otherwise replace only the new ones. But consider the
-        // case that the user might only want to reorder the categories
-        for (size_t i = 0; i < vCategories.size(); i++)
-        {
-            // Try to find the new category in the current list
-            auto iter = std::find(m_categories.begin(), m_categories.end(), vCategories[i]);
+    // If the number of new categories is higher
+    // than the previous one: extend the necessary space
+    if (vCategories.size() > m_categories.size())
+        m_categories.resize(vCategories.size());
 
-            // If the category was found and is different to the current
-            // one: swap them. Otherwise simply overwrite
-            if (iter != m_categories.end() && iter-m_categories.begin() != (int)i)
-                std::swap(m_categories[i], *iter);
-            else
-                m_categories[i] = vCategories[i];
+    // Now replace only the new ones. But consider the
+    // case that the user might only want to reorder the categories
+    for (size_t i = 0; i < vCategories.size(); i++)
+    {
+        // Try to find the new category in the current list
+        auto iter = std::find(m_categories.begin(), m_categories.end(), vCategories[i]);
+
+        // If the category was found and is different to the current
+        // one: swap them. Otherwise simply overwrite
+        if (iter != m_categories.end() && iter-m_categories.begin() != (int)i)
+        {
+            std::swap(m_categories[i], *iter);
+
+            // We also have to swap the IDs
+            for (int& val : m_data)
+            {
+                if (val == i)
+                    val = iter-m_categories.begin();
+                else if (val == iter-m_categories.begin())
+                    val = i;
+            }
         }
+        else
+            m_categories[i] = vCategories[i];
     }
 }
 
