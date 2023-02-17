@@ -1023,6 +1023,18 @@ bool isConvertible(const std::string& sStr, ConvertibleType type)
             || tolower(sStr.back()) == 'e')
             return false;
 
+        // Regression fix introduced because NA is accepted as NaN
+        for (size_t i = 1; i < sStr.length()-1; i++)
+        {
+            if (sStr[i] == '-' || sStr[i] == '+')
+            {
+                if (tolower(sStr[i-1]) != 'e'
+                    && (isdigit(sStr[i-1]) && sStr.find_first_of("iI", i+1) == std::string::npos)
+                    && sStr[i-1] != ' ')
+                    return false;
+            }
+        }
+
         // Try to detect dates
         return !isConvertible(sStr, CONVTYPE_DATE_TIME);
     }
