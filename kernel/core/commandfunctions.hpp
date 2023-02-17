@@ -5369,7 +5369,7 @@ static std::map<std::string,CommandFunc> getCommandFunctions()
     mCommandFuncMap["tab"] = cmd_context_specific;
     mCommandFuncMap["var"] = cmd_context_specific;
     mCommandFuncMap["str"] = cmd_context_specific;
-    mCommandFuncMap["csr"] = cmd_context_specific;
+    mCommandFuncMap["cst"] = cmd_context_specific;
     mCommandFuncMap["namespace"] = cmd_context_specific;
     mCommandFuncMap["layout"] = cmd_context_specific;
     mCommandFuncMap["endlayout"] = cmd_context_specific;
