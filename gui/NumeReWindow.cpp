@@ -7207,6 +7207,9 @@ void NumeReWindow::OnCreatePackage(const wxString& projectFile)
             if (edit->getEditorSetting(NumeReEditor::SETTING_INDENTONTYPE))
                 edit->ToggleSettings(NumeReEditor::SETTING_INDENTONTYPE);
 
+            // Save the file directly
+            edit->SaveFileLocal();
+
             std::string sPackageName = dlg.getPackageName().ToStdString();
 
             if (wxYES == wxMessageBox(_guilang.get("GUI_PKGDLG_UPDATEINSTALLED", sPackageName),

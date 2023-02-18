@@ -4447,7 +4447,9 @@ void Plot::defaultRanges(size_t nPlotCompose, bool bNewSubPlot)
 
             if (m_manager.hasDataPlots() && (_pData.getGivenRanges() < i + 1 || !_pData.getRangeSetting(i)))
             {
-                if ((isinf(dataRanges[i].front()) || isnan(dataRanges[i].front())) && (unsigned)i < std::max(2u, _pInfo.nMaxPlotDim))
+                if ((isinf(dataRanges[i].front()) || isnan(dataRanges[i].front()))
+                    && (isinf(secDataRanges[i].front()) || isnan(secDataRanges[i].front()))
+                    && (unsigned)i < std::max(2u, _pInfo.nMaxPlotDim))
                 {
                     clearData();
                     throw SyntaxError(SyntaxError::PLOTDATA_IS_NAN, sCurrentExpr, sCurrentExpr.find(' ')+1);

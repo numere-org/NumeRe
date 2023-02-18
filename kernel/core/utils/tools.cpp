@@ -930,7 +930,7 @@ std::string replaceToTeX(const std::string& sString, bool replaceForTeXFile)
 
                 // after the operator
                 if (sReturn[nPos + 1] == ' ')
-                    sReturn.erase(nPos, sReturn.find_first_not_of(' ', nPos+1) - nPos);
+                    sReturn.erase(nPos+1, sReturn.find_first_not_of(' ', nPos+1) - nPos-1);
 
                 // Identify exponents and ignore them
                 if (iter.first == "+" || iter.first == "-")

@@ -748,7 +748,6 @@ void NumeReEditor::OnChar( wxStyledTextEvent& event )
 
     if (chr == '\n')
     {
-        m_currSelection.clear();
         m_nextChar = 0;
         markModified(currentLine);
         int previousLineInd = 0;
@@ -1371,6 +1370,8 @@ void NumeReEditor::AdvCallTipCancel()
 /////////////////////////////////////////////////
 void NumeReEditor::OnKeyDn(wxKeyEvent& event)
 {
+    m_currSelection.clear();
+
     // Check the parentheses in the case of selections
     // and matching partners
     if (event.GetKeyCode() != WXK_SHIFT
