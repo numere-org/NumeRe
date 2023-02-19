@@ -1163,6 +1163,13 @@ void NumeReWindow::prepareSession()
 //////////////////////////////////////////////////////////////////////////////
 void NumeReWindow::OnClose(wxCloseEvent &event)
 {
+    // This event might be fired multiple times
+    if (m_appClosing)
+    {
+        g_logger.info("Prevented additional call to NumeReWindow::OnClose()");
+        return;
+    }
+
     m_appClosing = true;
     g_logger.info("Closing NumeRe.");
 
@@ -1186,9 +1193,7 @@ void NumeReWindow::OnClose(wxCloseEvent &event)
     }
 
     if (m_updateTimer)
-    {
         m_updateTimer->Stop();
-    }
 
     if (m_fileEventTimer)
         m_fileEventTimer->Stop();

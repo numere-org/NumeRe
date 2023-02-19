@@ -372,7 +372,7 @@ bool FunctionDefinition::decodeDefinition()
 /////////////////////////////////////////////////
 bool FunctionDefinition::splitAndValidateArguments()
 {
-    string sDelim = "+-*/^!=&| ><()?[]{}$%§~#:.,;";
+    string sDelim = "+-*/^!=&| ><()?[]{}$%§#:.,;";
 
     // Get the argument list of the definition
     string sArguments = sDefinitionString.substr(sDefinitionString.find('('));

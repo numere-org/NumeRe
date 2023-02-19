@@ -897,19 +897,30 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, F
             }
         }
 
-        // Handle the defining process and the calling
-        // of local functions
-        if (sCurrentCommand == "lclfunc")
+        try
         {
-            // This is a definition
-            _localDef.defineFunc(sProcCommandLine.substr(sProcCommandLine.find("lclfunc")+7));
-            sProcCommandLine.clear();
-            continue;
+            // Handle the defining process and the calling
+            // of local functions
+            if (sCurrentCommand == "lclfunc")
+            {
+                // This is a definition
+                _localDef.defineFunc(sProcCommandLine.substr(sProcCommandLine.find("lclfunc")+7));
+                sProcCommandLine.clear();
+                continue;
+            }
+            else
+            {
+                // This is probably a call to a local function
+                _localDef.call(sProcCommandLine);
+            }
         }
-        else
+        catch (...)
         {
-            // This is probably a call to a local function
-            _localDef.call(sProcCommandLine);
+            _debugger.gatherInformations(_varFactory, sProcCommandLine, sCurrentProcedureName, GetCurrentLine());
+            _debugger.showError(current_exception());
+
+            nCurrentByteCode = 0;
+            catchExceptionForTest(current_exception(), bSupressAnswer_back, GetCurrentLine());
         }
 
         // define the current command to be a flow control statement,

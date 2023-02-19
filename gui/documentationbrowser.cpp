@@ -136,14 +136,18 @@ void DocumentationBrowser::prepareToolbar(NumeReWindow* mainwindow)
     tb->SetBackgroundColour(*wxWHITE);
 
     // Fill the tool bar with tools
-    tb->AddTool(ID_HELP_HOME, _guilang.get("GUI_TB_DOCBROWSER_HOME"), mainwindow->getToolbarIcon("home"), _guilang.get("GUI_TB_DOCBROWSER_HOME"));
-    tb->AddTool(ID_HELP_INDEX, _guilang.get("GUI_TB_DOCBROWSER_INDEX"), mainwindow->getToolbarIcon("index"), _guilang.get("GUI_TB_DOCBROWSER_INDEX"));
+    tb->AddTool(ID_HELP_HOME, _guilang.get("GUI_TB_DOCBROWSER_HOME"), mainwindow->getToolbarIcon("home"),
+                _guilang.get("GUI_TB_DOCBROWSER_HOME"));
+    tb->AddTool(ID_HELP_INDEX, _guilang.get("GUI_TB_DOCBROWSER_INDEX"), mainwindow->getToolbarIcon("index"),
+                _guilang.get("GUI_TB_DOCBROWSER_INDEX"));
     tb->AddSeparator();
-    tb->AddTool(ID_HELP_GO_BACK, _guilang.get("GUI_TB_DOCBROWSER_BACK"), mainwindow->getToolbarIcon("back"), _guilang.get("GUI_TB_DOCBROWSER_BACK"));
-    tb->AddTool(ID_HELP_GO_FORWARD, _guilang.get("GUI_TB_DOCBROWSER_FORWARD"), mainwindow->getToolbarIcon("forward"), _guilang.get("GUI_TB_DOCBROWSER_FORWARD"));
+    tb->AddTool(ID_HELP_GO_BACK, _guilang.get("GUI_TB_DOCBROWSER_BACK"), mainwindow->getToolbarIcon("back"),
+                _guilang.get("GUI_TB_DOCBROWSER_BACK"));
+    tb->AddTool(ID_HELP_GO_FORWARD, _guilang.get("GUI_TB_DOCBROWSER_FORWARD"), mainwindow->getToolbarIcon("forward"),
+                _guilang.get("GUI_TB_DOCBROWSER_FORWARD"));
     tb->AddSeparator();
-    tb->AddTool(ID_HELP_PRINT, _guilang.get("GUI_TB_DOCBROWSER_PRINT"), mainwindow->getToolbarIcon("print"), _guilang.get("GUI_TB_DOCBROWSER_PRINT"));
-//    tb->AddTool(ID_HELP_HOME, _guilang.get("GUI_TB_DOCBROWSER_FORWARD"), wxArtProvider::GetBitmap(wxART_GO_FORWARD, wxART_TOOLBAR));
+    tb->AddTool(ID_HELP_PRINT, _guilang.get("GUI_TB_DOCBROWSER_PRINT"), mainwindow->getToolbarIcon("print"),
+                _guilang.get("GUI_TB_DOCBROWSER_PRINT"));
 
     // Display the toolbar
     tb->Realize();
