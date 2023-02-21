@@ -377,7 +377,7 @@ namespace NumeRe
         if (j >= vTableData.size())
             return false;
 
-        return convert_if_needed(vTableData[j], j, _type);
+        return convert_if_needed(vTableData[j], j, _type, true);
     }
 
 

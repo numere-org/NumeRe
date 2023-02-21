@@ -252,6 +252,7 @@ namespace NumeRe
         {
             size_t nStartPos = nStartPosition;
             size_t nEndPos = nEndPosition;
+            bool isMultArgFunc = false;
             // Handle multi-argument functions
             if (parser_CheckMultArgFunc(sLine.substr(0, nStartPosition), sLine.substr(nEndPosition + 1)))
             {
@@ -260,6 +261,7 @@ namespace NumeRe
                 else
                     nStartPos -= 4;
 
+                isMultArgFunc = true;
                 nEndPos++;
             }
 
@@ -287,7 +289,7 @@ namespace NumeRe
 
                 // Get the data and parse string expressions
                 replaceDataEntities(sData, sOccurence, _data, _parser, _option,
-                                    REPLACE_NAN | (nStartPos && (sLine[nStartPos-1] == '#' || sLine[nStartPos-1] == '~') ? INSERT_STRINGS : 0));
+                                    REPLACE_NAN | (!isMultArgFunc && nStartPos && (sLine[nStartPos-1] == '#' || sLine[nStartPos-1] == '~') ? INSERT_STRINGS : 0));
             }
 
             // Strip the spaces, which have been added during the
@@ -311,7 +313,6 @@ namespace NumeRe
             //    sData = strRes.vResult.front();
 
             sLine = sLine.substr(0, nStartPos) + sData + sLine.substr(nEndPos + 1);
-
             nStartPosition = nStartPos+1;
         }
 

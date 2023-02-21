@@ -1309,7 +1309,7 @@ std::string fromSystemCodePage(std::string sOutput)
 
 /////////////////////////////////////////////////
 /// \brief Transforms a UTF8 encoded string into
-/// a standard ASCII string in the internal code
+/// a Win CP1252 string in the internal code
 /// page representation.
 ///
 /// \param sString const std::string&
@@ -1318,59 +1318,145 @@ std::string fromSystemCodePage(std::string sOutput)
 /////////////////////////////////////////////////
 std::string utf8parser(const std::string& sString)
 {
-    std::string sReturn = sString;
-    if (sReturn.length() < 2)
-        return sReturn;
+    // Static declaration of constant
+	static const unsigned char NONANSIBITMASK = 128;
+    std::string sWinCp = sString;
 
-    // Go through the complete string
-    for (unsigned int i = 0; i < sReturn.length() - 1; i++)
+    for (size_t i = 0; i < sWinCp.length(); i++)
     {
-        // UTF-8 encoded characters are more than one byte in length
-        if (sReturn[i] == (char)195)
+        if (sWinCp[i] & NONANSIBITMASK)
         {
-            if (sReturn[i + 1] == (char)132) //Ä
+            if (sWinCp[i] == (char)0xC2)
             {
-                sReturn.erase(i, 1);
-                sReturn[i] = (char)142;
+                // Regl. ANSI > 127
+                sWinCp.erase(i, 1);
             }
-            else if (sReturn[i + 1] == (char)164) //ä
+            else if (sWinCp[i] == (char)0xE2 && sWinCp.length() > i+2)
             {
-                sReturn.erase(i, 1);
-                sReturn[i] = (char)132;
+                // These are the about 20 characters, which have other
+                // code points in Win-CP1252 and unicode
+                // U+20.. and U+21..
+
+                // Trademark symbol
+                if (sWinCp[i+1] == (char)0x84 && (sWinCp[i+2] & ~(char)0xC0) == (char)0x22)
+                {
+                    sWinCp.erase(i, 2);
+                    sWinCp[i] = (char)0x99;
+                    continue;
+                }
+
+                // All other cases
+                char sChar = sWinCp[i+2] & ~(char)0xC0;
+                sChar += (sWinCp[i+1] & (char)0x3) << 6;
+                sWinCp.erase(i, 2);
+
+                // Switch as lookup table
+                switch (sChar)
+                {
+                    case (char)0xAC:
+                        sWinCp[i] = (char)0x80;
+                        break;
+                    case (char)0x1A:
+                        sWinCp[i] = (char)0x82;
+                        break;
+                    case (char)0x1E:
+                        sWinCp[i] = (char)0x84;
+                        break;
+                    case (char)0x26:
+                        sWinCp[i] = (char)0x85;
+                        break;
+                    case (char)0x20:
+                        sWinCp[i] = (char)0x86;
+                        break;
+                    case (char)0x21:
+                        sWinCp[i] = (char)0x87;
+                        break;
+                    case (char)0x30:
+                        sWinCp[i] = (char)0x89;
+                        break;
+                    case (char)0x39:
+                        sWinCp[i] = (char)0x8B;
+                        break;
+                    case (char)0x18:
+                        sWinCp[i] = (char)0x91;
+                        break;
+                    case (char)0x19:
+                        sWinCp[i] = (char)0x92;
+                        break;
+                    case (char)0x1C:
+                        sWinCp[i] = (char)0x93;
+                        break;
+                    case (char)0x1D:
+                        sWinCp[i] = (char)0x94;
+                        break;
+                    case (char)0x22:
+                        sWinCp[i] = (char)0x95;
+                        break;
+                    case (char)0x13:
+                        sWinCp[i] = (char)0x96;
+                        break;
+                    case (char)0x14:
+                        sWinCp[i] = (char)0x97;
+                        break;
+                    case (char)0x3A:
+                        sWinCp[i] = (char)0x9B;
+                        break;
+                }
             }
-            else if (sReturn[i + 1] == (char)150) //Ö
+            else if (sWinCp[i] >= (char)0xC4 && sWinCp[i] <= (char)0xCB)
             {
-                sReturn.erase(i, 1);
-                sReturn[i] = (char)153;
+                // These are the about 20 characters, which have other
+                // code points in Win-CP1252 and unicode
+                // U+01.. and U+02..
+                char sChar = sWinCp[i+1] & ~(char)0xC0;
+                sChar += (sWinCp[i] & (char)0x3) << 6;
+                sWinCp.erase(i, 1);
+
+                // Switch as lookup table
+                switch (sChar)
+                {
+                    case (char)0x92:
+                        sWinCp[i] = (char)0x83;
+                        break;
+                    case (char)0xC6:
+                        sWinCp[i] = (char)0x88;
+                        break;
+                    case (char)0x60:
+                        sWinCp[i] = (char)0x8A;
+                        break;
+                    case (char)0x52:
+                        sWinCp[i] = (char)0x8C;
+                        break;
+                    case (char)0x7D:
+                        sWinCp[i] = (char)0x8E;
+                        break;
+                    case (char)0x7E:
+                        sWinCp[i] = (char)0x9E;
+                        break;
+                    case (char)0x78:
+                        sWinCp[i] = (char)0x9F;
+                        break;
+                    case (char)0xDC:
+                        sWinCp[i] = (char)0x98;
+                        break;
+                    case (char)0x61:
+                        sWinCp[i] = (char)0x9A;
+                        break;
+                    case (char)0x53:
+                        sWinCp[i] = (char)0x9C;
+                        break;
+                }
             }
-            else if (sReturn[i + 1] == (char)182) //ö
+            else if (sWinCp[i] == (char)0xC3)
             {
-                sReturn.erase(i, 1);
-                sReturn[i] = (char)148;
+                // Regl. ANSI > 127
+                sWinCp.erase(i, 1);
+                sWinCp[i] += 64;
             }
-            else if (sReturn[i + 1] == (char)156) //Ü
-            {
-                sReturn.erase(i, 1);
-                sReturn[i] = (char)154;
-            }
-            else if (sReturn[i + 1] == (char)188) //ü
-            {
-                sReturn.erase(i, 1);
-                sReturn[i] = (char)129;
-            }
-            else if (sReturn[i + 1] == (char)159) //ß
-            {
-                sReturn.erase(i, 1);
-                sReturn[i] = (char)225;
-            }
-        }
-        if (sReturn[i] == (char)194 && sReturn[i + 1] == (char)176)
-        {
-            sReturn.erase(i, 1);
-            sReturn[i] = (char)248;
         }
     }
-    return sReturn;
+
+    return sWinCp;
 }
 
 

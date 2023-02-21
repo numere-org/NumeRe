@@ -2328,10 +2328,11 @@ void convert_if_empty(TblColPtr& col, size_t colNo, TableColumn::ColumnType type
 /// \param col TblColPtr&
 /// \param colNo size_t
 /// \param type TableColumn::ColumnType
+/// \param convertSimilarTypes bool
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool convert_if_needed(TblColPtr& col, size_t colNo, TableColumn::ColumnType type)
+bool convert_if_needed(TblColPtr& col, size_t colNo, TableColumn::ColumnType type, bool convertSimilarTypes)
 {
     if (!col || (!col->size() && col->m_type != type))
     {
@@ -2339,9 +2340,13 @@ bool convert_if_needed(TblColPtr& col, size_t colNo, TableColumn::ColumnType typ
         return true;
     }
 
-    if (col->m_type == type
-        || (type == TableColumn::TYPE_CATEGORICAL && col->m_type == TableColumn::TYPE_STRING)
-        || (type == TableColumn::TYPE_STRING && col->m_type == TableColumn::TYPE_CATEGORICAL))
+    if (col->m_type == type)
+        return true;
+
+    bool isSimilar = (type == TableColumn::TYPE_CATEGORICAL && col->m_type == TableColumn::TYPE_STRING)
+                      || (type == TableColumn::TYPE_STRING && col->m_type == TableColumn::TYPE_CATEGORICAL);
+
+    if (!convertSimilarTypes && isSimilar)
         return true;
 
     TableColumn* convertedCol = col->convert(type);

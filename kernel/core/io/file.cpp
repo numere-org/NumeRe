@@ -4002,8 +4002,8 @@ namespace NumeRe
         long long int nExcelLines = 0;
         long long int nExcelCols = 0;
         long long int nOffset = 0;
-        int nLine = 0, nCol = 0;
-        int nLinemin = 0, nLinemax = 0;
+        int nRow = 0, nCol = 0;
+        int nRowmin = 0, nRowmax = 0;
         int nColmin = 0, nColmax = 0;
         bool bBreakSignal = false;
 
@@ -4074,12 +4074,23 @@ namespace NumeRe
             // Get the dimensions of the current sheet
             _element = _sheet.FirstChildElement()->FirstChildElement("dimension");
             sCellLocation = _element->Attribute("ref");
-            int nLinemin = 0, nLinemax = 0;
-            int nColmin = 0, nColmax = 0;
 
             // Take care of comment lines => todo
-            evalIndices(sCellLocation.substr(0, sCellLocation.find(':')), nLinemin, nColmin);
-            evalIndices(sCellLocation.substr(sCellLocation.find(':') + 1), nLinemax, nColmax);
+            evalIndices(sCellLocation.substr(0, sCellLocation.find(':')), nRowmin, nColmin);
+            evalIndices(sCellLocation.substr(sCellLocation.find(':') + 1), nRowmax, nColmax);
+            tinyxml2::XMLElement* cols = _sheet.FirstChildElement()->FirstChildElement("cols");
+
+            if (cols && cols->FirstChildElement())
+            {
+                cols = cols->FirstChildElement();
+
+                do
+                {
+                    if (cols->IntAttribute("max") > nColmax+1)
+                        nColmax = cols->IntAttribute("max")-1;
+
+                } while ((cols = cols->NextSiblingElement()));
+            }
 
             vCommentLines.push_back(0);
 
@@ -4095,10 +4106,22 @@ namespace NumeRe
             do
             {
                 // Find the next cell
+                int currentRow = _node->ToElement()->IntAttribute("r");
                 _element = _node->ToElement()->FirstChildElement("c");
+
+                // Row does not contain any cells
+                if (!_element)
+                {
+                    vCommentLines[i] = currentRow;
+                    continue;
+                }
+
+                size_t cellCount = 0;
 
                 do
                 {
+                    cellCount++;
+
                     if (_element->Attribute("t"))
                     {
                         // If the attribute signalizes a
@@ -4109,7 +4132,7 @@ namespace NumeRe
                             break;
                         }
                     }
-                    else
+                    else if (_element->FirstChildElement()) // Ensure that the cell is not empty
                     {
                         bBreakSignal = true;
                         break;
@@ -4117,9 +4140,12 @@ namespace NumeRe
                 }
                 while ((_element = _element->NextSiblingElement()));
 
+                // Only use the first row as headline candidates
                 if (!bBreakSignal)
-                    vCommentLines[i]++;
-                else
+                    vCommentLines[i] = currentRow;
+
+                // Search for the first nearly complete line of strings
+                if (bBreakSignal || 4/3.0 * cellCount >= nColmax-nColmin+1)
                     break;
             }
             while ((_node = _node->NextSibling()));
@@ -4129,12 +4155,14 @@ namespace NumeRe
             // Calculate the maximal number of needed
             // rows to store all sheets next to each
             // other
-            if (nExcelLines < nLinemax-nLinemin+1-vCommentLines[i])
-                nExcelLines = nLinemax-nLinemin+1-vCommentLines[i];
+            if (nExcelLines < nRowmax-nRowmin+1-vCommentLines[i])
+                nExcelLines = nRowmax-nRowmin+1-vCommentLines[i];
 
             // Add the number of columns to the total
             // number of columns
             nExcelCols += nColmax-nColmin+1;
+
+            g_logger.info("headlines=" + toString(vCommentLines[i]));
         }
 
         // Set the dimensions of the final table
@@ -4177,8 +4205,22 @@ namespace NumeRe
 
             // Extract the target indices
             sCellLocation = _element->Attribute("ref");
-            evalIndices(sCellLocation.substr(0, sCellLocation.find(':')), nLinemin, nColmin);
-            evalIndices(sCellLocation.substr(sCellLocation.find(':')+1), nLinemax, nColmax);
+            evalIndices(sCellLocation.substr(0, sCellLocation.find(':')), nRowmin, nColmin);
+            evalIndices(sCellLocation.substr(sCellLocation.find(':')+1), nRowmax, nColmax);
+
+            tinyxml2::XMLElement* cols = _sheet.FirstChildElement()->FirstChildElement("cols");
+
+            if (cols && cols->FirstChildElement())
+            {
+                cols = cols->FirstChildElement();
+
+                do
+                {
+                    if (cols->IntAttribute("max") > nColmax+1)
+                        nColmax = cols->IntAttribute("max")-1;
+
+                } while ((cols = cols->NextSiblingElement()));
+            }
 
             // Go through each cell and store its
             // value at the correct position in the
@@ -4189,6 +4231,7 @@ namespace NumeRe
             {
                 _element = _node->ToElement()->FirstChildElement("c");
 
+                // Does not contain any cells
                 if (!_element)
                     continue;
 
@@ -4197,57 +4240,54 @@ namespace NumeRe
                 do
                 {
                     sCellLocation = _element->Attribute("r");
-                    evalIndices(sCellLocation, nLine, nCol);
+                    evalIndices(sCellLocation, nRow, nCol);
                     nCol -= nColmin;
-                    nLine -= nLinemin;
+                    nRow -= nRowmin;
 
-                    if (nCol+nOffset >= nCols || nLine-vCommentLines[i] >= nRows)
+                    if (nCol+nOffset >= nCols)
                         continue;
 
                     // catch textual cells and store them
                     // in the corresponding table column
                     // head
-                    if (_element->Attribute("t"))
+                    if (_element->Attribute("t") && _element->Attribute("t") == string("s"))
                     {
-                        if (_element->Attribute("t") == string("s"))
+                        //Handle text
+                        int nPos = 0;
+                        _element->FirstChildElement("v")->QueryIntText(&nPos);
+                        _stringelement = _strings.FirstChildElement()->FirstChildElement("si");
+
+                        for (int k = 1; k <= nPos; k++)
                         {
-                            //Handle text
-                            int nPos = 0;
-                            _element->FirstChildElement("v")->QueryIntText(&nPos);
-                            _stringelement = _strings.FirstChildElement()->FirstChildElement("si");
-
-                            for (int k = 1; k <= nPos; k++)
-                            {
-                                _stringelement = _stringelement->NextSiblingElement();
-                            }
-
-                            if (_stringelement->FirstChildElement()->FirstChild())
-                                sEntry = utf8parser(_stringelement->FirstChildElement()->FirstChild()->ToText()->Value());
-                            else
-                                sEntry.clear();
-
-                            // If the string is not empty, then
-                            // we'll add it to the correct table
-                            // column head
-                            if (sEntry.length())
-                            {
-                                if (nLine - vCommentLines[i] < 0)
-                                {
-                                    if (!fileData->at(nCol+nOffset)->m_sHeadLine.length())
-                                        fileData->at(nCol+nOffset)->m_sHeadLine = sEntry;
-                                    else if (fileData->at(nCol+nOffset)->m_sHeadLine != sEntry)
-                                        fileData->at(nCol+nOffset)->m_sHeadLine += "\n" + sEntry;
-                                }
-                                else
-                                    fileData->at(nCol+nOffset)->setValue(nLine-vCommentLines[i], sEntry);
-                            }
-
-                            continue;
+                            _stringelement = _stringelement->NextSiblingElement();
                         }
+
+                        if (_stringelement->FirstChildElement()->FirstChild())
+                            sEntry = utf8parser(_stringelement->FirstChildElement()->FirstChild()->ToText()->Value());
+                        else
+                            sEntry.clear();
+
+                        // If the string is not empty, then
+                        // we'll add it to the correct table
+                        // column head
+                        if (sEntry.length())
+                        {
+                            if (nRow - vCommentLines[i] < 0)
+                            {
+                                if (!fileData->at(nCol+nOffset)->m_sHeadLine.length())
+                                    fileData->at(nCol+nOffset)->m_sHeadLine = sEntry;
+                                else if (fileData->at(nCol+nOffset)->m_sHeadLine != sEntry)
+                                    fileData->at(nCol+nOffset)->m_sHeadLine += "\n" + sEntry;
+                            }
+                            else
+                                fileData->at(nCol+nOffset)->setValue(nRow-vCommentLines[i], sEntry);
+                        }
+
+                        continue;
                     }
                     else if (_element->FirstChildElement("v"))
                     {
-                        fileData->at(nCol+nOffset)->setValue(nLine-vCommentLines[i], _element->FirstChildElement("v")->GetText());
+                        fileData->at(nCol+nOffset)->setValue(nRow-vCommentLines[i], utf8parser(_element->FirstChildElement("v")->GetText()));
                     }
                 }
                 while ((_element = _element->NextSiblingElement()));

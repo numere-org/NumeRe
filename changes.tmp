@@ -79,3 +79,4 @@ Updated	Toolbar icons have been changed and can now be customized. Three styles 
 Added	Added various distribution functions (Laplace, Cauchy, Rayleigh, Landau, Levy (alpha stable), Fisher F, Student T), each with a random variant generator, cdf and inverse cdf values (p and q).
 Updated	The "help" command and the documentation browser have been improved and may now display function and procedure documentations as well.
 Fixed	Function definitions in procedures using local variables as arguments are now possible.
+Fixed	Resolved a critical issue in the loading of XLSX files and further improved the UTF-9/WinCP1252 compatibility.
