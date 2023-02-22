@@ -1084,7 +1084,7 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const std::string& sCommand)
             {
                 print(toUpperCase(_lang.get("ERR_PROCESS_CANCELLED_HEAD")));
                 make_hline();
-                print(_lang.get("ERR_NR_3200_0_PROCESS_ABORTED_BY_USER"));
+                print(LineBreak(_lang.get("ERR_NR_3200_0_PROCESS_ABORTED_BY_USER"), _option, false, 4));
                 g_logger.warning("Process was cancelled by user");
             }
             else

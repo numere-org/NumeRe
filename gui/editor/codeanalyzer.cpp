@@ -1274,6 +1274,7 @@ AnnotationCount CodeAnalyzer::analyseFunctions(bool isContinuedLine)
              && sSyntaxElement != "version()"
              && sSyntaxElement != "getlasterror()"
              && sSyntaxElement != "getversioninfo()"
+             && sSyntaxElement != "landau_rd()"
              && sSyntaxElement.find('(') != string::npos)
     {
         // Check for missing arguments

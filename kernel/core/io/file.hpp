@@ -1789,7 +1789,6 @@ namespace NumeRe
     {
         private:
             void readFile();
-            std::string expandLine(const std::string& sLine);
 
         public:
             OpenDocumentSpreadSheet(const std::string& filename);

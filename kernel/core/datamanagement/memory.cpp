@@ -3418,7 +3418,7 @@ mu::value_type Memory::getCovariance(size_t col1, const VectorIndex& _vIndex1, s
         vCov += (readMem(_vIndex1[i], col1) - vAvg1) * (readMem(_vIndex2[i], col2) - vAvg2);
     }
 
-    return vCov;
+    return vCov / (minSize-1.0);
 }
 
 
@@ -3442,7 +3442,7 @@ mu::value_type Memory::getPearsonCorr(size_t col1, const VectorIndex& _vIndex1, 
     size_t minSize = std::min(_vIndex1.size(), _vIndex2.size());
 
     return getCovariance(col1, _vIndex1, col2, _vIndex2)
-        / ((minSize-1.0) * std(_vIndex1.subidx(0, minSize), VectorIndex(col1)) * std(_vIndex2.subidx(0, minSize), VectorIndex(col2)));
+        / (std(_vIndex1.subidx(0, minSize), VectorIndex(col1)) * std(_vIndex2.subidx(0, minSize), VectorIndex(col2)));
 }
 
 

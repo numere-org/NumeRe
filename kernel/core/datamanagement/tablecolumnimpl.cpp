@@ -972,7 +972,8 @@ LogicalColumn* LogicalColumn::copy(const VectorIndex& idx) const
 
     for (size_t i = 0; i < idx.size(); i++)
     {
-        col->m_data[i] = m_data[i];
+        if (idx[i] >= 0 && idx[i] < (int)m_data.size())
+            col->m_data[i] = m_data[idx[i]];
     }
 
     return col;

@@ -3349,12 +3349,7 @@ namespace NumeRe
     /////////////////////////////////////////////////
     void OpenDocumentSpreadSheet::readFile()
     {
-        string sODS = "";
-        string sODS_substr = "";
-        vector<string> vTables;
-        vector<string> vMatrix;
-        long long int nCommentLines = 0;
-        long long int nMaxCols = 0;
+        std::string sODS;
 
         // Get the contents of the embedded
         // XML file
@@ -3365,334 +3360,172 @@ namespace NumeRe
         if (!sODS.length())
             throw SyntaxError(SyntaxError::CANNOT_READ_FILE, sFileName, SyntaxError::invalid_position, sFileName);
 
-        // Remove the obsolete beginning of
-        // the file, which we don't need
-        sODS.erase(0, sODS.find("<office:spreadsheet>"));
+        // Parse the XML file
+        tinyxml2::XMLDocument odsDocument;
+        odsDocument.Parse(sODS.c_str());
 
-        // Ensure again that the file is not empty
-        if (!sODS.length())
+        // Ensure again that the file is not empty and that
+        // the necessary elements are present
+        if (!odsDocument.FirstChildElement()
+            || !odsDocument.FirstChildElement()->FirstChildElement("office:body")
+            || !odsDocument.FirstChildElement()->FirstChildElement("office:body")->FirstChildElement()
+            || !odsDocument.FirstChildElement()->FirstChildElement("office:body")->FirstChildElement()->FirstChildElement("table:table"))
             throw SyntaxError(SyntaxError::CANNOT_READ_FILE, sFileName, SyntaxError::invalid_position, sFileName);
 
-        // Remove the part until the first table
-        sODS.erase(0, sODS.find("<table:table "));
+        std::vector<size_t> vTableSizes;
+        std::vector<size_t> vCommentRows;
 
-        // Extract the different tables from the
-        // whole string and store them in different
-        // vector components
-        while (sODS.size() && sODS.find("<table:table ") != string::npos && sODS.find("</table:table>") != string::npos)
+        // Get the contained table section
+        tinyxml2::XMLElement* table = odsDocument.FirstChildElement()->FirstChildElement("office:body")
+                                                                     ->FirstChildElement()
+                                                                     ->FirstChildElement("table:table");
+
+        // Find the column count of every table as well as the needed number of
+        // table head lines
+        do
         {
-            vTables.push_back(sODS.substr(sODS.find("<table:table "), sODS.find("</table:table>")+14-sODS.find("<table:table ")));
-            sODS.erase(sODS.find("<table:table "), sODS.find("</table:table>")+14-sODS.find("<table:table "));
-        }
+            tinyxml2::XMLElement* row = table->FirstChildElement("table:table-row");
+            vTableSizes.push_back(0);
+            vCommentRows.push_back(0);
+            bool isString = true;
+
+            // Read every row
+            while (row)
+            {
+                tinyxml2::XMLElement* cell = row->FirstChildElement();
+                size_t cellcount = 0;
+
+                // Examine each cell
+                while (cell)
+                {
+                    // Interpret the repeating statement only if this is not the last cell
+                    // in this row
+                    if (cell->NextSiblingElement())
+                        cellcount += cell->IntAttribute("table:number-columns-repeated", 1);
+                    else
+                        cellcount++;
+
+                    if (!(cell->Attribute("office:value-type", "string")
+                        || cell->Attribute("table:number-columns-repeated")
+                        || !cell->FirstChildElement()))
+                        isString = false;
+
+                    cell = cell->NextSiblingElement();
+                }
+
+                // Count comment rows
+                if (isString)
+                    vCommentRows.back()++;
+
+                // Use the maximal number of cells
+                if (cellcount > vTableSizes.back())
+                    vTableSizes.back() = cellcount;
+
+                row = row->NextSiblingElement("table:table-row");
+            }
+        } while ((table = table->NextSiblingElement("table:table")));
+
+        // Find the total amount of needed columns
+        nCols = std::accumulate(vTableSizes.begin(), vTableSizes.end(), 0);
 
         // Ensure that we found at least a single
-        // table
-        if (!vTables.size())
+        // column
+        if (!nCols)
             throw SyntaxError(SyntaxError::CANNOT_READ_FILE, sFileName, SyntaxError::invalid_position, sFileName);
 
-        // Decode all tables and store them next
-        // to each other in the vMatrix vector
-        // variable
-        for (unsigned int i = 0; i < vTables.size(); i++)
-        {
-            unsigned int nPos = 0;
-            unsigned int nCount = 0;
-            long long int _nCols = 0;
-            string sLine = "";
-
-            // This section decodes a single table and stores
-            // the lines in the vMatrix vector variable. If
-            // this is not the first table, then the lines
-            // are appended to the already existing ones
-            while (vTables[i].find("<table:table-row ", nPos) != string::npos && vTables[i].find("</table:table-row>", nPos) != string::npos)
-            {
-                // Extract the next line from the current
-                // table and expand the line
-                nPos = vTables[i].find("<table:table-row ", nPos);
-                sLine = vTables[i].substr(nPos, vTables[i].find("</table:table-row>", nPos)+18-nPos);
-                sLine = expandLine(sLine);
-
-                // If the line is not empty, store it
-                // at the corresponding line in the vMatrix
-                // variable
-                if (sLine.length())
-                {
-                    if (!i) // first table
-                        vMatrix.push_back(sLine);
-                    else
-                    {
-                        // Extent the number if rows with
-                        // empty cells, if the following tables
-                        // contain more rows
-                        if (vMatrix.size() <= nCount)
-                        {
-                            vMatrix.push_back("<>");
-
-                            for (long long int n = 1; n < nMaxCols; n++)
-                                vMatrix[nCount] += "<>";
-
-                            vMatrix[nCount] += sLine;
-                        }
-                        else
-                            vMatrix[nCount] += sLine;
-
-                        nCount++;
-                    }
-                }
-
-                nPos++;
-            }
-
-            // Determine the current number of columns,
-            // which are contained in the vMatrix variable
-            // up to now
-            for (unsigned int j = 0; j < vMatrix.size(); j++)
-            {
-                _nCols = 0;
-
-                // Each opening left angle brace corresponds
-                // to a single cell
-                for (unsigned int n = 0; n < vMatrix[j].length(); n++)
-                {
-                    if (vMatrix[j][n] == '<')
-                        _nCols++;
-                }
-
-                if (_nCols > nMaxCols)
-                    nMaxCols = _nCols;
-            }
-
-            // Append empty cells to matrix rows, if their
-            // number of columns is not sufficient to resemble
-            // a full rectangle matrix
-            for (unsigned int j = 0; j < vMatrix.size(); j++)
-            {
-                _nCols = 0;
-
-                // Each opening left angle brace corresponds
-                // to a single cell
-                for (unsigned int n = 0; n < vMatrix[j].length(); n++)
-                {
-                    if (vMatrix[j][n] == '<')
-                        _nCols++;
-                }
-
-                if (_nCols < nMaxCols)
-                {
-                    for (long long int k = _nCols; k < nMaxCols; k++)
-                        vMatrix[j] += "<>";
-                }
-            }
-        }
-
-        // Replace all whitespaces in the matrix
-        // with underscores
-        for (unsigned int i = 0; i < vMatrix.size(); i++)
-        {
-            while (vMatrix[i].find(' ') != string::npos)
-                vMatrix[i].replace(vMatrix[i].find(' '), 1, "_");
-        }
-
-        // Ensure that the matrix is not empty
-        if (!vMatrix.size() || !nMaxCols)
-            throw SyntaxError(SyntaxError::CANNOT_READ_FILE, sFileName, SyntaxError::invalid_position, sFileName);
-
-        // Try to detect the number of (pure)
-        // text lines in the matrix. Those will be
-        // used as table column heads. If a single
-        // cell is numeric, we do not use this row
-        // as a text line
-        for (unsigned int i = 0; i < vMatrix.size(); i++)
-        {
-            bool bBreak = false;
-
-            for (unsigned int j = 0; j < vMatrix[i].length(); j++)
-            {
-                // Only examine non-empty cells
-                if (vMatrix[i][j] == '<' && vMatrix[i][j+1] != '>')
-                {
-                    // If this cell is numeric, leave the
-                    // whole loop
-                    if (isNumeric(vMatrix[i].substr(j+1, vMatrix[i].find('>',j)-j-1)))
-                    {
-                        bBreak = true;
-                        break;
-                    }
-                }
-
-                if (j == vMatrix[i].length()-1)
-                    nCommentLines++;
-            }
-
-            if (bBreak)
-                break;
-        }
-
-        // Set the dimensions of the final table
-        // and create the internal storage
-        nRows = vMatrix.size() - nCommentLines;
-        nCols = nMaxCols;
+        // Prepare the table column array and create string columns
         createStorage();
 
-        // We first create a string-only table and try to
-        // convert them afterwards
-        for (long long int j = 0; j < nCols; j++)
+        for (long long int i = 0; i < nCols; i++)
+            fileData->at(i).reset(new StringColumn);
+
+        // Return to the first table
+        table = odsDocument.FirstChildElement()->FirstChildElement("office:body")
+                                               ->FirstChildElement()
+                                               ->FirstChildElement("table:table");
+
+        size_t nTableId = 0;
+        size_t nOffSet = 0;
+
+        // Read and parse every table in the file
+        do
         {
-            fileData->at(j).reset(new StringColumn);
-        }
+            tinyxml2::XMLElement* row = table->FirstChildElement("table:table-row");
+            size_t rowCount = 0;
 
-        unsigned int nPos = 0;
-
-        // Store the pure text lines as table
-        // column heads
-        for (long long int i = 0; i < nCommentLines; i++)
-        {
-            nPos = 0;
-
-            for (long long int j = 0; j < nCols; j++)
+            // Read every row
+            while (row)
             {
-                nPos = vMatrix[i].find('<', nPos);
-                string sEntry = utf8parser(vMatrix[i].substr(nPos,vMatrix[i].find('>', nPos)+1-nPos));
-                nPos++;
+                tinyxml2::XMLElement* cell = row->FirstChildElement();
+                int colCount = 0;
 
-                // Omit empty cells
-                if (sEntry == "<>")
-                    continue;
+                // Examine each cell
+                while (cell)
+                {
+                    // Does this row still belong to the previously identified
+                    // table headlines?
+                    if (vCommentRows[nTableId])
+                    {
+                        // Ensure that it contains the text element and write
+                        // that to the current columns headline
+                        if (cell->FirstChildElement("text:p"))
+                        {
+                            if (fileData->at(colCount + nOffSet)->m_sHeadLine.length())
+                                fileData->at(colCount + nOffSet)->m_sHeadLine += "\n";
 
-                // Remove the left and right angles
-                sEntry.erase(0, 1);
-                sEntry.pop_back();
+                            fileData->at(colCount + nOffSet)->m_sHeadLine += utf8parser(cell->FirstChildElement("text:p")->GetText());
+                        }
+                    }
+                    else
+                    {
+                        // Some data types need some special pre-processing
+                        if (cell->Attribute("office:value-type", "string"))
+                            fileData->at(colCount + nOffSet)->setValue(rowCount, utf8parser(cell->FirstChildElement()->GetText()));
+                        else if (cell->Attribute("office:value-type", "boolean"))
+                            fileData->at(colCount + nOffSet)->setValue(rowCount, cell->Attribute("office:boolean-value"));
+                        else if (cell->FirstChildElement("text:p"))
+                            fileData->at(colCount + nOffSet)->setValue(rowCount, cell->FirstChildElement("text:p")->GetText());
+                    }
 
-                if (!fileData->at(j)->m_sHeadLine.length())
-                    fileData->at(j)->m_sHeadLine = sEntry;
-                else if (fileData->at(j)->m_sHeadLine != sEntry)
-                    fileData->at(j)->m_sHeadLine += "\n" + sEntry;
+                    colCount += cell->IntAttribute("table:number-columns-repeated", 1);
+                    cell = cell->NextSiblingElement();
+                }
+
+                if (vCommentRows[nTableId])
+                    vCommentRows[nTableId]--;
+                else
+                    rowCount++;
+
+                row = row->NextSiblingElement("table:table-row");
             }
-        }
 
-        // Store the actual data in the internal
-        // storage. If we hit a text-only cell,
-        // then we'll append it to the corresponding
-        // table column head
-        for (long long int i = 0; i < nRows; i++)
+            nOffSet += vTableSizes[nTableId];
+            nTableId++;
+        } while ((table = table->NextSiblingElement("table:table")));
+
+        // Now calculate the total number of rows in this data set
+        for (TblColPtr& col : *fileData)
         {
-            nPos = 0;
-
-            for (long long int j = 0; j < nCols; j++)
-            {
-                nPos = vMatrix[i+nCommentLines].find('<', nPos);
-                string sEntry = utf8parser(vMatrix[i+nCommentLines].substr(nPos,vMatrix[i+nCommentLines].find('>', nPos)+1-nPos));
-                nPos++;
-
-                // Omit empty cells
-                if (sEntry == "<>")
-                    continue;
-
-                // Remove left and right angles
-                sEntry.erase(0, 1);
-                sEntry.pop_back();
-
-                // Write it as a string to the table
-                fileData->at(j)->setValue(i, sEntry);
-            }
+            nRows = col->size() > nRows ? col->size() : nRows;
         }
     }
 
 
+
     /////////////////////////////////////////////////
-    /// \brief This member function is used by the
-    /// readFile() member function to expand the XML-
-    /// based table row string into the intermediate
-    /// cell format. Compressed cells are extended
-    /// as well.
+    /// \brief Static helper function to convert
+    /// MS-Excel time values to the acutal UNIX epoch.
     ///
-    /// \param sLine const string&
-    /// \return string
+    /// \param sXlsTime std::string
+    /// \param isTimeVal bool
+    /// \return std::string
     ///
     /////////////////////////////////////////////////
-    string OpenDocumentSpreadSheet::expandLine(const string& sLine)
+    static std::string convertExcelTimeToEpoch(std::string sXlsTime, bool isTimeVal)
     {
-        string sExpandedLine = "";
-
-        for (unsigned int i = 0; i < sLine.length(); i++)
-        {
-            if (sLine.substr(i, 17) == "<table:table-cell")
-            {
-                if (sLine[sLine.find('>',i)-1] != '/')
-                {
-                    // Read the value of the current cell
-                    string sCellEntry = sLine.substr(i, sLine.find("</table:table-cell>", i)-i);
-
-                    // Extract the value into a simpler,
-                    // intermediate cell format: "<VALUE>"
-                    if (sCellEntry.find("office:value-type=") != string::npos && getArgAtPos(sCellEntry, sCellEntry.find("office:value-type=")+18) == "float")
-                        sExpandedLine += "<" + getArgAtPos(sCellEntry, sCellEntry.find("office:value=")+13) + ">";
-                    else if (sCellEntry.find("<text:p>") != string::npos)
-                        sExpandedLine += "<" + sCellEntry.substr(sCellEntry.find("<text:p>")+8, sCellEntry.find("</text:p>")-sCellEntry.find("<text:p>")-8) + ">";
-                }
-                else
-                {
-                    if (sLine.find("<table:table-cell", i+1) == string::npos && sLine.find("<table:covered-table-cell", i+1) == string::npos)
-                        break;
-
-                    if (sLine.substr(i, sLine.find('>',i)+1-i).find("table:number-columns-repeated=") != string::npos)
-                    {
-                        // If there are some empty cells,
-                        // which are compressed, then we
-                        // expand them here
-                        string sTemp = getArgAtPos(sLine, sLine.find("table:number-columns-repeated=", i)+30);
-
-                        if (sTemp.front() == '"')
-                            sTemp.erase(0, 1);
-
-                        if (sTemp.back() == '"')
-                            sTemp.pop_back();
-
-                        // Create the corresponding number
-                        // of empty cells
-                        for (int j = 0; j < StrToInt(sTemp); j++)
-                            sExpandedLine += "<>";
-                    }
-                    else
-                        sExpandedLine += "<>";
-                }
-            }
-            else if (sLine.substr(i,25) == "<table:covered-table-cell")
-            {
-                // If there are some empty cells,
-                // which are compressed, then we
-                // expand them here
-                string sTemp = getArgAtPos(sLine, sLine.find("table:number-columns-repeated=", i)+30);
-
-                if (sTemp.front() == '"')
-                    sTemp.erase(0, 1);
-
-                if (sTemp.back() == '"')
-                    sTemp.pop_back();
-
-                // Create the corresponding number
-                // of empty cells
-                for (int j = 0; j < StrToInt(sTemp); j++)
-                    sExpandedLine += "<>";
-            }
-        }
-
-        // Remove all trailing empty cells from the
-        // current line. If they are necessary to
-        // create a rectangular table, then they
-        // will be added again
-        if (sExpandedLine.length())
-        {
-            while (sExpandedLine.substr(sExpandedLine.length()-2) == "<>")
-            {
-                sExpandedLine.erase(sExpandedLine.length()-2);
-
-                if (!sExpandedLine.length() || sExpandedLine.length() < 2)
-                    break;
-            }
-        }
-
-        return sExpandedLine;
+        static const double epochOffset = to_double(StrToTime("1899-12-30"));
+        return toString(to_timePoint(StrToDb(sXlsTime)*24*3600 + (!isTimeVal)*epochOffset),
+                        GET_MILLISECONDS | GET_FULL_PRECISION | GET_UNBIASED_TIME | (isTimeVal)*GET_ONLY_TIME);
     }
 
 
@@ -4017,6 +3850,7 @@ namespace NumeRe
         tinyxml2::XMLDocument _workbook;
         tinyxml2::XMLDocument _sheet;
         tinyxml2::XMLDocument _strings;
+        tinyxml2::XMLDocument _styles;
         tinyxml2::XMLNode* _node;
         tinyxml2::XMLElement* _element;
         tinyxml2::XMLElement* _stringelement;
@@ -4075,11 +3909,13 @@ namespace NumeRe
             _element = _sheet.FirstChildElement()->FirstChildElement("dimension");
             sCellLocation = _element->Attribute("ref");
 
-            // Take care of comment lines => todo
+            // Determine the dimensions of this sheet
             evalIndices(sCellLocation.substr(0, sCellLocation.find(':')), nRowmin, nColmin);
             evalIndices(sCellLocation.substr(sCellLocation.find(':') + 1), nRowmax, nColmax);
             tinyxml2::XMLElement* cols = _sheet.FirstChildElement()->FirstChildElement("cols");
 
+            // We use the columns identifiers to check and probably
+            // update the necessary columns
             if (cols && cols->FirstChildElement())
             {
                 cols = cols->FirstChildElement();
@@ -4185,6 +4021,9 @@ namespace NumeRe
         // XML file and parse it
         sStringsContent = getZipFileItem("xl/sharedStrings.xml");
         _strings.Parse(sStringsContent.c_str());
+        std::string sStylesContent = getZipFileItem("xl/styles.xml");
+        _styles.Parse(sStylesContent.c_str());
+        tinyxml2::XMLElement* cellXfs = _styles.FirstChildElement()->FirstChildElement("cellXfs");
 
         // Go through all sheets
         for (unsigned int i = 0; i < nSheets; i++)
@@ -4287,7 +4126,37 @@ namespace NumeRe
                     }
                     else if (_element->FirstChildElement("v"))
                     {
-                        fileData->at(nCol+nOffset)->setValue(nRow-vCommentLines[i], utf8parser(_element->FirstChildElement("v")->GetText()));
+                        std::string sValue = utf8parser(_element->FirstChildElement("v")->GetText());
+
+                        // Decode styles
+                        if (_element->Attribute("t") && _element->Attribute("t") == string("b"))
+                            sValue = sValue == "0" ? "false" : "true";
+                        else if (_element->Attribute("s") && cellXfs && cellXfs->FirstChildElement())
+                        {
+                            // Style ID
+                            int styleId = _element->IntAttribute("s");
+                            tinyxml2::XMLElement* style = cellXfs->FirstChildElement();
+
+                            // Find the correct style ID
+                            while (styleId && style)
+                            {
+                                style = style->NextSiblingElement();
+                                styleId--;
+                            }
+
+                            if (!styleId && style && style->Attribute("numFmtId"))
+                            {
+                                styleId = style->IntAttribute("numFmtId");
+
+                                // Those are time formats: 14-22, 45-47
+                                if ((styleId >= 14 && styleId <= 22) || (styleId >= 45 && styleId <= 47))
+                                    sValue = convertExcelTimeToEpoch(sValue, (styleId >= 18 && styleId <= 21)
+                                                                              || (styleId >= 45 && styleId >= 47));
+                            }
+                        }
+
+                        // Write the decoded string to the table column array
+                        fileData->at(nCol+nOffset)->setValue(nRow-vCommentLines[i], sValue);
                     }
                 }
                 while ((_element = _element->NextSiblingElement()));

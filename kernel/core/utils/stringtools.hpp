@@ -35,7 +35,8 @@ enum TIMESTAMP
     GET_AS_TIMESTAMP = 0x2,
     GET_WITH_TEXT = 0x4,
     GET_MILLISECONDS = 0x8,
-    GET_FULL_PRECISION = 0x10
+    GET_FULL_PRECISION = 0x10,
+    GET_UNBIASED_TIME = 0x20
 };
 
 enum ConvertibleType

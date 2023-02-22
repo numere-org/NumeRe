@@ -235,7 +235,7 @@ std::string toString(sys_time_point tp, int timeStampFlags)
         }
     }
 
-    if (timeStampFlags & GET_ONLY_TIME)
+    if (timeStampFlags & GET_ONLY_TIME && !(timeStampFlags & GET_UNBIASED_TIME))
         timeStream << std::setfill('0') << std::setw(2) << ltm.m_hours.count() + (tz.Bias + tz.DayLightBias).count()/60; 	// hh
     else
         timeStream << std::setfill('0') << std::setw(2) << ltm.m_hours.count(); 	// hh
