@@ -28,6 +28,8 @@ using namespace std;
 BEGIN_EVENT_TABLE(DependencyDialog, wxDialog)
     EVT_TREE_ITEM_ACTIVATED(-1, DependencyDialog::OnItemActivate)
     EVT_TREE_ITEM_RIGHT_CLICK(-1, DependencyDialog::OnItemRightClick)
+    EVT_TREE_SEL_CHANGED(-1, DependencyDialog::OnItemSelected)
+    EVT_TREE_SEL_CHANGING(-1, DependencyDialog::OnItemSelected)
     EVT_MENU(ID_DEPENDENCYDIALOG_EXPORTDOT, DependencyDialog::OnMenuEvent)
     EVT_MENU(ID_DEPENDENCYDIALOG_FOLDALL, DependencyDialog::OnMenuEvent)
     EVT_MENU(ID_DEPENDENCYDIALOG_FOLDITEM, DependencyDialog::OnMenuEvent)
@@ -551,4 +553,28 @@ void DependencyDialog::OnMenuEvent(wxCommandEvent& event)
     }
 }
 
+
+/////////////////////////////////////////////////
+/// \brief This private member function handles
+/// highlighting all occurrences of an item
+/// selected in the dependency viewer
+///
+/// \param event wxTreeEvent&
+/// \return void
+///
+/////////////////////////////////////////////////
+void DependencyDialog::OnItemSelected(wxTreeEvent& event)
+{
+    wxTreeItemId currItem = m_dependencyTree->GetRootItem();
+    wxString NAME = m_dependencyTree->GetItemText(event.GetItem());
+
+    while ((currItem = m_dependencyTree->GetNext(currItem)).IsOk())
+    {
+        wxString helper = m_dependencyTree->GetItemText(currItem);
+        if (m_dependencyTree->GetItemText(currItem) == NAME)
+            m_dependencyTree->SetItemBackgroundColour(currItem, wxColour(192, 227, 248));
+        else
+            m_dependencyTree->SetItemBackgroundColour(currItem, *wxWHITE);
+    }
+}
 

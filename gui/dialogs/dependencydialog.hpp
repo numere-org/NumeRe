@@ -52,6 +52,7 @@ class DependencyDialog : public wxDialog
 
         void OnItemActivate(wxTreeEvent& event);
         void OnItemRightClick(wxTreeEvent& event);
+        void OnItemSelected(wxTreeEvent& event);
         void OnMenuEvent(wxCommandEvent& event);
 
     public:
