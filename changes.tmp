@@ -80,3 +80,6 @@ Added	Added various distribution functions (Laplace, Cauchy, Rayleigh, Landau, L
 Updated	The "help" command and the documentation browser have been improved and may now display function and procedure documentations as well.
 Fixed	Function definitions in procedures using local variables as arguments are now possible.
 Fixed	Resolved a critical issue in the loading of XLSX files and further improved the UTF-9/WinCP1252 compatibility.
+Fixed	If a line with a breakpoint gets commented out or is deleted, then the breakpoint will now be removed.
+Added	The dependency viewer now highlights all occurences of a procedure in the dependency tree.
+Fixed	A problem with pasting in the terminal, where parts of multi-line expressions were hidden, was resolved.

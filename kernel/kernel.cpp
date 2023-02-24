@@ -2494,7 +2494,9 @@ NumeReVariables NumeReKernel::getVariableList()
     // Gather all (global) numerical variables
     for (auto iter = varmap.begin(); iter != varmap.end(); ++iter)
     {
-        if ((iter->first).substr(0, 2) == "_~")
+        if ((iter->first).substr(0, 2) == "_~"
+            || iter->first == "ans"
+            || isDimensionVar(iter->first))
             continue;
 
         if ((*iter->second).imag() && !(isnan((*iter->second).real()) && isnan((*iter->second).imag())))
@@ -3551,7 +3553,9 @@ int NumeReKernel::evalDebuggerBreakPoint(const std::string& sCurrentCommand)
 
     for (auto iter : varmap)
     {
-        if (iter.first.substr(0, 2) != "_~")
+        if (iter.first.substr(0, 2) != "_~"
+            && iter.first != "ans"
+            && !isDimensionVar(iter.first))
             mLocalVars[iter.first] = std::make_pair(iter.first, iter.second);
     }
 

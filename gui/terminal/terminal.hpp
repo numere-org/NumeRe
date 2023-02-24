@@ -256,6 +256,7 @@ class NumeReTerminal : public wxWindow, public GenericTerminal, public wxThreadH
 		void copyText();
 		void pasteText();
 		void cutText();
+		void insertRawText(std::string sText);
 
 		// Text printing functions
 		virtual void DrawText(int fg_color, int bg_color, int flags, int x, int y, const std::string& sText) override;

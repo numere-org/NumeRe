@@ -404,6 +404,7 @@ bool NumeReEditor::SaveFile( const wxString& filename )
     // save edit in file and clear undo
     if (!filename.IsEmpty())
     {
+        m_terminal->clearBreakpoints(GetFileNameAndPath().ToStdString());
         m_simpleFileName = fn.GetFullName();
     }
 
@@ -4205,8 +4206,10 @@ void NumeReEditor::applyStrikeThrough()
 //////////////////////////////////////////////////////////////////////////////
 void NumeReEditor::SetFilename(wxFileName filename, bool fileIsRemote)
 {
+    m_terminal->clearBreakpoints(GetFileNameAndPath().ToStdString());
     m_bLastSavedRemotely = fileIsRemote;
     m_fileNameAndPath = filename;
+    SynchronizeBreakpoints();
 }
 
 
@@ -7349,7 +7352,7 @@ void NumeReEditor::ClearDblClkIndicator()
 /// if one clicks on the fold margin, and handles
 /// the breakpoints or the hidden lines markers.
 /////////////////////////////////////////////////
-void NumeReEditor::OnMarginClick( wxStyledTextEvent& event )
+void NumeReEditor::OnMarginClick(wxStyledTextEvent& event)
 {
     bool bCanUseBreakPoints = m_fileType == FILE_NSCR || m_fileType == FILE_NPRC;
     int position = event.GetPosition();
@@ -7407,31 +7410,18 @@ void NumeReEditor::OnMarginClick( wxStyledTextEvent& event )
 /// selected line is non-empty and not a comment-
 /// only line.
 /////////////////////////////////////////////////
-void NumeReEditor::AddBreakpoint( int linenum )
+void NumeReEditor::AddBreakpoint(int linenum)
 {
-    // Go through the line and ensure that this
-    // line actually contains executable code
-    for (int i = PositionFromLine(linenum); i < GetLineEndPosition(linenum); i++)
+    // Add a breakpoint, if it is allowed in this line
+    if (isBreakPointAllowed(linenum))
     {
-        // Check the current character
-        if (!isStyleType(STYLE_COMMENT_LINE, i)
-            && !isStyleType(STYLE_COMMENT_BLOCK, i)
-            && !isStyleType(STYLE_COMMENT_SECTION_LINE, i)
-            && !isStyleType(STYLE_COMMENT_SECTION_BLOCK, i)
-            && GetCharAt(i) != '\r'
-            && GetCharAt(i) != '\n'
-            && GetCharAt(i) != ' '
-            && GetCharAt(i) != '\t')
-        {
-            // Add the breakpoint marker
-            int markerNum = MarkerAdd(linenum, MARKER_BREAKPOINT);
+        // Add the breakpoint marker
+        int markerNum = MarkerAdd(linenum, MARKER_BREAKPOINT);
 
-            // Add the breakpoint to the internal
-            // logic
-            m_breakpoints.Add(markerNum);
-            m_terminal->addBreakpoint(GetFileNameAndPath().ToStdString(), linenum);
-            break;
-        }
+        // Add the breakpoint to the internal
+        // logic
+        m_breakpoints.Add(markerNum);
+        m_terminal->addBreakpoint(GetFileNameAndPath().ToStdString(), linenum);
     }
 }
 
@@ -7444,7 +7434,7 @@ void NumeReEditor::AddBreakpoint( int linenum )
 /// \return void
 ///
 /////////////////////////////////////////////////
-void NumeReEditor::RemoveBreakpoint( int linenum )
+void NumeReEditor::RemoveBreakpoint(int linenum)
 {
     // need to remove the marker handle from the array - use
     // LineFromHandle on debug start and clean up then
@@ -7472,9 +7462,44 @@ void NumeReEditor::SynchronizeBreakpoints()
     // Re-set the existing breakpoints
     while ((line = MarkerNext(line, 1 << MARKER_BREAKPOINT)) != -1)
     {
-        m_terminal->addBreakpoint(GetFileNameAndPath().ToStdString(), line);
+        if (isBreakPointAllowed(line))
+            m_terminal->addBreakpoint(GetFileNameAndPath().ToStdString(), line);
+        else
+            MarkerDelete(line, MARKER_BREAKPOINT);
+
         line++;
     }
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Check, whether a breakpoint is allowed
+/// in this line.
+///
+/// \param linenum int
+/// \return bool
+///
+/////////////////////////////////////////////////
+bool NumeReEditor::isBreakPointAllowed(int linenum)
+{
+    for (int i = PositionFromLine(linenum); i < GetLineEndPosition(linenum); i++)
+    {
+        // Check the current character
+        if (!isStyleType(STYLE_COMMENT_LINE, i)
+            && !isStyleType(STYLE_COMMENT_BLOCK, i)
+            && !isStyleType(STYLE_COMMENT_SECTION_LINE, i)
+            && !isStyleType(STYLE_COMMENT_SECTION_BLOCK, i)
+            && GetCharAt(i) != '\r'
+            && GetCharAt(i) != '\n'
+            && GetCharAt(i) != ' '
+            && GetCharAt(i) != '\t')
+        {
+            // Add the breakpoint marker
+            return true;
+        }
+    }
+
+    return false;
 }
 
 

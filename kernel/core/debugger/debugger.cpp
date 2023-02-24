@@ -977,7 +977,9 @@ vector<string> NumeReDebugger::getGlobals()
     // List all relevant numerical variables
     for (auto iter = _parser.GetVar().begin(); iter != _parser.GetVar().end(); ++iter)
     {
-        if (iter->first.substr(0, 2) != "_~")
+        if (iter->first.substr(0, 2) != "_~"
+            && iter->first != "ans"
+            && !isDimensionVar(iter->first))
         {
             if ((*iter->second).imag() && !(isnan((*iter->second).real()) && isnan((*iter->second).imag())))
                 mGlobals[iter->first] = "1 x 1\tcomplex\t" + toString(*iter->second, 2*DEFAULT_NUM_PRECISION);

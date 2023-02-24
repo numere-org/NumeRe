@@ -180,6 +180,11 @@ void replaceStringMethod(std::string& sLine, size_t nPos, size_t nLength, const 
 std::string shortenFileName(const std::string& sFullFileName);
 std::string incrementVersion(std::string _sVer);
 
+inline bool isDimensionVar(const std::string& sVarName)
+{
+    return sVarName == "nrows" || sVarName == "ncols" || sVarName == "nlen" || sVarName == "nlines";
+}
+
 
 #endif
 

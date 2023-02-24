@@ -381,61 +381,8 @@ wxDragResult NumeReDropTarget::OnData(wxCoord x, wxCoord y, wxDragResult default
                 // Text is copied into the console at the
                 // current position (not the selected one)
                 wxTextDataObject* textdata = static_cast<wxTextDataObject*>(data);
-                std::string sText = textdata->GetText().ToStdString();
-
-                size_t nQuotes = 0;
-
-                // Replace line comments with block comments, where necessary
-                for (size_t i = 0; i < sText.length(); i++)
-                {
-                    if (sText[i] == '"' && (!i || sText[i-1] != '\\'))
-                        nQuotes++;
-
-                    if (nQuotes % 2)
-                        continue;
-
-                    if (sText.substr(i, 2) == "##")
-                    {
-                        size_t p = sText.find('\n', i);
-
-                        // The last one does not need any replacement
-                        if (p == std::string::npos)
-                            break;
-
-                        sText[i+1] = '*';
-                        sText.insert(p, "*#");
-                        i = p+2;
-                    }
-                }
-
-                size_t pos, pos2;
-
-                // Replace line continuation markers including their trailing
-                // line breaks with a single whitespace
-                while ((pos = sText.find("\\\\")) != std::string::npos
-                       && (pos2 = sText.find_first_not_of(" \t", pos+2)) != std::string::npos
-                       && sText[pos2] == '\n')
-                {
-                    sText.replace(pos, pos2-pos+1, " ");
-                }
-
-                // Replace line break and tabulator characters,
-                // because they won't be parsed correctly
-                while ((pos = sText.find('\n')) != std::string::npos)
-                {
-                    if (pos
-                        && sText.find_last_not_of(" \t", pos-1) != std::string::npos
-                        && sText[sText.find_last_not_of(" \t", pos-1)] != ';')
-                        sText[pos] = ';';
-                    else
-                        sText[pos] = ' ';
-                }
-
-                while ((pos = sText.find('\t')) != std::string::npos)
-                    sText[pos] = ' ';
-
                 NumeReWindow* top = static_cast<NumeReWindow*>(m_topWindow);
-                top->getTerminal()->ProcessInput(sText.length(), sText);
+                top->getTerminal()->insertRawText(textdata->GetText().ToStdString());
                 top->getTerminal()->SetFocus();
                 defaultDragResult = wxDragCopy;
             }

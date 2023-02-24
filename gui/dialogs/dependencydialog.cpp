@@ -37,6 +37,8 @@ BEGIN_EVENT_TABLE(DependencyDialog, wxDialog)
     EVT_MENU(ID_DEPENDENCYDIALOG_UNFOLDITEM, DependencyDialog::OnMenuEvent)
 END_EVENT_TABLE()
 
+#define WINDOWHEIGHT 550
+#define WINDOWWIDTH 500
 
 /////////////////////////////////////////////////
 /// \brief Constructor. Creates the UI elements
@@ -50,12 +52,13 @@ END_EVENT_TABLE()
 /// \param style long
 ///
 /////////////////////////////////////////////////
-DependencyDialog::DependencyDialog(wxWindow* parent, wxWindowID id, const wxString& title, const string& mainfile, ProcedureLibrary& lib, long style) : wxDialog(parent, id, title, wxDefaultPosition, wxSize(-1, 450), style)
+DependencyDialog::DependencyDialog(wxWindow* parent, wxWindowID id, const wxString& title, const string& mainfile, ProcedureLibrary& lib, long style) : wxDialog(parent, id, title, wxDefaultPosition, wxSize(WINDOWWIDTH, WINDOWHEIGHT), style)
 {
     wxBoxSizer* vsizer = new wxBoxSizer(wxVERTICAL);
 
     // Create the UI elements
-    m_dependencyTree = new wxcode::wxTreeListCtrl(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTR_TWIST_BUTTONS | wxTR_FULL_ROW_HIGHLIGHT);
+    m_dependencyTree = new wxcode::wxTreeListCtrl(this, wxID_ANY, wxDefaultPosition, wxDefaultSize,
+                                                  wxTR_TWIST_BUTTONS | wxTR_FULL_ROW_HIGHLIGHT);
     m_dependencyTree->AddColumn(_guilang.get("GUI_DEPDLG_TREE"), GetClientSize().GetWidth());
     vsizer->Add(m_dependencyTree, 1, wxEXPAND | wxALL, 5);
     vsizer->Add(CreateButtonSizer(wxOK), 0, wxALL | wxALIGN_CENTER_HORIZONTAL, 5);

@@ -148,15 +148,10 @@ class NumeReEditor : public wxStyledTextCtrl, public wxThreadHelper
 		wxString GetFileNameAndPath();
 		wxString GetFilenameString();
 		wxFileName GetFileName(); // capital N
-		wxFileName GetExecutableFileName()
-		{
-			return m_executableFilename;
-		}
 		wxString GetFilePath();
 		wxArrayInt GetBreakpoints();
 
 		void SetFilename(wxFileName filename, bool fileIsRemote);
-		void SetExecutableFilename(wxFileName filename);
 		void ResetEditor();
 		bool LastSavedRemotely()
 		{
@@ -200,9 +195,10 @@ class NumeReEditor : public wxStyledTextCtrl, public wxThreadHelper
 		virtual wxThread::ExitCode Entry();
 		void OnThreadUpdate(wxThreadEvent& event);
 
-		void AddBreakpoint( int linenum );
-		void RemoveBreakpoint( int linenum );
+		void AddBreakpoint(int linenum);
+		void RemoveBreakpoint(int linenum);
 		void SynchronizeBreakpoints();
+		bool isBreakPointAllowed(int linenum);
 
 		void AddProcedureDocumentation();
 
@@ -394,7 +390,6 @@ class NumeReEditor : public wxStyledTextCtrl, public wxThreadHelper
 		CodeFormatter* m_formatter;
 
 		wxFileName m_fileNameAndPath;
-		wxFileName m_executableFilename;
 		wxString m_simpleFileName;
 		wxString m_watchedString;
 		wxString m_dblclkString;
