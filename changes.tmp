@@ -83,3 +83,5 @@ Fixed	Resolved a critical issue in the loading of XLSX files and further improve
 Fixed	If a line with a breakpoint gets commented out or is deleted, then the breakpoint will now be removed.
 Added	The dependency viewer now highlights all occurences of a procedure in the dependency tree.
 Fixed	A problem with pasting in the terminal, where parts of multi-line expressions were hidden, was resolved.
+Added	The function "getompthreads()" returns the number of possible OpenMP threads usable by internal code.
+New	The plotting options "ohlc" (Open-High-Low-Close) and "candlestick" have been added to correctly plot stock time series.

@@ -484,6 +484,7 @@ void NumeReKernel::defineFunctions()
     _parser.DefineFun("clock", parser_clock, false);                          // clock()
     _parser.DefineFun("sleep", parser_sleep, false);                          // sleep(millisecnds)
     _parser.DefineFun("version", parser_numereversion);                       // version()
+    _parser.DefineFun("getompthreads", parser_omp_threads);                   // getompthreads()
     _parser.DefineFun("date", parser_date);                                   // date(TIME,TYPE)
     _parser.DefineFun("weeknum", parser_weeknum);                             // date(TIME,TYPE)
     _parser.DefineFun("is_nan", parser_isnan);                                // is_nan(x)
@@ -1049,7 +1050,7 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const std::string& sCommand)
             make_hline();
             print(toUpperCase(_lang.get("ERR_STD_BA_HEAD")));
             make_hline();
-            print(_lang.get("ERR_STD_BADALLOC", sVersion));
+            print(LineBreak(_lang.get("ERR_STD_BADALLOC", sVersion), _option, false, 4));
             make_hline();
             sendErrorNotification();
 

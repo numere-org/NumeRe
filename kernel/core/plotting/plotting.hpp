@@ -76,7 +76,7 @@ class Plot
         void create2dPlot(size_t nPlotCompose, size_t nPlotComposeSize);
         bool plot2d(mglData& _mData, mglData& _mData2, mglData* _mAxisVals, mglData& _mContVec);
         void createStdPlot(size_t nPlotCompose, size_t nPlotComposeSize);
-        bool plotstd(mglData& _mData, mglData& _mAxisVals, mglData _mData2[2], const short nType);
+        bool plotstd(mglData& _mData, mglData& _mAxisVals, mglData _mData2[3], const short nType);
         void create3dPlot();
         void create3dVect();
         void create2dVect();

@@ -157,6 +157,8 @@ static std::map<std::string,std::pair<PlotData::LogicalPlotSetting,PlotData::Par
     mGenericSwitches.emplace("area", std::make_pair(PlotData::LOG_AREA, PlotData::LOCAL));
     mGenericSwitches.emplace("steps", std::make_pair(PlotData::LOG_STEPPLOT, PlotData::LOCAL));
     mGenericSwitches.emplace("boxplot", std::make_pair(PlotData::LOG_BOXPLOT, PlotData::LOCAL));
+    mGenericSwitches.emplace("ohlc", std::make_pair(PlotData::LOG_OHLC, PlotData::LOCAL));
+    mGenericSwitches.emplace("candlestick", std::make_pair(PlotData::LOG_CANDLESTICK, PlotData::LOCAL));
     mGenericSwitches.emplace("colormask", std::make_pair(PlotData::LOG_COLORMASK, PlotData::LOCAL));
     mGenericSwitches.emplace("alphamask", std::make_pair(PlotData::LOG_ALPHAMASK, PlotData::LOCAL));
     mGenericSwitches.emplace("schematic", std::make_pair(PlotData::LOG_SCHEMATIC, PlotData::GLOBAL));

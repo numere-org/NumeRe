@@ -41,6 +41,7 @@
 #include <gsl/gsl_randist.h>
 #include <gsl/gsl_cdf.h>
 #include <noise/noise.h>
+#include <omp.h>
 
 #include "student_t.hpp"
 #include "../datamanagement/memorymanager.hpp"
@@ -2624,6 +2625,19 @@ value_type parser_log_b(const value_type& b, const value_type& x)
 value_type parser_numereversion()
 {
     return 100.0*AutoVersion::MAJOR+10.0*AutoVersion::MINOR + AutoVersion::BUILD + std::atof(AutoVersion::UBUNTU_VERSION_STYLE) / 100.0;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Returns the number of available OMP
+/// threads.
+///
+/// \return value_type
+///
+/////////////////////////////////////////////////
+value_type parser_omp_threads()
+{
+    return omp_get_max_threads();
 }
 
 

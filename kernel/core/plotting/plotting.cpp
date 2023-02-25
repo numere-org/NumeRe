@@ -1395,7 +1395,7 @@ void Plot::createStdPlot(size_t nPlotCompose, size_t nPlotComposeSize)
 
     mglData _mData;
     mglData _mPlotAxes;
-    mglData _mData2[2];
+    mglData _mData2[3];
 
     int nPrevDataLayers = 0;
     int nCurrentStyle = 0;
@@ -1451,6 +1451,13 @@ void Plot::createStdPlot(size_t nPlotCompose, size_t nPlotComposeSize)
                 _mData = m_manager.assets[n+nDataOffset].vectorsToMatrix();
                 _mData.Transpose();
             }
+            else if (_pData.getSettings(PlotData::LOG_OHLC) || _pData.getSettings(PlotData::LOG_CANDLESTICK))
+            {
+                _mData.Link(m_manager.assets[n+nDataOffset].data[0].first);
+                _mData2[0].Link(m_manager.assets[n+nDataOffset].data[1].first);
+                _mData2[1].Link(m_manager.assets[n+nDataOffset].data[2].first);
+                _mData2[2].Link(m_manager.assets[n+nDataOffset].data[3].first);
+            }
             else if (_pData.getSettings(PlotData::FLOAT_BARS)
                      || _pData.getSettings(PlotData::FLOAT_HBARS))
                 _mData = m_manager.assets[n+nDataOffset].vectorsToMatrix();
@@ -1469,7 +1476,8 @@ void Plot::createStdPlot(size_t nPlotCompose, size_t nPlotComposeSize)
                         _mData2[0] = 0.0 * _mData;
                     }
                 }
-                else if (_pData.getSettings(PlotData::LOG_YERROR) || _pData.getSettings(PlotData::LOG_XERROR))
+                else if (_pData.getSettings(PlotData::LOG_YERROR)
+                         || _pData.getSettings(PlotData::LOG_XERROR))
                 {
                     size_t layer = 1;
 
@@ -1574,7 +1582,10 @@ void Plot::createStdPlot(size_t nPlotCompose, size_t nPlotComposeSize)
                 {
                     if (_pData.getSettings(PlotData::LOG_BOXPLOT))
                         sLegendStyle = getLegendStyle(_pInfo.sLineStyles[nCurrentStyle]);
-                    else if (!_pData.getSettings(PlotData::LOG_XERROR) && !_pData.getSettings(PlotData::LOG_YERROR))
+                    else if (!_pData.getSettings(PlotData::LOG_XERROR)
+                             && !_pData.getSettings(PlotData::LOG_YERROR)
+                             && !_pData.getSettings(PlotData::LOG_OHLC)
+                             && !_pData.getSettings(PlotData::LOG_CANDLESTICK))
                     {
                         if ((_pData.getSettings(PlotData::LOG_INTERPOLATE) && m_manager.assets[n+nDataOffset].axes[0].nx >= _pInfo.nSamples)
                             || _pData.getSettings(PlotData::FLOAT_BARS)
@@ -1607,7 +1618,9 @@ void Plot::createStdPlot(size_t nPlotCompose, size_t nPlotComposeSize)
             && (useImag || _pData.getSettings(PlotData::INT_COMPLEXMODE) != CPLX_REIM))
             n++;
 
-        if (getNN(_mData2[0]) && _pData.getSettings(PlotData::LOG_REGION))
+        if ((getNN(_mData2[0]) && _pData.getSettings(PlotData::LOG_REGION))
+            || _pData.getSettings(PlotData::LOG_OHLC)
+            || _pData.getSettings(PlotData::LOG_CANDLESTICK))
             _pInfo.nStyle = _pInfo.nextStyle();
 
         if (_pData.getSettings(PlotData::INT_COMPLEXMODE) == CPLX_REIM)
@@ -1668,17 +1681,19 @@ void Plot::createStdPlot(size_t nPlotCompose, size_t nPlotComposeSize)
 ///
 /// \param _mData mglData&
 /// \param _mAxisVals mglData&
-/// \param _mData2[2] mglData
+/// \param _mData2[3] mglData
 /// \param nType const short
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool Plot::plotstd(mglData& _mData, mglData& _mAxisVals, mglData _mData2[2], const short nType)
+bool Plot::plotstd(mglData& _mData, mglData& _mAxisVals, mglData _mData2[3], const short nType)
 {
 #warning NOTE (numere#3#08/15/21): Temporary fix for MathGL misbehaviour
     if (!_pData.getSettings(PlotData::LOG_BOXPLOT)
         && !_pData.getSettings(PlotData::LOG_YERROR)
         && !_pData.getSettings(PlotData::LOG_XERROR)
+        && !_pData.getSettings(PlotData::LOG_OHLC)
+        && !_pData.getSettings(PlotData::LOG_CANDLESTICK)
         && !_pData.getSettings(PlotData::FLOAT_BARS)
         && !_pData.getSettings(PlotData::FLOAT_HBARS)
         && !_pData.getSettings(PlotData::LOG_STEPPLOT)
@@ -1688,6 +1703,7 @@ bool Plot::plotstd(mglData& _mData, mglData& _mAxisVals, mglData _mData2[2], con
         _mAxisVals = duplicatePoints(_mAxisVals);
         _mData2[0] = duplicatePoints(_mData2[0]);
         _mData2[1] = duplicatePoints(_mData2[1]);
+        _mData2[2] = duplicatePoints(_mData2[1]);
     }
 
     int nNextStyle = _pInfo.nextStyle();
@@ -1714,6 +1730,12 @@ bool Plot::plotstd(mglData& _mData, mglData& _mAxisVals, mglData _mData2[2], con
         if (_pData.getSettings(PlotData::LOG_BOXPLOT))
             _graph->BoxPlot(_mData2[0], _mData,
                             _pInfo.sLineStyles[_pInfo.nStyle].c_str());
+        else if (_pData.getSettings(PlotData::LOG_OHLC))
+            _graph->OHLC(_mAxisVals, _mData, _mData2[0], _mData2[1], _mData2[2],
+                         (_pInfo.sLineStyles[_pInfo.nStyle]+_pInfo.sLineStyles[nNextStyle]).c_str());
+        else if (_pData.getSettings(PlotData::LOG_CANDLESTICK))
+            _graph->Candle(_mAxisVals, _mData2[2], _mData, _mData2[1], _mData2[0],
+                           (_pInfo.sLineStyles[_pInfo.nStyle]+_pInfo.sLineStyles[nNextStyle]).c_str());
         else if (!_pData.getSettings(PlotData::LOG_XERROR) && !_pData.getSettings(PlotData::LOG_YERROR))
         {
             if (_pData.getSettings(PlotData::LOG_INTERPOLATE) && countValidElements(_mData) >= (size_t)_pInfo.nSamples)
@@ -3746,6 +3768,8 @@ void Plot::extractDataValues(const std::vector<std::string>& vDataPlots)
                 datarows = 3;
             else if (_pData.getSettings(PlotData::LOG_XERROR) || _pData.getSettings(PlotData::LOG_YERROR))
                 datarows = 2;
+            else if (_pData.getSettings(PlotData::LOG_OHLC) || _pData.getSettings(PlotData::LOG_CANDLESTICK))
+                datarows = 4;
             else if (_idx.col.numberOfNodes() >= 2)
                 datarows = _idx.col.numberOfNodes() - 1*!_pData.getSettings(PlotData::LOG_BOXPLOT);
 
@@ -3757,7 +3781,9 @@ void Plot::extractDataValues(const std::vector<std::string>& vDataPlots)
             // A vector index was used. Insert a column index
             // if the current plot is a boxplot or an axis coordinate
             // is missing
-            if (_pData.getSettings(PlotData::LOG_BOXPLOT) || _idx.col.numberOfNodes() == 1)
+            if (_pData.getSettings(PlotData::LOG_BOXPLOT)
+                || _idx.col.numberOfNodes() == 1
+                || (_idx.col.size() < 5 && (_pData.getSettings(PlotData::LOG_OHLC) || _pData.getSettings(PlotData::LOG_CANDLESTICK))))
                 _idx.col.prepend(std::vector<int>({-1}));
 
             if (_idx.col.front() == VectorIndex::INVALID)
@@ -3823,6 +3849,8 @@ void Plot::extractDataValues(const std::vector<std::string>& vDataPlots)
             bool isMultiDataSet = _pData.getSettings(PlotData::FLOAT_HBARS) != 0.0
                 || _pData.getSettings(PlotData::FLOAT_BARS) != 0.0
                 || _pData.getSettings(PlotData::LOG_BOXPLOT)
+                || _pData.getSettings(PlotData::LOG_OHLC)
+                || _pData.getSettings(PlotData::LOG_CANDLESTICK)
                 || !(_pData.getSettings(PlotData::LOG_XERROR) || _pData.getSettings(PlotData::LOG_YERROR));
 
 
@@ -4312,13 +4340,21 @@ string Plot::constructDataLegendElement(string& sColumnIndices, const string& sT
     int nStart = 0;
 
     // Barcharts and boxplots will need other legend strings
-    if (_pInfo.sCommand == "plot" && (_pData.getSettings(PlotData::FLOAT_BARS) || _pData.getSettings(PlotData::LOG_BOXPLOT) || _pData.getSettings(PlotData::FLOAT_HBARS)))
+    if (_pInfo.sCommand == "plot"
+        && (_pData.getSettings(PlotData::FLOAT_BARS)
+            || _pData.getSettings(PlotData::LOG_BOXPLOT)
+            || _pData.getSettings(PlotData::FLOAT_HBARS)))
     {
         sFirst.clear();
         sLast.clear();
         cSep = '\n';
-        nStart  = 1;
+        nStart = 1;
     }
+
+    if (_pInfo.sCommand == "plot"
+        && (_pData.getSettings(PlotData::LOG_OHLC) || _pData.getSettings(PlotData::LOG_CANDLESTICK))
+        && nResults > 4)
+        nStart = 1;
 
     string sLegend = sFirst;
 

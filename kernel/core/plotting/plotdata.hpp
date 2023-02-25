@@ -90,6 +90,8 @@ class PlotData : public FileSystem
             LOG_SILENTMODE,
             LOG_STEPPLOT,
             LOG_TABLE,
+            LOG_OHLC,
+            LOG_CANDLESTICK,
             LOG_SETTING_SIZE
         };
 

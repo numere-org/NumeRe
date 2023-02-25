@@ -146,6 +146,7 @@ value_type parser_weeknum(const value_type&);
 value_type parser_isnan(const value_type&);
 value_type parser_interval(const value_type&, const value_type&, const value_type&);
 value_type parser_numereversion();
+value_type parser_omp_threads();
 value_type parser_cot(const value_type&);
 value_type parser_sleep(const value_type&);
 value_type parser_log_b(const value_type&, const value_type&);
