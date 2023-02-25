@@ -2057,7 +2057,8 @@ void NumeReWindow::openImage(wxFileName filename)
 {
     wxString programPath = getProgramFolder();
 
-    ViewerFrame* frame = new ViewerFrame(this, "NumeRe-ImageViewer: " + filename.GetName());
+    ViewerFrame* frame = new ViewerFrame(this, "NumeRe-ImageViewer: " + filename.GetName(),
+                                         m_options->getSetting(SETTING_B_FLOATONPARENT).active() ? wxFRAME_FLOAT_ON_PARENT : 0);
     registerWindow(frame, WT_IMAGEVIEWER);
     wxBoxSizer* sizer = new wxBoxSizer(wxHORIZONTAL);
 
@@ -2146,7 +2147,8 @@ void NumeReWindow::openHTML(wxString HTMLcontent)
 /////////////////////////////////////////////////
 void NumeReWindow::openTable(NumeRe::Container<std::string> _stringTable, const std::string& tableDisplayName, const std::string& sIntName)
 {
-    ViewerFrame* frame = new ViewerFrame(this, "NumeRe: " + tableDisplayName);
+    ViewerFrame* frame = new ViewerFrame(this, "NumeRe: " + tableDisplayName,
+                                         m_options->getSetting(SETTING_B_FLOATONPARENT).active() ? wxFRAME_FLOAT_ON_PARENT : 0);
     registerWindow(frame, WT_TABLEVIEWER);
     frame->SetSize(800,600);
     TableViewer* grid = new TableViewer(frame, wxID_ANY, frame->CreateStatusBar(3), nullptr, wxDefaultPosition, wxDefaultSize, wxWANTS_CHARS | wxBORDER_STATIC);
@@ -2170,7 +2172,8 @@ void NumeReWindow::openTable(NumeRe::Container<std::string> _stringTable, const 
 /////////////////////////////////////////////////
 void NumeReWindow::openTable(NumeRe::Table _table, const std::string& tableDisplayName, const std::string& sIntName)
 {
-    ViewerFrame* frame = new ViewerFrame(this, "NumeRe: " + tableDisplayName);
+    ViewerFrame* frame = new ViewerFrame(this, "NumeRe: " + tableDisplayName,
+                                         m_options->getSetting(SETTING_B_FLOATONPARENT).active() ? wxFRAME_FLOAT_ON_PARENT : 0);
     registerWindow(frame, WT_TABLEVIEWER);
     frame->SetSize(800,600);
     TablePanel* panel = new TablePanel(frame, wxID_ANY, frame->CreateStatusBar(3));
@@ -2195,7 +2198,7 @@ void NumeReWindow::openTable(NumeRe::Table _table, const std::string& tableDispl
 /////////////////////////////////////////////////
 void NumeReWindow::editTable(NumeRe::Container<std::string> _stringTable, const std::string& tableDisplayName)
 {
-    ViewerFrame* frame = new ViewerFrame(this, _guilang.get("GUI_TABLEEDITOR") + " " + tableDisplayName);
+    ViewerFrame* frame = new ViewerFrame(this, _guilang.get("GUI_TABLEEDITOR") + " " + tableDisplayName, wxFRAME_FLOAT_ON_PARENT);
     frame->SetSize(800,600);
     TableEditPanel* panel = new TableEditPanel(frame, wxID_ANY, frame->CreateStatusBar(3));
     panel->SetTerminal(m_terminal);
@@ -2219,7 +2222,7 @@ void NumeReWindow::editTable(NumeRe::Container<std::string> _stringTable, const 
 /////////////////////////////////////////////////
 void NumeReWindow::editTable(NumeRe::Table _table, const std::string& tableDisplayName)
 {
-    ViewerFrame* frame = new ViewerFrame(this, _guilang.get("GUI_TABLEEDITOR") + " " + tableDisplayName);
+    ViewerFrame* frame = new ViewerFrame(this, _guilang.get("GUI_TABLEEDITOR") + " " + tableDisplayName, wxFRAME_FLOAT_ON_PARENT);
     frame->SetSize(800,600);
     TableEditPanel* panel = new TableEditPanel(frame, wxID_ANY, frame->CreateStatusBar(3));
     panel->SetTerminal(m_terminal);
@@ -2294,7 +2297,8 @@ void NumeReWindow::showWindow(NumeRe::Window& window)
     }
     else if (window.getType() == NumeRe::WINDOW_CUSTOM)
     {
-        CustomWindow* win = new CustomWindow(this, window);
+        CustomWindow* win = new CustomWindow(this, window,
+                                             m_options->getSetting(SETTING_B_FLOATONPARENT).active() ? wxFRAME_FLOAT_ON_PARENT : 0);
         registerWindow(win, WT_CUSTOM);
         win->Show();
     }

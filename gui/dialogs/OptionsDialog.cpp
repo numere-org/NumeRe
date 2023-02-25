@@ -201,6 +201,7 @@ void OptionsDialog::CreateConfigPage()
     m_ExtendedInfo = panel->CreateCheckBox(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_EXTENDEDINFO"));
     m_CustomLanguage = panel->CreateCheckBox(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_CUSTOMLANG"));
     m_ESCinScripts = panel->CreateCheckBox(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_ESCINSCRIPTS"));
+    m_floatOnParent = panel->CreateCheckBox(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_FLOATONPARENT"));
     //m_UseExternalViewer = panel->CreateCheckBox(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_EXTERNALVIEWER"));
 
     group = panel->createGroup(_guilang.get("GUI_OPTIONS_TOOLBAR"));
@@ -812,6 +813,7 @@ bool OptionsDialog::EvaluateOptions()
     mSettings[SETTING_B_SHOWHINTS].active() = m_ShowHints->IsChecked();
     mSettings[SETTING_B_USECUSTOMLANG].active() = m_CustomLanguage->IsChecked();
     mSettings[SETTING_B_USEESCINSCRIPTS].active() = m_ESCinScripts->IsChecked();
+    mSettings[SETTING_B_FLOATONPARENT].active() = m_floatOnParent->IsChecked();
     mSettings[SETTING_B_LOGFILE].active() = m_UseLogfile->IsChecked();
     //mSettings[SETTING_B_EXTERNALDOCWINDOW].active() = m_UseExternalViewer->IsChecked();
     mSettings[SETTING_B_ENABLEEXECUTE].active() = m_useExecuteCommand->IsChecked();
@@ -924,6 +926,7 @@ void OptionsDialog::InitializeDialog()
     m_ShowHints->SetValue(mSettings[SETTING_B_SHOWHINTS].active());
     m_CustomLanguage->SetValue(mSettings[SETTING_B_USECUSTOMLANG].active());
     m_ESCinScripts->SetValue(mSettings[SETTING_B_USEESCINSCRIPTS].active());
+    m_floatOnParent->SetValue(mSettings[SETTING_B_FLOATONPARENT].active());
     m_UseLogfile->SetValue(mSettings[SETTING_B_LOGFILE].active());
     //m_UseExternalViewer->SetValue(mSettings[SETTING_B_EXTERNALDOCWINDOW].active());
     m_useExecuteCommand->SetValue(mSettings[SETTING_B_ENABLEEXECUTE].active());

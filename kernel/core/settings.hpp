@@ -79,6 +79,7 @@
 #define SETTING_B_PATHSONTABS         "ui.showpathsontabs"
 #define SETTING_S_TOOLBARICONSTYLE    "ui.toolbariconstyle"
 #define SETTING_B_ICONSONTABS         "ui.showiconsontabs"
+#define SETTING_B_FLOATONPARENT       "ui.floatonparent"
 #define SETTING_V_POS_SASH_V          "ui.position.verticalsash"
 #define SETTING_V_POS_SASH_H          "ui.position.horizontalsash"
 #define SETTING_V_POS_SASH_T          "ui.position.terminalsash"

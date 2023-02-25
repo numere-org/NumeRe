@@ -58,7 +58,7 @@ BEGIN_EVENT_TABLE(DuplicateCodeDialog, ViewerFrame)
 	EVT_LIST_COL_CLICK          (wxID_ANY, DuplicateCodeDialog::OnColumnHeaderClick)
 END_EVENT_TABLE()
 
-DuplicateCodeDialog::DuplicateCodeDialog(wxWindow* _parent, const wxString& title) : ViewerFrame(_parent, title)
+DuplicateCodeDialog::DuplicateCodeDialog(wxWindow* _parent, const wxString& title) : ViewerFrame(_parent, title, wxFRAME_FLOAT_ON_PARENT)
 {
 	m_parent = _parent;
 	m_mainPanel = new wxPanel(this, wxID_ANY, wxDefaultPosition);

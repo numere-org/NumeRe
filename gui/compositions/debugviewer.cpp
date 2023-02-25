@@ -45,7 +45,7 @@ END_EVENT_TABLE()
 /// \param title const wxString&
 ///
 /////////////////////////////////////////////////
-DebugViewer::DebugViewer(wxWindow* parent, Options* _options, const wxString& title) : ViewerFrame(parent, title)
+DebugViewer::DebugViewer(wxWindow* parent, Options* _options, const wxString& title) : ViewerFrame(parent, title, wxFRAME_FLOAT_ON_PARENT)
 {
     m_terminal = nullptr;
     m_options = _options;

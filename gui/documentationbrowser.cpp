@@ -19,6 +19,7 @@
 #include "documentationbrowser.hpp"
 #include "compositions/helpviewer.hpp"
 #include "NumeReWindow.h"
+#include "../common/Options.h"
 #include "../common/datastructures.h"
 #include "controls/treesearchctrl.hpp"
 #include "controls/treedata.hpp"
@@ -47,7 +48,7 @@ END_EVENT_TABLE()
 /// \param mainwindow NumeReWindow*
 ///
 /////////////////////////////////////////////////
-DocumentationBrowser::DocumentationBrowser(wxWindow* parent, const wxString& titletemplate, NumeReWindow* mainwindow) : ViewerFrame(parent, titletemplate)
+DocumentationBrowser::DocumentationBrowser(wxWindow* parent, const wxString& titletemplate, NumeReWindow* mainwindow) : ViewerFrame(parent, titletemplate, mainwindow->getOptions()->getSetting(SETTING_B_FLOATONPARENT).active() ? wxFRAME_FLOAT_ON_PARENT : 0)
 {
     // Obtain the program root directory and create a new
     // IconManager object using this information

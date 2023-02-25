@@ -313,7 +313,7 @@ static std::string getTagValue(const std::string& sTaggedString, const std::stri
 /// \param icons IconManager*
 ///
 /////////////////////////////////////////////////
-PackageRepoBrowser::PackageRepoBrowser(wxWindow* parent, NumeReTerminal* terminal, IconManager* icons) : ViewerFrame(parent, PACKAGE_REPO_BROWSER_TITLE)
+PackageRepoBrowser::PackageRepoBrowser(wxWindow* parent, NumeReTerminal* terminal, IconManager* icons) : ViewerFrame(parent, PACKAGE_REPO_BROWSER_TITLE, wxFRAME_FLOAT_ON_PARENT)
 {
     SetSize(WINDOWWIDTH, WINDOWHEIGHT);
     m_terminal = terminal;

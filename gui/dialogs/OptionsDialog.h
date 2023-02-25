@@ -173,6 +173,7 @@ class OptionsDialog: public wxDialog
         wxCheckBox* m_ShowHints;
         wxCheckBox* m_CustomLanguage;
         wxCheckBox* m_ESCinScripts;
+        wxCheckBox* m_floatOnParent;
         wxCheckBox* m_UseLogfile;
         //wxCheckBox* m_UseExternalViewer;
         wxCheckBox* m_FilePathsInTabs;

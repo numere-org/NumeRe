@@ -109,7 +109,7 @@ class CustomWindow : public wxFrame
         void Refresh();
 
     public:
-        CustomWindow(wxWindow* parent, const NumeRe::Window& windowRef);
+        CustomWindow(wxWindow* parent, const NumeRe::Window& windowRef, int addStyle);
 
         std::vector<int> getWindowItems(WindowItemType _type) const;
         bool closeWindow();

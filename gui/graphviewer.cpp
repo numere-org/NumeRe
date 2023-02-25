@@ -18,6 +18,8 @@
 
 
 #include "graphviewer.hpp"
+#include "NumeReWindow.h"
+#include "../common/Options.h"
 
 
 BEGIN_EVENT_TABLE(GraphViewer, ViewerFrame)
@@ -28,7 +30,7 @@ BEGIN_EVENT_TABLE(GraphViewer, ViewerFrame)
 END_EVENT_TABLE()
 
 
-GraphViewer::GraphViewer(wxWindow* parent, const wxString& title, GraphHelper* _helper, NumeReTerminal* terminal) : ViewerFrame(parent, title)
+GraphViewer::GraphViewer(wxWindow* parent, const wxString& title, GraphHelper* _helper, NumeReTerminal* terminal) : ViewerFrame(parent, title, static_cast<NumeReWindow*>(parent)->getOptions()->getSetting(SETTING_B_FLOATONPARENT).active() ? wxFRAME_FLOAT_ON_PARENT : 0)
 {
     wxBoxSizer* sizer = new wxBoxSizer(wxHORIZONTAL);
     _grapherWindow = new wxMGL(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxBORDER_THEME);

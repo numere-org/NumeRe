@@ -6025,7 +6025,7 @@ void NumeReEditor::AbstrahizeSection()
 void NumeReEditor::CreateProcedureFromSection(int nStartPos, int nEndPos, const wxString& sInputList, const wxString sOutputList)
 {
     // Creata a new window and a new editor
-    ViewerFrame* copyFrame = new ViewerFrame(m_mainFrame, _guilang.get("GUI_REFACTORING_COPYWINDOW_HEAD"));
+    ViewerFrame* copyFrame = new ViewerFrame(m_mainFrame, _guilang.get("GUI_REFACTORING_COPYWINDOW_HEAD"), wxFRAME_FLOAT_ON_PARENT);
     NumeReEditor* edit = new NumeReEditor(m_mainFrame, m_options, copyFrame, wxID_ANY, _syntax, m_terminal, wxDefaultPosition, wxDefaultSize, wxBORDER_THEME);
     wxStatusBar* statusbar = copyFrame->CreateStatusBar();
     int sizes[] = {-2, -1};

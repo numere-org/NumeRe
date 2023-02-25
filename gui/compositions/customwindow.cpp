@@ -261,9 +261,10 @@ END_EVENT_TABLE()
 ///
 /// \param parent wxWindow*
 /// \param windowRef const NumeRe::Window&
+/// \param addStyle int
 ///
 /////////////////////////////////////////////////
-CustomWindow::CustomWindow(wxWindow* parent, const NumeRe::Window& windowRef) : wxFrame(parent, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxFRAME_FLOAT_ON_PARENT | wxRESIZE_BORDER | wxCAPTION | wxCLOSE_BOX | wxMAXIMIZE_BOX | wxMINIMIZE_BOX), m_windowRef(windowRef)
+CustomWindow::CustomWindow(wxWindow* parent, const NumeRe::Window& windowRef, int addStyle) : wxFrame(parent, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, addStyle | wxRESIZE_BORDER | wxCAPTION | wxCLOSE_BOX | wxMAXIMIZE_BOX | wxMINIMIZE_BOX), m_windowRef(windowRef)
 {
     m_windowRef.connect(this);
 

@@ -30,7 +30,7 @@
 class ViewerFrame : public wxFrame
 {
     public:
-        ViewerFrame(wxWindow* parent, const wxString& title) : wxFrame(parent, wxID_ANY, title, wxDefaultPosition, wxDefaultSize, wxFRAME_FLOAT_ON_PARENT | wxRESIZE_BORDER | wxCAPTION | wxCLOSE_BOX | wxMAXIMIZE_BOX | wxMINIMIZE_BOX) {};
+        ViewerFrame(wxWindow* parent, const wxString& title, int addStyle) : wxFrame(parent, wxID_ANY, title, wxDefaultPosition, wxDefaultSize, addStyle | wxRESIZE_BORDER | wxCAPTION | wxCLOSE_BOX | wxMAXIMIZE_BOX | wxMINIMIZE_BOX) {};
 
         void OnKeyDown(wxKeyEvent& event);
         void OnFocus(wxFocusEvent& event);
