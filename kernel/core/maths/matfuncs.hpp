@@ -3355,21 +3355,6 @@ static Matrix matrixRasterFilter(const MatFuncData& funcData, const MatFuncError
 {
     // mat1 -> matrix to filter, mat2 -> filter kernel, nVal -> boundary mode
 
-    // Check that matrix and the filter are not empty
-    if (funcData.mat1.isEmpty() || funcData.mat2.isEmpty())
-        throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, errorInfo.command, errorInfo.position);
-
-    // Check if mode is valid
-    if (funcData.nVal < 0 || funcData.nVal > 1)
-    {
-        std::string sMode = std::to_string(funcData.nVal);
-        throw SyntaxError(SyntaxError::INVALID_MODE, errorInfo.command, errorInfo.position, sMode);
-    }
-
-    // Check if filter size is valid for the given matrix, check that filter has an uneven number of rows and cols
-    if (funcData.mat2.rows() > funcData.mat1.rows() || funcData.mat2.cols() > funcData.mat1.cols() || !(funcData.mat2.rows() % 2) || !(funcData.mat2.cols() % 2))
-        throw SyntaxError(SyntaxError::INVALID_FILTER_SIZE, errorInfo.command, errorInfo.position);
-
     // Store the input dimensions for later use
     size_t inputRows = funcData.mat1.rows();
     size_t inputCols = funcData.mat1.cols();
@@ -3483,21 +3468,6 @@ Matrix convolution(Matrix& mat1, Matrix& mat2)
 static Matrix matrixConvolution(const MatFuncData& funcData, const MatFuncErrorInfo& errorInfo)
 {
     // mat1 -> matrix to filter, mat2 -> filter kernel, nVal -> boundary mode
-
-    // Check that matrix and the filter are not empty
-    if (funcData.mat1.isEmpty() || funcData.mat2.isEmpty())
-        throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, errorInfo.command, errorInfo.position);
-
-    // Check if mode is valid
-    if (funcData.nVal < 0 || funcData.nVal > 1)
-    {
-        std::string sMode = std::to_string(funcData.nVal);
-        throw SyntaxError(SyntaxError::INVALID_MODE, errorInfo.command, errorInfo.position, sMode);
-    }
-
-    // Check if filter size is valid for the given matrix, check that filter has an uneven number of rows and cols
-    if (funcData.mat2.rows() > funcData.mat1.rows() || funcData.mat2.cols() > funcData.mat1.cols() || !(funcData.mat2.rows() % 2) || !(funcData.mat2.cols() % 2))
-        throw SyntaxError(SyntaxError::INVALID_FILTER_SIZE, errorInfo.command, errorInfo.position);
 
     // Store the input dimensions for later use
     size_t inputRows = funcData.mat1.rows();
@@ -3667,7 +3637,6 @@ static std::map<std::string,MatFuncDef> getMatrixFunctions()
     mFunctions["one"] = MatFuncDef(MATSIG_N_MOPT, createOnesMatrix);
     mFunctions["identity"] = MatFuncDef(MATSIG_N_MOPT, identityMatrix);
     mFunctions["shuffle"] = MatFuncDef(MATSIG_N_MOPT, createShuffledMatrix);
-    mFunctions["convolve"] = MatFuncDef(MATSIG_MAT_MAT_N, matrixConvolution);
     mFunctions["correl"] = MatFuncDef(MATSIG_MAT_MAT, correlation);
     mFunctions["covar"] = MatFuncDef(MATSIG_MAT_MAT, covariance);
     mFunctions["normalize"] = MatFuncDef(MATSIG_MAT, normalize);
@@ -3693,7 +3662,6 @@ static std::map<std::string,MatFuncDef> getMatrixFunctions()
     mFunctions["assemble"] = MatFuncDef(MATSIG_MAT_MAT_MAT, assemble);
     mFunctions["polylength"] = MatFuncDef(MATSIG_MAT, polyLength);
     mFunctions["filter"] = MatFuncDef(MATSIG_MAT_MAT_N, matrixFilter);
-    mFunctions["rasterFilter"] = MatFuncDef(MATSIG_MAT_MAT_N, matrixRasterFilter);
 
     // For finding matrix functions
     mFunctions["matfl"] = MatFuncDef(MATSIG_INVALID, invalidMatrixFunction);
