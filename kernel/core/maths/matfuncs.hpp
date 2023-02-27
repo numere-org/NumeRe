@@ -3351,7 +3351,7 @@ static mu::value_type applyKernel(const Matrix& kernel, const Matrix& inMatrix, 
 /// \return Matrix
 ///
 /////////////////////////////////////////////////
-static Matrix matrixFilter(const MatFuncData& funcData, const MatFuncErrorInfo& errorInfo)
+static Matrix matrixRasterFilter(const MatFuncData& funcData, const MatFuncErrorInfo& errorInfo)
 {
     // mat1 -> matrix to filter, mat2 -> filter kernel, nVal -> boundary mode
 
@@ -3370,13 +3370,146 @@ static Matrix matrixFilter(const MatFuncData& funcData, const MatFuncErrorInfo& 
     if (funcData.mat2.rows() > funcData.mat1.rows() || funcData.mat2.cols() > funcData.mat1.cols() || !(funcData.mat2.rows() % 2) || !(funcData.mat2.cols() % 2))
         throw SyntaxError(SyntaxError::INVALID_FILTER_SIZE, errorInfo.command, errorInfo.position);
 
+    // Store the input dimensions for later use
+    size_t inputRows = funcData.mat1.rows();
+    size_t inputCols = funcData.mat1.cols();
+
     // Define the offset that is half the filter size
     size_t offsetRows = (funcData.mat2.rows() - 1) / 2;
     size_t offsetCols = (funcData.mat2.cols() - 1) / 2;
 
     // Generate the vectors with indices that represent the matrix rows and cols
-    VectorIndex rows(0, funcData.mat1.rows() - 1);
-    VectorIndex cols(0, funcData.mat1.cols() - 1);
+    VectorIndex rows(0, inputRows - 1);
+    VectorIndex cols(0, inputCols - 1);
+
+    // Add additional indices that represent the boundary condition
+    switch (funcData.nVal)
+    {
+        case 0: // boundary clamp
+            rows.prepend(std::vector<int>(offsetRows, 0));
+            rows.append(std::vector<int>(offsetRows, funcData.mat2.rows() - 1));
+            cols.prepend(std::vector<int>(offsetCols, 0));
+            cols.append(std::vector<int>(offsetCols, funcData.mat2.cols() - 1));
+            break;
+        case 1: // boundary reflect
+            rows.prepend(VectorIndex(offsetRows, 1));
+            rows.append(VectorIndex(funcData.mat2.rows() - 1, funcData.mat2.rows() - offsetRows));
+            cols.prepend(VectorIndex(offsetCols, 1));
+            cols.append(VectorIndex(funcData.mat2.cols() - 1, funcData.mat2.cols() - offsetRows));
+            break;
+    }
+
+    // Generate the result matrix
+    Matrix _mResult = createFilledMatrix(inputRows, inputCols, NAN);
+
+    // Calculate the results by applying the filter to the input pixel by pixel
+    #pragma omp parallel for
+    for (int i = 0; i < (int)_mResult.rows(); i++)
+    {
+        for (int j = 0; j < (int)_mResult.cols(); j++)
+        {
+            // Multiply the two matrices using a helper function
+            _mResult(i, j) = applyKernel(funcData.mat2, funcData.mat1, rows, cols, i, j);
+        }
+    }
+
+    return _mResult;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Helper function that performs the
+/// actual convolution. This includes replacing
+/// invalid values, transformations, multiplication
+/// and inverse transformation.
+///
+/// \param mat1 Matrix&
+/// \param mat2 Matrix&
+/// \return Matrix
+///
+/////////////////////////////////////////////////
+Matrix convolution(Matrix& mat1, Matrix& mat2)
+{
+    //Transform matrix 1
+    mglDataC _fftData1;
+
+    // Link the existing matrix to the fft object. Avoids copying the data
+    _fftData1.Link(&mat1.data()[0], mat1.rows(), mat1.cols());
+
+    // Replace all nans with zeros
+    for (size_t i = 0; i < mat1.rows(); i++)
+        for (size_t j = 0; j < mat1.cols(); j++)
+            mat1(i, j) = mu::isnan(mat1(i, j)) ? mu::value_type(0.0) : mat1(i, j);
+
+    // Perform the transformation
+    _fftData1.FFT("xy");
+
+    //Transform matrix 2
+    mglDataC _fftData2;
+
+    // Link the existing matrix to the fft object. Avoids copying the data
+    _fftData2.Link(&mat2.data()[0], mat2.rows(), mat2.cols());
+
+    // Replace all nans with zeros
+    for (size_t i = 0; i < mat2.rows(); i++)
+        for (size_t j = 0; j < mat2.cols(); j++)
+            mat2(i, j) = mu::isnan(mat2(i, j)) ? mu::value_type(0.0) : mat2(i, j);
+
+    // Perform the transformation
+    _fftData2.FFT("xy");
+
+    // Perform the convolution as an element wise multiplication
+    for (size_t i = 0; i < mat1.rows(); i++)
+        for (size_t j = 0; j < mat1.cols(); j++)
+            mat1(i, j) = mat1(i, j) * mat2(i, j);
+
+    // Take the inverse of the convolution result
+    _fftData1.FFT("ixy");
+
+    // Write results to matrix
+    return mat1;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Function that calculates a convolution
+/// using a transformation into the fourier space.
+///
+/// \param funcData const MatFuncData&
+/// \param errorInfo const MatFuncErrorInfo&
+/// \return Matrix
+///
+/////////////////////////////////////////////////
+static Matrix matrixConvolution(const MatFuncData& funcData, const MatFuncErrorInfo& errorInfo)
+{
+    // mat1 -> matrix to filter, mat2 -> filter kernel, nVal -> boundary mode
+
+    // Check that matrix and the filter are not empty
+    if (funcData.mat1.isEmpty() || funcData.mat2.isEmpty())
+        throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, errorInfo.command, errorInfo.position);
+
+    // Check if mode is valid
+    if (funcData.nVal < 0 || funcData.nVal > 1)
+    {
+        std::string sMode = std::to_string(funcData.nVal);
+        throw SyntaxError(SyntaxError::INVALID_MODE, errorInfo.command, errorInfo.position, sMode);
+    }
+
+    // Check if filter size is valid for the given matrix, check that filter has an uneven number of rows and cols
+    if (funcData.mat2.rows() > funcData.mat1.rows() || funcData.mat2.cols() > funcData.mat1.cols() || !(funcData.mat2.rows() % 2) || !(funcData.mat2.cols() % 2))
+        throw SyntaxError(SyntaxError::INVALID_FILTER_SIZE, errorInfo.command, errorInfo.position);
+
+    // Store the input dimensions for later use
+    size_t inputRows = funcData.mat1.rows();
+    size_t inputCols = funcData.mat1.cols();
+
+    // Define the offset that is half the filter size
+    size_t offsetRows = (funcData.mat2.rows() - 1) / 2;
+    size_t offsetCols = (funcData.mat2.cols() - 1) / 2;
+
+    // Generate the vectors with indices that represent the matrix rows and cols
+    VectorIndex rows(0, inputRows - 1);
+    VectorIndex cols(0, inputCols - 1);
 
     // Add additional indices that represent the boundary condition
     switch (funcData.nVal)
@@ -3396,18 +3529,71 @@ static Matrix matrixFilter(const MatFuncData& funcData, const MatFuncErrorInfo& 
     }
 
     // Generate the result matrix
-    Matrix _mResult = createFilledMatrix(funcData.mat1.rows(), funcData.mat1.cols(), NAN);
+    Matrix _mResult = createFilledMatrix(inputRows, inputCols, NAN);
 
-    // Calculate the results
-    #pragma omp parallel for
-    for (int i = 0; i < (int)_mResult.rows(); i++)
+    // Calculate the results by calculating the fourier transformation, performing the
+    // convolution by multiplication in fourier space and finally applying the inverse fft
+
+    // Get the complete matrix from the previously generated indices
+    Matrix mat(rows.size(), cols.size());  //TODO: Or can this be done without a new memory alloc
+    for (size_t i = 0; i < mat.rows(); i++)
+        for (size_t j = 0; j < mat.cols(); j++)
+            mat(i, j) = funcData.mat1(rows[i], cols[j]);
+
+    // Extend the kernel with zeros to the same size as the extended matrix
+    Matrix kernel(rows.size(), cols.size(), 0.0);  //TODO: Or can this be done without a new memory alloc
+    for (size_t i = 0; i < funcData.mat2.rows(); i++)
+        for (size_t j = 0; j < funcData.mat2.cols(); j++)
+            kernel(i + offsetRows + inputRows / 2 - funcData.mat2.rows() / 2, j + offsetCols + inputCols / 2  - funcData.mat2.cols() / 2) = funcData.mat2(i, j);
+
+    // Call the convolution function
+    Matrix extendedResult = convolution(mat, kernel);  //TODO: Without copy?
+
+    // Extract the relevant part of the result and perform the axis shift
+    for (size_t i = 0; i < inputRows; i++)
+        for (size_t j = 0; j < inputCols; j++)
+            _mResult(i, j) = extendedResult(i + (i >= inputRows/2 ? -(int)inputRows/2 : inputRows/2 + inputRows % 2) + offsetRows,
+                                            j + (j >= inputCols/2 ? -(int)inputCols/2 : inputCols/2 + inputCols % 2) + offsetCols);
+
+    return _mResult;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Function that decides which convolution
+/// method to use based on the input matrix
+/// dimensions.
+///
+/// \param funcData const MatFuncData&
+/// \param errorInfo const MatFuncErrorInfo&
+/// \return Matrix
+///
+/////////////////////////////////////////////////
+static Matrix matrixFilter(const MatFuncData& funcData, const MatFuncErrorInfo& errorInfo)
+{
+    // mat1 -> matrix to filter, mat2 -> filter kernel, nVal -> boundary mode
+
+    // Check that matrix and the filter are not empty
+    if (funcData.mat1.isEmpty() || funcData.mat2.isEmpty())
+        throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, errorInfo.command, errorInfo.position);
+
+    // Check if mode is valid
+    if (funcData.nVal < 0 || funcData.nVal > 1)
     {
-        for (int j = 0; j < (int)_mResult.cols(); j++)
-        {
-            // Multiply the two matrices using a helper function
-            _mResult(i, j) = applyKernel(funcData.mat2, funcData.mat1, rows, cols, i, j);
-        }
+        std::string sMode = std::to_string(funcData.nVal);
+        throw SyntaxError(SyntaxError::INVALID_MODE, errorInfo.command, errorInfo.position, sMode);
     }
+
+    // Check if filter size is valid for the given matrix, check that filter has an uneven number of rows and cols
+    if (funcData.mat2.rows() > funcData.mat1.rows() || funcData.mat2.cols() > funcData.mat1.cols() || !(funcData.mat2.rows() % 2) || !(funcData.mat2.cols() % 2))
+        throw SyntaxError(SyntaxError::INVALID_FILTER_SIZE, errorInfo.command, errorInfo.position);
+
+    // Select the method to use
+    Matrix _mResult;
+    if (funcData.mat2.rows() * funcData.mat2.cols() > 200)
+        _mResult = matrixConvolution(funcData, errorInfo);
+    else
+        _mResult = matrixRasterFilter(funcData, errorInfo);
 
     return _mResult;
 }
@@ -3481,6 +3667,7 @@ static std::map<std::string,MatFuncDef> getMatrixFunctions()
     mFunctions["one"] = MatFuncDef(MATSIG_N_MOPT, createOnesMatrix);
     mFunctions["identity"] = MatFuncDef(MATSIG_N_MOPT, identityMatrix);
     mFunctions["shuffle"] = MatFuncDef(MATSIG_N_MOPT, createShuffledMatrix);
+    mFunctions["convolve"] = MatFuncDef(MATSIG_MAT_MAT_N, matrixConvolution);
     mFunctions["correl"] = MatFuncDef(MATSIG_MAT_MAT, correlation);
     mFunctions["covar"] = MatFuncDef(MATSIG_MAT_MAT, covariance);
     mFunctions["normalize"] = MatFuncDef(MATSIG_MAT, normalize);
@@ -3506,6 +3693,7 @@ static std::map<std::string,MatFuncDef> getMatrixFunctions()
     mFunctions["assemble"] = MatFuncDef(MATSIG_MAT_MAT_MAT, assemble);
     mFunctions["polylength"] = MatFuncDef(MATSIG_MAT, polyLength);
     mFunctions["filter"] = MatFuncDef(MATSIG_MAT_MAT_N, matrixFilter);
+    mFunctions["rasterFilter"] = MatFuncDef(MATSIG_MAT_MAT_N, matrixRasterFilter);
 
     // For finding matrix functions
     mFunctions["matfl"] = MatFuncDef(MATSIG_INVALID, invalidMatrixFunction);
