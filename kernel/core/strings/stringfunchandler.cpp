@@ -17,6 +17,7 @@
 ******************************************************************************/
 
 #include "stringfunchandler.hpp"
+#include "../maths/functionimplementation.hpp"
 #include "../../kernel.hpp"
 #include "../structures.hpp"
 #define DEFAULT_NUM_ARG INT_MIN
@@ -24,9 +25,38 @@
 #define NEWSTRING (char)23
 
 using namespace std;
+typedef mu::value_type (*MAF)(const mu::value_type*, int);
 
 string removeQuotationMarks(const string& sString);
 string addQuotationMarks(const string& sString);
+
+/////////////////////////////////////////////////
+/// \brief Returns a map of available numerical
+/// MAFs.
+///
+/// \return std::map<std::string,MAF>
+///
+/////////////////////////////////////////////////
+static std::map<std::string,MAF> getParserMafMap()
+{
+    std::map<std::string,MAF> mafMap;
+    mafMap["min("] = parser_Min;
+    mafMap["max("] = parser_Max;
+    mafMap["cnt("] = parser_Cnt;
+    mafMap["num("] = parser_Num;
+    mafMap["sum("] = parser_Sum;
+    mafMap["avg("] = parser_Avg;
+    mafMap["prd("] = parser_product;
+    mafMap["norm("] = parser_Norm;
+    mafMap["med("] = parser_Med;
+    mafMap["pct("] = parser_Pct;
+    mafMap["cmp("] = parser_compare;
+    mafMap["minpos("] = parser_MinPos;
+    mafMap["maxpos("] = parser_MaxPos;
+
+    return mafMap;
+}
+
 
 namespace NumeRe
 {
@@ -105,6 +135,8 @@ namespace NumeRe
     {
         size_t nStartPosition = 0;
         size_t nEndPosition = 0;
+        static std::map<std::string,MAF> mMafMap = getParserMafMap();
+        static StringFunc strfnc_not_implemented = m_mStringFuncs["pct"].fHandle;
 
         // While the function signature can be found
         while ((nStartPosition = findNextFunction(sFuncName, sLine, nStartPosition, nEndPosition)) != string::npos)
@@ -141,14 +173,24 @@ namespace NumeRe
                 if (!nMaxArgs)
                     throw SyntaxError(SyntaxError::STRING_ERROR, sLine, nStartPosition, _lang.get("ERR_NR_3603_TOO_FEW_ARGS"));
 
-                // These five multiargument functions are also defined for numerical values.
-                // If the return value for the current functions arguments is an only logical
-                // value, ignore the current function call
-                if (bLogicalOnly
-                    && (sFuncName == "min(" || sFuncName == "max(" || sFuncName == "cnt(" || sFuncName == "num(" || sFuncName == "sum("))
+                auto iter = mMafMap.find(sFuncName);
+
+                // If the current function is a MAF
+                if (iter != mMafMap.end())
                 {
-                    nStartPosition++;
-                    continue;
+                    // If we only have numerical values, evaluate the MAF numerically
+                    if (bLogicalOnly)
+                    {
+                        argumentParser(sFunctionArgument, dValArg);
+                        std::string sFuncReturnValue = toString(iter->second(&dValArg[0], dValArg.size()));
+
+                        // replace the function with the return value
+                        sLine.replace(nStartPosition, nEndPosition + 1 - nStartPosition, sFuncReturnValue);
+                        nStartPosition++;
+                        continue;
+                    }
+                    else if (!bLogicalOnly && funcHandle.fHandle == strfnc_not_implemented) // Throw for unimplemented functions
+                        throw SyntaxError(SyntaxError::STRING_ERROR, sLine, nStartPosition, _lang.get("ERR_NR_3603_NOT_IMPLEMENTED"));
                 }
             }
             else if (funcHandle.fType >= PARSER_STRING_DOUBLE && funcHandle.fType < PARSER_STRING_INT_INT)

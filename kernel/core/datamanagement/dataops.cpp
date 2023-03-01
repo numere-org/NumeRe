@@ -1068,6 +1068,7 @@ bool writeToFile(CommandLineParser& cmdParser)
 		sExpression += " -komq";
 		string sDummy = "";
 		NumeReKernel::getInstance()->getStringParser().evalAndFormat(sExpression, sDummy, true);
+		sExpression = NumeReKernel::getInstance()->getAns().serialize();
 	}
 	else
 		throw SyntaxError(SyntaxError::NO_STRING_FOR_WRITING, cmdParser.getCommandLine(), SyntaxError::invalid_position);
@@ -1103,7 +1104,10 @@ bool writeToFile(CommandLineParser& cmdParser)
 
 		// Remove quotation marks if desired
 		if (bNoQuotes && sArgument[0] == '"' && sArgument[sArgument.length() - 1] == '"')
+        {
 			sArgument = sArgument.substr(1, sArgument.length() - 2);
+            replaceAll(sArgument, "\\\"", "\"");
+        }
 
         // Write only strings, which are not empty
 		if ((!sArgument.length() || sArgument == "\"\"") && !bKeepEmptyLines)

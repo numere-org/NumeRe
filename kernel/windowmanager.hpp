@@ -73,7 +73,8 @@ namespace NumeRe
         CTRL_FOLDERDIALOG = 0x1000,
         CTRL_LISTDIALOG = 0x2000,
         CTRL_SELECTIONDIALOG = 0x4000,
-        CTRL_TEXTENTRY = 0x8000
+        CTRL_TEXTENTRY = 0x8000,
+        CTRL_LISTEDITDIALOG = 0x10000
     };
 
 

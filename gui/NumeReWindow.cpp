@@ -87,6 +87,7 @@
 #include "dialogs/revisiondialog.hpp"
 #include "dialogs/pluginrepodialog.hpp"
 #include "dialogs/newfiledialog.hpp"
+#include "dialogs/listeditdialog.hpp"
 
 #include "terminal/terminal.hpp"
 
@@ -2271,29 +2272,19 @@ void NumeReWindow::showWindow(NumeRe::Window& window)
     else if (window.getType() == NumeRe::WINDOW_MODAL)
     {
         if (window.getWindowSettings().nControls & NumeRe::CTRL_FILEDIALOG)
-        {
             showFileDialog(window);
-        }
         else if (window.getWindowSettings().nControls & NumeRe::CTRL_FOLDERDIALOG)
-        {
             showDirDialog(window);
-        }
         else if (window.getWindowSettings().nControls & NumeRe::CTRL_TEXTENTRY)
-        {
             showTextEntry(window);
-        }
         else if (window.getWindowSettings().nControls & NumeRe::CTRL_MESSAGEBOX)
-        {
             showMessageBox(window);
-        }
         else if (window.getWindowSettings().nControls & NumeRe::CTRL_LISTDIALOG)
-        {
             showListDialog(window);
-        }
         else if (window.getWindowSettings().nControls & NumeRe::CTRL_SELECTIONDIALOG)
-        {
             showSelectionDialog(window);
-        }
+        else if (window.getWindowSettings().nControls & NumeRe::CTRL_LISTEDITDIALOG)
+            showListEditDialog(window);
     }
     else if (window.getType() == NumeRe::WINDOW_CUSTOM)
     {
@@ -2390,7 +2381,9 @@ void NumeReWindow::showTextEntry(NumeRe::Window& window)
         window.updateWindowInformation(NumeRe::STATUS_CANCEL, "");
     else
     {
-        window.updateWindowInformation(NumeRe::STATUS_OK, dialog.GetValue().ToStdString());
+        wxString value = dialog.GetValue();
+        value.Replace("\"", "\\\"");
+        window.updateWindowInformation(NumeRe::STATUS_OK, value.ToStdString());
     }
 }
 
@@ -2468,6 +2461,7 @@ void NumeReWindow::showListDialog(NumeRe::Window& window)
         window.updateWindowInformation(NumeRe::STATUS_CANCEL, "");
     else
     {
+        choices[dialog.GetSelection()].Replace("\"", "\\\"");
         window.updateWindowInformation(NumeRe::STATUS_OK, choices[dialog.GetSelection()].ToStdString());
     }
 }
@@ -2505,7 +2499,52 @@ void NumeReWindow::showSelectionDialog(NumeRe::Window& window)
 
         for (size_t i = 0; i < selections.size(); i++)
         {
+            choices[selections[i]].Replace("\"", "\\\"");
             sExpression += choices[selections[i]].ToStdString() + "\",\"";
+        }
+
+        if (sExpression.length())
+            sExpression.erase(sExpression.length()-3);
+
+        window.updateWindowInformation(NumeRe::STATUS_OK, sExpression);
+    }
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This private member function shows a
+/// list edit dialog.
+///
+/// \param window NumeRe::Window&
+/// \return void
+///
+/////////////////////////////////////////////////
+void NumeReWindow::showListEditDialog(NumeRe::Window& window)
+{
+    std::string sExpression = window.getWindowSettings().sExpression;
+    wxArrayString choices;
+
+    while (sExpression.length())
+    {
+        choices.Add(prepareStringsForDialog(getNextArgument(sExpression, true)));
+    }
+
+    ListEditDialog dialog(this, choices, window.getWindowSettings().sTitle, prepareStringsForDialog(window.getWindowSettings().sMessage));
+    dialog.SetIcon(getStandardIcon());
+    int ret = dialog.ShowModal();
+
+    if (ret == wxID_CANCEL)
+        window.updateWindowInformation(NumeRe::STATUS_CANCEL, "");
+    else
+    {
+        wxArrayString listEntries = dialog.getEntries();
+
+        sExpression.clear();
+
+        for (size_t i = 0; i < listEntries.size(); i++)
+        {
+            listEntries[i].Replace("\"", "\\\"");
+            sExpression += listEntries[i].ToStdString() + "\",\"";
         }
 
         if (sExpression.length())

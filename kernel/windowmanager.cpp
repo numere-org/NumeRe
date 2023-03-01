@@ -396,7 +396,7 @@ namespace NumeRe
             val.stringValue = _value.stringValue;
             val.tableValue = _value.tableValue;
             val.type = _value.type;
-            return m_customWindow->setItemValue(val, windowItemID);
+            return m_customWindow->pushItemValue(val, windowItemID);
         }
 
         return false;
@@ -415,7 +415,7 @@ namespace NumeRe
     bool Window::setItemLabel(const std::string& _label, int windowItemID)
     {
         if (m_customWindow)
-            return m_customWindow->setItemLabel(_label, windowItemID);
+            return m_customWindow->pushItemLabel(_label, windowItemID);
 
         return false;
     }

@@ -196,6 +196,7 @@ class StringVector : public std::vector<std::string>
         std::vector<bool> and_f(const StringVector& sVect) const;
         std::vector<bool> or_f(const StringVector& sVect) const;
         std::vector<bool> xor_f(const StringVector& sVect) const;
+        std::vector<mu::value_type> get_numerical() const;
         StringVector operator+(const StringVector& sVect) const;
         StringVector& operator+=(const StringVector& sVect);
         StringVector& evalIfElse(const StringVector& sLogicals, const StringVector& sIfBranch, const StringVector& sElseBranch);

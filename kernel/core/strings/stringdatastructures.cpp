@@ -799,6 +799,27 @@ std::vector<bool> StringVector::xor_f(const StringVector& sVect) const
 
 
 /////////////////////////////////////////////////
+/// \brief Convert all contents to numerical
+/// values. Makes only sense, if the contents are
+/// actually numerical.
+///
+/// \return std::vector<mu::value_type>
+///
+/////////////////////////////////////////////////
+std::vector<mu::value_type> StringVector::get_numerical() const
+{
+    std::vector<mu::value_type> vRet(size());
+
+    for (size_t i = 0; i < vRet.size(); i++)
+    {
+        vRet[i] = getNumericalVectorized(i);
+    }
+
+    return vRet;
+}
+
+
+/////////////////////////////////////////////////
 /// \brief Concatenate two StringVectors.
 ///
 /// \param sVect const StringVector&

@@ -926,6 +926,36 @@ namespace NumeRe
     /// \return std::string
     ///
     /////////////////////////////////////////////////
+    std::string Cluster::serialize() const
+    {
+        // Return nan, if no data is available
+        if (!vClusterArray.size())
+            return "nan";
+
+        std::string sSerialization;
+
+        // Append the contained data depending on its type
+        for (size_t i = 0; i < vClusterArray.size(); i++)
+        {
+            sSerialization += vClusterArray[i]->getString() + ",";
+        }
+
+        // Replace the last comma with a closing brace
+        sSerialization.pop_back();
+
+        return sSerialization;
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief This member function constructs a
+    /// plain vector from the data in memory, which
+    /// can be inserted in the commandline as a
+    /// replacement for the call to the cluster.
+    ///
+    /// \return std::string
+    ///
+    /////////////////////////////////////////////////
     std::string Cluster::getVectorRepresentation() const
     {
         // Return nan, if no data is available

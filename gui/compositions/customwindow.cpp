@@ -124,7 +124,7 @@ static void populateTreeListCtrl(wxTreeListCtrl* listCtrl, const wxArrayString& 
         nColumns--;
 
     listCtrl->DeleteAllItems();
-    //wxSize ctrlSize = listCtrl->GetClientSize();
+    wxSize ctrlSize = listCtrl->GetClientSize();
 
     while (listCtrl->GetColumnCount() < nColumns)
         listCtrl->AppendColumn("");
@@ -150,10 +150,10 @@ static void populateTreeListCtrl(wxTreeListCtrl* listCtrl, const wxArrayString& 
         }
     }
 
-    //for (size_t i = 0; i < 1u; i++)
-    //{
-    //    listCtrl->SetColumnWidth(i, -1);//ctrlSize.x / nColumns - 2);
-    //}
+    for (size_t i = 0; i < listCtrl->GetColumnCount(); i++)
+    {
+        listCtrl->SetColumnWidth(i, ctrlSize.x / nColumns - 2);
+    }
 }
 
 
@@ -197,7 +197,7 @@ static wxString getTreeListCtrlValue(wxTreeListCtrl* listCtrl)
                 values += convertToCodeString(sItem);
             }
 
-            if (listCtrl->GetColumnCount() > 1)
+            if (listCtrl->GetColumnCount() > 1 && items.size() > 1)
                 return convertToCodeString(values);
         }
         else
@@ -216,6 +216,29 @@ static wxString getTreeListCtrlValue(wxTreeListCtrl* listCtrl)
     }
 
     return "\"{" + values + "}\"";
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Finds the depth-first numerical ID of
+/// an element in the wxTreListCtrl.
+///
+/// \param listCtrl wxTreeListCtrl*
+/// \param item const wxTreeListItem&
+/// \return int
+///
+/////////////////////////////////////////////////
+static int enumerateListItems(wxTreeListCtrl* listCtrl, const wxTreeListItem& item)
+{
+    int id = 0;
+
+    for (wxTreeListItem currItem = listCtrl->GetFirstItem(); currItem.IsOk(); currItem = listCtrl->GetNextItem(currItem), id++)
+    {
+        if (currItem == item)
+            return id;
+    }
+
+    return wxNOT_FOUND;
 }
 
 
@@ -242,12 +265,16 @@ BEGIN_EVENT_TABLE(CustomWindow, wxFrame)
     EVT_SPINCTRL(-1, CustomWindow::OnSpin)
     EVT_CLOSE(CustomWindow::OnClose)
     EVT_GRID_SELECT_CELL(CustomWindow::OnCellSelect)
+    EVT_GRID_CELL_LEFT_DCLICK(CustomWindow::OnCellActivate)
     EVT_LEFT_DOWN(CustomWindow::OnMouseLeftDown)
     EVT_TREELIST_ITEM_CHECKED(-1, CustomWindow::OnTreeListEvent)
     EVT_TREELIST_SELECTION_CHANGED(-1, CustomWindow::OnTreeListEvent)
+    EVT_TREELIST_ITEM_ACTIVATED(-1, CustomWindow::OnTreeListActivateEvent)
     EVT_SIZE(CustomWindow::OnSizeEvent)
     EVT_SLIDER(-1, CustomWindow::OnChange)
     EVT_MENU(-1, CustomWindow::OnMenuEvent)
+    cEVT_SET_VALUE(-1, CustomWindow::OnSetValueEvent)
+    cEVT_SET_LABEL(-1, CustomWindow::OnSetLabelEvent)
 END_EVENT_TABLE()
 
 
@@ -438,7 +465,7 @@ void CustomWindow::layoutChild(const tinyxml2::XMLElement* currentChild, wxWindo
             m_windowItems[id] = std::make_pair(CustomWindow::BUTTON, button);
 
             if (currentChild->Attribute("onclick"))
-                m_eventTable[id] = currentChild->Attribute("onclick");
+                m_eventTable[id].onclick = currentChild->Attribute("onclick");
 
             if (currentChild->Attribute("color"))
                 button->SetForegroundColour(toWxColour(currentChild->Attribute("color")));
@@ -459,7 +486,7 @@ void CustomWindow::layoutChild(const tinyxml2::XMLElement* currentChild, wxWindo
                 checkbox->SetValue(currentChild->Attribute("value", "1"));
 
             if (currentChild->Attribute("onchange"))
-                m_eventTable[id] = currentChild->Attribute("onchange");
+                m_eventTable[id].onchange = currentChild->Attribute("onchange");
 
             if (currentChild->Attribute("color"))
                 checkbox->SetBackgroundColour(toWxColour(currentChild->Attribute("color")));
@@ -489,7 +516,7 @@ void CustomWindow::layoutChild(const tinyxml2::XMLElement* currentChild, wxWindo
                 radiobox->SetSelection(currentChild->IntAttribute("value")-1);
 
             if (currentChild->Attribute("onchange"))
-                m_eventTable[id] = currentChild->Attribute("onchange");
+                m_eventTable[id].onchange = currentChild->Attribute("onchange");
 
             if (state == DISABLED)
                 radiobox->Disable();
@@ -519,7 +546,7 @@ void CustomWindow::layoutChild(const tinyxml2::XMLElement* currentChild, wxWindo
             m_windowItems[id] = std::make_pair(CustomWindow::SPINCTRL, spinctrl);
 
             if (currentChild->Attribute("onchange"))
-                m_eventTable[id] = currentChild->Attribute("onchange");
+                m_eventTable[id].onchange = currentChild->Attribute("onchange");
 
             if (currentChild->Attribute("color"))
                 spinctrl->SetBackgroundColour(toWxColour(currentChild->Attribute("color")));
@@ -552,7 +579,7 @@ void CustomWindow::layoutChild(const tinyxml2::XMLElement* currentChild, wxWindo
             m_windowItems[id] = std::make_pair(CustomWindow::SLIDER, slider);
 
             if (currentChild->Attribute("onchange"))
-                m_eventTable[id] = currentChild->Attribute("onchange");
+                m_eventTable[id].onchange = currentChild->Attribute("onchange");
 
             if (currentChild->Attribute("color"))
                 slider->SetForegroundColour(toWxColour(currentChild->Attribute("color")));
@@ -592,7 +619,7 @@ void CustomWindow::layoutChild(const tinyxml2::XMLElement* currentChild, wxWindo
                 choice->SetSelection(currentChild->IntAttribute("value")-1);
 
             if (currentChild->Attribute("onchange"))
-                m_eventTable[id] = currentChild->Attribute("onchange");
+                m_eventTable[id].onchange = currentChild->Attribute("onchange");
 
             if (currentChild->Attribute("color"))
                 choice->SetBackgroundColour(toWxColour(currentChild->Attribute("color")));
@@ -612,7 +639,7 @@ void CustomWindow::layoutChild(const tinyxml2::XMLElement* currentChild, wxWindo
                 combo->SetSelection(currentChild->IntAttribute("value")-1);
 
             if (currentChild->Attribute("onchange"))
-                m_eventTable[id] = currentChild->Attribute("onchange");
+                m_eventTable[id].onchange = currentChild->Attribute("onchange");
 
             if (currentChild->Attribute("color"))
                 combo->SetBackgroundColour(toWxColour(currentChild->Attribute("color")));
@@ -652,7 +679,7 @@ void CustomWindow::layoutChild(const tinyxml2::XMLElement* currentChild, wxWindo
             m_windowItems[id] = std::make_pair(CustomWindow::TEXTCTRL, textctrl);
 
             if (currentChild->Attribute("onchange"))
-                m_eventTable[id] = currentChild->Attribute("onchange");
+                m_eventTable[id].onchange = currentChild->Attribute("onchange");
 
             if (currentChild->Attribute("color"))
                 textctrl->SetBackgroundColour(toWxColour(currentChild->Attribute("color")));
@@ -744,7 +771,7 @@ void CustomWindow::layoutChild(const tinyxml2::XMLElement* currentChild, wxWindo
             currSizer->Add(mgl, 1, alignment | wxALL | wxEXPAND | wxRESERVE_SPACE_EVEN_IF_HIDDEN, 5);
 
             if (currentChild->Attribute("onclick"))
-                m_eventTable[id] = currentChild->Attribute("onclick");
+                m_eventTable[id].onclick = currentChild->Attribute("onclick");
         }
         else if (std::string(currentChild->Value()) == "tablegrid")
         {
@@ -770,7 +797,10 @@ void CustomWindow::layoutChild(const tinyxml2::XMLElement* currentChild, wxWindo
             }
 
             if (currentChild->Attribute("onclick"))
-                m_eventTable[id] = currentChild->Attribute("onclick");
+                m_eventTable[id].onclick = currentChild->Attribute("onclick");
+
+            if (currentChild->Attribute("onactivate"))
+                m_eventTable[id].onactivate = currentChild->Attribute("onactivate");
         }
         else if (std::string(currentChild->Value()) == "treelist")
         {
@@ -844,7 +874,10 @@ void CustomWindow::layoutChild(const tinyxml2::XMLElement* currentChild, wxWindo
             }
 
             if (currentChild->Attribute("onclick"))
-                m_eventTable[id] = currentChild->Attribute("onclick");
+                m_eventTable[id].onclick = currentChild->Attribute("onclick");
+
+            if (currentChild->Attribute("onactivate"))
+                m_eventTable[id].onactivate = currentChild->Attribute("onactivate");
         }
         else if (std::string(currentChild->Value()) == "group")
         {
@@ -1002,7 +1035,7 @@ void CustomWindow::layoutMenu(const tinyxml2::XMLElement* currentChild, wxMenu* 
             m_windowItems[id] = std::make_pair(CustomWindow::MENUITEM, item);
 
             if (currentChild->Attribute("onclick"))
-                m_eventTable[id] = currentChild->Attribute("onclick");
+                m_eventTable[id].onclick = currentChild->Attribute("onclick");
 
             if (currentChild->Attribute("color"))
                 item->SetTextColour(toWxColour(currentChild->Attribute("color")));
@@ -1027,7 +1060,7 @@ void CustomWindow::layoutMenu(const tinyxml2::XMLElement* currentChild, wxMenu* 
             m_windowItems[id] = std::make_pair(CustomWindow::MENUITEM, item);
 
             if (currentChild->Attribute("onclick"))
-                m_eventTable[id] = currentChild->Attribute("onclick");
+                m_eventTable[id].onclick = currentChild->Attribute("onclick");
 
             if (currentChild->Attribute("color"))
                 item->SetTextColour(toWxColour(currentChild->Attribute("color")));
@@ -1079,10 +1112,11 @@ void CustomWindow::layoutMenu(const tinyxml2::XMLElement* currentChild, wxMenu* 
 ///
 /// \param event wxEvent&
 /// \param sEventType const wxString&
+/// \param pos const EventPosition&
 /// \return void
 ///
 /////////////////////////////////////////////////
-void CustomWindow::handleEvent(wxEvent& event, const wxString& sEventType)
+void CustomWindow::handleEvent(wxEvent& event, const wxString& sEventType, const EventPosition& pos)
 {
 #warning NOTE (numere#1#08/15/21): The "onclose" event is still undefined
     if (sEventType == "onclose")
@@ -1094,7 +1128,16 @@ void CustomWindow::handleEvent(wxEvent& event, const wxString& sEventType)
 
     if (iter != m_eventTable.end())
     {
-        if (iter->second[0] == '$' && iter->second.length() > 1 && (wxIsalnum(iter->second[1]) || iter->second[1] == '_'))
+        wxString sEventHandler;
+
+        if (sEventType == "onchange")
+            sEventHandler = iter->second.onchange;
+        else if (sEventType == "onclick")
+            sEventHandler = iter->second.onclick;
+        else if (sEventType == "onactivate")
+            sEventHandler = iter->second.onactivate;
+
+        if (sEventHandler[0] == '$' && sEventHandler.length() > 1 && (wxIsalnum(sEventHandler[1]) || sEventHandler[1] == '_'))
         {
             // If the event handler starts with an
             // dollar, it must be a procedure
@@ -1109,29 +1152,33 @@ void CustomWindow::handleEvent(wxEvent& event, const wxString& sEventType)
 
             // Create the corresponding key-value-list
             // syntax
-            if (event.GetEventType() == wxEVT_GRID_SELECT_CELL)
+            if (event.GetEventType() == wxEVT_GRID_SELECT_CELL
+                || event.GetEventType() == wxEVT_GRID_CELL_LEFT_DCLICK)
             {
-                kvl_event = "{\"event\",\"onclick\",\"object\",\"" + params.type
-                            + "\",\"value\"," + sEventType
-                            + ",\"state\",\"" + params.state + "\"}";
+                TableViewer* table = static_cast<TableViewer*>(m_windowItems[event.GetId()].second);
+                params.value = convertToCodeString(table->GetCellValue(static_cast<wxGridEvent&>(event).GetRow(),
+                                                                       static_cast<wxGridEvent&>(event).GetCol()));
             }
-            else
-            {
-                kvl_event = "{\"event\",\"" + sEventType
-                            + "\",\"object\",\"" + params.type
-                            + "\",\"value\"," + params.value
-                            + ",\"state\",\"" + params.state + "\"}";
-            }
+
+            kvl_event = "{\"event\",\"" + sEventType
+                        + "\",\"object\",\"" + params.type
+                        + "\",\"value\"," + params.value
+                        + ",\"state\",\"" + params.state + "\"";
+
+            wxString p = pos.serialize();
+
+            if (p.length())
+                kvl_event += ",\"position\", " + p;
 
             // Call the procedure with the following syntax:
             // $PROCEDURE(winid, objectid, event{})
-            mainWindow->pass_command(iter->second + "(" + toString(m_windowRef.getId()) + ","
-                                                        + toString(event.GetId()) + ","
-                                                        + kvl_event + ")", true);
+            mainWindow->pass_command(sEventHandler + "(" + toString(m_windowRef.getId()) + ","
+                                                         + toString(event.GetId()) + ","
+                                                         + kvl_event + "})", true);
         }
-        else if (iter->second.find('(') != std::string::npos)
+        else if (sEventHandler.find('(') != std::string::npos)
         {
-            wxArrayString funcDef = decodeEventHandlerFunction(iter->second);
+            wxArrayString funcDef = decodeEventHandlerFunction(sEventHandler);
 
             if (funcDef.front() == "evt_close")
                 closeWindow();
@@ -1630,6 +1677,38 @@ wxString CustomWindow::getProperties() const
 
 
 /////////////////////////////////////////////////
+/// \brief Push an item value change to the
+/// internal event handler.
+///
+/// \param _value WindowItemValue&
+/// \param windowItemID int
+/// \return bool
+///
+/////////////////////////////////////////////////
+bool CustomWindow::pushItemValue(WindowItemValue& _value, int windowItemID)
+{
+    GetEventHandler()->QueueEvent(new SetValueEvent(SET_WINDOW_VALUE, GetId(), windowItemID, _value));
+    return true;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Push an item label change to the
+/// internal event handler.
+///
+/// \param _label const wxString&
+/// \param windowItemID int
+/// \return bool
+///
+/////////////////////////////////////////////////
+bool CustomWindow::pushItemLabel(const wxString& _label, int windowItemID)
+{
+    GetEventHandler()->QueueEvent(new SetLabelEvent(SET_WINDOW_LABEL, GetId(), windowItemID, _label));
+    return true;
+}
+
+
+/////////////////////////////////////////////////
 /// \brief Change the value of the selected item.
 ///
 /// \param _value WindowItemValue&
@@ -1823,6 +1902,8 @@ bool CustomWindow::setItemLabel(const wxString& _label, int windowItemID)
                 else
                     listCtrl->GetDataView()->GetColumn(i)->SetTitle(labels[i]);
             }
+
+            break;
         }
         case CustomWindow::MENUITEM:
             static_cast<wxMenuItem*>(object.second)->SetItemLabel(removeQuotationMarks(_label));
@@ -2080,7 +2161,25 @@ void CustomWindow::OnSpin(wxSpinEvent& event)
 void CustomWindow::OnCellSelect(wxGridEvent& event)
 {
     TableViewer* table = static_cast<TableViewer*>(m_windowItems[event.GetId()].second);
-    handleEvent(event, convertToCodeString(table->GetCellValue(event.GetRow(), event.GetCol())));
+    handleEvent(event,
+                "onclick",
+                EventPosition(table->GetInternalRows(event.GetRow()), event.GetCol()));
+}
+
+
+/////////////////////////////////////////////////
+/// \brief wxGrid event handler for activation.
+///
+/// \param event wxGridEvent&
+/// \return void
+///
+/////////////////////////////////////////////////
+void CustomWindow::OnCellActivate(wxGridEvent& event)
+{
+    TableViewer* table = static_cast<TableViewer*>(m_windowItems[event.GetId()].second);
+    handleEvent(event,
+                "onactivate",
+                EventPosition(table->GetInternalRows(event.GetRow()), event.GetCol()));
 }
 
 
@@ -2109,7 +2208,7 @@ void CustomWindow::OnClose(wxCloseEvent& event)
 /////////////////////////////////////////////////
 void CustomWindow::OnMouseLeftDown(wxMouseEvent& event)
 {
-    handleEvent(event, "onclick");
+    handleEvent(event, "onclick", EventPosition(event.GetX(), event.GetY()));
 }
 
 
@@ -2122,11 +2221,32 @@ void CustomWindow::OnMouseLeftDown(wxMouseEvent& event)
 /////////////////////////////////////////////////
 void CustomWindow::OnTreeListEvent(wxTreeListEvent& event)
 {
-    if (static_cast<wxTreeListCtrl*>(m_windowItems[event.GetId()].second)->HasFlag(wxTL_CHECKBOX)
+    wxTreeListCtrl* listCtrl = static_cast<wxTreeListCtrl*>(m_windowItems[event.GetId()].second);
+
+    if (listCtrl->HasFlag(wxTL_CHECKBOX)
         && event.GetEventType() == wxEVT_TREELIST_SELECTION_CHANGED)
         return;
 
-    handleEvent(event, "onclick");
+    handleEvent(event, "onclick", EventPosition(enumerateListItems(listCtrl, event.GetItem())));
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Tree list control event handler.
+///
+/// \param event wxTreeListEvent&
+/// \return void
+///
+/////////////////////////////////////////////////
+void CustomWindow::OnTreeListActivateEvent(wxTreeListEvent& event)
+{
+    wxTreeListCtrl* listCtrl = static_cast<wxTreeListCtrl*>(m_windowItems[event.GetId()].second);
+
+    if (listCtrl->HasFlag(wxTL_CHECKBOX)
+        && event.GetEventType() == wxEVT_TREELIST_SELECTION_CHANGED)
+        return;
+
+    handleEvent(event, "onactivate", EventPosition(enumerateListItems(listCtrl, event.GetItem())));
 }
 
 

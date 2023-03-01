@@ -323,6 +323,7 @@ class NumeReWindow : public wxFrame
         void showMessageBox(NumeRe::Window& window);
         void showListDialog(NumeRe::Window& window);
         void showSelectionDialog(NumeRe::Window& window);
+        void showListEditDialog(NumeRe::Window& window);
 
         wxArrayString OpenFile(FileFilterType filterType );
         bool SaveCurrentFile(bool saveas);

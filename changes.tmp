@@ -87,3 +87,8 @@ Added	The function "getompthreads()" returns the number of possible OpenMP threa
 New	The plotting options "ohlc" (Open-High-Low-Close) and "candlestick" have been added to correctly plot stock time series.
 Applied	It is now possible to deactivate the floating mode of some windows, so that they move to the background if they lose focus.
 New	Added a version of the matrix filter that uses the Fast Fourier Transformation that executes significantly faster for larger kernel matrices.
+Fixed	Resolved a critical crash while filling a "treelist" from an event handler.
+New	A new event handler "onactivate" (for double-clicks) for "treelist" and "tablegrid" is available.
+Added	"dialog" has now a "listeditor" type for providing a list of editable strings.
+Fixed	"split()" may now handle empty strings or empty return values.
+Fixed	"max(logtoindex(STRINGEXPR))" is now working again.

@@ -44,8 +44,16 @@ bool ToolBarSearchCtrl::selectItem(const wxString& value)
 
     if (sTermInput.substr(0, 5) == "help ")
         m_mainframe->ShowHelp(sTermInput.substr(5));
-    else
+    else if (sTermInput.substr(0, 1) == ".")
+        m_mainframe->ShowHelp(sTermInput.substr(1));
+    else if (sTermInput.front() != '"' && sTermInput.find("(") != std::string::npos)
         m_mainframe->ShowHelp(sTermInput);
+    else
+    {
+        NumeReEditor* edit = m_mainframe->GetCurrentEditor();
+        edit->InsertText(edit->GetCurrentPos(), sTermInput);
+        edit->GotoPos(edit->GetCurrentPos()+sTermInput.length());
+    }
 
     return true;
 }

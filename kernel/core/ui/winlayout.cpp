@@ -212,10 +212,16 @@ static void parseLayoutCommand(const std::string& sLayoutCommand, tinyxml2::XMLE
         layoutElement->SetAttribute("state", getArgAtPos(sLayoutCommand, findParameter(sLayoutCommand, "state", '=')+5).c_str());
 
     if (findParameter(sLayoutCommand, "onchange", '='))
-        layoutElement->SetAttribute("onchange", parseEventOpt(sLayoutCommand, findParameter(sLayoutCommand, "onchange", '=')+8, sFolderName).c_str());
+        layoutElement->SetAttribute("onchange", parseEventOpt(sLayoutCommand,
+                                                              findParameter(sLayoutCommand, "onchange", '=')+8, sFolderName).c_str());
 
     if (findParameter(sLayoutCommand, "onclick", '='))
-        layoutElement->SetAttribute("onclick", parseEventOpt(sLayoutCommand, findParameter(sLayoutCommand, "onclick", '=')+7, sFolderName).c_str());
+        layoutElement->SetAttribute("onclick", parseEventOpt(sLayoutCommand,
+                                                             findParameter(sLayoutCommand, "onclick", '=')+7, sFolderName).c_str());
+
+    if (findParameter(sLayoutCommand, "onactivate", '='))
+        layoutElement->SetAttribute("onactivate", parseEventOpt(sLayoutCommand,
+                                                                findParameter(sLayoutCommand, "onactivate", '=')+10, sFolderName).c_str());
 }
 
 
@@ -802,6 +808,8 @@ void dialogCommand(CommandLineParser& cmdParser)
             nControls = NumeRe::CTRL_MESSAGEBOX;
         else if (sType == "textentry")
             nControls = NumeRe::CTRL_TEXTENTRY;
+        else if (sType == "listeditor")
+            nControls = NumeRe::CTRL_LISTEDITDIALOG;
     }
     else
         nControls = NumeRe::CTRL_MESSAGEBOX;
@@ -846,6 +854,7 @@ void dialogCommand(CommandLineParser& cmdParser)
     {
         std::string sDummy;
         kernel->getStringParser().evalAndFormat(sExpression, sDummy, true);
+        sExpression = kernel->getAns().serialize();
     }
 
     // Ensure that default values are available, if the user
@@ -888,7 +897,10 @@ void dialogCommand(CommandLineParser& cmdParser)
     // Insert the return value as a string into the command
     // line and inform the command handler, that a value
     // has to be evaluated
-    cmdParser.setReturnValue("\"" + replacePathSeparator(wininfo.sReturn) + "\"");
+    if (wininfo.sReturn.find("\\\"") == std::string::npos)
+        cmdParser.setReturnValue("\"" + replacePathSeparator(wininfo.sReturn) + "\"");
+    else
+        cmdParser.setReturnValue("\"" + wininfo.sReturn + "\"");
 }
 
 

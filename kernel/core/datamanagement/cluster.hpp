@@ -183,9 +183,9 @@ namespace NumeRe
             virtual std::string getString() override
             {
                 if (std::isnan(std::abs(dData)))
-                    return toExternalString("nan");
+                    return "nan";
 
-                return toExternalString(toString(dData, 7));
+                return toString(dData, 7);
             }
 
             /////////////////////////////////////////////////
@@ -409,6 +409,7 @@ namespace NumeRe
             void setStringArray(const std::vector<std::string>& sVals);
 
             std::vector<std::string> to_string() const;
+            std::string serialize() const;
             std::string getVectorRepresentation() const;
             std::string getShortVectorRepresentation(size_t maxStringLength) const;
 

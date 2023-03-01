@@ -1642,11 +1642,13 @@ static void parseArg(std::string& sArg, int flags)
     if (instance->getStringParser().isStringExpression(sArg))
     {
         std::string dummy;
-
         NumeRe::StringParser::StringParserRetVal _ret = instance->getStringParser().evalAndFormat(sArg, dummy, true);
 
         if (_ret == NumeRe::StringParser::STRING_SUCCESS)
+        {
+            sArg = NumeReKernel::getInstance()->getAns().serialize();
             return;
+        }
     }
 
     if (flags & ARGEXTRACT_ASSTRING)

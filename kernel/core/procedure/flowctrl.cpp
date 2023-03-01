@@ -3948,8 +3948,8 @@ void FlowCtrl::replaceLocalVars(const std::string& sOldVar, const std::string& s
             {
                 if (vCmdArray[i].sCommand.substr(j, sOldVar.length()) == sOldVar)
                 {
-                    if (((!j && checkDelimiter(" " + vCmdArray[i].sCommand.substr(j, sOldVar.length() + 1)))
-                        || (j && checkDelimiter(vCmdArray[i].sCommand.substr(j - 1, sOldVar.length() + 2))))
+                    if (((!j && checkDelimiter(" " + vCmdArray[i].sCommand.substr(j, sOldVar.length() + 1), true))
+                        || (j && checkDelimiter(vCmdArray[i].sCommand.substr(j - 1, sOldVar.length() + 2), true)))
                         && !isInQuotes(vCmdArray[i].sCommand, j, true))
                     {
                         vCmdArray[i].sCommand.replace(j, sOldVar.length(), sNewVar);

@@ -941,6 +941,10 @@ static StringVector strfnc_split(StringFuncArgs& funcArgs)
         sSplittedString.push_back(std::string(*iter));
     }
 
+    // Allow empty return values
+    if (!sSplittedString.size())
+        sSplittedString.push_back("");
+
     return sSplittedString;
 }
 
@@ -2662,6 +2666,21 @@ static StringVector strfnc_sha256(StringFuncArgs& funcArgs)
     return "\"\"";
 }
 
+
+/////////////////////////////////////////////////
+/// \brief Simple function to have valid pointer
+/// to unimplemented functions. (Avoids crashes)
+///
+/// \param funcArgs StringFuncArgs&
+/// \return StringVector
+///
+/////////////////////////////////////////////////
+static StringVector strfnc_not_implemented(StringFuncArgs& funcArgs)
+{
+    throw SyntaxError(SyntaxError::STRING_ERROR, "", SyntaxError::invalid_index, _lang.get("ERR_NR_3603_NOT_IMPLEMENTED"));
+}
+
+
 /////////////////////////////////////////////////
 /// \brief This static function is used to construct
 /// the string map.
@@ -2747,6 +2766,16 @@ static std::map<std::string, StringFuncHandle> getStringFuncHandles()
     mHandleTable["weekday"]             = StringFuncHandle(DBL_VALOPT, strfnc_weekday, false);
     mHandleTable["xor"]                 = StringFuncHandle(VAL, strfnc_xor, true);
 
+    // Multi argument functions, which have to be handled but must not called
+    mHandleTable["avg"]                 = StringFuncHandle(STR, strfnc_not_implemented, true);
+    mHandleTable["std"]                 = StringFuncHandle(STR, strfnc_not_implemented, true);
+    mHandleTable["prd"]                 = StringFuncHandle(STR, strfnc_not_implemented, true);
+    mHandleTable["norm"]                = StringFuncHandle(STR, strfnc_not_implemented, true);
+    mHandleTable["med"]                 = StringFuncHandle(STR, strfnc_not_implemented, true);
+    mHandleTable["pct"]                 = StringFuncHandle(STR, strfnc_not_implemented, true);
+    mHandleTable["cmp"]                 = StringFuncHandle(STR, strfnc_not_implemented, true);
+    mHandleTable["minpos"]              = StringFuncHandle(STR, strfnc_not_implemented, true);
+    mHandleTable["maxpos"]              = StringFuncHandle(STR, strfnc_not_implemented, true);
     return mHandleTable;
 }
 

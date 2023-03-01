@@ -350,6 +350,8 @@
 		<Unit filename="gui/dialogs/duplicatecodedialog.hpp" />
 		<Unit filename="gui/dialogs/fndrpldialog.cpp" />
 		<Unit filename="gui/dialogs/fndrpldialog.hpp" />
+		<Unit filename="gui/dialogs/listeditdialog.cpp" />
+		<Unit filename="gui/dialogs/listeditdialog.hpp" />
 		<Unit filename="gui/dialogs/newfiledialog.cpp" />
 		<Unit filename="gui/dialogs/newfiledialog.hpp" />
 		<Unit filename="gui/dialogs/packagedialog.cpp" />

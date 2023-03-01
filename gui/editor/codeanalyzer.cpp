@@ -458,6 +458,7 @@ AnnotationCount CodeAnalyzer::analyseCommands()
     if (sSyntaxElement != "hline"
             && sSyntaxElement != "continue"
             && sSyntaxElement != "break"
+            && sSyntaxElement != "separator"
             && sSyntaxElement != "else"
             && m_editor->isBlockEnd(sSyntaxElement) == wxNOT_FOUND
             && sSyntaxElement != "about"
@@ -1275,6 +1276,7 @@ AnnotationCount CodeAnalyzer::analyseFunctions(bool isContinuedLine)
              && sSyntaxElement != "getlasterror()"
              && sSyntaxElement != "getversioninfo()"
              && sSyntaxElement != "landau_rd()"
+             && sSyntaxElement != "evt_close()"
              && sSyntaxElement.find('(') != string::npos)
     {
         // Check for missing arguments

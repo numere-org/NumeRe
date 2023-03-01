@@ -2121,6 +2121,28 @@ wxString TableViewer::getSelectedValues()
 
 
 /////////////////////////////////////////////////
+/// \brief Converts the grid rows to the internal
+/// table rows.
+///
+/// \param gridrow int
+/// \return int
+///
+/////////////////////////////////////////////////
+int TableViewer::GetInternalRows(int gridrow) const
+{
+    if (isGridNumeReTable)
+        gridrow -= (int)static_cast<GridNumeReTable*>(GetTable())->getTableRef().getHeadCount();
+    else
+        gridrow -= (int)nFirstNumRow;
+
+    if (gridrow < 0)
+        return -1;
+
+    return gridrow;
+}
+
+
+/////////////////////////////////////////////////
 /// \brief This member function returns the
 /// internal NumeRe::Table from the data provider
 /// object.
