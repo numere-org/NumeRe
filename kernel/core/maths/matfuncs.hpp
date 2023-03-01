@@ -3372,15 +3372,15 @@ static Matrix matrixRasterFilter(const MatFuncData& funcData, const MatFuncError
     {
         case 0: // boundary clamp
             rows.prepend(std::vector<int>(offsetRows, 0));
-            rows.append(std::vector<int>(offsetRows, funcData.mat2.rows() - 1));
+            rows.append(std::vector<int>(offsetRows, inputRows - 1));
             cols.prepend(std::vector<int>(offsetCols, 0));
-            cols.append(std::vector<int>(offsetCols, funcData.mat2.cols() - 1));
+            cols.append(std::vector<int>(offsetCols, inputCols - 1));
             break;
         case 1: // boundary reflect
             rows.prepend(VectorIndex(offsetRows, 1));
-            rows.append(VectorIndex(funcData.mat2.rows() - 1, funcData.mat2.rows() - offsetRows));
+            rows.append(VectorIndex(inputRows - 2, inputRows - offsetRows - 1));
             cols.prepend(VectorIndex(offsetCols, 1));
-            cols.append(VectorIndex(funcData.mat2.cols() - 1, funcData.mat2.cols() - offsetRows));
+            cols.append(VectorIndex(inputCols - 2, inputCols - offsetCols - 1));
             break;
     }
 
@@ -3486,15 +3486,15 @@ static Matrix matrixConvolution(const MatFuncData& funcData, const MatFuncErrorI
     {
         case 0: // boundary clamp
             rows.prepend(std::vector<int>(offsetRows, 0));
-            rows.append(std::vector<int>(offsetRows, funcData.mat2.rows() - 1));
+            rows.append(std::vector<int>(offsetRows, inputRows - 1));
             cols.prepend(std::vector<int>(offsetCols, 0));
-            cols.append(std::vector<int>(offsetCols, funcData.mat2.cols() - 1));
+            cols.append(std::vector<int>(offsetCols, inputCols - 1));
             break;
         case 1: // boundary reflect
             rows.prepend(VectorIndex(offsetRows, 1));
-            rows.append(VectorIndex(funcData.mat2.rows() - 1, funcData.mat2.rows() - offsetRows));
+            rows.append(VectorIndex(inputRows - 2, inputRows - offsetRows - 1));
             cols.prepend(VectorIndex(offsetCols, 1));
-            cols.append(VectorIndex(funcData.mat2.rows() - 1, funcData.mat2.rows() - offsetRows));
+            cols.append(VectorIndex(inputCols - 2, inputCols - offsetCols - 1));
             break;
     }
 
@@ -3559,13 +3559,10 @@ static Matrix matrixFilter(const MatFuncData& funcData, const MatFuncErrorInfo& 
         throw SyntaxError(SyntaxError::INVALID_FILTER_SIZE, errorInfo.command, errorInfo.position);
 
     // Select the method to use
-    Matrix _mResult;
     if (funcData.mat2.rows() * funcData.mat2.cols() > 200)
-        _mResult = matrixConvolution(funcData, errorInfo);
-    else
-        _mResult = matrixRasterFilter(funcData, errorInfo);
+        return matrixConvolution(funcData, errorInfo);
 
-    return _mResult;
+    return matrixRasterFilter(funcData, errorInfo);
 }
 
 
