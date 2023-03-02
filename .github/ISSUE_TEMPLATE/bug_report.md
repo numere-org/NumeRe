@@ -7,7 +7,7 @@ assignees: numeredev
 
 ---
 
-**DESCRIPTION**
+### DESCRIPTION
 **Describe the bug**
 A clear and concise description of what the bug is. If possible, attach the logfile available at "NumeRe/numere.log" (type `edit <>` into the NumeRe terminal)
 
@@ -35,14 +35,14 @@ Add any other context about the problem here.
 
 -----------------------------------------------------
 
-**ANALYSIS**
+### ANALYSIS
 (*Describe, what's the issue and which changes have to be made*)
 
-**IMPLEMENTATION**
+### IMPLEMENTATION
 * Implementation: (*Describe, what you've changed*) 
 * Implementation test: (*Describe the type of test, which you performed, and if it was successful*)
 
-**DOCUMENTATION**
+### DOCUMENTATION
 * [ ] ChangesLog updated
 * [ ] Code changes commented
 * **Documentation articles:**
@@ -53,5 +53,5 @@ Add any other context about the problem here.
     * [ ] corresponding language files updated
     * [ ] not needed
 
-**TESTS**
+### TESTS
 (*Describe, which tests you performed and their outcome*)

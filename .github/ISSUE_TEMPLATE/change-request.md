@@ -7,7 +7,7 @@ assignees: numeredev
 
 ---
 
-**DESCRIPTION**
+### DESCRIPTION
 **Is your change request related to a problem? Please describe.**
 A clear and concise description of what the problem is. Ex. I'm always frustrated when [...]
 
@@ -28,14 +28,14 @@ A clear and concise description of what the bug is. If possible, attach the logf
 
 -----------------------------------------------------
 
-**ANALYSIS**
+### ANALYSIS
 (*Describe, what's the issue and which changes have to be made*)
 
-**IMPLEMENTATION**
+### IMPLEMENTATION
 * Implementation: (*Describe, what you've changed*) 
 * Implementation test: (*Describe the type of test, which you performed, and if it was successful*)
 
-**DOCUMENTATION**
+### DOCUMENTATION
 * [ ] ChangesLog updated
 * [ ] Code changes commented
 * **Documentation articles:**
@@ -46,5 +46,5 @@ A clear and concise description of what the bug is. If possible, attach the logf
     * [ ] corresponding language files updated
     * [ ] not needed
 
-**TESTS**
+### TESTS
 (*Describe, which tests you performed and their outcome*)
