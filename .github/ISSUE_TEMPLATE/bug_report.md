@@ -1,14 +1,15 @@
 ---
 name: Bug report
 about: Create a report to help us improve
-title: ''
+title: "[BUG]"
 labels: ''
-assignees: ''
+assignees: numeredev
 
 ---
 
+**DESCRIPTION**
 **Describe the bug**
-A clear and concise description of what the bug is.
+A clear and concise description of what the bug is. If possible, attach the logfile available at "NumeRe/numere.log" (type `edit <>` into the NumeRe terminal)
 
 **To Reproduce**
 Steps to reproduce the behavior:
@@ -24,15 +25,33 @@ A clear and concise description of what you expected to happen.
 If applicable, add screenshots to help explain your problem.
 
 **Desktop (please complete the following information):**
- - OS: [e.g. iOS]
- - Browser [e.g. chrome, safari]
- - Version [e.g. 22]
-
-**Smartphone (please complete the following information):**
- - Device: [e.g. iPhone6]
- - OS: [e.g. iOS8.1]
- - Browser [e.g. stock browser, safari]
- - Version [e.g. 22]
+ - OS: [e.g. x64]
+ - Version [e.g. v1.1.4.2203]
 
 **Additional context**
 Add any other context about the problem here.
+
+(*Do not write below this line*)
+
+-----------------------------------------------------
+
+**ANALYSIS**
+(*Describe, what's the issue and which changes have to be made*)
+
+**IMPLEMENTATION**
+* Implementation: (*Describe, what you've changed*) 
+* Implementation test: (*Describe the type of test, which you performed, and if it was successful*)
+
+**DOCUMENTATION**
+* [ ] ChangesLog updated
+* [ ] Code changes commented
+* **Documentation articles:**
+    * [ ] corresponding documentation articles updated
+    * [ ] new documentation articles created
+    * [ ] not needed
+* **Language files:**
+    * [ ] corresponding language files updated
+    * [ ] not needed
+
+**TESTS**
+(*Describe, which tests you performed and their outcome*)
