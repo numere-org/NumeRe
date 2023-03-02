@@ -92,3 +92,4 @@ New	A new event handler "onactivate" (for double-clicks) for "treelist" and "tab
 Added	"dialog" has now a "listeditor" type for providing a list of editable strings.
 Fixed	"split()" may now handle empty strings or empty return values.
 Fixed	"max(logtoindex(STRINGEXPR))" is now working again.
+New	"as_time() as_date()" functions

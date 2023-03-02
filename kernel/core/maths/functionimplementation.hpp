@@ -158,6 +158,8 @@ value_type parser_sech(const value_type&);
 value_type parser_csch(const value_type&);
 value_type parser_asech(const value_type&);
 value_type parser_acsch(const value_type&);
+value_type parser_as_date(const value_type*, int);
+value_type parser_as_time(const value_type*, int);
 
 // Distribution functions
 value_type parser_rd_laplace_rd(const value_type& a);

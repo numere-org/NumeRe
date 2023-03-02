@@ -551,6 +551,9 @@ void NumeReKernel::defineFunctions()
     _parser.DefineFun("student_t_cdf_q", parser_rd_student_t_cdf_q);  // student_t_cdf_q(x, nu)
     _parser.DefineFun("student_t_inv_p", parser_rd_student_t_inv_p);  // student_t_inv_p(p, nu)
     _parser.DefineFun("student_t_inv_q", parser_rd_student_t_inv_q);  // student_t_inv_q(q, nu)
+    _parser.DefineFun("as_date", parser_as_date, true);                         // as_date(nYear, nMounth, nDay)
+    _parser.DefineFun("as_time", parser_as_time, true);                         // as_time(nHours, nMinutes, nSeconds, nMilli, nMicro)
+
 
     /////////////////////////////////////////////////////////////////////
     // NOTE:

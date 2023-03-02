@@ -48,6 +48,7 @@
 #include "../utils/tools.hpp"
 #include "../version.h"
 
+
 using namespace std;
 
 int nErrorIndices[2] = {-1,-1};
@@ -2894,6 +2895,61 @@ value_type parser_acsch(const value_type& x)
     return std::asinh(1.0 / x);
 }
 
+
+/////////////////////////////////////////////////
+/// \brief This function returns the date from
+/// the passed vElements.
+///
+/// \param vElements const value_type*
+/// \param nElements int
+/// \return value_type
+///
+/////////////////////////////////////////////////
+value_type parser_as_date(const value_type* vElements, int nElements)
+{
+
+    int year = nElements > 0 ? intCast(vElements[0].real()) : 1970;
+    int month = nElements > 1 ? intCast(vElements[1].real()) : 1;
+    int day = nElements > 2 ? intCast(vElements[2].real()) : 1;
+
+    time_stamp ts;
+    ts.m_ymd = date::year{year}/ date::month{month}/ date::day{day};
+    return to_double(getTimePointFromTimeStamp(ts));
+
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This function returns the time from
+/// the passed vElements
+///
+/// \param vElements const value_type*
+/// \param nElements int
+/// \return value_type
+///
+/////////////////////////////////////////////////
+value_type parser_as_time(const value_type* vElements, int nElements)
+{
+    int hours = nElements > 0 ? intCast(vElements[0].real()) : 0;
+    int minutes = nElements > 1 ? intCast(vElements[1].real()) : 0;
+    int seconds = nElements > 2 ? intCast(vElements[2].real()) : 0;
+    int milliseconds = nElements > 3 ? intCast(vElements[3].real()) : 0;
+    int microseconds = nElements > 4 ? intCast(vElements[4].real()) : 0;
+
+    time_stamp ts;
+    ts.m_hours = std::chrono::hours(hours);
+    ts.m_minutes = std::chrono::minutes(minutes);
+    ts.m_seconds = std::chrono::seconds(seconds);
+    ts.m_millisecs = std::chrono::milliseconds(milliseconds);
+    ts.m_microsecs = std::chrono::microseconds(microseconds);
+
+    date::year y{1970u};
+    date::month m{1u};
+    date::day d{1u};
+    ts.m_ymd = y/m/d;
+
+    return to_double(getTimePointFromTimeStamp(ts));
+}
 
 /////////////////////////////////////////////////
 /// \brief This function returns a random value
