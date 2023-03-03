@@ -24,6 +24,7 @@
 #include "../maths/parser_functions.hpp"
 #include "../built-in.hpp"
 #include "../utils/tools.hpp"
+#include "../plotting/plotting.hpp"
 
 // Definition of special return values
 #define FLOWCTRL_ERROR -1
@@ -2781,13 +2782,7 @@ int FlowCtrl::compile(std::string sLine, int nthCmd)
         }
         else if (sCommand != "endcompose")
         {
-            if (sCommand.substr(0, 4) == "plot"
-                || sCommand.substr(0, 4) == "grad"
-                || sCommand.substr(0, 4) == "dens"
-                || sCommand.substr(0, 4) == "vect"
-                || sCommand.substr(0, 4) == "cont"
-                || sCommand.substr(0, 4) == "surf"
-                || sCommand.substr(0, 4) == "mesh")
+            if (Plot::isPlottingCommand(sCommand))
                 sLoopPlotCompose += sLine + " <<COMPOSE>> ";
 
             return FLOWCTRL_OK;
@@ -3429,13 +3424,7 @@ int FlowCtrl::calc(StringView sLine, int nthCmd)
             }
             else if (sCommand != "endcompose")
             {
-                if (sCommand.substr(0, 4) == "plot"
-                    || sCommand.substr(0, 4) == "grad"
-                    || sCommand.substr(0, 4) == "dens"
-                    || sCommand.substr(0, 4) == "vect"
-                    || sCommand.substr(0, 4) == "cont"
-                    || sCommand.substr(0, 4) == "surf"
-                    || sCommand.substr(0, 4) == "mesh")
+                if (Plot::isPlottingCommand(sCommand))
                     sLoopPlotCompose += sLine.to_string() + " <<COMPOSE>> ";
 
                 return FLOWCTRL_OK;

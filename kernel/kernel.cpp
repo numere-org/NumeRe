@@ -22,6 +22,7 @@
 #include "../gui/terminal/terminal.hpp"
 #include "core/datamanagement/database.hpp"
 #include "core/io/logger.hpp"
+#include "core/plotting/plotting.hpp"
 
 #define KERNEL_PRINT_SLEEP 2
 #define TERMINAL_FORMAT_FIELD_LENOFFSET 16
@@ -1518,15 +1519,8 @@ bool NumeReKernel::handleComposeBlock(std::string& sLine, const std::string& sCu
         {
             // add a new plotting command
             std::string sCommand = findCommand(sLine).sString;
-            if (sCommand.substr(0, 4) == "plot"
-                    || sCommand.substr(0, 7) == "subplot"
-                    || sCommand.substr(0, 4) == "grad"
-                    || sCommand.substr(0, 4) == "dens"
-                    || sCommand.substr(0, 4) == "draw"
-                    || sCommand.substr(0, 4) == "vect"
-                    || sCommand.substr(0, 4) == "cont"
-                    || sCommand.substr(0, 4) == "surf"
-                    || sCommand.substr(0, 4) == "mesh")
+
+            if (Plot::isPlottingCommand(sCommand))
             {
                 sPlotCompose += sLine + " <<COMPOSE>> ";
                 // If the block wasn't started from a script, then ask the user
@@ -1567,6 +1561,7 @@ bool NumeReKernel::handleComposeBlock(std::string& sLine, const std::string& sCu
                     return false;
                 }
             }
+
             return false;
         }
         else

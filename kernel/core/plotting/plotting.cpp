@@ -464,6 +464,30 @@ Plot::~Plot()
 
 
 /////////////////////////////////////////////////
+/// \brief This static member function detects
+/// plotting commands.
+///
+/// \param command StringView
+/// \return bool
+///
+/////////////////////////////////////////////////
+bool Plot::isPlottingCommand(StringView command)
+{
+    return command.subview(0, 4) == "plot"
+        || command == "subplot"
+        || command == "implot"
+        || command.subview(0, 4) == "grad"
+        || command.subview(0, 5) == "graph"
+        || command.subview(0, 4) == "dens"
+        || command.subview(0, 4) == "draw"
+        || command.subview(0, 4) == "vect"
+        || command.subview(0, 4) == "cont"
+        || command.subview(0, 4) == "surf"
+        || command.subview(0, 4) == "mesh";
+}
+
+
+/////////////////////////////////////////////////
 /// \brief This member function determines the
 /// maximal plotting dimension of the passed
 /// command.

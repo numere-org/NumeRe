@@ -21,6 +21,7 @@
 #include "../symdef.hpp"
 #include "dependency.hpp"
 #include "includer.hpp"
+#include "../plotting/plotting.hpp"
 
 #include <memory>
 
@@ -147,18 +148,9 @@ ProcedureElement::ProcedureElement(const StyledTextFile& procedureContents, cons
                 // An arbitrary command
                 std::string sCommand = findCommand(sProcCommandLine).sString;
 
-                if (sCommand.substr(0, 4) == "plot"
-                        || sCommand.substr(0, 7) == "subplot"
-                        || sCommand.substr(0, 5) == "graph"
-                        || sCommand.substr(0, 4) == "grad"
-                        || sCommand.substr(0, 4) == "draw"
-                        || sCommand.substr(0, 4) == "dens"
-                        || sCommand.substr(0, 4) == "vect"
-                        || sCommand.substr(0, 4) == "cont"
-                        || sCommand.substr(0, 4) == "surf"
-                        || sCommand.substr(0, 4) == "mesh")
-                    sProcPlotCompose += sProcCommandLine + " <<COMPOSE>> ";
+                if (Plot::isPlottingCommand(sCommand))
                 {
+                    sProcPlotCompose += sProcCommandLine + " <<COMPOSE>> ";
                     continue;
                 }
             }

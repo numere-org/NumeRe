@@ -120,12 +120,15 @@ class Plot
     public:
         Plot(std::string& sCmd, MemoryManager& __data, mu::Parser& __parser, Settings& __option, FunctionDefinitionManager& __functions, PlotData& __pData);
         ~Plot();
+
         inline GraphHelper* createGraphHelper()
             {
                 GraphHelper* _helper = new GraphHelper(_graph, _pData);
                 _graph = nullptr;
                 return _helper;
             }
+
+        static bool isPlottingCommand(StringView command);
 };
 
 
