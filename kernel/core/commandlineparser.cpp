@@ -649,7 +649,10 @@ std::string CommandLineParser::getParameterValueAsString(const std::string& sPar
     if (!stripAlways && arg.find(",") != std::string::npos && arg.find("\"") != std::string::npos)
         return arg;
     else if (arg.front() == '"' && arg.back() == '"')
-        return removeQuotationMarks(arg);
+    {
+        arg = removeQuotationMarks(arg);
+        replaceAll(arg, "\\\"", "\""); // toInternalString() would probably delete too many characters
+    }
 
     return arg;
 }
