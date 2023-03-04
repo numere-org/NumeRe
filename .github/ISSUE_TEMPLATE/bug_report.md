@@ -34,15 +34,17 @@ Add any other context about the problem here.
 (*Do not write below this line*)
 
 -----------------------------------------------------
-
+## DEVS' SECTION
 ### ANALYSIS
 (*Describe, what's the issue and which changes have to be made*)
 
 ### IMPLEMENTATION
+(*see also our [Wiki for implementation guidelines](https://github.com/numeredev/NumeRe/wiki/HowTo:-Contribute-Code)*)
 * Implementation: (*Describe, what you've changed*) 
 * Implementation test: (*Describe the type of test, which you performed, and if it was successful*)
 
 ### DOCUMENTATION
+(*see also our [Wiki for further information](https://github.com/numeredev/NumeRe/wiki/HowTo:-Create-Language-Strings)*)
 * [ ] ChangesLog updated
 * [ ] Code changes commented
 * **Documentation articles:**
