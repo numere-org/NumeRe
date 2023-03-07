@@ -4024,7 +4024,8 @@ void replaceStringMethod(string& sLine, size_t nPos, size_t nLength, const strin
              || sMethod == "mtch"
              || sMethod == "rmtch"
              || sMethod == "nmtch"
-             || sMethod == "nrmtch")
+             || sMethod == "nrmtch"
+             )
     {
         // All search-oriented methods
         replaceSearchMethods(sLine, nPos, nFinalPos, sReplacement, sMethod, sArgument);

@@ -931,7 +931,11 @@ static StringVector strfnc_split(StringFuncArgs& funcArgs)
     if (!sSep.length())
         return StringVector::empty_string();
 
-    boost::char_separator<char> cSep(sSep.c_str());
+    if (funcArgs.nArg1 == DEFAULT_NUM_ARG)
+        funcArgs.nArg1 = 0;
+
+    boost::char_separator<char> cSep(sSep.c_str(), nullptr,
+                                     funcArgs.nArg1 ? boost::keep_empty_tokens : boost::drop_empty_tokens);
 
     std::string sToSeparate = funcArgs.sArg1.view().to_string();
     boost::tokenizer<boost::char_separator<char> > tok(sToSeparate, cSep);
@@ -2741,7 +2745,7 @@ static std::map<std::string, StringFuncHandle> getStringFuncHandles()
     mHandleTable["replace"]             = StringFuncHandle(STR_VAL_VALOPT_STROPT, strfnc_replace, false);
     mHandleTable["replaceall"]          = StringFuncHandle(STR_STR_STR_VALOPT_VALOPT, strfnc_replaceall, false);
     mHandleTable["sha256"]              = StringFuncHandle(STR_VALOPT, strfnc_sha256, false);
-    mHandleTable["split"]               = StringFuncHandle(STR_STR, strfnc_split, false);
+    mHandleTable["split"]               = StringFuncHandle(STR_STR_VALOPT, strfnc_split, false);
     mHandleTable["str_not_match"]       = StringFuncHandle(STR_STR_VALOPT, strfnc_str_not_match, false);
     mHandleTable["str_not_rmatch"]      = StringFuncHandle(STR_STR_VALOPT, strfnc_str_not_rmatch, false);
     mHandleTable["strip"]               = StringFuncHandle(STR_STR_STR_VALOPT_VALOPT, strfnc_strip, false);
