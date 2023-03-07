@@ -15,8 +15,7 @@
 		</MakeCommands>
 		<Build>
 			<Target title="Debug">
-				<Option output="../../../Software/NumeRe/numere" prefix_auto="1" extension_auto="1" />
-				<Option working_dir="../../../Software/NumeRe/." />
+				<Option output="../../Software/NumeRe/numere" prefix_auto="1" extension_auto="1" />
 				<Option object_output="Debug" />
 				<Option type="0" />
 				<Option compiler="tdm-gcc" />
@@ -130,7 +129,7 @@
 				</Linker>
 			</Target>
 			<Target title="Profiling">
-				<Option output="../../../Software/NumeRe/numere" prefix_auto="1" extension_auto="1" />
+				<Option output="../../Software/NumeRe/numere" prefix_auto="1" extension_auto="1" />
 				<Option object_output="Debug/Profiling" />
 				<Option type="0" />
 				<Option compiler="tdm-gcc" />
@@ -185,7 +184,7 @@
 				</Linker>
 			</Target>
 			<Target title="Deep Debug">
-				<Option output="../../../Software/NumeRe/numere" prefix_auto="1" extension_auto="1" />
+				<Option output="../../Software/NumeRe/numere" prefix_auto="1" extension_auto="1" />
 				<Option object_output="Deepdebug" />
 				<Option type="0" />
 				<Option compiler="tdm-gcc" />
@@ -258,7 +257,7 @@
 			<Add option="-Wl,--stack,8388608" />
 			<Add option="-fopenmp" />
 		</Linker>
-		<Unit filename="Chameleon.rc">
+		<Unit filename="NumeRe.rc">
 			<Option compilerVar="WINDRES" />
 		</Unit>
 		<Unit filename="common/CommonHeaders.h" />
