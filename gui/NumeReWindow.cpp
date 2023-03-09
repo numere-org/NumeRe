@@ -7270,6 +7270,7 @@ void NumeReWindow::OnCreatePackage(const wxString& projectFile)
                 replaceAll(sPackage, "<endinfo>", "");
 
                 m_terminal->updatePackage(sPackage);
+                notifyInstallationDone();
             }
 
             // Check, whether this package is already installed and
