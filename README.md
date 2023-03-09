@@ -9,17 +9,17 @@ nonlinear fits of arbitrary functions as well as a ODE solver. It can display 1D
 transforms are included as well as wavelet transforms. Data is managed in a table-based manner and automatically saved, so you can quickly resume after a
 restart.
 
-## Simple tasks are simple
+### Simple tasks are simple
 
 We never understood why you have to write as much code for simple things as for more complex tasks. Our mantra is therefore Keep simple things simple.
 
-## Syntax as intuitive as a language
+### Syntax as intuitive as a language
 
 NumeRe's main goal is to be as intuitive as possible, which implies a syntax that is as simple and clear as possible. NumeRe does not try to be dynamically
 typed, but deliberately emphasizes that you understand what is happening as soon as you read the code. In addition, the advanced editor highlights different
 data structures in different colors, so the syntax may seem a bit "colorful and choppy" at first. But we can guarantee that you will appreciate it very soon.
 
-## Structure built-in
+### Structure built-in
 
 When writing procedures, the deeply-integrated namespaces help you to keep order right away, because each folder automatically corresponds to a namespace.
 This makes it possible to have several procedures with the same name that are still unique. The editor supports you by auto-completion, as well as by
@@ -27,14 +27,14 @@ displaying tooltips that show documentation and signatures of functions, command
 
 **Get more information at: [en.numere.org](https://en.numere.org)**
 
-# Join in
+## Join in
 
-## How can you support us?
+### How can you support us?
 
 The question should rather be: how do you want to support us? Do you want to work directly on the code and develop new features? Or do you want to suggest
 new features or do you have a suggestion for improvement? Maybe you have found a problem?
 
-## Contact us
+### Contact us
 
 **Get in touch with us through the following ways:**
 - Oldschool: Write us a mail
