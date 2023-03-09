@@ -23,7 +23,7 @@ Fixed	Setting icons for layouts is now possible.
 Added	Created new table methods: "TAB().fndcols()" (searches columns for headlines), "TAB().indexof()" (creates indices for columns for selected values) and "TAB().countif()" (counts occurences of values).
 Applied	Table and string methods are now also part of the symbols tree and can be dragged into the editor or the terminal.
 Added	NumeRe now supports Zygo MetroPro(r) *.dat files as well.
-Added	"hist" may now use time axes in its plot.
+Added	"hist2d" may now use time axes in its plot (experimental).
 Cleaned	The error message for bad alloc was rephrased to reflect the actual issue.
 Applied	"to_time()" and "timeformat()" will now use automatic pattern (detection), if the pattern is an empty string.
 Cleaned	It is now possible to drag code with comments to the terminal. The code will be executed normally.

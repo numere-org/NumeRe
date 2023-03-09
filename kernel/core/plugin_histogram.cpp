@@ -1348,6 +1348,8 @@ static void createPlotsForHist2D(const std::string& sCmd, HistogramParameters& _
 
 ///////////////////////////////////// CENTER GRAPH
     _histGraph->MultiPlot(3, 3, 3, 2, 2, "<_>");
+    _histGraph->SetTicks('x');
+    _histGraph->SetTicks('y');
     _histGraph->SetTuneTicks(3, 1.05);
 
     _histGraph->SetRanges(1, 2, 1, 2, 1, 2);
@@ -1404,6 +1406,8 @@ static void createPlotsForHist2D(const std::string& sCmd, HistogramParameters& _
     _histParams.binWidth[0] = _hBarHistData.Maximal() - _hBarHistData.Minimal();
 
     _histGraph->SetRanges(1, 2, 1, 2, 1, 2);
+    _histGraph->SetTicks('x');
+    _histGraph->SetTicks('y');
     _histGraph->SetFunc(_pData.getLogscale(ZRANGE) ? "lg(x)" : "",
                         _pData.getLogscale(YRANGE) ? "lg(y)" : "");
 
