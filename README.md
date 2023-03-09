@@ -1,3 +1,6 @@
+
+[![Lint Code Base](https://github.com/numere-org/NumeRe/actions/workflows/super-linter.yml/badge.svg)](https://github.com/numere-org/NumeRe/actions/workflows/super-linter.yml)
+
 # NumeRe
 ## Scientific data analysis for Windows® redefined
 
@@ -46,5 +49,3 @@ We use these tools and frameworks (we also provide a complete setup as a compile
 - Boost
 - wxWidgets
 - Code::Blocks
-
-[![Lint Code Base](https://github.com/numere-org/NumeRe/actions/workflows/super-linter.yml/badge.svg)](https://github.com/numere-org/NumeRe/actions/workflows/super-linter.yml)
