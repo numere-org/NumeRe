@@ -1,5 +1,5 @@
 # NumeRe
-[![Lint Code Base](https://github.com/numere-org/NumeRe/actions/workflows/super-linter.yml/badge.svg)](https://github.com/numere-org/NumeRe/actions/workflows/super-linter.yml)
+[![Download NumeRe](https://img.shields.io/sourceforge/dt/numere.svg)](https://sourceforge.net/projects/numere/files/latest/download)
 ## Scientific data analysis for Windows® redefined
 
 Curve fitting | Data analysis | Plotting | Matrix operations | FFT | Extensible Framework | Multiple file formats | Programmable | Open source | Free for everyone
