@@ -1292,7 +1292,7 @@ static void createPlotsForHist2D(const std::string& sCmd, HistogramParameters& _
     mglGraph* _histGraph = prepareGraphForHist(dAspect, _pData, bSilent);
 
 /////////////////////////////////// BAR PLOT
-    _histGraph->MultiPlot(3, 3, 0, 2, 1, "<>");
+    _histGraph->MultiPlot(3, 3, 0, 2, 1, "<^>");
     _histGraph->SetBarWidth(0.9);
     _histGraph->SetTuneTicks(3, 1.05);
     _histParams.binWidth[0] = _barHistData.Maximal() - _barHistData.Minimal();
@@ -1400,7 +1400,7 @@ static void createPlotsForHist2D(const std::string& sCmd, HistogramParameters& _
         _histGraph->Dens(_hist2DData[0], _hist2DData[1], _hist2DData[2], _pData.getColorScheme().c_str());
 
 /////////////////////////////// H-BAR PLOT
-    _histGraph->MultiPlot(3, 3, 5, 1, 2, "_");
+    _histGraph->MultiPlot(3, 3, 5, 1, 2, "_>");
     _histGraph->SetBarWidth(0.9);
     _histGraph->SetTuneTicks(3, 1.05);
     _histParams.binWidth[0] = _hBarHistData.Maximal() - _hBarHistData.Minimal();
