@@ -5529,6 +5529,7 @@ void NumeReWindow::UpdateToolbar()
     t = CreateToolBar(style);//new wxToolBar(this, -1, wxDefaultPosition, wxDefaultSize, style);
     t->SetBackgroundColour(*wxWHITE);
     //t->SetBackgroundColour(wxColour(221,230,255));
+//    t->SetBackgroundColour(wxColour(46,110,150));
 
     t->AddTool(ID_MENU_NEW_ASK, _guilang.get("GUI_TB_NEW"), getToolbarIcon("new-file"), _guilang.get("GUI_TB_NEW_TTP"), wxITEM_DROPDOWN);
 

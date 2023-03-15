@@ -3514,7 +3514,8 @@ static Matrix matrixConvolution(const MatFuncData& funcData, const MatFuncErrorI
     Matrix kernel(rows.size(), cols.size(), 0.0);  //TODO: Or can this be done without a new memory alloc
     for (size_t i = 0; i < funcData.mat2.rows(); i++)
         for (size_t j = 0; j < funcData.mat2.cols(); j++)
-            kernel(i + offsetRows + inputRows / 2 - funcData.mat2.rows() / 2, j + offsetCols + inputCols / 2  - funcData.mat2.cols() / 2) = funcData.mat2(i, j);
+            kernel(i + offsetRows + inputRows / 2 - funcData.mat2.rows() / 2,
+                   j + offsetCols + inputCols / 2 - funcData.mat2.cols() / 2) = funcData.mat2(i, j);
 
     // Call the convolution function
     Matrix extendedResult = convolution(mat, kernel);  //TODO: Without copy?

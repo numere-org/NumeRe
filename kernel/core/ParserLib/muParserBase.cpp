@@ -990,7 +990,10 @@ namespace mu
 				std::string sFunc = sExpr.subview(nSep, i - nSep).to_string();
 
 				// Exclude the following functions
-				if (sFunc == "polynomial" || sFunc == "perlin")
+                if (sFunc == "polynomial"
+                    || sFunc == "perlin"
+                    || sFunc == "as_date"
+                    || sFunc == "as_time")
                     continue;
                 else if (sFunc == "logtoidx" || sFunc == "idxtolog")
                 {
