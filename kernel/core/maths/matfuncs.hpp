@@ -3523,8 +3523,8 @@ static Matrix matrixConvolution(const MatFuncData& funcData, const MatFuncErrorI
     // Extract the relevant part of the result and perform the axis shift
     for (size_t i = 0; i < inputRows; i++)
         for (size_t j = 0; j < inputCols; j++)
-            _mResult(i, j) = extendedResult(i + (i >= inputRows/2 ? -(int)inputRows/2 : inputRows/2 + inputRows % 2) + offsetRows,
-                                            j + (j >= inputCols/2 ? -(int)inputCols/2 : inputCols/2 + inputCols % 2) + offsetCols);
+            _mResult(i, j) = extendedResult(i + (i >= inputRows/2 ? -(int)inputRows/2 : inputRows/2 + inputRows % 2 + 2 * offsetRows),
+                                            j + (j >= inputCols/2 ? -(int)inputCols/2 : inputCols/2 + inputCols % 2 + 2 * offsetCols));
 
     return _mResult;
 }
