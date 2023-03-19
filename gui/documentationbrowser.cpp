@@ -299,7 +299,7 @@ bool DocumentationBrowser::createNewPage(const wxString& docId)
     viewer->SetRelatedFrame(this, m_titleTemplate);
     viewer->SetRelatedStatusBar(0);
 
-    m_docTabs->AddPage(viewer, docId, true);
+    m_docTabs->AddPage(viewer, "Loading ...", true);
     return viewer->ShowPageOnItem(docId);
 }
 
