@@ -1,7 +1,7 @@
 ---
 name: Change request
 about: Suggest a change for this project
-title: "[CR]"
+title: "[CHANGE]"
 labels: change
 assignees: numeredev
 
