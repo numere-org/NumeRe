@@ -27,22 +27,20 @@ Add any other context or screenshots about the feature request here.
 ### ANALYSIS
 (*Describe, what's the issue and which changes have to be made*)
 
-### IMPLEMENTATION
+### IMPLEMENTATION STEPS
 (*see also our [Wiki for implementation guidelines](https://github.com/numeredev/NumeRe/wiki/HowTo:-Contribute-Code)*)
-* Implementation: (*Describe, what you've changed*) 
-* Implementation test: (*Describe the type of test, which you performed, and if it was successful*)
+- Implement the necessary changes in a new branch created here on GitHub
+- Test your implementation
 
-### DOCUMENTATION
+### DOCUMENTATION STEPS
 (*see also our [Wiki for further information](https://github.com/numeredev/NumeRe/wiki/HowTo:-Create-Language-Strings)*)
-* [ ] ChangesLog updated
-* [ ] Code changes commented
-* **Documentation articles:**
-    * [ ] corresponding documentation articles updated
-    * [ ] new documentation articles created
-    * [ ] not needed
-* **Language files:**
-    * [ ] corresponding language files updated
-    * [ ] not needed
+- Update the changes log
+- Add comments to your implementation
+- Add Doxygen documentation comments
+- Create or update the documentation articles (`*.NHLP` and `*.NDB` files, if needed)
+- Update the language strings (`*.NLNG` files, if needed)
 
-### TESTS
-(*Describe, which tests you performed and their outcome*)
+### PULL REQUEST
+- Create a pull request for your changes
+- Fill out the template
+- Assign @numere-org/maintainers as reviewers
