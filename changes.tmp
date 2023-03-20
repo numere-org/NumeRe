@@ -1,1 +1,2 @@
 Fixed	The documentation browser can now be opened again using "help window" and similar. The necessary time for opening up with this method was greatly reduced.
+Fixed	Drag/drop of files into the editor is now working as expected.
