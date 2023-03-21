@@ -3610,11 +3610,20 @@ namespace NumeRe
                 nCommentLines++;
             }
 
-            vCommentLines.push_back(nCommentLines != 0);
+            // String lines are only used complete as comments, if their consecutive number is
+            // smaller than 4 or 10% of the total number of rows (whichever is larger)
+            // Otherwise only the first line is used
+            if (nCommentLines)
+            {
+                if (nCommentLines >= std::max(4.0, 0.1*_sheet->GetTotalRows()))
+                    nCommentLines = 1;
+            }
+
+            vCommentLines.push_back(nCommentLines);
 
             // Find the maximal number of needed rows
-            if (nExcelLines < _sheet->GetTotalRows()-(nCommentLines != 0))
-                nExcelLines = _sheet->GetTotalRows()-(nCommentLines != 0);
+            if (nExcelLines < _sheet->GetTotalRows()-nCommentLines)
+                nExcelLines = _sheet->GetTotalRows()-nCommentLines;
 
             // Add the number of columns of the current
             // sheet to the total number of columns
