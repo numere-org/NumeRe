@@ -1,1 +1,2 @@
 Fixed	The documentation browser can now be opened again using "help window" and similar. The necessary time for opening up with this method was greatly reduced.
+Fixed	The graph window cannot made smaller than a defined minimal size anymore. The visual glitch cutting off parts of the the style text input has been resolved.
