@@ -847,6 +847,10 @@ void dialogCommand(CommandLineParser& cmdParser)
     // Strip spaces and assign the value
     sExpression = cmdParser.getExpr();
 
+    // Resolve table accesses
+    if (kernel->getMemoryManager().containsTablesOrClusters(sExpression))
+        getDataElements(sExpression, kernel->getParser(), kernel->getMemoryManager(), kernel->getSettings());
+
     // Handle strings in the default value
     // expression. This will include also possible path
     // tokens
