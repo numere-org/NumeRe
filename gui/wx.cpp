@@ -276,7 +276,7 @@ void wxMGL::InitializeToolbar()
     toptoolbar->AddTool(ID_GRAPH_CIRCLE, _guilang.get("GUI_GRAPH_CIRCLE"),  app->getToolbarIcon("add-circ"), _guilang.get("GUI_GRAPH_CIRCLE"), wxITEM_CHECK);
     toptoolbar->AddTool(ID_GRAPH_TEXT, _guilang.get("GUI_GRAPH_TEXT"), app->getToolbarIcon("add-text"), _guilang.get("GUI_GRAPH_TEXT"), wxITEM_CHECK);
 
-    styling = new wxTextCtrl(toptoolbar, wxID_ANY, "B-__");
+    styling = new wxTextCtrl(toptoolbar, wxID_ANY, "B-__", wxDefaultPosition, wxSize(60,-1));
 
     toptoolbar->AddControl(styling, "STYLE");
     toptoolbar->Realize();
