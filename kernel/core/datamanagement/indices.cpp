@@ -133,25 +133,45 @@ void getIndices(StringView sCmd, Indices& _idx,  Parser& _parser, MemoryManager&
 #warning TODO (numere#3#08/15/21): Checking for string variables here is inefficient
     if (NumeReKernel::getInstance()->getStringParser().isStringExpression(_idx.sCompiledAccessEquation))
     {
-        EndlessVector<std::string> idc = getAllArguments(_idx.sCompiledAccessEquation);
+        EndlessVector<std::string> idxDims = getAllArguments(_idx.sCompiledAccessEquation);
         g_logger.debug("_idx.sCompiledAccessEquation contains string vector vars " + _idx.sCompiledAccessEquation);
         _idx.sCompiledAccessEquation.clear();
 
-        for (std::string& index : idc)
+        // Go through the dimensions
+        for (std::string dim : idxDims)
         {
-            if (index != "#" && NumeReKernel::getInstance()->getStringParser().isStringExpression(index))
+            // Only do s.th. if the index contains more than the colon
+            if (dim.find_first_not_of(" :") != std::string::npos)
             {
-                std::string sDummy;
-                NumeReKernel::getInstance()->getStringParser().evalAndFormat(index, sDummy, true);
+                // Get all indices (the additional whitespace is needed to
+                // correctly detect indices like 'IDX:')
+                EndlessVector<std::string> idx = getAllIndices(dim + " ");
+                dim.clear();
 
-                if (index.find(',') != std::string::npos)
-                    index = "{" + index + "}";
+                // Go through every single index
+                for (size_t i = 0; i < idx.size(); i++)
+                {
+                    if (idx[i] != "#" && NumeReKernel::getInstance()->getStringParser().isStringExpression(idx[i]))
+                    {
+                        std::string sDummy;
+                        NumeReKernel::getInstance()->getStringParser().evalAndFormat(idx[i], sDummy, true);
+
+                        if (idx[i].find(',') != std::string::npos)
+                            idx[i] = "{" + idx[i] + "}";
+                    }
+
+                    dim += idx[i];
+
+                    if (i+1 < idx.size())
+                        dim += ":";
+                }
             }
 
+            // Combine everything together
             if (_idx.sCompiledAccessEquation.length())
                 _idx.sCompiledAccessEquation += ",";
 
-            _idx.sCompiledAccessEquation += index;
+            _idx.sCompiledAccessEquation += dim;
         }
 
     }
