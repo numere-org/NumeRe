@@ -5057,6 +5057,7 @@ void NumeReEditor::OnStartDrag(wxStyledTextEvent& event)
 /////////////////////////////////////////////////
 void NumeReEditor::OnDragOver(wxStyledTextEvent& event)
 {
+    event.SetDragAllowMove(true); // Necessary for file drag/drop
     event.SetDragResult(wxDragMove);
     event.Skip();
 }
