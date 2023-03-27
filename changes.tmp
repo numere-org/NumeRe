@@ -1,2 +1,3 @@
 Fixed	The documentation browser can now be opened again using "help window" and similar. The necessary time for opening up with this method was greatly reduced.
 Fixed	Excel sheets with more than a single table headline are readable again.
+Fixed	Drag/drop of files into the editor is now working as expected.
