@@ -1535,9 +1535,21 @@ namespace NumeRe
                          || sExpr[i] == '>')
                 {
                     if (sExpr[i] == ':' && hasIf <= 0)
+                    {
+                        if (i+1 == sExpr.length())
+                            throw SyntaxError(SyntaxError::STRING_ERROR, sExpr.get_viewed_string(),
+                                              i+sExpr.get_offset(), _lang.get("ERR_NR_3603_MISSING_OPERAND"));
+
                         continue;
+                    }
                     else if (sExpr[i] == ',' && hasIf > 0)
+                    {
+                        if (i+1 == sExpr.length())
+                            throw SyntaxError(SyntaxError::STRING_ERROR, sExpr.get_viewed_string(),
+                                              i+sExpr.get_offset(), _lang.get("ERR_NR_3603_MISSING_OPERAND"));
+
                         continue;
+                    }
                     else if (sExpr[i] == ':')
                         hasIf--;
                     else if (sExpr[i] == '?')
