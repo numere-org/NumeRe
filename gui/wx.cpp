@@ -173,6 +173,10 @@ wxMGL::wxMGL(wxWindow* parent, wxWindowID id, const wxPoint& pos, const wxSize& 
         statusbar = m_parentFrame->CreateStatusBar(3);
         int nWidths[] = {-2,-1,-1};
         statusbar->SetFieldsCount(3, nWidths);
+
+        // Define the minimal possible client size, below which any resizing
+        // action is prohibited.
+        m_parentFrame->SetMinClientSize(wxSize(550,100));
     }
     else
         m_parentFrame = nullptr;
@@ -276,7 +280,8 @@ void wxMGL::InitializeToolbar()
     toptoolbar->AddTool(ID_GRAPH_CIRCLE, _guilang.get("GUI_GRAPH_CIRCLE"),  app->getToolbarIcon("add-circ"), _guilang.get("GUI_GRAPH_CIRCLE"), wxITEM_CHECK);
     toptoolbar->AddTool(ID_GRAPH_TEXT, _guilang.get("GUI_GRAPH_TEXT"), app->getToolbarIcon("add-text"), _guilang.get("GUI_GRAPH_TEXT"), wxITEM_CHECK);
 
-    styling = new wxTextCtrl(toptoolbar, wxID_ANY, "B-__");
+    // Create a narrow text ctrl to insert the styling information
+    styling = new wxTextCtrl(toptoolbar, wxID_ANY, "B-__", wxDefaultPosition, wxSize(60,-1));
 
     toptoolbar->AddControl(styling, "STYLE");
     toptoolbar->Realize();
