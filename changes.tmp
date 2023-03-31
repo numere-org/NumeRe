@@ -4,3 +4,4 @@ Fixed	The graph window cannot made smaller than a defined minimal size anymore. 
 Fixed	Excel sheets with more than a single table headline are readable again.
 Fixed	Drag/drop of files into the editor is now working as expected.
 Fixed	"dialog" now accept also tables as input sources for their default values.
+Fixed	The default value of "getkeyval()" now works as intended.

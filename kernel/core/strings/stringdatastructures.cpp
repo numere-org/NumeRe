@@ -513,7 +513,7 @@ StringArg StringVector::getArg(size_t i) const
     else if (size() == 1)
         return StringArg(at(0));
 
-    return StringArg();
+    return StringArg("\"\"");
 }
 
 
