@@ -1839,6 +1839,7 @@ void plugin_histogram(std::string& sCmd)
     if (findParameter(sCmd, "silent"))
         bSilent = true;
 
+    // Had to rename the "grid" parameter due to name conflict
     if (findParameter(sCmd, "asgrid") && _idx.col.size() > 3)
         bGrid = true;
 
