@@ -5375,6 +5375,9 @@ static std::map<std::string,CommandFunc> getCommandFunctions()
     mCommandFuncMap["endlayout"] = cmd_context_specific;
     mCommandFuncMap["group"] = cmd_context_specific;
     mCommandFuncMap["endgroup"] = cmd_context_specific;
+    mCommandFuncMap["break"] = cmd_context_specific;
+    mCommandFuncMap["continue"] = cmd_context_specific;
+    mCommandFuncMap["leave"] = cmd_context_specific;
     mCommandFuncMap["else"] = cmd_context_specific;
     mCommandFuncMap["elseif"] = cmd_context_specific;
     mCommandFuncMap["endif"] = cmd_context_specific;
