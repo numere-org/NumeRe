@@ -132,8 +132,11 @@ void SymDefManager::createSymbol(const std::string& sCommandLine)
                 {
                     // Consider preset cases
                     std::string symbol = sEnum.substr(0, pos);
+                    std::string value = sEnum.substr(pos+1);
+                    // Allow using already defined enumerated symbols
+                    resolveSymbols(value);
                     StripSpaces(symbol);
-                    nEnumVal = StrToInt(sEnum.substr(pos+1));
+                    nEnumVal = StrToInt(value);
                     m_symDefs[symbol] = toString(nEnumVal);
                 }
 
