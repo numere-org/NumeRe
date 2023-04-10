@@ -136,7 +136,10 @@ void SymDefManager::createSymbol(const std::string& sCommandLine)
                     // Allow using already defined enumerated symbols
                     resolveSymbols(value);
                     StripSpaces(symbol);
-                    nEnumVal = StrToInt(value);
+
+                    if (isConvertible(value, CONVTYPE_VALUE))
+                        nEnumVal = intCast(StrToCmplx(value));
+
                     m_symDefs[symbol] = toString(nEnumVal);
                 }
 
