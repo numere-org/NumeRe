@@ -7,3 +7,4 @@ Fixed	"dialog" now accept also tables as input sources for their default values.
 Fixed	Empty cells are now preserved, if one converts string columns to logical columns.
 Fixed	The default value of "getkeyval()" now works as intended.
 Added	It's now possible to define an enumeration using the syntax "declare enum -> {VAL1, VAL2, ..}"
+Fixed	Exporting of tables containing multiple headrows to XLS format is possible again.
