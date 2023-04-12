@@ -756,6 +756,16 @@ static void evaluateTransposeForDataOperation(const string& sTarget, Indices& _i
 /////////////////////////////////////////////////
 static void performDataOperation(const string& sSource, const string& sTarget, const Indices& _iSourceIndex, const Indices& _iTargetIndex, MemoryManager& _data, bool bMove, bool bTranspose)
 {
+    // Get the extract as a table
+    NumeRe::Table extract = _data.extractTable(sSource, _iSourceIndex.row, _iSourceIndex.col);
+
+    // If we move then we need to delete the old data
+    if (bMove)
+        _data.deleteBulk(sSource, _iSourceIndex.row, _iSourceIndex.col);
+
+    // Temporary
+    _data.importTable(extract, sTarget, _iTargetIndex.row, _iTargetIndex.col);
+
     MemoryManager _cache;
 
     // First step: copy the contents to the Datafile _cache
