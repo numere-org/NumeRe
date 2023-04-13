@@ -764,9 +764,9 @@ static void performDataOperation(const string& sSource, const string& sTarget, c
         _data.deleteBulk(sSource, _iSourceIndex.row, _iSourceIndex.col);
 
     // Temporary
-    _data.importTable(extract, sTarget, _iTargetIndex.row, _iTargetIndex.col);
+    _data.insertCopiedTable(extract, sTarget, _iTargetIndex.row, _iTargetIndex.col, bTranspose);
 
-    MemoryManager _cache;
+    /*MemoryManager _cache;
 
     // First step: copy the contents to the Datafile _cache
     // If the move flag is set, then the contents are cleared at the source location
@@ -837,7 +837,7 @@ static void performDataOperation(const string& sSource, const string& sTarget, c
                     _data.deleteEntry(_iTargetIndex.col[j], _iTargetIndex.row[i], sTarget);
             }
         }
-    }
+    }*/
 }
 
 

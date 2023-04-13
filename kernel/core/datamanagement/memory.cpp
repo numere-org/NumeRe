@@ -1857,47 +1857,88 @@ NumeRe::Table Memory::extractTable(const string& _sTable, const VectorIndex& lin
 /////////////////////////////////////////////////
 void Memory::importTable(NumeRe::Table _table, const VectorIndex& lines, const VectorIndex& cols)
 {
+    m_meta = _table.getMetaData();
+
+    // We construct separate objects because they might be overwritten
+    insertCopiedTable(_table, lines, cols, false);
+}
+
+
+void Memory::insertCopiedTable(NumeRe::Table _table, const VectorIndex& lines, const VectorIndex& cols, bool transpose)
+{
     // We construct separate objects because they might be overwritten
     deleteBulk(VectorIndex(lines), VectorIndex(cols));
 
-    lines.setOpenEndIndex(lines.front() + _table.getLines()-1);
-    cols.setOpenEndIndex(cols.front() + _table.getCols()-1);
+    lines.setOpenEndIndex(lines.front() + transpose ? _table.getCols()-1 : _table.getLines()-1);
+    cols.setOpenEndIndex(cols.front() + transpose ? _table.getLines()-1 : _table.getCols()-1);
 
-    resizeMemory(lines.max()+1, cols.max()+1);
-    m_meta = _table.getMetaData();
+    resizeMemory(transpose ? cols.max()+1 : lines.max()+1,
+                 transpose ? lines.max()+1 : cols.max()+1);
 
-    #pragma omp parallel for
-    for (size_t j = 0; j < _table.getCols(); j++)
+    if (!transpose)
     {
-        if (j >= cols.size())
-            continue;
-
-        TableColumn* tabCol = _table.getColumn(j);
-
-        if (!tabCol)
-            continue;
-
-        if (!memArray[cols[j]])
+        #pragma omp parallel for
+        for (size_t j = 0; j < _table.getCols(); j++)
         {
-            if (tabCol->m_type == TableColumn::TYPE_VALUE)
-                memArray[cols[j]].reset(new ValueColumn);
-            else if (tabCol->m_type == TableColumn::TYPE_DATETIME)
-                memArray[cols[j]].reset(new DateTimeColumn);
-            else if (tabCol->m_type == TableColumn::TYPE_STRING)
-                memArray[cols[j]].reset(new StringColumn);
-            else if (tabCol->m_type == TableColumn::TYPE_LOGICAL)
-                memArray[cols[j]].reset(new LogicalColumn);
-            else if (tabCol->m_type == TableColumn::TYPE_CATEGORICAL)
-                memArray[cols[j]].reset(new CategoricalColumn);
-            else
+            if (j >= cols.size())
+                continue;
+
+            TableColumn* tabCol = _table.getColumn(j);
+
+            if (!tabCol)
+                continue;
+
+            if (!memArray[cols[j]])
             {
-                NumeReKernel::issueWarning("In Memory::importTable(): TableColumn::ColumnType not implemented.");
+                if (tabCol->m_type == TableColumn::TYPE_VALUE)
+                    memArray[cols[j]].reset(new ValueColumn);
+                else if (tabCol->m_type == TableColumn::TYPE_DATETIME)
+                    memArray[cols[j]].reset(new DateTimeColumn);
+                else if (tabCol->m_type == TableColumn::TYPE_STRING)
+                    memArray[cols[j]].reset(new StringColumn);
+                else if (tabCol->m_type == TableColumn::TYPE_LOGICAL)
+                    memArray[cols[j]].reset(new LogicalColumn);
+                else if (tabCol->m_type == TableColumn::TYPE_CATEGORICAL)
+                    memArray[cols[j]].reset(new CategoricalColumn);
+                else
+                {
+                    NumeReKernel::issueWarning("In Memory::insertCopiedTable(): TableColumn::ColumnType not implemented.");
+                    continue;
+                }
+
+                memArray[cols[j]]->m_sHeadLine = tabCol->m_sHeadLine;
+            }
+            else if (tabCol->m_type != memArray[cols[j]]->m_type)
+            {
+                memArray[cols[j]].reset(memArray[cols[j]]->convert(TableColumn::TYPE_STRING));
+                memArray[cols[j]]->insert(lines, tabCol->convert(TableColumn::TYPE_STRING));
                 continue;
             }
-        }
 
-        memArray[cols[j]]->insert(lines, tabCol);
-        memArray[cols[j]]->m_sHeadLine = tabCol->m_sHeadLine;
+            memArray[cols[j]]->insert(lines, tabCol);
+        }
+    }
+    else
+    {
+        #pragma omp parallel for
+        for (size_t j = 0; j < _table.getLines(); j++)
+        {
+            if (j >= cols.size())
+                continue;
+
+            if (!memArray[cols[j]])
+                memArray[cols[j]].reset(new StringColumn);
+            else
+                memArray[cols[j]].reset(memArray[cols[j]]->convert(TableColumn::TYPE_STRING));
+
+            for (size_t i = 0; i < _table.getCols(); i++)
+            {
+                if (i >= lines.size())
+                    break;
+
+                memArray[cols[j]]->setValue(lines[i], _table.getValueAsString(j, i));
+            }
+        }
     }
 
     // Try to convert string- to valuecolumns
