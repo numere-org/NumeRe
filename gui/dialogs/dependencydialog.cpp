@@ -482,6 +482,9 @@ void DependencyDialog::CreateDotFile()
 /////////////////////////////////////////////////
 void DependencyDialog::OnItemActivate(wxTreeEvent& event)
 {
+    if (!event.GetItem().IsOk())
+        return;
+
     NumeReWindow* main = static_cast<NumeReWindow*>(this->GetParent());
 
     wxString procedureName = m_dependencyTree->GetItemText(event.GetItem());
@@ -568,6 +571,9 @@ void DependencyDialog::OnMenuEvent(wxCommandEvent& event)
 /////////////////////////////////////////////////
 void DependencyDialog::OnItemSelected(wxTreeEvent& event)
 {
+    if (!event.GetItem().IsOk())
+        return;
+
     wxTreeItemId currItem = m_dependencyTree->GetRootItem();
     wxString NAME = m_dependencyTree->GetItemText(event.GetItem());
 
