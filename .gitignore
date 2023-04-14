@@ -30,3 +30,11 @@
 *.exe
 *.out
 *.app
+
+# Testing
+Debug/*
+
+# IDE
+NumeRe.depend
+NumeRe.layout
+.vscode/*
