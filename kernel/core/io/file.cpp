@@ -3676,8 +3676,11 @@ namespace NumeRe
 
                     // Replace line break characters with their
                     // corresponding masked character
-                    while (sEntry.find((char)13) != string::npos)
-                        sEntry.replace(sEntry.find((char)13), 1, "\n");
+                    for (size_t i = 0; i < sEntry.length(); i++)
+                    {
+                        if (sEntry[i] == (char)13)
+                            sEntry[i] = '\n';
+                    }
 
                     // Append the string to the current table
                     // column head, if it is not empty
@@ -3781,8 +3784,11 @@ namespace NumeRe
                 sHeadLine = fileData->at(j)->m_sHeadLine;
 
             // Replace newlines with the corresponding character code
-            while (sHeadLine.find('\n') != string::npos)
-                sHeadLine.replace(sHeadLine.find('\n'), 2, 1, (char)10);
+            for (size_t i = 0; i < sHeadLine.length(); i++)
+            {
+                if (sHeadLine[i] == '\n')
+                    sHeadLine[i] = (char)13;
+            }
 
             // Write the headline
             _cell->SetString(sHeadLine.c_str());
