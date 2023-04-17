@@ -510,7 +510,7 @@ wxThread::ExitCode NumeReTerminal::Entry()
 
 		// During idle times so that these tasks don't interfere with the main evaluation routine
 		// do the following:
-		if (time(0) - _kernel.getLastSavedTime() >= _kernel.getAutosaveInterval())
+		if (_kernel.getAutosaveInterval() > 0 && (time(0)-_kernel.getLastSavedTime()>=_kernel.getAutosaveInterval()))
 			_kernel.Autosave(); // save the cache
 
 	}
