@@ -8,4 +8,6 @@ Fixed	Empty cells are now preserved, if one converts string columns to logical c
 Fixed	The default value of "getkeyval()" now works as intended.
 Added	It's now possible to define an enumeration using the syntax "declare enum -> {VAL1, VAL2, ..}"
 Fixed	Issue in dependency viewer, when clicking at empty space, is now fixed
+Fixed	Exporting of tables containing multiple headrows to XLS format is possible again.
+Fixed	Copying and moving of mixed-value tables is now possible again.
 Fixed	Using "Go to procedure" works now also with external procedures.

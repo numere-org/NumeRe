@@ -593,6 +593,25 @@ namespace NumeRe
 
 
     /////////////////////////////////////////////////
+    /// \brief Getter function for the value of the
+    /// selected cell. The value is converted into an
+    /// internal string.
+    ///
+    /// \param i size_t
+    /// \param j size_t
+    /// \return std::string
+    ///
+    /////////////////////////////////////////////////
+    std::string Table::getValueAsInternalString(size_t i, size_t j) const
+    {
+        if (vTableData.size() > j && vTableData[j] && vTableData[j]->isValid(i))
+            return vTableData[j]->getValueAsInternalString(i);
+
+        return "";
+    }
+
+
+    /////////////////////////////////////////////////
     /// \brief Returns a copy of the internal column
     /// array or a nullptr, if the column does not
     /// exist or is empty.
