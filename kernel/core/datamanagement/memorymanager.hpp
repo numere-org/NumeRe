@@ -325,6 +325,12 @@ class MemoryManager : public NumeRe::FileAdapter, public StringMemory, public Nu
 			return vMemory[_nLayer]->importTable(_table, lines, cols);
 		}
 
+		inline void insertCopiedTable(NumeRe::Table _table, const std::string& _sTable, const VectorIndex& lines = VectorIndex(0, VectorIndex::OPEN_END), const VectorIndex& cols = VectorIndex(0, VectorIndex::OPEN_END), bool transpose = false)
+		{
+			return vMemory[findTable(_sTable)]->insertCopiedTable(_table, lines, cols, transpose);
+		}
+
+
 
 		// TABLE INPLACE MODIFICATION METHODS
 		std::vector<int> sortElements(const std::string& sLine);

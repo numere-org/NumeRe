@@ -210,7 +210,10 @@ namespace NumeRe
             for (size_t j = 0; j < vLine.size(); j++)
             {
                 replaceAll(vLine[j], "\1", " ");
-                fileData->at(j)->setValue(nLine, vLine[j]);
+
+                // Do not add tokenizer placeholders
+                if (vLine[j] != "_")
+                    fileData->at(j)->setValue(nLine, vLine[j]);
             }
 
             nLine++;
