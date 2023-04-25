@@ -3391,12 +3391,14 @@ namespace NumeRe
             vTableSizes.push_back(0);
             vCommentRows.push_back(0);
             bool isString = true;
+            size_t rowCount = 0;
 
             // Read every row
             while (row)
             {
                 tinyxml2::XMLElement* cell = row->FirstChildElement();
                 size_t cellcount = 0;
+                rowCount++;
 
                 // Examine each cell
                 while (cell)
@@ -3425,6 +3427,15 @@ namespace NumeRe
                     vTableSizes.back() = cellcount;
 
                 row = row->NextSiblingElement("table:table-row");
+            }
+
+            // String lines are only used complete as comments, if their consecutive number is
+            // smaller than 4 or 10% of the total number of rows (whichever is larger)
+            // Otherwise only the first line is used
+            if (vCommentRows.back())
+            {
+                if (vCommentRows.back() >= std::max(4.0, 0.1*rowCount))
+                    vCommentRows.back() = 1;
             }
         } while ((table = table->NextSiblingElement("table:table")));
 
@@ -3999,12 +4010,21 @@ namespace NumeRe
                     vCommentLines[i] = currentRow;
 
                 // Search for the first nearly complete line of strings
-                if (bBreakSignal || 4/3.0 * cellCount >= nColmax-nColmin+1)
+                if (bBreakSignal)// || 4/3.0 * cellCount >= nColmax-nColmin+1)
                     break;
             }
             while ((_node = _node->NextSibling()));
 
             bBreakSignal = false;
+
+            // String lines are only used complete as comments, if their consecutive number is
+            // smaller than 4 or 10% of the total number of rows (whichever is larger)
+            // Otherwise only the first line is used
+            if (vCommentLines[i])
+            {
+                if (vCommentLines[i] - nRowmin >= std::max(4.0, 0.1*(nRowmax-nRowmin+1)))
+                    vCommentLines[i] = nRowmin;
+            }
 
             // Calculate the maximal number of needed
             // rows to store all sheets next to each
