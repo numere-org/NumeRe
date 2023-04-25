@@ -11,3 +11,4 @@ Fixed	Issue in dependency viewer, when clicking at empty space, is now fixed
 Fixed	Exporting of tables containing multiple headrows to XLS format is possible again.
 Fixed	Copying and moving of mixed-value tables is now possible again.
 Fixed	Using "Go to procedure" works now also with external procedures.
+Fixed	Downloading of zip files now works as expected.
