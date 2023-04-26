@@ -1,0 +1,5396 @@
+# depslib dependency file v1.0
+1681728796 source:c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\common\comparefiles.cpp
+	"compareFiles.hpp"
+	"dtl/dtl.hpp"
+	<fstream>
+	<sstream>
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\common\comparefiles.hpp
+	<string>
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\common\dtl\dtl.hpp
+	"variables.hpp"
+	"functors.hpp"
+	"Sequence.hpp"
+	"Lcs.hpp"
+	"Ses.hpp"
+	"Diff.hpp"
+	"Diff3.hpp"
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\common\dtl\variables.hpp
+	<vector>
+	<list>
+	<string>
+	<algorithm>
+	<iostream>
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\common\dtl\functors.hpp
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\common\dtl\sequence.hpp
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\common\dtl\lcs.hpp
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\common\dtl\ses.hpp
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\common\dtl\diff.hpp
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\common\dtl\diff3.hpp
+
+1681728796 source:c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\common\filerevisions.cpp
+	"filerevisions.hpp"
+	"dtl/dtl.hpp"
+	<wx/zipstrm.h>
+	<wx/txtstrm.h>
+	<wx/wfstream.h>
+	<memory>
+	<fstream>
+	<sstream>
+	<wx/encconv.h>
+	"../kernel/core/utils/stringtools.hpp"
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\common\filerevisions.hpp
+	<wx/wx.h>
+	<wx/filename.h>
+	<vector>
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\wx.h
+	"wx/defs.h"
+	"wx/object.h"
+	"wx/dynarray.h"
+	"wx/list.h"
+	"wx/hash.h"
+	"wx/string.h"
+	"wx/hashmap.h"
+	"wx/arrstr.h"
+	"wx/intl.h"
+	"wx/log.h"
+	"wx/event.h"
+	"wx/app.h"
+	"wx/utils.h"
+	"wx/stream.h"
+	"wx/memory.h"
+	"wx/math.h"
+	"wx/stopwatch.h"
+	"wx/timer.h"
+	"wx/module.h"
+	"wx/wxcrt.h"
+	"wx/wxcrtvararg.h"
+	"wx/window.h"
+	"wx/containr.h"
+	"wx/panel.h"
+	"wx/toplevel.h"
+	"wx/frame.h"
+	"wx/gdicmn.h"
+	"wx/gdiobj.h"
+	"wx/region.h"
+	"wx/bitmap.h"
+	"wx/image.h"
+	"wx/colour.h"
+	"wx/font.h"
+	"wx/dc.h"
+	"wx/dcclient.h"
+	"wx/dcmemory.h"
+	"wx/dcprint.h"
+	"wx/dcscreen.h"
+	"wx/button.h"
+	"wx/menuitem.h"
+	"wx/menu.h"
+	"wx/pen.h"
+	"wx/brush.h"
+	"wx/palette.h"
+	"wx/icon.h"
+	"wx/cursor.h"
+	"wx/dialog.h"
+	"wx/settings.h"
+	"wx/msgdlg.h"
+	"wx/dataobj.h"
+	"wx/control.h"
+	"wx/ctrlsub.h"
+	"wx/bmpbuttn.h"
+	"wx/checkbox.h"
+	"wx/checklst.h"
+	"wx/choice.h"
+	"wx/scrolbar.h"
+	"wx/stattext.h"
+	"wx/statbmp.h"
+	"wx/statbox.h"
+	"wx/listbox.h"
+	"wx/radiobox.h"
+	"wx/radiobut.h"
+	"wx/textctrl.h"
+	"wx/slider.h"
+	"wx/gauge.h"
+	"wx/scrolwin.h"
+	"wx/dirdlg.h"
+	"wx/toolbar.h"
+	"wx/combobox.h"
+	"wx/layout.h"
+	"wx/sizer.h"
+	"wx/statusbr.h"
+	"wx/choicdlg.h"
+	"wx/textdlg.h"
+	"wx/filedlg.h"
+	"wx/mdi.h"
+	"wx/validate.h"
+	"wx/valtext.h"
+
+1412504348 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\defs.h
+	"wx/platform.h"
+	"wx/version.h"
+	"wx/dlimpexp.h"
+	<stddef.h>
+	"wx/debug.h"
+	<sys/types.h>
+	<sys/types.h>
+	"wx/windowid.h"
+	<unistd.h>
+	"wx/msw/winundef.h"
+	"wx/features.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\platform.h
+	<unistd.h>
+	<TargetConditionals.h>
+	<AvailabilityMacros.h>
+	"wx/osx/config_xcode.h"
+	"wx/android/config_android.h"
+	"wx/compiler.h"
+	"wx/setup.h"
+	"wx/msw/wince/libraries.h"
+	"wx/msw/libraries.h"
+	"wx/msw/gccpriv.h"
+	<TargetConditionals.h>
+	<AvailabilityMacros.h>
+	"wx/chkconf.h"
+
+1412504348 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\android\config_android.h
+
+1412504348 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\compiler.h
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\lib\gcc_lib\mswu\wx\setup.h
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\wince\libraries.h
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\libraries.h
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\gccpriv.h
+	<_mingw.h>
+	<w32api.h>
+
+1412504348 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\chkconf.h
+	"wx/msw/wince/chkconf.h"
+	"wx/msw/chkconf.h"
+	"wx/gtk/chkconf.h"
+	"wx/gtk/chkconf.h"
+	"wx/cocoa/chkconf.h"
+	"wx/osx/chkconf.h"
+	"wx/os2/chkconf.h"
+	"wx/dfb/chkconf.h"
+	"wx/motif/chkconf.h"
+	"wx/x11/chkconf.h"
+	"wx/android/chkconf.h"
+	"wx/unix/chkconf.h"
+	"wx/univ/chkconf.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\wince\chkconf.h
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\chkconf.h
+
+1412504348 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\android\chkconf.h
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\unix\chkconf.h
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\univ\chkconf.h
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\version.h
+	"wx/cpp.h"
+
+1412504348 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\cpp.h
+	"wx/compiler.h"
+
+1412504348 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\dlimpexp.h
+
+1412504348 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\debug.h
+	<assert.h>
+	<limits.h>
+	"wx/chartype.h"
+	"wx/cpp.h"
+	"wx/dlimpexp.h"
+
+1412504348 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\chartype.h
+	"wx/platform.h"
+	<sys/types.h>
+	<wchar.h>
+	<wcstr.h>
+	<stdlib.h>
+	<widec.h>
+	<ctype.h>
+	<stddef.h>
+	<string.h>
+	<ctype.h>
+	<tchar.h>
+	<ctype.h>
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\windowid.h
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\winundef.h
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\features.h
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\object.h
+	"wx/memory.h"
+	"wx/xti.h"
+	"wx/rtti.h"
+	"wx/xti2.h"
+	"wx/msw/msvcrt.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\memory.h
+	"wx/defs.h"
+	"wx/string.h"
+	"wx/msgout.h"
+	<stddef.h>
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\string.h
+	"wx/defs.h"
+	<ctype.h>
+	<stdio.h>
+	<string.h>
+	<stdarg.h>
+	<limits.h>
+	<string.h>
+	<stdio.h>
+	<stdarg.h>
+	<limits.h>
+	<stdlib.h>
+	"wx/wxcrtbase.h"
+	"wx/strvararg.h"
+	"wx/buffer.h"
+	"wx/strconv.h"
+	"wx/stringimpl.h"
+	"wx/stringops.h"
+	"wx/unichar.h"
+	"wx/tls.h"
+	"wx/iosfwrap.h"
+	"wx/crt.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\wxcrtbase.h
+	"wx/chartype.h"
+	<stdio.h>
+	<string.h>
+	<ctype.h>
+	<wctype.h>
+	<time.h>
+	<io.h>
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\strvararg.h
+	"wx/platform.h"
+	"wx/cpp.h"
+	"wx/chartype.h"
+	"wx/strconv.h"
+	"wx/buffer.h"
+	"wx/unichar.h"
+	<type_traits>
+	<type_traits>
+	<tr1/type_traits>
+	"wx/stringimpl.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\strconv.h
+	"wx/defs.h"
+	"wx/chartype.h"
+	"wx/buffer.h"
+	"typeinfo.h"
+	<stdlib.h>
+	"wx/fontenc.h"
+
+1412504348 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\buffer.h
+	"wx/chartype.h"
+	"wx/wxcrtbase.h"
+	<stdlib.h>
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\typeinfo.h
+	"wx/defs.h"
+	<typeinfo>
+	<string.h>
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\fontenc.h
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\unichar.h
+	"wx/defs.h"
+	"wx/chartype.h"
+	"wx/stringimpl.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\stringimpl.h
+	"wx/defs.h"
+	"wx/chartype.h"
+	"wx/wxcrtbase.h"
+	<stdlib.h>
+	"wx/beforestd.h"
+	<string>
+	"wx/afterstd.h"
+
+1412504348 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\beforestd.h
+
+1412504348 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\afterstd.h
+	"wx/msw/winundef.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\stringops.h
+	"wx/chartype.h"
+	"wx/stringimpl.h"
+	"wx/unichar.h"
+	"wx/buffer.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\tls.h
+	"wx/defs.h"
+	"wx/msw/tls.h"
+	"wx/os2/tls.h"
+	"wx/unix/tls.h"
+	<stdlib.h>
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\tls.h
+	"wx/msw/wrapwin.h"
+	"wx/thread.h"
+	"wx/vector.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\wrapwin.h
+	"wx/platform.h"
+	<winsock2.h>
+	<windows.h>
+	"wx/msw/winundef.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\thread.h
+	"wx/defs.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\vector.h
+	"wx/defs.h"
+	<vector>
+	<algorithm>
+	"wx/scopeguard.h"
+	"wx/meta/movable.h"
+	"wx/meta/if.h"
+	"wx/beforestd.h"
+	<new>
+	"wx/afterstd.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\scopeguard.h
+	"wx/defs.h"
+	"wx/except.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\except.h
+	"wx/defs.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\meta\movable.h
+	"wx/meta/pod.h"
+	"wx/string.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\meta\pod.h
+	"wx/defs.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\meta\if.h
+	"wx/defs.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\unix\tls.h
+	<pthread.h>
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\iosfwrap.h
+	<iostream.h>
+	<iosfwd>
+	"wx/msw/winundef.h"
+
+1412504348 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\crt.h
+	"wx/defs.h"
+	"wx/chartype.h"
+	"wx/wxcrt.h"
+	"wx/wxcrtvararg.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\wxcrt.h
+	"wx/wxcrtbase.h"
+	"wx/string.h"
+	<string.h>
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\wxcrtvararg.h
+	"wx/wxcrt.h"
+	"wx/strvararg.h"
+	"wx/string.h"
+	<stdarg.h>
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msgout.h
+	"wx/defs.h"
+	"wx/chartype.h"
+	"wx/strvararg.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\xti.h
+	"wx/defs.h"
+	"wx/xtitypes.h"
+	"wx/xtihandler.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\xtitypes.h
+	"wx/defs.h"
+	"wx/string.h"
+	"wx/hashmap.h"
+	"wx/arrstr.h"
+	"wx/flags.h"
+	"wx/intl.h"
+	"wx/log.h"
+	<typeinfo>
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\hashmap.h
+	"wx/string.h"
+	"wx/wxcrt.h"
+	<unordered_map>
+	<tr1/unordered_map>
+	<ext/hash_map>
+	<hash_map>
+	<stddef.h>
+
+1412504348 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\arrstr.h
+	"wx/defs.h"
+	"wx/string.h"
+	"wx/dynarray.h"
+	"wx/beforestd.h"
+	<iterator>
+	"wx/afterstd.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\dynarray.h
+	"wx/defs.h"
+	"wx/beforestd.h"
+	<vector>
+	<algorithm>
+	"wx/afterstd.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\flags.h
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\intl.h
+	"wx/defs.h"
+	"wx/string.h"
+	"wx/translation.h"
+	"wx/fontenc.h"
+	"wx/language.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\translation.h
+	"wx/defs.h"
+	"wx/string.h"
+	"wx/buffer.h"
+	"wx/language.h"
+	"wx/hashmap.h"
+	"wx/strconv.h"
+	"wx/scopedptr.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\language.h
+	"wx/defs.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\scopedptr.h
+	"wx/defs.h"
+	"wx/checkeddelete.h"
+
+1412504348 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\checkeddelete.h
+	"wx/cpp.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\log.h
+	"wx/defs.h"
+	"wx/cpp.h"
+	"wx/string.h"
+	"wx/strvararg.h"
+	"wx/arrstr.h"
+	<time.h>
+	"wx/dynarray.h"
+	"wx/hashmap.h"
+	"wx/thread.h"
+	"wx/iosfwrap.h"
+	"wx/generic/logg.h"
+	"wx/cocoa/log.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\generic\logg.h
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\xtihandler.h
+	"wx/defs.h"
+	"wx/xti.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\rtti.h
+	"wx/memory.h"
+	"wx/flags.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\xti2.h
+	"wx/xtiprop.h"
+	"wx/xtictor.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\xtiprop.h
+	"wx/defs.h"
+	"wx/xti.h"
+	"wx/any.h"
+
+1412504348 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\any.h
+	"wx/defs.h"
+	<new>
+	"wx/string.h"
+	"wx/meta/if.h"
+	"wx/typeinfo.h"
+	"wx/list.h"
+	"wx/datetime.h"
+	"wx/variant.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\list.h
+	"wx/defs.h"
+	"wx/object.h"
+	"wx/string.h"
+	"wx/vector.h"
+	"wx/beforestd.h"
+	<algorithm>
+	<iterator>
+	<list>
+	"wx/afterstd.h"
+
+1412504348 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\datetime.h
+	"wx/defs.h"
+	"wx/msw/wince/time.h"
+	<time.h>
+	<limits.h>
+	"wx/longlong.h"
+	"wx/anystr.h"
+	"wx/dynarray.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\wince\time.h
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\longlong.h
+	"wx/defs.h"
+	"wx/string.h"
+	<limits.h>
+	"wx/iosfwrap.h"
+	<limits>
+	"wx/strvararg.h"
+
+1412504348 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\anystr.h
+	"wx/string.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\variant.h
+	"wx/defs.h"
+	"wx/object.h"
+	"wx/string.h"
+	"wx/arrstr.h"
+	"wx/list.h"
+	"wx/cpp.h"
+	"wx/longlong.h"
+	"wx/datetime.h"
+	"wx/iosfwrap.h"
+	"wx/any.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\xtictor.h
+	"wx/defs.h"
+	"wx/xti.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\msvcrt.h
+	<stdlib.h>
+	<crtdbg.h>
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\hash.h
+	"wx/defs.h"
+	"wx/string.h"
+	"wx/object.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\event.h
+	"wx/defs.h"
+	"wx/cpp.h"
+	"wx/object.h"
+	"wx/clntdata.h"
+	"wx/gdicmn.h"
+	"wx/cursor.h"
+	"wx/mousestate.h"
+	"wx/dynarray.h"
+	"wx/thread.h"
+	"wx/tracker.h"
+	"wx/typeinfo.h"
+	"wx/any.h"
+	"wx/meta/convertible.h"
+	"wx/meta/removeref.h"
+
+1412504348 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\clntdata.h
+	"wx/defs.h"
+	"wx/string.h"
+	"wx/hashmap.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\gdicmn.h
+	"wx/defs.h"
+	"wx/list.h"
+	"wx/string.h"
+	"wx/fontenc.h"
+	"wx/hashmap.h"
+	"wx/math.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\math.h
+	"wx/defs.h"
+	<math.h>
+	<cmath>
+	<float.h>
+	<ieeefp.h>
+
+1412504348 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\cursor.h
+	"wx/defs.h"
+	"wx/msw/cursor.h"
+	"wx/motif/cursor.h"
+	"wx/gtk/cursor.h"
+	"wx/gtk1/cursor.h"
+	"wx/x11/cursor.h"
+	"wx/dfb/cursor.h"
+	"wx/osx/cursor.h"
+	"wx/cocoa/cursor.h"
+	"wx/os2/cursor.h"
+	"wx/utils.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\cursor.h
+	"wx/msw/gdiimage.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\gdiimage.h
+	"wx/gdiobj.h"
+	"wx/gdicmn.h"
+	"wx/list.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\gdiobj.h
+	"wx/object.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\utils.h
+	"wx/object.h"
+	"wx/list.h"
+	"wx/filefn.h"
+	"wx/hashmap.h"
+	"wx/versioninfo.h"
+	"wx/meta/implicitconversion.h"
+	"wx/gdicmn.h"
+	"wx/mousestate.h"
+	"wx/longlong.h"
+	"wx/platinfo.h"
+	<direct.h>
+	<dirent.h>
+	<unistd.h>
+	<stdio.h>
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\filefn.h
+	"wx/list.h"
+	"wx/arrstr.h"
+	"wx/msw/wince/time.h"
+	"wx/msw/private.h"
+	<time.h>
+	<sys/types.h>
+	<sys/stat.h>
+	<process.h>
+	"wx/os2/private.h"
+	<direct.h>
+	<io.h>
+	<unistd.h>
+	<unistd.h>
+	<dirent.h>
+	<direct.h>
+	<dos.h>
+	<io.h>
+	<direct.h>
+	<dos.h>
+	<io.h>
+	<io.h>
+	<unistd.h>
+	<dir.h>
+	<fcntl.h>
+	<sys/types.h>
+
+1588687172 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\private.h
+	"wx/msw/wrapwin.h"
+	"wx/msw/microwin.h"
+	"wx/log.h"
+	"wx/window.h"
+	"wx/gdicmn.h"
+	"wx/colour.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\microwin.h
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\window.h
+	"wx/event.h"
+	"wx/list.h"
+	"wx/cursor.h"
+	"wx/font.h"
+	"wx/colour.h"
+	"wx/region.h"
+	"wx/utils.h"
+	"wx/intl.h"
+	"wx/validate.h"
+	"wx/palette.h"
+	"wx/accel.h"
+	"wx/access.h"
+	"wx/msw/window.h"
+	"wx/motif/window.h"
+	"wx/gtk/window.h"
+	"wx/gtk1/window.h"
+	"wx/x11/window.h"
+	"wx/dfb/window.h"
+	"wx/osx/window.h"
+	"wx/cocoa/window.h"
+	"wx/os2/window.h"
+	"wx/univ/window.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\font.h
+	"wx/defs.h"
+	"wx/fontenc.h"
+	"wx/gdiobj.h"
+	"wx/gdicmn.h"
+	"wx/msw/font.h"
+	"wx/motif/font.h"
+	"wx/gtk/font.h"
+	"wx/gtk1/font.h"
+	"wx/x11/font.h"
+	"wx/dfb/font.h"
+	"wx/osx/font.h"
+	"wx/cocoa/font.h"
+	"wx/os2/font.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\font.h
+	"wx/gdicmn.h"
+
+1412504348 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\colour.h
+	"wx/defs.h"
+	"wx/gdiobj.h"
+	"wx/variant.h"
+	"wx/msw/colour.h"
+	"wx/motif/colour.h"
+	"wx/gtk/colour.h"
+	"wx/gtk1/colour.h"
+	"wx/generic/colour.h"
+	"wx/x11/colour.h"
+	"wx/osx/colour.h"
+	"wx/cocoa/colour.h"
+	"wx/os2/colour.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\colour.h
+	"wx/object.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\generic\colour.h
+	"wx/object.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\region.h
+	"wx/gdiobj.h"
+	"wx/gdicmn.h"
+	"wx/msw/region.h"
+	"wx/gtk/region.h"
+	"wx/gtk1/region.h"
+	"wx/x11/region.h"
+	"wx/dfb/region.h"
+	"wx/osx/region.h"
+	"wx/cocoa/region.h"
+	"wx/os2/region.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\region.h
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\validate.h
+	"wx/defs.h"
+	"wx/event.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\palette.h
+	"wx/defs.h"
+	"wx/object.h"
+	"wx/gdiobj.h"
+	"wx/msw/palette.h"
+	"wx/x11/palette.h"
+	"wx/generic/paletteg.h"
+	"wx/osx/palette.h"
+	"wx/os2/palette.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\palette.h
+	"wx/gdiobj.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\generic\paletteg.h
+	"wx/defs.h"
+	"wx/object.h"
+	"wx/gdiobj.h"
+	"wx/gdicmn.h"
+
+1412504348 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\accel.h
+	"wx/defs.h"
+	"wx/object.h"
+	"wx/generic/accel.h"
+	"wx/msw/accel.h"
+	"wx/motif/accel.h"
+	"wx/gtk/accel.h"
+	"wx/gtk1/accel.h"
+	"wx/osx/accel.h"
+	"wx/generic/accel.h"
+	"wx/os2/accel.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\generic\accel.h
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\accel.h
+
+1412504348 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\access.h
+	"wx/defs.h"
+	"wx/variant.h"
+	"wx/msw/ole/access.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\ole\access.h
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\window.h
+	"wx/settings.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\settings.h
+	"wx/colour.h"
+	"wx/font.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\univ\window.h
+	"wx/bitmap.h"
+
+1412504348 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\bitmap.h
+	"wx/string.h"
+	"wx/gdicmn.h"
+	"wx/colour.h"
+	"wx/image.h"
+	"wx/variant.h"
+	"wx/msw/bitmap.h"
+	"wx/x11/bitmap.h"
+	"wx/gtk/bitmap.h"
+	"wx/gtk1/bitmap.h"
+	"wx/x11/bitmap.h"
+	"wx/dfb/bitmap.h"
+	"wx/osx/bitmap.h"
+	"wx/cocoa/bitmap.h"
+	"wx/os2/bitmap.h"
+	"wx/generic/mask.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\image.h
+	"wx/defs.h"
+	"wx/object.h"
+	"wx/string.h"
+	"wx/gdicmn.h"
+	"wx/hashmap.h"
+	"wx/arrstr.h"
+	"wx/stream.h"
+	"wx/variant.h"
+	"wx/imagbmp.h"
+	"wx/imagpng.h"
+	"wx/imaggif.h"
+	"wx/imagpcx.h"
+	"wx/imagjpeg.h"
+	"wx/imagtga.h"
+	"wx/imagtiff.h"
+	"wx/imagpnm.h"
+	"wx/imagxpm.h"
+	"wx/imagiff.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\stream.h
+	"wx/defs.h"
+	<stdio.h>
+	"wx/object.h"
+	"wx/string.h"
+	"wx/filefn.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\imagbmp.h
+	"wx/image.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\imagpng.h
+	"wx/defs.h"
+	"wx/image.h"
+	"wx/versioninfo.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\versioninfo.h
+	"wx/string.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\imaggif.h
+	"wx/image.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\imagpcx.h
+	"wx/image.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\imagjpeg.h
+	"wx/defs.h"
+	"wx/image.h"
+	"wx/versioninfo.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\imagtga.h
+	"wx/image.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\imagtiff.h
+	"wx/defs.h"
+	"wx/image.h"
+	"wx/versioninfo.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\imagpnm.h
+	"wx/image.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\imagxpm.h
+	"wx/image.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\imagiff.h
+	"wx/image.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\bitmap.h
+	"wx/msw/gdiimage.h"
+	"wx/math.h"
+	"wx/palette.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\generic\mask.h
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\meta\implicitconversion.h
+	"wx/defs.h"
+	"wx/meta/if.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\mousestate.h
+	"wx/gdicmn.h"
+	"wx/kbdstate.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\kbdstate.h
+	"wx/defs.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\platinfo.h
+	"wx/string.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\tracker.h
+	"wx/defs.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\meta\convertible.h
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\meta\removeref.h
+
+1412504348 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\app.h
+	"wx/event.h"
+	"wx/eventfilter.h"
+	"wx/build.h"
+	"wx/cmdargs.h"
+	"wx/init.h"
+	"wx/intl.h"
+	"wx/log.h"
+	"wx/unix/app.h"
+	"wx/msw/app.h"
+	"wx/motif/app.h"
+	"wx/dfb/app.h"
+	"wx/gtk/app.h"
+	"wx/gtk1/app.h"
+	"wx/x11/app.h"
+	"wx/osx/app.h"
+	"wx/cocoa/app.h"
+	"wx/os2/app.h"
+	"wx/univ/theme.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\eventfilter.h
+	"wx/defs.h"
+
+1412504348 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\build.h
+	"wx/version.h"
+
+1412504348 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\cmdargs.h
+	"wx/arrstr.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\init.h
+	"wx/defs.h"
+	"wx/chartype.h"
+	"wx/msw/init.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\init.h
+	"wx/msw/wrapwin.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\unix\app.h
+	<signal.h>
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\app.h
+	"wx/event.h"
+	"wx/icon.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\icon.h
+	"wx/iconloc.h"
+	"wx/msw/icon.h"
+	"wx/motif/icon.h"
+	"wx/generic/icon.h"
+	"wx/generic/icon.h"
+	"wx/generic/icon.h"
+	"wx/generic/icon.h"
+	"wx/osx/icon.h"
+	"wx/generic/icon.h"
+	"wx/cocoa/icon.h"
+	"wx/os2/icon.h"
+	"wx/variant.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\iconloc.h
+	"wx/string.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\icon.h
+	"wx/msw/gdiimage.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\generic\icon.h
+	"wx/bitmap.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\univ\theme.h
+	"wx/string.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\stopwatch.h
+	"wx/defs.h"
+	"wx/longlong.h"
+	"wx/time.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\time.h
+	"wx/longlong.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\timer.h
+	"wx/defs.h"
+	"wx/object.h"
+	"wx/longlong.h"
+	"wx/event.h"
+	"wx/stopwatch.h"
+	"wx/utils.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\module.h
+	"wx/object.h"
+	"wx/list.h"
+	"wx/arrstr.h"
+	"wx/dynarray.h"
+
+1412504348 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\containr.h
+	"wx/defs.h"
+	"wx/event.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\panel.h
+	"wx/window.h"
+	"wx/containr.h"
+	"wx/univ/panel.h"
+	"wx/msw/panel.h"
+	"wx/generic/panelg.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\univ\panel.h
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\panel.h
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\generic\panelg.h
+	"wx/bitmap.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\toplevel.h
+	"wx/nonownedwnd.h"
+	"wx/iconbndl.h"
+	"wx/weakref.h"
+	"wx/msw/toplevel.h"
+	"wx/gtk/toplevel.h"
+	"wx/gtk1/toplevel.h"
+	"wx/x11/toplevel.h"
+	"wx/dfb/toplevel.h"
+	"wx/osx/toplevel.h"
+	"wx/cocoa/toplevel.h"
+	"wx/os2/toplevel.h"
+	"wx/motif/toplevel.h"
+	"wx/univ/toplevel.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\nonownedwnd.h
+	"wx/window.h"
+	"wx/dfb/nonownedwnd.h"
+	"wx/gtk/nonownedwnd.h"
+	"wx/osx/nonownedwnd.h"
+	"wx/msw/nonownedwnd.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\nonownedwnd.h
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\iconbndl.h
+	"wx/gdiobj.h"
+	"wx/gdicmn.h"
+	"wx/icon.h"
+	"wx/dynarray.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\weakref.h
+	"wx/tracker.h"
+	"wx/meta/convertible.h"
+	"wx/meta/int2type.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\meta\int2type.h
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\toplevel.h
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\univ\toplevel.h
+	"wx/univ/inpcons.h"
+	"wx/univ/inphand.h"
+	"wx/icon.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\univ\inpcons.h
+	"wx/object.h"
+	"wx/event.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\univ\inphand.h
+	"wx/univ/inpcons.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\frame.h
+	"wx/toplevel.h"
+	"wx/statusbr.h"
+	"wx/univ/frame.h"
+	"wx/msw/frame.h"
+	"wx/gtk/frame.h"
+	"wx/gtk1/frame.h"
+	"wx/motif/frame.h"
+	"wx/osx/frame.h"
+	"wx/cocoa/frame.h"
+	"wx/os2/frame.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\statusbr.h
+	"wx/defs.h"
+	"wx/control.h"
+	"wx/list.h"
+	"wx/dynarray.h"
+	"wx/univ/statusbr.h"
+	"wx/msw/statusbar.h"
+	"wx/generic/statusbr.h"
+	"wx/osx/statusbr.h"
+	"wx/generic/statusbr.h"
+
+1412504348 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\control.h
+	"wx/defs.h"
+	"wx/window.h"
+	"wx/univ/control.h"
+	"wx/msw/control.h"
+	"wx/motif/control.h"
+	"wx/gtk/control.h"
+	"wx/gtk1/control.h"
+	"wx/osx/control.h"
+	"wx/cocoa/control.h"
+	"wx/os2/control.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\univ\control.h
+	"wx/univ/inphand.h"
+	"wx/univ/inpcons.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\control.h
+	"wx/dynarray.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\univ\statusbr.h
+	"wx/univ/inpcons.h"
+	"wx/arrstr.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\statusbar.h
+	"wx/vector.h"
+	"wx/tooltip.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\tooltip.h
+	"wx/defs.h"
+	"wx/msw/tooltip.h"
+	"wx/gtk/tooltip.h"
+	"wx/gtk1/tooltip.h"
+	"wx/osx/tooltip.h"
+	"wx/cocoa/tooltip.h"
+	"wx/os2/tooltip.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\tooltip.h
+	"wx/object.h"
+	"wx/gdicmn.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\generic\statusbr.h
+	"wx/defs.h"
+	"wx/pen.h"
+	"wx/arrstr.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\pen.h
+	"wx/gdiobj.h"
+	"wx/gdicmn.h"
+	"wx/msw/pen.h"
+	"wx/x11/pen.h"
+	"wx/gtk/pen.h"
+	"wx/gtk1/pen.h"
+	"wx/dfb/pen.h"
+	"wx/osx/pen.h"
+	"wx/cocoa/pen.h"
+	"wx/os2/pen.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\pen.h
+	"wx/gdiobj.h"
+	"wx/gdicmn.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\univ\frame.h
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\frame.h
+
+1412504348 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\dc.h
+	"wx/object.h"
+	"wx/intl.h"
+	"wx/cursor.h"
+	"wx/font.h"
+	"wx/colour.h"
+	"wx/bitmap.h"
+	"wx/brush.h"
+	"wx/pen.h"
+	"wx/palette.h"
+	"wx/dynarray.h"
+	"wx/math.h"
+	"wx/image.h"
+	"wx/region.h"
+	"wx/affinematrix2d.h"
+
+1412504348 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\brush.h
+	"wx/defs.h"
+	"wx/object.h"
+	"wx/gdiobj.h"
+	"wx/gdicmn.h"
+	"wx/msw/brush.h"
+	"wx/x11/brush.h"
+	"wx/gtk/brush.h"
+	"wx/gtk1/brush.h"
+	"wx/dfb/brush.h"
+	"wx/osx/brush.h"
+	"wx/cocoa/brush.h"
+	"wx/os2/brush.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\brush.h
+
+1412504348 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\affinematrix2d.h
+	"wx/defs.h"
+	"wx/affinematrix2dbase.h"
+
+1412504348 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\affinematrix2dbase.h
+	"wx/defs.h"
+	"wx/geometry.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\geometry.h
+	"wx/defs.h"
+	"wx/utils.h"
+	"wx/gdicmn.h"
+	"wx/math.h"
+
+1412504348 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\dcclient.h
+	"wx/dc.h"
+
+1412504348 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\dcmemory.h
+	"wx/dc.h"
+	"wx/bitmap.h"
+
+1412504348 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\dcprint.h
+	"wx/defs.h"
+	"wx/dc.h"
+
+1412504348 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\dcscreen.h
+	"wx/defs.h"
+	"wx/dc.h"
+
+1412504348 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\button.h
+	"wx/defs.h"
+	"wx/anybutton.h"
+	"wx/univ/button.h"
+	"wx/msw/button.h"
+	"wx/motif/button.h"
+	"wx/gtk/button.h"
+	"wx/gtk1/button.h"
+	"wx/osx/button.h"
+	"wx/cocoa/button.h"
+	"wx/os2/button.h"
+
+1412504348 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\anybutton.h
+	"wx/defs.h"
+	"wx/bitmap.h"
+	"wx/control.h"
+	"wx/univ/anybutton.h"
+	"wx/msw/anybutton.h"
+	"wx/gtk/anybutton.h"
+	"wx/osx/anybutton.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\univ\anybutton.h
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\anybutton.h
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\univ\button.h
+	"wx/bitmap.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\button.h
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\menuitem.h
+	"wx/defs.h"
+	"wx/object.h"
+	"wx/univ/menuitem.h"
+	"wx/msw/menuitem.h"
+	"wx/motif/menuitem.h"
+	"wx/gtk/menuitem.h"
+	"wx/gtk1/menuitem.h"
+	"wx/osx/menuitem.h"
+	"wx/cocoa/menuitem.h"
+	"wx/os2/menuitem.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\univ\menuitem.h
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\menuitem.h
+	"wx/ownerdrw.h"
+	"wx/bitmap.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\ownerdrw.h
+	"wx/defs.h"
+	"wx/font.h"
+	"wx/colour.h"
+	"wx/msw/ownerdrw.h"
+	"wx/os2/ownerdrw.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\ownerdrw.h
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\menu.h
+	"wx/defs.h"
+	"wx/list.h"
+	"wx/window.h"
+	"wx/menuitem.h"
+	"wx/univ/menu.h"
+	"wx/msw/menu.h"
+	"wx/motif/menu.h"
+	"wx/gtk/menu.h"
+	"wx/gtk1/menu.h"
+	"wx/osx/menu.h"
+	"wx/cocoa/menu.h"
+	"wx/os2/menu.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\univ\menu.h
+	"wx/accel.h"
+	"wx/dynarray.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\menu.h
+	"wx/accel.h"
+	"wx/dynarray.h"
+	"wx/arrstr.h"
+
+1412504348 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\dialog.h
+	"wx/toplevel.h"
+	"wx/containr.h"
+	"wx/sharedptr.h"
+	"wx/univ/dialog.h"
+	"wx/msw/dialog.h"
+	"wx/motif/dialog.h"
+	"wx/gtk/dialog.h"
+	"wx/gtk1/dialog.h"
+	"wx/osx/dialog.h"
+	"wx/cocoa/dialog.h"
+	"wx/os2/dialog.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\sharedptr.h
+	"wx/defs.h"
+	"wx/atomic.h"
+
+1412504348 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\atomic.h
+	"wx/defs.h"
+	"wx/msw/wrapwin.h"
+	"libkern/OSAtomic.h"
+	<atomic.h>
+	"wx/thread.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\univ\dialog.h
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\dialog.h
+	"wx/panel.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msgdlg.h
+	"wx/defs.h"
+	"wx/dialog.h"
+	"wx/stockitem.h"
+	"wx/generic/msgdlgg.h"
+	"wx/cocoa/msgdlg.h"
+	"wx/msw/msgdlg.h"
+	"wx/motif/msgdlg.h"
+	"wx/gtk/msgdlg.h"
+	"wx/osx/msgdlg.h"
+	"wx/os2/msgdlg.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\stockitem.h
+	"wx/defs.h"
+	"wx/chartype.h"
+	"wx/string.h"
+	"wx/accel.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\generic\msgdlgg.h
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\msgdlg.h
+
+1412504348 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\dataobj.h
+	"wx/defs.h"
+	"wx/string.h"
+	"wx/bitmap.h"
+	"wx/list.h"
+	"wx/arrstr.h"
+	"wx/msw/ole/dataform.h"
+	"wx/motif/dataform.h"
+	"wx/gtk/dataform.h"
+	"wx/gtk1/dataform.h"
+	"wx/x11/dataform.h"
+	"wx/osx/dataform.h"
+	"wx/cocoa/dataform.h"
+	"wx/os2/dataform.h"
+	"wx/msw/ole/dataobj.h"
+	"wx/motif/dataobj.h"
+	"wx/x11/dataobj.h"
+	"wx/gtk/dataobj.h"
+	"wx/gtk1/dataobj.h"
+	"wx/osx/dataobj.h"
+	"wx/cocoa/dataobj.h"
+	"wx/os2/dataobj.h"
+	"wx/msw/ole/dataobj2.h"
+	"wx/gtk/dataobj2.h"
+	"wx/gtk1/dataobj2.h"
+	"wx/x11/dataobj2.h"
+	"wx/motif/dataobj2.h"
+	"wx/osx/dataobj2.h"
+	"wx/cocoa/dataobj2.h"
+	"wx/os2/dataobj2.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\ole\dataform.h
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\ole\dataobj.h
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\ole\dataobj2.h
+
+1412504348 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\ctrlsub.h
+	"wx/defs.h"
+	"wx/arrstr.h"
+	"wx/control.h"
+	"wx/msw/ctrlsub.h"
+	"wx/motif/ctrlsub.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\ctrlsub.h
+
+1412504348 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\bmpbuttn.h
+	"wx/defs.h"
+	"wx/button.h"
+	"wx/univ/bmpbuttn.h"
+	"wx/msw/bmpbuttn.h"
+	"wx/motif/bmpbuttn.h"
+	"wx/gtk/bmpbuttn.h"
+	"wx/gtk1/bmpbuttn.h"
+	"wx/osx/bmpbuttn.h"
+	"wx/cocoa/bmpbuttn.h"
+	"wx/os2/bmpbuttn.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\univ\bmpbuttn.h
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\bmpbuttn.h
+	"wx/button.h"
+	"wx/bitmap.h"
+	"wx/brush.h"
+
+1412504348 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\checkbox.h
+	"wx/defs.h"
+	"wx/control.h"
+	"wx/univ/checkbox.h"
+	"wx/msw/checkbox.h"
+	"wx/motif/checkbox.h"
+	"wx/gtk/checkbox.h"
+	"wx/gtk1/checkbox.h"
+	"wx/osx/checkbox.h"
+	"wx/cocoa/checkbox.h"
+	"wx/os2/checkbox.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\univ\checkbox.h
+	"wx/button.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\checkbox.h
+
+1412504348 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\checklst.h
+	"wx/defs.h"
+	"wx/listbox.h"
+	"wx/univ/checklst.h"
+	"wx/msw/wince/checklst.h"
+	"wx/msw/checklst.h"
+	"wx/motif/checklst.h"
+	"wx/gtk/checklst.h"
+	"wx/gtk1/checklst.h"
+	"wx/osx/checklst.h"
+	"wx/cocoa/checklst.h"
+	"wx/os2/checklst.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\listbox.h
+	"wx/defs.h"
+	"wx/ctrlsub.h"
+	"wx/univ/listbox.h"
+	"wx/msw/listbox.h"
+	"wx/motif/listbox.h"
+	"wx/gtk/listbox.h"
+	"wx/gtk1/listbox.h"
+	"wx/osx/listbox.h"
+	"wx/os2/listbox.h"
+	"wx/cocoa/listbox.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\univ\listbox.h
+	"wx/scrolwin.h"
+	"wx/dynarray.h"
+	"wx/arrstr.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\scrolwin.h
+	"wx/panel.h"
+	"wx/gtk/scrolwin.h"
+	"wx/gtk1/scrolwin.h"
+	"wx/generic/scrolwin.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\generic\scrolwin.h
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\listbox.h
+	"wx/dynarray.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\univ\checklst.h
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\wince\checklst.h
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\checklst.h
+
+1412504348 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\choice.h
+	"wx/defs.h"
+	"wx/ctrlsub.h"
+	"wx/univ/choice.h"
+	"wx/msw/wince/choicece.h"
+	"wx/msw/choice.h"
+	"wx/motif/choice.h"
+	"wx/gtk/choice.h"
+	"wx/gtk1/choice.h"
+	"wx/osx/choice.h"
+	"wx/cocoa/choice.h"
+	"wx/os2/choice.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\univ\choice.h
+	"wx/combobox.h"
+
+1412504348 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\combobox.h
+	"wx/defs.h"
+	"wx/textctrl.h"
+	"wx/ctrlsub.h"
+	"wx/textentry.h"
+	"wx/univ/combobox.h"
+	"wx/msw/combobox.h"
+	"wx/motif/combobox.h"
+	"wx/gtk/combobox.h"
+	"wx/gtk1/combobox.h"
+	"wx/osx/combobox.h"
+	"wx/cocoa/combobox.h"
+	"wx/os2/combobox.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\textctrl.h
+	"wx/defs.h"
+	"wx/control.h"
+	"wx/textentry.h"
+	"wx/dynarray.h"
+	"wx/gdicmn.h"
+	"wx/ioswrap.h"
+	"wx/x11/textctrl.h"
+	"wx/univ/textctrl.h"
+	"wx/msw/wince/textctrlce.h"
+	"wx/msw/textctrl.h"
+	"wx/motif/textctrl.h"
+	"wx/gtk/textctrl.h"
+	"wx/gtk1/textctrl.h"
+	"wx/osx/textctrl.h"
+	"wx/cocoa/textctrl.h"
+	"wx/os2/textctrl.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\textentry.h
+	"wx/filefn.h"
+	"wx/gdicmn.h"
+	"wx/gtk/textentry.h"
+	"wx/osx/textentry.h"
+	"wx/msw/textentry.h"
+	"wx/motif/textentry.h"
+	"wx/os2/textentry.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\textentry.h
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\ioswrap.h
+	"wx/beforestd.h"
+	<iostream.h>
+	<iostream>
+	"wx/afterstd.h"
+	"wx/msw/winundef.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\univ\textctrl.h
+	"wx/scrolwin.h"
+	"wx/univ/inphand.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\wince\textctrlce.h
+	"wx/dynarray.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\textctrl.h
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\univ\combobox.h
+	"wx/combo.h"
+
+1412504348 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\combo.h
+	"wx/defs.h"
+	"wx/control.h"
+	"wx/renderer.h"
+	"wx/bitmap.h"
+	"wx/textentry.h"
+	"wx/msw/combo.h"
+	"wx/generic/combo.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\renderer.h
+	"wx/gdicmn.h"
+	"wx/colour.h"
+	"wx/font.h"
+	"wx/bitmap.h"
+	"wx/string.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\combo.h
+	"wx/timer.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\generic\combo.h
+	"wx/dcbuffer.h"
+
+1412504348 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\dcbuffer.h
+	"wx/dcmemory.h"
+	"wx/dcclient.h"
+	"wx/window.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\combobox.h
+	"wx/choice.h"
+	"wx/textentry.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\wince\choicece.h
+	"wx/defs.h"
+	"wx/dynarray.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\choice.h
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\scrolbar.h
+	"wx/defs.h"
+	"wx/control.h"
+	"wx/univ/scrolbar.h"
+	"wx/msw/scrolbar.h"
+	"wx/motif/scrolbar.h"
+	"wx/gtk/scrolbar.h"
+	"wx/gtk1/scrolbar.h"
+	"wx/osx/scrolbar.h"
+	"wx/cocoa/scrolbar.h"
+	"wx/os2/scrolbar.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\univ\scrolbar.h
+	"wx/univ/scrarrow.h"
+	"wx/renderer.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\univ\scrarrow.h
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\scrolbar.h
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\stattext.h
+	"wx/defs.h"
+	"wx/control.h"
+	"wx/univ/stattext.h"
+	"wx/msw/stattext.h"
+	"wx/motif/stattext.h"
+	"wx/gtk/stattext.h"
+	"wx/gtk1/stattext.h"
+	"wx/osx/stattext.h"
+	"wx/cocoa/stattext.h"
+	"wx/os2/stattext.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\univ\stattext.h
+	"wx/generic/stattextg.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\generic\stattextg.h
+	"wx/stattext.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\stattext.h
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\statbmp.h
+	"wx/defs.h"
+	"wx/control.h"
+	"wx/bitmap.h"
+	"wx/icon.h"
+	"wx/univ/statbmp.h"
+	"wx/msw/statbmp.h"
+	"wx/motif/statbmp.h"
+	"wx/gtk/statbmp.h"
+	"wx/gtk1/statbmp.h"
+	"wx/osx/statbmp.h"
+	"wx/cocoa/statbmp.h"
+	"wx/os2/statbmp.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\univ\statbmp.h
+	"wx/bitmap.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\statbmp.h
+	"wx/control.h"
+	"wx/icon.h"
+	"wx/bitmap.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\statbox.h
+	"wx/defs.h"
+	"wx/control.h"
+	"wx/containr.h"
+	"wx/univ/statbox.h"
+	"wx/msw/statbox.h"
+	"wx/motif/statbox.h"
+	"wx/gtk/statbox.h"
+	"wx/gtk1/statbox.h"
+	"wx/osx/statbox.h"
+	"wx/cocoa/statbox.h"
+	"wx/os2/statbox.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\univ\statbox.h
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\statbox.h
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\radiobox.h
+	"wx/defs.h"
+	"wx/ctrlsub.h"
+	"wx/dynarray.h"
+	"wx/univ/radiobox.h"
+	"wx/msw/radiobox.h"
+	"wx/motif/radiobox.h"
+	"wx/gtk/radiobox.h"
+	"wx/gtk1/radiobox.h"
+	"wx/osx/radiobox.h"
+	"wx/cocoa/radiobox.h"
+	"wx/os2/radiobox.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\univ\radiobox.h
+	"wx/statbox.h"
+	"wx/dynarray.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\radiobox.h
+	"wx/statbox.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\radiobut.h
+	"wx/defs.h"
+	"wx/control.h"
+	"wx/univ/radiobut.h"
+	"wx/msw/radiobut.h"
+	"wx/motif/radiobut.h"
+	"wx/gtk/radiobut.h"
+	"wx/gtk1/radiobut.h"
+	"wx/osx/radiobut.h"
+	"wx/cocoa/radiobut.h"
+	"wx/os2/radiobut.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\univ\radiobut.h
+	"wx/checkbox.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\radiobut.h
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\slider.h
+	"wx/defs.h"
+	"wx/control.h"
+	"wx/univ/slider.h"
+	"wx/msw/slider.h"
+	"wx/motif/slider.h"
+	"wx/gtk/slider.h"
+	"wx/gtk1/slider.h"
+	"wx/osx/slider.h"
+	"wx/cocoa/slider.h"
+	"wx/os2/slider.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\univ\slider.h
+	"wx/univ/scrthumb.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\univ\scrthumb.h
+	"wx/timer.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\slider.h
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\gauge.h
+	"wx/defs.h"
+	"wx/control.h"
+	"wx/univ/gauge.h"
+	"wx/msw/gauge.h"
+	"wx/motif/gauge.h"
+	"wx/gtk/gauge.h"
+	"wx/gtk1/gauge.h"
+	"wx/osx/gauge.h"
+	"wx/cocoa/gauge.h"
+	"wx/os2/gauge.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\univ\gauge.h
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\gauge.h
+
+1412504348 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\dirdlg.h
+	"wx/dialog.h"
+	"wx/generic/dirdlgg.h"
+	"wx/generic/dirdlgg.h"
+	"wx/generic/dirdlgg.h"
+	"wx/msw/dirdlg.h"
+	"wx/gtk/dirdlg.h"
+	"wx/generic/dirdlgg.h"
+	"wx/osx/dirdlg.h"
+	"wx/cocoa/dirdlg.h"
+	"wx/generic/dirdlgg.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\generic\dirdlgg.h
+	"wx/dialog.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\dirdlg.h
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\toolbar.h
+	"wx/defs.h"
+	"wx/tbarbase.h"
+	"wx/univ/toolbar.h"
+	"wx/msw/toolbar.h"
+	"wx/msw/wince/tbarwce.h"
+	"wx/motif/toolbar.h"
+	"wx/gtk/toolbar.h"
+	"wx/gtk1/toolbar.h"
+	"wx/osx/toolbar.h"
+	"wx/cocoa/toolbar.h"
+	"wx/os2/toolbar.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\tbarbase.h
+	"wx/defs.h"
+	"wx/bitmap.h"
+	"wx/list.h"
+	"wx/control.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\univ\toolbar.h
+	"wx/button.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\toolbar.h
+	"wx/dynarray.h"
+	"wx/imaglist.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\imaglist.h
+	"wx/defs.h"
+	"wx/generic/imaglist.h"
+	"wx/msw/imaglist.h"
+	"wx/osx/imaglist.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\generic\imaglist.h
+	"wx/list.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\imaglist.h
+	"wx/bitmap.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\wince\tbarwce.h
+	"wx/dynarray.h"
+	"wx/msw/toolbar.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\layout.h
+	"wx/object.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\sizer.h
+	"wx/defs.h"
+	"wx/window.h"
+
+1412504348 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\choicdlg.h
+	"wx/defs.h"
+	"wx/generic/choicdgg.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\generic\choicdgg.h
+	"wx/dynarray.h"
+	"wx/dialog.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\textdlg.h
+	"wx/generic/textdlgg.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\generic\textdlgg.h
+	"wx/defs.h"
+	"wx/dialog.h"
+	"wx/valtext.h"
+	"wx/textctrl.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\valtext.h
+	"wx/defs.h"
+	"wx/validate.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\filedlg.h
+	"wx/defs.h"
+	"wx/dialog.h"
+	"wx/arrstr.h"
+	"wx/generic/filedlgg.h"
+	"wx/msw/filedlg.h"
+	"wx/motif/filedlg.h"
+	"wx/gtk/filedlg.h"
+	"wx/gtk1/filedlg.h"
+	"wx/osx/filedlg.h"
+	"wx/cocoa/filedlg.h"
+	"wx/os2/filedlg.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\generic\filedlgg.h
+	"wx/listctrl.h"
+	"wx/datetime.h"
+	"wx/filefn.h"
+	"wx/artprov.h"
+	"wx/filedlg.h"
+	"wx/generic/filectrlg.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\listctrl.h
+	"wx/defs.h"
+	"wx/listbase.h"
+	"wx/msw/listctrl.h"
+	"wx/osx/listctrl.h"
+	"wx/generic/listctrl.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\listbase.h
+	"wx/colour.h"
+	"wx/font.h"
+	"wx/gdicmn.h"
+	"wx/event.h"
+	"wx/control.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\listctrl.h
+	"wx/textctrl.h"
+	"wx/dynarray.h"
+	"wx/vector.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\generic\listctrl.h
+	"wx/containr.h"
+	"wx/scrolwin.h"
+	"wx/textctrl.h"
+
+1412504348 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\artprov.h
+	"wx/string.h"
+	"wx/bitmap.h"
+	"wx/icon.h"
+	"wx/iconbndl.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\generic\filectrlg.h
+	"wx/containr.h"
+	"wx/listctrl.h"
+	"wx/filectrl.h"
+	"wx/filename.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\filectrl.h
+	"wx/defs.h"
+	"wx/string.h"
+	"wx/event.h"
+	"wx/gtk/filectrl.h"
+	"wx/generic/filectrlg.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\filename.h
+	"wx/arrstr.h"
+	"wx/filefn.h"
+	"wx/datetime.h"
+	"wx/intl.h"
+	"wx/longlong.h"
+	"wx/file.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\file.h
+	"wx/defs.h"
+	"wx/string.h"
+	"wx/filefn.h"
+	"wx/convauto.h"
+
+1412504348 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\convauto.h
+	"wx/strconv.h"
+	"wx/fontenc.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\filedlg.h
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\mdi.h
+	"wx/defs.h"
+	"wx/frame.h"
+	"wx/menu.h"
+	"wx/generic/mdig.h"
+	"wx/msw/mdi.h"
+	"wx/gtk/mdi.h"
+	"wx/gtk1/mdi.h"
+	"wx/osx/mdi.h"
+	"wx/cocoa/mdi.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\generic\mdig.h
+	"wx/panel.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\mdi.h
+	"wx/frame.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\zipstrm.h
+	"wx/defs.h"
+	"wx/archive.h"
+	"wx/filename.h"
+
+1412504348 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\archive.h
+	"wx/defs.h"
+	"wx/stream.h"
+	"wx/filename.h"
+	<iterator>
+	<utility>
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\txtstrm.h
+	"wx/stream.h"
+	"wx/convauto.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\wfstream.h
+	"wx/defs.h"
+	"wx/object.h"
+	"wx/string.h"
+	"wx/stream.h"
+	"wx/file.h"
+	"wx/ffile.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\ffile.h
+	"wx/defs.h"
+	"wx/string.h"
+	"wx/filefn.h"
+	"wx/convauto.h"
+	<stdio.h>
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\encconv.h
+	"wx/defs.h"
+	"wx/object.h"
+	"wx/fontenc.h"
+	"wx/dynarray.h"
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\utils\stringtools.hpp
+	<string>
+	<complex>
+	<vector>
+	"datetimetools.hpp"
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\utils\datetimetools.hpp
+	<ctime>
+	<chrono>
+	"date/date.h"
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\utils\date\date.h
+	<cassert>
+	<algorithm>
+	<cctype>
+	<chrono>
+	<climits>
+	<cmath>
+	<cstddef>
+	<cstdint>
+	<cstdlib>
+	<ctime>
+	<ios>
+	<istream>
+	<iterator>
+	<limits>
+	<locale>
+	<memory>
+	<ostream>
+	<ratio>
+	<sstream>
+	<stdexcept>
+	<string>
+	<string_view>
+	<utility>
+	<type_traits>
+
+1681728796 source:c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\common\filewatcher.cpp
+	"filewatcher.hpp"
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\common\filewatcher.hpp
+	<wx/fswatcher.h>
+	<wx/filename.h>
+	<wx/wx.h>
+	<vector>
+	<string>
+	<map>
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\fswatcher.h
+	"wx/defs.h"
+	"wx/log.h"
+	"wx/event.h"
+	"wx/evtloop.h"
+	"wx/filename.h"
+	"wx/dir.h"
+	"wx/hashmap.h"
+	"wx/unix/fswatcher_inotify.h"
+	"wx/unix/fswatcher_kqueue.h"
+	"wx/msw/fswatcher.h"
+	"wx/generic/fswatcher.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\evtloop.h
+	"wx/event.h"
+	"wx/utils.h"
+	"wx/osx/core/evtloop.h"
+	"wx/unix/evtloop.h"
+	"wx/msw/evtloopconsole.h"
+	"wx/msw/evtloop.h"
+	"wx/cocoa/evtloop.h"
+	"wx/osx/evtloop.h"
+	"wx/dfb/evtloop.h"
+	"wx/gtk/evtloop.h"
+	"wx/stopwatch.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\unix\evtloop.h
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\evtloopconsole.h
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\evtloop.h
+	"wx/dynarray.h"
+	"wx/msw/wrapwin.h"
+	"wx/window.h"
+	"wx/msw/evtloopconsole.h"
+
+1412504348 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\dir.h
+	"wx/longlong.h"
+	"wx/string.h"
+	"wx/filefn.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\unix\fswatcher_inotify.h
+	"wx/defs.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\unix\fswatcher_kqueue.h
+	"wx/defs.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\fswatcher.h
+	"wx/defs.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\generic\fswatcher.h
+	"wx/defs.h"
+
+1681728796 source:c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\common\http.cpp
+	"http.h"
+	<curl/curl.h>
+	<fstream>
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\common\http.h
+	<string>
+	<exception>
+
+1681728796 source:c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\common\ipc.cpp
+	"ipc.hpp"
+	"../gui/NumeReWindow.h"
+	<wx/regex.h>
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\common\ipc.hpp
+	<wx/wx.h>
+	<wx/ipc.h>
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\ipc.h
+	"wx/dde.h"
+	"wx/sckipc.h"
+
+1412504348 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\dde.h
+	"wx/list.h"
+	"wx/msw/dde.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\dde.h
+	"wx/ipcbase.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\ipcbase.h
+	"wx/defs.h"
+	"wx/object.h"
+	"wx/string.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\sckipc.h
+	"wx/defs.h"
+	"wx/ipcbase.h"
+	"wx/socket.h"
+	"wx/sckstrm.h"
+	"wx/datstrm.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\socket.h
+	"wx/defs.h"
+	"wx/event.h"
+	"wx/sckaddr.h"
+	"wx/list.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\sckaddr.h
+	"wx/defs.h"
+	"wx/string.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\sckstrm.h
+	"wx/stream.h"
+	"wx/socket.h"
+
+1412504348 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\datstrm.h
+	"wx/stream.h"
+	"wx/longlong.h"
+	"wx/convauto.h"
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\gui\numerewindow.h
+	"wx/wxprec.h"
+	<wx/wx.h>
+	<wx/treectrl.h>
+	<wx/aui/auibook.h>
+	<wx/snglinst.h>
+	<vector>
+	<utility>
+	"NumeReStatusbar.hpp"
+	"globals.hpp"
+	"wx/dnd.h"
+	"../common/datastructures.h"
+	"../common/filewatcher.hpp"
+	"../kernel/windowmanager.hpp"
+	"../kernel/core/ui/language.hpp"
+	"../kernel/core/utils/tools.hpp"
+	"../kernel/core/plotting/graph_helper.hpp"
+	"../kernel/core/datamanagement/container.hpp"
+	"../kernel/core/datamanagement/table.hpp"
+	"dialogs/tipdialog.hpp"
+	"compositions/treepanel.hpp"
+	"compositions/viewerframe.hpp"
+	"compositions/viewerbook.hpp"
+	"compositions/filetree.hpp"
+	"compositions/variableviewer.hpp"
+	"compositions/procedureviewer.hpp"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\wxprec.h
+	"wx/defs.h"
+	"wx/chartype.h"
+	"wx/msw/wrapwin.h"
+	"wx/msw/private.h"
+	"wx/msw/wrapcctl.h"
+	"wx/msw/wrapcdlg.h"
+	"wx/msw/missing.h"
+	"wx/os2/private.h"
+	"wx/wx.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\wrapcctl.h
+	"wx/msw/wrapwin.h"
+	<commctrl.h>
+	"wx/msw/missing.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\missing.h
+	<windows.h>
+	"wx/msw/winundef.h"
+	"wx/msw/wince/missing.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\wince\missing.h
+	"wx/msw/private.h"
+	"shellapi.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\wrapcdlg.h
+	"wx/defs.h"
+	"wx/msw/wrapwin.h"
+	"wx/msw/private.h"
+	"wx/msw/missing.h"
+	<commdlg.h>
+	"wx/msw/winundef.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\treectrl.h
+	"wx/defs.h"
+	"wx/control.h"
+	"wx/treebase.h"
+	"wx/textctrl.h"
+	"wx/generic/treectlg.h"
+	"wx/msw/treectrl.h"
+	"wx/generic/treectlg.h"
+	"wx/generic/treectlg.h"
+	"wx/generic/treectlg.h"
+	"wx/generic/treectlg.h"
+	"wx/generic/treectlg.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\treebase.h
+	"wx/defs.h"
+	"wx/window.h"
+	"wx/event.h"
+	"wx/dynarray.h"
+	"wx/itemid.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\itemid.h
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\generic\treectlg.h
+	"wx/scrolwin.h"
+	"wx/pen.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\treectrl.h
+	"wx/textctrl.h"
+	"wx/dynarray.h"
+	"wx/treebase.h"
+	"wx/hashmap.h"
+
+1412504348 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\aui\auibook.h
+	"wx/defs.h"
+	"wx/aui/tabart.h"
+	"wx/aui/framemanager.h"
+	"wx/bookctrl.h"
+	"wx/containr.h"
+
+1412504348 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\aui\tabart.h
+	"wx/defs.h"
+	"wx/colour.h"
+	"wx/gdicmn.h"
+	"wx/font.h"
+	"wx/pen.h"
+	"wx/brush.h"
+	"wx/bitmap.h"
+	"wx/aui/tabartgtk.h"
+
+1412504348 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\aui\tabartgtk.h
+	"wx/defs.h"
+	"wx/aui/tabart.h"
+	"wx/gdicmn.h"
+
+1412504348 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\aui\framemanager.h
+	"wx/defs.h"
+	"wx/dynarray.h"
+	"wx/gdicmn.h"
+	"wx/window.h"
+	"wx/timer.h"
+	"wx/sizer.h"
+	"wx/bitmap.h"
+
+1412504348 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\bookctrl.h
+	"wx/defs.h"
+	"wx/control.h"
+	"wx/dynarray.h"
+	"wx/withimages.h"
+	"wx/notebook.h"
+	"wx/choicebk.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\withimages.h
+	"wx/defs.h"
+	"wx/icon.h"
+	"wx/imaglist.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\notebook.h
+	"wx/defs.h"
+	"wx/bookctrl.h"
+	"wx/univ/notebook.h"
+	"wx/msw/notebook.h"
+	"wx/generic/notebook.h"
+	"wx/gtk/notebook.h"
+	"wx/gtk1/notebook.h"
+	"wx/osx/notebook.h"
+	"wx/cocoa/notebook.h"
+	"wx/os2/notebook.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\univ\notebook.h
+	"wx/arrstr.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\notebook.h
+	"wx/control.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\generic\notebook.h
+	"wx/event.h"
+	"wx/control.h"
+
+1412504348 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\choicebk.h
+	"wx/defs.h"
+	"wx/bookctrl.h"
+	"wx/choice.h"
+	"wx/containr.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\snglinst.h
+	"wx/app.h"
+	"wx/utils.h"
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\gui\numerestatusbar.hpp
+	<wx/statusbr.h>
+	<wx/gauge.h>
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\gui\globals.hpp
+	"dialogs/fndrpldialog.hpp"
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\gui\dialogs\fndrpldialog.hpp
+	<wx/fdrepdlg.h>
+	<wx/wx.h>
+	<wx/intl.h>
+	<wx/log.h>
+	<wx/sizer.h>
+	<wx/button.h>
+	<wx/checkbox.h>
+	<wx/radiobox.h>
+	<wx/stattext.h>
+	<wx/textctrl.h>
+	<wx/settings.h>
+	"../compositions/viewerbook.hpp"
+	"../compositions/viewerpanel.hpp"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\fdrepdlg.h
+	"wx/defs.h"
+	"wx/dialog.h"
+	"wx/msw/fdrepdlg.h"
+	"wx/generic/fdrepdlg.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\fdrepdlg.h
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\generic\fdrepdlg.h
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\gui\compositions\viewerbook.hpp
+	<wx/wx.h>
+	<wx/aui/auibook.h>
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\gui\compositions\viewerpanel.hpp
+	<wx/wx.h>
+	<wx/panel.h>
+
+1412504348 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\dnd.h
+	"wx/defs.h"
+	"wx/dataobj.h"
+	"wx/cursor.h"
+	"wx/msw/ole/dropsrc.h"
+	"wx/msw/ole/droptgt.h"
+	"wx/motif/dnd.h"
+	"wx/x11/dnd.h"
+	"wx/gtk/dnd.h"
+	"wx/gtk1/dnd.h"
+	"wx/osx/dnd.h"
+	"wx/os2/dnd.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\ole\dropsrc.h
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\ole\droptgt.h
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\common\datastructures.h
+	<wx/wx.h>
+	<wx/hashmap.h>
+	<wx/string.h>
+	<wx/dynarray.h>
+	<wx/filename.h>
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\windowmanager.hpp
+	<map>
+	<string>
+	<vector>
+	"core/datamanagement/table.hpp"
+
+1681732648 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\datamanagement\table.hpp
+	"tablecolumn.hpp"
+	<ctime>
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\datamanagement\tablecolumn.hpp
+	<string>
+	<vector>
+	<memory>
+	"../ParserLib/muParserDef.h"
+	"../structures.hpp"
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\parserlib\muparserdef.h
+	<iostream>
+	<string>
+	<sstream>
+	<map>
+	<complex>
+	<vector>
+	"muParserFixes.h"
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\parserlib\muparserfixes.h
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\structures.hpp
+	<string>
+	<stdexcept>
+	<vector>
+	<cmath>
+	<algorithm>
+	"interval.hpp"
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\interval.hpp
+	<vector>
+	<string>
+	"ParserLib/muParserDef.h"
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\ui\language.hpp
+	<string>
+	<map>
+	<vector>
+	<iostream>
+	<fstream>
+	"../io/filesystem.hpp"
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\io\filesystem.hpp
+	<string>
+	<vector>
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\utils\tools.hpp
+	<string>
+	<cstdlib>
+	<vector>
+	<random>
+	<gsl/gsl_rng.h>
+	"../structures.hpp"
+	"../ui/error.hpp"
+	"../settings.hpp"
+	"stringtools.hpp"
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\ui\error.hpp
+	<string>
+	<vector>
+	"language.hpp"
+	"../ParserLib/muParserDef.h"
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\settings.hpp
+	<string>
+	<map>
+	<cassert>
+	"ui/error.hpp"
+	"documentation/doc_helper.hpp"
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\documentation\doc_helper.hpp
+	<string>
+	<vector>
+	<map>
+	"../io/filesystem.hpp"
+	"../ui/error.hpp"
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\plotting\graph_helper.hpp
+	<mgl2/wnd.h>
+	<mgl2/mgl.h>
+	"plotdata.hpp"
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\plotting\plotdata.hpp
+	<string>
+	<cmath>
+	<vector>
+	"../ui/error.hpp"
+	"../utils/tools.hpp"
+	"../structures.hpp"
+	"../interval.hpp"
+	"plotdef.hpp"
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\plotting\plotdef.hpp
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\datamanagement\container.hpp
+	<cstddef>
+	<vector>
+	"../ui/error.hpp"
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\gui\dialogs\tipdialog.hpp
+	<wx/wx.h>
+	<wx/tipdlg.h>
+	<vector>
+	<string>
+	<cmath>
+	<ctime>
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\tipdlg.h
+	"wx/defs.h"
+	"wx/textfile.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\textfile.h
+	"wx/defs.h"
+	"wx/textbuf.h"
+	"wx/file.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\textbuf.h
+	"wx/defs.h"
+	"wx/arrstr.h"
+	"wx/convauto.h"
+	"wx/string.h"
+	"wx/dynarray.h"
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\gui\compositions\treepanel.hpp
+	<wx/wx.h>
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\gui\compositions\viewerframe.hpp
+	<wx/wx.h>
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\gui\compositions\filetree.hpp
+	<wx/wx.h>
+	<wx/treectrl.h>
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\gui\compositions\variableviewer.hpp
+	"../controls/treelistctrl.h"
+	<map>
+	<vector>
+	<string>
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\gui\controls\treelistctrl.h
+	<wx/treectrl.h>
+	<wx/control.h>
+	<wx/pen.h>
+	<wx/listctrl.h>
+	"wx/xrc/xmlres.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\xrc\xmlres.h
+	"wx/defs.h"
+	"wx/string.h"
+	"wx/dynarray.h"
+	"wx/arrstr.h"
+	"wx/datetime.h"
+	"wx/list.h"
+	"wx/gdicmn.h"
+	"wx/filesys.h"
+	"wx/bitmap.h"
+	"wx/icon.h"
+	"wx/artprov.h"
+	"wx/colour.h"
+	"wx/vector.h"
+	"wx/xrc/xmlreshandler.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\filesys.h
+	"wx/defs.h"
+	"wx/stream.h"
+	"wx/datetime.h"
+	"wx/filename.h"
+	"wx/hashmap.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\xrc\xmlreshandler.h
+	"wx/defs.h"
+	"wx/string.h"
+	"wx/artprov.h"
+	"wx/colour.h"
+	"wx/filesys.h"
+	"wx/imaglist.h"
+	"wx/window.h"
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\gui\compositions\procedureviewer.hpp
+	<wx/wx.h>
+	<vector>
+	"../NumeReWindow.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\regex.h
+	"wx/defs.h"
+	"wx/string.h"
+
+1681728796 source:c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\common\options.cpp
+	"Options.h"
+	<wx/filename.h>
+	<wx/arrstr.h>
+	<wx/dir.h>
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\common\options.h
+	<wx/wx.h>
+	<wx/fileconf.h>
+	<wx/tokenzr.h>
+	<vector>
+	"datastructures.h"
+	"../kernel/core/settings.hpp"
+	"../kernel/core/utils/stringtools.hpp"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\fileconf.h
+	"wx/defs.h"
+	"wx/textfile.h"
+	"wx/string.h"
+	"wx/confbase.h"
+	"wx/filename.h"
+
+1412504348 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\confbase.h
+	"wx/defs.h"
+	"wx/string.h"
+	"wx/object.h"
+	"wx/base64.h"
+
+1412504348 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\base64.h
+	"wx/string.h"
+	"wx/buffer.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\tokenzr.h
+	"wx/object.h"
+	"wx/string.h"
+	"wx/arrstr.h"
+
+1681728796 source:c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\common\recycler.cpp
+	"recycler.hpp"
+	<tchar.h>
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\common\recycler.hpp
+	<windows.h>
+	<shellapi.h>
+
+1681728796 source:c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\common\vcsmanager.cpp
+	"vcsmanager.hpp"
+	"filerevisions.hpp"
+	"../gui/NumeReWindow.h"
+	"datastructures.h"
+	<vector>
+	<string>
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\common\vcsmanager.hpp
+	<wx/wx.h>
+
+1681728796 source:c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\gui\compositions\customwindow.cpp
+	"customwindow.hpp"
+	"../NumeReWindow.h"
+	"../../kernel/core/utils/tinyxml2.h"
+	"../../kernel/core/utils/stringtools.hpp"
+	"grouppanel.hpp"
+	<wx/tokenzr.h>
+	<wx/dataview.h>
+	<wx/statline.h>
+	"../wx.h"
+	<string>
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\gui\compositions\customwindow.hpp
+	<wx/wx.h>
+	<map>
+	<vector>
+	<utility>
+	<wx/treelist.h>
+	"../../kernel/windowmanager.hpp"
+	"../../kernel/core/datamanagement/table.hpp"
+	"tableviewer.hpp"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\treelist.h
+	"wx/defs.h"
+	"wx/compositewin.h"
+	"wx/containr.h"
+	"wx/headercol.h"
+	"wx/itemid.h"
+	"wx/vector.h"
+	"wx/window.h"
+	"wx/withimages.h"
+
+1412504348 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\compositewin.h
+	"wx/window.h"
+	"wx/containr.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\headercol.h
+	"wx/bitmap.h"
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\gui\compositions\tableviewer.hpp
+	<wx/wx.h>
+	<wx/grid.h>
+	<vector>
+	<string>
+	"gridcellcoordscontainer.hpp"
+	"../../kernel/core/datamanagement/container.hpp"
+	"../../kernel/core/datamanagement/table.hpp"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\grid.h
+	"wx/generic/grid.h"
+	"wx/generic/grideditors.h"
+	"wx/generic/gridctrl.h"
+
+1675094015 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\generic\grid.h
+	"wx/defs.h"
+	"wx/hashmap.h"
+	"wx/scrolwin.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\generic\grideditors.h
+	"wx/defs.h"
+	"wx/scopedptr.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\generic\gridctrl.h
+	"wx/grid.h"
+	"wx/datetime.h"
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\gui\compositions\gridcellcoordscontainer.hpp
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\utils\tinyxml2.h
+	<ctype.h>
+	<limits.h>
+	<stdio.h>
+	<stdlib.h>
+	<string.h>
+	<stddef.h>
+	<cctype>
+	<climits>
+	<cstdio>
+	<cstdlib>
+	<cstring>
+	<stdint.h>
+	<android/log.h>
+	<assert.h>
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\gui\compositions\grouppanel.hpp
+	<wx/wx.h>
+	<wx/spinctrl.h>
+	<wx/listctrl.h>
+	<wx/treelist.h>
+	<wx/collpane.h>
+	"../controls/treelistctrl.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\spinctrl.h
+	"wx/defs.h"
+	"wx/spinbutt.h"
+	"wx/msw/spinctrl.h"
+	"wx/os2/spinctrl.h"
+	"wx/gtk/spinctrl.h"
+	"wx/gtk1/spinctrl.h"
+	"wx/generic/spinctlg.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\spinbutt.h
+	"wx/defs.h"
+	"wx/control.h"
+	"wx/event.h"
+	"wx/range.h"
+	"wx/univ/spinbutt.h"
+	"wx/msw/spinbutt.h"
+	"wx/motif/spinbutt.h"
+	"wx/gtk/spinbutt.h"
+	"wx/gtk1/spinbutt.h"
+	"wx/osx/spinbutt.h"
+	"wx/cocoa/spinbutt.h"
+	"wx/os2/spinbutt.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\range.h
+	"wx/defs.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\univ\spinbutt.h
+	"wx/univ/scrarrow.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\spinbutt.h
+	"wx/control.h"
+	"wx/event.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\spinctrl.h
+	"wx/spinbutt.h"
+	"wx/dynarray.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\generic\spinctlg.h
+	"wx/compositewin.h"
+	"wx/textctrl.h"
+
+1412504348 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\collpane.h
+	"wx/defs.h"
+	"wx/control.h"
+	"wx/gtk/collpane.h"
+	"wx/generic/collpaneg.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\generic\collpaneg.h
+	"wx/containr.h"
+
+1412504348 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\dataview.h
+	"wx/defs.h"
+	"wx/textctrl.h"
+	"wx/headercol.h"
+	"wx/variant.h"
+	"wx/dnd.h"
+	"wx/dynarray.h"
+	"wx/icon.h"
+	"wx/itemid.h"
+	"wx/weakref.h"
+	"wx/vector.h"
+	"wx/dataobj.h"
+	"wx/withimages.h"
+	"wx/dvrenderers.h"
+	"wx/generic/dataview.h"
+	"wx/gtk/dataview.h"
+	"wx/osx/dataview.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\dvrenderers.h
+	"wx/gtk/dvrenderer.h"
+	"wx/osx/dvrenderer.h"
+	"wx/generic/dvrenderer.h"
+	"wx/generic/dvrenderers.h"
+	"wx/gtk/dvrenderers.h"
+	"wx/osx/dvrenderers.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\generic\dvrenderer.h
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\generic\dvrenderers.h
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\generic\dataview.h
+	"wx/defs.h"
+	"wx/object.h"
+	"wx/list.h"
+	"wx/control.h"
+	"wx/scrolwin.h"
+	"wx/icon.h"
+	"wx/vector.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\statline.h
+	"wx/defs.h"
+	"wx/control.h"
+	"wx/univ/statline.h"
+	"wx/msw/statline.h"
+	"wx/gtk/statline.h"
+	"wx/gtk1/statline.h"
+	"wx/os2/statline.h"
+	"wx/osx/statline.h"
+	"wx/cocoa/statline.h"
+	"wx/generic/statline.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\univ\statline.h
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\statline.h
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\generic\statline.h
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\gui\wx.h
+	<mgl2/wnd.h>
+	<wx/window.h>
+	<wx/image.h>
+	<wx/timer.h>
+	<wx/bitmap.h>
+	<wx/toolbar.h>
+	<wx/statusbr.h>
+	<wx/textctrl.h>
+	<wx/cursor.h>
+	<vector>
+
+1681728796 source:c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\gui\compositions\debugviewer.cpp
+	"debugviewer.hpp"
+	<wx/statbox.h>
+	"../../kernel/core/ui/language.hpp"
+	"../NumeReWindow.h"
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\gui\compositions\debugviewer.hpp
+	"viewerframe.hpp"
+	"../terminal/terminal.hpp"
+	"../../common/Options.h"
+	"variableviewer.hpp"
+	<wx/listctrl.h>
+	<wx/panel.h>
+	<string>
+	<vector>
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\gui\terminal\terminal.hpp
+	<map>
+	"../NumeReWindow.h"
+	"../../common/Options.h"
+	"gterm.hpp"
+	"../../kernel/kernel.hpp"
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\gui\terminal\gterm.hpp
+	<string.h>
+	<cstring>
+	<stdlib.h>
+	<stdio.h>
+	<vector>
+	<queue>
+	<deque>
+	<string>
+	"TextManager.h"
+	"../../kernel/syntax.hpp"
+	"../../kernel/core/ui/calltipprovider.hpp"
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\gui\terminal\textmanager.h
+	<vector>
+	<deque>
+	<string>
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\syntax.hpp
+	<string>
+	<vector>
+	<map>
+	<fstream>
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\ui\calltipprovider.hpp
+	<string>
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\kernel.hpp
+	<string>
+	<fstream>
+	<queue>
+	"windowmanager.hpp"
+	"core/built-in.hpp"
+	"core/plugins.hpp"
+	"core/script.hpp"
+	"core/settings.hpp"
+	"core/version.h"
+	"core/datamanagement/container.hpp"
+	"core/datamanagement/memorymanager.hpp"
+	"core/debugger/debugger.hpp"
+	"core/io/output.hpp"
+	"core/maths/define.hpp"
+	"core/maths/functionimplementation.hpp"
+	"core/maths/parser_functions.hpp"
+	"core/ParserLib/muParser.h"
+	"core/plotting/graph_helper.hpp"
+	"core/plotting/plotdata.hpp"
+	"core/procedure/procedure.hpp"
+	"core/procedure/procedurelibrary.hpp"
+	"core/strings/stringparser.hpp"
+	"core/ui/error.hpp"
+	"core/ui/language.hpp"
+	"core/utils/tools.hpp"
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\built-in.hpp
+	<iostream>
+	<fstream>
+	<sstream>
+	<string>
+	<conio.h>
+	<windows.h>
+	<cmath>
+	<vector>
+	"ui/error.hpp"
+	"datamanagement/memorymanager.hpp"
+	"settings.hpp"
+	"io/output.hpp"
+	"plugins.hpp"
+	"ParserLib/muParser.h"
+	"utils/tools.hpp"
+	"maths/parser_functions.hpp"
+	"maths/define.hpp"
+	"plotting/plotdata.hpp"
+	"script.hpp"
+	"version.h"
+	"documentation/documentation.hpp"
+	"maths/odesolver.hpp"
+
+1681732648 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\datamanagement\memorymanager.hpp
+	<fstream>
+	<string>
+	<vector>
+	"../ui/error.hpp"
+	"../settings.hpp"
+	"../structures.hpp"
+	"table.hpp"
+	"memory.hpp"
+	"stringmemory.hpp"
+	"cluster.hpp"
+	"fileadapter.hpp"
+
+1681732648 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\datamanagement\memory.hpp
+	<string>
+	<vector>
+	"table.hpp"
+	"sorter.hpp"
+	"tablecolumn.hpp"
+	"../maths/filtering.hpp"
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\datamanagement\sorter.hpp
+	<string>
+	"../structures.hpp"
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\maths\filtering.hpp
+	<utility>
+	<vector>
+	<cmath>
+	<queue>
+	"../io/file.hpp"
+	"../utils/tools.hpp"
+	"../ParserLib/muParserDef.h"
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\io\file.hpp
+	<string>
+	<fstream>
+	<cmath>
+	<vector>
+	<utility>
+	"../utils/zip++.hpp"
+	"../utils/stringtools.hpp"
+	"../ui/error.hpp"
+	"../datamanagement/tablecolumn.hpp"
+	"filesystem.hpp"
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\utils\zip++.hpp
+	<string>
+	<iostream>
+	<windows.h>
+	<tchar.h>
+	"zip.h"
+	"unzip.h"
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\utils\zip.h
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\utils\unzip.h
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\datamanagement\stringmemory.hpp
+	<string>
+	<map>
+	<vector>
+	"sorter.hpp"
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\datamanagement\cluster.hpp
+	<string>
+	<vector>
+	<map>
+	<cmath>
+	"../utils/tools.hpp"
+	"sorter.hpp"
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\datamanagement\fileadapter.hpp
+	"../io/file.hpp"
+	"../io/filesystem.hpp"
+	"../settings.hpp"
+	<string>
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\io\output.hpp
+	<string>
+	<ctime>
+	"../ui/error.hpp"
+	"filesystem.hpp"
+	"../settings.hpp"
+	"../version.h"
+	"../utils/tools.hpp"
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\version.h
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\plugins.hpp
+	<string>
+	<cmath>
+	<mgl2/mgl.h>
+	"ui/error.hpp"
+	"datamanagement/memorymanager.hpp"
+	"io/output.hpp"
+	"settings.hpp"
+	"utils/tools.hpp"
+	"plotting/plotdata.hpp"
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\parserlib\muparser.h
+	<vector>
+	"muParserBase.h"
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\parserlib\muparserbase.h
+	<cmath>
+	<string>
+	<iostream>
+	<map>
+	<memory>
+	<locale>
+	<list>
+	"muParserDef.h"
+	"muParserStack.h"
+	"muParserTokenReader.h"
+	"muParserBytecode.h"
+	"muParserError.h"
+	"muParserState.hpp"
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\parserlib\muparserstack.h
+	<cassert>
+	<string>
+	<stack>
+	<vector>
+	"muParserError.h"
+	"muParserToken.h"
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\parserlib\muparsererror.h
+	<cassert>
+	<stdexcept>
+	<string>
+	<sstream>
+	<vector>
+	<memory>
+	"../ui/language.hpp"
+	"muParserDef.h"
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\parserlib\muparsertoken.h
+	<cassert>
+	<string>
+	<stack>
+	<vector>
+	<memory>
+	"muParserError.h"
+	"muParserCallback.h"
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\parserlib\muparsercallback.h
+	"muParserDef.h"
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\parserlib\muparsertokenreader.h
+	<cassert>
+	<cstdio>
+	<cstring>
+	<list>
+	<map>
+	<memory>
+	<stack>
+	<string>
+	"muParserDef.h"
+	"muParserToken.h"
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\parserlib\muparserbytecode.h
+	<cassert>
+	<string>
+	<stack>
+	<vector>
+	"muParserDef.h"
+	"muParserError.h"
+	"muParserToken.h"
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\parserlib\muparserstate.hpp
+	<vector>
+	<string>
+	<utility>
+	"muParserDef.h"
+	"muParserBytecode.h"
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\maths\parser_functions.hpp
+	<string>
+	<vector>
+	"../settings.hpp"
+	"../datamanagement/memorymanager.hpp"
+	"../ParserLib/muParser.h"
+	"define.hpp"
+	"../datamanagement/dataaccess.hpp"
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\maths\define.hpp
+	<string>
+	<iostream>
+	<fstream>
+	<map>
+	<vector>
+	"../ui/error.hpp"
+	"../io/filesystem.hpp"
+	"../settings.hpp"
+	"../utils/tools.hpp"
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\datamanagement\dataaccess.hpp
+	<string>
+	"../ParserLib/muParser.h"
+	"memorymanager.hpp"
+	"table.hpp"
+	"../settings.hpp"
+	"../structures.hpp"
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\script.hpp
+	<string>
+	<memory>
+	"io/filesystem.hpp"
+	"io/styledtextfile.hpp"
+	"io/logger.hpp"
+	"maths/define.hpp"
+	"symdef.hpp"
+	"procedure/includer.hpp"
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\io\styledtextfile.hpp
+	<string>
+	<vector>
+	<utility>
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\io\logger.hpp
+	<fstream>
+	<string>
+	<vector>
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\symdef.hpp
+	<string>
+	<map>
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\procedure\includer.hpp
+	<string>
+	"../io/filesystem.hpp"
+	"../io/styledtextfile.hpp"
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\documentation\documentation.hpp
+	<string>
+	"../settings.hpp"
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\maths\odesolver.hpp
+	<iostream>
+	<string>
+	<vector>
+	<gsl/gsl_matrix.h>
+	<gsl/gsl_errno.h>
+	<gsl/gsl_odeiv.h>
+	"../ParserLib/muParser.h"
+	"../utils/tools.hpp"
+	"../datamanagement/memorymanager.hpp"
+	"define.hpp"
+	"parser_functions.hpp"
+	"../settings.hpp"
+	"../ui/error.hpp"
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\debugger\debugger.hpp
+	<vector>
+	<string>
+	<map>
+	<exception>
+	"../ui/error.hpp"
+	"breakpointmanager.hpp"
+	"../ParserLib/muParserDef.h"
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\debugger\breakpointmanager.hpp
+	<map>
+	<string>
+	<vector>
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\maths\functionimplementation.hpp
+	"../ParserLib/muParser.h"
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\procedure\procedure.hpp
+	<iostream>
+	<string>
+	<cmath>
+	<iomanip>
+	<fstream>
+	"../ui/error.hpp"
+	"../ParserLib/muParser.h"
+	"../datamanagement/memorymanager.hpp"
+	"../settings.hpp"
+	"../utils/tools.hpp"
+	"../built-in.hpp"
+	"../maths/parser_functions.hpp"
+	"../plotting/plotdata.hpp"
+	"flowctrl.hpp"
+	"plugin.hpp"
+	"../maths/define.hpp"
+	"../io/filesystem.hpp"
+	"../io/output.hpp"
+	"../script.hpp"
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\procedure\flowctrl.hpp
+	<string>
+	<vector>
+	<map>
+	<set>
+	"../ParserLib/muParser.h"
+	"../datamanagement/memorymanager.hpp"
+	"../maths/define.hpp"
+	"../settings.hpp"
+	"../io/output.hpp"
+	"../plotting/plotdata.hpp"
+	"../script.hpp"
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\procedure\plugin.hpp
+	<iostream>
+	<fstream>
+	<string>
+	"../io/filesystem.hpp"
+	"../ui/error.hpp"
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\procedure\procedurelibrary.hpp
+	"procedureelement.hpp"
+	<string>
+	<fstream>
+	<map>
+	<vector>
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\procedure\procedureelement.hpp
+	<string>
+	<map>
+	<vector>
+	"procedurecommandline.hpp"
+	"../io/styledtextfile.hpp"
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\procedure\procedurecommandline.hpp
+	<string>
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\strings\stringparser.hpp
+	<string>
+	<map>
+	"stringdatastructures.hpp"
+	"stringvarfactory.hpp"
+	"stringlogicparser.hpp"
+	"stringfunchandler.hpp"
+	"../ParserLib/muParser.h"
+	"../settings.hpp"
+	"../datamanagement/memorymanager.hpp"
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\strings\stringdatastructures.hpp
+	<string>
+	<vector>
+	"../ParserLib/muParserDef.h"
+	"../utils/stringtools.hpp"
+	"../structures.hpp"
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\strings\stringvarfactory.hpp
+	<string>
+	<map>
+	<vector>
+	"stringdatastructures.hpp"
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\strings\stringlogicparser.hpp
+	<string>
+	<vector>
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\strings\stringfunchandler.hpp
+	<string>
+	<map>
+	"stringdatastructures.hpp"
+	"stringvarfactory.hpp"
+
+1681728796 source:c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\gui\compositions\filetree.cpp
+	"filetree.hpp"
+	"../globals.hpp"
+
+1681728796 source:c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\gui\compositions\gridtable.cpp
+	"gridtable.hpp"
+	"../../kernel/core/utils/stringtools.hpp"
+	"../../kernel/core/datamanagement/tablecolumnimpl.hpp"
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\gui\compositions\gridtable.hpp
+	<wx/grid.h>
+	"../../kernel/core/datamanagement/table.hpp"
+	"gridcellcoordscontainer.hpp"
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\datamanagement\tablecolumnimpl.hpp
+	"tablecolumn.hpp"
+
+1681728796 source:c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\gui\compositions\grouppanel.cpp
+	"grouppanel.hpp"
+	"../../kernel/core/ui/language.hpp"
+
+1681728796 source:c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\gui\compositions\helpviewer.cpp
+	"helpviewer.hpp"
+	"../documentationbrowser.hpp"
+	"../NumeReWindow.h"
+	<wx/html/htmprint.h>
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\gui\compositions\helpviewer.hpp
+	<wx/wxhtml.h>
+	<wx/wx.h>
+	<vector>
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\wxhtml.h
+	"wx/html/htmldefs.h"
+	"wx/html/htmltag.h"
+	"wx/html/htmlcell.h"
+	"wx/html/htmlpars.h"
+	"wx/html/htmlwin.h"
+	"wx/html/winpars.h"
+	"wx/filesys.h"
+	"wx/html/helpctrl.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\html\htmldefs.h
+	"wx/defs.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\html\htmltag.h
+	"wx/defs.h"
+	"wx/object.h"
+	"wx/arrstr.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\html\htmlcell.h
+	"wx/defs.h"
+	"wx/html/htmltag.h"
+	"wx/html/htmldefs.h"
+	"wx/window.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\html\htmlpars.h
+	"wx/defs.h"
+	"wx/html/htmltag.h"
+	"wx/filesys.h"
+	"wx/hashmap.h"
+	"wx/hashset.h"
+	"wx/vector.h"
+	"wx/fontenc.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\hashset.h
+	"wx/hashmap.h"
+	<unordered_set>
+	<tr1/unordered_set>
+	<ext/hash_set>
+	<hash_set>
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\html\htmlwin.h
+	"wx/defs.h"
+	"wx/window.h"
+	"wx/scrolwin.h"
+	"wx/config.h"
+	"wx/stopwatch.h"
+	"wx/html/winpars.h"
+	"wx/html/htmlcell.h"
+	"wx/filesys.h"
+	"wx/html/htmlfilt.h"
+	"wx/filename.h"
+	"wx/bitmap.h"
+
+1412504348 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\config.h
+	"wx/confbase.h"
+	"wx/msw/regconf.h"
+	"wx/os2/iniconf.h"
+	"wx/fileconf.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\regconf.h
+	"wx/defs.h"
+	"wx/msw/registry.h"
+	"wx/object.h"
+	"wx/confbase.h"
+	"wx/buffer.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\registry.h
+	"wx/defs.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\html\winpars.h
+	"wx/defs.h"
+	"wx/module.h"
+	"wx/font.h"
+	"wx/html/htmlpars.h"
+	"wx/html/htmlcell.h"
+	"wx/encconv.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\html\htmlfilt.h
+	"wx/defs.h"
+	"wx/filesys.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\html\helpctrl.h
+	"wx/defs.h"
+	"wx/helpbase.h"
+	"wx/html/helpfrm.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\helpbase.h
+	"wx/defs.h"
+	"wx/object.h"
+	"wx/string.h"
+	"wx/gdicmn.h"
+	"wx/frame.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\html\helpfrm.h
+	"wx/defs.h"
+	"wx/helpbase.h"
+	"wx/html/helpdata.h"
+	"wx/window.h"
+	"wx/frame.h"
+	"wx/config.h"
+	"wx/splitter.h"
+	"wx/notebook.h"
+	"wx/listbox.h"
+	"wx/choice.h"
+	"wx/combobox.h"
+	"wx/checkbox.h"
+	"wx/stattext.h"
+	"wx/html/htmlwin.h"
+	"wx/html/helpwnd.h"
+	"wx/html/htmprint.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\html\helpdata.h
+	"wx/defs.h"
+	"wx/object.h"
+	"wx/string.h"
+	"wx/filesys.h"
+	"wx/dynarray.h"
+	"wx/font.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\splitter.h
+	"wx/event.h"
+	"wx/generic/splitter.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\generic\splitter.h
+	"wx/window.h"
+	"wx/containr.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\html\helpwnd.h
+	"wx/defs.h"
+	"wx/helpbase.h"
+	"wx/html/helpdata.h"
+	"wx/window.h"
+	"wx/frame.h"
+	"wx/config.h"
+	"wx/splitter.h"
+	"wx/notebook.h"
+	"wx/listbox.h"
+	"wx/choice.h"
+	"wx/combobox.h"
+	"wx/checkbox.h"
+	"wx/stattext.h"
+	"wx/hash.h"
+	"wx/html/htmlwin.h"
+	"wx/html/htmprint.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\html\htmprint.h
+	"wx/defs.h"
+	"wx/html/htmlcell.h"
+	"wx/html/winpars.h"
+	"wx/html/htmlfilt.h"
+	"wx/print.h"
+	"wx/printdlg.h"
+	<limits.h>
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\print.h
+	"wx/defs.h"
+	"wx/msw/printwin.h"
+	"wx/osx/printmac.h"
+	"wx/os2/printos2.h"
+	"wx/generic/printps.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\printwin.h
+	"wx/prntbase.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\prntbase.h
+	"wx/defs.h"
+	"wx/event.h"
+	"wx/cmndata.h"
+	"wx/panel.h"
+	"wx/scrolwin.h"
+	"wx/dialog.h"
+	"wx/frame.h"
+	"wx/dc.h"
+
+1412504348 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\cmndata.h
+	"wx/defs.h"
+	"wx/gdicmn.h"
+	"wx/stream.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\generic\printps.h
+	"wx/prntbase.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\printdlg.h
+	"wx/defs.h"
+	"wx/event.h"
+	"wx/dialog.h"
+	"wx/intl.h"
+	"wx/cmndata.h"
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\gui\documentationbrowser.hpp
+	<wx/treectrl.h>
+	<wx/splitter.h>
+	<wx/notebook.h>
+	"compositions/viewerframe.hpp"
+	"compositions/viewerbook.hpp"
+	"IconManager.h"
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\gui\iconmanager.h
+	<wx/string.h>
+	<wx/imaglist.h>
+	"../common/CommonHeaders.h"
+	"../common/datastructures.h"
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\common\commonheaders.h
+	<wx/wx.h>
+	<wx/string.h>
+	<wx/wxprec.h>
+	<wx/fdrepdlg.h>
+	<wx/config.h>
+	<wx/fileconf.h>
+	<wx/timer.h>
+	<wx/regex.h>
+	<wx/splash.h>
+	<wx/utils.h>
+	<wx/wfstream.h>
+	<wx/frame.h>
+	<wx/toolbar.h>
+	<wx/bitmap.h>
+	<wx/frame.h>
+	<wx/string.h>
+	<wx/filedlg.h>
+	<wx/file.h>
+	<wx/textfile.h>
+	<wx/splitter.h>
+	<wx/grid.h>
+	<wx/dynarray.h>
+	<wx/notebook.h>
+	<wx/log.h>
+	<wx/filename.h>
+	<wx/socket.h>
+	<wx/checklst.h>
+	<wx/treectrl.h>
+	<wx/mstream.h>
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\splash.h
+	"wx/generic/splash.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\generic\splash.h
+	"wx/bitmap.h"
+	"wx/eventfilter.h"
+	"wx/frame.h"
+	"wx/timer.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\mstream.h
+	"wx/defs.h"
+	"wx/stream.h"
+
+1681728796 source:c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\gui\compositions\imagepanel.cpp
+	<wx/artprov.h>
+	<wx/dir.h>
+	<wx/clipbrd.h>
+	"imagepanel.hpp"
+	"../../kernel/core/ui/language.hpp"
+	"../NumeReWindow.h"
+
+1412504348 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\clipbrd.h
+	"wx/defs.h"
+	"wx/event.h"
+	"wx/chartype.h"
+	"wx/dataobj.h"
+	"wx/vector.h"
+	"wx/msw/clipbrd.h"
+	"wx/motif/clipbrd.h"
+	"wx/gtk/clipbrd.h"
+	"wx/gtk1/clipbrd.h"
+	"wx/x11/clipbrd.h"
+	"wx/osx/clipbrd.h"
+	"wx/cocoa/clipbrd.h"
+	"wx/os2/clipbrd.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\clipbrd.h
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\gui\compositions\imagepanel.hpp
+	<wx/wx.h>
+	<wx/sizer.h>
+	"../../common/datastructures.h"
+
+1681728796 source:c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\gui\compositions\procedureviewer.cpp
+	"procedureviewer.hpp"
+	"../../kernel/core/ui/language.hpp"
+	"../../kernel/core/utils/stringtools.hpp"
+	"../editor/editor.h"
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\gui\editor\editor.h
+	"../terminal/terminal.hpp"
+	"../../common/datastructures.h"
+	"../../kernel/syntax.hpp"
+	"../dialogs/duplicatecodedialog.hpp"
+	<wx/wx.h>
+	<wx/stc/stc.h>
+	<wx/menu.h>
+	<wx/dynarray.h>
+	<wx/thread.h>
+	<wx/buffer.h>
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\gui\dialogs\duplicatecodedialog.hpp
+	"../compositions/viewerframe.hpp"
+	<wx/panel.h>
+	<wx/gauge.h>
+	<wx/listctrl.h>
+	<wx/spinctrl.h>
+	<string>
+	<vector>
+
+1675094014 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\stc\stc.h
+	"wx/defs.h"
+	"wx/control.h"
+	"wx/dnd.h"
+	"wx/stopwatch.h"
+	"wx/versioninfo.h"
+	"wx/textentry.h"
+	"wx/textctrl.h"
+
+1681728796 source:c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\gui\compositions\tableeditpanel.cpp
+	"tableeditpanel.hpp"
+	"../../kernel/core/datamanagement/container.hpp"
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\gui\compositions\tableeditpanel.hpp
+	<wx/wx.h>
+	<wx/panel.h>
+	"tableviewer.hpp"
+	"../terminal/terminal.hpp"
+	"../../kernel/core/ui/language.hpp"
+
+1681728796 source:c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\gui\compositions\tableviewer.cpp
+	"tableviewer.hpp"
+	"gridtable.hpp"
+	"tableeditpanel.hpp"
+	"../../kernel/core/ui/language.hpp"
+	"../../kernel/core/utils/tools.hpp"
+	"../../kernel/core/datamanagement/tablecolumn.hpp"
+	"../../kernel/core/io/file.hpp"
+	<wx/clipbrd.h>
+	<wx/dataobj.h>
+	<wx/tokenzr.h>
+	<memory>
+	"cellattributes.hpp"
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\gui\compositions\cellattributes.hpp
+	<wx/renderer.h>
+	<wx/generic/grideditors.h>
+	"cellvalueshader.hpp"
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\gui\compositions\cellvalueshader.hpp
+	<wx/dialog.h>
+	<wx/notebook.h>
+	<wx/clrpicker.h>
+	<wx/statline.h>
+	"grouppanel.hpp"
+	"../../kernel/core/ui/language.hpp"
+	"../../kernel/core/utils/stringtools.hpp"
+
+1412504348 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\clrpicker.h
+	"wx/defs.h"
+	"wx/pickerbase.h"
+	"wx/gtk/clrpicker.h"
+	"wx/generic/clrpickerg.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\pickerbase.h
+	"wx/control.h"
+	"wx/sizer.h"
+	"wx/containr.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\generic\clrpickerg.h
+	"wx/button.h"
+	"wx/bmpbuttn.h"
+	"wx/colourdata.h"
+
+1412504348 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\colourdata.h
+	"wx/colour.h"
+
+1681728796 source:c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\gui\compositions\variableviewer.cpp
+	"variableviewer.hpp"
+	"../../kernel/core/ui/language.hpp"
+	"../../kernel/core/utils/stringtools.hpp"
+	"../../common/datastructures.h"
+	"../../common/Options.h"
+	"../NumeReWindow.h"
+	<wx/menu.h>
+	<wx/dialog.h>
+	<wx/clipbrd.h>
+
+1681728796 source:c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\gui\compositions\viewerbook.cpp
+	"viewerbook.hpp"
+
+1681728796 source:c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\gui\compositions\viewerframe.cpp
+	"viewerframe.hpp"
+	"../NumeReWindow.h"
+
+1681728796 source:c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\gui\compositions\viewerpanel.cpp
+	"viewerpanel.hpp"
+
+1681728796 source:c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\gui\compositions\wxtermcontainer.cpp
+	"wx/wxprec.h"
+	"wx/wx.h"
+	"wx/scrolbar.h"
+	"wxTermContainer.h"
+	"../terminal/terminal.hpp"
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\gui\compositions\wxtermcontainer.h
+
+1681728796 source:c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\gui\controls\searchctrl.cpp
+	"searchctrl.hpp"
+	<wx/dnd.h>
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\gui\controls\searchctrl.hpp
+	<wx/wx.h>
+	<wx/combo.h>
+	<wx/listctrl.h>
+
+1681728796 source:c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\gui\controls\toolbarsearchctrl.cpp
+	"toolbarsearchctrl.hpp"
+	"../NumeReWindow.h"
+	"../terminal/terminal.hpp"
+	"../editor/editor.h"
+	<wx/event.h>
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\gui\controls\toolbarsearchctrl.hpp
+	"searchctrl.hpp"
+	"../../kernel/core/datamanagement/database.hpp"
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\datamanagement\database.hpp
+	<string>
+	<vector>
+	<map>
+	"../io/filesystem.hpp"
+
+1681728796 source:c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\gui\controls\treelistctrl.cpp
+	"wx/wxprec.h"
+	<wx/app.h>
+	<wx/treebase.h>
+	<wx/timer.h>
+	<wx/textctrl.h>
+	<wx/imaglist.h>
+	<wx/settings.h>
+	<wx/dcclient.h>
+	<wx/dcscreen.h>
+	<wx/scrolwin.h>
+	<wx/dcmemory.h>
+	<wx/renderer.h>
+	<wx/apptrait.h>
+	<wx/dcbuffer.h>
+	<wx/tooltip.h>
+	<wx/hashmap.h>
+	<wx/dynarray.h>
+	<wx/arrimpl.cpp>
+	"wx/mac/private.h"
+	"treelistctrl.h"
+	<wx/log.h>
+	<wx/msgdlg.h>
+
+1412504348 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\apptrait.h
+	"wx/string.h"
+	"wx/platinfo.h"
+	"wx/msw/apptbase.h"
+	"wx/unix/apptbase.h"
+	"wx/os2/apptbase.h"
+	"wx/msw/apptrait.h"
+	"wx/os2/apptrait.h"
+	"wx/unix/apptrait.h"
+	"wx/msdos/apptrait.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\apptbase.h
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\unix\apptbase.h
+	"wx/evtloop.h"
+	"wx/evtloopsrc.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\evtloopsrc.h
+	"wx/evtloop.h"
+	"wx/unix/evtloopsrc.h"
+	"wx/gtk/evtloopsrc.h"
+	"wx/osx/evtloopsrc.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\unix\evtloopsrc.h
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\apptrait.h
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\unix\apptrait.h
+
+1412504348 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\arrimpl.cpp
+
+1681728796 source:c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\gui\controls\treesearchctrl.cpp
+	"treesearchctrl.hpp"
+	"treedata.hpp"
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\gui\controls\treesearchctrl.hpp
+	"searchctrl.hpp"
+	<wx/wx.h>
+	<wx/treectrl.h>
+	"treelistctrl.h"
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\gui\controls\treedata.hpp
+	"wx/treectrl.h"
+
+1681728796 source:c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\gui\dialogs\aboutchameleondialog.cpp
+	"wx/wxprec.h"
+	<wx/msw/private.h>
+	<wx/filename.h>
+	<wx/stdpaths.h>
+	<wx/textctrl.h>
+	"AboutChameleonDialog.h"
+	"../../kernel/core/ui/language.hpp"
+	"../../kernel/core/version.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\stdpaths.h
+	"wx/defs.h"
+	"wx/string.h"
+	"wx/filefn.h"
+	"wx/msw/stdpaths.h"
+	"wx/osx/core/stdpaths.h"
+	"wx/os2/stdpaths.h"
+	"wx/unix/stdpaths.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\stdpaths.h
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\unix\stdpaths.h
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\gui\dialogs\aboutchameleondialog.h
+	<wx/wx.h>
+	"wx/notebook.h"
+	"../globals.hpp"
+
+1681733437 source:c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\gui\dialogs\dependencydialog.cpp
+	"dependencydialog.hpp"
+	"../NumeReWindow.h"
+	"../../kernel/core/utils/tools.hpp"
+	"../../kernel/core/ui/language.hpp"
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\gui\dialogs\dependencydialog.hpp
+	<wx/wx.h>
+	<string>
+	<map>
+	<vector>
+	"../controls/treelistctrl.h"
+	"../../kernel/core/procedure/procedurelibrary.hpp"
+	"../../kernel/core/procedure/dependency.hpp"
+	"../../common/datastructures.h"
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\procedure\dependency.hpp
+	<string>
+	<map>
+	<list>
+
+1681728796 source:c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\gui\dialogs\duplicatecodedialog.cpp
+	"duplicatecodedialog.hpp"
+	"../../kernel/core/ui/language.hpp"
+	"../../kernel/core/utils/stringtools.hpp"
+	"../editor/editor.h"
+	<wx/clipbrd.h>
+	<algorithm>
+
+1681728796 source:c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\gui\dialogs\fndrpldialog.cpp
+	"fndrpldialog.hpp"
+	"../globals.hpp"
+	"../../kernel/core/ui/language.hpp"
+
+1681728796 source:c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\gui\dialogs\listeditdialog.cpp
+	"listeditdialog.hpp"
+	"../compositions/grouppanel.hpp"
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\gui\dialogs\listeditdialog.hpp
+	<wx/wx.h>
+	<wx/listctrl.h>
+
+1681728796 source:c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\gui\dialogs\newfiledialog.cpp
+	"newfiledialog.hpp"
+	"../compositions/grouppanel.hpp"
+	"../../kernel/core/ui/language.hpp"
+	"../globals.hpp"
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\gui\dialogs\newfiledialog.hpp
+	<wx/wx.h>
+	<wx/listctrl.h>
+	"../../common/datastructures.h"
+
+1681728796 source:c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\gui\dialogs\packagedialog.cpp
+	"packagedialog.hpp"
+	"../compositions/grouppanel.hpp"
+	"../globals.hpp"
+	"../../kernel/core/ui/language.hpp"
+	"../../kernel/core/ui/winlayout.hpp"
+	"../../kernel/core/utils/tools.hpp"
+	"../../kernel/core/utils/tinyxml2.h"
+	"../../kernel/core/procedure/dependency.hpp"
+	"../../kernel/core/procedure/includer.hpp"
+	"../../kernel/core/io/styledtextfile.hpp"
+	"../../common/vcsmanager.hpp"
+	"../../common/filerevisions.hpp"
+	"../../common/datastructures.h"
+	<set>
+	<memory>
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\gui\dialogs\packagedialog.hpp
+	<wx/wx.h>
+	<wx/propgrid/propgrid.h>
+	"../terminal/terminal.hpp"
+	"../IconManager.h"
+	<set>
+	<string>
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\propgrid\propgrid.h
+	"wx/defs.h"
+	"wx/thread.h"
+	"wx/dcclient.h"
+	"wx/control.h"
+	"wx/scrolwin.h"
+	"wx/tooltip.h"
+	"wx/datetime.h"
+	"wx/recguard.h"
+	"wx/propgrid/property.h"
+	"wx/propgrid/propgridiface.h"
+	"wx/propgrid/props.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\recguard.h
+	"wx/defs.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\propgrid\property.h
+	"wx/defs.h"
+	"wx/propgrid/propgriddefs.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\propgrid\propgriddefs.h
+	"wx/defs.h"
+	"wx/dynarray.h"
+	"wx/vector.h"
+	"wx/hashmap.h"
+	"wx/variant.h"
+	"wx/any.h"
+	"wx/longlong.h"
+	"wx/clntdata.h"
+	"wx/tokenzr.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\propgrid\propgridiface.h
+	"wx/defs.h"
+	"wx/propgrid/property.h"
+	"wx/propgrid/propgridpagestate.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\propgrid\propgridpagestate.h
+	"wx/defs.h"
+	"wx/propgrid/property.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\propgrid\props.h
+	"wx/defs.h"
+	"wx/propgrid/editors.h"
+	"wx/filename.h"
+	"wx/dialog.h"
+	"wx/textctrl.h"
+	"wx/button.h"
+	"wx/listbox.h"
+	"wx/valtext.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\propgrid\editors.h
+	"wx/defs.h"
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\ui\winlayout.hpp
+	<string>
+	<vector>
+	"../commandlineparser.hpp"
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\commandlineparser.hpp
+	<string>
+	<vector>
+	"structures.hpp"
+	"datamanagement/dataaccess.hpp"
+
+1681728796 source:c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\gui\dialogs\pluginrepodialog.cpp
+	"pluginrepodialog.hpp"
+	"../IconManager.h"
+	"../globals.hpp"
+	"../compositions/grouppanel.hpp"
+	"../../kernel/core/ui/language.hpp"
+	"../../kernel/core/utils/tools.hpp"
+	"../../common/datastructures.h"
+	"../../common/http.h"
+	"../controls/searchctrl.hpp"
+	<fstream>
+	<vector>
+	<algorithm>
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\gui\dialogs\pluginrepodialog.hpp
+	<wx/wx.h>
+	<wx/thread.h>
+	"../controls/treelistctrl.h"
+	"../compositions/viewerframe.hpp"
+	"../terminal/terminal.hpp"
+	<string>
+	<vector>
+
+1681728796 source:c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\gui\dialogs\renamesymbolsdialog.cpp
+	"renamesymbolsdialog.hpp"
+	"../globals.hpp"
+	"../compositions/grouppanel.hpp"
+	"../../kernel/core/ui/language.hpp"
+	"../../kernel/core/utils/stringtools.hpp"
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\gui\dialogs\renamesymbolsdialog.hpp
+	<wx/wx.h>
+	<wx/listctrl.h>
+	<vector>
+
+1681728796 source:c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\gui\dialogs\revisiondialog.cpp
+	"revisiondialog.hpp"
+	"../../kernel/core/ui/language.hpp"
+	"../NumeReWindow.h"
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\gui\dialogs\revisiondialog.hpp
+	<wx/wx.h>
+	"../../common/filerevisions.hpp"
+	"../controls/treelistctrl.h"
+
+1681728796 source:c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\gui\dialogs\textoutputdialog.cpp
+	"textoutputdialog.hpp"
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\gui\dialogs\textoutputdialog.hpp
+	<wx/wx.h>
+
+1681728796 source:c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\gui\dialogs\tipdialog.cpp
+	"tipdialog.hpp"
+	<wx/statline.h>
+	<wx/artprov.h>
+
+1681728796 source:c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\gui\dirtraverser.cpp
+	"DirTraverser.hpp"
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\gui\dirtraverser.hpp
+	"controls/treedata.hpp"
+	"wx/dir.h"
+	<string>
+	<vector>
+	"IconManager.h"
+	"../common/datastructures.h"
+
+1681728796 source:c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\gui\documentationbrowser.cpp
+	"documentationbrowser.hpp"
+	"compositions/helpviewer.hpp"
+	"NumeReWindow.h"
+	"../common/Options.h"
+	"../common/datastructures.h"
+	"controls/treesearchctrl.hpp"
+	"controls/treedata.hpp"
+	"compositions/treepanel.hpp"
+	"../kernel/core/ui/language.hpp"
+	<vector>
+	<string>
+	<wx/artprov.h>
+
+1681728796 source:c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\gui\editor\codeanalyzer.cpp
+	"codeanalyzer.hpp"
+	"editor.h"
+	"searchcontroller.hpp"
+	"../../common/Options.h"
+	"../../kernel/core/ui/language.hpp"
+	"../../kernel/core/procedure/includer.hpp"
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\gui\editor\codeanalyzer.hpp
+	<string>
+	<vector>
+	<utility>
+	"../../kernel/core/symdef.hpp"
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\gui\editor\searchcontroller.hpp
+	<wx/wx.h>
+	<string>
+	<vector>
+
+1681728796 source:c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\gui\editor\codeformatter.cpp
+	"codeformatter.hpp"
+	"editor.h"
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\gui\editor\codeformatter.hpp
+	<wx/wx.h>
+
+1681733437 source:c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\gui\editor\editor.cpp
+	<stdlib.h>
+	<crtdbg.h>
+	"../../common/CommonHeaders.h"
+	"../../kernel/core/ui/language.hpp"
+	"../../kernel/core/utils/tools.hpp"
+	<wx/datetime.h>
+	<wx/stdpaths.h>
+	<wx/tokenzr.h>
+	<wx/clipbrd.h>
+	<vector>
+	<string>
+	<set>
+	<memory>
+	"editor.h"
+	"../NumeReWindow.h"
+	"../NumeReNotebook.h"
+	"codeanalyzer.hpp"
+	"searchcontroller.hpp"
+	"codeformatter.hpp"
+	"../../common/datastructures.h"
+	"../../common/Options.h"
+	"../../common/vcsmanager.hpp"
+	"../../common/filerevisions.hpp"
+	"../dialogs/renamesymbolsdialog.hpp"
+	"../globals.hpp"
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\gui\numerenotebook.h
+	<wx/aui/auibook.h>
+
+1681728796 source:c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\gui\editor\history.cpp
+	"../../common/CommonHeaders.h"
+	"../../kernel/core/ui/language.hpp"
+	"../../kernel/core/utils/tools.hpp"
+	<wx/datetime.h>
+	<wx/stdpaths.h>
+	<vector>
+	<string>
+	"history.hpp"
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\gui\editor\history.hpp
+	<wx/wx.h>
+	<wx/stc/stc.h>
+	<wx/menu.h>
+	<wx/dynarray.h>
+	"editor.h"
+	"../terminal/terminal.hpp"
+	"../../common/datastructures.h"
+	"../../kernel/syntax.hpp"
+
+1681728796 source:c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\gui\editor\numereprintout.cpp
+	"NumeRePrintout.h"
+	"editor.h"
+	"wx/printdlg.h"
+	"wx/progdlg.h"
+	"../../common/Options.h"
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\gui\editor\numereprintout.h
+	"wx/print.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\progdlg.h
+	"wx/defs.h"
+	"wx/generic/progdlgg.h"
+	"wx/msw/progdlg.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\generic\progdlgg.h
+	"wx/dialog.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\progdlg.h
+
+1681728796 source:c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\gui\editor\searchcontroller.cpp
+	"searchcontroller.hpp"
+	"editor.h"
+	"../terminal/terminal.hpp"
+
+1681728796 source:c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\gui\graphviewer.cpp
+	"graphviewer.hpp"
+	"NumeReWindow.h"
+	"../common/Options.h"
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\gui\graphviewer.hpp
+	<wx/wx.h>
+	"wx.h"
+	"compositions/viewerframe.hpp"
+	"../kernel/core/plotting/graph_helper.hpp"
+	"terminal/terminal.hpp"
+
+1681728796 source:c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\gui\iconmanager.cpp
+	"IconManager.h"
+	"globals.hpp"
+	<string>
+	<vector>
+	<wx/icon.h>
+	<wx/iconloc.h>
+	<wx/mimetype.h>
+	<wx/bitmap.h>
+	"icons/defaultfile.xpm"
+	"icons/closedfolder16x1632bpp.xpm"
+	"icons/exe.xpm"
+	"icons/doc.xpm"
+	"../kernel/core/io/logger.hpp"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\mimetype.h
+	"wx/defs.h"
+	"wx/string.h"
+	"wx/dynarray.h"
+	"wx/arrstr.h"
+	<stdarg.h>
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\gui\icons\defaultfile.xpm
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\gui\icons\closedfolder16x1632bpp.xpm
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\gui\icons\exe.xpm
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\gui\icons\doc.xpm
+
+1681728796 source:c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\gui\numeredroptarget.cpp
+	"numeredroptarget.hpp"
+	"NumeReWindow.h"
+	"editor/editor.h"
+	"terminal/terminal.hpp"
+	"compositions/filetree.hpp"
+	"DirTraverser.hpp"
+	"../common/vcsmanager.hpp"
+	"../common/filerevisions.hpp"
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\gui\numeredroptarget.hpp
+	<wx/wx.h>
+	<wx/dnd.h>
+
+1681728796 source:c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\gui\numerenotebook.cpp
+	"../common/CommonHeaders.h"
+	"NumeReNotebook.h"
+	"NumeReWindow.h"
+	"numeredroptarget.hpp"
+	"IconManager.h"
+	"../common/vcsmanager.hpp"
+	"editor/editor.h"
+	<wx/wx.h>
+	<wx/msgdlg.h>
+	<wx/notebook.h>
+	<windows.h>
+	<commctrl.h>
+	"../common/datastructures.h"
+
+1681728796 source:c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\gui\numerestatusbar.cpp
+	"NumeReStatusbar.hpp"
+
+1681732633 source:c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\gui\numerewindow.cpp
+	<stdlib.h>
+	<crtdbg.h>
+	"NumeReWindow.h"
+	<wx/wx.h>
+	<wx/dir.h>
+	<wx/string.h>
+	<wx/filedlg.h>
+	<wx/statusbr.h>
+	<wx/choicdlg.h>
+	<wx/msgdlg.h>
+	<wx/msw/wince/tbarwce.h>
+	<wx/msw/private.h>
+	<wx/print.h>
+	<wx/printdlg.h>
+	<wx/mimetype.h>
+	<wx/stdpaths.h>
+	<wx/filename.h>
+	<wx/artprov.h>
+	<fstream>
+	<wx/clipbrd.h>
+	<wx/display.h>
+	<array>
+	<math.h>
+	"NumeReNotebook.h"
+	"numeredroptarget.hpp"
+	"DirTraverser.hpp"
+	"IconManager.h"
+	"wxProportionalSplitterWindow.h"
+	"documentationbrowser.hpp"
+	"graphviewer.hpp"
+	"textsplashscreen.hpp"
+	"compositions/viewerframe.hpp"
+	"compositions/imagepanel.hpp"
+	"compositions/helpviewer.hpp"
+	"compositions/tableviewer.hpp"
+	"compositions/tableeditpanel.hpp"
+	"compositions/wxTermContainer.h"
+	"compositions/debugviewer.hpp"
+	"compositions/customwindow.hpp"
+	"editor/editor.h"
+	"editor/history.hpp"
+	"editor/NumeRePrintout.h"
+	"dialogs/OptionsDialog.h"
+	"dialogs/AboutChameleonDialog.h"
+	"dialogs/textoutputdialog.hpp"
+	"dialogs/packagedialog.hpp"
+	"dialogs/dependencydialog.hpp"
+	"dialogs/revisiondialog.hpp"
+	"dialogs/pluginrepodialog.hpp"
+	"dialogs/newfiledialog.hpp"
+	"dialogs/listeditdialog.hpp"
+	"terminal/terminal.hpp"
+	"../kernel/core/version.h"
+	"../kernel/core/utils/tools.hpp"
+	"../kernel/core/procedure/dependency.hpp"
+	"../kernel/core/datamanagement/database.hpp"
+	"../kernel/core/documentation/docgen.hpp"
+	"../kernel/core/ui/error.hpp"
+	"../kernel/core/io/logger.hpp"
+	"../kernel/core/ui/calltipprovider.hpp"
+	"../common/recycler.hpp"
+	"../common/Options.h"
+	"../common/vcsmanager.hpp"
+	"../common/filerevisions.hpp"
+	"../common/ipc.hpp"
+	"../common/http.h"
+	"../common/compareFiles.hpp"
+	"controls/treesearchctrl.hpp"
+	"controls/toolbarsearchctrl.hpp"
+
+1412504348 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\display.h
+	"wx/dynarray.h"
+	"wx/vidmode.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\vidmode.h
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\gui\wxproportionalsplitterwindow.h
+	<wx/wxprec.h>
+	<wx/splitter.h>
+	<cmath>
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\gui\textsplashscreen.hpp
+	<wx/wx.h>
+	<wx/splash.h>
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\gui\dialogs\optionsdialog.h
+	"wx/notebook.h"
+	"wx/spinctrl.h"
+	<wx/clrpicker.h>
+	<wx/fontpicker.h>
+	"../../kernel/core/settings.hpp"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\fontpicker.h
+	"wx/defs.h"
+	"wx/pickerbase.h"
+	"wx/gtk/fontpicker.h"
+	"wx/generic/fontpickerg.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\generic\fontpickerg.h
+	"wx/button.h"
+	"wx/fontdata.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\fontdata.h
+	"wx/font.h"
+	"wx/colour.h"
+	"wx/encinfo.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\encinfo.h
+	"wx/string.h"
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\documentation\docgen.hpp
+	<string>
+	<set>
+	<vector>
+	<utility>
+	"../io/filesystem.hpp"
+	"../io/styledtextfile.hpp"
+	"../../syntax.hpp"
+
+1681728796 source:c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\gui\terminal\actions.cpp
+	"gterm.hpp"
+	<wx/log.h>
+
+1681728796 source:c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\gui\terminal\gterm.cpp
+	"gterm.hpp"
+	<wx/stdpaths.h>
+	<wx/wx.h>
+	<wx/filename.h>
+
+1681740726 source:c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\gui\terminal\terminal.cpp
+	"wx/wxprec.h"
+	"wx/wx.h"
+	<wx/timer.h>
+	<ctype.h>
+	"gterm.hpp"
+	"terminal.hpp"
+	"terminalcalltip.hpp"
+	<wx/clipbrd.h>
+	<wx/dataobj.h>
+	"../globals.hpp"
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\gui\terminal\terminalcalltip.hpp
+	<wx/window.h>
+	<wx/textctrl.h>
+
+1681728796 source:c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\gui\terminal\terminalcalltip.cpp
+	"terminalcalltip.hpp"
+	<wx/panel.h>
+
+1681728796 source:c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\gui\terminal\textmanager.cpp
+	"TextManager.h"
+	<iostream>
+	<stdlib.h>
+	<wx/wx.h>
+	<wx/file.h>
+	<wx/dcmemory.h>
+	<wx/image.h>
+	"gterm.hpp"
+
+1681728796 source:c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\gui\terminal\utils.cpp
+	"gterm.hpp"
+	"../../kernel/core/ui/language.hpp"
+	"../../kernel/core/utils/tools.hpp"
+	<wx/log.h>
+
+1681728796 source:c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\gui\terminal\winmesgbeep.cpp
+	<windows.h>
+
+1681733437 source:c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\gui\wx.cpp
+	<wx/dcclient.h>
+	<wx/msgdlg.h>
+	<wx/clipbrd.h>
+	<wx/dataobj.h>
+	<wx/menu.h>
+	<wx/scrolwin.h>
+	<wx/artprov.h>
+	<cmath>
+	<mgl2/canvas_wnd.h>
+	"wx.h"
+	"../common/datastructures.h"
+	"../kernel/core/ui/language.hpp"
+	"terminal/terminal.hpp"
+	"graphviewer.hpp"
+
+1681728796 source:c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\audiolib\audiofile.cpp
+	"audiofile.hpp"
+	"wavfile.hpp"
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\audiolib\audiofile.hpp
+	<vector>
+	<string>
+	<cmath>
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\audiolib\wavfile.hpp
+	"audiofile.hpp"
+	<fstream>
+
+1681728796 source:c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\audiolib\wavfile.cpp
+	"wavfile.hpp"
+	<cstring>
+
+1681728796 source:c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\built-in.cpp
+	"built-in.hpp"
+	"../kernel.hpp"
+	"io/fileops.hpp"
+	"datamanagement/dataops.hpp"
+	"commandfunctions.hpp"
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\io\fileops.hpp
+	<string>
+	<vector>
+	"../commandlineparser.hpp"
+	"../datamanagement/memorymanager.hpp"
+	"../settings.hpp"
+	"../ParserLib/muParser.h"
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\datamanagement\dataops.hpp
+	<string>
+	"memorymanager.hpp"
+	"../settings.hpp"
+	"../commandlineparser.hpp"
+	"../ParserLib/muParser.h"
+	"../io/output.hpp"
+	"../maths/define.hpp"
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\commandfunctions.hpp
+	<string>
+	<vector>
+	<map>
+	"built-in.hpp"
+	"maths/command_implementations.hpp"
+	"maths/matrixoperations.hpp"
+	"plotting/plotting.hpp"
+	"../kernel.hpp"
+	"ui/winlayout.hpp"
+	"io/logger.hpp"
+	"utils/tools.hpp"
+	"utils/archive.hpp"
+	"commandlineparser.hpp"
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\maths\command_implementations.hpp
+	"../datamanagement/memorymanager.hpp"
+	"../ParserLib/muParser.h"
+	"../settings.hpp"
+	"../commandlineparser.hpp"
+	"define.hpp"
+	<string>
+	<vector>
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\maths\matrixoperations.hpp
+	<string>
+	<vector>
+	"../ParserLib/muParser.h"
+	"../datamanagement/memorymanager.hpp"
+	"define.hpp"
+	"../settings.hpp"
+	"matdatastructures.hpp"
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\maths\matdatastructures.hpp
+	<vector>
+	<string>
+	<complex>
+	<utility>
+	"../ui/error.hpp"
+	"../utils/stringtools.hpp"
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\plotting\plotting.hpp
+	<mgl2/mgl.h>
+	<string>
+	<vector>
+	"../datamanagement/memorymanager.hpp"
+	"../ParserLib/muParser.h"
+	"../settings.hpp"
+	"../maths/define.hpp"
+	"plotdata.hpp"
+	"plotinfo.hpp"
+	"plotasset.hpp"
+	"graph_helper.hpp"
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\plotting\plotinfo.hpp
+	<mgl2/mgl.h>
+	<string>
+	<vector>
+	"../interval.hpp"
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\plotting\plotasset.hpp
+	"plotdef.hpp"
+	"../interval.hpp"
+	"../utils/tools.hpp"
+	<mgl2/mgl.h>
+	<string>
+	<vector>
+	<utility>
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\utils\archive.hpp
+	<string>
+	<vector>
+
+1681728796 source:c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\commandlineparser.cpp
+	"commandlineparser.hpp"
+	"../kernel.hpp"
+	"utils/tools.hpp"
+	"maths/parser_functions.hpp"
+
+1681728796 source:c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\datamanagement\cluster.cpp
+	<gsl/gsl_statistics.h>
+	"cluster.hpp"
+	"../ui/error.hpp"
+
+1681728796 source:c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\datamanagement\dataaccess.cpp
+	"dataaccess.hpp"
+	"../utils/tools.hpp"
+	"../../kernel.hpp"
+	<vector>
+
+1681728796 source:c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\datamanagement\database.cpp
+	<fstream>
+	"database.hpp"
+	"../ui/error.hpp"
+	"../utils/tools.hpp"
+
+1681732648 source:c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\datamanagement\dataops.cpp
+	<wx/image.h>
+	"dataops.hpp"
+	"container.hpp"
+	"../../kernel.hpp"
+	"../ui/language.hpp"
+	"../utils/tools.hpp"
+	"../utils/BasicExcel.hpp"
+	"../ui/error.hpp"
+	"../structures.hpp"
+	"../built-in.hpp"
+	"../maths/parser_functions.hpp"
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\utils\basicexcel.hpp
+	<algorithm>
+	<cmath>
+	<functional>
+	<iostream>
+	<iomanip>
+	<fstream>
+	<map>
+	<vector>
+	<cstring>
+
+1681728796 source:c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\datamanagement\fileadapter.cpp
+	"fileadapter.hpp"
+	"../utils/tools.hpp"
+	"../io/logger.hpp"
+	"memory.hpp"
+
+1681733437 source:c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\datamanagement\indices.cpp
+	"dataaccess.hpp"
+	"../utils/tools.hpp"
+	"../../kernel.hpp"
+	<vector>
+
+1681732648 source:c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\datamanagement\memory.cpp
+	<memory>
+	<gsl/gsl_statistics.h>
+	<gsl/gsl_sort.h>
+	<gsl/gsl_cdf.h>
+	"memory.hpp"
+	"tablecolumnimpl.hpp"
+	"../../kernel.hpp"
+	"../io/file.hpp"
+	"../ui/error.hpp"
+	"../settings.hpp"
+	"../utils/tools.hpp"
+	"../version.h"
+	"../maths/resampler.h"
+	"../maths/statslogic.hpp"
+	"../maths/matdatastructures.hpp"
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\maths\resampler.h
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\maths\statslogic.hpp
+	"../ParserLib/muParserDef.h"
+
+1681728796 source:c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\datamanagement\memorymanager.cpp
+	<ctime>
+	<cmath>
+	<gsl/gsl_statistics.h>
+	<gsl/gsl_sort.h>
+	"memorymanager.hpp"
+	"../utils/tools.hpp"
+	"../version.h"
+	"../maths/resampler.h"
+	"../../kernel.hpp"
+	"tablecolumnimpl.hpp"
+
+1681728796 source:c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\datamanagement\sorter.cpp
+	"sorter.hpp"
+	"../utils/tools.hpp"
+
+1681728796 source:c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\datamanagement\stringmemory.cpp
+	"stringmemory.hpp"
+	"../utils/tools.hpp"
+
+1681732648 source:c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\datamanagement\table.cpp
+	"table.hpp"
+	"../utils/tools.hpp"
+	"tablecolumnimpl.hpp"
+	<cmath>
+	<cstdio>
+
+1681728796 source:c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\datamanagement\tablecolumn.cpp
+	"tablecolumn.hpp"
+	"../ui/language.hpp"
+	"../utils/tools.hpp"
+
+1681733437 source:c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\datamanagement\tablecolumnimpl.cpp
+	"tablecolumnimpl.hpp"
+	"../utils/tools.hpp"
+	"../ui/error.hpp"
+	"../../kernel.hpp"
+
+1681728796 source:c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\debugger\breakpointmanager.cpp
+	"breakpointmanager.hpp"
+	"../utils/tools.hpp"
+
+1681728796 source:c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\debugger\debugger.cpp
+	"debugger.hpp"
+	"../../kernel.hpp"
+	"../utils/tools.hpp"
+	"../procedure/procedurevarfactory.hpp"
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\procedure\procedurevarfactory.hpp
+	<string>
+	<map>
+	"../utils/tools.hpp"
+	"../ui/error.hpp"
+	"../datamanagement/memorymanager.hpp"
+	"../maths/functionimplementation.hpp"
+	"../maths/define.hpp"
+	"../settings.hpp"
+	"../io/output.hpp"
+	"../plotting/plotdata.hpp"
+	"../script.hpp"
+
+1681728796 source:c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\documentation\doc_helper.cpp
+	<fstream>
+	"doc_helper.hpp"
+	"docfile.hpp"
+	"../version.h"
+	"../utils/tools.hpp"
+	"../../kernel.hpp"
+	<algorithm>
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\documentation\docfile.hpp
+	<string>
+	<vector>
+
+1681728796 source:c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\documentation\docfile.cpp
+	<fstream>
+	"docfile.hpp"
+	"../utils/tinyxml2.h"
+	"../utils/tools.hpp"
+
+1681728796 source:c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\documentation\docgen.cpp
+	"docgen.hpp"
+	"../../../common/datastructures.h"
+	"../../kernel.hpp"
+	"../utils/tools.hpp"
+	"../procedure/dependency.hpp"
+	"../ui/winlayout.hpp"
+
+1681728796 source:c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\documentation\documentation.cpp
+	<vector>
+	<map>
+	<fstream>
+	"documentation.hpp"
+	"../../kernel.hpp"
+	"../datamanagement/database.hpp"
+	"../ui/error.hpp"
+	"../ui/calltipprovider.hpp"
+	"../utils/tools.hpp"
+	"../../syntax.hpp"
+
+1681728796 source:c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\igorlib\crossplatformfileio.cpp
+	<ctype.h>
+	<string.h>
+	<stdlib.h>
+	<stdio.h>
+	<stddef.h>
+	<Windows.h>
+	"CrossPlatformFileIO.h"
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\igorlib\crossplatformfileio.h
+
+1681728796 source:c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\igorlib\readwave.cpp
+	"./ReadWave.h"
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\igorlib\readwave.h
+	<stdio.h>
+	<tchar.h>
+	<ctype.h>
+	<string.h>
+	<stdlib.h>
+	<stddef.h>
+	"./CrossPlatformFileIO.h"
+	"./IgorBin.h"
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\igorlib\igorbin.h
+
+1681728796 source:c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\interval.cpp
+	"interval.hpp"
+	"../kernel.hpp"
+	"utils/tools.hpp"
+
+1681733437 source:c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\io\file.cpp
+	<libsha.hpp>
+	<libzygo.hpp>
+	"file.hpp"
+	"../datamanagement/tablecolumnimpl.hpp"
+	"../IgorLib/ReadWave.h"
+	"../utils/tools.hpp"
+	"../utils/BasicExcel.hpp"
+	"../utils/tinyxml2.h"
+	"../ui/language.hpp"
+	"../version.h"
+	"../../kernel.hpp"
+
+1681728796 source:c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\io\fileops.cpp
+	"fileops.hpp"
+	"../utils/tools.hpp"
+	"../maths/parser_functions.hpp"
+	"../../kernel.hpp"
+	"../ui/language.hpp"
+
+1681728796 source:c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\io\filesystem.cpp
+	<iostream>
+	<fstream>
+	<sstream>
+	<windows.h>
+	"filesystem.hpp"
+	"../../kernel.hpp"
+	"../utils/datetimetools.hpp"
+
+1681728796 source:c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\io\logger.cpp
+	"logger.hpp"
+	"../utils/stringtools.hpp"
+	<windows.h>
+
+1681728796 source:c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\io\output.cpp
+	"output.hpp"
+	"../../kernel.hpp"
+
+1681728796 source:c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\io\styledtextfile.cpp
+	<fstream>
+	"styledtextfile.hpp"
+
+1681728796 source:c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\maths\command_implementations.cpp
+	<gsl/gsl_statistics.h>
+	<gsl/gsl_sort.h>
+	<algorithm>
+	<memory>
+	"command_implementations.hpp"
+	"parser_functions.hpp"
+	"matrixoperations.hpp"
+	"spline.h"
+	"wavelet.hpp"
+	"filtering.hpp"
+	"../AudioLib/audiofile.hpp"
+	"../../kernel.hpp"
+	"../../../common/http.h"
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\maths\spline.h
+	<cstdio>
+	<cassert>
+	<vector>
+	<algorithm>
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\maths\wavelet.hpp
+	<vector>
+	"../datamanagement/table.hpp"
+
+1681728796 source:c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\maths\define.cpp
+	"define.hpp"
+	"../../kernel.hpp"
+
+1681728796 source:c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\maths\fitcontroller.cpp
+	"fitcontroller.hpp"
+	"../../kernel.hpp"
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\maths\fitcontroller.hpp
+	<iostream>
+	<vector>
+	<string>
+	<gsl/gsl_multifit_nlin.h>
+	<gsl/gsl_blas.h>
+	<gsl/gsl_vector.h>
+	"../ParserLib/muParser.h"
+	"../utils/tools.hpp"
+	"../ui/error.hpp"
+
+1681728796 source:c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\maths\fitting.cpp
+	"parser_functions.hpp"
+	"../../kernel.hpp"
+	"fitcontroller.hpp"
+	"../interval.hpp"
+
+1681728796 source:c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\maths\functionimplementation.cpp
+	"functionimplementation.hpp"
+	<cstdlib>
+	<cmath>
+	<fstream>
+	<string>
+	<iostream>
+	<locale>
+	<limits>
+	<ios>
+	<iomanip>
+	<numeric>
+	<ctime>
+	<csignal>
+	<boost/math/common_factor.hpp>
+	<gsl/gsl_sf.h>
+	<gsl/gsl_rng.h>
+	<gsl/gsl_randist.h>
+	<gsl/gsl_cdf.h>
+	<noise/noise.h>
+	<omp.h>
+	"student_t.hpp"
+	"../datamanagement/memorymanager.hpp"
+	"../utils/tools.hpp"
+	"../version.h"
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\maths\student_t.hpp
+
+1681728796 source:c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\maths\matrixoperations.cpp
+	<Eigen/Dense>
+	"matrixoperations.hpp"
+	"matfuncs.hpp"
+	"parser_functions.hpp"
+	"../../kernel.hpp"
+	"../utils/stringtools.hpp"
+	"../io/logger.hpp"
+	<list>
+	<cmath>
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\maths\matfuncs.hpp
+	<Eigen/Dense>
+	<Eigen/Eigenvalues>
+	<random>
+	<map>
+	"matdatastructures.hpp"
+	"../ui/error.hpp"
+	"../../kernel.hpp"
+	"functionimplementation.hpp"
+	"statslogic.hpp"
+
+1681728796 source:c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\maths\odesolver.cpp
+	"odesolver.hpp"
+	"../../kernel.hpp"
+
+1681728796 source:c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\maths\parser_functions.cpp
+	"parser_functions.hpp"
+	"../../kernel.hpp"
+
+1681728796 source:c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\maths\resampler.cpp
+	<stdlib.h>
+	<math.h>
+	<float.h>
+	<assert.h>
+	<string.h>
+	<iostream>
+	"resampler.h"
+
+1681728796 source:c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\maths\student_t.cpp
+	"student_t.hpp"
+	<boost/math/distributions/students_t.hpp>
+
+1681728796 source:c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\maths\wavelet.cpp
+	"wavelet.hpp"
+	"../ui/error.hpp"
+	"resampler.h"
+	<gsl/gsl_wavelet.h>
+	<cmath>
+
+1681728796 source:c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\parserlib\muparser.cpp
+	"muParser.h"
+	"muParserTemplateMagic.h"
+	<cmath>
+	<algorithm>
+	<numeric>
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\parserlib\muparsertemplatemagic.h
+	<cmath>
+	"muParserError.h"
+
+1681728796 source:c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\parserlib\muparserbase.cpp
+	"muParserBase.h"
+	"muParserTemplateMagic.h"
+	"../../kernel.hpp"
+	"../utils/stringtools.hpp"
+	"../structures.hpp"
+	<cassert>
+	<cmath>
+	<memory>
+	<vector>
+	<deque>
+	<sstream>
+	<locale>
+	<omp.h>
+
+1681728796 source:c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\parserlib\muparserbytecode.cpp
+	"muParserBytecode.h"
+	"../../kernel.hpp"
+	"../utils/stringtools.hpp"
+	<cassert>
+	<string>
+	<stack>
+	<vector>
+	<iostream>
+	"muParserDef.h"
+	"muParserError.h"
+	"muParserToken.h"
+	"muParserStack.h"
+	"muParserTemplateMagic.h"
+
+1681728796 source:c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\parserlib\muparsercallback.cpp
+	"muParserCallback.h"
+
+1681728796 source:c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\parserlib\muparsererror.cpp
+	"muParserError.h"
+
+1681728796 source:c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\parserlib\muparserstate.cpp
+	"muParserState.hpp"
+	"../utils/tools.hpp"
+	"../io/logger.hpp"
+
+1681728796 source:c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\parserlib\muparsertokenreader.cpp
+	<cassert>
+	<cstdio>
+	<cstring>
+	<map>
+	<stack>
+	<string>
+	"muParserTokenReader.h"
+	"muParserBase.h"
+
+1681728796 source:c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\plotting\graph_helper.cpp
+	"graph_helper.hpp"
+	"../../kernel.hpp"
+	"../utils/tools.hpp"
+
+1681728796 source:c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\plotting\plotasset.cpp
+	"plotasset.hpp"
+
+1681728796 source:c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\plotting\plotdata.cpp
+	<mgl2/mgl.h>
+	<map>
+	<utility>
+	"plotdata.hpp"
+	"../../kernel.hpp"
+
+1681728796 source:c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\plotting\plotting.cpp
+	<wx/image.h>
+	"plotting.hpp"
+	"plotasset.hpp"
+	"../maths/parser_functions.hpp"
+	"../../kernel.hpp"
+
+1681728796 source:c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\plugin_histogram.cpp
+	"plugins.hpp"
+	"../kernel.hpp"
+
+1681728796 source:c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\plugin_random.cpp
+	<random>
+	<ctime>
+	"plugins.hpp"
+	"../kernel.hpp"
+	"maths/parser_functions.hpp"
+	"structures.hpp"
+
+1681728796 source:c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\plugin_statistics.cpp
+	<vector>
+	"plugins.hpp"
+	"maths/parser_functions.hpp"
+	"maths/student_t.hpp"
+	"../kernel.hpp"
+
+1681728796 source:c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\procedure\dependency.cpp
+	"dependency.hpp"
+	"procedureelement.hpp"
+	"../../kernel.hpp"
+
+1681728796 source:c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\procedure\flowctrl.cpp
+	"flowctrl.hpp"
+	"../ui/error.hpp"
+	"../../kernel.hpp"
+	"../maths/parser_functions.hpp"
+	"../built-in.hpp"
+	"../utils/tools.hpp"
+	"../plotting/plotting.hpp"
+
+1681728796 source:c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\procedure\includer.cpp
+	"includer.hpp"
+	"../symdef.hpp"
+	"../ui/error.hpp"
+	"../../kernel.hpp"
+
+1681728796 source:c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\procedure\plugin.cpp
+	"plugin.hpp"
+	"../../kernel.hpp"
+	"../utils/tools.hpp"
+
+1681728796 source:c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\procedure\procedure.cpp
+	"procedure.hpp"
+	"../../kernel.hpp"
+	"procedurevarfactory.hpp"
+	<memory>
+
+1681728796 source:c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\procedure\procedureelement.cpp
+	"procedureelement.hpp"
+	"../utils/tools.hpp"
+	"../symdef.hpp"
+	"dependency.hpp"
+	"includer.hpp"
+	"../plotting/plotting.hpp"
+	<memory>
+
+1681728796 source:c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\procedure\procedurelibrary.cpp
+	"procedurelibrary.hpp"
+	"../ui/error.hpp"
+	"../utils/tools.hpp"
+
+1681728796 source:c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\procedure\procedurevarfactory.cpp
+	"procedurevarfactory.hpp"
+	"procedure.hpp"
+	"../../kernel.hpp"
+
+1681728796 source:c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\script.cpp
+	"version.h"
+	"script.hpp"
+	"../kernel.hpp"
+	"utils/tools.hpp"
+	"documentation/docfile.hpp"
+	<algorithm>
+
+1681744304 source:c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\settings.cpp
+	"settings.hpp"
+	"../kernel.hpp"
+	<fstream>
+
+1681733437 source:c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\strings\stringdatastructures.cpp
+	"stringdatastructures.hpp"
+	"../../kernel.hpp"
+
+1681728796 source:c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\strings\stringfunchandler.cpp
+	"stringfunchandler.hpp"
+	"../maths/functionimplementation.hpp"
+	"../../kernel.hpp"
+	"../structures.hpp"
+
+1681728796 source:c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\strings\stringlogicparser.cpp
+	"stringlogicparser.hpp"
+	"../../kernel.hpp"
+
+1681733437 source:c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\strings\stringparser.cpp
+	"stringparser.hpp"
+	"stringfunctions.hpp"
+	"stringexpression.hpp"
+	<algorithm>
+	"../utils/timer.hpp"
+	"../structures.hpp"
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\strings\stringfunctions.hpp
+	"stringdatastructures.hpp"
+	"../../kernel.hpp"
+	"../utils/filecheck.hpp"
+	<boost/tokenizer.hpp>
+	<regex>
+	<sstream>
+	<libsha.hpp>
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\utils\filecheck.hpp
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\strings\stringexpression.hpp
+	<string>
+	"../utils/tools.hpp"
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\utils\timer.hpp
+	<chrono>
+	<string>
+	"../../kernel.hpp"
+	"tools.hpp"
+
+1681728796 source:c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\strings\stringvarfactory.cpp
+	"stringvarfactory.hpp"
+	"../../kernel.hpp"
+
+1681733437 source:c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\symdef.cpp
+	"symdef.hpp"
+	"utils/tools.hpp"
+	"maths/parser_functions.hpp"
+
+1681728796 source:c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\ui\calltipprovider.cpp
+	"calltipprovider.hpp"
+	"language.hpp"
+	"../utils/tools.hpp"
+	"../../kernel.hpp"
+	<fstream>
+
+1681728796 source:c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\ui\error.cpp
+	"error.hpp"
+	"../utils/tools.hpp"
+	"../strings/stringdatastructures.hpp"
+	"../../kernel.hpp"
+	"../maths/matdatastructures.hpp"
+
+1681728796 source:c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\ui\language.cpp
+	"language.hpp"
+	"../utils/stringtools.hpp"
+
+1681733437 source:c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\ui\winlayout.cpp
+	"winlayout.hpp"
+	"../utils/tinyxml2.h"
+	"../io/styledtextfile.hpp"
+	"../../kernel.hpp"
+	"../procedure/includer.hpp"
+	<stack>
+	<memory>
+
+1681728796 source:c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\utils\archive.cpp
+	"archive.hpp"
+	"stringtools.hpp"
+	"../io/logger.hpp"
+	<wx/zipstrm.h>
+	<wx/tarstrm.h>
+	<wx/zstream.h>
+	<wx/wfstream.h>
+	<wx/stream.h>
+	<wx/dir.h>
+	<fstream>
+	<cstring>
+	<memory>
+	"../../kernel.hpp"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\tarstrm.h
+	"wx/defs.h"
+	"wx/archive.h"
+	"wx/hashmap.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\zstream.h
+	"wx/defs.h"
+	"wx/stream.h"
+	"wx/versioninfo.h"
+
+1681728796 source:c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\utils\basicexcel.cpp
+	"BasicExcel.hpp"
+
+1681728796 source:c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\utils\datetimetools.cpp
+	"datetimetools.hpp"
+	"date/iso_week.h"
+	"windows.h"
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\utils\date\iso_week.h
+	"date.h"
+	<climits>
+
+1681728796 source:c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\utils\filecheck.cpp
+	<wx/filename.h>
+	"../../kernel.hpp"
+
+1681728796 source:c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\utils\stringtools.cpp
+	"stringtools.hpp"
+	"../settings.hpp"
+	"../structures.hpp"
+	"fast_float/fast_float.h"
+	<cstring>
+	<sstream>
+	<iomanip>
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\utils\fast_float\fast_float.h
+	<system_error>
+	"parse_number.h"
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\utils\fast_float\parse_number.h
+	"ascii_number.h"
+	"decimal_to_binary.h"
+	"digit_comparison.h"
+	<cmath>
+	<cstring>
+	<limits>
+	<system_error>
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\utils\fast_float\ascii_number.h
+	<cctype>
+	<cstdint>
+	<cstring>
+	<iterator>
+	"float_common.h"
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\utils\fast_float\float_common.h
+	<cfloat>
+	<cstdint>
+	<cassert>
+	<cstring>
+	<type_traits>
+	<machine/endian.h>
+	<sys/byteorder.h>
+	<endian.h>
+	<cassert>
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\utils\fast_float\decimal_to_binary.h
+	"float_common.h"
+	"fast_table.h"
+	<cfloat>
+	<cinttypes>
+	<cmath>
+	<cstdint>
+	<cstdlib>
+	<cstring>
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\utils\fast_float\fast_table.h
+	<cstdint>
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\utils\fast_float\digit_comparison.h
+	<algorithm>
+	<cstdint>
+	<cstring>
+	<iterator>
+	"float_common.h"
+	"bigint.h"
+	"ascii_number.h"
+
+1681728796 c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\utils\fast_float\bigint.h
+	<algorithm>
+	<cstdint>
+	<climits>
+	<cstring>
+	"float_common.h"
+
+1681728796 source:c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\utils\tinyxml2.cpp
+	"tinyxml2.h"
+	<new>
+	<stddef.h>
+	<stdarg.h>
+	<cstddef>
+	<cstdarg>
+
+1681728796 source:c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\utils\tools.cpp
+	"tools.hpp"
+	"../../kernel.hpp"
+	"../io/file.hpp"
+	<cstdlib>
+	<omp.h>
+
+1681728796 source:c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\utils\unzip.cpp
+	<windows.h>
+	<stdio.h>
+	<stdlib.h>
+	<string.h>
+	<tchar.h>
+	"unzip.h"
+
+1681728796 source:c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\utils\zip++.cpp
+	"zip++.hpp"
+
+1681728796 source:c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\core\utils\zip.cpp
+	<windows.h>
+	<stdio.h>
+	<tchar.h>
+	"zip.h"
+
+1681728796 source:c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\kernel.cpp
+	"wx/wx.h"
+	"../gui/terminal/terminal.hpp"
+	"core/datamanagement/database.hpp"
+	"core/io/logger.hpp"
+	"core/plotting/plotting.hpp"
+
+1681728796 source:c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\syntax.cpp
+	"syntax.hpp"
+	"core/utils/tools.hpp"
+
+1681728796 source:c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\kernel\windowmanager.cpp
+	"../gui/compositions/customwindow.hpp"
+	"kernel.hpp"
+	"core/utils/tinyxml2.h"
+	"core/plotting/graph_helper.hpp"
+	"windowmanager.hpp"
+
+1681728796 source:c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\numere.rc
+	<windows.h>
+	"kernel/core/version.h"
+	<wx/msw/wx.rc>
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\wx.rc
+	<windows.h>
+	"wx/msw/wince/wince.rc"
+	"wx/msw/rcdefs.h"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\wince\wince.rc
+	<commctrl.h>
+	"wx/msw/wince/resources.h"
+	"wx/msw/wince/smartphone.rc"
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\wince\resources.h
+
+1412504350 c:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\wince\smartphone.rc
+	<aygshell.h>
+
+1522834607 c:\tdm-gcc-32\wxwidgets-3.0.2\lib\gcc_lib\mswu\wx\msw\rcdefs.h
+
+1681744070 source:c:\users\aishwarya.kale\onedrive - invensity gmbh\documents\github\numere\gui\dialogs\optionsdialog.cpp
+	"wx/wxprec.h"
+	"../../common/CommonHeaders.h"
+	"../../common/Options.h"
+	"../../kernel/core/ui/language.hpp"
+	<wx/checklst.h>
+	<wx/valtext.h>
+	<wx/dirdlg.h>
+	<wx/dir.h>
+	"OptionsDialog.h"
+	"../NumeReWindow.h"
+	"../compositions/grouppanel.hpp"
+
