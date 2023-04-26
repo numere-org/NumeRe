@@ -950,7 +950,7 @@ void LogicalColumn::setValue(size_t elem, const mu::value_type& vValue)
     if (elem >= m_data.size())
         m_data.resize(elem+1, LOGICAL_NAN);
 
-    m_data[elem] = vValue != 0.0 ? LOGICAL_TRUE : LOGICAL_FALSE;
+    m_data[elem] = mu::isnan(vValue) ? LOGICAL_NAN : (vValue != 0.0 ? LOGICAL_TRUE : LOGICAL_FALSE);
 }
 
 
@@ -1817,6 +1817,12 @@ void CategoricalColumn::setValue(size_t elem, const std::string& sValue)
 
     if (elem >= m_data.size())
         m_data.resize(elem+1, CATEGORICAL_NAN);
+
+    if (!sValue.length())
+    {
+        m_data[elem] = CATEGORICAL_NAN;
+        return;
+    }
 
     auto iter = std::find(m_categories.begin(), m_categories.end(), sValue);
 

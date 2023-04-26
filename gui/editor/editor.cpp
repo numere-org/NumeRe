@@ -5057,6 +5057,7 @@ void NumeReEditor::OnStartDrag(wxStyledTextEvent& event)
 /////////////////////////////////////////////////
 void NumeReEditor::OnDragOver(wxStyledTextEvent& event)
 {
+    event.SetDragAllowMove(true); // Necessary for file drag/drop
     event.SetDragResult(wxDragMove);
     event.Skip();
 }
@@ -5429,21 +5430,35 @@ void NumeReEditor::FindAndOpenProcedure(const wxString& procedurename)
     vector<std::string> vPaths = m_terminal->getPathSettings();
     wxString pathname = procedurename;
 
-    // Validate the procedure name for unwanted characters
-    for (size_t i = 0; i < pathname.length(); i++)
+    // check whether the procedure is an external procedure
+    if (pathname.substr(0, 2) == "$'" && pathname[pathname.length()-1] == '\'')
     {
-        if (!isalnum(pathname[i])
-            && pathname[i] != '$'
-            && pathname[i] != '/'
-            && pathname[i] != ':'
-            && pathname[i] != '_'
-            && pathname[i] != '\''
-            && pathname[i] != '~')
+        if (!fileExists(pathname.substr(2, pathname.length()-3).ToStdString() + ".nprc"))
         {
-            wxMessageBox(_guilang.get("GUI_DLG_PROC_INVALIDCHARS", procedurename.ToStdString()), _guilang.get("GUI_DLG_PROC_INVALIDCHARS_HEADLINE"), wxCENTER | wxICON_ERROR | wxOK, this);
+            int ret = wxMessageBox(_guilang.get("GUI_DLG_PROC_NEXISTS_CREATE", procedurename.ToStdString()), _guilang.get("GUI_DLG_PROC_NEXISTS_CREATE_HEADLINE"), wxCENTER | wxICON_WARNING | wxYES_NO, this);
+
+            if (ret == wxYES)
+                m_mainFrame->NewFile(FILE_NPRC, pathname.substr(2, pathname.length()-3));
+
             return;
         }
     }
+    else
+    {
+        // Validate the procedure name for unwanted characters
+        for (size_t i = 0; i < pathname.length(); i++)
+        {
+            if (!isalnum(pathname[i])
+                && pathname[i] != '$'
+                && pathname[i] != '_'
+                && pathname[i] != '~')
+            {
+                wxMessageBox(_guilang.get("GUI_DLG_PROC_INVALIDCHARS", procedurename.ToStdString()), _guilang.get("GUI_DLG_PROC_INVALIDCHARS_HEADLINE"), wxCENTER | wxICON_ERROR | wxOK, this);
+                return;
+            }
+        }
+    }
+
 
     // Resolve the namespaces
     if (pathname.find("$this~") != string::npos)

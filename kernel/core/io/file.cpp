@@ -210,7 +210,10 @@ namespace NumeRe
             for (size_t j = 0; j < vLine.size(); j++)
             {
                 replaceAll(vLine[j], "\1", " ");
-                fileData->at(j)->setValue(nLine, vLine[j]);
+
+                // Do not add tokenizer placeholders
+                if (vLine[j] != "_")
+                    fileData->at(j)->setValue(nLine, vLine[j]);
             }
 
             nLine++;
@@ -3610,11 +3613,20 @@ namespace NumeRe
                 nCommentLines++;
             }
 
-            vCommentLines.push_back(nCommentLines != 0);
+            // String lines are only used complete as comments, if their consecutive number is
+            // smaller than 4 or 10% of the total number of rows (whichever is larger)
+            // Otherwise only the first line is used
+            if (nCommentLines)
+            {
+                if (nCommentLines >= std::max(4.0, 0.1*_sheet->GetTotalRows()))
+                    nCommentLines = 1;
+            }
+
+            vCommentLines.push_back(nCommentLines);
 
             // Find the maximal number of needed rows
-            if (nExcelLines < _sheet->GetTotalRows()-(nCommentLines != 0))
-                nExcelLines = _sheet->GetTotalRows()-(nCommentLines != 0);
+            if (nExcelLines < _sheet->GetTotalRows()-nCommentLines)
+                nExcelLines = _sheet->GetTotalRows()-nCommentLines;
 
             // Add the number of columns of the current
             // sheet to the total number of columns
@@ -3664,8 +3676,11 @@ namespace NumeRe
 
                     // Replace line break characters with their
                     // corresponding masked character
-                    while (sEntry.find((char)13) != string::npos)
-                        sEntry.replace(sEntry.find((char)13), 1, "\n");
+                    for (size_t i = 0; i < sEntry.length(); i++)
+                    {
+                        if (sEntry[i] == (char)13)
+                            sEntry[i] = '\n';
+                    }
 
                     // Append the string to the current table
                     // column head, if it is not empty
@@ -3769,8 +3784,11 @@ namespace NumeRe
                 sHeadLine = fileData->at(j)->m_sHeadLine;
 
             // Replace newlines with the corresponding character code
-            while (sHeadLine.find('\n') != string::npos)
-                sHeadLine.replace(sHeadLine.find('\n'), 2, 1, (char)10);
+            for (size_t i = 0; i < sHeadLine.length(); i++)
+            {
+                if (sHeadLine[i] == '\n')
+                    sHeadLine[i] = (char)13;
+            }
 
             // Write the headline
             _cell->SetString(sHeadLine.c_str());

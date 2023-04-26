@@ -1,5 +1,5 @@
 ### SUMMARY
-Implements necessary changes for #[ISSUE-ID].
+Implements necessary changes for #[ISSUE-ID]
 
 *Reviewers:* @numere-org/maintainers
 
