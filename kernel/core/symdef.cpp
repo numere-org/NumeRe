@@ -101,6 +101,51 @@ void SymDefManager::createSymbol(const std::string& sCommandLine)
             if (symbol.length() && definition.length() && symbol != definition)
                 m_symDefs[symbol] = definition;
         }
+        else if ((pos = symdef.find("->")) != std::string::npos && symdef.find("enum") < pos)
+        {
+            // Declare an enumeration
+            // Get the enumerated symbols
+            std::string definition = symdef.substr(pos+2);
+
+            // enable nested definitions
+            resolveSymbols(definition);
+
+            // Remove the surrounding whitespace, if any
+            StripSpaces(definition);
+
+            // Strings are not allowed here
+            if (containsStrings(definition))
+                continue;
+
+            // Get each single symbol
+            std::vector<std::string> vEnumSymbols = toStrVector(definition);
+
+            int nEnumVal = 1;
+
+            // Will not create s.th. if the vector is empty
+            for (const auto& sEnum : vEnumSymbols)
+            {
+                // Declare each single symbol
+                if ((pos = sEnum.find('=')) == std::string::npos)
+                    m_symDefs[sEnum] = toString(nEnumVal);
+                else
+                {
+                    // Consider preset cases
+                    std::string symbol = sEnum.substr(0, pos);
+                    std::string value = sEnum.substr(pos+1);
+                    // Allow using already defined enumerated symbols
+                    resolveSymbols(value);
+                    StripSpaces(symbol);
+
+                    if (isConvertible(value, CONVTYPE_VALUE))
+                        nEnumVal = intCast(StrToCmplx(value));
+
+                    m_symDefs[symbol] = toString(nEnumVal);
+                }
+
+                nEnumVal++;
+            }
+        }
     }
 }
 

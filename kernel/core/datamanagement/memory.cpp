@@ -1857,47 +1857,115 @@ NumeRe::Table Memory::extractTable(const string& _sTable, const VectorIndex& lin
 /////////////////////////////////////////////////
 void Memory::importTable(NumeRe::Table _table, const VectorIndex& lines, const VectorIndex& cols)
 {
+    m_meta = _table.getMetaData();
+
+    // We construct separate objects because they might be overwritten
+    insertCopiedTable(_table, lines, cols, false);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Insert data from a copied table and
+/// possibly transpose it during insertion. Will
+/// trigger multiple column type conversions,
+/// especially, if the table gets transposed.
+/// Will also only transpose the columns without
+/// considering the column headlines.
+///
+/// \param _table NumeRe::Table
+/// \param lines const VectorIndex&
+/// \param cols const VectorIndex&
+/// \param transpose bool
+/// \return void
+///
+/////////////////////////////////////////////////
+void Memory::insertCopiedTable(NumeRe::Table _table, const VectorIndex& lines, const VectorIndex& cols, bool transpose)
+{
     // We construct separate objects because they might be overwritten
     deleteBulk(VectorIndex(lines), VectorIndex(cols));
 
-    lines.setOpenEndIndex(lines.front() + _table.getLines()-1);
-    cols.setOpenEndIndex(cols.front() + _table.getCols()-1);
+    lines.setOpenEndIndex(lines.front() + transpose ? _table.getCols()-1 : _table.getLines()-1);
+    cols.setOpenEndIndex(cols.front() + transpose ? _table.getLines()-1 : _table.getCols()-1);
 
     resizeMemory(lines.max()+1, cols.max()+1);
-    m_meta = _table.getMetaData();
 
-    #pragma omp parallel for
-    for (size_t j = 0; j < _table.getCols(); j++)
+    // Shall we transpose the table?
+    if (!transpose)
     {
-        if (j >= cols.size())
-            continue;
-
-        TableColumn* tabCol = _table.getColumn(j);
-
-        if (!tabCol)
-            continue;
-
-        if (!memArray[cols[j]])
+        // Insert without transposition
+        #pragma omp parallel for
+        for (size_t j = 0; j < _table.getCols(); j++)
         {
-            if (tabCol->m_type == TableColumn::TYPE_VALUE)
-                memArray[cols[j]].reset(new ValueColumn);
-            else if (tabCol->m_type == TableColumn::TYPE_DATETIME)
-                memArray[cols[j]].reset(new DateTimeColumn);
-            else if (tabCol->m_type == TableColumn::TYPE_STRING)
-                memArray[cols[j]].reset(new StringColumn);
-            else if (tabCol->m_type == TableColumn::TYPE_LOGICAL)
-                memArray[cols[j]].reset(new LogicalColumn);
-            else if (tabCol->m_type == TableColumn::TYPE_CATEGORICAL)
-                memArray[cols[j]].reset(new CategoricalColumn);
-            else
+            if (j >= cols.size())
+                continue;
+
+            TableColumn* tabCol = _table.getColumn(j);
+
+            if (!tabCol)
+                continue;
+
+            // Do we have to create a new column?
+            if (!memArray[cols[j]])
             {
-                NumeReKernel::issueWarning("In Memory::importTable(): TableColumn::ColumnType not implemented.");
+                if (tabCol->m_type == TableColumn::TYPE_VALUE)
+                    memArray[cols[j]].reset(new ValueColumn);
+                else if (tabCol->m_type == TableColumn::TYPE_DATETIME)
+                    memArray[cols[j]].reset(new DateTimeColumn);
+                else if (tabCol->m_type == TableColumn::TYPE_STRING)
+                    memArray[cols[j]].reset(new StringColumn);
+                else if (tabCol->m_type == TableColumn::TYPE_LOGICAL)
+                    memArray[cols[j]].reset(new LogicalColumn);
+                else if (tabCol->m_type == TableColumn::TYPE_CATEGORICAL)
+                    memArray[cols[j]].reset(new CategoricalColumn);
+                else
+                {
+                    NumeReKernel::issueWarning("In Memory::insertCopiedTable(): TableColumn::ColumnType not implemented.");
+                    continue;
+                }
+
+                memArray[cols[j]]->m_sHeadLine = tabCol->m_sHeadLine;
+            }
+            else if (tabCol->m_type != memArray[cols[j]]->m_type)
+            {
+                // Convert the column if the type does not fit
+                memArray[cols[j]].reset(memArray[cols[j]]->convert(TableColumn::TYPE_STRING));
+                memArray[cols[j]]->insert(lines, tabCol->convert(TableColumn::TYPE_STRING));
                 continue;
             }
-        }
 
-        memArray[cols[j]]->insert(lines, tabCol);
-        memArray[cols[j]]->m_sHeadLine = tabCol->m_sHeadLine;
+            // Common type: simply insert the data
+            memArray[cols[j]]->insert(lines, tabCol);
+        }
+    }
+    else
+    {
+        // Transpose the table
+        #pragma omp parallel for
+        for (size_t j = 0; j < _table.getLines(); j++)
+        {
+            if (j >= cols.size())
+                continue;
+
+            // If we have to create a column, we'll create a string column,
+            // otherwise we'll convert the current one to a string column
+            if (!memArray[cols[j]])
+            {
+                memArray[cols[j]].reset(new StringColumn);
+                memArray[cols[j]]->m_sHeadLine = TableColumn::getDefaultColumnHead(cols[j]);
+            }
+            else
+                memArray[cols[j]].reset(memArray[cols[j]]->convert(TableColumn::TYPE_STRING));
+
+            // There's no easier way to store the result because the
+            // table does not return rows as vectors
+            for (size_t i = 0; i < _table.getCols(); i++)
+            {
+                if (i >= lines.size())
+                    break;
+
+                memArray[cols[j]]->setValue(lines[i], _table.getValueAsInternalString(j, i));
+            }
+        }
     }
 
     // Try to convert string- to valuecolumns
