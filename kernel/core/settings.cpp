@@ -57,7 +57,7 @@ Settings::Settings() : Documentation()
     m_settings[SETTING_B_MASKDEFAULT] = SettingsValue(false);
     m_settings[SETTING_B_DECODEARGUMENTS] = SettingsValue(false);
     m_settings[SETTING_V_PRECISION] = SettingsValue(7u, 1u, 14u);
-    m_settings[SETTING_V_AUTOSAVE] = SettingsValue(30u, 0u, -1u);
+    m_settings[SETTING_V_AUTOSAVE] = SettingsValue(30u, 1u, -1u);
     m_settings[SETTING_V_WINDOW_X] = SettingsValue(140u, 0u, -1u, SettingsValue::HIDDEN);
     m_settings[SETTING_V_WINDOW_Y] = SettingsValue(34u, 0u, -1u, SettingsValue::HIDDEN);
     m_settings[SETTING_V_BUFFERSIZE] = SettingsValue(300u, 300u, 1000u, SettingsValue::IMMUTABLE | SettingsValue::SAVE);
