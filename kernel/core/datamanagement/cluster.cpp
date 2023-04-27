@@ -377,7 +377,7 @@ namespace NumeRe
             if (vClusterArray[i]->getType() == ClusterItem::ITEMTYPE_DOUBLE)
                 nBytes += sizeof(mu::value_type);
             else if (vClusterArray[i]->getType() == ClusterItem::ITEMTYPE_STRING)
-                nBytes += sizeof(char) * (vClusterArray[i]->getParserString().length()-2);
+                nBytes += sizeof(char) * (vClusterArray[i]->getParserString().capacity()-2);
         }
 
         return nBytes;

@@ -1589,9 +1589,9 @@ size_t StringColumn::getBytes() const
     size_t bytes = 0;
 
     for (const auto& val : m_data)
-        bytes += val.length() * sizeof(char);
+        bytes += val.capacity() * sizeof(char);
 
-    return bytes + m_sHeadLine.length() * sizeof(char);
+    return bytes + m_sHeadLine.capacity() * sizeof(char);
 }
 
 
@@ -2105,9 +2105,9 @@ size_t CategoricalColumn::getBytes() const
     size_t bytes = 0;
 
     for (const auto& val : m_categories)
-        bytes += val.length() * sizeof(char);
+        bytes += val.capacity() * sizeof(char);
 
-    return size() * sizeof(int) + bytes + m_sHeadLine.length() * sizeof(char);
+    return size() * sizeof(int) + bytes + m_sHeadLine.capacity() * sizeof(char);
 }
 
 
