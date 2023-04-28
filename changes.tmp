@@ -15,3 +15,4 @@ Fixed	The strange problem where using a comma inside of a string literal in a st
 Cleaned	The calculation of needed memory per table and cluster does now reflect better the actually needed memory.
 Fixed	Exporting to CSV files does now support line breaks in column headlines as well
 Fixed	"TAB().num" now also considers strings as valid values for the "num()" operation.
+Fixed	Improved the evaluation of string vectors with different number of elements.

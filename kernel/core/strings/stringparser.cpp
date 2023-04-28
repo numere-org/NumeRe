@@ -1416,14 +1416,14 @@ namespace NumeRe
         finalizeStack(rpnStack);
 
         // Dump the stack
-        //std::string sDump;
-        //
-        //for (size_t i = 0; i < rpnStack.size(); i++)
-        //{
-        //    sDump += "[" + rpnStack[i].m_data.to_string() + "]";
-        //}
-        //
-        //g_logger.info("RPNSTACK = " + sDump);
+        std::string sDump;
+
+        for (size_t i = 0; i < rpnStack.size(); i++)
+        {
+            sDump += "[" + rpnStack[i].m_data.to_string() + "]";
+        }
+
+        g_logger.info("RPNSTACK = " + sDump);
 
         // Nothing more to do. Return the stack
         return rpnStack;
@@ -1701,13 +1701,13 @@ namespace NumeRe
                 }
             }
 
-            //std::string stackTop;
-            //
-            //for (size_t i = 0; i < valueStack.top().size(); i++)
-            //    stackTop += valueStack.top().getRef(i).substr(0, 100) + ",";
-            //
-            //stackTop.pop_back();
-            //g_logger.info("STACK.TOP() = " + stackTop);
+            std::string stackTop;
+
+            for (size_t i = 0; i < valueStack.top().size(); i++)
+                stackTop += valueStack.top().getRef(i).substr(0, 100) + ",";
+
+            stackTop.pop_back();
+            g_logger.info("STACK.TOP() = " + stackTop);
             //g_logger.info("STACK.TOP() = " + valueStack.top().getRef(0).substr(0, 100));
         }
 

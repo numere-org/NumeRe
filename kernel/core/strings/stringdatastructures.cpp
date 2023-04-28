@@ -87,7 +87,7 @@ StringView StringVector::getVectorized(size_t i) const
 /////////////////////////////////////////////////
 mu::value_type StringVector::getNumericalVectorized(size_t i) const
 {
-    if (i >= size() && size() > 1)
+    if ((i >= size() && size() > 1) || !getVectorized(i).length())
         return NAN;
 
     if (is_string(i))
@@ -117,7 +117,7 @@ mu::value_type StringVector::getNumericalVectorized(size_t i) const
 /////////////////////////////////////////////////
 bool StringVector::getBooleanVectorized(size_t i) const
 {
-    if (i >= size() && size() > 1)
+    if ((i >= size() && size() > 1) || !getVectorized(i).length())
         return false;
 
     if (is_string(i))
@@ -834,8 +834,17 @@ StringVector StringVector::operator+(const StringVector& sVect) const
     {
         if (is_string(i) && sVect.is_string(i))
             vRet.getRef(i) = "\"" + (getVectorized(i) + sVect.getVectorized(i)) + "\"";
-        else
+        else if (i >= size() && i < sVect.size())
+            vRet.getRef(i) = sVect.is_string(i) ? "\"" + sVect.getVectorized(i) + "\"" : sVect.getVectorized(i).to_string();
+        else if (i < size() && i >= sVect.size())
+            vRet.getRef(i) = is_string(i) ? "\"" + getVectorized(i) + "\"" : getVectorized(i).to_string();
+        else if (!is_string(i) && !sVect.is_string(i))
             vRet.getRef(i) = getVectorized(i) + std::string("+") + sVect.getVectorized(i).to_string();
+        else
+            throw SyntaxError(SyntaxError::STRING_ERROR,
+                              (is_string(i) ? "\"" + getVectorized(i) + "\"" : getVectorized(i).to_string())
+                              + " + " + (sVect.is_string(i) ? "\"" + sVect.getVectorized(i) + "\"" : sVect.getVectorized(i).to_string()),
+                              SyntaxError::invalid_position, _lang.get("ERR_NR_3603_NOT_INCOMPATIBLE_TYPES"));
     }
 
     return vRet;
