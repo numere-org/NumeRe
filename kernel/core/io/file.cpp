@@ -2153,16 +2153,10 @@ namespace NumeRe
         // all its contents
         open(ios::out | ios::trunc);
 
-        // Write the table heads to the file
-        for (long long int j = 0; j < nCols; j++)
-        {
-            if (fileData->at(j))
-                fFileStream << fileData->at(j)->m_sHeadLine;
+        // Write the headers
+        writeHeader();
 
-            fFileStream << ",";
-        }
-
-        fFileStream << "\n";
+        // Set the desired output precision
         fFileStream.precision(nPrecFields);
 
         // Write the data to the file
@@ -2185,6 +2179,48 @@ namespace NumeRe
         }
 
         fFileStream.flush();
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Writes the column headlines
+    /// considering internal line breaks.
+    ///
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
+    void CommaSeparatedValues::writeHeader()
+    {
+        size_t nNumberOfHeadlines = 1u;
+
+        // Go through the column heads in memory, determine
+        // their cell extents and store the maximal value of
+        // the extents and the needed width for the numerical
+        // value
+        for (long long int j = 0; j < nCols; j++)
+        {
+            if (!fileData->at(j))
+                continue;
+
+            pair<size_t, size_t> pCellExtents = calculateCellExtents(fileData->at(j)->m_sHeadLine);
+
+            if (nNumberOfHeadlines < pCellExtents.second)
+                nNumberOfHeadlines = pCellExtents.second;
+        }
+
+        // Write the table heads to the file
+        for (size_t i = 0; i < nNumberOfHeadlines; i++)
+        {
+            for (long long int j = 0; j < nCols; j++)
+            {
+                if (fileData->at(j))
+                    fFileStream << getLineFromHead(j, i);
+
+                fFileStream << ",";
+            }
+
+            fFileStream << "\n";
+        }
     }
 
 

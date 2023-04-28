@@ -13,3 +13,5 @@ Fixed	Copying and moving of mixed-value tables is now possible again.
 Fixed	Using "Go to procedure" works now also with external procedures.
 Fixed	The strange problem where using a comma inside of a string literal in a string method like "str.fnd()" was resolved.
 Cleaned	The calculation of needed memory per table and cluster does now reflect better the actually needed memory.
+Fixed	Exporting to CSV files does now support line breaks in column headlines as well
+Fixed	"TAB().num" now also considers strings as valid values for the "num()" operation.
