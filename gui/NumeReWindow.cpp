@@ -312,7 +312,7 @@ bool MyApp::OnInit()
     // Create and initialize the main frame. Will also
     // include loading the configuration, loading existing
     // caches and preparing the editor.
-    NumeReWindow* NumeReMainFrame = new NumeReWindow("NumeRe: Framework für Numerische Rechnungen (v" + sVersion + ")", wxDefaultPosition, wxDefaultSize);
+    NumeReWindow* NumeReMainFrame = new NumeReWindow("NumeRe: Framework fÃ¼r Numerische Rechnungen (v" + sVersion + ")", wxDefaultPosition, wxDefaultSize);
 
     g_logger.debug("Starting DDE server instance.");
     // Create the DDE server for the first (main)
@@ -1915,12 +1915,14 @@ void NumeReWindow::OnMenuEvent(wxCommandEvent &event)
 
                 if (result == wxCANCEL)
                     return;
-            }
-
-            if(m_book->getCurrentEditor()->HasBeenSaved() && m_book->getCurrentEditor()->getFileType() == FILE_NPRC || m_book->getCurrentEditor()->getFileType() == FILE_NLYT || m_book->getCurrentEditor()->getFileType() == FILE_NSCR)
+  
+            if (m_book->getCurrentEditor()->getFileType() == FILE_NPRC 
+                || m_book->getCurrentEditor()->getFileType() == FILE_NLYT 
+                || m_book->getCurrentEditor()->getFileType() == FILE_NSCR)
             {
                 m_terminal->UpdateLibrary();
             }
+          }
 
             if (m_book->getCurrentEditor()->getFileType() == FILE_TEXSOURCE)
                 compileLaTeX();
@@ -3529,11 +3531,13 @@ void NumeReWindow::EvaluateTab()
 
         if (result == wxCANCEL)
             return;
-    }
 
-    if(m_book->getCurrentEditor()->HasBeenSaved() && m_book->getCurrentEditor()->getFileType() == FILE_NPRC || m_book->getCurrentEditor()->getFileType() == FILE_NLYT || m_book->getCurrentEditor()->getFileType() == FILE_NSCR)
-    {
-        m_terminal->UpdateLibrary();
+        if (m_book->getCurrentEditor()->getFileType() == FILE_NPRC 
+            || m_book->getCurrentEditor()->getFileType() == FILE_NLYT 
+            || m_book->getCurrentEditor()->getFileType() == FILE_NSCR)
+        {
+            m_terminal->UpdateLibrary();
+        }
     }
 
     std::string command = replacePathSeparator((edit->GetFileName()).GetFullPath().ToStdString());
@@ -5673,7 +5677,7 @@ void NumeReWindow::UpdateVarViewer()
 /////////////////////////////////////////////////
 void NumeReWindow::UpdateWindowTitle(const wxString& filename)
 {
-    wxTopLevelWindow::SetTitle(filename + " - NumeRe: Framework für Numerische Rechnungen (v " + sVersion + ")");
+    wxTopLevelWindow::SetTitle(filename + " - NumeRe: Framework fÃ¼r Numerische Rechnungen (v " + sVersion + ")");
 }
 
 
