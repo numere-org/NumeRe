@@ -17,3 +17,5 @@ Fixed	Exporting to CSV files does now support line breaks in column headlines as
 Fixed	"TAB().num" now also considers strings as valid values for the "num()" operation.
 Fixed	Improved the evaluation of string vectors with different number of elements.
 Fixed	Improved performance when copying a large table out of the table viewer.
+Fixed	It's now possible to deactivate the table auto-save by setting the interval to zero
+
