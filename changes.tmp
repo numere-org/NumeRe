@@ -12,4 +12,4 @@ Fixed	Exporting of tables containing multiple headrows to XLS format is possible
 Fixed	Copying and moving of mixed-value tables is now possible again.
 Fixed	Using "Go to procedure" works now also with external procedures.
 Fixed	It's now possible to deactivate the table auto-save by setting the interval to zero
-Fixed	Bug when executing a change on numere procedure after saving it
+Fixed	Procedures execute now always the latest changes without the need of waiting a few seconds
