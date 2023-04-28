@@ -125,6 +125,7 @@ namespace NumeRe
             std::string getCleanHeadPart(size_t i, size_t part = 0) const;
             mu::value_type getValue(size_t i, size_t j) const;
             std::string getValueAsString(size_t i, size_t j) const;
+            std::string getValueAsInternalString(size_t i, size_t j) const;
             TableColumn* getColumn(size_t j) const;
             TableColumn::ColumnType getColumnType(size_t j) const;
             TableColumnArray& getTableData() {return vTableData;};

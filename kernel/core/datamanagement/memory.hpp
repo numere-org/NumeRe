@@ -172,6 +172,7 @@ class Memory : public Sorter
         void deleteBulk(const VectorIndex& _vLine, const VectorIndex& _vCol);
         NumeRe::Table extractTable(const std::string& _sTable, const VectorIndex& lines, const VectorIndex& cols);
         void importTable(NumeRe::Table _table, const VectorIndex& lines, const VectorIndex& cols);
+        void insertCopiedTable(NumeRe::Table _table, const VectorIndex& lines, const VectorIndex& cols, bool transpose);
 
         // MAFIMPLEMENTATIONS
         mu::value_type std(const VectorIndex& _vLine, const VectorIndex& _vCol) const;

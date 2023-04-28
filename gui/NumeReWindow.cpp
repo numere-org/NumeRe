@@ -3127,8 +3127,8 @@ void NumeReWindow::NewFile(FileFilterType _filetype, const wxString& defaultfile
     }
     else
     {
-        wxString filename;
-        wxString folder;
+        std::string filename;
+        std::string folder;
         wxTextEntryDialog* textentry;
 
         // If no default file name was passed, ask
@@ -3157,63 +3157,39 @@ void NumeReWindow::NewFile(FileFilterType _filetype, const wxString& defaultfile
             delete textentry;
         }
         else
-            filename = defaultfilename;
+            filename = defaultfilename.ToStdString();
 
         // Remove the dollar sign, if there is one
         if (filename.find('$') != std::string::npos)
             filename.erase(filename.find('$'),1);
 
-        // Remove the path parts from the file name
-        // These are either the tilde, the slash or the
-        // backslash
-        if (filename.find('~') != std::string::npos)
-        {
-            folder = filename.substr(0, filename.rfind('~')+1);
-            filename.erase(0, filename.rfind('~')+1);
-        }
+        // Replace all separators to UNIX separators
+        replaceAll(filename, "~", "/");
+        replaceAll(filename, "\\", "/");
 
+        // Remove the path parts from the file name
         if (filename.find('/') != std::string::npos)
         {
-            if (folder.length())
-                folder += "/" + filename.substr(0, filename.rfind('/')+1);
-            else
-                folder = filename.substr(0, filename.rfind('/')+1);
-
+            folder = filename.substr(0, filename.rfind('/')+1);
             filename.erase(0, filename.rfind('/')+1);
         }
 
-        if (filename.find('\\') != std::string::npos)
-        {
-            if (folder.length())
-                folder += "/" + filename.substr(0, filename.rfind('\\')+1);
-            else
-                folder = filename.substr(0, filename.rfind('\\')+1);
+        std::vector<std::string> vPaths = m_terminal->getPathSettings();
+        bool isExternal = folder.substr(0, vPaths[PROCPATH].length()) != vPaths[PROCPATH];
 
-            filename.erase(0, filename.rfind('\\')+1);
-        }
-
-        // Replace all path separators
-        if (folder.length())
-        {
-            while (folder.find('~') != std::string::npos)
-                folder[folder.find('~')] = '\\';
-            while (folder.find('/') != std::string::npos)
-                folder[folder.find('/')] = '\\';
-        }
-
-        if (folder == "main\\" && _filetype == FILE_NPRC)
+        if (folder == "main/" && _filetype == FILE_NPRC)
             folder.clear();
-        else
-            folder.insert(0,"\\");
+        else if (!isExternal)
+            folder.insert(0, "/");
 
         // Clean the file and folder names for procedures -
-        // we only allow alphanumeric characters
-        if (_filetype == FILE_NPRC)
+        // we only allow alphanumeric characters in non-external procedures
+        if (_filetype == FILE_NPRC && !isExternal)
         {
-            // Clean the folders
-            for (size_t i = 0; i < folder.length(); i++)
+            // Clean the folders after the root path
+            for (size_t i = vPaths[PROCPATH].length(); i < folder.length(); i++)
             {
-                if (!isalnum(folder[i]) && folder[i] != '_' && folder[i] != '\\' && folder[i] != ':')
+                if (!isalnum(folder[i]) && folder[i] != '_' && folder[i] != '/' && folder[i] != ':')
                     folder[i] = '_';
             }
 
@@ -3260,8 +3236,6 @@ void NumeReWindow::NewFile(FileFilterType _filetype, const wxString& defaultfile
         else if (_filetype == FILE_NPRC)
             filename += ".nprc";
 
-        std::vector<std::string> vPaths = m_terminal->getPathSettings();
-
         m_fileNum += 1;
 
         // Create a new editor
@@ -3274,7 +3248,7 @@ void NumeReWindow::NewFile(FileFilterType _filetype, const wxString& defaultfile
         if (_filetype == FILE_NSCR || _filetype == FILE_PLUGIN || _filetype == FILE_NLYT)
             edit->SetFilename(wxFileName(vPaths[SCRIPTPATH] + folder, filename), false);
         else if (_filetype == FILE_NPRC)
-            edit->SetFilename(wxFileName(vPaths[PROCPATH] + folder, filename), false);
+            edit->SetFilename(isExternal ? wxFileName(folder, filename) : wxFileName(vPaths[PROCPATH] + folder, filename), false);
         else
             edit->SetFilename(wxFileName(vPaths[SAVEPATH] + folder, filename), false);
 
