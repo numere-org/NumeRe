@@ -834,9 +834,9 @@ StringVector StringVector::operator+(const StringVector& sVect) const
     {
         if (is_string(i) && sVect.is_string(i))
             vRet.getRef(i) = "\"" + (getVectorized(i) + sVect.getVectorized(i)) + "\"";
-        else if (i >= size() && i < sVect.size())
+        else if (i >= size() && size() > 1 && i < sVect.size())
             vRet.getRef(i) = sVect.is_string(i) ? "\"" + sVect.getVectorized(i) + "\"" : sVect.getVectorized(i).to_string();
-        else if (i < size() && i >= sVect.size())
+        else if (i < size() && i >= sVect.size() && sVect.size() > 1)
             vRet.getRef(i) = is_string(i) ? "\"" + getVectorized(i) + "\"" : getVectorized(i).to_string();
         else if (!is_string(i) && !sVect.is_string(i))
             vRet.getRef(i) = getVectorized(i) + std::string("+") + sVect.getVectorized(i).to_string();
