@@ -12,3 +12,4 @@ Fixed	Exporting of tables containing multiple headrows to XLS format is possible
 Fixed	Copying and moving of mixed-value tables is now possible again.
 Fixed	Using "Go to procedure" works now also with external procedures.
 Fixed	Detection of table column head rows has been improved for XLSX and ODS files.
+Fixed	It's now possible to deactivate the table auto-save by setting the interval to zero
