@@ -342,9 +342,9 @@ namespace NumeRe
                 else
                 {
                     if (fileData->at(j)->m_type == TableColumn::TYPE_VALUE)
-                        fFileStream << toString(fileData->at(j)->getValue(i), nPrecFields);
+                        fFileStream << "  " + toString(fileData->at(j)->getValue(i), nPrecFields);
                     else
-                        fFileStream << fileData->at(j)->getValueAsInternalString(i);
+                        fFileStream << "  " + fileData->at(j)->getValueAsInternalString(i);
                 }
             }
 
