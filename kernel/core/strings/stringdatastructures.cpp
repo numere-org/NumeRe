@@ -828,15 +828,18 @@ std::vector<mu::value_type> StringVector::get_numerical() const
 /////////////////////////////////////////////////
 StringVector StringVector::operator+(const StringVector& sVect) const
 {
-    StringVector vRet(std::max(size(), sVect.size()));
+    size_t thisSize = size();
+    size_t otherSize = sVect.size();
+
+    StringVector vRet(std::max(thisSize, otherSize));
 
     for (size_t i = 0; i < vRet.size(); i++)
     {
         if (is_string(i) && sVect.is_string(i))
             vRet.getRef(i) = "\"" + (getVectorized(i) + sVect.getVectorized(i)) + "\"";
-        else if (i >= size() && size() > 1 && i < sVect.size())
+        else if (i >= thisSize && thisSize > 1 && i < otherSize)
             vRet.getRef(i) = sVect.is_string(i) ? "\"" + sVect.getVectorized(i) + "\"" : sVect.getVectorized(i).to_string();
-        else if (i < size() && i >= sVect.size() && sVect.size() > 1)
+        else if (i < thisSize && i >= otherSize && otherSize > 1)
             vRet.getRef(i) = is_string(i) ? "\"" + getVectorized(i) + "\"" : getVectorized(i).to_string();
         else if (!is_string(i) && !sVect.is_string(i))
             vRet.getRef(i) = getVectorized(i) + std::string("+") + sVect.getVectorized(i).to_string();

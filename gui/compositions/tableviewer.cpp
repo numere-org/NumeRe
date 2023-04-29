@@ -560,7 +560,6 @@ wxString TableViewer::replaceCtrlChars(const wxString& sStr)
 void TableViewer::copyContents()
 {
     wxString sSelection;
-    g_logger.info("Start copying");
 
     // Simple case: only one cell selected
     if (!(GetSelectedCells().size() || GetSelectedCols().size() || GetSelectedRows().size() || GetSelectionBlockTopLeft().size() || GetSelectionBlockBottomRight().size()))
@@ -665,16 +664,12 @@ void TableViewer::copyContents()
     if (!sSelection.length())
         return;
 
-    g_logger.info("Storing in clipboard");
     // Open the clipboard and store the selection
     if (wxTheClipboard->Open())
     {
         wxTheClipboard->SetData(new wxTextDataObject(sSelection));
         wxTheClipboard->Close();
     }
-    g_logger.info("Done");
-
-    return;
 }
 
 
