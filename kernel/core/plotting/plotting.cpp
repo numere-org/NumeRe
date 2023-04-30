@@ -4101,6 +4101,7 @@ void Plot::extractDataValues(const std::vector<std::string>& vDataPlots)
 /////////////////////////////////////////////////
 void Plot::createDataLegends()
 {
+#warning TODO (numere#3#04/24/23): Rework this function to follow more modern approaches
     // Examine all data labels
     for (size_t i = 0; i < m_manager.assets.size(); i++)
     {
@@ -4186,10 +4187,10 @@ void Plot::createDataLegends()
 
             // Parse the single arguments to extract the corresponding
             // headline elements
-            if (sArg_2 == "<<empty>>" && sArg_3 == "<<empty>>" && _pInfo.sCommand != "plot3d")
+            if (sArg_2 == "<<empty>>" && sArg_3 == "<<empty>>")
             {
                 // Only one index or an index vector
-                sTemp = "\"" + constructDataLegendElement(sArg_1, sTableName) + "\"";
+                sTemp = "\"" + constructDataLegendElement(sArg_1, sTableName, _pInfo.sCommand != "plot3d") + "\"";
             }
             else if (sArg_2.length())
             {
@@ -4339,10 +4340,11 @@ void Plot::createDataLegends()
 ///
 /// \param sColumnIndices string&
 /// \param sTableName const string&
+/// \param useBrackets bool
 /// \return string
 ///
 /////////////////////////////////////////////////
-string Plot::constructDataLegendElement(string& sColumnIndices, const string& sTableName)
+string Plot::constructDataLegendElement(string& sColumnIndices, const string& sTableName, bool useBrackets)
 {
     if (NumeReKernel::getInstance()->getMemoryManager().containsTablesOrClusters(sColumnIndices))
         getDataElements(sColumnIndices, _parser, NumeReKernel::getInstance()->getMemoryManager(), NumeReKernel::getInstance()->getSettings());
@@ -4358,8 +4360,8 @@ string Plot::constructDataLegendElement(string& sColumnIndices, const string& sT
     if (nResults == 1)
         return _data.getTopHeadLineElement(intCast(v[0]) - 1, sTableName);
 
-    string sFirst = "[";
-    string sLast = "]";
+    string sFirst = useBrackets ? "[" : "";
+    string sLast = useBrackets ? "]" : "";
     char cSep = ',';
     int nStart = 0;
 

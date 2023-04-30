@@ -328,7 +328,7 @@ int ValueColumn::compare(int i, int j, bool unused) const
 /////////////////////////////////////////////////
 bool ValueColumn::isValid(int elem) const
 {
-    if (elem >= (int)m_data.size() || mu::isnan(m_data[elem]))
+    if (elem >= (int)m_data.size() || elem < 0 || mu::isnan(m_data[elem]))
         return false;
 
     return true;
@@ -743,7 +743,7 @@ int DateTimeColumn::compare(int i, int j, bool unused) const
 /////////////////////////////////////////////////
 bool DateTimeColumn::isValid(int elem) const
 {
-    if (elem >= (int)m_data.size() || std::isnan(m_data[elem]))
+    if (elem >= (int)m_data.size() || elem < 0 || std::isnan(m_data[elem]))
         return false;
 
     return true;
@@ -1147,7 +1147,7 @@ int LogicalColumn::compare(int i, int j, bool unused) const
 /////////////////////////////////////////////////
 bool LogicalColumn::isValid(int elem) const
 {
-    if (elem >= (int)m_data.size() || m_data[elem] == LOGICAL_NAN)
+    if (elem >= (int)m_data.size() || elem < 0 || m_data[elem] == LOGICAL_NAN)
         return false;
 
     return true;
@@ -1554,7 +1554,7 @@ int StringColumn::compare(int i, int j, bool caseinsensitive) const
 /////////////////////////////////////////////////
 bool StringColumn::isValid(int elem) const
 {
-    if (elem >= (int)m_data.size() || !m_data[elem].length())
+    if (elem >= (int)m_data.size() || elem < 0 || !m_data[elem].length())
         return false;
 
     return true;
@@ -1589,9 +1589,9 @@ size_t StringColumn::getBytes() const
     size_t bytes = 0;
 
     for (const auto& val : m_data)
-        bytes += val.length() * sizeof(char);
+        bytes += val.capacity() * sizeof(char);
 
-    return bytes + m_sHeadLine.length() * sizeof(char);
+    return bytes + m_sHeadLine.capacity() * sizeof(char);
 }
 
 
@@ -2070,7 +2070,7 @@ int CategoricalColumn::compare(int i, int j, bool caseinsensitive) const
 /////////////////////////////////////////////////
 bool CategoricalColumn::isValid(int elem) const
 {
-    if (elem >= (int)m_data.size() || m_data[elem] == CATEGORICAL_NAN)
+    if (elem >= (int)m_data.size() || elem < 0 || m_data[elem] == CATEGORICAL_NAN)
         return false;
 
     return true;
@@ -2105,9 +2105,9 @@ size_t CategoricalColumn::getBytes() const
     size_t bytes = 0;
 
     for (const auto& val : m_categories)
-        bytes += val.length() * sizeof(char);
+        bytes += val.capacity() * sizeof(char);
 
-    return size() * sizeof(int) + bytes + m_sHeadLine.length() * sizeof(char);
+    return size() * sizeof(int) + bytes + m_sHeadLine.capacity() * sizeof(char);
 }
 
 

@@ -841,7 +841,7 @@ void Memory::copyElementsInto(vector<mu::value_type>* vTarget, const VectorIndex
 bool Memory::isValidElement(size_t _nLine, size_t _nCol) const
 {
     if (_nCol < memArray.size() && _nCol >= 0 && memArray[_nCol])
-        return !mu::isnan(memArray[_nCol]->getValue(_nLine));
+        return memArray[_nCol]->isValid(_nLine); // THIS CHANGE MIGHT HAVE BROKEN OTHER THINGS
 
     return false;
 }
@@ -2405,7 +2405,7 @@ mu::value_type Memory::num(const VectorIndex& _vLine, const VectorIndex& _vCol) 
 
         for (unsigned int i = 0; i < _vLine.size(); i++)
         {
-            if (_vLine[i] < 0 || _vLine[i] >= elems || mu::isnan(readMem(_vLine[i], _vCol[j])))
+            if (_vLine[i] < 0 || _vLine[i] >= elems || !isValidElement(_vLine[i], _vCol[j]))
                 nInvalid++;
         }
     }

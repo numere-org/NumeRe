@@ -23,6 +23,7 @@
 #include "../../kernel/core/utils/tools.hpp"
 #include "../../kernel/core/datamanagement/tablecolumn.hpp"
 #include "../../kernel/core/io/file.hpp"
+#include "../../kernel/core/io/logger.hpp"
 #include <wx/clipbrd.h>
 #include <wx/dataobj.h>
 #include <wx/tokenzr.h>
@@ -562,20 +563,25 @@ void TableViewer::copyContents()
 
     // Simple case: only one cell selected
     if (!(GetSelectedCells().size() || GetSelectedCols().size() || GetSelectedRows().size() || GetSelectionBlockTopLeft().size() || GetSelectionBlockBottomRight().size()))
-        sSelection = copyCell(this->GetCursorRow(), this->GetCursorColumn());
+        sSelection = GetCellValue(GetCursorRow(), GetCursorColumn());
 
     // More diffcult: more than one cell selected
     if (GetSelectedCells().size())
     {
         // Non-block selection
-        wxGridCellCoordsArray cellarray = GetSelectedCells();
-
-        for (size_t i = 0; i < cellarray.size(); i++)
+        if (isGridNumeReTable)
+            sSelection = static_cast<GridNumeReTable*>(GetTable())->serialize(wxGridCellCoordsContainer(GetSelectedCells()));
+        else
         {
-            sSelection += copyCell(cellarray[i].GetRow(), cellarray[i].GetCol());
+            wxGridCellCoordsArray cellarray = GetSelectedCells();
 
-            if (i < cellarray.size()-1)
-                sSelection += "\t";
+            for (size_t i = 0; i < cellarray.size(); i++)
+            {
+                sSelection += GetCellValue(cellarray[i]);
+
+                if (i < cellarray.size()-1)
+                    sSelection += "\t";
+            }
         }
     }
     else if (GetSelectionBlockTopLeft().size() && GetSelectionBlockBottomRight().size())
@@ -584,56 +590,74 @@ void TableViewer::copyContents()
         wxGridCellCoordsArray topleftarray = GetSelectionBlockTopLeft();
         wxGridCellCoordsArray bottomrightarray = GetSelectionBlockBottomRight();
 
-        for (int i = topleftarray[0].GetRow(); i <= bottomrightarray[0].GetRow(); i++)
+        if (isGridNumeReTable)
+            sSelection = static_cast<GridNumeReTable*>(GetTable())->serialize(wxGridCellCoordsContainer(topleftarray[0],
+                                                                                                        bottomrightarray[0]));
+        else
         {
-            for (int j = topleftarray[0].GetCol(); j <= bottomrightarray[0].GetCol(); j++)
+            for (int i = topleftarray[0].GetRow(); i <= bottomrightarray[0].GetRow(); i++)
             {
-                sSelection += copyCell(i,j);
+                for (int j = topleftarray[0].GetCol(); j <= bottomrightarray[0].GetCol(); j++)
+                {
+                    sSelection += GetCellValue(i,j);
 
-                if (j < bottomrightarray[0].GetCol())
-                    sSelection += "\t";
+                    if (j < bottomrightarray[0].GetCol())
+                        sSelection += "\t";
+                }
+
+                if (i < bottomrightarray[0].GetRow())
+                    sSelection += "\n";
             }
-
-            if (i < bottomrightarray[0].GetRow())
-                sSelection += "\n";
         }
     }
     else if (GetSelectedCols().size())
     {
         // Multiple selected columns
-        wxArrayInt colarray = GetSelectedCols();
-
-        for (int i = 0; i < GetRows(); i++)
+        if (isGridNumeReTable)
+            sSelection = static_cast<GridNumeReTable*>(GetTable())->serialize(wxGridCellCoordsContainer(GetSelectedCols(),
+                                                                                                        GetRows()-1, false));
+        else
         {
-            for (size_t j = 0; j < colarray.size(); j++)
+            wxArrayInt colarray = GetSelectedCols();
+
+            for (int i = 0; i < GetRows(); i++)
             {
-                sSelection += copyCell(i, colarray[j]);
+                for (size_t j = 0; j < colarray.size(); j++)
+                {
+                    sSelection += GetCellValue(i, colarray[j]);
 
-                if (j < colarray.size()-1)
-                    sSelection += "\t";
+                    if (j < colarray.size()-1)
+                        sSelection += "\t";
+                }
+
+                if (i < GetRows()-1)
+                    sSelection += "\n";
             }
-
-            if (i < GetRows()-1)
-                sSelection += "\n";
         }
     }
     else if (GetSelectedRows().size())
     {
         // Multiple selected rows
-        wxArrayInt rowarray = GetSelectedRows();
-
-        for (size_t i = 0; i < rowarray.size(); i++)
+        if (isGridNumeReTable)
+            sSelection = static_cast<GridNumeReTable*>(GetTable())->serialize(wxGridCellCoordsContainer(GetSelectedRows(),
+                                                                                                        GetCols()-1, true));
+        else
         {
-            for (int j = 0; j < GetCols(); j++)
+            wxArrayInt rowarray = GetSelectedRows();
+
+            for (size_t i = 0; i < rowarray.size(); i++)
             {
-                sSelection += copyCell(rowarray[i], j);
+                for (int j = 0; j < GetCols(); j++)
+                {
+                    sSelection += GetCellValue(rowarray[i], j);
 
-                if (j < GetCols()-1)
-                    sSelection += "\t";
+                    if (j < GetCols()-1)
+                        sSelection += "\t";
+                }
+
+                if (i < rowarray.size()-1)
+                    sSelection += "\n";
             }
-
-            if (i < rowarray.size()-1)
-                sSelection += "\n";
         }
     }
 
@@ -646,8 +670,6 @@ void TableViewer::copyContents()
         wxTheClipboard->SetData(new wxTextDataObject(sSelection));
         wxTheClipboard->Close();
     }
-
-    return;
 }
 
 
@@ -1238,22 +1260,6 @@ void TableViewer::createMenuBar()
 
     wxFrame* parFrame = m_parentPanel->getFrame();
     parFrame->Bind(wxEVT_MENU, &TableViewer::OnMenu, this);
-}
-
-
-/////////////////////////////////////////////////
-/// \brief This member function returns the
-/// contents of the selected cells and replaces
-/// whitespaces with underscores on-the-fly.
-///
-/// \param row int
-/// \param col int
-/// \return wxString
-///
-/////////////////////////////////////////////////
-wxString TableViewer::copyCell(int row, int col)
-{
-    return this->GetCellValue(row, col);
 }
 
 

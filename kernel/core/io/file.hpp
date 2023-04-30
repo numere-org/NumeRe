@@ -1687,6 +1687,7 @@ namespace NumeRe
         private:
             void readFile();
             void writeFile();
+            void writeHeader();
             char findSeparator(const std::vector<std::string>& vTextData);
             void countColumns(const std::vector<std::string>& vTextData, char& cSep);
 

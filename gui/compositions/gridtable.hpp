@@ -77,6 +77,7 @@ class GridNumeReTable : public wxGridTableBase
         double max(const wxGridCellCoordsContainer& coords) const;
         mu::value_type avg(const wxGridCellCoordsContainer& coords) const;
         mu::value_type sum(const wxGridCellCoordsContainer& coords) const;
+        std::string serialize(const wxGridCellCoordsContainer& coords) const;
 
         std::vector<int> getColumnTypes() const;
         std::vector<std::string> getCategories(int col) const;
