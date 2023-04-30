@@ -1917,7 +1917,9 @@ void NumeReWindow::OnMenuEvent(wxCommandEvent &event)
                     return;
             }
 
-            if(m_book->getCurrentEditor()->HasBeenSaved() && m_book->getCurrentEditor()->getFileType() == FILE_NPRC || m_book->getCurrentEditor()->getFileType() == FILE_NLYT || m_book->getCurrentEditor()->getFileType() == FILE_NSCR)
+            if (m_book->getCurrentEditor()->getFileType() == FILE_NPRC
+                || m_book->getCurrentEditor()->getFileType() == FILE_NLYT
+                || m_book->getCurrentEditor()->getFileType() == FILE_NSCR)
             {
                 m_terminal->UpdateLibrary();
             }
@@ -3531,7 +3533,9 @@ void NumeReWindow::EvaluateTab()
             return;
     }
 
-    if(m_book->getCurrentEditor()->HasBeenSaved() && m_book->getCurrentEditor()->getFileType() == FILE_NPRC || m_book->getCurrentEditor()->getFileType() == FILE_NLYT || m_book->getCurrentEditor()->getFileType() == FILE_NSCR)
+    if (m_book->getCurrentEditor()->getFileType() == FILE_NPRC
+        || m_book->getCurrentEditor()->getFileType() == FILE_NLYT
+        || m_book->getCurrentEditor()->getFileType() == FILE_NSCR)
     {
         m_terminal->UpdateLibrary();
     }
