@@ -11,5 +11,7 @@ Fixed	Issue in dependency viewer, when clicking at empty space, is now fixed
 Fixed	Exporting of tables containing multiple headrows to XLS format is possible again.
 Fixed	Copying and moving of mixed-value tables is now possible again.
 Fixed	Using "Go to procedure" works now also with external procedures.
-Fixed	Downloading of zip files now works as expected.
+Fixed	Using an index vector for table columns within "plot3d" now works as expected.
 Fixed	It's now possible to deactivate the table auto-save by setting the interval to zero
+Fixed	Detection of table column head rows has been improved for XLSX and ODS files.
+Fixed	Downloading of zip files now works as expected.
