@@ -15,3 +15,10 @@ Fixed	Using an index vector for table columns within "plot3d" now works as expec
 Fixed	It's now possible to deactivate the table auto-save by setting the interval to zero
 Fixed	Detection of table column head rows has been improved for XLSX and ODS files.
 Fixed	Downloading of zip files now works as expected.
+Fixed	The strange problem where using a comma inside of a string literal in a string method like "str.fnd()" was resolved.
+Cleaned	The calculation of needed memory per table and cluster does now reflect better the actually needed memory.
+Fixed	Exporting to CSV files does now support line breaks in column headlines as well
+Fixed	"TAB().num" now also considers strings as valid values for the "num()" operation.
+Fixed	Improved the evaluation of string vectors with different number of elements.
+Fixed	Improved performance when copying a large table out of the table viewer.
+Fixed	It's now possible to deactivate the table auto-save by setting the interval to zero

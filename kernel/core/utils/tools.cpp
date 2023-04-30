@@ -3890,15 +3890,22 @@ static void replaceSearchMethods(string& sLine, size_t nPos, size_t nFinalPos, c
         sArgument.insert(sArgument.length()-1, ", " + sReplacement + "");
     else
     {
+        // If we have a comma, it could be part of the only argument,
+        // so we remove all parentheses first and recombine everything
+        // afterwards
         string sTemp = "(";
-        sArgument.erase(0,1);
+        sArgument.erase(0, 1);
+        sArgument.pop_back();
         sTemp += getNextArgument(sArgument, true);
         sTemp += ", " + sReplacement;
 
-        if (sArgument[sArgument.find_first_not_of(' ')] == ')')
+        // If the argument now has no length, it was the only one
+        // so simply close the parenthesis. Otherwise append the
+        // missing arguments and then close the parenthesis
+        if (!sArgument.length())
             sArgument = sTemp + ")";
         else
-            sArgument = sTemp + ", " + sArgument;
+            sArgument = sTemp + ", " + sArgument + ")";
     }
 
     // Replace the method with its standard function signature

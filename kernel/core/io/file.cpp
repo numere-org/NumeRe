@@ -342,9 +342,9 @@ namespace NumeRe
                 else
                 {
                     if (fileData->at(j)->m_type == TableColumn::TYPE_VALUE)
-                        fFileStream << toString(fileData->at(j)->getValue(i), nPrecFields);
+                        fFileStream << "  " + toString(fileData->at(j)->getValue(i), nPrecFields);
                     else
-                        fFileStream << fileData->at(j)->getValueAsInternalString(i);
+                        fFileStream << "  " + fileData->at(j)->getValueAsInternalString(i);
                 }
             }
 
@@ -2153,16 +2153,10 @@ namespace NumeRe
         // all its contents
         open(ios::out | ios::trunc);
 
-        // Write the table heads to the file
-        for (long long int j = 0; j < nCols; j++)
-        {
-            if (fileData->at(j))
-                fFileStream << fileData->at(j)->m_sHeadLine;
+        // Write the headers
+        writeHeader();
 
-            fFileStream << ",";
-        }
-
-        fFileStream << "\n";
+        // Set the desired output precision
         fFileStream.precision(nPrecFields);
 
         // Write the data to the file
@@ -2185,6 +2179,48 @@ namespace NumeRe
         }
 
         fFileStream.flush();
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Writes the column headlines
+    /// considering internal line breaks.
+    ///
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
+    void CommaSeparatedValues::writeHeader()
+    {
+        size_t nNumberOfHeadlines = 1u;
+
+        // Go through the column heads in memory, determine
+        // their cell extents and store the maximal value of
+        // the extents and the needed width for the numerical
+        // value
+        for (long long int j = 0; j < nCols; j++)
+        {
+            if (!fileData->at(j))
+                continue;
+
+            pair<size_t, size_t> pCellExtents = calculateCellExtents(fileData->at(j)->m_sHeadLine);
+
+            if (nNumberOfHeadlines < pCellExtents.second)
+                nNumberOfHeadlines = pCellExtents.second;
+        }
+
+        // Write the table heads to the file
+        for (size_t i = 0; i < nNumberOfHeadlines; i++)
+        {
+            for (long long int j = 0; j < nCols; j++)
+            {
+                if (fileData->at(j))
+                    fFileStream << getLineFromHead(j, i);
+
+                fFileStream << ",";
+            }
+
+            fFileStream << "\n";
+        }
     }
 
 
@@ -3785,14 +3821,25 @@ namespace NumeRe
         // Get a pointer to this sheet
         _sheet = _excel.GetWorksheet(0u);
 
+        // Try to pre-allocate to improve speed
+        _cell = _sheet->Cell(nRows, nCols-1); // includes the headline
+
+        if (!_cell)
+            throw SyntaxError(SyntaxError::CANNOT_SAVE_FILE, sFileName, SyntaxError::invalid_position, sFileName);
+
         // Write the headlines in the first row
         for (long long int j = 0; j < nCols; j++)
         {
+            if (!fileData->at(j))
+                continue;
+
             // Get the current cell and the headline string
             _cell = _sheet->Cell(0u, j);
 
-            if (fileData->at(j))
-                sHeadLine = fileData->at(j)->m_sHeadLine;
+            if (!_cell)
+                throw SyntaxError(SyntaxError::CANNOT_SAVE_FILE, sFileName, SyntaxError::invalid_position, sFileName);
+
+            sHeadLine = fileData->at(j)->m_sHeadLine;
 
             // Replace newlines with the corresponding character code
             for (size_t i = 0; i < sHeadLine.length(); i++)
@@ -3806,20 +3853,23 @@ namespace NumeRe
         }
 
         // Now write the actual table
-        for (long long int i = 0; i < nRows; i++)
+        for (long long int j = 0; j < nCols; j++)
         {
-            for (long long int j = 0; j < nCols; j++)
+            if (!fileData->at(j))
+                continue;
+
+            for (long long int i = 0; i < nRows; i++)
             {
+                // Write the cell contents, if the data table contains valid data
+                // otherwise clear the cell
+                if (!fileData->at(j)->isValid(i))
+                    continue;
+
                 // Get the current cell (skip over the first row, because it contains the headline)
                 _cell = _sheet->Cell(1 + i, j);
 
-                // Write the cell contents, if the data table contains valid data
-                // otherwise clear the cell
-                if (!fileData->at(j) || !fileData->at(j)->isValid(i))
-                {
-                    _cell->EraseContents();
-                    continue;
-                }
+                if (!_cell)
+                    throw SyntaxError(SyntaxError::CANNOT_SAVE_FILE, sFileName, SyntaxError::invalid_position, sFileName);
 
                 if (fileData->at(j)->m_type == TableColumn::TYPE_VALUE || fileData->at(j)->m_type == TableColumn::TYPE_LOGICAL)
                     _cell->SetDouble(fileData->at(j)->getValue(i).real());
