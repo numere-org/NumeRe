@@ -312,7 +312,7 @@ bool MyApp::OnInit()
     // Create and initialize the main frame. Will also
     // include loading the configuration, loading existing
     // caches and preparing the editor.
-    NumeReWindow* NumeReMainFrame = new NumeReWindow("NumeRe: Framework fÃ¼r Numerische Rechnungen (v" + sVersion + ")", wxDefaultPosition, wxDefaultSize);
+    NumeReWindow* NumeReMainFrame = new NumeReWindow("NumeRe: Framework für Numerische Rechnungen (v" + sVersion + ")", wxDefaultPosition, wxDefaultSize);
 
     g_logger.debug("Starting DDE server instance.");
     // Create the DDE server for the first (main)
@@ -1916,13 +1916,13 @@ void NumeReWindow::OnMenuEvent(wxCommandEvent &event)
                 if (result == wxCANCEL)
                     return;
   
-            if (m_book->getCurrentEditor()->getFileType() == FILE_NPRC 
-                || m_book->getCurrentEditor()->getFileType() == FILE_NLYT 
-                || m_book->getCurrentEditor()->getFileType() == FILE_NSCR)
-            {
-                m_terminal->UpdateLibrary();
+                if (m_book->getCurrentEditor()->getFileType() == FILE_NPRC
+                    || m_book->getCurrentEditor()->getFileType() == FILE_NLYT
+                    || m_book->getCurrentEditor()->getFileType() == FILE_NSCR)
+                {
+                    m_terminal->UpdateLibrary();
+                }
             }
-          }
 
             if (m_book->getCurrentEditor()->getFileType() == FILE_TEXSOURCE)
                 compileLaTeX();
@@ -3079,6 +3079,7 @@ void NumeReWindow::NewFile(FileFilterType _filetype, const wxString& defaultfile
         DefaultPage();
         return;
     }
+
     if (_filetype == FILE_NONSOURCE)
     {
         m_fileNum += 1;
@@ -3132,6 +3133,8 @@ void NumeReWindow::NewFile(FileFilterType _filetype, const wxString& defaultfile
         std::string filename;
         std::string folder;
         wxTextEntryDialog* textentry;
+        bool isExternal = false;
+        std::vector<std::string> vPaths = m_terminal->getPathSettings();
 
         // If no default file name was passed, ask
         // the user
@@ -3159,7 +3162,10 @@ void NumeReWindow::NewFile(FileFilterType _filetype, const wxString& defaultfile
             delete textentry;
         }
         else
+        {
             filename = defaultfilename.ToStdString();
+            isExternal = folder.substr(0, vPaths[PROCPATH].length()) != vPaths[PROCPATH];
+        }
 
         // Remove the dollar sign, if there is one
         if (filename.find('$') != std::string::npos)
@@ -3175,9 +3181,6 @@ void NumeReWindow::NewFile(FileFilterType _filetype, const wxString& defaultfile
             folder = filename.substr(0, filename.rfind('/')+1);
             filename.erase(0, filename.rfind('/')+1);
         }
-
-        std::vector<std::string> vPaths = m_terminal->getPathSettings();
-        bool isExternal = folder.substr(0, vPaths[PROCPATH].length()) != vPaths[PROCPATH];
 
         if (folder == "main/" && _filetype == FILE_NPRC)
             folder.clear();
@@ -3532,8 +3535,8 @@ void NumeReWindow::EvaluateTab()
         if (result == wxCANCEL)
             return;
 
-        if (m_book->getCurrentEditor()->getFileType() == FILE_NPRC 
-            || m_book->getCurrentEditor()->getFileType() == FILE_NLYT 
+        if (m_book->getCurrentEditor()->getFileType() == FILE_NPRC
+            || m_book->getCurrentEditor()->getFileType() == FILE_NLYT
             || m_book->getCurrentEditor()->getFileType() == FILE_NSCR)
         {
             m_terminal->UpdateLibrary();
@@ -5677,7 +5680,7 @@ void NumeReWindow::UpdateVarViewer()
 /////////////////////////////////////////////////
 void NumeReWindow::UpdateWindowTitle(const wxString& filename)
 {
-    wxTopLevelWindow::SetTitle(filename + " - NumeRe: Framework fÃ¼r Numerische Rechnungen (v " + sVersion + ")");
+    wxTopLevelWindow::SetTitle(filename + " - NumeRe: Framework für Numerische Rechnungen (v " + sVersion + ")");
 }
 
 
