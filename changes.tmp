@@ -22,3 +22,5 @@ Fixed	"TAB().num" now also considers strings as valid values for the "num()" ope
 Fixed	Improved the evaluation of string vectors with different number of elements.
 Fixed	Improved performance when copying a large table out of the table viewer.
 Fixed	It's now possible to deactivate the table auto-save by setting the interval to zero
+Fixed	Procedures execute now always the latest changes without the need of waiting a few seconds
+Removed	Plain app names were removed from code and moved to the langauge files (allows also translations of the app name).
