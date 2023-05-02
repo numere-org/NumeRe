@@ -273,7 +273,7 @@ namespace NumeRe
 
         fFileStream << "#\n";
         fFileStream << "# " + _lang.get("OUTPUT_PRINTLEGAL_LINE1") << "\n";
-        fFileStream << "# NumeRe: Framework für Numerische Rechnungen" << "\n";
+        fFileStream << "# " + _lang.get("COMMON_APPNAME") << "\n";
         fFileStream << "#=============================================" << "\n";
         fFileStream << "# " + _lang.get("OUTPUT_PRINTLEGAL_LINE2", sVersion, sBuild) << "\n";
         fFileStream << "# " + _lang.get("OUTPUT_PRINTLEGAL_LINE3", sBuild.substr(0, 4)) << "\n";
@@ -2516,7 +2516,7 @@ namespace NumeRe
 
         fFileStream << "%\n";
         fFileStream << "% " + _lang.get("OUTPUT_PRINTLEGAL_LINE1") << "\n";
-        fFileStream << "% NumeRe: Framework für Numerische Rechnungen" << "\n";
+        fFileStream << "% " + _lang.get("COMMON_APPNAME") << "\n";
         fFileStream << "%=============================================" << "\n";
         fFileStream << "% " + _lang.get("OUTPUT_PRINTLEGAL_LINE2", sVersion, sBuild) << "\n";
         fFileStream << "% " + _lang.get("OUTPUT_PRINTLEGAL_LINE3", sBuild.substr(0, 4)) << "\n";

@@ -312,7 +312,7 @@ bool MyApp::OnInit()
     // Create and initialize the main frame. Will also
     // include loading the configuration, loading existing
     // caches and preparing the editor.
-    NumeReWindow* NumeReMainFrame = new NumeReWindow("NumeRe: Framework für Numerische Rechnungen (v" + sVersion + ")", wxDefaultPosition, wxDefaultSize);
+    NumeReWindow* NumeReMainFrame = new NumeReWindow("NumeRe (v" + sVersion + ")", wxDefaultPosition, wxDefaultSize);
 
     g_logger.debug("Starting DDE server instance.");
     // Create the DDE server for the first (main)
@@ -543,6 +543,8 @@ NumeReWindow::NumeReWindow(const wxString& title, const wxPoint& pos, const wxSi
         _guilang.loadStrings(true);
     else
         _guilang.loadStrings(false);
+
+    UpdateWindowTitle("");
 
     // Prepare the options dialog
     m_optionsDialog = new OptionsDialog(this, m_options, ID_OPTIONSDIALOG, _guilang.get("GUI_DLG_OPTIONS"));
@@ -1915,7 +1917,7 @@ void NumeReWindow::OnMenuEvent(wxCommandEvent &event)
 
                 if (result == wxCANCEL)
                     return;
-  
+
                 if (m_book->getCurrentEditor()->getFileType() == FILE_NPRC
                     || m_book->getCurrentEditor()->getFileType() == FILE_NLYT
                     || m_book->getCurrentEditor()->getFileType() == FILE_NSCR)
@@ -5680,7 +5682,7 @@ void NumeReWindow::UpdateVarViewer()
 /////////////////////////////////////////////////
 void NumeReWindow::UpdateWindowTitle(const wxString& filename)
 {
-    wxTopLevelWindow::SetTitle(filename + " - NumeRe: Framework für Numerische Rechnungen (v " + sVersion + ")");
+    wxTopLevelWindow::SetTitle((filename.length() ? filename + " - " : wxString()) + _guilang.get("COMMON_APPNAME") + " (v " + sVersion + ")");
 }
 
 
