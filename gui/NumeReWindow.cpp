@@ -1915,13 +1915,13 @@ void NumeReWindow::OnMenuEvent(wxCommandEvent &event)
 
                 if (result == wxCANCEL)
                     return;
-            }
 
-            if (m_book->getCurrentEditor()->getFileType() == FILE_NPRC
-                || m_book->getCurrentEditor()->getFileType() == FILE_NLYT
-                || m_book->getCurrentEditor()->getFileType() == FILE_NSCR)
-            {
-                m_terminal->UpdateLibrary();
+                if (m_book->getCurrentEditor()->getFileType() == FILE_NPRC
+                    || m_book->getCurrentEditor()->getFileType() == FILE_NLYT
+                    || m_book->getCurrentEditor()->getFileType() == FILE_NSCR)
+                {
+                    m_terminal->UpdateLibrary();
+                }
             }
 
             if (m_book->getCurrentEditor()->getFileType() == FILE_TEXSOURCE)
@@ -3534,13 +3534,13 @@ void NumeReWindow::EvaluateTab()
 
         if (result == wxCANCEL)
             return;
-    }
 
-    if (m_book->getCurrentEditor()->getFileType() == FILE_NPRC
-        || m_book->getCurrentEditor()->getFileType() == FILE_NLYT
-        || m_book->getCurrentEditor()->getFileType() == FILE_NSCR)
-    {
-        m_terminal->UpdateLibrary();
+        if (m_book->getCurrentEditor()->getFileType() == FILE_NPRC
+            || m_book->getCurrentEditor()->getFileType() == FILE_NLYT
+            || m_book->getCurrentEditor()->getFileType() == FILE_NSCR)
+        {
+            m_terminal->UpdateLibrary();
+        }
     }
 
     std::string command = replacePathSeparator((edit->GetFileName()).GetFullPath().ToStdString());
