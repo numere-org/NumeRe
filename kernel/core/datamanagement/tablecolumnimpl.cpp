@@ -33,7 +33,7 @@
 std::string ValueColumn::getValueAsString(size_t elem) const
 {
     if (elem < m_data.size())
-        return toString(m_data[elem], NumeReKernel::getInstance()->getSettings().getPrecision());
+        return toCmdString(m_data[elem]);
 
     return "nan";
 }
@@ -77,7 +77,10 @@ std::string ValueColumn::getValueAsParserString(size_t elem) const
 /////////////////////////////////////////////////
 std::string ValueColumn::getValueAsStringLiteral(size_t elem) const
 {
-    return getValueAsString(elem);
+    if (elem < m_data.size())
+        return toString(m_data[elem], NumeReKernel::getInstance()->getSettings().getPrecision());
+
+    return "nan";
 }
 
 

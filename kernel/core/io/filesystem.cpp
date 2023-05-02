@@ -165,6 +165,9 @@ void FileSystem::resolveWildCards(std::string& _sFileName, bool isFile, bool che
         hFind = FindFirstFile(_sFileName.c_str(), &FindFileData);
         std::string sNewFileName = "";
 
+        if (hFind == INVALID_HANDLE_VALUE)
+            return;
+
         do
         {
             if (!isFile && FindFileData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
@@ -202,17 +205,11 @@ void FileSystem::resolveWildCards(std::string& _sFileName, bool isFile, bool che
                     sPathTemp = sPathTemp.substr(0, sPathTemp.rfind('/'));
             }
             else if (sPathTemp.rfind('/') != std::string::npos)
-            {
                 sPathTemp = sPathTemp.substr(0, sPathTemp.rfind('/'));
-            }
             else if (sPathTemp.rfind('\\') != std::string::npos)
-            {
                 sPathTemp = sPathTemp.substr(0, sPathTemp.rfind('\\'));
-            }
             else
-            {
                 sPathTemp = "";
-            }
 
             if (sPathTemp.length())
                 _sFileName = sPathTemp + "/" + sNewFileName;
@@ -326,9 +323,7 @@ std::string FileSystem::ValidFileName(std::string _sFileName, const std::string 
         // Otherwise the extension will be exchanged
         // automatically
         if (sValidExtensions.find(";"+toLowerCase(sValid)+";") != std::string::npos)
-        {
             sValid = _sFileName;
-        }
         else
         {
             if (sValid == ".*")

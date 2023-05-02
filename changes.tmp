@@ -24,3 +24,5 @@ Fixed	Improved performance when copying a large table out of the table viewer.
 Fixed	It's now possible to deactivate the table auto-save by setting the interval to zero
 Fixed	Procedures execute now always the latest changes without the need of waiting a few seconds
 Removed	Plain app names were removed from code and moved to the langauge files (allows also translations of the app name).
+Fixed	Resolved a rare invalid pointer issue.
+Fixed	A rare problem with comparison of two mixed-type data objects was resolved.
