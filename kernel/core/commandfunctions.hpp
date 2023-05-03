@@ -66,7 +66,8 @@ static size_t findSettingOption(const std::string& sCmd, const std::string& sOpt
 /////////////////////////////////////////////////
 static bool confirmOperation(const std::string& sMessage)
 {
-    NumeReKernel::print(sMessage);
+    Settings& _option = NumeReKernel::getInstance()->getSettings();
+    NumeReKernel::print(LineBreak(sMessage, _option));
     std::string sArgument;
 
     do

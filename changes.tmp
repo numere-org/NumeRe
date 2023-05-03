@@ -26,3 +26,4 @@ Fixed	Procedures execute now always the latest changes without the need of waiti
 Removed	Plain app names were removed from code and moved to the langauge files (allows also translations of the app name).
 Fixed	Resolved a rare invalid pointer issue.
 Fixed	A rare problem with comparison of two mixed-type data objects was resolved.
+Fixed   The sometimes appearing dollar sign in some terminal messages has been removed.
