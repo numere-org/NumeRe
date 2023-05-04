@@ -664,10 +664,11 @@ std::string NumeReSyntax::highlightWarning(const std::string& sCommandLine)
 ///
 /// \param sFirstChars std::string
 /// \param useSmartSense bool
+/// \param varType NumeReSyntax::SyntaxColors
 /// \return std::string
 ///
 /////////////////////////////////////////////////
-std::string NumeReSyntax::getAutoCompList(std::string sFirstChars, bool useSmartSense)
+std::string NumeReSyntax::getAutoCompList(std::string sFirstChars, bool useSmartSense, NumeReSyntax::SyntaxColors varType)
 {
     std::string sAutoCompList;
 
@@ -735,7 +736,7 @@ std::string NumeReSyntax::getAutoCompList(std::string sFirstChars, bool useSmart
         {
             if (useSmartSense)
             {
-                if (selectMethods && iter->second.second != SYNTAX_METHODS)
+                if (selectMethods && (iter->second.second != SYNTAX_METHODS || iter->second.second != vartype)) // TODO
                     continue;
                 else if (!selectMethods && iter->second.second == SYNTAX_METHODS)
                     continue;

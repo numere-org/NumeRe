@@ -139,7 +139,7 @@ class NumeReSyntax
             {return constructString(vCppKeyWords);}
         std::string getCppFunctions() const
             {return constructString(vCppFunctions);}
-        std::string getAutoCompList(std::string sFirstChars, bool useSmartSense = false);
+        std::string getAutoCompList(std::string sFirstChars, bool useSmartSense = false, SyntaxColors varType = SYNTAX_STD);
         std::string getAutoCompListMATLAB(std::string sFirstChars);
         std::string getAutoCompListCPP(std::string sFirstChars);
         std::string getAutoCompListTeX(std::string sFirstChars);

@@ -808,141 +808,153 @@ void NumeReEditor::OnChar( wxStyledTextEvent& event )
     m_nextChar = 0;
 
     int lenEntered = currentPos - wordstartpos;
-    AutoCompSetAutoHide(!m_options->getSetting(SETTING_B_SMARTSENSE).active());
+    bool useSmartSense = m_options->getSetting(SETTING_B_SMARTSENSE).active();
+    bool isMethod = false;
+
+    if (useSmartSense
+        && (GetCharAt(wordstartpos-1) == '.' || chr == '.') // Should yield the same result
+        isMethod = true;
+
+    AutoCompSetAutoHide(!useSmartSense);
     wxString sAutoCompList;
 
-    if (lenEntered > 1
-        && (m_fileType == FILE_NSCR || m_fileType == FILE_NPRC)
-        && !isStyleType(STYLE_COMMENT, wordstartpos)
-        && !isStyleType(STYLE_STRING, wordstartpos)
-        && !isStyleType(STYLE_PROCEDURE, wordstartpos))
+    if (lenEntered > 1 || isMethod)
     {
-        int smartSenseWordStart = wordstartpos;
+        if (m_fileType == FILE_NSCR || m_fileType == FILE_NPRC)
+        {
+            if (GetStyleAt(wordstartpos) == wxSTC_NSCR_PROCEDURES)
+            {
+                wxString sNamespace;
+                wxString sSelectedNamespace;
+                int nNameSpacePosition = wordstartpos;
 
-        // SmartSense extension: match only methods
-        if (m_options->getSetting(SETTING_B_SMARTSENSE).active() && GetCharAt(wordstartpos-1) == '.')
-            smartSenseWordStart--;
+                while (GetStyleAt(nNameSpacePosition - 1) == wxSTC_NSCR_PROCEDURES && GetCharAt(nNameSpacePosition - 1) != '$')
+                    nNameSpacePosition--;
 
-        sAutoCompList = generateAutoCompList(smartSenseWordStart, currentPos,
-                                             _syntax->getAutoCompList(GetTextRange(smartSenseWordStart, currentPos).ToStdString(),
-                                                                      m_options->getSetting(SETTING_B_SMARTSENSE).active()));
+                if (nNameSpacePosition == wordstartpos)
+                    sNamespace = m_search->FindNameSpaceOfProcedure(wordstartpos) + "~";
+                else
+                    sSelectedNamespace = GetTextRange(nNameSpacePosition, wordstartpos);
 
-        if (sAutoCompList.length())
-            AutoCompShow(lenEntered, sAutoCompList);
-    }
-    else if (lenEntered > 1
-             && m_fileType == FILE_MATLAB
-             && !isStyleType(STYLE_COMMENT, wordstartpos)
-             && !isStyleType(STYLE_STRING, wordstartpos))
-    {
-        sAutoCompList = generateAutoCompList(wordstartpos, currentPos,
-                                             _syntax->getAutoCompListMATLAB(GetTextRange(wordstartpos, currentPos).ToStdString()));
-    }
-    else if (lenEntered > 1
-             && m_fileType == FILE_CPP
-             && !isStyleType(STYLE_COMMENT, wordstartpos)
-             && !isStyleType(STYLE_STRING, wordstartpos))
-    {
-        sAutoCompList = generateAutoCompList(wordstartpos, currentPos,
-                                             _syntax->getAutoCompListCPP(GetTextRange(wordstartpos, currentPos).ToStdString()));
-    }
-    else if (lenEntered > 1
-             && (m_fileType == FILE_NSCR || m_fileType == FILE_NPRC)
-             && GetStyleAt(wordstartpos) == wxSTC_NSCR_PROCEDURES)
-    {
-        wxString sNamespace;
-        wxString sSelectedNamespace;
-        int nNameSpacePosition = wordstartpos;
+                // If namespace == "this~" then replace it with the current namespace
+                if (sNamespace == "this~")
+                {
+                    string filename = GetFileNameAndPath().ToStdString();
+                    filename = replacePathSeparator(filename);
+                    vector<string> vPaths = m_terminal->getPathSettings();
 
-        while (GetStyleAt(nNameSpacePosition - 1) == wxSTC_NSCR_PROCEDURES && GetCharAt(nNameSpacePosition - 1) != '$')
-            nNameSpacePosition--;
+                    if (filename.substr(0, vPaths[PROCPATH].length()) == vPaths[PROCPATH])
+                    {
+                        filename.erase(0, vPaths[PROCPATH].length());
 
-        if (nNameSpacePosition == wordstartpos)
-            sNamespace = m_search->FindNameSpaceOfProcedure(wordstartpos) + "~";
+                        if (filename.find('/') != string::npos)
+                            filename.erase(filename.rfind('/') + 1);
+
+                        while (filename.front() == '/')
+                            filename.erase(0, 1);
+
+                        while (filename.find('/') != string::npos)
+                            filename[filename.find('/')] = '~';
+
+                        sNamespace = filename;
+                    }
+                    else
+                        sNamespace = "";
+                }
+                else if (sSelectedNamespace == "this~")
+                {
+                    string filename = GetFileNameAndPath().ToStdString();
+                    filename = replacePathSeparator(filename);
+                    vector<string> vPaths = m_terminal->getPathSettings();
+
+                    if (filename.substr(0, vPaths[PROCPATH].length()) == vPaths[PROCPATH])
+                    {
+                        filename.erase(0, vPaths[PROCPATH].length());
+
+                        if (filename.find('/') != string::npos)
+                            filename.erase(filename.rfind('/') + 1);
+
+                        while (filename.front() == '/')
+                            filename.erase(0, 1);
+
+                        while (filename.find('/') != string::npos)
+                            filename[filename.find('/')] = '~';
+
+                        sSelectedNamespace = filename;
+                    }
+                    else
+                        sSelectedNamespace = "";
+                }
+                // If namespace == "thisfile~" then search for all procedures in the current file and use them as the
+                // autocompletion list entries
+                else if (sNamespace == "thisfile"
+                         || sNamespace == "thisfile~"
+                         || sSelectedNamespace == "thisfile"
+                         || sSelectedNamespace == "thisfile~")
+                {
+                    this->AutoCompSetIgnoreCase(true);
+                    this->AutoCompSetCaseInsensitiveBehaviour(wxSTC_CASEINSENSITIVEBEHAVIOUR_IGNORECASE);
+                    this->AutoCompShow(lenEntered, m_search->FindProceduresInCurrentFile(GetTextRange(wordstartpos, currentPos), sSelectedNamespace));
+                    this->Colourise(0, -1);
+                    event.Skip();
+                    return;
+                }
+                // If namespace == "main~" (or similiar) then clear it's contents
+                else if (sNamespace == "main" || sNamespace == "main~" || sNamespace == "~")
+                    sNamespace = "";
+                else if (sSelectedNamespace == "main" || sSelectedNamespace == "main~" || sSelectedNamespace == "~")
+                    sSelectedNamespace = "";
+
+                sAutoCompList = _syntax->getProcAutoCompList(GetTextRange(wordstartpos, currentPos).ToStdString(),
+                                                             sNamespace.ToStdString(), sSelectedNamespace.ToStdString());
+            }
+            else if (!isStyleType(STYLE_COMMENT, wordstartpos)
+                     && !isStyleType(STYLE_STRING, wordstartpos)
+                     && !isStyleType(STYLE_NUMBER, wordstartpos))
+            {
+                int smartSenseWordStart = wordstartpos;
+                NumeReSyntax::SyntaxColors varType = NumeReSyntax::SYNTAX_STD;
+
+                // SmartSense extension: match only methods
+                if (useSmartSense && isMethod)
+                {
+                    smartSenseWordStart--;
+
+                    if (GetCharAt(wordstartpos-2) == ')')
+                        varType = NumeReSyntax::SYNTAX_TABLE;
+                }
+
+                sAutoCompList = generateAutoCompList(smartSenseWordStart, currentPos,
+                                                     _syntax->getAutoCompList(GetTextRange(smartSenseWordStart, currentPos).ToStdString(),
+                                                                              useSmartSense, varType));
+
+                if (sAutoCompList.length())
+                    AutoCompShow(lenEntered, sAutoCompList);
+            }
+        }
+        else if (m_fileType == FILE_MATLAB
+                 && !isStyleType(STYLE_COMMENT, wordstartpos)
+                 && !isStyleType(STYLE_STRING, wordstartpos))
+        {
+            sAutoCompList = generateAutoCompList(wordstartpos, currentPos,
+                                                 _syntax->getAutoCompListMATLAB(GetTextRange(wordstartpos, currentPos).ToStdString()));
+        }
+        else if (m_fileType == FILE_CPP
+                 && !isStyleType(STYLE_COMMENT, wordstartpos)
+                 && !isStyleType(STYLE_STRING, wordstartpos))
+        {
+            sAutoCompList = generateAutoCompList(wordstartpos, currentPos,
+                                                 _syntax->getAutoCompListCPP(GetTextRange(wordstartpos, currentPos).ToStdString()));
+        }
+        else if (m_fileType == FILE_TEXSOURCE
+                 && GetStyleAt(wordstartpos) == wxSTC_TEX_COMMAND)
+        {
+            sAutoCompList = generateAutoCompList(wordstartpos, currentPos,
+                                                 _syntax->getAutoCompListTeX(GetTextRange(wordstartpos, currentPos).ToStdString()));
+        }
         else
-            sSelectedNamespace = GetTextRange(nNameSpacePosition, wordstartpos);
-
-        // If namespace == "this~" then replace it with the current namespace
-        if (sNamespace == "this~")
-        {
-            string filename = GetFileNameAndPath().ToStdString();
-            filename = replacePathSeparator(filename);
-            vector<string> vPaths = m_terminal->getPathSettings();
-
-            if (filename.substr(0, vPaths[PROCPATH].length()) == vPaths[PROCPATH])
-            {
-                filename.erase(0, vPaths[PROCPATH].length());
-
-                if (filename.find('/') != string::npos)
-                    filename.erase(filename.rfind('/') + 1);
-
-                while (filename.front() == '/')
-                    filename.erase(0, 1);
-
-                while (filename.find('/') != string::npos)
-                    filename[filename.find('/')] = '~';
-
-                sNamespace = filename;
-            }
-            else
-                sNamespace = "";
-        }
-        else if (sSelectedNamespace == "this~")
-        {
-            string filename = GetFileNameAndPath().ToStdString();
-            filename = replacePathSeparator(filename);
-            vector<string> vPaths = m_terminal->getPathSettings();
-
-            if (filename.substr(0, vPaths[PROCPATH].length()) == vPaths[PROCPATH])
-            {
-                filename.erase(0, vPaths[PROCPATH].length());
-
-                if (filename.find('/') != string::npos)
-                    filename.erase(filename.rfind('/') + 1);
-
-                while (filename.front() == '/')
-                    filename.erase(0, 1);
-
-                while (filename.find('/') != string::npos)
-                    filename[filename.find('/')] = '~';
-
-                sSelectedNamespace = filename;
-            }
-            else
-                sSelectedNamespace = "";
-        }
-        // If namespace == "thisfile~" then search for all procedures in the current file and use them as the
-        // autocompletion list entries
-        else if (sNamespace == "thisfile"
-                 || sNamespace == "thisfile~"
-                 || sSelectedNamespace == "thisfile"
-                 || sSelectedNamespace == "thisfile~")
-        {
-            this->AutoCompSetIgnoreCase(true);
-            this->AutoCompSetCaseInsensitiveBehaviour(wxSTC_CASEINSENSITIVEBEHAVIOUR_IGNORECASE);
-            this->AutoCompShow(lenEntered, m_search->FindProceduresInCurrentFile(GetTextRange(wordstartpos, currentPos), sSelectedNamespace));
-            this->Colourise(0, -1);
-            event.Skip();
-            return;
-        }
-        // If namespace == "main~" (or similiar) then clear it's contents
-        else if (sNamespace == "main" || sNamespace == "main~" || sNamespace == "~")
-            sNamespace = "";
-        else if (sSelectedNamespace == "main" || sSelectedNamespace == "main~" || sSelectedNamespace == "~")
-            sSelectedNamespace = "";
-
-        sAutoCompList = _syntax->getProcAutoCompList(GetTextRange(wordstartpos, currentPos).ToStdString(),
-                                                     sNamespace.ToStdString(), sSelectedNamespace.ToStdString());
+            sAutoCompList = generateAutoCompList(wordstartpos, currentPos, "");
     }
-    else if (lenEntered > 1
-             && m_fileType == FILE_TEXSOURCE
-             && GetStyleAt(wordstartpos) == wxSTC_TEX_COMMAND)
-    {
-        sAutoCompList = generateAutoCompList(wordstartpos, currentPos,
-                                             _syntax->getAutoCompListTeX(GetTextRange(wordstartpos, currentPos).ToStdString()));
-    }
-    else if (lenEntered > 1)
-        sAutoCompList = generateAutoCompList(wordstartpos, currentPos, "");
 
     if (sAutoCompList.length())
         AutoCompShow(lenEntered, sAutoCompList);
