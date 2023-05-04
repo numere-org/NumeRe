@@ -719,7 +719,7 @@ void NumeReEditor::OnChar( wxStyledTextEvent& event )
     const wxChar chr = event.GetKey();
     const int currentLine = GetCurrentLine();
     const int currentPos = GetCurrentPos();
-    const int wordstartpos = WordStartPosition(currentPos, true);
+    int wordstartpos = WordStartPosition(currentPos, true);
 
     MarkerDeleteAll(MARKER_FOCUSEDLINE);
 
@@ -808,11 +808,13 @@ void NumeReEditor::OnChar( wxStyledTextEvent& event )
     m_nextChar = 0;
 
     int lenEntered = currentPos - wordstartpos;
-    bool useSmartSense = m_options->getSetting(SETTING_B_SMARTSENSE).active();
+    bool useSmartSense = m_options->getSetting(SETTING_B_SMARTSENSE).active() && (m_fileType == FILE_NSCR || m_fileType == FILE_NPRC);
     bool isMethod = false;
 
-    if (useSmartSense
-        && (GetCharAt(wordstartpos-1) == '.' || chr == '.') // Should yield the same result
+    if (useSmartSense && chr == '.')
+        wordstartpos = currentPos;
+
+    if (useSmartSense && GetCharAt(wordstartpos-1) == '.') // Should yield the same result
         isMethod = true;
 
     AutoCompSetAutoHide(!useSmartSense);
@@ -921,7 +923,7 @@ void NumeReEditor::OnChar( wxStyledTextEvent& event )
                     smartSenseWordStart--;
 
                     if (GetCharAt(wordstartpos-2) == ')')
-                        varType = NumeReSyntax::SYNTAX_TABLE;
+                        varType = NumeReSyntax::SYNTAX_TABLE; // TODO
                 }
 
                 sAutoCompList = generateAutoCompList(smartSenseWordStart, currentPos,
@@ -6458,7 +6460,7 @@ wxString NumeReEditor::generateAutoCompList(int wordstartpos, int currpos, std::
 
     // Find every occurence of the current word start
     // and store the possible completions in the map
-    while ((nPos = FindText(nPos, GetLineEndPosition(context.second), wordstart, searchFlags)) != std::string::npos)
+    while (wordstart.length() && (nPos = FindText(nPos, GetLineEndPosition(context.second), wordstart, searchFlags)) != std::string::npos)
     {
         if (isValidAutoCompMatch(nPos, findAll, searchMethod))
         {
