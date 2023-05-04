@@ -2618,7 +2618,10 @@ mu::value_type Memory::cnt(const VectorIndex& _vLine, const VectorIndex& _vCol) 
         int elems = getElemsInColumn(_vCol[j]);
 
         if (!elems)
+        {
+            nInvalid += _vLine.size();
             continue;
+        }
 
         for (unsigned int i = 0; i < _vLine.size(); i++)
         {
