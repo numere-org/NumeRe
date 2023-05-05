@@ -342,7 +342,7 @@ bool NumeReSyntax::matchItem(const std::vector<std::string>& vVector, const std:
     for (size_t i = 0; i < vVector.size(); i++)
     {
         // Match found -> return true
-        if (vVector[i] == sString)
+        if (vVector[i].substr(0, vVector[i].find('.')) == sString)
             return true;
     }
 
@@ -730,6 +730,12 @@ std::string NumeReSyntax::getAutoCompList(std::string sFirstChars, bool useSmart
         sFirstChars.erase(0, 1);
 
     bool selectAllMethods = selectMethods && !sFirstChars.length();
+    std::string methodSelector = ".unknown";
+
+    if (varType == SYNTAX_TABLE)
+        methodSelector = ".tab";
+    else if (varType == SYNTAX_STD)
+        methodSelector = ".str";
 
     // Try to find the correspondig elements in the map
     for (auto iter = mAutoCompList.begin(); iter != mAutoCompList.end(); ++iter)
@@ -739,7 +745,7 @@ std::string NumeReSyntax::getAutoCompList(std::string sFirstChars, bool useSmart
             if (useSmartSense)
             {
                 if (selectMethods && (iter->second.second != SYNTAX_METHODS
-                                      || iter->first.find(varType == SYNTAX_TABLE ? ".tab" : ".str") == std::string::npos))
+                                      || iter->first.find(methodSelector) == std::string::npos))
                     continue;
                 else if (!selectMethods && iter->second.second == SYNTAX_METHODS)
                     continue;

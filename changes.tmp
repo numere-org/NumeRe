@@ -28,3 +28,4 @@ Fixed	Resolved a rare invalid pointer issue.
 Fixed	A rare problem with comparison of two mixed-type data objects was resolved.
 Fixed   The sometimes appearing dollar sign in some terminal messages has been removed.
 Fixed	Empty columns are now correctly calculated as empy if used with "TAB().cnt.cols"
+Cleaned	The editor and the terminal will now only provide method autocompletion with methods fitting to the variable type.

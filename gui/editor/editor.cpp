@@ -811,11 +811,14 @@ void NumeReEditor::OnChar( wxStyledTextEvent& event )
     bool useSmartSense = m_options->getSetting(SETTING_B_SMARTSENSE).active() && (m_fileType == FILE_NSCR || m_fileType == FILE_NPRC);
     bool isMethod = false;
 
-    if (useSmartSense && chr == '.')
-        wordstartpos = currentPos;
+    if (useSmartSense)
+    {
+        if (chr == '.')
+            wordstartpos = currentPos;
 
-    if (useSmartSense && GetCharAt(wordstartpos-1) == '.') // Should yield the same result
-        isMethod = true;
+        if (GetCharAt(wordstartpos-1) == '.')
+            isMethod = true;
+    }
 
     AutoCompSetAutoHide(!useSmartSense);
     wxString sAutoCompList;
@@ -915,15 +918,22 @@ void NumeReEditor::OnChar( wxStyledTextEvent& event )
                      && !isStyleType(STYLE_NUMBER, wordstartpos))
             {
                 int smartSenseWordStart = wordstartpos;
-                NumeReSyntax::SyntaxColors varType = NumeReSyntax::SYNTAX_STD;
+                NumeReSyntax::SyntaxColors varType = NumeReSyntax::SYNTAX_METHODS;
 
                 // SmartSense extension: match only methods
-                if (useSmartSense && isMethod)
+                if (isMethod)
                 {
                     smartSenseWordStart--;
 
-                    if (GetCharAt(wordstartpos-2) == ')')
-                        varType = NumeReSyntax::SYNTAX_TABLE; // TODO
+                    // Identify the type of the current method host. Is currently quite rudimentary
+                    // and should be extended with the semi-static parser model
+                    if (GetStyleAt(wordstartpos-2) == wxSTC_NSCR_IDENTIFIER)
+                        varType = NumeReSyntax::SYNTAX_STD;
+                    else if (GetStyleAt(wordstartpos-2) == wxSTC_NSCR_METHOD
+                             || (GetTextRange(wordstartpos-3, wordstartpos-1) == "()"
+                                 && (GetStyleAt(wordstartpos-4) == wxSTC_NSCR_CUSTOM_FUNCTION
+                                     || GetStyleAt(wordstartpos-4) == wxSTC_NSCR_PREDEFS)))
+                        varType = NumeReSyntax::SYNTAX_TABLE;
                 }
 
                 sAutoCompList = generateAutoCompList(smartSenseWordStart, currentPos,
