@@ -295,6 +295,16 @@ void GenericTerminal::handle_calltip(int x, int y)
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Detect the type of the symbol left to
+/// the selected position (is used to detect the
+/// type of the method root variable).
+///
+/// \param x int
+/// \param y int
+/// \return NumeReSyntax::SyntaxColors
+///
+/////////////////////////////////////////////////
 NumeReSyntax::SyntaxColors GenericTerminal::get_method_root_type(int x, int y)
 {
     // Get the rendered line and the corresponding syntax colors
