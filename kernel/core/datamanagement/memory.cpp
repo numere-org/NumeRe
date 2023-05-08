@@ -2619,7 +2619,11 @@ mu::value_type Memory::cnt(const VectorIndex& _vLine, const VectorIndex& _vCol) 
 
         if (!elems)
         {
-            nInvalid += _vLine.size();
+            // If this goes for columns individual, then count it as empty
+            // otherwise it counts for cnt()
+            if (_vCol.size() == 1 && _vLine.size() > 1)
+                nInvalid += _vLine.size();
+
             continue;
         }
 
