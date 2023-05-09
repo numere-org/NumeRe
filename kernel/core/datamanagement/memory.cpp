@@ -2610,10 +2610,26 @@ mu::value_type Memory::cnt(const VectorIndex& _vLine, const VectorIndex& _vCol) 
     _vLine.setOpenEndIndex(lines-1);
     _vCol.setOpenEndIndex(cols-1);
 
+    std::vector<mu::value_type> vDimLen;
+
+    // Calculate the size in the corresponding direction first
+    if (_vCol.size() == 1 && _vLine.size() > 1)
+        vDimLen = size(_vCol, AppDir::COLS);
+    else if (_vCol.size() > 1 && _vLine.size() == 1)
+        vDimLen = size(_vLine, AppDir::LINES);
+
     for (unsigned int j = 0; j < _vCol.size(); j++)
     {
         if (_vCol[j] < 0)
             continue;
+
+        if (_vCol.size() > 1
+            && _vLine.size() == 1
+            && vDimLen.front().real() <= _vCol[j])
+        {
+            nInvalid++;
+            continue;
+        }
 
         int elems = getElemsInColumn(_vCol[j]);
 
