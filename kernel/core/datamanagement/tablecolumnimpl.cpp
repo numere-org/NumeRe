@@ -33,7 +33,7 @@
 std::string ValueColumn::getValueAsString(size_t elem) const
 {
     if (elem < m_data.size())
-        return toString(m_data[elem], NumeReKernel::getInstance()->getSettings().getPrecision());
+        return toCmdString(m_data[elem]);
 
     return "nan";
 }
@@ -77,7 +77,10 @@ std::string ValueColumn::getValueAsParserString(size_t elem) const
 /////////////////////////////////////////////////
 std::string ValueColumn::getValueAsStringLiteral(size_t elem) const
 {
-    return getValueAsString(elem);
+    if (elem < m_data.size())
+        return toString(m_data[elem], NumeReKernel::getInstance()->getSettings().getPrecision());
+
+    return "nan";
 }
 
 
@@ -328,7 +331,7 @@ int ValueColumn::compare(int i, int j, bool unused) const
 /////////////////////////////////////////////////
 bool ValueColumn::isValid(int elem) const
 {
-    if (elem >= (int)m_data.size() || mu::isnan(m_data[elem]))
+    if (elem >= (int)m_data.size() || elem < 0 || mu::isnan(m_data[elem]))
         return false;
 
     return true;
@@ -743,7 +746,7 @@ int DateTimeColumn::compare(int i, int j, bool unused) const
 /////////////////////////////////////////////////
 bool DateTimeColumn::isValid(int elem) const
 {
-    if (elem >= (int)m_data.size() || std::isnan(m_data[elem]))
+    if (elem >= (int)m_data.size() || elem < 0 || std::isnan(m_data[elem]))
         return false;
 
     return true;
@@ -950,7 +953,7 @@ void LogicalColumn::setValue(size_t elem, const mu::value_type& vValue)
     if (elem >= m_data.size())
         m_data.resize(elem+1, LOGICAL_NAN);
 
-    m_data[elem] = vValue != 0.0 ? LOGICAL_TRUE : LOGICAL_FALSE;
+    m_data[elem] = mu::isnan(vValue) ? LOGICAL_NAN : (vValue != 0.0 ? LOGICAL_TRUE : LOGICAL_FALSE);
 }
 
 
@@ -1147,7 +1150,7 @@ int LogicalColumn::compare(int i, int j, bool unused) const
 /////////////////////////////////////////////////
 bool LogicalColumn::isValid(int elem) const
 {
-    if (elem >= (int)m_data.size() || m_data[elem] == LOGICAL_NAN)
+    if (elem >= (int)m_data.size() || elem < 0 || m_data[elem] == LOGICAL_NAN)
         return false;
 
     return true;
@@ -1554,7 +1557,7 @@ int StringColumn::compare(int i, int j, bool caseinsensitive) const
 /////////////////////////////////////////////////
 bool StringColumn::isValid(int elem) const
 {
-    if (elem >= (int)m_data.size() || !m_data[elem].length())
+    if (elem >= (int)m_data.size() || elem < 0 || !m_data[elem].length())
         return false;
 
     return true;
@@ -1589,9 +1592,9 @@ size_t StringColumn::getBytes() const
     size_t bytes = 0;
 
     for (const auto& val : m_data)
-        bytes += val.length() * sizeof(char);
+        bytes += val.capacity() * sizeof(char);
 
-    return bytes + m_sHeadLine.length() * sizeof(char);
+    return bytes + m_sHeadLine.capacity() * sizeof(char);
 }
 
 
@@ -1817,6 +1820,12 @@ void CategoricalColumn::setValue(size_t elem, const std::string& sValue)
 
     if (elem >= m_data.size())
         m_data.resize(elem+1, CATEGORICAL_NAN);
+
+    if (!sValue.length())
+    {
+        m_data[elem] = CATEGORICAL_NAN;
+        return;
+    }
 
     auto iter = std::find(m_categories.begin(), m_categories.end(), sValue);
 
@@ -2064,7 +2073,7 @@ int CategoricalColumn::compare(int i, int j, bool caseinsensitive) const
 /////////////////////////////////////////////////
 bool CategoricalColumn::isValid(int elem) const
 {
-    if (elem >= (int)m_data.size() || m_data[elem] == CATEGORICAL_NAN)
+    if (elem >= (int)m_data.size() || elem < 0 || m_data[elem] == CATEGORICAL_NAN)
         return false;
 
     return true;
@@ -2099,9 +2108,9 @@ size_t CategoricalColumn::getBytes() const
     size_t bytes = 0;
 
     for (const auto& val : m_categories)
-        bytes += val.length() * sizeof(char);
+        bytes += val.capacity() * sizeof(char);
 
-    return size() * sizeof(int) + bytes + m_sHeadLine.length() * sizeof(char);
+    return size() * sizeof(int) + bytes + m_sHeadLine.capacity() * sizeof(char);
 }
 
 

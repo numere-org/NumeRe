@@ -199,6 +199,16 @@ namespace NumeRe
                 continue;
             }
 
+            // Ensure that the colon is not the first or the last
+            // character (assuming sIndexPairs is correctly stripped)
+            if (sIndexPairs.front() == ':')
+                sIndexPairs.insert(0, 1u, '1');
+
+            // Adding inf as last index if it is missing
+            if (sIndexPairs.back() == ':')
+                sIndexPairs += "inf";
+
+            // Cannot handle things like A: (without terminating index)
             StringResult strRes = eval(sIndexPairs, "", false);
 
             if (!strRes.vResult.size())

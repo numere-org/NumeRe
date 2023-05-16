@@ -210,7 +210,10 @@ namespace NumeRe
             for (size_t j = 0; j < vLine.size(); j++)
             {
                 replaceAll(vLine[j], "\1", " ");
-                fileData->at(j)->setValue(nLine, vLine[j]);
+
+                // Do not add tokenizer placeholders
+                if (vLine[j] != "_")
+                    fileData->at(j)->setValue(nLine, vLine[j]);
             }
 
             nLine++;
@@ -270,7 +273,7 @@ namespace NumeRe
 
         fFileStream << "#\n";
         fFileStream << "# " + _lang.get("OUTPUT_PRINTLEGAL_LINE1") << "\n";
-        fFileStream << "# NumeRe: Framework für Numerische Rechnungen" << "\n";
+        fFileStream << "# " + _lang.get("COMMON_APPNAME") << "\n";
         fFileStream << "#=============================================" << "\n";
         fFileStream << "# " + _lang.get("OUTPUT_PRINTLEGAL_LINE2", sVersion, sBuild) << "\n";
         fFileStream << "# " + _lang.get("OUTPUT_PRINTLEGAL_LINE3", sBuild.substr(0, 4)) << "\n";
@@ -339,9 +342,9 @@ namespace NumeRe
                 else
                 {
                     if (fileData->at(j)->m_type == TableColumn::TYPE_VALUE)
-                        fFileStream << toString(fileData->at(j)->getValue(i), nPrecFields);
+                        fFileStream << "  " + toString(fileData->at(j)->getValue(i), nPrecFields);
                     else
-                        fFileStream << fileData->at(j)->getValueAsInternalString(i);
+                        fFileStream << "  " + fileData->at(j)->getValueAsInternalString(i);
                 }
             }
 
@@ -2150,16 +2153,10 @@ namespace NumeRe
         // all its contents
         open(ios::out | ios::trunc);
 
-        // Write the table heads to the file
-        for (long long int j = 0; j < nCols; j++)
-        {
-            if (fileData->at(j))
-                fFileStream << fileData->at(j)->m_sHeadLine;
+        // Write the headers
+        writeHeader();
 
-            fFileStream << ",";
-        }
-
-        fFileStream << "\n";
+        // Set the desired output precision
         fFileStream.precision(nPrecFields);
 
         // Write the data to the file
@@ -2182,6 +2179,48 @@ namespace NumeRe
         }
 
         fFileStream.flush();
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Writes the column headlines
+    /// considering internal line breaks.
+    ///
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
+    void CommaSeparatedValues::writeHeader()
+    {
+        size_t nNumberOfHeadlines = 1u;
+
+        // Go through the column heads in memory, determine
+        // their cell extents and store the maximal value of
+        // the extents and the needed width for the numerical
+        // value
+        for (long long int j = 0; j < nCols; j++)
+        {
+            if (!fileData->at(j))
+                continue;
+
+            pair<size_t, size_t> pCellExtents = calculateCellExtents(fileData->at(j)->m_sHeadLine);
+
+            if (nNumberOfHeadlines < pCellExtents.second)
+                nNumberOfHeadlines = pCellExtents.second;
+        }
+
+        // Write the table heads to the file
+        for (size_t i = 0; i < nNumberOfHeadlines; i++)
+        {
+            for (long long int j = 0; j < nCols; j++)
+            {
+                if (fileData->at(j))
+                    fFileStream << getLineFromHead(j, i);
+
+                fFileStream << ",";
+            }
+
+            fFileStream << "\n";
+        }
     }
 
 
@@ -2477,7 +2516,7 @@ namespace NumeRe
 
         fFileStream << "%\n";
         fFileStream << "% " + _lang.get("OUTPUT_PRINTLEGAL_LINE1") << "\n";
-        fFileStream << "% NumeRe: Framework für Numerische Rechnungen" << "\n";
+        fFileStream << "% " + _lang.get("COMMON_APPNAME") << "\n";
         fFileStream << "%=============================================" << "\n";
         fFileStream << "% " + _lang.get("OUTPUT_PRINTLEGAL_LINE2", sVersion, sBuild) << "\n";
         fFileStream << "% " + _lang.get("OUTPUT_PRINTLEGAL_LINE3", sBuild.substr(0, 4)) << "\n";
@@ -3388,12 +3427,14 @@ namespace NumeRe
             vTableSizes.push_back(0);
             vCommentRows.push_back(0);
             bool isString = true;
+            size_t rowCount = 0;
 
             // Read every row
             while (row)
             {
                 tinyxml2::XMLElement* cell = row->FirstChildElement();
                 size_t cellcount = 0;
+                rowCount++;
 
                 // Examine each cell
                 while (cell)
@@ -3422,6 +3463,15 @@ namespace NumeRe
                     vTableSizes.back() = cellcount;
 
                 row = row->NextSiblingElement("table:table-row");
+            }
+
+            // String lines are only used complete as comments, if their consecutive number is
+            // smaller than 4 or 10% of the total number of rows (whichever is larger)
+            // Otherwise only the first line is used
+            if (vCommentRows.back())
+            {
+                if (vCommentRows.back() >= std::max(4.0, 0.1*rowCount))
+                    vCommentRows.back() = 1;
             }
         } while ((table = table->NextSiblingElement("table:table")));
 
@@ -3673,8 +3723,11 @@ namespace NumeRe
 
                     // Replace line break characters with their
                     // corresponding masked character
-                    while (sEntry.find((char)13) != string::npos)
-                        sEntry.replace(sEntry.find((char)13), 1, "\n");
+                    for (size_t i = 0; i < sEntry.length(); i++)
+                    {
+                        if (sEntry[i] == (char)13)
+                            sEntry[i] = '\n';
+                    }
 
                     // Append the string to the current table
                     // column head, if it is not empty
@@ -3768,38 +3821,55 @@ namespace NumeRe
         // Get a pointer to this sheet
         _sheet = _excel.GetWorksheet(0u);
 
+        // Try to pre-allocate to improve speed
+        _cell = _sheet->Cell(nRows, nCols-1); // includes the headline
+
+        if (!_cell)
+            throw SyntaxError(SyntaxError::CANNOT_SAVE_FILE, sFileName, SyntaxError::invalid_position, sFileName);
+
         // Write the headlines in the first row
         for (long long int j = 0; j < nCols; j++)
         {
+            if (!fileData->at(j))
+                continue;
+
             // Get the current cell and the headline string
             _cell = _sheet->Cell(0u, j);
 
-            if (fileData->at(j))
-                sHeadLine = fileData->at(j)->m_sHeadLine;
+            if (!_cell)
+                throw SyntaxError(SyntaxError::CANNOT_SAVE_FILE, sFileName, SyntaxError::invalid_position, sFileName);
+
+            sHeadLine = fileData->at(j)->m_sHeadLine;
 
             // Replace newlines with the corresponding character code
-            while (sHeadLine.find('\n') != string::npos)
-                sHeadLine.replace(sHeadLine.find('\n'), 2, 1, (char)10);
+            for (size_t i = 0; i < sHeadLine.length(); i++)
+            {
+                if (sHeadLine[i] == '\n')
+                    sHeadLine[i] = (char)13;
+            }
 
             // Write the headline
             _cell->SetString(sHeadLine.c_str());
         }
 
         // Now write the actual table
-        for (long long int i = 0; i < nRows; i++)
+        for (long long int j = 0; j < nCols; j++)
         {
-            for (long long int j = 0; j < nCols; j++)
+            if (!fileData->at(j))
+                continue;
+
+            for (long long int i = 0; i < nRows; i++)
             {
+                // Write the cell contents, if the data table contains valid data
+                // otherwise clear the cell
+                if (!fileData->at(j)->isValid(i))
+                    continue;
+
                 // Get the current cell (skip over the first row, because it contains the headline)
                 _cell = _sheet->Cell(1 + i, j);
 
-                // Write the cell contents, if the data table contains valid data
-                // otherwise clear the cell
-                if (!fileData->at(j) || !fileData->at(j)->isValid(i))
-                {
-                    _cell->EraseContents();
-                    continue;
-                }
+                if (!_cell)
+                    throw SyntaxError(SyntaxError::CANNOT_SAVE_FILE, sFileName, SyntaxError::invalid_position, sFileName);
 
                 if (fileData->at(j)->m_type == TableColumn::TYPE_VALUE || fileData->at(j)->m_type == TableColumn::TYPE_LOGICAL)
                     _cell->SetDouble(fileData->at(j)->getValue(i).real());
@@ -3990,12 +4060,21 @@ namespace NumeRe
                     vCommentLines[i] = currentRow;
 
                 // Search for the first nearly complete line of strings
-                if (bBreakSignal || 4/3.0 * cellCount >= nColmax-nColmin+1)
+                if (bBreakSignal)// || 4/3.0 * cellCount >= nColmax-nColmin+1)
                     break;
             }
             while ((_node = _node->NextSibling()));
 
             bBreakSignal = false;
+
+            // String lines are only used complete as comments, if their consecutive number is
+            // smaller than 4 or 10% of the total number of rows (whichever is larger)
+            // Otherwise only the first line is used
+            if (vCommentLines[i])
+            {
+                if (vCommentLines[i] - nRowmin >= std::max(4.0, 0.1*(nRowmax-nRowmin+1)))
+                    vCommentLines[i] = nRowmin;
+            }
 
             // Calculate the maximal number of needed
             // rows to store all sheets next to each

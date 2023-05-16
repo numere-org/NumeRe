@@ -312,7 +312,7 @@ bool MyApp::OnInit()
     // Create and initialize the main frame. Will also
     // include loading the configuration, loading existing
     // caches and preparing the editor.
-    NumeReWindow* NumeReMainFrame = new NumeReWindow("NumeRe: Framework für Numerische Rechnungen (v" + sVersion + ")", wxDefaultPosition, wxDefaultSize);
+    NumeReWindow* NumeReMainFrame = new NumeReWindow("NumeRe (v" + sVersion + ")", wxDefaultPosition, wxDefaultSize);
 
     g_logger.debug("Starting DDE server instance.");
     // Create the DDE server for the first (main)
@@ -543,6 +543,8 @@ NumeReWindow::NumeReWindow(const wxString& title, const wxPoint& pos, const wxSi
         _guilang.loadStrings(true);
     else
         _guilang.loadStrings(false);
+
+    UpdateWindowTitle("");
 
     // Prepare the options dialog
     m_optionsDialog = new OptionsDialog(this, m_options, ID_OPTIONSDIALOG, _guilang.get("GUI_DLG_OPTIONS"));
@@ -1915,6 +1917,13 @@ void NumeReWindow::OnMenuEvent(wxCommandEvent &event)
 
                 if (result == wxCANCEL)
                     return;
+
+                if (m_book->getCurrentEditor()->getFileType() == FILE_NPRC
+                    || m_book->getCurrentEditor()->getFileType() == FILE_NLYT
+                    || m_book->getCurrentEditor()->getFileType() == FILE_NSCR)
+                {
+                    m_terminal->UpdateLibrary();
+                }
             }
 
             if (m_book->getCurrentEditor()->getFileType() == FILE_TEXSOURCE)
@@ -3072,6 +3081,7 @@ void NumeReWindow::NewFile(FileFilterType _filetype, const wxString& defaultfile
         DefaultPage();
         return;
     }
+
     if (_filetype == FILE_NONSOURCE)
     {
         m_fileNum += 1;
@@ -3122,9 +3132,11 @@ void NumeReWindow::NewFile(FileFilterType _filetype, const wxString& defaultfile
     }
     else
     {
-        wxString filename;
-        wxString folder;
+        std::string filename;
+        std::string folder;
         wxTextEntryDialog* textentry;
+        bool isExternal = false;
+        std::vector<std::string> vPaths = m_terminal->getPathSettings();
 
         // If no default file name was passed, ask
         // the user
@@ -3152,63 +3164,39 @@ void NumeReWindow::NewFile(FileFilterType _filetype, const wxString& defaultfile
             delete textentry;
         }
         else
-            filename = defaultfilename;
+        {
+            filename = defaultfilename.ToStdString();
+            isExternal = folder.substr(0, vPaths[PROCPATH].length()) != vPaths[PROCPATH];
+        }
 
         // Remove the dollar sign, if there is one
         if (filename.find('$') != std::string::npos)
             filename.erase(filename.find('$'),1);
 
-        // Remove the path parts from the file name
-        // These are either the tilde, the slash or the
-        // backslash
-        if (filename.find('~') != std::string::npos)
-        {
-            folder = filename.substr(0, filename.rfind('~')+1);
-            filename.erase(0, filename.rfind('~')+1);
-        }
+        // Replace all separators to UNIX separators
+        replaceAll(filename, "~", "/");
+        replaceAll(filename, "\\", "/");
 
+        // Remove the path parts from the file name
         if (filename.find('/') != std::string::npos)
         {
-            if (folder.length())
-                folder += "/" + filename.substr(0, filename.rfind('/')+1);
-            else
-                folder = filename.substr(0, filename.rfind('/')+1);
-
+            folder = filename.substr(0, filename.rfind('/')+1);
             filename.erase(0, filename.rfind('/')+1);
         }
 
-        if (filename.find('\\') != std::string::npos)
-        {
-            if (folder.length())
-                folder += "/" + filename.substr(0, filename.rfind('\\')+1);
-            else
-                folder = filename.substr(0, filename.rfind('\\')+1);
-
-            filename.erase(0, filename.rfind('\\')+1);
-        }
-
-        // Replace all path separators
-        if (folder.length())
-        {
-            while (folder.find('~') != std::string::npos)
-                folder[folder.find('~')] = '\\';
-            while (folder.find('/') != std::string::npos)
-                folder[folder.find('/')] = '\\';
-        }
-
-        if (folder == "main\\" && _filetype == FILE_NPRC)
+        if (folder == "main/" && _filetype == FILE_NPRC)
             folder.clear();
-        else
-            folder.insert(0,"\\");
+        else if (!isExternal)
+            folder.insert(0, "/");
 
         // Clean the file and folder names for procedures -
-        // we only allow alphanumeric characters
-        if (_filetype == FILE_NPRC)
+        // we only allow alphanumeric characters in non-external procedures
+        if (_filetype == FILE_NPRC && !isExternal)
         {
-            // Clean the folders
-            for (size_t i = 0; i < folder.length(); i++)
+            // Clean the folders after the root path
+            for (size_t i = vPaths[PROCPATH].length(); i < folder.length(); i++)
             {
-                if (!isalnum(folder[i]) && folder[i] != '_' && folder[i] != '\\' && folder[i] != ':')
+                if (!isalnum(folder[i]) && folder[i] != '_' && folder[i] != '/' && folder[i] != ':')
                     folder[i] = '_';
             }
 
@@ -3255,8 +3243,6 @@ void NumeReWindow::NewFile(FileFilterType _filetype, const wxString& defaultfile
         else if (_filetype == FILE_NPRC)
             filename += ".nprc";
 
-        std::vector<std::string> vPaths = m_terminal->getPathSettings();
-
         m_fileNum += 1;
 
         // Create a new editor
@@ -3269,7 +3255,7 @@ void NumeReWindow::NewFile(FileFilterType _filetype, const wxString& defaultfile
         if (_filetype == FILE_NSCR || _filetype == FILE_PLUGIN || _filetype == FILE_NLYT)
             edit->SetFilename(wxFileName(vPaths[SCRIPTPATH] + folder, filename), false);
         else if (_filetype == FILE_NPRC)
-            edit->SetFilename(wxFileName(vPaths[PROCPATH] + folder, filename), false);
+            edit->SetFilename(isExternal ? wxFileName(folder, filename) : wxFileName(vPaths[PROCPATH] + folder, filename), false);
         else
             edit->SetFilename(wxFileName(vPaths[SAVEPATH] + folder, filename), false);
 
@@ -3550,6 +3536,13 @@ void NumeReWindow::EvaluateTab()
 
         if (result == wxCANCEL)
             return;
+
+        if (m_book->getCurrentEditor()->getFileType() == FILE_NPRC
+            || m_book->getCurrentEditor()->getFileType() == FILE_NLYT
+            || m_book->getCurrentEditor()->getFileType() == FILE_NSCR)
+        {
+            m_terminal->UpdateLibrary();
+        }
     }
 
     std::string command = replacePathSeparator((edit->GetFileName()).GetFullPath().ToStdString());
@@ -5689,7 +5682,7 @@ void NumeReWindow::UpdateVarViewer()
 /////////////////////////////////////////////////
 void NumeReWindow::UpdateWindowTitle(const wxString& filename)
 {
-    wxTopLevelWindow::SetTitle(filename + " - NumeRe: Framework für Numerische Rechnungen (v " + sVersion + ")");
+    wxTopLevelWindow::SetTitle((filename.length() ? filename + " - " : wxString()) + _guilang.get("COMMON_APPNAME") + " (v " + sVersion + ")");
 }
 
 

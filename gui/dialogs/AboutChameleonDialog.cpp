@@ -146,7 +146,10 @@ void AboutChameleonDialog::CreateControls()
     itemStaticBitmap6->SetBackgroundColour(wxColour(255, 255, 255));
     m_sizerProgram->Add(itemStaticBitmap6, 0, wxALIGN_CENTER_HORIZONTAL|wxALL, 5);
 
-    wxStaticText* mainStaticText = new wxStaticText( mainAboutPanel, wxID_STATIC, _("NumeRe:\nFramework für Numerische Rechnungen"), wxDefaultPosition, wxDefaultSize, wxALIGN_CENTRE );
+    wxString sAppName = _guilang.get("COMMON_APPNAME");
+    sAppName.Replace(": ", ":\n");
+
+    wxStaticText* mainStaticText = new wxStaticText( mainAboutPanel, wxID_STATIC, sAppName, wxDefaultPosition, wxDefaultSize, wxALIGN_CENTRE );
     mainStaticText->SetForegroundColour(wxColour(0, 0, 0));
     mainStaticText->SetBackgroundColour(wxColour(255, 255, 255));
     mainStaticText->SetFont(wxFont(12, wxSWISS, wxNORMAL, wxBOLD, false, _T("Arial")));

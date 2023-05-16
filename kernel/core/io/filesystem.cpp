@@ -35,7 +35,7 @@ FileSystem::FileSystem()
 {
     sPath = "";
     sExecutablePath = "";
-    sValidExtensions = ";.dat;.txt;.tmp;.def;.nscr;.png;.gif;.eps;.bps;.svg;.tex;.labx;.csv;.cache;.ndat;.nprc;.nlng;.nlyt;.log;.plugins;.hlpidx;.nhlp;.jdx;.dx;.jcm;.ibw;.ndb;.ods;.jpg;.bmp;.tga;.bps;.prc;.obj;.xyz;.stl;.json;.off;.pdf;.wav;.wave;.xls;.xlsx;.chm;.h;.hpp;.cxx;.cpp;.c;.m;.tif;.tiff;.ini;.xml;.yaml;.yml;.nsi;.dot;";
+    sValidExtensions = ";.dat;.txt;.tmp;.def;.nscr;.png;.gif;.eps;.bps;.svg;.tex;.labx;.csv;.cache;.ndat;.nprc;.nlng;.nlyt;.log;.plugins;.hlpidx;.nhlp;.jdx;.dx;.jcm;.ibw;.ndb;.ods;.jpg;.bmp;.tga;.bps;.prc;.obj;.xyz;.stl;.json;.off;.pdf;.wav;.wave;.xls;.xlsx;.chm;.h;.hpp;.cxx;.cpp;.c;.m;.tif;.tiff;.ini;.xml;.yaml;.yml;.nsi;.dot;.zip;.tar;.gz;";
 
     for (int i = 0; i < 7; i++)
     {
@@ -165,6 +165,9 @@ void FileSystem::resolveWildCards(std::string& _sFileName, bool isFile, bool che
         hFind = FindFirstFile(_sFileName.c_str(), &FindFileData);
         std::string sNewFileName = "";
 
+        if (hFind == INVALID_HANDLE_VALUE)
+            return;
+
         do
         {
             if (!isFile && FindFileData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
@@ -202,17 +205,11 @@ void FileSystem::resolveWildCards(std::string& _sFileName, bool isFile, bool che
                     sPathTemp = sPathTemp.substr(0, sPathTemp.rfind('/'));
             }
             else if (sPathTemp.rfind('/') != std::string::npos)
-            {
                 sPathTemp = sPathTemp.substr(0, sPathTemp.rfind('/'));
-            }
             else if (sPathTemp.rfind('\\') != std::string::npos)
-            {
                 sPathTemp = sPathTemp.substr(0, sPathTemp.rfind('\\'));
-            }
             else
-            {
                 sPathTemp = "";
-            }
 
             if (sPathTemp.length())
                 _sFileName = sPathTemp + "/" + sNewFileName;
@@ -326,9 +323,7 @@ std::string FileSystem::ValidFileName(std::string _sFileName, const std::string 
         // Otherwise the extension will be exchanged
         // automatically
         if (sValidExtensions.find(";"+toLowerCase(sValid)+";") != std::string::npos)
-        {
             sValid = _sFileName;
-        }
         else
         {
             if (sValid == ".*")
