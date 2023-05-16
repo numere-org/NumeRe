@@ -21,10 +21,9 @@ Fixed	Exporting to CSV files does now support line breaks in column headlines as
 Fixed	"TAB().num" now also considers strings as valid values for the "num()" operation.
 Fixed	Improved the evaluation of string vectors with different number of elements.
 Fixed	Improved performance when copying a large table out of the table viewer.
-Fixed	It's now possible to deactivate the table auto-save by setting the interval to zero
 Fixed	Procedures execute now always the latest changes without the need of waiting a few seconds
 Removed	Plain app names were removed from code and moved to the langauge files (allows also translations of the app name).
 Fixed	Resolved a rare invalid pointer issue.
 Fixed	A rare problem with comparison of two mixed-type data objects was resolved.
 Fixed	The sometimes appearing dollar sign in some terminal messages has been removed.
-Fixed	Empty columns are now correctly calculated as empy if used with "TAB().cnt.cols"
+Fixed	Empty columns are now correctly calculated as empty if used with "TAB().cnt.cols"
