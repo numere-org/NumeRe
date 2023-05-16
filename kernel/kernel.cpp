@@ -597,11 +597,13 @@ void NumeReKernel::printVersionInfo(bool shortInfo)
 {
     bWritingTable = true;
     make_hline(80);
-    printPreFmt("| ");
-    displaySplash();
-    printPreFmt("                                  |\n");
-    printPreFmt("| Version: " + sVersion + strfill("Build: ", 79 - 22 - sVersion.length()) + AutoVersion::YEAR + "-" + AutoVersion::MONTH + "-" + AutoVersion::DATE + " |\n");
-    printPreFmt("| Copyright (c) 2013-" + std::string(AutoVersion::YEAR) + toSystemCodePage(", Erik A. Hänel et al.") + strfill(toSystemCodePage(_lang.get("MAIN_ABOUT_NBR")), 79 - 48) + " |\n");
+    std::string sAppName = toUpperCase(_lang.get("COMMON_APPNAME"));
+
+    printPreFmt("| " + sAppName + strfill("|\n", 79 - sAppName.length()));
+    printPreFmt("| Version: " + sVersion + strfill("Build: ", 79 - 22 - sVersion.length())
+                + AutoVersion::YEAR + "-" + AutoVersion::MONTH + "-" + AutoVersion::DATE + " |\n");
+    printPreFmt("| Copyright (c) 2013-" + std::string(AutoVersion::YEAR) + toSystemCodePage(", Erik A. Hänel et al.")
+                + strfill(_lang.get("MAIN_ABOUT_NBR"), 79 - 48) + " |\n");
     make_hline(80);
 
     if (!shortInfo)
@@ -2322,7 +2324,7 @@ std::string NumeReKernel::ReadAnswer()
 /////////////////////////////////////////////////
 void NumeReKernel::displaySplash()
 {
-    printPreFmt("NUMERE: FRAMEWORK FÜR NUMERISCHE RECHNUNGEN");
+    printPreFmt(toUpperCase(_lang.get("COMMON_APPNAME")));
     return;
 }
 

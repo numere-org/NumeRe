@@ -118,7 +118,7 @@ namespace NumeRe
         if (!fileExists(sFile) && (_sFile.find('.') == string::npos || _sFile.find('.') < _sFile.rfind('/')))
             sFile = ValidFileName(_sFile+".*");
 
-        g_logger.info("Loading file '" + _sFile + "'.");
+        g_logger.info("Loading file '" + _sFile + "'. (Resolved as '" + sFile + "')");
 
         // Get an instance of the desired file type
         GenericFile* file = getFileByType(sFile);

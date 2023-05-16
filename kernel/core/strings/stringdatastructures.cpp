@@ -87,7 +87,7 @@ StringView StringVector::getVectorized(size_t i) const
 /////////////////////////////////////////////////
 mu::value_type StringVector::getNumericalVectorized(size_t i) const
 {
-    if (i >= size() && size() > 1)
+    if ((i >= size() && size() > 1) || !getVectorized(i).length())
         return NAN;
 
     if (is_string(i))
@@ -117,7 +117,7 @@ mu::value_type StringVector::getNumericalVectorized(size_t i) const
 /////////////////////////////////////////////////
 bool StringVector::getBooleanVectorized(size_t i) const
 {
-    if (i >= size() && size() > 1)
+    if ((i >= size() && size() > 1) || !getVectorized(i).length())
         return false;
 
     if (is_string(i))
@@ -513,7 +513,7 @@ StringArg StringVector::getArg(size_t i) const
     else if (size() == 1)
         return StringArg(at(0));
 
-    return StringArg();
+    return StringArg("\"\"");
 }
 
 
@@ -828,14 +828,26 @@ std::vector<mu::value_type> StringVector::get_numerical() const
 /////////////////////////////////////////////////
 StringVector StringVector::operator+(const StringVector& sVect) const
 {
-    StringVector vRet(std::max(size(), sVect.size()));
+    size_t thisSize = size();
+    size_t otherSize = sVect.size();
+
+    StringVector vRet(std::max(thisSize, otherSize));
 
     for (size_t i = 0; i < vRet.size(); i++)
     {
         if (is_string(i) && sVect.is_string(i))
             vRet.getRef(i) = "\"" + (getVectorized(i) + sVect.getVectorized(i)) + "\"";
-        else
+        else if (i >= thisSize && thisSize > 1 && i < otherSize)
+            vRet.getRef(i) = sVect.is_string(i) ? "\"" + sVect.getVectorized(i) + "\"" : sVect.getVectorized(i).to_string();
+        else if (i < thisSize && i >= otherSize && otherSize > 1)
+            vRet.getRef(i) = is_string(i) ? "\"" + getVectorized(i) + "\"" : getVectorized(i).to_string();
+        else if (!is_string(i) && !sVect.is_string(i))
             vRet.getRef(i) = getVectorized(i) + std::string("+") + sVect.getVectorized(i).to_string();
+        else
+            throw SyntaxError(SyntaxError::STRING_ERROR,
+                              (is_string(i) ? "\"" + getVectorized(i) + "\"" : getVectorized(i).to_string())
+                              + " + " + (sVect.is_string(i) ? "\"" + sVect.getVectorized(i) + "\"" : sVect.getVectorized(i).to_string()),
+                              SyntaxError::invalid_position, _lang.get("ERR_NR_3603_NOT_INCOMPATIBLE_TYPES"));
     }
 
     return vRet;

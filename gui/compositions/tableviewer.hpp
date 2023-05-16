@@ -91,8 +91,6 @@ class TableViewer : public wxGrid
         void updateStatusBar(const wxGridCellCoordsContainer& coords, wxGridCellCoords* cursor = nullptr);
         void createMenuBar();
 
-        wxString copyCell(int row, int col);
-
         wxMenu m_popUpMenu;
         wxGridCellCoords m_lastRightClick;
 

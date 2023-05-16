@@ -704,13 +704,13 @@ static void evaluateTransposeForDataOperation(const string& sTarget, Indices& _i
         // Depending on the transpose flag, the rows and columns are exchanged
         if (!bTranspose)
         {
-            _iTargetIndex.row = VectorIndex(0LL, _iSourceIndex.row.size());
-            _iTargetIndex.col = VectorIndex(_data.getCols(sTarget, false), _data.getCols(sTarget, false) + _iSourceIndex.col.size());
+            _iTargetIndex.row = VectorIndex(0LL, _iSourceIndex.row.size()-1);
+            _iTargetIndex.col = VectorIndex(_data.getCols(sTarget, false), _data.getCols(sTarget, false) + _iSourceIndex.col.size()-1);
         }
         else
         {
-            _iTargetIndex.row = VectorIndex(0LL, _iSourceIndex.col.size());
-            _iTargetIndex.col = VectorIndex(_data.getCols(sTarget, false), _data.getCols(sTarget, false) + _iSourceIndex.row.size());
+            _iTargetIndex.row = VectorIndex(0LL, _iSourceIndex.col.size()-1);
+            _iTargetIndex.col = VectorIndex(_data.getCols(sTarget, false), _data.getCols(sTarget, false) + _iSourceIndex.row.size()-1);
         }
     }
     else if (_iTargetIndex.row.size())
@@ -723,18 +723,18 @@ static void evaluateTransposeForDataOperation(const string& sTarget, Indices& _i
         if (!bTranspose)
         {
             if (_iTargetIndex.row.isOpenEnd())
-                _iTargetIndex.row = VectorIndex(_iTargetIndex.row.front(), _iTargetIndex.row.front() + _iSourceIndex.row.size());
+                _iTargetIndex.row = VectorIndex(_iTargetIndex.row.front(), _iTargetIndex.row.front() + _iSourceIndex.row.size()-1);
 
             if (_iTargetIndex.col.isOpenEnd())
-                _iTargetIndex.col = VectorIndex(_iTargetIndex.col.front(), _iTargetIndex.col.front() + _iSourceIndex.col.size());
+                _iTargetIndex.col = VectorIndex(_iTargetIndex.col.front(), _iTargetIndex.col.front() + _iSourceIndex.col.size()-1);
         }
         else
         {
             if (_iTargetIndex.row.isOpenEnd())
-                _iTargetIndex.row = VectorIndex(_iTargetIndex.row.front(), _iTargetIndex.row.front() + _iSourceIndex.col.size());
+                _iTargetIndex.row = VectorIndex(_iTargetIndex.row.front(), _iTargetIndex.row.front() + _iSourceIndex.col.size()-1);
 
             if (_iTargetIndex.col.isOpenEnd())
-                _iTargetIndex.col = VectorIndex(_iTargetIndex.col.front(), _iTargetIndex.col.front() + _iSourceIndex.row.size());
+                _iTargetIndex.col = VectorIndex(_iTargetIndex.col.front(), _iTargetIndex.col.front() + _iSourceIndex.row.size()-1);
         }
     }
 }
@@ -756,78 +756,15 @@ static void evaluateTransposeForDataOperation(const string& sTarget, Indices& _i
 /////////////////////////////////////////////////
 static void performDataOperation(const string& sSource, const string& sTarget, const Indices& _iSourceIndex, const Indices& _iTargetIndex, MemoryManager& _data, bool bMove, bool bTranspose)
 {
-    MemoryManager _cache;
+    // Get the extract as a table
+    NumeRe::Table extract = _data.extractTable(sSource, _iSourceIndex.row, _iSourceIndex.col);
 
-    // First step: copy the contents to the Datafile _cache
-    // If the move flag is set, then the contents are cleared at the source location
-    // vector indices
-    for (unsigned int i = 0; i < _iSourceIndex.row.size(); i++)
-    {
-        for (unsigned int j = 0; j < _iSourceIndex.col.size(); j++)
-        {
-            if (!i)
-                _cache.setHeadLineElement(j, "table", _data.getHeadLineElement(_iSourceIndex.col[j], sSource));
+    // If we move then we need to delete the old data
+    if (bMove)
+        _data.deleteBulk(sSource, _iSourceIndex.row, _iSourceIndex.col);
 
-            if (_data.isValidElement(_iSourceIndex.row[i], _iSourceIndex.col[j], sSource))
-            {
-                _cache.writeToTable(i, j, "table", _data.getElement(_iSourceIndex.row[i], _iSourceIndex.col[j], sSource));
-
-                if (bMove)
-                    _data.deleteEntry(_iSourceIndex.row[i], _iSourceIndex.col[j], sSource);
-            }
-        }
-    }
-
-    // Second step: Copy the contents in "_cache" to the new location in the original Datafile object
-
-    for (long long int i = 0; i < _cache.getLines("table", false); i++)
-    {
-        // Break the operation, if the indices are marking a smaller section
-        if (!bTranspose)
-        {
-            if (i >= _iTargetIndex.row.size())
-                break;
-        }
-        else
-        {
-            if (i >= _iTargetIndex.col.size())
-                break;
-        }
-        for (long long int j = 0; j < _cache.getCols("table", false); j++)
-        {
-            if (!bTranspose)
-            {
-                // Write the headlines
-                if (!_iTargetIndex.row[i] && _data.getHeadLineElement(_iTargetIndex.col[j], sTarget).substr(0, 6) == "Spalte")
-                {
-                    _data.setHeadLineElement(_iTargetIndex.col[j], sTarget, _cache.getHeadLineElement(j, "table"));
-                }
-
-                // Break the operation, if the indices are marking a smaller section
-                if (j > _iTargetIndex.col.size())
-                    break;
-
-                // Write the data. Invalid data is deleted explicitly, because it might already contain old data
-                if (_cache.isValidElement(i, j, "table"))
-                    _data.writeToTable(_iTargetIndex.row[i], _iTargetIndex.col[j], sTarget, _cache.getElement(i, j, "table"));
-                else if (_data.isValidElement(_iTargetIndex.row[i], _iTargetIndex.col[j], sTarget))
-                    _data.deleteEntry(_iTargetIndex.row[i], _iTargetIndex.col[j], sTarget);
-            }
-            else
-            {
-                // We don't have headlines in this case
-                // Break the operation, if the indices are marking a smaller section
-                if (j > _iTargetIndex.row.size())
-                    break;
-
-                // Write the data. Invalid data is deleted explicitly, because it might already contain old data
-                if (_cache.isValidElement(i, j, "table"))
-                    _data.writeToTable(_iTargetIndex.col[j], _iTargetIndex.row[i], sTarget, _cache.getElement(i, j, "table"));
-                else if (_data.isValidElement(_iTargetIndex.col[j], _iTargetIndex.row[i], sTarget))
-                    _data.deleteEntry(_iTargetIndex.col[j], _iTargetIndex.row[i], sTarget);
-            }
-        }
-    }
+    // Insert the copied table at the new location
+    _data.insertCopiedTable(extract, sTarget, _iTargetIndex.row, _iTargetIndex.col, bTranspose);
 }
 
 

@@ -1606,6 +1606,11 @@ value_type* FlowCtrl::evalHeader(int& nNum, std::string& sHeadExpression, bool b
 
             sCache = getDataElements(sHeadExpression, *_parserRef, *_dataRef, *_optionRef);
 
+            // Ad-hoc bytecode adaption
+#warning NOTE (numere#1#08/21/21): Might need some adaption, if bytecode issues are experienced
+            if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sHeadExpression))
+                nCurrentCalcType |= CALCTYPE_STRING;
+
             if (_parserRef->IsCompiling()
                 && _parserRef->CanCacheAccess())
             {
@@ -1812,6 +1817,11 @@ NumeRe::Cluster FlowCtrl::evalRangeBasedHeader(std::string& sHeadExpression, int
                 _parserRef->SetCompiling(true);
 
             sCache = getDataElements(sHeadExpression, *_parserRef, *_dataRef, *_optionRef);
+
+            // Ad-hoc bytecode adaption
+#warning NOTE (numere#1#08/21/21): Might need some adaption, if bytecode issues are experienced
+            if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sHeadExpression))
+                nCurrentCalcType |= CALCTYPE_STRING;
 
             if (_parserRef->IsCompiling()
                 && _parserRef->CanCacheAccess())

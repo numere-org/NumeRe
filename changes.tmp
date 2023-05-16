@@ -1,7 +1,1 @@
-Fixed	The documentation browser can now be opened again using "help window" and similar. The necessary time for opening up with this method was greatly reduced.
-Fixed	Using string expressions as indices is possible again.
-Fixed	The graph window cannot made smaller than a defined minimal size anymore. The visual glitch cutting off parts of the the style text input has been resolved.
-Fixed	Excel sheets with more than a single table headline are readable again.
-Fixed	Drag/drop of files into the editor is now working as expected.
-Fixed	"dialog" now accept also tables as input sources for their default values.
 New	The new flow control command "leave" allows jumping out of nested loops completely without the need of unnecessary complex "if-else" checks and boolean flags.

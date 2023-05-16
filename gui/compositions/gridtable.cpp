@@ -632,6 +632,56 @@ mu::value_type GridNumeReTable::sum(const wxGridCellCoordsContainer& coords) con
 
 
 /////////////////////////////////////////////////
+/// \brief This member function serializes the
+/// table within the range (r1,c1)->(r2,c2).
+///
+/// \param coords const wxGridCellCoordsContainer&
+/// \return std::string
+///
+/////////////////////////////////////////////////
+std::string GridNumeReTable::serialize(const wxGridCellCoordsContainer& coords) const
+{
+    std::string sSerialized;
+    const int nHeadLines = getNumHeadlines();
+    const wxGridCellsExtent& cellExtent = coords.getExtent();
+
+    if (cellExtent.m_topleft.GetRow() < nHeadLines)
+    {
+        for (int i = cellExtent.m_topleft.GetRow(); i <= std::min(nHeadLines-1, cellExtent.m_bottomright.GetRow()); i++)
+        {
+            for (int j = cellExtent.m_topleft.GetCol(); j <= cellExtent.m_bottomright.GetCol(); j++)
+            {
+                if (coords.contains(i, j))
+                    sSerialized += _table.getCleanHeadPart(j, i);
+
+                sSerialized += "\t";
+            }
+
+            sSerialized.back() = '\n';
+        }
+    }
+
+    if (cellExtent.m_bottomright.GetRow() >= nHeadLines)
+    {
+        for (int i = std::max(nHeadLines, cellExtent.m_topleft.GetRow()); i <= cellExtent.m_bottomright.GetRow(); i++)
+        {
+            for (int j = cellExtent.m_topleft.GetCol(); j <= cellExtent.m_bottomright.GetCol(); j++)
+            {
+                if (coords.contains(i, j))
+                    sSerialized += _table.getValueAsInternalString(i - nHeadLines, j);
+
+                sSerialized += "\t";
+            }
+
+            sSerialized.back() = '\n';
+        }
+    }
+
+    return sSerialized;
+}
+
+
+/////////////////////////////////////////////////
 /// \brief Returns the types of the handled table.
 ///
 /// \return std::vector<int>

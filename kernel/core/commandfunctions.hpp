@@ -66,7 +66,8 @@ static size_t findSettingOption(const std::string& sCmd, const std::string& sOpt
 /////////////////////////////////////////////////
 static bool confirmOperation(const std::string& sMessage)
 {
-    NumeReKernel::print(sMessage);
+    Settings& _option = NumeReKernel::getInstance()->getSettings();
+    NumeReKernel::print(LineBreak(sMessage, _option));
     std::string sArgument;
 
     do
@@ -2627,60 +2628,7 @@ static CommandReturnValues cmd_get(string& sCmd)
     bool asVal = findParameter(sCmd, "asval");
     bool asStr = findParameter(sCmd, "asstr");
 
-    for (auto iter = mSettings.begin(); iter != mSettings.end(); ++iter)
-    {
-        if (findSettingOption(sCmd, iter->first.substr(iter->first.find('.')+1)) && !iter->second.isHidden())
-        {
-            std::string convertedValue;
-
-            switch (iter->second.getType())
-            {
-                case SettingsValue::BOOL:
-                    convertedValue = toString(iter->second.active());
-                    break;
-                case SettingsValue::UINT:
-                    convertedValue = toString(iter->second.value());
-                    break;
-                case SettingsValue::STRING:
-                    convertedValue = iter->second.stringval();
-                    break;
-            }
-
-            switch (iter->second.getType())
-            {
-                case SettingsValue::BOOL:
-                case SettingsValue::UINT:
-                    if (asVal)
-                    {
-                        if (!nPos)
-                            sCmd = convertedValue;
-                        else
-                            sCmd.replace(nPos, sCommand.length(), convertedValue);
-
-                        break;
-                    }
-                // Fallthrough intended
-                case SettingsValue::STRING:
-                    if (asStr || asVal)
-                    {
-                        if (!nPos)
-                            sCmd = "\"" + convertedValue + "\"";
-                        else
-                            sCmd.replace(nPos, sCommand.length(), "\"" + convertedValue + "\"");
-                    }
-                    else
-                        NumeReKernel::print(toUpperCase(iter->first.substr(iter->first.find('.')+1)) + ": " + convertedValue);
-
-                    break;
-            }
-
-            if (asStr || asVal)
-                return COMMAND_HAS_RETURNVALUE;
-            else
-                return COMMAND_PROCESSED;
-        }
-    }
-
+    // Handle some special cases
     if (findSettingOption(sCmd, "windowsize"))
     {
         std::string convertedValue = "x = " + toString(mSettings.at(SETTING_V_WINDOW_X).value() + 1) + ", y = " + toString(mSettings.at(SETTING_V_WINDOW_Y).value() + 1);
@@ -2767,11 +2715,65 @@ static CommandReturnValues cmd_get(string& sCmd)
         NumeReKernel::print(LineBreak("PLOTPARAMS: " + _pData.getParams(), _option, false));
         return COMMAND_PROCESSED;
     }
-    else
+
+    // Handle generic cases
+    for (auto iter = mSettings.begin(); iter != mSettings.end(); ++iter)
     {
-        doc_Help("get", _option);
-        return COMMAND_PROCESSED;
+        if (findSettingOption(sCmd, iter->first.substr(iter->first.find('.')+1)) && !iter->second.isHidden())
+        {
+            std::string convertedValue;
+
+            switch (iter->second.getType())
+            {
+                case SettingsValue::BOOL:
+                    convertedValue = toString(iter->second.active());
+                    break;
+                case SettingsValue::UINT:
+                    convertedValue = toString(iter->second.value());
+                    break;
+                case SettingsValue::STRING:
+                    convertedValue = iter->second.stringval();
+                    break;
+            }
+
+            switch (iter->second.getType())
+            {
+                case SettingsValue::BOOL:
+                case SettingsValue::UINT:
+                    if (asVal)
+                    {
+                        if (!nPos)
+                            sCmd = convertedValue;
+                        else
+                            sCmd.replace(nPos, sCommand.length(), convertedValue);
+
+                        break;
+                    }
+                // Fallthrough intended
+                case SettingsValue::STRING:
+                    if (asStr || asVal)
+                    {
+                        if (!nPos)
+                            sCmd = "\"" + convertedValue + "\"";
+                        else
+                            sCmd.replace(nPos, sCommand.length(), "\"" + convertedValue + "\"");
+                    }
+                    else
+                        NumeReKernel::print(toUpperCase(iter->first.substr(iter->first.find('.')+1)) + ": " + convertedValue);
+
+                    break;
+            }
+
+            if (asStr || asVal)
+                return COMMAND_HAS_RETURNVALUE;
+            else
+                return COMMAND_PROCESSED;
+        }
     }
+
+    // Will only reach this point, if no setting has been found
+    doc_Help("get", _option);
+    return COMMAND_PROCESSED;
 }
 
 

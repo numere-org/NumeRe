@@ -30,3 +30,15 @@
 *.exe
 *.out
 *.app
+
+# Testing
+Debug/*
+
+# IDE
+NumeRe.depend
+NumeRe.layout
+.vscode/*
+*.cscope_file_list
+*.res
+*.bak
+/Release/ChangesLog.txt

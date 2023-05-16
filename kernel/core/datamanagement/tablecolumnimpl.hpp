@@ -89,7 +89,7 @@ class ValueColumn : public TableColumn
         /////////////////////////////////////////////////
         virtual size_t getBytes() const override
         {
-            return size() * sizeof(mu::value_type) + m_sHeadLine.length() * sizeof(char);
+            return size() * sizeof(mu::value_type) + m_sHeadLine.capacity() * sizeof(char);
         }
 
         /////////////////////////////////////////////////
@@ -173,7 +173,7 @@ class DateTimeColumn : public TableColumn
         /////////////////////////////////////////////////
         virtual size_t getBytes() const override
         {
-            return size() * sizeof(double) + m_sHeadLine.length() * sizeof(char);
+            return size() * sizeof(double) + m_sHeadLine.capacity() * sizeof(char);
         }
 
         /////////////////////////////////////////////////
@@ -264,7 +264,7 @@ class LogicalColumn : public TableColumn
         /////////////////////////////////////////////////
         virtual size_t getBytes() const override
         {
-            return size() * sizeof(LogicalValue) + m_sHeadLine.length() * sizeof(char);
+            return size() * sizeof(LogicalValue) + m_sHeadLine.capacity() * sizeof(char);
         }
 
         /////////////////////////////////////////////////

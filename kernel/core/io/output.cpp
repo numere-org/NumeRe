@@ -244,7 +244,7 @@ void Output::print_legal()		// Pro forma Kommentare in die Datei
     sBuild += AutoVersion::DATE;
     print(sCommentSign);
     print(sCommentSign + " " + _lang.get("OUTPUT_PRINTLEGAL_LINE1"));
-    print(sCommentSign + " NumeRe: Framework für Numerische Rechnungen");
+    print(sCommentSign + " " + _lang.get("COMMON_APPNAME"));
     print(sCommentSign + "=============================================");
     print(sCommentSign + " " + _lang.get("OUTPUT_PRINTLEGAL_LINE2", sVersion, sBuild));
     print(sCommentSign + " " + _lang.get("OUTPUT_PRINTLEGAL_LINE3", sBuild.substr(0,4)));

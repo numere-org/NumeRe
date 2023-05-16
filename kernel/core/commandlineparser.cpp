@@ -559,28 +559,28 @@ std::string CommandLineParser::getFileParameterValue(std::string sFileExt, const
 {
     FileSystem _fSys;
     _fSys.initializeFromKernel();
+    NumeReKernel* instance = NumeReKernel::getInstance();
 
     std::string sParams = m_parlist;
 
     // Call functions first
-    if (!NumeReKernel::getInstance()->getDefinitions().call(sParams))
+    if (!instance->getDefinitions().call(sParams))
         throw SyntaxError(SyntaxError::FUNCTION_ERROR, sParams, SyntaxError::invalid_position);
 
-    if (NumeReKernel::getInstance()->getStringParser().containsStringVars(sParams))
-        NumeReKernel::getInstance()->getStringParser().getStringValues(sParams);
+    if (instance->getStringParser().containsStringVars(sParams))
+        instance->getStringParser().getStringValues(sParams);
 
-    if (NumeReKernel::getInstance()->getMemoryManager().containsTablesOrClusters(sParams))
-        getDataElements(sParams, NumeReKernel::getInstance()->getParser(), NumeReKernel::getInstance()->getMemoryManager(), NumeReKernel::getInstance()->getSettings());
+    if (instance->getMemoryManager().containsTablesOrClusters(sParams))
+        getDataElements(sParams, instance->getParser(), instance->getMemoryManager(), instance->getSettings());
 
     int nParPos = findParameter(sParams, "file", '=');
 
     if (!nParPos && sDefaultName.length())
-        return _fSys.ValidFileName(removeQuotationMarks(sDefaultName), sFileExt);
+        return _fSys.ValidFileName(removeQuotationMarks(sDefaultName), sFileExt, false);
     else if (!nParPos)
         return "";
 
     std::string sFileName = getArgAtPos(sParams, nParPos+4, ARGEXTRACT_NONE);
-    NumeReKernel* instance = NumeReKernel::getInstance();
 
     // String evaluation
     if (instance->getStringParser().isStringExpression(sFileName))
@@ -595,7 +595,7 @@ std::string CommandLineParser::getFileParameterValue(std::string sFileExt, const
     if (sFileName.length())
         return parseFileName(sFileName, sFileExt, sBaseFolder);
     else if (sDefaultName.length())
-        return _fSys.ValidFileName(removeQuotationMarks(sDefaultName), sFileExt);
+        return _fSys.ValidFileName(removeQuotationMarks(sDefaultName), sFileExt, false);
 
     return "";
 }
@@ -618,7 +618,7 @@ std::string CommandLineParser::getFileParameterValueForSaving(std::string sFileE
     FileSystem _fSys;
     _fSys.initializeFromKernel();
 
-    return _fSys.ValidizeAndPrepareName(getFileParameterValue(sFileExt, sBaseFolder, sDefaultName), sFileExt);
+    return _fSys.ValidizeAndPrepareName(getFileParameterValue(sFileExt, sBaseFolder, sDefaultName), "");
 }
 
 
