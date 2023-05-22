@@ -28,7 +28,7 @@
 #include "../io/output.hpp"
 #include "../maths/define.hpp"
 
-void load_data(MemoryManager& _data, Settings& _option, mu::Parser& _parser, std::string sFileName = "");
+void load_data(MemoryManager& _data, Settings& _option, mu::Parser& _parser, std::string sFileName = "", std::string sFileFormat = "");
 void show_data(MemoryManager& _data, Output& _out, Settings& _option, const std::string& _sCache, size_t nPrecision);
 void append_data(CommandLineParser& cmdParser);
 void clear_cache(MemoryManager& _data, Settings& _option, bool bIgnore = false);

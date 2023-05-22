@@ -163,7 +163,7 @@ class Memory : public Sorter
 		void setMetaData(const NumeRe::TableMetaData& meta);
 		void markModified();
 
-		bool save(std::string _sFileName, const std::string& sTableName, unsigned short nPrecision);
+		bool save(std::string _sFileName, const std::string& sTableName, unsigned short nPrecision, std::string sExt = "");
         bool getSaveStatus() const;
         void setSaveStatus(bool _bIsSaved);
         long long int getLastSaved() const;

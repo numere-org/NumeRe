@@ -42,19 +42,22 @@ namespace NumeRe
     // is returned. The calling function is responsible for clearing the
     // created instance. The returned pointer is of the type of GenericFile
     // but references an instance of a derived class
-    GenericFile* getFileByType(const string& filename)
+    GenericFile* getFileByType(const std::string& filename, std::string sExt)
     {
         FileSystem _fSys;
         _fSys.initializeFromKernel();
 
-        // Get the extension of the filename
-        string sExt = toLowerCase(_fSys.getFileParts(filename).back());
+        // Get the extension of the filename, if nothing was provided
+        if (!sExt.length())
+            sExt = toLowerCase(_fSys.getFileParts(filename).back());
+        else
+            sExt = toLowerCase(sExt);
 
         // Create an instance of the selected file type
         if (sExt == "ndat")
             return new NumeReDataFile(filename);
 
-        if (sExt == "dat" && ZygoLib::DatFile::isDatFile(filename))
+        if ((sExt == "dat" || sExt == "zygo") && ZygoLib::DatFile::isDatFile(filename))
             return new ZygoDat(filename);
 
         if (sExt == "txt" || sExt == "dat" || !sExt.length())

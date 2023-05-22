@@ -1248,10 +1248,11 @@ namespace NumeRe
     /// references an instance of a derived class.
     ///
     /// \param filename const std::string&
+    /// \param sExt std::string
     /// \return GenericFile*
     ///
     /////////////////////////////////////////////////
-    GenericFile* getFileByType(const std::string& filename);
+    GenericFile* getFileByType(const std::string& filename, std::string sExt = "");
 
 
     /////////////////////////////////////////////////
