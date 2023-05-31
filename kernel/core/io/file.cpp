@@ -21,9 +21,9 @@
 
 #include "file.hpp"
 #include "../datamanagement/tablecolumnimpl.hpp"
-#include "../IgorLib/ReadWave.h"
+#include "IgorLib/ReadWave.h"
+#include "BasicExcel.hpp"
 #include "../utils/tools.hpp"
-#include "../utils/BasicExcel.hpp"
 #include "../../../externals/tinyxml2/tinyxml2.h"
 #include "../ui/language.hpp"
 #include "../version.h"

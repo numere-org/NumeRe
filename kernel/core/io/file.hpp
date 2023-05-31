@@ -25,7 +25,7 @@
 #include <vector>
 #include <utility>
 
-#include "../utils/zip++.hpp"
+#include "zip++.hpp"
 #include "../utils/stringtools.hpp"
 #include "../ui/error.hpp"
 #include "../datamanagement/tablecolumn.hpp"

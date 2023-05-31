@@ -30,7 +30,7 @@
 #include "ui/winlayout.hpp"
 #include "io/logger.hpp"
 #include "utils/tools.hpp"
-#include "utils/archive.hpp"
+#include "io/archive.hpp"
 
 #include "commandlineparser.hpp"
 

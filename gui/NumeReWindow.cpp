@@ -106,7 +106,7 @@
 #include "../common/filerevisions.hpp"
 #include "../common/ipc.hpp"
 
-#include "../common/http.h"
+#include "../kernel/core/utils/http.h"
 #include "../common/compareFiles.hpp"
 
 #include "controls/treesearchctrl.hpp"
