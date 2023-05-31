@@ -19,8 +19,8 @@
 #include "stringtools.hpp"
 #include "../settings.hpp"
 #include "../structures.hpp"
-#include "fast_float/fast_float.h"
 
+#include <fast_float/fast_float.h>
 #include <cstring>
 #include <sstream>
 #include <iomanip>

@@ -24,7 +24,7 @@
 #include "../IgorLib/ReadWave.h"
 #include "../utils/tools.hpp"
 #include "../utils/BasicExcel.hpp"
-#include "../utils/tinyxml2.h"
+#include "../../../externals/tinyxml2/tinyxml2.h"
 #include "../ui/language.hpp"
 #include "../version.h"
 #include "../../kernel.hpp"
