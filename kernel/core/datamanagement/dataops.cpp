@@ -208,7 +208,7 @@ static std::string** make_stringmatrix(MemoryManager& _data, Output& _out, Setti
 					string sHead = sOut[i][j];
 					int nCount = 0;
 
-					for (unsigned int n = 0; n < sHead.length(); n++)
+					for (size_t n = 0; n < sHead.length(); n++)
 					{
 						if (sHead[n] == '\n')
 						{

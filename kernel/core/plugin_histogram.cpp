@@ -1726,7 +1726,7 @@ void plugin_histogram(std::string& sCmd)
         {
             int nSep = 0;
 
-            for (unsigned int i = 0; i < sTemp.length(); i++)
+            for (size_t i = 0; i < sTemp.length(); i++)
             {
                 if (sTemp[i] == ':')
                 {

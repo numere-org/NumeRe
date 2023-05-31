@@ -94,9 +94,6 @@
 				<Linker>
 					<Add option="-s" />
 				</Linker>
-				<Environment>
-					<Variable name="wx" value="D:\TDM-GCC-64\wxWidgets-3.0.2" />
-				</Environment>
 			</Target>
 			<Environment>
 				<Variable name="wx" value="$(TARGET_COMPILER_DIR)wxWidgets-3.0.2" />

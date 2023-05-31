@@ -191,7 +191,7 @@ class FlowCtrl
         void eval();
         void reset();
 
-        int getCurrentLineNumber() const;
+        size_t getCurrentLineNumber() const;
         std::string getCurrentCommand() const;
 
         static bool isFlowCtrlStatement(const std::string& sCmd);

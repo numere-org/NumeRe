@@ -1,0 +1,1 @@
+Removed	The obsolete second parameter for the elliptic integral D was removed. The function now has the signature "ellipticD(x,k)"

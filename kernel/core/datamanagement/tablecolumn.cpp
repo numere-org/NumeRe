@@ -137,11 +137,11 @@ void TableColumn::setValue(const VectorIndex& idx, const std::vector<mu::value_t
 ///
 /// \param idx const VectorIndex&
 /// \param _dData mu::value_type*
-/// \param _nNum unsigned int
+/// \param _nNum size_t
 /// \return void
 ///
 /////////////////////////////////////////////////
-void TableColumn::setValue(const VectorIndex& idx, mu::value_type* _dData, unsigned int _nNum)
+void TableColumn::setValue(const VectorIndex& idx, mu::value_type* _dData, size_t _nNum)
 {
     for (size_t i = 0; i < idx.size(); i++)
     {

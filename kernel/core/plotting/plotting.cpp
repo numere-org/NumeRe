@@ -275,8 +275,8 @@ Plot::Plot(string& sCmd, MemoryManager& __data, Parser& __parser, Settings& __op
             // Only use the option value, if it contains two values
             if (nRes == 2)
             {
-                nMultiplots[1] = (unsigned int)intCast(v[0]);
-                nMultiplots[0] = (unsigned int)intCast(v[1]);
+                nMultiplots[1] = (size_t)intCast(v[0]);
+                nMultiplots[0] = (size_t)intCast(v[1]);
             }
 
             // Remove everything up to the first command in the
@@ -307,7 +307,7 @@ Plot::Plot(string& sCmd, MemoryManager& __data, Parser& __parser, Settings& __op
         }
 
         // Gather all parameters from all contained plotting commands
-        for (unsigned int i = 0; i < vPlotCompose.size(); i++)
+        for (size_t i = 0; i < vPlotCompose.size(); i++)
         {
             if (vPlotCompose[i].find("-set") != string::npos
                     && !isInQuotes(vPlotCompose[i], vPlotCompose[i].find("-set"))
@@ -374,7 +374,7 @@ Plot::Plot(string& sCmd, MemoryManager& __data, Parser& __parser, Settings& __op
 
             // Gather each plotting parameter until the next "subplot" command or until the end of the
             // whole block
-            for (unsigned int i = nPlotStart; i < vPlotCompose.size(); i++)
+            for (size_t i = nPlotStart; i < vPlotCompose.size(); i++)
             {
                 // Leave the loop, if the current command equals "subplot"
                 if (findCommand(vPlotCompose[i]).sString == "subplot")
@@ -552,7 +552,7 @@ size_t Plot::createSubPlotSet(bool& bAnimateVar, vector<string>& vPlotCompose, s
     // This loop will iterate through the plotting commands from
     // the passed starting index until the end or until the command
     // "subplot" has been found
-    for (unsigned int nPlotCompose = nSubPlotStart; nPlotCompose < vPlotCompose.size(); nPlotCompose++)
+    for (size_t nPlotCompose = nSubPlotStart; nPlotCompose < vPlotCompose.size(); nPlotCompose++)
     {
         m_types.clear();
         sCmd = vPlotCompose[nPlotCompose];
@@ -2220,7 +2220,7 @@ void Plot::create2dDrawing(vector<string>& vDrawVector)
     string sCurrentDrawingFunction;
     string sDummy;
 
-    for (unsigned int v = 0; v < vDrawVector.size(); v++)
+    for (size_t v = 0; v < vDrawVector.size(); v++)
     {
         sStyle = "k";
         sTextString = "";
@@ -2230,7 +2230,7 @@ void Plot::create2dDrawing(vector<string>& vDrawVector)
         {
             for (int n = (int)sCurrentDrawingFunction.length() - 1; n >= 0; n--)
             {
-                if (sCurrentDrawingFunction[n] == ',' && !isInQuotes(sCurrentDrawingFunction, (unsigned)n, true))
+                if (sCurrentDrawingFunction[n] == ',' && !isInQuotes(sCurrentDrawingFunction, (size_t)n, true))
                 {
                     sStyle = sCurrentDrawingFunction.substr(n + 1);
                     sCurrentDrawingFunction.erase(n);
@@ -2245,7 +2245,7 @@ void Plot::create2dDrawing(vector<string>& vDrawVector)
         {
             for (int n = (int)sCurrentDrawingFunction.length() - 1; n >= 0; n--)
             {
-                if (sCurrentDrawingFunction[n] == ',' && !isInQuotes(sCurrentDrawingFunction, (unsigned)n, true))
+                if (sCurrentDrawingFunction[n] == ',' && !isInQuotes(sCurrentDrawingFunction, (size_t)n, true))
                 {
                     sTextString = sCurrentDrawingFunction.substr(n + 1);
                     sCurrentDrawingFunction.erase(n);
@@ -2483,7 +2483,7 @@ void Plot::create3dDrawing(vector<string>& vDrawVector)
     string sCurrentDrawingFunction;
     string sDummy;
 
-    for (unsigned int v = 0; v < vDrawVector.size(); v++)
+    for (size_t v = 0; v < vDrawVector.size(); v++)
     {
         sStyle = "k";
         sTextString = "";
@@ -2493,7 +2493,7 @@ void Plot::create3dDrawing(vector<string>& vDrawVector)
         {
             for (int n = (int)sCurrentDrawingFunction.length() - 1; n >= 0; n--)
             {
-                if (sCurrentDrawingFunction[n] == ',' && !isInQuotes(sCurrentDrawingFunction, (unsigned)n, true))
+                if (sCurrentDrawingFunction[n] == ',' && !isInQuotes(sCurrentDrawingFunction, (size_t)n, true))
                 {
                     sStyle = sCurrentDrawingFunction.substr(n + 1);
                     sCurrentDrawingFunction.erase(n);
@@ -2508,7 +2508,7 @@ void Plot::create3dDrawing(vector<string>& vDrawVector)
         {
             for (int n = (int)sCurrentDrawingFunction.length() - 1; n >= 0; n--)
             {
-                if (sCurrentDrawingFunction[n] == ',' && !isInQuotes(sCurrentDrawingFunction, (unsigned)n, true))
+                if (sCurrentDrawingFunction[n] == ',' && !isInQuotes(sCurrentDrawingFunction, (size_t)n, true))
                 {
                     sTextString = sCurrentDrawingFunction.substr(n + 1);
                     sCurrentDrawingFunction.erase(n);
@@ -2928,7 +2928,7 @@ void Plot::createStd3dPlot(size_t nPlotCompose, size_t nPlotComposeSize)
                     NumeReKernel::getInstance()->getStringParser().evalAndFormat(sConvLegends, sDummy, true);
                     sConvLegends = "\"" + sConvLegends + "\"";
 
-                    for (unsigned int l = 0; l < sConvLegends.length(); l++)
+                    for (size_t l = 0; l < sConvLegends.length(); l++)
                     {
                         if (sConvLegends[l] == '(')
                             l += getMatchingParenthesis(sConvLegends.substr(l));
@@ -3386,12 +3386,12 @@ void Plot::evaluateSubplot(string& sCmd, size_t nMultiplots[2], size_t& nSubPlot
         if (findParameter(sCmd, "cols", '='))
         {
             _parser.SetExpr(getArgAtPos(sCmd, findParameter(sCmd, "cols", '=') + 4));
-            nMultiCols = (unsigned int)intCast(_parser.Eval());
+            nMultiCols = (size_t)intCast(_parser.Eval());
         }
         if (findParameter(sCmd, "lines", '='))
         {
             _parser.SetExpr(getArgAtPos(sCmd, findParameter(sCmd, "lines", '=') + 5));
-            nMultiLines = (unsigned int)intCast(_parser.Eval());
+            nMultiLines = (size_t)intCast(_parser.Eval());
         }
         if (sSubPlotIDX.length())
         {
@@ -6152,7 +6152,7 @@ void Plot::CoordSettings()
 
                 if (i < 3)
                 {
-                    for (unsigned int n = 0; n < _pData.getCustomTick(i).length(); n++)
+                    for (size_t n = 0; n < _pData.getCustomTick(i).length(); n++)
                     {
                         if (_pData.getCustomTick(i)[n] == '\n')
                             nCount++;
@@ -6209,7 +6209,7 @@ void Plot::CoordSettings()
                 }
                 else
                 {
-                    for (unsigned int n = 0; n < _pData.getCustomTick(i).length(); n++)
+                    for (size_t n = 0; n < _pData.getCustomTick(i).length(); n++)
                     {
                         if (_pData.getCustomTick(i)[n] == '\n')
                             nCount++;

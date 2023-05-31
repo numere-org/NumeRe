@@ -65,7 +65,7 @@ void Includer::openIncludedFile(const std::string& sIncludingString)
             {
                 if (sIncludeFileName[__i] == ':'
                     && (__i > 1
-                        || (__i == 1 && sIncludeFileName.length() > (unsigned int)__i+1 && sIncludeFileName[__i+1] != '/')))
+                        || (__i == 1 && sIncludeFileName.length() > (size_t)__i+1 && sIncludeFileName[__i+1] != '/')))
                 {
                     sIncludeFileName.erase(__i);
                     break;

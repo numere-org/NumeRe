@@ -52,7 +52,7 @@ int NumeReKernel::nLINE_LENGTH = 80;
 bool NumeReKernel::bWritingTable = false;
 int NumeReKernel::nOpenFileFlag = 0;
 int NumeReKernel::nLastStatusVal = -1;
-unsigned int NumeReKernel::nLastLineLength = 0;
+size_t NumeReKernel::nLastLineLength = 0;
 bool NumeReKernel::modifiedSettings = false;
 bool NumeReKernel::bCancelSignal = false;
 NumeRe::Table NumeReKernel::table;
@@ -495,7 +495,7 @@ void NumeReKernel::defineFunctions()
     _parser.DefineFun("ellipticF", parser_EllipticF);                         // ellipticF(x,k)
     _parser.DefineFun("ellipticE", parser_EllipticE);                         // ellipticE(x,k)
     _parser.DefineFun("ellipticPi", parser_EllipticP);                        // ellipticPi(x,n,k)
-    _parser.DefineFun("ellipticD", parser_EllipticD);                         // ellipticD(x,n,k)
+    _parser.DefineFun("ellipticD", parser_EllipticD);                         // ellipticD(x,k)
     _parser.DefineFun("cot", parser_cot);                                     // cot(x)
     _parser.DefineFun("floor", parser_floor);                                 // floor(x)
     _parser.DefineFun("roof", parser_roof);                                   // roof(x)
@@ -580,7 +580,7 @@ void NumeReKernel::initializeStackTracker()
     // measure the current stack position
     int stackMeasureVar;
     baseStackPosition = &stackMeasureVar;
-    g_logger.debug("Base stack address = " + toHexString((long long int)baseStackPosition));
+    g_logger.debug("Base stack address = " + toHexString((size_t)baseStackPosition));
 }
 
 
@@ -1206,11 +1206,11 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const std::string& sCommand)
 /// indicated by nPos. It draws three circumflexes
 /// below the error location.
 ///
-/// \param nPos unsigned int
+/// \param nPos size_t
 /// \return std::string
 ///
 /////////////////////////////////////////////////
-static std::string pointToError(unsigned int nPos)
+static std::string pointToError(size_t nPos)
 {
     std::string sErrorPointer = "|       ";
     sErrorPointer += strfill("^^^", nPos+14) + "\n";
@@ -1318,7 +1318,7 @@ bool NumeReKernel::handleCommandLineSource(std::string& sLine, std::string& sKee
 
         // --> Leerzeichen und Tabulatoren entfernen <--
         StripSpaces(sLine);
-        for (unsigned int i = 0; i < sLine.length(); i++)
+        for (size_t i = 0; i < sLine.length(); i++)
         {
             if (sLine[i] == '\t')
                 sLine[i] = ' ';
@@ -1701,7 +1701,7 @@ void NumeReKernel::handleToCmd(std::string& sLine, std::string& sCache, std::str
     // Do only something, if "to_cmd()" is located
     if (sLine.find("to_cmd(") != std::string::npos && !_procedure.getCurrentBlockDepth())
     {
-        unsigned int nPos = 0;
+        size_t nPos = 0;
 
         // Find all "to_cmd()"'s
         while (sLine.find("to_cmd(", nPos) != std::string::npos)
@@ -1709,7 +1709,7 @@ void NumeReKernel::handleToCmd(std::string& sLine, std::string& sCache, std::str
             nPos = sLine.find("to_cmd(", nPos) + 6;
             if (isInQuotes(sLine, nPos))
                 continue;
-            unsigned int nParPos = getMatchingParenthesis(sLine.substr(nPos));
+            size_t nParPos = getMatchingParenthesis(sLine.substr(nPos));
             if (nParPos == std::string::npos)
                 throw SyntaxError(SyntaxError::UNMATCHED_PARENTHESIS, sLine, nPos);
             std::string sCmdString = sLine.substr(nPos + 1, nParPos - 1);
@@ -1746,13 +1746,13 @@ bool NumeReKernel::evaluateProcedureCalls(std::string& sLine)
     // Only if there's a candidate for a procedure
     if (sLine.find('$') != std::string::npos && sLine.find('(', sLine.find('$')) != std::string::npos && !_procedure.getCurrentBlockDepth())
     {
-        unsigned int nPos = 0;
+        size_t nPos = 0;
         int nProc = 0;
 
         // Find all procedures
         while (sLine.find('$', nPos) != std::string::npos && sLine.find('(', sLine.find('$', nPos)) != std::string::npos)
         {
-            unsigned int nParPos = 0;
+            size_t nParPos = 0;
             nPos = sLine.find('$', nPos) + 1;
 
             // Get procedure name and argument list
@@ -1856,7 +1856,7 @@ bool NumeReKernel::executePlugins(std::string& sLine)
             if (_rTemp.isString() && sLine.find("<<RETURNVAL>>") != std::string::npos)
             {
                 std::string sReturn = "{";
-                for (unsigned int v = 0; v < _rTemp.vStringVal.size(); v++)
+                for (size_t v = 0; v < _rTemp.vStringVal.size(); v++)
                     sReturn += _rTemp.vStringVal[v] + ",";
                 sReturn.back() = '}';
                 sLine.replace(sLine.find("<<RETURNVAL>>"), 13, sReturn);
@@ -3067,7 +3067,7 @@ void NumeReKernel::progressBar(int nStep, int nFirstStep, int nFinalStep, const 
         // This is the custom part, where special tokens define
         // values or bars in different shapes and the remaining
         // string is printed directly
-        for (unsigned int i = 0; i < sType.length(); i++)
+        for (size_t i = 0; i < sType.length(); i++)
         {
             // Standard bar
             if (sType.substr(i, 5) == "<bar>")
@@ -3153,11 +3153,11 @@ void NumeReKernel::progressBar(int nStep, int nFirstStep, int nFinalStep, const 
 /// kernel.
 ///
 /// \param sFile const std::string&
-/// \param nLine unsigned int
+/// \param nLine size_t
 /// \return void
 ///
 /////////////////////////////////////////////////
-void NumeReKernel::gotoLine(const std::string& sFile, unsigned int nLine)
+void NumeReKernel::gotoLine(const std::string& sFile, size_t nLine)
 {
     if (!m_parent)
         return;

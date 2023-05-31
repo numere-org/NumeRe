@@ -444,7 +444,7 @@ namespace NumeRe
                         // using the tokenizer
                         if (vFileContents[i][1] != ' ')
                         {
-                            for (unsigned int n = 0; n < vFileContents[i].length(); n++)
+                            for (size_t n = 0; n < vFileContents[i].length(); n++)
                             {
                                 if (vFileContents[i][n] != '#')
                                 {
@@ -492,7 +492,7 @@ namespace NumeRe
                             // using the tokenizer
                             if (vFileContents[i-1][1] != ' ')
                             {
-                                for (unsigned int n = 0; n < vFileContents[i-1].length(); n++)
+                                for (size_t n = 0; n < vFileContents[i-1].length(); n++)
                                 {
                                     if (vFileContents[i-1][n] != '#')
                                     {
@@ -585,7 +585,7 @@ namespace NumeRe
                             // using the tokenizer
                             if (vFileContents[i-2][1] != ' ')
                             {
-                                for (unsigned int n = 0; n < vFileContents[i-2].length(); n++)
+                                for (size_t n = 0; n < vFileContents[i-2].length(); n++)
                                 {
                                     if (vFileContents[i-2][n] != '#')
                                     {
@@ -664,7 +664,7 @@ namespace NumeRe
                             if (vFileContents[k].length() == vFileContents[i].length())
                             {
                                 // Mirror the tokens from the previous lines
-                                for (unsigned int l = 0; l < vFileContents[k].length(); l++)
+                                for (size_t l = 0; l < vFileContents[k].length(); l++)
                                 {
                                     if (vFileContents[i][l] != ' ' && vFileContents[k][l] == ' ')
                                         vFileContents[k][l] = '_';
@@ -675,7 +675,7 @@ namespace NumeRe
                                 vFileContents[k].append(vFileContents[i].length() - vFileContents[k].length(), ' ');
 
                                 // Mirror the tokens from the previous lines
-                                for (unsigned int l = 0; l < vFileContents[k].length(); l++)
+                                for (size_t l = 0; l < vFileContents[k].length(); l++)
                                 {
                                     if (vFileContents[i][l] != ' ' && vFileContents[k][l] == ' ')
                                         vFileContents[k][l] = '_';
@@ -684,7 +684,7 @@ namespace NumeRe
                             else if (vFileContents[k].length() > vFileContents[i].length() && vFileContents[k].back() != ' ' && vFileContents[i].back() != ' ')
                             {
                                 // Mirror the tokens from the previous lines
-                                for (unsigned int l = 0; l < vFileContents[i].length(); l++)
+                                for (size_t l = 0; l < vFileContents[i].length(); l++)
                                 {
                                     if (vFileContents[i][l] != ' ' && vFileContents[k][l] == ' ')
                                         vFileContents[k][l] = '_';
@@ -696,7 +696,7 @@ namespace NumeRe
 
                         bool bBreakSignal = false;
                         vector<string> vHeadline;
-                        vHeadline.resize((unsigned int)(2*nCols), "");
+                        vHeadline.resize((size_t)(2*nCols), "");
 
                         // Go now through the selected headlines and
                         // break them down into the single columns. Based
@@ -873,10 +873,10 @@ namespace NumeRe
     /////////////////////////////////////////////////
     void NumeReDataFile::writeHeader()
     {
-        writeNumField(AutoVersion::MAJOR);
-        writeNumField(AutoVersion::MINOR);
-        writeNumField(AutoVersion::BUILD);
-        writeNumField(time(0));
+        writeNumField<int32_t>(AutoVersion::MAJOR);
+        writeNumField<int32_t>(AutoVersion::MINOR);
+        writeNumField<int32_t>(AutoVersion::BUILD);
+        writeNumField<__time32_t>(time(0));
 
         writeDummyHeader();
 
@@ -884,7 +884,7 @@ namespace NumeRe
         writeNumField(fileSpecVersionMinor);
         checkPos = tellp();
         writeStringField("SHA-256:" + sha256(""));
-        writeNumField<size_t>(10);
+        writeNumField<uint32_t>(10);
         checkStart = tellp();
         writeStringField(getTableName());
         writeStringField(sComment);
@@ -894,8 +894,8 @@ namespace NumeRe
         // in future versions and will be ignored
         // in older versions of NumeRe
         writeStringField("FTYPE=LLINT");
-        long long int t = _time64(0);
-        writeNumBlock<long long int>(&t, 1);
+        int64_t t = _time64(0);
+        writeNumBlock<int64_t>(&t, 1);
         writeStringField("FTYPE=DOUBLE");
         writeNumBlock<double>(nullptr, 0);
         writeStringField("FTYPE=DOUBLE");
@@ -922,13 +922,13 @@ namespace NumeRe
     /////////////////////////////////////////////////
     void NumeReDataFile::writeDummyHeader()
     {
-        writeNumField(1LL);
-        writeNumField(1LL);
+        writeNumField<int64_t>(1LL);
+        writeNumField<int64_t>(1LL);
         writeStringField("THIS_FILE_NEEDS_AT_LEAST_VERSION_v1.1.5 ");
-        long long int appZeros = 0;
+        int64_t appZeros = 0;
         double data = 1.15;
         bool valid = true;
-        fFileStream.write((char*)&appZeros, sizeof(long long int));
+        fFileStream.write((char*)&appZeros, sizeof(int64_t));
         fFileStream.write((char*)&data, sizeof(double));
         fFileStream.write((char*)&valid, sizeof(bool));
     }
@@ -967,7 +967,7 @@ namespace NumeRe
         // Update the checksum and file end
         seekp(checkPos);
         writeStringField("SHA-256:" + checkSum);
-        writeNumField<size_t>(posEnd);
+        writeNumField<uint32_t>(posEnd);
 
         // Go back to the end
         seekp(posEnd);
@@ -1007,16 +1007,16 @@ namespace NumeRe
             else if (col->m_type == TableColumn::TYPE_LOGICAL)
                 writeStringField("CTYPE=LOGICAL");
 
-            size_t lenPos = tellp();
+            uint32_t lenPos = tellp();
             // Store the position of the next column
-            writeNumField<size_t>(lenPos);
+            writeNumField<uint32_t>(lenPos);
 
             std::vector<mu::value_type> values = col->getValue(VectorIndex(0, VectorIndex::OPEN_END));
             writeNumBlock<mu::value_type>(&values[0], values.size());
 
-            size_t endPos = tellp();
+            uint32_t endPos = tellp();
             seekp(lenPos);
-            writeNumField<size_t>(endPos-lenPos);
+            writeNumField<uint32_t>(endPos-lenPos);
             seekp(endPos);
         }
         else if (col->m_type == TableColumn::TYPE_STRING
@@ -1031,16 +1031,16 @@ namespace NumeRe
             else if (col->m_type == TableColumn::TYPE_CATEGORICAL)
                 writeStringField("CTYPE=CATEGORICAL");
 
-            size_t lenPos = tellp();
+            uint32_t lenPos = tellp();
             // Store the position of the next column
-            writeNumField<size_t>(lenPos);
+            writeNumField<uint32_t>(lenPos);
 
             std::vector<std::string> values = col->getValueAsInternalString(VectorIndex(0, VectorIndex::OPEN_END));
             writeStringBlock(&values[0], values.size());
 
-            size_t endPos = tellp();
+            uint32_t endPos = tellp();
             seekp(lenPos);
-            writeNumField<size_t>(endPos-lenPos);
+            writeNumField<uint32_t>(endPos-lenPos);
             seekp(endPos);
         }
         else if (col->m_type == TableColumn::TYPE_NONE)
@@ -1063,10 +1063,10 @@ namespace NumeRe
     void NumeReDataFile::readHeader()
     {
         // Read the basic information
-        versionMajor = readNumField<long int>();
-        versionMinor = readNumField<long int>();
-        versionBuild = readNumField<long int>();
-        time_t oldTime = readNumField<time_t>();
+        versionMajor = readNumField<int32_t>();
+        versionMinor = readNumField<int32_t>();
+        versionBuild = readNumField<int32_t>();
+        __time32_t oldTime = readNumField<__time32_t>();
 
         // Detect, whether this file was created in
         // legacy format (earlier than v1.1.2)
@@ -1074,8 +1074,8 @@ namespace NumeRe
         {
             isLegacy = true;
             fileVersionRead = 1.0f;
-            nRows = readNumField<long long int>();
-            nCols = readNumField<long long int>();
+            nRows = readNumField<int64_t>();
+            nCols = readNumField<int64_t>();
             timeStamp = oldTime;
             return;
         }
@@ -1101,7 +1101,7 @@ namespace NumeRe
         if (fileVersionRead >= 4.0)
         {
             std::string sha_check = readStringField();
-            size_t fileEnd = readNumField<size_t>();
+            uint32_t fileEnd = readNumField<uint32_t>();
 
             size_t checkStart = tellg();
 
@@ -1121,13 +1121,13 @@ namespace NumeRe
         // Read now the three empty fields of the
         // header. We created special functions for
         // reading and deleting arbitary data types
-        long long int size;
+        int64_t size;
         string type;
         void* data = readGenericField(type, size);
 
         // Version 2.1 introduces 64 bit time stamps
-        if (fileVersionRead >= 2.01 && type == "LLINT" && size == 1u)
-            timeStamp = *(long long int*)data;
+        if (fileVersionRead >= 2.01 && (type == "LLINT" || type == "I64") && size == 1u)
+            timeStamp = *(int64_t*)data;
         else
             timeStamp = oldTime;
 
@@ -1156,8 +1156,8 @@ namespace NumeRe
         }
 
         // Read the dimensions of the table
-        nRows = readNumField<long long int>();
-        nCols = readNumField<long long int>();
+        nRows = readNumField<int64_t>();
+        nCols = readNumField<int64_t>();
     }
 
 
@@ -1171,13 +1171,13 @@ namespace NumeRe
     /////////////////////////////////////////////////
     void NumeReDataFile::skipDummyHeader()
     {
-        readNumField<long long int>();
-        readNumField<long long int>();
+        readNumField<int64_t>();
+        readNumField<int64_t>();
         readStringField();
-        long long int appZeros = 0;
+        int64_t appZeros = 0;
         double data = NAN;
         bool valid = false;
-        fFileStream.read((char*)&appZeros, sizeof(long long int));
+        fFileStream.read((char*)&appZeros, sizeof(int64_t));
         fFileStream.read((char*)&data, sizeof(double));
         fFileStream.read((char*)&valid, sizeof(bool));
     }
@@ -1240,9 +1240,9 @@ namespace NumeRe
             return;
         }
 
-        long long int stringBlockSize;
-        long long int dataarrayrows;
-        long long int dataarraycols;
+        int64_t stringBlockSize;
+        int64_t dataarrayrows;
+        int64_t dataarraycols;
 
         // Read the table column headers and the
         // table data and copy it to a ValueColumn
@@ -1250,12 +1250,12 @@ namespace NumeRe
         std::string* sHeads = readStringBlock(stringBlockSize);
         double** data = readDataArray<double>(dataarrayrows, dataarraycols);
 
-        for (long long int j = 0; j < dataarraycols; j++)
+        for (int64_t j = 0; j < dataarraycols; j++)
         {
             fileData->at(j).reset(new ValueColumn);
             fileData->at(j)->m_sHeadLine = sHeads[j];
 
-            for (long long int i = 0; i < dataarrayrows; i++)
+            for (int64_t i = 0; i < dataarrayrows; i++)
             {
                 fileData->at(j)->setValue(i, data[i][j]);
             }
@@ -1264,7 +1264,7 @@ namespace NumeRe
         // Free up memory
         delete[] sHeads;
 
-        for (long long int i = 0; i < dataarrayrows; i++)
+        for (int64_t i = 0; i < dataarrayrows; i++)
             delete[] data[i];
 
         delete[] data;
@@ -1290,7 +1290,7 @@ namespace NumeRe
         {
             col.reset(new ValueColumn);
             col->m_sHeadLine = sHeadLine;
-            long long int size = 0;
+            int64_t size = 0;
             mu::value_type* values = readNumBlock<mu::value_type>(size);
             col->setValue(VectorIndex(0, VectorIndex::OPEN_END), std::vector<mu::value_type>(values, values+size));
             delete[] values;
@@ -1299,7 +1299,7 @@ namespace NumeRe
         {
             col.reset(new LogicalColumn);
             col->m_sHeadLine = sHeadLine;
-            long long int size = 0;
+            int64_t size = 0;
             mu::value_type* values = readNumBlock<mu::value_type>(size);
             col->setValue(VectorIndex(0, VectorIndex::OPEN_END), std::vector<mu::value_type>(values, values+size));
             delete[] values;
@@ -1308,7 +1308,7 @@ namespace NumeRe
         {
             col.reset(new DateTimeColumn);
             col->m_sHeadLine = sHeadLine;
-            long long int size = 0;
+            int64_t size = 0;
             mu::value_type* values = readNumBlock<mu::value_type>(size);
             col->setValue(VectorIndex(0, VectorIndex::OPEN_END), std::vector<mu::value_type>(values, values+size));
             delete[] values;
@@ -1317,7 +1317,7 @@ namespace NumeRe
         {
             col.reset(new StringColumn);
             col->m_sHeadLine = sHeadLine;
-            long long int size = 0;
+            int64_t size = 0;
             std::string* strings = readStringBlock(size);
             col->setValue(VectorIndex(0, VectorIndex::OPEN_END), std::vector<std::string>(strings, strings+size));
             delete[] strings;
@@ -1326,7 +1326,7 @@ namespace NumeRe
         {
             col.reset(new CategoricalColumn);
             col->m_sHeadLine = sHeadLine;
-            long long int size = 0;
+            int64_t size = 0;
             std::string* strings = readStringBlock(size);
             col->setValue(VectorIndex(0, VectorIndex::OPEN_END), std::vector<std::string>(strings, strings+size));
             delete[] strings;
@@ -1356,7 +1356,7 @@ namespace NumeRe
             std::string sColType = readStringField();
 
             // Jump over the colum end information
-            readNumField<size_t>();
+            readNumField<uint32_t>();
 
             // Create the column for the corresponding CTYPE
             if (sColType == "CTYPE=VALUE")
@@ -1369,7 +1369,7 @@ namespace NumeRe
                 col.reset(new ValueColumn);
 
             col->m_sHeadLine = sHeadLine;
-            long long int size = 0;
+            int64_t size = 0;
             mu::value_type* values = readNumBlock<mu::value_type>(size);
             col->setValue(VectorIndex(0, VectorIndex::OPEN_END), std::vector<mu::value_type>(values, values+size));
             delete[] values;
@@ -1380,7 +1380,7 @@ namespace NumeRe
             std::string sColType = readStringField();
 
             // Jump over the colum end information
-            readNumField<size_t>();
+            readNumField<uint32_t>();
 
             // Create the column for the corresponding CTYPE
             if (sColType == "CTYPE=STRING")
@@ -1391,7 +1391,7 @@ namespace NumeRe
                 col.reset(new StringColumn);
 
             col->m_sHeadLine = sHeadLine;
-            long long int size = 0;
+            int64_t size = 0;
             std::string* strings = readStringBlock(size);
             col->setValue(VectorIndex(0, VectorIndex::OPEN_END), std::vector<std::string>(strings, strings+size));
             delete[] strings;
@@ -1399,7 +1399,7 @@ namespace NumeRe
         else
         {
             // In all other cases: just jump over this column
-            seekg(readNumField<size_t>());
+            seekg(readNumField<uint32_t>());
         }
     }
 
@@ -1417,27 +1417,27 @@ namespace NumeRe
     {
         // Prepare some POD arrays to read the
         // blocks to memory
-        size_t nLength = 0;
+        uint32_t nLength = 0;
         bool* bValidEntry = new bool[nCols];
         char** cHeadLine = new char*[nCols];
-        long long int* nAppendedZeros = new long long int[nCols];
+        int64_t* nAppendedZeros = new int64_t[nCols];
 
         // Create the internal storage
         createStorage();
 
         // Read the table heads to the internal
         // storage
-        for (long long int i = 0; i < nCols; i++)
+        for (int64_t i = 0; i < nCols; i++)
         {
             fileData->at(i).reset(new ValueColumn);
 
             nLength = 0;
-            fFileStream.read((char*)&nLength, sizeof(size_t));
+            fFileStream.read((char*)&nLength, sizeof(uint32_t));
             cHeadLine[i] = new char[nLength];
             fFileStream.read(cHeadLine[i], sizeof(char)*nLength);
             fileData->at(i)->m_sHeadLine.resize(nLength-1);
 
-            for (unsigned int j = 0; j < nLength-1; j++)
+            for (uint32_t j = 0; j < nLength-1; j++)
             {
                 fileData->at(i)->m_sHeadLine[j] = cHeadLine[i][j];
             }
@@ -1447,7 +1447,7 @@ namespace NumeRe
         // is ignored in this implementation,
         // because the calling data object will
         // determine this information by itself
-        fFileStream.read((char*)nAppendedZeros, sizeof(long long int)*nCols);
+        fFileStream.read((char*)nAppendedZeros, sizeof(int64_t)*nCols);
 
         // Read the table data linewise to the
         // internal memory. We cannot read the
@@ -1457,11 +1457,11 @@ namespace NumeRe
         // in memory
         double* data = new double[nCols];
 
-        for (long long int i = 0; i < nRows; i++)
+        for (int64_t i = 0; i < nRows; i++)
         {
             fFileStream.read((char*)data, sizeof(double)*nCols);
 
-            for (long long int j = 0; j < nCols; j++)
+            for (int64_t j = 0; j < nCols; j++)
             {
                 fileData->at(j)->setValue(i, data[j]);
             }
@@ -1472,10 +1472,10 @@ namespace NumeRe
         // Read the validation block and apply
         // the contained information on the data
         // in the internal storage
-        for (long long int i = 0; i < nRows; i++)
+        for (int64_t i = 0; i < nRows; i++)
         {
             fFileStream.read((char*)bValidEntry, sizeof(bool)*nCols);
-            for (long long int j = 0; j < nCols; j++)
+            for (int64_t j = 0; j < nCols; j++)
             {
                 if (!bValidEntry[j])
                     fileData->at(j)->setValue(i, NAN);
@@ -1483,7 +1483,7 @@ namespace NumeRe
         }
 
         // Free the created memory
-        for (long long int i = 0; i < nCols; i++)
+        for (int64_t i = 0; i < nCols; i++)
             delete[] cHeadLine[i];
 
         delete[] cHeadLine;
@@ -1499,11 +1499,11 @@ namespace NumeRe
     /// of NumeRe).
     ///
     /// \param type std::string&
-    /// \param size long longint&
+    /// \param size int64_t&
     /// \return void*
     ///
     /////////////////////////////////////////////////
-    void* NumeReDataFile::readGenericField(std::string& type, long long int& size)
+    void* NumeReDataFile::readGenericField(std::string& type, int64_t& size)
     {
         // Determine the field data type
         type = readStringField();
@@ -1518,24 +1518,19 @@ namespace NumeRe
             double* data = readNumBlock<double>(size);
             return (void*)data;
         }
-        else if (type == "INT")
+        else if (type == "INT" || type == "LINT" || type == "I32")
         {
-            int* data = readNumBlock<int>(size);
+            int32_t* data = readNumBlock<int32_t>(size);
             return (void*)data;
         }
-        else if (type == "LINT")
+        else if (type == "LLINT" || type == "I64")
         {
-            long int* data = readNumBlock<long int>(size);
+            int64_t* data = readNumBlock<int64_t>(size);
             return (void*)data;
         }
-        else if (type == "LLINT")
+        else if (type == "UINT" || type == "U32")
         {
-            long long int* data = readNumBlock<long long int>(size);
-            return (void*)data;
-        }
-        else if (type == "UINT")
-        {
-            size_t* data = readNumBlock<size_t>(size);
+            uint32_t* data = readNumBlock<uint32_t>(size);
             return (void*)data;
         }
         else if (type == "BYTE")
@@ -1545,7 +1540,7 @@ namespace NumeRe
         }
         else if (type == "STRING")
         {
-            string* data = readStringBlock(size);
+            std::string* data = readStringBlock(size);
             return (void*)data;
         }
 
@@ -1562,28 +1557,26 @@ namespace NumeRe
     /// is not defined).
     ///
     /// \param data void*
-    /// \param type const string&
+    /// \param type const std::string&
     /// \return void
     ///
     /////////////////////////////////////////////////
-    void NumeReDataFile::deleteGenericData(void* data, const string& type)
+    void NumeReDataFile::deleteGenericData(void* data, const std::string& type)
     {
         if (data)
         {
             if (type == "DOUBLE")
                 delete[] (double*)data;
-            else if (type == "INT")
-                delete[] (int*)data;
-            else if (type == "LINT")
-                delete[] (long int*)data;
-            else if (type == "LLINT")
-                delete[] (long long int*)data;
-            else if (type == "UINT")
-                delete[] (size_t*)data;
+            else if (type == "INT" || type == "LINT" || type == "I32")
+                delete[] (int32_t*)data;
+            else if (type == "LLINT" || type == "I64")
+                delete[] (int64_t*)data;
+            else if (type == "UINT" || type == "U32")
+                delete[] (uint32_t*)data;
             else if (type == "BYTE")
                 delete[] (char*)data;
             else if (type == "STRING")
-                delete[] (string*)data;
+                delete[] (std::string*)data;
         }
     }
 
@@ -1643,7 +1636,6 @@ namespace NumeRe
     /////////////////////////////////////////////////
     CacheFile::~CacheFile()
     {
-
         if (nIndexPos && vFileIndex.size())
         {
             seekp(nIndexPos);
@@ -1682,7 +1674,7 @@ namespace NumeRe
     void CacheFile::readSome()
     {
         reset();
-        size_t pos = tellg();
+        uint32_t pos = tellg();
 
         if (std::find(vFileIndex.begin(), vFileIndex.end(), pos) == vFileIndex.end())
             throw SyntaxError(SyntaxError::CANNOT_READ_FILE, "numere.cache", "numere.cache");
@@ -1738,10 +1730,10 @@ namespace NumeRe
         open(ios::binary | ios::in);
 
         // Read the basic information
-        versionMajor = readNumField<long int>();
-        versionMinor = readNumField<long int>();
-        versionBuild = readNumField<long int>();
-        timeStamp = readNumField<time_t>();
+        versionMajor = readNumField<int32_t>();
+        versionMinor = readNumField<int32_t>();
+        versionBuild = readNumField<int32_t>();
+        timeStamp = readNumField<__time32_t>();
 
         // Ensure that this file contains
         // the "NUMERECACHEFILE" string
@@ -1760,18 +1752,18 @@ namespace NumeRe
 
         // Read the number of available tables
         // in the cache file
-        size_t nNumberOfTables = readNumField<size_t>();
+        uint32_t nNumberOfTables = readNumField<uint32_t>();
 
         // Create the file index array. This array
         // may be used to support memory paging
         // in a future version of NumeRe
-        vFileIndex = vector<size_t>(nNumberOfTables, 0u);
+        vFileIndex = vector<uint32_t>(nNumberOfTables, 0u);
 
         // Read the file index information in
         // the file to the newly created file
         // index array
-        long long int size = 0;
-        size_t* nIndex = readNumBlock<size_t>(size);
+        int64_t size = 0;
+        uint32_t* nIndex = readNumBlock<uint32_t>(size);
         copyArray(nIndex, &vFileIndex[0], nNumberOfTables);
         delete[] nIndex;
     }
@@ -1790,16 +1782,16 @@ namespace NumeRe
         // all its contents
         open(ios::binary | ios::in | ios::out | ios::trunc);
 
-        writeNumField(AutoVersion::MAJOR);
-        writeNumField(AutoVersion::MINOR);
-        writeNumField(AutoVersion::BUILD);
-        writeNumField(time(0));
+        writeNumField<int32_t>(AutoVersion::MAJOR);
+        writeNumField<int32_t>(AutoVersion::MINOR);
+        writeNumField<int32_t>(AutoVersion::BUILD);
+        writeNumField<__time32_t>(time(0));
         writeStringField("NUMERECACHEFILE");
         writeNumField(fileSpecVersionMajor);
         writeNumField(fileSpecVersionMinor);
 
         // Write the length of the file index array
-        writeNumField(vFileIndex.size());
+        writeNumField<uint32_t>(vFileIndex.size());
 
         // Store the current position in the file
         // to update the array in the future (done
@@ -2607,7 +2599,7 @@ namespace NumeRe
     {
         string sReturn = _sText;
 
-        for (unsigned int i = 0; i < sReturn.length(); i++)
+        for (size_t i = 0; i < sReturn.length(); i++)
         {
             if (sReturn[i] == 'Ä' || sReturn[i] == (char)142)
                 sReturn.replace(i,1,"\\\"A");
@@ -3608,7 +3600,7 @@ namespace NumeRe
         YExcel::BasicExcel _excel;
         YExcel::BasicExcelWorksheet* _sheet;
         YExcel::BasicExcelCell* _cell;
-        unsigned int nSheets = 0;
+        size_t nSheets = 0;
         long long int nExcelLines = 0;
         long long int nExcelCols = 0;
         long long int nOffset = 0;
@@ -3633,15 +3625,15 @@ namespace NumeRe
         // which will be stored next to each other. We
         // consider pure text lines as table column
         // heads
-        for (unsigned int n = 0; n < nSheets; n++)
+        for (size_t n = 0; n < nSheets; n++)
         {
             _sheet = _excel.GetWorksheet(n);
             bBreakSignal = false;
             nCommentLines = 0;
 
-            for (unsigned int i = 0; i < _sheet->GetTotalRows(); i++)
+            for (size_t i = 0; i < _sheet->GetTotalRows(); i++)
             {
-                for (unsigned int j = 0; j < _sheet->GetTotalCols(); j++)
+                for (size_t j = 0; j < _sheet->GetTotalCols(); j++)
                 {
                     // Abort the loop, if we find a single
                     // non-textual cell in the current row
@@ -3695,7 +3687,7 @@ namespace NumeRe
 
         // Copy the pure text lines into the corresponding
         // table column heads
-        for (unsigned int n = 0; n < nSheets; n++)
+        for (size_t n = 0; n < nSheets; n++)
         {
             _sheet = _excel.GetWorksheet(n);
             nExcelCols = _sheet->GetTotalCols();
@@ -3747,7 +3739,7 @@ namespace NumeRe
         // We consider textual cells as part of the
         // corresponding table column heads and append
         // them automatically
-        for (unsigned int n = 0; n < nSheets; n++)
+        for (size_t n = 0; n < nSheets; n++)
         {
             _sheet = _excel.GetWorksheet(n);
             nExcelCols = _sheet->GetTotalCols();
@@ -3910,7 +3902,7 @@ namespace NumeRe
     /////////////////////////////////////////////////
     void XLSXSpreadSheet::readFile()
     {
-        unsigned int nSheets = 0;
+        size_t nSheets = 0;
         long long int nExcelLines = 0;
         long long int nExcelCols = 0;
         long long int nOffset = 0;

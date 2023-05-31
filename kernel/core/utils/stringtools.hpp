@@ -78,6 +78,7 @@ std::string toCmdString(double dNumber);
 std::string toCmdString(const std::complex<double>& dNumber);
 std::string toString(bool bBoolean);
 std::string toHexString(int nNumber);
+std::string toHexString(size_t nNumber);
 
 /////////////////////////////////////////////////
 /// \brief This function converts a std::vector

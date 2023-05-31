@@ -216,7 +216,7 @@ class MemoryManager : public NumeRe::FileAdapter, public StringMemory, public Nu
 		bool saveToCacheFile();
 		bool loadFromCacheFile();
 
-        inline unsigned int getNumberOfTables() const
+        inline size_t getNumberOfTables() const
 		{
 			return mCachesMap.size();
 		}
@@ -599,7 +599,7 @@ class MemoryManager : public NumeRe::FileAdapter, public StringMemory, public Nu
 			vMemory[findTable(_sCache)]->writeData(_nLine, _nCol, _sValue);
 		}
 
-		inline void writeToTable(Indices& _idx, const std::string& _sCache, mu::value_type* _dData, unsigned int _nNum)
+		inline void writeToTable(Indices& _idx, const std::string& _sCache, mu::value_type* _dData, size_t _nNum)
 		{
 			vMemory[findTable(_sCache)]->writeData(_idx, _dData, _nNum);
 		}

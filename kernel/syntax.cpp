@@ -447,7 +447,7 @@ std::string NumeReSyntax::highlightLine(const std::string& sCommandLine)
     }
 
     // Apply the syntax elements
-    for (unsigned int i = 0; i < sCommandLine.length(); i++)
+    for (size_t i = 0; i < sCommandLine.length(); i++)
     {
         // find the first relevant character
         if (!i && sCommandLine.substr(0,3) == "|<-")
@@ -475,7 +475,7 @@ std::string NumeReSyntax::highlightLine(const std::string& sCommandLine)
         // Highlight numbers
         if (sCommandLine[i] >= '0' && sCommandLine[i] <= '9')
         {
-            unsigned int nLen = 0;
+            size_t nLen = 0;
 
             // Until the curent number ends
             while (i+nLen < sCommandLine.length()
@@ -539,7 +539,7 @@ std::string NumeReSyntax::highlightLine(const std::string& sCommandLine)
 
             }
 
-            unsigned int nLen = 0;
+            size_t nLen = 0;
 
             // Find the end of the current syntax element
             while (i+nLen < sCommandLine.length()

@@ -160,7 +160,7 @@ static Matrix calcTrace(const MatFuncData& funcData, const MatFuncErrorInfo& err
 
     Matrix _mReturn(1, 1, 0.0);
 
-    for (unsigned int i = 0; i < funcData.mat1.rows(); i++)
+    for (size_t i = 0; i < funcData.mat1.rows(); i++)
     {
         _mReturn(0, 0) += funcData.mat1(i, i);
     }
@@ -201,7 +201,7 @@ static mu::value_type calcDeterminant(const Matrix& _mMatrix, std::vector<int> v
     int nSign = 1;
     mu::value_type dDet = 0.0;
 
-    for (unsigned int i = 0; i < _mMatrix.rows(); i++)
+    for (size_t i = 0; i < _mMatrix.rows(); i++)
     {
         // Noch nicht entfernte Zeile?
         if (!(vRemovedLines[i] & 1))
@@ -209,7 +209,7 @@ static mu::value_type calcDeterminant(const Matrix& _mMatrix, std::vector<int> v
             // entferne Zeile i
             vRemovedLines[i] += 1;
 
-            for (unsigned int j = 0; j < _mMatrix.rows(); j++)
+            for (size_t j = 0; j < _mMatrix.rows(); j++)
             {
                 // Noch nicht entfernte Spalte?
                 if (!(vRemovedLines[j] & 2))
@@ -309,9 +309,9 @@ static Matrix calcCrossProduct(const MatFuncData& funcData, const MatFuncErrorIn
     Matrix _mTemp = createFilledMatrix(funcData.mat1.rows(), funcData.mat1.cols()+1, 0.0);
 
     #pragma omp parallel for
-    for (unsigned int i = 0; i < funcData.mat1.rows(); i++)
+    for (size_t i = 0; i < funcData.mat1.rows(); i++)
     {
-        for (unsigned int j = 0; j < funcData.mat1.cols(); j++)
+        for (size_t j = 0; j < funcData.mat1.cols(); j++)
         {
             _mTemp(i, j+1) = funcData.mat1(i, j);
         }
@@ -320,7 +320,7 @@ static Matrix calcCrossProduct(const MatFuncData& funcData, const MatFuncErrorIn
     _mTemp(0, 0) = 1.0;
     _mResult(0, 0) = calcDeterminant(_mTemp, vRemovedLines);
 
-    for (unsigned int i = 1; i < funcData.mat1.rows(); i++)
+    for (size_t i = 1; i < funcData.mat1.rows(); i++)
     {
         _mTemp(i-1, 0) = 0.0;
         _mTemp(i, 0) = 1.0;
@@ -373,9 +373,9 @@ __attribute__((force_align_arg_pointer)) static Matrix calcEigenVectsAndValues(c
 
     // Copy the passed matrix into an Eigen matrix
     #pragma omp parallel for
-    for (unsigned int i = 0; i < _mMatrix.rows(); i++)
+    for (size_t i = 0; i < _mMatrix.rows(); i++)
     {
-        for (unsigned int j = 0; j < _mMatrix.rows(); j++)
+        for (size_t j = 0; j < _mMatrix.rows(); j++)
         {
             mMatrix(i,j) = _mMatrix(i,j);
         }
@@ -392,7 +392,7 @@ __attribute__((force_align_arg_pointer)) static Matrix calcEigenVectsAndValues(c
         Eigen::VectorXcd vEigenVals = eSolver.eigenvalues();
         _mEigenVals.resize(_mMatrix.rows(), 1);
 
-        for (unsigned int i = 0; i < _mEigenVals.rows(); i++)
+        for (size_t i = 0; i < _mEigenVals.rows(); i++)
         {
             _mEigenVals(i) = vEigenVals(i, 0);
         }
@@ -403,9 +403,9 @@ __attribute__((force_align_arg_pointer)) static Matrix calcEigenVectsAndValues(c
         _mEigenVects.resize(_mMatrix.rows(), _mMatrix.cols());
 
         #pragma omp parallel for
-        for (unsigned int i = 0; i < _mEigenVects.rows(); i++)
+        for (size_t i = 0; i < _mEigenVects.rows(); i++)
         {
-            for (unsigned int j = 0; j < _mEigenVects.cols(); j++)
+            for (size_t j = 0; j < _mEigenVects.cols(); j++)
             {
                 _mEigenVects(i, j) = mEigenVects(i, j);
             }
@@ -416,7 +416,7 @@ __attribute__((force_align_arg_pointer)) static Matrix calcEigenVectsAndValues(c
         Eigen::VectorXcd vEigenVals = eSolver.eigenvalues();
         _mEigenVects.resize(_mMatrix.rows(), _mMatrix.cols());
 
-        for (unsigned int i = 0; i < _mEigenVects.rows(); i++)
+        for (size_t i = 0; i < _mEigenVects.rows(); i++)
         {
             _mEigenVects(i, i) = vEigenVals(i, 0);
         }
@@ -487,8 +487,8 @@ static Matrix diagonalize(const MatFuncData& funcData, const MatFuncErrorInfo& e
 /////////////////////////////////////////////////
 static Matrix createShuffledMatrix(const MatFuncData& funcData, const MatFuncErrorInfo& errorInfo)
 {
-    unsigned int nShuffle = funcData.nVal;
-    unsigned int nBase = funcData.mVal;
+    size_t nShuffle = funcData.nVal;
+    size_t nBase = funcData.mVal;
 
     if (!nBase && nShuffle)
         nBase = nShuffle;
@@ -569,7 +569,7 @@ static Matrix invertMatrix(const MatFuncData& funcData, const MatFuncErrorInfo& 
         _mInverse(1, 0) *= -1.0;
         _mInverse(0, 1) *= -1.0;
 
-        for (unsigned int i = 0; i < 2; i++)
+        for (size_t i = 0; i < 2; i++)
         {
             _mInverse(i, 0) /= dDet;
             _mInverse(i, 1) /= dDet;
@@ -595,9 +595,9 @@ static Matrix invertMatrix(const MatFuncData& funcData, const MatFuncErrorInfo& 
     }
 
     // Allgemeiner Fall fuer n > 3
-    for (unsigned int j = 0; j < _mToInvert.cols(); j++)
+    for (size_t j = 0; j < _mToInvert.cols(); j++)
     {
-        for (unsigned int i = j; i < _mToInvert.rows(); i++)
+        for (size_t i = j; i < _mToInvert.rows(); i++)
         {
             if (_mToInvert(i, j) != 0.0)
             {
@@ -605,7 +605,7 @@ static Matrix invertMatrix(const MatFuncData& funcData, const MatFuncErrorInfo& 
                 {
                     mu::value_type dElement;
 
-                    for (unsigned int _j = 0; _j < _mToInvert.cols(); _j++)
+                    for (size_t _j = 0; _j < _mToInvert.cols(); _j++)
                     {
                         dElement = _mToInvert(i, _j);
                         _mToInvert(i, _j) = _mToInvert(j, _j);
@@ -621,20 +621,20 @@ static Matrix invertMatrix(const MatFuncData& funcData, const MatFuncErrorInfo& 
                 {
                     mu::value_type dPivot = _mToInvert(i, j);
 
-                    for (unsigned int _j = 0; _j < _mToInvert.cols(); _j++)
+                    for (size_t _j = 0; _j < _mToInvert.cols(); _j++)
                     {
                         _mToInvert(i, _j) /= dPivot;
                         _mInverse(i, _j) /= dPivot;
                     }
 
-                    for (unsigned int _i = i+1; _i < _mToInvert.rows(); _i++)
+                    for (size_t _i = i+1; _i < _mToInvert.rows(); _i++)
                     {
                         mu::value_type dFactor = _mToInvert(_i, j);
 
                         if (dFactor == 0.0) // Bereits 0???
                             continue;
 
-                        for (unsigned int _j = 0; _j < _mToInvert.cols(); _j++)
+                        for (size_t _j = 0; _j < _mToInvert.cols(); _j++)
                         {
                             _mToInvert(_i, _j) -= _mToInvert(i, _j)*dFactor;
                             _mInverse(_i, _j) -= _mInverse(i, _j)*dFactor;
@@ -655,7 +655,7 @@ static Matrix invertMatrix(const MatFuncData& funcData, const MatFuncErrorInfo& 
 
         if (_mToInvert(j, j) != 1.0)
         {
-            for (unsigned int _j = 0; _j < _mInverse.cols(); _j++)
+            for (size_t _j = 0; _j < _mInverse.cols(); _j++)
                 _mInverse(j, _j) /= _mToInvert(j, j);
 
             _mToInvert(j, j) = 1.0;
@@ -663,7 +663,7 @@ static Matrix invertMatrix(const MatFuncData& funcData, const MatFuncErrorInfo& 
 
         for (int i = 0; i < j; i++)
         {
-            for (unsigned int _j = 0; _j < _mInverse.cols(); _j++)
+            for (size_t _j = 0; _j < _mInverse.cols(); _j++)
                 _mInverse(i, _j) -= _mToInvert(i, j)*_mInverse(j, _j);
 
             _mToInvert(i, j) -= _mToInvert(i, j)*_mToInvert(j, j);
@@ -2398,15 +2398,15 @@ static void solveLGSSymbolic(const Matrix& _mMatrix, const MatFuncErrorInfo& err
     std::string sSolution = "sle(";
     std::vector<std::string> vResult(_mMatrix.cols()-1, "");
     bool bIsZeroesLine = true;
-    unsigned int nVarCount = 0;
+    size_t nVarCount = 0;
 
     Matrix _mToSolve = createFilledMatrix(_mMatrix.cols()-1, _mMatrix.cols(), 0.0);
     Matrix _mCoefficents = createFilledMatrix(_mMatrix.cols()-1, _mMatrix.cols(), 0.0);
 
     #pragma omp parallel for
-    for (unsigned int i = 0; i < std::min(_mMatrix.rows(), _mMatrix.cols()-1); i++)
+    for (size_t i = 0; i < std::min(_mMatrix.rows(), _mMatrix.cols()-1); i++)
     {
-        for (unsigned int j = 0; j < _mMatrix.cols(); j++)
+        for (size_t j = 0; j < _mMatrix.cols(); j++)
         {
             _mToSolve(i, j) = _mMatrix(i, j);
         }
@@ -2416,7 +2416,7 @@ static void solveLGSSymbolic(const Matrix& _mMatrix, const MatFuncErrorInfo& err
     {
         bIsZeroesLine = true;
 
-        for (unsigned int j = 0; j < _mToSolve.cols(); j++)
+        for (size_t j = 0; j < _mToSolve.cols(); j++)
         {
             if (bIsZeroesLine && _mToSolve(i, j) == 0.0)
             {
@@ -2435,7 +2435,7 @@ static void solveLGSSymbolic(const Matrix& _mMatrix, const MatFuncErrorInfo& err
             // Konstanter Term
             _mCoefficents(i, _mCoefficents.cols()-1) = _mToSolve(i, _mToSolve.cols()-1);
 
-            for (unsigned int j = i+1; j < _mToSolve.cols()-1; j++)
+            for (size_t j = i+1; j < _mToSolve.cols()-1; j++)
             {
                 if (_mToSolve(i, j) != 0.0)
                 {
@@ -2443,7 +2443,7 @@ static void solveLGSSymbolic(const Matrix& _mMatrix, const MatFuncErrorInfo& err
                     _mCoefficents(i, _mCoefficents.cols()-1) -= _mToSolve(i, j) * _mCoefficents(j, _mCoefficents.cols()-1);
 
                     // Alle Koeffizienten
-                    for (unsigned int n = i+1; n < _mCoefficents.cols()-1; n++)
+                    for (size_t n = i+1; n < _mCoefficents.cols()-1; n++)
                     {
                         _mCoefficents(i, n) -= _mToSolve(i, j) * _mCoefficents(j, n);
                     }
@@ -2452,9 +2452,9 @@ static void solveLGSSymbolic(const Matrix& _mMatrix, const MatFuncErrorInfo& err
         }
     }
 
-    for (unsigned int i = 0; i < _mCoefficents.rows(); i++)
+    for (size_t i = 0; i < _mCoefficents.rows(); i++)
     {
-        for (unsigned int j = 0; j < _mCoefficents.cols()-1; j++)
+        for (size_t j = 0; j < _mCoefficents.cols()-1; j++)
         {
             if (_mCoefficents(i, j) != 0.0)
             {
@@ -2475,14 +2475,14 @@ static void solveLGSSymbolic(const Matrix& _mMatrix, const MatFuncErrorInfo& err
             vResult[i].erase(vResult[i].find("+-"),1);
     }
 
-    for (unsigned int i = 0; i < nVarCount; i++)
+    for (size_t i = 0; i < nVarCount; i++)
     {
         sSolution += ('z'-nVarCount+i+1);
     }
 
     sSolution += ") := {";
 
-    for (unsigned int i = 0; i < vResult.size(); i++)
+    for (size_t i = 0; i < vResult.size(); i++)
     {
         sSolution += vResult[i];
 
@@ -2541,9 +2541,9 @@ static Matrix solveLGS(const MatFuncData& funcData, const MatFuncErrorInfo& erro
     }
 
     // Allgemeiner Fall fuer n > 2
-    for (unsigned int j = 0; j < _mToSolve.cols()-1; j++)
+    for (size_t j = 0; j < _mToSolve.cols()-1; j++)
     {
-        for (unsigned int i = j; i < _mToSolve.rows(); i++)
+        for (size_t i = j; i < _mToSolve.rows(); i++)
         {
             if (_mToSolve(i, j) != 0.0)
             {
@@ -2551,7 +2551,7 @@ static Matrix solveLGS(const MatFuncData& funcData, const MatFuncErrorInfo& erro
                 {
                     mu::value_type dElement;
 
-                    for (unsigned int _j = 0; _j < _mToSolve.cols(); _j++)
+                    for (size_t _j = 0; _j < _mToSolve.cols(); _j++)
                     {
                         dElement = _mToSolve(i, _j);
                         _mToSolve(i, _j) = _mToSolve(j, _j);
@@ -2564,20 +2564,20 @@ static Matrix solveLGS(const MatFuncData& funcData, const MatFuncErrorInfo& erro
                 {
                     mu::value_type dPivot = _mToSolve(i, j);
 
-                    for (unsigned int _j = 0; _j < _mToSolve.cols(); _j++)
+                    for (size_t _j = 0; _j < _mToSolve.cols(); _j++)
                     {
                         _mToSolve(i, _j) /= dPivot;
                     }
 
                     #pragma omp parallel for
-                    for (unsigned int _i = i+1; _i < _mToSolve.rows(); _i++)
+                    for (size_t _i = i+1; _i < _mToSolve.rows(); _i++)
                     {
                         mu::value_type dFactor = _mToSolve(_i, j);
 
                         if (dFactor == 0.0) // Bereits 0???
                             continue;
 
-                        for (unsigned int _j = 0; _j < _mToSolve.cols(); _j++)
+                        for (size_t _j = 0; _j < _mToSolve.cols(); _j++)
                         {
                             _mToSolve(_i, _j) -= _mToSolve(i, _j)*dFactor;
                         }
@@ -2606,9 +2606,9 @@ static Matrix solveLGS(const MatFuncData& funcData, const MatFuncErrorInfo& erro
         // Ggf. Nullzeilen nach unten tauschen
         std::vector<bool> vIsZerosLine(_mToSolve.rows(), true);
 
-        for (unsigned int i = 0; i < _mToSolve.rows(); i++)
+        for (size_t i = 0; i < _mToSolve.rows(); i++)
         {
-            for (unsigned int j = 0; j < _mToSolve.cols(); j++)
+            for (size_t j = 0; j < _mToSolve.cols(); j++)
             {
                 if (_mToSolve(i, j) != 0.0)
                 {
@@ -2618,17 +2618,17 @@ static Matrix solveLGS(const MatFuncData& funcData, const MatFuncErrorInfo& erro
             }
         }
 
-        for (unsigned int i = 0; i < vIsZerosLine.size(); i++)
+        for (size_t i = 0; i < vIsZerosLine.size(); i++)
         {
             if (vIsZerosLine[i])
             {
-                for (unsigned int _i = i+1; _i < vIsZerosLine.size(); _i++)
+                for (size_t _i = i+1; _i < vIsZerosLine.size(); _i++)
                 {
                     if (!vIsZerosLine[_i])
                     {
                         mu::value_type dElement;
 
-                        for (unsigned int _j = 0; _j < _mToSolve.cols(); _j++)
+                        for (size_t _j = 0; _j < _mToSolve.cols(); _j++)
                         {
                             dElement = _mToSolve(i, _j);
                             _mToSolve(i, _j) = _mToSolve(_i, _j);
@@ -2657,7 +2657,7 @@ static Matrix solveLGS(const MatFuncData& funcData, const MatFuncErrorInfo& erro
 
     for (int i = _mToSolve.cols()-3; i >= 0; i--)
     {
-        for (unsigned int j = 0; j < _mToSolve.cols()-1; j++)
+        for (size_t j = 0; j < _mToSolve.cols()-1; j++)
         {
             _mToSolve(i, _mToSolve.cols()-1) -= _mToSolve(i, j)*_mResult(j, 0);
 

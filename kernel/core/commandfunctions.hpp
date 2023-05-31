@@ -711,7 +711,7 @@ static bool listDirectory(const string& sDir, const string& sParams, const Setti
 	string sDirectory = "";
 	int nLength = 0;
 	int nCount[2] = {0, 0};
-	unsigned int nFirstColLength = _option.getWindow() / 2 - 6;
+	size_t nFirstColLength = _option.getWindow() / 2 - 6;
 	bool bOnlyDir = false;
 
 	if (findSettingOption(sParams, "dir"))
@@ -1018,7 +1018,7 @@ static bool listFiles(const string& sCmd, const Settings& _option)
 	string sSpecified = "";
 	string __sCmd = sCmd + " ";
 	string sPattern = "";
-	unsigned int nFirstColLength = _option.getWindow() / 2 - 6;
+	size_t nFirstColLength = _option.getWindow() / 2 - 6;
 	bool bFreePath = false;
 
 	// Extract a search pattern
@@ -1188,7 +1188,7 @@ static void listFunctions(const Settings& _option, const string& sType) //PRSRFU
 		vFuncs = _lang.getList("PARSERFUNCS_LISTFUNC_FUNC_*_[" + toUpperCase(sType) + "]");
 
     // Print the obtained function list on the terminal
-	for (unsigned int i = 0; i < vFuncs.size(); i++)
+	for (size_t i = 0; i < vFuncs.size(); i++)
 	{
 		NumeReKernel::printPreFmt(LineBreak("|   " + vFuncs[i], _option, false, 0, 75) + "\n");
 	}
@@ -1226,7 +1226,7 @@ static void listDefinitions(const FunctionDefinitionManager& _functions, const S
 	else
 	{
 	    // Print all custom defined functions on the terminal
-		for (unsigned int i = 0; i < _functions.getDefinedFunctions(); i++)
+		for (size_t i = 0; i < _functions.getDefinedFunctions(); i++)
 		{
 		    // Print first the name of the function
 			NumeReKernel::printPreFmt(sectionHeadline(_functions.getFunctionSignature(i).substr(0, _functions.getFunctionSignature(i).rfind('('))));
@@ -1268,7 +1268,7 @@ static void listLogicalOperators(const Settings& _option)
 	vector<string> vLogicals = _lang.getList("PARSERFUNCS_LISTLOGICAL_ITEM*");
 
 	// Print the list on the terminal
-	for (unsigned int i = 0; i < vLogicals.size(); i++)
+	for (size_t i = 0; i < vLogicals.size(); i++)
 		NumeReKernel::printPreFmt(toSystemCodePage("|   " + vLogicals[i]) + "\n");
 
 	NumeReKernel::printPreFmt(toSystemCodePage("|\n"));
@@ -1549,7 +1549,7 @@ static void listCommands(const Settings& _option)
 	vector<string> vCMDList = _lang.getList("PARSERFUNCS_LISTCMD_CMD_*");
 
 	// Print the complete list on the terminal
-	for (unsigned int i = 0; i < vCMDList.size(); i++)
+	for (size_t i = 0; i < vCMDList.size(); i++)
 	{
 		NumeReKernel::printPreFmt(LineBreak("|   " + vCMDList[i], _option, false, 0, 42) + "\n");
 	}
@@ -1571,11 +1571,11 @@ static void listCommands(const Settings& _option)
 /// \param sDesc const string&
 /// \param sDim const string&
 /// \param sValues const string&
-/// \param nWindowsize unsigned int
+/// \param nWindowsize size_t
 /// \return void
 ///
 /////////////////////////////////////////////////
-static void printUnits(const string& sUnit, const string& sDesc, const string& sDim, const string& sValues, unsigned int nWindowsize)
+static void printUnits(const string& sUnit, const string& sDesc, const string& sDim, const string& sValues, size_t nWindowsize)
 {
 	NumeReKernel::printPreFmt("|     " + strlfill(sUnit, 11) + strlfill(sDesc, (nWindowsize - 17) / 3 + (nWindowsize + 1) % 3) + strlfill(sDim, (nWindowsize - 35) / 3) + "=" + strfill(sValues, (nWindowsize - 2) / 3) + "\n");
 	return;
@@ -1808,7 +1808,7 @@ static void listInstalledPlugins(Parser& _parser, MemoryManager& _data, const Se
         plotTableBySize(headerEntries, colWidth);
 
 		// Print all plugins (name, command and description) on the terminal
-		for (unsigned int i = 0; i < _procedure.getPackageCount(); i++)
+		for (size_t i = 0; i < _procedure.getPackageCount(); i++)
 		{
             // Tabellenfunktion unter utils/tools.cpp oder util/stringtools.cpp
             std::vector<std::string> lineEntries;

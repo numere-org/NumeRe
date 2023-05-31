@@ -194,7 +194,7 @@ class NumeReKernel
         static bool bCancelSignal;
         static int nOpenFileFlag;
         static int nLastStatusVal;
-        static unsigned int nLastLineLength;
+        static size_t nLastLineLength;
         static bool modifiedSettings;
         static NumeRe::Table table;
         static bool bSupressAnswer;
@@ -235,7 +235,7 @@ class NumeReKernel
         static int numberOfNumbersPerLine();
         static void progressBar(int nStep, int nFirstStep, int nFinalStep, const std::string& sType);
         static void getline(std::string& sLine);
-        static void gotoLine(const std::string& sFile, unsigned int nLine = 0);
+        static void gotoLine(const std::string& sFile, size_t nLine = 0);
         static void setDocumentation(const std::string& _sDocumentation);
         static void installationDone();
         static bool GetAsyncCancelState();
@@ -401,13 +401,13 @@ struct NumeReTask
 /// size and '...' will be added.
 ///
 /// \param sString const std::string&
-/// \param nWidth unsigned int
+/// \param nWidth size_t
 /// \param cFill char
 /// \param limit bool
 /// \return std::string
 ///
 /////////////////////////////////////////////////
-inline std::string strfill(const std::string& sString, unsigned int nWidth, char cFill = ' ', bool limit = false)
+inline std::string strfill(const std::string& sString, size_t nWidth, char cFill = ' ', bool limit = false)
 {
     if (!nWidth)
         return "";
@@ -432,12 +432,12 @@ inline std::string strfill(const std::string& sString, unsigned int nWidth, char
 /// cFill. The string will be aligned left.
 ///
 /// \param sString const std::string&
-/// \param nWidth unsigned int
+/// \param nWidth size_t
 /// \param cFill char
 /// \return std::string
 ///
 /////////////////////////////////////////////////
-inline std::string strlfill(const std::string& sString, unsigned int nWidth, char cFill = ' ')
+inline std::string strlfill(const std::string& sString, size_t nWidth, char cFill = ' ')
 {
     if (!nWidth)
         return "";

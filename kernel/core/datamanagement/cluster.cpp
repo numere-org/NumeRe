@@ -623,7 +623,7 @@ namespace NumeRe
             vTarget->resize(_vLine.size(), NAN);
 
             // Insert the elements in the passed array
-            for (unsigned int i = 0; i < _vLine.size(); i++)
+            for (size_t i = 0; i < _vLine.size(); i++)
             {
                 if (_vLine[i] >= (int)vClusterArray.size() || _vLine[i] < 0)
                     (*vTarget)[i] = NAN;
@@ -1195,10 +1195,10 @@ namespace NumeRe
         // Calculate the average of the referenced items
         mu::value_type dAvg = avg(_vLine);
         mu::value_type dStd = 0.0;
-        unsigned int nInvalid = 0;
+        size_t nInvalid = 0;
 
         // Apply the operation and ignore invalid or non-double items
-        for (unsigned int i = 0; i < _vLine.size(); i++)
+        for (size_t i = 0; i < _vLine.size(); i++)
         {
             if (_vLine[i] < 0 || _vLine[i] >= (int)vClusterArray.size())
                 nInvalid++;
@@ -1231,10 +1231,10 @@ namespace NumeRe
             return NAN;
 
         mu::value_type dAvg = 0.0;
-        unsigned int nInvalid = 0;
+        size_t nInvalid = 0;
 
         // Apply the operation and ignore invalid or non-double items
-        for (unsigned int i = 0; i < _vLine.size(); i++)
+        for (size_t i = 0; i < _vLine.size(); i++)
         {
             if (_vLine[i] < 0 || _vLine[i] >= (int)vClusterArray.size())
                 nInvalid++;
@@ -1269,7 +1269,7 @@ namespace NumeRe
         double dMax = NAN;
 
         // Apply the operation and ignore invalid or non-double items
-        for (unsigned int i = 0; i < _vLine.size(); i++)
+        for (size_t i = 0; i < _vLine.size(); i++)
         {
             if (_vLine[i] < 0 || _vLine[i] >= (int)vClusterArray.size())
                 continue;
@@ -1307,7 +1307,7 @@ namespace NumeRe
 
         // Apply the operation on all items and convert
         // their values on-the-fly
-        for (unsigned int i = 0; i < _vLine.size(); i++)
+        for (size_t i = 0; i < _vLine.size(); i++)
         {
             if (_vLine[i] < 0 || _vLine[i] >= (int)vClusterArray.size())
                 continue;
@@ -1341,7 +1341,7 @@ namespace NumeRe
         double dMin = NAN;
 
         // Apply the operation and ignore invalid or non-double items
-        for (unsigned int i = 0; i < _vLine.size(); i++)
+        for (size_t i = 0; i < _vLine.size(); i++)
         {
             if (_vLine[i] < 0 || _vLine[i] >= (int)vClusterArray.size())
                 continue;
@@ -1379,7 +1379,7 @@ namespace NumeRe
 
         // Apply the operation on all items and convert
         // their values on-the-fly
-        for (unsigned int i = 0; i < _vLine.size(); i++)
+        for (size_t i = 0; i < _vLine.size(); i++)
         {
             if (_vLine[i] < 0 || _vLine[i] >= (int)vClusterArray.size())
                 continue;
@@ -1413,7 +1413,7 @@ namespace NumeRe
         mu::value_type dPrd = 1.0;
 
         // Apply the operation and ignore invalid or non-double items
-        for (unsigned int i = 0; i < _vLine.size(); i++)
+        for (size_t i = 0; i < _vLine.size(); i++)
         {
             if (_vLine[i] < 0 || _vLine[i] >= (int)vClusterArray.size())
                 continue;
@@ -1446,7 +1446,7 @@ namespace NumeRe
         mu::value_type dSum = 0.0;
 
         // Apply the operation and ignore invalid or non-double items
-        for (unsigned int i = 0; i < _vLine.size(); i++)
+        for (size_t i = 0; i < _vLine.size(); i++)
         {
             if (_vLine[i] < 0 || _vLine[i] >= (int)vClusterArray.size())
                 continue;
@@ -1480,7 +1480,7 @@ namespace NumeRe
 
         // Apply the operation on all items and convert
         // their values on-the-fly
-        for (unsigned int i = 0; i < _vLine.size(); i++)
+        for (size_t i = 0; i < _vLine.size(); i++)
         {
             if (_vLine[i] < 0 || _vLine[i] >= (int)vClusterArray.size())
                 continue;
@@ -1510,7 +1510,7 @@ namespace NumeRe
         int nInvalid = 0;
 
         // Apply the operation and ignore invalid values
-        for (unsigned int i = 0; i < _vLine.size(); i++)
+        for (size_t i = 0; i < _vLine.size(); i++)
         {
             if (_vLine[i] < 0 || _vLine[i] >= (int)vClusterArray.size())
                 nInvalid++;
@@ -1541,7 +1541,7 @@ namespace NumeRe
         double dRetVal = NAN;
 
         // Apply the operation and ignore invalid or non-double items
-        for (unsigned int i = 0; i < _vLine.size(); i++)
+        for (size_t i = 0; i < _vLine.size(); i++)
         {
             if (_vLine[i] < 0 || _vLine[i] >= (int)vClusterArray.size())
                 continue;
@@ -1575,7 +1575,7 @@ namespace NumeRe
             return 0.0;
 
         // Apply the operation and ignore invalid or non-double items
-        for (unsigned int i = 0; i < _vLine.size(); i++)
+        for (size_t i = 0; i < _vLine.size(); i++)
         {
             if (_vLine[i] < 0 || _vLine[i] >= (int)vClusterArray.size())
                 continue;
@@ -1607,7 +1607,7 @@ namespace NumeRe
         bool isTrue = false;
 
         // Apply the operation and ignore invalid or non-double items
-        for (unsigned int i = 0; i < _vLine.size(); i++)
+        for (size_t i = 0; i < _vLine.size(); i++)
         {
             if (_vLine[i] < 0 || _vLine[i] >= (int)vClusterArray.size())
                 continue;
@@ -1647,7 +1647,7 @@ namespace NumeRe
         int nInvalid = 0;
 
         // Apply the operation and ignore invalid locations
-        for (unsigned int i = 0; i < _vLine.size(); i++)
+        for (size_t i = 0; i < _vLine.size(); i++)
         {
             if (_vLine[i] < 0 || _vLine[i] >= (int)vClusterArray.size())
                 nInvalid++;
@@ -1674,7 +1674,7 @@ namespace NumeRe
         mu::value_type dNorm = 0.0;
 
         // Apply the operation and ignore invalid or non-double items
-        for (unsigned int i = 0; i < _vLine.size(); i++)
+        for (size_t i = 0; i < _vLine.size(); i++)
         {
             if (_vLine[i] < 0 || _vLine[i] >= (int)vClusterArray.size())
                 continue;
@@ -1817,12 +1817,12 @@ namespace NumeRe
             return NAN;
 
         double dMed = 0.0;
-        unsigned int nInvalid = 0;
-        unsigned int nCount = 0;
+        size_t nInvalid = 0;
+        size_t nCount = 0;
         double* dData = 0;
 
         // Calculate the number of valid items
-        for (unsigned int i = 0; i < _vLine.size(); i++)
+        for (size_t i = 0; i < _vLine.size(); i++)
         {
             if (_vLine[i] < 0 || _vLine[i] >= (int)vClusterArray.size())
                 nInvalid++;
@@ -1837,7 +1837,7 @@ namespace NumeRe
         dData = new double[_vLine.size() - nInvalid];
 
         // copy the data to the buffer
-        for (unsigned int i = 0; i < _vLine.size(); i++)
+        for (size_t i = 0; i < _vLine.size(); i++)
         {
             if (_vLine[i] < 0 || _vLine[i] >= (int)vClusterArray.size() || vClusterArray[_vLine[i]]->getType() != ClusterItem::ITEMTYPE_DOUBLE || std::isnan(vClusterArray[_vLine[i]]->getDouble().real()))
                 continue;
@@ -1883,15 +1883,15 @@ namespace NumeRe
         if (!vClusterArray.size())
             return NAN;
 
-        unsigned int nInvalid = 0;
-        unsigned int nCount = 0;
+        size_t nInvalid = 0;
+        size_t nCount = 0;
         double* dData = 0;
 
         if (dPct.real() >= 1 || dPct.real() <= 0)
             return NAN;
 
         // Calculate the number of valid items
-        for (unsigned int i = 0; i < _vLine.size(); i++)
+        for (size_t i = 0; i < _vLine.size(); i++)
         {
             if (_vLine[i] < 0 || _vLine[i] >= (int)vClusterArray.size())
                 nInvalid++;
@@ -1906,7 +1906,7 @@ namespace NumeRe
         dData = new double[_vLine.size() - nInvalid];
 
         // copy the data to the buffer
-        for (unsigned int i = 0; i < _vLine.size(); i++)
+        for (size_t i = 0; i < _vLine.size(); i++)
         {
             if (_vLine[i] < 0 || _vLine[i] >= (int)vClusterArray.size() || vClusterArray[_vLine[i]]->getType() != ClusterItem::ITEMTYPE_DOUBLE || std::isnan(vClusterArray[_vLine[i]]->getDouble().real()))
                 continue;

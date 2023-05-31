@@ -3986,12 +3986,12 @@ void NumeReWindow::OpenFilesFromList(const wxArrayString& filenameslist)
 /// in the editor.
 ///
 /// \param fnames wxArrayString
-/// \param nLine unsigned int The line to jump to
+/// \param nLine size_t The line to jump to
 /// \param nOpenFileFlag int
 /// \return void
 ///
 /////////////////////////////////////////////////
-void NumeReWindow::OpenSourceFile(wxArrayString fnames, unsigned int nLine, int nOpenFileFlag)
+void NumeReWindow::OpenSourceFile(wxArrayString fnames, size_t nLine, int nOpenFileFlag)
 {
     int firstPageNr = -1;
     wxString fileContents = wxEmptyString;
@@ -6456,20 +6456,20 @@ void NumeReWindow::OnTreeDragDrop(wxTreeEvent& event)
 /////////////////////////////////////////////////
 wxString NumeReWindow::addLinebreaks(const wxString& sLine)
 {
-    const unsigned int nMAXLINE = 70;
+    const size_t nMAXLINE = 70;
 
     wxString sReturn = sLine;
 
     while (sReturn.find("\\$") != std::string::npos)
         sReturn.erase(sReturn.find("\\$"),1);
 
-    unsigned int nDescStart = sReturn.find("- ");
-    unsigned int nIndentPos = 4;//
-    unsigned int nLastLineBreak = 0;
+    size_t nDescStart = sReturn.find("- ");
+    size_t nIndentPos = 4;//
+    size_t nLastLineBreak = 0;
     sReturn.replace(nDescStart, 2,"\n    ");
     nLastLineBreak = nDescStart;
 
-    for (unsigned int i = nDescStart; i < sReturn.length(); i++)
+    for (size_t i = nDescStart; i < sReturn.length(); i++)
     {
         if (sReturn[i] == '\n')
             nLastLineBreak = i;

@@ -84,7 +84,7 @@ namespace NumeRe
         m_dataBase = vector<vector<string>>(vDBEntries.size(), vector<string>());
 
         // Go through the database in memory
-        for (unsigned int i = 0; i < vDBEntries.size(); i++)
+        for (size_t i = 0; i < vDBEntries.size(); i++)
         {
             // If no field separator was found, simply append the overall line
             if (vDBEntries[i].find('~') == string::npos)

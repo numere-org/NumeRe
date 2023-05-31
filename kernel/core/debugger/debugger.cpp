@@ -459,7 +459,7 @@ void NumeReDebugger::pushStackItem(const string& sStackItem, Procedure* _current
     vStackTrace.push_back(pair<string, Procedure*>(sStackItem, _currentProcedure));
 
     // Insert a leading backslash, if it missing
-    for (unsigned int i = 0; i < vStackTrace.back().first.length(); i++)
+    for (size_t i = 0; i < vStackTrace.back().first.length(); i++)
     {
         if ((!i && vStackTrace.back().first[i] == '$') || (i && vStackTrace.back().first[i] == '$' && vStackTrace.back().first[i-1] != '\\'))
             vStackTrace.back().first.insert(i,1,'\\');
@@ -507,13 +507,13 @@ void NumeReDebugger::popStackItem()
 /// \param _varFactory ProcedureVarFactory*
 /// \param _sErraticCommand const string&
 /// \param _sErraticModule const string&
-/// \param _nLineNumber unsigned int
+/// \param _nLineNumber size_t
 /// \return void
 ///
 /// This member function is a wrapper for the
 /// more complicated signature further below.
 /////////////////////////////////////////////////
-void NumeReDebugger::gatherInformations(ProcedureVarFactory* _varFactory, const string& _sErraticCommand, const string& _sErraticModule, unsigned int _nLineNumber)
+void NumeReDebugger::gatherInformations(ProcedureVarFactory* _varFactory, const string& _sErraticCommand, const string& _sErraticModule, size_t _nLineNumber)
 {
     if (bAlreadyThrown)
         return;
@@ -542,7 +542,7 @@ void NumeReDebugger::gatherInformations(ProcedureVarFactory* _varFactory, const 
 /// \param _mArguments const std::map<std::string, std::string>&
 /// \param _sErraticCommand const string&
 /// \param _sErraticModule const string&
-/// \param _nLineNumber unsigned int
+/// \param _nLineNumber size_t
 /// \return void
 ///
 /////////////////////////////////////////////////
@@ -551,7 +551,7 @@ void NumeReDebugger:: gatherInformations(const std::map<std::string, std::pair<s
                                          const std::map<std::string, std::string>& _mLocalTables,
                                          const std::map<std::string, std::string>& _mLocalClusters,
                                          const std::map<std::string, std::string>& _mArguments,
-                                         const string& _sErraticCommand, const string& _sErraticModule, unsigned int _nLineNumber)
+                                         const string& _sErraticCommand, const string& _sErraticModule, size_t _nLineNumber)
 {
 
 
@@ -692,7 +692,7 @@ void NumeReDebugger:: gatherInformations(const std::map<std::string, std::pair<s
 /// current executed control flow block.
 ///
 /// \param _sErraticCommand const string&
-/// \param _nLineNumber unsigned int
+/// \param _nLineNumber size_t
 /// \param map<string
 /// \param mVarMap string>&
 /// \param vVarArray const std::vector<mu::value_type>&
@@ -700,7 +700,7 @@ void NumeReDebugger:: gatherInformations(const std::map<std::string, std::pair<s
 /// \return void
 ///
 /////////////////////////////////////////////////
-void NumeReDebugger::gatherLoopBasedInformations(const string& _sErraticCommand, unsigned int _nLineNumber, map<string, string>& mVarMap, const std::vector<mu::value_type>& vVarArray, const std::vector<std::string>& sVarArray)
+void NumeReDebugger::gatherLoopBasedInformations(const string& _sErraticCommand, size_t _nLineNumber, map<string, string>& mVarMap, const std::vector<mu::value_type>& vVarArray, const std::vector<std::string>& sVarArray)
 {
     if (bAlreadyThrown)
         return;
@@ -768,7 +768,7 @@ vector<string> NumeReDebugger::getModuleInformations()
     vector<string> vModule;
     vModule.push_back(sErraticCommand);
     vModule.push_back(sErraticModule);
-    vModule.push_back(toString((size_t)nLineNumber+1));
+    vModule.push_back(toString(nLineNumber+1));
     vModule.push_back(sErrorMessage);
     return vModule;
 }
@@ -789,7 +789,7 @@ vector<string> NumeReDebugger::getStackTrace()
     // Append the line number and the file name, though
     if (!vStackTrace.size())
     {
-        vStack.push_back(_lang.get("DBG_STACK_EMPTY") + "\t" + sErraticModule + "\t" + toString((size_t)nLineNumber+1));
+        vStack.push_back(_lang.get("DBG_STACK_EMPTY") + "\t" + sErraticModule + "\t" + toString(nLineNumber+1));
         return vStack;
     }
 
@@ -798,7 +798,7 @@ vector<string> NumeReDebugger::getStackTrace()
     for (int i = vStackTrace.size()-1; i >= 0; i--)
     {
         Procedure* _curProc = vStackTrace[i].second;
-        vStack.push_back("$" + vStackTrace[i].first + "\t" + _curProc->sCurrentProcedureName + "\t" + toString((size_t)_curProc->GetCurrentLine()+1));
+        vStack.push_back("$" + vStackTrace[i].first + "\t" + _curProc->sCurrentProcedureName + "\t" + toString(_curProc->GetCurrentLine()+1));
     }
 
     return vStack;

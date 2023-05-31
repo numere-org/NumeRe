@@ -98,7 +98,7 @@ string FunctionDefinition::parse(const string& _sArgList)
     // check, whether the arguments contain operators,
     // which means, they are expressions and not only
     // values -> They have to be surrounded by parentheses
-    for (unsigned int j = 0; j < vArg.size(); j++)
+    for (size_t j = 0; j < vArg.size(); j++)
     {
         StripSpaces(vArg[j]);
 
@@ -136,7 +136,7 @@ string FunctionDefinition::parse(const string& _sArgList)
         {
             if (n+1 < vArg.size())
             {
-                for (unsigned int k = n+1; k < vArg.size(); k++)
+                for (size_t k = n+1; k < vArg.size(); k++)
                     vArg[n] += "," + vArg[k];
 
                 vArg.erase(vArg.begin()+n+1, vArg.end());
@@ -440,7 +440,7 @@ bool FunctionDefinition::convertToValues()
         // with their value
         for (auto iter = mAsVal.begin(); iter != mAsVal.end(); ++iter)
         {
-            for (unsigned int i = 0; i < sParsedDefinitionString.length(); i++)
+            for (size_t i = 0; i < sParsedDefinitionString.length(); i++)
             {
                 if (sParsedDefinitionString.substr(i, (iter->first).length()) == iter->first && checkDelimiter(sParsedDefinitionString.substr(i-1, (iter->first).length()+2)))
                 {
@@ -555,7 +555,7 @@ string FunctionDefinitionManager::resolveRecursiveDefinitions(string sDefinition
 
     // Replace each occurence of this function by its previous
     // definition
-    for (unsigned int i = 0; i < sFunction.length(); i++)
+    for (size_t i = 0; i < sFunction.length(); i++)
     {
         if (sFunction.substr(i, sFunctionName.length()) == sFunctionName
             && (!i || !isalnum(sFunction[i-1])))
@@ -814,7 +814,7 @@ bool FunctionDefinitionManager::call(string& sExpr, int nRecursion)
     // loop: if the number of recursions is twice the number of
     // known function definitions, we've probably replaced every
     // function twice, so we do not expect to terminate it.
-    if ((unsigned)nRecursion == mFunctionsMap.size()*2 + 1)
+    if ((size_t)nRecursion == mFunctionsMap.size()*2 + 1)
     {
         throw SyntaxError(SyntaxError::TOO_MANY_FUNCTION_CALLS, sExpr, SyntaxError::invalid_position);
     }

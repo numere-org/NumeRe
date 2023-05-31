@@ -723,7 +723,7 @@ void TableViewer::pasteContents(bool useCursor)
         return;
 
     // Get the number of columns in the data table
-    for (unsigned int i = 0; i < vTableData.size(); i++)
+    for (size_t i = 0; i < vTableData.size(); i++)
     {
         wxStringTokenizer tok(vTableData[i], " ");
 
@@ -735,7 +735,7 @@ void TableViewer::pasteContents(bool useCursor)
     wxGridCellCoords topleft = CreateEmptyGridSpace(nLines, nSkip, nCols, useCursor);
 
     // Go to the whole data table
-    for (unsigned int i = 0; i < vTableData.size(); i++)
+    for (size_t i = 0; i < vTableData.size(); i++)
     {
         // Tokenize the current line
         wxStringTokenizer tok(vTableData[i], " ");
@@ -1396,7 +1396,7 @@ std::vector<wxString> TableViewer::getLinesFromPaste(const wxString& data)
         if (!isNumerical(sLine.ToStdString())
             && (tabSeparated || sLine.find("  ") != std::string::npos))
         {
-            for (unsigned int i = 1; i < sLine.length()-1; i++)
+            for (size_t i = 1; i < sLine.length()-1; i++)
             {
                 if (sLine[i] == ' ' && sLine[i-1] != ' ' && sLine[i+1] != ' ')
                     sLine[i] = '\1';
@@ -1420,7 +1420,7 @@ std::vector<wxString> TableViewer::getLinesFromPaste(const wxString& data)
         {
             // The semicolon is used to separate the columns
             // in this case
-            for (unsigned int i = 0; i < sLine.length(); i++)
+            for (size_t i = 0; i < sLine.length(); i++)
             {
                 if (sLine[i] == ',')
                     sLine[i] = '.';
@@ -1435,7 +1435,7 @@ std::vector<wxString> TableViewer::getLinesFromPaste(const wxString& data)
         {
             // The comma is used to separate the columns
             // in this case
-            for (unsigned int i = 0; i < sLine.length(); i++)
+            for (size_t i = 0; i < sLine.length(); i++)
             {
                 if (sLine[i] == ',')
                 {
