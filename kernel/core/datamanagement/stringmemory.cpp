@@ -260,7 +260,7 @@ void StringInternalMemory::reorderColumn(const vector<int>& vIndex, long long in
 // STRINGMEMORY IMPLEMENTATION
 
 // This member function is used for writing strings into the "string()" object
-bool StringMemory::writeString(const string& _sString, unsigned int _nthString, unsigned int nCol)
+bool StringMemory::writeString(const string& _sString, size_t _nthString, size_t nCol)
 {
     // If this is the first string to be written
     if (_stringIntMem.sStrings.empty())
@@ -269,7 +269,7 @@ bool StringMemory::writeString(const string& _sString, unsigned int _nthString, 
         if (_sString.length())
         {
             // Prepare the storage if needed
-            for (unsigned int i = 0; i <= nCol; i++)
+            for (size_t i = 0; i <= nCol; i++)
             {
                 _stringIntMem.sStrings.push_back(vector<string>());
             }
@@ -289,7 +289,7 @@ bool StringMemory::writeString(const string& _sString, unsigned int _nthString, 
     // Add a new column, if needed
     if (nCol >= _stringIntMem.sStrings.size())
     {
-        for (unsigned int i = _stringIntMem.sStrings.size(); i <= nCol; i++)
+        for (size_t i = _stringIntMem.sStrings.size(); i <= nCol; i++)
             _stringIntMem.sStrings.push_back(vector<string>());
     }
 
@@ -322,7 +322,7 @@ bool StringMemory::writeString(const string& _sString, unsigned int _nthString, 
 }
 
 // This member function is the interface to read strings from the "string()" object
-string StringMemory::readString(unsigned int _nthString, unsigned int nCol)
+string StringMemory::readString(size_t _nthString, size_t nCol)
 {
     // Ensure that the selected column exists
     if (nCol >= _stringIntMem.sStrings.size())
@@ -346,7 +346,7 @@ string StringMemory::readString(unsigned int _nthString, unsigned int nCol)
 
 // This member function returns the maximal string in the "string()" object
 // in the selected column
-string StringMemory::maxString(unsigned int i1, unsigned int i2, unsigned int nCol)
+string StringMemory::maxString(size_t i1, size_t i2, size_t nCol)
 {
     // Ensure that the selected column exists
     if (nCol >= _stringIntMem.sStrings.size())
@@ -363,7 +363,7 @@ string StringMemory::maxString(unsigned int i1, unsigned int i2, unsigned int nC
     string sMax = _stringIntMem.sStrings[nCol][i1];
 
     // Search for the maximal string
-    for (unsigned int i = i1+1; i < i2; i++)
+    for (size_t i = i1+1; i < i2; i++)
     {
         if (sMax < _stringIntMem.sStrings[nCol][i])
             sMax = _stringIntMem.sStrings[nCol][i];
@@ -402,7 +402,7 @@ string StringMemory::maxString(VectorIndex _vLine, VectorIndex _vCol)
 
 // This member function returns the minimal string in the "string()" object
 // in the selected column
-string StringMemory::minString(unsigned int i1, unsigned int i2, unsigned int nCol)
+string StringMemory::minString(size_t i1, size_t i2, size_t nCol)
 {
     // Ensure that the selected column exists
     if (nCol >= _stringIntMem.sStrings.size())
@@ -419,7 +419,7 @@ string StringMemory::minString(unsigned int i1, unsigned int i2, unsigned int nC
     string sMin = _stringIntMem.sStrings[nCol][i1];
 
     // Search for the minimal string
-    for (unsigned int i = i1+1; i < i2; i++)
+    for (size_t i = i1+1; i < i2; i++)
     {
         if (sMin > _stringIntMem.sStrings[nCol][i])
             sMin = _stringIntMem.sStrings[nCol][i];
@@ -458,7 +458,7 @@ string StringMemory::minString(VectorIndex _vLine, VectorIndex _vCol)
 
 // This member function concatenates the strings in the "string()" object
 // in the selected range and returns it
-string StringMemory::sumString(unsigned int i1, unsigned int i2, unsigned int nCol)
+string StringMemory::sumString(size_t i1, size_t i2, size_t nCol)
 {
     // Ensure that the selected column exists
     if (nCol >= _stringIntMem.sStrings.size())
@@ -475,7 +475,7 @@ string StringMemory::sumString(unsigned int i1, unsigned int i2, unsigned int nC
     string sSum = "";
 
     // Concatenate the strings
-    for (unsigned int i = i1; i < i2; i++)
+    for (size_t i = i1; i < i2; i++)
     {
         sSum += _stringIntMem.sStrings[nCol][i];
     }

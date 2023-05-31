@@ -1477,7 +1477,7 @@ void openExternally(const string& sFile)
     replaceAll(_sFile, "/", "\\");
 
     // Invoke the Windows shell
-    nErrorCode = (int)ShellExecute(nullptr, "open", sFile.c_str(), nullptr, nullptr, SW_SHOWNORMAL);
+    nErrorCode = (size_t)ShellExecute(nullptr, "open", sFile.c_str(), nullptr, nullptr, SW_SHOWNORMAL);
 
     // Examine the return value
     if (nErrorCode <= 32)
@@ -3453,7 +3453,7 @@ void evalRecursiveExpressions(string& sExpr)
             || sExpr.substr(0, 6) == "while(")
         return;
 
-    unsigned int nArgSepPos = 0;
+    size_t nArgSepPos = 0;
     int nQuotes = 0;
     bool bAnswerSuppressor = false;
 
@@ -3465,7 +3465,7 @@ void evalRecursiveExpressions(string& sExpr)
     }
 
     // Go through the complete expression
-    for (unsigned int i = 0; i < sExpr.length(); i++)
+    for (size_t i = 0; i < sExpr.length(); i++)
     {
         // Jump over parentheses
         if (!(nQuotes % 2)

@@ -709,7 +709,7 @@ static Matrix evalMatOp(string& sCmd, Parser& _parser, MemoryManager& _data, Fun
                 pos_back = getPrevMatMultiOp(sCmd, pos_back)-1;
                 Matrix _mLeft;
                 Matrix _mRight;
-                unsigned int nPositions[2];
+                size_t nPositions[2];
                 nPositions[1] = __sCmd.find(']',n)+1;
                 string sElement = __sCmd.substr(__sCmd.find_first_not_of(' ', n+2));
 

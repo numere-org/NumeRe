@@ -580,7 +580,7 @@ void NumeReKernel::initializeStackTracker()
     // measure the current stack position
     int stackMeasureVar;
     baseStackPosition = &stackMeasureVar;
-    g_logger.debug("Base stack address = " + toHexString((int)baseStackPosition));
+    g_logger.debug("Base stack address = " + toHexString((long long int)baseStackPosition));
 }
 
 

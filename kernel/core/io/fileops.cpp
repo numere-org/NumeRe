@@ -280,7 +280,7 @@ bool generateTemplate(const std::string& sFile, const std::string& sTempl, const
     while (!iTempl_in.eof())
     {
         std::getline(iTempl_in, sLine);
-        for (unsigned int i = 0; i < vTokens.size(); i++)
+        for (size_t i = 0; i < vTokens.size(); i++)
         {
             sToken = "%%"+toString(i+1)+"%%";
             while (sLine.find(sToken) != std::string::npos)

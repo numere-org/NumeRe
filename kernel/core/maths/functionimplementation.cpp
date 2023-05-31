@@ -2125,12 +2125,22 @@ value_type parser_EllipticD(const value_type& phi, const value_type& n, const va
             nSign = -1;
 
         if (!(nMultiple%2)) // even
+#ifdef NR_HAVE_GSL2
+            return nSign*(nMultiple*gsl_sf_ellint_D(M_PI_2, k.real(), 0) + gsl_sf_ellint_D(fabs(phi.real())-nMultiple*M_PI_2, k.real(), 0));
+        else // odd
+            return nSign*((nMultiple+1)*gsl_sf_ellint_D(M_PI_2, k.real(), 0) - gsl_sf_ellint_D(M_PI_2-(fabs(phi.real())-nMultiple*M_PI_2), k.real(), 0));
+    }
+
+    return gsl_sf_ellint_D(phi.real(), k.real(), 0);
+#else
             return nSign*(nMultiple*gsl_sf_ellint_D(M_PI_2, k.real(), n.real(), 0) + gsl_sf_ellint_D(fabs(phi.real())-nMultiple*M_PI_2, k.real(), n.real(), 0));
         else // odd
             return nSign*((nMultiple+1)*gsl_sf_ellint_D(M_PI_2, k.real(), n.real(), 0) - gsl_sf_ellint_D(M_PI_2-(fabs(phi.real())-nMultiple*M_PI_2), k.real(), n.real(), 0));
     }
 
     return gsl_sf_ellint_D(phi.real(), k.real(), n.real(), 0);
+#endif
+
 }
 
 

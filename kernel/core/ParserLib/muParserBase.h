@@ -339,9 +339,9 @@ namespace mu
 
 			mutable vectormap_type mVectorVars;
 
-			unsigned int nthLoopElement;
-			unsigned int nthLoopPartEquation;
-			unsigned int nCurrVectorIndex;
+			size_t nthLoopElement;
+			size_t nthLoopPartEquation;
+			size_t nCurrVectorIndex;
 			bool bMakeLoopByteCode;
 			bool bPauseLoopByteCode;
 			bool bPauseLock;

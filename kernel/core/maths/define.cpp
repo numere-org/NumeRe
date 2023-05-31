@@ -944,10 +944,10 @@ bool FunctionDefinitionManager::call(string& sExpr, int nRecursion)
 /// \brief Returns the number of defined
 /// functions.
 ///
-/// \return unsigned int
+/// \return size_t
 ///
 /////////////////////////////////////////////////
-unsigned int FunctionDefinitionManager::getDefinedFunctions() const
+size_t FunctionDefinitionManager::getDefinedFunctions() const
 {
     return mFunctionsMap.size();
 }

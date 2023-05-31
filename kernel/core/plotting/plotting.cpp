@@ -245,10 +245,10 @@ Plot::Plot(string& sCmd, MemoryManager& __data, Parser& __parser, Settings& __op
     sOutputName.clear();
 
     vector<string> vPlotCompose;
-    unsigned int nMultiplots[2] = {0, 0};
+    size_t nMultiplots[2] = {0, 0};
 
-    unsigned int nSubPlots = 0;
-    unsigned int nSubPlotMap = 0;
+    size_t nSubPlots = 0;
+    size_t nSubPlotMap = 0;
 
 
     // Pre-analyze the contents of the passed plotting command. If it
@@ -3381,7 +3381,7 @@ void Plot::evaluateSubplot(string& sCmd, size_t nMultiplots[2], size_t& nSubPlot
     StripSpaces(sSubPlotIDX);
     if (findParameter(sCmd, "cols", '=') || findParameter(sCmd, "lines", '='))
     {
-        unsigned int nMultiLines = 1, nMultiCols = 1;
+        size_t nMultiLines = 1, nMultiCols = 1;
 
         if (findParameter(sCmd, "cols", '='))
         {
@@ -3408,19 +3408,19 @@ void Plot::evaluateSubplot(string& sCmd, size_t nMultiplots[2], size_t& nSubPlot
             {
                 if (intCast(v[0]) < 1)
                     v[0] = 1;
-                if ((unsigned int)intCast(v[0]) - 1 >= nMultiplots[0]*nMultiplots[1])
+                if ((size_t)intCast(v[0]) - 1 >= nMultiplots[0]*nMultiplots[1])
                     throw SyntaxError(SyntaxError::INVALID_SUBPLOT_INDEX, "", SyntaxError::invalid_position);
-                if (!checkMultiPlotArray(nMultiplots, nSubPlotMap, (unsigned int)(intCast(v[0]) - 1), nMultiCols, nMultiLines))
+                if (!checkMultiPlotArray(nMultiplots, nSubPlotMap, (size_t)(intCast(v[0]) - 1), nMultiCols, nMultiLines))
                     throw SyntaxError(SyntaxError::INVALID_SUBPLOT_INDEX, "", SyntaxError::invalid_position);
-                _graph->MultiPlot(nMultiplots[0], nMultiplots[1], (unsigned int)intCast(v[0]) - 1, nMultiCols, nMultiLines);
+                _graph->MultiPlot(nMultiplots[0], nMultiplots[1], intCast(v[0]) - 1, nMultiCols, nMultiLines);
             }   // cols, lines
             else
             {
-                if ((unsigned int)(intCast(v[1]) - 1 + (intCast(v[0]) - 1)*nMultiplots[1]) >= nMultiplots[0]*nMultiplots[1])
+                if ((size_t)(intCast(v[1]) - 1 + (intCast(v[0]) - 1)*nMultiplots[1]) >= nMultiplots[0]*nMultiplots[1])
                     throw SyntaxError(SyntaxError::INVALID_SUBPLOT_INDEX, "", SyntaxError::invalid_position);
-                if (!checkMultiPlotArray(nMultiplots, nSubPlotMap, (unsigned int)((intCast(v[1]) - 1) + (intCast(v[0]) - 1)*nMultiplots[0]), nMultiCols, nMultiLines))
+                if (!checkMultiPlotArray(nMultiplots, nSubPlotMap, (size_t)((intCast(v[1]) - 1) + (intCast(v[0]) - 1)*nMultiplots[0]), nMultiCols, nMultiLines))
                     throw SyntaxError(SyntaxError::INVALID_SUBPLOT_INDEX, "", SyntaxError::invalid_position);
-                _graph->MultiPlot(nMultiplots[0], nMultiplots[1], (unsigned int)((intCast(v[1]) - 1) + (intCast(v[0]) - 1)*nMultiplots[0]), nMultiCols, nMultiLines);
+                _graph->MultiPlot(nMultiplots[0], nMultiplots[1], (int)((intCast(v[1]) - 1) + (intCast(v[0]) - 1)*nMultiplots[0]), nMultiCols, nMultiLines);
             }
         }
         else
@@ -3428,7 +3428,7 @@ void Plot::evaluateSubplot(string& sCmd, size_t nMultiplots[2], size_t& nSubPlot
             if (nSubPlots >= nMultiplots[0]*nMultiplots[1])
                 throw SyntaxError(SyntaxError::INVALID_SUBPLOT_INDEX, "", SyntaxError::invalid_position);
             int nPlotPos = 1;
-            for (unsigned int nSub = 0; nSub < nMultiplots[0]*nMultiplots[1]; nSub++)
+            for (size_t nSub = 0; nSub < nMultiplots[0]*nMultiplots[1]; nSub++)
             {
                 if (nPlotPos & nSubPlotMap)
                     nPlotPos <<= 1;
@@ -3463,26 +3463,26 @@ void Plot::evaluateSubplot(string& sCmd, size_t nMultiplots[2], size_t& nSubPlot
             {
                 if (intCast(v[0]) < 1)
                     v[0] = 1;
-                if ((unsigned int)intCast(v[0]) - 1 >= nMultiplots[0]*nMultiplots[1])
+                if ((size_t)intCast(v[0]) - 1 >= nMultiplots[0]*nMultiplots[1])
                     throw SyntaxError(SyntaxError::INVALID_SUBPLOT_INDEX, "", SyntaxError::invalid_position);
-                if ((unsigned int)intCast(v[0]) != 1)
-                    nRes <<= (unsigned int)(intCast(v[0]) - 1);
+                if ((size_t)intCast(v[0]) != 1)
+                    nRes <<= (size_t)(intCast(v[0]) - 1);
                 if (nRes & nSubPlotMap)
                     throw SyntaxError(SyntaxError::INVALID_SUBPLOT_INDEX, "", SyntaxError::invalid_position);
                 nSubPlotMap |= nRes;
-                _graph->SubPlot(nMultiplots[0], nMultiplots[1], (unsigned int)intCast(v[0]) - 1);
+                _graph->SubPlot(nMultiplots[0], nMultiplots[1], intCast(v[0]) - 1);
             }
             else
             {
-                if ((unsigned int)(intCast(v[1]) - 1 + (intCast(v[0]) - 1)*nMultiplots[0]) >= nMultiplots[0]*nMultiplots[1])
+                if ((size_t)(intCast(v[1]) - 1 + (intCast(v[0]) - 1)*nMultiplots[0]) >= nMultiplots[0]*nMultiplots[1])
                     throw SyntaxError(SyntaxError::INVALID_SUBPLOT_INDEX, "", SyntaxError::invalid_position);
                 nRes = 1;
-                if ((unsigned int)(intCast(v[1]) + (intCast(v[0]) - 1)*nMultiplots[0]) != 1)
-                    nRes <<= (unsigned int)((intCast(v[1]) - 1) + (intCast(v[0]) - 1) * nMultiplots[0]);
+                if ((size_t)(intCast(v[1]) + (intCast(v[0]) - 1)*nMultiplots[0]) != 1)
+                    nRes <<= (size_t)((intCast(v[1]) - 1) + (intCast(v[0]) - 1) * nMultiplots[0]);
                 if (nRes & nSubPlotMap)
                     throw SyntaxError(SyntaxError::INVALID_SUBPLOT_INDEX, "", SyntaxError::invalid_position);
                 nSubPlotMap |= nRes;
-                _graph->SubPlot(nMultiplots[0], nMultiplots[1], (unsigned int)((intCast(v[1]) - 1) + (intCast(v[0]) - 1)*nMultiplots[0]));
+                _graph->SubPlot(nMultiplots[0], nMultiplots[1], (int)((intCast(v[1]) - 1) + (intCast(v[0]) - 1)*nMultiplots[0]));
             }
         }
         else
@@ -3490,7 +3490,7 @@ void Plot::evaluateSubplot(string& sCmd, size_t nMultiplots[2], size_t& nSubPlot
             if (nSubPlots >= nMultiplots[0]*nMultiplots[1])
                 throw SyntaxError(SyntaxError::INVALID_SUBPLOT_INDEX, "", SyntaxError::invalid_position);
             int nPlotPos = 1;
-            for (unsigned int nSub = 0; nSub < nMultiplots[0]*nMultiplots[1]; nSub++)
+            for (size_t nSub = 0; nSub < nMultiplots[0]*nMultiplots[1]; nSub++)
             {
                 if (nPlotPos & nSubPlotMap)
                     nPlotPos <<= 1;
@@ -3883,7 +3883,7 @@ void Plot::extractDataValues(const std::vector<std::string>& vDataPlots)
             {
                 Interval range = m_manager.assets[typeCounter].getDataIntervals(0)[datIvlID];
 
-                for (size_t layer = 1; layer < std::max(1u, isMultiDataSet*m_manager.assets[typeCounter].getLayers()); layer++)
+                for (size_t layer = 1; layer < std::max((size_t)1u, isMultiDataSet*m_manager.assets[typeCounter].getLayers()); layer++)
                 {
                     range = range.combine(m_manager.assets[typeCounter].getDataIntervals(layer)[datIvlID]);
                 }
@@ -3902,7 +3902,7 @@ void Plot::extractDataValues(const std::vector<std::string>& vDataPlots)
                 else
                     dataRanges[XRANGE+isHbar] = dataRanges[XRANGE+isHbar].combine(axisrange);
 
-                for (size_t layer = 0; layer < std::max(1u, isMultiDataSet*m_manager.assets[typeCounter].getLayers()); layer++)
+                for (size_t layer = 0; layer < std::max((size_t)1u, isMultiDataSet*m_manager.assets[typeCounter].getLayers()); layer++)
                 {
                     IntervalSet datIvl = m_manager.assets[typeCounter].getDataIntervals(layer);
 
@@ -7136,15 +7136,15 @@ string Plot::composeColoursForBarChart(long int nNum)
 /// \brief This member function checks, whether
 /// the selected subplot position is still empty.
 ///
-/// \param nMultiPlot[2] unsigned int
-/// \param nSubPlotMap unsigned int&
-/// \param nPlotPos unsigned int
-/// \param nCols unsigned int
-/// \param nLines unsigned int
+/// \param nMultiPlot[2] size_t
+/// \param nSubPlotMap size_t&
+/// \param nPlotPos size_t
+/// \param nCols size_t
+/// \param nLines size_t
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool Plot::checkMultiPlotArray(unsigned int nMultiPlot[2], unsigned int& nSubPlotMap, unsigned int nPlotPos, unsigned int nCols, unsigned int nLines)
+bool Plot::checkMultiPlotArray(size_t nMultiPlot[2], size_t& nSubPlotMap, size_t nPlotPos, size_t nCols, size_t nLines)
 {
     // cols, lines
     if (nPlotPos + nCols - 1 >= (nPlotPos / nMultiPlot[0] + 1)*nMultiPlot[0])
@@ -7153,13 +7153,13 @@ bool Plot::checkMultiPlotArray(unsigned int nMultiPlot[2], unsigned int& nSubPlo
     if (nPlotPos / nMultiPlot[0] + nLines - 1 >= nMultiPlot[1])
         return false;
 
-    unsigned int nCol0, nLine0, pos;
+    size_t nCol0, nLine0, pos;
     nCol0 = nPlotPos % nMultiPlot[0];
     nLine0 = nPlotPos / nMultiPlot[0];
 
-    for (unsigned int i = 0; i < nLines; i++)
+    for (size_t i = 0; i < nLines; i++)
     {
-        for (unsigned int j = 0; j < nCols; j++)
+        for (size_t j = 0; j < nCols; j++)
         {
             pos = 1;
             pos <<= ((nCol0 + j) + nMultiPlot[0] * (nLine0 + i));
@@ -7169,9 +7169,9 @@ bool Plot::checkMultiPlotArray(unsigned int nMultiPlot[2], unsigned int& nSubPlo
         }
     }
 
-    for (unsigned int i = 0; i < nLines; i++)
+    for (size_t i = 0; i < nLines; i++)
     {
-        for (unsigned int j = 0; j < nCols; j++)
+        for (size_t j = 0; j < nCols; j++)
         {
             pos = 1;
             pos <<= ((nCol0 + j) + nMultiPlot[0] * (nLine0 + i));

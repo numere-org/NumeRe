@@ -3072,7 +3072,7 @@ static Matrix interpolate(const MatFuncData& funcData, const MatFuncErrorInfo& e
         throw SyntaxError(SyntaxError::WRONG_MATRIX_DIMENSIONS_FOR_MATOP, errorInfo.command, errorInfo.position,
                           printMatrixDim(funcData.mat1) + " vs. " + printMatrixDim(funcData.mat2));
 
-    Matrix interp = createFilledMatrix(funcData.mat2.rows(), std::max(1u, funcData.mat2.cols()-1), 0.0);
+    Matrix interp = createFilledMatrix(funcData.mat2.rows(), std::max((size_t)1u, funcData.mat2.cols()-1), 0.0);
 
     // Interpolate all values in the matrix mat2. First
     // column contains the row values, all remaining contain

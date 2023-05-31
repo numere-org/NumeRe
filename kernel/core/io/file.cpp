@@ -3816,10 +3816,10 @@ namespace NumeRe
         _excel.New(1);
 
         // Rename it so that it fits the cache name
-        _excel.RenameWorksheet(0u, sSheetName.c_str());
+        _excel.RenameWorksheet((size_t)0u, sSheetName.c_str());
 
         // Get a pointer to this sheet
-        _sheet = _excel.GetWorksheet(0u);
+        _sheet = _excel.GetWorksheet((size_t)0u);
 
         // Try to pre-allocate to improve speed
         _cell = _sheet->Cell(nRows, nCols-1); // includes the headline
@@ -3967,7 +3967,7 @@ namespace NumeRe
 
         // Walk through the sheets and extract the
         // dimension info
-        for (unsigned int i = 0; i < nSheets; i++)
+        for (size_t i = 0; i < nSheets; i++)
         {
             // Get the file contents of the current
             // sheet
@@ -4114,7 +4114,7 @@ namespace NumeRe
         tinyxml2::XMLElement* cellXfs = _styles.FirstChildElement()->FirstChildElement("cellXfs");
 
         // Go through all sheets
-        for (unsigned int i = 0; i < nSheets; i++)
+        for (size_t i = 0; i < nSheets; i++)
         {
             // Get the file contents of the current
             // sheet and parse it

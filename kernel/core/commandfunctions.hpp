@@ -634,7 +634,7 @@ static bool editObject(string& sCmd, Parser& _parser, MemoryManager& _data, Sett
 		if (sObject.find('*') != string::npos)
 			sObject.erase(sObject.rfind('*'));
 
-		if ((int)ShellExecute(NULL, NULL, sObject.c_str(), NULL, NULL, SW_SHOWNORMAL) > 32)
+		if ((long long int)ShellExecute(NULL, NULL, sObject.c_str(), NULL, NULL, SW_SHOWNORMAL) > 32)
 			return true;
 
 		throw SyntaxError(SyntaxError::FILE_NOT_EXIST, sCmd, SyntaxError::invalid_position, sObject);

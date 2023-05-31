@@ -246,8 +246,8 @@ bool Script::startInstallation(string& sScriptCommand)
 /////////////////////////////////////////////////
 bool Script::handleInstallInformation(string& sScriptCommand)
 {
-    unsigned int nNumereVersion = AutoVersion::MAJOR*100+AutoVersion::MINOR*10+AutoVersion::BUILD;
-    unsigned int nRequiredVersion = nNumereVersion;
+    size_t nNumereVersion = AutoVersion::MAJOR*100+AutoVersion::MINOR*10+AutoVersion::BUILD;
+    size_t nRequiredVersion = nNumereVersion;
 
     // If the current install information string is incomplete
     // (i.e. no "<endinfo>" tag), then search for the corresponding

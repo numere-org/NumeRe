@@ -26,9 +26,6 @@
 					<Add option="-DWXDEBUG" />
 					<Add option="-DDO_LOG" />
 				</Compiler>
-				<Environment>
-					<Variable name="wx" value="D:\TDM-GCC-32\wxWidgets-3.0.2" />
-				</Environment>
 			</Target>
 			<Target title="Release">
 				<Option output="../Software/rc/NumeRe/numere" prefix_auto="1" extension_auto="1" />
@@ -44,9 +41,6 @@
 				<Linker>
 					<Add option="-s" />
 				</Linker>
-				<Environment>
-					<Variable name="wx" value="D:\TDM-GCC-32\wxWidgets-3.0.2" />
-				</Environment>
 			</Target>
 			<Target title="Profiling">
 				<Option output="../../Software/NumeRe/numere" prefix_auto="1" extension_auto="1" />
@@ -58,9 +52,6 @@
 					<Add option="-fopenmp" />
 					<Add option="-D__GNUWIN32__" />
 				</Compiler>
-				<Environment>
-					<Variable name="wx" value="D:\TDM-GCC-32\wxWidgets-3.0.2" />
-				</Environment>
 			</Target>
 			<Target title="Deep Debug">
 				<Option output="../../Software/NumeRe/numere" prefix_auto="1" extension_auto="1" />
@@ -75,10 +66,41 @@
 					<Add option="-DWXDEBUG" />
 					<Add option="-DDO_LOG" />
 				</Compiler>
+			</Target>
+			<Target title="Profiling_x64">
+				<Option output="../../Software/NumeRe/numere" prefix_auto="1" extension_auto="1" />
+				<Option object_output="Debug/Profiling_x64" />
+				<Option type="0" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add option="-O3" />
+					<Add option="-fopenmp" />
+					<Add option="-D__GNUWIN64__" />
+					<Add option="-DNR_HAVE_GSL2" />
+				</Compiler>
+			</Target>
+			<Target title="Release_x64">
+				<Option output="../Software/rc/NumeRe/numere" prefix_auto="1" extension_auto="1" />
+				<Option object_output="Release_x64" />
+				<Option type="0" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add option="-O3" />
+					<Add option="-fopenmp" />
+					<Add option="-D__GNUWIN64__" />
+					<Add option="-DNR_HAVE_GSL2" />
+					<Add option="-DRELEASE" />
+				</Compiler>
+				<Linker>
+					<Add option="-s" />
+				</Linker>
 				<Environment>
-					<Variable name="wx" value="D:\TDM-GCC-32\wxWidgets-3.0.2" />
+					<Variable name="wx" value="D:\TDM-GCC-64\wxWidgets-3.0.2" />
 				</Environment>
 			</Target>
+			<Environment>
+				<Variable name="wx" value="$(TARGET_COMPILER_DIR)wxWidgets-3.0.2" />
+			</Environment>
 		</Build>
 		<Compiler>
 			<Add option="-Wall" />
@@ -480,6 +502,7 @@
 			<Option target="Debug" />
 			<Option target="Profiling" />
 			<Option target="Deep Debug" />
+			<Option target="Profiling_x64" />
 		</Unit>
 		<Unit filename="kernel/core/utils/tools.cpp" />
 		<Unit filename="kernel/core/utils/tools.hpp" />

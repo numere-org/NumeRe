@@ -758,8 +758,17 @@ bool Fitcontroller::fitctrl(const string& __sExpr, const string& __sRestrictions
     while (nStatus == GSL_CONTINUE && nIterations < nMaxIterations);
 
     // Get the covariance matrix
+
     gsl_matrix* mCovar = gsl_matrix_alloc(mParams.size(), mParams.size());
-    gsl_multifit_covar(solver->J, 0.0, mCovar);
+#ifdef NR_HAVE_GSL2
+	gsl_matrix *J = gsl_matrix_alloc(solver->fdf->n, solver->fdf->p);
+	gsl_multifit_fdfsolver_jac(solver, J);
+	gsl_multifit_covar (J, 0.0, mCovar);
+	gsl_matrix_free (J);
+#else
+	gsl_multifit_covar(solver->J, 0.0, mCovar);
+#endif
+
     vCovarianceMatrix = FitMatrix(mParams.size(), vector<double>(mParams.size(), 0.0));
 
     for (size_t i = 0; i < mParams.size(); i++)

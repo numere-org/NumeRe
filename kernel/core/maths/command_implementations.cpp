@@ -784,7 +784,7 @@ bool differentiate(CommandLineParser& cmdParser)
     if (paramVal.size())
     {
         order = intCast(paramVal.front());
-        order = std::min(order, 3u);
+        order = std::min(order, (size_t)3u);
     }
 
     // Numerical expressions and data sets are handled differently
@@ -4624,7 +4624,7 @@ void particleSwarmOptimizer(CommandLineParser& cmdParser)
 
     // Restrict to 4 dimensions, because there are
     // only 4 default variables
-    nDims = std::min(4u, nDims);
+    nDims = std::min((size_t)4u, nDims);
 
     // Determine the random range for the velocity vector
     double minRange = fabs(ivl[0].max() - ivl[0].min());

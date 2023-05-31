@@ -768,7 +768,7 @@ vector<string> NumeReDebugger::getModuleInformations()
     vector<string> vModule;
     vModule.push_back(sErraticCommand);
     vModule.push_back(sErraticModule);
-    vModule.push_back(toString(nLineNumber+1));
+    vModule.push_back(toString((size_t)nLineNumber+1));
     vModule.push_back(sErrorMessage);
     return vModule;
 }
@@ -789,7 +789,7 @@ vector<string> NumeReDebugger::getStackTrace()
     // Append the line number and the file name, though
     if (!vStackTrace.size())
     {
-        vStack.push_back(_lang.get("DBG_STACK_EMPTY") + "\t" + sErraticModule + "\t" + toString(nLineNumber+1));
+        vStack.push_back(_lang.get("DBG_STACK_EMPTY") + "\t" + sErraticModule + "\t" + toString((size_t)nLineNumber+1));
         return vStack;
     }
 
@@ -798,7 +798,7 @@ vector<string> NumeReDebugger::getStackTrace()
     for (int i = vStackTrace.size()-1; i >= 0; i--)
     {
         Procedure* _curProc = vStackTrace[i].second;
-        vStack.push_back("$" + vStackTrace[i].first + "\t" + _curProc->sCurrentProcedureName + "\t" + toString(_curProc->GetCurrentLine()+1));
+        vStack.push_back("$" + vStackTrace[i].first + "\t" + _curProc->sCurrentProcedureName + "\t" + toString((size_t)_curProc->GetCurrentLine()+1));
     }
 
     return vStack;

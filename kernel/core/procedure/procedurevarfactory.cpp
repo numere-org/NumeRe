@@ -459,7 +459,7 @@ void ProcedureVarFactory::createLocalInlineVars(string sVarList)
     NumeRe::Cluster& tempCluster = _dataRef->getCluster(sTempCluster);
 
     // Decode the variable list
-    for (unsigned int i = 0; i < nLocalVarMapSize; i++)
+    for (size_t i = 0; i < nLocalVarMapSize; i++)
     {
         std::string currentDef = getNextArgument(sVarList, true);
 
@@ -545,7 +545,7 @@ void ProcedureVarFactory::createLocalInlineStrings(string sStringList)
     NumeRe::Cluster& tempCluster = _dataRef->getCluster(sTempCluster);
 
     // Decode the variable list
-    for (unsigned int i = 0; i < nLocalStrMapSize; i++)
+    for (size_t i = 0; i < nLocalStrMapSize; i++)
     {
         std::string currentDef = getNextArgument(sStringList, true);
         std::string sVarValue;
@@ -788,7 +788,7 @@ void ProcedureVarFactory::evaluateProcedureArguments(std::string& currentArg, st
         if (_optionRef->getSetting(SETTING_B_TABLEREFS).active() && !isRef)
         {
             isRef = true;
-            NumeReKernel::issueWarning(_currentProcedure->getCurrentProcedureName() + " @ " + toString(_currentProcedure->GetCurrentLine()+1)
+            NumeReKernel::issueWarning(_currentProcedure->getCurrentProcedureName() + " @ " + toString((size_t)_currentProcedure->GetCurrentLine()+1)
                                        + ": " + _lang.get("PROCEDURE_WARN_TABLE_REFERENCE"));
         }
 
