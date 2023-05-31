@@ -17,7 +17,7 @@
 ******************************************************************************/
 
 #include "datetimetools.hpp"
-#include "date/iso_week.h"
+#include "../../../externals/date/include/date/iso_week.h"
 #include "windows.h"
 
 /////////////////////////////////////////////////
