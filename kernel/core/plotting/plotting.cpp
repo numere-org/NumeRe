@@ -435,6 +435,8 @@ Plot::Plot(string& sCmd, MemoryManager& __data, Parser& __parser, Settings& __op
             }
             else if (sOutputName.substr(sOutputName.length()-4) == ".tif" || sOutputName.substr(sOutputName.length()-5) == ".tiff")
                 writeTiff(_graph, sOutputName);
+            else if (sOutputName.substr(sOutputName.length()-4) == ".png")
+                _graph->WritePNG(sOutputName.c_str(), "", false);
             else
                 _graph->WriteFrame(sOutputName.c_str());
 
@@ -1767,7 +1769,7 @@ bool Plot::plotstd(mglData& _mData, mglData& _mAxisVals, mglData _mData2[3], con
             {
                 if (_pData.getSettings(PlotData::FLOAT_BARS))
                     _graph->Bars(_mAxisVals, _mData,
-                                 (composeColoursForBarChart(_mData.ny) + "^").c_str());
+                                 ("F" + composeColoursForBarChart(_mData.ny)).c_str());
                 else if (_pData.getSettings(PlotData::LOG_REGION) && getNN(_mData2[0]) > 1)
                 {
                     _graph->Region(_mAxisVals, _mData, _mData2[0],
@@ -1792,7 +1794,7 @@ bool Plot::plotstd(mglData& _mData, mglData& _mAxisVals, mglData _mData2[3], con
             {
                 if (_pData.getSettings(PlotData::FLOAT_BARS))
                     _graph->Bars(_mAxisVals, _mData,
-                                 (composeColoursForBarChart(_mData.ny) + "^").c_str());
+                                 ("F" + composeColoursForBarChart(_mData.ny)).c_str());
                 else if (_pData.getSettings(PlotData::LOG_STEPPLOT))
                     _graph->Step(_mAxisVals, _mData,
                                  (_pInfo.sLineStyles[_pInfo.nStyle]).c_str());
@@ -1808,10 +1810,10 @@ bool Plot::plotstd(mglData& _mData, mglData& _mAxisVals, mglData _mData2[3], con
 
                 if (_pData.getSettings(PlotData::FLOAT_BARS))
                     _graph->Bars(_mAxisVals, _mData,
-                                 (composeColoursForBarChart(_mData.ny) + "^").c_str());
+                                 ("F" + composeColoursForBarChart(_mData.ny)).c_str());
                 else if (_pData.getSettings(PlotData::FLOAT_HBARS))
                     _graph->Barh(_mAxisVals, _mData,
-                                 (composeColoursForBarChart(_mData.ny) + "^").c_str());
+                                 ("F" + composeColoursForBarChart(_mData.ny)).c_str());
                 else if (_pData.getSettings(PlotData::LOG_STEPPLOT))
                     _graph->Step(_mAxisVals, _mData,
                                  (_pInfo.sLineStyles[_pInfo.nStyle]).c_str());
@@ -7123,7 +7125,7 @@ string Plot::composeColoursForBarChart(long int nNum)
 
     for (int i = 0; i < nNum; i++)
     {
-        sColours += _pInfo.sLineStyles[_pInfo.nStyle];
+        sColours += _pData.getColors()[_pInfo.nStyle];
 
         if (i + 1 < nNum)
             _pInfo.nStyle = _pInfo.nextStyle();

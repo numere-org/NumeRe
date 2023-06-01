@@ -808,7 +808,7 @@ static void createPlotForHist1D(HistogramParameters& _histParams, mglData& _mAxi
     }
     else
     {
-        _histGraph->WriteFrame(sHistSavePath.c_str());
+        _histGraph->WritePNG(sHistSavePath.c_str(), "", false);
         delete _histGraph;
 
         if (_option.systemPrints() && !bSilent)
@@ -1479,7 +1479,7 @@ static void createPlotsForHist2D(const std::string& sCmd, HistogramParameters& _
     }
     else
     {
-        _histGraph->WriteFrame(sHistSavePath.c_str());
+        _histGraph->WritePNG(sHistSavePath.c_str(), "", false);
         delete _histGraph;
 
         if (_option.systemPrints() && !bSilent)
