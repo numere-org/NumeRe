@@ -112,8 +112,19 @@
 #include "controls/treesearchctrl.hpp"
 #include "controls/toolbarsearchctrl.hpp"
 
-const std::string sVersion = toString((int)AutoVersion::MAJOR) + "." + toString((int)AutoVersion::MINOR) + "." + toString((int)AutoVersion::BUILD) + " \"" + AutoVersion::STATUS + "\"";
-
+#ifdef __GNUWIN64__
+#  ifdef DO_LOG
+const std::string sVersion = toString((int)AutoVersion::MAJOR) + "." + toString((int)AutoVersion::MINOR) + "." + toString((int)AutoVersion::BUILD) + " \"" + AutoVersion::STATUS + "\" (x64-DEBUG)";
+#  else
+const std::string sVersion = toString((int)AutoVersion::MAJOR) + "." + toString((int)AutoVersion::MINOR) + "." + toString((int)AutoVersion::BUILD) + " \"" + AutoVersion::STATUS + "\" (x64)";
+#  endif
+#else
+#  ifdef DO_LOG
+const std::string sVersion = toString((int)AutoVersion::MAJOR) + "." + toString((int)AutoVersion::MINOR) + "." + toString((int)AutoVersion::BUILD) + " \"" + AutoVersion::STATUS + "\" (x86-DEBUG)";
+#  else
+const std::string sVersion = toString((int)AutoVersion::MAJOR) + "." + toString((int)AutoVersion::MINOR) + "." + toString((int)AutoVersion::BUILD) + " \"" + AutoVersion::STATUS + "\" (x86)";
+#  endif
+#endif
 // Forward declaration
 std::string removeMaskedStrings(const std::string& sString);
 std::string removeQuotationMarks(const std::string&);

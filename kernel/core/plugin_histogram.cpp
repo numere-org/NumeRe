@@ -578,7 +578,8 @@ static void createOutputForHist1D(MemoryManager& _data, const Indices& _idx, con
 static mglGraph* prepareGraphForHist(double dAspect, PlotData& _pData, bool bSilent)
 {
     // Create a new mglGraph instance on the heap
-    mglGraph* _histGraph = new mglGraph();
+    mglGraph* _histGraph = new mglGraph(0);
+    _histGraph->SetPenDelta(0.65);
 
     // Apply plot output size using the resolution
     // and the aspect settings
