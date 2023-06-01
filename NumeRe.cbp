@@ -95,6 +95,21 @@
 					<Add option="-s" />
 				</Linker>
 			</Target>
+			<Target title="Deep Debug_x64">
+				<Option output="../../Software/NumeRe/numere" prefix_auto="1" extension_auto="1" />
+				<Option object_output="Deepdebug_x64" />
+				<Option type="0" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add option="-g" />
+					<Add option="-ggdb3" />
+					<Add option="-fno-omit-frame-pointer" />
+					<Add option="-D__GNUWIN64__" />
+					<Add option="-DNR_HAVE_GSL2" />
+					<Add option="-DWXDEBUG" />
+					<Add option="-DDO_LOG" />
+				</Compiler>
+			</Target>
 			<Environment>
 				<Variable name="wx" value="$(TARGET_COMPILER_DIR)wxWidgets-3.0.2" />
 			</Environment>
@@ -500,6 +515,7 @@
 			<Option target="Profiling" />
 			<Option target="Deep Debug" />
 			<Option target="Profiling_x64" />
+			<Option target="Deep Debug_x64" />
 		</Unit>
 		<Unit filename="kernel/core/utils/tools.cpp" />
 		<Unit filename="kernel/core/utils/tools.hpp" />

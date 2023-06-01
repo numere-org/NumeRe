@@ -1533,6 +1533,11 @@ namespace NumeRe
             uint32_t* data = readNumBlock<uint32_t>(size);
             return (void*)data;
         }
+        else if (type == "LUINT" || type == "U64")
+        {
+            uint64_t* data = readNumBlock<uint64_t>(size);
+            return (void*)data;
+        }
         else if (type == "BYTE")
         {
             char* data = readNumBlock<char>(size);
@@ -1573,6 +1578,8 @@ namespace NumeRe
                 delete[] (int64_t*)data;
             else if (type == "UINT" || type == "U32")
                 delete[] (uint32_t*)data;
+            else if (type == "LUINT" || type == "U64")
+                delete[] (uint64_t*)data;
             else if (type == "BYTE")
                 delete[] (char*)data;
             else if (type == "STRING")
