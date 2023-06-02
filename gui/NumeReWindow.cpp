@@ -3197,7 +3197,7 @@ void NumeReWindow::NewFile(FileFilterType _filetype, const wxString& defaultfile
 
         if (folder == "main/" && _filetype == FILE_NPRC)
             folder.clear();
-        else if (!isExternal)
+        else if (!isExternal || _filetype != FILE_NPRC)
             folder.insert(0, "/");
 
         // Clean the file and folder names for procedures -

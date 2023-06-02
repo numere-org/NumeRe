@@ -1,1 +1,3 @@
 Removed	The obsolete second parameter for the elliptic integral D was removed. The function now has the signature "ellipticD(x,k)"
+Fixed	Resolved a problem with creating new files.
+New	A 64 bit version is now available.
