@@ -4494,21 +4494,24 @@ namespace NumeRe
                 if (dData)
                 {
                     if (bReadComplexData)
-                        fileData->at(nSliceCounter+nFirstCol)->setValue(nInsertion, mu::value_type(dData[i+j*2*nDim[0]], dData[i+1+j*2*nDim[0]]));
+                        fileData->at(nSliceCounter+nFirstCol)->setValue(nInsertion,
+                                                                        mu::value_type(dData[i+j*2*nDim[0]], dData[i+1+j*2*nDim[0]]));
                     else
                         fileData->at(nSliceCounter+nFirstCol)->setValue(nInsertion, dData[i+j*(nDim[0])]);
                 }
                 else if (fData)
                 {
                     if (bReadComplexData)
-                        fileData->at(nSliceCounter+nFirstCol)->setValue(nInsertion, mu::value_type(fData[i+j*2*nDim[0]], fData[i+1+j*2*nDim[0]]));
+                        fileData->at(nSliceCounter+nFirstCol)->setValue(nInsertion,
+                                                                        mu::value_type(fData[i+j*2*nDim[0]], fData[i+1+j*2*nDim[0]]));
                     else
                         fileData->at(nSliceCounter+nFirstCol)->setValue(nInsertion, (double)fData[i+j*(nDim[0])]);
                 }
                 else if (n8_tData)
                 {
                     if (bReadComplexData)
-                        fileData->at(nSliceCounter+nFirstCol)->setValue(nInsertion, mu::value_type(n8_tData[i+j*2*nDim[0]], n8_tData[i+1+j*2*nDim[0]]));
+                        fileData->at(nSliceCounter+nFirstCol)->setValue(nInsertion,
+                                                                        mu::value_type(n8_tData[i+j*2*nDim[0]], n8_tData[i+1+j*2*nDim[0]]));
                     else
                         fileData->at(nSliceCounter+nFirstCol)->setValue(nInsertion, (double)n8_tData[i+j*(nDim[0])]);
 
@@ -4516,14 +4519,16 @@ namespace NumeRe
                 else if (n16_tData)
                 {
                     if (bReadComplexData)
-                        fileData->at(nSliceCounter+nFirstCol)->setValue(nInsertion, mu::value_type(n16_tData[i+j*2*nDim[0]], n16_tData[i+1+j*2*nDim[0]]));
+                        fileData->at(nSliceCounter+nFirstCol)->setValue(nInsertion,
+                                                                        mu::value_type(n16_tData[i+j*2*nDim[0]], n16_tData[i+1+j*2*nDim[0]]));
                     else
                         fileData->at(nSliceCounter+nFirstCol)->setValue(nInsertion, (double)n16_tData[i+j*(nDim[0])]);
                 }
                 else if (n32_tData)
                 {
                     if (bReadComplexData)
-                        fileData->at(nSliceCounter+nFirstCol)->setValue(nInsertion, mu::value_type(n32_tData[i+j*2*nDim[0]], n32_tData[i+1+j*2*nDim[0]]));
+                        fileData->at(nSliceCounter+nFirstCol)->setValue(nInsertion,
+                                                                        mu::value_type(n32_tData[i+j*2*nDim[0]], n32_tData[i+1+j*2*nDim[0]]));
                     else
                         fileData->at(nSliceCounter+nFirstCol)->setValue(nInsertion, (double)n32_tData[i+j*(nDim[0])]);
                 }

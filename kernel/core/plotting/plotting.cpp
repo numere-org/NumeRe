@@ -1762,7 +1762,7 @@ bool Plot::plotstd(mglData& _mData, mglData& _mAxisVals, mglData _mData2[3], con
                          (_pInfo.sLineStyles[_pInfo.nStyle]+_pInfo.sLineStyles[nNextStyle]).c_str());
         else if (_pData.getSettings(PlotData::LOG_CANDLESTICK))
             _graph->Candle(_mAxisVals, _mData2[2], _mData, _mData2[1], _mData2[0],
-                           (_pInfo.sLineStyles[_pInfo.nStyle]+_pInfo.sLineStyles[nNextStyle]).c_str());
+                           (_pData.getColors().substr(_pInfo.nStyle, 1)+_pData.getColors().substr(nNextStyle, 1)).c_str());
         else if (!_pData.getSettings(PlotData::LOG_XERROR) && !_pData.getSettings(PlotData::LOG_YERROR))
         {
             if (_pData.getSettings(PlotData::LOG_INTERPOLATE) && countValidElements(_mData) >= (size_t)_pInfo.nSamples)

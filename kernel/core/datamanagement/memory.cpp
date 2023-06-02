@@ -33,8 +33,11 @@
 #include "../maths/statslogic.hpp"
 #include "../maths/matdatastructures.hpp"
 
-#define MAX_TABLE_SIZE 1e8
+#ifdef __GNUWIN64__
+#define MAX_TABLE_COLS (INT_MAX-1)/2
+#else
 #define MAX_TABLE_COLS 1e4
+#endif
 #define DEFAULT_COL_TYPE ValueColumn
 
 
