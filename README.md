@@ -27,6 +27,22 @@ displaying tooltips that show documentation and signatures of functions, command
 
 **Get more information at: [en.numere.org](https://en.numere.org)**
 
+## Screen shots
+
+Get an impression, how NumeRe looks like and what it's able to do for you. Note that although the UI language is *German* in these image, NumeRe is also available in *English*. There's no need to learn a foreign language. 😉
+
+![numere-session-screen](https://github.com/numere-org/NumeRe/assets/87755490/f6418ddc-eebc-4a47-9de4-d9c467b01d27)
+This is how a typical session might look like.
+
+![numere-documentation](https://github.com/numere-org/NumeRe/assets/87755490/dbf8a8fd-3f73-4588-95a8-75347a262f12)
+We have a huge embedded documentation in multiple languages available in every distribution.
+
+![promotion_1](https://github.com/numere-org/NumeRe/assets/87755490/9af0939d-d3d6-4104-8938-1cafe550f1f9)
+Some exemplary 2D and 3D plots.
+
+![promotion_2](https://github.com/numere-org/NumeRe/assets/87755490/1ac3056c-85df-4d44-8555-7647fdda7c0c)
+Some exemplary plots.
+
 ## Join in
 
 ### How can you support us?
