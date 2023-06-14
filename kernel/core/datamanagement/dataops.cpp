@@ -49,7 +49,7 @@ extern Language _lang;
 /// \return void
 ///
 /////////////////////////////////////////////////
-void load_data(MemoryManager& _data, Settings& _option, Parser& _parser, string sFileName)
+void load_data(MemoryManager& _data, Settings& _option, Parser& _parser, string sFileName, string sFileFormat)
 {
     // check, if the filename is available
 	if (!sFileName.length())
@@ -72,11 +72,10 @@ void load_data(MemoryManager& _data, Settings& _option, Parser& _parser, string 
 		}
 
 	}
+
 	// No data available in memory?
 	if (_data.isEmpty("data"))	// Es sind noch keine Daten vorhanden?
-	{
-		_data.openFile(sFileName);
-	}
+		_data.openFile(sFileName, false, false, 0, "", sFileFormat);
 	else	// Sind sie doch? Dann muessen wir uns was ueberlegen...
 	{
 	    // append the data?
@@ -111,7 +110,7 @@ void load_data(MemoryManager& _data, Settings& _option, Parser& _parser, string 
 				_data.removeData();			// Speicher freigeben...
 
 				// Open the file and copy its contents
-				_data.openFile(sFileName);
+				_data.openFile(sFileName, false, false, 0, "", sFileFormat);
             }
 			else							// Kannst du dich vielleicht mal entscheiden?
 			{
@@ -350,6 +349,10 @@ void append_data(CommandLineParser& cmdParser)
 	// Copy the default path and the path tokens
 	int nArgument = 0;
 	std::string sFileList = cmdParser.parseExprAsString();
+	std::string sFileFormat;
+
+    if (cmdParser.hasParam("fileformat"))
+        sFileFormat = cmdParser.getParameterValueAsString("fileformat", "", true, true);
 
     // If the command expression contains the parameter "all" and the
     // argument (i.e. the filename) contains wildcards
@@ -372,7 +375,7 @@ void append_data(CommandLineParser& cmdParser)
             // Load the data. The melting of multiple files
             // is processed automatically
             _data.setbLoadEmptyColsInNextFile(cmdParser.hasParam("keepdim") || cmdParser.hasParam("complete"));
-            _data.openFile(vFilelist[i]);
+            _data.openFile(vFilelist[i], false, false, 0, "", sFileFormat);
         }
 
         // Inform the user and return
@@ -403,10 +406,10 @@ void append_data(CommandLineParser& cmdParser)
                 nArgument = intCast(vPar.front());
         }
 
-        info = _data.openFile(sFileList, false, nArgument);
+        info = _data.openFile(sFileList, false, false, nArgument, "", sFileFormat);
     }
     else
-        info = _data.openFile(sFileList);
+        info = _data.openFile(sFileList, false, false, 0, "", sFileFormat);
 
         // Inform the user
     if (!_data.isEmpty("data") && _option.systemPrints())
