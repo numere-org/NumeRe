@@ -102,15 +102,16 @@ namespace NumeRe
     /// \param overrideTarget bool
     /// \param _nHeadline int
     /// \param sTargetTable const std::string&
+    /// \param sFileFormat std::string
     /// \return FileHeaderInfo
     ///
     /////////////////////////////////////////////////
-    FileHeaderInfo FileAdapter::openFile(std::string _sFile, bool loadToCache, bool overrideTarget, int _nHeadline, const std::string& sTargetTable)
+    FileHeaderInfo FileAdapter::openFile(std::string _sFile, bool loadToCache, bool overrideTarget, int _nHeadline, const std::string& sTargetTable, std::string sFileFormat)
     {
         FileHeaderInfo info;
 
         // Ensure that the file name is valid
-        std::string sFile = ValidFileName(_sFile);
+        std::string sFile = ValidFileName(_sFile, ".dat", !sFileFormat.length());
 
         // If the file seems not to exist and the user did
         // not provide the extension, try to detect it using
@@ -121,7 +122,7 @@ namespace NumeRe
         g_logger.info("Loading file '" + _sFile + "'. (Resolved as '" + sFile + "')");
 
         // Get an instance of the desired file type
-        GenericFile* file = getFileByType(sFile);
+        GenericFile* file = getFileByType(sFile, sFileFormat);
 
         // Ensure that the instance is valid
         if (!file)
@@ -232,10 +233,11 @@ namespace NumeRe
     /// \param sTable const std::string&
     /// \param _sFileName std::string
     /// \param nPrecision unsigned short
+    /// \param sFileFormat std::string
     /// \return bool
     ///
     /////////////////////////////////////////////////
-    bool FileAdapter::saveFile(const std::string& sTable, std::string _sFileName, unsigned short nPrecision)
+    bool FileAdapter::saveFile(const std::string& sTable, std::string _sFileName, unsigned short nPrecision, std::string sFileFormat)
     {
         if (!_sFileName.length())
             sOutputFile = generateFileName();
@@ -244,11 +246,11 @@ namespace NumeRe
             string sTemp = sPath;
             setPath(sSavePath, false, sExecutablePath);
 
-            sOutputFile = ValidFileName(_sFileName, ".ndat");
+            sOutputFile = ValidFileName(_sFileName, ".ndat", !sFileFormat.length());
             setPath(sTemp, false, sExecutablePath);
         }
 
-        return saveLayer(sOutputFile, sTable, nPrecision);
+        return saveLayer(sOutputFile, sTable, nPrecision, sFileFormat);
     }
 
 
