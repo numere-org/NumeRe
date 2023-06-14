@@ -2578,7 +2578,7 @@ size_t Procedure::GetCurrentLine() const
         return getCurrentLineNumber();
 
     // Use the internal line number
-    return std::max((size_t)0, nCurrentLine);
+    return std::max(0, nCurrentLine);
 }
 
 

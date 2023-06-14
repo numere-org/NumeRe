@@ -61,7 +61,7 @@ class Procedure : public FlowCtrl, public PackageManager
         std::fstream fProcedure;
         std::string sProcNames;
         std::string sCurrentProcedureName;
-        size_t nCurrentLine;
+        int nCurrentLine;
         std::string sNameSpace;
         std::string sCallingNameSpace;
         std::string sThisNameSpace;

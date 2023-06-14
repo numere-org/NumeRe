@@ -2573,10 +2573,17 @@ static StringVector strfnc_getversioninfo(StringFuncArgs& funcArgs)
     static std::string sINTVERSION = toString((int)AutoVersion::MAJOR) + "."
         + toString((int)AutoVersion::MINOR) + "."
         + toString((int)AutoVersion::BUILD) + "."
-        + toString((int)(std::stod(AutoVersion::UBUNTU_VERSION_STYLE)*100));
+        + toString((int)(std::stod(AutoVersion::UBUNTU_VERSION_STYLE)*100))
+#ifdef __GNUWIN64__
+        + "-x64"
+#endif
+        ;
     static std::string sINSTNAME = toString((int)AutoVersion::MAJOR) + toString((int)AutoVersion::MINOR) + toString((int)AutoVersion::BUILD)
-        + (std::string(AutoVersion::STATUS_SHORT).find("rc") != std::string::npos ? AutoVersion::STATUS_SHORT : "");
-
+        + (std::string(AutoVersion::STATUS_SHORT).find("rc") != std::string::npos ? AutoVersion::STATUS_SHORT : "")
+#ifdef __GNUWIN64__
+        + "_x64"
+#endif
+        ;
     StringVector sVersionInfo;
     sVersionInfo.push_back("Version");
     sVersionInfo.push_back(sVersion);
@@ -2586,6 +2593,12 @@ static StringVector strfnc_getversioninfo(StringFuncArgs& funcArgs)
     sVersionInfo.push_back(sINTVERSION);
     sVersionInfo.push_back("FileVersion");
     sVersionInfo.push_back(sINSTNAME);
+    sVersionInfo.push_back("Architecture");
+#ifdef __GNUWIN64__
+    sVersionInfo.push_back("64 bit");
+#else
+    sVersionInfo.push_back("32 bit");
+#endif
 
     return sVersionInfo;
 }

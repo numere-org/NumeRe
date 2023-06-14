@@ -3474,10 +3474,13 @@ int FlowCtrl::calc(StringView sLine, int nthCmd)
     // Remove the "explicit" command here
     if (nCurrentCalcType & CALCTYPE_EXPLICIT)
     {
-        sBuffer = sLine.to_string();
-        sBuffer.erase(findCommand(sBuffer).nPos, 8);
-        sLine = StringView(sBuffer);
-        sLine.strip();
+        if (findCommand(sLine).sString == "explicit")
+        {
+            sBuffer = sLine.to_string();
+            sBuffer.erase(findCommand(sBuffer).nPos, 8);
+            sLine = StringView(sBuffer);
+            sLine.strip();
+        }
     }
 
     // Evaluate the command, if this is a command
@@ -4443,10 +4446,10 @@ void FlowCtrl::updateTestStats()
 /// current line number as enumerated during
 /// passing the commands via "setCommand()".
 ///
-/// \return size_t
+/// \return int
 ///
 /////////////////////////////////////////////////
-size_t FlowCtrl::getCurrentLineNumber() const
+int FlowCtrl::getCurrentLineNumber() const
 {
     if (vCmdArray.size() > (size_t)nCurrentCommand)
         return vCmdArray[nCurrentCommand].nInputLine;
