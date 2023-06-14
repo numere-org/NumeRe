@@ -1,1 +1,2 @@
 Added	It is now possible to pass plotting options to "hist" and "hist2d" directly. Due to name conflicts, we had to rename the previously "grid" option to "asgrid".
+New	The new flow control command "leave" allows jumping out of nested loops completely without the need of unnecessary complex "if-else" checks and boolean flags.
