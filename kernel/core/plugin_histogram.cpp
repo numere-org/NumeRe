@@ -1686,19 +1686,14 @@ void plugin_histogram(std::string& sCmd)
     Indices _idx;
     Indices _tIdx;
 
-    if (_data.matchTableAsParameter(sCmd).length())
-        _histParams.sTable = _data.matchTableAsParameter(sCmd);
-    else
-    {
-        DataAccessParser _accessParser(sCmd);
+    DataAccessParser _accessParser(sCmd);
 
-        if (!_accessParser.getDataObject().length())
-            throw SyntaxError(SyntaxError::TABLE_DOESNT_EXIST, sCmd, SyntaxError::invalid_position);
+    if (!_accessParser.getDataObject().length())
+        throw SyntaxError(SyntaxError::TABLE_DOESNT_EXIST, sCmd, SyntaxError::invalid_position);
 
-        _accessParser.evalIndices();
-        _histParams.sTable = _accessParser.getDataObject();
-        _idx = _accessParser.getIndices();
-    }
+    _accessParser.evalIndices();
+    _histParams.sTable = _accessParser.getDataObject();
+    _idx = _accessParser.getIndices();
 
     if (_data.isEmpty(_histParams.sTable))
         throw SyntaxError(SyntaxError::NO_CACHED_DATA, sCmd, SyntaxError::invalid_position);
@@ -1844,8 +1839,12 @@ void plugin_histogram(std::string& sCmd)
     if (findParameter(sCmd, "silent"))
         bSilent = true;
 
-    if (findParameter(sCmd, "grid") && _idx.col.size() > 3)
+    // Had to rename the "grid" parameter due to name conflict
+    if (findParameter(sCmd, "asgrid") && _idx.col.size() > 3)
         bGrid = true;
+
+    // Parse all plotting-specific parameters
+    NumeReKernel::getInstance()->getPlottingData().setParams(sCmd);
 
     //////////////////////////////////////////////////////////////////////////////////////
     if (bMake2DHist)
