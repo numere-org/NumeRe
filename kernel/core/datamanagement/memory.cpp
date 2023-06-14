@@ -685,6 +685,8 @@ TableColumn::ColumnType Memory::getType(const VectorIndex& _vCol) const
 /////////////////////////////////////////////////
 bool Memory::isValueLike(const VectorIndex& _vCol) const
 {
+    _vCol.setOpenEndIndex(getCols()-1);
+
     for (size_t i = 0; i < _vCol.size(); i++)
     {
         if (_vCol[i] >= 0 && (int)memArray.size() > _vCol[i] && memArray[_vCol[i]])
