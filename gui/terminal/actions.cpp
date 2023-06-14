@@ -228,6 +228,7 @@ void GenericTerminal::tab()
     if (nTabStartPos == -1)
     {
         nTabStartPos = termCursor.x;
+        bool isMethod = false;
 
         // Get the word start from the terminal
         sAutoCompWordStart = toLowerCase(tm.GetWordStartAt(termCursor.y, termCursor.x));
@@ -238,13 +239,17 @@ void GenericTerminal::tab()
             std::string sNameSpace = getProcNameSpace();
             sAutoCompList = _syntax.getProcAutoCompList(sAutoCompWordStart, "", sNameSpace);
         }
-        else if (m_useSmartSense && tm.GetCharAdjusted(termCursor.y, nTabStartPos - sAutoCompWordStart.length()-1) == '.')
-            sAutoCompList = _syntax.getAutoCompList("." + sAutoCompWordStart, m_useSmartSense);
+        else if (m_useSmartSense && tm.GetCharAdjusted(termCursor.y, nTabStartPos - (int)sAutoCompWordStart.length()-1) == '.')
+        {
+            isMethod = true;
+            sAutoCompList = _syntax.getAutoCompList("." + sAutoCompWordStart, m_useSmartSense,
+                                                    get_method_root_type(nTabStartPos - (int)sAutoCompWordStart.length()-1, termCursor.y));
+        }
         else
             sAutoCompList = _syntax.getAutoCompList(sAutoCompWordStart, m_useSmartSense);
 
         // Reset the autocompletion, if no completion was found or the word start is too short
-        if (!sAutoCompList.length() || !sAutoCompWordStart.length())
+        if (!sAutoCompList.length() || (!sAutoCompWordStart.length() && !isMethod))
         {
             resetAutoComp(RESETCURSOR | RESETTAB);
             return;
@@ -261,8 +266,9 @@ void GenericTerminal::tab()
                 std::string sNameSpace = getProcNameSpace();
                 sAutoCompList = _syntax.getProcAutoCompList(sAutoCompWordStart, "", sNameSpace);
             }
-            else if (m_useSmartSense && tm.GetCharAdjusted(termCursor.y, nTabStartPos - sAutoCompWordStart.length()-1) == '.')
-                sAutoCompList = _syntax.getAutoCompList("." + sAutoCompWordStart, m_useSmartSense);
+            else if (m_useSmartSense && tm.GetCharAdjusted(termCursor.y, nTabStartPos - (int)sAutoCompWordStart.length()-1) == '.')
+                sAutoCompList = _syntax.getAutoCompList("." + sAutoCompWordStart, m_useSmartSense,
+                                                        get_method_root_type(nTabStartPos - (int)sAutoCompWordStart.length()-1, termCursor.y));
             else
                 sAutoCompList = _syntax.getAutoCompList(sAutoCompWordStart, m_useSmartSense);
         }
