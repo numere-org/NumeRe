@@ -64,7 +64,7 @@ Script::~Script()
 /// \return void
 ///
 /////////////////////////////////////////////////
-void Script::openScript(string& _sScriptFileName)
+void Script::openScript(string& _sScriptFileName, int nFromLine)
 {
     // Close an already opened script
     if (m_script)
@@ -93,6 +93,10 @@ void Script::openScript(string& _sScriptFileName)
         nLine = 0;
         _localDef.reset();
         _symdefs.clear();
+
+        // Set the line to start from if requested by user
+        if (nFromLine != 0)
+            nLine = nFromLine;
     }
 }
 
@@ -135,7 +139,7 @@ void Script::close()
 
             // Open the file and hope, it
             // actually exist
-            openScript(vInstallPackages[nCurrentPackage]);
+            openScript(vInstallPackages[nCurrentPackage], 0);
 
             return;
         }

@@ -926,7 +926,7 @@ void NumeReTerminal::pipe_command(const std::string& sCommand)
 /////////////////////////////////////////////////
 void NumeReTerminal::pass_command(const std::string& command, bool isEvent)
 {
-    // Don't do anything if the command is emoty
+    // Don't do anything if the command is empty
 	if (!command.length())
 		return;
 

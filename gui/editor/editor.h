@@ -150,6 +150,8 @@ class NumeReEditor : public wxStyledTextCtrl, public wxThreadHelper
 		wxFileName GetFileName(); // capital N
 		wxString GetFilePath();
 		wxArrayInt GetBreakpoints();
+		
+		int GetLineForMarkerOperation();
 
 		void SetFilename(wxFileName filename, bool fileIsRemote);
 		void ResetEditor();
@@ -357,7 +359,6 @@ class NumeReEditor : public wxStyledTextCtrl, public wxThreadHelper
 		void OnDrop(wxStyledTextEvent& event);
 		void OnMouseMotion(wxMouseEvent& event);
 
-		int GetLineForMarkerOperation();
 		void ResetRightClickLocation();
 		void ReplaceMatches(const std::vector<int>& vMatches, const wxString& sSymbol, const wxString& sNewSymbol);
 		void RenameSymbols(int nPos);

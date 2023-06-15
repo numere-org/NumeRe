@@ -1909,6 +1909,7 @@ void NumeReWindow::OnMenuEvent(wxCommandEvent &event)
         }
 
         case ID_MENU_EXECUTE:
+        case ID_MENU_EXECUTE_FROM_LINE:
         {
             if (!m_book->getCurrentEditor()->HasBeenSaved() || m_book->getCurrentEditor()->Modified())
             {
@@ -1936,6 +1937,7 @@ void NumeReWindow::OnMenuEvent(wxCommandEvent &event)
 
             break;
         }
+
         case ID_MENU_STOP_EXECUTION:
             m_terminal->CancelCalculation();
             break;
@@ -5467,6 +5469,7 @@ wxBitmap NumeReWindow::getToolbarIcon(const wxString& iconName)
     else if (style == "Focused")
     {
         if (iconName == "run"
+            || iconName == "run-from-line"
             || iconName == "stop"
             || iconName == "add-bp"
             || iconName == "remove-bp"
@@ -5569,6 +5572,7 @@ void NumeReWindow::UpdateToolbar()
         t->AddSeparator();
 
     t->AddTool(ID_MENU_EXECUTE, _guilang.get("GUI_TB_RUN"), getToolbarIcon("run"), _guilang.get("GUI_TB_RUN_TTP"));
+    t->AddTool(ID_MENU_EXECUTE_FROM_LINE, _guilang.get("GUI_TB_RUN_LINE"), getToolbarIcon("run-from-line"), _guilang.get("GUI_TB_RUN_LINE_TTP")); //TODO: Add GUI_TB_RUN_LINE and GUI_TB_RUN_LINE_TTP
     t->AddTool(ID_MENU_STOP_EXECUTION, _guilang.get("GUI_TB_STOP"), getToolbarIcon("stop"), _guilang.get("GUI_TB_STOP_TTP"));
 
     t->AddSeparator();
@@ -7103,7 +7107,15 @@ void NumeReWindow::OnExecuteFile(const std::string& sFileName, int id)
         while (command.front() == '/')
             command.erase(0, 1);
 
-        command = "start \"" + command + "\"";
+        // Define the command including the line to execute from
+        if (id == ID_MENU_EXECUTE)
+            command = "start \"" + command + "\"";
+        else if (id == ID_MENU_EXECUTE_FROM_LINE)
+        {
+            // Get the line to start from
+            int nStartLine = GetCurrentEditor()->GetLineForMarkerOperation();
+            command = "start \"" + command + "\"" + " -set fromline=" + std::to_string(nStartLine);
+        }
     }
     else if (command.rfind(".nlyt") != std::string::npos)
     {

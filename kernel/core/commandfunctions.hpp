@@ -3267,7 +3267,7 @@ static CommandReturnValues cmd_install(string& sCmd)
             sArgument = sCmd.substr(findCommand(sCmd).nPos + 8);
 
         StripSpaces(sArgument);
-        _script.openScript(sArgument);
+        _script.openScript(sArgument, 0);
     }
 
     return COMMAND_PROCESSED;
@@ -3337,7 +3337,7 @@ static CommandReturnValues cmd_credits(string& sCmd)
 	make_hline();
 	NumeReKernel::printPreFmt("|-> Version: " + sVersion);
 	NumeReKernel::printPreFmt(" | " + _lang.get("BUILTIN_CREDITS_BUILD") + ": " + AutoVersion::YEAR + "-" + AutoVersion::MONTH + "-" + AutoVersion::DATE + "\n");
-	NumeReKernel::print("Copyright (c) 2013-" + (AutoVersion::YEAR + toSystemCodePage(", Erik HÄNEL et al.")) );
+	NumeReKernel::print("Copyright (c) 2013-" + (AutoVersion::YEAR + toSystemCodePage(", Erik Hï¿½NEL et al.")) );
 	NumeReKernel::printPreFmt("|   <numere.developer@gmail.com>\n" );
 	NumeReKernel::print(_lang.get("BUILTIN_CREDITS_VERSIONINFO"));
 	make_hline(-80);
@@ -3911,7 +3911,22 @@ static CommandReturnValues cmd_start(string& sCmd)
     if (!sFileName.length())
         throw SyntaxError(SyntaxError::SCRIPT_NOT_EXIST, sCmd, sFileName, "[" + _lang.get("BUILTIN_CHECKKEYWORD_START_ERRORTOKEN") + "]");
 
-    _script.openScript(sFileName);
+    // Get the line to start from
+    int nFromLine = 0;
+    if (cmdParser.hasParam("fromline"))
+    {
+        // Get the line parameter and subtract 1 to match the internal 0 based line count
+        std::vector<mu::value_type> vecFromLine = cmdParser.getParameterValueAsNumericalValue("fromline");
+        nFromLine = intCast(vecFromLine.front()) - 1;
+
+        // Check if line is continous line, if so jump to line start
+        // TODO
+
+        // Check if line is in loop, if so jump to start of loop
+        // TODO
+    }
+
+    _script.openScript(sFileName, nFromLine);
 
     return COMMAND_PROCESSED;
 }
