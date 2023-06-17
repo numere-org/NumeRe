@@ -620,16 +620,26 @@ namespace NumeRe
             vTarget->resize(1, NAN);
         else
         {
+            vTarget->clear();
             vTarget->resize(_vLine.size(), NAN);
 
             // Insert the elements in the passed array
-            for (size_t i = 0; i < _vLine.size(); i++)
+            if (_vLine.size() > 100000)
             {
-                if (_vLine[i] >= (int)vClusterArray.size() || _vLine[i] < 0)
-                    (*vTarget)[i] = NAN;
-                else
-                    (*vTarget)[i] = vClusterArray[_vLine[i]]->getDouble();
-
+                #pragma omp parallel for
+                for (size_t i = 0; i < _vLine.size(); i++)
+                {
+                    if (_vLine[i] < (int)vClusterArray.size() && _vLine[i] >= 0)
+                        (*vTarget)[i] = vClusterArray[_vLine[i]]->getDouble();
+                }
+            }
+            else
+            {
+                for (size_t i = 0; i < _vLine.size(); i++)
+                {
+                    if (_vLine[i] < (int)vClusterArray.size() && _vLine[i] >= 0)
+                        (*vTarget)[i] = vClusterArray[_vLine[i]]->getDouble();
+                }
             }
         }
     }
@@ -647,25 +657,29 @@ namespace NumeRe
     /////////////////////////////////////////////////
     void Cluster::setDoubleArray(const std::vector<mu::value_type>& vVals)
     {
-        // Create new cluster items, if needed
-        while (vClusterArray.size() < vVals.size())
-            push_back(new ClusterDoubleItem(NAN));
+        // Free the internal memory first
+        clear();
 
-        for (size_t i = 0; i < vVals.size(); i++)
+        // Create empty space
+        vClusterArray.resize(vVals.size(), nullptr);
+        nGlobalType = ClusterItem::ITEMTYPE_DOUBLE;
+
+        // Write data to the free space
+        if (vVals.size() > 100000)
         {
-            // Assign the value
-            if (vClusterArray[i]->getType() != ClusterItem::ITEMTYPE_DOUBLE)
+            #pragma omp parallel for
+            for (size_t i = 0; i < vVals.size(); i++)
             {
-                // Re-create the current item as double
-                delete vClusterArray[i];
                 vClusterArray[i] = new ClusterDoubleItem(vVals[i]);
             }
-            else
-                static_cast<ClusterDoubleItem*>(vClusterArray[i])->setDouble(vVals[i]);
         }
-
-        reduceSize(vVals.size());
-        nGlobalType = ClusterItem::ITEMTYPE_DOUBLE;
+        else
+        {
+            for (size_t i = 0; i < vVals.size(); i++)
+            {
+                vClusterArray[i] = new ClusterDoubleItem(vVals[i]);
+            }
+        }
     }
 
 
@@ -682,25 +696,29 @@ namespace NumeRe
     /////////////////////////////////////////////////
     void Cluster::setDoubleArray(int nNum, mu::value_type* data)
     {
-        // Create new cluster items, if needed
-        while (vClusterArray.size() < (size_t)nNum)
-            push_back(new ClusterDoubleItem(NAN));
+        // Free the internal memory first
+        clear();
 
-        for (int i = 0; i < nNum; i++)
+        // Create empty space
+        vClusterArray.resize(nNum, nullptr);
+        nGlobalType = ClusterItem::ITEMTYPE_DOUBLE;
+
+        // Write data to the free space
+        if (nNum > 100000)
         {
-            // Assign the value
-            if (vClusterArray[i]->getType() != ClusterItem::ITEMTYPE_DOUBLE)
+            #pragma omp parallel for
+            for (int i = 0; i < nNum; i++)
             {
-                // Re-create the current item as double
-                delete vClusterArray[i];
                 vClusterArray[i] = new ClusterDoubleItem(data[i]);
             }
-            else
-                static_cast<ClusterDoubleItem*>(vClusterArray[i])->setDouble(data[i]);
         }
-
-        reduceSize(nNum);
-        nGlobalType = ClusterItem::ITEMTYPE_DOUBLE;
+        else
+        {
+            for (int i = 0; i < nNum; i++)
+            {
+                vClusterArray[i] = new ClusterDoubleItem(data[i]);
+            }
+        }
     }
 
 
