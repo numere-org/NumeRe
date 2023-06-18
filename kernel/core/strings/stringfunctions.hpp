@@ -29,7 +29,7 @@
 // define the "End of transmission block" as string separator
 #define NEWSTRING (char)23
 
-extern Language _guilang;
+extern Language _lang;
 
 using namespace std;
 
@@ -2654,7 +2654,7 @@ static StringVector strfnc_getfileinfo(StringFuncArgs& funcArgs)
 /////////////////////////////////////////////////
 static StringVector strfnc_getuilang(StringFuncArgs& funcArgs)
 {
-    return _guilang.get("LANGUAGE");
+    return _lang.get("LANGUAGE");
 }
 
 
