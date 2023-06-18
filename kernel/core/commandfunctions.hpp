@@ -2198,6 +2198,10 @@ static CommandReturnValues saveDataObject(string& sCmd)
             NumeReKernel::getInstance()->getStringParser().getStringValues(sCmd);
 
         std::string sFileName;
+        std::string sFileFormat;
+
+        if (cmdParser.hasParam("fileformat"))
+            sFileFormat = cmdParser.getParameterValueAsString("fileformat", "", true, true);
 
         if (cmdParser.getCommand() == "export")
             sFileName = cmdParser.getFileParameterValue(".dat", "<savepath>", "");
@@ -2214,7 +2218,7 @@ static CommandReturnValues saveDataObject(string& sCmd)
                 sFileName = _cache.generateFileName(".ndat");
         }
 
-        if (_cache.saveFile(_access.getDataObject(), sFileName, nPrecision))
+        if (_cache.saveFile(_access.getDataObject(), sFileName, nPrecision, sFileFormat))
         {
             if (_option.systemPrints())
                 NumeReKernel::print(_lang.get("BUILTIN_CHECKKEYWORD_SAVEDATA_SUCCESS", _cache.getOutputFileName()));
@@ -4930,6 +4934,7 @@ static CommandReturnValues cmd_load(string& sCmd)
         if (sFileName.length())
         {
             std::string sSlicingParam = cmdParser.getParameterValue("slice");
+            std::string sFileFormat;
 
             if (sSlicingParam == "xz")
                 nArgument = -1;
@@ -4938,14 +4943,19 @@ static CommandReturnValues cmd_load(string& sCmd)
             else
                 nArgument = 0;
 
+            if (cmdParser.hasParam("fileformat"))
+                sFileFormat = cmdParser.getParameterValueAsString("fileformat", "", true, true);
+
             _data.setbLoadEmptyColsInNextFile(cmdParser.hasParam("keepdim") || cmdParser.hasParam("complete"));
 
-            if ((cmdParser.hasParam("tocache") || cmdParser.hasParam("totable") || cmdParser.hasParam("target")) && !cmdParser.hasParam("all"))
+            if ((cmdParser.hasParam("tocache") || cmdParser.hasParam("totable") || cmdParser.hasParam("target"))
+                && !cmdParser.hasParam("all"))
             {
                 // Single file directly to cache
                 std::string sTargetTable = getTargetTable(cmdParser.getParameterList());
 
-                NumeRe::FileHeaderInfo info = _data.openFile(sFileName, true, cmdParser.hasParam("ignore") || cmdParser.hasParam("i"), nArgument, sTargetTable);
+                NumeRe::FileHeaderInfo info = _data.openFile(sFileName, true, cmdParser.hasParam("ignore") || cmdParser.hasParam("i"),
+                                                             nArgument, sTargetTable, sFileFormat);
 
                 if (!_data.isEmpty(info.sTableName))
                 {
@@ -4960,7 +4970,9 @@ static CommandReturnValues cmd_load(string& sCmd)
 
                 return COMMAND_PROCESSED;
             }
-            else if ((cmdParser.hasParam("tocache") || cmdParser.hasParam("totable") || cmdParser.hasParam("target")) && cmdParser.hasParam("all") && (sFileName.find('*') != string::npos || sFileName.find('?') != string::npos))
+            else if ((cmdParser.hasParam("tocache") || cmdParser.hasParam("totable") || cmdParser.hasParam("target"))
+                     && cmdParser.hasParam("all")
+                     && (sFileName.find('*') != string::npos || sFileName.find('?') != string::npos))
             {
                 // multiple files directly to cache
                 if (sFileName.find('/') == string::npos)
@@ -4972,7 +4984,8 @@ static CommandReturnValues cmd_load(string& sCmd)
                     throw SyntaxError(SyntaxError::FILE_NOT_EXIST, sCmd, sFileName, sFileName);
 
                 for (size_t i = 0; i < vFilelist.size(); i++)
-                    vFilelist[i] = _data.openFile(vFilelist[i], true, cmdParser.hasParam("ignore") || cmdParser.hasParam("i"), nArgument, getTargetTable(cmdParser.getParameterList())).sTableName;
+                    vFilelist[i] = _data.openFile(vFilelist[i], true, cmdParser.hasParam("ignore") || cmdParser.hasParam("i"), nArgument,
+                                                  getTargetTable(cmdParser.getParameterList()), sFileFormat).sTableName;
 
                 if (!_data.isEmpty(vFilelist.front()) && _option.systemPrints())
                     NumeReKernel::print(_lang.get("BUILTIN_CHECKKEYOWRD_LOAD_ALL_CACHES_SUCCESS", toString(vFilelist.size()), sFileName));
@@ -5002,7 +5015,7 @@ static CommandReturnValues cmd_load(string& sCmd)
                     for (size_t i = 0; i < vFilelist.size(); i++)
                     {
                         // Melting is done automatically
-                        _data.openFile(vFilelist[i], false, false, nArgument);
+                        _data.openFile(vFilelist[i], false, false, nArgument, sFileFormat);
                     }
 
                     if (!_data.isEmpty("data") && _option.systemPrints())
@@ -5029,7 +5042,7 @@ static CommandReturnValues cmd_load(string& sCmd)
                         nArgument = intCast(vParList.front());
                 }
 
-                info = _data.openFile(sFileName, false, false, nArgument);
+                info = _data.openFile(sFileName, false, false, nArgument, "", sFileFormat);
 
                 if (!_data.isEmpty("data"))
                 {
@@ -5043,7 +5056,7 @@ static CommandReturnValues cmd_load(string& sCmd)
                 }
             }
             else
-                load_data(_data, _option, _parser, sFileName);
+                load_data(_data, _option, _parser, sFileName, sFileFormat);
         }
         else
             load_data(_data, _option, _parser);
@@ -5377,6 +5390,9 @@ static std::map<std::string,CommandFunc> getCommandFunctions()
     mCommandFuncMap["endlayout"] = cmd_context_specific;
     mCommandFuncMap["group"] = cmd_context_specific;
     mCommandFuncMap["endgroup"] = cmd_context_specific;
+    mCommandFuncMap["break"] = cmd_context_specific;
+    mCommandFuncMap["continue"] = cmd_context_specific;
+    mCommandFuncMap["leave"] = cmd_context_specific;
     mCommandFuncMap["else"] = cmd_context_specific;
     mCommandFuncMap["elseif"] = cmd_context_specific;
     mCommandFuncMap["endif"] = cmd_context_specific;

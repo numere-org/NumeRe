@@ -685,6 +685,8 @@ TableColumn::ColumnType Memory::getType(const VectorIndex& _vCol) const
 /////////////////////////////////////////////////
 bool Memory::isValueLike(const VectorIndex& _vCol) const
 {
+    _vCol.setOpenEndIndex(getCols()-1);
+
     for (size_t i = 0; i < _vCol.size(); i++)
     {
         if (_vCol[i] >= 0 && (int)memArray.size() > _vCol[i] && memArray[_vCol[i]])
@@ -1983,13 +1985,14 @@ void Memory::insertCopiedTable(NumeRe::Table _table, const VectorIndex& lines, c
 /// \param _sFileName string
 /// \param sTableName const string&
 /// \param nPrecision unsigned short
+/// \param sExt std::string
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool Memory::save(string _sFileName, const string& sTableName, unsigned short nPrecision)
+bool Memory::save(string _sFileName, const string& sTableName, unsigned short nPrecision, std::string sExt)
 {
     // Get an instance of the desired file type
-    NumeRe::GenericFile* file = NumeRe::getFileByType(_sFileName);
+    NumeRe::GenericFile* file = NumeRe::getFileByType(_sFileName, sExt);
 
     // Ensure that a file was created
     if (!file)

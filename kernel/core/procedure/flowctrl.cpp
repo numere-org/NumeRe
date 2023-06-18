@@ -27,12 +27,16 @@
 #include "../plotting/plotting.hpp"
 
 // Definition of special return values
-#define FLOWCTRL_ERROR -1
-#define FLOWCTRL_RETURN -2
-#define FLOWCTRL_BREAK -3
-#define FLOWCTRL_CONTINUE -4
-#define FLOWCTRL_NO_CMD -5
-#define FLOWCTRL_OK 1
+enum
+{
+    FLOWCTRL_ERROR = -1,
+    FLOWCTRL_RETURN = -2,
+    FLOWCTRL_BREAK = -3,
+    FLOWCTRL_CONTINUE = -4,
+    FLOWCTRL_LEAVE = -5,
+    FLOWCTRL_NO_CMD = -6,
+    FLOWCTRL_OK = 1
+};
 
 // Definition of standard values of the jump table
 #define NO_FLOW_COMMAND -1
@@ -234,7 +238,7 @@ int FlowCtrl::for_loop(int nth_Cmd, int nth_loop)
                 int nReturn = (this->*vCmdArray[__j].fcFn)(__j, nth_loop+1);
 
                 // Handle the return value
-                if (nReturn == FLOWCTRL_ERROR || nReturn == FLOWCTRL_RETURN)
+                if (nReturn == FLOWCTRL_ERROR || nReturn == FLOWCTRL_RETURN || nReturn == FLOWCTRL_LEAVE)
                     return nReturn;
                 else if (nReturn == FLOWCTRL_BREAK)
                     return nJumpTable[nth_Cmd][BLOCK_END];
@@ -274,6 +278,13 @@ int FlowCtrl::for_loop(int nth_Cmd, int nth_loop)
                     // return statement, returning the end index
                     // of the current block
                     return nJumpTable[nth_Cmd][BLOCK_END];
+                }
+
+                if (sCommand == "leave")
+                {
+                    // "leave" requires to leave the complete
+                    // flow control block
+                    return FLOWCTRL_LEAVE;
                 }
             }
 
@@ -549,7 +560,7 @@ int FlowCtrl::range_based_for_loop(int nth_Cmd, int nth_loop)
                 int nReturn = (this->*vCmdArray[__j].fcFn)(__j, nth_loop+1);
 
                 // Handle the return value
-                if (nReturn == FLOWCTRL_ERROR || nReturn == FLOWCTRL_RETURN)
+                if (nReturn == FLOWCTRL_ERROR || nReturn == FLOWCTRL_RETURN || nReturn == FLOWCTRL_LEAVE)
                     return nReturn;
                 else if (nReturn == FLOWCTRL_BREAK)
                     return nJumpTable[nth_Cmd][BLOCK_END];
@@ -589,6 +600,13 @@ int FlowCtrl::range_based_for_loop(int nth_Cmd, int nth_loop)
                     // return statement, returning the end index
                     // of the current block
                     return nJumpTable[nth_Cmd][BLOCK_END];
+                }
+
+                if (sCommand == "leave")
+                {
+                    // "leave" requires to leave the complete
+                    // flow control block
+                    return FLOWCTRL_LEAVE;
                 }
             }
 
@@ -720,7 +738,7 @@ int FlowCtrl::while_loop(int nth_Cmd, int nth_loop)
                 int nReturn =  (this->*vCmdArray[__j].fcFn)(__j, nth_loop+1);
 
                 // Handle the return value
-                if (nReturn == FLOWCTRL_ERROR || nReturn == FLOWCTRL_RETURN)
+                if (nReturn == FLOWCTRL_ERROR || nReturn == FLOWCTRL_RETURN || nReturn == FLOWCTRL_LEAVE)
                     return nReturn;
                 else if (nReturn == FLOWCTRL_BREAK)
                     return nJumpTable[nth_Cmd][BLOCK_END];
@@ -760,6 +778,13 @@ int FlowCtrl::while_loop(int nth_Cmd, int nth_loop)
                     // return statement, returning the end index
                     // of the current block
                     return nJumpTable[nth_Cmd][BLOCK_END];
+                }
+
+                if (sCommand == "leave")
+                {
+                    // "leave" requires to leave the complete
+                    // flow control block
+                    return FLOWCTRL_LEAVE;
                 }
             }
 
@@ -871,6 +896,7 @@ int FlowCtrl::if_fork(int nth_Cmd, int nth_loop)
                     if (nReturn == FLOWCTRL_ERROR
                         || nReturn == FLOWCTRL_RETURN
                         || nReturn == FLOWCTRL_BREAK
+                        || nReturn == FLOWCTRL_LEAVE
                         || nReturn == FLOWCTRL_CONTINUE)
                         return nReturn;
                     else if (nReturn != FLOWCTRL_NO_CMD)
@@ -901,6 +927,13 @@ int FlowCtrl::if_fork(int nth_Cmd, int nth_loop)
                     {
                         nCalcType[__i] = CALCTYPE_BREAKCMD;
                         return FLOWCTRL_BREAK;
+                    }
+
+                    if (sCommand == "leave")
+                    {
+                        // "leave" requires to leave the complete
+                        // flow control block
+                        return FLOWCTRL_LEAVE;
                     }
                 }
 
@@ -973,6 +1006,7 @@ int FlowCtrl::if_fork(int nth_Cmd, int nth_loop)
             if (nReturn == FLOWCTRL_ERROR
                 || nReturn == FLOWCTRL_RETURN
                 || nReturn == FLOWCTRL_BREAK
+                || nReturn == FLOWCTRL_LEAVE
                 || nReturn == FLOWCTRL_CONTINUE)
                 return nReturn;
             else if (nReturn != FLOWCTRL_NO_CMD)
@@ -1001,6 +1035,13 @@ int FlowCtrl::if_fork(int nth_Cmd, int nth_loop)
             {
                 nCalcType[__i] = CALCTYPE_BREAKCMD;
                 return FLOWCTRL_BREAK;
+            }
+
+            if (sCommand == "leave")
+            {
+                // "leave" requires to leave the complete
+                // flow control block
+                return FLOWCTRL_LEAVE;
             }
         }
 
@@ -1103,6 +1144,7 @@ int FlowCtrl::switch_fork(int nth_Cmd, int nth_loop)
             // Handle the return value
             if (nReturn == FLOWCTRL_ERROR
                 || nReturn == FLOWCTRL_RETURN
+                || nReturn == FLOWCTRL_LEAVE
                 || nReturn == FLOWCTRL_CONTINUE)
                 return nReturn;
             else if (nReturn == FLOWCTRL_BREAK)
@@ -1142,6 +1184,13 @@ int FlowCtrl::switch_fork(int nth_Cmd, int nth_loop)
                 // We don't propagate the break signal in this case
                 nCalcType[__i] = CALCTYPE_BREAKCMD;
                 return nSwitchEnd;
+            }
+
+            if (sCommand == "leave")
+            {
+                // "leave" requires to leave the complete
+                // flow control block
+                return FLOWCTRL_LEAVE;
             }
         }
 
@@ -1219,6 +1268,7 @@ int FlowCtrl::try_catch(int nth_Cmd, int nth_loop)
                 if (nReturn == FLOWCTRL_ERROR
                     || nReturn == FLOWCTRL_RETURN
                     || nReturn == FLOWCTRL_BREAK
+                    || nReturn == FLOWCTRL_LEAVE
                     || nReturn == FLOWCTRL_CONTINUE)
                     return nReturn;
                 else if (nReturn != FLOWCTRL_NO_CMD)
@@ -1247,9 +1297,15 @@ int FlowCtrl::try_catch(int nth_Cmd, int nth_loop)
 
                 if (sCommand == "break")
                 {
-                    // We don't propagate the break signal in this case
                     nCalcType[__i] = CALCTYPE_BREAKCMD;
                     return FLOWCTRL_BREAK;
+                }
+
+                if (sCommand == "leave")
+                {
+                    // "leave" requires to leave the complete
+                    // flow control block
+                    return FLOWCTRL_LEAVE;
                 }
             }
 
@@ -1332,6 +1388,7 @@ int FlowCtrl::try_catch(int nth_Cmd, int nth_loop)
                         if (nReturn == FLOWCTRL_ERROR
                             || nReturn == FLOWCTRL_RETURN
                             || nReturn == FLOWCTRL_BREAK
+                            || nReturn == FLOWCTRL_LEAVE
                             || nReturn == FLOWCTRL_CONTINUE)
                             return nReturn;
                         else if (nReturn != FLOWCTRL_NO_CMD)
@@ -1361,9 +1418,15 @@ int FlowCtrl::try_catch(int nth_Cmd, int nth_loop)
 
                     if (sCommand == "break")
                     {
-                        // We don't propagate the break signal in this case
                         nCalcType[__i] = CALCTYPE_BREAKCMD;
                         return FLOWCTRL_BREAK;
+                    }
+
+                    if (sCommand == "leave")
+                    {
+                        // "leave" requires to leave the complete
+                        // flow control block
+                        return FLOWCTRL_LEAVE;
                     }
                 }
 

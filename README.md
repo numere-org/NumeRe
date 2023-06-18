@@ -4,7 +4,7 @@
 
 Curve fitting | Data analysis | Plotting | Matrix operations | FFT | Extensible Framework | Multiple file formats | Programmable | Open source | Free for everyone
 
-**NumeRe: Framework für Numerische Rechnungen** is an application for Microsoft Windows® that can do more than the usual spreadsheets. It provides you with
+**NumeRe: Framework for Numerical Calculations** is an application for Microsoft Windows® that can do more than the usual spreadsheets. It provides you with
 nonlinear fits of arbitrary functions as well as a ODE solver. It can display 1D and 2D data easily and publication-ready with a simple command. Fourier
 transforms are included as well as wavelet transforms. Data is managed in a table-based manner and automatically saved, so you can quickly resume after a
 restart.
@@ -26,6 +26,22 @@ This makes it possible to have several procedures with the same name that are st
 displaying tooltips that show documentation and signatures of functions, commands and procedures.
 
 **Get more information at: [en.numere.org](https://en.numere.org)**
+
+## Screen shots
+
+Get an impression, how NumeRe looks like and what it's able to do for you. Note that although the UI language is *German* in these image, NumeRe is also available in *English*. There's no need to learn a foreign language. 😉
+
+This is how a typical session might look like:
+![numere-session-screen](https://github.com/numere-org/NumeRe/assets/87755490/f6418ddc-eebc-4a47-9de4-d9c467b01d27)
+
+We have a huge embedded documentation in multiple languages available in every distribution:
+![numere-documentation](https://github.com/numere-org/NumeRe/assets/87755490/dbf8a8fd-3f73-4588-95a8-75347a262f12)
+
+Some exemplary 2D and 3D plots:
+![promotion_1](https://github.com/numere-org/NumeRe/assets/87755490/9af0939d-d3d6-4104-8938-1cafe550f1f9)
+
+Some exemplary plots:
+![promotion_2](https://github.com/numere-org/NumeRe/assets/87755490/1ac3056c-85df-4d44-8555-7647fdda7c0c)
 
 ## Join in
 

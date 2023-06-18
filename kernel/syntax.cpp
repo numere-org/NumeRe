@@ -238,7 +238,7 @@ std::string NumeReSyntax::constructString(const std::vector<std::string>& vVecto
     // Concatenate all elements in vVector
     for (size_t i = 0; i < vVector.size(); i++)
     {
-        sReturn += vVector[i] + " ";
+        sReturn += vVector[i].substr(0, vVector[i].find('.')) + " ";
     }
 
     return sReturn;
@@ -342,7 +342,7 @@ bool NumeReSyntax::matchItem(const std::vector<std::string>& vVector, const std:
     for (size_t i = 0; i < vVector.size(); i++)
     {
         // Match found -> return true
-        if (vVector[i] == sString)
+        if (vVector[i].substr(0, vVector[i].find('.')) == sString)
             return true;
     }
 
@@ -664,10 +664,11 @@ std::string NumeReSyntax::highlightWarning(const std::string& sCommandLine)
 ///
 /// \param sFirstChars std::string
 /// \param useSmartSense bool
+/// \param varType NumeReSyntax::SyntaxColors
 /// \return std::string
 ///
 /////////////////////////////////////////////////
-std::string NumeReSyntax::getAutoCompList(std::string sFirstChars, bool useSmartSense)
+std::string NumeReSyntax::getAutoCompList(std::string sFirstChars, bool useSmartSense, NumeReSyntax::SyntaxColors varType)
 {
     std::string sAutoCompList;
 
@@ -688,11 +689,11 @@ std::string NumeReSyntax::getAutoCompList(std::string sFirstChars, bool useSmart
                                                                            SYNTAX_FUNCTION);
 
         for (size_t i = 0; i < vMethods.size(); i++)
-            mAutoCompList[toLowerCase(vMethods[i])+"."] = std::make_pair(vMethods[i]+"?" + toString((int)SYNTAX_METHODS),
+            mAutoCompList[toLowerCase(vMethods[i])] = std::make_pair(vMethods[i].substr(0, vMethods[i].find('.'))+"?"+toString((int)SYNTAX_METHODS),
                                                                          SYNTAX_METHODS); // Methods shall not override functions
 
         for (size_t i = 0; i < vMethodsArgs.size(); i++)
-            mAutoCompList[toLowerCase(vMethodsArgs[i])+"(."] = std::make_pair(vMethodsArgs[i]+"(?" + toString((int)SYNTAX_METHODS),
+            mAutoCompList[toLowerCase(vMethodsArgs[i])] = std::make_pair(vMethodsArgs[i].substr(0, vMethodsArgs[i].find('.'))+"(?"+toString((int)SYNTAX_METHODS),
                                                                               SYNTAX_METHODS); // Methods shall not override functions
 
         for (size_t i = 0; i < vOptions.size(); i++)
@@ -728,20 +729,29 @@ std::string NumeReSyntax::getAutoCompList(std::string sFirstChars, bool useSmart
     if (selectMethods)
         sFirstChars.erase(0, 1);
 
+    bool selectAllMethods = selectMethods && !sFirstChars.length();
+    std::string methodSelector = ".unknown";
+
+    if (varType == SYNTAX_TABLE)
+        methodSelector = ".tab";
+    else if (varType == SYNTAX_STD)
+        methodSelector = ".str";
+
     // Try to find the correspondig elements in the map
     for (auto iter = mAutoCompList.begin(); iter != mAutoCompList.end(); ++iter)
     {
-        if ((iter->first).front() == sFirstChars.front())
+        if (selectAllMethods || (iter->first).front() == sFirstChars.front())
         {
             if (useSmartSense)
             {
-                if (selectMethods && iter->second.second != SYNTAX_METHODS)
+                if (selectMethods && (iter->second.second != SYNTAX_METHODS
+                                      || iter->first.find(methodSelector) == std::string::npos))
                     continue;
                 else if (!selectMethods && iter->second.second == SYNTAX_METHODS)
                     continue;
             }
 
-            if (sFirstChars == (iter->first).substr(0, sFirstChars.length()))
+            if (sFirstChars == (iter->first).substr(0, sFirstChars.length()) || selectAllMethods)
                 sAutoCompList += iter->second.first + " ";
         }
         else if ((iter->first).front() > sFirstChars.front())
