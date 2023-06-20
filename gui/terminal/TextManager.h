@@ -421,6 +421,9 @@ class CharacterVector : public std::vector<Character>
         {
             std::string sRet;
 
+            // Pre-reserve storage to avoid memory copies
+            sRet.reserve(size());
+
             for (size_t i = 0; i < size(); i++)
                 sRet.append(1u, operator[](i).m_char);
 
@@ -441,6 +444,7 @@ class CharacterVector : public std::vector<Character>
                 len = size() - pos;
 
             std::vector<unsigned short> vect;
+            vect.reserve(len);
 
             for (size_t i = 0; i < len; i++)
                 vect.push_back(operator[](pos+i).getColor());
