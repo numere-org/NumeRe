@@ -1276,6 +1276,9 @@ static std::string tableMethod_convert(const std::string& sTableName, std::strin
     NumeReKernel::getInstance()->getParser().SetExpr(sColumns);
     mu::value_type* v = NumeReKernel::getInstance()->getParser().Eval(nResults);
 
+    if (!sMethodArguments.length())
+        sMethodArguments = "auto";
+
     if (NumeReKernel::getInstance()->getMemoryManager().convertColumns(sTableName, VectorIndex(v, nResults, 0), sMethodArguments))
         return "\"" + sMethodArguments + "\"";
 

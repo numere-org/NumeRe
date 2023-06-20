@@ -277,6 +277,8 @@ TableColumn::ColumnType TableColumn::stringToType(const std::string& sType)
         return TYPE_LOGICAL;
     else if (sType == "category")
         return TYPE_CATEGORICAL;
+    else if (sType == "auto")
+        return TYPE_MIXED;
 
     return TYPE_NONE;
 }
