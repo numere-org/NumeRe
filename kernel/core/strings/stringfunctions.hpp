@@ -208,6 +208,34 @@ static StringVector strfnc_to_lowercase(StringFuncArgs& funcArgs)
 
 
 /////////////////////////////////////////////////
+/// \brief Implementation of the utf8toansi()
+/// function.
+///
+/// \param funcArgs StringFuncArgs&
+/// \return StringVector
+///
+/////////////////////////////////////////////////
+static StringVector strfnc_utf8ToAnsi(StringFuncArgs& funcArgs)
+{
+    return "\"" + utf8ToAnsi(funcArgs.sArg1.view().to_string()) + "\"";
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Implementation of the ansitoutf8()
+/// function.
+///
+/// \param funcArgs StringFuncArgs&
+/// \return StringVector
+///
+/////////////////////////////////////////////////
+static StringVector strfnc_ansiToUtf8(StringFuncArgs& funcArgs)
+{
+    return "\"" + ansiToUtf8(funcArgs.sArg1.view().to_string()) + "\"";
+}
+
+
+/////////////////////////////////////////////////
 /// \brief Implementation of the getenvvar()
 /// function.
 ///
@@ -2761,12 +2789,14 @@ static std::map<std::string, StringFuncHandle> getStringFuncHandles()
     mHandleTable["substr"]              = StringFuncHandle(STR_VAL_VALOPT, strfnc_substr, false);
     mHandleTable["textparse"]           = StringFuncHandle(STR_STR_VALOPT_VALOPT, strfnc_textparse, false);
     mHandleTable["timeformat"]          = StringFuncHandle(STR_DBL, strfnc_timeformat, false);
+    mHandleTable["to_ansi"]             = StringFuncHandle(STR, strfnc_utf8ToAnsi, false);
     mHandleTable["to_char"]             = StringFuncHandle(VAL, strfnc_to_char, true);
     mHandleTable["to_lowercase"]        = StringFuncHandle(STR, strfnc_to_lowercase, false);
     //mHandleTable["to_string"]           = StringFuncHandle(STR, strfnc_to_string, false);
     mHandleTable["to_tex"]              = StringFuncHandle(DBL_VALOPT, strfnc_to_tex, false);
     mHandleTable["to_time"]             = StringFuncHandle(STR_STR, strfnc_to_time, false);
     mHandleTable["to_uppercase"]        = StringFuncHandle(STR, strfnc_to_uppercase, false);
+    mHandleTable["to_utf8"]             = StringFuncHandle(STR, strfnc_ansiToUtf8, false);
     mHandleTable["weekday"]             = StringFuncHandle(DBL_VALOPT, strfnc_weekday, false);
     mHandleTable["xor"]                 = StringFuncHandle(VAL, strfnc_xor, true);
 
