@@ -320,6 +320,9 @@ static int ParseTeXCommand(unsigned int pos, Accessor &styler, char *command)
   return length+1;
 }
 
+#define PAIREDFOLDDEPTH 2
+#define UNPAIREDFOLDDEPTH 1
+
 static int classifyFoldPointTeXPaired(const char* s) {
 	int lev=0;
 	if (!(isdigit(s[0]) || (s[0] == '.'))){
@@ -330,7 +333,7 @@ static int classifyFoldPointTeXPaired(const char* s) {
 			|| strncmp(s,"Start",5)==0 
 			|| strcmp(s,"if")==0
 			)
-			lev=1;
+			lev=PAIREDFOLDDEPTH;
 		if (strcmp(s, "end")==0 
 			|| strcmp(s,"FoldStop")==0
 			|| strcmp(s,"protect")==0
@@ -338,7 +341,7 @@ static int classifyFoldPointTeXPaired(const char* s) {
 			|| strncmp(s,"Stop",4)==0
 			|| strcmp(s,"fi")==0
 			)
-		lev=-1;
+		lev=-PAIREDFOLDDEPTH;
 	}
 	return lev;
 }
@@ -351,6 +354,8 @@ static int classifyFoldPointTeXUnpaired(const char* s) {
 			strcmp(s,"section")==0||
 			strcmp(s,"subsection")==0||
 			strcmp(s,"subsubsection")==0||
+			strcmp(s,"addsec")==0||
+			strcmp(s,"addchap")==0||
 			strcmp(s,"CJKfamily")==0||
 			strcmp(s,"appendix")==0||
 			//strcmp(s,"Topic")==0||strcmp(s,"topic")==0||
@@ -360,7 +365,7 @@ static int classifyFoldPointTeXUnpaired(const char* s) {
 			strcmp(s,"frame")==0||
 			strcmp(s,"foilhead")==0||strcmp(s,"overlays")==0||strcmp(s,"slide")==0
 			){
-			    lev=1;
+			    lev=UNPAIREDFOLDDEPTH;
 			}
 	}
 	return lev;
@@ -386,7 +391,7 @@ static bool IsTeXCommentLine(int line, Accessor &styler) {
 
 static void FoldTexDoc(unsigned int startPos, int length, int, WordList *[], Accessor &styler)
 {
-	bool foldCompact = styler.GetPropertyInt("fold.compact", 1) != 0;
+	bool foldCompact = styler.GetPropertyInt("fold.compact", 0) != 0;
 	unsigned int endPos = startPos+length;
 	int visibleChars=0;
 	int lineCurrent=styler.GetLine(startPos);
@@ -405,47 +410,61 @@ static void FoldTexDoc(unsigned int startPos, int length, int, WordList *[], Acc
 			levelCurrent += classifyFoldPointTeXPaired(buffer)+classifyFoldPointTeXUnpaired(buffer);
 		}
 
-		if (levelCurrent > SC_FOLDLEVELBASE && ((ch == '\r' || ch=='\n') && (chNext == '\\'))) {
-            ParseTeXCommand(i+1, styler, buffer);
-			levelCurrent -= classifyFoldPointTeXUnpaired(buffer);
+		//if (levelCurrent > SC_FOLDLEVELBASE+2 && ((ch == '\r' || ch=='\n') && (chNext == '\\'))) {
+		if (levelCurrent > SC_FOLDLEVELBASE && atEOL)
+		{
+			unsigned int j = i+1;
+			char c = styler.SafeGetCharAt(j);
+			
+			while (j < endPos && c != ch && (c == '\t' || c == ' '))
+			{
+				j++;
+				c = styler.SafeGetCharAt(j);
+			}
+			
+			if (j < endPos && c == '\\')
+			{
+				ParseTeXCommand(j, styler, buffer);
+				levelCurrent -= classifyFoldPointTeXUnpaired(buffer);
+			}
 		}
 
-	char chNext2;
-	char chNext3;
-	char chNext4;
-	char chNext5;
-	chNext2=styler.SafeGetCharAt(i+2);
-	chNext3=styler.SafeGetCharAt(i+3);
-	chNext4=styler.SafeGetCharAt(i+4);
-	chNext5=styler.SafeGetCharAt(i+5);
+		char chNext2;
+		char chNext3;
+		char chNext4;
+		char chNext5;
+		chNext2=styler.SafeGetCharAt(i+2);
+		chNext3=styler.SafeGetCharAt(i+3);
+		chNext4=styler.SafeGetCharAt(i+4);
+		chNext5=styler.SafeGetCharAt(i+5);
 
-	bool atEOfold = (ch == '%') &&
-			(chNext == '%') && (chNext2=='}') &&
-				(chNext3=='}')&& (chNext4=='-')&& (chNext5=='-');
+		bool atEOfold = (ch == '%') &&
+				(chNext == '%') && (chNext2=='}') &&
+					(chNext3=='}')&& (chNext4=='-')&& (chNext5=='-');
 
-	bool atBOfold = (ch == '%') &&
-			(chNext == '%') && (chNext2=='-') &&
-				(chNext3=='-')&& (chNext4=='{')&& (chNext5=='{');
+		bool atBOfold = (ch == '%') &&
+				(chNext == '%') && (chNext2=='-') &&
+					(chNext3=='-')&& (chNext4=='{')&& (chNext5=='{');
 
-	if(atBOfold){
-		levelCurrent+=1;
-	}
+		if(atBOfold){
+			levelCurrent+=PAIREDFOLDDEPTH;
+		}
 
-	if(atEOfold){
-		levelCurrent-=1;
-	}
+		if(atEOfold){
+			levelCurrent-=PAIREDFOLDDEPTH;
+		}
 
-	if(ch=='\\' && chNext=='['){
-		levelCurrent+=1;
-	}
+		if(ch=='\\' && chNext=='['){
+			levelCurrent+=PAIREDFOLDDEPTH;
+		}
 
-	if(ch=='\\' && chNext==']'){
-		levelCurrent-=1;
-	}
+		if(ch=='\\' && chNext==']'){
+			levelCurrent-=PAIREDFOLDDEPTH;
+		}
 
-	bool foldComment = styler.GetPropertyInt("fold.comment") != 0;
+		bool foldComment = styler.GetPropertyInt("fold.comment") != 0;
 
-	if (foldComment && atEOL && IsTeXCommentLine(lineCurrent, styler))
+		if (foldComment && atEOL && IsTeXCommentLine(lineCurrent, styler))
         {
             if (lineCurrent==0 && IsTeXCommentLine(lineCurrent + 1, styler)
 				)
