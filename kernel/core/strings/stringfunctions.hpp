@@ -2654,7 +2654,9 @@ static StringVector strfnc_getfileinfo(StringFuncArgs& funcArgs)
 /////////////////////////////////////////////////
 static StringVector strfnc_getuilang(StringFuncArgs& funcArgs)
 {
-    return _lang.get("LANGUAGE");
+    StringVector sLang;
+    sLang.push_back(_lang.get("LANGUAGE"));
+    return sLang;
 }
 
 
