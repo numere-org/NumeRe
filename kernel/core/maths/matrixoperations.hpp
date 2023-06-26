@@ -30,7 +30,7 @@
 
 
 bool performMatrixOperation(std::string& sCmd, mu::Parser& _parser, MemoryManager& _data, FunctionDefinitionManager& _functions, const Settings& _option);
-Matrix createZeroesMatrix(unsigned int nLines, unsigned int nCols);
+Matrix createZeroesMatrix(size_t nLines, size_t nCols);
 Matrix transposeMatrix(const Matrix& _mMatrix);
 Indices getIndices(const std::string& sCmd, const Matrix& _mMatrix, mu::Parser& _parser, MemoryManager& _data, const Settings& _option);
 

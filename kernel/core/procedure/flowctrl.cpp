@@ -2875,7 +2875,7 @@ int FlowCtrl::compile(std::string sLine, int nthCmd)
         if (!bLockedPauseMode && bUseLoopParsingMode)
             _parserRef->PauseLoopMode();
 
-        unsigned int nPos = 0;
+        size_t nPos = 0;
 
         while (sLine.find("to_cmd(", nPos) != std::string::npos)
         {
@@ -2884,7 +2884,7 @@ int FlowCtrl::compile(std::string sLine, int nthCmd)
             if (isInQuotes(sLine, nPos))
                 continue;
 
-            unsigned int nParPos = getMatchingParenthesis(sLine.substr(nPos));
+            size_t nParPos = getMatchingParenthesis(sLine.substr(nPos));
 
             if (nParPos == std::string::npos)
                 throw SyntaxError(SyntaxError::UNMATCHED_PARENTHESIS, sLine, nPos);
@@ -3429,7 +3429,7 @@ int FlowCtrl::calc(StringView sLine, int nthCmd)
         if (!bLockedPauseMode && bUseLoopParsingMode)
             _parserRef->PauseLoopMode();
 
-        unsigned int nPos = 0;
+        size_t nPos = 0;
         sBuffer = sLine.to_string();
 
         while (sBuffer.find("to_cmd(", nPos) != std::string::npos)
@@ -3439,7 +3439,7 @@ int FlowCtrl::calc(StringView sLine, int nthCmd)
             if (isInQuotes(sBuffer, nPos))
                 continue;
 
-            unsigned int nParPos = getMatchingParenthesis(sBuffer.substr(nPos));
+            size_t nParPos = getMatchingParenthesis(sBuffer.substr(nPos));
 
             if (nParPos == std::string::npos)
                 throw SyntaxError(SyntaxError::UNMATCHED_PARENTHESIS, sBuffer, nPos);
@@ -3537,10 +3537,13 @@ int FlowCtrl::calc(StringView sLine, int nthCmd)
     // Remove the "explicit" command here
     if (nCurrentCalcType & CALCTYPE_EXPLICIT)
     {
-        sBuffer = sLine.to_string();
-        sBuffer.erase(findCommand(sBuffer).nPos, 8);
-        sLine = StringView(sBuffer);
-        sLine.strip();
+        if (findCommand(sLine).sString == "explicit")
+        {
+            sBuffer = sLine.to_string();
+            sBuffer.erase(findCommand(sBuffer).nPos, 8);
+            sLine = StringView(sBuffer);
+            sLine.strip();
+        }
     }
 
     // Evaluate the command, if this is a command
@@ -3794,7 +3797,7 @@ void FlowCtrl::replaceLocalVars(std::string& sLine)
 
     for (auto iter = mVarMap.begin(); iter != mVarMap.end(); ++iter)
     {
-        for (unsigned int i = 0; i < sLine.length(); i++)
+        for (size_t i = 0; i < sLine.length(); i++)
         {
             if (sLine.substr(i, (iter->first).length()) == iter->first)
             {
@@ -3831,7 +3834,7 @@ void FlowCtrl::replaceLocalVars(const std::string& sOldVar, const std::string& s
         {
             vCmdArray[i].sCommand += " ";
 
-            for (unsigned int j = 0; j < vCmdArray[i].sCommand.length(); j++)
+            for (size_t j = 0; j < vCmdArray[i].sCommand.length(); j++)
             {
                 if (vCmdArray[i].sCommand.substr(j, sOldVar.length()) == sOldVar)
                 {

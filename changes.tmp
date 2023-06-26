@@ -1,4 +1,10 @@
 Added	It is now possible to pass plotting options to "hist" and "hist2d" directly. Due to name conflicts, we had to rename the previously "grid" option to "asgrid".
 New	The new flow control command "leave" allows jumping out of nested loops completely without the need of unnecessary complex "if-else" checks and boolean flags.
 Cleaned	The editor and the terminal will now only provide method autocompletion with methods fitting to the variable type.
+Added	It's now possible  to define the file type of the loaded or saved file if that is different from the standard file extension.
+Cleaned	The editor and the terminal will now only provide method autocompletion with methods fitting to the variable type.
+Removed	The obsolete second parameter for the elliptic integral D was removed. The function now has the signature "ellipticD(x,k)"
+Fixed	Resolved a problem with creating new files.
+New	A 64 bit version is now available.
+Cleaned	The context menu of the table viewer now also contains the possibility to change the column type.
 Cleaned	Improved the rendering speed of the terminal (relevant for larger strings, which required a bunch of virtual line breaks).

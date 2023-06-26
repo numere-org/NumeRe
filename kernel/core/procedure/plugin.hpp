@@ -140,10 +140,10 @@ class PackageManager : public FileSystem
         /// \brief Returns the number of installed
         /// plugins.
         ///
-        /// \return unsigned int
+        /// \return size_t
         ///
         /////////////////////////////////////////////////
-        inline unsigned int getPackageCount() const
+        inline size_t getPackageCount() const
             {return vPackageInfo.size();}
 
         std::string getPluginInfoPath();
@@ -172,7 +172,7 @@ class PackageManager : public FileSystem
         {
             std::string sReturn = ";";
 
-            for (unsigned int i = 0; i < vPackageInfo.size(); i++)
+            for (size_t i = 0; i < vPackageInfo.size(); i++)
                 sReturn += vPackageInfo[i].getName() + ";";
 
             return sReturn;
@@ -202,11 +202,11 @@ class PackageManager : public FileSystem
         /// \brief Returns the plugin command of the ith
         /// plugin.
         ///
-        /// \param i unsigned int i
+        /// \param i size_t
         /// \return std::string
         ///
         /////////////////////////////////////////////////
-        inline std::string getPluginCommand(unsigned int i = 0) const
+        inline std::string getPluginCommand(size_t i = 0) const
         {
             if (i < vPackageInfo.size())
                 return vPackageInfo[i].sCommand;
@@ -218,11 +218,11 @@ class PackageManager : public FileSystem
         /// \brief Returns the plugin command signature
         /// of the ith plugin.
         ///
-        /// \param i unsigned int i
+        /// \param i size_t
         /// \return std::string
         ///
         /////////////////////////////////////////////////
-        inline std::string getPluginCommandSignature(unsigned int i = 0) const
+        inline std::string getPluginCommandSignature(size_t i = 0) const
         {
             if (i < vPackageInfo.size())
                 return vPackageInfo[i].getCommandSignature();
@@ -234,11 +234,11 @@ class PackageManager : public FileSystem
         /// \brief Returns the plugin name of the ith
         /// plugin.
         ///
-        /// \param i unsigned int
+        /// \param i size_t
         /// \return std::string
         ///
         /////////////////////////////////////////////////
-        inline std::string getPackageName(unsigned int i = 0) const
+        inline std::string getPackageName(size_t i = 0) const
         {
             if (i < vPackageInfo.size())
                 return vPackageInfo[i].getName();
@@ -250,11 +250,11 @@ class PackageManager : public FileSystem
         /// \brief Returns the version number string of
         /// the ith plugin.
         ///
-        /// \param i unsigned int
+        /// \param i size_t
         /// \return std::string
         ///
         /////////////////////////////////////////////////
-        inline std::string getPackageVersion(unsigned int i = 0) const
+        inline std::string getPackageVersion(size_t i = 0) const
         {
             if (i < vPackageInfo.size())
                 return vPackageInfo[i].sVersion;
@@ -265,11 +265,11 @@ class PackageManager : public FileSystem
         /////////////////////////////////////////////////
         /// \brief Returns the author of the ith plugin.
         ///
-        /// \param i unsigned int
+        /// \param i size_t
         /// \return std::string
         ///
         /////////////////////////////////////////////////
-        inline std::string getPackageAuthor(unsigned int i = 0) const
+        inline std::string getPackageAuthor(size_t i = 0) const
         {
             if (i < vPackageInfo.size())
                 return vPackageInfo[i].getAuthor();
@@ -281,11 +281,11 @@ class PackageManager : public FileSystem
         /// \brief Returns the description of the ith
         /// plugin.
         ///
-        /// \param unsigned int i = 0
+        /// \param i size_t
         /// \return std::string
         ///
         /////////////////////////////////////////////////
-        inline std::string getPackageDescription(unsigned int i = 0) const
+        inline std::string getPackageDescription(size_t i = 0) const
         {
             if (i < vPackageInfo.size())
                 return vPackageInfo[i].getDescription();
@@ -297,11 +297,11 @@ class PackageManager : public FileSystem
         /// \brief Returns the license information of the
         /// ith plugin.
         ///
-        /// \param unsigned int i = 0
+        /// \param i size_t
         /// \return std::string
         ///
         /////////////////////////////////////////////////
-        inline std::string getPackageLicense(unsigned int i = 0) const
+        inline std::string getPackageLicense(size_t i = 0) const
         {
             if (i < vPackageInfo.size())
                 return vPackageInfo[i].getLicense();
@@ -313,11 +313,11 @@ class PackageManager : public FileSystem
         /// \brief Returns the menu entry of the ith
         /// plugin.
         ///
-        /// \param unsigned int i = 0
+        /// \param i size_t
         /// \return std::string
         ///
         /////////////////////////////////////////////////
-        inline std::string getPluginMenuEntry(unsigned int i = 0) const
+        inline std::string getPluginMenuEntry(size_t i = 0) const
         {
             if (i < vPackageInfo.size())
                 return vPackageInfo[i].getMenuEntry();

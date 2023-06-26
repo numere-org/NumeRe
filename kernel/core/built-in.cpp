@@ -112,7 +112,7 @@ bool extractFirstParameterStringValue(const string& sCmd, string& sArgument)
 		getDataElements(sTemp, _parser, _data, _option);
 
 	//
-	for (unsigned int i = 0; i < sTemp.length(); i++)
+	for (size_t i = 0; i < sTemp.length(); i++)
 	{
 	    // Jump over this parenthesis, if its contents don't contain
 	    // strings or string variables
@@ -174,7 +174,7 @@ bool extractFirstParameterStringValue(const string& sCmd, string& sArgument)
     // they are valid. Additionally, replace the "<this>" path token
 	if (sArgument.find('<') != string::npos && sArgument.find('>', sArgument.find('<')) != string::npos)
 	{
-		for (unsigned int i = 0; i < sArgument.length(); i++)
+		for (size_t i = 0; i < sArgument.length(); i++)
 		{
 			if (sArgument.find('<', i) == string::npos)
 				break;
@@ -228,8 +228,8 @@ string evaluateParameterValues(const string& sCmd)
 	string sReturn = sCmd;
 	string sTemp = "";
 	string sDummy = "";
-	unsigned int nPos = 0;
-	unsigned int nLength = 0;
+	size_t nPos = 0;
+	size_t nLength = 0;
 	vector<double> vInterval;
 
 	// Add a whitespace character at the end
