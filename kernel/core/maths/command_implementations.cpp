@@ -29,7 +29,7 @@
 #include "filtering.hpp"
 #include "../AudioLib/audiofile.hpp"
 #include "../../kernel.hpp"
-#include "../../../common/http.h"
+#include "../utils/http.h"
 
 #define TRAPEZOIDAL 1
 #define SIMPSON 2
@@ -784,7 +784,7 @@ bool differentiate(CommandLineParser& cmdParser)
     if (paramVal.size())
     {
         order = intCast(paramVal.front());
-        order = std::min(order, 3u);
+        order = std::min(order, (size_t)3u);
     }
 
     // Numerical expressions and data sets are handled differently
@@ -889,7 +889,7 @@ bool differentiate(CommandLineParser& cmdParser)
             if (vInterval.size() == 1 || vInterval.size() > 2)
             {
                 // single point or a vector
-                for (unsigned int i = 0; i < vInterval.size(); i++)
+                for (size_t i = 0; i < vInterval.size(); i++)
                 {
                     dPos = vInterval[i];
                     vResult.push_back(_parser.Diff(dVar, dPos, dEps, order));
@@ -1407,7 +1407,7 @@ bool findExtrema(CommandLineParser& cmdParser)
     MemoryManager& _data = instance->getMemoryManager();
     Parser& _parser = instance->getParser();
 
-    unsigned int nSamples = 21;
+    size_t nSamples = 21;
     int nOrder = 5;
     mu::value_type dVal[2];
     mu::value_type dBoundaries[2] = {0.0, 0.0};
@@ -1569,7 +1569,7 @@ bool findExtrema(CommandLineParser& cmdParser)
     // Evaluate the extrema for all samples. We search for
     // a sign change in the derivative and examine these intervals
     // in more detail
-    for (unsigned int i = 1; i < nSamples; i++)
+    for (size_t i = 1; i < nSamples; i++)
     {
         // Evaluate the derivative at the current sample position
         dVal[1] = _parser.Diff(dVar, dBoundaries[0] + (double)i * (dBoundaries[1] - dBoundaries[0]) / (double)(nSamples - 1), 1e-7);
@@ -1871,7 +1871,7 @@ bool findZeroes(CommandLineParser& cmdParser)
     MemoryManager& _data = instance->getMemoryManager();
     Parser& _parser = instance->getParser();
 
-    unsigned int nSamples = 21;
+    size_t nSamples = 21;
     mu::value_type dVal[2];
     mu::value_type dBoundaries[2] = {0.0, 0.0};
     int nMode = 0;
@@ -2033,7 +2033,7 @@ bool findZeroes(CommandLineParser& cmdParser)
     // Evaluate all samples. We try to find
     // sign changes and evaluate the intervals, which
     // contain the sign changes, further
-    for (unsigned int i = 1; i < nSamples; i++)
+    for (size_t i = 1; i < nSamples; i++)
     {
         // Evalute the current sample
         *dVar = dBoundaries[0] + (double)i * (dBoundaries[1] - dBoundaries[0]) / (double)(nSamples - 1);
@@ -2129,7 +2129,7 @@ bool findZeroes(CommandLineParser& cmdParser)
 /////////////////////////////////////////////////
 static mu::value_type localizeExtremum(string& sCmd, mu::value_type* dVarAdress, Parser& _parser, const Settings& _option, mu::value_type dLeft, mu::value_type dRight, double dEps, int nRecursion)
 {
-    const unsigned int nSamples = 101;
+    const size_t nSamples = 101;
     mu::value_type dVal[2];
 
     if (_parser.GetExpr() != sCmd)
@@ -2143,7 +2143,7 @@ static mu::value_type localizeExtremum(string& sCmd, mu::value_type* dVarAdress,
 
     // Separate the current interval in
     // nSamples steps and examine each step
-    for (unsigned int i = 1; i < nSamples; i++)
+    for (size_t i = 1; i < nSamples; i++)
     {
         // Calculate the next value
         dVal[1] = _parser.Diff(dVarAdress, dLeft + (double)i * (dRight - dLeft) / (double)(nSamples - 1), 1e-7);
@@ -2225,7 +2225,7 @@ static mu::value_type localizeExtremum(string& sCmd, mu::value_type* dVarAdress,
 /////////////////////////////////////////////////
 static mu::value_type localizeZero(string& sCmd, mu::value_type* dVarAdress, Parser& _parser, const Settings& _option, mu::value_type dLeft, mu::value_type dRight, double dEps, int nRecursion)
 {
-    const unsigned int nSamples = 101;
+    const size_t nSamples = 101;
     mu::value_type dVal[2];
 
     if (_parser.GetExpr() != sCmd)
@@ -2240,7 +2240,7 @@ static mu::value_type localizeZero(string& sCmd, mu::value_type* dVarAdress, Par
 
     // Separate the current interval in
     // nSamples steps and examine each step
-    for (unsigned int i = 1; i < nSamples; i++)
+    for (size_t i = 1; i < nSamples; i++)
     {
         // Calculate the next value
         *dVarAdress = dLeft + (double)i * (dRight - dLeft) / (double)(nSamples - 1);
@@ -2382,7 +2382,7 @@ void taylor(CommandLineParser& cmdParser)
 
     // Create a unique function name, if it is desired
     if (bUseUniqueName)
-        sTaylor += toString((int)nth_taylor) + "_" + cmdParser.getExpr();
+        sTaylor += toString(nth_taylor) + "_" + cmdParser.getExpr();
 
     StripSpaces(sExpr);
     _parser.SetExpr(sExpr);
@@ -2408,7 +2408,7 @@ void taylor(CommandLineParser& cmdParser)
     {
         string sOperators = " ,;-*/%^!<>&|?:=+[]{}()";
 
-        for (unsigned int i = 0; i < sTaylor.length(); i++)
+        for (size_t i = 0; i < sTaylor.length(); i++)
         {
             if (sOperators.find(sTaylor[i]) != string::npos)
             {
@@ -2478,7 +2478,7 @@ void taylor(CommandLineParser& cmdParser)
     //if (_option.systemPrints())
     //    NumeReKernel::print(LineBreak(sTaylor, _option, true, 0, 8));
 
-    sTaylor += " " + _lang.get("PARSERFUNCS_TAYLOR_DEFINESTRING", sExpr_cpy, sVarName, toString(dVarValue, 4), toString((int)nth_taylor));
+    sTaylor += " " + _lang.get("PARSERFUNCS_TAYLOR_DEFINESTRING", sExpr_cpy, sVarName, toString(dVarValue, 4), toString(nth_taylor));
 
     FunctionDefinitionManager& _functions = NumeReKernel::getInstance()->getDefinitions();
 
@@ -3194,7 +3194,7 @@ bool evalPoints(CommandLineParser& cmdParser)
 {
     Parser& _parser = NumeReKernel::getInstance()->getParser();
     MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
-    unsigned int nSamples = 100;
+    size_t nSamples = 100;
     mu::value_type* dVar = 0;
     mu::value_type dTemp = 0.0;
     string sExpr = cmdParser.getExprAsMathExpression();
@@ -3295,7 +3295,7 @@ bool evalPoints(CommandLineParser& cmdParser)
         *dVar = ivl[0](0);
         vResults.push_back(_parser.Eval());
 
-        for (unsigned int i = 1; i < nSamples; i++)
+        for (size_t i = 1; i < nSamples; i++)
         {
             // Is a logarithmic distribution needed?
             if (bLogarithmic)
@@ -3310,7 +3310,7 @@ bool evalPoints(CommandLineParser& cmdParser)
     }
     else
     {
-        for (unsigned int i = 0; i < nSamples; i++)
+        for (size_t i = 0; i < nSamples; i++)
             vResults.push_back(_parser.Eval());
     }
 
@@ -3445,11 +3445,11 @@ bool createDatagrid(CommandLineParser& cmdParser)
 
         vector<mu::value_type> vVector;
 
-        for (unsigned int x = 0; x < vSamples[bTranspose]; x++)
+        for (size_t x = 0; x < vSamples[bTranspose]; x++)
         {
             _defVars.vValue[0][0] = ivl[0](x, vSamples[bTranspose]);
 
-            for (unsigned int y = 0; y < vSamples[1-bTranspose]; y++)
+            for (size_t y = 0; y < vSamples[1-bTranspose]; y++)
             {
                 _defVars.vValue[1][0] = ivl[1](y, vSamples[1-bTranspose]);
                 vVector.push_back(_parser.Eval());
@@ -3493,7 +3493,7 @@ bool createDatagrid(CommandLineParser& cmdParser)
             _data.writeToTable(_iTargetIndex.row[i], _iTargetIndex.col[j+2], sTargetCache, vZVals[i][j]);
 
             if (!i)
-                _data.setHeadLineElement(_iTargetIndex.col[j+2], sTargetCache, "z(x(:),y(" + toString((int)j + 1) + "))");
+                _data.setHeadLineElement(_iTargetIndex.col[j+2], sTargetCache, "z(x(:),y(" + toString(j + 1) + "))");
         }
     }
 
@@ -3589,21 +3589,21 @@ static void expandVectorToDatagrid(IntervalSet& ivl, vector<vector<mu::value_typ
             _mData[3].Create(vZVals[0].size());
 
         // copy the x and y vectors
-        for (unsigned int i = 0; i < nSamples_x; i++)
+        for (size_t i = 0; i < nSamples_x; i++)
             _mData[1].a[i] = ivl[0](i, nSamples_x).real();
 
-        for (unsigned int i = 0; i < nSamples_y; i++)
+        for (size_t i = 0; i < nSamples_y; i++)
             _mData[2].a[i] = ivl[1](i, nSamples_y).real();
 
         // copy the z vector
         if (vZVals.size() != 1)
         {
-            for (unsigned int i = 0; i < vZVals.size(); i++)
+            for (size_t i = 0; i < vZVals.size(); i++)
                 _mData[3].a[i] = vZVals[i][0].real();
         }
         else
         {
-            for (unsigned int i = 0; i < vZVals[0].size(); i++)
+            for (size_t i = 0; i < vZVals[0].size(); i++)
                 _mData[3].a[i] = vZVals[0][i].real();
         }
 
@@ -3620,9 +3620,9 @@ static void expandVectorToDatagrid(IntervalSet& ivl, vector<vector<mu::value_typ
         ivl[1] = Interval(_mData[2].Minimal(), _mData[2].Maximal());
 
         // Copy the z matrix
-        for (unsigned int i = 0; i < nSamples_x; i++)
+        for (size_t i = 0; i < nSamples_x; i++)
         {
-            for (unsigned int j = 0; j < nSamples_y; j++)
+            for (size_t j = 0; j < nSamples_y; j++)
                 vVector.push_back(_mData[0].a[i + nSamples_x * j]);
 
             vZVals.push_back(vVector);
@@ -3992,8 +3992,8 @@ bool analyzePulse(CommandLineParser& cmdParser)
         NumeReKernel::print("NUMERE: " + toUpperCase(_lang.get("PARSERFUNCS_PULSE_HEADLINE")));
         make_hline();
 
-        for (unsigned int i = 0; i < vPulseProperties.size(); i++)
-            NumeReKernel::printPreFmt("|   " + _lang.get("PARSERFUNCS_PULSE_TABLE_" + toString((int)i + 1) + "_*", toString(vPulseProperties[i], NumeReKernel::getInstance()->getSettings().getPrecision())) + "\n");
+        for (size_t i = 0; i < vPulseProperties.size(); i++)
+            NumeReKernel::printPreFmt("|   " + _lang.get("PARSERFUNCS_PULSE_TABLE_" + toString(i + 1) + "_*", toString(vPulseProperties[i], NumeReKernel::getInstance()->getSettings().getPrecision())) + "\n");
 
         NumeReKernel::toggleTableStatus();
         make_hline();
@@ -4103,7 +4103,7 @@ bool shortTimeFourierAnalysis(CommandLineParser& cmdParser)
 
             // Update the headline
             if (!i)
-                _data.setHeadLineElement(_target.col[j+2], sTargetCache, "A(" + toString((int)j + 1) + ")");
+                _data.setHeadLineElement(_target.col[j+2], sTargetCache, "A(" + toString(j + 1) + ")");
         }
     }
 
@@ -4624,7 +4624,7 @@ void particleSwarmOptimizer(CommandLineParser& cmdParser)
 
     // Restrict to 4 dimensions, because there are
     // only 4 default variables
-    nDims = std::min(4u, nDims);
+    nDims = std::min((size_t)4u, nDims);
 
     // Determine the random range for the velocity vector
     double minRange = fabs(ivl[0].max() - ivl[0].min());

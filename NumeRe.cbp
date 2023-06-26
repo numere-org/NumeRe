@@ -4,7 +4,7 @@
 	<Project>
 		<Option title="NumeRe" />
 		<Option pch_mode="2" />
-		<Option compiler="tdm-gcc" />
+		<Option compiler="gcc" />
 		<MakeCommands>
 			<Build command="" />
 			<CompileFile command="" />
@@ -20,56 +20,12 @@
 				<Option type="0" />
 				<Option compiler="tdm-gcc" />
 				<Compiler>
-					<Add option="-Wall" />
 					<Add option="-Og" />
 					<Add option="-g" />
-					<Add option="-std=gnu++2a" />
-					<Add option="-mthreads" />
-					<Add option="-DDLLVER_MAJOR_MASK" />
-					<Add option="-DwxUSE_REGEX" />
-					<Add option="-DwxDIALOG_MODAL" />
-					<Add option="-DwxUSE_UNICODE" />
 					<Add option="-D__GNUWIN32__" />
-					<Add option="-D__WXMSW__" />
 					<Add option="-DWXDEBUG" />
 					<Add option="-DDO_LOG" />
-					<Add directory="$(#wx)/lib/gcc_lib/mswu" />
-					<Add directory="$(#wx)/include" />
 				</Compiler>
-				<ResourceCompiler>
-					<Add directory="$(#wx)/include/" />
-				</ResourceCompiler>
-				<Linker>
-					<Add library="wxmsw30u_stc" />
-					<Add library="wxscintilla" />
-					<Add library="wxmsw30u_propgrid" />
-					<Add library="wxmsw30u_media" />
-					<Add library="wxmsw30u_adv" />
-					<Add library="wxmsw30u_gl" />
-					<Add library="wxmsw30u_html" />
-					<Add library="wxexpat" />
-					<Add library="wxbase30u_xml" />
-					<Add library="wxbase30u_net" />
-					<Add library="wxmsw30u_aui" />
-					<Add library="wxmsw30u_core" />
-					<Add library="wxbase30u" />
-					<Add library="wxregexu" />
-					<Add library="wxjpeg" />
-					<Add library="wxpng" />
-					<Add library="wxtiff" />
-					<Add library="wxzlib" />
-					<Add library="rpcrt4" />
-					<Add library="winmm" />
-					<Add library="advapi32" />
-					<Add library="version" />
-					<Add library="wsock32" />
-					<Add library="comctl32" />
-					<Add library="ole32" />
-					<Add library="uuid" />
-					<Add library="winspool" />
-					<Add library="oleaut32" />
-					<Add directory="$(#wx)/lib/gcc_lib" />
-				</Linker>
 			</Target>
 			<Target title="Release">
 				<Option output="../Software/rc/NumeRe/numere" prefix_auto="1" extension_auto="1" />
@@ -78,54 +34,12 @@
 				<Option compiler="tdm-gcc" />
 				<Compiler>
 					<Add option="-O3" />
-					<Add option="-Wall" />
-					<Add option="-std=gnu++2a" />
 					<Add option="-fopenmp" />
-					<Add option="-mthreads" />
-					<Add option="-DDLLVER_MAJOR_MASK" />
-					<Add option="-DwxUSE_REGEX" />
-					<Add option="-DwxDIALOG_MODAL" />
-					<Add option="-DwxUSE_UNICODE" />
 					<Add option="-D__GNUWIN32__" />
-					<Add option="-D__WXMSW__" />
 					<Add option="-DRELEASE" />
-					<Add directory="$(#wx)/lib/gcc_lib/mswu" />
-					<Add directory="$(#wx)/include" />
 				</Compiler>
-				<ResourceCompiler>
-					<Add directory="$(#wx)/include/" />
-				</ResourceCompiler>
 				<Linker>
 					<Add option="-s" />
-					<Add library="wxmsw30u_stc" />
-					<Add library="wxscintilla" />
-					<Add library="wxmsw30u_propgrid" />
-					<Add library="wxmsw30u_media" />
-					<Add library="wxmsw30u_adv" />
-					<Add library="wxmsw30u_gl" />
-					<Add library="wxmsw30u_html" />
-					<Add library="wxexpat" />
-					<Add library="wxbase30u_xml" />
-					<Add library="wxbase30u_net" />
-					<Add library="wxmsw30u_aui" />
-					<Add library="wxmsw30u_core" />
-					<Add library="wxbase30u" />
-					<Add library="wxregexu" />
-					<Add library="wxjpeg" />
-					<Add library="wxpng" />
-					<Add library="wxtiff" />
-					<Add library="wxzlib" />
-					<Add library="rpcrt4" />
-					<Add library="winmm" />
-					<Add library="advapi32" />
-					<Add library="version" />
-					<Add library="wsock32" />
-					<Add library="comctl32" />
-					<Add library="ole32" />
-					<Add library="uuid" />
-					<Add library="winspool" />
-					<Add library="oleaut32" />
-					<Add directory="$(#wx)/lib/gcc_lib" />
 				</Linker>
 			</Target>
 			<Target title="Profiling">
@@ -135,53 +49,9 @@
 				<Option compiler="tdm-gcc" />
 				<Compiler>
 					<Add option="-O3" />
-					<Add option="-Wall" />
-					<Add option="-std=gnu++2a" />
-					<Add option="-mthreads" />
 					<Add option="-fopenmp" />
-					<Add option="-DDLLVER_MAJOR_MASK" />
-					<Add option="-DwxUSE_REGEX" />
-					<Add option="-DwxDIALOG_MODAL" />
-					<Add option="-DwxUSE_UNICODE" />
 					<Add option="-D__GNUWIN32__" />
-					<Add option="-D__WXMSW__" />
-					<Add directory="$(#wx)/lib/gcc_lib/mswu" />
-					<Add directory="$(#wx)/include" />
 				</Compiler>
-				<ResourceCompiler>
-					<Add directory="$(#wx)/include/" />
-				</ResourceCompiler>
-				<Linker>
-					<Add library="wxmsw30u_stc" />
-					<Add library="wxscintilla" />
-					<Add library="wxmsw30u_propgrid" />
-					<Add library="wxmsw30u_media" />
-					<Add library="wxmsw30u_adv" />
-					<Add library="wxmsw30u_gl" />
-					<Add library="wxmsw30u_html" />
-					<Add library="wxexpat" />
-					<Add library="wxbase30u_xml" />
-					<Add library="wxbase30u_net" />
-					<Add library="wxmsw30u_aui" />
-					<Add library="wxmsw30u_core" />
-					<Add library="wxbase30u" />
-					<Add library="wxregexu" />
-					<Add library="wxjpeg" />
-					<Add library="wxpng" />
-					<Add library="wxtiff" />
-					<Add library="wxzlib" />
-					<Add library="rpcrt4" />
-					<Add library="winmm" />
-					<Add library="advapi32" />
-					<Add library="version" />
-					<Add library="wsock32" />
-					<Add library="comctl32" />
-					<Add library="ole32" />
-					<Add library="uuid" />
-					<Add library="winspool" />
-					<Add library="oleaut32" />
-					<Add directory="$(#wx)/lib/gcc_lib" />
-				</Linker>
 			</Target>
 			<Target title="Deep Debug">
 				<Option output="../../Software/NumeRe/numere" prefix_auto="1" extension_auto="1" />
@@ -189,63 +59,78 @@
 				<Option type="0" />
 				<Option compiler="tdm-gcc" />
 				<Compiler>
-					<Add option="-Wall" />
-					<Add option="-std=gnu++2a" />
 					<Add option="-g" />
-					<Add option="-mthreads" />
 					<Add option="-ggdb3" />
 					<Add option="-fno-omit-frame-pointer" />
-					<Add option="-DDLLVER_MAJOR_MASK" />
-					<Add option="-DwxUSE_REGEX" />
-					<Add option="-DwxDIALOG_MODAL" />
-					<Add option="-DwxUSE_UNICODE" />
 					<Add option="-D__GNUWIN32__" />
-					<Add option="-D__WXMSW__" />
 					<Add option="-DWXDEBUG" />
 					<Add option="-DDO_LOG" />
-					<Add directory="$(#wx)/lib/gcc_lib/mswu" />
-					<Add directory="$(#wx)/include" />
 				</Compiler>
-				<ResourceCompiler>
-					<Add directory="$(#wx)/include/" />
-				</ResourceCompiler>
+			</Target>
+			<Target title="Profiling_x64">
+				<Option output="../../Software/NumeRe/numere" prefix_auto="1" extension_auto="1" />
+				<Option object_output="Debug/Profiling_x64" />
+				<Option type="0" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add option="-O3" />
+					<Add option="-fopenmp" />
+					<Add option="-D__GNUWIN64__" />
+					<Add option="-DNR_HAVE_GSL2" />
+				</Compiler>
+			</Target>
+			<Target title="Release_x64">
+				<Option output="../Software/rc/NumeRe/numere" prefix_auto="1" extension_auto="1" />
+				<Option object_output="Release_x64" />
+				<Option type="0" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add option="-O3" />
+					<Add option="-fopenmp" />
+					<Add option="-D__GNUWIN64__" />
+					<Add option="-DNR_HAVE_GSL2" />
+					<Add option="-DRELEASE" />
+				</Compiler>
 				<Linker>
-					<Add library="wxmsw30u_stc" />
-					<Add library="wxscintilla" />
-					<Add library="wxmsw30u_propgrid" />
-					<Add library="wxmsw30u_media" />
-					<Add library="wxmsw30u_adv" />
-					<Add library="wxmsw30u_gl" />
-					<Add library="wxmsw30u_html" />
-					<Add library="wxexpat" />
-					<Add library="wxbase30u_xml" />
-					<Add library="wxbase30u_net" />
-					<Add library="wxmsw30u_aui" />
-					<Add library="wxmsw30u_core" />
-					<Add library="wxbase30u" />
-					<Add library="wxregexu" />
-					<Add library="wxjpeg" />
-					<Add library="wxpng" />
-					<Add library="wxtiff" />
-					<Add library="wxzlib" />
-					<Add library="rpcrt4" />
-					<Add library="winmm" />
-					<Add library="advapi32" />
-					<Add library="version" />
-					<Add library="wsock32" />
-					<Add library="comctl32" />
-					<Add library="ole32" />
-					<Add library="uuid" />
-					<Add library="winspool" />
-					<Add library="oleaut32" />
-					<Add directory="$(#wx)/lib/gcc_lib" />
+					<Add option="-s" />
 				</Linker>
 			</Target>
+			<Target title="Deep Debug_x64">
+				<Option output="../../Software/NumeRe/numere" prefix_auto="1" extension_auto="1" />
+				<Option object_output="Deepdebug_x64" />
+				<Option type="0" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add option="-g" />
+					<Add option="-ggdb3" />
+					<Add option="-fno-omit-frame-pointer" />
+					<Add option="-D__GNUWIN64__" />
+					<Add option="-DNR_HAVE_GSL2" />
+					<Add option="-DWXDEBUG" />
+					<Add option="-DDO_LOG" />
+				</Compiler>
+			</Target>
+			<Environment>
+				<Variable name="wx" value="$(TARGET_COMPILER_DIR)wxWidgets-3.0.2" />
+			</Environment>
 		</Build>
 		<Compiler>
+			<Add option="-Wall" />
+			<Add option="-std=gnu++2a" />
 			<Add option="-Wno-narrowing" />
+			<Add option="-mthreads" />
+			<Add option="-DDLLVER_MAJOR_MASK" />
+			<Add option="-DwxUSE_REGEX" />
+			<Add option="-DwxDIALOG_MODAL" />
+			<Add option="-DwxUSE_UNICODE" />
+			<Add option="-D__WXMSW__" />
 			<Add option="-D__MSVCRT_VERSION__=0x0601" />
+			<Add directory="$(wx)/lib/gcc_lib/mswu" />
+			<Add directory="$(wx)/include" />
 		</Compiler>
+		<ResourceCompiler>
+			<Add directory="$(wx)/include/" />
+		</ResourceCompiler>
 		<Linker>
 			<Add option="-lmgl" />
 			<Add option="-lgsl" />
@@ -256,6 +141,35 @@
 			<Add option="-lgslcblas" />
 			<Add option="-Wl,--stack,8388608" />
 			<Add option="-fopenmp" />
+			<Add library="wxmsw30u_stc" />
+			<Add library="wxscintilla" />
+			<Add library="wxmsw30u_propgrid" />
+			<Add library="wxmsw30u_media" />
+			<Add library="wxmsw30u_adv" />
+			<Add library="wxmsw30u_gl" />
+			<Add library="wxmsw30u_html" />
+			<Add library="wxexpat" />
+			<Add library="wxbase30u_xml" />
+			<Add library="wxbase30u_net" />
+			<Add library="wxmsw30u_aui" />
+			<Add library="wxmsw30u_core" />
+			<Add library="wxbase30u" />
+			<Add library="wxregexu" />
+			<Add library="wxjpeg" />
+			<Add library="wxpng" />
+			<Add library="wxtiff" />
+			<Add library="wxzlib" />
+			<Add library="rpcrt4" />
+			<Add library="winmm" />
+			<Add library="advapi32" />
+			<Add library="version" />
+			<Add library="wsock32" />
+			<Add library="comctl32" />
+			<Add library="ole32" />
+			<Add library="uuid" />
+			<Add library="winspool" />
+			<Add library="oleaut32" />
+			<Add directory="$(wx)/lib/gcc_lib" />
 		</Linker>
 		<Unit filename="NumeRe.rc">
 			<Option compilerVar="WINDRES" />
@@ -265,20 +179,10 @@
 		<Unit filename="common/compareFiles.cpp" />
 		<Unit filename="common/compareFiles.hpp" />
 		<Unit filename="common/datastructures.h" />
-		<Unit filename="common/dtl/Diff.hpp" />
-		<Unit filename="common/dtl/Diff3.hpp" />
-		<Unit filename="common/dtl/Lcs.hpp" />
-		<Unit filename="common/dtl/Sequence.hpp" />
-		<Unit filename="common/dtl/Ses.hpp" />
-		<Unit filename="common/dtl/dtl.hpp" />
-		<Unit filename="common/dtl/functors.hpp" />
-		<Unit filename="common/dtl/variables.hpp" />
 		<Unit filename="common/filerevisions.cpp" />
 		<Unit filename="common/filerevisions.hpp" />
 		<Unit filename="common/filewatcher.cpp" />
 		<Unit filename="common/filewatcher.hpp" />
-		<Unit filename="common/http.cpp" />
-		<Unit filename="common/http.h" />
 		<Unit filename="common/ipc.cpp" />
 		<Unit filename="common/ipc.hpp" />
 		<Unit filename="common/options.cpp" />
@@ -286,6 +190,26 @@
 		<Unit filename="common/recycler.hpp" />
 		<Unit filename="common/vcsmanager.cpp" />
 		<Unit filename="common/vcsmanager.hpp" />
+		<Unit filename="externals/date/include/date/chrono_io.h" />
+		<Unit filename="externals/date/include/date/date.h" />
+		<Unit filename="externals/date/include/date/ios.h" />
+		<Unit filename="externals/date/include/date/islamic.h" />
+		<Unit filename="externals/date/include/date/iso_week.h" />
+		<Unit filename="externals/date/include/date/julian.h" />
+		<Unit filename="externals/date/include/date/ptz.h" />
+		<Unit filename="externals/date/include/date/solar_hijri.h" />
+		<Unit filename="externals/date/include/date/tz.h" />
+		<Unit filename="externals/date/include/date/tz_private.h" />
+		<Unit filename="externals/dtl/dtl/Diff.hpp" />
+		<Unit filename="externals/dtl/dtl/Diff3.hpp" />
+		<Unit filename="externals/dtl/dtl/Lcs.hpp" />
+		<Unit filename="externals/dtl/dtl/Sequence.hpp" />
+		<Unit filename="externals/dtl/dtl/Ses.hpp" />
+		<Unit filename="externals/dtl/dtl/dtl.hpp" />
+		<Unit filename="externals/dtl/dtl/functors.hpp" />
+		<Unit filename="externals/dtl/dtl/variables.hpp" />
+		<Unit filename="externals/tinyxml2/tinyxml2.cpp" />
+		<Unit filename="externals/tinyxml2/tinyxml2.h" />
 		<Unit filename="gui/DirTraverser.cpp" />
 		<Unit filename="gui/DirTraverser.hpp" />
 		<Unit filename="gui/IconManager.cpp" />
@@ -403,11 +327,6 @@
 		<Unit filename="kernel/core/AudioLib/audiofile.hpp" />
 		<Unit filename="kernel/core/AudioLib/wavfile.cpp" />
 		<Unit filename="kernel/core/AudioLib/wavfile.hpp" />
-		<Unit filename="kernel/core/IgorLib/CrossPlatformFileIO.cpp" />
-		<Unit filename="kernel/core/IgorLib/CrossPlatformFileIO.h" />
-		<Unit filename="kernel/core/IgorLib/IgorBin.h" />
-		<Unit filename="kernel/core/IgorLib/ReadWave.cpp" />
-		<Unit filename="kernel/core/IgorLib/ReadWave.h" />
 		<Unit filename="kernel/core/ParserLib/muParser.cpp" />
 		<Unit filename="kernel/core/ParserLib/muParser.h" />
 		<Unit filename="kernel/core/ParserLib/muParserBase.cpp" />
@@ -472,6 +391,15 @@
 		<Unit filename="kernel/core/documentation/documentation.hpp" />
 		<Unit filename="kernel/core/interval.cpp" />
 		<Unit filename="kernel/core/interval.hpp" />
+		<Unit filename="kernel/core/io/BasicExcel.cpp" />
+		<Unit filename="kernel/core/io/BasicExcel.hpp" />
+		<Unit filename="kernel/core/io/IgorLib/CrossPlatformFileIO.cpp" />
+		<Unit filename="kernel/core/io/IgorLib/CrossPlatformFileIO.h" />
+		<Unit filename="kernel/core/io/IgorLib/IgorBin.h" />
+		<Unit filename="kernel/core/io/IgorLib/ReadWave.cpp" />
+		<Unit filename="kernel/core/io/IgorLib/ReadWave.h" />
+		<Unit filename="kernel/core/io/archive.cpp" />
+		<Unit filename="kernel/core/io/archive.hpp" />
 		<Unit filename="kernel/core/io/file.cpp" />
 		<Unit filename="kernel/core/io/file.hpp" />
 		<Unit filename="kernel/core/io/fileops.cpp" />
@@ -484,6 +412,12 @@
 		<Unit filename="kernel/core/io/output.hpp" />
 		<Unit filename="kernel/core/io/styledtextfile.cpp" />
 		<Unit filename="kernel/core/io/styledtextfile.hpp" />
+		<Unit filename="kernel/core/io/unzip.cpp" />
+		<Unit filename="kernel/core/io/unzip.h" />
+		<Unit filename="kernel/core/io/zip++.cpp" />
+		<Unit filename="kernel/core/io/zip++.hpp" />
+		<Unit filename="kernel/core/io/zip.cpp" />
+		<Unit filename="kernel/core/io/zip.h" />
 		<Unit filename="kernel/core/maths/command_implementations.cpp" />
 		<Unit filename="kernel/core/maths/command_implementations.hpp" />
 		<Unit filename="kernel/core/maths/define.cpp" />
@@ -568,42 +502,23 @@
 		<Unit filename="kernel/core/ui/language.hpp" />
 		<Unit filename="kernel/core/ui/winlayout.cpp" />
 		<Unit filename="kernel/core/ui/winlayout.hpp" />
-		<Unit filename="kernel/core/utils/BasicExcel.cpp" />
-		<Unit filename="kernel/core/utils/BasicExcel.hpp" />
-		<Unit filename="kernel/core/utils/archive.cpp" />
-		<Unit filename="kernel/core/utils/archive.hpp" />
-		<Unit filename="kernel/core/utils/date/date.h" />
-		<Unit filename="kernel/core/utils/date/iso_week.h" />
 		<Unit filename="kernel/core/utils/datetimetools.cpp" />
 		<Unit filename="kernel/core/utils/datetimetools.hpp" />
-		<Unit filename="kernel/core/utils/fast_float/ascii_number.h" />
-		<Unit filename="kernel/core/utils/fast_float/bigint.h" />
-		<Unit filename="kernel/core/utils/fast_float/decimal_to_binary.h" />
-		<Unit filename="kernel/core/utils/fast_float/digit_comparison.h" />
-		<Unit filename="kernel/core/utils/fast_float/fast_float.h" />
-		<Unit filename="kernel/core/utils/fast_float/fast_table.h" />
-		<Unit filename="kernel/core/utils/fast_float/float_common.h" />
-		<Unit filename="kernel/core/utils/fast_float/parse_number.h" />
-		<Unit filename="kernel/core/utils/fast_float/simple_decimal_conversion.h" />
 		<Unit filename="kernel/core/utils/filecheck.cpp" />
 		<Unit filename="kernel/core/utils/filecheck.hpp" />
+		<Unit filename="kernel/core/utils/http.cpp" />
+		<Unit filename="kernel/core/utils/http.h" />
 		<Unit filename="kernel/core/utils/stringtools.cpp" />
 		<Unit filename="kernel/core/utils/stringtools.hpp" />
 		<Unit filename="kernel/core/utils/timer.hpp">
 			<Option target="Debug" />
 			<Option target="Profiling" />
 			<Option target="Deep Debug" />
+			<Option target="Profiling_x64" />
+			<Option target="Deep Debug_x64" />
 		</Unit>
-		<Unit filename="kernel/core/utils/tinyxml2.cpp" />
-		<Unit filename="kernel/core/utils/tinyxml2.h" />
 		<Unit filename="kernel/core/utils/tools.cpp" />
 		<Unit filename="kernel/core/utils/tools.hpp" />
-		<Unit filename="kernel/core/utils/unzip.cpp" />
-		<Unit filename="kernel/core/utils/unzip.h" />
-		<Unit filename="kernel/core/utils/zip++.cpp" />
-		<Unit filename="kernel/core/utils/zip++.hpp" />
-		<Unit filename="kernel/core/utils/zip.cpp" />
-		<Unit filename="kernel/core/utils/zip.h" />
 		<Unit filename="kernel/core/version.h" />
 		<Unit filename="kernel/kernel.cpp" />
 		<Unit filename="kernel/kernel.hpp" />

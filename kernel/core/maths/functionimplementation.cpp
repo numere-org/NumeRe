@@ -2100,22 +2100,22 @@ value_type parser_EllipticP(const value_type& phi, const value_type& n, const va
 
 /////////////////////////////////////////////////
 /// \brief This function returns the value of the
-/// elliptic intergal D(phi,n,k).
+/// elliptic intergal D(phi,k).
 ///
 /// \param phi const value_type&
-/// \param n const value_type&
 /// \param k const value_type&
 /// \return value_type
 ///
 /////////////////////////////////////////////////
-value_type parser_EllipticD(const value_type& phi, const value_type& n, const value_type& k)
+value_type parser_EllipticD(const value_type& phi, const value_type& k)
 {
-    if (isnan(k.real()) || isnan(phi.real()) || isinf(k.real()) || isinf(phi.real()) || isnan(n.real()) || isinf(n.real()))
+    if (isnan(k.real()) || isnan(phi.real()) || isinf(k.real()) || isinf(phi.real()))
         return NAN;
 
     if (k.real() < 0 || k.real() >= 1)
         return NAN;
 
+#ifdef NR_HAVE_GSL2
     if (phi.real() < 0 || phi.real() > M_PI_2)
     {
         int nSign = 1;
@@ -2125,12 +2125,30 @@ value_type parser_EllipticD(const value_type& phi, const value_type& n, const va
             nSign = -1;
 
         if (!(nMultiple%2)) // even
-            return nSign*(nMultiple*gsl_sf_ellint_D(M_PI_2, k.real(), n.real(), 0) + gsl_sf_ellint_D(fabs(phi.real())-nMultiple*M_PI_2, k.real(), n.real(), 0));
+            return nSign*(nMultiple*gsl_sf_ellint_D(M_PI_2, k.real(), 0) + gsl_sf_ellint_D(fabs(phi.real())-nMultiple*M_PI_2, k.real(), 0));
         else // odd
-            return nSign*((nMultiple+1)*gsl_sf_ellint_D(M_PI_2, k.real(), n.real(), 0) - gsl_sf_ellint_D(M_PI_2-(fabs(phi.real())-nMultiple*M_PI_2), k.real(), n.real(), 0));
+            return nSign*((nMultiple+1)*gsl_sf_ellint_D(M_PI_2, k.real(), 0) - gsl_sf_ellint_D(M_PI_2-(fabs(phi.real())-nMultiple*M_PI_2), k.real(), 0));
     }
 
-    return gsl_sf_ellint_D(phi.real(), k.real(), n.real(), 0);
+    return gsl_sf_ellint_D(phi.real(), k.real(), 0);
+#else
+    if (phi.real() < 0 || phi.real() > M_PI_2)
+    {
+        int nSign = 1;
+        int nMultiple = floor(fabs(phi.real()/M_PI_2));
+
+        if (phi.real() < 0)
+            nSign = -1;
+
+        if (!(nMultiple%2)) // even
+            return nSign*(nMultiple*gsl_sf_ellint_D(M_PI_2, k.real(), 0.0, 0) + gsl_sf_ellint_D(fabs(phi.real())-nMultiple*M_PI_2, k.real(), 0.0, 0));
+        else // odd
+            return nSign*((nMultiple+1)*gsl_sf_ellint_D(M_PI_2, k.real(), 0.0, 0) - gsl_sf_ellint_D(M_PI_2-(fabs(phi.real())-nMultiple*M_PI_2), k.real(), 0.0, 0));
+    }
+
+    return gsl_sf_ellint_D(phi.real(), k.real(), 0.0, 0);
+#endif
+
 }
 
 
