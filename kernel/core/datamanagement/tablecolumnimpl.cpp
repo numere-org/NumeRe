@@ -428,7 +428,7 @@ TableColumn* ValueColumn::convert(ColumnType type)
 
     switch (type)
     {
-        case TableColumn::TYPE_NONE:
+        //case TableColumn::TYPE_NONE: // Disabled for correct autoconversion
         case TableColumn::TYPE_STRING:
         {
             col = new StringColumn(m_data.size());
@@ -843,7 +843,7 @@ TableColumn* DateTimeColumn::convert(ColumnType type)
 
     switch (type)
     {
-        case TableColumn::TYPE_NONE:
+        //case TableColumn::TYPE_NONE: // Disabled for correct autoconversion
         case TableColumn::TYPE_STRING:
         {
             col = new StringColumn(m_data.size());
@@ -1247,7 +1247,7 @@ TableColumn* LogicalColumn::convert(ColumnType type)
 
     switch (type)
     {
-        case TableColumn::TYPE_NONE:
+        //case TableColumn::TYPE_NONE: // Disabled for correct autoconversion
         case TableColumn::TYPE_STRING:
         {
             col = new StringColumn(m_data.size());
