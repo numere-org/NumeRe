@@ -375,11 +375,11 @@ int Documentation::findPositionUsingIdxKeys(const std::string& sIdxKeys) const
 /// the XML-parsing logic-stuff.
 ///
 /// \param sCmd const std::string&
-/// \param nPos unsigned int
+/// \param nPos size_t
 /// \return std::string
 ///
 /////////////////////////////////////////////////
-std::string Documentation::getArgAtPos(const std::string& sCmd, unsigned int nPos)
+std::string Documentation::getArgAtPos(const std::string& sCmd, size_t nPos)
 {
     std::string sArgument = "";
 
@@ -403,7 +403,7 @@ std::string Documentation::getArgAtPos(const std::string& sCmd, unsigned int nPo
         // This option value is surrounded with quotation marks
         // Go through the string and find the next quotation
         // mark, which is not escaped by a backslash
-        for (unsigned int i = nPos + 1; i < sCmd.length(); i++)
+        for (size_t i = nPos + 1; i < sCmd.length(); i++)
         {
             if (sCmd[i] == '"' && sCmd[i - 1] != '\\')
             {
@@ -416,7 +416,7 @@ std::string Documentation::getArgAtPos(const std::string& sCmd, unsigned int nPo
     {
         // This option value is not surrounded with quotation marks
         // Go through the string and find the next whitespace
-        for (unsigned int i = nPos; i < sCmd.length(); i++)
+        for (size_t i = nPos; i < sCmd.length(); i++)
         {
             // Jump over parentheses, if you find one
             if (sCmd[i] == '(' || sCmd[i] == '[' || sCmd[i] == '{')

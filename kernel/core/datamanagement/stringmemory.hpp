@@ -53,27 +53,27 @@ class StringMemory
         StringInternalMemory _stringIntMem;
 
     public:
-		bool writeString(const std::string& _sString, unsigned int _nthString = std::string::npos, unsigned int nCol = 0);
-		std::string readString(unsigned int _nthString = std::string::npos, unsigned int nCol = 0);
+		bool writeString(const std::string& _sString, size_t _nthString = std::string::npos, size_t nCol = 0);
+		std::string readString(size_t _nthString = std::string::npos, size_t nCol = 0);
 
-		std::string maxString(unsigned int i1 = 0, unsigned int i2 = std::string::npos, unsigned int nCol = 0);
+		std::string maxString(size_t i1 = 0, size_t i2 = std::string::npos, size_t nCol = 0);
 		std::string maxString(VectorIndex _vLine, VectorIndex _vCol);
-		std::string minString(unsigned int i1 = 0, unsigned int i2 = std::string::npos, unsigned int nCol = 0);
+		std::string minString(size_t i1 = 0, size_t i2 = std::string::npos, size_t nCol = 0);
 		std::string minString(VectorIndex _vLine, VectorIndex _vCol);
-		std::string sumString(unsigned int i1 = 0, unsigned int i2 = std::string::npos, unsigned int nCol = 0);
+		std::string sumString(size_t i1 = 0, size_t i2 = std::string::npos, size_t nCol = 0);
 		std::string sumString(VectorIndex _vLine, VectorIndex _vCol);
 
 		// Returns the number of stored elements in either a
 		// specific column or the maximal line count of the
 		// whole object
-		inline unsigned int getStringElements(unsigned int nCol = std::string::npos) const
+		inline size_t getStringElements(size_t nCol = std::string::npos) const
 		{
 			if (nCol == std::string::npos)
 			{
 			    // No column selected. Return the maximal line count
-				unsigned int nCnt = 0;
+				size_t nCnt = 0;
 
-				for (unsigned int i = 0; i < _stringIntMem.sStrings.size(); i++)
+				for (size_t i = 0; i < _stringIntMem.sStrings.size(); i++)
 				{
 					if (nCnt < _stringIntMem.sStrings[i].size())
 						nCnt = _stringIntMem.sStrings[i].size();
@@ -82,20 +82,20 @@ class StringMemory
 				return nCnt;
 			}
 			else if (nCol >= _stringIntMem.sStrings.size())
-				return 0;
+				return 0u;
 			else
 				return _stringIntMem.sStrings[nCol].size();
-			return 0;
+			return 0u;
 		}
 
 		// Return number of columns
-		inline unsigned int getStringCols() const
+		inline size_t getStringCols() const
 		{
 			return _stringIntMem.sStrings.size();
 		}
 
 		// Removes all elements of a selected column
-		inline bool removeStringElements(unsigned int nCol = 0)
+		inline bool removeStringElements(size_t nCol = 0)
 		{
 			if (nCol < _stringIntMem.sStrings.size())
 			{
@@ -119,15 +119,15 @@ class StringMemory
 
 		// Returns the size of a selected column or the whole
 		// object in bytes
-		inline int getStringSize(unsigned int nCol = std::string::npos) const
+		inline int getStringSize(size_t nCol = std::string::npos) const
 		{
 			if (nCol == std::string::npos)
 			{
 			    // No column selected. Return the total size
-				unsigned int nSize = 0;
+				size_t nSize = 0u;
 
 				// Recursively call this function for a specific column
-				for (unsigned int i = 0; i < _stringIntMem.sStrings.size(); i++)
+				for (size_t i = 0; i < _stringIntMem.sStrings.size(); i++)
 				{
 					nSize += getStringSize(i);
 				}
@@ -139,20 +139,20 @@ class StringMemory
 			    // Selected a valid column
 				if (_stringIntMem.sStrings[nCol].size())
 				{
-					int nSize = 0;
+					size_t nSize = 0;
 
 					// Count the number of caracters and multiply it with the
 					// bytesize of a character
-					for (unsigned int i = 0; i < _stringIntMem.sStrings[nCol].size(); i++)
+					for (size_t i = 0; i < _stringIntMem.sStrings[nCol].size(); i++)
 						nSize += _stringIntMem.sStrings[nCol][i].size() * sizeof(char);
 
 					return nSize;
 				}
 				else
-					return 0;
+					return 0u;
 			}
 			else
-				return 0;
+				return 0u;
 		}
 
 		// Wrapper for the internal string sorting function

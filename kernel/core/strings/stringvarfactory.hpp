@@ -49,7 +49,7 @@ namespace NumeRe
             std::string createStringVectorVar(const std::vector<std::string>& vStringVector);
             bool isStringVectorVar(const std::string& sVarName) const;
             const StringVector& getStringVectorVar(const std::string& sVarName) const;
-            void getStringValuesAsInternalVar(std::string& sLine, unsigned int nPos = 0);
+            void getStringValuesAsInternalVar(std::string& sLine, size_t nPos = 0);
 
         public:
             bool containsStringVectorVars(const std::string& sLine);

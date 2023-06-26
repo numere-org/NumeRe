@@ -468,7 +468,7 @@ IntervalSet PlotAssetManager::getAxisIntervalsOfType(PlotType t) const
         if (assets[i].type != t)
             continue;
 
-        for (size_t c = 0; c < std::min(3u, assets[i].getDim()); c++)
+        for (size_t c = 0; c < std::min((size_t)3u, assets[i].getDim()); c++)
         {
             ivl[c] = ivl[c].combine(assets[i].getAxisInterval((PlotCoords)c));
         }

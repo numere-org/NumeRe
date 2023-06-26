@@ -17,7 +17,7 @@
 ******************************************************************************/
 
 #include "filerevisions.hpp"
-#include "dtl/dtl.hpp"
+#include "../externals/dtl/dtl/dtl.hpp"
 #include <wx/zipstrm.h>
 #include <wx/txtstrm.h>
 #include <wx/wfstream.h>

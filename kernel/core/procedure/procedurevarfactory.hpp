@@ -54,7 +54,7 @@ class ProcedureVarFactory
         Procedure* _currentProcedure;
 
         std::string sProcName;
-        unsigned int nth_procedure;
+        size_t nth_procedure;
         bool inliningMode;
 
         enum VarType
@@ -78,9 +78,9 @@ class ProcedureVarFactory
         std::string resolveLocalStrings(std::string sProcedureCommandLine, size_t nMapSize = std::string::npos);
         std::string resolveLocalTables(std::string sProcedureCommandLine, size_t nMapSize = std::string::npos);
         std::string resolveLocalClusters(std::string sProcedureCommandLine, size_t nMapSize = std::string::npos);
-        unsigned int countVarListElements(const std::string& sVarList);
-        void checkArgument(const std::string& sArgument, const std::string& sArgumentList, unsigned int nCurrentIndex);
-        void checkArgumentValue(const std::string& sArgument, const std::string& sArgumentList, unsigned int nCurrentIndex);
+        size_t countVarListElements(const std::string& sVarList);
+        void checkArgument(const std::string& sArgument, const std::string& sArgumentList, size_t nCurrentIndex);
+        void checkArgumentValue(const std::string& sArgument, const std::string& sArgumentList, size_t nCurrentIndex);
         bool checkSymbolName(const std::string& sSymbolName) const;
         void createLocalInlineVars(std::string sVarList);
         void createLocalInlineStrings(std::string sVarList);
@@ -98,7 +98,7 @@ class ProcedureVarFactory
         std::vector<std::string> vInlineArgDef;
 
         ProcedureVarFactory();
-        ProcedureVarFactory(Procedure* _procedure, const std::string& sProc, unsigned int currentProc, bool _inliningMode = false);
+        ProcedureVarFactory(Procedure* _procedure, const std::string& sProc, size_t currentProc, bool _inliningMode = false);
         ~ProcedureVarFactory();
 
         void reset();

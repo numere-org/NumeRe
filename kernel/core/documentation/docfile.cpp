@@ -19,7 +19,7 @@
 #include <fstream>
 
 #include "docfile.hpp"
-#include "../utils/tinyxml2.h"
+#include "../../../externals/tinyxml2/tinyxml2.h"
 #include "../utils/tools.hpp" // for stripSpaces()
 
 

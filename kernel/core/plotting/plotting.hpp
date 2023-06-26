@@ -84,7 +84,7 @@ class Plot
         void create3dDrawing(std::vector<std::string>& vDrawVector);
         void createStd3dPlot(size_t nPlotCompose, size_t nPlotComposeSize);
         bool plotstd3d(mglData _mData[3], mglData _mData2[3], const short nType);
-        bool checkMultiPlotArray(unsigned int nMultiPlot[2], unsigned int& nSubPlotMap, unsigned int nPlotPos, unsigned int nCols, unsigned int nLines);
+        bool checkMultiPlotArray(size_t nMultiPlot[2], size_t& nSubPlotMap, size_t nPlotPos, size_t nCols, size_t nLines);
         long getNN(const mglData& _mData);
         void filename(size_t nPlotComposeSize, size_t nPlotCompose);
         void setStyles();
