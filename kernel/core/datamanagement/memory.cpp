@@ -948,6 +948,8 @@ bool Memory::convertColumns(const VectorIndex& _vCol, const std::string& _sType)
 
     if (_type == TableColumn::TYPE_NONE)
         return false;
+    else if (_type == TableColumn::TYPE_MIXED)
+        _type = TableColumn::TYPE_NONE; // Enable autoconversions
 
     _vCol.setOpenEndIndex(memArray.size()-1);
 
@@ -967,7 +969,7 @@ bool Memory::convertColumns(const VectorIndex& _vCol, const std::string& _sType)
             if (col && col != memArray[_vCol[i]].get())
                 memArray[_vCol[i]].reset(col);
             else
-                success = false;
+                success = _type == TableColumn::TYPE_NONE; // Auto conversions do not flag errors
         }
     }
 
