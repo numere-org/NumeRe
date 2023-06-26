@@ -116,7 +116,7 @@ wxDirTraverseResult DirTraverser::OnFile(const wxString& filename)
             filespec  = "*.*";
     }
 
-    unsigned int ndepth = 0;
+    size_t ndepth = 0;
 
     for (size_t i = 0; i < filename.length(); i++)
     {
@@ -152,7 +152,7 @@ wxDirTraverseResult DirTraverser::OnDir(const wxString& dirname)
     if (dirname.find(".revisions") != std::string::npos)
         return wxDIR_IGNORE;
 
-    unsigned int ndepth = 0;
+    size_t ndepth = 0;
 
     for (size_t i = 0; i < dirname.length(); i++)
     {

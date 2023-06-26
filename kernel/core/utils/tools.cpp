@@ -490,7 +490,7 @@ string extractStringToken(const string& sCmd, size_t nPos)
 /// parenthesis.
 ///
 /// \param sLine StringView
-/// \return unsigned int The position of the closing parenthesis
+/// \return size_t The position of the closing parenthesis
 ///
 /// This function determines the type of the
 /// desired parenthesis by itself by using the
@@ -501,7 +501,7 @@ string extractStringToken(const string& sCmd, size_t nPos)
 /// the function does not find the matching
 /// parenthesis, it returns string::npos
 /////////////////////////////////////////////////
-unsigned int getMatchingParenthesis(const StringView& sLine)
+size_t getMatchingParenthesis(const StringView& sLine)
 {
     size_t pos = sLine.find_first_of("([{");
 
@@ -581,7 +581,7 @@ bool isMultiValue(const string& sExpr, bool bIgnoreClosingParenthesis)
         size_t nQuotationMarks = 0;
 
         // Go through the string
-        for (unsigned int i = 0; i < sExpr.length(); i++)
+        for (size_t i = 0; i < sExpr.length(); i++)
         {
             // Jump over parentheses
             if ((sExpr[i] == '(' || sExpr[i] == '{' || sExpr[i] == '[') && !(nQuotationMarks % 2))
@@ -811,7 +811,7 @@ static void handleTeXIndicesAndExponents(std::string& sReturn, const std::map<st
             i++;
 
             // Find the end of the current brace
-            for (unsigned int j = i + 1; j < sReturn.length(); j++)
+            for (size_t j = i + 1; j < sReturn.length(); j++)
             {
                 if (sDelimiter.find(sReturn[j]) != std::string::npos)
                 {
@@ -1049,7 +1049,7 @@ static Match findCasualCommand(StringView sCmd)
         nStart = 2;
 
     // Go through the complete command line
-    for (unsigned int i = nStart; i < sCmd.length(); i++)
+    for (size_t i = nStart; i < sCmd.length(); i++)
     {
         // Break the loop, if one recognizes typical initializers of the parameter list
         if ((sCmd.subview(i, 2) == "--" || sCmd.subview(i, 5) == "-set ") && !isInQuotes(sCmd, i))
@@ -1202,7 +1202,7 @@ static Match findCommandWithReturnValue(StringView sCmd, const string& sCommand)
         nStart = 2;
 
     // Go through the complete command line
-    for (unsigned int i = nStart; i < sCmd.length(); i++)
+    for (size_t i = nStart; i < sCmd.length(); i++)
     {
         // Break the loop, if we find typical parameter string initializers
         if ((sCmd.subview(i, 2) == "--" || sCmd.subview(i, 5) == "-set ") && !isInQuotes(sCmd, i))
@@ -1477,7 +1477,7 @@ void openExternally(const string& sFile)
     replaceAll(_sFile, "/", "\\");
 
     // Invoke the Windows shell
-    nErrorCode = (int)ShellExecute(nullptr, "open", sFile.c_str(), nullptr, nullptr, SW_SHOWNORMAL);
+    nErrorCode = (size_t)ShellExecute(nullptr, "open", sFile.c_str(), nullptr, nullptr, SW_SHOWNORMAL);
 
     // Examine the return value
     if (nErrorCode <= 32)
@@ -1682,12 +1682,12 @@ static void parseArg(std::string& sArg, int flags)
 /// parsing, if necessary.
 ///
 /// \param sCmd const string&
-/// \param nPos unsigned int
+/// \param nPos size_t
 /// \param extraction int
 /// \return string
 ///
 /////////////////////////////////////////////////
-string getArgAtPos(const string& sCmd, unsigned int nPos, int extraction)
+string getArgAtPos(const string& sCmd, size_t nPos, int extraction)
 {
     string sArgument = "";
 
@@ -1756,12 +1756,12 @@ string getArgAtPos(const string& sCmd, unsigned int nPos, int extraction)
 /// passed expression is part of a string literal.
 ///
 /// \param sExpr StringView
-/// \param nPos unsigned int
+/// \param nPos size_t
 /// \param bool bIgnoreVarParser  = false
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool isInQuotes(StringView sExpr, unsigned int nPos, bool bIgnoreVarParser /* = false*/)
+bool isInQuotes(StringView sExpr, size_t nPos, bool bIgnoreVarParser /* = false*/)
 {
     int nQuotes = 0;
 
@@ -1802,7 +1802,7 @@ bool isInQuotes(StringView sExpr, unsigned int nPos, bool bIgnoreVarParser /* = 
 
         // If it is not part of quotation marks, examine the contents of the
         // variable to string parser (i.e. everything between "#" and the current position)
-        for (unsigned int i = sExpr.rfind('#', nPos); i < nPos; i++)
+        for (size_t i = sExpr.rfind('#', nPos); i < nPos; i++)
         {
             // Parenthesis is found
             // Jump over it
@@ -1851,11 +1851,11 @@ bool isInQuotes(StringView sExpr, unsigned int nPos, bool bIgnoreVarParser /* = 
 /// functions.
 ///
 /// \param sExpr const string&
-/// \param nPos unsigned int
+/// \param nPos size_t
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool isToStringArg(const string& sExpr, unsigned int nPos)
+bool isToStringArg(const string& sExpr, size_t nPos)
 {
     // Ensure that at least one of the three functions is available in the string
     if (sExpr.find("valtostr(") == string::npos && sExpr.find("to_string(") == string::npos && sExpr.find("string_cast(") == string::npos)
@@ -2097,7 +2097,7 @@ std::vector<std::string> splitIntoLines(std::string sOutput, size_t lineWidth, b
     std::vector<std::string> outputInLines;
 
     // Variable to store the position of the last line break
-    unsigned int nLastLineBreak = 0;
+    size_t nLastLineBreak = 0;
 
     // Convert the output to the system code page
     sOutput = toSystemCodePage(sOutput);
@@ -2114,7 +2114,7 @@ std::vector<std::string> splitIntoLines(std::string sOutput, size_t lineWidth, b
     }
 
     // Go through the whole string
-    for (unsigned int i = 1; i < sOutput.length(); i++)
+    for (size_t i = 1; i < sOutput.length(); i++)
     {
         // Check for the '$' sign. If found update the last line break
         if (sOutput[i] == '$' && sOutput[i - 1] != '\\')
@@ -2139,7 +2139,7 @@ std::vector<std::string> splitIntoLines(std::string sOutput, size_t lineWidth, b
         if ((i == lineWidth - nFirstIndent && !nLastLineBreak) || (nLastLineBreak && i - nLastLineBreak == lineWidth - nIndent))
         {
             // Go backwards from the current position and look for 1 space or 1 minus sign (if allowed) or the "$"
-            for (unsigned int j = i; j > nLastLineBreak; j--)
+            for (size_t j = i; j > nLastLineBreak; j--)
             {
                 if (sOutput[j] == ' ')
                 {
@@ -2186,7 +2186,7 @@ std::vector<std::string> splitIntoLines(std::string sOutput, size_t lineWidth, b
                 if (j - 1 == nLastLineBreak)
                 {
                     string sDelim = "+-*/";
-                    for (unsigned int n = i; n > nLastLineBreak; n--)
+                    for (size_t n = i; n > nLastLineBreak; n--)
                     {
                         if (sDelim.find(sOutput[n]) != string::npos)
                         {
@@ -2207,7 +2207,7 @@ std::vector<std::string> splitIntoLines(std::string sOutput, size_t lineWidth, b
 
     // Go through the whole string again
     size_t lastBreak = 0;   // lastBreak is the position of the first relevant char for the new line
-    for (unsigned int i = 0; i < sOutput.length(); i++)
+    for (size_t i = 0; i < sOutput.length(); i++)
     {
         if (sOutput[i] == '$' && sOutput[i - 1] != '\\')
         {
@@ -2618,7 +2618,7 @@ bool fileExists(const string& sFilename)
 /////////////////////////////////////////////////
 void eraseToken(string& sExpr, const string& sToken, bool bTokenHasValue)
 {
-    unsigned int nLength = sToken.length();
+    size_t nLength = sToken.length();
 
     // If the option token has a value, then the erase process is a bit more complex
     if (bTokenHasValue)
@@ -2628,13 +2628,13 @@ void eraseToken(string& sExpr, const string& sToken, bool bTokenHasValue)
             return;
 
         // Search for the option value
-        for (unsigned int i = findParameter(sExpr, sToken, '=') + nLength - 1; i < sExpr.length(); i++)
+        for (size_t i = findParameter(sExpr, sToken, '=') + nLength - 1; i < sExpr.length(); i++)
         {
             // Assignment operator found
             if (sExpr[i] == '=')
             {
                 // Find the end of the option value
-                for (unsigned int j = sExpr.find_first_not_of("= ", i); j < sExpr.length(); j++)
+                for (size_t j = sExpr.find_first_not_of("= ", i); j < sExpr.length(); j++)
                 {
                     // jump over parentheses
                     if (!isInQuotes(sExpr, j) && (sExpr[j] == '(' || sExpr[j] == '[' || sExpr[j] == '{'))
@@ -2678,7 +2678,7 @@ vector<string> resolveChooseTokens(const string& sDirectory, const Settings& _op
     vector<string> vResolved;
     vResolved.push_back(sDirectory);
     string sToken;
-    unsigned int nSize = 0, nth_choose = 0;
+    size_t nSize = 0, nth_choose = 0;
     bool bResolvingPath = false;
 
     // Is there at least one pipe in the directory?
@@ -2706,12 +2706,12 @@ vector<string> resolveChooseTokens(const string& sDirectory, const Settings& _op
                 if (sToken.find('|') != string::npos)
                 {
                     // duplicate the "root" tree
-                    for (unsigned int i = 0; i < nSize; i++)
+                    for (size_t i = 0; i < nSize; i++)
                         vResolved.push_back(vResolved[i + nth_choose * nSize]);
                 }
 
                 // Replace the tokens with the first of the current tokens
-                for (unsigned int i = nth_choose * nSize; i < (nth_choose + 1)*nSize; i++)
+                for (size_t i = nth_choose * nSize; i < (nth_choose + 1)*nSize; i++)
                 {
                     if (!bResolvingPath && vResolved[i].rfind('/') != string::npos && vResolved[i].rfind('/') > vResolved[i].rfind('>'))
                         bResolvingPath = true;
@@ -2728,7 +2728,7 @@ vector<string> resolveChooseTokens(const string& sDirectory, const Settings& _op
                     vector<string> vFolderList = getFolderList(vResolved[nth_choose * nSize].substr(0, vResolved[nth_choose * nSize].rfind('/')), _option, 1);
 
                     // Remove obsolete paths (i.e. paths pointing to itself or to one directory further up
-                    for (unsigned int j = 0; j < vFolderList.size(); j++)
+                    for (size_t j = 0; j < vFolderList.size(); j++)
                     {
                         if ((vFolderList[j].length() >= 3 && vFolderList[j].substr(vFolderList[j].length() - 3) == "/..")
                             || (vFolderList[j].length() >= 2 && vFolderList[j].substr(vFolderList[j].length() - 2) == "/."))
@@ -2756,7 +2756,7 @@ vector<string> resolveChooseTokens(const string& sDirectory, const Settings& _op
                     }
 
                     // Copy the obtained tree to the resolved tree
-                    for (unsigned int j = 0; j < vFolderList.size(); j++)
+                    for (size_t j = 0; j < vFolderList.size(); j++)
                     {
                         // Does the tree need to be duplicated?
                         if (vFolderList.size() > 1 && j < vFolderList.size() - 1)
@@ -2764,7 +2764,7 @@ vector<string> resolveChooseTokens(const string& sDirectory, const Settings& _op
                             // ggf. Baum duplizieren
                             if (vResolved.size() > (nth_choose + 1)*nSize)
                             {
-                                for (unsigned int k = 0; k < nSize; k++)
+                                for (size_t k = 0; k < nSize; k++)
                                 {
                                     vResolved.push_back(vResolved[k + (nth_choose + 1)*nSize]);
                                     vResolved[k + (nth_choose + 1)*nSize] = vResolved[k + nth_choose * nSize];
@@ -2772,7 +2772,7 @@ vector<string> resolveChooseTokens(const string& sDirectory, const Settings& _op
                             }
                             else
                             {
-                                for (unsigned int k = 0; k < nSize; k++)
+                                for (size_t k = 0; k < nSize; k++)
                                 {
                                     vResolved.push_back(vResolved[(nth_choose)*nSize]);
                                 }
@@ -2780,7 +2780,7 @@ vector<string> resolveChooseTokens(const string& sDirectory, const Settings& _op
                         }
 
                         // simply replace the path part of the resolved tree
-                        for (unsigned int k = nth_choose * nSize; k < (nth_choose + 1)*nSize; k++)
+                        for (size_t k = nth_choose * nSize; k < (nth_choose + 1)*nSize; k++)
                         {
                             vResolved[k].replace(0, vResolved[k].rfind('/'), vFolderList[j]);
                         }
@@ -2817,7 +2817,7 @@ vector<string> resolveChooseTokens(const string& sDirectory, const Settings& _op
         nSize = vResolved.size();
 
         // Remove obsolete paths (i.e. paths pointing to itself or to one directory further up
-        for (unsigned int j = 0; j < vFolderList.size(); j++)
+        for (size_t j = 0; j < vFolderList.size(); j++)
         {
             if ((vFolderList[j].length() >= 3 && vFolderList[j].substr(vFolderList[j].length() - 3) == "/..")
                 || (vFolderList[j].length() >= 2 && vFolderList[j].substr(vFolderList[j].length() - 2) == "/."))
@@ -2834,14 +2834,14 @@ vector<string> resolveChooseTokens(const string& sDirectory, const Settings& _op
             return vResolved;
 
         // Copy the resolved tree, if it is necessary
-        for (unsigned int i = 0; i < vFolderList.size() - 1; i++)
+        for (size_t i = 0; i < vFolderList.size() - 1; i++)
         {
             // Don't use paths, which weren't resolved
             if (vFolderList[i].find('*') != string::npos || vFolderList[i].find('?') != string::npos || !vFolderList[i].size())
                 continue;
 
             // ggf. Baum duplizieren
-            for (unsigned int k = 0; k < nSize; k++)
+            for (size_t k = 0; k < nSize; k++)
             {
                 vResolved.push_back(vResolved[k]);
             }
@@ -2849,14 +2849,14 @@ vector<string> resolveChooseTokens(const string& sDirectory, const Settings& _op
         }
 
         // Replace the paths with wildcards with the results obtained by recursion
-        for (unsigned int j = 0; j < vFolderList.size(); j++)
+        for (size_t j = 0; j < vFolderList.size(); j++)
         {
             // Don't use paths, which weren't resolved
             if (vFolderList[j].find('*') != string::npos || vFolderList[j].find('?') != string::npos || !vFolderList[j].size())
                 continue;
 
             // replace the paths in the resolved tree
-            for (unsigned int k = j * nSize; k < (j + 1)*nSize; k++)
+            for (size_t k = j * nSize; k < (j + 1)*nSize; k++)
             {
                 vResolved[k].replace(0, vResolved[k].rfind('/'), vFolderList[j]);
             }
@@ -2954,7 +2954,7 @@ vector<string> getFileList(const string& sDirectory, const Settings& _option, in
     vDirList = resolveChooseTokens(sDir, _option);
 
     // Walk through the resolved tree
-    for (unsigned int i = 0; i < vDirList.size(); i++)
+    for (size_t i = 0; i < vDirList.size(); i++)
     {
         sDir = vDirList[i];
 
@@ -3026,7 +3026,7 @@ vector<string> getFolderList(const string& sDirectory, const Settings& _option, 
     vDirList = resolveChooseTokens(sDir, _option);
 
     // Walk through the resolved tree
-    for (unsigned int i = 0; i < vDirList.size(); i++)
+    for (size_t i = 0; i < vDirList.size(); i++)
     {
         sDir = vDirList[i];
 
@@ -3122,7 +3122,7 @@ void reduceLogFilesize(const string& sFileName)
             return;
 
         // Copy the last 20.000 lines of the log file to the temporary file
-        for (unsigned int i = 0; i < nLines; i++)
+        for (size_t i = 0; i < nLines; i++)
         {
             getline(fFile, sTemp);
             if (nLines - i > MINLINES)
@@ -3247,7 +3247,7 @@ static bool handleRecursiveOperators(string& sExpr, size_t& nPos, size_t& nArgSe
 
         // Go through the remaining expression and try to find the end
         // of the current expression part
-        for (unsigned int j = nPos; j < sExpr.length(); j++)
+        for (size_t j = nPos; j < sExpr.length(); j++)
         {
             // Jump over parentheses
             if (!(nQuotes % 2)
@@ -3325,7 +3325,7 @@ static bool handleRecursiveOperators(string& sExpr, size_t& nPos, size_t& nArgSe
                 }
 
                 // Go through the expression and try to find the next argument separator
-                for (unsigned int k = nPos; k < sExpr.length(); k++)
+                for (size_t k = nPos; k < sExpr.length(); k++)
                 {
                     // Jump over parentheses
                     if (!(nQuotes % 2)
@@ -3453,7 +3453,7 @@ void evalRecursiveExpressions(string& sExpr)
             || sExpr.substr(0, 6) == "while(")
         return;
 
-    unsigned int nArgSepPos = 0;
+    size_t nArgSepPos = 0;
     int nQuotes = 0;
     bool bAnswerSuppressor = false;
 
@@ -3465,7 +3465,7 @@ void evalRecursiveExpressions(string& sExpr)
     }
 
     // Go through the complete expression
-    for (unsigned int i = 0; i < sExpr.length(); i++)
+    for (size_t i = 0; i < sExpr.length(); i++)
     {
         // Jump over parentheses
         if (!(nQuotes % 2)
@@ -3760,11 +3760,11 @@ std::complex<double> intPower(const std::complex<double>& dNumber, int nExponent
 /// to_cmd() function.
 ///
 /// \param sCmd const string&
-/// \param nPos unsigned int
+/// \param nPos size_t
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool isToCmd(const string& sCmd, unsigned int nPos)
+bool isToCmd(const string& sCmd, size_t nPos)
 {
     // Exclude border cases
     if (nPos < 6 || nPos >= sCmd.length())
@@ -3794,15 +3794,15 @@ bool isToCmd(const string& sCmd, unsigned int nPos)
 /// escaped dollar signs.
 ///
 /// \param sLine const string&
-/// \return unsigned int
+/// \return size_t
 ///
 /////////////////////////////////////////////////
-unsigned int countEscapeSymbols(const string& sLine)
+size_t countEscapeSymbols(const string& sLine)
 {
-    unsigned int nCount = 0;
+    size_t nCount = 0;
 
     // Go through the line
-    for (unsigned int i = 0; i < sLine.length(); i++)
+    for (size_t i = 0; i < sLine.length(); i++)
     {
         // If we find a escaped dollar sign, increment the counter
         if (sLine.substr(i, 2) == "\\$")

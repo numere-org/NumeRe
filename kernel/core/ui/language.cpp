@@ -99,7 +99,7 @@ map<string,string> Language::getLangFileContent(const string& sFile) const
 
         // Remove whitespaces in front of the first
         // equal sign
-        for (unsigned int i = 1; i < sLine.find('='); i++)
+        for (size_t i = 1; i < sLine.find('='); i++)
         {
             if (sLine[i] == ' ')
             {

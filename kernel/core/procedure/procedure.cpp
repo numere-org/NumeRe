@@ -180,7 +180,7 @@ Returnvalue Procedure::ProcCalc(string sLine, string sCurrentCommand, int& nByte
     {
         if (sLine.find("to_cmd(") != string::npos)
         {
-            unsigned int nPos = 0;
+            size_t nPos = 0;
 
             // As long as the "to_cmd()" function is found
             while (sLine.find("to_cmd(", nPos) != string::npos)
@@ -190,7 +190,7 @@ Returnvalue Procedure::ProcCalc(string sLine, string sCurrentCommand, int& nByte
                 if (isInQuotes(sLine, nPos))
                     continue;
 
-                unsigned int nParPos = getMatchingParenthesis(sLine.substr(nPos));
+                size_t nParPos = getMatchingParenthesis(sLine.substr(nPos));
 
                 if (nParPos == string::npos)
                     throw SyntaxError(SyntaxError::UNMATCHED_PARENTHESIS, sLine, nPos);
@@ -607,11 +607,11 @@ bool Procedure::setProcName(const string& sProc, bool bInstallFileName)
 /// \param _out Output&
 /// \param _pData PlotData&
 /// \param _script Script&
-/// \param nth_procedure unsigned int
+/// \param nth_procedure size_t
 /// \return Returnvalue
 ///
 /////////////////////////////////////////////////
-Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, FunctionDefinitionManager& _functions, MemoryManager& _data, Settings& _option, Output& _out, PlotData& _pData, Script& _script, unsigned int nth_procedure)
+Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, FunctionDefinitionManager& _functions, MemoryManager& _data, Settings& _option, Output& _out, PlotData& _pData, Script& _script, size_t nth_procedure)
 {
     // Measure the current stack size and ensure
     // that the current call won't exceed the
@@ -1272,7 +1272,7 @@ FlowCtrl::ProcedureInterfaceRetVal Procedure::procedureInterface(string& sLine, 
             throw SyntaxError(SyntaxError::INLINE_PROCEDURE_IS_NOT_INLINE, sLine, SyntaxError::invalid_position);
 
         sLine += " ";
-        unsigned int nPos = 0;
+        size_t nPos = 0;
         int nProc = 0;
 
         // Handle all procedure calls one after the other
@@ -1284,7 +1284,7 @@ FlowCtrl::ProcedureInterfaceRetVal Procedure::procedureInterface(string& sLine, 
 
             if (!isInQuotes(sLine, nPos, true))
             {
-                unsigned int nParPos = 0;
+                size_t nParPos = 0;
 
                 // Add namespaces, where necessary
                 if (__sName.find('~') == string::npos)
@@ -1312,7 +1312,7 @@ FlowCtrl::ProcedureInterfaceRetVal Procedure::procedureInterface(string& sLine, 
 
                 nParPos += getMatchingParenthesis(sLine.substr(nParPos));
                 __sVarList = __sVarList.substr(1, getMatchingParenthesis(__sVarList) - 1);
-                unsigned int nVarPos = 0;
+                size_t nVarPos = 0;
 
                 // Try to find other procedure calls in the argument
                 // list and prepend the current namespace
@@ -1338,8 +1338,8 @@ FlowCtrl::ProcedureInterfaceRetVal Procedure::procedureInterface(string& sLine, 
                 {
                     nPos += replaceReturnVal(sLine, _parser, tempreturnval, nPos - 1, nParPos + 1,
                                              "_~PROC~[" + mangleName(__sName) + "~"
-                                                + toString(nProc) + "_" + toString((int)nthRecursion) + "_"
-                                                + toString((int)(nth_command + nthRecursion)) + "]");
+                                                + toString(nProc) + "_" + toString(nthRecursion) + "_"
+                                                + toString(nth_command + nthRecursion) + "]");
                     nProc++;
                 }
 
@@ -1425,7 +1425,7 @@ FlowCtrl::ProcedureInterfaceRetVal Procedure::procedureInterface(string& sLine, 
                     {
                         string sReturn = "{";
 
-                        for (unsigned int v = 0; v < _return.vStringVal.size(); v++)
+                        for (size_t v = 0; v < _return.vStringVal.size(); v++)
                             sReturn += _return.vStringVal[v] + ",";
 
                         sReturn.back() = '}';
@@ -1474,8 +1474,8 @@ FlowCtrl::ProcedureInterfaceRetVal Procedure::procedureInterface(string& sLine, 
                     }
                     else
                     {
-                        _parser.SetVectorVar("_~PLUGIN[" + _procedure->getPluginProcName() + "~" + toString((int)nthRecursion) + "]", _return.vNumVal);
-                        sLine.replace(sLine.find("<<RETURNVAL>>"), 13, "_~PLUGIN[" + _procedure->getPluginProcName() + "~" + toString((int)(nth_command + nthRecursion)) + "]");
+                        _parser.SetVectorVar("_~PLUGIN[" + _procedure->getPluginProcName() + "~" + toString(nthRecursion) + "]", _return.vNumVal);
+                        sLine.replace(sLine.find("<<RETURNVAL>>"), 13, "_~PLUGIN[" + _procedure->getPluginProcName() + "~" + toString(nth_command + nthRecursion) + "]");
                     }
                 }
             }
@@ -1663,7 +1663,7 @@ bool Procedure::writeProcedure(string sProcedureLine)
                 sProcName = sFileName;
 
             // Write the procedure head comment
-            unsigned int nLength = _lang.get("PROC_FOOTER").length();
+            size_t nLength = _lang.get("PROC_FOOTER").length();
             fProcedure << "#**" << std::setfill('*') << std::setw(nLength) << '*' << endl;
             fProcedure << " * NUMERE-" << toUpperCase(_lang.get("COMMON_PROCEDURE")) << ": $" << sProcName << "()" << endl;
             fProcedure << " * " << std::setfill('=') << std::setw(nLength) << '=' << endl;
@@ -1766,7 +1766,7 @@ bool Procedure::writeProcedure(string sProcedureLine)
                  || sProcedureLine.find(" while(") != string::npos
                  || sProcedureLine.find(" endwhile") != string::npos)
         {
-            for (unsigned int n = 0; n < sProcedureLine.length(); n++)
+            for (size_t n = 0; n < sProcedureLine.length(); n++)
             {
                 if (sProcedureLine[n] == ' ' && !isInQuotes(sProcedureLine, n))
                 {
@@ -1932,7 +1932,7 @@ void Procedure::extractProcedureInformation(const string& sCmdLine, size_t nPos,
         }
         else
         {
-            for (unsigned int i = 0; i < sFileName.length(); i++)
+            for (size_t i = 0; i < sFileName.length(); i++)
             {
                 if (sFileName[i] == '~')
                 {
@@ -2568,10 +2568,10 @@ int Procedure::catchExceptionForTest(exception_ptr e_ptr, bool bSupressAnswer_ba
 /// current line number depending on whether a
 /// flow control statement is evaluated or not.
 ///
-/// \return unsigned int
+/// \return size_t
 ///
 /////////////////////////////////////////////////
-unsigned int Procedure::GetCurrentLine() const
+size_t Procedure::GetCurrentLine() const
 {
     // Get the line number from FlowCtrl
     if (bEvaluatingFlowControlStatements)
@@ -2593,13 +2593,13 @@ unsigned int Procedure::GetCurrentLine() const
 /// \param sLine string&
 /// \param _parser Parser&
 /// \param _return const Returnvalue&
-/// \param nPos unsigned int
-/// \param nPos2 unsigned int
+/// \param nPos size_t
+/// \param nPos2 size_t
 /// \param sReplaceName const string&
 /// \return size_t
 ///
 /////////////////////////////////////////////////
-size_t Procedure::replaceReturnVal(string& sLine, Parser& _parser, const Returnvalue& _return, unsigned int nPos, unsigned int nPos2, const string& sReplaceName)
+size_t Procedure::replaceReturnVal(string& sLine, Parser& _parser, const Returnvalue& _return, size_t nPos, size_t nPos2, const string& sReplaceName)
 {
     // If the return value is passed to the "return" command, then
     // simply use the current value as the next return value and
@@ -2738,7 +2738,7 @@ void Procedure::resetProcedure(Parser& _parser, bool bSupressAnswer)
 /////////////////////////////////////////////////
 void Procedure::extractCurrentNamespace(const string& sProc)
 {
-    for (unsigned int i = sProc.length() - 1; i >= 0; i--)
+    for (size_t i = sProc.length() - 1; i >= 0; i--)
     {
         if (sProc[i] == '\\' || sProc[i] == '/' || sProc[i] == '~')
         {
@@ -2749,7 +2749,7 @@ void Procedure::extractCurrentNamespace(const string& sProc)
             // character
             if (sThisNameSpace.find(':') == string::npos)
             {
-                for (unsigned int j = 0; j < sThisNameSpace.length(); j++)
+                for (size_t j = 0; j < sThisNameSpace.length(); j++)
                 {
                     if (sThisNameSpace[j] == '\\' || sThisNameSpace[j] == '/')
                         sThisNameSpace[j] = '~';
@@ -2884,7 +2884,7 @@ int Procedure::handleIncludeSyntax(string& sProcCommandLine, ifstream& fInclude,
             {
                 if (sIncludeFileName[__i] == ':'
                         && (__i > 1
-                            || (__i == 1 && sIncludeFileName.length() > (unsigned int)__i + 1 && sIncludeFileName[__i + 1] != '/')))
+                            || (__i == 1 && sIncludeFileName.length() > (size_t)__i + 1 && sIncludeFileName[__i + 1] != '/')))
                 {
                     sIncludeFileName.erase(sIncludeFileName.find(':'));
                     break;

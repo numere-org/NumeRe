@@ -42,7 +42,7 @@ const gsl_rng* getGslRandGenInstance();
 int findParameter(const std::string& sCmd, const std::string& sParam, const char cFollowing = ' ');
 bool getStringArgument(const std::string& sCmd, std::string& sArgument);
 std::string extractStringToken(const std::string& sCmd, size_t nPos);
-unsigned int getMatchingParenthesis(const StringView&);
+size_t getMatchingParenthesis(const StringView&);
 bool isMultiValue(const std::string& sExpr, bool bIgnoreClosingParenthesis = false);
 std::string replaceToTeX(const std::string& sString, bool replaceForTeXFile = false);
 Match findCommand(StringView sCmd, const std::string& sCommand = "");
@@ -61,9 +61,9 @@ enum ArgExtraction
     ARGEXTRACT_ASSTRING = 0x8
 };
 
-std::string getArgAtPos(const std::string& sCmd, unsigned int nPos, int extraction = ARGEXTRACT_STRIPPED);
-bool isInQuotes(StringView sExpr, unsigned int nPos, bool bIgnoreVarParser = false);
-bool isToStringArg(const std::string& sExpr, unsigned int nPos);
+std::string getArgAtPos(const std::string& sCmd, size_t nPos, int extraction = ARGEXTRACT_STRIPPED);
+bool isInQuotes(StringView sExpr, size_t nPos, bool bIgnoreVarParser = false);
+bool isToStringArg(const std::string& sExpr, size_t nPos);
 bool isDelimiter(char cChar);
 bool addLegends(std::string&);
 bool checkDelimiter(const std::string& sToken, bool stringdelim = false);
@@ -125,13 +125,13 @@ EndlessVector<std::string> getAllSemiColonSeparatedTokens(std::string sArgList);
 /** \brief Checks, whether the "to_cmd()" function was used
  *
  * \param sCmd const string&
- * \param nPos unsigned int
+ * \param nPos size_t
  * \return bool
  *
  */
-bool isToCmd(const std::string& sCmd, unsigned int nPos);
+bool isToCmd(const std::string& sCmd, size_t nPos);
 
-unsigned int countEscapeSymbols(const std::string& sLine);
+size_t countEscapeSymbols(const std::string& sLine);
 std::vector<std::string> getFileList(const std::string& sDirectory, const Settings& _option, int nFlags = 0);
 std::vector<std::string> getFolderList(const std::string& sDirectory, const Settings& _option, int nFlags = 0);
 

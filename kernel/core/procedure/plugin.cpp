@@ -480,7 +480,7 @@ void PackageManager::updatePluginFile()
         throw SyntaxError(SyntaxError::CANNOT_READ_FILE, "", SyntaxError::invalid_position, sPluginDefinitionFile);
 
     // Write the contents to file
-    for (unsigned int i = 0; i < vPackageInfo.size(); i++)
+    for (size_t i = 0; i < vPackageInfo.size(); i++)
     {
         fPlugins << vPackageInfo[i].exportDefinition() << std::endl;
     }
@@ -553,7 +553,7 @@ bool PackageManager::evalPluginCmd(std::string& sCmd)
         return false;
 
     // Find the plugin definition
-    for (unsigned int i = 0; i < vPackageInfo.size(); i++)
+    for (size_t i = 0; i < vPackageInfo.size(); i++)
     {
         if (findCommand(sCmd, vPackageInfo[i].sCommand).sString == vPackageInfo[i].sCommand)
         {
@@ -614,7 +614,7 @@ bool PackageManager::evalPluginCmd(std::string& sCmd)
 
     sCommand = "\"" + sCommandLine + "\"";
 
-    for (unsigned int i = 1; i < sCommandLine.length()-1; i++)
+    for (size_t i = 1; i < sCommandLine.length()-1; i++)
     {
         if (sCommandLine[i] == '"' && sCommandLine[i-1] != '\\')
             sCommandLine.insert(i,1,'\\');
@@ -622,7 +622,7 @@ bool PackageManager::evalPluginCmd(std::string& sCmd)
 
     if (sParams.length())
     {
-        for (unsigned int i = 1; i < sParams.length()-1; i++)
+        for (size_t i = 1; i < sParams.length()-1; i++)
         {
             if (sParams[i] == '"' && sParams[i-1] != '\\')
                 sParams.insert(i,1,'\\');
@@ -694,7 +694,7 @@ bool PackageManager::declareNewPackage(const std::string& sInstallInfoString)
     // Append the plugin or override an existing one
     if (vPackageInfo.size())
     {
-        for (unsigned int i = 0; i < vPackageInfo.size(); i++)
+        for (size_t i = 0; i < vPackageInfo.size(); i++)
         {
             // Identical plugin command found?
             if (_package.isPlugin() && vPackageInfo[i].sCommand == _package.sCommand)
@@ -704,7 +704,7 @@ bool PackageManager::declareNewPackage(const std::string& sInstallInfoString)
                 {
                     // Plugin names have to be unique: ensure that there's no
                     // duplicate
-                    for (unsigned int j = i+1; j < vPackageInfo.size(); j++)
+                    for (size_t j = i+1; j < vPackageInfo.size(); j++)
                     {
                         if (vPackageInfo[j].sName == _package.sName && vPackageInfo[j] != _package)
                             throw SyntaxError(SyntaxError::PLUGINNAME_ALREADY_EXISTS, "", SyntaxError::invalid_position, _package.getName());
@@ -779,7 +779,7 @@ void PackageManager::addHelpIndex(const std::string& _sPluginName, std::string _
     if (sPluginName.length())
     {
         // Search for the plugin with the selected name
-        for (unsigned int i = 0; i < vPackageInfo.size(); i++)
+        for (size_t i = 0; i < vPackageInfo.size(); i++)
         {
             // Identical name found? Append the documentation
             // index ID
@@ -833,7 +833,7 @@ bool PackageManager::isPluginCmd(const std::string& sCmd) const
 
     if (vPackageInfo.size())
     {
-        for (unsigned int i = 0; i < vPackageInfo.size(); i++)
+        for (size_t i = 0; i < vPackageInfo.size(); i++)
         {
             if (vPackageInfo[i].isPlugin() && findCommand(sCmd, vPackageInfo[i].sCommand).sString == vPackageInfo[i].sCommand)
                 return true;

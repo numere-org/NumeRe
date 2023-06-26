@@ -22,7 +22,7 @@
 #include "../../kernel/core/ui/language.hpp"
 #include "../../kernel/core/ui/winlayout.hpp"
 #include "../../kernel/core/utils/tools.hpp"
-#include "../../kernel/core/utils/tinyxml2.h"
+#include "../../externals/tinyxml2/tinyxml2.h"
 #include "../../kernel/core/procedure/dependency.hpp"
 #include "../../kernel/core/procedure/includer.hpp"
 #include "../../kernel/core/io/styledtextfile.hpp"

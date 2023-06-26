@@ -113,7 +113,7 @@ std::string FileSystem::cleanPath(std::string sFilePath, bool checkInvalidChars)
 
     const std::string sINVALID_CHARS = "\"#%&<>|";
 
-    for (unsigned int i = 0; i < sFilePath.length(); i++)
+    for (size_t i = 0; i < sFilePath.length(); i++)
     {
         if (sFilePath[i] == (char)142)
             sFilePath[i] = 'Ä';
@@ -241,7 +241,7 @@ int FileSystem::createFolders(const std::string& _sPath) const
     // create them recursively here
     if (GetLastError() == ERROR_PATH_NOT_FOUND)
     {
-        for (unsigned int i = 0; i < _sPath.length(); i++)
+        for (size_t i = 0; i < _sPath.length(); i++)
         {
             if (_sPath[i] == '/' || _sPath[i] == '\\')
             {
@@ -283,7 +283,7 @@ std::string FileSystem::ValidFileName(std::string _sFileName, const std::string 
 
     // Find the position of the last colon in the string
     // should be directly after the drive letter
-    unsigned int nPos = _sFileName.find_last_of(':');
+    size_t nPos = _sFileName.find_last_of(':');
 
     // If there's no colon in the current path, then it is a
     // network address
@@ -340,7 +340,7 @@ std::string FileSystem::ValidFileName(std::string _sFileName, const std::string 
     resolveWildCards(sValid, true, checkExtension);
 
     // Ensure that the file path separators are unix-like
-    for (unsigned int i = 0; i < sValid.length(); i++)
+    for (size_t i = 0; i < sValid.length(); i++)
     {
         if (sValid[i] == '\\')
             sValid[i] = '/';
@@ -367,7 +367,7 @@ std::string FileSystem::ValidFolderName(std::string _sFileName, bool doCleanPath
 
     // Find the position of the last colon in the string
     // should be directly after the drive letter
-    unsigned int nPos = _sFileName.find_last_of(':');
+    size_t nPos = _sFileName.find_last_of(':');
 
     // If there's no colon in the current path, then it is a
     // network address
@@ -386,7 +386,7 @@ std::string FileSystem::ValidFolderName(std::string _sFileName, bool doCleanPath
         resolveWildCards(_sFileName, true, false);
 
     // Ensure that the file path separators are unix-like
-    for (unsigned int i = 0; i < _sFileName.length(); i++)
+    for (size_t i = 0; i < _sFileName.length(); i++)
     {
         if (_sFileName[i] == '\\')
             _sFileName[i] = '/';
@@ -450,7 +450,7 @@ int FileSystem::setPath(std::string _sPath, bool bMkDir, std::string _sExePath)
 
     if (sPath.find('<') != std::string::npos)
     {
-        for (unsigned int i = 0; i < 6; i++)
+        for (size_t i = 0; i < 6; i++)
         {
             if (sPath.find(sTokens[i][0]) != std::string::npos)
                 sPath.replace(sPath.find(sTokens[i][0]), sTokens[i][0].length(), sTokens[i][1]);
@@ -459,7 +459,7 @@ int FileSystem::setPath(std::string _sPath, bool bMkDir, std::string _sExePath)
 
     if (sPath.find('~') != std::string::npos)
     {
-        for (unsigned int i = 0; i < sPath.length(); i++)
+        for (size_t i = 0; i < sPath.length(); i++)
         {
             if (sPath[i] == '~')
                 sPath[i] = '/';
