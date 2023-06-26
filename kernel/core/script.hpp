@@ -59,7 +59,7 @@ class Script : public FileSystem
         std::string sInstallID;
 
         std::vector<std::string> vInstallPackages;
-        unsigned int nCurrentPackage;
+        size_t nCurrentPackage;
 
         FunctionDefinitionManager _localDef;
         SymDefManager _symdefs;
@@ -88,7 +88,7 @@ class Script : public FileSystem
         {
             _localDef.setPredefinedFuncs(sPredefined);
         }
-        inline unsigned int getCurrentLine() const
+        inline size_t getCurrentLine() const
             {return m_include && m_include->is_open() ? m_include->getCurrentLine() : nLine;}
         void openScript(std::string& _sScriptFileName);
         void close();

@@ -95,7 +95,7 @@ string Output::replaceTeXControls(const string& _sText)
 {
     string sReturn = _sText;
 
-    for (unsigned int i = 0; i < sReturn.length(); i++)
+    for (size_t i = 0; i < sReturn.length(); i++)
     {
         if (sReturn[i] == 'Ä' || sReturn[i] == (char)142)
             sReturn.replace(i,1,"\\\"A");
@@ -280,7 +280,7 @@ void Output::print(string sOutput)
     {
         if (sOutput.find("<<SUMBAR>>") != string::npos)
         {
-            unsigned int nLength = sOutput.length();
+            size_t nLength = sOutput.length();
 
             if (!bFile)
                 sOutput.assign(nLength, '-');
@@ -405,8 +405,8 @@ void Output::format(string** _sMatrix, long long int _nCol, long long int _nLine
     if (!nHeadLineCount)
         nHeadLineCount = 1;
 
-    unsigned int nLongest[_nCol];		// Int fuer die laengste Zeichenkette: unsigned da string::length() einen unsigned zurueck gibt
-    unsigned int nLen = 0;			// Int fuer die aktuelle Laenge: dito
+    size_t nLongest[_nCol];		// Int fuer die laengste Zeichenkette: unsigned da string::length() einen unsigned zurueck gibt
+    size_t nLen = 0;			// Int fuer die aktuelle Laenge: dito
     string sPrint = "";				// String fuer die endgueltige Ausgabe
     string sLabel = sFileName;
 
@@ -562,7 +562,7 @@ void Output::format(string** _sMatrix, long long int _nCol, long long int _nLine
                 sPrint = sPrint.substr(0,sPrint.length()-2) + "\\\\\n";
             }
 
-            for (unsigned int i = 0; i < sPrint.length(); i++)
+            for (size_t i = 0; i < sPrint.length(); i++)
             {
                 if (sPrint[i] == '_')
                     sPrint[i] = ' ';
@@ -607,7 +607,7 @@ void Output::format(string** _sMatrix, long long int _nCol, long long int _nLine
     {
         long long int nCol_0 = 0;
         long long int nCol_1 = _nCol;
-        unsigned int nLine = 0;
+        size_t nLine = 0;
         int nNotRepeatFirstCol = 1;
 
         if (!bFile && _option.getWindow()-4 < nLen)
@@ -648,7 +648,7 @@ void Output::format(string** _sMatrix, long long int _nCol, long long int _nLine
                             else if (!bFile)
                                 sPrint = "|  ";
 
-                            for (unsigned int n = 0; n < nLongest[j] - _sMatrix[i][j].length() - 1; n++)
+                            for (size_t n = 0; n < nLongest[j] - _sMatrix[i][j].length() - 1; n++)
                             {
                                 sPrint += " ";	// Auf jeden Fall die Leerstellen zum Ausrichten ergaenzen
                             }
@@ -660,7 +660,7 @@ void Output::format(string** _sMatrix, long long int _nCol, long long int _nLine
                             else if (bPrintTeX && j)
                                 sPrint += " &";
 
-                            for (unsigned int n = 0; n < nLongest[j] - _sMatrix[i][j].length(); n++)
+                            for (size_t n = 0; n < nLongest[j] - _sMatrix[i][j].length(); n++)
                             {
                                 sPrint += " ";
                             }
@@ -696,7 +696,7 @@ void Output::format(string** _sMatrix, long long int _nCol, long long int _nLine
 
                     if (bPrintTeX && i < nHeadLineCount)
                     {
-                        for (unsigned int k = 0; k < sPrint.length(); k++)
+                        for (size_t k = 0; k < sPrint.length(); k++)
                         {
                             if (sPrint[k] == '_')
                                 sPrint[k] = ' ';
@@ -715,7 +715,7 @@ void Output::format(string** _sMatrix, long long int _nCol, long long int _nLine
 
                     for (long long int j = nCol_0*nNotRepeatFirstCol; j < nCol_1; j++)
                     {
-                        for (unsigned int k = 0; k < nLongest[j] - 5; k++)
+                        for (size_t k = 0; k < nLongest[j] - 5; k++)
                         {
                             if (j == nCol_0*nNotRepeatFirstCol && k == nLongest[j]-6)
                                 break;

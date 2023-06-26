@@ -99,9 +99,9 @@ namespace mu
 			mutable std::list<mu::value_type*> m_lDataStorage;
 
 			// Bytecode caching and loop caching interface section
-			void ActivateLoopMode(unsigned int _nLoopLength);
+			void ActivateLoopMode(size_t _nLoopLength);
 			void DeactivateLoopMode();
-			void SetIndex(unsigned int _nLoopElement);
+			void SetIndex(size_t _nLoopElement);
 			void SetCompiling(bool _bCompiling = true);
 			bool IsCompiling();
 			void CacheCurrentAccess(const CachedDataAccess& _access);
@@ -113,7 +113,7 @@ namespace mu
 			const std::string& GetCachedEquation() const;
 			void CacheCurrentTarget(const std::string& sEquation);
 			const std::string& GetCachedTarget() const;
-			int IsValidByteCode(unsigned int _nthLoopElement = -1, unsigned int _nthPartEquation = 0);
+			int IsValidByteCode(size_t _nthLoopElement = -1, size_t _nthPartEquation = 0);
 			bool ActiveLoopMode() const;
 			bool IsLockedPause() const;
 			void LockPause(bool _bLock = true);
@@ -339,9 +339,9 @@ namespace mu
 
 			mutable vectormap_type mVectorVars;
 
-			unsigned int nthLoopElement;
-			unsigned int nthLoopPartEquation;
-			unsigned int nCurrVectorIndex;
+			size_t nthLoopElement;
+			size_t nthLoopPartEquation;
+			size_t nCurrVectorIndex;
 			bool bMakeLoopByteCode;
 			bool bPauseLoopByteCode;
 			bool bPauseLock;

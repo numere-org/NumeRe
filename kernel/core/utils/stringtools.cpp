@@ -19,8 +19,8 @@
 #include "stringtools.hpp"
 #include "../settings.hpp"
 #include "../structures.hpp"
-#include "fast_float/fast_float.h"
 
+#include <fast_float/fast_float.h>
 #include <cstring>
 #include <sstream>
 #include <iomanip>
@@ -345,6 +345,22 @@ std::string toHexString(int nNumber)
 
 
 /////////////////////////////////////////////////
+/// \brief Converts an integer to a hexadecimal
+/// number printed as string.
+///
+/// \param nNumber size_t
+/// \return std::string
+///
+/////////////////////////////////////////////////
+std::string toHexString(size_t nNumber)
+{
+    std::ostringstream Temp;
+    Temp << std::hex << nNumber;
+    return "0x" + Temp.str();
+}
+
+
+/////////////////////////////////////////////////
 /// \brief This function converts a std::string
 /// into a std::vector, where the string shall be
 /// passed as "{x,y,z,...}"
@@ -413,7 +429,7 @@ std::string condenseText(const std::string& sText)
 {
     std::string sReturn = sText;
     static std::string sToErase = " AaEeIiOoUuÄäÖöÜüßYy";
-    for (unsigned int i = 0; i < sReturn.length(); i++)
+    for (size_t i = 0; i < sReturn.length(); i++)
     {
         if (sToErase.find(sReturn[i]) != std::string::npos
                 || sReturn[i] == 142
@@ -896,7 +912,7 @@ std::string toExternalString(std::string sStr)
 std::string toLowerCase(const std::string& sUpperCase)
 {
     std::string sLowerCase = sUpperCase;
-    for (unsigned int i = 0; i < sLowerCase.length(); i++)
+    for (size_t i = 0; i < sLowerCase.length(); i++)
     {
         // --> Laufe alle Zeichen im String ab und pruefe, ob ihr CHAR-Wert zwischen A und Z liegt
         if ((int)sLowerCase[i] >= (int)'A' && (int)sLowerCase[i] <= (int)'Z')
@@ -932,7 +948,7 @@ std::string toLowerCase(const std::string& sUpperCase)
 std::string toUpperCase(const std::string& sLowerCase)
 {
     std::string sUpperCase = sLowerCase;
-    for (unsigned int i = 0; i < sUpperCase.length(); i++)
+    for (size_t i = 0; i < sUpperCase.length(); i++)
     {
         // Handle escape characters like linebreaks or tabulator characters
         if ((!i || sUpperCase[i - 1] != '\\') && (sUpperCase.substr(i, 2) == "\\n" || sUpperCase.substr(i, 2) == "\\t"))
@@ -1239,7 +1255,7 @@ std::string wcstombs(const std::wstring& wStr)
     char* cBuf = new char[wStr.length() * 2 + 1];
 
     // transform the wstring into the target array
-    unsigned int nRet = wcstombs(cBuf, wStr.c_str(), wStr.length() * 2 + 1);
+    size_t nRet = wcstombs(cBuf, wStr.c_str(), wStr.length() * 2 + 1);
 
     // Write the zero character and copy the contents of the character
     // array to the target string
@@ -1278,7 +1294,7 @@ std::string toSystemCodePage(std::string sOutput)
 /////////////////////////////////////////////////
 std::string fromSystemCodePage(std::string sOutput)
 {
-    for (unsigned int i = 0; i < sOutput.length(); i++)
+    for (size_t i = 0; i < sOutput.length(); i++)
     {
         if (sOutput[i] == (char)142)
             sOutput[i] = 'Ä';
@@ -1648,7 +1664,7 @@ std::string replacePathSeparator(const std::string& __sPath)
     std::string sPath = __sPath;
 
     // Go through the whole string
-    for (unsigned int i = 0; i < sPath.length(); i++)
+    for (size_t i = 0; i < sPath.length(); i++)
     {
         // Replace the backslash
         if (sPath[i] == '\\')

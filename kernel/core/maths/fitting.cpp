@@ -459,7 +459,7 @@ static vector<double> evaluateFittingParams(FittingData& fitData, string& sCmd, 
     }
 
     // Separate expression from the command line option list
-    for (unsigned int i = 0; i < sCmd.length(); i++)
+    for (size_t i = 0; i < sCmd.length(); i++)
     {
         if (sCmd[i] == '(')
             i += getMatchingParenthesis(sCmd.substr(i));
@@ -484,7 +484,7 @@ static vector<double> evaluateFittingParams(FittingData& fitData, string& sCmd, 
 
     // Insert the command line option list after the intervals
     // were parsed into the original command line
-    for (unsigned int i = 0; i < fitData.sFitFunction.length(); i++)
+    for (size_t i = 0; i < fitData.sFitFunction.length(); i++)
     {
         if (fitData.sFitFunction[i] == '(')
             i += getMatchingParenthesis(fitData.sFitFunction.substr(i));
@@ -1025,7 +1025,7 @@ static int getDataForFit(const string& sCmd, string& sDimsForFitLog, FittingData
     }
     else
     {
-        for (unsigned int i = 0; i < _idx.row.size(); i++)
+        for (size_t i = 0; i < _idx.row.size(); i++)
         {
             if (_data.isValidElement(_idx.row[i], _idx.col[0], sDataTable)
                 && _data.isValidElement(_idx.row[i], _idx.col[1], sDataTable))
@@ -1159,7 +1159,7 @@ static bool calculateChiMap(string sFunctionDefString, const string& sFuncDispla
         {
             auto iter = paramsMap.begin();
 
-            for (unsigned int n = 0; n < vInitialVals.size(); n++)
+            for (size_t n = 0; n < vInitialVals.size(); n++)
             {
                 *(iter->second) = vInitialVals[n];
                 ++iter;
@@ -1242,7 +1242,7 @@ static bool calculateChiMap(string sFunctionDefString, const string& sFuncDispla
 
     auto iter = paramsMap.begin();
 
-    for (unsigned int n = 0; n < vInitialVals.size(); n++)
+    for (size_t n = 0; n < vInitialVals.size(); n++)
     {
         *(iter->second) = vInitialVals[n];
         ++iter;
@@ -1358,9 +1358,9 @@ static void calculateCovarianceData(FittingData& fitData, double dChisq, size_t 
 
     // SCale all elements in the covariance matrix with the
     // calculated factor
-    for (unsigned int i = 0; i < fitData.vz_w.size(); i++)
+    for (size_t i = 0; i < fitData.vz_w.size(); i++)
     {
-        for (unsigned int j = 0; j < fitData.vz_w[0].size(); j++)
+        for (size_t j = 0; j < fitData.vz_w[0].size(); j++)
         {
             fitData.vz_w[i][j] *= dFactor;
         }
@@ -1389,9 +1389,9 @@ static string getFitOptionsTable(Fitcontroller& _fControl, FittingData& fitData,
     }
 
     if (fitData.bUseErrors)
-        sFitParameterTable += sPrefix + _lang.get("PARSERFUNCS_FIT_POINTS_W_ERR", toString((int)nSize)) + "\n";
+        sFitParameterTable += sPrefix + _lang.get("PARSERFUNCS_FIT_POINTS_W_ERR", toString(nSize)) + "\n";
     else
-        sFitParameterTable += sPrefix + _lang.get("PARSERFUNCS_FIT_POINTS_WO_ERR", toString((int)nSize)) + "\n";
+        sFitParameterTable += sPrefix + _lang.get("PARSERFUNCS_FIT_POINTS_WO_ERR", toString(nSize)) + "\n";
 
     if (fitData.restricted[0])
         sFitParameterTable += sPrefix + _lang.get("PARSERFUNCS_FIT_COORD_RESTRICTS", "x", toString(fitData.ivl[0].min(), 5), toString(fitData.ivl[0].max(), 5)) + "\n";
@@ -1406,7 +1406,7 @@ static string getFitOptionsTable(Fitcontroller& _fControl, FittingData& fitData,
     if (fitData.sRestrictions.length())
         sFitParameterTable += sPrefix + _lang.get("PARSERFUNCS_FIT_PARAM_RESTRICTS", fitData.sRestrictions) + "\n";
 
-    sFitParameterTable += sPrefix + _lang.get("PARSERFUNCS_FIT_FREEDOMS", toString((int)nSize - paramsMap.size())) + "\n";
+    sFitParameterTable += sPrefix + _lang.get("PARSERFUNCS_FIT_FREEDOMS", toString(nSize - paramsMap.size())) + "\n";
     sFitParameterTable += sPrefix + _lang.get("PARSERFUNCS_FIT_ALGORITHM_SETTINGS", toString(fitData.dPrecision, 5), toString(fitData.nMaxIterations)) + "\n";
     sFitParameterTable += sPrefix + _lang.get("PARSERFUNCS_FIT_ITERATIONS", toString(_fControl.getIterations())) + "\n";
 
@@ -1434,7 +1434,7 @@ static string constructCovarianceMatrix(FittingData& fitData, size_t paramsMapSi
     string sCovMatrix;
 
     // Construct the whole matrix as a string
-    for (unsigned int n = 0; n < paramsMapSize; n++)
+    for (size_t n = 0; n < paramsMapSize; n++)
     {
         // The terminal requires some indentation
         if (!forFitLog)
@@ -1449,7 +1449,7 @@ static string constructCovarianceMatrix(FittingData& fitData, size_t paramsMapSi
             sCovMatrix += "|";
 
         // Write the current matrix line
-        for (unsigned int k = 0; k < paramsMapSize; k++)
+        for (size_t k = 0; k < paramsMapSize; k++)
         {
             sCovMatrix += " " + strfill(toString(fitData.vz_w[n][k] / sqrt(fabs(fitData.vz_w[n][n] * fitData.vz_w[k][k])), 3), 10);
         }
@@ -1520,7 +1520,7 @@ static double calculatePercentageAvgAndCreateParserVariables(FittingData& fitDat
     // Go through all fitting parameters and summarize the
     // percentual errors and construct error variables, if the
     // user required them
-    for (unsigned int n = 0; n < paramsMap.size(); n++)
+    for (size_t n = 0; n < paramsMap.size(); n++)
     {
         if (pItem == paramsMap.end())
             break;
@@ -1630,9 +1630,9 @@ static void createTeXExport(Fitcontroller& _fControl, const string& sTeXExportFi
     oTeXExport << "\t\\item " << _lang.get("PARSERFUNCS_FIT_FITTED_FUNC", "$" + replaceToTeX(sFittedFunction, true) + "$") << endl;
 
     if (fitData.bUseErrors)
-        oTeXExport << "\t\\item " << _lang.get("PARSERFUNCS_FIT_POINTS_W_ERR", toString((int)nSize)) << endl;
+        oTeXExport << "\t\\item " << _lang.get("PARSERFUNCS_FIT_POINTS_W_ERR", toString(nSize)) << endl;
     else
-        oTeXExport << "\t\\item " << _lang.get("PARSERFUNCS_FIT_POINTS_WO_ERR", toString((int)nSize)) << endl;
+        oTeXExport << "\t\\item " << _lang.get("PARSERFUNCS_FIT_POINTS_WO_ERR", toString(nSize)) << endl;
 
     if (fitData.restricted[0])
         oTeXExport << "\t\\item " << _lang.get("PARSERFUNCS_FIT_COORD_RESTRICTS", "x", toString(fitData.ivl[0].min(), 5), toString(fitData.ivl[0].max(), 5)) << endl;
@@ -1646,7 +1646,7 @@ static void createTeXExport(Fitcontroller& _fControl, const string& sTeXExportFi
     if (fitData.sRestrictions.length())
         oTeXExport << "\t\\item " << _lang.get("PARSERFUNCS_FIT_PARAM_RESTRICTS", "$" + replaceToTeX(fitData.sRestrictions, true) + "$") << endl;
 
-    oTeXExport << "\t\\item " << _lang.get("PARSERFUNCS_FIT_FREEDOMS", toString((int)nSize - paramsMap.size())) << endl;
+    oTeXExport << "\t\\item " << _lang.get("PARSERFUNCS_FIT_FREEDOMS", toString(nSize - paramsMap.size())) << endl;
     oTeXExport << "\t\\item " << _lang.get("PARSERFUNCS_FIT_ALGORITHM_SETTINGS", toString(fitData.dPrecision, 5), toString(fitData.nMaxIterations)) << endl;
     oTeXExport << "\t\\item " << _lang.get("PARSERFUNCS_FIT_ITERATIONS", toString(_fControl.getIterations())) << endl;
 
@@ -1694,7 +1694,7 @@ static void createTeXExport(Fitcontroller& _fControl, const string& sTeXExportFi
     string sPMSign = " ";
 
     // Write the fitting parameters linewise to the table
-    for (unsigned int n = 0; n < paramsMap.size(); n++)
+    for (size_t n = 0; n < paramsMap.size(); n++)
     {
         if (pItem == paramsMap.end())
             break;
@@ -1725,11 +1725,11 @@ static void createTeXExport(Fitcontroller& _fControl, const string& sTeXExportFi
         oTeXExport << endl << "\\subsection{" << _lang.get("PARSERFUNCS_FIT_CORRELMAT_HEAD") << "}" << endl;
         oTeXExport << "\\[" << endl << "\t\\begin{pmatrix}" << endl;
 
-        for (unsigned int n = 0; n < paramsMap.size(); n++)
+        for (size_t n = 0; n < paramsMap.size(); n++)
         {
             oTeXExport << "\t\t";
 
-            for (unsigned int k = 0; k < paramsMap.size(); k++)
+            for (size_t k = 0; k < paramsMap.size(); k++)
             {
                 oTeXExport << fitData.vz_w[n][k] / sqrt(fabs(fitData.vz_w[n][n]*fitData.vz_w[k][k]));
 

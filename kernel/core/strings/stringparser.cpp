@@ -117,7 +117,7 @@ namespace NumeRe
 
                     for (size_t i = 0; i < _idx.row.size(); i++)
                     {
-                        vStrings.push_back("\"" +  _data.readString((unsigned int)_idx.row[i], _idx.col.front()) + "\"");
+                        vStrings.push_back("\"" +  _data.readString((size_t)_idx.row[i], _idx.col.front()) + "\"");
                     }
 
                     sString = createStringVectorVar(vStrings);
@@ -348,8 +348,8 @@ namespace NumeRe
         std::string sLineToParsed = sLine + " ";
         std::string sLineToParsedTemp;
 
-        unsigned int nPos = 0;
-        unsigned int n_pos = 0;
+        size_t nPos = 0;
+        size_t n_pos = 0;
 
         // As long as there are further "#"
         while (sLineToParsed.find('#', nPos) != std::string::npos)
@@ -368,7 +368,7 @@ namespace NumeRe
                 // need to prepend zeros. Get the prefix here
                 if (sLineToParsed[0] == '~')
                 {
-                    for (unsigned int i = 0; i < sLineToParsed.length(); i++)
+                    for (size_t i = 0; i < sLineToParsed.length(); i++)
                     {
                         if (sLineToParsed[i] != '~')
                         {
@@ -1784,7 +1784,7 @@ namespace NumeRe
         std::vector<bool> vIsNoStringValue(vFinal.size(), false);
 
         // Examine the whole passed vector
-        for (unsigned int n = 0; n < vFinal.size(); n++)
+        for (size_t n = 0; n < vFinal.size(); n++)
         {
             // Strip whitespaces and ensure that the
             // current component is not empy

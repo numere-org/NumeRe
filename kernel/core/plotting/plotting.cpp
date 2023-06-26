@@ -226,7 +226,8 @@ static void writeTiff(mglGraph* _graph, const string& sOutputName)
 Plot::Plot(string& sCmd, MemoryManager& __data, Parser& __parser, Settings& __option, FunctionDefinitionManager& __functions, PlotData& __pData)
     : _data(__data), _parser(__parser), _option(__option), _functions(__functions), _pData(__pData)
 {
-    _graph = new mglGraph();
+    _graph = new mglGraph(0);
+    _graph->SetPenDelta(0.65);
     bOutputDesired = false;             // if a output directly into a file is desired
 
     _pInfo.sCommand = "";
@@ -245,10 +246,10 @@ Plot::Plot(string& sCmd, MemoryManager& __data, Parser& __parser, Settings& __op
     sOutputName.clear();
 
     vector<string> vPlotCompose;
-    unsigned int nMultiplots[2] = {0, 0};
+    size_t nMultiplots[2] = {0, 0};
 
-    unsigned int nSubPlots = 0;
-    unsigned int nSubPlotMap = 0;
+    size_t nSubPlots = 0;
+    size_t nSubPlotMap = 0;
 
 
     // Pre-analyze the contents of the passed plotting command. If it
@@ -275,8 +276,8 @@ Plot::Plot(string& sCmd, MemoryManager& __data, Parser& __parser, Settings& __op
             // Only use the option value, if it contains two values
             if (nRes == 2)
             {
-                nMultiplots[1] = (unsigned int)intCast(v[0]);
-                nMultiplots[0] = (unsigned int)intCast(v[1]);
+                nMultiplots[1] = (size_t)intCast(v[0]);
+                nMultiplots[0] = (size_t)intCast(v[1]);
             }
 
             // Remove everything up to the first command in the
@@ -307,7 +308,7 @@ Plot::Plot(string& sCmd, MemoryManager& __data, Parser& __parser, Settings& __op
         }
 
         // Gather all parameters from all contained plotting commands
-        for (unsigned int i = 0; i < vPlotCompose.size(); i++)
+        for (size_t i = 0; i < vPlotCompose.size(); i++)
         {
             if (vPlotCompose[i].find("-set") != string::npos
                     && !isInQuotes(vPlotCompose[i], vPlotCompose[i].find("-set"))
@@ -374,7 +375,7 @@ Plot::Plot(string& sCmd, MemoryManager& __data, Parser& __parser, Settings& __op
 
             // Gather each plotting parameter until the next "subplot" command or until the end of the
             // whole block
-            for (unsigned int i = nPlotStart; i < vPlotCompose.size(); i++)
+            for (size_t i = nPlotStart; i < vPlotCompose.size(); i++)
             {
                 // Leave the loop, if the current command equals "subplot"
                 if (findCommand(vPlotCompose[i]).sString == "subplot")
@@ -434,6 +435,8 @@ Plot::Plot(string& sCmd, MemoryManager& __data, Parser& __parser, Settings& __op
             }
             else if (sOutputName.substr(sOutputName.length()-4) == ".tif" || sOutputName.substr(sOutputName.length()-5) == ".tiff")
                 writeTiff(_graph, sOutputName);
+            else if (sOutputName.substr(sOutputName.length()-4) == ".png")
+                _graph->WritePNG(sOutputName.c_str(), "", false);
             else
                 _graph->WriteFrame(sOutputName.c_str());
 
@@ -552,7 +555,7 @@ size_t Plot::createSubPlotSet(bool& bAnimateVar, vector<string>& vPlotCompose, s
     // This loop will iterate through the plotting commands from
     // the passed starting index until the end or until the command
     // "subplot" has been found
-    for (unsigned int nPlotCompose = nSubPlotStart; nPlotCompose < vPlotCompose.size(); nPlotCompose++)
+    for (size_t nPlotCompose = nSubPlotStart; nPlotCompose < vPlotCompose.size(); nPlotCompose++)
     {
         m_types.clear();
         sCmd = vPlotCompose[nPlotCompose];
@@ -1759,14 +1762,14 @@ bool Plot::plotstd(mglData& _mData, mglData& _mAxisVals, mglData _mData2[3], con
                          (_pInfo.sLineStyles[_pInfo.nStyle]+_pInfo.sLineStyles[nNextStyle]).c_str());
         else if (_pData.getSettings(PlotData::LOG_CANDLESTICK))
             _graph->Candle(_mAxisVals, _mData2[2], _mData, _mData2[1], _mData2[0],
-                           (_pInfo.sLineStyles[_pInfo.nStyle]+_pInfo.sLineStyles[nNextStyle]).c_str());
+                           (_pData.getColors().substr(_pInfo.nStyle, 1)+_pData.getColors().substr(nNextStyle, 1)).c_str());
         else if (!_pData.getSettings(PlotData::LOG_XERROR) && !_pData.getSettings(PlotData::LOG_YERROR))
         {
             if (_pData.getSettings(PlotData::LOG_INTERPOLATE) && countValidElements(_mData) >= (size_t)_pInfo.nSamples)
             {
                 if (_pData.getSettings(PlotData::FLOAT_BARS))
                     _graph->Bars(_mAxisVals, _mData,
-                                 (composeColoursForBarChart(_mData.ny) + "^").c_str());
+                                 ("F" + composeColoursForBarChart(_mData.ny)).c_str());
                 else if (_pData.getSettings(PlotData::LOG_REGION) && getNN(_mData2[0]) > 1)
                 {
                     _graph->Region(_mAxisVals, _mData, _mData2[0],
@@ -1791,7 +1794,7 @@ bool Plot::plotstd(mglData& _mData, mglData& _mAxisVals, mglData _mData2[3], con
             {
                 if (_pData.getSettings(PlotData::FLOAT_BARS))
                     _graph->Bars(_mAxisVals, _mData,
-                                 (composeColoursForBarChart(_mData.ny) + "^").c_str());
+                                 ("F" + composeColoursForBarChart(_mData.ny)).c_str());
                 else if (_pData.getSettings(PlotData::LOG_STEPPLOT))
                     _graph->Step(_mAxisVals, _mData,
                                  (_pInfo.sLineStyles[_pInfo.nStyle]).c_str());
@@ -1807,10 +1810,10 @@ bool Plot::plotstd(mglData& _mData, mglData& _mAxisVals, mglData _mData2[3], con
 
                 if (_pData.getSettings(PlotData::FLOAT_BARS))
                     _graph->Bars(_mAxisVals, _mData,
-                                 (composeColoursForBarChart(_mData.ny) + "^").c_str());
+                                 ("F" + composeColoursForBarChart(_mData.ny)).c_str());
                 else if (_pData.getSettings(PlotData::FLOAT_HBARS))
                     _graph->Barh(_mAxisVals, _mData,
-                                 (composeColoursForBarChart(_mData.ny) + "^").c_str());
+                                 ("F" + composeColoursForBarChart(_mData.ny)).c_str());
                 else if (_pData.getSettings(PlotData::LOG_STEPPLOT))
                     _graph->Step(_mAxisVals, _mData,
                                  (_pInfo.sLineStyles[_pInfo.nStyle]).c_str());
@@ -2220,7 +2223,7 @@ void Plot::create2dDrawing(vector<string>& vDrawVector)
     string sCurrentDrawingFunction;
     string sDummy;
 
-    for (unsigned int v = 0; v < vDrawVector.size(); v++)
+    for (size_t v = 0; v < vDrawVector.size(); v++)
     {
         sStyle = "k";
         sTextString = "";
@@ -2230,7 +2233,7 @@ void Plot::create2dDrawing(vector<string>& vDrawVector)
         {
             for (int n = (int)sCurrentDrawingFunction.length() - 1; n >= 0; n--)
             {
-                if (sCurrentDrawingFunction[n] == ',' && !isInQuotes(sCurrentDrawingFunction, (unsigned)n, true))
+                if (sCurrentDrawingFunction[n] == ',' && !isInQuotes(sCurrentDrawingFunction, (size_t)n, true))
                 {
                     sStyle = sCurrentDrawingFunction.substr(n + 1);
                     sCurrentDrawingFunction.erase(n);
@@ -2245,7 +2248,7 @@ void Plot::create2dDrawing(vector<string>& vDrawVector)
         {
             for (int n = (int)sCurrentDrawingFunction.length() - 1; n >= 0; n--)
             {
-                if (sCurrentDrawingFunction[n] == ',' && !isInQuotes(sCurrentDrawingFunction, (unsigned)n, true))
+                if (sCurrentDrawingFunction[n] == ',' && !isInQuotes(sCurrentDrawingFunction, (size_t)n, true))
                 {
                     sTextString = sCurrentDrawingFunction.substr(n + 1);
                     sCurrentDrawingFunction.erase(n);
@@ -2483,7 +2486,7 @@ void Plot::create3dDrawing(vector<string>& vDrawVector)
     string sCurrentDrawingFunction;
     string sDummy;
 
-    for (unsigned int v = 0; v < vDrawVector.size(); v++)
+    for (size_t v = 0; v < vDrawVector.size(); v++)
     {
         sStyle = "k";
         sTextString = "";
@@ -2493,7 +2496,7 @@ void Plot::create3dDrawing(vector<string>& vDrawVector)
         {
             for (int n = (int)sCurrentDrawingFunction.length() - 1; n >= 0; n--)
             {
-                if (sCurrentDrawingFunction[n] == ',' && !isInQuotes(sCurrentDrawingFunction, (unsigned)n, true))
+                if (sCurrentDrawingFunction[n] == ',' && !isInQuotes(sCurrentDrawingFunction, (size_t)n, true))
                 {
                     sStyle = sCurrentDrawingFunction.substr(n + 1);
                     sCurrentDrawingFunction.erase(n);
@@ -2508,7 +2511,7 @@ void Plot::create3dDrawing(vector<string>& vDrawVector)
         {
             for (int n = (int)sCurrentDrawingFunction.length() - 1; n >= 0; n--)
             {
-                if (sCurrentDrawingFunction[n] == ',' && !isInQuotes(sCurrentDrawingFunction, (unsigned)n, true))
+                if (sCurrentDrawingFunction[n] == ',' && !isInQuotes(sCurrentDrawingFunction, (size_t)n, true))
                 {
                     sTextString = sCurrentDrawingFunction.substr(n + 1);
                     sCurrentDrawingFunction.erase(n);
@@ -2928,7 +2931,7 @@ void Plot::createStd3dPlot(size_t nPlotCompose, size_t nPlotComposeSize)
                     NumeReKernel::getInstance()->getStringParser().evalAndFormat(sConvLegends, sDummy, true);
                     sConvLegends = "\"" + sConvLegends + "\"";
 
-                    for (unsigned int l = 0; l < sConvLegends.length(); l++)
+                    for (size_t l = 0; l < sConvLegends.length(); l++)
                     {
                         if (sConvLegends[l] == '(')
                             l += getMatchingParenthesis(sConvLegends.substr(l));
@@ -3381,17 +3384,17 @@ void Plot::evaluateSubplot(string& sCmd, size_t nMultiplots[2], size_t& nSubPlot
     StripSpaces(sSubPlotIDX);
     if (findParameter(sCmd, "cols", '=') || findParameter(sCmd, "lines", '='))
     {
-        unsigned int nMultiLines = 1, nMultiCols = 1;
+        size_t nMultiLines = 1, nMultiCols = 1;
 
         if (findParameter(sCmd, "cols", '='))
         {
             _parser.SetExpr(getArgAtPos(sCmd, findParameter(sCmd, "cols", '=') + 4));
-            nMultiCols = (unsigned int)intCast(_parser.Eval());
+            nMultiCols = (size_t)intCast(_parser.Eval());
         }
         if (findParameter(sCmd, "lines", '='))
         {
             _parser.SetExpr(getArgAtPos(sCmd, findParameter(sCmd, "lines", '=') + 5));
-            nMultiLines = (unsigned int)intCast(_parser.Eval());
+            nMultiLines = (size_t)intCast(_parser.Eval());
         }
         if (sSubPlotIDX.length())
         {
@@ -3408,19 +3411,19 @@ void Plot::evaluateSubplot(string& sCmd, size_t nMultiplots[2], size_t& nSubPlot
             {
                 if (intCast(v[0]) < 1)
                     v[0] = 1;
-                if ((unsigned int)intCast(v[0]) - 1 >= nMultiplots[0]*nMultiplots[1])
+                if ((size_t)intCast(v[0]) - 1 >= nMultiplots[0]*nMultiplots[1])
                     throw SyntaxError(SyntaxError::INVALID_SUBPLOT_INDEX, "", SyntaxError::invalid_position);
-                if (!checkMultiPlotArray(nMultiplots, nSubPlotMap, (unsigned int)(intCast(v[0]) - 1), nMultiCols, nMultiLines))
+                if (!checkMultiPlotArray(nMultiplots, nSubPlotMap, (size_t)(intCast(v[0]) - 1), nMultiCols, nMultiLines))
                     throw SyntaxError(SyntaxError::INVALID_SUBPLOT_INDEX, "", SyntaxError::invalid_position);
-                _graph->MultiPlot(nMultiplots[0], nMultiplots[1], (unsigned int)intCast(v[0]) - 1, nMultiCols, nMultiLines);
+                _graph->MultiPlot(nMultiplots[0], nMultiplots[1], intCast(v[0]) - 1, nMultiCols, nMultiLines);
             }   // cols, lines
             else
             {
-                if ((unsigned int)(intCast(v[1]) - 1 + (intCast(v[0]) - 1)*nMultiplots[1]) >= nMultiplots[0]*nMultiplots[1])
+                if ((size_t)(intCast(v[1]) - 1 + (intCast(v[0]) - 1)*nMultiplots[1]) >= nMultiplots[0]*nMultiplots[1])
                     throw SyntaxError(SyntaxError::INVALID_SUBPLOT_INDEX, "", SyntaxError::invalid_position);
-                if (!checkMultiPlotArray(nMultiplots, nSubPlotMap, (unsigned int)((intCast(v[1]) - 1) + (intCast(v[0]) - 1)*nMultiplots[0]), nMultiCols, nMultiLines))
+                if (!checkMultiPlotArray(nMultiplots, nSubPlotMap, (size_t)((intCast(v[1]) - 1) + (intCast(v[0]) - 1)*nMultiplots[0]), nMultiCols, nMultiLines))
                     throw SyntaxError(SyntaxError::INVALID_SUBPLOT_INDEX, "", SyntaxError::invalid_position);
-                _graph->MultiPlot(nMultiplots[0], nMultiplots[1], (unsigned int)((intCast(v[1]) - 1) + (intCast(v[0]) - 1)*nMultiplots[0]), nMultiCols, nMultiLines);
+                _graph->MultiPlot(nMultiplots[0], nMultiplots[1], (int)((intCast(v[1]) - 1) + (intCast(v[0]) - 1)*nMultiplots[0]), nMultiCols, nMultiLines);
             }
         }
         else
@@ -3428,7 +3431,7 @@ void Plot::evaluateSubplot(string& sCmd, size_t nMultiplots[2], size_t& nSubPlot
             if (nSubPlots >= nMultiplots[0]*nMultiplots[1])
                 throw SyntaxError(SyntaxError::INVALID_SUBPLOT_INDEX, "", SyntaxError::invalid_position);
             int nPlotPos = 1;
-            for (unsigned int nSub = 0; nSub < nMultiplots[0]*nMultiplots[1]; nSub++)
+            for (size_t nSub = 0; nSub < nMultiplots[0]*nMultiplots[1]; nSub++)
             {
                 if (nPlotPos & nSubPlotMap)
                     nPlotPos <<= 1;
@@ -3463,26 +3466,26 @@ void Plot::evaluateSubplot(string& sCmd, size_t nMultiplots[2], size_t& nSubPlot
             {
                 if (intCast(v[0]) < 1)
                     v[0] = 1;
-                if ((unsigned int)intCast(v[0]) - 1 >= nMultiplots[0]*nMultiplots[1])
+                if ((size_t)intCast(v[0]) - 1 >= nMultiplots[0]*nMultiplots[1])
                     throw SyntaxError(SyntaxError::INVALID_SUBPLOT_INDEX, "", SyntaxError::invalid_position);
-                if ((unsigned int)intCast(v[0]) != 1)
-                    nRes <<= (unsigned int)(intCast(v[0]) - 1);
+                if ((size_t)intCast(v[0]) != 1)
+                    nRes <<= (size_t)(intCast(v[0]) - 1);
                 if (nRes & nSubPlotMap)
                     throw SyntaxError(SyntaxError::INVALID_SUBPLOT_INDEX, "", SyntaxError::invalid_position);
                 nSubPlotMap |= nRes;
-                _graph->SubPlot(nMultiplots[0], nMultiplots[1], (unsigned int)intCast(v[0]) - 1);
+                _graph->SubPlot(nMultiplots[0], nMultiplots[1], intCast(v[0]) - 1);
             }
             else
             {
-                if ((unsigned int)(intCast(v[1]) - 1 + (intCast(v[0]) - 1)*nMultiplots[0]) >= nMultiplots[0]*nMultiplots[1])
+                if ((size_t)(intCast(v[1]) - 1 + (intCast(v[0]) - 1)*nMultiplots[0]) >= nMultiplots[0]*nMultiplots[1])
                     throw SyntaxError(SyntaxError::INVALID_SUBPLOT_INDEX, "", SyntaxError::invalid_position);
                 nRes = 1;
-                if ((unsigned int)(intCast(v[1]) + (intCast(v[0]) - 1)*nMultiplots[0]) != 1)
-                    nRes <<= (unsigned int)((intCast(v[1]) - 1) + (intCast(v[0]) - 1) * nMultiplots[0]);
+                if ((size_t)(intCast(v[1]) + (intCast(v[0]) - 1)*nMultiplots[0]) != 1)
+                    nRes <<= (size_t)((intCast(v[1]) - 1) + (intCast(v[0]) - 1) * nMultiplots[0]);
                 if (nRes & nSubPlotMap)
                     throw SyntaxError(SyntaxError::INVALID_SUBPLOT_INDEX, "", SyntaxError::invalid_position);
                 nSubPlotMap |= nRes;
-                _graph->SubPlot(nMultiplots[0], nMultiplots[1], (unsigned int)((intCast(v[1]) - 1) + (intCast(v[0]) - 1)*nMultiplots[0]));
+                _graph->SubPlot(nMultiplots[0], nMultiplots[1], (int)((intCast(v[1]) - 1) + (intCast(v[0]) - 1)*nMultiplots[0]));
             }
         }
         else
@@ -3490,7 +3493,7 @@ void Plot::evaluateSubplot(string& sCmd, size_t nMultiplots[2], size_t& nSubPlot
             if (nSubPlots >= nMultiplots[0]*nMultiplots[1])
                 throw SyntaxError(SyntaxError::INVALID_SUBPLOT_INDEX, "", SyntaxError::invalid_position);
             int nPlotPos = 1;
-            for (unsigned int nSub = 0; nSub < nMultiplots[0]*nMultiplots[1]; nSub++)
+            for (size_t nSub = 0; nSub < nMultiplots[0]*nMultiplots[1]; nSub++)
             {
                 if (nPlotPos & nSubPlotMap)
                     nPlotPos <<= 1;
@@ -3883,7 +3886,7 @@ void Plot::extractDataValues(const std::vector<std::string>& vDataPlots)
             {
                 Interval range = m_manager.assets[typeCounter].getDataIntervals(0)[datIvlID];
 
-                for (size_t layer = 1; layer < std::max(1u, isMultiDataSet*m_manager.assets[typeCounter].getLayers()); layer++)
+                for (size_t layer = 1; layer < std::max((size_t)1u, isMultiDataSet*m_manager.assets[typeCounter].getLayers()); layer++)
                 {
                     range = range.combine(m_manager.assets[typeCounter].getDataIntervals(layer)[datIvlID]);
                 }
@@ -3902,7 +3905,7 @@ void Plot::extractDataValues(const std::vector<std::string>& vDataPlots)
                 else
                     dataRanges[XRANGE+isHbar] = dataRanges[XRANGE+isHbar].combine(axisrange);
 
-                for (size_t layer = 0; layer < std::max(1u, isMultiDataSet*m_manager.assets[typeCounter].getLayers()); layer++)
+                for (size_t layer = 0; layer < std::max((size_t)1u, isMultiDataSet*m_manager.assets[typeCounter].getLayers()); layer++)
                 {
                     IntervalSet datIvl = m_manager.assets[typeCounter].getDataIntervals(layer);
 
@@ -6152,7 +6155,7 @@ void Plot::CoordSettings()
 
                 if (i < 3)
                 {
-                    for (unsigned int n = 0; n < _pData.getCustomTick(i).length(); n++)
+                    for (size_t n = 0; n < _pData.getCustomTick(i).length(); n++)
                     {
                         if (_pData.getCustomTick(i)[n] == '\n')
                             nCount++;
@@ -6209,7 +6212,7 @@ void Plot::CoordSettings()
                 }
                 else
                 {
-                    for (unsigned int n = 0; n < _pData.getCustomTick(i).length(); n++)
+                    for (size_t n = 0; n < _pData.getCustomTick(i).length(); n++)
                     {
                         if (_pData.getCustomTick(i)[n] == '\n')
                             nCount++;
@@ -7122,7 +7125,7 @@ string Plot::composeColoursForBarChart(long int nNum)
 
     for (int i = 0; i < nNum; i++)
     {
-        sColours += _pInfo.sLineStyles[_pInfo.nStyle];
+        sColours += _pData.getColors()[_pInfo.nStyle];
 
         if (i + 1 < nNum)
             _pInfo.nStyle = _pInfo.nextStyle();
@@ -7136,15 +7139,15 @@ string Plot::composeColoursForBarChart(long int nNum)
 /// \brief This member function checks, whether
 /// the selected subplot position is still empty.
 ///
-/// \param nMultiPlot[2] unsigned int
-/// \param nSubPlotMap unsigned int&
-/// \param nPlotPos unsigned int
-/// \param nCols unsigned int
-/// \param nLines unsigned int
+/// \param nMultiPlot[2] size_t
+/// \param nSubPlotMap size_t&
+/// \param nPlotPos size_t
+/// \param nCols size_t
+/// \param nLines size_t
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool Plot::checkMultiPlotArray(unsigned int nMultiPlot[2], unsigned int& nSubPlotMap, unsigned int nPlotPos, unsigned int nCols, unsigned int nLines)
+bool Plot::checkMultiPlotArray(size_t nMultiPlot[2], size_t& nSubPlotMap, size_t nPlotPos, size_t nCols, size_t nLines)
 {
     // cols, lines
     if (nPlotPos + nCols - 1 >= (nPlotPos / nMultiPlot[0] + 1)*nMultiPlot[0])
@@ -7153,13 +7156,13 @@ bool Plot::checkMultiPlotArray(unsigned int nMultiPlot[2], unsigned int& nSubPlo
     if (nPlotPos / nMultiPlot[0] + nLines - 1 >= nMultiPlot[1])
         return false;
 
-    unsigned int nCol0, nLine0, pos;
+    size_t nCol0, nLine0, pos;
     nCol0 = nPlotPos % nMultiPlot[0];
     nLine0 = nPlotPos / nMultiPlot[0];
 
-    for (unsigned int i = 0; i < nLines; i++)
+    for (size_t i = 0; i < nLines; i++)
     {
-        for (unsigned int j = 0; j < nCols; j++)
+        for (size_t j = 0; j < nCols; j++)
         {
             pos = 1;
             pos <<= ((nCol0 + j) + nMultiPlot[0] * (nLine0 + i));
@@ -7169,9 +7172,9 @@ bool Plot::checkMultiPlotArray(unsigned int nMultiPlot[2], unsigned int& nSubPlo
         }
     }
 
-    for (unsigned int i = 0; i < nLines; i++)
+    for (size_t i = 0; i < nLines; i++)
     {
-        for (unsigned int j = 0; j < nCols; j++)
+        for (size_t j = 0; j < nCols; j++)
         {
             pos = 1;
             pos <<= ((nCol0 + j) + nMultiPlot[0] * (nLine0 + i));
