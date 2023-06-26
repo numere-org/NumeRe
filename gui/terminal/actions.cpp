@@ -68,11 +68,11 @@ void GenericTerminal::normal_output()
     // As long as the output data has a length
     do
     {
-        // Print the output until the first control character
-        tm.printOutput(sInput.substr(0, sInput.find_first_of("\n\r\t")));
-
         // Store the position of the first control character
         size_t nPos = sInput.find_first_of("\n\r\t");
+
+        // Print the output until the first control character
+        tm.printOutput(sInput.substr(0, nPos));
 
         // If the position is valid
         if (nPos != std::string::npos)
@@ -96,10 +96,7 @@ void GenericTerminal::normal_output()
             sInput.erase(0, nPos + 1);
         }
         else
-        {
             sInput.clear();
-        }
-
     }
     while (sInput.length());
 
