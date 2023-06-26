@@ -218,7 +218,7 @@ namespace NumeRe
                 }
                 else
                 {
-                    nMaxArgs = max(max(max(max(sStringArg2.size(), sStringArg3.size()), nIntArg1.size()), nIntArg2.size()), 1u);
+                    nMaxArgs = max(max(max(max(sStringArg2.size(), sStringArg3.size()), nIntArg1.size()), nIntArg2.size()), (size_t)1u);
 
                     if (nMaxArgs < 500)
                         vReturnValues = callMultiFunction(funcHandle, sStringArg1, sStringArg2, sStringArg3, nIntArg1, nIntArg2, dValArg, nMaxArgs);

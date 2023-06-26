@@ -189,7 +189,7 @@ class NumeReWindow : public wxFrame
         void DefaultPage();
         void OpenFileByType(const wxFileName& filename);
         void OpenFilesFromList(const wxArrayString& filenameslist);
-        void OpenSourceFile(wxArrayString fnames, unsigned int nLine = 0, int nOpenFileFlag = OPENFILE_NOTHING);
+        void OpenSourceFile(wxArrayString fnames, size_t nLine = 0, int nOpenFileFlag = OPENFILE_NOTHING);
         void openImage(wxFileName filename);
         void openPDF(wxFileName filename);
         bool ShowHelp(const wxString& sDocId);

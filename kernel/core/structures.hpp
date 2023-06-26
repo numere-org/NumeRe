@@ -2398,7 +2398,7 @@ struct Indices
 struct Match
 {
     std::string sString;
-    unsigned int nPos;
+    size_t nPos;
 };
 
 

@@ -259,7 +259,7 @@ class PlotData : public FileSystem
             return;
         }
 
-        inline std::string getAxisbind(unsigned int i) const
+        inline std::string getAxisbind(size_t i) const
         {
             if (2*i+1 < stringSettings[STR_AXISBIND].length())
                 return stringSettings[STR_AXISBIND].substr(2*i,2);

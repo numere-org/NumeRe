@@ -17,7 +17,7 @@
 ******************************************************************************/
 
 #include "compareFiles.hpp"
-#include "dtl/dtl.hpp"
+#include "../externals/dtl/dtl/dtl.hpp"
 #include <fstream>
 #include <sstream>
 

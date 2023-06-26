@@ -63,7 +63,7 @@ struct TableColumn
 
     void setValue(const VectorIndex& idx, const std::vector<std::string>& vValue);
     void setValue(const VectorIndex& idx, const std::vector<mu::value_type>& vValue);
-    void setValue(const VectorIndex& idx, mu::value_type* _dData, unsigned int _nNum);
+    void setValue(const VectorIndex& idx, mu::value_type* _dData, size_t _nNum);
 
     virtual void setValue(size_t elem, const std::string& sValue) = 0;
     virtual void setValue(size_t elem, const mu::value_type& vValue) = 0;

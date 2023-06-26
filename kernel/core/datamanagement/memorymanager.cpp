@@ -486,7 +486,7 @@ bool MemoryManager::loadFromLegacyCacheFile()
                 string sTemp;
                 sTemp.resize(nLength-1);
 
-                for (unsigned int n = 0; n < nLength-1; n++)
+                for (size_t n = 0; n < nLength-1; n++)
                 {
                     sTemp[n] = cCachesMap[n];
                 }
@@ -516,7 +516,7 @@ bool MemoryManager::loadFromLegacyCacheFile()
                 cache_file.read(cHeadLine[i][j], sizeof(char)*nLength);
                 string sHead;
 
-                for (unsigned int k = 0; k < nLength-1; k++)
+                for (size_t k = 0; k < nLength-1; k++)
                 {
                     sHead += cHeadLine[i][j][k];
                 }

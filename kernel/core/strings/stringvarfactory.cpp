@@ -60,7 +60,7 @@ namespace NumeRe
         if (!vStringVector.size())
             return "";
 
-        string strVectName = "_~STRVECT[" + toString((int)m_mStringVectorVars.size()) + "]";
+        string strVectName = "_~STRVECT[" + toString(m_mStringVectorVars.size()) + "]";
 
         // Does it already exist?
         if (m_mStringVectorVars.find(strVectName) != m_mStringVectorVars.end())
@@ -320,7 +320,7 @@ namespace NumeRe
         if (strVectName.length())
             return strVectName;
 
-        strVectName = "_~TEMPSTRVECT[" + toString((int)m_mTempStringVectorVars.size()) + "]";
+        strVectName = "_~TEMPSTRVECT[" + toString(m_mTempStringVectorVars.size()) + "]";
 
         // save the vector
         m_mTempStringVectorVars[strVectName] = vStringVector;
@@ -524,17 +524,17 @@ namespace NumeRe
     /// is connected to a method.
     ///
     /// \param sLine std::string&
-    /// \param nPos unsigned int
+    /// \param nPos size_t
     /// \return void
     ///
     /////////////////////////////////////////////////
-    void StringVarFactory::getStringValuesAsInternalVar(std::string& sLine, unsigned int nPos)
+    void StringVarFactory::getStringValuesAsInternalVar(std::string& sLine, size_t nPos)
     {
         // Do nothing, if no string variables were declared
         if (!m_mStringVars.size())
             return;
 
-        unsigned int __nPos;
+        size_t __nPos;
         sLine += " ";
 
         // Try to find every string variable into the passed string and
@@ -612,7 +612,7 @@ namespace NumeRe
         if (!m_mStringVars.size())
             return;
 
-        unsigned int __nPos;
+        size_t __nPos;
         sLine += " ";
 
         // Try to find every string variable into the passed string and
@@ -711,7 +711,7 @@ namespace NumeRe
 
         // Compare every character to the list of valid characters,
         // to ensure that the name is absolutly valid
-        for (unsigned int i = 0; i < sVar.length(); i++)
+        for (size_t i = 0; i < sVar.length(); i++)
         {
             if (sVALIDCHARACTERS.find(sVar[i]) == string::npos)
                 throw SyntaxError(SyntaxError::STRINGVARS_MUSTNT_CONTAIN, "", SyntaxError::invalid_position, sVar.substr(i,1));

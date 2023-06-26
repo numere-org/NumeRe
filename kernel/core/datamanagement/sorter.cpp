@@ -265,11 +265,11 @@ ColumnKeys* Sorter::evaluateKeyList(string& sKeyList, long long int nColumnCount
 	else
 	{
 	    // In this case we want a hierarchical sorting
-		unsigned int nLastIndex = 0;
+		size_t nLastIndex = 0;
 
 		// Go through the complete keylist string and decode it into
 		// a recursive ColumnKeys object
-		for (unsigned int n = 0; n < sKeyList.length(); n++)
+		for (size_t n = 0; n < sKeyList.length(); n++)
 		{
 			if (sKeyList[n] == ':')
 			{

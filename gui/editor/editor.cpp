@@ -6453,7 +6453,7 @@ wxString NumeReEditor::generateAutoCompList(int wordstartpos, int currpos, std::
     if (useSmartSense)
         context = getCurrentContext(LineFromPosition(currpos));
 
-    unsigned int nPos = PositionFromLine(context.first);
+    size_t nPos = PositionFromLine(context.first);
     bool findAll = !useSmartSense
                 || isStyleType(STYLE_COMMENT, wordstartpos)
                 || isStyleType(STYLE_STRING, wordstartpos);
@@ -6578,9 +6578,9 @@ void NumeReEditor::OnDisplayVariable(wxCommandEvent& event)
     SetIndicatorCurrent(HIGHLIGHT);
     IndicatorClearRange(0, maxpos);
 
-    unsigned int nPos = 0;
-    unsigned int nCurr = 0;
-    vector<unsigned int> vSelectionList;
+    size_t nPos = 0;
+    size_t nCurr = 0;
+    vector<size_t> vSelectionList;
 
     // If the current clicked word is already
     // highlighted, then simply clear out the
@@ -8507,7 +8507,7 @@ string NumeReEditor::realignLangString(string sLine, size_t& lastpos)
 /////////////////////////////////////////////////
 string NumeReEditor::addLinebreaks(const string& sLine, bool onlyDocumentation /* = false*/)
 {
-    const unsigned int nMAXLINE = 100;
+    const size_t nMAXLINE = 100;
 
     string sReturn = sLine;
 
@@ -8515,9 +8515,9 @@ string NumeReEditor::addLinebreaks(const string& sLine, bool onlyDocumentation /
     while (sReturn.find("\\$") != string::npos)
         sReturn.erase(sReturn.find("\\$"), 1);
 
-    unsigned int nDescStart = sReturn.find("- ");
-    unsigned int nIndentPos = 4;
-    unsigned int nLastLineBreak = 0;
+    size_t nDescStart = sReturn.find("- ");
+    size_t nIndentPos = 4;
+    size_t nLastLineBreak = 0;
     bool isItemize = false;
 
     // Handle the first indent depending on whether this is
@@ -8535,7 +8535,7 @@ string NumeReEditor::addLinebreaks(const string& sLine, bool onlyDocumentation /
 
     nLastLineBreak = nDescStart;
 
-    for (unsigned int i = nDescStart; i < sReturn.length(); i++)
+    for (size_t i = nDescStart; i < sReturn.length(); i++)
     {
         if (sReturn[i] == '\n')
         {
