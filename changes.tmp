@@ -8,5 +8,6 @@ Fixed	Resolved a problem with creating new files.
 New	A 64 bit version is now available.
 Cleaned	The context menu of the table viewer now also contains the possibility to change the column type.
 Added	The table method "TAB().convert()" may now autodetect the column type if the second argument is set to "auto" or omitted.
+Added	A function "getuilang()" for accessing the user's current language
 Fixed	The autoconversion of tables does not prefer logical over value columns any more (rather the other way around).
 Cleaned	Improved the rendering speed of the terminal (relevant for larger strings, which required a bunch of virtual line breaks).
