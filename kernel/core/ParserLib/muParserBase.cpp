@@ -41,7 +41,7 @@
 
 using namespace std;
 
-unsigned int getMatchingParenthesis(const StringView&);
+size_t getMatchingParenthesis(const StringView&);
 mu::value_type parser_Num(const mu::value_type*, int);
 mu::value_type parser_Cnt(const mu::value_type*, int);
 mu::value_type parser_and(const mu::value_type*, int);
@@ -2727,11 +2727,11 @@ namespace mu
 	{
 		int nParenthesis = 0;
 		int nVektorbrace = 0;
-		unsigned int nPos = 0;
+		size_t nPos = 0;
 
 		// Find the next "top-level" expression object, which
 		// is separated by a comma
-		for (unsigned int i = 0; i < sArgList.length(); i++)
+		for (size_t i = 0; i < sArgList.length(); i++)
 		{
 			if (sArgList[i] == '(')
 				nParenthesis++;
@@ -3092,11 +3092,11 @@ namespace mu
     /// the internal arrays for storing the necessary
     /// data.
     ///
-    /// \param _nLoopLength unsigned int
+    /// \param _nLoopLength size_t
     /// \return void
     ///
     /////////////////////////////////////////////////
-    void ParserBase::ActivateLoopMode(unsigned int _nLoopLength)
+    void ParserBase::ActivateLoopMode(size_t _nLoopLength)
     {
         if (!bMakeLoopByteCode)
         {
@@ -3143,11 +3143,11 @@ namespace mu
     /// \brief Activates the selected position in the
     /// internally stored bytecode.
     ///
-    /// \param _nLoopElement unsigned int
+    /// \param _nLoopElement size_t
     /// \return void
     ///
     /////////////////////////////////////////////////
-    void ParserBase::SetIndex(unsigned int _nLoopElement)
+    void ParserBase::SetIndex(size_t _nLoopElement)
     {
         nthLoopElement = _nLoopElement;
         nCurrVectorIndex = 0;
@@ -3331,12 +3331,12 @@ namespace mu
     /// the current equation is already parsed and
     /// there's a valid bytecode for it.
     ///
-    /// \param _nthLoopElement unsigned int
-    /// \param _nthPartEquation unsigned int
+    /// \param _nthLoopElement size_t
+    /// \param _nthPartEquation size_t
     /// \return int
     ///
     /////////////////////////////////////////////////
-    int ParserBase::IsValidByteCode(unsigned int _nthLoopElement, unsigned int _nthPartEquation)
+    int ParserBase::IsValidByteCode(size_t _nthLoopElement, size_t _nthPartEquation)
     {
         if (!bMakeLoopByteCode)
             return 0;
@@ -3729,7 +3729,7 @@ namespace mu
 
 		for (auto iter = mVarMapPntr->begin(); iter != mVarMapPntr->end(); ++iter)
 		{
-			for (unsigned int i = 0; i < sLine.length(); i++)
+			for (size_t i = 0; i < sLine.length(); i++)
 			{
 				if (sLine.substr(i, (iter->first).length()) == iter->first)
 				{

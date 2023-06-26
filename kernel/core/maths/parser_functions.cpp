@@ -88,7 +88,7 @@ void convertVectorToExpression(string& sLine, const Settings& _option)
 	string sDelim = "+-*/^&|!%";
 	int nDim = 0;
 	int nDim_vec = 0;
-	unsigned int nPos = 0;
+	size_t nPos = 0;
 	size_t nQuotes = 0;
 	bool bIsStringExpression = containsStrings(sLine);
 
@@ -252,7 +252,7 @@ void convertVectorToExpression(string& sLine, const Settings& _option)
 				{
 					// Search for string delimiters in the current vector component
 					// (a.k.a concatentation operators)
-					for (unsigned int n = 0; n < sDelim.length(); n++)
+					for (size_t n = 0; n < sDelim.length(); n++)
 					{
 						// If there's a delimiter, enclose the current
 						// vector component in parentheses
@@ -355,13 +355,13 @@ string addMissingVectorComponent(const string& sVectorComponent, const string& s
 
     // Now examine the right side. Only parentheses
     // are important in this case.
-    for (unsigned int i = 0; i < sRight.length(); i++)
+    for (size_t i = 0; i < sRight.length(); i++)
     {
         if (sRight[i] != ' ')
         {
             if (sRight[i] == ')')
             {
-                for (unsigned int j = i + 1; j < sRight.length(); j++)
+                for (size_t j = i + 1; j < sRight.length(); j++)
                 {
                     if (sRight[j] == ')')
                     {
@@ -390,15 +390,15 @@ string addMissingVectorComponent(const string& sVectorComponent, const string& s
 /// it jumps over parentheses and braces.
 ///
 /// \param sLine const string&
-/// \return unsigned int
+/// \return size_t
 ///
 /////////////////////////////////////////////////
-unsigned int getPositionOfFirstDelimiter(const string& sLine)
+size_t getPositionOfFirstDelimiter(const string& sLine)
 {
 	static string sDelimiter = "+-*/ =^&|!<>,\n";
 
 	// Go through the current line
-	for (unsigned int i = 0; i < sLine.length(); i++)
+	for (size_t i = 0; i < sLine.length(); i++)
 	{
         // Jump over parentheses and braces
 		if (sLine[i] == '(' || sLine[i] == '{')
@@ -431,7 +431,7 @@ string promptForUserInput(const string& __sCommand)
 	string sReturn = "";                // Variable fuer Rueckgabe-String
 	string sInput = "";                 // Variable fuer die erwartete Eingabe
 	bool bHasDefaultValue = false;      // Boolean; TRUE, wenn der String einen Default-Value hat
-	unsigned int nPos = 0;                       // Index-Variable
+	size_t nPos = 0;                       // Index-Variable
 
 	if (__sCommand.find("??") == string::npos)    // Wenn's "??" gar nicht gibt, koennen wir sofort zurueck
 		return __sCommand;

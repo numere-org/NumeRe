@@ -17,8 +17,8 @@
 ******************************************************************************/
 
 #include "archive.hpp"
-#include "stringtools.hpp"
-#include "../io/logger.hpp"
+#include "../utils/stringtools.hpp"
+#include "logger.hpp"
 
 #include <wx/zipstrm.h>
 #include <wx/tarstrm.h>

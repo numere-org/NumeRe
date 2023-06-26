@@ -5886,7 +5886,7 @@ ostream& operator<<(ostream& os, const BasicExcelCell& cell)
 			break;
 
 		case BasicExcelCell::WSTRING:
-			os << cell.GetWString();
+			//os << std::wstring(cell.GetWString());
 			break;
 	}
 	return os;

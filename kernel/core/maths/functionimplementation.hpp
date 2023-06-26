@@ -124,7 +124,7 @@ value_type parser_IrregularCylBessel(const value_type&, const value_type&);
 value_type parser_EllipticF(const value_type&, const value_type&);
 value_type parser_EllipticE(const value_type&, const value_type&);
 value_type parser_EllipticP(const value_type&, const value_type&, const value_type&);
-value_type parser_EllipticD(const value_type&, const value_type&, const value_type&);
+value_type parser_EllipticD(const value_type&, const value_type&);
 value_type parser_beta(const value_type&, const value_type&);
 value_type parser_zeta(const value_type&);
 value_type parser_clausen(const value_type&);

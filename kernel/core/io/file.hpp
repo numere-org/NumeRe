@@ -25,7 +25,7 @@
 #include <vector>
 #include <utility>
 
-#include "../utils/zip++.hpp"
+#include "zip++.hpp"
 #include "../utils/stringtools.hpp"
 #include "../ui/error.hpp"
 #include "../datamanagement/tablecolumn.hpp"
@@ -43,11 +43,11 @@ namespace NumeRe
         std::string sFileName;
         std::string sTableName;
         std::string sComment;
-        long long int nRows;
-        long long int nCols;
-        long int versionMajor;
-        long int versionMinor;
-        long int versionBuild;
+        int64_t nRows;
+        int64_t nCols;
+        int32_t versionMajor;
+        int32_t versionMinor;
+        int32_t versionBuild;
         float fileVersion;
         __time64_t timeStamp;
 
@@ -72,8 +72,8 @@ namespace NumeRe
             std::string sFileName;
             std::string sTableName;
             std::string sComment;
-            long long int nRows;
-            long long int nCols;
+            int64_t nRows;
+            int64_t nCols;
             unsigned short nPrecFields;
 
             // Flag for using external data, i.e. data, which won't be deleted
@@ -352,7 +352,7 @@ namespace NumeRe
             std::string readStringField()
             {
                 // Get the length of the field
-                size_t nLength = readNumField<size_t>();
+                uint32_t nLength = readNumField<uint32_t>();
 
                 // If the length is zero, return an empty string
                 if (!nLength)
@@ -409,14 +409,14 @@ namespace NumeRe
             /// block of numeric data into memory in binary
             /// mode.
             ///
-            /// \param size long longint&
+            /// \param size int64_t&
             /// \return template <typename T>T*
             ///
             /////////////////////////////////////////////////
-            template <typename T> T* readNumBlock(long long int& size)
+            template <typename T> T* readNumBlock(int64_t& size)
             {
                 // Get the number of values in the data block
-                size = readNumField<long long int>();
+                size = readNumField<int64_t>();
 
                 // If the size is zero, return a null pointer
                 if (!size)
@@ -436,16 +436,16 @@ namespace NumeRe
             /// whole two-dimensional array of data into
             /// memory in binary mode.
             ///
-            /// \param rows long longint&
-            /// \param cols long longint&
+            /// \param rows int64_t&
+            /// \param cols lint64_t&
             /// \return template <typenameT>T*
             ///
             /////////////////////////////////////////////////
-            template <typename T> T** readDataArray(long long int& rows, long long int& cols)
+            template <typename T> T** readDataArray(int64_t& rows, int64_t& cols)
             {
                 // Get the dimensions of the data block in memory
-                rows = readNumField<long long int>();
-                cols = readNumField<long long int>();
+                rows = readNumField<int64_t>();
+                cols = readNumField<int64_t>();
 
                 // If one of the dimensions is zero, return a null pointer
                 if (!rows || !cols)
@@ -456,7 +456,7 @@ namespace NumeRe
 
                 // Create the storage for the columns during reading the
                 // file and read the contents directly to memory
-                for (long long int i = 0; i < rows; i++)
+                for (int64_t i = 0; i < rows; i++)
                 {
                     data[i] = new T[cols];
                     fFileStream.read((char*)data[i], sizeof(T)*cols);
@@ -469,14 +469,14 @@ namespace NumeRe
             /// \brief This method can be used for reading a
             /// block of string data to memory in binary mode.
             ///
-            /// \param size long longint&
+            /// \param size int64_t&
             /// \return std::string*
             ///
             /////////////////////////////////////////////////
-            std::string* readStringBlock(long long int& size)
+            std::string* readStringBlock(int64_t& size)
             {
                 // Get the number of strings in the current block
-                size = readNumField<long long int>();
+                size = readNumField<int64_t>();
 
                 // If no strings are in the file, return a null pointer
                 if (!size)
@@ -591,7 +591,7 @@ namespace NumeRe
             void writeStringField(const std::string& sString)
             {
                 // Store the length of string as numeric value first
-                writeNumField<size_t>(sString.length());
+                writeNumField<uint32_t>((uint32_t)sString.length());
                 fFileStream.write(sString.c_str(), sString.length());
             }
 
@@ -601,14 +601,14 @@ namespace NumeRe
             /// the file in binary mode.
             ///
             /// \param data T*
-            /// \param size long long int
+            /// \param size int64_t
             /// \return void
             ///
             /////////////////////////////////////////////////
-            template <typename T> void writeNumBlock(T* data, long long int size)
+            template <typename T> void writeNumBlock(T* data, int64_t size)
             {
                 // Store the length of the data block first
-                writeNumField<long long int>(size);
+                writeNumField<int64_t>(size);
                 fFileStream.write((char*)data, sizeof(T)*size);
             }
 
@@ -618,19 +618,19 @@ namespace NumeRe
             /// binary mode.
             ///
             /// \param data T**
-            /// \param rows long long int
-            /// \param cols long long int
+            /// \param rows int64_t
+            /// \param cols int64_t
             /// \return void
             ///
             /////////////////////////////////////////////////
-            template <typename T> void writeDataArray(T** data, long long int rows, long long int cols)
+            template <typename T> void writeDataArray(T** data, int64_t rows, int64_t cols)
             {
                 // Store the dimensions of the array first
-                writeNumField<long long int>(rows);
-                writeNumField<long long int>(cols);
+                writeNumField<int64_t>(rows);
+                writeNumField<int64_t>(cols);
 
                 // Write the contents to the file in linewise fashion
-                for (long long int i = 0; i < rows; i++)
+                for (int64_t i = 0; i < rows; i++)
                     fFileStream.write((char*)data[i], sizeof(T)*cols);
             }
 
@@ -639,18 +639,18 @@ namespace NumeRe
             /// block of strings into the file in binary mode.
             ///
             /// \param data std::string*
-            /// \param size long long int
+            /// \param size int64_t
             /// \return void
             ///
             /////////////////////////////////////////////////
-            void writeStringBlock(std::string* data, long long int size)
+            void writeStringBlock(std::string* data, int64_t size)
             {
                 // Store the number of fields first
-                writeNumField<long long int>(size);
+                writeNumField<int64_t>(size);
 
                 // Write each field separately, because their length is
                 // independent on each other
-                for (long long int i = 0; i < size; i++)
+                for (int64_t i = 0; i < size; i++)
                 {
                     writeStringField(data[i]);
                 }
@@ -1026,10 +1026,10 @@ namespace NumeRe
             /////////////////////////////////////////////////
             /// \brief Returns the number of rows.
             ///
-            /// \return long long int
+            /// \return int64_t
             ///
             /////////////////////////////////////////////////
-            long long int getRows()
+            int64_t getRows()
             {
                 return nRows;
             }
@@ -1037,10 +1037,10 @@ namespace NumeRe
             /////////////////////////////////////////////////
             /// \brief Returns the number of columns.
             ///
-            /// \return long long int
+            /// \return int64_t
             ///
             /////////////////////////////////////////////////
-            long long int getCols()
+            int64_t getCols()
             {
                 return nCols;
             }
@@ -1114,7 +1114,7 @@ namespace NumeRe
             {
                 if (data && fileData)
                 {
-                    for (long long int col = 0; col < nCols; col++)
+                    for (int64_t col = 0; col < nCols; col++)
                     {
                         if (fileData->at(col))
                             data->at(col).reset(fileData->at(col)->copy());
@@ -1129,12 +1129,12 @@ namespace NumeRe
             /// because the referenced memory will be deleted
             /// upon destruction of this class instance.
             ///
-            /// \param rows long long int&
-            /// \param cols long long int&
+            /// \param rows int64_t&
+            /// \param cols int64_t&
             /// \return TableColumnArray*
             ///
             /////////////////////////////////////////////////
-            TableColumnArray* getData(long long int& rows, long long int& cols)
+            TableColumnArray* getData(int64_t& rows, int64_t& cols)
             {
                 rows = nRows;
                 cols = nCols;
@@ -1147,12 +1147,12 @@ namespace NumeRe
             /// which will be used in the future. Clears the
             /// internal memory in advance.
             ///
-            /// \param rows long long int
-            /// \param cols long long int
+            /// \param rows int64_t
+            /// \param cols int64_t
             /// \return void
             ///
             /////////////////////////////////////////////////
-            void setDimensions(long long int rows, long long int cols)
+            void setDimensions(int64_t rows, int64_t cols)
             {
                 clearStorage();
 
@@ -1192,12 +1192,12 @@ namespace NumeRe
             /// storage.
             ///
             /// \param data TableColumnArray*
-            /// \param rows long long int
-            /// \param cols long long int
+            /// \param rows int64_t
+            /// \param cols int64_t
             /// \return void
             ///
             /////////////////////////////////////////////////
-            void addData(TableColumnArray* data, long long int rows, long long int cols)
+            void addData(TableColumnArray* data, int64_t rows, int64_t cols)
             {
                 if (!nRows && !nCols)
                 {
@@ -1209,7 +1209,7 @@ namespace NumeRe
 
                 if (fileData && data)
                 {
-                    for (long long int col = 0; col < nCols; col++)
+                    for (int64_t col = 0; col < nCols; col++)
                        fileData->at(col).reset(data->at(col)->copy());
                 }
             }
@@ -1221,12 +1221,12 @@ namespace NumeRe
             /// exists.
             ///
             /// \param data TableColumnArray*
-            /// \param rows long long int
-            /// \param cols long long int
+            /// \param rows int64_t
+            /// \param cols int64_t
             /// \return void
             ///
             /////////////////////////////////////////////////
-            void setData(TableColumnArray* data, long long int rows, long long int cols)
+            void setData(TableColumnArray* data, int64_t rows, int64_t cols)
             {
                 useExternalData = true;
 
@@ -1310,10 +1310,10 @@ namespace NumeRe
             /// \brief Returns the number of columns in the
             /// internally stored GenericFile instance.
             ///
-            /// \return long long int
+            /// \return int64_t
             ///
             /////////////////////////////////////////////////
-            long long int getCols() const
+            int64_t getCols() const
             {
                 if (m_file)
                     return m_file->getCols();
@@ -1325,10 +1325,10 @@ namespace NumeRe
             /// \brief Returns the number of rows in the
             /// internally stored GenericFile instance.
             ///
-            /// \return long long int
+            /// \return int64_t
             ///
             /////////////////////////////////////////////////
-            long long int getRows() const
+            int64_t getRows() const
             {
                 if (m_file)
                     return m_file->getRows();
@@ -1342,12 +1342,12 @@ namespace NumeRe
             /// object instance is returned, if the element
             /// does not exist.
             ///
-            /// \param row long long int
-            /// \param col long long int
+            /// \param row int64_t
+            /// \param col int64_t
             /// \return mu::value_type
             ///
             /////////////////////////////////////////////////
-            mu::value_type getElement(long long int row, long long int col) const
+            mu::value_type getElement(int64_t row, int64_t col) const
             {
                 if (m_file)
                 {
@@ -1355,7 +1355,7 @@ namespace NumeRe
                         return 0;
 
                     // dummy variable
-                    long long int r,c;
+                    int64_t r,c;
                     TableColumnArray* arr = m_file->getData(r,c);
 
                     if (arr->at(col))
@@ -1370,12 +1370,12 @@ namespace NumeRe
             /// positions. An empty string is returned, if
             /// the element does not exist.
             ///
-            /// \param row long long int
-            /// \param col long long int
+            /// \param row int64_t
+            /// \param col int64_t
             /// \return std::string
             ///
             /////////////////////////////////////////////////
-            std::string getStringElement(long long int row, long long int col) const
+            std::string getStringElement(int64_t row, int64_t col) const
             {
                 if (m_file)
                 {
@@ -1383,7 +1383,7 @@ namespace NumeRe
                         return 0;
 
                     // dummy variable
-                    long long int r,c;
+                    int64_t r,c;
                     TableColumnArray* arr = m_file->getData(r,c);
 
                     if (arr->at(col))
@@ -1398,11 +1398,11 @@ namespace NumeRe
             /// the passed column. Returns an empty string,
             /// if the column does not exist.
             ///
-            /// \param col long long int
+            /// \param col int64_t
             /// \return string
             ///
             /////////////////////////////////////////////////
-            std::string getColumnHead(long long int col) const
+            std::string getColumnHead(int64_t col) const
             {
                 if (m_file)
                 {
@@ -1410,7 +1410,7 @@ namespace NumeRe
                         return "";
 
                     // dummy variable
-                    long long int r,c;
+                    int64_t r,c;
                     TableColumnArray* arr = m_file->getData(r,c);
 
                     if (arr->at(col))
@@ -1473,9 +1473,9 @@ namespace NumeRe
         protected:
             bool isLegacy;
             __time64_t timeStamp;
-            long int versionMajor;
-            long int versionMinor;
-            long int versionBuild;
+            int32_t versionMajor;
+            int32_t versionMinor;
+            int32_t versionBuild;
             const short fileSpecVersionMajor = 4;
             const short fileSpecVersionMinor = 0;
             float fileVersionRead;
@@ -1492,7 +1492,7 @@ namespace NumeRe
             void readColumn(TblColPtr& col);
             void readColumnV4(TblColPtr& col);
             void readLegacyFormat();
-            void* readGenericField(std::string& type, long long int& size);
+            void* readGenericField(std::string& type, int64_t& size);
             void deleteGenericData(void* data, const std::string& type);
 
         public:
@@ -1576,7 +1576,7 @@ namespace NumeRe
     class CacheFile : public NumeReDataFile
     {
         private:
-            std::vector<size_t> vFileIndex;
+            std::vector<uint32_t> vFileIndex;
             size_t nIndexPos;
 
             void reset();
@@ -1625,7 +1625,7 @@ namespace NumeRe
             /////////////////////////////////////////////////
             void setNumberOfTables(size_t nTables)
             {
-                vFileIndex = std::vector<size_t>(nTables, 0u);
+                vFileIndex = std::vector<uint32_t>(nTables, 0u);
             }
 
             /////////////////////////////////////////////////
@@ -1633,10 +1633,10 @@ namespace NumeRe
             /// passed table index.
             ///
             /// \param nthTable size_t
-            /// \return size_t
+            /// \return uint32_t
             ///
             /////////////////////////////////////////////////
-            size_t getPosition(size_t nthTable)
+            uint32_t getPosition(size_t nthTable)
             {
                 if (nthTable < vFileIndex.size())
                     return vFileIndex[nthTable];

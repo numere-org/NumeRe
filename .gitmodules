@@ -1,0 +1,12 @@
+[submodule "externals/dtl"]
+	path = externals/dtl
+	url = https://github.com/cubicdaiya/dtl.git
+[submodule "externals/tinyxml2"]
+	path = externals/tinyxml2
+	url = https://github.com/leethomason/tinyxml2.git
+[submodule "externals/fast_float"]
+	path = externals/fast_float
+	url = https://github.com/fastfloat/fast_float.git
+[submodule "externals/date"]
+	path = externals/date
+	url = https://github.com/HowardHinnant/date.git

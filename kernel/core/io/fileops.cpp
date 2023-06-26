@@ -107,7 +107,7 @@ bool moveOrCopyFiles(CommandLineParser& cmdParser)
     std::string sFile = "";
     std::vector<std::string> vFileList;
 
-    unsigned int nthFile = 1;
+    size_t nthFile = 1;
     bool bAll = cmdParser.hasParam("all") || cmdParser.hasParam("a");
     bool bSuccess = false;
 
@@ -151,7 +151,7 @@ bool moveOrCopyFiles(CommandLineParser& cmdParser)
         return false;
 
     // Operate on each file in the list
-    for (unsigned int nFile = 0; nFile < vFileList.size(); nFile++)
+    for (size_t nFile = 0; nFile < vFileList.size(); nFile++)
     {
         _sTarget = sTarget;
         sFile = vFileList[nFile];
@@ -177,7 +177,7 @@ bool moveOrCopyFiles(CommandLineParser& cmdParser)
         {
             std::string sToken = "";
 
-            for (unsigned int i = 0; i < _sTarget.length(); i++)
+            for (size_t i = 0; i < _sTarget.length(); i++)
             {
                 if (_sTarget[i] == '<')
                 {
@@ -188,17 +188,17 @@ bool moveOrCopyFiles(CommandLineParser& cmdParser)
 
                     if (sToken.find('#') != std::string::npos)
                     {
-                        unsigned int nLength = 1;
+                        size_t nLength = 1;
 
                         if (sToken.find('~') != std::string::npos)
                             nLength = sToken.rfind('~')-sToken.find('#')+1;
 
                         sToken.clear();
 
-                        if (nLength > toString((int)nthFile).length())
-                            sToken.append(nLength-toString((int)(nthFile)).length(),'0');
+                        if (nLength > toString(nthFile).length())
+                            sToken.append(nLength-toString(nthFile).length(),'0');
 
-                        sToken += toString((int)(nthFile));
+                        sToken += toString(nthFile);
                         _sTarget.replace(i,_sTarget.find('>',i)+1-i,sToken);
                         i += sToken.length();
                     }
@@ -280,7 +280,7 @@ bool generateTemplate(const std::string& sFile, const std::string& sTempl, const
     while (!iTempl_in.eof())
     {
         std::getline(iTempl_in, sLine);
-        for (unsigned int i = 0; i < vTokens.size(); i++)
+        for (size_t i = 0; i < vTokens.size(); i++)
         {
             sToken = "%%"+toString(i+1)+"%%";
             while (sLine.find(sToken) != std::string::npos)
