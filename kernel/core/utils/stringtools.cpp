@@ -1477,6 +1477,204 @@ std::string utf8parser(const std::string& sString)
 
 
 /////////////////////////////////////////////////
+/// \brief Transforms a UTF8 encoded string into
+/// a Win CP1252 string in the internal code
+/// page representation.
+///
+/// \param sString const std::string&
+/// \return std::string
+///
+/////////////////////////////////////////////////
+std::string utf8ToAnsi(const std::string& sString)
+{
+    return utf8parser(sString);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Creates an up to three byte sequence
+/// UTF8 character from a two byte unicode
+/// character. The length of the returned
+/// byte sequence is stored in nLength.
+///
+/// \param cHighByte unsigned char
+/// \param cLowByte unsigned char
+/// \param nLength size_t&
+/// \return std::string
+///
+/////////////////////////////////////////////////
+static std::string createUTF8FromUnicode(unsigned char cHighByte, unsigned char cLowByte, size_t& nLength)
+{
+    std::string sUTF8;
+
+    // If the high byte is larger than or equal to 0x08, we will
+    // return three bytes, otherwise only two bytes
+    if (cHighByte >= 0x08)
+    {
+        nLength = 3;
+        sUTF8 = "   ";
+        sUTF8[0] = (char)0xE0 | ((cHighByte & (unsigned char)0xF0) >> 4);
+        sUTF8[1] = (char)0x80 | ((cHighByte & (unsigned char)0x0F) << 2) | ((cLowByte & (unsigned char)0xC0) >> 6);
+        sUTF8[2] = (char)0x80 | (cLowByte & ~(char)0xC0);
+    }
+    else
+    {
+        nLength = 2;
+        sUTF8 = "  ";
+        sUTF8[0] = (char)0xC0 | ((cHighByte & (unsigned char)0x07) << 2) | ((cLowByte & (unsigned char)0xC0) >> 6);
+        sUTF8[1] = (char)0x80 | (cLowByte & ~(char)0xC0);
+    }
+
+    return sUTF8;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Transforms a Win CP1253 encoded string
+/// into a UTF8 string in the internal code page
+/// representation.
+///
+/// \param sString const std::string&
+/// \return std::string
+///
+/////////////////////////////////////////////////
+std::string ansiToUtf8(const std::string& sString)
+{
+    // Ensure that element text is available
+    if (!sString.length())
+        return std::string();
+
+    // convert current element into a regular string
+    // object (much easier to handle)
+    std::string sUtf8String = sString;
+
+    // static declarations of constants
+    static const unsigned char NONANSIBITMASK = 128;
+    static const unsigned char TWOBYTEUTF8 = 0xA0;
+
+    // Go through the complete xml text and replace the
+    // characters with the UTF8 encoded unicode value. The
+    // unicode value of Win-CP1252 and unicode is quite similar
+    // except of a set of about 24 characters between NONANSIBITMASK
+    // and TWOBYTEUTF8
+    for (size_t i = 0; i < sUtf8String.length(); i++)
+    {
+        // Only do something, if the character is larger than NONANSIBITMASK
+        if (sUtf8String[i] & NONANSIBITMASK)
+        {
+            if ((unsigned char)sUtf8String[i] >= TWOBYTEUTF8)
+            {
+                // Regular encoding
+                char cp1252Char = sUtf8String[i];
+                sUtf8String.replace(i, 1, "  ");
+                sUtf8String[i] = (char)0xC0 | ((cp1252Char & (unsigned char)0xC0) >> 6);
+                sUtf8String[i+1] = (char)0x80 | (cp1252Char & ~(char)0xC0);
+                i++;
+            }
+            else
+            {
+                // Special code sequences. These have other code points in UTF8
+                // and therefore we have to replace them manually
+                char cp1252Char = sUtf8String[i];
+                size_t nLength = 0;
+
+                // Switch as lookup table
+                switch (cp1252Char)
+                {
+                    case (char)0x80:
+                        sUtf8String.replace(i, 1, createUTF8FromUnicode(0x20, 0xAC, nLength));
+                        break;
+                    case (char)0x82:
+                        sUtf8String.replace(i, 1, createUTF8FromUnicode(0x20, 0x1A, nLength));
+                        break;
+                    case (char)0x83:
+                        sUtf8String.replace(i, 1, createUTF8FromUnicode(0x01, 0x92, nLength));
+                        break;
+                    case (char)0x84:
+                        sUtf8String.replace(i, 1, createUTF8FromUnicode(0x20, 0x1E, nLength));
+                        break;
+                    case (char)0x85:
+                        sUtf8String.replace(i, 1, createUTF8FromUnicode(0x20, 0x26, nLength));
+                        break;
+                    case (char)0x86:
+                        sUtf8String.replace(i, 1, createUTF8FromUnicode(0x20, 0x20, nLength));
+                        break;
+                    case (char)0x87:
+                        sUtf8String.replace(i, 1, createUTF8FromUnicode(0x20, 0x21, nLength));
+                        break;
+                    case (char)0x88:
+                        sUtf8String.replace(i, 1, createUTF8FromUnicode(0x02, 0xC6, nLength));
+                        break;
+                    case (char)0x89:
+                        sUtf8String.replace(i, 1, createUTF8FromUnicode(0x20, 0x30, nLength));
+                        break;
+                    case (char)0x8A:
+                        sUtf8String.replace(i, 1, createUTF8FromUnicode(0x01, 0x60, nLength));
+                        break;
+                    case (char)0x8B:
+                        sUtf8String.replace(i, 1, createUTF8FromUnicode(0x20, 0x39, nLength));
+                        break;
+                    case (char)0x8C:
+                        sUtf8String.replace(i, 1, createUTF8FromUnicode(0x01, 0x52, nLength));
+                        break;
+                    case (char)0x8E:
+                        sUtf8String.replace(i, 1, createUTF8FromUnicode(0x01, 0x7D, nLength));
+                        break;
+                    case (char)0x91:
+                        sUtf8String.replace(i, 1, createUTF8FromUnicode(0x20, 0x18, nLength));
+                        break;
+                    case (char)0x92:
+                        sUtf8String.replace(i, 1, createUTF8FromUnicode(0x20, 0x19, nLength));
+                        break;
+                    case (char)0x93:
+                        sUtf8String.replace(i, 1, createUTF8FromUnicode(0x20, 0x1C, nLength));
+                        break;
+                    case (char)0x94:
+                        sUtf8String.replace(i, 1, createUTF8FromUnicode(0x20, 0x1D, nLength));
+                        break;
+                    case (char)0x95:
+                        sUtf8String.replace(i, 1, createUTF8FromUnicode(0x20, 0x22, nLength));
+                        break;
+                    case (char)0x96:
+                        sUtf8String.replace(i, 1, createUTF8FromUnicode(0x20, 0x13, nLength));
+                        break;
+                    case (char)0x97:
+                        sUtf8String.replace(i, 1, createUTF8FromUnicode(0x20, 0x14, nLength));
+                        break;
+                    case (char)0x98:
+                        sUtf8String.replace(i, 1, createUTF8FromUnicode(0x02, 0xDC, nLength));
+                        break;
+                    case (char)0x99:
+                        sUtf8String.replace(i, 1, createUTF8FromUnicode(0x21, 0x22, nLength));
+                        break;
+                    case (char)0x9A:
+                        sUtf8String.replace(i, 1, createUTF8FromUnicode(0x01, 0x61, nLength));
+                        break;
+                    case (char)0x9B:
+                        sUtf8String.replace(i, 1, createUTF8FromUnicode(0x20, 0x3A, nLength));
+                        break;
+                    case (char)0x9C:
+                        sUtf8String.replace(i, 1, createUTF8FromUnicode(0x01, 0x53, nLength));
+                        break;
+                    case (char)0x9E:
+                        sUtf8String.replace(i, 1, createUTF8FromUnicode(0x01, 0x7E, nLength));
+                        break;
+                    case (char)0x9F:
+                        sUtf8String.replace(i, 1, createUTF8FromUnicode(0x01, 0x78, nLength));
+                        break;
+                }
+
+                i += nLength-1;
+
+            }
+        }
+    }
+
+    return sUtf8String;
+}
+
+
+/////////////////////////////////////////////////
 /// \brief This function simple returns the
 /// current time as a default timestamp.
 ///
