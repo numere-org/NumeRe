@@ -96,6 +96,7 @@ wxDragResult NumeReDropTarget::OnDragOver(wxCoord x, wxCoord y, wxDragResult def
     return defaultDragResult;
 }
 
+
 /////////////////////////////////////////////////
 /// \brief This method handles the file operations after DragDrop
 ///
@@ -382,7 +383,15 @@ wxDragResult NumeReDropTarget::OnData(wxCoord x, wxCoord y, wxDragResult default
                 // current position (not the selected one)
                 wxTextDataObject* textdata = static_cast<wxTextDataObject*>(data);
                 NumeReWindow* top = static_cast<NumeReWindow*>(m_topWindow);
-                top->getTerminal()->insertRawText(textdata->GetText().ToStdString());
+                std::string sAnsiText = textdata->GetText().ToStdString();
+
+                if (!sAnsiText.length() && textdata->GetText().length())
+                {
+                    wxMessageBox(_guilang.get("GUI_DLG_CONVERSION_ERROR"), _guilang.get("GUI_DLG_CONVERSION"), wxCENTER | wxICON_ERROR | wxOK, top);
+                    return wxDragError;
+                }
+
+                top->getTerminal()->insertRawText(sAnsiText);
                 top->getTerminal()->SetFocus();
                 defaultDragResult = wxDragCopy;
             }
@@ -393,6 +402,7 @@ wxDragResult NumeReDropTarget::OnData(wxCoord x, wxCoord y, wxDragResult default
 
     return defaultDragResult;
 }
+
 
 /////////////////////////////////////////////////
 /// \brief This method classifies the file type of the passed file type.
