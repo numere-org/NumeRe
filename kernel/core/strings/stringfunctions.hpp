@@ -29,6 +29,8 @@
 // define the "End of transmission block" as string separator
 #define NEWSTRING (char)23
 
+extern Language _lang;
+
 using namespace std;
 
 /////////////////////////////////////////////////
@@ -2656,6 +2658,22 @@ static StringVector strfnc_getfileinfo(StringFuncArgs& funcArgs)
 
 
 /////////////////////////////////////////////////
+/// \brief Implementation of the getuilang()
+/// function.
+///
+/// \param funcArgs StringFuncArgs&
+/// \return StringVector
+///
+/////////////////////////////////////////////////
+static StringVector strfnc_getuilang(StringFuncArgs& funcArgs)
+{
+    StringVector sLang;
+    sLang.push_back(_lang.get("LANGUAGE"));
+    return sLang;
+}
+
+
+/////////////////////////////////////////////////
 /// \brief Implementation of the sha256()
 /// function.
 ///
@@ -2731,6 +2749,7 @@ static std::map<std::string, StringFuncHandle> getStringFuncHandles()
     mHandleTable["getmatchingparens"]   = StringFuncHandle(STR, strfnc_getmatchingparens, false);
     mHandleTable["getversioninfo"]      = StringFuncHandle(NOARGS, strfnc_getversioninfo, false);
     mHandleTable["getopt"]              = StringFuncHandle(STR_VAL, strfnc_getopt, false);
+    mHandleTable["getuilang"]           = StringFuncHandle(NOARGS, strfnc_getuilang, false);
     mHandleTable["idxtolog"]            = StringFuncHandle(VAL, strfnc_idxtolog, true);
     mHandleTable["is_alnum"]            = StringFuncHandle(STR, strfnc_isalnum, false);
     mHandleTable["is_alpha"]            = StringFuncHandle(STR, strfnc_isalpha, false);

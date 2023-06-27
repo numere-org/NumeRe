@@ -1279,6 +1279,7 @@ AnnotationCount CodeAnalyzer::analyseFunctions(bool isContinuedLine)
              && sSyntaxElement != "clock()"
              && sSyntaxElement != "version()"
              && sSyntaxElement != "getlasterror()"
+             && sSyntaxElement != "getuilang()"
              && sSyntaxElement != "getversioninfo()"
              && sSyntaxElement != "landau_rd()"
              && sSyntaxElement != "evt_close()"
