@@ -4246,7 +4246,15 @@ namespace NumeRe
                         }
 
                         // Write the decoded string to the table column array
-                        fileData->at(nCol+nOffset)->setValue(nRow-vCommentLines[i], sValue);
+                        if (nRow - vCommentLines[i] < 0)
+                        {
+                            if (!fileData->at(nCol+nOffset)->m_sHeadLine.length())
+                                fileData->at(nCol+nOffset)->m_sHeadLine = sValue;
+                            else if (fileData->at(nCol+nOffset)->m_sHeadLine != sValue)
+                                fileData->at(nCol+nOffset)->m_sHeadLine += "\n" + sValue;
+                        }
+                        else
+                            fileData->at(nCol+nOffset)->setValue(nRow-vCommentLines[i], sValue);
                     }
                 }
                 while ((_element = _element->NextSiblingElement()));

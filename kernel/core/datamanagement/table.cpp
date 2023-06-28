@@ -443,7 +443,7 @@ namespace NumeRe
             int nLinebreak = 0;
 
             // Count all linebreaks
-            for (size_t n = 0; n < vTableData[j]->m_sHeadLine.length() - 2; n++)
+            for (size_t n = 0; n < vTableData[j]->m_sHeadLine.length(); n++)
             {
                 if (vTableData[j]->m_sHeadLine[n] == '\n')
                     nLinebreak++;
