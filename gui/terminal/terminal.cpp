@@ -901,22 +901,7 @@ NumeReTerminal::SetCursorBlinkRate(int rate)
 std::string NumeReTerminal::generateAutoCompList(const std::string& sWordStart, std::string sPreDefList)
 {
     NumeReVariables globalVars = getVariableList();
-    std::map<std::string, int> mAutoCompMap;
-    std::string sCurrentWord;
-
-    // Store the list of predefined values in the map
-    if (sPreDefList.length())
-    {
-        while (sPreDefList.length())
-        {
-            sCurrentWord = sPreDefList.substr(0, sPreDefList.find(' '));
-            mAutoCompMap[toLowerCase(sCurrentWord.substr(0, sCurrentWord.find_first_of("(?"))) + " |" + sCurrentWord] = -1;
-            sPreDefList.erase(0, sPreDefList.find(' '));
-
-            if (sPreDefList.front() == ' ')
-                sPreDefList.erase(0, 1);
-        }
-    }
+    std::string sScopedList;
 
     // Now find all possible candidates
     for (std::string sVar : globalVars.vVariables)
@@ -926,43 +911,14 @@ std::string NumeReTerminal::generateAutoCompList(const std::string& sWordStart, 
         if (toLowerCase(sVar).substr(0, sWordStart.length()) == sWordStart)
         {
             if (sVar.find_first_of("({") != std::string::npos)
-                mAutoCompMap[sVar.substr(0, sVar.find_first_of("({")) + " |" + sVar.substr(0, sVar.find_first_of("({")+1) + "?1"] = 1;
+                sScopedList += sVar.substr(0, sVar.find_first_of("({")+1) + "?1 ";
             else
-                mAutoCompMap[sVar + " |" + sVar + "?1"] = 1;
+                sScopedList += sVar + "?1 ";
         }
     }
 
-    // remove duplicates
-    for (auto iter = mAutoCompMap.begin(); iter != mAutoCompMap.end(); ++iter)
-    {
-        if (iter->second == -1)
-        {
-            if ((iter->first).find('(') != std::string::npos)
-            {
-                if (mAutoCompMap.find((iter->first).substr(0, (iter->first).find('('))) != mAutoCompMap.end())
-                {
-                    mAutoCompMap.erase((iter->first).substr(0, (iter->first).find('(')));
-                    iter = mAutoCompMap.begin();
-                }
-            }
-            else
-            {
-                if (mAutoCompMap.find((iter->first).substr(0, (iter->first).find('?'))) != mAutoCompMap.end())
-                {
-                    mAutoCompMap.erase((iter->first).substr(0, (iter->first).find('?')));
-                    iter = mAutoCompMap.begin();
-                }
-            }
-        }
-    }
-
-    std::string sList;
-
-    // Re-combine the autocompletion list
-    for (const auto& iter : mAutoCompMap)
-        sList += iter.first.substr(iter.first.find('|') + 1) + " ";
-
-    return sList;
+    // Use the static member function from NumeReSyntax to combine those two lists
+    return NumeReSyntax::mergeAutoCompleteLists(sPreDefList, sScopedList);
 }
 
 
