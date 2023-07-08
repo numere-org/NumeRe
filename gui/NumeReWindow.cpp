@@ -5385,6 +5385,7 @@ void NumeReWindow::UpdateMenuBar()
     menuTools->Append(ID_MENU_OPTIONS, _guilang.get("GUI_MENU_OPTIONS"));
     menuTools->AppendSeparator();
     menuTools->Append(ID_MENU_EXECUTE, _guilang.get("GUI_MENU_EXECUTE"), _guilang.get("GUI_MENU_EXECUTE_TTP"));
+    menuTools->Append(ID_MENU_EXECUTE_FROM_LINE, _guilang.get("GUI_MENU_EXECUTE_FROM_LINE"), _guilang.get("GUI_MENU_EXECUTE_FROM_LINE_TTP"));
     menuTools->Append(wxID_ANY, _guilang.get("GUI_MENU_FORMAT"), menuFormat);
     menuTools->Append(wxID_ANY, _guilang.get("GUI_MENU_REFACTORING"), menuRefactoring);
     menuTools->Append(ID_MENU_TOGGLE_COMMENT_LINE, _guilang.get("GUI_MENU_COMMENTLINE"), _guilang.get("GUI_MENU_COMMENTLINE_TTP"));

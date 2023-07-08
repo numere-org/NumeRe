@@ -301,7 +301,7 @@ NumeReEditor::NumeReEditor(NumeReWindow* mframe, Options* options, wxWindow* par
     m_popupMenu.Append(ID_MENU_PASTE, _guilang.get("GUI_MENU_EDITOR_PASTE"));
     m_popupMenu.AppendSeparator();
 
-    m_popupMenu.Append(ID_MENU_EXECUTE_FROM_LINE, _guilang.get("GUI_MENU_RUN_FROM_LINE"));
+    m_popupMenu.Append(ID_MENU_EXECUTE_FROM_LINE, _guilang.get("GUI_MENU_EDITOR_RUN_FROM_LINE"));
     m_popupMenu.AppendSeparator();
 
     m_popupMenu.Append(ID_FOLD_CURRENT_BLOCK, _guilang.get("GUI_MENU_EDITOR_FOLDCURRENTBLOCK"));
