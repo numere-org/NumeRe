@@ -645,9 +645,10 @@ namespace NumeRe
             if ((_idx.row.isOpenEnd() || (_idx.row.isExpanded() && _idx.row.last() == (int)cluster.size()-1)) && _idx.row.front() == 0)
                 cluster.clear();
 
-            _idx.row.setOpenEndIndex(_idx.row.front() + nStrings-nCurrentComponent-1);
+            //_idx.row.setOpenEndIndex(_idx.row.front() + nStrings-nCurrentComponent-1);
+            size_t last = _idx.row.isOpenEnd() ? nStrings-nCurrentComponent : _idx.row.size();
 
-            for (size_t i = 0; i < _idx.row.size(); i++)
+            for (size_t i = 0; i < last; i++)
             {
                 if (_idx.row[i] == VectorIndex::INVALID
                     || (nStrings > 1 && nCurrentComponent+i >= nStrings))
@@ -687,10 +688,14 @@ namespace NumeRe
                                                            || (_idx.row.isExpanded()
                                                                && _idx.row.last() == _data.getColElements(_idx.col.subidx(0,1),sTableName)-1));
 
-            _idx.row.setOpenEndIndex(_idx.row.front() + nStrings-nCurrentComponent-1);
-            _idx.col.setOpenEndIndex(_idx.col.front() + nStrings-nCurrentComponent-1);
+            //_idx.row.setOpenEndIndex(_idx.row.front() + nStrings-nCurrentComponent-1);
+            //_idx.col.setOpenEndIndex(_idx.col.front() + nStrings-nCurrentComponent-1);
 
-            for (size_t i = 0; i < std::max(_idx.row.size(), _idx.col.size()); i++)
+            size_t last = _idx.row.isOpenEnd() || _idx.col.isOpenEnd()
+                ? nStrings-nCurrentComponent
+                : std::max(_idx.row.size(), _idx.col.size());
+
+            for (size_t i = 0; i < last; i++)
             {
                 if (nStrings > 1 && nCurrentComponent+i >= nStrings)
                     break;

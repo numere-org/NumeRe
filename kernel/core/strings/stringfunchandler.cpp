@@ -1151,6 +1151,8 @@ namespace NumeRe
                 for (size_t i = 0; i < strRes.vResult.size(); i++)
                 {
                     std::string sComponent = strRes.vResult[i].to_string();
+                    // Legacy function needed to enable {123,456} == to_value("{123,456}") comparison
+                    convertVectorToExpression(sComponent, _option);
 
                     while (sComponent.length())
                     {
