@@ -44,7 +44,7 @@ class NumeReDebugger
     private:
         BreakpointManager _breakpointManager;
         std::vector<std::pair<std::string, Procedure*> > vStackTrace;
-        unsigned int nLineNumber;
+        size_t nLineNumber;
         std::string sErraticCommand;
         std::string sErraticModule;
         std::string sErrorMessage;
@@ -82,7 +82,7 @@ class NumeReDebugger
             {
                 return bAlreadyThrown;
             }
-        inline unsigned int getLineNumber() const
+        inline size_t getLineNumber() const
             {
                 return nLineNumber;
             }
@@ -123,16 +123,16 @@ class NumeReDebugger
         void popStackItem();
 
         void gatherInformations(ProcedureVarFactory* _varFactory,
-                                const std::string& _sErraticCommand, const std::string& _sErraticModule, unsigned int _nLineNumber);
+                                const std::string& _sErraticCommand, const std::string& _sErraticModule, size_t _nLineNumber);
 
         void gatherInformations(const std::map<std::string, std::pair<std::string, mu::value_type*>>& _mLocalVars,
                                 const std::map<std::string, std::pair<std::string, std::string>>& _mLocalStrings,
                                 const std::map<std::string, std::string>& _mLocalTables,
                                 const std::map<std::string, std::string>& _mLocalClusters,
                                 const std::map<std::string, std::string>& _mArguments,
-                                const std::string& _sErraticCommand, const std::string& _sErraticModule, unsigned int _nLineNumber);
+                                const std::string& _sErraticCommand, const std::string& _sErraticModule, size_t _nLineNumber);
 
-        void gatherLoopBasedInformations(const std::string& _sErraticCommand, unsigned int _nLineNumber, std::map<std::string,std::string>& mVarMap, const std::vector<mu::value_type>& vVarArray, const std::vector<std::string>& sVarArray);
+        void gatherLoopBasedInformations(const std::string& _sErraticCommand, size_t _nLineNumber, std::map<std::string,std::string>& mVarMap, const std::vector<mu::value_type>& vVarArray, const std::vector<std::string>& sVarArray);
 
         std::vector<std::string> getModuleInformations();
         std::vector<std::string> getStackTrace();

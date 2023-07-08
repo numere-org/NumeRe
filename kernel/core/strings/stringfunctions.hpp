@@ -29,6 +29,8 @@
 // define the "End of transmission block" as string separator
 #define NEWSTRING (char)23
 
+extern Language _lang;
+
 using namespace std;
 
 /////////////////////////////////////////////////
@@ -208,6 +210,34 @@ static StringVector strfnc_to_lowercase(StringFuncArgs& funcArgs)
 
 
 /////////////////////////////////////////////////
+/// \brief Implementation of the utf8toansi()
+/// function.
+///
+/// \param funcArgs StringFuncArgs&
+/// \return StringVector
+///
+/////////////////////////////////////////////////
+static StringVector strfnc_utf8ToAnsi(StringFuncArgs& funcArgs)
+{
+    return "\"" + utf8ToAnsi(funcArgs.sArg1.view().to_string()) + "\"";
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Implementation of the ansitoutf8()
+/// function.
+///
+/// \param funcArgs StringFuncArgs&
+/// \return StringVector
+///
+/////////////////////////////////////////////////
+static StringVector strfnc_ansiToUtf8(StringFuncArgs& funcArgs)
+{
+    return "\"" + ansiToUtf8(funcArgs.sArg1.view().to_string()) + "\"";
+}
+
+
+/////////////////////////////////////////////////
 /// \brief Implementation of the getenvvar()
 /// function.
 ///
@@ -269,7 +299,7 @@ static StringVector strfnc_getfilelist(StringFuncArgs& funcArgs)
     std::vector<std::string> vFileList = getFileList(funcArgs.sArg1.view().to_string(), *(funcArgs.opt), funcArgs.nArg1);
     StringVector sFileList;
 
-    for (unsigned int i = 0; i < vFileList.size(); i++)
+    for (size_t i = 0; i < vFileList.size(); i++)
     {
         sFileList.push_back(vFileList[i]);
     }
@@ -297,7 +327,7 @@ static StringVector strfnc_getfolderlist(StringFuncArgs& funcArgs)
     std::vector<std::string> vFolderList = getFolderList(funcArgs.sArg1.view().to_string(), *(funcArgs.opt), funcArgs.nArg1);
     StringVector sFolderList;
 
-    for (unsigned int i = 0; i < vFolderList.size(); i++)
+    for (size_t i = 0; i < vFolderList.size(); i++)
     {
         sFolderList.push_back(vFolderList[i]);
     }
@@ -319,7 +349,7 @@ static StringVector strfnc_getfolderlist(StringFuncArgs& funcArgs)
 /////////////////////////////////////////////////
 static StringVector strfnc_strlen(StringFuncArgs& funcArgs)
 {
-    return toString((int)funcArgs.sArg1.view().length());
+    return toString(funcArgs.sArg1.view().length());
 }
 
 
@@ -333,7 +363,7 @@ static StringVector strfnc_strlen(StringFuncArgs& funcArgs)
 /////////////////////////////////////////////////
 static StringVector strfnc_getmatchingparens(StringFuncArgs& funcArgs)
 {
-    return toString((int)getMatchingParenthesis(funcArgs.sArg1.view()) + 1);
+    return toString(getMatchingParenthesis(funcArgs.sArg1.view()) + 1);
 }
 
 
@@ -350,7 +380,7 @@ static StringVector strfnc_ascii(StringFuncArgs& funcArgs)
     StringVector sCodes;
     StringView sView = funcArgs.sArg1.view();
 
-    for (unsigned int i = 0; i < sView.length(); i++)
+    for (size_t i = 0; i < sView.length(); i++)
     {
         sCodes.push_back((int)sView[i]);
     }
@@ -373,7 +403,7 @@ static StringVector strfnc_isblank(StringFuncArgs& funcArgs)
     StringView sView = funcArgs.sArg1.view();
     static Umlauts _umlauts;
 
-    for (unsigned int i = 0; i < sView.length(); i++)
+    for (size_t i = 0; i < sView.length(); i++)
     {
         if (isblank(sView[i])
             && _umlauts.lower.find(sView[i]) == std::string::npos
@@ -405,7 +435,7 @@ static StringVector strfnc_isalnum(StringFuncArgs& funcArgs)
     StringView sView = funcArgs.sArg1.view();
     static Umlauts _umlauts;
 
-    for (unsigned int i = 0; i < sView.length(); i++)
+    for (size_t i = 0; i < sView.length(); i++)
     {
         if (isalnum(sView[i])
             || _umlauts.lower.find(sView[i]) != std::string::npos
@@ -437,7 +467,7 @@ static StringVector strfnc_isalpha(StringFuncArgs& funcArgs)
     StringView sView = funcArgs.sArg1.view();
     static Umlauts _umlauts;
 
-    for (unsigned int i = 0; i < sView.length(); i++)
+    for (size_t i = 0; i < sView.length(); i++)
     {
         if (isalpha(sView[i])
             || _umlauts.lower.find(sView[i]) != std::string::npos
@@ -469,7 +499,7 @@ static StringVector strfnc_iscntrl(StringFuncArgs& funcArgs)
     StringView sView = funcArgs.sArg1.view();
     static Umlauts _umlauts;
 
-    for (unsigned int i = 0; i < sView.length(); i++)
+    for (size_t i = 0; i < sView.length(); i++)
     {
         if (iscntrl(sView[i])
             && _umlauts.lower.find(sView[i]) == std::string::npos
@@ -500,7 +530,7 @@ static StringVector strfnc_isdigit(StringFuncArgs& funcArgs)
     StringVector sCodes;
     StringView sView = funcArgs.sArg1.view();
 
-    for (unsigned int i = 0; i < sView.length(); i++)
+    for (size_t i = 0; i < sView.length(); i++)
     {
         if (isdigit(sView[i]))
             sCodes.push_back(true);
@@ -568,7 +598,7 @@ static StringVector strfnc_isgraph(StringFuncArgs& funcArgs)
     StringView sView = funcArgs.sArg1.view();
     static Umlauts _umlauts;
 
-    for (unsigned int i = 0; i < sView.length(); i++)
+    for (size_t i = 0; i < sView.length(); i++)
     {
         if (isgraph(sView[i])
             || _umlauts.lower.find(sView[i]) != std::string::npos
@@ -603,7 +633,7 @@ static StringVector strfnc_islower(StringFuncArgs& funcArgs)
     // memory afterwards, which is more efficient)
     static Umlauts _umlauts;
 
-    for (unsigned int i = 0; i < sView.length(); i++)
+    for (size_t i = 0; i < sView.length(); i++)
     {
         // If the current character is found by "islower()" or is
         // part of the "lower" field of the "Umlauts" structure,
@@ -638,7 +668,7 @@ static StringVector strfnc_isprint(StringFuncArgs& funcArgs)
     StringView sView = funcArgs.sArg1.view();
     static Umlauts _umlauts;
 
-    for (unsigned int i = 0; i < sView.length(); i++)
+    for (size_t i = 0; i < sView.length(); i++)
     {
         if (isprint(sView[i])
             || _umlauts.lower.find(sView[i]) != std::string::npos
@@ -671,7 +701,7 @@ static StringVector strfnc_ispunct(StringFuncArgs& funcArgs)
 
     static Umlauts _umlauts;
 
-    for (unsigned int i = 0; i < sView.length(); i++)
+    for (size_t i = 0; i < sView.length(); i++)
     {
         if (ispunct(sView[i])
             && _umlauts.lower.find(sView[i]) == std::string::npos
@@ -704,7 +734,7 @@ static StringVector strfnc_isspace(StringFuncArgs& funcArgs)
 
     static Umlauts _umlauts;
 
-    for (unsigned int i = 0; i < sView.length(); i++)
+    for (size_t i = 0; i < sView.length(); i++)
     {
         if (isspace(sView[i])
             && _umlauts.lower.find(sView[i]) == std::string::npos
@@ -737,7 +767,7 @@ static StringVector strfnc_isupper(StringFuncArgs& funcArgs)
 
     static Umlauts _umlauts;
 
-    for (unsigned int i = 0; i < sView.length(); i++)
+    for (size_t i = 0; i < sView.length(); i++)
     {
         if (isupper(sView[i])
             || _umlauts.upper.find(sView[i]) != std::string::npos)
@@ -767,7 +797,7 @@ static StringVector strfnc_isxdigit(StringFuncArgs& funcArgs)
     StringVector sCodes;
     StringView sView = funcArgs.sArg1.view();
 
-    for (unsigned int i = 0; i < sView.length(); i++)
+    for (size_t i = 0; i < sView.length(); i++)
     {
         if (isxdigit(sView[i]))
             sCodes.push_back(true);
@@ -1064,7 +1094,7 @@ static StringVector strfnc_strfnd(StringFuncArgs& funcArgs)
     if (funcArgs.nArg1 == DEFAULT_NUM_ARG || funcArgs.nArg1 <= 0 || sView.length() < (size_t)funcArgs.nArg1)
         funcArgs.nArg1 = 1;
 
-    return toString((int)sView.find(sStr, funcArgs.nArg1 - 1) + 1);
+    return toString(sView.find(sStr, funcArgs.nArg1 - 1) + 1);
 }
 
 
@@ -1182,7 +1212,7 @@ static StringVector strfnc_strmatch(StringFuncArgs& funcArgs)
     if (funcArgs.nArg1 == DEFAULT_NUM_ARG || funcArgs.nArg1 <= 0 || sView.length() < (size_t)funcArgs.nArg1)
         funcArgs.nArg1 = 1;
 
-    return toString((int)sView.find_first_of(sStr, funcArgs.nArg1 - 1) + 1);
+    return toString(sView.find_first_of(sStr, funcArgs.nArg1 - 1) + 1);
 }
 
 
@@ -1205,7 +1235,7 @@ static StringVector strfnc_str_not_match(StringFuncArgs& funcArgs)
     if (funcArgs.nArg1 == DEFAULT_NUM_ARG || funcArgs.nArg1 <= 0 || sView.length() < (size_t)funcArgs.nArg1)
         funcArgs.nArg1 = 1;
 
-    return toString((int)sView.find_first_not_of(sStr, funcArgs.nArg1 - 1) + 1);
+    return toString(sView.find_first_not_of(sStr, funcArgs.nArg1 - 1) + 1);
 }
 
 
@@ -1228,7 +1258,7 @@ static StringVector strfnc_strrfnd(StringFuncArgs& funcArgs)
     if (funcArgs.nArg1 == DEFAULT_NUM_ARG || funcArgs.nArg1 <= 0 || sView.length() < (size_t)funcArgs.nArg1)
         funcArgs.nArg1 = sView.length() + 1;
 
-    return toString((int)sView.rfind(sStr, funcArgs.nArg1 - 1) + 1);
+    return toString(sView.rfind(sStr, funcArgs.nArg1 - 1) + 1);
 }
 
 
@@ -1251,7 +1281,7 @@ static StringVector strfnc_strrmatch(StringFuncArgs& funcArgs)
     if (funcArgs.nArg1 == DEFAULT_NUM_ARG || funcArgs.nArg1 <= 0 || sView.length() < (size_t)funcArgs.nArg1)
         funcArgs.nArg1 = sView.length() + 1;
 
-    return toString((int)sView.find_last_of(sStr, funcArgs.nArg1 - 1) + 1);
+    return toString(sView.find_last_of(sStr, funcArgs.nArg1 - 1) + 1);
 }
 
 
@@ -1274,7 +1304,7 @@ static StringVector strfnc_str_not_rmatch(StringFuncArgs& funcArgs)
     if (funcArgs.nArg1 == DEFAULT_NUM_ARG || funcArgs.nArg1 <= 0 || sView.length() < (size_t)funcArgs.nArg1)
         funcArgs.nArg1 = sView.length() + 1;
 
-    return toString((int)sView.find_last_not_of(sStr, funcArgs.nArg1 - 1) + 1);
+    return toString(sView.find_last_not_of(sStr, funcArgs.nArg1 - 1) + 1);
 }
 
 
@@ -1303,7 +1333,7 @@ static StringVector strfnc_findparam(StringFuncArgs& funcArgs)
         nMatch = findParameter(sView2.to_string(), sView1.to_string());
 
     if (nMatch)
-        return toString((int)nMatch); // findParameter returns already pos+1
+        return toString(nMatch); // findParameter returns already pos+1
     else
         return "0";
 }
@@ -2218,9 +2248,9 @@ static StringVector strfnc_regex(StringFuncArgs& funcArgs)
 static StringVector strfnc_cnt(StringFuncArgs& funcArgs)
 {
     if (funcArgs.sMultiArg.size())
-        return toString((int)funcArgs.sMultiArg.size());
+        return toString(funcArgs.sMultiArg.size());
     else if (funcArgs.nMultiArg.size())
-        return toString((int)funcArgs.nMultiArg.size());
+        return toString(funcArgs.nMultiArg.size());
 
     return "0";
 }
@@ -2249,7 +2279,7 @@ static StringVector strfnc_num(StringFuncArgs& funcArgs)
         return toString(nRet);
     }
     else if (funcArgs.nMultiArg.size())
-        return toString((int)funcArgs.nMultiArg.size());
+        return toString(funcArgs.nMultiArg.size());
 
     return "0";
 }
@@ -2573,10 +2603,17 @@ static StringVector strfnc_getversioninfo(StringFuncArgs& funcArgs)
     static std::string sINTVERSION = toString((int)AutoVersion::MAJOR) + "."
         + toString((int)AutoVersion::MINOR) + "."
         + toString((int)AutoVersion::BUILD) + "."
-        + toString((int)(std::stod(AutoVersion::UBUNTU_VERSION_STYLE)*100));
+        + toString((int)(std::stod(AutoVersion::UBUNTU_VERSION_STYLE)*100))
+#ifdef __GNUWIN64__
+        + "-x64"
+#endif
+        ;
     static std::string sINSTNAME = toString((int)AutoVersion::MAJOR) + toString((int)AutoVersion::MINOR) + toString((int)AutoVersion::BUILD)
-        + (std::string(AutoVersion::STATUS_SHORT).find("rc") != std::string::npos ? AutoVersion::STATUS_SHORT : "");
-
+        + (std::string(AutoVersion::STATUS_SHORT).find("rc") != std::string::npos ? AutoVersion::STATUS_SHORT : "")
+#ifdef __GNUWIN64__
+        + "_x64"
+#endif
+        ;
     StringVector sVersionInfo;
     sVersionInfo.push_back("Version");
     sVersionInfo.push_back(sVersion);
@@ -2586,6 +2623,12 @@ static StringVector strfnc_getversioninfo(StringFuncArgs& funcArgs)
     sVersionInfo.push_back(sINTVERSION);
     sVersionInfo.push_back("FileVersion");
     sVersionInfo.push_back(sINSTNAME);
+    sVersionInfo.push_back("Architecture");
+#ifdef __GNUWIN64__
+    sVersionInfo.push_back("64 bit");
+#else
+    sVersionInfo.push_back("32 bit");
+#endif
 
     return sVersionInfo;
 }
@@ -2639,6 +2682,22 @@ static StringVector strfnc_getfileinfo(StringFuncArgs& funcArgs)
     sFileInfo.push_generic(toCmdString(fInfo.modificationTime));
 
     return sFileInfo;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Implementation of the getuilang()
+/// function.
+///
+/// \param funcArgs StringFuncArgs&
+/// \return StringVector
+///
+/////////////////////////////////////////////////
+static StringVector strfnc_getuilang(StringFuncArgs& funcArgs)
+{
+    StringVector sLang;
+    sLang.push_back(_lang.get("LANGUAGE"));
+    return sLang;
 }
 
 
@@ -2718,6 +2777,7 @@ static std::map<std::string, StringFuncHandle> getStringFuncHandles()
     mHandleTable["getmatchingparens"]   = StringFuncHandle(STR, strfnc_getmatchingparens, false);
     mHandleTable["getversioninfo"]      = StringFuncHandle(NOARGS, strfnc_getversioninfo, false);
     mHandleTable["getopt"]              = StringFuncHandle(STR_VAL, strfnc_getopt, false);
+    mHandleTable["getuilang"]           = StringFuncHandle(NOARGS, strfnc_getuilang, false);
     mHandleTable["idxtolog"]            = StringFuncHandle(VAL, strfnc_idxtolog, true);
     mHandleTable["is_alnum"]            = StringFuncHandle(STR, strfnc_isalnum, false);
     mHandleTable["is_alpha"]            = StringFuncHandle(STR, strfnc_isalpha, false);
@@ -2761,12 +2821,14 @@ static std::map<std::string, StringFuncHandle> getStringFuncHandles()
     mHandleTable["substr"]              = StringFuncHandle(STR_VAL_VALOPT, strfnc_substr, false);
     mHandleTable["textparse"]           = StringFuncHandle(STR_STR_VALOPT_VALOPT, strfnc_textparse, false);
     mHandleTable["timeformat"]          = StringFuncHandle(STR_DBL, strfnc_timeformat, false);
+    mHandleTable["to_ansi"]             = StringFuncHandle(STR, strfnc_utf8ToAnsi, false);
     mHandleTable["to_char"]             = StringFuncHandle(VAL, strfnc_to_char, true);
     mHandleTable["to_lowercase"]        = StringFuncHandle(STR, strfnc_to_lowercase, false);
     //mHandleTable["to_string"]           = StringFuncHandle(STR, strfnc_to_string, false);
     mHandleTable["to_tex"]              = StringFuncHandle(DBL_VALOPT, strfnc_to_tex, false);
     mHandleTable["to_time"]             = StringFuncHandle(STR_STR, strfnc_to_time, false);
     mHandleTable["to_uppercase"]        = StringFuncHandle(STR, strfnc_to_uppercase, false);
+    mHandleTable["to_utf8"]             = StringFuncHandle(STR, strfnc_ansiToUtf8, false);
     mHandleTable["weekday"]             = StringFuncHandle(DBL_VALOPT, strfnc_weekday, false);
     mHandleTable["xor"]                 = StringFuncHandle(VAL, strfnc_xor, true);
 

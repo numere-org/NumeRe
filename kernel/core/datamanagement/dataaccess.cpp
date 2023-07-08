@@ -437,7 +437,7 @@ void replaceDataEntities(string& sLine, const string& sEntity, MemoryManager& _d
 {
 	string sEntityOccurence = "";
 	string sEntityName = sEntity.substr(0, sEntity.length()-1);
-	unsigned int nPos = 0;
+	size_t nPos = 0;
 	bool bWriteStrings = false;
 	bool bWriteFileName = false;
 	bool isCluster = sEntity.back() == '{';
@@ -1275,6 +1275,9 @@ static std::string tableMethod_convert(const std::string& sTableName, std::strin
     NumeReKernel::getInstance()->getMemoryManager().updateDimensionVariables(sTableName);
     NumeReKernel::getInstance()->getParser().SetExpr(sColumns);
     mu::value_type* v = NumeReKernel::getInstance()->getParser().Eval(nResults);
+
+    if (!sMethodArguments.length())
+        sMethodArguments = "auto";
 
     if (NumeReKernel::getInstance()->getMemoryManager().convertColumns(sTableName, VectorIndex(v, nResults, 0), sMethodArguments))
         return "\"" + sMethodArguments + "\"";
@@ -2454,7 +2457,7 @@ bool parser_CheckMultArgFunc(const string& sLeft, const string& sRight)
 	// examine the first non-whitespace character of the right side:
 	// - if it is a parenthesis, then simply break
 	// - if it is a comma, then try to find the next parenthesis. If it exists, it can be a compare-like function signature
-	for (unsigned int i = 0; i < sRight.length(); i++)
+	for (size_t i = 0; i < sRight.length(); i++)
 	{
 		if (sRight[i] != ' ')
 		{

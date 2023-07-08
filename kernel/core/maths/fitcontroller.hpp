@@ -88,8 +88,8 @@ class Fitcontroller
         static mu::value_type* zvar;
 
         bool fitctrl(const std::string& __sExpr, const std::string& __sRestrictions, FitData& _fData, double __dPrecision, int nMaxIterations);
-        static void removeNANVals(gsl_vector* fvals, unsigned int nSize);
-        static void removeNANVals(gsl_matrix* Jac, unsigned int nLines, unsigned int nCols);
+        static void removeNANVals(gsl_vector* fvals, size_t nSize);
+        static void removeNANVals(gsl_matrix* Jac, size_t nLines, size_t nCols);
 
     public:
         static mu::Parser* _fitParser;

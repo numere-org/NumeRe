@@ -21,6 +21,65 @@
 #include "../ui/error.hpp"
 #include "../../kernel.hpp"
 
+/////////////////////////////////////////////////
+/// \brief Static helper function used by some of
+/// the conversion member functions to define the
+/// common type of all the values in a column.
+///
+/// \param vVals const std::vector<std::string>&
+/// \return ConvertibleType
+///
+/////////////////////////////////////////////////
+static ConvertibleType detectCommonType(const std::vector<std::string>& vVals)
+{
+    ConvertibleType convType = CONVTYPE_NONE;
+
+    // Determine first, if a conversion is possible
+    for (size_t i = 0; i < vVals.size(); i++)
+    {
+        if (!vVals[i].length())
+            continue;
+
+        if (convType == CONVTYPE_NONE)
+        {
+            // No type was set, try to auto-detect the type
+            if (isConvertible(vVals[i], CONVTYPE_VALUE))
+                convType = CONVTYPE_VALUE;
+            else if (isConvertible(vVals[i], CONVTYPE_LOGICAL))
+                convType = CONVTYPE_LOGICAL;
+            else if (isConvertible(vVals[i], CONVTYPE_DATE_TIME))
+                convType = CONVTYPE_DATE_TIME;
+            else
+                break; // category is not used, bc. that's isomorph to string
+        }
+        else if (convType == CONVTYPE_LOGICAL && isConvertible(vVals[i], CONVTYPE_VALUE))
+            convType = CONVTYPE_VALUE;
+        else if (!isConvertible(vVals[i], convType))
+        {
+            // The current value is not convertible to the set or auto-detected
+            // column type. Use a fall-back or simply abort
+            if (convType == CONVTYPE_LOGICAL && isConvertible(vVals[i], CONVTYPE_VALUE))
+            {
+                // CONVTYPE_VALUE is more general than logical,
+                // therefore we use this as common type
+                convType = CONVTYPE_VALUE;
+            }
+            else if (convType == CONVTYPE_VALUE && isConvertible(vVals[i], CONVTYPE_LOGICAL))
+            {
+                // Do nothing here, that's already fine, as CONVTYPE_VALUE
+                // is more general
+            }
+            else
+            {
+                convType = CONVTYPE_NONE;
+                break;
+            }
+        }
+    }
+
+    return convType;
+}
+
 
 /////////////////////////////////////////////////
 /// \brief Returns the selected value as a string
@@ -369,7 +428,7 @@ TableColumn* ValueColumn::convert(ColumnType type)
 
     switch (type)
     {
-        case TableColumn::TYPE_NONE:
+        //case TableColumn::TYPE_NONE: // Disabled for correct autoconversion
         case TableColumn::TYPE_STRING:
         {
             col = new StringColumn(m_data.size());
@@ -784,7 +843,7 @@ TableColumn* DateTimeColumn::convert(ColumnType type)
 
     switch (type)
     {
-        case TableColumn::TYPE_NONE:
+        //case TableColumn::TYPE_NONE: // Disabled for correct autoconversion
         case TableColumn::TYPE_STRING:
         {
             col = new StringColumn(m_data.size());
@@ -1188,7 +1247,7 @@ TableColumn* LogicalColumn::convert(ColumnType type)
 
     switch (type)
     {
-        case TableColumn::TYPE_NONE:
+        //case TableColumn::TYPE_NONE: // Disabled for correct autoconversion
         case TableColumn::TYPE_STRING:
         {
             col = new StringColumn(m_data.size());
@@ -1611,36 +1670,8 @@ TableColumn* StringColumn::convert(ColumnType type)
 {
     TableColumn* col = nullptr;
 
-    ConvertibleType convType = CONVTYPE_NONE;
-
     // Determine first, if a conversion is possible
-    for (size_t i = 0; i < m_data.size(); i++)
-    {
-        if (!m_data[i].length())
-            continue;
-
-        if (convType == CONVTYPE_NONE)
-        {
-            if (isConvertible(m_data[i], CONVTYPE_VALUE))
-                convType = CONVTYPE_VALUE;
-            else if (isConvertible(m_data[i], CONVTYPE_LOGICAL))
-                convType = CONVTYPE_LOGICAL;
-            else if (isConvertible(m_data[i], CONVTYPE_DATE_TIME))
-                convType = CONVTYPE_DATE_TIME;
-            else
-                break;
-        }
-        else if (!isConvertible(m_data[i], convType))
-        {
-            if (convType == CONVTYPE_VALUE && isConvertible(m_data[i], CONVTYPE_LOGICAL))
-                convType = CONVTYPE_LOGICAL;
-            else
-            {
-                convType = CONVTYPE_NONE;
-                break;
-            }
-        }
-    }
+    ConvertibleType convType = detectCommonType(m_data);
 
     switch (type)
     {
@@ -1704,7 +1735,9 @@ TableColumn* StringColumn::convert(ColumnType type)
         {
             std::string strval = m_data[i];
             replaceAll(strval, ",", ".");
-            col->setValue(i, StrToCmplx(strval));
+            col->setValue(i, !isConvertible(strval, CONVTYPE_VALUE)
+                             ? StrToLogical(strval)
+                             : StrToCmplx(strval));
         }
         else if (convType == CONVTYPE_LOGICAL)
         {
@@ -2127,36 +2160,8 @@ TableColumn* CategoricalColumn::convert(ColumnType type)
 {
     TableColumn* col = nullptr;
 
-    ConvertibleType convType = CONVTYPE_NONE;
-
     // Determine first, if a conversion is possible
-    for (size_t i = 0; i < m_categories.size(); i++)
-    {
-        if (!m_categories[i].length())
-            continue;
-
-        if (convType == CONVTYPE_NONE)
-        {
-            if (isConvertible(m_categories[i], CONVTYPE_VALUE))
-                convType = CONVTYPE_VALUE;
-            else if (isConvertible(m_categories[i], CONVTYPE_LOGICAL))
-                convType = CONVTYPE_LOGICAL;
-            else if (isConvertible(m_categories[i], CONVTYPE_DATE_TIME))
-                convType = CONVTYPE_DATE_TIME;
-            else
-                break;
-        }
-        else if (!isConvertible(m_categories[i], convType))
-        {
-            if (convType == CONVTYPE_VALUE && isConvertible(m_categories[i], CONVTYPE_LOGICAL))
-                convType = CONVTYPE_LOGICAL;
-            else
-            {
-                convType = CONVTYPE_NONE;
-                break;
-            }
-        }
-    }
+    ConvertibleType convType = detectCommonType(m_categories);
 
     switch (type)
     {

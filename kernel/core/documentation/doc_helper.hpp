@@ -57,7 +57,7 @@ class Documentation : public FileSystem
         std::string getHelpIdxKey(const std::string& sTopic);
         std::string getHelpArticleID(const std::string& sTopic);
         std::string getHelpArticleTitle(const std::string& _sIdxKey);
-        static std::string getArgAtPos(const std::string& sCmd, unsigned int pos);
+        static std::string getArgAtPos(const std::string& sCmd, size_t pos);
 };
 
 #endif

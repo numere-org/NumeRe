@@ -106,14 +106,25 @@
 #include "../common/filerevisions.hpp"
 #include "../common/ipc.hpp"
 
-#include "../common/http.h"
+#include "../kernel/core/utils/http.h"
 #include "../common/compareFiles.hpp"
 
 #include "controls/treesearchctrl.hpp"
 #include "controls/toolbarsearchctrl.hpp"
 
-const std::string sVersion = toString((int)AutoVersion::MAJOR) + "." + toString((int)AutoVersion::MINOR) + "." + toString((int)AutoVersion::BUILD) + " \"" + AutoVersion::STATUS + "\"";
-
+#ifdef __GNUWIN64__
+#  ifdef DO_LOG
+const std::string sVersion = toString((int)AutoVersion::MAJOR) + "." + toString((int)AutoVersion::MINOR) + "." + toString((int)AutoVersion::BUILD) + " \"" + AutoVersion::STATUS + "\" (x64-DEBUG)";
+#  else
+const std::string sVersion = toString((int)AutoVersion::MAJOR) + "." + toString((int)AutoVersion::MINOR) + "." + toString((int)AutoVersion::BUILD) + " \"" + AutoVersion::STATUS + "\" (x64)";
+#  endif
+#else
+#  ifdef DO_LOG
+const std::string sVersion = toString((int)AutoVersion::MAJOR) + "." + toString((int)AutoVersion::MINOR) + "." + toString((int)AutoVersion::BUILD) + " \"" + AutoVersion::STATUS + "\" (x86-DEBUG)";
+#  else
+const std::string sVersion = toString((int)AutoVersion::MAJOR) + "." + toString((int)AutoVersion::MINOR) + "." + toString((int)AutoVersion::BUILD) + " \"" + AutoVersion::STATUS + "\" (x86)";
+#  endif
+#endif
 // Forward declaration
 std::string removeMaskedStrings(const std::string& sString);
 std::string removeQuotationMarks(const std::string&);
@@ -2165,7 +2176,7 @@ void NumeReWindow::openTable(NumeRe::Container<std::string> _stringTable, const 
     frame->SetSize(800,600);
     TableViewer* grid = new TableViewer(frame, wxID_ANY, frame->CreateStatusBar(3), nullptr, wxDefaultPosition, wxDefaultSize, wxWANTS_CHARS | wxBORDER_STATIC);
     grid->SetData(_stringTable, tableDisplayName, sIntName);
-    frame->SetSize(std::min(800u, grid->GetWidth()), std::max(std::min(600u, grid->GetHeight()+50), 300u));
+    frame->SetSize(std::min((size_t)800u, grid->GetWidth()), std::max(std::min((size_t)600u, grid->GetHeight()+50), (size_t)300u));
     frame->SetIcon(getStandardIcon());
     frame->Show();
     frame->SetFocus();
@@ -2191,7 +2202,7 @@ void NumeReWindow::openTable(NumeRe::Table _table, const std::string& tableDispl
     TablePanel* panel = new TablePanel(frame, wxID_ANY, frame->CreateStatusBar(3));
     panel->SetTerminal(m_terminal);
     panel->grid->SetData(_table, tableDisplayName, sIntName);
-    frame->SetSize(std::min(800u, panel->grid->GetWidth()+200), std::max(std::min(600u, panel->grid->GetHeight()+50), 300u));
+    frame->SetSize(std::min((size_t)800u, panel->grid->GetWidth()+200), std::max(std::min((size_t)600u, panel->grid->GetHeight()+50), (size_t)300u));
     frame->SetIcon(getStandardIcon());
     frame->Show();
     frame->SetFocus();
@@ -2215,7 +2226,7 @@ void NumeReWindow::editTable(NumeRe::Container<std::string> _stringTable, const 
     TableEditPanel* panel = new TableEditPanel(frame, wxID_ANY, frame->CreateStatusBar(3));
     panel->SetTerminal(m_terminal);
     panel->grid->SetData(_stringTable, tableDisplayName, "");
-    frame->SetSize(std::min(800u, panel->grid->GetWidth()), std::max(std::min(600u, panel->grid->GetHeight()+50), 300u));
+    frame->SetSize(std::min((size_t)800u, panel->grid->GetWidth()), std::max(std::min((size_t)600u, panel->grid->GetHeight()+50), (size_t)300u));
     frame->SetIcon(getStandardIcon());
     frame->Show();
     frame->SetFocus();
@@ -2239,7 +2250,7 @@ void NumeReWindow::editTable(NumeRe::Table _table, const std::string& tableDispl
     TableEditPanel* panel = new TableEditPanel(frame, wxID_ANY, frame->CreateStatusBar(3));
     panel->SetTerminal(m_terminal);
     panel->grid->SetData(_table, tableDisplayName, "");
-    frame->SetSize(std::min(800u, panel->grid->GetWidth()+200), std::max(std::min(600u, panel->grid->GetHeight()+50), 300u));
+    frame->SetSize(std::min((size_t)800u, panel->grid->GetWidth()+200), std::max(std::min((size_t)(size_t)600u, panel->grid->GetHeight()+50), (size_t)300u));
     frame->SetIcon(getStandardIcon());
     frame->Show();
     frame->SetFocus();
@@ -3227,7 +3238,7 @@ void NumeReWindow::NewFile(FileFilterType _filetype, const wxString& defaultfile
 
         if (folder == "main/" && _filetype == FILE_NPRC)
             folder.clear();
-        else if (!isExternal)
+        else if (!isExternal || _filetype != FILE_NPRC)
             folder.insert(0, "/");
 
         // Clean the file and folder names for procedures -
@@ -4027,12 +4038,12 @@ void NumeReWindow::OpenFilesFromList(const wxArrayString& filenameslist)
 /// in the editor.
 ///
 /// \param fnames wxArrayString
-/// \param nLine unsigned int The line to jump to
+/// \param nLine size_t The line to jump to
 /// \param nOpenFileFlag int
 /// \return void
 ///
 /////////////////////////////////////////////////
-void NumeReWindow::OpenSourceFile(wxArrayString fnames, unsigned int nLine, int nOpenFileFlag)
+void NumeReWindow::OpenSourceFile(wxArrayString fnames, size_t nLine, int nOpenFileFlag)
 {
     int firstPageNr = -1;
     wxString fileContents = wxEmptyString;
@@ -6499,20 +6510,20 @@ void NumeReWindow::OnTreeDragDrop(wxTreeEvent& event)
 /////////////////////////////////////////////////
 wxString NumeReWindow::addLinebreaks(const wxString& sLine)
 {
-    const unsigned int nMAXLINE = 70;
+    const size_t nMAXLINE = 70;
 
     wxString sReturn = sLine;
 
     while (sReturn.find("\\$") != std::string::npos)
         sReturn.erase(sReturn.find("\\$"),1);
 
-    unsigned int nDescStart = sReturn.find("- ");
-    unsigned int nIndentPos = 4;//
-    unsigned int nLastLineBreak = 0;
+    size_t nDescStart = sReturn.find("- ");
+    size_t nIndentPos = 4;//
+    size_t nLastLineBreak = 0;
     sReturn.replace(nDescStart, 2,"\n    ");
     nLastLineBreak = nDescStart;
 
-    for (unsigned int i = nDescStart; i < sReturn.length(); i++)
+    for (size_t i = nDescStart; i < sReturn.length(); i++)
     {
         if (sReturn[i] == '\n')
             nLastLineBreak = i;

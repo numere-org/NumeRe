@@ -161,9 +161,7 @@ ViewCursor TextManager::toViewCursor(const LogicalCursor& logCursor) const
             for (size_t j = 0; j < m_renderedBlock[i].coords.size(); j++)
             {
                 if (m_renderedBlock[i].coords[j].pos == logCursor.pos)
-                {
                     return ViewCursor(j, i - (m_topLine - m_numLinesScrolledUp));
-                }
             }
         }
 
@@ -173,11 +171,8 @@ ViewCursor TextManager::toViewCursor(const LogicalCursor& logCursor) const
             for (size_t j = m_indentDepth; j < m_renderedBlock[i].coords.size(); j++)
             {
                 if (m_renderedBlock[i].coords[j].pos == logCursor.pos)
-                {
                     return ViewCursor(j, i - (m_topLine - m_numLinesScrolledUp));
-                }
             }
-
         }
     }
 
@@ -380,28 +375,31 @@ void TextManager::updateColors(bool isErrorLine /*= false*/)
 /////////////////////////////////////////////////
 void TextManager::renderLayout()
 {
-    size_t lastRenderedLine = 0;
+    size_t firstLineToRender = 0;
 
     // Get the last rendered line of the current rendered
     // block
     if (m_renderedBlock.size())
-        lastRenderedLine = m_renderedBlock.back().coords.back().line + 1;
+        firstLineToRender = m_renderedBlock.back().coords.back().line + 1;
 
     // If the last rendered line is larger than the current
     // available managed text, clear it completely and
     // render a new layout
-    if (lastRenderedLine >= m_managedText.size())
+    if (firstLineToRender >= m_managedText.size())
     {
-        lastRenderedLine = 0;
+        firstLineToRender = 0;
         m_renderedBlock.clear();
     }
 
     // Go through the complete container
-    for (size_t i = lastRenderedLine; i < m_managedText.size(); i++)
+    for (size_t i = firstLineToRender; i < m_managedText.size(); i++)
     {
         size_t lastbreakpos = 0;
         bool firstline = true;
         LogicalCursor cursor(0, i);
+
+        // Buffer the current line to avoid multiple memory-heavy constructions
+        std::string sCurrentLine = m_managedText[i].toString();
 
         // Break the text lines at reasonable locations
         do
@@ -413,7 +411,7 @@ void TextManager::renderLayout()
                 firstline = false;
 
             // Get the new break position
-            size_t breakpos = findNextLinebreak(m_managedText[i].toString(), lastbreakpos);
+            size_t breakpos = findNextLinebreak(sCurrentLine, lastbreakpos);
 
             // If it's not the first line, add the indent here
             if (!firstline)
@@ -424,7 +422,7 @@ void TextManager::renderLayout()
             }
 
             // Assign text and colors
-            rLine.sLine += m_managedText[i].substr(lastbreakpos, breakpos - lastbreakpos);
+            rLine.sLine += sCurrentLine.substr(lastbreakpos, breakpos - lastbreakpos);
             vector<unsigned short> colors = m_managedText[i].subcolors(lastbreakpos, breakpos - lastbreakpos);
             rLine.colors.insert(rLine.colors.end(), colors.begin(), colors.end());
 
@@ -533,16 +531,19 @@ void TextManager::synchronizeRenderedBlock(int linesToDelete)
 /////////////////////////////////////////////////
 size_t TextManager::findNextLinebreak(const string& currentLine, size_t currentLinebreak) const
 {
+    size_t nLastPossibleChar = m_viewportWidth + currentLinebreak
+                                - m_indentDepth * (bool)currentLinebreak;
+
     // If the current line is shorter than the current viewport width,
     // return the length of the current line as next break position
-    if (m_viewportWidth + currentLinebreak - m_indentDepth * (bool)currentLinebreak > currentLine.length())
+    if (nLastPossibleChar > currentLine.length())
         return currentLine.length();
 
     // Store the valid line break characters
     static string sValidLinebreaks = "+- ,;.*/<>=!";
 
     // Find the next possible break position
-    for (int i = currentLinebreak + m_viewportWidth - 1 - m_indentDepth * (bool)currentLinebreak; i >= (int)currentLinebreak; i--)
+    for (int i = nLastPossibleChar-1; i >= (int)currentLinebreak; i--)
     {
         // If the current character marks a valid line break position,
         // return the character after it
@@ -551,7 +552,7 @@ size_t TextManager::findNextLinebreak(const string& currentLine, size_t currentL
     }
 
     // The fall back solution, if no valid position is found
-    return currentLinebreak + m_viewportWidth - m_indentDepth * (bool)currentLinebreak;
+    return nLastPossibleChar;
 }
 
 
@@ -613,7 +614,8 @@ void TextManager::newLine()
     }
 
     // Remove the last line due to the additional input character
-    synchronizeRenderedBlock(-1);
+    // INFO: Disabled due to not necessary double renders
+    //synchronizeRenderedBlock(-1);
 
     // render layout, get new top line and reset the virtual cursor line
     renderLayout();

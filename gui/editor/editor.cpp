@@ -3579,7 +3579,12 @@ void NumeReEditor::UpdateSyntaxHighlighting(bool forceUpdate)
 
 
     // make it for both: NSCR and NPRC
-    if (filetype == FILE_NSCR || filetype == FILE_NPRC || filetype == FILE_MATLAB || filetype == FILE_CPP || filetype == FILE_DIFF)
+    if (filetype == FILE_NSCR
+        || filetype == FILE_NPRC
+        || filetype == FILE_MATLAB
+        || filetype == FILE_CPP
+        || filetype == FILE_DIFF
+        || filetype == FILE_TEXSOURCE)
     {
         SetFoldFlags(wxSTC_FOLDFLAG_LINEAFTER_CONTRACTED);
 
@@ -3625,25 +3630,27 @@ void NumeReEditor::UpdateSyntaxHighlighting(bool forceUpdate)
     if (filetype == FILE_NSCR)
     {
         m_fileType = FILE_NSCR;
-        this->SetLexer(wxSTC_LEX_NSCR);
-        this->SetProperty("fold", "1");
+        SetLexer(wxSTC_LEX_NSCR);
+        SetProperty("fold", "1");
+
         if (_syntax)
         {
-            this->SetKeyWords(0, _syntax->getCommands());
-            this->SetKeyWords(1, _syntax->getOptions());
-            this->SetKeyWords(2, _syntax->getFunctions());
-            this->SetKeyWords(3, _syntax->getMethods());
-            this->SetKeyWords(4, _syntax->getBlockDefs());
-            this->SetKeyWords(5, _syntax->getConstants());
-            this->SetKeyWords(6, _syntax->getSpecial());
-            this->SetKeyWords(7, _syntax->getOperators());
-            this->SetKeyWords(8, _syntax->getDocKeyWords());
-            this->SetKeyWords(9, _syntax->getNPRCCommands());
+            SetKeyWords(0, _syntax->getCommands());
+            SetKeyWords(1, _syntax->getOptions());
+            SetKeyWords(2, _syntax->getFunctions());
+            SetKeyWords(3, _syntax->getMethods());
+            SetKeyWords(4, _syntax->getBlockDefs());
+            SetKeyWords(5, _syntax->getConstants());
+            SetKeyWords(6, _syntax->getSpecial());
+            SetKeyWords(7, _syntax->getOperators());
+            SetKeyWords(8, _syntax->getDocKeyWords());
+            SetKeyWords(9, _syntax->getNPRCCommands());
         }
 
         for (int i = 0; i <= wxSTC_NSCR_PROCEDURE_COMMANDS; i++)
         {
             SyntaxStyles _style;
+
             switch (i)
             {
                 case wxSTC_NSCR_DEFAULT:
@@ -3715,38 +3722,42 @@ void NumeReEditor::UpdateSyntaxHighlighting(bool forceUpdate)
                     break;
             }
 
-            this->StyleSetForeground(i, _style.foreground);
+            StyleSetForeground(i, _style.foreground);
+
             if (!_style.defaultbackground)
-                this->StyleSetBackground(i, _style.background);
+                StyleSetBackground(i, _style.background);
             else
-                this->StyleSetBackground(i, this->StyleGetBackground(wxSTC_STYLE_DEFAULT));
-            this->StyleSetBold(i, _style.bold);
-            this->StyleSetItalic(i, _style.italics);
-            this->StyleSetUnderline(i, _style.underline);
+                StyleSetBackground(i, StyleGetBackground(wxSTC_STYLE_DEFAULT));
+
+            StyleSetBold(i, _style.bold);
+            StyleSetItalic(i, _style.italics);
+            StyleSetUnderline(i, _style.underline);
         }
     }
     else if (filetype == FILE_NPRC)
     {
         m_fileType = FILE_NPRC;
-        this->SetLexer(wxSTC_LEX_NPRC);
-        this->SetProperty("fold", "1");
+        SetLexer(wxSTC_LEX_NPRC);
+        SetProperty("fold", "1");
+
         if (_syntax)
         {
-            this->SetKeyWords(0, _syntax->getCommands() + _syntax->getNPRCCommands());
-            this->SetKeyWords(1, _syntax->getOptions());
-            this->SetKeyWords(2, _syntax->getFunctions());
-            this->SetKeyWords(3, _syntax->getMethods());
-            this->SetKeyWords(4, _syntax->getBlockDefs());
-            this->SetKeyWords(5, _syntax->getConstants());
-            this->SetKeyWords(6, _syntax->getSpecial());
-            this->SetKeyWords(7, _syntax->getOperators());
-            this->SetKeyWords(8, _syntax->getDocKeyWords());
+            SetKeyWords(0, _syntax->getCommands() + _syntax->getNPRCCommands());
+            SetKeyWords(1, _syntax->getOptions());
+            SetKeyWords(2, _syntax->getFunctions());
+            SetKeyWords(3, _syntax->getMethods());
+            SetKeyWords(4, _syntax->getBlockDefs());
+            SetKeyWords(5, _syntax->getConstants());
+            SetKeyWords(6, _syntax->getSpecial());
+            SetKeyWords(7, _syntax->getOperators());
+            SetKeyWords(8, _syntax->getDocKeyWords());
         }
 
 
         for (int i = 0; i <= wxSTC_NPRC_FLAGS; i++)
         {
             SyntaxStyles _style;
+
             switch (i)
             {
                 case wxSTC_NPRC_DEFAULT:
@@ -3813,19 +3824,23 @@ void NumeReEditor::UpdateSyntaxHighlighting(bool forceUpdate)
                     break;
             }
 
-            this->StyleSetForeground(i, _style.foreground);
+            StyleSetForeground(i, _style.foreground);
+
             if (!_style.defaultbackground)
-                this->StyleSetBackground(i, _style.background);
+                StyleSetBackground(i, _style.background);
             else
-                this->StyleSetBackground(i, this->StyleGetBackground(wxSTC_STYLE_DEFAULT));
-            this->StyleSetBold(i, _style.bold);
-            this->StyleSetItalic(i, _style.italics);
-            this->StyleSetUnderline(i, _style.underline);
+                StyleSetBackground(i, StyleGetBackground(wxSTC_STYLE_DEFAULT));
+
+            StyleSetBold(i, _style.bold);
+            StyleSetItalic(i, _style.italics);
+            StyleSetUnderline(i, _style.underline);
         }
     }
     else if (filetype == FILE_TEXSOURCE)
     {
         SetLexer(wxSTC_LEX_TEX);
+        SetProperty("fold", "1");
+
         StyleSetForeground(wxSTC_TEX_DEFAULT, wxColor(0, 128, 0)); //Comment
         StyleSetForeground(wxSTC_TEX_COMMAND, wxColor(0, 0, 255)); //Command
         StyleSetBold(wxSTC_TEX_COMMAND, true);
@@ -3843,29 +3858,31 @@ void NumeReEditor::UpdateSyntaxHighlighting(bool forceUpdate)
     }
     else if (filetype == FILE_DATAFILES)
     {
-        this->SetLexer(wxSTC_LEX_OCTAVE);
-        this->StyleSetForeground(wxSTC_MATLAB_COMMENT, wxColor(0, 128, 0));
-        this->StyleSetItalic(wxSTC_MATLAB_COMMENT, false);
-        this->StyleSetForeground(wxSTC_MATLAB_OPERATOR, wxColor(255, 0, 0));
-        this->StyleSetBold(wxSTC_MATLAB_OPERATOR, false);
-        this->StyleSetForeground(wxSTC_MATLAB_NUMBER, wxColor(0, 0, 128));
-        this->StyleSetBackground(wxSTC_MATLAB_NUMBER, wxColor(255, 255, 255));
-        this->StyleSetForeground(wxSTC_MATLAB_IDENTIFIER, wxColor(0, 0, 0));
-        this->StyleSetBold(wxSTC_MATLAB_IDENTIFIER, false);
+        SetLexer(wxSTC_LEX_OCTAVE);
+        StyleSetForeground(wxSTC_MATLAB_COMMENT, wxColor(0, 128, 0));
+        StyleSetItalic(wxSTC_MATLAB_COMMENT, false);
+        StyleSetForeground(wxSTC_MATLAB_OPERATOR, wxColor(255, 0, 0));
+        StyleSetBold(wxSTC_MATLAB_OPERATOR, false);
+        StyleSetForeground(wxSTC_MATLAB_NUMBER, wxColor(0, 0, 128));
+        StyleSetBackground(wxSTC_MATLAB_NUMBER, wxColor(255, 255, 255));
+        StyleSetForeground(wxSTC_MATLAB_IDENTIFIER, wxColor(0, 0, 0));
+        StyleSetBold(wxSTC_MATLAB_IDENTIFIER, false);
     }
     else if (filetype == FILE_MATLAB)
     {
-        this->SetLexer(wxSTC_LEX_MATLAB);
-        this->SetProperty("fold", "1");
+        SetLexer(wxSTC_LEX_MATLAB);
+        SetProperty("fold", "1");
+
         if (_syntax)
         {
-            this->SetKeyWords(0, _syntax->getMatlab());
-            this->SetKeyWords(1, _syntax->getMatlabFunctions());
+            SetKeyWords(0, _syntax->getMatlab());
+            SetKeyWords(1, _syntax->getMatlabFunctions());
         }
 
         for (int i = 0; i <= wxSTC_MATLAB_FUNCTIONS; i++)
         {
             SyntaxStyles _style;
+
             switch (i)
             {
                 case wxSTC_MATLAB_DEFAULT:
@@ -3894,30 +3911,33 @@ void NumeReEditor::UpdateSyntaxHighlighting(bool forceUpdate)
                     break;
             }
 
-            this->StyleSetForeground(i, _style.foreground);
-            if (!_style.defaultbackground)
-                this->StyleSetBackground(i, _style.background);
-            else
-                this->StyleSetBackground(i, this->StyleGetBackground(wxSTC_STYLE_DEFAULT));
-            this->StyleSetBold(i, _style.bold);
-            this->StyleSetItalic(i, _style.italics);
-            this->StyleSetUnderline(i, _style.underline);
-        }
+            StyleSetForeground(i, _style.foreground);
 
+            if (!_style.defaultbackground)
+                StyleSetBackground(i, _style.background);
+            else
+                StyleSetBackground(i, StyleGetBackground(wxSTC_STYLE_DEFAULT));
+
+            StyleSetBold(i, _style.bold);
+            StyleSetItalic(i, _style.italics);
+            StyleSetUnderline(i, _style.underline);
+        }
     }
     else if (filetype == FILE_CPP)
     {
-        this->SetLexer(wxSTC_LEX_CPP);
-        this->SetProperty("fold", "1");
+        SetLexer(wxSTC_LEX_CPP);
+        SetProperty("fold", "1");
+
         if (_syntax)
         {
-            this->SetKeyWords(0, _syntax->getCpp());
-            this->SetKeyWords(1, _syntax->getCppFunctions());
+            SetKeyWords(0, _syntax->getCpp());
+            SetKeyWords(1, _syntax->getCppFunctions());
         }
 
         for (int i = 0; i <= wxSTC_C_PREPROCESSORCOMMENT; i++)
         {
             SyntaxStyles _style;
+
             switch (i)
             {
                 case wxSTC_C_DEFAULT :
@@ -3959,14 +3979,16 @@ void NumeReEditor::UpdateSyntaxHighlighting(bool forceUpdate)
                     break;
             }
 
-            this->StyleSetForeground(i, _style.foreground);
+            StyleSetForeground(i, _style.foreground);
+
             if (!_style.defaultbackground)
-                this->StyleSetBackground(i, _style.background);
+                StyleSetBackground(i, _style.background);
             else
-                this->StyleSetBackground(i, this->StyleGetBackground(wxSTC_STYLE_DEFAULT));
-            this->StyleSetBold(i, _style.bold);
-            this->StyleSetItalic(i, _style.italics);
-            this->StyleSetUnderline(i, _style.underline);
+                StyleSetBackground(i, StyleGetBackground(wxSTC_STYLE_DEFAULT));
+
+            StyleSetBold(i, _style.bold);
+            StyleSetItalic(i, _style.italics);
+            StyleSetUnderline(i, _style.underline);
         }
     }
     else if (filetype == FILE_DIFF)
@@ -4011,33 +4033,32 @@ void NumeReEditor::UpdateSyntaxHighlighting(bool forceUpdate)
     {
         if (!getEditorSetting(SETTING_USETXTADV))
         {
-            this->SetLexer(wxSTC_LEX_NULL);
-            this->ClearDocumentStyle();
+            SetLexer(wxSTC_LEX_NULL);
+            ClearDocumentStyle();
         }
         else
         {
-            this->SetLexer(wxSTC_LEX_TXTADV);
-            this->StyleSetItalic(wxSTC_TXTADV_DEFAULT, false);
-            this->StyleSetItalic(wxSTC_TXTADV_MODIFIER, true);
-            this->StyleSetForeground(wxSTC_TXTADV_MODIFIER, wxColor(255, 180, 180));
-            this->StyleSetItalic(wxSTC_TXTADV_ITALIC, true);
-            this->StyleSetItalic(wxSTC_TXTADV_BOLD, false);
-            this->StyleSetBold(wxSTC_TXTADV_BOLD, true);
-            this->StyleSetItalic(wxSTC_TXTADV_BOLD_ITALIC, true);
-            this->StyleSetBold(wxSTC_TXTADV_BOLD_ITALIC, true);
-            this->StyleSetUnderline(wxSTC_TXTADV_UNDERLINE, true);
-            this->StyleSetForeground(wxSTC_TXTADV_STRIKETHROUGH, wxColor(140, 140, 140));
-            this->StyleSetItalic(wxSTC_TXTADV_STRIKETHROUGH, true);
-            this->StyleSetUnderline(wxSTC_TXTADV_URL, true);
-            this->StyleSetForeground(wxSTC_TXTADV_URL, wxColor(0, 0, 255));
-            this->StyleSetUnderline(wxSTC_TXTADV_HEAD, true);
-            this->StyleSetBold(wxSTC_TXTADV_HEAD, true);
-            this->StyleSetUnderline(wxSTC_TXTADV_BIGHEAD, true);
-            this->StyleSetBold(wxSTC_TXTADV_BIGHEAD, true);
-            this->StyleSetSize(wxSTC_TXTADV_BIGHEAD, this->StyleGetSize(0) + 1);
-            this->StyleSetCase(wxSTC_TXTADV_BIGHEAD, wxSTC_CASE_UPPER);
+            SetLexer(wxSTC_LEX_TXTADV);
+            StyleSetItalic(wxSTC_TXTADV_DEFAULT, false);
+            StyleSetItalic(wxSTC_TXTADV_MODIFIER, true);
+            StyleSetForeground(wxSTC_TXTADV_MODIFIER, wxColor(255, 180, 180));
+            StyleSetItalic(wxSTC_TXTADV_ITALIC, true);
+            StyleSetItalic(wxSTC_TXTADV_BOLD, false);
+            StyleSetBold(wxSTC_TXTADV_BOLD, true);
+            StyleSetItalic(wxSTC_TXTADV_BOLD_ITALIC, true);
+            StyleSetBold(wxSTC_TXTADV_BOLD_ITALIC, true);
+            StyleSetUnderline(wxSTC_TXTADV_UNDERLINE, true);
+            StyleSetForeground(wxSTC_TXTADV_STRIKETHROUGH, wxColor(140, 140, 140));
+            StyleSetItalic(wxSTC_TXTADV_STRIKETHROUGH, true);
+            StyleSetUnderline(wxSTC_TXTADV_URL, true);
+            StyleSetForeground(wxSTC_TXTADV_URL, wxColor(0, 0, 255));
+            StyleSetUnderline(wxSTC_TXTADV_HEAD, true);
+            StyleSetBold(wxSTC_TXTADV_HEAD, true);
+            StyleSetUnderline(wxSTC_TXTADV_BIGHEAD, true);
+            StyleSetBold(wxSTC_TXTADV_BIGHEAD, true);
+            StyleSetSize(wxSTC_TXTADV_BIGHEAD, this->StyleGetSize(0) + 1);
+            StyleSetCase(wxSTC_TXTADV_BIGHEAD, wxSTC_CASE_UPPER);
         }
-        //this->ClearDocumentStyle();
     }
 
     updateDefaultHighlightSettings();
@@ -6457,7 +6478,7 @@ wxString NumeReEditor::generateAutoCompList(int wordstartpos, int currpos, std::
     if (useSmartSense)
         context = getCurrentContext(LineFromPosition(currpos));
 
-    unsigned int nPos = PositionFromLine(context.first);
+    size_t nPos = PositionFromLine(context.first);
     bool findAll = !useSmartSense
                 || isStyleType(STYLE_COMMENT, wordstartpos)
                 || isStyleType(STYLE_STRING, wordstartpos);
@@ -6582,9 +6603,9 @@ void NumeReEditor::OnDisplayVariable(wxCommandEvent& event)
     SetIndicatorCurrent(HIGHLIGHT);
     IndicatorClearRange(0, maxpos);
 
-    unsigned int nPos = 0;
-    unsigned int nCurr = 0;
-    vector<unsigned int> vSelectionList;
+    size_t nPos = 0;
+    size_t nCurr = 0;
+    vector<size_t> vSelectionList;
 
     // If the current clicked word is already
     // highlighted, then simply clear out the
@@ -8542,7 +8563,7 @@ string NumeReEditor::realignLangString(string sLine, size_t& lastpos)
 /////////////////////////////////////////////////
 string NumeReEditor::addLinebreaks(const string& sLine, bool onlyDocumentation /* = false*/)
 {
-    const unsigned int nMAXLINE = 100;
+    const size_t nMAXLINE = 100;
 
     string sReturn = sLine;
 
@@ -8550,9 +8571,9 @@ string NumeReEditor::addLinebreaks(const string& sLine, bool onlyDocumentation /
     while (sReturn.find("\\$") != string::npos)
         sReturn.erase(sReturn.find("\\$"), 1);
 
-    unsigned int nDescStart = sReturn.find("- ");
-    unsigned int nIndentPos = 4;
-    unsigned int nLastLineBreak = 0;
+    size_t nDescStart = sReturn.find("- ");
+    size_t nIndentPos = 4;
+    size_t nLastLineBreak = 0;
     bool isItemize = false;
 
     // Handle the first indent depending on whether this is
@@ -8570,7 +8591,7 @@ string NumeReEditor::addLinebreaks(const string& sLine, bool onlyDocumentation /
 
     nLastLineBreak = nDescStart;
 
-    for (unsigned int i = nDescStart; i < sReturn.length(); i++)
+    for (size_t i = nDescStart; i < sReturn.length(); i++)
     {
         if (sReturn[i] == '\n')
         {

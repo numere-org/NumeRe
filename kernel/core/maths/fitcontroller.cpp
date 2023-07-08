@@ -87,7 +87,7 @@ Fitcontroller::~Fitcontroller()
 int Fitcontroller::fitfunction(const gsl_vector* params, void* data, gsl_vector* fvals)
 {
     FitData* _fData = static_cast<FitData*>(data);
-    unsigned int i = 0;
+    size_t i = 0;
 
     for (auto iter = mParams.begin(); iter != mParams.end(); ++iter)
     {
@@ -97,7 +97,7 @@ int Fitcontroller::fitfunction(const gsl_vector* params, void* data, gsl_vector*
 
     if (_fData->vx.size() && _fData->vy.size() && !_fData->vz.size()) // xy-Fit
     {
-        for (unsigned int n = 0; n < _fData->vx.size(); n++)
+        for (size_t n = 0; n < _fData->vx.size(); n++)
         {
             if (isnan(_fData->vy[n]) || isinf(_fData->vy[n]) || isnan(_fData->vy_w[n]) || !_fData->vy_w[n])
             {
@@ -114,11 +114,11 @@ int Fitcontroller::fitfunction(const gsl_vector* params, void* data, gsl_vector*
     }
     else if (_fData->vx.size() && _fData->vy.size() && _fData->vz.size()) // xyz-Fit
     {
-        for (unsigned int n = 0; n < _fData->vx.size(); n++)
+        for (size_t n = 0; n < _fData->vx.size(); n++)
         {
             *xvar = _fData->vx[n];
 
-            for (unsigned int m = 0; m < _fData->vy.size(); m++)
+            for (size_t m = 0; m < _fData->vy.size(); m++)
             {
                 if (isnan(_fData->vz[n][m]) || isinf(_fData->vz[n][m]) || isnan(_fData->vz_w[n][m]) || !_fData->vz_w[n][m])
                 {
@@ -152,7 +152,7 @@ int Fitcontroller::fitfunction(const gsl_vector* params, void* data, gsl_vector*
 int Fitcontroller::fitjacobian(const gsl_vector* params, void* data, gsl_matrix* Jac)
 {
     FitData* _fData = static_cast<FitData*>(data);
-    unsigned int i = 0;
+    size_t i = 0;
     const double dEps = _fData->dPrecision*1.0e-1;
     FitMatrix vFuncRes;
     FitMatrix vDiffRes;
@@ -168,7 +168,7 @@ int Fitcontroller::fitjacobian(const gsl_vector* params, void* data, gsl_matrix*
         vFuncRes = FitMatrix(_fData->vx.size(),vector<double>(1,0.0));
         vDiffRes = FitMatrix(_fData->vx.size(),vector<double>(1,0.0));
 
-        for (unsigned int n = 0; n < _fData->vx.size(); n++)
+        for (size_t n = 0; n < _fData->vx.size(); n++)
         {
             *xvar = _fData->vx[n];
             vFuncRes[n][0] = _fitParser->Eval().real();
@@ -179,11 +179,11 @@ int Fitcontroller::fitjacobian(const gsl_vector* params, void* data, gsl_matrix*
         vFuncRes = FitMatrix(_fData->vz.size(),vector<double>(_fData->vz[0].size(),0.0));
         vDiffRes = FitMatrix(_fData->vz.size(),vector<double>(_fData->vz[0].size(),0.0));
 
-        for (unsigned int n = 0; n < _fData->vx.size(); n++)
+        for (size_t n = 0; n < _fData->vx.size(); n++)
         {
             *xvar = _fData->vx[n];
 
-            for (unsigned int m = 0; m < _fData->vy.size(); m++)
+            for (size_t m = 0; m < _fData->vy.size(); m++)
             {
                 *yvar = _fData->vy[m];
                 vFuncRes[n][m] = _fitParser->Eval().real();
@@ -200,13 +200,13 @@ int Fitcontroller::fitjacobian(const gsl_vector* params, void* data, gsl_matrix*
 
         if (_fData->vx.size() && _fData->vy.size() && !_fData->vz.size()) // xy-Fit
         {
-            for (unsigned int n = 0; n < _fData->vx.size(); n++)
+            for (size_t n = 0; n < _fData->vx.size(); n++)
             {
                 *xvar = _fData->vx[n];
                 vDiffRes[n][0] = _fitParser->Eval().real();
             }
 
-            for (unsigned int n = 0; n < _fData->vx.size(); n++)
+            for (size_t n = 0; n < _fData->vx.size(); n++)
             {
                 if (isnan(_fData->vy[n]) || isinf(_fData->vy[n]))
                 {
@@ -219,20 +219,20 @@ int Fitcontroller::fitjacobian(const gsl_vector* params, void* data, gsl_matrix*
         }
         else if (_fData->vx.size() && _fData->vy.size() && _fData->vz.size()) // xyz-Fit
         {
-            for (unsigned int n = 0; n < _fData->vx.size(); n++)
+            for (size_t n = 0; n < _fData->vx.size(); n++)
             {
                 *xvar = _fData->vx[n];
 
-                for (unsigned int m = 0; m < _fData->vy.size(); m++)
+                for (size_t m = 0; m < _fData->vy.size(); m++)
                 {
                     *yvar = _fData->vy[m];
                     vDiffRes[n][m] = _fitParser->Eval().real();
                 }
             }
 
-            for (unsigned int n = 0; n < _fData->vx.size(); n++)
+            for (size_t n = 0; n < _fData->vx.size(); n++)
             {
-                for (unsigned int m = 0; m < _fData->vy.size(); m++)
+                for (size_t m = 0; m < _fData->vy.size(); m++)
                 {
                     if (isnan(_fData->vz[n][m]) || isinf(_fData->vz[n][m]))
                     {
@@ -290,7 +290,7 @@ int Fitcontroller::fitfuncjac(const gsl_vector* params, void* data, gsl_vector* 
 int Fitcontroller::fitfunctionrestricted(const gsl_vector* params, void* data, gsl_vector* fvals)
 {
     FitData* _fData = static_cast<FitData*>(data);
-    unsigned int i = 0;
+    size_t i = 0;
     int nVals = 0;
     value_type* v = 0;
 
@@ -302,7 +302,7 @@ int Fitcontroller::fitfunctionrestricted(const gsl_vector* params, void* data, g
 
     if (_fData->vx.size() && _fData->vy.size() && !_fData->vz.size()) // xy-Fit
     {
-        for (unsigned int n = 0; n < _fData->vx.size(); n++)
+        for (size_t n = 0; n < _fData->vx.size(); n++)
         {
             if (isnan(_fData->vy[n]) || isinf(_fData->vy[n]) || isnan(_fData->vy_w[n]) || !_fData->vy_w[n])
             {
@@ -320,11 +320,11 @@ int Fitcontroller::fitfunctionrestricted(const gsl_vector* params, void* data, g
     }
     else if (_fData->vx.size() && _fData->vy.size() && _fData->vz.size()) // xyz-Fit
     {
-        for (unsigned int n = 0; n < _fData->vx.size(); n++)
+        for (size_t n = 0; n < _fData->vx.size(); n++)
         {
             *xvar = _fData->vx[n];
 
-            for (unsigned int m = 0; m < _fData->vy.size(); m++)
+            for (size_t m = 0; m < _fData->vy.size(); m++)
             {
                 if (isnan(_fData->vz[n][m]) || isinf(_fData->vz[n][m]) || isnan(_fData->vz_w[n][m]) || !_fData->vz_w[n][m])
                 {
@@ -359,7 +359,7 @@ int Fitcontroller::fitfunctionrestricted(const gsl_vector* params, void* data, g
 int Fitcontroller::fitjacobianrestricted(const gsl_vector* params, void* data, gsl_matrix* Jac)
 {
     FitData* _fData = static_cast<FitData*>(data);
-    unsigned int i = 0;
+    size_t i = 0;
     const double dEps = _fData->dPrecision*1.0e-1;
     FitMatrix vFuncRes;
     FitMatrix vDiffRes;
@@ -377,7 +377,7 @@ int Fitcontroller::fitjacobianrestricted(const gsl_vector* params, void* data, g
         vFuncRes = FitMatrix(_fData->vx.size(),vector<double>(1,0.0));
         vDiffRes = FitMatrix(_fData->vx.size(),vector<double>(1,0.0));
 
-        for (unsigned int n = 0; n < _fData->vx.size(); n++)
+        for (size_t n = 0; n < _fData->vx.size(); n++)
         {
             *xvar = _fData->vx[n];
             v = _fitParser->Eval(nVals);
@@ -389,11 +389,11 @@ int Fitcontroller::fitjacobianrestricted(const gsl_vector* params, void* data, g
         vFuncRes = FitMatrix(_fData->vz.size(),vector<double>(_fData->vz[0].size(),0.0));
         vDiffRes = FitMatrix(_fData->vz.size(),vector<double>(_fData->vz[0].size(),0.0));
 
-        for (unsigned int n = 0; n < _fData->vx.size(); n++)
+        for (size_t n = 0; n < _fData->vx.size(); n++)
         {
             *xvar = _fData->vx[n];
 
-            for (unsigned int m = 0; m < _fData->vy.size(); m++)
+            for (size_t m = 0; m < _fData->vy.size(); m++)
             {
                 *yvar = _fData->vy[m];
                 v = _fitParser->Eval(nVals);
@@ -411,14 +411,14 @@ int Fitcontroller::fitjacobianrestricted(const gsl_vector* params, void* data, g
 
         if (_fData->vx.size() && _fData->vy.size() && !_fData->vz.size()) // xy-Fit
         {
-            for (unsigned int n = 0; n < _fData->vx.size(); n++)
+            for (size_t n = 0; n < _fData->vx.size(); n++)
             {
                 *xvar = _fData->vx[n];
                 v = _fitParser->Eval(nVals);
                 vDiffRes[n][0] = evalRestrictions(v, nVals);
             }
 
-            for (unsigned int n = 0; n < _fData->vx.size(); n++)
+            for (size_t n = 0; n < _fData->vx.size(); n++)
             {
                 if (isnan(_fData->vy[n]) || isinf(_fData->vy[n]))
                 {
@@ -431,11 +431,11 @@ int Fitcontroller::fitjacobianrestricted(const gsl_vector* params, void* data, g
         }
         else if (_fData->vx.size() && _fData->vy.size() && _fData->vz.size()) // xyz-Fit
         {
-            for (unsigned int n = 0; n < _fData->vx.size(); n++)
+            for (size_t n = 0; n < _fData->vx.size(); n++)
             {
                 *xvar = _fData->vx[n];
 
-                for (unsigned int m = 0; m < _fData->vy.size(); m++)
+                for (size_t m = 0; m < _fData->vy.size(); m++)
                 {
                     *yvar = _fData->vy[m];
                     v = _fitParser->Eval(nVals);
@@ -443,9 +443,9 @@ int Fitcontroller::fitjacobianrestricted(const gsl_vector* params, void* data, g
                 }
             }
 
-            for (unsigned int n = 0; n < _fData->vx.size(); n++)
+            for (size_t n = 0; n < _fData->vx.size(); n++)
             {
-                for (unsigned int m = 0; m < _fData->vy.size(); m++)
+                for (size_t m = 0; m < _fData->vy.size(); m++)
                 {
                     if (isnan(_fData->vz[n][m]) || isinf(_fData->vz[n][m]))
                     {
@@ -523,15 +523,15 @@ double Fitcontroller::evalRestrictions(const value_type* v, int nVals)
 /// value to avoid converging towards NaNs.
 ///
 /// \param fvals gsl_vector*
-/// \param nSize unsigned int
+/// \param nSize size_t
 /// \return void
 ///
 /////////////////////////////////////////////////
-void Fitcontroller::removeNANVals(gsl_vector* fvals, unsigned int nSize)
+void Fitcontroller::removeNANVals(gsl_vector* fvals, size_t nSize)
 {
     double dMax = NAN;
 
-    for (unsigned int i = 0; i < nSize; i++)
+    for (size_t i = 0; i < nSize; i++)
     {
         if (!isnan(gsl_vector_get(fvals, i)) && !isinf(gsl_vector_get(fvals, i)))
         {
@@ -547,7 +547,7 @@ void Fitcontroller::removeNANVals(gsl_vector* fvals, unsigned int nSize)
 
     dMax *= 100.0;
 
-    for (unsigned int i = 0; i < nSize; i++)
+    for (size_t i = 0; i < nSize; i++)
     {
         if (isnan(gsl_vector_get(fvals, i)) || isinf(gsl_vector_get(fvals, i)))
             gsl_vector_set(fvals, i, dMax);
@@ -560,18 +560,18 @@ void Fitcontroller::removeNANVals(gsl_vector* fvals, unsigned int nSize)
 /// value to avoid converging towards NaNs.
 ///
 /// \param Jac gsl_matrix*
-/// \param nLines unsigned int
-/// \param nCols unsigned int
+/// \param nLines size_t
+/// \param nCols size_t
 /// \return void
 ///
 /////////////////////////////////////////////////
-void Fitcontroller::removeNANVals(gsl_matrix* Jac, unsigned int nLines, unsigned int nCols)
+void Fitcontroller::removeNANVals(gsl_matrix* Jac, size_t nLines, size_t nCols)
 {
     double dMax = NAN;
 
-    for (unsigned int i = 0; i < nLines; i++)
+    for (size_t i = 0; i < nLines; i++)
     {
-        for (unsigned int j = 0; j < nCols; j++)
+        for (size_t j = 0; j < nCols; j++)
         {
             if (!isnan(gsl_matrix_get(Jac, i, j)) && !isinf(gsl_matrix_get(Jac, i, j)))
             {
@@ -588,9 +588,9 @@ void Fitcontroller::removeNANVals(gsl_matrix* Jac, unsigned int nLines, unsigned
 
     dMax *= 100.0;
 
-    for (unsigned int i = 0; i < nLines; i++)
+    for (size_t i = 0; i < nLines; i++)
     {
-        for (unsigned int j = 0; j < nCols; j++)
+        for (size_t j = 0; j < nCols; j++)
         {
             if (isnan(gsl_matrix_get(Jac, i, j)) || isinf(gsl_matrix_get(Jac, i, j)))
                 gsl_matrix_set(Jac, i, j, dMax);
@@ -620,7 +620,7 @@ bool Fitcontroller::fitctrl(const string& __sExpr, const string& __sRestrictions
 
     int nStatus = 0;
     int nRetry = 0;
-    unsigned int nPoints = (_fData.vz.size()) ? _fData.vx.size()*_fData.vy.size() : _fData.vx.size();
+    size_t nPoints = (_fData.vz.size()) ? _fData.vx.size()*_fData.vy.size() : _fData.vx.size();
 
     // Validation
     if (_fData.vz.size() && _fData.vx.size() && _fData.vy.size())
@@ -758,8 +758,17 @@ bool Fitcontroller::fitctrl(const string& __sExpr, const string& __sRestrictions
     while (nStatus == GSL_CONTINUE && nIterations < nMaxIterations);
 
     // Get the covariance matrix
+
     gsl_matrix* mCovar = gsl_matrix_alloc(mParams.size(), mParams.size());
-    gsl_multifit_covar(solver->J, 0.0, mCovar);
+#ifdef NR_HAVE_GSL2
+	gsl_matrix *J = gsl_matrix_alloc(solver->fdf->n, solver->fdf->p);
+	gsl_multifit_fdfsolver_jac(solver, J);
+	gsl_multifit_covar (J, 0.0, mCovar);
+	gsl_matrix_free (J);
+#else
+	gsl_multifit_covar(solver->J, 0.0, mCovar);
+#endif
+
     vCovarianceMatrix = FitMatrix(mParams.size(), vector<double>(mParams.size(), 0.0));
 
     for (size_t i = 0; i < mParams.size(); i++)
@@ -871,7 +880,7 @@ string Fitcontroller::getFitFunction()
 
     for (auto iter = mParams.begin(); iter != mParams.end(); ++iter)
     {
-        for (unsigned int i = 0; i < sExpr.length(); i++)
+        for (size_t i = 0; i < sExpr.length(); i++)
         {
             if (sExpr.substr(i, (iter->first).length()) == iter->first)
             {

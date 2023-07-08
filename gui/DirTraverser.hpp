@@ -34,7 +34,7 @@ class DirTraverser : public wxDirTraverser
         FileFilterType fileSpec;
         wxString path;
         std::vector<wxTreeItemId> vcurrentnodes;
-        unsigned int ncurrentdepth;
+        size_t ncurrentdepth;
     public:
         DirTraverser(wxTreeCtrl* therootNode, IconManager* theiconmanager, wxTreeItemId theid, const wxString& thepath, FileFilterType thefilespec);
 

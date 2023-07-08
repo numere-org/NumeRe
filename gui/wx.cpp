@@ -1337,7 +1337,7 @@ void wxMGL::ExportPNG(wxString fname)
     if (fname.IsEmpty())
         wxMessageBox(appName, wxT("No filename."),wxOK|wxICON_ERROR ,this);
     else
-        gr->WriteFrame(mglw_str(mglSetExtension(fname,"png")));
+        gr->WritePNG(mglw_str(mglSetExtension(fname,"png")), "", false);
 }
 //-----------------------------------------------------------------------------
 void wxMGL::ExportPNGs(wxString fname)
@@ -1347,7 +1347,7 @@ void wxMGL::ExportPNGs(wxString fname)
     if (fname.IsEmpty())
         wxMessageBox(appName, wxT("No filename."),wxOK|wxICON_ERROR ,this);
     else
-        gr->WriteFrame(mglw_str(mglSetExtension(fname,"png")));
+        gr->WritePNG(mglw_str(mglSetExtension(fname,"png")), "", false);
     //mgl_write_png_solid(gr->Self(),mglw_str(mglSetExtension(fname,"png")), mglw_str(appName));
 }
 //-----------------------------------------------------------------------------

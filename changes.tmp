@@ -2,3 +2,14 @@ Added	It is now possible to pass plotting options to "hist" and "hist2d" directl
 New	The new flow control command "leave" allows jumping out of nested loops completely without the need of unnecessary complex "if-else" checks and boolean flags.
 Cleaned	The editor and the terminal will now only provide method autocompletion with methods fitting to the variable type.
 Added	It's now possible  to define the file type of the loaded or saved file if that is different from the standard file extension.
+Cleaned	The editor and the terminal will now only provide method autocompletion with methods fitting to the variable type.
+Removed	The obsolete second parameter for the elliptic integral D was removed. The function now has the signature "ellipticD(x,k)"
+Fixed	Resolved a problem with creating new files.
+New	A 64 bit version is now available.
+Cleaned	The context menu of the table viewer now also contains the possibility to change the column type.
+Added	The table method "TAB().convert()" may now autodetect the column type if the second argument is set to "auto" or omitted.
+Added	A function "getuilang()" for accessing the user's current language
+Fixed	The autoconversion of tables does not prefer logical over value columns any more (rather the other way around).
+Cleaned	Improved the rendering speed of the terminal (relevant for larger strings, which required a bunch of virtual line breaks).
+Added	The functions "to_utf8()" and "to_ansi()" can be used to convert to and from UTF-8 encoded strings.
+Added	Folding has been enabled for LaTeX files.

@@ -38,7 +38,7 @@ std::string promptForUserInput(const std::string& __sCommand);
 int integralFactorial(int nNumber);
 bool evaluateIndices(const std::string& sCache, Indices& _idx, MemoryManager& _data);
 std::vector<double> readAndParseIntervals(std::string& sExpr, mu::Parser& _parser, MemoryManager& _data, FunctionDefinitionManager& _functions, const Settings& _option, bool bEraseInterval = false);
-unsigned int getPositionOfFirstDelimiter(const std::string&);
+size_t getPositionOfFirstDelimiter(const std::string&);
 
 #endif
 
