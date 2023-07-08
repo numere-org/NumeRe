@@ -205,6 +205,7 @@ class NumeReWindow : public wxFrame
         void createLaTeXFile();
         void runLaTeX();
         void compileLaTeX();
+        void runFromLine(wxCommandEvent &event);
 
         void refreshFunctionTree();
 

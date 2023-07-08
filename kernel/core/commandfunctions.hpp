@@ -3915,15 +3915,9 @@ static CommandReturnValues cmd_start(string& sCmd)
     int nFromLine = 0;
     if (cmdParser.hasParam("fromline"))
     {
-        // Get the line parameter and subtract 1 to match the internal 0 based line count
+        // Get the line parameter and subtract 1 to match the internal line count
         std::vector<mu::value_type> vecFromLine = cmdParser.getParameterValueAsNumericalValue("fromline");
         nFromLine = intCast(vecFromLine.front()) - 1;
-
-        // Check if line is continous line, if so jump to line start
-        // TODO
-
-        // Check if line is in loop, if so jump to start of loop
-        // TODO
     }
 
     _script.openScript(sFileName, nFromLine);

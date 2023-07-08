@@ -150,7 +150,7 @@ class NumeReEditor : public wxStyledTextCtrl, public wxThreadHelper
 		wxFileName GetFileName(); // capital N
 		wxString GetFilePath();
 		wxArrayInt GetBreakpoints();
-		
+
 		int GetLineForMarkerOperation();
 
 		void SetFilename(wxFileName filename, bool fileIsRemote);
@@ -184,6 +184,7 @@ class NumeReEditor : public wxStyledTextCtrl, public wxThreadHelper
 		void OnAbstrahizeSection(wxCommandEvent& event);
 		void OnAbstrahizeSectionFromMenu();
 		void OnMenuEvent(wxCommandEvent& event);
+		void OnRunFromLineEvent(wxCommandEvent& event);
 		void OnTranspose();
 		void OnExtractAsHTML();
 		void OnExtractFormatted();
@@ -300,6 +301,8 @@ class NumeReEditor : public wxStyledTextCtrl, public wxThreadHelper
 		{
 		    return m_fileType == FILE_NSCR || m_fileType == FILE_NPRC || m_fileType == FILE_CPP || m_fileType == FILE_MATLAB;
 		}
+
+		int getStartLine(int line);
 
 		void AnalyseCode();
 

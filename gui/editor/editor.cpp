@@ -115,6 +115,7 @@ BEGIN_EVENT_TABLE(NumeReEditor, wxStyledTextCtrl)
     EVT_MENU            (ID_MENU_COPY, NumeReEditor::OnMenuEvent)
     EVT_MENU            (ID_MENU_CUT, NumeReEditor::OnMenuEvent)
     EVT_MENU            (ID_MENU_PASTE, NumeReEditor::OnMenuEvent)
+    EVT_MENU            (ID_MENU_EXECUTE_FROM_LINE, NumeReEditor::OnMenuEvent)
     EVT_IDLE            (NumeReEditor::OnIdle)
     EVT_TIMER           (ID_ANALYZERTIMER, NumeReEditor::OnAnalyzerTimer)
 END_EVENT_TABLE()
@@ -298,6 +299,9 @@ NumeReEditor::NumeReEditor(NumeReWindow* mframe, Options* options, wxWindow* par
     m_popupMenu.Append(ID_MENU_CUT, _guilang.get("GUI_MENU_EDITOR_CUT"));
     m_popupMenu.Append(ID_MENU_COPY, _guilang.get("GUI_MENU_EDITOR_COPY"));
     m_popupMenu.Append(ID_MENU_PASTE, _guilang.get("GUI_MENU_EDITOR_PASTE"));
+    m_popupMenu.AppendSeparator();
+
+    m_popupMenu.Append(ID_MENU_EXECUTE_FROM_LINE, _guilang.get("GUI_MENU_RUN_FROM_LINE")); //TODO: Add GUI_MENU_RUN_FROM_LINE
     m_popupMenu.AppendSeparator();
 
     m_popupMenu.Append(ID_FOLD_CURRENT_BLOCK, _guilang.get("GUI_MENU_EDITOR_FOLDCURRENTBLOCK"));
@@ -6859,6 +6863,10 @@ void NumeReEditor::OnMenuEvent(wxCommandEvent& event)
         case ID_MENU_PASTE:
             Paste();
             break;
+        case ID_MENU_EXECUTE_FROM_LINE:
+            //TODO: Solved with a public wrapper. Valid?
+            m_mainFrame->runFromLine(event);
+            break;
     }
 }
 
@@ -8243,6 +8251,25 @@ std::pair<int,int> NumeReEditor::getCurrentContext(int line)
 }
 
 
+//TODO: Doku
+int NumeReEditor::getStartLine(int line)
+{
+    // Only check for scripts and do not do further checks for line 0
+    if (m_fileType != FILE_NSCR || line == 0)
+        return 0;
+
+    // If in a loop, find start of loop
+    while (GetFoldParent(line - 1) != wxNOT_FOUND)
+        line = GetFoldParent(line - 1) + 1;
+
+    // Check if line is continued and if so go to start of line
+    while (GetLine(line - 1 - 1).find("\\\\") != std::string::npos)
+        line--;
+
+    return line;
+}
+
+
 /////////////////////////////////////////////////
 /// \brief Wrapper for \c CodeFormatter.
 ///
@@ -8428,15 +8455,15 @@ int NumeReEditor::countUmlauts(const string& sStr)
     int nUmlauts = 0;
     for (size_t i = 0; i < sStr.length(); i++)
     {
-        if (sStr[i] == 'Ä'
-                || sStr[i] == 'ä'
-                || sStr[i] == 'Ö'
-                || sStr[i] == 'ö'
-                || sStr[i] == 'Ü'
-                || sStr[i] == 'ü'
-                || sStr[i] == 'ß'
-                || sStr[i] == '°'
-                || sStr[i] == 'µ'
+        if (sStr[i] == 'Ã„'
+                || sStr[i] == 'Ã¤'
+                || sStr[i] == 'Ã–'
+                || sStr[i] == 'Ã¶'
+                || sStr[i] == 'Ãœ'
+                || sStr[i] == 'Ã¼'
+                || sStr[i] == 'ÃŸ'
+                || sStr[i] == 'Â°'
+                || sStr[i] == 'Âµ'
                 || sStr[i] == (char)142
                 || sStr[i] == (char)132
                 || sStr[i] == (char)153

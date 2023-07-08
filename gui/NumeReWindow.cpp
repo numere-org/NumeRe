@@ -2706,6 +2706,38 @@ void NumeReWindow::compileLaTeX()
 }
 
 
+//TODO: Add docu
+void NumeReWindow::runFromLine(wxCommandEvent &event)
+{
+    // Get the current editor
+    NumeReEditor* editor = m_book->getCurrentEditor();
+
+    // Get the current file from the current editor
+    std::string sFileName = (m_book->getCurrentEditor()->GetFileName()).GetFullPath().ToStdString();
+
+    // Check the filename
+    if (!sFileName.length())
+        return;
+
+    // Initialise the command
+    std::string command = replacePathSeparator(sFileName);
+    std::vector<std::string> vPaths = m_terminal->getPathSettings();
+
+    // Get the current line
+    int nStartLine = GetCurrentEditor()->GetLineForMarkerOperation() + 1;
+
+    // Get the valid starting point
+    nStartLine = GetCurrentEditor()->getStartLine(nStartLine);
+
+    // Set the command
+    command = "start \"" + command + "\"" + " -set fromline=" + std::to_string(nStartLine);
+
+    // Run the command
+    showConsole();
+    m_terminal->pass_command(command, false);
+}
+
+
 /////////////////////////////////////////////////
 /// \brief This member function moves the selected
 /// file from the file tree directly to the
@@ -7112,8 +7144,13 @@ void NumeReWindow::OnExecuteFile(const std::string& sFileName, int id)
             command = "start \"" + command + "\"";
         else if (id == ID_MENU_EXECUTE_FROM_LINE)
         {
-            // Get the line to start from
-            int nStartLine = GetCurrentEditor()->GetLineForMarkerOperation();
+            // Get the current line
+            int nStartLine = GetCurrentEditor()->GetLineForMarkerOperation() + 1;
+
+            // Get the valid starting point
+            nStartLine = GetCurrentEditor()->getStartLine(nStartLine);
+
+            // Set the command
             command = "start \"" + command + "\"" + " -set fromline=" + std::to_string(nStartLine);
         }
     }
