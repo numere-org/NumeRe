@@ -301,7 +301,7 @@ NumeReEditor::NumeReEditor(NumeReWindow* mframe, Options* options, wxWindow* par
     m_popupMenu.Append(ID_MENU_PASTE, _guilang.get("GUI_MENU_EDITOR_PASTE"));
     m_popupMenu.AppendSeparator();
 
-    m_popupMenu.Append(ID_MENU_EXECUTE_FROM_LINE, _guilang.get("GUI_MENU_RUN_FROM_LINE")); //TODO: Add GUI_MENU_RUN_FROM_LINE
+    m_popupMenu.Append(ID_MENU_EXECUTE_FROM_LINE, _guilang.get("GUI_MENU_RUN_FROM_LINE"));
     m_popupMenu.AppendSeparator();
 
     m_popupMenu.Append(ID_FOLD_CURRENT_BLOCK, _guilang.get("GUI_MENU_EDITOR_FOLDCURRENTBLOCK"));
@@ -6864,7 +6864,6 @@ void NumeReEditor::OnMenuEvent(wxCommandEvent& event)
             Paste();
             break;
         case ID_MENU_EXECUTE_FROM_LINE:
-            //TODO: Solved with a public wrapper. Valid?
             m_mainFrame->runFromLine(event);
             break;
     }
@@ -8251,7 +8250,16 @@ std::pair<int,int> NumeReEditor::getCurrentContext(int line)
 }
 
 
-//TODO: Doku
+/////////////////////////////////////////////////
+/// \brief This helper function finds the line
+/// to start code execution for the run from
+/// line command. This includes checking for
+/// continued lines and loops.
+///
+/// \param line int
+/// \return int
+///
+/////////////////////////////////////////////////
 int NumeReEditor::getStartLine(int line)
 {
     // Only check for scripts and do not do further checks for line 0

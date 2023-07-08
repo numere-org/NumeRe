@@ -2706,7 +2706,14 @@ void NumeReWindow::compileLaTeX()
 }
 
 
-//TODO: Add docu
+/////////////////////////////////////////////////
+/// \brief This function provides the functionality
+/// to run a script from the current line.
+///
+/// \param event wxCommandEvent&
+/// \return void
+///
+/////////////////////////////////////////////////
 void NumeReWindow::runFromLine(wxCommandEvent &event)
 {
     // Get the current editor
@@ -5604,7 +5611,7 @@ void NumeReWindow::UpdateToolbar()
         t->AddSeparator();
 
     t->AddTool(ID_MENU_EXECUTE, _guilang.get("GUI_TB_RUN"), getToolbarIcon("run"), _guilang.get("GUI_TB_RUN_TTP"));
-    t->AddTool(ID_MENU_EXECUTE_FROM_LINE, _guilang.get("GUI_TB_RUN_LINE"), getToolbarIcon("run-from-line"), _guilang.get("GUI_TB_RUN_LINE_TTP")); //TODO: Add GUI_TB_RUN_LINE and GUI_TB_RUN_LINE_TTP
+    t->AddTool(ID_MENU_EXECUTE_FROM_LINE, _guilang.get("GUI_TB_RUN_LINE"), getToolbarIcon("run-from-line"), _guilang.get("GUI_TB_RUN_LINE_TTP"));
     t->AddTool(ID_MENU_STOP_EXECUTION, _guilang.get("GUI_TB_STOP"), getToolbarIcon("stop"), _guilang.get("GUI_TB_STOP_TTP"));
 
     t->AddSeparator();
