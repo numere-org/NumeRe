@@ -13,3 +13,4 @@ Fixed	The autoconversion of tables does not prefer logical over value columns an
 Cleaned	Improved the rendering speed of the terminal (relevant for larger strings, which required a bunch of virtual line breaks).
 Added	The functions "to_utf8()" and "to_ansi()" can be used to convert to and from UTF-8 encoded strings.
 Added	Folding has been enabled for LaTeX files.
+Added	Added option to execute a script from the current or a given line.
