@@ -408,6 +408,8 @@ bool NumeReEditor::SaveFile( const wxString& filename )
         m_simpleFileName = fn.GetFullName();
     }
 
+    bool createRevision = m_options->GetKeepBackupFile();
+
     VersionControlSystemManager manager(m_mainFrame);
     std::unique_ptr<FileRevisions> revisions;
 
@@ -415,9 +417,9 @@ bool NumeReEditor::SaveFile( const wxString& filename )
     if (filename.find("numere.history") == string::npos)
         revisions.reset(manager.getRevisions(filename));
 
-    if (revisions.get())
+    if (revisions)
     {
-        if (!revisions->getRevisionCount() && wxFileExists(filename))
+        if (!revisions->getRevisionCount() && wxFileExists(filename) && createRevision)
         {
             wxFile tempfile(filename);
             wxString contents;
@@ -447,7 +449,7 @@ bool NumeReEditor::SaveFile( const wxString& filename )
         // if the contents are not matching, restore the backup and signalize that an error occured
         if (wxFileExists(filename + ".backup"))
             wxCopyFile(filename + ".backup", filename, true);
-        else if (revisions.get() && revisions->getRevisionCount())
+        else if (revisions && revisions->getRevisionCount())
             revisions->restoreRevision(revisions->getRevisionCount()-1, filename);
 
         return false;
@@ -457,7 +459,7 @@ bool NumeReEditor::SaveFile( const wxString& filename )
         // if the contents are not matching, restore the backup and signalize that an error occured
         if (wxFileExists(filename + ".backup"))
             wxCopyFile(filename + ".backup", filename, true);
-        else if (revisions.get() && revisions->getRevisionCount())
+        else if (revisions && revisions->getRevisionCount())
             revisions->restoreRevision(revisions->getRevisionCount()-1, filename);
 
         return false;
@@ -467,7 +469,7 @@ bool NumeReEditor::SaveFile( const wxString& filename )
         // if the contents are not matching, restore the backup and signalize that an error occured
         if (wxFileExists(filename + ".backup"))
             wxCopyFile(filename + ".backup", filename, true);
-        else if (revisions.get() && revisions->getRevisionCount())
+        else if (revisions && revisions->getRevisionCount())
             revisions->restoreRevision(revisions->getRevisionCount()-1, filename);
 
         return false;
@@ -475,7 +477,7 @@ bool NumeReEditor::SaveFile( const wxString& filename )
 
     // Add the current text to the revisions, if the saving process was
     // successful
-    if (revisions.get() && m_options->GetKeepBackupFile())
+    if (revisions && createRevision)
         revisions->addRevision(GetText());
 
     // If the user doesn't want to keep the backup files
