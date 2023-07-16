@@ -13,3 +13,5 @@ Fixed	The autoconversion of tables does not prefer logical over value columns an
 Cleaned	Improved the rendering speed of the terminal (relevant for larger strings, which required a bunch of virtual line breaks).
 Added	The functions "to_utf8()" and "to_ansi()" can be used to convert to and from UTF-8 encoded strings.
 Added	Folding has been enabled for LaTeX files.
+Added	Additional handler for interacting with custom windows were added: changing focus, selections, maximize, iconize and restore.
+Cleaned	The string arrays of "dropdown" and "combobox" can now be changed using the "window ID -set label=VALS item=ID" command.

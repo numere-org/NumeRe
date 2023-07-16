@@ -347,6 +347,22 @@ namespace NumeRe
 
 
     /////////////////////////////////////////////////
+    /// \brief Returns the currently selected element
+    /// in the corresponding window item.
+    ///
+    /// \param windowItemID int
+    /// \return std::string
+    ///
+    /////////////////////////////////////////////////
+    std::string Window::getItemSelection(int windowItemID) const
+    {
+        if (m_customWindow)
+            return m_customWindow->getItemSelection(windowItemID).ToStdString();
+
+        return "";
+    }
+
+    /////////////////////////////////////////////////
     /// \brief Returns the value of the selected
     /// property as a string.
     ///
@@ -458,6 +474,42 @@ namespace NumeRe
 
 
     /////////////////////////////////////////////////
+    /// \brief Set the selection to the corresponding
+    /// element in the window item.
+    ///
+    /// \param selectionID int
+    /// \param selectionID2 int
+    /// \param windowItemID int
+    /// \return bool
+    ///
+    /////////////////////////////////////////////////
+    bool Window::setItemSelection(int selectionID, int selectionID2, int windowItemID)
+    {
+        if (m_customWindow)
+            return m_customWindow->setItemSelection(selectionID, selectionID2, windowItemID);
+
+        return false;
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Set the keyboard focus to the desired
+    /// element.
+    ///
+    /// \param windowItemID int
+    /// \return bool
+    ///
+    /////////////////////////////////////////////////
+    bool Window::setItemFocus(int windowItemID)
+    {
+        if (m_customWindow)
+            return m_customWindow->pushItemFocus(windowItemID);
+
+        return false;
+    }
+
+
+    /////////////////////////////////////////////////
     /// \brief Updates the graph in the custom
     /// window.
     ///
@@ -490,6 +542,45 @@ namespace NumeRe
             return m_customWindow->setPropValue(_value, varName);
 
         return false;
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief This function iconizes the window.
+    ///
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
+    void Window::iconize()
+    {
+        if (m_customWindow)
+            m_customWindow->Iconize();
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief This function maximizes the window.
+    ///
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
+    void Window::maximize()
+    {
+        if (m_customWindow)
+            m_customWindow->Maximize();
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief This function restores the window.
+    ///
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
+    void Window::restore()
+    {
+        if (m_customWindow)
+            m_customWindow->Restore();
     }
 
 

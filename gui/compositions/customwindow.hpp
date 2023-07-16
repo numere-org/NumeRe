@@ -108,20 +108,37 @@ class SetLabelEvent : public wxEvent
 {
 public:
     SetLabelEvent(wxEventType eventType, int winid, int winItem, const wxString& label)
-        : wxEvent(winid, eventType), m_label(label) , m_item(winItem) {}
+        : wxEvent(winid, eventType), m_label(label), m_item(winItem) {}
     virtual wxEvent* Clone() const {return new SetLabelEvent(*this); }
 
     wxString m_label;
     int m_item;
 };
 
+/////////////////////////////////////////////////
+/// \brief This event is used to asynchronously
+/// change the elements' focus in the window.
+/////////////////////////////////////////////////
+class SetFocusEvent : public wxEvent
+{
+public:
+    SetFocusEvent(wxEventType eventType, int winid, int winItem)
+        : wxEvent(winid, eventType), m_item(winItem) {}
+    virtual wxEvent* Clone() const {return new SetFocusEvent(*this); }
+
+    int m_item;
+};
+
 wxDEFINE_EVENT(SET_WINDOW_VALUE, SetValueEvent);
 wxDEFINE_EVENT(SET_WINDOW_LABEL, SetLabelEvent);
+wxDEFINE_EVENT(SET_WINDOW_FOCUS, SetFocusEvent);
 
 #define cEVT_SET_VALUE(id, func) \
     wx__DECLARE_EVT1(SET_WINDOW_VALUE, id, &func)
 #define cEVT_SET_LABEL(id, func) \
     wx__DECLARE_EVT1(SET_WINDOW_LABEL, id, &func)
+#define cEVT_SET_FOCUS(id, func) \
+    wx__DECLARE_EVT1(SET_WINDOW_FOCUS, id, &func)
 
 
 /////////////////////////////////////////////////
@@ -193,16 +210,20 @@ class CustomWindow : public wxFrame
         wxString getItemLabel(int windowItemID) const;
         wxString getItemState(int windowItemID) const;
         wxString getItemColor(int windowItemID) const;
+        wxString getItemSelection(int windowItemID) const;
         wxString getPropValue(const wxString& varName) const;
         wxString getProperties() const;
 
         bool pushItemValue(WindowItemValue& _value, int windowItemID);
         bool pushItemLabel(const wxString& _label, int windowItemID);
+        bool pushItemFocus(int windowItemID);
 
         bool setItemValue(WindowItemValue& _value, int windowItemID);
         bool setItemLabel(const wxString& _label, int windowItemID);
         bool setItemState(const wxString& _state, int windowItemID);
         bool setItemColor(const wxString& _color, int windowItemID);
+        bool setItemSelection(int selectionID, int selectionID2, int windowItemID);
+        bool setItemFocus(int windowItemID);
         bool setItemGraph(GraphHelper* _helper, int windowItemID);
         bool setPropValue(const wxString& _value, const wxString& varName);
 
@@ -226,6 +247,11 @@ class CustomWindow : public wxFrame
         void OnSetLabelEvent(SetLabelEvent& event)
         {
             setItemLabel(event.m_label, event.m_item);
+        }
+
+        void OnSetFocusEvent(SetFocusEvent& event)
+        {
+            setItemFocus(event.m_item);
         }
 
         DECLARE_EVENT_TABLE();
