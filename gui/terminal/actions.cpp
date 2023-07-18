@@ -243,7 +243,7 @@ void GenericTerminal::tab()
                                                     get_method_root_type(nTabStartPos - (int)sAutoCompWordStart.length()-1, termCursor.y));
         }
         else
-            sAutoCompList = _syntax.getAutoCompList(sAutoCompWordStart, m_useSmartSense);
+            sAutoCompList = generateAutoCompList(sAutoCompWordStart, _syntax.getAutoCompList(sAutoCompWordStart, m_useSmartSense));
 
         // Reset the autocompletion, if no completion was found or the word start is too short
         if (!sAutoCompList.length() || (!sAutoCompWordStart.length() && !isMethod))
@@ -267,7 +267,7 @@ void GenericTerminal::tab()
                 sAutoCompList = _syntax.getAutoCompList("." + sAutoCompWordStart, m_useSmartSense,
                                                         get_method_root_type(nTabStartPos - (int)sAutoCompWordStart.length()-1, termCursor.y));
             else
-                sAutoCompList = _syntax.getAutoCompList(sAutoCompWordStart, m_useSmartSense);
+                sAutoCompList = generateAutoCompList(sAutoCompWordStart, _syntax.getAutoCompList(sAutoCompWordStart, m_useSmartSense));
         }
     }
 
