@@ -324,6 +324,40 @@ static StringVector strfnc_strlen(StringFuncArgs& funcArgs)
 
 
 /////////////////////////////////////////////////
+/// \brief Implementation of firstch()
+///
+/// \param funcArgs StringFuncArgs&
+/// \return StringVector
+///
+/////////////////////////////////////////////////
+static StringVector firstch(StringFuncArgs& funcArgs) {
+    std::string sStr = funcArgs.sArg1.view().to_string();
+    if (sStr.length() == 0) {
+        return "\"\"";
+    }
+    return "\"" + sStr.substr(0, 1) + "\"";
+    // return toString((int)funcArgs.sArg1.view().length());
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Implementation of lastch()
+///
+/// \param funcArgs StringFuncArgs&
+/// \return StringVector
+///
+/////////////////////////////////////////////////
+static StringVector lastch(StringFuncArgs& funcArgs) {
+    std::string sStr = funcArgs.sArg1.view().to_string();
+    if (sStr.length() == 0) {
+        return "\"\"";
+    }
+    return "\"" + sStr.substr(sStr.length() - 1, 1) + "\"";
+    // return toString(1+(int)funcArgs.sArg1.view().length());
+}
+
+
+/////////////////////////////////////////////////
 /// \brief Implementation of the getmatchinparens()
 /// function.
 ///
@@ -2734,6 +2768,7 @@ static std::map<std::string, StringFuncHandle> getStringFuncHandles()
     mHandleTable["is_upper"]            = StringFuncHandle(STR, strfnc_isupper, false);
     mHandleTable["is_xdigit"]           = StringFuncHandle(STR, strfnc_isxdigit, false);
     mHandleTable["justify"]             = StringFuncHandle(STR_VAL, strfnc_justify, true);
+    mHandleTable["lastch"]              = StringFuncHandle(STR, lastch, false);
     mHandleTable["locate"]              = StringFuncHandle(STR_STR_VALOPT_VALOPT, strfnc_locate, true);
     mHandleTable["logtoidx"]            = StringFuncHandle(STR, strfnc_logtoidx, true);
     mHandleTable["max"]                 = StringFuncHandle(STR, strfnc_max, true);
@@ -2746,6 +2781,7 @@ static std::map<std::string, StringFuncHandle> getStringFuncHandles()
     mHandleTable["replaceall"]          = StringFuncHandle(STR_STR_STR_VALOPT_VALOPT, strfnc_replaceall, false);
     mHandleTable["sha256"]              = StringFuncHandle(STR_VALOPT, strfnc_sha256, false);
     mHandleTable["split"]               = StringFuncHandle(STR_STR_VALOPT, strfnc_split, false);
+    mHandleTable["firstch"]             = StringFuncHandle(STR, firstch, false);
     mHandleTable["str_not_match"]       = StringFuncHandle(STR_STR_VALOPT, strfnc_str_not_match, false);
     mHandleTable["str_not_rmatch"]      = StringFuncHandle(STR_STR_VALOPT, strfnc_str_not_rmatch, false);
     mHandleTable["strip"]               = StringFuncHandle(STR_STR_STR_VALOPT_VALOPT, strfnc_strip, false);

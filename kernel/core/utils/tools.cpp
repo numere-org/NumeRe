@@ -377,6 +377,12 @@ bool getStringArgument(const string& sCmd, string& sArgument)
 
         if (sCmd.find("char(") != string::npos && (sCmd.find("char(") < nPos || nPos == string::npos))
             nPos = sCmd.find("char(");
+
+        if (sCmd.find("firstch(") != string::npos && (sCmd.find("firstch(") < nPos || nPos == string::npos))
+            nPos = sCmd.find("firstch(");
+
+        if (sCmd.find("lastch(") != string::npos && (sCmd.find("lastch(") < nPos || nPos == string::npos))
+            nPos = sCmd.find("lastch(");
     }
 
     // Try to find the end of the string block
@@ -3958,6 +3964,8 @@ static void replaceAccessMethods(string& sLine, size_t nPos, size_t nFinalPos, c
 }
 
 
+
+
 /////////////////////////////////////////////////
 /// \brief This function searches the indicated
 /// string variable occurence for possible string
@@ -4037,6 +4045,16 @@ void replaceStringMethod(string& sLine, size_t nPos, size_t nLength, const strin
         // All search-oriented methods
         replaceSearchMethods(sLine, nPos, nFinalPos, sReplacement, sMethod, sArgument);
     }
+
+    else if (sMethod == "first") {
+        // Access first letter
+        sLine.replace(nPos, nFinalPos-nPos, "firstch(" + sReplacement + ")");
+    }
+    else if (sMethod == "last") {
+        // Access last letter
+        sLine.replace(nPos, nFinalPos-nPos, "lastch(" + sReplacement + ")");
+    }
+
 }
 
 
