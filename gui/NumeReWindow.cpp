@@ -2003,7 +2003,11 @@ void NumeReWindow::OnFileSystemEvent(wxFileSystemWatcherEvent& event)
          || type == wxFSW_EVENT_RENAME
          || type == wxFSW_EVENT_MODIFY) && event.GetPath().GetFullPath().find(".revisions") == std::string::npos)
     {
-        m_modifiedFiles.push_back(std::make_pair(type, event.GetPath().GetFullPath()));
+        // Add only, if not already part of the list
+        if (std::find(m_modifiedFiles.begin(), m_modifiedFiles.end(),
+                      std::make_pair(type, event.GetPath().GetFullPath())) == m_modifiedFiles.end())
+            m_modifiedFiles.push_back(std::make_pair(type, event.GetPath().GetFullPath()));
+
         m_dragDropSourceItem = wxTreeItemId();
         m_fileEventTimer->StartOnce(500);
     }
@@ -4430,8 +4434,7 @@ bool NumeReWindow::SaveTab(int tab)
     sPath.erase(sPath.rfind('/'));
     FileSystem _fSys;
     _fSys.setPath(sPath, true, getProgramFolder().ToStdString());
-
-    m_filesLastSaveTime[filename] = time(0);
+    g_logger.info("Saving " + filename.ToStdString() + " ...");
 
     if (!edit->SaveFile(filename))
     {
@@ -4439,11 +4442,13 @@ bool NumeReWindow::SaveTab(int tab)
         return false;
     }
 
+    m_filesLastSaveTime[filename] = time(0);
     edit->SetSavePoint();
     edit->UpdateSyntaxHighlighting();
 
     m_book->SetTabText(tab, filename);
     m_book->Refresh();
+    g_logger.info(filename.ToStdString() + " was saved successfully.");
 
     return true;
 }
@@ -4790,7 +4795,7 @@ void NumeReWindow::OnFileEventTimer(wxTimerEvent& event)
                 std::unique_ptr<FileRevisions> revisions(manager.getRevisions(modifiedFiles[i].second));
                 g_logger.info("Adding external revision to '" + modifiedFiles[i].second.ToStdString() + "'.");
 
-                if (revisions.get())
+                if (revisions)
                     revisions->addExternalRevision(modifiedFiles[i].second);
             }
 
