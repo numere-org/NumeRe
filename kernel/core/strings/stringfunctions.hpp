@@ -331,12 +331,10 @@ static StringVector strfnc_strlen(StringFuncArgs& funcArgs)
 ///
 /////////////////////////////////////////////////
 static StringVector firstch(StringFuncArgs& funcArgs) {
-    std::string sStr = funcArgs.sArg1.view().to_string();
-    if (sStr.length() == 0) {
+    if (!funcArgs.sArg1.view().length())
         return "\"\"";
-    }
-    return "\"" + sStr.substr(0, 1) + "\"";
-    // return toString((int)funcArgs.sArg1.view().length());
+
+    return "\"" + funcArgs.sArg1.view().subview(0, 1).to_string() + "\"";
 }
 
 
@@ -348,12 +346,10 @@ static StringVector firstch(StringFuncArgs& funcArgs) {
 ///
 /////////////////////////////////////////////////
 static StringVector lastch(StringFuncArgs& funcArgs) {
-    std::string sStr = funcArgs.sArg1.view().to_string();
-    if (sStr.length() == 0) {
+    if (!funcArgs.sArg1.view().length())
         return "\"\"";
-    }
-    return "\"" + sStr.substr(sStr.length() - 1, 1) + "\"";
-    // return toString(1+(int)funcArgs.sArg1.view().length());
+
+    return "\"" + funcArgs.sArg1.view().subview(funcArgs.sArg1.view().length()-1, 1).to_string() + "\"";
 }
 
 

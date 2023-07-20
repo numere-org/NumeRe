@@ -3961,6 +3961,10 @@ static void replaceAccessMethods(string& sLine, size_t nPos, size_t nFinalPos, c
         sLine.replace(nPos, nFinalPos-nPos, "substr" + sArgument);
     else if (sMethod == "splt")
         sLine.replace(nPos, nFinalPos-nPos, "split" + sArgument);
+    else if (sMethod == "first")
+        sLine.replace(nPos, nFinalPos-nPos, "firstch(" + sReplacement + ")");
+    else if (sMethod == "last")
+        sLine.replace(nPos, nFinalPos-nPos, "lastch(" + sReplacement + ")");
 }
 
 
@@ -4029,7 +4033,9 @@ void replaceStringMethod(string& sLine, size_t nPos, size_t nLength, const strin
     }
     else if (sMethod == "at"
              || sMethod == "sub"
-             || sMethod == "splt")
+             || sMethod == "splt"
+             || sMethod == "first"
+             || sMethod == "last")
     {
         // Access methods and splitter
         replaceAccessMethods(sLine, nPos, nFinalPos, sReplacement, sMethod, sArgument);
@@ -4046,14 +4052,14 @@ void replaceStringMethod(string& sLine, size_t nPos, size_t nLength, const strin
         replaceSearchMethods(sLine, nPos, nFinalPos, sReplacement, sMethod, sArgument);
     }
 
-    else if (sMethod == "first") {
+    /* else if (sMethod == "first") {
         // Access first letter
         sLine.replace(nPos, nFinalPos-nPos, "firstch(" + sReplacement + ")");
     }
     else if (sMethod == "last") {
         // Access last letter
         sLine.replace(nPos, nFinalPos-nPos, "lastch(" + sReplacement + ")");
-    }
+    }*/
 
 }
 
