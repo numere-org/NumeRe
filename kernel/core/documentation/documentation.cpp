@@ -201,7 +201,7 @@ static void doc_ReplaceExprContentForHTML(std::string& sExpr, Settings& _option)
 /////////////////////////////////////////////////
 static void doc_ReplaceTokensForHTML(std::string& sDocParagraph, bool generateFile, Settings& _option)
 {
-    for (unsigned int k = 0; k < sDocParagraph.length(); k++)
+    for (size_t k = 0; k < sDocParagraph.length(); k++)
     {
         if (sDocParagraph.substr(k,2) == "\\$")
             sDocParagraph.erase(k,1);
@@ -239,7 +239,7 @@ static void doc_ReplaceTokensForHTML(std::string& sDocParagraph, bool generateFi
             sDocParagraph.insert(sDocParagraph.find("</code>", k+6), "</span>");
             std::string sCode = sDocParagraph.substr(k+6, sDocParagraph.find("</code>", k+6)-k-6);
 
-            for (unsigned int i = 0; i < sCode.length(); i++)
+            for (size_t i = 0; i < sCode.length(); i++)
             {
                 if (sCode.substr(i,2) == "\\n")
                     sCode.replace(i,2,"<br>");
@@ -716,7 +716,7 @@ static std::vector<std::pair<std::string, std::string>> parseList(std::vector<st
 {
     std::vector<std::pair<std::string, std::string>> vList;
 
-    for (unsigned int j = i+1; j < vDocArticle.size(); j++)
+    for (size_t j = i+1; j < vDocArticle.size(); j++)
     {
         if (vDocArticle[j].find("</list>") != std::string::npos)
         {
@@ -777,7 +777,7 @@ std::string doc_HelpAsHTML(const std::string& __sTopic, bool generateFile, Setti
     // Convert the XML-like structure of the documentation
     // article into a valid HTML DOM, which can be returned
     // as a single std::string
-    for (unsigned int i = 0; i < vDocArticle.size(); i++)
+    for (size_t i = 0; i < vDocArticle.size(); i++)
     {
         // If this is the first line, then create the header
         // tag section of the HTML file
@@ -834,7 +834,7 @@ std::string doc_HelpAsHTML(const std::string& __sTopic, bool generateFile, Setti
             {
                 std::string sCodeContent;
 
-                for (unsigned int j = i+1; j < vDocArticle.size(); j++)
+                for (size_t j = i+1; j < vDocArticle.size(); j++)
                 {
                     if (vDocArticle[j].find("</example>") != std::string::npos)
                     {
@@ -850,7 +850,7 @@ std::string doc_HelpAsHTML(const std::string& __sTopic, bool generateFile, Setti
             {
                 std::string sExample;
 
-                for (unsigned int j = i+1; j < vDocArticle.size(); j++)
+                for (size_t j = i+1; j < vDocArticle.size(); j++)
                 {
                     if (vDocArticle[j].find("</example>") != std::string::npos)
                     {
@@ -900,7 +900,7 @@ std::string doc_HelpAsHTML(const std::string& __sTopic, bool generateFile, Setti
                 {
                     std::string sExprBlock = vDocArticle[i].substr(vDocArticle[i].find("<exprblock>")+11, vDocArticle[i].find("</exprblock>")-vDocArticle[i].find("<exprblock>")-11);
 
-                    for (unsigned int k = 0; k < sExprBlock.length(); k++)
+                    for (size_t k = 0; k < sExprBlock.length(); k++)
                     {
                         if (sExprBlock.substr(k,2) == "\\n")
                             sExprBlock.replace(k,2,"<br>");
@@ -927,7 +927,7 @@ std::string doc_HelpAsHTML(const std::string& __sTopic, bool generateFile, Setti
                 else
                     sHTML += "<blockquote><span style=\"font-style: italic; font-family: palatino linotype; font-size: 12pt; font-weight: bold;\">\n";
 
-                for (unsigned int j = i+1; j < vDocArticle.size(); j++)
+                for (size_t j = i+1; j < vDocArticle.size(); j++)
                 {
                     if (vDocArticle[j].find("</exprblock>") != std::string::npos)
                     {
@@ -978,7 +978,7 @@ std::string doc_HelpAsHTML(const std::string& __sTopic, bool generateFile, Setti
 
                 std::string sCodeContent;
 
-                for (unsigned int j = i+1; j < vDocArticle.size(); j++)
+                for (size_t j = i+1; j < vDocArticle.size(); j++)
                 {
                     if (vDocArticle[j].find("</codeblock>") != std::string::npos)
                     {
@@ -1015,7 +1015,7 @@ std::string doc_HelpAsHTML(const std::string& __sTopic, bool generateFile, Setti
 
                 std::string sCodeContent;
 
-                for (unsigned int j = i+1; j < vDocArticle.size(); j++)
+                for (size_t j = i+1; j < vDocArticle.size(); j++)
                 {
                     if (vDocArticle[j].find("</verbatim>") != std::string::npos)
                     {
@@ -1054,7 +1054,7 @@ std::string doc_HelpAsHTML(const std::string& __sTopic, bool generateFile, Setti
                 sHTML += "<h4>Syntax</h4>\n";
                 std::string sCodeContent;
 
-                for (unsigned int j = i+1; j < vDocArticle.size(); j++)
+                for (size_t j = i+1; j < vDocArticle.size(); j++)
                 {
                     if (vDocArticle[j].find("</syntax>") != std::string::npos)
                     {
@@ -1135,7 +1135,7 @@ std::string doc_HelpAsHTML(const std::string& __sTopic, bool generateFile, Setti
             else
                 sHTML += "<div align=\"center\"><table border=\"1\" bordercolor=\"#888\" cellspacing=\"0\">\n  <tbody>\n";
 
-            for (unsigned int j = i+1; j < vDocArticle.size(); j++)
+            for (size_t j = i+1; j < vDocArticle.size(); j++)
             {
                 if (vDocArticle[j].find("</table>") != std::string::npos)
                 {

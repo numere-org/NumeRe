@@ -17,7 +17,7 @@
 ******************************************************************************/
 
 #include "winlayout.hpp"
-#include "../utils/tinyxml2.h"
+#include "../../../externals/tinyxml2/tinyxml2.h"
 #include "../io/styledtextfile.hpp"
 #include "../../kernel.hpp"
 #include "../procedure/includer.hpp"

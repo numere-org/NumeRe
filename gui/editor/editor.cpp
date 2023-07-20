@@ -408,6 +408,8 @@ bool NumeReEditor::SaveFile( const wxString& filename )
         m_simpleFileName = fn.GetFullName();
     }
 
+    bool createRevision = m_options->GetKeepBackupFile();
+
     VersionControlSystemManager manager(m_mainFrame);
     std::unique_ptr<FileRevisions> revisions;
 
@@ -415,9 +417,9 @@ bool NumeReEditor::SaveFile( const wxString& filename )
     if (filename.find("numere.history") == string::npos)
         revisions.reset(manager.getRevisions(filename));
 
-    if (revisions.get())
+    if (revisions)
     {
-        if (!revisions->getRevisionCount() && wxFileExists(filename))
+        if (!revisions->getRevisionCount() && wxFileExists(filename) && createRevision)
         {
             wxFile tempfile(filename);
             wxString contents;
@@ -447,7 +449,7 @@ bool NumeReEditor::SaveFile( const wxString& filename )
         // if the contents are not matching, restore the backup and signalize that an error occured
         if (wxFileExists(filename + ".backup"))
             wxCopyFile(filename + ".backup", filename, true);
-        else if (revisions.get() && revisions->getRevisionCount())
+        else if (revisions && revisions->getRevisionCount())
             revisions->restoreRevision(revisions->getRevisionCount()-1, filename);
 
         return false;
@@ -457,7 +459,7 @@ bool NumeReEditor::SaveFile( const wxString& filename )
         // if the contents are not matching, restore the backup and signalize that an error occured
         if (wxFileExists(filename + ".backup"))
             wxCopyFile(filename + ".backup", filename, true);
-        else if (revisions.get() && revisions->getRevisionCount())
+        else if (revisions && revisions->getRevisionCount())
             revisions->restoreRevision(revisions->getRevisionCount()-1, filename);
 
         return false;
@@ -467,7 +469,7 @@ bool NumeReEditor::SaveFile( const wxString& filename )
         // if the contents are not matching, restore the backup and signalize that an error occured
         if (wxFileExists(filename + ".backup"))
             wxCopyFile(filename + ".backup", filename, true);
-        else if (revisions.get() && revisions->getRevisionCount())
+        else if (revisions && revisions->getRevisionCount())
             revisions->restoreRevision(revisions->getRevisionCount()-1, filename);
 
         return false;
@@ -475,7 +477,7 @@ bool NumeReEditor::SaveFile( const wxString& filename )
 
     // Add the current text to the revisions, if the saving process was
     // successful
-    if (revisions.get() && m_options->GetKeepBackupFile())
+    if (revisions && createRevision)
         revisions->addRevision(GetText());
 
     // If the user doesn't want to keep the backup files
@@ -719,7 +721,7 @@ void NumeReEditor::OnChar( wxStyledTextEvent& event )
     const wxChar chr = event.GetKey();
     const int currentLine = GetCurrentLine();
     const int currentPos = GetCurrentPos();
-    const int wordstartpos = WordStartPosition(currentPos, true);
+    int wordstartpos = WordStartPosition(currentPos, true);
 
     MarkerDeleteAll(MARKER_FOCUSEDLINE);
 
@@ -808,141 +810,165 @@ void NumeReEditor::OnChar( wxStyledTextEvent& event )
     m_nextChar = 0;
 
     int lenEntered = currentPos - wordstartpos;
-    AutoCompSetAutoHide(!m_options->getSetting(SETTING_B_SMARTSENSE).active());
+    bool useSmartSense = m_options->getSetting(SETTING_B_SMARTSENSE).active() && (m_fileType == FILE_NSCR || m_fileType == FILE_NPRC);
+    bool isMethod = false;
+
+    if (useSmartSense)
+    {
+        if (chr == '.')
+            wordstartpos = currentPos;
+
+        if (GetCharAt(wordstartpos-1) == '.')
+            isMethod = true;
+    }
+
+    AutoCompSetAutoHide(!useSmartSense);
     wxString sAutoCompList;
 
-    if (lenEntered > 1
-        && (m_fileType == FILE_NSCR || m_fileType == FILE_NPRC)
-        && !isStyleType(STYLE_COMMENT, wordstartpos)
-        && !isStyleType(STYLE_STRING, wordstartpos)
-        && !isStyleType(STYLE_PROCEDURE, wordstartpos))
+    if (lenEntered > 1 || isMethod)
     {
-        int smartSenseWordStart = wordstartpos;
+        if (m_fileType == FILE_NSCR || m_fileType == FILE_NPRC)
+        {
+            if (GetStyleAt(wordstartpos) == wxSTC_NSCR_PROCEDURES)
+            {
+                wxString sNamespace;
+                wxString sSelectedNamespace;
+                int nNameSpacePosition = wordstartpos;
 
-        // SmartSense extension: match only methods
-        if (m_options->getSetting(SETTING_B_SMARTSENSE).active() && GetCharAt(wordstartpos-1) == '.')
-            smartSenseWordStart--;
+                while (GetStyleAt(nNameSpacePosition - 1) == wxSTC_NSCR_PROCEDURES && GetCharAt(nNameSpacePosition - 1) != '$')
+                    nNameSpacePosition--;
 
-        sAutoCompList = generateAutoCompList(smartSenseWordStart, currentPos,
-                                             _syntax->getAutoCompList(GetTextRange(smartSenseWordStart, currentPos).ToStdString(),
-                                                                      m_options->getSetting(SETTING_B_SMARTSENSE).active()));
+                if (nNameSpacePosition == wordstartpos)
+                    sNamespace = m_search->FindNameSpaceOfProcedure(wordstartpos) + "~";
+                else
+                    sSelectedNamespace = GetTextRange(nNameSpacePosition, wordstartpos);
 
-        if (sAutoCompList.length())
-            AutoCompShow(lenEntered, sAutoCompList);
-    }
-    else if (lenEntered > 1
-             && m_fileType == FILE_MATLAB
-             && !isStyleType(STYLE_COMMENT, wordstartpos)
-             && !isStyleType(STYLE_STRING, wordstartpos))
-    {
-        sAutoCompList = generateAutoCompList(wordstartpos, currentPos,
-                                             _syntax->getAutoCompListMATLAB(GetTextRange(wordstartpos, currentPos).ToStdString()));
-    }
-    else if (lenEntered > 1
-             && m_fileType == FILE_CPP
-             && !isStyleType(STYLE_COMMENT, wordstartpos)
-             && !isStyleType(STYLE_STRING, wordstartpos))
-    {
-        sAutoCompList = generateAutoCompList(wordstartpos, currentPos,
-                                             _syntax->getAutoCompListCPP(GetTextRange(wordstartpos, currentPos).ToStdString()));
-    }
-    else if (lenEntered > 1
-             && (m_fileType == FILE_NSCR || m_fileType == FILE_NPRC)
-             && GetStyleAt(wordstartpos) == wxSTC_NSCR_PROCEDURES)
-    {
-        wxString sNamespace;
-        wxString sSelectedNamespace;
-        int nNameSpacePosition = wordstartpos;
+                // If namespace == "this~" then replace it with the current namespace
+                if (sNamespace == "this~")
+                {
+                    string filename = GetFileNameAndPath().ToStdString();
+                    filename = replacePathSeparator(filename);
+                    vector<string> vPaths = m_terminal->getPathSettings();
 
-        while (GetStyleAt(nNameSpacePosition - 1) == wxSTC_NSCR_PROCEDURES && GetCharAt(nNameSpacePosition - 1) != '$')
-            nNameSpacePosition--;
+                    if (filename.substr(0, vPaths[PROCPATH].length()) == vPaths[PROCPATH])
+                    {
+                        filename.erase(0, vPaths[PROCPATH].length());
 
-        if (nNameSpacePosition == wordstartpos)
-            sNamespace = m_search->FindNameSpaceOfProcedure(wordstartpos) + "~";
+                        if (filename.find('/') != string::npos)
+                            filename.erase(filename.rfind('/') + 1);
+
+                        while (filename.front() == '/')
+                            filename.erase(0, 1);
+
+                        while (filename.find('/') != string::npos)
+                            filename[filename.find('/')] = '~';
+
+                        sNamespace = filename;
+                    }
+                    else
+                        sNamespace = "";
+                }
+                else if (sSelectedNamespace == "this~")
+                {
+                    string filename = GetFileNameAndPath().ToStdString();
+                    filename = replacePathSeparator(filename);
+                    vector<string> vPaths = m_terminal->getPathSettings();
+
+                    if (filename.substr(0, vPaths[PROCPATH].length()) == vPaths[PROCPATH])
+                    {
+                        filename.erase(0, vPaths[PROCPATH].length());
+
+                        if (filename.find('/') != string::npos)
+                            filename.erase(filename.rfind('/') + 1);
+
+                        while (filename.front() == '/')
+                            filename.erase(0, 1);
+
+                        while (filename.find('/') != string::npos)
+                            filename[filename.find('/')] = '~';
+
+                        sSelectedNamespace = filename;
+                    }
+                    else
+                        sSelectedNamespace = "";
+                }
+                // If namespace == "thisfile~" then search for all procedures in the current file and use them as the
+                // autocompletion list entries
+                else if (sNamespace == "thisfile"
+                         || sNamespace == "thisfile~"
+                         || sSelectedNamespace == "thisfile"
+                         || sSelectedNamespace == "thisfile~")
+                {
+                    this->AutoCompSetIgnoreCase(true);
+                    this->AutoCompSetCaseInsensitiveBehaviour(wxSTC_CASEINSENSITIVEBEHAVIOUR_IGNORECASE);
+                    this->AutoCompShow(lenEntered, m_search->FindProceduresInCurrentFile(GetTextRange(wordstartpos, currentPos), sSelectedNamespace));
+                    this->Colourise(0, -1);
+                    event.Skip();
+                    return;
+                }
+                // If namespace == "main~" (or similiar) then clear it's contents
+                else if (sNamespace == "main" || sNamespace == "main~" || sNamespace == "~")
+                    sNamespace = "";
+                else if (sSelectedNamespace == "main" || sSelectedNamespace == "main~" || sSelectedNamespace == "~")
+                    sSelectedNamespace = "";
+
+                sAutoCompList = _syntax->getProcAutoCompList(GetTextRange(wordstartpos, currentPos).ToStdString(),
+                                                             sNamespace.ToStdString(), sSelectedNamespace.ToStdString());
+            }
+            else if (!isStyleType(STYLE_COMMENT, wordstartpos)
+                     && !isStyleType(STYLE_STRING, wordstartpos)
+                     && !isStyleType(STYLE_NUMBER, wordstartpos))
+            {
+                int smartSenseWordStart = wordstartpos;
+                NumeReSyntax::SyntaxColors varType = NumeReSyntax::SYNTAX_METHODS;
+
+                // SmartSense extension: match only methods
+                if (isMethod)
+                {
+                    smartSenseWordStart--;
+
+                    // Identify the type of the current method host. Is currently quite rudimentary
+                    // and should be extended with the semi-static parser model
+                    if (GetStyleAt(wordstartpos-2) == wxSTC_NSCR_IDENTIFIER)
+                        varType = NumeReSyntax::SYNTAX_STD;
+                    else if (GetStyleAt(wordstartpos-2) == wxSTC_NSCR_METHOD
+                             || (GetTextRange(wordstartpos-3, wordstartpos-1) == "()"
+                                 && (GetStyleAt(wordstartpos-4) == wxSTC_NSCR_CUSTOM_FUNCTION
+                                     || GetStyleAt(wordstartpos-4) == wxSTC_NSCR_PREDEFS)))
+                        varType = NumeReSyntax::SYNTAX_TABLE;
+                }
+
+                sAutoCompList = generateAutoCompList(smartSenseWordStart, currentPos,
+                                                     _syntax->getAutoCompList(GetTextRange(smartSenseWordStart, currentPos).ToStdString(),
+                                                                              useSmartSense, varType));
+
+                if (sAutoCompList.length())
+                    AutoCompShow(lenEntered, sAutoCompList);
+            }
+        }
+        else if (m_fileType == FILE_MATLAB
+                 && !isStyleType(STYLE_COMMENT, wordstartpos)
+                 && !isStyleType(STYLE_STRING, wordstartpos))
+        {
+            sAutoCompList = generateAutoCompList(wordstartpos, currentPos,
+                                                 _syntax->getAutoCompListMATLAB(GetTextRange(wordstartpos, currentPos).ToStdString()));
+        }
+        else if (m_fileType == FILE_CPP
+                 && !isStyleType(STYLE_COMMENT, wordstartpos)
+                 && !isStyleType(STYLE_STRING, wordstartpos))
+        {
+            sAutoCompList = generateAutoCompList(wordstartpos, currentPos,
+                                                 _syntax->getAutoCompListCPP(GetTextRange(wordstartpos, currentPos).ToStdString()));
+        }
+        else if (m_fileType == FILE_TEXSOURCE
+                 && GetStyleAt(wordstartpos) == wxSTC_TEX_COMMAND)
+        {
+            sAutoCompList = generateAutoCompList(wordstartpos, currentPos,
+                                                 _syntax->getAutoCompListTeX(GetTextRange(wordstartpos, currentPos).ToStdString()));
+        }
         else
-            sSelectedNamespace = GetTextRange(nNameSpacePosition, wordstartpos);
-
-        // If namespace == "this~" then replace it with the current namespace
-        if (sNamespace == "this~")
-        {
-            string filename = GetFileNameAndPath().ToStdString();
-            filename = replacePathSeparator(filename);
-            vector<string> vPaths = m_terminal->getPathSettings();
-
-            if (filename.substr(0, vPaths[PROCPATH].length()) == vPaths[PROCPATH])
-            {
-                filename.erase(0, vPaths[PROCPATH].length());
-
-                if (filename.find('/') != string::npos)
-                    filename.erase(filename.rfind('/') + 1);
-
-                while (filename.front() == '/')
-                    filename.erase(0, 1);
-
-                while (filename.find('/') != string::npos)
-                    filename[filename.find('/')] = '~';
-
-                sNamespace = filename;
-            }
-            else
-                sNamespace = "";
-        }
-        else if (sSelectedNamespace == "this~")
-        {
-            string filename = GetFileNameAndPath().ToStdString();
-            filename = replacePathSeparator(filename);
-            vector<string> vPaths = m_terminal->getPathSettings();
-
-            if (filename.substr(0, vPaths[PROCPATH].length()) == vPaths[PROCPATH])
-            {
-                filename.erase(0, vPaths[PROCPATH].length());
-
-                if (filename.find('/') != string::npos)
-                    filename.erase(filename.rfind('/') + 1);
-
-                while (filename.front() == '/')
-                    filename.erase(0, 1);
-
-                while (filename.find('/') != string::npos)
-                    filename[filename.find('/')] = '~';
-
-                sSelectedNamespace = filename;
-            }
-            else
-                sSelectedNamespace = "";
-        }
-        // If namespace == "thisfile~" then search for all procedures in the current file and use them as the
-        // autocompletion list entries
-        else if (sNamespace == "thisfile"
-                 || sNamespace == "thisfile~"
-                 || sSelectedNamespace == "thisfile"
-                 || sSelectedNamespace == "thisfile~")
-        {
-            this->AutoCompSetIgnoreCase(true);
-            this->AutoCompSetCaseInsensitiveBehaviour(wxSTC_CASEINSENSITIVEBEHAVIOUR_IGNORECASE);
-            this->AutoCompShow(lenEntered, m_search->FindProceduresInCurrentFile(GetTextRange(wordstartpos, currentPos), sSelectedNamespace));
-            this->Colourise(0, -1);
-            event.Skip();
-            return;
-        }
-        // If namespace == "main~" (or similiar) then clear it's contents
-        else if (sNamespace == "main" || sNamespace == "main~" || sNamespace == "~")
-            sNamespace = "";
-        else if (sSelectedNamespace == "main" || sSelectedNamespace == "main~" || sSelectedNamespace == "~")
-            sSelectedNamespace = "";
-
-        sAutoCompList = _syntax->getProcAutoCompList(GetTextRange(wordstartpos, currentPos).ToStdString(),
-                                                     sNamespace.ToStdString(), sSelectedNamespace.ToStdString());
+            sAutoCompList = generateAutoCompList(wordstartpos, currentPos, "");
     }
-    else if (lenEntered > 1
-             && m_fileType == FILE_TEXSOURCE
-             && GetStyleAt(wordstartpos) == wxSTC_TEX_COMMAND)
-    {
-        sAutoCompList = generateAutoCompList(wordstartpos, currentPos,
-                                             _syntax->getAutoCompListTeX(GetTextRange(wordstartpos, currentPos).ToStdString()));
-    }
-    else if (lenEntered > 1)
-        sAutoCompList = generateAutoCompList(wordstartpos, currentPos, "");
 
     if (sAutoCompList.length())
         AutoCompShow(lenEntered, sAutoCompList);
@@ -3551,7 +3577,12 @@ void NumeReEditor::UpdateSyntaxHighlighting(bool forceUpdate)
 
 
     // make it for both: NSCR and NPRC
-    if (filetype == FILE_NSCR || filetype == FILE_NPRC || filetype == FILE_MATLAB || filetype == FILE_CPP || filetype == FILE_DIFF)
+    if (filetype == FILE_NSCR
+        || filetype == FILE_NPRC
+        || filetype == FILE_MATLAB
+        || filetype == FILE_CPP
+        || filetype == FILE_DIFF
+        || filetype == FILE_TEXSOURCE)
     {
         SetFoldFlags(wxSTC_FOLDFLAG_LINEAFTER_CONTRACTED);
 
@@ -3597,25 +3628,27 @@ void NumeReEditor::UpdateSyntaxHighlighting(bool forceUpdate)
     if (filetype == FILE_NSCR)
     {
         m_fileType = FILE_NSCR;
-        this->SetLexer(wxSTC_LEX_NSCR);
-        this->SetProperty("fold", "1");
+        SetLexer(wxSTC_LEX_NSCR);
+        SetProperty("fold", "1");
+
         if (_syntax)
         {
-            this->SetKeyWords(0, _syntax->getCommands());
-            this->SetKeyWords(1, _syntax->getOptions());
-            this->SetKeyWords(2, _syntax->getFunctions());
-            this->SetKeyWords(3, _syntax->getMethods());
-            this->SetKeyWords(4, _syntax->getBlockDefs());
-            this->SetKeyWords(5, _syntax->getConstants());
-            this->SetKeyWords(6, _syntax->getSpecial());
-            this->SetKeyWords(7, _syntax->getOperators());
-            this->SetKeyWords(8, _syntax->getDocKeyWords());
-            this->SetKeyWords(9, _syntax->getNPRCCommands());
+            SetKeyWords(0, _syntax->getCommands());
+            SetKeyWords(1, _syntax->getOptions());
+            SetKeyWords(2, _syntax->getFunctions());
+            SetKeyWords(3, _syntax->getMethods());
+            SetKeyWords(4, _syntax->getBlockDefs());
+            SetKeyWords(5, _syntax->getConstants());
+            SetKeyWords(6, _syntax->getSpecial());
+            SetKeyWords(7, _syntax->getOperators());
+            SetKeyWords(8, _syntax->getDocKeyWords());
+            SetKeyWords(9, _syntax->getNPRCCommands());
         }
 
         for (int i = 0; i <= wxSTC_NSCR_PROCEDURE_COMMANDS; i++)
         {
             SyntaxStyles _style;
+
             switch (i)
             {
                 case wxSTC_NSCR_DEFAULT:
@@ -3687,38 +3720,42 @@ void NumeReEditor::UpdateSyntaxHighlighting(bool forceUpdate)
                     break;
             }
 
-            this->StyleSetForeground(i, _style.foreground);
+            StyleSetForeground(i, _style.foreground);
+
             if (!_style.defaultbackground)
-                this->StyleSetBackground(i, _style.background);
+                StyleSetBackground(i, _style.background);
             else
-                this->StyleSetBackground(i, this->StyleGetBackground(wxSTC_STYLE_DEFAULT));
-            this->StyleSetBold(i, _style.bold);
-            this->StyleSetItalic(i, _style.italics);
-            this->StyleSetUnderline(i, _style.underline);
+                StyleSetBackground(i, StyleGetBackground(wxSTC_STYLE_DEFAULT));
+
+            StyleSetBold(i, _style.bold);
+            StyleSetItalic(i, _style.italics);
+            StyleSetUnderline(i, _style.underline);
         }
     }
     else if (filetype == FILE_NPRC)
     {
         m_fileType = FILE_NPRC;
-        this->SetLexer(wxSTC_LEX_NPRC);
-        this->SetProperty("fold", "1");
+        SetLexer(wxSTC_LEX_NPRC);
+        SetProperty("fold", "1");
+
         if (_syntax)
         {
-            this->SetKeyWords(0, _syntax->getCommands() + _syntax->getNPRCCommands());
-            this->SetKeyWords(1, _syntax->getOptions());
-            this->SetKeyWords(2, _syntax->getFunctions());
-            this->SetKeyWords(3, _syntax->getMethods());
-            this->SetKeyWords(4, _syntax->getBlockDefs());
-            this->SetKeyWords(5, _syntax->getConstants());
-            this->SetKeyWords(6, _syntax->getSpecial());
-            this->SetKeyWords(7, _syntax->getOperators());
-            this->SetKeyWords(8, _syntax->getDocKeyWords());
+            SetKeyWords(0, _syntax->getCommands() + _syntax->getNPRCCommands());
+            SetKeyWords(1, _syntax->getOptions());
+            SetKeyWords(2, _syntax->getFunctions());
+            SetKeyWords(3, _syntax->getMethods());
+            SetKeyWords(4, _syntax->getBlockDefs());
+            SetKeyWords(5, _syntax->getConstants());
+            SetKeyWords(6, _syntax->getSpecial());
+            SetKeyWords(7, _syntax->getOperators());
+            SetKeyWords(8, _syntax->getDocKeyWords());
         }
 
 
         for (int i = 0; i <= wxSTC_NPRC_FLAGS; i++)
         {
             SyntaxStyles _style;
+
             switch (i)
             {
                 case wxSTC_NPRC_DEFAULT:
@@ -3785,19 +3822,23 @@ void NumeReEditor::UpdateSyntaxHighlighting(bool forceUpdate)
                     break;
             }
 
-            this->StyleSetForeground(i, _style.foreground);
+            StyleSetForeground(i, _style.foreground);
+
             if (!_style.defaultbackground)
-                this->StyleSetBackground(i, _style.background);
+                StyleSetBackground(i, _style.background);
             else
-                this->StyleSetBackground(i, this->StyleGetBackground(wxSTC_STYLE_DEFAULT));
-            this->StyleSetBold(i, _style.bold);
-            this->StyleSetItalic(i, _style.italics);
-            this->StyleSetUnderline(i, _style.underline);
+                StyleSetBackground(i, StyleGetBackground(wxSTC_STYLE_DEFAULT));
+
+            StyleSetBold(i, _style.bold);
+            StyleSetItalic(i, _style.italics);
+            StyleSetUnderline(i, _style.underline);
         }
     }
     else if (filetype == FILE_TEXSOURCE)
     {
         SetLexer(wxSTC_LEX_TEX);
+        SetProperty("fold", "1");
+
         StyleSetForeground(wxSTC_TEX_DEFAULT, wxColor(0, 128, 0)); //Comment
         StyleSetForeground(wxSTC_TEX_COMMAND, wxColor(0, 0, 255)); //Command
         StyleSetBold(wxSTC_TEX_COMMAND, true);
@@ -3815,29 +3856,31 @@ void NumeReEditor::UpdateSyntaxHighlighting(bool forceUpdate)
     }
     else if (filetype == FILE_DATAFILES)
     {
-        this->SetLexer(wxSTC_LEX_OCTAVE);
-        this->StyleSetForeground(wxSTC_MATLAB_COMMENT, wxColor(0, 128, 0));
-        this->StyleSetItalic(wxSTC_MATLAB_COMMENT, false);
-        this->StyleSetForeground(wxSTC_MATLAB_OPERATOR, wxColor(255, 0, 0));
-        this->StyleSetBold(wxSTC_MATLAB_OPERATOR, false);
-        this->StyleSetForeground(wxSTC_MATLAB_NUMBER, wxColor(0, 0, 128));
-        this->StyleSetBackground(wxSTC_MATLAB_NUMBER, wxColor(255, 255, 255));
-        this->StyleSetForeground(wxSTC_MATLAB_IDENTIFIER, wxColor(0, 0, 0));
-        this->StyleSetBold(wxSTC_MATLAB_IDENTIFIER, false);
+        SetLexer(wxSTC_LEX_OCTAVE);
+        StyleSetForeground(wxSTC_MATLAB_COMMENT, wxColor(0, 128, 0));
+        StyleSetItalic(wxSTC_MATLAB_COMMENT, false);
+        StyleSetForeground(wxSTC_MATLAB_OPERATOR, wxColor(255, 0, 0));
+        StyleSetBold(wxSTC_MATLAB_OPERATOR, false);
+        StyleSetForeground(wxSTC_MATLAB_NUMBER, wxColor(0, 0, 128));
+        StyleSetBackground(wxSTC_MATLAB_NUMBER, wxColor(255, 255, 255));
+        StyleSetForeground(wxSTC_MATLAB_IDENTIFIER, wxColor(0, 0, 0));
+        StyleSetBold(wxSTC_MATLAB_IDENTIFIER, false);
     }
     else if (filetype == FILE_MATLAB)
     {
-        this->SetLexer(wxSTC_LEX_MATLAB);
-        this->SetProperty("fold", "1");
+        SetLexer(wxSTC_LEX_MATLAB);
+        SetProperty("fold", "1");
+
         if (_syntax)
         {
-            this->SetKeyWords(0, _syntax->getMatlab());
-            this->SetKeyWords(1, _syntax->getMatlabFunctions());
+            SetKeyWords(0, _syntax->getMatlab());
+            SetKeyWords(1, _syntax->getMatlabFunctions());
         }
 
         for (int i = 0; i <= wxSTC_MATLAB_FUNCTIONS; i++)
         {
             SyntaxStyles _style;
+
             switch (i)
             {
                 case wxSTC_MATLAB_DEFAULT:
@@ -3866,30 +3909,33 @@ void NumeReEditor::UpdateSyntaxHighlighting(bool forceUpdate)
                     break;
             }
 
-            this->StyleSetForeground(i, _style.foreground);
-            if (!_style.defaultbackground)
-                this->StyleSetBackground(i, _style.background);
-            else
-                this->StyleSetBackground(i, this->StyleGetBackground(wxSTC_STYLE_DEFAULT));
-            this->StyleSetBold(i, _style.bold);
-            this->StyleSetItalic(i, _style.italics);
-            this->StyleSetUnderline(i, _style.underline);
-        }
+            StyleSetForeground(i, _style.foreground);
 
+            if (!_style.defaultbackground)
+                StyleSetBackground(i, _style.background);
+            else
+                StyleSetBackground(i, StyleGetBackground(wxSTC_STYLE_DEFAULT));
+
+            StyleSetBold(i, _style.bold);
+            StyleSetItalic(i, _style.italics);
+            StyleSetUnderline(i, _style.underline);
+        }
     }
     else if (filetype == FILE_CPP)
     {
-        this->SetLexer(wxSTC_LEX_CPP);
-        this->SetProperty("fold", "1");
+        SetLexer(wxSTC_LEX_CPP);
+        SetProperty("fold", "1");
+
         if (_syntax)
         {
-            this->SetKeyWords(0, _syntax->getCpp());
-            this->SetKeyWords(1, _syntax->getCppFunctions());
+            SetKeyWords(0, _syntax->getCpp());
+            SetKeyWords(1, _syntax->getCppFunctions());
         }
 
         for (int i = 0; i <= wxSTC_C_PREPROCESSORCOMMENT; i++)
         {
             SyntaxStyles _style;
+
             switch (i)
             {
                 case wxSTC_C_DEFAULT :
@@ -3931,14 +3977,16 @@ void NumeReEditor::UpdateSyntaxHighlighting(bool forceUpdate)
                     break;
             }
 
-            this->StyleSetForeground(i, _style.foreground);
+            StyleSetForeground(i, _style.foreground);
+
             if (!_style.defaultbackground)
-                this->StyleSetBackground(i, _style.background);
+                StyleSetBackground(i, _style.background);
             else
-                this->StyleSetBackground(i, this->StyleGetBackground(wxSTC_STYLE_DEFAULT));
-            this->StyleSetBold(i, _style.bold);
-            this->StyleSetItalic(i, _style.italics);
-            this->StyleSetUnderline(i, _style.underline);
+                StyleSetBackground(i, StyleGetBackground(wxSTC_STYLE_DEFAULT));
+
+            StyleSetBold(i, _style.bold);
+            StyleSetItalic(i, _style.italics);
+            StyleSetUnderline(i, _style.underline);
         }
     }
     else if (filetype == FILE_DIFF)
@@ -3983,33 +4031,32 @@ void NumeReEditor::UpdateSyntaxHighlighting(bool forceUpdate)
     {
         if (!getEditorSetting(SETTING_USETXTADV))
         {
-            this->SetLexer(wxSTC_LEX_NULL);
-            this->ClearDocumentStyle();
+            SetLexer(wxSTC_LEX_NULL);
+            ClearDocumentStyle();
         }
         else
         {
-            this->SetLexer(wxSTC_LEX_TXTADV);
-            this->StyleSetItalic(wxSTC_TXTADV_DEFAULT, false);
-            this->StyleSetItalic(wxSTC_TXTADV_MODIFIER, true);
-            this->StyleSetForeground(wxSTC_TXTADV_MODIFIER, wxColor(255, 180, 180));
-            this->StyleSetItalic(wxSTC_TXTADV_ITALIC, true);
-            this->StyleSetItalic(wxSTC_TXTADV_BOLD, false);
-            this->StyleSetBold(wxSTC_TXTADV_BOLD, true);
-            this->StyleSetItalic(wxSTC_TXTADV_BOLD_ITALIC, true);
-            this->StyleSetBold(wxSTC_TXTADV_BOLD_ITALIC, true);
-            this->StyleSetUnderline(wxSTC_TXTADV_UNDERLINE, true);
-            this->StyleSetForeground(wxSTC_TXTADV_STRIKETHROUGH, wxColor(140, 140, 140));
-            this->StyleSetItalic(wxSTC_TXTADV_STRIKETHROUGH, true);
-            this->StyleSetUnderline(wxSTC_TXTADV_URL, true);
-            this->StyleSetForeground(wxSTC_TXTADV_URL, wxColor(0, 0, 255));
-            this->StyleSetUnderline(wxSTC_TXTADV_HEAD, true);
-            this->StyleSetBold(wxSTC_TXTADV_HEAD, true);
-            this->StyleSetUnderline(wxSTC_TXTADV_BIGHEAD, true);
-            this->StyleSetBold(wxSTC_TXTADV_BIGHEAD, true);
-            this->StyleSetSize(wxSTC_TXTADV_BIGHEAD, this->StyleGetSize(0) + 1);
-            this->StyleSetCase(wxSTC_TXTADV_BIGHEAD, wxSTC_CASE_UPPER);
+            SetLexer(wxSTC_LEX_TXTADV);
+            StyleSetItalic(wxSTC_TXTADV_DEFAULT, false);
+            StyleSetItalic(wxSTC_TXTADV_MODIFIER, true);
+            StyleSetForeground(wxSTC_TXTADV_MODIFIER, wxColor(255, 180, 180));
+            StyleSetItalic(wxSTC_TXTADV_ITALIC, true);
+            StyleSetItalic(wxSTC_TXTADV_BOLD, false);
+            StyleSetBold(wxSTC_TXTADV_BOLD, true);
+            StyleSetItalic(wxSTC_TXTADV_BOLD_ITALIC, true);
+            StyleSetBold(wxSTC_TXTADV_BOLD_ITALIC, true);
+            StyleSetUnderline(wxSTC_TXTADV_UNDERLINE, true);
+            StyleSetForeground(wxSTC_TXTADV_STRIKETHROUGH, wxColor(140, 140, 140));
+            StyleSetItalic(wxSTC_TXTADV_STRIKETHROUGH, true);
+            StyleSetUnderline(wxSTC_TXTADV_URL, true);
+            StyleSetForeground(wxSTC_TXTADV_URL, wxColor(0, 0, 255));
+            StyleSetUnderline(wxSTC_TXTADV_HEAD, true);
+            StyleSetBold(wxSTC_TXTADV_HEAD, true);
+            StyleSetUnderline(wxSTC_TXTADV_BIGHEAD, true);
+            StyleSetBold(wxSTC_TXTADV_BIGHEAD, true);
+            StyleSetSize(wxSTC_TXTADV_BIGHEAD, this->StyleGetSize(0) + 1);
+            StyleSetCase(wxSTC_TXTADV_BIGHEAD, wxSTC_CASE_UPPER);
         }
-        //this->ClearDocumentStyle();
     }
 
     updateDefaultHighlightSettings();
@@ -6403,24 +6450,7 @@ bool NumeReEditor::isValidAutoCompMatch(int nPos, bool findAll, bool searchMetho
 /////////////////////////////////////////////////
 wxString NumeReEditor::generateAutoCompList(int wordstartpos, int currpos, std::string sPreDefList)
 {
-    std::map<wxString, int> mAutoCompMap;
-    wxString wReturn = "";
-    std::string sCurrentWord;
-
-    // Store the list of predefined values in the map
-    if (sPreDefList.length())
-    {
-        while (sPreDefList.length())
-        {
-            sCurrentWord = sPreDefList.substr(0, sPreDefList.find(' '));
-            mAutoCompMap[toUpperCase(sCurrentWord.substr(0, sCurrentWord.find_first_of("(?"))) + " |" + sCurrentWord] = -1;
-            sPreDefList.erase(0, sPreDefList.find(' '));
-
-            if (sPreDefList.front() == ' ')
-                sPreDefList.erase(0, 1);
-        }
-    }
-
+    std::string sScopedList;
     bool useSmartSense = m_options->getSetting(SETTING_B_SMARTSENSE).active();
     bool searchMethod = GetCharAt(wordstartpos) == '.';
     wxString wordstart = GetTextRange(searchMethod ? wordstartpos+1 : wordstartpos, currpos);
@@ -6429,7 +6459,7 @@ wxString NumeReEditor::generateAutoCompList(int wordstartpos, int currpos, std::
     if (useSmartSense)
         context = getCurrentContext(LineFromPosition(currpos));
 
-    unsigned int nPos = PositionFromLine(context.first);
+    size_t nPos = PositionFromLine(context.first);
     bool findAll = !useSmartSense
                 || isStyleType(STYLE_COMMENT, wordstartpos)
                 || isStyleType(STYLE_STRING, wordstartpos);
@@ -6446,12 +6476,12 @@ wxString NumeReEditor::generateAutoCompList(int wordstartpos, int currpos, std::
 
     // Find every occurence of the current word start
     // and store the possible completions in the map
-    while ((nPos = FindText(nPos, GetLineEndPosition(context.second), wordstart, searchFlags)) != std::string::npos)
+    while (wordstart.length() && (nPos = FindText(nPos, GetLineEndPosition(context.second), wordstart, searchFlags)) != std::string::npos)
     {
         if (isValidAutoCompMatch(nPos, findAll, searchMethod))
         {
-            wxString sMatch = GetTextRange(nPos, WordEndPosition(nPos + 1, true));
-            wxString sFillUp;
+            std::string sMatch = GetTextRange(nPos, WordEndPosition(nPos + 1, true)).ToStdString();
+            std::string sFillUp;
 
             // Append the needed opening parentheses, if the completed
             // objects are data objects or functions
@@ -6462,7 +6492,7 @@ wxString NumeReEditor::generateAutoCompList(int wordstartpos, int currpos, std::
             else if (isStyleType(STYLE_IDENTIFIER, nPos))
                 sFillUp = "?" + toString((int)NumeReSyntax::SYNTAX_STD);
 
-            mAutoCompMap[toUpperCase(sMatch.ToStdString()) + " |" + sMatch+sFillUp] = 1;
+            sScopedList += sMatch + sFillUp + " ";
         }
 
         nPos++;
@@ -6484,8 +6514,8 @@ wxString NumeReEditor::generateAutoCompList(int wordstartpos, int currpos, std::
             {
                 if (isValidAutoCompMatch(pos, findAll, searchMethod))
                 {
-                    wxString sMatch = GetTextRange(pos, WordEndPosition(pos + 1, true));
-                    wxString sFillUp;
+                    std::string sMatch = GetTextRange(pos, WordEndPosition(pos + 1, true)).ToStdString();
+                    std::string sFillUp;
 
                     // Append the needed opening parentheses, if the completed
                     // objects are data objects or functions
@@ -6496,7 +6526,7 @@ wxString NumeReEditor::generateAutoCompList(int wordstartpos, int currpos, std::
                     else if (isStyleType(STYLE_IDENTIFIER, pos))
                         sFillUp = "?" + toString((int)NumeReSyntax::SYNTAX_STD);
 
-                    mAutoCompMap[toUpperCase(sMatch.ToStdString()) + " |" + sMatch+sFillUp] = 1;
+                    sScopedList += sMatch + sFillUp + " ";
                 }
 
                 pos++;
@@ -6504,35 +6534,8 @@ wxString NumeReEditor::generateAutoCompList(int wordstartpos, int currpos, std::
         }
     }
 
-    // remove duplicates
-    for (auto iter = mAutoCompMap.begin(); iter != mAutoCompMap.end(); ++iter)
-    {
-        if (iter->second == -1)
-        {
-            if ((iter->first).find('(') != std::string::npos)
-            {
-                if (mAutoCompMap.find((iter->first).substr(0, (iter->first).find('('))) != mAutoCompMap.end())
-                {
-                    mAutoCompMap.erase((iter->first).substr(0, (iter->first).find('(')));
-                    iter = mAutoCompMap.begin();
-                }
-            }
-            else
-            {
-                if (mAutoCompMap.find((iter->first).substr(0, (iter->first).find('?'))) != mAutoCompMap.end())
-                {
-                    mAutoCompMap.erase((iter->first).substr(0, (iter->first).find('?')));
-                    iter = mAutoCompMap.begin();
-                }
-            }
-        }
-    }
-
-    // Re-combine the autocompletion list
-    for (const auto& iter : mAutoCompMap)
-        wReturn += iter.first.substr(iter.first.find('|') + 1) + " ";
-
-    return wReturn;
+    // Use the static member function from NumeReSyntax to combine those two lists
+    return NumeReSyntax::mergeAutoCompleteLists(sPreDefList, sScopedList);
 }
 
 
@@ -6554,9 +6557,9 @@ void NumeReEditor::OnDisplayVariable(wxCommandEvent& event)
     SetIndicatorCurrent(HIGHLIGHT);
     IndicatorClearRange(0, maxpos);
 
-    unsigned int nPos = 0;
-    unsigned int nCurr = 0;
-    vector<unsigned int> vSelectionList;
+    size_t nPos = 0;
+    size_t nCurr = 0;
+    vector<size_t> vSelectionList;
 
     // If the current clicked word is already
     // highlighted, then simply clear out the
@@ -8483,7 +8486,7 @@ string NumeReEditor::realignLangString(string sLine, size_t& lastpos)
 /////////////////////////////////////////////////
 string NumeReEditor::addLinebreaks(const string& sLine, bool onlyDocumentation /* = false*/)
 {
-    const unsigned int nMAXLINE = 100;
+    const size_t nMAXLINE = 100;
 
     string sReturn = sLine;
 
@@ -8491,9 +8494,9 @@ string NumeReEditor::addLinebreaks(const string& sLine, bool onlyDocumentation /
     while (sReturn.find("\\$") != string::npos)
         sReturn.erase(sReturn.find("\\$"), 1);
 
-    unsigned int nDescStart = sReturn.find("- ");
-    unsigned int nIndentPos = 4;
-    unsigned int nLastLineBreak = 0;
+    size_t nDescStart = sReturn.find("- ");
+    size_t nIndentPos = 4;
+    size_t nLastLineBreak = 0;
     bool isItemize = false;
 
     // Handle the first indent depending on whether this is
@@ -8511,7 +8514,7 @@ string NumeReEditor::addLinebreaks(const string& sLine, bool onlyDocumentation /
 
     nLastLineBreak = nDescStart;
 
-    for (unsigned int i = nDescStart; i < sReturn.length(); i++)
+    for (size_t i = nDescStart; i < sReturn.length(); i++)
     {
         if (sReturn[i] == '\n')
         {

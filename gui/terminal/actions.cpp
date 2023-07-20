@@ -68,11 +68,11 @@ void GenericTerminal::normal_output()
     // As long as the output data has a length
     do
     {
-        // Print the output until the first control character
-        tm.printOutput(sInput.substr(0, sInput.find_first_of("\n\r\t")));
-
         // Store the position of the first control character
         size_t nPos = sInput.find_first_of("\n\r\t");
+
+        // Print the output until the first control character
+        tm.printOutput(sInput.substr(0, nPos));
 
         // If the position is valid
         if (nPos != std::string::npos)
@@ -96,10 +96,7 @@ void GenericTerminal::normal_output()
             sInput.erase(0, nPos + 1);
         }
         else
-        {
             sInput.clear();
-        }
-
     }
     while (sInput.length());
 
@@ -228,6 +225,7 @@ void GenericTerminal::tab()
     if (nTabStartPos == -1)
     {
         nTabStartPos = termCursor.x;
+        bool isMethod = false;
 
         // Get the word start from the terminal
         sAutoCompWordStart = toLowerCase(tm.GetWordStartAt(termCursor.y, termCursor.x));
@@ -238,13 +236,17 @@ void GenericTerminal::tab()
             std::string sNameSpace = getProcNameSpace();
             sAutoCompList = _syntax.getProcAutoCompList(sAutoCompWordStart, "", sNameSpace);
         }
-        else if (m_useSmartSense && tm.GetCharAdjusted(termCursor.y, nTabStartPos - sAutoCompWordStart.length()-1) == '.')
-            sAutoCompList = _syntax.getAutoCompList("." + sAutoCompWordStart, m_useSmartSense);
+        else if (m_useSmartSense && tm.GetCharAdjusted(termCursor.y, nTabStartPos - (int)sAutoCompWordStart.length()-1) == '.')
+        {
+            isMethod = true;
+            sAutoCompList = _syntax.getAutoCompList("." + sAutoCompWordStart, m_useSmartSense,
+                                                    get_method_root_type(nTabStartPos - (int)sAutoCompWordStart.length()-1, termCursor.y));
+        }
         else
-            sAutoCompList = _syntax.getAutoCompList(sAutoCompWordStart, m_useSmartSense);
+            sAutoCompList = generateAutoCompList(sAutoCompWordStart, _syntax.getAutoCompList(sAutoCompWordStart, m_useSmartSense));
 
         // Reset the autocompletion, if no completion was found or the word start is too short
-        if (!sAutoCompList.length() || !sAutoCompWordStart.length())
+        if (!sAutoCompList.length() || (!sAutoCompWordStart.length() && !isMethod))
         {
             resetAutoComp(RESETCURSOR | RESETTAB);
             return;
@@ -261,10 +263,11 @@ void GenericTerminal::tab()
                 std::string sNameSpace = getProcNameSpace();
                 sAutoCompList = _syntax.getProcAutoCompList(sAutoCompWordStart, "", sNameSpace);
             }
-            else if (m_useSmartSense && tm.GetCharAdjusted(termCursor.y, nTabStartPos - sAutoCompWordStart.length()-1) == '.')
-                sAutoCompList = _syntax.getAutoCompList("." + sAutoCompWordStart, m_useSmartSense);
+            else if (m_useSmartSense && tm.GetCharAdjusted(termCursor.y, nTabStartPos - (int)sAutoCompWordStart.length()-1) == '.')
+                sAutoCompList = _syntax.getAutoCompList("." + sAutoCompWordStart, m_useSmartSense,
+                                                        get_method_root_type(nTabStartPos - (int)sAutoCompWordStart.length()-1, termCursor.y));
             else
-                sAutoCompList = _syntax.getAutoCompList(sAutoCompWordStart, m_useSmartSense);
+                sAutoCompList = generateAutoCompList(sAutoCompWordStart, _syntax.getAutoCompList(sAutoCompWordStart, m_useSmartSense));
         }
     }
 

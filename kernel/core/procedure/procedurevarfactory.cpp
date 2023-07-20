@@ -77,11 +77,11 @@ ProcedureVarFactory::ProcedureVarFactory()
 ///
 /// \param _procedure Procedure*
 /// \param sProc const string&
-/// \param currentProc unsigned int
+/// \param currentProc size_t
 /// \param _inliningMode bool
 ///
 /////////////////////////////////////////////////
-ProcedureVarFactory::ProcedureVarFactory(Procedure* _procedure, const string& sProc, unsigned int currentProc, bool _inliningMode)
+ProcedureVarFactory::ProcedureVarFactory(Procedure* _procedure, const string& sProc, size_t currentProc, bool _inliningMode)
 {
     init();
     _currentProcedure = _procedure;
@@ -288,7 +288,7 @@ string ProcedureVarFactory::replaceProcedureName(string sProcedureName) const
 /////////////////////////////////////////////////
 std::string ProcedureVarFactory::createMangledArgName(const std::string& sDefinedName) const
 {
-    return "_~"+sProcName+"_~A_"+toString((int)nth_procedure)+"_"+sDefinedName;
+    return "_~"+sProcName+"_~A_"+toString(nth_procedure)+"_"+sDefinedName;
 }
 
 
@@ -301,7 +301,7 @@ std::string ProcedureVarFactory::createMangledArgName(const std::string& sDefine
 /////////////////////////////////////////////////
 std::string ProcedureVarFactory::createMangledVarName(const std::string& sDefinedName) const
 {
-    return "_~"+sProcName+"_"+toString((int)nth_procedure)+"_"+sDefinedName;
+    return "_~"+sProcName+"_"+toString(nth_procedure)+"_"+sDefinedName;
 }
 
 
@@ -311,19 +311,19 @@ std::string ProcedureVarFactory::createMangledVarName(const std::string& sDefine
 /// list.
 ///
 /// \param sVarList const string&
-/// \return unsigned int
+/// \return size_t
 ///
 /// This can be used to determine the size of the
 /// to be allocated data object.
 /////////////////////////////////////////////////
-unsigned int ProcedureVarFactory::countVarListElements(const string& sVarList)
+size_t ProcedureVarFactory::countVarListElements(const string& sVarList)
 {
     int nParenthesis = 0;
-    unsigned int nElements = 1;
+    size_t nElements = 1;
 
     // Count every comma, which is not part of a parenthesis and
     // also not between two quotation marks
-    for (unsigned int i = 0; i < sVarList.length(); i++)
+    for (size_t i = 0; i < sVarList.length(); i++)
     {
         if ((sVarList[i] == '(' || sVarList[i] == '{') && !isInQuotes(sVarList, i))
             nParenthesis++;
@@ -348,11 +348,11 @@ unsigned int ProcedureVarFactory::countVarListElements(const string& sVarList)
 ///
 /// \param sArgument const string&
 /// \param sArgumentList const string&
-/// \param nCurrentIndex unsigned int
+/// \param nCurrentIndex size_t
 /// \return void
 ///
 /////////////////////////////////////////////////
-void ProcedureVarFactory::checkArgument(const string& sArgument, const string& sArgumentList, unsigned int nCurrentIndex)
+void ProcedureVarFactory::checkArgument(const string& sArgument, const string& sArgumentList, size_t nCurrentIndex)
 {
     string sCommand = findCommand(sArgument).sString;
 
@@ -395,11 +395,11 @@ void ProcedureVarFactory::checkArgument(const string& sArgument, const string& s
 ///
 /// \param sArgument const string&
 /// \param sArgumentList const string&
-/// \param nCurrentIndex unsigned int
+/// \param nCurrentIndex size_t
 /// \return void
 ///
 /////////////////////////////////////////////////
-void ProcedureVarFactory::checkArgumentValue(const string& sArgument, const string& sArgumentList, unsigned int nCurrentIndex)
+void ProcedureVarFactory::checkArgumentValue(const string& sArgument, const string& sArgumentList, size_t nCurrentIndex)
 {
     string sCommand = findCommand(sArgument).sString;
 
@@ -459,7 +459,7 @@ void ProcedureVarFactory::createLocalInlineVars(string sVarList)
     NumeRe::Cluster& tempCluster = _dataRef->getCluster(sTempCluster);
 
     // Decode the variable list
-    for (unsigned int i = 0; i < nLocalVarMapSize; i++)
+    for (size_t i = 0; i < nLocalVarMapSize; i++)
     {
         std::string currentDef = getNextArgument(sVarList, true);
 
@@ -545,7 +545,7 @@ void ProcedureVarFactory::createLocalInlineStrings(string sStringList)
     NumeRe::Cluster& tempCluster = _dataRef->getCluster(sTempCluster);
 
     // Decode the variable list
-    for (unsigned int i = 0; i < nLocalStrMapSize; i++)
+    for (size_t i = 0; i < nLocalStrMapSize; i++)
     {
         std::string currentDef = getNextArgument(sStringList, true);
         std::string sVarValue;
@@ -641,7 +641,7 @@ map<string,string> ProcedureVarFactory::createProcedureArguments(string sArgumen
     std::string sArgListBack = sArgumentList;
 
     // Decode the argument list
-    for (unsigned int i = 0; i < nArgumentMapSize; i++)
+    for (size_t i = 0; i < nArgumentMapSize; i++)
     {
         std::string currentArg = getNextArgument(sArgumentList);
         StripSpaces(currentArg);
@@ -811,7 +811,7 @@ void ProcedureVarFactory::evaluateProcedureArguments(std::string& currentArg, st
                 throw SyntaxError(SyntaxError::INLINE_PROCEDURE_NEEDS_TABLE_REFERENCES, currentValue, "", currentArg + ")");
 
             // Create a local variable
-            std::string sNewArgName = "_~"+sProcName+"_~A_"+toString((int)nth_procedure)+"_"+currentArg.substr(0, currentArg.length()-1);
+            std::string sNewArgName = "_~"+sProcName+"_~A_"+toString(nth_procedure)+"_"+currentArg.substr(0, currentArg.length()-1);
 
             // Evaluate procedure calls first
             if (currentValue.find('$') != string::npos
@@ -914,7 +914,7 @@ void ProcedureVarFactory::evaluateProcedureArguments(std::string& currentArg, st
         else if (!isRef && !isMacro) // Macros do the old copy-paste logic
         {
             // Create a local variable
-            std::string sNewArgName = "_~"+sProcName+"_~A_"+toString((int)nth_procedure)+"_"+currentArg.substr(0, currentArg.length()-1);
+            std::string sNewArgName = "_~"+sProcName+"_~A_"+toString(nth_procedure)+"_"+currentArg.substr(0, currentArg.length()-1);
             NumeRe::Cluster& newCluster = _dataRef->newCluster(sNewArgName);
 
             // Copy, if it is already a (complete!) cluster
@@ -1148,7 +1148,7 @@ void ProcedureVarFactory::createLocalVars(string sVarList)
     size_t nLocalVarMapSize = countVarListElements(sVarList);
 
     // Decode the variable list
-    for (unsigned int i = 0; i < nLocalVarMapSize; i++)
+    for (size_t i = 0; i < nLocalVarMapSize; i++)
     {
         std::string currentDef = getNextArgument(sVarList, true);
         mu::value_type currentVal = 0;
@@ -1256,7 +1256,7 @@ void ProcedureVarFactory::createLocalStrings(string sStringList)
     size_t nLocalStrMapSize = countVarListElements(sStringList);
 
     // Decode the variable list
-    for (unsigned int i = 0; i < nLocalStrMapSize; i++)
+    for (size_t i = 0; i < nLocalStrMapSize; i++)
     {
         std::string currentDef = getNextArgument(sStringList, true);
         std::string sVarValue;
@@ -1352,7 +1352,7 @@ void ProcedureVarFactory::createLocalTables(string sTableList)
     size_t nLocalTableSize = countVarListElements(sTableList);
 
     // Decode the variable list
-    for (unsigned int i = 0; i < nLocalTableSize; i++)
+    for (size_t i = 0; i < nLocalTableSize; i++)
     {
         std::string currentDef = getNextArgument(sTableList, true);
         std::string sCurrentValue;
@@ -1471,7 +1471,7 @@ void ProcedureVarFactory::createLocalClusters(string sClusterList)
     size_t nLocalClusterSize = countVarListElements(sClusterList);
 
     // Decode the variable list
-    for (unsigned int i = 0; i < nLocalClusterSize; i++)
+    for (size_t i = 0; i < nLocalClusterSize; i++)
     {
         std::string currentDef = getNextArgument(sClusterList, true);
         std::string sCurrentValue;
@@ -1598,7 +1598,7 @@ string ProcedureVarFactory::resolveArguments(string sProcedureCommandLine, size_
 
     for (const auto& iter : mArguments)
     {
-        unsigned int nPos = 0;
+        size_t nPos = 0;
         size_t nArgumentBaseLength = iter.first.length();
 
         if (iter.first.back() == '(' || iter.first.back() == '{')

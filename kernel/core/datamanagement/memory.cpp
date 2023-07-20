@@ -33,8 +33,11 @@
 #include "../maths/statslogic.hpp"
 #include "../maths/matdatastructures.hpp"
 
-#define MAX_TABLE_SIZE 1e8
+#ifdef __GNUWIN64__
+#define MAX_TABLE_COLS (INT_MAX-1)/2
+#else
 #define MAX_TABLE_COLS 1e4
+#endif
 #define DEFAULT_COL_TYPE ValueColumn
 
 
@@ -685,6 +688,8 @@ TableColumn::ColumnType Memory::getType(const VectorIndex& _vCol) const
 /////////////////////////////////////////////////
 bool Memory::isValueLike(const VectorIndex& _vCol) const
 {
+    _vCol.setOpenEndIndex(getCols()-1);
+
     for (size_t i = 0; i < _vCol.size(); i++)
     {
         if (_vCol[i] >= 0 && (int)memArray.size() > _vCol[i] && memArray[_vCol[i]])
@@ -943,6 +948,8 @@ bool Memory::convertColumns(const VectorIndex& _vCol, const std::string& _sType)
 
     if (_type == TableColumn::TYPE_NONE)
         return false;
+    else if (_type == TableColumn::TYPE_MIXED)
+        _type = TableColumn::TYPE_NONE; // Enable autoconversions
 
     _vCol.setOpenEndIndex(memArray.size()-1);
 
@@ -962,7 +969,7 @@ bool Memory::convertColumns(const VectorIndex& _vCol, const std::string& _sType)
             if (col && col != memArray[_vCol[i]].get())
                 memArray[_vCol[i]].reset(col);
             else
-                success = false;
+                success = _type == TableColumn::TYPE_NONE; // Auto conversions do not flag errors
         }
     }
 
@@ -1068,7 +1075,7 @@ vector<string> Memory::getHeadLineElement(const VectorIndex& _vCol) const
 {
     vector<string> vHeadLines;
 
-    for (unsigned int i = 0; i < _vCol.size(); i++)
+    for (size_t i = 0; i < _vCol.size(); i++)
     {
         if (_vCol[i] < 0)
             continue;
@@ -1335,11 +1342,11 @@ void Memory::writeData(int _nLine, int _nCol, const std::string& sValue)
 ///
 /// \param _idx Indices&
 /// \param _dData mu::value_type*
-/// \param _nNum unsigned int
+/// \param _nNum size_t
 /// \return void
 ///
 /////////////////////////////////////////////////
-void Memory::writeData(Indices& _idx, mu::value_type* _dData, unsigned int _nNum)
+void Memory::writeData(Indices& _idx, mu::value_type* _dData, size_t _nNum)
 {
     int nDirection = LINES;
 
@@ -1983,13 +1990,14 @@ void Memory::insertCopiedTable(NumeRe::Table _table, const VectorIndex& lines, c
 /// \param _sFileName string
 /// \param sTableName const string&
 /// \param nPrecision unsigned short
+/// \param sExt std::string
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool Memory::save(string _sFileName, const string& sTableName, unsigned short nPrecision)
+bool Memory::save(string _sFileName, const string& sTableName, unsigned short nPrecision, std::string sExt)
 {
     // Get an instance of the desired file type
-    NumeRe::GenericFile* file = NumeRe::getFileByType(_sFileName);
+    NumeRe::GenericFile* file = NumeRe::getFileByType(_sFileName, sExt);
 
     // Ensure that a file was created
     if (!file)
@@ -2390,7 +2398,7 @@ mu::value_type Memory::num(const VectorIndex& _vLine, const VectorIndex& _vCol) 
     _vLine.setOpenEndIndex(lines-1);
     _vCol.setOpenEndIndex(cols-1);
 
-    for (unsigned int j = 0; j < _vCol.size(); j++)
+    for (size_t j = 0; j < _vCol.size(); j++)
     {
         if (_vCol[j] < 0)
             continue;
@@ -2403,7 +2411,7 @@ mu::value_type Memory::num(const VectorIndex& _vLine, const VectorIndex& _vCol) 
             continue;
         }
 
-        for (unsigned int i = 0; i < _vLine.size(); i++)
+        for (size_t i = 0; i < _vLine.size(); i++)
         {
             if (_vLine[i] < 0 || _vLine[i] >= elems || !isValidElement(_vLine[i], _vCol[j]))
                 nInvalid++;
@@ -2436,7 +2444,7 @@ mu::value_type Memory::and_func(const VectorIndex& _vLine, const VectorIndex& _v
 
     double dRetVal = NAN;
 
-    for (unsigned int j = 0; j < _vCol.size(); j++)
+    for (size_t j = 0; j < _vCol.size(); j++)
     {
         if (_vCol[j] < 0)
             continue;
@@ -2446,7 +2454,7 @@ mu::value_type Memory::and_func(const VectorIndex& _vLine, const VectorIndex& _v
         if (!elems)
             continue;
 
-        for (unsigned int i = 0; i < _vLine.size(); i++)
+        for (size_t i = 0; i < _vLine.size(); i++)
         {
             if (_vLine[i] < 0)
                 continue;
@@ -2494,7 +2502,7 @@ mu::value_type Memory::or_func(const VectorIndex& _vLine, const VectorIndex& _vC
     _vLine.setOpenEndIndex(lines-1);
     _vCol.setOpenEndIndex(cols-1);
 
-    for (unsigned int j = 0; j < _vCol.size(); j++)
+    for (size_t j = 0; j < _vCol.size(); j++)
     {
         if (_vCol[j] < 0)
             continue;
@@ -2504,7 +2512,7 @@ mu::value_type Memory::or_func(const VectorIndex& _vLine, const VectorIndex& _vC
         if (!elems)
             continue;
 
-        for (unsigned int i = 0; i < _vLine.size(); i++)
+        for (size_t i = 0; i < _vLine.size(); i++)
         {
             if (_vLine[i] < 0)
                 continue;
@@ -2548,7 +2556,7 @@ mu::value_type Memory::xor_func(const VectorIndex& _vLine, const VectorIndex& _v
 
     bool isTrue = false;
 
-    for (unsigned int j = 0; j < _vCol.size(); j++)
+    for (size_t j = 0; j < _vCol.size(); j++)
     {
         if (_vCol[j] < 0)
             continue;
@@ -2558,7 +2566,7 @@ mu::value_type Memory::xor_func(const VectorIndex& _vLine, const VectorIndex& _v
         if (!elems)
             continue;
 
-        for (unsigned int i = 0; i < _vLine.size(); i++)
+        for (size_t i = 0; i < _vLine.size(); i++)
         {
             if (_vLine[i] < 0)
                 continue;
@@ -2610,17 +2618,40 @@ mu::value_type Memory::cnt(const VectorIndex& _vLine, const VectorIndex& _vCol) 
     _vLine.setOpenEndIndex(lines-1);
     _vCol.setOpenEndIndex(cols-1);
 
-    for (unsigned int j = 0; j < _vCol.size(); j++)
+    std::vector<mu::value_type> vDimLen;
+
+    // Calculate the size in the corresponding direction first
+    if (_vCol.size() == 1 && _vLine.size() > 1)
+        vDimLen = size(_vCol, AppDir::COLS);
+    else if (_vCol.size() > 1 && _vLine.size() == 1)
+        vDimLen = size(_vLine, AppDir::LINES);
+
+    for (size_t j = 0; j < _vCol.size(); j++)
     {
         if (_vCol[j] < 0)
             continue;
 
+        if (_vCol.size() > 1
+            && _vLine.size() == 1
+            && vDimLen.front().real() <= _vCol[j])
+        {
+            nInvalid++;
+            continue;
+        }
+
         int elems = getElemsInColumn(_vCol[j]);
 
         if (!elems)
-            continue;
+        {
+            // If this goes for columns individual, then count it as empty
+            // otherwise it counts for cnt()
+            if (_vCol.size() == 1 && _vLine.size() > 1)
+                nInvalid += _vLine.size();
 
-        for (unsigned int i = 0; i < _vLine.size(); i++)
+            continue;
+        }
+
+        for (size_t i = 0; i < _vLine.size(); i++)
         {
             if (_vLine[i] < 0 || _vLine[i] >= elems)
                 nInvalid++;
@@ -2840,7 +2871,7 @@ mu::value_type Memory::med(const VectorIndex& _vLine, const VectorIndex& _vCol) 
 
     vData.reserve(_vLine.size()*_vCol.size());
 
-    for (unsigned int j = 0; j < _vCol.size(); j++)
+    for (size_t j = 0; j < _vCol.size(); j++)
     {
         if (_vCol[j] < 0)
             continue;
@@ -2850,7 +2881,7 @@ mu::value_type Memory::med(const VectorIndex& _vLine, const VectorIndex& _vCol) 
         if (!elems)
             continue;
 
-        for (unsigned int i = 0; i < _vLine.size(); i++)
+        for (size_t i = 0; i < _vLine.size(); i++)
         {
             if (_vLine[i] < 0)
                 continue;
@@ -2910,7 +2941,7 @@ mu::value_type Memory::pct(const VectorIndex& _vLine, const VectorIndex& _vCol, 
     if (dPct.real() >= 1 || dPct.real() <= 0)
         return NAN;
 
-    for (unsigned int j = 0; j < _vCol.size(); j++)
+    for (size_t j = 0; j < _vCol.size(); j++)
     {
         if (_vCol[j] < 0)
             continue;
@@ -2920,7 +2951,7 @@ mu::value_type Memory::pct(const VectorIndex& _vLine, const VectorIndex& _vCol, 
         if (!elems)
             continue;
 
-        for (unsigned int i = 0; i < _vLine.size(); i++)
+        for (size_t i = 0; i < _vLine.size(); i++)
         {
             if (_vLine[i] < 0)
                 continue;

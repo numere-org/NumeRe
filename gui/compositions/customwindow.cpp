@@ -18,7 +18,7 @@
 
 #include "customwindow.hpp"
 #include "../NumeReWindow.h" // Already includes NumeRe::Window
-#include "../../kernel/core/utils/tinyxml2.h"
+#include "../../externals/tinyxml2/tinyxml2.h"
 #include "../../kernel/core/utils/stringtools.hpp"
 #include "grouppanel.hpp"
 #include <wx/tokenzr.h>

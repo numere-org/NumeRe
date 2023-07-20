@@ -156,14 +156,14 @@ class Memory : public Sorter
 		void writeDataDirect(int _nLine, int _nCol, const mu::value_type& _dData);
 		void writeDataDirectUnsafe(int _nLine, int _nCol, const mu::value_type& _dData);
 		void writeData(int _nLine, int _nCol, const std::string& sValue);
-		void writeData(Indices& _idx, mu::value_type* _dData, unsigned int _nNum);
+		void writeData(Indices& _idx, mu::value_type* _dData, size_t _nNum);
 		void writeData(Indices& _idx, const ValueVector& _values);
 		bool setHeadLineElement(size_t _i, const std::string& _sHead);
 		void writeComment(const std::string& comment);
 		void setMetaData(const NumeRe::TableMetaData& meta);
 		void markModified();
 
-		bool save(std::string _sFileName, const std::string& sTableName, unsigned short nPrecision);
+		bool save(std::string _sFileName, const std::string& sTableName, unsigned short nPrecision, std::string sExt = "");
         bool getSaveStatus() const;
         void setSaveStatus(bool _bIsSaved);
         long long int getLastSaved() const;

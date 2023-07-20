@@ -304,7 +304,7 @@ namespace NumeRe
         // Evaluate ternaries first (will start a recursion)
         sLine = evalStringTernary(sLine);
 
-        unsigned int nPos;
+        size_t nPos;
 
         // Handle parenthesed expression parts
         // (will start a recursion)
@@ -478,7 +478,7 @@ namespace NumeRe
     {
         size_t nQuotes = 0;
 
-        for (unsigned int i = 0; i < sExpr.length(); i++)
+        for (size_t i = 0; i < sExpr.length(); i++)
         {
             if (sExpr[i] == '"' && (!i || sExpr[i-1] != '\\'))
                 nQuotes++;

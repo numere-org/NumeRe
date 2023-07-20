@@ -11,7 +11,7 @@ sCodeBasePathGrid = "<this>/wxGrid";
 
 ## Find the compiler directory
 paths{} = split(getenvvar("PATH"), ";");
-paths{} = replaceall(paths{locate(paths{}, "TDM-GCC-32", 4)}, "\ ", "/");
+paths{} = replaceall(paths{locate(paths{}, "TDM-GCC-", 4)}, "\ ", "/");
 sLibBasePath = substr(paths{1}, 1, strrfnd("/", paths{1})) + "wxWidgets-3.0.2";
 
 sLibSrcBasePathStc = sLibBasePath + "/src/stc";
@@ -25,8 +25,7 @@ sLibIncludeBasePathGrid = sLibBasePath + "/include/wx/generic";
 ## The Scintilla specific files
 copy sCodeBasePathStc + "/stc.h" -target=sLibIncludeBasePathStc + "/*"
 copy sCodeBasePathStc + "/Catalogue.cxx" -target=sLibSrcBasePathStc + "/scintilla/src/*"
-copy sCodeBasePathStc + "/LexMatlab.cxx" -target=sLibSrcBasePathStc + "/scintilla/lexers/*"
-copy sCodeBasePathStc + "/LexOthers.cxx" -target=sLibSrcBasePathStc + "/scintilla/lexers/*"
+copy sCodeBasePathStc + "/Lex*.cxx" -target=sLibSrcBasePathStc + "/scintilla/lexers/*" -all
 copy sCodeBasePathStc + "/SciLexer.h" -target=sLibSrcBasePathStc + "/scintilla/include/*"
 copy sCodeBasePathStc + "/ScintillaWX.cpp" -target=sLibSrcBasePathStc + "/*"
 

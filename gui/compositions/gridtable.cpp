@@ -108,7 +108,7 @@ NumeRe::Table& GridNumeReTable::getTableRef()
 /////////////////////////////////////////////////
 int GridNumeReTable::GetNumberRows()
 {
-    return std::max(_table.getLines(), 1u) + getNumHeadlines() + 1;
+    return std::max(_table.getLines(), (size_t)1u) + getNumHeadlines() + 1;
 }
 
 

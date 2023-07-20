@@ -201,6 +201,83 @@ void NumeReSyntax::setProcedureTree(const std::vector<std::string>& vTree)
 
 
 /////////////////////////////////////////////////
+/// \brief Merges the syntax-based predefined
+/// list with the scoped autocompletion list into
+/// a common autocompletion list.
+///
+/// \param sPreDefList std::string
+/// \param sScopedList std::string
+/// \return std::string
+///
+/////////////////////////////////////////////////
+std::string NumeReSyntax::mergeAutoCompleteLists(std::string sPreDefList, std::string sScopedList)
+{
+    std::map<std::string, int> mMergedMap;
+    std::string sCurrentWord;
+
+    // Store the list of predefined values in the map
+    if (sPreDefList.length())
+    {
+        while (sPreDefList.length())
+        {
+            sCurrentWord = sPreDefList.substr(0, sPreDefList.find(' '));
+            mMergedMap[toLowerCase(sCurrentWord.substr(0, sCurrentWord.find_first_of("({?"))) + " |" + sCurrentWord] = -1;
+            sPreDefList.erase(0, sPreDefList.find(' '));
+
+            if (sPreDefList.front() == ' ')
+                sPreDefList.erase(0, 1);
+        }
+    }
+
+    // Store the list of predefined values in the map
+    if (sScopedList.length())
+    {
+        while (sScopedList.length())
+        {
+            sCurrentWord = sScopedList.substr(0, sScopedList.find(' '));
+            mMergedMap[toLowerCase(sCurrentWord.substr(0, sCurrentWord.find_first_of("({?"))) + " |" + sCurrentWord] = 1;
+            sScopedList.erase(0, sScopedList.find(' '));
+
+            if (sScopedList.front() == ' ')
+                sScopedList.erase(0, 1);
+        }
+    }
+
+    // remove duplicates
+    for (auto iter = mMergedMap.begin(); iter != mMergedMap.end(); ++iter)
+    {
+        if (iter->second == -1)
+        {
+            if ((iter->first).find('(') != std::string::npos)
+            {
+                if (mMergedMap.find((iter->first).substr(0, (iter->first).find('('))) != mMergedMap.end())
+                {
+                    mMergedMap.erase((iter->first).substr(0, (iter->first).find('(')));
+                    iter = mMergedMap.begin();
+                }
+            }
+            else
+            {
+                if (mMergedMap.find((iter->first).substr(0, (iter->first).find('?'))) != mMergedMap.end())
+                {
+                    mMergedMap.erase((iter->first).substr(0, (iter->first).find('?')));
+                    iter = mMergedMap.begin();
+                }
+            }
+        }
+    }
+
+    std::string sList;
+
+    // Re-combine the autocompletion list
+    for (const auto& iter : mMergedMap)
+        sList += iter.first.substr(iter.first.find('|') + 1) + " ";
+
+    return sList;
+}
+
+
+/////////////////////////////////////////////////
 /// \brief Returns all block definitions as a
 /// folding string for the lexers.
 ///
@@ -238,7 +315,7 @@ std::string NumeReSyntax::constructString(const std::vector<std::string>& vVecto
     // Concatenate all elements in vVector
     for (size_t i = 0; i < vVector.size(); i++)
     {
-        sReturn += vVector[i] + " ";
+        sReturn += vVector[i].substr(0, vVector[i].find('.')) + " ";
     }
 
     return sReturn;
@@ -342,7 +419,7 @@ bool NumeReSyntax::matchItem(const std::vector<std::string>& vVector, const std:
     for (size_t i = 0; i < vVector.size(); i++)
     {
         // Match found -> return true
-        if (vVector[i] == sString)
+        if (vVector[i].substr(0, vVector[i].find('.')) == sString)
             return true;
     }
 
@@ -447,7 +524,7 @@ std::string NumeReSyntax::highlightLine(const std::string& sCommandLine)
     }
 
     // Apply the syntax elements
-    for (unsigned int i = 0; i < sCommandLine.length(); i++)
+    for (size_t i = 0; i < sCommandLine.length(); i++)
     {
         // find the first relevant character
         if (!i && sCommandLine.substr(0,3) == "|<-")
@@ -475,7 +552,7 @@ std::string NumeReSyntax::highlightLine(const std::string& sCommandLine)
         // Highlight numbers
         if (sCommandLine[i] >= '0' && sCommandLine[i] <= '9')
         {
-            unsigned int nLen = 0;
+            size_t nLen = 0;
 
             // Until the curent number ends
             while (i+nLen < sCommandLine.length()
@@ -539,7 +616,7 @@ std::string NumeReSyntax::highlightLine(const std::string& sCommandLine)
 
             }
 
-            unsigned int nLen = 0;
+            size_t nLen = 0;
 
             // Find the end of the current syntax element
             while (i+nLen < sCommandLine.length()
@@ -664,10 +741,11 @@ std::string NumeReSyntax::highlightWarning(const std::string& sCommandLine)
 ///
 /// \param sFirstChars std::string
 /// \param useSmartSense bool
+/// \param varType NumeReSyntax::SyntaxColors
 /// \return std::string
 ///
 /////////////////////////////////////////////////
-std::string NumeReSyntax::getAutoCompList(std::string sFirstChars, bool useSmartSense)
+std::string NumeReSyntax::getAutoCompList(std::string sFirstChars, bool useSmartSense, NumeReSyntax::SyntaxColors varType)
 {
     std::string sAutoCompList;
 
@@ -688,11 +766,11 @@ std::string NumeReSyntax::getAutoCompList(std::string sFirstChars, bool useSmart
                                                                            SYNTAX_FUNCTION);
 
         for (size_t i = 0; i < vMethods.size(); i++)
-            mAutoCompList[toLowerCase(vMethods[i])+"."] = std::make_pair(vMethods[i]+"?" + toString((int)SYNTAX_METHODS),
+            mAutoCompList[toLowerCase(vMethods[i])] = std::make_pair(vMethods[i].substr(0, vMethods[i].find('.'))+"?"+toString((int)SYNTAX_METHODS),
                                                                          SYNTAX_METHODS); // Methods shall not override functions
 
         for (size_t i = 0; i < vMethodsArgs.size(); i++)
-            mAutoCompList[toLowerCase(vMethodsArgs[i])+"(."] = std::make_pair(vMethodsArgs[i]+"(?" + toString((int)SYNTAX_METHODS),
+            mAutoCompList[toLowerCase(vMethodsArgs[i])] = std::make_pair(vMethodsArgs[i].substr(0, vMethodsArgs[i].find('.'))+"(?"+toString((int)SYNTAX_METHODS),
                                                                               SYNTAX_METHODS); // Methods shall not override functions
 
         for (size_t i = 0; i < vOptions.size(); i++)
@@ -728,20 +806,29 @@ std::string NumeReSyntax::getAutoCompList(std::string sFirstChars, bool useSmart
     if (selectMethods)
         sFirstChars.erase(0, 1);
 
+    bool selectAllMethods = selectMethods && !sFirstChars.length();
+    std::string methodSelector = ".unknown";
+
+    if (varType == SYNTAX_TABLE)
+        methodSelector = ".tab";
+    else if (varType == SYNTAX_STD)
+        methodSelector = ".str";
+
     // Try to find the correspondig elements in the map
     for (auto iter = mAutoCompList.begin(); iter != mAutoCompList.end(); ++iter)
     {
-        if ((iter->first).front() == sFirstChars.front())
+        if (selectAllMethods || (iter->first).front() == sFirstChars.front())
         {
             if (useSmartSense)
             {
-                if (selectMethods && iter->second.second != SYNTAX_METHODS)
+                if (selectMethods && (iter->second.second != SYNTAX_METHODS
+                                      || iter->first.find(methodSelector) == std::string::npos))
                     continue;
                 else if (!selectMethods && iter->second.second == SYNTAX_METHODS)
                     continue;
             }
 
-            if (sFirstChars == (iter->first).substr(0, sFirstChars.length()))
+            if (sFirstChars == (iter->first).substr(0, sFirstChars.length()) || selectAllMethods)
                 sAutoCompList += iter->second.first + " ";
         }
         else if ((iter->first).front() > sFirstChars.front())

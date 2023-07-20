@@ -97,7 +97,7 @@ class Procedure : public FlowCtrl, public PackageManager
         Procedure(const Procedure& _procedure);
         ~Procedure();
 
-        Returnvalue execute(std::string sProc, std::string sVarList, mu::Parser& _parser, FunctionDefinitionManager& _functions, MemoryManager& _data, Settings& _option, Output& _out, PlotData& _pData, Script& _script, unsigned int nth_procedure = 0);
+        Returnvalue execute(std::string sProc, std::string sVarList, mu::Parser& _parser, FunctionDefinitionManager& _functions, MemoryManager& _data, Settings& _option, Output& _out, PlotData& _pData, Script& _script, size_t nth_procedure = 0);
         static std::string mangleName(std::string sProcedureName);
         virtual FlowCtrl::ProcedureInterfaceRetVal procedureInterface(std::string& sLine, mu::Parser& _parser, FunctionDefinitionManager& _functions, MemoryManager& _data, Output& _out, PlotData& _pData, Script& _script, Settings& _option, int nth_command = 0) override;
         bool writeProcedure(std::string sProcedureLine);
@@ -112,7 +112,7 @@ class Procedure : public FlowCtrl, public PackageManager
             }
         inline std::string getCurrentProcedureName() const
             {return sCurrentProcedureName;}
-        unsigned int GetCurrentLine() const;
+        size_t GetCurrentLine() const;
         inline int getReturnType() const
             {return nReturnType;}
         inline bool is_writing() const
@@ -123,7 +123,7 @@ class Procedure : public FlowCtrl, public PackageManager
             {
                 return nDebuggerCode;
             }
-        size_t replaceReturnVal(std::string& sLine, mu::Parser& _parser, const Returnvalue& _return, unsigned int nPos, unsigned int nPos2, const std::string& sReplaceName);
+        size_t replaceReturnVal(std::string& sLine, mu::Parser& _parser, const Returnvalue& _return, size_t nPos, size_t nPos2, const std::string& sReplaceName);
 };
 
 #endif // PROCEDURE_HPP

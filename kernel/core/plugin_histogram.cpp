@@ -578,7 +578,8 @@ static void createOutputForHist1D(MemoryManager& _data, const Indices& _idx, con
 static mglGraph* prepareGraphForHist(double dAspect, PlotData& _pData, bool bSilent)
 {
     // Create a new mglGraph instance on the heap
-    mglGraph* _histGraph = new mglGraph();
+    mglGraph* _histGraph = new mglGraph(0);
+    _histGraph->SetPenDelta(0.65);
 
     // Apply plot output size using the resolution
     // and the aspect settings
@@ -807,7 +808,7 @@ static void createPlotForHist1D(HistogramParameters& _histParams, mglData& _mAxi
     }
     else
     {
-        _histGraph->WriteFrame(sHistSavePath.c_str());
+        _histGraph->WritePNG(sHistSavePath.c_str(), "", false);
         delete _histGraph;
 
         if (_option.systemPrints() && !bSilent)
@@ -1478,7 +1479,7 @@ static void createPlotsForHist2D(const std::string& sCmd, HistogramParameters& _
     }
     else
     {
-        _histGraph->WriteFrame(sHistSavePath.c_str());
+        _histGraph->WritePNG(sHistSavePath.c_str(), "", false);
         delete _histGraph;
 
         if (_option.systemPrints() && !bSilent)
@@ -1686,19 +1687,14 @@ void plugin_histogram(std::string& sCmd)
     Indices _idx;
     Indices _tIdx;
 
-    if (_data.matchTableAsParameter(sCmd).length())
-        _histParams.sTable = _data.matchTableAsParameter(sCmd);
-    else
-    {
-        DataAccessParser _accessParser(sCmd);
+    DataAccessParser _accessParser(sCmd);
 
-        if (!_accessParser.getDataObject().length())
-            throw SyntaxError(SyntaxError::TABLE_DOESNT_EXIST, sCmd, SyntaxError::invalid_position);
+    if (!_accessParser.getDataObject().length())
+        throw SyntaxError(SyntaxError::TABLE_DOESNT_EXIST, sCmd, SyntaxError::invalid_position);
 
-        _accessParser.evalIndices();
-        _histParams.sTable = _accessParser.getDataObject();
-        _idx = _accessParser.getIndices();
-    }
+    _accessParser.evalIndices();
+    _histParams.sTable = _accessParser.getDataObject();
+    _idx = _accessParser.getIndices();
 
     if (_data.isEmpty(_histParams.sTable))
         throw SyntaxError(SyntaxError::NO_CACHED_DATA, sCmd, SyntaxError::invalid_position);
@@ -1726,7 +1722,7 @@ void plugin_histogram(std::string& sCmd)
         {
             int nSep = 0;
 
-            for (unsigned int i = 0; i < sTemp.length(); i++)
+            for (size_t i = 0; i < sTemp.length(); i++)
             {
                 if (sTemp[i] == ':')
                 {
@@ -1844,8 +1840,12 @@ void plugin_histogram(std::string& sCmd)
     if (findParameter(sCmd, "silent"))
         bSilent = true;
 
-    if (findParameter(sCmd, "grid") && _idx.col.size() > 3)
+    // Had to rename the "grid" parameter due to name conflict
+    if (findParameter(sCmd, "asgrid") && _idx.col.size() > 3)
         bGrid = true;
+
+    // Parse all plotting-specific parameters
+    NumeReKernel::getInstance()->getPlottingData().setParams(sCmd);
 
     //////////////////////////////////////////////////////////////////////////////////////
     if (bMake2DHist)

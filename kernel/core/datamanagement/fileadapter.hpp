@@ -47,14 +47,14 @@ namespace NumeRe
 
             std::string getDate();
             void condenseDataSet(Memory* _mem);
-            virtual bool saveLayer(std::string _sFileName, const std::string& _sCache, unsigned short nPrecision) = 0;
+            virtual bool saveLayer(std::string _sFileName, const std::string& _sCache, unsigned short nPrecision, std::string sExt = "") = 0;
 
         public:
             FileAdapter();
             virtual ~FileAdapter() {}
 
-            FileHeaderInfo openFile(std::string _sFile, bool loadToCache = false, bool overrideTarget = false, int _nHeadline = 0, const std::string& sTargetTable = "");
-            bool saveFile(const std::string& sTable, std::string _sFileName, unsigned short nPrecision = 7);
+            FileHeaderInfo openFile(std::string _sFile, bool loadToCache = false, bool overrideTarget = false, int _nHeadline = 0, const std::string& sTargetTable = "", std::string sFileFormat = "");
+            bool saveFile(const std::string& sTable, std::string _sFileName, unsigned short nPrecision = 7, std::string sFileFormat = "");
             std::string getDataFileName(const std::string& sTable) const;
             std::string getDataFileNameShort() const;
             std::string getOutputFileName() const;

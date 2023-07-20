@@ -198,6 +198,7 @@ void GenericTerminal::handle_calltip(int x, int y)
         CalltipCancel();
         return;
     }
+
     // if the position is on a relevant syntax element
     // create a calltip for this element, otherwise
     // dismiss it
@@ -293,6 +294,40 @@ void GenericTerminal::handle_calltip(int x, int y)
     Calltip(posStart, y, _cTip);
 }
 
+
+/////////////////////////////////////////////////
+/// \brief Detect the type of the symbol left to
+/// the selected position (is used to detect the
+/// type of the method root variable).
+///
+/// \param x int
+/// \param y int
+/// \return NumeReSyntax::SyntaxColors
+///
+/////////////////////////////////////////////////
+NumeReSyntax::SyntaxColors GenericTerminal::get_method_root_type(int x, int y)
+{
+    // Get the rendered line and the corresponding syntax colors
+    std::string sLine = tm.getRenderedString(y);
+    std::vector<unsigned short> vColors = tm.getRenderedColors(y);
+
+    if ((int)vColors.size() <= x || x < 1)
+        return NumeReSyntax::SYNTAX_METHODS;
+
+    // Should replicate the logic from the editor
+    if (((vColors[x-1] >> 4) & 0xf) == NumeReSyntax::SYNTAX_STD)
+        return NumeReSyntax::SYNTAX_STD;
+    else if (((vColors[x-1] >> 4) & 0xf) == NumeReSyntax::SYNTAX_METHODS
+             || (x > 3
+                 && sLine.substr(x-2,2) == "()"
+                 && (((vColors[x-3] >> 4) & 0xf) == NumeReSyntax::SYNTAX_STD
+                     || ((vColors[x-3] >> 4) & 0xf) == NumeReSyntax::SYNTAX_SPECIALVAL)))
+        return NumeReSyntax::SYNTAX_TABLE;
+
+    return NumeReSyntax::SYNTAX_METHODS;
+}
+
+
 /////////////////////////////////////////////////
 /// \brief Moves the cursor to a location, if
 /// this location is editable.
@@ -339,3 +374,5 @@ void GenericTerminal::clear_mode_flag( int flag )
 
 	ModeChange(mode_flags);
 }
+
+

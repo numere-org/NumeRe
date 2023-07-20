@@ -18,7 +18,7 @@
 
 #include "../gui/compositions/customwindow.hpp"
 #include "kernel.hpp"
-#include "core/utils/tinyxml2.h"
+#include "../externals/tinyxml2/tinyxml2.h"
 #include "core/plotting/graph_helper.hpp"
 #include "windowmanager.hpp"
 

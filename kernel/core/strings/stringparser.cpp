@@ -117,7 +117,7 @@ namespace NumeRe
 
                     for (size_t i = 0; i < _idx.row.size(); i++)
                     {
-                        vStrings.push_back("\"" +  _data.readString((unsigned int)_idx.row[i], _idx.col.front()) + "\"");
+                        vStrings.push_back("\"" +  _data.readString((size_t)_idx.row[i], _idx.col.front()) + "\"");
                     }
 
                     sString = createStringVectorVar(vStrings);
@@ -348,8 +348,8 @@ namespace NumeRe
         std::string sLineToParsed = sLine + " ";
         std::string sLineToParsedTemp;
 
-        unsigned int nPos = 0;
-        unsigned int n_pos = 0;
+        size_t nPos = 0;
+        size_t n_pos = 0;
 
         // As long as there are further "#"
         while (sLineToParsed.find('#', nPos) != std::string::npos)
@@ -368,7 +368,7 @@ namespace NumeRe
                 // need to prepend zeros. Get the prefix here
                 if (sLineToParsed[0] == '~')
                 {
-                    for (unsigned int i = 0; i < sLineToParsed.length(); i++)
+                    for (size_t i = 0; i < sLineToParsed.length(); i++)
                     {
                         if (sLineToParsed[i] != '~')
                         {
@@ -645,9 +645,10 @@ namespace NumeRe
             if ((_idx.row.isOpenEnd() || (_idx.row.isExpanded() && _idx.row.last() == (int)cluster.size()-1)) && _idx.row.front() == 0)
                 cluster.clear();
 
-            _idx.row.setOpenEndIndex(_idx.row.front() + nStrings-nCurrentComponent-1);
+            //_idx.row.setOpenEndIndex(_idx.row.front() + nStrings-nCurrentComponent-1);
+            size_t last = _idx.row.isOpenEnd() ? nStrings-nCurrentComponent : _idx.row.size();
 
-            for (size_t i = 0; i < _idx.row.size(); i++)
+            for (size_t i = 0; i < last; i++)
             {
                 if (_idx.row[i] == VectorIndex::INVALID
                     || (nStrings > 1 && nCurrentComponent+i >= nStrings))
@@ -687,10 +688,14 @@ namespace NumeRe
                                                            || (_idx.row.isExpanded()
                                                                && _idx.row.last() == _data.getColElements(_idx.col.subidx(0,1),sTableName)-1));
 
-            _idx.row.setOpenEndIndex(_idx.row.front() + nStrings-nCurrentComponent-1);
-            _idx.col.setOpenEndIndex(_idx.col.front() + nStrings-nCurrentComponent-1);
+            //_idx.row.setOpenEndIndex(_idx.row.front() + nStrings-nCurrentComponent-1);
+            //_idx.col.setOpenEndIndex(_idx.col.front() + nStrings-nCurrentComponent-1);
 
-            for (size_t i = 0; i < std::max(_idx.row.size(), _idx.col.size()); i++)
+            size_t last = _idx.row.isOpenEnd() || _idx.col.isOpenEnd()
+                ? nStrings-nCurrentComponent
+                : std::max(_idx.row.size(), _idx.col.size());
+
+            for (size_t i = 0; i < last; i++)
             {
                 if (nStrings > 1 && nCurrentComponent+i >= nStrings)
                     break;
@@ -1784,7 +1789,7 @@ namespace NumeRe
         std::vector<bool> vIsNoStringValue(vFinal.size(), false);
 
         // Examine the whole passed vector
-        for (unsigned int n = 0; n < vFinal.size(); n++)
+        for (size_t n = 0; n < vFinal.size(); n++)
         {
             // Strip whitespaces and ensure that the
             // current component is not empy
@@ -2323,6 +2328,7 @@ namespace NumeRe
 			|| sExpression.find("string_cast(") != std::string::npos
 			|| sExpression.find("char(") != std::string::npos
 			|| sExpression.find("getlasterror(") != std::string::npos
+			|| sExpression.find("getuilang(") != std::string::npos
 			|| sExpression.find("getversioninfo(") != std::string::npos
 			|| sExpression.find("valtostr(") != std::string::npos
 			|| sExpression.find("weekday(") != std::string::npos

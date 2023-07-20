@@ -91,6 +91,7 @@ class GenericTerminal
         int calc_color(int fg, int bg, int flags);
         void move_cursor(int x, int y);
         void handle_calltip(int x, int y);
+        NumeReSyntax::SyntaxColors get_method_root_type(int x, int y);
 
         // action parameters
         int nparam, param[30];
@@ -120,6 +121,7 @@ class GenericTerminal
         void cr(), lf(), ff(), bell(), tab();
         bool bs(), del();
         bool delSelected();
+        virtual std::string generateAutoCompList(const std::string& sWordStart, std::string sPreDefList) {return sPreDefList;}
 
         // escape sequence actions
         void reset();

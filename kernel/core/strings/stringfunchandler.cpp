@@ -218,7 +218,7 @@ namespace NumeRe
                 }
                 else
                 {
-                    nMaxArgs = max(max(max(max(sStringArg2.size(), sStringArg3.size()), nIntArg1.size()), nIntArg2.size()), 1u);
+                    nMaxArgs = max(max(max(max(sStringArg2.size(), sStringArg3.size()), nIntArg1.size()), nIntArg2.size()), (size_t)1u);
 
                     if (nMaxArgs < 500)
                         vReturnValues = callMultiFunction(funcHandle, sStringArg1, sStringArg2, sStringArg3, nIntArg1, nIntArg2, dValArg, nMaxArgs);
@@ -1151,6 +1151,8 @@ namespace NumeRe
                 for (size_t i = 0; i < strRes.vResult.size(); i++)
                 {
                     std::string sComponent = strRes.vResult[i].to_string();
+                    // Legacy function needed to enable {123,456} == to_value("{123,456}") comparison
+                    convertVectorToExpression(sComponent, _option);
 
                     while (sComponent.length())
                     {

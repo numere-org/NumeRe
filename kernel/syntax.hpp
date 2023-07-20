@@ -112,6 +112,9 @@ class NumeReSyntax
         void loadSyntax(const std::string& _sPath = "");
         void addPlugins(const std::vector<std::string>& vPlugins);
         void setProcedureTree(const std::vector<std::string>& vTree);
+
+        static std::string mergeAutoCompleteLists(std::string sPreDefList, std::string sScopedList);
+
         std::string getCommands() const
             {return constructString(vNSCRCommands);}
         std::string getNPRCCommands() const
@@ -139,7 +142,7 @@ class NumeReSyntax
             {return constructString(vCppKeyWords);}
         std::string getCppFunctions() const
             {return constructString(vCppFunctions);}
-        std::string getAutoCompList(std::string sFirstChars, bool useSmartSense = false);
+        std::string getAutoCompList(std::string sFirstChars, bool useSmartSense = false, SyntaxColors varType = SYNTAX_STD);
         std::string getAutoCompListMATLAB(std::string sFirstChars);
         std::string getAutoCompListCPP(std::string sFirstChars);
         std::string getAutoCompListTeX(std::string sFirstChars);
@@ -154,5 +157,6 @@ class NumeReSyntax
             {return vBlockDefs;}
 
 };
+
 #endif // SYNTAX_HPP
 

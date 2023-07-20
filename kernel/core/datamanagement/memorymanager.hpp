@@ -60,9 +60,9 @@ class MemoryManager : public NumeRe::FileAdapter, public StringMemory, public Nu
 		VectorIndex parseEvery(std::string& sDir, const std::string& sTableName) const;
         std::vector<mu::value_type> resolveMAF(const std::string& sTableName, std::string sDir, mu::value_type (MemoryManager::*MAF)(const std::string&, long long int, long long int, long long int, long long int) const) const;
 
-        virtual bool saveLayer(std::string _sFileName, const std::string& _sTable, unsigned short nPrecision) override
+        virtual bool saveLayer(std::string _sFileName, const std::string& _sTable, unsigned short nPrecision, std::string sExt = "") override
 		{
-			return vMemory[findTable(_sTable)]->save(ValidFileName(_sFileName, ".ndat"), _sTable, nPrecision);
+			return vMemory[findTable(_sTable)]->save(ValidFileName(_sFileName, ".ndat", !sExt.length()), _sTable, nPrecision, sExt);
 		}
 
 		inline bool exists(const std::string& sTable) const
@@ -216,7 +216,7 @@ class MemoryManager : public NumeRe::FileAdapter, public StringMemory, public Nu
 		bool saveToCacheFile();
 		bool loadFromCacheFile();
 
-        inline unsigned int getNumberOfTables() const
+        inline size_t getNumberOfTables() const
 		{
 			return mCachesMap.size();
 		}
@@ -599,7 +599,7 @@ class MemoryManager : public NumeRe::FileAdapter, public StringMemory, public Nu
 			vMemory[findTable(_sCache)]->writeData(_nLine, _nCol, _sValue);
 		}
 
-		inline void writeToTable(Indices& _idx, const std::string& _sCache, mu::value_type* _dData, unsigned int _nNum)
+		inline void writeToTable(Indices& _idx, const std::string& _sCache, mu::value_type* _dData, size_t _nNum)
 		{
 			vMemory[findTable(_sCache)]->writeData(_idx, _dData, _nNum);
 		}

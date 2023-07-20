@@ -740,32 +740,32 @@ namespace mu
 					break;
 
 				case cmVAR:
-				    NumeReKernel::printPreFmt("VAR \t[" + toHexString((int)m_vRPN[i].Val.ptr) + "]\n");
+				    NumeReKernel::printPreFmt("VAR \t[" + toHexString((size_t)m_vRPN[i].Val.ptr) + "]\n");
 					break;
 
 				case cmVARPOW2:
-				    NumeReKernel::printPreFmt("VARPOW2 \t[" + toHexString((int)m_vRPN[i].Val.ptr) + "]\n");
+				    NumeReKernel::printPreFmt("VARPOW2 \t[" + toHexString((size_t)m_vRPN[i].Val.ptr) + "]\n");
 					break;
 
 				case cmVARPOW3:
-					NumeReKernel::printPreFmt("VARPOW3 \t[" + toHexString((int)m_vRPN[i].Val.ptr) + "]\n");
+					NumeReKernel::printPreFmt("VARPOW3 \t[" + toHexString((size_t)m_vRPN[i].Val.ptr) + "]\n");
 					break;
 
 				case cmVARPOW4:
-					NumeReKernel::printPreFmt("VARPOW4 \t[" + toHexString((int)m_vRPN[i].Val.ptr) + "]\n");
+					NumeReKernel::printPreFmt("VARPOW4 \t[" + toHexString((size_t)m_vRPN[i].Val.ptr) + "]\n");
 					break;
 
 				case cmVARMUL:
-					NumeReKernel::printPreFmt("VARMUL \t[" + toHexString((int)m_vRPN[i].Val.ptr) + "]");
+					NumeReKernel::printPreFmt("VARMUL \t[" + toHexString((size_t)m_vRPN[i].Val.ptr) + "]");
 					NumeReKernel::printPreFmt(" * [" + toString(m_vRPN[i].Val.data, 7) + "] + [" + toString(m_vRPN[i].Val.data2, 7) + "]\n");
 					break;
 
 				case cmFUNC:
-				    NumeReKernel::printPreFmt("CALL \t[ARG: " + toString(m_vRPN[i].Fun.argc) + "] [ADDR: " + toHexString((int)m_vRPN[i].Fun.ptr) + "]\n");
+				    NumeReKernel::printPreFmt("CALL \t[ARG: " + toString(m_vRPN[i].Fun.argc) + "] [ADDR: " + toHexString((size_t)m_vRPN[i].Fun.ptr) + "]\n");
 					break;
 
 				case cmFUNC_STR:
-				    NumeReKernel::printPreFmt("CALL STRFUNC\t[ARG:" + toString(m_vRPN[i].Fun.argc) + "] [IDX: "+ toString(m_vRPN[i].Fun.idx) + "] [ADDR: " + toHexString((int)m_vRPN[i].Fun.ptr) + "]\n");
+				    NumeReKernel::printPreFmt("CALL STRFUNC\t[ARG:" + toString(m_vRPN[i].Fun.argc) + "] [IDX: "+ toString(m_vRPN[i].Fun.idx) + "] [ADDR: " + toHexString((size_t)m_vRPN[i].Fun.ptr) + "]\n");
 					break;
 
 				case cmLT:
@@ -821,7 +821,7 @@ namespace mu
 					break;
 
 				case cmASSIGN:
-					NumeReKernel::printPreFmt("ASSIGN \t[" + toHexString((int)m_vRPN[i].Oprt.ptr) + "]\n");
+					NumeReKernel::printPreFmt("ASSIGN \t[" + toHexString((size_t)m_vRPN[i].Oprt.ptr) + "]\n");
 					break;
 
 				default:

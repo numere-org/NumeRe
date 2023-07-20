@@ -30,7 +30,7 @@
 #include "ui/winlayout.hpp"
 #include "io/logger.hpp"
 #include "utils/tools.hpp"
-#include "utils/archive.hpp"
+#include "io/archive.hpp"
 
 #include "commandlineparser.hpp"
 
@@ -634,7 +634,7 @@ static bool editObject(string& sCmd, Parser& _parser, MemoryManager& _data, Sett
 		if (sObject.find('*') != string::npos)
 			sObject.erase(sObject.rfind('*'));
 
-		if ((int)ShellExecute(NULL, NULL, sObject.c_str(), NULL, NULL, SW_SHOWNORMAL) > 32)
+		if ((long long int)ShellExecute(NULL, NULL, sObject.c_str(), NULL, NULL, SW_SHOWNORMAL) > 32)
 			return true;
 
 		throw SyntaxError(SyntaxError::FILE_NOT_EXIST, sCmd, SyntaxError::invalid_position, sObject);
@@ -711,7 +711,7 @@ static bool listDirectory(const string& sDir, const string& sParams, const Setti
 	string sDirectory = "";
 	int nLength = 0;
 	int nCount[2] = {0, 0};
-	unsigned int nFirstColLength = _option.getWindow() / 2 - 6;
+	size_t nFirstColLength = _option.getWindow() / 2 - 6;
 	bool bOnlyDir = false;
 
 	if (findSettingOption(sParams, "dir"))
@@ -1018,7 +1018,7 @@ static bool listFiles(const string& sCmd, const Settings& _option)
 	string sSpecified = "";
 	string __sCmd = sCmd + " ";
 	string sPattern = "";
-	unsigned int nFirstColLength = _option.getWindow() / 2 - 6;
+	size_t nFirstColLength = _option.getWindow() / 2 - 6;
 	bool bFreePath = false;
 
 	// Extract a search pattern
@@ -1188,7 +1188,7 @@ static void listFunctions(const Settings& _option, const string& sType) //PRSRFU
 		vFuncs = _lang.getList("PARSERFUNCS_LISTFUNC_FUNC_*_[" + toUpperCase(sType) + "]");
 
     // Print the obtained function list on the terminal
-	for (unsigned int i = 0; i < vFuncs.size(); i++)
+	for (size_t i = 0; i < vFuncs.size(); i++)
 	{
 		NumeReKernel::printPreFmt(LineBreak("|   " + vFuncs[i], _option, false, 0, 75) + "\n");
 	}
@@ -1226,7 +1226,7 @@ static void listDefinitions(const FunctionDefinitionManager& _functions, const S
 	else
 	{
 	    // Print all custom defined functions on the terminal
-		for (unsigned int i = 0; i < _functions.getDefinedFunctions(); i++)
+		for (size_t i = 0; i < _functions.getDefinedFunctions(); i++)
 		{
 		    // Print first the name of the function
 			NumeReKernel::printPreFmt(sectionHeadline(_functions.getFunctionSignature(i).substr(0, _functions.getFunctionSignature(i).rfind('('))));
@@ -1268,7 +1268,7 @@ static void listLogicalOperators(const Settings& _option)
 	vector<string> vLogicals = _lang.getList("PARSERFUNCS_LISTLOGICAL_ITEM*");
 
 	// Print the list on the terminal
-	for (unsigned int i = 0; i < vLogicals.size(); i++)
+	for (size_t i = 0; i < vLogicals.size(); i++)
 		NumeReKernel::printPreFmt(toSystemCodePage("|   " + vLogicals[i]) + "\n");
 
 	NumeReKernel::printPreFmt(toSystemCodePage("|\n"));
@@ -1549,7 +1549,7 @@ static void listCommands(const Settings& _option)
 	vector<string> vCMDList = _lang.getList("PARSERFUNCS_LISTCMD_CMD_*");
 
 	// Print the complete list on the terminal
-	for (unsigned int i = 0; i < vCMDList.size(); i++)
+	for (size_t i = 0; i < vCMDList.size(); i++)
 	{
 		NumeReKernel::printPreFmt(LineBreak("|   " + vCMDList[i], _option, false, 0, 42) + "\n");
 	}
@@ -1571,11 +1571,11 @@ static void listCommands(const Settings& _option)
 /// \param sDesc const string&
 /// \param sDim const string&
 /// \param sValues const string&
-/// \param nWindowsize unsigned int
+/// \param nWindowsize size_t
 /// \return void
 ///
 /////////////////////////////////////////////////
-static void printUnits(const string& sUnit, const string& sDesc, const string& sDim, const string& sValues, unsigned int nWindowsize)
+static void printUnits(const string& sUnit, const string& sDesc, const string& sDim, const string& sValues, size_t nWindowsize)
 {
 	NumeReKernel::printPreFmt("|     " + strlfill(sUnit, 11) + strlfill(sDesc, (nWindowsize - 17) / 3 + (nWindowsize + 1) % 3) + strlfill(sDim, (nWindowsize - 35) / 3) + "=" + strfill(sValues, (nWindowsize - 2) / 3) + "\n");
 	return;
@@ -1808,7 +1808,7 @@ static void listInstalledPlugins(Parser& _parser, MemoryManager& _data, const Se
         plotTableBySize(headerEntries, colWidth);
 
 		// Print all plugins (name, command and description) on the terminal
-		for (unsigned int i = 0; i < _procedure.getPackageCount(); i++)
+		for (size_t i = 0; i < _procedure.getPackageCount(); i++)
 		{
             // Tabellenfunktion unter utils/tools.cpp oder util/stringtools.cpp
             std::vector<std::string> lineEntries;
@@ -2198,6 +2198,10 @@ static CommandReturnValues saveDataObject(string& sCmd)
             NumeReKernel::getInstance()->getStringParser().getStringValues(sCmd);
 
         std::string sFileName;
+        std::string sFileFormat;
+
+        if (cmdParser.hasParam("fileformat"))
+            sFileFormat = cmdParser.getParameterValueAsString("fileformat", "", true, true);
 
         if (cmdParser.getCommand() == "export")
             sFileName = cmdParser.getFileParameterValue(".dat", "<savepath>", "");
@@ -2214,7 +2218,7 @@ static CommandReturnValues saveDataObject(string& sCmd)
                 sFileName = _cache.generateFileName(".ndat");
         }
 
-        if (_cache.saveFile(_access.getDataObject(), sFileName, nPrecision))
+        if (_cache.saveFile(_access.getDataObject(), sFileName, nPrecision, sFileFormat))
         {
             if (_option.systemPrints())
                 NumeReKernel::print(_lang.get("BUILTIN_CHECKKEYWORD_SAVEDATA_SUCCESS", _cache.getOutputFileName()));
@@ -2628,60 +2632,7 @@ static CommandReturnValues cmd_get(string& sCmd)
     bool asVal = findParameter(sCmd, "asval");
     bool asStr = findParameter(sCmd, "asstr");
 
-    for (auto iter = mSettings.begin(); iter != mSettings.end(); ++iter)
-    {
-        if (findSettingOption(sCmd, iter->first.substr(iter->first.find('.')+1)) && !iter->second.isHidden())
-        {
-            std::string convertedValue;
-
-            switch (iter->second.getType())
-            {
-                case SettingsValue::BOOL:
-                    convertedValue = toString(iter->second.active());
-                    break;
-                case SettingsValue::UINT:
-                    convertedValue = toString(iter->second.value());
-                    break;
-                case SettingsValue::STRING:
-                    convertedValue = iter->second.stringval();
-                    break;
-            }
-
-            switch (iter->second.getType())
-            {
-                case SettingsValue::BOOL:
-                case SettingsValue::UINT:
-                    if (asVal)
-                    {
-                        if (!nPos)
-                            sCmd = convertedValue;
-                        else
-                            sCmd.replace(nPos, sCommand.length(), convertedValue);
-
-                        break;
-                    }
-                // Fallthrough intended
-                case SettingsValue::STRING:
-                    if (asStr || asVal)
-                    {
-                        if (!nPos)
-                            sCmd = "\"" + convertedValue + "\"";
-                        else
-                            sCmd.replace(nPos, sCommand.length(), "\"" + convertedValue + "\"");
-                    }
-                    else
-                        NumeReKernel::print(toUpperCase(iter->first.substr(iter->first.find('.')+1)) + ": " + convertedValue);
-
-                    break;
-            }
-
-            if (asStr || asVal)
-                return COMMAND_HAS_RETURNVALUE;
-            else
-                return COMMAND_PROCESSED;
-        }
-    }
-
+    // Handle some special cases
     if (findSettingOption(sCmd, "windowsize"))
     {
         std::string convertedValue = "x = " + toString(mSettings.at(SETTING_V_WINDOW_X).value() + 1) + ", y = " + toString(mSettings.at(SETTING_V_WINDOW_Y).value() + 1);
@@ -2768,11 +2719,65 @@ static CommandReturnValues cmd_get(string& sCmd)
         NumeReKernel::print(LineBreak("PLOTPARAMS: " + _pData.getParams(), _option, false));
         return COMMAND_PROCESSED;
     }
-    else
+
+    // Handle generic cases
+    for (auto iter = mSettings.begin(); iter != mSettings.end(); ++iter)
     {
-        doc_Help("get", _option);
-        return COMMAND_PROCESSED;
+        if (findSettingOption(sCmd, iter->first.substr(iter->first.find('.')+1)) && !iter->second.isHidden())
+        {
+            std::string convertedValue;
+
+            switch (iter->second.getType())
+            {
+                case SettingsValue::BOOL:
+                    convertedValue = toString(iter->second.active());
+                    break;
+                case SettingsValue::UINT:
+                    convertedValue = toString(iter->second.value());
+                    break;
+                case SettingsValue::STRING:
+                    convertedValue = iter->second.stringval();
+                    break;
+            }
+
+            switch (iter->second.getType())
+            {
+                case SettingsValue::BOOL:
+                case SettingsValue::UINT:
+                    if (asVal)
+                    {
+                        if (!nPos)
+                            sCmd = convertedValue;
+                        else
+                            sCmd.replace(nPos, sCommand.length(), convertedValue);
+
+                        break;
+                    }
+                // Fallthrough intended
+                case SettingsValue::STRING:
+                    if (asStr || asVal)
+                    {
+                        if (!nPos)
+                            sCmd = "\"" + convertedValue + "\"";
+                        else
+                            sCmd.replace(nPos, sCommand.length(), "\"" + convertedValue + "\"");
+                    }
+                    else
+                        NumeReKernel::print(toUpperCase(iter->first.substr(iter->first.find('.')+1)) + ": " + convertedValue);
+
+                    break;
+            }
+
+            if (asStr || asVal)
+                return COMMAND_HAS_RETURNVALUE;
+            else
+                return COMMAND_PROCESSED;
+        }
     }
+
+    // Will only reach this point, if no setting has been found
+    doc_Help("get", _option);
+    return COMMAND_PROCESSED;
 }
 
 
@@ -4929,6 +4934,7 @@ static CommandReturnValues cmd_load(string& sCmd)
         if (sFileName.length())
         {
             std::string sSlicingParam = cmdParser.getParameterValue("slice");
+            std::string sFileFormat;
 
             if (sSlicingParam == "xz")
                 nArgument = -1;
@@ -4937,14 +4943,19 @@ static CommandReturnValues cmd_load(string& sCmd)
             else
                 nArgument = 0;
 
+            if (cmdParser.hasParam("fileformat"))
+                sFileFormat = cmdParser.getParameterValueAsString("fileformat", "", true, true);
+
             _data.setbLoadEmptyColsInNextFile(cmdParser.hasParam("keepdim") || cmdParser.hasParam("complete"));
 
-            if ((cmdParser.hasParam("tocache") || cmdParser.hasParam("totable") || cmdParser.hasParam("target")) && !cmdParser.hasParam("all"))
+            if ((cmdParser.hasParam("tocache") || cmdParser.hasParam("totable") || cmdParser.hasParam("target"))
+                && !cmdParser.hasParam("all"))
             {
                 // Single file directly to cache
                 std::string sTargetTable = getTargetTable(cmdParser.getParameterList());
 
-                NumeRe::FileHeaderInfo info = _data.openFile(sFileName, true, cmdParser.hasParam("ignore") || cmdParser.hasParam("i"), nArgument, sTargetTable);
+                NumeRe::FileHeaderInfo info = _data.openFile(sFileName, true, cmdParser.hasParam("ignore") || cmdParser.hasParam("i"),
+                                                             nArgument, sTargetTable, sFileFormat);
 
                 if (!_data.isEmpty(info.sTableName))
                 {
@@ -4959,7 +4970,9 @@ static CommandReturnValues cmd_load(string& sCmd)
 
                 return COMMAND_PROCESSED;
             }
-            else if ((cmdParser.hasParam("tocache") || cmdParser.hasParam("totable") || cmdParser.hasParam("target")) && cmdParser.hasParam("all") && (sFileName.find('*') != string::npos || sFileName.find('?') != string::npos))
+            else if ((cmdParser.hasParam("tocache") || cmdParser.hasParam("totable") || cmdParser.hasParam("target"))
+                     && cmdParser.hasParam("all")
+                     && (sFileName.find('*') != string::npos || sFileName.find('?') != string::npos))
             {
                 // multiple files directly to cache
                 if (sFileName.find('/') == string::npos)
@@ -4971,7 +4984,8 @@ static CommandReturnValues cmd_load(string& sCmd)
                     throw SyntaxError(SyntaxError::FILE_NOT_EXIST, sCmd, sFileName, sFileName);
 
                 for (size_t i = 0; i < vFilelist.size(); i++)
-                    vFilelist[i] = _data.openFile(vFilelist[i], true, cmdParser.hasParam("ignore") || cmdParser.hasParam("i"), nArgument, getTargetTable(cmdParser.getParameterList())).sTableName;
+                    vFilelist[i] = _data.openFile(vFilelist[i], true, cmdParser.hasParam("ignore") || cmdParser.hasParam("i"), nArgument,
+                                                  getTargetTable(cmdParser.getParameterList()), sFileFormat).sTableName;
 
                 if (!_data.isEmpty(vFilelist.front()) && _option.systemPrints())
                     NumeReKernel::print(_lang.get("BUILTIN_CHECKKEYOWRD_LOAD_ALL_CACHES_SUCCESS", toString(vFilelist.size()), sFileName));
@@ -5001,7 +5015,7 @@ static CommandReturnValues cmd_load(string& sCmd)
                     for (size_t i = 0; i < vFilelist.size(); i++)
                     {
                         // Melting is done automatically
-                        _data.openFile(vFilelist[i], false, false, nArgument);
+                        _data.openFile(vFilelist[i], false, false, nArgument, sFileFormat);
                     }
 
                     if (!_data.isEmpty("data") && _option.systemPrints())
@@ -5028,7 +5042,7 @@ static CommandReturnValues cmd_load(string& sCmd)
                         nArgument = intCast(vParList.front());
                 }
 
-                info = _data.openFile(sFileName, false, false, nArgument);
+                info = _data.openFile(sFileName, false, false, nArgument, "", sFileFormat);
 
                 if (!_data.isEmpty("data"))
                 {
@@ -5042,7 +5056,7 @@ static CommandReturnValues cmd_load(string& sCmd)
                 }
             }
             else
-                load_data(_data, _option, _parser, sFileName);
+                load_data(_data, _option, _parser, sFileName, sFileFormat);
         }
         else
             load_data(_data, _option, _parser);
@@ -5376,6 +5390,9 @@ static std::map<std::string,CommandFunc> getCommandFunctions()
     mCommandFuncMap["endlayout"] = cmd_context_specific;
     mCommandFuncMap["group"] = cmd_context_specific;
     mCommandFuncMap["endgroup"] = cmd_context_specific;
+    mCommandFuncMap["break"] = cmd_context_specific;
+    mCommandFuncMap["continue"] = cmd_context_specific;
+    mCommandFuncMap["leave"] = cmd_context_specific;
     mCommandFuncMap["else"] = cmd_context_specific;
     mCommandFuncMap["elseif"] = cmd_context_specific;
     mCommandFuncMap["endif"] = cmd_context_specific;

@@ -78,6 +78,7 @@ std::string toCmdString(double dNumber);
 std::string toCmdString(const std::complex<double>& dNumber);
 std::string toString(bool bBoolean);
 std::string toHexString(int nNumber);
+std::string toHexString(size_t nNumber);
 
 /////////////////////////////////////////////////
 /// \brief This function converts a std::vector
@@ -137,6 +138,8 @@ void replaceAll(std::string& sToModify, const std::string& sToRep, const std::st
 void replaceAll(std::string& sToModify, const char* sToRep, const char* sNewValue, size_t nStart = 0, size_t nEnd = std::string::npos);
 std::string replaceControlCharacters(std::string sToModify);
 std::string utf8parser(const std::string& sString);
+std::string utf8ToAnsi(const std::string& sString);
+std::string ansiToUtf8(const std::string& sString);
 
 std::string replacePathSeparator(const std::string& __sPath);
 std::string getTimeStamp(bool bGetStamp = true);

@@ -5,13 +5,13 @@ namespace AutoVersion{
 
 	//Date Version Types
 	static const char DATE[] = "16";
-	static const char MONTH[] = "03";
+	static const char MONTH[] = "05";
 	static const char YEAR[] = "2023";
-	static const char UBUNTU_VERSION_STYLE[] =  "23.03";
+	static const char UBUNTU_VERSION_STYLE[] =  "23.05";
 
 	//Software Status
-	static const char STATUS[] =  "Release Candidate";
-	static const char STATUS_SHORT[] =  "rc";
+	static const char STATUS[] =  "Cherenkov";
+	static const char STATUS_SHORT[] =  "";
 
 	//Standard Version Type
 	static const long MAJOR  = 1;

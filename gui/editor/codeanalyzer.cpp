@@ -458,6 +458,7 @@ AnnotationCount CodeAnalyzer::analyseCommands()
     if (sSyntaxElement != "hline"
             && sSyntaxElement != "continue"
             && sSyntaxElement != "break"
+            && sSyntaxElement != "leave"
             && sSyntaxElement != "separator"
             && sSyntaxElement != "else"
             && m_editor->isBlockEnd(sSyntaxElement) == wxNOT_FOUND
@@ -698,7 +699,11 @@ AnnotationCount CodeAnalyzer::analyseCommands()
                     if (!vMatches.size())
                         vMatches = m_editor->m_search->FindAll("return", wxSTC_NSCR_COMMAND, wordend, vBlock[i+1], false);
 
-                    // Ensure that there's one "break" or "return"
+                    // Search also for "leave"s as an alternative
+                    if (!vMatches.size())
+                        vMatches = m_editor->m_search->FindAll("leave", wxSTC_NSCR_COMMAND, wordend, vBlock[i+1], false);
+
+                    // Ensure that there's one "break", "leave" or "return"
                     // statement
                     if (m_options->GetAnalyzerOption(Options::SWITCH_FALLTHROUGH) && !vMatches.size())
                     {
@@ -1274,6 +1279,7 @@ AnnotationCount CodeAnalyzer::analyseFunctions(bool isContinuedLine)
              && sSyntaxElement != "clock()"
              && sSyntaxElement != "version()"
              && sSyntaxElement != "getlasterror()"
+             && sSyntaxElement != "getuilang()"
              && sSyntaxElement != "getversioninfo()"
              && sSyntaxElement != "landau_rd()"
              && sSyntaxElement != "evt_close()"
