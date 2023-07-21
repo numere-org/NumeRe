@@ -546,6 +546,38 @@ namespace NumeRe
 
 
     /////////////////////////////////////////////////
+    /// \brief This function changes the display
+    /// parameter of the selected window.
+    ///
+    /// \param _display const std::string&
+    /// \return bool
+    ///
+    /////////////////////////////////////////////////
+    bool Window::setDisplay(const std::string& _display)
+    {
+        if (m_customWindow)
+        {
+            if (_display == "maximize")
+                maximize();
+            else if (_display == "iconize")
+                iconize();
+            else if (_display == "restore")
+                restore();
+            else if (_display == "hide")
+                hide();
+            else if (_display == "unhide")
+                unhide();
+            else
+                return false;
+
+            return true;
+        }
+
+        return false;
+    }
+
+
+    /////////////////////////////////////////////////
     /// \brief This function iconizes the window.
     ///
     /// \return void
@@ -581,6 +613,32 @@ namespace NumeRe
     {
         if (m_customWindow)
             m_customWindow->Restore();
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief This function hides the window.
+    ///
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
+    void Window::hide()
+    {
+        if (m_customWindow)
+            m_customWindow->Hide();
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief This function unhides the window.
+    ///
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
+    void Window::unhide()
+    {
+        if (m_customWindow)
+            m_customWindow->Show();
     }
 
 

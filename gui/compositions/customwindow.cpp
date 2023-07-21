@@ -1697,7 +1697,7 @@ wxString CustomWindow::getItemSelection(int windowItemID) const
         case CustomWindow::TABLE:
         {
             TableViewer* table = static_cast<TableViewer*>(object.second);
-            return "{" + toString(table->GetGridCursorRow()+1) + "," + toString(table->GetGridCursorCol()+1) + "}";
+            return "{" + toString(table->GetInternalRows(table->GetGridCursorRow())+1) + "," + toString(table->GetGridCursorCol()+1) + "}";
         }
         case CustomWindow::TREELIST:
         {
@@ -2218,7 +2218,7 @@ bool CustomWindow::setItemSelection(int selectionID, int selectionID2, int windo
         case CustomWindow::TABLE:
         {
             TableViewer* table = static_cast<TableViewer*>(object.second);
-            table->SetGridCursor(std::min(std::max(0, selectionID-1), table->GetNumberRows()-1),
+            table->SetGridCursor(std::min(std::max(0, table->GetExternalRows(selectionID-1)), table->GetNumberRows()-1),
                                  std::min(std::max(0, selectionID2-1), table->GetNumberCols()-1));
             break;
         }

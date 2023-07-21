@@ -207,10 +207,13 @@ namespace NumeRe
             bool setItemFocus(int windowItemID);
             bool setItemGraph(GraphHelper* _helper, int windowItemID);
             bool setPropValue(const std::string& _value, const std::string& varName);
+            bool setDisplay(const std::string& _display);
 
             void iconize();
             void maximize();
             void restore();
+            void hide();
+            void unhide();
     };
 
 

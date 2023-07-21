@@ -559,6 +559,11 @@ static void setParametersInWindow(CommandLineParser& cmdParser, const std::strin
         std::string sState = getArgAtPos(sParList, findParameter(sParList, "state", '=')+5);
         cmdParser.setReturnValue(toString(winInfo.window->setItemState(sState, itemID)));
     }
+    else if (findParameter(sParList, "display", '='))
+    {
+        std::string sDisplay = getArgAtPos(sParList, findParameter(sParList, "display", '=')+7);
+        cmdParser.setReturnValue(toString(winInfo.window->setDisplay(sDisplay)));
+    }
     else if (findParameter(sParList, "color", '='))
     {
         std::string sColor = parseNumOpt(sParList, findParameter(sParList, "color", '=')+5);

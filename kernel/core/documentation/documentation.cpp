@@ -394,7 +394,7 @@ static std::vector<std::string> doc_findFunctionDocumentation(std::string sToken
     {
         sToken = _ctip.sDefinition;
 
-        if (sToken.find('(', sToken.find('.')))
+        if (sToken.find('(', sToken.find('.')) != std::string::npos)
             sToken.replace(sToken.find('(', sToken.find('.')), std::string::npos, "(...)");
         else
             sToken.erase(sToken.find(' '));
