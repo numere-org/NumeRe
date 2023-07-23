@@ -616,7 +616,17 @@ void CustomWindow::layoutChild(const tinyxml2::XMLElement* currentChild, wxWindo
         else if (std::string(currentChild->Value()) == "dropdown")
         {
             // Add a dropdown
-            wxChoice* choice = _groupPanel->CreateChoices(currParent, currSizer, getChoices(text), id, alignment);
+            wxArrayString choices;
+
+            if (currentChild->Attribute("label"))
+            {
+                wxString l = currentChild->Attribute("label");
+                choices = getChoices(l);
+            }
+            else
+                choices = getChoices(text);
+
+            wxChoice* choice = _groupPanel->CreateChoices(currParent, currSizer, choices, id, alignment);
             m_windowItems[id] = std::make_pair(CustomWindow::DROPDOWN, choice);
 
             if (currentChild->Attribute("value"))
@@ -636,7 +646,17 @@ void CustomWindow::layoutChild(const tinyxml2::XMLElement* currentChild, wxWindo
         else if (std::string(currentChild->Value()) == "combobox")
         {
             // Add a combobox
-            wxComboBox* combo = _groupPanel->CreateComboBox(currParent, currSizer, getChoices(text), id, alignment);
+            wxArrayString choices;
+
+            if (currentChild->Attribute("label"))
+            {
+                wxString l = currentChild->Attribute("label");
+                choices = getChoices(l);
+            }
+            else
+                choices = getChoices(text);
+
+            wxComboBox* combo = _groupPanel->CreateComboBox(currParent, currSizer, choices, id, alignment);
             m_windowItems[id] = std::make_pair(CustomWindow::COMBOBOX, combo);
 
             if (currentChild->Attribute("value"))
