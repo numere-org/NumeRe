@@ -461,7 +461,9 @@ void CustomWindow::layoutChild(const tinyxml2::XMLElement* currentChild, wxWindo
         // Now check for the current XMLElement's
         // value (i.e. the XML-Tag name) and create
         // a corresponding control (if available)
-        if (std::string(currentChild->Value()) == "button")
+        std::string sValue = currentChild->Value();
+
+        if (sValue == "button")
         {
             // Add a button
             wxButton* button = _groupPanel->CreateButton(currParent, currSizer, removeQuotationMarks(text), id, alignment);
@@ -479,7 +481,7 @@ void CustomWindow::layoutChild(const tinyxml2::XMLElement* currentChild, wxWindo
             else if (state == HIDDEN)
                 button->Hide();
         }
-        else if (std::string(currentChild->Value()) == "checkbox")
+        else if (sValue == "checkbox")
         {
             // Add a checkbox
             wxCheckBox* checkbox = _groupPanel->CreateCheckBox(currParent, currSizer, removeQuotationMarks(text), id, alignment);
@@ -500,7 +502,7 @@ void CustomWindow::layoutChild(const tinyxml2::XMLElement* currentChild, wxWindo
             else if (state == HIDDEN)
                 checkbox->Hide();
         }
-        else if (std::string(currentChild->Value()) == "radio")
+        else if (sValue == "radio")
         {
             // Add a radio group
             wxString label;
@@ -527,7 +529,7 @@ void CustomWindow::layoutChild(const tinyxml2::XMLElement* currentChild, wxWindo
             else if (state == HIDDEN)
                 radiobox->Hide();
         }
-        else if (std::string(currentChild->Value()) == "spinbut")
+        else if (sValue == "spinbut")
         {
             // Add a spincontrol group
             wxString label;
@@ -560,7 +562,7 @@ void CustomWindow::layoutChild(const tinyxml2::XMLElement* currentChild, wxWindo
             else if (state == HIDDEN)
                 spinctrl->Show(false);
         }
-        else if (std::string(currentChild->Value()) == "slider")
+        else if (sValue == "slider")
         {
             // Add a slider
             int nMin = 0, nMax = 100, nValue = 0;
@@ -593,7 +595,7 @@ void CustomWindow::layoutChild(const tinyxml2::XMLElement* currentChild, wxWindo
             else if (state == HIDDEN)
                 slider->Show(false);
         }
-        else if (std::string(currentChild->Value()) == "gauge")
+        else if (sValue == "gauge")
         {
             // Add a gauge
             wxString label;
@@ -613,7 +615,7 @@ void CustomWindow::layoutChild(const tinyxml2::XMLElement* currentChild, wxWindo
             else if (state == HIDDEN)
                 gauge->Hide();
         }
-        else if (std::string(currentChild->Value()) == "dropdown")
+        else if (sValue == "dropdown")
         {
             // Add a dropdown
             wxArrayString choices;
@@ -643,7 +645,7 @@ void CustomWindow::layoutChild(const tinyxml2::XMLElement* currentChild, wxWindo
             else if (state == HIDDEN)
                 choice->Hide();
         }
-        else if (std::string(currentChild->Value()) == "combobox")
+        else if (sValue == "combobox")
         {
             // Add a combobox
             wxArrayString choices;
@@ -673,7 +675,7 @@ void CustomWindow::layoutChild(const tinyxml2::XMLElement* currentChild, wxWindo
             else if (state == HIDDEN)
                 combo->Hide();
         }
-        else if (std::string(currentChild->Value()) == "textfield")
+        else if (sValue == "textfield")
         {
             // Add a textctrl
             int style = wxTE_PROCESS_ENTER;
@@ -713,7 +715,7 @@ void CustomWindow::layoutChild(const tinyxml2::XMLElement* currentChild, wxWindo
             else if (state == HIDDEN)
                 textctrl->Show(false);
         }
-        else if (std::string(currentChild->Value()) == "statictext" || std::string(currentChild->Value()) == "text")
+        else if (sValue == "statictext" || sValue == "text")
         {
             // Add a static test
             wxStaticText* statictext = _groupPanel->AddStaticText(currParent, currSizer, removeQuotationMarks(text), id, alignment);
@@ -723,7 +725,7 @@ void CustomWindow::layoutChild(const tinyxml2::XMLElement* currentChild, wxWindo
             if (currentChild->Attribute("color"))
                 statictext->SetForegroundColour(toWxColour(currentChild->Attribute("color")));
         }
-        else if (std::string(currentChild->Value()) == "prop")
+        else if (sValue == "prop")
         {
             // Create internal variables
             wxArrayString varList = getChoices(text);
@@ -741,13 +743,13 @@ void CustomWindow::layoutChild(const tinyxml2::XMLElement* currentChild, wxWindo
                     m_varTable[varList[i]] = "0";
             }
         }
-        else if (std::string(currentChild->Value()) == "bitmap")
+        else if (sValue == "bitmap")
         {
             // Add an image
             wxStaticBitmap* bitmap = _groupPanel->CreateBitmap(currParent, currSizer, removeQuotationMarks(text), id, alignment);
             m_windowItems[id] = std::make_pair(CustomWindow::IMAGE, bitmap);
         }
-        else if (std::string(currentChild->Value()) == "separator")
+        else if (sValue == "separator")
         {
             // Add a separator
             int style = wxHORIZONTAL;
@@ -774,7 +776,7 @@ void CustomWindow::layoutChild(const tinyxml2::XMLElement* currentChild, wxWindo
                 currSizer->Add(line, 0, wxEXPAND | wxALL, 5);
             }
         }
-        else if (std::string(currentChild->Value()) == "grapher")
+        else if (sValue == "grapher")
         {
             // Add a grapher object
             wxMGL* mgl = new wxMGL(currParent, id, wxDefaultPosition, wxDefaultSize, wxBORDER_THEME, true);
@@ -797,7 +799,7 @@ void CustomWindow::layoutChild(const tinyxml2::XMLElement* currentChild, wxWindo
             if (currentChild->Attribute("onclick"))
                 m_eventTable[id].onclick = currentChild->Attribute("onclick");
         }
-        else if (std::string(currentChild->Value()) == "tablegrid")
+        else if (sValue == "tablegrid")
         {
             // Add a table grid
             TableViewer* table = new TableViewer(currParent, id, nullptr, nullptr, wxDefaultPosition, wxDefaultSize, wxWANTS_CHARS | wxBORDER_THEME);
@@ -825,8 +827,13 @@ void CustomWindow::layoutChild(const tinyxml2::XMLElement* currentChild, wxWindo
 
             if (currentChild->Attribute("onactivate"))
                 m_eventTable[id].onactivate = currentChild->Attribute("onactivate");
+
+            if (state == DISABLED)
+                table->Enable(false);
+            else if (state == HIDDEN)
+                table->Show(false);
         }
-        else if (std::string(currentChild->Value()) == "treelist")
+        else if (sValue == "treelist")
         {
             // Add a treelist control
             int style = wxTL_SINGLE;
@@ -902,8 +909,13 @@ void CustomWindow::layoutChild(const tinyxml2::XMLElement* currentChild, wxWindo
 
             if (currentChild->Attribute("onactivate"))
                 m_eventTable[id].onactivate = currentChild->Attribute("onactivate");
+
+            if (state == DISABLED)
+                listCtrl->Enable(false);
+            else if (state == HIDDEN)
+                listCtrl->Show(false);
         }
-        else if (std::string(currentChild->Value()) == "group")
+        else if (sValue == "group")
         {
             // Add a group. A group is a recursive control,
             // which contains further controls (including further groups).
@@ -1038,7 +1050,9 @@ void CustomWindow::layoutMenu(const tinyxml2::XMLElement* currentChild, wxMenu* 
                 font.MakeBold();
         }
 
-        if (std::string(currentChild->Value()) == "menuitem")
+        std::string sValue = currentChild->Value();
+
+        if (sValue == "menuitem")
         {
             // Create a menu item
             bool isCheck = false;
@@ -1067,7 +1081,7 @@ void CustomWindow::layoutMenu(const tinyxml2::XMLElement* currentChild, wxMenu* 
             if (state == DISABLED)
                 item->Enable(false);
         }
-        else if (std::string(currentChild->Value()) == "checkbox")
+        else if (sValue == "checkbox")
         {
             // Create a checkable menu item
             bool isChecked = false;
@@ -1092,9 +1106,9 @@ void CustomWindow::layoutMenu(const tinyxml2::XMLElement* currentChild, wxMenu* 
             if (state == DISABLED)
                 item->Enable(false);
         }
-        else if (std::string(currentChild->Value()) == "separator")
+        else if (sValue == "separator")
             currMenu->AppendSeparator();
-        else if (std::string(currentChild->Value()) == "group")
+        else if (sValue == "group")
         {
             // Add a group. A group is a recursive control,
             // which contains further controls (including further groups).
