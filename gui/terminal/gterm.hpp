@@ -121,6 +121,7 @@ class GenericTerminal
         void cr(), lf(), ff(), bell(), tab();
         bool bs(), del();
         bool delSelected();
+        virtual std::string generateAutoCompList(const std::string& sWordStart, std::string sPreDefList) {return sPreDefList;}
 
         // escape sequence actions
         void reset();

@@ -408,6 +408,8 @@ bool NumeReEditor::SaveFile( const wxString& filename )
         m_simpleFileName = fn.GetFullName();
     }
 
+    bool createRevision = m_options->GetKeepBackupFile();
+
     VersionControlSystemManager manager(m_mainFrame);
     std::unique_ptr<FileRevisions> revisions;
 
@@ -415,9 +417,9 @@ bool NumeReEditor::SaveFile( const wxString& filename )
     if (filename.find("numere.history") == string::npos)
         revisions.reset(manager.getRevisions(filename));
 
-    if (revisions.get())
+    if (revisions)
     {
-        if (!revisions->getRevisionCount() && wxFileExists(filename))
+        if (!revisions->getRevisionCount() && wxFileExists(filename) && createRevision)
         {
             wxFile tempfile(filename);
             wxString contents;
@@ -447,7 +449,7 @@ bool NumeReEditor::SaveFile( const wxString& filename )
         // if the contents are not matching, restore the backup and signalize that an error occured
         if (wxFileExists(filename + ".backup"))
             wxCopyFile(filename + ".backup", filename, true);
-        else if (revisions.get() && revisions->getRevisionCount())
+        else if (revisions && revisions->getRevisionCount())
             revisions->restoreRevision(revisions->getRevisionCount()-1, filename);
 
         return false;
@@ -457,7 +459,7 @@ bool NumeReEditor::SaveFile( const wxString& filename )
         // if the contents are not matching, restore the backup and signalize that an error occured
         if (wxFileExists(filename + ".backup"))
             wxCopyFile(filename + ".backup", filename, true);
-        else if (revisions.get() && revisions->getRevisionCount())
+        else if (revisions && revisions->getRevisionCount())
             revisions->restoreRevision(revisions->getRevisionCount()-1, filename);
 
         return false;
@@ -467,7 +469,7 @@ bool NumeReEditor::SaveFile( const wxString& filename )
         // if the contents are not matching, restore the backup and signalize that an error occured
         if (wxFileExists(filename + ".backup"))
             wxCopyFile(filename + ".backup", filename, true);
-        else if (revisions.get() && revisions->getRevisionCount())
+        else if (revisions && revisions->getRevisionCount())
             revisions->restoreRevision(revisions->getRevisionCount()-1, filename);
 
         return false;
@@ -475,7 +477,7 @@ bool NumeReEditor::SaveFile( const wxString& filename )
 
     // Add the current text to the revisions, if the saving process was
     // successful
-    if (revisions.get() && m_options->GetKeepBackupFile())
+    if (revisions && createRevision)
         revisions->addRevision(GetText());
 
     // If the user doesn't want to keep the backup files
@@ -6448,24 +6450,7 @@ bool NumeReEditor::isValidAutoCompMatch(int nPos, bool findAll, bool searchMetho
 /////////////////////////////////////////////////
 wxString NumeReEditor::generateAutoCompList(int wordstartpos, int currpos, std::string sPreDefList)
 {
-    std::map<wxString, int> mAutoCompMap;
-    wxString wReturn = "";
-    std::string sCurrentWord;
-
-    // Store the list of predefined values in the map
-    if (sPreDefList.length())
-    {
-        while (sPreDefList.length())
-        {
-            sCurrentWord = sPreDefList.substr(0, sPreDefList.find(' '));
-            mAutoCompMap[toUpperCase(sCurrentWord.substr(0, sCurrentWord.find_first_of("(?"))) + " |" + sCurrentWord] = -1;
-            sPreDefList.erase(0, sPreDefList.find(' '));
-
-            if (sPreDefList.front() == ' ')
-                sPreDefList.erase(0, 1);
-        }
-    }
-
+    std::string sScopedList;
     bool useSmartSense = m_options->getSetting(SETTING_B_SMARTSENSE).active();
     bool searchMethod = GetCharAt(wordstartpos) == '.';
     wxString wordstart = GetTextRange(searchMethod ? wordstartpos+1 : wordstartpos, currpos);
@@ -6495,8 +6480,8 @@ wxString NumeReEditor::generateAutoCompList(int wordstartpos, int currpos, std::
     {
         if (isValidAutoCompMatch(nPos, findAll, searchMethod))
         {
-            wxString sMatch = GetTextRange(nPos, WordEndPosition(nPos + 1, true));
-            wxString sFillUp;
+            std::string sMatch = GetTextRange(nPos, WordEndPosition(nPos + 1, true)).ToStdString();
+            std::string sFillUp;
 
             // Append the needed opening parentheses, if the completed
             // objects are data objects or functions
@@ -6507,7 +6492,7 @@ wxString NumeReEditor::generateAutoCompList(int wordstartpos, int currpos, std::
             else if (isStyleType(STYLE_IDENTIFIER, nPos))
                 sFillUp = "?" + toString((int)NumeReSyntax::SYNTAX_STD);
 
-            mAutoCompMap[toUpperCase(sMatch.ToStdString()) + " |" + sMatch+sFillUp] = 1;
+            sScopedList += sMatch + sFillUp + " ";
         }
 
         nPos++;
@@ -6529,8 +6514,8 @@ wxString NumeReEditor::generateAutoCompList(int wordstartpos, int currpos, std::
             {
                 if (isValidAutoCompMatch(pos, findAll, searchMethod))
                 {
-                    wxString sMatch = GetTextRange(pos, WordEndPosition(pos + 1, true));
-                    wxString sFillUp;
+                    std::string sMatch = GetTextRange(pos, WordEndPosition(pos + 1, true)).ToStdString();
+                    std::string sFillUp;
 
                     // Append the needed opening parentheses, if the completed
                     // objects are data objects or functions
@@ -6541,7 +6526,7 @@ wxString NumeReEditor::generateAutoCompList(int wordstartpos, int currpos, std::
                     else if (isStyleType(STYLE_IDENTIFIER, pos))
                         sFillUp = "?" + toString((int)NumeReSyntax::SYNTAX_STD);
 
-                    mAutoCompMap[toUpperCase(sMatch.ToStdString()) + " |" + sMatch+sFillUp] = 1;
+                    sScopedList += sMatch + sFillUp + " ";
                 }
 
                 pos++;
@@ -6549,35 +6534,8 @@ wxString NumeReEditor::generateAutoCompList(int wordstartpos, int currpos, std::
         }
     }
 
-    // remove duplicates
-    for (auto iter = mAutoCompMap.begin(); iter != mAutoCompMap.end(); ++iter)
-    {
-        if (iter->second == -1)
-        {
-            if ((iter->first).find('(') != std::string::npos)
-            {
-                if (mAutoCompMap.find((iter->first).substr(0, (iter->first).find('('))) != mAutoCompMap.end())
-                {
-                    mAutoCompMap.erase((iter->first).substr(0, (iter->first).find('(')));
-                    iter = mAutoCompMap.begin();
-                }
-            }
-            else
-            {
-                if (mAutoCompMap.find((iter->first).substr(0, (iter->first).find('?'))) != mAutoCompMap.end())
-                {
-                    mAutoCompMap.erase((iter->first).substr(0, (iter->first).find('?')));
-                    iter = mAutoCompMap.begin();
-                }
-            }
-        }
-    }
-
-    // Re-combine the autocompletion list
-    for (const auto& iter : mAutoCompMap)
-        wReturn += iter.first.substr(iter.first.find('|') + 1) + " ";
-
-    return wReturn;
+    // Use the static member function from NumeReSyntax to combine those two lists
+    return NumeReSyntax::mergeAutoCompleteLists(sPreDefList, sScopedList);
 }
 
 
