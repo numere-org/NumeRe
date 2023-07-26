@@ -105,25 +105,43 @@ class Procedure : public FlowCtrl, public PackageManager
         virtual int evalDebuggerBreakPoint(mu::Parser& _parser, Settings& _option) override;
         virtual int getErrorInformationForDebugger() override;
         virtual int catchExceptionForTest(std::exception_ptr e_ptr, bool bSupressAnswer_back, int nLine) override;
-
-        inline void setPredefinedFuncs(const std::string& sPredefined)
-            {
-                _localDef.setPredefinedFuncs(sPredefined);
-            }
-        inline std::string getCurrentProcedureName() const
-            {return sCurrentProcedureName;}
         size_t GetCurrentLine() const;
-        inline int getReturnType() const
-            {return nReturnType;}
-        inline bool is_writing() const
-            {return bWritingTofile;}
-        inline int getProcedureFlags() const
-            {return nFlags;}
-        inline int& getDebuggerCode()
-            {
-                return nDebuggerCode;
-            }
         size_t replaceReturnVal(std::string& sLine, mu::Parser& _parser, const Returnvalue& _return, size_t nPos, size_t nPos2, const std::string& sReplaceName);
+
+        void setPredefinedFuncs(const std::string& sPredefined)
+        {
+            _localDef.setPredefinedFuncs(sPredefined);
+        }
+
+        std::string getCurrentProcedureName() const
+        {
+            return sCurrentProcedureName;
+        }
+
+        int getReturnType() const
+        {
+            return nReturnType;
+        }
+
+        bool is_writing() const
+        {
+            return bWritingTofile;
+        }
+
+        int getProcedureFlags() const
+        {
+            return nFlags;
+        }
+
+        int& getDebuggerCode()
+        {
+            return nDebuggerCode;
+        }
+
+        std::string getThisNameSpace() const
+        {
+            return sThisNameSpace;
+        }
 };
 
 #endif // PROCEDURE_HPP

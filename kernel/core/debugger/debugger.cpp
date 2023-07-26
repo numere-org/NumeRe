@@ -499,6 +499,22 @@ void NumeReDebugger::popStackItem()
 
 
 /////////////////////////////////////////////////
+/// \brief Returns the current executed procedure
+/// from the procedure stack.
+///
+/// \return Procedure*
+///
+/////////////////////////////////////////////////
+Procedure* NumeReDebugger::getCurrentProcedure()
+{
+    if (vStackTrace.size())
+        return vStackTrace.back().second;
+
+    return nullptr;
+}
+
+
+/////////////////////////////////////////////////
 /// \brief This member function gathers all
 /// information from the current workspace and
 /// stores them internally to display them to the
