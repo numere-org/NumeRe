@@ -4053,14 +4053,6 @@ void replaceStringMethod(string& sLine, size_t nPos, size_t nLength, const strin
         replaceSearchMethods(sLine, nPos, nFinalPos, sReplacement, sMethod, sArgument);
     }
 
-    /* else if (sMethod == "first") {
-        // Access first letter
-        sLine.replace(nPos, nFinalPos-nPos, "firstch(" + sReplacement + ")");
-    }
-    else if (sMethod == "last") {
-        // Access last letter
-        sLine.replace(nPos, nFinalPos-nPos, "lastch(" + sReplacement + ")");
-    }*/
 
 }
 
