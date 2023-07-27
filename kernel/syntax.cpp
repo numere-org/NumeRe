@@ -201,6 +201,83 @@ void NumeReSyntax::setProcedureTree(const std::vector<std::string>& vTree)
 
 
 /////////////////////////////////////////////////
+/// \brief Merges the syntax-based predefined
+/// list with the scoped autocompletion list into
+/// a common autocompletion list.
+///
+/// \param sPreDefList std::string
+/// \param sScopedList std::string
+/// \return std::string
+///
+/////////////////////////////////////////////////
+std::string NumeReSyntax::mergeAutoCompleteLists(std::string sPreDefList, std::string sScopedList)
+{
+    std::map<std::string, int> mMergedMap;
+    std::string sCurrentWord;
+
+    // Store the list of predefined values in the map
+    if (sPreDefList.length())
+    {
+        while (sPreDefList.length())
+        {
+            sCurrentWord = sPreDefList.substr(0, sPreDefList.find(' '));
+            mMergedMap[toLowerCase(sCurrentWord.substr(0, sCurrentWord.find_first_of("({?"))) + " |" + sCurrentWord] = -1;
+            sPreDefList.erase(0, sPreDefList.find(' '));
+
+            if (sPreDefList.front() == ' ')
+                sPreDefList.erase(0, 1);
+        }
+    }
+
+    // Store the list of predefined values in the map
+    if (sScopedList.length())
+    {
+        while (sScopedList.length())
+        {
+            sCurrentWord = sScopedList.substr(0, sScopedList.find(' '));
+            mMergedMap[toLowerCase(sCurrentWord.substr(0, sCurrentWord.find_first_of("({?"))) + " |" + sCurrentWord] = 1;
+            sScopedList.erase(0, sScopedList.find(' '));
+
+            if (sScopedList.front() == ' ')
+                sScopedList.erase(0, 1);
+        }
+    }
+
+    // remove duplicates
+    for (auto iter = mMergedMap.begin(); iter != mMergedMap.end(); ++iter)
+    {
+        if (iter->second == -1)
+        {
+            if ((iter->first).find('(') != std::string::npos)
+            {
+                if (mMergedMap.find((iter->first).substr(0, (iter->first).find('('))) != mMergedMap.end())
+                {
+                    mMergedMap.erase((iter->first).substr(0, (iter->first).find('(')));
+                    iter = mMergedMap.begin();
+                }
+            }
+            else
+            {
+                if (mMergedMap.find((iter->first).substr(0, (iter->first).find('?'))) != mMergedMap.end())
+                {
+                    mMergedMap.erase((iter->first).substr(0, (iter->first).find('?')));
+                    iter = mMergedMap.begin();
+                }
+            }
+        }
+    }
+
+    std::string sList;
+
+    // Re-combine the autocompletion list
+    for (const auto& iter : mMergedMap)
+        sList += iter.first.substr(iter.first.find('|') + 1) + " ";
+
+    return sList;
+}
+
+
+/////////////////////////////////////////////////
 /// \brief Returns all block definitions as a
 /// folding string for the lexers.
 ///

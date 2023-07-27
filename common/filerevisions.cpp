@@ -770,6 +770,10 @@ size_t FileRevisions::addRevision(const wxString& revisionContent)
         if (revisionContent == getRevision(getCurrentRevision()))
             return -1;
 
+        // Do not calculate a DIFF of too large files
+        if (revContent.length() > 200000)
+            return createNewRevision(revContent, "");
+
         wxString diffFile = createDiff(revisionContent);
 
         if (diffFile.length() < getMaxDiffFileSize(revContent.length()))
@@ -802,8 +806,13 @@ size_t FileRevisions::addExternalRevision(const wxString& filePath)
     // Only add the external revision, if it actually
     // modified the file
     wxString currRev = getRevision(getCurrentRevision());
+
     if (currRev == revContent)
         return -1;
+
+    // Do not calculate a DIFF of too large files
+    if (revContent.length() > 200000)
+        return createNewRevision(convertLineEndings(revContent), "External modification");
 
     // Ensure that the diff is not actually empty
     if (!diff(currRev, "", revContent, "").length())
