@@ -15,4 +15,4 @@ Added	The functions "to_utf8()" and "to_ansi()" can be used to convert to and fr
 Added	Folding has been enabled for LaTeX files.
 Added	The terminal now also proposed global variables for auto completion.
 Applied	The revision of large files won't be created by calculating a DIFF. Instead, the whole file content is saved.
-Added   It is possible to directly access the first and last character of a string
+Fixed	NumeRe does not crash anymore after the print preview of the documentation browser has been closed.
