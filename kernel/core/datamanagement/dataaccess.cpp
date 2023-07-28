@@ -960,7 +960,7 @@ static void handleMafDataAccess(string& sLine, const string& sMafAccess, Parser&
 	if (!NumeReKernel::getInstance()->getStringParser().isStringExpression(sMafVectorName))
     {
         // If the return value is not already a numerical vector
-        if (!_parser.ContainsVectorVars(sMafVectorName, false))
+        if (!_parser.ContainsVectorVars(sMafVectorName, false) && sMafVectorName != "true" && sMafVectorName != "false")
         {
             // Set the vector variable with its value for the parser
             _parser.SetVectorVar(sMafVectorName,
@@ -2037,6 +2037,206 @@ static std::string tableMethod_annotate(const std::string& sTableName, std::stri
 
 
 /////////////////////////////////////////////////
+/// \brief Realizes the "insertblock()" method.
+///
+/// \param sTableName const std::string&
+/// \param sMethodArguments std::string
+/// \return std::string
+///
+/////////////////////////////////////////////////
+static std::string tableMethod_insertBlock(const std::string& sTableName, std::string sMethodArguments)
+{
+    NumeReKernel* _kernel = NumeReKernel::getInstance();
+
+    // Might be necessary to resolve the contents of columns and conversions
+    getDataElements(sMethodArguments,
+                    _kernel->getParser(),
+                    _kernel->getMemoryManager(),
+                    _kernel->getSettings());
+
+    int nResults = 0;
+    _kernel->getMemoryManager().updateDimensionVariables(sTableName);
+    _kernel->getParser().SetExpr(sMethodArguments);
+    mu::value_type* v = _kernel->getParser().Eval(nResults);
+
+    size_t atRow = intCast(v[0])-1;
+
+    if (nResults < 2)
+        return "false";
+
+    size_t atCol = intCast(v[1])-1;
+    size_t rows = 1;
+    size_t cols = 1;
+
+    if (nResults > 2)
+        rows = intCast(v[2]);
+
+    if (nResults > 3)
+        cols = intCast(v[3]);
+
+    return toString(_kernel->getMemoryManager().insertBlock(sTableName, atRow, atCol, rows, cols));
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Realizes the "insertcols()" method.
+///
+/// \param sTableName const std::string&
+/// \param sMethodArguments std::string
+/// \return std::string
+///
+/////////////////////////////////////////////////
+static std::string tableMethod_insertCols(const std::string& sTableName, std::string sMethodArguments)
+{
+    NumeReKernel* _kernel = NumeReKernel::getInstance();
+
+    // Might be necessary to resolve the contents of columns and conversions
+    getDataElements(sMethodArguments,
+                    _kernel->getParser(),
+                    _kernel->getMemoryManager(),
+                    _kernel->getSettings());
+
+    int nResults = 0;
+    _kernel->getMemoryManager().updateDimensionVariables(sTableName);
+    _kernel->getParser().SetExpr(sMethodArguments);
+    mu::value_type* v = _kernel->getParser().Eval(nResults);
+
+    size_t col = intCast(v[0])-1;
+    size_t num = 1;
+
+    if (nResults > 1)
+        num = intCast(v[1]);
+
+    return toString(_kernel->getMemoryManager().insertCols(sTableName, col, num));
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Realizes the "insertrows()" method.
+///
+/// \param sTableName const std::string&
+/// \param sMethodArguments std::string
+/// \return std::string
+///
+/////////////////////////////////////////////////
+static std::string tableMethod_insertRows(const std::string& sTableName, std::string sMethodArguments)
+{
+    NumeReKernel* _kernel = NumeReKernel::getInstance();
+
+    // Might be necessary to resolve the contents of columns and conversions
+    getDataElements(sMethodArguments,
+                    _kernel->getParser(),
+                    _kernel->getMemoryManager(),
+                    _kernel->getSettings());
+
+    int nResults = 0;
+    _kernel->getMemoryManager().updateDimensionVariables(sTableName);
+    _kernel->getParser().SetExpr(sMethodArguments);
+    mu::value_type* v = _kernel->getParser().Eval(nResults);
+
+    size_t row = intCast(v[0])-1;
+    size_t num = 1;
+
+    if (nResults > 1)
+        num = intCast(v[1]);
+
+    return toString(_kernel->getMemoryManager().insertRows(sTableName, row, num));
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Realizes the "removeblock()" method.
+///
+/// \param sTableName const std::string&
+/// \param sMethodArguments std::string
+/// \return std::string
+///
+/////////////////////////////////////////////////
+static std::string tableMethod_removeBlock(const std::string& sTableName, std::string sMethodArguments)
+{
+    NumeReKernel* _kernel = NumeReKernel::getInstance();
+
+    // Might be necessary to resolve the contents of columns and conversions
+    getDataElements(sMethodArguments,
+                    _kernel->getParser(),
+                    _kernel->getMemoryManager(),
+                    _kernel->getSettings());
+
+    int nResults = 0;
+    _kernel->getMemoryManager().updateDimensionVariables(sTableName);
+    _kernel->getParser().SetExpr(sMethodArguments);
+    mu::value_type* v = _kernel->getParser().Eval(nResults);
+
+    size_t atRow = intCast(v[0])-1;
+
+    if (nResults < 2)
+        return "false";
+
+    size_t atCol = intCast(v[1])-1;
+    size_t rows = 1;
+    size_t cols = 1;
+
+    if (nResults > 2)
+        rows = intCast(v[2]);
+
+    if (nResults > 3)
+        cols = intCast(v[3]);
+
+    return toString(_kernel->getMemoryManager().removeBlock(sTableName, atRow, atCol, rows, cols));
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Realizes the "removecols()" method.
+///
+/// \param sTableName const std::string&
+/// \param sMethodArguments std::string
+/// \return std::string
+///
+/////////////////////////////////////////////////
+static std::string tableMethod_removeCols(const std::string& sTableName, std::string sMethodArguments)
+{
+    // Might be necessary to resolve the contents of columns and conversions
+    getDataElements(sMethodArguments,
+                    NumeReKernel::getInstance()->getParser(),
+                    NumeReKernel::getInstance()->getMemoryManager(),
+                    NumeReKernel::getInstance()->getSettings());
+
+    int nResults = 0;
+    NumeReKernel::getInstance()->getMemoryManager().updateDimensionVariables(sTableName);
+    NumeReKernel::getInstance()->getParser().SetExpr(sMethodArguments);
+    mu::value_type* v = NumeReKernel::getInstance()->getParser().Eval(nResults);
+
+    return toString(NumeReKernel::getInstance()->getMemoryManager().removeCols(sTableName, VectorIndex(v, nResults, 0)));
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Realizes the "removerows()" method.
+///
+/// \param sTableName const std::string&
+/// \param sMethodArguments std::string
+/// \return std::string
+///
+/////////////////////////////////////////////////
+static std::string tableMethod_removeRows(const std::string& sTableName, std::string sMethodArguments)
+{
+    // Might be necessary to resolve the contents of columns and conversions
+    getDataElements(sMethodArguments,
+                    NumeReKernel::getInstance()->getParser(),
+                    NumeReKernel::getInstance()->getMemoryManager(),
+                    NumeReKernel::getInstance()->getSettings());
+
+    int nResults = 0;
+    NumeReKernel::getInstance()->getMemoryManager().updateDimensionVariables(sTableName);
+    NumeReKernel::getInstance()->getParser().SetExpr(sMethodArguments);
+    mu::value_type* v = NumeReKernel::getInstance()->getParser().Eval(nResults);
+
+    return toString(NumeReKernel::getInstance()->getMemoryManager().removeRows(sTableName, VectorIndex(v, nResults, 0)));
+}
+
+
+/////////////////////////////////////////////////
 /// \brief Typedef for a table method
 /////////////////////////////////////////////////
 typedef std::string (*TableMethod)(const std::string&, std::string);
@@ -2069,6 +2269,12 @@ static std::map<std::string, TableMethod> getInplaceTableMethods()
     mTableMethods["zscoreof"] = tableMethod_zscore;
     mTableMethods["anovaof"] = tableMethod_anova;
     mTableMethods["binsof"] = tableMethod_binsof;
+    mTableMethods["insertcells"] = tableMethod_insertBlock;
+    mTableMethods["insertcols"] = tableMethod_insertCols;
+    mTableMethods["insertrows"] = tableMethod_insertRows;
+    mTableMethods["removecells"] = tableMethod_removeBlock;
+    mTableMethods["removecols"] = tableMethod_removeCols;
+    mTableMethods["removerows"] = tableMethod_removeRows;
 
     return mTableMethods;
 }

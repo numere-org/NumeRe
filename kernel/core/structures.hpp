@@ -151,8 +151,8 @@ class VectorIndex
         /////////////////////////////////////////////////
         /// \brief Constructor for single indices.
         ///
-        /// \param nStart int
-        /// \param nEnd int
+        /// \param nStart int The first reachable index
+        /// \param nEnd int The last reachable index
         ///
         /////////////////////////////////////////////////
         VectorIndex(int nStart, int nEnd = INVALID)

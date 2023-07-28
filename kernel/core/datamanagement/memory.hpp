@@ -174,6 +174,13 @@ class Memory : public Sorter
         void importTable(NumeRe::Table _table, const VectorIndex& lines, const VectorIndex& cols);
         void insertCopiedTable(NumeRe::Table _table, const VectorIndex& lines, const VectorIndex& cols, bool transpose);
 
+        bool insertBlock(size_t atRow, size_t atCol, size_t rows, size_t cols);
+        bool insertCols(size_t atCol, size_t num);
+        bool insertRows(size_t atRow, size_t num);
+        bool removeBlock(size_t atRow, size_t atCol, size_t rows, size_t cols);
+        bool removeCols(const VectorIndex& _vCols);
+        bool removeRows(const VectorIndex& _vRows);
+
         // MAFIMPLEMENTATIONS
         mu::value_type std(const VectorIndex& _vLine, const VectorIndex& _vCol) const;
         mu::value_type avg(const VectorIndex& _vLine, const VectorIndex& _vCol) const;

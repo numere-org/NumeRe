@@ -182,6 +182,36 @@ class MemoryManager : public NumeRe::FileAdapter, public StringMemory, public Nu
         void removeData(bool bAutoSave = false);
         void removeTablesFromMemory();
 
+        bool insertBlock(const std::string& sTable, size_t atRow, size_t atCol, size_t rows, size_t cols)
+        {
+            return vMemory[findTable(sTable)]->insertBlock(atRow, atCol, rows, cols);
+        }
+
+        bool insertCols(const std::string& sTable, size_t atCol, size_t num)
+        {
+            return vMemory[findTable(sTable)]->insertCols(atCol, num);
+        }
+
+        bool insertRows(const std::string& sTable, size_t atRow, size_t num)
+        {
+            return vMemory[findTable(sTable)]->insertRows(atRow, num);
+        }
+
+        bool removeBlock(const std::string& sTable, size_t atRow, size_t atCol, size_t rows, size_t cols)
+        {
+            return vMemory[findTable(sTable)]->removeBlock(atRow, atCol, rows, cols);
+        }
+
+        bool removeCols(const std::string& sTable, const VectorIndex& _vCols)
+        {
+            return vMemory[findTable(sTable)]->removeCols(_vCols);
+        }
+
+        bool removeRows(const std::string& sTable, const VectorIndex& _vRows)
+        {
+            return vMemory[findTable(sTable)]->removeRows(_vRows);
+        }
+
         bool resizeTable(int _nCols, const std::string& _sTable)
 		{
 			return vMemory[findTable(_sTable)]->resizeMemory(1, _nCols);
