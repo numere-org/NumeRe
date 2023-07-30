@@ -761,6 +761,20 @@ size_t Plot::createSubPlotSet(bool& bAnimateVar, vector<string>& vPlotCompose, s
         // on their number
         prepareMemory();
 
+        // Reset the internal data ranges for each new subplot (otherwise
+        // they'll be combined into an ever-growing interval)
+        if (bNewSubPlot)
+        {
+            for (size_t i = 0; i < dataRanges.size(); i++)
+            {
+                dataRanges[i].reset(NAN, NAN);
+            }
+            for (size_t i = 0; i < secDataRanges.size(); i++)
+            {
+                secDataRanges[i].reset(NAN, NAN);
+            }
+        }
+
         // Get now the data values for the plot
         extractDataValues(vDataPlots);
 

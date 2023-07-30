@@ -16,3 +16,4 @@ Added	Folding has been enabled for LaTeX files.
 Added	The terminal now also proposed global variables for auto completion.
 Applied	The revision of large files won't be created by calculating a DIFF. Instead, the whole file content is saved.
 Added	New table methods for insertion of cells ("TAB().insertXYZ()") and removing of cells ("TAB().removeXYZ()") have been added.
+Fixed	The data dimensions in multiplot layouts are now calculated correctly.
