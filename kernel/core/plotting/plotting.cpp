@@ -1588,7 +1588,7 @@ void Plot::createStdPlot(size_t nPlotCompose, size_t nPlotComposeSize)
         // Create the legend
         if (_pData.getSettings(PlotData::LOG_REGION) && getNN(_mData2[0]) > 1)
             sConvLegends = "\"" + removeQuotationMarks(m_manager.assets[n+nDataOffset].legend) + "\n"
-                            + removeQuotationMarks(m_manager.assets[n+nDataOffset].legend) + "\" -nq";
+                            + removeQuotationMarks(m_manager.assets[n+nDataOffset+1].legend) + "\" -nq";
         else
             sConvLegends = m_manager.assets[n+nDataOffset].legend + " -nq";
 
@@ -1609,11 +1609,8 @@ void Plot::createStdPlot(size_t nPlotCompose, size_t nPlotComposeSize)
             if (_pData.getSettings(PlotData::INT_COMPLEXMODE) == CPLX_REIM && sLegend.length())
                 sLegend = useImag ? "Im(" + sLegend + ")" : "Re(" + sLegend + ")";
 
-            // Add new surrounding quotation marks
-            sLegend = "\"" + sLegend + "\"";
-
             // Add the legend
-            if (sLegend != "\"\"")
+            if (sLegend.length())
             {
                 std::string sLegendStyle;
 
@@ -1645,7 +1642,7 @@ void Plot::createStdPlot(size_t nPlotCompose, size_t nPlotComposeSize)
                 }
 
                 nLegends++;
-                _graph->AddLegend(fromSystemCodePage(replaceToTeX(sLegend.substr(1, sLegend.length() - 2))).c_str(), sLegendStyle.c_str());
+                _graph->AddLegend(fromSystemCodePage(replaceToTeX(sLegend)).c_str(), sLegendStyle.c_str());
             }
 
             if (nCurrentStyle == _pInfo.nStyleMax - 1)
