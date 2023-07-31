@@ -1460,7 +1460,8 @@ void Plot::createStdPlot(size_t nPlotCompose, size_t nPlotComposeSize)
 
         _mData.Link(useImag || isCplxPlaneMode ? m_manager.assets[n+nDataOffset].data[0].second : m_manager.assets[n+nDataOffset].data[0].first);
 
-        if (_pData.getSettings(PlotData::LOG_REGION) && n+nDataOffset+1 < (int)m_manager.assets.size())
+        if (_pData.getSettings(PlotData::LOG_REGION)
+            && n+nDataOffset+1 < (int)m_manager.assets.size())
             _mData2[0].Link(useImag || isCplxPlaneMode ? m_manager.assets[n+nDataOffset+1].data[0].second : m_manager.assets[n+nDataOffset+1].data[0].first);
         else
             _mData2[0] = 0.0 * _mData;
@@ -1471,7 +1472,9 @@ void Plot::createStdPlot(size_t nPlotCompose, size_t nPlotComposeSize)
             if (m_manager.assets[n+nDataOffset].boundAxes.find('r') != std::string::npos)
                 _mData = scaleSecondaryToPrimaryInterval(_mData, _pInfo.ranges[YRANGE], _pInfo.secranges[YRANGE]);
 
-            if (_pData.getSettings(PlotData::LOG_REGION) && m_manager.assets[n+nDataOffset+1].boundAxes.find('r') != std::string::npos)
+            if (_pData.getSettings(PlotData::LOG_REGION)
+                && n+nDataOffset+1 < (int)m_manager.assets.size()
+                && m_manager.assets[n+nDataOffset+1].boundAxes.find('r') != std::string::npos)
                 _mData2[0] = scaleSecondaryToPrimaryInterval(_mData2[0], _pInfo.ranges[YRANGE], _pInfo.secranges[YRANGE]);
         }
         else
@@ -1561,7 +1564,9 @@ void Plot::createStdPlot(size_t nPlotCompose, size_t nPlotComposeSize)
             if (m_manager.assets[n+nDataOffset].boundAxes.find('r') != std::string::npos)
                 _mData = scaleSecondaryToPrimaryInterval(_mData, _pInfo.ranges[YRANGE], _pInfo.secranges[YRANGE]);
 
-            if (_pData.getSettings(PlotData::LOG_REGION) && m_manager.assets[n+nDataOffset+1].boundAxes.find('r') != std::string::npos && getNN(_mData2[0]) > 1)
+            if (_pData.getSettings(PlotData::LOG_REGION)
+                && n+nDataOffset+1 < (int)m_manager.assets.size()
+                && m_manager.assets[n+nDataOffset+1].boundAxes.find('r') != std::string::npos && getNN(_mData2[0]) > 1)
                 _mData2[0] = scaleSecondaryToPrimaryInterval(_mData2[0], _pInfo.ranges[YRANGE], _pInfo.secranges[YRANGE]);
 
             if (_pData.getSettings(PlotData::LOG_YERROR) && m_manager.assets[n+nDataOffset].boundAxes.find('r') != std::string::npos)
@@ -1586,7 +1591,7 @@ void Plot::createStdPlot(size_t nPlotCompose, size_t nPlotComposeSize)
         _pInfo.nStyle = _pInfo.nextStyle();
 
         // Create the legend
-        if (_pData.getSettings(PlotData::LOG_REGION) && getNN(_mData2[0]) > 1)
+        if (_pData.getSettings(PlotData::LOG_REGION) && getNN(_mData2[0]) > 1 && m_manager.assets.size() > n+nDataOffset+1)
             sConvLegends = "\"" + removeQuotationMarks(m_manager.assets[n+nDataOffset].legend) + "\n"
                             + removeQuotationMarks(m_manager.assets[n+nDataOffset+1].legend) + "\" -nq";
         else
@@ -1656,7 +1661,9 @@ void Plot::createStdPlot(size_t nPlotCompose, size_t nPlotComposeSize)
             && (useImag || _pData.getSettings(PlotData::INT_COMPLEXMODE) != CPLX_REIM))
             n++;
 
-        if ((getNN(_mData2[0]) && _pData.getSettings(PlotData::LOG_REGION))
+        if ((getNN(_mData2[0])
+             && _pData.getSettings(PlotData::LOG_REGION)
+             && n+nDataOffset+1 < (int)m_manager.assets.size())
             || _pData.getSettings(PlotData::LOG_OHLC)
             || _pData.getSettings(PlotData::LOG_CANDLESTICK))
             _pInfo.nStyle = _pInfo.nextStyle();
