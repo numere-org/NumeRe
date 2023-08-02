@@ -2313,6 +2313,12 @@ static string createMafVectorName(string sAccessString)
     if (sAccessString.find(".description") != std::string::npos)
         return "\"" + NumeReKernel::getInstance()->getMemoryManager().getComment(sAccessString.substr(0, sAccessString.find("()."))) + "\"";
 
+    if (sAccessString.find(".shrink") != std::string::npos)
+    {
+        NumeReKernel::getInstance()->getMemoryManager().shrink(sTableName);
+        return "true";
+    }
+
     sAccessString.replace(sAccessString.find("()"), 2, "[");
     sAccessString = replaceToVectorname(sAccessString);
     return sAccessString + "]";

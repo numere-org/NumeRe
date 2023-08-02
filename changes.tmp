@@ -15,6 +15,6 @@ Added	The functions "to_utf8()" and "to_ansi()" can be used to convert to and fr
 Added	Folding has been enabled for LaTeX files.
 Added	The terminal now also proposed global variables for auto completion.
 Applied	The revision of large files won't be created by calculating a DIFF. Instead, the whole file content is saved.
-Added	New table methods for insertion of cells ("TAB().insertXYZ()") and removing of cells ("TAB().removeXYZ()") have been added.
+Added	New table methods for insertion of cells ("TAB().insertXYZ()"), removing of cells ("TAB().removeXYZ()") and removing unnecessary trailing cells and columns ("TAB().shrink") have been added.
 Fixed	The data dimensions in multiplot layouts are now calculated correctly.
 Fixed	Resolved a small problem with the plot legends in combination with "region".
