@@ -165,6 +165,33 @@ void TableViewer::layoutGrid()
 
     }
 
+    // temporary test for header grouping
+    if (readOnly)
+    {
+        for (int i = 0; i < nFirstNumRow; i++)
+        {
+            for (int j = 0; j < GetNumberCols(); j++)
+            {
+                wxString startCol = GetCellValue(i, j);
+
+                if (startCol.length())
+                {
+                    for (int n = j+1; n < GetNumberCols(); n++)
+                    {
+                        if (GetCellValue(i, n) != startCol)
+                        {
+                            if (n-j > 1)
+                                SetCellSize(i, j, 1, n-j);
+
+                            j = n-1;
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
 
     // Define the minimal size of the window depending
     // on the number of columns. The maximal size is defined
