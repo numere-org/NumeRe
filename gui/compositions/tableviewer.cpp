@@ -167,31 +167,7 @@ void TableViewer::layoutGrid()
 
     // temporary test for header grouping
     if (readOnly)
-    {
-        for (int i = 0; i < nFirstNumRow; i++)
-        {
-            for (int j = 0; j < GetNumberCols(); j++)
-            {
-                wxString startCol = GetCellValue(i, j);
-
-                if (startCol.length())
-                {
-                    for (int n = j+1; n < GetNumberCols(); n++)
-                    {
-                        if (GetCellValue(i, n) != startCol)
-                        {
-                            if (n-j > 1)
-                                SetCellSize(i, j, 1, n-j);
-
-                            j = n-1;
-                            break;
-                        }
-                    }
-                }
-            }
-        }
-    }
-
+        groupHeaders(0, GetNumberCols(), 0);
 
     // Define the minimal size of the window depending
     // on the number of columns. The maximal size is defined
@@ -2073,6 +2049,77 @@ void TableViewer::changeColType()
 void TableViewer::finalize()
 {
     SaveEditControlValue();
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Group headers between start and ending
+/// column in the selected row together. Will
+/// call itself recursively to apply hierarchical
+/// grouping to the following rows of the table
+/// headers.
+///
+/// \param startCol int
+/// \param endCol int
+/// \param row int
+/// \return void
+///
+/////////////////////////////////////////////////
+void TableViewer::groupHeaders(int startCol, int endCol, int row)
+{
+    // Go through the columns
+    for (int j = startCol; j < endCol; j++)
+    {
+        // Get the value of the current column header
+        wxString startColValue = GetCellValue(row, j);
+
+        // We only want grouping for header columns with
+        // contents
+        if (startColValue.length())
+        {
+            // Find the first column with new contents
+            for (int n = j+1; n < endCol; n++)
+            {
+                if (GetCellValue(row, n) != startColValue)
+                {
+                    // If at least two columns fit together,
+                    // group them
+                    if (n-j > 1)
+                    {
+                        SetCellSize(row, j, 1, n-j);
+
+                        // If there are further rows, call
+                        // this function recursively for the grouped
+                        // set of columns
+                        if (row+1 < nFirstNumRow)
+                            groupHeaders(j, n, row+1);
+                    }
+
+                    j = n-1;
+                    break;
+                }
+
+                // Last one, still equal
+                if (n+1 == endCol)
+                {
+                    // If at least two columns fit together,
+                    // group them
+                    if (n-j >= 1)
+                    {
+                        SetCellSize(row, j, 1, endCol-j);
+
+                        // If there are further rows, call
+                        // this function recursively for the grouped
+                        // set of columns
+                        if (row+1 < nFirstNumRow)
+                            groupHeaders(j, endCol, row+1);
+                    }
+
+                    return;
+                }
+            }
+        }
+    }
 }
 
 
