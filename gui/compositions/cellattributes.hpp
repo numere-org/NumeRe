@@ -28,7 +28,9 @@
 static wxColour HeadlineColor = wxColour(192, 192, 192);
 static wxColour FrameColor = wxColour(230, 230, 230);
 static wxColour HighlightColor = wxColour(192, 227, 248);
-static wxColour HighlightHeadlineColor = wxColour(131, 200, 241);
+static wxColour HighlightTextColor = wxColour(226, 242, 252);
+//static wxColour HighlightHeadlineColor = wxColour(131, 200, 241);
+static wxColour HighlightHeadlineColor = wxColour(80, 176, 235);
 
 /////////////////////////////////////////////////
 /// \brief Calculates the luminosity of the
@@ -74,7 +76,10 @@ class AdvStringCellRenderer : public wxGridCellStringRenderer
             int cursorRow = grid.GetCursorRow();
             int cursorCol = grid.GetCursorColumn();
 
-            return ((col <= cursorCol && cursorCol < col+cols) || cursorRow == row)
+            int cursorRows, cursorCols;
+            grid.GetCellSize(cursorRow, cursorCol, &cursorRows, &cursorCols);
+
+            return (cursorRow == row || (col <= cursorCol && cursorCol < col+cols) || (cursorCol <= col && col < cursorCol+cursorCols))
                 && !isFrame(grid, row, col);
         }
 
@@ -92,6 +97,7 @@ class AdvStringCellRenderer : public wxGridCellStringRenderer
                 highlightAttr = attr.Clone();
                 highlightAttr->SetBackgroundColour(HighlightHeadlineColor);
                 highlightAttr->SetFont(highlightAttr->GetFont().Bold());
+                highlightAttr->SetTextColour(HighlightTextColor);
 
                 int rows, cols;
 

@@ -24,6 +24,7 @@
 #include "../../kernel/core/datamanagement/tablecolumn.hpp"
 #include "../../kernel/core/io/file.hpp"
 #include "../../kernel/core/io/logger.hpp"
+#include "../../kernel/kernel.hpp"
 #include <wx/clipbrd.h>
 #include <wx/dataobj.h>
 #include <wx/tokenzr.h>
@@ -70,6 +71,7 @@ TableViewer::TableViewer(wxWindow* parent, wxWindowID id, wxStatusBar* statusbar
     // Cells are always aligned right and centered vertically
     SetDefaultCellAlignment(wxALIGN_RIGHT, wxALIGN_CENTER);
     SetDefaultRenderer(new AdvStringCellRenderer);
+    EnableGridLines(NumeReKernel::getInstance()->getSettings().getSetting(SETTING_B_SHOWGRIDLINES).active());
 
     // Prepare the context menu
     m_popUpMenu.Append(ID_MENU_CVS, _guilang.get("GUI_TABLE_CVS"));
@@ -166,7 +168,7 @@ void TableViewer::layoutGrid()
     }
 
     // temporary test for header grouping
-    if (readOnly)
+    if (readOnly && NumeReKernel::getInstance()->getSettings().getSetting(SETTING_B_AUTOGROUPCOLS).active())
         groupHeaders(0, GetNumberCols(), 0);
 
     // Define the minimal size of the window depending
