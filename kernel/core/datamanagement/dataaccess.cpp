@@ -1443,30 +1443,47 @@ static std::string tableMethod_categorize(const std::string& sTableName, std::st
 static std::string tableMethod_findCols(const std::string& sTableName, std::string sMethodArguments)
 {
     std::string sColumns = getNextArgument(sMethodArguments, true);
+    bool enableRegEx = false;
+    NumeReKernel* _kernel = NumeReKernel::getInstance();
 
     // Might be necessary to resolve the contents of columns and conversions
     getDataElements(sColumns,
-                    NumeReKernel::getInstance()->getParser(),
-                    NumeReKernel::getInstance()->getMemoryManager(),
-                    NumeReKernel::getInstance()->getSettings());
+                    _kernel->getParser(),
+                    _kernel->getMemoryManager(),
+                    _kernel->getSettings());
 
     std::vector<std::string> vColNames;
 
-    if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sColumns))
+    if (sMethodArguments.length())
+    {
+        // Might be necessary to resolve the contents of columns and conversions
+        getDataElements(sMethodArguments,
+                        _kernel->getParser(),
+                        _kernel->getMemoryManager(),
+                        _kernel->getSettings());
+
+        int nResults = 0;
+        _kernel->getMemoryManager().updateDimensionVariables(sTableName);
+        _kernel->getParser().SetExpr(sMethodArguments);
+        mu::value_type* v = _kernel->getParser().Eval(nResults);
+        enableRegEx = v[0] != 0.0;
+    }
+
+    if (_kernel->getStringParser().isStringExpression(sColumns))
     {
         std::string sDummy;
         sColumns += " -nq";
-        NumeRe::StringParser::StringParserRetVal res = NumeReKernel::getInstance()->getStringParser().evalAndFormat(sColumns, sDummy, true);
+        NumeRe::StringParser::StringParserRetVal res = _kernel->getStringParser().evalAndFormat(sColumns, sDummy, true);
 
         if (res == NumeRe::StringParser::STRING_NUMERICAL)
             return "nan";
 
-        vColNames = NumeReKernel::getInstance()->getAns().getInternalStringArray();
+        vColNames = _kernel->getAns().getInternalStringArray();
     }
 
-    std::vector<mu::value_type> vCols = NumeReKernel::getInstance()->getMemoryManager().findCols(sTableName, vColNames);
+    std::vector<mu::value_type> vCols = _kernel->getMemoryManager().findCols(sTableName, vColNames, enableRegEx);
 
-    return NumeReKernel::getInstance()->getParser().CreateTempVectorVar(vCols);
+    return _kernel->getParser().CreateTempVectorVar(vCols);
 }
 
 
