@@ -3272,7 +3272,7 @@ std::vector<mu::value_type> Memory::findCols(const std::vector<std::string>& vCo
         {
             if (enableRegEx)
             {
-                if (memArray[i] && std::regex_match(memArray[i]->m_sHeadLine, std::regex(sName)))
+                if (memArray[i] && std::regex_search(memArray[i]->m_sHeadLine, std::regex(sName)))
                     vColIndices.push_back(i+1.0);
             }
             else
