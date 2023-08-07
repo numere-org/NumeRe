@@ -20,6 +20,7 @@
 #include "stringdatastructures.hpp"
 #include "../../kernel.hpp"
 #include "../utils/filecheck.hpp"
+#include "../../../common/compareFiles.hpp"
 #include <boost/tokenizer.hpp>
 #include <regex>
 #include <sstream>
@@ -280,6 +281,37 @@ static StringVector strfnc_getFileParts(StringFuncArgs& funcArgs)
         sReturnValue.push_back(vFileParts[i]);
 
     return sReturnValue;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Implementation of the getfilediff()
+/// function.
+///
+/// \param funcArgs StringFuncArgs&
+/// \return StringVector
+///
+/////////////////////////////////////////////////
+static StringVector strfnc_getFileDiffs(StringFuncArgs& funcArgs)
+{
+    if (!funcArgs.sArg1.view().length() || !funcArgs.sArg2.view().length())
+        return "\"\"";
+
+    FileSystem _fSys;
+    _fSys.initializeFromKernel();
+
+    std::string sDiffs = compareFiles(_fSys.ValidFileName(funcArgs.sArg1.view().to_string(), "", false, false),
+                                      _fSys.ValidFileName(funcArgs.sArg2.view().to_string(), "", false, false));
+    replaceAll(sDiffs, "\r\n", "\n");
+    std::vector<std::string> vSplitted = split(sDiffs, '\n');
+    StringVector res;
+
+    for (const auto& s : vSplitted)
+    {
+        res.push_back(s);
+    }
+
+    return res;
 }
 
 
@@ -2798,6 +2830,7 @@ static std::map<std::string, StringFuncHandle> getStringFuncHandles()
     mHandleTable["findparam"]           = StringFuncHandle(STR_STR_STROPT, strfnc_findparam, false);
     mHandleTable["findtoken"]           = StringFuncHandle(STR_STR_STROPT, strfnc_findtoken, false);
     mHandleTable["getenvvar"]           = StringFuncHandle(STR, strfnc_getenvvar, false);
+    mHandleTable["getfilediff"]         = StringFuncHandle(STR_STR, strfnc_getFileDiffs, false);
     mHandleTable["getfilelist"]         = StringFuncHandle(STR_VALOPT, strfnc_getfilelist, false);
     mHandleTable["getfileparts"]        = StringFuncHandle(STR, strfnc_getFileParts, false);
     mHandleTable["getfolderlist"]       = StringFuncHandle(STR_VALOPT, strfnc_getfolderlist, false);
