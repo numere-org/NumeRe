@@ -345,6 +345,14 @@ static void doc_splitDocumentation(const std::string& sDefinition, std::vector<s
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Extract the argument list of the
+/// passed function definition.
+///
+/// \param sDefinition std::string
+/// \return std::vector<std::string>
+///
+/////////////////////////////////////////////////
 static std::vector<std::string> getArgumentList(std::string sDefinition)
 {
     size_t pos = sDefinition.find('(');
@@ -362,6 +370,45 @@ static std::vector<std::string> getArgumentList(std::string sDefinition)
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Replaces the occurences of a single
+/// argument in a single string with their code
+/// highlighted variant.
+///
+/// \param sArgument const std::string&
+/// \param sString std::string&
+/// \param nPos size_t
+/// \return void
+///
+/////////////////////////////////////////////////
+static void replaceArgumentOccurences(const std::string& sArgument, std::string& sString, size_t nPos)
+{
+    // Search for the next occurence of the variable
+    while ((nPos = sString.find(sArgument, nPos)) != std::string::npos)
+    {
+        // check, whether the found match is an actual variable
+        if (checkDelimiter(sString.substr(nPos-1, sArgument.length() + 2)))
+        {
+            // replace VAR with <code>VAR</code> and increment the
+            // position index by the variable length + 13
+            sString.replace(nPos, sArgument.length(), "<code>" + sArgument + "</code>");
+            nPos += sArgument.length() + 13;
+        }
+        else
+            nPos += sArgument.length();
+    }
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Apply a code style to the arguments of
+/// the function used within the description.
+///
+/// \param vDoc std::vector<std::string>&
+/// \param sDefinition const std::string&
+/// \return void
+///
+/////////////////////////////////////////////////
 static void applyCodeHighlighting(std::vector<std::string>& vDoc, const std::string& sDefinition)
 {
     std::vector<std::string> vArgs = getArgumentList(sDefinition);
@@ -383,10 +430,8 @@ static void applyCodeHighlighting(std::vector<std::string>& vDoc, const std::str
             if (vDoc[i].substr(0, 6) == "<item ")
                 startPos = vDoc[i].find("\">")+2;
 
-            replaceAll(vDoc[i],
-                       arg,
-                       "<code>" + arg + "</code>",
-                       startPos);
+            replaceArgumentOccurences(arg, vDoc[i], startPos);
+            replaceArgumentOccurences("_" + arg, vDoc[i], startPos);
         }
     }
 }
