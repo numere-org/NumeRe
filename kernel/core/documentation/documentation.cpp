@@ -345,6 +345,53 @@ static void doc_splitDocumentation(const std::string& sDefinition, std::vector<s
 }
 
 
+static std::vector<std::string> getArgumentList(std::string sDefinition)
+{
+    size_t pos = sDefinition.find('(');
+
+    if (pos == std::string::npos)
+        return std::vector<std::string>();
+
+    if (sDefinition.find("().") != std::string::npos)
+        return getArgumentList(sDefinition.substr(sDefinition.find("().")+3));
+
+    sDefinition.erase(0, pos+1);
+    sDefinition.erase(sDefinition.rfind(')'));
+
+    return getAllArguments(sDefinition);
+}
+
+
+static void applyCodeHighlighting(std::vector<std::string>& vDoc, const std::string& sDefinition)
+{
+    std::vector<std::string> vArgs = getArgumentList(sDefinition);
+
+    for (std::string arg : vArgs)
+    {
+        // clean arg, if necessary
+        if (arg.find_first_of(" =&") != std::string::npos)
+            arg.erase(arg.find_first_of(" =&"));
+
+        if (arg.front() == '{' && arg.back() == '}')
+            arg = arg.substr(1, arg.length()-2);
+
+        // We start after the closing </syntax>
+        for (size_t i = 4; i < vDoc.size(); i++)
+        {
+            size_t startPos = 0;
+
+            if (vDoc[i].substr(0, 6) == "<item ")
+                startPos = vDoc[i].find("\">")+2;
+
+            replaceAll(vDoc[i],
+                       arg,
+                       "<code>" + arg + "</code>",
+                       startPos);
+        }
+    }
+}
+
+
 /////////////////////////////////////////////////
 /// \brief Tries to get the function
 /// documentation strings from the language file
@@ -372,6 +419,7 @@ static std::vector<std::string> doc_findFunctionDocumentation(std::string sToken
         vDoc.push_back("</syntax>");
 
         doc_splitDocumentation(_ctip.sDocumentation, vDoc);
+        applyCodeHighlighting(vDoc, _ctip.sDefinition);
         return vDoc;
     }
 
@@ -385,6 +433,7 @@ static std::vector<std::string> doc_findFunctionDocumentation(std::string sToken
         vDoc.push_back("</syntax>");
 
         doc_splitDocumentation(_ctip.sDocumentation, vDoc);
+        applyCodeHighlighting(vDoc, _ctip.sDefinition);
         return vDoc;
     }
 
@@ -405,6 +454,7 @@ static std::vector<std::string> doc_findFunctionDocumentation(std::string sToken
         vDoc.push_back("</syntax>");
 
         doc_splitDocumentation(_ctip.sDocumentation, vDoc);
+        applyCodeHighlighting(vDoc, _ctip.sDefinition);
         return vDoc;
     }
 
