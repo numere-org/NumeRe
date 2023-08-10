@@ -3406,6 +3406,113 @@ value_type parser_rd_fisher_f_inv_q(const value_type& q, const value_type& nu1, 
 
 /////////////////////////////////////////////////
 /// \brief This function returns a random value
+/// from the Weibull-distribution function.
+///
+/// \param a const value_type&
+/// \param b const value_type&
+/// \return value_type
+///
+/////////////////////////////////////////////////
+value_type parser_rd_weibull_rd(const value_type& a, const value_type& b)
+{
+    // Check the input values
+    if (mu::isnan(a) || a.real() == 0 || mu::isnan(b))
+        return NAN;
+
+    // Get the value from the probability density function
+    return gsl_ran_weibull(getGslRandGenInstance(), a.real(), b.real());
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This function computes the cumulative
+/// density function p at a given position for the
+/// Weibull-distribution function.
+///
+/// \param x const value_type&
+/// \param a const value_type&
+/// \param b const value_type&
+/// \return value_type
+///
+/////////////////////////////////////////////////
+value_type parser_rd_weibull_cdf_p(const value_type& x, const value_type& a, const value_type& b)
+{
+    // Check the input values
+    if (mu::isnan(a) || a.real() == 0 || mu::isnan(b) || mu::isnan(x) || x.real() < 0)
+        return NAN;
+
+    // Get the value from the probability density function
+    return gsl_cdf_weibull_P(x.real(), a.real(), b.real());
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This function computes the cumulative
+/// density function q at a given position for the
+/// Weibull-distribution function.
+///
+/// \param x const value_type&
+/// \param a const value_type&
+/// \param b const value_type&
+/// \return value_type
+///
+/////////////////////////////////////////////////
+value_type parser_rd_weibull_cdf_q(const value_type& x, const value_type& a, const value_type& b)
+{
+    if (mu::isnan(a) || a.real() == 0 || mu::isnan(b) || mu::isnan(x) || x.real() < 0)
+        return NAN;
+
+    // Get the result from the probability density function
+    return gsl_cdf_weibull_Q(x.real(), a.real(), b.real());
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This function computes the inverse of
+/// the cumulative density function p at a given
+/// position for the Weibull-distribution function.
+///
+/// \param p const value_type&
+/// \param a const value_type&
+/// \param b const value_type&
+/// \return value_type
+///
+/////////////////////////////////////////////////
+value_type parser_rd_weibull_inv_p(const value_type& p, const value_type& a, const value_type& b)
+{
+    // Check the input values
+    if (mu::isnan(a) || a.real() == 0 || mu::isnan(b) || mu::isnan(p) || p.real() < 0 || p.real() > 1)
+        return NAN;
+
+    // Get the value from the probability density function
+    return gsl_cdf_weibull_Pinv(p.real(), a.real(), b.real());
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This function computes the inverse of
+/// the cumulative density function q at a given
+/// position for the Weibull-distribution function.
+///
+/// \param q const value_type&
+/// \param a const value_type&
+/// \param b const value_type&
+/// \return value_type
+///
+/////////////////////////////////////////////////
+value_type parser_rd_weibull_inv_q(const value_type& q, const value_type& a, const value_type& b)
+{
+    // Check the input values
+    if (mu::isnan(a) || a.real() == 0 || mu::isnan(b) || mu::isnan(q) || q.real() < 0 || q.real() > 1)
+        return NAN;
+
+    // Get the value from the probability density function
+    return gsl_cdf_weibull_Qinv(q.real(), a.real(), b.real());
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This function returns a random value
 /// from the Student t-distribution function.
 ///
 /// \param nu const value_type&

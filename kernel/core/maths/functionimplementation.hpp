@@ -184,6 +184,11 @@ value_type parser_rd_fisher_f_cdf_p(const value_type& x, const value_type& nu1, 
 value_type parser_rd_fisher_f_cdf_q(const value_type& x, const value_type& nu1, const value_type& nu2);
 value_type parser_rd_fisher_f_inv_p(const value_type& p, const value_type& nu1, const value_type& nu2);
 value_type parser_rd_fisher_f_inv_q(const value_type& q, const value_type& nu1, const value_type& nu2);
+value_type parser_rd_weibull_rd(const value_type& a, const value_type& b);
+value_type parser_rd_weibull_cdf_p(const value_type& x, const value_type& a, const value_type& b);
+value_type parser_rd_weibull_cdf_q(const value_type& x, const value_type& a, const value_type& b);
+value_type parser_rd_weibull_inv_p(const value_type& p, const value_type& a, const value_type& b);
+value_type parser_rd_weibull_inv_q(const value_type& q, const value_type& a, const value_type& b);
 value_type parser_rd_student_t_rd(const value_type& nu);
 value_type parser_rd_student_t_cdf_p(const value_type& x, const value_type& nu);
 value_type parser_rd_student_t_cdf_q(const value_type& x, const value_type& nu);
