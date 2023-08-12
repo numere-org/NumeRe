@@ -199,44 +199,48 @@ namespace NumeRe
                 continue;
             }
 
-            // Ensure that the colon is not the first or the last
-            // character (assuming sIndexPairs is correctly stripped)
-            if (sIndexPairs.front() == ':')
-                sIndexPairs.insert(0, 1u, '1');
+            EndlessVector<std::string> idx = getAllIndices(sIndexPairs + " ");
+            sIndexPairs.clear();
 
-            // Adding inf as last index if it is missing
-            if (sIndexPairs.back() == ':')
-                sIndexPairs += "inf";
-
-            // Cannot handle things like A: (without terminating index)
-            StringResult strRes = eval(sIndexPairs, "", false);
-
-            if (!strRes.vResult.size())
-                throw SyntaxError(SyntaxError::STRING_ERROR, sIndexPairs, SyntaxError::invalid_position, _lang.get("ERR_NR_3603_INTERNAL"));
-
-            // Check, if the return values are
-            // only strings
-            if (strRes.bOnlyLogicals && strRes.vResult.size() > 1)
+            for (size_t i = 0; i < idx.size(); i++)
             {
-                std::vector<mu::value_type> vIndices;
+                if (isStringExpression(idx[i]))
+                {
+                    // Cannot handle things like A: (without terminating index)
+                    StringResult strRes = eval(idx[i], "", false);
 
-                // Convert the strings to doubles
-                for (size_t i = 0; i < strRes.vResult.size(); i++)
-                    vIndices.push_back(StrToDb(strRes.vResult[i].to_string()));
+                    if (!strRes.vResult.size())
+                        throw SyntaxError(SyntaxError::STRING_ERROR, idx[i], SyntaxError::invalid_position, _lang.get("ERR_NR_3603_INTERNAL"));
 
-                // Create a temporary vector
-                if (sParsedIndices.length())
-                    sParsedIndices += ", " + _parser.CreateTempVectorVar(vIndices);
-                else
-                    sParsedIndices = _parser.CreateTempVectorVar(vIndices);
+                    // Check, if the return values are
+                    // only strings
+                    if (strRes.bOnlyLogicals && strRes.vResult.size() > 1)
+                    {
+                        std::vector<mu::value_type> vIndices;
+
+                        // Convert the strings to doubles
+                        for (size_t i = 0; i < strRes.vResult.size(); i++)
+                            vIndices.push_back(StrToDb(strRes.vResult[i].to_string()));
+
+                        // Create a temporary vector
+                        idx[i] = _parser.CreateTempVectorVar(vIndices);
+                    }
+                    else if (strRes.vResult.size() > 1)
+                        idx[i] = createTempStringVectorVar(strRes.vResult); // Only add string vector variables, if necessary
+                    else
+                        idx[i] = strRes.vResult.getRef(0);
+                }
+
+                sIndexPairs += idx[i];
+
+                if (i+1 < idx.size())
+                    sIndexPairs += ":";
             }
-            else
-            {
-                if (sParsedIndices.length())
-                    sParsedIndices += ", " + createTempStringVectorVar(strRes.vResult);
-                else
-                    sParsedIndices = createTempStringVectorVar(strRes.vResult);
-            }
+
+            if (sParsedIndices.length())
+                sParsedIndices += ",";
+
+            sParsedIndices += sIndexPairs;
         }
 
         return sParsedIndices;
