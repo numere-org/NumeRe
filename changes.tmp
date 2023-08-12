@@ -17,3 +17,4 @@ Added	The terminal now also proposed global variables for auto completion.
 Applied	The revision of large files won't be created by calculating a DIFF. Instead, the whole file content is saved.
 Added	Random distribution functions for the Weibull distributions were added.
 Added	Added probability density functions for all available random number distributions.
+New	We added an experimental support for using the column headlines as table indices.

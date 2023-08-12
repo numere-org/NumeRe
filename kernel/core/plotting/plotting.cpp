@@ -3673,11 +3673,11 @@ std::vector<std::string> Plot::separateFunctionsAndData()
     while (sFuncTemp.length())
     {
         sToken = getNextArgument(sFuncTemp, true);
-        size_t nPos = sToken.find_first_of("#\"");
+        size_t nPos = sToken.find_first_of("#\"", getMatchingParenthesis(sToken));
 
         // Ensure we don't have a string expression right here
-        if (!nPos || NumeReKernel::getInstance()->getStringParser().isStringExpression(sToken.substr(0, nPos)))
-            throw SyntaxError(SyntaxError::CANNOT_PLOT_STRINGS, sCurrentExpr, sToken, sToken);
+        //if (!nPos || NumeReKernel::getInstance()->getStringParser().isStringExpression(sToken.substr(0, nPos)))
+        //    throw SyntaxError(SyntaxError::CANNOT_PLOT_STRINGS, sCurrentExpr, sToken, sToken);
 
         if (_data.containsTablesOrClusters(sToken))
         {
@@ -4351,6 +4351,9 @@ string Plot::constructDataLegendElement(string& sColumnIndices, const string& sT
 {
     if (NumeReKernel::getInstance()->getMemoryManager().containsTablesOrClusters(sColumnIndices))
         getDataElements(sColumnIndices, _parser, NumeReKernel::getInstance()->getMemoryManager(), NumeReKernel::getInstance()->getSettings());
+
+    if (sColumnIndices.front() == '\\')
+        return sColumnIndices.substr(2, sColumnIndices.length()-4);
 
     value_type* v = nullptr;
     int nResults = 0;

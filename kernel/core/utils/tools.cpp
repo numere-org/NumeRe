@@ -1980,85 +1980,57 @@ bool addLegends(string& sExpr)
 
     std::string sTemp;
 
-    for (size_t i = 0; i < args.size(); i++)
+    for (std::string arg : args)
     {
-        /* --> Nun koennte es sein, dass bereits eine Legende angegeben worden ist. Dabei gibt es drei
-         *     Moeglichkeiten: entweder durch umschliessende Anfuehrungszeichen, durch eine vorangestellte
-         *     Raute '#' oder auch beides. Wir muessen hier diese drei Faelle einzeln behandeln <--
-         * --> Ebenfalls ist es natuerlich moeglich, dass gar keine Legende angegeben worden ist. Das behandeln
-         *     wir im ELSE-Fall <--
-         */
-        if (args[i].find('"') != std::string::npos)
-        {
-            /* --> Hier ist auf jeden Fall '"' vorhanden. Es ist aber nicht gesagt, dass '#' nicht auch
-             *     zu finden ist <--
-             * --> Speichern wir zunaechst die Position des '"' in nPos <--
-             */
-            size_t nPos = args[i].find('"') + 1;
+        if (sTemp.length())
+            sTemp += ", ";
 
-            // --> Pruefe nun, ob in diesem Stringbereich ein zweites '"' zu finden ist <--
-            if (args[i].find('"', nPos) != std::string::npos)
+        // Find the end of the current expression first
+        for (size_t i = 0; i < arg.length(); i++)
+        {
+            if (arg[i] == '{' || arg[i] == '(')
+                i += getMatchingParenthesis(StringView(arg, i));
+
+            if (arg[i] == '"')
             {
-                // --> Ja? Gibt's denn dann eine Raute? <--
-                if (args[i].find('#', nPos) != std::string::npos)
+                if (arg.find('"', i+1) != std::string::npos)
                 {
-                    // --> Ja? Dann muessen wir (zur Vereinfachung an anderer Stelle) noch zwei Anfuehrungszeichen ergaenzen <--
-                    sTemp += args[i] + "+\"\"";
+                    if (arg.find('#', i+1) != std::string::npos)
+                        sTemp += arg + "+\"\"";
+                    else
+                        sTemp += arg;
                 }
                 else
-                    sTemp += args[i];
+                    return false;   // Nein? Dann ist irgendwas ganz Falsch: FALSE zurueckgeben!
             }
-            else
-                return false;   // Nein? Dann ist irgendwas ganz Falsch: FALSE zurueckgeben!
-        }
-        else if (args[i].find('#') != string::npos)
-        {
-            /* --> Hier gibt's nur '#' und keine '"' (werden im ersten Fall schon gefangen). Speichern wir
-             *     die Position der Raute in nPos <--
-             */
-            size_t nPos = args[i].find('#');
-
-            /* --> Setze sExpr dann aus dem Teil vor nPos und, wenn noch mindestens Komma ab nPos gefunden werden kann,
-             *     dem Teil ab nPos vor dem Komma, dem String '+""' und dem Teil ab dem Komma zusammen, oder, wenn kein
-             *     Komma gefunden werden kann, dem Teil nach nPos und dem String '+""' zusammen <--
-             * --> An dieser Stelle bietet sich der Ternary (A ? x : y) tatsaechlich einmal an, da er die ganze Sache,
-             *     die sonst eine temporaere Variable benoetigt haette, in einem Befehl erledigen kann <--
-             */
-            for (size_t j = nPos; j < args[i].length(); j++)
+            else if (arg[i] == '#')
             {
-                if (args[i][j] == '(')
-                    j += getMatchingParenthesis(args[i].substr(j));
+                for (size_t j = i+1; j < arg.length(); j++)
+                {
+                    if (arg[j] == '(')
+                        j += getMatchingParenthesis(StringView(arg, j));
 
-                if (args[i][j] == ' ')
-                {
-                    sTemp += args[i].insert(j, "+\"\"");
-                    break;
-                }
-                else if (j+1 == args[i].length())
-                {
-                    sTemp += args[i] + "+\"\"";
-                    break;
+                    if (arg[j] == ' ')
+                    {
+                        sTemp += arg.insert(j, "+\"\"");
+                        break;
+                    }
+                    else if (j+1 == arg.length())
+                    {
+                        sTemp += arg + "+\"\"";
+                        break;
+                    }
                 }
             }
+            else if (i+1 == arg.length())
+            {
+                std::string sLabel = arg;
+
+                StripSpaces(sLabel);
+
+                sTemp += arg + " " + toExternalString(sLabel);
+            }
         }
-        else
-        {
-            /* --> Hier gibt's weder '"' noch '#'; d.h., wir muessen die Legende selbst ergaenzen <--
-             * --> Schneiden wir zunaechst den gesamten Ausdurck zwischen den zwei Kommata heraus <--
-             */
-            std::string sLabel = args[i];
-
-            // --> Entfernen wir ueberzaehlige Leerzeichen <--
-            StripSpaces(sLabel);
-
-            /* --> Setzen wir den gesamten Ausdruck wieder zusammen, wobei wir den Ausdruck in
-             *     Anfuehrungszeichen als Legende einschieben <--
-             */
-            sTemp += args[i] + " \"" + sLabel + "\"";
-        }
-
-        if (i+1 < args.size())
-            sTemp += ", ";
     }
 
     sExpr = sTemp;
@@ -3173,6 +3145,7 @@ static void OprtRplc_setup(map<string, string>& mOprtRplc)
 {
     mOprtRplc["("] = "[";
     mOprtRplc[")"] = "]";
+    mOprtRplc["\""] = "~q~";
     mOprtRplc[":"] = "~c~";
     mOprtRplc[","] = "_";
     mOprtRplc["."] = "_";

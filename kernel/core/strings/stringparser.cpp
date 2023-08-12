@@ -233,9 +233,9 @@ namespace NumeRe
             else
             {
                 if (sParsedIndices.length())
-                    sParsedIndices += ", " + strRes.vResult[0].to_string();
+                    sParsedIndices += ", " + createTempStringVectorVar(strRes.vResult);
                 else
-                    sParsedIndices = strRes.vResult[0].to_string();
+                    sParsedIndices = createTempStringVectorVar(strRes.vResult);
             }
         }
 
