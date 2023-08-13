@@ -3967,9 +3967,9 @@ static void replaceAccessMethods(string& sLine, size_t nPos, size_t nFinalPos, c
     else if (sMethod == "last")
         sLine.replace(nPos, nFinalPos-nPos, "lastch(" + sReplacement + ")");
     else if (sMethod == "starts")
-        sLine.replace(nPos, nFinalPos-nPos, "beginswith(" + sArgument + ")");
+        sLine.replace(nPos, nFinalPos-nPos, "beginswith" + sArgument );
     else if (sMethod == "ends")
-        sLine.replace(nPos, nFinalPos-nPos, "endswith(" + sArgument + ")");
+        sLine.replace(nPos, nFinalPos-nPos, "endswith" + sArgument );
 }
 
 
