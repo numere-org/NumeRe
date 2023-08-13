@@ -2761,13 +2761,13 @@ static StringVector strfnc_sha256(StringFuncArgs& funcArgs)
 
 
 /////////////////////////////////////////////////
-/// \brief Implementation of beginswith() function
+/// \brief Implementation of startswith() function
 ///
 /// \param funcArgs StringFuncArgs&
 /// \return StringVector
 ///
 /////////////////////////////////////////////////
-static StringVector strfnc_beginswith(StringFuncArgs& funcArgs)
+static StringVector strfnc_startswith(StringFuncArgs& funcArgs)
 {
     return funcArgs.sArg2.view().length() <= funcArgs.sArg1.view().length()
         && equal(funcArgs.sArg2.view().begin(),
@@ -2825,7 +2825,6 @@ static std::map<std::string, StringFuncHandle> getStringFuncHandles()
     mHandleTable["and"]                 = StringFuncHandle(VAL, strfnc_and, true);
     mHandleTable["ascii"]               = StringFuncHandle(STR, strfnc_ascii, false);
     mHandleTable["basetodec"]           = StringFuncHandle(STR_STR, strfnc_basetodec, false);
-    mHandleTable["beginswith"]          = StringFuncHandle(STR_STR, strfnc_beginswith, false);
     mHandleTable["char"]                = StringFuncHandle(STR_VAL, strfnc_char, false);
     mHandleTable["cnt"]                 = StringFuncHandle(STR, strfnc_cnt, true);
     mHandleTable["dectobase"]           = StringFuncHandle(STR_VAL, strfnc_dectobase, false);
@@ -2874,7 +2873,7 @@ static std::map<std::string, StringFuncHandle> getStringFuncHandles()
     mHandleTable["sha256"]              = StringFuncHandle(STR_VALOPT, strfnc_sha256, false);
     mHandleTable["split"]               = StringFuncHandle(STR_STR_VALOPT, strfnc_split, false);
     mHandleTable["firstch"]             = StringFuncHandle(STR, firstch, false);
-    mHandleTable["startswith"]          = StringFuncHandle(STR_STR, strfnc_beginswith, false);
+    mHandleTable["startswith"]          = StringFuncHandle(STR_STR, strfnc_startswith, false);
     mHandleTable["str_not_match"]       = StringFuncHandle(STR_STR_VALOPT, strfnc_str_not_match, false);
     mHandleTable["str_not_rmatch"]      = StringFuncHandle(STR_STR_VALOPT, strfnc_str_not_rmatch, false);
     mHandleTable["strip"]               = StringFuncHandle(STR_STR_STR_VALOPT_VALOPT, strfnc_strip, false);
