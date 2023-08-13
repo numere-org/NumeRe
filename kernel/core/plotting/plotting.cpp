@@ -3673,7 +3673,10 @@ std::vector<std::string> Plot::separateFunctionsAndData()
     while (sFuncTemp.length())
     {
         sToken = getNextArgument(sFuncTemp, true);
-        size_t nPos = sToken.find_first_of("#\"", getMatchingParenthesis(sToken));
+        size_t nPos = sToken.find_first_of("#\"");
+
+        if (sToken.find_first_of("([{") < nPos)
+            nPos = sToken.find_first_of("#\"", getMatchingParenthesis(sToken));
 
         // Ensure we don't have a string expression right here
         //if (!nPos || NumeReKernel::getInstance()->getStringParser().isStringExpression(sToken.substr(0, nPos)))
@@ -4159,7 +4162,7 @@ void Plot::createDataLegends()
                                 sTemp += _data.getTopHeadLineElement(vCols[i], sTableName) + "\n";
                             }
 
-                            sTemp.back() == '"';
+                            sTemp.back() = '"';
                         }
                         else
                             sTemp = "\"" + _data.getTopHeadLineElement(vCols.last(), sTableName) + " vs. "
@@ -4197,7 +4200,7 @@ void Plot::createDataLegends()
                                 sTemp += _data.getTopHeadLineElement(vCols[i], sTableName) + "\n";
                             }
 
-                            sTemp.back() == '"';
+                            sTemp.back() = '"';
                         }
                         else
                             sTemp = "\"" + _data.getTopHeadLineElement(vCols[1], sTableName) + " vs. "

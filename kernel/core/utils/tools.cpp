@@ -1999,6 +1999,8 @@ bool addLegends(string& sExpr)
                         sTemp += arg + "+\"\"";
                     else
                         sTemp += arg;
+
+                    break;
                 }
                 else
                     return false;   // Nein? Dann ist irgendwas ganz Falsch: FALSE zurueckgeben!
