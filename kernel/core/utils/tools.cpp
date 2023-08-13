@@ -20,6 +20,7 @@
 #include "tools.hpp"
 #include "../../kernel.hpp"
 #include "../io/file.hpp"
+#include <libsha.hpp>
 #include <cstdlib>
 #include <omp.h>
 
@@ -3147,7 +3148,6 @@ static void OprtRplc_setup(map<string, string>& mOprtRplc)
 {
     mOprtRplc["("] = "[";
     mOprtRplc[")"] = "]";
-    mOprtRplc["\""] = "~q~";
     mOprtRplc[":"] = "~c~";
     mOprtRplc[","] = "_";
     mOprtRplc["."] = "_";
@@ -3187,6 +3187,9 @@ string replaceToVectorname(const string& sExpression)
     // If the map wasn't initialized do that now
     if (!mOprtRplc.size())
         OprtRplc_setup(mOprtRplc);
+
+    if (sVectorName.find('"') != std::string::npos)
+        return "_~" + sha256(sVectorName);
 
     // Remove whitespaces
     while (sVectorName.find(' ') != string::npos)
