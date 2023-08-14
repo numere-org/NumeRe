@@ -4,7 +4,7 @@
 
 Curve fitting | Data analysis | Plotting | Matrix operations | FFT | Extensible Framework | Multiple file formats | Programmable | Open source | Free for everyone
 
-**NumeRe: Framework for Numerical Calculations** is an application for Microsoft Windows® that can do more than the usual spreadsheets. It provides you with
+**NumeRe: Framework for Numerical Computations** is an application for Microsoft Windows® that can do more than the usual spreadsheets. It provides you with
 nonlinear fits of arbitrary functions as well as a ODE solver. It can display 1D and 2D data easily and publication-ready with a simple command. Fourier
 transforms are included as well as wavelet transforms. Data is managed in a table-based manner and automatically saved, so you can quickly resume after a
 restart.
