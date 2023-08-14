@@ -16,3 +16,4 @@ Added	Folding has been enabled for LaTeX files.
 Added	The terminal now also proposed global variables for auto completion.
 Applied	The revision of large files won't be created by calculating a DIFF. Instead, the whole file content is saved.
 Cleaned	"hist" will now use categories or logical values to determine the bins, however this only works, if all columns share their type and their category definitions. Otherwise abstract categories are defined.
+Updated	Language files and documentation articles may now be encoded using UTF-8. They're converted to CP1252 internally.
