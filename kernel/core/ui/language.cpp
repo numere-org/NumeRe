@@ -89,6 +89,9 @@ map<string,string> Language::getLangFileContent(const string& sFile) const
         if (sLine.front() == '#')
             continue;
 
+        // Convert UTF-8 encoded text to CP1252
+        sLine = utf8ToAnsi(sLine);
+
         // Replace included tab characters with
         // whitespaces
         for (size_t i = 0; i < sLine.length(); i++)

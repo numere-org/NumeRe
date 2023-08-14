@@ -18,3 +18,4 @@ Applied	The revision of large files won't be created by calculating a DIFF. Inst
 New	It's now possible to use relative namespaces with additional tilde characters: "$this~~relative~namespace~..."
 Added	The table method "TAB().fndcols()" may now support regular expressions.
 Added	The function "getfilediff()" can be used to calculate the unified diff of two files.
+Updated	Language files and documentation articles may now be encoded using UTF-8. They're converted to CP1252 internally.
