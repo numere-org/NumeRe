@@ -17,3 +17,4 @@ Added	The terminal now also proposed global variables for auto completion.
 Applied	The revision of large files won't be created by calculating a DIFF. Instead, the whole file content is saved.
 Added   It is possible to directly access the first and last character of a string
 Applied	It's now possible to pipe a window layout encoded as string directly into the "window" command.
+Updated	Language files and documentation articles may now be encoded using UTF-8. They're converted to CP1252 internally.
