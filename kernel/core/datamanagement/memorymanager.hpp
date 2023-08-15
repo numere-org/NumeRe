@@ -212,6 +212,16 @@ class MemoryManager : public NumeRe::FileAdapter, public StringMemory, public Nu
             return vMemory[findTable(sTable)]->removeRows(_vRows);
         }
 
+        bool reorderCols(const std::string& sTable, const VectorIndex& _vCols, const VectorIndex& _vNewOrder)
+        {
+            return vMemory[findTable(sTable)]->reorderCols(_vCols, _vNewOrder);
+        }
+
+        bool reorderRows(const std::string& sTable, const VectorIndex& _vRows, const VectorIndex& _vNewOrder)
+        {
+            return vMemory[findTable(sTable)]->reorderRows(_vRows, _vNewOrder);
+        }
+
         bool resizeTable(int _nCols, const std::string& _sTable)
 		{
 			return vMemory[findTable(_sTable)]->resizeMemory(1, _nCols);

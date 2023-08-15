@@ -180,6 +180,8 @@ class Memory : public Sorter
         bool removeBlock(size_t atRow, size_t atCol, size_t rows, size_t cols);
         bool removeCols(const VectorIndex& _vCols);
         bool removeRows(const VectorIndex& _vRows);
+        bool reorderCols(const VectorIndex& _vCols, const VectorIndex& _vNewOrder);
+        bool reorderRows(const VectorIndex& _vRows, const VectorIndex& _vNewOrder);
 
         // MAFIMPLEMENTATIONS
         mu::value_type std(const VectorIndex& _vLine, const VectorIndex& _vCol) const;

@@ -1617,7 +1617,7 @@ static std::string tableMethod_cov(const std::string& sTableName, std::string sM
     mu::value_type* v = _kernel->getParser().Eval(nResults);
 
     if (nResults < 2)
-        throw SyntaxError(SyntaxError::TOO_FEW_COLS, sTableName + "().cov()", ".cov(", ".cov(");
+        throw SyntaxError(SyntaxError::TOO_FEW_COLS, sTableName + "().covarof()", ".covarof(", ".covarof(");
 
     size_t col1 = intCast(v[0])-1;
     size_t col2 = intCast(v[1])-1;
@@ -1850,7 +1850,7 @@ static std::string tableMethod_anova(const std::string& sTableName, std::string 
     mu::value_type* v = _kernel->getParser().Eval(nResults);
 
     if (nResults < 2)
-        throw SyntaxError(SyntaxError::TOO_FEW_COLS, sTableName + "().anovafor()", ".anovafor(", ".anovafor(");
+        throw SyntaxError(SyntaxError::TOO_FEW_COLS, sTableName + "().anovaof()", ".anovaof(", ".anovaof(");
 
     size_t col1 = intCast(v[0])-1;
     size_t col2 = intCast(v[1])-1;
@@ -2237,6 +2237,84 @@ static std::string tableMethod_removeRows(const std::string& sTableName, std::st
 
 
 /////////////////////////////////////////////////
+/// \brief Realizes the "reordercols()" method.
+///
+/// \param sTableName const std::string&
+/// \param sMethodArguments std::string
+/// \return std::string
+///
+/////////////////////////////////////////////////
+static std::string tableMethod_reorderCols(const std::string& sTableName, std::string sMethodArguments)
+{
+    NumeReKernel* _kernel = NumeReKernel::getInstance();
+
+    // Might be necessary to resolve the contents of columns and conversions
+    getDataElements(sMethodArguments,
+                    _kernel->getParser(),
+                    _kernel->getMemoryManager(),
+                    _kernel->getSettings());
+
+    VectorIndex vIndex;
+    VectorIndex vNewOrder;
+    int nResults = 0;
+
+    _kernel->getMemoryManager().updateDimensionVariables(sTableName);
+    _kernel->getParser().SetExpr(getNextArgument(sMethodArguments, true));
+    mu::value_type* v = _kernel->getParser().Eval(nResults);
+    vIndex = VectorIndex(v, nResults, 0);
+
+    if (!sMethodArguments.length())
+        throw SyntaxError(SyntaxError::TOO_FEW_ARGS, sTableName + "().reordercols()", ".reordercols(", ".reordercols(");
+
+    _kernel->getMemoryManager().updateDimensionVariables(sTableName);
+    _kernel->getParser().SetExpr(getNextArgument(sMethodArguments, true));
+    v = _kernel->getParser().Eval(nResults);
+    vNewOrder = VectorIndex(v, nResults, 0);
+
+    return toString(_kernel->getMemoryManager().reorderCols(sTableName, vIndex, vNewOrder));
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Realizes the "reorderrows()" method.
+///
+/// \param sTableName const std::string&
+/// \param sMethodArguments std::string
+/// \return std::string
+///
+/////////////////////////////////////////////////
+static std::string tableMethod_reorderRows(const std::string& sTableName, std::string sMethodArguments)
+{
+    NumeReKernel* _kernel = NumeReKernel::getInstance();
+
+    // Might be necessary to resolve the contents of columns and conversions
+    getDataElements(sMethodArguments,
+                    _kernel->getParser(),
+                    _kernel->getMemoryManager(),
+                    _kernel->getSettings());
+
+    VectorIndex vIndex;
+    VectorIndex vNewOrder;
+    int nResults = 0;
+
+    _kernel->getMemoryManager().updateDimensionVariables(sTableName);
+    _kernel->getParser().SetExpr(getNextArgument(sMethodArguments, true));
+    mu::value_type* v = _kernel->getParser().Eval(nResults);
+    vIndex = VectorIndex(v, nResults, 0);
+
+    if (!sMethodArguments.length())
+        throw SyntaxError(SyntaxError::TOO_FEW_ARGS, sTableName + "().reorderrows()", ".reorderrows(", ".reorderrows(");
+
+    _kernel->getMemoryManager().updateDimensionVariables(sTableName);
+    _kernel->getParser().SetExpr(getNextArgument(sMethodArguments, true));
+    v = _kernel->getParser().Eval(nResults);
+    vNewOrder = VectorIndex(v, nResults, 0);
+
+    return toString(_kernel->getMemoryManager().reorderRows(sTableName, vIndex, vNewOrder));
+}
+
+
+/////////////////////////////////////////////////
 /// \brief Typedef for a table method
 /////////////////////////////////////////////////
 typedef std::string (*TableMethod)(const std::string&, std::string);
@@ -2275,6 +2353,8 @@ static std::map<std::string, TableMethod> getInplaceTableMethods()
     mTableMethods["removecells"] = tableMethod_removeBlock;
     mTableMethods["removecols"] = tableMethod_removeCols;
     mTableMethods["removerows"] = tableMethod_removeRows;
+    mTableMethods["reordercols"] = tableMethod_reorderCols;
+    mTableMethods["reorderrows"] = tableMethod_reorderRows;
 
     return mTableMethods;
 }

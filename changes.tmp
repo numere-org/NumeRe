@@ -19,3 +19,4 @@ Added	New table methods for insertion of cells ("TAB().insertXYZ()"), removing o
 Fixed	The data dimensions in multiplot layouts are now calculated correctly.
 Fixed	Resolved a small problem with the plot legends in combination with "region".
 Updated	Language files and documentation articles may now be encoded using UTF-8. They're converted to CP1252 internally.
+Added	New table methods for reordering rows and columns "TAB().reorderXYZ()" have been added.

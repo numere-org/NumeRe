@@ -2187,6 +2187,96 @@ bool Memory::removeRows(const VectorIndex& _vRows)
 
 
 /////////////////////////////////////////////////
+/// \brief Reorder a set of columns.
+///
+/// \param _vCols const VectorIndex&
+/// \param _vNewOrder const VectorIndex&
+/// \return bool
+///
+/////////////////////////////////////////////////
+bool Memory::reorderCols(const VectorIndex& _vCols, const VectorIndex& _vNewOrder)
+{
+    // The new order must not be open ended
+    if (_vNewOrder.isOpenEnd())
+        return false;
+
+    _vCols.setOpenEndIndex(getCols()-1);
+    VectorIndex vPlain(0, _vNewOrder.max());
+
+    // Ensure that the indices reflect reasonable combinations
+    if (_vNewOrder.size() != _vCols.size()
+        || _vCols.size() > getCols()
+        || _vNewOrder.max() >= (long long int)_vNewOrder.size()
+        || !_vCols.isUnique()
+        || !std::is_permutation(vPlain.begin(), vPlain.end(), _vNewOrder.begin(), _vNewOrder.end()))
+        return false;
+
+    TableColumnArray buffer;
+    buffer.resize(_vCols.size());
+
+    // Move the columns to the buffer
+    for (size_t i = 0; i < _vCols.size(); i++)
+    {
+        if (_vCols[i] != VectorIndex::INVALID && _vCols[i] < memArray.size())
+            buffer[i].reset(memArray[_vCols[i]].release());
+    }
+
+    // Move the columns back to the original array but in the new order
+    for (size_t i = 0; i < _vNewOrder.size(); i++)
+    {
+        if (_vNewOrder[i] != VectorIndex::INVALID && _vCols[i] != VectorIndex::INVALID)
+            memArray[_vCols[i]].reset(buffer[_vNewOrder[i]].release());
+    }
+
+    m_meta.modify();
+    return true;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Reorder a set of rows.
+///
+/// \param _vCols const VectorIndex&
+/// \param _vNewOrder const VectorIndex&
+/// \return bool
+///
+/////////////////////////////////////////////////
+bool Memory::reorderRows(const VectorIndex& _vRows, const VectorIndex& _vNewOrder)
+{
+    // The new order must not be open ended
+    if (_vNewOrder.isOpenEnd())
+        return false;
+
+    _vRows.setOpenEndIndex(getLines()-1);
+    VectorIndex vPlain(0, _vNewOrder.max());
+
+    // Ensure that the indices reflect reasonable combinations
+    if (_vNewOrder.size() != _vRows.size()
+        || _vRows.size() > getLines()
+        || _vNewOrder.max() >= (long long int)_vNewOrder.size()
+        || !_vRows.isUnique()
+        || !std::is_permutation(vPlain.begin(), vPlain.end(), _vNewOrder.begin(), _vNewOrder.end()))
+        return false;
+
+    vPlain = _vRows.get(_vNewOrder);
+
+    // Reorder the cells in each column
+    for (auto& col : memArray)
+    {
+        if (col)
+        {
+            TblColPtr cpy(col->copy(vPlain));
+            col->insert(_vRows, cpy.get());
+            col->shrink();
+        }
+    }
+
+    m_meta.modify();
+    return true;
+}
+
+
+/////////////////////////////////////////////////
 /// \brief This member function is used for
 /// saving the contents of this memory page into
 /// a file. The type of the file is selected by
