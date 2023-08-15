@@ -256,6 +256,24 @@ bool HelpViewer::GoIndex()
 
 
 /////////////////////////////////////////////////
+/// \brief Static helper function to create a
+/// basic printout object.
+///
+/// \return wxHtmlPrintout*
+///
+/////////////////////////////////////////////////
+static wxHtmlPrintout* createPrintout()
+{
+    wxHtmlPrintout* printout = new wxHtmlPrintout();
+    printout->SetFonts(wxEmptyString, "Consolas");
+    printout->SetMargins(12.6f, 12.6f, 12.6f, 12.6f, 2.5f);
+    printout->SetFooter("<div align=\"center\">@PAGENUM@ / @PAGESCNT@</div>");
+
+    return printout;
+}
+
+
+/////////////////////////////////////////////////
 /// \brief Public member function to open the
 /// print preview page.
 ///
@@ -273,10 +291,8 @@ bool HelpViewer::Print()
 
     // Create a new html printout class and apply the
     // necessary settings
-    wxHtmlPrintout* printout = new wxHtmlPrintout();
-    printout->SetFonts(wxEmptyString, "Consolas");
-    printout->SetMargins(12.6f, 12.6f, 12.6f, 12.6f, 2.5f);
-    printout->SetFooter("<div align=\"center\">@PAGENUM@ / @PAGESCNT@</div>");
+    wxHtmlPrintout* printout = createPrintout();
+    wxHtmlPrintout* printoutForPrinting = createPrintout();
 
     // Obtain the content of the page from the history
     wxString htmlText = vHistory[m_nHistoryPointer];
@@ -285,12 +301,18 @@ bool HelpViewer::Print()
     // assign it directly or obtain the page data from the
     // kernel
     if (htmlText.substr(0,15) == "<!DOCTYPE html>")
+    {
         printout->SetHtmlText(htmlText);
+        printoutForPrinting->SetHtmlText(htmlText);
+    }
     else
+    {
         printout->SetHtmlText(m_mainFrame->GetDocContent(htmlText));
+        printoutForPrinting->SetHtmlText(m_mainFrame->GetDocContent(htmlText));
+    }
 
     // Create a new preview object
-    wxPrintPreview *preview = new wxPrintPreview(printout, printout, g_printData);
+    wxPrintPreview *preview = new wxPrintPreview(printout, printoutForPrinting, g_printData);
 
     // Ensure that the preview is filled correctly
     if (!preview->Ok())
