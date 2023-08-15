@@ -19,3 +19,6 @@ Added	Random distribution functions for the Weibull distributions were added.
 Added	Added probability density functions for all available random number distributions.
 New	We added an experimental support for using the column headlines as table indices.
 Fixed	Table methods are now evaluated correctly within loops.
+Fixed	NumeRe will now restore its window, if it is iconized and one double-clicks on any linked file to have the editor scaled correctly.
+Fixed	NumeRe does not crash anymore after the print preview of the documentation browser has been closed.
+Updated	Language files and documentation articles may now be encoded using UTF-8. They're converted to CP1252 internally.

@@ -55,7 +55,7 @@ static void parseHeader(const std::string& sCombinedArticle, DocumentationEntry&
 
     // Get title and IDX keys
     if (iter && iter->Attribute("string"))
-        docEntry.sTitle = iter->Attribute("string");
+        docEntry.sTitle = utf8ToAnsi(iter->Attribute("string"));
 
     if (iter && iter->Attribute("idxkey"))
         docEntry.sIdxKeys = iter->Attribute("idxkey");
@@ -199,7 +199,7 @@ static int indentationLevelDiff(const std::string& sText)
 std::string DocumentationArticle::format()
 {
     // Format the header
-    std::string sFormat = "<article id=\"" + m_docEntry.sArticleId + "\" >\n\t<title string=\"" + m_docEntry.sTitle + "\" idxkey=\"" + m_docEntry.sIdxKeys + "\" />\n\t<keywords>\n";
+    std::string sFormat = "<article id=\"" + m_docEntry.sArticleId + "\" >\n\t<title string=\"" + ansiToUtf8(m_docEntry.sTitle) + "\" idxkey=\"" + m_docEntry.sIdxKeys + "\" />\n\t<keywords>\n";
 
     // Add the keywords
     for (const auto& keyw : m_keywords)
@@ -225,7 +225,7 @@ std::string DocumentationArticle::format()
         indentationLevel = std::max(0, indentationLevel);
 
         sFormat.append(indentationLevel+2, '\t');
-        sFormat += text + "\n";
+        sFormat += ansiToUtf8(text) + "\n";
 
         if (indLevelDiff > 0)
             indentationLevel += indLevelDiff;
