@@ -18,5 +18,7 @@ Applied	The revision of large files won't be created by calculating a DIFF. Inst
 Added	New table methods for insertion of cells ("TAB().insertXYZ()"), removing of cells ("TAB().removeXYZ()") and removing unnecessary trailing cells and columns ("TAB().shrink") have been added.
 Fixed	The data dimensions in multiplot layouts are now calculated correctly.
 Fixed	Resolved a small problem with the plot legends in combination with "region".
+Fixed	NumeRe will now restore its window, if it is iconized and one double-clicks on any linked file to have the editor scaled correctly.
+Fixed	NumeRe does not crash anymore after the print preview of the documentation browser has been closed.
 Updated	Language files and documentation articles may now be encoded using UTF-8. They're converted to CP1252 internally.
 Added	New table methods for reordering rows and columns "TAB().reorderXYZ()" have been added.
