@@ -3008,6 +3008,10 @@ void NumeReWindow::EvaluateCommandLine(wxArrayString& wxArgV)
     wxArrayString filestoopen;
     wxString ext;
 
+    // Only necessary, if there are more than one entries in the command line
+    if (wxArgV.size() > 1 && IsIconized())
+        Restore();
+
     for (size_t i = 1; i < wxArgV.size(); i++)
     {
         if (wxArgV[i].find('.') == std::string::npos)
