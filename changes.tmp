@@ -15,5 +15,6 @@ Added	The functions "to_utf8()" and "to_ansi()" can be used to convert to and fr
 Added	Folding has been enabled for LaTeX files.
 Added	The terminal now also proposed global variables for auto completion.
 Applied	The revision of large files won't be created by calculating a DIFF. Instead, the whole file content is saved.
+Fixed	NumeRe will now restore its window, if it is iconized and one double-clicks on any linked file to have the editor scaled correctly.
 Fixed	NumeRe does not crash anymore after the print preview of the documentation browser has been closed.
 Updated	Language files and documentation articles may now be encoded using UTF-8. They're converted to CP1252 internally.
