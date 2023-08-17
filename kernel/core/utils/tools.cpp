@@ -4096,6 +4096,53 @@ std::string shortenFileName(const std::string& sFullFileName)
     return sFileName;
 }
 
+enum
+{
+    EXEPATH,
+    WORKPATH,
+    LOADPATH,
+    SAVEPATH,
+    SCRIPTPATH,
+    PROCPATH,
+    PLOTPATH,
+    PATH_LAST
+};
+
+/////////////////////////////////////////////////
+/// \brief Removes the part of the path belonging
+/// to a default path or shortens it otherwise.
+///
+/// \param sFullPath const std::string&
+/// \return std::string
+///
+/////////////////////////////////////////////////
+std::string removeDefaultPath(const std::string& sFullPath)
+{
+    std::string sPath = replacePathSeparator(sFullPath);
+    std::vector<std::string> vPaths = NumeReKernel::getInstance()->getPathSettings();
+    size_t pos = 0;
+
+    for (int i = LOADPATH; i < PATH_LAST; i++)
+    {
+        if (sPath.substr(0, vPaths[i].length()) == vPaths[i])
+        {
+            pos = vPaths[i].length();
+
+            while (sPath[pos] == '/')
+                pos++;
+
+            break;
+        }
+    }
+
+    // Nothing found-must be an absolute path. We will
+    // replace /PATH/ with /../
+    if (!pos)
+        return shortenFileName(sPath);
+
+    return sPath.substr(pos);
+}
+
 
 /////////////////////////////////////////////////
 /// \brief Increments a MAJOR.MINOR.BUILD version
