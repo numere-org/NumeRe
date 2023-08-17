@@ -3944,6 +3944,10 @@ static void replaceAccessMethods(string& sLine, size_t nPos, size_t nFinalPos, c
         sLine.replace(nPos, nFinalPos-nPos, "firstch(" + sReplacement + ")");
     else if (sMethod == "last")
         sLine.replace(nPos, nFinalPos-nPos, "lastch(" + sReplacement + ")");
+    else if (sMethod == "startsw")
+        sLine.replace(nPos, nFinalPos-nPos, "startswith" + sArgument );
+    else if (sMethod == "endsw")
+        sLine.replace(nPos, nFinalPos-nPos, "endswith" + sArgument );
 }
 
 
@@ -4014,7 +4018,9 @@ void replaceStringMethod(string& sLine, size_t nPos, size_t nLength, const strin
              || sMethod == "sub"
              || sMethod == "splt"
              || sMethod == "first"
-             || sMethod == "last")
+             || sMethod == "last"
+             || sMethod == "startsw"
+             || sMethod == "endsw")
     {
         // Access methods and splitter
         replaceAccessMethods(sLine, nPos, nFinalPos, sReplacement, sMethod, sArgument);
