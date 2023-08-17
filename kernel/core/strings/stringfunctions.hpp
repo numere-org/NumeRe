@@ -2770,6 +2770,7 @@ static StringVector strfnc_sha256(StringFuncArgs& funcArgs)
 static StringVector strfnc_startswith(StringFuncArgs& funcArgs)
 {
     return funcArgs.sArg2.view().length() <= funcArgs.sArg1.view().length()
+        && funcArgs.sArg2.view().length()
         && equal(funcArgs.sArg2.view().begin(),
                  funcArgs.sArg2.view().end(),
                  funcArgs.sArg1.view().begin()
@@ -2787,6 +2788,7 @@ static StringVector strfnc_startswith(StringFuncArgs& funcArgs)
 static StringVector strfnc_endswith(StringFuncArgs& funcArgs)
 {
     return funcArgs.sArg2.view().length() <= funcArgs.sArg1.view().length()
+        && funcArgs.sArg2.view().length()
         && equal(funcArgs.sArg2.view().begin(),
                  funcArgs.sArg2.view().end(),
                  (funcArgs.sArg1.view().end() - funcArgs.sArg2.view().length())
