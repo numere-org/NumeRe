@@ -2883,7 +2883,7 @@ std::string NumeReKernel::formatResultOutput(const std::vector<std::string>& vSt
         // return the composed result
         return sAns;
     }
-    else
+    else if (vStringResults.size())
     {
         // Only one result
         // return the answer
