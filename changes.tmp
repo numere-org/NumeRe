@@ -22,6 +22,7 @@ Fixed	NumeRe will now restore its window, if it is iconized and one double-click
 Fixed	NumeRe does not crash anymore after the print preview of the documentation browser has been closed.
 Updated	Language files and documentation articles may now be encoded using UTF-8. They're converted to CP1252 internally.
 Added	New table methods for reordering rows and columns "TAB().reorderXYZ()" have been added.
+Cleaned	"hist" will now use categories or logical values to determine the bins, however this only works, if all columns share their type and their category definitions. Otherwise abstract categories are defined.
 Added	It is possible to directly access the first and last character of a string
 Added	String functions to compare the first and last characters of a string to a substring: "startswith()" and "endswith()"
 Fixed	NumeRe will now restore its window, if it is iconized and one double-clicks on any linked file to have the editor scaled correctly.
