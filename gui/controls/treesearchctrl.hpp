@@ -33,7 +33,8 @@ class TreeSearchCtrl : public SearchCtrl
 {
     private:
         wxTreeCtrl* m_associatedCtrl;
-        bool m_searchToolTip;
+        bool m_searchInToolTip;
+        bool m_isFileTree;
 
     protected:
         // Interaction functions with the wxTreeCtrl
@@ -43,12 +44,22 @@ class TreeSearchCtrl : public SearchCtrl
         wxArrayString getChildCandidates(const wxString& enteredText, wxTreeItemId node);
 
     public:
-        TreeSearchCtrl(wxWindow* parent, wxWindowID id, const wxString& hint = wxEmptyString, const wxString& calltip = wxEmptyString, wxTreeCtrl* associatedCtrl = nullptr, bool searchToolTip = false) : SearchCtrl(parent, id, wxEmptyString), m_associatedCtrl(associatedCtrl), m_searchToolTip(searchToolTip)
+        TreeSearchCtrl(wxWindow* parent, wxWindowID id, const wxString& hint = wxEmptyString, const wxString& calltip = wxEmptyString, wxTreeCtrl* associatedCtrl = nullptr, bool searchInToolTip = false, bool isFileTree = false) : SearchCtrl(parent, id, wxEmptyString), m_associatedCtrl(associatedCtrl), m_searchInToolTip(searchInToolTip), m_isFileTree(isFileTree)
         {
             // Provide a neat hint to the user, what he
             // may expect from this control
             SetHint(hint);
             popUp->SetCallTips(calltip);
+
+            if (m_isFileTree)
+            {
+                // Define the number of columns
+                wxArrayInt sizes;
+                sizes.Add(1, 1);
+                sizes.Add(250, 1);
+
+                popUp->SetColSizes(sizes);
+            }
         }
 
 };
