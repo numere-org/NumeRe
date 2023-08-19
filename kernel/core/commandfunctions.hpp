@@ -4143,9 +4143,9 @@ static CommandReturnValues cmd_swap(string& sCmd)
 /////////////////////////////////////////////////
 static CommandReturnValues cmd_hist(string& sCmd)
 {
-    string sArgument = evaluateParameterValues(sCmd);
+    CommandLineParser cmdParser(sCmd, "hist", CommandLineParser::CMD_EXPR_set_PAR);
 
-    plugin_histogram(sArgument);
+    plugin_histogram(cmdParser);
 
     return COMMAND_PROCESSED;
 }
