@@ -110,28 +110,8 @@ void EditorNotebook::SetTabText(size_t nTab, const wxString& text)
     else
         SetPageBitmap(nTab, wxNullBitmap);
 
-    std::vector<std::string> vPaths = m_top_parent->getPathDefs();
-
     if (m_showPathsOnTabs)
-    {
-        for (int i = LOADPATH; i < PATH_LAST; i++)
-        {
-            if (path.substr(0, vPaths[i].length()) == vPaths[i])
-            {
-                pos = vPaths[i].length();
-
-                while (path[pos] == '/')
-                    pos++;
-
-                break;
-            }
-        }
-
-        // Nothing found-must be an absolute path. We will
-        // replace /PATH/ with /../
-        if (!pos)
-            path = shortenFileName(path);
-    }
+        path = removeDefaultPath(path);
     else
         pos = path.rfind('/')+1;
 
