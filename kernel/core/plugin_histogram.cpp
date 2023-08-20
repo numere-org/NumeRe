@@ -1435,9 +1435,10 @@ static void createPlotsForHist2D(const std::string& sCmd, HistogramParameters& _
 
 ///////////////////////////////////// CENTER GRAPH
     _histGraph->MultiPlot(3, 3, 3, 2, 2, "<_>");
-    _histGraph->SetTicks('x');
-    _histGraph->SetTicks('y');
+//    _histGraph->SetTicks('x');
+//    _histGraph->SetTicks('y');
     _histGraph->SetTuneTicks(3, 1.05);
+    _histGraph->SetFontSizeCM(0.24 * ((double)(1 + std::max(0.0, _pData.getSettings(PlotData::FLOAT_TEXTSIZE)-2)) / 6.0), 72);
 
     _histGraph->SetRanges(1, 2, 1, 2, 1, 2);
     _histGraph->SetFunc(_pData.getLogscale(XRANGE) ? "lg(x)" : "",
@@ -1473,7 +1474,7 @@ static void createPlotsForHist2D(const std::string& sCmd, HistogramParameters& _
         _histGraph->SetTicksTime('y', 0, _pData.getTimeAxis(YRANGE).sTimeFormat.c_str());
 
     _histGraph->Box();
-    _histGraph->Axis("xy");
+    _histGraph->Axis("xyz");
     _histGraph->Colorbar(_pData.getColorScheme("I>").c_str());
 
     if (_pData.getSettings(PlotData::INT_GRID) == 1)
@@ -1496,6 +1497,7 @@ static void createPlotsForHist2D(const std::string& sCmd, HistogramParameters& _
     _histGraph->MultiPlot(3, 3, 5, 1, 2, "_>");
     _histGraph->SetBarWidth(0.9);
     _histGraph->SetTuneTicks(3, 1.05);
+    _histGraph->SetFontSizeCM(0.24 * ((double)(1 + _pData.getSettings(PlotData::FLOAT_TEXTSIZE)) / 6.0), 72);
     _histParams.binWidth[YCOORD] = _hBarHistData.Maximal() - _hBarHistData.Minimal();
 
     _histGraph->SetRanges(1, 2, 1, 2, 1, 2);
