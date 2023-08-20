@@ -201,7 +201,7 @@ static std::vector<std::vector<double>> calculateHist1dData(MemoryManager& _data
             _histData.a[k] = nCount;
         }
 
-        vLegends.push_back("grid");
+        vLegends.push_back(_histParams.sTable);
     }
     else
     {
@@ -423,7 +423,7 @@ static void createOutputForHist1D(MemoryManager& _data, const Indices& _idx, con
     sOut[0][0] = _histParams.sBinLabel;
 
     if (_histParams.bGrid)
-        sOut[0][1] = _histParams.sCountLabel + ": grid";
+        sOut[0][1] = _histParams.sCountLabel + ": " + _histParams.sTable;
     else
     {
         for (size_t i = 1; i < vHistMatrix[0].size() + 1; i++)
@@ -2015,6 +2015,8 @@ void plugin_histogram(CommandLineParser& cmdParser)
         createHist2D(cmdParser.getCommandLine(), sTargettable, _idx, _tIdx, _histParams, bWriteToCache, bSilent);
     else
         createHist1D(cmdParser.getCommandLine(), sTargettable, _idx, _tIdx, _histParams, bWriteToCache, bSilent);
+
+    NumeReKernel::getInstance()->getPlottingData().deleteData(true);
 }
 
 
