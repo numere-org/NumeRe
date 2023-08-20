@@ -18,6 +18,8 @@
 
 #include "treesearchctrl.hpp"
 #include "treedata.hpp"
+#include "../../kernel/core/utils/tools.hpp"
+#include <wx/tokenzr.h>
 
 
 /////////////////////////////////////////////////
@@ -78,7 +80,14 @@ wxTreeItemId TreeSearchCtrl::findItem(const wxString& value, wxTreeItemId node)
     {
         // Return the current node, if it
         // corresponds to the passed string
-        if (m_associatedCtrl->GetItemText(node).Lower() == value)
+        if (m_isFileTree)
+        {
+            FileNameTreeData* data = static_cast<FileNameTreeData*>(m_associatedCtrl->GetItemData(node));
+
+            if ((data && data->filename.Lower() == value) || m_associatedCtrl->GetItemText(node).Lower() == value)
+                return node;
+        }
+        else if (m_associatedCtrl->GetItemText(node).Lower() == value)
             return node;
 
         // Search the first child
@@ -151,19 +160,38 @@ wxArrayString TreeSearchCtrl::getCandidates(const wxString& enteredText)
 wxArrayString TreeSearchCtrl::getChildCandidates(const wxString& enteredText, wxTreeItemId node)
 {
     wxArrayString stringArray;
+    wxArrayString entered = wxStringTokenize(enteredText);
 
     // Go through all siblings
     do
     {
         // Append the current label, if it contains the
         // searched string
-        if (m_searchToolTip)
+        if (m_searchInToolTip)
         {
             ToolTipTreeData* data = static_cast<ToolTipTreeData*>(m_associatedCtrl->GetItemData(node));
 
-            if ((data && data->tooltip.Lower().find(enteredText) != std::string::npos)
-                || m_associatedCtrl->GetItemText(node).Lower().find(enteredText) != std::string::npos)
-                stringArray.Add(m_associatedCtrl->GetItemText(node));
+            for (size_t i = 0; i < entered.size(); i++)
+            {
+                if ((data && data->tooltip.Lower().find(entered[i]) != std::string::npos)
+                    || m_associatedCtrl->GetItemText(node).Lower().find(entered[i]) != std::string::npos)
+                {
+                    stringArray.Add(m_associatedCtrl->GetItemText(node));
+                    break;
+                }
+            }
+        }
+        else if (m_isFileTree)
+        {
+            FileNameTreeData* data = static_cast<FileNameTreeData*>(m_associatedCtrl->GetItemData(node));
+            wxString label = m_associatedCtrl->GetItemText(node);
+            wxString filePath = data ? data->filename : label;
+            wxString cleaned = removeDefaultPath(filePath.ToStdString());
+            bool isPath = enteredText.find('/') != std::string::npos;
+
+            if ((!isPath && label.Lower().find(enteredText) != std::string::npos)
+                || (isPath && cleaned.Lower().find(enteredText) != std::string::npos))
+                stringArray.Add(filePath + "~" + cleaned);
         }
         else if (m_associatedCtrl->GetItemText(node).Lower().find(enteredText) != std::string::npos)
             stringArray.Add(m_associatedCtrl->GetItemText(node));

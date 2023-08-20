@@ -1819,6 +1819,7 @@ namespace NumeRe
     class XLSSpreadSheet : public GenericFile
     {
         private:
+            const size_t MAXSHEETLENGTH = 31;
             void readFile();
             void writeFile();
 
