@@ -2004,7 +2004,7 @@ bool addLegends(string& sExpr)
                     break;
                 }
                 else
-                    return false;   // Nein? Dann ist irgendwas ganz Falsch: FALSE zurueckgeben!
+                    return false;   // Something's wrong here
             }
             else if (arg[i] == '#')
             {
@@ -2024,6 +2024,8 @@ bool addLegends(string& sExpr)
                         break;
                     }
                 }
+
+                break;
             }
             else if (i+1 == arg.length())
             {
