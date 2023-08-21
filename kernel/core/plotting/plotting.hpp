@@ -94,7 +94,6 @@ class Plot
         std::vector<std::string> separateFunctionsAndData();
         void extractDataValues(const std::vector<std::string>& vDataPlots);
         void createDataLegends();
-        std::string constructDataLegendElement(std::string& sColumnIndices, const std::string& sTableName, bool useBrackets = true);
         size_t countValidElements(const mglData& _mData);
         void prepareMemory();
         void defaultRanges(size_t nPlotCompose, bool bNewSubPlot);
