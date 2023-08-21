@@ -3814,6 +3814,9 @@ namespace NumeRe
         string sHeadLine;
         string sSheetName = getTableName();
 
+        if (sSheetName.length() > MAXSHEETLENGTH)
+            sSheetName = "Table";
+
         // Create a new sheet
         _excel.New(1);
 
