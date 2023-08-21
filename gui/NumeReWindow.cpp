@@ -1948,7 +1948,11 @@ void NumeReWindow::OnMenuEvent(wxCommandEvent &event)
             break;
         }
         case ID_MENU_STOP_EXECUTION:
-            m_terminal->CancelCalculation();
+            if (m_debugViewer && m_debugViewer->hasControl())
+                m_debugViewer->OnDebugCancel();
+            else
+                m_terminal->CancelCalculation();
+
             break;
     }
 }

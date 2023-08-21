@@ -462,7 +462,6 @@ class NumeReWindow : public wxFrame
         bool m_setSelection;
         bool m_remoteMode;
         bool m_appStarting;
-        bool m_currentlyDebugging;
         bool m_multiRowState;
         bool m_loadingFilesDuringStartup;
         std::map<int, wxMenuItem*> m_menuItems;
