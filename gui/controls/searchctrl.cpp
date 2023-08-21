@@ -277,6 +277,18 @@ void SearchCtrlPopup::OnKeyEvent(wxKeyEvent& event)
             case WXK_END:
                 m_combo->SetInsertionPointEnd();
                 break;
+            case WXK_NUMPAD_DIVIDE:
+                m_combo->WriteText('/');
+                break;
+            case WXK_NUMPAD_MULTIPLY:
+                m_combo->WriteText('*');
+                break;
+            case WXK_NUMPAD_ADD:
+                m_combo->WriteText('+');
+                break;
+            case WXK_NUMPAD_SUBTRACT:
+                m_combo->WriteText('-');
+                break;
         }
     }
 
