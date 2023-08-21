@@ -60,6 +60,7 @@ struct HistogramParameters
     bool bAvg;
     bool bRelative;
     bool bGrid;
+    bool bStoreGrid;
 };
 
 
@@ -164,6 +165,8 @@ static std::vector<std::vector<double>> calculateHist1dData(MemoryManager& _data
         for (int k = 0; k < _histParams.nBin[XCOORD]; k++)
         {
             nCount = 0;
+            Interval ivl(isXLog ? pow(10.0, log10(_histParams.ranges[ZCOORD].min())+k*_histParams.binWidth[XCOORD]) : _histParams.ranges[ZCOORD].min()+k*_histParams.binWidth[XCOORD],
+                         isXLog ? pow(10.0, log10(_histParams.ranges[ZCOORD].min())+(k+1)*_histParams.binWidth[XCOORD]) : _histParams.ranges[ZCOORD].min()+(k+1)*_histParams.binWidth[XCOORD]);
 
             // Detect the number of values, which
             // are part of the current bin interval
@@ -176,18 +179,8 @@ static std::vector<std::vector<double>> calculateHist1dData(MemoryManager& _data
                         || !_histParams.ranges[ZCOORD].isInside(_data.getElement(_idx.row[l], _idx.col[i], _histParams.sTable)))
                         continue;
 
-                    if (isXLog)
-                    {
-                        if (_data.getElement(_idx.row[l], _idx.col[i], _histParams.sTable).real() >= pow(10.0, log10(_histParams.ranges[ZCOORD].min()) + k * _histParams.binWidth[XCOORD])
-                            && _data.getElement(_idx.row[l], _idx.col[i], _histParams.sTable).real() < pow(10.0, log10(_histParams.ranges[ZCOORD].min()) + (k + 1) * _histParams.binWidth[XCOORD]))
-                            nCount++;
-                    }
-                    else
-                    {
-                        if (_data.getElement(_idx.row[l], _idx.col[i], _histParams.sTable).real() >= _histParams.ranges[ZCOORD].min() + k * _histParams.binWidth[XCOORD]
-                            && _data.getElement(_idx.row[l], _idx.col[i], _histParams.sTable).real() < _histParams.ranges[ZCOORD].min() + (k + 1) * _histParams.binWidth[XCOORD])
-                            nCount++;
-                    }
+                    if (ivl.isInside(_data.getElement(_idx.row[l], _idx.col[i], _histParams.sTable), Interval::INCLUDE_LOWER))
+                        nCount++;
                 }
 
                 if (i == 2 && !isXLog)
@@ -1157,41 +1150,35 @@ static void calculateDataForCenterPlot(MemoryManager& _data, const Indices& _idx
 /// \param dMin double
 /// \param dMax double
 /// \param dIntLength double
-/// \param nMax int
 /// \param isLogScale bool
 /// \param isHbar bool
 /// \return mglData
 ///
 /////////////////////////////////////////////////
-static mglData calculateXYHist(MemoryManager& _data, const Indices& _idx, const HistogramParameters& _histParams, mglData* _mAxisVals, double dBinMin, double dMin, double dMax, double dIntLength, int nMax, bool isLogScale, bool isHbar)
+static mglData calculateXYHist(MemoryManager& _data, const Indices& _idx, const HistogramParameters& _histParams, mglData* _mAxisVals, double dBinMin, double dMin, double dMax, double dIntLength, bool isLogScale, bool isHbar)
 {
     mglData _histData(_histParams.nBin[isHbar]);
+    Interval range(dMin, dMax);
 
     for (int k = 0; k < _histParams.nBin[isHbar]; k++)
     {
+        Interval ivl(isLogScale ? pow(10.0, log10(dBinMin) + k*dIntLength) : (dBinMin + k*dIntLength),
+                     isLogScale ? pow(10.0, log10(dBinMin) + (k+1)*dIntLength) : (dBinMin + (k+1)*dIntLength));
         double dSum = 0.0;
         size_t nCount = 0;
 
         for (size_t i = 0; i < _idx.row.size(); i++)
         {
-            if (_data.isValidElement(_idx.row[i], _idx.col[isHbar], _histParams.sTable)
-                && ((!isLogScale
-                     && _data.getElement(_idx.row[i], _idx.col[isHbar], _histParams.sTable).real() >= dBinMin + k * dIntLength
-                     && _data.getElement(_idx.row[i], _idx.col[isHbar], _histParams.sTable).real() < dBinMin + (k + 1)*dIntLength)
-                    || (isLogScale
-                        && _data.getElement(_idx.row[i], _idx.col[isHbar], _histParams.sTable).real() >= pow(10.0, log10(dBinMin) + k * dIntLength)
-                        && _data.getElement(_idx.row[i], _idx.col[isHbar], _histParams.sTable).real() < pow(10.0, log10(dBinMin) + (k + 1)*dIntLength))))
+            if (ivl.isInside(_data.getElement(_idx.row[i], _idx.col[isHbar], _histParams.sTable), Interval::INCLUDE_LOWER))
             {
                 if (_idx.col.size() == 3)
                 {
                     if (_data.isValidElement(_idx.row[i], _idx.col[!isHbar], _histParams.sTable)
-                        && _data.isValidElement(_idx.row[i], _idx.col[2], _histParams.sTable)
-                        && _histParams.ranges[ZCOORD].isInside(_data.getElement(_idx.row[i], _idx.col[2], _histParams.sTable))
-                        && _data.getElement(_idx.row[i], _idx.col[!isHbar], _histParams.sTable).real() >= dMin
-                        && _data.getElement(_idx.row[i], _idx.col[!isHbar], _histParams.sTable).real() <= dMax)
+                        && _histParams.ranges[ZCOORD].isInside(_data.getElement(_idx.row[i], _idx.col[ZCOORD], _histParams.sTable))
+                        && range.isInside(_data.getElement(_idx.row[i], _idx.col[!isHbar], _histParams.sTable)))
                     {
                         if (_histParams.bSum || _histParams.bAvg)
-                            dSum += _data.getElement(_idx.row[i], _idx.col[2], _histParams.sTable).real();
+                            dSum += _data.getElement(_idx.row[i], _idx.col[ZCOORD], _histParams.sTable).real();
                         else
                             dSum++;
 
@@ -1204,9 +1191,9 @@ static mglData calculateXYHist(MemoryManager& _data, const Indices& _idx, const 
                     {
                         if (_data.isValidElement(_idx.row[l], _idx.col[!isHbar], _histParams.sTable)
                             && _data.isValidElement(_idx.row[(!isHbar*i+isHbar*l)], _idx.col[(!isHbar*l+isHbar*i)+2], _histParams.sTable)
-                            && _histParams.ranges[ZCOORD].isInside(_data.getElement(_idx.row[(!isHbar*i+isHbar*l)], _idx.col[(!isHbar*l+isHbar*i)+2], _histParams.sTable))
-                            && _data.getElement(_idx.row[l], _idx.col[!isHbar], _histParams.sTable).real() >= dMin
-                            && _data.getElement(_idx.row[l], _idx.col[!isHbar], _histParams.sTable).real() <= dMax)
+                            && _histParams.ranges[ZCOORD].isInside(_data.getElement(_idx.row[(!isHbar*i+isHbar*l)],
+                                                                                    _idx.col[(!isHbar*l+isHbar*i)+2], _histParams.sTable))
+                            && range.isInside(_data.getElement(_idx.row[l], _idx.col[!isHbar], _histParams.sTable)))
                         {
                             dSum += _data.getElement(_idx.row[(!isHbar*i+isHbar*l)], _idx.col[(!isHbar*l+isHbar*i)+2], _histParams.sTable).real();
                             nCount++;
@@ -1217,14 +1204,84 @@ static mglData calculateXYHist(MemoryManager& _data, const Indices& _idx, const 
         }
 
         _histData.a[k] = dSum / (_histParams.bAvg ? nCount : 1);
-
-        if (!isLogScale)
-            _mAxisVals->a[k] = dBinMin + (k + 0.5) * dIntLength;
-        else
-            _mAxisVals->a[k] = pow(10.0, log10(dBinMin) + (k + 0.5) * dIntLength);
+        _mAxisVals->a[k] = ivl.middle();
     }
 
     return _histData;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This static function converts the 3D
+/// data into a datagrid containing histogram
+/// points.
+///
+/// \param _data MemoryManager&
+/// \param _idx const Indices&
+/// \param _histParams const HistogramParameters&
+/// \return std::vector<std::vector<double>>
+///
+/////////////////////////////////////////////////
+static std::vector<std::vector<double>> calculateXYHistGrid(MemoryManager& _data, const Indices& _idx, const HistogramParameters& _histParams)
+{
+    std::vector<std::vector<double>> vRet(_histParams.nBin[XCOORD], std::vector<double>(_histParams.nBin[YCOORD]));
+
+    double xMin = _histParams.ranges[XCOORD].min();
+    double xInt = _histParams.binWidth[XCOORD];
+    double yMin = _histParams.ranges[YCOORD].min();
+    double yInt = _histParams.binWidth[YCOORD];
+    bool xLog = NumeReKernel::getInstance()->getPlottingData().getLogscale(XCOORD);
+    bool yLog = NumeReKernel::getInstance()->getPlottingData().getLogscale(YCOORD);
+
+    for (int x = 0; x < _histParams.nBin[XCOORD]; x++)
+    {
+        Interval xInterval(xLog ? pow(10.0, log10(xMin)+x*xInt) : (xMin+x*xInt),
+                           xLog ? pow(10.0, log10(xMin)+(x+1)*xInt) : (xMin+(x+1)*xInt));
+
+        for (int y = 0; y < _histParams.nBin[YCOORD]; y++)
+        {
+            Interval yInterval(yLog ? pow(10.0, log10(yMin)+y*yInt) : (yMin+y*yInt),
+                               yLog ? pow(10.0, log10(yMin)+(y+1)*yInt) : (yMin+(y+1)*yInt));
+
+            double dSum = 0.0;
+            size_t nCount = 0;
+
+            for (size_t i = 0; i < _idx.row.size(); i++)
+            {
+                if (xInterval.isInside(_data.getElement(_idx.row[i], _idx.col[XCOORD], _histParams.sTable), Interval::INCLUDE_LOWER)
+                    && yInterval.isInside(_data.getElement(_idx.row[i], _idx.col[YCOORD], _histParams.sTable), Interval::INCLUDE_LOWER))
+                {
+                    if (_idx.col.size() == 3)
+                    {
+                        if (_histParams.ranges[ZCOORD].isInside(_data.getElement(_idx.row[i], _idx.col[ZCOORD], _histParams.sTable)))
+                        {
+                            if (_histParams.bSum || _histParams.bAvg)
+                                dSum += _data.getElement(_idx.row[i], _idx.col[ZCOORD], _histParams.sTable).real();
+                            else
+                                dSum++;
+
+                            nCount++;
+                        }
+                    }
+                    else
+                    {
+                        for (size_t l = 0; l < _idx.row.size(); l++)
+                        {
+                            if (_histParams.ranges[ZCOORD].isInside(_data.getElement(_idx.row[x], _idx.col[y+2], _histParams.sTable)))
+                            {
+                                dSum += _data.getElement(_idx.row[x], _idx.col[y+2], _histParams.sTable).real();
+                                nCount++;
+                            }
+                        }
+                    }
+                }
+            }
+
+            vRet[x][y] = dSum / (_histParams.bAvg ? nCount : 1);
+        }
+    }
+
+    return vRet;
 }
 
 
@@ -1293,6 +1350,26 @@ static void createOutputForHist2D(MemoryManager& _data, const Indices& _idx, con
 
                 _data.writeToTable(_tIdx.row[k], _tIdx.col[0+2*n], sTargettable, _mAxisVals[n].a[k]);
                 _data.writeToTable(_tIdx.row[k], _tIdx.col[1+2*n], sTargettable, (!n ? _barHistData.a[k] : _hBarHistData.a[k]));
+
+            }
+        }
+    }
+
+    if (bWriteToCache && _histParams.bStoreGrid)
+    {
+        std::vector<std::vector<double>> vGrid = calculateXYHistGrid(_data, _idx, _histParams);
+
+        for (size_t x = 0; x < vGrid.size(); x++)
+        {
+            if (_tIdx.row.size() <= x)
+                break;
+
+            for (size_t y = 0; y < vGrid[x].size(); y++)
+            {
+                if (_tIdx.col.size() <= y)
+                    break;
+
+                _data.writeToTable(_tIdx.row[x], _tIdx.col[4+y], sTargettable, vGrid[x][y]);
             }
         }
     }
@@ -1743,13 +1820,13 @@ static void createHist2D(const std::string& sCmd, const std::string& sTargettabl
     // along the y axis of the central plot
     mglData _barHistData = calculateXYHist(_data, _idx, _histParams, &_mAxisVals[0],
                                            _histParams.ranges[XCOORD].min(), _histParams.ranges[YCOORD].min(), _histParams.ranges[YCOORD].max(), _histParams.binWidth[XCOORD],
-                                           nMax, _pData.getLogscale(XRANGE), false);
+                                           _pData.getLogscale(XRANGE), false);
 
     // Calculate the necessary data for the horizontal
     // bar chart along the x axis of the central plot
     mglData _hBarHistData = calculateXYHist(_data, _idx, _histParams, &_mAxisVals[1],
                                             _histParams.ranges[YCOORD].min(), _histParams.ranges[XCOORD].min(), _histParams.ranges[XCOORD].max(), _histParams.binWidth[YCOORD],
-                                            nMax, _pData.getLogscale(YRANGE), true);
+                                            _pData.getLogscale(YRANGE), true);
 
     // Format the data for the textual output for the
     // terminal, the text file and store the result in
@@ -1784,6 +1861,10 @@ void plugin_histogram(CommandLineParser& cmdParser)
     bool bWriteToCache = false;
     bool bMake2DHist = cmdParser.getCommand() == "hist2d";
     bool bSilent = cmdParser.hasParam("silent");
+    std::string sCountMethod = cmdParser.getParameterValue("counts");
+
+    if (cmdParser.hasParam("sum"))
+        NumeReKernel::issueWarning(_lang.get("COMMON_SYNTAX_DEPRECATED", cmdParser.getCommandLine()));
 
     HistogramParameters _histParams;
 
@@ -1798,9 +1879,10 @@ void plugin_histogram(CommandLineParser& cmdParser)
     _histParams.nBin[YCOORD] = 0;
     _histParams.ranges = cmdParser.parseIntervals(false);
     _histParams.bGrid = false;
-    _histParams.bRelative = cmdParser.hasParam("relative");
-    _histParams.bAvg = cmdParser.hasParam("asavg");
-    _histParams.bSum = cmdParser.hasParam("assum") || cmdParser.hasParam("sum");
+    _histParams.bRelative = sCountMethod == "relative";
+    _histParams.bAvg = sCountMethod == "asavg";
+    _histParams.bSum = sCountMethod == "accum" || cmdParser.hasParam("sum");
+    _histParams.bStoreGrid = cmdParser.hasParam("storegrid");
 
     // Ensure we have three intervals
     _histParams.ranges.intervals.resize(3);
@@ -1876,11 +1958,13 @@ void plugin_histogram(CommandLineParser& cmdParser)
         _idx.col = VectorIndex(nDataRow, nDataRowFinal-1);
     }
 
+    // We can only calculate histograms of columns having a value-like character
     if (!_data.isValueLike(_idx.col, _histParams.sTable))
         throw SyntaxError(SyntaxError::WRONG_COLUMN_TYPE, cmdParser.getCommandLine(), _histParams.sTable+"(", _histParams.sTable);
 
     std::vector<mu::value_type> vResults;
 
+    // Get the number of selected bins
     if (cmdParser.hasParam("bins"))
         vResults = cmdParser.getParameterValueAsNumericalValue("bins");
     else if (cmdParser.hasParam("b"))
@@ -1898,6 +1982,7 @@ void plugin_histogram(CommandLineParser& cmdParser)
         vResults.clear();
     }
 
+    // Get the selected bin widths
     if (cmdParser.hasParam("width"))
         vResults = cmdParser.getParameterValueAsNumericalValue("width");
     else if (cmdParser.hasParam("w"))
@@ -1917,6 +2002,7 @@ void plugin_histogram(CommandLineParser& cmdParser)
 
     std::string sTargettable;
 
+    // Find out, whether the user wants a copy of the calculated data
     if (cmdParser.hasParam("target"))
     {
         sTargettable = cmdParser.getTargetTable(_tIdx, "table");
@@ -1955,6 +2041,7 @@ void plugin_histogram(CommandLineParser& cmdParser)
         }
     }
 
+    // Get the target file name, if any
     if (cmdParser.hasParam("file"))
         _histParams.sSavePath = cmdParser.getFileParameterValueForSaving(".dat", NumeReKernel::getInstance()->getSettings().getSavePath(), "");
     else if (cmdParser.hasParam("save"))
@@ -1970,6 +2057,7 @@ void plugin_histogram(CommandLineParser& cmdParser)
 
     _out.setStatus(_histParams.sSavePath.length() != 0);
 
+    // Get axis labels
     if (!bMake2DHist)
     {
         if (cmdParser.hasParam("xlabel"))
@@ -1994,6 +2082,7 @@ void plugin_histogram(CommandLineParser& cmdParser)
         _histParams.sAxisLabels[ZCOORD] = cmdParser.getParameterValueAsString("zlabel", "\\i z", true, true);
     }
 
+    // Get the bin estimation method
     std::string sMethod = getParameterValue(cmdParser.getCommandLine(), "method", "m", "");
 
     if (sMethod == "scott")

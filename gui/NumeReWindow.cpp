@@ -1192,6 +1192,8 @@ void NumeReWindow::OnClose(wxCloseEvent &event)
     {
         if (event.CanVeto())
             event.Veto(true);
+
+        m_appClosing = false;
         return;
     }
 
@@ -1199,10 +1201,9 @@ void NumeReWindow::OnClose(wxCloseEvent &event)
     if (m_book->getCurrentEditor() && m_book->getCurrentEditor()->Modified())
     {
         if (event.CanVeto())
-        {
             event.Veto (true);
-        }
 
+        m_appClosing = false;
         return;
     }
 
