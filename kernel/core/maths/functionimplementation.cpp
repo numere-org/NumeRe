@@ -2989,6 +2989,27 @@ value_type parser_rd_laplace_rd(const value_type& a)
 
 
 /////////////////////////////////////////////////
+/// \brief This function computes the probability
+/// density function p at a given position for the
+/// Laplace distribution function.
+///
+/// \param x const value_type&
+/// \param a const value_type&
+/// \return value_type
+///
+/////////////////////////////////////////////////
+value_type parser_rd_laplace_pdf(const value_type& x, const value_type& a)
+{
+    // Check the input values
+    if (mu::isnan(x) || mu::isnan(a) || x.imag() != 0 || a.imag() != 0 || a.real() == 0.0)
+        return NAN;
+
+    // Get the value from the probability density function
+    return gsl_ran_laplace_pdf(x.real(), a.real());
+}
+
+
+/////////////////////////////////////////////////
 /// \brief This function computes the cumulative
 /// density function p at a given position for the
 /// Laplace distribution function.
@@ -3084,6 +3105,27 @@ value_type parser_rd_cauchy_rd(const value_type& a)
 
     // Get the value from the probability density function
     return gsl_ran_cauchy(getGslRandGenInstance(), a.real());
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This function computes the probability
+/// density function p at a given position for the
+/// Cauchy distribution function.
+///
+/// \param x const value_type&
+/// \param a const value_type&
+/// \return value_type
+///
+/////////////////////////////////////////////////
+value_type parser_rd_cauchy_pdf(const value_type& x, const value_type& a)
+{
+    // Check the input values
+    if (mu::isnan(x) || mu::isnan(a) || x.imag() != 0 || a.imag() != 0 || a.real() == 0)
+        return NAN;
+
+    // Get the value from the probability density function
+    return gsl_ran_cauchy_pdf(x.real(), a.real());
 }
 
 
@@ -3187,6 +3229,27 @@ value_type parser_rd_rayleigh_rd(const value_type& sigma)
 
 
 /////////////////////////////////////////////////
+/// \brief This function computes the probability
+/// density function p at a given position for the
+/// Rayleigh distribution function.
+///
+/// \param x const value_type&
+/// \param sigma const value_type&
+/// \return value_type
+///
+/////////////////////////////////////////////////
+value_type parser_rd_rayleigh_pdf(const value_type& x, const value_type& sigma)
+{
+    // Check the input values
+    if (mu::isnan(x) || mu::isnan(sigma) || x.imag() != 0 || sigma.imag() != 0 || sigma.real() == 0 || x.real() < 0)
+        return NAN;
+
+    // Get the value from the probability density function
+    return gsl_ran_rayleigh_pdf(x.real(), sigma.real());
+}
+
+
+/////////////////////////////////////////////////
 /// \brief This function computes the cumulative
 /// density function p at a given position for the
 /// Rayleigh distribution function.
@@ -3281,6 +3344,25 @@ value_type parser_rd_landau_rd()
 
 
 /////////////////////////////////////////////////
+/// \brief his function computes the probability
+/// density function p at a given position for the
+/// Landau distribution function.
+///
+/// \return value_type
+///
+/////////////////////////////////////////////////
+value_type parser_rd_landau_pdf(const value_type& x)
+{
+    // Check the input values
+    if (mu::isnan(x) || x.imag() != 0)
+        return NAN;
+
+    // Get the value from the probability density function
+    return gsl_ran_landau_pdf(x.real());
+}
+
+
+/////////////////////////////////////////////////
 /// \brief This function returns a random value
 /// from the Levy alpha-stable distribution function.
 ///
@@ -3317,6 +3399,28 @@ value_type parser_rd_fisher_f_rd(const value_type& nu1, const value_type& nu2)
 
     // Get the value from the probability density function
     return gsl_ran_fdist(getGslRandGenInstance(), intCast(nu1.real()), intCast(nu2.real()));
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This function computes the probability
+/// density function p at a given position for the
+/// Fisher F-distribution function.
+///
+/// \param x const value_type&
+/// \param nu1 const value_type&
+/// \param nu2 const value_type&
+/// \return value_type
+///
+/////////////////////////////////////////////////
+value_type parser_rd_fisher_f_pdf(const value_type& x, const value_type& nu1, const value_type& nu2)
+{
+    // Check the input values
+    if (mu::isnan(x) || mu::isnan(nu1) || mu::isnan(nu2) || x.imag() != 0 || nu1.imag() != 0 || nu2.imag() != 0 || nu1.real() <= 0 || nu2.real() <= 0 || x.real() < 0 || !isInt(nu1.real()) || !isInt(nu2.real()))
+        return NAN;
+
+    // Get the value from the probability density function
+    return gsl_ran_fdist_pdf(x.real(), intCast(nu1.real()), intCast(nu2.real()));
 }
 
 
@@ -3406,6 +3510,135 @@ value_type parser_rd_fisher_f_inv_q(const value_type& q, const value_type& nu1, 
 
 /////////////////////////////////////////////////
 /// \brief This function returns a random value
+/// from the Weibull-distribution function.
+///
+/// \param a const value_type&
+/// \param b const value_type&
+/// \return value_type
+///
+/////////////////////////////////////////////////
+value_type parser_rd_weibull_rd(const value_type& a, const value_type& b)
+{
+    // Check the input values
+    if (mu::isnan(a) || a.real() == 0 || mu::isnan(b))
+        return NAN;
+
+    // Get the value from the probability density function
+    return gsl_ran_weibull(getGslRandGenInstance(), a.real(), b.real());
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This function computes the probability
+/// density function p at a given position for the
+/// Weibull-distribution function.
+///
+/// \param x const value_type&
+/// \param a const value_type&
+/// \param b const value_type&
+/// \return value_type
+///
+/////////////////////////////////////////////////
+value_type parser_rd_weibull_pdf(const value_type& x, const value_type& a, const value_type& b)
+{
+    // Check the input values
+    if (mu::isnan(a) || a.real() == 0 || mu::isnan(b) || mu::isnan(x) || x.real() < 0)
+        return NAN;
+
+    // Get the value from the probability density function
+    return gsl_ran_weibull_pdf(x.real(), a.real(), b.real());
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This function computes the cumulative
+/// density function p at a given position for the
+/// Weibull-distribution function.
+///
+/// \param x const value_type&
+/// \param a const value_type&
+/// \param b const value_type&
+/// \return value_type
+///
+/////////////////////////////////////////////////
+value_type parser_rd_weibull_cdf_p(const value_type& x, const value_type& a, const value_type& b)
+{
+    // Check the input values
+    if (mu::isnan(a) || a.real() == 0 || mu::isnan(b) || mu::isnan(x) || x.real() < 0)
+        return NAN;
+
+    // Get the value from the probability density function
+    return gsl_cdf_weibull_P(x.real(), a.real(), b.real());
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This function computes the cumulative
+/// density function q at a given position for the
+/// Weibull-distribution function.
+///
+/// \param x const value_type&
+/// \param a const value_type&
+/// \param b const value_type&
+/// \return value_type
+///
+/////////////////////////////////////////////////
+value_type parser_rd_weibull_cdf_q(const value_type& x, const value_type& a, const value_type& b)
+{
+    if (mu::isnan(a) || a.real() == 0 || mu::isnan(b) || mu::isnan(x) || x.real() < 0)
+        return NAN;
+
+    // Get the result from the probability density function
+    return gsl_cdf_weibull_Q(x.real(), a.real(), b.real());
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This function computes the inverse of
+/// the cumulative density function p at a given
+/// position for the Weibull-distribution function.
+///
+/// \param p const value_type&
+/// \param a const value_type&
+/// \param b const value_type&
+/// \return value_type
+///
+/////////////////////////////////////////////////
+value_type parser_rd_weibull_inv_p(const value_type& p, const value_type& a, const value_type& b)
+{
+    // Check the input values
+    if (mu::isnan(a) || a.real() == 0 || mu::isnan(b) || mu::isnan(p) || p.real() < 0 || p.real() > 1)
+        return NAN;
+
+    // Get the value from the probability density function
+    return gsl_cdf_weibull_Pinv(p.real(), a.real(), b.real());
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This function computes the inverse of
+/// the cumulative density function q at a given
+/// position for the Weibull-distribution function.
+///
+/// \param q const value_type&
+/// \param a const value_type&
+/// \param b const value_type&
+/// \return value_type
+///
+/////////////////////////////////////////////////
+value_type parser_rd_weibull_inv_q(const value_type& q, const value_type& a, const value_type& b)
+{
+    // Check the input values
+    if (mu::isnan(a) || a.real() == 0 || mu::isnan(b) || mu::isnan(q) || q.real() < 0 || q.real() > 1)
+        return NAN;
+
+    // Get the value from the probability density function
+    return gsl_cdf_weibull_Qinv(q.real(), a.real(), b.real());
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This function returns a random value
 /// from the Student t-distribution function.
 ///
 /// \param nu const value_type&
@@ -3420,6 +3653,27 @@ value_type parser_rd_student_t_rd(const value_type& nu)
 
     // Get the value from the probability density function
     return gsl_ran_tdist(getGslRandGenInstance(), intCast(nu.real()));
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This function computes the probability
+/// density function p at a given position for the
+/// Student t-distribution function.
+///
+/// \param x const value_type&
+/// \param nu const value_type&
+/// \return value_type
+///
+/////////////////////////////////////////////////
+value_type parser_rd_student_t_pdf(const value_type& x, const value_type& nu)
+{
+    // Check the input values
+    if (mu::isnan(x) || mu::isnan(nu) || x.imag() != 0 || nu.imag() != 0 || nu.real() <= 0 || !isInt(nu.real()))
+        return NAN;
+
+    // Get the value from the probability density function
+    return gsl_ran_tdist_pdf(x.real(), intCast(nu.real()));
 }
 
 
