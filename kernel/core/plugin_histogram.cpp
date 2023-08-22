@@ -1321,7 +1321,7 @@ static void createOutputForHist2D(MemoryManager& _data, const Indices& _idx, con
     if (_histParams.bAvg)
         sCountLabelStart = "Avg";
     else if (_histParams.bSum)
-        sCountLabelStart = "Sum";
+        sCountLabelStart = "Accum";
 
     // Fill output tables
     for (int n = 0; n < 2; n++)
@@ -1355,6 +1355,7 @@ static void createOutputForHist2D(MemoryManager& _data, const Indices& _idx, con
         }
     }
 
+    // Write the binned XY grid to the target table
     if (bWriteToCache && _histParams.bStoreGrid)
     {
         std::vector<std::vector<double>> vGrid = calculateXYHistGrid(_data, _idx, _histParams);
@@ -1368,6 +1369,10 @@ static void createOutputForHist2D(MemoryManager& _data, const Indices& _idx, con
             {
                 if (_tIdx.col.size() <= y)
                     break;
+
+                if (!x)
+                    _data.setHeadLineElement(_tIdx.col[4+y], sTargettable,
+                                             sCountLabelStart + "(x(:),y(" + toString(y+1) + "))");
 
                 _data.writeToTable(_tIdx.row[x], _tIdx.col[4+y], sTargettable, vGrid[x][y]);
             }
@@ -1819,13 +1824,15 @@ static void createHist2D(const std::string& sCmd, const std::string& sTargettabl
     // Calculate the necessary data for the bar chart
     // along the y axis of the central plot
     mglData _barHistData = calculateXYHist(_data, _idx, _histParams, &_mAxisVals[0],
-                                           _histParams.ranges[XCOORD].min(), _histParams.ranges[YCOORD].min(), _histParams.ranges[YCOORD].max(), _histParams.binWidth[XCOORD],
+                                           _histParams.ranges[XCOORD].min(),
+                                           _histParams.ranges[YCOORD].min(), _histParams.ranges[YCOORD].max(), _histParams.binWidth[XCOORD],
                                            _pData.getLogscale(XRANGE), false);
 
     // Calculate the necessary data for the horizontal
     // bar chart along the x axis of the central plot
     mglData _hBarHistData = calculateXYHist(_data, _idx, _histParams, &_mAxisVals[1],
-                                            _histParams.ranges[YCOORD].min(), _histParams.ranges[XCOORD].min(), _histParams.ranges[XCOORD].max(), _histParams.binWidth[YCOORD],
+                                            _histParams.ranges[YCOORD].min(),
+                                            _histParams.ranges[XCOORD].min(), _histParams.ranges[XCOORD].max(), _histParams.binWidth[YCOORD],
                                             _pData.getLogscale(YRANGE), true);
 
     // Format the data for the textual output for the
