@@ -169,6 +169,8 @@ class OptionsDialog: public wxDialog
         wxFontPickerCtrl* m_fontPickerHistory;
         wxCheckBox* m_highlightLocalVariables;
 
+        wxCheckBox* m_showGridLines;
+        wxCheckBox* m_autoGroupCols;
         wxCheckBox* m_ExtendedInfo;
         wxCheckBox* m_ShowHints;
         wxCheckBox* m_CustomLanguage;

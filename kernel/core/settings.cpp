@@ -101,6 +101,8 @@ Settings::Settings() : Documentation()
     m_settings[SETTING_B_USEREVISIONS] = SettingsValue(true, SettingsValue::SAVE | SettingsValue::IMMUTABLE);
     m_settings[SETTING_B_FOLDLOADEDFILE] = SettingsValue(false, SettingsValue::SAVE | SettingsValue::IMMUTABLE);
     m_settings[SETTING_B_HIGHLIGHTLOCALS] = SettingsValue(false, SettingsValue::SAVE | SettingsValue::IMMUTABLE);
+    m_settings[SETTING_B_SHOWGRIDLINES] = SettingsValue(true, SettingsValue::SAVE | SettingsValue::IMMUTABLE);
+    m_settings[SETTING_B_AUTOGROUPCOLS] = SettingsValue(true, SettingsValue::SAVE | SettingsValue::IMMUTABLE);
     m_settings[SETTING_B_USETABS] = SettingsValue(true, SettingsValue::SAVE | SettingsValue::IMMUTABLE);
     m_settings[SETTING_B_HOMEENDCANCELS] = SettingsValue(false, SettingsValue::SAVE | SettingsValue::IMMUTABLE);
     m_settings[SETTING_B_AUTOSAVEEXECUTION] = SettingsValue(false, SettingsValue::SAVE | SettingsValue::IMMUTABLE);
