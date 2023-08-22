@@ -115,6 +115,24 @@ public:
     int m_item;
 };
 
+
+/////////////////////////////////////////////////
+/// \brief This event is used to asynchronously
+/// change the element selection in the window.
+/////////////////////////////////////////////////
+class SetSelectionEvent : public wxEvent
+{
+public:
+    SetSelectionEvent(wxEventType eventType, int winid, int winItem, int selId1, int selId2)
+        : wxEvent(winid, eventType), m_selectionId1(selId1), m_selectionId2(selId2), m_item(winItem) {}
+    virtual wxEvent* Clone() const {return new SetSelectionEvent(*this); }
+
+    int m_selectionId1;
+    int m_selectionId2;
+    int m_item;
+};
+
+
 /////////////////////////////////////////////////
 /// \brief This event is used to asynchronously
 /// change the elements' focus in the window.
@@ -131,12 +149,15 @@ public:
 
 wxDEFINE_EVENT(SET_WINDOW_VALUE, SetValueEvent);
 wxDEFINE_EVENT(SET_WINDOW_LABEL, SetLabelEvent);
+wxDEFINE_EVENT(SET_WINDOW_SELECTION, SetSelectionEvent);
 wxDEFINE_EVENT(SET_WINDOW_FOCUS, SetFocusEvent);
 
 #define cEVT_SET_VALUE(id, func) \
     wx__DECLARE_EVT1(SET_WINDOW_VALUE, id, &func)
 #define cEVT_SET_LABEL(id, func) \
     wx__DECLARE_EVT1(SET_WINDOW_LABEL, id, &func)
+#define cEVT_SET_SELECTION(id, func) \
+    wx__DECLARE_EVT1(SET_WINDOW_SELECTION, id, &func)
 #define cEVT_SET_FOCUS(id, func) \
     wx__DECLARE_EVT1(SET_WINDOW_FOCUS, id, &func)
 
@@ -216,6 +237,7 @@ class CustomWindow : public wxFrame
 
         bool pushItemValue(WindowItemValue& _value, int windowItemID);
         bool pushItemLabel(const wxString& _label, int windowItemID);
+        bool pushItemSelection(int selectionID, int selectionID2, int windowItemID);
         bool pushItemFocus(int windowItemID);
 
         bool setItemValue(WindowItemValue& _value, int windowItemID);
@@ -247,6 +269,11 @@ class CustomWindow : public wxFrame
         void OnSetLabelEvent(SetLabelEvent& event)
         {
             setItemLabel(event.m_label, event.m_item);
+        }
+
+        void OnSetSelectionEvent(SetSelectionEvent& event)
+        {
+            setItemSelection(event.m_selectionId1, event.m_selectionId2, event.m_item);
         }
 
         void OnSetFocusEvent(SetFocusEvent& event)

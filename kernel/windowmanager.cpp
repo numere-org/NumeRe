@@ -486,7 +486,7 @@ namespace NumeRe
     bool Window::setItemSelection(int selectionID, int selectionID2, int windowItemID)
     {
         if (m_customWindow)
-            return m_customWindow->setItemSelection(selectionID, selectionID2, windowItemID);
+            return m_customWindow->pushItemSelection(selectionID, selectionID2, windowItemID);
 
         return false;
     }

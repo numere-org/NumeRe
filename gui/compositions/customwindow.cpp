@@ -275,6 +275,7 @@ BEGIN_EVENT_TABLE(CustomWindow, wxFrame)
     EVT_MENU(-1, CustomWindow::OnMenuEvent)
     cEVT_SET_VALUE(-1, CustomWindow::OnSetValueEvent)
     cEVT_SET_LABEL(-1, CustomWindow::OnSetLabelEvent)
+    cEVT_SET_SELECTION(-1, CustomWindow::OnSetSelectionEvent)
     cEVT_SET_FOCUS(-1, CustomWindow::OnSetFocusEvent)
 END_EVENT_TABLE()
 
@@ -1829,6 +1830,23 @@ bool CustomWindow::pushItemValue(WindowItemValue& _value, int windowItemID)
 bool CustomWindow::pushItemLabel(const wxString& _label, int windowItemID)
 {
     GetEventHandler()->QueueEvent(new SetLabelEvent(SET_WINDOW_LABEL, GetId(), windowItemID, _label));
+    return true;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Push an item selection change to the
+/// internal event handler.
+///
+/// \param selectionID int
+/// \param selectionID2 int
+/// \param windowItemID int
+/// \return bool
+///
+/////////////////////////////////////////////////
+bool CustomWindow::pushItemSelection(int selectionID, int selectionID2, int windowItemID)
+{
+    GetEventHandler()->QueueEvent(new SetSelectionEvent(SET_WINDOW_SELECTION, GetId(), windowItemID, selectionID, selectionID2));
     return true;
 }
 
