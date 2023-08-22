@@ -178,6 +178,7 @@ void evalRecursiveExpressions(std::string& sExpr);
 size_t qSortDouble(double* dArray, size_t nlength);
 void replaceStringMethod(std::string& sLine, size_t nPos, size_t nLength, const std::string& sReplacement);
 std::string shortenFileName(const std::string& sFullFileName);
+std::string removeDefaultPath(const std::string& sFullPath);
 std::string incrementVersion(std::string _sVer);
 
 inline bool isDimensionVar(const std::string& sVarName)
