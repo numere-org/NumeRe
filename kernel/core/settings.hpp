@@ -65,6 +65,8 @@
 #define SETTING_S_PLOTFONT            "plotting.plotfont"
 
 // Setting value definitions for the GUI
+#define SETTING_B_SHOWGRIDLINES       "table.ui.showgrid"
+#define SETTING_B_AUTOGROUPCOLS       "table.ui.autogroupcols"
 #define SETTING_S_LATEXROOT           "path.latexpath"
 #define SETTING_V_CARETBLINKTIME      "ui.caretblinktime"
 #define SETTING_V_FOCUSEDLINE         "debugger.focusedline"
