@@ -114,6 +114,7 @@ class TableViewer : public wxGrid
         void reloadTable();
         void changeColType();
         void finalize();
+        void groupHeaders(int startCol, int endCol, int row);
 
         wxString getSelectedValues();
         int GetInternalRows(int gridrow) const;
