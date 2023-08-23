@@ -36,7 +36,7 @@
  * Headerdatei fuer alle Plugins!
  */
 
-std::string plugin_statistics(std::string& sCmd, MemoryManager& _data);
+void plugin_statistics(CommandLineParser& cmdParser);
 void plugin_histogram(CommandLineParser& cmdParser);
 void plugin_random(std::string& sCmd);
 #endif

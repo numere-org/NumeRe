@@ -3582,48 +3582,14 @@ static CommandReturnValues cmd_warn(string& sCmd)
 /////////////////////////////////////////////////
 static CommandReturnValues cmd_stats(string& sCmd)
 {
-    MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
-    Match _match = findCommand(sCmd, "stats");
-    string sExpr = sCmd;
+    CommandLineParser cmdParser(sCmd, "stats", CommandLineParser::CMD_DAT_PAR);
+    plugin_statistics(cmdParser);
 
-    sExpr.replace(_match.nPos, string::npos, "_~load[~_~]");
-    sCmd.erase(0, _match.nPos);
-
-    string sArgument = evaluateParameterValues(sCmd);
-
-    DataAccessParser _accessParser(sCmd);
-
-    if (_accessParser.getDataObject().length())
+    if (cmdParser.getReturnValueStatement().length())
     {
-        MemoryManager _cache;
-
-        copyDataToTemporaryTable(sCmd, _accessParser, _data, _cache);
-
-        if (_accessParser.getDataObject() != "table")
-            _cache.renameTable("table", _accessParser.getDataObject(), true);
-
-        if (!_cache.isValueLike(VectorIndex(0, _cache.getCols(_accessParser.getDataObject())-1), _accessParser.getDataObject()))
-            throw SyntaxError(SyntaxError::WRONG_COLUMN_TYPE, sCmd, _accessParser.getDataObject()+"(", _accessParser.getDataObject());
-
-        if (NumeReKernel::getInstance()->getStringParser().containsStringVars(sCmd))
-            NumeReKernel::getInstance()->getStringParser().getStringValues(sCmd);
-
-        if (findParameter(sCmd, "export", '='))
-            addArgumentQuotes(sCmd, "export");
-
-        sArgument = "stats -" + _accessParser.getDataObject() + " " + sCmd.substr(getMatchingParenthesis(sCmd.substr(sCmd.find('('))) + 1 + sCmd.find('('));
-        sArgument = evaluateParameterValues(sArgument);
-        std::string sRet = plugin_statistics(sArgument, _cache);
-
-        if (sRet.length())
-        {
-            sExpr.replace(_match.nPos, string::npos, sRet);
-            sCmd = sExpr;
-            return COMMAND_HAS_RETURNVALUE;
-        }
+        sCmd = cmdParser.getReturnValueStatement();
+        return COMMAND_HAS_RETURNVALUE;
     }
-    else
-        throw SyntaxError(SyntaxError::TABLE_DOESNT_EXIST, sCmd, SyntaxError::invalid_position);
 
     return COMMAND_PROCESSED;
 }

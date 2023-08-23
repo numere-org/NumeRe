@@ -1043,6 +1043,9 @@ static void createHist1D(const std::string& sCmd, const std::string& sTargettabl
     {
         _data.setHeadLineElement(_tIdx.col.front(), sTargettable, "Bins");
 
+        if (vCategories.size())
+            _data.convertColumns(sTargettable, _tIdx.col.subidx(0, 1), "string");
+
         for (size_t i = 0; i < vHistMatrix.size(); i++)
         {
             if (_tIdx.row.size() <= i)
@@ -1901,6 +1904,10 @@ void plugin_histogram(CommandLineParser& cmdParser)
 
     if (!_accessParser.getDataObject().length())
         throw SyntaxError(SyntaxError::TABLE_DOESNT_EXIST, cmdParser.getCommandLine(), cmdParser.getExpr(), cmdParser.getExpr());
+
+    if (_accessParser.isCluster())
+        throw SyntaxError(SyntaxError::CACHE_DOESNT_EXIST, cmdParser.getCommandLine(),
+                          _accessParser.getDataObject() + "{", _accessParser.getDataObject());
 
     _accessParser.evalIndices();
     _histParams.sTable = _accessParser.getDataObject();
