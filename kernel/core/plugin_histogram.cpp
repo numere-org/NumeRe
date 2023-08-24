@@ -456,11 +456,13 @@ static void createOutputForHist1D(MemoryManager& _data, const Indices& _idx, con
     else
         _out.setCompact(_option.createCompactTables());
 
+    double diff = _mAxisVals.GetNN() > 1 ? 0.5*(_mAxisVals.a[1] - _mAxisVals.a[0]) : 0.0;
+
     // --> Fuelle die Ausgabe-Matrix <--
     for (size_t i = 1; i < vHistMatrix.size() + 1; i++)
     {
         if (vCategories.size() <= 2*(i-1))
-            sOut[i][0] = toString(_mAxisVals.a[i - 1], _option);
+            sOut[i][0] = toString(_mAxisVals.a[i - 1]-diff, _option);
         else
             sOut[i][0] = vCategories[2*(i-1)];
 
@@ -522,7 +524,9 @@ static mglGraph* prepareGraphForHist(double dAspect, PlotData& _pData, bool bSil
 
     // Apply plot output size using the resolution
     // and the aspect settings
-    if (_pData.getSettings(PlotData::INT_HIGHRESLEVEL) == 2 && bSilent && _pData.getSettings(PlotData::LOG_SILENTMODE))
+    if (_pData.getSettings(PlotData::INT_SIZE_X) > 0 && _pData.getSettings(PlotData::INT_SIZE_Y) > 0)
+        _histGraph->SetSize(_pData.getSettings(PlotData::INT_SIZE_X), _pData.getSettings(PlotData::INT_SIZE_Y));
+    else if (_pData.getSettings(PlotData::INT_HIGHRESLEVEL) == 2 && bSilent && _pData.getSettings(PlotData::LOG_SILENTMODE))
     {
         double dHeight = sqrt(1920.0 * 1440.0 / dAspect);
         _histGraph->SetSize((int)lrint(dAspect * dHeight), (int)lrint(dHeight));
@@ -576,7 +580,7 @@ static void createPlotForHist1D(HistogramParameters& _histParams, mglData& _mAxi
     Settings& _option = NumeReKernel::getInstance()->getSettings();
 
     // Define aspect and plotting colors
-    double dAspect = 8.0 / 3.0;
+    double dAspect = _pData.getSettings(PlotData::FLOAT_ASPECT);
     int nStyle = 0;
     const int nStyleMax = 14;
     std::string sColorStyles[nStyleMax] = {"r", "g", "b", "q", "m", "P", "u", "R", "G", "B", "Q", "M", "p", "U"};
@@ -630,33 +634,67 @@ static void createPlotForHist1D(HistogramParameters& _histParams, mglData& _mAxi
         if (!_pData.getLogscale(XRANGE) && _pData.getTimeAxis(XRANGE).use)
             _histGraph->SetTicksTime('x', 0, _pData.getTimeAxis(XRANGE).sTimeFormat.c_str());
         else if (!_pData.getLogscale(XRANGE))
-            _histGraph->SetTicksVal('x', _mAxisVals, sTicks.c_str());
+        {
+            if (vCategories.size())
+                _histGraph->SetTicksVal('x', _mAxisVals, sTicks.c_str());
+            else
+            {
+                double diff = _mAxisVals.GetNN() > 2 ? (_mAxisVals.a[1] - _mAxisVals.a[0]) : 0.0;
+
+                if (_pData.getTickTemplate(XCOORD).length())
+                    _histGraph->SetTickTempl('x', _pData.getTickTemplate(XCOORD).c_str());
+
+                if (_pData.getTickTemplate(YCOORD).length())
+                    _histGraph->SetTickTempl('y', _pData.getTickTemplate(YCOORD).c_str());
+
+                int subticks = 0;
+                int tickfactor = 1;
+
+                if (_mAxisVals.GetNN() > 25)
+                {
+                    tickfactor = _mAxisVals.GetNN() / 5;
+
+                    if ((tickfactor % 5) < 3)
+                        tickfactor -= tickfactor % 5;
+                    else
+                        tickfactor += 5-(tickfactor % 5);
+
+                    if (!(tickfactor % 5))
+                        subticks = 4;
+                    else if (!(tickfactor % 4))
+                        subticks = 3;
+                    else if (!(tickfactor % 2))
+                        subticks = 1;
+                }
+                else if (_mAxisVals.GetNN() > 15)
+                {
+                    subticks = 4;
+                    tickfactor = 5;
+                }
+                else if (_mAxisVals.GetNN() > 10)
+                {
+                    subticks = 3;
+                    tickfactor = 4;
+                }
+                else if (_mAxisVals.GetNN() > 5)
+                {
+                    subticks = 1;
+                    tickfactor = 2;
+                }
+
+                _histGraph->SetTicks('x', tickfactor * diff, subticks, _mAxisVals.a[0]-0.5*diff);
+            }
+        }
 
         if (!_pData.getSettings(PlotData::LOG_BOX)
             && _histParams.ranges[XCOORD].min() <= 0.0
             && _histParams.ranges[XCOORD].max() >= 0.0
             && !_pData.getLogscale(YRANGE))
-        {
-            //_histGraph->SetOrigin(0.0,0.0);
-            if (_histParams.nBin[XCOORD] > 40)
-                _histGraph->Axis("UAKDTVISO");
-            else
-                _histGraph->Axis("AKDTVISO");
-        }
+            _histGraph->Axis("AKDTVISO");
         else if (!_pData.getSettings(PlotData::LOG_BOX))
-        {
-            if (_histParams.nBin[XCOORD] > 40)
-                _histGraph->Axis("UAKDTVISO");
-            else
-                _histGraph->Axis("AKDTVISO");
-        }
+            _histGraph->Axis("AKDTVISO");
         else
-        {
-            if (_histParams.nBin[XCOORD] > 40)
-                _histGraph->Axis("U");
-            else
-                _histGraph->Axis();
-        }
+            _histGraph->Axis();
     }
 
     // Create the surrounding box
@@ -992,9 +1030,6 @@ static void createHist1D(const std::string& sCmd, const std::string& sTargettabl
             _histParams.nBin[XCOORD]++;
         }
 
-        double dDiff = _histParams.nBin[XCOORD] * _histParams.binWidth[XCOORD] - _histParams.ranges[XCOORD].range();
-        _histParams.ranges[XCOORD].reset(_histParams.ranges[XCOORD].min()-dDiff*0.5, _histParams.ranges[XCOORD].max()+dDiff+0.5);
-
         if (_histParams.nBin[XCOORD])
         {
             if (_histParams.bGrid)
@@ -1053,7 +1088,7 @@ static void createHist1D(const std::string& sCmd, const std::string& sTargettabl
 
             if (vCategories.size() <= 2*i)
                 _data.writeToTable(_tIdx.row[i], _tIdx.col.front(), sTargettable,
-                                   _histParams.ranges[XCOORD].min() + i * _histParams.binWidth[XCOORD] + _histParams.binWidth[XCOORD] / 2.0);
+                                   _histParams.ranges[XCOORD].min() + i * _histParams.binWidth[XCOORD]);
             else
                 _data.writeToTable(_tIdx.row[i], _tIdx.col.front(), sTargettable, vCategories[2*i]);
 
@@ -1326,12 +1361,16 @@ static void createOutputForHist2D(MemoryManager& _data, const Indices& _idx, con
     else if (_histParams.bSum)
         sCountLabelStart = "Accum";
 
+    double diff[2];
+    diff[XCOORD] = _mAxisVals[XCOORD].GetNN() > 1 ? 0.5*(_mAxisVals[XCOORD].a[1] - _mAxisVals[XCOORD].a[0]) : 0.0;
+    diff[YCOORD] = _mAxisVals[YCOORD].GetNN() > 1 ? 0.5*(_mAxisVals[YCOORD].a[1] - _mAxisVals[YCOORD].a[0]) : 0.0;
+
     // Fill output tables
     for (int n = 0; n < 2; n++)
     {
         for (int k = 0; k < _histParams.nBin[n]; k++)
         {
-            sOut[k + 1][0+2*n] = toString(_mAxisVals[n].a[k], _option);
+            sOut[k + 1][0+2*n] = toString(_mAxisVals[n].a[k] - diff[n], _option);
             sOut[k + 1][1+2*n] = toString((!n ? _barHistData.a[k] : _hBarHistData.a[k]), _option);
 
             if (!k)
@@ -1351,7 +1390,7 @@ static void createOutputForHist2D(MemoryManager& _data, const Indices& _idx, con
                     _data.setHeadLineElement(_tIdx.col[1+2*n], sTargettable, sCountLabelStart + ": " + _histParams.sAxisLabels[ZCOORD]);
                 }
 
-                _data.writeToTable(_tIdx.row[k], _tIdx.col[0+2*n], sTargettable, _mAxisVals[n].a[k]);
+                _data.writeToTable(_tIdx.row[k], _tIdx.col[0+2*n], sTargettable, _mAxisVals[n].a[k] - diff[n]);
                 _data.writeToTable(_tIdx.row[k], _tIdx.col[1+2*n], sTargettable, (!n ? _barHistData.a[k] : _hBarHistData.a[k]));
 
             }
@@ -1459,7 +1498,7 @@ static void createPlotsForHist2D(const std::string& sCmd, HistogramParameters& _
     Settings& _option = NumeReKernel::getInstance()->getSettings();
     Output& _out = NumeReKernel::getInstance()->getOutput();
 
-    double dAspect = 4.0 / 3.0;
+    double dAspect = _pData.getSettings(PlotData::FLOAT_ASPECT);
 
     mglGraph* _histGraph = prepareGraphForHist(dAspect, _pData, bSilent);
 
