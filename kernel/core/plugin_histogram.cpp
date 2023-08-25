@@ -650,6 +650,10 @@ static void createPlotForHist1D(HistogramParameters& _histParams, mglData& _mAxi
                 int subticks = 0;
                 int tickfactor = 1;
 
+                // Determine the number of subticks and the tick factor for the
+                // x axis through some basic heuristic. Could be improved in the
+                // future to resolve the fixation to 5 subticks, but works for
+                // now
                 if (_mAxisVals.GetNN() > 25)
                 {
                     tickfactor = _mAxisVals.GetNN() / 5;
