@@ -3190,7 +3190,7 @@ string replaceToVectorname(const string& sExpression)
     if (!mOprtRplc.size())
         OprtRplc_setup(mOprtRplc);
 
-    if (sVectorName.find('"') != std::string::npos)
+    if (sVectorName.find_first_of("\"#") != std::string::npos)
         return "_~" + sha256(sVectorName);
 
     // Remove whitespaces
