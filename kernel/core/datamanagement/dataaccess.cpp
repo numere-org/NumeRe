@@ -1413,7 +1413,17 @@ static std::string tableMethod_findCols(const std::string& sTableName, std::stri
 {
     NumeReKernel* _kernel = NumeReKernel::getInstance();
     std::string sColumns = getNextArgument(sMethodArguments, true);
+    bool enableRegEx = false;
     std::vector<std::string> vColNames;
+
+    if (sMethodArguments.length())
+    {
+        int nResults = 0;
+        _kernel->getMemoryManager().updateDimensionVariables(sTableName);
+        _kernel->getParser().SetExpr(sMethodArguments);
+        mu::value_type* v = _kernel->getParser().Eval(nResults);
+        enableRegEx = v[0] != 0.0;
+    }
 
     if (_kernel->getStringParser().isStringExpression(sColumns))
     {
@@ -1427,7 +1437,7 @@ static std::string tableMethod_findCols(const std::string& sTableName, std::stri
         vColNames = _kernel->getAns().getInternalStringArray();
     }
 
-    std::vector<mu::value_type> vCols = _kernel->getMemoryManager().findCols(sTableName, vColNames);
+    std::vector<mu::value_type> vCols = _kernel->getMemoryManager().findCols(sTableName, vColNames, enableRegEx);
 
     _kernel->getParser().SetVectorVar(sResultVectorName, vCols);
     return sResultVectorName;

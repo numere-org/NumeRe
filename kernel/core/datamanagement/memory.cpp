@@ -20,6 +20,7 @@
 #include <gsl/gsl_statistics.h>
 #include <gsl/gsl_sort.h>
 #include <gsl/gsl_cdf.h>
+#include <regex>
 
 #include "memory.hpp"
 #include "tablecolumnimpl.hpp"
@@ -3257,10 +3258,11 @@ static bool closeEnough(const mu::value_type& v1, const mu::value_type& v2)
 /// multiple column IDs per string.
 ///
 /// \param vColNames const std::vector<std::string>&
+/// \param enableRegEx bool
 /// \return std::vector<mu::value_type>
 ///
 /////////////////////////////////////////////////
-std::vector<mu::value_type> Memory::findCols(const std::vector<std::string>& vColNames) const
+std::vector<mu::value_type> Memory::findCols(const std::vector<std::string>& vColNames, bool enableRegEx) const
 {
     std::vector<mu::value_type> vColIndices;
 
@@ -3268,8 +3270,16 @@ std::vector<mu::value_type> Memory::findCols(const std::vector<std::string>& vCo
     {
         for (size_t i = 0; i < memArray.size(); i++)
         {
-            if (memArray[i] && memArray[i]->m_sHeadLine == sName)
-                vColIndices.push_back(i+1.0);
+            if (enableRegEx)
+            {
+                if (memArray[i] && std::regex_search(memArray[i]->m_sHeadLine, std::regex(sName)))
+                    vColIndices.push_back(i+1.0);
+            }
+            else
+            {
+                if (memArray[i] && memArray[i]->m_sHeadLine == sName)
+                    vColIndices.push_back(i+1.0);
+            }
         }
     }
 

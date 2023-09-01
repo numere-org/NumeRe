@@ -19,6 +19,7 @@
 
 #include "syntax.hpp"
 #include "core/utils/tools.hpp"
+#include "core/procedure/procedure.hpp"
 
 
 /////////////////////////////////////////////////
@@ -969,6 +970,9 @@ std::string NumeReSyntax::getProcAutoCompList(std::string sFirstChars, std::stri
 
     std::string sProcName;
     static std::string sStandardNamespaces[] = {"main~", "this~", "thisfile~"};
+
+    Procedure::cleanRelativeNameSpaces(sBaseNameSpace);
+    Procedure::cleanRelativeNameSpaces(sSelectedNameSpace);
 
     // Try to detect the actual name of the procedure including its namespace
     if (sSelectedNameSpace.length())
