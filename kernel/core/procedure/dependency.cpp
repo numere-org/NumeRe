@@ -91,6 +91,7 @@ Dependencies::Dependencies(ProcedureElement* procedureFile)
 
     // Get the current default procedure path
     std::string sProcDefPath = NumeReKernel::getInstance()->getSettings().getProcPath();
+    g_logger.info("sFileName = " + sFileName);
 
     // If the default procedure path is part of the
     // thisfile namespace, remove this part and translate
@@ -179,9 +180,11 @@ int Dependencies::getProcedureDependencies(ProcedureElement* procedureFile, int 
 
     // Insert the "thisfile" namespace, if the current procedure is not
     // the main procedure of the current file
-    if (sProcedureName.find('~') != std::string::npos && procedureFile->getFileName().substr(procedureFile->getFileName().rfind('/')+1) != sProcedureName.substr(sProcedureName.rfind('~')+1) + ".nprc")
+    if (sProcedureName.find('~') != std::string::npos
+        && procedureFile->getFileName().substr(procedureFile->getFileName().rfind('/')+1) != sProcedureName.substr(sProcedureName.rfind('~')+1) + ".nprc")
         sProcedureName.insert(sProcedureName.rfind('~')+1, sThisFileNameSpacePrefix + "thisfile~");
-    else if (sProcedureName.find('/') != std::string::npos && procedureFile->getFileName().substr(procedureFile->getFileName().rfind('/')+1) != sProcedureName.substr(sProcedureName.rfind('/')+1) + ".nprc")
+    else if (sProcedureName.find('/') != std::string::npos
+             && procedureFile->getFileName().substr(procedureFile->getFileName().rfind('/')+1) != sProcedureName.substr(sProcedureName.rfind('/')+1) + ".nprc")
         sProcedureName.insert(sProcedureName.rfind('/')+1, sThisFileNameSpacePrefix + "thisfile~");
     else
         sMainProcedure = sProcedureName;
@@ -275,10 +278,16 @@ void Dependencies::resolveProcedureCalls(std::string sLine, const std::string& s
                     __sName = sLine.substr(nPos + 1, sLine.find('\'', nPos + 1) - nPos - 1);
 
                 if (__sName.find('/') != std::string::npos && __sName.find("thisfile~") == std::string::npos)
+                {
+                    replaceAll(__sName, "~~", "/../");
                     replaceAll(__sName, "~", "/");
+                }
+
+                Procedure::cleanRelativeNameSpaces(__sName);
 
                 // Add procedure name and called procedure file name to the
                 // dependency list
+
                 mDependencies[sProcedureName].push_back(Dependency("$" + __sName, getProcedureFileName(__sName)));
 			}
 
@@ -305,19 +314,8 @@ std::string Dependencies::getProcedureFileName(std::string sProc) const
 		if (sProc.find("thisfile~") != std::string::npos)
 		    return sFileName;
 
-        // Replace all tilde characters in the current path
-        // string. Consider the special namespace "main", which
-        // is a reference to the toplevel procedure folder
-        for (size_t i = 0; i < sProc.length(); i++)
-        {
-            if (sProc[i] == '~')
-            {
-                if (sProc.length() > 5 && i >= 4 && sProc.substr(i - 4, 5) == "main~")
-                    sProc = sProc.substr(0, i - 4) + sProc.substr(i + 1);
-                else
-                    sProc[i] = '/';
-            }
-        }
+        // Convert the namespace to a path
+        sProc = Procedure::nameSpaceToPath(sProc, "");
 
 		// Create a valid file name from the procedure name
 		sProc = NumeReKernel::getInstance()->getProcedureInterpreter().ValidFileName(sProc, ".nprc");
