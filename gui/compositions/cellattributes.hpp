@@ -28,7 +28,9 @@
 static wxColour HeadlineColor = wxColour(192, 192, 192);
 static wxColour FrameColor = wxColour(230, 230, 230);
 static wxColour HighlightColor = wxColour(192, 227, 248);
-static wxColour HighlightHeadlineColor = wxColour(131, 200, 241);
+static wxColour HighlightTextColor = wxColour(226, 242, 252);
+//static wxColour HighlightHeadlineColor = wxColour(131, 200, 241);
+static wxColour HighlightHeadlineColor = wxColour(80, 176, 235);
 
 /////////////////////////////////////////////////
 /// \brief Calculates the luminosity of the
@@ -68,7 +70,16 @@ class AdvStringCellRenderer : public wxGridCellStringRenderer
 
         bool isPartOfCursor(const wxGrid& grid, int row, int col)
         {
-            return (grid.GetCursorColumn() == col || grid.GetCursorRow() == row)
+            int rows, cols;
+            grid.GetCellSize(row, col, &rows, &cols);
+
+            int cursorRow = grid.GetCursorRow();
+            int cursorCol = grid.GetCursorColumn();
+
+            int cursorRows, cursorCols;
+            grid.GetCellSize(cursorRow, cursorCol, &cursorRows, &cursorCols);
+
+            return (cursorRow == row || (col <= cursorCol && cursorCol < col+cols) || (cursorCol <= col && col < cursorCol+cursorCols))
                 && !isFrame(grid, row, col);
         }
 
@@ -86,7 +97,14 @@ class AdvStringCellRenderer : public wxGridCellStringRenderer
                 highlightAttr = attr.Clone();
                 highlightAttr->SetBackgroundColour(HighlightHeadlineColor);
                 highlightAttr->SetFont(highlightAttr->GetFont().Bold());
-                highlightAttr->SetAlignment(wxALIGN_LEFT, wxALIGN_CENTER);
+                highlightAttr->SetTextColour(HighlightTextColor);
+
+                int rows, cols;
+
+                if (grid.GetCellSize(row, col, &rows, &cols) == wxGrid::CellSpan_Main)
+                    highlightAttr->SetAlignment(wxALIGN_CENTER, wxALIGN_CENTER);
+                else
+                    highlightAttr->SetAlignment(wxALIGN_LEFT, wxALIGN_CENTER);
             }
             else if (hasCustomColor())
             {
@@ -116,12 +134,19 @@ class AdvStringCellRenderer : public wxGridCellStringRenderer
             return frameAttr;
         }
 
-        wxGridCellAttr* createHeadlineAttr(const wxGridCellAttr& attr)
+        wxGridCellAttr* createHeadlineAttr(const wxGridCellAttr& attr, const wxGrid& grid, int row, int col)
         {
             wxGridCellAttr* headlineAttr = attr.Clone();
             headlineAttr->SetBackgroundColour(HeadlineColor);
             headlineAttr->SetFont(headlineAttr->GetFont().Bold());
-            headlineAttr->SetAlignment(wxALIGN_LEFT, wxALIGN_CENTER);
+
+            int rows, cols;
+
+            if (grid.GetCellSize(row, col, &rows, &cols) == wxGrid::CellSpan_Main)
+                headlineAttr->SetAlignment(wxALIGN_CENTER, wxALIGN_CENTER);
+            else
+                headlineAttr->SetAlignment(wxALIGN_LEFT, wxALIGN_CENTER);
+
             return headlineAttr;
         }
 
@@ -175,7 +200,7 @@ class AdvStringCellRenderer : public wxGridCellStringRenderer
             }
             else if (isHeadLine(grid, row))
             {
-                wxGridCellAttr* newAttr = createHeadlineAttr(attr);
+                wxGridCellAttr* newAttr = createHeadlineAttr(attr, grid, row, col);
                 wxGridCellStringRenderer::Draw(grid, *newAttr, dc, rect, row, col, isSelected);
                 newAttr->DecRef();
             }

@@ -347,15 +347,7 @@ void DebugViewer::OnMenuEvent(wxCommandEvent& event)
 
             break;
         case ID_DEBUG_CANCEL:
-            if (b_transferredControl)
-            {
-                m_terminal->CancelCalculation();
-                m_terminal->continueDebug();
-            }
-
-            GetStatusBar()->SetStatusText(_guilang.get("DBG_ABORTED"), 1);
-            SetTitle("NumeRe: Debugger  [" + _guilang.get("DBG_ABORTED") + "]");
-            EnableDebugger(false);
+            OnDebugCancel();
 
             break;
         case ID_DEBUG_STEP:
@@ -518,6 +510,28 @@ void DebugViewer::OnClose(wxCloseEvent& event)
 
     this->Hide();
     event.Veto();
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This function stops the debugging
+/// process completely and aborts the current
+/// process in the kernel.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
+void DebugViewer::OnDebugCancel()
+{
+    if (b_transferredControl)
+    {
+        m_terminal->CancelCalculation();
+        m_terminal->continueDebug();
+    }
+
+    GetStatusBar()->SetStatusText(_guilang.get("DBG_ABORTED"), 1);
+    SetTitle("NumeRe: Debugger  [" + _guilang.get("DBG_ABORTED") + "]");
+    EnableDebugger(false);
 }
 
 
