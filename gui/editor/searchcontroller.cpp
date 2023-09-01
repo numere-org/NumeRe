@@ -418,40 +418,13 @@ wxString SearchController::FindProcedureDefinition()
 	wxString procedurename = pathname.substr(pathname.rfind('~') + 1); // contains a "$", if it's not used for the "thisfile~" case
 
 	// Handle the namespaces
-	if (pathname.find("$this~") != string::npos)
-	{
-	    // This namespace (the current folder)
-		wxString thispath = m_editor->GetFileNameAndPath();
-		pathname.replace(pathname.find("$this~"), 6, thispath.substr(0, thispath.rfind('\\') + 1));
-
-		while (pathname.find('~') != string::npos)
-			pathname[pathname.find('~')] = '\\';
-	}
-	else if (pathname.find("$thisfile~") != string::npos)
+	if (pathname.find("$thisfile~") != string::npos)
 	{
 	    // local namespace
 		return FindProcedureDefinitionInLocalFile(procedurename);
 	}
 	else
-	{
-	    // All other namespaces
-		if (pathname.find("$main~") != string::npos)
-			pathname.erase(pathname.find("$main~") + 1, 5);
-
-		while (pathname.find('~') != string::npos)
-			pathname[pathname.find('~')] = '/';
-
-		// Add the root folders to the path name
-		if (pathname[0] == '$' && pathname.find(':') == string::npos)
-			pathname.replace(0, 1, vPaths[PROCPATH] + "/");
-		else if (pathname.find(':') == string::npos)
-			pathname.insert(0, vPaths[PROCPATH]);
-		else // pathname.find(':') != string::npos
-		{
-		    // Absolute file paths
-			pathname = pathname.substr(pathname.find('\'') + 1, pathname.rfind('\'') - pathname.find('\'') - 1);
-		}
-	}
+        pathname = Procedure::nameSpaceToPath(pathname.ToStdString(), m_editor->GetFilePath().ToStdString());
 
 	// Find the namespace in absolute procedure paths
 	while (procedurename.find('\'') != string::npos)

@@ -566,19 +566,8 @@ bool Procedure::setProcName(const string& sProc, bool bInstallFileName)
         else if (_sProc.substr(0, 9) == "thisfile~")
             return false;
 
-        // Replace all tilde characters in the current path
-        // string. Consider the special namespace "main", which
-        // is a reference to the toplevel procedure folder
-        for (size_t i = 0; i < _sProc.length(); i++)
-        {
-            if (_sProc[i] == '~')
-            {
-                if (_sProc.length() > 5 && i >= 4 && _sProc.substr(i - 4, 5) == "main~")
-                    _sProc = _sProc.substr(0, i - 4) + _sProc.substr(i + 1);
-                else
-                    _sProc[i] = '/';
-            }
-        }
+        // Convert the namespace to a path
+        _sProc = nameSpaceToPath(_sProc, "");
 
         // Create a valid file name from the procedure name
         sCurrentProcedureName = FileSystem::ValidFileName(_sProc, ".nprc");
@@ -2431,6 +2420,100 @@ std::string Procedure::mangleName(std::string sProcedureName)
     }
 
     return sProcedureName;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Convert the encoded namespace into a
+/// file or folder path (it's a file path, if the
+/// namespace is "thisfile~").
+///
+/// \param sEncodedNameSpace std::string
+/// \param thisPath const std::string&
+/// \param thisFilePath const std::string&
+/// \return std::string
+///
+/////////////////////////////////////////////////
+std::string Procedure::nameSpaceToPath(std::string sEncodedNameSpace, const std::string& thisPath, const std::string& thisFilePath)
+{
+    if (!sEncodedNameSpace.length())
+        return "";
+
+    // Handle the "thisfile" namespace by using the call stack
+    // to obtain the corresponding file name
+    if (sEncodedNameSpace.find("thisfile~") != std::string::npos)
+        return thisFilePath;
+
+    // Only extract the namespace of the procedure
+    if (sEncodedNameSpace.front() == '$')
+        sEncodedNameSpace.erase(0, 1);
+
+    if (sEncodedNameSpace.find('(') != std::string::npos)
+        sEncodedNameSpace.erase(sEncodedNameSpace.find('('));
+
+    if (sEncodedNameSpace.front() == '\'')
+        sEncodedNameSpace.erase(0, 1);
+
+    if (sEncodedNameSpace.back() == '\'')
+        sEncodedNameSpace.pop_back();
+
+    // Replace all tilde characters in the current path
+    // string. Consider the special namespace "main", which
+    // is a reference to the toplevel procedure folder
+    if (sEncodedNameSpace.substr(0, 5) == "this~")
+        sEncodedNameSpace.replace(0, 4, thisPath);
+
+    if (sEncodedNameSpace.substr(0, 5) == "main~")
+        sEncodedNameSpace.erase(0, 4); // could leave a leading ~
+
+    replaceAll(sEncodedNameSpace, "~~", "/../");
+    replaceAll(sEncodedNameSpace, "~", "/");
+
+    if (sEncodedNameSpace.find(':') == std::string::npos)
+        sEncodedNameSpace.insert(0, NumeReKernel::getInstance()->getSettings().getProcPath() + "/");
+
+    replaceAll(sEncodedNameSpace, "//", "/");
+    replaceAll(sEncodedNameSpace, "\\", "/");
+
+    size_t relPos;
+
+    // Clean relative file paths
+    while ((relPos = sEncodedNameSpace.find("/../")) != std::string::npos)
+    {
+        size_t prevFolder = sEncodedNameSpace.rfind('/', relPos-1);
+
+        if (prevFolder != std::string::npos)
+            sEncodedNameSpace.erase(prevFolder, relPos+3-prevFolder);
+        else
+            break;
+    }
+
+    return sEncodedNameSpace;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Simple helper to clean a relative
+/// namespace. Only works on encoded namespaces.
+///
+/// \param nameSpace std::string&
+/// \return void
+///
+/////////////////////////////////////////////////
+void Procedure::cleanRelativeNameSpaces(std::string& nameSpace)
+{
+    size_t relPos;
+
+    // Clean relative file paths
+    while ((relPos = nameSpace.find("~~")) != std::string::npos)
+    {
+        size_t prevFolder = nameSpace.rfind('~', relPos-1);
+
+        if (prevFolder != std::string::npos)
+            nameSpace.erase(prevFolder, relPos+1-prevFolder);
+        else
+            nameSpace.erase(0, relPos+2);
+    }
 }
 
 
