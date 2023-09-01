@@ -666,13 +666,6 @@ static const string handleCachedDataAccess(string& sLine, Parser& _parser, Memor
 			continue;
 		}
 
-//		if (_access.flags & mu::CachedDataAccess::IS_INLINE_METHOD)
-//		{
-//			// handle cached MAF methods
-//		    createMafVectorName(_access.sAccessEquation);
-//			continue;
-//		}
-
 		// Create an index
 		Indices _idx;
 
@@ -985,23 +978,13 @@ static void handleMafDataAccess(string& sLine, const string& sMafAccess, Parser&
         }
         else
             _parser.DisableAccessCaching();
-//        else
-//        {
-//            // Create a cached access and store it
-//            mu::CachedDataAccess _access = {sMafAccess,
-//                                            sMafVectorName,
-//                                            sMafAccess.substr(0, sMafAccess.find('(')),
-//                                            mu::CachedDataAccess::IS_INLINE_METHOD};
-//            _parser.CacheCurrentAccess(_access);
-//        }
     }
     else
     {
         NumeRe::StringParser& _stringParser = NumeReKernel::getInstance()->getStringParser();
 
-        if (sMafVectorName.front() == '{')
-            sMafVectorName = _stringParser.createTempStringVectorVar(getAllArguments(sMafVectorName.substr(1, sMafVectorName.length()-2)));
-        else
+        // Ensure that it is a string vector
+        if (sMafVectorName.front() == '"')
             sMafVectorName = _stringParser.createTempStringVectorVar({sMafVectorName});
 
         _parser.DisableAccessCaching();
@@ -1316,31 +1299,23 @@ static std::string tableMethod_typeof(const std::string& sTableName, std::string
     _kernel->getParser().SetExpr(sMethodArguments);
     mu::value_type* v = _kernel->getParser().Eval(nResults);
 
-    std::string sRet;
+    std::vector<std::string> vRet;
 
     for (int i = 0; i < nResults; i++)
     {
-        if (sRet.length())
-            sRet += ",";
-
         TableColumn::ColumnType type = _kernel->getMemoryManager().getType(VectorIndex(intCast(v[i])-1), sTableName);
-        sRet += "\"" + TableColumn::typeToString(type) + "\"";
+        vRet.push_back("\"" + TableColumn::typeToString(type) + "\"");
     }
 
-    if (sRet.length())
-    {
-        if (sRet.find(',') != std::string::npos)
-            return "{" + sRet + "}";
-
-        return sRet;
-    }
+    if (vRet.size())
+        return _kernel->getStringParser().createTempStringVectorVar(vRet);
 
     return "\"\"";
 }
 
 
 /////////////////////////////////////////////////
-/// \brief Realizes the "categories()" table
+/// \brief Realizes the "categoriesof()" table
 /// method.
 ///
 /// \param sTableName const std::string&
@@ -1362,17 +1337,13 @@ static std::string tableMethod_categories(const std::string& sTableName, std::st
     if (!vCategories.size())
         return "\"\"";
 
-    std::string sRet;
-
     for (size_t i = 0; i < vCategories.size(); i+=2)
     {
-        if (sRet.length())
-            sRet += ",";
-
-        sRet += "\"" + vCategories[i] + "\"," + vCategories[i+1];
+        // convert category labels to parser strings
+        vCategories[i] = "\"" + vCategories[i] + "\"";
     }
 
-    return "{" + sRet + "}";
+    return _kernel->getStringParser().createTempStringVectorVar(vCategories);
 }
 
 
@@ -1416,17 +1387,13 @@ static std::string tableMethod_categorize(const std::string& sTableName, std::st
         if (!vCategories.size())
             return "\"\"";
 
-        std::string sRet;
-
         for (size_t i = 0; i < vCategories.size(); i+=2)
         {
-            if (sRet.length())
-                sRet += ",";
-
-            sRet += "\"" + vCategories[i] + "\"," + vCategories[i+1];
+            // convert the category names to parser strings
+            vCategories[i] = "\"" + vCategories[i] + "\"";
         }
 
-        return "{" + sRet + "}";
+        return _kernel->getStringParser().createTempStringVectorVar(vCategories);
     }
 
     return "\"\"";
@@ -1496,22 +1463,15 @@ static std::string tableMethod_counteq(const std::string& sTableName, std::strin
         sMethodArguments += " -nq";
         NumeRe::StringParser::StringParserRetVal res = _kernel->getStringParser().evalAndFormat(sMethodArguments, sDummy, true);
 
-        if (res == NumeRe::StringParser::STRING_NUMERICAL)
-        {
-            _kernel->getParser().SetExpr(sMethodArguments);
-            v = _kernel->getParser().Eval(nResults);
-
-            vResults = _kernel->getMemoryManager().countIfEqual(sTableName, vCols,
-                                                                std::vector<mu::value_type>(v, v+nResults),
-                                                                std::vector<std::string>());
-        }
-        else
+        if (res != NumeRe::StringParser::STRING_NUMERICAL)
             vResults = _kernel->getMemoryManager().countIfEqual(sTableName, vCols,
                                                                 std::vector<mu::value_type>(),
                                                                 _kernel->getAns().getInternalStringArray());
     }
-    else
+
+    if (!vResults.size())
     {
+        // Either no string expression or a numerical result
         _kernel->getParser().SetExpr(sMethodArguments);
         v = _kernel->getParser().Eval(nResults);
 
@@ -1526,7 +1486,7 @@ static std::string tableMethod_counteq(const std::string& sTableName, std::strin
 
 
 /////////////////////////////////////////////////
-/// \brief Realizes the "index()" table method.
+/// \brief Realizes the "indexof()" table method.
 ///
 /// \param sTableName const std::string&
 /// \param sMethodArguments std::string
@@ -1552,22 +1512,15 @@ static std::string tableMethod_index(const std::string& sTableName, std::string 
         sMethodArguments += " -nq";
         NumeRe::StringParser::StringParserRetVal res = _kernel->getStringParser().evalAndFormat(sMethodArguments, sDummy, true);
 
-        if (res == NumeRe::StringParser::STRING_NUMERICAL)
-        {
-            _kernel->getParser().SetExpr(sMethodArguments);
-            v = _kernel->getParser().Eval(nResults);
-
-            vResults = _kernel->getMemoryManager().getIndex(sTableName, col,
-                                                            std::vector<mu::value_type>(v, v+nResults),
-                                                            std::vector<std::string>());
-        }
-        else
+        if (res != NumeRe::StringParser::STRING_NUMERICAL)
             vResults = _kernel->getMemoryManager().getIndex(sTableName, col,
                                                             std::vector<mu::value_type>(),
                                                             _kernel->getAns().getInternalStringArray());
     }
-    else
+
+    if (!vResults.size())
     {
+        // Either no string expression or a numerical result
         _kernel->getParser().SetExpr(sMethodArguments);
         v = _kernel->getParser().Eval(nResults);
 
@@ -1582,7 +1535,7 @@ static std::string tableMethod_index(const std::string& sTableName, std::string 
 
 
 /////////////////////////////////////////////////
-/// \brief Realizes the "cov()" table method.
+/// \brief Realizes the "covarof()" table method.
 ///
 /// \param sTableName const std::string&
 /// \param sMethodArguments std::string
@@ -1603,7 +1556,7 @@ static std::string tableMethod_cov(const std::string& sTableName, std::string sM
     mu::value_type* v = _kernel->getParser().Eval(nResults);
 
     if (nResults < 2)
-        throw SyntaxError(SyntaxError::TOO_FEW_COLS, sTableName + "().cov()", ".cov(", ".cov(");
+        throw SyntaxError(SyntaxError::TOO_FEW_COLS, sTableName + "().covarof()", ".covarof(", ".covarof(");
 
     size_t col1 = intCast(v[0])-1;
     size_t col2 = intCast(v[1])-1;
@@ -1636,7 +1589,7 @@ static std::string tableMethod_cov(const std::string& sTableName, std::string sM
 
 
 /////////////////////////////////////////////////
-/// \brief Realizes the "pcorr()" table method.
+/// \brief Realizes the "pcorrof()" table method.
 ///
 /// \param sTableName const std::string&
 /// \param sMethodArguments std::string
@@ -1657,7 +1610,7 @@ static std::string tableMethod_pcorr(const std::string& sTableName, std::string 
     mu::value_type* v = _kernel->getParser().Eval(nResults);
 
     if (nResults < 2)
-        throw SyntaxError(SyntaxError::TOO_FEW_COLS, sTableName + "().pcorr()", ".pcorr(", ".pcorr(");
+        throw SyntaxError(SyntaxError::TOO_FEW_COLS, sTableName + "().pcorrof()", ".pcorrof(", ".pcorrof(");
 
     size_t col1 = intCast(v[0])-1;
     size_t col2 = intCast(v[1])-1;
@@ -1690,7 +1643,7 @@ static std::string tableMethod_pcorr(const std::string& sTableName, std::string 
 
 
 /////////////////////////////////////////////////
-/// \brief Realizes the "scorr()" table method.
+/// \brief Realizes the "scorrof()" table method.
 ///
 /// \param sTableName const std::string&
 /// \param sMethodArguments std::string
@@ -1711,7 +1664,7 @@ static std::string tableMethod_scorr(const std::string& sTableName, std::string 
     mu::value_type* v = _kernel->getParser().Eval(nResults);
 
     if (nResults < 2)
-        throw SyntaxError(SyntaxError::TOO_FEW_COLS, sTableName + "().scorr()", ".scorr(", ".scorr(");
+        throw SyntaxError(SyntaxError::TOO_FEW_COLS, sTableName + "().scorrof()", ".scorrof(", ".scorrof(");
 
     size_t col1 = intCast(v[0])-1;
     size_t col2 = intCast(v[1])-1;
@@ -1744,7 +1697,7 @@ static std::string tableMethod_scorr(const std::string& sTableName, std::string 
 
 
 /////////////////////////////////////////////////
-/// \brief Realizes the "zscore()" table method.
+/// \brief Realizes the "zscoreof()" table method.
 ///
 /// \param sTableName const std::string&
 /// \param sMethodArguments std::string
@@ -1783,7 +1736,7 @@ static std::string tableMethod_zscore(const std::string& sTableName, std::string
 
 
 /////////////////////////////////////////////////
-/// \brief Realizes the "anova()" table method.
+/// \brief Realizes the "anovaof()" table method.
 ///
 /// \param sTableName const std::string&
 /// \param sMethodArguments std::string
@@ -1804,7 +1757,7 @@ static std::string tableMethod_anova(const std::string& sTableName, std::string 
     mu::value_type* v = _kernel->getParser().Eval(nResults);
 
     if (nResults < 2)
-        throw SyntaxError(SyntaxError::TOO_FEW_COLS, sTableName + "().anovafor()", ".anovafor(", ".anovafor(");
+        throw SyntaxError(SyntaxError::TOO_FEW_COLS, sTableName + "().anovaof()", ".anovaof(", ".anovaof(");
 
     size_t col1 = intCast(v[0])-1;
     size_t col2 = intCast(v[1])-1;
@@ -1830,15 +1783,20 @@ static std::string tableMethod_anova(const std::string& sTableName, std::string 
 
     AnovaResult res = _kernel->getMemoryManager().getOneWayAnova(sTableName, col1, col2, vIndex, significance);
 
-    std::string sRet = "{";
+    std::vector<std::string> vRet;
 
-    sRet += "\"FisherRatio\"," + toString(res.m_FRatio) + ",";
-    sRet += "\"FisherSignificanceVal\"," + toString(res.m_significanceVal) + ",";
-    sRet += "\"SignificanceLevel\"," + toString(res.m_significance) + ",";
-    sRet += "\"SignificantVariation\"," + toString(res.m_isSignificant) + ",";
-    sRet += "\"Categories\"," + toString(res.m_numCategories) + "}";
+    vRet.push_back("\"FisherRatio\"");
+    vRet.push_back(toString(res.m_FRatio));
+    vRet.push_back("\"FisherSignificanceVal\"");
+    vRet.push_back(toString(res.m_significanceVal));
+    vRet.push_back("\"SignificanceLevel\"");
+    vRet.push_back(toString(res.m_significance));
+    vRet.push_back("\"SignificantVariation\"");
+    vRet.push_back(toString(res.m_isSignificant));
+    vRet.push_back("\"Categories\"");
+    vRet.push_back(toString(res.m_numCategories));
 
-    return sRet;
+    return _kernel->getStringParser().createTempStringVectorVar(vRet);
 }
 
 
