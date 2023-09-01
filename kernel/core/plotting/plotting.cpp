@@ -3693,9 +3693,12 @@ std::vector<std::string> Plot::separateFunctionsAndData()
         sToken = getNextArgument(sFuncTemp, true);
         size_t nPos = sToken.find_first_of("#\"");
 
+        if (sToken.find_first_of("([{") < nPos)
+            nPos = sToken.find_first_of("#\"", getMatchingParenthesis(sToken));
+
         // Ensure we don't have a string expression right here
-        if (!nPos || NumeReKernel::getInstance()->getStringParser().isStringExpression(sToken.substr(0, nPos)))
-            throw SyntaxError(SyntaxError::CANNOT_PLOT_STRINGS, sCurrentExpr, sToken, sToken);
+        //if (!nPos || NumeReKernel::getInstance()->getStringParser().isStringExpression(sToken.substr(0, nPos)))
+        //    throw SyntaxError(SyntaxError::CANNOT_PLOT_STRINGS, sCurrentExpr, sToken, sToken);
 
         if (_data.containsTablesOrClusters(sToken))
         {
@@ -4122,7 +4125,6 @@ void Plot::extractDataValues(const std::vector<std::string>& vDataPlots)
 /////////////////////////////////////////////////
 void Plot::createDataLegends()
 {
-#warning TODO (numere#3#04/24/23): Rework this function to follow more modern approaches
     // Examine all data labels
     for (size_t i = 0; i < m_manager.assets.size(); i++)
     {
@@ -4131,12 +4133,12 @@ void Plot::createDataLegends()
 
         // Extraxt the current label and
         // remove the surrounding quotation marks
-        std::string sTemp = removeQuotationMarks(m_manager.assets[i].legend);
+        std::string sTemp = toInternalString(m_manager.assets[i].legend);
 
         // Try to find a data object in the current label
         if (_data.containsTables(sTemp)
-                && (sTemp.find(',') != string::npos || sTemp.substr(sTemp.find('('), 2) == "()")
-                && sTemp.find(')') != string::npos)
+                && (sTemp.find(',') != std::string::npos || sTemp.substr(sTemp.find('('), 2) == "()")
+                && sTemp.find(')') != std::string::npos)
         {
             // Ensure that the referenced data object contains valid data
             if (_data.containsTablesOrClusters(sTemp) && !_data.isValid())
@@ -4144,198 +4146,100 @@ void Plot::createDataLegends()
 
             // Strip all spaces and extract the table name
             StripSpaces(sTemp);
-            string sTableName = sTemp.substr(0, sTemp.find('('));
+            DataAccessParser _access = getAccessParserForPlotAndFit(sTemp);
+            std::string sTableName = _access.getDataObject();
 
-            // Ensure that the parentheses are matching each other
-            if (getMatchingParenthesis(sTemp.substr(sTemp.find('('))) == string::npos)
-                throw SyntaxError(SyntaxError::UNMATCHED_PARENTHESIS, sTemp, sTemp.find('('));
+            const VectorIndex& vCols = _access.getIndices().col;
 
-            // Extract the argument of the data object
-            string sArgs = sTemp.substr(sTemp.find('('), getMatchingParenthesis(sTemp.substr(sTemp.find('('))) + 1);
-
-            // Update the data dimension variables
-            _data.updateDimensionVariables(sTableName);
-
-            // Expand empty parentheses
-            if (sArgs == "()")
-                sArgs = ":,:";
-            else
-                sArgs = sArgs.substr(1, sArgs.length()-2);
-
-            string sArg_1 = sArgs;
-            string sArg_2 = "<<empty>>";
-            string sArg_3 = "<<empty>>";
-
-            // Get the second dimension of the argument parentheses
-            getNextArgument(sArg_1, true);
-            StripSpaces(sArg_1);
-
-            // If the second dimension contains one or more colons,
-            // extract the individual columns here
-            if (sArg_1 == ":")
+            if (vCols.numberOfNodes() == 1)
+                sTemp = "\"" + _data.getTopHeadLineElement(vCols.front(), sTableName) + "\"";
+            else if (vCols.numberOfNodes() == 2)
             {
-                sArg_1 = "";
-                sArg_2 = "";
-            }
-            else if (sArg_1.find(':') != string::npos)
-            {
-                auto indices = getAllIndices(sArg_1);
-                sArg_1 = indices[0];
+                if (vCols.isOpenEnd())
+                    sTemp = "\"" + _data.getTopHeadLineElement(vCols[1], sTableName) + " vs. "
+                        + _data.getTopHeadLineElement(vCols[0], sTableName) + "\"";
+                else
+                    sTemp = "\"" + _data.getTopHeadLineElement(vCols.last(), sTableName) + " vs. "
+                        + _data.getTopHeadLineElement(vCols.front(), sTableName) + "\"";
 
-                if (indices.size() > 1)
-                {
-                    sArg_2 = indices[1];
 
-                    if (indices.size() > 2)
-                        sArg_3 = indices[2];
-                }
-                else if (_data.containsTablesOrClusters(sArg_1))
-                {
-                    getDataElements(sArg_1, _parser, _data, _option);
-                }
-            }
-
-            // Strip surrounding whitespaces
-            StripSpaces(sArg_1);
-
-            // Handle special cases
-            if (!sArg_1.length() && !sArg_2.length() && sArg_3 == "<<empty>>")
-            {
-                sArg_1 = "1";
-            }
-            else if (!sArg_1.length())
-                continue;
-
-            // Parse the single arguments to extract the corresponding
-            // headline elements
-            if (sArg_2 == "<<empty>>" && sArg_3 == "<<empty>>")
-            {
-                // Only one index or an index vector
-                sTemp = "\"" + constructDataLegendElement(sArg_1, sTableName, _pInfo.sCommand != "plot3d") + "\"";
-            }
-            else if (sArg_2.length())
-            {
                 // First and second index value available
                 if (_pInfo.sCommand != "plot3d")
                 {
                     // Standard plot
-                    if (!(_pData.getSettings(PlotData::LOG_YERROR) || _pData.getSettings(PlotData::LOG_XERROR)) && sArg_3 == "<<empty>>")
+                    if (!(_pData.getSettings(PlotData::LOG_YERROR) || _pData.getSettings(PlotData::LOG_XERROR)))
                     {
                         // Handle here barcharts
                         if (_pData.getSettings(PlotData::FLOAT_BARS) || _pData.getSettings(PlotData::FLOAT_HBARS))
                         {
-                            double dArg_1, dArg_2;
-                            _parser.SetExpr(sArg_1);
-                            dArg_1 = _parser.Eval().real();
-                            _parser.SetExpr(sArg_2);
-                            dArg_2 = _parser.Eval().real();
                             sTemp = "\"";
 
                             // Don't use the first one
-                            for (int i = intCast(dArg_1); i < intCast(dArg_2); i++)
+                            for (int i = 0; i < vCols.size(); i++)
                             {
-                                sTemp += _data.getTopHeadLineElement(i, sTableName) + "\n";
+                                sTemp += _data.getTopHeadLineElement(vCols[i], sTableName) + "\n";
                             }
 
-                            sTemp.pop_back();
-                            sTemp += "\"";
+                            sTemp.back() = '"';
                         }
                         else
-                            sTemp = "\"" + constructDataLegendElement(sArg_2, sTableName)
-                                    + " vs. " + constructDataLegendElement(sArg_1, sTableName) + "\"";
+                            sTemp = "\"" + _data.getTopHeadLineElement(vCols.last(), sTableName) + " vs. "
+                                + _data.getTopHeadLineElement(vCols.front(), sTableName) + "\"";
                     }
-                    else if (sArg_3 != "<<empty>>")
-                        sTemp = "\"" + constructDataLegendElement(sArg_2, sTableName)
-                                + " vs. " + constructDataLegendElement(sArg_1, sTableName) + "\"";
                     else
                     {
-                        double dArg_1, dArg_2;
-                        _parser.SetExpr(sArg_1);
-                        dArg_1 = _parser.Eval().real();
-                        _parser.SetExpr(sArg_2);
-                        dArg_2 = _parser.Eval().real();
-
-                        if (dArg_1 < dArg_2)
-                            sTemp = "\"" + _data.getTopHeadLineElement((int)dArg_1, sTableName)
-                                    + " vs. " + _data.getTopHeadLineElement((int)dArg_1 - 1, sTableName) + "\"";
-                        else
-                            sTemp = "\"" + _data.getTopHeadLineElement((int)dArg_2 - 1, sTableName)
-                                    + " vs. " + _data.getTopHeadLineElement((int)dArg_2, sTableName) + "\"";
+                        sTemp = "\"" + _data.getTopHeadLineElement(vCols[1], sTableName) + " vs. "
+                            + _data.getTopHeadLineElement(vCols[0], sTableName) + "\"";
                     }
                 }
-                else if (sArg_3 == "<<empty>>" || !sArg_3.length())
+                else
                 {
                     // three-dimensional plot
-                    double dArg_1, dArg_2;
-                    _parser.SetExpr(sArg_1);
-                    dArg_1 = _parser.Eval().real();
-                    _parser.SetExpr(sArg_2);
-                    dArg_2 = _parser.Eval().real();
-
-                    if (dArg_1 < dArg_2)
-                        sTemp = "\"" + _data.getTopHeadLineElement((int)dArg_1 - 1, sTableName) + ", "
-                            + _data.getTopHeadLineElement((int)dArg_2 - 2, sTableName) + ", "
-                            + _data.getTopHeadLineElement((int)dArg_2 - 1, sTableName) + "\"";
-                    else
-                        sTemp = "\"" + _data.getTopHeadLineElement((int)dArg_2 - 1, sTableName) + ", "
-                            + _data.getTopHeadLineElement((int)dArg_1 - 2, sTableName) + ", "
-                            + _data.getTopHeadLineElement((int)dArg_1 - 1, sTableName) + "\"";
-                }
-                else if (sArg_3.length())
-                {
-                    // Three dimensional plot
-                    sTemp = "\"" + constructDataLegendElement(sArg_1, sTableName) + ", "
-                            + constructDataLegendElement(sArg_2, sTableName) + ", "
-                            + constructDataLegendElement(sArg_3, sTableName) + "\"";
+                    sTemp = "\"" + _data.getTopHeadLineElement(vCols[0], sTableName) + ", "
+                        + _data.getTopHeadLineElement(vCols[1], sTableName) + ", "
+                        + _data.getTopHeadLineElement(vCols[2], sTableName) + "\"";
                 }
             }
-            else if (!sArg_2.length())
+            else if (vCols.numberOfNodes() == 3)
             {
-                // second index open end
                 if (_pInfo.sCommand != "plot3d")
                 {
-                    // Handle here barcharts
-                    if (_pData.getSettings(PlotData::FLOAT_BARS) || _pData.getSettings(PlotData::FLOAT_HBARS))
+                    // Standard plot
+                    if (!(_pData.getSettings(PlotData::LOG_YERROR) || _pData.getSettings(PlotData::LOG_XERROR)))
                     {
-                        double dArg_1;
-                        _parser.SetExpr(sArg_1);
-                        dArg_1 = _parser.Eval().real();
-
-                        sTemp = "\"";
-
-                        // Don't use the first one
-                        for (int i = intCast(dArg_1); i < _data.getCols(sTableName, false); i++)
+                        // Handle here barcharts
+                        if (_pData.getSettings(PlotData::FLOAT_BARS) || _pData.getSettings(PlotData::FLOAT_HBARS))
                         {
-                            sTemp += _data.getTopHeadLineElement(i, sTableName) + "\n";
-                        }
+                            sTemp = "\"";
 
-                        sTemp.pop_back();
-                        sTemp += "\"";
+                            // Don't use the first one
+                            for (int i = 0; i < vCols.size(); i++)
+                            {
+                                sTemp += _data.getTopHeadLineElement(vCols[i], sTableName) + "\n";
+                            }
+
+                            sTemp.back() = '"';
+                        }
+                        else
+                            sTemp = "\"" + _data.getTopHeadLineElement(vCols[1], sTableName) + " vs. "
+                                + _data.getTopHeadLineElement(vCols[0], sTableName) + "\"";
                     }
                     else
                     {
-                        _parser.SetExpr(sArg_1);
-                        sTemp = "\"" + _data.getTopHeadLineElement(intCast(_parser.Eval()), sTableName)
-                                + " vs. " + _data.getTopHeadLineElement(intCast(_parser.Eval()) - 1, sTableName) + "\"";
+                        sTemp = "\"" + _data.getTopHeadLineElement(vCols[1], sTableName) + " vs. "
+                            + _data.getTopHeadLineElement(vCols[0], sTableName) + "\"";
                     }
                 }
-                else if (sArg_3 == "<<empty>>" || !sArg_3.length())
+                else
                 {
-                    _parser.SetExpr(sArg_1);
-                    sTemp = "\"" + _data.getTopHeadLineElement(intCast(_parser.Eval()) - 1, sTableName) + ", "
-                            + _data.getTopHeadLineElement(intCast(_parser.Eval()), sTableName) + ", "
-                            + _data.getTopHeadLineElement(intCast(_parser.Eval()) + 1, sTableName) + "\"";
+                    // three-dimensional plot
+                    std::vector<int> vNodes = vCols.getVector();
+                    sTemp = "\"" + _data.getTopHeadLineElement(vNodes[0], sTableName) + ", "
+                        + _data.getTopHeadLineElement(vNodes[1], sTableName) + ", "
+                        + _data.getTopHeadLineElement(vNodes[2], sTableName) + "\"";
                 }
-                else if (sArg_3.length())
-                {
-                    _parser.SetExpr(sArg_1);
-                    sTemp = "\"" + _data.getTopHeadLineElement(intCast(_parser.Eval()) - 1, sTableName)
-                            + ", " + _data.getTopHeadLineElement(intCast(_parser.Eval()), sTableName) + ", ";
-                    sTemp += constructDataLegendElement(sArg_3, sTableName) + "\"";
-                }
+
             }
-            else
-                continue;
 
             // Prepend backslashes before opening and closing
             // braces
@@ -4352,67 +4256,6 @@ void Plot::createDataLegends()
             m_manager.assets[i].legend = sTemp;
         }
     }
-}
-
-
-/////////////////////////////////////////////////
-/// \brief This member function is used to
-/// construct special legend elements.
-///
-/// \param sColumnIndices string&
-/// \param sTableName const string&
-/// \param useBrackets bool
-/// \return string
-///
-/////////////////////////////////////////////////
-string Plot::constructDataLegendElement(string& sColumnIndices, const string& sTableName, bool useBrackets)
-{
-    if (NumeReKernel::getInstance()->getMemoryManager().containsTablesOrClusters(sColumnIndices))
-        getDataElements(sColumnIndices, _parser, NumeReKernel::getInstance()->getMemoryManager(), NumeReKernel::getInstance()->getSettings());
-
-    value_type* v = nullptr;
-    int nResults = 0;
-
-    // Set the expression and evaluate it
-    _parser.SetExpr(sColumnIndices);
-    v = _parser.Eval(nResults);
-
-    // If only one value, simply return the corresponding head line
-    if (nResults == 1)
-        return _data.getTopHeadLineElement(intCast(v[0]) - 1, sTableName);
-
-    string sFirst = useBrackets ? "[" : "";
-    string sLast = useBrackets ? "]" : "";
-    char cSep = ',';
-    int nStart = 0;
-
-    // Barcharts and boxplots will need other legend strings
-    if (_pInfo.sCommand == "plot"
-        && (_pData.getSettings(PlotData::FLOAT_BARS)
-            || _pData.getSettings(PlotData::LOG_BOXPLOT)
-            || _pData.getSettings(PlotData::FLOAT_HBARS)))
-    {
-        sFirst.clear();
-        sLast.clear();
-        cSep = '\n';
-        nStart = 1;
-    }
-
-    if (_pInfo.sCommand == "plot"
-        && (_pData.getSettings(PlotData::LOG_OHLC) || _pData.getSettings(PlotData::LOG_CANDLESTICK))
-        && nResults > 4)
-        nStart = 1;
-
-    string sLegend = sFirst;
-
-    // combine the legend strings
-    for (int i = nStart; i < nResults; i++)
-    {
-        sLegend += _data.getTopHeadLineElement(intCast(v[i]) - 1, sTableName);
-        if (i + 1 < nResults)
-            sLegend += cSep;
-    }
-    return sLegend + sLast;
 }
 
 

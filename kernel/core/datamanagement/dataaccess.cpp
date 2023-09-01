@@ -976,6 +976,9 @@ static void handleMafDataAccess(string& sLine, const string& sMafAccess, Parser&
                                             mu::CachedDataAccess::IS_TABLE_METHOD};
             _parser.CacheCurrentAccess(_access);
         }
+        else
+#warning FIXME (erik.haenel#1#): This is a temporary fix because the table methods lack a good calling interface
+            _parser.DisableAccessCaching();
     }
     else
     {
@@ -985,6 +988,8 @@ static void handleMafDataAccess(string& sLine, const string& sMafAccess, Parser&
             sMafVectorName = _stringParser.createTempStringVectorVar(getAllArguments(sMafVectorName.substr(1, sMafVectorName.length()-2)));
         else
             sMafVectorName = _stringParser.createTempStringVectorVar({sMafVectorName});
+
+        _parser.DisableAccessCaching();
     }
 
 	// Replace every occurence
