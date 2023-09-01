@@ -99,6 +99,8 @@ class Procedure : public FlowCtrl, public PackageManager
 
         Returnvalue execute(std::string sProc, std::string sVarList, mu::Parser& _parser, FunctionDefinitionManager& _functions, MemoryManager& _data, Settings& _option, Output& _out, PlotData& _pData, Script& _script, size_t nth_procedure = 0);
         static std::string mangleName(std::string sProcedureName);
+        static std::string nameSpaceToPath(std::string sEncodedNameSpace, const std::string& thisPath, const std::string& thisFilePath = "");
+        static void cleanRelativeNameSpaces(std::string& nameSpace);
         virtual FlowCtrl::ProcedureInterfaceRetVal procedureInterface(std::string& sLine, mu::Parser& _parser, FunctionDefinitionManager& _functions, MemoryManager& _data, Output& _out, PlotData& _pData, Script& _script, Settings& _option, int nth_command = 0) override;
         bool writeProcedure(std::string sProcedureLine);
         virtual int isInline(const std::string& sProc) override;
