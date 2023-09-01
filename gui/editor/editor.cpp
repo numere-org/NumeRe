@@ -4351,7 +4351,7 @@ wxFileName NumeReEditor::GetFileName()
 //////////////////////////////////////////////////////////////////////////////
 wxString NumeReEditor::GetFilePath()
 {
-    return m_fileNameAndPath.GetPath(false, m_bLastSavedRemotely ? wxPATH_UNIX : wxPATH_DOS);
+    return m_fileNameAndPath.GetPath();
 }
 
 
@@ -5506,18 +5506,8 @@ void NumeReEditor::FindAndOpenProcedure(const wxString& procedurename)
         }
     }
 
-
     // Resolve the namespaces
-    if (pathname.find("$this~") != string::npos)
-    {
-        // Get the current namespace and replace it
-        wxString thispath = GetFileNameAndPath();
-        pathname.replace(pathname.find("$this~"), 6, thispath.substr(0, thispath.rfind('\\') + 1));
-
-        while (pathname.find('~') != string::npos)
-			pathname[pathname.find('~')] = '\\';
-    }
-    else if (pathname.find("$thisfile~") != string::npos)
+    if (pathname.find("$thisfile~") != string::npos)
     {
         // Search for the procedure in the current file
         wxString name = pathname.substr(pathname.rfind('~') + 1);
@@ -5575,24 +5565,7 @@ void NumeReEditor::FindAndOpenProcedure(const wxString& procedurename)
         return;
     }
     else
-    {
-        // Usual case: replace the namespace syntax with
-        // the path syntax
-        if (pathname.find("$main~") != string::npos)
-            pathname.erase(pathname.find("$main~") + 1, 5);
-
-        while (pathname.find('~') != string::npos)
-            pathname[pathname.find('~')] = '/';
-
-        if (pathname[0] == '$' && pathname.find(':') == string::npos)
-            pathname.replace(0, 1, vPaths[5] + "/");
-        else if (pathname.find(':') == string::npos)
-            pathname.insert(0, vPaths[5]);
-        else if (pathname.find('\'') != string::npos)
-            pathname = pathname.substr(pathname.find('\'') + 1, pathname.rfind('\'') - pathname.find('\'') - 1);
-        else if (pathname[0] == '$')
-            pathname.erase(0, 1);
-    }
+        pathname = Procedure::nameSpaceToPath(pathname.ToStdString(), GetFilePath().ToStdString());
 
     wxArrayString pathnames;
     pathnames.Add(pathname + ".nprc");
