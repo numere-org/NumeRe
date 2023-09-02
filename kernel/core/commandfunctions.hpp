@@ -331,11 +331,12 @@ static bool newObject(string& sCmd, Parser& _parser, MemoryManager& _data, Setti
 			sFileName = "<>/" + sFileName;
 
         sFileName = _fSys.ValidizeAndPrepareName(sFileName, ".txt");
+        StringView fileName(sFileName);
 
-        if (sFileName.substr(sFileName.rfind('.')) == ".nprc"
-				|| sFileName.substr(sFileName.rfind('.')) == ".nscr"
-				|| sFileName.substr(sFileName.rfind('.')) == ".nlyt"
-				|| sFileName.substr(sFileName.rfind('.')) == ".ndat")
+        if (fileName.ends_with(".nprc")
+            || fileName.ends_with(".nscr")
+            || fileName.ends_with(".nlyt")
+            || fileName.ends_with(".ndat"))
 			sFileName.replace(sFileName.rfind('.'), 5, ".txt");
 
         if (!prepareTemplate("tmpl_file", sFileName))
@@ -487,109 +488,124 @@ static bool editObject(string& sCmd, Parser& _parser, MemoryManager& _data, Sett
 			sObject.erase(sObject.rfind('-'));
 	}
 
-	StripSpaces(sObject);
+	MutableStringView viewedObject(sObject);
+	viewedObject.strip();
 	FileSystem _fSys;
 	_fSys.setTokens(_option.getTokenPaths());
 
-	if (sObject.find('.') != string::npos)
-		_fSys.declareFileType(sObject.substr(sObject.rfind('.')));
+	if (viewedObject.find('.') != string::npos)
+		_fSys.declareFileType(viewedObject.subview(viewedObject.rfind('.')).to_string());
 
-	if (!sObject.length())
+	if (!viewedObject.length())
 		throw SyntaxError(SyntaxError::NO_FILENAME, sCmd, SyntaxError::invalid_position);
 
-	if (sObject[0] == '$'  && sObject[1] != '\'')
-		sObject = "<procpath>/" + sObject.substr(1);
-	else if (sObject[0] == '$')
-		sObject.erase(0, 1);
+	if (viewedObject[0] == '$'  && viewedObject[1] != '\'')
+        viewedObject.replace(0, 1, "<procpath>/");
+	else if (viewedObject[0] == '$')
+		viewedObject.trim_front(1);
 
-	while (sObject.find('~') != string::npos)
-		sObject[sObject.find('~')] = '/';
+	while (viewedObject.find('~') != string::npos)
+		viewedObject[viewedObject.find('~')] = '/';
 
 	while (sObject.find('$') != string::npos)
 		sObject.erase(sObject.find('$'), 1);
 
-	if (sObject[0] == '\'' && sObject[sObject.length() - 1] == '\'')
-		sObject = sObject.substr(1, sObject.length() - 2);
+	if (viewedObject.front() == '\'' && viewedObject.back() == '\'')
+    {
+        viewedObject.trim_front(1);
+        viewedObject.trim_back(1);
+    }
 
     // Resolve the paths
-	if (sObject.find("<loadpath>") != string::npos || sObject.find(_option.getLoadPath()) != string::npos)
+	if (viewedObject.find("<loadpath>") != string::npos || viewedObject.find(_option.getLoadPath()) != string::npos)
 	{
 		_fSys.setPath(_option.getLoadPath(), false, _option.getExePath());
-		sObject = _fSys.ValidFileName(sObject, ".dat");
+		sObject = _fSys.ValidFileName(viewedObject.to_string(), ".dat");
+		viewedObject = sObject;
 	}
-	else if (sObject.find("<savepath>") != string::npos || sObject.find(_option.getSavePath()) != string::npos)
+	else if (viewedObject.find("<savepath>") != string::npos || viewedObject.find(_option.getSavePath()) != string::npos)
 	{
 		_fSys.setPath(_option.getSavePath(), false, _option.getExePath());
-		sObject = _fSys.ValidFileName(sObject, ".dat");
+		sObject = _fSys.ValidFileName(viewedObject.to_string(), ".dat");
+		viewedObject = sObject;
 	}
-	else if (sObject.find("<scriptpath>") != string::npos || sObject.find(_option.getScriptPath()) != string::npos)
+	else if (viewedObject.find("<scriptpath>") != string::npos || viewedObject.find(_option.getScriptPath()) != string::npos)
 	{
 		_fSys.setPath(_option.getScriptPath(), false, _option.getExePath());
-		sObject = _fSys.ValidFileName(sObject, ".nscr");
+		sObject = _fSys.ValidFileName(viewedObject.to_string(), ".nscr");
+		viewedObject = sObject;
 	}
-	else if (sObject.find("<plotpath>") != string::npos || sObject.find(_option.getPlotPath()) != string::npos)
+	else if (viewedObject.find("<plotpath>") != string::npos || viewedObject.find(_option.getPlotPath()) != string::npos)
 	{
 		_fSys.setPath(_option.getPlotPath(), false, _option.getExePath());
-		sObject = _fSys.ValidFileName(sObject, ".png");
+		sObject = _fSys.ValidFileName(viewedObject.to_string(), ".png");
+		viewedObject = sObject;
 	}
-	else if (sObject.find("<procpath>") != string::npos || sObject.find(_option.getProcPath()) != string::npos)
+	else if (viewedObject.find("<procpath>") != string::npos || viewedObject.find(_option.getProcPath()) != string::npos)
 	{
 		_fSys.setPath(_option.getProcPath(), false, _option.getExePath());
-		sObject = _fSys.ValidFileName(sObject, ".nprc");
+		sObject = _fSys.ValidFileName(viewedObject.to_string(), ".nprc");
+		viewedObject = sObject;
 	}
-	else if (sObject.find("<wp>") != string::npos || sObject.find(_option.getWorkPath()) != string::npos)
+	else if (viewedObject.find("<wp>") != string::npos || viewedObject.find(_option.getWorkPath()) != string::npos)
 	{
 		_fSys.setPath(_option.getWorkPath(), false, _option.getExePath());
-		sObject = _fSys.ValidFileName(sObject, ".nprc");
+		sObject = _fSys.ValidFileName(viewedObject.to_string(), ".nprc");
+		viewedObject = sObject;
 	}
-	else if (sObject.find("<>") != string::npos || sObject.find("<this>") != string::npos || sObject.find(_option.getExePath()) != string::npos)
+	else if (viewedObject.find("<>") != string::npos || viewedObject.find("<this>") != string::npos || viewedObject.find(_option.getExePath()) != string::npos)
 	{
 		_fSys.setPath(_option.getExePath(), false, _option.getExePath());
-		sObject = _fSys.ValidFileName(sObject, ".dat");
+		sObject = _fSys.ValidFileName(viewedObject.to_string(), ".dat");
+		viewedObject = sObject;
 	}
-	else if (!_data.containsTablesOrClusters(sObject))
+	else if (!_data.containsTablesOrClusters(viewedObject.to_string()))
 	{
 	    // Is probably a folder path to be edited in the Windows Explorer
-		if (sObject.find('.') == string::npos && (sObject.find('/') != string::npos || sObject.find('\\') != string::npos))
+		if (viewedObject.find('.') == string::npos && (viewedObject.find('/') != string::npos || viewedObject.find('\\') != string::npos))
 		{
-			ShellExecute(NULL, NULL, sObject.c_str(), NULL, NULL, SW_SHOWNORMAL);
+			ShellExecute(NULL, NULL, viewedObject.to_string().c_str(), NULL, NULL, SW_SHOWNORMAL);
 			return true;
 		}
 
 		// Append a wildcard at the end of the path if necessary
-		if (sObject[sObject.length() - 1] != '*' && sObject.find('.') == string::npos)
+		if (viewedObject.back() != '*' && viewedObject.find('.') == string::npos)
+        {
 			sObject += "*";
+            viewedObject = sObject;
+        }
 
         // Try to determine the path based upon the file extension, where we might find the
         // file, if the user did not supply the path to the file
-		if (sObject.find('.') != string::npos)
+		if (viewedObject.find('.') != string::npos)
 		{
-			if (sObject.substr(sObject.rfind('.')) == ".dat" || sObject.substr(sObject.rfind('.')) == ".txt")
+			if (viewedObject.ends_with(".dat")
+                || viewedObject.ends_with(".txt"))
 			{
 				_fSys.setPath(_option.getLoadPath(), false, _option.getExePath());
-				string sTemporaryObjectName = _fSys.ValidFileName(sObject, ".dat");
+				string sTemporaryObjectName = _fSys.ValidFileName(viewedObject.to_string(), ".dat");
 
 				if (!fileExists(sTemporaryObjectName))
 					_fSys.setPath(_option.getSavePath(), false, _option.getExePath());
 			}
-			else if (sObject.substr(sObject.rfind('.')) == ".nscr")
+			else if (viewedObject.ends_with(".nscr"))
 				_fSys.setPath(_option.getScriptPath(), false, _option.getExePath());
-			else if (sObject.substr(sObject.rfind('.')) == ".nprc")
+			else if (viewedObject.ends_with(".nprc"))
 				_fSys.setPath(_option.getProcPath(), false, _option.getExePath());
-			else if (sObject.substr(sObject.rfind('.')) == ".png"
-					 || sObject.substr(sObject.rfind('.')) == ".gif"
-					 || sObject.substr(sObject.rfind('.')) == ".svg"
-					 || sObject.substr(sObject.rfind('.')) == ".eps")
+			else if (viewedObject.ends_with(".png")
+					 || viewedObject.ends_with(".gif")
+					 || viewedObject.ends_with(".svg")
+					 || viewedObject.ends_with(".eps"))
 				_fSys.setPath(_option.getPlotPath(), false, _option.getExePath());
-			else if (sObject.substr(sObject.rfind('.')) == ".tex")
+			else if (viewedObject.ends_with(".tex"))
 			{
 				_fSys.setPath(_option.getPlotPath(), false, _option.getExePath());
-				string sTemporaryObjectName = _fSys.ValidFileName(sObject, ".tex");
+				string sTemporaryObjectName = _fSys.ValidFileName(viewedObject.to_string(), ".tex");
 
 				if (!fileExists(sTemporaryObjectName))
 					_fSys.setPath(_option.getSavePath(), false, _option.getExePath());
 			}
-			else if (sObject.substr(sObject.rfind('.')) == ".nhlp")
+			else if (viewedObject.ends_with(".nhlp"))
 				_fSys.setPath(_option.getExePath() + "/docs", false, _option.getExePath());
 			else
 				_fSys.setPath(_option.getExePath(), false, _option.getExePath());
@@ -597,21 +613,24 @@ static bool editObject(string& sCmd, Parser& _parser, MemoryManager& _data, Sett
 		else
 			_fSys.setPath(_option.getExePath(), false, _option.getExePath());
 
-		sObject = _fSys.ValidFileName(sObject, ".dat");
+		sObject = _fSys.ValidFileName(viewedObject.to_string(), ".dat");
+		viewedObject = sObject;
 	}
 
 	// Is probably a folder path
-	if (!_data.containsTablesOrClusters(sObject) && sObject.find('.') == string::npos && (sObject.find('/') != string::npos || sObject.find('\\') != string::npos))
+	if (!_data.containsTablesOrClusters(viewedObject.to_string())
+        && viewedObject.find('.') == string::npos
+        && (viewedObject.find('/') != string::npos || viewedObject.find('\\') != string::npos))
 	{
-		ShellExecute(NULL, NULL, sObject.c_str(), NULL, NULL, SW_SHOWNORMAL);
+		ShellExecute(NULL, NULL, viewedObject.to_string().c_str(), NULL, NULL, SW_SHOWNORMAL);
 		return true;
 	}
 
 	// Open the table for editing
-	if (_data.containsTables(sObject))
+	if (_data.containsTables(viewedObject.to_string()))
 	{
-		StripSpaces(sObject);
-		string sTableName = sObject.substr(0, sObject.find('('));
+		viewedObject.strip();
+		string sTableName = viewedObject.subview(0, viewedObject.find('(')).to_string();
 
 		NumeReKernel::showTable(_data.extractTable(sTableName), sTableName, true);
 		NumeReKernel::printPreFmt("|-> " + _lang.get("BUILTIN_WAITINGFOREDIT") + " ... ");
@@ -627,61 +646,61 @@ static bool editObject(string& sCmd, Parser& _parser, MemoryManager& _data, Sett
 	}
 
 	// Could be a folder -> open it in the Windows Explorer
-	if (!fileExists(sObject) || sObject.find('.') == string::npos)
+	if (!fileExists(viewedObject.to_string()) || viewedObject.find('.') == string::npos)
 	{
-		sObject.erase(sObject.rfind('.'));
+		viewedObject.trim_back(viewedObject.length() - viewedObject.rfind('.'));
 
-		if (sObject.find('*') != string::npos)
-			sObject.erase(sObject.rfind('*'));
+		if (viewedObject.find('*') != string::npos)
+			viewedObject.trim_back(viewedObject.length() - viewedObject.rfind('*'));
 
-		if ((long long int)ShellExecute(NULL, NULL, sObject.c_str(), NULL, NULL, SW_SHOWNORMAL) > 32)
+		if ((long long int)ShellExecute(NULL, NULL, viewedObject.to_string().c_str(), NULL, NULL, SW_SHOWNORMAL) > 32)
 			return true;
 
-		throw SyntaxError(SyntaxError::FILE_NOT_EXIST, sCmd, SyntaxError::invalid_position, sObject);
+		throw SyntaxError(SyntaxError::FILE_NOT_EXIST, sCmd, SyntaxError::invalid_position, viewedObject.to_string());
 	}
 
 	// Determine the file type of the file to be edited
-	if (sObject.substr(sObject.rfind('.')) == ".dat"
-			|| sObject.substr(sObject.rfind('.')) == ".txt"
-			|| sObject.substr(sObject.rfind('.')) == ".tex"
-			|| sObject.substr(sObject.rfind('.')) == ".xml"
-			|| sObject.substr(sObject.rfind('.')) == ".yaml"
-			|| sObject.substr(sObject.rfind('.')) == ".yml"
-			|| sObject.substr(sObject.rfind('.')) == ".json"
-			|| sObject.substr(sObject.rfind('.')) == ".csv"
-			|| sObject.substr(sObject.rfind('.')) == ".labx"
-			|| sObject.substr(sObject.rfind('.')) == ".jdx"
-			|| sObject.substr(sObject.rfind('.')) == ".jcm"
-			|| sObject.substr(sObject.rfind('.')) == ".dx"
-			|| sObject.substr(sObject.rfind('.')) == ".nscr"
-			|| sObject.substr(sObject.rfind('.')) == ".nprc"
-			|| sObject.substr(sObject.rfind('.')) == ".nhlp"
-			|| sObject.substr(sObject.rfind('.')) == ".nlyt"
-			|| sObject.substr(sObject.rfind('.')) == ".png"
-			|| sObject.substr(sObject.rfind('.')) == ".gif"
-			|| sObject.substr(sObject.rfind('.')) == ".m"
-			|| sObject.substr(sObject.rfind('.')) == ".cpp"
-			|| sObject.substr(sObject.rfind('.')) == ".cxx"
-			|| sObject.substr(sObject.rfind('.')) == ".c"
-			|| sObject.substr(sObject.rfind('.')) == ".hpp"
-			|| sObject.substr(sObject.rfind('.')) == ".hxx"
-			|| sObject.substr(sObject.rfind('.')) == ".h"
-			|| sObject.substr(sObject.rfind('.')) == ".log")
+	if (viewedObject.ends_with(".dat")
+		|| viewedObject.ends_with(".txt")
+		|| viewedObject.ends_with(".tex")
+		|| viewedObject.ends_with(".xml")
+		|| viewedObject.ends_with(".yaml")
+		|| viewedObject.ends_with(".yml")
+		|| viewedObject.ends_with(".json")
+		|| viewedObject.ends_with(".csv")
+		|| viewedObject.ends_with(".labx")
+		|| viewedObject.ends_with(".jdx")
+		|| viewedObject.ends_with(".jcm")
+		|| viewedObject.ends_with(".dx")
+		|| viewedObject.ends_with(".nscr")
+		|| viewedObject.ends_with(".nprc")
+		|| viewedObject.ends_with(".nhlp")
+		|| viewedObject.ends_with(".nlyt")
+		|| viewedObject.ends_with(".png")
+		|| viewedObject.ends_with(".gif")
+		|| viewedObject.ends_with(".m")
+		|| viewedObject.ends_with(".cpp")
+		|| viewedObject.ends_with(".cxx")
+		|| viewedObject.ends_with(".c")
+		|| viewedObject.ends_with(".hpp")
+		|| viewedObject.ends_with(".hxx")
+		|| viewedObject.ends_with(".h")
+		|| viewedObject.ends_with(".log"))
 		nType = 1;
-	else if (sObject.substr(sObject.rfind('.')) == ".svg"
-			 || sObject.substr(sObject.rfind('.')) == ".eps")
+	else if (viewedObject.ends_with(".svg")
+			 || viewedObject.ends_with(".eps"))
 		nType = 2;
 
 	if (!nType)
-		throw SyntaxError(SyntaxError::CANNOT_EDIT_FILE_TYPE, sCmd, SyntaxError::invalid_position, sObject);
+		throw SyntaxError(SyntaxError::CANNOT_EDIT_FILE_TYPE, sCmd, SyntaxError::invalid_position, viewedObject.to_string());
 
 	if (nType == 1)
 	{
 		NumeReKernel::nOpenFileFlag = nFileOpenFlag;
-		NumeReKernel::gotoLine(sObject);
+		NumeReKernel::gotoLine(viewedObject.to_string());
 	}
 	else if (nType == 2)
-		openExternally(sObject);
+		openExternally(viewedObject.to_string());
 
 	return true;
 }

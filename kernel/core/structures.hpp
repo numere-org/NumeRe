@@ -991,6 +991,7 @@ class StringViewBase
         {
             const std::string* thisString = getData();
             const std::string* viewString = view.getData();
+
             if (thisString && viewString)
                 return thisString->compare(m_start, m_len, *viewString, view.m_start, view.m_len) == 0;
 
@@ -1317,6 +1318,134 @@ class StringViewBase
                 return getData()->begin() + m_start + m_len;
 
             return std::string::const_iterator();
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief Checks, whether the viewed string has
+        /// the same character sequence as the passed
+        /// string starting from the selected position.
+        ///
+        /// \param other const StringViewBase&
+        /// \param pos size_t
+        /// \return bool
+        ///
+        /////////////////////////////////////////////////
+        inline bool match(const StringViewBase& other, size_t pos = 0) const
+        {
+            const std::string* thisString = getData();
+            const std::string* viewString = other.getData();
+
+            if (thisString && viewString)
+                return thisString->compare(m_start+pos, std::min(other.m_len, m_len-pos),
+                                           *viewString, other.m_start, other.m_len) == 0;
+
+            return false;
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief Checks, whether the viewed string has
+        /// the same character sequence as the passed
+        /// string starting from the selected position.
+        ///
+        /// \param other const std::string&
+        /// \param pos size_t
+        /// \return bool
+        ///
+        /////////////////////////////////////////////////
+        inline bool match(const std::string& other, size_t pos = 0) const
+        {
+            const std::string* thisString = getData();
+
+            if (thisString)
+                return thisString->compare(m_start+pos, std::min(other.length(), m_len-pos), other) == 0;
+
+            return false;
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief Checks, whether the viewed string
+        /// starts with the passed string.
+        ///
+        /// \param other const StringViewBase&
+        /// \return bool
+        ///
+        /////////////////////////////////////////////////
+        inline bool starts_with(const StringViewBase& other) const
+        {
+            const std::string* thisString = getData();
+            const std::string* viewString = other.getData();
+
+            if (thisString && viewString)
+                return thisString->compare(m_start, std::min(other.m_len, m_len),
+                                           *viewString, other.m_start, other.m_len) == 0;
+
+            return false;
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief Checks, whether the viewed string
+        /// starts with the passed string.
+        ///
+        /// \param other const std::string&
+        /// \return bool
+        ///
+        /////////////////////////////////////////////////
+        inline bool starts_with(const std::string& other) const
+        {
+            const std::string* thisString = getData();
+
+            if (thisString)
+                return thisString->compare(m_start, std::min(other.length(), m_len), other) == 0;
+
+            return false;
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief Checks, whether the viewed string
+        /// ends with the passed string.
+        ///
+        /// \param other const StringViewBase&
+        /// \return bool
+        ///
+        /////////////////////////////////////////////////
+        inline bool ends_with(const StringViewBase& other) const
+        {
+            const std::string* thisString = getData();
+            const std::string* viewString = other.getData();
+
+            if (thisString && viewString)
+            {
+                if (m_len < other.m_len)
+                    return false;
+
+                return thisString->compare(m_start+m_len-other.m_len, other.m_len,
+                                           *viewString, other.m_start, other.m_len) == 0;
+            }
+
+            return false;
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief Checks, whether the viewed string
+        /// ends with the passed string.
+        ///
+        /// \param other const std::string&
+        /// \return bool
+        ///
+        /////////////////////////////////////////////////
+        inline bool ends_with(const std::string& other) const
+        {
+            const std::string* thisString = getData();
+
+            if (thisString)
+            {
+                if (m_len < other.length())
+                    return false;
+
+                return thisString->compare(m_start+m_len-other.length(), other.length(), other) == 0;
+            }
+
+            return false;
         }
 
         /////////////////////////////////////////////////

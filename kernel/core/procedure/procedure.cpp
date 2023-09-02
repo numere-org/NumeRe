@@ -1275,7 +1275,7 @@ FlowCtrl::ProcedureInterfaceRetVal Procedure::procedureInterface(string& sLine, 
                     __sName = sNameSpace + __sName;
 
                 if (__sName.substr(0, 5) == "this~")
-                    __sName = sThisNameSpace + __sName.substr(4));
+                    __sName = sThisNameSpace + __sName.substr(4);
 
                 // Handle explicit procedure file names
                 if (sLine[nPos] == '\'')

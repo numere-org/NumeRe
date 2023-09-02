@@ -2260,7 +2260,7 @@ namespace NumeRe
 
         while (iter != mClusterMap.end())
         {
-            if (iter->first.substr(0, 6) == "_~~TC_")
+            if (StringView(iter->first).starts_with("_~~TC_"))
                 iter = mClusterMap.erase(iter);
             else
                 ++iter;
