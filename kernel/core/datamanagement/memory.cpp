@@ -2115,7 +2115,7 @@ bool Memory::removeCols(const VectorIndex& _vCols)
     _vCols.setOpenEndIndex(memArray.size()-1);
 
     if (_vCols.isExpanded())
-        memArray.erase(memArray.begin()+_vCols.min(), memArray.begin()+_vCols.max());
+        memArray.erase(memArray.begin()+_vCols.min(), memArray.begin()+_vCols.max()+1);
     else if (_vCols.size() == 1)
         memArray.erase(memArray.begin()+_vCols.front());
     else
