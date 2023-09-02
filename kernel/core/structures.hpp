@@ -23,6 +23,7 @@
 #include <string>
 #include <stdexcept>
 #include <vector>
+#include <set>
 #include <cmath>
 #include <algorithm>
 #include "interval.hpp"
@@ -86,6 +87,123 @@ class VectorIndex
         }
 
     public:
+        /////////////////////////////////////////////////
+        /// \brief Definition of a forward iterator for
+        /// the VectorIndex class
+        /////////////////////////////////////////////////
+        class ForwardIterator
+        {
+            public:
+                // Definition of necessary iterator tags
+                using iterator_category = std::forward_iterator_tag;
+                using difference_type   = std::ptrdiff_t;
+                using value_type        = int;
+                using pointer           = int*;
+                using reference         = int&;
+
+            private:
+                const VectorIndex* m_data;
+                size_t m_curPos;
+
+                /////////////////////////////////////////////////
+                /// \brief Determine, if the iterator is beyond
+                /// the end.
+                ///
+                /// \return bool
+                ///
+                /////////////////////////////////////////////////
+                bool isEnd() const
+                {
+                    return m_curPos >= m_data->size();
+                }
+
+            public:
+                ForwardIterator(const VectorIndex* data = nullptr, size_t p = 0) : m_data(data), m_curPos(p) {}
+                ForwardIterator(const ForwardIterator& other) : m_data(other.m_data), m_curPos(other.m_curPos) {}
+
+                /////////////////////////////////////////////////
+                /// \brief Assignment operator
+                ///
+                /// \param other const ForwardIterator&
+                /// \return ForwardIterator&
+                ///
+                /////////////////////////////////////////////////
+                ForwardIterator& operator=(const ForwardIterator& other)
+                {
+                    m_data = other.m_data;
+                    m_curPos = other.m_curPos;
+                    return *this;
+                }
+
+                /////////////////////////////////////////////////
+                /// \brief Equality operator
+                ///
+                /// \param other const ForwardIterator&
+                /// \return bool
+                ///
+                /////////////////////////////////////////////////
+                bool operator==(const ForwardIterator& other) const
+                {
+                    return m_data == other.m_data
+                        && (m_curPos == other.m_curPos || (isEnd() && other.isEnd()));
+                }
+
+                /////////////////////////////////////////////////
+                /// \brief Inequality operator
+                ///
+                /// \param other const ForwardIterator&
+                /// \return bool
+                ///
+                /////////////////////////////////////////////////
+                bool operator!=(const ForwardIterator& other) const
+                {
+                    return !operator==(other);
+                }
+
+                /////////////////////////////////////////////////
+                /// \brief Pre-increment operator
+                ///
+                /// \return ForwardIterator&
+                ///
+                /////////////////////////////////////////////////
+                ForwardIterator& operator++()
+                {
+                    m_curPos++;
+                    return *this;
+                }
+
+                /////////////////////////////////////////////////
+                /// \brief Post-increment operator
+                ///
+                /// \param int
+                /// \return ForwardIterator
+                ///
+                /////////////////////////////////////////////////
+                ForwardIterator operator++(int)
+                {
+                    ForwardIterator t(*this);
+                    m_curPos++;
+                    return t;
+                }
+
+                /////////////////////////////////////////////////
+                /// \brief Dereferencing operator
+                ///
+                /// \return int
+                ///
+                /////////////////////////////////////////////////
+                int operator*() const
+                {
+                    if (m_data && m_curPos < m_data->size())
+                        return (*m_data)[m_curPos];
+
+                    throw std::out_of_range("VectorIndex::ForwardIterator is invalid or beyond range");
+                }
+        };
+
+        /////////////////////////////////////////////////
+        /// \brief Special values for vector indices.
+        /////////////////////////////////////////////////
         enum
         {
             INVALID = -1,
@@ -151,8 +269,8 @@ class VectorIndex
         /////////////////////////////////////////////////
         /// \brief Constructor for single indices.
         ///
-        /// \param nStart int
-        /// \param nEnd int
+        /// \param nStart int The first reachable index
+        /// \param nEnd int The last reachable index
         ///
         /////////////////////////////////////////////////
         VectorIndex(int nStart, int nEnd = INVALID)
@@ -301,6 +419,33 @@ class VectorIndex
         }
 
         /////////////////////////////////////////////////
+        /// \brief Get a portion of this index possible
+        /// with another order.
+        ///
+        /// \param other const VectorIndex&
+        /// \return VectorIndex
+        ///
+        /////////////////////////////////////////////////
+        VectorIndex get(const VectorIndex& other) const
+        {
+            VectorIndex idx;
+
+            if (!other.isOpenEnd())
+                idx.vStorage.resize(other.size());
+            else
+                idx.vStorage.resize(size());
+
+            idx.expand = false;
+
+            for (size_t i = 0; i < (other.isOpenEnd() ? size() : other.size()); i++)
+            {
+                idx.vStorage[i] = getIndex(other[i]);
+            }
+
+            return idx;
+        }
+
+        /////////////////////////////////////////////////
         /// \brief This member function returns the size
         /// of the indices stored in this class.
         ///
@@ -364,6 +509,34 @@ class VectorIndex
                 return vStorage.front() <= vStorage.back() || vStorage.back() == INVALID || vStorage.back() == OPEN_END;
 
             return false;
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief Determine, whether the list of indices
+        /// are unique (relevant for sorting).
+        ///
+        /// \return bool
+        ///
+        /////////////////////////////////////////////////
+        bool isUnique() const
+        {
+            if (!isValid())
+                return false;
+
+            // Expanded are always unique
+            if (expand)
+                return true;
+
+            std::set<int> test;
+
+            // Test by inserting into a set
+            for (int i : vStorage)
+            {
+                if (!test.insert(i).second)
+                    return false;
+            }
+
+            return true;
         }
 
         /////////////////////////////////////////////////
@@ -679,6 +852,30 @@ class VectorIndex
         const int& back() const
         {
             return vStorage.back();
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief Return an iterator to the start of the
+        /// sequence.
+        ///
+        /// \return ForwardIterator
+        ///
+        /////////////////////////////////////////////////
+        ForwardIterator begin() const
+        {
+            return ForwardIterator(this);
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief Return an iterator to the end of the
+        /// sequence.
+        ///
+        /// \return ForwardIterator
+        ///
+        /////////////////////////////////////////////////
+        ForwardIterator end() const
+        {
+            return ForwardIterator(this, size());
         }
 
         /////////////////////////////////////////////////
