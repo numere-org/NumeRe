@@ -56,7 +56,7 @@ static Matrix multiplyMatrices(const Matrix& _mLeft, const Matrix& _mRight, cons
 static Matrix getMatrixElements(string& sExpr, const Matrix& _mMatrix, Parser& _parser, MemoryManager& _data, FunctionDefinitionManager& _functions, const Settings& _option);
 static vector<mu::value_type> calcDeltasForMatFill(const std::vector<std::vector<mu::value_type>>& _mMatrix, size_t nLine);
 static void showMatrixResult(const Matrix& _mResult, const Settings& _option);
-static Indices getIndicesForMatrix(const string& sCmd, const MatOpCache& _cache, Parser& _parser, MemoryManager& _data, const Settings& _option);
+static Indices getIndicesForMatrix(StringView sCmd, const MatOpCache& _cache, Parser& _parser, MemoryManager& _data, const Settings& _option);
 static bool containsMatrices(const string& sExpr, MemoryManager& _data);
 
 Matrix transposeMatrix(const Matrix& _mMatrix);
@@ -302,7 +302,7 @@ static Matrix evalMatOp(string& sCmd, Parser& _parser, MemoryManager& _data, Fun
         && sCmd[nEqPos-1] != '!'
         && sCmd[nEqPos-1] != '<'
         && sCmd[nEqPos-1] != '>'
-        && sCmd.substr(0, nEqPos).find('{') != string::npos)
+        && StringView(sCmd, 0, nEqPos).find('{') != string::npos)
     {
         iter_start = nEqPos+1;
     }
@@ -631,7 +631,7 @@ static Matrix evalMatOp(string& sCmd, Parser& _parser, MemoryManager& _data, Fun
             MatOpCache::MatOpDataAccess _access;
 
             // Get the indices
-            _access.idx = getIndicesForMatrix(__sCmd.substr(nPos), _cache, _parser, _data, _option);
+            _access.idx = getIndicesForMatrix(StringView(__sCmd, nPos), _cache, _parser, _data, _option);
 
             // Evaluate the indices
             if (!evaluateIndices(iter->first, _access.idx, _data))
@@ -641,7 +641,7 @@ static Matrix evalMatOp(string& sCmd, Parser& _parser, MemoryManager& _data, Fun
             _access.sName = iter->first;
 
             // Identify, which value to use for a missing value
-            if (addMissingVectorComponent("", __sCmd.substr(0,nPos), __sCmd.substr(nPos+1+(iter->first).length()+getMatchingParenthesis(__sCmd.substr(nPos+(iter->first).length()))),false) == "0")
+            if (addMissingVectorComponent("", __sCmd.substr(0,nPos), __sCmd.substr(nPos+1+(iter->first).length()+getMatchingParenthesis(StringView(__sCmd, nPos+(iter->first).length()))),false) == "0")
                 _access.missingValues = 0;
             else
                 _access.missingValues = 1;
@@ -650,7 +650,7 @@ static Matrix evalMatOp(string& sCmd, Parser& _parser, MemoryManager& _data, Fun
             _cache.vDataAccesses.push_back(_access);
 
             // Replace the current call with a standardized one
-            __sCmd.replace(nPos, getMatchingParenthesis(__sCmd.substr(nPos+(iter->first).length()))+(iter->first).length()+1, "_~matrix["+toString(_cache.vDataAccesses.size()-1)+"]");
+            __sCmd.replace(nPos, getMatchingParenthesis(StringView(__sCmd, nPos+(iter->first).length()))+(iter->first).length()+1, "_~matrix["+toString(_cache.vDataAccesses.size()-1)+"]");
         }
     }
 
@@ -669,7 +669,7 @@ static Matrix evalMatOp(string& sCmd, Parser& _parser, MemoryManager& _data, Fun
             }
 
             // Get the indices
-            Indices _idx = getIndicesForMatrix(__sCmd.substr(nPos), _cache, _parser, _data, _option);
+            Indices _idx = getIndicesForMatrix(StringView(__sCmd, nPos), _cache, _parser, _data, _option);
 
             if (_idx.row.isOpenEnd())
                 _idx.row.setRange(0, iter->second.size()-1);
@@ -688,7 +688,7 @@ static Matrix evalMatOp(string& sCmd, Parser& _parser, MemoryManager& _data, Fun
             _cache.vReturnedMatrices.push_back(_mClusterMatrix);
 
             // Replace the current call with a standardized one
-            __sCmd.replace(nPos, getMatchingParenthesis(__sCmd.substr(nPos+(iter->first).length()))+(iter->first).length()+1,
+            __sCmd.replace(nPos, getMatchingParenthesis(StringView(__sCmd, nPos+(iter->first).length()))+(iter->first).length()+1,
                            "_~returnedMatrix["+toString(_cache.vReturnedMatrices.size()-1)+"]");
         }
     }
@@ -1531,13 +1531,13 @@ void showMatrix(const vector<vector<mu::value_type> >& _mMatrix)
 /// parser_getIndicesForMatrix(), which will
 /// handle the return values of matrix evaluations.
 ///
-/// \param _sCmd const string&
+/// \param _sCmd StringView
 /// \param vReturnedMatrices const vector<Matrix>&
 /// \param _parser Parser&
 /// \return void
 ///
 /////////////////////////////////////////////////
-static void parser_declareMatrixReturnValuesForIndices(const string& _sCmd, const vector<Matrix>& vReturnedMatrices, Parser& _parser)
+static void parser_declareMatrixReturnValuesForIndices(StringView _sCmd, const vector<Matrix>& vReturnedMatrices, Parser& _parser)
 {
     for (size_t j = 0; j < vReturnedMatrices.size(); j++)
     {
@@ -1570,14 +1570,14 @@ static void parser_declareMatrixReturnValuesForIndices(const string& _sCmd, cons
 /// handle the indices of already parsed datafile
 /// matrices.
 ///
-/// \param _sCmd string&
+/// \param _sCmd StringView
 /// \param _cache const MatOpCache&
 /// \param Parser&_parser
 /// \param _data Datafile&
 /// \return void
 ///
 /////////////////////////////////////////////////
-static void parser_declareDataMatrixValuesForIndices(string& _sCmd, const MatOpCache& _cache, Parser&_parser, MemoryManager& _data)
+static void parser_declareDataMatrixValuesForIndices(StringView _sCmd, const MatOpCache& _cache, Parser&_parser, MemoryManager& _data)
 {
     for (size_t j = 0; j < _cache.vDataAccesses.size(); j++)
     {
@@ -1603,7 +1603,7 @@ static void parser_declareDataMatrixValuesForIndices(string& _sCmd, const MatOpC
 /// evaluated matrix expressions, which are used
 /// as indices for datafile matrices.
 ///
-/// \param sCmd const string&
+/// \param sCmd StringView
 /// \param _cache const MatOpCache&
 /// \param _parser Parser&
 /// \param _data Datafile&
@@ -1611,22 +1611,20 @@ static void parser_declareDataMatrixValuesForIndices(string& _sCmd, const MatOpC
 /// \return Indices
 ///
 /////////////////////////////////////////////////
-static Indices getIndicesForMatrix(const string& sCmd, const MatOpCache& _cache, Parser& _parser, MemoryManager& _data, const Settings& _option)
+static Indices getIndicesForMatrix(StringView sCmd, const MatOpCache& _cache, Parser& _parser, MemoryManager& _data, const Settings& _option)
 {
-    string _sCmd = sCmd;
-
     // Declare the return values of the former matrix calculations
     // to the parser by extracting the values and creating a vector
     // variable
-    parser_declareMatrixReturnValuesForIndices(_sCmd, _cache.vReturnedMatrices, _parser);
+    parser_declareMatrixReturnValuesForIndices(sCmd, _cache.vReturnedMatrices, _parser);
 
     // Declare the already parsed data object matrices in the
     // current expressions by parsing their indices, extracting
     // the corresponding values and creating a vector variable
-    parser_declareDataMatrixValuesForIndices(_sCmd, _cache, _parser, _data);
+    parser_declareDataMatrixValuesForIndices(sCmd, _cache, _parser, _data);
 
     // Return the calculated indices
-    return getIndices(_sCmd, _parser, _data, _option);
+    return getIndices(sCmd, _parser, _data, _option);
 }
 
 

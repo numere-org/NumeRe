@@ -104,7 +104,7 @@ namespace NumeRe
                     continue;
 
                 if (sLine[i] == '(' || sLine[i] == '[' || sLine[i] == '{')
-                    i += getMatchingParenthesis(sLine.substr(i));
+                    i += getMatchingParenthesis(StringView(sLine, i));
 
                 if (sLine[i] == '=' && isAssignmentOperator(i))
                 {

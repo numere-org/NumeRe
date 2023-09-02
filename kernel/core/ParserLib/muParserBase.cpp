@@ -3733,8 +3733,8 @@ namespace mu
 			{
 				if (sLine.substr(i, (iter->first).length()) == iter->first)
 				{
-					if ((i && checkDelimiter(sLine.substr(i - 1, (iter->first).length() + 2)))
-							|| (!i && checkDelimiter(" " + sLine.substr(i, (iter->first).length() + 1))))
+					if ((i && checkDelimiter(StringView(sLine, i - 1, (iter->first).length() + 2)))
+							|| (!i && checkDelimiter(StringView(" " + sLine, i+1, (iter->first).length() + 1))))
 					{
 						sLine.replace(i, (iter->first).length(), iter->second);
 					}

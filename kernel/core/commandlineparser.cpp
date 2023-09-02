@@ -120,7 +120,7 @@ void CommandLineParser::parse(const std::string& sCommandString, CommandLinePars
                 {
                     // Handle parentheses
                     if (m_expr[i] == '(' || m_expr[i] == '{')
-                        i += getMatchingParenthesis(m_expr.substr(i));
+                        i += getMatchingParenthesis(StringView(m_expr, i));
 
                     // Handle lists (will jump to the minus sign or
                     // a possible following expression part, if no list)
@@ -164,7 +164,7 @@ void CommandLineParser::parse(const std::string& sCommandString, CommandLinePars
                 if (!(nQuotes % 2))
                 {
                     if (m_expr[i] == '(' || m_expr[i] == '{')
-                        i += getMatchingParenthesis(m_expr.substr(i));
+                        i += getMatchingParenthesis(StringView(m_expr, i));
 
                     // Is this the start of the parameter list?
                     if (m_expr.substr(i, 2) == "--" || m_expr.substr(i, 5) == "-set ")

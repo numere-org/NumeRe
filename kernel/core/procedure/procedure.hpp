@@ -78,9 +78,9 @@ class Procedure : public FlowCtrl, public PackageManager
         void init();
 
         Returnvalue ProcCalc(std::string sLine, std::string sCurrentCommand, int& nByteCode, mu::Parser& _parser, FunctionDefinitionManager& _functions, MemoryManager& _data, Settings& _option, Output& _out, PlotData& _pData, Script& _script);
-        bool setProcName(const std::string& sProc, bool bInstallFileName = false);
+        bool setProcName(StringView sProc, bool bInstallFileName = false);
         void resetProcedure(mu::Parser& _parser, bool bSupressAnswer);
-        void extractCurrentNamespace(const std::string& sProc);
+        void extractCurrentNamespace(StringView sProc);
         bool handleVariableDefinitions(std::string& sProcCommandLine, const std::string& sCommand);
         int handleIncludeSyntax(std::string& sProcCommandLine, std::ifstream& fInclude, bool bReadingFromInclude);
         void extractProcedureInformation(const std::string& sCmdLine, size_t nPos, std::string& sProcName, std::string& sArgList, std::string& sFileName);
@@ -97,7 +97,7 @@ class Procedure : public FlowCtrl, public PackageManager
         Procedure(const Procedure& _procedure);
         ~Procedure();
 
-        Returnvalue execute(std::string sProc, std::string sVarList, mu::Parser& _parser, FunctionDefinitionManager& _functions, MemoryManager& _data, Settings& _option, Output& _out, PlotData& _pData, Script& _script, size_t nth_procedure = 0);
+        Returnvalue execute(StringView sProc, std::string sVarList, mu::Parser& _parser, FunctionDefinitionManager& _functions, MemoryManager& _data, Settings& _option, Output& _out, PlotData& _pData, Script& _script, size_t nth_procedure = 0);
         static std::string mangleName(std::string sProcedureName);
         static std::string nameSpaceToPath(std::string sEncodedNameSpace, const std::string& thisPath, const std::string& thisFilePath = "");
         static void cleanRelativeNameSpaces(std::string& nameSpace);

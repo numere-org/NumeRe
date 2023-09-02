@@ -397,12 +397,12 @@ namespace NumeRe
                 else
                 {
                     // Found the procedure name, now extract the definition
-                    if (getMatchingParenthesis(sProcCommandLine.substr(sProcCommandLine.find(procedurename))) == std::string::npos)
+                    if (getMatchingParenthesis(StringView(sProcCommandLine, sProcCommandLine.find(procedurename))) == std::string::npos)
                         return CallTip();
 
-                    _cTip.sDefinition = sProcCommandLine.substr(sProcCommandLine.find(procedurename), getMatchingParenthesis(sProcCommandLine.substr(sProcCommandLine.find(procedurename))) + 1);
+                    _cTip.sDefinition = sProcCommandLine.substr(sProcCommandLine.find(procedurename), getMatchingParenthesis(StringView(sProcCommandLine, sProcCommandLine.find(procedurename))) + 1);
                     size_t nFirstParens = _cTip.sDefinition.find('(');
-                    std::string sArgList = _cTip.sDefinition.substr(nFirstParens + 1, getMatchingParenthesis(_cTip.sDefinition.substr(nFirstParens)) - 1);
+                    std::string sArgList = _cTip.sDefinition.substr(nFirstParens + 1, getMatchingParenthesis(StringView(_cTip.sDefinition, nFirstParens)) - 1);
                     _cTip.sDefinition.erase(nFirstParens + 1);
 
                     while (sArgList.length())

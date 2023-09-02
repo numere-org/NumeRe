@@ -427,7 +427,7 @@ string extractStringToken(const string& sCmd, size_t nPos)
         // Jump over each parenthesis block
         if (sCmd[i] == '(' || sCmd[i] == '[' || sCmd[i] == '{')
         {
-            i += getMatchingParenthesis(sCmd.substr(i));
+            i += getMatchingParenthesis(StringView(sCmd, i));
             continue;
         }
 
@@ -443,7 +443,7 @@ string extractStringToken(const string& sCmd, size_t nPos)
                 }
                 // jump over parentheses
                 if (sCmd[j] == '(')
-                    j += getMatchingParenthesis(sCmd.substr(j));
+                    j += getMatchingParenthesis(StringView(sCmd, j));
 
                 if (j == sCmd.length() - 1)
                 {
@@ -592,7 +592,7 @@ bool isMultiValue(const string& sExpr, bool bIgnoreClosingParenthesis)
         {
             // Jump over parentheses
             if ((sExpr[i] == '(' || sExpr[i] == '{' || sExpr[i] == '[') && !(nQuotationMarks % 2))
-                i += getMatchingParenthesis(sExpr.substr(i));
+                i += getMatchingParenthesis(StringView(sExpr, i));
 
             // Count quotation marks
             if (sExpr[i] == '"')
@@ -1437,11 +1437,11 @@ string extractCommandString(const string& sCmd, const Match& _mMatch)
             if (sCmd[i] == '(' && !isInQuotes(sCmd, i))
             {
                 // Find the matching parenthesis
-                if (getMatchingParenthesis(sCmd.substr(i)) != string::npos)
+                if (getMatchingParenthesis(StringView(sCmd, i)) != string::npos)
                 {
                     // Use the contents of the parenthesis
                     // However, only extract the command and not the characters in front of it
-                    sCommandString = sCmd.substr(_mMatch.nPos, getMatchingParenthesis(sCmd.substr(i)) - (_mMatch.nPos - i + 1));
+                    sCommandString = sCmd.substr(_mMatch.nPos, getMatchingParenthesis(StringView(sCmd, i)) - (_mMatch.nPos - i + 1));
                     break;
                 }
                 else
@@ -1722,13 +1722,13 @@ string getArgAtPos(const string& sCmd, size_t nPos, int extraction)
             continue;
 
         if (sCmd[i] == '(' || sCmd[i] == '[' || sCmd[i] == '{')
-            i += getMatchingParenthesis(sCmd.substr(i));
+            i += getMatchingParenthesis(StringView(sCmd, i));
 
         if (sCmd[i] == ' ')
         {
             size_t cont = isStringContinuation(sCmd, i);
 
-            if (cont < sCmd.length() && NumeReKernel::getInstance()->getStringParser().isStringExpression(sCmd.substr(nPos, i-nPos)))
+            if (cont < sCmd.length() && NumeReKernel::getInstance()->getStringParser().isStringExpression(StringView(sCmd, nPos, i-nPos)))
                 i = cont-1;
             else
             {
@@ -1872,7 +1872,7 @@ bool isToStringArg(const string& sExpr, size_t nPos)
     for (int i = nPos; i >= 8; i--)
     {
         // An opening parenthesis was found with its counterpart after the current position
-        if (sExpr[i] == '(' && getMatchingParenthesis(sExpr.substr(i)) + i > nPos)
+        if (sExpr[i] == '(' && getMatchingParenthesis(StringView(sExpr, i)) + i > nPos)
         {
             // Is there one of the three functions left from the current position?
             if (i > 10 && sExpr.substr(i - 11, 12) == "string_cast(")
@@ -2622,7 +2622,7 @@ void eraseToken(string& sExpr, const string& sToken, bool bTokenHasValue)
                 {
                     // jump over parentheses
                     if (!isInQuotes(sExpr, j) && (sExpr[j] == '(' || sExpr[j] == '[' || sExpr[j] == '{'))
-                        j += getMatchingParenthesis(sExpr.substr(j));
+                        j += getMatchingParenthesis(StringView(sExpr, j));
 
                     // White space found -> end of option value
                     // erase token and its value together
@@ -3239,7 +3239,7 @@ static bool handleRecursiveOperators(string& sExpr, size_t& nPos, size_t& nArgSe
             // Jump over parentheses
             if (!(nQuotes % 2)
                 && (sExpr[j] == '(' || sExpr[j] == '[' || sExpr[j] == '{'))
-                j += getMatchingParenthesis(sExpr.substr(j));
+                j += getMatchingParenthesis(StringView(sExpr, j));
 
             // Count the not escaped parentheses
             if (sExpr[j] == '"')
@@ -3317,7 +3317,7 @@ static bool handleRecursiveOperators(string& sExpr, size_t& nPos, size_t& nArgSe
                     // Jump over parentheses
                     if (!(nQuotes % 2)
                         && (sExpr[k] == '(' || sExpr[k] == '[' || sExpr[k] == '{'))
-                        k += getMatchingParenthesis(sExpr.substr(k));
+                        k += getMatchingParenthesis(StringView(sExpr, k));
 
                     // Count the quotation marks, which are not escaped
                     if (sExpr[k] == '"')
@@ -3458,7 +3458,7 @@ void evalRecursiveExpressions(string& sExpr)
         if (!(nQuotes % 2)
             && (sExpr[i] == '(' || sExpr[i] == '{' || sExpr[i] == '['))
         {
-            size_t parens = getMatchingParenthesis(sExpr.substr(i));
+            size_t parens = getMatchingParenthesis(StringView(sExpr, i));
             if (parens != string::npos)
                 i += parens;
         }
@@ -3766,7 +3766,7 @@ bool isToCmd(const string& sCmd, size_t nPos)
         {
             // function found -> try to find the matching parenthesis
             // If it is left of the desired position, then return true
-            if (getMatchingParenthesis(sCmd.substr(i + 6)) > nPos - i - 6 && getMatchingParenthesis(sCmd.substr(i + 6)) != string::npos)
+            if (getMatchingParenthesis(StringView(sCmd, i + 6)) > nPos - i - 6 && getMatchingParenthesis(StringView(sCmd, i + 6)) != string::npos)
                 return true;
         }
     }
@@ -3991,8 +3991,8 @@ void replaceStringMethod(string& sLine, size_t nPos, size_t nLength, const strin
         {
             // Method ends with closing parenthesis
             sMethod = sLine.substr(nPos+nLength+1, i-(nPos+nLength+1));
-            sArgument = sLine.substr(i, getMatchingParenthesis(sLine.substr(i))+1);
-            nFinalPos = i += getMatchingParenthesis(sLine.substr(i))+1;
+            sArgument = sLine.substr(i, getMatchingParenthesis(StringView(sLine, i))+1);
+            nFinalPos = i += getMatchingParenthesis(StringView(sLine, i))+1;
             break;
         }
         else if (sDELIMITER.find(sLine[i]) != string::npos)

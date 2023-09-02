@@ -178,7 +178,7 @@ namespace NumeRe
         {
             // Jump ver parentheses
             if (!(quotes % 2) && (sTernary[i] == '(' || sTernary[i] == '[' || sTernary[i] == '{'))
-                i += getMatchingParenthesis(sTernary.substr(i));
+                i += getMatchingParenthesis(StringView(sTernary, i));
 
             // Increment the question mark counter
             if (!(quotes % 2) && sTernary[i] == '?')
@@ -319,8 +319,8 @@ namespace NumeRe
                 if (!isInQuotes(sLine, nPos - 1))
                 {
                     sLine = sLine.substr(0, nPos - 1)
-                            + evalStringLogic(sLine.substr(nPos, getMatchingParenthesis(sLine.substr(nPos - 1)) - 1), bReturningLogicals)
-                            + sLine.substr(getMatchingParenthesis(sLine.substr(nPos - 1)) + nPos);
+                            + evalStringLogic(sLine.substr(nPos, getMatchingParenthesis(StringView(sLine, nPos - 1)) - 1), bReturningLogicals)
+                            + sLine.substr(getMatchingParenthesis(StringView(sLine, nPos - 1)) + nPos);
                     nPos = 0;
                 }
             }

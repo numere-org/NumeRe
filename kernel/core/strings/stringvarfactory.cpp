@@ -121,11 +121,11 @@ namespace NumeRe
     /// there are string vector variables in the passed
     /// command line
     ///
-    /// \param sLine const string&
+    /// \param sLine StringView
     /// \return bool
     ///
     /////////////////////////////////////////////////
-    bool StringVarFactory::containsStringVectorVars(const string& sLine)
+    bool StringVarFactory::containsStringVectorVars(StringView sLine)
     {
         // If the command line or the string vector vars are empty return false
         if (!sLine.length() || (!m_mStringVectorVars.size() && !m_mTempStringVectorVars.size()))
@@ -352,11 +352,11 @@ namespace NumeRe
     /// string and determines, whether it is a
     /// delimiter or not.
     ///
-    /// \param sToken const string&
+    /// \param sToken StringView
     /// \return bool
     ///
     /////////////////////////////////////////////////
-    bool StringVarFactory::checkStringvarDelimiter(const string& sToken) const
+    bool StringVarFactory::checkStringvarDelimiter(StringView sToken) const
     {
         static const string sDELIMITER = "+-*/ ()={}^&|!<>,\\%#[]?:\";";
 
@@ -463,11 +463,11 @@ namespace NumeRe
     /// whether the passed string line contains string
     /// variables as part of the expression.
     ///
-    /// \param _sLine const string&
+    /// \param _sLine StringView
     /// \return bool
     ///
     /////////////////////////////////////////////////
-    bool StringVarFactory::containsStringVars(const string& _sLine) const
+    bool StringVarFactory::containsStringVars(StringView _sLine) const
     {
         // Do nothing, if no string variables were declared
         if (!m_mStringVars.size())
@@ -488,7 +488,7 @@ namespace NumeRe
                 // Compare the located match to the delimiters and return
                 // true, if the match is delimited on both sides
                 if (sLine[pos+(iter->first).length()] != '('
-                    && checkStringvarDelimiter(sLine.substr(pos-1, (iter->first).length()+2))
+                    && checkStringvarDelimiter(StringView(sLine, pos-1, (iter->first).length()+2))
                     )
                     return true;
 
@@ -567,7 +567,7 @@ namespace NumeRe
                 if (__nPos == 1)
                 {
                     // Check with delimiter
-                    if (checkStringvarDelimiter(" " + sLine.substr(0, (iter->first).length()+1))
+                    if (checkStringvarDelimiter(StringView(" " + sLine, 1, (iter->first).length()+1))
                         && !isInQuotes(sLine, 0, true))
                     {
                         // Replace it with standard function signature or its value
@@ -581,7 +581,7 @@ namespace NumeRe
                 }
 
                 // Check with delimiter
-                if (checkStringvarDelimiter(sLine.substr(__nPos-2, (iter->first).length()+2))
+                if (checkStringvarDelimiter(StringView(sLine, __nPos-2, (iter->first).length()+2))
                     && !isInQuotes(sLine, __nPos-1, true))
                 {
                     // Replace it with standard function signature or its value
@@ -644,7 +644,7 @@ namespace NumeRe
                 if (__nPos == 1)
                 {
                     // Check with delimiter
-                    if (checkStringvarDelimiter(" " + sLine.substr(0, (iter->first).length()+1))
+                    if (checkStringvarDelimiter(StringView(" " + sLine, 1, (iter->first).length()+1))
                         && !isInQuotes(sLine, 0, true))
                     {
                         // Replace it with standard function signature or its value
@@ -658,7 +658,7 @@ namespace NumeRe
                 }
 
                 // Check with delimiter
-                if (checkStringvarDelimiter(sLine.substr(__nPos-2, (iter->first).length()+2))
+                if (checkStringvarDelimiter(StringView(sLine, __nPos-2, (iter->first).length()+2))
                     && !isInQuotes(sLine, __nPos-1, true))
                 {
                     // Replace it with standard function signature or its value

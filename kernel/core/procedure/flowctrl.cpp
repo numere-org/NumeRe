@@ -2884,7 +2884,7 @@ int FlowCtrl::compile(std::string sLine, int nthCmd)
             if (isInQuotes(sLine, nPos))
                 continue;
 
-            size_t nParPos = getMatchingParenthesis(sLine.substr(nPos));
+            size_t nParPos = getMatchingParenthesis(StringView(sLine, nPos));
 
             if (nParPos == std::string::npos)
                 throw SyntaxError(SyntaxError::UNMATCHED_PARENTHESIS, sLine, nPos);
@@ -3439,7 +3439,7 @@ int FlowCtrl::calc(StringView sLine, int nthCmd)
             if (isInQuotes(sBuffer, nPos))
                 continue;
 
-            size_t nParPos = getMatchingParenthesis(sBuffer.substr(nPos));
+            size_t nParPos = getMatchingParenthesis(StringView(sBuffer, nPos));
 
             if (nParPos == std::string::npos)
                 throw SyntaxError(SyntaxError::UNMATCHED_PARENTHESIS, sBuffer, nPos);
@@ -3554,7 +3554,6 @@ int FlowCtrl::calc(StringView sLine, int nthCmd)
 
         {
             bool bSupressAnswer_back = NumeReKernel::bSupressAnswer;
-            std::string sPreCommandLine = sLine.to_string();
             sBuffer = sLine.to_string();
             NumeReKernel::bSupressAnswer = bLoopSupressAnswer;
 

@@ -1721,7 +1721,7 @@ void NumeReKernel::handleToCmd(std::string& sLine, std::string& sCache, std::str
             nPos = sLine.find("to_cmd(", nPos) + 6;
             if (isInQuotes(sLine, nPos))
                 continue;
-            size_t nParPos = getMatchingParenthesis(sLine.substr(nPos));
+            size_t nParPos = getMatchingParenthesis(StringView(sLine, nPos));
             if (nParPos == std::string::npos)
                 throw SyntaxError(SyntaxError::UNMATCHED_PARENTHESIS, sLine, nPos);
             std::string sCmdString = sLine.substr(nPos + 1, nParPos - 1);
@@ -1781,7 +1781,7 @@ bool NumeReKernel::evaluateProcedureCalls(std::string& sLine)
                 nParPos = sLine.find('(', nPos);
 
             __sVarList = sLine.substr(nParPos);
-            nParPos += getMatchingParenthesis(sLine.substr(nParPos));
+            nParPos += getMatchingParenthesis(StringView(sLine, nParPos));
             __sVarList = __sVarList.substr(1, getMatchingParenthesis(__sVarList) - 1);
 
             // Ensure that the procedure is not part of quotation marks

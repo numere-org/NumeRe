@@ -190,7 +190,7 @@ Returnvalue Procedure::ProcCalc(string sLine, string sCurrentCommand, int& nByte
                 if (isInQuotes(sLine, nPos))
                     continue;
 
-                size_t nParPos = getMatchingParenthesis(sLine.substr(nPos));
+                size_t nParPos = getMatchingParenthesis(StringView(sLine, nPos));
 
                 if (nParPos == string::npos)
                     throw SyntaxError(SyntaxError::UNMATCHED_PARENTHESIS, sLine, nPos);
@@ -539,38 +539,33 @@ Returnvalue Procedure::ProcCalc(string sLine, string sCurrentCommand, int& nByte
 /// procedure. It handles the "thisfile"
 /// namespace directly.
 ///
-/// \param sProc const string&
+/// \param sProc StringView
 /// \param bInstallFileName bool
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool Procedure::setProcName(const string& sProc, bool bInstallFileName)
+bool Procedure::setProcName(StringView sProc, bool bInstallFileName)
 {
     if (sProc.length())
     {
-        string _sProc = sProc;
-
         // Handle the "thisfile" namespace by using the call stack
         // to obtain the corresponding file name
-        if (sProcNames.length() && !bInstallFileName && _sProc.substr(0, 9) == "thisfile~")
+        if (sProcNames.length() && !bInstallFileName && sProc.subview(0, 9) == "thisfile~")
         {
             sCurrentProcedureName = sProcNames.substr(sProcNames.rfind(';') + 1);
             sProcNames += ";" + sCurrentProcedureName;
             return true;
         }
-        else if (sLastWrittenProcedureFile.length() && bInstallFileName && _sProc.substr(0, 9) == "thisfile~")
+        else if (sLastWrittenProcedureFile.length() && bInstallFileName && sProc.subview(0, 9) == "thisfile~")
         {
             sCurrentProcedureName = sLastWrittenProcedureFile.substr(0, sLastWrittenProcedureFile.find('|'));
             return true;
         }
-        else if (_sProc.substr(0, 9) == "thisfile~")
+        else if (sProc.subview(0, 9) == "thisfile~")
             return false;
 
-        // Convert the namespace to a path
-        _sProc = nameSpaceToPath(_sProc, "");
-
         // Create a valid file name from the procedure name
-        sCurrentProcedureName = FileSystem::ValidFileName(_sProc, ".nprc");
+        sCurrentProcedureName = FileSystem::ValidFileName(nameSpaceToPath(sProc.to_string(), ""), ".nprc");
 
         // Append the newly obtained procedure file name
         // to the call stack
@@ -587,7 +582,7 @@ bool Procedure::setProcName(const string& sProc, bool bInstallFileName)
 /// execution of the currently selected procedure
 /// as it handles all the logic.
 ///
-/// \param sProc string
+/// \param sProc StringView
 /// \param sVarList string
 /// \param _parser Parser&
 /// \param _functions Define&
@@ -600,7 +595,7 @@ bool Procedure::setProcName(const string& sProc, bool bInstallFileName)
 /// \return Returnvalue
 ///
 /////////////////////////////////////////////////
-Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, FunctionDefinitionManager& _functions, MemoryManager& _data, Settings& _option, Output& _out, PlotData& _pData, Script& _script, size_t nth_procedure)
+Returnvalue Procedure::execute(StringView sProc, string sVarList, Parser& _parser, FunctionDefinitionManager& _functions, MemoryManager& _data, Settings& _option, Output& _out, PlotData& _pData, Script& _script, size_t nth_procedure)
 {
     // Measure the current stack size and ensure
     // that the current call won't exceed the
@@ -613,7 +608,7 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, F
         throw SyntaxError(SyntaxError::PROCEDURE_STACK_OVERFLOW, "$" + sProc + "(" + sVarList + ")", SyntaxError::invalid_position, "\\$" + sProc, nth_procedure);
     }
 
-    StripSpaces(sProc);
+    sProc.strip();
     NumeReKernel::getInstance()->getDebugger().pushStackItem(sProc + "(" + sVarList + ")", this);
 
     // Set the file name for the currently selected procedure
@@ -633,28 +628,28 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, F
     if (_varFactory)
         delete _varFactory;
 
-    _varFactory = new ProcedureVarFactory(this, mangleName(sProc), nth_procedure);
+    _varFactory = new ProcedureVarFactory(this, mangleName(sProc.to_string()), nth_procedure);
     ProcedureElement*ProcElement = NumeReKernel::ProcLibrary.getProcedureContents(sCurrentProcedureName);
 
     // add spaces in front of and at the end of sVarList
     sVarList = " " + sVarList + " ";
 
     // Remove file name extension, if there's one in the procedure name
-    if (sProc.length() > 5 && sProc.substr(sProc.length() - 5) == ".nprc")
-        sProc = sProc.substr(0, sProc.rfind('.'));
+    if (sProc.length() > 5 && sProc.subview(sProc.length() - 5) == ".nprc")
+        sProc = sProc.subview(0, sProc.rfind('.'));
 
     // Get the namespace of this procedure
     extractCurrentNamespace(sProc);
 
     // Separate the procedure name from the namespace
     if (sProc.find('~') != string::npos)
-        sProc = sProc.substr(sProc.rfind('~') + 1);
+        sProc = sProc.subview(sProc.rfind('~') + 1);
 
     if (sProc.find('/') != string::npos)
-        sProc = sProc.substr(sProc.rfind('/') + 1);
+        sProc = sProc.subview(sProc.rfind('/') + 1);
 
     if (sProc.find('\\') != string::npos)
-        sProc = sProc.substr(sProc.rfind('\\') + 1);
+        sProc = sProc.subview(sProc.rfind('\\') + 1);
 
     // Prepare the procedure command line elements
     // and find the current procedure line
@@ -672,7 +667,7 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, F
         if (_option.useDebugger())
             _debugger.popStackItem();
 
-        throw SyntaxError(SyntaxError::PROCEDURE_NOT_FOUND, "", SyntaxError::invalid_position, sProc);
+        throw SyntaxError(SyntaxError::PROCEDURE_NOT_FOUND, "", SyntaxError::invalid_position, sProc.to_string());
     }
 
     // Get the procedure head line
@@ -688,7 +683,7 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, F
         if (_option.useDebugger())
             _debugger.popStackItem();
 
-        throw SyntaxError(SyntaxError::PROCEDURE_NOT_FOUND, "", SyntaxError::invalid_position, sProc);
+        throw SyntaxError(SyntaxError::PROCEDURE_NOT_FOUND, "", SyntaxError::invalid_position, sProc.to_string());
     }
 
     // Get the flags
@@ -1280,8 +1275,7 @@ FlowCtrl::ProcedureInterfaceRetVal Procedure::procedureInterface(string& sLine, 
                     __sName = sNameSpace + __sName;
 
                 if (__sName.substr(0, 5) == "this~")
-                    __sName.replace(0, 4, sThisNameSpace);
-
+                    __sName = sThisNameSpace + __sName.substr(4));
 
                 // Handle explicit procedure file names
                 if (sLine[nPos] == '\'')
@@ -1296,10 +1290,10 @@ FlowCtrl::ProcedureInterfaceRetVal Procedure::procedureInterface(string& sLine, 
                 __sVarList = sLine.substr(nParPos);
 
                 // Ensure that each parenthesis has its counterpart
-                if (getMatchingParenthesis(sLine.substr(nParPos)) == string::npos)
+                if (getMatchingParenthesis(StringView(sLine, nParPos)) == string::npos)
                     throw SyntaxError(SyntaxError::UNMATCHED_PARENTHESIS, sLine, nParPos);
 
-                nParPos += getMatchingParenthesis(sLine.substr(nParPos));
+                nParPos += getMatchingParenthesis(StringView(sLine, nParPos));
                 __sVarList = __sVarList.substr(1, getMatchingParenthesis(__sVarList) - 1);
                 size_t nVarPos = 0;
 
@@ -2080,7 +2074,7 @@ vector<string> Procedure::expandInlineProcedures(string& sProc)
                     // Replace the return value and insert the
                     // stuff before the return value in the overall
                     // expansion
-                    sProc.replace(nPos-1, getMatchingParenthesis(sProc.substr(nPos-1))+1, vInlinedRepresentation.back());
+                    sProc.replace(nPos-1, getMatchingParenthesis(StringView(sProc, nPos-1))+1, vInlinedRepresentation.back());
                     vExpandedProcedures.insert(vExpandedProcedures.end(), vInlinedRepresentation.begin(), vInlinedRepresentation.end()-1);
                 }
 
@@ -2815,17 +2809,17 @@ void Procedure::resetProcedure(Parser& _parser, bool bSupressAnswer)
 /// \brief This member function extracts the
 /// namespace of the currently executed procedure.
 ///
-/// \param sProc const string&
+/// \param sProc StringView
 /// \return void
 ///
 /////////////////////////////////////////////////
-void Procedure::extractCurrentNamespace(const string& sProc)
+void Procedure::extractCurrentNamespace(StringView sProc)
 {
     for (size_t i = sProc.length() - 1; i >= 0; i--)
     {
         if (sProc[i] == '\\' || sProc[i] == '/' || sProc[i] == '~')
         {
-            sThisNameSpace = sProc.substr(0, i);
+            sThisNameSpace = sProc.subview(0, i).to_string();
 
             // If the namespace doesn't contain a colon
             // replace all path separators with a tilde

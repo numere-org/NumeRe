@@ -1943,7 +1943,7 @@ namespace NumeRe
             n_pos = strExpr.nEqPos+1;
 
         // Get the string variables
-        if (containsStringVars(strExpr.sLine.substr(n_pos)))
+        if (containsStringVars(StringView(strExpr.sLine, n_pos)))
             getStringValuesAsInternalVar(strExpr.sLine, n_pos);
 
         // Does the current line contain candidates
@@ -2050,8 +2050,8 @@ namespace NumeRe
                         if (strExpr.sLine[j] == '"')
                             throw SyntaxError(SyntaxError::STRING_ERROR, strExpr.sLine, j, _lang.get("ERR_NR_3603_UNEXPECTED_LITERAL"));
 
-                        if ((strExpr.sLine[j] == '(' || strExpr.sLine[j] == '{') && getMatchingParenthesis(strExpr.sLine.substr(j)) != std::string::npos)
-                            j += getMatchingParenthesis(sLine.substr(j));
+                        if ((strExpr.sLine[j] == '(' || strExpr.sLine[j] == '{') && getMatchingParenthesis(StringView(strExpr.sLine, j)) != std::string::npos)
+                            j += getMatchingParenthesis(StringView(sLine, j));
 
                         if (strExpr.sLine[j] == ' ' || strExpr.sLine[j] == '+')
                         {
@@ -2071,10 +2071,10 @@ namespace NumeRe
                 if (strExpr.sLine[i] == '(' && !(nQuotes % 2))
                 {
                     // Ensure that its counterpart exists
-                    if (getMatchingParenthesis(strExpr.sLine.substr(i)) == std::string::npos)
+                    if (getMatchingParenthesis(StringView(strExpr.sLine, i)) == std::string::npos)
                         throw SyntaxError(SyntaxError::UNMATCHED_PARENTHESIS, strExpr.sLine, i);
 
-                    size_t nPos = getMatchingParenthesis(strExpr.sLine.substr(i)) + i;
+                    size_t nPos = getMatchingParenthesis(StringView(strExpr.sLine, i)) + i;
 
                     // Ignore any calls to "string()"
                     if (i < 6 || strExpr.sLine.substr(i - 6, 6) != "string")
@@ -2129,7 +2129,7 @@ namespace NumeRe
 
                 if (!(nQuotes % 2) && strExpr.sLine[i] == '{')
                 {
-                    size_t nmatching = getMatchingParenthesis(strExpr.sLine.substr(i));
+                    size_t nmatching = getMatchingParenthesis(StringView(strExpr.sLine, i));
                     std::string sVectorTemp = strExpr.sLine.substr(i+1, nmatching-1);
 
                     if (!sVectorTemp.length()) // Empty brace == nan
@@ -2321,11 +2321,11 @@ namespace NumeRe
     /// is an expression containing strings, string
     /// variables or string vector variables.
     ///
-    /// \param sExpression const std::string&
+    /// \param sExpression StringView
     /// \return bool
     ///
     /////////////////////////////////////////////////
-    bool StringParser::isStringExpression(const std::string& sExpression)
+    bool StringParser::isStringExpression(StringView sExpression)
     {
         if (sExpression.find_first_of("\"#") != std::string::npos
 			|| sExpression.find("string(") != std::string::npos

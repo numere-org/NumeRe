@@ -3611,7 +3611,7 @@ static CommandReturnValues cmd_stats(string& sCmd)
         if (findParameter(sCmd, "export", '='))
             addArgumentQuotes(sCmd, "export");
 
-        sArgument = "stats -" + _accessParser.getDataObject() + " " + sCmd.substr(getMatchingParenthesis(sCmd.substr(sCmd.find('('))) + 1 + sCmd.find('('));
+        sArgument = "stats -" + _accessParser.getDataObject() + " " + sCmd.substr(getMatchingParenthesis(StringView(sCmd, sCmd.find('('))) + 1 + sCmd.find('('));
         sArgument = evaluateParameterValues(sArgument);
         std::string sRet = plugin_statistics(sArgument, _cache);
 

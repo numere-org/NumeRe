@@ -2934,7 +2934,7 @@ void Plot::createStd3dPlot(size_t nPlotCompose, size_t nPlotComposeSize)
                     for (size_t l = 0; l < sConvLegends.length(); l++)
                     {
                         if (sConvLegends[l] == '(')
-                            l += getMatchingParenthesis(sConvLegends.substr(l));
+                            l += getMatchingParenthesis(StringView(sConvLegends, l));
 
                         if (sConvLegends[l] == ',')
                         {
@@ -3657,7 +3657,7 @@ std::vector<std::string> Plot::separateFunctionsAndData()
                 && !_data.isCluster(sToken.substr(0, sToken.find_first_of("({"))))
                 throw SyntaxError(SyntaxError::DATAPOINTS_CANNOT_BE_MODIFIED_WHILE_PLOTTING, sCurrentExpr, sErrTok, sToken);
 
-            string sSubstr = sToken.substr(getMatchingParenthesis(sToken.substr(sToken.find_first_of("({"))) + sToken.find_first_of("({") + 1);
+            string sSubstr = sToken.substr(getMatchingParenthesis(StringView(sToken, sToken.find_first_of("({"))) + sToken.find_first_of("({") + 1);
 
             if (sSubstr[sSubstr.find_first_not_of(' ')] != '"' && sSubstr[sSubstr.find_first_not_of(' ')] != '#')
                 throw SyntaxError(SyntaxError::DATAPOINTS_CANNOT_BE_MODIFIED_WHILE_PLOTTING, sCurrentExpr, sErrTok, sToken);

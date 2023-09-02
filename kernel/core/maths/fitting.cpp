@@ -462,7 +462,7 @@ static vector<double> evaluateFittingParams(FittingData& fitData, string& sCmd, 
     for (size_t i = 0; i < sCmd.length(); i++)
     {
         if (sCmd[i] == '(')
-            i += getMatchingParenthesis(sCmd.substr(i));
+            i += getMatchingParenthesis(StringView(sCmd, i));
 
         if (sCmd[i] == '-')
         {
@@ -487,7 +487,7 @@ static vector<double> evaluateFittingParams(FittingData& fitData, string& sCmd, 
     for (size_t i = 0; i < fitData.sFitFunction.length(); i++)
     {
         if (fitData.sFitFunction[i] == '(')
-            i += getMatchingParenthesis(fitData.sFitFunction.substr(i));
+            i += getMatchingParenthesis(StringView(fitData.sFitFunction, i));
 
         if (fitData.sFitFunction[i] == '-')
         {
@@ -720,7 +720,7 @@ static mu::varmap_type getFittingParameters(FittingData& fitData, const mu::varm
                     for (size_t j = i; j < fitData.sParams.length(); j++)
                     {
                         if (fitData.sParams[j] == '(')
-                            j += getMatchingParenthesis(fitData.sParams.substr(j));
+                            j += getMatchingParenthesis(StringView(fitData.sParams, j));
 
                         if (fitData.sParams[j] == ',')
                         {

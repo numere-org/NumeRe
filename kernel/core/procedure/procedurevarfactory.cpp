@@ -51,7 +51,7 @@ static bool containsFreeOperators(const string& sString)
         {
             size_t nMatch;
 
-            if ((nMatch = getMatchingParenthesis(sString.substr(i))) != string::npos)
+            if ((nMatch = getMatchingParenthesis(StringView(sString, i))) != string::npos)
                 i += nMatch;
         }
         else if (sOperators.find(sString[i]) != string::npos)
@@ -1619,7 +1619,7 @@ string ProcedureVarFactory::resolveArguments(string sProcedureCommandLine, size_
                     || isToCmd(sProcedureCommandLine, nPos)))
             {
                 if ((iter.second.front() == '{' || iter.second.back() == ')') && iter.first.back() == '{')
-                    sProcedureCommandLine.replace(nPos, getMatchingParenthesis(sProcedureCommandLine.substr(nPos))+1, iter.second);
+                    sProcedureCommandLine.replace(nPos, getMatchingParenthesis(StringView(sProcedureCommandLine, nPos))+1, iter.second);
                 else
                     sProcedureCommandLine.replace(nPos, nArgumentBaseLength, iter.second);
 

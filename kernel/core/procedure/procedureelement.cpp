@@ -178,7 +178,7 @@ ProcedureElement::ProcedureElement(const StyledTextFile& procedureContents, cons
                 for (size_t j = 0; j < sProcCommandLine.length(); j++)
                 {
                     if ((sProcCommandLine[j] == '(' || sProcCommandLine[j] == '{' || sProcCommandLine[j] == '[')
-                         && getMatchingParenthesis(sProcCommandLine.substr(j)) == std::string::npos)
+                         && getMatchingParenthesis(StringView(sProcCommandLine, j)) == std::string::npos)
                         throw SyntaxError(SyntaxError::UNMATCHED_PARENTHESIS, sProcCommandLine, j);
                 }
 
@@ -229,7 +229,7 @@ ProcedureElement::ProcedureElement(const StyledTextFile& procedureContents, cons
                 std::string sProcName = sProcCommandLine.substr(sProcCommandLine.find('$'));
                 sProcName.erase(sProcName.find('('));
 
-                if (getMatchingParenthesis(sProcCommandLine.substr(sProcCommandLine.find('('))) == std::string::npos)
+                if (getMatchingParenthesis(StringView(sProcCommandLine, sProcCommandLine.find('('))) == std::string::npos)
                     throw SyntaxError(SyntaxError::UNMATCHED_PARENTHESIS, sProcCommandLine, sProcCommandLine.find('('));
 
                 // Ensure that the argument list is defined reasonable

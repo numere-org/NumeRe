@@ -137,7 +137,7 @@ static void doc_ReplaceExprContentForHTML(std::string& sExpr, Settings& _option)
         {
             if (sExpr[i+1] == '(')
             {
-                sExpr.replace(getMatchingParenthesis(sExpr.substr(i))+i, 1, "</sup>");
+                sExpr.replace(getMatchingParenthesis(StringView(sExpr, i))+i, 1, "</sup>");
                 sExpr.replace(i, 2, "<sup>");
             }
             else
@@ -155,7 +155,7 @@ static void doc_ReplaceExprContentForHTML(std::string& sExpr, Settings& _option)
         {
             if (sExpr[i+1] == '(')
             {
-                sExpr.replace(getMatchingParenthesis(sExpr.substr(i))+i, 1, "</sub >");
+                sExpr.replace(getMatchingParenthesis(StringView(sExpr, i))+i, 1, "</sub >");
                 sExpr.replace(i, 2, "<sub>");
             }
             else
