@@ -163,7 +163,7 @@ static int indentationLevelDiff(const std::string& sText)
                 continue;
 
             // Is it an opening or closing tag?
-            if (tag.substr(0, 2) == "</")
+            if (tag.starts_with("</"))
             {
                 // Do only decrement matched pairs
                 if (vTagStack.size() && tagVal == vTagStack.back())

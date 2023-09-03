@@ -145,7 +145,7 @@ class FlowCtrl
         NumeRe::Cluster evalRangeBasedHeader(std::string& sHeadExpression, int nth_Cmd, const std::string& sHeadCommand);
         int evalForkFlowCommands(int __j, int nth_loop);
 
-        void replaceLocalVars(std::string& sLine);
+        void replaceLocalVars(MutableStringView sLine);
         void replaceLocalVars(const std::string& sOldVar, const std::string& sNewVar, size_t from = 0, size_t to = std::string::npos);
 
         bool checkFlowControlArgument(const std::string& sFlowControlArgument, bool isForLoop = false);

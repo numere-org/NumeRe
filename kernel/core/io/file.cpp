@@ -407,7 +407,7 @@ namespace NumeRe
         // where the table heads are located. Depending on the format of
         // the comment section in the file, the following code tries
         // different approaches
-        if (nComment >= 13 && vFileContents[2].substr(0, 21) == "# NumeRe: Framework f")
+        if (nComment >= 13 && vFileContents[2].starts_with("# NumeRe: Framework f"))
         {
             // This is a NumeRe-created text file
             // Find the first actual headline
@@ -657,7 +657,7 @@ namespace NumeRe
                                 break;
 
                             // Abort on separator lines
-                            if (vFileContents[k].substr(0, 4) == "#===" || vFileContents[k].substr(0, 5) == "# ===")
+                            if (vFileContents[k].starts_with("#===") || vFileContents[k].starts_with("# ==="))
                                 break;
 
                             // Ensure that the current line has the same length
@@ -713,7 +713,7 @@ namespace NumeRe
                                 break;
 
                             // Abort on separator lines
-                            if (vFileContents[k].substr(0, 4) == "#===" || vFileContents[k].substr(0, 5) == "# ===")
+                            if (vFileContents[k].starts_with("#===") || vFileContents[k].starts_with("# ==="))
                                 break;
 
                             // Tokenize the current line
@@ -2781,9 +2781,9 @@ namespace NumeRe
 
             // Copy all meta data before the actual table into
             // a common string
-            if (vFileContents[i].substr(0, 2) == "##"
+            if (vFileContents[i].starts_with("##")
                 && !nTableStart
-                && vFileContents[i].substr(0, 6) != "##END=")
+                && !vFileContents[i].starts_with("##END="))
             {
                 if (sComment.length())
                     sComment += "\n";
@@ -2794,7 +2794,7 @@ namespace NumeRe
             parseLabel(vFileContents[i]);
 
             // Here starts a n-tuples table
-            if (vFileContents[i].substr(0, 10) == "##NTUPLES=")
+            if (vFileContents[i].starts_with("##NTUPLES="))
             {
                 EndlessVector<std::string> symbol;
                 EndlessVector<std::string> varType;
@@ -2810,8 +2810,8 @@ namespace NumeRe
 
                     // Copy all meta data before the actual table into
                     // a common string
-                    if (vFileContents[j].substr(0, 2) == "##"
-                        && vFileContents[j].substr(0, 7) != "##PAGE=")
+                    if (vFileContents[j].starts_with("##")
+                        && !vFileContents[j].starts_with("##PAGE="))
                     {
                         if (sComment.length())
                             sComment += "\n";
@@ -2821,21 +2821,21 @@ namespace NumeRe
 
                     parseLabel(vFileContents[j]);
 
-                    if (vFileContents[j].substr(0, 9) == "##SYMBOL=")
+                    if (vFileContents[j].starts_with("##SYMBOL="))
                         symbol = getAllArguments(vFileContents[j].substr(9));
-                    else if (vFileContents[j].substr(0, 10) == "##VARTYPE=")
+                    else if (vFileContents[j].starts_with("##VARTYPE="))
                         varType = getAllArguments(vFileContents[j].substr(10));
-                    else if (vFileContents[j].substr(0, 9) == "##VARDIM=")
+                    else if (vFileContents[j].starts_with("##VARDIM="))
                         varDim = getAllArguments(vFileContents[j].substr(9));
-                    else if (vFileContents[j].substr(0, 8) == "##UNITS=")
+                    else if (vFileContents[j].starts_with("##UNITS="))
                         units = getAllArguments(vFileContents[j].substr(8));
-                    else if (vFileContents[j].substr(0, 8) == "##FIRST=")
+                    else if (vFileContents[j].starts_with("##FIRST="))
                         firstVal = getAllArguments(vFileContents[j].substr(8));
-                    else if (vFileContents[j].substr(0, 7) == "##LAST=")
+                    else if (vFileContents[j].starts_with("##LAST="))
                         lastVal = getAllArguments(vFileContents[j].substr(7));
-                    else if (vFileContents[j].substr(0, 9) == "##FACTOR=")
+                    else if (vFileContents[j].starts_with("##FACTOR="))
                         factor = getAllArguments(vFileContents[j].substr(9));
-                    else if (vFileContents[j].substr(0, 7) == "##PAGE=")
+                    else if (vFileContents[j].starts_with("##PAGE="))
                     {
                         nTableStart = j;
                         i = j;
@@ -2895,7 +2895,7 @@ namespace NumeRe
             }
 
             // Erase everything after the end tag
-            if (vFileContents[i].substr(0, 6) == "##END=")
+            if (vFileContents[i].starts_with("##END="))
             {
                 vFileContents.erase(vFileContents.begin()+i+1, vFileContents.end());
                 break;
@@ -2941,13 +2941,13 @@ namespace NumeRe
         for (size_t i = nTableStart; i < vFileContents.size(); i++)
         {
             // Determine the needed number of rows
-            if (vFileContents[i].substr(0, 10) == "##NPOINTS=")
+            if (vFileContents[i].starts_with("##NPOINTS="))
                 meta.m_points = StrToInt(vFileContents[i].substr(10));
 
-            if (vFileContents[i].substr(0,11) == "##XYPOINTS="
-                || vFileContents[i].substr(0, 9) == "##XYDATA="
-                || vFileContents[i].substr(0, 12) == "##PEAKTABLE="
-                || vFileContents[i].substr(0, 12) == "##DATATABLE=")
+            if (vFileContents[i].starts_with("##XYPOINTS=")
+                || vFileContents[i].starts_with("##XYDATA=")
+                || vFileContents[i].starts_with("##PEAKTABLE=")
+                || vFileContents[i].starts_with("##DATATABLE="))
             {
                 nDataStart = i+1;
                 std::string sXYScheme = vFileContents[i].substr(vFileContents[i].find('=')+1);
@@ -3011,34 +3011,34 @@ namespace NumeRe
                 vFileContents[j].erase(vFileContents[j].find("$$"));
 
             // Get the x and y scaling factors
-            if (vFileContents[j].substr(0,10) == "##XFACTOR=")
+            if (vFileContents[j].starts_with("##XFACTOR="))
                 meta.m_xFactor = StrToDb(vFileContents[j].substr(10));
 
-            if (vFileContents[j].substr(0,10) == "##YFACTOR=")
+            if (vFileContents[j].starts_with("##YFACTOR="))
                 meta.m_yFactor = StrToDb(vFileContents[j].substr(10));
 
-            if (vFileContents[j].substr(0,9) == "##FIRSTX=")
+            if (vFileContents[j].starts_with("##FIRSTX="))
                 meta.m_firstX = StrToDb(vFileContents[j].substr(9));
 
-            if (vFileContents[j].substr(0,8) == "##LASTX=")
+            if (vFileContents[j].starts_with("##LASTX="))
                 meta.m_lastX = StrToDb(vFileContents[j].substr(8));
 
             // Extract the x units
-            if (vFileContents[j].substr(0,9) == "##XUNITS=")
+            if (vFileContents[j].starts_with("##XUNITS="))
             {
                 meta.m_xUnit = vFileContents[j].substr(9);
                 StripSpaces(meta.m_xUnit);
             }
 
             // Extract the y units
-            if (vFileContents[j].substr(0,9) == "##YUNITS=")
+            if (vFileContents[j].starts_with("##YUNITS="))
             {
                 meta.m_yUnit = vFileContents[j].substr(9);
                 StripSpaces(meta.m_yUnit);
             }
 
             // Get the data type (currently unused)
-            if (vFileContents[j].substr(0,11) == "##DATATYPE=")
+            if (vFileContents[j].starts_with("##DATATYPE="))
             {
                 sDataType = vFileContents[j].substr(11);
                 StripSpaces(sDataType);
@@ -3071,7 +3071,7 @@ namespace NumeRe
                 meta.m_yUnit = "Absorbtion";
             else if (toUpperCase(meta.m_yUnit) == "KUBELKA-MUNK")
                 meta.m_yUnit = "Kubelka-Munk";
-            else if (toUpperCase(meta.m_yUnit) == "ARBITRARY UNITS" || meta.m_yUnit.substr(0,9) == "Intensity")
+            else if (toUpperCase(meta.m_yUnit) == "ARBITRARY UNITS" || meta.m_yUnit.starts_with("Intensity"))
                 meta.m_yUnit = "Intensität";
         }
 
@@ -3086,12 +3086,12 @@ namespace NumeRe
         for (size_t j = nDataStart; j < vFileContents.size() - 1; j++)
         {
             // Abort at the end tag
-            if (vFileContents[j].substr(0, 6) == "##END="
-                || vFileContents[j].substr(0, 7) == "##PAGE=")
+            if (vFileContents[j].starts_with("##END=")
+                || vFileContents[j].starts_with("##PAGE="))
                 return j;
 
             // Ignore lables
-            if (vFileContents[j].substr(0, 2) == "##")
+            if (vFileContents[j].starts_with("##"))
                 continue;
 
             // Omit comments

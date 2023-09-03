@@ -317,10 +317,10 @@ namespace NumeRe
                 }
 
                 // Ignore comment lines
-                if (sProcCommandLine.substr(0, 2) == "##")
+                if (sProcCommandLine.starts_with("##"))
                 {
                     // Append each documentation string
-                    if (sProcCommandLine.substr(0, 3) == "##!")
+                    if (sProcCommandLine.starts_with("##!"))
                         AppendToDocumentation(_cTip, sProcCommandLine.substr(3));
 
                     continue;
@@ -331,9 +331,9 @@ namespace NumeRe
                     sProcCommandLine = sProcCommandLine.substr(0, sProcCommandLine.find("##"));
 
                 // Remove block comments and continue
-                if (sProcCommandLine.substr(0, 2) == "#*" && sProcCommandLine.find("*#", 2) == std::string::npos)
+                if (sProcCommandLine.starts_with("#*") && sProcCommandLine.find("*#", 2) == std::string::npos)
                 {
-                    if (sProcCommandLine.substr(0, 3) == "#*!")
+                    if (sProcCommandLine.starts_with("#*!"))
                     {
                         bDocFound = true;
                         AppendToDocumentation(_cTip, sProcCommandLine.substr(3));
@@ -439,9 +439,9 @@ namespace NumeRe
                             std::getline(procedure_in, sProcCommandLine);
                             StripSpaces(sProcCommandLine);
 
-                            if (sProcCommandLine.substr(0, 3) == "##!")
+                            if (sProcCommandLine.starts_with("##!"))
                                 AppendToDocumentation(_cTip, sProcCommandLine.substr(3));
-                            else if (sProcCommandLine.substr(0, 3) == "#*!")
+                            else if (sProcCommandLine.starts_with("#*!"))
                             {
                                 AppendToDocumentation(_cTip, sProcCommandLine.substr(3));
                                 bBlockComment = true;

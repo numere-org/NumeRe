@@ -686,7 +686,7 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const std::string& sCommand)
         sCommandLine.pop_back();
 
     // check for the double backslash at the end of the line
-    if (sCommandLine.length() > 2 && sCommandLine.substr(sCommandLine.length() - 2, 2) == "\\\\")
+    if (sCommandLine.ends_with("\\\\"))
     {
         sCommandLine.erase(sCommandLine.length() - 2);
         return NUMERE_PENDING;
@@ -779,12 +779,12 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const std::string& sCommand)
                 continue;
 
             // Eval debugger breakpoints from scripts
-            if ((sLine.substr(0, 2) == "|>" || nDebuggerCode == DEBUGGER_STEP)
+            if ((sLine.starts_with(">") || nDebuggerCode == DEBUGGER_STEP)
                     && _script.isValid()
                     && !_procedure.is_writing()
                     && !_procedure.getCurrentBlockDepth())
             {
-                if (sLine.substr(0, 2) == "|>")
+                if (sLine.starts_with("|>"))
                     sLine.erase(0, 2);
 
                 if (_option.useDebugger() && nDebuggerCode != DEBUGGER_LEAVE)
@@ -1137,7 +1137,7 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const std::string& sCommand)
                                                        toString(e.getIndices()[2]), toString(e.getIndices()[3]));
                     std::string sErrIDString = _lang.getKey("ERR_NR_" + toString((int)e.errorcode) + "_0_*");
 
-                    if (sErrLine_0.substr(0, 7) == "ERR_NR_")
+                    if (sErrLine_0.starts_with("ERR_NR_"))
                     {
                         sErrLine_0 = _lang.get("ERR_GENERIC_0", toString((int)e.errorcode));
                         sErrLine_1 = _lang.get("ERR_GENERIC_1");
@@ -1350,7 +1350,7 @@ bool NumeReKernel::handleCommandLineSource(std::string& sLine, std::string& sKee
         // --> Wenn die Laenge groesser als 2 ist, koennen '\' am Ende sein <--
         if (sLine.length() > 2)
         {
-            if (sLine.substr(sLine.length() - 2, 2) == "\\\\")
+            if (sLine.ends_with("\\\\"))
             {
                 // --> Ergaenze die Eingabe zu sKeep und beginne einen neuen Schleifendurchlauf <--
                 sKeep += sLine.substr(0, sLine.length() - 2);
@@ -2508,7 +2508,7 @@ NumeReVariables NumeReKernel::getVariableList()
     // Gather all (global) numerical variables
     for (auto iter = varmap.begin(); iter != varmap.end(); ++iter)
     {
-        if ((iter->first).substr(0, 2) == "_~"
+        if ((iter->first).starts_with("_~")
             || iter->first == "ans"
             || isDimensionVar(iter->first))
             continue;
@@ -2526,7 +2526,7 @@ NumeReVariables NumeReKernel::getVariableList()
     // Gather all (global) string variables
     for (auto iter = stringmap.begin(); iter != stringmap.end(); ++iter)
     {
-        if ((iter->first).substr(0, 2) == "_~")
+        if ((iter->first).starts_with("_~"))
             continue;
 
         sCurrentLine = iter->first
@@ -2541,7 +2541,7 @@ NumeReVariables NumeReKernel::getVariableList()
     // Gather all (global) tables
     for (auto iter = tablemap.begin(); iter != tablemap.end(); ++iter)
     {
-        if ((iter->first).substr(0, 2) == "_~")
+        if ((iter->first).starts_with("_~"))
             continue;
 
         if (iter->first == "string")
@@ -2563,7 +2563,7 @@ NumeReVariables NumeReKernel::getVariableList()
     // Gather all (global) clusters
     for (auto iter = clustermap.begin(); iter != clustermap.end(); ++iter)
     {
-        if ((iter->first).substr(0, 2) == "_~")
+        if ((iter->first).starts_with("_~"))
             continue;
 
         sCurrentLine = iter->first + "{}\t" + toString(iter->second.size()) + " x 1";
@@ -3567,7 +3567,7 @@ int NumeReKernel::evalDebuggerBreakPoint(const std::string& sCurrentCommand)
 
     for (auto iter : varmap)
     {
-        if (iter.first.substr(0, 2) != "_~"
+        if (!iter.first.starts_with("_~")
             && iter.first != "ans"
             && !isDimensionVar(iter.first))
             mLocalVars[iter.first] = std::make_pair(iter.first, iter.second);
@@ -3578,7 +3578,7 @@ int NumeReKernel::evalDebuggerBreakPoint(const std::string& sCurrentCommand)
 
     for (const auto& iter : sStringMap)
     {
-        if (iter.first.substr(0, 2) != "_~")
+        if (!iter.first.starts_with("_~"))
             mLocalStrings[iter.first] = std::make_pair(iter.first, iter.second);
     }
 
@@ -3596,7 +3596,7 @@ int NumeReKernel::evalDebuggerBreakPoint(const std::string& sCurrentCommand)
 
     for (const auto& iter : clusterMap)
     {
-        if (iter.first.substr(0, 2) != "_~")
+        if (!iter.first.starts_with("_~"))
             mLocalClusters[iter.first] = iter.first;
     }
 

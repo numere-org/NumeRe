@@ -454,7 +454,7 @@ static vector<double> evaluateFittingParams(FittingData& fitData, string& sCmd, 
     {
         sTeXExportFile = _data.ValidFileName(sTeXExportFile, ".tex");
 
-        if (sTeXExportFile.substr(sTeXExportFile.rfind('.')) != ".tex")
+        if (!sTeXExportFile.ends_with(".tex"))
             sTeXExportFile.replace(sTeXExportFile.rfind('.'), string::npos, ".tex");
     }
 

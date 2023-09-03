@@ -796,41 +796,22 @@ static bool listDirectory(const string& sDir, const string& sParams, const Setti
 			}
 			else if (sDir[0] == '<')
 			{
-				if (sDir.substr(0, 10) == "<loadpath>")
-				{
-					hFind = FindFirstFile((_option.getLoadPath() + "\\" + sDir.substr(sDir.find('>') + 1) + "\\" + sPattern).c_str(), &FindFileData);
-					sDirectory = _option.getLoadPath() + sDir.substr(10);
-				}
-				else if (sDir.substr(0, 10) == "<savepath>")
-				{
-					hFind = FindFirstFile((_option.getSavePath() + "\\" + sDir.substr(sDir.find('>') + 1) + "\\" + sPattern).c_str(), &FindFileData);
-					sDirectory = _option.getSavePath() + sDir.substr(10);
-				}
-				else if (sDir.substr(0, 12) == "<scriptpath>")
-				{
-					hFind = FindFirstFile((_option.getScriptPath() + "\\" + sDir.substr(sDir.find('>') + 1) + "\\" + sPattern).c_str(), &FindFileData);
-					sDirectory = _option.getScriptPath() + sDir.substr(12);
-				}
-				else if (sDir.substr(0, 10) == "<plotpath>")
-				{
-					hFind = FindFirstFile((_option.getPlotPath() + "\\" + sDir.substr(sDir.find('>') + 1) + "\\" + sPattern).c_str(), &FindFileData);
-					sDirectory = _option.getPlotPath() + sDir.substr(10);
-				}
-				else if (sDir.substr(0, 10) == "<procpath>")
-				{
-					hFind = FindFirstFile((_option.getProcPath() + "\\" + sDir.substr(sDir.find('>') + 1) + "\\" + sPattern).c_str(), &FindFileData);
-					sDirectory = _option.getProcPath() + sDir.substr(10);
-				}
-				else if (sDir.substr(0, 4) == "<wp>")
-				{
-					hFind = FindFirstFile((_option.getWorkPath() + "\\" + sDir.substr(sDir.find('>') + 1) + "\\" + sPattern).c_str(), &FindFileData);
-					sDirectory = _option.getWorkPath() + sDir.substr(10);
-				}
-				else if (sDir.substr(0, 2) == "<>" || sDir.substr(0, 6) == "<this>")
-				{
-					hFind = FindFirstFile((_option.getExePath() + "\\" + sDir.substr(sDir.find('>') + 1) + "\\" + sPattern).c_str(), &FindFileData);
-					sDirectory = _option.getExePath() + sDir.substr(sDir.find('>') + 1);
-				}
+				if (sDir.starts_with("<loadpath>"))
+                    sDirectory = _option.getLoadPath() + sDir.substr(10);
+				else if (sDir.starts_with("<savepath>"))
+                    sDirectory = _option.getSavePath() + sDir.substr(10);
+				else if (sDir.starts_with("<scriptpath>"))
+                    sDirectory = _option.getScriptPath() + sDir.substr(12);
+				else if (sDir.starts_with("<plotpath>"))
+                    sDirectory = _option.getPlotPath() + sDir.substr(10);
+				else if (sDir.starts_with("<procpath>"))
+                    sDirectory = _option.getProcPath() + sDir.substr(10);
+				else if (sDir.starts_with("<wp>"))
+                    sDirectory = _option.getWorkPath() + sDir.substr(4);
+				else if (sDir.starts_with("<>") || sDir.starts_with("<this>"))
+                    sDirectory = _option.getExePath() + sDir.substr(sDir.find('>') + 1);
+
+				hFind = FindFirstFile((sDirectory + "\\" + sPattern).c_str(), &FindFileData);
 			}
 			else
 			{
@@ -2854,7 +2835,7 @@ static CommandReturnValues cmd_readline(string& sCmd)
             if (sLastLine.find('\n') != string::npos)
                 sLastLine.erase(0, sLastLine.rfind('\n'));
 
-            if (sLastLine.substr(0, 4) == "|   " || sLastLine.substr(0, 4) == "|<- " || sLastLine.substr(0, 4) == "|-> ")
+            if (sLastLine.starts_with("|   ") || sLastLine.starts_with("|<- ") || sLastLine.starts_with("|-> "))
                 sLastLine.erase(0, 4);
 
             StripSpaces(sLastLine);
@@ -3955,7 +3936,7 @@ static CommandReturnValues cmd_show(string& sCmd)
     CommandLineParser cmdParser(sCmd, CommandLineParser::CMD_DAT_PAR);
 
     // Handle the compact mode (probably not needed any more)
-    if (cmdParser.getCommand().substr(0, 5) == "showf")
+    if (cmdParser.getCommand().starts_with("showf"))
         _out.setCompact(false);
     else
         _out.setCompact(_option.createCompactTables());

@@ -958,7 +958,55 @@ class StringViewBase
             return pos >= m_start && pos < m_start + m_len;
         }
 
+        /////////////////////////////////////////////////
+        /// \brief Private helper function to determine,
+        /// whether a character is a parser delimiter.
+        ///
+        /// \param c char
+        /// \return bool
+        ///
+        /////////////////////////////////////////////////
+        static bool is_parser_delim(char c)
+        {
+            // Characters converted to a single logical expression
+            return c >= 32 && c <= 126 && c != 36 && c != 39 && c != 46
+                && (c < 48 || c > 57)
+                && (c < 64 || c > 90)
+                && (c < 95 || c > 122);
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief Private helper function to determine,
+        /// whether a character is a delimiter.
+        ///
+        /// \param c char
+        /// \return bool
+        ///
+        /////////////////////////////////////////////////
+        static bool is_std_delim(char c)
+        {
+            // Characters converted to a single logical expression
+            return c >= 32 && c <= 125 && c != 36 && c != 39 && c != 46
+                && (c < 48 || c > 57)
+                && (c < 64 || c > 90)
+                && (c < 95 || c > 122);
+
+            // Should be identical to:
+            //static const string sDELIMITER = "+-*/ ()={}^&|!<>,\\%#[]?:\";";
+        }
+
     public:
+
+        /////////////////////////////////////////////////
+        /// \brief Defines the delimiter types.
+        /////////////////////////////////////////////////
+        enum DelimiterType
+        {
+            STD_DELIMITER,
+            PARSER_DELIMITER,
+            STRING_DELIMITER,
+            STRVAR_DELIMITER
+        };
 
         /////////////////////////////////////////////////
         /// \brief StringViewBase default constructor.
@@ -1486,6 +1534,22 @@ class StringViewBase
         }
 
         /////////////////////////////////////////////////
+        /// \brief Remove all characters after the
+        /// selected position from the view.
+        ///
+        /// \param pos size_t
+        /// \return void
+        ///
+        /////////////////////////////////////////////////
+        inline void remove_from(size_t pos)
+        {
+            if (pos > 0 && getData())
+                m_len = pos;
+            else
+                clear();
+        }
+
+        /////////////////////////////////////////////////
         /// \brief This member function shrinks the
         /// viewed section to remove all leading or
         /// trailing whitespace characters. This is the
@@ -1849,6 +1913,48 @@ class StringViewBase
             return std::string::npos;
         }
 
+        /////////////////////////////////////////////////
+        /// \brief Checks, whether the selected sequence
+        /// of characters in the view is delimited by the
+        /// selected set of delimiters.
+        ///
+        /// \param pos size_t
+        /// \param len size_t
+        /// \param type DelimiterType
+        /// \return bool
+        ///
+        /////////////////////////////////////////////////
+        bool is_delimited_sequence(size_t pos = 0, size_t len = std::string::npos, DelimiterType type = STD_DELIMITER) const
+        {
+            const std::string* data = getData();
+
+            if (data)
+            {
+                len = validizeLength(pos, len);
+
+                switch (type)
+                {
+                    case STD_DELIMITER:
+                        return (!pos || is_std_delim(data->operator[](m_start+pos-1)))
+                            && (len == m_len || is_std_delim(data->operator[](m_start+len)));
+
+                    case STRING_DELIMITER:
+                        return (!pos || is_std_delim(data->operator[](m_start+pos-1)))
+                            && (len == m_len || is_std_delim(data->operator[](m_start+len)) || data->operator[](m_start+len) == '.');
+
+                    case STRVAR_DELIMITER:
+                        return (!pos || is_std_delim(data->operator[](m_start+pos-1)))
+                            && (len == m_len || (is_std_delim(data->operator[](m_start+len))
+                                                 && data->operator[](m_start+len) != '(') || data->operator[](m_start+len) == '.');
+
+                    case PARSER_DELIMITER:
+                        return (!pos || is_parser_delim(data->operator[](m_start+pos-1)))
+                            && (len == m_len || is_parser_delim(data->operator[](m_start+len)));
+                }
+            }
+
+            return false;
+        }
 };
 
 

@@ -88,7 +88,7 @@ std::string FileSystem::cleanPath(std::string sFilePath, bool checkInvalidChars)
     {
         for (int i = 0; i < 7; i++)
         {
-            if (sFilePath.substr(0,sTokens[i][0].length()) == sTokens[i][0])
+            if (sFilePath.starts_with(sTokens[i][0]))
             {
                 if (sFilePath[sTokens[i][0].length()] != '/')
                     sFilePath = sTokens[i][1] + "/" + sFilePath.substr(sTokens[i][0].length());
@@ -99,7 +99,7 @@ std::string FileSystem::cleanPath(std::string sFilePath, bool checkInvalidChars)
             }
         }
 
-        if (sFilePath.substr(0,6) == "<this>")
+        if (sFilePath.starts_with("<this>"))
         {
             if (sFilePath[6] != '/')
                 sFilePath = sTokens[0][1] + "/" + sFilePath.substr(6);
@@ -289,7 +289,7 @@ std::string FileSystem::ValidFileName(std::string _sFileName, const std::string 
     // network address
     if (nPos == std::string::npos)
     {
-        if (_sFileName.substr(0, 2) != "//")
+        if (!_sFileName.starts_with("//"))
             _sFileName = sPath.substr(1, sPath.length()-2) + "/" + _sFileName;
     }
 
@@ -373,7 +373,7 @@ std::string FileSystem::ValidFolderName(std::string _sFileName, bool doCleanPath
     // network address
     if (nPos == std::string::npos)
     {
-        if (_sFileName.substr(0,2) != "//")
+        if (!_sFileName.starts_with("//"))
             _sFileName = sPath.substr(1, sPath.length()-2) + "/" + _sFileName;
     }
 
@@ -471,13 +471,17 @@ int FileSystem::setPath(std::string _sPath, bool bMkDir, std::string _sExePath)
 
     if (sPath.find(':') == std::string::npos)
     {
-        if (sPath.length() > 3 && sPath.substr(0,3) != "..\\" && sPath.substr(0,3) != "../" && sPath.substr(0,2) != ".\\" && sPath.substr(0,2) != "./")
+        if (sPath.length() > 3
+            && !sPath.starts_with("..\\")
+            && !sPath.starts_with("../")
+            && !sPath.starts_with(".\\")
+            && !sPath.starts_with("./"))
             sPath = "\"" + sExecutablePath + "\\" + sPath + "\"";
-        else if (sPath.length() > 2 && (sPath.substr(0,2) == ".\\" || sPath.substr(0,2) == "./"))
+        else if (sPath.length() > 2 && (sPath.starts_with(".\\") || sPath.starts_with("./")))
             sPath = "\"" + sExecutablePath + sPath.substr(1) + "\"";
-        else if (sPath.length() > 3 && (sPath.substr(0,3) == "..\\" || sPath.substr(0,3) == "../"))
+        else if (sPath.length() > 3 && (sPath.starts_with("..\\") || sPath.starts_with("../")))
         {
-            while (sPath.length() > 3 && (sPath.substr(0,3) == "..\\" || sPath.substr(0,3) == "../"))
+            while (sPath.length() > 3 && (sPath.starts_with("..\\") || sPath.starts_with("../")))
             {
                 if (sExecutablePath.find('\\') != std::string::npos)
                     sExecutablePath = sExecutablePath.substr(0,sExecutablePath.rfind('\\'));
@@ -496,11 +500,11 @@ int FileSystem::setPath(std::string _sPath, bool bMkDir, std::string _sExePath)
             sPath = "\"" + sExecutablePath + "\\" + sPath + "\"";
     }
 
-    if (sPath[0] == '"')
-        sPath = sPath.substr(1);
+    if (sPath.front() == '"')
+        sPath.erase(0, 1);
 
-    if (sPath[sPath.length()-1] == '"')
-        sPath = sPath.substr(0, sPath.length()-1);
+    if (sPath.back() == '"')
+        sPath.pop_back();
 
 
     if (bMkDir)

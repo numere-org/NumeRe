@@ -895,7 +895,7 @@ std::string replaceToTeX(const std::string& sString, bool replaceForTeXFile)
                     continue;
                 }
             }
-            else if (!checkDelimiter(sReturn.substr(nPos - 1, iter.first.length() + 2)))
+            else if (!StringView(sReturn).is_delimited_sequence(nPos, iter.first.length()))
             {
                 // --> Pruefen wir auch getrennt den Fall, ob das Token ueberhaupt begrenzt ist ('_' zaehlt nicht zu den Delimitern) <--
                 nPos += iter.first.length();
@@ -979,7 +979,7 @@ std::string replaceToTeX(const std::string& sString, bool replaceForTeXFile)
                     continue;
                 }
             }
-            else if (!checkDelimiter(sReturn.substr(nPos - 1, iter.first.length() + 2)))
+            else if (!StringView(sReturn).is_delimited_sequence(nPos, iter.first.length()))
             {
                 // --> Pruefen wir auch getrennt den Fall, ob das Token ueberhaupt begrenzt ist ('_' zaehlt nicht zu den Delimitern) <--
                 nPos += iter.first.length();
@@ -1224,23 +1224,20 @@ static Match findCommandWithReturnValue(StringView sCmd, const string& sCommand)
             continue;
 
         // This is our command and it is not at the beginning of the line
-        if (sCmd.subview(i, sCommand.length()) == sCommand && i)
+        if (sCmd.match(sCommand, i) && i)
         {
             // Is the command filling the rest of the command line?
             if (i + sCommand.length() == sCmd.length() - 1)
             {
-                // Store the command string with the previous character
-                _mMatch.sString = sCmd.subview(i - 1).to_string() + " ";
-
                 // Store the position
                 _mMatch.nPos = i;
 
                 // Ensure that the command is not part of a larger word
-                if (checkDelimiter(_mMatch.sString) && !isInQuotes(sCmd, i))
+                if (sCmd.is_delimited_sequence(i) && !isInQuotes(sCmd, i))
                 {
                     // It is not
                     // Remove the additional characters
-                    _mMatch.sString = _mMatch.sString.substr(1, _mMatch.sString.length() - 2);
+                    _mMatch.sString = sCmd.subview(i).to_string();
                 }
                 else
                 {
@@ -1288,7 +1285,7 @@ static Match findCommandWithReturnValue(StringView sCmd, const string& sCommand)
         }
 
         // This is our command and it is at the beginning of the line
-        if (sCmd.subview(i, sCommand.length()) == sCommand && !i)
+        if (sCmd.starts_with(sCommand))
         {
             // If the command lenght and the command line length are nearly the same
             if (sCommand.length() == sCmd.length() - 1)
@@ -2049,15 +2046,17 @@ bool addLegends(string& sExpr)
 /// character in the passed string is a delimiter
 /// character.
 ///
-/// \param sString const string&
+/// \param sString StringView
 /// \param stringdelim bool
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool checkDelimiter(const string& sString, bool stringdelim)
+bool checkDelimiter(StringView sString, bool stringdelim)
 {
     // --> Gib die Auswertung dieses logischen Ausdrucks zurueck <--
-    return isDelimiter(sString.front()) && (isDelimiter(sString.back()) || (sString.back() == '.' && stringdelim));
+    //return isDelimiter(sString.front()) && (isDelimiter(sString.back()) || (sString.back() == '.' && stringdelim));
+    return sString.is_delimited_sequence(1, sString.length()-2,
+                                         stringdelim ? StringViewBase::STRING_DELIMITER : StringViewBase::STD_DELIMITER);
 }
 
 
@@ -2086,7 +2085,7 @@ std::vector<std::string> splitIntoLines(std::string sOutput, size_t lineWidth, b
     sOutput = toSystemCodePage(sOutput);
 
     // Check if the output already contains the line starting chars
-    if ((sOutput.substr(0, 4) == "|   " || sOutput.substr(0, 4) == "|-> ") && nFirstIndent == 4)
+    if ((sOutput.starts_with("|   ") || sOutput.starts_with("|-> ")) && nFirstIndent == 4)
         nFirstIndent = 0;
 
     // Check if string is already shorter than the line length and does not have any new line commands
@@ -2245,7 +2244,7 @@ std::string outputString(std::vector<std::string> stringInLines, int nFirstInden
         return sOutput;
 
     // Check if the output already contains the line starting chars
-    if ((sOutput.substr(0, 4) == "|   " || sOutput.substr(0, 4) == "|-> ") && nFirstIndent == 4)
+    if ((sOutput.starts_with("|   ") || sOutput.starts_with("|-> ")) && nFirstIndent == 4)
         nFirstIndent = 0;
 
     // Add the first line with the corresponding indent
@@ -2878,21 +2877,21 @@ static HANDLE initializeFileHandle(string& sDir, WIN32_FIND_DATA* FindFileData, 
     else if (sDir[0] == '<')
     {
         // Get the default paths
-        if (sDir.substr(0, 10) == "<loadpath>")
+        if (sDir.starts_with("<loadpath>"))
             sPath = _option.getLoadPath() + sDir.substr(sDir.find('>') + 1);
-        else if (sDir.substr(0, 10) == "<savepath>")
+        else if (sDir.starts_with("<savepath>"))
             sPath = _option.getSavePath() + sDir.substr(sDir.find('>') + 1);
-        else if (sDir.substr(0, 12) == "<scriptpath>")
+        else if (sDir.starts_with("<scriptpath>"))
             sPath = _option.getScriptPath() + sDir.substr(sDir.find('>') + 1);
-        else if (sDir.substr(0, 10) == "<plotpath>")
+        else if (sDir.starts_with("<plotpath>"))
             sPath = _option.getPlotPath() + sDir.substr(sDir.find('>') + 1);
-        else if (sDir.substr(0, 10) == "<procpath>")
+        else if (sDir.starts_with("<procpath>"))
             sPath = _option.getProcPath() + sDir.substr(sDir.find('>') + 1);
-        else if (sDir.substr(0, 2) == "<>")
+        else if (sDir.starts_with("<>"))
             sPath = _option.getExePath() + sDir.substr(sDir.find('>') + 1);
-        else if (sDir.substr(0, 6) == "<this>")
+        else if (sDir.starts_with("<this>"))
             sPath = _option.getExePath() + sDir.substr(sDir.find('>') + 1);
-        else if (sDir.substr(0, 4) == "<wp>")
+        else if (sDir.starts_with("<wp>"))
             sPath = _option.getWorkPath() + sDir.substr(sDir.find('>') + 1);
 
         // If the path has a length then initialize the file handle
@@ -3425,19 +3424,19 @@ static void handleIncAndDecOperators(string& sExpr, size_t nPos, size_t nArgSepP
 void evalRecursiveExpressions(string& sExpr)
 {
     // Ignore flow control blocks
-    if (sExpr.substr(0, 3) == "if "
-            || sExpr.substr(0, 3) == "if("
-            || sExpr.substr(0, 7) == "elseif "
-            || sExpr.substr(0, 7) == "elseif("
-            || sExpr.substr(0, 5) == "else "
-            || sExpr.substr(0, 7) == "switch "
-            || sExpr.substr(0, 7) == "switch("
-            || sExpr.substr(0, 5) == "case "
-            || sExpr.substr(0, 8) == "default:"
-            || sExpr.substr(0, 4) == "for "
-            || sExpr.substr(0, 4) == "for("
-            || sExpr.substr(0, 6) == "while "
-            || sExpr.substr(0, 6) == "while(")
+    if (sExpr.starts_with("if ")
+        || sExpr.starts_with("if(")
+        || sExpr.starts_with("elseif ")
+        || sExpr.starts_with("elseif(")
+        || sExpr.starts_with("else ")
+        || sExpr.starts_with("switch ")
+        || sExpr.starts_with("switch(")
+        || sExpr.starts_with("case ")
+        || sExpr.starts_with("default:")
+        || sExpr.starts_with("for ")
+        || sExpr.starts_with("for(")
+        || sExpr.starts_with("while ")
+        || sExpr.starts_with("while("))
         return;
 
     size_t nArgSepPos = 0;
@@ -3565,7 +3564,7 @@ string decodeNameSpace(string sCommandLine, const string& sThisNameSpace)
 
         StripSpaces(sCommandLine);
 
-        if (sCommandLine.substr(0, 5) == "this~" || sCommandLine == "this")
+        if (sCommandLine.starts_with("this~") || sCommandLine == "this")
             sCommandLine.replace(0, 4, sThisNameSpace);
 
         while (sCommandLine.back() == '~')
@@ -4110,7 +4109,7 @@ std::string removeDefaultPath(const std::string& sFullPath)
 
     for (int i = LOADPATH; i < PATH_LAST; i++)
     {
-        if (sPath.substr(0, vPaths[i].length()) == vPaths[i])
+        if (sPath.starts_with(vPaths[i]))
         {
             pos = vPaths[i].length();
 

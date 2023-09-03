@@ -2083,7 +2083,7 @@ namespace NumeRe
                         std::string sString = strExpr.sLine.substr(i + 1, nPos - i - 1);
 
                         // Pre-evaluate the contents of the parenthesis
-                        if (i > 0 && !checkDelimiter(strExpr.sLine.substr(i - 1, nPos - i + 2))) // this is probably a numerical function. Keep the parentheses
+                        if (i > 0 && !StringView(strExpr.sLine).is_delimited_sequence(i, nPos-i)) // this is probably a numerical function. Keep the parentheses
                         {
                             // Do only something, if the contents are containings strings
                             if (isStringExpression(sString))

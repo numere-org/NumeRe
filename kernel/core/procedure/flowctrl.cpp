@@ -3785,11 +3785,11 @@ int FlowCtrl::calc(StringView sLine, int nthCmd)
 /// replace variable occurences with their
 /// (auto-determined) internal name.
 ///
-/// \param sLine std::string&
+/// \param sLine MutableStringView
 /// \return void
 ///
 /////////////////////////////////////////////////
-void FlowCtrl::replaceLocalVars(std::string& sLine)
+void FlowCtrl::replaceLocalVars(MutableStringView sLine)
 {
     if (!mVarMap.size())
         return;
@@ -3798,13 +3798,10 @@ void FlowCtrl::replaceLocalVars(std::string& sLine)
     {
         for (size_t i = 0; i < sLine.length(); i++)
         {
-            if (sLine.substr(i, (iter->first).length()) == iter->first)
+            if (sLine.match(iter->first, i))
             {
-                if ((i && checkDelimiter(sLine.substr(i - 1, (iter->first).length() + 2)))
-                    || (!i && checkDelimiter(" " + sLine.substr(i, (iter->first).length() + 1))))
-                {
+                if (sLine.is_delimited_sequence(i, iter->first.length()))
                     sLine.replace(i, (iter->first).length(), iter->second);
-                }
             }
         }
     }
@@ -3831,23 +3828,20 @@ void FlowCtrl::replaceLocalVars(const std::string& sOldVar, const std::string& s
         // statements
         if (vCmdArray[i].sCommand.length())
         {
-            vCmdArray[i].sCommand += " ";
+            MutableStringView cmd(vCmdArray[i].sCommand);
 
-            for (size_t j = 0; j < vCmdArray[i].sCommand.length(); j++)
+            for (size_t j = 0; j < cmd.length(); j++)
             {
-                if (vCmdArray[i].sCommand.substr(j, sOldVar.length()) == sOldVar)
+                if (cmd.match(sOldVar, j))
                 {
-                    if (((!j && checkDelimiter(" " + vCmdArray[i].sCommand.substr(j, sOldVar.length() + 1), true))
-                        || (j && checkDelimiter(vCmdArray[i].sCommand.substr(j - 1, sOldVar.length() + 2), true)))
-                        && !isInQuotes(vCmdArray[i].sCommand, j, true))
+                    if (cmd.is_delimited_sequence(j, sOldVar.length(), StringViewBase::STRING_DELIMITER)
+                        && !isInQuotes(cmd, j, true))
                     {
-                        vCmdArray[i].sCommand.replace(j, sOldVar.length(), sNewVar);
+                        cmd.replace(j, sOldVar.length(), sNewVar);
                         j += sNewVar.length() - sOldVar.length();
                     }
                 }
             }
-
-            StripSpaces(vCmdArray[i].sCommand);
         }
     }
 }

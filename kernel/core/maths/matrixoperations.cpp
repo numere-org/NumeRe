@@ -51,7 +51,7 @@ struct MatOpCache
 using namespace std;
 
 static Matrix evalMatOp(string& sCmd, Parser& _parser, MemoryManager& _data, FunctionDefinitionManager& _functions, const Settings& _option, MatOpCache& _cache);
-static size_t getPrevMatMultiOp(const string& sCmd, size_t nLastPos);
+static size_t getPrevMatMultiOp(StringView sCmd, size_t nLastPos);
 static Matrix multiplyMatrices(const Matrix& _mLeft, const Matrix& _mRight, const string& sCmd, const string& sExpr, size_t position);
 static Matrix getMatrixElements(string& sExpr, const Matrix& _mMatrix, Parser& _parser, MemoryManager& _data, FunctionDefinitionManager& _functions, const Settings& _option);
 static vector<mu::value_type> calcDeltasForMatFill(const std::vector<std::vector<mu::value_type>>& _mMatrix, size_t nLine);
@@ -307,6 +307,8 @@ static Matrix evalMatOp(string& sCmd, Parser& _parser, MemoryManager& _data, Fun
         iter_start = nEqPos+1;
     }
 
+    StringView cmd(sCmd);
+
     // Apply all known and requested matrix functions.
     // The equation will be segmentized and the evaluated
     // part will be appended to the evaluated equation.
@@ -323,8 +325,8 @@ static Matrix evalMatOp(string& sCmd, Parser& _parser, MemoryManager& _data, Fun
                 if (fIter->second.signature == MATSIG_INVALID)
                     continue;
 
-                if (StringView(sCmd, i, fIter->first.length()+1) == fIter->first + "("
-                    && (nMatchingParens = getMatchingParenthesis(StringView(sCmd, i+fIter->first.length()))) != string::npos)
+                if (cmd.match(fIter->first+"(", i)
+                    && (nMatchingParens = getMatchingParenthesis(cmd.subview(i+fIter->first.length()))) != string::npos)
                 {
                     // Extract argument
                     std::string sSubExpr = sCmd.substr(i+fIter->first.length()+1, nMatchingParens-1);
@@ -434,7 +436,7 @@ static Matrix evalMatOp(string& sCmd, Parser& _parser, MemoryManager& _data, Fun
                     }
 
                     // Prepare leading part of the equation
-                    __sCmd += sCmd.substr(pos_back, i-pos_back);
+                    __sCmd.append(sCmd, pos_back, i-pos_back);
 
                     // Store the last position and advance the
                     // current position
@@ -447,11 +449,11 @@ static Matrix evalMatOp(string& sCmd, Parser& _parser, MemoryManager& _data, Fun
             }
 
             // construct matrix from columns -> MAT(...)
-            if (sCmd.substr(i,6) == "matfc("
-                && (nMatchingParens = getMatchingParenthesis(StringView(sCmd, i+5))) != string::npos)
+            if (cmd.match("matfc(", i)
+                && (nMatchingParens = getMatchingParenthesis(cmd.subview(i+5))) != string::npos)
             {
                 string sSubExpr = sCmd.substr(i+6, nMatchingParens-1);
-                __sCmd += sCmd.substr(pos_back, i-pos_back);
+                __sCmd.append(sCmd, pos_back, i-pos_back);
                 _cache.vReturnedMatrices.push_back(createMatFromCols(sSubExpr, _parser, _data, _functions, _option));
                 pos_back = i+nMatchingParens+6;
                 __sCmd += "_~returnedMatrix["+toString(_cache.vReturnedMatrices.size()-1)+"]";
@@ -459,11 +461,11 @@ static Matrix evalMatOp(string& sCmd, Parser& _parser, MemoryManager& _data, Fun
             }
 
             // construct matrix from lines -> MAT(...)
-            if (sCmd.substr(i,6) == "matfl("
-                && (nMatchingParens = getMatchingParenthesis(StringView(sCmd, i+5))) != string::npos)
+            if (cmd.match("matfl(", i)
+                && (nMatchingParens = getMatchingParenthesis(cmd.subview(i+5))) != string::npos)
             {
                 string sSubExpr = sCmd.substr(i+6, nMatchingParens-1);
-                __sCmd += sCmd.substr(pos_back, i-pos_back);
+                __sCmd.append(sCmd, pos_back, i-pos_back);
                 _cache.vReturnedMatrices.push_back(createMatFromLines(sSubExpr, _parser, _data, _functions, _option));
                 pos_back = i+nMatchingParens+6;
                 __sCmd += "_~returnedMatrix["+toString(_cache.vReturnedMatrices.size()-1)+"]";
@@ -471,11 +473,11 @@ static Matrix evalMatOp(string& sCmd, Parser& _parser, MemoryManager& _data, Fun
             }
 
             // construct matrix from columns and fill missing values -> MAT(...)
-            if (sCmd.substr(i,7) == "matfcf("
-                && (nMatchingParens = getMatchingParenthesis(StringView(sCmd, i+6))) != string::npos)
+            if (cmd.match("matfcf(", i)
+                && (nMatchingParens = getMatchingParenthesis(cmd.subview(i+6))) != string::npos)
             {
                 string sSubExpr = sCmd.substr(i+7, nMatchingParens-1);
-                __sCmd += sCmd.substr(pos_back, i-pos_back);
+                __sCmd.append(sCmd, pos_back, i-pos_back);
                 _cache.vReturnedMatrices.push_back(createMatFromColsFilled(sSubExpr, _parser, _data, _functions, _option));
                 pos_back = i+nMatchingParens+7;
                 __sCmd += "_~returnedMatrix["+toString(_cache.vReturnedMatrices.size()-1)+"]";
@@ -483,11 +485,11 @@ static Matrix evalMatOp(string& sCmd, Parser& _parser, MemoryManager& _data, Fun
             }
 
             // construct matrix from lines and fill missing values -> MAT(...)
-            if (sCmd.substr(i,7) == "matflf("
-                && (nMatchingParens = getMatchingParenthesis(StringView(sCmd, i+6))) != string::npos)
+            if (cmd.match("matflf(", i)
+                && (nMatchingParens = getMatchingParenthesis(cmd.subview(i+6))) != string::npos)
             {
                 string sSubExpr = sCmd.substr(i+7, nMatchingParens-1);
-                __sCmd += sCmd.substr(pos_back, i-pos_back);
+                __sCmd.append(sCmd, pos_back, i-pos_back);
                 _cache.vReturnedMatrices.push_back(createMatFromLinesFilled(sSubExpr, _parser, _data, _functions, _option));
                 pos_back = i+nMatchingParens+7;
                 __sCmd += "_~returnedMatrix["+toString(_cache.vReturnedMatrices.size()-1)+"]";
@@ -495,11 +497,11 @@ static Matrix evalMatOp(string& sCmd, Parser& _parser, MemoryManager& _data, Fun
             }
 
             // Handle old vector syntax (will most probably be changed to matrix syntax)
-            if (sCmd.substr(i,2) == "{{"
-                && (nMatchingParens = getMatchingParenthesis(StringView(sCmd, i))) != string::npos)
+            if (cmd.match("{{", i)
+                && (nMatchingParens = getMatchingParenthesis(cmd.subview(i))) != string::npos)
             {
                 string sSubExpr = sCmd.substr(i+1, nMatchingParens-1);
-                __sCmd += sCmd.substr(pos_back, i-pos_back);
+                __sCmd.append(sCmd, pos_back, i-pos_back);
                 _cache.vReturnedMatrices.push_back(createMatFromCols(sSubExpr, _parser, _data, _functions, _option));
                 pos_back = i+nMatchingParens+1;
                 __sCmd += "_~returnedMatrix["+toString(_cache.vReturnedMatrices.size()-1)+"]";
@@ -508,10 +510,10 @@ static Matrix evalMatOp(string& sCmd, Parser& _parser, MemoryManager& _data, Fun
 
             // Handle vectors
             if (sCmd[i] == '{'
-                && (nMatchingParens = getMatchingParenthesis(StringView(sCmd, i))) != string::npos)
+                && (nMatchingParens = getMatchingParenthesis(cmd.subview(i))) != string::npos)
             {
                 string sSubExpr = sCmd.substr(i, nMatchingParens+1);
-                __sCmd += sCmd.substr(pos_back, i-pos_back);
+                __sCmd.append(sCmd, pos_back, i-pos_back);
                 _cache.vReturnedMatrices.push_back(createMatFromCols(sSubExpr, _parser, _data, _functions, _option));
                 pos_back = i+nMatchingParens+1;
                 __sCmd += "_~returnedMatrix["+toString(_cache.vReturnedMatrices.size()-1)+"]";
@@ -530,7 +532,7 @@ static Matrix evalMatOp(string& sCmd, Parser& _parser, MemoryManager& _data, Fun
             nMatrix = StrToInt(__sCmd.substr(__sCmd.rfind('[')+1, __sCmd.rfind(']')-__sCmd.rfind('[')-1));
             if (__sCmd.substr(__sCmd.rfind('[')-16,17) == "_~returnedMatrix[")
             {
-                nMatchingParens = getMatchingParenthesis(StringView(sCmd, i));
+                nMatchingParens = getMatchingParenthesis(cmd.subview(i));
                 string sSubExpr = sCmd.substr(i, nMatchingParens+1);
                 pos_back = i+nMatchingParens+1;
                 _cache.vReturnedMatrices[nMatrix] = getMatrixElements(sSubExpr, _cache.vReturnedMatrices[nMatrix], _parser, _data, _functions, _option);
@@ -541,7 +543,7 @@ static Matrix evalMatOp(string& sCmd, Parser& _parser, MemoryManager& _data, Fun
         // Pre-evaluate parentheses
         if (sCmd[i] == '(')
         {
-            nMatchingParens = getMatchingParenthesis(StringView(sCmd, i));
+            nMatchingParens = getMatchingParenthesis(cmd.subview(i));
             //size_t nLastDelimiter;
 
             if (sCmd.substr(i, nMatchingParens).find("**") != string::npos
@@ -562,21 +564,21 @@ static Matrix evalMatOp(string& sCmd, Parser& _parser, MemoryManager& _data, Fun
                         {
                             if ((j && !isalnum(sCmd[j-1]) && sCmd[j-1] != '_') || !j)
                             {
-                                __sCmd += sCmd.substr(pos_back, j-pos_back);
+                                __sCmd.append(sCmd, pos_back, j-pos_back);
                                 sSubExpr = sCmd.substr(j, closing_par_pos+1 - j);
                                 break;
                             }
                         }
                     }
                     else
-                        __sCmd += sCmd.substr(pos_back, i-pos_back);
+                        __sCmd.append(sCmd, pos_back, i-pos_back);
 
                     _cache.vReturnedMatrices.push_back(evalMatOp(sSubExpr, _parser, _data, _functions, _option, _cache));
                     __sCmd += "_~returnedMatrix["+toString(_cache.vReturnedMatrices.size()-1)+"]";
                 }
                 else
                 {
-                    __sCmd += sCmd.substr(pos_back, i-pos_back);
+                    __sCmd.append(sCmd, pos_back, i-pos_back);
                     __sCmd += "(";
 
                     // As this might be a usual function, evaluate each argument
@@ -609,7 +611,7 @@ static Matrix evalMatOp(string& sCmd, Parser& _parser, MemoryManager& _data, Fun
 
     // Append the missing part of the equation
     if (pos_back < sCmd.length())
-        __sCmd += sCmd.substr(pos_back);
+        __sCmd.append(sCmd, pos_back);
 
     size_t nPos = 0;
 
@@ -703,7 +705,7 @@ static Matrix evalMatOp(string& sCmd, Parser& _parser, MemoryManager& _data, Fun
         for (int n = __sCmd.length()-1; n >= 0; n--)
         {
             // Theres's a matrix multiplication
-            if (__sCmd.substr(n, 2) == "**")
+            if (StringView(__sCmd, n, 2) == "**")
             {
                 // Find the last operator
                 pos_back = getPrevMatMultiOp(sCmd, pos_back)-1;
@@ -872,12 +874,12 @@ static Matrix evalMatOp(string& sCmd, Parser& _parser, MemoryManager& _data, Fun
 /// the position of the next (left-hand) matrix
 /// multiplication operator.
 ///
-/// \param sCmd const string&
+/// \param sCmd StringView
 /// \param nLastPos size_t
 /// \return size_t
 ///
 /////////////////////////////////////////////////
-static size_t getPrevMatMultiOp(const string& sCmd, size_t nLastPos)
+static size_t getPrevMatMultiOp(StringView sCmd, size_t nLastPos)
 {
     int nQuotes = 0;
 
@@ -889,7 +891,7 @@ static size_t getPrevMatMultiOp(const string& sCmd, size_t nLastPos)
         if (sCmd[i] == ')' || sCmd[i] == '}')
             nQuotes--;
 
-        if (!(nQuotes%2) && sCmd.substr(i,2) == "**")
+        if (!(nQuotes%2) && sCmd.match("**", i))
             return i;
     }
 

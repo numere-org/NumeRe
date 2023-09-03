@@ -66,7 +66,7 @@ bool isInQuotes(StringView sExpr, size_t nPos, bool bIgnoreVarParser = false);
 bool isToStringArg(const std::string& sExpr, size_t nPos);
 bool isDelimiter(char cChar);
 bool addLegends(std::string&);
-bool checkDelimiter(const std::string& sToken, bool stringdelim = false);
+bool checkDelimiter(StringView sToken, bool stringdelim = false);
 std::vector<std::string> splitIntoLines(std::string sOutput, size_t lineWidth, bool bAllowDashBreaks = true, int nFirstIndent = 4, int nIndent = 4);
 std::string outputString(std::vector<std::string> stringInLines, int nFirstIndent, int nIndent);
 std::string LineBreak(std::string sOutput, const Settings& _option, bool bAllowDashBreaks = true, int nFirstIndent = 4, int nIndent = 4);

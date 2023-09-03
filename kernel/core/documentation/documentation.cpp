@@ -387,7 +387,7 @@ static void replaceArgumentOccurences(const std::string& sArgument, std::string&
     while ((nPos = sString.find(sArgument, nPos)) != std::string::npos)
     {
         // check, whether the found match is an actual variable
-        if (checkDelimiter(sString.substr(nPos-1, sArgument.length() + 2)))
+        if (StringView(sString).is_delimited_sequence(nPos, sArgument.length()))
         {
             // replace VAR with <code>VAR</code> and increment the
             // position index by the variable length + 13
@@ -427,7 +427,7 @@ static void applyCodeHighlighting(std::vector<std::string>& vDoc, const std::str
         {
             size_t startPos = 0;
 
-            if (vDoc[i].substr(0, 6) == "<item ")
+            if (vDoc[i].starts_with("<item "))
                 startPos = vDoc[i].find("\">")+2;
 
             replaceArgumentOccurences(arg, vDoc[i], startPos);
@@ -750,10 +750,10 @@ static std::string getHighlightedCode(std::string sCode, bool verbatim, Settings
         sCode = applySyntaxHighlighting(sCode, _option);
         replaceAll(sCode, "\\t ", "&nbsp;&nbsp;&nbsp;&nbsp;");
 
-        if (sCode.substr(0, 4) == "|<- ")
+        if (sCode.starts_with("|<- "))
             sCode.replace(1, 1, "&lt;");
 
-        if (sCode.substr(0, 4) == "|-> ")
+        if (sCode.starts_with("|-> "))
             sCode.replace(2, 1, "&gt;");
     }
     else

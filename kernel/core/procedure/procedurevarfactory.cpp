@@ -1614,7 +1614,7 @@ string ProcedureVarFactory::resolveArguments(string sProcedureCommandLine, size_
                 continue;
             }
 
-            if (checkDelimiter(sProcedureCommandLine.substr(nPos-1, nArgumentBaseLength+2), true)
+            if (StringView(sProcedureCommandLine).is_delimited_sequence(nPos, nArgumentBaseLength, StringViewBase::STRING_DELIMITER)
                 && (!isInQuotes(sProcedureCommandLine, nPos, true)
                     || isToCmd(sProcedureCommandLine, nPos)))
             {
@@ -1665,10 +1665,13 @@ string ProcedureVarFactory::resolveLocalVars(string sProcedureCommandLine, size_
 
             nDelimCheck = nPos-1;
 
-            if ((sProcedureCommandLine[nDelimCheck] == '~' && sProcedureCommandLine[sProcedureCommandLine.find_last_not_of('~', nDelimCheck)] == '#'))
+            if (sProcedureCommandLine[nDelimCheck] == '~'
+                && sProcedureCommandLine[sProcedureCommandLine.find_last_not_of('~', nDelimCheck)] == '#')
                 nDelimCheck = sProcedureCommandLine.find_last_not_of('~', nDelimCheck);
 
-            if (checkDelimiter(sProcedureCommandLine.substr(nDelimCheck, iter.first.length() + 1 + nPos - nDelimCheck))
+            nDelimCheck++;
+
+            if (StringView(sProcedureCommandLine).is_delimited_sequence(nDelimCheck, iter.first.length()+nPos-nDelimCheck)
                 && (!isInQuotes(sProcedureCommandLine, nPos, true)
                     || isToCmd(sProcedureCommandLine, nPos)))
             {
@@ -1715,10 +1718,14 @@ string ProcedureVarFactory::resolveLocalStrings(string sProcedureCommandLine, si
 
             nDelimCheck = nPos-1;
 
-            if ((sProcedureCommandLine[nDelimCheck] == '~' && sProcedureCommandLine[sProcedureCommandLine.find_last_not_of('~', nDelimCheck)] == '#'))
+            if (sProcedureCommandLine[nDelimCheck] == '~'
+                && sProcedureCommandLine[sProcedureCommandLine.find_last_not_of('~', nDelimCheck)] == '#')
                 nDelimCheck = sProcedureCommandLine.find_last_not_of('~', nDelimCheck);
 
-            if (checkDelimiter(sProcedureCommandLine.substr(nDelimCheck, iter.first.length() + 1 + nPos - nDelimCheck), true)
+            nDelimCheck++;
+
+            if (StringView(sProcedureCommandLine).is_delimited_sequence(nDelimCheck, iter.first.length()+nPos-nDelimCheck,
+                                                                        StringViewBase::STRING_DELIMITER)
                 && (!isInQuotes(sProcedureCommandLine, nPos, true) || isToCmd(sProcedureCommandLine, nPos)))
             {
                 if (inliningMode)
@@ -1768,10 +1775,14 @@ string ProcedureVarFactory::resolveLocalTables(string sProcedureCommandLine, siz
 
             nDelimCheck = nPos-1;
 
-            if ((sProcedureCommandLine[nDelimCheck] == '~' && sProcedureCommandLine[sProcedureCommandLine.find_last_not_of('~', nDelimCheck)] == '#'))
+            if (sProcedureCommandLine[nDelimCheck] == '~'
+                && sProcedureCommandLine[sProcedureCommandLine.find_last_not_of('~', nDelimCheck)] == '#')
                 nDelimCheck = sProcedureCommandLine.find_last_not_of('~', nDelimCheck);
 
-            if (checkDelimiter(sProcedureCommandLine.substr(nDelimCheck, iter.first.length() + 1 + nPos - nDelimCheck), true)
+            nDelimCheck++;
+
+            if (StringView(sProcedureCommandLine).is_delimited_sequence(nDelimCheck, iter.first.length()+nPos-nDelimCheck,
+                                                                        StringViewBase::STRING_DELIMITER)
                 && (!isInQuotes(sProcedureCommandLine, nPos, true) || isToCmd(sProcedureCommandLine, nPos)))
             {
                 sProcedureCommandLine.replace(nPos, iter.first.length(), iter.second);
@@ -1808,7 +1819,7 @@ string ProcedureVarFactory::resolveLocalClusters(string sProcedureCommandLine, s
 
         while ((nPos = sProcedureCommandLine.find(iter.first + "{", nPos)) != string::npos)
         {
-            if ((sProcedureCommandLine[nPos-1] == '~' && sProcedureCommandLine[sProcedureCommandLine.find_last_not_of('~', nPos-1)] != '#'))
+            if (sProcedureCommandLine[nPos-1] == '~' && sProcedureCommandLine[sProcedureCommandLine.find_last_not_of('~', nPos-1)] != '#')
             {
                 nPos += iter.first.length();
                 continue;
@@ -1816,10 +1827,14 @@ string ProcedureVarFactory::resolveLocalClusters(string sProcedureCommandLine, s
 
             nDelimCheck = nPos-1;
 
-            if ((sProcedureCommandLine[nDelimCheck] == '~' && sProcedureCommandLine[sProcedureCommandLine.find_last_not_of('~', nDelimCheck)] == '#'))
+            if (sProcedureCommandLine[nDelimCheck] == '~'
+                && sProcedureCommandLine[sProcedureCommandLine.find_last_not_of('~', nDelimCheck)] == '#')
                 nDelimCheck = sProcedureCommandLine.find_last_not_of('~', nDelimCheck);
 
-            if (checkDelimiter(sProcedureCommandLine.substr(nDelimCheck, iter.first.length() + 1 + nPos - nDelimCheck), true)
+            nDelimCheck++;
+
+            if (StringView(sProcedureCommandLine).is_delimited_sequence(nDelimCheck, iter.first.length()+nPos-nDelimCheck,
+                                                                        StringViewBase::STRING_DELIMITER)
                 && (!isInQuotes(sProcedureCommandLine, nPos, true) || isToCmd(sProcedureCommandLine, nPos)))
             {
                 sProcedureCommandLine.replace(nPos, iter.first.length(), iter.second);
