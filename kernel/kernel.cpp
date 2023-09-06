@@ -614,7 +614,7 @@ void NumeReKernel::printVersionInfo(bool shortInfo)
     printPreFmt("| " + sAppName + strfill("|\n", 79 - sAppName.length()));
     printPreFmt("| Version: " + sVersion + strfill("Build: ", 79 - 22 - sVersion.length())
                 + AutoVersion::YEAR + "-" + AutoVersion::MONTH + "-" + AutoVersion::DATE + " |\n");
-    printPreFmt("| Copyright (c) 2013-" + std::string(AutoVersion::YEAR) + toSystemCodePage(", Erik A. Hänel et al.")
+    printPreFmt("| Copyright (c) 2013-" + std::string(AutoVersion::YEAR) + toSystemCodePage(", Erik A. HÃ¤nel et al.")
                 + strfill(_lang.get("MAIN_ABOUT_NBR"), 79 - 48) + " |\n");
     make_hline(80);
 
@@ -779,7 +779,7 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const std::string& sCommand)
                 continue;
 
             // Eval debugger breakpoints from scripts
-            if ((sLine.starts_with(">") || nDebuggerCode == DEBUGGER_STEP)
+            if ((sLine.starts_with("|>") || nDebuggerCode == DEBUGGER_STEP)
                     && _script.isValid()
                     && !_procedure.is_writing()
                     && !_procedure.getCurrentBlockDepth())

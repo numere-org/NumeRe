@@ -550,18 +550,18 @@ bool Procedure::setProcName(StringView sProc, bool bInstallFileName)
     {
         // Handle the "thisfile" namespace by using the call stack
         // to obtain the corresponding file name
-        if (sProcNames.length() && !bInstallFileName && sProc.subview(0, 9) == "thisfile~")
+        if (sProcNames.length() && !bInstallFileName && sProc.starts_with("thisfile~"))
         {
             sCurrentProcedureName = sProcNames.substr(sProcNames.rfind(';') + 1);
             sProcNames += ";" + sCurrentProcedureName;
             return true;
         }
-        else if (sLastWrittenProcedureFile.length() && bInstallFileName && sProc.subview(0, 9) == "thisfile~")
+        else if (sLastWrittenProcedureFile.length() && bInstallFileName && sProc.starts_with("thisfile~"))
         {
             sCurrentProcedureName = sLastWrittenProcedureFile.substr(0, sLastWrittenProcedureFile.find('|'));
             return true;
         }
-        else if (sProc.subview(0, 9) == "thisfile~")
+        else if (sProc.starts_with("thisfile~"))
             return false;
 
         // Create a valid file name from the procedure name
@@ -635,21 +635,21 @@ Returnvalue Procedure::execute(StringView sProc, string sVarList, Parser& _parse
     sVarList = " " + sVarList + " ";
 
     // Remove file name extension, if there's one in the procedure name
-    if (sProc.length() > 5 && sProc.subview(sProc.length() - 5) == ".nprc")
-        sProc = sProc.subview(0, sProc.rfind('.'));
+    if (sProc.length() > 5 && sProc.ends_with(".nprc"))
+        sProc.remove_from(sProc.rfind('.'));
 
     // Get the namespace of this procedure
     extractCurrentNamespace(sProc);
 
     // Separate the procedure name from the namespace
     if (sProc.find('~') != string::npos)
-        sProc = sProc.subview(sProc.rfind('~') + 1);
+        sProc.trim_front(sProc.rfind('~') + 1);
 
     if (sProc.find('/') != string::npos)
-        sProc = sProc.subview(sProc.rfind('/') + 1);
+        sProc.trim_front(sProc.rfind('/') + 1);
 
     if (sProc.find('\\') != string::npos)
-        sProc = sProc.subview(sProc.rfind('\\') + 1);
+        sProc.trim_front(sProc.rfind('\\') + 1);
 
     // Prepare the procedure command line elements
     // and find the current procedure line
@@ -1275,7 +1275,7 @@ FlowCtrl::ProcedureInterfaceRetVal Procedure::procedureInterface(string& sLine, 
                     __sName = sNameSpace + __sName;
 
                 if (__sName.starts_with("this~"))
-                    __sName = sThisNameSpace + __sName.substr(4);
+                    __sName.replace(0, 4, sThisNameSpace);
 
                 // Handle explicit procedure file names
                 if (sLine[nPos] == '\'')

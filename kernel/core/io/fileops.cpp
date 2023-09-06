@@ -222,7 +222,7 @@ bool moveOrCopyFiles(CommandLineParser& cmdParser)
         StripSpaces(_sTarget);
 
         if (_sTarget.ends_with("/*"))
-            _sTarget.erase(_sTarget.length()-1);
+            _sTarget.pop.back();
 
         // Validate target file name
         _sTarget = _fSys.ValidFileName(_sTarget);

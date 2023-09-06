@@ -953,22 +953,21 @@ bool writeToFile(CommandLineParser& cmdParser)
 		if (cmdParser.hasParam("file"))
 		{
 		    sFileName = cmdParser.getFileParameterValueForSaving(".txt", "<savepath>", "");
-		    StringView fileName(sFileName);
 
 			// Scripts, procedures and data files may not be written directly
 			// this avoids reloads during the execution and other unexpected
 			// behavior
-            if (fileName.ends_with(".nprc")
-                || fileName.ends_with(".nscr")
-                || fileName.ends_with(".ndat"))
+            if (sFileName.ends_with(".nprc")
+                || sFileName.ends_with(".nscr")
+                || sFileName.ends_with(".ndat"))
 			{
 				string sErrorToken;
 
-				if (fileName.ends_with(".nprc"))
+				if (sFileName.ends_with(".nprc"))
 					sErrorToken = "NumeRe-Prozedur";
-				else if (fileName.ends_with(".nscr"))
+				else if (sFileName.ends_with(".nscr"))
 					sErrorToken = "NumeRe-Script";
-				else if (fileName.ends_with(".ndat"))
+				else if (sFileName.ends_with(".ndat"))
 					sErrorToken = "NumeRe-Datenfile";
 
 				throw SyntaxError(SyntaxError::FILETYPE_MAY_NOT_BE_WRITTEN, cmdParser.getCommandLine(), SyntaxError::invalid_position, sErrorToken);

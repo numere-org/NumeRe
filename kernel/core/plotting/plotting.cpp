@@ -428,22 +428,20 @@ Plot::Plot(string& sCmd, MemoryManager& __data, Parser& __parser, Settings& __op
             if (!_pData.getSettings(PlotData::LOG_SILENTMODE) && _option.systemPrints())
                 NumeReKernel::printPreFmt("|-> " + toSystemCodePage(_lang.get("PLOT_SAVING")) + " ... ");
 
-            StringView outputName(sOutputName);
-
-            if (outputName.ends_with(".bps"))
+            if (sOutputName.ends_with(".bps"))
             {
                 sOutputName[sOutputName.length()-3] = 'e';
                 _graph->WriteBPS(sOutputName.c_str());
             }
-            else if (outputName.ends_with(".tif") || outputName.ends_with(".tiff"))
+            else if (sOutputName.ends_with(".tif") || sOutputName.ends_with(".tiff"))
                 writeTiff(_graph, sOutputName);
-            else if (outputName.ends_with(".png"))
+            else if (sOutputName.ends_with(".png"))
                 _graph->WritePNG(sOutputName.c_str(), "", false);
             else
                 _graph->WriteFrame(sOutputName.c_str());
 
             // --> TeX-Ausgabe gewaehlt? Dann werden mehrere Dateien erzeugt, die an den Zielort verschoben werden muessen <--
-            if (outputName.ends_with(".tex"))
+            if (sOutputName.ends_with(".tex"))
                 writeTeXMain(sOutputName);
 
             if (!_pData.getSettings(PlotData::LOG_SILENTMODE) && _option.systemPrints())
