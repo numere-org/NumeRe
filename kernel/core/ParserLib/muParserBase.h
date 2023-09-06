@@ -268,7 +268,6 @@ namespace mu
 
 		private:
 			void replaceLocalVars(MutableStringView sLine);
-			bool checkDelimiter(StringView sLine);
 			MutableStringView compileVectors(MutableStringView sExpr);
 			bool compileVectorsInMultiArgFunc(MutableStringView& sExpr, size_t& nPos);
 			size_t FindMultiArgFunc(StringView sExpr, size_t nPos, std::string& sMultArgFunc);

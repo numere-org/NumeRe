@@ -38,7 +38,6 @@ namespace NumeRe
             std::map<std::string,std::string> m_mStringVars;
 
             bool isNumericCandidate(const std::string& sComponent);
-            bool checkStringvarDelimiter(StringView sToken) const;
             void replaceStringVectorVars(std::map<std::string,StringVector>& mVectorVarMap, std::string& currentline, size_t nCurrentComponent, bool& bHasComponents);
             std::string findVectorInMap(const std::map<std::string,StringVector>& mVectorVarMap, const std::vector<std::string>& vStringVector);
 

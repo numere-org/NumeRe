@@ -3745,27 +3745,33 @@ std::complex<double> intPower(const std::complex<double>& dNumber, int nExponent
 /// desired position is part of the argument of a
 /// to_cmd() function.
 ///
-/// \param sCmd const string&
+/// \param sCmd StringView
 /// \param nPos size_t
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool isToCmd(const string& sCmd, size_t nPos)
+bool isToCmd(StringView sCmd, size_t nPos)
 {
-    // Exclude border cases
+    // Exclude boundary cases
     if (nPos < 6 || nPos >= sCmd.length())
         return false;
-    if (sCmd.find("to_cmd(") == string::npos || sCmd.find("to_cmd(") > nPos)
-        return false;
+
+    size_t quotes = isInQuotes(sCmd, nPos);
 
     // Go through the whole string and try to find the functions arguments
     for (int i = nPos - 6; i >= 0; i--)
     {
-        if (sCmd.substr(i, 7) == "to_cmd(" && !isInQuotes(sCmd, i))
+        if (sCmd[i] == '"' && (!i || sCmd[i-1] != '\\'))
+            quotes++;
+
+        if (!(quotes % 2) && sCmd.match("to_cmd(", i))
         {
             // function found -> try to find the matching parenthesis
             // If it is left of the desired position, then return true
-            if (getMatchingParenthesis(StringView(sCmd, i + 6)) > nPos - i - 6 && getMatchingParenthesis(StringView(sCmd, i + 6)) != string::npos)
+            size_t matchingParens = getMatchingParenthesis(sCmd.subview(i + 6));
+
+            if (matchingParens > nPos - i - 6
+                && matchingParens != std::string::npos)
                 return true;
         }
     }
@@ -3857,29 +3863,29 @@ size_t qSortDouble(double* dArray, size_t nlength)
 /// search-oriented methods in the current string
 /// variable access.
 ///
-/// \param sLine string&
+/// \param sLine MutableStringView
 /// \param nPos size_t
 /// \param nFinalPos size_t
-/// \param sReplacement const string&
-/// \param sMethod const string&
-/// \param sArgument string&
+/// \param sReplacement const std::string&
+/// \param sMethod StringView
+/// \param sArgument std::string&
 /// \return void
 ///
 /////////////////////////////////////////////////
-static void replaceSearchMethods(string& sLine, size_t nPos, size_t nFinalPos, const string& sReplacement, const string& sMethod, string& sArgument)
+static void replaceSearchMethods(MutableStringView sLine, size_t nPos, size_t nFinalPos, const std::string& sReplacement, StringView sMethod, std::string& sArgument)
 {
     // Prepare the argument (use empty one or construct one
     // from argument and variable value)
     if (sArgument == "()")
         sArgument = "(" + sReplacement + ", " + sReplacement + ")";
-    else if (sArgument.find(',') == string::npos)
+    else if (sArgument.find(',') == std::string::npos)
         sArgument.insert(sArgument.length()-1, ", " + sReplacement + "");
     else
     {
         // If we have a comma, it could be part of the only argument,
         // so we remove all parentheses first and recombine everything
         // afterwards
-        string sTemp = "(";
+        std::string sTemp = "(";
         sArgument.erase(0, 1);
         sArgument.pop_back();
         sTemp += getNextArgument(sArgument, true);
@@ -3916,16 +3922,16 @@ static void replaceSearchMethods(string& sLine, size_t nPos, size_t nFinalPos, c
 /// splitter in the current string variable
 /// access.
 ///
-/// \param sLine string&
+/// \param sLine MutableStringView
 /// \param nPos size_t
 /// \param nFinalPos size_t
-/// \param sReplacement const string&
-/// \param sMethod const string&
-/// \param sArgument string&
+/// \param sReplacement const std::string&
+/// \param sMethod StringView
+/// \param sArgument std::string&
 /// \return void
 ///
 /////////////////////////////////////////////////
-static void replaceAccessMethods(string& sLine, size_t nPos, size_t nFinalPos, const string& sReplacement, const string& sMethod, string& sArgument)
+static void replaceAccessMethods(MutableStringView sLine, size_t nPos, size_t nFinalPos, const std::string& sReplacement, StringView sMethod, std::string& sArgument)
 {
     // Prepare the argument (use empty one or construct one
     // from argument and variable value)
@@ -3952,22 +3958,20 @@ static void replaceAccessMethods(string& sLine, size_t nPos, size_t nFinalPos, c
 }
 
 
-
-
 /////////////////////////////////////////////////
 /// \brief This function searches the indicated
 /// string variable occurence for possible string
 /// methods and replaces them with the standard
 /// string function.
 ///
-/// \param sLine string&
+/// \param sLine MutableStringView
 /// \param nPos size_t
 /// \param nLength size_t
-/// \param sReplacement const string&
+/// \param sReplacement const std::string&
 /// \return void
 ///
 /////////////////////////////////////////////////
-void replaceStringMethod(string& sLine, size_t nPos, size_t nLength, const string& sReplacement)
+void replaceStringMethod(MutableStringView sLine, size_t nPos, size_t nLength, const std::string& sReplacement)
 {
     // Does the string variable name end with a dot?
     if (sLine[nPos+nLength] != '.')
@@ -3976,9 +3980,9 @@ void replaceStringMethod(string& sLine, size_t nPos, size_t nLength, const strin
         return;
     }
 
-    static const string sDELIMITER = "+-*/ ={}^&|!,\\%#?:\";";
-    string sMethod = "";
-    string sArgument = "";
+    static const std::string sDELIMITER = "+-*/ ={}^&|!,\\%#?:\";";
+    StringView sMethod;
+    std::string sArgument = "";
     size_t nFinalPos = 0;
 
     // Find the end of the appended method. This is either
@@ -3989,15 +3993,15 @@ void replaceStringMethod(string& sLine, size_t nPos, size_t nLength, const strin
         if (sLine[i] == '(')
         {
             // Method ends with closing parenthesis
-            sMethod = sLine.substr(nPos+nLength+1, i-(nPos+nLength+1));
-            sArgument = sLine.substr(i, getMatchingParenthesis(StringView(sLine, i))+1);
-            nFinalPos = i += getMatchingParenthesis(StringView(sLine, i))+1;
+            sMethod = sLine.subview(nPos+nLength+1, i-(nPos+nLength+1));
+            sArgument = sLine.subview(i, getMatchingParenthesis(sLine.subview(i))+1).to_string();
+            nFinalPos = i += getMatchingParenthesis(sLine.subview(i))+1;
             break;
         }
-        else if (sDELIMITER.find(sLine[i]) != string::npos)
+        else if (sDELIMITER.find(sLine[i]) != std::string::npos)
         {
             // Method ends with a delimiter
-            sMethod = sLine.substr(nPos+nLength+1, i-(nPos+nLength+1));
+            sMethod = sLine.subview(nPos+nLength+1, i-(nPos+nLength+1));
             nFinalPos = i;
             break;
         }
@@ -4037,8 +4041,6 @@ void replaceStringMethod(string& sLine, size_t nPos, size_t nLength, const strin
         // All search-oriented methods
         replaceSearchMethods(sLine, nPos, nFinalPos, sReplacement, sMethod, sArgument);
     }
-
-
 }
 
 

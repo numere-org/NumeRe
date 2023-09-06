@@ -124,12 +124,12 @@ EndlessVector<std::string> getAllSemiColonSeparatedTokens(std::string sArgList);
 
 /** \brief Checks, whether the "to_cmd()" function was used
  *
- * \param sCmd const string&
+ * \param sCmd StringView
  * \param nPos size_t
  * \return bool
  *
  */
-bool isToCmd(const std::string& sCmd, size_t nPos);
+bool isToCmd(StringView sCmd, size_t nPos);
 
 size_t countEscapeSymbols(const std::string& sLine);
 std::vector<std::string> getFileList(const std::string& sDirectory, const Settings& _option, int nFlags = 0);
@@ -176,7 +176,7 @@ namespace big_endian_io
 void evalRecursiveExpressions(std::string& sExpr);
 
 size_t qSortDouble(double* dArray, size_t nlength);
-void replaceStringMethod(std::string& sLine, size_t nPos, size_t nLength, const std::string& sReplacement);
+void replaceStringMethod(MutableStringView sLine, size_t nPos, size_t nLength, const std::string& sReplacement);
 std::string shortenFileName(const std::string& sFullFileName);
 std::string removeDefaultPath(const std::string& sFullPath);
 std::string incrementVersion(std::string _sVer);

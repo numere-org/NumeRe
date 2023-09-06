@@ -503,11 +503,8 @@ static bool editObject(string& sCmd, Parser& _parser, MemoryManager& _data, Sett
 	else if (viewedObject[0] == '$')
 		viewedObject.trim_front(1);
 
-	while (viewedObject.find('~') != string::npos)
-		viewedObject[viewedObject.find('~')] = '/';
-
-	while (sObject.find('$') != string::npos)
-		sObject.erase(sObject.find('$'), 1);
+    replaceAll(viewedObject, "~", "/");
+    replaceAll(viewedObject, "$", "");
 
 	if (viewedObject.front() == '\'' && viewedObject.back() == '\'')
     {

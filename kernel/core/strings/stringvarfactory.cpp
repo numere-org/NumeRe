@@ -347,34 +347,6 @@ namespace NumeRe
 
 
     /////////////////////////////////////////////////
-    /// \brief This private member function examines
-    /// the first and the last character of the passed
-    /// string and determines, whether it is a
-    /// delimiter or not.
-    ///
-    /// \param sToken StringView
-    /// \return bool
-    ///
-    /////////////////////////////////////////////////
-    bool StringVarFactory::checkStringvarDelimiter(StringView sToken) const
-    {
-#warning TODO (numere#1#09/03/23): Unused, just for backup
-
-        static const string sDELIMITER = "+-*/ ()={}^&|!<>,\\%#[]?:\";";
-
-        // The opening parenthesis at the end indicates a function.
-        // This is obviously not a string variable
-        if (sToken.back() == '(')
-            return false;
-
-        // If the first and the last character are part of the
-        // delimiter list (or the last character is a dot), then
-        // we indicate the current token as delimited.
-        return sDELIMITER.find(sToken.front()) != string::npos && (sDELIMITER.find(sToken.back()) != string::npos || sToken.back() == '.');
-    }
-
-
-    /////////////////////////////////////////////////
     /// \brief Replaces all found vectors of the
     /// passed map with their nCurrentComponent
     /// component.

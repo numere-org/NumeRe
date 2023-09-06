@@ -3690,31 +3690,6 @@ namespace mu
         return false;
 	}
 
-	static bool isDelim(char c)
-	{
-#warning TODO (numere#1#09/03/23): Unused, only for backup
-	    // Characters converted to a single logical expression
-	    return c >= 32 && c <= 126 && c != 36 && c != 39 && c != 46 && (c < 48 || c > 57) && (c < 64 || c > 90) && (c < 95 || c > 122);
-	}
-
-    /////////////////////////////////////////////////
-    /// \brief This member function checks, whether
-    /// the passed string is delimited on both sides.
-    ///
-    /// \param sLine StringView
-    /// \return bool
-    ///
-    /////////////////////////////////////////////////
-	bool ParserBase::checkDelimiter(StringView sLine)
-	{
-#warning TODO (numere#1#09/03/23): Unused, only for backup
-	    return isDelim(sLine.front()) && isDelim(sLine.back());
-	    //static std::string sDelimiter = "+-*/ ()={}^&|!<>,\\%#~[]:";
-        //
-		//// --> Gib die Auswertung dieses logischen Ausdrucks zurueck <--
-		//return sDelimiter.find(sLine.front()) != std::string::npos && sDelimiter.find(sLine.back()) != std::string::npos;
-	}
-
 
     /////////////////////////////////////////////////
     /// \brief This member function replaces var

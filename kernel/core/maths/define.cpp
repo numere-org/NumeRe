@@ -891,17 +891,9 @@ bool FunctionDefinitionManager::call(string& sExpr, int nRecursion)
             {
                 if (sExpr[nPos] == ')' && sTemp.back() == '(')
                 {
-                    if (sTemp[sTemp.length()-2] != ' ')
-                    {
-                        static string sDelim = "+-*/^!?:,!&|#";
+                    static string sDelim = "+-*/^!?:,!&|# ";
 
-                        if (sDelim.find(sTemp[sTemp.length()-2]) != string::npos)
-                        {
-                            sTemp.trim_back(1);
-                            nPos++;
-                        }
-                    }
-                    else
+                    if (sDelim.find(sTemp[sTemp.length()-2]) != std::string::npos)
                     {
                         sTemp.trim_back(1);
                         nPos++;
