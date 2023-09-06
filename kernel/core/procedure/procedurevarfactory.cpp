@@ -632,7 +632,7 @@ map<string,string> ProcedureVarFactory::createProcedureArguments(string sArgumen
     if (!validateParenthesisNumber(sArgumentList))
     {
         _debugger.gatherInformations(this, sArgumentList, _currentProcedure->getCurrentProcedureName(), _currentProcedure->GetCurrentLine());
-        _debugger.throwException(SyntaxError(SyntaxError::UNMATCHED_PARENTHESIS, sArgumentList, SyntaxError::invalid_position));
+        _debugger.throwException(SyntaxError(SyntaxError::UNMATCHED_PARENTHESIS, sArgumentList, sArgumentList.find_first_of("({[]})")));
     }
 
     // Get the number of argument of this procedure
@@ -751,7 +751,7 @@ void ProcedureVarFactory::evaluateProcedureArguments(std::string& currentArg, st
     // Evaluate procedure calls first (but not for tables)
     if (currentValue.find('$') != string::npos
         && currentValue.find('(') != string::npos
-        && currentArg.substr(currentArg.length()-2) != "()")
+        && !currentArg.ends_with("()"))
     {
         if (_currentProcedure->getProcedureFlags() & ProcedureCommandLine::FLAG_INLINE)
         {
@@ -780,7 +780,7 @@ void ProcedureVarFactory::evaluateProcedureArguments(std::string& currentArg, st
         StripSpaces(currentArg);
     }
 
-    if (currentArg.length() > 2 && currentArg.substr(currentArg.length()-2) == "()")
+    if (currentArg.length() > 2 && currentArg.ends_with("()"))
     {
         currentArg.pop_back();
 
@@ -835,7 +835,7 @@ void ProcedureVarFactory::evaluateProcedureArguments(std::string& currentArg, st
                     currentValue = "false";
                 else
                 {
-                    if (currentValue.substr(0, sNewArgName.length()+5) != sNewArgName+"() = ")
+                    if (!currentValue.starts_with(sNewArgName+"() = "))
                     {
                         currentValue = sNewArgName;
                         mLocalArgs[sNewArgName] = TABLETYPE;
@@ -902,7 +902,7 @@ void ProcedureVarFactory::evaluateProcedureArguments(std::string& currentArg, st
                 throw SyntaxError(SyntaxError::INLINE_PROCEDURE_NEEDS_TABLE_REFERENCES, currentValue, "", currentArg + ")");
         }
     }
-    else if (currentArg.length() > 2 && currentArg.substr(currentArg.length()-2) == "{}")
+    else if (currentArg.length() > 2 && currentArg.ends_with("{}"))
     {
         currentArg.pop_back();
 
@@ -959,7 +959,7 @@ void ProcedureVarFactory::evaluateProcedureArguments(std::string& currentArg, st
             currentValue = sNewArgName;
             mLocalArgs[sNewArgName] = CLUSTERTYPE;
         }
-        else if (inliningMode && (currentValue.length() < 3 || currentValue.substr(currentValue.length()-2) != "{}"))
+        else if (inliningMode && (currentValue.length() < 3 || !currentValue.ends_with("{}")))
         {
             std::string sTempCluster = _dataRef->createTemporaryCluster(currentArg.substr(0, currentArg.find('{')));
             vInlineArgDef.push_back(sTempCluster + " = " + currentValue + ";");
@@ -980,7 +980,7 @@ void ProcedureVarFactory::evaluateProcedureArguments(std::string& currentArg, st
             if (varMap.find(currentValue) == varMap.end()
                 && stringMap.find(currentValue) == stringMap.end()
                 && !(isTemplate && _dataRef->isCluster(currentValue))
-                && !(isTemplate && currentValue.substr(0, 7) == "string(")
+                && !(isTemplate && currentValue.starts_with("string("))
                 && !(isTemplate && _dataRef->isTable(currentValue)))
             {
                 _debugger.gatherInformations(this, currentValue, _currentProcedure->getCurrentProcedureName(), _currentProcedure->GetCurrentLine());
@@ -1399,7 +1399,7 @@ void ProcedureVarFactory::createLocalTables(string sTableList)
                         sCurrentValue = "false";
                     else
                     {
-                        if (sCurrentValue.substr(0, currentVar.length()+5) == currentVar + "() = ")
+                        if (sCurrentValue.starts_with(currentVar + "() = "))
                             currentVar.erase(0, currentVar.length()+5);
                         else
                         {

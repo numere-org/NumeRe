@@ -1375,7 +1375,7 @@ bool NumeReKernel::handleCommandLineSource(std::string& sLine, std::string& sKee
                 && (sLine.find('(') != std::string::npos || sLine.find('{') != std::string::npos))
         {
             if (!validateParenthesisNumber(sLine))
-                throw SyntaxError(SyntaxError::UNMATCHED_PARENTHESIS, sLine, sLine.find('('));
+                throw SyntaxError(SyntaxError::UNMATCHED_PARENTHESIS, sLine, sLine.find_first_of("({[]})"));
         }
     }
     return true;
@@ -1490,15 +1490,15 @@ bool NumeReKernel::handleComposeBlock(std::string& sLine, const std::string& sCu
                 if (_procedure.getCurrentBlockDepth())
                 {
                     // --> Wenn in "_procedure" geschrieben wird und dabei kein Script ausgefuehrt wird, hebe dies entsprechend hervor <--
-                    printPreFmt("|" + _procedure.getCurrentBlock());
-                    if (_procedure.getCurrentBlock() == "IF")
+                    printPreFmt("|" + FlowCtrl::getBlockName(_procedure.getCurrentBlock()));
+                    if (_procedure.getCurrentBlock() == FlowCtrl::FCB_IF)
                     {
                         if (_procedure.getCurrentBlockDepth() > 1)
                             printPreFmt("---");
                         else
                             printPreFmt("-");
                     }
-                    else if (_procedure.getCurrentBlock() == "ELSE" && _procedure.getCurrentBlockDepth() > 1)
+                    else if (_procedure.getCurrentBlock() == FlowCtrl::FCB_ELSE && _procedure.getCurrentBlockDepth() > 1)
                         printPreFmt("-");
                     else
                     {
@@ -1544,15 +1544,15 @@ bool NumeReKernel::handleComposeBlock(std::string& sLine, const std::string& sCu
                     if (_procedure.getCurrentBlockDepth())
                     {
                         // --> Wenn in "_procedure" geschrieben wird und dabei kein Script ausgefuehrt wird, hebe dies entsprechend hervor <--
-                        printPreFmt("|" + _procedure.getCurrentBlock());
-                        if (_procedure.getCurrentBlock() == "IF")
+                        printPreFmt("|" + FlowCtrl::getBlockName(_procedure.getCurrentBlock()));
+                        if (_procedure.getCurrentBlock() == FlowCtrl::FCB_IF)
                         {
                             if (_procedure.getCurrentBlockDepth() > 1)
                                 printPreFmt("---");
                             else
                                 printPreFmt("-");
                         }
-                        else if (_procedure.getCurrentBlock() == "ELSE" && _procedure.getCurrentBlockDepth() > 1)
+                        else if (_procedure.getCurrentBlock() == FlowCtrl::FCB_ELSE && _procedure.getCurrentBlockDepth() > 1)
                             printPreFmt("-");
                         else
                         {
@@ -1613,15 +1613,15 @@ bool NumeReKernel::handleProcedureWrite(const std::string& sLine, const std::str
             if (_procedure.getCurrentBlockDepth())
             {
                 // --> Wenn in "_procedure" geschrieben wird und dabei kein Script ausgefuehrt wird, hebe dies entsprechend hervor <--
-                printPreFmt("|" + _procedure.getCurrentBlock());
-                if (_procedure.getCurrentBlock() == "IF")
+                printPreFmt("|" + FlowCtrl::getBlockName(_procedure.getCurrentBlock()));
+                if (_procedure.getCurrentBlock() == FlowCtrl::FCB_IF)
                 {
                     if (_procedure.getCurrentBlockDepth() > 1)
                         printPreFmt("---");
                     else
                         printPreFmt("-");
                 }
-                else if (_procedure.getCurrentBlock() == "ELSE" && _procedure.getCurrentBlockDepth() > 1)
+                else if (_procedure.getCurrentBlock() == FlowCtrl::FCB_ELSE && _procedure.getCurrentBlockDepth() > 1)
                     printPreFmt("-");
                 else
                 {
@@ -1949,7 +1949,7 @@ bool NumeReKernel::handleFlowControls(std::string& sLine, const std::string& sCu
         if (bSupressAnswer)
             sLine += ";";
         // --> Die Zeile in den Ausdrucksspeicher schreiben, damit sie spaeter wiederholt aufgerufen werden kann <--
-        _procedure.setCommand(sLine, (_script.isValid() && _script.isOpen()) ? _script.getCurrentLine()-1 : 0);
+        _procedure.addToControlFlowBlock(sLine, (_script.isValid() && _script.isOpen()) ? _script.getCurrentLine()-1 : 0);
         /* --> So lange wir im Loop sind und nicht endfor aufgerufen wurde, braucht die Zeile nicht an den Parser
          *     weitergegeben werden. Wir ignorieren daher den Rest dieser for(;;)-Schleife <--
          */
@@ -1959,16 +1959,16 @@ bool NumeReKernel::handleFlowControls(std::string& sLine, const std::string& sCu
             {
                 toggleTableStatus();
                 // --> Wenn in "_procedure" geschrieben wird und dabei kein Script ausgefuehrt wird, hebe dies entsprechend hervor <--
-                printPreFmt("|" + _procedure.getCurrentBlock());
+                printPreFmt("|" + FlowCtrl::getBlockName(_procedure.getCurrentBlock()));
 
-                if (_procedure.getCurrentBlock() == "IF")
+                if (_procedure.getCurrentBlock() == FlowCtrl::FCB_IF)
                 {
                     if (_procedure.getCurrentBlockDepth() > 1)
                         printPreFmt("---");
                     else
                         printPreFmt("-");
                 }
-                else if (_procedure.getCurrentBlock() == "ELSE" && _procedure.getCurrentBlockDepth() > 1)
+                else if (_procedure.getCurrentBlock() == FlowCtrl::FCB_ELSE && _procedure.getCurrentBlockDepth() > 1)
                     printPreFmt("-");
                 else
                 {

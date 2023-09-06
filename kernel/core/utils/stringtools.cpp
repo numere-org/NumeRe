@@ -1744,7 +1744,7 @@ std::string ellipsize(const std::string& sLongString, size_t nMaxStringLength)
 /// with the new value sNewValue. The boundaries
 /// limit the range of processing.
 ///
-/// \param sToModify std::string&
+/// \param sToModify MutableStringView
 /// \param sToRep const char*
 /// \param sNewValue const char*
 /// \param nStart size_t
@@ -1752,7 +1752,7 @@ std::string ellipsize(const std::string& sLongString, size_t nMaxStringLength)
 /// \return void
 ///
 /////////////////////////////////////////////////
-void replaceAll(std::string& sToModify, const char* sToRep, const char* sNewValue, size_t nStart /*= 0*/, size_t nEnd /*= string::npos*/)
+void replaceAll(MutableStringView sToModify, const char* sToRep, const char* sNewValue, size_t nStart /*= 0*/, size_t nEnd /*= string::npos*/)
 {
     size_t nRepLength = strlen(sToRep);
     size_t nNewLength = strlen(sNewValue);
@@ -1774,7 +1774,7 @@ void replaceAll(std::string& sToModify, const char* sToRep, const char* sNewValu
         if (i >= sToModify.length())
             break;
 
-        if (!sToModify.compare(i, nRepLength, sToRep))
+        if (sToModify.match(sToRep, i))
         {
             sToModify.replace(i, nRepLength, sNewValue);
             nEnd += nOffSet;
@@ -1791,15 +1791,15 @@ void replaceAll(std::string& sToModify, const char* sToRep, const char* sNewValu
 /// limit the range of processing. This function
 /// is a (slower) overload for std::strings.
 ///
-/// \param sToModify std::string&
-/// \param sToRep const std::string&
-/// \param sNewValue const std::string&
+/// \param sToModify MutableStringView
+/// \param sToRep StringView
+/// \param sNewValue StringView
 /// \param nStart size_t
 /// \param nEnd size_t
 /// \return void
 ///
 /////////////////////////////////////////////////
-void replaceAll(std::string& sToModify, const std::string& sToRep, const std::string& sNewValue, size_t nStart /*= 0*/, size_t nEnd /*= string::npos*/)
+void replaceAll(MutableStringView sToModify, StringView sToRep, StringView sNewValue, size_t nStart /*= 0*/, size_t nEnd /*= string::npos*/)
 {
     size_t nRepLength = sToRep.length();
     size_t nNewLength = sNewValue.length();
@@ -1821,7 +1821,7 @@ void replaceAll(std::string& sToModify, const std::string& sToRep, const std::st
         if (i >= sToModify.length())
             break;
 
-        if (!sToModify.compare(i, nRepLength, sToRep))
+        if (sToModify.match(sToRep, i))
         {
             sToModify.replace(i, nRepLength, sNewValue);
             nEnd += nOffSet;

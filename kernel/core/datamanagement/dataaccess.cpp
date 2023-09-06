@@ -281,7 +281,7 @@ string getDataElements(string& sLine, Parser& _parser, MemoryManager& _data, con
 
 	// Validate the number of parentheses
 	if (!validateParenthesisNumber(sLine))
-		throw SyntaxError(SyntaxError::UNMATCHED_PARENTHESIS, sLine, SyntaxError::invalid_position);
+		throw SyntaxError(SyntaxError::UNMATCHED_PARENTHESIS, sLine, sLine.find_first_of("({[]})"));
 
 	string sCache;             // Rueckgabe-string: Ggf. der linke Teil der Gleichung, falls es sich um eine Zuweisung handelt
 	string sLine_Temp;         // temporaerer string, da wir die string-Referenz nicht unnoetig veraendern wollen
@@ -2293,14 +2293,15 @@ Indices getIndicesForPlotAndFit(const string& sExpression, string& sDataTable, i
 /// passed expression is non-empty (i.e. it
 /// contains more than white spaces).
 ///
-/// \param sExpr const string&
+/// \param sExpr StringView
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool isNotEmptyExpression(const string& sExpr)
+bool isNotEmptyExpression(StringView sExpr)
 {
 	if (!sExpr.length())
 		return false;
+
 	return sExpr.find_first_not_of(' ') != string::npos;
 }
 

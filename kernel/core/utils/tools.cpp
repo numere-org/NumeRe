@@ -1972,7 +1972,7 @@ bool addLegends(string& sExpr)
 {
     // Validate the number of parentheses
     if (!validateParenthesisNumber(sExpr))
-        throw SyntaxError(SyntaxError::UNMATCHED_PARENTHESIS, sExpr, '(');
+        throw SyntaxError(SyntaxError::UNMATCHED_PARENTHESIS, sExpr, sExpr.find_first_of("({[]})"));
 
     EndlessVector<std::string> args = getAllArguments(sExpr);
 
@@ -3583,11 +3583,11 @@ string decodeNameSpace(string sCommandLine, const string& sThisNameSpace)
 /// number of parentheses, i.e. whether there's a
 /// closing parenthesis for each opened one.
 ///
-/// \param sCmd const string&
+/// \param sCmd StringView
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool validateParenthesisNumber(const string& sCmd)
+bool validateParenthesisNumber(StringView sCmd)
 {
     int nParCount = 0;
     int nVectCount = 0;

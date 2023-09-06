@@ -85,7 +85,7 @@ class Procedure : public FlowCtrl, public PackageManager
         int handleIncludeSyntax(std::string& sProcCommandLine, std::ifstream& fInclude, bool bReadingFromInclude);
         void extractProcedureInformation(const std::string& sCmdLine, size_t nPos, std::string& sProcName, std::string& sArgList, std::string& sFileName);
 
-        virtual int procedureCmdInterface(std::string& sLine) override;
+        virtual int procedureCmdInterface(StringView sLine) override;
         virtual std::vector<std::string> expandInlineProcedures(std::string& sLine) override;
         int isInlineable(const std::string& sProc, const std::string& sFileName, int* nInlineFlag = nullptr);
         int applyInliningRuleset(const std::string& sCommandLine, const std::string& sArgumentList);

@@ -21,6 +21,7 @@
 #define STRUCTURES_HPP
 
 #include <string>
+#include <cstring>
 #include <stdexcept>
 #include <vector>
 #include <cmath>
@@ -1411,6 +1412,26 @@ class StringViewBase
         }
 
         /////////////////////////////////////////////////
+        /// \brief Checks, whether the viewed string has
+        /// the same character sequence as the passed
+        /// string starting from the selected position.
+        ///
+        /// \param other const char*
+        /// \param pos size_t
+        /// \return bool
+        ///
+        /////////////////////////////////////////////////
+        inline bool match(const char* other, size_t pos = 0) const
+        {
+            const std::string* thisString = getData();
+
+            if (thisString)
+                return thisString->compare(m_start+pos, std::min(std::strlen(other), m_len-pos), other) == 0;
+
+            return false;
+        }
+
+        /////////////////////////////////////////////////
         /// \brief Checks, whether the viewed string
         /// starts with the passed string.
         ///
@@ -1595,7 +1616,7 @@ class StringViewBase
         /////////////////////////////////////////////////
         inline size_t length() const
         {
-            return m_len;
+            return getData() ? m_len : 0;
         }
 
         /////////////////////////////////////////////////
@@ -1931,25 +1952,27 @@ class StringViewBase
             if (data)
             {
                 len = validizeLength(pos, len);
+                size_t prevChar = m_start+pos-1;
+                size_t nextChar = m_start+pos+len;
 
                 switch (type)
                 {
                     case STD_DELIMITER:
-                        return (!pos || is_std_delim(data->operator[](m_start+pos-1)))
-                            && (len == m_len || is_std_delim(data->operator[](m_start+len)));
+                        return (!pos || is_std_delim(data->operator[](prevChar)))
+                            && (len+pos == m_len || is_std_delim(data->operator[](nextChar)));
 
                     case STRING_DELIMITER:
-                        return (!pos || is_std_delim(data->operator[](m_start+pos-1)))
-                            && (len == m_len || is_std_delim(data->operator[](m_start+len)) || data->operator[](m_start+len) == '.');
+                        return (!pos || is_std_delim(data->operator[](prevChar)))
+                            && (len+pos == m_len || is_std_delim(data->operator[](nextChar)) || data->operator[](nextChar) == '.');
 
                     case STRVAR_DELIMITER:
-                        return (!pos || is_std_delim(data->operator[](m_start+pos-1)))
-                            && (len == m_len || (is_std_delim(data->operator[](m_start+len))
-                                                 && data->operator[](m_start+len) != '(') || data->operator[](m_start+len) == '.');
+                        return (!pos || is_std_delim(data->operator[](prevChar)))
+                            && (len+pos == m_len || (is_std_delim(data->operator[](nextChar))
+                                                 && data->operator[](nextChar) != '(') || data->operator[](nextChar) == '.');
 
                     case PARSER_DELIMITER:
-                        return (!pos || is_parser_delim(data->operator[](m_start+pos-1)))
-                            && (len == m_len || is_parser_delim(data->operator[](m_start+len)));
+                        return (!pos || is_parser_delim(data->operator[](prevChar)))
+                            && (len+pos == m_len || is_parser_delim(data->operator[](nextChar)));
                 }
             }
 
@@ -2125,11 +2148,11 @@ class MutableStringView : public StringViewBase
         /// \brief Assignment operator for another
         /// MutableStringView instance.
         ///
-        /// \param view MutableStringView&
+        /// \param view MutableStringView
         /// \return MutableStringView&
         ///
         /////////////////////////////////////////////////
-        MutableStringView& operator=(MutableStringView& view)
+        MutableStringView& operator=(MutableStringView view)
         {
             assign(view);
             return *this;
@@ -2267,6 +2290,67 @@ class MutableStringView : public StringViewBase
         /////////////////////////////////////////////////
         /// \brief This member function replaces a range
         /// in the internal viewed string with the passed
+        /// string.
+        ///
+        /// \param pos size_t
+        /// \param len size_t
+        /// \param s const char*
+        /// \return MutableStringView&
+        /// \remark Positions and lengths of other
+        /// StringViews to the same strings are
+        /// invalidated, if the lengths of the replaced
+        /// and the replacing string differ.
+        ///
+        /////////////////////////////////////////////////
+        MutableStringView& replace(size_t pos, size_t len, const char* s)
+        {
+            if (m_data && pos < m_len)
+            {
+                len = validizeLength(pos, len);
+                m_data->replace(m_start+pos, len, s);
+                m_len += std::strlen(s) - len;
+            }
+
+            return *this;
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief This member function replaces a range
+        /// in the internal viewed string with the passed
+        /// string. This function allows to select a
+        /// smaller part of the replacing string.
+        ///
+        /// \param pos size_t
+        /// \param len size_t
+        /// \param s const char*
+        /// \param subpos size_t
+        /// \param sublen size_t
+        /// \return MutableStringView&
+        /// \remark Positions and lengths of other
+        /// StringViews to the same strings are
+        /// invalidated, if the lengths of the replaced
+        /// and the replacing string differ.
+        ///
+        /////////////////////////////////////////////////
+        MutableStringView& replace(size_t pos, size_t len, const char* s, size_t subpos, size_t sublen)
+        {
+            if (m_data && pos < m_len)
+            {
+                len = validizeLength(pos, len);
+
+                if (subpos + sublen > std::strlen(s))
+                    sublen = std::strlen(s) - subpos;
+
+                m_data->replace(m_start+pos, len, s, subpos, sublen);
+                m_len += sublen - len;
+            }
+
+            return *this;
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief This member function replaces a range
+        /// in the internal viewed string with the passed
         /// StringViewBase.
         ///
         /// \param pos size_t
@@ -2282,6 +2366,72 @@ class MutableStringView : public StringViewBase
         MutableStringView& replace(size_t pos, size_t len, const StringViewBase& view)
         {
             return replace(pos, len, view.to_string());
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief This member function inserts a string
+        /// at the selected position.
+        ///
+        /// \param pos size_t
+        /// \param s const std::string&
+        /// \return MutableStringView&
+        /// \remark Positions and lengths of other
+        /// StringViews to the same strings are
+        /// invalidated, if the lengths of the replaced
+        /// and the replacing string differ.
+        ///
+        /////////////////////////////////////////////////
+        MutableStringView& insert(size_t pos, const std::string& s)
+        {
+            if (m_data && pos < m_len)
+            {
+                m_data->insert(m_start+pos, s);
+                m_len += s.length();
+            }
+
+            return *this;
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief This member function inserts a string
+        /// at the selected position.
+        ///
+        /// \param pos size_t
+        /// \param s const char*
+        /// \return MutableStringView&
+        /// \remark Positions and lengths of other
+        /// StringViews to the same strings are
+        /// invalidated, if the lengths of the replaced
+        /// and the replacing string differ.
+        ///
+        /////////////////////////////////////////////////
+        MutableStringView& insert(size_t pos, const char* s)
+        {
+            if (m_data && pos < m_len)
+            {
+                m_data->insert(m_start+pos, s);
+                m_len += std::strlen(s);
+            }
+
+            return *this;
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief This member function inserts a passed
+        /// StringViewBase at the selected position.
+        ///
+        /// \param pos size_t
+        /// \param view const StringViewBase&
+        /// \return MutableStringView&
+        /// \remark Positions and lengths of other
+        /// StringViews to the same strings are
+        /// invalidated, if the lengths of the replaced
+        /// and the replacing string differ.
+        ///
+        /////////////////////////////////////////////////
+        MutableStringView& insert(size_t pos, const StringViewBase& view)
+        {
+            return insert(pos, view.to_string());
         }
 
 };

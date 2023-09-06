@@ -90,13 +90,13 @@ inline bool isValidValue(double d)
 
 /** \brief Checks, whether the number of parentheses is an even number
  *
- * \param sCmd const string&
+ * \param sCmd StringView
  * \return bool
  *
  * Doesn't check, whether the parentheses are ordered reasonable
  *
  */
-bool validateParenthesisNumber(const std::string& sCmd);
+bool validateParenthesisNumber(StringView sCmd);
 
 void addArgumentQuotes(std::string& sToAdd, const std::string& sParam);
 void addArgumentQuotes(std::string& sToAdd, size_t pos);

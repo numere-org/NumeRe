@@ -85,7 +85,7 @@ FlowCtrl::FlowCtrl()
 
     nCurrentCommand = 0;
     nDebuggerCode = 0;
-    sLoopNames = "";
+    blockNames.clear();
     sLoopPlotCompose = "";
     bSilent = true;
     bMask = false;
@@ -135,6 +135,46 @@ int FlowCtrl::getCurrentBlockDepth() const
 
 
 /////////////////////////////////////////////////
+/// \brief Converts the block Ids to human
+/// readable strings.
+///
+/// \param blockId FlowCtrl::FlowCtrlBlock
+/// \return std::string
+///
+/////////////////////////////////////////////////
+std::string FlowCtrl::getBlockName(FlowCtrl::FlowCtrlBlock blockId)
+{
+    switch (blockId)
+    {
+        case FCB_NONE:
+            return "";
+        case FCB_FOR:
+            return "FOR";
+        case FCB_WHL:
+            return "WHL";
+        case FCB_IF:
+            return "IF";
+        case FCB_ELIF:
+            return "ELIF";
+        case FCB_ELSE:
+            return "ELSE";
+        case FCB_SWCH:
+            return "SWCH";
+        case FCB_CASE:
+            return "CASE";
+        case FCB_DEF:
+            return "DEF";
+        case FCB_TRY:
+            return "TRY";
+        case FCB_CTCH:
+            return "CTCH";
+    }
+
+    return "";
+}
+
+
+/////////////////////////////////////////////////
 /// \brief This member function realizes the FOR
 /// control flow statement. The return value is
 /// either an error value or the end of the
@@ -160,17 +200,17 @@ int FlowCtrl::for_loop(int nth_Cmd, int nth_loop)
     if (!vCmdArray[nth_Cmd].sFlowCtrlHeader.length())
     {
         vCmdArray[nth_Cmd].sFlowCtrlHeader = vCmdArray[nth_Cmd].sCommand.substr(vCmdArray[nth_Cmd].sCommand.find('=') + 1);
-        std::string sVar = vCmdArray[nth_Cmd].sCommand.substr(vCmdArray[nth_Cmd].sCommand.find(' ') + 1);
-        sVar = sVar.substr(0, sVar.find('='));
-        StripSpaces(sVar);
+        StringView sVar(vCmdArray[nth_Cmd].sCommand, vCmdArray[nth_Cmd].sCommand.find(' ') + 1);
+        sVar.remove_from(sVar.find('='));
+        sVar.strip();
 
-        if (sVar.substr(0, 2) == "|>")
+        if (sVar.starts_with("|>"))
         {
             vCmdArray[nth_Cmd].sFlowCtrlHeader.insert(0, "|>");
-            sVar.erase(0, 2);
+            sVar.trim_front(2);
         }
 
-        StripSpaces(sVar);
+        sVar.strip();
 
         // Get the variable address of the loop
         // index
@@ -388,17 +428,17 @@ int FlowCtrl::range_based_for_loop(int nth_Cmd, int nth_loop)
     if (!vCmdArray[nth_Cmd].sFlowCtrlHeader.length())
     {
         vCmdArray[nth_Cmd].sFlowCtrlHeader = vCmdArray[nth_Cmd].sCommand.substr(vCmdArray[nth_Cmd].sCommand.find("->") + 2);
-        std::string sVar = vCmdArray[nth_Cmd].sCommand.substr(vCmdArray[nth_Cmd].sCommand.find(' ') + 1);
-        sVar.erase(sVar.find("->")+2);
-        StripSpaces(sVar);
+        StringView sVar(vCmdArray[nth_Cmd].sCommand, vCmdArray[nth_Cmd].sCommand.find(' ') + 1);
+        sVar.remove_from(sVar.find("->")+2);
+        sVar.strip();
 
-        if (sVar.substr(0, 2) == "|>")
+        if (sVar.starts_with("|>"))
         {
             vCmdArray[nth_Cmd].sFlowCtrlHeader.insert(0, "|>");
-            sVar.erase(0, 2);
+            sVar.trim_front(2);
         }
 
-        StripSpaces(sVar);
+        sVar.strip();
 
         // Get the variable address of the loop
         // index
@@ -1904,7 +1944,7 @@ int FlowCtrl::evalForkFlowCommands(int __i, int nth_loop)
     // that we need to display a status
     if (nth_loop <= -1)
     {
-        if (vCmdArray[__i].sCommand.substr(0, 3) == "for")
+        if (vCmdArray[__i].sCommand.starts_with("for"))
         {
             bPrintedStatus = false;
             __i = (this->*vCmdArray[__i].fcFn)(__i, nth_loop+1);
@@ -1920,7 +1960,7 @@ int FlowCtrl::evalForkFlowCommands(int __i, int nth_loop)
 
             return __i;
         }
-        else if (vCmdArray[__i].sCommand.substr(0, 5) == "while")
+        else if (vCmdArray[__i].sCommand.starts_with("while"))
         {
             bPrintedStatus = false;
             __i = (this->*vCmdArray[__i].fcFn)(__i, nth_loop+1);
@@ -1948,21 +1988,22 @@ int FlowCtrl::evalForkFlowCommands(int __i, int nth_loop)
 /// control statement class. The internal flow
 /// control command buffer grows as needed.
 ///
-/// \param __sCmd std::string&
+/// \param __sCmd MutableStringView
 /// \param nCurrentLine int
 /// \return void
 ///
 /////////////////////////////////////////////////
-void FlowCtrl::setCommand(std::string& __sCmd, int nCurrentLine)
+void FlowCtrl::addToControlFlowBlock(MutableStringView __sCmd, int nCurrentLine)
 {
-    bool bDebuggingBreakPoint = (__sCmd.substr(__sCmd.find_first_not_of(' '), 2) == "|>");
-    std::string sAppendedExpression = "";
+    __sCmd.strip();
+    bool bDebuggingBreakPoint = __sCmd.starts_with("|>");
+    MutableStringView sAppendedExpression;
 
     // Remove the breakpoint syntax
     if (bDebuggingBreakPoint)
     {
-        __sCmd.erase(__sCmd.find_first_not_of(' '), 2);
-        StripSpaces(__sCmd);
+        __sCmd.trim_front(2);
+        __sCmd.strip();
     }
 
     if (bReturnSignal)
@@ -1980,12 +2021,9 @@ void FlowCtrl::setCommand(std::string& __sCmd, int nCurrentLine)
         return;
     }
 
-    // Remove unnecessary whitespaces
-    StripSpaces(__sCmd);
-
     // Find the command of the current command line
     // if there's any
-    std::string command =  findCommand(__sCmd).sString;
+    std::string command = findCommand(__sCmd).sString;
 
     if (isAnyFlowCtrlStatement(command))
     {
@@ -1994,14 +2032,15 @@ void FlowCtrl::setCommand(std::string& __sCmd, int nCurrentLine)
         if (!validateParenthesisNumber(__sCmd))
         {
             reset();
-            throw SyntaxError(SyntaxError::UNMATCHED_PARENTHESIS, __sCmd, __sCmd.find('('));
+            throw SyntaxError(SyntaxError::UNMATCHED_PARENTHESIS, __sCmd.get_viewed_string(),
+                              __sCmd.find_first_of("({[]})")+__sCmd.get_offset());
         }
 
         FlowCtrlFunction fn = nullptr;
 
         if (command == "for")
         {
-            sLoopNames += ";FOR";
+            blockNames.push_back(FCB_FOR);
             nFlowCtrlStatements[FC_FOR]++;
 
             bool isRangeBased = __sCmd.find("->") != std::string::npos;
@@ -2010,15 +2049,17 @@ void FlowCtrl::setCommand(std::string& __sCmd, int nCurrentLine)
             if (!checkFlowControlArgument(__sCmd, true))
             {
                 reset();
-                throw SyntaxError(SyntaxError::CANNOT_EVAL_FOR, __sCmd, SyntaxError::invalid_position);
+                throw SyntaxError(SyntaxError::CANNOT_EVAL_FOR, __sCmd.get_viewed_string(),
+                                  __sCmd.find("for")+__sCmd.get_offset());
             }
 
             // Replace the colon operator with a comma, which is faster
             // because it can be parsed internally
             size_t nQuotes = 0;
             size_t nPos = std::string::npos;
+            size_t nTermPos = getMatchingParenthesis(__sCmd);
 
-            for (size_t i = __sCmd.find('(')+1; i < getMatchingParenthesis(__sCmd); i++)
+            for (size_t i = __sCmd.find('(')+1; i < nTermPos; i++)
             {
                 if (__sCmd[i] == '"' && __sCmd[i-1] != '\\')
                     nQuotes++;
@@ -2026,7 +2067,7 @@ void FlowCtrl::setCommand(std::string& __sCmd, int nCurrentLine)
                 if (!(nQuotes % 2))
                 {
                     if (__sCmd[i] == '(' || __sCmd[i] == '{' || __sCmd[i] == '[')
-                        i += getMatchingParenthesis(StringView(__sCmd, i));
+                        i += getMatchingParenthesis(__sCmd.subview(i));
 
                     if (__sCmd[i] == ':')
                     {
@@ -2049,64 +2090,65 @@ void FlowCtrl::setCommand(std::string& __sCmd, int nCurrentLine)
         }
         else if (command == "while")
         {
-            sLoopNames += ";WHL";
+            blockNames.push_back(FCB_WHL);
             nFlowCtrlStatements[FC_WHILE]++;
 
             // check the flow control argument for completeness
             if (!checkFlowControlArgument(__sCmd, false))
             {
                 reset();
-                throw SyntaxError(SyntaxError::CANNOT_EVAL_WHILE, __sCmd, SyntaxError::invalid_position);
+                throw SyntaxError(SyntaxError::CANNOT_EVAL_WHILE, __sCmd.get_viewed_string(),
+                                  __sCmd.find("while")+__sCmd.get_offset());
             }
 
             fn = FlowCtrl::while_loop;
         }
         else if (command == "if")
         {
-            sLoopNames += ";IF";
+            blockNames.push_back(FCB_IF);
             nFlowCtrlStatements[FC_IF]++;
 
             // check the flow control argument for completeness
             if (!checkFlowControlArgument(__sCmd, false))
             {
                 reset();
-                throw SyntaxError(SyntaxError::CANNOT_EVAL_IF, __sCmd, SyntaxError::invalid_position);
+                throw SyntaxError(SyntaxError::CANNOT_EVAL_IF, __sCmd.get_viewed_string(),
+                                  __sCmd.find("if")+__sCmd.get_offset());
             }
 
-            __sCmd = toString(nFlowCtrlStatements[FC_IF]) + ">>" + __sCmd;
+            __sCmd.insert(0, toString(nFlowCtrlStatements[FC_IF]) + ">>");
             fn = FlowCtrl::if_fork;
         }
         else if (command == "else" || command == "elseif")
         {
-            if (nFlowCtrlStatements[FC_IF] && (getCurrentBlock() == "IF" || getCurrentBlock() == "ELIF"))
+            if (nFlowCtrlStatements[FC_IF] && (getCurrentBlock() == FCB_IF || getCurrentBlock() == FCB_ELIF))
             {
                 if (command == "elseif")
                 {
-                    sLoopNames = sLoopNames.substr(0, sLoopNames.rfind(';')) + ";ELIF";
+                    blockNames.back() = FCB_ELIF;
 
                     // check the flow control argument for completeness
                     if (!checkFlowControlArgument(__sCmd, false))
                     {
                         reset();
-                        throw SyntaxError(SyntaxError::CANNOT_EVAL_IF, __sCmd, SyntaxError::invalid_position);
+                        throw SyntaxError(SyntaxError::CANNOT_EVAL_IF, __sCmd.get_viewed_string(),
+                                          __sCmd.find("elseif")+__sCmd.get_offset());
                     }
                 }
                 else
-                {
-                    sLoopNames = sLoopNames.substr(0, sLoopNames.rfind(';')) + ";ELSE";
-                }
+                    blockNames.back() = FCB_ELSE;
 
-                __sCmd = toString(nFlowCtrlStatements[FC_IF]) + ">>" + __sCmd;
+                __sCmd.insert(0, toString(nFlowCtrlStatements[FC_IF]) + ">>");
             }
             else
                 return;
         }
         else if (command == "endif")
         {
-            if (nFlowCtrlStatements[FC_IF] && (getCurrentBlock() == "IF" || getCurrentBlock() == "ELIF" || getCurrentBlock() == "ELSE"))
+            if (nFlowCtrlStatements[FC_IF] && (getCurrentBlock() == FCB_IF || getCurrentBlock() == FCB_ELIF || getCurrentBlock() == FCB_ELSE))
             {
-                sLoopNames = sLoopNames.substr(0, sLoopNames.rfind(';'));
-                __sCmd = toString(nFlowCtrlStatements[FC_IF]) + ">>" + __sCmd;
+                blockNames.pop_back();
+                __sCmd.insert(0, toString(nFlowCtrlStatements[FC_IF]) + ">>");
                 nFlowCtrlStatements[FC_IF]--;
             }
             else
@@ -2114,51 +2156,51 @@ void FlowCtrl::setCommand(std::string& __sCmd, int nCurrentLine)
         }
         else if (command == "switch")
         {
-            sLoopNames += ";SWCH";
+            blockNames.push_back(FCB_SWCH);
             nFlowCtrlStatements[FC_SWITCH]++;
 
             // check the flow control argument for completeness
             if (!checkFlowControlArgument(__sCmd, false))
             {
                 reset();
-                throw SyntaxError(SyntaxError::CANNOT_EVAL_SWITCH, __sCmd, SyntaxError::invalid_position);
+                throw SyntaxError(SyntaxError::CANNOT_EVAL_SWITCH, __sCmd.get_viewed_string(),
+                                  __sCmd.find("switch")+__sCmd.get_offset());
             }
 
-            __sCmd = toString(nFlowCtrlStatements[FC_SWITCH]) + ">>" + __sCmd;
+            __sCmd.insert(0, toString(nFlowCtrlStatements[FC_SWITCH]) + ">>");
             fn = FlowCtrl::switch_fork;
         }
         else if (command == "case" || command == "default")
         {
-            if (nFlowCtrlStatements[FC_SWITCH] && (getCurrentBlock() == "SWCH" || getCurrentBlock() == "CASE"))
+            if (nFlowCtrlStatements[FC_SWITCH] && (getCurrentBlock() == FCB_SWCH || getCurrentBlock() == FCB_CASE))
             {
                 // check the case definition for completeness
                 if (!checkCaseValue(__sCmd))
                 {
                     reset();
-                    throw SyntaxError(SyntaxError::CANNOT_EVAL_SWITCH, __sCmd, SyntaxError::invalid_position);
+                    throw SyntaxError(SyntaxError::CANNOT_EVAL_SWITCH, __sCmd.get_viewed_string(),
+                                      __sCmd.find_first_of("cd")+__sCmd.get_offset());
                 }
 
                 // Set the corresponding loop names
                 if (command == "default")
-                {
-                    sLoopNames = sLoopNames.substr(0, sLoopNames.rfind(';')) + ";DEF";
-                }
+                    blockNames.back() = FCB_DEF;
                 else
-                {
-                    sLoopNames = sLoopNames.substr(0, sLoopNames.rfind(';')) + ";CASE";
-                }
+                    blockNames.back() = FCB_CASE;
 
-                __sCmd = toString(nFlowCtrlStatements[FC_SWITCH]) + ">>" + __sCmd;
+                __sCmd.insert(0, toString(nFlowCtrlStatements[FC_SWITCH]) + ">>");
             }
             else
                 return;
         }
         else if (command == "endswitch")
         {
-            if (nFlowCtrlStatements[FC_SWITCH] && (getCurrentBlock() == "SWCH" || getCurrentBlock() == "CASE" || getCurrentBlock() == "DEF"))
+            if (nFlowCtrlStatements[FC_SWITCH] && (getCurrentBlock() == FCB_SWCH
+                                                   || getCurrentBlock() == FCB_CASE
+                                                   || getCurrentBlock() == FCB_DEF))
             {
-                sLoopNames = sLoopNames.substr(0, sLoopNames.rfind(';'));
-                __sCmd = toString(nFlowCtrlStatements[FC_SWITCH]) + ">>" + __sCmd;
+                blockNames.pop_back();
+                __sCmd.insert(0, toString(nFlowCtrlStatements[FC_SWITCH]) + ">>");
                 nFlowCtrlStatements[FC_SWITCH]--;
             }
             else
@@ -2166,37 +2208,38 @@ void FlowCtrl::setCommand(std::string& __sCmd, int nCurrentLine)
         }
         else if (command == "try")
         {
-            sLoopNames += ";TRY";
+            blockNames.push_back(FCB_TRY);
             nFlowCtrlStatements[FC_TRY]++;
 
-            __sCmd = toString(nFlowCtrlStatements[FC_TRY]) + ">>" + __sCmd;
+            __sCmd.insert(0, toString(nFlowCtrlStatements[FC_TRY]) + ">>");
             fn = FlowCtrl::try_catch;
         }
         else if (command == "catch")
         {
-            if (nFlowCtrlStatements[FC_TRY] && (getCurrentBlock() == "TRY" || getCurrentBlock() == "CTCH"))
+            if (nFlowCtrlStatements[FC_TRY] && (getCurrentBlock() == FCB_TRY || getCurrentBlock() == FCB_CTCH))
             {
                 // check the case definition for completeness
                 if (!checkCaseValue(__sCmd))
                 {
                     reset();
-                    throw SyntaxError(SyntaxError::CANNOT_EVAL_SWITCH, __sCmd, SyntaxError::invalid_position);
+                    throw SyntaxError(SyntaxError::CANNOT_EVAL_TRY, __sCmd.get_viewed_string(),
+                                      __sCmd.find("catch")+__sCmd.get_offset());
                 }
 
                 // Set the corresponding loop names
-                sLoopNames = sLoopNames.substr(0, sLoopNames.rfind(';')) + ";CTCH";
+                blockNames.back() = FCB_CTCH;
 
-                __sCmd = toString(nFlowCtrlStatements[FC_TRY]) + ">>" + __sCmd;
+                __sCmd.insert(0, toString(nFlowCtrlStatements[FC_TRY]) + ">>");
             }
             else
                 return;
         }
         else if (command == "endtry")
         {
-            if (nFlowCtrlStatements[FC_TRY] && (getCurrentBlock() == "TRY" || getCurrentBlock() == "CTCH"))
+            if (nFlowCtrlStatements[FC_TRY] && (getCurrentBlock() == FCB_TRY || getCurrentBlock() == FCB_CTCH))
             {
-                sLoopNames = sLoopNames.substr(0, sLoopNames.rfind(';'));
-                __sCmd = toString(nFlowCtrlStatements[FC_TRY]) + ">>" + __sCmd;
+                blockNames.pop_back();
+                __sCmd.insert(0, toString(nFlowCtrlStatements[FC_TRY]) + ">>");
                 nFlowCtrlStatements[FC_TRY]--;
             }
             else
@@ -2204,9 +2247,9 @@ void FlowCtrl::setCommand(std::string& __sCmd, int nCurrentLine)
         }
         else if (command == "endfor")
         {
-            if (nFlowCtrlStatements[FC_FOR] && getCurrentBlock() == "FOR")
+            if (nFlowCtrlStatements[FC_FOR] && getCurrentBlock() == FCB_FOR)
             {
-                sLoopNames = sLoopNames.substr(0, sLoopNames.rfind(';'));
+                blockNames.pop_back();
                 nFlowCtrlStatements[FC_FOR]--;
             }
             else
@@ -2214,9 +2257,9 @@ void FlowCtrl::setCommand(std::string& __sCmd, int nCurrentLine)
         }
         else if (command == "endwhile")
         {
-            if (nFlowCtrlStatements[FC_WHILE] && getCurrentBlock() == "WHL")
+            if (nFlowCtrlStatements[FC_WHILE] && getCurrentBlock() == FCB_WHL)
             {
-                sLoopNames = sLoopNames.substr(0, sLoopNames.rfind(';'));
+                blockNames.pop_back();
                 nFlowCtrlStatements[FC_WHILE]--;
             }
             else
@@ -2235,37 +2278,36 @@ void FlowCtrl::setCommand(std::string& __sCmd, int nCurrentLine)
                 || command == "switch"
                 || command == "while"))
         {
-            sAppendedExpression = __sCmd.substr(getMatchingParenthesis(__sCmd) + 1);
-            __sCmd.erase(getMatchingParenthesis(__sCmd) + 1);
-
             if (bDebuggingBreakPoint)
                 __sCmd.insert(__sCmd.find('(')+1, "|>");
+
+            sAppendedExpression = __sCmd.subview(getMatchingParenthesis(__sCmd) + 1);
+            __sCmd.remove_from(getMatchingParenthesis(__sCmd) + 1);
         }
         else if (command == "case" || command == "default" || command == "catch")
         {
             if (__sCmd.find(':', 4) != std::string::npos
                 && __sCmd.find_first_not_of(": ", __sCmd.find(':', 4)) != std::string::npos)
             {
-                sAppendedExpression = __sCmd.substr(__sCmd.find(':', 4)+1);
-                __sCmd.erase(__sCmd.find(':', 4)+1);
+                sAppendedExpression = __sCmd.subview(__sCmd.find(':', 4)+1);
+                __sCmd.remove_from(__sCmd.find(':', 4)+1);
             }
         }
         else if (__sCmd.find(' ', 4) != std::string::npos
             && __sCmd.find_first_not_of(' ', __sCmd.find(' ', 4)) != std::string::npos
             && __sCmd[__sCmd.find_first_not_of(' ', __sCmd.find(' ', 4))] != '-')
         {
-            sAppendedExpression = __sCmd.substr(__sCmd.find(' ', 4));
-            __sCmd.erase(__sCmd.find(' ', 4));
+            sAppendedExpression = __sCmd.subview(__sCmd.find(' ', 4));
+            __sCmd.remove_from(__sCmd.find(' ', 4));
         }
 
-        StripSpaces(sAppendedExpression);
-        StripSpaces(__sCmd);
+        __sCmd.strip();
 
         if (sAppendedExpression.find_first_not_of(";") == std::string::npos)
-            sAppendedExpression.clear();
+            sAppendedExpression = nullptr;
 
         // Store the current flow control statement
-        vCmdArray.push_back(FlowCtrlCommand(__sCmd, nCurrentLine, true, fn));
+        vCmdArray.push_back(FlowCtrlCommand(__sCmd.to_string(), nCurrentLine, true, fn));
     }
     else
     {
@@ -2281,42 +2323,38 @@ void FlowCtrl::setCommand(std::string& __sCmd, int nCurrentLine)
 
             if (__sCmd[n] == ' ' && !(nQuotes % 2))
             {
-                if (__sCmd.substr(n, 5) == " for "
-                    || __sCmd.substr(n, 5) == " for("
-                    || __sCmd.substr(n, 7) == " endfor"
-                    || __sCmd.substr(n, 4) == " if "
-                    || __sCmd.substr(n, 4) == " if("
-                    || __sCmd.substr(n, 5) == " else"
-                    || __sCmd.substr(n, 8) == " elseif "
-                    || __sCmd.substr(n, 8) == " elseif("
-                    || __sCmd.substr(n, 6) == " endif"
-                    || __sCmd.substr(n, 8) == " switch "
-                    || __sCmd.substr(n, 8) == " switch("
-                    || __sCmd.substr(n, 6) == " case "
-                    || __sCmd.substr(n, 9) == " default "
-                    || __sCmd.substr(n, 9) == " default:"
-                    || __sCmd.substr(n, 10) == " endswitch"
-                    || __sCmd.substr(n, 4) == " try"
-                    || __sCmd.substr(n, 7) == " catch "
-                    || __sCmd.substr(n, 7) == " catch:"
-                    || __sCmd.substr(n, 7) == " endtry"
-                    || __sCmd.substr(n, 7) == " while "
-                    || __sCmd.substr(n, 7) == " while("
-                    || __sCmd.substr(n, 9) == " endwhile")
+                if (__sCmd.match(" for ", n)
+                    || __sCmd.match(" for(", n)
+                    || __sCmd.match(" endfor", n)
+                    || __sCmd.match(" if ", n)
+                    || __sCmd.match(" if(", n)
+                    || __sCmd.match(" else", n)
+                    || __sCmd.match(" elseif ", n)
+                    || __sCmd.match(" elseif(", n)
+                    || __sCmd.match(" endif", n)
+                    || __sCmd.match(" switch ", n)
+                    || __sCmd.match(" switch(", n)
+                    || __sCmd.match(" case ", n)
+                    || __sCmd.match(" default ", n)
+                    || __sCmd.match(" default:", n)
+                    || __sCmd.match(" endswitch", n)
+                    || __sCmd.match(" try", n)
+                    || __sCmd.match(" catch ", n)
+                    || __sCmd.match(" catch:", n)
+                    || __sCmd.match(" endtry", n)
+                    || __sCmd.match(" while ", n)
+                    || __sCmd.match(" while(", n)
+                    || __sCmd.match(" endwhile", n))
                 {
-                    sAppendedExpression = __sCmd.substr(n + 1);
-                    __sCmd.erase(n);
+                    sAppendedExpression = __sCmd.subview(n + 1);
+                    __sCmd.remove_from(n);
                     break;
                 }
             }
         }
 
-        // Add the breakpoint
-        if (bDebuggingBreakPoint)
-            __sCmd.insert(0, "|> ");
-
         // Store the current command line
-        vCmdArray.push_back(FlowCtrlCommand(__sCmd, nCurrentLine));
+        vCmdArray.push_back(FlowCtrlCommand((bDebuggingBreakPoint ? "|> " : "") + __sCmd.to_string(), nCurrentLine));
     }
 
     // If there's a command available and all flow
@@ -2331,7 +2369,7 @@ void FlowCtrl::setCommand(std::string& __sCmd, int nCurrentLine)
     // If there's something left in the current cache,
     // call this function recursively
     if (sAppendedExpression.length())
-        setCommand(sAppendedExpression, nCurrentLine);
+        addToControlFlowBlock(sAppendedExpression, nCurrentLine);
 
     return;
 }
@@ -2440,7 +2478,7 @@ void FlowCtrl::eval()
         // Determine the flow control command, which
         // is in the first line and call the corresponding
         // function for evaluation
-        if (vCmdArray[0].sCommand.substr(0, 3) == "for")
+        if (vCmdArray[0].sCommand.starts_with("for"))
         {
             if ((this->*vCmdArray[0].fcFn)(0, 0) == FLOWCTRL_ERROR)
             {
@@ -2457,7 +2495,7 @@ void FlowCtrl::eval()
                     NumeReKernel::printPreFmt("|FOR> " + _lang.get("COMMON_SUCCESS") + ".\n");
             }
         }
-        else if (vCmdArray[0].sCommand.substr(0, 5) == "while")
+        else if (vCmdArray[0].sCommand.starts_with("while"))
         {
             if (while_loop() == FLOWCTRL_ERROR)
             {
@@ -2604,7 +2642,7 @@ void FlowCtrl::reset()
         nFlowCtrlStatements[i] = 0;
 
     bSilent = true;
-    sLoopNames = "";
+    blockNames.clear();
     sLoopPlotCompose = "";
     bMask = false;
     nCurrentCommand = 0;
@@ -3520,8 +3558,7 @@ int FlowCtrl::calc(StringView sLine, int nthCmd)
     // Handle the procedure commands like "namespace" here
     if (nCurrentCalcType & CALCTYPE_PROCEDURECMDINTERFACE)
     {
-        sBuffer = sLine.to_string();
-        int nProcedureCmd = procedureCmdInterface(sBuffer);
+        int nProcedureCmd = procedureCmdInterface(sLine);
 
         if (nProcedureCmd)
         {
@@ -3530,8 +3567,6 @@ int FlowCtrl::calc(StringView sLine, int nthCmd)
         }
         else
             return FLOWCTRL_ERROR;
-
-        sLine = StringView(sBuffer);
     }
 
     // Remove the "explicit" command here
@@ -3852,19 +3887,19 @@ void FlowCtrl::replaceLocalVars(const std::string& sOldVar, const std::string& s
 /// the passed flow control argument is valid or
 /// not.
 ///
-/// \param sFlowControlArgument const std::string&
+/// \param sFlowControlArgument StringView
 /// \param isForLoop bool
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool FlowCtrl::checkFlowControlArgument(const std::string& sFlowControlArgument, bool isForLoop)
+bool FlowCtrl::checkFlowControlArgument(StringView sFlowControlArgument, bool isForLoop)
 {
     // The argument shall be enclosed in parentheses
     if (sFlowControlArgument.find('(') == std::string::npos)
         return false;
 
-    std::string sArgument = sFlowControlArgument.substr(sFlowControlArgument.find('('));
-    sArgument = sArgument.substr(1, getMatchingParenthesis(sArgument) - 1);
+    StringView sArgument = sFlowControlArgument.subview(sFlowControlArgument.find('('));
+    sArgument = sArgument.subview(1, getMatchingParenthesis(sArgument) - 1);
 
     // Ensure that the argument is not empty
     if (!isNotEmptyExpression(sArgument))
@@ -3888,11 +3923,11 @@ bool FlowCtrl::checkFlowControlArgument(const std::string& sFlowControlArgument,
 /// \brief This member function checks, whether
 /// the entered case definition is valid or not.
 ///
-/// \param sCaseDefinition const std::string&
+/// \param sCaseDefinition StringView
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool FlowCtrl::checkCaseValue(const std::string& sCaseDefinition)
+bool FlowCtrl::checkCaseValue(StringView sCaseDefinition)
 {
     // Colon operator is missing
     if (sCaseDefinition.find(':') == std::string::npos)
@@ -3900,11 +3935,11 @@ bool FlowCtrl::checkCaseValue(const std::string& sCaseDefinition)
 
     // Check, whether there's a valid value between
     // "case" and the colon operator
-    if (sCaseDefinition.substr(0, 5) == "case ")
+    if (sCaseDefinition.starts_with("case "))
     {
         // Extract the value
-        std::string sValue = sCaseDefinition.substr(4);
-        sValue.erase(sValue.find(':'));
+        StringView sValue = sCaseDefinition.subview(4);
+        sValue.remove_from(sValue.find(':'));
 
         // Check, whether there are other characters
         // than the whitespace
@@ -3912,7 +3947,7 @@ bool FlowCtrl::checkCaseValue(const std::string& sCaseDefinition)
             return false;
 
         // Cut of the first expression (in the possible list)
-        getNextArgument(sValue, true);
+        getNextViewedArgument(sValue);
 
         // Check for more than one value (only one allowed)
         if (sValue.length() && sValue.find_first_not_of(' ') != std::string::npos)
@@ -3934,7 +3969,6 @@ bool FlowCtrl::checkCaseValue(const std::string& sCaseDefinition)
 string FlowCtrl::extractFlagsAndIndexVariables()
 {
     std::string sVars = ";";
-    std::string sVar;
     int nVarArray = 0;
 
     for (size_t i = 0; i < vCmdArray.size(); i++)
@@ -3944,19 +3978,19 @@ string FlowCtrl::extractFlagsAndIndexVariables()
             continue;
 
         // Extract the index variables
-        if (vCmdArray[i].sCommand.substr(0, 3) == "for")
+        if (vCmdArray[i].sCommand.starts_with("for"))
         {
-            sVar = vCmdArray[i].sCommand.substr(vCmdArray[i].sCommand.find('(') + 1);
+            StringView sVar(vCmdArray[i].sCommand, vCmdArray[i].sCommand.find('(') + 1);
 
             if (sVar.find("->") != std::string::npos)
-                sVar.erase(sVar.find("->")+2); // Has the arrow appended
+                sVar.remove_from(sVar.find("->")+2); // Has the arrow appended
             else
-                sVar.erase(sVar.find('='));
+                sVar.remove_from(sVar.find('='));
 
-            if (sVar.substr(0, 2) == "|>")
-                sVar.erase(0, 2);
+            if (sVar.starts_with("|>"))
+                sVar.trim_front(2);
 
-            StripSpaces(sVar);
+            sVar.strip();
 
             if (sVars.find(";" + sVar + ";") == std::string::npos)
             {
@@ -4016,7 +4050,7 @@ void FlowCtrl::fillJumpTableAndExpandRecursives()
         // the loop parsing mode is reasonable
         if (vCmdArray[i].bFlowCtrlStatement)
         {
-            if (vCmdArray[i].sCommand.substr(0, 3) == "for")
+            if (vCmdArray[i].sCommand.starts_with("for"))
             {
                 int nForCount = 0;
 
@@ -4025,7 +4059,7 @@ void FlowCtrl::fillJumpTableAndExpandRecursives()
                     if (!vCmdArray[j].bFlowCtrlStatement)
                         continue;
 
-                    if (vCmdArray[j].sCommand.length() && vCmdArray[j].sCommand.substr(0, 6) == "endfor")
+                    if (vCmdArray[j].sCommand.length() && vCmdArray[j].sCommand.starts_with("endfor"))
                     {
                         if (nForCount)
                             nForCount--;
@@ -4035,11 +4069,11 @@ void FlowCtrl::fillJumpTableAndExpandRecursives()
                             break;
                         }
                     }
-                    else if (vCmdArray[j].sCommand.length() && vCmdArray[j].sCommand.substr(0, 3) == "for")
+                    else if (vCmdArray[j].sCommand.length() && vCmdArray[j].sCommand.starts_with("for"))
                         nForCount++;
                 }
             }
-            else if (vCmdArray[i].sCommand.substr(0, 5) == "while")
+            else if (vCmdArray[i].sCommand.starts_with("while"))
             {
                 int nWhileCount = 0;
 
@@ -4048,7 +4082,7 @@ void FlowCtrl::fillJumpTableAndExpandRecursives()
                     if (!vCmdArray[j].bFlowCtrlStatement)
                         continue;
 
-                    if (vCmdArray[j].sCommand.length() && vCmdArray[j].sCommand.substr(0, 8) == "endwhile")
+                    if (vCmdArray[j].sCommand.length() && vCmdArray[j].sCommand.starts_with("endwhile"))
                     {
                         if (nWhileCount)
                             nWhileCount--;
@@ -4058,7 +4092,7 @@ void FlowCtrl::fillJumpTableAndExpandRecursives()
                             break;
                         }
                     }
-                    else if (vCmdArray[j].sCommand.length() && vCmdArray[j].sCommand.substr(0, 5) == "while")
+                    else if (vCmdArray[j].sCommand.length() && vCmdArray[j].sCommand.starts_with("while"))
                         nWhileCount++;
                 }
             }
@@ -4072,15 +4106,15 @@ void FlowCtrl::fillJumpTableAndExpandRecursives()
                         continue;
 
                     if (vCmdArray[j].sCommand.length()
-                        && vCmdArray[j].sCommand.substr(0, (sNth_If + ">>else").length()) == sNth_If + ">>else"
+                        && vCmdArray[j].sCommand.starts_with(sNth_If + ">>else")
                         && nJumpTable[i][BLOCK_MIDDLE] == NO_FLOW_COMMAND)
                         nJumpTable[i][BLOCK_MIDDLE] = j;
                     else if (vCmdArray[j].sCommand.length()
-                             && vCmdArray[j].sCommand.substr(0, (sNth_If + ">>elseif").length()) == sNth_If + ">>elseif"
+                             && vCmdArray[j].sCommand.starts_with(sNth_If + ">>elseif")
                              && nJumpTable[i][BLOCK_MIDDLE] == NO_FLOW_COMMAND)
                         nJumpTable[i][BLOCK_MIDDLE] = j;
                     else if (vCmdArray[j].sCommand.length()
-                             && vCmdArray[j].sCommand.substr(0, (sNth_If + ">>endif").length()) == sNth_If + ">>endif")
+                             && vCmdArray[j].sCommand.starts_with(sNth_If + ">>endif"))
                     {
                         nJumpTable[i][BLOCK_END] = j;
                         break;
@@ -4097,15 +4131,15 @@ void FlowCtrl::fillJumpTableAndExpandRecursives()
                         continue;
 
                     if (vCmdArray[j].sCommand.length()
-                        && vCmdArray[j].sCommand.substr(0, (sNth_If + ">>else").length()) == sNth_If + ">>else"
+                        && vCmdArray[j].sCommand.starts_with(sNth_If + ">>else")
                         && nJumpTable[i][BLOCK_MIDDLE] == NO_FLOW_COMMAND)
                         nJumpTable[i][BLOCK_MIDDLE] = j;
                     else if (vCmdArray[j].sCommand.length()
-                             && vCmdArray[j].sCommand.substr(0, (sNth_If + ">>elseif").length()) == sNth_If + ">>elseif"
+                             && vCmdArray[j].sCommand.starts_with(sNth_If + ">>elseif")
                              && nJumpTable[i][BLOCK_MIDDLE] == NO_FLOW_COMMAND)
                         nJumpTable[i][BLOCK_MIDDLE] = j;
                     else if (vCmdArray[j].sCommand.length()
-                             && vCmdArray[j].sCommand.substr(0, (sNth_If + ">>endif").length()) == sNth_If + ">>endif")
+                             && vCmdArray[j].sCommand.starts_with(sNth_If + ">>endif"))
                     {
                         nJumpTable[i][BLOCK_END] = j;
                         break;
@@ -4122,15 +4156,15 @@ void FlowCtrl::fillJumpTableAndExpandRecursives()
                         continue;
 
                     if (vCmdArray[j].sCommand.length()
-                        && vCmdArray[j].sCommand.substr(0, (sNth_Switch + ">>case").length()) == sNth_Switch + ">>case"
+                        && vCmdArray[j].sCommand.starts_with(sNth_Switch + ">>case")
                         && nJumpTable[i][BLOCK_MIDDLE] == NO_FLOW_COMMAND)
                         nJumpTable[i][BLOCK_MIDDLE] = j;
                     else if (vCmdArray[j].sCommand.length()
-                             && vCmdArray[j].sCommand.substr(0, (sNth_Switch + ">>default").length()) == sNth_Switch + ">>default"
+                             && vCmdArray[j].sCommand.starts_with(sNth_Switch + ">>default")
                              && nJumpTable[i][BLOCK_MIDDLE] == NO_FLOW_COMMAND)
                         nJumpTable[i][BLOCK_MIDDLE] = j;
                     else if (vCmdArray[j].sCommand.length()
-                             && vCmdArray[j].sCommand.substr(0, (sNth_Switch + ">>endswitch").length()) == sNth_Switch + ">>endswitch")
+                             && vCmdArray[j].sCommand.starts_with(sNth_Switch + ">>endswitch"))
                     {
                         nJumpTable[i][BLOCK_END] = j;
                         break;
@@ -4153,15 +4187,15 @@ void FlowCtrl::fillJumpTableAndExpandRecursives()
                         continue;
 
                     if (vCmdArray[j].sCommand.length()
-                        && vCmdArray[j].sCommand.substr(0, (sNth_Switch + ">>case").length()) == sNth_Switch + ">>case"
+                        && vCmdArray[j].sCommand.starts_with(sNth_Switch + ">>case")
                         && nJumpTable[i][BLOCK_MIDDLE] == NO_FLOW_COMMAND)
                         nJumpTable[i][BLOCK_MIDDLE] = j;
                     else if (vCmdArray[j].sCommand.length()
-                             && vCmdArray[j].sCommand.substr(0, (sNth_Switch + ">>default").length()) == sNth_Switch + ">>default"
+                             && vCmdArray[j].sCommand.starts_with(sNth_Switch + ">>default")
                              && nJumpTable[i][BLOCK_MIDDLE] == NO_FLOW_COMMAND)
                         nJumpTable[i][BLOCK_MIDDLE] = j;
                     else if (vCmdArray[j].sCommand.length()
-                             && vCmdArray[j].sCommand.substr(0, (sNth_Switch + ">>endswitch").length()) == sNth_Switch + ">>endswitch")
+                             && vCmdArray[j].sCommand.starts_with(sNth_Switch + ">>endswitch"))
                     {
                         nJumpTable[i][BLOCK_END] = j;
                         break;
@@ -4178,11 +4212,11 @@ void FlowCtrl::fillJumpTableAndExpandRecursives()
                         continue;
 
                     if (vCmdArray[j].sCommand.length()
-                        && vCmdArray[j].sCommand.substr(0, (sNth_Try + ">>catch").length()) == sNth_Try + ">>catch"
+                        && vCmdArray[j].sCommand.starts_with(sNth_Try + ">>catch")
                         && nJumpTable[i][BLOCK_MIDDLE] == NO_FLOW_COMMAND)
                         nJumpTable[i][BLOCK_MIDDLE] = j;
                     else if (vCmdArray[j].sCommand.length()
-                             && vCmdArray[j].sCommand.substr(0, (sNth_Try + ">>endtry").length()) == sNth_Try + ">>endtry")
+                             && vCmdArray[j].sCommand.starts_with(sNth_Try + ">>endtry"))
                     {
                         nJumpTable[i][BLOCK_END] = j;
                         break;
@@ -4199,11 +4233,11 @@ void FlowCtrl::fillJumpTableAndExpandRecursives()
                         continue;
 
                     if (vCmdArray[j].sCommand.length()
-                        && vCmdArray[j].sCommand.substr(0, (sNth_Try + ">>catch").length()) == sNth_Try + ">>catch"
+                        && vCmdArray[j].sCommand.starts_with(sNth_Try + ">>catch")
                         && nJumpTable[i][BLOCK_MIDDLE] == NO_FLOW_COMMAND)
                         nJumpTable[i][BLOCK_MIDDLE] = j;
                     else if (vCmdArray[j].sCommand.length()
-                             && vCmdArray[j].sCommand.substr(0, (sNth_Try + ">>endtry").length()) == sNth_Try + ">>endtry")
+                             && vCmdArray[j].sCommand.starts_with(sNth_Try + ">>endtry"))
                     {
                         nJumpTable[i][BLOCK_END] = j;
                         break;
@@ -4281,7 +4315,7 @@ void FlowCtrl::prepareSwitchExpression(int nSwitchStart)
     {
         // Extract the value of the found case and gather
         // it in the argument list
-        if (vCmdArray[j].sCommand.length() && vCmdArray[j].sCommand.substr(0, (sNth_Switch + ">>case").length()) == sNth_Switch + ">>case")
+        if (vCmdArray[j].sCommand.length() && vCmdArray[j].sCommand.starts_with(sNth_Switch + ">>case"))
         {
             if (sArgument.length())
                 sArgument += ", ";
@@ -4333,7 +4367,7 @@ void FlowCtrl::checkParsingModeAndExpandDefinitions()
     {
         if (vCmdArray[i].bFlowCtrlStatement)
         {
-            if (vCmdArray[i].sCommand.substr(0, 3) == "for" || vCmdArray[i].sCommand.substr(0, 5) == "while")
+            if (vCmdArray[i].sCommand.starts_with("for") || vCmdArray[i].sCommand.starts_with("while"))
             {
                 if (!bUseLoopParsingMode)
                     bUseLoopParsingMode = true;
@@ -4448,7 +4482,7 @@ void FlowCtrl::prepareLocalVarsAndReplace(std::string& sVars)
         StripSpaces(sVarArray[i]);
 
         // Is it already defined?
-        if (sVarArray[i].substr(0, 2) == "_~" && getPointerToVariable(sVarArray[i], *_parserRef))
+        if (sVarArray[i].starts_with("_~") && getPointerToVariable(sVarArray[i], *_parserRef))
             vVars[sVarArray[i]] = getPointerToVariable(sVarArray[i], *_parserRef);
         else
         {
@@ -4500,7 +4534,8 @@ void FlowCtrl::updateTestStats()
 /////////////////////////////////////////////////
 /// \brief This member function returns the
 /// current line number as enumerated during
-/// passing the commands via "setCommand()".
+/// passing the commands via
+/// "addToControlFlowBlock()".
 ///
 /// \return int
 ///
@@ -4536,11 +4571,11 @@ string FlowCtrl::getCurrentCommand() const
 /// whether the passed command is a flow control
 /// statement.
 ///
-/// \param sCmd const std::string&
+/// \param sCmd StringView
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool FlowCtrl::isFlowCtrlStatement(const std::string& sCmd)
+bool FlowCtrl::isFlowCtrlStatement(StringView sCmd)
 {
     return sCmd == "if" || sCmd == "for" || sCmd == "while" || sCmd == "switch" || sCmd == "try";
 }
@@ -4552,11 +4587,11 @@ bool FlowCtrl::isFlowCtrlStatement(const std::string& sCmd)
 /// known flow control statements (not only their
 /// headers).
 ///
-/// \param sCmd const std::string&
+/// \param sCmd StringView
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool FlowCtrl::isAnyFlowCtrlStatement(const std::string& sCmd)
+bool FlowCtrl::isAnyFlowCtrlStatement(StringView sCmd)
 {
     return sCmd == "for"
         || sCmd == "endfor"
@@ -4601,11 +4636,11 @@ FlowCtrl::ProcedureInterfaceRetVal FlowCtrl::procedureInterface(std::string& sLi
 /////////////////////////////////////////////////
 /// \brief Dummy implementation.
 ///
-/// \param sLine std::string&
+/// \param sLine StringView
 /// \return int
 ///
 /////////////////////////////////////////////////
-int FlowCtrl::procedureCmdInterface(std::string& sLine)
+int FlowCtrl::procedureCmdInterface(StringView sLine)
 {
     return 1;
 }

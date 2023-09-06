@@ -84,7 +84,7 @@ ProcedureElement::ProcedureElement(const StyledTextFile& procedureContents, cons
         // that we have a line continuation at this point
         if (sProcCommandLine.length() > 2)
         {
-            if (sProcCommandLine.substr(sProcCommandLine.length() - 2, 2) == "\\\\")
+            if (sProcCommandLine.ends_with("\\\\"))
             {
                 // Add the current line to the current line cache
                 // and continue

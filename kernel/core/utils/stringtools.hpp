@@ -28,6 +28,7 @@
 // Forward declaration
 class Settings;
 class StringView;
+class MutableStringView;
 
 enum TIMESTAMP
 {
@@ -134,8 +135,8 @@ int detectTimeDateFormat(const std::string&);
 std::string toSystemCodePage(std::string sOutput);
 std::string fromSystemCodePage(std::string sOutput);
 
-void replaceAll(std::string& sToModify, const std::string& sToRep, const std::string& sNewValue, size_t nStart = 0, size_t nEnd = std::string::npos);
-void replaceAll(std::string& sToModify, const char* sToRep, const char* sNewValue, size_t nStart = 0, size_t nEnd = std::string::npos);
+void replaceAll(MutableStringView sToModify, StringView sToRep, StringView sNewValue, size_t nStart = 0, size_t nEnd = std::string::npos);
+void replaceAll(MutableStringView sToModify, const char* sToRep, const char* sNewValue, size_t nStart = 0, size_t nEnd = std::string::npos);
 std::string replaceControlCharacters(std::string sToModify);
 std::string utf8parser(const std::string& sString);
 std::string utf8ToAnsi(const std::string& sString);

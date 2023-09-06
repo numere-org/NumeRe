@@ -708,7 +708,7 @@ size_t Plot::createSubPlotSet(bool& bAnimateVar, vector<string>& vPlotCompose, s
             continue; // Ignore the "subplot" command, if we have no multiplot layout
 
         // Display the "Calculating data for SOME PLOT" message
-        displayMessage(_pData.getAnimateSamples() && findVariableInExpression(sFunc, "t") != string::npos);
+        displayMessage(_pData.getAnimateSamples() && findVariableInExpression(sFunc, "t") != std::string::npos);
 
         // Apply the logic and the transformation for logarithmic
         // plotting axes
@@ -739,6 +739,14 @@ size_t Plot::createSubPlotSet(bool& bAnimateVar, vector<string>& vPlotCompose, s
         // Call the input prompt, if one of the function definition requires this
         if (sFunc.find("??") != string::npos)
             sFunc = promptForUserInput(sFunc);
+
+        // Ensure that we set the variable "t" to a reasonable value to avoid
+        // problems within the detection of indices
+        if (_pData.getAnimateSamples() && findVariableInExpression(sFunc, "t") != std::string::npos)
+        {
+            // set t to the starting value
+            _defVars.vValue[TCOORD][0] = _pData.getRanges()[TRANGE].front();  // Plotparameter: t
+        }
 
         // Split the function-and-data section into functions and data sets,
         // evaluate the indices of the data sets and store the values of the
