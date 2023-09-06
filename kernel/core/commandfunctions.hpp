@@ -331,12 +331,11 @@ static bool newObject(string& sCmd, Parser& _parser, MemoryManager& _data, Setti
 			sFileName = "<>/" + sFileName;
 
         sFileName = _fSys.ValidizeAndPrepareName(sFileName, ".txt");
-        StringView fileName(sFileName);
 
-        if (fileName.ends_with(".nprc")
-            || fileName.ends_with(".nscr")
-            || fileName.ends_with(".nlyt")
-            || fileName.ends_with(".ndat"))
+        if (sFileName.ends_with(".nprc")
+            || sFileName.ends_with(".nscr")
+            || sFileName.ends_with(".nlyt")
+            || sFileName.ends_with(".ndat"))
 			sFileName.replace(sFileName.rfind('.'), 5, ".txt");
 
         if (!prepareTemplate("tmpl_file", sFileName))
