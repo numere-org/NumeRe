@@ -1983,6 +1983,301 @@ void Memory::insertCopiedTable(NumeRe::Table _table, const VectorIndex& lines, c
 
 
 /////////////////////////////////////////////////
+/// \brief Insert a block of elements starting
+/// from the indicated topleft position, moving
+/// that downwards.
+///
+/// \param atRow size_t
+/// \param atCol size_t
+/// \param rows size_t
+/// \param cols size_t
+/// \return bool
+///
+/////////////////////////////////////////////////
+bool Memory::insertBlock(size_t atRow, size_t atCol, size_t rows, size_t cols)
+{
+    if (atRow >= getLines() || atCol >= memArray.size())
+        return false;
+
+    // Catch whole rows and cols
+    if (atRow == 0 && rows >= getLines())
+        return insertCols(atCol, cols);
+    else if (atCol == 0 && cols >= memArray.size())
+        return insertRows(atRow, rows);
+
+    for (size_t c = atCol; c < std::min(atCol+cols, memArray.size()); c++)
+    {
+        if (memArray[c])
+            memArray[c]->insertElements(atRow, rows);
+    }
+
+    m_meta.modify();
+    nCalcLines = -1;
+    return true;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Insert a set of columns in front of
+/// the desired column.
+///
+/// \param atCol size_t
+/// \param num size_t
+/// \return bool
+///
+/////////////////////////////////////////////////
+bool Memory::insertCols(size_t atCol, size_t num)
+{
+    if (atCol >= memArray.size())
+        return false;
+
+    TableColumnArray arr(num);
+    memArray.insert(memArray.begin()+atCol, std::make_move_iterator(arr.begin()), std::make_move_iterator(arr.end()));
+    m_meta.modify();
+    return true;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Insert a set of rows in front of the
+/// desired row.
+///
+/// \param atRow size_t
+/// \param num size_t
+/// \return bool
+///
+/////////////////////////////////////////////////
+bool Memory::insertRows(size_t atRow, size_t num)
+{
+    if (atRow >= getLines())
+        return false;
+
+    for (TblColPtr& col : memArray)
+    {
+        if (col)
+            col->insertElements(atRow, num);
+    }
+
+    m_meta.modify();
+    nCalcLines = -1;
+    return true;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Remove a block of elements starting
+/// from the indicated topleft position, moving
+/// everything below the block upwards.
+///
+/// \param atRow size_t
+/// \param atCol size_t
+/// \param rows size_t
+/// \param cols size_t
+/// \return bool
+///
+/////////////////////////////////////////////////
+bool Memory::removeBlock(size_t atRow, size_t atCol, size_t rows, size_t cols)
+{
+    if (atRow >= getLines() || atCol >= memArray.size())
+        return false;
+
+    // Catch whole rows and cols
+    if (atRow == 0 && rows >= getLines())
+        return removeCols(VectorIndex(atCol, atCol+cols-1));
+    else if (atCol == 0 && cols >= memArray.size())
+        return removeRows(VectorIndex(atRow, atRow+rows-1));
+
+    for (size_t c = atCol; c < std::min(atCol+cols, memArray.size()); c++)
+    {
+        if (memArray[c])
+            memArray[c]->removeElements(atRow, rows);
+    }
+
+    m_meta.modify();
+    nCalcLines = -1;
+    return true;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Remove a set of indicated columns,
+/// moving everything behind to the left.
+///
+/// \param _vCols const VectorIndex&
+/// \return bool
+///
+/////////////////////////////////////////////////
+bool Memory::removeCols(const VectorIndex& _vCols)
+{
+    if (_vCols.min() >= memArray.size())
+        return false;
+
+    _vCols.setOpenEndIndex(memArray.size()-1);
+
+    if (_vCols.isExpanded())
+        memArray.erase(memArray.begin()+_vCols.min(), memArray.begin()+_vCols.max()+1);
+    else if (_vCols.size() == 1)
+        memArray.erase(memArray.begin()+_vCols.front());
+    else
+    {
+        std::vector<int> vVals = _vCols.getVector();
+        std::sort(vVals.begin(), vVals.end());
+
+        for (int i = vVals.size()-1; i >= 0; i--)
+        {
+            if (vVals[i] < memArray.size())
+                memArray.erase(memArray.begin()+vVals[i]);
+        }
+    }
+
+    m_meta.modify();
+    return true;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Remove a set of indicated rows, moving
+/// everything upwards.
+///
+/// \param _vRows const VectorIndex&
+/// \return bool
+///
+/////////////////////////////////////////////////
+bool Memory::removeRows(const VectorIndex& _vRows)
+{
+    if (_vRows.min() >= getLines())
+        return false;
+
+    _vRows.setOpenEndIndex(getLines()-1);
+
+    if (_vRows.isExpanded())
+    {
+        for (TblColPtr& col : memArray)
+        {
+            if (col)
+                col->removeElements(_vRows.min(), _vRows.size());
+        }
+    }
+    else if (_vRows.size() == 1)
+    {
+        for (TblColPtr& col : memArray)
+        {
+            if (col)
+                col->removeElements(_vRows.front(), 1);
+        }
+    }
+    else
+    {
+        std::vector<int> vVals = _vRows.getVector();
+        std::sort(vVals.begin(), vVals.end());
+
+        for (int i = vVals.size()-1; i >= 0; i--)
+        {
+            for (TblColPtr& col : memArray)
+            {
+                if (col)
+                    col->removeElements(vVals[i], 1);
+            }
+        }
+    }
+
+    m_meta.modify();
+    nCalcLines = -1;
+    return true;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Reorder a set of columns.
+///
+/// \param _vCols const VectorIndex&
+/// \param _vNewOrder const VectorIndex&
+/// \return bool
+///
+/////////////////////////////////////////////////
+bool Memory::reorderCols(const VectorIndex& _vCols, const VectorIndex& _vNewOrder)
+{
+    // The new order must not be open ended
+    if (_vNewOrder.isOpenEnd())
+        return false;
+
+    _vCols.setOpenEndIndex(getCols()-1);
+    VectorIndex vPlain(0, _vNewOrder.max());
+
+    // Ensure that the indices reflect reasonable combinations
+    if (_vNewOrder.size() != _vCols.size()
+        || _vCols.size() > getCols()
+        || _vNewOrder.max() >= (long long int)_vNewOrder.size()
+        || !_vCols.isUnique()
+        || !std::is_permutation(vPlain.begin(), vPlain.end(), _vNewOrder.begin(), _vNewOrder.end()))
+        return false;
+
+    TableColumnArray buffer;
+    buffer.resize(_vCols.size());
+
+    // Move the columns to the buffer
+    for (size_t i = 0; i < _vCols.size(); i++)
+    {
+        if (_vCols[i] != VectorIndex::INVALID && _vCols[i] < memArray.size())
+            buffer[i].reset(memArray[_vCols[i]].release());
+    }
+
+    // Move the columns back to the original array but in the new order
+    for (size_t i = 0; i < _vNewOrder.size(); i++)
+    {
+        if (_vNewOrder[i] != VectorIndex::INVALID && _vCols[i] != VectorIndex::INVALID)
+            memArray[_vCols[i]].reset(buffer[_vNewOrder[i]].release());
+    }
+
+    m_meta.modify();
+    return true;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Reorder a set of rows.
+///
+/// \param _vCols const VectorIndex&
+/// \param _vNewOrder const VectorIndex&
+/// \return bool
+///
+/////////////////////////////////////////////////
+bool Memory::reorderRows(const VectorIndex& _vRows, const VectorIndex& _vNewOrder)
+{
+    // The new order must not be open ended
+    if (_vNewOrder.isOpenEnd())
+        return false;
+
+    _vRows.setOpenEndIndex(getLines()-1);
+    VectorIndex vPlain(0, _vNewOrder.max());
+
+    // Ensure that the indices reflect reasonable combinations
+    if (_vNewOrder.size() != _vRows.size()
+        || _vRows.size() > getLines()
+        || _vNewOrder.max() >= (long long int)_vNewOrder.size()
+        || !_vRows.isUnique()
+        || !std::is_permutation(vPlain.begin(), vPlain.end(), _vNewOrder.begin(), _vNewOrder.end()))
+        return false;
+
+    vPlain = _vRows.get(_vNewOrder);
+
+    // Reorder the cells in each column
+    for (auto& col : memArray)
+    {
+        if (col)
+        {
+            TblColPtr cpy(col->copy(vPlain));
+            col->insert(_vRows, cpy.get());
+            col->shrink();
+        }
+    }
+
+    m_meta.modify();
+    return true;
+}
+
+
+/////////////////////////////////////////////////
 /// \brief This member function is used for
 /// saving the contents of this memory page into
 /// a file. The type of the file is selected by
