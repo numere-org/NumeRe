@@ -570,10 +570,7 @@ static bool editObject(string& sCmd, Parser& _parser, MemoryManager& _data, Sett
 
 		// Append a wildcard at the end of the path if necessary
 		if (viewedObject.back() != '*' && viewedObject.find('.') == string::npos)
-        {
-			sObject += "*";
-            viewedObject = sObject;
-        }
+			viewedObject.insert(viewedObject.length(), "*");
 
         // Try to determine the path based upon the file extension, where we might find the
         // file, if the user did not supply the path to the file
