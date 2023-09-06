@@ -648,7 +648,7 @@ static bool editObject(string& sCmd, Parser& _parser, MemoryManager& _data, Sett
 	// Could be a folder -> open it in the Windows Explorer
 	if (!fileExists(viewedObject.to_string()) || viewedObject.find('.') == string::npos)
 	{
-		viewedObject.trim_back(viewedObject.length() - viewedObject.rfind('.'));
+		viewedObject.remove_from(viewedObject.rfind('.'));
 
 		if (viewedObject.find('*') != string::npos)
 			viewedObject.trim_back(viewedObject.length() - viewedObject.rfind('*'));
