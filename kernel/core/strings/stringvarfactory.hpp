@@ -61,6 +61,7 @@ namespace NumeRe
             std::string getStringValue(const std::string& sVar) const;
             void setStringValue(const std::string& sVar, const std::string& sValue);
             void removeStringVar(const std::string& sVar);
+            void clearStringVar();
 
             // Returns a reference to the internal string variable map
             inline const std::map<std::string, std::string>& getStringVars() const

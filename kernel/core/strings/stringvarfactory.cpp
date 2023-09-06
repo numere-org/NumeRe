@@ -746,5 +746,33 @@ namespace NumeRe
             m_mStringVars.erase(iter);
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief This public member function removes all
+    /// string variables which don't start with ~,_
+    ///
+    /// \param sVar const string&
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
+    void StringVarFactory::clearStringVar()
+    {
+	if (!m_mStringVars.size())
+            return;
+
+	for (auto iter = m_mStringVars.begin(); iter != m_mStringVars.end(); ++iter)
+	{
+	    NumeReKernel::getInstance()->print(iter->first);
+	    if (iter->first.substr(0, 1) == "_" || iter->first.substr(0, 1) == "~")
+	    {
+		continue;
+	    }
+	    else
+	    {
+		m_mStringVars.erase(iter);
+	    }
+	}
+    }
+
 }
 
