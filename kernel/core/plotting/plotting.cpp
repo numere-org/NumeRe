@@ -4228,6 +4228,7 @@ void Plot::createDataLegends()
             // Strip all spaces and extract the table name
             StripSpaces(sTemp);
             DataAccessParser _access = getAccessParserForPlotAndFit(sTemp);
+            _access.evalIndices();
             std::string sTableName = _access.getDataObject();
 
             const VectorIndex& vCols = _access.getIndices().col;
