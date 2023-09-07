@@ -64,41 +64,39 @@ enum StatsFields
 ///
 /// \param _data MemoryManager&
 /// \param sTable const std::string&
+/// \param _idx const Indices&
 /// \return std::vector<std::vector<double>>
 ///
 /////////////////////////////////////////////////
-static std::vector<std::vector<double>> calcStats(MemoryManager& _data, const std::string& sTable)
+static std::vector<std::vector<double>> calcStats(MemoryManager& _data, const std::string& sTable, const Indices& _idx)
 {
-    long long int nLines = _data.getLines(sTable);
-    long long int nCols = _data.getCols(sTable);
-
     std::vector<std::vector<double>> vStats (STATS_FIELD_COUNT, std::vector<double>());
 
-    // Calculate built-in statistical values (short-cuts)
-    vStats[STATS_AVG] = mu::real(_data.avg(sTable, "cols"));
-    vStats[STATS_STD] = mu::real(_data.std(sTable, "cols"));
-    vStats[STATS_MED] = mu::real(_data.med(sTable, "cols"));
-    vStats[STATS_Q1]  = mu::real(_data.pct(sTable, "cols", 0.25));
-    vStats[STATS_Q3]  = mu::real(_data.pct(sTable, "cols", 0.75));
-    vStats[STATS_MIN] = mu::real(_data.min(sTable, "cols"));
-    vStats[STATS_MAX] = mu::real(_data.max(sTable, "cols"));
-    vStats[STATS_NUM] = mu::real(_data.num(sTable, "cols"));
-    vStats[STATS_CNT] = mu::real(_data.cnt(sTable, "cols"));
-    vStats[STATS_RMS] = mu::real(_data.norm(sTable, "cols"));
-
-    for (long long int j = 0; j < nCols; j++)
+    for (size_t j = 0; j < _idx.col.size(); j++)
     {
+        // Calculate built-in statistical values (short-cuts)
+        vStats[STATS_AVG].push_back(_data.avg(sTable, _idx.row, _idx.col.subidx(j, 1)).real());
+        vStats[STATS_STD].push_back(_data.std(sTable, _idx.row, _idx.col.subidx(j, 1)).real());
+        vStats[STATS_MED].push_back(_data.med(sTable, _idx.row, _idx.col.subidx(j, 1)).real());
+        vStats[STATS_Q1].push_back(_data.pct(sTable, _idx.row, _idx.col.subidx(j, 1), 0.25).real());
+        vStats[STATS_Q3].push_back(_data.pct(sTable, _idx.row, _idx.col.subidx(j, 1), 0.75).real());
+        vStats[STATS_MIN].push_back(_data.min(sTable, _idx.row, _idx.col.subidx(j, 1)).real());
+        vStats[STATS_MAX].push_back(_data.max(sTable, _idx.row, _idx.col.subidx(j, 1)).real());
+        vStats[STATS_NUM].push_back(_data.num(sTable, _idx.row, _idx.col.subidx(j, 1)).real());
+        vStats[STATS_CNT].push_back(_data.cnt(sTable, _idx.row, _idx.col.subidx(j, 1)).real());
+        vStats[STATS_RMS].push_back(_data.norm(sTable, _idx.row, _idx.col.subidx(j, 1)).real());
+
         // Many values make no sense if no data
         // is available
-        if (!vStats[STATS_NUM][j])
+        if (!vStats[STATS_NUM].back())
         {
             vStats[STATS_CONFINT].push_back(NAN);
             vStats[STATS_SKEW].push_back(NAN);
             vStats[STATS_EXC].push_back(NAN);
             vStats[STATS_STDERR].push_back(NAN);
             vStats[STATS_S_T].push_back(NAN);
-            vStats[STATS_STD][j] = NAN;
-            vStats[STATS_RMS][j] = NAN;
+            vStats[STATS_STD].back() = NAN;
+            vStats[STATS_RMS].back() = NAN;
             continue;
         }
 
@@ -108,35 +106,37 @@ static std::vector<std::vector<double>> calcStats(MemoryManager& _data, const st
 
         // Calculate Confidence interval count,
         // Skewness and Excess
-        for (long long int i = 0; i < nLines; i++)
+        for (size_t i = 0; i < _idx.row.size(); i++)
         {
-            if (!_data.isValidElement(i, j, sTable))
+            if (!_data.isValidElement(_idx.row[i], _idx.col[j], sTable))
                 continue;
 
-            if (fabs(_data.getElement(i, j, sTable) - vStats[STATS_AVG][j]) <= vStats[STATS_STD][j])
-                vStats[STATS_CONFINT][j]++;
+            double val = _data.getElement(_idx.row[i], _idx.col[j], sTable).real();
 
-            vStats[STATS_SKEW][j] += intPower(_data.getElement(i, j, sTable).real() - vStats[STATS_AVG][j], 3);
-            vStats[STATS_EXC][j] += intPower(_data.getElement(i, j, sTable).real() - vStats[STATS_AVG][j], 4);
+            if (fabs(val - vStats[STATS_AVG].back()) <= vStats[STATS_STD].back())
+                vStats[STATS_CONFINT].back()++;
+
+            vStats[STATS_SKEW].back() += intPower(val - vStats[STATS_AVG].back(), 3);
+            vStats[STATS_EXC].back() += intPower(val - vStats[STATS_AVG].back(), 4);
         }
 
         // Finalize the confidence interval count
-        vStats[STATS_CONFINT][j] /= vStats[STATS_NUM][j];
-        vStats[STATS_CONFINT][j] = round(10000.0*vStats[STATS_CONFINT][j]) / 100.0;
+        vStats[STATS_CONFINT].back() /= vStats[STATS_NUM].back();
+        vStats[STATS_CONFINT].back() = round(10000.0*vStats[STATS_CONFINT].back()) / 100.0;
 
         // Finalize Skewness and Excess
-        vStats[STATS_SKEW][j] /= vStats[STATS_NUM][j] * intPower(vStats[STATS_STD][j], 3);
-        vStats[STATS_EXC][j] /= vStats[STATS_NUM][j] * intPower(vStats[STATS_STD][j], 4);
-        vStats[STATS_EXC][j] -= 3.0; // Convert Kurtosis to Excess
+        vStats[STATS_SKEW].back() /= vStats[STATS_NUM].back() * intPower(vStats[STATS_STD].back(), 3);
+        vStats[STATS_EXC].back() /= vStats[STATS_NUM].back() * intPower(vStats[STATS_STD].back(), 4);
+        vStats[STATS_EXC].back() -= 3.0; // Convert Kurtosis to Excess
 
         // Calculate 2nd order stats values available
         // from simple arithmetic operations
-        vStats[STATS_STDERR].push_back(vStats[STATS_STD][j] / sqrt(vStats[STATS_NUM][j]));
-        vStats[STATS_RMS][j] /= sqrt(vStats[STATS_NUM][j]);
+        vStats[STATS_STDERR].push_back(vStats[STATS_STD].back() / sqrt(vStats[STATS_NUM].back()));
+        vStats[STATS_RMS].back() /= sqrt(vStats[STATS_NUM].back());
 
         // Use BOOST to calculate the Student-t value for
         // the current number of freedoms
-        vStats[STATS_S_T].push_back(student_t(vStats[STATS_NUM][j], 0.95));
+        vStats[STATS_S_T].push_back(student_t(vStats[STATS_NUM].back(), 0.95));
     }
 
     return vStats;
@@ -204,14 +204,15 @@ static std::string getStatFieldName(int nStatField)
 /// \param sSavePath const std::string&
 /// \param _data MemoryManager&
 /// \param sTable const std::string&
+/// \param _idx const Indices&
 /// \param _option const Settings&
 /// \return void
 ///
 /////////////////////////////////////////////////
-static void createStatsFile(Output& _out, const std::vector<std::vector<double>>& vStats, const std::string& sSavePath, MemoryManager& _data, const std::string& sTable, const Settings& _option)
+static void createStatsFile(Output& _out, const std::vector<std::vector<double>>& vStats, const std::string& sSavePath, MemoryManager& _data, const std::string& sTable, const Indices& _idx, const Settings& _option)
 {
-    int nLine = _data.getLines(sTable);
-    int nCol = _data.getCols(sTable);
+    int nLine = vStats.size();
+    int nCol = vStats[0].size();
     int nHeadlines = _data.getHeadlineCount(sTable);
     const int nPrecision = 4;
 
@@ -239,7 +240,7 @@ static void createStatsFile(Output& _out, const std::vector<std::vector<double>>
         }
 
         // Add the headlines to the columns
-        std::string sHeadline = _data.getHeadLineElement(j, sTable);
+        std::string sHeadline = _data.getHeadLineElement(_idx.col[j], sTable);
 
         for (int i = 0; i < nHeadlines; i++)
         {
@@ -257,13 +258,13 @@ static void createStatsFile(Output& _out, const std::vector<std::vector<double>>
         // Write the table values to the single columns
         for (int i = 0; i < nLine; i++)
         {
-            if (!_data.isValidElement(i,j, sTable))
+            if (!_data.isValidElement(_idx.row[i], _idx.col[j], sTable))
             {
                 sOut[i + nHeadlines][j] = "---";
                 continue;
             }
 
-            sOut[i + nHeadlines][j] = toString(_data.getElement(i,j, sTable), _option.getPrecision()); // Kopieren der Matrix in die Ausgabe
+            sOut[i + nHeadlines][j] = toString(_data.getElement(_idx.row[i], _idx.col[j], sTable), _option.getPrecision()); // Kopieren der Matrix in die Ausgabe
         }
 
         // Write the calculated stats to the columns
@@ -307,19 +308,20 @@ static void createStatsFile(Output& _out, const std::vector<std::vector<double>>
 /// \param sSavePath const std::string&
 /// \param _data MemoryManager&
 /// \param sTable const std::string&
+/// \param _idx const Indices&
 /// \param _option const Settings&
 /// \return void
 ///
 /////////////////////////////////////////////////
-static void createStatsOutput(Output& _out, const std::vector<std::vector<double>>& vStats, const std::string& sSavePath, MemoryManager& _data, const std::string& sTable, const Settings& _option)
+static void createStatsOutput(Output& _out, const std::vector<std::vector<double>>& vStats, const std::string& sSavePath, MemoryManager& _data, const std::string& sTable, const Indices& _idx, const Settings& _option)
 {
-    int nCol = _data.getCols(sTable);
+    int nCol = vStats[0].size();
     int nHeadlines = _data.getHeadlineCount(sTable);
     const int nPrecision = 4;
 
     // Redirect the control, if necessary
     if (_out.isFile())
-        createStatsFile(_out, vStats, sSavePath, _data, sTable, _option);
+        createStatsFile(_out, vStats, sSavePath, _data, sTable, _idx, _option);
 
     // Create the overview string table
     // on the heap
@@ -335,7 +337,7 @@ static void createStatsOutput(Output& _out, const std::vector<std::vector<double
     for (int j = 0; j < nCol; j++)
     {
         // Write the table column headlines
-        std::string sHeadline = _data.getHeadLineElement(j, sTable);
+        std::string sHeadline = _data.getHeadLineElement(_idx.col[j], sTable);
 
         for (int i = 0; i < nHeadlines; i++)
         {
@@ -409,57 +411,61 @@ static void createStatsOutput(Output& _out, const std::vector<std::vector<double
 /// \brief This is the implementation of the
 /// stats command.
 ///
-/// \param sCmd std::string&
-/// \param _data MemoryManager& Might be different from the usual MemoryManager
-/// \return std::string
+/// \param cmdParser CommandLineParser&
+/// \return void
 ///
 /////////////////////////////////////////////////
-std::string plugin_statistics(std::string& sCmd, MemoryManager& _data)
+void plugin_statistics(CommandLineParser& cmdParser)
 {
-    MemoryManager& _rootData = NumeReKernel::getInstance()->getMemoryManager();
+    MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
     Output& _out = NumeReKernel::getInstance()->getOutput();
     Settings& _option = NumeReKernel::getInstance()->getSettings();
 
     Indices _idx;
 
     std::string sSavePath;
-    std::string sRet;
+    DataAccessParser accessParser = cmdParser.getExprAsDataObject();
+
+    if (!accessParser.getDataObject().length())
+        throw SyntaxError(SyntaxError::TABLE_DOESNT_EXIST, cmdParser.getCommandLine(), cmdParser.getExpr(), cmdParser.getExpr());
+
+    std::string sDatatable = accessParser.getDataObject();
+
+    if (accessParser.isCluster())
+        throw SyntaxError(SyntaxError::CACHE_DOESNT_EXIST, cmdParser.getCommandLine(), sDatatable + "{", sDatatable);
+
+    accessParser.evalIndices();
 
     // Get the target table, if the user specified one,
     // otherwise just leave it empty
-    std::string sTarget = evaluateTargetOptionInCommand(sCmd, "", _idx, NumeReKernel::getInstance()->getParser(), _rootData, _option);
+    std::string sTarget = cmdParser.getTargetTable(_idx, "");
 
     // Ensure that at least some data is available
     if (!_data.isValid())
-        throw SyntaxError(SyntaxError::NO_DATA_AVAILABLE, sCmd, SyntaxError::invalid_position);
+        throw SyntaxError(SyntaxError::NO_DATA_AVAILABLE, cmdParser.getCommandLine(), sDatatable + "(", sDatatable);
 
-    if (findParameter(sCmd, "save", '=') || findParameter(sCmd, "export", '='))
+    // Get the target file name, if any
+    if (cmdParser.hasParam("file"))
+        sSavePath = cmdParser.getFileParameterValueForSaving(".dat", NumeReKernel::getInstance()->getSettings().getSavePath(), "");
+    else if (cmdParser.hasParam("save"))
     {
-        int nPos = 0;
-
-        if (findParameter(sCmd, "save", '='))
-            nPos = findParameter(sCmd, "save", '=')+4;
-        else
-            nPos = findParameter(sCmd, "export", '=')+6;
-
-        _out.setStatus(true);
-        sSavePath = getArgAtPos(sCmd, nPos);
+        NumeReKernel::issueWarning(_lang.get("COMMON_SYNTAX_DEPRECATED", cmdParser.getCommandLine()));
+        sSavePath = cmdParser.getParameterValueAsString("save", "", true, true);
+    }
+    else if (cmdParser.hasParam("export"))
+    {
+        NumeReKernel::issueWarning(_lang.get("COMMON_SYNTAX_DEPRECATED", cmdParser.getCommandLine()));
+        sSavePath = cmdParser.getParameterValueAsString("export", "", true, true);
     }
 
-    if (findParameter(sCmd, "save") || findParameter(sCmd, "export"))
-        _out.setStatus(true);
-
-    std::string sDatatable = "data";
-
-    if (_data.matchTableAsParameter(sCmd).length())
-        sDatatable = _data.matchTableAsParameter(sCmd);
+    _out.setStatus(sSavePath.length() != 0);
 
     // Ensure that the table is not empty
     if (_data.isEmpty(sDatatable))
-        throw SyntaxError(SyntaxError::NO_CACHED_DATA, sCmd, SyntaxError::invalid_position);
+        throw SyntaxError(SyntaxError::NO_CACHED_DATA, cmdParser.getCommandLine(), sDatatable + "(", sDatatable);
 
     // Calculate the statistics
-    std::vector<std::vector<double>> vStats = calcStats(_data, sDatatable);
+    std::vector<std::vector<double>> vStats = calcStats(_data, sDatatable, accessParser.getIndices());
 
     // Write the statistics to the target table, if a
     // target table was specified
@@ -470,31 +476,34 @@ std::string plugin_statistics(std::string& sCmd, MemoryManager& _data)
             for (size_t j = 0; j < vStats[i].size(); j++)
             {
                 if (!i && j < _idx.col.size())
-                    _rootData.setHeadLineElement(_idx.col[j], sTarget, _data.getHeadLineElement(j, sDatatable));
+                    _data.setHeadLineElement(_idx.col[j+1], sTarget, _data.getHeadLineElement(accessParser.getIndices().col[j], sDatatable));
 
                 if (!vStats[STATS_NUM][j])
                     continue;
 
                 if (i < _idx.row.size() && j < _idx.col.size())
-                    _rootData.writeToTable(_idx.row[i], _idx.col[j], sTarget, vStats[i][j]);
+                    _data.writeToTable(_idx.row[i], _idx.col[j+1], sTarget, vStats[i][j]);
             }
         }
 
-        sRet = "{";
+        std::vector<std::string> sRet;
+        _data.convertColumns(sTarget, _idx.col.subidx(0, 1), "string");
+        _data.setHeadLineElement(_idx.col[0], sTarget, "Stats");
 
         for (int n = STATS_AVG; n < STATS_FIELD_COUNT; n++)
         {
-            sRet += "\"" + getStatFieldName(n) + "\",";
+            sRet.push_back("\"" + getStatFieldName(n) + "\"");
+            _data.writeToTable(_idx.row[n], _idx.col[0], sTarget, getStatFieldName(n));
         }
 
-        sRet.back() = '}';
+        cmdParser.setReturnValue(sRet);
     }
+    else
+        cmdParser.clearReturnValue();
 
     // Create the output for the terminal and the file,
     // if necessary
-    createStatsOutput(_out, vStats, sSavePath, _data, sDatatable, _option);
-
-    return sRet;
+    createStatsOutput(_out, vStats, sSavePath, _data, sDatatable, accessParser.getIndices(), _option);
 }
 
 

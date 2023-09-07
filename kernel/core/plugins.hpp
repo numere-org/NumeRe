@@ -30,13 +30,14 @@
 #include "settings.hpp"
 #include "utils/tools.hpp"
 #include "plotting/plotdata.hpp"
+#include "commandlineparser.hpp"
 
 /*
  * Headerdatei fuer alle Plugins!
  */
 
-std::string plugin_statistics(std::string& sCmd, MemoryManager& _data);
-void plugin_histogram(std::string& sCmd);
+void plugin_statistics(CommandLineParser& cmdParser);
+void plugin_histogram(CommandLineParser& cmdParser);
 void plugin_random(std::string& sCmd);
 #endif
 

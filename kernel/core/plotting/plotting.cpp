@@ -4155,14 +4155,6 @@ void Plot::createDataLegends()
                 sTemp = "\"" + _data.getTopHeadLineElement(vCols.front(), sTableName) + "\"";
             else if (vCols.numberOfNodes() == 2)
             {
-                if (vCols.isOpenEnd())
-                    sTemp = "\"" + _data.getTopHeadLineElement(vCols[1], sTableName) + " vs. "
-                        + _data.getTopHeadLineElement(vCols[0], sTableName) + "\"";
-                else
-                    sTemp = "\"" + _data.getTopHeadLineElement(vCols.last(), sTableName) + " vs. "
-                        + _data.getTopHeadLineElement(vCols.front(), sTableName) + "\"";
-
-
                 // First and second index value available
                 if (_pInfo.sCommand != "plot3d")
                 {
@@ -4183,8 +4175,14 @@ void Plot::createDataLegends()
                             sTemp.back() = '"';
                         }
                         else
-                            sTemp = "\"" + _data.getTopHeadLineElement(vCols.last(), sTableName) + " vs. "
-                                + _data.getTopHeadLineElement(vCols.front(), sTableName) + "\"";
+                        {
+                            if (vCols.isOpenEnd())
+                                sTemp = "\"" + _data.getTopHeadLineElement(vCols[1], sTableName) + " vs. "
+                                    + _data.getTopHeadLineElement(vCols[0], sTableName) + "\"";
+                            else
+                                sTemp = "\"" + _data.getTopHeadLineElement(vCols.last(), sTableName) + " vs. "
+                                    + _data.getTopHeadLineElement(vCols.front(), sTableName) + "\"";
+                        }
                     }
                     else
                     {
