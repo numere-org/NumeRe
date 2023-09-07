@@ -55,7 +55,7 @@ static bool isMesh2D(StringView sCommand)
 
 static bool isMesh3D(StringView sCommand)
 {
-    return !sCommand.ends_with("3d")
+    return sCommand.ends_with("3d")
         && (sCommand.starts_with("mesh")
             || sCommand.starts_with("surf")
             || sCommand.starts_with("dens")
