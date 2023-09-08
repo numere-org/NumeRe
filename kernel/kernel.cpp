@@ -842,7 +842,8 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const std::string& sCommand)
 
             // Handle procedure calls at this location
             // Will return false, if the command line was cleared completely
-            if (sCurrentCommand != "help" && !evaluateProcedureCalls(sLine))
+            // Do nothing, if the prefixed command is a "manual" command
+            if (sCurrentCommand != "help" && sCurrentCommand != "edit" && sCurrentCommand != "new" && !evaluateProcedureCalls(sLine))
                 continue;
 
             // --> Gibt es "??"? Dann rufe die Prompt-Funktion auf <--

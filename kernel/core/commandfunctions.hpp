@@ -456,174 +456,19 @@ static bool newObject(string& sCmd, Parser& _parser, MemoryManager& _data, Setti
 /// \brief This function opens the object in the
 /// editor to edit its contents.
 ///
-/// \param sCmd string&
-/// \param _parser Parser&
+/// \param sCmd std::string&
 /// \param _data Datafile&
 /// \param _option Settings&
 /// \return bool
 ///
 /////////////////////////////////////////////////
-static bool editObject(string& sCmd, Parser& _parser, MemoryManager& _data, Settings& _option)
+static bool editObject(std::string& sCmd, MemoryManager& _data, Settings& _option)
 {
-	int nType = 0;
-	int nFileOpenFlag = 0;
-
-	if (findParameter(sCmd, "norefresh"))
-		nFileOpenFlag = 1;
-
-	if (findParameter(sCmd, "refresh"))
-		nFileOpenFlag = 2 | 4;
-
-	string sObject;
-
-	if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sCmd))
-		extractFirstParameterStringValue(sCmd, sObject);
-	else
+    // Open the table for editing
+	if (_data.containsTables(sObject))
 	{
-		sObject = sCmd.substr(findCommand(sCmd).sString.length());
-
-		// remove flags from object
-		if (nFileOpenFlag)
-			sObject.erase(sObject.rfind('-'));
-	}
-
-	MutableStringView viewedObject(sObject);
-	viewedObject.strip();
-	FileSystem _fSys;
-	_fSys.setTokens(_option.getTokenPaths());
-
-	if (viewedObject.find('.') != string::npos)
-		_fSys.declareFileType(viewedObject.subview(viewedObject.rfind('.')).to_string());
-
-	if (!viewedObject.length())
-		throw SyntaxError(SyntaxError::NO_FILENAME, sCmd, SyntaxError::invalid_position);
-
-	if (viewedObject[0] == '$'  && viewedObject[1] != '\'')
-        viewedObject.insert(0, "<procpath>/");
-	else if (viewedObject[0] == '$')
-		viewedObject.trim_front(1);
-
-    replaceAll(viewedObject, "~", "/");
-    replaceAll(viewedObject, "$", "");
-
-	if (viewedObject.front() == '\'' && viewedObject.back() == '\'')
-    {
-        viewedObject.trim_front(1);
-        viewedObject.trim_back(1);
-    }
-
-    // Resolve the paths
-	if (viewedObject.find("<loadpath>") != string::npos || viewedObject.find(_option.getLoadPath()) != string::npos)
-	{
-		_fSys.setPath(_option.getLoadPath(), false, _option.getExePath());
-		sObject = _fSys.ValidFileName(viewedObject.to_string(), ".dat");
-		viewedObject = sObject;
-	}
-	else if (viewedObject.find("<savepath>") != string::npos || viewedObject.find(_option.getSavePath()) != string::npos)
-	{
-		_fSys.setPath(_option.getSavePath(), false, _option.getExePath());
-		sObject = _fSys.ValidFileName(viewedObject.to_string(), ".dat");
-		viewedObject = sObject;
-	}
-	else if (viewedObject.find("<scriptpath>") != string::npos || viewedObject.find(_option.getScriptPath()) != string::npos)
-	{
-		_fSys.setPath(_option.getScriptPath(), false, _option.getExePath());
-		sObject = _fSys.ValidFileName(viewedObject.to_string(), ".nscr");
-		viewedObject = sObject;
-	}
-	else if (viewedObject.find("<plotpath>") != string::npos || viewedObject.find(_option.getPlotPath()) != string::npos)
-	{
-		_fSys.setPath(_option.getPlotPath(), false, _option.getExePath());
-		sObject = _fSys.ValidFileName(viewedObject.to_string(), ".png");
-		viewedObject = sObject;
-	}
-	else if (viewedObject.find("<procpath>") != string::npos || viewedObject.find(_option.getProcPath()) != string::npos)
-	{
-		_fSys.setPath(_option.getProcPath(), false, _option.getExePath());
-		sObject = _fSys.ValidFileName(viewedObject.to_string(), ".nprc");
-		viewedObject = sObject;
-	}
-	else if (viewedObject.find("<wp>") != string::npos || viewedObject.find(_option.getWorkPath()) != string::npos)
-	{
-		_fSys.setPath(_option.getWorkPath(), false, _option.getExePath());
-		sObject = _fSys.ValidFileName(viewedObject.to_string(), ".nprc");
-		viewedObject = sObject;
-	}
-	else if (viewedObject.find("<>") != string::npos || viewedObject.find("<this>") != string::npos || viewedObject.find(_option.getExePath()) != string::npos)
-	{
-		_fSys.setPath(_option.getExePath(), false, _option.getExePath());
-		sObject = _fSys.ValidFileName(viewedObject.to_string(), ".dat");
-		viewedObject = sObject;
-	}
-	else if (!_data.containsTablesOrClusters(viewedObject.to_string()))
-	{
-	    // Is probably a folder path to be edited in the Windows Explorer
-		if (viewedObject.find('.') == string::npos && (viewedObject.find('/') != string::npos || viewedObject.find('\\') != string::npos))
-		{
-			ShellExecute(NULL, NULL, viewedObject.to_string().c_str(), NULL, NULL, SW_SHOWNORMAL);
-			return true;
-		}
-
-		// Append a wildcard at the end of the path if necessary
-		if (viewedObject.back() != '*' && viewedObject.find('.') == string::npos)
-			viewedObject.insert(viewedObject.length(), "*");
-
-        // Try to determine the path based upon the file extension, where we might find the
-        // file, if the user did not supply the path to the file
-		if (viewedObject.find('.') != string::npos)
-		{
-			if (viewedObject.ends_with(".dat")
-                || viewedObject.ends_with(".txt"))
-			{
-				_fSys.setPath(_option.getLoadPath(), false, _option.getExePath());
-				string sTemporaryObjectName = _fSys.ValidFileName(viewedObject.to_string(), ".dat");
-
-				if (!fileExists(sTemporaryObjectName))
-					_fSys.setPath(_option.getSavePath(), false, _option.getExePath());
-			}
-			else if (viewedObject.ends_with(".nscr"))
-				_fSys.setPath(_option.getScriptPath(), false, _option.getExePath());
-			else if (viewedObject.ends_with(".nprc"))
-				_fSys.setPath(_option.getProcPath(), false, _option.getExePath());
-			else if (viewedObject.ends_with(".png")
-					 || viewedObject.ends_with(".gif")
-					 || viewedObject.ends_with(".svg")
-					 || viewedObject.ends_with(".eps"))
-				_fSys.setPath(_option.getPlotPath(), false, _option.getExePath());
-			else if (viewedObject.ends_with(".tex"))
-			{
-				_fSys.setPath(_option.getPlotPath(), false, _option.getExePath());
-				string sTemporaryObjectName = _fSys.ValidFileName(viewedObject.to_string(), ".tex");
-
-				if (!fileExists(sTemporaryObjectName))
-					_fSys.setPath(_option.getSavePath(), false, _option.getExePath());
-			}
-			else if (viewedObject.ends_with(".nhlp"))
-				_fSys.setPath(_option.getExePath() + "/docs", false, _option.getExePath());
-			else
-				_fSys.setPath(_option.getExePath(), false, _option.getExePath());
-		}
-		else
-			_fSys.setPath(_option.getExePath(), false, _option.getExePath());
-
-		sObject = _fSys.ValidFileName(viewedObject.to_string(), ".dat");
-		viewedObject = sObject;
-	}
-
-	// Is probably a folder path
-	if (!_data.containsTablesOrClusters(viewedObject.to_string())
-        && viewedObject.find('.') == string::npos
-        && (viewedObject.find('/') != string::npos || viewedObject.find('\\') != string::npos))
-	{
-		ShellExecute(NULL, NULL, viewedObject.to_string().c_str(), NULL, NULL, SW_SHOWNORMAL);
-		return true;
-	}
-
-	// Open the table for editing
-	if (_data.containsTables(viewedObject.to_string()))
-	{
-		viewedObject.strip();
-		string sTableName = viewedObject.subview(0, viewedObject.find('(')).to_string();
+	    StripSpaces(sObject);
+		std::string sTableName = sObject.substr(0, sObject.find('('));
 
 		NumeReKernel::showTable(_data.extractTable(sTableName), sTableName, true);
 		NumeReKernel::printPreFmt("|-> " + _lang.get("BUILTIN_WAITINGFOREDIT") + " ... ");
@@ -638,62 +483,187 @@ static bool editObject(string& sCmd, Parser& _parser, MemoryManager& _data, Sett
         return true;
 	}
 
-	// Could be a folder -> open it in the Windows Explorer
-	if (!fileExists(viewedObject.to_string()) || viewedObject.find('.') == string::npos)
+	int nType = 0;
+	int nFileOpenFlag = 0;
+
+	if (findParameter(sCmd, "norefresh"))
+		nFileOpenFlag = 1;
+
+	if (findParameter(sCmd, "refresh"))
+		nFileOpenFlag = 2 | 4;
+
+	std::string sObject;
+
+	if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sCmd))
+		extractFirstParameterStringValue(sCmd, sObject);
+	else
 	{
-		viewedObject.remove_from(viewedObject.rfind('.'));
+		sObject = sCmd.substr(findCommand(sCmd).sString.length());
 
-		if (viewedObject.find('*') != string::npos)
-			viewedObject.remove_from(viewedObject.rfind('*'));
+		// remove flags from object
+		if (nFileOpenFlag)
+			sObject.erase(sObject.rfind('-'));
+	}
 
-		if ((long long int)ShellExecute(NULL, NULL, viewedObject.to_string().c_str(), NULL, NULL, SW_SHOWNORMAL) > 32)
+	StripSpaces(sObject);
+	std::string sDefaultExtension = ".dat";
+	FileSystem _fSys;
+	_fSys.setTokens(_option.getTokenPaths());
+
+	if (sObject.find('.') != std::string::npos)
+		_fSys.declareFileType(sObject.substr(sObject.rfind('.')));
+
+	if (!sObject.length())
+		throw SyntaxError(SyntaxError::NO_FILENAME, sCmd, SyntaxError::invalid_position);
+
+	if (sObject[0] == '$' && sObject[1] != '\'')
+        sObject.insert(0, "<procpath>/");
+	else if (sObject[0] == '$')
+		sObject.erase(0,1);
+
+    replaceAll(sObject, "~", "/");
+    replaceAll(sObject, "$", "");
+
+	if (sObject.front() == '\'' && sObject.back() == '\'')
+    {
+        sObject.erase(0, 1);
+        sObject.pop_back();
+    }
+
+    // Resolve the paths
+    if (sObject.ends_with(".dat")
+        || sObject.ends_with(".txt")
+        || sObject.ends_with(".tex"))
+    {
+        _fSys.setPath(_option.getLoadPath(), false, _option.getExePath());
+
+        std::string sTemporaryObjectName = _fSys.ValidFileName(sObject, ".dat");
+
+        if (!fileExists(sTemporaryObjectName))
+            _fSys.setPath(_option.getSavePath(), false, _option.getExePath());
+    }
+    else if (sObject.find("<loadpath>") != std::string::npos
+             || sObject.find(_option.getLoadPath()) != std::string::npos)
+        _fSys.setPath(_option.getLoadPath(), false, _option.getExePath());
+    else if (sObject.find("<savepath>") != std::string::npos
+             || sObject.find(_option.getSavePath()) != std::string::npos)
+        _fSys.setPath(_option.getSavePath(), false, _option.getExePath());
+    else if (sObject.ends_with(".nscr")
+             || sObject.find("<scriptpath>") != std::string::npos
+             || sObject.find(_option.getScriptPath()) != std::string::npos)
+    {
+        _fSys.setPath(_option.getScriptPath(), false, _option.getExePath());
+        sDefaultExtension = ".nscr";
+    }
+    else if (sObject.ends_with(".png")
+             || sObject.ends_with(".gif")
+             || sObject.ends_with(".svg")
+             || sObject.ends_with(".eps")
+             || sObject.find("<plotpath>") != std::string::npos
+             || sObject.find(_option.getPlotPath()) != std::string::npos)
+    {
+        _fSys.setPath(_option.getPlotPath(), false, _option.getExePath());
+        sDefaultExtension = ".png";
+    }
+    else if (sObject.ends_with(".nprc")
+             || sObject.find("<procpath>") != std::string::npos
+             || sObject.find(_option.getProcPath()) != std::string::npos)
+    {
+        _fSys.setPath(_option.getProcPath(), false, _option.getExePath());
+        sDefaultExtension = ".nprc";
+    }
+    else if (sObject.find("<wp>") != std::string::npos
+             || sObject.find(_option.getWorkPath()) != std::string::npos)
+        _fSys.setPath(_option.getWorkPath(), false, _option.getExePath());
+    else if (sObject.find("<>") != std::string::npos
+             || sObject.find("<this>") != std::string::npos
+             || sObject.find(_option.getExePath()) != std::string::npos)
+        _fSys.setPath(_option.getExePath(), false, _option.getExePath());
+    else
+    {
+        // Is probably a folder path to be edited in the Windows Explorer
+        if (sObject.find('.') == std::string::npos
+            && sObject.find_first_of("/\\") != std::string::npos)
+        {
+            ShellExecute(NULL, NULL, sObject.c_str(), NULL, NULL, SW_SHOWNORMAL);
+            return true;
+        }
+
+        // Append a wildcard at the end of the path if necessary
+        if (sObject.back() != '*' && sObject.find('.') == std::string::npos)
+            sObject += "*";
+
+        // Try to determine the path based upon the file extension, where we might find the
+        // file, if the user did not supply the path to the file
+        if (sObject.find('.') != std::string::npos)
+        {
+            if (sObject.ends_with(".nhlp"))
+                _fSys.setPath(_option.getExePath() + "/docs", false, _option.getExePath());
+            else
+                _fSys.setPath(_option.getExePath(), false, _option.getExePath());
+        }
+        else
+            _fSys.setPath(_option.getExePath(), false, _option.getExePath());
+    }
+
+    sObject = _fSys.ValidFileName(sObject, sDefaultExtension);
+
+	// Could be a folder -> open it in the Windows Explorer
+	if (!fileExists(sObject) || sObject.find('.') == std::string::npos)
+	{
+		sObject.erase(sObject.rfind('.'));
+
+		if (sObject.find('*') != std::string::npos)
+			sObject.erase(sObject.rfind('*'));
+
+		if ((long long int)ShellExecute(NULL, NULL, sObject.c_str(), NULL, NULL, SW_SHOWNORMAL) > 32)
 			return true;
 
-		throw SyntaxError(SyntaxError::FILE_NOT_EXIST, sCmd, SyntaxError::invalid_position, viewedObject.to_string());
+		throw SyntaxError(SyntaxError::FILE_NOT_EXIST, sCmd, SyntaxError::invalid_position, sObject);
 	}
 
 	// Determine the file type of the file to be edited
-	if (viewedObject.ends_with(".dat")
-		|| viewedObject.ends_with(".txt")
-		|| viewedObject.ends_with(".tex")
-		|| viewedObject.ends_with(".xml")
-		|| viewedObject.ends_with(".yaml")
-		|| viewedObject.ends_with(".yml")
-		|| viewedObject.ends_with(".json")
-		|| viewedObject.ends_with(".csv")
-		|| viewedObject.ends_with(".labx")
-		|| viewedObject.ends_with(".jdx")
-		|| viewedObject.ends_with(".jcm")
-		|| viewedObject.ends_with(".dx")
-		|| viewedObject.ends_with(".nscr")
-		|| viewedObject.ends_with(".nprc")
-		|| viewedObject.ends_with(".nhlp")
-		|| viewedObject.ends_with(".nlyt")
-		|| viewedObject.ends_with(".png")
-		|| viewedObject.ends_with(".gif")
-		|| viewedObject.ends_with(".m")
-		|| viewedObject.ends_with(".cpp")
-		|| viewedObject.ends_with(".cxx")
-		|| viewedObject.ends_with(".c")
-		|| viewedObject.ends_with(".hpp")
-		|| viewedObject.ends_with(".hxx")
-		|| viewedObject.ends_with(".h")
-		|| viewedObject.ends_with(".log"))
+	if (sObject.ends_with(".dat")
+		|| sObject.ends_with(".txt")
+		|| sObject.ends_with(".tex")
+		|| sObject.ends_with(".xml")
+		|| sObject.ends_with(".yaml")
+		|| sObject.ends_with(".yml")
+		|| sObject.ends_with(".json")
+		|| sObject.ends_with(".csv")
+		|| sObject.ends_with(".labx")
+		|| sObject.ends_with(".jdx")
+		|| sObject.ends_with(".jcm")
+		|| sObject.ends_with(".dx")
+		|| sObject.ends_with(".nscr")
+		|| sObject.ends_with(".nprc")
+		|| sObject.ends_with(".nhlp")
+		|| sObject.ends_with(".nlyt")
+		|| sObject.ends_with(".png")
+		|| sObject.ends_with(".gif")
+		|| sObject.ends_with(".m")
+		|| sObject.ends_with(".cpp")
+		|| sObject.ends_with(".cxx")
+		|| sObject.ends_with(".c")
+		|| sObject.ends_with(".hpp")
+		|| sObject.ends_with(".hxx")
+		|| sObject.ends_with(".h")
+		|| sObject.ends_with(".log"))
 		nType = 1;
-	else if (viewedObject.ends_with(".svg")
-			 || viewedObject.ends_with(".eps"))
+	else if (sObject.ends_with(".svg")
+			 || sObject.ends_with(".eps"))
 		nType = 2;
 
 	if (!nType)
-		throw SyntaxError(SyntaxError::CANNOT_EDIT_FILE_TYPE, sCmd, SyntaxError::invalid_position, viewedObject.to_string());
+		throw SyntaxError(SyntaxError::CANNOT_EDIT_FILE_TYPE, sCmd, SyntaxError::invalid_position, sObject);
 
 	if (nType == 1)
 	{
 		NumeReKernel::nOpenFileFlag = nFileOpenFlag;
-		NumeReKernel::gotoLine(viewedObject.to_string());
+		NumeReKernel::gotoLine(sObject);
 	}
 	else if (nType == 2)
-		openExternally(viewedObject.to_string());
+		openExternally(sObject);
 
 	return true;
 }
@@ -2958,7 +2928,6 @@ static CommandReturnValues cmd_new(string& sCmd)
 static CommandReturnValues cmd_edit(string& sCmd)
 {
     MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
-    Parser& _parser = NumeReKernel::getInstance()->getParser();
     Settings& _option = NumeReKernel::getInstance()->getSettings();
 
     if (sCmd.length() > 5)
@@ -2968,10 +2937,10 @@ static CommandReturnValues cmd_edit(string& sCmd)
         {
             extractFirstParameterStringValue(sCmd, sArgument);
             sArgument = "edit " + sArgument;
-            editObject(sArgument, _parser, _data, _option);
+            editObject(sArgument, _data, _option);
         }
         else
-            editObject(sCmd, _parser, _data, _option);
+            editObject(sCmd, _data, _option);
     }
     else
         doc_Help("edit", _option);
