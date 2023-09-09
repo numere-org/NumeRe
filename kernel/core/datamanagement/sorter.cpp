@@ -311,7 +311,7 @@ ColumnKeys* Sorter::evaluateKeyList(string& sKeyList, long long int nColumnCount
 				keys->nKey[0] = StrToInt(sKeyList.substr(nLastIndex, n - nLastIndex)) - 1;
 				string sColArray;
 
-				size_t i = getMatchingParenthesis(sKeyList.substr(n));
+				size_t i = getMatchingParenthesis(StringView(sKeyList, n));
 
 				if (i != string::npos)
 				{

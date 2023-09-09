@@ -428,7 +428,7 @@ std::vector<int> toIntVector(std::string sString)
 std::string condenseText(const std::string& sText)
 {
     std::string sReturn = sText;
-    static std::string sToErase = " AaEeIiOoUuƒ‰÷ˆ‹¸ﬂYy";
+    static std::string sToErase = " AaEeIiOoUu\xC4\xE4\xD6\xF6\xDC\xFC\xDFYy";
     for (size_t i = 0; i < sReturn.length(); i++)
     {
         if (sToErase.find(sReturn[i]) != std::string::npos
@@ -912,26 +912,16 @@ std::string toExternalString(std::string sStr)
 std::string toLowerCase(const std::string& sUpperCase)
 {
     std::string sLowerCase = sUpperCase;
+    static Umlauts _umlauts;
+    constexpr int charDiff = (int)'a' - (int)'A';
+
     for (size_t i = 0; i < sLowerCase.length(); i++)
     {
         // --> Laufe alle Zeichen im String ab und pruefe, ob ihr CHAR-Wert zwischen A und Z liegt
         if ((int)sLowerCase[i] >= (int)'A' && (int)sLowerCase[i] <= (int)'Z')
-        {
-            // --> Falls ja, verschiebe den CHAR-Wert um die Differenz aus A und a <--
-            sLowerCase[i] = (char)((int)sLowerCase[i] + ((int)'a' - (int)'A'));
-        }
-        if (sLowerCase[i] == 'ƒ')
-            sLowerCase[i] = '‰';
-        else if (sLowerCase[i] == '÷')
-            sLowerCase[i] = 'ˆ';
-        else if (sLowerCase[i] == '‹')
-            sLowerCase[i] = '¸';
-        else if (sLowerCase[i] == (char)142)
-            sLowerCase[i] = (char)132;
-        else if (sLowerCase[i] == (char)153)
-            sLowerCase[i] = (char)148;
-        else if (sLowerCase[i] == (char)154)
-            sLowerCase[i] = (char)129;
+            sLowerCase[i] = (char)((int)sLowerCase[i] + charDiff);
+        else
+            sLowerCase[i] = _umlauts.toLower(sLowerCase[i]);
     }
     return sLowerCase;
 }
@@ -948,41 +938,28 @@ std::string toLowerCase(const std::string& sUpperCase)
 std::string toUpperCase(const std::string& sLowerCase)
 {
     std::string sUpperCase = sLowerCase;
+    static Umlauts _umlauts;
+    const int EQUAL = 0;
+    constexpr int charDiff = (int)'A' - (int)'a';
+
     for (size_t i = 0; i < sUpperCase.length(); i++)
     {
         // Handle escape characters like linebreaks or tabulator characters
-        if ((!i || sUpperCase[i - 1] != '\\') && (sUpperCase.substr(i, 2) == "\\n" || sUpperCase.substr(i, 2) == "\\t"))
+        if ((!i || sUpperCase[i - 1] != '\\') && (sUpperCase.compare(i, 2, "\\n") == EQUAL || sUpperCase.compare(i, 2, "\\t") == EQUAL))
         {
             i++;
             continue;
         }
-        else if (sUpperCase.substr(i, 2) == "\\n")
-        {
+        else if (sUpperCase.compare(i, 2, "\\n") == EQUAL)
             sUpperCase.replace(i, 2, "N");
-        }
-        else if (sUpperCase.substr(i, 2) == "\\t")
-        {
+        else if (sUpperCase.compare(i, 2, "\\t") == EQUAL)
             sUpperCase.replace(i, 2, "T");
-        }
-        // --> Laufe alle Zeichen im String ab und pruefe, ob ihr CHAR-Wert zwischen a und z liegt
-        if ((int)sUpperCase[i] >= (int)'a' && (int)sLowerCase[i] <= (int)'z')
-        {
-            // --> Falls ja, verschiebe den CHAR-Wert um die Differenz aus a und A <--
-            sUpperCase[i] = (char)((int)sUpperCase[i] + ((int)'A' - (int)'a'));
-        }
-        if (sUpperCase[i] == '‰')
-            sUpperCase[i] = 'ƒ';
-        else if (sUpperCase[i] == 'ˆ')
-            sUpperCase[i] = '÷';
-        else if (sUpperCase[i] == '¸')
-            sUpperCase[i] = '‹';
-        else if (sUpperCase[i] == (char)132)
-            sUpperCase[i] = (char)142;
-        else if (sUpperCase[i] == (char)148)
-            sUpperCase[i] = (char)153;
-        else if (sUpperCase[i] == (char)129)
-            sUpperCase[i] = (char)154;
+        else if ((int)sUpperCase[i] >= (int)'a' && (int)sLowerCase[i] <= (int)'z')
+            sUpperCase[i] = (char)((int)sUpperCase[i] + charDiff);
+        else
+            sUpperCase[i] = _umlauts.toUpper(sUpperCase[i]);
     }
+
     return sUpperCase;
 }
 
@@ -1297,21 +1274,21 @@ std::string fromSystemCodePage(std::string sOutput)
     for (size_t i = 0; i < sOutput.length(); i++)
     {
         if (sOutput[i] == (char)142)
-            sOutput[i] = 'ƒ';
+            sOutput[i] = (char)0xC4;
         else if (sOutput[i] == (char)132)
-            sOutput[i] = '‰';
+            sOutput[i] = (char)0xE4;
         else if (sOutput[i] == (char)153)
-            sOutput[i] = '÷';
+            sOutput[i] = (char)0xD6;
         else if (sOutput[i] == (char)148)
-            sOutput[i] = 'ˆ';
+            sOutput[i] = (char)0xF6;
         else if (sOutput[i] == (char)154)
-            sOutput[i] = '‹';
+            sOutput[i] = (char)0xDC;
         else if (sOutput[i] == (char)129)
-            sOutput[i] = '¸';
+            sOutput[i] = (char)0xFC;
         else if (sOutput[i] == (char)225)
-            sOutput[i] = 'ﬂ';
+            sOutput[i] = (char)0xDF;
         else if (sOutput[i] == (char)248)
-            sOutput[i] = '∞';
+            sOutput[i] = (char)0xB0;
         else if (sOutput[i] == (char)174)
             sOutput[i] = (char)171;
         else if (sOutput[i] == (char)175)
@@ -1744,7 +1721,7 @@ std::string ellipsize(const std::string& sLongString, size_t nMaxStringLength)
 /// with the new value sNewValue. The boundaries
 /// limit the range of processing.
 ///
-/// \param sToModify std::string&
+/// \param sToModify MutableStringView
 /// \param sToRep const char*
 /// \param sNewValue const char*
 /// \param nStart size_t
@@ -1752,7 +1729,7 @@ std::string ellipsize(const std::string& sLongString, size_t nMaxStringLength)
 /// \return void
 ///
 /////////////////////////////////////////////////
-void replaceAll(std::string& sToModify, const char* sToRep, const char* sNewValue, size_t nStart /*= 0*/, size_t nEnd /*= string::npos*/)
+void replaceAll(MutableStringView sToModify, const char* sToRep, const char* sNewValue, size_t nStart /*= 0*/, size_t nEnd /*= string::npos*/)
 {
     size_t nRepLength = strlen(sToRep);
     size_t nNewLength = strlen(sNewValue);
@@ -1774,7 +1751,7 @@ void replaceAll(std::string& sToModify, const char* sToRep, const char* sNewValu
         if (i >= sToModify.length())
             break;
 
-        if (!sToModify.compare(i, nRepLength, sToRep))
+        if (sToModify.match(sToRep, i))
         {
             sToModify.replace(i, nRepLength, sNewValue);
             nEnd += nOffSet;
@@ -1791,15 +1768,15 @@ void replaceAll(std::string& sToModify, const char* sToRep, const char* sNewValu
 /// limit the range of processing. This function
 /// is a (slower) overload for std::strings.
 ///
-/// \param sToModify std::string&
-/// \param sToRep const std::string&
-/// \param sNewValue const std::string&
+/// \param sToModify MutableStringView
+/// \param sToRep StringView
+/// \param sNewValue StringView
 /// \param nStart size_t
 /// \param nEnd size_t
 /// \return void
 ///
 /////////////////////////////////////////////////
-void replaceAll(std::string& sToModify, const std::string& sToRep, const std::string& sNewValue, size_t nStart /*= 0*/, size_t nEnd /*= string::npos*/)
+void replaceAll(MutableStringView sToModify, StringView sToRep, StringView sNewValue, size_t nStart /*= 0*/, size_t nEnd /*= string::npos*/)
 {
     size_t nRepLength = sToRep.length();
     size_t nNewLength = sNewValue.length();
@@ -1821,7 +1798,7 @@ void replaceAll(std::string& sToModify, const std::string& sToRep, const std::st
         if (i >= sToModify.length())
             break;
 
-        if (!sToModify.compare(i, nRepLength, sToRep))
+        if (sToModify.match(sToRep, i))
         {
             sToModify.replace(i, nRepLength, sNewValue);
             nEnd += nOffSet;

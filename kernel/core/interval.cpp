@@ -519,7 +519,7 @@ IntervalSet::IntervalSet(const std::string& sIntervalString)
     }
 
     // Read the interval syntax
-	if (sIntervalString.find('[') != std::string::npos && getMatchingParenthesis(sIntervalString.substr(sIntervalString.find('['))) != std::string::npos)
+	if (sIntervalString.find('[') != std::string::npos && getMatchingParenthesis(StringView(sIntervalString, sIntervalString.find('['))) != std::string::npos)
 	{
 		size_t nPos = 0;
 		size_t nMatchingParens = 0;
@@ -530,7 +530,7 @@ IntervalSet::IntervalSet(const std::string& sIntervalString)
 		{
 			nPos = sIntervalString.find('[', nPos);
 
-			if (nPos == std::string::npos || (nMatchingParens = getMatchingParenthesis(sIntervalString.substr(nPos))) == std::string::npos)
+			if (nPos == std::string::npos || (nMatchingParens = getMatchingParenthesis(StringView(sIntervalString, nPos))) == std::string::npos)
 				break;
 
             nMatchingParens += nPos;

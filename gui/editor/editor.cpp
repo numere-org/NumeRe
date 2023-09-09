@@ -8377,28 +8377,11 @@ bool NumeReEditor::isStyleType(StyleType _type, int nPos)
 /////////////////////////////////////////////////
 int NumeReEditor::countUmlauts(const string& sStr)
 {
+    static Umlauts _umlauts;
     int nUmlauts = 0;
     for (size_t i = 0; i < sStr.length(); i++)
     {
-        if (sStr[i] == 'Ä'
-                || sStr[i] == 'ä'
-                || sStr[i] == 'Ö'
-                || sStr[i] == 'ö'
-                || sStr[i] == 'Ü'
-                || sStr[i] == 'ü'
-                || sStr[i] == 'ß'
-                || sStr[i] == '°'
-                || sStr[i] == 'µ'
-                || sStr[i] == (char)142
-                || sStr[i] == (char)132
-                || sStr[i] == (char)153
-                || sStr[i] == (char)148
-                || sStr[i] == (char)154
-                || sStr[i] == (char)129
-                || sStr[i] == (char)225
-                || sStr[i] == (char)167
-                || sStr[i] == (char)230
-           )
+        if (_umlauts.isUmlaut(sStr[i]))
             nUmlauts++;
     }
     return nUmlauts;

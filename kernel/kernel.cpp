@@ -614,7 +614,7 @@ void NumeReKernel::printVersionInfo(bool shortInfo)
     printPreFmt("| " + sAppName + strfill("|\n", 79 - sAppName.length()));
     printPreFmt("| Version: " + sVersion + strfill("Build: ", 79 - 22 - sVersion.length())
                 + AutoVersion::YEAR + "-" + AutoVersion::MONTH + "-" + AutoVersion::DATE + " |\n");
-    printPreFmt("| Copyright (c) 2013-" + std::string(AutoVersion::YEAR) + toSystemCodePage(", Erik A. Hänel et al.")
+    printPreFmt("| Copyright (c) 2013-" + std::string(AutoVersion::YEAR) + toSystemCodePage(", Erik A. H\xe4nel et al.")
                 + strfill(_lang.get("MAIN_ABOUT_NBR"), 79 - 48) + " |\n");
     make_hline(80);
 
@@ -686,7 +686,7 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const std::string& sCommand)
         sCommandLine.pop_back();
 
     // check for the double backslash at the end of the line
-    if (sCommandLine.length() > 2 && sCommandLine.substr(sCommandLine.length() - 2, 2) == "\\\\")
+    if (sCommandLine.ends_with("\\\\"))
     {
         sCommandLine.erase(sCommandLine.length() - 2);
         return NUMERE_PENDING;
@@ -779,12 +779,12 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const std::string& sCommand)
                 continue;
 
             // Eval debugger breakpoints from scripts
-            if ((sLine.substr(0, 2) == "|>" || nDebuggerCode == DEBUGGER_STEP)
+            if ((sLine.starts_with("|>") || nDebuggerCode == DEBUGGER_STEP)
                     && _script.isValid()
                     && !_procedure.is_writing()
                     && !_procedure.getCurrentBlockDepth())
             {
-                if (sLine.substr(0, 2) == "|>")
+                if (sLine.starts_with("|>"))
                     sLine.erase(0, 2);
 
                 if (_option.useDebugger() && nDebuggerCode != DEBUGGER_LEAVE)
@@ -842,7 +842,8 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const std::string& sCommand)
 
             // Handle procedure calls at this location
             // Will return false, if the command line was cleared completely
-            if (sCurrentCommand != "help" && !evaluateProcedureCalls(sLine))
+            // Do nothing, if the prefixed command is a "manual" command
+            if (sCurrentCommand != "help" && sCurrentCommand != "edit" && sCurrentCommand != "new" && !evaluateProcedureCalls(sLine))
                 continue;
 
             // --> Gibt es "??"? Dann rufe die Prompt-Funktion auf <--
@@ -1137,7 +1138,7 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const std::string& sCommand)
                                                        toString(e.getIndices()[2]), toString(e.getIndices()[3]));
                     std::string sErrIDString = _lang.getKey("ERR_NR_" + toString((int)e.errorcode) + "_0_*");
 
-                    if (sErrLine_0.substr(0, 7) == "ERR_NR_")
+                    if (sErrLine_0.starts_with("ERR_NR_"))
                     {
                         sErrLine_0 = _lang.get("ERR_GENERIC_0", toString((int)e.errorcode));
                         sErrLine_1 = _lang.get("ERR_GENERIC_1");
@@ -1350,7 +1351,7 @@ bool NumeReKernel::handleCommandLineSource(std::string& sLine, std::string& sKee
         // --> Wenn die Laenge groesser als 2 ist, koennen '\' am Ende sein <--
         if (sLine.length() > 2)
         {
-            if (sLine.substr(sLine.length() - 2, 2) == "\\\\")
+            if (sLine.ends_with("\\\\"))
             {
                 // --> Ergaenze die Eingabe zu sKeep und beginne einen neuen Schleifendurchlauf <--
                 sKeep += sLine.substr(0, sLine.length() - 2);
@@ -1375,7 +1376,7 @@ bool NumeReKernel::handleCommandLineSource(std::string& sLine, std::string& sKee
                 && (sLine.find('(') != std::string::npos || sLine.find('{') != std::string::npos))
         {
             if (!validateParenthesisNumber(sLine))
-                throw SyntaxError(SyntaxError::UNMATCHED_PARENTHESIS, sLine, sLine.find('('));
+                throw SyntaxError(SyntaxError::UNMATCHED_PARENTHESIS, sLine, sLine.find_first_of("({[]})"));
         }
     }
     return true;
@@ -1490,15 +1491,15 @@ bool NumeReKernel::handleComposeBlock(std::string& sLine, const std::string& sCu
                 if (_procedure.getCurrentBlockDepth())
                 {
                     // --> Wenn in "_procedure" geschrieben wird und dabei kein Script ausgefuehrt wird, hebe dies entsprechend hervor <--
-                    printPreFmt("|" + _procedure.getCurrentBlock());
-                    if (_procedure.getCurrentBlock() == "IF")
+                    printPreFmt("|" + FlowCtrl::getBlockName(_procedure.getCurrentBlock()));
+                    if (_procedure.getCurrentBlock() == FlowCtrl::FCB_IF)
                     {
                         if (_procedure.getCurrentBlockDepth() > 1)
                             printPreFmt("---");
                         else
                             printPreFmt("-");
                     }
-                    else if (_procedure.getCurrentBlock() == "ELSE" && _procedure.getCurrentBlockDepth() > 1)
+                    else if (_procedure.getCurrentBlock() == FlowCtrl::FCB_ELSE && _procedure.getCurrentBlockDepth() > 1)
                         printPreFmt("-");
                     else
                     {
@@ -1544,15 +1545,15 @@ bool NumeReKernel::handleComposeBlock(std::string& sLine, const std::string& sCu
                     if (_procedure.getCurrentBlockDepth())
                     {
                         // --> Wenn in "_procedure" geschrieben wird und dabei kein Script ausgefuehrt wird, hebe dies entsprechend hervor <--
-                        printPreFmt("|" + _procedure.getCurrentBlock());
-                        if (_procedure.getCurrentBlock() == "IF")
+                        printPreFmt("|" + FlowCtrl::getBlockName(_procedure.getCurrentBlock()));
+                        if (_procedure.getCurrentBlock() == FlowCtrl::FCB_IF)
                         {
                             if (_procedure.getCurrentBlockDepth() > 1)
                                 printPreFmt("---");
                             else
                                 printPreFmt("-");
                         }
-                        else if (_procedure.getCurrentBlock() == "ELSE" && _procedure.getCurrentBlockDepth() > 1)
+                        else if (_procedure.getCurrentBlock() == FlowCtrl::FCB_ELSE && _procedure.getCurrentBlockDepth() > 1)
                             printPreFmt("-");
                         else
                         {
@@ -1613,15 +1614,15 @@ bool NumeReKernel::handleProcedureWrite(const std::string& sLine, const std::str
             if (_procedure.getCurrentBlockDepth())
             {
                 // --> Wenn in "_procedure" geschrieben wird und dabei kein Script ausgefuehrt wird, hebe dies entsprechend hervor <--
-                printPreFmt("|" + _procedure.getCurrentBlock());
-                if (_procedure.getCurrentBlock() == "IF")
+                printPreFmt("|" + FlowCtrl::getBlockName(_procedure.getCurrentBlock()));
+                if (_procedure.getCurrentBlock() == FlowCtrl::FCB_IF)
                 {
                     if (_procedure.getCurrentBlockDepth() > 1)
                         printPreFmt("---");
                     else
                         printPreFmt("-");
                 }
-                else if (_procedure.getCurrentBlock() == "ELSE" && _procedure.getCurrentBlockDepth() > 1)
+                else if (_procedure.getCurrentBlock() == FlowCtrl::FCB_ELSE && _procedure.getCurrentBlockDepth() > 1)
                     printPreFmt("-");
                 else
                 {
@@ -1721,7 +1722,7 @@ void NumeReKernel::handleToCmd(std::string& sLine, std::string& sCache, std::str
             nPos = sLine.find("to_cmd(", nPos) + 6;
             if (isInQuotes(sLine, nPos))
                 continue;
-            size_t nParPos = getMatchingParenthesis(sLine.substr(nPos));
+            size_t nParPos = getMatchingParenthesis(StringView(sLine, nPos));
             if (nParPos == std::string::npos)
                 throw SyntaxError(SyntaxError::UNMATCHED_PARENTHESIS, sLine, nPos);
             std::string sCmdString = sLine.substr(nPos + 1, nParPos - 1);
@@ -1781,7 +1782,7 @@ bool NumeReKernel::evaluateProcedureCalls(std::string& sLine)
                 nParPos = sLine.find('(', nPos);
 
             __sVarList = sLine.substr(nParPos);
-            nParPos += getMatchingParenthesis(sLine.substr(nParPos));
+            nParPos += getMatchingParenthesis(StringView(sLine, nParPos));
             __sVarList = __sVarList.substr(1, getMatchingParenthesis(__sVarList) - 1);
 
             // Ensure that the procedure is not part of quotation marks
@@ -1949,7 +1950,7 @@ bool NumeReKernel::handleFlowControls(std::string& sLine, const std::string& sCu
         if (bSupressAnswer)
             sLine += ";";
         // --> Die Zeile in den Ausdrucksspeicher schreiben, damit sie spaeter wiederholt aufgerufen werden kann <--
-        _procedure.setCommand(sLine, (_script.isValid() && _script.isOpen()) ? _script.getCurrentLine()-1 : 0);
+        _procedure.addToControlFlowBlock(sLine, (_script.isValid() && _script.isOpen()) ? _script.getCurrentLine()-1 : 0);
         /* --> So lange wir im Loop sind und nicht endfor aufgerufen wurde, braucht die Zeile nicht an den Parser
          *     weitergegeben werden. Wir ignorieren daher den Rest dieser for(;;)-Schleife <--
          */
@@ -1959,16 +1960,16 @@ bool NumeReKernel::handleFlowControls(std::string& sLine, const std::string& sCu
             {
                 toggleTableStatus();
                 // --> Wenn in "_procedure" geschrieben wird und dabei kein Script ausgefuehrt wird, hebe dies entsprechend hervor <--
-                printPreFmt("|" + _procedure.getCurrentBlock());
+                printPreFmt("|" + FlowCtrl::getBlockName(_procedure.getCurrentBlock()));
 
-                if (_procedure.getCurrentBlock() == "IF")
+                if (_procedure.getCurrentBlock() == FlowCtrl::FCB_IF)
                 {
                     if (_procedure.getCurrentBlockDepth() > 1)
                         printPreFmt("---");
                     else
                         printPreFmt("-");
                 }
-                else if (_procedure.getCurrentBlock() == "ELSE" && _procedure.getCurrentBlockDepth() > 1)
+                else if (_procedure.getCurrentBlock() == FlowCtrl::FCB_ELSE && _procedure.getCurrentBlockDepth() > 1)
                     printPreFmt("-");
                 else
                 {
@@ -2508,7 +2509,7 @@ NumeReVariables NumeReKernel::getVariableList()
     // Gather all (global) numerical variables
     for (auto iter = varmap.begin(); iter != varmap.end(); ++iter)
     {
-        if ((iter->first).substr(0, 2) == "_~"
+        if ((iter->first).starts_with("_~")
             || iter->first == "ans"
             || isDimensionVar(iter->first))
             continue;
@@ -2526,7 +2527,7 @@ NumeReVariables NumeReKernel::getVariableList()
     // Gather all (global) string variables
     for (auto iter = stringmap.begin(); iter != stringmap.end(); ++iter)
     {
-        if ((iter->first).substr(0, 2) == "_~")
+        if ((iter->first).starts_with("_~"))
             continue;
 
         sCurrentLine = iter->first
@@ -2541,7 +2542,7 @@ NumeReVariables NumeReKernel::getVariableList()
     // Gather all (global) tables
     for (auto iter = tablemap.begin(); iter != tablemap.end(); ++iter)
     {
-        if ((iter->first).substr(0, 2) == "_~")
+        if ((iter->first).starts_with("_~"))
             continue;
 
         if (iter->first == "string")
@@ -2563,7 +2564,7 @@ NumeReVariables NumeReKernel::getVariableList()
     // Gather all (global) clusters
     for (auto iter = clustermap.begin(); iter != clustermap.end(); ++iter)
     {
-        if ((iter->first).substr(0, 2) == "_~")
+        if ((iter->first).starts_with("_~"))
             continue;
 
         sCurrentLine = iter->first + "{}\t" + toString(iter->second.size()) + " x 1";
@@ -3567,7 +3568,7 @@ int NumeReKernel::evalDebuggerBreakPoint(const std::string& sCurrentCommand)
 
     for (auto iter : varmap)
     {
-        if (iter.first.substr(0, 2) != "_~"
+        if (!iter.first.starts_with("_~")
             && iter.first != "ans"
             && !isDimensionVar(iter.first))
             mLocalVars[iter.first] = std::make_pair(iter.first, iter.second);
@@ -3578,7 +3579,7 @@ int NumeReKernel::evalDebuggerBreakPoint(const std::string& sCurrentCommand)
 
     for (const auto& iter : sStringMap)
     {
-        if (iter.first.substr(0, 2) != "_~")
+        if (!iter.first.starts_with("_~"))
             mLocalStrings[iter.first] = std::make_pair(iter.first, iter.second);
     }
 
@@ -3596,7 +3597,7 @@ int NumeReKernel::evalDebuggerBreakPoint(const std::string& sCurrentCommand)
 
     for (const auto& iter : clusterMap)
     {
-        if (iter.first.substr(0, 2) != "_~")
+        if (!iter.first.starts_with("_~"))
             mLocalClusters[iter.first] = iter.first;
     }
 
