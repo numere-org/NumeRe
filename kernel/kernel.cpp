@@ -614,7 +614,7 @@ void NumeReKernel::printVersionInfo(bool shortInfo)
     printPreFmt("| " + sAppName + strfill("|\n", 79 - sAppName.length()));
     printPreFmt("| Version: " + sVersion + strfill("Build: ", 79 - 22 - sVersion.length())
                 + AutoVersion::YEAR + "-" + AutoVersion::MONTH + "-" + AutoVersion::DATE + " |\n");
-    printPreFmt("| Copyright (c) 2013-" + std::string(AutoVersion::YEAR) + toSystemCodePage(", Erik A. Hänel et al.")
+    printPreFmt("| Copyright (c) 2013-" + std::string(AutoVersion::YEAR) + toSystemCodePage(", Erik A. H\xe4nel et al.")
                 + strfill(_lang.get("MAIN_ABOUT_NBR"), 79 - 48) + " |\n");
     make_hline(80);
 

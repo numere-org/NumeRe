@@ -385,7 +385,7 @@ struct Umlauts
 
     // Constructor fills the fields with the corresponding
     // character codes (eg \x94 is a Hex value for (char)148)
-    Umlauts() : lower("äüöß\x84\x94\x81"), upper("ÄÖÜ\x8E\x99\x9A") {}
+    Umlauts() : lower("\xE4\xF6\xFC\xDF\x84\x94\x81"), upper("\xC4\xD6\xDC\x8E\x99\x9A") {}
 };
 
 #endif // STRINGDATASTRUCTURES_HPP

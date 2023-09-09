@@ -428,7 +428,7 @@ std::vector<int> toIntVector(std::string sString)
 std::string condenseText(const std::string& sText)
 {
     std::string sReturn = sText;
-    static std::string sToErase = " AaEeIiOoUuÄäÖöÜüßYy";
+    static std::string sToErase = " AaEeIiOoUu\xC4\xE4\xD6\xF6\xDC\xFC\xDFYy";
     for (size_t i = 0; i < sReturn.length(); i++)
     {
         if (sToErase.find(sReturn[i]) != std::string::npos
@@ -920,12 +920,12 @@ std::string toLowerCase(const std::string& sUpperCase)
             // --> Falls ja, verschiebe den CHAR-Wert um die Differenz aus A und a <--
             sLowerCase[i] = (char)((int)sLowerCase[i] + ((int)'a' - (int)'A'));
         }
-        if (sLowerCase[i] == 'Ä')
-            sLowerCase[i] = 'ä';
-        else if (sLowerCase[i] == 'Ö')
-            sLowerCase[i] = 'ö';
-        else if (sLowerCase[i] == 'Ü')
-            sLowerCase[i] = 'ü';
+        if (sLowerCase[i] == 0xC4)
+            sLowerCase[i] = 0xE4;
+        else if (sLowerCase[i] == 0xD6)
+            sLowerCase[i] = 0xF6;
+        else if (sLowerCase[i] == 0xDC)
+            sLowerCase[i] = 0xFC;
         else if (sLowerCase[i] == (char)142)
             sLowerCase[i] = (char)132;
         else if (sLowerCase[i] == (char)153)
@@ -970,12 +970,12 @@ std::string toUpperCase(const std::string& sLowerCase)
             // --> Falls ja, verschiebe den CHAR-Wert um die Differenz aus a und A <--
             sUpperCase[i] = (char)((int)sUpperCase[i] + ((int)'A' - (int)'a'));
         }
-        if (sUpperCase[i] == 'ä')
-            sUpperCase[i] = 'Ä';
-        else if (sUpperCase[i] == 'ö')
-            sUpperCase[i] = 'Ö';
-        else if (sUpperCase[i] == 'ü')
-            sUpperCase[i] = 'Ü';
+        if (sUpperCase[i] == 0xE4)
+            sUpperCase[i] = 0xC4;
+        else if (sUpperCase[i] == 0xF6)
+            sUpperCase[i] = 0xD6;
+        else if (sUpperCase[i] == 0xFC)
+            sUpperCase[i] = 0xDC;
         else if (sUpperCase[i] == (char)132)
             sUpperCase[i] = (char)142;
         else if (sUpperCase[i] == (char)148)
@@ -1297,21 +1297,21 @@ std::string fromSystemCodePage(std::string sOutput)
     for (size_t i = 0; i < sOutput.length(); i++)
     {
         if (sOutput[i] == (char)142)
-            sOutput[i] = 'Ä';
+            sOutput[i] = 0xC4;
         else if (sOutput[i] == (char)132)
-            sOutput[i] = 'ä';
+            sOutput[i] = 0xE4;
         else if (sOutput[i] == (char)153)
-            sOutput[i] = 'Ö';
+            sOutput[i] = 0xD6;
         else if (sOutput[i] == (char)148)
-            sOutput[i] = 'ö';
+            sOutput[i] = 0xF6;
         else if (sOutput[i] == (char)154)
-            sOutput[i] = 'Ü';
+            sOutput[i] = 0xDC;
         else if (sOutput[i] == (char)129)
-            sOutput[i] = 'ü';
+            sOutput[i] = 0xFC;
         else if (sOutput[i] == (char)225)
-            sOutput[i] = 'ß';
+            sOutput[i] = 0xDF;
         else if (sOutput[i] == (char)248)
-            sOutput[i] = '°';
+            sOutput[i] = 0xB0;
         else if (sOutput[i] == (char)174)
             sOutput[i] = (char)171;
         else if (sOutput[i] == (char)175)

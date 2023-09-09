@@ -8380,24 +8380,24 @@ int NumeReEditor::countUmlauts(const string& sStr)
     int nUmlauts = 0;
     for (size_t i = 0; i < sStr.length(); i++)
     {
-        if (sStr[i] == 'Ä'
-                || sStr[i] == 'ä'
-                || sStr[i] == 'Ö'
-                || sStr[i] == 'ö'
-                || sStr[i] == 'Ü'
-                || sStr[i] == 'ü'
-                || sStr[i] == 'ß'
-                || sStr[i] == '°'
-                || sStr[i] == 'µ'
-                || sStr[i] == (char)142
-                || sStr[i] == (char)132
-                || sStr[i] == (char)153
-                || sStr[i] == (char)148
-                || sStr[i] == (char)154
-                || sStr[i] == (char)129
-                || sStr[i] == (char)225
-                || sStr[i] == (char)167
-                || sStr[i] == (char)230
+        if (sStr[i] == 0xC4
+            || sStr[i] == 0xE4
+            || sStr[i] == 0xD6
+            || sStr[i] == 0xF6
+            || sStr[i] == 0xDC
+            || sStr[i] == 0xFC
+            || sStr[i] == 0xDF
+            || sStr[i] == 0xB0
+            || sStr[i] == 0xB5 //µ
+            || sStr[i] == (char)142
+            || sStr[i] == (char)132
+            || sStr[i] == (char)153
+            || sStr[i] == (char)148
+            || sStr[i] == (char)154
+            || sStr[i] == (char)129
+            || sStr[i] == (char)225
+            || sStr[i] == (char)167
+            || sStr[i] == (char)230
            )
             nUmlauts++;
     }

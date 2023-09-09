@@ -2611,28 +2611,28 @@ namespace NumeRe
 
         for (size_t i = 0; i < sReturn.length(); i++)
         {
-            if (sReturn[i] == 'Ä' || sReturn[i] == (char)142)
+            if (sReturn[i] == 0xC4 || sReturn[i] == (char)142) // Ä
                 sReturn.replace(i,1,"\\\"A");
 
-            if (sReturn[i] == 'ä' || sReturn[i] == (char)132)
+            if (sReturn[i] == 0xE4 || sReturn[i] == (char)132) // ä
                 sReturn.replace(i,1,"\\\"a");
 
-            if (sReturn[i] == 'Ö' || sReturn[i] == (char)153)
+            if (sReturn[i] == 0xD6 || sReturn[i] == (char)153) // Ö
                 sReturn.replace(i,1,"\\\"O");
 
-            if (sReturn[i] == 'ö' || sReturn[i] == (char)148)
+            if (sReturn[i] == 0xF6 || sReturn[i] == (char)148) // ö
                 sReturn.replace(i,1,"\\\"o");
 
-            if (sReturn[i] == 'Ü' || sReturn[i] == (char)154)
+            if (sReturn[i] == 0xDC || sReturn[i] == (char)154) // Ü
                 sReturn.replace(i,1,"\\\"U");
 
-            if (sReturn[i] == 'ü' || sReturn[i] == (char)129)
+            if (sReturn[i] == 0xFC || sReturn[i] == (char)129) // ü
                 sReturn.replace(i,1,"\\\"u");
 
-            if (sReturn[i] == 'ß' || sReturn[i] == (char)225)
+            if (sReturn[i] == 0xDF || sReturn[i] == (char)225) // ß
                 sReturn.replace(i,1,"\\ss ");
 
-            if (sReturn[i] == '°' || sReturn[i] == (char)248)
+            if (sReturn[i] == 0xB0 || sReturn[i] == (char)248) // °
                 sReturn.replace(i,1,"$^\\circ$");
 
             if (sReturn[i] == (char)196 || sReturn[i] == (char)249)
@@ -3050,9 +3050,9 @@ namespace NumeRe
             if (toUpperCase(meta.m_xUnit) == "1/CM")
                 meta.m_xUnit = "Wellenzahl k [cm^-1]";
             else if (toUpperCase(meta.m_xUnit) == "MICROMETERS")
-                meta.m_xUnit = "Wellenlänge lambda [mu m]";
+                meta.m_xUnit = "Wellenl\xE4nge lambda [mu m]";
             else if (toUpperCase(meta.m_xUnit) == "NANOMETERS")
-                meta.m_xUnit = "Wellenlänge lambda [nm]";
+                meta.m_xUnit = "Wellenl\xE4nge lambda [nm]";
             else if (toUpperCase(meta.m_xUnit) == "SECONDS")
                 meta.m_xUnit = "Zeit t [s]";
             else if (toUpperCase(meta.m_xUnit) == "1/S" || toUpperCase(meta.m_xUnit) == "1/SECONDS")
@@ -3072,7 +3072,7 @@ namespace NumeRe
             else if (toUpperCase(meta.m_yUnit) == "KUBELKA-MUNK")
                 meta.m_yUnit = "Kubelka-Munk";
             else if (toUpperCase(meta.m_yUnit) == "ARBITRARY UNITS" || meta.m_yUnit.starts_with("Intensity"))
-                meta.m_yUnit = "Intensität";
+                meta.m_yUnit = "Intensit\xE4t";
         }
 
         meta.m_deltaX = (meta.m_lastX - meta.m_firstX) / (meta.m_points - 1);

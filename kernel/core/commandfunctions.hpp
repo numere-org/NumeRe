@@ -464,6 +464,29 @@ static bool newObject(string& sCmd, Parser& _parser, MemoryManager& _data, Setti
 /////////////////////////////////////////////////
 static bool editObject(std::string& sCmd, MemoryManager& _data, Settings& _option)
 {
+    std::string sObject;
+	int nType = 0;
+	int nFileOpenFlag = 0;
+
+	if (findParameter(sCmd, "norefresh"))
+		nFileOpenFlag = 1;
+
+	if (findParameter(sCmd, "refresh"))
+		nFileOpenFlag = 2 | 4;
+
+	if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sCmd))
+		extractFirstParameterStringValue(sCmd, sObject);
+	else
+	{
+		sObject = sCmd.substr(findCommand(sCmd).sString.length());
+
+		// remove flags from object
+		if (nFileOpenFlag)
+			sObject.erase(sObject.rfind('-'));
+	}
+
+	StripSpaces(sObject);
+
     // Open the table for editing
 	if (_data.containsTables(sObject))
 	{
@@ -483,29 +506,6 @@ static bool editObject(std::string& sCmd, MemoryManager& _data, Settings& _optio
         return true;
 	}
 
-	int nType = 0;
-	int nFileOpenFlag = 0;
-
-	if (findParameter(sCmd, "norefresh"))
-		nFileOpenFlag = 1;
-
-	if (findParameter(sCmd, "refresh"))
-		nFileOpenFlag = 2 | 4;
-
-	std::string sObject;
-
-	if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sCmd))
-		extractFirstParameterStringValue(sCmd, sObject);
-	else
-	{
-		sObject = sCmd.substr(findCommand(sCmd).sString.length());
-
-		// remove flags from object
-		if (nFileOpenFlag)
-			sObject.erase(sObject.rfind('-'));
-	}
-
-	StripSpaces(sObject);
 	std::string sDefaultExtension = ".dat";
 	FileSystem _fSys;
 	_fSys.setTokens(_option.getTokenPaths());
