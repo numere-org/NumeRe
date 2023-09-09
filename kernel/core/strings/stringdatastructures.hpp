@@ -373,20 +373,5 @@ enum StringParserFlags
 };
 
 
-/////////////////////////////////////////////////
-/// \brief Structure containing the german umlauts. The
-/// lower field will contain lower case umlauts,
-/// upper field contains the upper case umlauts.
-/////////////////////////////////////////////////
-struct Umlauts
-{
-    std::string lower;
-    std::string upper;
-
-    // Constructor fills the fields with the corresponding
-    // character codes (eg \x94 is a Hex value for (char)148)
-    Umlauts() : lower("\xE4\xF6\xFC\xDF\x84\x94\x81"), upper("\xC4\xD6\xDC\x8E\x99\x9A") {}
-};
-
 #endif // STRINGDATASTRUCTURES_HPP
 

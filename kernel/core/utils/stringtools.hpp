@@ -30,6 +30,70 @@ class Settings;
 class StringView;
 class MutableStringView;
 
+/////////////////////////////////////////////////
+/// \brief Structure containing the german umlauts. The
+/// lower field will contain lower case umlauts,
+/// upper field contains the upper case umlauts.
+/////////////////////////////////////////////////
+struct Umlauts
+{
+    std::string lower;
+    std::string upper;
+
+    // Constructor fills the fields with the corresponding
+    // character codes (eg \x94 is a Hex value for (char)148)
+    Umlauts() : lower("\xE4\xF6\xFC\x84\x94\x81\xDF\xB0\xB5\xE1\xA7\xE6"), upper("\xC4\xD6\xDC\x8E\x99\x9A") {}
+
+    /////////////////////////////////////////////////
+    /// \brief Determine, whether this character is
+    /// an umlaut.
+    ///
+    /// \param c char
+    /// \return bool
+    ///
+    /////////////////////////////////////////////////
+    bool isUmlaut(char c)
+    {
+        return lower.find(c) != std::string::npos || upper.find(c) != std::string::npos;
+    }
+
+    /////////////////////////////////////////////////
+    /// \brief Convert an umlaut to uppercase or
+    /// return the same character.
+    ///
+    /// \param c char
+    /// \return char
+    ///
+    /////////////////////////////////////////////////
+    char toUpper(char c)
+    {
+        size_t p = lower.find(c);
+
+        if (p < upper.length())
+            return upper[p];
+
+        return c;
+    }
+
+    /////////////////////////////////////////////////
+    /// \brief Convert an umlaut to lowercase or
+    /// return the same character.
+    ///
+    /// \param c char
+    /// \return char
+    ///
+    /////////////////////////////////////////////////
+    char toLower(char c)
+    {
+        size_t p = upper.find(c);
+
+        if (p < lower.length())
+            return lower[p];
+
+        return c;
+    }
+};
+
 enum TIMESTAMP
 {
     GET_ONLY_TIME = 0x1,

@@ -912,26 +912,16 @@ std::string toExternalString(std::string sStr)
 std::string toLowerCase(const std::string& sUpperCase)
 {
     std::string sLowerCase = sUpperCase;
+    static Umlauts _umlauts;
+    constexpr int charDiff = (int)'a' - (int)'A';
+
     for (size_t i = 0; i < sLowerCase.length(); i++)
     {
         // --> Laufe alle Zeichen im String ab und pruefe, ob ihr CHAR-Wert zwischen A und Z liegt
         if ((int)sLowerCase[i] >= (int)'A' && (int)sLowerCase[i] <= (int)'Z')
-        {
-            // --> Falls ja, verschiebe den CHAR-Wert um die Differenz aus A und a <--
-            sLowerCase[i] = (char)((int)sLowerCase[i] + ((int)'a' - (int)'A'));
-        }
-        if (sLowerCase[i] == (char)0xC4)
-            sLowerCase[i] = (char)0xE4;
-        else if (sLowerCase[i] == (char)0xD6)
-            sLowerCase[i] = (char)0xF6;
-        else if (sLowerCase[i] == (char)0xDC)
-            sLowerCase[i] = (char)0xFC;
-        else if (sLowerCase[i] == (char)142)
-            sLowerCase[i] = (char)132;
-        else if (sLowerCase[i] == (char)153)
-            sLowerCase[i] = (char)148;
-        else if (sLowerCase[i] == (char)154)
-            sLowerCase[i] = (char)129;
+            sLowerCase[i] = (char)((int)sLowerCase[i] + charDiff);
+        else
+            sLowerCase[i] = _umlauts.toLower(sLowerCase[i]);
     }
     return sLowerCase;
 }
@@ -948,41 +938,28 @@ std::string toLowerCase(const std::string& sUpperCase)
 std::string toUpperCase(const std::string& sLowerCase)
 {
     std::string sUpperCase = sLowerCase;
+    static Umlauts _umlauts;
+    const int EQUAL = 0;
+    constexpr int charDiff = (int)'A' - (int)'a';
+
     for (size_t i = 0; i < sUpperCase.length(); i++)
     {
         // Handle escape characters like linebreaks or tabulator characters
-        if ((!i || sUpperCase[i - 1] != '\\') && (sUpperCase.substr(i, 2) == "\\n" || sUpperCase.substr(i, 2) == "\\t"))
+        if ((!i || sUpperCase[i - 1] != '\\') && (sUpperCase.compare(i, 2, "\\n") == EQUAL || sUpperCase.compare(i, 2, "\\t") == EQUAL))
         {
             i++;
             continue;
         }
-        else if (sUpperCase.substr(i, 2) == "\\n")
-        {
+        else if (sUpperCase.compare(i, 2, "\\n") == EQUAL)
             sUpperCase.replace(i, 2, "N");
-        }
-        else if (sUpperCase.substr(i, 2) == "\\t")
-        {
+        else if (sUpperCase.compare(i, 2, "\\t") == EQUAL)
             sUpperCase.replace(i, 2, "T");
-        }
-        // --> Laufe alle Zeichen im String ab und pruefe, ob ihr CHAR-Wert zwischen a und z liegt
-        if ((int)sUpperCase[i] >= (int)'a' && (int)sLowerCase[i] <= (int)'z')
-        {
-            // --> Falls ja, verschiebe den CHAR-Wert um die Differenz aus a und A <--
-            sUpperCase[i] = (char)((int)sUpperCase[i] + ((int)'A' - (int)'a'));
-        }
-        if (sUpperCase[i] == (char)0xE4)
-            sUpperCase[i] = (char)0xC4;
-        else if (sUpperCase[i] == (char)0xF6)
-            sUpperCase[i] = (char)0xD6;
-        else if (sUpperCase[i] == (char)0xFC)
-            sUpperCase[i] = (char)0xDC;
-        else if (sUpperCase[i] == (char)132)
-            sUpperCase[i] = (char)142;
-        else if (sUpperCase[i] == (char)148)
-            sUpperCase[i] = (char)153;
-        else if (sUpperCase[i] == (char)129)
-            sUpperCase[i] = (char)154;
+        else if ((int)sUpperCase[i] >= (int)'a' && (int)sLowerCase[i] <= (int)'z')
+            sUpperCase[i] = (char)((int)sUpperCase[i] + charDiff);
+        else
+            sUpperCase[i] = _umlauts.toUpper(sUpperCase[i]);
     }
+
     return sUpperCase;
 }
 
