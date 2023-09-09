@@ -8380,15 +8380,15 @@ int NumeReEditor::countUmlauts(const string& sStr)
     int nUmlauts = 0;
     for (size_t i = 0; i < sStr.length(); i++)
     {
-        if (sStr[i] == 0xC4
-            || sStr[i] == 0xE4
-            || sStr[i] == 0xD6
-            || sStr[i] == 0xF6
-            || sStr[i] == 0xDC
-            || sStr[i] == 0xFC
-            || sStr[i] == 0xDF
-            || sStr[i] == 0xB0
-            || sStr[i] == 0xB5 //µ
+        if (sStr[i] == (char)0xC4
+            || sStr[i] == (char)0xE4
+            || sStr[i] == (char)0xD6
+            || sStr[i] == (char)0xF6
+            || sStr[i] == (char)0xDC
+            || sStr[i] == (char)0xFC
+            || sStr[i] == (char)0xDF
+            || sStr[i] == (char)0xB0
+            || sStr[i] == (char)0xB5 //µ
             || sStr[i] == (char)142
             || sStr[i] == (char)132
             || sStr[i] == (char)153

@@ -920,12 +920,12 @@ std::string toLowerCase(const std::string& sUpperCase)
             // --> Falls ja, verschiebe den CHAR-Wert um die Differenz aus A und a <--
             sLowerCase[i] = (char)((int)sLowerCase[i] + ((int)'a' - (int)'A'));
         }
-        if (sLowerCase[i] == 0xC4)
-            sLowerCase[i] = 0xE4;
-        else if (sLowerCase[i] == 0xD6)
-            sLowerCase[i] = 0xF6;
-        else if (sLowerCase[i] == 0xDC)
-            sLowerCase[i] = 0xFC;
+        if (sLowerCase[i] == (char)0xC4)
+            sLowerCase[i] = (char)0xE4;
+        else if (sLowerCase[i] == (char)0xD6)
+            sLowerCase[i] = (char)0xF6;
+        else if (sLowerCase[i] == (char)0xDC)
+            sLowerCase[i] = (char)0xFC;
         else if (sLowerCase[i] == (char)142)
             sLowerCase[i] = (char)132;
         else if (sLowerCase[i] == (char)153)
@@ -970,12 +970,12 @@ std::string toUpperCase(const std::string& sLowerCase)
             // --> Falls ja, verschiebe den CHAR-Wert um die Differenz aus a und A <--
             sUpperCase[i] = (char)((int)sUpperCase[i] + ((int)'A' - (int)'a'));
         }
-        if (sUpperCase[i] == 0xE4)
-            sUpperCase[i] = 0xC4;
-        else if (sUpperCase[i] == 0xF6)
-            sUpperCase[i] = 0xD6;
-        else if (sUpperCase[i] == 0xFC)
-            sUpperCase[i] = 0xDC;
+        if (sUpperCase[i] == (char)0xE4)
+            sUpperCase[i] = (char)0xC4;
+        else if (sUpperCase[i] == (char)0xF6)
+            sUpperCase[i] = (char)0xD6;
+        else if (sUpperCase[i] == (char)0xFC)
+            sUpperCase[i] = (char)0xDC;
         else if (sUpperCase[i] == (char)132)
             sUpperCase[i] = (char)142;
         else if (sUpperCase[i] == (char)148)
@@ -1297,21 +1297,21 @@ std::string fromSystemCodePage(std::string sOutput)
     for (size_t i = 0; i < sOutput.length(); i++)
     {
         if (sOutput[i] == (char)142)
-            sOutput[i] = 0xC4;
+            sOutput[i] = (char)0xC4;
         else if (sOutput[i] == (char)132)
-            sOutput[i] = 0xE4;
+            sOutput[i] = (char)0xE4;
         else if (sOutput[i] == (char)153)
-            sOutput[i] = 0xD6;
+            sOutput[i] = (char)0xD6;
         else if (sOutput[i] == (char)148)
-            sOutput[i] = 0xF6;
+            sOutput[i] = (char)0xF6;
         else if (sOutput[i] == (char)154)
-            sOutput[i] = 0xDC;
+            sOutput[i] = (char)0xDC;
         else if (sOutput[i] == (char)129)
-            sOutput[i] = 0xFC;
+            sOutput[i] = (char)0xFC;
         else if (sOutput[i] == (char)225)
-            sOutput[i] = 0xDF;
+            sOutput[i] = (char)0xDF;
         else if (sOutput[i] == (char)248)
-            sOutput[i] = 0xB0;
+            sOutput[i] = (char)0xB0;
         else if (sOutput[i] == (char)174)
             sOutput[i] = (char)171;
         else if (sOutput[i] == (char)175)

@@ -270,25 +270,25 @@ std::string DocumentationGenerator::getStrippedRange(const StyledTextFile& file,
         {
             switch (sTextRange[i])
             {
-                case 0xC4:
+                case (char)0xC4:
                     sTextRange.replace(i, 1, "Ae");
                     break;
-                case 0xE4:
+                case (char)0xE4:
                     sTextRange.replace(i, 1, "ae");
                     break;
-                case 0xD6:
+                case (char)0xD6:
                     sTextRange.replace(i, 1, "Oe");
                     break;
-                case 0xF6:
+                case (char)0xF6:
                     sTextRange.replace(i, 1, "oe");
                     break;
-                case 0xDC:
+                case (char)0xDC:
                     sTextRange.replace(i, 1, "Ue");
                     break;
-                case 0xFC:
+                case (char)0xFC:
                     sTextRange.replace(i, 1, "ue");
                     break;
-                case 0xDF:
+                case (char)0xDF:
                     sTextRange.replace(i, 1, "ss");
                     break;
             }
@@ -508,25 +508,25 @@ std::string DocumentationGenerator::parseDocumentation(const StyledTextFile& fil
     {
         switch (sTextRange[i])
         {
-            case 0xC4:
+            case (char)0xC4:
                 sTextRange.replace(i, 1, "\\\"A");
                 break;
-            case 0xE4:
+            case (char)0xE4:
                 sTextRange.replace(i, 1, "\\\"a");
                 break;
-            case 0xD6:
+            case (char)0xD6:
                 sTextRange.replace(i, 1, "\\\"O");
                 break;
-            case 0xF6:
+            case (char)0xF6:
                 sTextRange.replace(i, 1, "\\\"o");
                 break;
-            case 0xDC:
+            case (char)0xDC:
                 sTextRange.replace(i, 1, "\\\"U");
                 break;
-            case 0xFC:
+            case (char)0xFC:
                 sTextRange.replace(i, 1, "\\\"u");
                 break;
-            case 0xDF:
+            case (char)0xDF:
                 sTextRange.replace(i, 1, "\\ss ");
                 break;
         }

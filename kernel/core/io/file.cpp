@@ -2611,28 +2611,28 @@ namespace NumeRe
 
         for (size_t i = 0; i < sReturn.length(); i++)
         {
-            if (sReturn[i] == 0xC4 || sReturn[i] == (char)142) // Ä
+            if (sReturn[i] == (char)0xC4 || sReturn[i] == (char)142) // Ä
                 sReturn.replace(i,1,"\\\"A");
 
-            if (sReturn[i] == 0xE4 || sReturn[i] == (char)132) // ä
+            if (sReturn[i] == (char)0xE4 || sReturn[i] == (char)132) // ä
                 sReturn.replace(i,1,"\\\"a");
 
-            if (sReturn[i] == 0xD6 || sReturn[i] == (char)153) // Ö
+            if (sReturn[i] == (char)0xD6 || sReturn[i] == (char)153) // Ö
                 sReturn.replace(i,1,"\\\"O");
 
-            if (sReturn[i] == 0xF6 || sReturn[i] == (char)148) // ö
+            if (sReturn[i] == (char)0xF6 || sReturn[i] == (char)148) // ö
                 sReturn.replace(i,1,"\\\"o");
 
-            if (sReturn[i] == 0xDC || sReturn[i] == (char)154) // Ü
+            if (sReturn[i] == (char)0xDC || sReturn[i] == (char)154) // Ü
                 sReturn.replace(i,1,"\\\"U");
 
-            if (sReturn[i] == 0xFC || sReturn[i] == (char)129) // ü
+            if (sReturn[i] == (char)0xFC || sReturn[i] == (char)129) // ü
                 sReturn.replace(i,1,"\\\"u");
 
-            if (sReturn[i] == 0xDF || sReturn[i] == (char)225) // ß
+            if (sReturn[i] == (char)0xDF || sReturn[i] == (char)225) // ß
                 sReturn.replace(i,1,"\\ss ");
 
-            if (sReturn[i] == 0xB0 || sReturn[i] == (char)248) // °
+            if (sReturn[i] == (char)0xB0 || sReturn[i] == (char)248) // °
                 sReturn.replace(i,1,"$^\\circ$");
 
             if (sReturn[i] == (char)196 || sReturn[i] == (char)249)

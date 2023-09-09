@@ -116,19 +116,19 @@ std::string FileSystem::cleanPath(std::string sFilePath, bool checkInvalidChars)
     for (size_t i = 0; i < sFilePath.length(); i++)
     {
         if (sFilePath[i] == (char)142)
-            sFilePath[i] = 0xC4;
+            sFilePath[i] = (char)0xC4;
         else if (sFilePath[i] == (char)132)
-            sFilePath[i] = 0xE4;
+            sFilePath[i] = (char)0xE4;
         else if (sFilePath[i] == (char)153)
-            sFilePath[i] = 0xD6;
+            sFilePath[i] = (char)0xD6;
         else if (sFilePath[i] == (char)148)
-            sFilePath[i] = 0xF6;
+            sFilePath[i] = (char)0xF6;
         else if (sFilePath[i] == (char)154)
-            sFilePath[i] = 0xDC;
+            sFilePath[i] = (char)0xDC;
         else if (sFilePath[i] == (char)129)
-            sFilePath[i] = 0xFC;
+            sFilePath[i] = (char)0xFC;
         else if (sFilePath[i] == (char)225)
-            sFilePath[i] = 0xDF;
+            sFilePath[i] = (char)0xDF;
         else if (sFilePath[i] == '~')
         {
             NumeReKernel::issueWarning("INTERNAL ISSUE: Replaced a tilde character in \"" + sFilePath + "\" with a slash. This should not happen. Consider informing the development team about this warning and how to recreate it. Thank you.");
