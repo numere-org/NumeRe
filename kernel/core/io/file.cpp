@@ -3048,15 +3048,15 @@ namespace NumeRe
         if (meta.m_xUnit.length())
         {
             if (toUpperCase(meta.m_xUnit) == "1/CM")
-                meta.m_xUnit = "Wellenzahl k [cm^-1]";
+                meta.m_xUnit = "Wave number k [cm^-1]";
             else if (toUpperCase(meta.m_xUnit) == "MICROMETERS")
-                meta.m_xUnit = "Wellenl\xE4nge lambda [mu m]";
+                meta.m_xUnit = "Wave length lambda [mu m]";
             else if (toUpperCase(meta.m_xUnit) == "NANOMETERS")
-                meta.m_xUnit = "Wellenl\xE4nge lambda [nm]";
+                meta.m_xUnit = "Wave length lambda [nm]";
             else if (toUpperCase(meta.m_xUnit) == "SECONDS")
-                meta.m_xUnit = "Zeit t [s]";
+                meta.m_xUnit = "Time t [s]";
             else if (toUpperCase(meta.m_xUnit) == "1/S" || toUpperCase(meta.m_xUnit) == "1/SECONDS")
-                meta.m_xUnit = "Frequenz f [Hz]";
+                meta.m_xUnit = "Frequency f [Hz]";
             else
                 meta.m_xUnit = "[" + meta.m_xUnit + "]";
         }
@@ -3064,15 +3064,15 @@ namespace NumeRe
         if (meta.m_yUnit.length())
         {
             if (toUpperCase(meta.m_yUnit) == "TRANSMITTANCE")
-                meta.m_yUnit = "Transmission";
+                meta.m_yUnit = "Transmittance";
             else if (toUpperCase(meta.m_yUnit) == "REFLECTANCE")
-                meta.m_yUnit = "Reflexion";
+                meta.m_yUnit = "Reflectance";
             else if (toUpperCase(meta.m_yUnit) == "ABSORBANCE")
-                meta.m_yUnit = "Absorbtion";
+                meta.m_yUnit = "Absorbance";
             else if (toUpperCase(meta.m_yUnit) == "KUBELKA-MUNK")
                 meta.m_yUnit = "Kubelka-Munk";
             else if (toUpperCase(meta.m_yUnit) == "ARBITRARY UNITS" || meta.m_yUnit.starts_with("Intensity"))
-                meta.m_yUnit = "Intensit\xE4t";
+                meta.m_yUnit = "Intensity";
         }
 
         meta.m_deltaX = (meta.m_lastX - meta.m_firstX) / (meta.m_points - 1);
