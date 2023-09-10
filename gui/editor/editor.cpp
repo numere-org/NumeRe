@@ -115,7 +115,6 @@ BEGIN_EVENT_TABLE(NumeReEditor, wxStyledTextCtrl)
     EVT_MENU            (ID_MENU_COPY, NumeReEditor::OnMenuEvent)
     EVT_MENU            (ID_MENU_CUT, NumeReEditor::OnMenuEvent)
     EVT_MENU            (ID_MENU_PASTE, NumeReEditor::OnMenuEvent)
-    EVT_MENU            (ID_MENU_EXECUTE_FROM_LINE, NumeReEditor::OnMenuEvent)
     EVT_IDLE            (NumeReEditor::OnIdle)
     EVT_TIMER           (ID_ANALYZERTIMER, NumeReEditor::OnAnalyzerTimer)
 END_EVENT_TABLE()
@@ -6841,9 +6840,6 @@ void NumeReEditor::OnMenuEvent(wxCommandEvent& event)
             break;
         case ID_MENU_PASTE:
             Paste();
-            break;
-        case ID_MENU_EXECUTE_FROM_LINE:
-            m_mainFrame->runFromLine(event);
             break;
     }
 }

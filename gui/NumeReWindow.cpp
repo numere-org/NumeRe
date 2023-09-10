@@ -2743,7 +2743,6 @@ void NumeReWindow::runFromLine(wxCommandEvent &event)
 
     // Initialise the command
     std::string command = replacePathSeparator(sFileName);
-    std::vector<std::string> vPaths = m_terminal->getPathSettings();
 
     // Get the current line
     int nStartLine = GetCurrentEditor()->GetLineForMarkerOperation() + 1;
