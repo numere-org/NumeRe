@@ -184,7 +184,6 @@ class NumeReEditor : public wxStyledTextCtrl, public wxThreadHelper
 		void OnAbstrahizeSection(wxCommandEvent& event);
 		void OnAbstrahizeSectionFromMenu();
 		void OnMenuEvent(wxCommandEvent& event);
-		void OnRunFromLineEvent(wxCommandEvent& event);
 		void OnTranspose();
 		void OnExtractAsHTML();
 		void OnExtractFormatted();

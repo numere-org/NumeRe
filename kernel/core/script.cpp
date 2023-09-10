@@ -90,13 +90,12 @@ void Script::openScript(string& _sScriptFileName, int nFromLine)
         nInstallModeFlags = ENABLE_DEFAULTS;
         sHelpID = "";
         sInstallID = "";
-        nLine = 0;
-        _localDef.reset();
-        _symdefs.clear();
 
         // Set the line to start from if requested by user
-        if (nFromLine != 0)
-            nLine = nFromLine;
+        nLine = nFromLine;
+
+        _localDef.reset();
+        _symdefs.clear();
     }
 }
 

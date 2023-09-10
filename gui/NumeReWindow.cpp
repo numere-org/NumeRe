@@ -2731,7 +2731,7 @@ void NumeReWindow::runFromLine(wxCommandEvent &event)
     NumeReEditor* editor = m_book->getCurrentEditor();
 
     // Get the current file from the current editor
-    std::string sFileName = (m_book->getCurrentEditor()->GetFileName()).GetFullPath().ToStdString();
+    std::string sFileName = (m_book->getCurrentEditor()->GetFileNameAndPath()).ToStdString();
 
     // Check the filename
     if (!sFileName.length())

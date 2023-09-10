@@ -8292,7 +8292,7 @@ int NumeReEditor::getStartLine(int line)
         line = GetFoldParent(line - 1) + 1;
 
     // Check if line is continued and if so go to start of line
-    while (GetLine(line - 1 - 1).find("\\\\") != std::string::npos)
+    while (GetLine(line - 2).find("\\\\") != std::string::npos)
         line--;
 
     return line;

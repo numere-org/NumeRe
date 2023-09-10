@@ -3337,7 +3337,7 @@ static CommandReturnValues cmd_credits(string& sCmd)
 	make_hline();
 	NumeReKernel::printPreFmt("|-> Version: " + sVersion);
 	NumeReKernel::printPreFmt(" | " + _lang.get("BUILTIN_CREDITS_BUILD") + ": " + AutoVersion::YEAR + "-" + AutoVersion::MONTH + "-" + AutoVersion::DATE + "\n");
-	NumeReKernel::print("Copyright (c) 2013-" + (AutoVersion::YEAR + toSystemCodePage(", Erik H�NEL et al.")) );
+	NumeReKernel::print("Copyright (c) 2013-" + (AutoVersion::YEAR + toSystemCodePage(", Erik HÄNEL et al.")) );
 	NumeReKernel::printPreFmt("|   <numere.developer@gmail.com>\n" );
 	NumeReKernel::print(_lang.get("BUILTIN_CREDITS_VERSIONINFO"));
 	make_hline(-80);
