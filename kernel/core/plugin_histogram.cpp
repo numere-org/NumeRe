@@ -330,12 +330,13 @@ static std::vector<std::vector<double>> calculateHist1dData(MemoryManager& _data
 ///
 /// \param _histParams const HistogramParameters&
 /// \param _mAxisVals const mglData&
+/// \param vCategories const ValueVector&
 /// \param sCommonExponent std::string&
 /// \param bGrid bool
 /// \return std::string
 ///
 /////////////////////////////////////////////////
-static std::string prepareTicksForHist1d(const HistogramParameters& _histParams, const mglData& _mAxisVals, std::string& sCommonExponent, bool bGrid)
+static std::string prepareTicksForHist1d(const HistogramParameters& _histParams, const mglData& _mAxisVals, const ValueVector& vCategories, std::string& sCommonExponent, bool bGrid)
 {
     std::string sTicks;
     double dCommonExponent = 1.0;
@@ -366,7 +367,20 @@ static std::string prepareTicksForHist1d(const HistogramParameters& _histParams,
     }
     else
     {
-        if (toString(_histParams.ranges.x[0] + _histParams.binWidth[0] / 2.0, 3).find('e') != std::string::npos || toString(_histParams.ranges.x[0] + _histParams.binWidth[0] / 2.0, 3).find('E') != std::string::npos)
+        if (vCategories.size())
+        {
+            for (size_t i = 0; i < vCategories.size(); i += 2)
+            {
+                if (i)
+                    sTicks += "\\n";
+
+                sTicks += vCategories[i];
+            }
+
+            return sTicks;
+        }
+        else if (toString(_histParams.ranges.x[0] + _histParams.binWidth[0] / 2.0, 3).find('e') != std::string::npos
+                 || toString(_histParams.ranges.x[0] + _histParams.binWidth[0] / 2.0, 3).find('E') != std::string::npos)
         {
             sCommonExponent = toString(_histParams.ranges.x[0] + _histParams.binWidth[0] / 2.0, 3).substr(toString(_histParams.ranges.x[0] + _histParams.binWidth[0] / 2.0, 3).find('e'));
             dCommonExponent = StrToDb("1.0" + sCommonExponent);
@@ -453,13 +467,14 @@ static std::string prepareTicksForHist1d(const HistogramParameters& _histParams,
 /// \param vHistMatrix const std::vector<std::vector<double>>&
 /// \param _histParams const HistogramParameters&
 /// \param _mAxisVals const mglData&
+/// \param vCategories const ValueVector&
 /// \param bGrid bool
 /// \param bFormat bool
 /// \param bSilent bool
 /// \return void
 ///
 /////////////////////////////////////////////////
-static void createOutputForHist1D(MemoryManager& _data, const Indices& _idx, const std::vector<std::vector<double>>& vHistMatrix, const HistogramParameters& _histParams, const mglData& _mAxisVals, bool bGrid, bool bFormat, bool bSilent)
+static void createOutputForHist1D(MemoryManager& _data, const Indices& _idx, const std::vector<std::vector<double>>& vHistMatrix, const HistogramParameters& _histParams, const mglData& _mAxisVals, const ValueVector& vCategories, bool bGrid, bool bFormat, bool bSilent)
 {
     Output& _out = NumeReKernel::getInstance()->getOutput();
     Settings& _option = NumeReKernel::getInstance()->getSettings();
@@ -522,8 +537,10 @@ static void createOutputForHist1D(MemoryManager& _data, const Indices& _idx, con
     // --> Fuelle die Ausgabe-Matrix <--
     for (size_t i = 1; i < vHistMatrix.size() + 1; i++)
     {
-        // --> Die erste Spalte enthaelt immer die linke Grenze des Bin-Intervalls <--
-        sOut[i][0] = toString(_mAxisVals.a[i - 1], _option);
+        if (vCategories.size() <= 2*(i-1))
+            sOut[i][0] = toString(_mAxisVals.a[i - 1], _option);
+        else
+            sOut[i][0] = vCategories[2*(i-1)];
 
         for (size_t j = 0; j < vHistMatrix[0].size(); j++)
         {
@@ -625,13 +642,14 @@ static mglGraph* prepareGraphForHist(double dAspect, PlotData& _pData, bool bSil
 /// \param _mAxisVals mglData&
 /// \param _histData mglData&
 /// \param vLegends const std::vector<std::string>&
+/// \param vCategories const ValueVector&
 /// \param nMax int
 /// \param bSilent bool
 /// \param bGrid bool
 /// \return void
 ///
 /////////////////////////////////////////////////
-static void createPlotForHist1D(HistogramParameters& _histParams, mglData& _mAxisVals, mglData& _histData, const std::vector<std::string>& vLegends, int nMax, bool bSilent, bool bGrid)
+static void createPlotForHist1D(HistogramParameters& _histParams, mglData& _mAxisVals, mglData& _histData, const std::vector<std::string>& vLegends, const ValueVector& vCategories, int nMax, bool bSilent, bool bGrid)
 {
     Output& _out = NumeReKernel::getInstance()->getOutput();
     PlotData& _pData = NumeReKernel::getInstance()->getPlottingData();
@@ -665,7 +683,7 @@ static void createPlotForHist1D(HistogramParameters& _histParams, mglData& _mAxi
 
     // Get the common exponent and the precalculated ticks
     std::string sCommonExponent;
-    std::string sTicks = prepareTicksForHist1d(_histParams, _mAxisVals, sCommonExponent, bGrid);
+    std::string sTicks = prepareTicksForHist1d(_histParams, _mAxisVals, vCategories, sCommonExponent, bGrid);
 
     // If we calculated a single histogram from a data grid,
     // we need to use the z ranges for the x ranges, because
@@ -687,9 +705,9 @@ static void createPlotForHist1D(HistogramParameters& _histParams, mglData& _mAxi
 
     // Update the y ranges for a possible logscale
     if (_pData.getLogscale(YRANGE))
-        _histGraph->SetRanges(_histParams.ranges.x[0], _histParams.ranges.x[1], 0.1, 1.4 * (double)nMax);
+        _histGraph->SetRanges(_histParams.ranges.x[0], _histParams.ranges.x[1] + (vCategories.size() != 0), 0.1, 1.4 * (double)nMax);
     else
-        _histGraph->SetRanges(_histParams.ranges.x[0], _histParams.ranges.x[1], 0.0, 1.05 * (double)nMax);
+        _histGraph->SetRanges(_histParams.ranges.x[0], _histParams.ranges.x[1] + (vCategories.size() != 0), 0.0, 1.05 * (double)nMax);
 
     // Create the axes
     if (_pData.getSettings(PlotData::INT_AXIS) != AXIS_NONE)
@@ -823,6 +841,112 @@ static void createPlotForHist1D(HistogramParameters& _histParams, mglData& _mAxi
 
 
 /////////////////////////////////////////////////
+/// \brief Returns the superset of both vectors
+/// (if one is a subset of the other) or an empty
+/// vector.
+///
+/// \param lhs const ValueVector&
+/// \param rhs const ValueVector&
+/// \return ValueVector
+///
+/////////////////////////////////////////////////
+static ValueVector isSubSet(const ValueVector& lhs, const ValueVector& rhs)
+{
+    // Are they equal?
+    if (lhs == rhs)
+        return lhs;
+
+    const ValueVector& longer = lhs.size() > rhs.size() ? lhs : rhs;
+    const ValueVector& shorter = lhs.size() > rhs.size() ? rhs : lhs;
+
+    // Ensure that one of the category definitions is a subset of the other one
+    for (size_t i = 0; i < shorter.size(); i += 2)
+    {
+        auto pos = std::find(longer.begin(), longer.end(), shorter[i]);
+
+        if (pos == longer.end() || *(pos+1) != shorter[i+1])
+            return ValueVector();
+    }
+
+    // return the superset
+    return longer;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Get the bins from possible categorical
+/// columns and return the valid categories for
+/// the plot axes.
+///
+/// \param _data MemoryManager&
+/// \param _histParams HistogramParameters&
+/// \param _idx Indices&
+/// \param vCategories ValueVector&
+/// \return bool
+///
+/////////////////////////////////////////////////
+static bool getBinsFromCategories(MemoryManager& _data, HistogramParameters& _histParams, Indices& _idx, ValueVector& vCategories)
+{
+    // For special column types, we use predefined bins instead of the calculated ones
+    if (_data.getType(_idx.col, _histParams.sTable) == TableColumn::TYPE_CATEGORICAL)
+    {
+        // Try to use the category definitions as bins and labels
+        _histParams.binWidth[0] = 1.0;
+        vCategories = _data.getCategoryList(_idx.col.subidx(0, 1), _histParams.sTable);
+
+        for (size_t i = 1; i < _idx.col.size(); i++)
+        {
+            // Ensure that all categories can be described by one common superset
+            if (!(vCategories = isSubSet(vCategories, _data.getCategoryList(_idx.col.subidx(i, 1), _histParams.sTable))).size())
+            {
+                // If that's not the case, we simply use their IDs as
+                // abstract categories to at least us reasoable bin values
+                int nCategoryMin = intCast(std::max(_data.min(_histParams.sTable, _idx.row, _idx.col).real(), _histParams.ranges.x[0]));
+                int nCategoryMax = intCast(std::min(_data.max(_histParams.sTable, _idx.row, _idx.col).real(), _histParams.ranges.x[1]));
+                _histParams.nBin = nCategoryMax - nCategoryMin + 1;
+
+                for (int i = 0; i < _histParams.nBin; i++)
+                {
+                    vCategories.push_back("Cat:" + toString(i+nCategoryMin));
+                    vCategories.push_back(toString(i+nCategoryMin));
+                }
+
+                return true;
+            }
+        }
+    }
+    else if (_data.getType(_idx.col, _histParams.sTable) == TableColumn::TYPE_LOGICAL)
+    {
+        // Use logical values as bins and labels
+        _histParams.binWidth[0] = 1.0;
+        _histParams.nBin = 2;
+        vCategories = std::vector<std::string>({"false", "0", "true", "1"});
+    }
+
+    // If we found a set of categories, ensure that their IDs are part of the
+    // user specified x interval
+    if (vCategories.size())
+    {
+        size_t i = 1;
+
+        while (i < vCategories.size())
+        {
+            if (StrToInt(vCategories[i]) < _histParams.ranges.x[0] || StrToInt(vCategories[i]) > _histParams.ranges.x[1])
+                vCategories.erase(vCategories.begin() + i - 1, vCategories.begin() + i + 1);
+            else
+                i += 2;
+        }
+
+        _histParams.nBin = vCategories.size() / 2;
+
+        return true;
+    }
+
+    return false;
+}
+
+
+/////////////////////////////////////////////////
 /// \brief This static function is the driver
 /// code for creating a 1D histogram.
 ///
@@ -875,10 +999,14 @@ static void createHist1D(const std::string& sCmd, const std::string& sTargettabl
     {
         for (size_t j = 2 * bGrid; j < _idx.col.size(); j++)
         {
-            if (_data.isValidElement(_idx.row[i], _idx.col[j], _histParams.sTable) && _data.getElement(_idx.row[i], _idx.col[j], _histParams.sTable).real() <= _histParams.ranges.x[1] && _data.getElement(_idx.row[i], _idx.col[j], _histParams.sTable).real() >= _histParams.ranges.x[0])
+            if (_data.isValidElement(_idx.row[i], _idx.col[j], _histParams.sTable)
+                && _data.getElement(_idx.row[i], _idx.col[j], _histParams.sTable).real() <= _histParams.ranges.x[1]
+                && _data.getElement(_idx.row[i], _idx.col[j], _histParams.sTable).real() >= _histParams.ranges.x[0])
                 nMax++;
         }
     }
+
+    ValueVector vCategories;
 
     if (!_histParams.nBin && _histParams.binWidth[0] == 0.0)
     {
@@ -893,12 +1021,15 @@ static void createHist1D(const std::string& sCmd, const std::string& sTargettabl
         }
         else
         {
-            if (_histParams.nMethod == STURGES)
-                _histParams.nBin = (int)rint(1.0 + 3.3 * log10((double)nMax / (double)(_idx.col.size())));
-            else if (_histParams.nMethod == SCOTT)
-                _histParams.binWidth[0] = 3.49 * _data.std(_histParams.sTable, _idx.row, _idx.col.subidx(0, 1)).real() / pow((double)nMax / (double)(_idx.col.size()), 1.0 / 3.0);
-            else if (_histParams.nMethod == FREEDMAN_DIACONIS)
-                _histParams.binWidth[0] = 2.0 * (_data.pct(_histParams.sTable, _idx.row, _idx.col.subidx(0, 1), 0.75).real() - _data.pct(_histParams.sTable, _idx.row, _idx.col.subidx(0, 1), 0.25).real()) / pow((double)nMax / (double)(_idx.col.size()), 1.0 / 3.0);
+            if (!getBinsFromCategories(_data, _histParams, _idx, vCategories))
+            {
+                if (_histParams.nMethod == STURGES)
+                    _histParams.nBin = (int)rint(1.0 + 3.3 * log10((double)nMax / (double)(_idx.col.size())));
+                else if (_histParams.nMethod == SCOTT)
+                    _histParams.binWidth[0] = 3.49 * _data.std(_histParams.sTable, _idx.row, _idx.col.subidx(0, 1)).real() / pow((double)nMax / (double)(_idx.col.size()), 1.0 / 3.0);
+                else if (_histParams.nMethod == FREEDMAN_DIACONIS)
+                    _histParams.binWidth[0] = 2.0 * (_data.pct(_histParams.sTable, _idx.row, _idx.col.subidx(0, 1), 0.75).real() - _data.pct(_histParams.sTable, _idx.row, _idx.col.subidx(0, 1), 0.25).real()) / pow((double)nMax / (double)(_idx.col.size()), 1.0 / 3.0);
+            }
         }
     }
 
@@ -962,7 +1093,7 @@ static void createHist1D(const std::string& sCmd, const std::string& sTargettabl
 
     // Create the textual data for the terminal
     // and the file, if necessary
-    createOutputForHist1D(_data, _idx, vHistMatrix, _histParams, _mAxisVals, bGrid,
+    createOutputForHist1D(_data, _idx, vHistMatrix, _histParams, _mAxisVals, vCategories, bGrid,
                           !bWriteToCache || findParameter(sCmd, "export", '=') || findParameter(sCmd, "save", '='), bSilent);
 
     // Store the results into the output table,
@@ -976,7 +1107,10 @@ static void createHist1D(const std::string& sCmd, const std::string& sTargettabl
             if (_tIdx.row.size() <= i)
                 break;
 
-            _data.writeToTable(_tIdx.row[i], _tIdx.col.front(), sTargettable, _histParams.ranges.x[0] + i * _histParams.binWidth[0] + _histParams.binWidth[0] / 2.0);
+            if (vCategories.size() < 2*i)
+                _data.writeToTable(_tIdx.row[i], _tIdx.col.front(), sTargettable, _histParams.ranges.x[0] + i * _histParams.binWidth[0] + _histParams.binWidth[0] / 2.0);
+            else
+                _data.writeToTable(_tIdx.row[i], _tIdx.col.front(), sTargettable, vCategories[2*i]);
 
             for (size_t j = 0; j < vHistMatrix[0].size(); j++)
             {
@@ -992,7 +1126,7 @@ static void createHist1D(const std::string& sCmd, const std::string& sTargettabl
     }
 
     // Create the plot using the calculated data
-    createPlotForHist1D(_histParams, _mAxisVals, _histData, vLegends, nMax, bSilent, bGrid);
+    createPlotForHist1D(_histParams, _mAxisVals, _histData, vLegends, vCategories, nMax, bSilent, bGrid);
 }
 
 

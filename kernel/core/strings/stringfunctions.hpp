@@ -354,6 +354,36 @@ static StringVector strfnc_strlen(StringFuncArgs& funcArgs)
 
 
 /////////////////////////////////////////////////
+/// \brief Implementation of firstch()
+///
+/// \param funcArgs StringFuncArgs&
+/// \return StringVector
+///
+/////////////////////////////////////////////////
+static StringVector firstch(StringFuncArgs& funcArgs) {
+    if (!funcArgs.sArg1.view().length())
+        return "\"\"";
+
+    return "\"" + funcArgs.sArg1.view().subview(0, 1).to_string() + "\"";
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Implementation of lastch()
+///
+/// \param funcArgs StringFuncArgs&
+/// \return StringVector
+///
+/////////////////////////////////////////////////
+static StringVector lastch(StringFuncArgs& funcArgs) {
+    if (!funcArgs.sArg1.view().length())
+        return "\"\"";
+
+    return "\"" + funcArgs.sArg1.view().subview(funcArgs.sArg1.view().length()-1, 1).to_string() + "\"";
+}
+
+
+/////////////////////////////////////////////////
 /// \brief Implementation of the getmatchinparens()
 /// function.
 ///
@@ -2731,6 +2761,42 @@ static StringVector strfnc_sha256(StringFuncArgs& funcArgs)
 
 
 /////////////////////////////////////////////////
+/// \brief Implementation of startswith() function
+///
+/// \param funcArgs StringFuncArgs&
+/// \return StringVector
+///
+/////////////////////////////////////////////////
+static StringVector strfnc_startswith(StringFuncArgs& funcArgs)
+{
+    return funcArgs.sArg2.view().length() <= funcArgs.sArg1.view().length()
+        && funcArgs.sArg2.view().length()
+        && equal(funcArgs.sArg2.view().begin(),
+                 funcArgs.sArg2.view().end(),
+                 funcArgs.sArg1.view().begin()
+                 );
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Implementation of endswith() function
+///
+/// \param funcArgs StringFuncArgs&
+/// \return StringVector
+///
+/////////////////////////////////////////////////
+static StringVector strfnc_endswith(StringFuncArgs& funcArgs)
+{
+    return funcArgs.sArg2.view().length() <= funcArgs.sArg1.view().length()
+        && funcArgs.sArg2.view().length()
+        && equal(funcArgs.sArg2.view().begin(),
+                 funcArgs.sArg2.view().end(),
+                 (funcArgs.sArg1.view().end() - funcArgs.sArg2.view().length())
+                 );
+}
+
+
+/////////////////////////////////////////////////
 /// \brief Simple function to have valid pointer
 /// to unimplemented functions. (Avoids crashes)
 ///
@@ -2764,6 +2830,7 @@ static std::map<std::string, StringFuncHandle> getStringFuncHandles()
     mHandleTable["char"]                = StringFuncHandle(STR_VAL, strfnc_char, false);
     mHandleTable["cnt"]                 = StringFuncHandle(STR, strfnc_cnt, true);
     mHandleTable["dectobase"]           = StringFuncHandle(STR_VAL, strfnc_dectobase, false);
+    mHandleTable["endswith"]            = StringFuncHandle(STR_STR, strfnc_endswith, false);
     mHandleTable["findfile"]            = StringFuncHandle(STR_STROPT, strfnc_findfile, false);
     mHandleTable["findparam"]           = StringFuncHandle(STR_STR_STROPT, strfnc_findparam, false);
     mHandleTable["findtoken"]           = StringFuncHandle(STR_STR_STROPT, strfnc_findtoken, false);
@@ -2794,6 +2861,7 @@ static std::map<std::string, StringFuncHandle> getStringFuncHandles()
     mHandleTable["is_upper"]            = StringFuncHandle(STR, strfnc_isupper, false);
     mHandleTable["is_xdigit"]           = StringFuncHandle(STR, strfnc_isxdigit, false);
     mHandleTable["justify"]             = StringFuncHandle(STR_VAL, strfnc_justify, true);
+    mHandleTable["lastch"]              = StringFuncHandle(STR, lastch, false);
     mHandleTable["locate"]              = StringFuncHandle(STR_STR_VALOPT_VALOPT, strfnc_locate, true);
     mHandleTable["logtoidx"]            = StringFuncHandle(STR, strfnc_logtoidx, true);
     mHandleTable["max"]                 = StringFuncHandle(STR, strfnc_max, true);
@@ -2806,6 +2874,8 @@ static std::map<std::string, StringFuncHandle> getStringFuncHandles()
     mHandleTable["replaceall"]          = StringFuncHandle(STR_STR_STR_VALOPT_VALOPT, strfnc_replaceall, false);
     mHandleTable["sha256"]              = StringFuncHandle(STR_VALOPT, strfnc_sha256, false);
     mHandleTable["split"]               = StringFuncHandle(STR_STR_VALOPT, strfnc_split, false);
+    mHandleTable["firstch"]             = StringFuncHandle(STR, firstch, false);
+    mHandleTable["startswith"]          = StringFuncHandle(STR_STR, strfnc_startswith, false);
     mHandleTable["str_not_match"]       = StringFuncHandle(STR_STR_VALOPT, strfnc_str_not_match, false);
     mHandleTable["str_not_rmatch"]      = StringFuncHandle(STR_STR_VALOPT, strfnc_str_not_rmatch, false);
     mHandleTable["strip"]               = StringFuncHandle(STR_STR_STR_VALOPT_VALOPT, strfnc_strip, false);

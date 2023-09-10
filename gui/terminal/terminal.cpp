@@ -889,6 +889,40 @@ NumeReTerminal::SetCursorBlinkRate(int rate)
 
 
 /////////////////////////////////////////////////
+/// \brief Generate the complete autocompletion
+/// list considering global variables as possible
+/// autocompletion candidates.
+///
+/// \param sWordStart const std::string&
+/// \param sPreDefList std::string
+/// \return std::string
+///
+/////////////////////////////////////////////////
+std::string NumeReTerminal::generateAutoCompList(const std::string& sWordStart, std::string sPreDefList)
+{
+    NumeReVariables globalVars = getVariableList();
+    std::string sScopedList;
+
+    // Now find all possible candidates
+    for (std::string sVar : globalVars.vVariables)
+    {
+        sVar.erase(sVar.find('\t'));
+
+        if (toLowerCase(sVar).substr(0, sWordStart.length()) == sWordStart)
+        {
+            if (sVar.find_first_of("({") != std::string::npos)
+                sScopedList += sVar.substr(0, sVar.find_first_of("({")+1) + "?1 ";
+            else
+                sScopedList += sVar + "?1 ";
+        }
+    }
+
+    // Use the static member function from NumeReSyntax to combine those two lists
+    return NumeReSyntax::mergeAutoCompleteLists(sPreDefList, sScopedList);
+}
+
+
+/////////////////////////////////////////////////
 /// \brief Pass the entered command line to the
 /// kernel.
 ///
