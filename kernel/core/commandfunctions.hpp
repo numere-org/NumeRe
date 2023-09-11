@@ -3229,7 +3229,7 @@ static CommandReturnValues cmd_install(string& sCmd)
             sArgument = sCmd.substr(findCommand(sCmd).nPos + 8);
 
         StripSpaces(sArgument);
-        _script.openScript(sArgument);
+        _script.openScript(sArgument, 0);
     }
 
     return COMMAND_PROCESSED;
@@ -3839,7 +3839,16 @@ static CommandReturnValues cmd_start(string& sCmd)
     if (!sFileName.length())
         throw SyntaxError(SyntaxError::SCRIPT_NOT_EXIST, sCmd, sFileName, "[" + _lang.get("BUILTIN_CHECKKEYWORD_START_ERRORTOKEN") + "]");
 
-    _script.openScript(sFileName);
+    // Get the line to start from
+    int nFromLine = 0;
+    if (cmdParser.hasParam("fromline"))
+    {
+        // Get the line parameter and subtract 1 to match the internal line count
+        std::vector<mu::value_type> vecFromLine = cmdParser.getParameterValueAsNumericalValue("fromline");
+        nFromLine = intCast(vecFromLine.front()) - 1;
+    }
+
+    _script.openScript(sFileName, nFromLine);
 
     return COMMAND_PROCESSED;
 }

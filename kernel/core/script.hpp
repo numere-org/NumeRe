@@ -90,7 +90,7 @@ class Script : public FileSystem
         }
         inline size_t getCurrentLine() const
             {return m_include && m_include->is_open() ? m_include->getCurrentLine() : nLine;}
-        void openScript(std::string& _sScriptFileName);
+        void openScript(std::string& _sScriptFileName, int nFromLine);
         void close();
         void returnCommand();
         inline void setInstallProcedures(bool _bInstall = true)

@@ -300,6 +300,9 @@ NumeReEditor::NumeReEditor(NumeReWindow* mframe, Options* options, wxWindow* par
     m_popupMenu.Append(ID_MENU_PASTE, _guilang.get("GUI_MENU_EDITOR_PASTE"));
     m_popupMenu.AppendSeparator();
 
+    m_popupMenu.Append(ID_MENU_EXECUTE_FROM_LINE, _guilang.get("GUI_MENU_EDITOR_RUN_FROM_LINE"));
+    m_popupMenu.AppendSeparator();
+
     m_popupMenu.Append(ID_FOLD_CURRENT_BLOCK, _guilang.get("GUI_MENU_EDITOR_FOLDCURRENTBLOCK"));
     m_popupMenu.Append(ID_HIDE_SELECTION, _guilang.get("GUI_MENU_EDITOR_HIDECURRENTBLOCK"));
     m_popupMenu.AppendSeparator();
@@ -8192,6 +8195,34 @@ std::pair<int,int> NumeReEditor::getCurrentContext(int line)
         return std::make_pair(line, GetLineCount());
 
     return std::make_pair(line, LineFromPosition(vMatch.back()));
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This helper function finds the line
+/// to start code execution for the run from
+/// line command. This includes checking for
+/// continued lines and loops.
+///
+/// \param line int
+/// \return int
+///
+/////////////////////////////////////////////////
+int NumeReEditor::getStartLine(int line)
+{
+    // Only check for scripts and do not do further checks for line 0
+    if (m_fileType != FILE_NSCR || line == 0)
+        return 0;
+
+    // If in a loop, find start of loop
+    while (GetFoldParent(line - 1) != wxNOT_FOUND)
+        line = GetFoldParent(line - 1) + 1;
+
+    // Check if line is continued and if so go to start of line
+    while (GetLine(line - 2).find("\\\\") != std::string::npos)
+        line--;
+
+    return line;
 }
 
 
