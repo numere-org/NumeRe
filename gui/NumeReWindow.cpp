@@ -1624,6 +1624,11 @@ void NumeReWindow::OnMenuEvent(wxCommandEvent &event)
             NewFile(FILE_NLYT);
             break;
         }
+        case ID_MENU_NEW_APP:
+        {
+            NewFile(FILE_NAPP);
+            break;
+        }
 
         case ID_MENU_OPEN_SOURCE_LOCAL:
         case ID_MENU_OPEN_SOURCE_REMOTE:
@@ -3167,11 +3172,17 @@ void NumeReWindow::NewFile(FileFilterType _filetype, const wxString& defaultfile
         if (!defaultfilename.length())
         {
             if (_filetype == FILE_NSCR)
-                textentry = new wxTextEntryDialog(this, _guilang.get("GUI_DLG_NEWNSCR_QUESTION"), _guilang.get("GUI_DLG_NEWNSCR"), _guilang.get("GUI_DLG_NEWNSCR_DFLT"));
+                textentry = new wxTextEntryDialog(this, _guilang.get("GUI_DLG_NEWNSCR_QUESTION"), _guilang.get("GUI_DLG_NEWNSCR"),
+                                                  _guilang.get("GUI_DLG_NEWNSCR_DFLT"));
             else if (_filetype == FILE_NLYT)
-                textentry = new wxTextEntryDialog(this, _guilang.get("GUI_DLG_NEWNLYT_QUESTION"), _guilang.get("GUI_DLG_NEWNLYT"), _guilang.get("GUI_DLG_NEWNLYT_DFLT"));
+                textentry = new wxTextEntryDialog(this, _guilang.get("GUI_DLG_NEWNLYT_QUESTION"), _guilang.get("GUI_DLG_NEWNLYT"),
+                                                  _guilang.get("GUI_DLG_NEWNLYT_DFLT"));
             else if (_filetype == FILE_NPRC)
-                textentry = new wxTextEntryDialog(this, _guilang.get("GUI_DLG_NEWNPRC_QUESTION"), _guilang.get("GUI_DLG_NEWNPRC"), _guilang.get("GUI_DLG_NEWNPRC_DFLT"));
+                textentry = new wxTextEntryDialog(this, _guilang.get("GUI_DLG_NEWNPRC_QUESTION"), _guilang.get("GUI_DLG_NEWNPRC"),
+                                                  _guilang.get("GUI_DLG_NEWNPRC_DFLT"));
+            else if (_filetype == FILE_NAPP)
+                textentry = new wxTextEntryDialog(this, _guilang.get("GUI_DLG_NEWNAPP_QUESTION"), _guilang.get("GUI_DLG_NEWNAPP"),
+                                                  _guilang.get("GUI_DLG_NEWNAPP_DFLT"));
             else
                 textentry = new wxTextEntryDialog(this, _guilang.get("GUI_DLG_NEWPLUGIN_QUESTION"), _guilang.get("GUI_DLG_NEWPLUGIN"), _guilang.get("GUI_DLG_NEWPLUGIN_DFLT"));
 
@@ -3207,6 +3218,8 @@ void NumeReWindow::NewFile(FileFilterType _filetype, const wxString& defaultfile
             folder = filename.substr(0, filename.rfind('/')+1);
             filename.erase(0, filename.rfind('/')+1);
         }
+        else if (_filetype == FILE_NAPP)
+            folder = toLowerCase(filename);
 
         if (folder == "main/" && _filetype == FILE_NPRC)
             folder.clear();
@@ -3215,89 +3228,116 @@ void NumeReWindow::NewFile(FileFilterType _filetype, const wxString& defaultfile
 
         // Clean the file and folder names for procedures -
         // we only allow alphanumeric characters in non-external procedures
-        if (_filetype == FILE_NPRC && !isExternal)
+        if ((_filetype == FILE_NPRC || _filetype == FILE_NAPP) && !isExternal)
         {
             // Clean the folders after the root path
-            for (size_t i = vPaths[PROCPATH].length(); i < folder.length(); i++)
+            for (size_t i = (_filetype == FILE_NAPP ? 0 : vPaths[PROCPATH].length()); i < folder.length(); i++)
             {
                 if (!isalnum(folder[i]) && folder[i] != '_' && folder[i] != '/' && folder[i] != ':')
                     folder[i] = '_';
             }
 
-            // Clean the file
-            for (size_t i = 0; i < filename.length(); i++)
+            // Clean the file if not an app name
+            if (_filetype!= FILE_NAPP)
             {
-                if (!isalnum(filename[i]) && filename[i] != '_')
-                    filename[i] = '_';
+                for (size_t i = 0; i < filename.length(); i++)
+                {
+                    if (!isalnum(filename[i]) && filename[i] != '_')
+                        filename[i] = '_';
+                }
             }
         }
 
-        // Prepare the template file
-        wxString template_file, dummy, timestamp;
+        wxString templateFileName;
+        wxFileName fullFileName;
 
-        // Search the correct filename
+        // Determine the file extension and determine the correct
+        // template file name to be loaded
         if (_filetype == FILE_NSCR)
-            dummy = "tmpl_script.nlng";
+        {
+            templateFileName = "tmpl_script.nlng";
+            fullFileName = wxFileName(vPaths[SCRIPTPATH] + folder, filename+".nscr");
+        }
         else if (_filetype == FILE_NLYT)
-            dummy = "tmpl_layout.nlng";
+        {
+            templateFileName = "tmpl_layout.nlng";
+            fullFileName = wxFileName(vPaths[SCRIPTPATH] + folder, filename+".nlyt");
+        }
         else if (_filetype == FILE_PLUGIN)
-            dummy = "tmpl_plugin.nlng";
-        else
-            dummy = "tmpl_procedure.nlng";
-
-        timestamp = getTimeStamp(false);
-
-        // Get the template file contents
-        if (m_options->useCustomLangFiles() && wxFileExists(getProgramFolder() + "\\user\\lang\\"+dummy))
-            GetFileContents(getProgramFolder() + "\\user\\lang\\"+dummy, template_file, dummy);
-        else
-            GetFileContents(getProgramFolder() + "\\lang\\"+dummy, template_file, dummy);
-
-        // Replace the tokens in the file
-        template_file.Replace("%%1%%", filename);
-        template_file.Replace("%%2%%", timestamp);
-
-        // Determine the file extension
-        if (_filetype == FILE_NSCR)
-            filename += ".nscr";
-        else if (_filetype == FILE_NLYT)
-            filename += ".nlyt";
-        else if (_filetype == FILE_PLUGIN)
-            filename = "plgn_" + filename + ".nscr";
+        {
+            templateFileName = "tmpl_plugin.nlng";
+            fullFileName = wxFileName(vPaths[SCRIPTPATH] + folder, "plgn_" + filename + ".nscr");
+        }
         else if (_filetype == FILE_NPRC)
-            filename += ".nprc";
-
-        m_fileNum += 1;
-
-        // Create a new editor
-        NumeReEditor* edit = m_book->createEditor("");
-        edit->SetText(template_file);
-
-        int settings = CopyEditorSettings(_filetype);
-
-        // Set the corresponding full file name
-        if (_filetype == FILE_NSCR || _filetype == FILE_PLUGIN || _filetype == FILE_NLYT)
-            edit->SetFilename(wxFileName(vPaths[SCRIPTPATH] + folder, filename), false);
-        else if (_filetype == FILE_NPRC)
-            edit->SetFilename(isExternal ? wxFileName(folder, filename) : wxFileName(vPaths[PROCPATH] + folder, filename), false);
+        {
+            templateFileName = "tmpl_procedure.nlng";
+            fullFileName = (isExternal ? wxFileName(folder, filename) : wxFileName(vPaths[PROCPATH] + folder, filename+".nprc"));
+        }
+        else if (_filetype == FILE_NAPP)
+        {
+            wxString time = getTimeStamp(false);
+            folder.insert(0, vPaths[PROCPATH]);
+            loadTemplateToEditor(FILE_NPRC, "tmpl_app_start.nlng", wxFileName(folder, "start.nprc"), filename, time);
+            loadTemplateToEditor(FILE_NPRC, "tmpl_app_init.nlng", wxFileName(folder + "/controller", "initialize.nprc"), filename, time);
+            loadTemplateToEditor(FILE_NLYT, "tmpl_app_gui.nlng", wxFileName(folder + "/view", "appmain.nlyt"), filename, time);
+            loadTemplateToEditor(FILE_NPRC, "tmpl_app_event.nlng", wxFileName(folder + "/view", "handleEvent.nprc"), filename, time);
+            return;
+        }
         else
-            edit->SetFilename(wxFileName(vPaths[SAVEPATH] + folder, filename), false);
+        {
+            templateFileName = "tmpl_file.nlng";
+            fullFileName = wxFileName(vPaths[SAVEPATH] + folder, filename + ".txt");
+        }
 
-        m_currentPage = m_book->GetPageCount()-1;
-        edit->UpdateSyntaxHighlighting();
-
-        // Jump to the predefined template position
-        edit->GotoPipe();
-
-        edit->SetUnsaved();
-        edit->EmptyUndoBuffer();
-
-        // Add a new tab for the editor
-        m_book->SetTabText(m_currentPage, edit->GetFileNameAndPath());
-        edit->ToggleSettings(settings);
-        m_book->ChangeSelection(m_currentPage);
-        m_book->SetSelection(m_currentPage);
+        loadTemplateToEditor(_filetype, templateFileName, fullFileName, filename, getTimeStamp(false));
     }
+}
+
+
+void NumeReWindow::loadTemplateToEditor(FileFilterType _filetype, wxString templateFileName, wxFileName fullfilename, wxString title, wxString timestamp)
+{
+    wxString template_file;
+
+    // Get the template file contents
+    if (m_options->useCustomLangFiles() && wxFileExists(getProgramFolder() + "\\user\\lang\\"+templateFileName))
+        GetFileContents(getProgramFolder() + "\\user\\lang\\"+templateFileName, template_file, templateFileName);
+    else
+        GetFileContents(getProgramFolder() + "\\lang\\"+templateFileName, template_file, templateFileName);
+
+    // Replace the tokens in the file
+    template_file.Replace("%%1%%", title);
+    template_file.Replace("%%2%%", timestamp);
+
+    m_fileNum += 1;
+
+    // Create a new editor
+    NumeReEditor* edit = m_book->createEditor("");
+
+#if wxUSE_DRAG_AND_DROP
+    edit->SetDropTarget(new NumeReDropTarget(this, edit, NumeReDropTarget::EDITOR));
+#endif
+
+    edit->SetText(template_file);
+
+    int settings = CopyEditorSettings(_filetype);
+
+    // Set the corresponding full file name
+    edit->SetFilename(fullfilename, false);
+
+    m_currentPage = m_book->GetPageCount()-1;
+    edit->UpdateSyntaxHighlighting();
+
+    // Jump to the predefined template position
+    edit->GotoPipe();
+
+    edit->SetUnsaved();
+    edit->EmptyUndoBuffer();
+
+    // Add a new tab for the editor
+    m_book->SetTabText(m_currentPage, edit->GetFileNameAndPath());
+    edit->ToggleSettings(settings);
+    m_book->ChangeSelection(m_currentPage);
+    m_book->SetSelection(m_currentPage);
 }
 
 
@@ -5238,6 +5278,7 @@ void NumeReWindow::UpdateMenuBar()
     menuNewFile->Append(ID_MENU_NEW_SCRIPT, _guilang.get("GUI_MENU_NEW_NSCR"), _guilang.get("GUI_MENU_NEW_NSCR_TTP"));
     menuNewFile->Append(ID_MENU_NEW_PROCEDURE, _guilang.get("GUI_MENU_NEW_NPRC"), _guilang.get("GUI_MENU_NEW_NPRC_TTP"));
     menuNewFile->Append(ID_MENU_NEW_LAYOUT, _guilang.get("GUI_MENU_NEW_LAYOUT"), _guilang.get("GUI_MENU_NEW_LAYOUT_TTP"));
+    menuNewFile->Append(ID_MENU_NEW_APP, _guilang.get("GUI_MENU_NEW_APP"), _guilang.get("GUI_MENU_NEW_APP_TTP"));
     menuNewFile->Append(ID_MENU_NEW_PLUGIN, _guilang.get("GUI_MENU_NEW_PLUGIN"), _guilang.get("GUI_MENU_NEW_PLUGIN_TTP"));
     menuNewFile->AppendSeparator();
     menuNewFile->Append(ID_MENU_NEW_EMPTY, _guilang.get("GUI_MENU_NEW_EMPTYFILE"), _guilang.get("GUI_MENU_NEW_EMPTYFILE_TTP"));
@@ -5555,6 +5596,7 @@ void NumeReWindow::UpdateToolbar()
     menuNewFile->Append(ID_MENU_NEW_SCRIPT, _guilang.get("GUI_MENU_NEW_NSCR"), _guilang.get("GUI_MENU_NEW_NSCR_TTP"));
     menuNewFile->Append(ID_MENU_NEW_PROCEDURE, _guilang.get("GUI_MENU_NEW_NPRC"), _guilang.get("GUI_MENU_NEW_NPRC_TTP"));
     menuNewFile->Append(ID_MENU_NEW_LAYOUT, _guilang.get("GUI_MENU_NEW_LAYOUT"), _guilang.get("GUI_MENU_NEW_LAYOUT_TTP"));
+    menuNewFile->Append(ID_MENU_NEW_APP, _guilang.get("GUI_MENU_NEW_APP"), _guilang.get("GUI_MENU_NEW_APP_TTP"));
     //menuNewFile->Append(ID_MENU_NEW_PLUGIN, _guilang.get("GUI_MENU_NEW_PLUGIN"), _guilang.get("GUI_MENU_NEW_PLUGIN_TTP"));
     menuNewFile->AppendSeparator();
     menuNewFile->Append(ID_MENU_NEW_EMPTY, _guilang.get("GUI_MENU_NEW_EMPTYFILE"), _guilang.get("GUI_MENU_NEW_EMPTYFILE_TTP"));
