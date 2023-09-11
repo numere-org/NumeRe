@@ -28,6 +28,8 @@
 
 #include <string>
 
+#define MINCOLSIZE 70
+
 /////////////////////////////////////////////////
 /// \brief This static function converts colors
 /// to wxStrings.
@@ -108,7 +110,10 @@ static wxString nextItemValue(wxString& sItem)
 static void populateTreeListCtrl(wxTreeListCtrl* listCtrl, const wxArrayString& values)
 {
     if (!values.size())
+    {
+        listCtrl->DeleteAllItems();
         return;
+    }
 
     bool useCheckBoxes = listCtrl->HasFlag(wxTL_CHECKBOX);
     size_t nColumns = 1;
@@ -124,7 +129,7 @@ static void populateTreeListCtrl(wxTreeListCtrl* listCtrl, const wxArrayString& 
         nColumns--;
 
     listCtrl->DeleteAllItems();
-    wxSize ctrlSize = listCtrl->GetClientSize();
+    int colSize = std::max(listCtrl->GetClientSize().x / (int)nColumns - 2, MINCOLSIZE);
 
     while (listCtrl->GetColumnCount() < nColumns)
         listCtrl->AppendColumn("");
@@ -152,7 +157,7 @@ static void populateTreeListCtrl(wxTreeListCtrl* listCtrl, const wxArrayString& 
 
     for (size_t i = 0; i < listCtrl->GetColumnCount(); i++)
     {
-        listCtrl->SetColumnWidth(i, ctrlSize.x / nColumns - 2);
+        listCtrl->SetColumnWidth(i, colSize);
     }
 }
 
@@ -177,9 +182,11 @@ static wxString getTreeListCtrlValue(wxTreeListCtrl* listCtrl)
     // Get selections if any and no checkboxes are used
     if (!useCheckBoxes)
     {
-        if (listCtrl->GetSelections(items))
+        size_t itemCount = 0;
+        /*if (listCtrl->GetSelections(items))
         {
-            for (size_t i = 0; i < items.size(); i++)
+            for (size_t i = 0; i < items.size(); i++)*/
+            for (wxTreeListItem item = listCtrl->GetFirstItem(); item.IsOk(); item = listCtrl->GetNextItem(item))
             {
                 if (values.length())
                     values += ", ";
@@ -188,20 +195,24 @@ static wxString getTreeListCtrlValue(wxTreeListCtrl* listCtrl)
 
                 for (size_t j = 0; j < listCtrl->GetColumnCount(); j++)
                 {
-                    sItem += listCtrl->GetItemText(items[i], j);
+                    sItem += listCtrl->GetItemText(item, j);
 
                     if (j+1 < listCtrl->GetColumnCount())
                         sItem += "\t";
                 }
 
                 values += convertToCodeString(sItem);
+                itemCount++;
             }
 
-            if (listCtrl->GetColumnCount() > 1 && items.size() > 1)
-                return convertToCodeString(values);
-        }
+            /*if (listCtrl->GetColumnCount() > 1 && itemCount > 1)
+                return convertToCodeString(values);*/
+
+            if (!values.length())
+                return "\"\"";
+        /*}
         else
-            values = "\"\"";
+            values = "\"\"";*/
 
         return values;
     }
@@ -768,7 +779,7 @@ void CustomWindow::layoutChild(const tinyxml2::XMLElement* currentChild, wxWindo
             else
                 mgl->SetMinClientSize(wxSize(640,480));
 
-            currSizer->Add(mgl, 1, alignment | wxALL | wxEXPAND | wxRESERVE_SPACE_EVEN_IF_HIDDEN, 5);
+            currSizer->Add(mgl, !currentChild->Attribute("size"), alignment | wxALL | wxEXPAND | wxRESERVE_SPACE_EVEN_IF_HIDDEN, 5);
 
             if (currentChild->Attribute("onclick"))
                 m_eventTable[id].onclick = currentChild->Attribute("onclick");
@@ -812,6 +823,7 @@ void CustomWindow::layoutChild(const tinyxml2::XMLElement* currentChild, wxWindo
 
             wxArrayString labels;
             wxArrayString values;
+            int colSize = GetClientSize().x;
 
             wxTreeListCtrl* listCtrl = _groupPanel->CreateTreeListCtrl(currParent, currSizer, style, wxDefaultSize, id, alignment);
             m_windowItems[id] = std::make_pair(CustomWindow::TREELIST, listCtrl);
@@ -833,9 +845,11 @@ void CustomWindow::layoutChild(const tinyxml2::XMLElement* currentChild, wxWindo
             {
                 if (labels.size())
                 {
+                    colSize = std::max(colSize / (int)labels.size() - 2, MINCOLSIZE);
+
                     for (size_t j = 0; j < labels.size(); j++)
                     {
-                        listCtrl->AppendColumn(labels[j]);
+                        listCtrl->AppendColumn(labels[j], colSize);
                     }
                 }
 
@@ -848,14 +862,14 @@ void CustomWindow::layoutChild(const tinyxml2::XMLElement* currentChild, wxWindo
                 sSize.substr(0, sSize.find(',')).ToLong(&row);
                 sSize.substr(sSize.find(',')+1).ToLong(&col);
 
-                wxSize ctrlSize = GetClientSize();
+                colSize = std::max(colSize / (int)col - 2, MINCOLSIZE);
 
                 for (size_t j = 0; j < (size_t)col; j++)
                 {
                     if (labels.size() > j)
-                        listCtrl->AppendColumn(labels[j], ctrlSize.x/col - 2);
+                        listCtrl->AppendColumn(labels[j], colSize);
                     else
-                        listCtrl->AppendColumn("", ctrlSize.x/col - 2);
+                        listCtrl->AppendColumn("", colSize);
                 }
 
                 for (int i = 0; i < row; i++)
@@ -865,11 +879,11 @@ void CustomWindow::layoutChild(const tinyxml2::XMLElement* currentChild, wxWindo
             }
             else if (labels.size())
             {
-                wxSize ctrlSize = GetClientSize();
+                colSize = std::max(colSize / (int)labels.size() - 2, MINCOLSIZE);
 
                 for (size_t j = 0; j < labels.size(); j++)
                 {
-                    listCtrl->AppendColumn(labels[j], ctrlSize.x / labels.size() - 2);
+                    listCtrl->AppendColumn(labels[j], colSize);
                 }
             }
 
