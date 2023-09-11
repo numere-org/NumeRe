@@ -182,6 +182,46 @@ class MemoryManager : public NumeRe::FileAdapter, public StringMemory, public Nu
         void removeData(bool bAutoSave = false);
         void removeTablesFromMemory();
 
+        bool insertBlock(const std::string& sTable, size_t atRow, size_t atCol, size_t rows, size_t cols)
+        {
+            return vMemory[findTable(sTable)]->insertBlock(atRow, atCol, rows, cols);
+        }
+
+        bool insertCols(const std::string& sTable, size_t atCol, size_t num)
+        {
+            return vMemory[findTable(sTable)]->insertCols(atCol, num);
+        }
+
+        bool insertRows(const std::string& sTable, size_t atRow, size_t num)
+        {
+            return vMemory[findTable(sTable)]->insertRows(atRow, num);
+        }
+
+        bool removeBlock(const std::string& sTable, size_t atRow, size_t atCol, size_t rows, size_t cols)
+        {
+            return vMemory[findTable(sTable)]->removeBlock(atRow, atCol, rows, cols);
+        }
+
+        bool removeCols(const std::string& sTable, const VectorIndex& _vCols)
+        {
+            return vMemory[findTable(sTable)]->removeCols(_vCols);
+        }
+
+        bool removeRows(const std::string& sTable, const VectorIndex& _vRows)
+        {
+            return vMemory[findTable(sTable)]->removeRows(_vRows);
+        }
+
+        bool reorderCols(const std::string& sTable, const VectorIndex& _vCols, const VectorIndex& _vNewOrder)
+        {
+            return vMemory[findTable(sTable)]->reorderCols(_vCols, _vNewOrder);
+        }
+
+        bool reorderRows(const std::string& sTable, const VectorIndex& _vRows, const VectorIndex& _vNewOrder)
+        {
+            return vMemory[findTable(sTable)]->reorderRows(_vRows, _vNewOrder);
+        }
+
         bool resizeTable(int _nCols, const std::string& _sTable)
 		{
 			return vMemory[findTable(_sTable)]->resizeMemory(1, _nCols);
@@ -361,9 +401,9 @@ class MemoryManager : public NumeRe::FileAdapter, public StringMemory, public Nu
 		    return vMemory[findTable(_sTable)]->setCategories(_vCol, vCategories);
 		}
 
-        std::vector<mu::value_type> findCols(const std::string& sTable, const std::vector<std::string>& vCols) const
+        std::vector<mu::value_type> findCols(const std::string& sTable, const std::vector<std::string>& vCols, bool enableRegEx) const
         {
-            return vMemory[findTable(sTable)]->findCols(vCols);
+            return vMemory[findTable(sTable)]->findCols(vCols, enableRegEx);
         }
 
         std::vector<mu::value_type> countIfEqual(const std::string& sTable, const VectorIndex& _vCols,

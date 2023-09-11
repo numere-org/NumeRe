@@ -69,7 +69,7 @@ class Plot
         Plot& operator=(const Plot&) = delete;
 
     protected:
-        void determinePlottingDimensions(const std::string& sPlotCommand);
+        void determinePlottingDimensions(StringView sPlotCommand);
         size_t createSubPlotSet(bool& bAnimateVar, std::vector<std::string>& vPlotCompose, size_t nSubPlotStart, size_t nMultiplots[2], size_t& nSubPlots, size_t& nSubPlotMap);
         void applyPlotSizeAndQualitySettings();
         bool createPlotOrAnimation(size_t nPlotCompose, size_t nPlotComposeSize, bool bNewSubPlot, bool bAnimateVar, std::vector<std::string>& vDrawVector, const std::vector<std::string>& vDataPlots);
@@ -94,7 +94,6 @@ class Plot
         std::vector<std::string> separateFunctionsAndData();
         void extractDataValues(const std::vector<std::string>& vDataPlots);
         void createDataLegends();
-        std::string constructDataLegendElement(std::string& sColumnIndices, const std::string& sTableName, bool useBrackets = true);
         size_t countValidElements(const mglData& _mData);
         void prepareMemory();
         void defaultRanges(size_t nPlotCompose, bool bNewSubPlot);

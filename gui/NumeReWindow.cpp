@@ -563,7 +563,7 @@ NumeReWindow::NumeReWindow(const wxString& title, const wxPoint& pos, const wxSi
     // Create the contents of file and symbols tree
     m_filePanel = new TreePanel(m_treeBook, wxID_ANY);
     m_fileTree = new FileTree(m_filePanel, ID_PROJECTTREE, wxDefaultPosition, wxDefaultSize, wxTR_TWIST_BUTTONS | wxTR_HAS_BUTTONS | wxTR_NO_LINES | wxTR_FULL_ROW_HIGHLIGHT);
-    TreeSearchCtrl* fileSearchCtrl = new TreeSearchCtrl(m_filePanel, wxID_ANY, _guilang.get("GUI_SEARCH_FILES"), _guilang.get("GUI_SEARCH_CALLTIP_TREE"), m_fileTree);
+    TreeSearchCtrl* fileSearchCtrl = new TreeSearchCtrl(m_filePanel, wxID_ANY, _guilang.get("GUI_SEARCH_FILES"), _guilang.get("GUI_SEARCH_CALLTIP_TREE"), m_fileTree, false, true);
     m_filePanel->AddWindows(fileSearchCtrl, m_fileTree);
     m_treeBook->AddPage(m_filePanel, _guilang.get("GUI_FILETREE"));
 
@@ -1192,6 +1192,8 @@ void NumeReWindow::OnClose(wxCloseEvent &event)
     {
         if (event.CanVeto())
             event.Veto(true);
+
+        m_appClosing = false;
         return;
     }
 
@@ -1199,10 +1201,9 @@ void NumeReWindow::OnClose(wxCloseEvent &event)
     if (m_book->getCurrentEditor() && m_book->getCurrentEditor()->Modified())
     {
         if (event.CanVeto())
-        {
             event.Veto (true);
-        }
 
+        m_appClosing = false;
         return;
     }
 
@@ -1950,7 +1951,11 @@ void NumeReWindow::OnMenuEvent(wxCommandEvent &event)
         }
 
         case ID_MENU_STOP_EXECUTION:
-            m_terminal->CancelCalculation();
+            if (m_debugViewer && m_debugViewer->hasControl())
+                m_debugViewer->OnDebugCancel();
+            else
+                m_terminal->CancelCalculation();
+
             break;
     }
 }

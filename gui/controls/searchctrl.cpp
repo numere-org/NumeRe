@@ -162,16 +162,16 @@ void SearchCtrlPopup::OnKeyEvent(wxKeyEvent& event)
                 switch (chr)
                 {
                     case 246: // ö
-                        m_combo->WriteText('ö');
+                        m_combo->WriteText((char)0xF6);
                         break;
                     case 228: // ä
-                        m_combo->WriteText('ä');
+                        m_combo->WriteText((char)0xE4);
                         break;
                     case 252: // ü
-                        m_combo->WriteText('ü');
+                        m_combo->WriteText((char)0xFC);
                         break;
                     case 223: // ß
-                        m_combo->WriteText('ß');
+                        m_combo->WriteText((char)0xDF);
                         break;
                     default:
                         m_combo->WriteText(chr);
@@ -230,13 +230,13 @@ void SearchCtrlPopup::OnKeyEvent(wxKeyEvent& event)
                         m_combo->WriteText('=');
                         break;
                     case 246: // ö
-                        m_combo->WriteText('Ö');
+                        m_combo->WriteText((char)0xD6);
                         break;
                     case 228: // ä
-                        m_combo->WriteText('Ä');
+                        m_combo->WriteText((char)0xC4);
                         break;
                     case 252: // ü
-                        m_combo->WriteText('Ü');
+                        m_combo->WriteText((char)0xDC);
                         break;
                     case 223: // ß
                         m_combo->WriteText('?');
@@ -276,6 +276,18 @@ void SearchCtrlPopup::OnKeyEvent(wxKeyEvent& event)
                 break;
             case WXK_END:
                 m_combo->SetInsertionPointEnd();
+                break;
+            case WXK_NUMPAD_DIVIDE:
+                m_combo->WriteText('/');
+                break;
+            case WXK_NUMPAD_MULTIPLY:
+                m_combo->WriteText('*');
+                break;
+            case WXK_NUMPAD_ADD:
+                m_combo->WriteText('+');
+                break;
+            case WXK_NUMPAD_SUBTRACT:
+                m_combo->WriteText('-');
                 break;
         }
     }

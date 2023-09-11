@@ -269,7 +269,7 @@ string Language::getKey(const string& sMessage) const
         // Find a candidate for the passed token
         for (auto iter = mLangStrings.begin(); iter != mLangStrings.end(); ++iter)
         {
-            if ((iter->first).substr(0, sKey.length()) == sKey)
+            if ((iter->first).starts_with(sKey))
             {
                 sKey = iter->first;
                 return sKey;
@@ -308,11 +308,11 @@ string Language::get(const string& sMessage, const vector<string>& vTokens) cons
         // containing an asteriks
         for (auto iter = mLangStrings.begin(); iter != mLangStrings.end(); ++iter)
         {
-            if ((iter->first).substr(0,sLangString.length()) == sLangString)
+            if ((iter->first).starts_with(sLangString))
                 sLangString = iter->second;
         }
 
-        if (sMessage.substr(0, sLangString.length()) == sLangString)
+        if (sMessage.starts_with(sLangString))
             return sMessage;
     }
     else if (mLangStrings.find(sMessage) != mLangStrings.end())
@@ -367,7 +367,7 @@ vector<string> Language::getList(const string& sMessageScheme) const
 
     for (auto iter = mLangStrings.begin(); iter != mLangStrings.end(); ++iter)
     {
-        if ((iter->first).substr(0, sPrefix.length()) != sPrefix)
+        if (!(iter->first).starts_with(sPrefix))
             continue;
 
         // Ensure that the found identifier has the

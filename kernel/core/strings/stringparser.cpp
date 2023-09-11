@@ -199,44 +199,48 @@ namespace NumeRe
                 continue;
             }
 
-            // Ensure that the colon is not the first or the last
-            // character (assuming sIndexPairs is correctly stripped)
-            if (sIndexPairs.front() == ':')
-                sIndexPairs.insert(0, 1u, '1');
+            EndlessVector<std::string> idx = getAllIndices(sIndexPairs + " ");
+            sIndexPairs.clear();
 
-            // Adding inf as last index if it is missing
-            if (sIndexPairs.back() == ':')
-                sIndexPairs += "inf";
-
-            // Cannot handle things like A: (without terminating index)
-            StringResult strRes = eval(sIndexPairs, "", false);
-
-            if (!strRes.vResult.size())
-                throw SyntaxError(SyntaxError::STRING_ERROR, sIndexPairs, SyntaxError::invalid_position, _lang.get("ERR_NR_3603_INTERNAL"));
-
-            // Check, if the return values are
-            // only strings
-            if (strRes.bOnlyLogicals && strRes.vResult.size() > 1)
+            for (size_t i = 0; i < idx.size(); i++)
             {
-                std::vector<mu::value_type> vIndices;
+                if (isStringExpression(idx[i]))
+                {
+                    // Cannot handle things like A: (without terminating index)
+                    StringResult strRes = eval(idx[i], "", false);
 
-                // Convert the strings to doubles
-                for (size_t i = 0; i < strRes.vResult.size(); i++)
-                    vIndices.push_back(StrToDb(strRes.vResult[i].to_string()));
+                    if (!strRes.vResult.size())
+                        throw SyntaxError(SyntaxError::STRING_ERROR, idx[i], SyntaxError::invalid_position, _lang.get("ERR_NR_3603_INTERNAL"));
 
-                // Create a temporary vector
-                if (sParsedIndices.length())
-                    sParsedIndices += ", " + _parser.CreateTempVectorVar(vIndices);
-                else
-                    sParsedIndices = _parser.CreateTempVectorVar(vIndices);
+                    // Check, if the return values are
+                    // only strings
+                    if (strRes.bOnlyLogicals && strRes.vResult.size() > 1)
+                    {
+                        std::vector<mu::value_type> vIndices;
+
+                        // Convert the strings to doubles
+                        for (size_t i = 0; i < strRes.vResult.size(); i++)
+                            vIndices.push_back(StrToDb(strRes.vResult[i].to_string()));
+
+                        // Create a temporary vector
+                        idx[i] = _parser.CreateTempVectorVar(vIndices);
+                    }
+                    else if (strRes.vResult.size() > 1)
+                        idx[i] = createTempStringVectorVar(strRes.vResult); // Only add string vector variables, if necessary
+                    else
+                        idx[i] = strRes.vResult.getRef(0);
+                }
+
+                sIndexPairs += idx[i];
+
+                if (i+1 < idx.size())
+                    sIndexPairs += ":";
             }
-            else
-            {
-                if (sParsedIndices.length())
-                    sParsedIndices += ", " + strRes.vResult[0].to_string();
-                else
-                    sParsedIndices = strRes.vResult[0].to_string();
-            }
+
+            if (sParsedIndices.length())
+                sParsedIndices += ",";
+
+            sParsedIndices += sIndexPairs;
         }
 
         return sParsedIndices;
@@ -1939,7 +1943,7 @@ namespace NumeRe
             n_pos = strExpr.nEqPos+1;
 
         // Get the string variables
-        if (containsStringVars(strExpr.sLine.substr(n_pos)))
+        if (containsStringVars(StringView(strExpr.sLine, n_pos)))
             getStringValuesAsInternalVar(strExpr.sLine, n_pos);
 
         // Does the current line contain candidates
@@ -2046,8 +2050,8 @@ namespace NumeRe
                         if (strExpr.sLine[j] == '"')
                             throw SyntaxError(SyntaxError::STRING_ERROR, strExpr.sLine, j, _lang.get("ERR_NR_3603_UNEXPECTED_LITERAL"));
 
-                        if ((strExpr.sLine[j] == '(' || strExpr.sLine[j] == '{') && getMatchingParenthesis(strExpr.sLine.substr(j)) != std::string::npos)
-                            j += getMatchingParenthesis(sLine.substr(j));
+                        if ((strExpr.sLine[j] == '(' || strExpr.sLine[j] == '{') && getMatchingParenthesis(StringView(strExpr.sLine, j)) != std::string::npos)
+                            j += getMatchingParenthesis(StringView(sLine, j));
 
                         if (strExpr.sLine[j] == ' ' || strExpr.sLine[j] == '+')
                         {
@@ -2067,10 +2071,10 @@ namespace NumeRe
                 if (strExpr.sLine[i] == '(' && !(nQuotes % 2))
                 {
                     // Ensure that its counterpart exists
-                    if (getMatchingParenthesis(strExpr.sLine.substr(i)) == std::string::npos)
+                    if (getMatchingParenthesis(StringView(strExpr.sLine, i)) == std::string::npos)
                         throw SyntaxError(SyntaxError::UNMATCHED_PARENTHESIS, strExpr.sLine, i);
 
-                    size_t nPos = getMatchingParenthesis(strExpr.sLine.substr(i)) + i;
+                    size_t nPos = getMatchingParenthesis(StringView(strExpr.sLine, i)) + i;
 
                     // Ignore any calls to "string()"
                     if (i < 6 || strExpr.sLine.substr(i - 6, 6) != "string")
@@ -2079,7 +2083,7 @@ namespace NumeRe
                         std::string sString = strExpr.sLine.substr(i + 1, nPos - i - 1);
 
                         // Pre-evaluate the contents of the parenthesis
-                        if (i > 0 && !checkDelimiter(strExpr.sLine.substr(i - 1, nPos - i + 2))) // this is probably a numerical function. Keep the parentheses
+                        if (i > 0 && !StringView(strExpr.sLine).is_delimited_sequence(i, nPos-i)) // this is probably a numerical function. Keep the parentheses
                         {
                             // Do only something, if the contents are containings strings
                             if (isStringExpression(sString))
@@ -2125,7 +2129,7 @@ namespace NumeRe
 
                 if (!(nQuotes % 2) && strExpr.sLine[i] == '{')
                 {
-                    size_t nmatching = getMatchingParenthesis(strExpr.sLine.substr(i));
+                    size_t nmatching = getMatchingParenthesis(StringView(strExpr.sLine, i));
                     std::string sVectorTemp = strExpr.sLine.substr(i+1, nmatching-1);
 
                     if (!sVectorTemp.length()) // Empty brace == nan
@@ -2317,11 +2321,11 @@ namespace NumeRe
     /// is an expression containing strings, string
     /// variables or string vector variables.
     ///
-    /// \param sExpression const std::string&
+    /// \param sExpression StringView
     /// \return bool
     ///
     /////////////////////////////////////////////////
-    bool StringParser::isStringExpression(const std::string& sExpression)
+    bool StringParser::isStringExpression(StringView sExpression)
     {
         if (sExpression.find_first_of("\"#") != std::string::npos
 			|| sExpression.find("string(") != std::string::npos

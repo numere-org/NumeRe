@@ -24,6 +24,7 @@
 #include "../../kernel/core/datamanagement/tablecolumn.hpp"
 #include "../../kernel/core/io/file.hpp"
 #include "../../kernel/core/io/logger.hpp"
+#include "../../kernel/kernel.hpp"
 #include <wx/clipbrd.h>
 #include <wx/dataobj.h>
 #include <wx/tokenzr.h>
@@ -70,6 +71,7 @@ TableViewer::TableViewer(wxWindow* parent, wxWindowID id, wxStatusBar* statusbar
     // Cells are always aligned right and centered vertically
     SetDefaultCellAlignment(wxALIGN_RIGHT, wxALIGN_CENTER);
     SetDefaultRenderer(new AdvStringCellRenderer);
+    EnableGridLines(NumeReKernel::getInstance()->getSettings().getSetting(SETTING_B_SHOWGRIDLINES).active());
 
     // Prepare the context menu
     m_popUpMenu.Append(ID_MENU_CVS, _guilang.get("GUI_TABLE_CVS"));
@@ -165,6 +167,9 @@ void TableViewer::layoutGrid()
 
     }
 
+    // temporary test for header grouping
+    if (readOnly && NumeReKernel::getInstance()->getSettings().getSetting(SETTING_B_AUTOGROUPCOLS).active())
+        groupHeaders(0, GetNumberCols(), 0);
 
     // Define the minimal size of the window depending
     // on the number of columns. The maximal size is defined
@@ -2046,6 +2051,77 @@ void TableViewer::changeColType()
 void TableViewer::finalize()
 {
     SaveEditControlValue();
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Group headers between start and ending
+/// column in the selected row together. Will
+/// call itself recursively to apply hierarchical
+/// grouping to the following rows of the table
+/// headers.
+///
+/// \param startCol int
+/// \param endCol int
+/// \param row int
+/// \return void
+///
+/////////////////////////////////////////////////
+void TableViewer::groupHeaders(int startCol, int endCol, int row)
+{
+    // Go through the columns
+    for (int j = startCol; j < endCol; j++)
+    {
+        // Get the value of the current column header
+        wxString startColValue = GetCellValue(row, j);
+
+        // We only want grouping for header columns with
+        // contents
+        if (startColValue.length())
+        {
+            // Find the first column with new contents
+            for (int n = j+1; n < endCol; n++)
+            {
+                if (GetCellValue(row, n) != startColValue)
+                {
+                    // If at least two columns fit together,
+                    // group them
+                    if (n-j > 1)
+                    {
+                        SetCellSize(row, j, 1, n-j);
+
+                        // If there are further rows, call
+                        // this function recursively for the grouped
+                        // set of columns
+                        if (row+1 < nFirstNumRow)
+                            groupHeaders(j, n, row+1);
+                    }
+
+                    j = n-1;
+                    break;
+                }
+
+                // Last one, still equal
+                if (n+1 == endCol)
+                {
+                    // If at least two columns fit together,
+                    // group them
+                    if (n-j >= 1)
+                    {
+                        SetCellSize(row, j, 1, endCol-j);
+
+                        // If there are further rows, call
+                        // this function recursively for the grouped
+                        // set of columns
+                        if (row+1 < nFirstNumRow)
+                            groupHeaders(j, endCol, row+1);
+                    }
+
+                    return;
+                }
+            }
+        }
+    }
 }
 
 

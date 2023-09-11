@@ -49,7 +49,7 @@ bool is_dir(std::string sPathname)
         return false;
 
     // Check for a valid volume identifier (be of pattern "C:/" if not a network path)
-    if (sPathname[2] != '/' && !(sPathname.substr(0,2) == "//" && isalpha(sPathname[2])))
+    if (sPathname[2] != '/' && !(sPathname.starts_with("//") && isalpha(sPathname[2])))
         return false;
 
     return true;
@@ -79,7 +79,7 @@ bool is_file(std::string sPathname)
         return false;
 
     // Check for a valid volume identifier (be of pattern "C:/" if not a network path)
-    if (sPathname[2] != '/' && !(sPathname.substr(0,2) == "//" && isalpha(sPathname[2])))
+    if (sPathname[2] != '/' && !(sPathname.starts_with("//") && isalpha(sPathname[2])))
         return false;
 
     // Manually check if there could be file extension. Check for a dot and if there are chars after it

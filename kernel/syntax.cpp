@@ -19,6 +19,7 @@
 
 #include "syntax.hpp"
 #include "core/utils/tools.hpp"
+#include "core/procedure/procedure.hpp"
 
 
 /////////////////////////////////////////////////
@@ -116,37 +117,37 @@ void NumeReSyntax::loadSyntax(const std::string& _sPath)
         // Depending on the identifier at the beginning of the line, the contents
         // are used for different syntax elements
         // The member function "splitString" splits the line into a vector
-        if (sLine.substr(0, 13) == "NSCR_COMMANDS")
+        if (sLine.starts_with("NSCR_COMMANDS"))
             vNSCRCommands = splitString(sLine.substr(sLine.find('=')+1));
-        else if (sLine.substr(0, 13) == "NPRC_COMMANDS")
+        else if (sLine.starts_with("NPRC_COMMANDS"))
             vNPRCCommands = splitString(sLine.substr(sLine.find('=')+1));
-        else if (sLine.substr(0, 9) == "FUNCTIONS")
+        else if (sLine.starts_with("FUNCTIONS"))
             vFunctions = splitString(sLine.substr(sLine.find('=')+1));
-        else if (sLine.substr(0, 11) == "METHODSARGS")
+        else if (sLine.starts_with("METHODSARGS"))
             vMethodsArgs = splitString(sLine.substr(sLine.find('=')+1));
-        else if (sLine.substr(0, 7) == "METHODS")
+        else if (sLine.starts_with("METHODS"))
             vMethods = splitString(sLine.substr(sLine.find('=')+1));
-        else if (sLine.substr(0, 7) == "OPTIONS")
+        else if (sLine.starts_with("OPTIONS"))
             vOptions = splitString(sLine.substr(sLine.find('=')+1));
-        else if (sLine.substr(0, 9) == "CONSTANTS")
+        else if (sLine.starts_with("CONSTANTS"))
             vConstants = splitString(sLine.substr(sLine.find('=')+1));
-        else if (sLine.substr(0, 11) == "SPECIALVALS")
+        else if (sLine.starts_with("SPECIALVALS"))
             vSpecialValues = splitString(sLine.substr(sLine.find('=')+1));
-        else if (sLine.substr(0, 9) == "OPERATORS")
+        else if (sLine.starts_with("OPERATORS"))
             vOperators = splitString(sLine.substr(sLine.find('=')+1));
-        else if (sLine.substr(0, 11) == "DOCKEYWORDS")
+        else if (sLine.starts_with("DOCKEYWORDS"))
             vDocKeyWords = splitString(sLine.substr(sLine.find('=')+1));
-        else if (sLine.substr(0, 9) == "BLOCKDEFS")
+        else if (sLine.starts_with("BLOCKDEFS"))
             vBlockDefs = splitDefs(sLine.substr(sLine.find('=')+1));
-        else if (sLine.substr(0, 14) == "MATLABKEYWORDS")
+        else if (sLine.starts_with("MATLABKEYWORDS"))
             vMatlabKeyWords = splitString(sLine.substr(sLine.find('=')+1));
-        else if (sLine.substr(0, 15) == "MATLABFUNCTIONS")
+        else if (sLine.starts_with("MATLABFUNCTIONS"))
             vMatlabFunctions = splitString(sLine.substr(sLine.find('=')+1));
-        else if (sLine.substr(0, 11) == "CPPKEYWORDS")
+        else if (sLine.starts_with("CPPKEYWORDS"))
             vCppKeyWords = splitString(sLine.substr(sLine.find('=')+1));
-        else if (sLine.substr(0, 12) == "CPPFUNCTIONS")
+        else if (sLine.starts_with("CPPFUNCTIONS"))
             vCppFunctions = splitString(sLine.substr(sLine.find('=')+1));
-        else if (sLine.substr(0, 11) == "TEXKEYWORDS")
+        else if (sLine.starts_with("TEXKEYWORDS"))
             vTeXKeyWords = splitString(sLine.substr(sLine.find('=')+1));
     }
 }
@@ -449,7 +450,7 @@ std::string NumeReSyntax::highlightLine(const std::string& sCommandLine)
         return highlightError(sCommandLine);
 
     // Search for the warning operator.
-    if (sCommandLine.substr(0, 3) == "|!>")
+    if (sCommandLine.starts_with("|!>"))
         return highlightWarning(sCommandLine);
 
     // Create a color string, which will only contain default colors
@@ -461,18 +462,18 @@ std::string NumeReSyntax::highlightLine(const std::string& sCommandLine)
 
     // Avoid some special cases
     // These shall not be highlighted, because they are messages from the kernel
-    if (sCommandLine.substr(0,3) != "|<-"
-        && sCommandLine.substr(0,5) != "|-\?\?>"
-        && (sCommandLine.substr(0,2) != "||" || sCommandLine.substr(0,4) == "||->")
-        && sCommandLine.substr(0,4) != "|FOR"
-        && sCommandLine.substr(0,5) != "|ELSE"
-        && sCommandLine.substr(0,5) != "|ELIF"
-        && sCommandLine.substr(0,5) != "|PROC"
-        && sCommandLine.substr(0,5) != "|COMP"
-        && sCommandLine.substr(0,3) != "|IF"
-        && sCommandLine.substr(0,4) != "|TRY"
-        && sCommandLine.substr(0,5) != "|CTCH"
-        && sCommandLine.substr(0,4) != "|WHL")
+    if (!sCommandLine.starts_with("|<-")
+        && !sCommandLine.starts_with("|-\?\?>")
+        && !(sCommandLine.starts_with("||") || sCommandLine.starts_with("||->"))
+        && !sCommandLine.starts_with("|FOR")
+        && !sCommandLine.starts_with("|ELSE")
+        && !sCommandLine.starts_with("|ELIF")
+        && !sCommandLine.starts_with("|PROC")
+        && !sCommandLine.starts_with("|COMP")
+        && !sCommandLine.starts_with("|IF")
+        && !sCommandLine.starts_with("|TRY")
+        && !sCommandLine.starts_with("|CTCH")
+        && !sCommandLine.starts_with("|WHL"))
         return colors;
 
     // Search for strings
@@ -527,22 +528,22 @@ std::string NumeReSyntax::highlightLine(const std::string& sCommandLine)
     for (size_t i = 0; i < sCommandLine.length(); i++)
     {
         // find the first relevant character
-        if (!i && sCommandLine.substr(0,3) == "|<-")
+        if (!i && sCommandLine.starts_with("|<-"))
             i += 3;
-        else if (!i && (sCommandLine.substr(0,5) == "|-\?\?>"
-                        || sCommandLine.substr(0,4) == "|FOR"
-                        || sCommandLine.substr(0,5) == "|ELSE"
-                        || sCommandLine.substr(0,5) == "|ELIF"
-                        || sCommandLine.substr(0,4) == "|WHL"
-                        || sCommandLine.substr(0,3) == "|IF"
-                        || sCommandLine.substr(0,4) == "|TRY"
-                        || sCommandLine.substr(0,5) == "|CTCH"
-                        || sCommandLine.substr(0,5) == "|PROC"
-                        || sCommandLine.substr(0,5) == "|COMP"))
+        else if (!i && (sCommandLine.starts_with("|-\?\?>")
+                        || sCommandLine.starts_with("|FOR")
+                        || sCommandLine.starts_with("|ELSE")
+                        || sCommandLine.starts_with("|ELIF")
+                        || sCommandLine.starts_with("|WHL")
+                        || sCommandLine.starts_with("|IF")
+                        || sCommandLine.starts_with("|TRY")
+                        || sCommandLine.starts_with("|CTCH")
+                        || sCommandLine.starts_with("|PROC")
+                        || sCommandLine.starts_with("|COMP")))
             i += sCommandLine.find('>')+1;
-        else if (!i && sCommandLine.substr(0,4) == "||<-")
+        else if (!i && sCommandLine.starts_with("||<-"))
             i += 4;
-        else if (!i && sCommandLine.substr(0,3) == "|| ")
+        else if (!i && sCommandLine.starts_with("|| "))
             i += 3;
 
         // Ignore whitespaces
@@ -828,7 +829,7 @@ std::string NumeReSyntax::getAutoCompList(std::string sFirstChars, bool useSmart
                     continue;
             }
 
-            if (sFirstChars == (iter->first).substr(0, sFirstChars.length()) || selectAllMethods)
+            if (iter->first.starts_with(sFirstChars) || selectAllMethods)
                 sAutoCompList += iter->second.first + " ";
         }
         else if ((iter->first).front() > sFirstChars.front())
@@ -867,7 +868,7 @@ std::string NumeReSyntax::getAutoCompListMATLAB(std::string sFirstChars)
     {
         if ((iter->first).front() == sFirstChars.front())
         {
-            if (sFirstChars == (iter->first).substr(0,sFirstChars.length()))
+            if (iter->first.starts_with(sFirstChars))
                 sAutoCompList += (iter->first).substr((iter->first).find('|')+1) + "?" + toString((int)(iter->second)) + " ";
         }
         else if ((iter->first).front() > sFirstChars.front())
@@ -905,7 +906,7 @@ std::string NumeReSyntax::getAutoCompListCPP(std::string sFirstChars)
     {
         if ((iter->first).front() == sFirstChars.front())
         {
-            if (sFirstChars == (iter->first).substr(0,sFirstChars.length()))
+            if (iter->first.starts_with(sFirstChars))
                 sAutoCompList += (iter->first).substr((iter->first).find('|')+1) + "?" + toString((int)(iter->second)) + " ";
         }
         else if ((iter->first).front() > sFirstChars.front())
@@ -940,7 +941,7 @@ std::string NumeReSyntax::getAutoCompListTeX(std::string sFirstChars)
     {
         if ((iter->first).front() == sFirstChars.front())
         {
-            if (sFirstChars == (iter->first).substr(0,sFirstChars.length()))
+            if (iter->first.starts_with(sFirstChars))
                 sAutoCompList += (iter->first).substr((iter->first).find('|')+1) + "?" + toString((int)(iter->second)) + " ";
         }
         else if ((iter->first).front() > sFirstChars.front())
@@ -970,6 +971,9 @@ std::string NumeReSyntax::getProcAutoCompList(std::string sFirstChars, std::stri
     std::string sProcName;
     static std::string sStandardNamespaces[] = {"main~", "this~", "thisfile~"};
 
+    Procedure::cleanRelativeNameSpaces(sBaseNameSpace);
+    Procedure::cleanRelativeNameSpaces(sSelectedNameSpace);
+
     // Try to detect the actual name of the procedure including its namespace
     if (sSelectedNameSpace.length())
     {
@@ -998,7 +1002,7 @@ std::string NumeReSyntax::getProcAutoCompList(std::string sFirstChars, std::stri
     {
         for (size_t i = 0; i < 3; i++)
         {
-            if (sStandardNamespaces[i].substr(0, sFirstChars.length()) == sFirstChars)
+            if (sStandardNamespaces[i].starts_with(sFirstChars))
                 sAutoCompList += sStandardNamespaces[i] + "?" + toString((int)(SYNTAX_PROCEDURE)) + " ";
         }
     }
@@ -1071,7 +1075,7 @@ std::string NumeReSyntax::getNameSpaceAutoCompList(std::string sFirstChars)
     // Provide the standard namespaces first
     for (size_t i = 0; i < 3; i++)
     {
-        if (sStandardNamespaces[i].substr(0, sFirstChars.length()) == sFirstChars)
+        if (sStandardNamespaces[i].starts_with(sFirstChars))
             sAutoCompList += sStandardNamespaces[i] + "?" + toString((int)(SYNTAX_PROCEDURE)) + " ";
     }
 
@@ -1080,7 +1084,7 @@ std::string NumeReSyntax::getNameSpaceAutoCompList(std::string sFirstChars)
 
     for (size_t i = 0; i < vProcedureTree.size(); i++)
     {
-        if (vProcedureTree[i].substr(0, sProcName.length()) == sProcName)
+        if (vProcedureTree[i].starts_with(sProcName))
         {
             if (vProcedureTree[i].find('~', sProcName.length()) != std::string::npos)
                 sToken = vProcedureTree[i].substr(0, vProcedureTree[i].find('~', sProcName.length())+1) + "?" + toString((int)(SYNTAX_PROCEDURE)) + " ";

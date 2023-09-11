@@ -60,7 +60,13 @@ class DebugViewer : public ViewerFrame
         void setTerminal(NumeReTerminal* term) {m_terminal = term;}
         void setDebugInfo(const wxString& title, const std::vector<std::string>& vStack);
         void OnClose(wxCloseEvent& event);
+        void OnDebugCancel();
         void OnExecutionFinished();
+
+        bool hasControl() const
+        {
+            return b_transferredControl;
+        }
 
     DECLARE_EVENT_TABLE();
 };

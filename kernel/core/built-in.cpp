@@ -117,19 +117,19 @@ bool extractFirstParameterStringValue(const string& sCmd, string& sArgument)
 	    // Jump over this parenthesis, if its contents don't contain
 	    // strings or string variables
 		if (sTemp[i] == '('
-            && !NumeReKernel::getInstance()->getStringParser().isStringExpression(sTemp.substr(i, getMatchingParenthesis(sTemp.substr(i))))
-            && !NumeReKernel::getInstance()->getStringParser().isStringExpression(sTemp.substr(0, i)))
-			i += getMatchingParenthesis(sTemp.substr(i));
+            && !NumeReKernel::getInstance()->getStringParser().isStringExpression(StringView(sTemp, i, getMatchingParenthesis(StringView(sTemp, i))))
+            && !NumeReKernel::getInstance()->getStringParser().isStringExpression(StringView(sTemp, 0, i)))
+			i += getMatchingParenthesis(StringView(sTemp, i));
 
 		// Evaluate parameter starts, i.e. the minus sign of the command line
-		if (sTemp[i] == '-'	&& !NumeReKernel::getInstance()->getStringParser().isStringExpression(sTemp.substr(0, i)))
+		if (sTemp[i] == '-'	&& !NumeReKernel::getInstance()->getStringParser().isStringExpression(StringView(sTemp, 0, i)))
 		{
 		    // No string left of the minus sign, erase this part
 		    // and break the loop
 			sTemp.erase(0, i);
 			break;
 		}
-		else if (sTemp[i] == '-' && NumeReKernel::getInstance()->getStringParser().isStringExpression(sTemp.substr(0, i)))
+		else if (sTemp[i] == '-' && NumeReKernel::getInstance()->getStringParser().isStringExpression(StringView(sTemp, 0, i)))
 		{
 		    // There are strings left of the minus sign
 		    // Find now the last string element in this part of the expression
@@ -145,7 +145,8 @@ bool extractFirstParameterStringValue(const string& sCmd, string& sArgument)
 
 				// This is now the location, where all string-related stuff is
 				// to the right and everything else is to the left
-				if (!NumeReKernel::getInstance()->getStringParser().isStringExpression(sTemp.substr(0, j)) && NumeReKernel::getInstance()->getStringParser().isStringExpression(sTemp.substr(j, i - j)))
+				if (!NumeReKernel::getInstance()->getStringParser().isStringExpression(StringView(sTemp, 0, j))
+                    && NumeReKernel::getInstance()->getStringParser().isStringExpression(StringView(sTemp, j, i - j)))
 				{
 				    // Erase the left part and break the loop
 					sTemp.erase(0, j);
@@ -291,7 +292,7 @@ string evaluateParameterValues(const string& sCmd)
 			nPos++;
 
         // Parse the parameter values into evaluated values for the commands
-		if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sReturn.substr(nPos, sReturn.find(' ', nPos) - nPos)))
+		if (NumeReKernel::getInstance()->getStringParser().isStringExpression(StringView(sReturn, nPos, sReturn.find(' ', nPos) - nPos)))
 		{
 		    // This is a string value
 			if (!getStringArgument(sReturn.substr(nPos - 1), sTemp)) // mit "=" uebergeben => fixes getStringArgument issues
