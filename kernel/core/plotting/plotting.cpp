@@ -4194,6 +4194,13 @@ void Plot::extractDataValues(const std::vector<std::string>& vDataPlots)
 
         typeCounter++;
     }
+
+    // Ensure that we have at least minimal axis intervals
+    if (dataRanges[XRANGE].range() == 0.0 && vDataPlots.size())
+        dataRanges[XRANGE].expand(0.1);
+
+    if (dataRanges[YRANGE].range() == 0.0 && vDataPlots.size() && !isPlot1D(_pInfo.sCommand))
+        dataRanges[YRANGE].expand(0.1);
 }
 
 
