@@ -2194,6 +2194,71 @@ inline std::string operator+(const std::string& sString, const StringViewBase& v
 }
 
 
+/////////////////////////////////////////////////
+/// \brief This member function is an overload
+/// for the equality operator using a const
+/// std::string instance.
+///
+/// \param sString const std::string&
+/// \param view const StringViewBase&
+/// \return bool
+///
+/////////////////////////////////////////////////
+inline bool operator==(const std::string& sString, const StringViewBase& view)
+{
+    return view == sString;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This member function is an overload
+/// for the equality operator using a const char*.
+///
+/// \param sString const char*
+/// \param view const StringViewBase&
+/// \return bool
+///
+/////////////////////////////////////////////////
+inline bool operator==(const char* sString, const StringViewBase& view)
+{
+    return view == sString;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This member function is an overload
+/// for the inequality operator using a const
+/// std::string instance.
+///
+/// \param sString const std::string&
+/// \param view const StringViewBase&
+/// \return bool
+///
+/////////////////////////////////////////////////
+inline bool operator!=(const std::string& sString, const StringViewBase& view)
+{
+    return view != sString;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This member function is an overload
+/// for the inequality operator using a const
+/// char*.
+///
+/// \param sString const char*
+/// \param view const StringViewBase&
+/// \return bool
+///
+/////////////////////////////////////////////////
+inline bool operator!=(const char* sString, const StringViewBase& view)
+{
+    return view != sString;
+}
+
+
+
+
 // Forward declaration for friendship
 class StringView;
 
