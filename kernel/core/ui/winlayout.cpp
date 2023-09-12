@@ -496,6 +496,8 @@ static void getParametersFromWindow(CommandLineParser& cmdParser, const std::str
         cmdParser.setReturnValue("\"" + winInfo.window->getItemState(itemID) + "\"");
     else if (findParameter(sParList, "color"))
         cmdParser.setReturnValue(winInfo.window->getItemColor(itemID));
+    else if (findParameter(sParList, "selection"))
+        cmdParser.setReturnValue(winInfo.window->getItemSelection(itemID));
 }
 
 
@@ -557,12 +559,34 @@ static void setParametersInWindow(CommandLineParser& cmdParser, const std::strin
         std::string sState = getArgAtPos(sParList, findParameter(sParList, "state", '=')+5);
         cmdParser.setReturnValue(toString(winInfo.window->setItemState(sState, itemID)));
     }
+    else if (findParameter(sParList, "display", '='))
+    {
+        std::string sDisplay = getArgAtPos(sParList, findParameter(sParList, "display", '=')+7);
+        cmdParser.setReturnValue(toString(winInfo.window->setDisplay(sDisplay)));
+    }
     else if (findParameter(sParList, "color", '='))
     {
         std::string sColor = parseNumOpt(sParList, findParameter(sParList, "color", '=')+5);
         cmdParser.setReturnValue(toString(winInfo.window->setItemColor(sColor, itemID)));
     }
+    else if (findParameter(sParList, "selection", '='))
+    {
+        std::vector<mu::value_type> sel = cmdParser.getParameterValueAsNumericalValue("selection");
+        int sel1 = 1, sel2 = 0;
 
+        if (sel.size() > 0)
+            sel1 = intCast(sel[0]);
+
+        if (sel.size() > 1)
+            sel2 = intCast(sel[1]);
+
+        cmdParser.setReturnValue(toString(winInfo.window->setItemSelection(sel1, sel2, itemID)));
+    }
+    else if (findParameter(sParList, "focus"))
+    {
+        NumeReKernel::print("focus item=" + toString(itemID));
+        cmdParser.setReturnValue(toString(winInfo.window->setItemFocus(itemID)));
+    }
 
 }
 
