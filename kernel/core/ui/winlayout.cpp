@@ -328,6 +328,9 @@ static std::string parseLayoutScript(std::string& sLayoutScript, tinyxml2::XMLDo
                 if (findParameter(line, "color", '='))
                     currentGroup.top()->SetAttribute("color", parseNumOpt(line, findParameter(line, "color", '=')+5).c_str());
 
+                if (findParameter(line, "statustext", '='))
+                    currentGroup.top()->SetAttribute("statustext", parseStringOpt(line, findParameter(line, "statustext", '=')+10).c_str());
+
                 if (findParameter(line, "onopen", '='))
                     sOnOpenEvent = parseEventOpt(line, findParameter(line, "onopen", '=')+6, sFolderName);
             }
@@ -498,6 +501,8 @@ static void getParametersFromWindow(CommandLineParser& cmdParser, const std::str
         cmdParser.setReturnValue(winInfo.window->getItemColor(itemID));
     else if (findParameter(sParList, "selection"))
         cmdParser.setReturnValue(winInfo.window->getItemSelection(itemID));
+    else if (findParameter(sParList, "statustext"))
+        cmdParser.setReturnValue(winInfo.window->getStatusText());
 }
 
 
@@ -587,7 +592,11 @@ static void setParametersInWindow(CommandLineParser& cmdParser, const std::strin
         NumeReKernel::print("focus item=" + toString(itemID));
         cmdParser.setReturnValue(toString(winInfo.window->setItemFocus(itemID)));
     }
-
+    else if (findParameter(sParList, "statustext", '='))
+    {
+        std::string sStatusText = cmdParser.getParameterValueAsString("statustext", "");
+        cmdParser.setReturnValue(toString(winInfo.window->setStatusText(sStatusText)));
+    }
 }
 
 

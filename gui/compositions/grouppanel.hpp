@@ -21,6 +21,8 @@
 #include <wx/listctrl.h>
 #include <wx/treelist.h>
 #include <wx/collpane.h>
+#include <wx/datectrl.h>
+#include <wx/timectrl.h>
 
 #ifndef GROUPPANEL_HPP
 #define GROUPPANEL_HPP
@@ -224,6 +226,7 @@ class GroupPanel : public wxScrolledWindow
 
         wxTextCtrl* CreatePathInput(wxWindow* parent, wxSizer* sizer, const wxString& description, int buttonID, int id = wxID_ANY);
         TextField* CreateTextInput(wxWindow* parent, wxSizer* sizer, const wxString& description, const wxString& sDefault = wxEmptyString, int nStyle = 0, int id = wxID_ANY, const wxSize& size = wxSize(310,-1), int alignment = wxALIGN_CENTER_VERTICAL);
+        TextField* CreateLamp(wxWindow* parent, wxSizer* sizer, const wxString& description, const wxString& sDefault = wxEmptyString, int nStyle = 0, int id = wxID_ANY, const wxSize& size = wxSize(20,10), int alignment = wxALIGN_CENTER_VERTICAL);
         wxCheckBox* CreateCheckBox(wxWindow* parent, wxSizer* sizer, const wxString& description, int id = wxID_ANY, int alignment = wxALIGN_CENTER_VERTICAL);
         SpinBut* CreateSpinControl(wxWindow* parent, wxSizer* sizer, const wxString& description, int nMin, int nMax, int nInitial, int id = wxID_ANY, int alignment = wxALIGN_CENTER_VERTICAL);
         wxListView* CreateListView(wxWindow* parent, wxSizer* sizer, int nStyle = wxLC_REPORT, wxSize size = wxDefaultSize, int id = wxID_ANY);
@@ -236,6 +239,8 @@ class GroupPanel : public wxScrolledWindow
         wxGauge* CreateGauge(wxWindow* parent, wxSizer* sizer, int style, int id = wxID_ANY, int alignment = wxALIGN_CENTER_VERTICAL);
         wxStaticBitmap* CreateBitmap(wxWindow* parent, wxSizer* sizer, const wxString& filename, int id = wxID_ANY, int alignment = wxALIGN_CENTER_VERTICAL);
         wxSlider* CreateSlider(wxWindow* parent, wxSizer* sizer, int nMin, int nMax, int nInitial, int style, int id = wxID_ANY, int alignment = wxALIGN_CENTER_VERTICAL);
+        wxDatePickerCtrl* CreateDatePicker(wxWindow* parent, wxSizer* sizer, const wxDateTime& dt = wxDefaultDateTime, int style = wxDP_SHOWCENTURY | wxDP_DROPDOWN, int id = wxID_ANY, int alignment = wxALIGN_CENTER_VERTICAL);
+        wxTimePickerCtrl* CreateTimePicker(wxWindow* parent, wxSizer* sizer, const wxDateTime& dt = wxDefaultDateTime, int id = wxID_ANY, int alignment = wxALIGN_CENTER_VERTICAL);
 };
 
 

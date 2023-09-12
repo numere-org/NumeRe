@@ -240,6 +240,12 @@ namespace NumeRe
                 return m_customWindow->getWindowItems(CustomWindow::BUTTON);
             else if (_selection == "textfield")
                 return m_customWindow->getWindowItems(CustomWindow::TEXTCTRL);
+            else if (_selection == "lamp")
+                return m_customWindow->getWindowItems(CustomWindow::LAMP);
+            else if (_selection == "datepicker")
+                return m_customWindow->getWindowItems(CustomWindow::DATEPICKER);
+            else if (_selection == "timepicker")
+                return m_customWindow->getWindowItems(CustomWindow::TIMEPICKER);
             else if (_selection == "dropdown")
                 return m_customWindow->getWindowItems(CustomWindow::DROPDOWN);
             else if (_selection == "combobox")
@@ -390,6 +396,21 @@ namespace NumeRe
     {
         if (m_customWindow)
             return m_customWindow->getProperties().ToStdString();
+
+        return "\"\"";
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Returns the status text in this window.
+    ///
+    /// \return std::string
+    ///
+    /////////////////////////////////////////////////
+    std::string Window::getStatusText() const
+    {
+        if (m_customWindow)
+            return m_customWindow->getStatusText().ToStdString();
 
         return "\"\"";
     }
@@ -572,6 +593,23 @@ namespace NumeRe
 
             return true;
         }
+
+        return false;
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief This function changes the status text
+    /// of the selected window.
+    ///
+    /// \param _value const std::string&
+    /// \return bool
+    ///
+    /////////////////////////////////////////////////
+    bool Window::setStatusText(const std::string& _value)
+    {
+        if (m_customWindow)
+            return m_customWindow->setStatusText(_value);
 
         return false;
     }

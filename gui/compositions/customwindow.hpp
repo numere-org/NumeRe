@@ -24,6 +24,7 @@
 #include <vector>
 #include <utility>
 #include <wx/treelist.h>
+#include <wx/dateevt.h>
 
 #include "../../kernel/windowmanager.hpp"
 #include "../../kernel/core/datamanagement/table.hpp"
@@ -201,6 +202,9 @@ class CustomWindow : public wxFrame
             TABLE,      // OK
             GRAPHER,    // OK
             SLIDER,
+            DATEPICKER,
+            TIMEPICKER,
+            LAMP,
             MENUITEM
         };
 
@@ -217,9 +221,7 @@ class CustomWindow : public wxFrame
         void handleEvent(wxEvent& event, const wxString& sEventType, const EventPosition& pos = EventPosition());
         bool getWindowParameters(WindowItemParams& params) const;
         bool getItemParameters(int windowItemID, WindowItemParams& params) const;
-        wxArrayString getChoices(wxString& choices) const;
         wxArrayString decodeEventHandlerFunction(const wxString& sEventHandler) const;
-        wxString removeQuotationMarks(wxString sString) const;
         void Refresh();
 
     public:
@@ -234,6 +236,7 @@ class CustomWindow : public wxFrame
         wxString getItemSelection(int windowItemID) const;
         wxString getPropValue(const wxString& varName) const;
         wxString getProperties() const;
+        wxString getStatusText() const;
 
         bool pushItemValue(WindowItemValue& _value, int windowItemID);
         bool pushItemLabel(const wxString& _label, int windowItemID);
@@ -248,6 +251,7 @@ class CustomWindow : public wxFrame
         bool setItemFocus(int windowItemID);
         bool setItemGraph(GraphHelper* _helper, int windowItemID);
         bool setPropValue(const wxString& _value, const wxString& varName);
+        bool setStatusText(wxString _value);
 
         void OnMenuEvent(wxCommandEvent& event);
         void OnClick(wxCommandEvent& event);
@@ -259,6 +263,7 @@ class CustomWindow : public wxFrame
         void OnMouseLeftDown(wxMouseEvent& event);
         void OnTreeListEvent(wxTreeListEvent& event);
         void OnTreeListActivateEvent(wxTreeListEvent& event);
+        void OnDateEvent(wxDateEvent& event);
         void OnSizeEvent(wxSizeEvent& event);
 
         void OnSetValueEvent(SetValueEvent& event)

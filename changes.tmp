@@ -47,3 +47,6 @@ Cleaned	Improved the internal interface of "stats". If the result is stored to a
 Cleaned	Units of loaded JCAMP-DX files are now written in English
 Cleaned	"url" now has a progress bar for larger files and accepts now longer transmissins.
 Added	Added option to execute a script from the current or a given line.
+Added	Layout commands have been added: "lamp", "timepicker" and "datepicker"
+Added	Using "statustext", one can now modify the statusbar of window layouts.
+Cleaned	A "treelist" can now display data using a tree-like layout.

@@ -4327,6 +4327,7 @@ void NumeReWindow::Ready()
 
     wxToolBar* tb = GetToolBar();
     tb->EnableTool(ID_MENU_EXECUTE, true);
+    tb->EnableTool(ID_MENU_EXECUTE_FROM_LINE, true);
     tb->EnableTool(ID_MENU_STOP_EXECUTION, false);
 
     CallAfter(NumeReWindow::UpdateVarViewer);
@@ -4347,6 +4348,7 @@ void NumeReWindow::Busy()
 
     wxToolBar* tb = GetToolBar();
     tb->EnableTool(ID_MENU_EXECUTE, false);
+    tb->EnableTool(ID_MENU_EXECUTE_FROM_LINE, false);
     tb->EnableTool(ID_MENU_STOP_EXECUTION, true);
 }
 
@@ -4905,6 +4907,7 @@ void NumeReWindow::ToolbarStatusUpdate()
     if (!tb->GetToolEnabled(ID_MENU_STOP_EXECUTION))
     {
         tb->EnableTool(ID_MENU_EXECUTE, true);
+        tb->EnableTool(ID_MENU_EXECUTE_FROM_LINE, true);
         tb->EnableTool(ID_MENU_STOP_EXECUTION, false);
     }
 

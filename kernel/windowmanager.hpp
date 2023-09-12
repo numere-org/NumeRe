@@ -198,6 +198,7 @@ namespace NumeRe
             std::string getItemSelection(int windowItemID) const;
             std::string getPropValue(const std::string& varName) const;
             std::string getProperties() const;
+            std::string getStatusText() const;
 
             bool setItemValue(const WinItemValue& _value, int windowItemID);
             bool setItemLabel(const std::string& _label, int windowItemID);
@@ -208,6 +209,7 @@ namespace NumeRe
             bool setItemGraph(GraphHelper* _helper, int windowItemID);
             bool setPropValue(const std::string& _value, const std::string& varName);
             bool setDisplay(const std::string& _display);
+            bool setStatusText(const std::string& _value);
 
             void iconize();
             void maximize();

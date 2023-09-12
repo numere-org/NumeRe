@@ -391,14 +391,51 @@ TextField* GroupPanel::CreateTextInput(wxWindow* parent, wxSizer* sizer, const w
     // Create the text above the input line, if it exists
     if (description.length())
     {
+        int margin = static_cast<wxBoxSizer*>(sizer)->GetOrientation() == wxVERTICAL ? wxRIGHT : wxBOTTOM;
         inputStaticText = new wxStaticText(parent, wxID_STATIC, description, wxDefaultPosition, wxDefaultSize, 0);
-        sizer->Add(inputStaticText, 0, alignment | wxLEFT | wxTOP | wxRIGHT | wxADJUST_MINSIZE | wxRESERVE_SPACE_EVEN_IF_HIDDEN, ELEMENT_BORDER);
+        sizer->Add(inputStaticText, 0, alignment | wxLEFT | wxTOP | margin | wxADJUST_MINSIZE | wxRESERVE_SPACE_EVEN_IF_HIDDEN, ELEMENT_BORDER);
     }
 
     // Create the input line
     TextField* textCtrl = new TextField(parent, id, sDefault, size, nStyle);
     textCtrl->m_label = inputStaticText;
     sizer->Add(textCtrl, 0, alignment | wxALL | wxEXPAND | wxFIXED_MINSIZE | wxRESERVE_SPACE_EVEN_IF_HIDDEN, ELEMENT_BORDER);
+
+    return textCtrl;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This member function creates the
+/// layout for a "lamp".
+///
+/// \param parent wxWindow*
+/// \param sizer wxSizer*
+/// \param description const wxString&
+/// \param sDefault const wxString&
+/// \param nStyle int
+/// \param id int
+/// \param size const wxSize&
+/// \param alignment int
+/// \return TextField*
+///
+/////////////////////////////////////////////////
+TextField* GroupPanel::CreateLamp(wxWindow* parent, wxSizer* sizer, const wxString& description, const wxString& sDefault, int nStyle, int id, const wxSize& size, int alignment)
+{
+    wxStaticText* inputStaticText = nullptr;
+    // Create the text above the input line, if it exists
+    if (description.length())
+    {
+        int margin = static_cast<wxBoxSizer*>(sizer)->GetOrientation() == wxVERTICAL ? wxRIGHT : wxBOTTOM;
+        inputStaticText = new wxStaticText(parent, wxID_STATIC, description, wxDefaultPosition, wxDefaultSize, 0);
+        sizer->Add(inputStaticText, 0, alignment | wxLEFT | wxTOP | margin | wxADJUST_MINSIZE | wxRESERVE_SPACE_EVEN_IF_HIDDEN, ELEMENT_BORDER);
+    }
+
+    // Create the "lamp"
+    TextField* textCtrl = new TextField(parent, id, sDefault, size, nStyle | wxBORDER_RAISED | wxTE_READONLY);
+    textCtrl->m_label = inputStaticText;
+    textCtrl->SetBackgroundColour(wxColour(64,64,64));
+    sizer->Add(textCtrl, 0, alignment | wxALL | wxFIXED_MINSIZE | wxRESERVE_SPACE_EVEN_IF_HIDDEN, ELEMENT_BORDER);
 
     return textCtrl;
 }
@@ -696,5 +733,48 @@ wxSlider* GroupPanel::CreateSlider(wxWindow* parent, wxSizer* sizer, int nMin, i
     sizer->Add(slider, 0, alignment | wxALL | wxEXPAND | wxRESERVE_SPACE_EVEN_IF_HIDDEN, ELEMENT_BORDER);
 
     return slider;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This member function creates the
+/// layout for a date picker control.
+///
+/// \param parent wxWindow*
+/// \param sizer wxSizer*
+/// \param dt const wxDateTime&
+/// \param style int
+/// \param id int
+/// \param alignment int
+/// \return wxDatePickerCtrl*
+///
+/////////////////////////////////////////////////
+wxDatePickerCtrl* GroupPanel::CreateDatePicker(wxWindow* parent, wxSizer* sizer, const wxDateTime& dt, int style, int id, int alignment)
+{
+    wxDatePickerCtrl* picker = new wxDatePickerCtrl(parent, id, dt, wxDefaultPosition, wxDefaultSize, style);
+    sizer->Add(picker, 0, alignment | wxALL | wxEXPAND | wxRESERVE_SPACE_EVEN_IF_HIDDEN, ELEMENT_BORDER);
+
+    return picker;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This member function creates the
+/// layout for a time picker control.
+///
+/// \param parent wxWindow*
+/// \param sizer wxSizer*
+/// \param dt const wxDateTime&
+/// \param id int
+/// \param alignment int
+/// \return wxTimePickerCtrl*
+///
+/////////////////////////////////////////////////
+wxTimePickerCtrl* GroupPanel::CreateTimePicker(wxWindow* parent, wxSizer* sizer, const wxDateTime& dt, int id, int alignment)
+{
+    wxTimePickerCtrl* picker = new wxTimePickerCtrl(parent, id, dt);
+    sizer->Add(picker, 0, alignment | wxALL | wxEXPAND | wxRESERVE_SPACE_EVEN_IF_HIDDEN, ELEMENT_BORDER);
+
+    return picker;
 }
 

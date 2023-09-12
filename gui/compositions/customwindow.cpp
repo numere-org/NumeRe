@@ -20,6 +20,7 @@
 #include "../NumeReWindow.h" // Already includes NumeRe::Window
 #include "../../externals/tinyxml2/tinyxml2.h"
 #include "../../kernel/core/utils/stringtools.hpp"
+#include "../../kernel/core/io/logger.hpp"
 #include "grouppanel.hpp"
 #include <wx/tokenzr.h>
 #include <wx/dataview.h>
@@ -62,6 +63,54 @@ static wxColour toWxColour(const wxString& s)
 
 
 /////////////////////////////////////////////////
+/// \brief Convert states to lamp colours.
+///
+/// \param s const wxString&
+/// \return wxColour
+///
+/////////////////////////////////////////////////
+static wxColour colorFromLampStates(const wxString& s)
+{
+    if (s == "ok")
+        return wxColour(0,255,0);
+
+    if (s == "error")
+        return wxColour(255,0,0);
+
+    if (s == "warn")
+        return wxColour(255,255,0);
+
+    // if (s == "off")
+    return wxColour(64,64,64);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Convert lamp colours to states.
+///
+/// \param c const wxColour&
+/// \return wxString
+///
+/////////////////////////////////////////////////
+static wxString lampStatesFromColor(const wxColour& c)
+{
+    if (c == wxColour(0,255,0))
+        return "ok";
+
+    if (c == wxColour(255,0,0))
+        return "error";
+
+    if (c == wxColour(255,255,0))
+        return "warn";
+
+    if (c == wxColour(64,64,64))
+        return "off";
+
+    return "";
+}
+
+
+/////////////////////////////////////////////////
 /// \brief This static function conversts usual
 /// strings into "Kernel strings" (i.e. usual
 /// NumeRe code strings).
@@ -78,6 +127,28 @@ static wxString convertToCodeString(wxString s)
 
 
 /////////////////////////////////////////////////
+/// \brief Static function to convert a
+/// kernel string into a usual string.
+///
+/// \param sString wxString
+/// \return wxString
+///
+/////////////////////////////////////////////////
+wxString removeQuotationMarks(wxString sString)
+{
+    sString.Trim(false);
+    sString.Trim(true);
+
+    if (sString.length() && sString[0] == '"' && sString[sString.length()-1] == '"')
+        sString = sString.substr(1, sString.length()-2);
+
+    sString.Replace("\\\"", "\"");
+
+    return sString;
+}
+
+
+/////////////////////////////////////////////////
 /// \brief Separates the different item values.
 ///
 /// \param sItem wxString&
@@ -86,14 +157,98 @@ static wxString convertToCodeString(wxString s)
 /////////////////////////////////////////////////
 static wxString nextItemValue(wxString& sItem)
 {
-    wxString sValue = sItem.substr(0, sItem.find('\t'));
+    wxString sValue = sItem.substr(0, sItem.find_first_of("\t\n"));
 
-    if (sItem.find('\t') != std::string::npos)
-        sItem.erase(0, sItem.find('\t')+1);
-    else
+    if (sItem.length() == sValue.length())
         sItem.clear();
+    else if (sItem[sValue.length()] == '\t')
+        sItem.erase(0, sValue.length()+1);
+    else
+        sItem.erase(0, sValue.length());
 
     return sValue;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief A simple tokenizer to separate a list
+/// of strings into multiple strings.
+///
+/// \param choices wxString&
+/// \return wxArrayString
+///
+/////////////////////////////////////////////////
+static wxArrayString getChoices(wxString& choices)
+{
+    wxArrayString choicesArray;
+    size_t nQuotes = 0;
+
+    for (int i = 0; i < (int)choices.length(); i++)
+    {
+        if (choices[i] == '"' && (!i || choices[i-1] != '\\'))
+            nQuotes++;
+
+        if (!(nQuotes % 2) && choices[i] == ',')
+        {
+            choicesArray.Add(removeQuotationMarks(choices.substr(0, i)));
+            choices.erase(0, i+1);
+            i = -1;
+        }
+    }
+
+    if (choices.length())
+        choicesArray.Add(removeQuotationMarks(choices));
+
+    return choicesArray;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Populate the children of the current
+/// wxTreeListItem.
+///
+/// \param listCtrl wxTreeListCtrl*
+/// \param values const wxArrayString&
+/// \param parentItem wxTreeListItem
+/// \param hasChild bool
+/// \return void
+///
+/////////////////////////////////////////////////
+static void populateChild(wxTreeListCtrl* listCtrl, const wxArrayString& values, wxTreeListItem parentItem, bool hasChild)
+{
+    bool useCheckBoxes = listCtrl->HasFlag(wxTL_CHECKBOX);
+    size_t nColumns = listCtrl->GetColumnCount();
+
+    for (size_t i = 0; i < values.size(); i++)
+    {
+        wxString sItem = values[i];
+        size_t currCol = 1u;
+        bool check = false;
+
+        if (useCheckBoxes)
+            check = nextItemValue(sItem) != "0";
+
+        wxTreeListItem item = listCtrl->AppendItem(parentItem, nextItemValue(sItem));
+
+        if (check && useCheckBoxes)
+            listCtrl->CheckItem(item);
+
+        while (sItem.length() && currCol < nColumns && !sItem.StartsWith("\n{"))
+        {
+            listCtrl->SetItemText(item, currCol, nextItemValue(sItem));
+            currCol++;
+        }
+
+        g_logger.info(sItem.ToStdString());
+
+        if (hasChild && sItem.StartsWith("\n{") && sItem.EndsWith("}"))
+        {
+            sItem.erase(0, 2);
+            sItem.RemoveLast();
+            wxArrayString childValues = getChoices(sItem);
+            populateChild(listCtrl, childValues, item, hasChild);
+        }
+    }
 }
 
 
@@ -117,12 +272,18 @@ static void populateTreeListCtrl(wxTreeListCtrl* listCtrl, const wxArrayString& 
 
     bool useCheckBoxes = listCtrl->HasFlag(wxTL_CHECKBOX);
     size_t nColumns = 1;
-    size_t pos = 0;
+    bool hasChild = false;
 
-    while ((pos = values[0].find('\t', pos)) != std::string::npos)
+    for (size_t pos = 0; pos < values[0].length(); pos++)
     {
-        nColumns++;
-        pos++;
+        if (values[0][pos] == '\t')
+            nColumns++;
+
+        if (values[0].substr(pos, 2) == "\n{")
+        {
+            hasChild = true;
+            break;
+        }
     }
 
     if (useCheckBoxes)
@@ -134,26 +295,7 @@ static void populateTreeListCtrl(wxTreeListCtrl* listCtrl, const wxArrayString& 
     while (listCtrl->GetColumnCount() < nColumns)
         listCtrl->AppendColumn("");
 
-    for (size_t i = 0; i < values.size(); i++)
-    {
-        wxString sItem = values[i];
-        size_t currCol = 1u;
-        bool check = false;
-
-        if (useCheckBoxes)
-            check = nextItemValue(sItem) != "0";
-
-        wxTreeListItem item = listCtrl->AppendItem(listCtrl->GetRootItem(), nextItemValue(sItem));
-
-        if (check && useCheckBoxes)
-            listCtrl->CheckItem(item);
-
-        while (sItem.length() && currCol < nColumns)
-        {
-            listCtrl->SetItemText(item, currCol, nextItemValue(sItem));
-            currCol++;
-        }
-    }
+    populateChild(listCtrl, values, listCtrl->GetRootItem(), hasChild);
 
     for (size_t i = 0; i < listCtrl->GetColumnCount(); i++)
     {
@@ -283,6 +425,8 @@ BEGIN_EVENT_TABLE(CustomWindow, wxFrame)
     EVT_TREELIST_ITEM_ACTIVATED(-1, CustomWindow::OnTreeListActivateEvent)
     EVT_SIZE(CustomWindow::OnSizeEvent)
     EVT_SLIDER(-1, CustomWindow::OnChange)
+    EVT_DATE_CHANGED(-1, CustomWindow::OnDateEvent)
+    EVT_TIME_CHANGED(-1, CustomWindow::OnDateEvent)
     EVT_MENU(-1, CustomWindow::OnMenuEvent)
     cEVT_SET_VALUE(-1, CustomWindow::OnSetValueEvent)
     cEVT_SET_LABEL(-1, CustomWindow::OnSetLabelEvent)
@@ -372,6 +516,9 @@ void CustomWindow::layout()
 
     // Create a status bar
     CreateStatusBar();
+
+    if (layoutGroup->Attribute("statustext"))
+        setStatusText(layoutGroup->Attribute("statustext"));
 
     // Evaluate the size information
     if (layoutGroup->Attribute("size"))
@@ -726,6 +873,95 @@ void CustomWindow::layoutChild(const tinyxml2::XMLElement* currentChild, wxWindo
                 textctrl->Enable(false);
             else if (state == HIDDEN)
                 textctrl->Show(false);
+        }
+        else if (sValue == "lamp")
+        {
+            // Add a lamp
+            wxSize size(20,10);
+
+            if (currentChild->Attribute("size"))
+            {
+                wxString sSize = currentChild->Attribute("size");
+                long int x,y;
+                sSize.substr(0, sSize.find(',')).ToLong(&x);
+                sSize.substr(sSize.find(',')+1).ToLong(&y);
+
+                size.x = x;
+                size.y = y;
+            }
+
+            wxString label;
+
+            if (currentChild->Attribute("label"))
+                label = currentChild->Attribute("label");
+
+            TextField* textctrl = _groupPanel->CreateLamp(currParent, currSizer, label, wxEmptyString, 0, id, size, alignment);
+            m_windowItems[id] = std::make_pair(CustomWindow::LAMP, textctrl);
+
+            //if (currentChild->Attribute("onclick"))
+            //    m_eventTable[id].onclick = currentChild->Attribute("onclick");
+
+            if (currentChild->Attribute("color"))
+                textctrl->SetBackgroundColour(toWxColour(currentChild->Attribute("color")));
+            else if (currentChild->Attribute("value"))
+                 textctrl->SetBackgroundColour(colorFromLampStates(currentChild->Attribute("value")));
+
+            if (state == DISABLED)
+                textctrl->Enable(false);
+            else if (state == HIDDEN)
+                textctrl->Show(false);
+        }
+        else if (sValue == "datepicker")
+        {
+            // Add a datepicker
+            int style = wxDP_DROPDOWN | wxDP_SHOWCENTURY;
+
+            wxDateTime dt;
+
+            if (currentChild->Attribute("value"))
+            {
+                wxString::const_iterator end;
+                wxString time = currentChild->Attribute("value");
+
+                if (!dt.ParseDateTime(removeQuotationMarks(time), &end))
+                    dt.ParseDate(removeQuotationMarks(time), &end);
+            }
+
+            wxDatePickerCtrl* datePicker = _groupPanel->CreateDatePicker(currParent, currSizer, dt, style, id, alignment);
+            m_windowItems[id] = std::make_pair(CustomWindow::DATEPICKER, datePicker);
+
+            if (currentChild->Attribute("onchange"))
+                m_eventTable[id].onchange = currentChild->Attribute("onchange");
+
+            if (state == DISABLED)
+                datePicker->Enable(false);
+            else if (state == HIDDEN)
+                datePicker->Show(false);
+        }
+        else if (sValue == "timepicker")
+        {
+            // Add a timepicker
+            wxDateTime dt;
+
+            if (currentChild->Attribute("value"))
+            {
+                wxString::const_iterator end;
+                wxString time = currentChild->Attribute("value");
+
+                if (!dt.ParseDateTime(removeQuotationMarks(time), &end))
+                    dt.ParseTime(removeQuotationMarks(time), &end);
+            }
+
+            wxTimePickerCtrl* timePicker = _groupPanel->CreateTimePicker(currParent, currSizer, dt, id, alignment);
+            m_windowItems[id] = std::make_pair(CustomWindow::TIMEPICKER, timePicker);
+
+            if (currentChild->Attribute("onchange"))
+                m_eventTable[id].onchange = currentChild->Attribute("onchange");
+
+            if (state == DISABLED)
+                timePicker->Enable(false);
+            else if (state == HIDDEN)
+                timePicker->Show(false);
         }
         else if (sValue == "statictext" || sValue == "text")
         {
@@ -1201,6 +1437,10 @@ void CustomWindow::handleEvent(wxEvent& event, const wxString& sEventType, const
             // window item
             getItemParameters(event.GetId(), params);
 
+            // Do not return the values of a tree list here
+            if (params.type == "treelist")
+                params.value = "nan";
+
             wxString kvl_event;
 
             // Create the corresponding key-value-list
@@ -1352,6 +1592,23 @@ bool CustomWindow::getItemParameters(int windowItemID, WindowItemParams& params)
             params.color = toWxString(static_cast<TextField*>(object.second)->GetBackgroundColour());
 
             break;
+        case CustomWindow::LAMP:
+            params.type = "lamp";
+            params.label = convertToCodeString(static_cast<TextField*>(object.second)->GetLabel());
+            params.color = toWxString(static_cast<TextField*>(object.second)->GetBackgroundColour());
+            params.value = "\"" + lampStatesFromColor(static_cast<TextField*>(object.second)->GetBackgroundColour()) + "\"";
+
+            break;
+        case CustomWindow::DATEPICKER:
+            params.type = "datepicker";
+            params.value = convertToCodeString(static_cast<wxDatePickerCtrl*>(object.second)->GetValue().FormatISODate());
+
+            break;
+        case CustomWindow::TIMEPICKER:
+            params.type = "timepicker";
+            params.value = convertToCodeString(static_cast<wxTimePickerCtrl*>(object.second)->GetValue().FormatISOTime());
+
+            break;
         case CustomWindow::RADIOGROUP:
         {
             params.type = "radio";
@@ -1483,39 +1740,6 @@ bool CustomWindow::getItemParameters(int windowItemID, WindowItemParams& params)
 
 
 /////////////////////////////////////////////////
-/// \brief A simple tokenizer to separate a list
-/// of strings into multiple strings.
-///
-/// \param choices wxString&
-/// \return wxArrayString
-///
-/////////////////////////////////////////////////
-wxArrayString CustomWindow::getChoices(wxString& choices) const
-{
-    wxArrayString choicesArray;
-    size_t nQuotes = 0;
-
-    for (int i = 0; i < (int)choices.length(); i++)
-    {
-        if (choices[i] == '"' && (!i || choices[i-1] != '\\'))
-            nQuotes++;
-
-        if (!(nQuotes % 2) && choices[i] == ',')
-        {
-            choicesArray.Add(removeQuotationMarks(choices.substr(0, i)));
-            choices.erase(0, i+1);
-            i = -1;
-        }
-    }
-
-    if (choices.length())
-        choicesArray.Add(removeQuotationMarks(choices));
-
-    return choicesArray;
-}
-
-
-/////////////////////////////////////////////////
 /// \brief This member function decodes the
 /// arguments of a event handler function and
 /// returns them as a wxArrayString.
@@ -1541,28 +1765,6 @@ wxArrayString CustomWindow::decodeEventHandlerFunction(const wxString& sEventHan
     }
 
     return funcDef;
-}
-
-
-/////////////////////////////////////////////////
-/// \brief Private member function to convert a
-/// kernel string into a usual string.
-///
-/// \param sString wxString
-/// \return wxString
-///
-/////////////////////////////////////////////////
-wxString CustomWindow::removeQuotationMarks(wxString sString) const
-{
-    sString.Trim(false);
-    sString.Trim(true);
-
-    if (sString.length() && sString[0] == '"' && sString[sString.length()-1] == '"')
-        sString = sString.substr(1, sString.length()-2);
-
-    sString.Replace("\\\"", "\"");
-
-    return sString;
 }
 
 
@@ -1764,6 +1966,9 @@ wxString CustomWindow::getItemSelection(int windowItemID) const
         case CustomWindow::MENUITEM:
         case CustomWindow::GRAPHER:
         case CustomWindow::IMAGE:
+        case CustomWindow::DATEPICKER:
+        case CustomWindow::TIMEPICKER:
+        case CustomWindow::LAMP:
             break;
     }
 
@@ -1813,6 +2018,34 @@ wxString CustomWindow::getProperties() const
         return "\"\"";
 
     return sProperties;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Returns the contents of the status bar
+/// if any available.
+///
+/// \return wxString
+///
+/////////////////////////////////////////////////
+wxString CustomWindow::getStatusText() const
+{
+    const wxStatusBar* bar = GetStatusBar();
+    int numFields = bar->GetFieldsCount();
+    wxString sStatusText;
+
+    for (int i = 0; i < numFields; i++)
+    {
+        if (sStatusText.length())
+            sStatusText += ",";
+
+        sStatusText += "\"" + bar->GetStatusText(i) + "\"";
+    }
+
+    if (!sStatusText.length())
+        return "\"\"";
+
+    return sStatusText;
 }
 
 
@@ -1927,6 +2160,35 @@ bool CustomWindow::setItemValue(WindowItemValue& _value, int windowItemID)
         case CustomWindow::TEXTCTRL:
             static_cast<TextField*>(object.second)->ChangeValue(removeQuotationMarks(_value.stringValue));
             break;
+        case CustomWindow::LAMP:
+        {
+            wxColour color = colorFromLampStates(_value.stringValue);
+            static_cast<wxTextCtrl*>(object.second)->SetBackgroundColour(color);
+            Refresh();
+            break;
+        }
+        case CustomWindow::DATEPICKER:
+        {
+            wxDateTime dt;
+            wxString::const_iterator end;
+
+            if (!dt.ParseDateTime(removeQuotationMarks(_value.stringValue), &end))
+                dt.ParseDate(removeQuotationMarks(_value.stringValue), &end);
+
+            static_cast<wxDatePickerCtrl*>(object.second)->SetValue(dt);
+            break;
+        }
+        case CustomWindow::TIMEPICKER:
+        {
+            wxDateTime dt;
+            wxString::const_iterator end;
+
+            if (!dt.ParseDateTime(removeQuotationMarks(_value.stringValue), &end))
+                dt.ParseTime(removeQuotationMarks(_value.stringValue), &end);
+
+            static_cast<wxTimePickerCtrl*>(object.second)->SetValue(dt);
+            break;
+        }
         case CustomWindow::GAUGE:
         {
             long int nVal;
@@ -2057,6 +2319,7 @@ bool CustomWindow::setItemLabel(const wxString& _label, int windowItemID)
             static_cast<wxStaticText*>(object.second)->SetLabel(removeQuotationMarks(_label));
             break;
         case CustomWindow::TEXTCTRL:
+        case CustomWindow::LAMP:
             static_cast<TextField*>(object.second)->SetLabel(removeQuotationMarks(_label));
             break;
         case CustomWindow::SPINCTRL:
@@ -2103,6 +2366,8 @@ bool CustomWindow::setItemLabel(const wxString& _label, int windowItemID)
         case CustomWindow::TABLE:
         case CustomWindow::GRAPHER:
         case CustomWindow::SLIDER:
+        case CustomWindow::DATEPICKER:
+        case CustomWindow::TIMEPICKER:
             break;
     }
 
@@ -2200,6 +2465,9 @@ bool CustomWindow::setItemColor(const wxString& _color, int windowItemID)
         case CustomWindow::TEXTCTRL:
             static_cast<wxTextCtrl*>(object.second)->SetBackgroundColour(color);
             break;
+        case CustomWindow::LAMP:
+            static_cast<wxTextCtrl*>(object.second)->SetBackgroundColour(color);
+            break;
         case CustomWindow::SPINCTRL:
             static_cast<wxSpinCtrl*>(object.second)->SetBackgroundColour(color);
             break;
@@ -2221,6 +2489,8 @@ bool CustomWindow::setItemColor(const wxString& _color, int windowItemID)
         case CustomWindow::TABLE:
         case CustomWindow::GRAPHER:
         case CustomWindow::SLIDER:
+        case CustomWindow::DATEPICKER:
+        case CustomWindow::TIMEPICKER:
             break;
     }
 
@@ -2315,6 +2585,9 @@ bool CustomWindow::setItemSelection(int selectionID, int selectionID2, int windo
         case CustomWindow::MENUITEM:
         case CustomWindow::GRAPHER:
         case CustomWindow::IMAGE:
+        case CustomWindow::DATEPICKER:
+        case CustomWindow::TIMEPICKER:
+        case CustomWindow::LAMP:
             break;
     }
 
@@ -2400,6 +2673,31 @@ bool CustomWindow::setPropValue(const wxString& _value, const wxString& varName)
     }
 
     return false;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Sets the text into the status bar.
+///
+/// \param _value wxString
+/// \return bool
+///
+/////////////////////////////////////////////////
+bool CustomWindow::setStatusText(wxString _value)
+{
+    wxArrayString values = getChoices(_value);
+
+    wxStatusBar* bar = GetStatusBar();
+
+    if (bar->GetFieldsCount() != values.size())
+        bar->SetFieldsCount(values.size());
+
+    for (size_t i = 0; i < values.size(); i++)
+    {
+        bar->SetStatusText(values[i], i);
+    }
+
+    return true;
 }
 
 
@@ -2554,6 +2852,19 @@ void CustomWindow::OnTreeListActivateEvent(wxTreeListEvent& event)
         return;
 
     handleEvent(event, "onactivate", EventPosition(enumerateListItems(listCtrl, event.GetItem())));
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Date and time picker event handler.
+///
+/// \param event wxDateEvent&
+/// \return void
+///
+/////////////////////////////////////////////////
+void CustomWindow::OnDateEvent(wxDateEvent& event)
+{
+    handleEvent(event, "onchange");
 }
 
 
