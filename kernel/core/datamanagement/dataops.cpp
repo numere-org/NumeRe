@@ -957,17 +957,17 @@ bool writeToFile(CommandLineParser& cmdParser)
 			// Scripts, procedures and data files may not be written directly
 			// this avoids reloads during the execution and other unexpected
 			// behavior
-            if (sFileName.substr(sFileName.rfind('.')) == ".nprc"
-                || sFileName.substr(sFileName.rfind('.')) == ".nscr"
-                || sFileName.substr(sFileName.rfind('.')) == ".ndat")
+            if (sFileName.ends_with(".nprc")
+                || sFileName.ends_with(".nscr")
+                || sFileName.ends_with(".ndat"))
 			{
 				string sErrorToken;
 
-				if (sFileName.substr(sFileName.rfind('.')) == ".nprc")
+				if (sFileName.ends_with(".nprc"))
 					sErrorToken = "NumeRe-Prozedur";
-				else if (sFileName.substr(sFileName.rfind('.')) == ".nscr")
+				else if (sFileName.ends_with(".nscr"))
 					sErrorToken = "NumeRe-Script";
-				else if (sFileName.substr(sFileName.rfind('.')) == ".ndat")
+				else if (sFileName.ends_with(".ndat"))
 					sErrorToken = "NumeRe-Datenfile";
 
 				throw SyntaxError(SyntaxError::FILETYPE_MAY_NOT_BE_WRITTEN, cmdParser.getCommandLine(), SyntaxError::invalid_position, sErrorToken);

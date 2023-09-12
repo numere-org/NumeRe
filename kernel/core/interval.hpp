@@ -40,6 +40,13 @@ class Interval
         double getSample(size_t n, size_t nSamples) const;
 
     public:
+        enum Bounds
+        {
+            INCLUDE_LOWER = 1,
+            INCLUDE_UPPER = 2,
+            INCLUDE_BOTH = 3
+        };
+
         std::string name;
 
         Interval() : m_sDefinition(), m_vInterval({NAN,NAN}), name() {}
@@ -62,7 +69,7 @@ class Interval
         double range() const;
         double middle() const;
 
-        bool isInside(mu::value_type val) const;
+        bool isInside(mu::value_type val, int bnds = INCLUDE_BOTH) const;
         bool contains(const std::string& sVarName) const;
         size_t getSamples() const;
 

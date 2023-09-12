@@ -81,7 +81,7 @@ static std::string parseEventOpt(const std::string& sCmd, size_t pos, const std:
     std::string option = getArgAtPos(sCmd, pos);
     std::string sProcBase = NumeReKernel::getInstance()->getSettings().getProcPath();
 
-    if (sFolderName.substr(0, sProcBase.length()) == sProcBase)
+    if (sFolderName.starts_with(sProcBase))
     {
         sProcBase = sFolderName.substr(sProcBase.length());
         replaceAll(sProcBase, "/", "~");
@@ -98,7 +98,7 @@ static std::string parseEventOpt(const std::string& sCmd, size_t pos, const std:
     if (option.front() == '$' && option.substr(option.length()-2) == "()")
         option.erase(option.length()-2);
 
-    if (option.substr(0, 6) == "$this~")
+    if (option.starts_with("$this~"))
         option = "$" + sProcBase + option.substr(6);
 
     return option;

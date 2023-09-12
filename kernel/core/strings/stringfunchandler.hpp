@@ -71,7 +71,7 @@ namespace NumeRe
 
         public:
             virtual ~StringFuncHandler() {}
-            virtual bool isStringExpression(const std::string& sExpression) = 0;
+            virtual bool isStringExpression(StringView sExpression) = 0;
 
     };
 }

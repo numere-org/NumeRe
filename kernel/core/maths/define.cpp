@@ -440,11 +440,13 @@ bool FunctionDefinition::convertToValues()
         // with their value
         for (auto iter = mAsVal.begin(); iter != mAsVal.end(); ++iter)
         {
+            MutableStringView defString(sParsedDefinitionString);
+
             for (size_t i = 0; i < sParsedDefinitionString.length(); i++)
             {
-                if (sParsedDefinitionString.substr(i, (iter->first).length()) == iter->first && checkDelimiter(sParsedDefinitionString.substr(i-1, (iter->first).length()+2)))
+                if (defString.match(iter->first, i) && defString.is_delimited_sequence(i, iter->first.length()))
                 {
-                    sParsedDefinitionString.replace(i, (iter->first).length(), toString(*iter->second, NumeReKernel::getInstance()->getSettings().getPrecision()));
+                    defString.replace(i, (iter->first).length(), toString(*iter->second, NumeReKernel::getInstance()->getSettings().getPrecision()));
                 }
             }
         }
@@ -464,6 +466,8 @@ bool FunctionDefinition::convertToValues()
 /////////////////////////////////////////////////
 bool FunctionDefinition::replaceArgumentOccurences()
 {
+    MutableStringView defString(sParsedDefinitionString);
+
     // Replace all occurences in the expression with
     // new placeholders
     for (size_t i = 0; i < vArguments.size(); i++)
@@ -472,14 +476,14 @@ bool FunctionDefinition::replaceArgumentOccurences()
         size_t nPos = 0;
 
         // Search for the next occurence of the variable
-        while ((nPos = sParsedDefinitionString.find(vArguments[i], nPos)) != string::npos)
+        while ((nPos = defString.find(vArguments[i], nPos)) != string::npos)
         {
             // check, whether the found match is an actual variable
-            if (checkDelimiter(sParsedDefinitionString.substr(nPos-1, vArguments[i].length() + 2)))
+            if (defString.is_delimited_sequence(nPos, vArguments[i].length()))
             {
                 // replace VAR with >>VAR<< and increment the
                 // position index by the variable length + 4
-                sParsedDefinitionString.replace(nPos, vArguments[i].length(), ">>" + vArguments[i] + "<<");
+                defString.replace(nPos, vArguments[i].length(), ">>" + vArguments[i] + "<<");
                 nPos += vArguments[i].length() + 4;
             }
             else
@@ -803,7 +807,7 @@ bool FunctionDefinitionManager::call(string& sExpr, int nRecursion)
     if (!NumeReKernel::getInstance())
         return false;
 
-    string sTemp = "";
+    StringView sTemp;
     string sImpFunc = "";
     bool bDoRecursion = false;
 
@@ -815,18 +819,18 @@ bool FunctionDefinitionManager::call(string& sExpr, int nRecursion)
     // known function definitions, we've probably replaced every
     // function twice, so we do not expect to terminate it.
     if ((size_t)nRecursion == mFunctionsMap.size()*2 + 1)
-    {
         throw SyntaxError(SyntaxError::TOO_MANY_FUNCTION_CALLS, sExpr, SyntaxError::invalid_position);
-    }
 
     /* --> Ergaenze ggf. Leerzeichen vor und nach dem Ausdruck, damit die Untersuchung der Zeichen vor und
      *     nach einem Treffer keinen SEG-FAULT wirft <--
      */
-    if (sExpr[0] != ' ')
+    if (sExpr.front() != ' ')
         sExpr = " " + sExpr;
 
-    if (sExpr[sExpr.length()-1] != ' ')
+    if (sExpr.back() != ' ')
         sExpr += " ";
+
+    StringView expr(sExpr);
 
     // search through the whole set of definitions for
     // possible matches
@@ -835,97 +839,86 @@ bool FunctionDefinitionManager::call(string& sExpr, int nRecursion)
         size_t nPos = 0;
 
         // Is there a possible match?
-        if (sExpr.find(iter->second.sName + "(") != string::npos)
+        // Check for each occurence, whether the candidate
+        // is an actual match and replace it with the parsed
+        // definition string
+        while ((nPos = sExpr.find(iter->second.sName + "(", nPos)) != string::npos)
         {
-            // Check for each occurence, whether the candidate
-            // is an actual match and replace it with the parsed
-            // definition string
-            do
+            // Is it an actual match?
+            if (!expr.is_delimited_sequence(nPos, iter->second.sName.length())
+                || isInQuotes(sExpr, nPos, true))
             {
-                // Is it an actual match?
-                if (!checkDelimiter(sExpr.substr(sExpr.find(iter->second.sName + "(", nPos)-1, iter->second.sName.length()+2))
-                    || isInQuotes(sExpr, sExpr.find(iter->second.sName + "(", nPos), true))
-                {
-                    nPos = sExpr.find(iter->second.sName + "(", nPos) + iter->second.sName.length() + 1;
-                    continue;
-                }
-
-                // Copy the part in front of the match into a
-                // temporary buffer
-                sTemp = sExpr.substr(0, sExpr.find(iter->second.sName + "(", nPos));
-
-                // save the position of the argument's opening
-                // parenthesis
-                nPos = sExpr.find(iter->second.sName + "(",nPos) + iter->second.sName.length();
-
-                // Copy the calling arguments
-                string sArgs = sExpr.substr(nPos);
-                size_t nPos_2 = getMatchingParenthesis(sArgs);
-
-                // Check, whether the sArgs are terminated
-                // by a parenthesis
-                if (nPos_2 == string::npos)
-                {
-                    throw SyntaxError(SyntaxError::UNMATCHED_PARENTHESIS, sExpr, nPos);
-                }
-
-                // Remove the surrounding parentheses
-                sArgs.erase(nPos_2);
-                sArgs.erase(0, 1);
-                nPos += nPos_2 + 1;
-
-                // Parse the function definition using the
-                // passed arguments
-                sImpFunc = iter->second.parse(sArgs);
-                StripSpaces(sImpFunc);
-
-                // Remove obsolete duplicated parenthesis pairs
-                while (sExpr[nPos] == ')' && sExpr[nPos+1] == ')' && sTemp.back() == '(' && sTemp[sTemp.length()-2] == '(')
-                {
-                    nPos++;
-                    sTemp.pop_back();
-                }
-
-                // Recreate the complete expression
-                if (sImpFunc.front() == '{' && sImpFunc.back() == '}')
-                {
-                    if (sExpr[nPos] == ')' && sTemp.back() == '(')
-                    {
-                        if (sTemp[sTemp.length()-2] != ' ')
-                        {
-                            static string sDelim = "+-*/^!?:,!&|#";
-
-                            if (sDelim.find(sTemp[sTemp.length()-2]) != string::npos)
-                            {
-                                sTemp.pop_back();
-                                nPos++;
-                            }
-                        }
-                        else
-                        {
-                            sTemp.pop_back();
-                            nPos++;
-                        }
-                    }
-                    sExpr = sTemp + sImpFunc + sExpr.substr(nPos);
-                }
-                else if (sTemp.back() == '(' && sExpr[nPos] == ')')
-                {
-                    sExpr = sTemp + sImpFunc + sExpr.substr(nPos);
-                }
-                else
-                {
-                    sExpr = sTemp + "(" + sImpFunc + ")" + sExpr.substr(nPos);
-                }
-
-                // If at least one replacement was preformed,
-                // is is possible that we introduced another
-                // function. Therefore we set the recursion
-                // boolean to true
-                if (!bDoRecursion)
-                    bDoRecursion = true;
+                nPos += iter->second.sName.length() + 1;
+                continue;
             }
-            while (sExpr.find(iter->second.sName + "(", nPos) != string::npos);
+
+            // Copy the part in front of the match into a
+            // temporary buffer
+            sTemp = expr.subview(0, nPos);
+
+            // save the position of the argument's opening
+            // parenthesis
+            nPos += iter->second.sName.length();
+
+            // Copy the calling arguments
+            StringView sArgs = expr.subview(nPos);
+            size_t nPos_2 = getMatchingParenthesis(sArgs);
+
+            // Check, whether the sArgs are terminated
+            // by a parenthesis
+            if (nPos_2 == string::npos)
+                throw SyntaxError(SyntaxError::UNMATCHED_PARENTHESIS, sExpr, nPos);
+
+            // Remove the surrounding parentheses
+            sArgs.remove_from(nPos_2);
+            sArgs.trim_front(1);
+            nPos += nPos_2 + 1;
+
+            // Parse the function definition using the
+            // passed arguments
+            sImpFunc = iter->second.parse(sArgs.to_string());
+            StripSpaces(sImpFunc);
+
+            // Remove obsolete duplicated parenthesis pairs
+            while (expr.match("))", nPos) && sTemp.ends_with("(("))
+            {
+                nPos++;
+                sTemp.trim_back(1);
+            }
+
+            // Recreate the complete expression
+            if (sImpFunc.front() == '{' && sImpFunc.back() == '}')
+            {
+                if (sExpr[nPos] == ')' && sTemp.back() == '(')
+                {
+                    static string sDelim = "+-*/^!?:,!&|# ";
+
+                    if (sDelim.find(sTemp[sTemp.length()-2]) != std::string::npos)
+                    {
+                        sTemp.trim_back(1);
+                        nPos++;
+                    }
+                }
+
+                sExpr = sTemp + sImpFunc + expr.subview(nPos);
+            }
+            else if (sTemp.back() == '(' && sExpr[nPos] == ')')
+            {
+                sExpr = sTemp + sImpFunc + expr.subview(nPos);
+            }
+            else
+            {
+                sExpr = sTemp + "(" + sImpFunc + ")" + expr.subview(nPos);
+            }
+
+            expr = sExpr;
+
+            // If at least one replacement was preformed,
+            // is is possible that we introduced another
+            // function. Therefore we set the recursion
+            // boolean to true
+            if (!bDoRecursion)
+                bDoRecursion = true;
         }
     }
 

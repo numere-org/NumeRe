@@ -32,60 +32,60 @@ std::string removeQuotationMarks(const std::string&);
 
 
 
-static bool isPlot1D(const std::string& sCommand)
+static bool isPlot1D(StringView sCommand)
 {
     return sCommand == "plot" || sCommand == "graph";
 }
 
-static bool isPlot3D(const std::string& sCommand)
+static bool isPlot3D(StringView sCommand)
 {
     return sCommand == "plot3d" || sCommand == "graph3d";
 }
 
-static bool isMesh2D(const std::string& sCommand)
+static bool isMesh2D(StringView sCommand)
 {
     return sCommand == "implot"
-        || (sCommand.substr(sCommand.length()-2) != "3d"
-            && (sCommand.substr(0, 4) == "mesh"
-                || sCommand.substr(0, 4) == "surf"
-                || sCommand.substr(0, 4) == "dens"
-                || sCommand.substr(0, 4) == "cont"
-                || sCommand.substr(0, 4) == "grad"));
+        || (!sCommand.ends_with("3d")
+            && (sCommand.starts_with("mesh")
+                || sCommand.starts_with("surf")
+                || sCommand.starts_with("dens")
+                || sCommand.starts_with("cont")
+                || sCommand.starts_with("grad")));
 }
 
-static bool isMesh3D(const std::string& sCommand)
+static bool isMesh3D(StringView sCommand)
 {
-    return sCommand.substr(sCommand.length()-2) == "3d"
-        && (sCommand.substr(0, 4) == "mesh"
-            || sCommand.substr(0, 4) == "surf"
-            || sCommand.substr(0, 4) == "dens"
-            || sCommand.substr(0, 4) == "cont"
-            || sCommand.substr(0, 4) == "grad");
+    return sCommand.ends_with("3d")
+        && (sCommand.starts_with("mesh")
+            || sCommand.starts_with("surf")
+            || sCommand.starts_with("dens")
+            || sCommand.starts_with("cont")
+            || sCommand.starts_with("grad"));
 }
 
-static bool isVect2D(const std::string& sCommand)
+static bool isVect2D(StringView sCommand)
 {
     return sCommand == "vect" || sCommand == "vector";
 }
 
-static bool isVect3D(const std::string& sCommand)
+static bool isVect3D(StringView sCommand)
 {
     return sCommand == "vect3d" || sCommand == "vector3d";
 }
 
-static bool isDraw(const std::string& sCommand)
+static bool isDraw(StringView sCommand)
 {
     return sCommand == "draw" || sCommand == "draw3d";
 }
 
-static bool has3DView(const std::string& sCommand)
+static bool has3DView(StringView sCommand)
 {
     return sCommand == "draw3d"
         || isPlot3D(sCommand)
         || isMesh3D(sCommand)
-        || sCommand.substr(0, 4) == "mesh" // "mesh3d" already handled and included
-        || sCommand.substr(0, 4) == "surf"
-        || sCommand.substr(0, 4) == "cont";
+        || sCommand.starts_with("mesh") // "mesh3d" already handled and included
+        || sCommand.starts_with("surf")
+        || sCommand.starts_with("cont");
 }
 
 
@@ -428,20 +428,20 @@ Plot::Plot(string& sCmd, MemoryManager& __data, Parser& __parser, Settings& __op
             if (!_pData.getSettings(PlotData::LOG_SILENTMODE) && _option.systemPrints())
                 NumeReKernel::printPreFmt("|-> " + toSystemCodePage(_lang.get("PLOT_SAVING")) + " ... ");
 
-            if (sOutputName.substr(sOutputName.length()-4) == ".bps")
+            if (sOutputName.ends_with(".bps"))
             {
                 sOutputName[sOutputName.length()-3] = 'e';
                 _graph->WriteBPS(sOutputName.c_str());
             }
-            else if (sOutputName.substr(sOutputName.length()-4) == ".tif" || sOutputName.substr(sOutputName.length()-5) == ".tiff")
+            else if (sOutputName.ends_with(".tif") || sOutputName.ends_with(".tiff"))
                 writeTiff(_graph, sOutputName);
-            else if (sOutputName.substr(sOutputName.length()-4) == ".png")
+            else if (sOutputName.ends_with(".png"))
                 _graph->WritePNG(sOutputName.c_str(), "", false);
             else
                 _graph->WriteFrame(sOutputName.c_str());
 
             // --> TeX-Ausgabe gewaehlt? Dann werden mehrere Dateien erzeugt, die an den Zielort verschoben werden muessen <--
-            if (sOutputName.substr(sOutputName.length() - 4, 4) == ".tex")
+            if (sOutputName.ends_with(".tex"))
                 writeTeXMain(sOutputName);
 
             if (!_pData.getSettings(PlotData::LOG_SILENTMODE) && _option.systemPrints())
@@ -476,17 +476,17 @@ Plot::~Plot()
 /////////////////////////////////////////////////
 bool Plot::isPlottingCommand(StringView command)
 {
-    return command.subview(0, 4) == "plot"
+    return command.starts_with("plot")
         || command == "subplot"
         || command == "implot"
-        || command.subview(0, 4) == "grad"
-        || command.subview(0, 5) == "graph"
-        || command.subview(0, 4) == "dens"
-        || command.subview(0, 4) == "draw"
-        || command.subview(0, 4) == "vect"
-        || command.subview(0, 4) == "cont"
-        || command.subview(0, 4) == "surf"
-        || command.subview(0, 4) == "mesh";
+        || command.starts_with("grad")
+        || command.starts_with("graph")
+        || command.starts_with("dens")
+        || command.starts_with("draw")
+        || command.starts_with("vect")
+        || command.starts_with("cont")
+        || command.starts_with("surf")
+        || command.starts_with("mesh");
 }
 
 
@@ -495,29 +495,34 @@ bool Plot::isPlottingCommand(StringView command)
 /// maximal plotting dimension of the passed
 /// command.
 ///
-/// \param sPlotCommand const string&
+/// \param sPlotCommand StringView
 /// \return void
 ///
 /////////////////////////////////////////////////
-void Plot::determinePlottingDimensions(const string& sPlotCommand)
+void Plot::determinePlottingDimensions(StringView sPlotCommand)
 {
-    if ((sPlotCommand.substr(0, 4) == "mesh"
-         || sPlotCommand.substr(0, 4) == "surf"
-         || sPlotCommand.substr(0, 4) == "cont"
-         || sPlotCommand.substr(0, 4) == "vect"
-         || sPlotCommand.substr(0, 4) == "dens"
-         || sPlotCommand.substr(0, 4) == "draw"
-         || sPlotCommand.substr(0, 4) == "grad"
-         || sPlotCommand.substr(0, 4) == "plot")
-        && sPlotCommand.find("3d") != string::npos)
+    if ((sPlotCommand.starts_with("mesh")
+         || sPlotCommand.starts_with("surf")
+         || sPlotCommand.starts_with("cont")
+         || sPlotCommand.starts_with("vect")
+         || sPlotCommand.starts_with("dens")
+         || sPlotCommand.starts_with("draw")
+         || sPlotCommand.starts_with("grad")
+         || sPlotCommand.starts_with("plot"))
+        && sPlotCommand.ends_with("3d"))
     {
         _pInfo.nMaxPlotDim = 3;
     }
-    else if (sPlotCommand.substr(0, 4) == "mesh" || sPlotCommand.substr(0, 4) == "surf" || sPlotCommand.substr(0, 4) == "cont")
+    else if (sPlotCommand.starts_with("mesh")
+             || sPlotCommand.starts_with("surf")
+             || sPlotCommand.starts_with("cont"))
     {
         _pInfo.nMaxPlotDim = 3;
     }
-    else if (sPlotCommand.substr(0, 4) == "vect" || sPlotCommand.substr(0, 4) == "dens" || sPlotCommand.substr(0, 4) == "grad" || sPlotCommand == "implot")
+    else if (sPlotCommand.starts_with("vect")
+             || sPlotCommand.starts_with("dens")
+             || sPlotCommand.starts_with("grad")
+             || sPlotCommand == "implot")
     {
         if (_pInfo.nMaxPlotDim < 3)
             _pInfo.nMaxPlotDim = 2;
@@ -701,7 +706,7 @@ size_t Plot::createSubPlotSet(bool& bAnimateVar, vector<string>& vPlotCompose, s
             continue; // Ignore the "subplot" command, if we have no multiplot layout
 
         // Display the "Calculating data for SOME PLOT" message
-        displayMessage(_pData.getAnimateSamples() && findVariableInExpression(sFunc, "t") != string::npos);
+        displayMessage(_pData.getAnimateSamples() && findVariableInExpression(sFunc, "t") != std::string::npos);
 
         // Apply the logic and the transformation for logarithmic
         // plotting axes
@@ -733,6 +738,14 @@ size_t Plot::createSubPlotSet(bool& bAnimateVar, vector<string>& vPlotCompose, s
         if (sFunc.find("??") != string::npos)
             sFunc = promptForUserInput(sFunc);
 
+        // Ensure that we set the variable "t" to a reasonable value to avoid
+        // problems within the detection of indices
+        if (_pData.getAnimateSamples() && findVariableInExpression(sFunc, "t") != std::string::npos)
+        {
+            // set t to the starting value
+            _defVars.vValue[TCOORD][0] = _pData.getRanges()[TRANGE].front();  // Plotparameter: t
+        }
+
         // Split the function-and-data section into functions and data sets,
         // evaluate the indices of the data sets and store the values of the
         // data sets into the mglData objects, which will be used further down
@@ -760,6 +773,20 @@ size_t Plot::createSubPlotSet(bool& bAnimateVar, vector<string>& vPlotCompose, s
         // Prepare the plotting memory for functions and datasets depending
         // on their number
         prepareMemory();
+
+        // Reset the internal data ranges for each new subplot (otherwise
+        // they'll be combined into an ever-growing interval)
+        if (bNewSubPlot)
+        {
+            for (size_t i = 0; i < dataRanges.size(); i++)
+            {
+                dataRanges[i].reset(NAN, NAN);
+            }
+            for (size_t i = 0; i < secDataRanges.size(); i++)
+            {
+                secDataRanges[i].reset(NAN, NAN);
+            }
+        }
 
         // Get now the data values for the plot
         extractDataValues(vDataPlots);
@@ -1446,7 +1473,8 @@ void Plot::createStdPlot(size_t nPlotCompose, size_t nPlotComposeSize)
 
         _mData.Link(useImag || isCplxPlaneMode ? m_manager.assets[n+nDataOffset].data[0].second : m_manager.assets[n+nDataOffset].data[0].first);
 
-        if (_pData.getSettings(PlotData::LOG_REGION) && n+nDataOffset+1 < (int)m_manager.assets.size())
+        if (_pData.getSettings(PlotData::LOG_REGION)
+            && n+nDataOffset+1 < (int)m_manager.assets.size())
             _mData2[0].Link(useImag || isCplxPlaneMode ? m_manager.assets[n+nDataOffset+1].data[0].second : m_manager.assets[n+nDataOffset+1].data[0].first);
         else
             _mData2[0] = 0.0 * _mData;
@@ -1457,7 +1485,9 @@ void Plot::createStdPlot(size_t nPlotCompose, size_t nPlotComposeSize)
             if (m_manager.assets[n+nDataOffset].boundAxes.find('r') != std::string::npos)
                 _mData = scaleSecondaryToPrimaryInterval(_mData, _pInfo.ranges[YRANGE], _pInfo.secranges[YRANGE]);
 
-            if (_pData.getSettings(PlotData::LOG_REGION) && m_manager.assets[n+nDataOffset+1].boundAxes.find('r') != std::string::npos)
+            if (_pData.getSettings(PlotData::LOG_REGION)
+                && n+nDataOffset+1 < (int)m_manager.assets.size()
+                && m_manager.assets[n+nDataOffset+1].boundAxes.find('r') != std::string::npos)
                 _mData2[0] = scaleSecondaryToPrimaryInterval(_mData2[0], _pInfo.ranges[YRANGE], _pInfo.secranges[YRANGE]);
         }
         else
@@ -1547,7 +1577,9 @@ void Plot::createStdPlot(size_t nPlotCompose, size_t nPlotComposeSize)
             if (m_manager.assets[n+nDataOffset].boundAxes.find('r') != std::string::npos)
                 _mData = scaleSecondaryToPrimaryInterval(_mData, _pInfo.ranges[YRANGE], _pInfo.secranges[YRANGE]);
 
-            if (_pData.getSettings(PlotData::LOG_REGION) && m_manager.assets[n+nDataOffset+1].boundAxes.find('r') != std::string::npos && getNN(_mData2[0]) > 1)
+            if (_pData.getSettings(PlotData::LOG_REGION)
+                && n+nDataOffset+1 < (int)m_manager.assets.size()
+                && m_manager.assets[n+nDataOffset+1].boundAxes.find('r') != std::string::npos && getNN(_mData2[0]) > 1)
                 _mData2[0] = scaleSecondaryToPrimaryInterval(_mData2[0], _pInfo.ranges[YRANGE], _pInfo.secranges[YRANGE]);
 
             if (_pData.getSettings(PlotData::LOG_YERROR) && m_manager.assets[n+nDataOffset].boundAxes.find('r') != std::string::npos)
@@ -1572,9 +1604,9 @@ void Plot::createStdPlot(size_t nPlotCompose, size_t nPlotComposeSize)
         _pInfo.nStyle = _pInfo.nextStyle();
 
         // Create the legend
-        if (_pData.getSettings(PlotData::LOG_REGION) && getNN(_mData2[0]) > 1)
+        if (_pData.getSettings(PlotData::LOG_REGION) && getNN(_mData2[0]) > 1 && m_manager.assets.size() > n+nDataOffset+1)
             sConvLegends = "\"" + removeQuotationMarks(m_manager.assets[n+nDataOffset].legend) + "\n"
-                            + removeQuotationMarks(m_manager.assets[n+nDataOffset].legend) + "\" -nq";
+                            + removeQuotationMarks(m_manager.assets[n+nDataOffset+1].legend) + "\" -nq";
         else
             sConvLegends = m_manager.assets[n+nDataOffset].legend + " -nq";
 
@@ -1595,11 +1627,8 @@ void Plot::createStdPlot(size_t nPlotCompose, size_t nPlotComposeSize)
             if (_pData.getSettings(PlotData::INT_COMPLEXMODE) == CPLX_REIM && sLegend.length())
                 sLegend = useImag ? "Im(" + sLegend + ")" : "Re(" + sLegend + ")";
 
-            // Add new surrounding quotation marks
-            sLegend = "\"" + sLegend + "\"";
-
             // Add the legend
-            if (sLegend != "\"\"")
+            if (sLegend.length())
             {
                 std::string sLegendStyle;
 
@@ -1631,7 +1660,7 @@ void Plot::createStdPlot(size_t nPlotCompose, size_t nPlotComposeSize)
                 }
 
                 nLegends++;
-                _graph->AddLegend(fromSystemCodePage(replaceToTeX(sLegend.substr(1, sLegend.length() - 2))).c_str(), sLegendStyle.c_str());
+                _graph->AddLegend(fromSystemCodePage(replaceToTeX(sLegend)).c_str(), sLegendStyle.c_str());
             }
 
             if (nCurrentStyle == _pInfo.nStyleMax - 1)
@@ -1645,7 +1674,9 @@ void Plot::createStdPlot(size_t nPlotCompose, size_t nPlotComposeSize)
             && (useImag || _pData.getSettings(PlotData::INT_COMPLEXMODE) != CPLX_REIM))
             n++;
 
-        if ((getNN(_mData2[0]) && _pData.getSettings(PlotData::LOG_REGION))
+        if ((getNN(_mData2[0])
+             && _pData.getSettings(PlotData::LOG_REGION)
+             && n+nDataOffset+1 < (int)m_manager.assets.size())
             || _pData.getSettings(PlotData::LOG_OHLC)
             || _pData.getSettings(PlotData::LOG_CANDLESTICK))
             _pInfo.nStyle = _pInfo.nextStyle();
@@ -2219,24 +2250,24 @@ void Plot::create2dDrawing(vector<string>& vDrawVector)
     int nFunctions;
     string sStyle;
     string sTextString;
-    string sDrawExpr;
-    string sCurrentDrawingFunction;
+    StringView sDrawExpr;
+    StringView sCurrentDrawingFunction;
     string sDummy;
 
     for (size_t v = 0; v < vDrawVector.size(); v++)
     {
         sStyle = "k";
         sTextString = "";
-        sDrawExpr = "";
         sCurrentDrawingFunction = vDrawVector[v];
+
         if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sCurrentDrawingFunction))
         {
             for (int n = (int)sCurrentDrawingFunction.length() - 1; n >= 0; n--)
             {
                 if (sCurrentDrawingFunction[n] == ',' && !isInQuotes(sCurrentDrawingFunction, (size_t)n, true))
                 {
-                    sStyle = sCurrentDrawingFunction.substr(n + 1);
-                    sCurrentDrawingFunction.erase(n);
+                    sStyle = sCurrentDrawingFunction.subview(n + 1).to_string();
+                    sCurrentDrawingFunction.remove_from(n);
 
                     break;
                 }
@@ -2244,14 +2275,15 @@ void Plot::create2dDrawing(vector<string>& vDrawVector)
             sStyle = sStyle.substr(0, sStyle.rfind(')')) + " -nq";
             NumeReKernel::getInstance()->getStringParser().evalAndFormat(sStyle, sDummy, true);
         }
+
         if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sCurrentDrawingFunction))
         {
             for (int n = (int)sCurrentDrawingFunction.length() - 1; n >= 0; n--)
             {
                 if (sCurrentDrawingFunction[n] == ',' && !isInQuotes(sCurrentDrawingFunction, (size_t)n, true))
                 {
-                    sTextString = sCurrentDrawingFunction.substr(n + 1);
-                    sCurrentDrawingFunction.erase(n);
+                    sTextString = sCurrentDrawingFunction.subview(n + 1).to_string();
+                    sCurrentDrawingFunction.remove_from(n);
 
                     break;
                 }
@@ -2259,38 +2291,48 @@ void Plot::create2dDrawing(vector<string>& vDrawVector)
             sTextString += " -nq";
             NumeReKernel::getInstance()->getStringParser().evalAndFormat(sTextString, sDummy, true);
         }
+
         if (sCurrentDrawingFunction.back() == ')')
-            sDrawExpr = sCurrentDrawingFunction.substr(sCurrentDrawingFunction.find('(') + 1, sCurrentDrawingFunction.rfind(')') - sCurrentDrawingFunction.find('(') - 1);
+            sDrawExpr = sCurrentDrawingFunction.subview(sCurrentDrawingFunction.find('(') + 1, sCurrentDrawingFunction.rfind(')') - sCurrentDrawingFunction.find('(') - 1);
         else
-            sDrawExpr = sCurrentDrawingFunction.substr(sCurrentDrawingFunction.find('(') + 1);
+            sDrawExpr = sCurrentDrawingFunction.subview(sCurrentDrawingFunction.find('(') + 1);
+
         if (sDrawExpr.find('{') != string::npos)
-            convertVectorToExpression(sDrawExpr, _option);
+        {
+            sDummy = sDrawExpr.to_string();
+            convertVectorToExpression(sDummy, _option);
+            sDrawExpr = sDummy;
+        }
+
         _parser.SetExpr(sDrawExpr);
         mu::value_type* vRes = _parser.Eval(nFunctions);
         std::vector<double> vResults = real({vRes, vRes+nFunctions});
 
-        if (sCurrentDrawingFunction.substr(0, 6) == "trace(" || sCurrentDrawingFunction.substr(0, 5) == "line(")
+        if (sCurrentDrawingFunction.starts_with("trace(") || sCurrentDrawingFunction.starts_with("line("))
         {
             if (nFunctions < 2)
                 continue;
+
             if (nFunctions < 4)
                 _graph->Line(mglPoint(), mglPoint(vResults[0], vResults[1]), sStyle.c_str());
             else
                 _graph->Line(mglPoint(vResults[0], vResults[1]), mglPoint(vResults[2], vResults[3]), sStyle.c_str());
         }
-        else if (sCurrentDrawingFunction.substr(0, 7) == "tracev(" || sCurrentDrawingFunction.substr(0, 6) == "linev(")
+        else if (sCurrentDrawingFunction.starts_with("tracev(") || sCurrentDrawingFunction.starts_with("linev("))
         {
             if (nFunctions < 2)
                 continue;
+
             if (nFunctions < 4)
                 _graph->Line(mglPoint(), mglPoint(vResults[0], vResults[1]), sStyle.c_str());
             else
                 _graph->Line(mglPoint(vResults[0], vResults[1]), mglPoint(vResults[0] + vResults[2], vResults[1] + vResults[3]), sStyle.c_str());
         }
-        else if (sCurrentDrawingFunction.substr(0, 5) == "face(" || sCurrentDrawingFunction.substr(0, 7) == "cuboid(")
+        else if (sCurrentDrawingFunction.starts_with("face(") || sCurrentDrawingFunction.starts_with("cuboid("))
         {
             if (nFunctions < 4)
                 continue;
+
             if (nFunctions < 6)
                 _graph->Face(mglPoint(vResults[2] - vResults[3] + vResults[1], vResults[3] + vResults[2] - vResults[0]),
                              mglPoint(vResults[2], vResults[3]),
@@ -2310,10 +2352,11 @@ void Plot::create2dDrawing(vector<string>& vDrawVector)
                              mglPoint(vResults[0], vResults[1]),
                              sStyle.c_str());
         }
-        else if (sCurrentDrawingFunction.substr(0, 6) == "facev(")
+        else if (sCurrentDrawingFunction.starts_with("facev("))
         {
             if (nFunctions < 4)
                 continue;
+
             if (nFunctions < 6)
                 _graph->Face(mglPoint(vResults[0] + vResults[2] - vResults[3], vResults[1] + vResults[3] + vResults[2]),
                              mglPoint(vResults[0] + vResults[2], vResults[1] + vResults[3]),
@@ -2333,11 +2376,13 @@ void Plot::create2dDrawing(vector<string>& vDrawVector)
                              mglPoint(vResults[0], vResults[1]),
                              sStyle.c_str());
         }
-        else if (sCurrentDrawingFunction.substr(0, 9) == "triangle(")
+        else if (sCurrentDrawingFunction.starts_with("triangle("))
         {
             if (nFunctions < 4)
                 continue;
+
             double c = hypot(vResults[2] - vResults[0], vResults[3] - vResults[1]) / 2.0 * sqrt(3) / hypot(vResults[2], vResults[3]);
+
             if (nFunctions < 6)
                 _graph->Face(mglPoint((-vResults[0] + vResults[2]) / 2.0 - c * vResults[3], (-vResults[1] + vResults[3]) / 2.0 + c * vResults[2]),
                              mglPoint(vResults[2], vResults[3]),
@@ -2351,11 +2396,13 @@ void Plot::create2dDrawing(vector<string>& vDrawVector)
                              mglPoint(vResults[0], vResults[1]),
                              sStyle.c_str());
         }
-        else if (sCurrentDrawingFunction.substr(0, 10) == "trianglev(")
+        else if (sCurrentDrawingFunction.starts_with("trianglev("))
         {
             if (nFunctions < 4)
                 continue;
+
             double c = sqrt(3.0) / 2.0;
+
             if (nFunctions < 6)
                 _graph->Face(mglPoint((vResults[0] + 0.5 * vResults[2]) - c * vResults[3], (vResults[1] + 0.5 * vResults[3]) + c * vResults[2]),
                              mglPoint(vResults[0] + vResults[2], vResults[1] + vResults[3]),
@@ -2369,22 +2416,27 @@ void Plot::create2dDrawing(vector<string>& vDrawVector)
                              mglPoint(vResults[0], vResults[1]),
                              sStyle.c_str());
         }
-        else if (sCurrentDrawingFunction.substr(0, 7) == "sphere(")
+        else if (sCurrentDrawingFunction.starts_with("sphere("))
         {
             if (nFunctions < 3)
                 continue;
+
             _graph->Sphere(mglPoint(vResults[0], vResults[1]), vResults[2], sStyle.c_str());
         }
-        else if (sCurrentDrawingFunction.substr(0, 5) == "drop(")
+        else if (sCurrentDrawingFunction.starts_with("drop("))
         {
             if (nFunctions < 5)
                 continue;
+
             double dShift = 1;
             double dAspherity = 1;
+
             if (nFunctions >= 6)
                 dShift = vResults[5];
+
             if (nFunctions >= 7)
                 dAspherity = vResults[6];
+
             _graph->Drop(mglPoint(vResults[0], vResults[1]),
                          mglPoint(vResults[2], vResults[3]),
                          vResults[4],
@@ -2392,58 +2444,66 @@ void Plot::create2dDrawing(vector<string>& vDrawVector)
                          dShift,
                          dAspherity);
         }
-        else if (sCurrentDrawingFunction.substr(0, 7) == "circle(")
+        else if (sCurrentDrawingFunction.starts_with("circle("))
         {
             if (nFunctions < 3)
                 continue;
+
             _graph->Circle(mglPoint(vResults[0], vResults[1]), vResults[2], sStyle.c_str());
         }
-        else if (sCurrentDrawingFunction.substr(0, 4) == "arc(")
+        else if (sCurrentDrawingFunction.starts_with("arc("))
         {
             if (nFunctions < 5)
                 continue;
+
             _graph->Arc(mglPoint(vResults[0], vResults[1]), mglPoint(vResults[2], vResults[3]), vResults[4], sStyle.c_str());
         }
-        else if (sCurrentDrawingFunction.substr(0, 5) == "arcv(")
+        else if (sCurrentDrawingFunction.starts_with("arcv("))
         {
             if (nFunctions < 5)
                 continue;
+
             _graph->Arc(mglPoint(vResults[0], vResults[1]), mglPoint(vResults[2] + vResults[0], vResults[3] + vResults[1]), vResults[4], sStyle.c_str());
         }
-        else if (sCurrentDrawingFunction.substr(0, 6) == "point(")
+        else if (sCurrentDrawingFunction.starts_with("point("))
         {
             if (nFunctions < 2)
                 continue;
+
             _graph->Mark(mglPoint(vResults[0], vResults[1]), sStyle.c_str());
         }
-        else if (sCurrentDrawingFunction.substr(0, 6) == "curve(")
+        else if (sCurrentDrawingFunction.starts_with("curve("))
         {
             if (nFunctions < 8)
                 continue;
+
             _graph->Curve(mglPoint(vResults[0], vResults[1]),
                           mglPoint(vResults[2], vResults[3]),
                           mglPoint(vResults[4], vResults[5]),
                           mglPoint(vResults[6], vResults[7]), sStyle.c_str());
         }
-        else if (sCurrentDrawingFunction.substr(0, 8) == "ellipse(")
+        else if (sCurrentDrawingFunction.starts_with("ellipse("))
         {
             if (nFunctions < 5)
                 continue;
+
             _graph->Ellipse(mglPoint(vResults[0], vResults[1]), mglPoint(vResults[2], vResults[3]), vResults[4], sStyle.c_str());
         }
-        else if (sCurrentDrawingFunction.substr(0, 9) == "ellipsev(")
+        else if (sCurrentDrawingFunction.starts_with("ellipsev("))
         {
             if (nFunctions < 5)
                 continue;
+
             _graph->Ellipse(mglPoint(vResults[0], vResults[1]), mglPoint(vResults[2] + vResults[0], vResults[3] + vResults[1]), vResults[4], sStyle.c_str());
         }
-        else if (sCurrentDrawingFunction.substr(0, 5) == "text(")
+        else if (sCurrentDrawingFunction.starts_with("text("))
         {
             if (!sTextString.length())
             {
                 sTextString = sStyle;
                 sStyle = "k";
             }
+
             if (nFunctions >= 4)
                 _graph->Puts(mglPoint(vResults[0], vResults[1]), mglPoint(vResults[2], vResults[3]), sTextString.c_str(), sStyle.c_str());
             else if (nFunctions >= 2)
@@ -2451,16 +2511,18 @@ void Plot::create2dDrawing(vector<string>& vDrawVector)
             else
                 continue;
         }
-        else if (sCurrentDrawingFunction.substr(0, 8) == "polygon(")
+        else if (sCurrentDrawingFunction.starts_with("polygon("))
         {
             if (nFunctions < 5 || vResults[4] < 3)
                 continue;
+
             _graph->Polygon(mglPoint(vResults[0], vResults[1]), mglPoint(vResults[2], vResults[3]), (int)vResults[4], sStyle.c_str());
         }
-        else if (sCurrentDrawingFunction.substr(0, 9) == "polygonv(")
+        else if (sCurrentDrawingFunction.starts_with("polygonv("))
         {
             if (nFunctions < 5 || vResults[4] < 3)
                 continue;
+
             _graph->Polygon(mglPoint(vResults[0], vResults[1]), mglPoint(vResults[2] + vResults[0], vResults[3] + vResults[1]), (int)vResults[4], sStyle.c_str());
         }
         else
@@ -2482,77 +2544,91 @@ void Plot::create3dDrawing(vector<string>& vDrawVector)
     int nFunctions;
     string sStyle;
     string sTextString;
-    string sDrawExpr;
-    string sCurrentDrawingFunction;
+    StringView sDrawExpr;
+    StringView sCurrentDrawingFunction;
     string sDummy;
 
     for (size_t v = 0; v < vDrawVector.size(); v++)
     {
         sStyle = "k";
         sTextString = "";
-        sDrawExpr = "";
         sCurrentDrawingFunction = vDrawVector[v];
+
         if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sCurrentDrawingFunction))
         {
             for (int n = (int)sCurrentDrawingFunction.length() - 1; n >= 0; n--)
             {
                 if (sCurrentDrawingFunction[n] == ',' && !isInQuotes(sCurrentDrawingFunction, (size_t)n, true))
                 {
-                    sStyle = sCurrentDrawingFunction.substr(n + 1);
-                    sCurrentDrawingFunction.erase(n);
+                    sStyle = sCurrentDrawingFunction.subview(n + 1).to_string();
+                    sCurrentDrawingFunction.remove_from(n);
 
                     break;
                 }
             }
+
             sStyle = sStyle.substr(0, sStyle.rfind(')')) + " -nq";
             NumeReKernel::getInstance()->getStringParser().evalAndFormat(sStyle, sDummy, true);
         }
+
         if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sCurrentDrawingFunction))
         {
             for (int n = (int)sCurrentDrawingFunction.length() - 1; n >= 0; n--)
             {
                 if (sCurrentDrawingFunction[n] == ',' && !isInQuotes(sCurrentDrawingFunction, (size_t)n, true))
                 {
-                    sTextString = sCurrentDrawingFunction.substr(n + 1);
-                    sCurrentDrawingFunction.erase(n);
+                    sTextString = sCurrentDrawingFunction.subview(n + 1).to_string();
+                    sCurrentDrawingFunction.remove_from(n);
 
                     break;
                 }
             }
+
             sTextString += " -nq";
             NumeReKernel::getInstance()->getStringParser().evalAndFormat(sTextString, sDummy, true);
         }
+
         if (sCurrentDrawingFunction.back() == ')')
-            sDrawExpr = sCurrentDrawingFunction.substr(sCurrentDrawingFunction.find('(') + 1, sCurrentDrawingFunction.rfind(')') - sCurrentDrawingFunction.find('(') - 1);
+            sDrawExpr = sCurrentDrawingFunction.subview(sCurrentDrawingFunction.find('(') + 1, sCurrentDrawingFunction.rfind(')') - sCurrentDrawingFunction.find('(') - 1);
         else
-            sDrawExpr = sCurrentDrawingFunction.substr(sCurrentDrawingFunction.find('(') + 1);
+            sDrawExpr = sCurrentDrawingFunction.subview(sCurrentDrawingFunction.find('(') + 1);
+
         if (sDrawExpr.find('{') != string::npos)
-            convertVectorToExpression(sDrawExpr, _option);
+        {
+            sDummy = sDrawExpr.to_string();
+            convertVectorToExpression(sDummy, _option);
+            sDrawExpr = sDummy;
+        }
+
         _parser.SetExpr(sDrawExpr);
         mu::value_type* vRes = _parser.Eval(nFunctions);
         std::vector<double> vResults = real({vRes, vRes+nFunctions});
-        if (sCurrentDrawingFunction.substr(0, 6) == "trace(" || sCurrentDrawingFunction.substr(0, 5) == "line(")
+
+        if (sCurrentDrawingFunction.starts_with("trace(") || sCurrentDrawingFunction.starts_with("line("))
         {
             if (nFunctions < 3)
                 continue;
+
             if (nFunctions < 6)
                 _graph->Line(mglPoint(), mglPoint(vResults[0], vResults[1], vResults[2]), sStyle.c_str());
             else
                 _graph->Line(mglPoint(vResults[0], vResults[1], vResults[2]), mglPoint(vResults[3], vResults[4], vResults[5]), sStyle.c_str());
         }
-        else if (sCurrentDrawingFunction.substr(0, 7) == "tracev(" || sCurrentDrawingFunction.substr(0, 6) == "linev(")
+        else if (sCurrentDrawingFunction.starts_with("tracev(") || sCurrentDrawingFunction.starts_with("linev("))
         {
             if (nFunctions < 3)
                 continue;
+
             if (nFunctions < 6)
                 _graph->Line(mglPoint(), mglPoint(vResults[0], vResults[1], vResults[2]), sStyle.c_str());
             else
                 _graph->Line(mglPoint(vResults[0], vResults[1], vResults[2]), mglPoint(vResults[3] + vResults[0], vResults[4] + vResults[1], vResults[5] + vResults[2]), sStyle.c_str());
         }
-        else if (sCurrentDrawingFunction.substr(0, 5) == "face(")
+        else if (sCurrentDrawingFunction.starts_with("face("))
         {
             if (nFunctions < 6)
                 continue;
+
             if (nFunctions < 9)
                 _graph->Face(mglPoint(vResults[3] - vResults[4] + vResults[1], vResults[4] + vResults[3] - vResults[0], vResults[5]),
                              mglPoint(vResults[0] + vResults[3], vResults[1] + vResults[4], vResults[2] + vResults[5]),
@@ -2572,10 +2648,11 @@ void Plot::create3dDrawing(vector<string>& vDrawVector)
                              mglPoint(vResults[0], vResults[1], vResults[2]),
                              sStyle.c_str());
         }
-        else if (sCurrentDrawingFunction.substr(0, 6) == "facev(")
+        else if (sCurrentDrawingFunction.starts_with("facev("))
         {
             if (nFunctions < 6)
                 continue;
+
             if (nFunctions < 9)
                 _graph->Face(mglPoint(vResults[0] + vResults[3] - vResults[4], vResults[1] + vResults[4] + vResults[3], vResults[5] + vResults[2]),
                              mglPoint(vResults[0] + vResults[3], vResults[1] + vResults[4], vResults[5] + vResults[2]),
@@ -2595,13 +2672,15 @@ void Plot::create3dDrawing(vector<string>& vDrawVector)
                              mglPoint(vResults[0], vResults[1], vResults[2]),
                              sStyle.c_str());
         }
-        else if (sCurrentDrawingFunction.substr(0, 9) == "triangle(")
+        else if (sCurrentDrawingFunction.starts_with("triangle("))
         {
             if (nFunctions < 6)
                 continue;
+
             double c = sqrt((vResults[3] - vResults[0]) * (vResults[3] - vResults[0])
                             + (vResults[4] - vResults[1]) * (vResults[4] - vResults[1])
                             + (vResults[5] - vResults[2]) * (vResults[5] - vResults[2])) / 2.0 * sqrt(3) / hypot(vResults[3], vResults[4]);
+
             if (nFunctions < 9)
                 _graph->Face(mglPoint((-vResults[0] + vResults[3]) / 2.0 - c * vResults[4], (-vResults[1] + vResults[4]) / 2.0 + c * vResults[3], (vResults[5] + vResults[2]) / 2.0),
                              mglPoint(vResults[3], vResults[4], vResults[5]),
@@ -2615,13 +2694,15 @@ void Plot::create3dDrawing(vector<string>& vDrawVector)
                              mglPoint(vResults[0], vResults[1], vResults[2]),
                              sStyle.c_str());
         }
-        else if (sCurrentDrawingFunction.substr(0, 10) == "trianglev(")
+        else if (sCurrentDrawingFunction.starts_with("trianglev("))
         {
             if (nFunctions < 6)
                 continue;
+
             double c = sqrt((vResults[3]) * (vResults[3])
                             + (vResults[4]) * (vResults[4])
                             + (vResults[5]) * (vResults[5])) / 2.0 * sqrt(3) / hypot(vResults[3], vResults[4]);
+
             if (nFunctions < 9)
                 _graph->Face(mglPoint((vResults[0] + 0.5 * vResults[3]) - c * vResults[4], (vResults[1] + 0.5 * vResults[4]) + c * vResults[3], (vResults[5] + 0.5 * vResults[2])),
                              mglPoint(vResults[0] + vResults[3], vResults[1] + vResults[4], vResults[2] + vResults[5]),
@@ -2635,10 +2716,11 @@ void Plot::create3dDrawing(vector<string>& vDrawVector)
                              mglPoint(vResults[0], vResults[1], vResults[2]),
                              sStyle.c_str());
         }
-        else if (sCurrentDrawingFunction.substr(0, 7) == "cuboid(")
+        else if (sCurrentDrawingFunction.starts_with("cuboid("))
         {
             if (nFunctions < 6)
                 continue;
+
             mglPoint _mDx;
             mglPoint _mDy;
             mglPoint _mDz;
@@ -2700,40 +2782,47 @@ void Plot::create3dDrawing(vector<string>& vDrawVector)
                          mglPoint(vResults[0], vResults[1], vResults[2]) + _mDy + _mDz + _mDx,
                          sStyle.c_str());
         }
-        else if (sCurrentDrawingFunction.substr(0, 7) == "sphere(")
+        else if (sCurrentDrawingFunction.starts_with("sphere("))
         {
             if (nFunctions < 4)
                 continue;
+
             _graph->Sphere(mglPoint(vResults[0], vResults[1], vResults[2]), vResults[3], sStyle.c_str());
         }
-        else if (sCurrentDrawingFunction.substr(0, 5) == "cone(")
+        else if (sCurrentDrawingFunction.starts_with("cone("))
         {
             if (nFunctions < 7)
                 continue;
+
             if (nFunctions >= 8)
                 _graph->Cone(mglPoint(vResults[0], vResults[1], vResults[2]), mglPoint(vResults[3], vResults[4], vResults[5]), vResults[6], vResults[7], sStyle.c_str());
             else
                 _graph->Cone(mglPoint(vResults[0], vResults[1], vResults[2]), mglPoint(vResults[3], vResults[4], vResults[5]), vResults[6], 0.0, sStyle.c_str());
         }
-        else if (sCurrentDrawingFunction.substr(0, 6) == "conev(")
+        else if (sCurrentDrawingFunction.starts_with("conev("))
         {
             if (nFunctions < 7)
                 continue;
+
             if (nFunctions >= 8)
                 _graph->Cone(mglPoint(vResults[0], vResults[1], vResults[2]), mglPoint(vResults[3], vResults[4], vResults[5]) + mglPoint(vResults[0], vResults[1], vResults[2]), vResults[6], vResults[7], sStyle.c_str());
             else
                 _graph->Cone(mglPoint(vResults[0], vResults[1], vResults[2]), mglPoint(vResults[3], vResults[4], vResults[5]) + mglPoint(vResults[0], vResults[1], vResults[2]), vResults[6], 0.0, sStyle.c_str());
         }
-        else if (sCurrentDrawingFunction.substr(0, 5) == "drop(")
+        else if (sCurrentDrawingFunction.starts_with("drop("))
         {
             if (nFunctions < 7)
                 continue;
+
             double dShift = 1;
             double dAspherity = 1;
+
             if (nFunctions >= 8)
                 dShift = vResults[7];
+
             if (nFunctions >= 9)
                 dAspherity = vResults[8];
+
             _graph->Drop(mglPoint(vResults[0], vResults[1], vResults[2]),
                          mglPoint(vResults[3], vResults[4], vResults[5]),
                          vResults[6],
@@ -2741,16 +2830,18 @@ void Plot::create3dDrawing(vector<string>& vDrawVector)
                          dShift,
                          dAspherity);
         }
-        else if (sCurrentDrawingFunction.substr(0, 7) == "circle(")
+        else if (sCurrentDrawingFunction.starts_with("circle("))
         {
             if (nFunctions < 4)
                 continue;
+
             _graph->Circle(mglPoint(vResults[0], vResults[1], vResults[2]), vResults[3], sStyle.c_str());
         }
-        else if (sCurrentDrawingFunction.substr(0, 4) == "arc(")
+        else if (sCurrentDrawingFunction.starts_with("arc("))
         {
             if (nFunctions < 7)
                 continue;
+
             if (nFunctions < 9)
                 _graph->Arc(mglPoint(vResults[0], vResults[1], vResults[2]),
                             mglPoint(vResults[3], vResults[4], vResults[5]), vResults[6], sStyle.c_str());
@@ -2761,10 +2852,11 @@ void Plot::create3dDrawing(vector<string>& vDrawVector)
                             vResults[9], sStyle.c_str());
 
         }
-        else if (sCurrentDrawingFunction.substr(0, 5) == "arcv(")
+        else if (sCurrentDrawingFunction.starts_with("arcv("))
         {
             if (nFunctions < 7)
                 continue;
+
             if (nFunctions < 9)
                 _graph->Arc(mglPoint(vResults[0], vResults[1], vResults[2]),
                             mglPoint(vResults[3], vResults[4], vResults[5]) + mglPoint(vResults[0], vResults[1], vResults[2]), vResults[6], sStyle.c_str());
@@ -2775,40 +2867,45 @@ void Plot::create3dDrawing(vector<string>& vDrawVector)
                             vResults[9], sStyle.c_str());
 
         }
-        else if (sCurrentDrawingFunction.substr(0, 6) == "point(")
+        else if (sCurrentDrawingFunction.starts_with("point("))
         {
             if (nFunctions < 3)
                 continue;
+
             _graph->Mark(mglPoint(vResults[0], vResults[1], vResults[2]), sStyle.c_str());
         }
-        else if (sCurrentDrawingFunction.substr(0, 6) == "curve(")
+        else if (sCurrentDrawingFunction.starts_with("curve("))
         {
             if (nFunctions < 12)
                 continue;
+
             _graph->Curve(mglPoint(vResults[0], vResults[1], vResults[2]),
                           mglPoint(vResults[3], vResults[4], vResults[5]),
                           mglPoint(vResults[6], vResults[7], vResults[8]),
                           mglPoint(vResults[9], vResults[10], vResults[11]), sStyle.c_str());
         }
-        else if (sCurrentDrawingFunction.substr(0, 8) == "ellipse(")
+        else if (sCurrentDrawingFunction.starts_with("ellipse("))
         {
             if (nFunctions < 7)
                 continue;
+
             _graph->Ellipse(mglPoint(vResults[0], vResults[1], vResults[2]), mglPoint(vResults[3], vResults[4], vResults[5]), vResults[6], sStyle.c_str());
         }
-        else if (sCurrentDrawingFunction.substr(0, 9) == "ellipsev(")
+        else if (sCurrentDrawingFunction.starts_with("ellipsev("))
         {
             if (nFunctions < 7)
                 continue;
+
             _graph->Ellipse(mglPoint(vResults[0], vResults[1], vResults[2]), mglPoint(vResults[3], vResults[4], vResults[5]) + mglPoint(vResults[0], vResults[1], vResults[2]), vResults[6], sStyle.c_str());
         }
-        else if (sCurrentDrawingFunction.substr(0, 5) == "text(")
+        else if (sCurrentDrawingFunction.starts_with("text("))
         {
             if (!sTextString.length())
             {
                 sTextString = sStyle;
                 sStyle = "k";
             }
+
             if (nFunctions >= 6)
                 _graph->Puts(mglPoint(vResults[0], vResults[1], vResults[2]), mglPoint(vResults[3], vResults[4], vResults[5]), sTextString.c_str(), sStyle.c_str());
             else if (nFunctions >= 3)
@@ -2816,16 +2913,18 @@ void Plot::create3dDrawing(vector<string>& vDrawVector)
             else
                 continue;
         }
-        else if (sCurrentDrawingFunction.substr(0, 8) == "polygon(")
+        else if (sCurrentDrawingFunction.starts_with("polygon("))
         {
             if (nFunctions < 7 || vResults[6] < 3)
                 continue;
+
             _graph->Polygon(mglPoint(vResults[0], vResults[1], vResults[2]), mglPoint(vResults[3], vResults[4], vResults[5]), (int)vResults[6], sStyle.c_str());
         }
-        else if (sCurrentDrawingFunction.substr(0, 9) == "polygonv(")
+        else if (sCurrentDrawingFunction.starts_with("polygonv("))
         {
             if (nFunctions < 7 || vResults[6] < 3)
                 continue;
+
             _graph->Polygon(mglPoint(vResults[0], vResults[1], vResults[2]), mglPoint(vResults[3], vResults[4], vResults[5]) + mglPoint(vResults[0], vResults[1], vResults[2]), (int)vResults[6], sStyle.c_str());
         }
         else
@@ -2934,7 +3033,7 @@ void Plot::createStd3dPlot(size_t nPlotCompose, size_t nPlotComposeSize)
                     for (size_t l = 0; l < sConvLegends.length(); l++)
                     {
                         if (sConvLegends[l] == '(')
-                            l += getMatchingParenthesis(sConvLegends.substr(l));
+                            l += getMatchingParenthesis(StringView(sConvLegends, l));
 
                         if (sConvLegends[l] == ',')
                         {
@@ -3657,7 +3756,7 @@ std::vector<std::string> Plot::separateFunctionsAndData()
                 && !_data.isCluster(sToken.substr(0, sToken.find_first_of("({"))))
                 throw SyntaxError(SyntaxError::DATAPOINTS_CANNOT_BE_MODIFIED_WHILE_PLOTTING, sCurrentExpr, sErrTok, sToken);
 
-            string sSubstr = sToken.substr(getMatchingParenthesis(sToken.substr(sToken.find_first_of("({"))) + sToken.find_first_of("({") + 1);
+            string sSubstr = sToken.substr(getMatchingParenthesis(StringView(sToken, sToken.find_first_of("({"))) + sToken.find_first_of("({") + 1);
 
             if (sSubstr[sSubstr.find_first_not_of(' ')] != '"' && sSubstr[sSubstr.find_first_not_of(' ')] != '#')
                 throw SyntaxError(SyntaxError::DATAPOINTS_CANNOT_BE_MODIFIED_WHILE_PLOTTING, sCurrentExpr, sErrTok, sToken);
@@ -4129,6 +4228,7 @@ void Plot::createDataLegends()
             // Strip all spaces and extract the table name
             StripSpaces(sTemp);
             DataAccessParser _access = getAccessParserForPlotAndFit(sTemp);
+            _access.evalIndices();
             std::string sTableName = _access.getDataObject();
 
             const VectorIndex& vCols = _access.getIndices().col;
@@ -4137,14 +4237,6 @@ void Plot::createDataLegends()
                 sTemp = "\"" + _data.getTopHeadLineElement(vCols.front(), sTableName) + "\"";
             else if (vCols.numberOfNodes() == 2)
             {
-                if (vCols.isOpenEnd())
-                    sTemp = "\"" + _data.getTopHeadLineElement(vCols[1], sTableName) + " vs. "
-                        + _data.getTopHeadLineElement(vCols[0], sTableName) + "\"";
-                else
-                    sTemp = "\"" + _data.getTopHeadLineElement(vCols.last(), sTableName) + " vs. "
-                        + _data.getTopHeadLineElement(vCols.front(), sTableName) + "\"";
-
-
                 // First and second index value available
                 if (_pInfo.sCommand != "plot3d")
                 {
@@ -4165,8 +4257,14 @@ void Plot::createDataLegends()
                             sTemp.back() = '"';
                         }
                         else
-                            sTemp = "\"" + _data.getTopHeadLineElement(vCols.last(), sTableName) + " vs. "
-                                + _data.getTopHeadLineElement(vCols.front(), sTableName) + "\"";
+                        {
+                            if (vCols.isOpenEnd())
+                                sTemp = "\"" + _data.getTopHeadLineElement(vCols[1], sTableName) + " vs. "
+                                    + _data.getTopHeadLineElement(vCols[0], sTableName) + "\"";
+                            else
+                                sTemp = "\"" + _data.getTopHeadLineElement(vCols.last(), sTableName) + " vs. "
+                                    + _data.getTopHeadLineElement(vCols.front(), sTableName) + "\"";
+                        }
                     }
                     else
                     {
