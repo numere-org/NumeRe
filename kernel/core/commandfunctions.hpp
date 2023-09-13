@@ -3846,6 +3846,9 @@ static CommandReturnValues cmd_start(string& sCmd)
         // Get the line parameter and subtract 1 to match the internal line count
         std::vector<mu::value_type> vecFromLine = cmdParser.getParameterValueAsNumericalValue("fromline");
         nFromLine = intCast(vecFromLine.front()) - 1;
+
+        // Get the valid starting point
+        nFromLine = GetCurrentEditor()->getStartLine(nFromLine);
     }
 
     _script.openScript(sFileName, nFromLine);

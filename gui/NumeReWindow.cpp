@@ -7141,9 +7141,6 @@ void NumeReWindow::OnExecuteFile(const std::string& sFileName, int id)
             // Get the current line
             int nStartLine = GetCurrentEditor()->GetCurrentLine() + 1;
 
-            // Get the valid starting point
-            nStartLine = GetCurrentEditor()->getStartLine(nStartLine);
-
             // Set the command
             command = "start \"" + command + "\"" + " -set fromline=" + std::to_string(nStartLine);
         }
