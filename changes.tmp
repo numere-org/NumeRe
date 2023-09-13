@@ -50,3 +50,5 @@ Added	Added option to execute a script from the current or a given line.
 Added	Layout commands have been added: "lamp", "timepicker" and "datepicker"
 Added	Using "statustext", one can now modify the statusbar of window layouts.
 Cleaned	A "treelist" can now display data using a tree-like layout.
+Cleaned	Improved the behavior of the table viewer: long strings are now wrapped around and the autosizing feature now informs about longer runtimes.
+Added	Whole new apps can now be created using the new file dialog and selecting one of the available templates.

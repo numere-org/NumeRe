@@ -3277,12 +3277,46 @@ void NumeReWindow::NewFile(FileFilterType _filetype, const wxString& defaultfile
         }
         else if (_filetype == FILE_NAPP)
         {
+            // Determine the template type
+            std::vector<std::string> vFiles;
+            wxArrayString choices;
+
+            // Get the template list
+            if (m_options->useCustomLangFiles() && wxFileExists(getProgramFolder() + "\\user\\lang\\tmpl_app_start.nlng"))
+                vFiles = getFileList(getProgramFolder().ToStdString() + "/user/lang/tmpl_app_gui_[*].nlng", m_terminal->getKernelSettings());
+            else
+                vFiles = getFileList(getProgramFolder().ToStdString() + "/lang/tmpl_app_gui_[*].nlng", m_terminal->getKernelSettings());
+
+            // Ensure we have the templates available
+            if (!vFiles.size())
+            {
+                wxMessageBox("Error: No app templates have been found", "Error: Missing Templates", wxOK | wxCENTER | wxICON_ERROR, this);
+                return;
+            }
+
+            // Get the template names
+            for (auto& file : vFiles)
+            {
+                choices.Add(file.substr(file.rfind('[')+1, file.rfind(']') - file.rfind('[')-1));
+            }
+
+            // Ask for the desired template
+            wxSingleChoiceDialog dialog(this, _guilang.get("GUI_DLG_NEWNAPP_TEMPLATE_QUESTION"),
+                                        _guilang.get("GUI_DLG_NEWNAPP_TEMPLATE"), choices);
+            dialog.SetIcon(getStandardIcon());
+            int ret = dialog.ShowModal();
+
+            if (ret == wxID_CANCEL)
+                return;
+
             wxString time = getTimeStamp(false);
             folder.insert(0, vPaths[PROCPATH]);
             loadTemplateToEditor(FILE_NPRC, "tmpl_app_start.nlng", wxFileName(folder, "start.nprc"), filename, time);
             loadTemplateToEditor(FILE_NPRC, "tmpl_app_init.nlng", wxFileName(folder + "/controller", "initialize.nprc"), filename, time);
-            loadTemplateToEditor(FILE_NLYT, "tmpl_app_gui.nlng", wxFileName(folder + "/view", "appmain.nlyt"), filename, time);
-            loadTemplateToEditor(FILE_NPRC, "tmpl_app_event.nlng", wxFileName(folder + "/view", "handleEvent.nprc"), filename, time);
+            loadTemplateToEditor(FILE_NLYT, "tmpl_app_gui_[" + choices[dialog.GetSelection()] + "].nlng",
+                                 wxFileName(folder + "/view", "appmain.nlyt"), filename, time);
+            loadTemplateToEditor(FILE_NPRC, "tmpl_app_event_[" + choices[dialog.GetSelection()] + "].nlng",
+                                 wxFileName(folder + "/view", "handleEvent.nprc"), filename, time);
             return;
         }
         else
@@ -3296,6 +3330,19 @@ void NumeReWindow::NewFile(FileFilterType _filetype, const wxString& defaultfile
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Load the specified template to the
+/// editor and replace the tokens with the
+/// corresponding values.
+///
+/// \param _filetype FileFilterType
+/// \param templateFileName wxString
+/// \param fullfilename wxFileName
+/// \param title wxString
+/// \param timestamp wxString
+/// \return void
+///
+/////////////////////////////////////////////////
 void NumeReWindow::loadTemplateToEditor(FileFilterType _filetype, wxString templateFileName, wxFileName fullfilename, wxString title, wxString timestamp)
 {
     wxString template_file;
@@ -3337,6 +3384,9 @@ void NumeReWindow::loadTemplateToEditor(FileFilterType _filetype, wxString templ
 
     // Add a new tab for the editor
     m_book->SetTabText(m_currentPage, edit->GetFileNameAndPath());
+
+    // Modify the page title by adding the "unsaved asterisk"
+    m_book->SetPageText(m_currentPage, m_book->GetPageText(m_currentPage) + "*");
     edit->ToggleSettings(settings);
     m_book->ChangeSelection(m_currentPage);
     m_book->SetSelection(m_currentPage);

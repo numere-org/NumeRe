@@ -24,6 +24,8 @@
 
 #include "cellvalueshader.hpp"
 
+#define DATESTRINGLEN 24
+
 // Define the standard colors
 static wxColour HeadlineColor = wxColour(192, 192, 192);
 static wxColour FrameColor = wxColour(230, 230, 230);
@@ -53,7 +55,7 @@ static double calculateLuminosity(const wxColour& c)
 /// position and automatically update the
 /// surrounding frame.
 /////////////////////////////////////////////////
-class AdvStringCellRenderer : public wxGridCellStringRenderer
+class AdvStringCellRenderer : public wxGridCellAutoWrapStringRenderer
 {
     protected:
         CellValueShader m_shader;
@@ -189,7 +191,12 @@ class AdvStringCellRenderer : public wxGridCellStringRenderer
             if (isPartOfCursor(grid, row, col))
             {
                 wxGridCellAttr* newAttr = createHighlightedAttr(attr, grid, row, col);
-                wxGridCellStringRenderer::Draw(grid, *newAttr, dc, rect, row, col, isSelected);
+
+                if (grid.GetCellValue(row, col).length() > DATESTRINGLEN)
+                    wxGridCellAutoWrapStringRenderer::Draw(grid, *newAttr, dc, rect, row, col, isSelected);
+                else
+                    wxGridCellStringRenderer::Draw(grid, *newAttr, dc, rect, row, col, isSelected);
+
                 newAttr->DecRef();
             }
             else if (isFrame(grid, row, col))
@@ -201,17 +208,40 @@ class AdvStringCellRenderer : public wxGridCellStringRenderer
             else if (isHeadLine(grid, row))
             {
                 wxGridCellAttr* newAttr = createHeadlineAttr(attr, grid, row, col);
-                wxGridCellStringRenderer::Draw(grid, *newAttr, dc, rect, row, col, isSelected);
+
+                if (grid.GetCellValue(row, col).length() > DATESTRINGLEN)
+                    wxGridCellAutoWrapStringRenderer::Draw(grid, *newAttr, dc, rect, row, col, isSelected);
+                else
+                    wxGridCellStringRenderer::Draw(grid, *newAttr, dc, rect, row, col, isSelected);
+
                 newAttr->DecRef();
             }
             else if (hasCustomColor())
             {
                 wxGridCellAttr* newAttr = createCustomColorAttr(attr, grid, row, col);
-                wxGridCellStringRenderer::Draw(grid, *newAttr, dc, rect, row, col, isSelected);
+
+                if (grid.GetCellValue(row, col).length() > DATESTRINGLEN)
+                    wxGridCellAutoWrapStringRenderer::Draw(grid, *newAttr, dc, rect, row, col, isSelected);
+                else
+                    wxGridCellStringRenderer::Draw(grid, *newAttr, dc, rect, row, col, isSelected);
+
                 newAttr->DecRef();
             }
             else
-                wxGridCellStringRenderer::Draw(grid, attr, dc, rect, row, col, isSelected);
+            {
+                if (grid.GetCellValue(row, col).length() > DATESTRINGLEN)
+                    wxGridCellAutoWrapStringRenderer::Draw(grid, attr, dc, rect, row, col, isSelected);
+                else
+                    wxGridCellStringRenderer::Draw(grid, attr, dc, rect, row, col, isSelected);
+            }
+        }
+
+        virtual wxSize GetBestSize(wxGrid& grid, wxGridCellAttr& attr, wxDC& dc, int row, int col)
+        {
+            if (grid.GetCellValue(row, col).length() > DATESTRINGLEN)
+                return wxGridCellAutoWrapStringRenderer::GetBestSize(grid, attr, dc, row, col);
+            else
+                return wxGridCellStringRenderer::GetBestSize(grid, attr, dc, row, col);
         }
 
         virtual wxGridCellRenderer *Clone() const
@@ -364,7 +394,7 @@ class CombinedCellEditor : public wxGridCellEditor
         /////////////////////////////////////////////////
         virtual void Create(wxWindow* parent, wxWindowID id, wxEvtHandler* evtHandler) override
         {
-            int style = wxTE_PROCESS_ENTER | wxTE_PROCESS_TAB | wxBORDER_NONE;
+            int style = wxTE_PROCESS_ENTER | wxTE_PROCESS_TAB | wxBORDER_NONE | wxTE_MULTILINE | wxTE_RICH;
 
             // Create the text control
             m_text = new wxTextCtrl(parent, id, wxEmptyString, wxDefaultPosition, wxDefaultSize, style);

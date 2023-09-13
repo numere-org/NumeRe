@@ -28,6 +28,7 @@
 #include <wx/clipbrd.h>
 #include <wx/dataobj.h>
 #include <wx/tokenzr.h>
+#include <wx/infobar.h>
 
 #include <memory>
 
@@ -72,6 +73,8 @@ TableViewer::TableViewer(wxWindow* parent, wxWindowID id, wxStatusBar* statusbar
     SetDefaultCellAlignment(wxALIGN_RIGHT, wxALIGN_CENTER);
     SetDefaultRenderer(new AdvStringCellRenderer);
     EnableGridLines(NumeReKernel::getInstance()->getSettings().getSetting(SETTING_B_SHOWGRIDLINES).active());
+    SetDefaultRowSize(24);
+    SetDefaultColSize(95);
 
     // Prepare the context menu
     m_popUpMenu.Append(ID_MENU_CVS, _guilang.get("GUI_TABLE_CVS"));
@@ -383,6 +386,22 @@ void TableViewer::OnLabelDoubleClick(wxGridEvent& event)
 {
     if (event.GetCol() >= 0)
         AutoSizeColumn(event.GetCol());
+    else if (event.GetRow() >= 0)
+        AutoSizeRow(event.GetRow());
+    else
+    {
+        int elements = GetRows() * GetCols();
+
+        if (elements > 1500 && m_parentPanel)
+            m_parentPanel->showMessage("Autosizing cells. Please wait ...");
+
+        AutoSize();
+
+        if (elements > 1500 && m_parentPanel)
+            m_parentPanel->dismissMessage();
+    }
+
+    m_parent->Layout();
 }
 
 
