@@ -3116,6 +3116,33 @@ static CommandReturnValues cmd_delete(string& sCmd)
 
 
 /////////////////////////////////////////////////
+/// \brief This static function clears all user
+/// defined variables.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
+static void clear_variables()
+{
+    NumeRe::StringParser& _stringParser = NumeReKernel::getInstance()->getStringParser();
+    _stringParser.clearStringVar();
+
+    static std::vector<std::string> defaultVars = {"t", "x", "y", "z", "ncols", "nlens", "nlines", "nrows", "ans"};
+    Parser& _parser = NumeReKernel::getInstance()->getParser();
+    varmap_type mVariables = _parser.GetVar();
+
+    // check if user-defined variable is legacy variable and call is from terminal
+    for (auto iter = mVariables.begin(); iter != mVariables.end(); ++iter)
+    {
+	bool isLegacyVariable = iter->first.starts_with("_~");
+	bool isCallingFromTerminal = std::find(defaultVars.begin(), defaultVars.end(), iter->first) == defaultVars.end();
+	if (!isLegacyVariable && isCallingFromTerminal)
+	    _parser.RemoveVar(iter->first);
+    }
+}
+
+
+/////////////////////////////////////////////////
 /// \brief This static function implements the
 /// "clear" command.
 ///
@@ -3144,21 +3171,7 @@ static CommandReturnValues cmd_clear(string& sCmd)
     }
     else if (cmdParser.hasParam("var") && NumeReKernel::getInstance()->getDebugger().getStackSize() == 0)
     {
-        NumeRe::StringParser& _stringParser = NumeReKernel::getInstance()->getStringParser();
-        _stringParser.clearStringVar();
-
-        static std::vector<std::string> defaultVars = {"t", "x", "y", "z", "ncols", "nlens", "nlines", "nrows", "ans"};
-        Parser& _parser = NumeReKernel::getInstance()->getParser();
-        varmap_type mVariables = _parser.GetVar();
-
-        // check if user-defined variable is legacy variable and call is from terminal
-        for (auto iter = mVariables.begin(); iter != mVariables.end(); ++iter)
-        {
-	    bool isLegacyVariable = iter->first.starts_with("_~");
-	    bool isCallingFromTerminal = std::find(defaultVars.begin(), defaultVars.end(), iter->first) == defaultVars.end();
-            if (!isLegacyVariable && isCallingFromTerminal)
-                _parser.RemoveVar(iter->first);
-        }
+	clear_variables();
     }
     else if (cmdParser.hasParam("memory"))
     {
@@ -3170,6 +3183,12 @@ static CommandReturnValues cmd_clear(string& sCmd)
 
         // Clear also the string table
         _data.clearStringElements();
+
+	// Clear also user-defined variables
+	if (NumeReKernel::getInstance()->getDebugger().getStackSize() == 0)
+	{
+	    clear_variables();
+	}
 
         // Clear also the clusters
         _data.clearAllClusters();
@@ -5495,4 +5514,3 @@ static std::map<std::string,CommandFunc> getCommandFunctionsWithReturnValues()
 
 
 #endif // COMMANDFUNCTIONS_HPP
-
