@@ -281,7 +281,7 @@ string getDataElements(string& sLine, Parser& _parser, MemoryManager& _data, con
 
 	// Validate the number of parentheses
 	if (!validateParenthesisNumber(sLine))
-		throw SyntaxError(SyntaxError::UNMATCHED_PARENTHESIS, sLine, SyntaxError::invalid_position);
+		throw SyntaxError(SyntaxError::UNMATCHED_PARENTHESIS, sLine, sLine.find_first_of("({[]})"));
 
 	string sCache;             // Rueckgabe-string: Ggf. der linke Teil der Gleichung, falls es sich um eine Zuweisung handelt
 	string sLine_Temp;         // temporaerer string, da wir die string-Referenz nicht unnoetig veraendern wollen
@@ -893,7 +893,7 @@ static void replaceEntityOccurence(string& sLine, const string& sEntityOccurence
 				mu::value_type dRef = 0.0;
 				int nType = 0;
 				string sArg = "";
-				sLeft = sLine.substr(sLine.find(sLeft) + sLeft.length(), getMatchingParenthesis(sLine.substr(sLine.find(sLeft) + sLeft.length() - 1)) - 1);
+				sLeft = sLine.substr(sLine.find(sLeft) + sLeft.length(), getMatchingParenthesis(StringView(sLine, sLine.find(sLeft) + sLeft.length() - 1)) - 1);
 				sArg = getNextArgument(sLeft, true);
 				sArg = getNextArgument(sLeft, true);
 
@@ -910,7 +910,7 @@ static void replaceEntityOccurence(string& sLine, const string& sEntityOccurence
 				_parser.SetExpr(sArg);
 				nType = intCast(_parser.Eval());
 				sLine = sLine.replace(sLine.rfind("cmp(", sLine.find(sEntityOccurence)),
-									  getMatchingParenthesis(sLine.substr(sLine.rfind("cmp(", sLine.find(sEntityOccurence)) + 3)) + 4,
+									  getMatchingParenthesis(StringView(sLine, sLine.rfind("cmp(", sLine.find(sEntityOccurence)) + 3)) + 4,
 									  toCmdString(isCluster ? _data.getCluster(sEntityName).cmp(_idx.row, dRef, nType) : _data.cmp(sEntityName, _idx.row, _idx.col, dRef, nType)));
 			}
 			else if (sLeft == "pct(")
@@ -919,7 +919,7 @@ static void replaceEntityOccurence(string& sLine, const string& sEntityOccurence
 				_parser.DisableAccessCaching();
 				mu::value_type dPct = 0.5;
 				string sArg = "";
-				sLeft = sLine.substr(sLine.find(sLeft) + sLeft.length(), getMatchingParenthesis(sLine.substr(sLine.find(sLeft) + sLeft.length() - 1)) - 1);
+				sLeft = sLine.substr(sLine.find(sLeft) + sLeft.length(), getMatchingParenthesis(StringView(sLine, sLine.find(sLeft) + sLeft.length() - 1)) - 1);
 				sArg = getNextArgument(sLeft, true);
 				sArg = getNextArgument(sLeft, true);
 
@@ -929,7 +929,7 @@ static void replaceEntityOccurence(string& sLine, const string& sEntityOccurence
 				_parser.SetExpr(sArg);
 				dPct = _parser.Eval();
 				sLine = sLine.replace(sLine.rfind("pct(", sLine.find(sEntityOccurence)),
-									  getMatchingParenthesis(sLine.substr(sLine.rfind("pct(", sLine.find(sEntityOccurence)) + 3)) + 4,
+									  getMatchingParenthesis(StringView(sLine, sLine.rfind("pct(", sLine.find(sEntityOccurence)) + 3)) + 4,
 									  toCmdString(isCluster ? _data.getCluster(sEntityName).pct(_idx.row, dPct) : _data.pct(sEntityName, _idx.row, _idx.col, dPct)));
 			}
 			else //Fallback
@@ -1105,7 +1105,7 @@ static string getMafAccessString(const string& sLine, const string& sEntity)
 		for (size_t i = nPos; i < sLine.length(); i++)
 		{
 			if (sLine[i] == '(' || sLine[i] == '[' || sLine[i] == '{')
-				i += getMatchingParenthesis(sLine.substr(i)) + 1;
+				i += getMatchingParenthesis(StringView(sLine, i)) + 1;
 
 			if (i >= sLine.length())
 				return sLine.substr(nPos);
@@ -2585,14 +2585,15 @@ Indices getIndicesForPlotAndFit(const string& sExpression, string& sDataTable, i
 /// passed expression is non-empty (i.e. it
 /// contains more than white spaces).
 ///
-/// \param sExpr const string&
+/// \param sExpr StringView
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool isNotEmptyExpression(const string& sExpr)
+bool isNotEmptyExpression(StringView sExpr)
 {
 	if (!sExpr.length())
 		return false;
+
 	return sExpr.find_first_not_of(' ') != string::npos;
 }
 
@@ -2643,7 +2644,7 @@ bool isClusterCandidate(string& sLine, string& sCluster, bool doCut)
             }
 
             // Extract the cluster including its braces
-            sCluster = sLine.substr(start, getMatchingParenthesis(sLine.substr(i))+(i-start)+1);
+            sCluster = sLine.substr(start, getMatchingParenthesis(StringView(sLine, i))+(i-start)+1);
 
             // If the command line shall be splitted, do that
             // here
@@ -2664,7 +2665,7 @@ bool isClusterCandidate(string& sLine, string& sCluster, bool doCut)
 
             // Declare the extracted cluster, if it is not
             // known to the clustermanager
-            if (!_data.isCluster(sCluster.substr(0, sCluster.find('{'))))
+            if (!_data.isCluster(StringView(sCluster, 0, sCluster.find('{'))))
                 _data.newCluster(sCluster);
 
             return true;

@@ -56,6 +56,22 @@ class FlowCtrl
         PlotData* _pDataRef;
         Script* _scriptRef;
 
+    public:
+        enum FlowCtrlBlock
+        {
+            FCB_NONE,
+            FCB_FOR,
+            FCB_WHL,
+            FCB_IF,
+            FCB_ELIF,
+            FCB_ELSE,
+            FCB_SWCH,
+            FCB_CASE,
+            FCB_DEF,
+            FCB_TRY,
+            FCB_CTCH
+        };
+
     protected:
         enum CalculationType
         {
@@ -105,7 +121,7 @@ class FlowCtrl
         varmap_type vVars;
         std::vector<std::vector<int>> nJumpTable;
         std::vector<int> nCalcType;
-        std::string sLoopNames;
+        std::vector<FlowCtrlBlock> blockNames;
 
         int nFlowCtrlStatements[FC_COUNT];
 
@@ -145,11 +161,11 @@ class FlowCtrl
         NumeRe::Cluster evalRangeBasedHeader(std::string& sHeadExpression, int nth_Cmd, const std::string& sHeadCommand);
         int evalForkFlowCommands(int __j, int nth_loop);
 
-        void replaceLocalVars(std::string& sLine);
+        void replaceLocalVars(MutableStringView sLine);
         void replaceLocalVars(const std::string& sOldVar, const std::string& sNewVar, size_t from = 0, size_t to = std::string::npos);
 
-        bool checkFlowControlArgument(const std::string& sFlowControlArgument, bool isForLoop = false);
-        bool checkCaseValue(const std::string& sCaseDefinition);
+        bool checkFlowControlArgument(StringView sFlowControlArgument, bool isForLoop = false);
+        bool checkCaseValue(StringView sCaseDefinition);
 
         std::string extractFlagsAndIndexVariables();
         void fillJumpTableAndExpandRecursives();
@@ -159,7 +175,7 @@ class FlowCtrl
         void updateTestStats();
 
 
-        virtual int procedureCmdInterface(std::string& sLine);
+        virtual int procedureCmdInterface(StringView sLine);
         virtual ProcedureInterfaceRetVal procedureInterface(std::string& sLine, Parser& _parser, FunctionDefinitionManager& _functions, MemoryManager& _data, Output& _out, PlotData& _pData, Script& _script, Settings& _option, int nth_command);
         virtual int isInline(const std::string& sProc);
         virtual int evalDebuggerBreakPoint(Parser& _parser, Settings& _option);
@@ -172,13 +188,14 @@ class FlowCtrl
         virtual ~FlowCtrl();
 
         int getCurrentBlockDepth() const;
-        inline std::string getCurrentBlock() const
+        inline FlowCtrlBlock getCurrentBlock() const
             {
-                if (sLoopNames.length())
-                    return sLoopNames.substr(sLoopNames.rfind(';')+1);
-                else
-                    return "";
+                if (blockNames.size())
+                    return blockNames.back();
+
+                return FCB_NONE;
             }
+        static std::string getBlockName(FlowCtrlBlock blockId);
         inline Returnvalue getReturnValue() const
             {
                 return ReturnVal;
@@ -187,15 +204,15 @@ class FlowCtrl
             {
                 return bReturnSignal;
             }
-        void setCommand(std::string& __sCmd, int nCurrentLine);
+        void addToControlFlowBlock(MutableStringView __sCmd, int nCurrentLine);
         void eval();
         void reset();
 
         int getCurrentLineNumber() const;
         std::string getCurrentCommand() const;
 
-        static bool isFlowCtrlStatement(const std::string& sCmd);
-        static bool isAnyFlowCtrlStatement(const std::string& sCmd);
+        static bool isFlowCtrlStatement(StringView sCmd);
+        static bool isAnyFlowCtrlStatement(StringView sCmd);
 
 };
 

@@ -21,6 +21,7 @@
 #define STRUCTURES_HPP
 
 #include <string>
+#include <cstring>
 #include <stdexcept>
 #include <vector>
 #include <set>
@@ -1155,7 +1156,55 @@ class StringViewBase
             return pos >= m_start && pos < m_start + m_len;
         }
 
+        /////////////////////////////////////////////////
+        /// \brief Private helper function to determine,
+        /// whether a character is a parser delimiter.
+        ///
+        /// \param c char
+        /// \return bool
+        ///
+        /////////////////////////////////////////////////
+        static bool is_parser_delim(char c)
+        {
+            // Characters converted to a single logical expression
+            return c >= 32 && c <= 126 && c != 36 && c != 39 && c != 46
+                && (c < 48 || c > 57)
+                && (c < 64 || c > 90)
+                && (c < 95 || c > 122);
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief Private helper function to determine,
+        /// whether a character is a delimiter.
+        ///
+        /// \param c char
+        /// \return bool
+        ///
+        /////////////////////////////////////////////////
+        static bool is_std_delim(char c)
+        {
+            // Characters converted to a single logical expression
+            return c >= 32 && c <= 125 && c != 36 && c != 39 && c != 46
+                && (c < 48 || c > 57)
+                && (c < 64 || c > 90)
+                && (c < 95 || c > 122);
+
+            // Should be identical to:
+            //static const string sDELIMITER = "+-*/ ()={}^&|!<>,\\%#[]?:\";";
+        }
+
     public:
+
+        /////////////////////////////////////////////////
+        /// \brief Defines the delimiter types.
+        /////////////////////////////////////////////////
+        enum DelimiterType
+        {
+            STD_DELIMITER,
+            PARSER_DELIMITER,
+            STRING_DELIMITER,
+            STRVAR_DELIMITER
+        };
 
         /////////////////////////////////////////////////
         /// \brief StringViewBase default constructor.
@@ -1188,6 +1237,7 @@ class StringViewBase
         {
             const std::string* thisString = getData();
             const std::string* viewString = view.getData();
+
             if (thisString && viewString)
                 return thisString->compare(m_start, m_len, *viewString, view.m_start, view.m_len) == 0;
 
@@ -1517,6 +1567,154 @@ class StringViewBase
         }
 
         /////////////////////////////////////////////////
+        /// \brief Checks, whether the viewed string has
+        /// the same character sequence as the passed
+        /// string starting from the selected position.
+        ///
+        /// \param other const StringViewBase&
+        /// \param pos size_t
+        /// \return bool
+        ///
+        /////////////////////////////////////////////////
+        inline bool match(const StringViewBase& other, size_t pos = 0) const
+        {
+            const std::string* thisString = getData();
+            const std::string* viewString = other.getData();
+
+            if (thisString && viewString)
+                return thisString->compare(m_start+pos, std::min(other.m_len, m_len-pos),
+                                           *viewString, other.m_start, other.m_len) == 0;
+
+            return false;
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief Checks, whether the viewed string has
+        /// the same character sequence as the passed
+        /// string starting from the selected position.
+        ///
+        /// \param other const std::string&
+        /// \param pos size_t
+        /// \return bool
+        ///
+        /////////////////////////////////////////////////
+        inline bool match(const std::string& other, size_t pos = 0) const
+        {
+            const std::string* thisString = getData();
+
+            if (thisString)
+                return thisString->compare(m_start+pos, std::min(other.length(), m_len-pos), other) == 0;
+
+            return false;
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief Checks, whether the viewed string has
+        /// the same character sequence as the passed
+        /// string starting from the selected position.
+        ///
+        /// \param other const char*
+        /// \param pos size_t
+        /// \return bool
+        ///
+        /////////////////////////////////////////////////
+        inline bool match(const char* other, size_t pos = 0) const
+        {
+            const std::string* thisString = getData();
+
+            if (thisString)
+                return thisString->compare(m_start+pos, std::min(std::strlen(other), m_len-pos), other) == 0;
+
+            return false;
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief Checks, whether the viewed string
+        /// starts with the passed string.
+        ///
+        /// \param other const StringViewBase&
+        /// \return bool
+        ///
+        /////////////////////////////////////////////////
+        inline bool starts_with(const StringViewBase& other) const
+        {
+            const std::string* thisString = getData();
+            const std::string* viewString = other.getData();
+
+            if (thisString && viewString)
+                return thisString->compare(m_start, std::min(other.m_len, m_len),
+                                           *viewString, other.m_start, other.m_len) == 0;
+
+            return false;
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief Checks, whether the viewed string
+        /// starts with the passed string.
+        ///
+        /// \param other const std::string&
+        /// \return bool
+        ///
+        /////////////////////////////////////////////////
+        inline bool starts_with(const std::string& other) const
+        {
+            const std::string* thisString = getData();
+
+            if (thisString)
+                return thisString->compare(m_start, std::min(other.length(), m_len), other) == 0;
+
+            return false;
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief Checks, whether the viewed string
+        /// ends with the passed string.
+        ///
+        /// \param other const StringViewBase&
+        /// \return bool
+        ///
+        /////////////////////////////////////////////////
+        inline bool ends_with(const StringViewBase& other) const
+        {
+            const std::string* thisString = getData();
+            const std::string* viewString = other.getData();
+
+            if (thisString && viewString)
+            {
+                if (m_len < other.m_len)
+                    return false;
+
+                return thisString->compare(m_start+m_len-other.m_len, other.m_len,
+                                           *viewString, other.m_start, other.m_len) == 0;
+            }
+
+            return false;
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief Checks, whether the viewed string
+        /// ends with the passed string.
+        ///
+        /// \param other const std::string&
+        /// \return bool
+        ///
+        /////////////////////////////////////////////////
+        inline bool ends_with(const std::string& other) const
+        {
+            const std::string* thisString = getData();
+
+            if (thisString)
+            {
+                if (m_len < other.length())
+                    return false;
+
+                return thisString->compare(m_start+m_len-other.length(), other.length(), other) == 0;
+            }
+
+            return false;
+        }
+
+        /////////////////////////////////////////////////
         /// \brief This member function can be used to
         /// remove characters from the front of the
         /// viewed section.
@@ -1549,6 +1747,22 @@ class StringViewBase
         {
             if (len < m_len)
                 m_len -= len;
+            else
+                clear();
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief Remove all characters after the
+        /// selected position from the view.
+        ///
+        /// \param pos size_t
+        /// \return void
+        ///
+        /////////////////////////////////////////////////
+        inline void remove_from(size_t pos)
+        {
+            if (pos > 0 && getData())
+                m_len = pos;
             else
                 clear();
         }
@@ -1599,7 +1813,7 @@ class StringViewBase
         /////////////////////////////////////////////////
         inline size_t length() const
         {
-            return m_len;
+            return getData() ? m_len : 0;
         }
 
         /////////////////////////////////////////////////
@@ -1917,6 +2131,50 @@ class StringViewBase
             return std::string::npos;
         }
 
+        /////////////////////////////////////////////////
+        /// \brief Checks, whether the selected sequence
+        /// of characters in the view is delimited by the
+        /// selected set of delimiters.
+        ///
+        /// \param pos size_t
+        /// \param len size_t
+        /// \param type DelimiterType
+        /// \return bool
+        ///
+        /////////////////////////////////////////////////
+        bool is_delimited_sequence(size_t pos = 0, size_t len = std::string::npos, DelimiterType type = STD_DELIMITER) const
+        {
+            const std::string* data = getData();
+
+            if (data)
+            {
+                len = validizeLength(pos, len);
+                size_t prevChar = m_start+pos-1;
+                size_t nextChar = m_start+pos+len;
+
+                switch (type)
+                {
+                    case STD_DELIMITER:
+                        return (!pos || is_std_delim(data->operator[](prevChar)))
+                            && (len+pos == m_len || is_std_delim(data->operator[](nextChar)));
+
+                    case STRING_DELIMITER:
+                        return (!pos || is_std_delim(data->operator[](prevChar)))
+                            && (len+pos == m_len || is_std_delim(data->operator[](nextChar)) || data->operator[](nextChar) == '.');
+
+                    case STRVAR_DELIMITER:
+                        return (!pos || is_std_delim(data->operator[](prevChar)))
+                            && (len+pos == m_len || (is_std_delim(data->operator[](nextChar))
+                                                 && data->operator[](nextChar) != '(') || data->operator[](nextChar) == '.');
+
+                    case PARSER_DELIMITER:
+                        return (!pos || is_parser_delim(data->operator[](prevChar)))
+                            && (len+pos == m_len || is_parser_delim(data->operator[](nextChar)));
+                }
+            }
+
+            return false;
+        }
 };
 
 
@@ -1934,6 +2192,71 @@ inline std::string operator+(const std::string& sString, const StringViewBase& v
 {
     return sString + view.to_string();
 }
+
+
+/////////////////////////////////////////////////
+/// \brief This member function is an overload
+/// for the equality operator using a const
+/// std::string instance.
+///
+/// \param sString const std::string&
+/// \param view const StringViewBase&
+/// \return bool
+///
+/////////////////////////////////////////////////
+inline bool operator==(const std::string& sString, const StringViewBase& view)
+{
+    return view == sString;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This member function is an overload
+/// for the equality operator using a const char*.
+///
+/// \param sString const char*
+/// \param view const StringViewBase&
+/// \return bool
+///
+/////////////////////////////////////////////////
+inline bool operator==(const char* sString, const StringViewBase& view)
+{
+    return view == sString;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This member function is an overload
+/// for the inequality operator using a const
+/// std::string instance.
+///
+/// \param sString const std::string&
+/// \param view const StringViewBase&
+/// \return bool
+///
+/////////////////////////////////////////////////
+inline bool operator!=(const std::string& sString, const StringViewBase& view)
+{
+    return view != sString;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This member function is an overload
+/// for the inequality operator using a const
+/// char*.
+///
+/// \param sString const char*
+/// \param view const StringViewBase&
+/// \return bool
+///
+/////////////////////////////////////////////////
+inline bool operator!=(const char* sString, const StringViewBase& view)
+{
+    return view != sString;
+}
+
+
 
 
 // Forward declaration for friendship
@@ -2087,11 +2410,11 @@ class MutableStringView : public StringViewBase
         /// \brief Assignment operator for another
         /// MutableStringView instance.
         ///
-        /// \param view MutableStringView&
+        /// \param view MutableStringView
         /// \return MutableStringView&
         ///
         /////////////////////////////////////////////////
-        MutableStringView& operator=(MutableStringView& view)
+        MutableStringView& operator=(MutableStringView view)
         {
             assign(view);
             return *this;
@@ -2229,6 +2552,67 @@ class MutableStringView : public StringViewBase
         /////////////////////////////////////////////////
         /// \brief This member function replaces a range
         /// in the internal viewed string with the passed
+        /// string.
+        ///
+        /// \param pos size_t
+        /// \param len size_t
+        /// \param s const char*
+        /// \return MutableStringView&
+        /// \remark Positions and lengths of other
+        /// StringViews to the same strings are
+        /// invalidated, if the lengths of the replaced
+        /// and the replacing string differ.
+        ///
+        /////////////////////////////////////////////////
+        MutableStringView& replace(size_t pos, size_t len, const char* s)
+        {
+            if (m_data && pos < m_len)
+            {
+                len = validizeLength(pos, len);
+                m_data->replace(m_start+pos, len, s);
+                m_len += std::strlen(s) - len;
+            }
+
+            return *this;
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief This member function replaces a range
+        /// in the internal viewed string with the passed
+        /// string. This function allows to select a
+        /// smaller part of the replacing string.
+        ///
+        /// \param pos size_t
+        /// \param len size_t
+        /// \param s const char*
+        /// \param subpos size_t
+        /// \param sublen size_t
+        /// \return MutableStringView&
+        /// \remark Positions and lengths of other
+        /// StringViews to the same strings are
+        /// invalidated, if the lengths of the replaced
+        /// and the replacing string differ.
+        ///
+        /////////////////////////////////////////////////
+        MutableStringView& replace(size_t pos, size_t len, const char* s, size_t subpos, size_t sublen)
+        {
+            if (m_data && pos < m_len)
+            {
+                len = validizeLength(pos, len);
+
+                if (subpos + sublen > std::strlen(s))
+                    sublen = std::strlen(s) - subpos;
+
+                m_data->replace(m_start+pos, len, s, subpos, sublen);
+                m_len += sublen - len;
+            }
+
+            return *this;
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief This member function replaces a range
+        /// in the internal viewed string with the passed
         /// StringViewBase.
         ///
         /// \param pos size_t
@@ -2244,6 +2628,72 @@ class MutableStringView : public StringViewBase
         MutableStringView& replace(size_t pos, size_t len, const StringViewBase& view)
         {
             return replace(pos, len, view.to_string());
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief This member function inserts a string
+        /// at the selected position.
+        ///
+        /// \param pos size_t
+        /// \param s const std::string&
+        /// \return MutableStringView&
+        /// \remark Positions and lengths of other
+        /// StringViews to the same strings are
+        /// invalidated, if the lengths of the replaced
+        /// and the replacing string differ.
+        ///
+        /////////////////////////////////////////////////
+        MutableStringView& insert(size_t pos, const std::string& s)
+        {
+            if (m_data && pos < m_len)
+            {
+                m_data->insert(m_start+pos, s);
+                m_len += s.length();
+            }
+
+            return *this;
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief This member function inserts a string
+        /// at the selected position.
+        ///
+        /// \param pos size_t
+        /// \param s const char*
+        /// \return MutableStringView&
+        /// \remark Positions and lengths of other
+        /// StringViews to the same strings are
+        /// invalidated, if the lengths of the replaced
+        /// and the replacing string differ.
+        ///
+        /////////////////////////////////////////////////
+        MutableStringView& insert(size_t pos, const char* s)
+        {
+            if (m_data && pos < m_len)
+            {
+                m_data->insert(m_start+pos, s);
+                m_len += std::strlen(s);
+            }
+
+            return *this;
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief This member function inserts a passed
+        /// StringViewBase at the selected position.
+        ///
+        /// \param pos size_t
+        /// \param view const StringViewBase&
+        /// \return MutableStringView&
+        /// \remark Positions and lengths of other
+        /// StringViews to the same strings are
+        /// invalidated, if the lengths of the replaced
+        /// and the replacing string differ.
+        ///
+        /////////////////////////////////////////////////
+        MutableStringView& insert(size_t pos, const StringViewBase& view)
+        {
+            return insert(pos, view.to_string());
         }
 
 };

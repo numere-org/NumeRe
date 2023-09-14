@@ -420,7 +420,7 @@ std::string Documentation::getArgAtPos(const std::string& sCmd, size_t nPos)
         {
             // Jump over parentheses, if you find one
             if (sCmd[i] == '(' || sCmd[i] == '[' || sCmd[i] == '{')
-                i += getMatchingParenthesis(sCmd.substr(i));
+                i += getMatchingParenthesis(StringView(sCmd, i));
 
             // Whitespace. Stop the loop here
             if (sCmd[i] == ' ')

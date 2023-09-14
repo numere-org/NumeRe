@@ -877,17 +877,17 @@ string Fitcontroller::getFitFunction()
         return "";
 
     sExpr += " ";
+    MutableStringView expr(sExpr);
 
     for (auto iter = mParams.begin(); iter != mParams.end(); ++iter)
     {
-        for (size_t i = 0; i < sExpr.length(); i++)
+        for (size_t i = 0; i < expr.length(); i++)
         {
-            if (sExpr.substr(i, (iter->first).length()) == iter->first)
+            if (expr.match(iter->first, i))
             {
-                if ((!i && checkDelimiter(" "+sExpr.substr(i, (iter->first).length()+1)))
-                    || (i && checkDelimiter(sExpr.substr(i-1, (iter->first).length()+2))))
+                if (expr.is_delimited_sequence(i, iter->first.length()))
                 {
-                    sExpr.replace(i, (iter->first).length(), toString(*(iter->second), 5));
+                    expr.replace(i, (iter->first).length(), toString(*(iter->second), 5));
                     i += toString(*(iter->second), 5).length();
                 }
             }

@@ -2,7 +2,6 @@ Added	It is now possible to pass plotting options to "hist" and "hist2d" directl
 New	The new flow control command "leave" allows jumping out of nested loops completely without the need of unnecessary complex "if-else" checks and boolean flags.
 Cleaned	The editor and the terminal will now only provide method autocompletion with methods fitting to the variable type.
 Added	It's now possible  to define the file type of the loaded or saved file if that is different from the standard file extension.
-Cleaned	The editor and the terminal will now only provide method autocompletion with methods fitting to the variable type.
 Removed	The obsolete second parameter for the elliptic integral D was removed. The function now has the signature "ellipticD(x,k)"
 Fixed	Resolved a problem with creating new files.
 New	A 64 bit version is now available.
@@ -25,13 +24,14 @@ Added	New table methods for reordering rows and columns "TAB().reorderXYZ()" hav
 New	It's now possible to use relative namespaces with additional tilde characters: "$this~~relative~namespace~..."
 Added	The table method "TAB().fndcols()" may now support regular expressions.
 Added	The function "getfilediff()" can be used to calculate the unified diff of two files.
-Cleaned	If the debugger is active, the usual stop button now also works as expected and aborts the whole process.
 Cleaned	"hist" will now use categories or logical values to determine the bins, however this only works, if all columns share their type and their category definitions. Otherwise abstract categories are defined.
 Added	It is possible to directly access the first and last character of a string
 Added	String functions to compare the first and last characters of a string to a substring: "startswith()" and "endswith()"
 Fixed	NumeRe will now restore its window, if it is iconized and one double-clicks on any linked file to have the editor scaled correctly.
 Fixed	NumeRe does not crash anymore after the print preview of the documentation browser has been closed.
 Updated	Language files and documentation articles may now be encoded using UTF-8. They're converted to CP1252 internally.
+Updated	The commands "hist" and "hist2d" were greatly improved and provide new features.
+Fixed	The inability to close the application after a previous close was aborted was resolved.
 Fixed	If the table name is now longer than 31 characters, an automatic sheet name will be used in XLS exports.
 Updated	The search bars of the file and the symbol's trees have been updated and improved.
 Added	Random distribution functions for the Weibull distributions were added.
@@ -40,4 +40,8 @@ New	We added an experimental support for using the column headlines as table ind
 Fixed	Table methods are now evaluated correctly within loops.
 Cleaned	If the debugger is active, the usual stop button now also works as expected and aborts the whole process.
 Added	The table viewer will now group common table header rows together, creating a virtual hierarchy.
+Cleaned	Improved the internal interface of "stats". If the result is stored to a target table, the first column will now contain the stats names.
+Cleaned	Units of loaded JCAMP-DX files are now written in English
+Cleaned	"url" now has a progress bar for larger files and accepts now longer transmissins.
+Added	Added option to execute a script from the current or a given line.
 Added	The clear command has now a new option -var, which will delete user created numberical and string variables.

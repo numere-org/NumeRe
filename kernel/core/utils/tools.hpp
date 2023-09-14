@@ -66,7 +66,7 @@ bool isInQuotes(StringView sExpr, size_t nPos, bool bIgnoreVarParser = false);
 bool isToStringArg(const std::string& sExpr, size_t nPos);
 bool isDelimiter(char cChar);
 bool addLegends(std::string&);
-bool checkDelimiter(const std::string& sToken, bool stringdelim = false);
+bool checkDelimiter(StringView sToken, bool stringdelim = false);
 std::vector<std::string> splitIntoLines(std::string sOutput, size_t lineWidth, bool bAllowDashBreaks = true, int nFirstIndent = 4, int nIndent = 4);
 std::string outputString(std::vector<std::string> stringInLines, int nFirstIndent, int nIndent);
 std::string LineBreak(std::string sOutput, const Settings& _option, bool bAllowDashBreaks = true, int nFirstIndent = 4, int nIndent = 4);
@@ -90,13 +90,13 @@ inline bool isValidValue(double d)
 
 /** \brief Checks, whether the number of parentheses is an even number
  *
- * \param sCmd const string&
+ * \param sCmd StringView
  * \return bool
  *
  * Doesn't check, whether the parentheses are ordered reasonable
  *
  */
-bool validateParenthesisNumber(const std::string& sCmd);
+bool validateParenthesisNumber(StringView sCmd);
 
 void addArgumentQuotes(std::string& sToAdd, const std::string& sParam);
 void addArgumentQuotes(std::string& sToAdd, size_t pos);
@@ -124,12 +124,12 @@ EndlessVector<std::string> getAllSemiColonSeparatedTokens(std::string sArgList);
 
 /** \brief Checks, whether the "to_cmd()" function was used
  *
- * \param sCmd const string&
+ * \param sCmd StringView
  * \param nPos size_t
  * \return bool
  *
  */
-bool isToCmd(const std::string& sCmd, size_t nPos);
+bool isToCmd(StringView sCmd, size_t nPos);
 
 size_t countEscapeSymbols(const std::string& sLine);
 std::vector<std::string> getFileList(const std::string& sDirectory, const Settings& _option, int nFlags = 0);
@@ -176,7 +176,7 @@ namespace big_endian_io
 void evalRecursiveExpressions(std::string& sExpr);
 
 size_t qSortDouble(double* dArray, size_t nlength);
-void replaceStringMethod(std::string& sLine, size_t nPos, size_t nLength, const std::string& sReplacement);
+void replaceStringMethod(MutableStringView sLine, size_t nPos, size_t nLength, const std::string& sReplacement);
 std::string shortenFileName(const std::string& sFullFileName);
 std::string removeDefaultPath(const std::string& sFullPath);
 std::string incrementVersion(std::string _sVer);

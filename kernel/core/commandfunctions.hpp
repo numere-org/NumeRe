@@ -332,10 +332,10 @@ static bool newObject(string& sCmd, Parser& _parser, MemoryManager& _data, Setti
 
         sFileName = _fSys.ValidizeAndPrepareName(sFileName, ".txt");
 
-        if (sFileName.substr(sFileName.rfind('.')) == ".nprc"
-				|| sFileName.substr(sFileName.rfind('.')) == ".nscr"
-				|| sFileName.substr(sFileName.rfind('.')) == ".nlyt"
-				|| sFileName.substr(sFileName.rfind('.')) == ".ndat")
+        if (sFileName.ends_with(".nprc")
+            || sFileName.ends_with(".nscr")
+            || sFileName.ends_with(".nlyt")
+            || sFileName.ends_with(".ndat"))
 			sFileName.replace(sFileName.rfind('.'), 5, ".txt");
 
         if (!prepareTemplate("tmpl_file", sFileName))
@@ -456,15 +456,15 @@ static bool newObject(string& sCmd, Parser& _parser, MemoryManager& _data, Setti
 /// \brief This function opens the object in the
 /// editor to edit its contents.
 ///
-/// \param sCmd string&
-/// \param _parser Parser&
+/// \param sCmd std::string&
 /// \param _data Datafile&
 /// \param _option Settings&
 /// \return bool
 ///
 /////////////////////////////////////////////////
-static bool editObject(string& sCmd, Parser& _parser, MemoryManager& _data, Settings& _option)
+static bool editObject(std::string& sCmd, MemoryManager& _data, Settings& _option)
 {
+    std::string sObject;
 	int nType = 0;
 	int nFileOpenFlag = 0;
 
@@ -473,8 +473,6 @@ static bool editObject(string& sCmd, Parser& _parser, MemoryManager& _data, Sett
 
 	if (findParameter(sCmd, "refresh"))
 		nFileOpenFlag = 2 | 4;
-
-	string sObject;
 
 	if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sCmd))
 		extractFirstParameterStringValue(sCmd, sObject);
@@ -488,130 +486,12 @@ static bool editObject(string& sCmd, Parser& _parser, MemoryManager& _data, Sett
 	}
 
 	StripSpaces(sObject);
-	FileSystem _fSys;
-	_fSys.setTokens(_option.getTokenPaths());
 
-	if (sObject.find('.') != string::npos)
-		_fSys.declareFileType(sObject.substr(sObject.rfind('.')));
-
-	if (!sObject.length())
-		throw SyntaxError(SyntaxError::NO_FILENAME, sCmd, SyntaxError::invalid_position);
-
-	if (sObject[0] == '$'  && sObject[1] != '\'')
-		sObject = "<procpath>/" + sObject.substr(1);
-	else if (sObject[0] == '$')
-		sObject.erase(0, 1);
-
-	while (sObject.find('~') != string::npos)
-		sObject[sObject.find('~')] = '/';
-
-	while (sObject.find('$') != string::npos)
-		sObject.erase(sObject.find('$'), 1);
-
-	if (sObject[0] == '\'' && sObject[sObject.length() - 1] == '\'')
-		sObject = sObject.substr(1, sObject.length() - 2);
-
-    // Resolve the paths
-	if (sObject.find("<loadpath>") != string::npos || sObject.find(_option.getLoadPath()) != string::npos)
-	{
-		_fSys.setPath(_option.getLoadPath(), false, _option.getExePath());
-		sObject = _fSys.ValidFileName(sObject, ".dat");
-	}
-	else if (sObject.find("<savepath>") != string::npos || sObject.find(_option.getSavePath()) != string::npos)
-	{
-		_fSys.setPath(_option.getSavePath(), false, _option.getExePath());
-		sObject = _fSys.ValidFileName(sObject, ".dat");
-	}
-	else if (sObject.find("<scriptpath>") != string::npos || sObject.find(_option.getScriptPath()) != string::npos)
-	{
-		_fSys.setPath(_option.getScriptPath(), false, _option.getExePath());
-		sObject = _fSys.ValidFileName(sObject, ".nscr");
-	}
-	else if (sObject.find("<plotpath>") != string::npos || sObject.find(_option.getPlotPath()) != string::npos)
-	{
-		_fSys.setPath(_option.getPlotPath(), false, _option.getExePath());
-		sObject = _fSys.ValidFileName(sObject, ".png");
-	}
-	else if (sObject.find("<procpath>") != string::npos || sObject.find(_option.getProcPath()) != string::npos)
-	{
-		_fSys.setPath(_option.getProcPath(), false, _option.getExePath());
-		sObject = _fSys.ValidFileName(sObject, ".nprc");
-	}
-	else if (sObject.find("<wp>") != string::npos || sObject.find(_option.getWorkPath()) != string::npos)
-	{
-		_fSys.setPath(_option.getWorkPath(), false, _option.getExePath());
-		sObject = _fSys.ValidFileName(sObject, ".nprc");
-	}
-	else if (sObject.find("<>") != string::npos || sObject.find("<this>") != string::npos || sObject.find(_option.getExePath()) != string::npos)
-	{
-		_fSys.setPath(_option.getExePath(), false, _option.getExePath());
-		sObject = _fSys.ValidFileName(sObject, ".dat");
-	}
-	else if (!_data.containsTablesOrClusters(sObject))
-	{
-	    // Is probably a folder path to be edited in the Windows Explorer
-		if (sObject.find('.') == string::npos && (sObject.find('/') != string::npos || sObject.find('\\') != string::npos))
-		{
-			ShellExecute(NULL, NULL, sObject.c_str(), NULL, NULL, SW_SHOWNORMAL);
-			return true;
-		}
-
-		// Append a wildcard at the end of the path if necessary
-		if (sObject[sObject.length() - 1] != '*' && sObject.find('.') == string::npos)
-			sObject += "*";
-
-        // Try to determine the path based upon the file extension, where we might find the
-        // file, if the user did not supply the path to the file
-		if (sObject.find('.') != string::npos)
-		{
-			if (sObject.substr(sObject.rfind('.')) == ".dat" || sObject.substr(sObject.rfind('.')) == ".txt")
-			{
-				_fSys.setPath(_option.getLoadPath(), false, _option.getExePath());
-				string sTemporaryObjectName = _fSys.ValidFileName(sObject, ".dat");
-
-				if (!fileExists(sTemporaryObjectName))
-					_fSys.setPath(_option.getSavePath(), false, _option.getExePath());
-			}
-			else if (sObject.substr(sObject.rfind('.')) == ".nscr")
-				_fSys.setPath(_option.getScriptPath(), false, _option.getExePath());
-			else if (sObject.substr(sObject.rfind('.')) == ".nprc")
-				_fSys.setPath(_option.getProcPath(), false, _option.getExePath());
-			else if (sObject.substr(sObject.rfind('.')) == ".png"
-					 || sObject.substr(sObject.rfind('.')) == ".gif"
-					 || sObject.substr(sObject.rfind('.')) == ".svg"
-					 || sObject.substr(sObject.rfind('.')) == ".eps")
-				_fSys.setPath(_option.getPlotPath(), false, _option.getExePath());
-			else if (sObject.substr(sObject.rfind('.')) == ".tex")
-			{
-				_fSys.setPath(_option.getPlotPath(), false, _option.getExePath());
-				string sTemporaryObjectName = _fSys.ValidFileName(sObject, ".tex");
-
-				if (!fileExists(sTemporaryObjectName))
-					_fSys.setPath(_option.getSavePath(), false, _option.getExePath());
-			}
-			else if (sObject.substr(sObject.rfind('.')) == ".nhlp")
-				_fSys.setPath(_option.getExePath() + "/docs", false, _option.getExePath());
-			else
-				_fSys.setPath(_option.getExePath(), false, _option.getExePath());
-		}
-		else
-			_fSys.setPath(_option.getExePath(), false, _option.getExePath());
-
-		sObject = _fSys.ValidFileName(sObject, ".dat");
-	}
-
-	// Is probably a folder path
-	if (!_data.containsTablesOrClusters(sObject) && sObject.find('.') == string::npos && (sObject.find('/') != string::npos || sObject.find('\\') != string::npos))
-	{
-		ShellExecute(NULL, NULL, sObject.c_str(), NULL, NULL, SW_SHOWNORMAL);
-		return true;
-	}
-
-	// Open the table for editing
+    // Open the table for editing
 	if (_data.containsTables(sObject))
 	{
-		StripSpaces(sObject);
-		string sTableName = sObject.substr(0, sObject.find('('));
+	    StripSpaces(sObject);
+		std::string sTableName = sObject.substr(0, sObject.find('('));
 
 		NumeReKernel::showTable(_data.extractTable(sTableName), sTableName, true);
 		NumeReKernel::printPreFmt("|-> " + _lang.get("BUILTIN_WAITINGFOREDIT") + " ... ");
@@ -626,12 +506,114 @@ static bool editObject(string& sCmd, Parser& _parser, MemoryManager& _data, Sett
         return true;
 	}
 
+	std::string sDefaultExtension = ".dat";
+	FileSystem _fSys;
+	_fSys.setTokens(_option.getTokenPaths());
+
+	if (sObject.find('.') != std::string::npos)
+		_fSys.declareFileType(sObject.substr(sObject.rfind('.')));
+
+	if (!sObject.length())
+		throw SyntaxError(SyntaxError::NO_FILENAME, sCmd, SyntaxError::invalid_position);
+
+	if (sObject[0] == '$' && sObject[1] != '\'')
+        sObject.insert(0, "<procpath>/");
+	else if (sObject[0] == '$')
+		sObject.erase(0,1);
+
+    replaceAll(sObject, "~", "/");
+    replaceAll(sObject, "$", "");
+
+	if (sObject.front() == '\'' && sObject.back() == '\'')
+    {
+        sObject.erase(0, 1);
+        sObject.pop_back();
+    }
+
+    // Resolve the paths
+    if (sObject.ends_with(".dat")
+        || sObject.ends_with(".txt")
+        || sObject.ends_with(".tex"))
+    {
+        _fSys.setPath(_option.getLoadPath(), false, _option.getExePath());
+
+        std::string sTemporaryObjectName = _fSys.ValidFileName(sObject, ".dat");
+
+        if (!fileExists(sTemporaryObjectName))
+            _fSys.setPath(_option.getSavePath(), false, _option.getExePath());
+    }
+    else if (sObject.find("<loadpath>") != std::string::npos
+             || sObject.find(_option.getLoadPath()) != std::string::npos)
+        _fSys.setPath(_option.getLoadPath(), false, _option.getExePath());
+    else if (sObject.find("<savepath>") != std::string::npos
+             || sObject.find(_option.getSavePath()) != std::string::npos)
+        _fSys.setPath(_option.getSavePath(), false, _option.getExePath());
+    else if (sObject.ends_with(".nscr")
+             || sObject.find("<scriptpath>") != std::string::npos
+             || sObject.find(_option.getScriptPath()) != std::string::npos)
+    {
+        _fSys.setPath(_option.getScriptPath(), false, _option.getExePath());
+        sDefaultExtension = ".nscr";
+    }
+    else if (sObject.ends_with(".png")
+             || sObject.ends_with(".gif")
+             || sObject.ends_with(".svg")
+             || sObject.ends_with(".eps")
+             || sObject.find("<plotpath>") != std::string::npos
+             || sObject.find(_option.getPlotPath()) != std::string::npos)
+    {
+        _fSys.setPath(_option.getPlotPath(), false, _option.getExePath());
+        sDefaultExtension = ".png";
+    }
+    else if (sObject.ends_with(".nprc")
+             || sObject.find("<procpath>") != std::string::npos
+             || sObject.find(_option.getProcPath()) != std::string::npos)
+    {
+        _fSys.setPath(_option.getProcPath(), false, _option.getExePath());
+        sDefaultExtension = ".nprc";
+    }
+    else if (sObject.find("<wp>") != std::string::npos
+             || sObject.find(_option.getWorkPath()) != std::string::npos)
+        _fSys.setPath(_option.getWorkPath(), false, _option.getExePath());
+    else if (sObject.find("<>") != std::string::npos
+             || sObject.find("<this>") != std::string::npos
+             || sObject.find(_option.getExePath()) != std::string::npos)
+        _fSys.setPath(_option.getExePath(), false, _option.getExePath());
+    else
+    {
+        // Is probably a folder path to be edited in the Windows Explorer
+        if (sObject.find('.') == std::string::npos
+            && sObject.find_first_of("/\\") != std::string::npos)
+        {
+            ShellExecute(NULL, NULL, sObject.c_str(), NULL, NULL, SW_SHOWNORMAL);
+            return true;
+        }
+
+        // Append a wildcard at the end of the path if necessary
+        if (sObject.back() != '*' && sObject.find('.') == std::string::npos)
+            sObject += "*";
+
+        // Try to determine the path based upon the file extension, where we might find the
+        // file, if the user did not supply the path to the file
+        if (sObject.find('.') != std::string::npos)
+        {
+            if (sObject.ends_with(".nhlp"))
+                _fSys.setPath(_option.getExePath() + "/docs", false, _option.getExePath());
+            else
+                _fSys.setPath(_option.getExePath(), false, _option.getExePath());
+        }
+        else
+            _fSys.setPath(_option.getExePath(), false, _option.getExePath());
+    }
+
+    sObject = _fSys.ValidFileName(sObject, sDefaultExtension);
+
 	// Could be a folder -> open it in the Windows Explorer
-	if (!fileExists(sObject) || sObject.find('.') == string::npos)
+	if (!fileExists(sObject) || sObject.find('.') == std::string::npos)
 	{
 		sObject.erase(sObject.rfind('.'));
 
-		if (sObject.find('*') != string::npos)
+		if (sObject.find('*') != std::string::npos)
 			sObject.erase(sObject.rfind('*'));
 
 		if ((long long int)ShellExecute(NULL, NULL, sObject.c_str(), NULL, NULL, SW_SHOWNORMAL) > 32)
@@ -641,35 +623,35 @@ static bool editObject(string& sCmd, Parser& _parser, MemoryManager& _data, Sett
 	}
 
 	// Determine the file type of the file to be edited
-	if (sObject.substr(sObject.rfind('.')) == ".dat"
-			|| sObject.substr(sObject.rfind('.')) == ".txt"
-			|| sObject.substr(sObject.rfind('.')) == ".tex"
-			|| sObject.substr(sObject.rfind('.')) == ".xml"
-			|| sObject.substr(sObject.rfind('.')) == ".yaml"
-			|| sObject.substr(sObject.rfind('.')) == ".yml"
-			|| sObject.substr(sObject.rfind('.')) == ".json"
-			|| sObject.substr(sObject.rfind('.')) == ".csv"
-			|| sObject.substr(sObject.rfind('.')) == ".labx"
-			|| sObject.substr(sObject.rfind('.')) == ".jdx"
-			|| sObject.substr(sObject.rfind('.')) == ".jcm"
-			|| sObject.substr(sObject.rfind('.')) == ".dx"
-			|| sObject.substr(sObject.rfind('.')) == ".nscr"
-			|| sObject.substr(sObject.rfind('.')) == ".nprc"
-			|| sObject.substr(sObject.rfind('.')) == ".nhlp"
-			|| sObject.substr(sObject.rfind('.')) == ".nlyt"
-			|| sObject.substr(sObject.rfind('.')) == ".png"
-			|| sObject.substr(sObject.rfind('.')) == ".gif"
-			|| sObject.substr(sObject.rfind('.')) == ".m"
-			|| sObject.substr(sObject.rfind('.')) == ".cpp"
-			|| sObject.substr(sObject.rfind('.')) == ".cxx"
-			|| sObject.substr(sObject.rfind('.')) == ".c"
-			|| sObject.substr(sObject.rfind('.')) == ".hpp"
-			|| sObject.substr(sObject.rfind('.')) == ".hxx"
-			|| sObject.substr(sObject.rfind('.')) == ".h"
-			|| sObject.substr(sObject.rfind('.')) == ".log")
+	if (sObject.ends_with(".dat")
+		|| sObject.ends_with(".txt")
+		|| sObject.ends_with(".tex")
+		|| sObject.ends_with(".xml")
+		|| sObject.ends_with(".yaml")
+		|| sObject.ends_with(".yml")
+		|| sObject.ends_with(".json")
+		|| sObject.ends_with(".csv")
+		|| sObject.ends_with(".labx")
+		|| sObject.ends_with(".jdx")
+		|| sObject.ends_with(".jcm")
+		|| sObject.ends_with(".dx")
+		|| sObject.ends_with(".nscr")
+		|| sObject.ends_with(".nprc")
+		|| sObject.ends_with(".nhlp")
+		|| sObject.ends_with(".nlyt")
+		|| sObject.ends_with(".png")
+		|| sObject.ends_with(".gif")
+		|| sObject.ends_with(".m")
+		|| sObject.ends_with(".cpp")
+		|| sObject.ends_with(".cxx")
+		|| sObject.ends_with(".c")
+		|| sObject.ends_with(".hpp")
+		|| sObject.ends_with(".hxx")
+		|| sObject.ends_with(".h")
+		|| sObject.ends_with(".log"))
 		nType = 1;
-	else if (sObject.substr(sObject.rfind('.')) == ".svg"
-			 || sObject.substr(sObject.rfind('.')) == ".eps")
+	else if (sObject.ends_with(".svg")
+			 || sObject.ends_with(".eps"))
 		nType = 2;
 
 	if (!nType)
@@ -777,41 +759,22 @@ static bool listDirectory(const string& sDir, const string& sParams, const Setti
 			}
 			else if (sDir[0] == '<')
 			{
-				if (sDir.substr(0, 10) == "<loadpath>")
-				{
-					hFind = FindFirstFile((_option.getLoadPath() + "\\" + sDir.substr(sDir.find('>') + 1) + "\\" + sPattern).c_str(), &FindFileData);
-					sDirectory = _option.getLoadPath() + sDir.substr(10);
-				}
-				else if (sDir.substr(0, 10) == "<savepath>")
-				{
-					hFind = FindFirstFile((_option.getSavePath() + "\\" + sDir.substr(sDir.find('>') + 1) + "\\" + sPattern).c_str(), &FindFileData);
-					sDirectory = _option.getSavePath() + sDir.substr(10);
-				}
-				else if (sDir.substr(0, 12) == "<scriptpath>")
-				{
-					hFind = FindFirstFile((_option.getScriptPath() + "\\" + sDir.substr(sDir.find('>') + 1) + "\\" + sPattern).c_str(), &FindFileData);
-					sDirectory = _option.getScriptPath() + sDir.substr(12);
-				}
-				else if (sDir.substr(0, 10) == "<plotpath>")
-				{
-					hFind = FindFirstFile((_option.getPlotPath() + "\\" + sDir.substr(sDir.find('>') + 1) + "\\" + sPattern).c_str(), &FindFileData);
-					sDirectory = _option.getPlotPath() + sDir.substr(10);
-				}
-				else if (sDir.substr(0, 10) == "<procpath>")
-				{
-					hFind = FindFirstFile((_option.getProcPath() + "\\" + sDir.substr(sDir.find('>') + 1) + "\\" + sPattern).c_str(), &FindFileData);
-					sDirectory = _option.getProcPath() + sDir.substr(10);
-				}
-				else if (sDir.substr(0, 4) == "<wp>")
-				{
-					hFind = FindFirstFile((_option.getWorkPath() + "\\" + sDir.substr(sDir.find('>') + 1) + "\\" + sPattern).c_str(), &FindFileData);
-					sDirectory = _option.getWorkPath() + sDir.substr(10);
-				}
-				else if (sDir.substr(0, 2) == "<>" || sDir.substr(0, 6) == "<this>")
-				{
-					hFind = FindFirstFile((_option.getExePath() + "\\" + sDir.substr(sDir.find('>') + 1) + "\\" + sPattern).c_str(), &FindFileData);
-					sDirectory = _option.getExePath() + sDir.substr(sDir.find('>') + 1);
-				}
+				if (sDir.starts_with("<loadpath>"))
+                    sDirectory = _option.getLoadPath() + sDir.substr(10);
+				else if (sDir.starts_with("<savepath>"))
+                    sDirectory = _option.getSavePath() + sDir.substr(10);
+				else if (sDir.starts_with("<scriptpath>"))
+                    sDirectory = _option.getScriptPath() + sDir.substr(12);
+				else if (sDir.starts_with("<plotpath>"))
+                    sDirectory = _option.getPlotPath() + sDir.substr(10);
+				else if (sDir.starts_with("<procpath>"))
+                    sDirectory = _option.getProcPath() + sDir.substr(10);
+				else if (sDir.starts_with("<wp>"))
+                    sDirectory = _option.getWorkPath() + sDir.substr(4);
+				else if (sDir.starts_with("<>") || sDir.starts_with("<this>"))
+                    sDirectory = _option.getExePath() + sDir.substr(sDir.find('>') + 1);
+
+				hFind = FindFirstFile((sDirectory + "\\" + sPattern).c_str(), &FindFileData);
 			}
 			else
 			{
@@ -2835,7 +2798,7 @@ static CommandReturnValues cmd_readline(string& sCmd)
             if (sLastLine.find('\n') != string::npos)
                 sLastLine.erase(0, sLastLine.rfind('\n'));
 
-            if (sLastLine.substr(0, 4) == "|   " || sLastLine.substr(0, 4) == "|<- " || sLastLine.substr(0, 4) == "|-> ")
+            if (sLastLine.starts_with("|   ") || sLastLine.starts_with("|<- ") || sLastLine.starts_with("|-> "))
                 sLastLine.erase(0, 4);
 
             StripSpaces(sLastLine);
@@ -2965,7 +2928,6 @@ static CommandReturnValues cmd_new(string& sCmd)
 static CommandReturnValues cmd_edit(string& sCmd)
 {
     MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
-    Parser& _parser = NumeReKernel::getInstance()->getParser();
     Settings& _option = NumeReKernel::getInstance()->getSettings();
 
     if (sCmd.length() > 5)
@@ -2975,10 +2937,10 @@ static CommandReturnValues cmd_edit(string& sCmd)
         {
             extractFirstParameterStringValue(sCmd, sArgument);
             sArgument = "edit " + sArgument;
-            editObject(sArgument, _parser, _data, _option);
+            editObject(sArgument, _data, _option);
         }
         else
-            editObject(sCmd, _parser, _data, _option);
+            editObject(sCmd, _data, _option);
     }
     else
         doc_Help("edit", _option);
@@ -3304,7 +3266,7 @@ static CommandReturnValues cmd_install(string& sCmd)
             sArgument = sCmd.substr(findCommand(sCmd).nPos + 8);
 
         StripSpaces(sArgument);
-        _script.openScript(sArgument);
+        _script.openScript(sArgument, 0);
     }
 
     return COMMAND_PROCESSED;
@@ -3374,7 +3336,7 @@ static CommandReturnValues cmd_credits(string& sCmd)
 	make_hline();
 	NumeReKernel::printPreFmt("|-> Version: " + sVersion);
 	NumeReKernel::printPreFmt(" | " + _lang.get("BUILTIN_CREDITS_BUILD") + ": " + AutoVersion::YEAR + "-" + AutoVersion::MONTH + "-" + AutoVersion::DATE + "\n");
-	NumeReKernel::print("Copyright (c) 2013-" + (AutoVersion::YEAR + toSystemCodePage(", Erik HÄNEL et al.")) );
+	NumeReKernel::print("Copyright (c) 2013-" + (AutoVersion::YEAR + toSystemCodePage(", Erik HÃ„NEL et al.")) );
 	NumeReKernel::printPreFmt("|   <numere.developer@gmail.com>\n" );
 	NumeReKernel::print(_lang.get("BUILTIN_CREDITS_VERSIONINFO"));
 	make_hline(-80);
@@ -3619,48 +3581,14 @@ static CommandReturnValues cmd_warn(string& sCmd)
 /////////////////////////////////////////////////
 static CommandReturnValues cmd_stats(string& sCmd)
 {
-    MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
-    Match _match = findCommand(sCmd, "stats");
-    string sExpr = sCmd;
+    CommandLineParser cmdParser(sCmd, "stats", CommandLineParser::CMD_DAT_PAR);
+    plugin_statistics(cmdParser);
 
-    sExpr.replace(_match.nPos, string::npos, "_~load[~_~]");
-    sCmd.erase(0, _match.nPos);
-
-    string sArgument = evaluateParameterValues(sCmd);
-
-    DataAccessParser _accessParser(sCmd);
-
-    if (_accessParser.getDataObject().length())
+    if (cmdParser.getReturnValueStatement().length())
     {
-        MemoryManager _cache;
-
-        copyDataToTemporaryTable(sCmd, _accessParser, _data, _cache);
-
-        if (_accessParser.getDataObject() != "table")
-            _cache.renameTable("table", _accessParser.getDataObject(), true);
-
-        if (!_cache.isValueLike(VectorIndex(0, _cache.getCols(_accessParser.getDataObject())-1), _accessParser.getDataObject()))
-            throw SyntaxError(SyntaxError::WRONG_COLUMN_TYPE, sCmd, _accessParser.getDataObject()+"(", _accessParser.getDataObject());
-
-        if (NumeReKernel::getInstance()->getStringParser().containsStringVars(sCmd))
-            NumeReKernel::getInstance()->getStringParser().getStringValues(sCmd);
-
-        if (findParameter(sCmd, "export", '='))
-            addArgumentQuotes(sCmd, "export");
-
-        sArgument = "stats -" + _accessParser.getDataObject() + " " + sCmd.substr(getMatchingParenthesis(sCmd.substr(sCmd.find('('))) + 1 + sCmd.find('('));
-        sArgument = evaluateParameterValues(sArgument);
-        std::string sRet = plugin_statistics(sArgument, _cache);
-
-        if (sRet.length())
-        {
-            sExpr.replace(_match.nPos, string::npos, sRet);
-            sCmd = sExpr;
-            return COMMAND_HAS_RETURNVALUE;
-        }
+        sCmd = cmdParser.getReturnValueStatement();
+        return COMMAND_HAS_RETURNVALUE;
     }
-    else
-        throw SyntaxError(SyntaxError::TABLE_DOESNT_EXIST, sCmd, SyntaxError::invalid_position);
 
     return COMMAND_PROCESSED;
 }
@@ -3948,7 +3876,16 @@ static CommandReturnValues cmd_start(string& sCmd)
     if (!sFileName.length())
         throw SyntaxError(SyntaxError::SCRIPT_NOT_EXIST, sCmd, sFileName, "[" + _lang.get("BUILTIN_CHECKKEYWORD_START_ERRORTOKEN") + "]");
 
-    _script.openScript(sFileName);
+    // Get the line to start from
+    int nFromLine = 0;
+    if (cmdParser.hasParam("fromline"))
+    {
+        // Get the line parameter and subtract 1 to match the internal line count
+        std::vector<mu::value_type> vecFromLine = cmdParser.getParameterValueAsNumericalValue("fromline");
+        nFromLine = intCast(vecFromLine.front()) - 1;
+    }
+
+    _script.openScript(sFileName, nFromLine);
 
     return COMMAND_PROCESSED;
 }
@@ -3973,7 +3910,7 @@ static CommandReturnValues cmd_show(string& sCmd)
     CommandLineParser cmdParser(sCmd, CommandLineParser::CMD_DAT_PAR);
 
     // Handle the compact mode (probably not needed any more)
-    if (cmdParser.getCommand().substr(0, 5) == "showf")
+    if (cmdParser.getCommand().starts_with("showf"))
         _out.setCompact(false);
     else
         _out.setCompact(_option.createCompactTables());
@@ -4180,9 +4117,9 @@ static CommandReturnValues cmd_swap(string& sCmd)
 /////////////////////////////////////////////////
 static CommandReturnValues cmd_hist(string& sCmd)
 {
-    string sArgument = evaluateParameterValues(sCmd);
+    CommandLineParser cmdParser(sCmd, "hist", CommandLineParser::CMD_EXPR_set_PAR);
 
-    plugin_histogram(sArgument);
+    plugin_histogram(cmdParser);
 
     return COMMAND_PROCESSED;
 }

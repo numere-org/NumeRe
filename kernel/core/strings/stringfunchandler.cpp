@@ -162,7 +162,7 @@ namespace NumeRe
                 nMaxArgs = argumentParser(sFunctionArgument, dValArg, nIntArg1);
             else if (funcHandle.fType >= PARSER_STRING && funcHandle.fType < PARSER_STRING_DOUBLE)
             {
-                if (sFuncName == "to_string(" && !isStringExpression(sFunctionArgument.to_string()))
+                if (sFuncName == "to_string(" && !isStringExpression(sFunctionArgument))
                 {
                     sStringArg1.push_generic(sFunctionArgument.to_string());
                     nMaxArgs = 1;

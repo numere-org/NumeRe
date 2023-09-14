@@ -1192,6 +1192,8 @@ void NumeReWindow::OnClose(wxCloseEvent &event)
     {
         if (event.CanVeto())
             event.Veto(true);
+
+        m_appClosing = false;
         return;
     }
 
@@ -1199,10 +1201,9 @@ void NumeReWindow::OnClose(wxCloseEvent &event)
     if (m_book->getCurrentEditor() && m_book->getCurrentEditor()->Modified())
     {
         if (event.CanVeto())
-        {
             event.Veto (true);
-        }
 
+        m_appClosing = false;
         return;
     }
 
@@ -1920,6 +1921,7 @@ void NumeReWindow::OnMenuEvent(wxCommandEvent &event)
         }
 
         case ID_MENU_EXECUTE:
+        case ID_MENU_EXECUTE_FROM_LINE:
         {
             if (!m_book->getCurrentEditor()->HasBeenSaved() || m_book->getCurrentEditor()->Modified())
             {
@@ -1947,6 +1949,7 @@ void NumeReWindow::OnMenuEvent(wxCommandEvent &event)
 
             break;
         }
+
         case ID_MENU_STOP_EXECUTION:
             if (m_debugViewer && m_debugViewer->hasControl())
                 m_debugViewer->OnDebugCancel();
@@ -5357,6 +5360,7 @@ void NumeReWindow::UpdateMenuBar()
     menuTools->Append(ID_MENU_OPTIONS, _guilang.get("GUI_MENU_OPTIONS"));
     menuTools->AppendSeparator();
     menuTools->Append(ID_MENU_EXECUTE, _guilang.get("GUI_MENU_EXECUTE"), _guilang.get("GUI_MENU_EXECUTE_TTP"));
+    menuTools->Append(ID_MENU_EXECUTE_FROM_LINE, _guilang.get("GUI_MENU_EXECUTE_FROM_LINE"), _guilang.get("GUI_MENU_EXECUTE_FROM_LINE_TTP"));
     menuTools->Append(wxID_ANY, _guilang.get("GUI_MENU_FORMAT"), menuFormat);
     menuTools->Append(wxID_ANY, _guilang.get("GUI_MENU_REFACTORING"), menuRefactoring);
     menuTools->Append(ID_MENU_TOGGLE_COMMENT_LINE, _guilang.get("GUI_MENU_COMMENTLINE"), _guilang.get("GUI_MENU_COMMENTLINE_TTP"));
@@ -5491,6 +5495,7 @@ wxBitmap NumeReWindow::getToolbarIcon(const wxString& iconName)
     else if (style == "Focused")
     {
         if (iconName == "run"
+            || iconName == "run-from-line"
             || iconName == "stop"
             || iconName == "add-bp"
             || iconName == "remove-bp"
@@ -5593,6 +5598,7 @@ void NumeReWindow::UpdateToolbar()
         t->AddSeparator();
 
     t->AddTool(ID_MENU_EXECUTE, _guilang.get("GUI_TB_RUN"), getToolbarIcon("run"), _guilang.get("GUI_TB_RUN_TTP"));
+    t->AddTool(ID_MENU_EXECUTE_FROM_LINE, _guilang.get("GUI_TB_RUN_LINE"), getToolbarIcon("run-from-line"), _guilang.get("GUI_TB_RUN_LINE_TTP"));
     t->AddTool(ID_MENU_STOP_EXECUTION, _guilang.get("GUI_TB_STOP"), getToolbarIcon("stop"), _guilang.get("GUI_TB_STOP_TTP"));
 
     t->AddSeparator();
@@ -7127,7 +7133,20 @@ void NumeReWindow::OnExecuteFile(const std::string& sFileName, int id)
         while (command.front() == '/')
             command.erase(0, 1);
 
-        command = "start \"" + command + "\"";
+        // Define the command including the line to execute from
+        if (id == ID_MENU_EXECUTE)
+            command = "start \"" + command + "\"";
+        else if (id == ID_MENU_EXECUTE_FROM_LINE)
+        {
+            // Get the current line
+            int nStartLine = GetCurrentEditor()->GetCurrentLine() + 1;
+
+            // Get the valid starting point
+            nStartLine = GetCurrentEditor()->getStartLine(nStartLine);
+
+            // Set the command
+            command = "start \"" + command + "\"" + " -set fromline=" + std::to_string(nStartLine);
+        }
     }
     else if (command.rfind(".nlyt") != std::string::npos)
     {

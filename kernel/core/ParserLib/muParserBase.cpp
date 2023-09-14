@@ -676,7 +676,7 @@ namespace mu
 
             while ((match = sExpr.find(iter->first, match)) != string::npos)
             {
-                if (!match || checkDelimiter(sExpr.subview(match-1, iter->first.length()+2)))
+                if (!match || sExpr.is_delimited_sequence(match, iter->first.length(), StringViewBase::PARSER_DELIMITER))
                     compileVectorsInMultiArgFunc(sExpr, match);
 
                 match++;
@@ -3632,7 +3632,7 @@ namespace mu
 
 			if ((iter->first).find('[') != string::npos && (iter->first).find(']') != string::npos)
 			{
-				if (bIgnoreProcedureVects && (iter->first).substr(0, 8) == "_~PROC~[")
+				if (bIgnoreProcedureVects && (iter->first).starts_with("_~PROC~["))
 				{
 					iter++;
 					continue;
@@ -3672,7 +3672,7 @@ namespace mu
 
             size_t nPos = sExpr.find(iter->first);
 
-            if (nPos != string::npos && (!nPos || checkDelimiter(sExpr.subview(nPos-1, iter->first.length()+2))))
+            if (nPos != string::npos && sExpr.is_delimited_sequence(nPos, iter->first.length(), StringViewBase::PARSER_DELIMITER))
                 return true;
         }
 
@@ -3682,7 +3682,7 @@ namespace mu
         {
             size_t nPos = sExpr.find(func);
 
-            if (nPos != string::npos && (!nPos || checkDelimiter(sExpr.subview(nPos-1, func.length()+2))))
+            if (nPos != string::npos && sExpr.is_delimited_sequence(nPos, func.length(), StringViewBase::PARSER_DELIMITER))
                 return true;
         }
 
@@ -3690,39 +3690,16 @@ namespace mu
         return false;
 	}
 
-	static bool isDelim(char c)
-	{
-	    // Characters converted to a single logical expression
-	    return c >= 32 && c <= 126 && c != 36 && c != 39 && c != 46 && (c < 48 || c > 57) && (c < 64 || c > 90) && (c < 95 || c > 122);
-	}
-
-    /////////////////////////////////////////////////
-    /// \brief This member function checks, whether
-    /// the passed string is delimited on both sides.
-    ///
-    /// \param sLine StringView
-    /// \return bool
-    ///
-    /////////////////////////////////////////////////
-	bool ParserBase::checkDelimiter(StringView sLine)
-	{
-	    return isDelim(sLine.front()) && isDelim(sLine.back());
-	    //static std::string sDelimiter = "+-*/ ()={}^&|!<>,\\%#~[]:";
-        //
-		//// --> Gib die Auswertung dieses logischen Ausdrucks zurueck <--
-		//return sDelimiter.find(sLine.front()) != std::string::npos && sDelimiter.find(sLine.back()) != std::string::npos;
-	}
-
 
     /////////////////////////////////////////////////
     /// \brief This member function replaces var
     /// occurences with the names of local variables.
     ///
-    /// \param sLine std::string&
+    /// \param sLine MutableStringView
     /// \return void
     ///
     /////////////////////////////////////////////////
-	void ParserBase::replaceLocalVars(std::string& sLine)
+	void ParserBase::replaceLocalVars(MutableStringView sLine)
 	{
 		if (!mVarMapPntr || !mVarMapPntr->size())
 			return;
@@ -3731,13 +3708,10 @@ namespace mu
 		{
 			for (size_t i = 0; i < sLine.length(); i++)
 			{
-				if (sLine.substr(i, (iter->first).length()) == iter->first)
+				if (sLine.match(iter->first, i))
 				{
-					if ((i && checkDelimiter(sLine.substr(i - 1, (iter->first).length() + 2)))
-							|| (!i && checkDelimiter(" " + sLine.substr(i, (iter->first).length() + 1))))
-					{
+					if (sLine.is_delimited_sequence(i, (iter->first).length(), StringViewBase::PARSER_DELIMITER))
 						sLine.replace(i, (iter->first).length(), iter->second);
-					}
 				}
 			}
 		}
