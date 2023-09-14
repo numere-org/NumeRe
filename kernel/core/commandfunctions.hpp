@@ -3142,31 +3142,22 @@ static CommandReturnValues cmd_clear(string& sCmd)
 
         return cmd_delete(sCommand);
     }
-    else if (cmdParser.hasParam("var"))
+    else if (cmdParser.hasParam("var") && NumeReKernel::getInstance()->getDebugger().getStackSize() == 0)
     {
         NumeRe::StringParser& _stringParser = NumeReKernel::getInstance()->getStringParser();
         _stringParser.clearStringVar();
 
-        static vector<string> sLegacyVar = {"t", "x", "y", "z", "ncols", "nlens", "nlines", "nrows", "ans"};
+        static std::vector<std::string> defaultVars = {"t", "x", "y", "z", "ncols", "nlens", "nlines", "nrows", "ans"};
         Parser& _parser = NumeReKernel::getInstance()->getParser();
         varmap_type mVariables = _parser.GetVar();
 
-        // check if user-defined variable is legacy variable
-        for (auto iter = mVariables.begin(); iter != mVariables.end(); ++iter) {
-            bool isLegacyVariable = false;
-            for (int i = 0; i != sLegacyVar.size(); i++) {
-                // if ( sLegacyVar[i] == iter->first || iter->first[0] == "~" || iter->first[0] == "_")
-                if ( sLegacyVar[i] == iter->first )
-                {
-                    isLegacyVariable = true;
-                    break;
-                }
-            }
-
-            if (not isLegacyVariable)
-            {
+        // check if user-defined variable is legacy variable and call is from terminal
+        for (auto iter = mVariables.begin(); iter != mVariables.end(); ++iter)
+        {
+	    bool isLegacyVariable = iter->first.starts_with("_~");
+	    bool isCallingFromTerminal = std::find(defaultVars.begin(), defaultVars.end(), iter->first) == defaultVars.end();
+            if (!isLegacyVariable && isCallingFromTerminal)
                 _parser.RemoveVar(iter->first);
-            }
         }
     }
     else if (cmdParser.hasParam("memory"))
