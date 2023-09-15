@@ -3135,7 +3135,7 @@ static CommandReturnValues cmd_clear(string& sCmd)
     {
 	    clear_variables();
     }
-    else if (cmdParser.hasParam("memory"))
+    else if (cmdParser.hasParam("memory") && NumeReKernel::getInstance()->getDebugger().getStackSize() == 0)
     {
         // Clear all tables
         if (cmdParser.hasParam("ignore") || cmdParser.hasParam("i"))
@@ -3147,10 +3147,7 @@ static CommandReturnValues cmd_clear(string& sCmd)
         _data.clearStringElements();
 
 	// Clear also user-defined variables if called from terminal
-	if (NumeReKernel::getInstance()->getDebugger().getStackSize() == 0)
-	{
-	    clear_variables();
-	}
+	clear_variables();
 
         // Clear also the clusters
         _data.clearAllClusters();
