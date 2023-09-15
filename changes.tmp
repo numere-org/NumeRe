@@ -44,3 +44,4 @@ Cleaned	Improved the internal interface of "stats". If the result is stored to a
 Cleaned	Units of loaded JCAMP-DX files are now written in English
 Cleaned	"url" now has a progress bar for larger files and accepts now longer transmissins.
 Added	Added option to execute a script from the current or a given line.
+Added	"clear -var" can now be used from the terminal or a script to clear the current list of variables (with exception of default variables).
