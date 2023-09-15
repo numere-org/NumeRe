@@ -725,14 +725,14 @@ namespace NumeRe
     /////////////////////////////////////////////////
     void StringVarFactory::clearStringVar()
     {
-	if (!m_mStringVars.size())
+	    if (!m_mStringVars.size())
             return;
 
-	for (auto iter = m_mStringVars.begin(); iter != m_mStringVars.end(); ++iter)
-	{
-	    if (!iter->first.starts_with("_~"))
-	        m_mStringVars.erase(iter);
-	}
+	    for (auto iter = m_mStringVars.begin(); iter != m_mStringVars.end(); ++iter)
+	    {
+	        if (!iter->first.starts_with("_~"))
+	            m_mStringVars.erase(iter);
+	    }
     }
 
 }
