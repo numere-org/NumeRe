@@ -3133,7 +3133,7 @@ static CommandReturnValues cmd_clear(string& sCmd)
     }
     else if (cmdParser.hasParam("var") && NumeReKernel::getInstance()->getDebugger().getStackSize() == 0)
     {
-	clear_variables();
+	    clear_variables();
     }
     else if (cmdParser.hasParam("memory"))
     {
