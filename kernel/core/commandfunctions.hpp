@@ -3146,7 +3146,7 @@ static CommandReturnValues cmd_clear(string& sCmd)
         // Clear also the string table
         _data.clearStringElements();
 
-	// Clear also user-defined variables
+	// Clear also user-defined variables if called from terminal
 	if (NumeReKernel::getInstance()->getDebugger().getStackSize() == 0)
 	{
 	    clear_variables();
