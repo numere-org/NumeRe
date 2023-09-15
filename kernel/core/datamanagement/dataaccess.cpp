@@ -281,7 +281,7 @@ string getDataElements(string& sLine, Parser& _parser, MemoryManager& _data, con
 
 	// Validate the number of parentheses
 	if (!validateParenthesisNumber(sLine))
-		throw SyntaxError(SyntaxError::UNMATCHED_PARENTHESIS, sLine, SyntaxError::invalid_position);
+		throw SyntaxError(SyntaxError::UNMATCHED_PARENTHESIS, sLine, sLine.find_first_of("({[]})"));
 
 	string sCache;             // Rueckgabe-string: Ggf. der linke Teil der Gleichung, falls es sich um eine Zuweisung handelt
 	string sLine_Temp;         // temporaerer string, da wir die string-Referenz nicht unnoetig veraendern wollen
@@ -339,7 +339,7 @@ string getDataElements(string& sLine, Parser& _parser, MemoryManager& _data, con
 		}
 		else
 		{
-			/* --> Nein? Dann ist das eine Zuweisung. Wird komplizierter zu loesen. Auﬂerdem kann dann rechts von
+			/* --> Nein? Dann ist das eine Zuweisung. Wird komplizierter zu loesen. Au√üerdem kann dann rechts von
 			 *     "=" immer noch "cache(" auftreten. <--
 			 * --> Suchen wir zuerst mal nach der Position des "=" und speichern diese in eq_pos <--
 			 */
@@ -893,7 +893,7 @@ static void replaceEntityOccurence(string& sLine, const string& sEntityOccurence
 				mu::value_type dRef = 0.0;
 				int nType = 0;
 				string sArg = "";
-				sLeft = sLine.substr(sLine.find(sLeft) + sLeft.length(), getMatchingParenthesis(sLine.substr(sLine.find(sLeft) + sLeft.length() - 1)) - 1);
+				sLeft = sLine.substr(sLine.find(sLeft) + sLeft.length(), getMatchingParenthesis(StringView(sLine, sLine.find(sLeft) + sLeft.length() - 1)) - 1);
 				sArg = getNextArgument(sLeft, true);
 				sArg = getNextArgument(sLeft, true);
 
@@ -910,7 +910,7 @@ static void replaceEntityOccurence(string& sLine, const string& sEntityOccurence
 				_parser.SetExpr(sArg);
 				nType = intCast(_parser.Eval());
 				sLine = sLine.replace(sLine.rfind("cmp(", sLine.find(sEntityOccurence)),
-									  getMatchingParenthesis(sLine.substr(sLine.rfind("cmp(", sLine.find(sEntityOccurence)) + 3)) + 4,
+									  getMatchingParenthesis(StringView(sLine, sLine.rfind("cmp(", sLine.find(sEntityOccurence)) + 3)) + 4,
 									  toCmdString(isCluster ? _data.getCluster(sEntityName).cmp(_idx.row, dRef, nType) : _data.cmp(sEntityName, _idx.row, _idx.col, dRef, nType)));
 			}
 			else if (sLeft == "pct(")
@@ -919,7 +919,7 @@ static void replaceEntityOccurence(string& sLine, const string& sEntityOccurence
 				_parser.DisableAccessCaching();
 				mu::value_type dPct = 0.5;
 				string sArg = "";
-				sLeft = sLine.substr(sLine.find(sLeft) + sLeft.length(), getMatchingParenthesis(sLine.substr(sLine.find(sLeft) + sLeft.length() - 1)) - 1);
+				sLeft = sLine.substr(sLine.find(sLeft) + sLeft.length(), getMatchingParenthesis(StringView(sLine, sLine.find(sLeft) + sLeft.length() - 1)) - 1);
 				sArg = getNextArgument(sLeft, true);
 				sArg = getNextArgument(sLeft, true);
 
@@ -929,7 +929,7 @@ static void replaceEntityOccurence(string& sLine, const string& sEntityOccurence
 				_parser.SetExpr(sArg);
 				dPct = _parser.Eval();
 				sLine = sLine.replace(sLine.rfind("pct(", sLine.find(sEntityOccurence)),
-									  getMatchingParenthesis(sLine.substr(sLine.rfind("pct(", sLine.find(sEntityOccurence)) + 3)) + 4,
+									  getMatchingParenthesis(StringView(sLine, sLine.rfind("pct(", sLine.find(sEntityOccurence)) + 3)) + 4,
 									  toCmdString(isCluster ? _data.getCluster(sEntityName).pct(_idx.row, dPct) : _data.pct(sEntityName, _idx.row, _idx.col, dPct)));
 			}
 			else //Fallback
@@ -960,7 +960,7 @@ static void handleMafDataAccess(string& sLine, const string& sMafAccess, Parser&
 	if (!NumeReKernel::getInstance()->getStringParser().isStringExpression(sMafVectorName))
     {
         // If the return value is not already a numerical vector
-        if (!_parser.ContainsVectorVars(sMafVectorName, false))
+        if (!_parser.ContainsVectorVars(sMafVectorName, false) && sMafVectorName != "true" && sMafVectorName != "false")
         {
             // Set the vector variable with its value for the parser
             _parser.SetVectorVar(sMafVectorName,
@@ -1103,7 +1103,7 @@ static string getMafAccessString(const string& sLine, const string& sEntity)
 		for (size_t i = nPos; i < sLine.length(); i++)
 		{
 			if (sLine[i] == '(' || sLine[i] == '[' || sLine[i] == '{')
-				i += getMatchingParenthesis(sLine.substr(i)) + 1;
+				i += getMatchingParenthesis(StringView(sLine, i)) + 1;
 
 			if (i >= sLine.length())
 				return sLine.substr(nPos);
@@ -1935,6 +1935,284 @@ static std::string tableMethod_annotate(const std::string& sTableName, std::stri
 
 
 /////////////////////////////////////////////////
+/// \brief Realizes the "insertblock()" method.
+///
+/// \param sTableName const std::string&
+/// \param sMethodArguments std::string
+/// \return std::string
+///
+/////////////////////////////////////////////////
+static std::string tableMethod_insertBlock(const std::string& sTableName, std::string sMethodArguments)
+{
+    NumeReKernel* _kernel = NumeReKernel::getInstance();
+
+    // Might be necessary to resolve the contents of columns and conversions
+    getDataElements(sMethodArguments,
+                    _kernel->getParser(),
+                    _kernel->getMemoryManager(),
+                    _kernel->getSettings());
+
+    int nResults = 0;
+    _kernel->getMemoryManager().updateDimensionVariables(sTableName);
+    _kernel->getParser().SetExpr(sMethodArguments);
+    mu::value_type* v = _kernel->getParser().Eval(nResults);
+
+    size_t atRow = intCast(v[0])-1;
+
+    if (nResults < 2)
+        return "false";
+
+    size_t atCol = intCast(v[1])-1;
+    size_t rows = 1;
+    size_t cols = 1;
+
+    if (nResults > 2)
+        rows = intCast(v[2]);
+
+    if (nResults > 3)
+        cols = intCast(v[3]);
+
+    return toString(_kernel->getMemoryManager().insertBlock(sTableName, atRow, atCol, rows, cols));
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Realizes the "insertcols()" method.
+///
+/// \param sTableName const std::string&
+/// \param sMethodArguments std::string
+/// \return std::string
+///
+/////////////////////////////////////////////////
+static std::string tableMethod_insertCols(const std::string& sTableName, std::string sMethodArguments)
+{
+    NumeReKernel* _kernel = NumeReKernel::getInstance();
+
+    // Might be necessary to resolve the contents of columns and conversions
+    getDataElements(sMethodArguments,
+                    _kernel->getParser(),
+                    _kernel->getMemoryManager(),
+                    _kernel->getSettings());
+
+    int nResults = 0;
+    _kernel->getMemoryManager().updateDimensionVariables(sTableName);
+    _kernel->getParser().SetExpr(sMethodArguments);
+    mu::value_type* v = _kernel->getParser().Eval(nResults);
+
+    size_t col = intCast(v[0])-1;
+    size_t num = 1;
+
+    if (nResults > 1)
+        num = intCast(v[1]);
+
+    return toString(_kernel->getMemoryManager().insertCols(sTableName, col, num));
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Realizes the "insertrows()" method.
+///
+/// \param sTableName const std::string&
+/// \param sMethodArguments std::string
+/// \return std::string
+///
+/////////////////////////////////////////////////
+static std::string tableMethod_insertRows(const std::string& sTableName, std::string sMethodArguments)
+{
+    NumeReKernel* _kernel = NumeReKernel::getInstance();
+
+    // Might be necessary to resolve the contents of columns and conversions
+    getDataElements(sMethodArguments,
+                    _kernel->getParser(),
+                    _kernel->getMemoryManager(),
+                    _kernel->getSettings());
+
+    int nResults = 0;
+    _kernel->getMemoryManager().updateDimensionVariables(sTableName);
+    _kernel->getParser().SetExpr(sMethodArguments);
+    mu::value_type* v = _kernel->getParser().Eval(nResults);
+
+    size_t row = intCast(v[0])-1;
+    size_t num = 1;
+
+    if (nResults > 1)
+        num = intCast(v[1]);
+
+    return toString(_kernel->getMemoryManager().insertRows(sTableName, row, num));
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Realizes the "removeblock()" method.
+///
+/// \param sTableName const std::string&
+/// \param sMethodArguments std::string
+/// \return std::string
+///
+/////////////////////////////////////////////////
+static std::string tableMethod_removeBlock(const std::string& sTableName, std::string sMethodArguments)
+{
+    NumeReKernel* _kernel = NumeReKernel::getInstance();
+
+    // Might be necessary to resolve the contents of columns and conversions
+    getDataElements(sMethodArguments,
+                    _kernel->getParser(),
+                    _kernel->getMemoryManager(),
+                    _kernel->getSettings());
+
+    int nResults = 0;
+    _kernel->getMemoryManager().updateDimensionVariables(sTableName);
+    _kernel->getParser().SetExpr(sMethodArguments);
+    mu::value_type* v = _kernel->getParser().Eval(nResults);
+
+    size_t atRow = intCast(v[0])-1;
+
+    if (nResults < 2)
+        return "false";
+
+    size_t atCol = intCast(v[1])-1;
+    size_t rows = 1;
+    size_t cols = 1;
+
+    if (nResults > 2)
+        rows = intCast(v[2]);
+
+    if (nResults > 3)
+        cols = intCast(v[3]);
+
+    return toString(_kernel->getMemoryManager().removeBlock(sTableName, atRow, atCol, rows, cols));
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Realizes the "removecols()" method.
+///
+/// \param sTableName const std::string&
+/// \param sMethodArguments std::string
+/// \return std::string
+///
+/////////////////////////////////////////////////
+static std::string tableMethod_removeCols(const std::string& sTableName, std::string sMethodArguments)
+{
+    // Might be necessary to resolve the contents of columns and conversions
+    getDataElements(sMethodArguments,
+                    NumeReKernel::getInstance()->getParser(),
+                    NumeReKernel::getInstance()->getMemoryManager(),
+                    NumeReKernel::getInstance()->getSettings());
+
+    int nResults = 0;
+    NumeReKernel::getInstance()->getMemoryManager().updateDimensionVariables(sTableName);
+    NumeReKernel::getInstance()->getParser().SetExpr(sMethodArguments);
+    mu::value_type* v = NumeReKernel::getInstance()->getParser().Eval(nResults);
+
+    return toString(NumeReKernel::getInstance()->getMemoryManager().removeCols(sTableName, VectorIndex(v, nResults, 0)));
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Realizes the "removerows()" method.
+///
+/// \param sTableName const std::string&
+/// \param sMethodArguments std::string
+/// \return std::string
+///
+/////////////////////////////////////////////////
+static std::string tableMethod_removeRows(const std::string& sTableName, std::string sMethodArguments)
+{
+    // Might be necessary to resolve the contents of columns and conversions
+    getDataElements(sMethodArguments,
+                    NumeReKernel::getInstance()->getParser(),
+                    NumeReKernel::getInstance()->getMemoryManager(),
+                    NumeReKernel::getInstance()->getSettings());
+
+    int nResults = 0;
+    NumeReKernel::getInstance()->getMemoryManager().updateDimensionVariables(sTableName);
+    NumeReKernel::getInstance()->getParser().SetExpr(sMethodArguments);
+    mu::value_type* v = NumeReKernel::getInstance()->getParser().Eval(nResults);
+
+    return toString(NumeReKernel::getInstance()->getMemoryManager().removeRows(sTableName, VectorIndex(v, nResults, 0)));
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Realizes the "reordercols()" method.
+///
+/// \param sTableName const std::string&
+/// \param sMethodArguments std::string
+/// \return std::string
+///
+/////////////////////////////////////////////////
+static std::string tableMethod_reorderCols(const std::string& sTableName, std::string sMethodArguments)
+{
+    NumeReKernel* _kernel = NumeReKernel::getInstance();
+
+    // Might be necessary to resolve the contents of columns and conversions
+    getDataElements(sMethodArguments,
+                    _kernel->getParser(),
+                    _kernel->getMemoryManager(),
+                    _kernel->getSettings());
+
+    VectorIndex vIndex;
+    VectorIndex vNewOrder;
+    int nResults = 0;
+
+    _kernel->getMemoryManager().updateDimensionVariables(sTableName);
+    _kernel->getParser().SetExpr(getNextArgument(sMethodArguments, true));
+    mu::value_type* v = _kernel->getParser().Eval(nResults);
+    vIndex = VectorIndex(v, nResults, 0);
+
+    if (!sMethodArguments.length())
+        throw SyntaxError(SyntaxError::TOO_FEW_ARGS, sTableName + "().reordercols()", ".reordercols(", ".reordercols(");
+
+    _kernel->getMemoryManager().updateDimensionVariables(sTableName);
+    _kernel->getParser().SetExpr(getNextArgument(sMethodArguments, true));
+    v = _kernel->getParser().Eval(nResults);
+    vNewOrder = VectorIndex(v, nResults, 0);
+
+    return toString(_kernel->getMemoryManager().reorderCols(sTableName, vIndex, vNewOrder));
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Realizes the "reorderrows()" method.
+///
+/// \param sTableName const std::string&
+/// \param sMethodArguments std::string
+/// \return std::string
+///
+/////////////////////////////////////////////////
+static std::string tableMethod_reorderRows(const std::string& sTableName, std::string sMethodArguments)
+{
+    NumeReKernel* _kernel = NumeReKernel::getInstance();
+
+    // Might be necessary to resolve the contents of columns and conversions
+    getDataElements(sMethodArguments,
+                    _kernel->getParser(),
+                    _kernel->getMemoryManager(),
+                    _kernel->getSettings());
+
+    VectorIndex vIndex;
+    VectorIndex vNewOrder;
+    int nResults = 0;
+
+    _kernel->getMemoryManager().updateDimensionVariables(sTableName);
+    _kernel->getParser().SetExpr(getNextArgument(sMethodArguments, true));
+    mu::value_type* v = _kernel->getParser().Eval(nResults);
+    vIndex = VectorIndex(v, nResults, 0);
+
+    if (!sMethodArguments.length())
+        throw SyntaxError(SyntaxError::TOO_FEW_ARGS, sTableName + "().reorderrows()", ".reorderrows(", ".reorderrows(");
+
+    _kernel->getMemoryManager().updateDimensionVariables(sTableName);
+    _kernel->getParser().SetExpr(getNextArgument(sMethodArguments, true));
+    v = _kernel->getParser().Eval(nResults);
+    vNewOrder = VectorIndex(v, nResults, 0);
+
+    return toString(_kernel->getMemoryManager().reorderRows(sTableName, vIndex, vNewOrder));
+}
+
+
+/////////////////////////////////////////////////
 /// \brief Typedef for a table method
 /////////////////////////////////////////////////
 typedef std::string (*TableMethod)(const std::string&, std::string, const std::string&);
@@ -1967,6 +2245,14 @@ static std::map<std::string, TableMethod> getInplaceTableMethods()
     mTableMethods["zscoreof"] = tableMethod_zscore;
     mTableMethods["anovaof"] = tableMethod_anova;
     mTableMethods["binsof"] = tableMethod_binsof;
+    mTableMethods["insertcells"] = tableMethod_insertBlock;
+    mTableMethods["insertcols"] = tableMethod_insertCols;
+    mTableMethods["insertrows"] = tableMethod_insertRows;
+    mTableMethods["removecells"] = tableMethod_removeBlock;
+    mTableMethods["removecols"] = tableMethod_removeCols;
+    mTableMethods["removerows"] = tableMethod_removeRows;
+    mTableMethods["reordercols"] = tableMethod_reorderCols;
+    mTableMethods["reorderrows"] = tableMethod_reorderRows;
 
     return mTableMethods;
 }
@@ -2014,6 +2300,12 @@ static string createMafVectorName(string sAccessString)
 
     if (sAccessString.find(".description") != std::string::npos)
         return "\"" + NumeReKernel::getInstance()->getMemoryManager().getComment(sAccessString.substr(0, sAccessString.find("()."))) + "\"";
+  
+    if (sAccessString.find(".shrink") != std::string::npos)
+    {
+        NumeReKernel::getInstance()->getMemoryManager().shrink(sTableName);
+        return "true";
+    }
 
     return sResultVectorName;
 }
@@ -2177,14 +2469,15 @@ Indices getIndicesForPlotAndFit(const string& sExpression, string& sDataTable, i
 /// passed expression is non-empty (i.e. it
 /// contains more than white spaces).
 ///
-/// \param sExpr const string&
+/// \param sExpr StringView
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool isNotEmptyExpression(const string& sExpr)
+bool isNotEmptyExpression(StringView sExpr)
 {
 	if (!sExpr.length())
 		return false;
+
 	return sExpr.find_first_not_of(' ') != string::npos;
 }
 
@@ -2235,7 +2528,7 @@ bool isClusterCandidate(string& sLine, string& sCluster, bool doCut)
             }
 
             // Extract the cluster including its braces
-            sCluster = sLine.substr(start, getMatchingParenthesis(sLine.substr(i))+(i-start)+1);
+            sCluster = sLine.substr(start, getMatchingParenthesis(StringView(sLine, i))+(i-start)+1);
 
             // If the command line shall be splitted, do that
             // here
@@ -2256,7 +2549,7 @@ bool isClusterCandidate(string& sLine, string& sCluster, bool doCut)
 
             // Declare the extracted cluster, if it is not
             // known to the clustermanager
-            if (!_data.isCluster(sCluster.substr(0, sCluster.find('{'))))
+            if (!_data.isCluster(StringView(sCluster, 0, sCluster.find('{'))))
                 _data.newCluster(sCluster);
 
             return true;

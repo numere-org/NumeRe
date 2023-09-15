@@ -286,13 +286,19 @@ double Interval::middle() const
 /// part of this interval.
 ///
 /// \param val mu::value_type
+/// \param bnds int
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool Interval::isInside(mu::value_type val) const
+bool Interval::isInside(mu::value_type val, int bnds) const
 {
-    return (m_vInterval.size() == 2 && val.real() >= min() && val.real() <= max())
-        || std::find(m_vInterval.begin(), m_vInterval.end(), val.real()) != m_vInterval.end();
+    if (m_vInterval.size() == 2)
+    {
+        return ((bnds & Interval::INCLUDE_LOWER) ? val.real() >= min() : val.real() > min())
+            && ((bnds & Interval::INCLUDE_UPPER) ? val.real() <= max() : val.real() < max());
+    }
+
+    return std::find(m_vInterval.begin(), m_vInterval.end(), val.real()) != m_vInterval.end();
 }
 
 
@@ -513,7 +519,7 @@ IntervalSet::IntervalSet(const std::string& sIntervalString)
     }
 
     // Read the interval syntax
-	if (sIntervalString.find('[') != std::string::npos && getMatchingParenthesis(sIntervalString.substr(sIntervalString.find('['))) != std::string::npos)
+	if (sIntervalString.find('[') != std::string::npos && getMatchingParenthesis(StringView(sIntervalString, sIntervalString.find('['))) != std::string::npos)
 	{
 		size_t nPos = 0;
 		size_t nMatchingParens = 0;
@@ -524,7 +530,7 @@ IntervalSet::IntervalSet(const std::string& sIntervalString)
 		{
 			nPos = sIntervalString.find('[', nPos);
 
-			if (nPos == std::string::npos || (nMatchingParens = getMatchingParenthesis(sIntervalString.substr(nPos))) == std::string::npos)
+			if (nPos == std::string::npos || (nMatchingParens = getMatchingParenthesis(StringView(sIntervalString, nPos))) == std::string::npos)
 				break;
 
             nMatchingParens += nPos;

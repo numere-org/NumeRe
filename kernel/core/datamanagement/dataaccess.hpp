@@ -68,7 +68,7 @@ bool parser_CheckMultArgFunc(const std::string&, const std::string&);
 std::string getDataElements(std::string& sLine, mu::Parser& _parser, MemoryManager& _data, const Settings& _option, int options = REPLACE_NAN);
 void replaceDataEntities(std::string&, const std::string&, MemoryManager&, mu::Parser&, const Settings&, int options = NO_OPTION);
 Memory* extractRange(const std::string& sCmd, DataAccessParser& _accessParser, int nDesiredCols = -1, bool bSort = false);
-bool isNotEmptyExpression(const std::string&);
+bool isNotEmptyExpression(StringView);
 bool isClusterCandidate(std::string& sLine, std::string& sCluster, bool doCut = true);
 mu::value_type getDataFromObject(const std::string& sObject, long long int i, long long int j, bool isCluster);
 std::vector<mu::value_type> getDataFromObject(const std::string& sObject, const VectorIndex& vRows, long long int j, bool isCluster);

@@ -300,6 +300,9 @@ NumeReEditor::NumeReEditor(NumeReWindow* mframe, Options* options, wxWindow* par
     m_popupMenu.Append(ID_MENU_PASTE, _guilang.get("GUI_MENU_EDITOR_PASTE"));
     m_popupMenu.AppendSeparator();
 
+    m_popupMenu.Append(ID_MENU_EXECUTE_FROM_LINE, _guilang.get("GUI_MENU_EDITOR_RUN_FROM_LINE"));
+    m_popupMenu.AppendSeparator();
+
     m_popupMenu.Append(ID_FOLD_CURRENT_BLOCK, _guilang.get("GUI_MENU_EDITOR_FOLDCURRENTBLOCK"));
     m_popupMenu.Append(ID_HIDE_SELECTION, _guilang.get("GUI_MENU_EDITOR_HIDECURRENTBLOCK"));
     m_popupMenu.AppendSeparator();
@@ -8196,6 +8199,34 @@ std::pair<int,int> NumeReEditor::getCurrentContext(int line)
 
 
 /////////////////////////////////////////////////
+/// \brief This helper function finds the line
+/// to start code execution for the run from
+/// line command. This includes checking for
+/// continued lines and loops.
+///
+/// \param line int
+/// \return int
+///
+/////////////////////////////////////////////////
+int NumeReEditor::getStartLine(int line)
+{
+    // Only check for scripts and do not do further checks for line 0
+    if (m_fileType != FILE_NSCR || line == 0)
+        return 0;
+
+    // If in a loop, find start of loop
+    while (GetFoldParent(line - 1) != wxNOT_FOUND)
+        line = GetFoldParent(line - 1) + 1;
+
+    // Check if line is continued and if so go to start of line
+    while (GetLine(line - 2).find("\\\\") != std::string::npos)
+        line--;
+
+    return line;
+}
+
+
+/////////////////////////////////////////////////
 /// \brief Wrapper for \c CodeFormatter.
 ///
 /// \param nFirstLine int
@@ -8377,28 +8408,11 @@ bool NumeReEditor::isStyleType(StyleType _type, int nPos)
 /////////////////////////////////////////////////
 int NumeReEditor::countUmlauts(const string& sStr)
 {
+    static Umlauts _umlauts;
     int nUmlauts = 0;
     for (size_t i = 0; i < sStr.length(); i++)
     {
-        if (sStr[i] == 'Ä'
-                || sStr[i] == 'ä'
-                || sStr[i] == 'Ö'
-                || sStr[i] == 'ö'
-                || sStr[i] == 'Ü'
-                || sStr[i] == 'ü'
-                || sStr[i] == 'ß'
-                || sStr[i] == '°'
-                || sStr[i] == 'µ'
-                || sStr[i] == (char)142
-                || sStr[i] == (char)132
-                || sStr[i] == (char)153
-                || sStr[i] == (char)148
-                || sStr[i] == (char)154
-                || sStr[i] == (char)129
-                || sStr[i] == (char)225
-                || sStr[i] == (char)167
-                || sStr[i] == (char)230
-           )
+        if (_umlauts.isUmlaut(sStr[i]))
             nUmlauts++;
     }
     return nUmlauts;

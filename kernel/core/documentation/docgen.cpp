@@ -270,25 +270,25 @@ std::string DocumentationGenerator::getStrippedRange(const StyledTextFile& file,
         {
             switch (sTextRange[i])
             {
-                case 'Ä':
+                case (char)0xC4:
                     sTextRange.replace(i, 1, "Ae");
                     break;
-                case 'ä':
+                case (char)0xE4:
                     sTextRange.replace(i, 1, "ae");
                     break;
-                case 'Ö':
+                case (char)0xD6:
                     sTextRange.replace(i, 1, "Oe");
                     break;
-                case 'ö':
+                case (char)0xF6:
                     sTextRange.replace(i, 1, "oe");
                     break;
-                case 'Ü':
+                case (char)0xDC:
                     sTextRange.replace(i, 1, "Ue");
                     break;
-                case 'ü':
+                case (char)0xFC:
                     sTextRange.replace(i, 1, "ue");
                     break;
-                case 'ß':
+                case (char)0xDF:
                     sTextRange.replace(i, 1, "ss");
                     break;
             }
@@ -508,25 +508,25 @@ std::string DocumentationGenerator::parseDocumentation(const StyledTextFile& fil
     {
         switch (sTextRange[i])
         {
-            case 'Ä':
+            case (char)0xC4:
                 sTextRange.replace(i, 1, "\\\"A");
                 break;
-            case 'ä':
+            case (char)0xE4:
                 sTextRange.replace(i, 1, "\\\"a");
                 break;
-            case 'Ö':
+            case (char)0xD6:
                 sTextRange.replace(i, 1, "\\\"O");
                 break;
-            case 'ö':
+            case (char)0xF6:
                 sTextRange.replace(i, 1, "\\\"o");
                 break;
-            case 'Ü':
+            case (char)0xDC:
                 sTextRange.replace(i, 1, "\\\"U");
                 break;
-            case 'ü':
+            case (char)0xFC:
                 sTextRange.replace(i, 1, "\\\"u");
                 break;
-            case 'ß':
+            case (char)0xDF:
                 sTextRange.replace(i, 1, "\\ss ");
                 break;
         }
@@ -685,7 +685,7 @@ std::string DocumentationGenerator::createMainProcedure(std::string sFileName) c
     sFileName.erase(sFileName.rfind('.'));
 
     // Try to detect the corresponding namespace
-    if (sFileName.substr(0, vPaths[PROCPATH].length()) == vPaths[PROCPATH])
+    if (sFileName.starts_with(vPaths[PROCPATH]))
     {
         sFileName.erase(0, vPaths[PROCPATH].length());
 
@@ -719,19 +719,19 @@ std::string DocumentationGenerator::createLaTeXFileName(std::string sFileName) c
 {
     std::vector<std::string> vPaths = NumeReKernel::getInstance()->getPathSettings();
 
-    if (sFileName.substr(0, vPaths[PROCPATH].length()) == vPaths[PROCPATH])
+    if (sFileName.starts_with(vPaths[PROCPATH]))
     {
         // This is one of the default folders
         sFileName.erase(0, vPaths[PROCPATH].length());
         sFileName = getPath() + "/procedures" + sFileName;
     }
-    else if (sFileName.substr(0, vPaths[SCRIPTPATH].length()) == vPaths[SCRIPTPATH])
+    else if (sFileName.starts_with(vPaths[SCRIPTPATH]))
     {
         // This is one of the default folders
         sFileName.erase(0, vPaths[SCRIPTPATH].length());
         sFileName = getPath() + "/scripts" + sFileName;
     }
-    else if (sFileName.substr(0, vPaths[EXEPATH].length()) == vPaths[EXEPATH])
+    else if (sFileName.starts_with(vPaths[EXEPATH]))
     {
         // This is one of the default folders
         sFileName.erase(0, vPaths[EXEPATH].length());
@@ -768,7 +768,7 @@ std::string DocumentationGenerator::prepareFileNameForLaTeX(std::string sFileNam
     // Remove standard path parts
     for (size_t i = LOADPATH; i < PATH_LAST; i++)
     {
-        if (sFileName.substr(0, vPaths[i].length()) == vPaths[i])
+        if (sFileName.starts_with(vPaths[i]))
         {
             sFileName.erase(0, vPaths[i].length());
 

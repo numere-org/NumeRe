@@ -823,7 +823,7 @@ bool differentiate(CommandLineParser& cmdParser)
                     && sVar.find(']', sVar.find('[')) != string::npos
                     && sVar.find(':', sVar.find('[')) != string::npos)
             {
-                sPos = sVar.substr(sVar.find('[') + 1, getMatchingParenthesis(sVar.substr(sVar.find('['))) - 1);
+                sPos = sVar.substr(sVar.find('[') + 1, getMatchingParenthesis(StringView(sVar, sVar.find('['))) - 1);
                 sVar = "x";
                 StripSpaces(sPos);
 
@@ -1102,7 +1102,7 @@ static string getIntervalForSearchFunctions(const string& sParams, string& sVar)
     else
     {
         sVar = "x";
-        sInterval = sParams.substr(sParams.find('[') + 1, getMatchingParenthesis(sParams.substr(sParams.find('['))) - 1);
+        sInterval = sParams.substr(sParams.find('[') + 1, getMatchingParenthesis(StringView(sParams, sParams.find('['))) - 1);
         StripSpaces(sInterval);
 
         if (sInterval == ":")

@@ -160,7 +160,7 @@ void getIndices(StringView sCmd, Indices& _idx,  Parser& _parser, MemoryManager&
                         NumeRe::Cluster& ans = NumeReKernel::getInstance()->getAns();
 
                         if (ans.isString())
-                            idx[i] = _parser.CreateTempVectorVar(_data.findCols(sTableName.to_string(), ans.getInternalStringArray()));
+                            idx[i] = _parser.CreateTempVectorVar(_data.findCols(sTableName.to_string(), ans.getInternalStringArray(), false));
                         else if (idx[i].find(',') != std::string::npos)
                             idx[i] = "{" + idx[i] + "}";
                     }

@@ -22,6 +22,7 @@
  ***************************************************************************/
 
 #include "http.h"
+#include "tools.hpp"
 #include <curl/curl.h>
 #include <fstream>
 
@@ -73,6 +74,49 @@ namespace url
         std::ifstream* filestream = static_cast<std::ifstream*>(stream);
         size_t bytes = filestream->readsome(ptr, size * nmemb);
         return bytes;
+    }
+
+    /////////////////////////////////////////////////
+    /// \brief Simple helper struct for the transfer
+    /// progress bar.
+    /////////////////////////////////////////////////
+    struct ProgressData
+    {
+        curl_off_t lastVal = 0;
+    };
+
+
+    /////////////////////////////////////////////////
+    /// \brief Created and handles the progress bar
+    /// visualizing the download process. Note that
+    /// for small transfer packages, the progress bar
+    /// is not shown.
+    ///
+    /// \param clientp void*
+    /// \param dltotal curl_off_t
+    /// \param dlnow curl_off_t
+    /// \param ultotal curl_off_t
+    /// \param ulnow curl_off_t
+    /// \return int
+    ///
+    /////////////////////////////////////////////////
+    static int progress_callback(void *clientp, curl_off_t dltotal, curl_off_t dlnow, curl_off_t ultotal, curl_off_t ulnow)
+    {
+        ProgressData* data = static_cast<ProgressData*>(clientp);
+
+        if (dlnow > 0L && dltotal > 1000000 && data->lastVal < dlnow)
+        {
+            make_progressBar(dlnow, 0, dltotal, "bar");
+            data->lastVal = dlnow;
+        }
+
+        if (ulnow > 0L && ultotal > 100000 && data->lastVal < ulnow)
+        {
+            make_progressBar(ulnow, 0, ultotal, "bar");
+            data->lastVal = ulnow;
+        }
+
+        return 0;
     }
 
 
@@ -139,10 +183,32 @@ namespace url
             if (code != CURLE_OK)
                 throw Error("Failed to set connection time-out option [" + std::string(errorBuffer) + "].");
 
-            code = curl_easy_setopt(conn, CURLOPT_TIMEOUT, 10L);
+            code = curl_easy_setopt(conn, CURLOPT_LOW_SPEED_LIMIT, 1024);
 
             if (code != CURLE_OK)
-                throw Error("Failed to set time-out option [" + std::string(errorBuffer) + "].");
+                throw Error("Failed to set low-speed option [" + std::string(errorBuffer) + "].");
+
+            code = curl_easy_setopt(conn, CURLOPT_LOW_SPEED_TIME, 30L);
+
+            if (code != CURLE_OK)
+                throw Error("Failed to set low-speed time option [" + std::string(errorBuffer) + "].");
+
+            code = curl_easy_setopt(conn, CURLOPT_NOPROGRESS, 0L);
+
+            if (code != CURLE_OK)
+                throw Error("Failed to set progress option [" + std::string(errorBuffer) + "].");
+
+            code = curl_easy_setopt(conn, CURLOPT_XFERINFOFUNCTION, progress_callback);
+
+            if (code != CURLE_OK)
+                throw Error("Failed to set progress function [" + std::string(errorBuffer) + "].");
+
+            ProgressData data;
+
+            code = curl_easy_setopt(conn, CURLOPT_XFERINFODATA, &data);
+
+            if (code != CURLE_OK)
+                throw Error("Failed to set progress data [" + std::string(errorBuffer) + "].");
         }
         catch (...)
         {

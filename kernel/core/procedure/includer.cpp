@@ -185,21 +185,20 @@ std::string Includer::getNextLine()
             nIncludeLine++;
             StripSpaces(sCurrentLine);
 
-            if (sIncludedLine.length() > 2 && sIncludedLine.substr(sIncludedLine.length()-2) == "\\\\")
+            if (sIncludedLine.ends_with("\\\\"))
                 sIncludedLine.erase(sIncludedLine.length()-2);
 
             sIncludedLine += sCurrentLine;
         }
         while (nIncludeLine < m_include->getLinesCount()
-               && sIncludedLine.length() > 2
-               && sIncludedLine.substr(sIncludedLine.length()-2) == "\\\\");
+               && sIncludedLine.ends_with("\\\\"));
 
         // Ignore empty lines
         if (!sIncludedLine.length())
             continue;
 
         // Ignore non-global installation sections
-        if (sIncludedLine.substr(0,9) == "<install>"
+        if (sIncludedLine.starts_with("<install>")
             || (findCommand(sIncludedLine).sString == "global" && sIncludedLine.find("<install>") != std::string::npos))
         {
             while (nIncludeLine < m_include->getLinesCount())
@@ -208,7 +207,7 @@ std::string Includer::getNextLine()
                 nIncludeLine++;
                 StripSpaces(sIncludedLine);
 
-                if (sIncludedLine.substr(0,12) == "<endinstall>"
+                if (sIncludedLine.starts_with("<endinstall>")
                     || (findCommand(sIncludedLine).sString == "global" && sIncludedLine.find("<endinstall>") != std::string::npos))
                     break;
             }

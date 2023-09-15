@@ -139,21 +139,21 @@ void convertVectorToExpression(string& sLine, const Settings& _option)
         if (nPos && (isalnum(sTemp[nPos-1]) || sTemp[nPos-1] == '_'))
         {
             // Ensure that there's a matching parenthesis
-            if (getMatchingParenthesis(sTemp.substr(nPos)) == string::npos)
+            if (getMatchingParenthesis(StringView(sTemp, nPos)) == string::npos)
                 throw SyntaxError(SyntaxError::INCOMPLETE_VECTOR_SYNTAX, sLine, SyntaxError::invalid_position);
 
-            nPos += getMatchingParenthesis(sTemp.substr(nPos));
+            nPos += getMatchingParenthesis(StringView(sTemp, nPos));
             continue;
         }
 
 		nDim_vec = 0;
 
 		// Ensure that there's a matching parenthesis
-		if (getMatchingParenthesis(sTemp.substr(nPos)) == string::npos)
+		if (getMatchingParenthesis(StringView(sTemp, nPos)) == string::npos)
 			throw SyntaxError(SyntaxError::INCOMPLETE_VECTOR_SYNTAX, sLine, SyntaxError::invalid_position);
 
 		// Extract the current vector
-		vVectors.back() = sTemp.substr(nPos + 1, getMatchingParenthesis(sTemp.substr(nPos)) - 1);
+		vVectors.back() = sTemp.substr(nPos + 1, getMatchingParenthesis(StringView(sTemp, nPos)) - 1);
 
 		// If there's a part of the expression before the vector
 		// copy this as the first scalar value
@@ -173,12 +173,12 @@ void convertVectorToExpression(string& sLine, const Settings& _option)
 		if (parser_CheckMultArgFunc(vScalars.back(), sTemp.substr(sTemp.find('}', nPos) + 1)))
 		{
 			vScalars.back() += vVectors.back();
-			sTemp.erase(0, getMatchingParenthesis(sTemp.substr(nPos)) + nPos + 1);
+			sTemp.erase(0, getMatchingParenthesis(StringView(sTemp, nPos)) + nPos + 1);
 			continue;
 		}
 
 		// Remove the part of the already copied part of the expressions
-		sTemp.erase(0, getMatchingParenthesis(sTemp.substr(nPos)) + nPos + 1);
+		sTemp.erase(0, getMatchingParenthesis(StringView(sTemp, nPos)) + nPos + 1);
 		nPos = 0;
 
 		// Get the dimensions of the current vector
@@ -402,7 +402,7 @@ size_t getPositionOfFirstDelimiter(const string& sLine)
 	{
         // Jump over parentheses and braces
 		if (sLine[i] == '(' || sLine[i] == '{')
-			i += getMatchingParenthesis(sLine.substr(i));
+			i += getMatchingParenthesis(StringView(sLine, i));
 
         // Try to find the current character in
         // the defined list of delimiters
@@ -630,10 +630,10 @@ bool evaluateIndices(const string& sCache, Indices& _idx, MemoryManager& _data)
 
 	// Evaluate the case for an open end index
 	if (_idx.row.isOpenEnd())
-		_idx.row.setRange(0, _data.getLines(sCache.substr(0, sCache.find('(')), false)-1);
+		_idx.row.setRange(0, _data.getLines(StringView(sCache, 0, sCache.find('(')), false)-1);
 
 	if (_idx.col.isOpenEnd())
-		_idx.col.setRange(0, _data.getCols(sCache.substr(0, sCache.find('(')), false)-1);
+		_idx.col.setRange(0, _data.getCols(StringView(sCache, 0, sCache.find('(')), false)-1);
 
 	// Signal success
 	return true;
@@ -740,7 +740,7 @@ vector<double> readAndParseIntervals(string& sExpr, Parser& _parser, MemoryManag
 		{
 			nPos = sExpr.find('[', nPos);
 
-			if (nPos == string::npos || (nMatchingParens = getMatchingParenthesis(sExpr.substr(nPos))) == string::npos)
+			if (nPos == string::npos || (nMatchingParens = getMatchingParenthesis(StringView(sExpr, nPos))) == string::npos)
 				break;
 
             nMatchingParens += nPos;

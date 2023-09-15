@@ -317,10 +317,10 @@ namespace NumeRe
                 }
 
                 // Ignore comment lines
-                if (sProcCommandLine.substr(0, 2) == "##")
+                if (sProcCommandLine.starts_with("##"))
                 {
                     // Append each documentation string
-                    if (sProcCommandLine.substr(0, 3) == "##!")
+                    if (sProcCommandLine.starts_with("##!"))
                         AppendToDocumentation(_cTip, sProcCommandLine.substr(3));
 
                     continue;
@@ -331,9 +331,9 @@ namespace NumeRe
                     sProcCommandLine = sProcCommandLine.substr(0, sProcCommandLine.find("##"));
 
                 // Remove block comments and continue
-                if (sProcCommandLine.substr(0, 2) == "#*" && sProcCommandLine.find("*#", 2) == std::string::npos)
+                if (sProcCommandLine.starts_with("#*") && sProcCommandLine.find("*#", 2) == std::string::npos)
                 {
-                    if (sProcCommandLine.substr(0, 3) == "#*!")
+                    if (sProcCommandLine.starts_with("#*!"))
                     {
                         bDocFound = true;
                         AppendToDocumentation(_cTip, sProcCommandLine.substr(3));
@@ -397,12 +397,12 @@ namespace NumeRe
                 else
                 {
                     // Found the procedure name, now extract the definition
-                    if (getMatchingParenthesis(sProcCommandLine.substr(sProcCommandLine.find(procedurename))) == std::string::npos)
+                    if (getMatchingParenthesis(StringView(sProcCommandLine, sProcCommandLine.find(procedurename))) == std::string::npos)
                         return CallTip();
 
-                    _cTip.sDefinition = sProcCommandLine.substr(sProcCommandLine.find(procedurename), getMatchingParenthesis(sProcCommandLine.substr(sProcCommandLine.find(procedurename))) + 1);
+                    _cTip.sDefinition = sProcCommandLine.substr(sProcCommandLine.find(procedurename), getMatchingParenthesis(StringView(sProcCommandLine, sProcCommandLine.find(procedurename))) + 1);
                     size_t nFirstParens = _cTip.sDefinition.find('(');
-                    std::string sArgList = _cTip.sDefinition.substr(nFirstParens + 1, getMatchingParenthesis(_cTip.sDefinition.substr(nFirstParens)) - 1);
+                    std::string sArgList = _cTip.sDefinition.substr(nFirstParens + 1, getMatchingParenthesis(StringView(_cTip.sDefinition, nFirstParens)) - 1);
                     _cTip.sDefinition.erase(nFirstParens + 1);
 
                     while (sArgList.length())
@@ -439,9 +439,9 @@ namespace NumeRe
                             std::getline(procedure_in, sProcCommandLine);
                             StripSpaces(sProcCommandLine);
 
-                            if (sProcCommandLine.substr(0, 3) == "##!")
+                            if (sProcCommandLine.starts_with("##!"))
                                 AppendToDocumentation(_cTip, sProcCommandLine.substr(3));
-                            else if (sProcCommandLine.substr(0, 3) == "#*!")
+                            else if (sProcCommandLine.starts_with("#*!"))
                             {
                                 AppendToDocumentation(_cTip, sProcCommandLine.substr(3));
                                 bBlockComment = true;
