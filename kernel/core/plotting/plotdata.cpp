@@ -2437,6 +2437,19 @@ void PlotData::setFileName(std::string _sFileName)
 
 
 /////////////////////////////////////////////////
+/// \brief Change the plot title on-the-fly.
+///
+/// \param sTitle const std::string&
+/// \return void
+///
+/////////////////////////////////////////////////
+void PlotData::setTitle(const std::string& sTitle)
+{
+    stringSettings[STR_PLOTTITLE] = sTitle;
+}
+
+
+/////////////////////////////////////////////////
 /// \brief Replaces tab and newlines
 /// correspondingly.
 ///

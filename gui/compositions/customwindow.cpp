@@ -2643,6 +2643,12 @@ bool CustomWindow::setItemGraph(GraphHelper* _helper, int windowItemID)
 
     mgl->SetDraw(_helper);
     mgl->SetGraph(_helper->setGrapher());
+
+    for (size_t i = 0; i < 4; i++)
+    {
+        mgl->timeAxes[i] = _helper->timeAxes[i];
+    }
+
     mgl->SetSize(s.x, s.y);
     mgl->Refresh();
 

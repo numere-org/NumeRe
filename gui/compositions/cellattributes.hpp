@@ -23,6 +23,7 @@
 #include <wx/generic/grideditors.h>
 
 #include "cellvalueshader.hpp"
+#include "../controls/datetimepicker.hpp"
 
 #define DATESTRINGLEN 24
 
@@ -351,6 +352,9 @@ class AdvBooleanCellRenderer : public AdvStringCellRenderer
             if (!bestSize.x)
                 bestSize = DoGetBestSize(attr, dc, "---");
 
+            if (isHeadLine(grid, row))
+                return DoGetBestSize(attr, dc, grid.GetCellValue(row, col));
+
             return bestSize;
         }
 
@@ -394,7 +398,14 @@ class CombinedCellEditor : public wxGridCellEditor
         /////////////////////////////////////////////////
         virtual void Create(wxWindow* parent, wxWindowID id, wxEvtHandler* evtHandler) override
         {
-            int style = wxTE_PROCESS_ENTER | wxTE_PROCESS_TAB | wxBORDER_NONE | wxTE_MULTILINE | wxTE_RICH;
+            int style = wxTE_PROCESS_ENTER | wxTE_PROCESS_TAB | wxBORDER_NONE;
+
+            // Create the numeric entry
+            m_numericEntry = new wxTextCtrl(parent, id, wxEmptyString, wxDefaultPosition, wxDefaultSize, style);
+            m_numericEntry->SetMargins(0, 0);
+            m_numericEntry->Hide();
+
+            style |= wxTE_MULTILINE | wxTE_RICH;
 
             // Create the text control
             m_text = new wxTextCtrl(parent, id, wxEmptyString, wxDefaultPosition, wxDefaultSize, style);
@@ -402,7 +413,7 @@ class CombinedCellEditor : public wxGridCellEditor
             m_text->Hide();
 
             // The text control is the default control
-            m_control = m_text;
+            m_control = m_numericEntry;
 
             // Create the check box
             m_checkBox = new wxCheckBox(parent, id, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxBORDER_NONE);
@@ -415,6 +426,12 @@ class CombinedCellEditor : public wxGridCellEditor
             // Bind the ENTER key event of the combo box to the event
             // handler in this class
             m_comboBox->Bind(wxEVT_TEXT_ENTER, CombinedCellEditor::OnEnterKey, this);
+
+            // Create the datetime picker
+            m_datePicker = new DateTimePicker(parent, wxDefaultDateTime);
+            m_datePicker->Hide();
+
+            m_datePicker->Bind(wxEVT_TEXT_ENTER, CombinedCellEditor::OnEnterKey, this);
 
             wxGridCellEditor::Create(parent, id, evtHandler);
         }
@@ -543,13 +560,31 @@ class CombinedCellEditor : public wxGridCellEditor
                     evtHandler->SetInSetFocus(false);
                 }
             }
-            else // All other cases and the headline
+            else if (!isHead
+                     && (int)vTypes.size() > col
+                     && vTypes[col] == TableColumn::TYPE_STRING)
             {
-                // Select the text control, which is the default control
+                // Select the date entry control
                 m_control = m_text;
                 m_text->SetValue(m_value);
                 m_text->SetInsertionPointEnd();
                 m_text->SelectAll();
+            }
+            else if (!isHead
+                     && (int)vTypes.size() > col
+                     && vTypes[col] == TableColumn::TYPE_DATETIME)
+            {
+                // Select the date entry control
+                m_control = m_datePicker;
+                m_datePicker->SetValue(m_value);
+            }
+            else // All other cases and the headline
+            {
+                // Select the numeric control, which is the default control
+                m_control = m_numericEntry;
+                m_numericEntry->SetValue(m_value);
+                m_numericEntry->SetInsertionPointEnd();
+                m_numericEntry->SelectAll();
             }
 
             // Show the selected control and give it the keyboard
@@ -583,6 +618,16 @@ class CombinedCellEditor : public wxGridCellEditor
             if (m_control == m_text)
             {
                 const wxString value = m_text->GetValue();
+                m_control = m_numericEntry;
+
+                if (value == m_value)
+                    return false;
+
+                m_value = value;
+            }
+            else if (m_control == m_numericEntry)
+            {
+                const wxString value = m_numericEntry->GetValue();
 
                 if (value == m_value)
                     return false;
@@ -592,7 +637,7 @@ class CombinedCellEditor : public wxGridCellEditor
             else if (m_control == m_checkBox)
             {
                 // Reset the control
-                m_control = m_text;
+                m_control = m_numericEntry;
                 bool value = m_checkBox->GetValue();
 
                 if (toString(value) == m_value)
@@ -603,8 +648,19 @@ class CombinedCellEditor : public wxGridCellEditor
             else if (m_control == m_comboBox)
             {
                 // Reset the control
-                m_control = m_text;
+                m_control = m_numericEntry;
                 const wxString value = m_comboBox->GetValue();
+
+                if (value == m_value)
+                    return false;
+
+                m_value = value;
+            }
+            else if (m_control == m_datePicker)
+            {
+                // Reset the control
+                m_control = m_numericEntry;
+                wxString value = m_datePicker->GetValue();
 
                 if (value == m_value)
                     return false;
@@ -652,12 +708,21 @@ class CombinedCellEditor : public wxGridCellEditor
                 m_text->SetValue(m_value);
                 m_text->SetInsertionPointEnd();
             }
+            else if (m_control == m_numericEntry)
+            {
+                m_numericEntry->SetValue(m_value);
+                m_numericEntry->SetInsertionPointEnd();
+            }
             else if (m_control == m_checkBox)
                 m_checkBox->SetValue(m_value == "true");
             else if (m_control == m_comboBox)
             {
                 m_comboBox->SetValue(m_value);
                 m_comboBox->SetInsertionPointEnd();
+            }
+            else if (m_control == m_datePicker)
+            {
+                m_datePicker->SetValue(m_value);
             }
         }
 
@@ -693,7 +758,10 @@ class CombinedCellEditor : public wxGridCellEditor
             // longer an appropriate way to get the character into the text control.
             // Do it ourselves instead.  We know that if we get this far that we have
             // a valid character, so not a whole lot of testing needs to be done.
-            if (m_control == m_text || m_control == m_comboBox)
+            if (m_control == m_text
+                || m_control == m_numericEntry
+                || m_control == m_comboBox
+                || m_control == m_datePicker)
             {
                 // Handle text ctrl and combo box commonly
                 wxTextEntry* textField = dynamic_cast<wxTextEntry*>(m_control);
@@ -834,8 +902,10 @@ class CombinedCellEditor : public wxGridCellEditor
             {
                 // Only hide here
                 m_text->Hide();
+                m_numericEntry->Hide();
                 m_checkBox->Hide();
                 m_comboBox->Hide();
+                m_datePicker->Hide();
             }
 
             if (show)
@@ -847,8 +917,10 @@ class CombinedCellEditor : public wxGridCellEditor
 
     protected:
         wxTextCtrl* m_text;
+        wxTextCtrl* m_numericEntry;
         wxCheckBox* m_checkBox;
         wxComboBox* m_comboBox;
+        DateTimePicker* m_datePicker;
         wxGrid* m_grid;
         wxString m_value;
         bool m_finished;
@@ -892,10 +964,13 @@ class CombinedCellEditor : public wxGridCellEditor
 
             textRect.width -= 2;
             textRect.height -= 2;
-            rect.width += 2;
+            rect.width += 1;
+            rect.y += 1;
 
             m_text->SetSize(textRect, wxSIZE_ALLOW_MINUS_ONE);
+            m_numericEntry->SetSize(textRect, wxSIZE_ALLOW_MINUS_ONE);
             m_comboBox->SetSize(rect, wxSIZE_ALLOW_MINUS_ONE);
+            m_datePicker->SetSize(rect, wxSIZE_ALLOW_MINUS_ONE);
         }
 
         /////////////////////////////////////////////////

@@ -254,6 +254,8 @@
 		<Unit filename="gui/compositions/viewerpanel.hpp" />
 		<Unit filename="gui/compositions/wxTermContainer.cpp" />
 		<Unit filename="gui/compositions/wxTermContainer.h" />
+		<Unit filename="gui/controls/datetimepicker.cpp" />
+		<Unit filename="gui/controls/datetimepicker.hpp" />
 		<Unit filename="gui/controls/searchctrl.cpp" />
 		<Unit filename="gui/controls/searchctrl.hpp" />
 		<Unit filename="gui/controls/toolbarsearchctrl.cpp" />

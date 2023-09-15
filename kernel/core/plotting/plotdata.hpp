@@ -191,6 +191,7 @@ class PlotData : public FileSystem
         std::string getAxisLabel(size_t axis) const;
         void setSamples(int _nSamples);
         void setFileName(std::string _sFileName);
+        void setTitle(const std::string& sTitle);
         void reset();
         void deleteData(bool bGraphFinished = false);
 

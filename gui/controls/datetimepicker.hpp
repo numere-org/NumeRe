@@ -1,0 +1,76 @@
+/*****************************************************************************
+    NumeRe: Framework fuer Numerische Rechnungen
+    Copyright (C) 2023  Erik Haenel et al.
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+******************************************************************************/
+
+#include <wx/wx.h>
+#include <wx/calctrl.h>
+#include <wx/timectrl.h>
+#include <wx/combo.h>
+#include <wx/settings.h>
+
+#ifndef DATETIMEPICKER_HPP
+#define DATETIMEPICKER_HPP
+
+class DateTimePicker;
+
+// DateTimePickerPopup declaration
+
+class DateTimePickerPopup : public wxPanel, public wxComboPopup
+{
+    public:
+        bool Create(wxWindow* parent);
+
+        wxWindow* GetControl()
+        {
+            return this;
+        }
+        wxString GetStringValue() const;
+        wxSize GetAdjustedSize(int minWidth, int prefHeight, int maxHeight);
+
+        void OnPopup();
+
+        static wxString GetDisplayDateTimeString(const wxDateTime& dateTime);
+    private:
+        wxCalendarCtrl*   m_calendar;
+        wxTimePickerCtrl* m_timePicker;
+
+        DateTimePicker* GetCustomDateTimePicker();
+
+        wxDateTime GetDateTime() const;
+        void SetDateTime(const wxDateTime& dateTime);
+
+        void OnOKButtonClicked(wxCommandEvent&);
+};
+
+
+// DateTimePicker declaration
+
+class DateTimePicker : public wxComboCtrl
+{
+    public:
+        DateTimePicker(wxWindow* parent, const wxDateTime& dateTime = wxDefaultDateTime);
+
+        wxDateTime GetDateTime() const;
+        void SetDateTime(const wxDateTime& dateTime);
+
+    private:
+        DateTimePickerPopup* m_popup;
+};
+
+#endif // DATETIMEPICKER_HPP
+
+

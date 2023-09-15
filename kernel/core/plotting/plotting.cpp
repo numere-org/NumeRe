@@ -578,7 +578,7 @@ size_t Plot::createSubPlotSet(bool& bAnimateVar, vector<string>& vPlotCompose, s
             // Only delete the contents of the plot data object
             // if the last command was no "subplot" command, otherwise
             // one would reset all global plotting parameters
-            if (!bNewSubPlot)
+            if (bNewSubPlot)
                 _pData.deleteData();
 
             // Reset the plot info object
@@ -589,6 +589,9 @@ size_t Plot::createSubPlotSet(bool& bAnimateVar, vector<string>& vPlotCompose, s
             _pInfo.bDraw3D = false;
             _pInfo.bDraw = false;
             vDrawVector.clear();
+
+            // Reset the title to avoid double-prints
+            _pData.setTitle("");
         }
 
         // Find the current plot command
@@ -5203,6 +5206,13 @@ void Plot::passRangesToGraph()
             nLayers += m_manager.assets[i].getLayers();
 
         _pInfo.ranges[XRANGE].reset(0, nLayers+1);
+    }
+
+    // Adapt ranges to fit in time scale
+    for (size_t i = XRANGE; i <= CRANGE; i++)
+    {
+        if (_pData.getTimeAxis(i).use)
+            _pInfo.ranges[i].reset(std::max(0.0, _pInfo.ranges[i].min()), std::max(0.0, _pInfo.ranges[i].max()));
     }
 
     // INSERT HERE AXIS LOGIC

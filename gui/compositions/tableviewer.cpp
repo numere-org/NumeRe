@@ -1224,10 +1224,52 @@ void TableViewer::updateStatusBar(const wxGridCellCoordsContainer& coords, wxGri
         sel << "--,--";
 
     // Calculate the simple statistics
-    wxString statustext = "Min: " + toString(calculateMin(coords), STATUSBAR_PRECISION);
-    statustext << " | Max: " << toString(calculateMax(coords), STATUSBAR_PRECISION);
-    statustext << " | Sum: " << toString(calculateSum(coords), 2*STATUSBAR_PRECISION);
-    statustext << " | Avg: " << toString(calculateAvg(coords), 2*STATUSBAR_PRECISION);
+    bool isDateTime = false;
+
+    if (isGridNumeReTable)
+    {
+        wxGridCellsExtent selectedExtent = coords.getExtent();
+        std::vector<int> vTypes = static_cast<GridNumeReTable*>(GetTable())->getColumnTypes();
+
+        if (vTypes[selectedExtent.m_topleft.GetCol()] == TableColumn::TYPE_DATETIME)
+        {
+            isDateTime = true;
+
+            for (int col = selectedExtent.m_topleft.GetCol()+1; col <= selectedExtent.m_bottomright.GetCol(); col++)
+            {
+                if (vTypes[col] != TableColumn::TYPE_DATETIME)
+                {
+                    isDateTime = false;
+                    break;
+                }
+            }
+
+        }
+    }
+
+    wxString statustext;
+
+    double dMin = calculateMin(coords);
+    double dMax = calculateMax(coords);
+    mu::value_type dSum = calculateSum(coords);
+    mu::value_type dAvg = calculateAvg(coords);
+
+    if (isDateTime && !isnan(dMin))
+    {
+        statustext = "[ " + toString(to_timePoint(dMin), GET_SHORTEST);
+        statustext << " : " << toString(to_timePoint(dMax), GET_SHORTEST);
+        statustext << L" ]  |  \u0394t " << formatDuration(dMax-dMin);
+        statustext << L"  |  \u03A3t " << formatDuration(dSum.real());
+        statustext << L"  |  t\u0305 " << toString(to_timePoint(dAvg.real()), GET_SHORTEST);
+    }
+    else
+    {
+        statustext = "[ " + toString(dMin, STATUSBAR_PRECISION);
+        statustext << " : " << toString(dMax, STATUSBAR_PRECISION);
+        statustext << L" ]  |  \u0394x " << toString(dMax-dMin, STATUSBAR_PRECISION);
+        statustext << L"  |  \u03A3x " << toString(dSum, 2*STATUSBAR_PRECISION);
+        statustext << L"  |  x\u0305 " << toString(dAvg, 2*STATUSBAR_PRECISION);
+    }
 
     // Set the status bar valuey
     m_statusBar->SetStatusText(dim);
