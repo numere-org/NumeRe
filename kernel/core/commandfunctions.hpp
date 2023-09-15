@@ -3096,10 +3096,10 @@ static void clear_variables()
     // check if user-defined variable is legacy variable and call is from terminal
     for (auto iter = mVariables.begin(); iter != mVariables.end(); ++iter)
     {
-	bool isLegacyVariable = iter->first.starts_with("_~");
-	bool isCallingFromTerminal = std::find(defaultVars.begin(), defaultVars.end(), iter->first) == defaultVars.end();
-	if (!isLegacyVariable && isCallingFromTerminal)
-	    _parser.RemoveVar(iter->first);
+	    bool isTemporaryVar = iter->first.starts_with("_~");
+	    bool isDefaultVar = std::find(defaultVars.begin(), defaultVars.end(), iter->first) != defaultVars.end();
+	    if (!isTemporaryVar && !isDefaultVar)
+	        _parser.RemoveVar(iter->first);
     }
 }
 
