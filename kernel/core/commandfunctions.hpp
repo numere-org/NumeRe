@@ -3093,7 +3093,7 @@ static void clear_variables()
     Parser& _parser = NumeReKernel::getInstance()->getParser();
     varmap_type mVariables = _parser.GetVar();
 
-    // check if user-defined variable is legacy variable and call is from terminal
+    // remove variables, which are not default variables and no temporary variables
     for (auto iter = mVariables.begin(); iter != mVariables.end(); ++iter)
     {
 	    bool isTemporaryVar = iter->first.starts_with("_~");
