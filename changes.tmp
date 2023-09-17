@@ -48,7 +48,7 @@ Cleaned	Units of loaded JCAMP-DX files are now written in English
 Cleaned	"url" now has a progress bar for larger files and accepts now longer transmissins.
 Added	Added option to execute a script from the current or a given line.
 Added	"clear -var" can now be used from the terminal or a script to clear the current list of variables (with exception of default variables).
-Added	Layout commands have been added: "lamp", "timepicker" and "datepicker"
+Added	Layout commands have been added: "lamp" and "datetimepicker"
 Added	Using "statustext", one can now modify the statusbar of window layouts.
 Cleaned	A "treelist" can now display data using a tree-like layout.
 Cleaned	Improved the behavior of the table viewer: long strings are now wrapped around and the autosizing feature now informs about longer runtimes.

@@ -242,10 +242,8 @@ namespace NumeRe
                 return m_customWindow->getWindowItems(CustomWindow::TEXTCTRL);
             else if (_selection == "lamp")
                 return m_customWindow->getWindowItems(CustomWindow::LAMP);
-            else if (_selection == "datepicker")
-                return m_customWindow->getWindowItems(CustomWindow::DATEPICKER);
-            else if (_selection == "timepicker")
-                return m_customWindow->getWindowItems(CustomWindow::TIMEPICKER);
+            else if (_selection == "datetimepicker")
+                return m_customWindow->getWindowItems(CustomWindow::DATETIMEPICKER);
             else if (_selection == "dropdown")
                 return m_customWindow->getWindowItems(CustomWindow::DROPDOWN);
             else if (_selection == "combobox")

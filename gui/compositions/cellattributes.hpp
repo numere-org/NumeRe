@@ -428,7 +428,7 @@ class CombinedCellEditor : public wxGridCellEditor
             m_comboBox->Bind(wxEVT_TEXT_ENTER, CombinedCellEditor::OnEnterKey, this);
 
             // Create the datetime picker
-            m_datePicker = new DateTimePicker(parent, wxDefaultDateTime);
+            m_datePicker = new DateTimePicker(parent, id, wxDefaultDateTime);
             m_datePicker->Hide();
 
             m_datePicker->Bind(wxEVT_TEXT_ENTER, CombinedCellEditor::OnEnterKey, this);

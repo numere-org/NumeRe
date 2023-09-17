@@ -202,8 +202,7 @@ class CustomWindow : public wxFrame
             TABLE,      // OK
             GRAPHER,    // OK
             SLIDER,
-            DATEPICKER,
-            TIMEPICKER,
+            DATETIMEPICKER,
             LAMP,
             MENUITEM
         };

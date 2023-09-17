@@ -21,6 +21,9 @@
 
 // DateTimePickerPopup definition
 
+DateTimePickerPopup::DateTimePickerPopup(int style) : wxPanel(), wxComboPopup(), m_style(style) {}
+
+
 bool DateTimePickerPopup::Create(wxWindow* parent)
 {
     if (!wxPanel::Create(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxBORDER_SIMPLE | wxTAB_TRAVERSAL))
@@ -32,14 +35,15 @@ bool DateTimePickerPopup::Create(wxWindow* parent)
     wxBoxSizer* subSizer = new wxBoxSizer(wxHORIZONTAL);
 
     m_calendar = new wxCalendarCtrl(this, wxID_ANY, wxDefaultDateTime,
-                                    wxDefaultPosition, wxDefaultSize, wxNO_BORDER);
+                                    wxDefaultPosition, wxDefaultSize, wxNO_BORDER | wxCAL_MONDAY_FIRST | wxCAL_SHOW_WEEK_NUMBERS);
+    m_calendar->Show(m_style & DT_PICKER_DATE);
     mainSizer->Add(m_calendar, wxSizerFlags(1).Expand().Border(wxALL, 2));
 
     m_timePicker = new wxTimePickerCtrl(this, wxID_ANY);
-    subSizer->Add(m_timePicker, wxSizerFlags(1).Expand().Border(wxALL, 2));
+    m_timePicker->Show(m_style & DT_PICKER_TIME);
+    subSizer->Add(m_timePicker, wxSizerFlags(1).Expand().Border(wxALL, 2).ReserveSpaceEvenIfHidden());
 
     wxButton* OKButton = new wxButton(this, wxID_OK);
-    OKButton->SetDefault();
     OKButton->Bind(wxEVT_COMMAND_BUTTON_CLICKED, &DateTimePickerPopup::OnOKButtonClicked, this);
     subSizer->Add(OKButton, wxSizerFlags(1).Expand().Border(wxALL, 2));
 
@@ -52,7 +56,7 @@ bool DateTimePickerPopup::Create(wxWindow* parent)
 
 wxString DateTimePickerPopup::GetStringValue() const
 {
-    return GetDisplayDateTimeString(GetDateTime());
+    return GetDisplayDateTimeString(GetDateTime(), m_style);
 }
 
 
@@ -67,7 +71,7 @@ void DateTimePickerPopup::OnPopup()
 {
     DateTimePicker* picker = GetCustomDateTimePicker();
 
-    if ( picker )
+    if (picker)
         SetDateTime(picker->GetDateTime());
 }
 
@@ -97,13 +101,17 @@ void DateTimePickerPopup::SetDateTime(const wxDateTime& dateTime)
 }
 
 
-wxString DateTimePickerPopup::GetDisplayDateTimeString(const wxDateTime& dateTime)
+wxString DateTimePickerPopup::GetDisplayDateTimeString(const wxDateTime& dateTime, int style)
 {
     if (!dateTime.IsValid())
         return "---";
 
-    // @fixme: change the format string as needed
-    return dateTime.FormatISOCombined(',');
+    if ((style & DT_PICKER_DATE) && (style & DT_PICKER_TIME))
+        return dateTime.FormatISOCombined(',');
+    else if (style & DT_PICKER_DATE)
+        return dateTime.FormatISODate();
+
+    return dateTime.FormatISOTime();
 }
 
 
@@ -117,10 +125,6 @@ DateTimePicker* DateTimePickerPopup::GetCustomDateTimePicker()
 
 void DateTimePickerPopup::OnOKButtonClicked(wxCommandEvent&)
 {
-    DateTimePicker* picker = GetCustomDateTimePicker();
-
-    if ( picker )
-        picker->SetDateTime(GetDateTime());
     Dismiss();
 }
 
@@ -128,21 +132,13 @@ void DateTimePickerPopup::OnOKButtonClicked(wxCommandEvent&)
 
 
 
-DateTimePicker::DateTimePicker(wxWindow* parent, const wxDateTime& dateTime)
-    : wxComboCtrl(parent, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxCB_SIMPLE | wxTE_PROCESS_ENTER)
+DateTimePicker::DateTimePicker(wxWindow* parent, int id, const wxDateTime& dateTime, int style)
+    : wxComboCtrl(parent, id, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxCB_SIMPLE | wxTE_PROCESS_ENTER), m_style(style)
 {
-    UseAltPopupWindow();
-    m_popup = new DateTimePickerPopup();
+    m_popup = new DateTimePickerPopup(m_style);
     SetPopupControl(m_popup);
 
     SetDateTime(dateTime);
-
-    // make the combo control fit the date and time string
-    //wxSize size = GetMinClientSize();
-    //const wxString dateTimeStr = DateTimePickerPopup::GetDisplayDateTimeString(m_dateTime);
-    //
-    //size.SetWidth(GetSizeFromTextSize(GetTextExtent(wxString::Format(" %s ", dateTimeStr))).GetWidth());
-    //SetMinClientSize(size);
 }
 
 
@@ -161,7 +157,7 @@ wxDateTime DateTimePicker::GetDateTime() const
 
 void DateTimePicker::SetDateTime(const wxDateTime& dateTime)
 {
-    SetValue(DateTimePickerPopup::GetDisplayDateTimeString(dateTime));
+    SetValue(DateTimePickerPopup::GetDisplayDateTimeString(dateTime, m_style));
 }
 
 

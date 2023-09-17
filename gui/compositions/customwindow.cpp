@@ -536,6 +536,8 @@ void CustomWindow::layout()
     else
         SetClientSize(wxSize(800,600));
 
+    Layout();
+
 
     //wxBoxSizer* vsizer = new wxBoxSizer(wxVERTICAL);
     //vsizer->Add(_groupPanel, 1, wxEXPAND, 0);
@@ -911,57 +913,37 @@ void CustomWindow::layoutChild(const tinyxml2::XMLElement* currentChild, wxWindo
             else if (state == HIDDEN)
                 textctrl->Show(false);
         }
-        else if (sValue == "datepicker")
+        else if (sValue == "datetimepicker")
         {
-            // Add a datepicker
-            int style = wxDP_DROPDOWN | wxDP_SHOWCENTURY;
+            // Add a datetimepicker
+            int style = DT_PICKER_DATE | DT_PICKER_TIME;
 
-            wxDateTime dt;
+            if (currentChild->Attribute("type"))
+            {
+                if (currentChild->Attribute("type", "timepicker"))
+                    style = DT_PICKER_TIME;
+
+                if (currentChild->Attribute("type", "datepicker"))
+                    style = DT_PICKER_DATE;
+            }
+
+            DateTimePicker* dtPicker = _groupPanel->CreateDateTimePicker(currParent, currSizer, wxDefaultDateTime, style, id, alignment);
 
             if (currentChild->Attribute("value"))
             {
-                wxString::const_iterator end;
                 wxString time = currentChild->Attribute("value");
-
-                if (!dt.ParseDateTime(removeQuotationMarks(time), &end))
-                    dt.ParseDate(removeQuotationMarks(time), &end);
+                dtPicker->SetValue(removeQuotationMarks(time));
             }
 
-            wxDatePickerCtrl* datePicker = _groupPanel->CreateDatePicker(currParent, currSizer, dt, style, id, alignment);
-            m_windowItems[id] = std::make_pair(CustomWindow::DATEPICKER, datePicker);
+            m_windowItems[id] = std::make_pair(CustomWindow::DATETIMEPICKER, dtPicker);
 
             if (currentChild->Attribute("onchange"))
                 m_eventTable[id].onchange = currentChild->Attribute("onchange");
 
             if (state == DISABLED)
-                datePicker->Enable(false);
+                dtPicker->Enable(false);
             else if (state == HIDDEN)
-                datePicker->Show(false);
-        }
-        else if (sValue == "timepicker")
-        {
-            // Add a timepicker
-            wxDateTime dt;
-
-            if (currentChild->Attribute("value"))
-            {
-                wxString::const_iterator end;
-                wxString time = currentChild->Attribute("value");
-
-                if (!dt.ParseDateTime(removeQuotationMarks(time), &end))
-                    dt.ParseTime(removeQuotationMarks(time), &end);
-            }
-
-            wxTimePickerCtrl* timePicker = _groupPanel->CreateTimePicker(currParent, currSizer, dt, id, alignment);
-            m_windowItems[id] = std::make_pair(CustomWindow::TIMEPICKER, timePicker);
-
-            if (currentChild->Attribute("onchange"))
-                m_eventTable[id].onchange = currentChild->Attribute("onchange");
-
-            if (state == DISABLED)
-                timePicker->Enable(false);
-            else if (state == HIDDEN)
-                timePicker->Show(false);
+                dtPicker->Show(false);
         }
         else if (sValue == "statictext" || sValue == "text")
         {
@@ -1040,7 +1022,7 @@ void CustomWindow::layoutChild(const tinyxml2::XMLElement* currentChild, wxWindo
                 mgl->SetMinClientSize(wxSize(x,y));
             }
             else
-                mgl->SetMinClientSize(wxSize(640,480));
+                mgl->SetMinClientSize(wxSize(600,400));
 
             currSizer->Add(mgl, !currentChild->Attribute("size"), alignment | wxALL | wxEXPAND | wxRESERVE_SPACE_EVEN_IF_HIDDEN, 5);
 
@@ -1599,14 +1581,9 @@ bool CustomWindow::getItemParameters(int windowItemID, WindowItemParams& params)
             params.value = "\"" + lampStatesFromColor(static_cast<TextField*>(object.second)->GetBackgroundColour()) + "\"";
 
             break;
-        case CustomWindow::DATEPICKER:
-            params.type = "datepicker";
-            params.value = convertToCodeString(static_cast<wxDatePickerCtrl*>(object.second)->GetValue().FormatISODate());
-
-            break;
-        case CustomWindow::TIMEPICKER:
-            params.type = "timepicker";
-            params.value = convertToCodeString(static_cast<wxTimePickerCtrl*>(object.second)->GetValue().FormatISOTime());
+        case CustomWindow::DATETIMEPICKER:
+            params.type = "datetimepicker";
+            params.value = convertToCodeString(static_cast<DateTimePicker*>(object.second)->GetValue());
 
             break;
         case CustomWindow::RADIOGROUP:
@@ -1966,8 +1943,7 @@ wxString CustomWindow::getItemSelection(int windowItemID) const
         case CustomWindow::MENUITEM:
         case CustomWindow::GRAPHER:
         case CustomWindow::IMAGE:
-        case CustomWindow::DATEPICKER:
-        case CustomWindow::TIMEPICKER:
+        case CustomWindow::DATETIMEPICKER:
         case CustomWindow::LAMP:
             break;
     }
@@ -2167,26 +2143,15 @@ bool CustomWindow::setItemValue(WindowItemValue& _value, int windowItemID)
             Refresh();
             break;
         }
-        case CustomWindow::DATEPICKER:
+        case CustomWindow::DATETIMEPICKER:
         {
-            wxDateTime dt;
-            wxString::const_iterator end;
+            //wxDateTime dt;
+            //wxString::const_iterator end;
+            //
+            //if (!dt.ParseDateTime(removeQuotationMarks(_value.stringValue), &end))
+            //    dt.ParseDate(removeQuotationMarks(_value.stringValue), &end);
 
-            if (!dt.ParseDateTime(removeQuotationMarks(_value.stringValue), &end))
-                dt.ParseDate(removeQuotationMarks(_value.stringValue), &end);
-
-            static_cast<wxDatePickerCtrl*>(object.second)->SetValue(dt);
-            break;
-        }
-        case CustomWindow::TIMEPICKER:
-        {
-            wxDateTime dt;
-            wxString::const_iterator end;
-
-            if (!dt.ParseDateTime(removeQuotationMarks(_value.stringValue), &end))
-                dt.ParseTime(removeQuotationMarks(_value.stringValue), &end);
-
-            static_cast<wxTimePickerCtrl*>(object.second)->SetValue(dt);
+            static_cast<DateTimePicker*>(object.second)->SetValue(removeQuotationMarks(_value.stringValue));
             break;
         }
         case CustomWindow::GAUGE:
@@ -2366,8 +2331,7 @@ bool CustomWindow::setItemLabel(const wxString& _label, int windowItemID)
         case CustomWindow::TABLE:
         case CustomWindow::GRAPHER:
         case CustomWindow::SLIDER:
-        case CustomWindow::DATEPICKER:
-        case CustomWindow::TIMEPICKER:
+        case CustomWindow::DATETIMEPICKER:
             break;
     }
 
@@ -2489,8 +2453,7 @@ bool CustomWindow::setItemColor(const wxString& _color, int windowItemID)
         case CustomWindow::TABLE:
         case CustomWindow::GRAPHER:
         case CustomWindow::SLIDER:
-        case CustomWindow::DATEPICKER:
-        case CustomWindow::TIMEPICKER:
+        case CustomWindow::DATETIMEPICKER:
             break;
     }
 
@@ -2585,8 +2548,7 @@ bool CustomWindow::setItemSelection(int selectionID, int selectionID2, int windo
         case CustomWindow::MENUITEM:
         case CustomWindow::GRAPHER:
         case CustomWindow::IMAGE:
-        case CustomWindow::DATEPICKER:
-        case CustomWindow::TIMEPICKER:
+        case CustomWindow::DATETIMEPICKER:
         case CustomWindow::LAMP:
             break;
     }

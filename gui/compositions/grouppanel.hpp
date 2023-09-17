@@ -28,6 +28,7 @@
 #define GROUPPANEL_HPP
 
 #include "../controls/treelistctrl.h"
+#include "../controls/datetimepicker.hpp"
 
 
 
@@ -241,6 +242,7 @@ class GroupPanel : public wxScrolledWindow
         wxSlider* CreateSlider(wxWindow* parent, wxSizer* sizer, int nMin, int nMax, int nInitial, int style, int id = wxID_ANY, int alignment = wxALIGN_CENTER_VERTICAL);
         wxDatePickerCtrl* CreateDatePicker(wxWindow* parent, wxSizer* sizer, const wxDateTime& dt = wxDefaultDateTime, int style = wxDP_SHOWCENTURY | wxDP_DROPDOWN, int id = wxID_ANY, int alignment = wxALIGN_CENTER_VERTICAL);
         wxTimePickerCtrl* CreateTimePicker(wxWindow* parent, wxSizer* sizer, const wxDateTime& dt = wxDefaultDateTime, int id = wxID_ANY, int alignment = wxALIGN_CENTER_VERTICAL);
+        DateTimePicker* CreateDateTimePicker(wxWindow* parent, wxSizer* sizer, const wxDateTime& dt = wxDefaultDateTime, int style = DT_PICKER_DATE | DT_PICKER_TIME, int id = wxID_ANY, int alignment = wxALIGN_CENTER_VERTICAL);
 };
 
 

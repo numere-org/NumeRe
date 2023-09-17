@@ -778,3 +778,25 @@ wxTimePickerCtrl* GroupPanel::CreateTimePicker(wxWindow* parent, wxSizer* sizer,
     return picker;
 }
 
+
+/////////////////////////////////////////////////
+/// \brief This member function creates the
+/// layout for a date-time picker control.
+///
+/// \param parent wxWindow*
+/// \param sizer wxSizer*
+/// \param dt const wxDateTime&
+/// \param style int
+/// \param id int
+/// \param alignment int
+/// \return DateTimePicker*
+///
+/////////////////////////////////////////////////
+DateTimePicker* GroupPanel::CreateDateTimePicker(wxWindow* parent, wxSizer* sizer, const wxDateTime& dt, int style, int id, int alignment)
+{
+    DateTimePicker* picker = new DateTimePicker(parent, id, dt, style);
+    sizer->Add(picker, 0, alignment | wxALL | wxEXPAND | wxRESERVE_SPACE_EVEN_IF_HIDDEN, ELEMENT_BORDER);
+
+    return picker;
+}
+

@@ -25,6 +25,12 @@
 #ifndef DATETIMEPICKER_HPP
 #define DATETIMEPICKER_HPP
 
+enum
+{
+    DT_PICKER_DATE = 0x1,
+    DT_PICKER_TIME = 0x2
+};
+
 class DateTimePicker;
 
 // DateTimePickerPopup declaration
@@ -32,6 +38,7 @@ class DateTimePicker;
 class DateTimePickerPopup : public wxPanel, public wxComboPopup
 {
     public:
+        DateTimePickerPopup(int style);
         bool Create(wxWindow* parent);
 
         wxWindow* GetControl()
@@ -43,10 +50,11 @@ class DateTimePickerPopup : public wxPanel, public wxComboPopup
 
         void OnPopup();
 
-        static wxString GetDisplayDateTimeString(const wxDateTime& dateTime);
+        static wxString GetDisplayDateTimeString(const wxDateTime& dateTime, int style = DT_PICKER_DATE | DT_PICKER_TIME);
     private:
         wxCalendarCtrl*   m_calendar;
         wxTimePickerCtrl* m_timePicker;
+        int m_style;
 
         DateTimePicker* GetCustomDateTimePicker();
 
@@ -62,12 +70,13 @@ class DateTimePickerPopup : public wxPanel, public wxComboPopup
 class DateTimePicker : public wxComboCtrl
 {
     public:
-        DateTimePicker(wxWindow* parent, const wxDateTime& dateTime = wxDefaultDateTime);
+        DateTimePicker(wxWindow* parent, int id = wxID_ANY, const wxDateTime& dateTime = wxDefaultDateTime, int style = DT_PICKER_DATE | DT_PICKER_TIME);
 
         wxDateTime GetDateTime() const;
         void SetDateTime(const wxDateTime& dateTime);
 
     private:
+        int m_style;
         DateTimePickerPopup* m_popup;
 };
 
