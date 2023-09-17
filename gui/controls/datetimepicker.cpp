@@ -21,9 +21,23 @@
 
 // DateTimePickerPopup definition
 
+/////////////////////////////////////////////////
+/// \brief Popup constructor.
+///
+/// \param style int
+///
+/////////////////////////////////////////////////
 DateTimePickerPopup::DateTimePickerPopup(int style) : wxPanel(), wxComboPopup(), m_style(style) {}
 
 
+/////////////////////////////////////////////////
+/// \brief Create the DateTimePicker control
+/// popup.
+///
+/// \param parent wxWindow*
+/// \return bool
+///
+/////////////////////////////////////////////////
 bool DateTimePickerPopup::Create(wxWindow* parent)
 {
     if (!wxPanel::Create(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxBORDER_SIMPLE | wxTAB_TRAVERSAL))
@@ -54,6 +68,13 @@ bool DateTimePickerPopup::Create(wxWindow* parent)
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Return the value of the popup as a
+/// string.
+///
+/// \return wxString
+///
+/////////////////////////////////////////////////
 wxString DateTimePickerPopup::GetStringValue() const
 {
     return GetDisplayDateTimeString(GetDateTime(), m_style);
@@ -67,6 +88,13 @@ wxSize DateTimePickerPopup::GetAdjustedSize(int WXUNUSED(minWidth), int WXUNUSED
 }
 
 
+/////////////////////////////////////////////////
+/// \brief This member function is called, once
+/// the popup appears.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
 void DateTimePickerPopup::OnPopup()
 {
     DateTimePicker* picker = GetCustomDateTimePicker();
@@ -76,6 +104,13 @@ void DateTimePickerPopup::OnPopup()
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Get the value of the embedded controls
+/// as a combined datetime object.
+///
+/// \return wxDateTime
+///
+/////////////////////////////////////////////////
 wxDateTime DateTimePickerPopup::GetDateTime() const
 {
     wxDateTime dateOnly, timeOnly;
@@ -91,6 +126,14 @@ wxDateTime DateTimePickerPopup::GetDateTime() const
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Set the initial values of the embedded
+/// controls.
+///
+/// \param dateTime const wxDateTime&
+/// \return void
+///
+/////////////////////////////////////////////////
 void DateTimePickerPopup::SetDateTime(const wxDateTime& dateTime)
 {
     if (!dateTime.IsValid())
@@ -101,6 +144,15 @@ void DateTimePickerPopup::SetDateTime(const wxDateTime& dateTime)
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Format the passed datetime object as a
+/// string using the selected style.
+///
+/// \param dateTime const wxDateTime&
+/// \param style int
+/// \return wxString
+///
+/////////////////////////////////////////////////
 wxString DateTimePickerPopup::GetDisplayDateTimeString(const wxDateTime& dateTime, int style)
 {
     if (!dateTime.IsValid())
@@ -115,6 +167,13 @@ wxString DateTimePickerPopup::GetDisplayDateTimeString(const wxDateTime& dateTim
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Function for getting the parent
+/// control.
+///
+/// \return DateTimePicker*
+///
+/////////////////////////////////////////////////
 DateTimePicker* DateTimePickerPopup::GetCustomDateTimePicker()
 {
     wxCHECK(IsCreated(), NULL);
@@ -123,6 +182,13 @@ DateTimePicker* DateTimePickerPopup::GetCustomDateTimePicker()
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Handler for the OK button.
+///
+/// \param wxCommandEvent&
+/// \return void
+///
+/////////////////////////////////////////////////
 void DateTimePickerPopup::OnOKButtonClicked(wxCommandEvent&)
 {
     Dismiss();
@@ -132,6 +198,15 @@ void DateTimePickerPopup::OnOKButtonClicked(wxCommandEvent&)
 
 
 
+/////////////////////////////////////////////////
+/// \brief Construct a DateTimePicker control.
+///
+/// \param parent wxWindow*
+/// \param id int
+/// \param dateTime const wxDateTime&
+/// \param style int
+///
+/////////////////////////////////////////////////
 DateTimePicker::DateTimePicker(wxWindow* parent, int id, const wxDateTime& dateTime, int style)
     : wxComboCtrl(parent, id, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxCB_SIMPLE | wxTE_PROCESS_ENTER), m_style(style)
 {
@@ -142,6 +217,13 @@ DateTimePicker::DateTimePicker(wxWindow* parent, int id, const wxDateTime& dateT
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Get the value of the control as
+/// wxDateTime.
+///
+/// \return wxDateTime
+///
+/////////////////////////////////////////////////
 wxDateTime DateTimePicker::GetDateTime() const
 {
     time_stamp time = getTimeStampFromTimePoint(StrToTime(GetValue().ToStdString()));
@@ -155,6 +237,14 @@ wxDateTime DateTimePicker::GetDateTime() const
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Set the value of the control via a
+/// wxDateTime object.
+///
+/// \param dateTime const wxDateTime&
+/// \return void
+///
+/////////////////////////////////////////////////
 void DateTimePicker::SetDateTime(const wxDateTime& dateTime)
 {
     SetValue(DateTimePickerPopup::GetDisplayDateTimeString(dateTime, m_style));

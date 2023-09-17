@@ -33,8 +33,11 @@ enum
 
 class DateTimePicker;
 
-// DateTimePickerPopup declaration
 
+/////////////////////////////////////////////////
+/// \brief Defines the popup for the
+/// DateTimePicker control.
+/////////////////////////////////////////////////
 class DateTimePickerPopup : public wxPanel, public wxComboPopup
 {
     public:
@@ -65,8 +68,11 @@ class DateTimePickerPopup : public wxPanel, public wxComboPopup
 };
 
 
-// DateTimePicker declaration
 
+
+/////////////////////////////////////////////////
+/// \brief Defines a DateTimePickerCtrl
+/////////////////////////////////////////////////
 class DateTimePicker : public wxComboCtrl
 {
     public:
