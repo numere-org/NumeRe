@@ -855,7 +855,15 @@ size_t Plot::createSubPlotSet(bool& bAnimateVar, vector<string>& vPlotCompose, s
                 if (findVariableInExpression(sArgument, "t") != string::npos)
                     bAnimateVar = true;
 
-                vDrawVector.push_back(sArgument);
+                if (sArgument.front() == '{' && sArgument.back() == '}')
+                {
+                    EndlessVector<StringView> args = getAllArguments(StringView(sArgument, 1, sArgument.length()-2));
+
+                    for (const StringView& arg : args)
+                        vDrawVector.push_back(arg.to_string());
+                }
+                else
+                    vDrawVector.push_back(sArgument);
             }
 
             // Set the function string to be empty

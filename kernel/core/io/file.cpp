@@ -3924,6 +3924,8 @@ namespace NumeRe
         int nColmin = 0, nColmax = 0;
         bool bBreakSignal = false;
 
+        const int MAXXLSXCOLS = 16384;
+
         vector<long long int> vCommentLines;
         string sEntry;
         string sSheetContent;
@@ -4006,7 +4008,8 @@ namespace NumeRe
 
                 do
                 {
-                    if (cols->IntAttribute("max") > nColmax+1)
+                    if (cols->IntAttribute("max") > nColmax+1
+                        && (nColmax+1 + 100 >= MAXXLSXCOLS || cols->IntAttribute("max") != MAXXLSXCOLS))
                         nColmax = cols->IntAttribute("max")-1;
 
                 } while ((cols = cols->NextSiblingElement()));
@@ -4148,7 +4151,8 @@ namespace NumeRe
 
                 do
                 {
-                    if (cols->IntAttribute("max") > nColmax+1)
+                    if (cols->IntAttribute("max") > nColmax+1
+                        && (nColmax+1 + 100 >= MAXXLSXCOLS || cols->IntAttribute("max") != MAXXLSXCOLS))
                         nColmax = cols->IntAttribute("max")-1;
 
                 } while ((cols = cols->NextSiblingElement()));
@@ -4217,7 +4221,7 @@ namespace NumeRe
 
                         continue;
                     }
-                    else if (_element->FirstChildElement("v"))
+                    else if (_element->FirstChildElement("v") && _element->FirstChildElement("v")->GetText())
                     {
                         std::string sValue = utf8parser(_element->FirstChildElement("v")->GetText());
 
