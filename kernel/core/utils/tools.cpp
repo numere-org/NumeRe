@@ -24,6 +24,9 @@
 #include <cstdlib>
 #include <omp.h>
 
+#include <windows.h>
+#include <shobjidl.h>
+
 
 /////////////////////////////////////////////////
 /// \brief This class represents a thread safe
@@ -2916,6 +2919,77 @@ static HANDLE initializeFileHandle(string& sDir, WIN32_FIND_DATA* FindFileData, 
 
 
 /////////////////////////////////////////////////
+/// \brief Resolve a Windows shell link (*.lnk).
+/// Copied and adapted from MSDN.
+///
+/// \param sLink const std::string&
+/// \return std::string
+///
+/////////////////////////////////////////////////
+static std::string ResolveLink(const std::string& sLink)
+{
+    HRESULT hres;
+    IShellLink* psl;
+    CHAR szGotPath[MAX_PATH];
+    WIN32_FIND_DATA wfd;
+
+    std::string sFilePath;
+
+    CoInitialize(nullptr);
+
+    // Get a pointer to the IShellLink interface. It is assumed that CoInitialize
+    // has already been called.
+    hres = CoCreateInstance(CLSID_ShellLink, NULL, CLSCTX_INPROC_SERVER, IID_IShellLinkA, (LPVOID*)&psl);
+
+    if (SUCCEEDED(hres))
+    {
+        IPersistFile* ppf;
+
+        // Get a pointer to the IPersistFile interface.
+        hres = psl->QueryInterface(IID_IPersistFile, (void**)&ppf);
+
+        if (SUCCEEDED(hres))
+        {
+            WCHAR wsz[MAX_PATH];
+
+            // Ensure that the string is Unicode.
+            MultiByteToWideChar(CP_ACP, 0, sLink.c_str(), -1, wsz, MAX_PATH);
+
+            // Add code here to check return value from MultiByteWideChar
+            // for success.
+
+            // Load the shortcut.
+            hres = ppf->Load(wsz, STGM_READ);
+
+            if (SUCCEEDED(hres))
+            {
+                // Resolve the link.
+                hres = psl->Resolve(nullptr, SLR_NO_UI);
+
+                if (SUCCEEDED(hres))
+                {
+                    // Get the path to the link target.
+                    hres = psl->GetPath(szGotPath, MAX_PATH, (WIN32_FIND_DATA*)&wfd, SLGP_SHORTPATH);
+
+                    if (SUCCEEDED(hres))
+                        sFilePath = szGotPath;
+                }
+            }
+
+            // Release the pointer to the IPersistFile interface.
+            ppf->Release();
+        }
+
+        // Release the pointer to the IShellLink interface.
+        psl->Release();
+    }
+
+    CoUninitialize();
+    return sFilePath;
+}
+
+
+/////////////////////////////////////////////////
 /// \brief This function returns a list of files
 /// (including their paths, if nFlags & 1).
 ///
@@ -2969,11 +3043,37 @@ vector<string> getFileList(const string& sDirectory, const Settings& _option, in
             if (FindFileData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
                 continue;
 
-            // Push back filenames
-            if (nFlags & 1)
-                vFileList.push_back(sDir + FindFileData.cFileName);
+            if (std::string(FindFileData.cFileName).ends_with(".lnk"))
+            {
+                // Handle links
+                std::string sLinkTarget = replacePathSeparator(ResolveLink(sDir + FindFileData.cFileName));
+                FileInfo info = NumeReKernel::getInstance()->getFileSystem().getFileInfo(sLinkTarget);
+
+                if (info.fileAttributes & FileInfo::ATTR_DIRECTORY)
+                {
+                    // Push back the link file
+                    if (nFlags & 1)
+                        vFileList.push_back(sDir + FindFileData.cFileName);
+                    else
+                        vFileList.push_back(FindFileData.cFileName);
+                }
+                else
+                {
+                    // Push back the target file
+                    if (nFlags & 1)
+                        vFileList.push_back(sLinkTarget);
+                    else
+                        vFileList.push_back(info.name + (info.ext.length() ? "." + info.ext : std::string("")));
+                }
+            }
             else
-                vFileList.push_back(FindFileData.cFileName);
+            {
+                // Push back filenames
+                if (nFlags & 1)
+                    vFileList.push_back(sDir + FindFileData.cFileName);
+                else
+                    vFileList.push_back(FindFileData.cFileName);
+            }
         }
         while (FindNextFile(hFind, &FindFileData) != 0);
 
@@ -3045,6 +3145,21 @@ vector<string> getFolderList(const string& sDirectory, const Settings& _option, 
                     vFileList.push_back(sDir + FindFileData.cFileName);
                 else
                     vFileList.push_back(FindFileData.cFileName);
+            }
+            else if (std::string(FindFileData.cFileName).ends_with(".lnk"))
+            {
+                // Handle links
+                std::string sLinkTarget = replacePathSeparator(ResolveLink(sDir + FindFileData.cFileName));
+                FileInfo info = NumeReKernel::getInstance()->getFileSystem().getFileInfo(sLinkTarget);
+
+                if (info.fileAttributes & FileInfo::ATTR_DIRECTORY)
+                {
+                    // Push back the target file
+                    if (nFlags & 1)
+                        vFileList.push_back(sLinkTarget);
+                    else
+                        vFileList.push_back(sLinkTarget.substr(sLinkTarget.rfind('/')+1));
+                }
             }
             else // ignore files
                 continue;

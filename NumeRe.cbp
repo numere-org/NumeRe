@@ -125,6 +125,7 @@
 			<Add option="-DwxUSE_UNICODE" />
 			<Add option="-D__WXMSW__" />
 			<Add option="-D__MSVCRT_VERSION__=0x0601" />
+			<Add option="-D_WIN32_WINNT=0x0601" />
 			<Add directory="$(wx)/lib/gcc_lib/mswu" />
 			<Add directory="$(wx)/include" />
 		</Compiler>
