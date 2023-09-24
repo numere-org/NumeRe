@@ -599,7 +599,7 @@ static void setParametersInWindow(CommandLineParser& cmdParser, const std::strin
     }
 }
 
-}
+
 
 /////////////////////////////////////////////////
 /// \brief This function is the actual
@@ -608,7 +608,6 @@ static void setParametersInWindow(CommandLineParser& cmdParser, const std::strin
 /// \param cmdParser CommandLineParser&
 /// \return void
 ///
-/////////////////////////////////////////////////
 /////////////////////////////////////////////////
 void windowCommand(CommandLineParser& cmdParser)
 {

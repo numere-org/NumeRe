@@ -2042,13 +2042,12 @@ void NumeReWindow::CreateProcedureTree(const std::string& sProcedurePath)
     std::vector<std::string> vProcedureTree;
     std::vector<std::string> vCurrentTree;
     std::string sPath = sProcedurePath;
-    Settings _option = m_terminal->getKernelSettings();
 
     // Find every folder first
     do
     {
         sPath += "/*";
-        vCurrentTree = getFolderList(sPath, _option, 1);
+        vCurrentTree = getFolderList(sPath, 1);
 
         if (vCurrentTree.size())
             vFolderTree.insert(vFolderTree.end(), vCurrentTree.begin(), vCurrentTree.end());
@@ -2061,7 +2060,7 @@ void NumeReWindow::CreateProcedureTree(const std::string& sProcedurePath)
         if (vFolderTree[i].substr(vFolderTree[i].length()-3) == "/.." || vFolderTree[i].substr(vFolderTree[i].length()-2) == "/.")
             continue;
 
-        vCurrentTree = getFileList(vFolderTree[i] + "/*.nprc", _option, 1);
+        vCurrentTree = getFileList(vFolderTree[i] + "/*.nprc", 1);
 
         if (vCurrentTree.size())
             vProcedureTree.insert(vProcedureTree.end(), vCurrentTree.begin(), vCurrentTree.end());
@@ -3283,9 +3282,9 @@ void NumeReWindow::NewFile(FileFilterType _filetype, const wxString& defaultfile
 
             // Get the template list
             if (m_options->useCustomLangFiles() && wxFileExists(getProgramFolder() + "\\user\\lang\\tmpl_app_start.nlng"))
-                vFiles = getFileList(getProgramFolder().ToStdString() + "/user/lang/tmpl_app_gui_[*].nlng", m_terminal->getKernelSettings());
+                vFiles = getFileList(getProgramFolder().ToStdString() + "/user/lang/tmpl_app_gui_[*].nlng");
             else
-                vFiles = getFileList(getProgramFolder().ToStdString() + "/lang/tmpl_app_gui_[*].nlng", m_terminal->getKernelSettings());
+                vFiles = getFileList(getProgramFolder().ToStdString() + "/lang/tmpl_app_gui_[*].nlng");
 
             // Ensure we have the templates available
             if (!vFiles.size())

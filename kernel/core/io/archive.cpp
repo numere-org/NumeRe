@@ -173,7 +173,7 @@ namespace Archive
         if (type == ARCHIVE_NONE)
             throw SyntaxError(SyntaxError::INVALID_FILETYPE, sTargetFile, sTargetFile.substr(sTargetFile.rfind('.')), sTargetFile);
 
-        const Settings& _option = NumeReKernel::getInstance()->getSettings();
+        FileSystem& _fSys = NumeReKernel::getInstance()->getFileSystem();
 
         if (type == ARCHIVE_ZIP)
         {
@@ -187,9 +187,9 @@ namespace Archive
                     // Handle the recursion
                     g_logger.debug("Including directory: " + vFileList[i]);
                     std::string sDirectory = vFileList[i] + "/*";
-                    std::vector<std::string> vFiles = getFileList(sDirectory, _option, 1);
+                    std::vector<std::string> vFiles = _fSys.getFileList(sDirectory, FileSystem::FULLPATH);
 
-                    while (vFiles.size() || getFolderList(sDirectory, _option).size() > 2)
+                    while (vFiles.size() || _fSys.getFolderList(sDirectory).size() > 2)
                     {
                         for (size_t j = 0; j < vFiles.size(); j++)
                         {
@@ -204,7 +204,7 @@ namespace Archive
                         }
 
                         sDirectory += "/*";
-                        vFiles = getFileList(sDirectory, _option, 1);
+                        vFiles = _fSys.getFileList(sDirectory, FileSystem::FULLPATH);
                     }
                 }
                 else
@@ -232,9 +232,9 @@ namespace Archive
                     // Handle the recursion
                     g_logger.debug("Including directory: " + vFileList[i]);
                     std::string sDirectory = vFileList[i] + "/*";
-                    std::vector<std::string> vFiles = getFileList(sDirectory, _option, 1);
+                    std::vector<std::string> vFiles = _fSys.getFileList(sDirectory, FileSystem::FULLPATH);
 
-                    while (vFiles.size() || getFolderList(sDirectory, _option).size() > 2)
+                    while (vFiles.size() || _fSys.getFolderList(sDirectory).size() > 2)
                     {
                         for (size_t j = 0; j < vFiles.size(); j++)
                         {
@@ -249,7 +249,7 @@ namespace Archive
                         }
 
                         sDirectory += "/*";
-                        vFiles = getFileList(sDirectory, _option, 1);
+                        vFiles = _fSys.getFileList(sDirectory, FileSystem::FULLPATH);
                     }
                 }
                 else

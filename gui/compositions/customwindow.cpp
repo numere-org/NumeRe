@@ -1695,10 +1695,18 @@ bool CustomWindow::getItemParameters(int windowItemID, WindowItemParams& params)
             for (size_t i = 0; i < listCtrl->GetColumnCount(); i++)
             {
                 if (params.label.length())
+                {
+                    if (params.label[0] != '{')
+                        params.label.insert(0, '{');
+
                     params.label += ", ";
+                }
 
                 params.label += convertToCodeString(listCtrl->GetDataView()->GetColumn(i)->GetTitle());
             }
+
+            if (params.label[0] == '{')
+                params.label += '}';
 
             params.value = getTreeListCtrlValue(listCtrl);
             params.type = "treelist";
@@ -2029,13 +2037,21 @@ wxString CustomWindow::getStatusText() const
     for (int i = 0; i < numFields; i++)
     {
         if (sStatusText.length())
+        {
+            if (sStatusText[0] != '{')
+                sStatusText.insert(0, '{');
+
             sStatusText += ",";
+        }
 
         sStatusText += "\"" + bar->GetStatusText(i) + "\"";
     }
 
     if (!sStatusText.length())
         return "\"\"";
+
+    if (sStatusText[0] == '{')
+        sStatusText += '}';
 
     return sStatusText;
 }

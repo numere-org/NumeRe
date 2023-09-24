@@ -4949,7 +4949,7 @@ static CommandReturnValues cmd_load(string& sCmd)
                 if (sFileName.find('/') == string::npos)
                     sFileName = "<loadpath>/" + sFileName;
 
-                vector<string> vFilelist = getFileList(sFileName, _option, 1);
+                std::vector<std::string> vFilelist = NumeReKernel::getInstance()->getFileSystem().getFileList(sFileName, FileSystem::FULLPATH);
 
                 if (!vFilelist.size())
                     throw SyntaxError(SyntaxError::FILE_NOT_EXIST, sCmd, sFileName, sFileName);
@@ -4978,7 +4978,7 @@ static CommandReturnValues cmd_load(string& sCmd)
                     if (sFileName.find('/') == string::npos)
                         sFileName = "<loadpath>/" + sFileName;
 
-                    vector<string> vFilelist = getFileList(sFileName, _option, 1);
+                    std::vector<std::string> vFilelist = NumeReKernel::getInstance()->getFileSystem().getFileList(sFileName, FileSystem::FULLPATH);
 
                     if (!vFilelist.size())
                         throw SyntaxError(SyntaxError::FILE_NOT_EXIST, sCmd, sFileName, sFileName);

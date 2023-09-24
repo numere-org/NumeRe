@@ -363,7 +363,7 @@ void append_data(CommandLineParser& cmdParser)
             sFileList = "<loadpath>/" + sFileList;
 
         // Get the file list, which fulfills the file path scheme
-        vector<string> vFilelist = getFileList(sFileList, _option, true);
+        std::vector<std::string> vFilelist = NumeReKernel::getInstance()->getFileSystem().getFileList(sFileList, FileSystem::FULLPATH);
 
         // Ensure that at least one file exists
         if (!vFilelist.size())
