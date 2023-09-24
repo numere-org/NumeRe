@@ -118,6 +118,7 @@ class TableViewer : public wxGrid
 
         wxString getSelectedValues();
         int GetInternalRows(int gridrow) const;
+        int GetExternalRows(int gridrow) const;
 
 
         size_t GetHeight() {return nHeight;}

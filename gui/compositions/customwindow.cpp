@@ -221,7 +221,7 @@ static wxString getTreeListCtrlValue(wxTreeListCtrl* listCtrl)
 
 /////////////////////////////////////////////////
 /// \brief Finds the depth-first numerical ID of
-/// an element in the wxTreListCtrl.
+/// an element in the wxTreeListCtrl.
 ///
 /// \param listCtrl wxTreeListCtrl*
 /// \param item const wxTreeListItem&
@@ -275,6 +275,8 @@ BEGIN_EVENT_TABLE(CustomWindow, wxFrame)
     EVT_MENU(-1, CustomWindow::OnMenuEvent)
     cEVT_SET_VALUE(-1, CustomWindow::OnSetValueEvent)
     cEVT_SET_LABEL(-1, CustomWindow::OnSetLabelEvent)
+    cEVT_SET_SELECTION(-1, CustomWindow::OnSetSelectionEvent)
+    cEVT_SET_FOCUS(-1, CustomWindow::OnSetFocusEvent)
 END_EVENT_TABLE()
 
 
@@ -368,7 +370,10 @@ void CustomWindow::layout()
         sSize.substr(0, sSize.find(',')).ToLong(&x);
         sSize.substr(sSize.find(',')+1).ToLong(&y);
 
-        SetClientSize(wxSize(x,y));
+        if (x == -1 && y == -1)
+            Maximize();
+        else
+            SetClientSize(wxSize(x,y));
     }
     else
         SetClientSize(wxSize(800,600));
@@ -457,7 +462,9 @@ void CustomWindow::layoutChild(const tinyxml2::XMLElement* currentChild, wxWindo
         // Now check for the current XMLElement's
         // value (i.e. the XML-Tag name) and create
         // a corresponding control (if available)
-        if (std::string(currentChild->Value()) == "button")
+        std::string sValue = currentChild->Value();
+
+        if (sValue == "button")
         {
             // Add a button
             wxButton* button = _groupPanel->CreateButton(currParent, currSizer, removeQuotationMarks(text), id, alignment);
@@ -475,7 +482,7 @@ void CustomWindow::layoutChild(const tinyxml2::XMLElement* currentChild, wxWindo
             else if (state == HIDDEN)
                 button->Hide();
         }
-        else if (std::string(currentChild->Value()) == "checkbox")
+        else if (sValue == "checkbox")
         {
             // Add a checkbox
             wxCheckBox* checkbox = _groupPanel->CreateCheckBox(currParent, currSizer, removeQuotationMarks(text), id, alignment);
@@ -496,7 +503,7 @@ void CustomWindow::layoutChild(const tinyxml2::XMLElement* currentChild, wxWindo
             else if (state == HIDDEN)
                 checkbox->Hide();
         }
-        else if (std::string(currentChild->Value()) == "radio")
+        else if (sValue == "radio")
         {
             // Add a radio group
             wxString label;
@@ -523,7 +530,7 @@ void CustomWindow::layoutChild(const tinyxml2::XMLElement* currentChild, wxWindo
             else if (state == HIDDEN)
                 radiobox->Hide();
         }
-        else if (std::string(currentChild->Value()) == "spinbut")
+        else if (sValue == "spinbut")
         {
             // Add a spincontrol group
             wxString label;
@@ -556,7 +563,7 @@ void CustomWindow::layoutChild(const tinyxml2::XMLElement* currentChild, wxWindo
             else if (state == HIDDEN)
                 spinctrl->Show(false);
         }
-        else if (std::string(currentChild->Value()) == "slider")
+        else if (sValue == "slider")
         {
             // Add a slider
             int nMin = 0, nMax = 100, nValue = 0;
@@ -589,7 +596,7 @@ void CustomWindow::layoutChild(const tinyxml2::XMLElement* currentChild, wxWindo
             else if (state == HIDDEN)
                 slider->Show(false);
         }
-        else if (std::string(currentChild->Value()) == "gauge")
+        else if (sValue == "gauge")
         {
             // Add a gauge
             wxString label;
@@ -609,10 +616,20 @@ void CustomWindow::layoutChild(const tinyxml2::XMLElement* currentChild, wxWindo
             else if (state == HIDDEN)
                 gauge->Hide();
         }
-        else if (std::string(currentChild->Value()) == "dropdown")
+        else if (sValue == "dropdown")
         {
             // Add a dropdown
-            wxChoice* choice = _groupPanel->CreateChoices(currParent, currSizer, getChoices(text), id, alignment);
+            wxArrayString choices;
+
+            if (currentChild->Attribute("label"))
+            {
+                wxString l = currentChild->Attribute("label");
+                choices = getChoices(l);
+            }
+            else
+                choices = getChoices(text);
+
+            wxChoice* choice = _groupPanel->CreateChoices(currParent, currSizer, choices, id, alignment);
             m_windowItems[id] = std::make_pair(CustomWindow::DROPDOWN, choice);
 
             if (currentChild->Attribute("value"))
@@ -629,10 +646,20 @@ void CustomWindow::layoutChild(const tinyxml2::XMLElement* currentChild, wxWindo
             else if (state == HIDDEN)
                 choice->Hide();
         }
-        else if (std::string(currentChild->Value()) == "combobox")
+        else if (sValue == "combobox")
         {
             // Add a combobox
-            wxComboBox* combo = _groupPanel->CreateComboBox(currParent, currSizer, getChoices(text), id, alignment);
+            wxArrayString choices;
+
+            if (currentChild->Attribute("label"))
+            {
+                wxString l = currentChild->Attribute("label");
+                choices = getChoices(l);
+            }
+            else
+                choices = getChoices(text);
+
+            wxComboBox* combo = _groupPanel->CreateComboBox(currParent, currSizer, choices, id, alignment);
             m_windowItems[id] = std::make_pair(CustomWindow::COMBOBOX, combo);
 
             if (currentChild->Attribute("value"))
@@ -649,7 +676,7 @@ void CustomWindow::layoutChild(const tinyxml2::XMLElement* currentChild, wxWindo
             else if (state == HIDDEN)
                 combo->Hide();
         }
-        else if (std::string(currentChild->Value()) == "textfield")
+        else if (sValue == "textfield")
         {
             // Add a textctrl
             int style = wxTE_PROCESS_ENTER;
@@ -689,7 +716,7 @@ void CustomWindow::layoutChild(const tinyxml2::XMLElement* currentChild, wxWindo
             else if (state == HIDDEN)
                 textctrl->Show(false);
         }
-        else if (std::string(currentChild->Value()) == "statictext" || std::string(currentChild->Value()) == "text")
+        else if (sValue == "statictext" || sValue == "text")
         {
             // Add a static test
             wxStaticText* statictext = _groupPanel->AddStaticText(currParent, currSizer, removeQuotationMarks(text), id, alignment);
@@ -699,7 +726,7 @@ void CustomWindow::layoutChild(const tinyxml2::XMLElement* currentChild, wxWindo
             if (currentChild->Attribute("color"))
                 statictext->SetForegroundColour(toWxColour(currentChild->Attribute("color")));
         }
-        else if (std::string(currentChild->Value()) == "prop")
+        else if (sValue == "prop")
         {
             // Create internal variables
             wxArrayString varList = getChoices(text);
@@ -717,13 +744,13 @@ void CustomWindow::layoutChild(const tinyxml2::XMLElement* currentChild, wxWindo
                     m_varTable[varList[i]] = "0";
             }
         }
-        else if (std::string(currentChild->Value()) == "bitmap")
+        else if (sValue == "bitmap")
         {
             // Add an image
             wxStaticBitmap* bitmap = _groupPanel->CreateBitmap(currParent, currSizer, removeQuotationMarks(text), id, alignment);
             m_windowItems[id] = std::make_pair(CustomWindow::IMAGE, bitmap);
         }
-        else if (std::string(currentChild->Value()) == "separator")
+        else if (sValue == "separator")
         {
             // Add a separator
             int style = wxHORIZONTAL;
@@ -750,7 +777,7 @@ void CustomWindow::layoutChild(const tinyxml2::XMLElement* currentChild, wxWindo
                 currSizer->Add(line, 0, wxEXPAND | wxALL, 5);
             }
         }
-        else if (std::string(currentChild->Value()) == "grapher")
+        else if (sValue == "grapher")
         {
             // Add a grapher object
             wxMGL* mgl = new wxMGL(currParent, id, wxDefaultPosition, wxDefaultSize, wxBORDER_THEME, true);
@@ -773,7 +800,7 @@ void CustomWindow::layoutChild(const tinyxml2::XMLElement* currentChild, wxWindo
             if (currentChild->Attribute("onclick"))
                 m_eventTable[id].onclick = currentChild->Attribute("onclick");
         }
-        else if (std::string(currentChild->Value()) == "tablegrid")
+        else if (sValue == "tablegrid")
         {
             // Add a table grid
             TableViewer* table = new TableViewer(currParent, id, nullptr, nullptr, wxDefaultPosition, wxDefaultSize, wxWANTS_CHARS | wxBORDER_THEME);
@@ -801,8 +828,13 @@ void CustomWindow::layoutChild(const tinyxml2::XMLElement* currentChild, wxWindo
 
             if (currentChild->Attribute("onactivate"))
                 m_eventTable[id].onactivate = currentChild->Attribute("onactivate");
+
+            if (state == DISABLED)
+                table->Enable(false);
+            else if (state == HIDDEN)
+                table->Show(false);
         }
-        else if (std::string(currentChild->Value()) == "treelist")
+        else if (sValue == "treelist")
         {
             // Add a treelist control
             int style = wxTL_SINGLE;
@@ -878,8 +910,13 @@ void CustomWindow::layoutChild(const tinyxml2::XMLElement* currentChild, wxWindo
 
             if (currentChild->Attribute("onactivate"))
                 m_eventTable[id].onactivate = currentChild->Attribute("onactivate");
+
+            if (state == DISABLED)
+                listCtrl->Enable(false);
+            else if (state == HIDDEN)
+                listCtrl->Show(false);
         }
-        else if (std::string(currentChild->Value()) == "group")
+        else if (sValue == "group")
         {
             // Add a group. A group is a recursive control,
             // which contains further controls (including further groups).
@@ -1014,7 +1051,9 @@ void CustomWindow::layoutMenu(const tinyxml2::XMLElement* currentChild, wxMenu* 
                 font.MakeBold();
         }
 
-        if (std::string(currentChild->Value()) == "menuitem")
+        std::string sValue = currentChild->Value();
+
+        if (sValue == "menuitem")
         {
             // Create a menu item
             bool isCheck = false;
@@ -1043,7 +1082,7 @@ void CustomWindow::layoutMenu(const tinyxml2::XMLElement* currentChild, wxMenu* 
             if (state == DISABLED)
                 item->Enable(false);
         }
-        else if (std::string(currentChild->Value()) == "checkbox")
+        else if (sValue == "checkbox")
         {
             // Create a checkable menu item
             bool isChecked = false;
@@ -1068,9 +1107,9 @@ void CustomWindow::layoutMenu(const tinyxml2::XMLElement* currentChild, wxMenu* 
             if (state == DISABLED)
                 item->Enable(false);
         }
-        else if (std::string(currentChild->Value()) == "separator")
+        else if (sValue == "separator")
             currMenu->AppendSeparator();
-        else if (std::string(currentChild->Value()) == "group")
+        else if (sValue == "group")
         {
             // Add a group. A group is a recursive control,
             // which contains further controls (including further groups).
@@ -1314,7 +1353,15 @@ bool CustomWindow::getItemParameters(int windowItemID, WindowItemParams& params)
             params.type = "dropdown";
             wxChoice* choices = static_cast<wxChoice*>(object.second);
             params.value = convertToCodeString(choices->GetString(choices->GetSelection()));
-            params.label = params.value;
+
+            for (size_t i = 0; i < choices->GetCount(); i++)
+            {
+                if (params.label.length())
+                    params.label += ", ";
+
+                params.label += convertToCodeString(choices->GetString(i));
+            }
+
             params.color = toWxString(static_cast<wxChoice*>(object.second)->GetBackgroundColour());
 
             break;
@@ -1329,7 +1376,14 @@ bool CustomWindow::getItemParameters(int windowItemID, WindowItemParams& params)
             else
                 params.value = convertToCodeString(combo->GetValue());
 
-            params.label = params.value;
+            for (size_t i = 0; i < combo->GetCount(); i++)
+            {
+                if (params.label.length())
+                    params.label += ", ";
+
+                params.label += convertToCodeString(combo->GetString(i));
+            }
+
             params.color = toWxString(static_cast<wxComboBox*>(object.second)->GetBackgroundColour());
 
             break;
@@ -1381,6 +1435,7 @@ bool CustomWindow::getItemParameters(int windowItemID, WindowItemParams& params)
 
                 params.label += convertToCodeString(listCtrl->GetDataView()->GetColumn(i)->GetTitle());
             }
+
             params.value = getTreeListCtrlValue(listCtrl);
             params.type = "treelist";
 
@@ -1632,6 +1687,77 @@ wxString CustomWindow::getItemColor(int windowItemID) const
 
 
 /////////////////////////////////////////////////
+/// \brief Get the current selection of the
+/// selected item.
+///
+/// \param windowItemID int
+/// \return wxString
+///
+/////////////////////////////////////////////////
+wxString CustomWindow::getItemSelection(int windowItemID) const
+{
+    auto iter = m_windowItems.find(windowItemID);
+
+    if (iter == m_windowItems.end())
+        return "";
+
+    std::pair<CustomWindow::WindowItemType, wxObject*> object = iter->second;
+
+    switch (object.first)
+    {
+        case CustomWindow::TEXTCTRL:
+        {
+            TextField* field = static_cast<TextField*>(object.second);
+
+            if (field->HasSelection())
+            {
+                long int from;
+                long int to;
+                field->GetSelection(&from, &to);
+                return "{" + toString((long long)from+1) + "," + toString((long long)to-from) + "}";
+            }
+
+            return toString((long long)field->GetInsertionPoint()+1);
+        }
+        case CustomWindow::DROPDOWN:
+        {
+            wxChoice* choices = static_cast<wxChoice*>(object.second);
+            return toString(choices->GetSelection()+1);
+        }
+        case CustomWindow::COMBOBOX:
+        {
+            wxComboBox* combo = static_cast<wxComboBox*>(object.second);
+            return toString(combo->GetSelection()+1);
+        }
+        case CustomWindow::TABLE:
+        {
+            TableViewer* table = static_cast<TableViewer*>(object.second);
+            return "{" + toString(table->GetInternalRows(table->GetGridCursorRow())+1) + "," + toString(table->GetGridCursorCol()+1) + "}";
+        }
+        case CustomWindow::TREELIST:
+        {
+            wxTreeListCtrl* listCtrl = static_cast<wxTreeListCtrl*>(object.second);
+            int selection = enumerateListItems(listCtrl, listCtrl->GetSelection());
+            return toString(selection+1);
+        }
+        case CustomWindow::GAUGE:
+        case CustomWindow::SPINCTRL:
+        case CustomWindow::SLIDER:
+        case CustomWindow::RADIOGROUP:
+        case CustomWindow::BUTTON:
+        case CustomWindow::CHECKBOX:
+        case CustomWindow::TEXT:
+        case CustomWindow::MENUITEM:
+        case CustomWindow::GRAPHER:
+        case CustomWindow::IMAGE:
+            break;
+    }
+
+    return "";
+}
+
+
+/////////////////////////////////////////////////
 /// \brief Returns the value of the selected
 /// window property.
 ///
@@ -1709,6 +1835,38 @@ bool CustomWindow::pushItemLabel(const wxString& _label, int windowItemID)
 
 
 /////////////////////////////////////////////////
+/// \brief Push an item selection change to the
+/// internal event handler.
+///
+/// \param selectionID int
+/// \param selectionID2 int
+/// \param windowItemID int
+/// \return bool
+///
+/////////////////////////////////////////////////
+bool CustomWindow::pushItemSelection(int selectionID, int selectionID2, int windowItemID)
+{
+    GetEventHandler()->QueueEvent(new SetSelectionEvent(SET_WINDOW_SELECTION, GetId(), windowItemID, selectionID, selectionID2));
+    return true;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Push an item focus change to the
+/// internal event handler.
+///
+/// \param windowItemID int
+/// \return bool
+///
+/////////////////////////////////////////////////
+bool CustomWindow::pushItemFocus(int windowItemID)
+{
+    GetEventHandler()->QueueEvent(new SetFocusEvent(SET_WINDOW_FOCUS, GetId(), windowItemID));
+    return true;
+}
+
+
+/////////////////////////////////////////////////
 /// \brief Change the value of the selected item.
 ///
 /// \param _value WindowItemValue&
@@ -1724,7 +1882,11 @@ bool CustomWindow::setItemValue(WindowItemValue& _value, int windowItemID)
         _value.stringValue.substr(0, _value.stringValue.find(',')).ToLong(&x);
         _value.stringValue.substr(_value.stringValue.find(',')+1).ToLong(&y);
 
-        SetClientSize(wxSize(x,y));
+        if (x == -1 && y == -1)
+            Maximize();
+        else
+            SetClientSize(wxSize(x,y));
+
         Refresh();
 
         return true;
@@ -1909,7 +2071,19 @@ bool CustomWindow::setItemLabel(const wxString& _label, int windowItemID)
             static_cast<wxMenuItem*>(object.second)->SetItemLabel(removeQuotationMarks(_label));
             break;
         case CustomWindow::DROPDOWN:
+        {
+            wxString lab = _label;
+            wxArrayString labels = getChoices(lab);
+            static_cast<wxChoice*>(object.second)->Set(labels);
+            break;
+        }
         case CustomWindow::COMBOBOX:
+        {
+            wxString lab = _label;
+            wxArrayString labels = getChoices(lab);
+            static_cast<wxComboBox*>(object.second)->Set(labels);
+            break;
+        }
         case CustomWindow::GAUGE:
         case CustomWindow::IMAGE:
         case CustomWindow::TABLE:
@@ -2038,6 +2212,125 @@ bool CustomWindow::setItemColor(const wxString& _color, int windowItemID)
 
     Refresh();
 
+    return true;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Set the selection in the selected
+/// window item.
+///
+/// \param selectionID int
+/// \param selectionID2 int
+/// \param windowItemID int
+/// \return bool
+///
+/////////////////////////////////////////////////
+bool CustomWindow::setItemSelection(int selectionID, int selectionID2, int windowItemID)
+{
+    auto iter = m_windowItems.find(windowItemID);
+
+    if (iter == m_windowItems.end())
+        return false;
+
+    std::pair<CustomWindow::WindowItemType, wxObject*> object = iter->second;
+
+    switch (object.first)
+    {
+        case CustomWindow::TEXTCTRL:
+        {
+            TextField* field = static_cast<TextField*>(object.second);
+
+            if (selectionID2)
+                field->SetSelection(std::max(std::min((long)selectionID-1, (long)field->GetLastPosition()), 0L),
+                                    std::max(std::min((long)selectionID-1+selectionID2, (long)field->GetLastPosition()), 0L));
+            else
+                field->SetInsertionPoint(std::max(std::min((long)selectionID-1, (long)field->GetLastPosition()), 0L));
+
+            break;
+        }
+        case CustomWindow::DROPDOWN:
+        {
+            wxChoice* choices = static_cast<wxChoice*>(object.second);
+
+            if (selectionID > 0 && selectionID <= choices->GetCount())
+                choices->SetSelection(selectionID-1);
+
+            break;
+        }
+        case CustomWindow::COMBOBOX:
+        {
+            wxComboBox* combo = static_cast<wxComboBox*>(object.second);
+
+            if (selectionID > 0 && selectionID <= combo->GetCount())
+                combo->SetSelection(selectionID-1);
+
+            break;
+        }
+        case CustomWindow::TABLE:
+        {
+            TableViewer* table = static_cast<TableViewer*>(object.second);
+            table->SetGridCursor(std::min(std::max(0, table->GetExternalRows(selectionID-1)), table->GetNumberRows()-1),
+                                 std::min(std::max(0, selectionID2-1), table->GetNumberCols()-1));
+            break;
+        }
+        case CustomWindow::TREELIST:
+        {
+            wxTreeListCtrl* listCtrl = static_cast<wxTreeListCtrl*>(object.second);
+
+            for (wxTreeListItem item = listCtrl->GetFirstItem(); item.IsOk(); item = listCtrl->GetNextItem(item))
+            {
+                if (selectionID <= 1)
+                {
+                    listCtrl->Select(item);
+                    break;
+                }
+
+                selectionID--;
+            }
+
+            break;
+        }
+        case CustomWindow::GAUGE:
+        case CustomWindow::SPINCTRL:
+        case CustomWindow::SLIDER:
+        case CustomWindow::RADIOGROUP:
+        case CustomWindow::BUTTON:
+        case CustomWindow::CHECKBOX:
+        case CustomWindow::TEXT:
+        case CustomWindow::MENUITEM:
+        case CustomWindow::GRAPHER:
+        case CustomWindow::IMAGE:
+            break;
+    }
+
+    return true;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Set the keyboard focus to the selected
+/// item.
+///
+/// \param windowItemID int
+/// \return bool
+///
+/////////////////////////////////////////////////
+bool CustomWindow::setItemFocus(int windowItemID)
+{
+    if (windowItemID == -1)
+    {
+        SetFocus();
+        return true;
+    }
+
+    auto iter = m_windowItems.find(windowItemID);
+
+    if (iter == m_windowItems.end())
+        return false;
+
+    std::pair<CustomWindow::WindowItemType, wxObject*> object = iter->second;
+    static_cast<wxWindow*>(object.second)->SetFocus();
     return true;
 }
 
