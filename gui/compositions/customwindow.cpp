@@ -1605,10 +1605,18 @@ bool CustomWindow::getItemParameters(int windowItemID, WindowItemParams& params)
             for (size_t i = 0; i < choices->GetCount(); i++)
             {
                 if (params.label.length())
+                {
+                    if (params.label[0] != '{')
+                        params.label.insert(0, '{');
+
                     params.label += ", ";
+                }
 
                 params.label += convertToCodeString(choices->GetString(i));
             }
+
+            if (params.label[0] == '{')
+                params.label += '}';
 
             params.color = toWxString(static_cast<wxChoice*>(object.second)->GetBackgroundColour());
 
@@ -1627,10 +1635,18 @@ bool CustomWindow::getItemParameters(int windowItemID, WindowItemParams& params)
             for (size_t i = 0; i < combo->GetCount(); i++)
             {
                 if (params.label.length())
+                {
+                    if (params.label[0] != '{')
+                        params.label.insert(0, '{');
+
                     params.label += ", ";
+                }
 
                 params.label += convertToCodeString(combo->GetString(i));
             }
+
+            if (params.label[0] == '{')
+                params.label += '}';
 
             params.color = toWxString(static_cast<wxComboBox*>(object.second)->GetBackgroundColour());
 
