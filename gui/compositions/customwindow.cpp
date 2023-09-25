@@ -626,8 +626,9 @@ void CustomWindow::layoutChild(const tinyxml2::XMLElement* currentChild, wxWindo
 
         if (sValue == "button")
         {
+            int proportion = currentChild->IntAttribute("prop", 1);
             // Add a button
-            wxButton* button = _groupPanel->CreateButton(currParent, currSizer, removeQuotationMarks(text), id, alignment);
+            wxButton* button = _groupPanel->CreateButton(currParent, currSizer, removeQuotationMarks(text), id, alignment, proportion);
             button->SetFont(font);
             m_windowItems[id] = std::make_pair(CustomWindow::BUTTON, button);
 
@@ -726,6 +727,7 @@ void CustomWindow::layoutChild(const tinyxml2::XMLElement* currentChild, wxWindo
         else if (sValue == "slider")
         {
             // Add a slider
+            int proportion = currentChild->IntAttribute("prop", 0);
             int nMin = 0, nMax = 100, nValue = 0;
             int style = wxHORIZONTAL;
 
@@ -741,7 +743,7 @@ void CustomWindow::layoutChild(const tinyxml2::XMLElement* currentChild, wxWindo
             if (currentChild->Attribute("value"))
                 nValue = currentChild->DoubleAttribute("value");
 
-            wxSlider* slider = _groupPanel->CreateSlider(currParent, currSizer, nMin, nMax, nValue, style, id, alignment);
+            wxSlider* slider = _groupPanel->CreateSlider(currParent, currSizer, nMin, nMax, nValue, style, id, alignment, proportion);
             slider->SetFont(font);
             m_windowItems[id] = std::make_pair(CustomWindow::SLIDER, slider);
 
@@ -759,13 +761,14 @@ void CustomWindow::layoutChild(const tinyxml2::XMLElement* currentChild, wxWindo
         else if (sValue == "gauge")
         {
             // Add a gauge
+            int proportion = currentChild->IntAttribute("prop", 0);
             wxString label;
             int style = wxHORIZONTAL;
 
             if (currentChild->Attribute("type"))
                 style = currentChild->Attribute("type", "horizontal") ? wxGA_HORIZONTAL | wxGA_SMOOTH : wxGA_VERTICAL | wxGA_SMOOTH;
 
-            wxGauge* gauge = _groupPanel->CreateGauge(currParent, currSizer, style, id, alignment);
+            wxGauge* gauge = _groupPanel->CreateGauge(currParent, currSizer, style, id, alignment, proportion);
             m_windowItems[id] = std::make_pair(CustomWindow::GAUGE, gauge);
 
             if (currentChild->Attribute("value"))
@@ -779,6 +782,7 @@ void CustomWindow::layoutChild(const tinyxml2::XMLElement* currentChild, wxWindo
         else if (sValue == "dropdown")
         {
             // Add a dropdown
+            int proportion = currentChild->IntAttribute("prop", 1);
             wxArrayString choices;
 
             if (currentChild->Attribute("label"))
@@ -789,7 +793,7 @@ void CustomWindow::layoutChild(const tinyxml2::XMLElement* currentChild, wxWindo
             else
                 choices = getChoices(text);
 
-            wxChoice* choice = _groupPanel->CreateChoices(currParent, currSizer, choices, id, alignment);
+            wxChoice* choice = _groupPanel->CreateChoices(currParent, currSizer, choices, id, alignment, proportion);
             m_windowItems[id] = std::make_pair(CustomWindow::DROPDOWN, choice);
 
             if (currentChild->Attribute("value"))
@@ -809,6 +813,7 @@ void CustomWindow::layoutChild(const tinyxml2::XMLElement* currentChild, wxWindo
         else if (sValue == "combobox")
         {
             // Add a combobox
+            int proportion = currentChild->IntAttribute("prop", 1);
             wxArrayString choices;
 
             if (currentChild->Attribute("label"))
@@ -819,7 +824,7 @@ void CustomWindow::layoutChild(const tinyxml2::XMLElement* currentChild, wxWindo
             else
                 choices = getChoices(text);
 
-            wxComboBox* combo = _groupPanel->CreateComboBox(currParent, currSizer, choices, id, alignment);
+            wxComboBox* combo = _groupPanel->CreateComboBox(currParent, currSizer, choices, id, alignment, proportion);
             m_windowItems[id] = std::make_pair(CustomWindow::COMBOBOX, combo);
 
             if (currentChild->Attribute("value"))
@@ -839,6 +844,7 @@ void CustomWindow::layoutChild(const tinyxml2::XMLElement* currentChild, wxWindo
         else if (sValue == "textfield")
         {
             // Add a textctrl
+            int proportion = currentChild->IntAttribute("prop", 0);
             int style = wxTE_PROCESS_ENTER;
             wxSize size(310,-1);
 
@@ -861,7 +867,7 @@ void CustomWindow::layoutChild(const tinyxml2::XMLElement* currentChild, wxWindo
             if (currentChild->Attribute("label"))
                 label = currentChild->Attribute("label");
 
-            TextField* textctrl = _groupPanel->CreateTextInput(currParent, currSizer, label, removeQuotationMarks(text), style, id, size, alignment);
+            TextField* textctrl = _groupPanel->CreateTextInput(currParent, currSizer, label, removeQuotationMarks(text), style, id, size, alignment, proportion);
             textctrl->SetFont(font);
             m_windowItems[id] = std::make_pair(CustomWindow::TEXTCTRL, textctrl);
 
@@ -879,6 +885,7 @@ void CustomWindow::layoutChild(const tinyxml2::XMLElement* currentChild, wxWindo
         else if (sValue == "lamp")
         {
             // Add a lamp
+            int proportion = currentChild->IntAttribute("prop", 0);
             wxSize size(20,10);
 
             if (currentChild->Attribute("size"))
@@ -897,7 +904,7 @@ void CustomWindow::layoutChild(const tinyxml2::XMLElement* currentChild, wxWindo
             if (currentChild->Attribute("label"))
                 label = currentChild->Attribute("label");
 
-            TextField* textctrl = _groupPanel->CreateLamp(currParent, currSizer, label, wxEmptyString, 0, id, size, alignment);
+            TextField* textctrl = _groupPanel->CreateLamp(currParent, currSizer, label, wxEmptyString, 0, id, size, alignment, proportion);
             m_windowItems[id] = std::make_pair(CustomWindow::LAMP, textctrl);
 
             //if (currentChild->Attribute("onclick"))
@@ -916,6 +923,7 @@ void CustomWindow::layoutChild(const tinyxml2::XMLElement* currentChild, wxWindo
         else if (sValue == "datetimepicker")
         {
             // Add a datetimepicker
+            int proportion = currentChild->IntAttribute("prop", 1);
             int style = DT_PICKER_DATE | DT_PICKER_TIME;
 
             if (currentChild->Attribute("type"))
@@ -927,7 +935,7 @@ void CustomWindow::layoutChild(const tinyxml2::XMLElement* currentChild, wxWindo
                     style = DT_PICKER_DATE;
             }
 
-            DateTimePicker* dtPicker = _groupPanel->CreateDateTimePicker(currParent, currSizer, wxDefaultDateTime, style, id, alignment);
+            DateTimePicker* dtPicker = _groupPanel->CreateDateTimePicker(currParent, currSizer, wxDefaultDateTime, style, id, alignment, proportion);
 
             if (currentChild->Attribute("value"))
             {
@@ -1032,8 +1040,9 @@ void CustomWindow::layoutChild(const tinyxml2::XMLElement* currentChild, wxWindo
         else if (sValue == "tablegrid")
         {
             // Add a table grid
+            int proportion = currentChild->IntAttribute("prop", 1);
             TableViewer* table = new TableViewer(currParent, id, nullptr, nullptr, wxDefaultPosition, wxDefaultSize, wxWANTS_CHARS | wxBORDER_THEME);
-            currSizer->Add(table, 1, alignment | wxALL | wxEXPAND | wxRESERVE_SPACE_EVEN_IF_HIDDEN, 5);
+            currSizer->Add(table, proportion, alignment | wxALL | wxEXPAND | wxRESERVE_SPACE_EVEN_IF_HIDDEN, 5);
             m_windowItems[id] = std::make_pair(CustomWindow::TABLE, table);
             table->SetTableReadOnly(false);
 
@@ -1066,6 +1075,7 @@ void CustomWindow::layoutChild(const tinyxml2::XMLElement* currentChild, wxWindo
         else if (sValue == "treelist")
         {
             // Add a treelist control
+            int proportion = currentChild->IntAttribute("prop", 1);
             int style = wxTL_SINGLE;
 
             if (currentChild->Attribute("type"))
@@ -1075,7 +1085,7 @@ void CustomWindow::layoutChild(const tinyxml2::XMLElement* currentChild, wxWindo
             wxArrayString values;
             int colSize = GetClientSize().x;
 
-            wxTreeListCtrl* listCtrl = _groupPanel->CreateTreeListCtrl(currParent, currSizer, style, wxDefaultSize, id, alignment);
+            wxTreeListCtrl* listCtrl = _groupPanel->CreateTreeListCtrl(currParent, currSizer, style, wxDefaultSize, id, alignment, proportion);
             m_windowItems[id] = std::make_pair(CustomWindow::TREELIST, listCtrl);
             listCtrl->SetFont(font);
 

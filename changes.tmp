@@ -56,3 +56,4 @@ Added	Whole new apps can now be created using the new file dialog and selecting 
 Fixed	Drawing functions can now be combined into function definitions (e.g. for predefined combinations) and used within "draw" and "draw3d" as expected.
 Updated	The XLSX file import was improved and is much faster now.
 Added	"getfilelist()" and "getfolderlist()" may now follow shell links (*.LNK files).
+Applied	The relative scaling of GUI elements may now be set with "relscl=FACTOR".

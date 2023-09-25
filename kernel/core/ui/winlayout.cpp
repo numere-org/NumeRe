@@ -181,6 +181,9 @@ static void parseLayoutCommand(const std::string& sLayoutCommand, tinyxml2::XMLE
     if (findParameter(sLayoutCommand, "id", '='))
         layoutElement->SetAttribute("id", parseNumOpt(sLayoutCommand, findParameter(sLayoutCommand, "id", '=')+2).c_str());
 
+    if (findParameter(sLayoutCommand, "relscl", '='))
+        layoutElement->SetAttribute("prop", parseNumOpt(sLayoutCommand, findParameter(sLayoutCommand, "relscl", '=')+6).c_str());
+
     if (findParameter(sLayoutCommand, "color", '='))
         layoutElement->SetAttribute("color", parseNumOpt(sLayoutCommand, findParameter(sLayoutCommand, "color", '=')+5).c_str());
 
