@@ -1262,6 +1262,7 @@ void NumeReWindow::OnClose(wxCloseEvent &event)
     }
 
     // Close all windows to avoid calls to the map afterwards
+    g_logger.info("Closing all remaining opened windows.");
     closeWindows(WT_ALL);
 
     Destroy();
@@ -3678,6 +3679,7 @@ void NumeReWindow::CloseFile(int pageNr, bool askforsave)
 {
     if (pageNr == -1)
     {
+        g_logger.info("Getting page ID.");
         pageNr = m_book->GetSelection();
     }
 
@@ -3722,14 +3724,15 @@ void NumeReWindow::CloseFile(int pageNr, bool askforsave)
             edit->EmptyUndoBuffer();
         }
 
-        if(m_book->GetPageCount() > 0)
+        /*if(m_book->GetPageCount() > 0)
         {
             if(currentFileName.IsOk())
             {
+                g_logger.info("Searching or a tab for " + currentFileName.GetFullPath().ToStdString());
                 int newSelectedPageNum = GetPageNum(currentFileName);
                 PageHasChanged(newSelectedPageNum);
             }
-        }
+        }*/
     }
 }
 

@@ -872,7 +872,7 @@ string TextManager::getSelectedText() const
     }
 
     // Remove all trailing new line characters
-    while (sText.back() == '\n')
+    while (sText.length() && sText.back() == '\n')
         sText.pop_back();
 
     // return the selected text

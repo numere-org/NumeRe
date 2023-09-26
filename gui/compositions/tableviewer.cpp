@@ -1630,19 +1630,41 @@ void TableViewer::SetData(NumeRe::Table& _table, const std::string& sName, const
 void TableViewer::SetTableReadOnly(bool isReadOnly)
 {
     readOnly = isReadOnly;
+    EnableEditing(!isReadOnly);
 
     if (!readOnly)
     {
-        m_popUpMenu.Append(ID_MENU_PASTE, _guilang.get("GUI_PASTE_TABLE_CONTENTS"));
-        m_popUpMenu.Append(ID_MENU_PASTE_HERE, _guilang.get("GUI_PASTE_TABLE_CONTENTS_HERE"));
-        m_popUpMenu.AppendSeparator();
-        m_popUpMenu.Append(ID_MENU_INSERT_ROW, _guilang.get("GUI_INSERT_TABLE_ROW"));
-        m_popUpMenu.Append(ID_MENU_INSERT_COL, _guilang.get("GUI_INSERT_TABLE_COL"));
-        m_popUpMenu.Append(ID_MENU_INSERT_CELL, _guilang.get("GUI_INSERT_TABLE_CELL"));
-        m_popUpMenu.AppendSeparator();
-        m_popUpMenu.Append(ID_MENU_REMOVE_ROW, _guilang.get("GUI_REMOVE_TABLE_ROW"));
-        m_popUpMenu.Append(ID_MENU_REMOVE_COL, _guilang.get("GUI_REMOVE_TABLE_COL"));
-        m_popUpMenu.Append(ID_MENU_REMOVE_CELL, _guilang.get("GUI_REMOVE_TABLE_CELL"));
+        if (m_popUpMenu.FindItem(ID_MENU_PASTE))
+        {
+            for (int i = 0; i < nFirstNumRow; i++)
+            {
+                for (int j = 0; j < GetNumberCols(); j++)
+                {
+                    SetCellSize(i, j, 1, 1);
+                }
+            }
+            m_popUpMenu.Enable(ID_MENU_PASTE, true);
+            m_popUpMenu.Enable(ID_MENU_PASTE_HERE, true);
+            m_popUpMenu.Enable(ID_MENU_INSERT_ROW, true);
+            m_popUpMenu.Enable(ID_MENU_INSERT_COL, true);
+            m_popUpMenu.Enable(ID_MENU_INSERT_CELL, true);
+            m_popUpMenu.Enable(ID_MENU_REMOVE_ROW, true);
+            m_popUpMenu.Enable(ID_MENU_REMOVE_COL, true);
+            m_popUpMenu.Enable(ID_MENU_REMOVE_CELL, true);
+        }
+        else
+        {
+            m_popUpMenu.Append(ID_MENU_PASTE, _guilang.get("GUI_PASTE_TABLE_CONTENTS"));
+            m_popUpMenu.Append(ID_MENU_PASTE_HERE, _guilang.get("GUI_PASTE_TABLE_CONTENTS_HERE"));
+            m_popUpMenu.AppendSeparator();
+            m_popUpMenu.Append(ID_MENU_INSERT_ROW, _guilang.get("GUI_INSERT_TABLE_ROW"));
+            m_popUpMenu.Append(ID_MENU_INSERT_COL, _guilang.get("GUI_INSERT_TABLE_COL"));
+            m_popUpMenu.Append(ID_MENU_INSERT_CELL, _guilang.get("GUI_INSERT_TABLE_CELL"));
+            m_popUpMenu.AppendSeparator();
+            m_popUpMenu.Append(ID_MENU_REMOVE_ROW, _guilang.get("GUI_REMOVE_TABLE_ROW"));
+            m_popUpMenu.Append(ID_MENU_REMOVE_COL, _guilang.get("GUI_REMOVE_TABLE_COL"));
+            m_popUpMenu.Append(ID_MENU_REMOVE_CELL, _guilang.get("GUI_REMOVE_TABLE_CELL"));
+        }
 
         if (m_parentPanel)
         {
@@ -1654,24 +1676,42 @@ void TableViewer::SetTableReadOnly(bool isReadOnly)
                 toolsMenu->Enable(ID_MENU_RELOAD, false);
         }
     }
-    else if (m_parentPanel)
+    else
     {
-        wxMenuBar* menuBar = m_parentPanel->getMenuBar();
-
-        wxMenu* editMenu = menuBar->GetMenu(menuBar->FindMenu(_guilang.get("GUI_MENU_EDIT")));
-
-        if (editMenu)
+        if (m_popUpMenu.FindItem(ID_MENU_PASTE))
         {
-            editMenu->Enable(ID_MENU_PASTE, false);
-            editMenu->Enable(ID_MENU_PASTE_HERE, false);
-            editMenu->Enable(ID_MENU_INSERT_ROW, false);
-            editMenu->Enable(ID_MENU_INSERT_COL, false);
-            editMenu->Enable(ID_MENU_INSERT_CELL, false);
-            editMenu->Enable(ID_MENU_REMOVE_ROW, false);
-            editMenu->Enable(ID_MENU_REMOVE_COL, false);
-            editMenu->Enable(ID_MENU_REMOVE_CELL, false);
+            groupHeaders(0, GetNumberCols(), 0);
+            m_popUpMenu.Enable(ID_MENU_PASTE, false);
+            m_popUpMenu.Enable(ID_MENU_PASTE_HERE, false);
+            m_popUpMenu.Enable(ID_MENU_INSERT_ROW, false);
+            m_popUpMenu.Enable(ID_MENU_INSERT_COL, false);
+            m_popUpMenu.Enable(ID_MENU_INSERT_CELL, false);
+            m_popUpMenu.Enable(ID_MENU_REMOVE_ROW, false);
+            m_popUpMenu.Enable(ID_MENU_REMOVE_COL, false);
+            m_popUpMenu.Enable(ID_MENU_REMOVE_CELL, false);
+        }
+
+        if (m_parentPanel)
+        {
+            wxMenuBar* menuBar = m_parentPanel->getMenuBar();
+
+            wxMenu* editMenu = menuBar->GetMenu(menuBar->FindMenu(_guilang.get("GUI_MENU_EDIT")));
+
+            if (editMenu)
+            {
+                editMenu->Enable(ID_MENU_PASTE, false);
+                editMenu->Enable(ID_MENU_PASTE_HERE, false);
+                editMenu->Enable(ID_MENU_INSERT_ROW, false);
+                editMenu->Enable(ID_MENU_INSERT_COL, false);
+                editMenu->Enable(ID_MENU_INSERT_CELL, false);
+                editMenu->Enable(ID_MENU_REMOVE_ROW, false);
+                editMenu->Enable(ID_MENU_REMOVE_COL, false);
+                editMenu->Enable(ID_MENU_REMOVE_CELL, false);
+            }
         }
     }
+
+    Refresh();
 }
 
 

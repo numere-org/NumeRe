@@ -57,3 +57,4 @@ Fixed	Drawing functions can now be combined into function definitions (e.g. for 
 Updated	The XLSX file import was improved and is much faster now.
 Added	"getfilelist()" and "getfolderlist()" may now follow shell links (*.LNK files).
 Applied	The relative scaling of GUI elements may now be set with "relscl=FACTOR".
+Added	The GUI element state "readonly" was added, which is identical to "disabled" for most elements with exception of "tablegrid" and "textentry".

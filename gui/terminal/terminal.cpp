@@ -294,6 +294,7 @@ void NumeReTerminal::removeBreakpoint(const std::string& _sFilename, size_t nLin
 /////////////////////////////////////////////////
 void NumeReTerminal::clearBreakpoints(const std::string& _sFilename)
 {
+    g_logger.info("Clearing breakpoints for " + _sFilename);
     wxCriticalSectionLocker lock(m_kernelCS);
     _kernel.getDebugger().getBreakpointManager().clearBreakpoints(_sFilename);
 }

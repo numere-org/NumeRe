@@ -239,8 +239,6 @@ static void populateChild(wxTreeListCtrl* listCtrl, const wxArrayString& values,
             currCol++;
         }
 
-        g_logger.info(sItem.ToStdString());
-
         if (hasChild && sItem.StartsWith("\n{") && sItem.EndsWith("}"))
         {
             sItem.erase(0, 2);
@@ -401,6 +399,7 @@ static int enumerateListItems(wxTreeListCtrl* listCtrl, const wxTreeListItem& it
 /////////////////////////////////////////////////
 enum WindowState
 {
+    READONLY,
     ENABLED,
     DISABLED,
     HIDDEN
@@ -578,9 +577,16 @@ void CustomWindow::layoutChild(const tinyxml2::XMLElement* currentChild, wxWindo
 
         // Evaluate the state attribute
         if (currentChild->Attribute("state"))
-            state = currentChild->Attribute("state", "disabled") ? DISABLED : (currentChild->Attribute("state", "hidden") ? HIDDEN : ENABLED);
+        {
+            if (currentChild->Attribute("state", "disabled"))
+                state = DISABLED;
+            else if (currentChild->Attribute("state", "hidden"))
+                state = HIDDEN;
+            else if (currentChild->Attribute("state", "readonly"))
+                state = READONLY;
+        }
 
-        // evaluat the font attribute
+        // evaluate the font attribute
         if (currentChild->Attribute("font"))
         {
             wxString sFont = currentChild->Attribute("font");
@@ -638,7 +644,7 @@ void CustomWindow::layoutChild(const tinyxml2::XMLElement* currentChild, wxWindo
             if (currentChild->Attribute("color"))
                 button->SetForegroundColour(toWxColour(currentChild->Attribute("color")));
 
-            if (state == DISABLED)
+            if (state == DISABLED || state == READONLY)
                 button->Disable();
             else if (state == HIDDEN)
                 button->Hide();
@@ -659,7 +665,7 @@ void CustomWindow::layoutChild(const tinyxml2::XMLElement* currentChild, wxWindo
             if (currentChild->Attribute("color"))
                 checkbox->SetBackgroundColour(toWxColour(currentChild->Attribute("color")));
 
-            if (state == DISABLED)
+            if (state == DISABLED || state == READONLY)
                 checkbox->Disable();
             else if (state == HIDDEN)
                 checkbox->Hide();
@@ -686,7 +692,7 @@ void CustomWindow::layoutChild(const tinyxml2::XMLElement* currentChild, wxWindo
             if (currentChild->Attribute("onchange"))
                 m_eventTable[id].onchange = currentChild->Attribute("onchange");
 
-            if (state == DISABLED)
+            if (state == DISABLED || state == READONLY)
                 radiobox->Disable();
             else if (state == HIDDEN)
                 radiobox->Hide();
@@ -719,7 +725,7 @@ void CustomWindow::layoutChild(const tinyxml2::XMLElement* currentChild, wxWindo
             if (currentChild->Attribute("color"))
                 spinctrl->SetBackgroundColour(toWxColour(currentChild->Attribute("color")));
 
-            if (state == DISABLED)
+            if (state == DISABLED || state == READONLY)
                 spinctrl->Enable(false);
             else if (state == HIDDEN)
                 spinctrl->Show(false);
@@ -753,7 +759,7 @@ void CustomWindow::layoutChild(const tinyxml2::XMLElement* currentChild, wxWindo
             if (currentChild->Attribute("color"))
                 slider->SetForegroundColour(toWxColour(currentChild->Attribute("color")));
 
-            if (state == DISABLED)
+            if (state == DISABLED || state == READONLY)
                 slider->Enable(false);
             else if (state == HIDDEN)
                 slider->Show(false);
@@ -774,7 +780,7 @@ void CustomWindow::layoutChild(const tinyxml2::XMLElement* currentChild, wxWindo
             if (currentChild->Attribute("value"))
                 gauge->SetValue(currentChild->DoubleAttribute("value"));
 
-            if (state == DISABLED)
+            if (state == DISABLED || state == READONLY)
                 gauge->Disable();
             else if (state == HIDDEN)
                 gauge->Hide();
@@ -805,7 +811,7 @@ void CustomWindow::layoutChild(const tinyxml2::XMLElement* currentChild, wxWindo
             if (currentChild->Attribute("color"))
                 choice->SetBackgroundColour(toWxColour(currentChild->Attribute("color")));
 
-            if (state == DISABLED)
+            if (state == DISABLED || state == READONLY)
                 choice->Disable();
             else if (state == HIDDEN)
                 choice->Hide();
@@ -836,7 +842,7 @@ void CustomWindow::layoutChild(const tinyxml2::XMLElement* currentChild, wxWindo
             if (currentChild->Attribute("color"))
                 combo->SetBackgroundColour(toWxColour(currentChild->Attribute("color")));
 
-            if (state == DISABLED)
+            if (state == DISABLED || state == READONLY)
                 combo->Disable();
             else if (state == HIDDEN)
                 combo->Hide();
@@ -881,6 +887,8 @@ void CustomWindow::layoutChild(const tinyxml2::XMLElement* currentChild, wxWindo
                 textctrl->Enable(false);
             else if (state == HIDDEN)
                 textctrl->Show(false);
+
+            textctrl->SetEditable(state != READONLY);
         }
         else if (sValue == "lamp")
         {
@@ -915,7 +923,7 @@ void CustomWindow::layoutChild(const tinyxml2::XMLElement* currentChild, wxWindo
             else if (currentChild->Attribute("value"))
                  textctrl->SetBackgroundColour(colorFromLampStates(currentChild->Attribute("value")));
 
-            if (state == DISABLED)
+            if (state == DISABLED || state == READONLY)
                 textctrl->Enable(false);
             else if (state == HIDDEN)
                 textctrl->Show(false);
@@ -948,7 +956,7 @@ void CustomWindow::layoutChild(const tinyxml2::XMLElement* currentChild, wxWindo
             if (currentChild->Attribute("onchange"))
                 m_eventTable[id].onchange = currentChild->Attribute("onchange");
 
-            if (state == DISABLED)
+            if (state == DISABLED || state == READONLY)
                 dtPicker->Enable(false);
             else if (state == HIDDEN)
                 dtPicker->Show(false);
@@ -1044,7 +1052,7 @@ void CustomWindow::layoutChild(const tinyxml2::XMLElement* currentChild, wxWindo
             TableViewer* table = new TableViewer(currParent, id, nullptr, nullptr, wxDefaultPosition, wxDefaultSize, wxWANTS_CHARS | wxBORDER_THEME);
             currSizer->Add(table, proportion, alignment | wxALL | wxEXPAND | wxRESERVE_SPACE_EVEN_IF_HIDDEN, 5);
             m_windowItems[id] = std::make_pair(CustomWindow::TABLE, table);
-            table->SetTableReadOnly(false);
+            table->SetTableReadOnly(state == READONLY);
 
             if (currentChild->Attribute("size"))
             {
@@ -1153,7 +1161,7 @@ void CustomWindow::layoutChild(const tinyxml2::XMLElement* currentChild, wxWindo
             if (currentChild->Attribute("onactivate"))
                 m_eventTable[id].onactivate = currentChild->Attribute("onactivate");
 
-            if (state == DISABLED)
+            if (state == DISABLED || state == READONLY)
                 listCtrl->Enable(false);
             else if (state == HIDDEN)
                 listCtrl->Show(false);
@@ -1583,6 +1591,9 @@ bool CustomWindow::getItemParameters(int windowItemID, WindowItemParams& params)
             params.label = convertToCodeString(static_cast<TextField*>(object.second)->GetLabel());
             params.color = toWxString(static_cast<TextField*>(object.second)->GetBackgroundColour());
 
+            if (!static_cast<wxTextCtrl*>(object.second)->IsEditable())
+                params.state = "readonly";
+
             break;
         case CustomWindow::LAMP:
             params.type = "lamp";
@@ -1688,6 +1699,9 @@ bool CustomWindow::getItemParameters(int windowItemID, WindowItemParams& params)
             params.value = convertToCodeString(table->getSelectedValues());
             params.type = "tablegrid";
 
+            if (!table->IsEditable())
+                params.state = "readonly";
+
             break;
         }
         case CustomWindow::GRAPHER:
@@ -1743,7 +1757,7 @@ bool CustomWindow::getItemParameters(int windowItemID, WindowItemParams& params)
             break;
     }
 
-    if (object.first != CustomWindow::MENUITEM)
+    if (object.first != CustomWindow::MENUITEM && !params.state.length())
         params.state = !static_cast<wxWindow*>(object.second)->IsShown() ? "hidden" : static_cast<wxWindow*>(object.second)->IsEnabled() ? "enabled" : "disabled";
 
     return true;
@@ -2415,6 +2429,23 @@ bool CustomWindow::setItemState(const wxString& _state, int windowItemID)
 
     if (_state == "hidden")
         window->Show(false);
+    else if (_state == "readonly")
+    {
+        window->Show(true);
+
+        if (object.first == CustomWindow::TABLE)
+        {
+            window->Enable(true);
+            static_cast<TableViewer*>(window)->SetTableReadOnly(true);
+        }
+        else if (object.first == CustomWindow::TEXTCTRL)
+        {
+            window->Enable(true);
+            static_cast<TextField*>(window)->SetEditable(false);
+        }
+        else
+            window->Enable(false);
+    }
     else if (_state == "disabled")
     {
         window->Show(true);
@@ -2424,6 +2455,11 @@ bool CustomWindow::setItemState(const wxString& _state, int windowItemID)
     {
         window->Show(true);
         window->Enable(true);
+
+        if (object.first == CustomWindow::TABLE)
+            static_cast<TableViewer*>(window)->SetTableReadOnly(false);
+        else if (object.first == CustomWindow::TEXTCTRL)
+            static_cast<TextField*>(window)->SetEditable(true);
     }
 
     return true;

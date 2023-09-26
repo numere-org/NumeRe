@@ -4094,7 +4094,7 @@ namespace NumeRe
             // number of columns
             nExcelCols += nColmax-nColmin+1;
 
-            g_logger.info("headlines=" + toString(vCommentLines[i]));
+            g_logger.debug("headlines=" + toString(vCommentLines[i]));
         }
 
         // Set the dimensions of the final table
