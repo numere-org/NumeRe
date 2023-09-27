@@ -3219,6 +3219,9 @@ void NumeReWindow::NewFile(FileFilterType _filetype, const wxString& defaultfile
         {
             folder = filename.substr(0, filename.rfind('/')+1);
             filename.erase(0, filename.rfind('/')+1);
+
+            if (_filetype == FILE_NAPP)
+                folder += toLowerCase(filename);
         }
         else if (_filetype == FILE_NAPP)
             folder = toLowerCase(filename);
