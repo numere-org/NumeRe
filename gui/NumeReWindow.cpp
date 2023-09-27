@@ -3186,7 +3186,8 @@ void NumeReWindow::NewFile(FileFilterType _filetype, const wxString& defaultfile
                 textentry = new wxTextEntryDialog(this, _guilang.get("GUI_DLG_NEWNAPP_QUESTION"), _guilang.get("GUI_DLG_NEWNAPP"),
                                                   _guilang.get("GUI_DLG_NEWNAPP_DFLT"));
             else
-                textentry = new wxTextEntryDialog(this, _guilang.get("GUI_DLG_NEWPLUGIN_QUESTION"), _guilang.get("GUI_DLG_NEWPLUGIN"), _guilang.get("GUI_DLG_NEWPLUGIN_DFLT"));
+                textentry = new wxTextEntryDialog(this, _guilang.get("GUI_DLG_NEWPLUGIN_QUESTION"), _guilang.get("GUI_DLG_NEWPLUGIN"),
+                                                  _guilang.get("GUI_DLG_NEWPLUGIN_DFLT"));
 
             int retval = textentry->ShowModal();
 
@@ -3203,7 +3204,7 @@ void NumeReWindow::NewFile(FileFilterType _filetype, const wxString& defaultfile
         else
         {
             filename = defaultfilename.ToStdString();
-            isExternal = folder.substr(0, vPaths[PROCPATH].length()) != vPaths[PROCPATH];
+            isExternal = filename.starts_with(vPaths[PROCPATH]);
         }
 
         // Remove the dollar sign, if there is one
@@ -3243,7 +3244,7 @@ void NumeReWindow::NewFile(FileFilterType _filetype, const wxString& defaultfile
             }
 
             // Clean the file if not an app name
-            if (_filetype!= FILE_NAPP)
+            if (_filetype != FILE_NAPP)
             {
                 for (size_t i = 0; i < filename.length(); i++)
                 {
@@ -3276,7 +3277,7 @@ void NumeReWindow::NewFile(FileFilterType _filetype, const wxString& defaultfile
         else if (_filetype == FILE_NPRC)
         {
             templateFileName = "tmpl_procedure.nlng";
-            fullFileName = (isExternal ? wxFileName(folder, filename) : wxFileName(vPaths[PROCPATH] + folder, filename+".nprc"));
+            fullFileName = (isExternal ? wxFileName(folder, filename+".nprc") : wxFileName(vPaths[PROCPATH] + folder, filename+".nprc"));
         }
         else if (_filetype == FILE_NAPP)
         {
