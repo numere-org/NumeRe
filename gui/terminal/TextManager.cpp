@@ -780,7 +780,9 @@ void TextManager::selectText(const ViewCursor& viewCursor, bool bSelect /*= true
     LogicalCursor cursor = toLogicalCursor(viewCursor);
 
     // Ensure that the cursor is valid
-    if (!cursor)
+    if (!cursor
+        || m_managedText.size() <= cursor.line
+        || m_managedText[cursor.line].size() <= cursor.pos)
         return;
 
     // Select or deselect the pointer character

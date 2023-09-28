@@ -239,18 +239,38 @@ static void handleMafDataAccess(string& sLine, const string& sMafAccess, Parser&
 static string getLastToken(const string& sLine);
 
 
-size_t findAssignmentOperator(StringView sCmd)
+/////////////////////////////////////////////////
+/// \brief Static helper function to detect a
+/// possible assignment operator.
+///
+/// \param sCmd StringView
+/// \return size_t
+///
+/////////////////////////////////////////////////
+static size_t findAssignmentOperator(StringView sCmd)
 {
-    size_t pos = sCmd.find('=');
+    size_t nQuotes = 0;
 
-    if (pos != std::string::npos
-        && pos > 0
-        && sCmd[pos - 1] != '!'
-        && sCmd[pos - 1] != '<'
-        && sCmd[pos - 1] != '>'
-        && sCmd[pos + 1] != '='
-        && sCmd[pos - 1] != '=')
-        return pos;
+    for (size_t i = 0; i < sCmd.length(); i++)
+    {
+        if (sCmd[i] == '"' && (!i || sCmd[i-1] != '\\'))
+            nQuotes++;
+
+        if (!nQuotes)
+        {
+            if (sCmd[i] == '(' || sCmd[i] == '{')
+                i += getMatchingParenthesis(sCmd.subview(i));
+
+            if (sCmd[i] == '='
+                && i > 0
+                && sCmd[i-1] != '!'
+                && sCmd[i-1] != '<'
+                && sCmd[i-1] != '>'
+                && sCmd[i+1] != '='
+                && sCmd[i-1] != '=')
+                return i;
+        }
+    }
 
     return std::string::npos;
 }
@@ -445,7 +465,6 @@ void replaceDataEntities(string& sLine, const string& sEntity, MemoryManager& _d
 	string sEntityReplacement = "";
 	string sEntityStringReplacement = "";
 	NumeRe::StringParser& _stringParser = NumeReKernel::getInstance()->getStringParser();
-
 
 	// handle MAF methods. sEntity already has "(" at its back
 	while (!isCluster && (nPos = sLine.find(sEntity + ").", nPos)) != string::npos)
@@ -953,6 +972,7 @@ static void replaceEntityOccurence(string& sLine, const string& sEntityOccurence
 static void handleMafDataAccess(string& sLine, const string& sMafAccess, Parser& _parser, MemoryManager& _data)
 {
 	size_t nPos = 0;
+
 	// Replace the access string with its corresponding vector name
 	string sMafVectorName = createMafVectorName(sMafAccess);
 
