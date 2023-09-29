@@ -407,7 +407,10 @@ bool NumeReEditor::SaveFile( const wxString& filename )
     // save edit in file and clear undo
     if (!filename.IsEmpty())
     {
-        m_terminal->clearBreakpoints(GetFileNameAndPath().ToStdString());
+        if ((m_fileType == FILE_NSCR || m_fileType == FILE_NPRC)
+            && GetFileNameAndPath().ToStdString().length())
+            m_terminal->clearBreakpoints(GetFileNameAndPath().ToStdString());
+
         m_simpleFileName = fn.GetFullName();
     }
 
@@ -4256,7 +4259,9 @@ void NumeReEditor::applyStrikeThrough()
 //////////////////////////////////////////////////////////////////////////////
 void NumeReEditor::SetFilename(wxFileName filename, bool fileIsRemote)
 {
-    m_terminal->clearBreakpoints(GetFileNameAndPath().ToStdString());
+    if (GetFileNameAndPath().ToStdString().length())
+        m_terminal->clearBreakpoints(GetFileNameAndPath().ToStdString());
+
     m_bLastSavedRemotely = fileIsRemote;
     m_fileNameAndPath = filename;
     SynchronizeBreakpoints();

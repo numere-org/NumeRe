@@ -1251,9 +1251,10 @@ void NumeReWindow::OnClose(wxCloseEvent &event)
         wxMilliSleep(200);
     }
 
+    g_logger.debug("Cleaning up.");
+
     if (m_debugViewer != nullptr)
         m_debugViewer->Destroy();
-
 
     if (m_history)
     {
@@ -1262,9 +1263,10 @@ void NumeReWindow::OnClose(wxCloseEvent &event)
     }
 
     // Close all windows to avoid calls to the map afterwards
-    g_logger.info("Closing all remaining opened windows.");
+    g_logger.debug("Closing all remaining opened windows.");
     closeWindows(WT_ALL);
 
+    g_logger.info("Shutting down.");
     Destroy();
 }
 
@@ -3682,22 +3684,15 @@ void NumeReWindow::EvaluateTab()
 void NumeReWindow::CloseFile(int pageNr, bool askforsave)
 {
     if (pageNr == -1)
-    {
-        g_logger.info("Getting page ID.");
         pageNr = m_book->GetSelection();
-    }
 
     if (askforsave)
     {
         // gives the user a chance to save if the file has been modified
-        int modifiedFileResult = HandleModifiedFile(pageNr, MODIFIEDFILE_CLOSE);
-
         // a wxYES result is taken care of inside HandleModifiedFile, and a
         // wxNO is handled implicitly by the fact that the file isn't saved.
-        if(modifiedFileResult == wxCANCEL)
-        {
+        if (HandleModifiedFile(pageNr, MODIFIEDFILE_CLOSE) == wxCANCEL)
             return;
-        }
     }
 
     if (m_book->GetPageCount() > 0)
@@ -3711,7 +3706,6 @@ void NumeReWindow::CloseFile(int pageNr, bool askforsave)
         if ((m_book->GetPageCount() > 1) || m_appClosing)
         {
             currentFileName = edit->GetFileName();
-            //NumeReEditor* pEdit = static_cast <NumeReEditor* >(m_book->GetPage(pageNr));
             m_book->DeletePage (pageNr);
             m_watcher->Remove(currentFileName);
         }
@@ -3720,23 +3714,12 @@ void NumeReWindow::CloseFile(int pageNr, bool askforsave)
         {
             m_fileNum = 1;
             m_watcher->Remove(edit->GetFileName());
-            //wxString locationPrefix = "(?) ";
             wxString noname = _guilang.get("GUI_NEWFILE_UNTITLED") + " " + wxString::Format ("%d", m_fileNum);
             m_book->SetPageText (pageNr, noname);
             edit->ResetEditor();
             edit->SetText("\r\n");
             edit->EmptyUndoBuffer();
         }
-
-        /*if(m_book->GetPageCount() > 0)
-        {
-            if(currentFileName.IsOk())
-            {
-                g_logger.info("Searching or a tab for " + currentFileName.GetFullPath().ToStdString());
-                int newSelectedPageNum = GetPageNum(currentFileName);
-                PageHasChanged(newSelectedPageNum);
-            }
-        }*/
     }
 }
 

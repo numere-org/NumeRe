@@ -839,7 +839,9 @@ bool TextManager::isSelected(const ViewCursor& viewCursor) const
 bool TextManager::isSelectedLogical(const LogicalCursor& cursor) const
 {
     // Ensure that the cursor is valid
-    if (!cursor)
+    if (!cursor
+        || m_managedText.size() <= cursor.line
+        || m_managedText[cursor.line].size() <= cursor.pos)
         return false;
 
     // Return true, if the color line at the current contains the SELECTED flag
