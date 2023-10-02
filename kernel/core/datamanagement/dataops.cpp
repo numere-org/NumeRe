@@ -254,7 +254,7 @@ static std::string** make_stringmatrix(MemoryManager& _data, Output& _out, Setti
             if (_out.isCompact() && !bSave)
                 sprintf(cBuffer, "%.*g", 4, _data.getElement(i - nHeadlineCount, j, sCache).real());
             else
-                sprintf(cBuffer, "%.*g", nPrecision, _data.getElement(i - nHeadlineCount, j, sCache).real());
+                sprintf(cBuffer, "%.*g", (int)nPrecision, _data.getElement(i - nHeadlineCount, j, sCache).real());
 
             sOut[i][j] = cBuffer;
 		}

@@ -1939,18 +1939,13 @@ static std::string tableMethod_annotate(const std::string& sTableName, std::stri
 ///
 /// \param sTableName const std::string&
 /// \param sMethodArguments std::string
+/// \param sResultVectorName const std::string&
 /// \return std::string
 ///
 /////////////////////////////////////////////////
-static std::string tableMethod_insertBlock(const std::string& sTableName, std::string sMethodArguments)
+static std::string tableMethod_insertBlock(const std::string& sTableName, std::string sMethodArguments, const std::string& sResultVectorName)
 {
     NumeReKernel* _kernel = NumeReKernel::getInstance();
-
-    // Might be necessary to resolve the contents of columns and conversions
-    getDataElements(sMethodArguments,
-                    _kernel->getParser(),
-                    _kernel->getMemoryManager(),
-                    _kernel->getSettings());
 
     int nResults = 0;
     _kernel->getMemoryManager().updateDimensionVariables(sTableName);
@@ -1981,18 +1976,13 @@ static std::string tableMethod_insertBlock(const std::string& sTableName, std::s
 ///
 /// \param sTableName const std::string&
 /// \param sMethodArguments std::string
+/// \param sResultVectorName const std::string&
 /// \return std::string
 ///
 /////////////////////////////////////////////////
-static std::string tableMethod_insertCols(const std::string& sTableName, std::string sMethodArguments)
+static std::string tableMethod_insertCols(const std::string& sTableName, std::string sMethodArguments, const std::string& sResultVectorName)
 {
     NumeReKernel* _kernel = NumeReKernel::getInstance();
-
-    // Might be necessary to resolve the contents of columns and conversions
-    getDataElements(sMethodArguments,
-                    _kernel->getParser(),
-                    _kernel->getMemoryManager(),
-                    _kernel->getSettings());
 
     int nResults = 0;
     _kernel->getMemoryManager().updateDimensionVariables(sTableName);
@@ -2014,18 +2004,13 @@ static std::string tableMethod_insertCols(const std::string& sTableName, std::st
 ///
 /// \param sTableName const std::string&
 /// \param sMethodArguments std::string
+/// \param sResultVectorName const std::string&
 /// \return std::string
 ///
 /////////////////////////////////////////////////
-static std::string tableMethod_insertRows(const std::string& sTableName, std::string sMethodArguments)
+static std::string tableMethod_insertRows(const std::string& sTableName, std::string sMethodArguments, const std::string& sResultVectorName)
 {
     NumeReKernel* _kernel = NumeReKernel::getInstance();
-
-    // Might be necessary to resolve the contents of columns and conversions
-    getDataElements(sMethodArguments,
-                    _kernel->getParser(),
-                    _kernel->getMemoryManager(),
-                    _kernel->getSettings());
 
     int nResults = 0;
     _kernel->getMemoryManager().updateDimensionVariables(sTableName);
@@ -2047,18 +2032,13 @@ static std::string tableMethod_insertRows(const std::string& sTableName, std::st
 ///
 /// \param sTableName const std::string&
 /// \param sMethodArguments std::string
+/// \param sResultVectorName const std::string&
 /// \return std::string
 ///
 /////////////////////////////////////////////////
-static std::string tableMethod_removeBlock(const std::string& sTableName, std::string sMethodArguments)
+static std::string tableMethod_removeBlock(const std::string& sTableName, std::string sMethodArguments, const std::string& sResultVectorName)
 {
     NumeReKernel* _kernel = NumeReKernel::getInstance();
-
-    // Might be necessary to resolve the contents of columns and conversions
-    getDataElements(sMethodArguments,
-                    _kernel->getParser(),
-                    _kernel->getMemoryManager(),
-                    _kernel->getSettings());
 
     int nResults = 0;
     _kernel->getMemoryManager().updateDimensionVariables(sTableName);
@@ -2089,23 +2069,20 @@ static std::string tableMethod_removeBlock(const std::string& sTableName, std::s
 ///
 /// \param sTableName const std::string&
 /// \param sMethodArguments std::string
+/// \param sResultVectorName const std::string&
 /// \return std::string
 ///
 /////////////////////////////////////////////////
-static std::string tableMethod_removeCols(const std::string& sTableName, std::string sMethodArguments)
+static std::string tableMethod_removeCols(const std::string& sTableName, std::string sMethodArguments, const std::string& sResultVectorName)
 {
-    // Might be necessary to resolve the contents of columns and conversions
-    getDataElements(sMethodArguments,
-                    NumeReKernel::getInstance()->getParser(),
-                    NumeReKernel::getInstance()->getMemoryManager(),
-                    NumeReKernel::getInstance()->getSettings());
+    NumeReKernel* _kernel = NumeReKernel::getInstance();
 
     int nResults = 0;
-    NumeReKernel::getInstance()->getMemoryManager().updateDimensionVariables(sTableName);
-    NumeReKernel::getInstance()->getParser().SetExpr(sMethodArguments);
-    mu::value_type* v = NumeReKernel::getInstance()->getParser().Eval(nResults);
+    _kernel->getMemoryManager().updateDimensionVariables(sTableName);
+    _kernel->getParser().SetExpr(sMethodArguments);
+    mu::value_type* v = _kernel->getParser().Eval(nResults);
 
-    return toString(NumeReKernel::getInstance()->getMemoryManager().removeCols(sTableName, VectorIndex(v, nResults, 0)));
+    return toString(_kernel->getMemoryManager().removeCols(sTableName, VectorIndex(v, nResults, 0)));
 }
 
 
@@ -2114,23 +2091,20 @@ static std::string tableMethod_removeCols(const std::string& sTableName, std::st
 ///
 /// \param sTableName const std::string&
 /// \param sMethodArguments std::string
+/// \param sResultVectorName const std::string&
 /// \return std::string
 ///
 /////////////////////////////////////////////////
-static std::string tableMethod_removeRows(const std::string& sTableName, std::string sMethodArguments)
+static std::string tableMethod_removeRows(const std::string& sTableName, std::string sMethodArguments, const std::string& sResultVectorName)
 {
-    // Might be necessary to resolve the contents of columns and conversions
-    getDataElements(sMethodArguments,
-                    NumeReKernel::getInstance()->getParser(),
-                    NumeReKernel::getInstance()->getMemoryManager(),
-                    NumeReKernel::getInstance()->getSettings());
+    NumeReKernel* _kernel = NumeReKernel::getInstance();
 
     int nResults = 0;
-    NumeReKernel::getInstance()->getMemoryManager().updateDimensionVariables(sTableName);
-    NumeReKernel::getInstance()->getParser().SetExpr(sMethodArguments);
-    mu::value_type* v = NumeReKernel::getInstance()->getParser().Eval(nResults);
+    _kernel->getMemoryManager().updateDimensionVariables(sTableName);
+    _kernel->getParser().SetExpr(sMethodArguments);
+    mu::value_type* v = _kernel->getParser().Eval(nResults);
 
-    return toString(NumeReKernel::getInstance()->getMemoryManager().removeRows(sTableName, VectorIndex(v, nResults, 0)));
+    return toString(_kernel->getMemoryManager().removeRows(sTableName, VectorIndex(v, nResults, 0)));
 }
 
 
@@ -2139,18 +2113,13 @@ static std::string tableMethod_removeRows(const std::string& sTableName, std::st
 ///
 /// \param sTableName const std::string&
 /// \param sMethodArguments std::string
+/// \param sResultVectorName const std::string&
 /// \return std::string
 ///
 /////////////////////////////////////////////////
-static std::string tableMethod_reorderCols(const std::string& sTableName, std::string sMethodArguments)
+static std::string tableMethod_reorderCols(const std::string& sTableName, std::string sMethodArguments, const std::string& sResultVectorName)
 {
     NumeReKernel* _kernel = NumeReKernel::getInstance();
-
-    // Might be necessary to resolve the contents of columns and conversions
-    getDataElements(sMethodArguments,
-                    _kernel->getParser(),
-                    _kernel->getMemoryManager(),
-                    _kernel->getSettings());
 
     VectorIndex vIndex;
     VectorIndex vNewOrder;
@@ -2178,18 +2147,13 @@ static std::string tableMethod_reorderCols(const std::string& sTableName, std::s
 ///
 /// \param sTableName const std::string&
 /// \param sMethodArguments std::string
+/// \param sResultVectorName const std::string&
 /// \return std::string
 ///
 /////////////////////////////////////////////////
-static std::string tableMethod_reorderRows(const std::string& sTableName, std::string sMethodArguments)
+static std::string tableMethod_reorderRows(const std::string& sTableName, std::string sMethodArguments, const std::string& sResultVectorName)
 {
     NumeReKernel* _kernel = NumeReKernel::getInstance();
-
-    // Might be necessary to resolve the contents of columns and conversions
-    getDataElements(sMethodArguments,
-                    _kernel->getParser(),
-                    _kernel->getMemoryManager(),
-                    _kernel->getSettings());
 
     VectorIndex vIndex;
     VectorIndex vNewOrder;
@@ -2300,7 +2264,7 @@ static string createMafVectorName(string sAccessString)
 
     if (sAccessString.find(".description") != std::string::npos)
         return "\"" + NumeReKernel::getInstance()->getMemoryManager().getComment(sAccessString.substr(0, sAccessString.find("()."))) + "\"";
-  
+
     if (sAccessString.find(".shrink") != std::string::npos)
     {
         NumeReKernel::getInstance()->getMemoryManager().shrink(sTableName);
