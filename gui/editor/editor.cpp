@@ -849,14 +849,34 @@ void NumeReEditor::OnChar( wxStyledTextEvent& event )
                 else
                     sSelectedNamespace = GetTextRange(nNameSpacePosition, wordstartpos);
 
-                // If namespace == "this~" then replace it with the current namespace
-                if (sNamespace == "this~")
-                {
-                    string filename = GetFileNameAndPath().ToStdString();
-                    filename = replacePathSeparator(filename);
-                    vector<string> vPaths = m_terminal->getPathSettings();
+                std::string filename = GetFileNameAndPath().ToStdString();
+                filename = replacePathSeparator(filename);
+                std::vector<std::string> vPaths = m_terminal->getPathSettings();
 
-                    if (filename.substr(0, vPaths[PROCPATH].length()) == vPaths[PROCPATH])
+                if (filename.starts_with(vPaths[PROCPATH]))
+                {
+                    filename.erase(0, vPaths[PROCPATH].length());
+
+                    if (filename.find('/') != string::npos)
+                        filename.erase(filename.rfind('/'));
+
+                    while (filename.front() == '/')
+                        filename.erase(0, 1);
+
+                    replaceAll(filename, "/", "~");
+                }
+
+                // If namespace == "this~" then replace it with the current namespace
+                if (sNamespace.StartsWith("this~"))
+                    sNamespace.replace(0, 4, filename);
+                else if (sSelectedNamespace.StartsWith("this~"))
+                    sSelectedNamespace.replace(0, 4, filename);
+                /*{
+                    std::string filename = GetFileNameAndPath().ToStdString();
+                    filename = replacePathSeparator(filename);
+                    std::vector<std::string> vPaths = m_terminal->getPathSettings();
+
+                    if (filename.starts_with(vPaths[PROCPATH]))
                     {
                         filename.erase(0, vPaths[PROCPATH].length());
 
@@ -866,8 +886,8 @@ void NumeReEditor::OnChar( wxStyledTextEvent& event )
                         while (filename.front() == '/')
                             filename.erase(0, 1);
 
-                        while (filename.find('/') != string::npos)
-                            filename[filename.find('/')] = '~';
+                        replaceAll(filename, "~~", "/../");
+                        replaceAll(filename, "~", "/");
 
                         sNamespace = filename;
                     }
@@ -880,7 +900,7 @@ void NumeReEditor::OnChar( wxStyledTextEvent& event )
                     filename = replacePathSeparator(filename);
                     vector<string> vPaths = m_terminal->getPathSettings();
 
-                    if (filename.substr(0, vPaths[PROCPATH].length()) == vPaths[PROCPATH])
+                    if (filename.starts_with(vPaths[PROCPATH]))
                     {
                         filename.erase(0, vPaths[PROCPATH].length());
 
@@ -890,14 +910,14 @@ void NumeReEditor::OnChar( wxStyledTextEvent& event )
                         while (filename.front() == '/')
                             filename.erase(0, 1);
 
-                        while (filename.find('/') != string::npos)
-                            filename[filename.find('/')] = '~';
+                        replaceAll(filename, "~~", "/../");
+                        replaceAll(filename, "~", "/");
 
                         sSelectedNamespace = filename;
                     }
                     else
                         sSelectedNamespace = "";
-                }
+                }*/
                 // If namespace == "thisfile~" then search for all procedures in the current file and use them as the
                 // autocompletion list entries
                 else if (sNamespace == "thisfile"
@@ -905,10 +925,11 @@ void NumeReEditor::OnChar( wxStyledTextEvent& event )
                          || sSelectedNamespace == "thisfile"
                          || sSelectedNamespace == "thisfile~")
                 {
-                    this->AutoCompSetIgnoreCase(true);
-                    this->AutoCompSetCaseInsensitiveBehaviour(wxSTC_CASEINSENSITIVEBEHAVIOUR_IGNORECASE);
-                    this->AutoCompShow(lenEntered, m_search->FindProceduresInCurrentFile(GetTextRange(wordstartpos, currentPos), sSelectedNamespace));
-                    this->Colourise(0, -1);
+                    AutoCompSetIgnoreCase(true);
+                    AutoCompSetCaseInsensitiveBehaviour(wxSTC_CASEINSENSITIVEBEHAVIOUR_IGNORECASE);
+                    AutoCompShow(lenEntered, m_search->FindProceduresInCurrentFile(GetTextRange(wordstartpos, currentPos),
+                                                                                   sSelectedNamespace));
+                    Colourise(0, -1);
                     event.Skip();
                     return;
                 }

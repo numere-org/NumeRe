@@ -4824,8 +4824,9 @@ void NumeReWindow::OnFileEventTimer(wxTimerEvent& event)
 
             // Mark the procedure library as to be
             // refreshed
-            if (sEventpath.substr(sEventpath.length()-5) == ".nprc"
-                || sEventpath.substr(sEventpath.length()-5) == ".nscr")
+            if (sEventpath.ends_with(".nprc")
+                || sEventpath.ends_with(".nscr")
+                || sEventpath.ends_with(".nlyt"))
                refreshProcedureLibrary = true;
 
         }
@@ -4841,8 +4842,9 @@ void NumeReWindow::OnFileEventTimer(wxTimerEvent& event)
             //
             // Mark the procedure library as to be
             // refreshed
-            if (modifiedFiles[i].second.substr(modifiedFiles[i].second.length()-5) == ".nprc"
-                || modifiedFiles[i].second.substr(modifiedFiles[i].second.length()-5) == ".nscr")
+            if (modifiedFiles[i].second.ToStdString().ends_with(".nprc")
+                || modifiedFiles[i].second.ToStdString().ends_with(".nscr")
+                || modifiedFiles[i].second.ToStdString().ends_with(".nlyt"))
                 refreshProcedureLibrary = true;
 
             // Ignore files, which have been saved by NumeRe

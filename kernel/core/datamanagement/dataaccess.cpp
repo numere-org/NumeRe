@@ -764,6 +764,13 @@ static void replaceEntityStringOccurence(string& sLine, const string& sEntityOcc
 }
 
 
+static std::string createTempVar(const std::string& sVectName, const mu::value_type& val, Parser& _parser)
+{
+    _parser.SetVectorVar(sVectName, {val});
+    return sVectName;
+}
+
+
 /////////////////////////////////////////////////
 /// \brief This function replaces every occurence
 /// of the entity with either the vector name for
@@ -818,91 +825,91 @@ static void replaceEntityOccurence(string& sLine, const string& sEntityOccurence
 			{
 				_parser.DisableAccessCaching();
 				sLine = sLine.substr(0, sLine.rfind("std(", sLine.find(sEntityOccurence)))
-						+ toCmdString(isCluster ? _data.getCluster(sEntityName).std(_idx.row) : _data.std(sEntityName, _idx.row, _idx.col))
+						+ createTempVar(sEntityReplacement + "~std", isCluster ? _data.getCluster(sEntityName).std(_idx.row) : _data.std(sEntityName, _idx.row, _idx.col), _parser)
 						+ sLine.substr(sLine.find(')', sLine.find(sEntityOccurence) + sEntityOccurence.length()) + 1);
 			}
 			else if (sLeft == "avg(")
 			{
 				_parser.DisableAccessCaching();
 				sLine = sLine.substr(0, sLine.rfind("avg(", sLine.find(sEntityOccurence)))
-						+ toCmdString(isCluster ? _data.getCluster(sEntityName).avg(_idx.row) : _data.avg(sEntityName, _idx.row, _idx.col))
+						+ createTempVar(sEntityReplacement + "~avg", isCluster ? _data.getCluster(sEntityName).avg(_idx.row) : _data.avg(sEntityName, _idx.row, _idx.col), _parser)
 						+ sLine.substr(sLine.find(')', sLine.find(sEntityOccurence) + sEntityOccurence.length()) + 1);
 			}
 			else if (sLeft == "max(")
 			{
 				_parser.DisableAccessCaching();
 				sLine = sLine.substr(0, sLine.rfind("max(", sLine.find(sEntityOccurence)))
-						+ toCmdString(isCluster ? _data.getCluster(sEntityName).max(_idx.row) : _data.max(sEntityName, _idx.row, _idx.col))
+						+ createTempVar(sEntityReplacement + "~max", isCluster ? _data.getCluster(sEntityName).max(_idx.row) : _data.max(sEntityName, _idx.row, _idx.col), _parser)
 						+ sLine.substr(sLine.find(')', sLine.find(sEntityOccurence) + sEntityOccurence.length()) + 1);
 			}
 			else if (sLeft == "min(")
 			{
 				_parser.DisableAccessCaching();
 				sLine = sLine.substr(0, sLine.rfind("min(", sLine.find(sEntityOccurence)))
-						+ toCmdString(isCluster ? _data.getCluster(sEntityName).min(_idx.row) : _data.min(sEntityName, _idx.row, _idx.col))
+						+ createTempVar(sEntityReplacement + "~min", isCluster ? _data.getCluster(sEntityName).min(_idx.row) : _data.min(sEntityName, _idx.row, _idx.col), _parser)
 						+ sLine.substr(sLine.find(')', sLine.find(sEntityOccurence) + sEntityOccurence.length()) + 1);
 			}
 			else if (sLeft == "prd(")
 			{
 				_parser.DisableAccessCaching();
 				sLine = sLine.substr(0, sLine.rfind("prd(", sLine.find(sEntityOccurence)))
-						+ toCmdString(isCluster ? _data.getCluster(sEntityName).prd(_idx.row) : _data.prd(sEntityName, _idx.row, _idx.col))
+						+ createTempVar(sEntityReplacement + "~prd", isCluster ? _data.getCluster(sEntityName).prd(_idx.row) : _data.prd(sEntityName, _idx.row, _idx.col), _parser)
 						+ sLine.substr(sLine.find(')', sLine.find(sEntityOccurence) + sEntityOccurence.length()) + 1);
 			}
 			else if (sLeft == "sum(")
 			{
 				_parser.DisableAccessCaching();
 				sLine = sLine.substr(0, sLine.rfind("sum(", sLine.find(sEntityOccurence)))
-						+ toCmdString(isCluster ? _data.getCluster(sEntityName).sum(_idx.row) : _data.sum(sEntityName, _idx.row, _idx.col))
+						+ createTempVar(sEntityReplacement + "~sum", isCluster ? _data.getCluster(sEntityName).sum(_idx.row) : _data.sum(sEntityName, _idx.row, _idx.col), _parser)
 						+ sLine.substr(sLine.find(')', sLine.find(sEntityOccurence) + sEntityOccurence.length()) + 1);
 			}
 			else if (sLeft == "num(")
 			{
 				_parser.DisableAccessCaching();
 				sLine = sLine.substr(0, sLine.rfind("num(", sLine.find(sEntityOccurence)))
-						+ toCmdString(isCluster ? _data.getCluster(sEntityName).num(_idx.row) : _data.num(sEntityName, _idx.row, _idx.col))
+						+ createTempVar(sEntityReplacement + "~num", isCluster ? _data.getCluster(sEntityName).num(_idx.row) : _data.num(sEntityName, _idx.row, _idx.col), _parser)
 						+ sLine.substr(sLine.find(')', sLine.find(sEntityOccurence) + sEntityOccurence.length()) + 1);
 			}
 			else if (sLeft == "and(")
 			{
 				_parser.DisableAccessCaching();
 				sLine = sLine.substr(0, sLine.rfind("and(", sLine.find(sEntityOccurence)))
-						+ toCmdString(isCluster ? _data.getCluster(sEntityName).and_func(_idx.row) : _data.and_func(sEntityName, _idx.row, _idx.col))
+						+ createTempVar(sEntityReplacement + "~and", isCluster ? _data.getCluster(sEntityName).and_func(_idx.row) : _data.and_func(sEntityName, _idx.row, _idx.col), _parser)
 						+ sLine.substr(sLine.find(')', sLine.find(sEntityOccurence) + sEntityOccurence.length()) + 1);
 			}
 			else if (sLeft == "xor(")
 			{
 				_parser.DisableAccessCaching();
 				sLine = sLine.substr(0, sLine.rfind("xor(", sLine.find(sEntityOccurence)))
-						+ toCmdString(isCluster ? _data.getCluster(sEntityName).xor_func(_idx.row) : _data.xor_func(sEntityName, _idx.row, _idx.col))
+						+ createTempVar(sEntityReplacement + "~xor", isCluster ? _data.getCluster(sEntityName).xor_func(_idx.row) : _data.xor_func(sEntityName, _idx.row, _idx.col), _parser)
 						+ sLine.substr(sLine.find(')', sLine.find(sEntityOccurence) + sEntityOccurence.length()) + 1);
 			}
 			else if (sLeft == "or(")
 			{
 				_parser.DisableAccessCaching();
 				sLine = sLine.substr(0, sLine.rfind("or(", sLine.find(sEntityOccurence)))
-						+ toCmdString(isCluster ? _data.getCluster(sEntityName).or_func(_idx.row) : _data.or_func(sEntityName, _idx.row, _idx.col))
+						+ createTempVar(sEntityReplacement + "~or", isCluster ? _data.getCluster(sEntityName).or_func(_idx.row) : _data.or_func(sEntityName, _idx.row, _idx.col), _parser)
 						+ sLine.substr(sLine.find(')', sLine.find(sEntityOccurence) + sEntityOccurence.length()) + 1);
 			}
 			else if (sLeft == "cnt(")
 			{
 				_parser.DisableAccessCaching();
 				sLine = sLine.substr(0, sLine.rfind("cnt(", sLine.find(sEntityOccurence)))
-						+ toCmdString(isCluster ? _data.getCluster(sEntityName).cnt(_idx.row) : _data.cnt(sEntityName, _idx.row, _idx.col))
+						+ createTempVar(sEntityReplacement + "~cnt", isCluster ? _data.getCluster(sEntityName).cnt(_idx.row) : _data.cnt(sEntityName, _idx.row, _idx.col), _parser)
 						+ sLine.substr(sLine.find(')', sLine.find(sEntityOccurence) + sEntityOccurence.length()) + 1);
 			}
 			else if (sLeft == "med(")
 			{
 				_parser.DisableAccessCaching();
 				sLine = sLine.substr(0, sLine.rfind("med(", sLine.find(sEntityOccurence)))
-						+ toCmdString(isCluster ? _data.getCluster(sEntityName).med(_idx.row) : _data.med(sEntityName, _idx.row, _idx.col))
+						+ createTempVar(sEntityReplacement + "~med", isCluster ? _data.getCluster(sEntityName).med(_idx.row) : _data.med(sEntityName, _idx.row, _idx.col), _parser)
 						+ sLine.substr(sLine.find(')', sLine.find(sEntityOccurence) + sEntityOccurence.length()) + 1);
 			}
 			else if (sLeft == "norm(")
 			{
 				_parser.DisableAccessCaching();
 				sLine = sLine.substr(0, sLine.rfind("norm(", sLine.find(sEntityOccurence)))
-						+ toCmdString(isCluster ? _data.getCluster(sEntityName).norm(_idx.row) : _data.norm(sEntityName, _idx.row, _idx.col))
+						+ createTempVar(sEntityReplacement + "~norm", isCluster ? _data.getCluster(sEntityName).norm(_idx.row) : _data.norm(sEntityName, _idx.row, _idx.col), _parser)
 						+ sLine.substr(sLine.find(')', sLine.find(sEntityOccurence) + sEntityOccurence.length()) + 1);
 			}
 			else if (sLeft == "cmp(")
@@ -930,7 +937,7 @@ static void replaceEntityOccurence(string& sLine, const string& sEntityOccurence
 				nType = intCast(_parser.Eval());
 				sLine = sLine.replace(sLine.rfind("cmp(", sLine.find(sEntityOccurence)),
 									  getMatchingParenthesis(StringView(sLine, sLine.rfind("cmp(", sLine.find(sEntityOccurence)) + 3)) + 4,
-									  toCmdString(isCluster ? _data.getCluster(sEntityName).cmp(_idx.row, dRef, nType) : _data.cmp(sEntityName, _idx.row, _idx.col, dRef, nType)));
+									  createTempVar(sEntityReplacement + "~cmp", isCluster ? _data.getCluster(sEntityName).cmp(_idx.row, dRef, nType) : _data.cmp(sEntityName, _idx.row, _idx.col, dRef, nType), _parser));
 			}
 			else if (sLeft == "pct(")
 			{
@@ -949,7 +956,7 @@ static void replaceEntityOccurence(string& sLine, const string& sEntityOccurence
 				dPct = _parser.Eval();
 				sLine = sLine.replace(sLine.rfind("pct(", sLine.find(sEntityOccurence)),
 									  getMatchingParenthesis(StringView(sLine, sLine.rfind("pct(", sLine.find(sEntityOccurence)) + 3)) + 4,
-									  toCmdString(isCluster ? _data.getCluster(sEntityName).pct(_idx.row, dPct) : _data.pct(sEntityName, _idx.row, _idx.col, dPct)));
+									  createTempVar(sEntityReplacement + "~pct", isCluster ? _data.getCluster(sEntityName).pct(_idx.row, dPct) : _data.pct(sEntityName, _idx.row, _idx.col, dPct), _parser));
 			}
 			else //Fallback
 				sLine.replace(nPos, sEntityOccurence.length(), sEntityReplacement);

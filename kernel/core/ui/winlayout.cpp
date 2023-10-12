@@ -506,6 +506,8 @@ static void getParametersFromWindow(CommandLineParser& cmdParser, const std::str
         cmdParser.setReturnValue(winInfo.window->getItemSelection(itemID));
     else if (findParameter(sParList, "statustext"))
         cmdParser.setReturnValue(winInfo.window->getStatusText());
+    else if (findParameter(sParList, "dialogresult"))
+        cmdParser.setReturnValue(winInfo.window->dialog());
 }
 
 
@@ -592,7 +594,6 @@ static void setParametersInWindow(CommandLineParser& cmdParser, const std::strin
     }
     else if (findParameter(sParList, "focus"))
     {
-        NumeReKernel::print("focus item=" + toString(itemID));
         cmdParser.setReturnValue(toString(winInfo.window->setItemFocus(itemID)));
     }
     else if (findParameter(sParList, "statustext", '='))

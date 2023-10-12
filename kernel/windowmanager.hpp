@@ -137,6 +137,7 @@ namespace NumeRe
             WindowSettings m_settings;
             mutable tinyxml2::XMLDocument* m_layout;
             size_t nWindowID;
+            bool m_closing;
 
             void registerWindow();
             void unregisterWindow();
@@ -199,6 +200,8 @@ namespace NumeRe
             std::string getPropValue(const std::string& varName) const;
             std::string getProperties() const;
             std::string getStatusText() const;
+
+            std::string dialog();
 
             bool setItemValue(const WinItemValue& _value, int windowItemID);
             bool setItemLabel(const std::string& _label, int windowItemID);

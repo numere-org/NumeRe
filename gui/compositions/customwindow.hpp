@@ -213,6 +213,8 @@ class CustomWindow : public wxFrame
         std::map<wxString, wxString> m_varTable;
 
         NumeRe::Window m_windowRef;
+        wxWindowDisabler* m_dialogLock;
+        wxString m_dialogResult;
 
         void layout();
         void layoutChild(const tinyxml2::XMLElement* currentChild, wxWindow* currParent, wxSizer* currSizer, GroupPanel* _groupPanel);
@@ -251,6 +253,32 @@ class CustomWindow : public wxFrame
         bool setItemGraph(GraphHelper* _helper, int windowItemID);
         bool setPropValue(const wxString& _value, const wxString& varName);
         bool setStatusText(wxString _value);
+
+        void asDialog()
+        {
+            if (!m_dialogLock)
+                m_dialogLock = new wxWindowDisabler(this);
+        }
+
+        bool isDialog() const
+        {
+            return m_dialogLock != nullptr;
+        }
+
+        void endDialog(const wxString& dialogResult)
+        {
+            if (m_dialogLock)
+            {
+                m_dialogResult = dialogResult;
+                delete m_dialogLock;
+                m_dialogLock = nullptr;
+            }
+        }
+
+        wxString getDialogResult() const
+        {
+            return m_dialogResult;
+        }
 
         void OnMenuEvent(wxCommandEvent& event);
         void OnClick(wxCommandEvent& event);

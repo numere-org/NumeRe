@@ -688,6 +688,9 @@ size_t Plot::createSubPlotSet(bool& bAnimateVar, vector<string>& vPlotCompose, s
 
             if (sOutputName[0] == '"' && sOutputName[sOutputName.length() - 1] == '"')
                 sOutputName = sOutputName.substr(1, sOutputName.length() - 2);
+
+            if (!nMultiplots[0] && !nMultiplots[1])
+                _graph->SubPlot(1, 1, 0, _pData.getSettings(PlotData::STR_PLOTBOUNDARIES).c_str());
         }
 
         // This section contains the logic, which will determine the position
@@ -857,6 +860,8 @@ size_t Plot::createSubPlotSet(bool& bAnimateVar, vector<string>& vPlotCompose, s
 
                 if (sArgument.front() == '{' && sArgument.back() == '}')
                 {
+#warning TODO (numere#1#10/06/23): Might not work for embedded function definitions
+
                     EndlessVector<StringView> args = getAllArguments(StringView(sArgument, 1, sArgument.length()-2));
 
                     for (const StringView& arg : args)
@@ -3484,14 +3489,19 @@ void Plot::evaluateSubplot(string& sCmd, size_t nMultiplots[2], size_t& nSubPlot
     }
 
     string sSubPlotIDX = sCmd.substr(findCommand(sCmd).nPos + 7);
+
     if (sSubPlotIDX.find("-set") != string::npos || sSubPlotIDX.find("--") != string::npos)
     {
+        _pData.setGlobalComposeParams(sSubPlotIDX);
+
         if (sSubPlotIDX.find("-set") != string::npos)
             sSubPlotIDX.erase(sSubPlotIDX.find("-set"));
         else
             sSubPlotIDX.erase(sSubPlotIDX.find("--"));
     }
+
     StripSpaces(sSubPlotIDX);
+
     if (findParameter(sCmd, "cols", '=') || findParameter(sCmd, "lines", '='))
     {
         size_t nMultiLines = 1, nMultiCols = 1;
@@ -3501,46 +3511,61 @@ void Plot::evaluateSubplot(string& sCmd, size_t nMultiplots[2], size_t& nSubPlot
             _parser.SetExpr(getArgAtPos(sCmd, findParameter(sCmd, "cols", '=') + 4));
             nMultiCols = (size_t)intCast(_parser.Eval());
         }
+
         if (findParameter(sCmd, "lines", '='))
         {
             _parser.SetExpr(getArgAtPos(sCmd, findParameter(sCmd, "lines", '=') + 5));
             nMultiLines = (size_t)intCast(_parser.Eval());
         }
+
         if (sSubPlotIDX.length())
         {
             if (!_functions.call(sSubPlotIDX))
                 throw SyntaxError(SyntaxError::FUNCTION_ERROR, sSubPlotIDX, SyntaxError::invalid_position);
+
             if (_data.containsTablesOrClusters(sSubPlotIDX))
             {
                 getDataElements(sSubPlotIDX, _parser, _data, _option);
             }
+
             _parser.SetExpr(sSubPlotIDX);
             int nRes = 0;
             value_type* v = _parser.Eval(nRes);
+
             if (nRes == 1)
             {
                 if (intCast(v[0]) < 1)
                     v[0] = 1;
+
                 if ((size_t)intCast(v[0]) - 1 >= nMultiplots[0]*nMultiplots[1])
                     throw SyntaxError(SyntaxError::INVALID_SUBPLOT_INDEX, "", SyntaxError::invalid_position);
+
                 if (!checkMultiPlotArray(nMultiplots, nSubPlotMap, (size_t)(intCast(v[0]) - 1), nMultiCols, nMultiLines))
                     throw SyntaxError(SyntaxError::INVALID_SUBPLOT_INDEX, "", SyntaxError::invalid_position);
-                _graph->MultiPlot(nMultiplots[0], nMultiplots[1], intCast(v[0]) - 1, nMultiCols, nMultiLines);
+
+                _graph->MultiPlot(nMultiplots[0], nMultiplots[1], intCast(v[0]) - 1, nMultiCols, nMultiLines,
+                                  _pData.getSettings(PlotData::STR_PLOTBOUNDARIES).c_str());
             }   // cols, lines
             else
             {
                 if ((size_t)(intCast(v[1]) - 1 + (intCast(v[0]) - 1)*nMultiplots[1]) >= nMultiplots[0]*nMultiplots[1])
                     throw SyntaxError(SyntaxError::INVALID_SUBPLOT_INDEX, "", SyntaxError::invalid_position);
-                if (!checkMultiPlotArray(nMultiplots, nSubPlotMap, (size_t)((intCast(v[1]) - 1) + (intCast(v[0]) - 1)*nMultiplots[0]), nMultiCols, nMultiLines))
+
+                if (!checkMultiPlotArray(nMultiplots, nSubPlotMap, (size_t)((intCast(v[1]) - 1) + (intCast(v[0]) - 1)*nMultiplots[0]),
+                                         nMultiCols, nMultiLines))
                     throw SyntaxError(SyntaxError::INVALID_SUBPLOT_INDEX, "", SyntaxError::invalid_position);
-                _graph->MultiPlot(nMultiplots[0], nMultiplots[1], (int)((intCast(v[1]) - 1) + (intCast(v[0]) - 1)*nMultiplots[0]), nMultiCols, nMultiLines);
+
+                _graph->MultiPlot(nMultiplots[0], nMultiplots[1], (int)((intCast(v[1]) - 1) + (intCast(v[0]) - 1)*nMultiplots[0]),
+                                  nMultiCols, nMultiLines, _pData.getSettings(PlotData::STR_PLOTBOUNDARIES).c_str());
             }
         }
         else
         {
             if (nSubPlots >= nMultiplots[0]*nMultiplots[1])
                 throw SyntaxError(SyntaxError::INVALID_SUBPLOT_INDEX, "", SyntaxError::invalid_position);
+
             int nPlotPos = 1;
+
             for (size_t nSub = 0; nSub < nMultiplots[0]*nMultiplots[1]; nSub++)
             {
                 if (nPlotPos & nSubPlotMap)
@@ -3549,13 +3574,14 @@ void Plot::evaluateSubplot(string& sCmd, size_t nMultiplots[2], size_t& nSubPlot
                 {
                     if (!checkMultiPlotArray(nMultiplots, nSubPlotMap, nSub, nMultiCols, nMultiLines))
                         throw SyntaxError(SyntaxError::INVALID_SUBPLOT_INDEX, "", SyntaxError::invalid_position);
-                    _graph->MultiPlot(nMultiplots[0], nMultiplots[1], nSub, nMultiCols, nMultiLines);
+
+                    _graph->MultiPlot(nMultiplots[0], nMultiplots[1], nSub, nMultiCols, nMultiLines,
+                                      _pData.getSettings(PlotData::STR_PLOTBOUNDARIES).c_str());
                     break;
                 }
+
                 if (nSub == nMultiplots[0]*nMultiplots[1] - 1)
-                {
                     throw SyntaxError(SyntaxError::INVALID_SUBPLOT_INDEX, "", SyntaxError::invalid_position);
-                }
             }
         }
     }
@@ -3565,44 +3591,56 @@ void Plot::evaluateSubplot(string& sCmd, size_t nMultiplots[2], size_t& nSubPlot
         {
             if (!_functions.call(sSubPlotIDX))
                 throw SyntaxError(SyntaxError::FUNCTION_ERROR, sSubPlotIDX, SyntaxError::invalid_position);
+
             if (_data.containsTablesOrClusters(sSubPlotIDX))
-            {
                 getDataElements(sSubPlotIDX, _parser, _data, _option);
-            }
+
             _parser.SetExpr(sSubPlotIDX);
             int nRes = 0;
             value_type* v = _parser.Eval(nRes);
+
             if (nRes == 1)
             {
                 if (intCast(v[0]) < 1)
                     v[0] = 1;
+
                 if ((size_t)intCast(v[0]) - 1 >= nMultiplots[0]*nMultiplots[1])
                     throw SyntaxError(SyntaxError::INVALID_SUBPLOT_INDEX, "", SyntaxError::invalid_position);
+
                 if ((size_t)intCast(v[0]) != 1)
                     nRes <<= (size_t)(intCast(v[0]) - 1);
+
                 if (nRes & nSubPlotMap)
                     throw SyntaxError(SyntaxError::INVALID_SUBPLOT_INDEX, "", SyntaxError::invalid_position);
+
                 nSubPlotMap |= nRes;
-                _graph->SubPlot(nMultiplots[0], nMultiplots[1], intCast(v[0]) - 1);
+                _graph->SubPlot(nMultiplots[0], nMultiplots[1], intCast(v[0]) - 1, _pData.getSettings(PlotData::STR_PLOTBOUNDARIES).c_str());
             }
             else
             {
                 if ((size_t)(intCast(v[1]) - 1 + (intCast(v[0]) - 1)*nMultiplots[0]) >= nMultiplots[0]*nMultiplots[1])
                     throw SyntaxError(SyntaxError::INVALID_SUBPLOT_INDEX, "", SyntaxError::invalid_position);
+
                 nRes = 1;
+
                 if ((size_t)(intCast(v[1]) + (intCast(v[0]) - 1)*nMultiplots[0]) != 1)
                     nRes <<= (size_t)((intCast(v[1]) - 1) + (intCast(v[0]) - 1) * nMultiplots[0]);
+
                 if (nRes & nSubPlotMap)
                     throw SyntaxError(SyntaxError::INVALID_SUBPLOT_INDEX, "", SyntaxError::invalid_position);
+
                 nSubPlotMap |= nRes;
-                _graph->SubPlot(nMultiplots[0], nMultiplots[1], (int)((intCast(v[1]) - 1) + (intCast(v[0]) - 1)*nMultiplots[0]));
+                _graph->SubPlot(nMultiplots[0], nMultiplots[1], (int)((intCast(v[1]) - 1) + (intCast(v[0]) - 1)*nMultiplots[0]),
+                                _pData.getSettings(PlotData::STR_PLOTBOUNDARIES).c_str());
             }
         }
         else
         {
             if (nSubPlots >= nMultiplots[0]*nMultiplots[1])
                 throw SyntaxError(SyntaxError::INVALID_SUBPLOT_INDEX, "", SyntaxError::invalid_position);
+
             int nPlotPos = 1;
+
             for (size_t nSub = 0; nSub < nMultiplots[0]*nMultiplots[1]; nSub++)
             {
                 if (nPlotPos & nSubPlotMap)
@@ -3610,13 +3648,12 @@ void Plot::evaluateSubplot(string& sCmd, size_t nMultiplots[2], size_t& nSubPlot
                 else
                 {
                     nSubPlotMap |= nPlotPos;
-                    _graph->SubPlot(nMultiplots[0], nMultiplots[1], nSub);
+                    _graph->SubPlot(nMultiplots[0], nMultiplots[1], nSub, _pData.getSettings(PlotData::STR_PLOTBOUNDARIES).c_str());
                     break;
                 }
+
                 if (nSub == nMultiplots[0]*nMultiplots[1] - 1)
-                {
                     throw SyntaxError(SyntaxError::INVALID_SUBPLOT_INDEX, "", SyntaxError::invalid_position);
-                }
             }
         }
     }

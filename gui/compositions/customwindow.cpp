@@ -175,10 +175,11 @@ static wxString nextItemValue(wxString& sItem)
 /// of strings into multiple strings.
 ///
 /// \param choices wxString&
+/// \param keepQuotationMarks bool
 /// \return wxArrayString
 ///
 /////////////////////////////////////////////////
-static wxArrayString getChoices(wxString& choices)
+static wxArrayString getChoices(wxString& choices, bool keepQuotationMarks = false)
 {
     wxArrayString choicesArray;
     size_t nQuotes = 0;
@@ -190,14 +191,22 @@ static wxArrayString getChoices(wxString& choices)
 
         if (!(nQuotes % 2) && choices[i] == ',')
         {
-            choicesArray.Add(removeQuotationMarks(choices.substr(0, i)));
+            if (keepQuotationMarks)
+                choicesArray.Add(choices.substr(0, i));
+            else
+                choicesArray.Add(removeQuotationMarks(choices.substr(0, i)));
             choices.erase(0, i+1);
             i = -1;
         }
     }
 
     if (choices.length())
-        choicesArray.Add(removeQuotationMarks(choices));
+    {
+        if (keepQuotationMarks)
+            choicesArray.Add(choices);
+        else
+            choicesArray.Add(removeQuotationMarks(choices));
+    }
 
     return choicesArray;
 }
@@ -288,12 +297,14 @@ static void populateTreeListCtrl(wxTreeListCtrl* listCtrl, const wxArrayString& 
         nColumns--;
 
     listCtrl->DeleteAllItems();
-    int colSize = std::max(listCtrl->GetClientSize().x / (int)nColumns - 2, MINCOLSIZE);
 
     while (listCtrl->GetColumnCount() < nColumns)
         listCtrl->AppendColumn("");
 
     populateChild(listCtrl, values, listCtrl->GetRootItem(), hasChild);
+
+    nColumns = listCtrl->GetColumnCount();
+    int colSize = std::max(listCtrl->GetClientSize().x / (int)nColumns - 2, MINCOLSIZE);
 
     for (size_t i = 0; i < listCtrl->GetColumnCount(); i++)
     {
@@ -447,7 +458,7 @@ END_EVENT_TABLE()
 /// \param addStyle int
 ///
 /////////////////////////////////////////////////
-CustomWindow::CustomWindow(wxWindow* parent, const NumeRe::Window& windowRef, int addStyle) : wxFrame(parent, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, addStyle | wxRESIZE_BORDER | wxCAPTION | wxCLOSE_BOX | wxMAXIMIZE_BOX | wxMINIMIZE_BOX), m_windowRef(windowRef)
+CustomWindow::CustomWindow(wxWindow* parent, const NumeRe::Window& windowRef, int addStyle) : wxFrame(parent, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, addStyle | wxRESIZE_BORDER | wxCAPTION | wxCLOSE_BOX | wxMAXIMIZE_BOX | wxMINIMIZE_BOX), m_windowRef(windowRef), m_dialogLock(nullptr)
 {
     m_windowRef.connect(this);
 
@@ -1409,7 +1420,12 @@ void CustomWindow::handleEvent(wxEvent& event, const wxString& sEventType, const
 {
 #warning NOTE (numere#1#08/15/21): The "onclose" event is still undefined
     if (sEventType == "onclose")
+    {
+        if (isDialog())
+            endDialog("");
+
         return;
+    }
 
     // Try to find a defined event handler for
     // the current window item element
@@ -1426,7 +1442,7 @@ void CustomWindow::handleEvent(wxEvent& event, const wxString& sEventType, const
         else if (sEventType == "onactivate")
             sEventHandler = iter->second.onactivate;
 
-        if (sEventHandler[0] == '$' && sEventHandler.length() > 1 && (wxIsalnum(sEventHandler[1]) || sEventHandler[1] == '_'))
+        if (sEventHandler[0] == '$' && sEventHandler.length() > 1 && (wxIsalnum(sEventHandler[1]) || sEventHandler[1] == '_') && !isDialog())
         {
             // If the event handler starts with an
             // dollar, it must be a procedure
@@ -1515,6 +1531,13 @@ void CustomWindow::handleEvent(wxEvent& event, const wxString& sEventType, const
                 long int id;
                 funcDef[1].ToLong(&id);
                 setItemState(funcDef[2], id);
+            }
+            else if (funcDef.front() == "evt_enddialog" && funcDef.size() >= 2)
+            {
+                if (isDialog())
+                    endDialog(funcDef[1]);
+                else
+                    closeWindow();
             }
         }
     }
@@ -1783,7 +1806,7 @@ wxArrayString CustomWindow::decodeEventHandlerFunction(const wxString& sEventHan
 
     if (sParams.length())
     {
-        wxArrayString choices = getChoices(sParams);
+        wxArrayString choices = getChoices(sParams, true);
 
         for (size_t i = 0; i < choices.size(); i++)
             funcDef.Add(choices[i]);

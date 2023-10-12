@@ -1660,6 +1660,7 @@ void PlotData::setParams(const std::string& __sCmd, int nType)
         || findParameter(sCmd, "ylabel", '=')
         || findParameter(sCmd, "zlabel", '=')
         || findParameter(sCmd, "title", '=')
+        || findParameter(sCmd, "margin", '=')
         || findParameter(sCmd, "background", '=')) && (nType == ALL || nType & GLOBAL))
     {
         int nPos = 0;
@@ -1695,6 +1696,13 @@ void PlotData::setParams(const std::string& __sCmd, int nType)
                 stringSettings[STR_COMPOSEDTITLE] += ", " + stringSettings[STR_PLOTTITLE];
             else
                 stringSettings[STR_COMPOSEDTITLE] = stringSettings[STR_PLOTTITLE];
+        }
+
+        if (findParameter(sCmd, "margin", '='))
+        {
+            nPos = findParameter(sCmd, "margin", '=') + 6;
+            stringSettings[STR_PLOTBOUNDARIES] = getArgAtPos(__sCmd, nPos, STRINGEXTRACT);
+            StripSpaces(stringSettings[STR_PLOTBOUNDARIES]);
         }
 
         if (findParameter(sCmd, "background", '='))
@@ -1982,6 +1990,7 @@ void PlotData::reset()
     stringSettings[STR_GREYS] =          "kHhWkHhWkHhWkHhWkHhW";
     stringSettings[STR_LINESTYLESGREY] = "-|=;i:j|=;i:j-|=:i;-";
     stringSettings[STR_GRIDSTYLE] = "=h0-h0";
+    stringSettings[STR_PLOTBOUNDARIES] = "<>_^";
 
     dRotateAngles[0] = 60;
     dRotateAngles[1] = 115;
@@ -2063,6 +2072,7 @@ void PlotData::deleteData(bool bGraphFinished /* = false*/)
     stringSettings[STR_PLOTTITLE].clear();
     stringSettings[STR_AXISBIND].clear();
     stringSettings[STR_BACKGROUND].clear();
+    stringSettings[STR_PLOTBOUNDARIES] = "<>_^";
 
     for (int i = XRANGE; i <= YRANGE; i++)
     {

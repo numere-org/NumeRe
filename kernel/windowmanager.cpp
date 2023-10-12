@@ -43,6 +43,7 @@ namespace NumeRe
         m_customWindow = nullptr;
         nWindowID = std::string::npos;
         m_layout = nullptr;
+        m_closing = false;
     }
 
 
@@ -218,6 +219,8 @@ namespace NumeRe
     {
         if (m_manager)
             m_manager->updateWindowInformation(WindowInformation(nWindowID, status == STATUS_RUNNING ? this : nullptr, status, _return));
+
+        m_closing = status != STATUS_RUNNING;
     }
 
 
@@ -409,6 +412,31 @@ namespace NumeRe
     {
         if (m_customWindow)
             return m_customWindow->getStatusText().ToStdString();
+
+        return "\"\"";
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Show this window as a dialog.
+    ///
+    /// \return std::string
+    ///
+    /////////////////////////////////////////////////
+    std::string Window::dialog()
+    {
+        if (m_customWindow)
+        {
+            m_customWindow->asDialog();
+
+            do
+            {
+                Sleep(100);
+            }
+            while (!m_closing && m_customWindow->isDialog());
+
+            return m_closing ? "\"\"" : m_customWindow->getDialogResult().ToStdString();
+        }
 
         return "\"\"";
     }

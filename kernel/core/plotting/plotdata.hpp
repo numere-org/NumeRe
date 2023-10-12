@@ -144,6 +144,7 @@ class PlotData : public FileSystem
             STR_LINESIZES,
             STR_LINESTYLES,
             STR_LINESTYLESGREY,
+            STR_PLOTBOUNDARIES,
             STR_PLOTTITLE,
             STR_POINTSTYLES,
             STR_SETTING_SIZE
