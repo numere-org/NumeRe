@@ -2349,6 +2349,24 @@ int TableViewer::GetExternalRows(int gridrow) const
 
 
 /////////////////////////////////////////////////
+/// \brief Calculates the minimal size necessary
+/// to display the whole table.
+///
+/// \return wxSize
+///
+/////////////////////////////////////////////////
+wxSize TableViewer::calculateMinSize() const
+{
+    wxSize minSize;
+
+    minSize.y = GetRowHeight(0) * GetNumberRows() + GetColLabelSize() + 5;
+    minSize.x = GetColSize(0) * GetNumberCols() + GetRowLabelSize() + 5;
+
+    return minSize;
+}
+
+
+/////////////////////////////////////////////////
 /// \brief This member function returns the
 /// internal NumeRe::Table from the data provider
 /// object.

@@ -226,7 +226,8 @@ DateTimePicker::DateTimePicker(wxWindow* parent, int id, const wxDateTime& dateT
 /////////////////////////////////////////////////
 wxDateTime DateTimePicker::GetDateTime() const
 {
-    time_stamp time = getTimeStampFromTimePoint(StrToTime(GetValue().ToStdString()));
+    std::string sControlValue = GetValue().ToStdString();
+    time_stamp time = getTimeStampFromTimePoint(sControlValue == "---" ? sys_time_now() : StrToTime(sControlValue));
 
     wxDateTime dt;
 

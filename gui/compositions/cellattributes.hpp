@@ -398,19 +398,18 @@ class CombinedCellEditor : public wxGridCellEditor
         /////////////////////////////////////////////////
         virtual void Create(wxWindow* parent, wxWindowID id, wxEvtHandler* evtHandler) override
         {
-            int style = wxTE_PROCESS_ENTER | wxTE_PROCESS_TAB | wxBORDER_NONE;
+            int style = wxTE_PROCESS_ENTER | wxBORDER_NONE;
 
             // Create the numeric entry
             m_numericEntry = new wxTextCtrl(parent, id, wxEmptyString, wxDefaultPosition, wxDefaultSize, style);
             m_numericEntry->SetMargins(0, 0);
             m_numericEntry->Hide();
 
-            style |= wxTE_MULTILINE | wxTE_RICH;
-
             // Create the text control
-            m_text = new wxTextCtrl(parent, id, wxEmptyString, wxDefaultPosition, wxDefaultSize, style);
+            m_text = new wxTextCtrl(parent, id, wxEmptyString, wxDefaultPosition, wxDefaultSize, style | wxTE_MULTILINE);
             m_text->SetMargins(0, 0);
             m_text->Hide();
+            m_text->Bind(wxEVT_TEXT_ENTER, CombinedCellEditor::OnEnterKey, this);
 
             // The text control is the default control
             m_control = m_numericEntry;
@@ -566,7 +565,7 @@ class CombinedCellEditor : public wxGridCellEditor
             {
                 // Select the date entry control
                 m_control = m_text;
-                m_text->SetValue(m_value);
+                m_text->ChangeValue(m_value);
                 m_text->SetInsertionPointEnd();
                 m_text->SelectAll();
             }
@@ -582,7 +581,7 @@ class CombinedCellEditor : public wxGridCellEditor
             {
                 // Select the numeric control, which is the default control
                 m_control = m_numericEntry;
-                m_numericEntry->SetValue(m_value);
+                m_numericEntry->ChangeValue(m_value);
                 m_numericEntry->SetInsertionPointEnd();
                 m_numericEntry->SelectAll();
             }
@@ -1050,7 +1049,7 @@ class CombinedCellEditor : public wxGridCellEditor
         /////////////////////////////////////////////////
         void OnEnterKey(wxCommandEvent& event)
         {
-           finalize(true);
+            finalize(true);
         }
 
         /////////////////////////////////////////////////

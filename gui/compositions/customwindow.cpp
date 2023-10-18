@@ -1061,7 +1061,7 @@ void CustomWindow::layoutChild(const tinyxml2::XMLElement* currentChild, wxWindo
             // Add a table grid
             int proportion = currentChild->IntAttribute("prop", 1);
             TableViewer* table = new TableViewer(currParent, id, nullptr, nullptr, wxDefaultPosition, wxDefaultSize, wxWANTS_CHARS | wxBORDER_THEME);
-            currSizer->Add(table, proportion, alignment | wxALL | wxEXPAND | wxRESERVE_SPACE_EVEN_IF_HIDDEN, 5);
+            currSizer->Add(table, proportion, alignment | wxALL | wxEXPAND | wxRESERVE_SPACE_EVEN_IF_HIDDEN | wxFIXED_MINSIZE, 5);
             m_windowItems[id] = std::make_pair(CustomWindow::TABLE, table);
             table->SetTableReadOnly(state == READONLY);
 
@@ -1073,11 +1073,13 @@ void CustomWindow::layoutChild(const tinyxml2::XMLElement* currentChild, wxWindo
                 sSize.substr(sSize.find(',')+1).ToLong(&y);
                 NumeRe::Table data(x,y);
                 table->SetData(data, "", "");
+                table->SetMinSize(table->calculateMinSize());
             }
             else
             {
                 NumeRe::Table data(1,1);
                 table->SetData(data, "", "");
+                table->SetMinSize(wxSize(-1, 300));
             }
 
             if (currentChild->Attribute("onclick"))
@@ -1090,6 +1092,8 @@ void CustomWindow::layoutChild(const tinyxml2::XMLElement* currentChild, wxWindo
                 table->Enable(false);
             else if (state == HIDDEN)
                 table->Show(false);
+
+            //table->SetSize(table->getSize)
         }
         else if (sValue == "treelist")
         {

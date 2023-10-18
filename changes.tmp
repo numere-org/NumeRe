@@ -60,3 +60,4 @@ Applied	The relative scaling of GUI elements may now be set with "relscl=FACTOR"
 Added	The GUI element state "readonly" was added, which is identical to "disabled" for most elements with exception of "tablegrid" and "textentry".
 Added	It is now possible to use custom window layouts as custom dialogs with "window WINID -get dialogresult"
 Added	The plot option margin=MARGIN can be used to control the plot margin size.
+Cleaned	The autocompletion feature does not interfere with any of the editor tooltips any more.

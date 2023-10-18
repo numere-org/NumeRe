@@ -183,6 +183,7 @@ NumeReEditor::NumeReEditor(NumeReWindow* mframe, Options* options, wxWindow* par
     m_nDuplicateCodeFlag = 0;
     m_procedureViewer = nullptr;
     m_analyzerTimer = new wxTimer(this, ID_ANALYZERTIMER);
+    m_isFunctionContext = false;
 
     Bind(wxEVT_THREAD, &NumeReEditor::OnThreadUpdate, this);
 
@@ -1104,17 +1105,19 @@ void NumeReEditor::MakeBlockCheck()
 /////////////////////////////////////////////////
 void NumeReEditor::HandleFunctionCallTip()
 {
+    m_isFunctionContext = false;
+
     // do nothing if an autocompletion list is active
-    if (this->AutoCompActive())
+    if (AutoCompActive())
         return;
 
     // do nothing, if language is not supported
-    if (this->getFileType() != FILE_NSCR && this->getFileType() != FILE_NPRC)
+    if (getFileType() != FILE_NSCR && getFileType() != FILE_NPRC)
         return;
 
     int nStartingBrace = 0;
     int nArgStartPos = 0;
-    string sFunctionContext = this->GetCurrentFunctionContext(nStartingBrace);
+    string sFunctionContext = GetCurrentFunctionContext(nStartingBrace);
     static NumeRe::CallTipProvider _provider = *m_terminal->getProvider();
     NumeRe::CallTip _cTip;
 
@@ -1152,7 +1155,7 @@ void NumeReEditor::HandleFunctionCallTip()
     if (!_cTip.sDefinition.length())
         return;
 
-    string sArgument = this->GetCurrentArgument(_cTip.sDefinition, nStartingBrace, nArgStartPos);
+    string sArgument = GetCurrentArgument(_cTip.sDefinition, nStartingBrace, nArgStartPos);
 
     /*if (sArgument.length())
     {
@@ -1175,16 +1178,18 @@ void NumeReEditor::HandleFunctionCallTip()
 
     }*/
 
-    if (this->CallTipActive() && this->CallTipStartPos() != nStartingBrace)
+    if (CallTipActive() && CallTipStartPos() != nStartingBrace)
     {
-        this->AdvCallTipCancel();
-        this->AdvCallTipShow(nStartingBrace, _cTip.sDefinition);
+        AdvCallTipCancel();
+        AdvCallTipShow(nStartingBrace, _cTip.sDefinition);
     }
-    else if (!this->CallTipActive())
-        this->AdvCallTipShow(nStartingBrace, _cTip.sDefinition);
+    else if (!CallTipActive())
+        AdvCallTipShow(nStartingBrace, _cTip.sDefinition);
 
     if (sArgument.length())
-        this->CallTipSetHighlight(nArgStartPos, nArgStartPos + sArgument.length());
+        CallTipSetHighlight(nArgStartPos, nArgStartPos + sArgument.length());
+
+    m_isFunctionContext = true;
 }
 
 
@@ -1403,6 +1408,7 @@ void NumeReEditor::AdvCallTipCancel()
 {
     m_nCallTipStart = 0;
     m_sCallTipContent.clear();
+    m_isFunctionContext = false;
     CallTipCancel();
 }
 
@@ -1663,8 +1669,8 @@ void NumeReEditor::OnLeave(wxMouseEvent& event)
 /////////////////////////////////////////////////
 void NumeReEditor::OnLoseFocus(wxFocusEvent& event)
 {
-    if (this->CallTipActive())
-        this->AdvCallTipCancel();
+    if (CallTipActive())
+        AdvCallTipCancel();
 
     event.Skip();
 }
@@ -1683,7 +1689,11 @@ void NumeReEditor::OnLoseFocus(wxFocusEvent& event)
 /////////////////////////////////////////////////
 void NumeReEditor::OnMouseDwell(wxStyledTextEvent& event)
 {
-    if ((m_fileType != FILE_NSCR && m_fileType != FILE_NPRC) || m_PopUpActive || !this->HasFocus())
+    if ((m_fileType != FILE_NSCR && m_fileType != FILE_NPRC)
+        || m_PopUpActive
+        || m_isFunctionContext
+        || AutoCompActive()
+        || !HasFocus())
         return;
 
     int charpos = event.GetPosition();
@@ -1764,6 +1774,7 @@ void NumeReEditor::OnMouseDwell(wxStyledTextEvent& event)
         if (GetCharAt(charpos) != '$')
             startPosition--;
 
+        // If we are already showing this tooltip or the function context, do nothing
         if (CallTipActive() && m_nCallTipStart == startPosition)
             return;
 
@@ -5045,8 +5056,8 @@ bool NumeReEditor::isWrappedLine(int line)
 /////////////////////////////////////////////////
 void NumeReEditor::AsynchActions()
 {
-    if (!this->AutoCompActive()
-        && this->getEditorSetting(SETTING_INDENTONTYPE)
+    if (!AutoCompActive()
+        && getEditorSetting(SETTING_INDENTONTYPE)
         && (m_fileType == FILE_NSCR || m_fileType == FILE_NPRC || m_fileType == FILE_MATLAB || m_fileType == FILE_CPP)
         && !isNoAutoIndentionKey(m_nLastReleasedKey)
         && !HasSelection())
