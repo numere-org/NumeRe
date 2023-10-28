@@ -61,3 +61,5 @@ Added	The GUI element state "readonly" was added, which is identical to "disable
 Added	It is now possible to use custom window layouts as custom dialogs with "window WINID -get dialogresult"
 Added	The plot option margin=MARGIN can be used to control the plot margin size.
 Cleaned	The autocompletion feature does not interfere with any of the editor tooltips any more.
+Applied	Date-time columns are now automatically wide enough for their contents.
+Fixed	Plot marks now also scale with their corresponding line sizes.
