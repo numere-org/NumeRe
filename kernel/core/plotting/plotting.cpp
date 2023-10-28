@@ -1782,6 +1782,9 @@ bool Plot::plotstd(mglData& _mData, mglData& _mAxisVals, mglData _mData2[3], con
 
     int nNextStyle = _pInfo.nextStyle();
 
+    if (isdigit(_pInfo.sLineStyles[_pInfo.nStyle].back()))
+        _graph->SetMarkSize(_pInfo.sLineStyles[_pInfo.nStyle].back() - '0');
+
     if (nType == PT_FUNCTION)
     {
         if (_pData.getSettings(PlotData::LOG_REGION) && getNN(_mData2[0]) > 1) // Default region plot
@@ -3195,6 +3198,9 @@ bool Plot::plotstd3d(mglData _mData[3], mglData _mData2[3], const short nType)
 
     int nNextStyle = _pInfo.nextStyle();
 
+    if (isdigit(_pInfo.sLineStyles[_pInfo.nStyle].back()))
+        _graph->SetMarkSize(_pInfo.sLineStyles[_pInfo.nStyle].back() - '0');
+
     if (nType == PT_FUNCTION)
     {
         if (!_pData.getSettings(PlotData::LOG_AREA)
@@ -3434,6 +3440,7 @@ void Plot::setStyles()
 
         _pInfo.sContStyles[i] += _pData.getLineStyles()[i];
         _pInfo.sLineStyles[i] += _pData.getSettings(PlotData::STR_LINESIZES)[i];
+        _pInfo.sConPointStyles[i] += _pData.getSettings(PlotData::STR_LINESIZES)[i];
     }
 }
 

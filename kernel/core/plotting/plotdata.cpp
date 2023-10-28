@@ -1986,7 +1986,7 @@ void PlotData::reset()
     stringSettings[STR_CONTGREYS] =      "kwkwkwkwkwkwkwkwkwkw";
     stringSettings[STR_POINTSTYLES] =    " + x o s . d#+#x#.#* x o s . d#+#x#.#* +";
     stringSettings[STR_LINESTYLES] =     "----------;;;;;;;;;;";
-    stringSettings[STR_LINESIZES] =      "00000000000000000000";
+    stringSettings[STR_LINESIZES] =      "11111111111111111111";
     stringSettings[STR_GREYS] =          "kHhWkHhWkHhWkHhWkHhW";
     stringSettings[STR_LINESTYLESGREY] = "-|=;i:j|=;i:j-|=:i;-";
     stringSettings[STR_GRIDSTYLE] = "=h0-h0";
@@ -2065,7 +2065,7 @@ void PlotData::deleteData(bool bGraphFinished /* = false*/)
     stringSettings[STR_CONTGREYS] =      "kwkwkwkwkwkwkwkwkwkw";
     stringSettings[STR_POINTSTYLES] =    " + x o s . d#+#x#.#* x o s . d#+#x#.#* +";
     stringSettings[STR_LINESTYLES] =     "----------;;;;;;;;;;";
-    stringSettings[STR_LINESIZES] =      "00000000000000000000";
+    stringSettings[STR_LINESIZES] =      "11111111111111111111";
     stringSettings[STR_GREYS] =          "kHhWkHhWkHhWkHhWkHhW";
     stringSettings[STR_LINESTYLESGREY] = "-|=;i:j|=;i:j-|=:i;-";
     stringSettings[STR_FILENAME].clear();

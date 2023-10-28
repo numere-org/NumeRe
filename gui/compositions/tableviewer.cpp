@@ -150,6 +150,13 @@ void TableViewer::layoutGrid()
                 }
 
                 SetColAttr(j, attr);
+
+                if (m_currentColTypes[j] == TableColumn::TYPE_DATETIME)
+                {
+                    //AutoSizeColumn(j);
+                    SetColSize(j, 120);
+                    SetColMinimalWidth(j, 120);
+                }
             }
         }
 
