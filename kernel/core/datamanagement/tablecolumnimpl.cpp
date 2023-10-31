@@ -1716,7 +1716,7 @@ TableColumn* StringColumn::convert(ColumnType type)
             return nullptr;
     }
 
-    int numFormat = 0;
+    NumberFormat numFormat = NUM_NONE;
     if (convType == CONVTYPE_DATE_TIME)
         col = new DateTimeColumn(m_data.size());
     else if (convType == CONVTYPE_VALUE) {
@@ -2215,7 +2215,7 @@ TableColumn* CategoricalColumn::convert(ColumnType type)
     }
 
     // NEW Marco
-    int numFormat = 0;
+    NumberFormat numFormat = NUM_NONE;
     if (convType == CONVTYPE_DATE_TIME)
         col = new DateTimeColumn(m_data.size());
     else if (convType == CONVTYPE_VALUE) {

@@ -1826,7 +1826,7 @@ std::string replaceControlCharacters(std::string sToModify)
 
 
 // count and last position
-std::pair<int, int> countStringAppereance(std::string &str,const std::string &subStr){
+std::pair<int, int> countSubstringAppereance(std::string &str,const std::string &subStr){
     int cnt = 0;
     int lastPos = 0;
     size_t pos = str.find(subStr);
@@ -1841,7 +1841,7 @@ std::pair<int, int> countStringAppereance(std::string &str,const std::string &su
 
 //NEW from Marco
 #include <regex>
-int detectNumberFormat(std::vector<std::string> &sNumVec,const std::vector<int> &indizes){ //TODO
+NumberFormat detectNumberFormat(std::vector<std::string> &sNumVec,const std::vector<int> &indizes){ //TODO
     //pass by ref to not copy
 
     //there are two parts to take cate of:
@@ -1872,7 +1872,6 @@ int detectNumberFormat(std::vector<std::string> &sNumVec,const std::vector<int> 
 
     // 1 if '.' is for thousands and ',' is decimals
     // 2 if ',' is for thousands and '.' is decimals
-    int numVers = -1;
 
     // TODO:
     // what about 5.1+E10                               : should be fine
@@ -1898,72 +1897,72 @@ int detectNumberFormat(std::vector<std::string> &sNumVec,const std::vector<int> 
             std::string numToCheck =  match.str();
 
             // TODO new function to find all apperances ?
-            std::pair<int,int> dotAppears = countStringAppereance(numToCheck, ".");
-            std::pair<int,int> comAppears = countStringAppereance(numToCheck, ",");
+            std::pair<int,int> dotAppears = countSubstringAppereance(numToCheck, ".");
+            std::pair<int,int> comAppears = countSubstringAppereance(numToCheck, ",");
 
             // check for unique format apperances
             if(dotAppears.first > 0 && comAppears.first > 0){
                 if(dotAppears.second < comAppears.second && comAppears.first == 1){
-                    return 1;
+                    return NUM_EU;
                 } else if(comAppears.second < comAppears.second && comAppears.first == 1) {
-                    return 2;
+                    return NUM_US;
                 }
                 // non valid format
-                return -1;
+                return NUM_NONE;
             } else if(dotAppears.first > 0) {
                 if(dotAppears.first == 1) {
                     if(numToCheck.size() - (dotAppears.second+1) != 3){
                         // when not 3 digits after '.', it cannot be a thousands seperator and must be the decimal part
-                        return 2;
+                        return NUM_US;
                     } else if(dotAppears.second > 3){
                         // if there are more then 3 digits left to the '.' seperator it cannot be a thousands seperator
-                        return 2;
+                        return NUM_US;
                     }
                 } else {
                     // TODO here we should check if there is always 3 digits inbetween
                     // if so, '.' is the thousands seperator
-                    return 1;
+                    return NUM_EU;
                 }
             } else if(comAppears.first > 0) {
                 if(comAppears.first == 1) {
                     if(numToCheck.size() - (comAppears.second+1) != 3){
                         // when not 3 digits after ',', it cannot be a thousands seperator and must be the decimal part
-                        return 1;
+                        return NUM_EU;
                     } else if(comAppears.second > 3){
                         // if there are more then 3 digits left to the '.' seperator it cannot be a thousands seperator
-                        return 1;
+                        return NUM_EU;
                     }
                 } else {
                     // TODO here we should check if there is always 3 digits inbetween
                     // if so, '.' is the thousands seperator
-                    return 2;
+                    return NUM_US;
                 }
             }
             ++iterator;
         }
     }
 
-    return numVers;
+    return NUM_NONE;
 }
 
 // TODO
-void strChangeNumberFormat(std::string &sNum, int numFormat){
+void strChangeNumberFormat(std::string &sNum, NumberFormat numFormat){
     // TODO to correctly handle omplex numbers or stuff like +E10 do we have
     // to isolate numbers parts ?
     switch(numFormat){
-    case 1:
+    case NUM_EU:
         // '.' for thousands and ',' for decimals
         replaceAll(sNum, ".", "");
         replaceAll(sNum, ",", ".");
         break;
 
-    case 2:
+    case NUM_US:
         // '.' for thousands and ',' for decimals
         replaceAll(sNum, ",", "");
         //replaceAll(sNum, ".", "");
         break;
 
-    case -1:
+    case NUM_NONE:
 
         break;
     }

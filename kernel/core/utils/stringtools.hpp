@@ -130,6 +130,13 @@ enum TimeDateFormat
     TD_SEP_SLASH = 0x800000
 };
 
+enum NumberFormat
+{
+    NUM_NONE = 0x0,
+    NUM_EU = 0x1,  // '.' as thousand sep & ',' as decimal
+    NUM_US = 0x2   // ',' as thousand sep & ',' as decimal
+};
+
 std::string toString(int nNumber, const Settings& _option);
 std::string toString(double dNumber, const Settings& _option);
 std::string toString(double dNumber, int nPrecision = 7);
@@ -214,9 +221,9 @@ std::string ellipsize(const std::string& sLongString, size_t nMaxStringLength = 
 bool isEqualStripped(StringView str1, StringView str2);
 
 
-std::pair<int, int> countStringAppereance(std::string &str,const std::string &subStr);
-void strChangeNumberFormat(std::string &sNum, int numFormat);
-int detectNumberFormat(std::vector<std::string> &sNumVec,const std::vector<int> &indizes = std::vector<int>());
+std::pair<int, int> countSubstringAppereance(std::string &str,const std::string &subStr);
+void strChangeNumberFormat(std::string &sNum, NumberFormat numFormat);
+NumberFormat detectNumberFormat(std::vector<std::string> &sNumVec,const std::vector<int> &indizes = std::vector<int>());
 
 #endif // STRINGTOOLS_HPP
 
