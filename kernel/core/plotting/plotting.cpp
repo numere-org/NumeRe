@@ -2292,46 +2292,144 @@ void Plot::create2dDrawing(vector<string>& vDrawVector)
             if (nFunctions < 4)
                 continue;
             if (nFunctions < 6)
-                _graph->Face(mglPoint(vResults[2] - vResults[3] + vResults[1], vResults[3] + vResults[2] - vResults[0]),
+                {
+                    if (sStyle.substr(0, 1) == "#")
+                    {
+                        mglPoint point1 = mglPoint(vResults[2] - vResults[3] + vResults[1], vResults[3] + vResults[2] - vResults[0]);
+                        mglPoint point2 = mglPoint(vResults[2], vResults[3]);
+                        mglPoint point3 = mglPoint(vResults[0] - vResults[3] + vResults[1], vResults[1] + vResults[2] - vResults[0]);
+                        mglPoint point4 = mglPoint(vResults[0], vResults[1]);
+
+                        _graph->Line(point4, point2, sStyle.c_str());
+                        _graph->Line(point2, point1, sStyle.c_str());
+                        _graph->Line(point1, point3, sStyle.c_str());
+                        _graph->Line(point3, point4, sStyle.c_str());
+                    }
+                    else
+                        _graph->Face(mglPoint(vResults[2] - vResults[3] + vResults[1], vResults[3] + vResults[2] - vResults[0]),
                              mglPoint(vResults[2], vResults[3]),
                              mglPoint(vResults[0] - vResults[3] + vResults[1], vResults[1] + vResults[2] - vResults[0]),
                              mglPoint(vResults[0], vResults[1]),
                              sStyle.c_str());
+                 }
+
             else if (nFunctions < 8)
-                _graph->Face(mglPoint(vResults[4], vResults[5]),
-                             mglPoint(vResults[2], vResults[3]),
-                             mglPoint(vResults[0] + vResults[4] - vResults[2], vResults[1] + vResults[5] - vResults[3]),
-                             mglPoint(vResults[0], vResults[1]),
-                             sStyle.c_str());
+               {
+                   if (sStyle.substr(0, 1) == "#")
+                   {
+                       mglPoint point1 = mglPoint(vResults[4], vResults[5]);
+                        mglPoint point2 = mglPoint(vResults[2], vResults[3]);
+                        mglPoint point3 = mglPoint(vResults[0] + vResults[4] - vResults[2], vResults[1] + vResults[5] - vResults[3] + vResults[1], vResults[1] + vResults[2] - vResults[0]);
+                        mglPoint point4 = mglPoint(vResults[0], vResults[1]);
+
+                         _graph->Line(point4, point2, sStyle.c_str());
+                         _graph->Line(point2, point1, sStyle.c_str());
+                         _graph->Line(point1, point3, sStyle.c_str());
+                         _graph->Line(point3, point4, sStyle.c_str());
+                   }
+                   else
+                   {
+                       _graph->Face(mglPoint(vResults[4], vResults[5]),
+                                    mglPoint(vResults[2], vResults[3]),
+                                    mglPoint(vResults[0] + vResults[4] - vResults[2], vResults[1] + vResults[5] - vResults[3]),
+                                    mglPoint(vResults[0], vResults[1]),
+                                    sStyle.c_str());
+                   }
+                 }
             else
-                _graph->Face(mglPoint(vResults[4], vResults[5]),
-                             mglPoint(vResults[2], vResults[3]),
-                             mglPoint(vResults[6], vResults[7]),
-                             mglPoint(vResults[0], vResults[1]),
-                             sStyle.c_str());
+                if (sStyle.substr(0, 1) == "#")
+                    {
+                        mglPoint point1 = mglPoint(vResults[4], vResults[5]);
+                        mglPoint point2 = mglPoint(vResults[2], vResults[3]);
+                        mglPoint point3 = mglPoint(vResults[6], vResults[7]);
+                        mglPoint point4 = mglPoint(vResults[0], vResults[1]);
+
+                        _graph->Line(point4, point2, sStyle.c_str());
+                        _graph->Line(point2, point1, sStyle.c_str());
+                        _graph->Line(point1, point3, sStyle.c_str());
+                        _graph->Line(point3, point4, sStyle.c_str());
+                   }
+                else
+                    _graph->Face(mglPoint(vResults[4], vResults[5]),
+                                 mglPoint(vResults[2], vResults[3]),
+                                 mglPoint(vResults[6], vResults[7]),
+                                 mglPoint(vResults[0], vResults[1]),
+                                 sStyle.c_str());
         }
         else if (sCurrentDrawingFunction.substr(0, 6) == "facev(")
         {
             if (nFunctions < 4)
                 continue;
             if (nFunctions < 6)
-                _graph->Face(mglPoint(vResults[0] + vResults[2] - vResults[3], vResults[1] + vResults[3] + vResults[2]),
-                             mglPoint(vResults[0] + vResults[2], vResults[1] + vResults[3]),
-                             mglPoint(vResults[0] - vResults[3], vResults[1] + vResults[2]),
-                             mglPoint(vResults[0], vResults[1]),
-                             sStyle.c_str());
+                {
+                    if (sStyle.substr(0, 1) == "#")
+                    {
+                        mglPoint point1 = mglPoint(vResults[0] + vResults[2] - vResults[3], vResults[1] + vResults[3] + vResults[2]);
+                        mglPoint point2 = mglPoint(vResults[0] + vResults[2], vResults[1] + vResults[3]);
+                        mglPoint point3 = mglPoint(vResults[0] - vResults[3] + vResults[1], vResults[1] + vResults[2] - vResults[0]);
+                        mglPoint point4 = mglPoint(vResults[0], vResults[1]);
+
+                        _graph->Line(point4, point2, sStyle.c_str());
+                        _graph->Line(point2, point1, sStyle.c_str());
+                        _graph->Line(point1, point3, sStyle.c_str());
+                        _graph->Line(point3, point4, sStyle.c_str());
+                    }
+                    else
+                    {
+                        _graph->Face(mglPoint(vResults[0] + vResults[2] - vResults[3], vResults[1] + vResults[3] + vResults[2]),
+                         mglPoint(vResults[0] + vResults[2], vResults[1] + vResults[3]),
+                         mglPoint(vResults[0] - vResults[3], vResults[1] + vResults[2]),
+                         mglPoint(vResults[0], vResults[1]),
+                         sStyle.c_str());
+                    }
+                }
             else if (nFunctions < 8)
-                _graph->Face(mglPoint(vResults[0] + vResults[4] + vResults[2], vResults[1] + vResults[3] + vResults[5]),
-                             mglPoint(vResults[0] + vResults[2], vResults[1] + vResults[3]),
-                             mglPoint(vResults[0] + vResults[4], vResults[1] + vResults[5]),
-                             mglPoint(vResults[0], vResults[1]),
-                             sStyle.c_str());
+                {
+                    if (sStyle.substr(0, 1) == "#")
+                    {
+                        mglPoint point1 = mglPoint(vResults[0] + vResults[4] + vResults[2], vResults[1] + vResults[3] + vResults[5]);
+                        mglPoint point2 = mglPoint(vResults[0] + vResults[2], vResults[1] + vResults[3]);
+                        mglPoint point3 = mglPoint(vResults[0] + vResults[4], vResults[1] + vResults[5]);
+                        mglPoint point4 = mglPoint(vResults[0], vResults[1]);
+
+                        _graph->Line(point4, point2, sStyle.c_str());
+                        _graph->Line(point2, point1, sStyle.c_str());
+                        _graph->Line(point1, point3, sStyle.c_str());
+                        _graph->Line(point3, point4, sStyle.c_str());
+                    }
+                    else
+                    {
+                        _graph->Face(mglPoint(vResults[0] + vResults[2] - vResults[3], vResults[1] + vResults[3] + vResults[2]),
+                         mglPoint(vResults[0] + vResults[2], vResults[1] + vResults[3]),
+                         mglPoint(vResults[0] - vResults[3], vResults[1] + vResults[2]),
+                         mglPoint(vResults[0], vResults[1]),
+                         sStyle.c_str());
+                    }
+                }
+
             else
-                _graph->Face(mglPoint(vResults[0] + vResults[4], vResults[1] + vResults[5]),
+            {
+                if (sStyle.substr(0, 1) == "#")
+                    {
+                        mglPoint point1 = mglPoint(vResults[0] + vResults[4], vResults[1] + vResults[5]);
+                        mglPoint point2 = mglPoint(vResults[0] + vResults[2], vResults[1] + vResults[3]);
+                        mglPoint point3 = mglPoint(vResults[0] + vResults[6], vResults[1] + vResults[7]);
+                        mglPoint point4 = mglPoint(vResults[0], vResults[1]);
+
+                        _graph->Line(point4, point2, sStyle.c_str());
+                        _graph->Line(point2, point1, sStyle.c_str());
+                        _graph->Line(point1, point3, sStyle.c_str());
+                        _graph->Line(point3, point4, sStyle.c_str());
+                    }
+                    else
+                    {
+                        _graph->Face(mglPoint(vResults[0] + vResults[4], vResults[1] + vResults[5]),
                              mglPoint(vResults[0] + vResults[2], vResults[1] + vResults[3]),
                              mglPoint(vResults[0] + vResults[6], vResults[1] + vResults[7]),
                              mglPoint(vResults[0], vResults[1]),
                              sStyle.c_str());
+                    }
+            }
         }
         else if (sCurrentDrawingFunction.substr(0, 9) == "triangle(")
         {
@@ -2554,46 +2652,153 @@ void Plot::create3dDrawing(vector<string>& vDrawVector)
             if (nFunctions < 6)
                 continue;
             if (nFunctions < 9)
-                _graph->Face(mglPoint(vResults[3] - vResults[4] + vResults[1], vResults[4] + vResults[3] - vResults[0], vResults[5]),
+                 {
+                   if (sStyle.substr(0, 1) == "#")
+                   {
+                       mglPoint point1 = mglPoint(vResults[3] - vResults[4] + vResults[1], vResults[4] + vResults[3] - vResults[0], vResults[5]);
+                        mglPoint point2 = mglPoint(vResults[0] + vResults[3], vResults[1] + vResults[4], vResults[2] + vResults[5]);
+                        mglPoint point3 = mglPoint(vResults[0] - vResults[4] + vResults[1], vResults[1] + vResults[3] - vResults[0], vResults[2]);
+                        mglPoint point4 = mglPoint(vResults[0], vResults[1], vResults[2]);
+
+                         _graph->Line(point4, point2, sStyle.c_str());
+                         _graph->Line(point2, point1, sStyle.c_str());
+                         _graph->Line(point1, point3, sStyle.c_str());
+                         _graph->Line(point3, point4, sStyle.c_str());
+                   }
+                   else
+                   {
+                        _graph->Face(mglPoint(vResults[3] - vResults[4] + vResults[1], vResults[4] + vResults[3] - vResults[0], vResults[5]),
                              mglPoint(vResults[0] + vResults[3], vResults[1] + vResults[4], vResults[2] + vResults[5]),
                              mglPoint(vResults[0] - vResults[4] + vResults[1], vResults[1] + vResults[3] - vResults[0], vResults[2]),
                              mglPoint(vResults[0], vResults[1], vResults[2]),
                              sStyle.c_str());
+                   }
+                 }
+
             else if (nFunctions < 12)
-                _graph->Face(mglPoint(vResults[6], vResults[7], vResults[8]),
+                {
+                   if (sStyle.substr(0, 1) == "#")
+                   {
+                       mglPoint point1 = mglPoint(vResults[6], vResults[7], vResults[8]);
+                        mglPoint point2 = mglPoint(vResults[3], vResults[4], vResults[5]);
+                        mglPoint point3 = mglPoint(vResults[0] + vResults[6] - vResults[3], vResults[1] + vResults[7] - vResults[4], vResults[2] + vResults[8] - vResults[5]);
+                        mglPoint point4 = mglPoint(vResults[0], vResults[1], vResults[2]);
+
+                         _graph->Line(point4, point2, sStyle.c_str());
+                         _graph->Line(point2, point1, sStyle.c_str());
+                         _graph->Line(point1, point3, sStyle.c_str());
+                         _graph->Line(point3, point4, sStyle.c_str());
+                   }
+                   else
+                   {
+                        _graph->Face(mglPoint(vResults[6], vResults[7], vResults[8]),
                              mglPoint(vResults[3], vResults[4], vResults[5]),
                              mglPoint(vResults[0] + vResults[6] - vResults[3], vResults[1] + vResults[7] - vResults[4], vResults[2] + vResults[8] - vResults[5]),
                              mglPoint(vResults[0], vResults[1], vResults[2]),
                              sStyle.c_str());
+                   }
+                 }
+
             else
-                _graph->Face(mglPoint(vResults[6], vResults[7], vResults[8]),
+                {
+                   if (sStyle.substr(0, 1) == "#")
+                   {
+                       mglPoint point1 = mglPoint(vResults[6], vResults[7], vResults[8]);
+                        mglPoint point2 = mglPoint(vResults[3], vResults[4], vResults[5]);
+                        mglPoint point3 = mglPoint(vResults[0] + vResults[6] - vResults[3], vResults[1] + vResults[7] - vResults[4], vResults[2] + vResults[8] - vResults[5]);
+                        mglPoint point4 = mglPoint(vResults[0], vResults[1], vResults[2]);
+
+                         _graph->Line(point4, point2, sStyle.c_str());
+                         _graph->Line(point2, point1, sStyle.c_str());
+                         _graph->Line(point1, point3, sStyle.c_str());
+                         _graph->Line(point3, point4, sStyle.c_str());
+                   }
+                   else
+                   {
+                        _graph->Face(mglPoint(vResults[6], vResults[7], vResults[8]),
                              mglPoint(vResults[3], vResults[4], vResults[5]),
                              mglPoint(vResults[9], vResults[10], vResults[11]),
                              mglPoint(vResults[0], vResults[1], vResults[2]),
                              sStyle.c_str());
+                   }
+                 }
+
         }
         else if (sCurrentDrawingFunction.substr(0, 6) == "facev(")
         {
             if (nFunctions < 6)
                 continue;
             if (nFunctions < 9)
-                _graph->Face(mglPoint(vResults[0] + vResults[3] - vResults[4], vResults[1] + vResults[4] + vResults[3], vResults[5] + vResults[2]),
+                {
+                   if (sStyle.substr(0, 1) == "#")
+                   {
+                       mglPoint point1 = mglPoint(vResults[0] + vResults[3] - vResults[4], vResults[1] + vResults[4] + vResults[3], vResults[5] + vResults[2]);
+                        mglPoint point2 = mglPoint(vResults[0] + vResults[3], vResults[1] + vResults[4], vResults[5] + vResults[2]);
+                        mglPoint point3 = mglPoint(vResults[0] - vResults[4], vResults[1] + vResults[3], vResults[2]);
+                        mglPoint point4 = mglPoint(vResults[0], vResults[1], vResults[2]);
+
+                         _graph->Line(point4, point2, sStyle.c_str());
+                         _graph->Line(point2, point1, sStyle.c_str());
+                         _graph->Line(point1, point3, sStyle.c_str());
+                         _graph->Line(point3, point4, sStyle.c_str());
+                   }
+                   else
+                   {
+                        _graph->Face(mglPoint(vResults[0] + vResults[3] - vResults[4], vResults[1] + vResults[4] + vResults[3], vResults[5] + vResults[2]),
                              mglPoint(vResults[0] + vResults[3], vResults[1] + vResults[4], vResults[5] + vResults[2]),
                              mglPoint(vResults[0] - vResults[4], vResults[1] + vResults[3], vResults[2]),
                              mglPoint(vResults[0], vResults[1], vResults[2]),
                              sStyle.c_str());
+                   }
+                 }
+
             else if (nFunctions < 12)
-                _graph->Face(mglPoint(vResults[0] + vResults[6] + vResults[3], vResults[1] + vResults[7] + vResults[4], vResults[2] + vResults[8] + vResults[5]),
+                {
+                   if (sStyle.substr(0, 1) == "#")
+                   {
+                       mglPoint point1 = mglPoint(vResults[0] + vResults[6] + vResults[3], vResults[1] + vResults[7] + vResults[4], vResults[2] + vResults[8] + vResults[5]);
+                        mglPoint point2 = mglPoint(vResults[0] + vResults[6], vResults[1] + vResults[4], vResults[2] + vResults[5]);
+                        mglPoint point3 = mglPoint(vResults[0] + vResults[3], vResults[1] + vResults[7], vResults[2] + vResults[8]);
+                        mglPoint point4 = mglPoint(vResults[0], vResults[1], vResults[2]);
+
+                         _graph->Line(point4, point2, sStyle.c_str());
+                         _graph->Line(point2, point1, sStyle.c_str());
+                         _graph->Line(point1, point3, sStyle.c_str());
+                         _graph->Line(point3, point4, sStyle.c_str());
+                   }
+                   else
+                   {
+                        _graph->Face(mglPoint(vResults[0] + vResults[6] + vResults[3], vResults[1] + vResults[7] + vResults[4], vResults[2] + vResults[8] + vResults[5]),
                              mglPoint(vResults[0] + vResults[6], vResults[1] + vResults[4], vResults[2] + vResults[5]),
                              mglPoint(vResults[0] + vResults[3], vResults[1] + vResults[7], vResults[2] + vResults[8]),
                              mglPoint(vResults[0], vResults[1], vResults[2]),
                              sStyle.c_str());
+                   }
+                 }
+
             else
-                _graph->Face(mglPoint(vResults[0] + vResults[6], vResults[1] + vResults[7], vResults[2] + vResults[8]),
+                {
+                   if (sStyle.substr(0, 1) == "#")
+                   {
+                        mglPoint point1 = mglPoint(vResults[0] + vResults[6] + vResults[3], vResults[1] + vResults[7] + vResults[4], vResults[2] + vResults[8] + vResults[5]);
+                        mglPoint point2 = mglPoint(vResults[0] + vResults[6], vResults[1] + vResults[4], vResults[2] + vResults[5]);
+                        mglPoint point3 = mglPoint(vResults[0] + vResults[3], vResults[1] + vResults[7], vResults[2] + vResults[8]);
+                        mglPoint point4 = mglPoint(vResults[0], vResults[1], vResults[2]);
+
+                        _graph->Line(point4, point2, sStyle.c_str());
+                        _graph->Line(point2, point1, sStyle.c_str());
+                        _graph->Line(point1, point3, sStyle.c_str());
+                        _graph->Line(point3, point4, sStyle.c_str());
+                   }
+                   else
+                   {
+                        _graph->Face(mglPoint(vResults[0] + vResults[6], vResults[1] + vResults[7], vResults[2] + vResults[8]),
                              mglPoint(vResults[0] + vResults[3], vResults[1] + vResults[4], vResults[2] + vResults[5]),
                              mglPoint(vResults[0] + vResults[9], vResults[1] + vResults[10], vResults[2] + vResults[11]),
                              mglPoint(vResults[0], vResults[1], vResults[2]),
                              sStyle.c_str());
+                   }
+                 }
         }
         else if (sCurrentDrawingFunction.substr(0, 9) == "triangle(")
         {
