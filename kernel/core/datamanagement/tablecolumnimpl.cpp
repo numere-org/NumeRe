@@ -1716,10 +1716,16 @@ TableColumn* StringColumn::convert(ColumnType type)
             return nullptr;
     }
 
+    int numFormat = 0;
     if (convType == CONVTYPE_DATE_TIME)
         col = new DateTimeColumn(m_data.size());
-    else if (convType == CONVTYPE_VALUE)
+    else if (convType == CONVTYPE_VALUE) {
+        // NEW Marco
+        // function to check for number format
+        //m_categories[m_data[i]]
+        numFormat = detectNumberFormat(m_data);
         col = new ValueColumn(m_data.size());
+    }
     else if (convType == CONVTYPE_LOGICAL)
         col = new LogicalColumn(m_data.size());
 
@@ -1733,8 +1739,10 @@ TableColumn* StringColumn::convert(ColumnType type)
             col->setValue(i, -INFINITY);
         else if (convType == CONVTYPE_VALUE)
         {
+            // TODO Marco 1
             std::string strval = m_data[i];
-            replaceAll(strval, ",", ".");
+            strChangeNumberFormat(strval, numFormat);
+            //replaceAll(strval, ",", ".");
             col->setValue(i, !isConvertible(strval, CONVTYPE_VALUE)
                              ? StrToLogical(strval)
                              : StrToCmplx(strval));
@@ -2206,10 +2214,17 @@ TableColumn* CategoricalColumn::convert(ColumnType type)
             return nullptr;
     }
 
+    // NEW Marco
+    int numFormat = 0;
     if (convType == CONVTYPE_DATE_TIME)
         col = new DateTimeColumn(m_data.size());
-    else if (convType == CONVTYPE_VALUE)
+    else if (convType == CONVTYPE_VALUE) {
+        // NEW Marco
+        // function to check for number format
+        //m_categories[m_data[i]]
+        numFormat = detectNumberFormat(m_categories, m_data);
         col = new ValueColumn(m_data.size());
+    }
     else if (convType == CONVTYPE_LOGICAL)
         col = new LogicalColumn(m_data.size());
 
@@ -2223,8 +2238,10 @@ TableColumn* CategoricalColumn::convert(ColumnType type)
             col->setValue(i, -INFINITY);
         else if (convType == CONVTYPE_VALUE)
         {
+            // TODO New Marco 2
             std::string strval = m_categories[m_data[i]];
-            replaceAll(strval, ",", ".");
+            strChangeNumberFormat(strval, numFormat);
+            //replaceAll(strval, ",", ".");
             col->setValue(i, StrToCmplx(strval));
         }
         else if (convType == CONVTYPE_LOGICAL)

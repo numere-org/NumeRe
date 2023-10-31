@@ -213,6 +213,11 @@ std::string ellipsize(const std::string& sLongString, size_t nMaxStringLength = 
 
 bool isEqualStripped(StringView str1, StringView str2);
 
+
+std::pair<int, int> countStringAppereance(std::string &str,const std::string &subStr);
+void strChangeNumberFormat(std::string &sNum, int numFormat);
+int detectNumberFormat(std::vector<std::string> &sNumVec,const std::vector<int> &indizes = std::vector<int>());
+
 #endif // STRINGTOOLS_HPP
 
 

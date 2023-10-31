@@ -1760,7 +1760,6 @@ void replaceAll(MutableStringView sToModify, const char* sToRep, const char* sNe
     }
 }
 
-
 /////////////////////////////////////////////////
 /// \brief This function replaces all occurences
 /// of the string sToRep in the string sToModify
@@ -1823,6 +1822,151 @@ std::string replaceControlCharacters(std::string sToModify)
     replaceAll(sToModify, "\t", "\\t");
 
     return sToModify;
+}
+
+
+// count and last position
+std::pair<int, int> countStringAppereance(std::string &str,const std::string &subStr){
+    int cnt = 0;
+    int lastPos = 0;
+    size_t pos = str.find(subStr);
+    while (pos != std::string::npos) {
+        cnt++;
+        lastPos = pos;
+        pos = str.find(subStr, pos + 1);
+    }
+
+    return std::pair<int, int>(cnt, lastPos);
+}
+
+//NEW from Marco
+#include <regex>
+int detectNumberFormat(std::vector<std::string> &sNumVec,const std::vector<int> &indizes){ //TODO
+    //pass by ref to not copy
+
+    //there are two parts to take cate of:
+    // - thousands separator, which can be '.' or ',' however there are always 3 digits inbetween
+    // - decimal fraction, whoich can also be '.' or ',' and should be used vice versa to the thousands seperator
+    // if only one is in the string, we can assume it is the decimal fraction ?
+
+    // wenn über alle werte in col:
+    // split in single nums
+    // count ',' and '.' per number & what of both was accured last
+    // if one char always accures 1 or 0
+    // -> if ',' always last this is decimal
+    // elseif '.' always 1 or 0 and last ?
+    // -> '.' decimal
+    // elif only ',' & more often than 1 -> ',' is thousands sep
+    // only '-' & more often than 1 -> '.'
+
+
+    // V1 :
+    // we assume all Numbers are from same style
+    // further we assume all are correct
+    // therfore we can skip the loop as soon as we find a unique example:
+    // these are:
+    //      -> both '.' & ',' in the same Number use accordingly
+    //      -> one char appearse more often then once in Number & there are 3 digits inbetween:
+    //      -> one char appearse once, but after the car are != 3 digits
+
+
+    // 1 if '.' is for thousands and ',' is decimals
+    // 2 if ',' is for thousands and '.' is decimals
+    int numVers = -1;
+
+    // TODO:
+    // what about 5.1+E10                               : should be fine
+    // what about + 2.1i or 2.1*I                       : should be fine too
+    // could there be something like 1 000 000 ?
+
+    int apperances[] = {0,0};
+    int len = indizes.empty() ? sNumVec.size() : indizes.size();
+    for(int i = 0; i < len; i++){
+        int idx = i;
+        if(!indizes.empty())
+            idx = indizes[i];
+        std::string sNum = sNumVec[idx];    //TODO no copy when big data chunks thatas bad
+
+        // loop through string to find numerical substrings, where we change str format ?
+        // or can I use regex?
+        std::regex pattern("[0-9.,]+");
+        std::sregex_iterator iterator(sNum.begin(), sNum.end(), pattern);
+        std::sregex_iterator end;
+
+        while (iterator != end) {
+            std::smatch match = *iterator;
+            std::string numToCheck =  match.str();
+
+            // TODO new function to find all apperances ?
+            std::pair<int,int> dotAppears = countStringAppereance(numToCheck, ".");
+            std::pair<int,int> comAppears = countStringAppereance(numToCheck, ",");
+
+            // check for unique format apperances
+            if(dotAppears.first > 0 && comAppears.first > 0){
+                if(dotAppears.second < comAppears.second && comAppears.first == 1){
+                    return 1;
+                } else if(comAppears.second < comAppears.second && comAppears.first == 1) {
+                    return 2;
+                }
+                // non valid format
+                return -1;
+            } else if(dotAppears.first > 0) {
+                if(dotAppears.first == 1) {
+                    if(numToCheck.size() - (dotAppears.second+1) != 3){
+                        // when not 3 digits after '.', it cannot be a thousands seperator and must be the decimal part
+                        return 2;
+                    } else if(dotAppears.second > 3){
+                        // if there are more then 3 digits left to the '.' seperator it cannot be a thousands seperator
+                        return 2;
+                    }
+                } else {
+                    // TODO here we should check if there is always 3 digits inbetween
+                    // if so, '.' is the thousands seperator
+                    return 1;
+                }
+            } else if(comAppears.first > 0) {
+                if(comAppears.first == 1) {
+                    if(numToCheck.size() - (comAppears.second+1) != 3){
+                        // when not 3 digits after ',', it cannot be a thousands seperator and must be the decimal part
+                        return 1;
+                    } else if(comAppears.second > 3){
+                        // if there are more then 3 digits left to the '.' seperator it cannot be a thousands seperator
+                        return 1;
+                    }
+                } else {
+                    // TODO here we should check if there is always 3 digits inbetween
+                    // if so, '.' is the thousands seperator
+                    return 2;
+                }
+            }
+            ++iterator;
+        }
+    }
+
+    return numVers;
+}
+
+// TODO
+void strChangeNumberFormat(std::string &sNum, int numFormat){
+    // TODO to correctly handle omplex numbers or stuff like +E10 do we have
+    // to isolate numbers parts ?
+    switch(numFormat){
+    case 1:
+        // '.' for thousands and ',' for decimals
+        replaceAll(sNum, ".", "");
+        replaceAll(sNum, ",", ".");
+        break;
+
+    case 2:
+        // '.' for thousands and ',' for decimals
+        replaceAll(sNum, ",", "");
+        //replaceAll(sNum, ".", "");
+        break;
+
+    case -1:
+
+        break;
+    }
 }
 
 
