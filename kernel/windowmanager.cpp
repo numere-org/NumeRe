@@ -43,6 +43,7 @@ namespace NumeRe
         m_customWindow = nullptr;
         nWindowID = std::string::npos;
         m_layout = nullptr;
+        m_closing = false;
     }
 
 
@@ -218,6 +219,8 @@ namespace NumeRe
     {
         if (m_manager)
             m_manager->updateWindowInformation(WindowInformation(nWindowID, status == STATUS_RUNNING ? this : nullptr, status, _return));
+
+        m_closing = status != STATUS_RUNNING;
     }
 
 
@@ -240,6 +243,10 @@ namespace NumeRe
                 return m_customWindow->getWindowItems(CustomWindow::BUTTON);
             else if (_selection == "textfield")
                 return m_customWindow->getWindowItems(CustomWindow::TEXTCTRL);
+            else if (_selection == "lamp")
+                return m_customWindow->getWindowItems(CustomWindow::LAMP);
+            else if (_selection == "datetimepicker")
+                return m_customWindow->getWindowItems(CustomWindow::DATETIMEPICKER);
             else if (_selection == "dropdown")
                 return m_customWindow->getWindowItems(CustomWindow::DROPDOWN);
             else if (_selection == "combobox")
@@ -390,6 +397,46 @@ namespace NumeRe
     {
         if (m_customWindow)
             return m_customWindow->getProperties().ToStdString();
+
+        return "\"\"";
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Returns the status text in this window.
+    ///
+    /// \return std::string
+    ///
+    /////////////////////////////////////////////////
+    std::string Window::getStatusText() const
+    {
+        if (m_customWindow)
+            return m_customWindow->getStatusText().ToStdString();
+
+        return "\"\"";
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Show this window as a dialog.
+    ///
+    /// \return std::string
+    ///
+    /////////////////////////////////////////////////
+    std::string Window::dialog()
+    {
+        if (m_customWindow)
+        {
+            m_customWindow->asDialog();
+
+            do
+            {
+                Sleep(100);
+            }
+            while (!m_closing && m_customWindow->isDialog());
+
+            return m_closing ? "\"\"" : m_customWindow->getDialogResult().ToStdString();
+        }
 
         return "\"\"";
     }
@@ -572,6 +619,23 @@ namespace NumeRe
 
             return true;
         }
+
+        return false;
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief This function changes the status text
+    /// of the selected window.
+    ///
+    /// \param _value const std::string&
+    /// \return bool
+    ///
+    /////////////////////////////////////////////////
+    bool Window::setStatusText(const std::string& _value)
+    {
+        if (m_customWindow)
+            return m_customWindow->setStatusText(_value);
 
         return false;
     }

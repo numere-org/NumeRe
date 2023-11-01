@@ -328,7 +328,7 @@ static StringVector strfnc_getfilelist(StringFuncArgs& funcArgs)
     if (funcArgs.nArg1 == DEFAULT_NUM_ARG)
         funcArgs.nArg1 = 0;
 
-    std::vector<std::string> vFileList = getFileList(funcArgs.sArg1.view().to_string(), *(funcArgs.opt), funcArgs.nArg1);
+    std::vector<std::string> vFileList = NumeReKernel::getInstance()->getFileSystem().getFileList(funcArgs.sArg1.view().to_string(), funcArgs.nArg1);
     StringVector sFileList;
 
     for (size_t i = 0; i < vFileList.size(); i++)
@@ -356,7 +356,7 @@ static StringVector strfnc_getfolderlist(StringFuncArgs& funcArgs)
     if (funcArgs.nArg1 == DEFAULT_NUM_ARG)
         funcArgs.nArg1 = 0;
 
-    std::vector<std::string> vFolderList = getFolderList(funcArgs.sArg1.view().to_string(), *(funcArgs.opt), funcArgs.nArg1);
+    std::vector<std::string> vFolderList = NumeReKernel::getInstance()->getFileSystem().getFolderList(funcArgs.sArg1.view().to_string(), funcArgs.nArg1);
     StringVector sFolderList;
 
     for (size_t i = 0; i < vFolderList.size(); i++)

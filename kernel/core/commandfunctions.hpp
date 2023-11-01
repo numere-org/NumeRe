@@ -4926,7 +4926,7 @@ static CommandReturnValues cmd_load(string& sCmd)
                 std::string sTargetTable = getTargetTable(cmdParser.getParameterList());
 
                 NumeRe::FileHeaderInfo info = _data.openFile(sFileName, true, cmdParser.hasParam("ignore") || cmdParser.hasParam("i"),
-                                              nArgument, sTargetTable, sFileFormat);
+                                                             nArgument, sTargetTable, sFileFormat);
 
                 if (!_data.isEmpty(info.sTableName))
                 {
@@ -4949,7 +4949,7 @@ static CommandReturnValues cmd_load(string& sCmd)
                 if (sFileName.find('/') == string::npos)
                     sFileName = "<loadpath>/" + sFileName;
 
-                vector<string> vFilelist = getFileList(sFileName, _option, 1);
+                std::vector<std::string> vFilelist = NumeReKernel::getInstance()->getFileSystem().getFileList(sFileName, FileSystem::FULLPATH);
 
                 if (!vFilelist.size())
                     throw SyntaxError(SyntaxError::FILE_NOT_EXIST, sCmd, sFileName, sFileName);
@@ -4978,7 +4978,7 @@ static CommandReturnValues cmd_load(string& sCmd)
                     if (sFileName.find('/') == string::npos)
                         sFileName = "<loadpath>/" + sFileName;
 
-                    vector<string> vFilelist = getFileList(sFileName, _option, 1);
+                    std::vector<std::string> vFilelist = NumeReKernel::getInstance()->getFileSystem().getFileList(sFileName, FileSystem::FULLPATH);
 
                     if (!vFilelist.size())
                         throw SyntaxError(SyntaxError::FILE_NOT_EXIST, sCmd, sFileName, sFileName);
@@ -4986,7 +4986,7 @@ static CommandReturnValues cmd_load(string& sCmd)
                     for (size_t i = 0; i < vFilelist.size(); i++)
                     {
                         // Melting is done automatically
-                        _data.openFile(vFilelist[i], false, false, nArgument, sFileFormat);
+                        _data.openFile(vFilelist[i], false, false, nArgument, "", sFileFormat);
                     }
 
                     if (!_data.isEmpty("data") && _option.systemPrints())

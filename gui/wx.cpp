@@ -33,6 +33,7 @@
 
 #include "../common/datastructures.h"
 #include "../kernel/core/ui/language.hpp"
+#include "../kernel/core/utils/stringtools.hpp"
 
 #include "terminal/terminal.hpp"
 #include "graphviewer.hpp"
@@ -800,6 +801,32 @@ wxImage wxMGL::ConvertFromGraph()
 
 
 /////////////////////////////////////////////////
+/// \brief Convert a mglPoint to a string
+/// representation.
+///
+/// \param p mglPoint&
+/// \return std::string
+///
+/////////////////////////////////////////////////
+std::string wxMGL::pointToString(mglPoint& p) const
+{
+    std::string sFormatted = "[";
+
+    if (timeAxes[0].use)
+        sFormatted += toString(to_timePoint(p.x), GET_SHORTEST);
+    else
+        sFormatted += toString(p.x, 5);
+
+    if (timeAxes[1].use)
+        sFormatted += " / " + toString(to_timePoint(p.y), GET_SHORTEST);
+    else
+        sFormatted += " / " + toString(p.y, 5);
+
+    return sFormatted + "]";
+}
+
+
+/////////////////////////////////////////////////
 /// \brief This member function sets the current
 /// drawing as new bitmap and applies the view
 /// modifications in advance.
@@ -1019,18 +1046,20 @@ void wxMGL::OnMouseMove(wxMouseEvent &ev)
     mouse_y1 = ev.GetY();
     mglPoint p = gr->CalcXYZ(mouse_x1, mouse_y1);
 
+    std::string sFormatted = pointToString(p);
+
     if (zoomactive)
     {
-        mglPoint start = gr->CalcXYZ(mouse_x0,mouse_y0);
-        MousePos.Printf(wxT("[%.4g, %.4g] --> [%.4g, %.4g]"), start.x, start.y, p.x, p.y);
+        mglPoint start = gr->CalcXYZ(mouse_x0, mouse_y0);
+        sFormatted = pointToString(start) + " --> " + sFormatted;
     }
     else if (drawModeActive && drawMode != DM_NONE && drawMode != DM_TEXT)
     {
         mglPoint start = gr->CalcXYZ(start_x, start_y);
-        MousePos.Printf(wxT("[%.4g, %.4g] --> [%.4g, %.4g]"), start.x, start.y, p.x, p.y);
+        sFormatted = pointToString(start) + " --> " + sFormatted;
     }
-    else
-        MousePos.Printf(wxT("[%.4g, %.4g]"), p.x, p.y);
+
+    MousePos = sFormatted;
 
     // Apply the transformations related to the rotation
     // mode

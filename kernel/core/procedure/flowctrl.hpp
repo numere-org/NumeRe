@@ -181,7 +181,7 @@ class FlowCtrl
         virtual int evalDebuggerBreakPoint(Parser& _parser, Settings& _option);
         virtual int getErrorInformationForDebugger();
         virtual std::vector<std::string> expandInlineProcedures(std::string& sLine);
-        virtual int catchExceptionForTest(std::exception_ptr e_ptr, bool bSupressAnswer_back, int nLine);
+        virtual int catchExceptionForTest(std::exception_ptr e_ptr, bool bSupressAnswer_back, int nLine, bool cleanUp = false);
 
     public:
         FlowCtrl();

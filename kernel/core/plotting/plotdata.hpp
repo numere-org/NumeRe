@@ -144,6 +144,7 @@ class PlotData : public FileSystem
             STR_LINESIZES,
             STR_LINESTYLES,
             STR_LINESTYLESGREY,
+            STR_PLOTBOUNDARIES,
             STR_PLOTTITLE,
             STR_POINTSTYLES,
             STR_SETTING_SIZE
@@ -191,6 +192,7 @@ class PlotData : public FileSystem
         std::string getAxisLabel(size_t axis) const;
         void setSamples(int _nSamples);
         void setFileName(std::string _sFileName);
+        void setTitle(const std::string& sTitle);
         void reset();
         void deleteData(bool bGraphFinished = false);
 

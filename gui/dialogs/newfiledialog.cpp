@@ -51,7 +51,7 @@ NewFileDialog::NewFileDialog(wxWindow* parent, const wxString& iconPath) : wxDia
     // Create the main UI elements
     m_fileTypes = panel->CreateListView(panel, panel->getMainSizer(), wxLC_ICON | wxLC_SINGLE_SEL);
     m_description = panel->CreateTextInput(panel, panel->getMainSizer(), wxEmptyString, wxEmptyString,
-                                           wxTE_MULTILINE | wxTE_READONLY | wxTE_RICH, wxID_ANY, wxSize(440*g_pixelScale, -1));
+                                           wxTE_MULTILINE | wxTE_READONLY | wxTE_RICH, wxID_ANY, wxSize(420*g_pixelScale, -1));
 
     // Set the default text of the description
     wxString descText = _guilang.get("GUI_NEWDLG_DEFAULT");
@@ -67,11 +67,13 @@ NewFileDialog::NewFileDialog(wxWindow* parent, const wxString& iconPath) : wxDia
     wxIcon nscr(iconPath + "/nscr.png", wxBITMAP_TYPE_PNG, IMAGESIZEPIX, IMAGESIZEPIX);
     wxIcon nprc(iconPath + "/nprc.png", wxBITMAP_TYPE_PNG, IMAGESIZEPIX, IMAGESIZEPIX);
     wxIcon nlyt(iconPath + "/nlyt.png", wxBITMAP_TYPE_PNG, IMAGESIZEPIX, IMAGESIZEPIX);
+    wxIcon napp(iconPath + "/napp.png", wxBITMAP_TYPE_PNG, IMAGESIZEPIX, IMAGESIZEPIX);
     wxIcon generic(iconPath + "/generic.png", wxBITMAP_TYPE_PNG, IMAGESIZEPIX, IMAGESIZEPIX);
 
     images->Add(nscr);
     images->Add(nprc);
     images->Add(nlyt);
+    images->Add(napp);
     images->Add(generic);
 
     m_fileTypes->AssignImageList(images, wxIMAGE_LIST_NORMAL);
@@ -80,6 +82,7 @@ NewFileDialog::NewFileDialog(wxWindow* parent, const wxString& iconPath) : wxDia
     m_fileTypeDesc.Add(_guilang.get("GUI_NEWDLG_NSCR"));
     m_fileTypeDesc.Add(_guilang.get("GUI_NEWDLG_NPRC"));
     m_fileTypeDesc.Add(_guilang.get("GUI_NEWDLG_LAYOUT"));
+    m_fileTypeDesc.Add(_guilang.get("GUI_NEWDLG_NAPP"));
     m_fileTypeDesc.Add(_guilang.get("GUI_NEWDLG_EMPTYFILE"));
 
     // Insert the file types into the list view
@@ -125,6 +128,8 @@ void NewFileDialog::selectItem(int itemId)
     else if (itemId == 2)
         m_selectedFileType = FILE_NLYT;
     else if (itemId == 3)
+        m_selectedFileType = FILE_NAPP;
+    else if (itemId == 4)
         m_selectedFileType = FILE_NONSOURCE;
 }
 
