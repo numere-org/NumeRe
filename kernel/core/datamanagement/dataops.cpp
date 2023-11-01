@@ -254,7 +254,7 @@ static std::string** make_stringmatrix(MemoryManager& _data, Output& _out, Setti
             if (_out.isCompact() && !bSave)
                 sprintf(cBuffer, "%.*g", 4, _data.getElement(i - nHeadlineCount, j, sCache).real());
             else
-                sprintf(cBuffer, "%.*g", nPrecision, _data.getElement(i - nHeadlineCount, j, sCache).real());
+                sprintf(cBuffer, "%.*g", (int)nPrecision, _data.getElement(i - nHeadlineCount, j, sCache).real());
 
             sOut[i][j] = cBuffer;
 		}
@@ -363,7 +363,7 @@ void append_data(CommandLineParser& cmdParser)
             sFileList = "<loadpath>/" + sFileList;
 
         // Get the file list, which fulfills the file path scheme
-        vector<string> vFilelist = getFileList(sFileList, _option, true);
+        std::vector<std::string> vFilelist = NumeReKernel::getInstance()->getFileSystem().getFileList(sFileList, FileSystem::FULLPATH);
 
         // Ensure that at least one file exists
         if (!vFilelist.size())
@@ -957,17 +957,17 @@ bool writeToFile(CommandLineParser& cmdParser)
 			// Scripts, procedures and data files may not be written directly
 			// this avoids reloads during the execution and other unexpected
 			// behavior
-            if (sFileName.substr(sFileName.rfind('.')) == ".nprc"
-                || sFileName.substr(sFileName.rfind('.')) == ".nscr"
-                || sFileName.substr(sFileName.rfind('.')) == ".ndat")
+            if (sFileName.ends_with(".nprc")
+                || sFileName.ends_with(".nscr")
+                || sFileName.ends_with(".ndat"))
 			{
 				string sErrorToken;
 
-				if (sFileName.substr(sFileName.rfind('.')) == ".nprc")
+				if (sFileName.ends_with(".nprc"))
 					sErrorToken = "NumeRe-Prozedur";
-				else if (sFileName.substr(sFileName.rfind('.')) == ".nscr")
+				else if (sFileName.ends_with(".nscr"))
 					sErrorToken = "NumeRe-Script";
-				else if (sFileName.substr(sFileName.rfind('.')) == ".ndat")
+				else if (sFileName.ends_with(".ndat"))
 					sErrorToken = "NumeRe-Datenfile";
 
 				throw SyntaxError(SyntaxError::FILETYPE_MAY_NOT_BE_WRITTEN, cmdParser.getCommandLine(), SyntaxError::invalid_position, sErrorToken);

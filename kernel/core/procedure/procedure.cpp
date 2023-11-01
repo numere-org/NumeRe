@@ -190,7 +190,7 @@ Returnvalue Procedure::ProcCalc(string sLine, string sCurrentCommand, int& nByte
                 if (isInQuotes(sLine, nPos))
                     continue;
 
-                size_t nParPos = getMatchingParenthesis(sLine.substr(nPos));
+                size_t nParPos = getMatchingParenthesis(StringView(sLine, nPos));
 
                 if (nParPos == string::npos)
                     throw SyntaxError(SyntaxError::UNMATCHED_PARENTHESIS, sLine, nPos);
@@ -343,7 +343,7 @@ Returnvalue Procedure::ProcCalc(string sLine, string sCurrentCommand, int& nByte
         if (!getCurrentBlockDepth())
         {
             // Keep breakpoints and remove the token from the command line
-            bool bBreakPoint = (sLine.substr(0, 2) == "|>");
+            bool bBreakPoint = sLine.starts_with("|>");
 
             if (bBreakPoint)
             {
@@ -375,7 +375,7 @@ Returnvalue Procedure::ProcCalc(string sLine, string sCurrentCommand, int& nByte
                 sLine += ";";
 
             // Pass the command line to the FlowCtrl class
-            setCommand(sLine, nCurrentLine);
+            addToControlFlowBlock(sLine, nCurrentLine);
 
             // Return now to the calling function
             thisReturnVal.vNumVal.push_back(NAN);
@@ -539,38 +539,33 @@ Returnvalue Procedure::ProcCalc(string sLine, string sCurrentCommand, int& nByte
 /// procedure. It handles the "thisfile"
 /// namespace directly.
 ///
-/// \param sProc const string&
+/// \param sProc StringView
 /// \param bInstallFileName bool
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool Procedure::setProcName(const string& sProc, bool bInstallFileName)
+bool Procedure::setProcName(StringView sProc, bool bInstallFileName)
 {
     if (sProc.length())
     {
-        string _sProc = sProc;
-
         // Handle the "thisfile" namespace by using the call stack
         // to obtain the corresponding file name
-        if (sProcNames.length() && !bInstallFileName && _sProc.substr(0, 9) == "thisfile~")
+        if (sProcNames.length() && !bInstallFileName && sProc.starts_with("thisfile~"))
         {
             sCurrentProcedureName = sProcNames.substr(sProcNames.rfind(';') + 1);
             sProcNames += ";" + sCurrentProcedureName;
             return true;
         }
-        else if (sLastWrittenProcedureFile.length() && bInstallFileName && _sProc.substr(0, 9) == "thisfile~")
+        else if (sLastWrittenProcedureFile.length() && bInstallFileName && sProc.starts_with("thisfile~"))
         {
             sCurrentProcedureName = sLastWrittenProcedureFile.substr(0, sLastWrittenProcedureFile.find('|'));
             return true;
         }
-        else if (_sProc.substr(0, 9) == "thisfile~")
+        else if (sProc.starts_with("thisfile~"))
             return false;
 
-        // Convert the namespace to a path
-        _sProc = nameSpaceToPath(_sProc, "");
-
         // Create a valid file name from the procedure name
-        sCurrentProcedureName = FileSystem::ValidFileName(_sProc, ".nprc");
+        sCurrentProcedureName = FileSystem::ValidFileName(nameSpaceToPath(sProc.to_string(), ""), ".nprc");
 
         // Append the newly obtained procedure file name
         // to the call stack
@@ -587,7 +582,7 @@ bool Procedure::setProcName(const string& sProc, bool bInstallFileName)
 /// execution of the currently selected procedure
 /// as it handles all the logic.
 ///
-/// \param sProc string
+/// \param sProc StringView
 /// \param sVarList string
 /// \param _parser Parser&
 /// \param _functions Define&
@@ -600,7 +595,7 @@ bool Procedure::setProcName(const string& sProc, bool bInstallFileName)
 /// \return Returnvalue
 ///
 /////////////////////////////////////////////////
-Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, FunctionDefinitionManager& _functions, MemoryManager& _data, Settings& _option, Output& _out, PlotData& _pData, Script& _script, size_t nth_procedure)
+Returnvalue Procedure::execute(StringView sProc, string sVarList, Parser& _parser, FunctionDefinitionManager& _functions, MemoryManager& _data, Settings& _option, Output& _out, PlotData& _pData, Script& _script, size_t nth_procedure)
 {
     // Measure the current stack size and ensure
     // that the current call won't exceed the
@@ -613,8 +608,7 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, F
         throw SyntaxError(SyntaxError::PROCEDURE_STACK_OVERFLOW, "$" + sProc + "(" + sVarList + ")", SyntaxError::invalid_position, "\\$" + sProc, nth_procedure);
     }
 
-    StripSpaces(sProc);
-    NumeReKernel::getInstance()->getDebugger().pushStackItem(sProc + "(" + sVarList + ")", this);
+    sProc.strip();
 
     // Set the file name for the currently selected procedure
     if (!setProcName(sProc))
@@ -629,39 +623,41 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, F
     nthRecursion = nth_procedure;
     bool bSupressAnswer_back = NumeReKernel::bSupressAnswer;
 
+    ProcedureElement* ProcElement = NumeReKernel::ProcLibrary.getProcedureContents(sCurrentProcedureName);
+
+    NumeReDebugger& _debugger = NumeReKernel::getInstance()->getDebugger();
+    _debugger.pushStackItem(sProc + "(" + sVarList + ")", this);
+
     // Prepare the var factory and obtain the current procedure file
     if (_varFactory)
         delete _varFactory;
 
-    _varFactory = new ProcedureVarFactory(this, mangleName(sProc), nth_procedure);
-    ProcedureElement*ProcElement = NumeReKernel::ProcLibrary.getProcedureContents(sCurrentProcedureName);
+    _varFactory = new ProcedureVarFactory(this, mangleName(sProc.to_string()), nth_procedure);
 
     // add spaces in front of and at the end of sVarList
     sVarList = " " + sVarList + " ";
 
     // Remove file name extension, if there's one in the procedure name
-    if (sProc.length() > 5 && sProc.substr(sProc.length() - 5) == ".nprc")
-        sProc = sProc.substr(0, sProc.rfind('.'));
+    if (sProc.length() > 5 && sProc.ends_with(".nprc"))
+        sProc.remove_from(sProc.rfind('.'));
 
     // Get the namespace of this procedure
     extractCurrentNamespace(sProc);
 
     // Separate the procedure name from the namespace
     if (sProc.find('~') != string::npos)
-        sProc = sProc.substr(sProc.rfind('~') + 1);
+        sProc.trim_front(sProc.rfind('~') + 1);
 
     if (sProc.find('/') != string::npos)
-        sProc = sProc.substr(sProc.rfind('/') + 1);
+        sProc.trim_front(sProc.rfind('/') + 1);
 
     if (sProc.find('\\') != string::npos)
-        sProc = sProc.substr(sProc.rfind('\\') + 1);
+        sProc.trim_front(sProc.rfind('\\') + 1);
 
     // Prepare the procedure command line elements
     // and find the current procedure line
     pair<int, ProcedureCommandLine> currentLine;
     currentLine.first = ProcElement->gotoProcedure("$" + sProc);
-
-    NumeReDebugger& _debugger = NumeReKernel::getInstance()->getDebugger();
 
     // if the procedure was not found, throw an error
     if (currentLine.first == -1)
@@ -672,7 +668,7 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, F
         if (_option.useDebugger())
             _debugger.popStackItem();
 
-        throw SyntaxError(SyntaxError::PROCEDURE_NOT_FOUND, "", SyntaxError::invalid_position, sProc);
+        throw SyntaxError(SyntaxError::PROCEDURE_NOT_FOUND, "", SyntaxError::invalid_position, sProc.to_string());
     }
 
     // Get the procedure head line
@@ -688,7 +684,7 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, F
         if (_option.useDebugger())
             _debugger.popStackItem();
 
-        throw SyntaxError(SyntaxError::PROCEDURE_NOT_FOUND, "", SyntaxError::invalid_position, sProc);
+        throw SyntaxError(SyntaxError::PROCEDURE_NOT_FOUND, "", SyntaxError::invalid_position, sProc.to_string());
     }
 
     // Get the flags
@@ -809,7 +805,7 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, F
 
             if (_option.useDebugger()
                 && _debugger.getBreakpointManager().isBreakpoint(sCurrentProcedureName, nCurrentLine)
-                && sProcCommandLine.substr(0, 2) != "|>")
+                && !sProcCommandLine.starts_with("|>"))
             {
                 sProcCommandLine.insert(0, "|> ");
             }
@@ -909,7 +905,7 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, F
             _debugger.showError(current_exception());
 
             nCurrentByteCode = 0;
-            catchExceptionForTest(current_exception(), bSupressAnswer_back, GetCurrentLine());
+            catchExceptionForTest(current_exception(), bSupressAnswer_back, GetCurrentLine(), true);
         }
 
         // define the current command to be a flow control statement,
@@ -1059,7 +1055,7 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, F
                 _debugger.showError(current_exception());
 
                 nCurrentByteCode = 0;
-                catchExceptionForTest(current_exception(), bSupressAnswer_back, GetCurrentLine());
+                catchExceptionForTest(current_exception(), bSupressAnswer_back, GetCurrentLine(), true);
 
                 // If the error is converted, we have to skip
                 // the remaining code, otherwise the procedure
@@ -1159,7 +1155,7 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, F
                     _debugger.showError(current_exception());
 
                     nCurrentByteCode = 0;
-                    catchExceptionForTest(current_exception(), bSupressAnswer_back, GetCurrentLine());
+                    catchExceptionForTest(current_exception(), bSupressAnswer_back, GetCurrentLine(), true);
                 }
             }
         }
@@ -1188,7 +1184,7 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, F
             _debugger.showError(current_exception());
 
             nCurrentByteCode = 0;
-            catchExceptionForTest(current_exception(), bSupressAnswer_back, GetCurrentLine());
+            catchExceptionForTest(current_exception(), bSupressAnswer_back, GetCurrentLine(), true);
         }
 
         sProcCommandLine.clear();
@@ -1279,9 +1275,8 @@ FlowCtrl::ProcedureInterfaceRetVal Procedure::procedureInterface(string& sLine, 
                 if (__sName.find('~') == string::npos)
                     __sName = sNameSpace + __sName;
 
-                if (__sName.substr(0, 5) == "this~")
+                if (__sName.starts_with("this~"))
                     __sName.replace(0, 4, sThisNameSpace);
-
 
                 // Handle explicit procedure file names
                 if (sLine[nPos] == '\'')
@@ -1296,10 +1291,10 @@ FlowCtrl::ProcedureInterfaceRetVal Procedure::procedureInterface(string& sLine, 
                 __sVarList = sLine.substr(nParPos);
 
                 // Ensure that each parenthesis has its counterpart
-                if (getMatchingParenthesis(sLine.substr(nParPos)) == string::npos)
+                if (getMatchingParenthesis(StringView(sLine, nParPos)) == string::npos)
                     throw SyntaxError(SyntaxError::UNMATCHED_PARENTHESIS, sLine, nParPos);
 
-                nParPos += getMatchingParenthesis(sLine.substr(nParPos));
+                nParPos += getMatchingParenthesis(StringView(sLine, nParPos));
                 __sVarList = __sVarList.substr(1, getMatchingParenthesis(__sVarList) - 1);
                 size_t nVarPos = 0;
 
@@ -1485,13 +1480,13 @@ FlowCtrl::ProcedureInterfaceRetVal Procedure::procedureInterface(string& sLine, 
 /// commands. Currently it is only used for the
 /// namespace command.
 ///
-/// \param sLine string&
+/// \param sLine StringView
 /// \return int
 ///
 /// The commands "var", "str", "tab" and "cst"
 /// are recognized but not evaluated.
 /////////////////////////////////////////////////
-int Procedure::procedureCmdInterface(string& sLine)
+int Procedure::procedureCmdInterface(StringView sLine)
 {
     // Find the current command
     string sCommand = findCommand(sLine).sString;
@@ -1504,22 +1499,23 @@ int Procedure::procedureCmdInterface(string& sLine)
     }
     else if (sCommand == "namespace")
     {
-        sLine = sLine.substr(sLine.find("namespace") + 9);
-        StripSpaces(sLine);
+        sLine.trim_front(sLine.find("namespace")+9);
+        sLine.strip();
 
         // Evaluate the namespace name
         if (sLine.length())
         {
             if (sLine.find(' ') != string::npos)
-                sLine = sLine.substr(0, sLine.find(' '));
-
-            if (sLine.substr(0, 5) == "this~" || sLine == "this")
-                sLine.replace(0, 4, sThisNameSpace);
+                sLine.remove_from(sLine.find(' '));
 
             if (sLine != "main")
             {
-                sNameSpace = sLine;
-                if (sNameSpace[sNameSpace.length() - 1] != '~')
+                sNameSpace = sLine.to_string();
+
+                if (sNameSpace.starts_with("this~") || sNameSpace == "this")
+                    sNameSpace.replace(0, 4, sThisNameSpace);
+
+                if (sNameSpace.back() != '~')
                     sNameSpace += "~";
             }
             else
@@ -1550,7 +1546,7 @@ bool Procedure::writeProcedure(string sProcedureLine)
 
     // Check, whether the current line is a procedure head,
     // a procedure foot or the actual body of the procedure
-    if (sProcedureLine.substr(0, 9) == "procedure"
+    if (sProcedureLine.starts_with("procedure")
             && sProcedureLine.find('$') != string::npos
             && sProcedureLine.find('(', sProcedureLine.find('$')) != string::npos)
     {
@@ -1573,7 +1569,7 @@ bool Procedure::writeProcedure(string sProcedureLine)
         // If the procedure belongs to the "thisfile"
         // namespace, then it has to be appended to the
         // procedure, which was opened lastly
-        if (sFileName.substr(0, 9) == "thisfile~")
+        if (sFileName.starts_with("thisfile~"))
             bAppend = true;
 
         // Create a corresponding folder from the
@@ -1690,7 +1686,7 @@ bool Procedure::writeProcedure(string sProcedureLine)
         fProcedure << sProcedureLine.substr(sProcedureLine.find('(')) << endl;
         return true;
     }
-    else if (sProcedureLine.substr(0, 12) == "endprocedure")
+    else if (sProcedureLine.starts_with("endprocedure"))
         bWritingTofile = false;
     else
     {
@@ -1700,34 +1696,34 @@ bool Procedure::writeProcedure(string sProcedureLine)
         // line into multiple lines. This is done by pushing the
         // remaining part of the current line into a string cache.
         if (sProcedureLine.find('(') != string::npos
-                && (sProcedureLine.substr(0, 3) == "for"
-                    || sProcedureLine.substr(0, 3) == "if "
-                    || sProcedureLine.substr(0, 3) == "if("
-                    || sProcedureLine.substr(0, 6) == "elseif"
-                    || sProcedureLine.substr(0, 6) == "switch"
-                    || sProcedureLine.substr(0, 5) == "while"))
+                && (sProcedureLine.starts_with("for")
+                    || sProcedureLine.starts_with("if ")
+                    || sProcedureLine.starts_with("if(")
+                    || sProcedureLine.starts_with("elseif")
+                    || sProcedureLine.starts_with("switch")
+                    || sProcedureLine.starts_with("while")))
         {
             sAppendedLine = sProcedureLine.substr(getMatchingParenthesis(sProcedureLine) + 1);
             sProcedureLine.erase(getMatchingParenthesis(sProcedureLine) + 1);
         }
         else if (sProcedureLine.find(':', 5) != string::npos
-                 && (sProcedureLine.substr(0, 5) == "case "
-                     || sProcedureLine.substr(0, 6) == "catch "
-                     || sProcedureLine.substr(0, 6) == "catch:"
-                     || sProcedureLine.substr(0, 8) == "default "
-                     || sProcedureLine.substr(0, 8) == "default:")
+                 && (sProcedureLine.starts_with("case ")
+                     || sProcedureLine.starts_with("catch ")
+                     || sProcedureLine.starts_with("catch:")
+                     || sProcedureLine.starts_with("default ")
+                     || sProcedureLine.starts_with("default:"))
                  && sProcedureLine.find_first_not_of(' ', sProcedureLine.find(':', 5)) != string::npos)
         {
             sAppendedLine = sProcedureLine.substr(sProcedureLine.find(':', 5)+1);
             sProcedureLine.erase(sProcedureLine.find(':', 5)+1);
         }
         else if (sProcedureLine.find(' ', 4) != string::npos
-                 && (sProcedureLine.substr(0, 5) == "else "
-                     || sProcedureLine.substr(0, 6) == "endif "
-                     || sProcedureLine.substr(0, 7) == "endtry "
-                     || sProcedureLine.substr(0, 10) == "endswitch "
-                     || sProcedureLine.substr(0, 7) == "endfor "
-                     || sProcedureLine.substr(0, 9) == "endwhile ")
+                 && (sProcedureLine.starts_with("else ")
+                     || sProcedureLine.starts_with("endif ")
+                     || sProcedureLine.starts_with("endtry ")
+                     || sProcedureLine.starts_with("endswitch ")
+                     || sProcedureLine.starts_with("endfor ")
+                     || sProcedureLine.starts_with("endwhile "))
                  && sProcedureLine.find_first_not_of(' ', sProcedureLine.find(' ', 4)) != string::npos
                  && sProcedureLine[sProcedureLine.find_first_not_of(' ', sProcedureLine.find(' ', 4))] != '-')
         {
@@ -1889,7 +1885,7 @@ void Procedure::extractProcedureInformation(const string& sCmdLine, size_t nPos,
     if (__sName.find('~') == string::npos)
         __sName = sNameSpace + __sName;
 
-    if (__sName.substr(0, 5) == "this~")
+    if (__sName.starts_with("this~"))
         __sName.replace(0, 4, sThisNameSpace);
 
     // Handle the special case of absolute paths
@@ -1910,7 +1906,7 @@ void Procedure::extractProcedureInformation(const string& sCmdLine, size_t nPos,
     // Handle namespaces
     if (sFileName.find('~') != string::npos)
     {
-        if (sFileName.substr(0, 9) == "thisfile~")
+        if (sFileName.starts_with("thisfile~"))
         {
             if (sProcNames.length())
                 sFileName = sProcNames.substr(sProcNames.rfind(';') + 1);
@@ -2080,7 +2076,7 @@ vector<string> Procedure::expandInlineProcedures(string& sProc)
                     // Replace the return value and insert the
                     // stuff before the return value in the overall
                     // expansion
-                    sProc.replace(nPos-1, getMatchingParenthesis(sProc.substr(nPos-1))+1, vInlinedRepresentation.back());
+                    sProc.replace(nPos-1, getMatchingParenthesis(StringView(sProc, nPos-1))+1, vInlinedRepresentation.back());
                     vExpandedProcedures.insert(vExpandedProcedures.end(), vInlinedRepresentation.begin(), vInlinedRepresentation.end()-1);
                 }
 
@@ -2298,7 +2294,7 @@ vector<string> Procedure::getInlined(const string& sProc, const string& sArgumen
 
         for (const auto& sArgDef : varFactory.vInlineArgDef)
         {
-            if (sArgDef.substr(0, 6) == "_~~TC_")
+            if (sArgDef.starts_with("_~~TC_"))
                 inlineClusters.insert(sArgDef.substr(0, sArgDef.find('{')));
         }
     }
@@ -2460,10 +2456,10 @@ std::string Procedure::nameSpaceToPath(std::string sEncodedNameSpace, const std:
     // Replace all tilde characters in the current path
     // string. Consider the special namespace "main", which
     // is a reference to the toplevel procedure folder
-    if (sEncodedNameSpace.substr(0, 5) == "this~")
+    if (sEncodedNameSpace.starts_with("this~"))
         sEncodedNameSpace.replace(0, 4, thisPath);
 
-    if (sEncodedNameSpace.substr(0, 5) == "main~")
+    if (sEncodedNameSpace.starts_with("main~"))
         sEncodedNameSpace.erase(0, 4); // could leave a leading ~
 
     replaceAll(sEncodedNameSpace, "~~", "/../");
@@ -2583,10 +2579,11 @@ int Procedure::getErrorInformationForDebugger()
 /// \param e_ptr exception_ptr
 /// \param bSupressAnswer_back bool
 /// \param nLine int
+/// \param cleanUp bool
 /// \return int
 ///
 /////////////////////////////////////////////////
-int Procedure::catchExceptionForTest(exception_ptr e_ptr, bool bSupressAnswer_back, int nLine)
+int Procedure::catchExceptionForTest(exception_ptr e_ptr, bool bSupressAnswer_back, int nLine, bool cleanUp)
 {
     // Assure that the procedure is flagges as "test"
     if (nFlags & ProcedureCommandLine::FLAG_TEST)
@@ -2638,7 +2635,9 @@ int Procedure::catchExceptionForTest(exception_ptr e_ptr, bool bSupressAnswer_ba
     {
         // If not a test, then simply reset the current procedure
         // and rethrow the error
-        resetProcedure(NumeReKernel::getInstance()->getParser(), bSupressAnswer_back);
+        if (cleanUp)
+            resetProcedure(NumeReKernel::getInstance()->getParser(), bSupressAnswer_back);
+
         rethrow_exception(e_ptr);
     }
 
@@ -2815,17 +2814,17 @@ void Procedure::resetProcedure(Parser& _parser, bool bSupressAnswer)
 /// \brief This member function extracts the
 /// namespace of the currently executed procedure.
 ///
-/// \param sProc const string&
+/// \param sProc StringView
 /// \return void
 ///
 /////////////////////////////////////////////////
-void Procedure::extractCurrentNamespace(const string& sProc)
+void Procedure::extractCurrentNamespace(StringView sProc)
 {
     for (size_t i = sProc.length() - 1; i >= 0; i--)
     {
         if (sProc[i] == '\\' || sProc[i] == '/' || sProc[i] == '~')
         {
-            sThisNameSpace = sProc.substr(0, i);
+            sThisNameSpace = sProc.subview(0, i).to_string();
 
             // If the namespace doesn't contain a colon
             // replace all path separators with a tilde
@@ -2837,6 +2836,9 @@ void Procedure::extractCurrentNamespace(const string& sProc)
                     if (sThisNameSpace[j] == '\\' || sThisNameSpace[j] == '/')
                         sThisNameSpace[j] = '~';
                 }
+
+                // Resolve relative namespaces
+                cleanRelativeNameSpaces(sThisNameSpace);
             }
 
             break;

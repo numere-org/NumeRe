@@ -102,89 +102,89 @@ static bool confirmOperation(const std::string& sMessage)
 /////////////////////////////////////////////////
 static string getVarList(const string& sCmd, Parser& _parser, MemoryManager& _data, Settings& _option)
 {
-	mu::varmap_type mNumVars = _parser.GetVar();
-	map<string, string> mStringVars = NumeReKernel::getInstance()->getStringParser().getStringVars();
-	map<string, int> mVars;
+    mu::varmap_type mNumVars = _parser.GetVar();
+    map<string, string> mStringVars = NumeReKernel::getInstance()->getStringParser().getStringVars();
+    map<string, int> mVars;
 
-	string sSep = ", ";
-	string sReturn = "";
+    string sSep = ", ";
+    string sReturn = "";
 
-	// Fill the vars map with the names and the
-	// types of the variables
-	for (auto iter = mNumVars.begin(); iter != mNumVars.end(); ++iter)
-		mVars[iter->first] = 0;
+    // Fill the vars map with the names and the
+    // types of the variables
+    for (auto iter = mNumVars.begin(); iter != mNumVars.end(); ++iter)
+        mVars[iter->first] = 0;
 
-	for (auto iter = mStringVars.begin(); iter != mStringVars.end(); ++iter)
-		mVars[iter->first] = 1;
+    for (auto iter = mStringVars.begin(); iter != mStringVars.end(); ++iter)
+        mVars[iter->first] = 1;
 
     // Change the separation characters, if the user
     // wants the return value to be a string
-	if (findParameter(sCmd, "asstr"))
-	{
-		sSep = "\", \"";
-		sReturn = "\"";
-	}
+    if (findParameter(sCmd, "asstr"))
+    {
+        sSep = "\", \"";
+        sReturn = "\"";
+    }
 
-	// Return all variables, when "vars" was passed
-	if (findCommand(sCmd).sString == "vars")
-	{
-		for (auto iter = mVars.begin(); iter != mVars.end(); ++iter)
-		{
-			sReturn += iter->first + " = ";
+    // Return all variables, when "vars" was passed
+    if (findCommand(sCmd).sString == "vars")
+    {
+        for (auto iter = mVars.begin(); iter != mVars.end(); ++iter)
+        {
+            sReturn += iter->first + " = ";
 
-			if (iter->second)
-			{
-				if (findParameter(sCmd, "asstr"))
-					sReturn += "\\\"" + mStringVars[iter->first] + "\\\"";
-				else
-					sReturn += "\"" + mStringVars[iter->first] + "\"";
-			}
-			else
-				sReturn += toString(*mNumVars[iter->first], _option.getPrecision());
+            if (iter->second)
+            {
+                if (findParameter(sCmd, "asstr"))
+                    sReturn += "\\\"" + mStringVars[iter->first] + "\\\"";
+                else
+                    sReturn += "\"" + mStringVars[iter->first] + "\"";
+            }
+            else
+                sReturn += toString(*mNumVars[iter->first], _option.getPrecision());
 
-			sReturn += sSep;
-		}
-	}
+            sReturn += sSep;
+        }
+    }
 
-	// Return only string variables, if "strings" was
-	// passed
-	if (findCommand(sCmd).sString == "strings")
-	{
-		for (auto iter = mStringVars.begin(); iter != mStringVars.end(); ++iter)
-		{
-			sReturn += iter->first + " = ";
+    // Return only string variables, if "strings" was
+    // passed
+    if (findCommand(sCmd).sString == "strings")
+    {
+        for (auto iter = mStringVars.begin(); iter != mStringVars.end(); ++iter)
+        {
+            sReturn += iter->first + " = ";
 
-			if (findParameter(sCmd, "asstr"))
-				sReturn += "\\\"" + iter->second + "\\\"";
-			else
-				sReturn += "\"" + iter->second + "\"";
+            if (findParameter(sCmd, "asstr"))
+                sReturn += "\\\"" + iter->second + "\\\"";
+            else
+                sReturn += "\"" + iter->second + "\"";
 
-			sReturn += sSep;
-		}
+            sReturn += sSep;
+        }
 
-		if (sReturn == "\"")
-			return "\"\"";
-	}
+        if (sReturn == "\"")
+            return "\"\"";
+    }
 
-	// Return only numerical variables, if "nums"
-	// was passed
-	if (findCommand(sCmd).sString == "nums")
-	{
-		for (auto iter = mNumVars.begin(); iter != mNumVars.end(); ++iter)
-		{
-			sReturn += iter->first + " = ";
-			sReturn += toString(*iter->second, _option.getPrecision());
-			sReturn += sSep;
-		}
-	}
+    // Return only numerical variables, if "nums"
+    // was passed
+    if (findCommand(sCmd).sString == "nums")
+    {
+        for (auto iter = mNumVars.begin(); iter != mNumVars.end(); ++iter)
+        {
+            sReturn += iter->first + " = ";
+            sReturn += toString(*iter->second, _option.getPrecision());
+            sReturn += sSep;
+        }
+    }
 
-	// Remove the trailing separation character
-	if (findParameter(sCmd, "asstr") && sReturn.length() > 2)
-		sReturn.erase(sReturn.length() - 3);
-	else if (!findParameter(sCmd, "asstr") && sReturn.length() > 1)
-		sReturn.erase(sReturn.length() - 2);
+    // Remove the trailing separation character
+    if (findParameter(sCmd, "asstr") && sReturn.length() > 2)
+        sReturn.erase(sReturn.length() - 3);
+    else if (!findParameter(sCmd, "asstr") && sReturn.length() > 1)
+        sReturn.erase(sReturn.length() - 2);
 
-	return sReturn;
+    return sReturn;
 }
 
 
@@ -218,7 +218,7 @@ static bool undefineFunctions(string sFunctionList, FunctionDefinitionManager& _
 
     // Inform the user that (some) of the functions were undefined
     if (_option.systemPrints() && sSuccessFulRemoved.length())
-        NumeReKernel::print(_lang.get("BUILTIN_CHECKKEYWORD_UNDEF_SUCCESS", sSuccessFulRemoved.substr(0, sSuccessFulRemoved.length()-2)));
+        NumeReKernel::print(_lang.get("BUILTIN_CHECKKEYWORD_UNDEF_SUCCESS", sSuccessFulRemoved.substr(0, sSuccessFulRemoved.length() - 2)));
 
     return true;
 }
@@ -271,8 +271,8 @@ static bool newObject(string& sCmd, Parser& _parser, MemoryManager& _data, Setti
         sFileName = replacePathSeparator(cmdParser.getParameterValueAsString("dir", "", true, true));
         int nReturn = _fSys.setPath(sFileName, true, _option.getExePath());
 
-		if (nReturn == 1 && _option.systemPrints())
-			NumeReKernel::print(_lang.get("BUILTIN_NEW_FOLDERCREATED", sFileName));
+        if (nReturn == 1 && _option.systemPrints())
+            NumeReKernel::print(_lang.get("BUILTIN_NEW_FOLDERCREATED", sFileName));
 
         return true;
     }
@@ -284,15 +284,15 @@ static bool newObject(string& sCmd, Parser& _parser, MemoryManager& _data, Setti
             return false;
 
         if (sFileName.find(':') == std::string::npos && sFileName.front() != '<')
-			sFileName = "<scriptpath>/" + sFileName;
+            sFileName = "<scriptpath>/" + sFileName;
 
         sFileName = _fSys.ValidizeAndPrepareName(sFileName, ".nscr");
 
         if (!prepareTemplate("tmpl_script", sFileName))
             throw SyntaxError(SyntaxError::CANNOT_GENERATE_SCRIPT, sCmd, sFileName, sFileName);
 
-		if (_option.systemPrints())
-			NumeReKernel::print(_lang.get("BUILTIN_NEW_SCRIPTCREATED", sFileName));
+        if (_option.systemPrints())
+            NumeReKernel::print(_lang.get("BUILTIN_NEW_SCRIPTCREATED", sFileName));
 
         return true;
     }
@@ -308,15 +308,15 @@ static bool newObject(string& sCmd, Parser& _parser, MemoryManager& _data, Setti
         replaceAll(sFileName, "main/", "");
 
         if (sFileName.find(':') == std::string::npos && sFileName.front() != '<')
-			sFileName = "<procpath>/" + sFileName;
+            sFileName = "<procpath>/" + sFileName;
 
         sFileName = _fSys.ValidizeAndPrepareName(sFileName, ".nprc");
 
         if (!prepareTemplate("tmpl_procedure", sFileName))
             throw SyntaxError(SyntaxError::CANNOT_GENERATE_PROCEDURE, sCmd, sFileName, sFileName);
 
-		if (_option.systemPrints())
-			NumeReKernel::print(_lang.get("BUILTIN_NEW_PROCCREATED", sFileName));
+        if (_option.systemPrints())
+            NumeReKernel::print(_lang.get("BUILTIN_NEW_PROCCREATED", sFileName));
 
         return true;
     }
@@ -328,21 +328,21 @@ static bool newObject(string& sCmd, Parser& _parser, MemoryManager& _data, Setti
             return false;
 
         if (sFileName.find(':') == std::string::npos && sFileName.front() != '<')
-			sFileName = "<>/" + sFileName;
+            sFileName = "<>/" + sFileName;
 
         sFileName = _fSys.ValidizeAndPrepareName(sFileName, ".txt");
 
-        if (sFileName.substr(sFileName.rfind('.')) == ".nprc"
-				|| sFileName.substr(sFileName.rfind('.')) == ".nscr"
-				|| sFileName.substr(sFileName.rfind('.')) == ".nlyt"
-				|| sFileName.substr(sFileName.rfind('.')) == ".ndat")
-			sFileName.replace(sFileName.rfind('.'), 5, ".txt");
+        if (sFileName.ends_with(".nprc")
+                || sFileName.ends_with(".nscr")
+                || sFileName.ends_with(".nlyt")
+                || sFileName.ends_with(".ndat"))
+            sFileName.replace(sFileName.rfind('.'), 5, ".txt");
 
         if (!prepareTemplate("tmpl_file", sFileName))
             throw SyntaxError(SyntaxError::CANNOT_GENERATE_FILE, sCmd, sFileName, sFileName);
 
-		if (_option.systemPrints())
-			NumeReKernel::print(_lang.get("BUILTIN_NEW_FILECREATED", sFileName));
+        if (_option.systemPrints())
+            NumeReKernel::print(_lang.get("BUILTIN_NEW_FILECREATED", sFileName));
 
         return true;
     }
@@ -354,15 +354,15 @@ static bool newObject(string& sCmd, Parser& _parser, MemoryManager& _data, Setti
             return false;
 
         if (sFileName.find(':') == std::string::npos && sFileName.front() != '<')
-			sFileName = "<scriptpath>/" + sFileName;
+            sFileName = "<scriptpath>/" + sFileName;
 
         sFileName = _fSys.ValidizeAndPrepareName(sFileName, ".nscr");
 
         if (!prepareTemplate("tmpl_plugin", sFileName))
             throw SyntaxError(SyntaxError::CANNOT_GENERATE_SCRIPT, sCmd, sFileName, sFileName);
 
-		if (_option.systemPrints())
-			NumeReKernel::print(_lang.get("BUILTIN_NEW_PLUGINCREATED", sFileName));
+        if (_option.systemPrints())
+            NumeReKernel::print(_lang.get("BUILTIN_NEW_PLUGINCREATED", sFileName));
 
         return true;
     }
@@ -395,56 +395,56 @@ static bool newObject(string& sCmd, Parser& _parser, MemoryManager& _data, Setti
         else if (cmdParser.getExpr().find("()") != std::string::npos)
         {
             // Create new tables
-			std::string sReturnVal = "";
-			std::string sObject = cmdParser.parseExprAsString();
+            std::string sReturnVal = "";
+            std::string sObject = cmdParser.parseExprAsString();
 
-			if (!sObject.length())
-				return false;
+            if (!sObject.length())
+                return false;
 
             // Create the tables
-			while (sObject.length())
-			{
-			    std::string sTableName = getNextArgument(sObject, true);
+            while (sObject.length())
+            {
+                std::string sTableName = getNextArgument(sObject, true);
 
-			    // Does the table already exist?
-				if (_data.isTable(sTableName))
-				{
-					if (cmdParser.hasParam("free"))
-					{
-					    std::string sName = sTableName.substr(0, sTableName.find('('));
-						_data.deleteBulk(sName, 0, _data.getLines(sName) - 1, 0, _data.getCols(sName) - 1);
+                // Does the table already exist?
+                if (_data.isTable(sTableName))
+                {
+                    if (cmdParser.hasParam("free"))
+                    {
+                        std::string sName = sTableName.substr(0, sTableName.find('('));
+                        _data.deleteBulk(sName, 0, _data.getLines(sName) - 1, 0, _data.getCols(sName) - 1);
 
-						if (sReturnVal.length())
-							sReturnVal += ", ";
+                        if (sReturnVal.length())
+                            sReturnVal += ", ";
 
-						sReturnVal += "\"" + sTableName + "\"";
-					}
+                        sReturnVal += "\"" + sTableName + "\"";
+                    }
 
-					continue;
-				}
+                    continue;
+                }
 
-				// Create a new table
-				if (_data.addTable(sTableName, _option))
-				{
-					if (sReturnVal.length())
-						sReturnVal += ", ";
+                // Create a new table
+                if (_data.addTable(sTableName, _option))
+                {
+                    if (sReturnVal.length())
+                        sReturnVal += ", ";
 
-					sReturnVal += "\"" + sTableName + "\"";
-					continue;
-				}
-				else
-					return false;
-			}
+                    sReturnVal += "\"" + sTableName + "\"";
+                    continue;
+                }
+                else
+                    return false;
+            }
 
-			if (sReturnVal.length() && _option.systemPrints())
-			{
-				if (cmdParser.hasParam("free"))
-					NumeReKernel::print(_lang.get("BUILTIN_NEW_FREE_CACHES", sReturnVal));
-				else
-					NumeReKernel::print(_lang.get("BUILTIN_NEW_CACHES", sReturnVal));
-			}
+            if (sReturnVal.length() && _option.systemPrints())
+            {
+                if (cmdParser.hasParam("free"))
+                    NumeReKernel::print(_lang.get("BUILTIN_NEW_FREE_CACHES", sReturnVal));
+                else
+                    NumeReKernel::print(_lang.get("BUILTIN_NEW_CACHES", sReturnVal));
+            }
 
-			return true;
+            return true;
         }
     }
 
@@ -456,234 +456,216 @@ static bool newObject(string& sCmd, Parser& _parser, MemoryManager& _data, Setti
 /// \brief This function opens the object in the
 /// editor to edit its contents.
 ///
-/// \param sCmd string&
-/// \param _parser Parser&
+/// \param sCmd std::string&
 /// \param _data Datafile&
 /// \param _option Settings&
 /// \return bool
 ///
 /////////////////////////////////////////////////
-static bool editObject(string& sCmd, Parser& _parser, MemoryManager& _data, Settings& _option)
+static bool editObject(std::string& sCmd, MemoryManager& _data, Settings& _option)
 {
-	int nType = 0;
-	int nFileOpenFlag = 0;
+    std::string sObject;
+    int nType = 0;
+    int nFileOpenFlag = 0;
 
-	if (findParameter(sCmd, "norefresh"))
-		nFileOpenFlag = 1;
+    if (findParameter(sCmd, "norefresh"))
+        nFileOpenFlag = 1;
 
-	if (findParameter(sCmd, "refresh"))
-		nFileOpenFlag = 2 | 4;
+    if (findParameter(sCmd, "refresh"))
+        nFileOpenFlag = 2 | 4;
 
-	string sObject;
+    if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sCmd))
+        extractFirstParameterStringValue(sCmd, sObject);
+    else
+    {
+        sObject = sCmd.substr(findCommand(sCmd).sString.length());
 
-	if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sCmd))
-		extractFirstParameterStringValue(sCmd, sObject);
-	else
-	{
-		sObject = sCmd.substr(findCommand(sCmd).sString.length());
+        // remove flags from object
+        if (nFileOpenFlag)
+            sObject.erase(sObject.rfind('-'));
+    }
 
-		// remove flags from object
-		if (nFileOpenFlag)
-			sObject.erase(sObject.rfind('-'));
-	}
+    StripSpaces(sObject);
 
-	StripSpaces(sObject);
-	FileSystem _fSys;
-	_fSys.setTokens(_option.getTokenPaths());
+    // Open the table for editing
+    if (_data.containsTables(sObject))
+    {
+        StripSpaces(sObject);
+        std::string sTableName = sObject.substr(0, sObject.find('('));
 
-	if (sObject.find('.') != string::npos)
-		_fSys.declareFileType(sObject.substr(sObject.rfind('.')));
+        NumeReKernel::showTable(_data.extractTable(sTableName), sTableName, true);
+        NumeReKernel::printPreFmt("|-> " + _lang.get("BUILTIN_WAITINGFOREDIT") + " ... ");
 
-	if (!sObject.length())
-		throw SyntaxError(SyntaxError::NO_FILENAME, sCmd, SyntaxError::invalid_position);
+        NumeRe::Table _table = NumeReKernel::getTable();
+        NumeReKernel::printPreFmt(_lang.get("COMMON_DONE") + ".\n");
 
-	if (sObject[0] == '$'  && sObject[1] != '\'')
-		sObject = "<procpath>/" + sObject.substr(1);
-	else if (sObject[0] == '$')
-		sObject.erase(0, 1);
-
-	while (sObject.find('~') != string::npos)
-		sObject[sObject.find('~')] = '/';
-
-	while (sObject.find('$') != string::npos)
-		sObject.erase(sObject.find('$'), 1);
-
-	if (sObject[0] == '\'' && sObject[sObject.length() - 1] == '\'')
-		sObject = sObject.substr(1, sObject.length() - 2);
-
-    // Resolve the paths
-	if (sObject.find("<loadpath>") != string::npos || sObject.find(_option.getLoadPath()) != string::npos)
-	{
-		_fSys.setPath(_option.getLoadPath(), false, _option.getExePath());
-		sObject = _fSys.ValidFileName(sObject, ".dat");
-	}
-	else if (sObject.find("<savepath>") != string::npos || sObject.find(_option.getSavePath()) != string::npos)
-	{
-		_fSys.setPath(_option.getSavePath(), false, _option.getExePath());
-		sObject = _fSys.ValidFileName(sObject, ".dat");
-	}
-	else if (sObject.find("<scriptpath>") != string::npos || sObject.find(_option.getScriptPath()) != string::npos)
-	{
-		_fSys.setPath(_option.getScriptPath(), false, _option.getExePath());
-		sObject = _fSys.ValidFileName(sObject, ".nscr");
-	}
-	else if (sObject.find("<plotpath>") != string::npos || sObject.find(_option.getPlotPath()) != string::npos)
-	{
-		_fSys.setPath(_option.getPlotPath(), false, _option.getExePath());
-		sObject = _fSys.ValidFileName(sObject, ".png");
-	}
-	else if (sObject.find("<procpath>") != string::npos || sObject.find(_option.getProcPath()) != string::npos)
-	{
-		_fSys.setPath(_option.getProcPath(), false, _option.getExePath());
-		sObject = _fSys.ValidFileName(sObject, ".nprc");
-	}
-	else if (sObject.find("<wp>") != string::npos || sObject.find(_option.getWorkPath()) != string::npos)
-	{
-		_fSys.setPath(_option.getWorkPath(), false, _option.getExePath());
-		sObject = _fSys.ValidFileName(sObject, ".nprc");
-	}
-	else if (sObject.find("<>") != string::npos || sObject.find("<this>") != string::npos || sObject.find(_option.getExePath()) != string::npos)
-	{
-		_fSys.setPath(_option.getExePath(), false, _option.getExePath());
-		sObject = _fSys.ValidFileName(sObject, ".dat");
-	}
-	else if (!_data.containsTablesOrClusters(sObject))
-	{
-	    // Is probably a folder path to be edited in the Windows Explorer
-		if (sObject.find('.') == string::npos && (sObject.find('/') != string::npos || sObject.find('\\') != string::npos))
-		{
-			ShellExecute(NULL, NULL, sObject.c_str(), NULL, NULL, SW_SHOWNORMAL);
-			return true;
-		}
-
-		// Append a wildcard at the end of the path if necessary
-		if (sObject[sObject.length() - 1] != '*' && sObject.find('.') == string::npos)
-			sObject += "*";
-
-        // Try to determine the path based upon the file extension, where we might find the
-        // file, if the user did not supply the path to the file
-		if (sObject.find('.') != string::npos)
-		{
-			if (sObject.substr(sObject.rfind('.')) == ".dat" || sObject.substr(sObject.rfind('.')) == ".txt")
-			{
-				_fSys.setPath(_option.getLoadPath(), false, _option.getExePath());
-				string sTemporaryObjectName = _fSys.ValidFileName(sObject, ".dat");
-
-				if (!fileExists(sTemporaryObjectName))
-					_fSys.setPath(_option.getSavePath(), false, _option.getExePath());
-			}
-			else if (sObject.substr(sObject.rfind('.')) == ".nscr")
-				_fSys.setPath(_option.getScriptPath(), false, _option.getExePath());
-			else if (sObject.substr(sObject.rfind('.')) == ".nprc")
-				_fSys.setPath(_option.getProcPath(), false, _option.getExePath());
-			else if (sObject.substr(sObject.rfind('.')) == ".png"
-					 || sObject.substr(sObject.rfind('.')) == ".gif"
-					 || sObject.substr(sObject.rfind('.')) == ".svg"
-					 || sObject.substr(sObject.rfind('.')) == ".eps")
-				_fSys.setPath(_option.getPlotPath(), false, _option.getExePath());
-			else if (sObject.substr(sObject.rfind('.')) == ".tex")
-			{
-				_fSys.setPath(_option.getPlotPath(), false, _option.getExePath());
-				string sTemporaryObjectName = _fSys.ValidFileName(sObject, ".tex");
-
-				if (!fileExists(sTemporaryObjectName))
-					_fSys.setPath(_option.getSavePath(), false, _option.getExePath());
-			}
-			else if (sObject.substr(sObject.rfind('.')) == ".nhlp")
-				_fSys.setPath(_option.getExePath() + "/docs", false, _option.getExePath());
-			else
-				_fSys.setPath(_option.getExePath(), false, _option.getExePath());
-		}
-		else
-			_fSys.setPath(_option.getExePath(), false, _option.getExePath());
-
-		sObject = _fSys.ValidFileName(sObject, ".dat");
-	}
-
-	// Is probably a folder path
-	if (!_data.containsTablesOrClusters(sObject) && sObject.find('.') == string::npos && (sObject.find('/') != string::npos || sObject.find('\\') != string::npos))
-	{
-		ShellExecute(NULL, NULL, sObject.c_str(), NULL, NULL, SW_SHOWNORMAL);
-		return true;
-	}
-
-	// Open the table for editing
-	if (_data.containsTables(sObject))
-	{
-		StripSpaces(sObject);
-		string sTableName = sObject.substr(0, sObject.find('('));
-
-		NumeReKernel::showTable(_data.extractTable(sTableName), sTableName, true);
-		NumeReKernel::printPreFmt("|-> " + _lang.get("BUILTIN_WAITINGFOREDIT") + " ... ");
-
-		NumeRe::Table _table = NumeReKernel::getTable();
-		NumeReKernel::printPreFmt(_lang.get("COMMON_DONE") + ".\n");
-
-		if (_table.isEmpty())
+        if (_table.isEmpty())
             return true;
 
         _data.importTable(_table, sTableName);
         return true;
-	}
+    }
 
-	// Could be a folder -> open it in the Windows Explorer
-	if (!fileExists(sObject) || sObject.find('.') == string::npos)
-	{
-		sObject.erase(sObject.rfind('.'));
+    std::string sDefaultExtension = ".dat";
+    FileSystem _fSys;
+    _fSys.setTokens(_option.getTokenPaths());
 
-		if (sObject.find('*') != string::npos)
-			sObject.erase(sObject.rfind('*'));
+    if (sObject.find('.') != std::string::npos)
+        _fSys.declareFileType(sObject.substr(sObject.rfind('.')));
 
-		if ((long long int)ShellExecute(NULL, NULL, sObject.c_str(), NULL, NULL, SW_SHOWNORMAL) > 32)
-			return true;
+    if (!sObject.length())
+        throw SyntaxError(SyntaxError::NO_FILENAME, sCmd, SyntaxError::invalid_position);
 
-		throw SyntaxError(SyntaxError::FILE_NOT_EXIST, sCmd, SyntaxError::invalid_position, sObject);
-	}
+    if (sObject[0] == '$' && sObject[1] != '\'')
+        sObject.insert(0, "<procpath>/");
+    else if (sObject[0] == '$')
+        sObject.erase(0, 1);
 
-	// Determine the file type of the file to be edited
-	if (sObject.substr(sObject.rfind('.')) == ".dat"
-			|| sObject.substr(sObject.rfind('.')) == ".txt"
-			|| sObject.substr(sObject.rfind('.')) == ".tex"
-			|| sObject.substr(sObject.rfind('.')) == ".xml"
-			|| sObject.substr(sObject.rfind('.')) == ".yaml"
-			|| sObject.substr(sObject.rfind('.')) == ".yml"
-			|| sObject.substr(sObject.rfind('.')) == ".json"
-			|| sObject.substr(sObject.rfind('.')) == ".csv"
-			|| sObject.substr(sObject.rfind('.')) == ".labx"
-			|| sObject.substr(sObject.rfind('.')) == ".jdx"
-			|| sObject.substr(sObject.rfind('.')) == ".jcm"
-			|| sObject.substr(sObject.rfind('.')) == ".dx"
-			|| sObject.substr(sObject.rfind('.')) == ".nscr"
-			|| sObject.substr(sObject.rfind('.')) == ".nprc"
-			|| sObject.substr(sObject.rfind('.')) == ".nhlp"
-			|| sObject.substr(sObject.rfind('.')) == ".nlyt"
-			|| sObject.substr(sObject.rfind('.')) == ".png"
-			|| sObject.substr(sObject.rfind('.')) == ".gif"
-			|| sObject.substr(sObject.rfind('.')) == ".m"
-			|| sObject.substr(sObject.rfind('.')) == ".cpp"
-			|| sObject.substr(sObject.rfind('.')) == ".cxx"
-			|| sObject.substr(sObject.rfind('.')) == ".c"
-			|| sObject.substr(sObject.rfind('.')) == ".hpp"
-			|| sObject.substr(sObject.rfind('.')) == ".hxx"
-			|| sObject.substr(sObject.rfind('.')) == ".h"
-			|| sObject.substr(sObject.rfind('.')) == ".log")
-		nType = 1;
-	else if (sObject.substr(sObject.rfind('.')) == ".svg"
-			 || sObject.substr(sObject.rfind('.')) == ".eps")
-		nType = 2;
+    replaceAll(sObject, "~", "/");
+    replaceAll(sObject, "$", "");
 
-	if (!nType)
-		throw SyntaxError(SyntaxError::CANNOT_EDIT_FILE_TYPE, sCmd, SyntaxError::invalid_position, sObject);
+    if (sObject.front() == '\'' && sObject.back() == '\'')
+    {
+        sObject.erase(0, 1);
+        sObject.pop_back();
+    }
 
-	if (nType == 1)
-	{
-		NumeReKernel::nOpenFileFlag = nFileOpenFlag;
-		NumeReKernel::gotoLine(sObject);
-	}
-	else if (nType == 2)
-		openExternally(sObject);
+    // Resolve the paths
+    if (sObject.ends_with(".dat")
+            || sObject.ends_with(".txt")
+            || sObject.ends_with(".tex"))
+    {
+        _fSys.setPath(_option.getLoadPath(), false, _option.getExePath());
 
-	return true;
+        std::string sTemporaryObjectName = _fSys.ValidFileName(sObject, ".dat");
+
+        if (!fileExists(sTemporaryObjectName))
+            _fSys.setPath(_option.getSavePath(), false, _option.getExePath());
+    }
+    else if (sObject.find("<loadpath>") != std::string::npos
+             || sObject.find(_option.getLoadPath()) != std::string::npos)
+        _fSys.setPath(_option.getLoadPath(), false, _option.getExePath());
+    else if (sObject.find("<savepath>") != std::string::npos
+             || sObject.find(_option.getSavePath()) != std::string::npos)
+        _fSys.setPath(_option.getSavePath(), false, _option.getExePath());
+    else if (sObject.ends_with(".nscr")
+             || sObject.find("<scriptpath>") != std::string::npos
+             || sObject.find(_option.getScriptPath()) != std::string::npos)
+    {
+        _fSys.setPath(_option.getScriptPath(), false, _option.getExePath());
+        sDefaultExtension = ".nscr";
+    }
+    else if (sObject.ends_with(".png")
+             || sObject.ends_with(".gif")
+             || sObject.ends_with(".svg")
+             || sObject.ends_with(".eps")
+             || sObject.find("<plotpath>") != std::string::npos
+             || sObject.find(_option.getPlotPath()) != std::string::npos)
+    {
+        _fSys.setPath(_option.getPlotPath(), false, _option.getExePath());
+        sDefaultExtension = ".png";
+    }
+    else if (sObject.ends_with(".nprc")
+             || sObject.find("<procpath>") != std::string::npos
+             || sObject.find(_option.getProcPath()) != std::string::npos)
+    {
+        _fSys.setPath(_option.getProcPath(), false, _option.getExePath());
+        sDefaultExtension = ".nprc";
+    }
+    else if (sObject.find("<wp>") != std::string::npos
+             || sObject.find(_option.getWorkPath()) != std::string::npos)
+        _fSys.setPath(_option.getWorkPath(), false, _option.getExePath());
+    else if (sObject.find("<>") != std::string::npos
+             || sObject.find("<this>") != std::string::npos
+             || sObject.find(_option.getExePath()) != std::string::npos)
+        _fSys.setPath(_option.getExePath(), false, _option.getExePath());
+    else
+    {
+        // Is probably a folder path to be edited in the Windows Explorer
+        if (sObject.find('.') == std::string::npos
+                && sObject.find_first_of("/\\") != std::string::npos)
+        {
+            ShellExecute(NULL, NULL, sObject.c_str(), NULL, NULL, SW_SHOWNORMAL);
+            return true;
+        }
+
+        // Append a wildcard at the end of the path if necessary
+        if (sObject.back() != '*' && sObject.find('.') == std::string::npos)
+            sObject += "*";
+
+        // Try to determine the path based upon the file extension, where we might find the
+        // file, if the user did not supply the path to the file
+        if (sObject.find('.') != std::string::npos)
+        {
+            if (sObject.ends_with(".nhlp"))
+                _fSys.setPath(_option.getExePath() + "/docs", false, _option.getExePath());
+            else
+                _fSys.setPath(_option.getExePath(), false, _option.getExePath());
+        }
+        else
+            _fSys.setPath(_option.getExePath(), false, _option.getExePath());
+    }
+
+    sObject = _fSys.ValidFileName(sObject, sDefaultExtension);
+
+    // Could be a folder -> open it in the Windows Explorer
+    if (!fileExists(sObject) || sObject.find('.') == std::string::npos)
+    {
+        sObject.erase(sObject.rfind('.'));
+
+        if (sObject.find('*') != std::string::npos)
+            sObject.erase(sObject.rfind('*'));
+
+        if ((long long int)ShellExecute(NULL, NULL, sObject.c_str(), NULL, NULL, SW_SHOWNORMAL) > 32)
+            return true;
+
+        throw SyntaxError(SyntaxError::FILE_NOT_EXIST, sCmd, SyntaxError::invalid_position, sObject);
+    }
+
+    // Determine the file type of the file to be edited
+    if (sObject.ends_with(".dat")
+            || sObject.ends_with(".txt")
+            || sObject.ends_with(".tex")
+            || sObject.ends_with(".xml")
+            || sObject.ends_with(".yaml")
+            || sObject.ends_with(".yml")
+            || sObject.ends_with(".json")
+            || sObject.ends_with(".csv")
+            || sObject.ends_with(".labx")
+            || sObject.ends_with(".jdx")
+            || sObject.ends_with(".jcm")
+            || sObject.ends_with(".dx")
+            || sObject.ends_with(".nscr")
+            || sObject.ends_with(".nprc")
+            || sObject.ends_with(".nhlp")
+            || sObject.ends_with(".nlyt")
+            || sObject.ends_with(".png")
+            || sObject.ends_with(".gif")
+            || sObject.ends_with(".m")
+            || sObject.ends_with(".cpp")
+            || sObject.ends_with(".cxx")
+            || sObject.ends_with(".c")
+            || sObject.ends_with(".hpp")
+            || sObject.ends_with(".hxx")
+            || sObject.ends_with(".h")
+            || sObject.ends_with(".log"))
+        nType = 1;
+    else if (sObject.ends_with(".svg")
+             || sObject.ends_with(".eps"))
+        nType = 2;
+
+    if (!nType)
+        throw SyntaxError(SyntaxError::CANNOT_EDIT_FILE_TYPE, sCmd, SyntaxError::invalid_position, sObject);
+
+    if (nType == 1)
+    {
+        NumeReKernel::nOpenFileFlag = nFileOpenFlag;
+        NumeReKernel::gotoLine(sObject);
+    }
+    else if (nType == 2)
+        openExternally(sObject);
+
+    return true;
 }
 
 
@@ -699,272 +681,253 @@ static bool editObject(string& sCmd, Parser& _parser, MemoryManager& _data, Sett
 /////////////////////////////////////////////////
 static bool listDirectory(const string& sDir, const string& sParams, const Settings& _option)
 {
-	WIN32_FIND_DATA FindFileData;
-	HANDLE hFind = INVALID_HANDLE_VALUE;
-	LARGE_INTEGER Filesize;
-	double dFilesize = 0.0;
-	double dFilesizeTotal = 0.0;
-	string sConnect;
-	string sPattern = "*";
-	string sFilesize = " Bytes";
-	string sFileName;
-	string sDirectory = "";
-	int nLength = 0;
-	int nCount[2] = {0, 0};
-	size_t nFirstColLength = _option.getWindow() / 2 - 6;
-	bool bOnlyDir = false;
+    WIN32_FIND_DATA FindFileData;
+    HANDLE hFind = INVALID_HANDLE_VALUE;
+    LARGE_INTEGER Filesize;
+    double dFilesize = 0.0;
+    double dFilesizeTotal = 0.0;
+    string sConnect;
+    string sPattern = "*";
+    string sFilesize = " Bytes";
+    string sFileName;
+    string sDirectory = "";
+    int nLength = 0;
+    int nCount[2] = {0, 0};
+    size_t nFirstColLength = _option.getWindow() / 2 - 6;
+    bool bOnlyDir = false;
 
-	if (findSettingOption(sParams, "dir"))
-		bOnlyDir = true;
+    if (findSettingOption(sParams, "dir"))
+        bOnlyDir = true;
 
-	if (findSettingOption(sParams, "pattern") || findSettingOption(sParams, "p"))
-	{
-		int nPos = 0;
+    if (findSettingOption(sParams, "pattern") || findSettingOption(sParams, "p"))
+    {
+        int nPos = 0;
 
-		if (findSettingOption(sParams, "pattern"))
-			nPos = findSettingOption(sParams, "pattern");
-		else
-			nPos = findSettingOption(sParams, "p");
+        if (findSettingOption(sParams, "pattern"))
+            nPos = findSettingOption(sParams, "pattern");
+        else
+            nPos = findSettingOption(sParams, "p");
 
-		sPattern = getArgAtPos(sParams, nPos);
-		StripSpaces(sPattern);
+        sPattern = getArgAtPos(sParams, nPos);
+        StripSpaces(sPattern);
 
-		if (!sPattern.length())
-			sPattern = "*";
-	}
+        if (!sPattern.length())
+            sPattern = "*";
+    }
 
-	for (int n = 0; n < 2; n++)
-	{
-		if (bOnlyDir && n)
-			break;
+    for (int n = 0; n < 2; n++)
+    {
+        if (bOnlyDir && n)
+            break;
 
-		if (sDir == "LOADPATH")
-		{
-			hFind = FindFirstFile((_option.getLoadPath() + "\\" + sPattern).c_str(), &FindFileData);
-			sDirectory = _option.getLoadPath();
-		}
-		else if (sDir == "SAVEPATH")
-		{
-			hFind = FindFirstFile((_option.getSavePath() + "\\" + sPattern).c_str(), &FindFileData);
-			sDirectory = _option.getSavePath();
-		}
-		else if (sDir == "PLOTPATH")
-		{
-			hFind = FindFirstFile((_option.getPlotPath() + "\\" + sPattern).c_str(), &FindFileData);
-			sDirectory = _option.getPlotPath();
-		}
-		else if (sDir == "SCRIPTPATH")
-		{
-			hFind = FindFirstFile((_option.getScriptPath() + "\\" + sPattern).c_str(), &FindFileData);
-			sDirectory = _option.getScriptPath();
-		}
-		else if (sDir == "PROCPATH")
-		{
-			hFind = FindFirstFile((_option.getProcPath() + "\\" + sPattern).c_str(), &FindFileData);
-			sDirectory = _option.getProcPath();
-		}
-		else if (sDir == "WORKPATH")
-		{
-			hFind = FindFirstFile((_option.getWorkPath() + "\\" + sPattern).c_str(), &FindFileData);
-			sDirectory = _option.getWorkPath();
-		}
-		else
-		{
-			if (sDir[0] == '.')
-			{
-				hFind = FindFirstFile((_option.getExePath() + "\\" + sDir + "\\" + sPattern).c_str(), &FindFileData);
-				sDirectory = _option.getExePath() + "/" + sDir;
-			}
-			else if (sDir[0] == '<')
-			{
-				if (sDir.substr(0, 10) == "<loadpath>")
-				{
-					hFind = FindFirstFile((_option.getLoadPath() + "\\" + sDir.substr(sDir.find('>') + 1) + "\\" + sPattern).c_str(), &FindFileData);
-					sDirectory = _option.getLoadPath() + sDir.substr(10);
-				}
-				else if (sDir.substr(0, 10) == "<savepath>")
-				{
-					hFind = FindFirstFile((_option.getSavePath() + "\\" + sDir.substr(sDir.find('>') + 1) + "\\" + sPattern).c_str(), &FindFileData);
-					sDirectory = _option.getSavePath() + sDir.substr(10);
-				}
-				else if (sDir.substr(0, 12) == "<scriptpath>")
-				{
-					hFind = FindFirstFile((_option.getScriptPath() + "\\" + sDir.substr(sDir.find('>') + 1) + "\\" + sPattern).c_str(), &FindFileData);
-					sDirectory = _option.getScriptPath() + sDir.substr(12);
-				}
-				else if (sDir.substr(0, 10) == "<plotpath>")
-				{
-					hFind = FindFirstFile((_option.getPlotPath() + "\\" + sDir.substr(sDir.find('>') + 1) + "\\" + sPattern).c_str(), &FindFileData);
-					sDirectory = _option.getPlotPath() + sDir.substr(10);
-				}
-				else if (sDir.substr(0, 10) == "<procpath>")
-				{
-					hFind = FindFirstFile((_option.getProcPath() + "\\" + sDir.substr(sDir.find('>') + 1) + "\\" + sPattern).c_str(), &FindFileData);
-					sDirectory = _option.getProcPath() + sDir.substr(10);
-				}
-				else if (sDir.substr(0, 4) == "<wp>")
-				{
-					hFind = FindFirstFile((_option.getWorkPath() + "\\" + sDir.substr(sDir.find('>') + 1) + "\\" + sPattern).c_str(), &FindFileData);
-					sDirectory = _option.getWorkPath() + sDir.substr(10);
-				}
-				else if (sDir.substr(0, 2) == "<>" || sDir.substr(0, 6) == "<this>")
-				{
-					hFind = FindFirstFile((_option.getExePath() + "\\" + sDir.substr(sDir.find('>') + 1) + "\\" + sPattern).c_str(), &FindFileData);
-					sDirectory = _option.getExePath() + sDir.substr(sDir.find('>') + 1);
-				}
-			}
-			else
-			{
-				hFind = FindFirstFile((sDir + "\\" + sPattern).c_str(), &FindFileData);
-				sDirectory = sDir;
-			}
-		}
+        if (sDir == "LOADPATH")
+        {
+            hFind = FindFirstFile((_option.getLoadPath() + "\\" + sPattern).c_str(), &FindFileData);
+            sDirectory = _option.getLoadPath();
+        }
+        else if (sDir == "SAVEPATH")
+        {
+            hFind = FindFirstFile((_option.getSavePath() + "\\" + sPattern).c_str(), &FindFileData);
+            sDirectory = _option.getSavePath();
+        }
+        else if (sDir == "PLOTPATH")
+        {
+            hFind = FindFirstFile((_option.getPlotPath() + "\\" + sPattern).c_str(), &FindFileData);
+            sDirectory = _option.getPlotPath();
+        }
+        else if (sDir == "SCRIPTPATH")
+        {
+            hFind = FindFirstFile((_option.getScriptPath() + "\\" + sPattern).c_str(), &FindFileData);
+            sDirectory = _option.getScriptPath();
+        }
+        else if (sDir == "PROCPATH")
+        {
+            hFind = FindFirstFile((_option.getProcPath() + "\\" + sPattern).c_str(), &FindFileData);
+            sDirectory = _option.getProcPath();
+        }
+        else if (sDir == "WORKPATH")
+        {
+            hFind = FindFirstFile((_option.getWorkPath() + "\\" + sPattern).c_str(), &FindFileData);
+            sDirectory = _option.getWorkPath();
+        }
+        else
+        {
+            if (sDir[0] == '.')
+            {
+                hFind = FindFirstFile((_option.getExePath() + "\\" + sDir + "\\" + sPattern).c_str(), &FindFileData);
+                sDirectory = _option.getExePath() + "/" + sDir;
+            }
+            else if (sDir[0] == '<')
+            {
+                if (sDir.starts_with("<loadpath>"))
+                    sDirectory = _option.getLoadPath() + sDir.substr(10);
+                else if (sDir.starts_with("<savepath>"))
+                    sDirectory = _option.getSavePath() + sDir.substr(10);
+                else if (sDir.starts_with("<scriptpath>"))
+                    sDirectory = _option.getScriptPath() + sDir.substr(12);
+                else if (sDir.starts_with("<plotpath>"))
+                    sDirectory = _option.getPlotPath() + sDir.substr(10);
+                else if (sDir.starts_with("<procpath>"))
+                    sDirectory = _option.getProcPath() + sDir.substr(10);
+                else if (sDir.starts_with("<wp>"))
+                    sDirectory = _option.getWorkPath() + sDir.substr(4);
+                else if (sDir.starts_with("<>") || sDir.starts_with("<this>"))
+                    sDirectory = _option.getExePath() + sDir.substr(sDir.find('>') + 1);
 
-		if (hFind == INVALID_HANDLE_VALUE)
-			return false;
+                hFind = FindFirstFile((sDirectory + "\\" + sPattern).c_str(), &FindFileData);
+            }
+            else
+            {
+                hFind = FindFirstFile((sDir + "\\" + sPattern).c_str(), &FindFileData);
+                sDirectory = sDir;
+            }
+        }
 
-		do
-		{
-			sFilesize = " Bytes";
-			sConnect = "|   ";
-			sConnect += FindFileData.cFileName;
-			sFileName = sDirectory + "/" + FindFileData.cFileName;
+        if (hFind == INVALID_HANDLE_VALUE)
+            return false;
 
-			if (sConnect.length() + 3 > nFirstColLength) //31
-				sConnect = sConnect.substr(0, nFirstColLength - 14) + "..." + sConnect.substr(sConnect.length() - 8); //20
+        do
+        {
+            sFilesize = " Bytes";
+            sConnect = "|   ";
+            sConnect += FindFileData.cFileName;
+            sFileName = sDirectory + "/" + FindFileData.cFileName;
 
-			nLength = sConnect.length();
+            if (sConnect.length() + 3 > nFirstColLength) //31
+                sConnect = sConnect.substr(0, nFirstColLength - 14) + "..." + sConnect.substr(sConnect.length() - 8); //20
 
-			if (FindFileData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
-			{
-				if (n)
-					continue;
+            nLength = sConnect.length();
+
+            if (FindFileData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
+            {
+                if (n)
+                    continue;
 
                 // Ignore parent and current directory placeholders
-				if (sConnect.substr(sConnect.length() - 2) == ".." || sConnect.substr(sConnect.length() - 1) == ".")
-					continue;
+                if (sConnect.substr(sConnect.length() - 2) == ".." || sConnect.substr(sConnect.length() - 1) == ".")
+                    continue;
 
-				nCount[1]++;
-				sConnect += "  (...)";
-				sConnect.append(nFirstColLength - 1 - nLength, ' ');
-				sConnect += "<" + _lang.get("BUILTIN_LISTFILES_CUSTOMPATH") + ">";
-			}
-			else if (!bOnlyDir && n)
-			{
-				nCount[0]++;
-				Filesize.LowPart = FindFileData.nFileSizeLow;
-				Filesize.HighPart = FindFileData.nFileSizeHigh;
-				string sExt = "";
+                nCount[1]++;
+                sConnect += "  (...)";
+                sConnect.append(nFirstColLength - 1 - nLength, ' ');
+                sConnect += "<" + _lang.get("BUILTIN_LISTFILES_CUSTOMPATH") + ">";
+            }
+            else if (!bOnlyDir && n)
+            {
+                nCount[0]++;
+                Filesize.LowPart = FindFileData.nFileSizeLow;
+                Filesize.HighPart = FindFileData.nFileSizeHigh;
+                string sExt = "";
 
-				if (sConnect.find('.') != string::npos)
-					sExt = toLowerCase(sConnect.substr(sConnect.rfind('.'), sConnect.find(' ', sConnect.rfind('.')) - sConnect.rfind('.')));
+                if (sConnect.find('.') != string::npos)
+                    sExt = toLowerCase(sConnect.substr(sConnect.rfind('.'), sConnect.find(' ', sConnect.rfind('.')) - sConnect.rfind('.')));
 
                 sConnect.append(nFirstColLength + 7 - nLength, '.');
 
-				// Get the language string for the current file type
-				if (!sExt.length())
-					sConnect += _lang.get("COMMON_FILETYPE_NOEXT");
-				else if (sExt == ".dx" || sExt == ".jcm")
-					sConnect += _lang.get("COMMON_FILETYPE_JDX");
-				else if (sExt == ".wave")
-					sConnect += _lang.get("COMMON_FILETYPE_WAV");
+                // Get the language string for the current file type
+                if (!sExt.length())
+                    sConnect += _lang.get("COMMON_FILETYPE_NOEXT");
+                else if (sExt == ".dx" || sExt == ".jcm")
+                    sConnect += _lang.get("COMMON_FILETYPE_JDX");
+                else if (sExt == ".wave")
+                    sConnect += _lang.get("COMMON_FILETYPE_WAV");
                 else
                 {
                     sExt = _lang.get("COMMON_FILETYPE_" + toUpperCase(sExt.substr(1)));
 
                     if (sExt.find("COMMON_FILETYPE_") != string::npos)
-                        sConnect += sExt.substr(sExt.rfind('_')+1) + "-" + _lang.get("COMMON_FILETYPE_NOEXT");
+                        sConnect += sExt.substr(sExt.rfind('_') + 1) + "-" + _lang.get("COMMON_FILETYPE_NOEXT");
                     else
                         sConnect += sExt;
                 }
 
                 // Create the file size string
-				dFilesize = (double)Filesize.QuadPart;
-				dFilesizeTotal += dFilesize;
+                dFilesize = (double)Filesize.QuadPart;
+                dFilesizeTotal += dFilesize;
 
-				if (dFilesize / 1000.0 >= 1)
-				{
-					dFilesize /= 1024.0;
-					sFilesize = "KBytes";
+                if (dFilesize / 1000.0 >= 1)
+                {
+                    dFilesize /= 1024.0;
+                    sFilesize = "KBytes";
 
-					if (dFilesize / 1000.0 >= 1)
-					{
-						dFilesize /= 1024.0;
-						sFilesize = "MBytes";
+                    if (dFilesize / 1000.0 >= 1)
+                    {
+                        dFilesize /= 1024.0;
+                        sFilesize = "MBytes";
 
-						if (dFilesize / 1000.0 >= 1)
-						{
-							dFilesize /= 1024.0;
-							sFilesize = "GBytes";
-						}
-					}
-				}
+                        if (dFilesize / 1000.0 >= 1)
+                        {
+                            dFilesize /= 1024.0;
+                            sFilesize = "GBytes";
+                        }
+                    }
+                }
 
-				sFilesize = toString(dFilesize, 3) + " " + sFilesize;
-				sConnect.append(_option.getWindow() - sConnect.length() - sFilesize.length(), '.');
-				sConnect += sFilesize;
+                sFilesize = toString(dFilesize, 3) + " " + sFilesize;
+                sConnect.append(_option.getWindow() - sConnect.length() - sFilesize.length(), '.');
+                sConnect += sFilesize;
 
-				if (sExt == _lang.get("COMMON_FILETYPE_NDAT") && _option.showExtendedFileInfo())
-				{
-					sConnect += "\n|     : ";
-					std::string sFileInfo = getFileInfo(sFileName);
-					replaceAll(sFileInfo, "\n", "\n|     : ");
-					sConnect += sFileInfo;
-				}
-			}
-			else
-				continue;
+                if (sExt == _lang.get("COMMON_FILETYPE_NDAT") && _option.showExtendedFileInfo())
+                {
+                    sConnect += "\n|     : ";
+                    std::string sFileInfo = getFileInfo(sFileName);
+                    replaceAll(sFileInfo, "\n", "\n|     : ");
+                    sConnect += sFileInfo;
+                }
+            }
+            else
+                continue;
 
-			NumeReKernel::printPreFmt(sConnect + "\n");
-		}
-		while (FindNextFile(hFind, &FindFileData) != 0);
-	}
+            NumeReKernel::printPreFmt(sConnect + "\n");
+        }
+        while (FindNextFile(hFind, &FindFileData) != 0);
+    }
 
-	FindClose(hFind);
+    FindClose(hFind);
 
     // Create the byte sum string for the whole list
-	if (nCount[0])
-	{
-		sFilesize = " Bytes";
+    if (nCount[0])
+    {
+        sFilesize = " Bytes";
 
-		if (dFilesizeTotal / 1000.0 >= 1)
-		{
-			dFilesizeTotal /= 1024.0;
-			sFilesize = "KBytes";
+        if (dFilesizeTotal / 1000.0 >= 1)
+        {
+            dFilesizeTotal /= 1024.0;
+            sFilesize = "KBytes";
 
-			if (dFilesizeTotal / 1000.0 >= 1)
-			{
-				dFilesizeTotal /= 1024.0;
-				sFilesize = "MBytes";
+            if (dFilesizeTotal / 1000.0 >= 1)
+            {
+                dFilesizeTotal /= 1024.0;
+                sFilesize = "MBytes";
 
-				if (dFilesizeTotal / 1000.0 >= 1)
-				{
-					dFilesizeTotal /= 1024.0;
-					sFilesize = "GBytes";
-				}
-			}
-		}
+                if (dFilesizeTotal / 1000.0 >= 1)
+                {
+                    dFilesizeTotal /= 1024.0;
+                    sFilesize = "GBytes";
+                }
+            }
+        }
 
-		sFilesize = "Total: " + toString(dFilesizeTotal, 3) + " " + sFilesize;
-	}
-	else
-		sFilesize = "";
+        sFilesize = "Total: " + toString(dFilesizeTotal, 3) + " " + sFilesize;
+    }
+    else
+        sFilesize = "";
 
-	string sSummary = "-- " + _lang.get("BUILTIN_LISTFILES_SUMMARY", toString(nCount[0]), toString(nCount[1])) + " --";
-	sSummary.append(_option.getWindow() - sSummary.length() - 4 - sFilesize.length(), ' ');
-	sSummary += sFilesize;
+    string sSummary = "-- " + _lang.get("BUILTIN_LISTFILES_SUMMARY", toString(nCount[0]), toString(nCount[1])) + " --";
+    sSummary.append(_option.getWindow() - sSummary.length() - 4 - sFilesize.length(), ' ');
+    sSummary += sFilesize;
 
-	if (bOnlyDir)
-	{
-		if (nCount[1])
-			NumeReKernel::printPreFmt("|   -- " + _lang.get("BUILTIN_LISTFILES_DIR_SUMMARY", toString(nCount[1])) + " --\n");
-		else
-			NumeReKernel::printPreFmt("|   -- " + _lang.get("BUILTIN_LISTFILES_NODIRS") + " --\n");
-	}
-	else
-		NumeReKernel::printPreFmt("|   " + sSummary + "\n");
+    if (bOnlyDir)
+    {
+        if (nCount[1])
+            NumeReKernel::printPreFmt("|   -- " + _lang.get("BUILTIN_LISTFILES_DIR_SUMMARY", toString(nCount[1])) + " --\n");
+        else
+            NumeReKernel::printPreFmt("|   -- " + _lang.get("BUILTIN_LISTFILES_NODIRS") + " --\n");
+    }
+    else
+        NumeReKernel::printPreFmt("|   " + sSummary + "\n");
 
-	return true;
+    return true;
 }
 
 
@@ -1014,144 +977,144 @@ static string createListDirectoryHeader(const string& sPathName, const string& s
 /////////////////////////////////////////////////
 static bool listFiles(const string& sCmd, const Settings& _option)
 {
-	string sConnect = "";
-	string sSpecified = "";
-	string __sCmd = sCmd + " ";
-	string sPattern = "";
-	size_t nFirstColLength = _option.getWindow() / 2 - 6;
-	bool bFreePath = false;
+    string sConnect = "";
+    string sSpecified = "";
+    string __sCmd = sCmd + " ";
+    string sPattern = "";
+    size_t nFirstColLength = _option.getWindow() / 2 - 6;
+    bool bFreePath = false;
 
-	// Extract a search pattern
-	if (findSettingOption(__sCmd, "pattern") || findSettingOption(__sCmd, "p"))
-	{
-		int nPos = 0;
+    // Extract a search pattern
+    if (findSettingOption(__sCmd, "pattern") || findSettingOption(__sCmd, "p"))
+    {
+        int nPos = 0;
 
-		if (findSettingOption(__sCmd, "pattern"))
-			nPos = findSettingOption(__sCmd, "pattern");
-		else
-			nPos = findSettingOption(__sCmd, "p");
+        if (findSettingOption(__sCmd, "pattern"))
+            nPos = findSettingOption(__sCmd, "pattern");
+        else
+            nPos = findSettingOption(__sCmd, "p");
 
-		sPattern = getArgAtPos(__sCmd, nPos);
-		StripSpaces(sPattern);
+        sPattern = getArgAtPos(__sCmd, nPos);
+        StripSpaces(sPattern);
 
-		if (sPattern.length())
-			sPattern = _lang.get("BUILTIN_LISTFILES_FILTEREDFOR", sPattern);
-	}
+        if (sPattern.length())
+            sPattern = _lang.get("BUILTIN_LISTFILES_FILTEREDFOR", sPattern);
+    }
 
-	NumeReKernel::toggleTableStatus();
+    NumeReKernel::toggleTableStatus();
 
-	// Write the headline
-	make_hline();
-	sConnect = "NUMERE: " + toUpperCase(_lang.get("BUILTIN_LISTFILES_EXPLORER"));
+    // Write the headline
+    make_hline();
+    sConnect = "NUMERE: " + toUpperCase(_lang.get("BUILTIN_LISTFILES_EXPLORER"));
 
-	if (sConnect.length() > nFirstColLength + 6)
-		sConnect += "    ";
-	else
-		sConnect.append(nFirstColLength + 6 - sConnect.length(), ' ');
+    if (sConnect.length() > nFirstColLength + 6)
+        sConnect += "    ";
+    else
+        sConnect.append(nFirstColLength + 6 - sConnect.length(), ' ');
 
-	NumeReKernel::print(LineBreak(sConnect + sPattern, _option, true, 0, sConnect.length()) );
-	make_hline();
+    NumeReKernel::print(LineBreak(sConnect + sPattern, _option, true, 0, sConnect.length()) );
+    make_hline();
 
-	// Find the specified folder
-	size_t nPos = findSettingOption(__sCmd, "files");
+    // Find the specified folder
+    size_t nPos = findSettingOption(__sCmd, "files");
 
-	if (nPos && sCmd[nPos-1] == '=')
-	{
-		sSpecified = getArgAtPos(__sCmd, nPos);
-		StripSpaces(sSpecified);
+    if (nPos && sCmd[nPos - 1] == '=')
+    {
+        sSpecified = getArgAtPos(__sCmd, nPos);
+        StripSpaces(sSpecified);
 
-		if (sSpecified[0] == '<' && sSpecified[sSpecified.length() - 1] == '>' && sSpecified != "<>" && sSpecified != "<this>")
-		{
-			sSpecified = sSpecified.substr(1, sSpecified.length() - 2);
-			sSpecified = toLowerCase(sSpecified);
+        if (sSpecified[0] == '<' && sSpecified[sSpecified.length() - 1] == '>' && sSpecified != "<>" && sSpecified != "<this>")
+        {
+            sSpecified = sSpecified.substr(1, sSpecified.length() - 2);
+            sSpecified = toLowerCase(sSpecified);
 
-			if (sSpecified != "loadpath" && sSpecified != "savepath" && sSpecified != "plotpath" && sSpecified != "scriptpath" && sSpecified != "procpath" && sSpecified != "wp")
-				sSpecified = "";
-		}
-		else
-			bFreePath = true;
-	}
+            if (sSpecified != "loadpath" && sSpecified != "savepath" && sSpecified != "plotpath" && sSpecified != "scriptpath" && sSpecified != "procpath" && sSpecified != "wp")
+                sSpecified = "";
+        }
+        else
+            bFreePath = true;
+    }
 
-	// Write the headers and list the directories
-	if (!bFreePath)
-	{
-		if (!sSpecified.length() || sSpecified == "loadpath")
-		{
-		    NumeReKernel::print(createListDirectoryHeader(_option.getLoadPath(), _lang.get("BUILTIN_LISTFILES_LOADPATH"), _option.getWindow()));
+    // Write the headers and list the directories
+    if (!bFreePath)
+    {
+        if (!sSpecified.length() || sSpecified == "loadpath")
+        {
+            NumeReKernel::print(createListDirectoryHeader(_option.getLoadPath(), _lang.get("BUILTIN_LISTFILES_LOADPATH"), _option.getWindow()));
 
-			if (!listDirectory("LOADPATH", __sCmd, _option))
-				NumeReKernel::printPreFmt(LineBreak("|   -- " + _lang.get("BUILTIN_LISTFILES_NOFILES") + " --", _option) + "\n");
-		}
+            if (!listDirectory("LOADPATH", __sCmd, _option))
+                NumeReKernel::printPreFmt(LineBreak("|   -- " + _lang.get("BUILTIN_LISTFILES_NOFILES") + " --", _option) + "\n");
+        }
 
-		if (!sSpecified.length() || sSpecified == "savepath")
-		{
-			if (!sSpecified.length())
-				NumeReKernel::printPreFmt("|\n" );
+        if (!sSpecified.length() || sSpecified == "savepath")
+        {
+            if (!sSpecified.length())
+                NumeReKernel::printPreFmt("|\n" );
 
-		    NumeReKernel::print(createListDirectoryHeader(_option.getSavePath(), _lang.get("BUILTIN_LISTFILES_SAVEPATH"), _option.getWindow()));
+            NumeReKernel::print(createListDirectoryHeader(_option.getSavePath(), _lang.get("BUILTIN_LISTFILES_SAVEPATH"), _option.getWindow()));
 
-			if (!listDirectory("SAVEPATH", __sCmd, _option))
-				NumeReKernel::printPreFmt(LineBreak("|   -- " + _lang.get("BUILTIN_LISTFILES_NOFILES") + " --", _option) + "\n");
-		}
+            if (!listDirectory("SAVEPATH", __sCmd, _option))
+                NumeReKernel::printPreFmt(LineBreak("|   -- " + _lang.get("BUILTIN_LISTFILES_NOFILES") + " --", _option) + "\n");
+        }
 
-		if (!sSpecified.length() || sSpecified == "scriptpath")
-		{
-			if (!sSpecified.length())
-				NumeReKernel::printPreFmt("|\n" );
+        if (!sSpecified.length() || sSpecified == "scriptpath")
+        {
+            if (!sSpecified.length())
+                NumeReKernel::printPreFmt("|\n" );
 
-		    NumeReKernel::print(createListDirectoryHeader(_option.getScriptPath(), _lang.get("BUILTIN_LISTFILES_SCRIPTPATH"), _option.getWindow()));
+            NumeReKernel::print(createListDirectoryHeader(_option.getScriptPath(), _lang.get("BUILTIN_LISTFILES_SCRIPTPATH"), _option.getWindow()));
 
-			if (!listDirectory("SCRIPTPATH", __sCmd, _option))
-				NumeReKernel::printPreFmt(LineBreak("|   -- " + _lang.get("BUILTIN_LISTFILES_NOFILES") + " --", _option) + "\n");
-		}
+            if (!listDirectory("SCRIPTPATH", __sCmd, _option))
+                NumeReKernel::printPreFmt(LineBreak("|   -- " + _lang.get("BUILTIN_LISTFILES_NOFILES") + " --", _option) + "\n");
+        }
 
-		if (!sSpecified.length() || sSpecified == "procpath")
-		{
-			if (!sSpecified.length())
-				NumeReKernel::printPreFmt("|\n" );
+        if (!sSpecified.length() || sSpecified == "procpath")
+        {
+            if (!sSpecified.length())
+                NumeReKernel::printPreFmt("|\n" );
 
-		    NumeReKernel::print(createListDirectoryHeader(_option.getProcPath(), _lang.get("BUILTIN_LISTFILES_PROCPATH"), _option.getWindow()));
+            NumeReKernel::print(createListDirectoryHeader(_option.getProcPath(), _lang.get("BUILTIN_LISTFILES_PROCPATH"), _option.getWindow()));
 
-			if (!listDirectory("PROCPATH", __sCmd, _option))
-				NumeReKernel::printPreFmt(LineBreak("|   -- " + _lang.get("BUILTIN_LISTFILES_NOFILES") + " --", _option) + "\n");
-		}
+            if (!listDirectory("PROCPATH", __sCmd, _option))
+                NumeReKernel::printPreFmt(LineBreak("|   -- " + _lang.get("BUILTIN_LISTFILES_NOFILES") + " --", _option) + "\n");
+        }
 
-		if (!sSpecified.length() || sSpecified == "plotpath")
-		{
-			if (!sSpecified.length())
-				NumeReKernel::printPreFmt("|\n" );
+        if (!sSpecified.length() || sSpecified == "plotpath")
+        {
+            if (!sSpecified.length())
+                NumeReKernel::printPreFmt("|\n" );
 
-		    NumeReKernel::print(createListDirectoryHeader(_option.getPlotPath(), _lang.get("BUILTIN_LISTFILES_PLOTPATH"), _option.getWindow()));
+            NumeReKernel::print(createListDirectoryHeader(_option.getPlotPath(), _lang.get("BUILTIN_LISTFILES_PLOTPATH"), _option.getWindow()));
 
-			if (!listDirectory("PLOTPATH", __sCmd, _option))
-				NumeReKernel::printPreFmt(LineBreak("|   -- " + _lang.get("BUILTIN_LISTFILES_NOFILES") + " --", _option) + "\n");
-		}
+            if (!listDirectory("PLOTPATH", __sCmd, _option))
+                NumeReKernel::printPreFmt(LineBreak("|   -- " + _lang.get("BUILTIN_LISTFILES_NOFILES") + " --", _option) + "\n");
+        }
 
-		if (sSpecified == "wp")
-		{
-		    NumeReKernel::print(createListDirectoryHeader(_option.getWorkPath(), _lang.get("BUILTIN_LISTFILES_WORKPATH"), _option.getWindow()));
+        if (sSpecified == "wp")
+        {
+            NumeReKernel::print(createListDirectoryHeader(_option.getWorkPath(), _lang.get("BUILTIN_LISTFILES_WORKPATH"), _option.getWindow()));
 
-			if (!listDirectory("WORKPATH", __sCmd, _option))
-				NumeReKernel::printPreFmt(LineBreak("|   -- " + _lang.get("BUILTIN_LISTFILES_NOFILES") + " --", _option) + "\n");
-		}
-	}
-	else
-	{
-		sSpecified = fromSystemCodePage(sSpecified);
+            if (!listDirectory("WORKPATH", __sCmd, _option))
+                NumeReKernel::printPreFmt(LineBreak("|   -- " + _lang.get("BUILTIN_LISTFILES_NOFILES") + " --", _option) + "\n");
+        }
+    }
+    else
+    {
+        sSpecified = fromSystemCodePage(sSpecified);
 
-	    if (sSpecified == "<>" || sSpecified == "<this>")
+        if (sSpecified == "<>" || sSpecified == "<this>")
             NumeReKernel::print(createListDirectoryHeader(_option.getExePath(), _lang.get("BUILTIN_LISTFILES_ROOTPATH"), _option.getWindow()));
-	    else
+        else
             NumeReKernel::print(createListDirectoryHeader(sSpecified, _lang.get("BUILTIN_LISTFILES_CUSTOMPATH"), _option.getWindow()));
 
-		if (!listDirectory(sSpecified, __sCmd, _option))
-			NumeReKernel::printPreFmt(LineBreak("|   -- " + _lang.get("BUILTIN_LISTFILES_NOFILES") + " --", _option) + "\n");
-	}
+        if (!listDirectory(sSpecified, __sCmd, _option))
+            NumeReKernel::printPreFmt(LineBreak("|   -- " + _lang.get("BUILTIN_LISTFILES_NOFILES") + " --", _option) + "\n");
+    }
 
-	make_hline();
+    make_hline();
 
-	NumeReKernel::toggleTableStatus();
-	return true;
+    NumeReKernel::toggleTableStatus();
+    return true;
 }
 
 
@@ -1168,36 +1131,36 @@ static bool listFiles(const string& sCmd, const Settings& _option)
 /////////////////////////////////////////////////
 static void listFunctions(const Settings& _option, const string& sType) //PRSRFUNC_LISTFUNC_[TYPES]_*
 {
-	NumeReKernel::toggleTableStatus();
-	make_hline();
-	NumeReKernel::printPreFmt("|-> NUMERE: " + toUpperCase(_lang.get("PARSERFUNCS_LISTFUNC_HEADLINE")));
-	if (sType != "all")
-	{
-		NumeReKernel::printPreFmt("  [" + toUpperCase(_lang.get("PARSERFUNCS_LISTFUNC_TYPE_" + toUpperCase(sType))) + "]");
-	}
-	NumeReKernel::printPreFmt("\n");
-	make_hline();
-	NumeReKernel::printPreFmt(LineBreak("|   " + _lang.get("PARSERFUNCS_LISTFUNC_TABLEHEAD"), _option, false, 0, 28) + "\n|\n");
-	vector<string> vFuncs;
+    NumeReKernel::toggleTableStatus();
+    make_hline();
+    NumeReKernel::printPreFmt("|-> NUMERE: " + toUpperCase(_lang.get("PARSERFUNCS_LISTFUNC_HEADLINE")));
+    if (sType != "all")
+    {
+        NumeReKernel::printPreFmt("  [" + toUpperCase(_lang.get("PARSERFUNCS_LISTFUNC_TYPE_" + toUpperCase(sType))) + "]");
+    }
+    NumeReKernel::printPreFmt("\n");
+    make_hline();
+    NumeReKernel::printPreFmt(LineBreak("|   " + _lang.get("PARSERFUNCS_LISTFUNC_TABLEHEAD"), _option, false, 0, 28) + "\n|\n");
+    vector<string> vFuncs;
 
-	// Get the list of functions from the language file
-	// depending on the selected type
-	if (sType == "all")
-		vFuncs = _lang.getList("PARSERFUNCS_LISTFUNC_FUNC_*");
-	else
-		vFuncs = _lang.getList("PARSERFUNCS_LISTFUNC_FUNC_*_[" + toUpperCase(sType) + "]");
+    // Get the list of functions from the language file
+    // depending on the selected type
+    if (sType == "all")
+        vFuncs = _lang.getList("PARSERFUNCS_LISTFUNC_FUNC_*");
+    else
+        vFuncs = _lang.getList("PARSERFUNCS_LISTFUNC_FUNC_*_[" + toUpperCase(sType) + "]");
 
     // Print the obtained function list on the terminal
-	for (size_t i = 0; i < vFuncs.size(); i++)
-	{
-		NumeReKernel::printPreFmt(LineBreak("|   " + vFuncs[i], _option, false, 0, 75) + "\n");
-	}
-	NumeReKernel::printPreFmt("|\n");
-	NumeReKernel::print(LineBreak(_lang.get("PARSERFUNCS_LISTFUNC_FOOTNOTE1"), _option));
-	NumeReKernel::print(LineBreak(_lang.get("PARSERFUNCS_LISTFUNC_FOOTNOTE2"), _option));
-	NumeReKernel::toggleTableStatus();
-	make_hline();
-	return;
+    for (size_t i = 0; i < vFuncs.size(); i++)
+    {
+        NumeReKernel::printPreFmt(LineBreak("|   " + vFuncs[i], _option, false, 0, 75) + "\n");
+    }
+    NumeReKernel::printPreFmt("|\n");
+    NumeReKernel::print(LineBreak(_lang.get("PARSERFUNCS_LISTFUNC_FOOTNOTE1"), _option));
+    NumeReKernel::print(LineBreak(_lang.get("PARSERFUNCS_LISTFUNC_FOOTNOTE2"), _option));
+    NumeReKernel::toggleTableStatus();
+    make_hline();
+    return;
 }
 
 
@@ -1215,36 +1178,36 @@ static void listFunctions(const Settings& _option, const string& sType) //PRSRFU
 /////////////////////////////////////////////////
 static void listDefinitions(const FunctionDefinitionManager& _functions, const Settings& _option)
 {
-	NumeReKernel::toggleTableStatus();
-	make_hline();
-	NumeReKernel::print("NUMERE: " + toUpperCase(_lang.get("PARSERFUNCS_LISTDEFINE_HEADLINE")));
-	make_hline();
-	if (!_functions.getDefinedFunctions())
-	{
-		NumeReKernel::print(toSystemCodePage(_lang.get("PARSERFUNCS_LISTDEFINE_EMPTY")));
-	}
-	else
-	{
-	    // Print all custom defined functions on the terminal
-		for (size_t i = 0; i < _functions.getDefinedFunctions(); i++)
-		{
-		    // Print first the name of the function
-			NumeReKernel::printPreFmt(sectionHeadline(_functions.getFunctionSignature(i).substr(0, _functions.getFunctionSignature(i).rfind('('))));
+    NumeReKernel::toggleTableStatus();
+    make_hline();
+    NumeReKernel::print("NUMERE: " + toUpperCase(_lang.get("PARSERFUNCS_LISTDEFINE_HEADLINE")));
+    make_hline();
+    if (!_functions.getDefinedFunctions())
+    {
+        NumeReKernel::print(toSystemCodePage(_lang.get("PARSERFUNCS_LISTDEFINE_EMPTY")));
+    }
+    else
+    {
+        // Print all custom defined functions on the terminal
+        for (size_t i = 0; i < _functions.getDefinedFunctions(); i++)
+        {
+            // Print first the name of the function
+            NumeReKernel::printPreFmt(sectionHeadline(_functions.getFunctionSignature(i).substr(0, _functions.getFunctionSignature(i).rfind('('))));
 
-			// Print the comment, if it is available
-			if (_functions.getComment(i).length())
-			{
-				NumeReKernel::printPreFmt(LineBreak("|       " + _lang.get("PARSERFUNCS_LISTDEFINE_DESCRIPTION", _functions.getComment(i)), _option, true, 0, 25) + "\n"); //10
-			}
+            // Print the comment, if it is available
+            if (_functions.getComment(i).length())
+            {
+                NumeReKernel::printPreFmt(LineBreak("|       " + _lang.get("PARSERFUNCS_LISTDEFINE_DESCRIPTION", _functions.getComment(i)), _option, true, 0, 25) + "\n"); //10
+            }
 
-			// Print the actual implementation of the function
-			NumeReKernel::printPreFmt(LineBreak("|       " + _lang.get("PARSERFUNCS_LISTDEFINE_DEFINITION", _functions.getFunctionSignature(i), _functions.getImplementation(i)), _option, false, 0, 29) + "\n"); //14
+            // Print the actual implementation of the function
+            NumeReKernel::printPreFmt(LineBreak("|       " + _lang.get("PARSERFUNCS_LISTDEFINE_DEFINITION", _functions.getFunctionSignature(i), _functions.getImplementation(i)), _option, false, 0, 29) + "\n"); //14
         }
-		NumeReKernel::printPreFmt("|   -- " + toString(_functions.getDefinedFunctions()) + " " + toSystemCodePage(_lang.get("PARSERFUNCS_LISTDEFINE_FUNCTIONS"))  + " --\n");
-	}
-	NumeReKernel::toggleTableStatus();
-	make_hline();
-	return;
+        NumeReKernel::printPreFmt("|   -- " + toString(_functions.getDefinedFunctions()) + " " + toSystemCodePage(_lang.get("PARSERFUNCS_LISTDEFINE_FUNCTIONS"))  + " --\n");
+    }
+    NumeReKernel::toggleTableStatus();
+    make_hline();
+    return;
 }
 
 
@@ -1258,25 +1221,25 @@ static void listDefinitions(const FunctionDefinitionManager& _functions, const S
 /////////////////////////////////////////////////
 static void listLogicalOperators(const Settings& _option)
 {
-	NumeReKernel::toggleTableStatus();
-	make_hline();
-	NumeReKernel::print(toSystemCodePage("NUMERE: " + toUpperCase(_lang.get("PARSERFUNCS_LISTLOGICAL_HEADLINE"))));
-	make_hline();
-	NumeReKernel::printPreFmt(toSystemCodePage("|   " + _lang.get("PARSERFUNCS_LISTLOGICAL_TABLEHEAD")) + "\n|\n");
+    NumeReKernel::toggleTableStatus();
+    make_hline();
+    NumeReKernel::print(toSystemCodePage("NUMERE: " + toUpperCase(_lang.get("PARSERFUNCS_LISTLOGICAL_HEADLINE"))));
+    make_hline();
+    NumeReKernel::printPreFmt(toSystemCodePage("|   " + _lang.get("PARSERFUNCS_LISTLOGICAL_TABLEHEAD")) + "\n|\n");
 
-	// Get the list of all logical expressions
-	vector<string> vLogicals = _lang.getList("PARSERFUNCS_LISTLOGICAL_ITEM*");
+    // Get the list of all logical expressions
+    vector<string> vLogicals = _lang.getList("PARSERFUNCS_LISTLOGICAL_ITEM*");
 
-	// Print the list on the terminal
-	for (size_t i = 0; i < vLogicals.size(); i++)
-		NumeReKernel::printPreFmt(toSystemCodePage("|   " + vLogicals[i]) + "\n");
+    // Print the list on the terminal
+    for (size_t i = 0; i < vLogicals.size(); i++)
+        NumeReKernel::printPreFmt(toSystemCodePage("|   " + vLogicals[i]) + "\n");
 
-	NumeReKernel::printPreFmt(toSystemCodePage("|\n"));
-	NumeReKernel::print(LineBreak(_lang.get("PARSERFUNCS_LISTLOGICAL_FOOTNOTE1"), _option));
-	NumeReKernel::print(LineBreak(_lang.get("PARSERFUNCS_LISTLOGICAL_FOOTNOTE2"), _option));
-	NumeReKernel::toggleTableStatus();
-	make_hline();
-	return;
+    NumeReKernel::printPreFmt(toSystemCodePage("|\n"));
+    NumeReKernel::print(LineBreak(_lang.get("PARSERFUNCS_LISTLOGICAL_FOOTNOTE1"), _option));
+    NumeReKernel::print(LineBreak(_lang.get("PARSERFUNCS_LISTLOGICAL_FOOTNOTE2"), _option));
+    NumeReKernel::toggleTableStatus();
+    make_hline();
+    return;
 }
 
 
@@ -1297,159 +1260,159 @@ static void listLogicalOperators(const Settings& _option)
 /////////////////////////////////////////////////
 static void listDeclaredVariables(Parser& _parser, const Settings& _option, const MemoryManager& _data)
 {
-	int nDataSetNum = 1;
-	map<string, int> VarMap;
-	int nBytesSum = 0;
+    int nDataSetNum = 1;
+    map<string, int> VarMap;
+    int nBytesSum = 0;
 
-	// Query the used variables
-	//
-	// Get the numerical variables
-	mu::varmap_type variables = _parser.GetVar();
+    // Query the used variables
+    //
+    // Get the numerical variables
+    mu::varmap_type variables = _parser.GetVar();
 
-	// Get the string variables
-	map<string, string> StringMap = NumeReKernel::getInstance()->getStringParser().getStringVars();
+    // Get the string variables
+    map<string, string> StringMap = NumeReKernel::getInstance()->getStringParser().getStringVars();
 
-	// Get the current defined data tables
-	map<string, std::pair<size_t,size_t>> CacheMap = _data.getTableMap();
+    // Get the current defined data tables
+    map<string, std::pair<size_t, size_t>> CacheMap = _data.getTableMap();
 
-	const map<string, NumeRe::Cluster>& mClusterMap = _data.getClusterMap();
+    const map<string, NumeRe::Cluster>& mClusterMap = _data.getClusterMap();
 
-	// Combine string and numerical variables to have
-	// them sorted after their name
-	for (auto iter = variables.begin(); iter != variables.end(); ++iter)
-	{
-		VarMap[iter->first] = 0;
-	}
-	for (auto iter = StringMap.begin(); iter != StringMap.end(); ++iter)
-	{
-		VarMap[iter->first] = 1;
-	}
+    // Combine string and numerical variables to have
+    // them sorted after their name
+    for (auto iter = variables.begin(); iter != variables.end(); ++iter)
+    {
+        VarMap[iter->first] = 0;
+    }
+    for (auto iter = StringMap.begin(); iter != StringMap.end(); ++iter)
+    {
+        VarMap[iter->first] = 1;
+    }
 
-	// Get data table and string table sizes
-	string sStringSize = toString(_data.getStringElements()) + " x " + toString(_data.getStringCols());
+    // Get data table and string table sizes
+    string sStringSize = toString(_data.getStringElements()) + " x " + toString(_data.getStringCols());
 
-	NumeReKernel::toggleTableStatus();
-	make_hline();
-	NumeReKernel::print("NUMERE: " + toUpperCase(toSystemCodePage(_lang.get("PARSERFUNCS_LISTVAR_HEADLINE"))));
-	make_hline();
+    NumeReKernel::toggleTableStatus();
+    make_hline();
+    NumeReKernel::print("NUMERE: " + toUpperCase(toSystemCodePage(_lang.get("PARSERFUNCS_LISTVAR_HEADLINE"))));
+    make_hline();
 
-	// Print all defined caches first
-	for (auto iter = CacheMap.begin(); iter != CacheMap.end(); ++iter)
-	{
-		string sCacheSize = toString(_data.getLines(iter->first, false)) + " x " + toString(_data.getCols(iter->first, false));
-		NumeReKernel::printPreFmt("|   " + iter->first + "()" + strfill("Dim:", (_option.getWindow(0) - 32) / 2 - (iter->first).length() + _option.getWindow(0) % 2) + strfill(sCacheSize, (_option.getWindow(0) - 50) / 2) + strfill("[table]", 19));
+    // Print all defined caches first
+    for (auto iter = CacheMap.begin(); iter != CacheMap.end(); ++iter)
+    {
+        string sCacheSize = toString(_data.getLines(iter->first, false)) + " x " + toString(_data.getCols(iter->first, false));
+        NumeReKernel::printPreFmt("|   " + iter->first + "()" + strfill("Dim:", (_option.getWindow(0) - 32) / 2 - (iter->first).length() + _option.getWindow(0) % 2) + strfill(sCacheSize, (_option.getWindow(0) - 50) / 2) + strfill("[table]", 19));
 
-		if (_data.getSize(iter->second.second) >= 1024 * 1024)
-			NumeReKernel::printPreFmt(strfill(toString(_data.getSize(iter->second.second) / (1024.0 * 1024.0), 4), 9) + " MBytes\n");
-		else if (_data.getSize(iter->second.second) >= 1024)
-			NumeReKernel::printPreFmt(strfill(toString(_data.getSize(iter->second.second) / (1024.0), 4), 9) + " KBytes\n");
-		else
-			NumeReKernel::printPreFmt(strfill(toString(_data.getSize(iter->second.second)), 9) + "  Bytes\n");
+        if (_data.getSize(iter->second.second) >= 1024 * 1024)
+            NumeReKernel::printPreFmt(strfill(toString(_data.getSize(iter->second.second) / (1024.0 * 1024.0), 4), 9) + " MBytes\n");
+        else if (_data.getSize(iter->second.second) >= 1024)
+            NumeReKernel::printPreFmt(strfill(toString(_data.getSize(iter->second.second) / (1024.0), 4), 9) + " KBytes\n");
+        else
+            NumeReKernel::printPreFmt(strfill(toString(_data.getSize(iter->second.second)), 9) + "  Bytes\n");
 
-		nBytesSum += _data.getSize(iter->second.second);
-	}
+        nBytesSum += _data.getSize(iter->second.second);
+    }
 
-	NumeReKernel::printPreFmt("|   " + strfill("-", _option.getWindow(0) - 4, '-') + "\n");
+    NumeReKernel::printPreFmt("|   " + strfill("-", _option.getWindow(0) - 4, '-') + "\n");
 
-	// Print all defined cluster
-	for (auto iter = mClusterMap.begin(); iter != mClusterMap.end(); ++iter)
-	{
-		string sClusterSize = toString(iter->second.size()) + " x 1";
-		NumeReKernel::printPreFmt("|   " + iter->first + "{}" + strfill("Dim:", (_option.getWindow(0) - 32) / 2 - (iter->first).length() + _option.getWindow(0) % 2) + strfill(sClusterSize, (_option.getWindow(0) - 50) / 2) + strfill("[cluster]", 19));
+    // Print all defined cluster
+    for (auto iter = mClusterMap.begin(); iter != mClusterMap.end(); ++iter)
+    {
+        string sClusterSize = toString(iter->second.size()) + " x 1";
+        NumeReKernel::printPreFmt("|   " + iter->first + "{}" + strfill("Dim:", (_option.getWindow(0) - 32) / 2 - (iter->first).length() + _option.getWindow(0) % 2) + strfill(sClusterSize, (_option.getWindow(0) - 50) / 2) + strfill("[cluster]", 19));
 
-		if (iter->second.getBytes() >= 1024 * 1024)
-			NumeReKernel::printPreFmt(strfill(toString(iter->second.getBytes() / (1024.0 * 1024.0), 4), 9) + " MBytes\n");
-		else if (iter->second.getBytes() >= 1024)
-			NumeReKernel::printPreFmt(strfill(toString(iter->second.getBytes() / (1024.0), 4), 9) + " KBytes\n");
-		else
-			NumeReKernel::printPreFmt(strfill(toString(iter->second.getBytes()), 9) + "  Bytes\n");
+        if (iter->second.getBytes() >= 1024 * 1024)
+            NumeReKernel::printPreFmt(strfill(toString(iter->second.getBytes() / (1024.0 * 1024.0), 4), 9) + " MBytes\n");
+        else if (iter->second.getBytes() >= 1024)
+            NumeReKernel::printPreFmt(strfill(toString(iter->second.getBytes() / (1024.0), 4), 9) + " KBytes\n");
+        else
+            NumeReKernel::printPreFmt(strfill(toString(iter->second.getBytes()), 9) + "  Bytes\n");
 
-		nBytesSum += iter->second.getBytes();
-	}
+        nBytesSum += iter->second.getBytes();
+    }
 
-	if (mClusterMap.size())
+    if (mClusterMap.size())
         NumeReKernel::printPreFmt("|   " + strfill("-", _option.getWindow(0) - 4, '-') + "\n");
 
 
-	// Print now the dimension of the string table
-	if (_data.getStringElements())
-	{
-		NumeReKernel::printPreFmt("|   string()" + strfill("Dim:", (_option.getWindow(0) - 32) / 2 - 6 + _option.getWindow(0) % 2) + strfill(sStringSize, (_option.getWindow(0) - 50) / 2) + strfill("[string x string]", 19));
-		if (_data.getStringSize() >= 1024 * 1024)
-			NumeReKernel::printPreFmt(strfill(toString(_data.getStringSize() / (1024.0 * 1024.0), 4), 9) + " MBytes\n");
-		else if (_data.getStringSize() >= 1024)
-			NumeReKernel::printPreFmt(strfill(toString(_data.getStringSize() / (1024.0), 4), 9) + " KBytes\n");
-		else
-			NumeReKernel::printPreFmt(strfill(toString(_data.getStringSize()), 9) + "  Bytes\n");
-		nBytesSum += _data.getStringSize();
+    // Print now the dimension of the string table
+    if (_data.getStringElements())
+    {
+        NumeReKernel::printPreFmt("|   string()" + strfill("Dim:", (_option.getWindow(0) - 32) / 2 - 6 + _option.getWindow(0) % 2) + strfill(sStringSize, (_option.getWindow(0) - 50) / 2) + strfill("[string x string]", 19));
+        if (_data.getStringSize() >= 1024 * 1024)
+            NumeReKernel::printPreFmt(strfill(toString(_data.getStringSize() / (1024.0 * 1024.0), 4), 9) + " MBytes\n");
+        else if (_data.getStringSize() >= 1024)
+            NumeReKernel::printPreFmt(strfill(toString(_data.getStringSize() / (1024.0), 4), 9) + " KBytes\n");
+        else
+            NumeReKernel::printPreFmt(strfill(toString(_data.getStringSize()), 9) + "  Bytes\n");
+        nBytesSum += _data.getStringSize();
 
-		NumeReKernel::printPreFmt("|   " + strfill("-", _option.getWindow(0) - 4, '-') + "\n");
+        NumeReKernel::printPreFmt("|   " + strfill("-", _option.getWindow(0) - 4, '-') + "\n");
     }
 
     // Print now the set of variables
-	for (auto item = VarMap.begin(); item != VarMap.end(); ++item)
-	{
-	    // The second member indicates, whether a
-	    // variable is a string or a numerical variable
-		if (item->second)
-		{
-		    // This is a string
-			NumeReKernel::printPreFmt("|   " + item->first + strfill(" = ", (_option.getWindow(0) - 20) / 2 + 1 - _option.getPrecision() - (item->first).length() + _option.getWindow(0) % 2));
-			if (StringMap[item->first].length() > _option.getPrecision() + (_option.getWindow(0) - 60) / 2 - 4)
-				NumeReKernel::printPreFmt(strfill("\"" + StringMap[item->first].substr(0, _option.getPrecision() + (_option.getWindow(0) - 60) / 2 - 7) + "...\"", (_option.getWindow(0) - 60) / 2 + _option.getPrecision()));
-			else
-				NumeReKernel::printPreFmt(strfill("\"" + StringMap[item->first] + "\"", (_option.getWindow(0) - 60) / 2 + _option.getPrecision()));
-			NumeReKernel::printPreFmt(strfill("[string]", 19) + strfill(toString(StringMap[item->first].size()), 9) + "  Bytes\n");
-			nBytesSum += StringMap[item->first].size();
-		}
-		else
-		{
-		    // This is a numerical variable
-			NumeReKernel::printPreFmt("|   " + item->first + strfill(" = ", (_option.getWindow(0) - 20) / 2 + 1 - _option.getPrecision() - (item->first).length() + _option.getWindow(0) % 2) + strfill(toString(*variables[item->first], _option.getPrecision()), (_option.getWindow(0) - 60) / 2 + _option.getPrecision()) + (variables[item->first]->imag() ? strfill("[complex]", 19) + strfill("16", 9) + "  Bytes\n" : strfill("[double]", 19) + strfill("8", 9) + "  Bytes\n"));
-			nBytesSum += variables[item->first]->imag() ? sizeof(std::complex<double>) : sizeof(double);
-		}
-	}
+    for (auto item = VarMap.begin(); item != VarMap.end(); ++item)
+    {
+        // The second member indicates, whether a
+        // variable is a string or a numerical variable
+        if (item->second)
+        {
+            // This is a string
+            NumeReKernel::printPreFmt("|   " + item->first + strfill(" = ", (_option.getWindow(0) - 20) / 2 + 1 - _option.getPrecision() - (item->first).length() + _option.getWindow(0) % 2));
+            if (StringMap[item->first].length() > _option.getPrecision() + (_option.getWindow(0) - 60) / 2 - 4)
+                NumeReKernel::printPreFmt(strfill("\"" + StringMap[item->first].substr(0, _option.getPrecision() + (_option.getWindow(0) - 60) / 2 - 7) + "...\"", (_option.getWindow(0) - 60) / 2 + _option.getPrecision()));
+            else
+                NumeReKernel::printPreFmt(strfill("\"" + StringMap[item->first] + "\"", (_option.getWindow(0) - 60) / 2 + _option.getPrecision()));
+            NumeReKernel::printPreFmt(strfill("[string]", 19) + strfill(toString(StringMap[item->first].size()), 9) + "  Bytes\n");
+            nBytesSum += StringMap[item->first].size();
+        }
+        else
+        {
+            // This is a numerical variable
+            NumeReKernel::printPreFmt("|   " + item->first + strfill(" = ", (_option.getWindow(0) - 20) / 2 + 1 - _option.getPrecision() - (item->first).length() + _option.getWindow(0) % 2) + strfill(toString(*variables[item->first], _option.getPrecision()), (_option.getWindow(0) - 60) / 2 + _option.getPrecision()) + (variables[item->first]->imag() ? strfill("[complex]", 19) + strfill("16", 9) + "  Bytes\n" : strfill("[double]", 19) + strfill("8", 9) + "  Bytes\n"));
+            nBytesSum += variables[item->first]->imag() ? sizeof(std::complex<double>) : sizeof(double);
+        }
+    }
 
-	// Create now the footer of the list:
-	// Combine the number of variables and data
-	// tables first
-	NumeReKernel::printPreFmt("|   -- " + toString(VarMap.size()) + " " + toSystemCodePage(_lang.get("PARSERFUNCS_LISTVAR_VARS_AND")) + " ");
-	if (_data.isValid() || _data.getStringElements())
-	{
-		if (_data.isValid() && _data.getStringElements())
-		{
-			NumeReKernel::printPreFmt(toString(1 + CacheMap.size()));
-			nDataSetNum = CacheMap.size() + 1;
-		}
-		else if (_data.isValid())
-		{
-			NumeReKernel::printPreFmt(toString(CacheMap.size()));
-			nDataSetNum = CacheMap.size();
-		}
-		else
-			NumeReKernel::printPreFmt("1");
-	}
-	else
-		NumeReKernel::printPreFmt("0");
-	NumeReKernel::printPreFmt(" " + toSystemCodePage(_lang.get("PARSERFUNCS_LISTVAR_DATATABLES")) + " --");
+    // Create now the footer of the list:
+    // Combine the number of variables and data
+    // tables first
+    NumeReKernel::printPreFmt("|   -- " + toString(VarMap.size()) + " " + toSystemCodePage(_lang.get("PARSERFUNCS_LISTVAR_VARS_AND")) + " ");
+    if (_data.isValid() || _data.getStringElements())
+    {
+        if (_data.isValid() && _data.getStringElements())
+        {
+            NumeReKernel::printPreFmt(toString(1 + CacheMap.size()));
+            nDataSetNum = CacheMap.size() + 1;
+        }
+        else if (_data.isValid())
+        {
+            NumeReKernel::printPreFmt(toString(CacheMap.size()));
+            nDataSetNum = CacheMap.size();
+        }
+        else
+            NumeReKernel::printPreFmt("1");
+    }
+    else
+        NumeReKernel::printPreFmt("0");
+    NumeReKernel::printPreFmt(" " + toSystemCodePage(_lang.get("PARSERFUNCS_LISTVAR_DATATABLES")) + " --");
 
-	// Calculate now the needed memory for the stored values and print it at the
-	// end of the footer line
-	if (VarMap.size() > 9 && nDataSetNum > 9)
-		NumeReKernel::printPreFmt(strfill("Total: ", (_option.getWindow(0) - 32 - _lang.get("PARSERFUNCS_LISTVAR_VARS_AND").length() - _lang.get("PARSERFUNCS_LISTVAR_DATATABLES").length())));
-	else if (VarMap.size() > 9 || nDataSetNum > 9)
-		NumeReKernel::printPreFmt(strfill("Total: ", (_option.getWindow(0) - 31 - _lang.get("PARSERFUNCS_LISTVAR_VARS_AND").length() - _lang.get("PARSERFUNCS_LISTVAR_DATATABLES").length())));
-	else
-		NumeReKernel::printPreFmt(strfill("Total: ", (_option.getWindow(0) - 30 - _lang.get("PARSERFUNCS_LISTVAR_VARS_AND").length() - _lang.get("PARSERFUNCS_LISTVAR_DATATABLES").length())));
-	if (nBytesSum >= 1024 * 1024)
-		NumeReKernel::printPreFmt(strfill(toString(nBytesSum / (1024.0 * 1024.0), 4), 8) + " MBytes\n");
-	else if (nBytesSum >= 1024)
-		NumeReKernel::printPreFmt(strfill(toString(nBytesSum / (1024.0), 4), 8) + " KBytes\n");
-	else
-		NumeReKernel::printPreFmt(strfill(toString(nBytesSum), 8) + "  Bytes\n");
-	NumeReKernel::toggleTableStatus();
-	make_hline();
-	return;
+    // Calculate now the needed memory for the stored values and print it at the
+    // end of the footer line
+    if (VarMap.size() > 9 && nDataSetNum > 9)
+        NumeReKernel::printPreFmt(strfill("Total: ", (_option.getWindow(0) - 32 - _lang.get("PARSERFUNCS_LISTVAR_VARS_AND").length() - _lang.get("PARSERFUNCS_LISTVAR_DATATABLES").length())));
+    else if (VarMap.size() > 9 || nDataSetNum > 9)
+        NumeReKernel::printPreFmt(strfill("Total: ", (_option.getWindow(0) - 31 - _lang.get("PARSERFUNCS_LISTVAR_VARS_AND").length() - _lang.get("PARSERFUNCS_LISTVAR_DATATABLES").length())));
+    else
+        NumeReKernel::printPreFmt(strfill("Total: ", (_option.getWindow(0) - 30 - _lang.get("PARSERFUNCS_LISTVAR_VARS_AND").length() - _lang.get("PARSERFUNCS_LISTVAR_DATATABLES").length())));
+    if (nBytesSum >= 1024 * 1024)
+        NumeReKernel::printPreFmt(strfill(toString(nBytesSum / (1024.0 * 1024.0), 4), 8) + " MBytes\n");
+    else if (nBytesSum >= 1024)
+        NumeReKernel::printPreFmt(strfill(toString(nBytesSum / (1024.0), 4), 8) + " KBytes\n");
+    else
+        NumeReKernel::printPreFmt(strfill(toString(nBytesSum), 8) + "  Bytes\n");
+    NumeReKernel::toggleTableStatus();
+    make_hline();
+    return;
 }
 
 
@@ -1465,40 +1428,40 @@ static void listDeclaredVariables(Parser& _parser, const Settings& _option, cons
 /////////////////////////////////////////////////
 static void listConstants(const Parser& _parser, const Settings& _option)
 {
-	const int nUnits = 20;
-	// Define a set of units including a simple
-	// heuristic, which defines, which constant
-	// needs which unit
-	static string sUnits[nUnits] =
-	{
-		"_G[m^3/(kg s^2)]",
-		"_R[J/(mol K)]",
-		"_coul_norm[V m/(A s)]",
-		"_c[m/s]",
-		"_elek[A s/(V m)]",
-		"_elem[A s]",
-		"_gamma[1/(T s)]",
-		"_g[m/s^2]",
-		"_hartree[J]",
-		"_h[J s]",
-		"_k[J/K]",
-		"_m_[kg]",
-		"_magn[V s/(A m)]",
-		"_mu_[J/T]",
-		"_n[1/mol]",
-		"_rydberg[1/m]",
-		"_r[m]",
-		"_stefan[J/(m^2 s K^4)]",
-		"_wien[m K]",
-		"_[---]"
-	};
-	NumeReKernel::toggleTableStatus();
-	make_hline();
-	NumeReKernel::print("NUMERE: " + toSystemCodePage(toUpperCase(_lang.get("PARSERFUNCS_LISTCONST_HEADLINE"))));
-	make_hline();
+    const int nUnits = 20;
+    // Define a set of units including a simple
+    // heuristic, which defines, which constant
+    // needs which unit
+    static string sUnits[nUnits] =
+    {
+        "_G[m^3/(kg s^2)]",
+        "_R[J/(mol K)]",
+        "_coul_norm[V m/(A s)]",
+        "_c[m/s]",
+        "_elek[A s/(V m)]",
+        "_elem[A s]",
+        "_gamma[1/(T s)]",
+        "_g[m/s^2]",
+        "_hartree[J]",
+        "_h[J s]",
+        "_k[J/K]",
+        "_m_[kg]",
+        "_magn[V s/(A m)]",
+        "_mu_[J/T]",
+        "_n[1/mol]",
+        "_rydberg[1/m]",
+        "_r[m]",
+        "_stefan[J/(m^2 s K^4)]",
+        "_wien[m K]",
+        "_[---]"
+    };
+    NumeReKernel::toggleTableStatus();
+    make_hline();
+    NumeReKernel::print("NUMERE: " + toSystemCodePage(toUpperCase(_lang.get("PARSERFUNCS_LISTCONST_HEADLINE"))));
+    make_hline();
 
-	// Get the map of all defined constants from the parser
-	mu::valmap_type cmap = _parser.GetConst();
+    // Get the map of all defined constants from the parser
+    mu::valmap_type cmap = _parser.GetConst();
     valmap_type::const_iterator item = cmap.begin();
 
     // Print all constants, their values and their unit on
@@ -1520,9 +1483,9 @@ static void listConstants(const Parser& _parser, const Settings& _option)
     NumeReKernel::printPreFmt("|\n");
     NumeReKernel::print(LineBreak(_lang.get("PARSERFUNCS_LISTCONST_FOOTNOTE1"), _option));
     NumeReKernel::print(LineBreak(_lang.get("PARSERFUNCS_LISTCONST_FOOTNOTE2"), _option));
-	NumeReKernel::toggleTableStatus();
-	make_hline();
-	return;
+    NumeReKernel::toggleTableStatus();
+    make_hline();
+    return;
 }
 
 
@@ -1538,27 +1501,27 @@ static void listConstants(const Parser& _parser, const Settings& _option)
 /////////////////////////////////////////////////
 static void listCommands(const Settings& _option)
 {
-	NumeReKernel::toggleTableStatus();
-	make_hline();
-	NumeReKernel::print("NUMERE: " + toSystemCodePage(toUpperCase(_lang.get("PARSERFUNCS_LISTCMD_HEADLINE")))); //PRSRFUNC_LISTCMD_*
-	make_hline();
-	NumeReKernel::printPreFmt(LineBreak("|   " + _lang.get("PARSERFUNCS_LISTCMD_TABLEHEAD"), _option, 0) + "\n|\n");
+    NumeReKernel::toggleTableStatus();
+    make_hline();
+    NumeReKernel::print("NUMERE: " + toSystemCodePage(toUpperCase(_lang.get("PARSERFUNCS_LISTCMD_HEADLINE")))); //PRSRFUNC_LISTCMD_*
+    make_hline();
+    NumeReKernel::printPreFmt(LineBreak("|   " + _lang.get("PARSERFUNCS_LISTCMD_TABLEHEAD"), _option, 0) + "\n|\n");
 
     // Get the list of all defined commands
     // from the language files
-	vector<string> vCMDList = _lang.getList("PARSERFUNCS_LISTCMD_CMD_*");
+    vector<string> vCMDList = _lang.getList("PARSERFUNCS_LISTCMD_CMD_*");
 
-	// Print the complete list on the terminal
-	for (size_t i = 0; i < vCMDList.size(); i++)
-	{
-		NumeReKernel::printPreFmt(LineBreak("|   " + vCMDList[i], _option, false, 0, 42) + "\n");
-	}
+    // Print the complete list on the terminal
+    for (size_t i = 0; i < vCMDList.size(); i++)
+    {
+        NumeReKernel::printPreFmt(LineBreak("|   " + vCMDList[i], _option, false, 0, 42) + "\n");
+    }
 
-	NumeReKernel::printPreFmt("|\n");
-	NumeReKernel::print(LineBreak(_lang.get("PARSERFUNCS_LISTCMD_FOOTNOTE1"), _option));
-	NumeReKernel::print(LineBreak(_lang.get("PARSERFUNCS_LISTCMD_FOOTNOTE2"), _option));
-	NumeReKernel::toggleTableStatus();
-	make_hline();
+    NumeReKernel::printPreFmt("|\n");
+    NumeReKernel::print(LineBreak(_lang.get("PARSERFUNCS_LISTCMD_FOOTNOTE1"), _option));
+    NumeReKernel::print(LineBreak(_lang.get("PARSERFUNCS_LISTCMD_FOOTNOTE2"), _option));
+    NumeReKernel::toggleTableStatus();
+    make_hline();
 }
 
 
@@ -1577,8 +1540,8 @@ static void listCommands(const Settings& _option)
 /////////////////////////////////////////////////
 static void printUnits(const string& sUnit, const string& sDesc, const string& sDim, const string& sValues, size_t nWindowsize)
 {
-	NumeReKernel::printPreFmt("|     " + strlfill(sUnit, 11) + strlfill(sDesc, (nWindowsize - 17) / 3 + (nWindowsize + 1) % 3) + strlfill(sDim, (nWindowsize - 35) / 3) + "=" + strfill(sValues, (nWindowsize - 2) / 3) + "\n");
-	return;
+    NumeReKernel::printPreFmt("|     " + strlfill(sUnit, 11) + strlfill(sDesc, (nWindowsize - 17) / 3 + (nWindowsize + 1) % 3) + strlfill(sDim, (nWindowsize - 35) / 3) + "=" + strfill(sValues, (nWindowsize - 2) / 3) + "\n");
+    return;
 }
 
 
@@ -1594,50 +1557,50 @@ static void printUnits(const string& sUnit, const string& sDesc, const string& s
 /////////////////////////////////////////////////
 static void listUnitConversions(const Settings& _option) //PRSRFUNC_LISTUNITS_*
 {
-	NumeReKernel::toggleTableStatus();
-	make_hline();
-	NumeReKernel::print("NUMERE: " + toSystemCodePage(toUpperCase(_lang.get("PARSERFUNCS_LISTUNITS_HEADLINE")))); //(_option.getWindow()-x)/3
-	make_hline(); // 11       21  x=17             15   x=35      1               x=2      26
-	printUnits(_lang.get("PARSERFUNCS_LISTUNITS_SYMBOL"), _lang.get("PARSERFUNCS_LISTUNITS_DESCRIPTION"), _lang.get("PARSERFUNCS_LISTUNITS_DIMENSION"), _lang.get("PARSERFUNCS_LISTUNITS_UNIT"), _option.getWindow());
-	NumeReKernel::printPreFmt("|\n");
-	printUnits("1'A",   _lang.get("PARSERFUNCS_LISTUNITS_UNIT_ANGSTROEM"),        "L",           "1e-10      [m]", _option.getWindow());
-	printUnits("1'AU",  _lang.get("PARSERFUNCS_LISTUNITS_UNIT_ASTRO_UNIT"),       "L",           "1.4959787e11      [m]", _option.getWindow());
-	printUnits("1'b",   _lang.get("PARSERFUNCS_LISTUNITS_UNIT_BARN"),             "L^2",         "1e-28    [m^2]", _option.getWindow());
-	printUnits("1'cal", _lang.get("PARSERFUNCS_LISTUNITS_UNIT_CALORY"),           "M L^2 / T^2", "4.1868      [J]", _option.getWindow());
-	printUnits("1'Ci",  _lang.get("PARSERFUNCS_LISTUNITS_UNIT_CURIE"),            "1 / T",       "3.7e10     [Bq]", _option.getWindow());
-	printUnits("1'eV",  _lang.get("PARSERFUNCS_LISTUNITS_UNIT_ELECTRONVOLT"),     "M L^2 / T^2", "1.60217657e-19      [J]", _option.getWindow());
-	printUnits("1'fm",  _lang.get("PARSERFUNCS_LISTUNITS_UNIT_FERMI"),            "L",           "1e-15      [m]", _option.getWindow());
-	printUnits("1'ft",  _lang.get("PARSERFUNCS_LISTUNITS_UNIT_FOOT"),             "L",           "0.3048      [m]", _option.getWindow());
-	printUnits("1'Gs",  _lang.get("PARSERFUNCS_LISTUNITS_UNIT_GAUSS"),            "M / (T^2 I)", "1e-4      [T]", _option.getWindow());
-	printUnits("1'in",  _lang.get("PARSERFUNCS_LISTUNITS_UNIT_INCH"),             "L",           "0.0254      [m]", _option.getWindow());
-	printUnits("1'kmh", _lang.get("PARSERFUNCS_LISTUNITS_UNIT_VELOCITY"),         "L / T",       "0.2777777...    [m/s]", _option.getWindow());
-	printUnits("1'kn",  _lang.get("PARSERFUNCS_LISTUNITS_UNIT_KNOTS"),            "L / T",       "0.5144444...    [m/s]", _option.getWindow());
-	printUnits("1'l",   _lang.get("PARSERFUNCS_LISTUNITS_UNIT_LITERS"),           "L^3",         "1e-3    [m^3]", _option.getWindow());
-	printUnits("1'ly",  _lang.get("PARSERFUNCS_LISTUNITS_UNIT_LIGHTYEAR"),        "L",           "9.4607305e15      [m]", _option.getWindow());
-	printUnits("1'mile", _lang.get("PARSERFUNCS_LISTUNITS_UNIT_MILE"),             "L",           "1609.344      [m]", _option.getWindow());
-	printUnits("1'mol", _lang.get("PARSERFUNCS_LISTUNITS_UNIT_MOL"),              "N",           "6.022140857e23      ---", _option.getWindow());
-	printUnits("1'mph", _lang.get("PARSERFUNCS_LISTUNITS_UNIT_VELOCITY"),         "L / T",       "0.44703722    [m/s]", _option.getWindow());
-	printUnits("1'Ps",  _lang.get("PARSERFUNCS_LISTUNITS_UNIT_POISE"),            "M / (L T)",   "0.1   [Pa s]", _option.getWindow());
-	printUnits("1'pc",  _lang.get("PARSERFUNCS_LISTUNITS_UNIT_PARSEC"),           "L",           "3.0856776e16      [m]", _option.getWindow());
-	printUnits("1'psi", _lang.get("PARSERFUNCS_LISTUNITS_UNIT_PSI"),              "M / (L T^2)", "6894.7573     [Pa]", _option.getWindow());
-	printUnits("1'TC",  _lang.get("PARSERFUNCS_LISTUNITS_UNIT_CELSIUS"),          "Theta",       "274.15      [K]", _option.getWindow());
-	printUnits("1'TF",  _lang.get("PARSERFUNCS_LISTUNITS_UNIT_FAHRENHEIT"),       "Theta",       "255.92778      [K]", _option.getWindow());
-	printUnits("1'Torr", _lang.get("PARSERFUNCS_LISTUNITS_UNIT_TORR"),             "M / (L T^2)", "133.322     [Pa]", _option.getWindow());
-	printUnits("1'yd",  _lang.get("PARSERFUNCS_LISTUNITS_UNIT_YARD"),             "L",           "0.9144      [m]", _option.getWindow());
-	NumeReKernel::printPreFmt("|\n");
-	printUnits("1'G",   "(giga)",             "---",           "1e9      ---", _option.getWindow());
-	printUnits("1'M",   "(mega)",             "---",           "1e6      ---", _option.getWindow());
-	printUnits("1'k",   "(kilo)",             "---",           "1e3      ---", _option.getWindow());
-	printUnits("1'm",   "(milli)",            "---",           "1e-3      ---", _option.getWindow());
-	printUnits("1'mu",  "(micro)",            "---",           "1e-6      ---", _option.getWindow());
-	printUnits("1'n",   "(nano)",             "---",           "1e-9      ---", _option.getWindow());
+    NumeReKernel::toggleTableStatus();
+    make_hline();
+    NumeReKernel::print("NUMERE: " + toSystemCodePage(toUpperCase(_lang.get("PARSERFUNCS_LISTUNITS_HEADLINE")))); //(_option.getWindow()-x)/3
+    make_hline(); // 11       21  x=17             15   x=35      1               x=2      26
+    printUnits(_lang.get("PARSERFUNCS_LISTUNITS_SYMBOL"), _lang.get("PARSERFUNCS_LISTUNITS_DESCRIPTION"), _lang.get("PARSERFUNCS_LISTUNITS_DIMENSION"), _lang.get("PARSERFUNCS_LISTUNITS_UNIT"), _option.getWindow());
+    NumeReKernel::printPreFmt("|\n");
+    printUnits("1'A",   _lang.get("PARSERFUNCS_LISTUNITS_UNIT_ANGSTROEM"),        "L",           "1e-10      [m]", _option.getWindow());
+    printUnits("1'AU",  _lang.get("PARSERFUNCS_LISTUNITS_UNIT_ASTRO_UNIT"),       "L",           "1.4959787e11      [m]", _option.getWindow());
+    printUnits("1'b",   _lang.get("PARSERFUNCS_LISTUNITS_UNIT_BARN"),             "L^2",         "1e-28    [m^2]", _option.getWindow());
+    printUnits("1'cal", _lang.get("PARSERFUNCS_LISTUNITS_UNIT_CALORY"),           "M L^2 / T^2", "4.1868      [J]", _option.getWindow());
+    printUnits("1'Ci",  _lang.get("PARSERFUNCS_LISTUNITS_UNIT_CURIE"),            "1 / T",       "3.7e10     [Bq]", _option.getWindow());
+    printUnits("1'eV",  _lang.get("PARSERFUNCS_LISTUNITS_UNIT_ELECTRONVOLT"),     "M L^2 / T^2", "1.60217657e-19      [J]", _option.getWindow());
+    printUnits("1'fm",  _lang.get("PARSERFUNCS_LISTUNITS_UNIT_FERMI"),            "L",           "1e-15      [m]", _option.getWindow());
+    printUnits("1'ft",  _lang.get("PARSERFUNCS_LISTUNITS_UNIT_FOOT"),             "L",           "0.3048      [m]", _option.getWindow());
+    printUnits("1'Gs",  _lang.get("PARSERFUNCS_LISTUNITS_UNIT_GAUSS"),            "M / (T^2 I)", "1e-4      [T]", _option.getWindow());
+    printUnits("1'in",  _lang.get("PARSERFUNCS_LISTUNITS_UNIT_INCH"),             "L",           "0.0254      [m]", _option.getWindow());
+    printUnits("1'kmh", _lang.get("PARSERFUNCS_LISTUNITS_UNIT_VELOCITY"),         "L / T",       "0.2777777...    [m/s]", _option.getWindow());
+    printUnits("1'kn",  _lang.get("PARSERFUNCS_LISTUNITS_UNIT_KNOTS"),            "L / T",       "0.5144444...    [m/s]", _option.getWindow());
+    printUnits("1'l",   _lang.get("PARSERFUNCS_LISTUNITS_UNIT_LITERS"),           "L^3",         "1e-3    [m^3]", _option.getWindow());
+    printUnits("1'ly",  _lang.get("PARSERFUNCS_LISTUNITS_UNIT_LIGHTYEAR"),        "L",           "9.4607305e15      [m]", _option.getWindow());
+    printUnits("1'mile", _lang.get("PARSERFUNCS_LISTUNITS_UNIT_MILE"),             "L",           "1609.344      [m]", _option.getWindow());
+    printUnits("1'mol", _lang.get("PARSERFUNCS_LISTUNITS_UNIT_MOL"),              "N",           "6.022140857e23      ---", _option.getWindow());
+    printUnits("1'mph", _lang.get("PARSERFUNCS_LISTUNITS_UNIT_VELOCITY"),         "L / T",       "0.44703722    [m/s]", _option.getWindow());
+    printUnits("1'Ps",  _lang.get("PARSERFUNCS_LISTUNITS_UNIT_POISE"),            "M / (L T)",   "0.1   [Pa s]", _option.getWindow());
+    printUnits("1'pc",  _lang.get("PARSERFUNCS_LISTUNITS_UNIT_PARSEC"),           "L",           "3.0856776e16      [m]", _option.getWindow());
+    printUnits("1'psi", _lang.get("PARSERFUNCS_LISTUNITS_UNIT_PSI"),              "M / (L T^2)", "6894.7573     [Pa]", _option.getWindow());
+    printUnits("1'TC",  _lang.get("PARSERFUNCS_LISTUNITS_UNIT_CELSIUS"),          "Theta",       "274.15      [K]", _option.getWindow());
+    printUnits("1'TF",  _lang.get("PARSERFUNCS_LISTUNITS_UNIT_FAHRENHEIT"),       "Theta",       "255.92778      [K]", _option.getWindow());
+    printUnits("1'Torr", _lang.get("PARSERFUNCS_LISTUNITS_UNIT_TORR"),             "M / (L T^2)", "133.322     [Pa]", _option.getWindow());
+    printUnits("1'yd",  _lang.get("PARSERFUNCS_LISTUNITS_UNIT_YARD"),             "L",           "0.9144      [m]", _option.getWindow());
+    NumeReKernel::printPreFmt("|\n");
+    printUnits("1'G",   "(giga)",             "---",           "1e9      ---", _option.getWindow());
+    printUnits("1'M",   "(mega)",             "---",           "1e6      ---", _option.getWindow());
+    printUnits("1'k",   "(kilo)",             "---",           "1e3      ---", _option.getWindow());
+    printUnits("1'm",   "(milli)",            "---",           "1e-3      ---", _option.getWindow());
+    printUnits("1'mu",  "(micro)",            "---",           "1e-6      ---", _option.getWindow());
+    printUnits("1'n",   "(nano)",             "---",           "1e-9      ---", _option.getWindow());
 
-	NumeReKernel::printPreFmt("|\n");
-	NumeReKernel::print(LineBreak(_lang.get("PARSERFUNCS_LISTUNITS_FOOTNOTE"), _option));
-	NumeReKernel::toggleTableStatus();
-	make_hline();
+    NumeReKernel::printPreFmt("|\n");
+    NumeReKernel::print(LineBreak(_lang.get("PARSERFUNCS_LISTUNITS_FOOTNOTE"), _option));
+    NumeReKernel::toggleTableStatus();
+    make_hline();
 
-	return;
+    return;
 }
 
 
@@ -1705,7 +1668,7 @@ void plotTableBySize(std::vector<std::string> lineEntries, std::vector<size_t> l
 {
     // Format the string
     string sDummy = "";
-    for (auto& thisEntry: lineEntries)
+    for (auto& thisEntry : lineEntries)
     {
         thisEntry = '"' + thisEntry + "\" -nq";
         NumeReKernel::getInstance()->getStringParser().evalAndFormat(thisEntry, sDummy, true);
@@ -1737,7 +1700,7 @@ void plotTableBySize(std::vector<std::string> lineEntries, std::vector<size_t> l
 
         // Check if all strings have been plotted completely
         size_t totalStringElements = 0;
-        for (std::vector<std::string> thisColumn: splittedLineEntries)
+        for (std::vector<std::string> thisColumn : splittedLineEntries)
             totalStringElements += thisColumn.size();
 
         // Plot depending on last line or not
@@ -1770,18 +1733,18 @@ void plotTableBySize(std::vector<std::string> lineEntries, std::vector<size_t> l
 static void listInstalledPlugins(Parser& _parser, MemoryManager& _data, const Settings& _option)
 {
 
-	NumeReKernel::toggleTableStatus();
-	make_hline();
-	NumeReKernel::print(toSystemCodePage("NUMERE: " + toUpperCase(_lang.get("PARSERFUNCS_LISTPLUGINS_HEADLINE"))));
-	make_hline();
-	Procedure& _procedure = NumeReKernel::getInstance()->getProcedureInterpreter();
+    NumeReKernel::toggleTableStatus();
+    make_hline();
+    NumeReKernel::print(toSystemCodePage("NUMERE: " + toUpperCase(_lang.get("PARSERFUNCS_LISTPLUGINS_HEADLINE"))));
+    make_hline();
+    Procedure& _procedure = NumeReKernel::getInstance()->getProcedureInterpreter();
 
-	// Probably there's no plugin defined
-	if (!_procedure.getPackageCount())
-		NumeReKernel::print(toSystemCodePage(_lang.get("PARSERFUNCS_LISTPLUGINS_EMPTY")));
-	else
-	{
-	    size_t largewindowoffset = _option.getWindow() > 230 ? 10 : 0;
+    // Probably there's no plugin defined
+    if (!_procedure.getPackageCount())
+        NumeReKernel::print(toSystemCodePage(_lang.get("PARSERFUNCS_LISTPLUGINS_EMPTY")));
+    else
+    {
+        size_t largewindowoffset = _option.getWindow() > 230 ? 10 : 0;
         // The info to be printed is: Package Name, Version, Command, Description, Author, License
         // The minimal desired column width is
         std::vector<size_t> minDesiredColWidth{20 + largewindowoffset,
@@ -1807,32 +1770,32 @@ static void listInstalledPlugins(Parser& _parser, MemoryManager& _data, const Se
         headerEntries.push_back(_lang.get("PARSERFUNCS_LISTPLUGINS_LICENSE"));
         plotTableBySize(headerEntries, colWidth);
 
-		// Print all plugins (name, command and description) on the terminal
-		for (size_t i = 0; i < _procedure.getPackageCount(); i++)
-		{
+        // Print all plugins (name, command and description) on the terminal
+        for (size_t i = 0; i < _procedure.getPackageCount(); i++)
+        {
             // Tabellenfunktion unter utils/tools.cpp oder util/stringtools.cpp
             std::vector<std::string> lineEntries;
 
-			// Print package name
-			lineEntries.push_back(_procedure.getPackageName(i));
-			// Print package version
-			lineEntries.push_back("v" + _procedure.getPackageVersion(i));
-			// Print command info
+            // Print package name
+            lineEntries.push_back(_procedure.getPackageName(i));
+            // Print package version
+            lineEntries.push_back("v" + _procedure.getPackageVersion(i));
+            // Print command info
             lineEntries.push_back(_procedure.getPluginCommand(i).length() ? _procedure.getPluginCommandSignature(i) : "---");
-			// Print the description
+            // Print the description
             lineEntries.push_back(_procedure.getPackageDescription(i));
             // Print package author
-			lineEntries.push_back(_procedure.getPackageAuthor(i));
-			// Print package license
+            lineEntries.push_back(_procedure.getPackageAuthor(i));
+            // Print package license
             lineEntries.push_back(_procedure.getPackageLicense(i));
             // Plot this line
             plotTableBySize(lineEntries, colWidth);
-		}
-	}
+        }
+    }
 
-	NumeReKernel::toggleTableStatus();
-	make_hline();
-	return;
+    NumeReKernel::toggleTableStatus();
+    make_hline();
+    return;
 }
 
 
@@ -1856,90 +1819,90 @@ static void listInstalledPlugins(Parser& _parser, MemoryManager& _data, const Se
 /////////////////////////////////////////////////
 static bool executeCommand(string& sCmd, Parser& _parser, MemoryManager& _data, FunctionDefinitionManager& _functions, const Settings& _option)
 {
-	if (!_option.executeEnabled())
-		throw SyntaxError(SyntaxError::EXECUTE_COMMAND_DISABLED, sCmd, "execute");
+    if (!_option.executeEnabled())
+        throw SyntaxError(SyntaxError::EXECUTE_COMMAND_DISABLED, sCmd, "execute");
 
     CommandLineParser cmdParser(sCmd, "execute", CommandLineParser::CMD_EXPR_set_PAR);
 
-	FileSystem _fSys;
-	_fSys.setTokens(_option.getTokenPaths());
-	_fSys.setPath(_option.getExePath(), false, _option.getExePath());
-	_fSys.declareFileType(".exe");
-	string sParams = cmdParser.getParameterValueAsString("params", "");
-	string sWorkpath = cmdParser.getParameterValueAsString("wp", "");
-	string sObject = cmdParser.parseExprAsString();
-	int nRetVal = 0;
-	bool bWaitForTermination = cmdParser.hasParam("wait");
+    FileSystem _fSys;
+    _fSys.setTokens(_option.getTokenPaths());
+    _fSys.setPath(_option.getExePath(), false, _option.getExePath());
+    _fSys.declareFileType(".exe");
+    string sParams = cmdParser.getParameterValueAsString("params", "");
+    string sWorkpath = cmdParser.getParameterValueAsString("wp", "");
+    string sObject = cmdParser.parseExprAsString();
+    int nRetVal = 0;
+    bool bWaitForTermination = cmdParser.hasParam("wait");
 
-	// Resolve path placeholders
-	if (sObject.find('<') != string::npos && sObject.find('>', sObject.find('<') + 1) != string::npos)
-		sObject = _fSys.ValidFileName(sObject, ".exe");
+    // Resolve path placeholders
+    if (sObject.find('<') != string::npos && sObject.find('>', sObject.find('<') + 1) != string::npos)
+        sObject = _fSys.ValidFileName(sObject, ".exe");
 
-	if (sParams.find('<') != string::npos && sParams.find('>', sParams.find('<') + 1) != string::npos)
-	{
-		if (sParams.front() == '"')
-			sParams = "\"" + _fSys.ValidFileName(sParams.substr(1));
-		else
-			sParams = _fSys.ValidFileName(sParams);
-	}
+    if (sParams.find('<') != string::npos && sParams.find('>', sParams.find('<') + 1) != string::npos)
+    {
+        if (sParams.front() == '"')
+            sParams = "\"" + _fSys.ValidFileName(sParams.substr(1));
+        else
+            sParams = _fSys.ValidFileName(sParams);
+    }
 
-	if (sWorkpath.find('<') != string::npos && sWorkpath.find('>', sWorkpath.find('<') + 1) != string::npos)
-	{
-		if (sWorkpath.front() == '"')
-			sWorkpath = "\"" + _fSys.ValidFileName(sWorkpath.substr(1));
-		else
-			sWorkpath = _fSys.ValidFileName(sWorkpath);
+    if (sWorkpath.find('<') != string::npos && sWorkpath.find('>', sWorkpath.find('<') + 1) != string::npos)
+    {
+        if (sWorkpath.front() == '"')
+            sWorkpath = "\"" + _fSys.ValidFileName(sWorkpath.substr(1));
+        else
+            sWorkpath = _fSys.ValidFileName(sWorkpath);
 
-		if (sWorkpath.rfind(".dat") != string::npos)
-			sWorkpath.erase(sWorkpath.rfind(".dat"), 4);
-	}
+        if (sWorkpath.rfind(".dat") != string::npos)
+            sWorkpath.erase(sWorkpath.rfind(".dat"), 4);
+    }
 
-	StripSpaces(sObject);
+    StripSpaces(sObject);
 
-	// Prepare the shell execution information
-	// structure
-	SHELLEXECUTEINFO ShExecInfo = {0};
-	ShExecInfo.cbSize = sizeof(SHELLEXECUTEINFO);
-	ShExecInfo.fMask = SEE_MASK_NOCLOSEPROCESS;
-	ShExecInfo.hwnd = NULL;
-	ShExecInfo.lpVerb = NULL;
-	ShExecInfo.lpFile = sObject.c_str();
-	ShExecInfo.lpParameters = sParams.c_str();
-	ShExecInfo.lpDirectory = sWorkpath.c_str();
-	ShExecInfo.nShow = SW_SHOW;
-	ShExecInfo.hInstApp = NULL;
+    // Prepare the shell execution information
+    // structure
+    SHELLEXECUTEINFO ShExecInfo = {0};
+    ShExecInfo.cbSize = sizeof(SHELLEXECUTEINFO);
+    ShExecInfo.fMask = SEE_MASK_NOCLOSEPROCESS;
+    ShExecInfo.hwnd = NULL;
+    ShExecInfo.lpVerb = NULL;
+    ShExecInfo.lpFile = sObject.c_str();
+    ShExecInfo.lpParameters = sParams.c_str();
+    ShExecInfo.lpDirectory = sWorkpath.c_str();
+    ShExecInfo.nShow = SW_SHOW;
+    ShExecInfo.hInstApp = NULL;
 
-	nRetVal = ShellExecuteEx(&ShExecInfo);
+    nRetVal = ShellExecuteEx(&ShExecInfo);
 
-	if (!nRetVal)
-		throw SyntaxError(SyntaxError::EXECUTE_COMMAND_UNSUCCESSFUL, sCmd, "execute");
+    if (!nRetVal)
+        throw SyntaxError(SyntaxError::EXECUTE_COMMAND_UNSUCCESSFUL, sCmd, "execute");
 
     // Do we have to wait for termination?
-	if (bWaitForTermination)
-	{
-		if (_option.systemPrints())
-			NumeReKernel::printPreFmt("|-> " + _lang.get("COMMON_EVALUATING") + " ... ");
+    if (bWaitForTermination)
+    {
+        if (_option.systemPrints())
+            NumeReKernel::printPreFmt("|-> " + _lang.get("COMMON_EVALUATING") + " ... ");
 
-		while (true)
-		{
-			// wait 1sec and check, whether the user pressed the ESC key
-			if (WaitForSingleObject(ShExecInfo.hProcess, 1000) == WAIT_OBJECT_0)
-				break;
+        while (true)
+        {
+            // wait 1sec and check, whether the user pressed the ESC key
+            if (WaitForSingleObject(ShExecInfo.hProcess, 1000) == WAIT_OBJECT_0)
+                break;
 
-			if (NumeReKernel::GetAsyncCancelState())
-			{
-				if (_option.systemPrints())
-					NumeReKernel::printPreFmt(_lang.get("COMMON_CANCEL") + "\n");
+            if (NumeReKernel::GetAsyncCancelState())
+            {
+                if (_option.systemPrints())
+                    NumeReKernel::printPreFmt(_lang.get("COMMON_CANCEL") + "\n");
 
-				throw SyntaxError(SyntaxError::PROCESS_ABORTED_BY_USER, "", SyntaxError::invalid_position);
-			}
-		}
+                throw SyntaxError(SyntaxError::PROCESS_ABORTED_BY_USER, "", SyntaxError::invalid_position);
+            }
+        }
 
-		if (_option.systemPrints())
-			NumeReKernel::printPreFmt(_lang.get("COMMON_DONE") + ".\n");
-	}
+        if (_option.systemPrints())
+            NumeReKernel::printPreFmt(_lang.get("COMMON_DONE") + ".\n");
+    }
 
-	return true;
+    return true;
 }
 
 
@@ -1956,26 +1919,26 @@ static bool executeCommand(string& sCmd, Parser& _parser, MemoryManager& _data, 
 static void autoSave(MemoryManager& _data, Output& _out, Settings& _option)
 {
     // Only do something, if there's unsaved and valid data
-	if (_data.isValid() && !_data.getSaveStatus())
-	{
-	    // Inform the user
-		if (_option.systemPrints())
-			NumeReKernel::printPreFmt(toSystemCodePage(  _lang.get("BUILTIN_AUTOSAVE") + " ... "));
+    if (_data.isValid() && !_data.getSaveStatus())
+    {
+        // Inform the user
+        if (_option.systemPrints())
+            NumeReKernel::printPreFmt(toSystemCodePage(  _lang.get("BUILTIN_AUTOSAVE") + " ... "));
 
-		// Try to save the cache
-		if (_data.saveToCacheFile())
-		{
-			if (_option.systemPrints())
-				NumeReKernel::printPreFmt(toSystemCodePage(_lang.get("COMMON_SUCCESS") + ".") );
-		}
-		else
-		{
-			if (_option.systemPrints())
-				NumeReKernel::printPreFmt("\n");
-			throw SyntaxError(SyntaxError::CANNOT_SAVE_CACHE, "", SyntaxError::invalid_position);
-		}
-	}
-	return;
+        // Try to save the cache
+        if (_data.saveToCacheFile())
+        {
+            if (_option.systemPrints())
+                NumeReKernel::printPreFmt(toSystemCodePage(_lang.get("COMMON_SUCCESS") + ".") );
+        }
+        else
+        {
+            if (_option.systemPrints())
+                NumeReKernel::printPreFmt("\n");
+            throw SyntaxError(SyntaxError::CANNOT_SAVE_CACHE, "", SyntaxError::invalid_position);
+        }
+    }
+    return;
 }
 
 
@@ -2036,7 +1999,7 @@ static void copyDataToTemporaryTable(const string& sCmd, DataAccessParser& _acce
     // Copy the target data to a new table
     _accessParser.evalIndices();
     Memory* mem = _data.getTable(_accessParser.getDataObject())->extractRange(_accessParser.getIndices().row,
-                                                                              _accessParser.getIndices().col);
+                  _accessParser.getIndices().col);
     _cache.melt(mem, "table", true);
 }
 
@@ -2056,23 +2019,23 @@ static size_t findSettingOption(const std::string& sCmd, const std::string& sOpt
     size_t pos = findParameter(sCmd, sOption, '=');
 
     if (pos)
-        return pos+sOption.length();
+        return pos + sOption.length();
 
     pos = findParameter(sCmd, sOption);
 
     if (pos)
-        return pos-1 + sOption.length();
+        return pos - 1 + sOption.length();
 
     pos = sCmd.find(sOption);
 
     if (pos != std::string::npos
-        && (!pos || sCmd[pos-1] == ' '))
+            && (!pos || sCmd[pos - 1] == ' '))
     {
-        if (pos+sOption.length() == sCmd.length() || sCmd[pos+sOption.length()] == ' ')
+        if (pos + sOption.length() == sCmd.length() || sCmd[pos + sOption.length()] == ' ')
             return pos + sOption.length();
 
-        if (sCmd[pos+sOption.length()] == '=')
-            return pos + sOption.length()+1;
+        if (sCmd[pos + sOption.length()] == '=')
+            return pos + sOption.length() + 1;
     }
 
     return 0u;
@@ -2275,7 +2238,7 @@ static CommandReturnValues cmd_integrate(string& sCmd)
     CommandLineParser cmdParser(sCmd, "integrate", CommandLineParser::CMD_EXPR_set_PAR);
 
     if (cmdParser.getCommand().substr(0, 10) == "integrate2"
-        || cmdParser.parseIntervals().size() == 2)
+            || cmdParser.parseIntervals().size() == 2)
     {
         integrate2d(cmdParser);
         sCmd = cmdParser.getReturnValueStatement();
@@ -2723,7 +2686,7 @@ static CommandReturnValues cmd_get(string& sCmd)
     // Handle generic cases
     for (auto iter = mSettings.begin(); iter != mSettings.end(); ++iter)
     {
-        if (findSettingOption(sCmd, iter->first.substr(iter->first.find('.')+1)) && !iter->second.isHidden())
+        if (findSettingOption(sCmd, iter->first.substr(iter->first.find('.') + 1)) && !iter->second.isHidden())
         {
             std::string convertedValue;
 
@@ -2763,7 +2726,7 @@ static CommandReturnValues cmd_get(string& sCmd)
                             sCmd.replace(nPos, sCommand.length(), "\"" + convertedValue + "\"");
                     }
                     else
-                        NumeReKernel::print(toUpperCase(iter->first.substr(iter->first.find('.')+1)) + ": " + convertedValue);
+                        NumeReKernel::print(toUpperCase(iter->first.substr(iter->first.find('.') + 1)) + ": " + convertedValue);
 
                     break;
             }
@@ -2835,7 +2798,7 @@ static CommandReturnValues cmd_readline(string& sCmd)
             if (sLastLine.find('\n') != string::npos)
                 sLastLine.erase(0, sLastLine.rfind('\n'));
 
-            if (sLastLine.substr(0, 4) == "|   " || sLastLine.substr(0, 4) == "|<- " || sLastLine.substr(0, 4) == "|-> ")
+            if (sLastLine.starts_with("|   ") || sLastLine.starts_with("|<- ") || sLastLine.starts_with("|-> "))
                 sLastLine.erase(0, 4);
 
             StripSpaces(sLastLine);
@@ -2965,7 +2928,6 @@ static CommandReturnValues cmd_new(string& sCmd)
 static CommandReturnValues cmd_edit(string& sCmd)
 {
     MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
-    Parser& _parser = NumeReKernel::getInstance()->getParser();
     Settings& _option = NumeReKernel::getInstance()->getSettings();
 
     if (sCmd.length() > 5)
@@ -2975,10 +2937,10 @@ static CommandReturnValues cmd_edit(string& sCmd)
         {
             extractFirstParameterStringValue(sCmd, sArgument);
             sArgument = "edit " + sArgument;
-            editObject(sArgument, _parser, _data, _option);
+            editObject(sArgument, _data, _option);
         }
         else
-            editObject(sCmd, _parser, _data, _option);
+            editObject(sCmd, _data, _option);
     }
     else
         doc_Help("edit", _option);
@@ -3116,6 +3078,33 @@ static CommandReturnValues cmd_delete(string& sCmd)
 
 
 /////////////////////////////////////////////////
+/// \brief This static function clears all user
+/// defined variables.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
+static void clear_variables()
+{
+    NumeRe::StringParser& _stringParser = NumeReKernel::getInstance()->getStringParser();
+    _stringParser.clearStringVar();
+
+    static std::vector<std::string> defaultVars = {"t", "x", "y", "z", "ncols", "nlens", "nlines", "nrows", "ans"};
+    Parser& _parser = NumeReKernel::getInstance()->getParser();
+    varmap_type mVariables = _parser.GetVar();
+
+    // remove variables, which are not default variables and no temporary variables
+    for (auto iter = mVariables.begin(); iter != mVariables.end(); ++iter)
+    {
+        bool isTemporaryVar = iter->first.starts_with("_~");
+        bool isDefaultVar = std::find(defaultVars.begin(), defaultVars.end(), iter->first) != defaultVars.end();
+        if (!isTemporaryVar && !isDefaultVar)
+            _parser.RemoveVar(iter->first);
+    }
+}
+
+
+/////////////////////////////////////////////////
 /// \brief This static function implements the
 /// "clear" command.
 ///
@@ -3142,7 +3131,11 @@ static CommandReturnValues cmd_clear(string& sCmd)
 
         return cmd_delete(sCommand);
     }
-    else if (cmdParser.hasParam("memory"))
+    else if (cmdParser.hasParam("var") && NumeReKernel::getInstance()->getDebugger().getStackSize() == 0)
+    {
+        clear_variables();
+    }
+    else if (cmdParser.hasParam("memory") && NumeReKernel::getInstance()->getDebugger().getStackSize() == 0)
     {
         // Clear all tables
         if (cmdParser.hasParam("ignore") || cmdParser.hasParam("i"))
@@ -3152,6 +3145,9 @@ static CommandReturnValues cmd_clear(string& sCmd)
 
         // Clear also the string table
         _data.clearStringElements();
+
+        // Clear also user-defined variables if called from terminal
+        clear_variables();
 
         // Clear also the clusters
         _data.clearAllClusters();
@@ -3267,7 +3263,7 @@ static CommandReturnValues cmd_install(string& sCmd)
             sArgument = sCmd.substr(findCommand(sCmd).nPos + 8);
 
         StripSpaces(sArgument);
-        _script.openScript(sArgument);
+        _script.openScript(sArgument, 0);
     }
 
     return COMMAND_PROCESSED;
@@ -3329,25 +3325,25 @@ static CommandReturnValues cmd_copy(string& sCmd)
 /////////////////////////////////////////////////
 static CommandReturnValues cmd_credits(string& sCmd)
 {
-	NumeReKernel::toggleTableStatus();
-	make_hline();
-	NumeReKernel::printPreFmt("|-> ");
-	NumeReKernel::getInstance()->displaySplash();
-	NumeReKernel::printPreFmt("\n");
-	make_hline();
-	NumeReKernel::printPreFmt("|-> Version: " + sVersion);
-	NumeReKernel::printPreFmt(" | " + _lang.get("BUILTIN_CREDITS_BUILD") + ": " + AutoVersion::YEAR + "-" + AutoVersion::MONTH + "-" + AutoVersion::DATE + "\n");
-	NumeReKernel::print("Copyright (c) 2013-" + (AutoVersion::YEAR + toSystemCodePage(", Erik HÄNEL et al.")) );
-	NumeReKernel::printPreFmt("|   <numere.developer@gmail.com>\n" );
-	NumeReKernel::print(_lang.get("BUILTIN_CREDITS_VERSIONINFO"));
-	make_hline(-80);
-	NumeReKernel::print(_lang.get("BUILTIN_CREDITS_LICENCE_1"));
-	NumeReKernel::print(_lang.get("BUILTIN_CREDITS_LICENCE_2"));
-	NumeReKernel::print(_lang.get("BUILTIN_CREDITS_LICENCE_3"));
-	NumeReKernel::toggleTableStatus();
-	make_hline();
+    NumeReKernel::toggleTableStatus();
+    make_hline();
+    NumeReKernel::printPreFmt("|-> ");
+    NumeReKernel::getInstance()->displaySplash();
+    NumeReKernel::printPreFmt("\n");
+    make_hline();
+    NumeReKernel::printPreFmt("|-> Version: " + sVersion);
+    NumeReKernel::printPreFmt(" | " + _lang.get("BUILTIN_CREDITS_BUILD") + ": " + AutoVersion::YEAR + "-" + AutoVersion::MONTH + "-" + AutoVersion::DATE + "\n");
+    NumeReKernel::print("Copyright (c) 2013-" + (AutoVersion::YEAR + toSystemCodePage(", Erik HÃ„NEL et al.")) );
+    NumeReKernel::printPreFmt("|   <numere.developer@gmail.com>\n" );
+    NumeReKernel::print(_lang.get("BUILTIN_CREDITS_VERSIONINFO"));
+    make_hline(-80);
+    NumeReKernel::print(_lang.get("BUILTIN_CREDITS_LICENCE_1"));
+    NumeReKernel::print(_lang.get("BUILTIN_CREDITS_LICENCE_2"));
+    NumeReKernel::print(_lang.get("BUILTIN_CREDITS_LICENCE_3"));
+    NumeReKernel::toggleTableStatus();
+    make_hline();
 
-	return COMMAND_PROCESSED;
+    return COMMAND_PROCESSED;
 }
 
 
@@ -3414,7 +3410,7 @@ static CommandReturnValues cmd_clc(string& sCmd)
 {
     NumeReKernel::clcTerminal();
 
-	return COMMAND_PROCESSED;
+    return COMMAND_PROCESSED;
 }
 
 
@@ -3582,48 +3578,14 @@ static CommandReturnValues cmd_warn(string& sCmd)
 /////////////////////////////////////////////////
 static CommandReturnValues cmd_stats(string& sCmd)
 {
-    MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
-    Match _match = findCommand(sCmd, "stats");
-    string sExpr = sCmd;
+    CommandLineParser cmdParser(sCmd, "stats", CommandLineParser::CMD_DAT_PAR);
+    plugin_statistics(cmdParser);
 
-    sExpr.replace(_match.nPos, string::npos, "_~load[~_~]");
-    sCmd.erase(0, _match.nPos);
-
-    string sArgument = evaluateParameterValues(sCmd);
-
-    DataAccessParser _accessParser(sCmd);
-
-    if (_accessParser.getDataObject().length())
+    if (cmdParser.getReturnValueStatement().length())
     {
-        MemoryManager _cache;
-
-        copyDataToTemporaryTable(sCmd, _accessParser, _data, _cache);
-
-        if (_accessParser.getDataObject() != "table")
-            _cache.renameTable("table", _accessParser.getDataObject(), true);
-
-        if (!_cache.isValueLike(VectorIndex(0, _cache.getCols(_accessParser.getDataObject())-1), _accessParser.getDataObject()))
-            throw SyntaxError(SyntaxError::WRONG_COLUMN_TYPE, sCmd, _accessParser.getDataObject()+"(", _accessParser.getDataObject());
-
-        if (NumeReKernel::getInstance()->getStringParser().containsStringVars(sCmd))
-            NumeReKernel::getInstance()->getStringParser().getStringValues(sCmd);
-
-        if (findParameter(sCmd, "export", '='))
-            addArgumentQuotes(sCmd, "export");
-
-        sArgument = "stats -" + _accessParser.getDataObject() + " " + sCmd.substr(getMatchingParenthesis(sCmd.substr(sCmd.find('('))) + 1 + sCmd.find('('));
-        sArgument = evaluateParameterValues(sArgument);
-        std::string sRet = plugin_statistics(sArgument, _cache);
-
-        if (sRet.length())
-        {
-            sExpr.replace(_match.nPos, string::npos, sRet);
-            sCmd = sExpr;
-            return COMMAND_HAS_RETURNVALUE;
-        }
+        sCmd = cmdParser.getReturnValueStatement();
+        return COMMAND_HAS_RETURNVALUE;
     }
-    else
-        throw SyntaxError(SyntaxError::TABLE_DOESNT_EXIST, sCmd, SyntaxError::invalid_position);
 
     return COMMAND_PROCESSED;
 }
@@ -3728,7 +3690,7 @@ static CommandReturnValues cmd_set(string& sCmd)
 
     for (auto iter = mSettings.begin(); iter != mSettings.end(); ++iter)
     {
-        if (iter->second.isMutable() && (pos = findSettingOption(sCmd, iter->first.substr(iter->first.find('.')+1))))
+        if (iter->second.isMutable() && (pos = findSettingOption(sCmd, iter->first.substr(iter->first.find('.') + 1))))
         {
             switch (iter->second.getType())
             {
@@ -3741,8 +3703,8 @@ static CommandReturnValues cmd_set(string& sCmd)
                     _data.setbLoadEmptyCols(mSettings[SETTING_B_LOADEMPTYCOLS].active());
 
                     if (iter->first == SETTING_B_DEFCONTROL && mSettings[SETTING_B_DEFCONTROL].active()
-                        && !_functions.getDefinedFunctions()
-                        && fileExists(_option.getExePath() + "\\functions.def"))
+                            && !_functions.getDefinedFunctions()
+                            && fileExists(_option.getExePath() + "\\functions.def"))
                         _functions.load(_option);
                     else if (iter->first == SETTING_B_DEBUGGER)
                         NumeReKernel::getInstance()->getDebugger().setActive(mSettings[SETTING_B_DEBUGGER].active());
@@ -3751,13 +3713,13 @@ static CommandReturnValues cmd_set(string& sCmd)
                         NumeReKernel::modifiedSettings = true;
 
                     if (_option.systemPrints())
-                        NumeReKernel::print(toUpperCase(iter->first.substr(iter->first.find('.')+1)) + ": " + toString((bool)nArgument));
+                        NumeReKernel::print(toUpperCase(iter->first.substr(iter->first.find('.') + 1)) + ": " + toString((bool)nArgument));
 
                     break;
                 case SettingsValue::UINT:
                     if (parseCmdArg(sCmd, pos, _parser, nArgument)
-                        && nArgument >= iter->second.min()
-                        && nArgument <= iter->second.max())
+                            && nArgument >= iter->second.min()
+                            && nArgument <= iter->second.max())
                     {
                         iter->second.value() = nArgument;
 
@@ -3765,7 +3727,7 @@ static CommandReturnValues cmd_set(string& sCmd)
                             NumeReKernel::modifiedSettings = true;
 
                         if (_option.systemPrints())
-                            NumeReKernel::print(toUpperCase(iter->first.substr(iter->first.find('.')+1)) + ": " + toString(nArgument));
+                            NumeReKernel::print(toUpperCase(iter->first.substr(iter->first.find('.') + 1)) + ": " + toString(nArgument));
                     }
 
                     break;
@@ -3790,7 +3752,7 @@ static CommandReturnValues cmd_set(string& sCmd)
                             NumeReKernel::modifiedSettings = true;
 
                         if (_option.systemPrints())
-                            NumeReKernel::print(toUpperCase(iter->first.substr(iter->first.find('.')+1)) + ": " + iter->second.stringval());
+                            NumeReKernel::print(toUpperCase(iter->first.substr(iter->first.find('.') + 1)) + ": " + iter->second.stringval());
                     }
                     else
                     {
@@ -3818,7 +3780,7 @@ static CommandReturnValues cmd_set(string& sCmd)
                                 NumeReKernel::modifiedSettings = true;
 
                             if (_option.systemPrints())
-                                NumeReKernel::print(toUpperCase(iter->first.substr(iter->first.find('.')+1)) + ": " + sArgument);
+                                NumeReKernel::print(toUpperCase(iter->first.substr(iter->first.find('.') + 1)) + ": " + sArgument);
                         }
                     }
 
@@ -3911,7 +3873,16 @@ static CommandReturnValues cmd_start(string& sCmd)
     if (!sFileName.length())
         throw SyntaxError(SyntaxError::SCRIPT_NOT_EXIST, sCmd, sFileName, "[" + _lang.get("BUILTIN_CHECKKEYWORD_START_ERRORTOKEN") + "]");
 
-    _script.openScript(sFileName);
+    // Get the line to start from
+    int nFromLine = 0;
+    if (cmdParser.hasParam("fromline"))
+    {
+        // Get the line parameter and subtract 1 to match the internal line count
+        std::vector<mu::value_type> vecFromLine = cmdParser.getParameterValueAsNumericalValue("fromline");
+        nFromLine = intCast(vecFromLine.front()) - 1;
+    }
+
+    _script.openScript(sFileName, nFromLine);
 
     return COMMAND_PROCESSED;
 }
@@ -3936,7 +3907,7 @@ static CommandReturnValues cmd_show(string& sCmd)
     CommandLineParser cmdParser(sCmd, CommandLineParser::CMD_DAT_PAR);
 
     // Handle the compact mode (probably not needed any more)
-    if (cmdParser.getCommand().substr(0, 5) == "showf")
+    if (cmdParser.getCommand().starts_with("showf"))
         _out.setCompact(false);
     else
         _out.setCompact(_option.createCompactTables());
@@ -4082,12 +4053,12 @@ static CommandReturnValues cmd_smooth(string& sCmd)
     if (_access.getDataObject().length())
     {
         if (!isValidIndexSet(_access.getIndices()))
-            throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd, _access.getDataObject()+"(", _access.getIndexString());
+            throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd, _access.getDataObject() + "(", _access.getIndexString());
 
         _access.evalIndices();
 
         if (!_data.isValueLike(_access.getIndices().col, _access.getDataObject()))
-            throw SyntaxError(SyntaxError::WRONG_COLUMN_TYPE, cmdParser.getCommandLine(), _access.getDataObject()+"(", _access.getDataObject());
+            throw SyntaxError(SyntaxError::WRONG_COLUMN_TYPE, cmdParser.getCommandLine(), _access.getDataObject() + "(", _access.getDataObject());
 
         bool success = false;
 
@@ -4143,9 +4114,9 @@ static CommandReturnValues cmd_swap(string& sCmd)
 /////////////////////////////////////////////////
 static CommandReturnValues cmd_hist(string& sCmd)
 {
-    string sArgument = evaluateParameterValues(sCmd);
+    CommandLineParser cmdParser(sCmd, "hist", CommandLineParser::CMD_EXPR_set_PAR);
 
-    plugin_histogram(sArgument);
+    plugin_histogram(cmdParser);
 
     return COMMAND_PROCESSED;
 }
@@ -4250,7 +4221,7 @@ static CommandReturnValues cmd_pack(string& sCmd)
         }
 
         if (instance->getStringParser().isStringExpression(sExpression)
-            || instance->getMemoryManager().containsClusters(sExpression))
+                || instance->getMemoryManager().containsClusters(sExpression))
         {
             sExpression += " -komq";
             std::string sDummy = "";
@@ -4443,12 +4414,12 @@ static CommandReturnValues cmd_resample(string& sCmd)
         }
 
         if (!isValidIndexSet(_access.getIndices()))
-            throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd, _access.getDataObject()+"(", _access.getIndexString());
+            throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd, _access.getDataObject() + "(", _access.getIndexString());
 
         _access.evalIndices();
 
         if (!_data.isValueLike(_access.getIndices().col, _access.getDataObject()))
-            throw SyntaxError(SyntaxError::WRONG_COLUMN_TYPE, cmdParser.getCommandLine(), _access.getDataObject()+"(", _access.getDataObject());
+            throw SyntaxError(SyntaxError::WRONG_COLUMN_TYPE, cmdParser.getCommandLine(), _access.getDataObject() + "(", _access.getDataObject());
 
         MemoryManager::AppDir dir = MemoryManager::ALL;
 
@@ -4508,7 +4479,7 @@ static CommandReturnValues cmd_remove(string& sCmd)
             {
                 size_t nPos = sTable.find(iter->first + "()");
 
-                if (nPos != string::npos && (!nPos || isDelimiter(sTable[nPos-1])) && iter->first != "table")
+                if (nPos != string::npos && (!nPos || isDelimiter(sTable[nPos - 1])) && iter->first != "table")
                 {
                     sTable = iter->first;
 
@@ -4639,16 +4610,16 @@ static CommandReturnValues cmd_retouch(string& sCmd)
     if (_access.getDataObject().length())
     {
         if (!isValidIndexSet(_access.getIndices()))
-            throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd, _access.getDataObject()+"(", _access.getIndexString());
+            throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd, _access.getDataObject() + "(", _access.getIndexString());
 
         if (_access.getIndices().row.isOpenEnd())
-            _access.getIndices().row.setRange(0, _data.getLines(_access.getDataObject(), false)-1);
+            _access.getIndices().row.setRange(0, _data.getLines(_access.getDataObject(), false) - 1);
 
         if (_access.getIndices().col.isOpenEnd())
-            _access.getIndices().col.setRange(0, _data.getCols(_access.getDataObject())-1);
+            _access.getIndices().col.setRange(0, _data.getCols(_access.getDataObject()) - 1);
 
         if (!_data.isValueLike(_access.getIndices().col, _access.getDataObject()))
-            throw SyntaxError(SyntaxError::WRONG_COLUMN_TYPE, sCmd, _access.getDataObject()+"(", _access.getDataObject());
+            throw SyntaxError(SyntaxError::WRONG_COLUMN_TYPE, sCmd, _access.getDataObject() + "(", _access.getDataObject());
 
         MemoryManager::AppDir dir = MemoryManager::ALL;
 
@@ -4878,11 +4849,11 @@ static std::string getTargetTable(const std::string& sCmd)
     std::string sTargetTable;
 
     if (findParameter(sCmd, "totable", '='))
-        sTargetTable = getArgAtPos(sCmd, findParameter(sCmd, "totable", '=')+7);
+        sTargetTable = getArgAtPos(sCmd, findParameter(sCmd, "totable", '=') + 7);
     else if (findParameter(sCmd, "tocache", '='))
-        sTargetTable = getArgAtPos(sCmd, findParameter(sCmd, "tocache", '=')+7);
+        sTargetTable = getArgAtPos(sCmd, findParameter(sCmd, "tocache", '=') + 7);
     else if (findParameter(sCmd, "target", '='))
-        sTargetTable = getArgAtPos(sCmd, findParameter(sCmd, "target", '=')+6);
+        sTargetTable = getArgAtPos(sCmd, findParameter(sCmd, "target", '=') + 6);
 
     if (sTargetTable.find('(') != std::string::npos)
         return sTargetTable.substr(0, sTargetTable.find('('));
@@ -4949,7 +4920,7 @@ static CommandReturnValues cmd_load(string& sCmd)
             _data.setbLoadEmptyColsInNextFile(cmdParser.hasParam("keepdim") || cmdParser.hasParam("complete"));
 
             if ((cmdParser.hasParam("tocache") || cmdParser.hasParam("totable") || cmdParser.hasParam("target"))
-                && !cmdParser.hasParam("all"))
+                    && !cmdParser.hasParam("all"))
             {
                 // Single file directly to cache
                 std::string sTargetTable = getTargetTable(cmdParser.getParameterList());
@@ -4962,7 +4933,7 @@ static CommandReturnValues cmd_load(string& sCmd)
                     if (_option.systemPrints())
                         NumeReKernel::print(_lang.get("BUILTIN_LOADDATA_SUCCESS", info.sTableName + "()", toString(_data.getLines(info.sTableName, false)), toString(_data.getCols(info.sTableName, false))));
 
-                    cmdParser.setReturnValue(std::vector<mu::value_type>({1, info.nRows, _data.getCols(info.sTableName)-info.nCols+1, _data.getCols(info.sTableName)}));
+                    cmdParser.setReturnValue(std::vector<mu::value_type>({1, info.nRows, _data.getCols(info.sTableName) - info.nCols + 1, _data.getCols(info.sTableName)}));
                     sCmd = cmdParser.getReturnValueStatement();
 
                     return COMMAND_HAS_RETURNVALUE;
@@ -4978,7 +4949,7 @@ static CommandReturnValues cmd_load(string& sCmd)
                 if (sFileName.find('/') == string::npos)
                     sFileName = "<loadpath>/" + sFileName;
 
-                vector<string> vFilelist = getFileList(sFileName, _option, 1);
+                std::vector<std::string> vFilelist = NumeReKernel::getInstance()->getFileSystem().getFileList(sFileName, FileSystem::FULLPATH);
 
                 if (!vFilelist.size())
                     throw SyntaxError(SyntaxError::FILE_NOT_EXIST, sCmd, sFileName, sFileName);
@@ -5007,7 +4978,7 @@ static CommandReturnValues cmd_load(string& sCmd)
                     if (sFileName.find('/') == string::npos)
                         sFileName = "<loadpath>/" + sFileName;
 
-                    vector<string> vFilelist = getFileList(sFileName, _option, 1);
+                    std::vector<std::string> vFilelist = NumeReKernel::getInstance()->getFileSystem().getFileList(sFileName, FileSystem::FULLPATH);
 
                     if (!vFilelist.size())
                         throw SyntaxError(SyntaxError::FILE_NOT_EXIST, sCmd, sFileName, sFileName);
@@ -5015,7 +4986,7 @@ static CommandReturnValues cmd_load(string& sCmd)
                     for (size_t i = 0; i < vFilelist.size(); i++)
                     {
                         // Melting is done automatically
-                        _data.openFile(vFilelist[i], false, false, nArgument, sFileFormat);
+                        _data.openFile(vFilelist[i], false, false, nArgument, "", sFileFormat);
                     }
 
                     if (!_data.isEmpty("data") && _option.systemPrints())
@@ -5092,13 +5063,13 @@ static CommandReturnValues cmd_reload(string& sCmd)
 
     for (size_t i = 0; i < _filenames.size(); i++)
     {
-        if (sCmd.find_first_not_of(' ', _mMatch.nPos+6) != string::npos)
+        if (sCmd.find_first_not_of(' ', _mMatch.nPos + 6) != string::npos)
         {
             // Seems not to contain any valid file name
-            if (sCmd[sCmd.find_first_not_of(' ', _mMatch.nPos+6)] == '-')
-                sArgument = "load " + _filenames[i] + " " + sCmd.substr(sCmd.find_first_not_of(' ', _mMatch.nPos+6)) + " -app";
+            if (sCmd[sCmd.find_first_not_of(' ', _mMatch.nPos + 6)] == '-')
+                sArgument = "load " + _filenames[i] + " " + sCmd.substr(sCmd.find_first_not_of(' ', _mMatch.nPos + 6)) + " -app";
             else
-                sArgument = sCmd.substr(_mMatch.nPos+2) + " -app";
+                sArgument = sCmd.substr(_mMatch.nPos + 2) + " -app";
         }
         else
             sArgument = "load " + _filenames[i] + " -app";
@@ -5276,7 +5247,7 @@ static CommandReturnValues cmd_context_specific(string& sCmd)
 /// \return std::map<std::string,CommandFunc>
 ///
 /////////////////////////////////////////////////
-static std::map<std::string,CommandFunc> getCommandFunctions()
+static std::map<std::string, CommandFunc> getCommandFunctions()
 {
     std::map<std::string, CommandFunc> mCommandFuncMap;
 
@@ -5436,7 +5407,7 @@ static std::map<std::string,CommandFunc> getCommandFunctions()
 /// \return std::map<std::string,CommandFunc>
 ///
 /////////////////////////////////////////////////
-static std::map<std::string,CommandFunc> getCommandFunctionsWithReturnValues()
+static std::map<std::string, CommandFunc> getCommandFunctionsWithReturnValues()
 {
     std::map<std::string, CommandFunc> mCommandFuncMap;
 
@@ -5477,4 +5448,3 @@ static std::map<std::string,CommandFunc> getCommandFunctionsWithReturnValues()
 
 
 #endif // COMMANDFUNCTIONS_HPP
-

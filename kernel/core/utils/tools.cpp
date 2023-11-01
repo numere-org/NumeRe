@@ -427,7 +427,7 @@ string extractStringToken(const string& sCmd, size_t nPos)
         // Jump over each parenthesis block
         if (sCmd[i] == '(' || sCmd[i] == '[' || sCmd[i] == '{')
         {
-            i += getMatchingParenthesis(sCmd.substr(i));
+            i += getMatchingParenthesis(StringView(sCmd, i));
             continue;
         }
 
@@ -443,7 +443,7 @@ string extractStringToken(const string& sCmd, size_t nPos)
                 }
                 // jump over parentheses
                 if (sCmd[j] == '(')
-                    j += getMatchingParenthesis(sCmd.substr(j));
+                    j += getMatchingParenthesis(StringView(sCmd, j));
 
                 if (j == sCmd.length() - 1)
                 {
@@ -592,7 +592,7 @@ bool isMultiValue(const string& sExpr, bool bIgnoreClosingParenthesis)
         {
             // Jump over parentheses
             if ((sExpr[i] == '(' || sExpr[i] == '{' || sExpr[i] == '[') && !(nQuotationMarks % 2))
-                i += getMatchingParenthesis(sExpr.substr(i));
+                i += getMatchingParenthesis(StringView(sExpr, i));
 
             // Count quotation marks
             if (sExpr[i] == '"')
@@ -895,7 +895,7 @@ std::string replaceToTeX(const std::string& sString, bool replaceForTeXFile)
                     continue;
                 }
             }
-            else if (!checkDelimiter(sReturn.substr(nPos - 1, iter.first.length() + 2)))
+            else if (!StringView(sReturn).is_delimited_sequence(nPos, iter.first.length()))
             {
                 // --> Pruefen wir auch getrennt den Fall, ob das Token ueberhaupt begrenzt ist ('_' zaehlt nicht zu den Delimitern) <--
                 nPos += iter.first.length();
@@ -979,7 +979,7 @@ std::string replaceToTeX(const std::string& sString, bool replaceForTeXFile)
                     continue;
                 }
             }
-            else if (!checkDelimiter(sReturn.substr(nPos - 1, iter.first.length() + 2)))
+            else if (!StringView(sReturn).is_delimited_sequence(nPos, iter.first.length()))
             {
                 // --> Pruefen wir auch getrennt den Fall, ob das Token ueberhaupt begrenzt ist ('_' zaehlt nicht zu den Delimitern) <--
                 nPos += iter.first.length();
@@ -1224,23 +1224,20 @@ static Match findCommandWithReturnValue(StringView sCmd, const string& sCommand)
             continue;
 
         // This is our command and it is not at the beginning of the line
-        if (sCmd.subview(i, sCommand.length()) == sCommand && i)
+        if (sCmd.match(sCommand, i) && i)
         {
             // Is the command filling the rest of the command line?
             if (i + sCommand.length() == sCmd.length() - 1)
             {
-                // Store the command string with the previous character
-                _mMatch.sString = sCmd.subview(i - 1).to_string() + " ";
-
                 // Store the position
                 _mMatch.nPos = i;
 
                 // Ensure that the command is not part of a larger word
-                if (checkDelimiter(_mMatch.sString) && !isInQuotes(sCmd, i))
+                if (sCmd.is_delimited_sequence(i) && !isInQuotes(sCmd, i))
                 {
                     // It is not
                     // Remove the additional characters
-                    _mMatch.sString = _mMatch.sString.substr(1, _mMatch.sString.length() - 2);
+                    _mMatch.sString = sCmd.subview(i).to_string();
                 }
                 else
                 {
@@ -1288,7 +1285,7 @@ static Match findCommandWithReturnValue(StringView sCmd, const string& sCommand)
         }
 
         // This is our command and it is at the beginning of the line
-        if (sCmd.subview(i, sCommand.length()) == sCommand && !i)
+        if (sCmd.starts_with(sCommand))
         {
             // If the command lenght and the command line length are nearly the same
             if (sCommand.length() == sCmd.length() - 1)
@@ -1437,11 +1434,11 @@ string extractCommandString(const string& sCmd, const Match& _mMatch)
             if (sCmd[i] == '(' && !isInQuotes(sCmd, i))
             {
                 // Find the matching parenthesis
-                if (getMatchingParenthesis(sCmd.substr(i)) != string::npos)
+                if (getMatchingParenthesis(StringView(sCmd, i)) != string::npos)
                 {
                     // Use the contents of the parenthesis
                     // However, only extract the command and not the characters in front of it
-                    sCommandString = sCmd.substr(_mMatch.nPos, getMatchingParenthesis(sCmd.substr(i)) - (_mMatch.nPos - i + 1));
+                    sCommandString = sCmd.substr(_mMatch.nPos, getMatchingParenthesis(StringView(sCmd, i)) - (_mMatch.nPos - i + 1));
                     break;
                 }
                 else
@@ -1722,13 +1719,13 @@ string getArgAtPos(const string& sCmd, size_t nPos, int extraction)
             continue;
 
         if (sCmd[i] == '(' || sCmd[i] == '[' || sCmd[i] == '{')
-            i += getMatchingParenthesis(sCmd.substr(i));
+            i += getMatchingParenthesis(StringView(sCmd, i));
 
         if (sCmd[i] == ' ')
         {
             size_t cont = isStringContinuation(sCmd, i);
 
-            if (cont < sCmd.length() && NumeReKernel::getInstance()->getStringParser().isStringExpression(sCmd.substr(nPos, i-nPos)))
+            if (cont < sCmd.length() && NumeReKernel::getInstance()->getStringParser().isStringExpression(StringView(sCmd, nPos, i-nPos)))
                 i = cont-1;
             else
             {
@@ -1872,7 +1869,7 @@ bool isToStringArg(const string& sExpr, size_t nPos)
     for (int i = nPos; i >= 8; i--)
     {
         // An opening parenthesis was found with its counterpart after the current position
-        if (sExpr[i] == '(' && getMatchingParenthesis(sExpr.substr(i)) + i > nPos)
+        if (sExpr[i] == '(' && getMatchingParenthesis(StringView(sExpr, i)) + i > nPos)
         {
             // Is there one of the three functions left from the current position?
             if (i > 10 && sExpr.substr(i - 11, 12) == "string_cast(")
@@ -1975,7 +1972,7 @@ bool addLegends(string& sExpr)
 {
     // Validate the number of parentheses
     if (!validateParenthesisNumber(sExpr))
-        throw SyntaxError(SyntaxError::UNMATCHED_PARENTHESIS, sExpr, '(');
+        throw SyntaxError(SyntaxError::UNMATCHED_PARENTHESIS, sExpr, sExpr.find_first_of("({[]})"));
 
     EndlessVector<std::string> args = getAllArguments(sExpr);
 
@@ -2049,15 +2046,17 @@ bool addLegends(string& sExpr)
 /// character in the passed string is a delimiter
 /// character.
 ///
-/// \param sString const string&
+/// \param sString StringView
 /// \param stringdelim bool
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool checkDelimiter(const string& sString, bool stringdelim)
+bool checkDelimiter(StringView sString, bool stringdelim)
 {
     // --> Gib die Auswertung dieses logischen Ausdrucks zurueck <--
-    return isDelimiter(sString.front()) && (isDelimiter(sString.back()) || (sString.back() == '.' && stringdelim));
+    //return isDelimiter(sString.front()) && (isDelimiter(sString.back()) || (sString.back() == '.' && stringdelim));
+    return sString.is_delimited_sequence(1, sString.length()-2,
+                                         stringdelim ? StringViewBase::STRING_DELIMITER : StringViewBase::STD_DELIMITER);
 }
 
 
@@ -2086,7 +2085,7 @@ std::vector<std::string> splitIntoLines(std::string sOutput, size_t lineWidth, b
     sOutput = toSystemCodePage(sOutput);
 
     // Check if the output already contains the line starting chars
-    if ((sOutput.substr(0, 4) == "|   " || sOutput.substr(0, 4) == "|-> ") && nFirstIndent == 4)
+    if ((sOutput.starts_with("|   ") || sOutput.starts_with("|-> ")) && nFirstIndent == 4)
         nFirstIndent = 0;
 
     // Check if string is already shorter than the line length and does not have any new line commands
@@ -2245,7 +2244,7 @@ std::string outputString(std::vector<std::string> stringInLines, int nFirstInden
         return sOutput;
 
     // Check if the output already contains the line starting chars
-    if ((sOutput.substr(0, 4) == "|   " || sOutput.substr(0, 4) == "|-> ") && nFirstIndent == 4)
+    if ((sOutput.starts_with("|   ") || sOutput.starts_with("|-> ")) && nFirstIndent == 4)
         nFirstIndent = 0;
 
     // Add the first line with the corresponding indent
@@ -2622,7 +2621,7 @@ void eraseToken(string& sExpr, const string& sToken, bool bTokenHasValue)
                 {
                     // jump over parentheses
                     if (!isInQuotes(sExpr, j) && (sExpr[j] == '(' || sExpr[j] == '[' || sExpr[j] == '{'))
-                        j += getMatchingParenthesis(sExpr.substr(j));
+                        j += getMatchingParenthesis(StringView(sExpr, j));
 
                     // White space found -> end of option value
                     // erase token and its value together
@@ -2648,342 +2647,17 @@ void eraseToken(string& sExpr, const string& sToken, bool bTokenHasValue)
 
 
 /////////////////////////////////////////////////
-/// \brief This function resolves the possibility
-/// to select multiple paths at once by inserting
-/// something like this/is/a/<path|with|tokens>/which/will/search/at/different/locations
-///
-/// \param sDirectory const string&
-/// \param _option const Settings&
-/// \return vector<string>
-///
-/////////////////////////////////////////////////
-vector<string> resolveChooseTokens(const string& sDirectory, const Settings& _option)
-{
-    vector<string> vResolved;
-    vResolved.push_back(sDirectory);
-    string sToken;
-    size_t nSize = 0, nth_choose = 0;
-    bool bResolvingPath = false;
-
-    // Is there at least one pipe in the directory?
-    if (sDirectory.find('|') != string::npos)
-    {
-        // As long as the directory contains pipes
-        while (vResolved[0].find('|') != string::npos)
-        {
-            // no opening angle for the token?
-            if (!vResolved[0].rfind('<'))
-                break;
-
-            // Get the token and remove the remaining part
-            sToken = vResolved[0].substr(vResolved[0].rfind('<') + 1);
-            sToken.erase(sToken.find('>'));
-
-            // Store the current size of the directory tree
-            nSize = vResolved.size();
-            nth_choose = 0;
-
-            // As long as a pipe is found in the token or the token has a length
-            while (sToken.find('|') != string::npos || sToken.length())
-            {
-                // so lange ein "|" in dem Token gefunden wird, muss der Baum dupliziert werden
-                if (sToken.find('|') != string::npos)
-                {
-                    // duplicate the "root" tree
-                    for (size_t i = 0; i < nSize; i++)
-                        vResolved.push_back(vResolved[i + nth_choose * nSize]);
-                }
-
-                // Replace the tokens with the first of the current tokens
-                for (size_t i = nth_choose * nSize; i < (nth_choose + 1)*nSize; i++)
-                {
-                    if (!bResolvingPath && vResolved[i].rfind('/') != string::npos && vResolved[i].rfind('/') > vResolved[i].rfind('>'))
-                        bResolvingPath = true;
-                    vResolved[i].replace(vResolved[i].rfind('<'), vResolved[i].rfind('>') + 1 - vResolved[i].rfind('<'), sToken.substr(0, sToken.find('|')));
-                }
-
-                // If we want to resolve a path, then we have to do that with a recursion
-                if (bResolvingPath
-                        && ((vResolved[nth_choose * nSize].find('*') != string::npos && vResolved[nth_choose * nSize].find('*') < vResolved[nth_choose * nSize].rfind('/'))
-                            || (vResolved[nth_choose * nSize].find('?') != string::npos && vResolved[nth_choose * nSize].find('?') < vResolved[nth_choose * nSize].rfind('/'))))
-                {
-                    // Platzhalter in Pfaden werden mit einer Rekursion geloest.
-                    // Resolve the current tree
-                    vector<string> vFolderList = getFolderList(vResolved[nth_choose * nSize].substr(0, vResolved[nth_choose * nSize].rfind('/')), _option, 1);
-
-                    // Remove obsolete paths (i.e. paths pointing to itself or to one directory further up
-                    for (size_t j = 0; j < vFolderList.size(); j++)
-                    {
-                        if ((vFolderList[j].length() >= 3 && vFolderList[j].substr(vFolderList[j].length() - 3) == "/..")
-                            || (vFolderList[j].length() >= 2 && vFolderList[j].substr(vFolderList[j].length() - 2) == "/."))
-                        {
-                            vFolderList.erase(vFolderList.begin() + j);
-
-                            // If we erase the current position, we have to decrement the position
-                            j--;
-                        }
-                    }
-
-                    // If we didn't get a result, remove the current token from the token list and continue
-                    if (!vFolderList.size())
-                    {
-                        bResolvingPath = false;
-                        nth_choose++;
-                        if (sToken.find('|') != string::npos)
-                            sToken.erase(0, sToken.find('|') + 1);
-                        else
-                        {
-                            sToken.clear();
-                            break;
-                        }
-                        continue;
-                    }
-
-                    // Copy the obtained tree to the resolved tree
-                    for (size_t j = 0; j < vFolderList.size(); j++)
-                    {
-                        // Does the tree need to be duplicated?
-                        if (vFolderList.size() > 1 && j < vFolderList.size() - 1)
-                        {
-                            // ggf. Baum duplizieren
-                            if (vResolved.size() > (nth_choose + 1)*nSize)
-                            {
-                                for (size_t k = 0; k < nSize; k++)
-                                {
-                                    vResolved.push_back(vResolved[k + (nth_choose + 1)*nSize]);
-                                    vResolved[k + (nth_choose + 1)*nSize] = vResolved[k + nth_choose * nSize];
-                                }
-                            }
-                            else
-                            {
-                                for (size_t k = 0; k < nSize; k++)
-                                {
-                                    vResolved.push_back(vResolved[(nth_choose)*nSize]);
-                                }
-                            }
-                        }
-
-                        // simply replace the path part of the resolved tree
-                        for (size_t k = nth_choose * nSize; k < (nth_choose + 1)*nSize; k++)
-                        {
-                            vResolved[k].replace(0, vResolved[k].rfind('/'), vFolderList[j]);
-                        }
-
-                        // Increment the choose token counter
-                        if (vFolderList.size() > 1 && j < vFolderList.size() - 1)
-                            nth_choose++;
-                    }
-                }
-
-                // Erase the current token from the token list and continue
-                bResolvingPath = false;
-                nth_choose++;
-                if (sToken.find('|') != string::npos)
-                    sToken.erase(0, sToken.find('|') + 1);
-                else
-                {
-                    sToken.clear();
-                    break;
-                }
-            }
-        }
-    }
-
-    // This is not using path tokens but place holders/wildcards in the path part
-    if (vResolved[0].find('/') != string::npos
-            && ((vResolved[0].find('*') != string::npos && vResolved[0].find('*') < vResolved[0].rfind('/'))
-                || (vResolved[0].find('?') != string::npos && vResolved[0].find('?') < vResolved[0].rfind('/'))))
-    {
-        // Platzhalter in Pfaden werden mit einer Rekursion geloest.
-        vector<string> vFolderList = getFolderList(vResolved[0].substr(0, vResolved[0].rfind('/')), _option, 1);
-
-        // store the current tree size
-        nSize = vResolved.size();
-
-        // Remove obsolete paths (i.e. paths pointing to itself or to one directory further up
-        for (size_t j = 0; j < vFolderList.size(); j++)
-        {
-            if ((vFolderList[j].length() >= 3 && vFolderList[j].substr(vFolderList[j].length() - 3) == "/..")
-                || (vFolderList[j].length() >= 2 && vFolderList[j].substr(vFolderList[j].length() - 2) == "/."))
-            {
-                vFolderList.erase(vFolderList.begin() + j);
-
-                // If we erase the current position, we have to decrement the position
-                j--;
-            }
-        }
-
-        // Return, if no result was found
-        if (!vFolderList.size())
-            return vResolved;
-
-        // Copy the resolved tree, if it is necessary
-        for (size_t i = 0; i < vFolderList.size() - 1; i++)
-        {
-            // Don't use paths, which weren't resolved
-            if (vFolderList[i].find('*') != string::npos || vFolderList[i].find('?') != string::npos || !vFolderList[i].size())
-                continue;
-
-            // ggf. Baum duplizieren
-            for (size_t k = 0; k < nSize; k++)
-            {
-                vResolved.push_back(vResolved[k]);
-            }
-
-        }
-
-        // Replace the paths with wildcards with the results obtained by recursion
-        for (size_t j = 0; j < vFolderList.size(); j++)
-        {
-            // Don't use paths, which weren't resolved
-            if (vFolderList[j].find('*') != string::npos || vFolderList[j].find('?') != string::npos || !vFolderList[j].size())
-                continue;
-
-            // replace the paths in the resolved tree
-            for (size_t k = j * nSize; k < (j + 1)*nSize; k++)
-            {
-                vResolved[k].replace(0, vResolved[k].rfind('/'), vFolderList[j]);
-            }
-        }
-    }
-
-    // return the resolved tree
-    return vResolved;
-}
-
-
-/////////////////////////////////////////////////
-/// \brief This function is a static helper
-/// function for getFileList and getFolderList.
-///
-/// \param sDir string&
-/// \param FindFileData WIN32_FIND_DATA*
-/// \param _option const Settings&
-/// \return HANDLE
-///
-/////////////////////////////////////////////////
-static HANDLE initializeFileHandle(string& sDir, WIN32_FIND_DATA* FindFileData, const Settings& _option)
-{
-    HANDLE hFind = INVALID_HANDLE_VALUE;
-    string sPath;
-
-    // Initialize the Windows structures
-    if (sDir[0] == '.')
-    {
-        // Only a dot -> root path
-        hFind = FindFirstFile((_option.getExePath() + "\\" + sDir).c_str(), FindFileData);
-        sDir = replacePathSeparator(_option.getExePath() + "/" + sDir);
-        sDir.erase(sDir.rfind('/') + 1);
-    }
-    else if (sDir[0] == '<')
-    {
-        // Get the default paths
-        if (sDir.substr(0, 10) == "<loadpath>")
-            sPath = _option.getLoadPath() + sDir.substr(sDir.find('>') + 1);
-        else if (sDir.substr(0, 10) == "<savepath>")
-            sPath = _option.getSavePath() + sDir.substr(sDir.find('>') + 1);
-        else if (sDir.substr(0, 12) == "<scriptpath>")
-            sPath = _option.getScriptPath() + sDir.substr(sDir.find('>') + 1);
-        else if (sDir.substr(0, 10) == "<plotpath>")
-            sPath = _option.getPlotPath() + sDir.substr(sDir.find('>') + 1);
-        else if (sDir.substr(0, 10) == "<procpath>")
-            sPath = _option.getProcPath() + sDir.substr(sDir.find('>') + 1);
-        else if (sDir.substr(0, 2) == "<>")
-            sPath = _option.getExePath() + sDir.substr(sDir.find('>') + 1);
-        else if (sDir.substr(0, 6) == "<this>")
-            sPath = _option.getExePath() + sDir.substr(sDir.find('>') + 1);
-        else if (sDir.substr(0, 4) == "<wp>")
-            sPath = _option.getWorkPath() + sDir.substr(sDir.find('>') + 1);
-
-        // If the path has a length then initialize the file handle
-        if (sPath.length())
-        {
-            hFind = FindFirstFile(sPath.c_str(), FindFileData);
-            sDir = replacePathSeparator(sPath);
-            sDir.erase(sDir.rfind('/') + 1);
-        }
-    }
-    else
-    {
-        // an arbitrary path
-        hFind = FindFirstFile(sDir.c_str(), FindFileData);
-        if (sDir.find('/') != string::npos)
-            sDir.erase(sDir.rfind('/') + 1);
-    }
-
-    // return the initialized file handle
-    return hFind;
-}
-
-
-/////////////////////////////////////////////////
 /// \brief This function returns a list of files
 /// (including their paths, if nFlags & 1).
 ///
 /// \param sDirectory const string&
-/// \param _option const Settings&
 /// \param nFlags int
 /// \return vector<string>
 ///
 /////////////////////////////////////////////////
-vector<string> getFileList(const string& sDirectory, const Settings& _option, int nFlags)
+vector<string> getFileList(const string& sDirectory, int nFlags)
 {
-    vector<string> vFileList;
-    vector<string> vDirList;
-
-    // Replace the Windows-Style Path separators to Unix-Style
-    string sDir = replacePathSeparator(sDirectory);
-
-    // Get the resolved tree
-    vDirList = resolveChooseTokens(sDir, _option);
-
-    // Walk through the resolved tree
-    for (size_t i = 0; i < vDirList.size(); i++)
-    {
-        sDir = vDirList[i];
-
-        // Append a wildcard, if one is missing
-        if (sDir.rfind('.') == string::npos && sDir.find('*') == string::npos && sDir.find('?') == string::npos)
-        {
-            if (sDir[sDir.find_last_not_of(' ')] != '/')
-                sDir += '/';
-            sDir += "*";
-        }
-        else if ((sDir.find('.') == string::npos
-                  || (sDir.find('.') != string::npos && sDir.find('/', sDir.rfind('.')) != string::npos))
-                 && sDir.back() != '*')
-            sDir += "*";
-
-        // Declare the Windows structures;
-        WIN32_FIND_DATA FindFileData;
-        HANDLE hFind = initializeFileHandle(sDir, &FindFileData, _option);
-
-        // Ensure that the structures were initialized correctly
-        if (hFind == INVALID_HANDLE_VALUE)
-            continue;
-
-        // As long as the FindNextFile function returns non-zero
-        // read the contents of FindFileData
-        do
-        {
-            // Ignore directories
-            if (FindFileData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
-                continue;
-
-            // Push back filenames
-            if (nFlags & 1)
-                vFileList.push_back(sDir + FindFileData.cFileName);
-            else
-                vFileList.push_back(FindFileData.cFileName);
-        }
-        while (FindNextFile(hFind, &FindFileData) != 0);
-
-        // Close the handle
-        FindClose(hFind);
-    }
-
-    // Return the obtained file list
-    return vFileList;
+    return NumeReKernel::getInstance()->getFileSystem().getFileList(sDirectory, nFlags);
 }
 
 
@@ -2993,72 +2667,13 @@ vector<string> getFileList(const string& sDirectory, const Settings& _option, in
 /// nFlags & 1).
 ///
 /// \param sDirectory const string&
-/// \param _option const Settings&
 /// \param nFlags int
 /// \return vector<string>
 ///
 /////////////////////////////////////////////////
-vector<string> getFolderList(const string& sDirectory, const Settings& _option, int nFlags)
+vector<string> getFolderList(const string& sDirectory, int nFlags)
 {
-    vector<string> vFileList;
-    vector<string> vDirList;
-
-    // Replace the Windows-Style Path separators to Unix-Style
-    string sDir = replacePathSeparator(sDirectory);
-
-    // Get the resolved tree
-    vDirList = resolveChooseTokens(sDir, _option);
-
-    // Walk through the resolved tree
-    for (size_t i = 0; i < vDirList.size(); i++)
-    {
-        sDir = vDirList[i];
-
-        // Append a wildcard, if one is missing
-        if (sDir.rfind('.') == string::npos && sDir.find('*') == string::npos && sDir.find('?') == string::npos)
-        {
-            if (sDir[sDir.find_last_not_of(' ')] != '/')
-                sDir += '/';
-            sDir += "*";
-        }
-        else if ((sDir.find('.') == string::npos
-                  || (sDir.find('.') != string::npos && sDir.find('/', sDir.rfind('.')) != string::npos))
-                 && sDir.back() != '*')
-            sDir += "*";
-
-        // Declare the Windows structures;
-        WIN32_FIND_DATA FindFileData;
-        HANDLE hFind = initializeFileHandle(sDir, &FindFileData, _option);
-
-        // Ensure that the structures were initialized correctly
-        if (hFind == INVALID_HANDLE_VALUE)
-            continue;
-
-        // As long as the FindNextFile function returns non-zero
-        // read the contents of FindFileData
-        do
-        {
-            // USe directories
-            if (FindFileData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
-            {
-                // Push back the directories
-                if (nFlags & 1)
-                    vFileList.push_back(sDir + FindFileData.cFileName);
-                else
-                    vFileList.push_back(FindFileData.cFileName);
-            }
-            else // ignore files
-                continue;
-
-        }
-        while (FindNextFile(hFind, &FindFileData) != 0);
-
-        // Close the handle
-        FindClose(hFind);
-    }
-
-    // Return the obtained file list
-    return vFileList;
+    return NumeReKernel::getInstance()->getFileSystem().getFolderList(sDirectory, nFlags);
 }
 
 
@@ -3190,7 +2805,7 @@ string replaceToVectorname(const string& sExpression)
     if (!mOprtRplc.size())
         OprtRplc_setup(mOprtRplc);
 
-    if (sVectorName.find('"') != std::string::npos)
+    if (sVectorName.find_first_of("\"#") != std::string::npos)
         return "_~" + sha256(sVectorName);
 
     // Remove whitespaces
@@ -3239,7 +2854,7 @@ static bool handleRecursiveOperators(string& sExpr, size_t& nPos, size_t& nArgSe
             // Jump over parentheses
             if (!(nQuotes % 2)
                 && (sExpr[j] == '(' || sExpr[j] == '[' || sExpr[j] == '{'))
-                j += getMatchingParenthesis(sExpr.substr(j));
+                j += getMatchingParenthesis(StringView(sExpr, j));
 
             // Count the not escaped parentheses
             if (sExpr[j] == '"')
@@ -3317,7 +2932,7 @@ static bool handleRecursiveOperators(string& sExpr, size_t& nPos, size_t& nArgSe
                     // Jump over parentheses
                     if (!(nQuotes % 2)
                         && (sExpr[k] == '(' || sExpr[k] == '[' || sExpr[k] == '{'))
-                        k += getMatchingParenthesis(sExpr.substr(k));
+                        k += getMatchingParenthesis(StringView(sExpr, k));
 
                     // Count the quotation marks, which are not escaped
                     if (sExpr[k] == '"')
@@ -3425,19 +3040,19 @@ static void handleIncAndDecOperators(string& sExpr, size_t nPos, size_t nArgSepP
 void evalRecursiveExpressions(string& sExpr)
 {
     // Ignore flow control blocks
-    if (sExpr.substr(0, 3) == "if "
-            || sExpr.substr(0, 3) == "if("
-            || sExpr.substr(0, 7) == "elseif "
-            || sExpr.substr(0, 7) == "elseif("
-            || sExpr.substr(0, 5) == "else "
-            || sExpr.substr(0, 7) == "switch "
-            || sExpr.substr(0, 7) == "switch("
-            || sExpr.substr(0, 5) == "case "
-            || sExpr.substr(0, 8) == "default:"
-            || sExpr.substr(0, 4) == "for "
-            || sExpr.substr(0, 4) == "for("
-            || sExpr.substr(0, 6) == "while "
-            || sExpr.substr(0, 6) == "while(")
+    if (sExpr.starts_with("if ")
+        || sExpr.starts_with("if(")
+        || sExpr.starts_with("elseif ")
+        || sExpr.starts_with("elseif(")
+        || sExpr.starts_with("else ")
+        || sExpr.starts_with("switch ")
+        || sExpr.starts_with("switch(")
+        || sExpr.starts_with("case ")
+        || sExpr.starts_with("default:")
+        || sExpr.starts_with("for ")
+        || sExpr.starts_with("for(")
+        || sExpr.starts_with("while ")
+        || sExpr.starts_with("while("))
         return;
 
     size_t nArgSepPos = 0;
@@ -3458,7 +3073,7 @@ void evalRecursiveExpressions(string& sExpr)
         if (!(nQuotes % 2)
             && (sExpr[i] == '(' || sExpr[i] == '{' || sExpr[i] == '['))
         {
-            size_t parens = getMatchingParenthesis(sExpr.substr(i));
+            size_t parens = getMatchingParenthesis(StringView(sExpr, i));
             if (parens != string::npos)
                 i += parens;
         }
@@ -3565,7 +3180,7 @@ string decodeNameSpace(string sCommandLine, const string& sThisNameSpace)
 
         StripSpaces(sCommandLine);
 
-        if (sCommandLine.substr(0, 5) == "this~" || sCommandLine == "this")
+        if (sCommandLine.starts_with("this~") || sCommandLine == "this")
             sCommandLine.replace(0, 4, sThisNameSpace);
 
         while (sCommandLine.back() == '~')
@@ -3584,11 +3199,11 @@ string decodeNameSpace(string sCommandLine, const string& sThisNameSpace)
 /// number of parentheses, i.e. whether there's a
 /// closing parenthesis for each opened one.
 ///
-/// \param sCmd const string&
+/// \param sCmd StringView
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool validateParenthesisNumber(const string& sCmd)
+bool validateParenthesisNumber(StringView sCmd)
 {
     int nParCount = 0;
     int nVectCount = 0;
@@ -3746,27 +3361,33 @@ std::complex<double> intPower(const std::complex<double>& dNumber, int nExponent
 /// desired position is part of the argument of a
 /// to_cmd() function.
 ///
-/// \param sCmd const string&
+/// \param sCmd StringView
 /// \param nPos size_t
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool isToCmd(const string& sCmd, size_t nPos)
+bool isToCmd(StringView sCmd, size_t nPos)
 {
-    // Exclude border cases
+    // Exclude boundary cases
     if (nPos < 6 || nPos >= sCmd.length())
         return false;
-    if (sCmd.find("to_cmd(") == string::npos || sCmd.find("to_cmd(") > nPos)
-        return false;
+
+    size_t quotes = isInQuotes(sCmd, nPos);
 
     // Go through the whole string and try to find the functions arguments
     for (int i = nPos - 6; i >= 0; i--)
     {
-        if (sCmd.substr(i, 7) == "to_cmd(" && !isInQuotes(sCmd, i))
+        if (sCmd[i] == '"' && (!i || sCmd[i-1] != '\\'))
+            quotes++;
+
+        if (!(quotes % 2) && sCmd.match("to_cmd(", i))
         {
             // function found -> try to find the matching parenthesis
             // If it is left of the desired position, then return true
-            if (getMatchingParenthesis(sCmd.substr(i + 6)) > nPos - i - 6 && getMatchingParenthesis(sCmd.substr(i + 6)) != string::npos)
+            size_t matchingParens = getMatchingParenthesis(sCmd.subview(i + 6));
+
+            if (matchingParens > nPos - i - 6
+                && matchingParens != std::string::npos)
                 return true;
         }
     }
@@ -3858,29 +3479,29 @@ size_t qSortDouble(double* dArray, size_t nlength)
 /// search-oriented methods in the current string
 /// variable access.
 ///
-/// \param sLine string&
+/// \param sLine MutableStringView
 /// \param nPos size_t
 /// \param nFinalPos size_t
-/// \param sReplacement const string&
-/// \param sMethod const string&
-/// \param sArgument string&
+/// \param sReplacement const std::string&
+/// \param sMethod StringView
+/// \param sArgument std::string&
 /// \return void
 ///
 /////////////////////////////////////////////////
-static void replaceSearchMethods(string& sLine, size_t nPos, size_t nFinalPos, const string& sReplacement, const string& sMethod, string& sArgument)
+static void replaceSearchMethods(MutableStringView sLine, size_t nPos, size_t nFinalPos, const std::string& sReplacement, StringView sMethod, std::string& sArgument)
 {
     // Prepare the argument (use empty one or construct one
     // from argument and variable value)
     if (sArgument == "()")
         sArgument = "(" + sReplacement + ", " + sReplacement + ")";
-    else if (sArgument.find(',') == string::npos)
+    else if (sArgument.find(',') == std::string::npos)
         sArgument.insert(sArgument.length()-1, ", " + sReplacement + "");
     else
     {
         // If we have a comma, it could be part of the only argument,
         // so we remove all parentheses first and recombine everything
         // afterwards
-        string sTemp = "(";
+        std::string sTemp = "(";
         sArgument.erase(0, 1);
         sArgument.pop_back();
         sTemp += getNextArgument(sArgument, true);
@@ -3917,16 +3538,16 @@ static void replaceSearchMethods(string& sLine, size_t nPos, size_t nFinalPos, c
 /// splitter in the current string variable
 /// access.
 ///
-/// \param sLine string&
+/// \param sLine MutableStringView
 /// \param nPos size_t
 /// \param nFinalPos size_t
-/// \param sReplacement const string&
-/// \param sMethod const string&
-/// \param sArgument string&
+/// \param sReplacement const std::string&
+/// \param sMethod StringView
+/// \param sArgument std::string&
 /// \return void
 ///
 /////////////////////////////////////////////////
-static void replaceAccessMethods(string& sLine, size_t nPos, size_t nFinalPos, const string& sReplacement, const string& sMethod, string& sArgument)
+static void replaceAccessMethods(MutableStringView sLine, size_t nPos, size_t nFinalPos, const std::string& sReplacement, StringView sMethod, std::string& sArgument)
 {
     // Prepare the argument (use empty one or construct one
     // from argument and variable value)
@@ -3953,22 +3574,20 @@ static void replaceAccessMethods(string& sLine, size_t nPos, size_t nFinalPos, c
 }
 
 
-
-
 /////////////////////////////////////////////////
 /// \brief This function searches the indicated
 /// string variable occurence for possible string
 /// methods and replaces them with the standard
 /// string function.
 ///
-/// \param sLine string&
+/// \param sLine MutableStringView
 /// \param nPos size_t
 /// \param nLength size_t
-/// \param sReplacement const string&
+/// \param sReplacement const std::string&
 /// \return void
 ///
 /////////////////////////////////////////////////
-void replaceStringMethod(string& sLine, size_t nPos, size_t nLength, const string& sReplacement)
+void replaceStringMethod(MutableStringView sLine, size_t nPos, size_t nLength, const std::string& sReplacement)
 {
     // Does the string variable name end with a dot?
     if (sLine[nPos+nLength] != '.')
@@ -3977,9 +3596,9 @@ void replaceStringMethod(string& sLine, size_t nPos, size_t nLength, const strin
         return;
     }
 
-    static const string sDELIMITER = "+-*/ ={}^&|!,\\%#?:\";";
-    string sMethod = "";
-    string sArgument = "";
+    static const std::string sDELIMITER = "+-*/ ={}^&|!,\\%#?:\";";
+    StringView sMethod;
+    std::string sArgument = "";
     size_t nFinalPos = 0;
 
     // Find the end of the appended method. This is either
@@ -3990,15 +3609,15 @@ void replaceStringMethod(string& sLine, size_t nPos, size_t nLength, const strin
         if (sLine[i] == '(')
         {
             // Method ends with closing parenthesis
-            sMethod = sLine.substr(nPos+nLength+1, i-(nPos+nLength+1));
-            sArgument = sLine.substr(i, getMatchingParenthesis(sLine.substr(i))+1);
-            nFinalPos = i += getMatchingParenthesis(sLine.substr(i))+1;
+            sMethod = sLine.subview(nPos+nLength+1, i-(nPos+nLength+1));
+            sArgument = sLine.subview(i, getMatchingParenthesis(sLine.subview(i))+1).to_string();
+            nFinalPos = i += getMatchingParenthesis(sLine.subview(i))+1;
             break;
         }
-        else if (sDELIMITER.find(sLine[i]) != string::npos)
+        else if (sDELIMITER.find(sLine[i]) != std::string::npos)
         {
             // Method ends with a delimiter
-            sMethod = sLine.substr(nPos+nLength+1, i-(nPos+nLength+1));
+            sMethod = sLine.subview(nPos+nLength+1, i-(nPos+nLength+1));
             nFinalPos = i;
             break;
         }
@@ -4038,8 +3657,6 @@ void replaceStringMethod(string& sLine, size_t nPos, size_t nLength, const strin
         // All search-oriented methods
         replaceSearchMethods(sLine, nPos, nFinalPos, sReplacement, sMethod, sArgument);
     }
-
-
 }
 
 
@@ -4110,7 +3727,7 @@ std::string removeDefaultPath(const std::string& sFullPath)
 
     for (int i = LOADPATH; i < PATH_LAST; i++)
     {
-        if (sPath.substr(0, vPaths[i].length()) == vPaths[i])
+        if (sPath.starts_with(vPaths[i]))
         {
             pos = vPaths[i].length();
 

@@ -20,6 +20,7 @@
 #include <fstream>
 #include <sstream>
 #include <windows.h>
+#include <shobjidl.h>
 
 #include "filesystem.hpp"
 #include "../../kernel.hpp"
@@ -88,7 +89,7 @@ std::string FileSystem::cleanPath(std::string sFilePath, bool checkInvalidChars)
     {
         for (int i = 0; i < 7; i++)
         {
-            if (sFilePath.substr(0,sTokens[i][0].length()) == sTokens[i][0])
+            if (sFilePath.starts_with(sTokens[i][0]))
             {
                 if (sFilePath[sTokens[i][0].length()] != '/')
                     sFilePath = sTokens[i][1] + "/" + sFilePath.substr(sTokens[i][0].length());
@@ -99,7 +100,7 @@ std::string FileSystem::cleanPath(std::string sFilePath, bool checkInvalidChars)
             }
         }
 
-        if (sFilePath.substr(0,6) == "<this>")
+        if (sFilePath.starts_with("<this>"))
         {
             if (sFilePath[6] != '/')
                 sFilePath = sTokens[0][1] + "/" + sFilePath.substr(6);
@@ -116,19 +117,19 @@ std::string FileSystem::cleanPath(std::string sFilePath, bool checkInvalidChars)
     for (size_t i = 0; i < sFilePath.length(); i++)
     {
         if (sFilePath[i] == (char)142)
-            sFilePath[i] = 'Ä';
+            sFilePath[i] = (char)0xC4;
         else if (sFilePath[i] == (char)132)
-            sFilePath[i] = 'ä';
+            sFilePath[i] = (char)0xE4;
         else if (sFilePath[i] == (char)153)
-            sFilePath[i] = 'Ö';
+            sFilePath[i] = (char)0xD6;
         else if (sFilePath[i] == (char)148)
-            sFilePath[i] = 'ö';
+            sFilePath[i] = (char)0xF6;
         else if (sFilePath[i] == (char)154)
-            sFilePath[i] = 'Ü';
+            sFilePath[i] = (char)0xDC;
         else if (sFilePath[i] == (char)129)
-            sFilePath[i] = 'ü';
+            sFilePath[i] = (char)0xFC;
         else if (sFilePath[i] == (char)225)
-            sFilePath[i] = 'ß';
+            sFilePath[i] = (char)0xDF;
         else if (sFilePath[i] == '~')
         {
             NumeReKernel::issueWarning("INTERNAL ISSUE: Replaced a tilde character in \"" + sFilePath + "\" with a slash. This should not happen. Consider informing the development team about this warning and how to recreate it. Thank you.");
@@ -221,6 +222,257 @@ void FileSystem::resolveWildCards(std::string& _sFileName, bool isFile, bool che
 
 
 /////////////////////////////////////////////////
+/// \brief This member function is a helper
+/// function for getFileList and getFolderList.
+///
+/// \param sDir std::string&
+/// \param FindFileData void*
+/// \return HANDLE
+///
+/////////////////////////////////////////////////
+HANDLE FileSystem::initializeFileHandle(std::string& sDir, void* FindFileData) const
+{
+    HANDLE hFind = INVALID_HANDLE_VALUE;
+
+    // Initialize the Windows structures
+    if (sDir[0] == '.')
+    {
+        // Only a dot -> root path
+        hFind = FindFirstFile((sExecutablePath + "\\" + sDir).c_str(), (WIN32_FIND_DATA*)FindFileData);
+        sDir = replacePathSeparator(sExecutablePath + "/" + sDir);
+        sDir.erase(sDir.rfind('/') + 1);
+    }
+    else if (sDir[0] == '<')
+    {
+        // Get the default paths
+        sDir = cleanPath(sDir, false);
+
+        // If the path has a length then initialize the file handle
+        if (sDir.length())
+        {
+            hFind = FindFirstFile(sDir.c_str(), (WIN32_FIND_DATA*)FindFileData);
+            sDir = replacePathSeparator(sDir);
+            sDir.erase(sDir.rfind('/') + 1);
+        }
+    }
+    else
+    {
+        // an arbitrary path
+        hFind = FindFirstFile(sDir.c_str(), (WIN32_FIND_DATA*)FindFileData);
+        if (sDir.find('/') != std::string::npos)
+            sDir.erase(sDir.rfind('/') + 1);
+    }
+
+    // return the initialized file handle
+    return hFind;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This function resolves the possibility
+/// to select multiple paths at once by inserting
+/// something like this/is/a/<path|with|tokens>/which/will/search/at/different/locations
+///
+/// \param sDirectory const std::string&
+/// \return std::vector<std::string>
+///
+/////////////////////////////////////////////////
+std::vector<std::string> FileSystem::resolveChooseTokens(const std::string& sDirectory) const
+{
+    std::vector<std::string> vResolved;
+    vResolved.push_back(sDirectory);
+    std::string sToken;
+    size_t nSize = 0, nth_choose = 0;
+    bool bResolvingPath = false;
+
+    // Is there at least one pipe in the directory?
+    if (sDirectory.find('|') != std::string::npos)
+    {
+        // As long as the directory contains pipes
+        while (vResolved[0].find('|') != std::string::npos)
+        {
+            // no opening angle for the token?
+            if (!vResolved[0].rfind('<'))
+                break;
+
+            // Get the token and remove the remaining part
+            sToken = vResolved[0].substr(vResolved[0].rfind('<') + 1);
+            sToken.erase(sToken.find('>'));
+
+            // Store the current size of the directory tree
+            nSize = vResolved.size();
+            nth_choose = 0;
+
+            // As long as a pipe is found in the token or the token has a length
+            while (sToken.find('|') != std::string::npos || sToken.length())
+            {
+                // so lange ein "|" in dem Token gefunden wird, muss der Baum dupliziert werden
+                if (sToken.find('|') != std::string::npos)
+                {
+                    // duplicate the "root" tree
+                    for (size_t i = 0; i < nSize; i++)
+                        vResolved.push_back(vResolved[i + nth_choose * nSize]);
+                }
+
+                // Replace the tokens with the first of the current tokens
+                for (size_t i = nth_choose * nSize; i < (nth_choose + 1)*nSize; i++)
+                {
+                    if (!bResolvingPath && vResolved[i].rfind('/') != std::string::npos && vResolved[i].rfind('/') > vResolved[i].rfind('>'))
+                        bResolvingPath = true;
+                    vResolved[i].replace(vResolved[i].rfind('<'), vResolved[i].rfind('>') + 1 - vResolved[i].rfind('<'), sToken.substr(0, sToken.find('|')));
+                }
+
+                // If we want to resolve a path, then we have to do that with a recursion
+                if (bResolvingPath
+                        && ((vResolved[nth_choose * nSize].find('*') != std::string::npos && vResolved[nth_choose * nSize].find('*') < vResolved[nth_choose * nSize].rfind('/'))
+                            || (vResolved[nth_choose * nSize].find('?') != std::string::npos && vResolved[nth_choose * nSize].find('?') < vResolved[nth_choose * nSize].rfind('/'))))
+                {
+                    // Platzhalter in Pfaden werden mit einer Rekursion geloest.
+                    // Resolve the current tree
+                    std::vector<std::string> vFolderList = getFolderList(vResolved[nth_choose * nSize].substr(0, vResolved[nth_choose * nSize].rfind('/')), FULLPATH);
+
+                    // Remove obsolete paths (i.e. paths pointing to itself or to one directory further up
+                    for (size_t j = 0; j < vFolderList.size(); j++)
+                    {
+                        if ((vFolderList[j].length() >= 3 && vFolderList[j].substr(vFolderList[j].length() - 3) == "/..")
+                            || (vFolderList[j].length() >= 2 && vFolderList[j].substr(vFolderList[j].length() - 2) == "/."))
+                        {
+                            vFolderList.erase(vFolderList.begin() + j);
+
+                            // If we erase the current position, we have to decrement the position
+                            j--;
+                        }
+                    }
+
+                    // If we didn't get a result, remove the current token from the token list and continue
+                    if (!vFolderList.size())
+                    {
+                        bResolvingPath = false;
+                        nth_choose++;
+                        if (sToken.find('|') != std::string::npos)
+                            sToken.erase(0, sToken.find('|') + 1);
+                        else
+                        {
+                            sToken.clear();
+                            break;
+                        }
+                        continue;
+                    }
+
+                    // Copy the obtained tree to the resolved tree
+                    for (size_t j = 0; j < vFolderList.size(); j++)
+                    {
+                        // Does the tree need to be duplicated?
+                        if (vFolderList.size() > 1 && j < vFolderList.size() - 1)
+                        {
+                            // ggf. Baum duplizieren
+                            if (vResolved.size() > (nth_choose + 1)*nSize)
+                            {
+                                for (size_t k = 0; k < nSize; k++)
+                                {
+                                    vResolved.push_back(vResolved[k + (nth_choose + 1)*nSize]);
+                                    vResolved[k + (nth_choose + 1)*nSize] = vResolved[k + nth_choose * nSize];
+                                }
+                            }
+                            else
+                            {
+                                for (size_t k = 0; k < nSize; k++)
+                                {
+                                    vResolved.push_back(vResolved[(nth_choose)*nSize]);
+                                }
+                            }
+                        }
+
+                        // simply replace the path part of the resolved tree
+                        for (size_t k = nth_choose * nSize; k < (nth_choose + 1)*nSize; k++)
+                        {
+                            vResolved[k].replace(0, vResolved[k].rfind('/'), vFolderList[j]);
+                        }
+
+                        // Increment the choose token counter
+                        if (vFolderList.size() > 1 && j < vFolderList.size() - 1)
+                            nth_choose++;
+                    }
+                }
+
+                // Erase the current token from the token list and continue
+                bResolvingPath = false;
+                nth_choose++;
+                if (sToken.find('|') != std::string::npos)
+                    sToken.erase(0, sToken.find('|') + 1);
+                else
+                {
+                    sToken.clear();
+                    break;
+                }
+            }
+        }
+    }
+
+    // This is not using path tokens but place holders/wildcards in the path part
+    if (vResolved[0].find('/') != std::string::npos
+            && ((vResolved[0].find('*') != std::string::npos && vResolved[0].find('*') < vResolved[0].rfind('/'))
+                || (vResolved[0].find('?') != std::string::npos && vResolved[0].find('?') < vResolved[0].rfind('/'))))
+    {
+        // Platzhalter in Pfaden werden mit einer Rekursion geloest.
+        std::vector<std::string> vFolderList = getFolderList(vResolved[0].substr(0, vResolved[0].rfind('/')), FULLPATH);
+
+        // store the current tree size
+        nSize = vResolved.size();
+
+        // Remove obsolete paths (i.e. paths pointing to itself or to one directory further up
+        for (size_t j = 0; j < vFolderList.size(); j++)
+        {
+            if ((vFolderList[j].length() >= 3 && vFolderList[j].substr(vFolderList[j].length() - 3) == "/..")
+                || (vFolderList[j].length() >= 2 && vFolderList[j].substr(vFolderList[j].length() - 2) == "/."))
+            {
+                vFolderList.erase(vFolderList.begin() + j);
+
+                // If we erase the current position, we have to decrement the position
+                j--;
+            }
+        }
+
+        // Return, if no result was found
+        if (!vFolderList.size())
+            return vResolved;
+
+        // Copy the resolved tree, if it is necessary
+        for (size_t i = 0; i < vFolderList.size() - 1; i++)
+        {
+            // Don't use paths, which weren't resolved
+            if (vFolderList[i].find('*') != std::string::npos || vFolderList[i].find('?') != std::string::npos || !vFolderList[i].size())
+                continue;
+
+            // ggf. Baum duplizieren
+            for (size_t k = 0; k < nSize; k++)
+            {
+                vResolved.push_back(vResolved[k]);
+            }
+
+        }
+
+        // Replace the paths with wildcards with the results obtained by recursion
+        for (size_t j = 0; j < vFolderList.size(); j++)
+        {
+            // Don't use paths, which weren't resolved
+            if (vFolderList[j].find('*') != std::string::npos || vFolderList[j].find('?') != std::string::npos || !vFolderList[j].size())
+                continue;
+
+            // replace the paths in the resolved tree
+            for (size_t k = j * nSize; k < (j + 1)*nSize; k++)
+            {
+                vResolved[k].replace(0, vResolved[k].rfind('/'), vFolderList[j]);
+            }
+        }
+    }
+
+    // return the resolved tree
+    return vResolved;
+}
+
+
+/////////////////////////////////////////////////
 /// \brief This member function creates all
 /// missing directories in the passed path.
 ///
@@ -289,7 +541,7 @@ std::string FileSystem::ValidFileName(std::string _sFileName, const std::string 
     // network address
     if (nPos == std::string::npos)
     {
-        if (_sFileName.substr(0, 2) != "//")
+        if (!_sFileName.starts_with("//"))
             _sFileName = sPath.substr(1, sPath.length()-2) + "/" + _sFileName;
     }
 
@@ -373,7 +625,7 @@ std::string FileSystem::ValidFolderName(std::string _sFileName, bool doCleanPath
     // network address
     if (nPos == std::string::npos)
     {
-        if (_sFileName.substr(0,2) != "//")
+        if (!_sFileName.starts_with("//"))
             _sFileName = sPath.substr(1, sPath.length()-2) + "/" + _sFileName;
     }
 
@@ -425,6 +677,83 @@ std::string FileSystem::ValidizeAndPrepareName(const std::string& _sFileName, co
 
 
 /////////////////////////////////////////////////
+/// \brief Resolve a Windows shell link (*.lnk).
+/// Copied and adapted from MSDN.
+///
+/// \param sLink const std::string&
+/// \return std::string
+///
+/////////////////////////////////////////////////
+std::string FileSystem::resolveLink(const std::string& sLink)
+{
+#warning FIXME (numere#1#10/31/23): It seems that TDM-GCC 9.2.0 lacks the necessary declarations
+#ifdef NR_HAVE_GSL2
+    HRESULT hres;
+    IShellLink* psl;
+    CHAR szGotPath[MAX_PATH];
+    WIN32_FIND_DATA wfd;
+
+    std::string sFilePath;
+
+    CoInitialize(nullptr);
+
+    // Get a pointer to the IShellLink interface. It is assumed that CoInitialize
+    // has already been called.
+    hres = CoCreateInstance(CLSID_ShellLink, NULL, CLSCTX_INPROC_SERVER, IID_IShellLinkA, (LPVOID*)&psl);
+
+    if (SUCCEEDED(hres))
+    {
+        IPersistFile* ppf;
+
+        // Get a pointer to the IPersistFile interface.
+        hres = psl->QueryInterface(IID_IPersistFile, (void**)&ppf);
+
+        if (SUCCEEDED(hres))
+        {
+            WCHAR wsz[MAX_PATH];
+
+            // Ensure that the string is Unicode.
+            MultiByteToWideChar(CP_ACP, 0, sLink.c_str(), -1, wsz, MAX_PATH);
+
+            // Add code here to check return value from MultiByteWideChar
+            // for success.
+
+            // Load the shortcut.
+            hres = ppf->Load(wsz, STGM_READ);
+
+            if (SUCCEEDED(hres))
+            {
+                // Resolve the link.
+                hres = psl->Resolve(nullptr, SLR_NO_UI);
+
+                if (SUCCEEDED(hres))
+                {
+                    // Get the path to the link target.
+                    hres = psl->GetPath(szGotPath, MAX_PATH, (WIN32_FIND_DATA*)&wfd, SLGP_SHORTPATH);
+
+                    if (SUCCEEDED(hres))
+                        sFilePath = szGotPath;
+                }
+            }
+
+            // Release the pointer to the IPersistFile interface.
+            ppf->Release();
+        }
+
+        // Release the pointer to the IShellLink interface.
+        psl->Release();
+    }
+
+    CoUninitialize();
+    return sFilePath;
+#else
+    NumeReKernel::issueWarning("Feature not supported in x86 build.");
+    return sLink;
+#endif
+}
+
+
+/////////////////////////////////////////////////
 /// \brief This member function may be used to
 /// set the preferred file path of the current
 /// FileSystem instance.
@@ -471,13 +800,17 @@ int FileSystem::setPath(std::string _sPath, bool bMkDir, std::string _sExePath)
 
     if (sPath.find(':') == std::string::npos)
     {
-        if (sPath.length() > 3 && sPath.substr(0,3) != "..\\" && sPath.substr(0,3) != "../" && sPath.substr(0,2) != ".\\" && sPath.substr(0,2) != "./")
+        if (sPath.length() > 3
+            && !sPath.starts_with("..\\")
+            && !sPath.starts_with("../")
+            && !sPath.starts_with(".\\")
+            && !sPath.starts_with("./"))
             sPath = "\"" + sExecutablePath + "\\" + sPath + "\"";
-        else if (sPath.length() > 2 && (sPath.substr(0,2) == ".\\" || sPath.substr(0,2) == "./"))
+        else if (sPath.length() > 2 && (sPath.starts_with(".\\") || sPath.starts_with("./")))
             sPath = "\"" + sExecutablePath + sPath.substr(1) + "\"";
-        else if (sPath.length() > 3 && (sPath.substr(0,3) == "..\\" || sPath.substr(0,3) == "../"))
+        else if (sPath.length() > 3 && (sPath.starts_with("..\\") || sPath.starts_with("../")))
         {
-            while (sPath.length() > 3 && (sPath.substr(0,3) == "..\\" || sPath.substr(0,3) == "../"))
+            while (sPath.length() > 3 && (sPath.starts_with("..\\") || sPath.starts_with("../")))
             {
                 if (sExecutablePath.find('\\') != std::string::npos)
                     sExecutablePath = sExecutablePath.substr(0,sExecutablePath.rfind('\\'));
@@ -496,11 +829,11 @@ int FileSystem::setPath(std::string _sPath, bool bMkDir, std::string _sExePath)
             sPath = "\"" + sExecutablePath + "\\" + sPath + "\"";
     }
 
-    if (sPath[0] == '"')
-        sPath = sPath.substr(1);
+    if (sPath.front() == '"')
+        sPath.erase(0, 1);
 
-    if (sPath[sPath.length()-1] == '"')
-        sPath = sPath.substr(0, sPath.length()-1);
+    if (sPath.back() == '"')
+        sPath.pop_back();
 
 
     if (bMkDir)
@@ -544,6 +877,191 @@ std::string FileSystem::getPath() const
     if (sPath[0] == '"' && sPath[sPath.length()-1] == '"')
         return sPath.substr(1,sPath.length()-2);
     return sPath;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This function returns a list of files
+/// (including their paths, if nFlags & FULLPATH).
+///
+/// \param sDirectory const std::string&
+/// \param nFlags int
+/// \return std::vector<std::string>
+///
+/////////////////////////////////////////////////
+std::vector<std::string> FileSystem::getFileList(const std::string& sDirectory, int nFlags) const
+{
+    std::vector<std::string> vFileList;
+    std::vector<std::string> vDirList;
+
+    // Replace the Windows-Style Path separators to Unix-Style
+    std::string sDir = replacePathSeparator(sDirectory);
+
+    // Get the resolved tree
+    vDirList = resolveChooseTokens(sDir);
+
+    // Walk through the resolved tree
+    for (size_t i = 0; i < vDirList.size(); i++)
+    {
+        sDir = vDirList[i];
+
+        // Append a wildcard, if one is missing
+        if (sDir.rfind('.') == std::string::npos && sDir.find('*') == std::string::npos && sDir.find('?') == std::string::npos)
+        {
+            if (sDir[sDir.find_last_not_of(' ')] != '/')
+                sDir += '/';
+            sDir += "*";
+        }
+        else if ((sDir.find('.') == std::string::npos
+                  || (sDir.find('.') != std::string::npos && sDir.find('/', sDir.rfind('.')) != std::string::npos))
+                 && sDir.back() != '*')
+            sDir += "*";
+
+        // Declare the Windows structures;
+        WIN32_FIND_DATA FindFileData;
+        HANDLE hFind = initializeFileHandle(sDir, &FindFileData);
+
+        // Ensure that the structures were initialized correctly
+        if (hFind == INVALID_HANDLE_VALUE)
+            continue;
+
+        // As long as the FindNextFile function returns non-zero
+        // read the contents of FindFileData
+        do
+        {
+            // Ignore directories
+            if (FindFileData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
+                continue;
+
+            if (std::string(FindFileData.cFileName).ends_with(".lnk"))
+            {
+                // Handle links
+                std::string sLinkTarget = replacePathSeparator(resolveLink(sDir + FindFileData.cFileName));
+                FileInfo info = getFileInfo(sLinkTarget);
+
+                if (info.fileAttributes & FileInfo::ATTR_DIRECTORY)
+                {
+                    // Push back the link file
+                    if (nFlags & FULLPATH)
+                        vFileList.push_back(sDir + FindFileData.cFileName);
+                    else
+                        vFileList.push_back(FindFileData.cFileName);
+                }
+                else
+                {
+                    // Push back the target file
+                    if (nFlags & FULLPATH)
+                        vFileList.push_back(sLinkTarget);
+                    else
+                        vFileList.push_back(info.name + (info.ext.length() ? "." + info.ext : std::string("")));
+                }
+            }
+            else
+            {
+                // Push back filenames
+                if (nFlags & FULLPATH)
+                    vFileList.push_back(sDir + FindFileData.cFileName);
+                else
+                    vFileList.push_back(FindFileData.cFileName);
+            }
+        }
+        while (FindNextFile(hFind, &FindFileData) != 0);
+
+        // Close the handle
+        FindClose(hFind);
+    }
+
+    // Return the obtained file list
+    return vFileList;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This function returns a list of
+/// directories (including their paths, if
+/// nFlags & FULLPATH).
+///
+/// \param sDirectory const std::string&
+/// \param nFlags int
+/// \return std::vector<std::string>
+///
+/////////////////////////////////////////////////
+std::vector<std::string> FileSystem::getFolderList(const std::string& sDirectory, int nFlags) const
+{
+    std::vector<std::string> vFileList;
+    std::vector<std::string> vDirList;
+
+    // Replace the Windows-Style Path separators to Unix-Style
+    std::string sDir = replacePathSeparator(sDirectory);
+
+    // Get the resolved tree
+    vDirList = resolveChooseTokens(sDir);
+
+    // Walk through the resolved tree
+    for (size_t i = 0; i < vDirList.size(); i++)
+    {
+        sDir = vDirList[i];
+
+        // Append a wildcard, if one is missing
+        if (sDir.rfind('.') == std::string::npos && sDir.find('*') == std::string::npos && sDir.find('?') == std::string::npos)
+        {
+            if (sDir[sDir.find_last_not_of(' ')] != '/')
+                sDir += '/';
+            sDir += "*";
+        }
+        else if ((sDir.find('.') == std::string::npos
+                  || (sDir.find('.') != std::string::npos && sDir.find('/', sDir.rfind('.')) != std::string::npos))
+                 && sDir.back() != '*')
+            sDir += "*";
+
+        // Declare the Windows structures;
+        WIN32_FIND_DATA FindFileData;
+        HANDLE hFind = initializeFileHandle(sDir, &FindFileData);
+
+        // Ensure that the structures were initialized correctly
+        if (hFind == INVALID_HANDLE_VALUE)
+            continue;
+
+        // As long as the FindNextFile function returns non-zero
+        // read the contents of FindFileData
+        do
+        {
+            // USe directories
+            if (FindFileData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
+            {
+                // Push back the directories
+                if (nFlags & FULLPATH)
+                    vFileList.push_back(sDir + FindFileData.cFileName);
+                else
+                    vFileList.push_back(FindFileData.cFileName);
+            }
+            else if (std::string(FindFileData.cFileName).ends_with(".lnk"))
+            {
+                // Handle links
+                std::string sLinkTarget = replacePathSeparator(resolveLink(sDir + FindFileData.cFileName));
+                FileInfo info = getFileInfo(sLinkTarget);
+
+                if (info.fileAttributes & FileInfo::ATTR_DIRECTORY)
+                {
+                    // Push back the target file
+                    if (nFlags & FULLPATH)
+                        vFileList.push_back(sLinkTarget);
+                    else
+                        vFileList.push_back(sLinkTarget.substr(sLinkTarget.rfind('/')+1));
+                }
+            }
+            else // ignore files
+                continue;
+
+        }
+        while (FindNextFile(hFind, &FindFileData) != 0);
+
+        // Close the handle
+        FindClose(hFind);
+    }
+
+    // Return the obtained file list
+    return vFileList;
 }
 
 

@@ -131,7 +131,7 @@ void NumeReDebugger::throwException(SyntaxError error)
             sErrorMessage = _lang.get("ERR_NR_" + toString((int)error.errorcode) + "_0_*", error.getToken(), toString(error.getIndices()[0]), toString(error.getIndices()[1]), toString(error.getIndices()[2]),
                                       toString(error.getIndices()[3]));
 
-            if (sErrorMessage.substr(0, 7) == "ERR_NR_")
+            if (sErrorMessage.starts_with("ERR_NR_"))
             {
                 sErrorMessage = _lang.get("ERR_GENERIC_0", toString((int)error.errorcode));
             }
@@ -312,7 +312,7 @@ string NumeReDebugger::decodeType(string& sArgumentValue, const std::string& sAr
     }
 
     // Equals the current argument the string table?
-    if (sArgumentValue.substr(0, 7) == "string(")
+    if (sArgumentValue.starts_with("string("))
     {
         // Replace the value with its actual value and mark the
         // argument type as reference
@@ -965,7 +965,7 @@ vector<string> NumeReDebugger::getGlobals()
     // List all relevant caches
     for (auto iter = _data.getTableMap().begin(); iter != _data.getTableMap().end(); ++iter)
     {
-        if (iter->first.substr(0, 2) != "_~")
+        if (!iter->first.starts_with("_~"))
         {
             mGlobals[iter->first + "()"] = toString(_data.getLines(iter->first, false)) + " x " + toString(_data.getCols(iter->first, false))
                 + "\ttable\t{" + toString(_data.min(iter->first, "")[0], DEFAULT_MINMAX_PRECISION) + ", ..., "
@@ -976,7 +976,7 @@ vector<string> NumeReDebugger::getGlobals()
     // List all relevant clusters
     for (auto iter = _data.getClusterMap().begin(); iter != _data.getClusterMap().end(); ++iter)
     {
-        if (iter->first.substr(0, 2) != "_~")
+        if (!iter->first.starts_with("_~"))
         {
             mGlobals[iter->first + "{}"] = toString(iter->second.size()) + " x 1" + "\tcluster\t"
                 + replaceControlCharacters(iter->second.getShortVectorRepresentation(MAXSTRINGLENGTH));
@@ -986,14 +986,14 @@ vector<string> NumeReDebugger::getGlobals()
     // List all relevant string variables
     for (auto iter = _stringParser.getStringVars().begin(); iter != _stringParser.getStringVars().end(); ++iter)
     {
-        if (iter->first.substr(0, 2) != "_~")
+        if (!iter->first.starts_with("_~"))
             mGlobals[iter->first] = "1 x 1\tstring\t" + replaceControlCharacters(ellipsize(toExternalString(iter->second), MAXSTRINGLENGTH));
     }
 
     // List all relevant numerical variables
     for (auto iter = _parser.GetVar().begin(); iter != _parser.GetVar().end(); ++iter)
     {
-        if (iter->first.substr(0, 2) != "_~"
+        if (!iter->first.starts_with("_~")
             && iter->first != "ans"
             && !isDimensionVar(iter->first))
         {

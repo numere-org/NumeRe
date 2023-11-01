@@ -160,7 +160,7 @@ void getIndices(StringView sCmd, Indices& _idx,  Parser& _parser, MemoryManager&
                         NumeRe::Cluster& ans = NumeReKernel::getInstance()->getAns();
 
                         if (ans.isString())
-                            idx[i] = _parser.CreateTempVectorVar(_data.findCols(sTableName.to_string(), ans.getInternalStringArray()));
+                            idx[i] = _parser.CreateTempVectorVar(_data.findCols(sTableName.to_string(), ans.getInternalStringArray(), false));
                         else if (idx[i].find(',') != std::string::npos)
                             idx[i] = "{" + idx[i] + "}";
                     }
@@ -183,6 +183,11 @@ void getIndices(StringView sCmd, Indices& _idx,  Parser& _parser, MemoryManager&
 
     // If the argument contains a comma, handle it as a usual index list
     handleArgumentForIndices(_idx, _parser, _data, _idx.sCompiledAccessEquation, sCmd);
+
+    // Check indices here
+    if (!_idx.row.checkRange() || !_idx.col.checkRange())
+        throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd.to_string(), nPos+1,
+                          _idx.row.to_string() + ", " + _idx.col.to_string());
 }
 
 

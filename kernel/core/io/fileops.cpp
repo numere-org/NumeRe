@@ -48,7 +48,7 @@ bool removeFile(CommandLineParser& cmdParser)
     //sCmd = fromSystemCodePage(sCmd);
 
     // Get all relevant files
-    std::vector<std::string> vFiles = getFileList(cmdParser.parseExprAsString(), NumeReKernel::getInstance()->getSettings(), 1);
+    std::vector<std::string> vFiles = _fSys.getFileList(cmdParser.parseExprAsString(), FileSystem::FULLPATH);
 
     // No files -> No deletion needed
     if (!vFiles.size())
@@ -57,10 +57,10 @@ bool removeFile(CommandLineParser& cmdParser)
     // Delete the first or every file
     for (const std::string& sFile : vFiles)
     {
-        if (sFile.substr(sFile.rfind('.')) == ".exe"
-            || sFile.substr(sFile.rfind('.')) == ".dll"
-            || sFile.substr(sFile.rfind('.')) == ".sys"
-            || sFile.substr(sFile.rfind('.')) == ".vfm")
+        if (sFile.ends_with(".exe")
+            || sFile.ends_with(".dll")
+            || sFile.ends_with(".sys")
+            || sFile.ends_with(".vfm"))
             return false;
 
         if (!bIgnore)
@@ -145,7 +145,7 @@ bool moveOrCopyFiles(CommandLineParser& cmdParser)
         cmdParser.setReturnValue(sSource);
 
     // Get the source file list an validate
-    vFileList = getFileList(sSource, NumeReKernel::getInstance()->getSettings(), 1);
+    vFileList = _fSys.getFileList(sSource, FileSystem::FULLPATH);
 
     if (!vFileList.size())
         return false;
@@ -221,15 +221,15 @@ bool moveOrCopyFiles(CommandLineParser& cmdParser)
         _sTarget = removeQuotationMarks(_sTarget);
         StripSpaces(_sTarget);
 
-        if (_sTarget.substr(_sTarget.length()-2) == "/*")
-            _sTarget.erase(_sTarget.length()-1);
+        if (_sTarget.ends_with("/*"))
+            _sTarget.pop_back();
 
         // Validate target file name
         _sTarget = _fSys.ValidFileName(_sTarget);
 
-        if (_sTarget.substr(_sTarget.rfind('.')-1) == "*.dat")
+        if (_sTarget.ends_with("*.dat"))
             _sTarget = _sTarget.substr(0,_sTarget.rfind('/')) + sFile.substr(sFile.rfind('/'));
-        else if (_sTarget.substr(_sTarget.rfind('.')-1) == "/.dat")
+        else if (_sTarget.ends_with("/.dat"))
             _sTarget = _sTarget.substr(0, _sTarget.rfind('/')) + sFile.substr(sFile.rfind('/'));
 
         if (_sTarget.substr(_sTarget.rfind('.')) != sFile.substr(sFile.rfind('.')))
@@ -249,7 +249,7 @@ bool moveOrCopyFiles(CommandLineParser& cmdParser)
 
         if (!bAll
             || (cmdParser.getCommandLine().find_first_of("?*") == std::string::npos)
-            || (sTarget.find('*') == std::string::npos && (sTarget[sTarget.length()-1] != '/' && sTarget.substr(sTarget.length()-2) != "/\"") && sTarget.find("<#") == std::string::npos && sTarget.find("<fname>") == std::string::npos))
+            || (sTarget.find('*') == std::string::npos && (sTarget.back() != '/' && !sTarget.ends_with("/\"")) && sTarget.find("<#") == std::string::npos && sTarget.find("<fname>") == std::string::npos))
         {
             cmdParser.setReturnValue(sFile);
             break;

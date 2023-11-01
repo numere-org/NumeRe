@@ -149,53 +149,7 @@ std::string toString(size_t nNumber)
 /////////////////////////////////////////////////
 std::string toString(__time64_t tTime, int timeStampFlags)
 {
-    tm* ltm = _localtime64(&tTime);
-
-    if (!ltm)
-        return "";
-
-    time_zone tz = getCurrentTimeZone();
-
-    std::ostringstream timeStream;
-
-    if (!(timeStampFlags & GET_ONLY_TIME))
-    {
-        timeStream << 1900+ltm->tm_year << "-"; //YYYY-
-        timeStream << std::setfill('0') << std::setw(2) << ltm->tm_mon + 1 << "-"; // MM-
-        timeStream << std::setfill('0') << std::setw(2) << ltm->tm_mday; 	// DD
-
-        if (timeStampFlags & GET_AS_TIMESTAMP)
-            timeStream << "_";
-        else
-        {
-            timeStream << ", ";	// Komma im regulaeren Datum
-
-            if (timeStampFlags & GET_WITH_TEXT)
-            {
-                if (_lang.get("TOOLS_TIMESTAMP_AT") == "TOOLS_TIMESTAMP_AT")
-                    timeStream << "at ";
-                else
-                    timeStream << _lang.get("TOOLS_TIMESTAMP_AT") << " ";
-            }
-        }
-    }
-
-    if (timeStampFlags & GET_ONLY_TIME)
-        timeStream << std::setfill('0') << std::setw(2) << ltm->tm_hour + tz.Bias.count()/60; 	// hh
-    else
-        timeStream << std::setfill('0') << std::setw(2) << ltm->tm_hour; 	// hh
-
-    if (!(timeStampFlags & GET_AS_TIMESTAMP))
-        timeStream << ":";		// ':' im regulaeren Datum
-
-    timeStream << std::setfill('0') << std::setw(2) << ltm->tm_min;	// mm
-
-    if (!(timeStampFlags & GET_AS_TIMESTAMP))
-        timeStream << ":";
-
-    timeStream << std::setfill('0') << std::setw(2) << ltm->tm_sec;	// ss
-
-    return timeStream.str();
+    return toString(getTimePointFromTimeStamp(getTimeStampFromTime_t(tTime)), timeStampFlags);
 }
 
 
@@ -213,51 +167,71 @@ std::string toString(sys_time_point tp, int timeStampFlags)
     time_zone tz = getCurrentTimeZone();
     std::ostringstream timeStream;
 
+    if (timeStampFlags & GET_SHORTEST)
+    {
+        //if (to_double(tp) < 24*3600)
+        //    timeStampFlags |= GET_ONLY_TIME;
+
+        if (!(timeStampFlags & GET_ONLY_TIME)
+            && !ltm.m_hours.count()
+            && !ltm.m_minutes.count()
+            && !ltm.m_seconds.count()
+            && !ltm.m_millisecs.count()
+            && !ltm.m_microsecs.count())
+            timeStampFlags |= GET_ONLY_DATE;
+    }
+
     if (!(timeStampFlags & GET_ONLY_TIME))
     {
         timeStream << ltm.m_ymd.year() << "-"; //YYYY-
         timeStream << std::setfill('0') << std::setw(2) << unsigned(ltm.m_ymd.month()) << "-"; // MM-
         timeStream << ltm.m_ymd.day(); 	// DD
 
-        if (timeStampFlags & GET_AS_TIMESTAMP)
-            timeStream << "_";
-        else
+        if (!(timeStampFlags & GET_ONLY_DATE))
         {
-            timeStream << ", ";	// Komma im regulaeren Datum
-
-            if (timeStampFlags & GET_WITH_TEXT)
+            if (timeStampFlags & GET_AS_TIMESTAMP)
+                timeStream << "_";
+            else
             {
-                if (_lang.get("TOOLS_TIMESTAMP_AT") == "TOOLS_TIMESTAMP_AT")
-                    timeStream << "at ";
-                else
-                    timeStream << _lang.get("TOOLS_TIMESTAMP_AT") << " ";
+                timeStream << ", ";	// Komma im regulaeren Datum
+
+                if (timeStampFlags & GET_WITH_TEXT)
+                {
+                    if (_lang.get("TOOLS_TIMESTAMP_AT") == "TOOLS_TIMESTAMP_AT")
+                        timeStream << "at ";
+                    else
+                        timeStream << _lang.get("TOOLS_TIMESTAMP_AT") << " ";
+                }
             }
         }
     }
 
-    if (timeStampFlags & GET_ONLY_TIME && !(timeStampFlags & GET_UNBIASED_TIME))
-        timeStream << std::setfill('0') << std::setw(2) << ltm.m_hours.count() + (tz.Bias + tz.DayLightBias).count()/60; 	// hh
-    else
-        timeStream << std::setfill('0') << std::setw(2) << ltm.m_hours.count(); 	// hh
-
-    if (!(timeStampFlags & GET_AS_TIMESTAMP))
-        timeStream << ":";		// ':' im regulaeren Datum
-
-    timeStream << std::setfill('0') << std::setw(2) << ltm.m_minutes.count();	// mm
-
-    if (!(timeStampFlags & GET_AS_TIMESTAMP))
-        timeStream << ":";
-
-    timeStream << std::setfill('0') << std::setw(2) << ltm.m_seconds.count();	// ss
-
-    if (!(timeStampFlags & GET_AS_TIMESTAMP))
+    if (!(timeStampFlags & GET_ONLY_DATE))
     {
-        if (timeStampFlags & (GET_MILLISECONDS | GET_FULL_PRECISION)
-            || ltm.m_millisecs.count())
-            timeStream << "." << std::setfill('0') << std::setw(3) << ltm.m_millisecs.count();
+        if (timeStampFlags & GET_ONLY_TIME && !(timeStampFlags & GET_UNBIASED_TIME))
+            timeStream << std::setfill('0') << std::setw(2) << ltm.m_hours.count() + (tz.Bias + tz.DayLightBias).count()/60; 	// hh
+        else
+            timeStream << std::setfill('0') << std::setw(2) << ltm.m_hours.count(); 	// hh
 
-        if (timeStampFlags & GET_FULL_PRECISION)
-            timeStream << std::setfill('0') << std::setw(3) << ltm.m_microsecs.count();
+        if (!(timeStampFlags & GET_AS_TIMESTAMP))
+            timeStream << ":";		// ':' im regulaeren Datum
+
+        timeStream << std::setfill('0') << std::setw(2) << ltm.m_minutes.count();	// mm
+
+        if (!(timeStampFlags & GET_AS_TIMESTAMP))
+            timeStream << ":";
+
+        timeStream << std::setfill('0') << std::setw(2) << ltm.m_seconds.count();	// ss
+
+        if (!(timeStampFlags & GET_AS_TIMESTAMP))
+        {
+            if (timeStampFlags & (GET_MILLISECONDS | GET_FULL_PRECISION)
+                || ltm.m_millisecs.count())
+                timeStream << "." << std::setfill('0') << std::setw(3) << ltm.m_millisecs.count();
+
+            if (timeStampFlags & GET_FULL_PRECISION)
+                timeStream << std::setfill('0') << std::setw(3) << ltm.m_microsecs.count();
+        }
     }
 
     return timeStream.str();
@@ -361,6 +335,63 @@ std::string toHexString(size_t nNumber)
 
 
 /////////////////////////////////////////////////
+/// \brief Converts a double into a formatted
+/// duration string.
+///
+/// \param dDuration double
+/// \return std::string
+///
+/////////////////////////////////////////////////
+std::string formatDuration(double dDuration)
+{
+    if (std::isnan(dDuration))
+        return "---";
+
+    std::string sDuration;
+    bool isNegative = dDuration < 0.0;
+
+    dDuration = std::abs(dDuration);
+
+    int nYears = std::floor(dDuration / (365.0*24*3600));
+    dDuration -= nYears * 365.0*24*3600;
+
+    int nWeeks = std::floor(dDuration / (7.0*24*3600));
+    dDuration -= nWeeks * 7.0*24*3600;
+
+    int nDays = std::floor(dDuration / (24.0*3600));
+    dDuration -= nDays * 24.0*3600;
+
+    int nHours = std::floor(dDuration / 3600.0);
+    dDuration -= nHours * 3600.0;
+
+    int nMinutes = std::floor(dDuration / 60.0);
+    dDuration -= nMinutes * 60.0;
+
+    int nSeconds = (int)dDuration;
+    dDuration -= dDuration;
+
+    if (isNegative)
+        sDuration += "-";
+
+    if (nYears)
+        sDuration += toString(nYears) + "y ";
+
+    if (nWeeks)
+        sDuration += toString(nWeeks) + "wk ";
+
+    if (nDays)
+        sDuration += toString(nDays) + "d ";
+
+    sDuration += toString(nHours) + ":" + strfill(toString(nMinutes), 2, '0') + ":" + strfill(toString(nSeconds), 2, '0');
+
+    if (dDuration > 0.0)
+        sDuration += "." + strfill(toString((int)(dDuration*1000)), '0', 3);
+
+    return sDuration;
+}
+
+
+/////////////////////////////////////////////////
 /// \brief This function converts a std::string
 /// into a std::vector, where the string shall be
 /// passed as "{x,y,z,...}"
@@ -428,7 +459,7 @@ std::vector<int> toIntVector(std::string sString)
 std::string condenseText(const std::string& sText)
 {
     std::string sReturn = sText;
-    static std::string sToErase = " AaEeIiOoUuƒ‰÷ˆ‹¸ﬂYy";
+    static std::string sToErase = " AaEeIiOoUu\xC4\xE4\xD6\xF6\xDC\xFC\xDFYy";
     for (size_t i = 0; i < sReturn.length(); i++)
     {
         if (sToErase.find(sReturn[i]) != std::string::npos
@@ -465,6 +496,62 @@ std::string truncString(const std::string& sText, size_t nMaxChars)
         return sText;
 
     return sText.substr(0, nMaxChars-3) + "...";
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This function fills the passed string
+/// up to the width nWidth with the characters
+/// cFill. The string will be aligned
+/// right. If the bool option limit is true,
+/// the string will be shortened to the required
+/// size and '...' will be added.
+///
+/// \param sString const std::string&
+/// \param nWidth size_t
+/// \param cFill char
+/// \param limit bool
+/// \return std::string
+///
+/////////////////////////////////////////////////
+std::string strfill(const std::string& sString, size_t nWidth, char cFill, bool limit)
+{
+    if (!nWidth)
+        return "";
+
+    std::string sReturn = sString;
+
+    // Fill the string
+    if (sString.length() < nWidth)
+        sReturn.insert(0, nWidth-sReturn.length(), cFill);
+
+    // Limit the output size if required
+    if (limit && sString.length() > nWidth)
+        sReturn = sString.substr(0, nWidth - 3) + "...";
+
+    return sReturn;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This function fills the passed string
+/// up to the width nWidth with the characters
+/// cFill. The string will be aligned left.
+///
+/// \param sString const std::string&
+/// \param nWidth size_t
+/// \param cFill char
+/// \return std::string
+///
+/////////////////////////////////////////////////
+std::string strlfill(const std::string& sString, size_t nWidth, char cFill)
+{
+    if (!nWidth)
+        return "";
+    std::string sReturn = sString;
+    if (sString.length() < nWidth)
+        sReturn.append(nWidth-sReturn.length(), cFill);
+    return sReturn;
 }
 
 
@@ -912,26 +999,16 @@ std::string toExternalString(std::string sStr)
 std::string toLowerCase(const std::string& sUpperCase)
 {
     std::string sLowerCase = sUpperCase;
+    static Umlauts _umlauts;
+    constexpr int charDiff = (int)'a' - (int)'A';
+
     for (size_t i = 0; i < sLowerCase.length(); i++)
     {
         // --> Laufe alle Zeichen im String ab und pruefe, ob ihr CHAR-Wert zwischen A und Z liegt
         if ((int)sLowerCase[i] >= (int)'A' && (int)sLowerCase[i] <= (int)'Z')
-        {
-            // --> Falls ja, verschiebe den CHAR-Wert um die Differenz aus A und a <--
-            sLowerCase[i] = (char)((int)sLowerCase[i] + ((int)'a' - (int)'A'));
-        }
-        if (sLowerCase[i] == 'ƒ')
-            sLowerCase[i] = '‰';
-        else if (sLowerCase[i] == '÷')
-            sLowerCase[i] = 'ˆ';
-        else if (sLowerCase[i] == '‹')
-            sLowerCase[i] = '¸';
-        else if (sLowerCase[i] == (char)142)
-            sLowerCase[i] = (char)132;
-        else if (sLowerCase[i] == (char)153)
-            sLowerCase[i] = (char)148;
-        else if (sLowerCase[i] == (char)154)
-            sLowerCase[i] = (char)129;
+            sLowerCase[i] = (char)((int)sLowerCase[i] + charDiff);
+        else
+            sLowerCase[i] = _umlauts.toLower(sLowerCase[i]);
     }
     return sLowerCase;
 }
@@ -948,41 +1025,28 @@ std::string toLowerCase(const std::string& sUpperCase)
 std::string toUpperCase(const std::string& sLowerCase)
 {
     std::string sUpperCase = sLowerCase;
+    static Umlauts _umlauts;
+    const int EQUAL = 0;
+    constexpr int charDiff = (int)'A' - (int)'a';
+
     for (size_t i = 0; i < sUpperCase.length(); i++)
     {
         // Handle escape characters like linebreaks or tabulator characters
-        if ((!i || sUpperCase[i - 1] != '\\') && (sUpperCase.substr(i, 2) == "\\n" || sUpperCase.substr(i, 2) == "\\t"))
+        if ((!i || sUpperCase[i - 1] != '\\') && (sUpperCase.compare(i, 2, "\\n") == EQUAL || sUpperCase.compare(i, 2, "\\t") == EQUAL))
         {
             i++;
             continue;
         }
-        else if (sUpperCase.substr(i, 2) == "\\n")
-        {
+        else if (sUpperCase.compare(i, 2, "\\n") == EQUAL)
             sUpperCase.replace(i, 2, "N");
-        }
-        else if (sUpperCase.substr(i, 2) == "\\t")
-        {
+        else if (sUpperCase.compare(i, 2, "\\t") == EQUAL)
             sUpperCase.replace(i, 2, "T");
-        }
-        // --> Laufe alle Zeichen im String ab und pruefe, ob ihr CHAR-Wert zwischen a und z liegt
-        if ((int)sUpperCase[i] >= (int)'a' && (int)sLowerCase[i] <= (int)'z')
-        {
-            // --> Falls ja, verschiebe den CHAR-Wert um die Differenz aus a und A <--
-            sUpperCase[i] = (char)((int)sUpperCase[i] + ((int)'A' - (int)'a'));
-        }
-        if (sUpperCase[i] == '‰')
-            sUpperCase[i] = 'ƒ';
-        else if (sUpperCase[i] == 'ˆ')
-            sUpperCase[i] = '÷';
-        else if (sUpperCase[i] == '¸')
-            sUpperCase[i] = '‹';
-        else if (sUpperCase[i] == (char)132)
-            sUpperCase[i] = (char)142;
-        else if (sUpperCase[i] == (char)148)
-            sUpperCase[i] = (char)153;
-        else if (sUpperCase[i] == (char)129)
-            sUpperCase[i] = (char)154;
+        else if ((int)sUpperCase[i] >= (int)'a' && (int)sLowerCase[i] <= (int)'z')
+            sUpperCase[i] = (char)((int)sUpperCase[i] + charDiff);
+        else
+            sUpperCase[i] = _umlauts.toUpper(sUpperCase[i]);
     }
+
     return sUpperCase;
 }
 
@@ -1297,21 +1361,21 @@ std::string fromSystemCodePage(std::string sOutput)
     for (size_t i = 0; i < sOutput.length(); i++)
     {
         if (sOutput[i] == (char)142)
-            sOutput[i] = 'ƒ';
+            sOutput[i] = (char)0xC4;
         else if (sOutput[i] == (char)132)
-            sOutput[i] = '‰';
+            sOutput[i] = (char)0xE4;
         else if (sOutput[i] == (char)153)
-            sOutput[i] = '÷';
+            sOutput[i] = (char)0xD6;
         else if (sOutput[i] == (char)148)
-            sOutput[i] = 'ˆ';
+            sOutput[i] = (char)0xF6;
         else if (sOutput[i] == (char)154)
-            sOutput[i] = '‹';
+            sOutput[i] = (char)0xDC;
         else if (sOutput[i] == (char)129)
-            sOutput[i] = '¸';
+            sOutput[i] = (char)0xFC;
         else if (sOutput[i] == (char)225)
-            sOutput[i] = 'ﬂ';
+            sOutput[i] = (char)0xDF;
         else if (sOutput[i] == (char)248)
-            sOutput[i] = '∞';
+            sOutput[i] = (char)0xB0;
         else if (sOutput[i] == (char)174)
             sOutput[i] = (char)171;
         else if (sOutput[i] == (char)175)
@@ -1744,7 +1808,7 @@ std::string ellipsize(const std::string& sLongString, size_t nMaxStringLength)
 /// with the new value sNewValue. The boundaries
 /// limit the range of processing.
 ///
-/// \param sToModify std::string&
+/// \param sToModify MutableStringView
 /// \param sToRep const char*
 /// \param sNewValue const char*
 /// \param nStart size_t
@@ -1752,7 +1816,7 @@ std::string ellipsize(const std::string& sLongString, size_t nMaxStringLength)
 /// \return void
 ///
 /////////////////////////////////////////////////
-void replaceAll(std::string& sToModify, const char* sToRep, const char* sNewValue, size_t nStart /*= 0*/, size_t nEnd /*= string::npos*/)
+void replaceAll(MutableStringView sToModify, const char* sToRep, const char* sNewValue, size_t nStart /*= 0*/, size_t nEnd /*= string::npos*/)
 {
     size_t nRepLength = strlen(sToRep);
     size_t nNewLength = strlen(sNewValue);
@@ -1774,7 +1838,7 @@ void replaceAll(std::string& sToModify, const char* sToRep, const char* sNewValu
         if (i >= sToModify.length())
             break;
 
-        if (!sToModify.compare(i, nRepLength, sToRep))
+        if (sToModify.match(sToRep, i))
         {
             sToModify.replace(i, nRepLength, sNewValue);
             nEnd += nOffSet;
@@ -1791,15 +1855,15 @@ void replaceAll(std::string& sToModify, const char* sToRep, const char* sNewValu
 /// limit the range of processing. This function
 /// is a (slower) overload for std::strings.
 ///
-/// \param sToModify std::string&
-/// \param sToRep const std::string&
-/// \param sNewValue const std::string&
+/// \param sToModify MutableStringView
+/// \param sToRep StringView
+/// \param sNewValue StringView
 /// \param nStart size_t
 /// \param nEnd size_t
 /// \return void
 ///
 /////////////////////////////////////////////////
-void replaceAll(std::string& sToModify, const std::string& sToRep, const std::string& sNewValue, size_t nStart /*= 0*/, size_t nEnd /*= string::npos*/)
+void replaceAll(MutableStringView sToModify, StringView sToRep, StringView sNewValue, size_t nStart /*= 0*/, size_t nEnd /*= string::npos*/)
 {
     size_t nRepLength = sToRep.length();
     size_t nNewLength = sNewValue.length();
@@ -1821,7 +1885,7 @@ void replaceAll(std::string& sToModify, const std::string& sToRep, const std::st
         if (i >= sToModify.length())
             break;
 
-        if (!sToModify.compare(i, nRepLength, sToRep))
+        if (sToModify.match(sToRep, i))
         {
             sToModify.replace(i, nRepLength, sNewValue);
             nEnd += nOffSet;

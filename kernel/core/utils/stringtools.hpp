@@ -28,15 +28,82 @@
 // Forward declaration
 class Settings;
 class StringView;
+class MutableStringView;
+
+/////////////////////////////////////////////////
+/// \brief Structure containing the german umlauts. The
+/// lower field will contain lower case umlauts,
+/// upper field contains the upper case umlauts.
+/////////////////////////////////////////////////
+struct Umlauts
+{
+    std::string lower;
+    std::string upper;
+
+    // Constructor fills the fields with the corresponding
+    // character codes (eg \x94 is a Hex value for (char)148)
+    Umlauts() : lower("\xE4\xF6\xFC\x84\x94\x81\xDF\xB0\xB5\xE1\xA7\xE6"), upper("\xC4\xD6\xDC\x8E\x99\x9A") {}
+
+    /////////////////////////////////////////////////
+    /// \brief Determine, whether this character is
+    /// an umlaut.
+    ///
+    /// \param c char
+    /// \return bool
+    ///
+    /////////////////////////////////////////////////
+    bool isUmlaut(char c)
+    {
+        return lower.find(c) != std::string::npos || upper.find(c) != std::string::npos;
+    }
+
+    /////////////////////////////////////////////////
+    /// \brief Convert an umlaut to uppercase or
+    /// return the same character.
+    ///
+    /// \param c char
+    /// \return char
+    ///
+    /////////////////////////////////////////////////
+    char toUpper(char c)
+    {
+        size_t p = lower.find(c);
+
+        if (p < upper.length())
+            return upper[p];
+
+        return c;
+    }
+
+    /////////////////////////////////////////////////
+    /// \brief Convert an umlaut to lowercase or
+    /// return the same character.
+    ///
+    /// \param c char
+    /// \return char
+    ///
+    /////////////////////////////////////////////////
+    char toLower(char c)
+    {
+        size_t p = upper.find(c);
+
+        if (p < lower.length())
+            return lower[p];
+
+        return c;
+    }
+};
 
 enum TIMESTAMP
 {
     GET_ONLY_TIME = 0x1,
-    GET_AS_TIMESTAMP = 0x2,
-    GET_WITH_TEXT = 0x4,
-    GET_MILLISECONDS = 0x8,
-    GET_FULL_PRECISION = 0x10,
-    GET_UNBIASED_TIME = 0x20
+    GET_ONLY_DATE = 0x2,
+    GET_AS_TIMESTAMP = 0x4,
+    GET_WITH_TEXT = 0x8,
+    GET_MILLISECONDS = 0x10,
+    GET_FULL_PRECISION = 0x20,
+    GET_UNBIASED_TIME = 0x40,
+    GET_SHORTEST = 0x80
 };
 
 enum ConvertibleType
@@ -79,6 +146,7 @@ std::string toCmdString(const std::complex<double>& dNumber);
 std::string toString(bool bBoolean);
 std::string toHexString(int nNumber);
 std::string toHexString(size_t nNumber);
+std::string formatDuration(double dDuration);
 
 /////////////////////////////////////////////////
 /// \brief This function converts a std::vector
@@ -111,6 +179,8 @@ std::vector<std::string> toStrVector(std::string sString);
 std::vector<int> toIntVector(std::string sString);
 std::string condenseText(const std::string& sText);
 std::string truncString(const std::string& sText, size_t nMaxChars);
+std::string strfill(const std::string& sString, size_t nWidth, char cFill = ' ', bool limit = false);
+std::string strlfill(const std::string& sString, size_t nWidth, char cFill = ' ');
 
 std::string wcstombs(const std::wstring& wStr);
 void StripSpaces(std::string&);
@@ -134,8 +204,8 @@ int detectTimeDateFormat(const std::string&);
 std::string toSystemCodePage(std::string sOutput);
 std::string fromSystemCodePage(std::string sOutput);
 
-void replaceAll(std::string& sToModify, const std::string& sToRep, const std::string& sNewValue, size_t nStart = 0, size_t nEnd = std::string::npos);
-void replaceAll(std::string& sToModify, const char* sToRep, const char* sNewValue, size_t nStart = 0, size_t nEnd = std::string::npos);
+void replaceAll(MutableStringView sToModify, StringView sToRep, StringView sNewValue, size_t nStart = 0, size_t nEnd = std::string::npos);
+void replaceAll(MutableStringView sToModify, const char* sToRep, const char* sNewValue, size_t nStart = 0, size_t nEnd = std::string::npos);
 std::string replaceControlCharacters(std::string sToModify);
 std::string utf8parser(const std::string& sString);
 std::string utf8ToAnsi(const std::string& sString);

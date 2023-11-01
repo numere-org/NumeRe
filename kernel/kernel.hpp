@@ -393,62 +393,6 @@ struct NumeReTask
 
 
 /////////////////////////////////////////////////
-/// \brief This function fills the passed string
-/// up to the width nWidth with the characters
-/// cFill. The string will be aligned
-/// right. If the bool option limit is true,
-/// the string will be shortened to the required
-/// size and '...' will be added.
-///
-/// \param sString const std::string&
-/// \param nWidth size_t
-/// \param cFill char
-/// \param limit bool
-/// \return std::string
-///
-/////////////////////////////////////////////////
-inline std::string strfill(const std::string& sString, size_t nWidth, char cFill = ' ', bool limit = false)
-{
-    if (!nWidth)
-        return "";
-
-    std::string sReturn = sString;
-
-    // Fill the string
-    if (sString.length() < nWidth)
-        sReturn.insert(0, nWidth-sReturn.length(), cFill);
-
-    // Limit the output size if required
-    if (limit && sString.length() > nWidth)
-        sReturn = sString.substr(0, nWidth - 3) + "...";
-
-    return sReturn;
-}
-
-
-/////////////////////////////////////////////////
-/// \brief This function fills the passed string
-/// up to the width nWidth with the characters
-/// cFill. The string will be aligned left.
-///
-/// \param sString const std::string&
-/// \param nWidth size_t
-/// \param cFill char
-/// \return std::string
-///
-/////////////////////////////////////////////////
-inline std::string strlfill(const std::string& sString, size_t nWidth, char cFill = ' ')
-{
-    if (!nWidth)
-        return "";
-    std::string sReturn = sString;
-    if (sString.length() < nWidth)
-        sReturn.append(nWidth-sReturn.length(), cFill);
-    return sReturn;
-}
-
-
-/////////////////////////////////////////////////
 /// \brief This function provides a headline for
 /// the "windows" in the console.
 ///

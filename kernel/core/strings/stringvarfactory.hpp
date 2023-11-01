@@ -38,7 +38,6 @@ namespace NumeRe
             std::map<std::string,std::string> m_mStringVars;
 
             bool isNumericCandidate(const std::string& sComponent);
-            bool checkStringvarDelimiter(const std::string& sToken) const;
             void replaceStringVectorVars(std::map<std::string,StringVector>& mVectorVarMap, std::string& currentline, size_t nCurrentComponent, bool& bHasComponents);
             std::string findVectorInMap(const std::map<std::string,StringVector>& mVectorVarMap, const std::vector<std::string>& vStringVector);
 
@@ -52,15 +51,16 @@ namespace NumeRe
             void getStringValuesAsInternalVar(std::string& sLine, size_t nPos = 0);
 
         public:
-            bool containsStringVectorVars(const std::string& sLine);
+            bool containsStringVectorVars(StringView sLine);
             std::string createTempStringVectorVar(const std::vector<std::string>& vStringVector);
             void removeTempStringVectorVars();
-            bool containsStringVars(const std::string& sLine) const;
+            bool containsStringVars(StringView sLine) const;
             bool isStringVar(const std::string& sVarName) const;
             void getStringValues(std::string& sLine);
             std::string getStringValue(const std::string& sVar) const;
             void setStringValue(const std::string& sVar, const std::string& sValue);
             void removeStringVar(const std::string& sVar);
+            void clearStringVar();
 
             // Returns a reference to the internal string variable map
             inline const std::map<std::string, std::string>& getStringVars() const
