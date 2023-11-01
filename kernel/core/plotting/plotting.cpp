@@ -531,6 +531,62 @@ void Plot::determinePlottingDimensions(StringView sPlotCommand)
 
 
 /////////////////////////////////////////////////
+/// \brief Resolves possible embedded definitions
+/// in the draw function's components.
+///
+/// \param sArgument StringView
+/// \param vDrawVector std::vector<std::string>&
+/// \return void
+///
+/////////////////////////////////////////////////
+static void resolveDrawVectorArgs(StringView sArgument, std::vector<std::string>& vDrawVector)
+{
+    sArgument.strip();
+
+    if (sArgument.front() == '{' && sArgument.back() == '}')
+    {
+        // Resolve vector syntax
+        EndlessVector<StringView> args = getAllArguments(sArgument.subview(1, sArgument.length()-2));
+
+        for (StringView& arg : args)
+        {
+            arg.strip();
+
+            // Remove obsolete surrounding parentheses
+            while (arg.front() == '(' && getMatchingParenthesis(arg) == arg.length()-1)
+            {
+                arg.trim_front(1);
+                arg.trim_back(1);
+                arg.strip();
+            }
+
+            // Handle vector syntax
+            if (arg.front() == '{' && arg.back() == '}')
+                resolveDrawVectorArgs(arg, vDrawVector);
+            else
+                vDrawVector.push_back(arg.to_string());
+        }
+    }
+    else
+    {
+        // Remove obsolete surrounding parentheses
+        while (sArgument.front() == '(' && getMatchingParenthesis(sArgument) == sArgument.length()-1)
+        {
+            sArgument.trim_front(1);
+            sArgument.trim_back(1);
+            sArgument.strip();
+        }
+
+        // Handle vector syntax
+        if (sArgument.front() == '{' && sArgument.back() == '}')
+            resolveDrawVectorArgs(sArgument, vDrawVector);
+        else
+            vDrawVector.push_back(sArgument.to_string());
+    }
+}
+
+
+/////////////////////////////////////////////////
 /// \brief This member function handles the
 /// creation of a single subplot, which may be a
 /// single plot or part of a plot composition.
@@ -858,17 +914,7 @@ size_t Plot::createSubPlotSet(bool& bAnimateVar, vector<string>& vPlotCompose, s
                 if (findVariableInExpression(sArgument, "t") != string::npos)
                     bAnimateVar = true;
 
-                if (sArgument.front() == '{' && sArgument.back() == '}')
-                {
-#warning TODO (numere#1#10/06/23): Might not work for embedded function definitions
-
-                    EndlessVector<StringView> args = getAllArguments(StringView(sArgument, 1, sArgument.length()-2));
-
-                    for (const StringView& arg : args)
-                        vDrawVector.push_back(arg.to_string());
-                }
-                else
-                    vDrawVector.push_back(sArgument);
+                resolveDrawVectorArgs(sArgument, vDrawVector);
             }
 
             // Set the function string to be empty

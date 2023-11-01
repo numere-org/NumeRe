@@ -686,6 +686,8 @@ std::string FileSystem::ValidizeAndPrepareName(const std::string& _sFileName, co
 /////////////////////////////////////////////////
 std::string FileSystem::resolveLink(const std::string& sLink)
 {
+#warning FIXME (numere#1#10/31/23): It seems that TDM-GCC 9.2.0 lacks the necessary declarations
+#ifdef NR_HAVE_GSL2
     HRESULT hres;
     IShellLink* psl;
     CHAR szGotPath[MAX_PATH];
@@ -744,6 +746,10 @@ std::string FileSystem::resolveLink(const std::string& sLink)
 
     CoUninitialize();
     return sFilePath;
+#else
+    NumeReKernel::issueWarning("Feature not supported in x86 build.");
+    return sLink;
+#endif
 }
 
 
