@@ -264,6 +264,7 @@ class NumeReWindow : public wxFrame
         void prepareSession();
 
         int CopyEditorSettings(FileFilterType _fileType);
+        void loadTemplateToEditor(FileFilterType _filetype, wxString templateFileName, wxFileName fullfilename, wxString title, wxString timestamp);
 
         void OnMenuEvent(wxCommandEvent& event);
         void OnPluginMenuEvent(wxCommandEvent& event);

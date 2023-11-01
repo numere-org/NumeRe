@@ -48,3 +48,18 @@ Cleaned	Units of loaded JCAMP-DX files are now written in English
 Cleaned	"url" now has a progress bar for larger files and accepts now longer transmissins.
 Added	Added option to execute a script from the current or a given line.
 Added	"clear -var" can now be used from the terminal or a script to clear the current list of variables (with exception of default variables).
+Added	Layout commands have been added: "lamp" and "datetimepicker"
+Added	Using "statustext", one can now modify the statusbar of window layouts.
+Cleaned	A "treelist" can now display data using a tree-like layout.
+Cleaned	Improved the behavior of the table viewer: long strings are now wrapped around and the autosizing feature now informs about longer runtimes.
+Added	Whole new apps can now be created using the new file dialog and selecting one of the available templates.
+Fixed	Drawing functions can now be combined into function definitions (e.g. for predefined combinations) and used within "draw" and "draw3d" as expected.
+Updated	The XLSX file import was improved and is much faster now.
+Added	"getfilelist()" and "getfolderlist()" may now follow shell links (*.LNK files).
+Applied	The relative scaling of GUI elements may now be set with "relscl=FACTOR".
+Added	The GUI element state "readonly" was added, which is identical to "disabled" for most elements with exception of "tablegrid" and "textentry".
+Added	It is now possible to use custom window layouts as custom dialogs with "window WINID -get dialogresult"
+Added	The plot option margin=MARGIN can be used to control the plot margin size.
+Cleaned	The autocompletion feature does not interfere with any of the editor tooltips any more.
+Applied	Date-time columns are now automatically wide enough for their contents.
+Fixed	Plot marks now also scale with their corresponding line sizes.

@@ -4704,10 +4704,11 @@ vector<std::string> FlowCtrl::expandInlineProcedures(std::string& sLine)
 /// \param e_ptr exception_ptr
 /// \param bSupressAnswer_back bool
 /// \param nLine int
+/// \param cleanUp bool
 /// \return int
 ///
 /////////////////////////////////////////////////
-int FlowCtrl::catchExceptionForTest(exception_ptr e_ptr, bool bSupressAnswer_back, int nLine)
+int FlowCtrl::catchExceptionForTest(exception_ptr e_ptr, bool bSupressAnswer_back, int nLine, bool cleanUp)
 {
     return 0;
 }

@@ -20,6 +20,7 @@
 #include "../NumeReWindow.h" // Already includes NumeRe::Window
 #include "../../externals/tinyxml2/tinyxml2.h"
 #include "../../kernel/core/utils/stringtools.hpp"
+#include "../../kernel/core/io/logger.hpp"
 #include "grouppanel.hpp"
 #include <wx/tokenzr.h>
 #include <wx/dataview.h>
@@ -27,6 +28,8 @@
 #include "../wx.h"
 
 #include <string>
+
+#define MINCOLSIZE 70
 
 /////////////////////////////////////////////////
 /// \brief This static function converts colors
@@ -60,6 +63,54 @@ static wxColour toWxColour(const wxString& s)
 
 
 /////////////////////////////////////////////////
+/// \brief Convert states to lamp colours.
+///
+/// \param s const wxString&
+/// \return wxColour
+///
+/////////////////////////////////////////////////
+static wxColour colorFromLampStates(const wxString& s)
+{
+    if (s == "ok")
+        return wxColour(0,255,0);
+
+    if (s == "error")
+        return wxColour(255,0,0);
+
+    if (s == "warn")
+        return wxColour(255,255,0);
+
+    // if (s == "off")
+    return wxColour(64,64,64);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Convert lamp colours to states.
+///
+/// \param c const wxColour&
+/// \return wxString
+///
+/////////////////////////////////////////////////
+static wxString lampStatesFromColor(const wxColour& c)
+{
+    if (c == wxColour(0,255,0))
+        return "ok";
+
+    if (c == wxColour(255,0,0))
+        return "error";
+
+    if (c == wxColour(255,255,0))
+        return "warn";
+
+    if (c == wxColour(64,64,64))
+        return "off";
+
+    return "";
+}
+
+
+/////////////////////////////////////////////////
 /// \brief This static function conversts usual
 /// strings into "Kernel strings" (i.e. usual
 /// NumeRe code strings).
@@ -76,6 +127,28 @@ static wxString convertToCodeString(wxString s)
 
 
 /////////////////////////////////////////////////
+/// \brief Static function to convert a
+/// kernel string into a usual string.
+///
+/// \param sString wxString
+/// \return wxString
+///
+/////////////////////////////////////////////////
+wxString removeQuotationMarks(wxString sString)
+{
+    sString.Trim(false);
+    sString.Trim(true);
+
+    if (sString.length() && sString[0] == '"' && sString[sString.length()-1] == '"')
+        sString = sString.substr(1, sString.length()-2);
+
+    sString.Replace("\\\"", "\"");
+
+    return sString;
+}
+
+
+/////////////////////////////////////////////////
 /// \brief Separates the different item values.
 ///
 /// \param sItem wxString&
@@ -84,14 +157,105 @@ static wxString convertToCodeString(wxString s)
 /////////////////////////////////////////////////
 static wxString nextItemValue(wxString& sItem)
 {
-    wxString sValue = sItem.substr(0, sItem.find('\t'));
+    wxString sValue = sItem.substr(0, sItem.find_first_of("\t\n"));
 
-    if (sItem.find('\t') != std::string::npos)
-        sItem.erase(0, sItem.find('\t')+1);
-    else
+    if (sItem.length() == sValue.length())
         sItem.clear();
+    else if (sItem[sValue.length()] == '\t')
+        sItem.erase(0, sValue.length()+1);
+    else
+        sItem.erase(0, sValue.length());
 
     return sValue;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief A simple tokenizer to separate a list
+/// of strings into multiple strings.
+///
+/// \param choices wxString&
+/// \param keepQuotationMarks bool
+/// \return wxArrayString
+///
+/////////////////////////////////////////////////
+static wxArrayString getChoices(wxString& choices, bool keepQuotationMarks = false)
+{
+    wxArrayString choicesArray;
+    size_t nQuotes = 0;
+
+    for (int i = 0; i < (int)choices.length(); i++)
+    {
+        if (choices[i] == '"' && (!i || choices[i-1] != '\\'))
+            nQuotes++;
+
+        if (!(nQuotes % 2) && choices[i] == ',')
+        {
+            if (keepQuotationMarks)
+                choicesArray.Add(choices.substr(0, i));
+            else
+                choicesArray.Add(removeQuotationMarks(choices.substr(0, i)));
+            choices.erase(0, i+1);
+            i = -1;
+        }
+    }
+
+    if (choices.length())
+    {
+        if (keepQuotationMarks)
+            choicesArray.Add(choices);
+        else
+            choicesArray.Add(removeQuotationMarks(choices));
+    }
+
+    return choicesArray;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Populate the children of the current
+/// wxTreeListItem.
+///
+/// \param listCtrl wxTreeListCtrl*
+/// \param values const wxArrayString&
+/// \param parentItem wxTreeListItem
+/// \param hasChild bool
+/// \return void
+///
+/////////////////////////////////////////////////
+static void populateChild(wxTreeListCtrl* listCtrl, const wxArrayString& values, wxTreeListItem parentItem, bool hasChild)
+{
+    bool useCheckBoxes = listCtrl->HasFlag(wxTL_CHECKBOX);
+    size_t nColumns = listCtrl->GetColumnCount();
+
+    for (size_t i = 0; i < values.size(); i++)
+    {
+        wxString sItem = values[i];
+        size_t currCol = 1u;
+        bool check = false;
+
+        if (useCheckBoxes)
+            check = nextItemValue(sItem) != "0";
+
+        wxTreeListItem item = listCtrl->AppendItem(parentItem, nextItemValue(sItem));
+
+        if (check && useCheckBoxes)
+            listCtrl->CheckItem(item);
+
+        while (sItem.length() && currCol < nColumns && !sItem.StartsWith("\n{"))
+        {
+            listCtrl->SetItemText(item, currCol, nextItemValue(sItem));
+            currCol++;
+        }
+
+        if (hasChild && sItem.StartsWith("\n{") && sItem.EndsWith("}"))
+        {
+            sItem.erase(0, 2);
+            sItem.RemoveLast();
+            wxArrayString childValues = getChoices(sItem);
+            populateChild(listCtrl, childValues, item, hasChild);
+        }
+    }
 }
 
 
@@ -108,51 +272,43 @@ static wxString nextItemValue(wxString& sItem)
 static void populateTreeListCtrl(wxTreeListCtrl* listCtrl, const wxArrayString& values)
 {
     if (!values.size())
+    {
+        listCtrl->DeleteAllItems();
         return;
+    }
 
     bool useCheckBoxes = listCtrl->HasFlag(wxTL_CHECKBOX);
     size_t nColumns = 1;
-    size_t pos = 0;
+    bool hasChild = false;
 
-    while ((pos = values[0].find('\t', pos)) != std::string::npos)
+    for (size_t pos = 0; pos < values[0].length(); pos++)
     {
-        nColumns++;
-        pos++;
+        if (values[0][pos] == '\t')
+            nColumns++;
+
+        if (values[0].substr(pos, 2) == "\n{")
+        {
+            hasChild = true;
+            break;
+        }
     }
 
     if (useCheckBoxes)
         nColumns--;
 
     listCtrl->DeleteAllItems();
-    wxSize ctrlSize = listCtrl->GetClientSize();
 
     while (listCtrl->GetColumnCount() < nColumns)
         listCtrl->AppendColumn("");
 
-    for (size_t i = 0; i < values.size(); i++)
-    {
-        wxString sItem = values[i];
-        size_t currCol = 1u;
-        bool check = false;
+    populateChild(listCtrl, values, listCtrl->GetRootItem(), hasChild);
 
-        if (useCheckBoxes)
-            check = nextItemValue(sItem) != "0";
-
-        wxTreeListItem item = listCtrl->AppendItem(listCtrl->GetRootItem(), nextItemValue(sItem));
-
-        if (check && useCheckBoxes)
-            listCtrl->CheckItem(item);
-
-        while (sItem.length() && currCol < nColumns)
-        {
-            listCtrl->SetItemText(item, currCol, nextItemValue(sItem));
-            currCol++;
-        }
-    }
+    nColumns = listCtrl->GetColumnCount();
+    int colSize = std::max(listCtrl->GetClientSize().x / (int)nColumns - 2, MINCOLSIZE);
 
     for (size_t i = 0; i < listCtrl->GetColumnCount(); i++)
     {
-        listCtrl->SetColumnWidth(i, ctrlSize.x / nColumns - 2);
+        listCtrl->SetColumnWidth(i, colSize);
     }
 }
 
@@ -177,9 +333,11 @@ static wxString getTreeListCtrlValue(wxTreeListCtrl* listCtrl)
     // Get selections if any and no checkboxes are used
     if (!useCheckBoxes)
     {
-        if (listCtrl->GetSelections(items))
+        size_t itemCount = 0;
+        /*if (listCtrl->GetSelections(items))
         {
-            for (size_t i = 0; i < items.size(); i++)
+            for (size_t i = 0; i < items.size(); i++)*/
+            for (wxTreeListItem item = listCtrl->GetFirstItem(); item.IsOk(); item = listCtrl->GetNextItem(item))
             {
                 if (values.length())
                     values += ", ";
@@ -188,20 +346,24 @@ static wxString getTreeListCtrlValue(wxTreeListCtrl* listCtrl)
 
                 for (size_t j = 0; j < listCtrl->GetColumnCount(); j++)
                 {
-                    sItem += listCtrl->GetItemText(items[i], j);
+                    sItem += listCtrl->GetItemText(item, j);
 
                     if (j+1 < listCtrl->GetColumnCount())
                         sItem += "\t";
                 }
 
                 values += convertToCodeString(sItem);
+                itemCount++;
             }
 
-            if (listCtrl->GetColumnCount() > 1 && items.size() > 1)
-                return convertToCodeString(values);
-        }
+            /*if (listCtrl->GetColumnCount() > 1 && itemCount > 1)
+                return convertToCodeString(values);*/
+
+            if (!values.length())
+                return "\"\"";
+        /*}
         else
-            values = "\"\"";
+            values = "\"\"";*/
 
         return values;
     }
@@ -248,6 +410,7 @@ static int enumerateListItems(wxTreeListCtrl* listCtrl, const wxTreeListItem& it
 /////////////////////////////////////////////////
 enum WindowState
 {
+    READONLY,
     ENABLED,
     DISABLED,
     HIDDEN
@@ -272,6 +435,8 @@ BEGIN_EVENT_TABLE(CustomWindow, wxFrame)
     EVT_TREELIST_ITEM_ACTIVATED(-1, CustomWindow::OnTreeListActivateEvent)
     EVT_SIZE(CustomWindow::OnSizeEvent)
     EVT_SLIDER(-1, CustomWindow::OnChange)
+    EVT_DATE_CHANGED(-1, CustomWindow::OnDateEvent)
+    EVT_TIME_CHANGED(-1, CustomWindow::OnDateEvent)
     EVT_MENU(-1, CustomWindow::OnMenuEvent)
     cEVT_SET_VALUE(-1, CustomWindow::OnSetValueEvent)
     cEVT_SET_LABEL(-1, CustomWindow::OnSetLabelEvent)
@@ -293,7 +458,7 @@ END_EVENT_TABLE()
 /// \param addStyle int
 ///
 /////////////////////////////////////////////////
-CustomWindow::CustomWindow(wxWindow* parent, const NumeRe::Window& windowRef, int addStyle) : wxFrame(parent, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, addStyle | wxRESIZE_BORDER | wxCAPTION | wxCLOSE_BOX | wxMAXIMIZE_BOX | wxMINIMIZE_BOX), m_windowRef(windowRef)
+CustomWindow::CustomWindow(wxWindow* parent, const NumeRe::Window& windowRef, int addStyle) : wxFrame(parent, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, addStyle | wxRESIZE_BORDER | wxCAPTION | wxCLOSE_BOX | wxMAXIMIZE_BOX | wxMINIMIZE_BOX), m_windowRef(windowRef), m_dialogLock(nullptr)
 {
     m_windowRef.connect(this);
 
@@ -362,6 +527,9 @@ void CustomWindow::layout()
     // Create a status bar
     CreateStatusBar();
 
+    if (layoutGroup->Attribute("statustext"))
+        setStatusText(layoutGroup->Attribute("statustext"));
+
     // Evaluate the size information
     if (layoutGroup->Attribute("size"))
     {
@@ -377,6 +545,8 @@ void CustomWindow::layout()
     }
     else
         SetClientSize(wxSize(800,600));
+
+    Layout();
 
 
     //wxBoxSizer* vsizer = new wxBoxSizer(wxVERTICAL);
@@ -418,9 +588,16 @@ void CustomWindow::layoutChild(const tinyxml2::XMLElement* currentChild, wxWindo
 
         // Evaluate the state attribute
         if (currentChild->Attribute("state"))
-            state = currentChild->Attribute("state", "disabled") ? DISABLED : (currentChild->Attribute("state", "hidden") ? HIDDEN : ENABLED);
+        {
+            if (currentChild->Attribute("state", "disabled"))
+                state = DISABLED;
+            else if (currentChild->Attribute("state", "hidden"))
+                state = HIDDEN;
+            else if (currentChild->Attribute("state", "readonly"))
+                state = READONLY;
+        }
 
-        // evaluat the font attribute
+        // evaluate the font attribute
         if (currentChild->Attribute("font"))
         {
             wxString sFont = currentChild->Attribute("font");
@@ -466,8 +643,9 @@ void CustomWindow::layoutChild(const tinyxml2::XMLElement* currentChild, wxWindo
 
         if (sValue == "button")
         {
+            int proportion = currentChild->IntAttribute("prop", 1);
             // Add a button
-            wxButton* button = _groupPanel->CreateButton(currParent, currSizer, removeQuotationMarks(text), id, alignment);
+            wxButton* button = _groupPanel->CreateButton(currParent, currSizer, removeQuotationMarks(text), id, alignment, proportion);
             button->SetFont(font);
             m_windowItems[id] = std::make_pair(CustomWindow::BUTTON, button);
 
@@ -477,7 +655,7 @@ void CustomWindow::layoutChild(const tinyxml2::XMLElement* currentChild, wxWindo
             if (currentChild->Attribute("color"))
                 button->SetForegroundColour(toWxColour(currentChild->Attribute("color")));
 
-            if (state == DISABLED)
+            if (state == DISABLED || state == READONLY)
                 button->Disable();
             else if (state == HIDDEN)
                 button->Hide();
@@ -498,7 +676,7 @@ void CustomWindow::layoutChild(const tinyxml2::XMLElement* currentChild, wxWindo
             if (currentChild->Attribute("color"))
                 checkbox->SetBackgroundColour(toWxColour(currentChild->Attribute("color")));
 
-            if (state == DISABLED)
+            if (state == DISABLED || state == READONLY)
                 checkbox->Disable();
             else if (state == HIDDEN)
                 checkbox->Hide();
@@ -525,7 +703,7 @@ void CustomWindow::layoutChild(const tinyxml2::XMLElement* currentChild, wxWindo
             if (currentChild->Attribute("onchange"))
                 m_eventTable[id].onchange = currentChild->Attribute("onchange");
 
-            if (state == DISABLED)
+            if (state == DISABLED || state == READONLY)
                 radiobox->Disable();
             else if (state == HIDDEN)
                 radiobox->Hide();
@@ -558,7 +736,7 @@ void CustomWindow::layoutChild(const tinyxml2::XMLElement* currentChild, wxWindo
             if (currentChild->Attribute("color"))
                 spinctrl->SetBackgroundColour(toWxColour(currentChild->Attribute("color")));
 
-            if (state == DISABLED)
+            if (state == DISABLED || state == READONLY)
                 spinctrl->Enable(false);
             else if (state == HIDDEN)
                 spinctrl->Show(false);
@@ -566,6 +744,7 @@ void CustomWindow::layoutChild(const tinyxml2::XMLElement* currentChild, wxWindo
         else if (sValue == "slider")
         {
             // Add a slider
+            int proportion = currentChild->IntAttribute("prop", 0);
             int nMin = 0, nMax = 100, nValue = 0;
             int style = wxHORIZONTAL;
 
@@ -581,7 +760,7 @@ void CustomWindow::layoutChild(const tinyxml2::XMLElement* currentChild, wxWindo
             if (currentChild->Attribute("value"))
                 nValue = currentChild->DoubleAttribute("value");
 
-            wxSlider* slider = _groupPanel->CreateSlider(currParent, currSizer, nMin, nMax, nValue, style, id, alignment);
+            wxSlider* slider = _groupPanel->CreateSlider(currParent, currSizer, nMin, nMax, nValue, style, id, alignment, proportion);
             slider->SetFont(font);
             m_windowItems[id] = std::make_pair(CustomWindow::SLIDER, slider);
 
@@ -591,7 +770,7 @@ void CustomWindow::layoutChild(const tinyxml2::XMLElement* currentChild, wxWindo
             if (currentChild->Attribute("color"))
                 slider->SetForegroundColour(toWxColour(currentChild->Attribute("color")));
 
-            if (state == DISABLED)
+            if (state == DISABLED || state == READONLY)
                 slider->Enable(false);
             else if (state == HIDDEN)
                 slider->Show(false);
@@ -599,19 +778,20 @@ void CustomWindow::layoutChild(const tinyxml2::XMLElement* currentChild, wxWindo
         else if (sValue == "gauge")
         {
             // Add a gauge
+            int proportion = currentChild->IntAttribute("prop", 0);
             wxString label;
             int style = wxHORIZONTAL;
 
             if (currentChild->Attribute("type"))
                 style = currentChild->Attribute("type", "horizontal") ? wxGA_HORIZONTAL | wxGA_SMOOTH : wxGA_VERTICAL | wxGA_SMOOTH;
 
-            wxGauge* gauge = _groupPanel->CreateGauge(currParent, currSizer, style, id, alignment);
+            wxGauge* gauge = _groupPanel->CreateGauge(currParent, currSizer, style, id, alignment, proportion);
             m_windowItems[id] = std::make_pair(CustomWindow::GAUGE, gauge);
 
             if (currentChild->Attribute("value"))
                 gauge->SetValue(currentChild->DoubleAttribute("value"));
 
-            if (state == DISABLED)
+            if (state == DISABLED || state == READONLY)
                 gauge->Disable();
             else if (state == HIDDEN)
                 gauge->Hide();
@@ -619,6 +799,7 @@ void CustomWindow::layoutChild(const tinyxml2::XMLElement* currentChild, wxWindo
         else if (sValue == "dropdown")
         {
             // Add a dropdown
+            int proportion = currentChild->IntAttribute("prop", 1);
             wxArrayString choices;
 
             if (currentChild->Attribute("label"))
@@ -629,7 +810,7 @@ void CustomWindow::layoutChild(const tinyxml2::XMLElement* currentChild, wxWindo
             else
                 choices = getChoices(text);
 
-            wxChoice* choice = _groupPanel->CreateChoices(currParent, currSizer, choices, id, alignment);
+            wxChoice* choice = _groupPanel->CreateChoices(currParent, currSizer, choices, id, alignment, proportion);
             m_windowItems[id] = std::make_pair(CustomWindow::DROPDOWN, choice);
 
             if (currentChild->Attribute("value"))
@@ -641,7 +822,7 @@ void CustomWindow::layoutChild(const tinyxml2::XMLElement* currentChild, wxWindo
             if (currentChild->Attribute("color"))
                 choice->SetBackgroundColour(toWxColour(currentChild->Attribute("color")));
 
-            if (state == DISABLED)
+            if (state == DISABLED || state == READONLY)
                 choice->Disable();
             else if (state == HIDDEN)
                 choice->Hide();
@@ -649,6 +830,7 @@ void CustomWindow::layoutChild(const tinyxml2::XMLElement* currentChild, wxWindo
         else if (sValue == "combobox")
         {
             // Add a combobox
+            int proportion = currentChild->IntAttribute("prop", 1);
             wxArrayString choices;
 
             if (currentChild->Attribute("label"))
@@ -659,7 +841,7 @@ void CustomWindow::layoutChild(const tinyxml2::XMLElement* currentChild, wxWindo
             else
                 choices = getChoices(text);
 
-            wxComboBox* combo = _groupPanel->CreateComboBox(currParent, currSizer, choices, id, alignment);
+            wxComboBox* combo = _groupPanel->CreateComboBox(currParent, currSizer, choices, id, alignment, proportion);
             m_windowItems[id] = std::make_pair(CustomWindow::COMBOBOX, combo);
 
             if (currentChild->Attribute("value"))
@@ -671,7 +853,7 @@ void CustomWindow::layoutChild(const tinyxml2::XMLElement* currentChild, wxWindo
             if (currentChild->Attribute("color"))
                 combo->SetBackgroundColour(toWxColour(currentChild->Attribute("color")));
 
-            if (state == DISABLED)
+            if (state == DISABLED || state == READONLY)
                 combo->Disable();
             else if (state == HIDDEN)
                 combo->Hide();
@@ -679,6 +861,7 @@ void CustomWindow::layoutChild(const tinyxml2::XMLElement* currentChild, wxWindo
         else if (sValue == "textfield")
         {
             // Add a textctrl
+            int proportion = currentChild->IntAttribute("prop", 0);
             int style = wxTE_PROCESS_ENTER;
             wxSize size(310,-1);
 
@@ -701,7 +884,7 @@ void CustomWindow::layoutChild(const tinyxml2::XMLElement* currentChild, wxWindo
             if (currentChild->Attribute("label"))
                 label = currentChild->Attribute("label");
 
-            TextField* textctrl = _groupPanel->CreateTextInput(currParent, currSizer, label, removeQuotationMarks(text), style, id, size, alignment);
+            TextField* textctrl = _groupPanel->CreateTextInput(currParent, currSizer, label, removeQuotationMarks(text), style, id, size, alignment, proportion);
             textctrl->SetFont(font);
             m_windowItems[id] = std::make_pair(CustomWindow::TEXTCTRL, textctrl);
 
@@ -715,6 +898,79 @@ void CustomWindow::layoutChild(const tinyxml2::XMLElement* currentChild, wxWindo
                 textctrl->Enable(false);
             else if (state == HIDDEN)
                 textctrl->Show(false);
+
+            textctrl->SetEditable(state != READONLY);
+        }
+        else if (sValue == "lamp")
+        {
+            // Add a lamp
+            int proportion = currentChild->IntAttribute("prop", 0);
+            wxSize size(20,10);
+
+            if (currentChild->Attribute("size"))
+            {
+                wxString sSize = currentChild->Attribute("size");
+                long int x,y;
+                sSize.substr(0, sSize.find(',')).ToLong(&x);
+                sSize.substr(sSize.find(',')+1).ToLong(&y);
+
+                size.x = x;
+                size.y = y;
+            }
+
+            wxString label;
+
+            if (currentChild->Attribute("label"))
+                label = currentChild->Attribute("label");
+
+            TextField* textctrl = _groupPanel->CreateLamp(currParent, currSizer, label, wxEmptyString, 0, id, size, alignment, proportion);
+            m_windowItems[id] = std::make_pair(CustomWindow::LAMP, textctrl);
+
+            //if (currentChild->Attribute("onclick"))
+            //    m_eventTable[id].onclick = currentChild->Attribute("onclick");
+
+            if (currentChild->Attribute("color"))
+                textctrl->SetBackgroundColour(toWxColour(currentChild->Attribute("color")));
+            else if (currentChild->Attribute("value"))
+                 textctrl->SetBackgroundColour(colorFromLampStates(currentChild->Attribute("value")));
+
+            if (state == DISABLED || state == READONLY)
+                textctrl->Enable(false);
+            else if (state == HIDDEN)
+                textctrl->Show(false);
+        }
+        else if (sValue == "datetimepicker")
+        {
+            // Add a datetimepicker
+            int proportion = currentChild->IntAttribute("prop", 1);
+            int style = DT_PICKER_DATE | DT_PICKER_TIME;
+
+            if (currentChild->Attribute("type"))
+            {
+                if (currentChild->Attribute("type", "timepicker"))
+                    style = DT_PICKER_TIME;
+
+                if (currentChild->Attribute("type", "datepicker"))
+                    style = DT_PICKER_DATE;
+            }
+
+            DateTimePicker* dtPicker = _groupPanel->CreateDateTimePicker(currParent, currSizer, wxDefaultDateTime, style, id, alignment, proportion);
+
+            if (currentChild->Attribute("value"))
+            {
+                wxString time = currentChild->Attribute("value");
+                dtPicker->SetValue(removeQuotationMarks(time));
+            }
+
+            m_windowItems[id] = std::make_pair(CustomWindow::DATETIMEPICKER, dtPicker);
+
+            if (currentChild->Attribute("onchange"))
+                m_eventTable[id].onchange = currentChild->Attribute("onchange");
+
+            if (state == DISABLED || state == READONLY)
+                dtPicker->Enable(false);
+            else if (state == HIDDEN)
+                dtPicker->Show(false);
         }
         else if (sValue == "statictext" || sValue == "text")
         {
@@ -793,9 +1049,9 @@ void CustomWindow::layoutChild(const tinyxml2::XMLElement* currentChild, wxWindo
                 mgl->SetMinClientSize(wxSize(x,y));
             }
             else
-                mgl->SetMinClientSize(wxSize(640,480));
+                mgl->SetMinClientSize(wxSize(600,400));
 
-            currSizer->Add(mgl, 1, alignment | wxALL | wxEXPAND | wxRESERVE_SPACE_EVEN_IF_HIDDEN, 5);
+            currSizer->Add(mgl, !currentChild->Attribute("size"), alignment | wxALL | wxEXPAND | wxRESERVE_SPACE_EVEN_IF_HIDDEN, 5);
 
             if (currentChild->Attribute("onclick"))
                 m_eventTable[id].onclick = currentChild->Attribute("onclick");
@@ -803,10 +1059,11 @@ void CustomWindow::layoutChild(const tinyxml2::XMLElement* currentChild, wxWindo
         else if (sValue == "tablegrid")
         {
             // Add a table grid
+            int proportion = currentChild->IntAttribute("prop", 1);
             TableViewer* table = new TableViewer(currParent, id, nullptr, nullptr, wxDefaultPosition, wxDefaultSize, wxWANTS_CHARS | wxBORDER_THEME);
-            currSizer->Add(table, 1, alignment | wxALL | wxEXPAND | wxRESERVE_SPACE_EVEN_IF_HIDDEN, 5);
+            currSizer->Add(table, proportion, alignment | wxALL | wxEXPAND | wxRESERVE_SPACE_EVEN_IF_HIDDEN | wxFIXED_MINSIZE, 5);
             m_windowItems[id] = std::make_pair(CustomWindow::TABLE, table);
-            table->SetTableReadOnly(false);
+            table->SetTableReadOnly(state == READONLY);
 
             if (currentChild->Attribute("size"))
             {
@@ -816,11 +1073,13 @@ void CustomWindow::layoutChild(const tinyxml2::XMLElement* currentChild, wxWindo
                 sSize.substr(sSize.find(',')+1).ToLong(&y);
                 NumeRe::Table data(x,y);
                 table->SetData(data, "", "");
+                table->SetMinSize(table->calculateMinSize());
             }
             else
             {
                 NumeRe::Table data(1,1);
                 table->SetData(data, "", "");
+                table->SetMinSize(wxSize(-1, 300));
             }
 
             if (currentChild->Attribute("onclick"))
@@ -833,10 +1092,13 @@ void CustomWindow::layoutChild(const tinyxml2::XMLElement* currentChild, wxWindo
                 table->Enable(false);
             else if (state == HIDDEN)
                 table->Show(false);
+
+            //table->SetSize(table->getSize)
         }
         else if (sValue == "treelist")
         {
             // Add a treelist control
+            int proportion = currentChild->IntAttribute("prop", 1);
             int style = wxTL_SINGLE;
 
             if (currentChild->Attribute("type"))
@@ -844,8 +1106,9 @@ void CustomWindow::layoutChild(const tinyxml2::XMLElement* currentChild, wxWindo
 
             wxArrayString labels;
             wxArrayString values;
+            int colSize = GetClientSize().x;
 
-            wxTreeListCtrl* listCtrl = _groupPanel->CreateTreeListCtrl(currParent, currSizer, style, wxDefaultSize, id, alignment);
+            wxTreeListCtrl* listCtrl = _groupPanel->CreateTreeListCtrl(currParent, currSizer, style, wxDefaultSize, id, alignment, proportion);
             m_windowItems[id] = std::make_pair(CustomWindow::TREELIST, listCtrl);
             listCtrl->SetFont(font);
 
@@ -865,9 +1128,11 @@ void CustomWindow::layoutChild(const tinyxml2::XMLElement* currentChild, wxWindo
             {
                 if (labels.size())
                 {
+                    colSize = std::max(colSize / (int)labels.size() - 2, MINCOLSIZE);
+
                     for (size_t j = 0; j < labels.size(); j++)
                     {
-                        listCtrl->AppendColumn(labels[j]);
+                        listCtrl->AppendColumn(labels[j], colSize);
                     }
                 }
 
@@ -880,14 +1145,14 @@ void CustomWindow::layoutChild(const tinyxml2::XMLElement* currentChild, wxWindo
                 sSize.substr(0, sSize.find(',')).ToLong(&row);
                 sSize.substr(sSize.find(',')+1).ToLong(&col);
 
-                wxSize ctrlSize = GetClientSize();
+                colSize = std::max(colSize / (int)col - 2, MINCOLSIZE);
 
                 for (size_t j = 0; j < (size_t)col; j++)
                 {
                     if (labels.size() > j)
-                        listCtrl->AppendColumn(labels[j], ctrlSize.x/col - 2);
+                        listCtrl->AppendColumn(labels[j], colSize);
                     else
-                        listCtrl->AppendColumn("", ctrlSize.x/col - 2);
+                        listCtrl->AppendColumn("", colSize);
                 }
 
                 for (int i = 0; i < row; i++)
@@ -897,11 +1162,11 @@ void CustomWindow::layoutChild(const tinyxml2::XMLElement* currentChild, wxWindo
             }
             else if (labels.size())
             {
-                wxSize ctrlSize = GetClientSize();
+                colSize = std::max(colSize / (int)labels.size() - 2, MINCOLSIZE);
 
                 for (size_t j = 0; j < labels.size(); j++)
                 {
-                    listCtrl->AppendColumn(labels[j], ctrlSize.x / labels.size() - 2);
+                    listCtrl->AppendColumn(labels[j], colSize);
                 }
             }
 
@@ -911,7 +1176,7 @@ void CustomWindow::layoutChild(const tinyxml2::XMLElement* currentChild, wxWindo
             if (currentChild->Attribute("onactivate"))
                 m_eventTable[id].onactivate = currentChild->Attribute("onactivate");
 
-            if (state == DISABLED)
+            if (state == DISABLED || state == READONLY)
                 listCtrl->Enable(false);
             else if (state == HIDDEN)
                 listCtrl->Show(false);
@@ -1159,7 +1424,12 @@ void CustomWindow::handleEvent(wxEvent& event, const wxString& sEventType, const
 {
 #warning NOTE (numere#1#08/15/21): The "onclose" event is still undefined
     if (sEventType == "onclose")
+    {
+        if (isDialog())
+            endDialog("");
+
         return;
+    }
 
     // Try to find a defined event handler for
     // the current window item element
@@ -1176,7 +1446,7 @@ void CustomWindow::handleEvent(wxEvent& event, const wxString& sEventType, const
         else if (sEventType == "onactivate")
             sEventHandler = iter->second.onactivate;
 
-        if (sEventHandler[0] == '$' && sEventHandler.length() > 1 && (wxIsalnum(sEventHandler[1]) || sEventHandler[1] == '_'))
+        if (sEventHandler[0] == '$' && sEventHandler.length() > 1 && (wxIsalnum(sEventHandler[1]) || sEventHandler[1] == '_') && !isDialog())
         {
             // If the event handler starts with an
             // dollar, it must be a procedure
@@ -1186,6 +1456,10 @@ void CustomWindow::handleEvent(wxEvent& event, const wxString& sEventType, const
             // Get the parameters for the selected
             // window item
             getItemParameters(event.GetId(), params);
+
+            // Do not return the values of a tree list here
+            if (params.type == "treelist")
+                params.value = "nan";
 
             wxString kvl_event;
 
@@ -1262,6 +1536,13 @@ void CustomWindow::handleEvent(wxEvent& event, const wxString& sEventType, const
                 funcDef[1].ToLong(&id);
                 setItemState(funcDef[2], id);
             }
+            else if (funcDef.front() == "evt_enddialog" && funcDef.size() >= 2)
+            {
+                if (isDialog())
+                    endDialog(funcDef[1]);
+                else
+                    closeWindow();
+            }
         }
     }
 }
@@ -1337,6 +1618,21 @@ bool CustomWindow::getItemParameters(int windowItemID, WindowItemParams& params)
             params.label = convertToCodeString(static_cast<TextField*>(object.second)->GetLabel());
             params.color = toWxString(static_cast<TextField*>(object.second)->GetBackgroundColour());
 
+            if (!static_cast<wxTextCtrl*>(object.second)->IsEditable())
+                params.state = "readonly";
+
+            break;
+        case CustomWindow::LAMP:
+            params.type = "lamp";
+            params.label = convertToCodeString(static_cast<TextField*>(object.second)->GetLabel());
+            params.color = toWxString(static_cast<TextField*>(object.second)->GetBackgroundColour());
+            params.value = "\"" + lampStatesFromColor(static_cast<TextField*>(object.second)->GetBackgroundColour()) + "\"";
+
+            break;
+        case CustomWindow::DATETIMEPICKER:
+            params.type = "datetimepicker";
+            params.value = convertToCodeString(static_cast<DateTimePicker*>(object.second)->GetValue());
+
             break;
         case CustomWindow::RADIOGROUP:
         {
@@ -1357,10 +1653,18 @@ bool CustomWindow::getItemParameters(int windowItemID, WindowItemParams& params)
             for (size_t i = 0; i < choices->GetCount(); i++)
             {
                 if (params.label.length())
+                {
+                    if (params.label[0] != '{')
+                        params.label.insert(0, '{');
+
                     params.label += ", ";
+                }
 
                 params.label += convertToCodeString(choices->GetString(i));
             }
+
+            if (params.label[0] == '{')
+                params.label += '}';
 
             params.color = toWxString(static_cast<wxChoice*>(object.second)->GetBackgroundColour());
 
@@ -1379,10 +1683,18 @@ bool CustomWindow::getItemParameters(int windowItemID, WindowItemParams& params)
             for (size_t i = 0; i < combo->GetCount(); i++)
             {
                 if (params.label.length())
+                {
+                    if (params.label[0] != '{')
+                        params.label.insert(0, '{');
+
                     params.label += ", ";
+                }
 
                 params.label += convertToCodeString(combo->GetString(i));
             }
+
+            if (params.label[0] == '{')
+                params.label += '}';
 
             params.color = toWxString(static_cast<wxComboBox*>(object.second)->GetBackgroundColour());
 
@@ -1414,6 +1726,9 @@ bool CustomWindow::getItemParameters(int windowItemID, WindowItemParams& params)
             params.value = convertToCodeString(table->getSelectedValues());
             params.type = "tablegrid";
 
+            if (!table->IsEditable())
+                params.state = "readonly";
+
             break;
         }
         case CustomWindow::GRAPHER:
@@ -1431,10 +1746,18 @@ bool CustomWindow::getItemParameters(int windowItemID, WindowItemParams& params)
             for (size_t i = 0; i < listCtrl->GetColumnCount(); i++)
             {
                 if (params.label.length())
+                {
+                    if (params.label[0] != '{')
+                        params.label.insert(0, '{');
+
                     params.label += ", ";
+                }
 
                 params.label += convertToCodeString(listCtrl->GetDataView()->GetColumn(i)->GetTitle());
             }
+
+            if (params.label[0] == '{')
+                params.label += '}';
 
             params.value = getTreeListCtrlValue(listCtrl);
             params.type = "treelist";
@@ -1461,43 +1784,10 @@ bool CustomWindow::getItemParameters(int windowItemID, WindowItemParams& params)
             break;
     }
 
-    if (object.first != CustomWindow::MENUITEM)
+    if (object.first != CustomWindow::MENUITEM && !params.state.length())
         params.state = !static_cast<wxWindow*>(object.second)->IsShown() ? "hidden" : static_cast<wxWindow*>(object.second)->IsEnabled() ? "enabled" : "disabled";
 
     return true;
-}
-
-
-/////////////////////////////////////////////////
-/// \brief A simple tokenizer to separate a list
-/// of strings into multiple strings.
-///
-/// \param choices wxString&
-/// \return wxArrayString
-///
-/////////////////////////////////////////////////
-wxArrayString CustomWindow::getChoices(wxString& choices) const
-{
-    wxArrayString choicesArray;
-    size_t nQuotes = 0;
-
-    for (int i = 0; i < (int)choices.length(); i++)
-    {
-        if (choices[i] == '"' && (!i || choices[i-1] != '\\'))
-            nQuotes++;
-
-        if (!(nQuotes % 2) && choices[i] == ',')
-        {
-            choicesArray.Add(removeQuotationMarks(choices.substr(0, i)));
-            choices.erase(0, i+1);
-            i = -1;
-        }
-    }
-
-    if (choices.length())
-        choicesArray.Add(removeQuotationMarks(choices));
-
-    return choicesArray;
 }
 
 
@@ -1520,35 +1810,13 @@ wxArrayString CustomWindow::decodeEventHandlerFunction(const wxString& sEventHan
 
     if (sParams.length())
     {
-        wxArrayString choices = getChoices(sParams);
+        wxArrayString choices = getChoices(sParams, true);
 
         for (size_t i = 0; i < choices.size(); i++)
             funcDef.Add(choices[i]);
     }
 
     return funcDef;
-}
-
-
-/////////////////////////////////////////////////
-/// \brief Private member function to convert a
-/// kernel string into a usual string.
-///
-/// \param sString wxString
-/// \return wxString
-///
-/////////////////////////////////////////////////
-wxString CustomWindow::removeQuotationMarks(wxString sString) const
-{
-    sString.Trim(false);
-    sString.Trim(true);
-
-    if (sString.length() && sString[0] == '"' && sString[sString.length()-1] == '"')
-        sString = sString.substr(1, sString.length()-2);
-
-    sString.Replace("\\\"", "\"");
-
-    return sString;
 }
 
 
@@ -1750,6 +2018,8 @@ wxString CustomWindow::getItemSelection(int windowItemID) const
         case CustomWindow::MENUITEM:
         case CustomWindow::GRAPHER:
         case CustomWindow::IMAGE:
+        case CustomWindow::DATETIMEPICKER:
+        case CustomWindow::LAMP:
             break;
     }
 
@@ -1799,6 +2069,42 @@ wxString CustomWindow::getProperties() const
         return "\"\"";
 
     return sProperties;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Returns the contents of the status bar
+/// if any available.
+///
+/// \return wxString
+///
+/////////////////////////////////////////////////
+wxString CustomWindow::getStatusText() const
+{
+    const wxStatusBar* bar = GetStatusBar();
+    int numFields = bar->GetFieldsCount();
+    wxString sStatusText;
+
+    for (int i = 0; i < numFields; i++)
+    {
+        if (sStatusText.length())
+        {
+            if (sStatusText[0] != '{')
+                sStatusText.insert(0, '{');
+
+            sStatusText += ",";
+        }
+
+        sStatusText += "\"" + bar->GetStatusText(i) + "\"";
+    }
+
+    if (!sStatusText.length())
+        return "\"\"";
+
+    if (sStatusText[0] == '{')
+        sStatusText += '}';
+
+    return sStatusText;
 }
 
 
@@ -1913,6 +2219,24 @@ bool CustomWindow::setItemValue(WindowItemValue& _value, int windowItemID)
         case CustomWindow::TEXTCTRL:
             static_cast<TextField*>(object.second)->ChangeValue(removeQuotationMarks(_value.stringValue));
             break;
+        case CustomWindow::LAMP:
+        {
+            wxColour color = colorFromLampStates(_value.stringValue);
+            static_cast<wxTextCtrl*>(object.second)->SetBackgroundColour(color);
+            Refresh();
+            break;
+        }
+        case CustomWindow::DATETIMEPICKER:
+        {
+            //wxDateTime dt;
+            //wxString::const_iterator end;
+            //
+            //if (!dt.ParseDateTime(removeQuotationMarks(_value.stringValue), &end))
+            //    dt.ParseDate(removeQuotationMarks(_value.stringValue), &end);
+
+            static_cast<DateTimePicker*>(object.second)->SetValue(removeQuotationMarks(_value.stringValue));
+            break;
+        }
         case CustomWindow::GAUGE:
         {
             long int nVal;
@@ -2043,6 +2367,7 @@ bool CustomWindow::setItemLabel(const wxString& _label, int windowItemID)
             static_cast<wxStaticText*>(object.second)->SetLabel(removeQuotationMarks(_label));
             break;
         case CustomWindow::TEXTCTRL:
+        case CustomWindow::LAMP:
             static_cast<TextField*>(object.second)->SetLabel(removeQuotationMarks(_label));
             break;
         case CustomWindow::SPINCTRL:
@@ -2089,6 +2414,7 @@ bool CustomWindow::setItemLabel(const wxString& _label, int windowItemID)
         case CustomWindow::TABLE:
         case CustomWindow::GRAPHER:
         case CustomWindow::SLIDER:
+        case CustomWindow::DATETIMEPICKER:
             break;
     }
 
@@ -2130,6 +2456,23 @@ bool CustomWindow::setItemState(const wxString& _state, int windowItemID)
 
     if (_state == "hidden")
         window->Show(false);
+    else if (_state == "readonly")
+    {
+        window->Show(true);
+
+        if (object.first == CustomWindow::TABLE)
+        {
+            window->Enable(true);
+            static_cast<TableViewer*>(window)->SetTableReadOnly(true);
+        }
+        else if (object.first == CustomWindow::TEXTCTRL)
+        {
+            window->Enable(true);
+            static_cast<TextField*>(window)->SetEditable(false);
+        }
+        else
+            window->Enable(false);
+    }
     else if (_state == "disabled")
     {
         window->Show(true);
@@ -2139,6 +2482,11 @@ bool CustomWindow::setItemState(const wxString& _state, int windowItemID)
     {
         window->Show(true);
         window->Enable(true);
+
+        if (object.first == CustomWindow::TABLE)
+            static_cast<TableViewer*>(window)->SetTableReadOnly(false);
+        else if (object.first == CustomWindow::TEXTCTRL)
+            static_cast<TextField*>(window)->SetEditable(true);
     }
 
     return true;
@@ -2186,6 +2534,9 @@ bool CustomWindow::setItemColor(const wxString& _color, int windowItemID)
         case CustomWindow::TEXTCTRL:
             static_cast<wxTextCtrl*>(object.second)->SetBackgroundColour(color);
             break;
+        case CustomWindow::LAMP:
+            static_cast<wxTextCtrl*>(object.second)->SetBackgroundColour(color);
+            break;
         case CustomWindow::SPINCTRL:
             static_cast<wxSpinCtrl*>(object.second)->SetBackgroundColour(color);
             break;
@@ -2207,6 +2558,7 @@ bool CustomWindow::setItemColor(const wxString& _color, int windowItemID)
         case CustomWindow::TABLE:
         case CustomWindow::GRAPHER:
         case CustomWindow::SLIDER:
+        case CustomWindow::DATETIMEPICKER:
             break;
     }
 
@@ -2301,6 +2653,8 @@ bool CustomWindow::setItemSelection(int selectionID, int selectionID2, int windo
         case CustomWindow::MENUITEM:
         case CustomWindow::GRAPHER:
         case CustomWindow::IMAGE:
+        case CustomWindow::DATETIMEPICKER:
+        case CustomWindow::LAMP:
             break;
     }
 
@@ -2356,6 +2710,12 @@ bool CustomWindow::setItemGraph(GraphHelper* _helper, int windowItemID)
 
     mgl->SetDraw(_helper);
     mgl->SetGraph(_helper->setGrapher());
+
+    for (size_t i = 0; i < 4; i++)
+    {
+        mgl->timeAxes[i] = _helper->timeAxes[i];
+    }
+
     mgl->SetSize(s.x, s.y);
     mgl->Refresh();
 
@@ -2386,6 +2746,31 @@ bool CustomWindow::setPropValue(const wxString& _value, const wxString& varName)
     }
 
     return false;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Sets the text into the status bar.
+///
+/// \param _value wxString
+/// \return bool
+///
+/////////////////////////////////////////////////
+bool CustomWindow::setStatusText(wxString _value)
+{
+    wxArrayString values = getChoices(_value);
+
+    wxStatusBar* bar = GetStatusBar();
+
+    if (bar->GetFieldsCount() != values.size())
+        bar->SetFieldsCount(values.size());
+
+    for (size_t i = 0; i < values.size(); i++)
+    {
+        bar->SetStatusText(values[i], i);
+    }
+
+    return true;
 }
 
 
@@ -2540,6 +2925,19 @@ void CustomWindow::OnTreeListActivateEvent(wxTreeListEvent& event)
         return;
 
     handleEvent(event, "onactivate", EventPosition(enumerateListItems(listCtrl, event.GetItem())));
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Date and time picker event handler.
+///
+/// \param event wxDateEvent&
+/// \return void
+///
+/////////////////////////////////////////////////
+void CustomWindow::OnDateEvent(wxDateEvent& event)
+{
+    handleEvent(event, "onchange");
 }
 
 
