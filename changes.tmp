@@ -43,6 +43,9 @@ New	We added an experimental support for using the column headlines as table ind
 Fixed	Table methods are now evaluated correctly within loops.
 Cleaned	If the debugger is active, the usual stop button now also works as expected and aborts the whole process.
 Added	The table viewer will now group common table header rows together, creating a virtual hierarchy.
+Fixed	The static code analyzer will now detect more missing semicolons.
+Fixed	Data expressions may now be used within table methods.
+Fixed	Indices are now better checked.
 Cleaned	Improved the internal interface of "stats". If the result is stored to a target table, the first column will now contain the stats names.
 Cleaned	Units of loaded JCAMP-DX files are now written in English
 Cleaned	"url" now has a progress bar for larger files and accepts now longer transmissins.
