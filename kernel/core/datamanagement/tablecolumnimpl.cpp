@@ -1716,13 +1716,12 @@ TableColumn* StringColumn::convert(ColumnType type)
             return nullptr;
     }
 
+    // NEW Marco
     NumberFormat numFormat = NUM_NONE;
     if (convType == CONVTYPE_DATE_TIME)
         col = new DateTimeColumn(m_data.size());
     else if (convType == CONVTYPE_VALUE) {
         // NEW Marco
-        // function to check for number format
-        //m_categories[m_data[i]]
         numFormat = detectNumberFormat(m_data);
         col = new ValueColumn(m_data.size());
     }
@@ -2220,8 +2219,6 @@ TableColumn* CategoricalColumn::convert(ColumnType type)
         col = new DateTimeColumn(m_data.size());
     else if (convType == CONVTYPE_VALUE) {
         // NEW Marco
-        // function to check for number format
-        //m_categories[m_data[i]]
         numFormat = detectNumberFormat(m_categories, m_data);
         col = new ValueColumn(m_data.size());
     }
@@ -2238,7 +2235,7 @@ TableColumn* CategoricalColumn::convert(ColumnType type)
             col->setValue(i, -INFINITY);
         else if (convType == CONVTYPE_VALUE)
         {
-            // TODO New Marco 2
+            // TODO Marco 2
             std::string strval = m_categories[m_data[i]];
             strChangeNumberFormat(strval, numFormat);
             //replaceAll(strval, ",", ".");

@@ -24,6 +24,7 @@
 #include <cstring>
 #include <sstream>
 #include <iomanip>
+#include <regex>
 
 // Forward declarations
 std::string getNextArgument(std::string& sArgList, bool bCut);
@@ -1825,7 +1826,15 @@ std::string replaceControlCharacters(std::string sToModify)
 }
 
 
-// count and last position
+/////////////////////////////////////////////////
+/// \brief This function counts appearences of a given Substring inside a string.
+///        Returns a pair with first the # appearences of the substring and second the index of last appeareance
+///
+/// \param str std::string&
+/// \param subStr const std::string&
+/// \return std::pair<int, int>
+///
+/////////////////////////////////////////////////
 std::pair<int, int> countSubstringAppereance(std::string &str,const std::string &subStr){
     int cnt = 0;
     int lastPos = 0;
@@ -1839,39 +1848,17 @@ std::pair<int, int> countSubstringAppereance(std::string &str,const std::string 
     return std::pair<int, int>(cnt, lastPos);
 }
 
-//NEW from Marco
-#include <regex>
-NumberFormat detectNumberFormat(std::vector<std::string> &sNumVec,const std::vector<int> &indizes){ //TODO
-    //pass by ref to not copy
 
-    //there are two parts to take cate of:
-    // - thousands separator, which can be '.' or ',' however there are always 3 digits inbetween
-    // - decimal fraction, whoich can also be '.' or ',' and should be used vice versa to the thousands seperator
-    // if only one is in the string, we can assume it is the decimal fraction ?
-
-    // wenn über alle werte in col:
-    // split in single nums
-    // count ',' and '.' per number & what of both was accured last
-    // if one char always accures 1 or 0
-    // -> if ',' always last this is decimal
-    // elseif '.' always 1 or 0 and last ?
-    // -> '.' decimal
-    // elif only ',' & more often than 1 -> ',' is thousands sep
-    // only '-' & more often than 1 -> '.'
-
-
-    // V1 :
-    // we assume all Numbers are from same style
-    // further we assume all are correct
-    // therfore we can skip the loop as soon as we find a unique example:
-    // these are:
-    //      -> both '.' & ',' in the same Number use accordingly
-    //      -> one char appearse more often then once in Number & there are 3 digits inbetween:
-    //      -> one char appearse once, but after the car are != 3 digits
-
-
-    // 1 if '.' is for thousands and ',' is decimals
-    // 2 if ',' is for thousands and '.' is decimals
+/////////////////////////////////////////////////
+/// \brief This function tries to find Number Format in  vector of strings containing numbers
+///        Assumtion is that Format is continous trough the whole vector
+///
+/// \param sNumVec std::vector<std::string>&
+/// \param indizes const std::vector<int>&
+/// \return NumberFormat
+///
+/////////////////////////////////////////////////
+NumberFormat detectNumberFormat(std::vector<std::string> &sNumVec,const std::vector<int> &indizes){
 
     // TODO:
     // what about 5.1+E10                               : should be fine
@@ -1945,7 +1932,15 @@ NumberFormat detectNumberFormat(std::vector<std::string> &sNumVec,const std::vec
     return NUM_NONE;
 }
 
-// TODO
+
+/////////////////////////////////////////////////
+/// \brief This function changes Number Format inside a String
+///
+/// \param sNum std::string&
+/// \param numFormat NumberFormat
+/// \return void
+///
+/////////////////////////////////////////////////
 void strChangeNumberFormat(std::string &sNum, NumberFormat numFormat){
     // TODO to correctly handle omplex numbers or stuff like +E10 do we have
     // to isolate numbers parts ?
@@ -1963,7 +1958,7 @@ void strChangeNumberFormat(std::string &sNum, NumberFormat numFormat){
         break;
 
     case NUM_NONE:
-
+        // No valid Format, do nothing
         break;
     }
 }

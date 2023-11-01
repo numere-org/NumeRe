@@ -133,8 +133,8 @@ enum TimeDateFormat
 enum NumberFormat
 {
     NUM_NONE = 0x0,
-    NUM_EU = 0x1,  // '.' as thousand sep & ',' as decimal
-    NUM_US = 0x2   // ',' as thousand sep & ',' as decimal
+    NUM_EU = 0x1,  // '.' as thousand seperator & ',' as decimal seperator
+    NUM_US = 0x2   // ',' as thousand seperator & '.' as decimal seperator
 };
 
 std::string toString(int nNumber, const Settings& _option);
@@ -219,7 +219,6 @@ std::vector<std::string> split(const std::string& sStr, char cSplit);
 std::string ellipsize(const std::string& sLongString, size_t nMaxStringLength = 1024);
 
 bool isEqualStripped(StringView str1, StringView str2);
-
 
 std::pair<int, int> countSubstringAppereance(std::string &str,const std::string &subStr);
 void strChangeNumberFormat(std::string &sNum, NumberFormat numFormat);
