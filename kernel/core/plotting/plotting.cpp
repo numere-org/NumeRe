@@ -2224,15 +2224,43 @@ static void faceAdapted(mglGraph* _graph, const mglPoint& p1, const mglPoint& p2
 {
     if (sStyle.substr(0, 1) == "#")
       {
-        _graph->Line(p4, p2, sStyle.c_str());
-        _graph->Line(p2, p1, sStyle.c_str());
-        _graph->Line(p1, p3, sStyle.c_str());
-        _graph->Line(p3, p4, sStyle.c_str());
+          if (size(sStyle) > 1)
+          {
+            _graph->Line(p4, p2, sStyle.substr(1, 1).c_str());
+            _graph->Line(p2, p1, sStyle.substr(1, 1).c_str());
+            _graph->Line(p1, p3, sStyle.substr(1, 1).c_str());
+            _graph->Line(p3, p4, sStyle.substr(1, 1).c_str());
+          }
+          else
+          {
+            _graph->Line(p4, p2, sStyle.c_str());
+            _graph->Line(p2, p1, sStyle.c_str());
+            _graph->Line(p1, p3, sStyle.c_str());
+            _graph->Line(p3, p4, sStyle.c_str());
+          }
+
+
         return;
       }
-
-  _graph->Face(p1, p2, p3, p4, sStyle.c_str());
-  return;
+    if (size(sStyle) == 2)
+    {
+        _graph->Face(p1, p2, p3, p4, sStyle.substr(1, 1).c_str());
+        _graph->Line(p4, p2, "#");
+        _graph->Line(p2, p1, "#");
+        _graph->Line(p1, p3, "#");
+        _graph->Line(p3, p4, "#");
+    }
+    else if (size(sStyle) > 2)
+    {
+        _graph->Face(p1, p2, p3, p4, sStyle.substr(1, 1).c_str());
+        _graph->Line(p4, p2, sStyle.substr(2, 1).c_str());
+        _graph->Line(p2, p1, sStyle.substr(2, 1).c_str());
+        _graph->Line(p1, p3, sStyle.substr(2, 1).c_str());
+        _graph->Line(p3, p4, sStyle.substr(2, 1).c_str());
+    }
+    else
+        _graph->Face(p1, p2, p3, p4, sStyle.c_str());
+    return;
 }
 
 
