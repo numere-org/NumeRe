@@ -134,7 +134,9 @@ enum NumberFormat
 {
     NUM_NONE = 0x0,
     NUM_EU = 0x1,  // '.' as thousand seperator & ',' as decimal seperator
-    NUM_US = 0x2   // ',' as thousand seperator & '.' as decimal seperator
+    NUM_US = 0x2,   // ',' as thousand seperator & '.' as decimal seperator
+    NUM_SPACE = 0x4,
+    NUM_INVALID = 0x8
 };
 
 std::string toString(int nNumber, const Settings& _option);
@@ -201,6 +203,7 @@ size_t versionToInt(std::string);
 std::string intToVersion(size_t);
 
 bool isConvertible(const std::string& sStr, ConvertibleType type = CONVTYPE_VALUE);
+bool isConvertible(const std::string& sStr, ConvertibleType type, NumberFormat& nFormat);
 int detectTimeDateFormat(const std::string&);
 
 std::string toSystemCodePage(std::string sOutput);

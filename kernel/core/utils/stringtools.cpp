@@ -1000,7 +1000,13 @@ static bool isDateTimePattern(const std::string& sStr, size_t pos)
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool isConvertible(const std::string& sStr, ConvertibleType type)
+bool isConvertible(const std::string& sStr, ConvertibleType type){
+    NumberFormat nForm;
+    return isConvertible(sStr, type, nForm);
+}
+
+//TODO NEW
+bool isConvertible(const std::string& sStr, ConvertibleType type, NumberFormat &nFormat)
 {
     if (type == CONVTYPE_VALUE)
     {
@@ -1017,17 +1023,98 @@ bool isConvertible(const std::string& sStr, ConvertibleType type)
             || tolower(sStr.back()) == 'e')
             return false;
 
+        // NEW
+        bool inNum = false;
+        int numStartIdx = 0;
+        int lastSepIdx = -1;
+
+        // TODO is a starting decimal seperator valid ? If so we know what Format hast do be
+        // -- die lokig failed combis aus xxx.xxx,xxx.xxx,xxx ????
+        nFormat = NUM_NONE;
+        if(sStr[0] == '.')
+            nFormat = NUM_US;
+        else if (sStr[0] == ',')
+            nFormat = NUM_EU;
+
+        if(nFormat != NUM_NONE){
+            lastSepIdx = 0;
+            inNum = true;
+        } else if('0' <= sStr[i] && sStr[i] <= '9' )
+            inNum = true;
+
         // Regression fix introduced because NA is accepted as NaN
-        for (size_t i = 1; i < sStr.length()-1; i++)
+        size_t i = 1;
+        for (; i < sStr.length()-1; i++)
         {
-            if (sStr[i] == '-' || sStr[i] == '+')
-            {
-                if (tolower(sStr[i-1]) != 'e'
-                    && (isdigit(sStr[i-1]) && sStr.find_first_of("iI", i+1) == std::string::npos)
-                    && sStr[i-1] != ' ')
-                    return false;
+            //if(sStr[i] < '0' || '9' < sStr[i]) { // No seperator and no Decimal -> outside of Number
+            if(sStr[i] == ',' || sStr[i] == '.' || sStr[i] == ' ' || ('0' <= sStr[i] && sStr[i] <= '9' )) {
+                if(!inNum){
+                    inNum = true;
+                    numStartIdx = i;
+                }
+                if(sStr[i] == ',' || sStr[i] == '.' || sStr[i] == ' ' ) {
+                    if(lastSepIdx != -1) {
+                        if(sStr[lastSepIdx] != sStr[i]) {
+                            // Case 1: two seperators in one number
+                            // TODO
+                        } else {
+                            // Case 3: Two same seperators inbetween must be thousands seperator
+                            // TODO
+                            if(lastSepIdx - i != 3) {
+                                //TODO non valid CASE !!!!!
+                            }
+                        }
+                        } else {
+                            lastSepIdx = i;
+                            if((i - numStartIdx) > 3) {
+                                // Case 4 first seperator but left more than 3 Digits -> must be Decimal seperator
+                                // TODO Case 4
+                            }
+                        }
+                    }
+                } else {
+                if(inNum){
+                    if(lastSepIdx != -1 && (i - lastSepIdx) != 3){
+                        // Case 2: != 3 digits after last seperator -> must be decimal seperator
+                        // TODO
+                        if(sStr[lastSepIdx] == ',') { // TODO ADD check that type is not already US via &
+                            nFormat = NUM_EU;
+                        } else if(sStr[lastSepIdx] == '.') {
+                            nFormat = NUM_US;
+                        } else {  // ' ' cannot be a decimal seperator
+                            nFormat = NUM_INVALID;
+                        }
+                    }
+
+                    inNum = false;
+                    numStartIdx = 0;
+                    lastSepIdx = -1;
+                }
+                if (sStr[i] == '-' || sStr[i] == '+')
+                {
+                    if (tolower(sStr[i-1]) != 'e'
+                        && (isdigit(sStr[i-1]) && sStr.find_first_of("iI", i+1) == std::string::npos)
+                        && sStr[i-1] != ' ')
+                        return false;
+                }
             }
         }
+
+        if(inNum){
+            if(lastSepIdx != -1 && (i - lastSepIdx) != 3){
+                // Case 2: != 3 digits after last seperator -> must be decimal seperator
+                // TODO
+                if(sStr[lastSepIdx] == ',') { // TODO ADD check that type is not already US via &
+                    nFormat = NUM_EU;
+                } else if(sStr[lastSepIdx] == '.') {
+                    nFormat = NUM_US;
+                } else {  // ' ' cannot be a decimal seperator
+                    nFormat = NUM_INVALID;
+                }
+            }
+        }
+
+        //TODO Check last value for number format
 
         // Try to detect dates
         return !isConvertible(sStr, CONVTYPE_DATE_TIME);
@@ -1867,27 +1954,30 @@ NumberFormat detectNumberFormat(std::vector<std::string> &sNumVec,const std::vec
 
     int apperances[] = {0,0};
     int len = indizes.empty() ? sNumVec.size() : indizes.size();
+
+    // loop through all string
     for(int i = 0; i < len; i++){
         int idx = i;
         if(!indizes.empty())
             idx = indizes[i];
-        std::string sNum = sNumVec[idx];    //TODO no copy when big data chunks thatas bad
 
-        // loop through string to find numerical substrings, where we change str format ?
-        // or can I use regex?
+        // Split up String into all number parts like re and i part of complex number
+        std::string sNum = sNumVec[idx];    //TODO no copy when big data chunks thatas bad
         std::regex pattern("[0-9.,]+");
         std::sregex_iterator iterator(sNum.begin(), sNum.end(), pattern);
         std::sregex_iterator end;
 
+        //Loop trough all found numbers
         while (iterator != end) {
             std::smatch match = *iterator;
             std::string numToCheck =  match.str();
 
-            // TODO new function to find all apperances ?
+            // TODO new function to find all apperances, needed to check if 3 digits inbetween thousand seperators
             std::pair<int,int> dotAppears = countSubstringAppereance(numToCheck, ".");
             std::pair<int,int> comAppears = countSubstringAppereance(numToCheck, ",");
 
             // check for unique format apperances
+            // Case 1: both seperators in one Number
             if(dotAppears.first > 0 && comAppears.first > 0){
                 if(dotAppears.second < comAppears.second && comAppears.first == 1){
                     return NUM_EU;
@@ -1899,36 +1989,35 @@ NumberFormat detectNumberFormat(std::vector<std::string> &sNumVec,const std::vec
             } else if(dotAppears.first > 0) {
                 if(dotAppears.first == 1) {
                     if(numToCheck.size() - (dotAppears.second+1) != 3){
-                        // when not 3 digits after '.', it cannot be a thousands seperator and must be the decimal part
+                        // Case 2: not 3 digits after '.', it cannot be a thousands seperator and must be the decimal part
                         return NUM_US;
                     } else if(dotAppears.second > 3){
-                        // if there are more then 3 digits left to the '.' seperator it cannot be a thousands seperator
+                        // Case 4: >3 digits left to the '.' seperator it cannot be a thousands seperator
                         return NUM_US;
                     }
                 } else {
+                    // Case 3: more than 1 seperator, '.' is the thousands seperator
                     // TODO here we should check if there is always 3 digits inbetween
-                    // if so, '.' is the thousands seperator
                     return NUM_EU;
                 }
             } else if(comAppears.first > 0) {
                 if(comAppears.first == 1) {
                     if(numToCheck.size() - (comAppears.second+1) != 3){
-                        // when not 3 digits after ',', it cannot be a thousands seperator and must be the decimal part
+                        // Case 2: not 3 digits after ',', it cannot be a thousands seperator and must be the decimal part
                         return NUM_EU;
                     } else if(comAppears.second > 3){
-                        // if there are more then 3 digits left to the '.' seperator it cannot be a thousands seperator
+                        // Case 4: >3 digits left to the '.' seperator it cannot be a thousands seperator
                         return NUM_EU;
                     }
                 } else {
+                    // Case 3: more than 1 seperator, ',' is the thousands seperator
                     // TODO here we should check if there is always 3 digits inbetween
-                    // if so, '.' is the thousands seperator
                     return NUM_US;
                 }
             }
             ++iterator;
         }
     }
-
     return NUM_NONE;
 }
 
@@ -1942,24 +2031,23 @@ NumberFormat detectNumberFormat(std::vector<std::string> &sNumVec,const std::vec
 ///
 /////////////////////////////////////////////////
 void strChangeNumberFormat(std::string &sNum, NumberFormat numFormat){
-    // TODO to correctly handle omplex numbers or stuff like +E10 do we have
-    // to isolate numbers parts ?
+
     switch(numFormat){
-    case NUM_EU:
-        // '.' for thousands and ',' for decimals
-        replaceAll(sNum, ".", "");
-        replaceAll(sNum, ",", ".");
-        break;
+        case NUM_EU:
+            // '.' for thousands and ',' for decimals
+            replaceAll(sNum, ".", "");
+            replaceAll(sNum, ",", ".");
+            break;
 
-    case NUM_US:
-        // '.' for thousands and ',' for decimals
-        replaceAll(sNum, ",", "");
-        //replaceAll(sNum, ".", "");
-        break;
+        case NUM_US:
+            // '.' for thousands and ',' for decimals
+            replaceAll(sNum, ",", "");
+            //replaceAll(sNum, ".", "");
+            break;
 
-    case NUM_NONE:
-        // No valid Format, do nothing
-        break;
+        case NUM_NONE:
+            // No valid Format, do nothing
+            break;
     }
 }
 
