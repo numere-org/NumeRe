@@ -1039,7 +1039,7 @@ bool isConvertible(const std::string& sStr, ConvertibleType type, NumberFormat &
         if(nFormat != NUM_NONE){
             lastSepIdx = 0;
             inNum = true;
-        } else if('0' <= sStr[i] && sStr[i] <= '9' )
+        } else if('0' <= sStr[0] && sStr[0] <= '9' )
             inNum = true;
 
         // Regression fix introduced because NA is accepted as NaN
@@ -1056,23 +1056,45 @@ bool isConvertible(const std::string& sStr, ConvertibleType type, NumberFormat &
                     if(lastSepIdx != -1) {
                         if(sStr[lastSepIdx] != sStr[i]) {
                             // Case 1: two seperators in one number
-                            // TODO
+                            // TODO check for invalid change of Format inside one number
+                            if(sStr[i] == ',') {
+                                nFormat = NUM_EU;
+                            } else if(sStr[i] == '.') {
+                                nFormat = NUM_US;
+                            } else {
+                                //TODO invalid ! cannot be Leerzeichen
+                            }
                         } else {
                             // Case 3: Two same seperators inbetween must be thousands seperator
                             // TODO
-                            if(lastSepIdx - i != 3) {
+                            if(i - lastSepIdx != 4) {
                                 //TODO non valid CASE !!!!!
+                            } else if(sStr[i] == ' ') {
+                                //TODO leerzeichen
+                            } else if(sStr[i] == ',') {
+                                nFormat = NUM_EU;
+                            } else if(sStr[i] == '.') {
+                                nFormat = NUM_US;
+                            } else {
+                                //TODO invalid ! bzw gibt den case ja nicht
                             }
                         }
-                        } else {
-                            lastSepIdx = i;
-                            if((i - numStartIdx) > 3) {
-                                // Case 4 first seperator but left more than 3 Digits -> must be Decimal seperator
-                                // TODO Case 4
+                    } else {
+                        if((i - numStartIdx) > 4) {
+                            // Case 4 first seperator but left more than 3 Digits -> must be Decimal seperator
+                            // TODO Case 4
+                            if(sStr[i] == ',') {
+                                nFormat = NUM_EU;
+                            } else if(sStr[i] == '.') {
+                                nFormat = NUM_US;
+                            } else {
+                                //TODO invalid ! cannot be Leerzeichen
                             }
                         }
                     }
-                } else {
+                    lastSepIdx = i;
+                }
+            } else {
                 if(inNum){
                     if(lastSepIdx != -1 && (i - lastSepIdx) != 3){
                         // Case 2: != 3 digits after last seperator -> must be decimal seperator
