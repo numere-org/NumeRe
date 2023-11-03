@@ -20,6 +20,7 @@
 #include "stringdatastructures.hpp"
 #include "../../kernel.hpp"
 #include "../utils/filecheck.hpp"
+#include "../../../common/compareFiles.hpp"
 #include <boost/tokenizer.hpp>
 #include <regex>
 #include <sstream>
@@ -284,6 +285,37 @@ static StringVector strfnc_getFileParts(StringFuncArgs& funcArgs)
 
 
 /////////////////////////////////////////////////
+/// \brief Implementation of the getfilediff()
+/// function.
+///
+/// \param funcArgs StringFuncArgs&
+/// \return StringVector
+///
+/////////////////////////////////////////////////
+static StringVector strfnc_getFileDiffs(StringFuncArgs& funcArgs)
+{
+    if (!funcArgs.sArg1.view().length() || !funcArgs.sArg2.view().length())
+        return "\"\"";
+
+    FileSystem _fSys;
+    _fSys.initializeFromKernel();
+
+    std::string sDiffs = compareFiles(_fSys.ValidFileName(funcArgs.sArg1.view().to_string(), "", false, false),
+                                      _fSys.ValidFileName(funcArgs.sArg2.view().to_string(), "", false, false));
+    replaceAll(sDiffs, "\r\n", "\n");
+    std::vector<std::string> vSplitted = split(sDiffs, '\n');
+    StringVector res;
+
+    for (const auto& s : vSplitted)
+    {
+        res.push_back(s);
+    }
+
+    return res;
+}
+
+
+/////////////////////////////////////////////////
 /// \brief Implementation of the getfilelist()
 /// function.
 ///
@@ -296,7 +328,7 @@ static StringVector strfnc_getfilelist(StringFuncArgs& funcArgs)
     if (funcArgs.nArg1 == DEFAULT_NUM_ARG)
         funcArgs.nArg1 = 0;
 
-    std::vector<std::string> vFileList = getFileList(funcArgs.sArg1.view().to_string(), *(funcArgs.opt), funcArgs.nArg1);
+    std::vector<std::string> vFileList = NumeReKernel::getInstance()->getFileSystem().getFileList(funcArgs.sArg1.view().to_string(), funcArgs.nArg1);
     StringVector sFileList;
 
     for (size_t i = 0; i < vFileList.size(); i++)
@@ -324,7 +356,7 @@ static StringVector strfnc_getfolderlist(StringFuncArgs& funcArgs)
     if (funcArgs.nArg1 == DEFAULT_NUM_ARG)
         funcArgs.nArg1 = 0;
 
-    std::vector<std::string> vFolderList = getFolderList(funcArgs.sArg1.view().to_string(), *(funcArgs.opt), funcArgs.nArg1);
+    std::vector<std::string> vFolderList = NumeReKernel::getInstance()->getFileSystem().getFolderList(funcArgs.sArg1.view().to_string(), funcArgs.nArg1);
     StringVector sFolderList;
 
     for (size_t i = 0; i < vFolderList.size(); i++)
@@ -2761,6 +2793,42 @@ static StringVector strfnc_sha256(StringFuncArgs& funcArgs)
 
 
 /////////////////////////////////////////////////
+/// \brief Implementation of startswith() function
+///
+/// \param funcArgs StringFuncArgs&
+/// \return StringVector
+///
+/////////////////////////////////////////////////
+static StringVector strfnc_startswith(StringFuncArgs& funcArgs)
+{
+    return funcArgs.sArg2.view().length() <= funcArgs.sArg1.view().length()
+        && funcArgs.sArg2.view().length()
+        && equal(funcArgs.sArg2.view().begin(),
+                 funcArgs.sArg2.view().end(),
+                 funcArgs.sArg1.view().begin()
+                 );
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Implementation of endswith() function
+///
+/// \param funcArgs StringFuncArgs&
+/// \return StringVector
+///
+/////////////////////////////////////////////////
+static StringVector strfnc_endswith(StringFuncArgs& funcArgs)
+{
+    return funcArgs.sArg2.view().length() <= funcArgs.sArg1.view().length()
+        && funcArgs.sArg2.view().length()
+        && equal(funcArgs.sArg2.view().begin(),
+                 funcArgs.sArg2.view().end(),
+                 (funcArgs.sArg1.view().end() - funcArgs.sArg2.view().length())
+                 );
+}
+
+
+/////////////////////////////////////////////////
 /// \brief Simple function to have valid pointer
 /// to unimplemented functions. (Avoids crashes)
 ///
@@ -2794,10 +2862,12 @@ static std::map<std::string, StringFuncHandle> getStringFuncHandles()
     mHandleTable["char"]                = StringFuncHandle(STR_VAL, strfnc_char, false);
     mHandleTable["cnt"]                 = StringFuncHandle(STR, strfnc_cnt, true);
     mHandleTable["dectobase"]           = StringFuncHandle(STR_VAL, strfnc_dectobase, false);
+    mHandleTable["endswith"]            = StringFuncHandle(STR_STR, strfnc_endswith, false);
     mHandleTable["findfile"]            = StringFuncHandle(STR_STROPT, strfnc_findfile, false);
     mHandleTable["findparam"]           = StringFuncHandle(STR_STR_STROPT, strfnc_findparam, false);
     mHandleTable["findtoken"]           = StringFuncHandle(STR_STR_STROPT, strfnc_findtoken, false);
     mHandleTable["getenvvar"]           = StringFuncHandle(STR, strfnc_getenvvar, false);
+    mHandleTable["getfilediff"]         = StringFuncHandle(STR_STR, strfnc_getFileDiffs, false);
     mHandleTable["getfilelist"]         = StringFuncHandle(STR_VALOPT, strfnc_getfilelist, false);
     mHandleTable["getfileparts"]        = StringFuncHandle(STR, strfnc_getFileParts, false);
     mHandleTable["getfolderlist"]       = StringFuncHandle(STR_VALOPT, strfnc_getfolderlist, false);
@@ -2838,6 +2908,7 @@ static std::map<std::string, StringFuncHandle> getStringFuncHandles()
     mHandleTable["sha256"]              = StringFuncHandle(STR_VALOPT, strfnc_sha256, false);
     mHandleTable["split"]               = StringFuncHandle(STR_STR_VALOPT, strfnc_split, false);
     mHandleTable["firstch"]             = StringFuncHandle(STR, firstch, false);
+    mHandleTable["startswith"]          = StringFuncHandle(STR_STR, strfnc_startswith, false);
     mHandleTable["str_not_match"]       = StringFuncHandle(STR_STR_VALOPT, strfnc_str_not_match, false);
     mHandleTable["str_not_rmatch"]      = StringFuncHandle(STR_STR_VALOPT, strfnc_str_not_rmatch, false);
     mHandleTable["strip"]               = StringFuncHandle(STR_STR_STR_VALOPT_VALOPT, strfnc_strip, false);

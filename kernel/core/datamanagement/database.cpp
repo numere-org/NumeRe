@@ -59,7 +59,7 @@ namespace NumeRe
             {
                 if (sLine[0] == '#')
                     continue;
-                vDBEntries.push_back(sLine);
+                vDBEntries.push_back(utf8parser(sLine));
             }
         }
 

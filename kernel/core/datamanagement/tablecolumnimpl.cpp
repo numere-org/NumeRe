@@ -1684,21 +1684,27 @@ TableColumn* StringColumn::convert(ColumnType type)
         }
         case TableColumn::TYPE_DATETIME:
         {
-            if (convType != CONVTYPE_DATE_TIME)
+            if (!m_data.size())
+                convType = CONVTYPE_DATE_TIME;
+            else if (convType != CONVTYPE_DATE_TIME)
                 return nullptr;
 
             break;
         }
         case TableColumn::TYPE_VALUE:
         {
-            if (convType != CONVTYPE_VALUE && convType != CONVTYPE_LOGICAL)
+            if (!m_data.size())
+                convType = CONVTYPE_VALUE;
+            else if (convType != CONVTYPE_VALUE && convType != CONVTYPE_LOGICAL)
                 return nullptr;
 
             break;
         }
         case TableColumn::TYPE_LOGICAL:
         {
-            if (convType != CONVTYPE_VALUE && convType != CONVTYPE_LOGICAL)
+            if (!m_data.size())
+                convType = CONVTYPE_LOGICAL;
+            else if (convType != CONVTYPE_VALUE && convType != CONVTYPE_LOGICAL)
                 return nullptr;
 
             break;
@@ -2174,21 +2180,27 @@ TableColumn* CategoricalColumn::convert(ColumnType type)
         }
         case TableColumn::TYPE_DATETIME:
         {
-            if (convType != CONVTYPE_DATE_TIME)
+            if (!m_data.size())
+                convType = CONVTYPE_DATE_TIME;
+            else if (convType != CONVTYPE_DATE_TIME)
                 return nullptr;
 
             break;
         }
         case TableColumn::TYPE_VALUE:
         {
-            if (convType != CONVTYPE_VALUE && convType != CONVTYPE_LOGICAL)
+            if (!m_data.size())
+                convType = CONVTYPE_VALUE;
+            else if (convType != CONVTYPE_VALUE && convType != CONVTYPE_LOGICAL)
                 return nullptr;
 
             break;
         }
         case TableColumn::TYPE_LOGICAL:
         {
-            if (convType != CONVTYPE_VALUE && convType != CONVTYPE_LOGICAL)
+            if (!m_data.size())
+                convType = CONVTYPE_LOGICAL;
+            else if (convType != CONVTYPE_VALUE && convType != CONVTYPE_LOGICAL)
                 return nullptr;
 
             break;

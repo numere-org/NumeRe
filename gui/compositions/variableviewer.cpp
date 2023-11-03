@@ -39,6 +39,7 @@ struct VarData : public wxTreeItemData
     std::string sInternalName;
 
     VarData(const std::string name) : sInternalName(name) {}
+    virtual ~VarData() override {}
 };
 
 

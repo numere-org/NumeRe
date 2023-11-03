@@ -21,6 +21,7 @@
 
 #include <wx/wx.h>
 #include <wx/panel.h>
+#include <wx/infobar.h>
 #include "tableviewer.hpp"
 #include "../terminal/terminal.hpp"
 #include "../../kernel/core/ui/language.hpp"
@@ -39,6 +40,7 @@ class TablePanel : public wxPanel
         wxBoxSizer* vsizer;
         wxBoxSizer* hsizer;
         wxStaticText* m_lastSaveText;
+        wxInfoBar* m_infoBar;
         bool finished;
 
         NumeReTerminal* m_terminal;
@@ -51,6 +53,8 @@ class TablePanel : public wxPanel
         void SetTerminal(NumeReTerminal* term) {m_terminal = term;}
         NumeReTerminal* GetTerminal() {return m_terminal;};
         std::string getComment() const;
+        void showMessage(const wxString& msg);
+        void dismissMessage();
         wxMenuBar* getMenuBar();
         wxFrame* getFrame();
 

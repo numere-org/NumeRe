@@ -121,11 +121,11 @@ namespace NumeRe
     /// there are string vector variables in the passed
     /// command line
     ///
-    /// \param sLine const string&
+    /// \param sLine StringView
     /// \return bool
     ///
     /////////////////////////////////////////////////
-    bool StringVarFactory::containsStringVectorVars(const string& sLine)
+    bool StringVarFactory::containsStringVectorVars(StringView sLine)
     {
         // If the command line or the string vector vars are empty return false
         if (!sLine.length() || (!m_mStringVectorVars.size() && !m_mTempStringVectorVars.size()))
@@ -347,32 +347,6 @@ namespace NumeRe
 
 
     /////////////////////////////////////////////////
-    /// \brief This private member function examines
-    /// the first and the last character of the passed
-    /// string and determines, whether it is a
-    /// delimiter or not.
-    ///
-    /// \param sToken const string&
-    /// \return bool
-    ///
-    /////////////////////////////////////////////////
-    bool StringVarFactory::checkStringvarDelimiter(const string& sToken) const
-    {
-        static const string sDELIMITER = "+-*/ ()={}^&|!<>,\\%#[]?:\";";
-
-        // The opening parenthesis at the end indicates a function.
-        // This is obviously not a string variable
-        if (sToken.back() == '(')
-            return false;
-
-        // If the first and the last character are part of the
-        // delimiter list (or the last character is a dot), then
-        // we indicate the current token as delimited.
-        return sDELIMITER.find(sToken.front()) != string::npos && (sDELIMITER.find(sToken.back()) != string::npos || sToken.back() == '.');
-    }
-
-
-    /////////////////////////////////////////////////
     /// \brief Replaces all found vectors of the
     /// passed map with their nCurrentComponent
     /// component.
@@ -463,18 +437,15 @@ namespace NumeRe
     /// whether the passed string line contains string
     /// variables as part of the expression.
     ///
-    /// \param _sLine const string&
+    /// \param sLine StringView
     /// \return bool
     ///
     /////////////////////////////////////////////////
-    bool StringVarFactory::containsStringVars(const string& _sLine) const
+    bool StringVarFactory::containsStringVars(StringView sLine) const
     {
         // Do nothing, if no string variables were declared
         if (!m_mStringVars.size())
             return false;
-
-        // Add whitespaces for safety
-        string sLine = " " + _sLine + " ";
 
         // Search for the first match of all declared string variables
         for (auto iter = m_mStringVars.begin(); iter != m_mStringVars.end(); ++iter)
@@ -487,9 +458,7 @@ namespace NumeRe
             {
                 // Compare the located match to the delimiters and return
                 // true, if the match is delimited on both sides
-                if (sLine[pos+(iter->first).length()] != '('
-                    && checkStringvarDelimiter(sLine.substr(pos-1, (iter->first).length()+2))
-                    )
+                if (sLine.is_delimited_sequence(pos, iter->first.length(), StringViewBase::STRVAR_DELIMITER))
                     return true;
 
                 pos++;
@@ -567,7 +536,7 @@ namespace NumeRe
                 if (__nPos == 1)
                 {
                     // Check with delimiter
-                    if (checkStringvarDelimiter(" " + sLine.substr(0, (iter->first).length()+1))
+                    if (StringView(sLine).is_delimited_sequence(0, iter->first.length(), StringViewBase::STRVAR_DELIMITER)
                         && !isInQuotes(sLine, 0, true))
                     {
                         // Replace it with standard function signature or its value
@@ -581,7 +550,7 @@ namespace NumeRe
                 }
 
                 // Check with delimiter
-                if (checkStringvarDelimiter(sLine.substr(__nPos-2, (iter->first).length()+2))
+                if (StringView(sLine).is_delimited_sequence(__nPos-1, iter->first.length(), StringViewBase::STRVAR_DELIMITER)
                     && !isInQuotes(sLine, __nPos-1, true))
                 {
                     // Replace it with standard function signature or its value
@@ -644,7 +613,7 @@ namespace NumeRe
                 if (__nPos == 1)
                 {
                     // Check with delimiter
-                    if (checkStringvarDelimiter(" " + sLine.substr(0, (iter->first).length()+1))
+                    if (StringView(sLine).is_delimited_sequence(0, iter->first.length(), StringViewBase::STRVAR_DELIMITER)
                         && !isInQuotes(sLine, 0, true))
                     {
                         // Replace it with standard function signature or its value
@@ -658,7 +627,7 @@ namespace NumeRe
                 }
 
                 // Check with delimiter
-                if (checkStringvarDelimiter(sLine.substr(__nPos-2, (iter->first).length()+2))
+                if (StringView(sLine).is_delimited_sequence(__nPos-1, iter->first.length(), StringViewBase::STRVAR_DELIMITER)
                     && !isInQuotes(sLine, __nPos-1, true))
                 {
                     // Replace it with standard function signature or its value
@@ -746,5 +715,24 @@ namespace NumeRe
             m_mStringVars.erase(iter);
     }
 
-}
 
+    /////////////////////////////////////////////////
+    /// \brief This public member function removes all
+    /// string variables which don't start with ~,_
+    ///
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
+    void StringVarFactory::clearStringVar()
+    {
+	    if (!m_mStringVars.size())
+            return;
+
+	    for (auto iter = m_mStringVars.begin(); iter != m_mStringVars.end(); ++iter)
+	    {
+	        if (!iter->first.starts_with("_~"))
+	            m_mStringVars.erase(iter);
+	    }
+    }
+
+}

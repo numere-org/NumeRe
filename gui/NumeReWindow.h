@@ -264,6 +264,7 @@ class NumeReWindow : public wxFrame
         void prepareSession();
 
         int CopyEditorSettings(FileFilterType _fileType);
+        void loadTemplateToEditor(FileFilterType _filetype, wxString templateFileName, wxFileName fullfilename, wxString title, wxString timestamp);
 
         void OnMenuEvent(wxCommandEvent& event);
         void OnPluginMenuEvent(wxCommandEvent& event);
@@ -462,7 +463,6 @@ class NumeReWindow : public wxFrame
         bool m_setSelection;
         bool m_remoteMode;
         bool m_appStarting;
-        bool m_currentlyDebugging;
         bool m_multiRowState;
         bool m_loadingFilesDuringStartup;
         std::map<int, wxMenuItem*> m_menuItems;

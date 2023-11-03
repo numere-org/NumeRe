@@ -163,7 +163,7 @@ static std::vector<std::string> loadDocumentationArticle(const std::string& sFil
         // Extract the title
         if (sLine.find("<title ") != std::string::npos)
         {
-            vReturn.push_back(getArgAtPos(sLine, sLine.find("string=", sLine.find("<title "))+7));
+            vReturn.push_back(utf8parser(getArgAtPos(sLine, sLine.find("string=", sLine.find("<title "))+7)));
             sLine.erase(0, sLine.find("/>", sLine.find("<title "))+2);
             StripSpaces(sLine);
 
@@ -177,7 +177,7 @@ static std::vector<std::string> loadDocumentationArticle(const std::string& sFil
             sLine.erase(0, sLine.find("<contents>")+10);
 
             if (sLine.length())
-                vReturn.push_back(sLine);
+                vReturn.push_back(utf8parser(sLine));
 
             while (!fDocument.eof())
             {
@@ -195,12 +195,12 @@ static std::vector<std::string> loadDocumentationArticle(const std::string& sFil
                     sLine.erase(sLine.find("</contents>"));
 
                     if (sLine.length())
-                        vReturn.push_back(sLine);
+                        vReturn.push_back(utf8parser(sLine));
 
                     return vReturn;
                 }
 
-                vReturn.push_back(sLine);
+                vReturn.push_back(utf8parser(sLine));
             }
         }
     }
@@ -420,7 +420,7 @@ std::string Documentation::getArgAtPos(const std::string& sCmd, size_t nPos)
         {
             // Jump over parentheses, if you find one
             if (sCmd[i] == '(' || sCmd[i] == '[' || sCmd[i] == '{')
-                i += getMatchingParenthesis(sCmd.substr(i));
+                i += getMatchingParenthesis(StringView(sCmd, i));
 
             // Whitespace. Stop the loop here
             if (sCmd[i] == ' ')
@@ -455,10 +455,8 @@ std::string Documentation::getArgAtPos(const std::string& sCmd, size_t nPos)
 /////////////////////////////////////////////////
 void Documentation::createDocumentationIndex(bool bLoadUserLangFiles)
 {
-    Settings& _option = NumeReKernel::getInstance()->getSettings();
-
     // Add standard documentation files
-    std::vector<std::string> vFiles = getFileList(ValidFolderName("<>") + "docs/*.nhlp", _option, 1);
+    std::vector<std::string> vFiles = getFileList(ValidFolderName("<>") + "docs/*.nhlp", FileSystem::FULLPATH);
 
     for (const std::string& file : vFiles)
     {
@@ -466,7 +464,7 @@ void Documentation::createDocumentationIndex(bool bLoadUserLangFiles)
     }
 
     // Add plugin documentation files
-    vFiles = getFileList(ValidFolderName("<>") + "docs/plugins/*.nhlp", _option, 1);
+    vFiles = getFileList(ValidFolderName("<>") + "docs/plugins/*.nhlp", FileSystem::FULLPATH);
 
     for (const std::string& file : vFiles)
     {
@@ -477,7 +475,7 @@ void Documentation::createDocumentationIndex(bool bLoadUserLangFiles)
         return;
 
     // Add user documentation files
-    vFiles = getFileList(ValidFolderName("<>") + "user/docs/*.nhlp", _option, 1);
+    vFiles = getFileList(ValidFolderName("<>") + "user/docs/*.nhlp", FileSystem::FULLPATH);
 
     for (const std::string& file : vFiles)
     {

@@ -114,13 +114,16 @@ class TableViewer : public wxGrid
         void reloadTable();
         void changeColType();
         void finalize();
+        void groupHeaders(int startCol, int endCol, int row);
 
         wxString getSelectedValues();
         int GetInternalRows(int gridrow) const;
+        int GetExternalRows(int gridrow) const;
 
 
         size_t GetHeight() {return nHeight;}
         size_t GetWidth() {return nWidth;}
+        wxSize calculateMinSize() const;
 
         enum TableViewerIDs
         {

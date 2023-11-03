@@ -294,6 +294,7 @@ void NumeReTerminal::removeBreakpoint(const std::string& _sFilename, size_t nLin
 /////////////////////////////////////////////////
 void NumeReTerminal::clearBreakpoints(const std::string& _sFilename)
 {
+    g_logger.debug("Clearing breakpoints for " + _sFilename);
     wxCriticalSectionLocker lock(m_kernelCS);
     _kernel.getDebugger().getBreakpointManager().clearBreakpoints(_sFilename);
 }
@@ -498,11 +499,11 @@ wxThread::ExitCode NumeReTerminal::Entry()
 						//All others
 				}
 			}
-			else */
+			else
             if (m_KernelStatus == NumeReKernel::NUMERE_QUIT) //quit
 			{
 				break;
-			}
+			}*/
 
 			// Notify the event handler that there's an update
 			wxQueueEvent(GetEventHandler(), new wxThreadEvent());
@@ -520,8 +521,8 @@ wxThread::ExitCode NumeReTerminal::Entry()
 	// The thread will terminate
 	// Close the session and inform the thread handler
 	_kernel.CloseSession();
-	m_KernelStatus = NumeReKernel::NUMERE_QUIT;
-	wxQueueEvent(GetEventHandler(), new wxThreadEvent());
+	//m_KernelStatus = NumeReKernel::NUMERE_QUIT;
+	//wxQueueEvent(GetEventHandler(), new wxThreadEvent());
 	return (wxThread::ExitCode)0;
 }
 
@@ -960,7 +961,7 @@ void NumeReTerminal::pipe_command(const std::string& sCommand)
 /////////////////////////////////////////////////
 void NumeReTerminal::pass_command(const std::string& command, bool isEvent)
 {
-    // Don't do anything if the command is emoty
+    // Don't do anything if the command is empty
 	if (!command.length())
 		return;
 

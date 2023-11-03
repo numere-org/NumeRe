@@ -185,7 +185,7 @@ class FunctionDefinitionManager : public FileSystem
 
             for (auto iter = mFunctionsMap.begin(); iter != mFunctionsMap.end(); ++iter)
             {
-                if (iter->first == sFuncName.substr(0, sFuncName.find('(')))
+                if (sFuncName.starts_with(iter->first+"("))
                     return i;
 
                 i++;

@@ -174,6 +174,15 @@ class Memory : public Sorter
         void importTable(NumeRe::Table _table, const VectorIndex& lines, const VectorIndex& cols);
         void insertCopiedTable(NumeRe::Table _table, const VectorIndex& lines, const VectorIndex& cols, bool transpose);
 
+        bool insertBlock(size_t atRow, size_t atCol, size_t rows, size_t cols);
+        bool insertCols(size_t atCol, size_t num);
+        bool insertRows(size_t atRow, size_t num);
+        bool removeBlock(size_t atRow, size_t atCol, size_t rows, size_t cols);
+        bool removeCols(const VectorIndex& _vCols);
+        bool removeRows(const VectorIndex& _vRows);
+        bool reorderCols(const VectorIndex& _vCols, const VectorIndex& _vNewOrder);
+        bool reorderRows(const VectorIndex& _vRows, const VectorIndex& _vNewOrder);
+
         // MAFIMPLEMENTATIONS
         mu::value_type std(const VectorIndex& _vLine, const VectorIndex& _vCol) const;
         mu::value_type avg(const VectorIndex& _vLine, const VectorIndex& _vCol) const;
@@ -193,7 +202,7 @@ class Memory : public Sorter
         std::vector<mu::value_type> size(const VectorIndex& _vIndex, int dir) const;
         std::vector<mu::value_type> minpos(const VectorIndex& _vIndex, int dir) const;
         std::vector<mu::value_type> maxpos(const VectorIndex& _vIndex, int dir) const;
-        std::vector<mu::value_type> findCols(const std::vector<std::string>& vColNames) const;
+        std::vector<mu::value_type> findCols(const std::vector<std::string>& vColNames, bool enableRegEx) const;
         std::vector<mu::value_type> countIfEqual(const VectorIndex& _vCols, const std::vector<mu::value_type>& vValues, const std::vector<std::string>& vStringValues) const;
         std::vector<mu::value_type> getIndex(size_t col, const std::vector<mu::value_type>& vValues, const std::vector<std::string>& vStringValues) const;
         AnovaResult getOneWayAnova(size_t colCategories, size_t colValues, const VectorIndex& _vIndex, double significance) const;

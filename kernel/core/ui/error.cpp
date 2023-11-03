@@ -94,7 +94,7 @@ ErrorType getErrorType(std::exception_ptr e_ptr)
                                               toString(e.getIndices()[2]), toString(e.getIndices()[3]));
 
                 // This error message does not exist
-                if (sLastErrorMessage.substr(0, 7) == "ERR_NR_")
+                if (sLastErrorMessage.starts_with("ERR_NR_"))
                     sLastErrorMessage = _lang.get("ERR_GENERIC_0", toString((int)e.errorcode));
 
                 return (nLastErrorType = TYPE_SYNTAXERROR);

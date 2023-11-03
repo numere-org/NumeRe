@@ -38,6 +38,11 @@ GraphViewer::GraphViewer(wxWindow* parent, const wxString& title, GraphHelper* _
     _grapherWindow->SetDraw(_helper);
     _grapherWindow->SetGraph(_helper->setGrapher());
 
+    for (size_t i = 0; i < 4; i++)
+    {
+        _grapherWindow->timeAxes[i] = _helper->timeAxes[i];
+    }
+
     sizer->Add(_grapherWindow, 1, wxEXPAND);
     double dHeight = sqrt(640.0*480.0 / _helper->getAspect());
     if (_helper->getHires())

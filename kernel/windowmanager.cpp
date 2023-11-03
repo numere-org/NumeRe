@@ -43,6 +43,7 @@ namespace NumeRe
         m_customWindow = nullptr;
         nWindowID = std::string::npos;
         m_layout = nullptr;
+        m_closing = false;
     }
 
 
@@ -218,6 +219,8 @@ namespace NumeRe
     {
         if (m_manager)
             m_manager->updateWindowInformation(WindowInformation(nWindowID, status == STATUS_RUNNING ? this : nullptr, status, _return));
+
+        m_closing = status != STATUS_RUNNING;
     }
 
 
@@ -240,6 +243,10 @@ namespace NumeRe
                 return m_customWindow->getWindowItems(CustomWindow::BUTTON);
             else if (_selection == "textfield")
                 return m_customWindow->getWindowItems(CustomWindow::TEXTCTRL);
+            else if (_selection == "lamp")
+                return m_customWindow->getWindowItems(CustomWindow::LAMP);
+            else if (_selection == "datetimepicker")
+                return m_customWindow->getWindowItems(CustomWindow::DATETIMEPICKER);
             else if (_selection == "dropdown")
                 return m_customWindow->getWindowItems(CustomWindow::DROPDOWN);
             else if (_selection == "combobox")
@@ -347,6 +354,22 @@ namespace NumeRe
 
 
     /////////////////////////////////////////////////
+    /// \brief Returns the currently selected element
+    /// in the corresponding window item.
+    ///
+    /// \param windowItemID int
+    /// \return std::string
+    ///
+    /////////////////////////////////////////////////
+    std::string Window::getItemSelection(int windowItemID) const
+    {
+        if (m_customWindow)
+            return m_customWindow->getItemSelection(windowItemID).ToStdString();
+
+        return "";
+    }
+
+    /////////////////////////////////////////////////
     /// \brief Returns the value of the selected
     /// property as a string.
     ///
@@ -374,6 +397,46 @@ namespace NumeRe
     {
         if (m_customWindow)
             return m_customWindow->getProperties().ToStdString();
+
+        return "\"\"";
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Returns the status text in this window.
+    ///
+    /// \return std::string
+    ///
+    /////////////////////////////////////////////////
+    std::string Window::getStatusText() const
+    {
+        if (m_customWindow)
+            return m_customWindow->getStatusText().ToStdString();
+
+        return "\"\"";
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Show this window as a dialog.
+    ///
+    /// \return std::string
+    ///
+    /////////////////////////////////////////////////
+    std::string Window::dialog()
+    {
+        if (m_customWindow)
+        {
+            m_customWindow->asDialog();
+
+            do
+            {
+                Sleep(100);
+            }
+            while (!m_closing && m_customWindow->isDialog());
+
+            return m_closing ? "\"\"" : m_customWindow->getDialogResult().ToStdString();
+        }
 
         return "\"\"";
     }
@@ -458,6 +521,42 @@ namespace NumeRe
 
 
     /////////////////////////////////////////////////
+    /// \brief Set the selection to the corresponding
+    /// element in the window item.
+    ///
+    /// \param selectionID int
+    /// \param selectionID2 int
+    /// \param windowItemID int
+    /// \return bool
+    ///
+    /////////////////////////////////////////////////
+    bool Window::setItemSelection(int selectionID, int selectionID2, int windowItemID)
+    {
+        if (m_customWindow)
+            return m_customWindow->pushItemSelection(selectionID, selectionID2, windowItemID);
+
+        return false;
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Set the keyboard focus to the desired
+    /// element.
+    ///
+    /// \param windowItemID int
+    /// \return bool
+    ///
+    /////////////////////////////////////////////////
+    bool Window::setItemFocus(int windowItemID)
+    {
+        if (m_customWindow)
+            return m_customWindow->pushItemFocus(windowItemID);
+
+        return false;
+    }
+
+
+    /////////////////////////////////////////////////
     /// \brief Updates the graph in the custom
     /// window.
     ///
@@ -490,6 +589,120 @@ namespace NumeRe
             return m_customWindow->setPropValue(_value, varName);
 
         return false;
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief This function changes the display
+    /// parameter of the selected window.
+    ///
+    /// \param _display const std::string&
+    /// \return bool
+    ///
+    /////////////////////////////////////////////////
+    bool Window::setDisplay(const std::string& _display)
+    {
+        if (m_customWindow)
+        {
+            if (_display == "maximize")
+                maximize();
+            else if (_display == "iconize")
+                iconize();
+            else if (_display == "restore")
+                restore();
+            else if (_display == "hide")
+                hide();
+            else if (_display == "unhide")
+                unhide();
+            else
+                return false;
+
+            return true;
+        }
+
+        return false;
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief This function changes the status text
+    /// of the selected window.
+    ///
+    /// \param _value const std::string&
+    /// \return bool
+    ///
+    /////////////////////////////////////////////////
+    bool Window::setStatusText(const std::string& _value)
+    {
+        if (m_customWindow)
+            return m_customWindow->setStatusText(_value);
+
+        return false;
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief This function iconizes the window.
+    ///
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
+    void Window::iconize()
+    {
+        if (m_customWindow)
+            m_customWindow->Iconize();
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief This function maximizes the window.
+    ///
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
+    void Window::maximize()
+    {
+        if (m_customWindow)
+            m_customWindow->Maximize();
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief This function restores the window.
+    ///
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
+    void Window::restore()
+    {
+        if (m_customWindow)
+            m_customWindow->Restore();
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief This function hides the window.
+    ///
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
+    void Window::hide()
+    {
+        if (m_customWindow)
+            m_customWindow->Hide();
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief This function unhides the window.
+    ///
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
+    void Window::unhide()
+    {
+        if (m_customWindow)
+            m_customWindow->Show();
     }
 
 
