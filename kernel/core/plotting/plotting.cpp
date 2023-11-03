@@ -2518,17 +2518,23 @@ void Plot::create2dDrawing(vector<string>& vDrawVector)
             double c = hypot(vResults[2] - vResults[0], vResults[3] - vResults[1]) / 2.0 * sqrt(3) / hypot(vResults[2], vResults[3]);
 
             if (nFunctions < 6)
-                _graph->Face(mglPoint((-vResults[0] + vResults[2]) / 2.0 - c * vResults[3], (-vResults[1] + vResults[3]) / 2.0 + c * vResults[2]),
-                             mglPoint(vResults[2], vResults[3]),
-                             mglPoint((-vResults[0] + vResults[2]) / 2.0 - c * vResults[3], (-vResults[1] + vResults[3]) / 2.0 + c * vResults[2]),
-                             mglPoint(vResults[0], vResults[1]),
-                             sStyle.c_str());
+            {
+                mglPoint point1 = mglPoint((-vResults[0] + vResults[2]) / 2.0 - c * vResults[3], (-vResults[1] + vResults[3]) / 2.0 + c * vResults[2]);
+                mglPoint point2 = mglPoint(vResults[2], vResults[3]);
+                mglPoint point3 = mglPoint((-vResults[0] + vResults[2]) / 2.0 - c * vResults[3], (-vResults[1] + vResults[3]) / 2.0 + c * vResults[2]);
+                mglPoint point4 = mglPoint(vResults[0], vResults[1]);
+                faceAdapted(_graph, point1, point2, point3, point4, sStyle);
+            }
+
             else
-                _graph->Face(mglPoint(vResults[4], vResults[5]),
-                             mglPoint(vResults[2], vResults[3]),
-                             mglPoint(vResults[4], vResults[5]),
-                             mglPoint(vResults[0], vResults[1]),
-                             sStyle.c_str());
+            {
+                mglPoint point1 = mglPoint(vResults[4], vResults[5]);
+                mglPoint point2 = mglPoint(vResults[2], vResults[3]);
+                mglPoint point3 = mglPoint(vResults[4], vResults[5]);
+                mglPoint point4 = mglPoint(vResults[0], vResults[1]);
+                faceAdapted(_graph, point1, point2, point3, point4, sStyle);
+            }
+
         }
         else if (sCurrentDrawingFunction.starts_with("trianglev("))
         {
@@ -2538,17 +2544,23 @@ void Plot::create2dDrawing(vector<string>& vDrawVector)
             double c = sqrt(3.0) / 2.0;
 
             if (nFunctions < 6)
-                _graph->Face(mglPoint((vResults[0] + 0.5 * vResults[2]) - c * vResults[3], (vResults[1] + 0.5 * vResults[3]) + c * vResults[2]),
-                             mglPoint(vResults[0] + vResults[2], vResults[1] + vResults[3]),
-                             mglPoint((vResults[0] + 0.5 * vResults[2]) - c * vResults[3], (vResults[1] + 0.5 * vResults[3]) + c * vResults[2]),
-                             mglPoint(vResults[0], vResults[1]),
-                             sStyle.c_str());
+            {
+                mglPoint point1 = mglPoint((vResults[0] + 0.5 * vResults[2]) - c * vResults[3], (vResults[1] + 0.5 * vResults[3]) + c * vResults[2]);
+                mglPoint point2 = mglPoint(vResults[0] + vResults[2], vResults[1] + vResults[3]);
+                mglPoint point3 = mglPoint((vResults[0] + 0.5 * vResults[2]) - c * vResults[3], (vResults[1] + 0.5 * vResults[3]) + c * vResults[2]);
+                mglPoint point4 = mglPoint(vResults[0], vResults[1]);
+                faceAdapted(_graph, point1, point2, point3, point4, sStyle);
+            }
+
             else
-                _graph->Face(mglPoint(vResults[0] + vResults[4], vResults[1] + vResults[5]),
-                             mglPoint(vResults[0] + vResults[2], vResults[1] + vResults[3]),
-                             mglPoint(vResults[0] + vResults[4], vResults[1] + vResults[5]),
-                             mglPoint(vResults[0], vResults[1]),
-                             sStyle.c_str());
+            {
+                mglPoint point1 = mglPoint(vResults[0] + vResults[4], vResults[1] + vResults[5]);
+                mglPoint point2 = mglPoint(vResults[0] + vResults[2], vResults[1] + vResults[3]);
+                mglPoint point3 = mglPoint(vResults[0] + vResults[4], vResults[1] + vResults[5]);
+                mglPoint point4 = mglPoint(vResults[0], vResults[1]);
+                faceAdapted(_graph, point1, point2, point3, point4, sStyle);
+            }
+
         }
         else if (sCurrentDrawingFunction.starts_with("sphere("))
         {
@@ -2771,7 +2783,6 @@ void Plot::create3dDrawing(vector<string>& vDrawVector)
                     mglPoint point4 = mglPoint(vResults[0], vResults[1], vResults[2]);
                     faceAdapted(_graph, point1, point2, point3, point4, sStyle);
                  }
-
             else if (nFunctions < 12)
                 {
                     mglPoint point1 = mglPoint(vResults[6], vResults[7], vResults[8]);
@@ -2780,7 +2791,6 @@ void Plot::create3dDrawing(vector<string>& vDrawVector)
                     mglPoint point4 = mglPoint(vResults[0], vResults[1], vResults[2]);
                     faceAdapted(_graph, point1, point2, point3, point4, sStyle);
                  }
-
             else
                 {
                     mglPoint point1 = mglPoint(vResults[6], vResults[7], vResults[8]);
@@ -2833,17 +2843,22 @@ void Plot::create3dDrawing(vector<string>& vDrawVector)
                             + (vResults[5] - vResults[2]) * (vResults[5] - vResults[2])) / 2.0 * sqrt(3) / hypot(vResults[3], vResults[4]);
 
             if (nFunctions < 9)
-                _graph->Face(mglPoint((-vResults[0] + vResults[3]) / 2.0 - c * vResults[4], (-vResults[1] + vResults[4]) / 2.0 + c * vResults[3], (vResults[5] + vResults[2]) / 2.0),
-                             mglPoint(vResults[3], vResults[4], vResults[5]),
-                             mglPoint((-vResults[0] + vResults[3]) / 2.0 - c * vResults[4], (-vResults[1] + vResults[4]) / 2.0 + c * vResults[3], (vResults[5] + vResults[2]) / 2.0),
-                             mglPoint(vResults[0], vResults[1], vResults[2]),
-                             sStyle.c_str());
+            {
+                mglPoint point1 = mglPoint((-vResults[0] + vResults[3]) / 2.0 - c * vResults[4], (-vResults[1] + vResults[4]) / 2.0 + c * vResults[3], (vResults[5] + vResults[2]) / 2.0);
+                mglPoint point2 = mglPoint(vResults[3], vResults[4], vResults[5]);
+                mglPoint point3 = mglPoint((-vResults[0] + vResults[3]) / 2.0 - c * vResults[4], (-vResults[1] + vResults[4]) / 2.0 + c * vResults[3], (vResults[5] + vResults[2]) / 2.0);
+                mglPoint point4 = mglPoint(vResults[0], vResults[1], vResults[2]);
+                faceAdapted(_graph, point1, point2, point3, point4, sStyle);
+            }
+
             else
-                _graph->Face(mglPoint(vResults[6], vResults[7], vResults[8]),
-                             mglPoint(vResults[3], vResults[4], vResults[5]),
-                             mglPoint(vResults[6], vResults[7], vResults[8]),
-                             mglPoint(vResults[0], vResults[1], vResults[2]),
-                             sStyle.c_str());
+            {
+                mglPoint point1 = mglPoint(vResults[6], vResults[7], vResults[8]);
+                mglPoint point2 = mglPoint(vResults[3], vResults[4], vResults[5]);
+                mglPoint point3 = mglPoint(vResults[6], vResults[7], vResults[8]);
+                mglPoint point4 = mglPoint(vResults[0], vResults[1], vResults[2]);
+                faceAdapted(_graph, point1, point2, point3, point4, sStyle);
+            }
         }
         else if (sCurrentDrawingFunction.starts_with("trianglev("))
         {
@@ -2855,17 +2870,21 @@ void Plot::create3dDrawing(vector<string>& vDrawVector)
                             + (vResults[5]) * (vResults[5])) / 2.0 * sqrt(3) / hypot(vResults[3], vResults[4]);
 
             if (nFunctions < 9)
-                _graph->Face(mglPoint((vResults[0] + 0.5 * vResults[3]) - c * vResults[4], (vResults[1] + 0.5 * vResults[4]) + c * vResults[3], (vResults[5] + 0.5 * vResults[2])),
-                             mglPoint(vResults[0] + vResults[3], vResults[1] + vResults[4], vResults[2] + vResults[5]),
-                             mglPoint((vResults[0] + 0.5 * vResults[3]) - c * vResults[4], (vResults[1] + 0.5 * vResults[4]) + c * vResults[3], (vResults[5] + 0.5 * vResults[2])),
-                             mglPoint(vResults[0], vResults[1], vResults[2]),
-                             sStyle.c_str());
+            {
+                mglPoint point1 = mglPoint((vResults[0] + 0.5 * vResults[3]) - c * vResults[4], (vResults[1] + 0.5 * vResults[4]) + c * vResults[3], (vResults[5] + 0.5 * vResults[2]));
+                mglPoint point2 = mglPoint(vResults[0] + vResults[3], vResults[1] + vResults[4], vResults[2] + vResults[5]);
+                mglPoint point3 = mglPoint((vResults[0] + 0.5 * vResults[3]) - c * vResults[4], (vResults[1] + 0.5 * vResults[4]) + c * vResults[3], (vResults[5] + 0.5 * vResults[2]));
+                mglPoint point4 = mglPoint(vResults[0], vResults[1], vResults[2]);
+                faceAdapted(_graph, point1, point2, point3, point4, sStyle);
+            }
             else
-                _graph->Face(mglPoint(vResults[0] + vResults[6], vResults[1] + vResults[7], vResults[2] + vResults[8]),
-                             mglPoint(vResults[0] + vResults[3], vResults[1] + vResults[4], vResults[2] + vResults[5]),
-                             mglPoint(vResults[0] + vResults[6], vResults[1] + vResults[7], vResults[2] + vResults[8]),
-                             mglPoint(vResults[0], vResults[1], vResults[2]),
-                             sStyle.c_str());
+            {
+                mglPoint point1 = mglPoint(vResults[0] + vResults[6], vResults[1] + vResults[7], vResults[2] + vResults[8]);
+                mglPoint point2 = mglPoint(vResults[0] + vResults[3], vResults[1] + vResults[4], vResults[2] + vResults[5]);
+                mglPoint point3 = mglPoint(vResults[0] + vResults[6], vResults[1] + vResults[7], vResults[2] + vResults[8]);
+                mglPoint point4 = mglPoint(vResults[0], vResults[1], vResults[2]);
+                faceAdapted(_graph, point1, point2, point3, point4, sStyle);
+            }
         }
         else if (sCurrentDrawingFunction.starts_with("cuboid("))
         {
@@ -2902,36 +2921,47 @@ void Plot::create3dDrawing(vector<string>& vDrawVector)
                 _mDz = mglPoint(vResults[9], vResults[10], vResults[11]);
             }
 
-            _graph->Face(mglPoint(vResults[0], vResults[1], vResults[2]),
-                         mglPoint(vResults[0], vResults[1], vResults[2]) + _mDx,
-                         mglPoint(vResults[0], vResults[1], vResults[2]) + _mDy,
-                         mglPoint(vResults[0], vResults[1], vResults[2]) + _mDx + _mDy,
-                         sStyle.c_str());
-            _graph->Face(mglPoint(vResults[0], vResults[1], vResults[2]),
-                         mglPoint(vResults[0], vResults[1], vResults[2]) + _mDx,
-                         mglPoint(vResults[0], vResults[1], vResults[2]) + _mDz,
-                         mglPoint(vResults[0], vResults[1], vResults[2]) + _mDz + _mDx,
-                         sStyle.c_str());
-            _graph->Face(mglPoint(vResults[0], vResults[1], vResults[2]),
-                         mglPoint(vResults[0], vResults[1], vResults[2]) + _mDy,
-                         mglPoint(vResults[0], vResults[1], vResults[2]) + _mDz,
-                         mglPoint(vResults[0], vResults[1], vResults[2]) + _mDy + _mDz,
-                         sStyle.c_str());
+
+                mglPoint point1 = mglPoint(vResults[0], vResults[1], vResults[2]);
+                mglPoint point2 = mglPoint(vResults[0], vResults[1], vResults[2]) + _mDx;
+                mglPoint point3 = mglPoint(vResults[0], vResults[1], vResults[2]) + _mDy;
+                mglPoint point4 = mglPoint(vResults[0], vResults[1], vResults[2]) + _mDx + _mDy;
+                faceAdapted(_graph, point1, point2, point3, point4, sStyle);
+
+                point1 = mglPoint(vResults[0], vResults[1], vResults[2]);
+                point2 = mglPoint(vResults[0], vResults[1], vResults[2]) + _mDx;
+                point3 = mglPoint(vResults[0], vResults[1], vResults[2]) + _mDz;
+                point4 = mglPoint(vResults[0], vResults[1], vResults[2]) + _mDz + _mDx;
+                faceAdapted(_graph, point1, point2, point3, point4, sStyle);
+
+                point1 = mglPoint(vResults[0], vResults[1], vResults[2]);
+                point2 = mglPoint(vResults[0], vResults[1], vResults[2]) + _mDy;
+                point3 = mglPoint(vResults[0], vResults[1], vResults[2]) + _mDz;
+                point4 = mglPoint(vResults[0], vResults[1], vResults[2]) + _mDy + _mDz;
+                faceAdapted(_graph, point1, point2, point3, point4, sStyle);
+
             _graph->Face(mglPoint(vResults[0], vResults[1], vResults[2]) + _mDz,
                          mglPoint(vResults[0], vResults[1], vResults[2]) + _mDx + _mDz,
                          mglPoint(vResults[0], vResults[1], vResults[2]) + _mDy + _mDz,
                          mglPoint(vResults[0], vResults[1], vResults[2]) + _mDx + _mDy + _mDz,
                          sStyle.c_str());
-            _graph->Face(mglPoint(vResults[0], vResults[1], vResults[2]) + _mDy,
-                         mglPoint(vResults[0], vResults[1], vResults[2]) + _mDx + _mDy,
-                         mglPoint(vResults[0], vResults[1], vResults[2]) + _mDz + _mDy,
-                         mglPoint(vResults[0], vResults[1], vResults[2]) + _mDz + _mDx + _mDy,
-                         sStyle.c_str());
-            _graph->Face(mglPoint(vResults[0], vResults[1], vResults[2]) + _mDx,
-                         mglPoint(vResults[0], vResults[1], vResults[2]) + _mDy + _mDx,
-                         mglPoint(vResults[0], vResults[1], vResults[2]) + _mDz + _mDx,
-                         mglPoint(vResults[0], vResults[1], vResults[2]) + _mDy + _mDz + _mDx,
-                         sStyle.c_str());
+                point1 = mglPoint(vResults[0], vResults[1], vResults[2]) + _mDz;
+                point2 = mglPoint(vResults[0], vResults[1], vResults[2]) + _mDx + _mDz;
+                point3 = mglPoint(vResults[0], vResults[1], vResults[2]) + _mDy + _mDz;
+                point4 = mglPoint(vResults[0], vResults[1], vResults[2]) + _mDx + _mDy + _mDz;
+                faceAdapted(_graph, point1, point2, point3, point4, sStyle);
+
+                point1 = mglPoint(vResults[0], vResults[1], vResults[2]) + _mDy;
+                point2 = mglPoint(vResults[0], vResults[1], vResults[2]) + _mDx + _mDy;
+                point3 = mglPoint(vResults[0], vResults[1], vResults[2]) + _mDz + _mDy;
+                point4 = mglPoint(vResults[0], vResults[1], vResults[2]) + _mDz + _mDx + _mDy;
+                faceAdapted(_graph, point1, point2, point3, point4, sStyle);
+
+                point1 = mglPoint(vResults[0], vResults[1], vResults[2]) + _mDx;
+                point2 = mglPoint(vResults[0], vResults[1], vResults[2]) + _mDy + _mDx;
+                point3 = mglPoint(vResults[0], vResults[1], vResults[2]) + _mDz + _mDx;
+                point4 = mglPoint(vResults[0], vResults[1], vResults[2]) + _mDy + _mDz + _mDx;
+                faceAdapted(_graph, point1, point2, point3, point4, sStyle);
         }
         else if (sCurrentDrawingFunction.starts_with("sphere("))
         {
