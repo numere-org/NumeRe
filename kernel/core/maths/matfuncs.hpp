@@ -228,7 +228,7 @@ static mu::value_type calcDeterminant(const Matrix& _mMatrix, std::vector<int> v
                     else
                         dDet += (double)nSign * _mMatrix(i, j);
 
-                    // füge Spalte j wieder hinzu
+                    // fï¿½ge Spalte j wieder hinzu
                     vRemovedLines[j] -= 2;
                     // alternierendes Vorzeichen
                     nSign *= -1;
@@ -3505,20 +3505,20 @@ static Matrix matrixConvolution(const MatFuncData& funcData, const MatFuncErrorI
     // convolution by multiplication in fourier space and finally applying the inverse fft
 
     // Get the complete matrix from the previously generated indices
-    Matrix mat(rows.size(), cols.size());  //TODO: Or can this be done without a new memory alloc
+    Matrix mat(rows.size(), cols.size());
     for (size_t i = 0; i < mat.rows(); i++)
         for (size_t j = 0; j < mat.cols(); j++)
             mat(i, j) = funcData.mat1(rows[i], cols[j]);
 
     // Extend the kernel with zeros to the same size as the extended matrix
-    Matrix kernel(rows.size(), cols.size(), 0.0);  //TODO: Or can this be done without a new memory alloc
+    Matrix kernel(rows.size(), cols.size(), 0.0);
     for (size_t i = 0; i < funcData.mat2.rows(); i++)
         for (size_t j = 0; j < funcData.mat2.cols(); j++)
             kernel(i + offsetRows + inputRows / 2 - funcData.mat2.rows() / 2,
                    j + offsetCols + inputCols / 2 - funcData.mat2.cols() / 2) = funcData.mat2(i, j);
 
     // Call the convolution function
-    Matrix extendedResult = convolution(mat, kernel);  //TODO: Without copy?
+    Matrix extendedResult = convolution(mat, kernel);
 
     // Extract the relevant part of the result and perform the axis shift
     for (size_t i = 0; i < inputRows; i++)
@@ -3564,6 +3564,126 @@ static Matrix matrixFilter(const MatFuncData& funcData, const MatFuncErrorInfo& 
         return matrixConvolution(funcData, errorInfo);
 
     return matrixRasterFilter(funcData, errorInfo);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Function to perform a circular shift
+/// of the elements in a matrix by n rows.
+///
+/// \param funcData const MatFuncData&
+/// \param errorInfo const MatFuncErrorInfo&
+/// \return Matrix
+///
+/////////////////////////////////////////////////
+static Matrix circShiftRow(const MatFuncData& funcData, const MatFuncErrorInfo& errorInfo)
+{
+    // Inputs: funcData.mat1 funcData.nVal
+    std::vector<mu::value_type> matData = funcData.mat1.data();
+
+    // Circular shift downwards (negative values upwards)
+    // TODO: remove the unnecessary int casts
+    int shift = (int)funcData.nVal % (int)matData.size();
+    shift = - shift;
+    shift = (shift + (int)matData.size()) % (int)matData.size();
+
+    std::rotate(matData.begin(), matData.begin() + shift, matData.end());
+
+    Matrix _mResult = Matrix();
+    _mResult.assign(funcData.mat1.rows(), funcData.mat1.cols(), matData);
+
+    return _mResult;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Function to perform a circular shift
+/// of the elements in a matrix by n columns.
+///
+/// \param funcData const MatFuncData&
+/// \param errorInfo const MatFuncErrorInfo&
+/// \return Matrix
+///
+/////////////////////////////////////////////////
+static Matrix circShiftCol(const MatFuncData& funcData, const MatFuncErrorInfo& errorInfo)
+{
+    // Transpose the matrix (including restructuring the memory) to get a row wise representation of the data
+    Matrix _mResult = Matrix(funcData.mat1);
+    _mResult.transpose();
+    _mResult.extend(_mResult.rows(), _mResult.cols());
+
+    MatFuncData funcDataTransposed = MatFuncData(_mResult, funcData.nVal);
+
+    // Apply the circShiftRow to the transposed matrix
+    _mResult = circShiftRow(funcDataTransposed, errorInfo);
+
+    // Reverse the transposition
+    _mResult.transpose();
+    _mResult.extend(_mResult.rows(), _mResult.cols());
+
+    // TODO: The double transpose is not very efficient. Probably a loop with directly addressing the new elements would be faster.
+
+    return _mResult;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Function to perform a shift
+/// of the columns in a matrix by n columns.
+///
+/// \param funcData const MatFuncData&
+/// \param errorInfo const MatFuncErrorInfo&
+/// \return Matrix
+///
+/////////////////////////////////////////////////
+static Matrix vectShiftCol(const MatFuncData& funcData, const MatFuncErrorInfo& errorInfo)
+{
+    // Matrix data is a column-wise vector
+    std::vector<mu::value_type> matData = funcData.mat1.data();
+
+    // Column shift to the right (negative values to the left)
+    for (size_t col = 0; col < funcData.mat1.cols(); col++)
+    {
+        // TODO: Remove the unnecessary int casts
+        int col_old = (int)((((int)col - (int)funcData.nVal) % (int)funcData.mat1.cols()) + (int)funcData.mat1.cols()) % (int)funcData.mat1.cols();
+        std::copy(funcData.mat1.data().begin() + col_old * funcData.mat1.rows(), funcData.mat1.data().begin() + (col_old + 1) * funcData.mat1.rows(), matData.begin() + col * funcData.mat1.rows());
+    }
+
+    Matrix _mResult = Matrix();
+    _mResult.assign(funcData.mat1.rows(), funcData.mat1.cols(), matData);
+
+    return _mResult;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Function to perform a shift
+/// of the rows in a matrix by n rows.
+///
+/// \param funcData const MatFuncData&
+/// \param errorInfo const MatFuncErrorInfo&
+/// \return Matrix
+///
+/////////////////////////////////////////////////
+static Matrix vectShiftRow(const MatFuncData& funcData, const MatFuncErrorInfo& errorInfo)
+{
+    // Transpose the matrix (including restructuring the memory) to get a row wise representation of the data
+    Matrix _mResult = Matrix(funcData.mat1);
+    _mResult.transpose();
+    _mResult.extend(_mResult.rows(), _mResult.cols());
+
+    MatFuncData funcDataTransposed = MatFuncData(_mResult, funcData.nVal);
+
+    // Apply the vectShiftRow to the transposed matrix
+    _mResult = vectShiftCol(funcDataTransposed, errorInfo);
+
+    // Reverse the transposition
+    _mResult.transpose();
+    _mResult.extend(_mResult.rows(), _mResult.cols());
+
+    // TODO: The double transpose is not very efficient. Probably a loop with directly addressing the new elements would be faster.
+
+    return _mResult;
 }
 
 
@@ -3660,6 +3780,10 @@ static std::map<std::string,MatFuncDef> getMatrixFunctions()
     mFunctions["assemble"] = MatFuncDef(MATSIG_MAT_MAT_MAT, assemble);
     mFunctions["polylength"] = MatFuncDef(MATSIG_MAT, polyLength);
     mFunctions["filter"] = MatFuncDef(MATSIG_MAT_MAT_N, matrixFilter);
+    mFunctions["circshiftrow"] = MatFuncDef(MATSIG_MAT_N_MOPT, circShiftRow);
+    mFunctions["circshiftcol"] = MatFuncDef(MATSIG_MAT_N_MOPT, circShiftCol);
+    mFunctions["vectshiftrow"] = MatFuncDef(MATSIG_MAT_N_MOPT, vectShiftRow);
+    mFunctions["vectshiftcol"] = MatFuncDef(MATSIG_MAT_N_MOPT, vectShiftCol);
 
     // For finding matrix functions
     mFunctions["matfl"] = MatFuncDef(MATSIG_INVALID, invalidMatrixFunction);
