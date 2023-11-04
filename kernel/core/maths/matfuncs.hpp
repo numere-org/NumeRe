@@ -3628,6 +3628,30 @@ static Matrix circShiftCol(const MatFuncData& funcData, const MatFuncErrorInfo& 
 
 
 /////////////////////////////////////////////////
+/// \brief Wrapper for the two circular shift
+/// functions. Selects the methode and checks
+/// the dimension argument.
+///
+/// \param funcData const MatFuncData&
+/// \param errorInfo const MatFuncErrorInfo&
+/// \return Matrix
+///
+/////////////////////////////////////////////////
+static Matrix circShift(const MatFuncData& funcData, const MatFuncErrorInfo& errorInfo)
+{
+    // Check the dim argument
+    if (funcData.mVal < 0 || funcData.mVal > 1)
+        throw SyntaxError(SyntaxError::INVALID_AXIS, errorInfo.command, errorInfo.position);
+
+    // Call the proper function
+    if (funcData.mVal == 0)
+        return circShiftRow(funcData, errorInfo);
+    else
+        return circShiftCol(funcData, errorInfo);
+}
+
+
+/////////////////////////////////////////////////
 /// \brief Function to perform a shift
 /// of the columns in a matrix by n columns.
 ///
@@ -3684,6 +3708,30 @@ static Matrix vectShiftRow(const MatFuncData& funcData, const MatFuncErrorInfo& 
     // TODO: The double transpose is not very efficient. Probably a loop with directly addressing the new elements would be faster.
 
     return _mResult;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Wrapper for the two vector shift
+/// functions. Selects the methode and checks
+/// the dimension argument.
+///
+/// \param funcData const MatFuncData&
+/// \param errorInfo const MatFuncErrorInfo&
+/// \return Matrix
+///
+/////////////////////////////////////////////////
+static Matrix vectShift(const MatFuncData& funcData, const MatFuncErrorInfo& errorInfo)
+{
+    // Check the dim argument
+    if (funcData.mVal < 0 || funcData.mVal > 1)
+        throw SyntaxError(SyntaxError::INVALID_AXIS, errorInfo.command, errorInfo.position);
+
+    // Call the proper function
+    if (funcData.mVal == 0)
+        return vectShiftRow(funcData, errorInfo);
+    else
+        return vectShiftCol(funcData, errorInfo);
 }
 
 
@@ -3780,10 +3828,8 @@ static std::map<std::string,MatFuncDef> getMatrixFunctions()
     mFunctions["assemble"] = MatFuncDef(MATSIG_MAT_MAT_MAT, assemble);
     mFunctions["polylength"] = MatFuncDef(MATSIG_MAT, polyLength);
     mFunctions["filter"] = MatFuncDef(MATSIG_MAT_MAT_N, matrixFilter);
-    mFunctions["circshiftrow"] = MatFuncDef(MATSIG_MAT_N_MOPT, circShiftRow);
-    mFunctions["circshiftcol"] = MatFuncDef(MATSIG_MAT_N_MOPT, circShiftCol);
-    mFunctions["vectshiftrow"] = MatFuncDef(MATSIG_MAT_N_MOPT, vectShiftRow);
-    mFunctions["vectshiftcol"] = MatFuncDef(MATSIG_MAT_N_MOPT, vectShiftCol);
+    mFunctions["circshift"] = MatFuncDef(MATSIG_MAT_N_MOPT, circShift);
+    mFunctions["vectshift"] = MatFuncDef(MATSIG_MAT_N_MOPT, vectShift);
 
     // For finding matrix functions
     mFunctions["matfl"] = MatFuncDef(MATSIG_INVALID, invalidMatrixFunction);
