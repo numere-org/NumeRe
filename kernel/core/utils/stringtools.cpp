@@ -989,7 +989,15 @@ static bool isDateTimePattern(const std::string& sStr, size_t pos)
     return false;
 }
 
-// TODO anders
+
+/////////////////////////////////////////////////
+/// \brief This function is used during the detectCommonType Function to
+///        count detected Number Formats troughout one Column
+///
+/// \param numType int
+/// \return void
+///
+/////////////////////////////////////////////////
 static void voteNumType(int numType)  {
     if((numType & NUM_DECIMAL_EU && numType & NUM_K_US) ||
        (numType & NUM_DECIMAL_US && numType & NUM_K_EU)) {
@@ -1012,7 +1020,7 @@ static void voteNumType(int numType)  {
     }
 }
 
-//TODO BAD
+//TODO Is that a nice way? I dont think so at all
 int last_num_format = 0;
 int num_format_votes[] = {0,0,0,0,0,0};
 
@@ -1960,117 +1968,6 @@ std::string replaceControlCharacters(std::string sToModify)
 
     return sToModify;
 }
-
-
-/////////////////////////////////////////////////
-/// \brief This function counts appearences of a given Substring inside a string.
-///        Returns a pair with first the # appearences of the substring and second the index of last appeareance
-///
-/// \param str std::string&
-/// \param subStr const std::string&
-/// \return std::pair<int, int>
-///
-/////////////////////////////////////////////////
-std::pair<int, int> countSubstringAppereance(std::string &str,const std::string &subStr){
-    int cnt = 0;
-    int lastPos = 0;
-    size_t pos = str.find(subStr);
-    while (pos != std::string::npos) {
-        cnt++;
-        lastPos = pos;
-        pos = str.find(subStr, pos + 1);
-    }
-
-    return std::pair<int, int>(cnt, lastPos);
-}
-
-
-/////////////////////////////////////////////////
-/// \brief This function tries to find Number Format in  vector of strings containing numbers
-///        Assumtion is that Format is continous trough the whole vector
-///
-/// \param sNumVec std::vector<std::string>&
-/// \param indizes const std::vector<int>&
-/// \return NumberFormat
-///
-/////////////////////////////////////////////////
-NumberFormat detectNumberFormat(std::vector<std::string> &sNumVec,const std::vector<int> &indizes){
-/*
-    // TODO:
-    // what about 5.1+E10                               : should be fine
-    // what about + 2.1i or 2.1*I                       : should be fine too
-    // could there be something like 1 000 000 ?
-
-    int apperances[] = {0,0};
-    int len = indizes.empty() ? sNumVec.size() : indizes.size();
-
-    // loop through all string
-    for(int i = 0; i < len; i++){
-        int idx = i;
-        if(!indizes.empty())
-            idx = indizes[i];
-
-        // Split up String into all number parts like re and i part of complex number
-        std::string sNum = sNumVec[idx];    //TODO no copy when big data chunks thatas bad
-        std::regex pattern("[0-9.,]+");
-        std::sregex_iterator iterator(sNum.begin(), sNum.end(), pattern);
-        std::sregex_iterator end;
-
-        //Loop trough all found numbers
-        while (iterator != end) {
-            std::smatch match = *iterator;
-            std::string numToCheck =  match.str();
-
-            // TODO new function to find all apperances, needed to check if 3 digits inbetween thousand seperators
-            std::pair<int,int> dotAppears = countSubstringAppereance(numToCheck, ".");
-            std::pair<int,int> comAppears = countSubstringAppereance(numToCheck, ",");
-
-            // check for unique format apperances
-            // Case 1: both seperators in one Number
-            if(dotAppears.first > 0 && comAppears.first > 0){
-                if(dotAppears.second < comAppears.second && comAppears.first == 1){
-                    return NUM_EU;
-                } else if(comAppears.second < comAppears.second && comAppears.first == 1) {
-                    return NUM_US;
-                }
-                // non valid format
-                return NUM_NONE;
-            } else if(dotAppears.first > 0) {
-                if(dotAppears.first == 1) {
-                    if(numToCheck.size() - (dotAppears.second+1) != 3){
-                        // Case 2: not 3 digits after '.', it cannot be a thousands seperator and must be the decimal part
-                        return NUM_US;
-                    } else if(dotAppears.second > 3){
-                        // Case 4: >3 digits left to the '.' seperator it cannot be a thousands seperator
-                        return NUM_US;
-                    }
-                } else {
-                    // Case 3: more than 1 seperator, '.' is the thousands seperator
-                    // TODO here we should check if there is always 3 digits inbetween
-                    return NUM_EU;
-                }
-            } else if(comAppears.first > 0) {
-                if(comAppears.first == 1) {
-                    if(numToCheck.size() - (comAppears.second+1) != 3){
-                        // Case 2: not 3 digits after ',', it cannot be a thousands seperator and must be the decimal part
-                        return NUM_EU;
-                    } else if(comAppears.second > 3){
-                        // Case 4: >3 digits left to the '.' seperator it cannot be a thousands seperator
-                        return NUM_EU;
-                    }
-                } else {
-                    // Case 3: more than 1 seperator, ',' is the thousands seperator
-                    // TODO here we should check if there is always 3 digits inbetween
-                    return NUM_US;
-                }
-            }
-            ++iterator;
-        }
-    }
-    return NUM_NONE;
-    */
-}
-
 
 /////////////////////////////////////////////////
 /// \brief This function changes Number Format inside a String

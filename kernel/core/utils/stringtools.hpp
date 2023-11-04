@@ -227,14 +227,11 @@ std::string ellipsize(const std::string& sLongString, size_t nMaxStringLength = 
 
 bool isEqualStripped(StringView str1, StringView str2);
 
-std::pair<int, int> countSubstringAppereance(std::string &str,const std::string &subStr);
-void strChangeNumberFormat(std::string &sNum, int numFormat);
-NumberFormat detectNumberFormat(std::vector<std::string> &sNumVec,const std::vector<int> &indizes = std::vector<int>());
-
 // NEW
 extern int last_num_format;
 extern int num_format_votes[];
 static void voteNumType(int numType);
+void strChangeNumberFormat(std::string &sNum, int numFormat);
 
 #endif // STRINGTOOLS_HPP
 

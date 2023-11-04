@@ -108,9 +108,7 @@ static ConvertibleType detectCommonType(const std::vector<std::string>& vVals)
         else if(num_format_votes[1] > 0)
             last_num_format |= NUM_DECIMAL_US | (NUM_K_US * add);
 
-
-
-        // TODO If one invalid not breaking, we have to check here the case that decimal & k are valid combination
+        // TODO If one invalid not breaking, we have to check here the case that decimal & k are valid combinations ?
      }
 
     return convType;
