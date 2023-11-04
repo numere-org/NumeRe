@@ -133,10 +133,15 @@ enum TimeDateFormat
 enum NumberFormat
 {
     NUM_NONE = 0x0,
-    NUM_EU = 0x1,  // '.' as thousand seperator & ',' as decimal seperator
-    NUM_US = 0x2,   // ',' as thousand seperator & '.' as decimal seperator
-    NUM_SPACE = 0x4,
-    NUM_INVALID = 0x8
+
+    NUM_DECIMAL_EU = 0x1,  // '.' as thousand seperator & ',' as decimal seperator
+    NUM_DECIMAL_US = 0x2,   // ',' as thousand seperator & '.' as decimal seperator
+
+    NUM_K_SPACE = 0x100,
+    NUM_K_EU = 0x200,
+    NUM_K_US = 0x400,
+
+    NUM_INVALID = 0x1000
 };
 
 std::string toString(int nNumber, const Settings& _option);
@@ -203,7 +208,6 @@ size_t versionToInt(std::string);
 std::string intToVersion(size_t);
 
 bool isConvertible(const std::string& sStr, ConvertibleType type = CONVTYPE_VALUE);
-bool isConvertible(const std::string& sStr, ConvertibleType type, NumberFormat& nFormat);
 int detectTimeDateFormat(const std::string&);
 
 std::string toSystemCodePage(std::string sOutput);
@@ -224,8 +228,13 @@ std::string ellipsize(const std::string& sLongString, size_t nMaxStringLength = 
 bool isEqualStripped(StringView str1, StringView str2);
 
 std::pair<int, int> countSubstringAppereance(std::string &str,const std::string &subStr);
-void strChangeNumberFormat(std::string &sNum, NumberFormat numFormat);
+void strChangeNumberFormat(std::string &sNum, int numFormat);
 NumberFormat detectNumberFormat(std::vector<std::string> &sNumVec,const std::vector<int> &indizes = std::vector<int>());
+
+// NEW
+extern int last_num_format;
+extern int num_format_votes[];
+static void voteNumType(int numType);
 
 #endif // STRINGTOOLS_HPP
 

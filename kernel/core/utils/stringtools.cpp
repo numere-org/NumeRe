@@ -989,6 +989,32 @@ static bool isDateTimePattern(const std::string& sStr, size_t pos)
     return false;
 }
 
+// TODO anders
+static void voteNumType(int numType)  {
+    if((numType & NUM_DECIMAL_EU && numType & NUM_K_US) ||
+       (numType & NUM_DECIMAL_US && numType & NUM_K_EU)) {
+        num_format_votes[5]++;  // INVALID Combination
+    } else {
+        if(numType & NUM_DECIMAL_EU)
+            num_format_votes[0]++;
+        else if(numType & NUM_DECIMAL_US)
+            num_format_votes[1]++;
+
+        if(numType & NUM_K_EU)
+            num_format_votes[2]++;
+        else if(numType & NUM_K_US)
+            num_format_votes[3]++;
+        else if(numType & NUM_K_SPACE)
+            num_format_votes[4]++;
+
+        if(numType & NUM_INVALID)
+            num_format_votes[5]++;
+    }
+}
+
+//TODO BAD
+int last_num_format = 0;
+int num_format_votes[] = {0,0,0,0,0,0};
 
 /////////////////////////////////////////////////
 /// \brief This function checks, whether a string
@@ -1001,13 +1027,6 @@ static bool isDateTimePattern(const std::string& sStr, size_t pos)
 ///
 /////////////////////////////////////////////////
 bool isConvertible(const std::string& sStr, ConvertibleType type){
-    NumberFormat nForm;
-    return isConvertible(sStr, type, nForm);
-}
-
-//TODO NEW
-bool isConvertible(const std::string& sStr, ConvertibleType type, NumberFormat &nFormat)
-{
     if (type == CONVTYPE_VALUE)
     {
         // Apply the simplest heuristic: mostly every numerical valid character
@@ -1029,12 +1048,11 @@ bool isConvertible(const std::string& sStr, ConvertibleType type, NumberFormat &
         int lastSepIdx = -1;
 
         // TODO is a starting decimal seperator valid ? If so we know what Format hast do be
-        // -- die lokig failed combis aus xxx.xxx,xxx.xxx,xxx ????
-        nFormat = NUM_NONE;
+        int nFormat = NUM_NONE;
         if(sStr[0] == '.')
-            nFormat = NUM_US;
+            nFormat |= NUM_DECIMAL_US;
         else if (sStr[0] == ',')
-            nFormat = NUM_EU;
+            nFormat |= NUM_DECIMAL_EU;
 
         if(nFormat != NUM_NONE){
             lastSepIdx = 0;
@@ -1044,7 +1062,7 @@ bool isConvertible(const std::string& sStr, ConvertibleType type, NumberFormat &
 
         // Regression fix introduced because NA is accepted as NaN
         size_t i = 1;
-        for (; i < sStr.length()-1; i++)
+        for (; i < sStr.length(); i++)
         {
             //if(sStr[i] < '0' || '9' < sStr[i]) { // No seperator and no Decimal -> outside of Number
             if(sStr[i] == ',' || sStr[i] == '.' || sStr[i] == ' ' || ('0' <= sStr[i] && sStr[i] <= '9' )) {
@@ -1056,39 +1074,48 @@ bool isConvertible(const std::string& sStr, ConvertibleType type, NumberFormat &
                     if(lastSepIdx != -1) {
                         if(sStr[lastSepIdx] != sStr[i]) {
                             // Case 1: two seperators in one number
-                            // TODO check for invalid change of Format inside one number
+                            // TODO check for invalid change of Format inside one number like xxx.xxx,xxx.xxx
                             if(sStr[i] == ',') {
-                                nFormat = NUM_EU;
+                                nFormat |= NUM_DECIMAL_EU;
                             } else if(sStr[i] == '.') {
-                                nFormat = NUM_US;
+                                nFormat |= NUM_DECIMAL_US;
                             } else {
-                                //TODO invalid ! cannot be Leerzeichen
+                                // invalid ! cannot be Leerzeichen
+                                nFormat |= NUM_INVALID;
+                                //return false;
+                            }
+                            if(sStr[lastSepIdx] == ' ') {
+                                nFormat |= NUM_K_SPACE;
+                            } else if(sStr[lastSepIdx] == '.') {
+                                nFormat |= NUM_K_EU;
+                            } else if(sStr[lastSepIdx] == ',') {
+                                nFormat |= NUM_K_US;
                             }
                         } else {
                             // Case 3: Two same seperators inbetween must be thousands seperator
-                            // TODO
                             if(i - lastSepIdx != 4) {
-                                //TODO non valid CASE !!!!!
+                                nFormat |= NUM_INVALID;
                             } else if(sStr[i] == ' ') {
-                                //TODO leerzeichen
-                            } else if(sStr[i] == ',') {
-                                nFormat = NUM_EU;
+                                nFormat |= NUM_K_SPACE;
                             } else if(sStr[i] == '.') {
-                                nFormat = NUM_US;
+                                nFormat |= NUM_K_EU;
+                            } else if(sStr[i] == ',') {
+                                nFormat |= NUM_K_US;
                             } else {
-                                //TODO invalid ! bzw gibt den case ja nicht
+                                nFormat |= NUM_INVALID;
+                                //return false;
                             }
                         }
                     } else {
                         if((i - numStartIdx) > 4) {
                             // Case 4 first seperator but left more than 3 Digits -> must be Decimal seperator
-                            // TODO Case 4
                             if(sStr[i] == ',') {
-                                nFormat = NUM_EU;
+                                nFormat |= NUM_DECIMAL_EU;
                             } else if(sStr[i] == '.') {
-                                nFormat = NUM_US;
+                                nFormat |= NUM_DECIMAL_US;
                             } else {
-                                //TODO invalid ! cannot be Leerzeichen
+                                nFormat |= NUM_INVALID;
+                                //return false;
                             }
                         }
                     }
@@ -1098,13 +1125,13 @@ bool isConvertible(const std::string& sStr, ConvertibleType type, NumberFormat &
                 if(inNum){
                     if(lastSepIdx != -1 && (i - lastSepIdx) != 3){
                         // Case 2: != 3 digits after last seperator -> must be decimal seperator
-                        // TODO
                         if(sStr[lastSepIdx] == ',') { // TODO ADD check that type is not already US via &
-                            nFormat = NUM_EU;
+                            nFormat |= NUM_DECIMAL_EU;
                         } else if(sStr[lastSepIdx] == '.') {
-                            nFormat = NUM_US;
+                            nFormat |= NUM_DECIMAL_US;
                         } else {  // ' ' cannot be a decimal seperator
-                            nFormat = NUM_INVALID;
+                            nFormat |= NUM_INVALID;
+                            //return false;
                         }
                     }
 
@@ -1112,7 +1139,7 @@ bool isConvertible(const std::string& sStr, ConvertibleType type, NumberFormat &
                     numStartIdx = 0;
                     lastSepIdx = -1;
                 }
-                if (sStr[i] == '-' || sStr[i] == '+')
+                if (i-1 < sStr.length() && sStr[i] == '-' || sStr[i] == '+')
                 {
                     if (tolower(sStr[i-1]) != 'e'
                         && (isdigit(sStr[i-1]) && sStr.find_first_of("iI", i+1) == std::string::npos)
@@ -1123,21 +1150,21 @@ bool isConvertible(const std::string& sStr, ConvertibleType type, NumberFormat &
         }
 
         if(inNum){
-            if(lastSepIdx != -1 && (i - lastSepIdx) != 3){
+            if(lastSepIdx != -1 && (i - lastSepIdx) != 4){
                 // Case 2: != 3 digits after last seperator -> must be decimal seperator
-                // TODO
                 if(sStr[lastSepIdx] == ',') { // TODO ADD check that type is not already US via &
-                    nFormat = NUM_EU;
+                    nFormat |= NUM_DECIMAL_EU;
                 } else if(sStr[lastSepIdx] == '.') {
-                    nFormat = NUM_US;
+                    nFormat |= NUM_DECIMAL_US;
                 } else {  // ' ' cannot be a decimal seperator
-                    nFormat = NUM_INVALID;
+                    nFormat |= NUM_INVALID;
+                    //return false;
                 }
             }
         }
 
         //TODO Check last value for number format
-
+        voteNumType(nFormat);
         // Try to detect dates
         return !isConvertible(sStr, CONVTYPE_DATE_TIME);
     }
@@ -1968,7 +1995,7 @@ std::pair<int, int> countSubstringAppereance(std::string &str,const std::string 
 ///
 /////////////////////////////////////////////////
 NumberFormat detectNumberFormat(std::vector<std::string> &sNumVec,const std::vector<int> &indizes){
-
+/*
     // TODO:
     // what about 5.1+E10                               : should be fine
     // what about + 2.1i or 2.1*I                       : should be fine too
@@ -2041,6 +2068,7 @@ NumberFormat detectNumberFormat(std::vector<std::string> &sNumVec,const std::vec
         }
     }
     return NUM_NONE;
+    */
 }
 
 
@@ -2052,25 +2080,19 @@ NumberFormat detectNumberFormat(std::vector<std::string> &sNumVec,const std::vec
 /// \return void
 ///
 /////////////////////////////////////////////////
-void strChangeNumberFormat(std::string &sNum, NumberFormat numFormat){
+void strChangeNumberFormat(std::string &sNum, int numFormat){
 
-    switch(numFormat){
-        case NUM_EU:
-            // '.' for thousands and ',' for decimals
-            replaceAll(sNum, ".", "");
-            replaceAll(sNum, ",", ".");
-            break;
+    if(numFormat & NUM_K_EU)
+        replaceAll(sNum, ".", "");
 
-        case NUM_US:
-            // '.' for thousands and ',' for decimals
-            replaceAll(sNum, ",", "");
-            //replaceAll(sNum, ".", "");
-            break;
+    if(numFormat & NUM_K_US)
+        replaceAll(sNum, ",", "");
 
-        case NUM_NONE:
-            // No valid Format, do nothing
-            break;
-    }
+    if(numFormat & NUM_K_SPACE)
+        replaceAll(sNum, " ", "");
+
+    if(numFormat & NUM_DECIMAL_EU)
+        replaceAll(sNum, ",", ".");
 }
 
 

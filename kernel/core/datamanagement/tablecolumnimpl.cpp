@@ -21,6 +21,8 @@
 #include "../ui/error.hpp"
 #include "../../kernel.hpp"
 
+
+
 /////////////////////////////////////////////////
 /// \brief Static helper function used by some of
 /// the conversion member functions to define the
@@ -33,6 +35,10 @@
 static ConvertibleType detectCommonType(const std::vector<std::string>& vVals)
 {
     ConvertibleType convType = CONVTYPE_NONE;
+
+    last_num_format = 0;
+    for(int i = 0; i < 6; i++)
+        num_format_votes[i] = 0;
 
     // Determine first, if a conversion is possible
     for (size_t i = 0; i < vVals.size(); i++)
@@ -77,8 +83,39 @@ static ConvertibleType detectCommonType(const std::vector<std::string>& vVals)
         }
     }
 
+    if(convType == CONVTYPE_VALUE) {
+        last_num_format = 0;
+
+        // NEW check voting
+        if(num_format_votes[5] > 0) {  // if one invalid, all invalid ?
+            last_num_format = NUM_INVALID;
+            return CONVTYPE_NONE;
+        }
+
+        if((num_format_votes[2] > num_format_votes[3]) && (num_format_votes[2] > num_format_votes[4]))
+            last_num_format |= NUM_K_EU;
+        else if((num_format_votes[3] > num_format_votes[2]) && (num_format_votes[3] > num_format_votes[4]))
+            last_num_format |= NUM_K_US;
+        else if(num_format_votes[4] > 0)
+            last_num_format |= NUM_K_SPACE;
+
+        int add = 0;
+        if(last_num_format == 0)
+            add = 1;
+
+        if(num_format_votes[0] > num_format_votes[1])
+            last_num_format |= NUM_DECIMAL_EU | (NUM_K_EU * add);
+        else if(num_format_votes[1] > 0)
+            last_num_format |= NUM_DECIMAL_US | (NUM_K_US * add);
+
+
+
+        // TODO If one invalid not breaking, we have to check here the case that decimal & k are valid combination
+     }
+
     return convType;
 }
+
 
 
 /////////////////////////////////////////////////
@@ -1716,15 +1753,10 @@ TableColumn* StringColumn::convert(ColumnType type)
             return nullptr;
     }
 
-    // NEW Marco
-    NumberFormat numFormat = NUM_NONE;
     if (convType == CONVTYPE_DATE_TIME)
         col = new DateTimeColumn(m_data.size());
-    else if (convType == CONVTYPE_VALUE) {
-        // NEW Marco
-        numFormat = detectNumberFormat(m_data);
+    else if (convType == CONVTYPE_VALUE)
         col = new ValueColumn(m_data.size());
-    }
     else if (convType == CONVTYPE_LOGICAL)
         col = new LogicalColumn(m_data.size());
 
@@ -1740,8 +1772,7 @@ TableColumn* StringColumn::convert(ColumnType type)
         {
             // TODO Marco 1
             std::string strval = m_data[i];
-            strChangeNumberFormat(strval, numFormat);
-            //replaceAll(strval, ",", ".");
+            strChangeNumberFormat(strval, last_num_format);
             col->setValue(i, !isConvertible(strval, CONVTYPE_VALUE)
                              ? StrToLogical(strval)
                              : StrToCmplx(strval));
@@ -2213,15 +2244,10 @@ TableColumn* CategoricalColumn::convert(ColumnType type)
             return nullptr;
     }
 
-    // NEW Marco
-    NumberFormat numFormat = NUM_NONE;
     if (convType == CONVTYPE_DATE_TIME)
         col = new DateTimeColumn(m_data.size());
-    else if (convType == CONVTYPE_VALUE) {
-        // NEW Marco
-        numFormat = detectNumberFormat(m_categories, m_data);
+    else if (convType == CONVTYPE_VALUE)
         col = new ValueColumn(m_data.size());
-    }
     else if (convType == CONVTYPE_LOGICAL)
         col = new LogicalColumn(m_data.size());
 
@@ -2237,7 +2263,7 @@ TableColumn* CategoricalColumn::convert(ColumnType type)
         {
             // TODO Marco 2
             std::string strval = m_categories[m_data[i]];
-            strChangeNumberFormat(strval, numFormat);
+            strChangeNumberFormat(strval, last_num_format);
             //replaceAll(strval, ",", ".");
             col->setValue(i, StrToCmplx(strval));
         }
