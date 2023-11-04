@@ -149,53 +149,7 @@ std::string toString(size_t nNumber)
 /////////////////////////////////////////////////
 std::string toString(__time64_t tTime, int timeStampFlags)
 {
-    tm* ltm = _localtime64(&tTime);
-
-    if (!ltm)
-        return "";
-
-    time_zone tz = getCurrentTimeZone();
-
-    std::ostringstream timeStream;
-
-    if (!(timeStampFlags & GET_ONLY_TIME))
-    {
-        timeStream << 1900+ltm->tm_year << "-"; //YYYY-
-        timeStream << std::setfill('0') << std::setw(2) << ltm->tm_mon + 1 << "-"; // MM-
-        timeStream << std::setfill('0') << std::setw(2) << ltm->tm_mday; 	// DD
-
-        if (timeStampFlags & GET_AS_TIMESTAMP)
-            timeStream << "_";
-        else
-        {
-            timeStream << ", ";	// Komma im regulaeren Datum
-
-            if (timeStampFlags & GET_WITH_TEXT)
-            {
-                if (_lang.get("TOOLS_TIMESTAMP_AT") == "TOOLS_TIMESTAMP_AT")
-                    timeStream << "at ";
-                else
-                    timeStream << _lang.get("TOOLS_TIMESTAMP_AT") << " ";
-            }
-        }
-    }
-
-    if (timeStampFlags & GET_ONLY_TIME)
-        timeStream << std::setfill('0') << std::setw(2) << ltm->tm_hour + tz.Bias.count()/60; 	// hh
-    else
-        timeStream << std::setfill('0') << std::setw(2) << ltm->tm_hour; 	// hh
-
-    if (!(timeStampFlags & GET_AS_TIMESTAMP))
-        timeStream << ":";		// ':' im regulaeren Datum
-
-    timeStream << std::setfill('0') << std::setw(2) << ltm->tm_min;	// mm
-
-    if (!(timeStampFlags & GET_AS_TIMESTAMP))
-        timeStream << ":";
-
-    timeStream << std::setfill('0') << std::setw(2) << ltm->tm_sec;	// ss
-
-    return timeStream.str();
+    return toString(getTimePointFromTimeStamp(getTimeStampFromTime_t(tTime)), timeStampFlags);
 }
 
 
@@ -213,51 +167,71 @@ std::string toString(sys_time_point tp, int timeStampFlags)
     time_zone tz = getCurrentTimeZone();
     std::ostringstream timeStream;
 
+    if (timeStampFlags & GET_SHORTEST)
+    {
+        //if (to_double(tp) < 24*3600)
+        //    timeStampFlags |= GET_ONLY_TIME;
+
+        if (!(timeStampFlags & GET_ONLY_TIME)
+            && !ltm.m_hours.count()
+            && !ltm.m_minutes.count()
+            && !ltm.m_seconds.count()
+            && !ltm.m_millisecs.count()
+            && !ltm.m_microsecs.count())
+            timeStampFlags |= GET_ONLY_DATE;
+    }
+
     if (!(timeStampFlags & GET_ONLY_TIME))
     {
         timeStream << ltm.m_ymd.year() << "-"; //YYYY-
         timeStream << std::setfill('0') << std::setw(2) << unsigned(ltm.m_ymd.month()) << "-"; // MM-
         timeStream << ltm.m_ymd.day(); 	// DD
 
-        if (timeStampFlags & GET_AS_TIMESTAMP)
-            timeStream << "_";
-        else
+        if (!(timeStampFlags & GET_ONLY_DATE))
         {
-            timeStream << ", ";	// Komma im regulaeren Datum
-
-            if (timeStampFlags & GET_WITH_TEXT)
+            if (timeStampFlags & GET_AS_TIMESTAMP)
+                timeStream << "_";
+            else
             {
-                if (_lang.get("TOOLS_TIMESTAMP_AT") == "TOOLS_TIMESTAMP_AT")
-                    timeStream << "at ";
-                else
-                    timeStream << _lang.get("TOOLS_TIMESTAMP_AT") << " ";
+                timeStream << ", ";	// Komma im regulaeren Datum
+
+                if (timeStampFlags & GET_WITH_TEXT)
+                {
+                    if (_lang.get("TOOLS_TIMESTAMP_AT") == "TOOLS_TIMESTAMP_AT")
+                        timeStream << "at ";
+                    else
+                        timeStream << _lang.get("TOOLS_TIMESTAMP_AT") << " ";
+                }
             }
         }
     }
 
-    if (timeStampFlags & GET_ONLY_TIME && !(timeStampFlags & GET_UNBIASED_TIME))
-        timeStream << std::setfill('0') << std::setw(2) << ltm.m_hours.count() + (tz.Bias + tz.DayLightBias).count()/60; 	// hh
-    else
-        timeStream << std::setfill('0') << std::setw(2) << ltm.m_hours.count(); 	// hh
-
-    if (!(timeStampFlags & GET_AS_TIMESTAMP))
-        timeStream << ":";		// ':' im regulaeren Datum
-
-    timeStream << std::setfill('0') << std::setw(2) << ltm.m_minutes.count();	// mm
-
-    if (!(timeStampFlags & GET_AS_TIMESTAMP))
-        timeStream << ":";
-
-    timeStream << std::setfill('0') << std::setw(2) << ltm.m_seconds.count();	// ss
-
-    if (!(timeStampFlags & GET_AS_TIMESTAMP))
+    if (!(timeStampFlags & GET_ONLY_DATE))
     {
-        if (timeStampFlags & (GET_MILLISECONDS | GET_FULL_PRECISION)
-            || ltm.m_millisecs.count())
-            timeStream << "." << std::setfill('0') << std::setw(3) << ltm.m_millisecs.count();
+        if (timeStampFlags & GET_ONLY_TIME && !(timeStampFlags & GET_UNBIASED_TIME))
+            timeStream << std::setfill('0') << std::setw(2) << ltm.m_hours.count() + (tz.Bias + tz.DayLightBias).count()/60; 	// hh
+        else
+            timeStream << std::setfill('0') << std::setw(2) << ltm.m_hours.count(); 	// hh
 
-        if (timeStampFlags & GET_FULL_PRECISION)
-            timeStream << std::setfill('0') << std::setw(3) << ltm.m_microsecs.count();
+        if (!(timeStampFlags & GET_AS_TIMESTAMP))
+            timeStream << ":";		// ':' im regulaeren Datum
+
+        timeStream << std::setfill('0') << std::setw(2) << ltm.m_minutes.count();	// mm
+
+        if (!(timeStampFlags & GET_AS_TIMESTAMP))
+            timeStream << ":";
+
+        timeStream << std::setfill('0') << std::setw(2) << ltm.m_seconds.count();	// ss
+
+        if (!(timeStampFlags & GET_AS_TIMESTAMP))
+        {
+            if (timeStampFlags & (GET_MILLISECONDS | GET_FULL_PRECISION)
+                || ltm.m_millisecs.count())
+                timeStream << "." << std::setfill('0') << std::setw(3) << ltm.m_millisecs.count();
+
+            if (timeStampFlags & GET_FULL_PRECISION)
+                timeStream << std::setfill('0') << std::setw(3) << ltm.m_microsecs.count();
+        }
     }
 
     return timeStream.str();
@@ -357,6 +331,63 @@ std::string toHexString(size_t nNumber)
     std::ostringstream Temp;
     Temp << std::hex << nNumber;
     return "0x" + Temp.str();
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Converts a double into a formatted
+/// duration string.
+///
+/// \param dDuration double
+/// \return std::string
+///
+/////////////////////////////////////////////////
+std::string formatDuration(double dDuration)
+{
+    if (std::isnan(dDuration))
+        return "---";
+
+    std::string sDuration;
+    bool isNegative = dDuration < 0.0;
+
+    dDuration = std::abs(dDuration);
+
+    int nYears = std::floor(dDuration / (365.0*24*3600));
+    dDuration -= nYears * 365.0*24*3600;
+
+    int nWeeks = std::floor(dDuration / (7.0*24*3600));
+    dDuration -= nWeeks * 7.0*24*3600;
+
+    int nDays = std::floor(dDuration / (24.0*3600));
+    dDuration -= nDays * 24.0*3600;
+
+    int nHours = std::floor(dDuration / 3600.0);
+    dDuration -= nHours * 3600.0;
+
+    int nMinutes = std::floor(dDuration / 60.0);
+    dDuration -= nMinutes * 60.0;
+
+    int nSeconds = (int)dDuration;
+    dDuration -= dDuration;
+
+    if (isNegative)
+        sDuration += "-";
+
+    if (nYears)
+        sDuration += toString(nYears) + "y ";
+
+    if (nWeeks)
+        sDuration += toString(nWeeks) + "wk ";
+
+    if (nDays)
+        sDuration += toString(nDays) + "d ";
+
+    sDuration += toString(nHours) + ":" + strfill(toString(nMinutes), 2, '0') + ":" + strfill(toString(nSeconds), 2, '0');
+
+    if (dDuration > 0.0)
+        sDuration += "." + strfill(toString((int)(dDuration*1000)), '0', 3);
+
+    return sDuration;
 }
 
 
@@ -465,6 +496,62 @@ std::string truncString(const std::string& sText, size_t nMaxChars)
         return sText;
 
     return sText.substr(0, nMaxChars-3) + "...";
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This function fills the passed string
+/// up to the width nWidth with the characters
+/// cFill. The string will be aligned
+/// right. If the bool option limit is true,
+/// the string will be shortened to the required
+/// size and '...' will be added.
+///
+/// \param sString const std::string&
+/// \param nWidth size_t
+/// \param cFill char
+/// \param limit bool
+/// \return std::string
+///
+/////////////////////////////////////////////////
+std::string strfill(const std::string& sString, size_t nWidth, char cFill, bool limit)
+{
+    if (!nWidth)
+        return "";
+
+    std::string sReturn = sString;
+
+    // Fill the string
+    if (sString.length() < nWidth)
+        sReturn.insert(0, nWidth-sReturn.length(), cFill);
+
+    // Limit the output size if required
+    if (limit && sString.length() > nWidth)
+        sReturn = sString.substr(0, nWidth - 3) + "...";
+
+    return sReturn;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This function fills the passed string
+/// up to the width nWidth with the characters
+/// cFill. The string will be aligned left.
+///
+/// \param sString const std::string&
+/// \param nWidth size_t
+/// \param cFill char
+/// \return std::string
+///
+/////////////////////////////////////////////////
+std::string strlfill(const std::string& sString, size_t nWidth, char cFill)
+{
+    if (!nWidth)
+        return "";
+    std::string sReturn = sString;
+    if (sString.length() < nWidth)
+        sReturn.append(nWidth-sReturn.length(), cFill);
+    return sReturn;
 }
 
 

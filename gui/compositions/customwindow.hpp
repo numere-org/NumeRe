@@ -24,6 +24,7 @@
 #include <vector>
 #include <utility>
 #include <wx/treelist.h>
+#include <wx/dateevt.h>
 
 #include "../../kernel/windowmanager.hpp"
 #include "../../kernel/core/datamanagement/table.hpp"
@@ -108,20 +109,58 @@ class SetLabelEvent : public wxEvent
 {
 public:
     SetLabelEvent(wxEventType eventType, int winid, int winItem, const wxString& label)
-        : wxEvent(winid, eventType), m_label(label) , m_item(winItem) {}
+        : wxEvent(winid, eventType), m_label(label), m_item(winItem) {}
     virtual wxEvent* Clone() const {return new SetLabelEvent(*this); }
 
     wxString m_label;
     int m_item;
 };
 
+
+/////////////////////////////////////////////////
+/// \brief This event is used to asynchronously
+/// change the element selection in the window.
+/////////////////////////////////////////////////
+class SetSelectionEvent : public wxEvent
+{
+public:
+    SetSelectionEvent(wxEventType eventType, int winid, int winItem, int selId1, int selId2)
+        : wxEvent(winid, eventType), m_selectionId1(selId1), m_selectionId2(selId2), m_item(winItem) {}
+    virtual wxEvent* Clone() const {return new SetSelectionEvent(*this); }
+
+    int m_selectionId1;
+    int m_selectionId2;
+    int m_item;
+};
+
+
+/////////////////////////////////////////////////
+/// \brief This event is used to asynchronously
+/// change the elements' focus in the window.
+/////////////////////////////////////////////////
+class SetFocusEvent : public wxEvent
+{
+public:
+    SetFocusEvent(wxEventType eventType, int winid, int winItem)
+        : wxEvent(winid, eventType), m_item(winItem) {}
+    virtual wxEvent* Clone() const {return new SetFocusEvent(*this); }
+
+    int m_item;
+};
+
 wxDEFINE_EVENT(SET_WINDOW_VALUE, SetValueEvent);
 wxDEFINE_EVENT(SET_WINDOW_LABEL, SetLabelEvent);
+wxDEFINE_EVENT(SET_WINDOW_SELECTION, SetSelectionEvent);
+wxDEFINE_EVENT(SET_WINDOW_FOCUS, SetFocusEvent);
 
 #define cEVT_SET_VALUE(id, func) \
     wx__DECLARE_EVT1(SET_WINDOW_VALUE, id, &func)
 #define cEVT_SET_LABEL(id, func) \
     wx__DECLARE_EVT1(SET_WINDOW_LABEL, id, &func)
+#define cEVT_SET_SELECTION(id, func) \
+    wx__DECLARE_EVT1(SET_WINDOW_SELECTION, id, &func)
+#define cEVT_SET_FOCUS(id, func) \
+    wx__DECLARE_EVT1(SET_WINDOW_FOCUS, id, &func)
 
 
 /////////////////////////////////////////////////
@@ -163,6 +202,8 @@ class CustomWindow : public wxFrame
             TABLE,      // OK
             GRAPHER,    // OK
             SLIDER,
+            DATETIMEPICKER,
+            LAMP,
             MENUITEM
         };
 
@@ -172,6 +213,8 @@ class CustomWindow : public wxFrame
         std::map<wxString, wxString> m_varTable;
 
         NumeRe::Window m_windowRef;
+        wxWindowDisabler* m_dialogLock;
+        wxString m_dialogResult;
 
         void layout();
         void layoutChild(const tinyxml2::XMLElement* currentChild, wxWindow* currParent, wxSizer* currSizer, GroupPanel* _groupPanel);
@@ -179,9 +222,7 @@ class CustomWindow : public wxFrame
         void handleEvent(wxEvent& event, const wxString& sEventType, const EventPosition& pos = EventPosition());
         bool getWindowParameters(WindowItemParams& params) const;
         bool getItemParameters(int windowItemID, WindowItemParams& params) const;
-        wxArrayString getChoices(wxString& choices) const;
         wxArrayString decodeEventHandlerFunction(const wxString& sEventHandler) const;
-        wxString removeQuotationMarks(wxString sString) const;
         void Refresh();
 
     public:
@@ -193,18 +234,51 @@ class CustomWindow : public wxFrame
         wxString getItemLabel(int windowItemID) const;
         wxString getItemState(int windowItemID) const;
         wxString getItemColor(int windowItemID) const;
+        wxString getItemSelection(int windowItemID) const;
         wxString getPropValue(const wxString& varName) const;
         wxString getProperties() const;
+        wxString getStatusText() const;
 
         bool pushItemValue(WindowItemValue& _value, int windowItemID);
         bool pushItemLabel(const wxString& _label, int windowItemID);
+        bool pushItemSelection(int selectionID, int selectionID2, int windowItemID);
+        bool pushItemFocus(int windowItemID);
 
         bool setItemValue(WindowItemValue& _value, int windowItemID);
         bool setItemLabel(const wxString& _label, int windowItemID);
         bool setItemState(const wxString& _state, int windowItemID);
         bool setItemColor(const wxString& _color, int windowItemID);
+        bool setItemSelection(int selectionID, int selectionID2, int windowItemID);
+        bool setItemFocus(int windowItemID);
         bool setItemGraph(GraphHelper* _helper, int windowItemID);
         bool setPropValue(const wxString& _value, const wxString& varName);
+        bool setStatusText(wxString _value);
+
+        void asDialog()
+        {
+            if (!m_dialogLock)
+                m_dialogLock = new wxWindowDisabler(this);
+        }
+
+        bool isDialog() const
+        {
+            return m_dialogLock != nullptr;
+        }
+
+        void endDialog(const wxString& dialogResult)
+        {
+            if (m_dialogLock)
+            {
+                m_dialogResult = dialogResult;
+                delete m_dialogLock;
+                m_dialogLock = nullptr;
+            }
+        }
+
+        wxString getDialogResult() const
+        {
+            return m_dialogResult;
+        }
 
         void OnMenuEvent(wxCommandEvent& event);
         void OnClick(wxCommandEvent& event);
@@ -216,6 +290,7 @@ class CustomWindow : public wxFrame
         void OnMouseLeftDown(wxMouseEvent& event);
         void OnTreeListEvent(wxTreeListEvent& event);
         void OnTreeListActivateEvent(wxTreeListEvent& event);
+        void OnDateEvent(wxDateEvent& event);
         void OnSizeEvent(wxSizeEvent& event);
 
         void OnSetValueEvent(SetValueEvent& event)
@@ -226,6 +301,16 @@ class CustomWindow : public wxFrame
         void OnSetLabelEvent(SetLabelEvent& event)
         {
             setItemLabel(event.m_label, event.m_item);
+        }
+
+        void OnSetSelectionEvent(SetSelectionEvent& event)
+        {
+            setItemSelection(event.m_selectionId1, event.m_selectionId2, event.m_item);
+        }
+
+        void OnSetFocusEvent(SetFocusEvent& event)
+        {
+            setItemFocus(event.m_item);
         }
 
         DECLARE_EVENT_TABLE();

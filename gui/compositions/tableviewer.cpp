@@ -28,6 +28,7 @@
 #include <wx/clipbrd.h>
 #include <wx/dataobj.h>
 #include <wx/tokenzr.h>
+#include <wx/infobar.h>
 
 #include <memory>
 
@@ -72,6 +73,8 @@ TableViewer::TableViewer(wxWindow* parent, wxWindowID id, wxStatusBar* statusbar
     SetDefaultCellAlignment(wxALIGN_RIGHT, wxALIGN_CENTER);
     SetDefaultRenderer(new AdvStringCellRenderer);
     EnableGridLines(NumeReKernel::getInstance()->getSettings().getSetting(SETTING_B_SHOWGRIDLINES).active());
+    SetDefaultRowSize(24);
+    SetDefaultColSize(95);
 
     // Prepare the context menu
     m_popUpMenu.Append(ID_MENU_CVS, _guilang.get("GUI_TABLE_CVS"));
@@ -147,6 +150,13 @@ void TableViewer::layoutGrid()
                 }
 
                 SetColAttr(j, attr);
+
+                if (m_currentColTypes[j] == TableColumn::TYPE_DATETIME)
+                {
+                    //AutoSizeColumn(j);
+                    SetColSize(j, 120);
+                    SetColMinimalWidth(j, 120);
+                }
             }
         }
 
@@ -383,6 +393,22 @@ void TableViewer::OnLabelDoubleClick(wxGridEvent& event)
 {
     if (event.GetCol() >= 0)
         AutoSizeColumn(event.GetCol());
+    else if (event.GetRow() >= 0)
+        AutoSizeRow(event.GetRow());
+    else
+    {
+        int elements = GetRows() * GetCols();
+
+        if (elements > 1500 && m_parentPanel)
+            m_parentPanel->showMessage("Autosizing cells. Please wait ...");
+
+        AutoSize();
+
+        if (elements > 1500 && m_parentPanel)
+            m_parentPanel->dismissMessage();
+    }
+
+    m_parent->Layout();
 }
 
 
@@ -1205,10 +1231,52 @@ void TableViewer::updateStatusBar(const wxGridCellCoordsContainer& coords, wxGri
         sel << "--,--";
 
     // Calculate the simple statistics
-    wxString statustext = "Min: " + toString(calculateMin(coords), STATUSBAR_PRECISION);
-    statustext << " | Max: " << toString(calculateMax(coords), STATUSBAR_PRECISION);
-    statustext << " | Sum: " << toString(calculateSum(coords), 2*STATUSBAR_PRECISION);
-    statustext << " | Avg: " << toString(calculateAvg(coords), 2*STATUSBAR_PRECISION);
+    bool isDateTime = false;
+
+    if (isGridNumeReTable)
+    {
+        wxGridCellsExtent selectedExtent = coords.getExtent();
+        std::vector<int> vTypes = static_cast<GridNumeReTable*>(GetTable())->getColumnTypes();
+
+        if (vTypes[selectedExtent.m_topleft.GetCol()] == TableColumn::TYPE_DATETIME)
+        {
+            isDateTime = true;
+
+            for (int col = selectedExtent.m_topleft.GetCol()+1; col <= selectedExtent.m_bottomright.GetCol(); col++)
+            {
+                if (vTypes[col] != TableColumn::TYPE_DATETIME)
+                {
+                    isDateTime = false;
+                    break;
+                }
+            }
+
+        }
+    }
+
+    wxString statustext;
+
+    double dMin = calculateMin(coords);
+    double dMax = calculateMax(coords);
+    mu::value_type dSum = calculateSum(coords);
+    mu::value_type dAvg = calculateAvg(coords);
+
+    if (isDateTime && !isnan(dMin))
+    {
+        statustext = "[ " + toString(to_timePoint(dMin), GET_SHORTEST);
+        statustext << " : " << toString(to_timePoint(dMax), GET_SHORTEST);
+        statustext << L" ]  |  \u0394t " << formatDuration(dMax-dMin);
+        statustext << L"  |  \u03A3t " << formatDuration(dSum.real());
+        statustext << L"  |  t\u0305 " << toString(to_timePoint(dAvg.real()), GET_SHORTEST);
+    }
+    else
+    {
+        statustext = "[ " + toString(dMin, STATUSBAR_PRECISION);
+        statustext << " : " << toString(dMax, STATUSBAR_PRECISION);
+        statustext << L" ]  |  \u0394x " << toString(dMax-dMin, STATUSBAR_PRECISION);
+        statustext << L"  |  \u03A3x " << toString(dSum, 2*STATUSBAR_PRECISION);
+        statustext << L"  |  x\u0305 " << toString(dAvg, 2*STATUSBAR_PRECISION);
+    }
 
     // Set the status bar valuey
     m_statusBar->SetStatusText(dim);
@@ -1569,19 +1637,41 @@ void TableViewer::SetData(NumeRe::Table& _table, const std::string& sName, const
 void TableViewer::SetTableReadOnly(bool isReadOnly)
 {
     readOnly = isReadOnly;
+    EnableEditing(!isReadOnly);
 
     if (!readOnly)
     {
-        m_popUpMenu.Append(ID_MENU_PASTE, _guilang.get("GUI_PASTE_TABLE_CONTENTS"));
-        m_popUpMenu.Append(ID_MENU_PASTE_HERE, _guilang.get("GUI_PASTE_TABLE_CONTENTS_HERE"));
-        m_popUpMenu.AppendSeparator();
-        m_popUpMenu.Append(ID_MENU_INSERT_ROW, _guilang.get("GUI_INSERT_TABLE_ROW"));
-        m_popUpMenu.Append(ID_MENU_INSERT_COL, _guilang.get("GUI_INSERT_TABLE_COL"));
-        m_popUpMenu.Append(ID_MENU_INSERT_CELL, _guilang.get("GUI_INSERT_TABLE_CELL"));
-        m_popUpMenu.AppendSeparator();
-        m_popUpMenu.Append(ID_MENU_REMOVE_ROW, _guilang.get("GUI_REMOVE_TABLE_ROW"));
-        m_popUpMenu.Append(ID_MENU_REMOVE_COL, _guilang.get("GUI_REMOVE_TABLE_COL"));
-        m_popUpMenu.Append(ID_MENU_REMOVE_CELL, _guilang.get("GUI_REMOVE_TABLE_CELL"));
+        if (m_popUpMenu.FindItem(ID_MENU_PASTE))
+        {
+            for (int i = 0; i < nFirstNumRow; i++)
+            {
+                for (int j = 0; j < GetNumberCols(); j++)
+                {
+                    SetCellSize(i, j, 1, 1);
+                }
+            }
+            m_popUpMenu.Enable(ID_MENU_PASTE, true);
+            m_popUpMenu.Enable(ID_MENU_PASTE_HERE, true);
+            m_popUpMenu.Enable(ID_MENU_INSERT_ROW, true);
+            m_popUpMenu.Enable(ID_MENU_INSERT_COL, true);
+            m_popUpMenu.Enable(ID_MENU_INSERT_CELL, true);
+            m_popUpMenu.Enable(ID_MENU_REMOVE_ROW, true);
+            m_popUpMenu.Enable(ID_MENU_REMOVE_COL, true);
+            m_popUpMenu.Enable(ID_MENU_REMOVE_CELL, true);
+        }
+        else
+        {
+            m_popUpMenu.Append(ID_MENU_PASTE, _guilang.get("GUI_PASTE_TABLE_CONTENTS"));
+            m_popUpMenu.Append(ID_MENU_PASTE_HERE, _guilang.get("GUI_PASTE_TABLE_CONTENTS_HERE"));
+            m_popUpMenu.AppendSeparator();
+            m_popUpMenu.Append(ID_MENU_INSERT_ROW, _guilang.get("GUI_INSERT_TABLE_ROW"));
+            m_popUpMenu.Append(ID_MENU_INSERT_COL, _guilang.get("GUI_INSERT_TABLE_COL"));
+            m_popUpMenu.Append(ID_MENU_INSERT_CELL, _guilang.get("GUI_INSERT_TABLE_CELL"));
+            m_popUpMenu.AppendSeparator();
+            m_popUpMenu.Append(ID_MENU_REMOVE_ROW, _guilang.get("GUI_REMOVE_TABLE_ROW"));
+            m_popUpMenu.Append(ID_MENU_REMOVE_COL, _guilang.get("GUI_REMOVE_TABLE_COL"));
+            m_popUpMenu.Append(ID_MENU_REMOVE_CELL, _guilang.get("GUI_REMOVE_TABLE_CELL"));
+        }
 
         if (m_parentPanel)
         {
@@ -1593,24 +1683,42 @@ void TableViewer::SetTableReadOnly(bool isReadOnly)
                 toolsMenu->Enable(ID_MENU_RELOAD, false);
         }
     }
-    else if (m_parentPanel)
+    else
     {
-        wxMenuBar* menuBar = m_parentPanel->getMenuBar();
-
-        wxMenu* editMenu = menuBar->GetMenu(menuBar->FindMenu(_guilang.get("GUI_MENU_EDIT")));
-
-        if (editMenu)
+        if (m_popUpMenu.FindItem(ID_MENU_PASTE))
         {
-            editMenu->Enable(ID_MENU_PASTE, false);
-            editMenu->Enable(ID_MENU_PASTE_HERE, false);
-            editMenu->Enable(ID_MENU_INSERT_ROW, false);
-            editMenu->Enable(ID_MENU_INSERT_COL, false);
-            editMenu->Enable(ID_MENU_INSERT_CELL, false);
-            editMenu->Enable(ID_MENU_REMOVE_ROW, false);
-            editMenu->Enable(ID_MENU_REMOVE_COL, false);
-            editMenu->Enable(ID_MENU_REMOVE_CELL, false);
+            groupHeaders(0, GetNumberCols(), 0);
+            m_popUpMenu.Enable(ID_MENU_PASTE, false);
+            m_popUpMenu.Enable(ID_MENU_PASTE_HERE, false);
+            m_popUpMenu.Enable(ID_MENU_INSERT_ROW, false);
+            m_popUpMenu.Enable(ID_MENU_INSERT_COL, false);
+            m_popUpMenu.Enable(ID_MENU_INSERT_CELL, false);
+            m_popUpMenu.Enable(ID_MENU_REMOVE_ROW, false);
+            m_popUpMenu.Enable(ID_MENU_REMOVE_COL, false);
+            m_popUpMenu.Enable(ID_MENU_REMOVE_CELL, false);
+        }
+
+        if (m_parentPanel)
+        {
+            wxMenuBar* menuBar = m_parentPanel->getMenuBar();
+
+            wxMenu* editMenu = menuBar->GetMenu(menuBar->FindMenu(_guilang.get("GUI_MENU_EDIT")));
+
+            if (editMenu)
+            {
+                editMenu->Enable(ID_MENU_PASTE, false);
+                editMenu->Enable(ID_MENU_PASTE_HERE, false);
+                editMenu->Enable(ID_MENU_INSERT_ROW, false);
+                editMenu->Enable(ID_MENU_INSERT_COL, false);
+                editMenu->Enable(ID_MENU_INSERT_CELL, false);
+                editMenu->Enable(ID_MENU_REMOVE_ROW, false);
+                editMenu->Enable(ID_MENU_REMOVE_COL, false);
+                editMenu->Enable(ID_MENU_REMOVE_CELL, false);
+            }
         }
     }
+
+    Refresh();
 }
 
 
@@ -2222,6 +2330,46 @@ int TableViewer::GetInternalRows(int gridrow) const
         return -1;
 
     return gridrow;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Converts the grid rows to the external
+/// table rows.
+///
+/// \param gridrow int
+/// \return int
+///
+/////////////////////////////////////////////////
+int TableViewer::GetExternalRows(int gridrow) const
+{
+    if (isGridNumeReTable)
+        gridrow += (int)static_cast<GridNumeReTable*>(GetTable())->getTableRef().getHeadCount();
+    else
+        gridrow += (int)nFirstNumRow;
+
+    if (gridrow >= GetNumberRows())
+        return GetNumberRows()-1;
+
+    return gridrow;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Calculates the minimal size necessary
+/// to display the whole table.
+///
+/// \return wxSize
+///
+/////////////////////////////////////////////////
+wxSize TableViewer::calculateMinSize() const
+{
+    wxSize minSize;
+
+    minSize.y = GetRowHeight(0) * GetNumberRows() + GetColLabelSize() + 5;
+    minSize.x = GetColSize(0) * GetNumberCols() + GetRowLabelSize() + 5;
+
+    return minSize;
 }
 
 

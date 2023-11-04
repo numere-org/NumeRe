@@ -1118,7 +1118,7 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const std::string& sCommand)
 
                     auto errorLoc = getErrorLocation();
 
-                    if (errorLoc.second != -1u)
+                    if (errorLoc.second != SyntaxError::invalid_position)
                     {
                         print(_lang.get("DBG_FILE") + ": " + errorLoc.first + " @ " + toString(errorLoc.second+1));
 

@@ -48,7 +48,7 @@ bool removeFile(CommandLineParser& cmdParser)
     //sCmd = fromSystemCodePage(sCmd);
 
     // Get all relevant files
-    std::vector<std::string> vFiles = getFileList(cmdParser.parseExprAsString(), NumeReKernel::getInstance()->getSettings(), 1);
+    std::vector<std::string> vFiles = _fSys.getFileList(cmdParser.parseExprAsString(), FileSystem::FULLPATH);
 
     // No files -> No deletion needed
     if (!vFiles.size())
@@ -145,7 +145,7 @@ bool moveOrCopyFiles(CommandLineParser& cmdParser)
         cmdParser.setReturnValue(sSource);
 
     // Get the source file list an validate
-    vFileList = getFileList(sSource, NumeReKernel::getInstance()->getSettings(), 1);
+    vFileList = _fSys.getFileList(sSource, FileSystem::FULLPATH);
 
     if (!vFileList.size())
         return false;

@@ -110,6 +110,23 @@
 					<Add option="-DDO_LOG" />
 				</Compiler>
 			</Target>
+			<Target title="Dr Memory_x64">
+				<Option output="../../Software/NumeRe/numere" prefix_auto="1" extension_auto="1" />
+				<Option object_output="Deepdebug_x64" />
+				<Option type="0" />
+				<Option compiler="gcc" />
+				<Option host_application="D:/Software/DrMemory-Windows-2.6.0/bin64/drmemory.exe -light -count_leaks -no_check_gdi --" />
+				<Option run_host_application_in_terminal="1" />
+				<Compiler>
+					<Add option="-g" />
+					<Add option="-ggdb3" />
+					<Add option="-fno-omit-frame-pointer" />
+					<Add option="-D__GNUWIN64__" />
+					<Add option="-DNR_HAVE_GSL2" />
+					<Add option="-DWXDEBUG" />
+					<Add option="-DDO_LOG" />
+				</Compiler>
+			</Target>
 			<Environment>
 				<Variable name="wx" value="$(TARGET_COMPILER_DIR)wxWidgets-3.0.2" />
 			</Environment>
@@ -125,6 +142,7 @@
 			<Add option="-DwxUSE_UNICODE" />
 			<Add option="-D__WXMSW__" />
 			<Add option="-D__MSVCRT_VERSION__=0x0601" />
+			<Add option="-D_WIN32_WINNT=0x0601" />
 			<Add directory="$(wx)/lib/gcc_lib/mswu" />
 			<Add directory="$(wx)/include" />
 		</Compiler>
@@ -254,6 +272,8 @@
 		<Unit filename="gui/compositions/viewerpanel.hpp" />
 		<Unit filename="gui/compositions/wxTermContainer.cpp" />
 		<Unit filename="gui/compositions/wxTermContainer.h" />
+		<Unit filename="gui/controls/datetimepicker.cpp" />
+		<Unit filename="gui/controls/datetimepicker.hpp" />
 		<Unit filename="gui/controls/searchctrl.cpp" />
 		<Unit filename="gui/controls/searchctrl.hpp" />
 		<Unit filename="gui/controls/toolbarsearchctrl.cpp" />
@@ -516,6 +536,7 @@
 			<Option target="Deep Debug" />
 			<Option target="Profiling_x64" />
 			<Option target="Deep Debug_x64" />
+			<Option target="Dr Memory_x64" />
 		</Unit>
 		<Unit filename="kernel/core/utils/tools.cpp" />
 		<Unit filename="kernel/core/utils/tools.hpp" />

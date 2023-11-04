@@ -181,6 +181,9 @@ static void parseLayoutCommand(const std::string& sLayoutCommand, tinyxml2::XMLE
     if (findParameter(sLayoutCommand, "id", '='))
         layoutElement->SetAttribute("id", parseNumOpt(sLayoutCommand, findParameter(sLayoutCommand, "id", '=')+2).c_str());
 
+    if (findParameter(sLayoutCommand, "relscl", '='))
+        layoutElement->SetAttribute("prop", parseNumOpt(sLayoutCommand, findParameter(sLayoutCommand, "relscl", '=')+6).c_str());
+
     if (findParameter(sLayoutCommand, "color", '='))
         layoutElement->SetAttribute("color", parseNumOpt(sLayoutCommand, findParameter(sLayoutCommand, "color", '=')+5).c_str());
 
@@ -327,6 +330,9 @@ static std::string parseLayoutScript(std::string& sLayoutScript, tinyxml2::XMLDo
 
                 if (findParameter(line, "color", '='))
                     currentGroup.top()->SetAttribute("color", parseNumOpt(line, findParameter(line, "color", '=')+5).c_str());
+
+                if (findParameter(line, "statustext", '='))
+                    currentGroup.top()->SetAttribute("statustext", parseStringOpt(line, findParameter(line, "statustext", '=')+10).c_str());
 
                 if (findParameter(line, "onopen", '='))
                     sOnOpenEvent = parseEventOpt(line, findParameter(line, "onopen", '=')+6, sFolderName);
@@ -496,6 +502,12 @@ static void getParametersFromWindow(CommandLineParser& cmdParser, const std::str
         cmdParser.setReturnValue("\"" + winInfo.window->getItemState(itemID) + "\"");
     else if (findParameter(sParList, "color"))
         cmdParser.setReturnValue(winInfo.window->getItemColor(itemID));
+    else if (findParameter(sParList, "selection"))
+        cmdParser.setReturnValue(winInfo.window->getItemSelection(itemID));
+    else if (findParameter(sParList, "statustext"))
+        cmdParser.setReturnValue(winInfo.window->getStatusText());
+    else if (findParameter(sParList, "dialogresult"))
+        cmdParser.setReturnValue(winInfo.window->dialog());
 }
 
 
@@ -557,14 +569,40 @@ static void setParametersInWindow(CommandLineParser& cmdParser, const std::strin
         std::string sState = getArgAtPos(sParList, findParameter(sParList, "state", '=')+5);
         cmdParser.setReturnValue(toString(winInfo.window->setItemState(sState, itemID)));
     }
+    else if (findParameter(sParList, "display", '='))
+    {
+        std::string sDisplay = getArgAtPos(sParList, findParameter(sParList, "display", '=')+7);
+        cmdParser.setReturnValue(toString(winInfo.window->setDisplay(sDisplay)));
+    }
     else if (findParameter(sParList, "color", '='))
     {
         std::string sColor = parseNumOpt(sParList, findParameter(sParList, "color", '=')+5);
         cmdParser.setReturnValue(toString(winInfo.window->setItemColor(sColor, itemID)));
     }
+    else if (findParameter(sParList, "selection", '='))
+    {
+        std::vector<mu::value_type> sel = cmdParser.getParameterValueAsNumericalValue("selection");
+        int sel1 = 1, sel2 = 0;
 
+        if (sel.size() > 0)
+            sel1 = intCast(sel[0]);
 
+        if (sel.size() > 1)
+            sel2 = intCast(sel[1]);
+
+        cmdParser.setReturnValue(toString(winInfo.window->setItemSelection(sel1, sel2, itemID)));
+    }
+    else if (findParameter(sParList, "focus"))
+    {
+        cmdParser.setReturnValue(toString(winInfo.window->setItemFocus(itemID)));
+    }
+    else if (findParameter(sParList, "statustext", '='))
+    {
+        std::string sStatusText = cmdParser.getParameterValueAsString("statustext", "");
+        cmdParser.setReturnValue(toString(winInfo.window->setStatusText(sStatusText)));
+    }
 }
+
 
 
 /////////////////////////////////////////////////
