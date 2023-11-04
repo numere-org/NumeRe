@@ -228,7 +228,7 @@ static mu::value_type calcDeterminant(const Matrix& _mMatrix, std::vector<int> v
                     else
                         dDet += (double)nSign * _mMatrix(i, j);
 
-                    // f�ge Spalte j wieder hinzu
+                    // füge Spalte j wieder hinzu
                     vRemovedLines[j] -= 2;
                     // alternierendes Vorzeichen
                     nSign *= -1;
