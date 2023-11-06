@@ -36,9 +36,8 @@ static ConvertibleType detectCommonType(const std::vector<std::string>& vVals)
 {
     ConvertibleType convType = CONVTYPE_NONE;
 
-    last_num_format = 0;
-    for(int i = 0; i < 6; i++)
-        num_format_votes[i] = 0;
+    int last_num_format = 0; // is actually only used here
+    NumberFormatsVoter voter;
 
     // Determine first, if a conversion is possible
     for (size_t i = 0; i < vVals.size(); i++)

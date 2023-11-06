@@ -1034,7 +1034,7 @@ int num_format_votes[] = {0,0,0,0,0,0};
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool isConvertible(const std::string& sStr, ConvertibleType type){
+bool isConvertible(const std::string& sStr, ConvertibleType type, NumberFormatsVoter* voter = nullptr){
     if (type == CONVTYPE_VALUE)
     {
         // Apply the simplest heuristic: mostly every numerical valid character
@@ -1057,15 +1057,15 @@ bool isConvertible(const std::string& sStr, ConvertibleType type){
 
         // TODO is a starting decimal seperator valid ? If so we know what Format hast do be
         int nFormat = NUM_NONE;
-        if(sStr[0] == '.')
+        if (sStr.front() == '.')
             nFormat |= NUM_DECIMAL_US;
-        else if (sStr[0] == ',')
+        else if (sStr.front() == ',')
             nFormat |= NUM_DECIMAL_EU;
 
-        if(nFormat != NUM_NONE){
+        if (nFormat != NUM_NONE){
             lastSepIdx = 0;
             inNum = true;
-        } else if('0' <= sStr[0] && sStr[0] <= '9' )
+        } else if (isdigit(sStr.front()))
             inNum = true;
 
         // Regression fix introduced because NA is accepted as NaN
@@ -1073,7 +1073,7 @@ bool isConvertible(const std::string& sStr, ConvertibleType type){
         for (; i < sStr.length(); i++)
         {
             //if(sStr[i] < '0' || '9' < sStr[i]) { // No seperator and no Decimal -> outside of Number
-            if(sStr[i] == ',' || sStr[i] == '.' || sStr[i] == ' ' || ('0' <= sStr[i] && sStr[i] <= '9' )) {
+            if(sStr[i] == ',' || sStr[i] == '.' || sStr[i] == ' ' || isdigit(sStr[i])) {
                 if(!inNum){
                     inNum = true;
                     numStartIdx = i;
@@ -1172,7 +1172,8 @@ bool isConvertible(const std::string& sStr, ConvertibleType type){
         }
 
         //TODO Check last value for number format
-        voteNumType(nFormat);
+        if (voter)
+            voter->vote(nFormat);
         // Try to detect dates
         return !isConvertible(sStr, CONVTYPE_DATE_TIME);
     }
