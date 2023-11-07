@@ -254,7 +254,7 @@ static std::string** make_stringmatrix(MemoryManager& _data, Output& _out, Setti
             if (_out.isCompact() && !bSave)
                 sprintf(cBuffer, "%.*g", 4, _data.getElement(i - nHeadlineCount, j, sCache).real());
             else
-                sprintf(cBuffer, "%.*g", nPrecision, _data.getElement(i - nHeadlineCount, j, sCache).real());
+                sprintf(cBuffer, "%.*g", (int)nPrecision, _data.getElement(i - nHeadlineCount, j, sCache).real());
 
             sOut[i][j] = cBuffer;
 		}
@@ -363,7 +363,7 @@ void append_data(CommandLineParser& cmdParser)
             sFileList = "<loadpath>/" + sFileList;
 
         // Get the file list, which fulfills the file path scheme
-        vector<string> vFilelist = getFileList(sFileList, _option, true);
+        std::vector<std::string> vFilelist = NumeReKernel::getInstance()->getFileSystem().getFileList(sFileList, FileSystem::FULLPATH);
 
         // Ensure that at least one file exists
         if (!vFilelist.size())

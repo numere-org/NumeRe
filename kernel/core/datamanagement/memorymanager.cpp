@@ -885,13 +885,13 @@ void MemoryManager::melt(Memory* _mem, const string& sTable, bool overrideTarget
     else if (overrideTarget)
     {
         // Shall the original table be overwritten?
-        delete vMemory[mCachesMap[sTable].first];
-        vMemory[mCachesMap[sTable].first] = _mem;
+        delete vMemory[mCachesMap[sTable].second];
+        vMemory[mCachesMap[sTable].second] = _mem;
     }
     else
     {
         // Combine both tables
-        Memory* _existingMem = vMemory[mCachesMap[sTable].first];
+        Memory* _existingMem = vMemory[mCachesMap[sTable].second];
 
         size_t nCols = _existingMem->memArray.size();
 

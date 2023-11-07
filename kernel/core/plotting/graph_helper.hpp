@@ -43,6 +43,7 @@ class GraphHelper : public mglDraw
         GraphHelper(mglGraph* __graph, const PlotData& _pData);
         ~GraphHelper();
 
+        TimeAxis timeAxes[4];
         int Draw(mglGraph* _graph);
         void Reload();
         mglGraph* setGrapher()

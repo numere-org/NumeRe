@@ -35,6 +35,11 @@ GraphHelper::GraphHelper(mglGraph* __graph, const PlotData& _pData)
     bHires = _pData.getSettings(PlotData::INT_HIGHRESLEVEL) == 2;
     dAspect = _pData.getSettings(PlotData::FLOAT_ASPECT);
     sTitle = _pData.getSettings(PlotData::STR_COMPOSEDTITLE);
+
+    for (size_t i = 0; i < 4; i++)
+    {
+        timeAxes[i] = _pData.getTimeAxis(i);
+    }
 }
 
 

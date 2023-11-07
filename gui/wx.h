@@ -29,6 +29,7 @@
 #include <wx/statusbr.h>
 #include <wx/textctrl.h>
 #include <wx/cursor.h>
+#include "../kernel/core/interval.hpp"
 
 #include <vector>
 
@@ -40,6 +41,7 @@ class wxMGL : public wxWindow
 public:
 	wxString appName;	///< Application name for message boxes
 	bool AutoResize; 	///< Allow auto resizing (default is false)
+	TimeAxis timeAxes[4];
 
 	wxMGL(wxWindow* parent, wxWindowID id = -1, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxDefaultSize, long style = 0, bool frameless = false, const wxString& name = wxPanelNameStr);
 	virtual ~wxMGL();
@@ -160,6 +162,7 @@ protected:
 
 	void setBitmap();
 	wxImage ConvertFromGraph();
+	std::string pointToString(mglPoint& p) const;
 
 
 	mglGraph *gr;		///< pointer to grapher
