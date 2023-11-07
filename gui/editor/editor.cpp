@@ -980,14 +980,34 @@ void NumeReEditor::OnChar( wxStyledTextEvent& event )
     bool bLineIndicatorSet = m_options->getSetting(SETTING_B_LINELENGTH).active();
     const int iMaxLineLength = 100;     // member from codeanalyzer.hpp private MAXLINESOFCODE
     const int iColumnPos = GetColumn(currentPos);
-    // std::string sCurrentPos = std::to_string(iColumnPos);
 
-    if (isStyleType(StyleType::STYLE_COMMENT, currentPos)
-	&& bLineIndicatorSet
-	&& (iColumnPos > iMaxLineLength))
+    if (bLineIndicatorSet && (iColumnPos > iMaxLineLength))
     {
-	NumeReKernel::print("activating line break " + sCurrentPos); // for debug
-	std::string sBlock = addLinebreaks("a\n");  // raises exception for some reason
+        int indentWidth = GetLineIndentation(currentLine);
+
+        if (GetStyleAt(currentPos) == wxSTC_NSCR_COMMENT_LINE)
+        {
+            InsertText(currentPos-1, "\r\n## ");
+            GotoPos(currentPos+5);    		  // carret to pos ## |
+        }
+        else if (GetStyleAt(currentPos) == wxSTC_NSCR_COMMENT_BLOCK)
+        {
+            InsertText(currentPos-1, "\r\n * ");
+            GotoPos(currentPos+5);    		  // carret to pos * |
+        }
+        else if (GetStyleAt(currentPos) == wxSTC_NSCR_DOCCOMMENT_LINE)
+        {
+            InsertText(currentPos-1, "\r\n##! ");
+            GotoPos(currentPos+6);    		  // carret to pos ##! |
+        }
+        else if (GetStyleAt(currentPos) == wxSTC_NSCR_DOCCOMMENT_BLOCK)
+        {
+            InsertText(currentPos-1, "\r\n#*! ");
+            GotoPos(currentPos+6);    		  // carret to pos #*! |
+        }
+
+	    // adjust indentation
+	    this->SetLineIndentation(GetCurrentLine(), indentWidth);
     }
 
     Colourise(0, -1);
