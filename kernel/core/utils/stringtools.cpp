@@ -24,7 +24,6 @@
 #include <cstring>
 #include <sstream>
 #include <iomanip>
-#include <regex>
 
 // Forward declarations
 std::string getNextArgument(std::string& sArgList, bool bCut);
@@ -990,39 +989,8 @@ static bool isDateTimePattern(const std::string& sStr, size_t pos)
 }
 
 
-/////////////////////////////////////////////////
-/// \brief This function is used during the detectCommonType Function to
-///        count detected Number Formats troughout one Column
-///
-/// \param numType int
-/// \return void
-///
-/////////////////////////////////////////////////
-static void voteNumType(int numType)  {
-    if((numType & NUM_DECIMAL_EU && numType & NUM_K_US) ||
-       (numType & NUM_DECIMAL_US && numType & NUM_K_EU)) {
-        num_format_votes[5]++;  // INVALID Combination
-    } else {
-        if(numType & NUM_DECIMAL_EU)
-            num_format_votes[0]++;
-        else if(numType & NUM_DECIMAL_US)
-            num_format_votes[1]++;
-
-        if(numType & NUM_K_EU)
-            num_format_votes[2]++;
-        else if(numType & NUM_K_US)
-            num_format_votes[3]++;
-        else if(numType & NUM_K_SPACE)
-            num_format_votes[4]++;
-
-        if(numType & NUM_INVALID)
-            num_format_votes[5]++;
-    }
-}
-
 //TODO Is that a nice way? I dont think so at all
 int last_num_format = 0;
-int num_format_votes[] = {0,0,0,0,0,0};
 
 /////////////////////////////////////////////////
 /// \brief This function checks, whether a string
@@ -1034,7 +1002,7 @@ int num_format_votes[] = {0,0,0,0,0,0};
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool isConvertible(const std::string& sStr, ConvertibleType type, NumberFormatsVoter* voter = nullptr){
+bool isConvertible(const std::string& sStr, ConvertibleType type, NumberFormatsVoter* voter){
     if (type == CONVTYPE_VALUE)
     {
         // Apply the simplest heuristic: mostly every numerical valid character
@@ -1052,102 +1020,25 @@ bool isConvertible(const std::string& sStr, ConvertibleType type, NumberFormatsV
 
         // NEW
         bool inNum = false;
-        int numStartIdx = 0;
-        int lastSepIdx = -1;
 
-        // TODO is a starting decimal seperator valid ? If so we know what Format hast do be
-        int nFormat = NUM_NONE;
-        if (sStr.front() == '.')
-            nFormat |= NUM_DECIMAL_US;
-        else if (sStr.front() == ',')
-            nFormat |= NUM_DECIMAL_EU;
-
-        if (nFormat != NUM_NONE){
-            lastSepIdx = 0;
-            inNum = true;
-        } else if (isdigit(sStr.front()))
-            inNum = true;
-
-        // Regression fix introduced because NA is accepted as NaN
-        size_t i = 1;
-        for (; i < sStr.length(); i++)
+        // Regression fix introduced because NA is accepted as NaNhow to
+        for (size_t i = 0; i < sStr.length(); i++)
         {
-            //if(sStr[i] < '0' || '9' < sStr[i]) { // No seperator and no Decimal -> outside of Number
-            if(sStr[i] == ',' || sStr[i] == '.' || sStr[i] == ' ' || isdigit(sStr[i])) {
+            if(voter && (sStr[i] == ',' || sStr[i] == '.' || sStr[i] == ' ' || isdigit(sStr[i]))) {
                 if(!inNum){
                     inNum = true;
-                    numStartIdx = i;
+                    voter->startParseNumber(i);
                 }
                 if(sStr[i] == ',' || sStr[i] == '.' || sStr[i] == ' ' ) {
-                    if(lastSepIdx != -1) {
-                        if(sStr[lastSepIdx] != sStr[i]) {
-                            // Case 1: two seperators in one number
-                            // TODO check for invalid change of Format inside one number like xxx.xxx,xxx.xxx
-                            if(sStr[i] == ',') {
-                                nFormat |= NUM_DECIMAL_EU;
-                            } else if(sStr[i] == '.') {
-                                nFormat |= NUM_DECIMAL_US;
-                            } else {
-                                // invalid ! cannot be Leerzeichen
-                                nFormat |= NUM_INVALID;
-                                //return false;
-                            }
-                            if(sStr[lastSepIdx] == ' ') {
-                                nFormat |= NUM_K_SPACE;
-                            } else if(sStr[lastSepIdx] == '.') {
-                                nFormat |= NUM_K_EU;
-                            } else if(sStr[lastSepIdx] == ',') {
-                                nFormat |= NUM_K_US;
-                            }
-                        } else {
-                            // Case 3: Two same seperators inbetween must be thousands seperator
-                            if(i - lastSepIdx != 4) {
-                                nFormat |= NUM_INVALID;
-                            } else if(sStr[i] == ' ') {
-                                nFormat |= NUM_K_SPACE;
-                            } else if(sStr[i] == '.') {
-                                nFormat |= NUM_K_EU;
-                            } else if(sStr[i] == ',') {
-                                nFormat |= NUM_K_US;
-                            } else {
-                                nFormat |= NUM_INVALID;
-                                //return false;
-                            }
-                        }
-                    } else {
-                        if((i - numStartIdx) > 4) {
-                            // Case 4 first seperator but left more than 3 Digits -> must be Decimal seperator
-                            if(sStr[i] == ',') {
-                                nFormat |= NUM_DECIMAL_EU;
-                            } else if(sStr[i] == '.') {
-                                nFormat |= NUM_DECIMAL_US;
-                            } else {
-                                nFormat |= NUM_INVALID;
-                                //return false;
-                            }
-                        }
-                    }
-                    lastSepIdx = i;
+                    voter->addSeperator(sStr[i], i);
                 }
             } else {
-                if(inNum){
-                    if(lastSepIdx != -1 && (i - lastSepIdx) != 3){
-                        // Case 2: != 3 digits after last seperator -> must be decimal seperator
-                        if(sStr[lastSepIdx] == ',') { // TODO ADD check that type is not already US via &
-                            nFormat |= NUM_DECIMAL_EU;
-                        } else if(sStr[lastSepIdx] == '.') {
-                            nFormat |= NUM_DECIMAL_US;
-                        } else {  // ' ' cannot be a decimal seperator
-                            nFormat |= NUM_INVALID;
-                            //return false;
-                        }
-                    }
-
+                if(voter && inNum){
+                    int ret = voter->endParseNumber(i);
+                    voter->vote(ret);
                     inNum = false;
-                    numStartIdx = 0;
-                    lastSepIdx = -1;
                 }
-                if (i-1 < sStr.length() && sStr[i] == '-' || sStr[i] == '+')
+                if (i > 0 && i-1 < sStr.length() && sStr[i] == '-' || sStr[i] == '+')
                 {
                     if (tolower(sStr[i-1]) != 'e'
                         && (isdigit(sStr[i-1]) && sStr.find_first_of("iI", i+1) == std::string::npos)
@@ -1157,23 +1048,11 @@ bool isConvertible(const std::string& sStr, ConvertibleType type, NumberFormatsV
             }
         }
 
-        if(inNum){
-            if(lastSepIdx != -1 && (i - lastSepIdx) != 4){
-                // Case 2: != 3 digits after last seperator -> must be decimal seperator
-                if(sStr[lastSepIdx] == ',') { // TODO ADD check that type is not already US via &
-                    nFormat |= NUM_DECIMAL_EU;
-                } else if(sStr[lastSepIdx] == '.') {
-                    nFormat |= NUM_DECIMAL_US;
-                } else {  // ' ' cannot be a decimal seperator
-                    nFormat |= NUM_INVALID;
-                    //return false;
-                }
-            }
+        if (voter && inNum) {
+            int ret = voter->endParseNumber(sStr.length()-1);
+            voter->vote(ret);
         }
 
-        //TODO Check last value for number format
-        if (voter)
-            voter->vote(nFormat);
         // Try to detect dates
         return !isConvertible(sStr, CONVTYPE_DATE_TIME);
     }

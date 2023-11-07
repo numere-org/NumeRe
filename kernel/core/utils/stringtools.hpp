@@ -22,6 +22,7 @@
 #include <string>
 #include <complex>
 #include <vector>
+#include <map>
 
 #include "datetimetools.hpp"
 
@@ -141,8 +142,139 @@ enum NumberFormat
     NUM_K_EU = 0x200,
     NUM_K_US = 0x400,
 
-    NUM_INVALID = 0x1000
+    NUM_INVALID = 0x1000,
+
+    NUM_FORMAT_COUNT = 6
 };
+
+struct NumberFormatsVoter
+{ // Preferring ANSI brace format ;-)
+    // necessary attributes here
+    int num_format_votes[NUM_FORMAT_COUNT];
+
+    std::vector<char> sep;
+    int m_last_idx = -1;
+    std::string m_tape;
+    int curr_format = 0;
+
+    std::map<std::string, int> num_format_lookup =
+        {{".", NUM_DECIMAL_US}, {",", NUM_DECIMAL_EU},   // CASE 5: Starting Sepetator -> must be DECIMAL  TODO check only last also
+         {">.", NUM_DECIMAL_US}, {">,", NUM_DECIMAL_EU}, // CASE 4: one ceperator and left is > 3
+         {".>", NUM_DECIMAL_US}, {",>", NUM_DECIMAL_EU}, {".<", NUM_DECIMAL_US}, {",<", NUM_DECIMAL_EU},  // CASE 2: one ceperator and right is != 3
+         {".=.", NUM_K_EU}, {",=,", NUM_K_US}, {" = ", NUM_K_SPACE},  //CASE 3 same seperator more than once, must be thousands
+         {",=.", NUM_K_US | NUM_DECIMAL_US}, {" =.", NUM_K_SPACE | NUM_DECIMAL_US}, {".=,", NUM_K_EU | NUM_DECIMAL_EU}, {" =,", NUM_K_SPACE | NUM_DECIMAL_EU} // CASE 1 two diff seperators, sec should be decimal, first thousands
+         };
+
+    NumberFormatsVoter() {
+        for(size_t i = 0; i < NUM_FORMAT_COUNT; i++)
+            num_format_votes[i] = 0;
+    }
+
+    int checkNumFormat(std::string key){
+        auto elem = num_format_lookup.find(key);
+
+        if(elem != num_format_lookup.end())
+            return num_format_lookup[key];
+
+        return 0;
+    }
+
+    void pushInbetween(int idx){
+        int digs_inbetween = idx - m_last_idx;
+        if(digs_inbetween > 0) {
+            if(digs_inbetween < 3)
+                m_tape.push_back('<');
+            else if(digs_inbetween > 3)
+                m_tape.push_back('>');
+            else
+                m_tape.push_back('=');
+        }
+    }
+
+    void startParseNumber(int idx) {
+        m_last_idx = idx-1; //todo wie handeln wir 1ste und letzte, da diese nicht seperatoren sind
+        m_tape = "";
+        curr_format = 0;
+    }
+
+    void addSeperator(char sep, int idx) {
+        pushInbetween(idx-1);
+        m_tape.push_back(sep);
+        m_last_idx = idx;
+
+        // max 3 symbols at ones in tape
+        while(m_tape.length() > 3)
+            m_tape.erase(m_tape.begin());
+
+        curr_format |= checkNumFormat(m_tape);
+    }
+
+    int endParseNumber(int idx) {
+
+        // we only want to check for the last 2/1
+        m_tape = m_tape.back();
+
+        pushInbetween(idx); //since normally the function is called when seperator appears
+        curr_format |= checkNumFormat(m_tape);
+
+        m_last_idx = idx;
+        m_tape = "";
+        return curr_format;
+    }
+
+    void vote(int numType)
+    {
+        if((numType & NUM_DECIMAL_EU && numType & NUM_K_US) ||
+           (numType & NUM_DECIMAL_US && numType & NUM_K_EU)) {
+            num_format_votes[5]++;  // INVALID Combination
+        } else {
+            if(numType & NUM_DECIMAL_EU)
+                num_format_votes[0]++;
+            else if(numType & NUM_DECIMAL_US)
+                num_format_votes[1]++;
+
+            if(numType & NUM_K_EU)
+                num_format_votes[2]++;
+            else if(numType & NUM_K_US)
+                num_format_votes[3]++;
+            else if(numType & NUM_K_SPACE)
+                num_format_votes[4]++;
+
+            if(numType & NUM_INVALID)
+                num_format_votes[5]++;
+        }
+    }
+
+    int getFormat()
+    {
+        int num_format = 0;
+
+        // NEW check voting
+        if(num_format_votes[5] > 0) {  // if one invalid, all invalid ?
+            return NUM_INVALID;
+        }
+
+        if((num_format_votes[2] > num_format_votes[3]) && (num_format_votes[2] > num_format_votes[4]))
+            num_format |= NUM_K_EU;
+        else if((num_format_votes[3] > num_format_votes[2]) && (num_format_votes[3] > num_format_votes[4]))
+            num_format |= NUM_K_US;
+        else if(num_format_votes[4] > 0)
+            num_format |= NUM_K_SPACE;
+
+        int add = 0;
+        if(num_format == 0)
+            add = 1;
+
+        if(num_format_votes[0] > num_format_votes[1])
+            num_format |= NUM_DECIMAL_EU | (NUM_K_EU * add);
+        else if(num_format_votes[1] > 0)
+            num_format |= NUM_DECIMAL_US | (NUM_K_US * add);
+
+        return num_format;
+    }
+
+};
+
 
 std::string toString(int nNumber, const Settings& _option);
 std::string toString(double dNumber, const Settings& _option);
@@ -207,7 +339,7 @@ sys_time_point StrToTime(const std::string&);
 size_t versionToInt(std::string);
 std::string intToVersion(size_t);
 
-bool isConvertible(const std::string& sStr, ConvertibleType type = CONVTYPE_VALUE);
+bool isConvertible(const std::string& sStr, ConvertibleType type = CONVTYPE_VALUE, NumberFormatsVoter* voter = nullptr);
 int detectTimeDateFormat(const std::string&);
 
 std::string toSystemCodePage(std::string sOutput);
@@ -229,8 +361,8 @@ bool isEqualStripped(StringView str1, StringView str2);
 
 // NEW
 extern int last_num_format;
-extern int num_format_votes[];
-static void voteNumType(int numType);
+//extern int num_format_votes[NUM_FORMAT_COUNT];
+//static void voteNumType(int numType);
 void strChangeNumberFormat(std::string &sNum, int numFormat);
 
 #endif // STRINGTOOLS_HPP
