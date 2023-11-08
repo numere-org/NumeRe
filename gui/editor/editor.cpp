@@ -1016,22 +1016,16 @@ void NumeReEditor::OnChar( wxStyledTextEvent& event )
             InsertText(currentPos-1, "\r\n## ");
             GotoPos(currentPos+5);    		  // carret to pos ## |
         }
-        else if (GetStyleAt(currentPos) == wxSTC_NSCR_COMMENT_BLOCK)
-        {
-            InsertText(currentPos-1, "\r\n * ");
-            GotoPos(currentPos+5);    		  // carret to pos * |
-        }
         else if (GetStyleAt(currentPos) == wxSTC_NSCR_DOCCOMMENT_LINE)
         {
             InsertText(currentPos-1, "\r\n##! ");
             GotoPos(currentPos+6);    		  // carret to pos ##! |
         }
-        else if (GetStyleAt(currentPos) == wxSTC_NSCR_DOCCOMMENT_BLOCK)
+        else if (isStyleType(NumeReEditor::STYLE_COMMENT_BLOCK, currentPos))
         {
-            InsertText(currentPos-1, "\r\n#*! ");
-            GotoPos(currentPos+6);    		  // carret to pos #*! |
+            InsertText(currentPos-1, "\r\n * ");
+            GotoPos(currentPos+5);    		  // carret to pos * |
         }
-
 	    // adjust indentation
 	    this->SetLineIndentation(GetCurrentLine(), indentWidth);
     }
