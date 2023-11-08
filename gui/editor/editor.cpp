@@ -1005,8 +1005,9 @@ void NumeReEditor::OnChar( wxStyledTextEvent& event )
     bool bLineIndicatorSet = m_options->getSetting(SETTING_B_LINELENGTH).active();
     const int iMaxLineLength = 100;     // member from codeanalyzer.hpp private MAXLINESOFCODE
     const int iColumnPos = GetColumn(currentPos);
+    bool bIsNumereFile = m_fileType == FILE_NSCR || m_fileType == FILE_NPRC || m_fileType == FILE_NLYT;
 
-    if (bLineIndicatorSet && (iColumnPos > iMaxLineLength))
+    if (bIsNumereFile && bLineIndicatorSet && (iColumnPos > iMaxLineLength))
     {
         int indentWidth = GetLineIndentation(currentLine);
 
