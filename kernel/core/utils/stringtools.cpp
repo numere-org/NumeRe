@@ -1034,11 +1034,11 @@ bool isConvertible(const std::string& sStr, ConvertibleType type, NumberFormatsV
                 }
             } else {
                 if(voter && inNum){
-                    int ret = voter->endParseNumber(i);
+                    int ret = voter->endParseNumber(i-1);  // last one was one before
                     voter->vote(ret);
                     inNum = false;
                 }
-                if (i > 0 && i-1 < sStr.length() && sStr[i] == '-' || sStr[i] == '+')
+                if (i > 0 && i-1 < sStr.length() && (sStr[i] == '-' || sStr[i] == '+'))
                 {
                     if (tolower(sStr[i-1]) != 'e'
                         && (isdigit(sStr[i-1]) && sStr.find_first_of("iI", i+1) == std::string::npos)

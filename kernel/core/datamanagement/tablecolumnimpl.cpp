@@ -32,11 +32,9 @@
 /// \return ConvertibleType
 ///
 /////////////////////////////////////////////////
-static ConvertibleType detectCommonType(const std::vector<std::string>& vVals)
+static ConvertibleType detectCommonType(const std::vector<std::string>& vVals, int &numFormat)
 {
     ConvertibleType convType = CONVTYPE_NONE;
-
-    last_num_format = 0; // is actually only used here
     NumberFormatsVoter voter;
 
     // Determine first, if a conversion is possible
@@ -83,8 +81,10 @@ static ConvertibleType detectCommonType(const std::vector<std::string>& vVals)
     }
 
     if(convType == CONVTYPE_VALUE) {
-        last_num_format = voter.getFormat();
-     }
+        numFormat = voter.getFormat();
+        if(numFormat & NUM_INVALID)
+            return CONVTYPE_NONE;
+    }
 
     return convType;
 }
@@ -1681,7 +1681,8 @@ TableColumn* StringColumn::convert(ColumnType type)
     TableColumn* col = nullptr;
 
     // Determine first, if a conversion is possible
-    ConvertibleType convType = detectCommonType(m_data);
+    int numFormat = 0;
+    ConvertibleType convType = detectCommonType(m_data, numFormat);
 
     switch (type)
     {
@@ -1745,7 +1746,7 @@ TableColumn* StringColumn::convert(ColumnType type)
         {
             // TODO Marco 1
             std::string strval = m_data[i];
-            strChangeNumberFormat(strval, last_num_format);
+            strChangeNumberFormat(strval, numFormat);
             col->setValue(i, !isConvertible(strval, CONVTYPE_VALUE)
                              ? StrToLogical(strval)
                              : StrToCmplx(strval));
@@ -2172,7 +2173,8 @@ TableColumn* CategoricalColumn::convert(ColumnType type)
     TableColumn* col = nullptr;
 
     // Determine first, if a conversion is possible
-    ConvertibleType convType = detectCommonType(m_categories);
+    int NumFormat = 0;
+    ConvertibleType convType = detectCommonType(m_categories, NumFormat);
 
     switch (type)
     {
@@ -2236,7 +2238,7 @@ TableColumn* CategoricalColumn::convert(ColumnType type)
         {
             // TODO Marco 2
             std::string strval = m_categories[m_data[i]];
-            strChangeNumberFormat(strval, last_num_format);
+            strChangeNumberFormat(strval, NumFormat);
             //replaceAll(strval, ",", ".");
             col->setValue(i, StrToCmplx(strval));
         }

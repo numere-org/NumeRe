@@ -142,46 +142,92 @@ enum NumberFormat
     NUM_K_EU = 0x200,
     NUM_K_US = 0x400,
 
-    NUM_INVALID = 0x1000,
-
-    NUM_FORMAT_COUNT = 6
+    NUM_INVALID = 0x1000
 };
 
+/////////////////////////////////////////////////
+/// \brief Structure to get number Format of String or several strings
+///        For each Number in a/several string iterate through string,
+///        at first digit of number call startParseNumber with current position in string,
+///        at every found seperator (',';'.';' ') call addSeperator(...) and at last digit
+///        call endParseNumber(idx). It will return the Number format of the current number,
+///        When a common type of several Strings should be found use this return value with the
+///        vote(int) function for each string and getFormat() to get the overall Format in the End.
+/////////////////////////////////////////////////
 struct NumberFormatsVoter
-{ // Preferring ANSI brace format ;-)
-    // necessary attributes here
-    int num_format_votes[NUM_FORMAT_COUNT];
+{
+    enum
+    {
+        FMT_DEC_EU,
+        FMT_DEC_US,
+        FMT_K_EU,
+        FMT_K_US,
+        FMT_K_SPACE,
+        FMT_INVALID,
+        FMT_COUNT
+    };
 
-    std::vector<char> sep;
+    // TODO what about encapsulation ? this should be private then
+    int m_num_format_votes[FMT_COUNT];
     int m_last_idx = -1;
     std::string m_tape;
-    int curr_format = 0;
+    int m_curr_format = 0;
 
-    std::map<std::string, int> num_format_lookup =
-        {{".", NUM_DECIMAL_US}, {",", NUM_DECIMAL_EU},   // CASE 5: Starting Sepetator -> must be DECIMAL  TODO check only last also
-         {">.", NUM_DECIMAL_US}, {">,", NUM_DECIMAL_EU}, // CASE 4: one ceperator and left is > 3
-         {".>", NUM_DECIMAL_US}, {",>", NUM_DECIMAL_EU}, {".<", NUM_DECIMAL_US}, {",<", NUM_DECIMAL_EU},  // CASE 2: one ceperator and right is != 3
-         {".=.", NUM_K_EU}, {",=,", NUM_K_US}, {" = ", NUM_K_SPACE},  //CASE 3 same seperator more than once, must be thousands
-         {",=.", NUM_K_US | NUM_DECIMAL_US}, {" =.", NUM_K_SPACE | NUM_DECIMAL_US}, {".=,", NUM_K_EU | NUM_DECIMAL_EU}, {" =,", NUM_K_SPACE | NUM_DECIMAL_EU} // CASE 1 two diff seperators, sec should be decimal, first thousands
-         };
+    static const inline std::map<std::string, int> num_format_lookup =
+    {
+        {".", NUM_DECIMAL_US}, {",", NUM_DECIMAL_EU},   // CASE 5: Starting Sepetator -> must be DECIMAL  TODO check only last also
+        {">.", NUM_DECIMAL_US}, {">,", NUM_DECIMAL_EU}, // CASE 4: one ceperator and left is > 3
+        {".>", NUM_DECIMAL_US}, {",>", NUM_DECIMAL_EU}, {".<", NUM_DECIMAL_US}, {",<", NUM_DECIMAL_EU},  // CASE 2: one ceperator and right is != 3
+        {".=.", NUM_K_EU}, {",=,", NUM_K_US}, {" = ", NUM_K_SPACE},  //CASE 3 same seperator more than once, must be thousands
+        {",=.", NUM_K_US | NUM_DECIMAL_US}, {" =.", NUM_K_SPACE | NUM_DECIMAL_US}, {".=,", NUM_K_EU | NUM_DECIMAL_EU}, {" =,", NUM_K_SPACE | NUM_DECIMAL_EU}, // CASE 1 two diff seperators, sec should be decimal, first thousands
 
-    NumberFormatsVoter() {
-        for(size_t i = 0; i < NUM_FORMAT_COUNT; i++)
-            num_format_votes[i] = 0;
+        // All below here is invalid
+        {".>,", NUM_INVALID}, {".>.", NUM_INVALID}, {".> ", NUM_INVALID}, {".<,", NUM_INVALID}, {".<.", NUM_INVALID}, {".< ", NUM_INVALID},
+        {",>,", NUM_INVALID}, {",>.", NUM_INVALID}, {",> ", NUM_INVALID}, {",<,", NUM_INVALID}, {",<.", NUM_INVALID}, {",< ", NUM_INVALID},
+        {" >,", NUM_INVALID}, {" >.", NUM_INVALID}, {" > ", NUM_INVALID}, {" <,", NUM_INVALID}, {" <.", NUM_INVALID}, {" < ", NUM_INVALID}
+    };
+
+    /////////////////////////////////////////////////
+    /// \brief Default Constructor of NumberFormatsVoter
+    ///
+    ///
+    /////////////////////////////////////////////////
+    NumberFormatsVoter()
+    {
+        for(size_t i = 0; i < FMT_COUNT; i++)
+            m_num_format_votes[i] = 0;
     }
 
-    int checkNumFormat(std::string key){
+    /////////////////////////////////////////////////
+    /// \brief This function is for lookup if current Tape is a valid or invalid number Format
+    ///
+    /// \param key std::string
+    /// \return int
+    ///
+    /////////////////////////////////////////////////
+    int checkNumFormat(std::string key)
+    {
+        // TODO what about encapsulation ? this should be private then
         auto elem = num_format_lookup.find(key);
 
         if(elem != num_format_lookup.end())
-            return num_format_lookup[key];
+            return elem->second;
 
         return 0;
     }
 
-    void pushInbetween(int idx){
+    /////////////////////////////////////////////////
+    /// \brief This function pushes digits # inbetween seperators
+    ///
+    /// \param idx int
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
+    void pushInbetween(int idx)
+    {
         int digs_inbetween = idx - m_last_idx;
-        if(digs_inbetween > 0) {
+        if(digs_inbetween > 0)
+        {
             if(digs_inbetween < 3)
                 m_tape.push_back('<');
             else if(digs_inbetween > 3)
@@ -191,13 +237,30 @@ struct NumberFormatsVoter
         }
     }
 
-    void startParseNumber(int idx) {
+    /////////////////////////////////////////////////
+    /// \brief This function starts parse of a number
+    ///
+    /// \param idx int
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
+    void startParseNumber(int idx)
+    {
         m_last_idx = idx-1; //todo wie handeln wir 1ste und letzte, da diese nicht seperatoren sind
         m_tape = "";
-        curr_format = 0;
+        m_curr_format = 0;
     }
 
-    void addSeperator(char sep, int idx) {
+    /////////////////////////////////////////////////
+    /// \brief This function is called for every found seperator and adds to the tape
+    ///
+    /// \param sep char
+    /// \param idx int
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
+    void addSeperator(char sep, int idx)
+    {
         pushInbetween(idx-1);
         m_tape.push_back(sep);
         m_last_idx = idx;
@@ -206,68 +269,95 @@ struct NumberFormatsVoter
         while(m_tape.length() > 3)
             m_tape.erase(m_tape.begin());
 
-        curr_format |= checkNumFormat(m_tape);
+        m_curr_format |= checkNumFormat(m_tape);
     }
 
-    int endParseNumber(int idx) {
-
+    /////////////////////////////////////////////////
+    /// \brief This function is called when last char of a number is reached during parsing
+    ///
+    /// \param idx int
+    /// \return int
+    ///
+    /////////////////////////////////////////////////
+    int endParseNumber(int idx)
+    {
         // we only want to check for the last 2/1
         m_tape = m_tape.back();
 
         pushInbetween(idx); //since normally the function is called when seperator appears
-        curr_format |= checkNumFormat(m_tape);
+        m_curr_format |= checkNumFormat(m_tape);
 
         m_last_idx = idx;
         m_tape = "";
-        return curr_format;
+        return m_curr_format;
     }
 
+    /////////////////////////////////////////////////
+    /// \brief This function is called to make a vote with the given number Type
+    ///
+    /// \param numType int
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
     void vote(int numType)
     {
         if((numType & NUM_DECIMAL_EU && numType & NUM_K_US) ||
-           (numType & NUM_DECIMAL_US && numType & NUM_K_EU)) {
-            num_format_votes[5]++;  // INVALID Combination
-        } else {
+                (numType & NUM_DECIMAL_US && numType & NUM_K_EU))
+        {
+            m_num_format_votes[FMT_INVALID]++;  // INVALID Combination
+        }
+        else
+        {
             if(numType & NUM_DECIMAL_EU)
-                num_format_votes[0]++;
+                m_num_format_votes[FMT_DEC_EU]++;
             else if(numType & NUM_DECIMAL_US)
-                num_format_votes[1]++;
+                m_num_format_votes[FMT_DEC_US]++;
 
             if(numType & NUM_K_EU)
-                num_format_votes[2]++;
+                m_num_format_votes[FMT_K_EU]++;
             else if(numType & NUM_K_US)
-                num_format_votes[3]++;
+                m_num_format_votes[FMT_K_US]++;
             else if(numType & NUM_K_SPACE)
-                num_format_votes[4]++;
+                m_num_format_votes[FMT_K_SPACE]++;
 
             if(numType & NUM_INVALID)
-                num_format_votes[5]++;
+                m_num_format_votes[FMT_INVALID]++;
         }
     }
 
+    /////////////////////////////////////////////////
+    /// \brief This function returns the current Format given by votes
+    ///
+    /// \return int
+    ///
+    /////////////////////////////////////////////////
     int getFormat()
     {
-        int num_format = 0;
-
-        // NEW check voting
-        if(num_format_votes[5] > 0) {  // if one invalid, all invalid ?
-            return NUM_INVALID;
+        // As soon as there are more than 2 set, we will have at least one bad sample that would be parsed wrong
+        int inval_cnt = 0;
+        for(int i = 0; i < FMT_COUNT; i++)
+        {
+            if(m_num_format_votes[i] > 0)
+                inval_cnt++;
         }
+        if(inval_cnt > 2 || m_num_format_votes[FMT_INVALID] > 0)
+            return NUM_INVALID;
 
-        if((num_format_votes[2] > num_format_votes[3]) && (num_format_votes[2] > num_format_votes[4]))
+        int num_format = 0;
+        if((m_num_format_votes[FMT_K_EU] > m_num_format_votes[FMT_K_US]) && (m_num_format_votes[FMT_K_EU] > m_num_format_votes[FMT_K_SPACE]))
             num_format |= NUM_K_EU;
-        else if((num_format_votes[3] > num_format_votes[2]) && (num_format_votes[3] > num_format_votes[4]))
+        else if((m_num_format_votes[FMT_K_US] > m_num_format_votes[FMT_K_EU]) && (m_num_format_votes[FMT_K_US] > m_num_format_votes[FMT_K_SPACE]))
             num_format |= NUM_K_US;
-        else if(num_format_votes[4] > 0)
+        else if(m_num_format_votes[FMT_K_SPACE] > 0)
             num_format |= NUM_K_SPACE;
 
         int add = 0;
         if(num_format == 0)
             add = 1;
 
-        if(num_format_votes[0] > num_format_votes[1])
+        if(m_num_format_votes[FMT_DEC_EU] > m_num_format_votes[FMT_DEC_US])
             num_format |= NUM_DECIMAL_EU | (NUM_K_EU * add);
-        else if(num_format_votes[1] > 0)
+        else if(m_num_format_votes[FMT_DEC_US] > 0)
             num_format |= NUM_DECIMAL_US | (NUM_K_US * add);
 
         return num_format;
@@ -359,10 +449,6 @@ std::string ellipsize(const std::string& sLongString, size_t nMaxStringLength = 
 
 bool isEqualStripped(StringView str1, StringView str2);
 
-// NEW
-extern int last_num_format;
-//extern int num_format_votes[NUM_FORMAT_COUNT];
-//static void voteNumType(int numType);
 void strChangeNumberFormat(std::string &sNum, int numFormat);
 
 #endif // STRINGTOOLS_HPP
