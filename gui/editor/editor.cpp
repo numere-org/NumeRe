@@ -1002,32 +1002,37 @@ void NumeReEditor::OnChar( wxStyledTextEvent& event )
         AutoCompShow(lenEntered, sAutoCompList);
 
     // if line indicator setting is active, provide autowrapping for comments
-    bool bLineIndicatorSet = m_options->getSetting(SETTING_B_LINELENGTH).active();
-    const int iMaxLineLength = 100;     // member from codeanalyzer.hpp private MAXLINESOFCODE
-    const int iColumnPos = GetColumn(currentPos);
-    bool bIsNumereFile = m_fileType == FILE_NSCR || m_fileType == FILE_NPRC || m_fileType == FILE_NLYT;
+    bool isLineIndicatorSet = m_options->getSetting(SETTING_B_LINELENGTH).active();
+    const int maxLineLength = 100;     // member from codeanalyzer.hpp private MAXLINESOFCODE
+    const int columnPos = GetColumn(currentPos);
+    bool isNumereFile = m_fileType == FILE_NSCR || m_fileType == FILE_NPRC || m_fileType == FILE_NLYT;
+    int lineBreakPos = wordstartpos;
+    // Wrap only, if the breaking point before last word on line is more than quarter of MAXLINEOFCODE after the indentation
+    bool isWordSmall = (currentPos-lineBreakPos) < (maxLineLength/4);
 
-    if (bIsNumereFile && bLineIndicatorSet && (iColumnPos > iMaxLineLength))
+    if (isNumereFile
+        && isLineIndicatorSet
+        && (columnPos > maxLineLength)
+        && isWordSmall)
     {
         int indentWidth = GetLineIndentation(currentLine);
-
         if (GetStyleAt(currentPos) == wxSTC_NSCR_COMMENT_LINE)
         {
-            InsertText(currentPos-1, "\r\n## ");
-            GotoPos(currentPos+5);    		  // carret to pos ## |
+            InsertText(wordstartpos, "\r\n## ");
+            GotoPos(currentPos+5);		  // carret to pos ## (word)|
         }
         else if (GetStyleAt(currentPos) == wxSTC_NSCR_DOCCOMMENT_LINE)
         {
-            InsertText(currentPos-1, "\r\n##! ");
-            GotoPos(currentPos+6);    		  // carret to pos ##! |
+            InsertText(wordstartpos, "\r\n##! ");
+            GotoPos(currentPos+6);		  // carret to pos ##! (word)|
         }
         else if (isStyleType(NumeReEditor::STYLE_COMMENT_BLOCK, currentPos))
         {
-            InsertText(currentPos-1, "\r\n * ");
-            GotoPos(currentPos+5);    		  // carret to pos * |
+            InsertText(wordstartpos, "\r\n * ");
+            GotoPos(currentPos+5);		  // carret to pos * (word)|
         }
-	    // adjust indentation
-	    this->SetLineIndentation(GetCurrentLine(), indentWidth);
+        // adjust indentation
+        this->SetLineIndentation(GetCurrentLine(), indentWidth);
     }
 
     Colourise(0, -1);
