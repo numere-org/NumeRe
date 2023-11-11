@@ -1004,13 +1004,15 @@ void NumeReEditor::OnChar( wxStyledTextEvent& event )
         AutoCompShow(lenEntered, sAutoCompList);
 
     // if line indicator setting is active, provide autowrapping for comments
-    bool isLineIndicatorSet = m_options->getSetting(SETTING_B_LINELENGTH).active();
+    bool isLineIndicatorActive = m_options->getSetting(SETTING_B_LINELENGTH).active();
     const int columnPos = GetColumn(currentPos);
     bool isNumereFile = m_fileType == FILE_NSCR || m_fileType == FILE_NPRC || m_fileType == FILE_NLYT;
 
     if (isNumereFile
-        && isLineIndicatorSet
-        && (columnPos > LINELENGTH_COLUMN))
+        && isLineIndicatorActive
+        && (columnPos > LINELENGTH_COLUMN)
+        && isStyleType(STYLE_COMMENT, currentPos)
+        && isStyleType(STYLE_COMMENT, GetLineIndentPosition(currentLine)+1))
     {
         // Only calculate this information if really necessary
         int lineBreakPos = WordStartPosition(FindColumn(currentLine, LINELENGTH_COLUMN), true);
