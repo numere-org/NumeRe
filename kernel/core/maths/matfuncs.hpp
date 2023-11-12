@@ -3583,8 +3583,8 @@ static Matrix circShiftRow(const MatFuncData& funcData, const MatFuncErrorInfo& 
 
     // Circular shift downwards (negative values upwards)
     int matSize = (int)matData.size();
-    int shift = (int)funcData.nVal % matSize;
-    shift = - (shift + matSize) % matSize;
+    int shift = -(int)funcData.nVal % matSize;
+    shift = (shift + matSize) % matSize;
 
     std::rotate(matData.begin(), matData.begin() + shift, matData.end());
 
@@ -3615,8 +3615,6 @@ static Matrix circShiftCol(const MatFuncData& funcData, const MatFuncErrorInfo& 
 
     // Reverse the transposition
     _mResult.transpose();
-
-    // TODO: The double transpose is not very efficient. Probably a loop with directly addressing the new elements would be faster.
 
     return _mResult;
 }
@@ -3663,7 +3661,6 @@ static Matrix vectShiftCol(const MatFuncData& funcData, const MatFuncErrorInfo& 
     // Column shift to the right (negative values to the left)
     for (size_t col = 0; col < funcData.mat1.cols(); col++)
     {
-        // TODO: Remove the unnecessary int casts
         int mat1cols = (int)funcData.mat1.cols();
         int mat1rows = (int)funcData.mat1.rows();
         // Calculate the previous position of the column and copy it to the current target col
@@ -3702,8 +3699,6 @@ static Matrix vectShiftRow(const MatFuncData& funcData, const MatFuncErrorInfo& 
     // Reverse the transposition
     _mResult.transpose();
     _mResult.extend(_mResult.rows(), _mResult.cols());
-
-    // TODO: The double transpose is not very efficient. Probably a loop with directly addressing the new elements would be faster.
 
     return _mResult;
 }
