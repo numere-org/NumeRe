@@ -3578,18 +3578,16 @@ static Matrix matrixFilter(const MatFuncData& funcData, const MatFuncErrorInfo& 
 /////////////////////////////////////////////////
 static Matrix circShiftRow(const MatFuncData& funcData, const MatFuncErrorInfo& errorInfo)
 {
-    // Inputs: funcData.mat1 funcData.nVal
-    std::vector<mu::value_type> matData = funcData.mat1.data();
+    // Generate the output matrix to perform the operations on
+    Matrix _mResult = Matrix();
+    _mResult.assign(funcData.mat1.rows(), funcData.mat1.cols(), funcData.mat1.data());
 
     // Circular shift downwards (negative values upwards)
-    int matSize = (int)matData.size();
+    int matSize = (int)_mResult.data().size();
     int shift = -(int)funcData.nVal % matSize;
     shift = (shift + matSize) % matSize;
 
-    std::rotate(matData.begin(), matData.begin() + shift, matData.end());
-
-    Matrix _mResult = Matrix();
-    _mResult.assign(funcData.mat1.rows(), funcData.mat1.cols(), matData);
+    std::rotate(_mResult.data().begin(), _mResult.data().begin() + shift, _mResult.data().end());
 
     return _mResult;
 }
@@ -3609,6 +3607,7 @@ static Matrix circShiftCol(const MatFuncData& funcData, const MatFuncErrorInfo& 
     // Transpose the matrix (including restructuring the memory) to get a row wise representation of the data
     Matrix _mResult = Matrix(funcData.mat1);
     _mResult.transpose();
+    _mResult.extend(_mResult.rows(), _mResult.cols());
 
     // Apply the circShiftRow to the transposed matrix
     _mResult = circShiftRow(MatFuncData(std::move(_mResult), funcData.nVal), errorInfo);
@@ -3656,7 +3655,8 @@ static Matrix circShift(const MatFuncData& funcData, const MatFuncErrorInfo& err
 static Matrix vectShiftCol(const MatFuncData& funcData, const MatFuncErrorInfo& errorInfo)
 {
     // Matrix data is a column-wise vector
-    std::vector<mu::value_type> matData = funcData.mat1.data();
+    Matrix _mResult = Matrix();
+    _mResult.assign(funcData.mat1.rows(), funcData.mat1.cols(), funcData.mat1.data());
 
     // Column shift to the right (negative values to the left)
     for (size_t col = 0; col < funcData.mat1.cols(); col++)
@@ -3665,11 +3665,8 @@ static Matrix vectShiftCol(const MatFuncData& funcData, const MatFuncErrorInfo& 
         int mat1rows = (int)funcData.mat1.rows();
         // Calculate the previous position of the column and copy it to the current target col
         int col_old = (int)((((int)col - (int)funcData.nVal) % mat1cols) + mat1cols) % mat1cols;
-        std::copy(funcData.mat1.data().begin() + col_old * mat1rows, funcData.mat1.data().begin() + (col_old + 1) * mat1rows, matData.begin() + col * mat1rows);
+        std::copy(funcData.mat1.data().begin() + col_old * mat1rows, funcData.mat1.data().begin() + (col_old + 1) * mat1rows, _mResult.data().begin() + col * mat1rows);
     }
-
-    Matrix _mResult = Matrix();
-    _mResult.assign(funcData.mat1.rows(), funcData.mat1.cols(), matData);
 
     return _mResult;
 }
