@@ -3582,10 +3582,9 @@ static Matrix circShiftRow(const MatFuncData& funcData, const MatFuncErrorInfo& 
     std::vector<mu::value_type> matData = funcData.mat1.data();
 
     // Circular shift downwards (negative values upwards)
-    // TODO: remove the unnecessary int casts
-    int shift = (int)funcData.nVal % (int)matData.size();
-    shift = - shift;
-    shift = (shift + (int)matData.size()) % (int)matData.size();
+    int matSize = (int)matData.size();
+    int shift = (int)funcData.nVal % matSize;
+    shift = - (shift + matSize) % matSize;
 
     std::rotate(matData.begin(), matData.begin() + shift, matData.end());
 
@@ -3669,8 +3668,11 @@ static Matrix vectShiftCol(const MatFuncData& funcData, const MatFuncErrorInfo& 
     for (size_t col = 0; col < funcData.mat1.cols(); col++)
     {
         // TODO: Remove the unnecessary int casts
-        int col_old = (int)((((int)col - (int)funcData.nVal) % (int)funcData.mat1.cols()) + (int)funcData.mat1.cols()) % (int)funcData.mat1.cols();
-        std::copy(funcData.mat1.data().begin() + col_old * funcData.mat1.rows(), funcData.mat1.data().begin() + (col_old + 1) * funcData.mat1.rows(), matData.begin() + col * funcData.mat1.rows());
+        int mat1cols = (int)funcData.mat1.cols();
+        int mat1rows = (int)funcData.mat1.rows();
+        // Calculate the previous position of the column and copy it to the current target col
+        int col_old = (int)((((int)col - (int)funcData.nVal) % mat1cols) + mat1cols) % mat1cols;
+        std::copy(funcData.mat1.data().begin() + col_old * mat1rows, funcData.mat1.data().begin() + (col_old + 1) * mat1rows, matData.begin() + col * mat1rows);
     }
 
     Matrix _mResult = Matrix();
