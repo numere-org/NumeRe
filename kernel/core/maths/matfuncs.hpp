@@ -3609,16 +3609,12 @@ static Matrix circShiftCol(const MatFuncData& funcData, const MatFuncErrorInfo& 
     // Transpose the matrix (including restructuring the memory) to get a row wise representation of the data
     Matrix _mResult = Matrix(funcData.mat1);
     _mResult.transpose();
-    _mResult.extend(_mResult.rows(), _mResult.cols());
-
-    MatFuncData funcDataTransposed = MatFuncData(_mResult, funcData.nVal);
 
     // Apply the circShiftRow to the transposed matrix
-    _mResult = circShiftRow(funcDataTransposed, errorInfo);
+    _mResult = circShiftRow(MatFuncData(std::move(_mResult), funcData.nVal), errorInfo);
 
     // Reverse the transposition
     _mResult.transpose();
-    _mResult.extend(_mResult.rows(), _mResult.cols());
 
     // TODO: The double transpose is not very efficient. Probably a loop with directly addressing the new elements would be faster.
 
