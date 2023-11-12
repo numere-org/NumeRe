@@ -156,6 +156,7 @@ enum NumberFormat
 /////////////////////////////////////////////////
 struct NumberFormatsVoter
 {
+    private:
     enum
     {
         FMT_DEC_EU,
@@ -167,7 +168,6 @@ struct NumberFormatsVoter
         FMT_COUNT
     };
 
-    // TODO what about encapsulation ? this should be private then
     int m_num_format_votes[FMT_COUNT];
     int m_last_idx = -1;
     std::string m_tape;
@@ -188,28 +188,15 @@ struct NumberFormatsVoter
     };
 
     /////////////////////////////////////////////////
-    /// \brief Default Constructor of NumberFormatsVoter
-    ///
-    ///
-    /////////////////////////////////////////////////
-    NumberFormatsVoter()
-    {
-        for(size_t i = 0; i < FMT_COUNT; i++)
-            m_num_format_votes[i] = 0;
-    }
-
-    /////////////////////////////////////////////////
     /// \brief This function is for lookup if current Tape is a valid or invalid number Format
     ///
     /// \param key std::string
     /// \return int
     ///
     /////////////////////////////////////////////////
-    int checkNumFormat(std::string key)
+    int checkNumFormat(const std::string& key) const
     {
-        // TODO what about encapsulation ? this should be private then
         auto elem = num_format_lookup.find(key);
-
         if(elem != num_format_lookup.end())
             return elem->second;
 
@@ -235,6 +222,18 @@ struct NumberFormatsVoter
             else
                 m_tape.push_back('=');
         }
+    }
+
+    public:
+    /////////////////////////////////////////////////
+    /// \brief Default Constructor of NumberFormatsVoter
+    ///
+    ///
+    /////////////////////////////////////////////////
+    NumberFormatsVoter()
+    {
+        for(size_t i = 0; i < FMT_COUNT; i++)
+            m_num_format_votes[i] = 0;
     }
 
     /////////////////////////////////////////////////
@@ -266,8 +265,8 @@ struct NumberFormatsVoter
         m_last_idx = idx;
 
         // max 3 symbols at ones in tape
-        while(m_tape.length() > 3)
-            m_tape.erase(m_tape.begin());
+        if(m_tape.length() > 3)
+            m_tape.erase(0, m_tape.length()-3);
 
         m_curr_format |= checkNumFormat(m_tape);
     }
@@ -281,15 +280,26 @@ struct NumberFormatsVoter
     /////////////////////////////////////////////////
     int endParseNumber(int idx)
     {
-        // we only want to check for the last 2/1
+        // we only want to check for the last 2 or 1
         m_tape = m_tape.back();
-
-        pushInbetween(idx); //since normally the function is called when seperator appears
+        pushInbetween(idx);
         m_curr_format |= checkNumFormat(m_tape);
 
         m_last_idx = idx;
         m_tape = "";
         return m_curr_format;
+    }
+
+    /////////////////////////////////////////////////
+    /// \brief This function is called when last char of a number is reached during parsing
+    ///        and the result is directly used for voting
+    ///
+    /// \param idx int
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
+    void endParseAndVote(int idx){
+        vote(endParseNumber(idx));
     }
 
     /////////////////////////////////////////////////
@@ -362,7 +372,6 @@ struct NumberFormatsVoter
 
         return num_format;
     }
-
 };
 
 

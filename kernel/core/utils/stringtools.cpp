@@ -988,10 +988,6 @@ static bool isDateTimePattern(const std::string& sStr, size_t pos)
     return false;
 }
 
-
-//TODO Is that a nice way? I dont think so at all
-int last_num_format = 0;
-
 /////////////////////////////////////////////////
 /// \brief This function checks, whether a string
 /// can be converted to the selected
@@ -1034,8 +1030,7 @@ bool isConvertible(const std::string& sStr, ConvertibleType type, NumberFormatsV
                 }
             } else {
                 if(voter && inNum){
-                    int ret = voter->endParseNumber(i-1);  // last one was one before
-                    voter->vote(ret);
+                    voter->endParseAndVote(i-1);  // last one was one before
                     inNum = false;
                 }
                 if (i > 0 && i-1 < sStr.length() && (sStr[i] == '-' || sStr[i] == '+'))
@@ -1048,10 +1043,8 @@ bool isConvertible(const std::string& sStr, ConvertibleType type, NumberFormatsV
             }
         }
 
-        if (voter && inNum) {
-            int ret = voter->endParseNumber(sStr.length()-1);
-            voter->vote(ret);
-        }
+        if (voter && inNum)
+            voter->endParseAndVote(sStr.length()-1);
 
         // Try to detect dates
         return !isConvertible(sStr, CONVTYPE_DATE_TIME);
