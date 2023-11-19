@@ -3579,8 +3579,8 @@ static Matrix matrixFilter(const MatFuncData& funcData, const MatFuncErrorInfo& 
 static Matrix circShiftRow(const MatFuncData& funcData, const MatFuncErrorInfo& errorInfo)
 {
     // Generate the output matrix to perform the operations on
-    Matrix _mResult = Matrix();
-    _mResult.assign(funcData.mat1.rows(), funcData.mat1.cols(), funcData.mat1.data());
+    Matrix _mResult = funcData.mat1;
+    _mResult.extend(_mResult.rows(), _mResult.cols());
 
     // Circular shift downwards (negative values upwards)
     int matSize = (int)_mResult.data().size();
@@ -3605,9 +3605,8 @@ static Matrix circShiftRow(const MatFuncData& funcData, const MatFuncErrorInfo& 
 static Matrix circShiftCol(const MatFuncData& funcData, const MatFuncErrorInfo& errorInfo)
 {
     // Transpose the matrix (including restructuring the memory) to get a row wise representation of the data
-    Matrix _mResult = Matrix(funcData.mat1);
+    Matrix _mResult = funcData.mat1;
     _mResult.transpose();
-    _mResult.extend(_mResult.rows(), _mResult.cols());
 
     // Apply the circShiftRow to the transposed matrix
     _mResult = circShiftRow(MatFuncData(std::move(_mResult), funcData.nVal), errorInfo);
@@ -3655,8 +3654,8 @@ static Matrix circShift(const MatFuncData& funcData, const MatFuncErrorInfo& err
 static Matrix vectShiftCol(const MatFuncData& funcData, const MatFuncErrorInfo& errorInfo)
 {
     // Matrix data is a column-wise vector
-    Matrix _mResult = Matrix();
-    _mResult.assign(funcData.mat1.rows(), funcData.mat1.cols(), funcData.mat1.data());
+    Matrix _mResult = funcData.mat1;
+    _mResult.extend(_mResult.rows(), _mResult.cols());
 
     // Column shift to the right (negative values to the left)
     for (size_t col = 0; col < funcData.mat1.cols(); col++)
@@ -3684,8 +3683,9 @@ static Matrix vectShiftCol(const MatFuncData& funcData, const MatFuncErrorInfo& 
 static Matrix vectShiftRow(const MatFuncData& funcData, const MatFuncErrorInfo& errorInfo)
 {
     // Transpose the matrix (including restructuring the memory) to get a row wise representation of the data
-    Matrix _mResult = Matrix(funcData.mat1);
+    Matrix _mResult = funcData.mat1;
     _mResult.transpose();
+    // NOTE: This should not be necessary, but it does not work without it. Maybe the MatFuncData constructor does not copy the transposed state.
     _mResult.extend(_mResult.rows(), _mResult.cols());
 
     MatFuncData funcDataTransposed = MatFuncData(_mResult, funcData.nVal);
@@ -3695,7 +3695,6 @@ static Matrix vectShiftRow(const MatFuncData& funcData, const MatFuncErrorInfo& 
 
     // Reverse the transposition
     _mResult.transpose();
-    _mResult.extend(_mResult.rows(), _mResult.cols());
 
     return _mResult;
 }
