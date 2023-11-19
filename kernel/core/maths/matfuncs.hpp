@@ -3654,17 +3654,19 @@ static Matrix circShift(const MatFuncData& funcData, const MatFuncErrorInfo& err
 static Matrix vectShiftCol(const MatFuncData& funcData, const MatFuncErrorInfo& errorInfo)
 {
     // Matrix data is a column-wise vector
-    Matrix _mResult = funcData.mat1;
-    _mResult.extend(_mResult.rows(), _mResult.cols());
+    Matrix _mResult(funcData.mat1.rows(), funcData.mat1.cols());
+    int mat1cols = (int)funcData.mat1.cols();
 
-    // Column shift to the right (negative values to the left)
     for (size_t col = 0; col < funcData.mat1.cols(); col++)
     {
-        int mat1cols = (int)funcData.mat1.cols();
-        int mat1rows = (int)funcData.mat1.rows();
         // Calculate the previous position of the column and copy it to the current target col
         int col_old = (int)((((int)col - (int)funcData.nVal) % mat1cols) + mat1cols) % mat1cols;
-        std::copy(funcData.mat1.data().begin() + col_old * mat1rows, funcData.mat1.data().begin() + (col_old + 1) * mat1rows, _mResult.data().begin() + col * mat1rows);
+
+        // Copy the individual cells
+        for (size_t row = 0; row < funcData.mat1.rows(); row++)
+        {
+            _mResult(row, col) = funcData.mat1(row, col_old);
+        }
     }
 
     return _mResult;
