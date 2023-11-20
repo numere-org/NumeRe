@@ -42,3 +42,4 @@ NumeRe.layout
 *.res
 *.bak
 /Release/ChangesLog.txt
+.DS_Store
