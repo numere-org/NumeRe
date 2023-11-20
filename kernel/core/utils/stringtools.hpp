@@ -180,7 +180,7 @@ struct NumberFormatsVoter
 
     static const inline std::map<std::string, int> num_format_lookup =
     {
-        {".", NUM_DECIMAL_US}, {",", NUM_DECIMAL_EU},   // CASE 5: Starting Sepetator -> must be DECIMAL  TODO check only last also
+        {".", NUM_DECIMAL_US}, {",", NUM_DECIMAL_EU},   // CASE 5: Starting Sepetator -> must be DECIMAL
         {">.", NUM_DECIMAL_US}, {">,", NUM_DECIMAL_EU}, // CASE 4: one ceperator and left is > 3
         {".>", NUM_DECIMAL_US}, {",>", NUM_DECIMAL_EU}, {".<", NUM_DECIMAL_US}, {",<", NUM_DECIMAL_EU},  // CASE 2: one ceperator and right is != 3
         {".=.", NUM_K_EU}, {",=,", NUM_K_US}, {" = ", NUM_K_SPACE},  //CASE 3 same seperator more than once, must be thousands
@@ -243,7 +243,7 @@ struct NumberFormatsVoter
     }
 
     /////////////////////////////////////////////////
-    /// \brief This function starts parse of a number
+    /// \brief This function starts parse of a number, start with first non 0 of number
     ///
     /// \param idx int
     /// \return void
@@ -251,7 +251,7 @@ struct NumberFormatsVoter
     /////////////////////////////////////////////////
     void startParseNumber(int idx)
     {
-        m_last_idx = idx-1; //todo wie handeln wir 1ste und letzte, da diese nicht seperatoren sind
+        m_last_idx = idx-1;
         m_tape = "";
         m_curr_format = 0;
     }
@@ -335,7 +335,6 @@ struct NumberFormatsVoter
                 m_num_format_votes[FMT_K_US]++;
             else if(numType & NUM_K_SPACE)
                 m_num_format_votes[FMT_K_SPACE]++;
-            // No need for these votes if already clear K sep found
             else if(numType & NUM_AMBIGIOUS_DOT)
                 m_num_format_votes[FMT_AMBIGIOUS_DOT]++;
             else if(numType & NUM_AMBIGIOUS_COM)
