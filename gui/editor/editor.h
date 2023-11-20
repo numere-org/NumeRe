@@ -431,6 +431,7 @@ class NumeReEditor : public wxStyledTextCtrl, public wxThreadHelper
 		int m_nLastReleasedKey;
 		int m_nCallTipStart;
 		std::string m_sCallTipContent;
+		bool m_isFunctionContext;
 
 		bool m_bLoadingFile;
 		bool m_bLastSavedRemotely;

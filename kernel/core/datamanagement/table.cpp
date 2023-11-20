@@ -271,7 +271,8 @@ namespace NumeRe
                 head += getCleanHeadPart(i, j) + '\n';
         }
 
-        head.pop_back();
+		if (head.length())
+			head.pop_back();
 
         vTableData[i]->m_sHeadLine = head;
     }

@@ -942,6 +942,32 @@ class VectorIndex
         }
 
         /////////////////////////////////////////////////
+        /// \brief Check, whether all values of the
+        /// indices are in a range, which can be handled
+        /// by all algorithms.
+        ///
+        /// \return bool
+        ///
+        /////////////////////////////////////////////////
+        bool checkRange() const
+        {
+            // Expanded ones need only two indices checked
+            if (expand)
+                return (vStorage.front() == STRING || vStorage.front() >= INVALID)
+                    && vStorage.back() >= OPEN_END;
+
+            // All others need explicit checks
+            for (size_t i = 0; i+1 < vStorage.size(); i++)
+            {
+                if (vStorage[i] < INVALID && i+1 < vStorage.size())
+                    return false;
+            }
+
+            // The last one can be an open end one
+            return vStorage.back() >= OPEN_END;
+        }
+
+        /////////////////////////////////////////////////
         /// \brief This member function can be used to
         /// replace the open end state with a defined
         /// index value although the VectorIndex instance

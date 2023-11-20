@@ -75,6 +75,8 @@
 #define SEMANTICS_NUM 4
 #define SEMANTICS_FUNCTION 8
 
+#define LINELENGTH_COLUMN 100
+
 
 BEGIN_EVENT_TABLE(NumeReEditor, wxStyledTextCtrl)
     EVT_STC_CHARADDED	(-1, NumeReEditor::OnChar)
@@ -183,6 +185,7 @@ NumeReEditor::NumeReEditor(NumeReWindow* mframe, Options* options, wxWindow* par
     m_nDuplicateCodeFlag = 0;
     m_procedureViewer = nullptr;
     m_analyzerTimer = new wxTimer(this, ID_ANALYZERTIMER);
+    m_isFunctionContext = false;
 
     Bind(wxEVT_THREAD, &NumeReEditor::OnThreadUpdate, this);
 
@@ -407,7 +410,10 @@ bool NumeReEditor::SaveFile( const wxString& filename )
     // save edit in file and clear undo
     if (!filename.IsEmpty())
     {
-        m_terminal->clearBreakpoints(GetFileNameAndPath().ToStdString());
+        if ((m_fileType == FILE_NSCR || m_fileType == FILE_NPRC)
+            && GetFileNameAndPath().ToStdString().length())
+            m_terminal->clearBreakpoints(GetFileNameAndPath().ToStdString());
+
         m_simpleFileName = fn.GetFullName();
     }
 
@@ -846,14 +852,34 @@ void NumeReEditor::OnChar( wxStyledTextEvent& event )
                 else
                     sSelectedNamespace = GetTextRange(nNameSpacePosition, wordstartpos);
 
-                // If namespace == "this~" then replace it with the current namespace
-                if (sNamespace == "this~")
-                {
-                    string filename = GetFileNameAndPath().ToStdString();
-                    filename = replacePathSeparator(filename);
-                    vector<string> vPaths = m_terminal->getPathSettings();
+                std::string filename = GetFileNameAndPath().ToStdString();
+                filename = replacePathSeparator(filename);
+                std::vector<std::string> vPaths = m_terminal->getPathSettings();
 
-                    if (filename.substr(0, vPaths[PROCPATH].length()) == vPaths[PROCPATH])
+                if (filename.starts_with(vPaths[PROCPATH]))
+                {
+                    filename.erase(0, vPaths[PROCPATH].length());
+
+                    if (filename.find('/') != string::npos)
+                        filename.erase(filename.rfind('/'));
+
+                    while (filename.front() == '/')
+                        filename.erase(0, 1);
+
+                    replaceAll(filename, "/", "~");
+                }
+
+                // If namespace == "this~" then replace it with the current namespace
+                if (sNamespace.StartsWith("this~"))
+                    sNamespace.replace(0, 4, filename);
+                else if (sSelectedNamespace.StartsWith("this~"))
+                    sSelectedNamespace.replace(0, 4, filename);
+                /*{
+                    std::string filename = GetFileNameAndPath().ToStdString();
+                    filename = replacePathSeparator(filename);
+                    std::vector<std::string> vPaths = m_terminal->getPathSettings();
+
+                    if (filename.starts_with(vPaths[PROCPATH]))
                     {
                         filename.erase(0, vPaths[PROCPATH].length());
 
@@ -863,8 +889,8 @@ void NumeReEditor::OnChar( wxStyledTextEvent& event )
                         while (filename.front() == '/')
                             filename.erase(0, 1);
 
-                        while (filename.find('/') != string::npos)
-                            filename[filename.find('/')] = '~';
+                        replaceAll(filename, "~~", "/../");
+                        replaceAll(filename, "~", "/");
 
                         sNamespace = filename;
                     }
@@ -877,7 +903,7 @@ void NumeReEditor::OnChar( wxStyledTextEvent& event )
                     filename = replacePathSeparator(filename);
                     vector<string> vPaths = m_terminal->getPathSettings();
 
-                    if (filename.substr(0, vPaths[PROCPATH].length()) == vPaths[PROCPATH])
+                    if (filename.starts_with(vPaths[PROCPATH]))
                     {
                         filename.erase(0, vPaths[PROCPATH].length());
 
@@ -887,14 +913,14 @@ void NumeReEditor::OnChar( wxStyledTextEvent& event )
                         while (filename.front() == '/')
                             filename.erase(0, 1);
 
-                        while (filename.find('/') != string::npos)
-                            filename[filename.find('/')] = '~';
+                        replaceAll(filename, "~~", "/../");
+                        replaceAll(filename, "~", "/");
 
                         sSelectedNamespace = filename;
                     }
                     else
                         sSelectedNamespace = "";
-                }
+                }*/
                 // If namespace == "thisfile~" then search for all procedures in the current file and use them as the
                 // autocompletion list entries
                 else if (sNamespace == "thisfile"
@@ -902,10 +928,11 @@ void NumeReEditor::OnChar( wxStyledTextEvent& event )
                          || sSelectedNamespace == "thisfile"
                          || sSelectedNamespace == "thisfile~")
                 {
-                    this->AutoCompSetIgnoreCase(true);
-                    this->AutoCompSetCaseInsensitiveBehaviour(wxSTC_CASEINSENSITIVEBEHAVIOUR_IGNORECASE);
-                    this->AutoCompShow(lenEntered, m_search->FindProceduresInCurrentFile(GetTextRange(wordstartpos, currentPos), sSelectedNamespace));
-                    this->Colourise(0, -1);
+                    AutoCompSetIgnoreCase(true);
+                    AutoCompSetCaseInsensitiveBehaviour(wxSTC_CASEINSENSITIVEBEHAVIOUR_IGNORECASE);
+                    AutoCompShow(lenEntered, m_search->FindProceduresInCurrentFile(GetTextRange(wordstartpos, currentPos),
+                                                                                   sSelectedNamespace));
+                    Colourise(0, -1);
                     event.Skip();
                     return;
                 }
@@ -975,6 +1002,47 @@ void NumeReEditor::OnChar( wxStyledTextEvent& event )
 
     if (sAutoCompList.length())
         AutoCompShow(lenEntered, sAutoCompList);
+
+    // if line indicator setting is active, provide autowrapping for comments
+    bool isLineIndicatorActive = m_options->getSetting(SETTING_B_LINELENGTH).active();
+    const int columnPos = GetColumn(currentPos);
+    bool isNumereFile = m_fileType == FILE_NSCR || m_fileType == FILE_NPRC || m_fileType == FILE_NLYT;
+
+    if (isNumereFile
+        && isLineIndicatorActive
+        && (columnPos > LINELENGTH_COLUMN)
+        && isStyleType(STYLE_COMMENT, currentPos)
+        && isStyleType(STYLE_COMMENT, GetLineIndentPosition(currentLine)+1))
+    {
+        // Only calculate this information if really necessary
+        int lineBreakPos = WordStartPosition(FindColumn(currentLine, LINELENGTH_COLUMN), true);
+
+        // Wrap only, if the breaking point before last word on line is more than half of LINELENGTH_COLUMN after the indentation
+        bool isWordSmall = (lineBreakPos - GetLineIndentPosition(currentLine)) > (LINELENGTH_COLUMN/2);
+
+        if (isWordSmall)
+        {
+            // Get the start of the last line to use as a reference for indentation
+            wxString sLineStart = GetTextRange(PositionFromLine(currentLine), GetLineIndentPosition(currentLine)+20);
+            sLineStart.erase(sLineStart.find_first_not_of("#*! -\t"));
+            sLineStart.Replace("-", " ");
+
+            if (GetStyleAt(currentPos) == wxSTC_NSCR_COMMENT_LINE
+                || GetStyleAt(currentPos) == wxSTC_NSCR_DOCCOMMENT_LINE)
+            {
+                InsertText(lineBreakPos, "\r\n" + sLineStart);
+                GotoPos(currentPos+2+sLineStart.length());
+            }
+            else if (isStyleType(NumeReEditor::STYLE_COMMENT_BLOCK, currentPos))
+            {
+                sLineStart.Replace("#*", " *");
+                sLineStart.Replace("!", "");
+
+                InsertText(lineBreakPos, "\r\n"+sLineStart);
+                GotoPos(currentPos+2+sLineStart.length());
+            }
+        }
+    }
 
     Colourise(0, -1);
 
@@ -1080,17 +1148,19 @@ void NumeReEditor::MakeBlockCheck()
 /////////////////////////////////////////////////
 void NumeReEditor::HandleFunctionCallTip()
 {
+    m_isFunctionContext = false;
+
     // do nothing if an autocompletion list is active
-    if (this->AutoCompActive())
+    if (AutoCompActive())
         return;
 
     // do nothing, if language is not supported
-    if (this->getFileType() != FILE_NSCR && this->getFileType() != FILE_NPRC)
+    if (getFileType() != FILE_NSCR && getFileType() != FILE_NPRC)
         return;
 
     int nStartingBrace = 0;
     int nArgStartPos = 0;
-    string sFunctionContext = this->GetCurrentFunctionContext(nStartingBrace);
+    string sFunctionContext = GetCurrentFunctionContext(nStartingBrace);
     static NumeRe::CallTipProvider _provider = *m_terminal->getProvider();
     NumeRe::CallTip _cTip;
 
@@ -1128,7 +1198,7 @@ void NumeReEditor::HandleFunctionCallTip()
     if (!_cTip.sDefinition.length())
         return;
 
-    string sArgument = this->GetCurrentArgument(_cTip.sDefinition, nStartingBrace, nArgStartPos);
+    string sArgument = GetCurrentArgument(_cTip.sDefinition, nStartingBrace, nArgStartPos);
 
     /*if (sArgument.length())
     {
@@ -1151,16 +1221,18 @@ void NumeReEditor::HandleFunctionCallTip()
 
     }*/
 
-    if (this->CallTipActive() && this->CallTipStartPos() != nStartingBrace)
+    if (CallTipActive() && CallTipStartPos() != nStartingBrace)
     {
-        this->AdvCallTipCancel();
-        this->AdvCallTipShow(nStartingBrace, _cTip.sDefinition);
+        AdvCallTipCancel();
+        AdvCallTipShow(nStartingBrace, _cTip.sDefinition);
     }
-    else if (!this->CallTipActive())
-        this->AdvCallTipShow(nStartingBrace, _cTip.sDefinition);
+    else if (!CallTipActive())
+        AdvCallTipShow(nStartingBrace, _cTip.sDefinition);
 
     if (sArgument.length())
-        this->CallTipSetHighlight(nArgStartPos, nArgStartPos + sArgument.length());
+        CallTipSetHighlight(nArgStartPos, nArgStartPos + sArgument.length());
+
+    m_isFunctionContext = true;
 }
 
 
@@ -1379,6 +1451,7 @@ void NumeReEditor::AdvCallTipCancel()
 {
     m_nCallTipStart = 0;
     m_sCallTipContent.clear();
+    m_isFunctionContext = false;
     CallTipCancel();
 }
 
@@ -1639,8 +1712,8 @@ void NumeReEditor::OnLeave(wxMouseEvent& event)
 /////////////////////////////////////////////////
 void NumeReEditor::OnLoseFocus(wxFocusEvent& event)
 {
-    if (this->CallTipActive())
-        this->AdvCallTipCancel();
+    if (CallTipActive())
+        AdvCallTipCancel();
 
     event.Skip();
 }
@@ -1659,7 +1732,11 @@ void NumeReEditor::OnLoseFocus(wxFocusEvent& event)
 /////////////////////////////////////////////////
 void NumeReEditor::OnMouseDwell(wxStyledTextEvent& event)
 {
-    if ((m_fileType != FILE_NSCR && m_fileType != FILE_NPRC) || m_PopUpActive || !this->HasFocus())
+    if ((m_fileType != FILE_NSCR && m_fileType != FILE_NPRC)
+        || m_PopUpActive
+        || m_isFunctionContext
+        || AutoCompActive()
+        || !HasFocus())
         return;
 
     int charpos = event.GetPosition();
@@ -1740,6 +1817,7 @@ void NumeReEditor::OnMouseDwell(wxStyledTextEvent& event)
         if (GetCharAt(charpos) != '$')
             startPosition--;
 
+        // If we are already showing this tooltip or the function context, do nothing
         if (CallTipActive() && m_nCallTipStart == startPosition)
             return;
 
@@ -4162,7 +4240,7 @@ void NumeReEditor::updateDefaultHighlightSettings()
     {
         SetEdgeColour(wxColour(210, 210, 255));
         SetEdgeMode(wxSTC_EDGE_LINE);
-        SetEdgeColumn(100);
+        SetEdgeColumn(LINELENGTH_COLUMN);
     }
     else
         SetEdgeMode(wxSTC_EDGE_NONE);
@@ -4256,7 +4334,9 @@ void NumeReEditor::applyStrikeThrough()
 //////////////////////////////////////////////////////////////////////////////
 void NumeReEditor::SetFilename(wxFileName filename, bool fileIsRemote)
 {
-    m_terminal->clearBreakpoints(GetFileNameAndPath().ToStdString());
+    if (GetFileNameAndPath().ToStdString().length())
+        m_terminal->clearBreakpoints(GetFileNameAndPath().ToStdString());
+
     m_bLastSavedRemotely = fileIsRemote;
     m_fileNameAndPath = filename;
     SynchronizeBreakpoints();
@@ -5019,8 +5099,8 @@ bool NumeReEditor::isWrappedLine(int line)
 /////////////////////////////////////////////////
 void NumeReEditor::AsynchActions()
 {
-    if (!this->AutoCompActive()
-        && this->getEditorSetting(SETTING_INDENTONTYPE)
+    if (!AutoCompActive()
+        && getEditorSetting(SETTING_INDENTONTYPE)
         && (m_fileType == FILE_NSCR || m_fileType == FILE_NPRC || m_fileType == FILE_MATLAB || m_fileType == FILE_CPP)
         && !isNoAutoIndentionKey(m_nLastReleasedKey)
         && !HasSelection())
@@ -8738,5 +8818,3 @@ wxString NumeReEditor::ExtractAsHTML(int nFirstLine, int nLastLine)
 
     return sHtml;
 }
-
-

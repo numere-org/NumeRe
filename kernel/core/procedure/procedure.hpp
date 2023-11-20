@@ -106,7 +106,7 @@ class Procedure : public FlowCtrl, public PackageManager
         virtual int isInline(const std::string& sProc) override;
         virtual int evalDebuggerBreakPoint(mu::Parser& _parser, Settings& _option) override;
         virtual int getErrorInformationForDebugger() override;
-        virtual int catchExceptionForTest(std::exception_ptr e_ptr, bool bSupressAnswer_back, int nLine) override;
+        virtual int catchExceptionForTest(std::exception_ptr e_ptr, bool bSupressAnswer_back, int nLine, bool cleanUp) override;
 
         inline void setPredefinedFuncs(const std::string& sPredefined)
             {

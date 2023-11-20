@@ -41,7 +41,8 @@ namespace mu
 	    {
 	        NO_FLAG = 0x0,
 	        IS_CLUSTER = 0x1,
-	        IS_TABLE_METHOD = 0x2
+	        IS_TABLE_METHOD = 0x2,
+	        IS_INLINE_METHOD = 0x4
 	    };
 
 		std::string sAccessEquation; // Passed to parser_getIndices -> returns the indices for the current access
