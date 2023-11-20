@@ -239,6 +239,22 @@ std::string TableColumn::typeToString(TableColumn::ColumnType type)
     {
     case TYPE_NONE:
         return "none";
+    case TYPE_VALUE_I8:
+        return "value(i8)";
+    case TYPE_VALUE_UI8:
+        return "value(ui8)";
+    case TYPE_VALUE_I16:
+        return "value(i16)";
+    case TYPE_VALUE_UI16:
+        return "value(ui16)";
+    case TYPE_VALUE_I32:
+        return "value(i32)";
+    case TYPE_VALUE_UI32:
+        return "value(ui32)";
+    case TYPE_VALUE_I64:
+        return "value(i64)";
+    case TYPE_VALUE_UI64:
+        return "value(ui64)";
     case TYPE_VALUE:
         return "value";
     case TYPE_STRING:
@@ -269,6 +285,22 @@ TableColumn::ColumnType TableColumn::stringToType(const std::string& sType)
 {
     if (sType == "value")
         return TYPE_VALUE;
+    else if (sType == "value(i8)")
+        return TYPE_VALUE_I8;
+    else if (sType == "value(ui8)")
+        return TYPE_VALUE_UI8;
+    else if (sType == "value(i16)")
+        return TYPE_VALUE_I16;
+    else if (sType == "value(ui16)")
+        return TYPE_VALUE_UI16;
+    else if (sType == "value(i32)")
+        return TYPE_VALUE_I32;
+    else if (sType == "value(ui32)")
+        return TYPE_VALUE_UI32;
+    else if (sType == "value(i64)")
+        return TYPE_VALUE_I64;
+    else if (sType == "value(ui64)")
+        return TYPE_VALUE_UI64;
     else if (sType == "string")
         return TYPE_STRING;
     else if (sType == "datetime")
@@ -293,6 +325,22 @@ TableColumn::ColumnType TableColumn::stringToType(const std::string& sType)
 /////////////////////////////////////////////////
 std::vector<std::string> TableColumn::getTypesAsString()
 {
-    return {"value", "string", "datetime", "logical", "category"};
+    return {"value", "value(i8)", "value(ui8)", "value(i16)", "value(ui16)",
+        "value(i32)", "value(ui32)", "value(i64)", "value(ui64)",
+        "string", "datetime", "logical", "category"};
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Return, whether the passed type
+/// represents a value type.
+///
+/// \param type TableColumn::ColumnType
+/// \return bool
+///
+/////////////////////////////////////////////////
+bool TableColumn::isValueType(TableColumn::ColumnType type)
+{
+    return type > TableColumn::VALUELIKE && type < TableColumn::VALUE_LAST;
 }
 

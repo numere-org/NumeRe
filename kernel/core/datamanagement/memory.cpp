@@ -175,9 +175,6 @@ Memory& Memory::operator=(const Memory& other)
 
         switch (other.memArray[i]->m_type)
         {
-            case TableColumn::TYPE_VALUE:
-                memArray[i].reset(new ValueColumn);
-                break;
             case TableColumn::TYPE_DATETIME:
                 memArray[i].reset(new DateTimeColumn);
                 break;
@@ -198,6 +195,11 @@ Memory& Memory::operator=(const Memory& other)
             case TableColumn::STRINGLIKE:
             case TableColumn::TYPE_MIXED:
                 break;
+            default:
+            {
+                if (TableColumn::isValueType(other.memArray[i]->m_type))
+                    memArray[i].reset(createValueTypeColumn(other.memArray[i]->m_type));
+            }
         }
 
         memArray[i]->assign(other.memArray[i].get());
@@ -1384,7 +1386,9 @@ void Memory::writeData(Indices& _idx, mu::value_type* _dData, size_t _nNum)
             {
                 if (!i
                     && rewriteColumn
-                    && (memArray[_idx.col[j]]->m_type != TableColumn::TYPE_DATETIME || !mu::isreal(_dData, _nNum)))
+                    && ((memArray[_idx.col[j]]->m_type != TableColumn::TYPE_DATETIME
+                         && !TableColumn::isValueType(memArray[_idx.col[j]]->m_type))
+                        || !mu::isreal(_dData, _nNum)))
                     convert_for_overwrite(memArray[_idx.col[j]], _idx.col[j], TableColumn::TYPE_VALUE);
 
                 if (_nNum > i)
@@ -1440,7 +1444,9 @@ void Memory::writeSingletonData(Indices& _idx, const mu::value_type& _dData)
             if (!i
                 && rewriteColumn
                 && (int)memArray.size() > _idx.col[j]
-                && (_dData.imag() || memArray[_idx.col[j]]->m_type != TableColumn::TYPE_DATETIME))
+                && (_dData.imag()
+                    || (memArray[_idx.col[j]]->m_type != TableColumn::TYPE_DATETIME
+                        && !TableColumn::isValueType(memArray[_idx.col[j]]->m_type))))
                 convert_for_overwrite(memArray[_idx.col[j]], _idx.col[j], TableColumn::TYPE_VALUE);
 
             writeData(_idx.row[i], _idx.col[j], _dData);
@@ -1915,8 +1921,8 @@ void Memory::insertCopiedTable(NumeRe::Table _table, const VectorIndex& lines, c
             // Do we have to create a new column?
             if (!memArray[cols[j]])
             {
-                if (tabCol->m_type == TableColumn::TYPE_VALUE)
-                    memArray[cols[j]].reset(new ValueColumn);
+                if (TableColumn::isValueType(tabCol->m_type))
+                    memArray[cols[j]].reset(createValueTypeColumn(tabCol->m_type));
                 else if (tabCol->m_type == TableColumn::TYPE_DATETIME)
                     memArray[cols[j]].reset(new DateTimeColumn);
                 else if (tabCol->m_type == TableColumn::TYPE_STRING)

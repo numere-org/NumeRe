@@ -344,7 +344,7 @@ namespace NumeRe
                     fFileStream << "---";
                 else
                 {
-                    if (fileData->at(j)->m_type == TableColumn::TYPE_VALUE)
+                    if (TableColumn::isValueType(fileData->at(j)->m_type))
                         fFileStream << "  " + toString(fileData->at(j)->getValue(i), nPrecFields);
                     else
                         fFileStream << "  " + fileData->at(j)->getValueAsInternalString(i);
@@ -995,7 +995,7 @@ namespace NumeRe
 
         writeStringField(col->m_sHeadLine);
 
-        if (col->m_type == TableColumn::TYPE_VALUE
+        if (TableColumn::isValueType(col->m_type)
             || col->m_type == TableColumn::TYPE_DATETIME
             || col->m_type == TableColumn::TYPE_LOGICAL)
         {
@@ -1003,12 +1003,7 @@ namespace NumeRe
             writeStringField("DTYPE=COMPLEX");
 
             // Note the type of the column
-            if (col->m_type == TableColumn::TYPE_VALUE)
-                writeStringField("CTYPE=VALUE");
-            else if (col->m_type == TableColumn::TYPE_DATETIME)
-                writeStringField("CTYPE=DATETIME");
-            else if (col->m_type == TableColumn::TYPE_LOGICAL)
-                writeStringField("CTYPE=LOGICAL");
+            writeStringField("CTYPE="+toUpperCase(TableColumn::typeToString(col->m_type)));
 
             uint32_t lenPos = tellp();
             // Store the position of the next column
@@ -1357,17 +1352,18 @@ namespace NumeRe
         {
             // Get the actual column type
             std::string sColType = readStringField();
+            TableColumn::ColumnType type = TableColumn::stringToType(toLowerCase(sColType.substr(sColType.find('=')+1)));
 
             // Jump over the colum end information
             readNumField<uint32_t>();
 
             // Create the column for the corresponding CTYPE
-            if (sColType == "CTYPE=VALUE")
-                col.reset(new ValueColumn);
-            else if (sColType == "CTYPE=DATETIME")
+            if (sColType == "CTYPE=DATETIME")
                 col.reset(new DateTimeColumn);
             else if (sColType == "CTYPE=LOGICAL")
                 col.reset(new LogicalColumn);
+            else if (type != TableColumn::TYPE_NONE)
+                col.reset(createValueTypeColumn(type));
             else // All others fall back to a generic value column
                 col.reset(new ValueColumn);
 
@@ -2168,7 +2164,7 @@ namespace NumeRe
             {
                 if (fileData->at(j) && fileData->at(j)->isValid(i))
                 {
-                    if (fileData->at(j)->m_type == TableColumn::TYPE_VALUE)
+                    if (TableColumn::isValueType(fileData->at(j)->m_type))
                         fFileStream << toString(fileData->at(j)->getValue(i), DEFAULT_PRECISION);
                     else
                         fFileStream << fileData->at(j)->getValueAsInternalString(i);
@@ -2469,7 +2465,7 @@ namespace NumeRe
 
                 if (!fileData->at(j))
                     fFileStream << "---";
-                else if (fileData->at(j)->m_type == TableColumn::TYPE_VALUE)
+                else if (TableColumn::isValueType(fileData->at(j)->m_type))
                     fFileStream << formatNumber(fileData->at(j)->getValue(i));
                 else
                     fFileStream << fileData->at(j)->getValueAsInternalString(i);
@@ -3876,7 +3872,7 @@ namespace NumeRe
                 if (!_cell)
                     throw SyntaxError(SyntaxError::CANNOT_SAVE_FILE, sFileName, SyntaxError::invalid_position, sFileName);
 
-                if (fileData->at(j)->m_type == TableColumn::TYPE_VALUE || fileData->at(j)->m_type == TableColumn::TYPE_LOGICAL)
+                if (TableColumn::isValueType(fileData->at(j)->m_type) || fileData->at(j)->m_type == TableColumn::TYPE_LOGICAL)
                     _cell->SetDouble(fileData->at(j)->getValue(i).real());
                 else
                     _cell->SetString(fileData->at(j)->getValueAsInternalString(i).c_str());
@@ -4671,13 +4667,17 @@ namespace NumeRe
             // Write the x column
             for (uint16_t i = 0; i < layer.header.cn_width; i++)
             {
-                fileData->at(colOffset)->setValue(i, i * layer.header.camera_res);
+                fileData->at(colOffset)->setValue(i, i * (layer.header.pixel_width > 0
+                                                          ? layer.header.pixel_width
+                                                          : layer.header.camera_res));
             }
 
             // Write the y column
             for (uint16_t j = 0; j < layer.header.cn_height; j++)
             {
-                fileData->at(colOffset+1)->setValue(j, j * layer.header.camera_res);
+                fileData->at(colOffset+1)->setValue(j, j * (layer.header.pixel_height > 0
+                                                            ? layer.header.pixel_height
+                                                            : layer.header.camera_res));
             }
 
             // Write the phase data and consider the needed transposition of height and width

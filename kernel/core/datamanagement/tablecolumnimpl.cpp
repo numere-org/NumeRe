@@ -79,18 +79,6 @@ static ConvertibleType detectCommonType(const std::vector<std::string>& vVals)
 }
 
 
-static void test()
-{
-    ValueColumn v;
-    IntValueColumn i;
-    BaseIntColumn<uint8_t, TableColumn::TYPE_VALUE> ui8;
-    BaseIntColumn<uint32_t, TableColumn::TYPE_VALUE> ui32;
-    BaseIntColumn<int64_t, TableColumn::TYPE_VALUE> i64;
-}
-
-
-
-
 /////////////////////////////////////////////////
 /// \brief Returns the selected value as a string
 /// or a default value, if it does not exist.
@@ -466,22 +454,15 @@ TableColumn* DateTimeColumn::convert(ColumnType type)
 
             break;
         }
-        case TableColumn::TYPE_VALUE:
-        {
-            col = new ValueColumn(m_data.size());
-
-            for (size_t i = 0; i < m_data.size(); i++)
-            {
-                if (!mu::isnan(m_data[i]))
-                    col->setValue(i, m_data[i]);
-            }
-
-            break;
-        }
         case TableColumn::TYPE_DATETIME:
             return this;
         default:
+        {
+            if (TableColumn::isValueType(type))
+                return convertNumericType(type, this);
+
             return nullptr;
+        }
     }
 
     col->m_sHeadLine = m_sHeadLine;
@@ -870,22 +851,21 @@ TableColumn* LogicalColumn::convert(ColumnType type)
 
             break;
         }
-        case TableColumn::TYPE_VALUE:
+        case TableColumn::TYPE_LOGICAL:
+            return this;
+        default:
         {
-            col = new ValueColumn(m_data.size());
+            if (!TableColumn::isValueType(type))
+                return nullptr;
+
+            col = createValueTypeColumn(type, m_data.size());
 
             for (size_t i = 0; i < m_data.size(); i++)
             {
                 if (m_data[i] != LOGICAL_NAN)
                     col->setValue(i, m_data[i] == LOGICAL_TRUE ? 1.0 : 0.0);
             }
-
-            break;
         }
-        case TableColumn::TYPE_LOGICAL:
-            return this;
-        default:
-            return nullptr;
     }
 
     col->m_sHeadLine = m_sHeadLine;
@@ -1289,15 +1269,6 @@ TableColumn* StringColumn::convert(ColumnType type)
 
             break;
         }
-        case TableColumn::TYPE_VALUE:
-        {
-            if (!m_data.size())
-                convType = CONVTYPE_VALUE;
-            else if (convType != CONVTYPE_VALUE && convType != CONVTYPE_LOGICAL)
-                return nullptr;
-
-            break;
-        }
         case TableColumn::TYPE_LOGICAL:
         {
             if (!m_data.size())
@@ -1317,13 +1288,24 @@ TableColumn* StringColumn::convert(ColumnType type)
             return col;
         }
         default:
-            return nullptr;
+        {
+            if (TableColumn::isValueType(type))
+            {
+                if (!m_data.size())
+                    convType = CONVTYPE_VALUE;
+                else if (convType != CONVTYPE_VALUE && convType != CONVTYPE_LOGICAL)
+                    return nullptr;
+            }
+            else
+                return nullptr;
+        }
     }
 
     if (convType == CONVTYPE_DATE_TIME)
         col = new DateTimeColumn(m_data.size());
     else if (convType == CONVTYPE_VALUE)
-        col = new ValueColumn(m_data.size());
+        col = createValueTypeColumn(TableColumn::isValueType(type) ? type : TableColumn::TYPE_VALUE,
+                                    m_data.size());
     else if (convType == CONVTYPE_LOGICAL)
         col = new LogicalColumn(m_data.size());
 
@@ -1785,15 +1767,6 @@ TableColumn* CategoricalColumn::convert(ColumnType type)
 
             break;
         }
-        case TableColumn::TYPE_VALUE:
-        {
-            if (!m_data.size())
-                convType = CONVTYPE_VALUE;
-            else if (convType != CONVTYPE_VALUE && convType != CONVTYPE_LOGICAL)
-                return nullptr;
-
-            break;
-        }
         case TableColumn::TYPE_LOGICAL:
         {
             if (!m_data.size())
@@ -1813,13 +1786,24 @@ TableColumn* CategoricalColumn::convert(ColumnType type)
         case TableColumn::TYPE_CATEGORICAL:
             return this;
         default:
-            return nullptr;
+        {
+            if (TableColumn::isValueType(type))
+            {
+                if (!m_data.size())
+                    convType = CONVTYPE_VALUE;
+                else if (convType != CONVTYPE_VALUE && convType != CONVTYPE_LOGICAL)
+                    return nullptr;
+            }
+            else
+                return nullptr;
+        }
     }
 
     if (convType == CONVTYPE_DATE_TIME)
         col = new DateTimeColumn(m_data.size());
     else if (convType == CONVTYPE_VALUE)
-        col = new ValueColumn(m_data.size());
+        col = createValueTypeColumn(TableColumn::isValueType(type) ? type : TableColumn::TYPE_VALUE,
+                                    m_data.size());
     else if (convType == CONVTYPE_LOGICAL)
         col = new LogicalColumn(m_data.size());
 
@@ -1925,9 +1909,6 @@ void convert_if_empty(TblColPtr& col, size_t colNo, TableColumn::ColumnType type
             case TableColumn::TYPE_STRING:
                 col.reset(new StringColumn);
                 break;
-            case TableColumn::TYPE_VALUE:
-                col.reset(new ValueColumn);
-                break;
             case TableColumn::TYPE_DATETIME:
                 col.reset(new DateTimeColumn);
                 break;
@@ -1938,7 +1919,12 @@ void convert_if_empty(TblColPtr& col, size_t colNo, TableColumn::ColumnType type
                 col.reset(new CategoricalColumn);
                 break;
             default:
-                return;
+            {
+                if (!TableColumn::isValueType(type))
+                    return;
+
+                col.reset(createValueTypeColumn(type));
+            }
         }
 
         col->m_sHeadLine = sHead;
@@ -1969,7 +1955,8 @@ bool convert_if_needed(TblColPtr& col, size_t colNo, TableColumn::ColumnType typ
         return true;
 
     bool isSimilar = (type == TableColumn::TYPE_CATEGORICAL && col->m_type == TableColumn::TYPE_STRING)
-                      || (type == TableColumn::TYPE_STRING && col->m_type == TableColumn::TYPE_CATEGORICAL);
+                      || (type == TableColumn::TYPE_STRING && col->m_type == TableColumn::TYPE_CATEGORICAL)
+                      || (TableColumn::isValueType(type) && TableColumn::isValueType(col->m_type));
 
     if (!convertSimilarTypes && isSimilar)
         return true;
@@ -2021,12 +2008,6 @@ void convert_for_overwrite(TblColPtr& col, size_t colNo, TableColumn::ColumnType
             col->m_sHeadLine = sHeadLine;
             break;
         }
-        case TableColumn::TYPE_VALUE:
-        {
-            col.reset(new ValueColumn);
-            col->m_sHeadLine = sHeadLine;
-            break;
-        }
         case TableColumn::TYPE_DATETIME:
         {
             col.reset(new DateTimeColumn);
@@ -2046,7 +2027,76 @@ void convert_for_overwrite(TblColPtr& col, size_t colNo, TableColumn::ColumnType
             break;
         }
         default:
-            return;
+        {
+            if (TableColumn::isValueType(type))
+            {
+                col.reset(createValueTypeColumn(type));
+                col->m_sHeadLine = sHeadLine;
+            }
+        }
     }
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Create a value column with the passed
+/// value type (if it is a value type).
+///
+/// \param type TableColumn::ColumnType
+/// \param nSize size_t
+/// \return TableColumn*
+///
+/////////////////////////////////////////////////
+TableColumn* createValueTypeColumn(TableColumn::ColumnType type, size_t nSize)
+{
+    switch (type)
+    {
+        case TableColumn::TYPE_VALUE_I8:
+            return new I8ValueColumn(nSize);
+        case TableColumn::TYPE_VALUE_UI8:
+            return new UI8ValueColumn(nSize);
+        case TableColumn::TYPE_VALUE_I16:
+            return new I16ValueColumn(nSize);
+        case TableColumn::TYPE_VALUE_UI16:
+            return new UI16ValueColumn(nSize);
+        case TableColumn::TYPE_VALUE_I32:
+            return new I32ValueColumn(nSize);
+        case TableColumn::TYPE_VALUE_UI32:
+            return new UI32ValueColumn(nSize);
+        case TableColumn::TYPE_VALUE_I64:
+            return new I64ValueColumn(nSize);
+        case TableColumn::TYPE_VALUE_UI64:
+            return new UI64ValueColumn(nSize);
+        case TableColumn::TYPE_VALUE:
+            return new ValueColumn(nSize);
+    }
+
+    return nullptr;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This function returns the contents of
+/// an existing value column (type) as a new
+/// value column type, if the target type is an
+/// existing value column type.
+///
+/// \param type TableColumn::ColumnType
+/// \param current TableColumn*
+/// \return TableColumn*
+///
+/////////////////////////////////////////////////
+TableColumn* convertNumericType(TableColumn::ColumnType type, TableColumn* current)
+{
+    size_t nNumElements = current->getNumFilledElements();
+    TableColumn* col = createValueTypeColumn(type, nNumElements);
+
+    if (col)
+    {
+        col->setValue(VectorIndex(0, nNumElements-1), current->getValue(VectorIndex(0, nNumElements-1)));
+        col->m_sHeadLine = current->m_sHeadLine;
+    }
+
+    return col;
 }
 

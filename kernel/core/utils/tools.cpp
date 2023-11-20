@@ -1891,39 +1891,6 @@ bool isToStringArg(const string& sExpr, size_t nPos)
 
 
 /////////////////////////////////////////////////
-/// \brief Casts doubles to integers and avoids
-/// rounding errors.
-///
-/// \param number double
-/// \return long long int
-///
-/////////////////////////////////////////////////
-long long int intCast(double number)
-{
-    // if quite close, use rint
-    if (fabs(number - rint(number)) < 1e-7)
-        return rint(number);
-    // otherwise truncate
-    return static_cast<int>(number);
-}
-
-
-/////////////////////////////////////////////////
-/// \brief Casts the real part of the complex
-/// number to an integer and avoids rounding
-/// errors.
-///
-/// \param number const std::complex<double>&
-/// \return long long int
-///
-/////////////////////////////////////////////////
-long long int intCast(const std::complex<double>& number)
-{
-    return intCast(number.real());
-}
-
-
-/////////////////////////////////////////////////
 /// \brief Determines, whether the content of a
 /// complex value is actually a regular integer.
 ///

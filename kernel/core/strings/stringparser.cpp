@@ -746,7 +746,9 @@ namespace NumeRe
                         {
                             if (!i
                                 && rewriteColumn
-                                && (_data.getType(_idx.col.subidx(0, 1), sTableName) != TableColumn::TYPE_DATETIME || !mu::isreal(v, nResults)))
+                                && ((_data.getType(_idx.col.subidx(0, 1), sTableName) != TableColumn::TYPE_DATETIME
+                                     && !TableColumn::isValueType(_data.getType(_idx.col.subidx(0, 1), sTableName)))
+                                    || !mu::isreal(v, nResults)))
                                 _data.overwriteColumn(_idx.col.front(), sTableName, TableColumn::TYPE_VALUE);
 
                             if (_idx.row[i] == VectorIndex::INVALID || j+i >= _idx.row.size())

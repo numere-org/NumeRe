@@ -30,23 +30,28 @@ class CategoricalColumn;
 class DateTimeColumn;
 class LogicalColumn;
 
+// Helper for all TYPE_VALUE_* conversions
+TableColumn* createValueTypeColumn(TableColumn::ColumnType type, size_t nSize = 0);
+TableColumn* convertNumericType(TableColumn::ColumnType type, TableColumn* current);
+
 /////////////////////////////////////////////////
 /// \brief A table column containing only
 /// numerical values.
 /////////////////////////////////////////////////
 template <class T, TableColumn::ColumnType COLTYPE>
-class BaseValueColumn : public TableColumn
+class GenericValueColumn : public TableColumn
 {
     protected:
         std::vector<T> m_data;
-        T INVALID_VALUE = T(NAN);
+        const T INVALID_VALUE = (T(1.1) == 1.1 ? NAN : 0);
+        size_t m_numElements;
 
     public:
         /////////////////////////////////////////////////
         /// \brief Default constructor. Sets only the
         ///  type of the column.
         /////////////////////////////////////////////////
-        BaseValueColumn() : TableColumn()
+        GenericValueColumn() : TableColumn(), m_numElements(0)
         {
             m_type = COLTYPE;
         }
@@ -58,12 +63,12 @@ class BaseValueColumn : public TableColumn
         /// \param nElem size_t
         ///
         /////////////////////////////////////////////////
-        BaseValueColumn(size_t nElem) : BaseValueColumn()
+        GenericValueColumn(size_t nElem) : GenericValueColumn()
         {
             resize(nElem);
         }
 
-        virtual ~BaseValueColumn() {}
+        virtual ~GenericValueColumn() {}
 
         /////////////////////////////////////////////////
         /// \brief Returns the selected value as a string
@@ -78,7 +83,7 @@ class BaseValueColumn : public TableColumn
             if (elem < m_data.size())
                 return toCmdString(m_data[elem]);
 
-            return toString(mu::value_type(INVALID_VALUE));
+            return "nan";
         }
 
         /////////////////////////////////////////////////
@@ -121,7 +126,7 @@ class BaseValueColumn : public TableColumn
             if (elem < m_data.size())
                 return toString(mu::value_type(m_data[elem]), NumeReKernel::getInstance()->getSettings().getPrecision());
 
-            return toString(mu::value_type(INVALID_VALUE));
+            return "nan";
         }
 
         /////////////////////////////////////////////////
@@ -138,8 +143,10 @@ class BaseValueColumn : public TableColumn
             if (elem < m_data.size())
                 return m_data[elem];
 
-            return INVALID_VALUE;
+            return NAN;
         }
+
+        virtual void setValue(size_t elem, const mu::value_type& vValue) = 0;
 
         /////////////////////////////////////////////////
         /// \brief Set a single string value.
@@ -152,7 +159,7 @@ class BaseValueColumn : public TableColumn
         virtual void setValue(size_t elem, const std::string& sValue) override
         {
             if (isConvertible(sValue, CONVTYPE_VALUE))
-                TableColumn::setValue(elem, StrToCmplx(toInternalString(sValue)));
+                setValue(elem, StrToCmplx(toInternalString(sValue)));
             else
                 throw SyntaxError(SyntaxError::STRING_ERROR, sValue, sValue, _lang.get("ERR_NR_3603_INCONVERTIBLE_STRING"));
         }
@@ -170,7 +177,8 @@ class BaseValueColumn : public TableColumn
             if (column->m_type == m_type)
             {
                 m_sHeadLine = column->m_sHeadLine;
-                m_data = static_cast<const BaseValueColumn*>(column)->m_data;
+                m_data = static_cast<const GenericValueColumn*>(column)->m_data;
+                m_numElements = static_cast<const GenericValueColumn*>(column)->m_numElements;
             }
             else
                 throw SyntaxError(SyntaxError::CANNOT_ASSIGN_COLUMN_OF_DIFFERENT_TYPE, m_sHeadLine, column->m_sHeadLine, typeToString(m_type) + "/" + typeToString(column->m_type));
@@ -188,7 +196,7 @@ class BaseValueColumn : public TableColumn
         virtual void insert(const VectorIndex& idx, const TableColumn* column) override
         {
             if (column->m_type == m_type)
-                TableColumn::setValue(idx, static_cast<const BaseValueColumn*>(column)->TableColumn::getValue(VectorIndex(0, VectorIndex::OPEN_END)));
+                TableColumn::setValue(idx, static_cast<const GenericValueColumn*>(column)->TableColumn::getValue(VectorIndex(0, VectorIndex::OPEN_END)));
             else
                 throw SyntaxError(SyntaxError::CANNOT_ASSIGN_COLUMN_OF_DIFFERENT_TYPE, m_sHeadLine, column->m_sHeadLine, typeToString(m_type) + "/" + typeToString(column->m_type));
         }
@@ -210,6 +218,7 @@ class BaseValueColumn : public TableColumn
             if (idx.isExpanded() && idx.front() == 0 && idx.last() >= (int)m_data.size()-1)
             {
                 m_data.clear();
+                m_numElements = 0;
                 return;
             }
 
@@ -218,6 +227,10 @@ class BaseValueColumn : public TableColumn
                 if (idx[i] >= 0 && idx[i] < (int)m_data.size())
                     m_data[idx[i]] = INVALID_VALUE;
             }
+
+            // Update the number of elements
+            if (idx.isExpanded() && idx.last() >= (int)m_data.size()-1)
+                m_numElements = std::min(m_numElements, (size_t)idx.front());
 
             shrink();
         }
@@ -236,7 +249,12 @@ class BaseValueColumn : public TableColumn
         virtual void insertElements(size_t pos, size_t elem) override
         {
             if (pos < m_data.size())
+            {
                 m_data.insert(m_data.begin()+pos, elem, INVALID_VALUE);
+
+                if (pos < m_numElements)
+                    m_numElements += elem;
+            }
         }
 
         /////////////////////////////////////////////////
@@ -264,7 +282,12 @@ class BaseValueColumn : public TableColumn
         virtual void removeElements(size_t pos, size_t elem) override
         {
             if (pos < m_data.size())
+            {
                 m_data.erase(m_data.begin()+pos, m_data.begin()+pos+elem);
+
+                if (pos < m_numElements)
+                    m_numElements -= std::min(m_numElements - pos, elem);
+            }
         }
 
         /////////////////////////////////////////////////
@@ -280,6 +303,8 @@ class BaseValueColumn : public TableColumn
                 m_data.clear();
             else
                 m_data.resize(elem, INVALID_VALUE);
+
+            m_numElements = std::min(m_numElements, elem);
         }
 
         /////////////////////////////////////////////////
@@ -292,7 +317,7 @@ class BaseValueColumn : public TableColumn
         /////////////////////////////////////////////////
         virtual bool isValid(int elem) const override
         {
-            if (elem >= (int)m_data.size() || elem < 0 || mu::isnan(m_data[elem]))
+            if ((size_t)elem >= std::min(m_numElements, m_data.size()) || elem < 0 || mu::isnan(m_data[elem]))
                 return false;
 
             return true;
@@ -307,7 +332,7 @@ class BaseValueColumn : public TableColumn
         /////////////////////////////////////////////////
         virtual bool asBool(int elem) const override
         {
-            if (elem < 0 || elem >= (int)m_data.size())
+            if (elem < 0 || (size_t)elem >= std::min(m_numElements, m_data.size()))
                 return false;
 
             return m_data[elem] != 0.0;
@@ -380,7 +405,12 @@ class BaseValueColumn : public TableColumn
                 case COLTYPE:
                     return this;
                 default:
+                {
+                    if (TableColumn::isValueType(type))
+                        return convertNumericType(type, this);
+
                     return nullptr;
+                }
             }
 
             col->m_sHeadLine = m_sHeadLine;
@@ -413,14 +443,14 @@ class BaseValueColumn : public TableColumn
 };
 
 
-class ValueColumn : public BaseValueColumn<mu::value_type, TableColumn::TYPE_VALUE>
+class ValueColumn : public GenericValueColumn<mu::value_type, TableColumn::TYPE_VALUE>
 {
     public:
         /////////////////////////////////////////////////
         /// \brief Default constructor. Sets only the
         ///  type of the column.
         /////////////////////////////////////////////////
-        ValueColumn() : BaseValueColumn()
+        ValueColumn() : GenericValueColumn()
         {
         }
 
@@ -455,6 +485,7 @@ class ValueColumn : public BaseValueColumn<mu::value_type, TableColumn::TYPE_VAL
                 m_data.resize(elem+1, INVALID_VALUE);
 
             m_data[elem] = vValue;
+            m_numElements = std::max(elem+1, m_numElements);
         }
 
         /////////////////////////////////////////////////
@@ -468,14 +499,14 @@ class ValueColumn : public BaseValueColumn<mu::value_type, TableColumn::TYPE_VAL
         /////////////////////////////////////////////////
         virtual ValueColumn* copy(const VectorIndex& idx) const override
         {
-            idx.setOpenEndIndex(size()-1);
+            idx.setOpenEndIndex(getNumFilledElements()-1);
 
             ValueColumn* col = new ValueColumn(idx.size());
             col->m_sHeadLine = m_sHeadLine;
 
             for (size_t i = 0; i < idx.size(); i++)
             {
-                col->m_data[i] = getValue(idx[i]);
+                col->setValue(i, getValue(idx[i]));
             }
 
             return col;
@@ -507,14 +538,14 @@ class ValueColumn : public BaseValueColumn<mu::value_type, TableColumn::TYPE_VAL
 };
 
 template <class T, TableColumn::ColumnType COLTYPE>
-class BaseIntColumn : public BaseValueColumn<T, COLTYPE>
+class BaseIntColumn : public GenericValueColumn<T, COLTYPE>
 {
     public:
         /////////////////////////////////////////////////
         /// \brief Default constructor. Sets only the
         ///  type of the column.
         /////////////////////////////////////////////////
-        BaseIntColumn() : BaseValueColumn<T, COLTYPE>()
+        BaseIntColumn() : GenericValueColumn<T, COLTYPE>()
         {
         }
 
@@ -548,7 +579,12 @@ class BaseIntColumn : public BaseValueColumn<T, COLTYPE>
             if (elem >= this->m_data.size())
                 this->m_data.resize(elem+1, this->INVALID_VALUE);
 
-            this->m_data[elem] = (T)intCast(vValue);
+            this->m_data[elem] = mu::isnan(vValue) ? this->INVALID_VALUE : genericIntCast<T>(vValue);
+
+            if (mu::isnan(vValue) && this->m_numElements == elem+1)
+                this->m_numElements--;
+            else if (!mu::isnan(vValue))
+                this->m_numElements = std::max(this->m_numElements, elem+1);
         }
 
         /////////////////////////////////////////////////
@@ -562,16 +598,19 @@ class BaseIntColumn : public BaseValueColumn<T, COLTYPE>
         /////////////////////////////////////////////////
         virtual BaseIntColumn* copy(const VectorIndex& idx) const override
         {
-            idx.setOpenEndIndex(this->size()-1);
+            long long int nNumElements = this->getNumFilledElements();
+            idx.setOpenEndIndex(nNumElements-1);
 
             BaseIntColumn* col = new BaseIntColumn(idx.size());
             col->m_sHeadLine = this->m_sHeadLine;
 
             for (size_t i = 0; i < idx.size(); i++)
             {
-                col->m_data[i] = (T)intCast(this->getValue(idx[i]));
+                if (idx[i] < nNumElements)
+                    col->setValue(i, this->getValue(idx[i]));
             }
 
+            col->shrink();
             return col;
         }
 
@@ -600,8 +639,15 @@ class BaseIntColumn : public BaseValueColumn<T, COLTYPE>
         }
 };
 
-//using ValueColumn = BaseValueColumn<mu::value_type, TableColumn::TYPE_VALUE>;
-using IntValueColumn = BaseIntColumn<int, TableColumn::TYPE_VALUE>;
+
+using I8ValueColumn = BaseIntColumn<int8_t, TableColumn::TYPE_VALUE_I8>;
+using UI8ValueColumn = BaseIntColumn<uint8_t, TableColumn::TYPE_VALUE_UI8>;
+using I16ValueColumn = BaseIntColumn<int16_t, TableColumn::TYPE_VALUE_I16>;
+using UI16ValueColumn = BaseIntColumn<uint16_t, TableColumn::TYPE_VALUE_UI16>;
+using I32ValueColumn = BaseIntColumn<int32_t, TableColumn::TYPE_VALUE_I32>;
+using UI32ValueColumn = BaseIntColumn<uint32_t, TableColumn::TYPE_VALUE_UI32>;
+using I64ValueColumn = BaseIntColumn<int64_t, TableColumn::TYPE_VALUE_I64>;
+using UI64ValueColumn = BaseIntColumn<uint64_t, TableColumn::TYPE_VALUE_UI64>;
 
 
 /////////////////////////////////////////////////
