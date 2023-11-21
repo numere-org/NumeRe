@@ -132,8 +132,8 @@ EndlessVector<std::string> getAllSemiColonSeparatedTokens(std::string sArgList);
 bool isToCmd(StringView sCmd, size_t nPos);
 
 size_t countEscapeSymbols(const std::string& sLine);
-std::vector<std::string> getFileList(const std::string& sDirectory, const Settings& _option, int nFlags = 0);
-std::vector<std::string> getFolderList(const std::string& sDirectory, const Settings& _option, int nFlags = 0);
+std::vector<std::string> getFileList(const std::string& sDirectory, int nFlags = 0);
+std::vector<std::string> getFolderList(const std::string& sDirectory, int nFlags = 0);
 
 namespace little_endian_io
 {

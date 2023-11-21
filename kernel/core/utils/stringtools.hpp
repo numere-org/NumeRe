@@ -98,11 +98,13 @@ struct Umlauts
 enum TIMESTAMP
 {
     GET_ONLY_TIME = 0x1,
-    GET_AS_TIMESTAMP = 0x2,
-    GET_WITH_TEXT = 0x4,
-    GET_MILLISECONDS = 0x8,
-    GET_FULL_PRECISION = 0x10,
-    GET_UNBIASED_TIME = 0x20
+    GET_ONLY_DATE = 0x2,
+    GET_AS_TIMESTAMP = 0x4,
+    GET_WITH_TEXT = 0x8,
+    GET_MILLISECONDS = 0x10,
+    GET_FULL_PRECISION = 0x20,
+    GET_UNBIASED_TIME = 0x40,
+    GET_SHORTEST = 0x80
 };
 
 enum ConvertibleType
@@ -417,6 +419,7 @@ std::string toCmdString(const std::complex<double>& dNumber);
 std::string toString(bool bBoolean);
 std::string toHexString(int nNumber);
 std::string toHexString(size_t nNumber);
+std::string formatDuration(double dDuration);
 
 /////////////////////////////////////////////////
 /// \brief This function converts a std::vector
@@ -449,6 +452,8 @@ std::vector<std::string> toStrVector(std::string sString);
 std::vector<int> toIntVector(std::string sString);
 std::string condenseText(const std::string& sText);
 std::string truncString(const std::string& sText, size_t nMaxChars);
+std::string strfill(const std::string& sString, size_t nWidth, char cFill = ' ', bool limit = false);
+std::string strlfill(const std::string& sString, size_t nWidth, char cFill = ' ');
 
 std::string wcstombs(const std::wstring& wStr);
 void StripSpaces(std::string&);

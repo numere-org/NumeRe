@@ -247,9 +247,9 @@ void CodeAnalyzer::run()
             {
                 string sWord = m_editor->GetTextRange(m_editor->WordStartPosition(m_nCurPos, true), m_editor->WordEndPosition(m_nCurPos, true)).ToStdString();
 
-                // the commands "matop" or "mtrxop" are needing semicolons
+                // these commands are needing semicolons
                 // and are the first element in a command line
-                if (sWord != "matop" && sWord != "mtrxop")
+                if (sWord != "matop" && sWord != "mtrxop" && sWord != "assert" && sWord != "explicit" && sWord != "global")
                     isSuppressed = true;
             }
 		    // Handle commands

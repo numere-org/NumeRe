@@ -123,6 +123,7 @@ class TableViewer : public wxGrid
 
         size_t GetHeight() {return nHeight;}
         size_t GetWidth() {return nWidth;}
+        wxSize calculateMinSize() const;
 
         enum TableViewerIDs
         {

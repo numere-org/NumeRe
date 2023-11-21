@@ -48,6 +48,10 @@ TablePanel::TablePanel(wxFrame* parent, wxWindowID id, wxStatusBar* statusbar, b
 {
     finished = false;
     m_terminal = nullptr;
+    m_infoBar = new wxInfoBar(this);
+
+    wxBoxSizer* globalSizer = new wxBoxSizer(wxVERTICAL);
+    globalSizer->Add(m_infoBar, 0, wxEXPAND);
 
     vsizer = new wxBoxSizer(wxVERTICAL);
     hsizer = new wxBoxSizer(wxHORIZONTAL);
@@ -68,8 +72,9 @@ TablePanel::TablePanel(wxFrame* parent, wxWindowID id, wxStatusBar* statusbar, b
 
     hsizer->Add(vsizer, 0, wxEXPAND | wxALL, 5);
     hsizer->Add(grid, 1, wxALIGN_CENTER_HORIZONTAL | wxEXPAND | wxALL, 5);
+    globalSizer->Add(hsizer, 1, wxEXPAND);
 
-    SetSizer(hsizer);
+    SetSizer(globalSizer);
     PostSizeEvent();
 }
 
@@ -100,6 +105,33 @@ void TablePanel::update(const NumeRe::TableMetaData& meta)
 std::string TablePanel::getComment() const
 {
     return m_commentField->GetValue().ToStdString();
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Show a message in the info bar.
+///
+/// \param msg const wxString&
+/// \return void
+///
+/////////////////////////////////////////////////
+void TablePanel::showMessage(const wxString& msg)
+{
+    if (m_infoBar)
+        m_infoBar->ShowMessage(msg);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Dismiss the message in the info bar.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
+void TablePanel::dismissMessage()
+{
+    if (m_infoBar)
+        m_infoBar->Dismiss();
 }
 
 

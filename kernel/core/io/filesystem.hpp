@@ -28,6 +28,8 @@
 std::string toSystemCodePage(std::string);
 std::string fromSystemCodePage(std::string);
 
+typedef void* HANDLE;
+
 /*
  * Headerdatei zur FileSystem Klasse
  * -> FileSystem dient als PARENT fuer Output und Datafile, da die Methode FileSystem::ValidFileName(string) in beiden Klassen benutzt wird
@@ -93,6 +95,8 @@ class FileSystem
     private:
         std::string cleanPath(std::string sFilePath, bool checkInvalidChars) const;
         void resolveWildCards(std::string& _sFileName, bool isFile, bool checkExtension = true) const;
+        HANDLE initializeFileHandle(std::string& sDir, void* FindFileData) const;
+        std::vector<std::string> resolveChooseTokens(const std::string& sDirectory) const;
 
 	protected:
 		std::string sPath;
@@ -104,15 +108,23 @@ class FileSystem
 
 	public:
         FileSystem();
-
         FileSystem& assign(const FileSystem& _fSys);
+
+        enum
+        {
+            ONLY_NAME,
+            FULLPATH
+        };
 
 		std::string ValidFileName(std::string _sFileName, const std::string sExtension = ".dat", bool checkExtension = true, bool doCleanPath = true) const;
 		std::string ValidFolderName(std::string _sFileName, bool doCleanPath = true, bool appendTrailingSeparator = true) const;
 		std::string ValidizeAndPrepareName(const std::string& _sFileName, const std::string& sExtension = ".dat") const;
+		static std::string resolveLink(const std::string& sLink);
 		int setPath(std::string _sPath, bool bMkDir, std::string _sExePath);
 		void createRevisionsFolder();
 		std::string getPath() const;
+		std::vector<std::string> getFileList(const std::string& sDirectory, int nFlags = ONLY_NAME) const;
+        std::vector<std::string> getFolderList(const std::string& sDirectory, int nFlags = ONLY_NAME) const;
 		std::vector<std::string> getFileParts(const std::string& sFilePath) const;
 		FileInfo getFileInfo(const std::string& sFilePath) const;
         void setTokens(std::string _sTokens);

@@ -2312,7 +2312,7 @@ bool Memory::save(string _sFileName, const string& sTableName, unsigned short nP
     // If the file type is a NumeRe data file, then
     // we can also set the comment associated with
     // this memory page
-    if (file->getExtension() == "ndat")
+    if (file->getExtension() == "ndat" || toLowerCase(sExt) == "ndat")
         static_cast<NumeRe::NumeReDataFile*>(file)->setComment(m_meta.comment);
 
     // Try to write the data to the file. This might

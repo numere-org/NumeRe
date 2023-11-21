@@ -609,7 +609,6 @@ Returnvalue Procedure::execute(StringView sProc, string sVarList, Parser& _parse
     }
 
     sProc.strip();
-    NumeReKernel::getInstance()->getDebugger().pushStackItem(sProc + "(" + sVarList + ")", this);
 
     // Set the file name for the currently selected procedure
     if (!setProcName(sProc))
@@ -624,12 +623,16 @@ Returnvalue Procedure::execute(StringView sProc, string sVarList, Parser& _parse
     nthRecursion = nth_procedure;
     bool bSupressAnswer_back = NumeReKernel::bSupressAnswer;
 
+    ProcedureElement* ProcElement = NumeReKernel::ProcLibrary.getProcedureContents(sCurrentProcedureName);
+
+    NumeReDebugger& _debugger = NumeReKernel::getInstance()->getDebugger();
+    _debugger.pushStackItem(sProc + "(" + sVarList + ")", this);
+
     // Prepare the var factory and obtain the current procedure file
     if (_varFactory)
         delete _varFactory;
 
     _varFactory = new ProcedureVarFactory(this, mangleName(sProc.to_string()), nth_procedure);
-    ProcedureElement*ProcElement = NumeReKernel::ProcLibrary.getProcedureContents(sCurrentProcedureName);
 
     // add spaces in front of and at the end of sVarList
     sVarList = " " + sVarList + " ";
@@ -655,8 +658,6 @@ Returnvalue Procedure::execute(StringView sProc, string sVarList, Parser& _parse
     // and find the current procedure line
     pair<int, ProcedureCommandLine> currentLine;
     currentLine.first = ProcElement->gotoProcedure("$" + sProc);
-
-    NumeReDebugger& _debugger = NumeReKernel::getInstance()->getDebugger();
 
     // if the procedure was not found, throw an error
     if (currentLine.first == -1)
@@ -904,7 +905,7 @@ Returnvalue Procedure::execute(StringView sProc, string sVarList, Parser& _parse
             _debugger.showError(current_exception());
 
             nCurrentByteCode = 0;
-            catchExceptionForTest(current_exception(), bSupressAnswer_back, GetCurrentLine());
+            catchExceptionForTest(current_exception(), bSupressAnswer_back, GetCurrentLine(), true);
         }
 
         // define the current command to be a flow control statement,
@@ -1054,7 +1055,7 @@ Returnvalue Procedure::execute(StringView sProc, string sVarList, Parser& _parse
                 _debugger.showError(current_exception());
 
                 nCurrentByteCode = 0;
-                catchExceptionForTest(current_exception(), bSupressAnswer_back, GetCurrentLine());
+                catchExceptionForTest(current_exception(), bSupressAnswer_back, GetCurrentLine(), true);
 
                 // If the error is converted, we have to skip
                 // the remaining code, otherwise the procedure
@@ -1154,7 +1155,7 @@ Returnvalue Procedure::execute(StringView sProc, string sVarList, Parser& _parse
                     _debugger.showError(current_exception());
 
                     nCurrentByteCode = 0;
-                    catchExceptionForTest(current_exception(), bSupressAnswer_back, GetCurrentLine());
+                    catchExceptionForTest(current_exception(), bSupressAnswer_back, GetCurrentLine(), true);
                 }
             }
         }
@@ -1183,7 +1184,7 @@ Returnvalue Procedure::execute(StringView sProc, string sVarList, Parser& _parse
             _debugger.showError(current_exception());
 
             nCurrentByteCode = 0;
-            catchExceptionForTest(current_exception(), bSupressAnswer_back, GetCurrentLine());
+            catchExceptionForTest(current_exception(), bSupressAnswer_back, GetCurrentLine(), true);
         }
 
         sProcCommandLine.clear();
@@ -2578,10 +2579,11 @@ int Procedure::getErrorInformationForDebugger()
 /// \param e_ptr exception_ptr
 /// \param bSupressAnswer_back bool
 /// \param nLine int
+/// \param cleanUp bool
 /// \return int
 ///
 /////////////////////////////////////////////////
-int Procedure::catchExceptionForTest(exception_ptr e_ptr, bool bSupressAnswer_back, int nLine)
+int Procedure::catchExceptionForTest(exception_ptr e_ptr, bool bSupressAnswer_back, int nLine, bool cleanUp)
 {
     // Assure that the procedure is flagges as "test"
     if (nFlags & ProcedureCommandLine::FLAG_TEST)
@@ -2633,7 +2635,9 @@ int Procedure::catchExceptionForTest(exception_ptr e_ptr, bool bSupressAnswer_ba
     {
         // If not a test, then simply reset the current procedure
         // and rethrow the error
-        resetProcedure(NumeReKernel::getInstance()->getParser(), bSupressAnswer_back);
+        if (cleanUp)
+            resetProcedure(NumeReKernel::getInstance()->getParser(), bSupressAnswer_back);
+
         rethrow_exception(e_ptr);
     }
 
@@ -2832,6 +2836,9 @@ void Procedure::extractCurrentNamespace(StringView sProc)
                     if (sThisNameSpace[j] == '\\' || sThisNameSpace[j] == '/')
                         sThisNameSpace[j] = '~';
                 }
+
+                // Resolve relative namespaces
+                cleanRelativeNameSpaces(sThisNameSpace);
             }
 
             break;
