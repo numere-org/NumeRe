@@ -377,6 +377,10 @@ struct NumberFormatsVoter
         if(cnt_set > 1)
             return NUM_INVALID;
 
+        //If no thousands seperator was set increase cnt, to also handle the case where both decimal separators are set invalidly.
+        if(cnt_set == 0)
+            cnt_set++;
+
         // IF we have some ambigious votes that correspont to unique decimals use these to set thousands seperator.
         if(m_num_format_votes[FMT_DEC_EU] > 0)
         {
