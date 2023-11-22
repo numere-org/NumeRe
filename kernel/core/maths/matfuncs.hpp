@@ -3687,8 +3687,6 @@ static Matrix vectShiftRow(const MatFuncData& funcData, const MatFuncErrorInfo& 
     // Transpose the matrix (including restructuring the memory) to get a row wise representation of the data
     Matrix _mResult = funcData.mat1;
     _mResult.transpose();
-    // NOTE: This should not be necessary, but it does not work without it. Maybe the MatFuncData constructor does not copy the transposed state.
-    _mResult.extend(_mResult.rows(), _mResult.cols());
 
     MatFuncData funcDataTransposed = MatFuncData(_mResult, funcData.nVal);
 
