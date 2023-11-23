@@ -682,7 +682,9 @@ enum MatFuncSignature
     MATSIG_MAT_MAT_N,
     MATSIG_MAT_F,
     MATSIG_MAT_F_N,
+    MATSIG_MAT_N_MAUTO,
     MATSIG_MAT_N_MOPT,
+    MATSIG_N_MAUTO,
     MATSIG_N_MOPT
 };
 

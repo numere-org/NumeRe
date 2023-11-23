@@ -68,4 +68,5 @@ Added	The plot option margin=MARGIN can be used to control the plot margin size.
 Cleaned	The autocompletion feature does not interfere with any of the editor tooltips any more.
 Applied	Date-time columns are now automatically wide enough for their contents.
 Fixed	Plot marks now also scale with their corresponding line sizes.
+Added	Added functions to perform circular and row/column-wise shifts of all elements in a matrix.
 Added	Added feature of autowrapping for comments if line indicator is active
