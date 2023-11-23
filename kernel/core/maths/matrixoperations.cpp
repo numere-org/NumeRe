@@ -406,7 +406,7 @@ static Matrix evalMatOp(string& sCmd, Parser& _parser, MemoryManager& _data, Fun
                             _cache.vReturnedMatrices.push_back(fIter->second.func(MatFuncData(evalMatOp(sMatrix, _parser, _data, _functions, _option, _cache), fVal, n), errorInfo));
                             break;
                         }
-                        case MATSIG_MAT_N_MOPT:
+                        case MATSIG_MAT_N_MAUTO:
                         {
                             std::string sMatrix = getNextArgument(sSubExpr, true);
 
@@ -419,6 +419,33 @@ static Matrix evalMatOp(string& sCmd, Parser& _parser, MemoryManager& _data, Fun
                                 m = intCast(v[1]);
 
                             _cache.vReturnedMatrices.push_back(fIter->second.func(MatFuncData(evalMatOp(sMatrix, _parser, _data, _functions, _option, _cache), n, m), errorInfo));
+                            break;
+                        }
+                        case MATSIG_MAT_N_MOPT:
+                        {
+                            std::string sMatrix = getNextArgument(sSubExpr, true);
+
+                            _parser.SetExpr(sSubExpr);
+                            v = _parser.Eval(nResults);
+                            int n = intCast(v[0]);
+                            int m = 0;
+
+                            if (nResults > 1)
+                                m = intCast(v[1]);
+
+                            _cache.vReturnedMatrices.push_back(fIter->second.func(MatFuncData(evalMatOp(sMatrix, _parser, _data, _functions, _option, _cache), n, m), errorInfo));
+                            break;
+                        }
+                        case MATSIG_N_MAUTO:
+                        {
+                            _parser.SetExpr(sSubExpr);
+                            v = _parser.Eval(nResults);
+
+                            if (nResults > 1)
+                                _cache.vReturnedMatrices.push_back(fIter->second.func(MatFuncData(intCast(v[0]), intCast(v[1])), errorInfo));
+                            else
+                                _cache.vReturnedMatrices.push_back(fIter->second.func(MatFuncData(intCast(v[0]), intCast(v[0])), errorInfo));
+
                             break;
                         }
                         case MATSIG_N_MOPT:
