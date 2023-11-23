@@ -42,3 +42,8 @@ NumeRe.layout
 *.res
 *.bak
 /Release/ChangesLog.txt
+*.snalyzerinfo
+/numere-cppcheck-build-dir/*.a1
+/numere-cppcheck-build-dir/*.s1
+/numere-cppcheck-build-dir/*.s2
+/numere-cppcheck-build-dir
