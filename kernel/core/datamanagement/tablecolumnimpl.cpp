@@ -21,6 +21,8 @@
 #include "../ui/error.hpp"
 #include "../../kernel.hpp"
 
+
+
 /////////////////////////////////////////////////
 /// \brief Static helper function used by some of
 /// the conversion member functions to define the
@@ -30,9 +32,10 @@
 /// \return ConvertibleType
 ///
 /////////////////////////////////////////////////
-static ConvertibleType detectCommonType(const std::vector<std::string>& vVals)
+static ConvertibleType detectCommonType(const std::vector<std::string>& vVals, int &numFormat)
 {
     ConvertibleType convType = CONVTYPE_NONE;
+    NumberFormatsVoter voter;
 
     // Determine first, if a conversion is possible
     for (size_t i = 0; i < vVals.size(); i++)
@@ -43,7 +46,7 @@ static ConvertibleType detectCommonType(const std::vector<std::string>& vVals)
         if (convType == CONVTYPE_NONE)
         {
             // No type was set, try to auto-detect the type
-            if (isConvertible(vVals[i], CONVTYPE_VALUE))
+            if (isConvertible(vVals[i], CONVTYPE_VALUE, &voter))
                 convType = CONVTYPE_VALUE;
             else if (isConvertible(vVals[i], CONVTYPE_LOGICAL))
                 convType = CONVTYPE_LOGICAL;
@@ -52,13 +55,13 @@ static ConvertibleType detectCommonType(const std::vector<std::string>& vVals)
             else
                 break; // category is not used, bc. that's isomorph to string
         }
-        else if (convType == CONVTYPE_LOGICAL && isConvertible(vVals[i], CONVTYPE_VALUE))
+        else if (convType == CONVTYPE_LOGICAL && isConvertible(vVals[i], CONVTYPE_VALUE, &voter))
             convType = CONVTYPE_VALUE;
-        else if (!isConvertible(vVals[i], convType))
+        else if (!isConvertible(vVals[i], convType, &voter))
         {
             // The current value is not convertible to the set or auto-detected
             // column type. Use a fall-back or simply abort
-            if (convType == CONVTYPE_LOGICAL && isConvertible(vVals[i], CONVTYPE_VALUE))
+            if (convType == CONVTYPE_LOGICAL && isConvertible(vVals[i], CONVTYPE_VALUE, &voter))
             {
                 // CONVTYPE_VALUE is more general than logical,
                 // therefore we use this as common type
@@ -77,8 +80,15 @@ static ConvertibleType detectCommonType(const std::vector<std::string>& vVals)
         }
     }
 
+    if(convType == CONVTYPE_VALUE) {
+        numFormat = voter.getFormat();
+        if(numFormat & NUM_INVALID)
+            return CONVTYPE_NONE;
+    }
+
     return convType;
 }
+
 
 
 /////////////////////////////////////////////////
@@ -1671,7 +1681,8 @@ TableColumn* StringColumn::convert(ColumnType type)
     TableColumn* col = nullptr;
 
     // Determine first, if a conversion is possible
-    ConvertibleType convType = detectCommonType(m_data);
+    int numFormat = 0;
+    ConvertibleType convType = detectCommonType(m_data, numFormat);
 
     switch (type)
     {
@@ -1739,8 +1750,9 @@ TableColumn* StringColumn::convert(ColumnType type)
             col->setValue(i, -INFINITY);
         else if (convType == CONVTYPE_VALUE)
         {
+            // TODO Marco 1
             std::string strval = m_data[i];
-            replaceAll(strval, ",", ".");
+            strChangeNumberFormat(strval, numFormat);
             col->setValue(i, !isConvertible(strval, CONVTYPE_VALUE)
                              ? StrToLogical(strval)
                              : StrToCmplx(strval));
@@ -2167,7 +2179,8 @@ TableColumn* CategoricalColumn::convert(ColumnType type)
     TableColumn* col = nullptr;
 
     // Determine first, if a conversion is possible
-    ConvertibleType convType = detectCommonType(m_categories);
+    int NumFormat = 0;
+    ConvertibleType convType = detectCommonType(m_categories, NumFormat);
 
     switch (type)
     {
@@ -2235,8 +2248,10 @@ TableColumn* CategoricalColumn::convert(ColumnType type)
             col->setValue(i, -INFINITY);
         else if (convType == CONVTYPE_VALUE)
         {
+            // TODO Marco 2
             std::string strval = m_categories[m_data[i]];
-            replaceAll(strval, ",", ".");
+            strChangeNumberFormat(strval, NumFormat);
+            //replaceAll(strval, ",", ".");
             col->setValue(i, StrToCmplx(strval));
         }
         else if (convType == CONVTYPE_LOGICAL)
