@@ -107,14 +107,6 @@ class Procedure : public FlowCtrl, public PackageManager
         virtual int evalDebuggerBreakPoint(mu::Parser& _parser, Settings& _option) override;
         virtual int getErrorInformationForDebugger() override;
         virtual int catchExceptionForTest(std::exception_ptr e_ptr, bool bSupressAnswer_back, int nLine, bool cleanUp) override;
-
-        inline void setPredefinedFuncs(const std::string& sPredefined)
-            {
-                _localDef.setPredefinedFuncs(sPredefined);
-            }
-        inline std::string getCurrentProcedureName() const
-            {return sCurrentProcedureName;}
-
         size_t GetCurrentLine() const;
         size_t replaceReturnVal(std::string& sLine, mu::Parser& _parser, const Returnvalue& _return, size_t nPos, size_t nPos2, const std::string& sReplaceName);
 
