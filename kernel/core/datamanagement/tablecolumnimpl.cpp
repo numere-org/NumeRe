@@ -1870,8 +1870,8 @@ void CategoricalColumn::setCategories(const std::vector<std::string>& vCategorie
             for (int& val : m_data)
             {
                 if (val == i)
-                    val = iter-m_categories.begin();
-                else if (val == iter-m_categories.begin())
+                    val = iter - m_categories.begin();
+                else if (val == iter - m_categories.begin())
                     val = i;
             }
         }

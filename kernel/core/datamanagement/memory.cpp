@@ -985,6 +985,47 @@ bool Memory::convertColumns(const VectorIndex& _vCol, const std::string& _sType)
 
 
 /////////////////////////////////////////////////
+/// \brief This member function tries to convert
+/// the selected columns to the target column
+/// type, if they are empty.
+///
+/// \param _vCol const VectorIndex&
+/// \param _sType const std::string&
+/// \return bool
+///
+/////////////////////////////////////////////////
+bool Memory::convertEmptyColumns(const VectorIndex& _vCol, const std::string& _sType)
+{
+    TableColumn::ColumnType _type = TableColumn::stringToType(_sType);
+
+    if (_type == TableColumn::TYPE_NONE)
+        return false;
+    else if (_type == TableColumn::TYPE_MIXED)
+        _type = TableColumn::TYPE_NONE; // Enable autoconversions
+
+    _vCol.setOpenEndIndex(memArray.size()-1);
+
+    bool success = true;
+
+    for (size_t i = 0; i < _vCol.size(); i++)
+    {
+        if (_vCol[i] < 0)
+            continue;
+        else if (_vCol[i] >= (int)memArray.size())
+            memArray.resize(_vCol[i]+1);
+
+        convert_if_empty(memArray[_vCol[i]], _vCol[i], _type);
+    }
+
+    // If successful: mark the whole table as modified
+    if (success)
+        m_meta.modify();
+
+    return success;
+}
+
+
+/////////////////////////////////////////////////
 /// \brief Updates the categories of a
 /// categorical column and switches the column
 /// type if necessary.
