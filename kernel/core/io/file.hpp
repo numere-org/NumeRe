@@ -54,7 +54,6 @@ namespace NumeRe
         FileHeaderInfo() : sFileExtension(), sFileName(), sTableName(), sComment(), nRows(0), nCols(0), versionMajor(-1), versionMinor(-1), versionBuild(-1), timeStamp(0) {}
     };
 
-
     /////////////////////////////////////////////////
     /// \brief Template class representing a generic
     /// file. This class may be specified for the
@@ -66,1176 +65,1223 @@ namespace NumeRe
     /////////////////////////////////////////////////
     class GenericFile : public FileSystem
     {
-        protected:
-            std::fstream fFileStream;
-            std::string sFileExtension;
-            std::string sFileName;
-            std::string sTableName;
-            std::string sComment;
-            int64_t nRows;
-            int64_t nCols;
-            unsigned short nPrecFields;
+    protected:
+        std::fstream fFileStream;
+        std::string sFileExtension;
+        std::string sFileName;
+        std::string sTableName;
+        std::string sComment;
+        int64_t nRows;
+        int64_t nCols;
+        unsigned short nPrecFields;
 
-            // Flag for using external data, i.e. data, which won't be deleted
-            // by this class upon calling "clearStorage()" or the destructor
-            bool useExternalData;
-            std::ios::openmode openMode;
+        // Flag for using external data, i.e. data, which won't be deleted
+        // by this class upon calling "clearStorage()" or the destructor
+        bool useExternalData;
+        std::ios::openmode openMode;
 
-            // The main data table
-            TableColumnArray* fileData;
+        // The main data table
+        TableColumnArray *fileData;
 
-            /////////////////////////////////////////////////
-            /// \brief This method has to be used to open the
-            /// target file in stream mode. If the file cannot
-            /// be opened, this method throws an error.
-            ///
-            /// \param mode std::ios::openmode
-            /// \return void
-            ///
-            /////////////////////////////////////////////////
-            void open(std::ios::openmode mode)
+        /////////////////////////////////////////////////
+        /// \brief This method has to be used to open the
+        /// target file in stream mode. If the file cannot
+        /// be opened, this method throws an error.
+        ///
+        /// \param mode std::ios::openmode
+        /// \return void
+        ///
+        /////////////////////////////////////////////////
+        void open(std::ios::openmode mode)
+        {
+            if (fFileStream.is_open())
+                fFileStream.close();
+
+            fFileStream.open(sFileName.c_str(), mode);
+
+            if (!fFileStream.good())
+                throw SyntaxError(SyntaxError::CANNOT_READ_FILE, sFileName, SyntaxError::invalid_position, sFileName);
+
+            openMode = mode;
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief This method strips trailing spaces
+        /// from the passed string.
+        ///
+        /// \param _sToStrip std::string&
+        /// \return void
+        ///
+        /////////////////////////////////////////////////
+        void stripTrailingSpaces(std::string &_sToStrip)
+        {
+            if (_sToStrip.find_first_not_of(" \t") != std::string::npos)
+                _sToStrip.erase(_sToStrip.find_last_not_of(" \t") + 1);
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief This method simply replaces commas
+        /// with dots in the passed string to enable
+        /// correct parsing into a double.
+        ///
+        /// \param _sToReplace std::string&
+        /// \return void
+        ///
+        /////////////////////////////////////////////////
+        void replaceDecimalSign(std::string &_sToReplace)
+        {
+            for (size_t i = 0; i < _sToReplace.length(); i++)
             {
-                if (fFileStream.is_open())
-                    fFileStream.close();
+                if (_sToReplace[i] == ',')
+                    _sToReplace[i] = '.';
+            }
+        }
 
-                fFileStream.open(sFileName.c_str(), mode);
+        /////////////////////////////////////////////////
+        /// \brief This method replaces tabulator
+        /// characters with whitespaces to simplify the
+        /// column determination (the used tokenizer will
+        /// only have to consider whitespaces as separator
+        /// characters). Sometimes, replacing tabulators
+        /// into whitespaces will destroy  column
+        /// information. To avoid this, placeholders
+        /// (underscores) may be inserted as "empty"
+        /// column cells.
+        ///
+        /// \param _sToReplace std::string&
+        /// \param bAddPlaceholders bool
+        /// \return void
+        ///
+        /////////////////////////////////////////////////
+        void replaceTabSign(std::string &_sToReplace, bool bAddPlaceholders = false)
+        {
+            bool bKeepColumns = false;
 
-                if (!fFileStream.good())
-                    throw SyntaxError(SyntaxError::CANNOT_READ_FILE, sFileName, SyntaxError::invalid_position, sFileName);
+            // Determine, if columns shall be kept (automatic heuristics)
+            if (!bAddPlaceholders && _sToReplace.find(' ') == std::string::npos)
+            {
+                bKeepColumns = true;
 
-                openMode = mode;
+                if (_sToReplace[0] == '\t')
+                    _sToReplace.insert(0, "---");
             }
 
-            /////////////////////////////////////////////////
-            /// \brief This method strips trailing spaces
-            /// from the passed string.
-            ///
-            /// \param _sToStrip std::string&
-            /// \return void
-            ///
-            /////////////////////////////////////////////////
-            void stripTrailingSpaces(std::string& _sToStrip)
+            for (size_t i = 0; i < _sToReplace.length(); i++)
             {
-                if (_sToStrip.find_first_not_of(" \t") != std::string::npos)
-                    _sToStrip.erase(_sToStrip.find_last_not_of(" \t")+1);
-            }
-
-            /////////////////////////////////////////////////
-            /// \brief This method simply replaces commas
-            /// with dots in the passed string to enable
-            /// correct parsing into a double.
-            ///
-            /// \param _sToReplace std::string&
-            /// \return void
-            ///
-            /////////////////////////////////////////////////
-            void replaceDecimalSign(std::string& _sToReplace)
-            {
-                for (size_t i = 0; i < _sToReplace.length(); i++)
+                if (_sToReplace[i] == '\t')
                 {
-                    if (_sToReplace[i] == ',')
-                        _sToReplace[i] = '.';
-                }
-            }
+                    _sToReplace.replace(i, 1, "  ");
 
-            /////////////////////////////////////////////////
-            /// \brief This method replaces tabulator
-            /// characters with whitespaces to simplify the
-            /// column determination (the used tokenizer will
-            /// only have to consider whitespaces as separator
-            /// characters). Sometimes, replacing tabulators
-            /// into whitespaces will destroy  column
-            /// information. To avoid this, placeholders
-            /// (underscores) may be inserted as "empty"
-            /// column cells.
-            ///
-            /// \param _sToReplace std::string&
-            /// \param bAddPlaceholders bool
-            /// \return void
-            ///
-            /////////////////////////////////////////////////
-            void replaceTabSign(std::string& _sToReplace, bool bAddPlaceholders = false)
-            {
-                bool bKeepColumns = false;
-
-                // Determine, if columns shall be kept (automatic heuristics)
-                if (!bAddPlaceholders && _sToReplace.find(' ') == std::string::npos)
-                {
-                    bKeepColumns = true;
-
-                    if (_sToReplace[0] == '\t')
-                        _sToReplace.insert(0, "---");
-                }
-
-                for (size_t i = 0; i < _sToReplace.length(); i++)
-                {
-                    if (_sToReplace[i] == '\t')
+                    // Shall "empty cells" be added?
+                    if (bAddPlaceholders)
                     {
-                        _sToReplace.replace(i, 1, "  ");
+                        // Insert underscores as empty cells
+                        if (!i)
+                            _sToReplace.insert(0, 1, '_');
+                        else if (_sToReplace[i - 1] == ' ')
+                            _sToReplace.insert(i, 1, '_');
 
-                        // Shall "empty cells" be added?
-                        if (bAddPlaceholders)
-                        {
-                            // Insert underscores as empty cells
-                            if (!i)
-                                _sToReplace.insert(0, 1, '_');
-                            else if (_sToReplace[i-1] == ' ')
-                                _sToReplace.insert(i, 1, '_');
-
-                            if (i+2 == _sToReplace.length())
-                                _sToReplace += "_";
-                        }
-
-                        // Shall empty cells be kept (determined by heuristic)
-                        if (bKeepColumns && (i+2 == _sToReplace.length() || _sToReplace[i+2] == '\t'))
-                            _sToReplace.insert(i + 2, "---");
+                        if (i + 2 == _sToReplace.length())
+                            _sToReplace += "_";
                     }
-                }
 
-                // Transform single whitespaces into special characters,
-                // which will hide them from the tokenizer. Do this only,
-                // if there are also locations with multiple whitespaces
-                if (bAddPlaceholders && _sToReplace.find("  ") != std::string::npos)
-                {
-                    for (size_t i = 1+(_sToReplace.front() == '#'); i < _sToReplace.length()-1; i++)
-                    {
-                        if (_sToReplace[i] == ' ' && _sToReplace[i-1] != ' ' && _sToReplace[i+1] != ' ')
-                            _sToReplace[i] = '\1';
-                    }
+                    // Shall empty cells be kept (determined by heuristic)
+                    if (bKeepColumns && (i + 2 == _sToReplace.length() || _sToReplace[i + 2] == '\t'))
+                        _sToReplace.insert(i + 2, "---");
                 }
             }
 
-            /////////////////////////////////////////////////
-            /// \brief This method calculates the extents of
-            /// the passed string, if it is used as a table
-            /// column headlines. This method will return a
-            /// std::pair<> with the maximal number of
-            /// characters in a line in the first and the
-            /// number of lines in the second component.
-            ///
-            /// \param sContents const std::string&
-            /// \return std::pair<size_t, size_t>
-            ///
-            /////////////////////////////////////////////////
-            std::pair<size_t, size_t> calculateCellExtents(const std::string& sContents)
+            // Transform single whitespaces into special characters,
+            // which will hide them from the tokenizer. Do this only,
+            // if there are also locations with multiple whitespaces
+            if (bAddPlaceholders && _sToReplace.find("  ") != std::string::npos)
             {
-                // Prepare the std::pair<> to contain the extents of the cell.
-                // (One line is the minimal value)
-                std::pair<size_t, size_t> pCellExtents(0u, 1u);
-                size_t nLastLineBreak = 0;
-
-                // Search for linebreak characters
-                for (size_t i = 0; i < sContents.length(); i++)
+                for (size_t i = 1 + (_sToReplace.front() == '#'); i < _sToReplace.length() - 1; i++)
                 {
-                    // Linebreak character found?
-                    if (sContents[i] == '\n')
-                    {
-                        // Increment the number of lines
-                        pCellExtents.second++;
-
-                        // Use the maximal number of characters per line
-                        // as the first column
-                        if (i - nLastLineBreak > pCellExtents.first)
-                            pCellExtents.first = i - nLastLineBreak;
-
-                        nLastLineBreak = i;
-                    }
-                    /*else if (sContents.substr(i, 2) == "\\n")
-                    {
-                        // Increment the number of lines
-                        pCellExtents.second++;
-
-                        // Use the maximal number of characters per line
-                        // as the first column
-                        if (i - nLastLineBreak > pCellExtents.first)
-                            pCellExtents.first = i - nLastLineBreak;
-
-                        nLastLineBreak = i+1;
-                    }*/
+                    if (_sToReplace[i] == ' ' && _sToReplace[i - 1] != ' ' && _sToReplace[i + 1] != ' ')
+                        _sToReplace[i] = '\1';
                 }
+            }
+        }
 
-                // Examine the last part of the string, which won't be
-                // detected by the for loop
-                if (sContents.length() - nLastLineBreak > pCellExtents.first)
-                    pCellExtents.first = sContents.length() - nLastLineBreak;
+        /////////////////////////////////////////////////
+        /// \brief This method calculates the extents of
+        /// the passed string, if it is used as a table
+        /// column headlines. This method will return a
+        /// std::pair<> with the maximal number of
+        /// characters in a line in the first and the
+        /// number of lines in the second component.
+        ///
+        /// \param sContents const std::string&
+        /// \return std::pair<size_t, size_t>
+        ///
+        /////////////////////////////////////////////////
+        std::pair<size_t, size_t> calculateCellExtents(const std::string &sContents)
+        {
+            // Prepare the std::pair<> to contain the extents of the cell.
+            // (One line is the minimal value)
+            std::pair<size_t, size_t> pCellExtents(0u, 1u);
+            size_t nLastLineBreak = 0;
 
-                return pCellExtents;
+            // Search for linebreak characters
+            for (size_t i = 0; i < sContents.length(); i++)
+            {
+                // Linebreak character found?
+                if (sContents[i] == '\n')
+                {
+                    // Increment the number of lines
+                    pCellExtents.second++;
+
+                    // Use the maximal number of characters per line
+                    // as the first column
+                    if (i - nLastLineBreak > pCellExtents.first)
+                        pCellExtents.first = i - nLastLineBreak;
+
+                    nLastLineBreak = i;
+                }
+                /*else if (sContents.substr(i, 2) == "\\n")
+                {
+                    // Increment the number of lines
+                    pCellExtents.second++;
+
+                    // Use the maximal number of characters per line
+                    // as the first column
+                    if (i - nLastLineBreak > pCellExtents.first)
+                        pCellExtents.first = i - nLastLineBreak;
+
+                    nLastLineBreak = i+1;
+                }*/
             }
 
-            /////////////////////////////////////////////////
-            /// \brief This method gets the selected line
-            /// number from the table column headline in the
-            /// selected column. If the selected text does not
-            /// contain enough lines, a simple whitespaces is
-            /// returned.
-            ///
-            /// \param nCol long longint
-            /// \param nLineNumber size_t
-            /// \return std::string
-            ///
-            /////////////////////////////////////////////////
-            std::string getLineFromHead(long long int nCol, size_t nLineNumber)
+            // Examine the last part of the string, which won't be
+            // detected by the for loop
+            if (sContents.length() - nLastLineBreak > pCellExtents.first)
+                pCellExtents.first = sContents.length() - nLastLineBreak;
+
+            return pCellExtents;
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief This method gets the selected line
+        /// number from the table column headline in the
+        /// selected column. If the selected text does not
+        /// contain enough lines, a simple whitespaces is
+        /// returned.
+        ///
+        /// \param nCol long longint
+        /// \param nLineNumber size_t
+        /// \return std::string
+        ///
+        /////////////////////////////////////////////////
+        std::string getLineFromHead(long long int nCol, size_t nLineNumber)
+        {
+            size_t nLastLineBreak = 0u;
+
+            if (!fileData->at(nCol))
             {
-                size_t nLastLineBreak = 0u;
-
-                if (!fileData->at(nCol))
-                {
-                    if (!nLineNumber)
-                        return TableColumn::getDefaultColumnHead(nCol);
-
-                    return " ";
-                }
-
-                std::string sHeadLine = fileData->at(nCol)->m_sHeadLine;
-
-                // Search the selected part
-                for (size_t i = 0; i < sHeadLine.length(); i++)
-                {
-                    // Linebreak character found?
-                    if (sHeadLine[i] == '\n')
-                    {
-                        // If this is the correct line number, return
-                        // the corresponding substring
-                        if (!nLineNumber)
-                            return sHeadLine.substr(nLastLineBreak, i - nLastLineBreak);
-
-                        // Decrement the line number and store the
-                        // position of the current line break
-                        nLineNumber--;
-                        nLastLineBreak = i+1;
-                    }
-                    /*else if (sHeadLine.substr(i, 2) == "\\n")
-                    {
-                        // If this is the correct line number, return
-                        // the corresponding substring
-                        if (!nLineNumber)
-                            return sHeadLine.substr(nLastLineBreak, i - nLastLineBreak);
-
-                        // Decrement the line number and store the
-                        // position of the current line break
-                        nLineNumber--;
-                        nLastLineBreak = i+2;
-                    }*/
-                }
-
-                // Catch the last part of the string, which is not found by
-                // the for loop
                 if (!nLineNumber)
-                    return sHeadLine.substr(nLastLineBreak);
+                    return TableColumn::getDefaultColumnHead(nCol);
 
-                // Not enough lines in this string, return a whitespace character
                 return " ";
             }
 
-            /////////////////////////////////////////////////
-            /// \brief This method is a template fo reading
-            /// a numeric field of the selected template type
-            /// in binary mode.
-            ///
-            /// \return T
-            ///
-            /////////////////////////////////////////////////
-            template <typename T> T readNumField()
+            std::string sHeadLine = fileData->at(nCol)->m_sHeadLine;
+
+            // Search the selected part
+            for (size_t i = 0; i < sHeadLine.length(); i++)
             {
-                T num;
-                fFileStream.read((char*)&num, sizeof(T));
-                return num;
-            }
-
-            /////////////////////////////////////////////////
-            /// \brief This mehtod can be used to read a
-            /// string field from the file in binary mode.
-            ///
-            /// \return std::string
-            ///
-            /////////////////////////////////////////////////
-            std::string readStringField()
-            {
-                // Get the length of the field
-                uint32_t nLength = readNumField<uint32_t>();
-
-                // If the length is zero, return an empty string
-                if (!nLength)
-                    return "";
-
-                // Create a character buffer with the corresponding
-                // length
-                char* buffer = new char[nLength];
-
-                // Read the contents into the buffer
-                fFileStream.read(buffer, nLength);
-
-                // Copy the buffer into a string and delete the buffer
-                std::string sBuffer(buffer, nLength);
-                delete[] buffer;
-
-                return sBuffer;
-            }
-
-            /////////////////////////////////////////////////
-            /// \brief This method may be used to get the
-            /// contents of an embedded file in a zipfile and
-            /// return the contents as string.
-            ///
-            /// \param filename const std::string&
-            /// \return std::string
-            ///
-            /////////////////////////////////////////////////
-            std::string getZipFileItem(const std::string& filename)
-            {
-                // Create a Zipfile class object
-                Zipfile* _zip = new Zipfile();
-
-                // Open the file in ZIP mode
-                if (!_zip->open(sFileName))
+                // Linebreak character found?
+                if (sHeadLine[i] == '\n')
                 {
-                    _zip->close();
-                    delete _zip;
-                    throw SyntaxError(SyntaxError::DATAFILE_NOT_EXIST, sFileName, SyntaxError::invalid_position, sFileName);
+                    // If this is the correct line number, return
+                    // the corresponding substring
+                    if (!nLineNumber)
+                        return sHeadLine.substr(nLastLineBreak, i - nLastLineBreak);
+
+                    // Decrement the line number and store the
+                    // position of the current line break
+                    nLineNumber--;
+                    nLastLineBreak = i + 1;
                 }
+                /*else if (sHeadLine.substr(i, 2) == "\\n")
+                {
+                    // If this is the correct line number, return
+                    // the corresponding substring
+                    if (!nLineNumber)
+                        return sHeadLine.substr(nLastLineBreak, i - nLastLineBreak);
 
-                // Obtain the contents of the embedded file
-                std::string sFileItem = _zip->getZipItem(filename);
+                    // Decrement the line number and store the
+                    // position of the current line break
+                    nLineNumber--;
+                    nLastLineBreak = i+2;
+                }*/
+            }
 
-                // Close the Zip file and delete the class instance
+            // Catch the last part of the string, which is not found by
+            // the for loop
+            if (!nLineNumber)
+                return sHeadLine.substr(nLastLineBreak);
+
+            // Not enough lines in this string, return a whitespace character
+            return " ";
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief This method is a template fo reading
+        /// a numeric field of the selected template type
+        /// in binary mode.
+        ///
+        /// \return T
+        ///
+        /////////////////////////////////////////////////
+        template <typename T>
+        T readNumField()
+        {
+            T num;
+            fFileStream.read((char *)&num, sizeof(T));
+            return num;
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief This mehtod can be used to read a
+        /// string field from the file in binary mode.
+        ///
+        /// \return std::string
+        ///
+        /////////////////////////////////////////////////
+        std::string readStringField()
+        {
+            // Get the length of the field
+            uint32_t nLength = readNumField<uint32_t>();
+
+            // If the length is zero, return an empty string
+            if (!nLength)
+                return "";
+
+            // Create a character buffer with the corresponding
+            // length
+            char *buffer = new char[nLength];
+
+            // Read the contents into the buffer
+            fFileStream.read(buffer, nLength);
+
+            // Copy the buffer into a string and delete the buffer
+            std::string sBuffer(buffer, nLength);
+            delete[] buffer;
+
+            return sBuffer;
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief This method may be used to get the
+        /// contents of an embedded file in a zipfile and
+        /// return the contents as string.
+        ///
+        /// \param filename const std::string&
+        /// \return std::string
+        ///
+        /////////////////////////////////////////////////
+        std::string getZipFileItem(const std::string &filename)
+        {
+            // Create a Zipfile class object
+            Zipfile *_zip = new Zipfile();
+
+            // Open the file in ZIP mode
+            if (!_zip->open(sFileName))
+            {
                 _zip->close();
                 delete _zip;
-
-                return sFileItem;
+                throw SyntaxError(SyntaxError::DATAFILE_NOT_EXIST, sFileName, SyntaxError::invalid_position, sFileName);
             }
 
-            /////////////////////////////////////////////////
-            /// \brief This method template is for reading a
-            /// block of numeric data into memory in binary
-            /// mode.
-            ///
-            /// \param size int64_t&
-            /// \return template <typename T>T*
-            ///
-            /////////////////////////////////////////////////
-            template <typename T> T* readNumBlock(int64_t& size)
+            // Obtain the contents of the embedded file
+            std::string sFileItem = _zip->getZipItem(filename);
+
+            // Close the Zip file and delete the class instance
+            _zip->close();
+            delete _zip;
+
+            return sFileItem;
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief This method template is for reading a
+        /// block of numeric data into memory in binary
+        /// mode.
+        ///
+        /// \param size int64_t&
+        /// \return template <typename T>T*
+        ///
+        /////////////////////////////////////////////////
+        template <typename T>
+        T *readNumBlock(int64_t &size)
+        {
+            // Get the number of values in the data block
+            size = readNumField<int64_t>();
+
+            // If the size is zero, return a null pointer
+            if (!size)
+                return nullptr;
+
+            // Create new storage for the data
+            T *data = new T[size];
+
+            // Read the contents of the file into the created storager
+            fFileStream.read((char *)data, sizeof(T) * size);
+
+            return data;
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief This method template is for reading a
+        /// whole two-dimensional array of data into
+        /// memory in binary mode.
+        ///
+        /// \param rows int64_t&
+        /// \param cols lint64_t&
+        /// \return template <typenameT>T*
+        ///
+        /////////////////////////////////////////////////
+        template <typename T>
+        T **readDataArray(int64_t &rows, int64_t &cols)
+        {
+            // Get the dimensions of the data block in memory
+            rows = readNumField<int64_t>();
+            cols = readNumField<int64_t>();
+
+            // If one of the dimensions is zero, return a null pointer
+            if (!rows || !cols)
+                return nullptr;
+
+            // Prepare a new storage object for the contained data
+            T **data = new T *[rows];
+
+            // Create the storage for the columns during reading the
+            // file and read the contents directly to memory
+            for (int64_t i = 0; i < rows; i++)
             {
-                // Get the number of values in the data block
-                size = readNumField<int64_t>();
-
-                // If the size is zero, return a null pointer
-                if (!size)
-                    return nullptr;
-
-                // Create new storage for the data
-                T* data = new T[size];
-
-                // Read the contents of the file into the created storager
-                fFileStream.read((char*)data, sizeof(T)*size);
-
-                return data;
+                data[i] = new T[cols];
+                fFileStream.read((char *)data[i], sizeof(T) * cols);
             }
 
-            /////////////////////////////////////////////////
-            /// \brief This method template is for reading a
-            /// whole two-dimensional array of data into
-            /// memory in binary mode.
-            ///
-            /// \param rows int64_t&
-            /// \param cols lint64_t&
-            /// \return template <typenameT>T*
-            ///
-            /////////////////////////////////////////////////
-            template <typename T> T** readDataArray(int64_t& rows, int64_t& cols)
+            return data;
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief This method can be used for reading a
+        /// block of string data to memory in binary mode.
+        ///
+        /// \param size int64_t&
+        /// \return std::string*
+        ///
+        /////////////////////////////////////////////////
+        std::string *readStringBlock(int64_t &size)
+        {
+            // Get the number of strings in the current block
+            size = readNumField<int64_t>();
+
+            // If no strings are in the file, return a null pointer
+            if (!size)
+                return nullptr;
+
+            // Create an array of strings for the data in the file
+            std::string *data = new std::string[size];
+
+            // Read each string separately (because their length is
+            // most probably independent on each other)
+            for (long long int i = 0; i < size; i++)
             {
-                // Get the dimensions of the data block in memory
-                rows = readNumField<int64_t>();
-                cols = readNumField<int64_t>();
+                data[i] = readStringField();
+            }
 
-                // If one of the dimensions is zero, return a null pointer
-                if (!rows || !cols)
-                    return nullptr;
+            return data;
+        }
 
-                // Prepare a new storage object for the contained data
-                T** data = new T*[rows];
+        /////////////////////////////////////////////////
+        /// \brief This method may be used to read the
+        /// file in text mode and to obtain the data as
+        /// a vector.
+        ///
+        /// \param stripEmptyLines bool
+        /// \return std::vector<std::string>
+        ///
+        /////////////////////////////////////////////////
+        std::vector<std::string> readTextFile(bool stripEmptyLines)
+        {
+            std::vector<std::string> vTextFile;
+            std::string currentLine;
 
-                // Create the storage for the columns during reading the
-                // file and read the contents directly to memory
-                for (int64_t i = 0; i < rows; i++)
+            // Read the whole file linewise
+            while (!fFileStream.eof())
+            {
+                std::getline(fFileStream, currentLine);
+
+                // If empty lines shall be stripped, strip
+                // trailing whitespaces first
+                if (stripEmptyLines)
+                    stripTrailingSpaces(currentLine);
+
+                // If empty lines shall be stripped, store
+                // only non-empty lines
+                if (!stripEmptyLines || currentLine.length())
+                    vTextFile.push_back(currentLine);
+            }
+
+            return vTextFile;
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief This method may be used to separater a
+        /// line into multiple tokens using a set of
+        /// separator characters. If empty token shall
+        /// be skipped, then only tokens with a non-zero
+        /// length are stored.
+        ///
+        /// \param sString std::string
+        /// \param sSeparators const std::string&
+        /// \param skipEmptyTokens bool
+        /// \return std::vector<std::string>
+        ///
+        /////////////////////////////////////////////////
+        std::vector<std::string> tokenize(std::string sString, const std::string &sSeparators, bool skipEmptyTokens = false)
+        {
+            std::vector<std::string> vTokens;
+            // Initialize variable for getting words
+            std::string sToken;
+            // Initialize variable for coutning inner quotes
+            int quoteCount = 0;
+
+            // As long as the string has a length
+            while (sString.length())
+            {
+                // Iterate over characters in string
+                char c = sString[0];
+                sString.erase(0, 1)
+
+                    // Keep Track of inner quotes
+                    if (sString[0] == '"')
                 {
-                    data[i] = new T[cols];
-                    fFileStream.read((char*)data[i], sizeof(T)*cols);
+                    quoteCount++;
+                    if (quoteCount % 2 == 0)
+                    {
+                        // Even number of quotes mean this is the closing quote
+                        sToken += c;
+                    }
+                    // Escape
+                    //  Odd number of quotes mean we are in an inner quote
                 }
-
-                return data;
-            }
-
-            /////////////////////////////////////////////////
-            /// \brief This method can be used for reading a
-            /// block of string data to memory in binary mode.
-            ///
-            /// \param size int64_t&
-            /// \return std::string*
-            ///
-            /////////////////////////////////////////////////
-            std::string* readStringBlock(int64_t& size)
-            {
-                // Get the number of strings in the current block
-                size = readNumField<int64_t>();
-
-                // If no strings are in the file, return a null pointer
-                if (!size)
-                    return nullptr;
-
-                // Create an array of strings for the data in the file
-                std::string* data = new std::string[size];
-
-                // Read each string separately (because their length is
-                // most probably independent on each other)
-                for (long long int i = 0; i < size; i++)
+                else if (c == cSeparators && quoteCount % 2 == 0)
                 {
-                    data[i] = readStringField();
-                }
-
-                return data;
-            }
-
-            /////////////////////////////////////////////////
-            /// \brief This method may be used to read the
-            /// file in text mode and to obtain the data as
-            /// a vector.
-            ///
-            /// \param stripEmptyLines bool
-            /// \return std::vector<std::string>
-            ///
-            /////////////////////////////////////////////////
-            std::vector<std::string> readTextFile(bool stripEmptyLines)
-            {
-                std::vector<std::string> vTextFile;
-                std::string currentLine;
-
-                // Read the whole file linewise
-                while (!fFileStream.eof())
-                {
-                    std::getline(fFileStream, currentLine);
-
-                    // If empty lines shall be stripped, strip
-                    // trailing whitespaces first
-                    if (stripEmptyLines)
-                        stripTrailingSpaces(currentLine);
-
-                    // If empty lines shall be stripped, store
-                    // only non-empty lines
-                    if (!stripEmptyLines || currentLine.length())
-                        vTextFile.push_back(currentLine);
-                }
-
-                return vTextFile;
-            }
-
-            /////////////////////////////////////////////////
-            /// \brief This method may be used to separater a
-            /// line into multiple tokens using a set of
-            /// separator characters. If empty token shall
-            /// be skipped, then only tokens with a non-zero
-            /// length are stored.
-            ///
-            /// \param sString std::string
-            /// \param sSeparators const std::string&
-            /// \param skipEmptyTokens bool
-            /// \return std::vector<std::string>
-            ///
-            /////////////////////////////////////////////////
-            std::vector<std::string> tokenize(std::string sString, const std::string& sSeparators, bool skipEmptyTokens = false)
-            {
-                std::vector<std::string> vTokens;
-
-                // As long as the string has a length
-                while (sString.length())
-                {
-                    // Store the string until the first separator character
-                    vTokens.push_back(sString.substr(0, sString.find_first_of(sSeparators)));
-
-                    // If empty tokens shall not be stored, remove the last
-                    // token again, if it is empty
-                    if (skipEmptyTokens && !vTokens.back().length())
-                        vTokens.pop_back();
-
-                    // Erase the contents of the line including the first
-                    // separator character
-                    if (sString.find_first_of(sSeparators) != std::string::npos)
-                        sString.erase(0, sString.find_first_of(sSeparators)+1);
-                    else
-                        break;
-                }
-
-                return vTokens;
-            }
-
-            /////////////////////////////////////////////////
-            /// \brief This method template can be used to
-            /// write a numeric value to file in binary mode.
-            ///
-            /// \param num T
-            /// \return void
-            ///
-            /////////////////////////////////////////////////
-            template <typename T> void writeNumField(T num)
-            {
-                fFileStream.write((char*)&num, sizeof(T));
-            }
-
-            /////////////////////////////////////////////////
-            /// \brief This method may be used to write a
-            /// string to file in binary mode.
-            ///
-            /// \param sString const std::string&
-            /// \return void
-            ///
-            /////////////////////////////////////////////////
-            void writeStringField(const std::string& sString)
-            {
-                // Store the length of string as numeric value first
-                writeNumField<uint32_t>((uint32_t)sString.length());
-                fFileStream.write(sString.c_str(), sString.length());
-            }
-
-            /////////////////////////////////////////////////
-            /// \brief This method template may be used to
-            /// write a block of data of the selected type to
-            /// the file in binary mode.
-            ///
-            /// \param data T*
-            /// \param size int64_t
-            /// \return void
-            ///
-            /////////////////////////////////////////////////
-            template <typename T> void writeNumBlock(T* data, int64_t size)
-            {
-                // Store the length of the data block first
-                writeNumField<int64_t>(size);
-                fFileStream.write((char*)data, sizeof(T)*size);
-            }
-
-            /////////////////////////////////////////////////
-            /// \brief This method may be used to write a
-            /// two-dimensional array of data to the file in
-            /// binary mode.
-            ///
-            /// \param data T**
-            /// \param rows int64_t
-            /// \param cols int64_t
-            /// \return void
-            ///
-            /////////////////////////////////////////////////
-            template <typename T> void writeDataArray(T** data, int64_t rows, int64_t cols)
-            {
-                // Store the dimensions of the array first
-                writeNumField<int64_t>(rows);
-                writeNumField<int64_t>(cols);
-
-                // Write the contents to the file in linewise fashion
-                for (int64_t i = 0; i < rows; i++)
-                    fFileStream.write((char*)data[i], sizeof(T)*cols);
-            }
-
-            /////////////////////////////////////////////////
-            /// \brief This method may be used to write a
-            /// block of strings into the file in binary mode.
-            ///
-            /// \param data std::string*
-            /// \param size int64_t
-            /// \return void
-            ///
-            /////////////////////////////////////////////////
-            void writeStringBlock(std::string* data, int64_t size)
-            {
-                // Store the number of fields first
-                writeNumField<int64_t>(size);
-
-                // Write each field separately, because their length is
-                // independent on each other
-                for (int64_t i = 0; i < size; i++)
-                {
-                    writeStringField(data[i]);
-                }
-            }
-
-            /////////////////////////////////////////////////
-            /// \brief This method prepares the internal
-            /// storage, so that it may contain the read
-            /// data. This method is only used for textual
-            /// files.
-            ///
-            /// \return void
-            ///
-            /////////////////////////////////////////////////
-            void createStorage()
-            {
-                if (nCols > 0 && !fileData)
-                {
-                    fileData = new TableColumnArray;
-                    fileData->resize(nCols);
-                }
-                else if (nRows < 0 || nCols < 0)
-                    throw SyntaxError(SyntaxError::CANNOT_READ_FILE, sFileName, SyntaxError::invalid_position, sFileName);
-            }
-
-            /////////////////////////////////////////////////
-            /// \brief This method cleares the internal
-            /// storage. This method is called by the
-            /// destructor automatically.
-            ///
-            /// \return void
-            ///
-            /////////////////////////////////////////////////
-            void clearStorage()
-            {
-                // Only delete the storage, if it is internal data. Do
-                // not delete the storage, if it is linked from an external
-                // source
-                if (!useExternalData && fileData)
-                {
-                    fileData->clear();
-                    delete fileData;
-                    fileData = nullptr;
+                    // Separator outside quotes, add the token to the result vector
+                    vTokens.push_back(sToken);
+                    sToken.clear();
                 }
                 else
-                    fileData = nullptr;
-
-                nRows = 0;
-                nCols = 0;
-            }
-
-            /////////////////////////////////////////////////
-            /// \brief This method may be used to copy two-
-            /// dimensional arrays of data. Both source and
-            /// target arrays have to exist in advance.
-            ///
-            /// \param from T**
-            /// \param to T**
-            /// \param rows long long int
-            /// \param cols long long int
-            /// \return void
-            ///
-            /////////////////////////////////////////////////
-            template <typename T> void copyDataArray(T** from, T** to, long long int rows, long long int cols)
-            {
-                if (!from || !to || !rows || !cols)
-                    return;
-
-                for (long long int i = 0; i < rows; i++)
                 {
-                    for (long long int j = 0; j < cols; j++)
-                        to[i][j] = from[i][j];
+                    sToken += c;
                 }
+
+                // Add the last token or one token if no separator found
+                vTokens.push_back(sToken)
+
+                //TODO: How do I resolve an overarching pushback
+                //What I figured out is, finding quotes doesnt work for edge case where there are 
+                //nested double quotes
+                // I need to check for quotes in CSVreader class function as well
+
+
+                // Store the string until the first separator character
+                vTokens.push_back(sString.substr(0, sString.find_first_of(sSeparators)));
+
+                // If empty tokens shall not be stored, remove the last
+                // token again, if it is empty
+                if (skipEmptyTokens && !vTokens.back().length())
+                    vTokens.pop_back();
+
+                // Erase the contents of the line including the first
+                // separator character
+                if (sString.find_first_of(sSeparators) != std::string::npos)
+                    sString.erase(0, sString.find_first_of(sSeparators) + 1);
+                else
+                    break;
             }
 
-            /////////////////////////////////////////////////
-            /// \brief This method may be used to copy string
-            /// arrays. Both source and target arrays have to
-            /// exist in advance.
-            ///
-            /// \param from std::string*
-            /// \param to std::string*
-            /// \param nElements long long int
-            /// \return void
-            ///
-            /////////////////////////////////////////////////
-            void copyStringArray(std::string* from, std::string* to, long long int nElements)
-            {
-                if (!from || !to || !nElements)
-                    return;
+            return vTokens;
+        }
 
-                for (long long int i = 0; i < nElements; i++)
-                    to[i] = from[i];
+        /////////////////////////////////////////////////
+        /// \brief This method template can be used to
+        /// write a numeric value to file in binary mode.
+        ///
+        /// \param num T
+        /// \return void
+        ///
+        /////////////////////////////////////////////////
+        template <typename T>
+        void writeNumField(T num)
+        {
+            fFileStream.write((char *)&num, sizeof(T));
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief This method may be used to write a
+        /// string to file in binary mode.
+        ///
+        /// \param sString const std::string&
+        /// \return void
+        ///
+        /////////////////////////////////////////////////
+        void writeStringField(const std::string &sString)
+        {
+            // Store the length of string as numeric value first
+            writeNumField<uint32_t>((uint32_t)sString.length());
+            fFileStream.write(sString.c_str(), sString.length());
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief This method template may be used to
+        /// write a block of data of the selected type to
+        /// the file in binary mode.
+        ///
+        /// \param data T*
+        /// \param size int64_t
+        /// \return void
+        ///
+        /////////////////////////////////////////////////
+        template <typename T>
+        void writeNumBlock(T *data, int64_t size)
+        {
+            // Store the length of the data block first
+            writeNumField<int64_t>(size);
+            fFileStream.write((char *)data, sizeof(T) * size);
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief This method may be used to write a
+        /// two-dimensional array of data to the file in
+        /// binary mode.
+        ///
+        /// \param data T**
+        /// \param rows int64_t
+        /// \param cols int64_t
+        /// \return void
+        ///
+        /////////////////////////////////////////////////
+        template <typename T>
+        void writeDataArray(T **data, int64_t rows, int64_t cols)
+        {
+            // Store the dimensions of the array first
+            writeNumField<int64_t>(rows);
+            writeNumField<int64_t>(cols);
+
+            // Write the contents to the file in linewise fashion
+            for (int64_t i = 0; i < rows; i++)
+                fFileStream.write((char *)data[i], sizeof(T) * cols);
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief This method may be used to write a
+        /// block of strings into the file in binary mode.
+        ///
+        /// \param data std::string*
+        /// \param size int64_t
+        /// \return void
+        ///
+        /////////////////////////////////////////////////
+        void writeStringBlock(std::string *data, int64_t size)
+        {
+            // Store the number of fields first
+            writeNumField<int64_t>(size);
+
+            // Write each field separately, because their length is
+            // independent on each other
+            for (int64_t i = 0; i < size; i++)
+            {
+                writeStringField(data[i]);
             }
+        }
 
-            /////////////////////////////////////////////////
-            /// \brief This method template may be used to
-            /// copy arrays of data of the selected type.
-            /// Both source and target arrays have to exist
-            /// in advance.
-            ///
-            /// \param from T*
-            /// \param to T*
-            /// \param nElements long long int
-            /// \return void
-            ///
-            /////////////////////////////////////////////////
-            template <typename T> void copyArray(T* from, T* to, long long int nElements)
+        /////////////////////////////////////////////////
+        /// \brief This method prepares the internal
+        /// storage, so that it may contain the read
+        /// data. This method is only used for textual
+        /// files.
+        ///
+        /// \return void
+        ///
+        /////////////////////////////////////////////////
+        void createStorage()
+        {
+            if (nCols > 0 && !fileData)
             {
-                if (!from || !to || !nElements)
-                    return;
-
-                for (long long int i = 0; i < nElements; i++)
-                    to[i] = from[i];
+                fileData = new TableColumnArray;
+                fileData->resize(nCols);
             }
+            else if (nRows < 0 || nCols < 0)
+                throw SyntaxError(SyntaxError::CANNOT_READ_FILE, sFileName, SyntaxError::invalid_position, sFileName);
+        }
 
-            /////////////////////////////////////////////////
-            /// \brief This method may be used to determine,
-            /// whether a string contains \em only numeric
-            /// data.
-            ///
-            /// \param sString const std::string&
-            /// \return bool
-            ///
-            /////////////////////////////////////////////////
-            bool isNumeric(const std::string& sString)
+        /////////////////////////////////////////////////
+        /// \brief This method cleares the internal
+        /// storage. This method is called by the
+        /// destructor automatically.
+        ///
+        /// \return void
+        ///
+        /////////////////////////////////////////////////
+        void clearStorage()
+        {
+            // Only delete the storage, if it is internal data. Do
+            // not delete the storage, if it is linked from an external
+            // source
+            if (!useExternalData && fileData)
             {
-                if (!sString.length())
-                    return false;
-
-                return isConvertible(sString, CONVTYPE_VALUE);
+                fileData->clear();
+                delete fileData;
+                fileData = nullptr;
             }
+            else
+                fileData = nullptr;
 
-            /////////////////////////////////////////////////
-            /// \brief This method is used by the assignment
-            /// operator and the copy constructor to copy the
-            /// contents of the passed GenericFile instance.
-            ///
-            /// \param file const GenericFile&
-            /// \return void
-            ///
-            /////////////////////////////////////////////////
-            void assign(const GenericFile& file)
+            nRows = 0;
+            nCols = 0;
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief This method may be used to copy two-
+        /// dimensional arrays of data. Both source and
+        /// target arrays have to exist in advance.
+        ///
+        /// \param from T**
+        /// \param to T**
+        /// \param rows long long int
+        /// \param cols long long int
+        /// \return void
+        ///
+        /////////////////////////////////////////////////
+        template <typename T>
+        void copyDataArray(T **from, T **to, long long int rows, long long int cols)
+        {
+            if (!from || !to || !rows || !cols)
+                return;
+
+            for (long long int i = 0; i < rows; i++)
             {
-                clearStorage();
-
-                nRows = file.nRows;
-                nCols = file.nCols;
-                nPrecFields = file.nPrecFields;
-                useExternalData = file.useExternalData;
-                sFileName = file.sFileName;
-                sFileExtension = file.sFileExtension;
-                sTableName = file.sTableName;
-                sComment = file.sComment;
-
-                // Creates only the vector but leaves the
-                // actual columns untouched
-                createStorage();
-
-                if (file.fileData && fileData)
-                {
-                    for (long long int col = 0; col < nCols; col++)
-                        fileData->at(col).reset(file.fileData->at(col)->copy());
-                }
+                for (long long int j = 0; j < cols; j++)
+                    to[i][j] = from[i][j];
             }
+        }
 
-        public:
-            // Constructor from filename
-            /////////////////////////////////////////////////
-            /// \brief Constructor from filename.
-            ///
-            /// \param fileName const std::string&
-            ///
-            /////////////////////////////////////////////////
-            GenericFile(const std::string& fileName) : FileSystem(), nRows(0), nCols(0), nPrecFields(7), useExternalData(false), fileData(nullptr)
+        /////////////////////////////////////////////////
+        /// \brief This method may be used to copy string
+        /// arrays. Both source and target arrays have to
+        /// exist in advance.
+        ///
+        /// \param from std::string*
+        /// \param to std::string*
+        /// \param nElements long long int
+        /// \return void
+        ///
+        /////////////////////////////////////////////////
+        void copyStringArray(std::string *from, std::string *to, long long int nElements)
+        {
+            if (!from || !to || !nElements)
+                return;
+
+            for (long long int i = 0; i < nElements; i++)
+                to[i] = from[i];
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief This method template may be used to
+        /// copy arrays of data of the selected type.
+        /// Both source and target arrays have to exist
+        /// in advance.
+        ///
+        /// \param from T*
+        /// \param to T*
+        /// \param nElements long long int
+        /// \return void
+        ///
+        /////////////////////////////////////////////////
+        template <typename T>
+        void copyArray(T *from, T *to, long long int nElements)
+        {
+            if (!from || !to || !nElements)
+                return;
+
+            for (long long int i = 0; i < nElements; i++)
+                to[i] = from[i];
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief This method may be used to determine,
+        /// whether a string contains \em only numeric
+        /// data.
+        ///
+        /// \param sString const std::string&
+        /// \return bool
+        ///
+        /////////////////////////////////////////////////
+        bool isNumeric(const std::string &sString)
+        {
+            if (!sString.length())
+                return false;
+
+            return isConvertible(sString, CONVTYPE_VALUE);
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief This method is used by the assignment
+        /// operator and the copy constructor to copy the
+        /// contents of the passed GenericFile instance.
+        ///
+        /// \param file const GenericFile&
+        /// \return void
+        ///
+        /////////////////////////////////////////////////
+        void assign(const GenericFile &file)
+        {
+            clearStorage();
+
+            nRows = file.nRows;
+            nCols = file.nCols;
+            nPrecFields = file.nPrecFields;
+            useExternalData = file.useExternalData;
+            sFileName = file.sFileName;
+            sFileExtension = file.sFileExtension;
+            sTableName = file.sTableName;
+            sComment = file.sComment;
+
+            // Creates only the vector but leaves the
+            // actual columns untouched
+            createStorage();
+
+            if (file.fileData && fileData)
             {
-                // Initializes the file system from the kernel
-                initializeFromKernel();
-                sFileName = ValidFileName(fileName, "", false);
-                sFileExtension = getFileParts(sFileName).back();
+                for (long long int col = 0; col < nCols; col++)
+                    fileData->at(col).reset(file.fileData->at(col)->copy());
             }
+        }
 
-            /////////////////////////////////////////////////
-            /// \brief Copy constructor.
-            ///
-            /// \param file const GenericFile&
-            ///
-            /////////////////////////////////////////////////
-            GenericFile(const GenericFile& file) : GenericFile(file.sFileName)
-            {
-                assign(file);
-            }
+    public:
+        // Constructor from filename
+        /////////////////////////////////////////////////
+        /// \brief Constructor from filename.
+        ///
+        /// \param fileName const std::string&
+        ///
+        /////////////////////////////////////////////////
+        GenericFile(const std::string &fileName) : FileSystem(), nRows(0), nCols(0), nPrecFields(7), useExternalData(false), fileData(nullptr)
+        {
+            // Initializes the file system from the kernel
+            initializeFromKernel();
+            sFileName = ValidFileName(fileName, "", false);
+            sFileExtension = getFileParts(sFileName).back();
+        }
 
-            /////////////////////////////////////////////////
-            /// \brief Virtual destructor: we'll work with
-            /// instances on the heap, therefore we'll need
-            /// virtual declared destructors. This destructor
-            /// will clear the internal memory and closes the
-            /// file stream, if it is still open.
-            /////////////////////////////////////////////////
-            virtual ~GenericFile()
-            {
-                clearStorage();
+        /////////////////////////////////////////////////
+        /// \brief Copy constructor.
+        ///
+        /// \param file const GenericFile&
+        ///
+        /////////////////////////////////////////////////
+        GenericFile(const GenericFile &file) : GenericFile(file.sFileName)
+        {
+            assign(file);
+        }
 
-                if (fFileStream.is_open())
-                    fFileStream.close();
-            }
+        /////////////////////////////////////////////////
+        /// \brief Virtual destructor: we'll work with
+        /// instances on the heap, therefore we'll need
+        /// virtual declared destructors. This destructor
+        /// will clear the internal memory and closes the
+        /// file stream, if it is still open.
+        /////////////////////////////////////////////////
+        virtual ~GenericFile()
+        {
+            clearStorage();
 
-            /////////////////////////////////////////////////
-            /// \brief Wrapper for fstream::is_open()
-            ///
-            /// \return bool
-            ///
-            /////////////////////////////////////////////////
-            bool is_open()
-            {
-                return fFileStream.is_open();
-            }
-
-            /////////////////////////////////////////////////
-            /// \brief Wrapper for fstream::close(). Will
-            /// also clear the internal memory.
-            ///
-            /// \return void
-            ///
-            /////////////////////////////////////////////////
-            void close()
-            {
+            if (fFileStream.is_open())
                 fFileStream.close();
-                clearStorage();
-            }
+        }
 
-            /////////////////////////////////////////////////
-            /// \brief Wrapper for fstream::good()
-            ///
-            /// \return bool
-            ///
-            /////////////////////////////////////////////////
-            bool good()
-            {
-                return fFileStream.good();
-            }
+        /////////////////////////////////////////////////
+        /// \brief Wrapper for fstream::is_open()
+        ///
+        /// \return bool
+        ///
+        /////////////////////////////////////////////////
+        bool is_open()
+        {
+            return fFileStream.is_open();
+        }
 
-            /////////////////////////////////////////////////
-            /// \brief Wrapper for fstream::tellg()
-            ///
-            /// \return size_t
-            ///
-            /////////////////////////////////////////////////
-            size_t tellg()
-            {
-                return fFileStream.tellg();
-            }
+        /////////////////////////////////////////////////
+        /// \brief Wrapper for fstream::close(). Will
+        /// also clear the internal memory.
+        ///
+        /// \return void
+        ///
+        /////////////////////////////////////////////////
+        void close()
+        {
+            fFileStream.close();
+            clearStorage();
+        }
 
-            /////////////////////////////////////////////////
-            /// \brief Wrapper for fstream::tellp()
-            ///
-            /// \return size_t
-            ///
-            /////////////////////////////////////////////////
-            size_t tellp()
-            {
-                return fFileStream.tellp();
-            }
+        /////////////////////////////////////////////////
+        /// \brief Wrapper for fstream::good()
+        ///
+        /// \return bool
+        ///
+        /////////////////////////////////////////////////
+        bool good()
+        {
+            return fFileStream.good();
+        }
 
-            /////////////////////////////////////////////////
-            /// \brief Wrapper for fstream::seekg() with
-            /// start from the beginning of the stream.
-            ///
-            /// \param pos size_t
-            /// \return void
-            ///
-            /////////////////////////////////////////////////
-            void seekg(size_t pos)
-            {
-                fFileStream.seekg(pos, std::ios::beg);
-            }
+        /////////////////////////////////////////////////
+        /// \brief Wrapper for fstream::tellg()
+        ///
+        /// \return size_t
+        ///
+        /////////////////////////////////////////////////
+        size_t tellg()
+        {
+            return fFileStream.tellg();
+        }
 
-            /////////////////////////////////////////////////
-            /// \brief Wrapper for fstream::seekp() with
-            /// start from the beginning of the stream.
-            ///
-            /// \param pos size_t
-            /// \return void
-            ///
-            /////////////////////////////////////////////////
-            void seekp(size_t pos)
-            {
-                fFileStream.seekp(pos, std::ios::beg);
-            }
+        /////////////////////////////////////////////////
+        /// \brief Wrapper for fstream::tellp()
+        ///
+        /// \return size_t
+        ///
+        /////////////////////////////////////////////////
+        size_t tellp()
+        {
+            return fFileStream.tellp();
+        }
 
-            /////////////////////////////////////////////////
-            /// \brief Returns the file extension.
-            ///
-            /// \return std::string
-            ///
-            /////////////////////////////////////////////////
-            std::string getExtension()
-            {
-                return sFileExtension;
-            }
+        /////////////////////////////////////////////////
+        /// \brief Wrapper for fstream::seekg() with
+        /// start from the beginning of the stream.
+        ///
+        /// \param pos size_t
+        /// \return void
+        ///
+        /////////////////////////////////////////////////
+        void seekg(size_t pos)
+        {
+            fFileStream.seekg(pos, std::ios::beg);
+        }
 
-            /////////////////////////////////////////////////
-            /// \brief Returns the file name.
-            ///
-            /// \return std::string
-            ///
-            /////////////////////////////////////////////////
-            std::string getFileName()
-            {
-                return sFileName;
-            }
+        /////////////////////////////////////////////////
+        /// \brief Wrapper for fstream::seekp() with
+        /// start from the beginning of the stream.
+        ///
+        /// \param pos size_t
+        /// \return void
+        ///
+        /////////////////////////////////////////////////
+        void seekp(size_t pos)
+        {
+            fFileStream.seekp(pos, std::ios::beg);
+        }
 
-            /////////////////////////////////////////////////
-            /// \brief Returns the table name referenced in
-            /// the file. Will default to the file name with
-            /// non-alnum characters replaced with
-            /// underscores, if the file does not reference a
-            /// table name by itself.
-            ///
-            /// \return std::string
-            ///
-            /////////////////////////////////////////////////
-            std::string getTableName()
+        /////////////////////////////////////////////////
+        /// \brief Returns the file extension.
+        ///
+        /// \return std::string
+        ///
+        /////////////////////////////////////////////////
+        std::string getExtension()
+        {
+            return sFileExtension;
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief Returns the file name.
+        ///
+        /// \return std::string
+        ///
+        /////////////////////////////////////////////////
+        std::string getFileName()
+        {
+            return sFileName;
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief Returns the table name referenced in
+        /// the file. Will default to the file name with
+        /// non-alnum characters replaced with
+        /// underscores, if the file does not reference a
+        /// table name by itself.
+        ///
+        /// \return std::string
+        ///
+        /////////////////////////////////////////////////
+        std::string getTableName()
+        {
+            // Has the table name not been defined yet
+            if (!sTableName.length())
             {
-                // Has the table name not been defined yet
-                if (!sTableName.length())
+                // Get the file name (not the whole path)
+                sTableName = getFileParts(sFileName)[2];
+
+                // Replace all non-alnum characters with underscores
+                for (size_t i = 0; i < sTableName.length(); i++)
                 {
-                    // Get the file name (not the whole path)
-                    sTableName = getFileParts(sFileName)[2];
-
-                    // Replace all non-alnum characters with underscores
-                    for (size_t i = 0; i < sTableName.length(); i++)
-                    {
-                        if (sTableName[i] != '_' && !isalnum(sTableName[i]))
-                            sTableName[i] = '_';
-                    }
-
-                    // If the first character is a digit, prepend an
-                    // underscore
-                    if (isdigit(sTableName.front()))
-                        sTableName.insert(0, 1, '_');
+                    if (sTableName[i] != '_' && !isalnum(sTableName[i]))
+                        sTableName[i] = '_';
                 }
 
-                return sTableName;
+                // If the first character is a digit, prepend an
+                // underscore
+                if (isdigit(sTableName.front()))
+                    sTableName.insert(0, 1, '_');
             }
 
-            /////////////////////////////////////////////////
-            /// \brief Returns the comment stored with the
-            /// referenced file.
-            ///
-            /// \return std::string
-            ///
-            /////////////////////////////////////////////////
-            std::string getComment()
+            return sTableName;
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief Returns the comment stored with the
+        /// referenced file.
+        ///
+        /// \return std::string
+        ///
+        /////////////////////////////////////////////////
+        std::string getComment()
+        {
+            return sComment;
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief Sets the comment to be written to the
+        /// referencedfile.
+        ///
+        /// \param comment const std::string&
+        /// \return void
+        ///
+        /////////////////////////////////////////////////
+        void setComment(const std::string &comment)
+        {
+            sComment = comment;
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief Returns the number of rows.
+        ///
+        /// \return int64_t
+        ///
+        /////////////////////////////////////////////////
+        int64_t getRows()
+        {
+            return nRows;
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief Returns the number of columns.
+        ///
+        /// \return int64_t
+        ///
+        /////////////////////////////////////////////////
+        int64_t getCols()
+        {
+            return nCols;
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief Returns the file header information
+        /// structure.
+        ///
+        /// \return FileHeaderInfo
+        ///
+        /////////////////////////////////////////////////
+        virtual FileHeaderInfo getFileHeaderInformation()
+        {
+            FileHeaderInfo info;
+
+            info.nCols = nCols;
+            info.nRows = nRows;
+            info.sFileExtension = sFileExtension;
+            info.sFileName = sFileName;
+            info.sTableName = getTableName();
+            info.sComment = sComment;
+
+            return info;
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief Pure virtual declaration of the read
+        /// access method. Has to be implemented in all
+        /// derived classes and can be used to read the
+        /// contents of the file to memory.
+        ///
+        /// \return bool
+        ///
+        /////////////////////////////////////////////////
+        virtual bool read() = 0;
+
+        /////////////////////////////////////////////////
+        /// \brief Pure virtual declaration of the write
+        /// access method. Has to be implemented in all
+        /// derived classes and can be used to write the
+        /// contents in memory to the target file.
+        ///
+        /// \return bool
+        ///
+        /////////////////////////////////////////////////
+        virtual bool write() = 0;
+
+        /////////////////////////////////////////////////
+        /// \brief Assignment operator definition.
+        ///
+        /// \param file const GenericFile&
+        /// \return GenericFile&
+        ///
+        /////////////////////////////////////////////////
+        GenericFile &operator=(const GenericFile &file)
+        {
+            assign(file);
+            return *this;
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief This method copies the internal data
+        /// to the passed memory address. The target
+        /// memory must already exist.
+        ///
+        /// \param data TableColumnArray*
+        /// \return void
+        ///
+        /////////////////////////////////////////////////
+        void getData(TableColumnArray *data)
+        {
+            if (data && fileData)
             {
-                return sComment;
-            }
-
-            /////////////////////////////////////////////////
-            /// \brief Sets the comment to be written to the
-            /// referencedfile.
-            ///
-            /// \param comment const std::string&
-            /// \return void
-            ///
-            /////////////////////////////////////////////////
-            void setComment(const std::string& comment)
-            {
-                sComment = comment;
-            }
-
-            /////////////////////////////////////////////////
-            /// \brief Returns the number of rows.
-            ///
-            /// \return int64_t
-            ///
-            /////////////////////////////////////////////////
-            int64_t getRows()
-            {
-                return nRows;
-            }
-
-            /////////////////////////////////////////////////
-            /// \brief Returns the number of columns.
-            ///
-            /// \return int64_t
-            ///
-            /////////////////////////////////////////////////
-            int64_t getCols()
-            {
-                return nCols;
-            }
-
-            /////////////////////////////////////////////////
-            /// \brief Returns the file header information
-            /// structure.
-            ///
-            /// \return FileHeaderInfo
-            ///
-            /////////////////////////////////////////////////
-            virtual FileHeaderInfo getFileHeaderInformation()
-            {
-                FileHeaderInfo info;
-
-                info.nCols = nCols;
-                info.nRows = nRows;
-                info.sFileExtension = sFileExtension;
-                info.sFileName = sFileName;
-                info.sTableName = getTableName();
-                info.sComment = sComment;
-
-                return info;
-            }
-
-            /////////////////////////////////////////////////
-            /// \brief Pure virtual declaration of the read
-            /// access method. Has to be implemented in all
-            /// derived classes and can be used to read the
-            /// contents of the file to memory.
-            ///
-            /// \return bool
-            ///
-            /////////////////////////////////////////////////
-            virtual bool read() = 0;
-
-            /////////////////////////////////////////////////
-            /// \brief Pure virtual declaration of the write
-            /// access method. Has to be implemented in all
-            /// derived classes and can be used to write the
-            /// contents in memory to the target file.
-            ///
-            /// \return bool
-            ///
-            /////////////////////////////////////////////////
-            virtual bool write() = 0;
-
-            /////////////////////////////////////////////////
-            /// \brief Assignment operator definition.
-            ///
-            /// \param file const GenericFile&
-            /// \return GenericFile&
-            ///
-            /////////////////////////////////////////////////
-            GenericFile& operator=(const GenericFile& file)
-            {
-                assign(file);
-                return *this;
-            }
-
-            /////////////////////////////////////////////////
-            /// \brief This method copies the internal data
-            /// to the passed memory address. The target
-            /// memory must already exist.
-            ///
-            /// \param data TableColumnArray*
-            /// \return void
-            ///
-            /////////////////////////////////////////////////
-            void getData(TableColumnArray* data)
-            {
-                if (data && fileData)
+                for (int64_t col = 0; col < nCols; col++)
                 {
-                    for (int64_t col = 0; col < nCols; col++)
-                    {
-                        if (fileData->at(col))
-                            data->at(col).reset(fileData->at(col)->copy());
-                    }
+                    if (fileData->at(col))
+                        data->at(col).reset(fileData->at(col)->copy());
                 }
             }
+        }
 
-            /////////////////////////////////////////////////
-            /// \brief This method returns a pointer to the
-            /// internal memory with read and write access.
-            /// This pointer shall not stored for future use,
-            /// because the referenced memory will be deleted
-            /// upon destruction of this class instance.
-            ///
-            /// \param rows int64_t&
-            /// \param cols int64_t&
-            /// \return TableColumnArray*
-            ///
-            /////////////////////////////////////////////////
-            TableColumnArray* getData(int64_t& rows, int64_t& cols)
+        /////////////////////////////////////////////////
+        /// \brief This method returns a pointer to the
+        /// internal memory with read and write access.
+        /// This pointer shall not stored for future use,
+        /// because the referenced memory will be deleted
+        /// upon destruction of this class instance.
+        ///
+        /// \param rows int64_t&
+        /// \param cols int64_t&
+        /// \return TableColumnArray*
+        ///
+        /////////////////////////////////////////////////
+        TableColumnArray *getData(int64_t &rows, int64_t &cols)
+        {
+            rows = nRows;
+            cols = nCols;
+
+            return fileData;
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief Sets the dimensions of the data table,
+        /// which will be used in the future. Clears the
+        /// internal memory in advance.
+        ///
+        /// \param rows int64_t
+        /// \param cols int64_t
+        /// \return void
+        ///
+        /////////////////////////////////////////////////
+        void setDimensions(int64_t rows, int64_t cols)
+        {
+            clearStorage();
+
+            nRows = rows;
+            nCols = cols;
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief Set the table's name.
+        ///
+        /// \param name const std::string&
+        /// \return void
+        ///
+        /////////////////////////////////////////////////
+        void setTableName(const std::string &name)
+        {
+            sTableName = name;
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief Set the precision, which shall be used
+        /// to convert the floating point numbers into
+        /// strings.
+        ///
+        /// \param nPrecision unsigned short
+        /// \return void
+        ///
+        /////////////////////////////////////////////////
+        void setTextfilePrecision(unsigned short nPrecision)
+        {
+            nPrecFields = nPrecision;
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief This method created the internal
+        /// storage and copies the passed data to this
+        /// storage.
+        ///
+        /// \param data TableColumnArray*
+        /// \param rows int64_t
+        /// \param cols int64_t
+        /// \return void
+        ///
+        /////////////////////////////////////////////////
+        void addData(TableColumnArray *data, int64_t rows, int64_t cols)
+        {
+            if (!nRows && !nCols)
             {
-                rows = nRows;
-                cols = nCols;
-
-                return fileData;
-            }
-
-            /////////////////////////////////////////////////
-            /// \brief Sets the dimensions of the data table,
-            /// which will be used in the future. Clears the
-            /// internal memory in advance.
-            ///
-            /// \param rows int64_t
-            /// \param cols int64_t
-            /// \return void
-            ///
-            /////////////////////////////////////////////////
-            void setDimensions(int64_t rows, int64_t cols)
-            {
-                clearStorage();
-
                 nRows = rows;
                 nCols = cols;
             }
 
-            /////////////////////////////////////////////////
-            /// \brief Set the table's name.
-            ///
-            /// \param name const std::string&
-            /// \return void
-            ///
-            /////////////////////////////////////////////////
-            void setTableName(const std::string& name)
+            createStorage();
+
+            if (fileData && data)
             {
-                sTableName = name;
+                for (int64_t col = 0; col < nCols; col++)
+                    fileData->at(col).reset(data->at(col)->copy());
             }
+        }
 
-            /////////////////////////////////////////////////
-            /// \brief Set the precision, which shall be used
-            /// to convert the floating point numbers into
-            /// strings.
-            ///
-            /// \param nPrecision unsigned short
-            /// \return void
-            ///
-            /////////////////////////////////////////////////
-            void setTextfilePrecision(unsigned short nPrecision)
-            {
-                nPrecFields = nPrecision;
-            }
+        /////////////////////////////////////////////////
+        /// \brief This method refernces the passed
+        /// external data internally. The data is not
+        /// copied and must exist as long as thos class
+        /// exists.
+        ///
+        /// \param data TableColumnArray*
+        /// \param rows int64_t
+        /// \param cols int64_t
+        /// \return void
+        ///
+        /////////////////////////////////////////////////
+        void setData(TableColumnArray *data, int64_t rows, int64_t cols)
+        {
+            useExternalData = true;
 
-            /////////////////////////////////////////////////
-            /// \brief This method created the internal
-            /// storage and copies the passed data to this
-            /// storage.
-            ///
-            /// \param data TableColumnArray*
-            /// \param rows int64_t
-            /// \param cols int64_t
-            /// \return void
-            ///
-            /////////////////////////////////////////////////
-            void addData(TableColumnArray* data, int64_t rows, int64_t cols)
-            {
-                if (!nRows && !nCols)
-                {
-                    nRows = rows;
-                    nCols = cols;
-                }
-
-                createStorage();
-
-                if (fileData && data)
-                {
-                    for (int64_t col = 0; col < nCols; col++)
-                       fileData->at(col).reset(data->at(col)->copy());
-                }
-            }
-
-            /////////////////////////////////////////////////
-            /// \brief This method refernces the passed
-            /// external data internally. The data is not
-            /// copied and must exist as long as thos class
-            /// exists.
-            ///
-            /// \param data TableColumnArray*
-            /// \param rows int64_t
-            /// \param cols int64_t
-            /// \return void
-            ///
-            /////////////////////////////////////////////////
-            void setData(TableColumnArray* data, int64_t rows, int64_t cols)
-            {
-                useExternalData = true;
-
-                fileData = data;
-                nRows = rows;
-                nCols = cols;
-            }
+            fileData = data;
+            nRows = rows;
+            nCols = cols;
+        }
     };
-
 
     /////////////////////////////////////////////////
     /// \brief This function determines the correct
@@ -1252,8 +1298,7 @@ namespace NumeRe
     /// \return GenericFile*
     ///
     /////////////////////////////////////////////////
-    GenericFile* getFileByType(const std::string& filename, std::string sExt = "");
-
+    GenericFile *getFileByType(const std::string &filename, std::string sExt = "");
 
     /////////////////////////////////////////////////
     /// \brief This class is a facet for an arbitrary
@@ -1263,167 +1308,165 @@ namespace NumeRe
     /////////////////////////////////////////////////
     class GenericFileView
     {
-        private:
-            GenericFile* m_file;
+    private:
+        GenericFile *m_file;
 
-        public:
-            /////////////////////////////////////////////////
-            /// \brief Default constructor.
-            /////////////////////////////////////////////////
-            GenericFileView() : m_file(nullptr) {}
+    public:
+        /////////////////////////////////////////////////
+        /// \brief Default constructor.
+        /////////////////////////////////////////////////
+        GenericFileView() : m_file(nullptr) {}
 
-            /////////////////////////////////////////////////
-            /// \brief Constructor from an available
-            /// GenericFile instance.
-            ///
-            /// \param _file GenericFile*
-            ///
-            /////////////////////////////////////////////////
-            GenericFileView(GenericFile* _file) : m_file(_file) {}
+        /////////////////////////////////////////////////
+        /// \brief Constructor from an available
+        /// GenericFile instance.
+        ///
+        /// \param _file GenericFile*
+        ///
+        /////////////////////////////////////////////////
+        GenericFileView(GenericFile *_file) : m_file(_file) {}
 
-            /////////////////////////////////////////////////
-            /// \brief Attaches a new GenericFile instance to
-            /// this facet class.
-            ///
-            /// \param _file GenericFile*
-            /// \return void
-            ///
-            /////////////////////////////////////////////////
-            void attach(GenericFile* _file)
+        /////////////////////////////////////////////////
+        /// \brief Attaches a new GenericFile instance to
+        /// this facet class.
+        ///
+        /// \param _file GenericFile*
+        /// \return void
+        ///
+        /////////////////////////////////////////////////
+        void attach(GenericFile *_file)
+        {
+            m_file = _file;
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief Returns the internally stored
+        /// GenericFile instance pointer.
+        ///
+        /// \return GenericFile*
+        ///
+        /////////////////////////////////////////////////
+        GenericFile *getPtr()
+        {
+            return m_file;
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief Returns the number of columns in the
+        /// internally stored GenericFile instance.
+        ///
+        /// \return int64_t
+        ///
+        /////////////////////////////////////////////////
+        int64_t getCols() const
+        {
+            if (m_file)
+                return m_file->getCols();
+
+            return 0;
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief Returns the number of rows in the
+        /// internally stored GenericFile instance.
+        ///
+        /// \return int64_t
+        ///
+        /////////////////////////////////////////////////
+        int64_t getRows() const
+        {
+            if (m_file)
+                return m_file->getRows();
+
+            return 0;
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief Returns the value stored at the passed
+        /// positions. A default constructed mu::value_type
+        /// object instance is returned, if the element
+        /// does not exist.
+        ///
+        /// \param row int64_t
+        /// \param col int64_t
+        /// \return mu::value_type
+        ///
+        /////////////////////////////////////////////////
+        mu::value_type getElement(int64_t row, int64_t col) const
+        {
+            if (m_file)
             {
-                m_file = _file;
+                if (row >= m_file->getRows() || col >= m_file->getCols())
+                    return 0;
+
+                // dummy variable
+                int64_t r, c;
+                TableColumnArray *arr = m_file->getData(r, c);
+
+                if (arr->at(col))
+                    return arr->at(col)->getValue(row);
             }
 
-            /////////////////////////////////////////////////
-            /// \brief Returns the internally stored
-            /// GenericFile instance pointer.
-            ///
-            /// \return GenericFile*
-            ///
-            /////////////////////////////////////////////////
-            GenericFile* getPtr()
+            return mu::value_type();
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief Returns the value stored at the passed
+        /// positions. An empty string is returned, if
+        /// the element does not exist.
+        ///
+        /// \param row int64_t
+        /// \param col int64_t
+        /// \return std::string
+        ///
+        /////////////////////////////////////////////////
+        std::string getStringElement(int64_t row, int64_t col) const
+        {
+            if (m_file)
             {
-                return m_file;
+                if (row >= m_file->getRows() || col >= m_file->getCols())
+                    return 0;
+
+                // dummy variable
+                int64_t r, c;
+                TableColumnArray *arr = m_file->getData(r, c);
+
+                if (arr->at(col))
+                    return arr->at(col)->getValueAsInternalString(row);
             }
 
-            /////////////////////////////////////////////////
-            /// \brief Returns the number of columns in the
-            /// internally stored GenericFile instance.
-            ///
-            /// \return int64_t
-            ///
-            /////////////////////////////////////////////////
-            int64_t getCols() const
-            {
-                if (m_file)
-                    return m_file->getCols();
+            return "";
+        }
 
-                return 0;
+        /////////////////////////////////////////////////
+        /// \brief Returns the column heading stored for
+        /// the passed column. Returns an empty string,
+        /// if the column does not exist.
+        ///
+        /// \param col int64_t
+        /// \return string
+        ///
+        /////////////////////////////////////////////////
+        std::string getColumnHead(int64_t col) const
+        {
+            if (m_file)
+            {
+                if (col >= m_file->getCols())
+                    return "";
+
+                // dummy variable
+                int64_t r, c;
+                TableColumnArray *arr = m_file->getData(r, c);
+
+                if (arr->at(col))
+                    return arr->at(col)->m_sHeadLine;
             }
 
-            /////////////////////////////////////////////////
-            /// \brief Returns the number of rows in the
-            /// internally stored GenericFile instance.
-            ///
-            /// \return int64_t
-            ///
-            /////////////////////////////////////////////////
-            int64_t getRows() const
-            {
-                if (m_file)
-                    return m_file->getRows();
-
-                return 0;
-            }
-
-            /////////////////////////////////////////////////
-            /// \brief Returns the value stored at the passed
-            /// positions. A default constructed mu::value_type
-            /// object instance is returned, if the element
-            /// does not exist.
-            ///
-            /// \param row int64_t
-            /// \param col int64_t
-            /// \return mu::value_type
-            ///
-            /////////////////////////////////////////////////
-            mu::value_type getElement(int64_t row, int64_t col) const
-            {
-                if (m_file)
-                {
-                    if (row >= m_file->getRows() || col >= m_file->getCols())
-                        return 0;
-
-                    // dummy variable
-                    int64_t r,c;
-                    TableColumnArray* arr = m_file->getData(r,c);
-
-                    if (arr->at(col))
-                        return arr->at(col)->getValue(row);
-                }
-
-                return mu::value_type();
-            }
-
-            /////////////////////////////////////////////////
-            /// \brief Returns the value stored at the passed
-            /// positions. An empty string is returned, if
-            /// the element does not exist.
-            ///
-            /// \param row int64_t
-            /// \param col int64_t
-            /// \return std::string
-            ///
-            /////////////////////////////////////////////////
-            std::string getStringElement(int64_t row, int64_t col) const
-            {
-                if (m_file)
-                {
-                    if (row >= m_file->getRows() || col >= m_file->getCols())
-                        return 0;
-
-                    // dummy variable
-                    int64_t r,c;
-                    TableColumnArray* arr = m_file->getData(r,c);
-
-                    if (arr->at(col))
-                        return arr->at(col)->getValueAsInternalString(row);
-                }
-
-                return "";
-            }
-
-            /////////////////////////////////////////////////
-            /// \brief Returns the column heading stored for
-            /// the passed column. Returns an empty string,
-            /// if the column does not exist.
-            ///
-            /// \param col int64_t
-            /// \return string
-            ///
-            /////////////////////////////////////////////////
-            std::string getColumnHead(int64_t col) const
-            {
-                if (m_file)
-                {
-                    if (col >= m_file->getCols())
-                        return "";
-
-                    // dummy variable
-                    int64_t r,c;
-                    TableColumnArray* arr = m_file->getData(r,c);
-
-                    if (arr->at(col))
-                        return arr->at(col)->m_sHeadLine;
-                }
-
-                return "";
-            }
+            return "";
+        }
     };
 
-
     typedef GenericFileView FileView;
-
 
     /////////////////////////////////////////////////
     /// \brief This class resembles an arbitrary text
@@ -1433,34 +1476,33 @@ namespace NumeRe
     /////////////////////////////////////////////////
     class TextDataFile : public GenericFile
     {
-        private:
-            void readFile();
-            void writeFile();
-            void writeHeader();
-            void writeTableHeads(const std::vector<size_t>& vColumnWidth, size_t nNumberOfLines);
-            void writeTableContents(const std::vector<size_t>& vColumnWidth);
-            void addSeparator(const std::vector<size_t>& vColumnWidth);
+    private:
+        void readFile();
+        void writeFile();
+        void writeHeader();
+        void writeTableHeads(const std::vector<size_t> &vColumnWidth, size_t nNumberOfLines);
+        void writeTableContents(const std::vector<size_t> &vColumnWidth);
+        void addSeparator(const std::vector<size_t> &vColumnWidth);
 
-            void decodeTableHeads(std::vector<std::string>& vFileContents, long long int nComment);
-            std::vector<size_t> calculateColumnWidths(size_t& nNumberOfLines);
+        void decodeTableHeads(std::vector<std::string> &vFileContents, long long int nComment);
+        std::vector<size_t> calculateColumnWidths(size_t &nNumberOfLines);
 
-        public:
-            TextDataFile(const std::string& filename);
-            virtual ~TextDataFile();
+    public:
+        TextDataFile(const std::string &filename);
+        virtual ~TextDataFile();
 
-            virtual bool read() override
-            {
-                readFile();
-                return true;
-            }
+        virtual bool read() override
+        {
+            readFile();
+            return true;
+        }
 
-            virtual bool write() override
-            {
-                writeFile();
-                return true;
-            }
+        virtual bool write() override
+        {
+            writeFile();
+            return true;
+        }
     };
-
 
     /////////////////////////////////////////////////
     /// \brief This class resembles the binary NumeRe
@@ -1470,96 +1512,95 @@ namespace NumeRe
     /////////////////////////////////////////////////
     class NumeReDataFile : public GenericFile
     {
-        protected:
-            bool isLegacy;
-            __time64_t timeStamp;
-            int32_t versionMajor;
-            int32_t versionMinor;
-            int32_t versionBuild;
-            const short fileSpecVersionMajor = 4;
-            const short fileSpecVersionMinor = 0;
-            float fileVersionRead;
-            size_t checkPos;
-            size_t checkStart;
+    protected:
+        bool isLegacy;
+        __time64_t timeStamp;
+        int32_t versionMajor;
+        int32_t versionMinor;
+        int32_t versionBuild;
+        const short fileSpecVersionMajor = 4;
+        const short fileSpecVersionMinor = 0;
+        float fileVersionRead;
+        size_t checkPos;
+        size_t checkStart;
 
-            void writeHeader();
-            void writeDummyHeader();
-            void writeFile();
-            void writeColumn(const TblColPtr& col);
-            void readHeader();
-            void skipDummyHeader();
-            void readFile();
-            void readColumn(TblColPtr& col);
-            void readColumnV4(TblColPtr& col);
-            void readLegacyFormat();
-            void* readGenericField(std::string& type, int64_t& size);
-            void deleteGenericData(void* data, const std::string& type);
+        void writeHeader();
+        void writeDummyHeader();
+        void writeFile();
+        void writeColumn(const TblColPtr &col);
+        void readHeader();
+        void skipDummyHeader();
+        void readFile();
+        void readColumn(TblColPtr &col);
+        void readColumnV4(TblColPtr &col);
+        void readLegacyFormat();
+        void *readGenericField(std::string &type, int64_t &size);
+        void deleteGenericData(void *data, const std::string &type);
 
-        public:
-            NumeReDataFile(const std::string& filename);
-            NumeReDataFile(const NumeReDataFile& file);
-            virtual ~NumeReDataFile();
+    public:
+        NumeReDataFile(const std::string &filename);
+        NumeReDataFile(const NumeReDataFile &file);
+        virtual ~NumeReDataFile();
 
-            virtual bool read() override
-            {
-                readFile();
-                return true;
-            }
+        virtual bool read() override
+        {
+            readFile();
+            return true;
+        }
 
-            virtual bool write() override
-            {
-                writeFile();
-                return true;
-            }
+        virtual bool write() override
+        {
+            writeFile();
+            return true;
+        }
 
-            NumeReDataFile& operator=(NumeReDataFile& file);
+        NumeReDataFile &operator=(NumeReDataFile &file);
 
-            /////////////////////////////////////////////////
-            /// \brief Reads only the header of the
-            /// referenced file.
-            ///
-            /// \return void
-            ///
-            /////////////////////////////////////////////////
-            void readFileInformation()
-            {
-                open(std::ios::in | std::ios::binary);
-                readHeader();
-            }
+        /////////////////////////////////////////////////
+        /// \brief Reads only the header of the
+        /// referenced file.
+        ///
+        /// \return void
+        ///
+        /////////////////////////////////////////////////
+        void readFileInformation()
+        {
+            open(std::ios::in | std::ios::binary);
+            readHeader();
+        }
 
-            /////////////////////////////////////////////////
-            /// \brief Returns the file timestamp.
-            ///
-            /// \return __time64_t
-            ///
-            /////////////////////////////////////////////////
-            __time64_t getTimeStamp()
-            {
-                return timeStamp;
-            }
+        /////////////////////////////////////////////////
+        /// \brief Returns the file timestamp.
+        ///
+        /// \return __time64_t
+        ///
+        /////////////////////////////////////////////////
+        __time64_t getTimeStamp()
+        {
+            return timeStamp;
+        }
 
-            virtual FileHeaderInfo getFileHeaderInformation() override
-            {
-                FileHeaderInfo info;
+        virtual FileHeaderInfo getFileHeaderInformation() override
+        {
+            FileHeaderInfo info;
 
-                info.nCols = nCols;
-                info.nRows = nRows;
-                info.sFileExtension = sFileExtension;
-                info.sFileName = sFileName;
-                info.sTableName = getTableName();
-                info.sComment = sComment;
-                info.versionMajor = versionMajor;
-                info.versionMinor = versionMinor;
-                info.versionBuild = versionBuild;
-                info.fileVersion = fileVersionRead;
-                info.timeStamp = timeStamp;
+            info.nCols = nCols;
+            info.nRows = nRows;
+            info.sFileExtension = sFileExtension;
+            info.sFileName = sFileName;
+            info.sTableName = getTableName();
+            info.sComment = sComment;
+            info.versionMajor = versionMajor;
+            info.versionMinor = versionMinor;
+            info.versionBuild = versionBuild;
+            info.fileVersion = fileVersionRead;
+            info.timeStamp = timeStamp;
 
-                return info;
-            }
+            return info;
+        }
 
-            std::string getVersionString();
+        std::string getVersionString();
     };
-
 
     /////////////////////////////////////////////////
     /// \brief This class resembles the cache file
@@ -1575,76 +1616,74 @@ namespace NumeRe
     /////////////////////////////////////////////////
     class CacheFile : public NumeReDataFile
     {
-        private:
-            std::vector<uint32_t> vFileIndex;
-            size_t nIndexPos;
+    private:
+        std::vector<uint32_t> vFileIndex;
+        size_t nIndexPos;
 
-            void reset();
-            void readSome();
-            void writeSome();
+        void reset();
+        void readSome();
+        void writeSome();
 
+    public:
+        CacheFile(const std::string &filename);
+        virtual ~CacheFile();
 
-        public:
-            CacheFile(const std::string& filename);
-            virtual ~CacheFile();
+        virtual bool read() override
+        {
+            readSome();
+            return true;
+        }
 
-            virtual bool read() override
-            {
-                readSome();
-                return true;
-            }
+        virtual bool write() override
+        {
+            writeSome();
+            return true;
+        }
 
-            virtual bool write() override
-            {
-                writeSome();
-                return true;
-            }
+        void readCacheHeader();
+        void writeCacheHeader();
 
-            void readCacheHeader();
-            void writeCacheHeader();
+        /////////////////////////////////////////////////
+        /// \brief Returns the number of tables stored in
+        /// the referenced cache file.
+        ///
+        /// \return size_t
+        ///
+        /////////////////////////////////////////////////
+        size_t getNumberOfTables()
+        {
+            return vFileIndex.size();
+        }
 
-            /////////////////////////////////////////////////
-            /// \brief Returns the number of tables stored in
-            /// the referenced cache file.
-            ///
-            /// \return size_t
-            ///
-            /////////////////////////////////////////////////
-            size_t getNumberOfTables()
-            {
-                return vFileIndex.size();
-            }
+        /////////////////////////////////////////////////
+        /// \brief Sets the number of tables to be stored
+        /// in the referenced cache file.
+        ///
+        /// \param nTables size_t
+        /// \return void
+        ///
+        /////////////////////////////////////////////////
+        void setNumberOfTables(size_t nTables)
+        {
+            vFileIndex = std::vector<uint32_t>(nTables, 0u);
+        }
 
-            /////////////////////////////////////////////////
-            /// \brief Sets the number of tables to be stored
-            /// in the referenced cache file.
-            ///
-            /// \param nTables size_t
-            /// \return void
-            ///
-            /////////////////////////////////////////////////
-            void setNumberOfTables(size_t nTables)
-            {
-                vFileIndex = std::vector<uint32_t>(nTables, 0u);
-            }
+        /////////////////////////////////////////////////
+        /// \brief Returns the character position of the
+        /// passed table index.
+        ///
+        /// \param nthTable size_t
+        /// \return uint32_t
+        ///
+        /////////////////////////////////////////////////
+        uint32_t getPosition(size_t nthTable)
+        {
+            if (nthTable < vFileIndex.size())
+                return vFileIndex[nthTable];
 
-            /////////////////////////////////////////////////
-            /// \brief Returns the character position of the
-            /// passed table index.
-            ///
-            /// \param nthTable size_t
-            /// \return uint32_t
-            ///
-            /////////////////////////////////////////////////
-            uint32_t getPosition(size_t nthTable)
-            {
-                if (nthTable < vFileIndex.size())
-                    return vFileIndex[nthTable];
-
-                return -1;
-            }
+            return -1;
+        }
     };
-
 
     /////////////////////////////////////////////////
     /// \brief This class resembles the CASSYLab
@@ -1654,27 +1693,26 @@ namespace NumeRe
     /////////////////////////////////////////////////
     class CassyLabx : public GenericFile
     {
-        private:
-            void readFile();
-            double extractValueFromTag(const std::string& sTag);
+    private:
+        void readFile();
+        double extractValueFromTag(const std::string &sTag);
 
-        public:
-            CassyLabx(const std::string& filename);
-            virtual ~CassyLabx();
+    public:
+        CassyLabx(const std::string &filename);
+        virtual ~CassyLabx();
 
-            virtual bool read() override
-            {
-                readFile();
-                return true;
-            }
+        virtual bool read() override
+        {
+            readFile();
+            return true;
+        }
 
-            virtual bool write() override
-            {
-                // do nothing here
-                return false;
-            }
+        virtual bool write() override
+        {
+            // do nothing here
+            return false;
+        }
     };
-
 
     /////////////////////////////////////////////////
     /// \brief This class resembles a comma separated
@@ -1685,30 +1723,29 @@ namespace NumeRe
     /////////////////////////////////////////////////
     class CommaSeparatedValues : public GenericFile
     {
-        private:
-            void readFile();
-            void writeFile();
-            void writeHeader();
-            char findSeparator(const std::vector<std::string>& vTextData);
-            void countColumns(const std::vector<std::string>& vTextData, char& cSep);
+    private:
+        void readFile();
+        void writeFile();
+        void writeHeader();
+        char findSeparator(const std::vector<std::string> &vTextData);
+        void countColumns(const std::vector<std::string> &vTextData, char &cSep);
 
-        public:
-            CommaSeparatedValues(const std::string& filename);
-            virtual ~CommaSeparatedValues();
+    public:
+        CommaSeparatedValues(const std::string &filename);
+        virtual ~CommaSeparatedValues();
 
-            virtual bool read() override
-            {
-                readFile();
-                return true;
-            }
+        virtual bool read() override
+        {
+            readFile();
+            return true;
+        }
 
-            virtual bool write() override
-            {
-                writeFile();
-                return true;
-            }
+        virtual bool write() override
+        {
+            writeFile();
+            return true;
+        }
     };
-
 
     /////////////////////////////////////////////////
     /// \brief This class resembles a LaTeX table.
@@ -1720,31 +1757,30 @@ namespace NumeRe
     /////////////////////////////////////////////////
     class LaTeXTable : public GenericFile
     {
-        private:
-            void writeFile();
-            void writeHeader();
-            void writeTableHeads();
-            size_t countHeadLines();
-            std::string replaceNonASCII(const std::string& sText);
-            std::string formatNumber(const mu::value_type& number);
+    private:
+        void writeFile();
+        void writeHeader();
+        void writeTableHeads();
+        size_t countHeadLines();
+        std::string replaceNonASCII(const std::string &sText);
+        std::string formatNumber(const mu::value_type &number);
 
-        public:
-            LaTeXTable(const std::string& filename);
-            virtual ~LaTeXTable();
+    public:
+        LaTeXTable(const std::string &filename);
+        virtual ~LaTeXTable();
 
-            virtual bool read() override
-            {
-                // do nothing here
-                return false;
-            }
+        virtual bool read() override
+        {
+            // do nothing here
+            return false;
+        }
 
-            virtual bool write() override
-            {
-                writeFile();
-                return true;
-            }
+        virtual bool write() override
+        {
+            writeFile();
+            return true;
+        }
     };
-
 
     /////////////////////////////////////////////////
     /// \brief This class resembles a JCAMP-DX file
@@ -1754,31 +1790,30 @@ namespace NumeRe
     /////////////////////////////////////////////////
     class JcampDX : public GenericFile
     {
-        private:
-            struct MetaData;
+    private:
+        struct MetaData;
 
-            void readFile();
-            size_t readTable(std::vector<std::string>& vFileContents, size_t nTableStart, MetaData);
-            void parseLabel(std::string& sLine);
-            std::vector<double> parseLine(const std::string& sLine);
+        void readFile();
+        size_t readTable(std::vector<std::string> &vFileContents, size_t nTableStart, MetaData);
+        void parseLabel(std::string &sLine);
+        std::vector<double> parseLine(const std::string &sLine);
 
-        public:
-            JcampDX(const std::string& filename);
-            virtual ~JcampDX();
+    public:
+        JcampDX(const std::string &filename);
+        virtual ~JcampDX();
 
-            virtual bool read() override
-            {
-                readFile();
-                return true;
-            }
+        virtual bool read() override
+        {
+            readFile();
+            return true;
+        }
 
-            virtual bool write() override
-            {
-                // do nothing
-                return false;
-            }
+        virtual bool write() override
+        {
+            // do nothing
+            return false;
+        }
     };
-
 
     /////////////////////////////////////////////////
     /// \brief This class resembles an OpenDocument
@@ -1789,26 +1824,25 @@ namespace NumeRe
     /////////////////////////////////////////////////
     class OpenDocumentSpreadSheet : public GenericFile
     {
-        private:
-            void readFile();
+    private:
+        void readFile();
 
-        public:
-            OpenDocumentSpreadSheet(const std::string& filename);
-            virtual ~OpenDocumentSpreadSheet();
+    public:
+        OpenDocumentSpreadSheet(const std::string &filename);
+        virtual ~OpenDocumentSpreadSheet();
 
-            virtual bool read() override
-            {
-                readFile();
-                return true;
-            }
+        virtual bool read() override
+        {
+            readFile();
+            return true;
+        }
 
-            virtual bool write() override
-            {
-                // do nothing
-                return false;
-            }
+        virtual bool write() override
+        {
+            // do nothing
+            return false;
+        }
     };
-
 
     /////////////////////////////////////////////////
     /// \brief This class resembles an Excel (97)
@@ -1818,28 +1852,27 @@ namespace NumeRe
     /////////////////////////////////////////////////
     class XLSSpreadSheet : public GenericFile
     {
-        private:
-            const size_t MAXSHEETLENGTH = 31;
-            void readFile();
-            void writeFile();
+    private:
+        const size_t MAXSHEETLENGTH = 31;
+        void readFile();
+        void writeFile();
 
-        public:
-            XLSSpreadSheet(const std::string& filename);
-            virtual ~XLSSpreadSheet();
+    public:
+        XLSSpreadSheet(const std::string &filename);
+        virtual ~XLSSpreadSheet();
 
-            virtual bool read() override
-            {
-                readFile();
-                return true;
-            }
+        virtual bool read() override
+        {
+            readFile();
+            return true;
+        }
 
-            virtual bool write() override
-            {
-                writeFile();
-                return true;
-            }
+        virtual bool write() override
+        {
+            writeFile();
+            return true;
+        }
     };
-
 
     /////////////////////////////////////////////////
     /// \brief This class resembles an Excel (2003)
@@ -1850,27 +1883,26 @@ namespace NumeRe
     /////////////////////////////////////////////////
     class XLSXSpreadSheet : public GenericFile
     {
-        private:
-            void readFile();
-            void evalIndices(const std::string& sIndices, int& nLine, int& nCol);
+    private:
+        void readFile();
+        void evalIndices(const std::string &sIndices, int &nLine, int &nCol);
 
-        public:
-            XLSXSpreadSheet(const std::string& filename);
-            virtual ~XLSXSpreadSheet();
+    public:
+        XLSXSpreadSheet(const std::string &filename);
+        virtual ~XLSXSpreadSheet();
 
-            virtual bool read() override
-            {
-                readFile();
-                return true;
-            }
+        virtual bool read() override
+        {
+            readFile();
+            return true;
+        }
 
-            virtual bool write() override
-            {
-                // do nothing
-                return false;
-            }
+        virtual bool write() override
+        {
+            // do nothing
+            return false;
+        }
     };
-
 
     /////////////////////////////////////////////////
     /// \brief This class resembles an Igor binary
@@ -1881,44 +1913,43 @@ namespace NumeRe
     /////////////////////////////////////////////////
     class IgorBinaryWave : public GenericFile
     {
-        private:
-            bool bXZSlice;
+    private:
+        bool bXZSlice;
 
-            void readFile();
+        void readFile();
 
-        public:
-            IgorBinaryWave(const std::string& filename);
-            IgorBinaryWave(const IgorBinaryWave& file);
-            virtual ~IgorBinaryWave();
+    public:
+        IgorBinaryWave(const std::string &filename);
+        IgorBinaryWave(const IgorBinaryWave &file);
+        virtual ~IgorBinaryWave();
 
-            virtual bool read() override
-            {
-                readFile();
-                return true;
-            }
+        virtual bool read() override
+        {
+            readFile();
+            return true;
+        }
 
-            virtual bool write() override
-            {
-                // do nothing
-                return false;
-            }
+        virtual bool write() override
+        {
+            // do nothing
+            return false;
+        }
 
-            IgorBinaryWave& operator=(const IgorBinaryWave& file);
+        IgorBinaryWave &operator=(const IgorBinaryWave &file);
 
-            /////////////////////////////////////////////////
-            /// \brief Activates the XZ-slicing of the Igor
-            /// binary wave, which is used to roll out 3D
-            /// data in 2D slices.
-            ///
-            /// \return void
-            ///
-            /////////////////////////////////////////////////
-            void useXZSlicing()
-            {
-                bXZSlice = true;
-            }
+        /////////////////////////////////////////////////
+        /// \brief Activates the XZ-slicing of the Igor
+        /// binary wave, which is used to roll out 3D
+        /// data in 2D slices.
+        ///
+        /// \return void
+        ///
+        /////////////////////////////////////////////////
+        void useXZSlicing()
+        {
+            bXZSlice = true;
+        }
     };
-
 
     /////////////////////////////////////////////////
     /// \brief This class implements a Zygo MetroPro
@@ -1927,31 +1958,27 @@ namespace NumeRe
     /////////////////////////////////////////////////
     class ZygoDat : public GenericFile
     {
-        private:
-            void readFile();
+    private:
+        void readFile();
 
-        public:
-            ZygoDat(const std::string& filename);
-            ZygoDat(const ZygoDat& file);
-            virtual ~ZygoDat();
+    public:
+        ZygoDat(const std::string &filename);
+        ZygoDat(const ZygoDat &file);
+        virtual ~ZygoDat();
 
-            virtual bool read() override
-            {
-                readFile();
-                return true;
-            }
+        virtual bool read() override
+        {
+            readFile();
+            return true;
+        }
 
-            virtual bool write() override
-            {
-                return false;
-            }
+        virtual bool write() override
+        {
+            return false;
+        }
 
-            ZygoDat& operator=(const ZygoDat& file);
-        };
+        ZygoDat &operator=(const ZygoDat &file);
+    };
 }
 
-
-
 #endif // NUMERE_FILE_HPP
-
-
