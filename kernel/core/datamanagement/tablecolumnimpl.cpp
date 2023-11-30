@@ -2067,6 +2067,13 @@ TableColumn* createValueTypeColumn(TableColumn::ColumnType type, size_t nSize)
             return new I64ValueColumn(nSize);
         case TableColumn::TYPE_VALUE_UI64:
             return new UI64ValueColumn(nSize);
+        case TableColumn::TYPE_VALUE_F32:
+            return new F32ValueColumn(nSize);
+        case TableColumn::TYPE_VALUE_F64:
+            return new F64ValueColumn(nSize);
+        case TableColumn::TYPE_VALUE_CF32:
+            return new CF32ValueColumn(nSize);
+        //case TableColumn::TYPE_VALUE_CF64: // Reminder that this might change
         case TableColumn::TYPE_VALUE:
             return new ValueColumn(nSize);
     }

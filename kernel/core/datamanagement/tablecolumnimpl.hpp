@@ -43,7 +43,7 @@ class GenericValueColumn : public TableColumn
 {
     protected:
         std::vector<T> m_data;
-        const T INVALID_VALUE = (T(1.1) == 1.1 ? NAN : 0);
+        const T INVALID_VALUE = std::is_integral<T>::value ? 0 : NAN;// (T(1.1) == 1.1 ? NAN : 0);
         size_t m_numElements;
 
     public:
@@ -335,7 +335,7 @@ class GenericValueColumn : public TableColumn
             if (elem < 0 || (size_t)elem >= std::min(m_numElements, m_data.size()))
                 return false;
 
-            return m_data[elem] != 0.0;
+            return m_data[elem] != T(0.0);
         }
 
         /////////////////////////////////////////////////
@@ -442,15 +442,15 @@ class GenericValueColumn : public TableColumn
         }
 };
 
-
-class ValueColumn : public GenericValueColumn<mu::value_type, TableColumn::TYPE_VALUE>
+template <class T, TableColumn::ColumnType COLTYPE>
+class BaseFloatColumn : public GenericValueColumn<T, COLTYPE>
 {
     public:
         /////////////////////////////////////////////////
         /// \brief Default constructor. Sets only the
         ///  type of the column.
         /////////////////////////////////////////////////
-        ValueColumn() : GenericValueColumn()
+        BaseFloatColumn() : GenericValueColumn<T, COLTYPE>()
         {
         }
 
@@ -461,12 +461,12 @@ class ValueColumn : public GenericValueColumn<mu::value_type, TableColumn::TYPE_
         /// \param nElem size_t
         ///
         /////////////////////////////////////////////////
-        ValueColumn(size_t nElem) : ValueColumn()
+        BaseFloatColumn(size_t nElem) : BaseFloatColumn<T, COLTYPE>()
         {
-            resize(nElem);
+            this->resize(nElem);
         }
 
-        virtual ~ValueColumn() {}
+        virtual ~BaseFloatColumn() {}
 
         /////////////////////////////////////////////////
         /// \brief Set a single numerical value.
@@ -478,14 +478,14 @@ class ValueColumn : public GenericValueColumn<mu::value_type, TableColumn::TYPE_
         /////////////////////////////////////////////////
         virtual void setValue(size_t elem, const mu::value_type& vValue) override
         {
-            if (elem >= m_data.size() && mu::isnan(vValue))
+            if (elem >= this->m_data.size() && mu::isnan(vValue))
                 return;
 
-            if (elem >= m_data.size())
-                m_data.resize(elem+1, INVALID_VALUE);
+            if (elem >= this->m_data.size())
+                this->m_data.resize(elem+1, this->INVALID_VALUE);
 
-            m_data[elem] = vValue;
-            m_numElements = std::max(elem+1, m_numElements);
+            this->m_data[elem] = vValue.real();
+            this->m_numElements = std::max(elem+1, this->m_numElements);
         }
 
         /////////////////////////////////////////////////
@@ -494,19 +494,19 @@ class ValueColumn : public GenericValueColumn<mu::value_type, TableColumn::TYPE_
         /// extraction into a new table.
         ///
         /// \param idx const VectorIndex&
-        /// \return ValueColumn*
+        /// \return BaseFloatColumn*
         ///
         /////////////////////////////////////////////////
-        virtual ValueColumn* copy(const VectorIndex& idx) const override
+        virtual BaseFloatColumn* copy(const VectorIndex& idx) const override
         {
-            idx.setOpenEndIndex(getNumFilledElements()-1);
+            idx.setOpenEndIndex(this->getNumFilledElements()-1);
 
-            ValueColumn* col = new ValueColumn(idx.size());
-            col->m_sHeadLine = m_sHeadLine;
+            BaseFloatColumn* col = new BaseFloatColumn(idx.size());
+            col->m_sHeadLine = this->m_sHeadLine;
 
             for (size_t i = 0; i < idx.size(); i++)
             {
-                col->setValue(i, getValue(idx[i]));
+                col->setValue(i, this->getValue(idx[i]));
             }
 
             return col;
@@ -525,17 +525,113 @@ class ValueColumn : public GenericValueColumn<mu::value_type, TableColumn::TYPE_
         /////////////////////////////////////////////////
         virtual int compare(int i, int j, bool unused) const override
         {
-            if ((int)m_data.size() <= std::max(i, j))
+            if ((int)this->m_data.size() <= std::max(i, j))
                 return 0;
 
-            if (m_data[i] == m_data[j])
+            if (this->m_data[i] == this->m_data[j])
                 return 0;
-            else if (m_data[i].real() < m_data[j].real())
+            else if (this->m_data[i] < this->m_data[j])
                 return -1;
 
             return 1;
         }
 };
+
+template <class T, TableColumn::ColumnType COLTYPE>
+class BaseComplexColumn : public GenericValueColumn<T, COLTYPE>
+{
+    public:
+        /////////////////////////////////////////////////
+        /// \brief Default constructor. Sets only the
+        ///  type of the column.
+        /////////////////////////////////////////////////
+        BaseComplexColumn() : GenericValueColumn<T, COLTYPE>()
+        {
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief Generalized constructor. Will prepare
+        /// a column with the specified size.
+        ///
+        /// \param nElem size_t
+        ///
+        /////////////////////////////////////////////////
+        BaseComplexColumn(size_t nElem) : BaseComplexColumn<T, COLTYPE>()
+        {
+            this->resize(nElem);
+        }
+
+        virtual ~BaseComplexColumn() {}
+
+        /////////////////////////////////////////////////
+        /// \brief Set a single numerical value.
+        ///
+        /// \param elem size_t
+        /// \param vValue const mu::value_type&
+        /// \return void
+        ///
+        /////////////////////////////////////////////////
+        virtual void setValue(size_t elem, const mu::value_type& vValue) override
+        {
+            if (elem >= this->m_data.size() && mu::isnan(vValue))
+                return;
+
+            if (elem >= this->m_data.size())
+                this->m_data.resize(elem+1, this->INVALID_VALUE);
+
+            this->m_data[elem] = vValue;
+            this->m_numElements = std::max(elem+1, this->m_numElements);
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief Creates a copy of the selected part of
+        /// this column. Can be used for simple
+        /// extraction into a new table.
+        ///
+        /// \param idx const VectorIndex&
+        /// \return BaseComplexColumn*
+        ///
+        /////////////////////////////////////////////////
+        virtual BaseComplexColumn* copy(const VectorIndex& idx) const override
+        {
+            idx.setOpenEndIndex(this->getNumFilledElements()-1);
+
+            BaseComplexColumn* col = new BaseComplexColumn(idx.size());
+            col->m_sHeadLine = this->m_sHeadLine;
+
+            for (size_t i = 0; i < idx.size(); i++)
+            {
+                col->setValue(i, this->getValue(idx[i]));
+            }
+
+            return col;
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief Returns 0, if both elements are equal,
+        /// -1 if element i is smaller than element j and
+        /// 1 otherwise.
+        ///
+        /// \param i int
+        /// \param j int
+        /// \param unused bool
+        /// \return int
+        ///
+        /////////////////////////////////////////////////
+        virtual int compare(int i, int j, bool unused) const override
+        {
+            if ((int)this->m_data.size() <= std::max(i, j))
+                return 0;
+
+            if (this->m_data[i] == this->m_data[j])
+                return 0;
+            else if (this->m_data[i].real() < this->m_data[j].real())
+                return -1;
+
+            return 1;
+        }
+};
+
 
 template <class T, TableColumn::ColumnType COLTYPE>
 class BaseIntColumn : public GenericValueColumn<T, COLTYPE>
@@ -648,6 +744,12 @@ using I32ValueColumn = BaseIntColumn<int32_t, TableColumn::TYPE_VALUE_I32>;
 using UI32ValueColumn = BaseIntColumn<uint32_t, TableColumn::TYPE_VALUE_UI32>;
 using I64ValueColumn = BaseIntColumn<int64_t, TableColumn::TYPE_VALUE_I64>;
 using UI64ValueColumn = BaseIntColumn<uint64_t, TableColumn::TYPE_VALUE_UI64>;
+
+using F32ValueColumn = BaseFloatColumn<float, TableColumn::TYPE_VALUE_F32>;
+using F64ValueColumn = BaseFloatColumn<double, TableColumn::TYPE_VALUE_F64>;
+
+using CF32ValueColumn = BaseComplexColumn<std::complex<float>, TableColumn::TYPE_VALUE_CF32>;
+using ValueColumn = BaseComplexColumn<std::complex<double>, TableColumn::TYPE_VALUE>;
 
 
 /////////////////////////////////////////////////

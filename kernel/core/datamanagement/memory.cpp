@@ -4626,8 +4626,17 @@ bool Memory::smooth(VectorIndex _vLine, VectorIndex _vCol, NumeRe::FilterSetting
         bUseAppendedZeroes = true;
 
     // Force the index ranges
-    _vLine.setRange(0, getLines()-1);
     _vCol.setRange(0, getCols()-1);
+
+    size_t nRowCount = getLines();
+
+    if (bUseAppendedZeroes)
+    {
+        std::vector<double> sizes = mu::real(size(_vCol, AppDir::COLS));
+        nRowCount = *std::max_element(sizes.begin(), sizes.end());
+    }
+
+    _vLine.setRange(0, nRowCount-1);
 
     // Change the predefined application directions, if it's needed
     if ((Direction == ALL || Direction == GRID) && _vLine.size() < 4)

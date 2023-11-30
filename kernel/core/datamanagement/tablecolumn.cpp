@@ -255,6 +255,12 @@ std::string TableColumn::typeToString(TableColumn::ColumnType type)
         return "value(i64)";
     case TYPE_VALUE_UI64:
         return "value(ui64)";
+    case TYPE_VALUE_F32:
+        return "value(f32)";
+    case TYPE_VALUE_F64:
+        return "value(f64)";
+    case TYPE_VALUE_CF32:
+        return "value(cf32)";
     case TYPE_VALUE:
         return "value";
     case TYPE_STRING:
@@ -283,8 +289,14 @@ std::string TableColumn::typeToString(TableColumn::ColumnType type)
 /////////////////////////////////////////////////
 TableColumn::ColumnType TableColumn::stringToType(const std::string& sType)
 {
-    if (sType == "value")
+    if (sType == "value" || sType == "value(cf64)")
         return TYPE_VALUE;
+    else if (sType == "value(cf32)")
+        return TYPE_VALUE_CF32;
+    else if (sType == "value(f64)")
+        return TYPE_VALUE_F64;
+    else if (sType == "value(f32)")
+        return TYPE_VALUE_F32;
     else if (sType == "value(i8)")
         return TYPE_VALUE_I8;
     else if (sType == "value(ui8)")
@@ -325,7 +337,8 @@ TableColumn::ColumnType TableColumn::stringToType(const std::string& sType)
 /////////////////////////////////////////////////
 std::vector<std::string> TableColumn::getTypesAsString()
 {
-    return {"value", "value(i8)", "value(ui8)", "value(i16)", "value(ui16)",
+    return {"value", "value(f32)", "value(f64)", "value(cf32)",
+        "value(i8)", "value(ui8)", "value(i16)", "value(ui16)",
         "value(i32)", "value(ui32)", "value(i64)", "value(ui64)",
         "string", "datetime", "logical", "category"};
 }

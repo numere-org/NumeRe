@@ -1918,7 +1918,7 @@ namespace NumeRe
 
         for (long long int i = 0; i < nCols; i++)
         {
-            fileData->at(i).reset(new ValueColumn);
+            fileData->at(i).reset(new F64ValueColumn);
             fileData->at(i)->m_sHeadLine = vHeadLines[i];
         }
 
@@ -2991,7 +2991,7 @@ namespace NumeRe
         // We only create numerical columns for this data type
         for (long long int j = nPageOffset; j < nCols; j++)
         {
-            fileData->at(j).reset(new ValueColumn);
+            fileData->at(j).reset(new F64ValueColumn);
         }
 
         // Prepare some decoding variables
@@ -4459,7 +4459,25 @@ namespace NumeRe
         // We create plain value column tables
         for (long long int j = 0; j < nCols; j++)
         {
-            fileData->at(j).reset(new ValueColumn);
+            if (j < nFirstCol)
+                fileData->at(j).reset(new F64ValueColumn);
+            else if (bReadComplexData)
+            {
+                if (nType & NT_FP64)
+                    fileData->at(j).reset(new ValueColumn);
+                else
+                    fileData->at(j).reset(new CF32ValueColumn);
+            }
+            else if (nType & NT_FP64)
+                fileData->at(j).reset(new F64ValueColumn);
+            else if (nType & NT_FP32)
+                fileData->at(j).reset(new F32ValueColumn);
+            else if (nType & NT_I8)
+                fileData->at(j).reset(new I8ValueColumn);
+            else if (nType & NT_I16)
+                fileData->at(j).reset(new I16ValueColumn);
+            else if (nType & NT_I32)
+                fileData->at(j).reset(new I32ValueColumn);
         }
 
         // Fill the x column and its corresponding
@@ -4653,7 +4671,7 @@ namespace NumeRe
         // We create plain value column tables
         for (long long int j = 0; j < nCols; j++)
         {
-            fileData->at(j).reset(new ValueColumn);
+            fileData->at(j).reset(new F64ValueColumn);
         }
 
         uint16_t colOffset = 0;

@@ -1334,8 +1334,6 @@ bool readImage(CommandLineParser& cmdParser)
 		}
 	}
 
-
-
     _table->markModified();
 	g_logger.debug("Image file loaded.");
 
