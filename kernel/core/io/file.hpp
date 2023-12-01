@@ -582,7 +582,7 @@ namespace NumeRe
             // operations
             //? What about edge case of three double quotes, where two
             //? double quotes is intended
-            for (std::string &token : tokens)
+            for (std::string &token : vTokens)
             {
                 size_t found = token.find('\"\"');
                 while (found != std::string::npos)
