@@ -567,7 +567,7 @@ namespace NumeRe
                     // Found a separator outside string, add to Tokens vector
                     // Exclude entry and ending string quotes
 
-                    vTokens.push_back(sString.substr(iStart+1, iEnd - iStart-1));
+                    vTokens.push_back(sString.substr(iStart + 1, iEnd - iStart - 1));
                     iStart = i + 1; // Update Start index for next token
                 }
 
@@ -580,9 +580,17 @@ namespace NumeRe
 
             // Remove the double quotes escape character with find and replace
             // operations
-            //? What about edge case of three double quotes, where two 
+            //? What about edge case of three double quotes, where two
             //? double quotes is intended
-            
+            for (std::string &token : tokens)
+            {
+                size_t found = token.find('\"\"');
+                while (found != std::string::npos)
+                {
+                    token.replace(found, 2, '\"');
+                    found = token.find('\"\"', found + 1);
+                }
+            }
             // If empty Tokens are not being stored, remove all empty tokens
             // from the vector
             if (skipEmptyTokens)
