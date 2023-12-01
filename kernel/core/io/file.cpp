@@ -2070,16 +2070,8 @@ namespace NumeRe
             if (!vFileData[i].length())
                 continue;
 
-            if (cSep == ',')
-            {
-                // Tokenize line with comma as separator
-                std::vector<std::string> vTokens = tokenize(vFileData[i], ',');
-            }
-            else
-            {
-                // Tokenize the current line
-                vector<string> vTokens = tokenize(vFileData[i], string(1, cSep));
-            }
+            // Tokenize the current line
+            vector<string> vTokens = tokenize(vFileData[i], string(1, cSep));
 
             // Decode each token
             for (size_t j = 0; j < vTokens.size(); j++)
@@ -2089,27 +2081,6 @@ namespace NumeRe
                     break;
 
                 std::string decodedToken;
-
-                bool inQuotedField = false;
-                // TODO: change range for loop
-                for (char c : vTokens[j])
-                {
-                    if (c == '"')
-                    {
-                        // Toggle the inside-quote state
-                        inQuotedField = !inQuotedField;
-                    }
-                    else if (c == ',' && !inQuotedField)
-                    {
-                        // Unescaped comma outside quote
-                        // Considered as end of token
-                        break;
-                    }
-                    else
-                    {
-                        decodedToken += c;
-                    }
-                }
 
                 fileData->at(j)->setValue(i - nComment, decodedToken);
             }
