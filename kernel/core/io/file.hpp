@@ -555,12 +555,12 @@ namespace NumeRe
             // Iterate over string line
             for (size_t i = 0; i < sString.length(); ++i)
             {
-                char c = sString[i]
+                char c = sString[i];
 
-                    if (c == '"')
+                if (c == '"')
                 {
                     // Encountered quote, toggle inQuotation
-                    inQuotation = !inQuotation
+                    inQuotation = !inQuotation;
                 }
                 else if (sSeparators.find(c) != std::string::npos && !inQuotation)
                 {
@@ -578,19 +578,19 @@ namespace NumeRe
             // Add the last token or one token if no separator found
             vTokens.push_back(sString.substr(iStart, iEnd - iStart));
 
-            // Remove the double quotes escape character with find and replace
-            // operations
-            //? What about edge case of three double quotes, where two
-            //? double quotes is intended
-            for (std::string &token : vTokens)
-            {
-                size_t found = token.find('\"\"');
-                while (found != std::string::npos)
-                {
-                    token.replace(found, 2, '\"');
-                    found = token.find('\"\"', found + 1);
-                }
-            }
+            // // Remove the double quotes escape character with find and replace
+            // // operations
+            // //? What about edge case of three double quotes, where two
+            // //? double quotes is intended
+            // for (std::string& token : vTokens)
+            // {
+            //     size_t found = token.find('\"\"');
+            //     while (found != std::string::npos)
+            //     {
+            //         token.replace(found, 2, '\"');
+            //         found = token.find('\"\"', found + 1);
+            //     }
+            // }
             // If empty Tokens are not being stored, remove all empty tokens
             // from the vector
             if (skipEmptyTokens)
@@ -600,10 +600,10 @@ namespace NumeRe
                                              { return token.empty(); }),
                               vTokens.end());
             }
+        return vTokens;
         }
 
-        return vTokens;
-    }
+    
 
     /////////////////////////////////////////////////
     /// \brief This method template can be used to
