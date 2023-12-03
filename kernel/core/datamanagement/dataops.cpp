@@ -1262,8 +1262,8 @@ bool readImage(CommandLineParser& cmdParser)
         }
 	}
 
-    _table->convertColumns(_idx.col.subidx(0, 2), "value(ui32)");
-	_table->convertColumns(_idx.col.subidx(2, sChannels == "grey" ? nHeight : sChannels.length()*nHeight), "value(ui8)");
+    _table->convertColumns(_idx.col.subidx(0, 2), "value.ui32");
+	_table->convertColumns(_idx.col.subidx(2, sChannels == "grey" ? nHeight : sChannels.length()*nHeight), "value.ui8");
 
 	// Write headlines
 	_data.setHeadLineElement(_idx.col[0], sTargetCache, "x");

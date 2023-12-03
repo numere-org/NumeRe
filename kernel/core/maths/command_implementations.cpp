@@ -3741,12 +3741,12 @@ bool readAudioFile(CommandLineParser& cmdParser)
 
         // Write the last row for preallocation
         _table->writeData(rowmax, _targetIdx.col.front(), 0.0);
-        _table->convertColumns(_targetIdx.col.subidx(0, 1), "value(f32)");
+        _table->convertColumns(_targetIdx.col.subidx(0, 1), "value.f32");
 
         if (nChannels > 1 && _targetIdx.col.size() > 1)
         {
             _table->writeData(rowmax, _targetIdx.col[1], 0.0);
-            _table->convertColumns(_targetIdx.col.subidx(1, 1), "value(f32)");
+            _table->convertColumns(_targetIdx.col.subidx(1, 1), "value.f32");
         }
 
         for (size_t i = 0; i < nLen; i++)
@@ -3842,12 +3842,12 @@ bool seekInAudioFile(CommandLineParser& cmdParser)
 
     // Write the last row for pre-allocation
     _table->writeData(rowmax, _targetIdx.col.front(), 0.0);
-    _table->convertColumns(_targetIdx.col.subidx(0, 1), "value(f32)");
+    _table->convertColumns(_targetIdx.col.subidx(0, 1), "value.f32");
 
     if (nChannels > 1 && _targetIdx.col.size() > 1)
     {
         _table->writeData(rowmax, _targetIdx.col[1], 0.0);
-        _table->convertColumns(_targetIdx.col.subidx(1, 1), "value(f32)");
+        _table->convertColumns(_targetIdx.col.subidx(1, 1), "value.f32");
     }
 
     for (size_t i = 0; i < nLen; i++)
