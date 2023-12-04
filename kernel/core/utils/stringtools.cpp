@@ -1075,7 +1075,6 @@ static bool isDateTimePattern(const std::string& sStr, size_t pos)
     return false;
 }
 
-
 /////////////////////////////////////////////////
 /// \brief This function checks, whether a string
 /// can be converted to the selected
@@ -1086,8 +1085,7 @@ static bool isDateTimePattern(const std::string& sStr, size_t pos)
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool isConvertible(const std::string& sStr, ConvertibleType type)
-{
+bool isConvertible(const std::string& sStr, ConvertibleType type, NumberFormatsVoter* voter){
     if (type == CONVTYPE_VALUE)
     {
         // Apply the simplest heuristic: mostly every numerical valid character
@@ -1103,17 +1101,37 @@ bool isConvertible(const std::string& sStr, ConvertibleType type)
             || tolower(sStr.back()) == 'e')
             return false;
 
-        // Regression fix introduced because NA is accepted as NaN
-        for (size_t i = 1; i < sStr.length()-1; i++)
+        // NEW
+        bool inNum = false;
+
+        // Regression fix introduced because NA is accepted as NaNhow to
+        for (size_t i = 0; i < sStr.length(); i++)
         {
-            if (sStr[i] == '-' || sStr[i] == '+')
-            {
-                if (tolower(sStr[i-1]) != 'e'
-                    && (isdigit(sStr[i-1]) && sStr.find_first_of("iI", i+1) == std::string::npos)
-                    && sStr[i-1] != ' ')
-                    return false;
+            if(voter && (sStr[i] == ',' || sStr[i] == '.' || sStr[i] == ' ' || isdigit(sStr[i]))) {
+                if(!inNum & sStr[i] != '0'){
+                    inNum = true;
+                    voter->startParseNumber(i);
+                }
+                if(sStr[i] == ',' || sStr[i] == '.' || sStr[i] == ' ' ) {
+                    voter->addSeperator(sStr[i], i);
+                }
+            } else {
+                if(voter && inNum){
+                    voter->endParseAndVote(i-1);  // last one was one before
+                    inNum = false;
+                }
+                if (i > 0 && i-1 < sStr.length() && (sStr[i] == '-' || sStr[i] == '+'))
+                {
+                    if (tolower(sStr[i-1]) != 'e'
+                        && (isdigit(sStr[i-1]) && sStr.find_first_of("iI", i+1) == std::string::npos)
+                        && sStr[i-1] != ' ')
+                        return false;
+                }
             }
         }
+
+        if (voter && inNum)
+            voter->endParseAndVote(sStr.length()-1);
 
         // Try to detect dates
         return !isConvertible(sStr, CONVTYPE_DATE_TIME);
@@ -1847,7 +1865,6 @@ void replaceAll(MutableStringView sToModify, const char* sToRep, const char* sNe
     }
 }
 
-
 /////////////////////////////////////////////////
 /// \brief This function replaces all occurences
 /// of the string sToRep in the string sToModify
@@ -1910,6 +1927,29 @@ std::string replaceControlCharacters(std::string sToModify)
     replaceAll(sToModify, "\t", "\\t");
 
     return sToModify;
+}
+
+/////////////////////////////////////////////////
+/// \brief This function changes Number Format inside a String
+///
+/// \param sNum std::string&
+/// \param numFormat NumberFormat
+/// \return void
+///
+/////////////////////////////////////////////////
+void strChangeNumberFormat(std::string &sNum, int numFormat){
+
+    if(numFormat & NUM_K_EU)
+        replaceAll(sNum, ".", "");
+
+    if(numFormat & NUM_K_US)
+        replaceAll(sNum, ",", "");
+
+    if(numFormat & NUM_K_SPACE)
+        replaceAll(sNum, " ", "");
+
+    if(numFormat & NUM_DECIMAL_EU)
+        replaceAll(sNum, ",", ".");
 }
 
 

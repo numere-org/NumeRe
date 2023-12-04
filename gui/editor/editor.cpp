@@ -75,6 +75,8 @@
 #define SEMANTICS_NUM 4
 #define SEMANTICS_FUNCTION 8
 
+#define LINELENGTH_COLUMN 100
+
 
 BEGIN_EVENT_TABLE(NumeReEditor, wxStyledTextCtrl)
     EVT_STC_CHARADDED	(-1, NumeReEditor::OnChar)
@@ -1000,6 +1002,47 @@ void NumeReEditor::OnChar( wxStyledTextEvent& event )
 
     if (sAutoCompList.length())
         AutoCompShow(lenEntered, sAutoCompList);
+
+    // if line indicator setting is active, provide autowrapping for comments
+    bool isLineIndicatorActive = m_options->getSetting(SETTING_B_LINELENGTH).active();
+    const int columnPos = GetColumn(currentPos);
+    bool isNumereFile = m_fileType == FILE_NSCR || m_fileType == FILE_NPRC || m_fileType == FILE_NLYT;
+
+    if (isNumereFile
+        && isLineIndicatorActive
+        && (columnPos > LINELENGTH_COLUMN)
+        && isStyleType(STYLE_COMMENT, currentPos)
+        && isStyleType(STYLE_COMMENT, GetLineIndentPosition(currentLine)+1))
+    {
+        // Only calculate this information if really necessary
+        int lineBreakPos = WordStartPosition(FindColumn(currentLine, LINELENGTH_COLUMN), true);
+
+        // Wrap only, if the breaking point before last word on line is more than half of LINELENGTH_COLUMN after the indentation
+        bool isWordSmall = (lineBreakPos - GetLineIndentPosition(currentLine)) > (LINELENGTH_COLUMN/2);
+
+        if (isWordSmall)
+        {
+            // Get the start of the last line to use as a reference for indentation
+            wxString sLineStart = GetTextRange(PositionFromLine(currentLine), GetLineIndentPosition(currentLine)+20);
+            sLineStart.erase(sLineStart.find_first_not_of("#*! -\t"));
+            sLineStart.Replace("-", " ");
+
+            if (GetStyleAt(currentPos) == wxSTC_NSCR_COMMENT_LINE
+                || GetStyleAt(currentPos) == wxSTC_NSCR_DOCCOMMENT_LINE)
+            {
+                InsertText(lineBreakPos, "\r\n" + sLineStart);
+                GotoPos(currentPos+2+sLineStart.length());
+            }
+            else if (isStyleType(NumeReEditor::STYLE_COMMENT_BLOCK, currentPos))
+            {
+                sLineStart.Replace("#*", " *");
+                sLineStart.Replace("!", "");
+
+                InsertText(lineBreakPos, "\r\n"+sLineStart);
+                GotoPos(currentPos+2+sLineStart.length());
+            }
+        }
+    }
 
     Colourise(0, -1);
 
@@ -4197,7 +4240,7 @@ void NumeReEditor::updateDefaultHighlightSettings()
     {
         SetEdgeColour(wxColour(210, 210, 255));
         SetEdgeMode(wxSTC_EDGE_LINE);
-        SetEdgeColumn(100);
+        SetEdgeColumn(LINELENGTH_COLUMN);
     }
     else
         SetEdgeMode(wxSTC_EDGE_NONE);
@@ -8775,5 +8818,3 @@ wxString NumeReEditor::ExtractAsHTML(int nFirstLine, int nLastLine)
 
     return sHtml;
 }
-
-

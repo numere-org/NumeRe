@@ -228,7 +228,7 @@ static mu::value_type calcDeterminant(const Matrix& _mMatrix, std::vector<int> v
                     else
                         dDet += (double)nSign * _mMatrix(i, j);
 
-                    // füge Spalte j wieder hinzu
+                    // fÃ¼ge Spalte j wieder hinzu
                     vRemovedLines[j] -= 2;
                     // alternierendes Vorzeichen
                     nSign *= -1;
@@ -3505,20 +3505,20 @@ static Matrix matrixConvolution(const MatFuncData& funcData, const MatFuncErrorI
     // convolution by multiplication in fourier space and finally applying the inverse fft
 
     // Get the complete matrix from the previously generated indices
-    Matrix mat(rows.size(), cols.size());  //TODO: Or can this be done without a new memory alloc
+    Matrix mat(rows.size(), cols.size());
     for (size_t i = 0; i < mat.rows(); i++)
         for (size_t j = 0; j < mat.cols(); j++)
             mat(i, j) = funcData.mat1(rows[i], cols[j]);
 
     // Extend the kernel with zeros to the same size as the extended matrix
-    Matrix kernel(rows.size(), cols.size(), 0.0);  //TODO: Or can this be done without a new memory alloc
+    Matrix kernel(rows.size(), cols.size(), 0.0);
     for (size_t i = 0; i < funcData.mat2.rows(); i++)
         for (size_t j = 0; j < funcData.mat2.cols(); j++)
             kernel(i + offsetRows + inputRows / 2 - funcData.mat2.rows() / 2,
                    j + offsetCols + inputCols / 2 - funcData.mat2.cols() / 2) = funcData.mat2(i, j);
 
     // Call the convolution function
-    Matrix extendedResult = convolution(mat, kernel);  //TODO: Without copy?
+    Matrix extendedResult = convolution(mat, kernel);
 
     // Extract the relevant part of the result and perform the axis shift
     for (size_t i = 0; i < inputRows; i++)
@@ -3564,6 +3564,163 @@ static Matrix matrixFilter(const MatFuncData& funcData, const MatFuncErrorInfo& 
         return matrixConvolution(funcData, errorInfo);
 
     return matrixRasterFilter(funcData, errorInfo);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Function to perform a circular shift
+/// of the elements in a matrix by n rows.
+///
+/// \param funcData const MatFuncData&
+/// \param errorInfo const MatFuncErrorInfo&
+/// \return Matrix
+///
+/////////////////////////////////////////////////
+static Matrix circShiftRow(const MatFuncData& funcData, const MatFuncErrorInfo& errorInfo)
+{
+    // Generate the output matrix to perform the operations on
+    Matrix _mResult = funcData.mat1;
+    _mResult.extend(_mResult.rows(), _mResult.cols());
+
+    // Circular shift downwards (negative values upwards)
+    int matSize = (int)_mResult.data().size();
+    int shift = -(int)funcData.nVal % matSize;
+    shift = (shift + matSize) % matSize;
+
+    std::rotate(_mResult.data().begin(), _mResult.data().begin() + shift, _mResult.data().end());
+
+    return _mResult;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Function to perform a circular shift
+/// of the elements in a matrix by n columns.
+///
+/// \param funcData const MatFuncData&
+/// \param errorInfo const MatFuncErrorInfo&
+/// \return Matrix
+///
+/////////////////////////////////////////////////
+static Matrix circShiftCol(const MatFuncData& funcData, const MatFuncErrorInfo& errorInfo)
+{
+    // Transpose the matrix (including restructuring the memory) to get a row wise representation of the data
+    Matrix _mResult = funcData.mat1;
+    _mResult.transpose();
+
+    // Apply the circShiftRow to the transposed matrix
+    _mResult = circShiftRow(MatFuncData(std::move(_mResult), funcData.nVal), errorInfo);
+
+    // Reverse the transposition
+    _mResult.transpose();
+
+    return _mResult;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Wrapper for the two circular shift
+/// functions. Selects the methode and checks
+/// the dimension argument.
+///
+/// \param funcData const MatFuncData&
+/// \param errorInfo const MatFuncErrorInfo&
+/// \return Matrix
+///
+/////////////////////////////////////////////////
+static Matrix circShift(const MatFuncData& funcData, const MatFuncErrorInfo& errorInfo)
+{
+    // Check the dim argument
+    if (funcData.mVal < 0 || funcData.mVal > 1)
+        throw SyntaxError(SyntaxError::INVALID_AXIS, errorInfo.command, errorInfo.position);
+
+    // Call the proper function
+    if (funcData.mVal == 0)
+        return circShiftRow(funcData, errorInfo);
+    else
+        return circShiftCol(funcData, errorInfo);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Function to perform a shift
+/// of the columns in a matrix by n columns.
+///
+/// \param funcData const MatFuncData&
+/// \param errorInfo const MatFuncErrorInfo&
+/// \return Matrix
+///
+/////////////////////////////////////////////////
+static Matrix vectShiftCol(const MatFuncData& funcData, const MatFuncErrorInfo& errorInfo)
+{
+    // Matrix data is a column-wise vector
+    Matrix _mResult(funcData.mat1.rows(), funcData.mat1.cols());
+    int mat1cols = (int)funcData.mat1.cols();
+
+    for (size_t col = 0; col < funcData.mat1.cols(); col++)
+    {
+        // Calculate the previous position of the column and copy it to the current target col
+        int col_old = (int)((((int)col - (int)funcData.nVal) % mat1cols) + mat1cols) % mat1cols;
+
+        // Copy the individual cells
+        for (size_t row = 0; row < funcData.mat1.rows(); row++)
+        {
+            _mResult(row, col) = funcData.mat1(row, col_old);
+        }
+    }
+
+    return _mResult;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Function to perform a shift
+/// of the rows in a matrix by n rows.
+///
+/// \param funcData const MatFuncData&
+/// \param errorInfo const MatFuncErrorInfo&
+/// \return Matrix
+///
+/////////////////////////////////////////////////
+static Matrix vectShiftRow(const MatFuncData& funcData, const MatFuncErrorInfo& errorInfo)
+{
+    // Transpose the matrix (including restructuring the memory) to get a row wise representation of the data
+    Matrix _mResult = funcData.mat1;
+    _mResult.transpose();
+
+    MatFuncData funcDataTransposed = MatFuncData(_mResult, funcData.nVal);
+
+    // Apply the vectShiftRow to the transposed matrix
+    _mResult = vectShiftCol(funcDataTransposed, errorInfo);
+
+    // Reverse the transposition
+    _mResult.transpose();
+
+    return _mResult;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Wrapper for the two vector shift
+/// functions. Selects the methode and checks
+/// the dimension argument.
+///
+/// \param funcData const MatFuncData&
+/// \param errorInfo const MatFuncErrorInfo&
+/// \return Matrix
+///
+/////////////////////////////////////////////////
+static Matrix vectShift(const MatFuncData& funcData, const MatFuncErrorInfo& errorInfo)
+{
+    // Check the dim argument
+    if (funcData.mVal < 0 || funcData.mVal > 1)
+        throw SyntaxError(SyntaxError::INVALID_AXIS, errorInfo.command, errorInfo.position);
+
+    // Call the proper function
+    if (funcData.mVal == 0)
+        return vectShiftRow(funcData, errorInfo);
+    else
+        return vectShiftCol(funcData, errorInfo);
 }
 
 
@@ -3622,15 +3779,15 @@ static std::map<std::string,MatFuncDef> getMatrixFunctions()
     mFunctions["med"] = MatFuncDef(MATSIG_MAT, matrixMed, false);
     mFunctions["pct"] = MatFuncDef(MATSIG_MAT_F, matrixPct, false);
     mFunctions["cmp"] = MatFuncDef(MATSIG_MAT_F_N, matrixCmp, false);
-    mFunctions["movsum"] = MatFuncDef(MATSIG_MAT_N_MOPT, matrixMovSum);
-    mFunctions["movstd"] = MatFuncDef(MATSIG_MAT_N_MOPT, matrixMovStd);
-    mFunctions["movavg"] = MatFuncDef(MATSIG_MAT_N_MOPT, matrixMovAvg);
-    mFunctions["movprd"] = MatFuncDef(MATSIG_MAT_N_MOPT, matrixMovPrd);
-    mFunctions["movmed"] = MatFuncDef(MATSIG_MAT_N_MOPT, matrixMovMed);
-    mFunctions["movmin"] = MatFuncDef(MATSIG_MAT_N_MOPT, matrixMovMin);
-    mFunctions["movmax"] = MatFuncDef(MATSIG_MAT_N_MOPT, matrixMovMax);
-    mFunctions["movnorm"] = MatFuncDef(MATSIG_MAT_N_MOPT, matrixMovNorm);
-    mFunctions["movnum"] = MatFuncDef(MATSIG_MAT_N_MOPT, matrixMovNum);
+    mFunctions["movsum"] = MatFuncDef(MATSIG_MAT_N_MAUTO, matrixMovSum);
+    mFunctions["movstd"] = MatFuncDef(MATSIG_MAT_N_MAUTO, matrixMovStd);
+    mFunctions["movavg"] = MatFuncDef(MATSIG_MAT_N_MAUTO, matrixMovAvg);
+    mFunctions["movprd"] = MatFuncDef(MATSIG_MAT_N_MAUTO, matrixMovPrd);
+    mFunctions["movmed"] = MatFuncDef(MATSIG_MAT_N_MAUTO, matrixMovMed);
+    mFunctions["movmin"] = MatFuncDef(MATSIG_MAT_N_MAUTO, matrixMovMin);
+    mFunctions["movmax"] = MatFuncDef(MATSIG_MAT_N_MAUTO, matrixMovMax);
+    mFunctions["movnorm"] = MatFuncDef(MATSIG_MAT_N_MAUTO, matrixMovNorm);
+    mFunctions["movnum"] = MatFuncDef(MATSIG_MAT_N_MAUTO, matrixMovNum);
     mFunctions["zero"] = MatFuncDef(MATSIG_N_MOPT, createZeroesMatrix);
     mFunctions["one"] = MatFuncDef(MATSIG_N_MOPT, createOnesMatrix);
     mFunctions["identity"] = MatFuncDef(MATSIG_N_MOPT, identityMatrix);
@@ -3660,6 +3817,8 @@ static std::map<std::string,MatFuncDef> getMatrixFunctions()
     mFunctions["assemble"] = MatFuncDef(MATSIG_MAT_MAT_MAT, assemble);
     mFunctions["polylength"] = MatFuncDef(MATSIG_MAT, polyLength);
     mFunctions["filter"] = MatFuncDef(MATSIG_MAT_MAT_N, matrixFilter);
+    mFunctions["circshift"] = MatFuncDef(MATSIG_MAT_N_MOPT, circShift);
+    mFunctions["vectshift"] = MatFuncDef(MATSIG_MAT_N_MOPT, vectShift);
 
     // For finding matrix functions
     mFunctions["matfl"] = MatFuncDef(MATSIG_INVALID, invalidMatrixFunction);

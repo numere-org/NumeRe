@@ -68,10 +68,11 @@ class StyledTextFile
         bool useStrings;
 
         void load();
+        void parse(const std::string& fileContents);
         void lex();
 
     public:
-        StyledTextFile(const std::string& fileName);
+        StyledTextFile(const std::string& fileName, const std::string& fileContents = "");
 
         std::string getFileName() const;
 

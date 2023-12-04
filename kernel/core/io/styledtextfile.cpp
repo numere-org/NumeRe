@@ -17,8 +17,42 @@
 ******************************************************************************/
 
 #include <fstream>
+#include <sstream>
 
 #include "styledtextfile.hpp"
+
+/////////////////////////////////////////////////
+/// \brief Splits the contents of a stream into
+/// individual lines while keeping character
+/// positions.
+///
+/// \param stream std::istream&
+/// \param vSplitted std::vector<std::pair<size_t, std::string>>&
+/// \return void
+///
+/////////////////////////////////////////////////
+static void split(std::istream& stream, std::vector<std::pair<size_t, std::string>>& vSplitted)
+{
+    std::string sLine;
+
+    if (!stream.good())
+        return;
+
+    vSplitted.clear();
+
+    // Read the complete stream
+    while (!stream.eof())
+    {
+        std::getline(stream, sLine);
+
+        // Store also the character positions at the
+        // start of the current line
+        if (!vSplitted.size())
+            vSplitted.push_back(std::make_pair(0, sLine));
+        else
+            vSplitted.push_back(std::make_pair(vSplitted.back().first + vSplitted.back().second.length() + 2, sLine));
+    }
+}
 
 
 /////////////////////////////////////////////////
@@ -32,25 +66,25 @@
 void StyledTextFile::load()
 {
     std::ifstream file(sFileName);
-    std::string sLine;
 
-    if (!file.good())
-        return;
+    split(file, vFileContents);
+}
 
-    vFileContents.clear();
 
-    // Read the complete file
-    while (!file.eof())
-    {
-        std::getline(file, sLine);
+/////////////////////////////////////////////////
+/// \brief This method parses the already loaded
+/// file into a memory representation with kept
+/// character positions.
+///
+/// \param fileContents const std::string&
+/// \return void
+///
+/////////////////////////////////////////////////
+void StyledTextFile::parse(const std::string& fileContents)
+{
+    std::istringstream file(fileContents);
 
-        // Store also the character positions at the
-        // start of the current line
-        if (!vFileContents.size())
-            vFileContents.push_back(std::make_pair(0, sLine));
-        else
-            vFileContents.push_back(std::make_pair(vFileContents.back().first + vFileContents.back().second.length() + 2, sLine));
-    }
+    split(file, vFileContents);
 }
 
 
@@ -179,9 +213,12 @@ void StyledTextFile::lex()
 /// and lex the specified file using NumeRe code.
 ///
 /// \param fileName const std::string&
+/// \param fileContents const std::string&
+/// optional parameter containing the already
+/// loaded file contents.
 ///
 /////////////////////////////////////////////////
-StyledTextFile::StyledTextFile(const std::string& fileName) : sFileName(fileName)
+StyledTextFile::StyledTextFile(const std::string& fileName, const std::string& fileContents) : sFileName(fileName)
 {
     sCommentLine = "##";
     sDocCommentLine = "##!";
@@ -191,7 +228,13 @@ StyledTextFile::StyledTextFile(const std::string& fileName) : sFileName(fileName
     sStringMarks = "\"";
     useStrings = true;
 
-    load();
+    // Either parse the passed file contents or
+    // load the file contents directly from file.
+    if (fileContents.length())
+        parse(fileContents);
+    else
+        load();
+
     lex();
 }
 
