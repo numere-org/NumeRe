@@ -541,32 +541,65 @@ namespace NumeRe
             /// \return std::vector<std::string>
             ///
             /////////////////////////////////////////////////
-            std::vector<std::string> tokenize(std::string sString, const std::string& sSeparators, bool skipEmptyTokens = false)
+            std::vector<std::string> tokenize(std::string sString, const std::string &sSeparators, bool skipEmptyTokens = false)
             {
                 std::vector<std::string> vTokens;
+                // Initialize index variables
+                size_t iStart = 0;
+                size_t iEnd = 0;
+                // Initialize variable for checking if inside quotes
+                bool inQuotation = false;
 
-                // As long as the string has a length
-                while (sString.length())
+                // Iterate over string line
+                for (size_t i = 0; i < sString.length(); ++i)
                 {
-                    // Store the string until the first separator character
-                    vTokens.push_back(sString.substr(0, sString.find_first_of(sSeparators)));
+                    char c = sString[i];
 
-                    // If empty tokens shall not be stored, remove the last
-                    // token again, if it is empty
-                    if (skipEmptyTokens && !vTokens.back().length())
-                        vTokens.pop_back();
+                    if (c == '"')
+                    {
+                        // Encountered quote, toggle inQuotation
+                        inQuotation = !inQuotation;
+                    }
+                    else if (sSeparators.find(c) != std::string::npos && !inQuotation)
+                    {
+                        // Found a separator outside string, add to Tokens vector
+                        // Exclude entry and ending string quotes
 
-                    // Erase the contents of the line including the first
-                    // separator character
-                    if (sString.find_first_of(sSeparators) != std::string::npos)
-                        sString.erase(0, sString.find_first_of(sSeparators)+1);
-                    else
-                        break;
+                        vTokens.push_back(sString.substr(iStart + 1, iEnd - iStart - 1));
+                        iStart = i + 1; // Update Start index for next token
+                    }
+
+                    // Update end index for current token
+                    iEnd = i + 1;
                 }
 
+                // Add the last token or one token if no separator found
+                vTokens.push_back(sString.substr(iStart, iEnd - iStart));
+
+                // // Remove the double quotes escape character with find and replace
+                // // operations
+                // //? What about edge case of three double quotes, where two
+                // //? double quotes is intended
+                // for (std::string& token : vTokens)
+                // {
+                //     size_t found = token.find('\"\"');
+                //     while (found != std::string::npos)
+                //     {
+                //         token.replace(found, 2, '\"');
+                //         found = token.find('\"\"', found + 1);
+                //     }
+                // }
+                // If empty Tokens are not being stored, remove all empty tokens
+                // from the vector
+                if (skipEmptyTokens)
+                {
+                    vTokens.erase(std::remove_if(vTokens.begin(), vTokens.end(),
+                                                 [](const std::string &token)
+                                                 { return token.empty(); }),
+                                  vTokens.end());
+                }
                 return vTokens;
             }
-
             /////////////////////////////////////////////////
             /// \brief This method template can be used to
             /// write a numeric value to file in binary mode.
