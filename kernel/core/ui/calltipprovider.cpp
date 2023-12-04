@@ -797,6 +797,9 @@ namespace NumeRe
     {
         CallTip _cTip;
 
+        if (sToken.front() != '_')
+            sToken.insert(0, 1, '_');
+
         if (sToken == "_G")
             _cTip.sDefinition = _lang.get("GUI_EDITOR_CALLTIP_CONST_GRAV_*");
         else
