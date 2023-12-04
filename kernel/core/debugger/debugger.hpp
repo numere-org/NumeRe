@@ -121,6 +121,7 @@ class NumeReDebugger
 
         void pushStackItem(const std::string& sStackItem, Procedure* _currentProcedure);
         void popStackItem();
+        Procedure* getCurrentProcedure();
 
         void gatherInformations(ProcedureVarFactory* _varFactory,
                                 const std::string& _sErraticCommand, const std::string& _sErraticModule, size_t _nLineNumber);

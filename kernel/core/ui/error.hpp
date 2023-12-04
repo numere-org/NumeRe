@@ -121,6 +121,7 @@ class SyntaxError
             INSTALL_CMD_FOUND=1800,
             INSUFFICIENT_NUMERE_VERSION=1900,
             INTERNAL_RESAMPLER_ERROR,
+            INVALID_AXIS,
             INVALID_CACHE_NAME=2000,
             INVALID_DATA_ACCESS,
             INVALID_ELEMENT,

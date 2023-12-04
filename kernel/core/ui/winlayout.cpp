@@ -241,16 +241,36 @@ static void parseLayoutCommand(const std::string& sLayoutCommand, tinyxml2::XMLE
 /////////////////////////////////////////////////
 static std::string parseLayoutScript(std::string& sLayoutScript, tinyxml2::XMLDocument* layout)
 {
-    // Ensure that the file name of the layout
-    // script is valid
-    sLayoutScript = NumeReKernel::getInstance()->getScript().ValidFileName(sLayoutScript, ".nlyt");
+    bool isFile = true;
+    std::string sThisFolder;
+
+    // Detect, whether sLayoutScript actually is a "script"
+    // and not a string-encoded script content
+    if (sLayoutScript.find("layout") != std::string::npos
+        && sLayoutScript.find("endlayout", sLayoutScript.find("layout")+7) != std::string::npos)
+    {
+        // This is a string-encoded script content
+        isFile = false;
+        NumeReKernel* instance = NumeReKernel::getInstance();
+
+        if (instance->getDebugger().getCurrentProcedure())
+            sThisFolder = instance->getSettings().getProcPath() + "/" + instance->getDebugger().getCurrentProcedure()->getThisNameSpace();
+        else
+            sThisFolder = instance->getSettings().getScriptPath();
+    }
+    else
+    {
+        // Ensure that the file name of the layout
+        // script is valid
+        sLayoutScript = NumeReKernel::getInstance()->getScript().ValidFileName(sLayoutScript, ".nlyt");
+        sThisFolder = sLayoutScript.substr(0, sLayoutScript.rfind('/'));
+    }
 
     // Load the layoutscript as a StyledTextFile
-    StyledTextFile layoutScript(sLayoutScript);
+    StyledTextFile layoutScript(isFile ? sLayoutScript : "", isFile ? "" : sLayoutScript);
     SymDefManager _symDefs;
     std::unique_ptr<Includer> _includer; // Pointer-based, because it might not be available each time
 
-    std::string sFolderName = sLayoutScript.substr(0, sLayoutScript.rfind('/'));
     std::string sOnOpenEvent;
 
     // Nothing read?
@@ -290,7 +310,7 @@ static std::string parseLayoutScript(std::string& sLayoutScript, tinyxml2::XMLDo
             // a new includer to resolve that
             if (Includer::is_including_syntax(line) && !_includer)
             {
-                _includer.reset(new Includer(line, sLayoutScript.substr(0, sLayoutScript.rfind('/'))));
+                _includer.reset(new Includer(line, sThisFolder));
                 continue;
             }
         }
@@ -317,7 +337,7 @@ static std::string parseLayoutScript(std::string& sLayoutScript, tinyxml2::XMLDo
                 // Start of the layout block
                 currentGroup.push(layout->NewElement("layout"));
                 layout->InsertFirstChild(currentGroup.top());
-                replaceAll(line, "<this>", sFolderName.c_str());
+                replaceAll(line, "<this>", sThisFolder.c_str());
 
                 if (findParameter(line, "size", '='))
                     currentGroup.top()->SetAttribute("size", parseNumOpt(line, findParameter(line, "size", '=')+4).c_str());
@@ -335,7 +355,7 @@ static std::string parseLayoutScript(std::string& sLayoutScript, tinyxml2::XMLDo
                     currentGroup.top()->SetAttribute("statustext", parseStringOpt(line, findParameter(line, "statustext", '=')+10).c_str());
 
                 if (findParameter(line, "onopen", '='))
-                    sOnOpenEvent = parseEventOpt(line, findParameter(line, "onopen", '=')+6, sFolderName);
+                    sOnOpenEvent = parseEventOpt(line, findParameter(line, "onopen", '=')+6, sThisFolder);
             }
             else if (_mMatch.sString == "endlayout")
                 break;
@@ -376,7 +396,7 @@ static std::string parseLayoutScript(std::string& sLayoutScript, tinyxml2::XMLDo
                 currentGroup.top()->InsertEndChild(currentChild);
                 std::string sLayoutCommand = line.substr(_mMatch.nPos+_mMatch.sString.length());
                 std::string sExpr = sLayoutCommand.substr(0, std::min(sLayoutCommand.find("-set"), sLayoutCommand.find("--")));
-                replaceAll(sExpr, "<this>", sFolderName.c_str());
+                replaceAll(sExpr, "<this>", sThisFolder.c_str());
                 StripSpaces(sExpr);
                 currentChild->SetText(sExpr.c_str());
             }
@@ -393,7 +413,7 @@ static std::string parseLayoutScript(std::string& sLayoutScript, tinyxml2::XMLDo
                 // Parse the parameters and the
                 // command expression and insert
                 // it
-                parseLayoutCommand(line.substr(_mMatch.nPos+_mMatch.sString.length()), currentChild, sFolderName);
+                parseLayoutCommand(line.substr(_mMatch.nPos+_mMatch.sString.length()), currentChild, sThisFolder);
             }
         }
     }

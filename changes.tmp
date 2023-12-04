@@ -1,3 +1,4 @@
+Fixed	The Table.convert() function has been enhanced to interpret various number formats, accommodating both EU and US decimal separators, as well as space, EU, and US-based thousand separators.
 Added	It is now possible to pass plotting options to "hist" and "hist2d" directly. Due to name conflicts, we had to rename the previously "grid" option to "asgrid".
 New	The new flow control command "leave" allows jumping out of nested loops completely without the need of unnecessary complex "if-else" checks and boolean flags.
 Cleaned	The editor and the terminal will now only provide method autocompletion with methods fitting to the variable type.
@@ -14,7 +15,8 @@ Added	The functions "to_utf8()" and "to_ansi()" can be used to convert to and fr
 Added	Folding has been enabled for LaTeX files.
 Added	The terminal now also proposed global variables for auto completion.
 Applied	The revision of large files won't be created by calculating a DIFF. Instead, the whole file content is saved.
-Fixed	Face() and Facev() functions can be made transparent
+Applied	It's now possible to pipe a window layout encoded as string directly into the "window" command.
+Fixed   Face() and Facev() functions can be made transparent
 Added	Additional handler for interacting with custom windows were added: changing focus, selections, maximize, iconize, restore, hide and unhide.
 Cleaned	The string arrays of "dropdown" and "combobox" can now be changed using the "window ID -set label=VALS item=ID" command.
 Fixed	Using "str.len" in the search bar yielded an uncatched exception message. This was resolved.
@@ -67,6 +69,7 @@ Added	The plot option margin=MARGIN can be used to control the plot margin size.
 Cleaned	The autocompletion feature does not interfere with any of the editor tooltips any more.
 Applied	Date-time columns are now automatically wide enough for their contents.
 Fixed	Plot marks now also scale with their corresponding line sizes.
+Added	Added functions to perform circular and row/column-wise shifts of all elements in a matrix.
 Added	Added feature of autowrapping for comments if line indicator is active
 New	You can now select the fundamental data type of a value column (some files are setting that automatically). Beware that only two data types support complex values: "value" (i.e. "value.cf64") and "value.cf32".
 Cleaned	"imread" reads images as "value.ui8" data.
