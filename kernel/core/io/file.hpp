@@ -541,7 +541,7 @@ namespace NumeRe
             /// \return std::vector<std::string>
             ///
             /////////////////////////////////////////////////
-            std::vector<std::string> tokenize(std::string sString, const std::string &sSeparators, bool skipEmptyTokens = false)
+            std::vector<std::string> tokenize(std::string sString, const std::string& sSeparators, bool skipEmptyTokens = false)
             {
                 std::vector<std::string> vTokens;
                 // Initialize index variables
