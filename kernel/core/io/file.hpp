@@ -528,6 +528,13 @@ namespace NumeRe
                 return vTextFile;
             }
 
+            enum TokenizerOptions
+            {
+                DEFAULT = 0x0,
+                SKIP_EMPTY = 0x1,
+                CONSIDER_QMARKS = 0x2
+            };
+
             /////////////////////////////////////////////////
             /// \brief This method may be used to separater a
             /// line into multiple tokens using a set of
@@ -535,63 +542,60 @@ namespace NumeRe
             /// be skipped, then only tokens with a non-zero
             /// length are stored.
             ///
-            /// \param sString std::string
+            /// \param sString const std::string&
             /// \param sSeparators const std::string&
-            /// \param skipEmptyTokens bool
+            /// \param options int
             /// \return std::vector<std::string>
             ///
             /////////////////////////////////////////////////
-            std::vector<std::string> tokenize(std::string sString, const std::string& sSeparators, bool skipEmptyTokens = false)
+            std::vector<std::string> tokenize(const std::string& sString, const std::string& sSeparators, int options = DEFAULT)
             {
                 std::vector<std::string> vTokens;
                 // Initialize index variables
                 size_t iStart = 0;
-                size_t iEnd = 0;
+
                 // Initialize variable for checking if inside quotes
                 bool inQuotation = false;
+                bool considerQMarks = options & CONSIDER_QMARKS;
 
                 // Iterate over string line
                 for (size_t i = 0; i < sString.length(); ++i)
                 {
                     char c = sString[i];
 
-                    if (c == '"')
+                    if (c == '"' && considerQMarks)
                     {
                         // Encountered quote, toggle inQuotation
                         inQuotation = !inQuotation;
                     }
-                    else if (sSeparators.find(c) != std::string::npos && !inQuotation)
+                    else if (sSeparators.find(c) != std::string::npos && (!inQuotation || !considerQMarks))
                     {
                         // Found a separator outside string, add to Tokens vector
                         // Exclude entry and ending string quotes
+                        if (considerQMarks && sString[iStart] == '"' && sString[i-1] == '"')
+                        {
+                            vTokens.push_back(sString.substr(iStart+1, i - iStart - 2));
+                            replaceAll(vTokens.back(), "\"\"", "\"");
+                        }
+                        else
+                            vTokens.push_back(sString.substr(iStart, i - iStart));
 
-                        vTokens.push_back(sString.substr(iStart + 1, iEnd - iStart - 1));
                         iStart = i + 1; // Update Start index for next token
                     }
-
-                    // Update end index for current token
-                    iEnd = i + 1;
                 }
 
                 // Add the last token or one token if no separator found
-                vTokens.push_back(sString.substr(iStart, iEnd - iStart));
+                if (considerQMarks && sString[iStart] == '"' && sString.back() == '"')
+                {
+                    vTokens.push_back(sString.substr(iStart+1, sString.length() - iStart - 2));
+                    replaceAll(vTokens.back(), "\"\"", "\"");
+                }
+                else
+                    vTokens.push_back(sString.substr(iStart));
 
-                // // Remove the double quotes escape character with find and replace
-                // // operations
-                // //? What about edge case of three double quotes, where two
-                // //? double quotes is intended
-                // for (std::string& token : vTokens)
-                // {
-                //     size_t found = token.find('\"\"');
-                //     while (found != std::string::npos)
-                //     {
-                //         token.replace(found, 2, '\"');
-                //         found = token.find('\"\"', found + 1);
-                //     }
-                // }
                 // If empty Tokens are not being stored, remove all empty tokens
                 // from the vector
-                if (skipEmptyTokens)
+                if (options & SKIP_EMPTY)
                 {
                     vTokens.erase(std::remove_if(vTokens.begin(), vTokens.end(),
                                                  [](const std::string &token)

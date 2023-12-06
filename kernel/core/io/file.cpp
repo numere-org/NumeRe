@@ -167,7 +167,7 @@ namespace NumeRe
 		// Determine now, how many columns are found in the file
 		for (size_t i = 0; i < vFileContents.size(); i++)
         {
-            size_t elem = tokenize(vFileContents[i], " ", true).size();
+            size_t elem = tokenize(vFileContents[i], " ", GenericFile::SKIP_EMPTY).size();
 
             if (elem > nCols)
                 nCols = elem;
@@ -200,7 +200,7 @@ namespace NumeRe
             }
 
             // Tokenize the current line
-            vector<string> vLine = tokenize(vFileContents[i], " ", true);
+            vector<string> vLine = tokenize(vFileContents[i], " ", GenericFile::SKIP_EMPTY);
 
             // Ensure that the number of columns is matching
             // If it does not match, then we did not determine
@@ -462,7 +462,7 @@ namespace NumeRe
                         // Considering the comment character, which is the
                         // first token, does the number of elements match to
                         // the number of columns?
-                        if (nCols + 1 == tokenize(vFileContents[i], " ", true).size())
+                        if (nCols + 1 == tokenize(vFileContents[i], " ", GenericFile::SKIP_EMPTY).size())
                             _nHeadline = 1;
                     }
 
@@ -471,7 +471,7 @@ namespace NumeRe
                 else if (!isNumeric(vFileContents[i]))
                 {
                     // Simply a non-numeric line
-                    if (nCols == tokenize(vFileContents[i], " ", true).size())
+                    if (nCols == tokenize(vFileContents[i], " ", GenericFile::SKIP_EMPTY).size())
                         _nHeadline = 1;
                 }
             }
@@ -510,7 +510,7 @@ namespace NumeRe
                             // Considering the comment character, which is the
                             // first token, does the number of elements match to
                             // the number of columns?
-                            if (tokenize(vFileContents[i-1], " ", true).size() <= nCols+1)
+                            if (tokenize(vFileContents[i-1], " ", GenericFile::SKIP_EMPTY).size() <= nCols+1)
                             {
                                 _nHeadline = i;
                                 break;
@@ -542,7 +542,7 @@ namespace NumeRe
                             // Considering the comment character, which is the
                             // first token, does the number of elements match to
                             // the number of columns?
-                            if (tokenize(vFileContents[i-2], " ", true).size() <= nCols+1)
+                            if (tokenize(vFileContents[i-2], " ", GenericFile::SKIP_EMPTY).size() <= nCols+1)
                                 _nHeadline = i-1;
                         }
                     }
@@ -571,7 +571,7 @@ namespace NumeRe
                             // Considering the comment character, which is the
                             // first token, does the number of elements match to
                             // the number of columns?
-                            if (tokenize(vFileContents[i-1], " ", true).size() == nCols+1)
+                            if (tokenize(vFileContents[i-1], " ", GenericFile::SKIP_EMPTY).size() == nCols+1)
                             {
                                 _nHeadline = i;
                                 break;
@@ -603,7 +603,7 @@ namespace NumeRe
                             // Considering the comment character, which is the
                             // first token, does the number of elements match to
                             // the number of columns?
-                            if (tokenize(vFileContents[i-2], " ", true).size() == nCols+1)
+                            if (tokenize(vFileContents[i-2], " ", GenericFile::SKIP_EMPTY).size() == nCols+1)
                                 _nHeadline = i-1;
                         }
                     }
@@ -717,7 +717,7 @@ namespace NumeRe
                                 break;
 
                             // Tokenize the current line
-                            vector<string> vLine = tokenize(vFileContents[k], " ", true);
+                            vector<string> vLine = tokenize(vFileContents[k], " ", GenericFile::SKIP_EMPTY);
 
                             // Remove the comment character from the list
                             // of tokens
@@ -2045,7 +2045,7 @@ namespace NumeRe
         {
             // Tokenize the current line using the
             // separator character
-            vector<string> vTokens = tokenize(vFileData[0], string(1, cSep));
+            vector<string> vTokens = tokenize(vFileData[0], string(1, cSep), GenericFile::CONSIDER_QMARKS);
 
             for (size_t i = 0; i < vTokens.size(); i++)
             {
@@ -2126,7 +2126,7 @@ namespace NumeRe
                 continue;
 
             // Tokenize the current line
-            vector<string> vTokens = tokenize(vFileData[i], string(1, cSep));
+            vector<string> vTokens = tokenize(vFileData[i], string(1, cSep), GenericFile::CONSIDER_QMARKS);
 
             // Decode each token
             for (size_t j = 0; j < vTokens.size(); j++)
@@ -2171,7 +2171,17 @@ namespace NumeRe
                     if (fileData->at(j)->m_type == TableColumn::TYPE_VALUE)
                         fFileStream << toString(fileData->at(j)->getValue(i), DEFAULT_PRECISION);
                     else
-                        fFileStream << fileData->at(j)->getValueAsInternalString(i);
+                    {
+                        std::string sValue = fileData->at(j)->getValueAsInternalString(i);
+
+                        if (sValue.find(',') != std::string::npos)
+                        {
+                            replaceAll(sValue, "\"", "\"\"");
+                            fFileStream << "\"" << sValue << "\"";
+                        }
+                        else
+                            fFileStream << sValue;
+                    }
                 }
 
                 fFileStream << ",";
