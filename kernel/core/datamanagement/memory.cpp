@@ -175,9 +175,6 @@ Memory& Memory::operator=(const Memory& other)
 
         switch (other.memArray[i]->m_type)
         {
-            case TableColumn::TYPE_VALUE:
-                memArray[i].reset(new ValueColumn);
-                break;
             case TableColumn::TYPE_DATETIME:
                 memArray[i].reset(new DateTimeColumn);
                 break;
@@ -198,6 +195,11 @@ Memory& Memory::operator=(const Memory& other)
             case TableColumn::STRINGLIKE:
             case TableColumn::TYPE_MIXED:
                 break;
+            default:
+            {
+                if (TableColumn::isValueType(other.memArray[i]->m_type))
+                    memArray[i].reset(createValueTypeColumn(other.memArray[i]->m_type));
+            }
         }
 
         memArray[i]->assign(other.memArray[i].get());
@@ -983,6 +985,47 @@ bool Memory::convertColumns(const VectorIndex& _vCol, const std::string& _sType)
 
 
 /////////////////////////////////////////////////
+/// \brief This member function tries to convert
+/// the selected columns to the target column
+/// type, if they are empty.
+///
+/// \param _vCol const VectorIndex&
+/// \param _sType const std::string&
+/// \return bool
+///
+/////////////////////////////////////////////////
+bool Memory::convertEmptyColumns(const VectorIndex& _vCol, const std::string& _sType)
+{
+    TableColumn::ColumnType _type = TableColumn::stringToType(_sType);
+
+    if (_type == TableColumn::TYPE_NONE)
+        return false;
+    else if (_type == TableColumn::TYPE_MIXED)
+        _type = TableColumn::TYPE_NONE; // Enable autoconversions
+
+    _vCol.setOpenEndIndex(memArray.size()-1);
+
+    bool success = true;
+
+    for (size_t i = 0; i < _vCol.size(); i++)
+    {
+        if (_vCol[i] < 0)
+            continue;
+        else if (_vCol[i] >= (int)memArray.size())
+            memArray.resize(_vCol[i]+1);
+
+        convert_if_empty(memArray[_vCol[i]], _vCol[i], _type);
+    }
+
+    // If successful: mark the whole table as modified
+    if (success)
+        m_meta.modify();
+
+    return success;
+}
+
+
+/////////////////////////////////////////////////
 /// \brief Updates the categories of a
 /// categorical column and switches the column
 /// type if necessary.
@@ -1384,7 +1427,9 @@ void Memory::writeData(Indices& _idx, mu::value_type* _dData, size_t _nNum)
             {
                 if (!i
                     && rewriteColumn
-                    && (memArray[_idx.col[j]]->m_type != TableColumn::TYPE_DATETIME || !mu::isreal(_dData, _nNum)))
+                    && ((memArray[_idx.col[j]]->m_type != TableColumn::TYPE_DATETIME
+                         && !TableColumn::isValueType(memArray[_idx.col[j]]->m_type))
+                        || !mu::isreal(_dData, _nNum)))
                     convert_for_overwrite(memArray[_idx.col[j]], _idx.col[j], TableColumn::TYPE_VALUE);
 
                 if (_nNum > i)
@@ -1440,7 +1485,9 @@ void Memory::writeSingletonData(Indices& _idx, const mu::value_type& _dData)
             if (!i
                 && rewriteColumn
                 && (int)memArray.size() > _idx.col[j]
-                && (_dData.imag() || memArray[_idx.col[j]]->m_type != TableColumn::TYPE_DATETIME))
+                && (_dData.imag()
+                    || (memArray[_idx.col[j]]->m_type != TableColumn::TYPE_DATETIME
+                        && !TableColumn::isValueType(memArray[_idx.col[j]]->m_type))))
                 convert_for_overwrite(memArray[_idx.col[j]], _idx.col[j], TableColumn::TYPE_VALUE);
 
             writeData(_idx.row[i], _idx.col[j], _dData);
@@ -1915,8 +1962,8 @@ void Memory::insertCopiedTable(NumeRe::Table _table, const VectorIndex& lines, c
             // Do we have to create a new column?
             if (!memArray[cols[j]])
             {
-                if (tabCol->m_type == TableColumn::TYPE_VALUE)
-                    memArray[cols[j]].reset(new ValueColumn);
+                if (TableColumn::isValueType(tabCol->m_type))
+                    memArray[cols[j]].reset(createValueTypeColumn(tabCol->m_type));
                 else if (tabCol->m_type == TableColumn::TYPE_DATETIME)
                     memArray[cols[j]].reset(new DateTimeColumn);
                 else if (tabCol->m_type == TableColumn::TYPE_STRING)
@@ -4579,8 +4626,17 @@ bool Memory::smooth(VectorIndex _vLine, VectorIndex _vCol, NumeRe::FilterSetting
         bUseAppendedZeroes = true;
 
     // Force the index ranges
-    _vLine.setRange(0, getLines()-1);
     _vCol.setRange(0, getCols()-1);
+
+    size_t nRowCount = getLines();
+
+    if (bUseAppendedZeroes)
+    {
+        std::vector<double> sizes = mu::real(size(_vCol, AppDir::COLS));
+        nRowCount = *std::max_element(sizes.begin(), sizes.end());
+    }
+
+    _vLine.setRange(0, nRowCount-1);
 
     // Change the predefined application directions, if it's needed
     if ((Direction == ALL || Direction == GRID) && _vLine.size() < 4)

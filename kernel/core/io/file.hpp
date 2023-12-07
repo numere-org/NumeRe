@@ -1477,7 +1477,7 @@ namespace NumeRe
             int32_t versionMinor;
             int32_t versionBuild;
             const short fileSpecVersionMajor = 4;
-            const short fileSpecVersionMinor = 0;
+            const short fileSpecVersionMinor = 1;
             float fileVersionRead;
             size_t checkPos;
             size_t checkStart;
