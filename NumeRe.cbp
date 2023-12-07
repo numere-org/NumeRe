@@ -208,6 +208,8 @@
 		<Unit filename="common/recycler.hpp" />
 		<Unit filename="common/vcsmanager.cpp" />
 		<Unit filename="common/vcsmanager.hpp" />
+		<Unit filename="externals/QR-Code-generator/cpp/qrcodegen.cpp" />
+		<Unit filename="externals/QR-Code-generator/cpp/qrcodegen.hpp" />
 		<Unit filename="externals/date/include/date/chrono_io.h" />
 		<Unit filename="externals/date/include/date/date.h" />
 		<Unit filename="externals/date/include/date/ios.h" />
@@ -430,6 +432,8 @@
 		<Unit filename="kernel/core/io/logger.hpp" />
 		<Unit filename="kernel/core/io/output.cpp" />
 		<Unit filename="kernel/core/io/output.hpp" />
+		<Unit filename="kernel/core/io/qrcode.cpp" />
+		<Unit filename="kernel/core/io/qrcode.hpp" />
 		<Unit filename="kernel/core/io/styledtextfile.cpp" />
 		<Unit filename="kernel/core/io/styledtextfile.hpp" />
 		<Unit filename="kernel/core/io/unzip.cpp" />

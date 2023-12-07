@@ -31,6 +31,7 @@
 #include "io/logger.hpp"
 #include "utils/tools.hpp"
 #include "io/archive.hpp"
+#include "io/qrcode.hpp"
 
 #include "commandlineparser.hpp"
 
@@ -5211,6 +5212,23 @@ static CommandReturnValues cmd_url(string& sCmd)
 
 /////////////////////////////////////////////////
 /// \brief This static function implements the
+/// "qrcode" command.
+///
+/// \param sCmd string&
+/// \return CommandReturnValues
+///
+/////////////////////////////////////////////////
+static CommandReturnValues cmd_qrcode(std::string& sCmd)
+{
+    CommandLineParser cmdParser(sCmd, "qrcode", CommandLineParser::CMD_EXPR_set_PAR);
+    createQrCode(cmdParser);
+
+    return COMMAND_PROCESSED;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This static function implements the
 /// "include" command.
 ///
 /// \param sCmd string&
@@ -5314,6 +5332,7 @@ static std::map<std::string, CommandFunc> getCommandFunctions()
     mCommandFuncMap["plotcompose"] = cmd_plotting;
     mCommandFuncMap["print"] = cmd_print;
     mCommandFuncMap["progress"] = cmd_progress;
+    mCommandFuncMap["qrcode"] = cmd_qrcode;
     mCommandFuncMap["quit"] = cmd_quit;
     mCommandFuncMap["random"] = cmd_random;
     mCommandFuncMap["redef"] = cmd_redefine;
