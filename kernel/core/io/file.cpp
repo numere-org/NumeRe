@@ -1988,6 +1988,27 @@ namespace NumeRe
 
 
     /////////////////////////////////////////////////
+    /// \brief Simple helper function to count the
+    /// quotation marks in a line of text.
+    ///
+    /// \param sLine const std::string&
+    /// \return size_t
+    ///
+    /////////////////////////////////////////////////
+    static size_t countQmarks(const std::string& sLine)
+    {
+        size_t qmarks = 0;
+
+        for (size_t i = 0; i < sLine.length(); i++)
+        {
+            qmarks += (sLine[i] == '"');
+        }
+
+        return qmarks;
+    }
+
+
+    /////////////////////////////////////////////////
     /// \brief This member function is used to read
     /// the target file to memory.
     ///
@@ -2009,6 +2030,23 @@ namespace NumeRe
 		// get the number of lines available in
 		// the data file
 		vector<string> vFileData = readTextFile(true);
+
+		// Combine all cells, which are spread over
+		// multiple lines into a single row by checking
+		// for unterminated quotation marks
+		for (size_t i = 0; i < vFileData.size(); i++)
+        {
+            while (countQmarks(vFileData[i]) % 2 && i+1 < vFileData.size())
+            {
+                // Insert a linebreak, if there's actual text to be separated
+                if (vFileData[i].back() != '"' && vFileData[i+1].front() != '"')
+                    vFileData[i] += "\n";
+
+                vFileData[i] += vFileData[i+1];
+                vFileData.erase(vFileData.begin()+i+1);
+            }
+        }
+
 		nLine = vFileData.size();
 
 		// Ensure that there is at least one
@@ -2174,7 +2212,7 @@ namespace NumeRe
                     {
                         std::string sValue = fileData->at(j)->getValueAsInternalString(i);
 
-                        if (sValue.find(',') != std::string::npos)
+                        if (sValue.find_first_of("\n\",") != std::string::npos)
                         {
                             replaceAll(sValue, "\"", "\"\"");
                             fFileStream << "\"" << sValue << "\"";
@@ -2339,16 +2377,20 @@ namespace NumeRe
         for (size_t i = 0; i < vTextData.size(); i++)
         {
             nCol = 1;
+            size_t qmarks = 0;
 
             for (size_t j = 0; j < vTextData[i].length(); j++)
             {
-                if (vTextData[i][j] == cSep)
+                if (vTextData[i][j] == '"')
+                    qmarks++;
+
+                if (!(qmarks % 2) && vTextData[i][j] == cSep)
                     nCol++;
             }
 
             if (nCols < nCol)
                 nCols = nCol;
-            else if (abs(nCol - nCols) > 1)
+            else if (abs(nCol - nCols) > std::max(0.1*std::max(nCol, nCols), 1.0))
             {
                 if (cSep == ',')
                     cSep = ';';
