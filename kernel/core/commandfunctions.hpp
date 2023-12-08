@@ -1428,7 +1428,7 @@ static void listDeclaredVariables(Parser& _parser, const Settings& _option, cons
 /////////////////////////////////////////////////
 static void listConstants(const Parser& _parser, const Settings& _option)
 {
-    const int nUnits = 20;
+    const int nUnits = 21;
     // Define a set of units including a simple
     // heuristic, which defines, which constant
     // needs which unit
@@ -1439,6 +1439,7 @@ static void listConstants(const Parser& _parser, const Settings& _option)
         "_coul_norm[V m/(A s)]",
         "_c[m/s]",
         "_elek[A s/(V m)]",
+        "_elec[A s/(V m)]",
         "_elem[A s]",
         "_gamma[1/(T s)]",
         "_g[m/s^2]",

@@ -3726,11 +3726,11 @@ bool readAudioFile(CommandLineParser& cmdParser)
     {
         std::unique_ptr<Audio::File> audiofile(Audio::getAudioFileByType(sAudioFile));
 
-        if (!audiofile.get() || !audiofile.get()->isValid())
+        if (!audiofile || !audiofile->isValid())
             return false;
 
-        size_t nLen = audiofile.get()->getLength();
-        size_t nChannels = audiofile.get()->getChannels();
+        size_t nLen = audiofile->getLength();
+        size_t nChannels = audiofile->getChannels();
 
         // Try to read the entire file
         _data.resizeTable(nChannels > 1 && _targetIdx.col.size() > 1 ? _targetIdx.col.subidx(0, 2).max()+1 : _targetIdx.col.front()+1,
@@ -3741,13 +3741,17 @@ bool readAudioFile(CommandLineParser& cmdParser)
 
         // Write the last row for preallocation
         _table->writeData(rowmax, _targetIdx.col.front(), 0.0);
+        _table->convertColumns(_targetIdx.col.subidx(0, 1), "value.f32");
 
         if (nChannels > 1 && _targetIdx.col.size() > 1)
+        {
             _table->writeData(rowmax, _targetIdx.col[1], 0.0);
+            _table->convertColumns(_targetIdx.col.subidx(1, 1), "value.f32");
+        }
 
         for (size_t i = 0; i < nLen; i++)
         {
-            Audio::Sample sample = audiofile.get()->read();
+            Audio::Sample sample = audiofile->read();
 
             if (_targetIdx.row.size() <= i)
                 break;
@@ -3773,13 +3777,13 @@ bool readAudioFile(CommandLineParser& cmdParser)
     {
         std::unique_ptr<Audio::File> audiofile(Audio::getAudioFileByType(sAudioFile));
 
-        if (!audiofile.get() || !audiofile.get()->isValid())
+        if (!audiofile || !audiofile->isValid())
             return false;
 
         // Only read the metadata
-        size_t nLen = audiofile.get()->getLength();
-        size_t nChannels = audiofile.get()->getChannels();
-        size_t nSampleRate = audiofile.get()->getSampleRate();
+        size_t nLen = audiofile->getLength();
+        size_t nChannels = audiofile->getChannels();
+        size_t nSampleRate = audiofile->getSampleRate();
 
         // Create the metadata
         std::vector<mu::value_type> vMetaData = {nLen, nChannels, nSampleRate, nLen / (double)nSampleRate};
@@ -3815,19 +3819,19 @@ bool seekInAudioFile(CommandLineParser& cmdParser)
     g_logger.info("Load audiofile '" + sAudioFile + "'.");
     std::unique_ptr<Audio::File> audiofile(Audio::getAudioFileByType(sAudioFile));
 
-    if (!audiofile.get() || !audiofile.get()->isValid())
+    if (!audiofile || !audiofile->isValid())
         return false;
 
-    size_t nLen = audiofile.get()->getLength();
-    size_t nChannels = audiofile.get()->getChannels();
+    size_t nLen = audiofile->getLength();
+    size_t nChannels = audiofile->getChannels();
 
-    if (!audiofile.get()->isSeekable() || std::max(vSeekIndices[0].real()-1, 0.0) >= nLen)
+    if (!audiofile->isSeekable() || std::max(vSeekIndices[0].real()-1, 0.0) >= nLen)
         return false;
 
     std::unique_ptr<Audio::SeekableFile> seekable(static_cast<Audio::SeekableFile*>(audiofile.release()));
 
-    seekable.get()->setPosition(std::max(vSeekIndices[0].real()-1, 0.0));
-    nLen = std::min(nLen - seekable.get()->getPosition(), (size_t)(std::max(vSeekIndices[1].real(), 0.0)));
+    seekable->setPosition(std::max(vSeekIndices[0].real()-1, 0.0));
+    nLen = std::min(nLen - seekable->getPosition(), (size_t)(std::max(vSeekIndices[1].real(), 0.0)));
 
     // Try to read the desired length from the file
     _data.resizeTable(nChannels > 1 && _targetIdx.col.size() > 1 ? _targetIdx.col.subidx(0, 2).max()+1 : _targetIdx.col.front()+1,
@@ -3838,13 +3842,17 @@ bool seekInAudioFile(CommandLineParser& cmdParser)
 
     // Write the last row for pre-allocation
     _table->writeData(rowmax, _targetIdx.col.front(), 0.0);
+    _table->convertColumns(_targetIdx.col.subidx(0, 1), "value.f32");
 
     if (nChannels > 1 && _targetIdx.col.size() > 1)
+    {
         _table->writeData(rowmax, _targetIdx.col[1], 0.0);
+        _table->convertColumns(_targetIdx.col.subidx(1, 1), "value.f32");
+    }
 
     for (size_t i = 0; i < nLen; i++)
     {
-        Audio::Sample sample = seekable.get()->read();
+        Audio::Sample sample = seekable->read();
 
         if (_targetIdx.row.size() <= i)
             break;

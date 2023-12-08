@@ -17,9 +17,7 @@
 ******************************************************************************/
 
 #include "tablecolumnimpl.hpp"
-#include "../utils/tools.hpp"
-#include "../ui/error.hpp"
-#include "../../kernel.hpp"
+
 
 
 
@@ -88,418 +86,6 @@ static ConvertibleType detectCommonType(const std::vector<std::string>& vVals, i
 
     return convType;
 }
-
-
-
-/////////////////////////////////////////////////
-/// \brief Returns the selected value as a string
-/// or a default value, if it does not exist.
-///
-/// \param elem size_t
-/// \return std::string
-///
-/////////////////////////////////////////////////
-std::string ValueColumn::getValueAsString(size_t elem) const
-{
-    if (elem < m_data.size())
-        return toCmdString(m_data[elem]);
-
-    return "nan";
-}
-
-
-/////////////////////////////////////////////////
-/// \brief Returns the contents as an internal
-/// string (i.e. without quotation marks).
-///
-/// \param elem size_t
-/// \return std::string
-///
-/////////////////////////////////////////////////
-std::string ValueColumn::getValueAsInternalString(size_t elem) const
-{
-    return getValueAsString(elem);
-}
-
-
-/////////////////////////////////////////////////
-/// \brief Returns the contents as parser
-/// string (i.e. without quotation marks).
-///
-/// \param elem size_t
-/// \return std::string
-///
-/////////////////////////////////////////////////
-std::string ValueColumn::getValueAsParserString(size_t elem) const
-{
-    return getValueAsString(elem);
-}
-
-
-/////////////////////////////////////////////////
-/// \brief Returns the contents as parser
-/// string (i.e. without quotation marks).
-///
-/// \param elem size_t
-/// \return std::string
-///
-/////////////////////////////////////////////////
-std::string ValueColumn::getValueAsStringLiteral(size_t elem) const
-{
-    if (elem < m_data.size())
-        return toString(m_data[elem], NumeReKernel::getInstance()->getSettings().getPrecision());
-
-    return "nan";
-}
-
-
-/////////////////////////////////////////////////
-/// \brief Returns the selected value as a
-/// numerical type or an invalid value, if it
-/// does not exist.
-///
-/// \param elem size_t
-/// \return mu::value_type
-///
-/////////////////////////////////////////////////
-mu::value_type ValueColumn::getValue(size_t elem) const
-{
-    if (elem < m_data.size())
-        return m_data[elem];
-
-    return NAN;
-}
-
-
-/////////////////////////////////////////////////
-/// \brief Set a single string value.
-///
-/// \param elem size_t
-/// \param sValue const std::string&
-/// \return void
-///
-/////////////////////////////////////////////////
-void ValueColumn::setValue(size_t elem, const std::string& sValue)
-{
-    if (isConvertible(sValue, CONVTYPE_VALUE))
-        setValue(elem, StrToCmplx(toInternalString(sValue)));
-    else
-        throw SyntaxError(SyntaxError::STRING_ERROR, sValue, sValue, _lang.get("ERR_NR_3603_INCONVERTIBLE_STRING"));
-}
-
-
-/////////////////////////////////////////////////
-/// \brief Set a single numerical value.
-///
-/// \param elem size_t
-/// \param vValue const mu::value_type&
-/// \return void
-///
-/////////////////////////////////////////////////
-void ValueColumn::setValue(size_t elem, const mu::value_type& vValue)
-{
-    if (elem >= m_data.size() && mu::isnan(vValue))
-        return;
-
-    if (elem >= m_data.size())
-        m_data.resize(elem+1, NAN);
-
-    m_data[elem] = vValue;
-}
-
-
-/////////////////////////////////////////////////
-/// \brief Creates a copy of the selected part of
-/// this column. Can be used for simple
-/// extraction into a new table.
-///
-/// \param idx const VectorIndex&
-/// \return ValueColumn*
-///
-/////////////////////////////////////////////////
-ValueColumn* ValueColumn::copy(const VectorIndex& idx) const
-{
-    idx.setOpenEndIndex(size()-1);
-
-    ValueColumn* col = new ValueColumn(idx.size());
-    col->m_sHeadLine = m_sHeadLine;
-
-    for (size_t i = 0; i < idx.size(); i++)
-    {
-        col->m_data[i] = getValue(idx[i]);
-    }
-
-    return col;
-}
-
-
-/////////////////////////////////////////////////
-/// \brief Assign another TableColumn's contents
-/// to this table column.
-///
-/// \param column const TableColumn*
-/// \return void
-///
-/////////////////////////////////////////////////
-void ValueColumn::assign(const TableColumn* column)
-{
-    if (column->m_type == TableColumn::TYPE_VALUE)
-    {
-        m_sHeadLine = column->m_sHeadLine;
-        m_data = static_cast<const ValueColumn*>(column)->m_data;
-    }
-    else
-        throw SyntaxError(SyntaxError::CANNOT_ASSIGN_COLUMN_OF_DIFFERENT_TYPE, m_sHeadLine, column->m_sHeadLine, typeToString(m_type) + "/" + typeToString(column->m_type));
-}
-
-
-/////////////////////////////////////////////////
-/// \brief Insert the contents of the passed
-/// column at the specified positions.
-///
-/// \param idx const VectorIndex&
-/// \param column const TableColumn*
-/// \return void
-///
-/////////////////////////////////////////////////
-void ValueColumn::insert(const VectorIndex& idx, const TableColumn* column)
-{
-    if (column->m_type == TableColumn::TYPE_VALUE)
-        TableColumn::setValue(idx, static_cast<const ValueColumn*>(column)->m_data);
-    else
-        throw SyntaxError(SyntaxError::CANNOT_ASSIGN_COLUMN_OF_DIFFERENT_TYPE, m_sHeadLine, column->m_sHeadLine, typeToString(m_type) + "/" + typeToString(column->m_type));
-}
-
-
-/////////////////////////////////////////////////
-/// \brief Delete the specified elements.
-///
-/// \note Will trigger the shrinking algorithm.
-///
-/// \param idx const VectorIndex&
-/// \return void
-///
-/////////////////////////////////////////////////
-void ValueColumn::deleteElements(const VectorIndex& idx)
-{
-    idx.setOpenEndIndex(size()-1);
-
-    // Shortcut, if everything shall be deleted
-    if (idx.isExpanded() && idx.front() == 0 && idx.last() >= (int)m_data.size()-1)
-    {
-        m_data.clear();
-        return;
-    }
-
-    for (size_t i = 0; i < idx.size(); i++)
-    {
-        if (idx[i] >= 0 && idx[i] < (int)m_data.size())
-            m_data[idx[i]] = NAN;
-    }
-
-    shrink();
-}
-
-
-/////////////////////////////////////////////////
-/// \brief Inserts as many as the selected
-/// elements at the desired position, if the
-/// column is already larger than the starting
-/// position.
-///
-/// \param pos size_t
-/// \param elem size_t
-/// \return void
-///
-/////////////////////////////////////////////////
-void ValueColumn::insertElements(size_t pos, size_t elem)
-{
-    if (pos < m_data.size())
-        m_data.insert(m_data.begin()+pos, elem, NAN);
-}
-
-
-/////////////////////////////////////////////////
-/// \brief Appends the number of elements.
-///
-/// \param elem size_t
-/// \return void
-///
-/////////////////////////////////////////////////
-void ValueColumn::appendElements(size_t elem)
-{
-    m_data.insert(m_data.end(), elem, NAN);
-}
-
-
-/////////////////////////////////////////////////
-/// \brief Removes the selected number of
-/// elements from the column and moving all
-/// following items forward.
-///
-/// \param pos size_t
-/// \param elem size_t
-/// \return void
-///
-/////////////////////////////////////////////////
-void ValueColumn::removeElements(size_t pos, size_t elem)
-{
-    if (pos < m_data.size())
-        m_data.erase(m_data.begin()+pos, m_data.begin()+pos+elem);
-}
-
-
-/////////////////////////////////////////////////
-/// \brief Resizes the internal array.
-///
-/// \param elem size_t
-/// \return void
-///
-/////////////////////////////////////////////////
-void ValueColumn::resize(size_t elem)
-{
-    if (!elem)
-        m_data.clear();
-    else
-        m_data.resize(elem, NAN);
-}
-
-
-/////////////////////////////////////////////////
-/// \brief Returns 0, if both elements are equal,
-/// -1 if element i is smaller than element j and
-/// 1 otherwise.
-///
-/// \param i int
-/// \param j int
-/// \param unused bool
-/// \return int
-///
-/////////////////////////////////////////////////
-int ValueColumn::compare(int i, int j, bool unused) const
-{
-    if ((int)m_data.size() <= std::max(i, j))
-        return 0;
-
-    if (m_data[i] == m_data[j])
-        return 0;
-    else if (m_data[i].real() < m_data[j].real())
-        return -1;
-
-    return 1;
-}
-
-
-/////////////////////////////////////////////////
-/// \brief Returns true, if the selected element
-/// is a valid value.
-///
-/// \param elem int
-/// \return bool
-///
-/////////////////////////////////////////////////
-bool ValueColumn::isValid(int elem) const
-{
-    if (elem >= (int)m_data.size() || elem < 0 || mu::isnan(m_data[elem]))
-        return false;
-
-    return true;
-}
-
-
-/////////////////////////////////////////////////
-/// \brief Interprets the value as a boolean.
-///
-/// \param elem int
-/// \return bool
-///
-/////////////////////////////////////////////////
-bool ValueColumn::asBool(int elem) const
-{
-    if (elem < 0 || elem >= (int)m_data.size())
-        return false;
-
-    return m_data[elem] != 0.0;
-}
-
-
-/////////////////////////////////////////////////
-/// \brief Returns the contents of this column
-/// converted to the new column type. Might even
-/// return itself.
-///
-/// \param type ColumnType
-/// \return TableColumn*
-///
-/////////////////////////////////////////////////
-TableColumn* ValueColumn::convert(ColumnType type)
-{
-    TableColumn* col = nullptr;
-
-    switch (type)
-    {
-        //case TableColumn::TYPE_NONE: // Disabled for correct autoconversion
-        case TableColumn::TYPE_STRING:
-        {
-            col = new StringColumn(m_data.size());
-
-            for (size_t i = 0; i < m_data.size(); i++)
-            {
-                if (!mu::isnan(m_data[i]))
-                    col->setValue(i, toString(m_data[i], NumeReKernel::getInstance()->getSettings().getPrecision()));
-            }
-
-            break;
-        }
-        case TableColumn::TYPE_CATEGORICAL:
-        {
-            col = new CategoricalColumn(m_data.size());
-
-            for (size_t i = 0; i < m_data.size(); i++)
-            {
-                if (!mu::isnan(m_data[i]))
-                    col->setValue(i, toString(m_data[i], NumeReKernel::getInstance()->getSettings().getPrecision()));
-            }
-
-            break;
-        }
-        case TableColumn::TYPE_DATETIME:
-        {
-            col = new DateTimeColumn(m_data.size());
-
-            for (size_t i = 0; i < m_data.size(); i++)
-            {
-                if (!mu::isnan(m_data[i]))
-                    col->setValue(i, m_data[i]);
-            }
-
-            break;
-        }
-        case TableColumn::TYPE_LOGICAL:
-        {
-            col = new LogicalColumn(m_data.size());
-
-            for (size_t i = 0; i < m_data.size(); i++)
-            {
-                if (!mu::isnan(m_data[i]))
-                    col->setValue(i, m_data[i]);
-            }
-
-            break;
-        }
-        case TableColumn::TYPE_VALUE:
-            return this;
-        default:
-            return nullptr;
-    }
-
-    col->m_sHeadLine = m_sHeadLine;
-    return col;
-}
-
-
-
-
 
 
 
@@ -878,22 +464,15 @@ TableColumn* DateTimeColumn::convert(ColumnType type)
 
             break;
         }
-        case TableColumn::TYPE_VALUE:
-        {
-            col = new ValueColumn(m_data.size());
-
-            for (size_t i = 0; i < m_data.size(); i++)
-            {
-                if (!mu::isnan(m_data[i]))
-                    col->setValue(i, m_data[i]);
-            }
-
-            break;
-        }
         case TableColumn::TYPE_DATETIME:
             return this;
         default:
+        {
+            if (TableColumn::isValueType(type))
+                return convertNumericType(type, this);
+
             return nullptr;
+        }
     }
 
     col->m_sHeadLine = m_sHeadLine;
@@ -1282,22 +861,21 @@ TableColumn* LogicalColumn::convert(ColumnType type)
 
             break;
         }
-        case TableColumn::TYPE_VALUE:
+        case TableColumn::TYPE_LOGICAL:
+            return this;
+        default:
         {
-            col = new ValueColumn(m_data.size());
+            if (!TableColumn::isValueType(type))
+                return nullptr;
+
+            col = createValueTypeColumn(type, m_data.size());
 
             for (size_t i = 0; i < m_data.size(); i++)
             {
                 if (m_data[i] != LOGICAL_NAN)
                     col->setValue(i, m_data[i] == LOGICAL_TRUE ? 1.0 : 0.0);
             }
-
-            break;
         }
-        case TableColumn::TYPE_LOGICAL:
-            return this;
-        default:
-            return nullptr;
     }
 
     col->m_sHeadLine = m_sHeadLine;
@@ -1702,15 +1280,6 @@ TableColumn* StringColumn::convert(ColumnType type)
 
             break;
         }
-        case TableColumn::TYPE_VALUE:
-        {
-            if (!m_data.size())
-                convType = CONVTYPE_VALUE;
-            else if (convType != CONVTYPE_VALUE && convType != CONVTYPE_LOGICAL)
-                return nullptr;
-
-            break;
-        }
         case TableColumn::TYPE_LOGICAL:
         {
             if (!m_data.size())
@@ -1730,13 +1299,24 @@ TableColumn* StringColumn::convert(ColumnType type)
             return col;
         }
         default:
-            return nullptr;
+        {
+            if (TableColumn::isValueType(type))
+            {
+                if (!m_data.size())
+                    convType = CONVTYPE_VALUE;
+                else if (convType != CONVTYPE_VALUE && convType != CONVTYPE_LOGICAL)
+                    return nullptr;
+            }
+            else
+                return nullptr;
+        }
     }
 
     if (convType == CONVTYPE_DATE_TIME)
         col = new DateTimeColumn(m_data.size());
     else if (convType == CONVTYPE_VALUE)
-        col = new ValueColumn(m_data.size());
+        col = createValueTypeColumn(TableColumn::isValueType(type) ? type : TableColumn::TYPE_VALUE,
+                                    m_data.size());
     else if (convType == CONVTYPE_LOGICAL)
         col = new LogicalColumn(m_data.size());
 
@@ -2200,15 +1780,6 @@ TableColumn* CategoricalColumn::convert(ColumnType type)
 
             break;
         }
-        case TableColumn::TYPE_VALUE:
-        {
-            if (!m_data.size())
-                convType = CONVTYPE_VALUE;
-            else if (convType != CONVTYPE_VALUE && convType != CONVTYPE_LOGICAL)
-                return nullptr;
-
-            break;
-        }
         case TableColumn::TYPE_LOGICAL:
         {
             if (!m_data.size())
@@ -2228,13 +1799,24 @@ TableColumn* CategoricalColumn::convert(ColumnType type)
         case TableColumn::TYPE_CATEGORICAL:
             return this;
         default:
-            return nullptr;
+        {
+            if (TableColumn::isValueType(type))
+            {
+                if (!m_data.size())
+                    convType = CONVTYPE_VALUE;
+                else if (convType != CONVTYPE_VALUE && convType != CONVTYPE_LOGICAL)
+                    return nullptr;
+            }
+            else
+                return nullptr;
+        }
     }
 
     if (convType == CONVTYPE_DATE_TIME)
         col = new DateTimeColumn(m_data.size());
     else if (convType == CONVTYPE_VALUE)
-        col = new ValueColumn(m_data.size());
+        col = createValueTypeColumn(TableColumn::isValueType(type) ? type : TableColumn::TYPE_VALUE,
+                                    m_data.size());
     else if (convType == CONVTYPE_LOGICAL)
         col = new LogicalColumn(m_data.size());
 
@@ -2303,8 +1885,8 @@ void CategoricalColumn::setCategories(const std::vector<std::string>& vCategorie
             for (int& val : m_data)
             {
                 if (val == i)
-                    val = iter-m_categories.begin();
-                else if (val == iter-m_categories.begin())
+                    val = iter - m_categories.begin();
+                else if (val == iter - m_categories.begin())
                     val = i;
             }
         }
@@ -2342,9 +1924,6 @@ void convert_if_empty(TblColPtr& col, size_t colNo, TableColumn::ColumnType type
             case TableColumn::TYPE_STRING:
                 col.reset(new StringColumn);
                 break;
-            case TableColumn::TYPE_VALUE:
-                col.reset(new ValueColumn);
-                break;
             case TableColumn::TYPE_DATETIME:
                 col.reset(new DateTimeColumn);
                 break;
@@ -2355,7 +1934,12 @@ void convert_if_empty(TblColPtr& col, size_t colNo, TableColumn::ColumnType type
                 col.reset(new CategoricalColumn);
                 break;
             default:
-                return;
+            {
+                if (!TableColumn::isValueType(type))
+                    return;
+
+                col.reset(createValueTypeColumn(type));
+            }
         }
 
         col->m_sHeadLine = sHead;
@@ -2386,7 +1970,8 @@ bool convert_if_needed(TblColPtr& col, size_t colNo, TableColumn::ColumnType typ
         return true;
 
     bool isSimilar = (type == TableColumn::TYPE_CATEGORICAL && col->m_type == TableColumn::TYPE_STRING)
-                      || (type == TableColumn::TYPE_STRING && col->m_type == TableColumn::TYPE_CATEGORICAL);
+                      || (type == TableColumn::TYPE_STRING && col->m_type == TableColumn::TYPE_CATEGORICAL)
+                      || (TableColumn::isValueType(type) && TableColumn::isValueType(col->m_type));
 
     if (!convertSimilarTypes && isSimilar)
         return true;
@@ -2438,12 +2023,6 @@ void convert_for_overwrite(TblColPtr& col, size_t colNo, TableColumn::ColumnType
             col->m_sHeadLine = sHeadLine;
             break;
         }
-        case TableColumn::TYPE_VALUE:
-        {
-            col.reset(new ValueColumn);
-            col->m_sHeadLine = sHeadLine;
-            break;
-        }
         case TableColumn::TYPE_DATETIME:
         {
             col.reset(new DateTimeColumn);
@@ -2463,7 +2042,83 @@ void convert_for_overwrite(TblColPtr& col, size_t colNo, TableColumn::ColumnType
             break;
         }
         default:
-            return;
+        {
+            if (TableColumn::isValueType(type))
+            {
+                col.reset(createValueTypeColumn(type));
+                col->m_sHeadLine = sHeadLine;
+            }
+        }
     }
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Create a value column with the passed
+/// value type (if it is a value type).
+///
+/// \param type TableColumn::ColumnType
+/// \param nSize size_t
+/// \return TableColumn*
+///
+/////////////////////////////////////////////////
+TableColumn* createValueTypeColumn(TableColumn::ColumnType type, size_t nSize)
+{
+    switch (type)
+    {
+        case TableColumn::TYPE_VALUE_I8:
+            return new I8ValueColumn(nSize);
+        case TableColumn::TYPE_VALUE_UI8:
+            return new UI8ValueColumn(nSize);
+        case TableColumn::TYPE_VALUE_I16:
+            return new I16ValueColumn(nSize);
+        case TableColumn::TYPE_VALUE_UI16:
+            return new UI16ValueColumn(nSize);
+        case TableColumn::TYPE_VALUE_I32:
+            return new I32ValueColumn(nSize);
+        case TableColumn::TYPE_VALUE_UI32:
+            return new UI32ValueColumn(nSize);
+        case TableColumn::TYPE_VALUE_I64:
+            return new I64ValueColumn(nSize);
+        case TableColumn::TYPE_VALUE_UI64:
+            return new UI64ValueColumn(nSize);
+        case TableColumn::TYPE_VALUE_F32:
+            return new F32ValueColumn(nSize);
+        case TableColumn::TYPE_VALUE_F64:
+            return new F64ValueColumn(nSize);
+        case TableColumn::TYPE_VALUE_CF32:
+            return new CF32ValueColumn(nSize);
+        //case TableColumn::TYPE_VALUE_CF64: // Reminder that this might change
+        case TableColumn::TYPE_VALUE:
+            return new ValueColumn(nSize);
+    }
+
+    return nullptr;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This function returns the contents of
+/// an existing value column (type) as a new
+/// value column type, if the target type is an
+/// existing value column type.
+///
+/// \param type TableColumn::ColumnType
+/// \param current TableColumn*
+/// \return TableColumn*
+///
+/////////////////////////////////////////////////
+TableColumn* convertNumericType(TableColumn::ColumnType type, TableColumn* current)
+{
+    size_t nNumElements = current->getNumFilledElements();
+    TableColumn* col = createValueTypeColumn(type, nNumElements);
+
+    if (col)
+    {
+        col->setValue(VectorIndex(0, nNumElements-1), current->getValue(VectorIndex(0, nNumElements-1)));
+        col->m_sHeadLine = current->m_sHeadLine;
+    }
+
+    return col;
 }
 
