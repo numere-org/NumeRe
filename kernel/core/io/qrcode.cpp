@@ -21,6 +21,7 @@
 #include "../../kernel.hpp"
 
 #include <fstream>
+#include <sstream>
 
 using qrcodegen::QrCode;
 using qrcodegen::QrSegment;
@@ -31,11 +32,12 @@ using qrcodegen::QrSegment;
 ///
 /// \param qr const QrCode&
 /// \param border int
+/// \param color const std::string&
 /// \param filename const std::string&
 /// \return void
 ///
 /////////////////////////////////////////////////
-static void toSvg(const QrCode& qr, int border, const std::string& filename)
+static void toSvg(const QrCode& qr, int border, const std::string& color, const std::string& filename)
 {
     if (border < 0)
         throw std::domain_error("Border must be non-negative");
@@ -69,7 +71,7 @@ static void toSvg(const QrCode& qr, int border, const std::string& filename)
         }
     }
 
-    file << "\" fill=\"#000000\"/>\n";
+    file << "\" fill=\"#" << color << "\"/>\n";
     file << "</svg>\n";
 }
 
@@ -83,12 +85,37 @@ static void toSvg(const QrCode& qr, int border, const std::string& filename)
 /////////////////////////////////////////////////
 void createQrCode(CommandLineParser& cmdParser)
 {
-    const QrCode::Ecc level = QrCode::Ecc::LOW;
+    QrCode::Ecc level = QrCode::Ecc::LOW;
+
+    if (cmdParser.hasParam("level"))
+    {
+        std::vector<mu::value_type> res = cmdParser.getParameterValueAsNumericalValue("level");
+
+        if (res.size() && res.front().real() >= 0 && res.front().real() <= 3)
+            level = (QrCode::Ecc)intCast(res.front());
+    }
+
     const QrCode qr = QrCode::encodeText(cmdParser.parseExprAsString().c_str(), level);
 
     std::string sFileName = cmdParser.getFileParameterValueForSaving(".svg", "<savepath>", "<savepath>/qrcode.svg");
+    std::string color = "000000";
 
-    toSvg(qr, 1, sFileName);
+    if (cmdParser.hasParam("color"))
+    {
+        std::vector<mu::value_type> res = cmdParser.getParameterValueAsNumericalValue("color");
+
+        if (res.size() >= 3)
+        {
+            std::ostringstream Temp;
+            Temp << std::hex;
+            Temp << std::setw(2) << std::setfill('0') << intCast(res[0]);
+            Temp << std::setw(2) << std::setfill('0') << intCast(res[1]);
+            Temp << std::setw(2) << std::setfill('0') << intCast(res[2]);
+            color = Temp.str();
+        }
+    }
+
+    toSvg(qr, 1, color, sFileName);
 
     if (NumeReKernel::getInstance()->getSettings().systemPrints())
         NumeReKernel::print(_lang.get("BUILTIN_NEW_FILECREATED", sFileName));
