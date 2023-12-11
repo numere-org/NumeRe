@@ -33,8 +33,50 @@
 
 extern const std::string sVersion;
 
-long long int intCast(double number);
-long long int intCast(const std::complex<double>& number);
+/////////////////////////////////////////////////
+/// \brief Casts doubles to integers and avoids
+/// rounding errors.
+///
+/// \param number double
+/// \return INT
+///
+/////////////////////////////////////////////////
+template <class INT>
+INT genericIntCast(double number)
+{
+    // if quite close, use rint
+    if (std::abs(number - rint(number)) < 1e-7)
+        return std::rint(number);
+
+    // otherwise truncate
+    return static_cast<INT>(number);
+}
+
+/////////////////////////////////////////////////
+/// \brief Casts the real part of the complex
+/// number to an integer and avoids rounding
+/// errors.
+///
+/// \param number const std::complex<double>&
+/// \return INT
+///
+/////////////////////////////////////////////////
+template <class INT>
+INT genericIntCast(const std::complex<double>& number)
+{
+    return genericIntCast<INT>(number.real());
+}
+
+inline int64_t intCast(double number)
+{
+    return genericIntCast<int64_t>(number);
+}
+
+inline int64_t intCast(const std::complex<double>& number)
+{
+    return genericIntCast<int64_t>(number.real());
+}
+
 bool isInt(const std::complex<double>& number);
 
 std::mt19937& getRandGenInstance();

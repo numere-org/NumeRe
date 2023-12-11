@@ -28,11 +28,11 @@ namespace Audio
     /// obtain a signed floating point value from an
     /// unsigned integer.
     ///
-    /// \param val double
-    /// \return double
+    /// \param val float
+    /// \return float
     ///
     /////////////////////////////////////////////////
-    static double convertFromUnsigned(double val)
+    static float convertFromUnsigned(float val)
     {
         return val > 1.0 ? val-2.0 : val;
     }
@@ -43,10 +43,10 @@ namespace Audio
     /// with the current bitdepth.
     ///
     /// \param bitdepth uint16_t
-    /// \return double
+    /// \return float
     ///
     /////////////////////////////////////////////////
-    static double getMaxVal(uint16_t bitdepth)
+    static float getMaxVal(uint16_t bitdepth)
     {
         return (1 << (bitdepth-1)) - 1;
     }

@@ -146,14 +146,14 @@ bool GridNumeReTable::CanGetValueAs(int row, int col, const wxString& sTypeName)
         return true;
 
     // Regular cells
-    if (sTypeName == "complex" && _table.getColumnType(col) == TableColumn::TYPE_VALUE)
+    if (sTypeName == "complex" && TableColumn::isValueType(_table.getColumnType(col)))// == TableColumn::TYPE_VALUE)
         return true;
 
     if (sTypeName == "datetime" && _table.getColumnType(col) == TableColumn::TYPE_DATETIME)
         return true;
 
     if (sTypeName == wxGRID_VALUE_FLOAT
-        && _table.getColumnType(col) == TableColumn::TYPE_VALUE
+        && TableColumn::isValueType(_table.getColumnType(col))
         && (_table.getValue(row-getNumHeadlines(), col).imag() == 0 || mu::isnan(_table.getValue(row-getNumHeadlines(), col))))
         return true;
 

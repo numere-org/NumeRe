@@ -16,8 +16,6 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
-
-
 #include "wx/wx.h"
 #include "../gui/terminal/terminal.hpp"
 #include "core/datamanagement/database.hpp"
@@ -28,6 +26,22 @@
 #define TERMINAL_FORMAT_FIELD_LENOFFSET 16
 #define DEFAULT_NUM_PRECISION 7
 #define DEFAULT_MINMAX_PRECISION 5
+
+#define INT8_MIN (-128)
+#define INT16_MIN (-32768)
+#define INT32_MIN (-2147483647 - 1)
+#define INT64_MIN  (-9223372036854775807LL - 1)
+
+#define INT8_MAX 127
+#define INT16_MAX 32767
+#define INT32_MAX 2147483647
+#define INT64_MAX 9223372036854775807LL
+
+#define UINT8_MAX 255
+#define UINT16_MAX 65535
+#define UINT32_MAX 0xffffffffU  /* 4294967295U */
+#define UINT64_MAX 0xffffffffffffffffULL /* 18446744073709551615ULL */
+
 
 extern const std::string sVersion;
 /* --> STATUS: Versionsname des Programms; Aktuell "Ampere", danach "Angstroem". Ab 1.0 Namen mit "B",
@@ -365,21 +379,29 @@ void NumeReKernel::defineConst()
     _parser.DefineConst("_g", 9.80665);
     _parser.DefineConst("_c", 299792458);
     _parser.DefineConst("_elek_feldkonst", 8.854187817e-12);
+    _parser.DefineConst("_electric_const", 8.854187817e-12);
     _parser.DefineConst("_n_avogadro", 6.02214129e23);
     _parser.DefineConst("_k_boltz", 1.3806488e-23);
     _parser.DefineConst("_elem_ladung", 1.602176565e-19);
+    _parser.DefineConst("_elem_charge", 1.602176565e-19);
     _parser.DefineConst("_h", 6.62606957e-34);
     _parser.DefineConst("_hbar", 1.054571726e-34);
     _parser.DefineConst("_m_elektron", 9.10938291e-31);
+    _parser.DefineConst("_m_electron", 9.10938291e-31);
     _parser.DefineConst("_m_proton", 1.672621777e-27);
     _parser.DefineConst("_m_neutron", 1.674927351e-27);
     _parser.DefineConst("_m_muon", 1.883531475e-28);
     _parser.DefineConst("_m_tau", 3.16747e-27);
     _parser.DefineConst("_magn_feldkonst", 1.25663706144e-6);
+    _parser.DefineConst("_magnetic_const", 1.25663706144e-6);
     _parser.DefineConst("_m_erde", 5.9726e24);
+    _parser.DefineConst("_m_earth", 5.9726e24);
     _parser.DefineConst("_m_sonne", 1.9885e30);
+    _parser.DefineConst("_m_sun", 1.9885e30);
     _parser.DefineConst("_r_erde", 6.378137e6);
+    _parser.DefineConst("_r_earth", 6.378137e6);
     _parser.DefineConst("_r_sonne", 6.9551e8);
+    _parser.DefineConst("_r_sun", 6.9551e8);
     _parser.DefineConst("true", 1);
     _parser.DefineConst("_theta_weinberg", 0.49097621387892);
     _parser.DefineConst("false", 0);
@@ -388,6 +410,7 @@ void NumeReKernel::defineConst()
     _parser.DefineConst("_alpha_fs", 7.2973525698E-3);
     _parser.DefineConst("_mu_bohr", 9.27400968E-24);
     _parser.DefineConst("_mu_kern", 5.05078353E-27);
+    _parser.DefineConst("_mu_nuclear", 5.05078353E-27);
     _parser.DefineConst("_mu_e", -9.284764620e-24);
     _parser.DefineConst("_mu_n", -9.662365e-27);
     _parser.DefineConst("_mu_p", 1.4106067873e8);
@@ -413,6 +436,30 @@ void NumeReKernel::defineConst()
     _parser.DefineConst(errorTypeToString(TYPE_SYNTAXERROR), mu::value_type(TYPE_SYNTAXERROR, 0));
     _parser.DefineConst(errorTypeToString(TYPE_ASSERTIONERROR), mu::value_type(TYPE_ASSERTIONERROR, 0));
     _parser.DefineConst(errorTypeToString(TYPE_MATHERROR), mu::value_type(TYPE_MATHERROR, 0));
+    _parser.DefineConst("ui8_max", UINT8_MAX);
+    _parser.DefineConst("i8_max", INT8_MAX);
+    _parser.DefineConst("i8_min", INT8_MIN);
+    _parser.DefineConst("ui16_max", UINT16_MAX);
+    _parser.DefineConst("i16_max", INT16_MAX);
+    _parser.DefineConst("i16_min", INT16_MIN);
+    _parser.DefineConst("ui32_max", UINT32_MAX);
+    _parser.DefineConst("i32_max", INT32_MAX);
+    _parser.DefineConst("i32_min", INT32_MIN);
+    _parser.DefineConst("ui64_max", UINT64_MAX);
+    _parser.DefineConst("i64_max", INT64_MAX);
+    _parser.DefineConst("i64_min", INT64_MIN);
+    _parser.DefineConst("f64_max", __DBL_MAX__);
+    _parser.DefineConst("f64_min", __DBL_MIN__);
+    _parser.DefineConst("f64_eps", __DBL_EPSILON__);
+    _parser.DefineConst("f32_max", __FLT_MAX__);
+    _parser.DefineConst("f32_min", __FLT_MIN__);
+    _parser.DefineConst("f32_eps", __FLT_EPSILON__);
+    _parser.DefineConst("cf64_max", mu::value_type(__DBL_MAX__, __DBL_MAX__));
+    _parser.DefineConst("cf64_min", mu::value_type(__DBL_MIN__, __DBL_MIN__));
+    _parser.DefineConst("cf64_eps", mu::value_type(__DBL_EPSILON__, __DBL_EPSILON__));
+    _parser.DefineConst("cf32_max", mu::value_type(__FLT_MAX__, __FLT_MAX__));
+    _parser.DefineConst("cf32_min", mu::value_type(__FLT_MIN__, __FLT_MIN__));
+    _parser.DefineConst("cf32_eps", mu::value_type(__FLT_EPSILON__, __FLT_EPSILON__));
 }
 
 

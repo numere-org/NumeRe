@@ -1108,7 +1108,7 @@ bool isConvertible(const std::string& sStr, ConvertibleType type, NumberFormatsV
         for (size_t i = 0; i < sStr.length(); i++)
         {
             if(voter && (sStr[i] == ',' || sStr[i] == '.' || sStr[i] == ' ' || isdigit(sStr[i]))) {
-                if(!inNum & sStr[i] != '0'){
+                if(!inNum && sStr[i] != '0'){
                     inNum = true;
                     voter->startParseNumber(i);
                 }

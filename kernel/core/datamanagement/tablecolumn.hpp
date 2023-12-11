@@ -36,7 +36,20 @@ struct TableColumn
     {
         TYPE_NONE,
         VALUELIKE,
-        TYPE_VALUE,
+        TYPE_VALUE_I8,
+        TYPE_VALUE_UI8,
+        TYPE_VALUE_I16,
+        TYPE_VALUE_UI16,
+        TYPE_VALUE_I32,
+        TYPE_VALUE_UI32,
+        TYPE_VALUE_I64,
+        TYPE_VALUE_UI64,
+        TYPE_VALUE_F32,
+        TYPE_VALUE_F64,
+        TYPE_VALUE_CF32,
+        TYPE_VALUE_CF64,
+        TYPE_VALUE = TYPE_VALUE_CF64,
+        VALUE_LAST,
         TYPE_DATETIME,
         TYPE_LOGICAL,
         TYPE_CATEGORICAL,
@@ -95,6 +108,7 @@ struct TableColumn
     static std::string typeToString(ColumnType type);
     static ColumnType stringToType(const std::string& sType);
     static std::vector<std::string> getTypesAsString();
+    static bool isValueType(ColumnType type);
 };
 
 
