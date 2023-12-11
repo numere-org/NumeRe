@@ -1232,25 +1232,29 @@ void TableViewer::updateStatusBar(const wxGridCellCoordsContainer& coords, wxGri
 
     // Calculate the simple statistics
     bool isDateTime = false;
+    wxString colTypes;
 
     if (isGridNumeReTable)
     {
         wxGridCellsExtent selectedExtent = coords.getExtent();
         std::vector<int> vTypes = static_cast<GridNumeReTable*>(GetTable())->getColumnTypes();
+        std::set<int> types;
 
-        if (vTypes[selectedExtent.m_topleft.GetCol()] == TableColumn::TYPE_DATETIME)
+        for (int col = selectedExtent.m_topleft.GetCol(); col <= selectedExtent.m_bottomright.GetCol(); col++)
         {
+            if (vTypes.size() > col)
+                types.insert(vTypes[col]);
+        }
+
+        if (types.size() == 1u && *types.begin() == TableColumn::TYPE_DATETIME)
             isDateTime = true;
 
-            for (int col = selectedExtent.m_topleft.GetCol()+1; col <= selectedExtent.m_bottomright.GetCol(); col++)
-            {
-                if (vTypes[col] != TableColumn::TYPE_DATETIME)
-                {
-                    isDateTime = false;
-                    break;
-                }
-            }
+        for (int type : types)
+        {
+            if (colTypes.length())
+                colTypes += ", ";
 
+            colTypes += TableColumn::typeToString(TableColumn::ColumnType(type));
         }
     }
 
@@ -1277,6 +1281,9 @@ void TableViewer::updateStatusBar(const wxGridCellCoordsContainer& coords, wxGri
         statustext << L"  |  \u03A3x " << toString(dSum, 2*STATUSBAR_PRECISION);
         statustext << L"  |  x\u0305 " << toString(dAvg, 2*STATUSBAR_PRECISION);
     }
+
+    if (colTypes.length())
+        statustext << "  |  Type: " << colTypes;
 
     // Set the status bar valuey
     m_statusBar->SetStatusText(dim);

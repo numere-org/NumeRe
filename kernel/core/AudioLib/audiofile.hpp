@@ -31,11 +31,11 @@ namespace Audio
     /////////////////////////////////////////////////
     struct Sample
     {
-        double leftOrMono;
-        double right;
+        float leftOrMono;
+        float right;
 
-        Sample(double _mono) : leftOrMono(_mono), right(NAN) {}
-        Sample(double _left, double _right) : leftOrMono(_left), right(_right) {}
+        Sample(float _mono) : leftOrMono(_mono), right(NAN) {}
+        Sample(float _left, float _right) : leftOrMono(_left), right(_right) {}
     };
 
 

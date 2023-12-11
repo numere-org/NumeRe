@@ -330,8 +330,9 @@ namespace NumeRe
         }
         else if (isConvertible(_sValue, CONVTYPE_VALUE))
         {
-            convert_if_needed(vTableData[j], j, TableColumn::TYPE_VALUE);
-            vTableData[j]->setValue(i, StrToCmplx(_sValue));
+            std::complex<double> val = StrToCmplx(_sValue);
+            convert_if_needed(vTableData[j], j, TableColumn::TYPE_VALUE, val.imag() != 0.0);
+            vTableData[j]->setValue(i, val);
         }
         else if (isConvertible(_sValue, CONVTYPE_LOGICAL))
         {
