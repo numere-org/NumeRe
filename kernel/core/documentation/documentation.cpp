@@ -22,10 +22,8 @@
 #include "documentation.hpp"
 #include "../../kernel.hpp"
 #include "../datamanagement/database.hpp"
-#include "../ui/error.hpp"
 #include "../ui/calltipprovider.hpp"
 #include "../utils/tools.hpp"
-#include "../../syntax.hpp"
 
 #include "htmlrendering.hpp"
 

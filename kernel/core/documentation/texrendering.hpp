@@ -16,3 +16,13 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
+#ifndef TEXRENDERING_HPP
+#define TEXRENDERING_HPP
+
+#include <string>
+#include <vector>
+#include "../settings.hpp"
+
+std::string renderTeX(std::vector<std::string>&& vDocArticle, const Settings& _option);
+
+#endif // TEXRENDERING_HPP
