@@ -2611,28 +2611,28 @@ namespace NumeRe
 
         for (size_t i = 0; i < sReturn.length(); i++)
         {
-            if (sReturn[i] == (char)0xC4 || sReturn[i] == (char)142) // Ä
+            if (sReturn[i] == (char)0xC4 || sReturn[i] == (char)142) // ï¿½
                 sReturn.replace(i,1,"\\\"A");
 
-            if (sReturn[i] == (char)0xE4 || sReturn[i] == (char)132) // ä
+            if (sReturn[i] == (char)0xE4 || sReturn[i] == (char)132) // ï¿½
                 sReturn.replace(i,1,"\\\"a");
 
-            if (sReturn[i] == (char)0xD6 || sReturn[i] == (char)153) // Ö
+            if (sReturn[i] == (char)0xD6 || sReturn[i] == (char)153) // ï¿½
                 sReturn.replace(i,1,"\\\"O");
 
-            if (sReturn[i] == (char)0xF6 || sReturn[i] == (char)148) // ö
+            if (sReturn[i] == (char)0xF6 || sReturn[i] == (char)148) // ï¿½
                 sReturn.replace(i,1,"\\\"o");
 
-            if (sReturn[i] == (char)0xDC || sReturn[i] == (char)154) // Ü
+            if (sReturn[i] == (char)0xDC || sReturn[i] == (char)154) // ï¿½
                 sReturn.replace(i,1,"\\\"U");
 
-            if (sReturn[i] == (char)0xFC || sReturn[i] == (char)129) // ü
+            if (sReturn[i] == (char)0xFC || sReturn[i] == (char)129) // ï¿½
                 sReturn.replace(i,1,"\\\"u");
 
-            if (sReturn[i] == (char)0xDF || sReturn[i] == (char)225) // ß
+            if (sReturn[i] == (char)0xDF || sReturn[i] == (char)225) // ï¿½
                 sReturn.replace(i,1,"\\ss ");
 
-            if (sReturn[i] == (char)0xB0 || sReturn[i] == (char)248) // °
+            if (sReturn[i] == (char)0xB0 || sReturn[i] == (char)248) // ï¿½
                 sReturn.replace(i,1,"$^\\circ$");
 
             if (sReturn[i] == (char)196 || sReturn[i] == (char)249)
@@ -3903,6 +3903,33 @@ namespace NumeRe
         // Empty destructor
     }
 
+    /////////////////////////////////////////////////
+    /// \brief Check if the given format string corresponds
+    /// to a date-time format. This function looks for
+    /// the presence of characters 'm', 'd', 's', 'h' (and their
+    /// uppercase equivalents) in the format string. These
+    /// characters are typically used in date-time formatting
+    /// in an Excel documents xl/style.xml file.
+    ///
+    /// \param formatString The string representing the format
+    /// code to be checked.
+    ///
+    /// \return true if the formatString is a date-time format,
+    /// false otherwise.
+    ///
+    /////////////////////////////////////////////////
+    bool isDateTimeFormat(const std::string& formatString)
+    {
+        // List of characters to search for
+        const char charsToFind[] = {'m', 'd', 's', 'h', 'M', 'D', 'S', 'H'};
+
+        // Check if any of the characters are present in the format string
+        auto it = std::find_if(formatString.begin(), formatString.end(), [&](char c)
+                               { return std::find(std::begin(charsToFind), std::end(charsToFind), c) != std::end(charsToFind); });
+
+        // If any of the characters are found, return true
+        return it != formatString.end();
+    }
 
     /////////////////////////////////////////////////
     /// \brief This member function is used to read
@@ -4121,6 +4148,31 @@ namespace NumeRe
         _styles.Parse(sStylesContent.c_str());
         tinyxml2::XMLElement* cellXfs = _styles.FirstChildElement()->FirstChildElement("cellXfs");
 
+        // Parse through styles.xml to get numfmts
+        // Iterate through nodes
+        tinyxml2::XMLElement *numFmts = _styles.FirstChildElement()->FirstChildElement("numfmts");
+
+        // Empty set to store numfmts ID
+        std::set<int> vDateTimeIds;
+
+        if (numFmts)
+        {
+            numtFmts = numFmts->FirstChildElement();
+
+            while (numFmts)
+            {
+                int id = numFmts->IntAttribute("numFmtId");
+                std::string formatString = numFmts->Attribute("formatCode");
+
+                // Detect datetime, if yes, push to empty set
+                if (isDateTimeFormat(formatString){
+                    vDateTimeIds.insert(id); // Insert into set
+                }
+
+                numFmts = numFmts->NextSiblingElement();
+            }
+        }
+
         // Go through all sheets
         for (size_t i = 0; i < nSheets; i++)
         {
@@ -4245,10 +4297,14 @@ namespace NumeRe
                             {
                                 styleId = style->IntAttribute("numFmtId");
 
-                                // Those are time formats: 14-22, 45-47
-                                if ((styleId >= 14 && styleId <= 22) || (styleId >= 45 && styleId <= 47))
+                                // Check if styleId is in vDateTimeIds set
+                                if (vDateTimeIds.find(styleId) != vDateTimeIds.end())
+                                {
+                                    // What change can i make to convertExcelTimeEpoch function?
                                     sValue = convertExcelTimeToEpoch(sValue, (styleId >= 18 && styleId <= 21)
+                                
                                                                               || (styleId >= 45 && styleId >= 47));
+                                }
                             }
                         }
 
