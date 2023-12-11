@@ -3921,7 +3921,7 @@ namespace NumeRe
     bool isDateTimeFormat(const std::string& formatString)
     {
         // List of characters to search for
-        const char charsToFind[] = {'m', 'd', 's', 'h', 'M', 'D', 'S', 'H'};
+        const char charsToFind[] = {'m', 'd', 's', 'h','j', 'M', 'D', 'S', 'H', 'J'};
 
         // Check if any of the characters are present in the format string
         auto it = std::find_if(formatString.begin(), formatString.end(), [&](char c)
