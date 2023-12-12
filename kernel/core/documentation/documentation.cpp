@@ -26,6 +26,9 @@
 #include "../utils/tools.hpp"
 
 #include "htmlrendering.hpp"
+#include "texrendering.hpp"
+
+static std::string doc_HelpAsTeX(const std::string& __sTopic, Settings& _option);
 
 
 /////////////////////////////////////////////////
@@ -268,6 +271,9 @@ void doc_Help(const std::string& __sTopic, Settings& _option)
     if (findParameter(sTopic, "html"))
         eraseToken(sTopic, "html", false);
 
+    if (findParameter(sTopic, "tex"))
+        eraseToken(sTopic, "tex", false);
+
     // --> Zunaechst einmal muessen wir anfuehrende oder abschliessende Leerzeichen entfernen <--
     StripSpaces(sTopic);
 
@@ -295,6 +301,22 @@ void doc_Help(const std::string& __sTopic, Settings& _option)
         make_hline();
         NumeReKernel::print(LineBreak(_lang.get("DOC_HELP_NO_ENTRY_FOUND", sTopic), _option));
         make_hline();
+    }
+    else if (findParameter(__sTopic, "tex"))
+    {
+        std::string sTeX = doc_HelpAsTeX(sTopic, _option);
+
+        _option.declareFileType(".tex");
+        std::string sFilename = _option.ValidizeAndPrepareName("<>/docs/texexport/"+_option.getHelpArticleID(sTopic) + ".tex",".tex");
+        std::ofstream fTeX;
+        fTeX.open(sFilename);
+
+        if (fTeX.fail())
+            throw SyntaxError(SyntaxError::CANNOT_GENERATE_FILE, "", SyntaxError::invalid_position, sFilename);
+
+        // content schreiben
+        fTeX << ansiToUtf8(sTeX);
+        NumeReKernel::print(_lang.get("DOC_HELP_HTMLEXPORT", _option.getHelpArticleTitle(_option.getHelpIdxKey(sTopic)), sFilename));
     }
     else
     {
@@ -348,6 +370,33 @@ std::string doc_HelpAsHTML(const std::string& __sTopic, bool generateFile, Setti
         vDocArticle = _option.getHelpArticle(toLowerCase(sTopic));
 
     return renderHTML(std::move(vDocArticle), generateFile, _option);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This function returns the
+/// documentation article for the selected topic
+/// as a TeX std::string. This std::string
+/// may be used to create a corresponding
+/// file.
+///
+/// \param __sTopic const std::string&
+/// \param _option Settings&
+/// \return std::string
+///
+/////////////////////////////////////////////////
+static std::string doc_HelpAsTeX(const std::string& __sTopic, Settings& _option)
+{
+    std::string sTopic = __sTopic;
+    StripSpaces(sTopic);
+
+    // Get the article contents
+    std::vector<std::string> vDocArticle = doc_findFunctionDocumentation(sTopic);
+
+    if (!vDocArticle.size())
+        vDocArticle = _option.getHelpArticle(toLowerCase(sTopic));
+
+    return renderTeX(std::move(vDocArticle), _option);
 }
 
 

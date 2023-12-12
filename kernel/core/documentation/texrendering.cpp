@@ -93,6 +93,9 @@ static void doc_ReplaceExprContentForTeX(std::string& sExpr)
     if (sExpr.find("<exprblock>") != std::string::npos)
         nPos = sExpr.find("<exprblock>")+11;
 
+    //replaceAll(sExpr, "{", "\\{", nPos);
+    //replaceAll(sExpr, "}", "\\}", nPos);
+
     // Try to match the tokens to those in the
     // data base and replace them
     for (size_t i = nPos; i < sExpr.length(); i++)
@@ -161,6 +164,8 @@ static void doc_ReplaceExprContentForTeX(std::string& sExpr)
             sExpr.insert(i+1,"_{");
             i += 2;
         }
+
+        replaceAll(sExpr, "...", "\\ldots");
     }
 }
 
@@ -184,16 +189,25 @@ static void doc_ReplaceTokensForTeX(std::string& sDocParagraph)
         //if (sDocParagraph.substr(k,2) == "  ")
         //    sDocParagraph.replace(k,1,"&nbsp;");
 
+        if (sDocParagraph.substr(k, 8) == "&#x2713;")
+            sDocParagraph.replace(k, 8, "\\usym{2713}");
+
         if (sDocParagraph.substr(k,4) == "<em>" && sDocParagraph.find("</em>", k+4) != std::string::npos)
         {
             sDocParagraph.replace(k,4, "\\emph{");
-            sDocParagraph.replace(sDocParagraph.find("</em>", k+12), 5, "}");
+            sDocParagraph.replace(sDocParagraph.find("</em>", k+5), 5, "}");
         }
 
         if (sDocParagraph.substr(k,3) == "<h>" && sDocParagraph.find("</h>", k+3) != std::string::npos)
         {
-            sDocParagraph.replace(k, 3, "\\section{");
+            sDocParagraph.replace(k, 3, "\\subsection{");
             sDocParagraph.replace(sDocParagraph.find("</h>", k+4), 4, "}");
+        }
+
+        if (sDocParagraph.substr(k,3) == "<a " && sDocParagraph.find("</a>", k+3) != std::string::npos)
+        {
+            sDocParagraph.erase(k, sDocParagraph.find(">", k)-k+1);
+            sDocParagraph.erase(sDocParagraph.find("</a>", k), 4);
         }
 
         if (sDocParagraph.substr(k,6) == "<expr>" && sDocParagraph.find("</expr>", k+6) != std::string::npos)
@@ -209,13 +223,17 @@ static void doc_ReplaceTokensForTeX(std::string& sDocParagraph)
         {
             std::string sCode = sDocParagraph.substr(k+6, sDocParagraph.find("</code>", k+6)-k-6);
 
-            replaceAll(sCode, "\\n", "\\\\");
+            replaceAll(sCode, "&lt;", "<");
+            replaceAll(sCode, "&gt;", ">");
+            //replaceAll(sCode, "\\t", "\t");
+            //replaceAll(sCode, "\\n", "\n");
+            replaceAll(sCode, "&amp;", "&");
 
             sDocParagraph.replace(k, sDocParagraph.find("</code>", k+6)+7-k, "\\lstinline`" + sCode + "`");
             k += sCode.length();
         }
 
-        /*if (sDocParagraph.substr(k,5) == "<img " && sDocParagraph.find("/>", k+5) != std::string::npos)
+        if (sDocParagraph.substr(k,5) == "<img " && sDocParagraph.find("/>", k+5) != std::string::npos)
         {
             std::string sImg = sDocParagraph.substr(k, sDocParagraph.find("/>", k+5)+2-k);
 
@@ -223,15 +241,14 @@ static void doc_ReplaceTokensForTeX(std::string& sDocParagraph)
             {
                 std::string sImgSrc = Documentation::getArgAtPos(sImg, sImg.find('=', sImg.find("src"))+1);
                 sImgSrc = NumeReKernel::getInstance()->getFileSystem().ValidFileName(sImgSrc, ".png");
-                sImg = "<img src=\"" + sImgSrc + "\" />";
-                sImg = "<div align=\"center\">" + sImg + "</div>";
+                sImg = "\\begin{figure}[ht]\n\\centering\n\\includegraphics[width=0.6\\textwidth]{" + sImgSrc + "}\n\\end{figure}\n";
             }
             else
                 sImg.clear();
 
             sDocParagraph.replace(k, sDocParagraph.find("/>", k+5)+2-k, sImg);
             k += sImg.length();
-        }*/
+        }
 
         if (sDocParagraph.substr(k, 10) == "&PLOTPATH&")
             sDocParagraph.replace(k, 10, "<plotpath>");
@@ -251,6 +268,9 @@ static void doc_ReplaceTokensForTeX(std::string& sDocParagraph)
         if (sDocParagraph.substr(k, 9) == "&EXEPATH&")
             sDocParagraph.replace(k, 9, "<>");
     }
+
+    replaceAll(sDocParagraph, "%", "\\%");
+    replaceAll(sDocParagraph, "&amp;", "\\&");
 }
 
 
@@ -271,9 +291,8 @@ static std::string getHighlightedCode(std::string sCode, bool verbatim)
     if (!verbatim)
     {
         replaceAll(sCode, "\\n", " \\n ");
-        replaceAll(sCode, "\\t", "\t");
-        replaceAll(sCode, "&lt;", "<");
-        replaceAll(sCode, "&gt;", ">");
+        //replaceAll(sCode, "&lt;", "<");
+        //replaceAll(sCode, "&gt;", ">");
 
         //if (sCode.starts_with("|<- "))
         //    sCode.replace(1, 1, "&lt;");
@@ -281,10 +300,12 @@ static std::string getHighlightedCode(std::string sCode, bool verbatim)
         //if (sCode.starts_with("|-> "))
         //    sCode.replace(2, 1, "&gt;");
     }
-    else
-        replaceAll(sCode, "\\t", "\t");
 
-    replaceAll(sCode, "\\n", "\\\\\n");
+    replaceAll(sCode, "&lt;", "<");
+    replaceAll(sCode, "&gt;", ">");
+    replaceAll(sCode, "\\t", "\t");
+    replaceAll(sCode, "\\n", "\n");
+    replaceAll(sCode, "&amp;", "\\&");
     return sCode;
 }
 
@@ -340,9 +361,12 @@ static std::vector<std::pair<std::string, std::string>> parseList(std::vector<st
         else
         {
             doc_ReplaceTokensForTeX(vDocArticle[j]);
+            replaceAll(vDocArticle[j], "<br/>", "\\newline ");
             size_t pos = vDocArticle[j].find("node=")+5;
             std::string& sLine = vDocArticle[j];
             std::string sNode = Documentation::getArgAtPos(sLine, pos);
+            replaceAll(sNode, "\\newline", "");
+            replaceAll(sNode, "\t", " ");
 
             vList.push_back(std::make_pair(sNode,
                                            sLine.substr(sLine.find('>', pos+sNode.length()+2)+1,
@@ -351,6 +375,44 @@ static std::vector<std::pair<std::string, std::string>> parseList(std::vector<st
     }
 
     return vList;
+}
+
+
+static std::vector<std::vector<std::string>> doc_readTokenTable(const std::string& sTable)
+{
+    std::vector<std::vector<std::string> > vTable;
+    std::vector<std::string> vLine;
+
+    for (size_t i = 0; i < sTable.length(); i++) // <table> <tr> <td>
+    {
+        if (sTable.substr(i, 4) == "<td>")
+        {
+            for (size_t j = i+4; j < sTable.length(); j++)
+            {
+                if (sTable.substr(j, 5) == "</td>")
+                {
+                    vLine.push_back(sTable.substr(i+4, j-i-4));
+                    doc_ReplaceTokensForTeX(vLine[vLine.size()-1]);
+                    i = j+4;
+                    break;
+                }
+            }
+        }
+
+        if (sTable.substr(i, 5) == "</tr>")
+        {
+            vTable.push_back(vLine);
+            vLine.clear();
+            i += 4;
+        }
+
+        if (sTable.substr(i,8) == "</table>")
+        {
+            break;
+        }
+    }
+
+    return vTable;
 }
 
 
@@ -363,7 +425,7 @@ std::string renderTeX(std::vector<std::string>&& vDocArticle, const Settings& _o
     bool isIndex = (vDocArticle[0] == "Index");
 
     // create the header tag section of the TeX file
-    std::string sTeX = "\\chapter{" + vDocArticle[0] + "}\n";
+    std::string sTeX = "\\section{" + vDocArticle[0] + "}\n";
 
 
     // Convert the XML-like structure of the documentation
@@ -376,7 +438,7 @@ std::string renderTeX(std::vector<std::string>&& vDocArticle, const Settings& _o
         // the intended style
         if (vDocArticle[i].find("<example ") != std::string::npos) // Beispiel-Tags
         {
-            sTeX += "<h4>"+ _lang.get("DOC_HELP_EXAMPLE_HEADLINE") +"</h4>\n";
+            sTeX += "\\subsection{"+ _lang.get("DOC_HELP_EXAMPLE_HEADLINE") +"}\n";
             bool bVerb = false;
             bool bCodeBlock = false;
             bool bPlain = false;
@@ -394,7 +456,7 @@ std::string renderTeX(std::vector<std::string>&& vDocArticle, const Settings& _o
 
             doc_ReplaceTokensForTeX(sDescription);
 
-            sTeX += "<p>" + sDescription + "</p>\n";
+            sTeX += sDescription + "\n";
 
             if (bCodeBlock || bPlain)
             {
@@ -405,11 +467,11 @@ std::string renderTeX(std::vector<std::string>&& vDocArticle, const Settings& _o
                     if (vDocArticle[j].find("</example>") != std::string::npos)
                     {
                         i = j;
-                        sTeX += formatCodeBlock(sCodeContent.substr(0, sCodeContent.length()-2), bPlain) + "\n";
+                        sTeX += "\\begin{lstlisting}\n" + formatCodeBlock(sCodeContent, bPlain) + "\n\\end{lstlisting}\n";
                         break;
                     }
 
-                    sCodeContent += vDocArticle[j] + "\\n";
+                    sCodeContent += vDocArticle[j] + "\n";
                 }
             }
             else
@@ -422,38 +484,34 @@ std::string renderTeX(std::vector<std::string>&& vDocArticle, const Settings& _o
                     {
                         i = j;
                         doc_ReplaceTokensForTeX(sExample);
-
-                       // if (generateFile)
-                       //     sTeX += FILE_CODEBLOCK_START + sExample.substr(0, sExample.length()-5) + FILE_CODEBLOCK_END;
-                       // else
-                       //     sTeX += VIEWER_CODEBLOCK_START + sExample.substr(0, sExample.length()-5) + VIEWER_CODEBLOCK_END;
+                        sTeX += "\\begin{lstlisting}\n" + sExample + "\\end{lstlisting}\n";
 
                         break;
                     }
 
                     if (vDocArticle[j] == "[...]")
                     {
-                        sExample += "[...]<br>\n";
+                        sExample += "[...]\n";
                         continue;
                     }
 
                     if (!bVerb)
                     {
                         if (((i+1) % 2 && j % 2) || (!((i+1) % 2) && !(j % 2)))
-                            sExample += "|&lt;- " + getHighlightedCode(vDocArticle[j], false) + "<br>\n";
+                            sExample += "|<- " + getHighlightedCode(vDocArticle[j], false) + "\n";
                         else
                         {
-                            sExample += "|-&gt; " + vDocArticle[j] + "<br>\n";
+                            sExample += "|-> " + vDocArticle[j] + "\n";
 
                             if (vDocArticle[j+1].find("</example>") == std::string::npos)
-                                sExample += "|<br>\n";
+                                sExample += "|\n";
                         }
                     }
                     else
-                        sExample += getHighlightedCode(vDocArticle[j], false) + "<br>\n";
+                        sExample += getHighlightedCode(vDocArticle[j], false) + "\n";
                 }
             }
-
+            sTeX += "\n";
         }
         else if (vDocArticle[i].find("<exprblock>") != std::string::npos) // EXPRBLOCK-Tags
         {
@@ -468,7 +526,7 @@ std::string renderTeX(std::vector<std::string>&& vDocArticle, const Settings& _o
                 {
                     std::string sExprBlock = vDocArticle[i].substr(pos+11, endpos-pos-11);
                     replaceAll(sExprBlock, "\\n", "\\\\\n");
-                    vDocArticle[i].replace(pos, endpos+12-pos, "\\[" + sExprBlock + "\\]");
+                    vDocArticle[i].replace(pos, endpos+12-pos, "\\begin{gather*}\n" + sExprBlock + "\\end{gather*}\n");
 
                     pos = vDocArticle[i].find("<exprblock>");
                 }
@@ -487,7 +545,7 @@ std::string renderTeX(std::vector<std::string>&& vDocArticle, const Settings& _o
                     if (vDocArticle[j].find("</exprblock>") != std::string::npos)
                     {
                         i = j;
-                        sTeX += "\\[\n" + formatExprBlock(sExprBlock) + "\n\\]\n";
+                        sTeX += "\\begin{gather*}\n" + formatExprBlock(sExprBlock) + "\\end{gather*}\n";
                         break;
                     }
 
@@ -530,11 +588,11 @@ std::string renderTeX(std::vector<std::string>&& vDocArticle, const Settings& _o
                     if (vDocArticle[j].find("</codeblock>") != std::string::npos)
                     {
                         i = j;
-                        sTeX += "\\begin{lstlisting}\n" + formatCodeBlock(sCodeContent.substr(0, sCodeContent.length()-2), false) + "\n\\end{lstlisting}\n";
+                        sTeX += "\\begin{lstlisting}\n" + formatCodeBlock(sCodeContent, false) + "\\end{lstlisting}\n";
                         break;
                     }
 
-                    sCodeContent += vDocArticle[j] + "\\n";
+                    sCodeContent += vDocArticle[j] + "\n";
                 }
             }
         }
@@ -570,11 +628,11 @@ std::string renderTeX(std::vector<std::string>&& vDocArticle, const Settings& _o
                     if (vDocArticle[j].find("</verbatim>") != std::string::npos)
                     {
                         i = j;
-                        sTeX += "\\begin{verbatim}\n" + formatCodeBlock(sCodeContent.substr(0, sCodeContent.length()-2), true) + "\n\\end{verbatim}\n";
+                        sTeX += "\\begin{verbatim}\n" + formatCodeBlock(sCodeContent, true) + "\\end{verbatim}\n";
                         break;
                     }
 
-                    sCodeContent += vDocArticle[j] + "\\n";
+                    sCodeContent += vDocArticle[j] + "\n";
                 }
             }
         }
@@ -590,8 +648,8 @@ std::string renderTeX(std::vector<std::string>&& vDocArticle, const Settings& _o
                     std::string sExprBlock = vDocArticle[i].substr(pos+8, endpos-pos-8);
 
                     vDocArticle[i].replace(pos, endpos+9-pos,
-                                           "\n\\section{Syntax}\n\\begin{lstlisting}\n" + formatCodeBlock(sExprBlock, false)
-                                                + "\n\\end{lstlisting}\n\\section{" + _lang.get("DOC_HELP_DESC_HEADLINE") + "}\n");
+                                           "\n\\subsection{Syntax}\n\\begin{lstlisting}\n" + formatCodeBlock(sExprBlock, false)
+                                                + "\n\\end{lstlisting}\n\\subsection{" + _lang.get("DOC_HELP_DESC_HEADLINE") + "}\n");
 
                     pos = vDocArticle[i].find("<syntax>");
                 }
@@ -604,7 +662,7 @@ std::string renderTeX(std::vector<std::string>&& vDocArticle, const Settings& _o
                 if (vDocArticle[i] != "<syntax>")
                     sTeX += vDocArticle[i].substr(0, vDocArticle[i].find("<syntax>")) + "\n";
 
-                sTeX += "\n\\section{Syntax}\n\\begin{lstlisting}\n";
+                sTeX += "\\subsection{Syntax}\n\\begin{lstlisting}\n";
                 std::string sCodeContent;
 
                 for (size_t j = i+1; j < vDocArticle.size(); j++)
@@ -612,12 +670,12 @@ std::string renderTeX(std::vector<std::string>&& vDocArticle, const Settings& _o
                     if (vDocArticle[j].find("</syntax>") != std::string::npos)
                     {
                         i = j;
-                        sTeX += formatCodeBlock(sCodeContent.substr(0, sCodeContent.length()-2), false)
-                            + "\n\\end{lstlisting}\n\\section{" + _lang.get("DOC_HELP_DESC_HEADLINE") + "}\n";
+                        sTeX += formatCodeBlock(sCodeContent, false)
+                            + "\\end{lstlisting}\n\\subsection{" + _lang.get("DOC_HELP_DESC_HEADLINE") + "}\n";
                         break;
                     }
 
-                    sCodeContent += vDocArticle[j] + "\\n";
+                    sCodeContent += vDocArticle[j] + "\n";
                 }
             }
         }
@@ -648,43 +706,51 @@ std::string renderTeX(std::vector<std::string>&& vDocArticle, const Settings& _o
             }
             else
             {
-                sTeX += "<table border=\"1\" bordercolor=\"#888\" cellspacing=\"0\">\n  <tbody>\n";
+                sTeX += "\\begin{small}\n\\centering\n\\begin{longtable}{p{0.4\\textwidth}p{0.55\\textwidth}}\n\\toprule\n";
 
                 for (const auto& iter : vList)
                 {
-                    if (isIndex)
-                    {
-                        sTeX += "    <tr>\n      <td width=\"200\"><a href=\"nhlp://"
-                              + iter.first + "?frame=self\"><code><span style=\"color:#00008B;\">"
-                              + iter.first + "</span></code></a></td>\n      <td>" + iter.second + "</td>\n    </tr>\n";
-                    }
-                    else
-                    {
-                        sTeX += "    <tr>\n      <td width=\"200\"><code><span style=\"color:#00008B;\">"
-                                  + iter.first + "</span></code></td>\n      <td>" + iter.second + "</td>\n    </tr>\n";
-                    }
+                    sTeX += "    \\lstinline`" + iter.first + "` & " + iter.second + "\\\\ \n";
                 }
 
-                sTeX += "  </tbody>\n</table>\n";
+                sTeX += "\\bottomrule\n\\end{longtable}\n\\end{small}\n";
             }
         }
-        else if (vDocArticle[i].find("<table") != std::string::npos) // Table-Tags
+        else if (vDocArticle[i].find("<table") != std::string::npos) // TABLE-Tags
         {
-            sTeX += "<div align=\"center\"><table border=\"1\" bordercolor=\"#888\" cellspacing=\"0\">\n  <tbody>\n";
+            std::string sTable = vDocArticle[i].substr(vDocArticle[i].find("<table"));
 
             for (size_t j = i+1; j < vDocArticle.size(); j++)
             {
                 if (vDocArticle[j].find("</table>") != std::string::npos)
                 {
-                    sTeX += "  </tbody>\n</table></div>\n";
+                    sTable += vDocArticle[j].substr(0, vDocArticle[j].find("</table>")+8);
+
+                    // Send the whole content to the table reader and render the obtained table on the screen.
+                    std::vector<std::vector<std::string>> vTable = doc_readTokenTable(sTable);
+                    sTeX += "\\begin{small}\n\\centering\n\\begin{longtable}{"
+                        + strfill("", vTable[0].size(), 'c') + "}\n\\toprule\n";
+
+                    for (size_t v = 0; v < vTable.size(); v++)
+                    {
+                        for (size_t w = 0; w < vTable[v].size(); w++)
+                        {
+                            if (w)
+                                sTeX += " & ";
+
+                            sTeX += vTable[v][w];
+                        }
+
+                        sTeX += "\\\\ \n";
+                    }
+
+                    sTeX += "\\bottomrule\n\\end{longtable}\n\\end{small}\n";
+
                     i = j;
                     break;
                 }
                 else
-                {
-                    doc_ReplaceTokensForTeX(vDocArticle[j]);
-                    sTeX += vDocArticle[j] + "\n";
-                }
+                    sTable += vDocArticle[j];
             }
         }
         else // Normaler Paragraph
