@@ -418,11 +418,11 @@ static std::vector<std::pair<std::string, std::string>> parseList(std::vector<st
         else
         {
             doc_ReplaceTokensForTeX(vDocArticle[j]);
-            replaceAll(vDocArticle[j], "<br/>", "\\newline ");
+            replaceAll(vDocArticle[j], "\\\\", "\\newline ");
             replaceAll(vDocArticle[j], "&quot;", "\"");
             replaceAll(vDocArticle[j], "&lt;", "<");
             replaceAll(vDocArticle[j], "&gt;", ">");
-            replaceAll(vDocArticle[j], "&", "\\&");
+            //replaceAll(vDocArticle[j], "&", "\\&");
             size_t pos = vDocArticle[j].find("node=")+5;
             std::string& sLine = vDocArticle[j];
             std::string sNode = Documentation::getArgAtPos(sLine, pos);
@@ -799,8 +799,30 @@ std::string renderTeX(std::vector<std::string>&& vDocArticle, const std::string&
 
                     // Send the whole content to the table reader and render the obtained table on the screen.
                     std::vector<std::vector<std::string>> vTable = doc_readTokenTable(sTable);
-                    sTeX += "\\begin{small}\n\\centering\n\\begin{longtable}{"
-                        + strfill("", vTable[0].size(), 'c') + "}\n\\toprule\n";
+                    std::vector<double> vColSizes(vTable[0].size(), 0.0);
+
+                    for (const std::vector<std::string>& vRow : vTable)
+                    {
+                        for (size_t n = 0; n < vRow.size(); n++)
+                        {
+                            vColSizes[n] = std::max(vColSizes[n], (double)vRow[n].size());
+                        }
+                    }
+
+                    for (size_t n = 0; n < vColSizes.size(); n++)
+                    {
+                        vColSizes[n] = std::sqrt(vColSizes[n]);
+                    }
+
+                    double sum = std::accumulate(vColSizes.begin(), vColSizes.end(), 0.0);
+                    sTeX += "\\begin{small}\n\\centering\n\\begin{longtable}{";
+
+                    for (size_t n = 0; n < vColSizes.size(); n++)
+                    {
+                        sTeX += "p{" + toString(vColSizes[n] / sum * (1.0 - 0.025*vColSizes.size())) + "\\textwidth}";
+                    }
+
+                    sTeX += "}\n\\toprule\n";
 
                     for (size_t v = 0; v < vTable.size(); v++)
                     {
