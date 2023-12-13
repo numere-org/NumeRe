@@ -389,14 +389,18 @@ static std::string doc_HelpAsTeX(const std::string& __sTopic, Settings& _option)
 {
     std::string sTopic = __sTopic;
     StripSpaces(sTopic);
+    std::string sIndex;
 
     // Get the article contents
     std::vector<std::string> vDocArticle = doc_findFunctionDocumentation(sTopic);
 
     if (!vDocArticle.size())
+    {
         vDocArticle = _option.getHelpArticle(toLowerCase(sTopic));
+        sIndex = _option.getHelpIdxKey(toLowerCase(sTopic));
+    }
 
-    return renderTeX(std::move(vDocArticle), _option);
+    return renderTeX(std::move(vDocArticle), sIndex, _option);
 }
 
 

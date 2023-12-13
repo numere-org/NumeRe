@@ -23,6 +23,6 @@
 #include <vector>
 #include "../settings.hpp"
 
-std::string renderTeX(std::vector<std::string>&& vDocArticle, const Settings& _option);
+std::string renderTeX(std::vector<std::string>&& vDocArticle, const std::string& sIndex, const Settings& _option);
 
 #endif // TEXRENDERING_HPP
