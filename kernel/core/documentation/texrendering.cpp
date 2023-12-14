@@ -227,7 +227,9 @@ static void doc_ReplaceTokensForTeX(std::string& sDocParagraph)
                 {
                     sAnchorRef = NumeReKernel::getInstance()->getSettings().getHelpIdxKey(sAnchorRef.substr(7, sAnchorRef.find('?')-7));
 
-                    if (sAnchorText.starts_with("help "))
+                    if (sAnchorRef == "<<NONE>>")
+                        sAnchor = sAnchorText;
+                    else if (sAnchorText.starts_with("help "))
                         sAnchor = "\\nameref{help:" + sAnchorRef + "}";
                     else
                         sAnchor = sAnchorText + " {\\footnotesize [$\\Rightarrow$ \\nameref{help:" + sAnchorRef + "}]}";
@@ -283,7 +285,12 @@ static void doc_ReplaceTokensForTeX(std::string& sDocParagraph)
         }
 
         if (sDocParagraph.substr(k, 6) == "<item ")
-            k = sDocParagraph.find("\">", k)+1;
+        {
+            if (sDocParagraph.find("\">", k) == std::string::npos && sDocParagraph.find("&q&>", k) != std::string::npos)
+                k = sDocParagraph.find("&q&>", k)+3;
+            else
+                k = sDocParagraph.find("\">", k)+1;
+        }
 
         if (sDocParagraph.substr(k, 18) == "\\begin{lstlisting}")
             k = sDocParagraph.find("\\end{lstlisting}", k)+16;
@@ -341,22 +348,9 @@ static void doc_ReplaceTokensForTeX(std::string& sDocParagraph)
 /////////////////////////////////////////////////
 static std::string getHighlightedCode(std::string sCode, bool verbatim)
 {
-    //if (!verbatim)
-    //{
-    //    replaceAll(sCode, "\\n", " \\n ");
-    //    //replaceAll(sCode, "&lt;", "<");
-    //    //replaceAll(sCode, "&gt;", ">");
-    //
-    //    //if (sCode.starts_with("|<- "))
-    //    //    sCode.replace(1, 1, "&lt;");
-    //    //
-    //    //if (sCode.starts_with("|-> "))
-    //    //    sCode.replace(2, 1, "&gt;");
-    //}
-
     replaceAll(sCode, "&lt;", "<");
     replaceAll(sCode, "&gt;", ">");
-    replaceAll(sCode, "\\t", "\t");
+    replaceAll(sCode, "\\t", "    ");
     replaceAll(sCode, "\\n", "\n");
     replaceAll(sCode, "&amp;", "\\&");
     return sCode;
@@ -418,22 +412,27 @@ static std::vector<std::pair<std::string, std::string>> parseList(std::vector<st
         else
         {
             doc_ReplaceTokensForTeX(vDocArticle[j]);
-            replaceAll(vDocArticle[j], "\\\\", "\\newline ");
-            replaceAll(vDocArticle[j], "&quot;", "\"");
-            replaceAll(vDocArticle[j], "&lt;", "<");
-            replaceAll(vDocArticle[j], "&gt;", ">");
-            //replaceAll(vDocArticle[j], "&", "\\&");
+
             size_t pos = vDocArticle[j].find("node=")+5;
             std::string& sLine = vDocArticle[j];
             std::string sNode = Documentation::getArgAtPos(sLine, pos);
             size_t nodeLen = sNode.length();
-            replaceAll(sNode, "\\newline ", "`\\newline\\lstinline`");
+            std::string sText = sLine.substr(sLine.find('>', pos+nodeLen+2)+1,
+                                             sLine.find("</item>")-1-sLine.find('>', pos+nodeLen+2));
+
+            replaceAll(sText, "\\\\", "\\newline ");
+            replaceAll(sText, "&quot;", "\"");
+            replaceAll(sText, "&lt;", "<");
+            replaceAll(sText, "&gt;", ">");
+
+            replaceAll(sNode, "\\\\", "`\\newline\\lstinline`");
+            replaceAll(sNode, "&quot;", "\"");
+            replaceAll(sNode, "&lt;", "<");
+            replaceAll(sNode, "&gt;", ">");
             replaceAll(sNode, "\t", " ");
             replaceAll(sNode, "\\&", "&");
 
-            vList.push_back(std::make_pair(sNode,
-                                           sLine.substr(sLine.find('>', pos+nodeLen+2)+1,
-                                                        sLine.find("</item>")-1-sLine.find('>', pos+nodeLen+2))));
+            vList.push_back(std::make_pair(sNode, sText));
         }
     }
 
