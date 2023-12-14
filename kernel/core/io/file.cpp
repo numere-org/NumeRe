@@ -4152,7 +4152,7 @@ namespace NumeRe
 
         // Parse through styles.xml to get numfmts
         // Iterate through nodes
-        tinyxml2::XMLElement *numFmts = _styles.FirstChildElement()->FirstChildElement("numFmts");
+        tinyxml2::XMLElement* numFmts = _styles.FirstChildElement()->FirstChildElement("numFmt");
 
         // Empty set to store numfmts ID
         std::set<int> vDateTimeIds;
