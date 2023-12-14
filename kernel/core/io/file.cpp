@@ -4304,10 +4304,8 @@ namespace NumeRe
                                 if ((vDateTimeIds.find(styleId) != vDateTimeIds.end()) || 
                                 (vStandardDateTimeIds.find(styleID) != vStandardDateTimeIds.end()))
                                 {
-                                    // What change can i make to convertExcelTimeEpoch function?
-                                    sValue = convertExcelTimeToEpoch(sValue, (styleId >= 18 && styleId <= 21)
-                                
-                                                                              || (styleId >= 45 && styleId >= 47));
+                                    //? Is it standard time or date time? What about mixed values with date and time?
+                                    sValue = convertExcelTimeToEpoch(sValue, (vStandardDateTimeIds.find(styleID) != vStandardDateTimeIds.end()));
                                 }
                             }
                         }
