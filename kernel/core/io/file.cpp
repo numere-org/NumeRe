@@ -4147,6 +4147,9 @@ namespace NumeRe
         _styles.Parse(sStylesContent.c_str());
         tinyxml2::XMLElement* cellXfs = _styles.FirstChildElement()->FirstChildElement("cellXfs");
 
+        // Initialize Set with Standard Excel Datetime IDs: 18..21, 45..47
+        std::set<int> vStandardDateTimeIds = {18,19,20,21, 45,46,47}
+
         // Parse through styles.xml to get numfmts
         // Iterate through nodes
         tinyxml2::XMLElement *numFmts = _styles.FirstChildElement()->FirstChildElement("numfmts");
@@ -4154,6 +4157,7 @@ namespace NumeRe
         // Empty set to store numfmts ID
         std::set<int> vDateTimeIds;
 
+        // Dynamically check _styles.xml for numFmtId
         if (numFmts)
         {
             numFmts = numFmts->FirstChildElement();
@@ -4297,7 +4301,8 @@ namespace NumeRe
                                 styleId = style->IntAttribute("numFmtId");
 
                                 // Check if styleId is in vDateTimeIds set
-                                if (vDateTimeIds.find(styleId) != vDateTimeIds.end())
+                                if ((vDateTimeIds.find(styleId) != vDateTimeIds.end()) || 
+                                (vStandardDateTimeIds.find(styleID) != vStandardDateTimeIds.end()))
                                 {
                                     // What change can i make to convertExcelTimeEpoch function?
                                     sValue = convertExcelTimeToEpoch(sValue, (styleId >= 18 && styleId <= 21)
