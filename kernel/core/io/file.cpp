@@ -4302,10 +4302,12 @@ namespace NumeRe
 
                                 // Check if styleId is in vDateTimeIds set
                                 if ((vDateTimeIds.find(styleId) != vDateTimeIds.end()) || 
-                                (vStandardDateTimeIds.find(styleID) != vStandardDateTimeIds.end()))
+                                (vStandardDateTimeIds.find(styleId) != vStandardDateTimeIds.end()))
                                 {
+
                                     //? Is it standard time or date time? What about mixed values with date and time?
-                                    sValue = convertExcelTimeToEpoch(sValue, (vStandardDateTimeIds.find(styleID) != vStandardDateTimeIds.end()));
+                                    sValue = convertExcelTimeToEpoch(sValue, 
+                                    (vStandardDateTimeIds.find(styleID) != vStandardDateTimeIds.end()));
                                 }
                             }
                         }
