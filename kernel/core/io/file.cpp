@@ -19,6 +19,9 @@
 #include <libsha.hpp>
 #include <libzygo.hpp>
 
+#include <set>
+#include <algorithm> // contains std::find_if for datetime detection
+
 #include "file.hpp"
 #include "../datamanagement/tablecolumnimpl.hpp"
 #include "IgorLib/ReadWave.h"
@@ -4153,7 +4156,7 @@ namespace NumeRe
 
         if (numFmts)
         {
-            numtFmts = numFmts->FirstChildElement();
+            numFmts = numFmts->FirstChildElement();
 
             while (numFmts)
             {
@@ -4161,9 +4164,9 @@ namespace NumeRe
                 std::string formatString = numFmts->Attribute("formatCode");
 
                 // Detect datetime, if yes, push to empty set
-                if (isDateTimeFormat(formatString){
+                if (isDateTimeFormat(formatString)){
                     vDateTimeIds.insert(id); // Insert into set
-                }
+                };
 
                 numFmts = numFmts->NextSiblingElement();
             }

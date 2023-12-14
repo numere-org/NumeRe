@@ -24,8 +24,6 @@
 #include <cmath>
 #include <vector>
 #include <utility>
-#include <set>
-#include <algorithm> // contains std::find_if for datetime detection
 
 #include "zip++.hpp"
 #include "../utils/stringtools.hpp"
