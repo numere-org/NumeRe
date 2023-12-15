@@ -4300,7 +4300,7 @@ namespace NumeRe
                             {
                                 styleId = style->IntAttribute("numFmtId");
 
-                                // Check if styleId is in vDateTimeIds set
+                                // Check if styleId is in vDateTimeIds or vStandardDateTimeIds set
                                 if ((vDateTimeIds.find(styleId) != vDateTimeIds.end()) || 
                                 (vStandardDateTimeIds.find(styleId) != vStandardDateTimeIds.end()))
                                 {
