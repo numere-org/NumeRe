@@ -4148,7 +4148,7 @@ namespace NumeRe
         tinyxml2::XMLElement* cellXfs = _styles.FirstChildElement()->FirstChildElement("cellXfs");
 
         // Initialize Set with Standard Excel Datetime IDs: 18..21, 45..47
-        std::set<int> vStandardDateTimeIds = {18,19,20,21, 45,46,47};
+        std::set<int> vStandardDateTimeIds = {14, 15, 16, 17, 18, 19, 20, 21, 22, 45, 46, 47};
 
         // Parse through styles.xml to get numfmts
         // Iterate through nodes
