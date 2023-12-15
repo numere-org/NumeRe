@@ -4307,7 +4307,7 @@ namespace NumeRe
 
                                     //? Is it standard time or date time? What about mixed values with date and time?
                                     sValue = convertExcelTimeToEpoch(sValue, 
-                                    (vStandardDateTimeIds.find(styleID) != vStandardDateTimeIds.end()));
+                                    (vStandardDateTimeIds.find(styleId) != vStandardDateTimeIds.end()));
                                 }
                             }
                         }
