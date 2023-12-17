@@ -25,7 +25,7 @@
 
 /////////////////////////////////////////////////
 /// \brief Static helper function for
-/// doc_ReplaceExprContentForHTML to determine
+/// doc_ReplaceExprContentForTeX to determine
 /// literal values in expressions.
 ///
 /// \param sExpr const std::string&
@@ -42,7 +42,7 @@ static bool isValue(const std::string& sExpr, size_t nPos, size_t nLength)
 
 /////////////////////////////////////////////////
 /// \brief Static helper function for
-/// doc_ReplaceExprContentForHTML to determine
+/// doc_ReplaceExprContentForTeX to determine
 /// operators in expressions.
 ///
 /// \param sExpr const std::string&
@@ -59,7 +59,7 @@ static bool isOperator(const std::string& sExpr, size_t nPos, size_t nLength)
 
 /////////////////////////////////////////////////
 /// \brief Static helper function for
-/// doc_ReplaceExprContentForHTML to determine
+/// doc_ReplaceExprContentForTeX to determine
 /// functions in expressions.
 ///
 /// \param sExpr const std::string&
@@ -92,9 +92,6 @@ static void doc_ReplaceExprContentForTeX(std::string& sExpr)
     // Set the starting position
     if (sExpr.find("<exprblock>") != std::string::npos)
         nPos = sExpr.find("<exprblock>")+11;
-
-    //replaceAll(sExpr, "{", "\\{", nPos);
-    //replaceAll(sExpr, "}", "\\}", nPos);
 
     // Try to match the tokens to those in the
     // data base and replace them
@@ -175,7 +172,7 @@ static void doc_ReplaceExprContentForTeX(std::string& sExpr)
 /////////////////////////////////////////////////
 /// \brief Searches for defined XML tokens in the
 /// passed string and replaces them with the
-/// plain HTML counterpart.
+/// plain TeX counterpart.
 ///
 /// \param sDocParagraph std::string&
 /// \return void
@@ -185,12 +182,6 @@ static void doc_ReplaceTokensForTeX(std::string& sDocParagraph)
 {
     for (size_t k = 0; k < sDocParagraph.length(); k++)
     {
-        //if (sDocParagraph.substr(k,3) == "\\\\n")
-        //    sDocParagraph.erase(k,1);
-
-        //if (sDocParagraph.substr(k,2) == "  ")
-        //    sDocParagraph.replace(k,1,"&nbsp;");
-
         if (sDocParagraph.substr(k, 8) == "&#x2713;")
             sDocParagraph.replace(k, 8, "\\usym{2713}");
 
@@ -336,7 +327,7 @@ static void doc_ReplaceTokensForTeX(std::string& sDocParagraph)
 
 
 /////////////////////////////////////////////////
-/// \brief Returns the final HTML string
+/// \brief Returns the final TeX string
 /// containing the already lexed and highlighted
 /// code.
 ///
@@ -358,7 +349,7 @@ static std::string getHighlightedCode(std::string sCode, bool verbatim)
 
 
 /////////////////////////////////////////////////
-/// \brief Returns the final HTML string
+/// \brief Returns the final TeX string
 /// containing the lexed and highlighted code and
 /// embeds that into the code block environment.
 ///
@@ -380,6 +371,14 @@ static std::string formatCodeBlock(std::string sCode, bool verbatim)
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Returns the final TeX string for an
+/// expression block.
+///
+/// \param sExpr std::string
+/// \return std::string
+///
+/////////////////////////////////////////////////
 static std::string formatExprBlock(std::string sExpr)
 {
     replaceAll(sExpr, "\\t", "\t");
@@ -390,7 +389,7 @@ static std::string formatExprBlock(std::string sExpr)
 
 /////////////////////////////////////////////////
 /// \brief Parses a list into a two-column
-/// structure, which can be converted into a HTML
+/// structure, which can be converted into a TeX
 /// table.
 ///
 /// \param vDocArticle std::vector<std::string>&
@@ -440,7 +439,15 @@ static std::vector<std::pair<std::string, std::string>> parseList(std::vector<st
 }
 
 
-static std::vector<std::vector<std::string>> doc_readTokenTable(const std::string& sTable)
+/////////////////////////////////////////////////
+/// \brief Read a XML table structure in a 2D
+/// vector.
+///
+/// \param sTable const std::string&
+/// \return std::vector<std::vector<std::string>>
+///
+/////////////////////////////////////////////////
+static std::vector<std::vector<std::string>> readTokenTable(const std::string& sTable)
 {
     std::vector<std::vector<std::string> > vTable;
     std::vector<std::string> vLine;
@@ -480,6 +487,15 @@ static std::vector<std::vector<std::string>> doc_readTokenTable(const std::strin
 
 
 
+/////////////////////////////////////////////////
+/// \brief Render the XML structure as TeX.
+///
+/// \param vDocArticle std::vector<std::string>&&
+/// \param sIndex const std::string&
+/// \param _option const Settings&
+/// \return std::string
+///
+/////////////////////////////////////////////////
 std::string renderTeX(std::vector<std::string>&& vDocArticle, const std::string& sIndex, const Settings& _option)
 {
     if (vDocArticle[0] == "NO_ENTRY_FOUND") // Nix gefunden
@@ -797,7 +813,7 @@ std::string renderTeX(std::vector<std::string>&& vDocArticle, const std::string&
                     sTable += vDocArticle[j].substr(0, vDocArticle[j].find("</table>")+8);
 
                     // Send the whole content to the table reader and render the obtained table on the screen.
-                    std::vector<std::vector<std::string>> vTable = doc_readTokenTable(sTable);
+                    std::vector<std::vector<std::string>> vTable = readTokenTable(sTable);
                     std::vector<double> vColSizes(vTable[0].size(), 0.0);
 
                     for (const std::vector<std::string>& vRow : vTable)

@@ -494,6 +494,15 @@ static std::string formatCodeBlock(std::string sCode, bool generateFile, bool ve
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Returns the final HTML string for an
+/// expression block.
+///
+/// \param sExpr std::string
+/// \param generateFile bool
+/// \return std::string
+///
+/////////////////////////////////////////////////
 static std::string formatExprBlock(std::string sExpr, bool generateFile)
 {
     replaceAll(sExpr, "\\t", "&nbsp;&nbsp;&nbsp;&nbsp;");
@@ -545,6 +554,15 @@ static std::vector<std::pair<std::string, std::string>> parseList(std::vector<st
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Render the XML structure as HTML.
+///
+/// \param vDocArticle std::vector<std::string>&&
+/// \param generateFile bool
+/// \param _option const Settings&
+/// \return std::string
+///
+/////////////////////////////////////////////////
 std::string renderHTML(std::vector<std::string>&& vDocArticle, bool generateFile, const Settings& _option)
 {
     if (vDocArticle[0] == "NO_ENTRY_FOUND") // Nix gefunden
