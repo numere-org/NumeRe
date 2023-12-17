@@ -528,6 +528,13 @@ namespace NumeRe
                 return vTextFile;
             }
 
+            enum TokenizerOptions
+            {
+                DEFAULT = 0x0,
+                SKIP_EMPTY = 0x1,
+                CONSIDER_QMARKS = 0x2
+            };
+
             /////////////////////////////////////////////////
             /// \brief This method may be used to separater a
             /// line into multiple tokens using a set of
@@ -535,38 +542,68 @@ namespace NumeRe
             /// be skipped, then only tokens with a non-zero
             /// length are stored.
             ///
-            /// \param sString std::string
+            /// \param sString const std::string&
             /// \param sSeparators const std::string&
-            /// \param skipEmptyTokens bool
+            /// \param options int
             /// \return std::vector<std::string>
             ///
             /////////////////////////////////////////////////
-            std::vector<std::string> tokenize(std::string sString, const std::string& sSeparators, bool skipEmptyTokens = false)
+            std::vector<std::string> tokenize(const std::string& sString, const std::string& sSeparators, int options = DEFAULT)
             {
                 std::vector<std::string> vTokens;
+                // Initialize index variables
+                size_t iStart = 0;
 
-                // As long as the string has a length
-                while (sString.length())
+                // Initialize variable for checking if inside quotes
+                bool inQuotation = false;
+                bool considerQMarks = options & CONSIDER_QMARKS;
+
+                // Iterate over string line
+                for (size_t i = 0; i < sString.length(); ++i)
                 {
-                    // Store the string until the first separator character
-                    vTokens.push_back(sString.substr(0, sString.find_first_of(sSeparators)));
+                    char c = sString[i];
 
-                    // If empty tokens shall not be stored, remove the last
-                    // token again, if it is empty
-                    if (skipEmptyTokens && !vTokens.back().length())
-                        vTokens.pop_back();
+                    if (c == '"' && considerQMarks)
+                    {
+                        // Encountered quote, toggle inQuotation
+                        inQuotation = !inQuotation;
+                    }
+                    else if (sSeparators.find(c) != std::string::npos && (!inQuotation || !considerQMarks))
+                    {
+                        // Found a separator outside string, add to Tokens vector
+                        // Exclude entry and ending string quotes
+                        if (considerQMarks && sString[iStart] == '"' && sString[i-1] == '"')
+                        {
+                            vTokens.push_back(sString.substr(iStart+1, i - iStart - 2));
+                            replaceAll(vTokens.back(), "\"\"", "\"");
+                        }
+                        else
+                            vTokens.push_back(sString.substr(iStart, i - iStart));
 
-                    // Erase the contents of the line including the first
-                    // separator character
-                    if (sString.find_first_of(sSeparators) != std::string::npos)
-                        sString.erase(0, sString.find_first_of(sSeparators)+1);
-                    else
-                        break;
+                        iStart = i + 1; // Update Start index for next token
+                    }
                 }
 
+                // Add the last token or one token if no separator found
+                if (considerQMarks && sString[iStart] == '"' && sString.back() == '"')
+                {
+                    vTokens.push_back(sString.substr(iStart+1, sString.length() - iStart - 2));
+                    replaceAll(vTokens.back(), "\"\"", "\"");
+                }
+                else
+                    vTokens.push_back(sString.substr(iStart));
+
+                // If empty Tokens are not being stored, remove all empty tokens
+                // from the vector
+                if (options & SKIP_EMPTY)
+                {
+                    vTokens.erase(std::remove_if(vTokens.begin(), vTokens.end(),
+                                                 [](const std::string &token)
+                                                 { return token.empty(); }),
+                                  vTokens.end());
+                }
                 return vTokens;
             }
-
             /////////////////////////////////////////////////
             /// \brief This method template can be used to
             /// write a numeric value to file in binary mode.

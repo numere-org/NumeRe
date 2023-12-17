@@ -411,6 +411,10 @@
 		<Unit filename="kernel/core/documentation/docgen.hpp" />
 		<Unit filename="kernel/core/documentation/documentation.cpp" />
 		<Unit filename="kernel/core/documentation/documentation.hpp" />
+		<Unit filename="kernel/core/documentation/htmlrendering.cpp" />
+		<Unit filename="kernel/core/documentation/htmlrendering.hpp" />
+		<Unit filename="kernel/core/documentation/texrendering.cpp" />
+		<Unit filename="kernel/core/documentation/texrendering.hpp" />
 		<Unit filename="kernel/core/interval.cpp" />
 		<Unit filename="kernel/core/interval.hpp" />
 		<Unit filename="kernel/core/io/BasicExcel.cpp" />

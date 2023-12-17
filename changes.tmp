@@ -69,6 +69,7 @@ Added	The plot option margin=MARGIN can be used to control the plot margin size.
 Cleaned	The autocompletion feature does not interfere with any of the editor tooltips any more.
 Applied	Date-time columns are now automatically wide enough for their contents.
 Fixed	Plot marks now also scale with their corresponding line sizes.
+Fixed	Tokenizer function now parses strings with embedded commas correctly when reading CSV Files.
 Added	Added functions to perform circular and row/column-wise shifts of all elements in a matrix.
 Added	Added feature of autowrapping for comments if line indicator is active
 New	You can now select the fundamental data type of a value column (some files are setting that automatically). Beware that only two data types support complex values: "value" (i.e. "value.cf64") and "value.cf32".
@@ -76,3 +77,4 @@ Cleaned	"imread" reads images as "value.ui8" data.
 Cleaned	"audioread" and "seek" read audiodata as "value.f32" (without complex value support)
 Cleaned	Physical constants are now named after their english names, german names still exist internally for backwards compatibility.
 Added	It's now possible to create a QR code from a string using the "qrcode" command.
+Added	It's now possible to create a TeX export from the documentation articles by appending a "-tex" to the "help" command (internal development feature).
