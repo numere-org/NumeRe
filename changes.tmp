@@ -78,3 +78,4 @@ Cleaned	"audioread" and "seek" read audiodata as "value.f32" (without complex va
 Cleaned	Physical constants are now named after their english names, german names still exist internally for backwards compatibility.
 Added	It's now possible to create a QR code from a string using the "qrcode" command.
 Added	It's now possible to create a TeX export from the documentation articles by appending a "-tex" to the "help" command (internal development feature).
+Fixed	A rare crash in "matop" mode was resolved, which occured, if one uses a non-filled part of a table for an expression.
