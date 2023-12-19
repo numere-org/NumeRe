@@ -4191,8 +4191,10 @@ namespace NumeRe
         // Iterate through nodes
         tinyxml2::XMLElement* numFmts = _styles.FirstChildElement()->FirstChildElement("numFmt");
 
-        // Empty set to store numfmts ID
-        std::set<int> vDateTimeIds;
+        // Empty set to store numFmts ID that corresponds to Time 
+        std::set<int> vTimeIds;
+        // Empty set to store numFmts ID that corresponds to Date
+        std::set<int> vDateIds;
 
         // Dynamically check _styles.xml for numFmtId
         if (numFmts)
@@ -4204,14 +4206,23 @@ namespace NumeRe
                 int id = numFmts->IntAttribute("numFmtId");
                 std::string formatString = numFmts->Attribute("formatCode");
 
-                // Detect datetime, if yes, push to empty set
-                if (isDateTimeFormat(formatString)){
-                    vDateTimeIds.insert(id); // Insert into set
+                // Detect time format, if yes, push Id to empty set
+                if (isTimeFormat(formatString)){
+                    vTimeIds.insert(id); // Insert into set
+                };
+
+                // Detect date format, if yes, push Id to empty set
+                if (isDateFormat(formatString))
+                {
+                    vDateIds.insert(id); // Insert into set
                 };
 
                 numFmts = numFmts->NextSiblingElement();
             }
         }
+
+        // Empty boolean value to store Time format inspection
+        bool isTime;
 
         // Go through all sheets
         for (size_t i = 0; i < nSheets; i++)
@@ -4337,16 +4348,17 @@ namespace NumeRe
                             {
                                 styleId = style->IntAttribute("numFmtId");
 
-                                // Check if styleId is in vDateTimeIds, vStandardTimeIds or vStandardDateIds set
-                                if ((vDateTimeIds.find(styleId) != vDateTimeIds.end()) ||
-                                    (vStandardTimeIds.find(styleId) != vStandardTimeIds.end()) ||
-                                    (vStandardDateIds.find(styleId) != vStandardDateIds.end()))
+                                // Check if styleId is in vTimeIds or vStandardTimeIds sets
+                                isTime = (vTimeIds.find(styleId) != vTimeIds.end()) ||
+                                    (vStandardTimeIds.find(styleId) != vStandardTimeIds.end()); 
+
+                                
+                                if (isTime)
                                 {
 
                                     // For purely Time characteristics with no Date characteristics, consign values
                                     // to UNIX standards
-                                    sValue = convertExcelTimeToEpoch(sValue, 
-                                    (vStandardTimeIds.find(styleId) != vStandardTimeIds.end()));
+                                    sValue = convertExcelTimeToEpoch(sValue, isTime);
                                 }
                             }
                         }
