@@ -16,7 +16,7 @@ Added	Folding has been enabled for LaTeX files.
 Added	The terminal now also proposed global variables for auto completion.
 Applied	The revision of large files won't be created by calculating a DIFF. Instead, the whole file content is saved.
 Applied	It's now possible to pipe a window layout encoded as string directly into the "window" command.
-Fixed   Face() and Facev() functions can be made transparent
+Fixed	Face() and Facev() functions can be made transparent
 Added	Additional handler for interacting with custom windows were added: changing focus, selections, maximize, iconize, restore, hide and unhide.
 Cleaned	The string arrays of "dropdown" and "combobox" can now be changed using the "window ID -set label=VALS item=ID" command.
 Fixed	Using "str.len" in the search bar yielded an uncatched exception message. This was resolved.
@@ -69,6 +69,7 @@ Added	The plot option margin=MARGIN can be used to control the plot margin size.
 Cleaned	The autocompletion feature does not interfere with any of the editor tooltips any more.
 Applied	Date-time columns are now automatically wide enough for their contents.
 Fixed	Plot marks now also scale with their corresponding line sizes.
+Fixed	Tokenizer function now parses strings with embedded commas correctly when reading CSV Files.
 Added	Added functions to perform circular and row/column-wise shifts of all elements in a matrix.
 Added	Added feature of autowrapping for comments if line indicator is active.
 New	You can now select the fundamental data type of a value column (some files are setting that automatically). Beware that only two data types support complex values: "value" (i.e. "value.cf64") and "value.cf32".
@@ -76,3 +77,7 @@ Cleaned	"imread" reads images as "value.ui8" data.
 Cleaned	"audioread" and "seek" read audiodata as "value.f32" (without complex value support)
 Cleaned	Physical constants are now named after their english names, german names still exist internally for backwards compatibility.
 Fixed	Fixed dynamically checking Datetime formats in Excel files.
+Added	It's now possible to create a QR code from a string using the "qrcode" command.
+Added	It's now possible to create a TeX export from the documentation articles by appending a "-tex" to the "help" command (internal development feature).
+Fixed	A rare crash in "matop" mode was resolved, which occured, if one uses a non-filled part of a table for an expression.
+
