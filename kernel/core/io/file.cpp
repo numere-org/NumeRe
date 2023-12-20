@@ -3972,10 +3972,10 @@ namespace NumeRe
     /// false otherwise.
     ///
     /////////////////////////////////////////////////
-    bool isDateFormat(const std::string &formatString)
+    static bool isDateFormat(const std::string &formatString)
     {
         // List of characters to search for
-        const char charsToFind[] = {'m', 'M', 'd', 'D', 'j', 'J', 'y', 'Y'};
+        static const char charsToFind[] = {'d', 'y'};
 
         // Check if any of the characters are present in the format string
         auto id = std::find_if(formatString.begin(), formatString.end(), [&](char c)
@@ -4004,10 +4004,10 @@ namespace NumeRe
     /// false otherwise.
     ///
     /////////////////////////////////////////////////
-    bool isTimeFormat(const std::string &formatString)
+    static bool isTimeFormat(const std::string &formatString)
     {
         // List of characters to search for
-        const char charsToFind[] = {'s', 'S', 'h', 'H'};
+        static const char charsToFind[] = {'s', 'h'};
 
         // Check if any of the characters are present in the format string
         auto it = std::find_if(formatString.begin(), formatString.end(), [&](char c)
@@ -4273,9 +4273,6 @@ namespace NumeRe
             }
         }
 
-        // Empty boolean value to store Time format inspection
-        bool isTime;
-
         // Go through all sheets
         for (size_t i = 0; i < nSheets; i++)
         {
@@ -4401,11 +4398,12 @@ namespace NumeRe
                                 styleId = style->IntAttribute("numFmtId");
 
                                 // Check if styleId is in vTimeIds or vStandardTimeIds sets
-                                isTime = (vTimeIds.find(styleId) != vTimeIds.end()) ||
-                                    (vStandardTimeIds.find(styleId) != vStandardTimeIds.end()); 
-
+                                bool isTime = vTimeIds.find(styleId) != vTimeIds.end()
+                                    || vStandardTimeIds.find(styleId) != vStandardTimeIds.end(); 
+                                bool isDate = vDateIds.find(styleId) != vDateIds.end()
+                                    || vStandardDateIds.find(styleId) != vStandardDateds.end(); 
                                 
-                                if (isTime)
+                                if (isDate || isTime)
                                 {
 
                                     // For purely Time characteristics with no Date characteristics, consign values
