@@ -3627,7 +3627,8 @@ namespace NumeRe
     static std::string convertExcelTimeToEpoch(std::string sXlsTime, bool isTimeVal)
     {
         static const double epochOffset = to_double(StrToTime("1899-12-30"));
-        return toString(to_timePoint(StrToDb(sXlsTime)*24*3600 + (!isTimeVal)*epochOffset),
+        double xlsTimeVal = StrToDb(sXlsTime);
+        return toString(to_timePoint(xlsTimeVal*24*3600 + (!isTimeVal)*(epochOffset + 24*3600*(xlsTimeVal < 61))),
                         GET_MILLISECONDS | GET_FULL_PRECISION | GET_UNBIASED_TIME | (isTimeVal)*GET_ONLY_TIME);
     }
 
@@ -3956,37 +3957,6 @@ namespace NumeRe
 
     /////////////////////////////////////////////////
     /// \brief Check if the given format string corresponds
-    /// to a date format. This function looks for
-    /// the presence of characters 'm', 'd', 'y', 't', 'j'(and their
-    /// uppercase equivalents) in the format string. These
-    /// characters are typically used in date-time formatting
-    /// in an Excel documents xl/style.xml file.
-    ///
-    /// There is a possible source of conflict detecting Month or Monat (m/M)
-    /// and checking for Minutes (m/M)
-    ///
-    /// \param formatString The string representing the format
-    /// code to be checked.
-    ///
-    /// \return true if the formatString is a date format,
-    /// false otherwise.
-    ///
-    /////////////////////////////////////////////////
-    static bool isDateFormat(const std::string &formatString)
-    {
-        // List of characters to search for
-        static const char charsToFind[] = {'d', 'y'};
-
-        // Check if any of the characters are present in the format string
-        auto id = std::find_if(formatString.begin(), formatString.end(), [&](char c)
-                               { return std::find(std::begin(charsToFind), std::end(charsToFind), c) != std::end(charsToFind); });
-
-        // If any of the characters are found, return true
-        return id != formatString.end();
-    }
-
-    /////////////////////////////////////////////////
-    /// \brief Check if the given format string corresponds
     /// to a time format. This function looks for
     /// the presence of characters 'm', 's', 'h' (and their
     /// uppercase equivalents) in the format string. These
@@ -4006,15 +3976,31 @@ namespace NumeRe
     /////////////////////////////////////////////////
     static bool isTimeFormat(const std::string &formatString)
     {
-        // List of characters to search for
-        static const char charsToFind[] = {'s', 'h'};
+        return formatString.find_first_of("sh") != std::string::npos;
+    }
 
-        // Check if any of the characters are present in the format string
-        auto it = std::find_if(formatString.begin(), formatString.end(), [&](char c)
-                               { return std::find(std::begin(charsToFind), std::end(charsToFind), c) != std::end(charsToFind); });
-
-        // If any of the characters are found, return true
-        return it != formatString.end();
+    /////////////////////////////////////////////////
+    /// \brief Check if the given format string corresponds
+    /// to a date format. This function looks for
+    /// the presence of characters 'm', 'd', 'y', 't', 'j'(and their
+    /// uppercase equivalents) in the format string. These
+    /// characters are typically used in date-time formatting
+    /// in an Excel documents xl/style.xml file.
+    ///
+    /// There is a possible source of conflict detecting Month or Monat (m/M)
+    /// and checking for Minutes (m/M)
+    ///
+    /// \param formatString The string representing the format
+    /// code to be checked.
+    ///
+    /// \return true if the formatString is a date format,
+    /// false otherwise.
+    ///
+    /////////////////////////////////////////////////
+    static bool isDateFormat(const std::string &formatString)
+    {
+        return formatString.find_first_of("dy") != std::string::npos
+            || (formatString.find("m") != std::string::npos && !isTimeFormat(formatString));
     }
 
     /////////////////////////////////////////////////
@@ -4235,15 +4221,15 @@ namespace NumeRe
         tinyxml2::XMLElement* cellXfs = _styles.FirstChildElement()->FirstChildElement("cellXfs");
 
         // Initialize Set with Standard Excel Time IDs: 18..21, 45..47
-        std::set<int> vStandardTimeIds = {18, 19, 20, 21, 22, 45, 46, 47};
-        // Initialize Set with Standard Excel Date IDs (14..17): 
-        std::set<int> vStandardDateIds = {14, 15, 16, 17};
+        static const std::set<int> vStandardTimeIds = {18, 19, 20, 21, 45, 46, 47};
+        // Initialize Set with Standard Excel Date IDs (14..17):
+        static const std::set<int> vStandardDateIds = {14, 15, 16, 17, 22};
 
         // Parse through styles.xml to get numfmts
         // Iterate through nodes
-        tinyxml2::XMLElement* numFmts = _styles.FirstChildElement()->FirstChildElement("numFmt");
+        tinyxml2::XMLElement* numFmts = _styles.FirstChildElement()->FirstChildElement("numFmts");
 
-        // Empty set to store numFmts ID that corresponds to Time 
+        // Empty set to store numFmts ID that corresponds to Time
         std::set<int> vTimeIds;
         // Empty set to store numFmts ID that corresponds to Date
         std::set<int> vDateIds;
@@ -4259,15 +4245,12 @@ namespace NumeRe
                 std::string formatString = numFmts->Attribute("formatCode");
 
                 // Detect time format, if yes, push Id to empty set
-                if (isTimeFormat(formatString)){
+                if (isTimeFormat(formatString))
                     vTimeIds.insert(id); // Insert into set
-                };
 
                 // Detect date format, if yes, push Id to empty set
                 if (isDateFormat(formatString))
-                {
                     vDateIds.insert(id); // Insert into set
-                };
 
                 numFmts = numFmts->NextSiblingElement();
             }
@@ -4397,18 +4380,18 @@ namespace NumeRe
                             {
                                 styleId = style->IntAttribute("numFmtId");
 
+
                                 // Check if styleId is in vTimeIds or vStandardTimeIds sets
                                 bool isTime = vTimeIds.find(styleId) != vTimeIds.end()
-                                    || vStandardTimeIds.find(styleId) != vStandardTimeIds.end(); 
+                                    || vStandardTimeIds.find(styleId) != vStandardTimeIds.end();
                                 bool isDate = vDateIds.find(styleId) != vDateIds.end()
-                                    || vStandardDateIds.find(styleId) != vStandardDateds.end(); 
-                                
+                                    || vStandardDateIds.find(styleId) != vStandardDateIds.end();
+
                                 if (isDate || isTime)
                                 {
-
                                     // For purely Time characteristics with no Date characteristics, consign values
                                     // to UNIX standards
-                                    sValue = convertExcelTimeToEpoch(sValue, isTime);
+                                    sValue = convertExcelTimeToEpoch(sValue, isTime && !isDate);
                                 }
                             }
                         }
