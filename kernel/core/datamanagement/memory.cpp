@@ -3753,19 +3753,19 @@ std::vector<mu::value_type> Memory::getIndex(size_t col, const std::vector<mu::v
 /// \brief Calculates the simples form of a ANOVA
 /// F test
 ///
-/// \param colCategories size_t
+/// \param colCategories VectorIndex&
 /// \param colValues size_t
 /// \param _vIndex const VectorIndex&
 /// \param significance double
 /// \return AnovaResult
 ///
 /////////////////////////////////////////////////
-AnovaResult Memory::getOneWayAnova(size_t colCategories, size_t colValues, const VectorIndex& _vIndex, double significance) const
+AnovaResult Memory::getOneWayAnova(const VectorIndex& colCategories, size_t colValues, const VectorIndex& _vIndex, double significance) const
 {
     // Get indices
-    if (colCategories > memArray.size()
-        || !memArray[colCategories]
-        || memArray[colCategories]->m_type != TableColumn::TYPE_CATEGORICAL
+    if (colCategories[0] > memArray.size()
+        || !memArray[colCategories[0]]
+        || memArray[colCategories[0]]->m_type != TableColumn::TYPE_CATEGORICAL
         || significance >= 1.0
         || significance <= 0.0)
     {
@@ -3774,68 +3774,170 @@ AnovaResult Memory::getOneWayAnova(size_t colCategories, size_t colValues, const
         return res;
     }
 
-    _vIndex.setOpenEndIndex(getElemsInColumn(colCategories)-1);
-    Memory _mem(2);
-    _mem.memArray[0].reset(memArray[colCategories]->copy(_vIndex));
-    _mem.memArray[1].reset(memArray[colValues]->copy(_vIndex));
-
-    const std::vector<std::string>& vCategories = static_cast<CategoricalColumn*>(_mem.memArray[0].get())->getCategories();
-
-    // Copy into different columns
-    for (const auto& cat : vCategories)
+    if(colCategories.size() == 1)
     {
-        std::vector<mu::value_type> catIndex = _mem.getIndex(0, std::vector<mu::value_type>(), std::vector<std::string>(1, cat));
+        _vIndex.setOpenEndIndex(getElemsInColumn(colCategories[0])-1);
+        Memory _mem(2);
+        _mem.memArray[0].reset(memArray[colCategories[0]]->copy(_vIndex));
+        _mem.memArray[1].reset(memArray[colValues]->copy(_vIndex));
 
-        if (mu::isnan(catIndex.front()))
-            continue;
+        const std::vector<std::string>& vCategories = static_cast<CategoricalColumn*>(_mem.memArray[0].get())->getCategories();
 
-        _mem.memArray.push_back(TblColPtr(_mem.memArray[1]->copy(VectorIndex(&catIndex[0], catIndex.size(), 0))));
+        // Copy into different columns
+        for (const auto& cat : vCategories)
+        {
+            std::vector<mu::value_type> catIndex = _mem.getIndex(0, std::vector<mu::value_type>(), std::vector<std::string>(1, cat));
+
+            if (mu::isnan(catIndex.front()))
+                continue;
+
+            _mem.memArray.push_back(TblColPtr(_mem.memArray[2]->copy(VectorIndex(&catIndex[0], catIndex.size(), 0))));
+        }
+
+        // Prepare vectors for each group
+        std::vector<mu::value_type> vAvg;
+        std::vector<mu::value_type> vVar;
+        std::vector<mu::value_type> vNum;
+
+        // Get the values for each group
+        for (size_t j = 2; j < _mem.memArray.size(); j++)
+        {
+            vAvg.push_back(_mem.avg(VectorIndex(0, VectorIndex::OPEN_END), VectorIndex(j)));
+            vNum.push_back(_mem.num(VectorIndex(0, VectorIndex::OPEN_END), VectorIndex(j)));
+            vVar.push_back(intPower(_mem.std(VectorIndex(0, VectorIndex::OPEN_END), VectorIndex(j)), 2));
+        }
+
+        // Calculate the overall values
+        mu::value_type overallAvg = _mem.avg(VectorIndex(0, VectorIndex::OPEN_END), VectorIndex(2, VectorIndex::OPEN_END));
+        mu::value_type overallNum = _mem.num(VectorIndex(0, VectorIndex::OPEN_END), VectorIndex(2, VectorIndex::OPEN_END));
+        mu::value_type overallVariance;
+
+        // Pretend that each group contains n equal measurements
+        // to calculate the ideal overall variance
+        for (size_t i = 0; i < vAvg.size(); i++)
+        {
+            overallVariance += vNum[i] * intPower(vAvg[i]-overallAvg, 2);
+        }
+
+        // Calculate the average group variance
+        mu::value_type avgGroupVariance = std::accumulate(vVar.begin(), vVar.end(), mu::value_type()) / (double)vVar.size();
+
+        double overallDOF = vVar.size() - 1.0;
+        double sumOfGroupDOFs = overallNum.real() - vVar.size();
+
+        // Normalize only the ideal overall variance as
+        // the squared STDEVs are already group-normalized
+        overallVariance /= overallDOF;
+        //avgGroupVariance /= (double)vVar.size();
+
+        // Sum up all information
+        AnovaResult res;
+        res.m_FRatio = overallVariance / avgGroupVariance;
+        res.m_significanceVal = gsl_cdf_fdist_Pinv(1.0 - significance, overallDOF, sumOfGroupDOFs);
+        res.m_significance = significance;
+        res.m_isSignificant = res.m_FRatio.real() >= res.m_significanceVal.real();
+        res.m_numCategories = vVar.size();
+
+        return res;
     }
-
-    // Prepare vectors for each group
-    std::vector<mu::value_type> vAvg;
-    std::vector<mu::value_type> vVar;
-    std::vector<mu::value_type> vNum;
-
-    // Get the values for each group
-    for (size_t j = 2; j < _mem.memArray.size(); j++)
+    else if(colCategories.size() == 2)
     {
-        vAvg.push_back(_mem.avg(VectorIndex(0, VectorIndex::OPEN_END), VectorIndex(j)));
-        vNum.push_back(_mem.num(VectorIndex(0, VectorIndex::OPEN_END), VectorIndex(j)));
-        vVar.push_back(intPower(_mem.std(VectorIndex(0, VectorIndex::OPEN_END), VectorIndex(j)), 2));
+        _vIndex.setOpenEndIndex(getElemsInColumn(colCategories[0])-1);
+        Memory _mem(2);
+        _mem.memArray[0].reset(memArray[colCategories[0]]->copy(_vIndex));
+        _mem.memArray[1].reset(memArray[colCategories[1]]->copy(_vIndex));
+        _mem.memArray[2].reset(memArray[colValues]->copy(_vIndex));
+
+        const std::vector<std::string>& vCategories1 = static_cast<CategoricalColumn*>(_mem.memArray[0].get())->getCategories();
+        const std::vector<std::string>& vCategories2 = static_cast<CategoricalColumn*>(_mem.memArray[1].get())->getCategories();
+
+        int over_all_size = vCategories1.size() + vCategories2.size() + vCategories1.size() * vCategories2.size();
+        _mem.memArray.reserve(3 + over_all_size);
+
+        // Copy the gropues into different columns (g1, g2, g1Xg2)
+        for (int i = 0; i < vCategories1.size(); i++)
+        {
+            //positions of all elements, which correspond to the passed values
+            std::vector<mu::value_type> catIndex1 = _mem.getIndex(0, std::vector<mu::value_type>(), std::vector<std::string>(1, vCategories1[i]));
+
+            if (mu::isnan(catIndex1.front()))
+                continue;
+
+            _mem.memArray[3+i] = TblColPtr(_mem.memArray[1]->copy(VectorIndex(&catIndex1[0], catIndex1.size(), 0)));
+
+            for (int j = 0; j < vCategories2.size(); j++){
+                std::vector<mu::value_type> catIndex2 = _mem.getIndex(0, std::vector<mu::value_type>(), std::vector<std::string>(1, vCategories1[i]));
+
+                if (mu::isnan(catIndex2.front()))
+                    continue;
+
+                _mem.memArray[3+vCategories1.size()+j] = TblColPtr(_mem.memArray[1]->copy(VectorIndex(&catIndex2[0], catIndex2.size(), 0)));
+
+                // todo is there any chance to sort mu::value_type ?
+                //std::sort(catIndex1.begin(), catIndex1.end());
+                //std::sort(catIndex2.begin(), catIndex2.end());
+                std::vector<mu::value_type> intersection;
+
+                //std::set_intersection(catIndex1.begin(), catIndex1.end(), catIndex2.begin(), catIndex2.end(),
+                //                      std::back_inserter(intersection));
+
+                for(auto a : catIndex1)
+                    for(auto b : catIndex2)
+                        if(a == b)
+                            intersection.push_back(a);
+
+                _mem.memArray[3+vCategories1.size()+vCategories2.size()+vCategories1.size()*i+j] = TblColPtr(_mem.memArray[1]->copy(VectorIndex(&intersection[0], intersection.size(), 0)));
+            }
+        }
+
+        // Prepare vectors for each group
+        std::vector<mu::value_type> vAvg;
+        std::vector<mu::value_type> vVar;
+        std::vector<mu::value_type> vNum;
+
+        // Get the values for each group
+        for (size_t j = 3; j < _mem.memArray.size(); j++)
+        {
+            vAvg.push_back(_mem.avg(VectorIndex(0, VectorIndex::OPEN_END), VectorIndex(j)));
+            vNum.push_back(_mem.num(VectorIndex(0, VectorIndex::OPEN_END), VectorIndex(j)));
+            vVar.push_back(intPower(_mem.std(VectorIndex(0, VectorIndex::OPEN_END), VectorIndex(j)), 2));
+        }
+
+        // Calculate the overall values
+        mu::value_type overallAvg = _mem.avg(VectorIndex(0, VectorIndex::OPEN_END), VectorIndex(2, VectorIndex::OPEN_END));
+        mu::value_type overallNum = _mem.num(VectorIndex(0, VectorIndex::OPEN_END), VectorIndex(2, VectorIndex::OPEN_END));
+        mu::value_type overallVariance;
+
+        // Pretend that each group contains n equal measurements
+        // to calculate the ideal overall variance
+        for (size_t i = 0; i < vAvg.size(); i++)
+        {
+            overallVariance += vNum[i] * intPower(vAvg[i]-overallAvg, 2);
+        }
+
+        // Calculate the average group variance
+        mu::value_type avgGroupVariance = std::accumulate(vVar.begin(), vVar.end(), mu::value_type()) / (double)vVar.size();
+
+        double overallDOF = vVar.size() - 1.0;
+        double sumOfGroupDOFs = overallNum.real() - vVar.size();
+
+        // Normalize only the ideal overall variance as
+        // the squared STDEVs are already group-normalized
+        overallVariance /= overallDOF;
+        //avgGroupVariance /= (double)vVar.size();
+
+        // Sum up all information
+        AnovaResult res;
+        res.m_FRatio = overallVariance / avgGroupVariance;
+        res.m_significanceVal = gsl_cdf_fdist_Pinv(1.0 - significance, overallDOF, sumOfGroupDOFs);
+        res.m_significance = significance;
+        res.m_isSignificant = res.m_FRatio.real() >= res.m_significanceVal.real();
+        res.m_numCategories = vVar.size();
+
+        return res;
     }
-
-    // Calculate the overall values
-    mu::value_type overallAvg = _mem.avg(VectorIndex(0, VectorIndex::OPEN_END), VectorIndex(2, VectorIndex::OPEN_END));
-    mu::value_type overallNum = _mem.num(VectorIndex(0, VectorIndex::OPEN_END), VectorIndex(2, VectorIndex::OPEN_END));
-    mu::value_type overallVariance;
-
-    // Pretend that each group contains n equal measurements
-    // to calculate the ideal overall variance
-    for (size_t i = 0; i < vAvg.size(); i++)
-    {
-        overallVariance += vNum[i] * intPower(vAvg[i]-overallAvg, 2);
-    }
-
-    // Calculate the average group variance
-    mu::value_type avgGroupVariance = std::accumulate(vVar.begin(), vVar.end(), mu::value_type()) / (double)vVar.size();
-
-    double overallDOF = vVar.size() - 1.0;
-    double sumOfGroupDOFs = overallNum.real() - vVar.size();
-
-    // Normalize only the ideal overall variance as
-    // the squared STDEVs are already group-normalized
-    overallVariance /= overallDOF;
-    //avgGroupVariance /= (double)vVar.size();
-
-    // Sum up all information
     AnovaResult res;
-    res.m_FRatio = overallVariance / avgGroupVariance;
-    res.m_significanceVal = gsl_cdf_fdist_Pinv(1.0 - significance, overallDOF, sumOfGroupDOFs);
-    res.m_significance = significance;
-    res.m_isSignificant = res.m_FRatio.real() >= res.m_significanceVal.real();
-    res.m_numCategories = vVar.size();
-
+    res.m_FRatio = NAN;
     return res;
 }
 
