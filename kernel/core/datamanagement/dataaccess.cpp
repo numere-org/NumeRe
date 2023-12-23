@@ -1796,7 +1796,7 @@ static std::string tableMethod_anova(const std::string& sTableName, std::string 
     if (nResults < 1)
         throw SyntaxError(SyntaxError::TOO_FEW_COLS, sTableName + "().anovaof()", ".anovaof(", ".anovaof(");
 
-    size_t col1 = intCast(v[0])-1;
+    auto col1 = VectorIndex(v, nResults, 0);
 
     sCols = getNextArgument(sMethodArguments, true);
     nResults = 0;
@@ -1806,7 +1806,7 @@ static std::string tableMethod_anova(const std::string& sTableName, std::string 
 
     if (nResults < 1)
         throw SyntaxError(SyntaxError::TOO_FEW_COLS, sTableName + "().anovaof()", ".anovaof(", ".anovaof(");
-    size_t col2 = intCast(v[1])-1;
+    size_t col2 = intCast(v[0])-1;
 
     VectorIndex vIndex(0, VectorIndex::OPEN_END);
     double significance = 0.05;
@@ -1827,7 +1827,7 @@ static std::string tableMethod_anova(const std::string& sTableName, std::string 
         }
     }
 
-    AnovaResult res;// = _kernel->getMemoryManager().getOneWayAnova(sTableName, col1, col2, vIndex, significance);
+    AnovaResult res = _kernel->getMemoryManager().getOneWayAnova(sTableName, col1, col2, vIndex, significance);
 
     std::vector<std::string> vRet;
 

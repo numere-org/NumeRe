@@ -3799,8 +3799,8 @@ AnovaResult Memory::getOneWayAnova(const VectorIndex& colCategories, size_t colV
         std::vector<mu::value_type> vVar;
         std::vector<mu::value_type> vNum;
 
-        // Get the values for each group
-        for (size_t j = 2; j < _mem.memArray.size(); j++)
+        // Get the values for group 1
+        for (size_t j = 3; j < _mem.memArray.size(); j++)
         {
             vAvg.push_back(_mem.avg(VectorIndex(0, VectorIndex::OPEN_END), VectorIndex(j)));
             vNum.push_back(_mem.num(VectorIndex(0, VectorIndex::OPEN_END), VectorIndex(j)));
@@ -3843,19 +3843,28 @@ AnovaResult Memory::getOneWayAnova(const VectorIndex& colCategories, size_t colV
     else if(colCategories.size() == 2)
     {
         _vIndex.setOpenEndIndex(getElemsInColumn(colCategories[0])-1);
-        Memory _mem(2);
+        Memory _mem(3);
         _mem.memArray[0].reset(memArray[colCategories[0]]->copy(_vIndex));
         _mem.memArray[1].reset(memArray[colCategories[1]]->copy(_vIndex));
         _mem.memArray[2].reset(memArray[colValues]->copy(_vIndex));
 
+        int a = getElemsInColumn(colCategories[0]);
+        int b = getElemsInColumn(colCategories[1]);
+        int x = getElemsInColumn(colValues);
+        mu::value_type as  = static_cast<ValueColumn*>(_mem.memArray[2].get())->getValue(0);
+        mu::value_type ass = static_cast<ValueColumn*>(_mem.memArray[2].get())->getValue(1);
+
         const std::vector<std::string>& vCategories1 = static_cast<CategoricalColumn*>(_mem.memArray[0].get())->getCategories();
         const std::vector<std::string>& vCategories2 = static_cast<CategoricalColumn*>(_mem.memArray[1].get())->getCategories();
 
-        int over_all_size = vCategories1.size() + vCategories2.size() + vCategories1.size() * vCategories2.size();
-        _mem.memArray.reserve(3 + over_all_size);
-
+        int numCat1 = vCategories1.size();
+        int numCat2 = vCategories2.size();
+        int numC1xC2 = numCat1 * numCat2;
+        int over_all_size = numCat1 + numCat2 + numC1xC2;
+        _mem.memArray.resize(3 + over_all_size);
+        int s = _mem.memArray.size();
         // Copy the gropues into different columns (g1, g2, g1Xg2)
-        for (int i = 0; i < vCategories1.size(); i++)
+        for (int i = 0; i < numCat1; i++)
         {
             //positions of all elements, which correspond to the passed values
             std::vector<mu::value_type> catIndex1 = _mem.getIndex(0, std::vector<mu::value_type>(), std::vector<std::string>(1, vCategories1[i]));
@@ -3863,15 +3872,17 @@ AnovaResult Memory::getOneWayAnova(const VectorIndex& colCategories, size_t colV
             if (mu::isnan(catIndex1.front()))
                 continue;
 
-            _mem.memArray[3+i] = TblColPtr(_mem.memArray[1]->copy(VectorIndex(&catIndex1[0], catIndex1.size(), 0)));
+            _mem.memArray[3+i] = TblColPtr(_mem.memArray[2]->copy(VectorIndex(&catIndex1[0], catIndex1.size(), 0)));
+            mu::value_type tst = static_cast<ValueColumn*>(_mem.memArray[3+i].get())->getValue(0);
+            mu::value_type tst2 = static_cast<ValueColumn*>(_mem.memArray[3+i].get())->getValue(1);
 
-            for (int j = 0; j < vCategories2.size(); j++){
-                std::vector<mu::value_type> catIndex2 = _mem.getIndex(0, std::vector<mu::value_type>(), std::vector<std::string>(1, vCategories1[i]));
+            for (int j = 0; j < numCat2; j++){
+                std::vector<mu::value_type> catIndex2 = _mem.getIndex(1, std::vector<mu::value_type>(), std::vector<std::string>(1, vCategories2[j]));
 
                 if (mu::isnan(catIndex2.front()))
                     continue;
 
-                _mem.memArray[3+vCategories1.size()+j] = TblColPtr(_mem.memArray[1]->copy(VectorIndex(&catIndex2[0], catIndex2.size(), 0)));
+                _mem.memArray[3+numCat1+j] = TblColPtr(_mem.memArray[2]->copy(VectorIndex(&catIndex2[0], catIndex2.size(), 0)));
 
                 // todo is there any chance to sort mu::value_type ?
                 //std::sort(catIndex1.begin(), catIndex1.end());
@@ -3886,9 +3897,12 @@ AnovaResult Memory::getOneWayAnova(const VectorIndex& colCategories, size_t colV
                         if(a == b)
                             intersection.push_back(a);
 
-                _mem.memArray[3+vCategories1.size()+vCategories2.size()+vCategories1.size()*i+j] = TblColPtr(_mem.memArray[1]->copy(VectorIndex(&intersection[0], intersection.size(), 0)));
+                _mem.memArray[3+numCat1+numCat2+numCat1*i+j] = TblColPtr(_mem.memArray[2]->copy(VectorIndex(&intersection[0], intersection.size(), 0)));
             }
         }
+
+        mu::value_type tst = static_cast<ValueColumn*>(_mem.memArray[10].get())->getValue(0);
+        mu::value_type tst2 = static_cast<ValueColumn*>(_mem.memArray[10].get())->getValue(1);
 
         // Prepare vectors for each group
         std::vector<mu::value_type> vAvg;
