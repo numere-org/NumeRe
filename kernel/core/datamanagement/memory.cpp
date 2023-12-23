@@ -3882,6 +3882,7 @@ AnovaResult Memory::getOneWayAnova(const VectorIndex& colCategories, size_t colV
                 if (mu::isnan(catIndex2.front()))
                     continue;
 
+                //todo this is done to often, how more efficient
                 _mem.memArray[3+numCat1+j] = TblColPtr(_mem.memArray[2]->copy(VectorIndex(&catIndex2[0], catIndex2.size(), 0)));
 
                 // todo is there any chance to sort mu::value_type ?
@@ -3897,12 +3898,11 @@ AnovaResult Memory::getOneWayAnova(const VectorIndex& colCategories, size_t colV
                         if(a == b)
                             intersection.push_back(a);
 
-                _mem.memArray[3+numCat1+numCat2+numCat1*i+j] = TblColPtr(_mem.memArray[2]->copy(VectorIndex(&intersection[0], intersection.size(), 0)));
+                _mem.memArray[3+numCat1+numCat2+numCat2*i+j] = TblColPtr(_mem.memArray[2]->copy(VectorIndex(&intersection[0], intersection.size(), 0)));
             }
         }
 
-        mu::value_type tst = static_cast<ValueColumn*>(_mem.memArray[10].get())->getValue(0);
-        mu::value_type tst2 = static_cast<ValueColumn*>(_mem.memArray[10].get())->getValue(1);
+        // thats how we calculate https://www.statology.org/two-way-anova-by-hand/
 
         // Prepare vectors for each group
         std::vector<mu::value_type> vAvg;
@@ -3914,20 +3914,40 @@ AnovaResult Memory::getOneWayAnova(const VectorIndex& colCategories, size_t colV
         {
             vAvg.push_back(_mem.avg(VectorIndex(0, VectorIndex::OPEN_END), VectorIndex(j)));
             vNum.push_back(_mem.num(VectorIndex(0, VectorIndex::OPEN_END), VectorIndex(j)));
+            mu::value_type asdf = vNum.back();
             vVar.push_back(intPower(_mem.std(VectorIndex(0, VectorIndex::OPEN_END), VectorIndex(j)), 2));
         }
 
         // Calculate the overall values
-        mu::value_type overallAvg = _mem.avg(VectorIndex(0, VectorIndex::OPEN_END), VectorIndex(2, VectorIndex::OPEN_END));
-        mu::value_type overallNum = _mem.num(VectorIndex(0, VectorIndex::OPEN_END), VectorIndex(2, VectorIndex::OPEN_END));
-        mu::value_type overallVariance;
+        mu::value_type overallAvg = _mem.avg(VectorIndex(0, VectorIndex::OPEN_END), VectorIndex(2));
+        mu::value_type overallNum = _mem.num(VectorIndex(0, VectorIndex::OPEN_END), VectorIndex(2));
+        mu::value_type SS_total = intPower(_mem.std(VectorIndex(0, VectorIndex::OPEN_END), VectorIndex(2)), 2);
 
-        // Pretend that each group contains n equal measurements
-        // to calculate the ideal overall variance
-        for (size_t i = 0; i < vAvg.size(); i++)
+        //Factor 1
+        mu::value_type SS_F1;
+        for(int i = 0; i < numCat1; i++)
+            SS_F1 += vNum[i] * intPower(vAvg[i]-overallAvg,2);
+
+        //Factor 2
+        mu::value_type SS_F2;
+        for(int i = numCat1; i < numCat1+numCat2; i++)
+            SS_F2 += vNum[i] * intPower(vAvg[i]-overallAvg,2);
+
+        int s_ov_av = vAvg.size();
+        //SS - Within / Error
+        mu::value_type SS_Within;
+        for(int i = numCat1+numCat2; i < over_all_size; i++)
         {
-            overallVariance += vNum[i] * intPower(vAvg[i]-overallAvg, 2);
+            mu::value_type SS_p;
+            double nnn = vNum[i].real();
+            for(int j = 0; j < vNum[i].real(); j++)
+            {
+                mu::value_type val_j = static_cast<ValueColumn*>(_mem.memArray[3+i].get())->getValue(j);
+                SS_p +=  intPower(val_j - vAvg[i],2);
+            }
+            SS_Within += SS_p;
         }
+
 
         // Calculate the average group variance
         mu::value_type avgGroupVariance = std::accumulate(vVar.begin(), vVar.end(), mu::value_type()) / (double)vVar.size();
@@ -3937,12 +3957,12 @@ AnovaResult Memory::getOneWayAnova(const VectorIndex& colCategories, size_t colV
 
         // Normalize only the ideal overall variance as
         // the squared STDEVs are already group-normalized
-        overallVariance /= overallDOF;
+        SS_total /= overallDOF;
         //avgGroupVariance /= (double)vVar.size();
 
         // Sum up all information
         AnovaResult res;
-        res.m_FRatio = overallVariance / avgGroupVariance;
+        res.m_FRatio = SS_total / avgGroupVariance;
         res.m_significanceVal = gsl_cdf_fdist_Pinv(1.0 - significance, overallDOF, sumOfGroupDOFs);
         res.m_significance = significance;
         res.m_isSignificant = res.m_FRatio.real() >= res.m_significanceVal.real();
