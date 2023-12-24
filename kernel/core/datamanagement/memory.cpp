@@ -3791,7 +3791,7 @@ AnovaResult Memory::getOneWayAnova(const VectorIndex& colCategories, size_t colV
             if (mu::isnan(catIndex.front()))
                 continue;
 
-            _mem.memArray.push_back(TblColPtr(_mem.memArray[2]->copy(VectorIndex(&catIndex[0], catIndex.size(), 0))));
+            _mem.memArray.push_back(TblColPtr(_mem.memArray[1]->copy(VectorIndex(&catIndex[0], catIndex.size(), 0))));
         }
 
         // Prepare vectors for each group
@@ -3921,7 +3921,7 @@ AnovaResult Memory::getOneWayAnova(const VectorIndex& colCategories, size_t colV
         // Calculate the overall values
         mu::value_type overallAvg = _mem.avg(VectorIndex(0, VectorIndex::OPEN_END), VectorIndex(2));
         mu::value_type overallNum = _mem.num(VectorIndex(0, VectorIndex::OPEN_END), VectorIndex(2));
-        mu::value_type SS_total = intPower(_mem.std(VectorIndex(0, VectorIndex::OPEN_END), VectorIndex(2)), 2);
+        mu::value_type SS_total;// = overallNum*intPower(_mem.std(VectorIndex(0, VectorIndex::OPEN_END), VectorIndex(2)), 2);
 
         //Factor 1
         mu::value_type SS_F1;
@@ -3933,42 +3933,71 @@ AnovaResult Memory::getOneWayAnova(const VectorIndex& colCategories, size_t colV
         for(int i = numCat1; i < numCat1+numCat2; i++)
             SS_F2 += vNum[i] * intPower(vAvg[i]-overallAvg,2);
 
-        int s_ov_av = vAvg.size();
         //SS - Within / Error
         mu::value_type SS_Within;
         for(int i = numCat1+numCat2; i < over_all_size; i++)
         {
-            mu::value_type SS_p;
-            double nnn = vNum[i].real();
             for(int j = 0; j < vNum[i].real(); j++)
             {
                 mu::value_type val_j = static_cast<ValueColumn*>(_mem.memArray[3+i].get())->getValue(j);
-                SS_p +=  intPower(val_j - vAvg[i],2);
+                SS_Within +=  intPower(val_j - vAvg[i],2);
             }
-            SS_Within += SS_p;
         }
 
+        //SS Overall hmm shouldnt that be same as n*std^2 ?
+        for(int i = 0; i < overallNum.real(); i++)
+        {
+            mu::value_type val_i = static_cast<ValueColumn*>(_mem.memArray[2].get())->getValue(i);
+            SS_total +=  intPower(val_i - overallAvg,2);
+        }
 
-        // Calculate the average group variance
-        mu::value_type avgGroupVariance = std::accumulate(vVar.begin(), vVar.end(), mu::value_type()) / (double)vVar.size();
+        // SS Interaction = SS_total - SS_F1 - SS_F2 - SS_Within
+        mu::value_type SS_Interaction = SS_total - SS_F1 - SS_F2 - SS_Within;
 
-        double overallDOF = vVar.size() - 1.0;
-        double sumOfGroupDOFs = overallNum.real() - vVar.size();
+        //DoF
+        double dof_F1 = numCat1 - 1;
+        double dof_F2 = numCat2 - 1;
+        double dof_interaction = dof_F1*dof_F2;
+        double dof_within = overallNum.real() - numC1xC2;
+        double dof_total = overallNum.real() - 1;
 
-        // Normalize only the ideal overall variance as
-        // the squared STDEVs are already group-normalized
-        SS_total /= overallDOF;
-        //avgGroupVariance /= (double)vVar.size();
+        // MS
+        SS_F1 /= dof_F1;
+        SS_F2 /= dof_F2;
+        SS_Interaction /= dof_interaction;
+        SS_Within /= dof_within;
+        SS_total /= dof_total;
 
-        // Sum up all information
-        AnovaResult res;
-        res.m_FRatio = SS_total / avgGroupVariance;
-        res.m_significanceVal = gsl_cdf_fdist_Pinv(1.0 - significance, overallDOF, sumOfGroupDOFs);
-        res.m_significance = significance;
-        res.m_isSignificant = res.m_FRatio.real() >= res.m_significanceVal.real();
-        res.m_numCategories = vVar.size();
+        // F Values
+        mu::value_type F_F1 = SS_F1 / SS_Within;
+        mu::value_type F_F2 = SS_F2 / SS_Within;
+        mu::value_type F_Interaction = SS_Interaction / SS_Within;
 
-        return res;
+        // p-values
+        double p_F1 = gsl_cdf_fdist_Pinv(1.0 - significance, dof_F1, dof_within);
+        double p_F2 = gsl_cdf_fdist_Pinv(1.0 - significance, dof_F2, dof_within);
+        double p_Interaction = gsl_cdf_fdist_Pinv(1.0 - significance, dof_interaction, dof_within);
+
+        AnovaResult res[3];
+        res[0].m_FRatio = F_F1;
+        res[0].m_significanceVal = p_F1;
+        res[0].m_significance = significance;
+        res[0].m_isSignificant = F_F1.real() >= p_F1;
+        res[0].m_numCategories = numCat1;
+
+        res[1].m_FRatio = F_F2;
+        res[1].m_significanceVal = p_F2;
+        res[1].m_significance = significance;
+        res[1].m_isSignificant = F_F2.real() >= p_F2;
+        res[1].m_numCategories = numCat2;
+
+        res[2].m_FRatio = F_Interaction;
+        res[2].m_significanceVal = p_Interaction;
+        res[2].m_significance = significance;
+        res[2].m_isSignificant = F_Interaction.real() >= p_Interaction;
+        res[2].m_numCategories = numC1xC2;
+
+        return res[0];
     }
     AnovaResult res;
     res.m_FRatio = NAN;
