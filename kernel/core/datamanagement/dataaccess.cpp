@@ -1796,6 +1796,10 @@ static std::string tableMethod_anova(const std::string& sTableName, std::string 
     if (nResults < 1)
         throw SyntaxError(SyntaxError::TOO_FEW_COLS, sTableName + "().anovaof()", ".anovaof(", ".anovaof(");
 
+    // todo since we only have implemented 1 or 2 way anova
+    if (nResults > 2)
+        throw SyntaxError(SyntaxError::TOO_MANY_ARGS, sTableName + "().anovaof()", ".anovaof(", ".anovaof(");
+
     auto col1 = VectorIndex(v, nResults, 0);
 
     sCols = getNextArgument(sMethodArguments, true);
@@ -1827,22 +1831,35 @@ static std::string tableMethod_anova(const std::string& sTableName, std::string 
         }
     }
 
-    AnovaResult res = _kernel->getMemoryManager().getOneWayAnova(sTableName, col1, col2, vIndex, significance);
+    std::vector<AnovaResult> res = _kernel->getMemoryManager().getOneWayAnova(sTableName, col1, col2, vIndex, significance);
 
+    // one anova res for one-way, three results for two-way
+    std::string res_part[] = {"\"Factor1\"", "\"Factor2\"", "\"Interaction\""};
     std::vector<std::string> vRet;
+    for(int i = 0; i < res.size(); i++){
+        //std::vector<std::string> vRet;
+        vRet.push_back("\"FisherRatio\"");
+        vRet.push_back(toString(res[i].m_FRatio));
+        vRet.push_back("\"FisherSignificanceVal\"");
+        vRet.push_back(toString(res[i].m_significanceVal));
+        vRet.push_back("\"SignificanceLevel\"");
+        vRet.push_back(toString(res[i].m_significance));
+        vRet.push_back("\"SignificantVariation\"");
+        vRet.push_back(toString(res[i].m_isSignificant));
+        vRet.push_back("\"Categories\"");
+        vRet.push_back(toString(res[i].m_numCategories));
 
-    vRet.push_back("\"FisherRatio\"");
-    vRet.push_back(toString(res.m_FRatio));
-    vRet.push_back("\"FisherSignificanceVal\"");
-    vRet.push_back(toString(res.m_significanceVal));
-    vRet.push_back("\"SignificanceLevel\"");
-    vRet.push_back(toString(res.m_significance));
-    vRet.push_back("\"SignificantVariation\"");
-    vRet.push_back(toString(res.m_isSignificant));
-    vRet.push_back("\"Categories\"");
-    vRet.push_back(toString(res.m_numCategories));
+        /*
+        if(res.size() > 1)
+        {
+            vRet1.push_back(res_part[i]);
+            vRet1.push_back(_kernel->getStringParser().createTempStringVectorVar(vRet));
+        } else
+            vRet1 = vRet;
+            */
+    }
 
-    return _kernel->getStringParser().createTempStringVectorVar(vRet);
+    return _kernel->getStringParser().createTempStringVectorVar(vRet);;
 }
 
 

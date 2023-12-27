@@ -3760,7 +3760,7 @@ std::vector<mu::value_type> Memory::getIndex(size_t col, const std::vector<mu::v
 /// \return AnovaResult
 ///
 /////////////////////////////////////////////////
-AnovaResult Memory::getOneWayAnova(const VectorIndex& colCategories, size_t colValues, const VectorIndex& _vIndex, double significance) const
+std::vector<AnovaResult> Memory::getOneWayAnova(const VectorIndex& colCategories, size_t colValues, const VectorIndex& _vIndex, double significance) const
 {
     // Get indices
     if (colCategories[0] > memArray.size()
@@ -3771,7 +3771,7 @@ AnovaResult Memory::getOneWayAnova(const VectorIndex& colCategories, size_t colV
     {
         AnovaResult res;
         res.m_FRatio = NAN;
-        return res;
+        return std::vector<AnovaResult> {res};
     }
 
     if(colCategories.size() == 1)
@@ -3800,7 +3800,7 @@ AnovaResult Memory::getOneWayAnova(const VectorIndex& colCategories, size_t colV
         std::vector<mu::value_type> vNum;
 
         // Get the values for group 1
-        for (size_t j = 3; j < _mem.memArray.size(); j++)
+        for (size_t j = 2; j < _mem.memArray.size(); j++)
         {
             vAvg.push_back(_mem.avg(VectorIndex(0, VectorIndex::OPEN_END), VectorIndex(j)));
             vNum.push_back(_mem.num(VectorIndex(0, VectorIndex::OPEN_END), VectorIndex(j)));
@@ -3838,7 +3838,7 @@ AnovaResult Memory::getOneWayAnova(const VectorIndex& colCategories, size_t colV
         res.m_isSignificant = res.m_FRatio.real() >= res.m_significanceVal.real();
         res.m_numCategories = vVar.size();
 
-        return res;
+        return std::vector<AnovaResult> {res};
     }
     else if(colCategories.size() == 2)
     {
@@ -3978,7 +3978,7 @@ AnovaResult Memory::getOneWayAnova(const VectorIndex& colCategories, size_t colV
         double p_F2 = gsl_cdf_fdist_Pinv(1.0 - significance, dof_F2, dof_within);
         double p_Interaction = gsl_cdf_fdist_Pinv(1.0 - significance, dof_interaction, dof_within);
 
-        AnovaResult res[3];
+        std::vector<AnovaResult> res(3);
         res[0].m_FRatio = F_F1;
         res[0].m_significanceVal = p_F1;
         res[0].m_significance = significance;
@@ -3997,11 +3997,11 @@ AnovaResult Memory::getOneWayAnova(const VectorIndex& colCategories, size_t colV
         res[2].m_isSignificant = F_Interaction.real() >= p_Interaction;
         res[2].m_numCategories = numC1xC2;
 
-        return res[0];
+        return res;
     }
     AnovaResult res;
     res.m_FRatio = NAN;
-    return res;
+    return std::vector<AnovaResult> {res};
 }
 
 
