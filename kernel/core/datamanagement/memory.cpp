@@ -3767,56 +3767,99 @@ std::vector<AnovaResult> Memory::getOneWayAnova(const VectorIndex& colCategories
         || !memArray[colCategories[0]]
         || memArray[colCategories[0]]->m_type != TableColumn::TYPE_CATEGORICAL
         || significance >= 1.0
-        || significance <= 0.0)
+        || significance <= 0.0
+        || colCategories.size() > 2)
     {
         AnovaResult res;
         res.m_FRatio = NAN;
         return std::vector<AnovaResult> {res};
     }
 
-    if(colCategories.size() == 1)
+    bool isTwoWay = colCategories.size() == 2;
+
+    _vIndex.setOpenEndIndex(getElemsInColumn(colCategories[0])-1);
+
+    Memory _mem(3);
+    for(int i = 0; i < colCategories.size(); i++)
+        _mem.memArray[i].reset(memArray[colCategories[i]]->copy(_vIndex));
+    // todo this has to change for 3+ way anova
+    _mem.memArray[2].reset(memArray[colValues]->copy(_vIndex));
+
+    //todo change to vector of vCategories
+    const std::vector<std::string>& vCategories1 = static_cast<CategoricalColumn*>(_mem.memArray[0].get())->getCategories();
+    const std::vector<std::string>& vCategories2 = static_cast<CategoricalColumn*>(_mem.memArray[1].get())->getCategories();
+
+    int numCat1 = vCategories1.size();
+    int numCat2 = isTwoWay ? vCategories2.size() : 0;
+    int numC1xC2 = numCat1 * numCat2;
+    int over_all_size = numCat1 + numCat2 + numC1xC2;
+    _mem.memArray.resize(3 + over_all_size);
+
+    // Copy the gropues into different columns (g1, g2, g1Xg2)
+    for (int i = 0; i < numCat1; i++)
     {
-        _vIndex.setOpenEndIndex(getElemsInColumn(colCategories[0])-1);
-        Memory _mem(2);
-        _mem.memArray[0].reset(memArray[colCategories[0]]->copy(_vIndex));
-        _mem.memArray[1].reset(memArray[colValues]->copy(_vIndex));
+        //positions of all elements, which correspond to the passed values
+        std::vector<mu::value_type> catIndex1 = _mem.getIndex(0, std::vector<mu::value_type>(), std::vector<std::string>(1, vCategories1[i]));
 
-        const std::vector<std::string>& vCategories = static_cast<CategoricalColumn*>(_mem.memArray[0].get())->getCategories();
+        if (mu::isnan(catIndex1.front()))
+            continue;
 
-        // Copy into different columns
-        for (const auto& cat : vCategories)
+        _mem.memArray[3+i] = TblColPtr(_mem.memArray[2]->copy(VectorIndex(&catIndex1[0], catIndex1.size(), 0)));
+
+        // will not be triggered if one-way anova
+        for (int j = 0; j < numCat2; j++)
         {
-            std::vector<mu::value_type> catIndex = _mem.getIndex(0, std::vector<mu::value_type>(), std::vector<std::string>(1, cat));
+            std::vector<mu::value_type> catIndex2 = _mem.getIndex(1, std::vector<mu::value_type>(), std::vector<std::string>(1, vCategories2[j]));
 
-            if (mu::isnan(catIndex.front()))
+            if (mu::isnan(catIndex2.front()))
                 continue;
 
-            _mem.memArray.push_back(TblColPtr(_mem.memArray[1]->copy(VectorIndex(&catIndex[0], catIndex.size(), 0))));
+            //todo this is done to often, how more efficient
+            _mem.memArray[3+numCat1+j] = TblColPtr(_mem.memArray[2]->copy(VectorIndex(&catIndex2[0], catIndex2.size(), 0)));
+
+            // todo is there any chance to sort mu::value_type ?
+            //std::sort(catIndex1.begin(), catIndex1.end());
+            //std::sort(catIndex2.begin(), catIndex2.end());
+            std::vector<mu::value_type> intersection;
+
+            //std::set_intersection(catIndex1.begin(), catIndex1.end(), catIndex2.begin(), catIndex2.end(),
+            //                      std::back_inserter(intersection));
+
+            for(auto a : catIndex1)
+                for(auto b : catIndex2)
+                    if(a == b)
+                        intersection.push_back(a);
+
+            _mem.memArray[3+numCat1+numCat2+numCat2*i+j] = TblColPtr(_mem.memArray[2]->copy(VectorIndex(&intersection[0], intersection.size(), 0)));
         }
+    }
 
-        // Prepare vectors for each group
-        std::vector<mu::value_type> vAvg;
-        std::vector<mu::value_type> vVar;
-        std::vector<mu::value_type> vNum;
+    // Prepare vectors for each group
+    std::vector<mu::value_type> vAvg;
+    std::vector<mu::value_type> vVar;
+    std::vector<mu::value_type> vNum;
 
-        // Get the values for group 1
-        for (size_t j = 2; j < _mem.memArray.size(); j++)
-        {
-            vAvg.push_back(_mem.avg(VectorIndex(0, VectorIndex::OPEN_END), VectorIndex(j)));
-            vNum.push_back(_mem.num(VectorIndex(0, VectorIndex::OPEN_END), VectorIndex(j)));
-            vVar.push_back(intPower(_mem.std(VectorIndex(0, VectorIndex::OPEN_END), VectorIndex(j)), 2));
-        }
+    // Get the values for group 1
+    for (size_t j = 3; j < _mem.memArray.size(); j++)
+    {
+        vAvg.push_back(_mem.avg(VectorIndex(0, VectorIndex::OPEN_END), VectorIndex(j)));
+        vNum.push_back(_mem.num(VectorIndex(0, VectorIndex::OPEN_END), VectorIndex(j)));
+        vVar.push_back(intPower(_mem.std(VectorIndex(0, VectorIndex::OPEN_END), VectorIndex(j)), 2));
+    }
 
-        // Calculate the overall values
-        mu::value_type overallAvg = _mem.avg(VectorIndex(0, VectorIndex::OPEN_END), VectorIndex(2, VectorIndex::OPEN_END));
-        mu::value_type overallNum = _mem.num(VectorIndex(0, VectorIndex::OPEN_END), VectorIndex(2, VectorIndex::OPEN_END));
-        mu::value_type overallVariance;
+    // Calculate the overall values
+    mu::value_type overallAvg = _mem.avg(VectorIndex(0, VectorIndex::OPEN_END), VectorIndex(2));
+    mu::value_type overallNum = _mem.num(VectorIndex(0, VectorIndex::OPEN_END), VectorIndex(2));
+    mu::value_type SS_total;// = overallNum*intPower(_mem.std(VectorIndex(0, VectorIndex::OPEN_END), VectorIndex(2)), 2);
 
+
+    if(!isTwoWay)
+    {
         // Pretend that each group contains n equal measurements
         // to calculate the ideal overall variance
         for (size_t i = 0; i < vAvg.size(); i++)
         {
-            overallVariance += vNum[i] * intPower(vAvg[i]-overallAvg, 2);
+            SS_total += vNum[i] * intPower(vAvg[i]-overallAvg, 2);
         }
 
         // Calculate the average group variance
@@ -3827,101 +3870,22 @@ std::vector<AnovaResult> Memory::getOneWayAnova(const VectorIndex& colCategories
 
         // Normalize only the ideal overall variance as
         // the squared STDEVs are already group-normalized
-        overallVariance /= overallDOF;
+        SS_total /= overallDOF;
         //avgGroupVariance /= (double)vVar.size();
 
         // Sum up all information
         AnovaResult res;
-        res.m_FRatio = overallVariance / avgGroupVariance;
+        res.m_FRatio = SS_total / avgGroupVariance;
         res.m_significanceVal = gsl_cdf_fdist_Pinv(1.0 - significance, overallDOF, sumOfGroupDOFs);
         res.m_significance = significance;
         res.m_isSignificant = res.m_FRatio.real() >= res.m_significanceVal.real();
         res.m_numCategories = vVar.size();
-
         return std::vector<AnovaResult> {res};
     }
-    else if(colCategories.size() == 2)
+    else
     {
-        _vIndex.setOpenEndIndex(getElemsInColumn(colCategories[0])-1);
-        Memory _mem(3);
-        _mem.memArray[0].reset(memArray[colCategories[0]]->copy(_vIndex));
-        _mem.memArray[1].reset(memArray[colCategories[1]]->copy(_vIndex));
-        _mem.memArray[2].reset(memArray[colValues]->copy(_vIndex));
-
-        int a = getElemsInColumn(colCategories[0]);
-        int b = getElemsInColumn(colCategories[1]);
-        int x = getElemsInColumn(colValues);
-        mu::value_type as  = static_cast<ValueColumn*>(_mem.memArray[2].get())->getValue(0);
-        mu::value_type ass = static_cast<ValueColumn*>(_mem.memArray[2].get())->getValue(1);
-
-        const std::vector<std::string>& vCategories1 = static_cast<CategoricalColumn*>(_mem.memArray[0].get())->getCategories();
-        const std::vector<std::string>& vCategories2 = static_cast<CategoricalColumn*>(_mem.memArray[1].get())->getCategories();
-
-        int numCat1 = vCategories1.size();
-        int numCat2 = vCategories2.size();
-        int numC1xC2 = numCat1 * numCat2;
-        int over_all_size = numCat1 + numCat2 + numC1xC2;
-        _mem.memArray.resize(3 + over_all_size);
-        int s = _mem.memArray.size();
-        // Copy the gropues into different columns (g1, g2, g1Xg2)
-        for (int i = 0; i < numCat1; i++)
-        {
-            //positions of all elements, which correspond to the passed values
-            std::vector<mu::value_type> catIndex1 = _mem.getIndex(0, std::vector<mu::value_type>(), std::vector<std::string>(1, vCategories1[i]));
-
-            if (mu::isnan(catIndex1.front()))
-                continue;
-
-            _mem.memArray[3+i] = TblColPtr(_mem.memArray[2]->copy(VectorIndex(&catIndex1[0], catIndex1.size(), 0)));
-            mu::value_type tst = static_cast<ValueColumn*>(_mem.memArray[3+i].get())->getValue(0);
-            mu::value_type tst2 = static_cast<ValueColumn*>(_mem.memArray[3+i].get())->getValue(1);
-
-            for (int j = 0; j < numCat2; j++){
-                std::vector<mu::value_type> catIndex2 = _mem.getIndex(1, std::vector<mu::value_type>(), std::vector<std::string>(1, vCategories2[j]));
-
-                if (mu::isnan(catIndex2.front()))
-                    continue;
-
-                //todo this is done to often, how more efficient
-                _mem.memArray[3+numCat1+j] = TblColPtr(_mem.memArray[2]->copy(VectorIndex(&catIndex2[0], catIndex2.size(), 0)));
-
-                // todo is there any chance to sort mu::value_type ?
-                //std::sort(catIndex1.begin(), catIndex1.end());
-                //std::sort(catIndex2.begin(), catIndex2.end());
-                std::vector<mu::value_type> intersection;
-
-                //std::set_intersection(catIndex1.begin(), catIndex1.end(), catIndex2.begin(), catIndex2.end(),
-                //                      std::back_inserter(intersection));
-
-                for(auto a : catIndex1)
-                    for(auto b : catIndex2)
-                        if(a == b)
-                            intersection.push_back(a);
-
-                _mem.memArray[3+numCat1+numCat2+numCat2*i+j] = TblColPtr(_mem.memArray[2]->copy(VectorIndex(&intersection[0], intersection.size(), 0)));
-            }
-        }
-
-        // thats how we calculate https://www.statology.org/two-way-anova-by-hand/
-
-        // Prepare vectors for each group
-        std::vector<mu::value_type> vAvg;
-        std::vector<mu::value_type> vVar;
-        std::vector<mu::value_type> vNum;
-
-        // Get the values for each group
-        for (size_t j = 3; j < _mem.memArray.size(); j++)
-        {
-            vAvg.push_back(_mem.avg(VectorIndex(0, VectorIndex::OPEN_END), VectorIndex(j)));
-            vNum.push_back(_mem.num(VectorIndex(0, VectorIndex::OPEN_END), VectorIndex(j)));
-            mu::value_type asdf = vNum.back();
-            vVar.push_back(intPower(_mem.std(VectorIndex(0, VectorIndex::OPEN_END), VectorIndex(j)), 2));
-        }
-
-        // Calculate the overall values
-        mu::value_type overallAvg = _mem.avg(VectorIndex(0, VectorIndex::OPEN_END), VectorIndex(2));
-        mu::value_type overallNum = _mem.num(VectorIndex(0, VectorIndex::OPEN_END), VectorIndex(2));
-        mu::value_type SS_total;// = overallNum*intPower(_mem.std(VectorIndex(0, VectorIndex::OPEN_END), VectorIndex(2)), 2);
+        // thats how we calculate 2-way anova https://www.statology.org/two-way-anova-by-hand/
+        // F-values for single cateogorie is calculated different than one-way anova due to different within/error calculation
 
         //Factor 1
         mu::value_type SS_F1;
