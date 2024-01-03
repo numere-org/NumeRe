@@ -2110,7 +2110,7 @@ bool NumeReKernel::evaluateStrings(std::string& sLine, std::string& sCache, bool
 {
     if (_stringParser.isStringExpression(sLine) || _stringParser.isStringExpression(sCache))
     {
-        auto retVal = _stringParser.evalAndFormat(sLine, sCache, false, true);
+        auto retVal = _stringParser.evalAndFormat(sLine, sCache, false, true, true);
 
         if (retVal == NumeRe::StringParser::STRING_SUCCESS)
         {

@@ -1006,7 +1006,7 @@ bool writeToFile(CommandLineParser& cmdParser)
 	{
 		sExpression += " -komq";
 		string sDummy = "";
-		NumeReKernel::getInstance()->getStringParser().evalAndFormat(sExpression, sDummy, true);
+		NumeReKernel::getInstance()->getStringParser().evalAndFormat(sExpression, sDummy, true, false, true);
 		sExpression = NumeReKernel::getInstance()->getAns().serialize();
 	}
 	else

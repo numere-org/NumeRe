@@ -80,4 +80,5 @@ Fixed	Fixed dynamically checking Datetime formats in Excel files.
 Added	It's now possible to create a QR code from a string using the "qrcode" command.
 Added	It's now possible to create a TeX export from the documentation articles by appending a "-tex" to the "help" command (internal development feature).
 Fixed	A rare crash in "matop" mode was resolved, which occured, if one uses a non-filled part of a table for an expression.
-
+Cleaned	"move" and "copy" can now create the target folders, if necessary.
+Fixed	Curve sets can now be plotted without the need of an additional legend entry.

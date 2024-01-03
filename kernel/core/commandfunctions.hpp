@@ -1673,7 +1673,7 @@ void plotTableBySize(std::vector<std::string> lineEntries, std::vector<size_t> l
     for (auto& thisEntry : lineEntries)
     {
         thisEntry = '"' + thisEntry + "\" -nq";
-        NumeReKernel::getInstance()->getStringParser().evalAndFormat(thisEntry, sDummy, true);
+        NumeReKernel::getInstance()->getStringParser().evalAndFormat(thisEntry, sDummy, true, false, true);
     }
 
     // Split all columns into multiple lines if necessary
@@ -4227,7 +4227,7 @@ static CommandReturnValues cmd_pack(string& sCmd)
         {
             sExpression += " -komq";
             std::string sDummy = "";
-            instance->getStringParser().evalAndFormat(sExpression, sDummy, true);
+            instance->getStringParser().evalAndFormat(sExpression, sDummy, true, false, true);
         }
 
         std::vector<std::string> vFileNames;
@@ -5169,7 +5169,7 @@ static CommandReturnValues cmd_print(string& sCmd)
 
     sArgument += " -print";
 
-    NumeReKernel::getInstance()->getStringParser().evalAndFormat(sArgument, sDummy, false);
+    NumeReKernel::getInstance()->getStringParser().evalAndFormat(sArgument, sDummy, false, false, true);
 
     return COMMAND_PROCESSED;
 }

@@ -312,7 +312,7 @@ std::string CommandLineParser::getExprAsFileName(std::string sFileExt, const std
     if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sFileName))
     {
         std::string sDummy;
-        NumeReKernel::getInstance()->getStringParser().evalAndFormat(sFileName, sDummy, true);
+        NumeReKernel::getInstance()->getStringParser().evalAndFormat(sFileName, sDummy, true, false, true);
     }
 
     sFileName = removeQuotationMarks(sFileName);
@@ -408,7 +408,7 @@ std::string CommandLineParser::parseExprAsString() const
     {
         sExpr += " -nq";
         std::string sDummy;
-        NumeReKernel::getInstance()->getStringParser().evalAndFormat(sExpr, sDummy, true);
+        NumeReKernel::getInstance()->getStringParser().evalAndFormat(sExpr, sDummy, true, false, true);
         return toInternalString(sExpr);
     }
 
@@ -437,7 +437,7 @@ std::vector<mu::value_type> CommandLineParser::parseExprAsNumericalValues() cons
     if (instance->getStringParser().isStringExpression(sValue))
     {
         std::string sDummy = "";
-        instance->getStringParser().evalAndFormat(sValue, sDummy, true);
+        instance->getStringParser().evalAndFormat(sValue, sDummy, true, false, true);
     }
 
     // Resolve table accesses
@@ -586,7 +586,7 @@ std::string CommandLineParser::getFileParameterValue(std::string sFileExt, const
     if (instance->getStringParser().isStringExpression(sFileName))
     {
         std::string dummy;
-        instance->getStringParser().evalAndFormat(sFileName, dummy, true);
+        instance->getStringParser().evalAndFormat(sFileName, dummy, true, false, true);
     }
 
     sFileName = removeQuotationMarks(sFileName);

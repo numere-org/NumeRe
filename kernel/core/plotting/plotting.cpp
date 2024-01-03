@@ -4542,8 +4542,9 @@ void Plot::createDataLegends()
                         + _data.getTopHeadLineElement(vNodes[1], sTableName) + ", "
                         + _data.getTopHeadLineElement(vNodes[2], sTableName) + "\"";
                 }
-
             }
+            else
+                sTemp = "\"" + sTemp + "\"";
 
             // Prepend backslashes before opening and closing
             // braces

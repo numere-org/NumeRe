@@ -1674,7 +1674,7 @@ value_type* FlowCtrl::evalHeader(int& nNum, std::string& sHeadExpression, bool b
                 _parserRef->PauseLoopMode();
 
             // Call the std::string parser
-            auto retVal = NumeReKernel::getInstance()->getStringParser().evalAndFormat(sHeadExpression, sCache, true);
+            auto retVal = NumeReKernel::getInstance()->getStringParser().evalAndFormat(sHeadExpression, sCache, true, false, true);
 
             // Evaluate the return value
             if (retVal != NumeRe::StringParser::STRING_NUMERICAL)
@@ -1886,7 +1886,7 @@ NumeRe::Cluster FlowCtrl::evalRangeBasedHeader(std::string& sHeadExpression, int
                 _parserRef->PauseLoopMode();
 
             // Call the std::string parser
-            auto retVal = NumeReKernel::getInstance()->getStringParser().evalAndFormat(sHeadExpression, sCache, true);
+            auto retVal = NumeReKernel::getInstance()->getStringParser().evalAndFormat(sHeadExpression, sCache, true, false, true);
 
             // Evaluate the return value
             if (retVal != NumeRe::StringParser::STRING_NUMERICAL)
@@ -2790,7 +2790,7 @@ int FlowCtrl::compile(std::string sLine, int nthCmd)
 
             sErrorToken = sLine.substr(findCommand(sLine).nPos+6);
             sErrorToken += " -nq";
-            NumeReKernel::getInstance()->getStringParser().evalAndFormat(sErrorToken, sCache, true);
+            NumeReKernel::getInstance()->getStringParser().evalAndFormat(sErrorToken, sCache, true, false, true);
         }
 
         nCalcType[nthCmd] |= CALCTYPE_THROWCOMMAND;
@@ -3124,7 +3124,7 @@ int FlowCtrl::compile(std::string sLine, int nthCmd)
         //if (!bLockedPauseMode && bUseLoopParsingMode)
         //    _parserRef->PauseLoopMode();
 
-        auto retVal = NumeReKernel::getInstance()->getStringParser().evalAndFormat(sLine, sCache, bLoopSupressAnswer, true);
+        auto retVal = NumeReKernel::getInstance()->getStringParser().evalAndFormat(sLine, sCache, bLoopSupressAnswer, true, true);
         NumeReKernel::getInstance()->getStringParser().removeTempStringVectorVars();
 
         if (retVal == NumeRe::StringParser::STRING_SUCCESS)
@@ -3343,7 +3343,7 @@ int FlowCtrl::calc(StringView sLine, int nthCmd)
             sErrorToken = sBuffer.substr(findCommand(sBuffer).nPos+6);
             sErrorToken += " -nq";
             std::string sDummy;
-            NumeReKernel::getInstance()->getStringParser().evalAndFormat(sErrorToken, sDummy, true);
+            NumeReKernel::getInstance()->getStringParser().evalAndFormat(sErrorToken, sDummy, true, false, true);
         }
 
         throw SyntaxError(SyntaxError::LOOP_THROW, sBuffer, SyntaxError::invalid_position, sErrorToken);
@@ -3685,7 +3685,7 @@ int FlowCtrl::calc(StringView sLine, int nthCmd)
         //    _parserRef->PauseLoopMode();
 
         sBuffer = sLine.to_string();
-        auto retVal = NumeReKernel::getInstance()->getStringParser().evalAndFormat(sBuffer, sDataObject, bLoopSupressAnswer, true);
+        auto retVal = NumeReKernel::getInstance()->getStringParser().evalAndFormat(sBuffer, sDataObject, bLoopSupressAnswer, true, true);
         NumeReKernel::getInstance()->getStringParser().removeTempStringVectorVars();
 
         if (retVal == NumeRe::StringParser::STRING_SUCCESS)
