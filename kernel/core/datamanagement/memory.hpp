@@ -206,7 +206,7 @@ class Memory : public Sorter
         std::vector<mu::value_type> findCols(const std::vector<std::string>& vColNames, bool enableRegEx) const;
         std::vector<mu::value_type> countIfEqual(const VectorIndex& _vCols, const std::vector<mu::value_type>& vValues, const std::vector<std::string>& vStringValues) const;
         std::vector<mu::value_type> getIndex(size_t col, const std::vector<mu::value_type>& vValues, const std::vector<std::string>& vStringValues) const;
-        std::vector<AnovaResult> getOneWayAnova(const VectorIndex& colCategories, size_t colValues, const VectorIndex& _vIndex, double significance) const;
+        std::vector<AnovaResult> getAnova(const VectorIndex& colCategories, size_t colValues, const VectorIndex& _vIndex, double significance) const;
         mu::value_type getCovariance(size_t col1, const VectorIndex& _vIndex1, size_t col2, const VectorIndex& _vIndex2) const;
         mu::value_type getPearsonCorr(size_t col1, const VectorIndex& _vIndex1, size_t col2, const VectorIndex& _vIndex2) const;
         mu::value_type getSpearmanCorr(size_t col1, const VectorIndex& _vIndex1, size_t col2, const VectorIndex& _vIndex2) const;

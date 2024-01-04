@@ -3748,7 +3748,6 @@ std::vector<mu::value_type> Memory::getIndex(size_t col, const std::vector<mu::v
     return vIndex;
 }
 
-
 /////////////////////////////////////////////////
 /// \brief Calculates the simples form of a ANOVA
 /// F test
@@ -3760,7 +3759,7 @@ std::vector<mu::value_type> Memory::getIndex(size_t col, const std::vector<mu::v
 /// \return AnovaResult
 ///
 /////////////////////////////////////////////////
-std::vector<AnovaResult> Memory::getOneWayAnova(const VectorIndex& colCategories, size_t colValues, const VectorIndex& _vIndex, double significance) const
+std::vector<AnovaResult> Memory::getAnova(const VectorIndex& colCategories, size_t colValues, const VectorIndex& _vIndex, double significance) const
 {
     // Get indices
     if (colCategories[0] > memArray.size()
@@ -3776,47 +3775,41 @@ std::vector<AnovaResult> Memory::getOneWayAnova(const VectorIndex& colCategories
     }
 
     bool isTwoWay = colCategories.size() == 2;
-
     _vIndex.setOpenEndIndex(getElemsInColumn(colCategories[0])-1);
 
-    Memory _mem(3);
+    Memory _mem(colCategories.size()+1);
+    _mem.memArray[0].reset(memArray[colValues]->copy(_vIndex));
     for(int i = 0; i < colCategories.size(); i++)
-        _mem.memArray[i].reset(memArray[colCategories[i]]->copy(_vIndex));
-    // todo this has to change for 3+ way anova
-    _mem.memArray[2].reset(memArray[colValues]->copy(_vIndex));
+        _mem.memArray[i+1].reset(memArray[colCategories[i]]->copy(_vIndex));
 
-    //todo change to vector of vCategories
-    const std::vector<std::string>& vCategories1 = static_cast<CategoricalColumn*>(_mem.memArray[0].get())->getCategories();
-    const std::vector<std::string>& vCategories2 = static_cast<CategoricalColumn*>(_mem.memArray[1].get())->getCategories();
+    std::vector<std::vector<std::string>> factors;
+    for(int i = 0; i < colCategories.size(); i++)
+        factors.push_back(static_cast<CategoricalColumn*>(_mem.memArray[i+1].get())->getCategories());
 
-    int numCat1 = vCategories1.size();
-    int numCat2 = isTwoWay ? vCategories2.size() : 0;
-    int numC1xC2 = numCat1 * numCat2;
-    int over_all_size = numCat1 + numCat2 + numC1xC2;
-    _mem.memArray.resize(3 + over_all_size);
+    std::vector<Memory> groupedValues(std::pow(2, factors.size()) - 1);
 
     // Copy the gropues into different columns (g1, g2, g1Xg2)
-    for (int i = 0; i < numCat1; i++)
+    // For 3+ - way anova here some algo for clustering in all subsets of combinations of groups would be needed
+    for (int i = 0; i < factors[0].size(); i++)
     {
         //positions of all elements, which correspond to the passed values
-        std::vector<mu::value_type> catIndex1 = _mem.getIndex(0, std::vector<mu::value_type>(), std::vector<std::string>(1, vCategories1[i]));
+        std::vector<mu::value_type> catIndex1 = _mem.getIndex(1, std::vector<mu::value_type>(), std::vector<std::string>(1, factors[0][i]));
 
         if (mu::isnan(catIndex1.front()))
             continue;
 
-        _mem.memArray[3+i] = TblColPtr(_mem.memArray[2]->copy(VectorIndex(&catIndex1[0], catIndex1.size(), 0)));
+        groupedValues[0].memArray.push_back(TblColPtr(_mem.memArray[0]->copy(VectorIndex(&catIndex1[0], catIndex1.size(), 0))));
 
         // will not be triggered if one-way anova
-        for (int j = 0; j < numCat2; j++)
+        for (int j = 0; isTwoWay & j < factors[1].size(); j++)
         {
-            std::vector<mu::value_type> catIndex2 = _mem.getIndex(1, std::vector<mu::value_type>(), std::vector<std::string>(1, vCategories2[j]));
+            std::vector<mu::value_type> catIndex2 = _mem.getIndex(2, std::vector<mu::value_type>(), std::vector<std::string>(1, factors[1][j]));
 
             if (mu::isnan(catIndex2.front()))
                 continue;
 
             //todo this is done to often, how more efficient
-            _mem.memArray[3+numCat1+j] = TblColPtr(_mem.memArray[2]->copy(VectorIndex(&catIndex2[0], catIndex2.size(), 0)));
-
+            groupedValues[1].memArray.push_back(TblColPtr(_mem.memArray[0]->copy(VectorIndex(&catIndex2[0], catIndex2.size(), 0))));
             // todo is there any chance to sort mu::value_type ?
             //std::sort(catIndex1.begin(), catIndex1.end());
             //std::sort(catIndex2.begin(), catIndex2.end());
@@ -3830,142 +3823,88 @@ std::vector<AnovaResult> Memory::getOneWayAnova(const VectorIndex& colCategories
                     if(a == b)
                         intersection.push_back(a);
 
-            _mem.memArray[3+numCat1+numCat2+numCat2*i+j] = TblColPtr(_mem.memArray[2]->copy(VectorIndex(&intersection[0], intersection.size(), 0)));
+            groupedValues[2].memArray.push_back(TblColPtr(_mem.memArray[0]->copy(VectorIndex(&intersection[0], intersection.size(), 0))));
         }
     }
 
     // Prepare vectors for each group
-    std::vector<mu::value_type> vAvg;
-    std::vector<mu::value_type> vVar;
-    std::vector<mu::value_type> vNum;
-
-    // Get the values for group 1
-    for (size_t j = 3; j < _mem.memArray.size(); j++)
+    std::vector<std::vector<mu::value_type>> vAvg_(groupedValues.size());
+    std::vector<std::vector<mu::value_type>> vVar_(groupedValues.size());
+    std::vector<std::vector<mu::value_type>> vNum_(groupedValues.size());
+    for(size_t i = 0; i < groupedValues.size(); i++)
     {
-        vAvg.push_back(_mem.avg(VectorIndex(0, VectorIndex::OPEN_END), VectorIndex(j)));
-        vNum.push_back(_mem.num(VectorIndex(0, VectorIndex::OPEN_END), VectorIndex(j)));
-        vVar.push_back(intPower(_mem.std(VectorIndex(0, VectorIndex::OPEN_END), VectorIndex(j)), 2));
+        for (size_t j = 0; j < groupedValues[i].memArray.size(); j++)
+        {
+            vAvg_[i].push_back(groupedValues[i].avg(VectorIndex(0, VectorIndex::OPEN_END), VectorIndex(j)));
+            vNum_[i].push_back(groupedValues[i].num(VectorIndex(0, VectorIndex::OPEN_END), VectorIndex(j)));
+            vVar_[i].push_back(intPower(groupedValues[i].std(VectorIndex(0, VectorIndex::OPEN_END), VectorIndex(j)), 2));
+        }
     }
 
     // Calculate the overall values
-    mu::value_type overallAvg = _mem.avg(VectorIndex(0, VectorIndex::OPEN_END), VectorIndex(2));
-    mu::value_type overallNum = _mem.num(VectorIndex(0, VectorIndex::OPEN_END), VectorIndex(2));
-    mu::value_type SS_total;// = overallNum*intPower(_mem.std(VectorIndex(0, VectorIndex::OPEN_END), VectorIndex(2)), 2);
+    mu::value_type overallAvg = _mem.avg(VectorIndex(0, VectorIndex::OPEN_END), VectorIndex(0));
+    mu::value_type overallNum = _mem.num(VectorIndex(0, VectorIndex::OPEN_END), VectorIndex(0));
 
-
-    if(!isTwoWay)
+    //calculate SS_Within
+    mu::value_type SS_Within;
+    for(size_t i = 0; i < vAvg_.back().size(); i++)
     {
-        // Pretend that each group contains n equal measurements
-        // to calculate the ideal overall variance
-        for (size_t i = 0; i < vAvg.size(); i++)
+        for(size_t j = 0; j < vNum_.back()[i].real(); j++)
         {
-            SS_total += vNum[i] * intPower(vAvg[i]-overallAvg, 2);
+            mu::value_type val_j = static_cast<ValueColumn*>(groupedValues.back().memArray[i].get())->getValue(j);
+            SS_Within +=  intPower(val_j - vAvg_.back()[i],2);
         }
-
-        // Calculate the average group variance
-        mu::value_type avgGroupVariance = std::accumulate(vVar.begin(), vVar.end(), mu::value_type()) / (double)vVar.size();
-
-        double overallDOF = vVar.size() - 1.0;
-        double sumOfGroupDOFs = overallNum.real() - vVar.size();
-
-        // Normalize only the ideal overall variance as
-        // the squared STDEVs are already group-normalized
-        SS_total /= overallDOF;
-        //avgGroupVariance /= (double)vVar.size();
-
-        // Sum up all information
-        AnovaResult res;
-        res.m_FRatio = SS_total / avgGroupVariance;
-        res.m_significanceVal = gsl_cdf_fdist_Pinv(1.0 - significance, overallDOF, sumOfGroupDOFs);
-        res.m_significance = significance;
-        res.m_isSignificant = res.m_FRatio.real() >= res.m_significanceVal.real();
-        res.m_numCategories = vVar.size();
-        return std::vector<AnovaResult> {res};
     }
-    else
+
+    std::vector<mu::value_type> SS_vals;
+    std::vector<double> dofs;
+    double dof_within = 1;
+
+    //calculate SS for each Factor
+    for(size_t i = 0; i < factors.size(); i++)
     {
-        // thats how we calculate 2-way anova https://www.statology.org/two-way-anova-by-hand/
-        // F-values for single cateogorie is calculated different than one-way anova due to different within/error calculation
+        mu::value_type SS_Fi;
+        for(size_t j = 0; j < factors[i].size(); j++)
+            SS_Fi += vNum_[i][j] * intPower(vAvg_[i][j]-overallAvg,2);
+        SS_vals.push_back(SS_Fi);
+        dofs.push_back(factors[i].size() - 1);
+        dof_within *= factors[i].size();
+    }
+    dof_within = overallNum.real() - dof_within;
 
-        //Factor 1
-        mu::value_type SS_F1;
-        for(int i = 0; i < numCat1; i++)
-            SS_F1 += vNum[i] * intPower(vAvg[i]-overallAvg,2);
-
-        //Factor 2
-        mu::value_type SS_F2;
-        for(int i = numCat1; i < numCat1+numCat2; i++)
-            SS_F2 += vNum[i] * intPower(vAvg[i]-overallAvg,2);
-
-        //SS - Within / Error
-        mu::value_type SS_Within;
-        for(int i = numCat1+numCat2; i < over_all_size; i++)
-        {
-            for(int j = 0; j < vNum[i].real(); j++)
-            {
-                mu::value_type val_j = static_cast<ValueColumn*>(_mem.memArray[3+i].get())->getValue(j);
-                SS_Within +=  intPower(val_j - vAvg[i],2);
-            }
-        }
-
+    //This is not neccecary for one way anova
+    if(isTwoWay)
+    {
+        mu::value_type SS_total;
         //SS Overall hmm shouldnt that be same as n*std^2 ?
-        for(int i = 0; i < overallNum.real(); i++)
+        for(size_t i = 0; i < overallNum.real(); i++)
         {
-            mu::value_type val_i = static_cast<ValueColumn*>(_mem.memArray[2].get())->getValue(i);
+            mu::value_type val_i = static_cast<ValueColumn*>(_mem.memArray[0].get())->getValue(i);
             SS_total +=  intPower(val_i - overallAvg,2);
         }
 
         // SS Interaction = SS_total - SS_F1 - SS_F2 - SS_Within
-        mu::value_type SS_Interaction = SS_total - SS_F1 - SS_F2 - SS_Within;
-
-        //DoF
-        double dof_F1 = numCat1 - 1;
-        double dof_F2 = numCat2 - 1;
-        double dof_interaction = dof_F1*dof_F2;
-        double dof_within = overallNum.real() - numC1xC2;
-        double dof_total = overallNum.real() - 1;
-
-        // MS
-        SS_F1 /= dof_F1;
-        SS_F2 /= dof_F2;
-        SS_Interaction /= dof_interaction;
-        SS_Within /= dof_within;
-        SS_total /= dof_total;
-
-        // F Values
-        mu::value_type F_F1 = SS_F1 / SS_Within;
-        mu::value_type F_F2 = SS_F2 / SS_Within;
-        mu::value_type F_Interaction = SS_Interaction / SS_Within;
-
-        // p-values
-        double p_F1 = gsl_cdf_fdist_Pinv(1.0 - significance, dof_F1, dof_within);
-        double p_F2 = gsl_cdf_fdist_Pinv(1.0 - significance, dof_F2, dof_within);
-        double p_Interaction = gsl_cdf_fdist_Pinv(1.0 - significance, dof_interaction, dof_within);
-
-        std::vector<AnovaResult> res(3);
-        res[0].m_FRatio = F_F1;
-        res[0].m_significanceVal = p_F1;
-        res[0].m_significance = significance;
-        res[0].m_isSignificant = F_F1.real() >= p_F1;
-        res[0].m_numCategories = numCat1;
-
-        res[1].m_FRatio = F_F2;
-        res[1].m_significanceVal = p_F2;
-        res[1].m_significance = significance;
-        res[1].m_isSignificant = F_F2.real() >= p_F2;
-        res[1].m_numCategories = numCat2;
-
-        res[2].m_FRatio = F_Interaction;
-        res[2].m_significanceVal = p_Interaction;
-        res[2].m_significance = significance;
-        res[2].m_isSignificant = F_Interaction.real() >= p_Interaction;
-        res[2].m_numCategories = numC1xC2;
-
-        return res;
+        SS_vals.push_back(SS_total - std::accumulate(SS_vals.begin(), SS_vals.end(),mu::value_type()) - SS_Within);
+        dofs.push_back(std::accumulate(dofs.begin(), dofs.end(), 1.0, std::multiplies<double>()));
     }
-    AnovaResult res;
-    res.m_FRatio = NAN;
-    return std::vector<AnovaResult> {res};
+
+    SS_Within /= dof_within;
+
+    std::vector<AnovaResult> res;
+    for(size_t i = 0; i< SS_vals.size(); i++)
+    {
+        SS_vals[i] /= dofs[i];
+        SS_vals[i] /= SS_Within;
+
+        AnovaResult res_i;
+        res_i.m_FRatio = SS_vals[i];
+        res_i.m_significanceVal = gsl_cdf_fdist_Pinv(1.0 - significance, dofs[i], dof_within);
+        res_i.m_significance = significance;
+        res_i.m_isSignificant = SS_vals[i].real() >= res_i.m_significanceVal.real();
+        res_i.m_numCategories = vAvg_[i].size();
+        res.push_back(res_i);
+    }
+    return res;
 }
 
 
