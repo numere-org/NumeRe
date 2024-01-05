@@ -3752,7 +3752,7 @@ std::vector<mu::value_type> Memory::getIndex(size_t col, const std::vector<mu::v
 /// \brief Calculates the simples form of a ANOVA
 /// F test
 ///
-/// \param colCategories VectorIndex&
+/// \param colCategories const VectorIndex&
 /// \param colValues size_t
 /// \param _vIndex const VectorIndex&
 /// \param significance double
@@ -3761,36 +3761,40 @@ std::vector<mu::value_type> Memory::getIndex(size_t col, const std::vector<mu::v
 /////////////////////////////////////////////////
 std::vector<AnovaResult> Memory::getAnova(const VectorIndex& colCategories, size_t colValues, const VectorIndex& _vIndex, double significance) const
 {
-    // Get indices
-    if (colCategories[0] > memArray.size()
-        || !memArray[colCategories[0]]
-        || memArray[colCategories[0]]->m_type != TableColumn::TYPE_CATEGORICAL
-        || significance >= 1.0
-        || significance <= 0.0
-        || colCategories.size() > 2)
+    bool check_req = false;
+    for(size_t i = 0; i < colCategories.size(); i++){
+        if (colCategories[i] > memArray.size() || !memArray[colCategories[i]]
+            || memArray[colCategories[i]]->m_type != TableColumn::TYPE_CATEGORICAL)
+            check_req = true;
+
+    }
+
+    if (check_req || significance >= 1.0
+        || significance <= 0.0 || colCategories.size() > 2)
     {
         AnovaResult res;
         res.m_FRatio = NAN;
         return std::vector<AnovaResult> {res};
     }
 
+    colCategories.setOpenEndIndex(getCols()-1);
     bool isTwoWay = colCategories.size() == 2;
     _vIndex.setOpenEndIndex(getElemsInColumn(colCategories[0])-1);
 
     Memory _mem(colCategories.size()+1);
     _mem.memArray[0].reset(memArray[colValues]->copy(_vIndex));
-    for(int i = 0; i < colCategories.size(); i++)
+    for(size_t i = 0; i < colCategories.size(); i++)
         _mem.memArray[i+1].reset(memArray[colCategories[i]]->copy(_vIndex));
 
     std::vector<std::vector<std::string>> factors;
-    for(int i = 0; i < colCategories.size(); i++)
+    for(size_t i = 0; i < colCategories.size(); i++)
         factors.push_back(static_cast<CategoricalColumn*>(_mem.memArray[i+1].get())->getCategories());
 
-    std::vector<Memory> groupedValues(std::pow(2, factors.size()) - 1);
+    std::vector<Memory> groupedValues(intPower(2, factors.size()) - 1);
 
     // Copy the gropues into different columns (g1, g2, g1Xg2)
     // For 3+ - way anova here some algo for clustering in all subsets of combinations of groups would be needed
-    for (int i = 0; i < factors[0].size(); i++)
+    for (size_t i = 0; i < factors[0].size(); i++)
     {
         //positions of all elements, which correspond to the passed values
         std::vector<mu::value_type> catIndex1 = _mem.getIndex(1, std::vector<mu::value_type>(), std::vector<std::string>(1, factors[0][i]));
@@ -3801,7 +3805,7 @@ std::vector<AnovaResult> Memory::getAnova(const VectorIndex& colCategories, size
         groupedValues[0].memArray.push_back(TblColPtr(_mem.memArray[0]->copy(VectorIndex(&catIndex1[0], catIndex1.size(), 0))));
 
         // will not be triggered if one-way anova
-        for (int j = 0; isTwoWay & j < factors[1].size(); j++)
+        for (size_t j = 0; isTwoWay && j < factors[1].size(); j++)
         {
             std::vector<mu::value_type> catIndex2 = _mem.getIndex(2, std::vector<mu::value_type>(), std::vector<std::string>(1, factors[1][j]));
 
@@ -3851,7 +3855,7 @@ std::vector<AnovaResult> Memory::getAnova(const VectorIndex& colCategories, size
     {
         for(size_t j = 0; j < vNum_.back()[i].real(); j++)
         {
-            mu::value_type val_j = static_cast<ValueColumn*>(groupedValues.back().memArray[i].get())->getValue(j);
+            mu::value_type val_j = groupedValues.back().memArray[i].get()->getValue(j);
             SS_Within +=  intPower(val_j - vAvg_.back()[i],2);
         }
     }
@@ -3879,7 +3883,7 @@ std::vector<AnovaResult> Memory::getAnova(const VectorIndex& colCategories, size
         //SS Overall hmm shouldnt that be same as n*std^2 ?
         for(size_t i = 0; i < overallNum.real(); i++)
         {
-            mu::value_type val_i = static_cast<ValueColumn*>(_mem.memArray[0].get())->getValue(i);
+            mu::value_type val_i = _mem.memArray[0].get()->getValue(i);
             SS_total +=  intPower(val_i - overallAvg,2);
         }
 
