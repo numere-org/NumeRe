@@ -4135,9 +4135,10 @@ static CommandReturnValues cmd_hist(string& sCmd)
 static CommandReturnValues cmd_help(string& sCmd)
 {
     Settings& _option = NumeReKernel::getInstance()->getSettings();
+    Match _mMatch = findCommand(sCmd);
 
-    if (findCommand(sCmd).nPos + findCommand(sCmd).sString.length() < sCmd.length())
-        doc_Help(sCmd.substr(findCommand(sCmd).nPos + findCommand(sCmd).sString.length()), _option);
+    if (_mMatch.nPos + _mMatch.sString.length() < sCmd.length())
+        doc_Help(sCmd.substr(_mMatch.nPos + _mMatch.sString.length()), _option);
     else
         doc_Help("brief", _option);
 

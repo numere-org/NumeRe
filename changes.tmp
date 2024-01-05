@@ -82,3 +82,6 @@ Added	It's now possible to create a TeX export from the documentation articles b
 Fixed	A rare crash in "matop" mode was resolved, which occured, if one uses a non-filled part of a table for an expression.
 Cleaned	"move" and "copy" can now create the target folders, if necessary.
 Fixed	Curve sets can now be plotted without the need of an additional legend entry.
+Added	A simple lexer for INI files was added.
+Applied	Other text files can now be embedded in packages.
+Fixed	In rare circumstances, locally installed packages could trigger a exception, if one wants to install something from the package repository. That has been resolved.

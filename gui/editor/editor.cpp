@@ -463,7 +463,7 @@ bool NumeReEditor::SaveFile( const wxString& filename )
 
         return false;
     }
-    else if ((m_fileType == FILE_NSCR || m_fileType == FILE_NPRC) && filecheck.Length() != this->GetLength() - countUmlauts(this->GetText().ToStdString()))
+    else if ((m_fileType == FILE_NSCR || m_fileType == FILE_NPRC) && filecheck.Length() != GetText().length())// - countUmlauts(this->GetText().ToStdString()))
     {
         // if the contents are not matching, restore the backup and signalize that an error occured
         if (wxFileExists(filename + ".backup"))
@@ -473,7 +473,7 @@ bool NumeReEditor::SaveFile( const wxString& filename )
 
         return false;
     }
-    else if ((m_fileType != FILE_NSCR && m_fileType != FILE_NPRC) && !filecheck.Length() && this->GetLength())
+    else if ((m_fileType != FILE_NSCR && m_fileType != FILE_NPRC) && !filecheck.Length() && GetTextLength())
     {
         // if the contents are not matching, restore the backup and signalize that an error occured
         if (wxFileExists(filename + ".backup"))
@@ -3642,9 +3642,9 @@ void NumeReEditor::UpdateSyntaxHighlighting(bool forceUpdate)
 {
     wxString filename = GetFileNameAndPath();
 
-    this->StyleSetBackground(wxSTC_STYLE_DEFAULT, m_options->GetSyntaxStyle(Options::STANDARD).background);
+    StyleSetBackground(wxSTC_STYLE_DEFAULT, m_options->GetSyntaxStyle(Options::STANDARD).background);
 
-    FileFilterType filetype = this->GetFileType(filename);
+    FileFilterType filetype = GetFileType(filename);
 
     if (m_fileType != filetype)
         m_fileType = filetype;
@@ -3663,6 +3663,8 @@ void NumeReEditor::UpdateSyntaxHighlighting(bool forceUpdate)
         || filetype == FILE_MATLAB
         || filetype == FILE_CPP
         || filetype == FILE_DIFF
+        || filetype == FILE_XML
+        || filetype == FILE_INI
         || filetype == FILE_TEXSOURCE)
     {
         SetFoldFlags(wxSTC_FOLDFLAG_LINEAFTER_CONTRACTED);
@@ -4098,6 +4100,7 @@ void NumeReEditor::UpdateSyntaxHighlighting(bool forceUpdate)
         StyleSetForeground(wxSTC_H_TAGEND, wxColour(0,0,255));
         StyleSetBold(wxSTC_H_TAGEND, true);
         StyleSetForeground(wxSTC_H_ATTRIBUTE, wxColour(255,0,0));
+        StyleSetBackground(wxSTC_H_ATTRIBUTE, wxColour(255,255,255));
         StyleSetForeground(wxSTC_H_DOUBLESTRING, wxColour(128,0,255));
         StyleSetBold(wxSTC_H_DOUBLESTRING, true);
         StyleSetForeground(wxSTC_H_SINGLESTRING, wxColour(128,0,255));
@@ -4107,6 +4110,21 @@ void NumeReEditor::UpdateSyntaxHighlighting(bool forceUpdate)
         StyleSetForeground(wxSTC_H_ENTITY, wxColour(64,0,0));
         StyleSetBackground(wxSTC_H_ENTITY, wxColour(255,255,220));
         StyleSetBold(wxSTC_H_ENTITY, true);
+    }
+    else if (filetype == FILE_INI)
+    {
+        SetLexer(wxSTC_LEX_PROPERTIES);
+        SetProperty("fold", "1");
+        StyleSetForeground(wxSTC_PROPS_DEFAULT, wxColour(0,0,0));
+        StyleSetForeground(wxSTC_PROPS_KEY, wxColour(0,0,128));
+        StyleSetBold(wxSTC_PROPS_KEY, true);
+        StyleSetForeground(wxSTC_PROPS_DEFVAL, wxColour(255,0,255));
+        StyleSetForeground(wxSTC_PROPS_ASSIGNMENT, wxColour(255,0,0));
+        StyleSetBackground(wxSTC_PROPS_ASSIGNMENT, wxColour(255,255,255));
+        StyleSetForeground(wxSTC_PROPS_SECTION, wxColour(128,0,0));
+        StyleSetBold(wxSTC_PROPS_SECTION, true);
+        StyleSetForeground(wxSTC_PROPS_COMMENT, wxColour(0,128,0));
+        StyleSetItalic(wxSTC_PROPS_COMMENT, true);
     }
     else
     {
@@ -4375,6 +4393,8 @@ FileFilterType NumeReEditor::GetFileType(const wxString& filename)
         fileType = FILE_DIFF;
 	else if (extension == "nhlp" || extension == "xml" || extension == "npkp")
         fileType = FILE_XML;
+	else if (extension == "ini" || extension == "cfg" || extension == "conf")
+        fileType = FILE_INI;
 
 	return fileType;
 }

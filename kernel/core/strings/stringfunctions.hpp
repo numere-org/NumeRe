@@ -444,7 +444,7 @@ static StringVector strfnc_ascii(StringFuncArgs& funcArgs)
 
     for (size_t i = 0; i < sView.length(); i++)
     {
-        sCodes.push_back((int)sView[i]);
+        sCodes.push_back((uint8_t)sView[i]);
     }
 
     return sCodes;
