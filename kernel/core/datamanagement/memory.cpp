@@ -3762,9 +3762,11 @@ std::vector<mu::value_type> Memory::getIndex(size_t col, const std::vector<mu::v
 std::vector<AnovaResult> Memory::getAnova(const VectorIndex& colCategories, size_t colValues, const VectorIndex& _vIndex, double significance) const
 {
     bool check_req = false;
+    size_t col_size = getElemsInColumn(colValues);
     for(size_t i = 0; i < colCategories.size(); i++){
         if (colCategories[i] > memArray.size() || !memArray[colCategories[i]]
-            || memArray[colCategories[i]]->m_type != TableColumn::TYPE_CATEGORICAL)
+            || memArray[colCategories[i]]->m_type != TableColumn::TYPE_CATEGORICAL
+            || getElemsInColumn(colCategories[i]) != col_size)
             check_req = true;
 
     }
@@ -3779,7 +3781,7 @@ std::vector<AnovaResult> Memory::getAnova(const VectorIndex& colCategories, size
 
     colCategories.setOpenEndIndex(getCols()-1);
     bool isTwoWay = colCategories.size() == 2;
-    _vIndex.setOpenEndIndex(getElemsInColumn(colCategories[0])-1);
+    _vIndex.setOpenEndIndex(col_size-1);
 
     Memory _mem(colCategories.size()+1);
     _mem.memArray[0].reset(memArray[colValues]->copy(_vIndex));
