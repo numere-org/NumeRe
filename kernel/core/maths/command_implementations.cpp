@@ -4110,6 +4110,8 @@ bool shortTimeFourierAnalysis(CommandLineParser& cmdParser)
     for (int i = 0; i < _result.GetNy() / 2; i++)
         _data.writeToTable(_target.row[i], _target.col[1], sTargetCache, dFmin + i * dSampleSize); // Fourier f
 
+    _data.convertColumns(sTargetCache, _target.col.subidx(0, 2), "value.f64");
+
     // Define headline
     _data.setHeadLineElement(_target.col[1], sTargetCache, "f [Hz]");
 
@@ -4131,6 +4133,8 @@ bool shortTimeFourierAnalysis(CommandLineParser& cmdParser)
                 _data.setHeadLineElement(_target.col[j+2], sTargetCache, "A(f(" + toString(j + 1) + "))");
         }
     }
+
+    _data.convertColumns(sTargetCache, _target.col.subidx(2, _result.GetNy()), "value.f64");
 
     cmdParser.clearReturnValue();
     cmdParser.setReturnValue(sTargetCache);
