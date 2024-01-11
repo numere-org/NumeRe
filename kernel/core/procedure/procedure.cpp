@@ -809,6 +809,12 @@ Returnvalue Procedure::execute(StringView sProc, string sVarList, Parser& _parse
             {
                 sProcCommandLine.insert(0, "|> ");
             }
+            else if (_option.useDebugger()
+                && !_debugger.getBreakpointManager().isBreakpoint(sCurrentProcedureName, nCurrentLine)
+                && sProcCommandLine.starts_with("|>"))
+            {
+                _debugger.getBreakpointManager().addBreakpoint(sCurrentProcedureName, nCurrentLine, Breakpoint(true));
+            }
 
             // Stop the evaluation if the current procedure,
             // if we reach the endprocedure command
@@ -932,7 +938,12 @@ Returnvalue Procedure::execute(StringView sProc, string sVarList, Parser& _parse
             if ((isBreakPoint || nDebuggerCode == NumeReKernel::DEBUGGER_STEP)
                 && !getCurrentBlockDepth())
             {
-                if (nDebuggerCode != NumeReKernel::DEBUGGER_LEAVE)
+                Breakpoint bp = _debugger.getBreakpointManager().getBreakpoint(sCurrentProcedureName, GetCurrentLine());
+
+                if (bp.m_isConditional)
+                    bp.m_condition = _varFactory->resolveVariables(bp.m_condition);
+
+                if (nDebuggerCode != NumeReKernel::DEBUGGER_LEAVE && bp.isActive(false))
                 {
                     _debugger.gatherInformations(_varFactory, sProcCommandLine, sCurrentProcedureName, GetCurrentLine());
                     nDebuggerCode = evalDebuggerBreakPoint(_parser, _option);

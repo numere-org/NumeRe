@@ -162,6 +162,7 @@ class NumeReEditor : public wxStyledTextCtrl, public wxThreadHelper
 
 		void GotoPipe(int nStartPos = 0);
 		void OnAddBreakpoint(wxCommandEvent& event);
+		void OnEditBreakpoint(wxCommandEvent& event);
 		void OnRemoveBreakpoint(wxCommandEvent& event);
 		void OnClearBreakpoints(wxCommandEvent& event);
 		void OnAddBookmark(wxCommandEvent& event);
@@ -198,6 +199,7 @@ class NumeReEditor : public wxStyledTextCtrl, public wxThreadHelper
 		void OnThreadUpdate(wxThreadEvent& event);
 
 		void AddBreakpoint(int linenum);
+		void EditBreakpoint(int linenum);
 		void RemoveBreakpoint(int linenum);
 		void SynchronizeBreakpoints();
 		bool isBreakPointAllowed(int linenum);

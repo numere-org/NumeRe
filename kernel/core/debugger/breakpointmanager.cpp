@@ -17,128 +17,269 @@
 ******************************************************************************/
 #include "breakpointmanager.hpp"
 #include "../utils/tools.hpp"
+#include "../../kernel.hpp"
 
-// Constructor
+
+/////////////////////////////////////////////////
+/// \brief Evaluates, whether the current
+/// breakpoint is active by evaluating the
+/// expression.
+///
+/// \param needsLocks bool
+/// \return bool
+///
+/////////////////////////////////////////////////
+bool Breakpoint::isActive(bool needsLocks)
+{
+    if (!m_enabled)
+        return false;
+
+    if (m_condition == "true" || m_condition == "1")
+        return true;
+    else if (m_condition == "false" || m_condition == "0")
+        return false;
+
+    NumeReKernel* instance = NumeReKernel::getInstance();
+    mu::Parser& _parser = instance->getParser();
+    std::string sCache;
+    int nNum;
+
+    // Replace the function definitions, if not already done
+    if (!instance->getDefinitions().call(m_condition))
+        throw SyntaxError(SyntaxError::FUNCTION_ERROR, m_condition, SyntaxError::invalid_position);
+
+    // Include procedure and plugin calls
+    /*if (needsLocks)
+    {
+        _parser.PauseLoopMode();
+        _parser.LockPause();
+    }
+
+    // Call the procedure interface function
+    ProcedureInterfaceRetVal nReturn = procedureInterface(m_condition, _parser,
+                                                          *_functionRef, *_dataRef, *_outRef,
+                                                          *_pDataRef, *_scriptRef, *_optionRef, nth_Cmd);
+
+    // Handle the return value
+    if (nReturn == INTERFACE_ERROR)
+        throw SyntaxError(SyntaxError::PROCEDURE_ERROR, m_condition, SyntaxError::invalid_position);
+    else if (nReturn == INTERFACE_EMPTY)
+        m_condition = "false";
+
+    if (needsLocks)
+    {
+        _parser.PauseLoopMode(false);
+        _parser.LockPause(false);
+    }*/
+
+    // Catch and evaluate all data and cache calls
+    if (instance->getMemoryManager().containsTablesOrClusters(m_condition)
+            && !instance->getStringParser().isStringExpression(m_condition))
+    {
+        //if (!_parser.HasCachedAccess()
+        //    && _parser.CanCacheAccess()
+        //    && !_parser.GetCachedEquation().length())
+        //    _parser.SetCompiling(true);
+
+        sCache = getDataElements(m_condition, _parser, instance->getMemoryManager(), instance->getSettings());
+
+        //if (_parser.IsCompiling()
+        //    && _parser.CanCacheAccess())
+        //{
+        //    _parser.CacheCurrentEquation(m_condition);
+        //    _parser.CacheCurrentTarget(sCache);
+        //}
+        //
+        //_parser.SetCompiling(false);
+    }
+
+    // Evaluate std::strings
+    if (instance->getStringParser().isStringExpression(m_condition))
+    {
+        if (needsLocks)
+            _parser.PauseLoopMode();
+
+        // Call the std::string parser
+        auto retVal = instance->getStringParser().evalAndFormat(m_condition, sCache, true, false, true);
+
+        if (needsLocks)
+            _parser.PauseLoopMode(false);
+
+        // Evaluate the return value
+        if (retVal != NumeRe::StringParser::STRING_NUMERICAL)
+        {
+            StripSpaces(m_condition);
+
+            if (m_condition != "\"\"")
+                return true;
+
+            return false;
+        }
+
+        // It's possible that the user might have done
+        // something weird with std::string operations transformed
+        // into a regular expression. Replace the local
+        // variables here
+        //replaceLocalVars(m_condition);
+    }
+
+    // Evalute the already prepared equation
+    if (!_parser.IsAlreadyParsed(m_condition))
+        _parser.SetExpr(m_condition);
+
+    return _parser.Eval(nNum);
+}
+
+
+
+
+/////////////////////////////////////////////////
+/// \brief Constructor
+/////////////////////////////////////////////////
 BreakpointManager::BreakpointManager()
 {
     mBreakpoints.clear();
 }
 
-// Copy constructor
+
+/////////////////////////////////////////////////
+/// \brief Copy constructor
+///
+/// \param _messenger const BreakpointManager&
+///
+/////////////////////////////////////////////////
 BreakpointManager::BreakpointManager(const BreakpointManager& _messenger) : BreakpointManager()
 {
     passBreakpoints(_messenger.mBreakpoints);
 }
 
-// This member function adds a breakpoint to the passed
-// file at the indicated line number
-void BreakpointManager::addBreakpoint(const std::string& _sFilename, size_t nLine)
+
+/////////////////////////////////////////////////
+/// \brief This member function adds a breakpoint
+/// to the passed file at the indicated line
+/// number.
+///
+/// \param _sFilename const std::string&
+/// \param nLine size_t
+/// \param bp const Breakpoint&
+/// \return void
+///
+/////////////////////////////////////////////////
+void BreakpointManager::addBreakpoint(const std::string& _sFilename, size_t nLine, const Breakpoint& bp)
 {
-    // Try to find the current file in the map
-    if (mBreakpoints.find(replacePathSeparator(_sFilename)) != mBreakpoints.end())
-    {
-        // Get the current breakpoint set of this file
-        std::vector<size_t> vLine = mBreakpoints[replacePathSeparator(_sFilename)];
-
-        // Try to find the current line
-        for (size_t i = 0; i < vLine.size(); i++)
-        {
-            if (vLine[i] == nLine)
-                return;
-        }
-
-        // If the line was not part of the breakpoint set
-        // add it to this set and store it in the map
-        vLine.push_back(nLine);
-        mBreakpoints[replacePathSeparator(_sFilename)] = vLine;
-    }
-    else
-    {
-        // This file does not yet exist. Create it and
-        // store the passed breakpoint
-        std::vector<size_t> vLine;
-        vLine.push_back(nLine);
-        mBreakpoints[replacePathSeparator(_sFilename)] = vLine;
-    }
+    mBreakpoints[replacePathSeparator(_sFilename)][nLine] = bp;
 }
 
-// This member function removes a breakpoint from the
-// passed file at the indicated line number
+
+/////////////////////////////////////////////////
+/// \brief This member function removes a
+/// breakpoint from the passed file at the
+/// indicated line number.
+///
+/// \param _sFilename const std::string&
+/// \param nLine size_t
+/// \return void
+///
+/////////////////////////////////////////////////
 void BreakpointManager::removeBreakpoint(const std::string& _sFilename, size_t nLine)
 {
+    std::string sFile = replacePathSeparator(_sFilename);
+
     // Try to find the current file in the map
-    if (mBreakpoints.find(replacePathSeparator(_sFilename)) == mBreakpoints.end())
+    if (mBreakpoints.find(sFile) != mBreakpoints.end())
     {
-        // If it does not exist, do nothing
-        return;
-    }
-    else
-    {
-        // Get the current breakpoint set of this file
-        std::vector<size_t> vLine = mBreakpoints[replacePathSeparator(_sFilename)];
-
         // Try to find the current line
-        for (size_t i = 0; i < vLine.size(); i++)
-        {
-            if (vLine[i] == nLine)
-            {
-                // Erase the breakpoint from the set
-                vLine.erase(vLine.begin()+i);
-            }
-        }
+        auto iter = mBreakpoints[sFile].find(nLine);
 
-        // If this was the last breakpoint, erase the whole
-        // file from the map. Otherwise store the new breakpoint
-        // set in the map
-        if (!vLine.size())
-            mBreakpoints.erase(replacePathSeparator(_sFilename));
-        else
-            mBreakpoints[replacePathSeparator(_sFilename)] = vLine;
+        if (iter != mBreakpoints[sFile].end())
+        {
+            // Erase the breakpoint if it has been found
+            mBreakpoints[sFile].erase(iter);
+
+            // Remove the complete file, if it is now empty
+            if (mBreakpoints[sFile].empty())
+                mBreakpoints.erase(sFile);
+        }
     }
 }
 
-// This member function removes all breakpoints from
-// the passed file
+
+/////////////////////////////////////////////////
+/// \brief This member function removes all
+/// breakpoints from the passed file.
+///
+/// \param _sFilename const std::string&
+/// \return void
+///
+/////////////////////////////////////////////////
 void BreakpointManager::clearBreakpoints(const std::string& _sFilename)
 {
     if (mBreakpoints.find(replacePathSeparator(_sFilename)) != mBreakpoints.end())
         mBreakpoints.erase(replacePathSeparator(_sFilename));
 }
 
-// This member function accepts the breakpoints passed
-// by a map of the corresponding type
-void BreakpointManager::passBreakpoints(const std::map<std::string,std::vector<size_t> >& _mBreakpoints)
+
+/////////////////////////////////////////////////
+/// \brief This member function accepts the
+/// breakpoints passed by a map of the
+/// corresponding type.
+///
+/// \param _mBreakpoints const std::map<std::string, std::map<size_t, Breakpoint>>&
+/// \return void
+///
+/////////////////////////////////////////////////
+void BreakpointManager::passBreakpoints(const std::map<std::string, std::map<size_t, Breakpoint>>& _mBreakpoints)
 {
     mBreakpoints.clear();
     mBreakpoints = _mBreakpoints;
 }
 
-// This member function returns true, if the user has set
-// a breakpoint in the passed file at the passed line number
-bool BreakpointManager::isBreakpoint(const std::string& _sFilename, size_t nLine)
+
+/////////////////////////////////////////////////
+/// \brief This member function returns true, if
+/// the user has set a breakpoint in the passed
+/// file at the passed line number.
+///
+/// \param _sFilename const std::string&
+/// \param nLine size_t
+/// \return bool
+///
+/////////////////////////////////////////////////
+bool BreakpointManager::isBreakpoint(const std::string& _sFilename, size_t nLine) const
 {
     // Try to find the current file in the map
-    if (mBreakpoints.find(replacePathSeparator(_sFilename)) == mBreakpoints.end())
-    {
-        // If it does not exist, return false
-        return false;
-    }
-    else
-    {
-        // Get the current breakpoint set of this file
-        std::vector<size_t> vLine = mBreakpoints[replacePathSeparator(_sFilename)];
+    auto iter = mBreakpoints.find(replacePathSeparator(_sFilename));
 
-        // Try to find the current line
-        for (size_t i = 0; i < vLine.size(); i++)
-        {
-            if (vLine[i] == nLine)
-            {
-                return true;
-            }
-        }
-    }
-
-    // Nothing found
-    return false;
+    // Try to find the current line
+    return iter != mBreakpoints.end() && iter->second.find(nLine) != iter->second.end();
 }
+
+
+/////////////////////////////////////////////////
+/// \brief Get the contents of the breakpoint at
+/// the desired line in the selected file.
+///
+/// \param _sFilename const std::string&
+/// \param nLine size_t
+/// \return Breakpoint
+///
+/////////////////////////////////////////////////
+Breakpoint BreakpointManager::getBreakpoint(const std::string& _sFilename, size_t nLine) const
+{
+    // Try to find the current file in the map
+    auto iter = mBreakpoints.find(replacePathSeparator(_sFilename));
+
+    if (iter != mBreakpoints.end())
+    {
+        // Try to find the current line
+        auto breakPoint = iter->second.find(nLine);
+
+        if (breakPoint != iter->second.end())
+            return breakPoint->second;
+    }
+
+    NumeReKernel::issueWarning("No breakpoint found in file \"" + _sFilename + "\" @ " + toString(nLine));
+    return Breakpoint(false);
+}
+
 
