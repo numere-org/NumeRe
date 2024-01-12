@@ -836,7 +836,7 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const std::string& sCommand)
                 if (sLine.starts_with("|>"))
                 {
                     sLine.erase(0, 2);
-                    bp = _debugger.getBreakpointManager().getBreakpoint(_script.getScriptFileName(), _script.getCurrentLine());
+                    bp = _debugger.getBreakpointManager().getBreakpoint(_script.getScriptFileName(), _script.getCurrentLine()-1);
                 }
 
                 if (_option.useDebugger() && nDebuggerCode != DEBUGGER_LEAVE && bp.isActive(false))

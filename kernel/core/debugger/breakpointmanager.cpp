@@ -34,6 +34,9 @@ bool Breakpoint::isActive(bool needsLocks)
     if (!m_enabled)
         return false;
 
+    g_logger.info("Breakpoint condition: " + m_condition);
+    NumeReKernel::issueWarning(m_condition);
+
     if (m_condition == "true" || m_condition == "1")
         return true;
     else if (m_condition == "false" || m_condition == "0")
@@ -74,7 +77,7 @@ bool Breakpoint::isActive(bool needsLocks)
 
     // Catch and evaluate all data and cache calls
     if (instance->getMemoryManager().containsTablesOrClusters(m_condition)
-            && !instance->getStringParser().isStringExpression(m_condition))
+        && !instance->getStringParser().isStringExpression(m_condition))
     {
         //if (!_parser.HasCachedAccess()
         //    && _parser.CanCacheAccess()
@@ -127,7 +130,15 @@ bool Breakpoint::isActive(bool needsLocks)
     if (!_parser.IsAlreadyParsed(m_condition))
         _parser.SetExpr(m_condition);
 
-    return _parser.Eval(nNum);
+    mu::value_type* v = _parser.Eval(nNum);
+
+    for (int i = 0; i < nNum; i++)
+    {
+        if (v[i] == 0.0 || mu::isnan(v[i]))
+            return false;
+    }
+
+    return true;
 }
 
 

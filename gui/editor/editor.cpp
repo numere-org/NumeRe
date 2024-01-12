@@ -255,7 +255,7 @@ NumeReEditor::NumeReEditor(NumeReWindow* mframe, Options* options, wxWindow* par
     MarkerSetBackground(MARKER_BREAKPOINT, wxColour("red"));
 
     MarkerDefine(MARKER_CONDITIONALBREAKPOINT, wxSTC_MARK_CIRCLE);
-    MarkerSetBackground(MARKER_CONDITIONALBREAKPOINT, wxColour(255,128,64));
+    MarkerSetBackground(MARKER_CONDITIONALBREAKPOINT, wxColour(128,0,255));
 
     MarkerDefine(MARKER_BOOKMARK, wxSTC_MARK_SMALLRECT);
     MarkerSetBackground(MARKER_BOOKMARK, wxColour(192, 0, 64));
@@ -7565,7 +7565,7 @@ void NumeReEditor::EditBreakpoint(int linenum)
     if (!newCondition.length())
         return;
 
-    m_terminal->addBreakpoint(GetFileNameAndPath().ToStdString(), linenum, bp);
+    m_terminal->addBreakpoint(GetFileNameAndPath().ToStdString(), linenum, Breakpoint(newCondition.ToStdString()));
 
     if (MarkerOnLine(linenum, MARKER_BREAKPOINT))
     {

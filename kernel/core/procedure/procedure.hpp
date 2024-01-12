@@ -56,6 +56,7 @@ class Procedure : public FlowCtrl, public PackageManager
 {
     private:
         friend class NumeReDebugger;
+        friend class FlowCtrl;
         friend class ProcedureVarFactory; // For FlowCtrl Enums
 
         std::fstream fProcedure;

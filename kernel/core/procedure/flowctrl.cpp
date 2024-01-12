@@ -19,6 +19,7 @@
 
 // Implementation der FlowCtrl-Klasse
 #include "flowctrl.hpp"
+#include "procedurevarfactory.hpp"
 #include "../ui/error.hpp"
 #include "../../kernel.hpp"
 #include "../maths/parser_functions.hpp"
@@ -1552,7 +1553,14 @@ value_type* FlowCtrl::evalHeader(int& nNum, std::string& sHeadExpression, bool b
         }
 
         if (bp.m_isConditional)
+        {
+            Procedure* proc = NumeReKernel::getInstance()->getDebugger().getCurrentProcedure();
+
+            if (proc)
+                bp.m_condition = proc->_varFactory->resolveVariables(bp.m_condition);
+
             replaceLocalVars(bp.m_condition);
+        }
 
         if (_optionRef->useDebugger()
             && nDebuggerCode != NumeReKernel::DEBUGGER_LEAVE
@@ -1774,7 +1782,14 @@ NumeRe::Cluster FlowCtrl::evalRangeBasedHeader(std::string& sHeadExpression, int
         }
 
         if (bp.m_isConditional)
+        {
+            Procedure* proc = NumeReKernel::getInstance()->getDebugger().getCurrentProcedure();
+
+            if (proc)
+                bp.m_condition = proc->_varFactory->resolveVariables(bp.m_condition);
+
             replaceLocalVars(bp.m_condition);
+        }
 
         if (_optionRef->useDebugger()
             && nDebuggerCode != NumeReKernel::DEBUGGER_LEAVE
@@ -2746,7 +2761,14 @@ int FlowCtrl::compile(std::string sLine, int nthCmd)
             bp = NumeReKernel::getInstance()->getDebugger().getBreakpointManager().getBreakpoint(NumeReKernel::getInstance()->getDebugger().getExecutedModule(), getCurrentLineNumber());
 
             if (bp.m_isConditional)
+            {
+                Procedure* proc = NumeReKernel::getInstance()->getDebugger().getCurrentProcedure();
+
+                if (proc)
+                    bp.m_condition = proc->_varFactory->resolveVariables(bp.m_condition);
+
                 replaceLocalVars(bp.m_condition);
+            }
 
             StripSpaces(sLine);
             vCmdArray[nthCmd].sCommand.erase(vCmdArray[nthCmd].sCommand.find("|>"), 2);
@@ -3345,7 +3367,14 @@ int FlowCtrl::calc(StringView sLine, int nthCmd)
             bp = NumeReKernel::getInstance()->getDebugger().getBreakpointManager().getBreakpoint(NumeReKernel::getInstance()->getDebugger().getExecutedModule(), getCurrentLineNumber());
 
             if (bp.m_isConditional)
+            {
+                Procedure* proc = NumeReKernel::getInstance()->getDebugger().getCurrentProcedure();
+
+                if (proc)
+                    bp.m_condition = proc->_varFactory->resolveVariables(bp.m_condition);
+
                 replaceLocalVars(bp.m_condition);
+            }
         }
 
         if (_optionRef->useDebugger()
