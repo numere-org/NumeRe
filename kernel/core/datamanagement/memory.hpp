@@ -18,6 +18,7 @@
 
 #include <string>
 #include <vector>
+#include <gsl/gsl_cdf.h>
 
 #include "table.hpp"
 #include "sorter.hpp"
@@ -38,6 +39,7 @@ struct StatsLogic;
 /////////////////////////////////////////////////
 struct AnovaResult
 {
+    std::string prefix;
     mu::value_type m_FRatio;
     mu::value_type m_significanceVal;
     mu::value_type m_significance;
@@ -234,7 +236,7 @@ class Memory : public Sorter
             mu::value_type SS_interaction;
             double dof;
 
-            FactorNode(const std::vector<size_t>& s) : subset(s) {}
+            FactorNode(const std::vector<size_t> s) : subset(s) {}
 
             void addChild(FactorNode* child) {
                 children.push_back(child);
@@ -244,6 +246,10 @@ class Memory : public Sorter
             {
                 for (auto child : children)
                     delete child;
+
+                // ne wir kommen ja vom parent ?
+                //if(parent != nullptr)
+                //    delete parent;
             }
         };
 
@@ -252,13 +258,21 @@ class Memory : public Sorter
         private:
             FactorNode* root;
             Memory* mem;
+            double significance = 0;
             std::vector<std::vector<std::string>> factors;
 
             mu::value_type overallMean;
             mu::value_type overallNum;
+            mu::value_type SS_Within;
+            double dof_within = 0;
+            size_t max_depth = 0;
 
             void buildTreeHelper(FactorNode* node, int start, int n, std::vector<size_t>& currentSet) {
                 if (start > n) return; // Base case: no more elements to add
+
+                //depth is given by size of subset
+                if(max_depth < currentSet.size()+1)
+                    max_depth = currentSet.size()+1;
 
                 for (size_t i = start; i <= n; ++i) {
                     std::vector<size_t> newSubset = currentSet;
@@ -271,8 +285,7 @@ class Memory : public Sorter
 
                     //calculate SS for new child
                     calculateMean(child, i);
-                    calculateSS(child);
-                    calculateSSInteraction(child);
+                    calculateDof(child, factors[i].size());
 
                     node->addChild(child);
                     buildTreeHelper(child, i + 1, n, newSubset);
@@ -320,6 +333,24 @@ class Memory : public Sorter
                 }
             }
 
+            void calculateLevel(FactorNode* node,  size_t depth)
+            {
+                if(node->subset.size() == max_depth)
+                    calculateSSWithin(node);
+
+                if(node->subset.size() == depth)
+                {
+                    calculateSS(node);
+                    calculateSSInteraction(node);
+                    return;
+                }
+
+                for (auto c : node->children)
+                    calculateLevel(c, depth);
+
+                return;
+            }
+
             void calculateSS(FactorNode* node)
             {
                 for(size_t i = 0; i < node->means.size(); i++)
@@ -334,6 +365,30 @@ class Memory : public Sorter
 
                 std::vector<mu::value_type> child_SS = getAllSubSetSS(node->subset);
                 node->SS_interaction = node->SS - std::accumulate(child_SS.begin(), child_SS.end(),mu::value_type());
+            }
+
+            calculateDof(FactorNode* node, size_t factorCnt)
+            {
+                node->dof = (factorCnt-1);
+                if(node->parent != nullptr)
+                    node->dof *= node->parent->dof;
+            }
+
+            void calculateSSWithin(FactorNode* node)
+            {
+                //make sure it is 0
+                SS_Within = 0;
+
+                for(size_t i = 0; i < node->catIndex.size(); i++)
+                {
+                    for(mu::value_type idx : node->catIndex[i])
+                    {
+                        // these indeces start at 1 ?
+                        mu::value_type val_j = mem->memArray[0].get()->getValue(idx.real()-1);
+                        SS_Within +=  intPower(val_j - node->means[i],2);
+                    }
+                }
+
             }
 
             //todo weg mit dem und direkt in helper rein?
@@ -365,14 +420,51 @@ class Memory : public Sorter
                 return true;
             }
 
+
+            void getResultsHelper(FactorNode* node, std::vector<AnovaResult>& res, size_t depth)
+            {
+                if(node->subset.size() == depth)
+                {
+                    AnovaResult r;
+                    mu::value_type SS = node->subset.size() > 1 ? node->SS_interaction : node->SS ;
+                    double dof = node->dof;
+                    SS /= dof;
+                    SS /= SS_Within;
+                    //todo fill r
+                    std::stringstream ss;
+
+                    if(node->subset.size() == 0)
+                        return;
+
+                    ss << "Factor" << node->subset[0];
+                    for(int i = 1; i < node->subset.size(); i++)
+                        ss << "x" << node->subset[i];
+
+                    r.prefix = ss.str();
+                    r.m_FRatio = SS;
+                    r.m_significanceVal = gsl_cdf_fdist_Pinv(1.0 - significance, dof, dof_within);
+                    r.m_significance = significance;
+                    r.m_isSignificant = SS.real() >= r.m_significanceVal.real();
+                    r.m_numCategories = node->means.size();
+                    res.push_back(r);
+                    return;
+                }
+
+                for (auto c : node->children)
+                    getResultsHelper(c, res, depth);
+
+                return;
+            }
+
         public:
             FactorTree()
             {
                 root = new FactorNode({});
             }
 
-            void buildTree(std::vector<std::vector<std::string>> _factors, Memory* _mem)
+            void buildTree(std::vector<std::vector<std::string>> _factors, Memory* _mem, double _significance)
             {
+                significance = _significance;
                 factors = _factors;
                 mem = _mem;
                 overallMean = _mem->avg(VectorIndex(0, VectorIndex::OPEN_END), VectorIndex(0));
@@ -381,6 +473,29 @@ class Memory : public Sorter
                 size_t n = factors.size()-1;
                 std::vector<size_t> startSet;
                 buildTreeHelper(root, 0, n, startSet);
+            }
+
+            void calculateResults()
+            {
+                overallMean = mem->avg(VectorIndex(0, VectorIndex::OPEN_END), VectorIndex(0));
+                overallNum = mem->num(VectorIndex(0, VectorIndex::OPEN_END), VectorIndex(0));
+                for(int l = 1; l <= max_depth; l++)
+                    calculateLevel(root, l);
+
+                dof_within = 1;
+                for(size_t i = 0; i < factors.size(); i++)
+                    dof_within *= factors[i].size();
+                dof_within = overallNum.real() - dof_within;
+
+                SS_Within /= dof_within;
+            }
+
+            std::vector<AnovaResult> getResults()
+            {
+                std::vector<AnovaResult> res;
+                for(size_t d = 1; d < max_depth; d--)
+                    getResultsHelper(root, res, d);
+                return res;
             }
         };
 

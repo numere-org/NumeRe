@@ -19,7 +19,7 @@
 #include <memory>
 #include <gsl/gsl_statistics.h>
 #include <gsl/gsl_sort.h>
-#include <gsl/gsl_cdf.h>
+
 #include <regex>
 
 #include "memory.hpp"
@@ -3791,6 +3791,11 @@ std::vector<AnovaResult> Memory::getAnova(const VectorIndex& colCategories, size
     std::vector<std::vector<std::string>> factors;
     for(size_t i = 0; i < colCategories.size(); i++)
         factors.push_back(static_cast<CategoricalColumn*>(_mem.memArray[i+1].get())->getCategories());
+
+    FactorTree ft = FactorTree();
+    ft.buildTree(factors, &_mem, significance);
+    ft.calculateResults();
+    return ft.getResults();
 
     std::vector<Memory> groupedValues(intPower(2, factors.size()) - 1);
 
