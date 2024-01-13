@@ -3899,6 +3899,7 @@ std::vector<AnovaResult> Memory::getAnova(const VectorIndex& colCategories, size
     std::vector<AnovaResult> res;
     for(size_t i = 0; i< SS_vals.size(); i++)
     {
+        auto ss = SS_vals[i];
         SS_vals[i] /= dofs[i];
         SS_vals[i] /= SS_Within;
 

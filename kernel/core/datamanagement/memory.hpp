@@ -206,7 +206,6 @@ class Memory : public Sorter
         std::vector<mu::value_type> findCols(const std::vector<std::string>& vColNames, bool enableRegEx) const;
         std::vector<mu::value_type> countIfEqual(const VectorIndex& _vCols, const std::vector<mu::value_type>& vValues, const std::vector<std::string>& vStringValues) const;
         std::vector<mu::value_type> getIndex(size_t col, const std::vector<mu::value_type>& vValues, const std::vector<std::string>& vStringValues) const;
-        std::vector<AnovaResult> getAnova(const VectorIndex& colCategories, size_t colValues, const VectorIndex& _vIndex, double significance) const;
         mu::value_type getCovariance(size_t col1, const VectorIndex& _vIndex1, size_t col2, const VectorIndex& _vIndex2) const;
         mu::value_type getPearsonCorr(size_t col1, const VectorIndex& _vIndex1, size_t col2, const VectorIndex& _vIndex2) const;
         mu::value_type getSpearmanCorr(size_t col1, const VectorIndex& _vIndex1, size_t col2, const VectorIndex& _vIndex2) const;
@@ -217,6 +216,176 @@ class Memory : public Sorter
         bool smooth(VectorIndex _vLine, VectorIndex _vCol, NumeRe::FilterSettings _settings, AppDir Direction = ALL);
         bool retouch(VectorIndex _vLine, VectorIndex _vCol, AppDir Direction = ALL);
         bool resample(VectorIndex _vLine, VectorIndex _vCol, std::pair<size_t,size_t> samples, AppDir Direction = ALL, std::string sFilter = "lanczos3");
+
+        //Anova Structure
+        class FactorNode
+        {
+        public:
+            FactorNode* parent = nullptr;
+            std::vector<FactorNode*> children;
+
+            // this is used for "navigation" in the tree, to access correct elements
+            std::vector<size_t> subset;
+
+            std::vector<std::vector<mu::value_type>> catIndex;
+            std::vector<mu::value_type> means;
+            std::vector<mu::value_type> nums;
+            mu::value_type SS;
+            mu::value_type SS_interaction;
+            double dof;
+
+            FactorNode(const std::vector<size_t>& s) : subset(s) {}
+
+            void addChild(FactorNode* child) {
+                children.push_back(child);
+            }
+
+            ~FactorNode()
+            {
+                for (auto child : children)
+                    delete child;
+            }
+        };
+
+        class FactorTree
+        {
+        private:
+            FactorNode* root;
+            Memory* mem;
+            std::vector<std::vector<std::string>> factors;
+
+            mu::value_type overallMean;
+            mu::value_type overallNum;
+
+            void buildTreeHelper(FactorNode* node, int start, int n, std::vector<size_t>& currentSet) {
+                if (start > n) return; // Base case: no more elements to add
+
+                for (size_t i = start; i <= n; ++i) {
+                    std::vector<size_t> newSubset = currentSet;
+                    newSubset.push_back(i);
+                    FactorNode* child = new FactorNode(newSubset);
+
+                    // we are at level > 2
+                    if(currentSet.size() > 0)
+                        child->parent = node;
+
+                    //calculate SS for new child
+                    calculateMean(child, i);
+                    calculateSS(child);
+                    calculateSSInteraction(child);
+
+                    node->addChild(child);
+                    buildTreeHelper(child, i + 1, n, newSubset);
+                }
+            }
+
+            void calculateMean(FactorNode* node, size_t facIdx)
+            {
+                Memory tmp_mem(0);
+                for (size_t i = 0; i < factors[facIdx].size(); i++)
+                {
+                    //positions of all elements, which correspond to the passed values
+                    std::vector<mu::value_type> catIndex1 = mem->getIndex(facIdx+1, std::vector<mu::value_type>(), std::vector<std::string>(1, factors[facIdx][i]));
+
+                    if (mu::isnan(catIndex1.front()))
+                        continue;
+
+                    if (node->parent == nullptr)
+                    {
+                        tmp_mem.memArray.push_back(TblColPtr(mem->memArray[0]->copy(VectorIndex(&catIndex1[0], catIndex1.size(), 0))));
+                        node->catIndex.push_back(catIndex1);
+                    } else
+                    {
+                        // Intersect with parent groups
+                        std::vector<std::vector<mu::value_type>> catIndicesParent = node->parent->catIndex;
+                        for(std::vector<mu::value_type> catIndex2 : catIndicesParent)
+                        {
+                            std::vector<mu::value_type> intersection;
+                            for(auto a : catIndex1)
+                                for(auto b : catIndex2)
+                                    if(a == b)
+                                        intersection.push_back(a);
+
+                            tmp_mem.memArray.push_back(TblColPtr(mem->memArray[0]->copy(VectorIndex(&intersection[0], intersection.size(), 0))));
+                            node->catIndex.push_back(intersection);
+                        }
+                    }
+                }
+                for (size_t i = 0; i < tmp_mem.memArray.size(); i++)
+                {
+                    node->means.push_back(tmp_mem.avg(VectorIndex(0, VectorIndex::OPEN_END), VectorIndex(i)));
+                    node->nums.push_back(tmp_mem.num(VectorIndex(0, VectorIndex::OPEN_END), VectorIndex(i)));
+                    //no need for variance ?
+                    //vVar_[i].push_back(intPower(groupedValues[i].std(VectorIndex(0, VectorIndex::OPEN_END), VectorIndex(j)), 2));
+                }
+            }
+
+            void calculateSS(FactorNode* node)
+            {
+                for(size_t i = 0; i < node->means.size(); i++)
+                    node->SS += node->nums[i] * intPower(node->means[i]-overallMean,2);
+            }
+
+            void calculateSSInteraction(FactorNode* node)
+            {
+                //no interaction effect if level 1
+                if(node->parent == nullptr)
+                    return;
+
+                std::vector<mu::value_type> child_SS = getAllSubSetSS(node->subset);
+                node->SS_interaction = node->SS - std::accumulate(child_SS.begin(), child_SS.end(),mu::value_type());
+            }
+
+            //todo weg mit dem und direkt in helper rein?
+            std::vector<mu::value_type> getAllSubSetSS(std::vector<size_t> set)
+            {
+                std::vector<mu::value_type> retvec;
+                getAllChild_SS_helper(root, set, retvec);
+                return retvec;
+            }
+
+            void getAllChild_SS_helper(FactorNode* node, std::vector<size_t> set, std::vector<mu::value_type> &retvec)
+            {
+                if (isSubSet(set, node->subset))
+                {
+                    retvec.push_back(node->subset.size() == 1 ? node->SS : node->SS_interaction);
+                    for (auto c : node->children)
+                        getAllChild_SS_helper(c, set, retvec);
+                }
+                return;
+            }
+
+            //todo static outside ?
+            bool isSubSet(std::vector<size_t> set, std::vector<size_t> subSet)
+            {
+                for (auto s : subSet) {
+                    if (std::find(set.begin(), set.end(), s) == set.end())
+                        return false;
+                    }
+                return true;
+            }
+
+        public:
+            FactorTree()
+            {
+                root = new FactorNode({});
+            }
+
+            void buildTree(std::vector<std::vector<std::string>> _factors, Memory* _mem)
+            {
+                factors = _factors;
+                mem = _mem;
+                overallMean = _mem->avg(VectorIndex(0, VectorIndex::OPEN_END), VectorIndex(0));
+                overallNum = _mem->num(VectorIndex(0, VectorIndex::OPEN_END), VectorIndex(0));
+
+                size_t n = factors.size()-1;
+                std::vector<size_t> startSet;
+                buildTreeHelper(root, 0, n, startSet);
+            }
+        };
+
+
+        std::vector<AnovaResult> getAnova(const VectorIndex& colCategories, size_t colValues, const VectorIndex& _vIndex, double significance) const;
 
 };
 
