@@ -219,7 +219,7 @@ class Memory : public Sorter
         bool retouch(VectorIndex _vLine, VectorIndex _vCol, AppDir Direction = ALL);
         bool resample(VectorIndex _vLine, VectorIndex _vCol, std::pair<size_t,size_t> samples, AppDir Direction = ALL, std::string sFilter = "lanczos3");
 
-        //Anova Structure
+
         class FactorNode
         {
         public:
@@ -236,12 +236,32 @@ class Memory : public Sorter
             mu::value_type SS_interaction;
             double dof;
 
+            /////////////////////////////////////////////////
+            /// \brief Constructor of FactorNode
+            ///
+            /// \param s
+            /// \return FactorNode(const std::vector<size_t> s):
+            ///
+            /////////////////////////////////////////////////
             FactorNode(const std::vector<size_t> s) : subset(s) {}
 
-            void addChild(FactorNode* child) {
+            /////////////////////////////////////////////////
+            /// \brief This function adds a chid element to the FactorNode
+            ///
+            /// \param child FactorNode*
+            /// \return void
+            ///
+            /////////////////////////////////////////////////
+            void addChild(FactorNode* child)
+            {
                 children.push_back(child);
             }
 
+            /////////////////////////////////////////////////
+            /// \brief Destructor of FactorNode
+            ///
+            ///
+            /////////////////////////////////////////////////
             ~FactorNode()
             {
                 for (auto child : children)
@@ -253,7 +273,7 @@ class Memory : public Sorter
             }
         };
 
-        class FactorTree
+        class AnovaCalculationStructure
         {
         private:
             FactorNode* root;
@@ -267,14 +287,26 @@ class Memory : public Sorter
             double dof_within = 0;
             size_t max_depth = 0;
 
-            void buildTreeHelper(FactorNode* node, int start, int n, std::vector<size_t>& currentSet) {
+            /////////////////////////////////////////////////
+            /// \brief This helper function does build the Tree up to a given level n
+            ///
+            /// \param node FactorNode*
+            /// \param start int
+            /// \param n int
+            /// \param currentSet std::vector<size_t>&
+            /// \return void
+            ///
+            /////////////////////////////////////////////////
+            void buildTreeHelper(FactorNode* node, int start, int n, std::vector<size_t>& currentSet)
+            {
                 if (start > n) return; // Base case: no more elements to add
 
                 //depth is given by size of subset
                 if(max_depth < currentSet.size()+1)
                     max_depth = currentSet.size()+1;
 
-                for (size_t i = start; i <= n; ++i) {
+                for (size_t i = start; i <= n; ++i)
+                {
                     std::vector<size_t> newSubset = currentSet;
                     newSubset.push_back(i);
                     FactorNode* child = new FactorNode(newSubset);
@@ -282,6 +314,11 @@ class Memory : public Sorter
                     // we are at level > 2
                     if(currentSet.size() > 0)
                         child->parent = node;
+
+                    std::stringstream ss;
+                    for(auto i : newSubset)
+                        ss << i << ",";
+                    std::string test = ss.str();
 
                     //calculate SS for new child
                     calculateMean(child, i);
@@ -292,6 +329,15 @@ class Memory : public Sorter
                 }
             }
 
+            /////////////////////////////////////////////////
+            /// \brief This function calculates the mean and num values for the given node by
+            ///  first splitting up all values into factor groups and then caluclation of means of these gropus
+            ///
+            /// \param node FactorNode*
+            /// \param facIdx size_t
+            /// \return void
+            ///
+            /////////////////////////////////////////////////
             void calculateMean(FactorNode* node, size_t facIdx)
             {
                 Memory tmp_mem(0);
@@ -319,6 +365,10 @@ class Memory : public Sorter
                                     if(a == b)
                                         intersection.push_back(a);
 
+                            int siz = intersection.size();
+                            if (intersection.size() == 0)
+                                continue;
+
                             tmp_mem.memArray.push_back(TblColPtr(mem->memArray[0]->copy(VectorIndex(&intersection[0], intersection.size(), 0))));
                             node->catIndex.push_back(intersection);
                         }
@@ -333,6 +383,15 @@ class Memory : public Sorter
                 }
             }
 
+            /////////////////////////////////////////////////
+            /// \brief This function is used to trigger calculations for depth after depth level, since values of
+            ///  previous depths are needed
+            ///
+            /// \param node FactorNode*
+            /// \param depth size_t
+            /// \return void
+            ///
+            /////////////////////////////////////////////////
             void calculateLevel(FactorNode* node,  size_t depth)
             {
                 if(node->subset.size() == max_depth)
@@ -351,12 +410,26 @@ class Memory : public Sorter
                 return;
             }
 
+            /////////////////////////////////////////////////
+            /// \brief calculation of Sum of Squares of given node
+            ///
+            /// \param node FactorNode*
+            /// \return void
+            ///
+            /////////////////////////////////////////////////
             void calculateSS(FactorNode* node)
             {
                 for(size_t i = 0; i < node->means.size(); i++)
                     node->SS += node->nums[i] * intPower(node->means[i]-overallMean,2);
             }
 
+            /////////////////////////////////////////////////
+            /// \brief calculation of SS Interaction of given node
+            ///
+            /// \param node FactorNode*
+            /// \return void
+            ///
+            /////////////////////////////////////////////////
             void calculateSSInteraction(FactorNode* node)
             {
                 //no interaction effect if level 1
@@ -367,6 +440,13 @@ class Memory : public Sorter
                 node->SS_interaction = node->SS - std::accumulate(child_SS.begin(), child_SS.end(),mu::value_type());
             }
 
+            /////////////////////////////////////////////////
+            /// \brief calculation of Degrees of fredom of given node
+            ///
+            /// \param node FactorNode*
+            /// \param factorCnt size_t
+            ///
+            /////////////////////////////////////////////////
             calculateDof(FactorNode* node, size_t factorCnt)
             {
                 node->dof = (factorCnt-1);
@@ -374,10 +454,18 @@ class Memory : public Sorter
                     node->dof *= node->parent->dof;
             }
 
+            /////////////////////////////////////////////////
+            /// \brief calculation of SSWithing using the provided node
+            ///
+            /// \param node FactorNode*
+            /// \return void
+            ///
+            /////////////////////////////////////////////////
             void calculateSSWithin(FactorNode* node)
             {
                 //make sure it is 0
                 SS_Within = 0;
+                dof_within = overallNum.real() - node->catIndex.size();
 
                 for(size_t i = 0; i < node->catIndex.size(); i++)
                 {
@@ -388,10 +476,16 @@ class Memory : public Sorter
                         SS_Within +=  intPower(val_j - node->means[i],2);
                     }
                 }
-
             }
 
-            //todo weg mit dem und direkt in helper rein?
+
+            /////////////////////////////////////////////////
+            /// \brief get all SS of elements which are subset of set
+            ///
+            /// \param set std::vector<size_t>
+            /// \return std::vector<mu::value_type>
+            ///
+            /////////////////////////////////////////////////
             std::vector<mu::value_type> getAllSubSetSS(std::vector<size_t> set)
             {
                 std::vector<mu::value_type> retvec;
@@ -399,6 +493,15 @@ class Memory : public Sorter
                 return retvec;
             }
 
+            /////////////////////////////////////////////////
+            /// \brief helper function to get all SS of elements which are subset of set
+            ///
+            /// \param node FactorNode*
+            /// \param set std::vector<size_t>
+            /// \param retvec std::vector<mu::value_type>&
+            /// \return void
+            ///
+            /////////////////////////////////////////////////
             void getAllChild_SS_helper(FactorNode* node, std::vector<size_t> set, std::vector<mu::value_type> &retvec)
             {
                 if (isSubSet(set, node->subset))
@@ -410,8 +513,16 @@ class Memory : public Sorter
                 return;
             }
 
-            //todo static outside ?
-            bool isSubSet(std::vector<size_t> set, std::vector<size_t> subSet)
+
+            /////////////////////////////////////////////////
+            /// \brief This function will checks if the given subSet is actually a valid subset of set
+            ///
+            /// \param set std::vector<size_t>
+            /// \param subSet std::vector<size_t>
+            /// \return bool
+            ///
+            /////////////////////////////////////////////////
+            bool isSubSet(std::vector<size_t> set, std::vector<size_t> subSet)  //todo static outside ?
             {
                 for (auto s : subSet) {
                     if (std::find(set.begin(), set.end(), s) == set.end())
@@ -421,6 +532,16 @@ class Memory : public Sorter
             }
 
 
+            /////////////////////////////////////////////////
+            /// \brief This is the helper function to navigate trhough the Tree and
+            ///     get all needed Results for the given depth level
+            ///
+            /// \param node FactorNode*
+            /// \param res std::vector<AnovaResult>&
+            /// \param depth size_t
+            /// \return void
+            ///
+            /////////////////////////////////////////////////
             void getResultsHelper(FactorNode* node, std::vector<AnovaResult>& res, size_t depth)
             {
                 if(node->subset.size() == depth)
@@ -430,9 +551,8 @@ class Memory : public Sorter
                     double dof = node->dof;
                     SS /= dof;
                     SS /= SS_Within;
-                    //todo fill r
-                    std::stringstream ss;
 
+                    std::stringstream ss;
                     if(node->subset.size() == 0)
                         return;
 
@@ -457,11 +577,27 @@ class Memory : public Sorter
             }
 
         public:
-            FactorTree()
+            /////////////////////////////////////////////////
+            /// \brief Constructor of AnovaCalculationStructure
+            ///
+            ///
+            /////////////////////////////////////////////////
+            AnovaCalculationStructure()
             {
                 root = new FactorNode({});
             }
 
+            /////////////////////////////////////////////////
+            /// \brief This function will construct the Tree structure from the
+            ///     given factors and the provided memory from the table columns the anova
+            ///     is performed on.
+            ///
+            /// \param _factors std::vector<std::vector<std::string>>
+            /// \param _mem Memory*
+            /// \param _significance double
+            /// \return void
+            ///
+            /////////////////////////////////////////////////
             void buildTree(std::vector<std::vector<std::string>> _factors, Memory* _mem, double _significance)
             {
                 significance = _significance;
@@ -475,6 +611,12 @@ class Memory : public Sorter
                 buildTreeHelper(root, 0, n, startSet);
             }
 
+            /////////////////////////////////////////////////
+            /// \brief This function will trigger all calculations to perform the Anova
+            ///
+            /// \return void
+            ///
+            /////////////////////////////////////////////////
             void calculateResults()
             {
                 overallMean = mem->avg(VectorIndex(0, VectorIndex::OPEN_END), VectorIndex(0));
@@ -482,18 +624,19 @@ class Memory : public Sorter
                 for(int l = 1; l <= max_depth; l++)
                     calculateLevel(root, l);
 
-                dof_within = 1;
-                for(size_t i = 0; i < factors.size(); i++)
-                    dof_within *= factors[i].size();
-                dof_within = overallNum.real() - dof_within;
-
                 SS_Within /= dof_within;
             }
 
+            /////////////////////////////////////////////////
+            /// \brief This function will return the result of the anova calculation.
+            ///
+            /// \return std::vector<AnovaResult>
+            ///
+            /////////////////////////////////////////////////
             std::vector<AnovaResult> getResults()
             {
                 std::vector<AnovaResult> res;
-                for(size_t d = 1; d < max_depth; d--)
+                for(size_t d = 1; d <= max_depth; d++)
                     getResultsHelper(root, res, d);
                 return res;
             }

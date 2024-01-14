@@ -1796,10 +1796,6 @@ static std::string tableMethod_anova(const std::string& sTableName, std::string 
     if (nResults < 1)
         throw SyntaxError(SyntaxError::TOO_FEW_COLS, sTableName + "().anovaof()", ".anovaof(", ".anovaof(");
 
-    // todo since we only have implemented 1 or 2 way anova
-    if (nResults > 2)
-        throw SyntaxError(SyntaxError::TOO_MANY_ARGS, sTableName + "().anovaof()", ".anovaof(", ".anovaof(");
-
     auto col1 = VectorIndex(v, nResults, 0);
 
     sCols = getNextArgument(sMethodArguments, true);
@@ -1833,12 +1829,10 @@ static std::string tableMethod_anova(const std::string& sTableName, std::string 
 
     std::vector<AnovaResult> res = _kernel->getMemoryManager().getOneWayAnova(sTableName, col1, col2, vIndex, significance);
 
-    // one anova res for one-way, three results for two-way
-    std::string res_part[] = {"Factor1", "Factor2", "Interaction"};
     std::vector<std::string> vRet;
     for(size_t i = 0; i < res.size(); i++)
     {
-        std::string prefix = res.size()>1 ? (res_part[i] + "-") : "";
+        std::string prefix = res.size()>1 ? (res[i].prefix + "-") : "";
         vRet.push_back("\"" + prefix + "FisherRatio\"");
         vRet.push_back(toString(res[i].m_FRatio));
         vRet.push_back("\"" + prefix + "FisherSignificanceVal\"");
