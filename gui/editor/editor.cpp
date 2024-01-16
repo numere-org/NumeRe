@@ -255,6 +255,7 @@ NumeReEditor::NumeReEditor(NumeReWindow* mframe, Options* options, wxWindow* par
     MarkerSetBackground(MARKER_BREAKPOINT, wxColour("red"));
 
     MarkerDefine(MARKER_CONDITIONALBREAKPOINT, wxSTC_MARK_CIRCLE);
+//    MarkerDefineBitmap(MARKER_CONDITIONALBREAKPOINT, wxBitmap(wxImage(m_mainFrame->getProgramFolder() +  "/icons/color/add-bp.png", wxBITMAP_TYPE_PNG)));
     MarkerSetBackground(MARKER_CONDITIONALBREAKPOINT, wxColour(128,0,255));
 
     MarkerDefine(MARKER_BOOKMARK, wxSTC_MARK_SMALLRECT);
@@ -7560,7 +7561,7 @@ void NumeReEditor::EditBreakpoint(int linenum)
     Breakpoint bp = m_terminal->getBreakpoint(GetFileNameAndPath().ToStdString(), linenum);
 
     // Edit here
-    wxString newCondition = wxGetTextFromUser("Enter condition", "Conditional Breakpoint", bp.m_condition, this);
+    wxString newCondition = wxGetTextFromUser(_guilang.get("GUI_MENU_EDITOR_EDITBP_TEXT"), _guilang.get("GUI_MENU_EDITOR_EDITBP_HEAD"), bp.m_condition, this);
 
     if (!newCondition.length())
         return;

@@ -803,17 +803,23 @@ Returnvalue Procedure::execute(StringView sProc, string sVarList, Parser& _parse
             // Obtain the current command from the command line
             sCurrentCommand = findCommand(sProcCommandLine).sString;
 
-            if (_option.useDebugger()
-                && _debugger.getBreakpointManager().isBreakpoint(sCurrentProcedureName, nCurrentLine)
-                && !sProcCommandLine.starts_with("|>"))
+            if (_option.useDebugger() && (_debugger.getBreakpointManager().isBreakpoint(sCurrentProcedureName, nCurrentLine)
+                                          || sProcCommandLine.starts_with("|>")))
             {
-                sProcCommandLine.insert(0, "|> ");
-            }
-            else if (_option.useDebugger()
-                && !_debugger.getBreakpointManager().isBreakpoint(sCurrentProcedureName, nCurrentLine)
-                && sProcCommandLine.starts_with("|>"))
-            {
-                _debugger.getBreakpointManager().addBreakpoint(sCurrentProcedureName, nCurrentLine, Breakpoint(true));
+                if (!sProcCommandLine.starts_with("|>"))
+                    sProcCommandLine.insert(0, "|> ");
+                else if (!_debugger.getBreakpointManager().isBreakpoint(sCurrentProcedureName, nCurrentLine))
+                    _debugger.getBreakpointManager().addBreakpoint(sCurrentProcedureName, nCurrentLine, Breakpoint(true));
+
+                Breakpoint bp = _debugger.getBreakpointManager().getBreakpoint(sCurrentProcedureName, nCurrentLine);
+
+                if (bp.m_isConditional)
+                {
+                    bp.m_condition = bp.m_originalCondition;
+                    ProcElement->resolveSymbols(bp.m_condition);
+                    _localDef.call(bp.m_condition);
+                    _debugger.getBreakpointManager().addBreakpoint(sCurrentProcedureName, nCurrentLine, bp);
+                }
             }
 
             // Stop the evaluation if the current procedure,
@@ -888,32 +894,6 @@ Returnvalue Procedure::execute(StringView sProc, string sVarList, Parser& _parse
             }
         }
 
-        try
-        {
-            // Handle the defining process and the calling
-            // of local functions
-            if (sCurrentCommand == "lclfunc")
-            {
-                // This is a definition
-                _localDef.defineFunc(sProcCommandLine.substr(sProcCommandLine.find("lclfunc")+7));
-                sProcCommandLine.clear();
-                continue;
-            }
-            else
-            {
-                // This is probably a call to a local function
-                _localDef.call(sProcCommandLine);
-            }
-        }
-        catch (...)
-        {
-            _debugger.gatherInformations(_varFactory, sProcCommandLine, sCurrentProcedureName, GetCurrentLine());
-            _debugger.showError(current_exception());
-
-            nCurrentByteCode = 0;
-            catchExceptionForTest(current_exception(), bSupressAnswer_back, GetCurrentLine(), true);
-        }
-
         // define the current command to be a flow control statement,
         // if the procedure was not parsed already
         if (nCurrentByteCode == ProcedureCommandLine::BYTECODE_NOT_PARSED
@@ -955,6 +935,32 @@ Returnvalue Procedure::execute(StringView sProc, string sVarList, Parser& _parse
                 continue;
 
             sProcCommandLine.insert(0, 1, ' ');
+        }
+
+        try
+        {
+            // Handle the defining process and the calling
+            // of local functions
+            if (sCurrentCommand == "lclfunc")
+            {
+                // This is a definition
+                _localDef.defineFunc(sProcCommandLine.substr(sProcCommandLine.find("lclfunc")+7));
+                sProcCommandLine.clear();
+                continue;
+            }
+            else
+            {
+                // This is probably a call to a local function
+                _localDef.call(sProcCommandLine);
+            }
+        }
+        catch (...)
+        {
+            _debugger.gatherInformations(_varFactory, sProcCommandLine, sCurrentProcedureName, GetCurrentLine());
+            _debugger.showError(current_exception());
+
+            nCurrentByteCode = 0;
+            catchExceptionForTest(current_exception(), bSupressAnswer_back, GetCurrentLine(), true);
         }
 
         // Handle the definition of local variables

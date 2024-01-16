@@ -29,17 +29,20 @@
 /////////////////////////////////////////////////
 struct Breakpoint
 {
+    std::string m_originalCondition;
     std::string m_condition;
     bool m_enabled;
     bool m_isConditional;
 
-    Breakpoint(const std::string& condition = "true", bool enable = true) : m_condition(condition), m_enabled(enable)
+    Breakpoint(const std::string& condition = "true", bool enable = true) : m_originalCondition(condition), m_condition(condition), m_enabled(enable)
     {
         m_isConditional = m_condition.length() && m_condition != "true" && m_condition != "false";
     }
 
-    Breakpoint(bool enable) : m_condition(enable ? "true" : "false"), m_enabled(enable), m_isConditional(false)
-    { }
+    Breakpoint(bool enable) : m_originalCondition(enable ? "true" : "false"), m_enabled(enable), m_isConditional(false)
+    {
+        m_condition = m_originalCondition;
+    }
 
     bool isActive(bool needsLocks);
 };

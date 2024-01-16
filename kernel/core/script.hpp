@@ -74,13 +74,12 @@ class Script : public FileSystem
         std::string getNextScriptCommandFromScript();
         std::string getNextScriptCommandFromInclude();
         std::string handleIncludeSyntax(std::string& sScriptCommand);
-        bool handleLocalDefinitions(std::string& sScriptCommand);
-
 
     public:
         Script();
         ~Script();
 
+        bool handleLocalDefinitions(std::string& sScriptCommand);
         std::string getNextScriptCommand();
         inline std::string getScriptFileName() const
             {return sScriptFileName;}
