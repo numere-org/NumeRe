@@ -85,4 +85,4 @@ Fixed	Curve sets can now be plotted without the need of an additional legend ent
 Added	A simple lexer for INI files was added.
 Applied	Other text files can now be embedded in packages.
 Fixed	In rare circumstances, locally installed packages could trigger a exception, if one wants to install something from the package repository. That has been resolved.
-New	Conditional breakpoints were added as experimental feature. To create one, create regular breakpoint and then right-click on it and select "Edit breakpoint".
+New	Conditional breakpoints were added as EXPERIMENTAL feature. To create one, create regular breakpoint and then right-click on it and select "Edit breakpoint".

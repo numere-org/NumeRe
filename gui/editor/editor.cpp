@@ -7558,20 +7558,27 @@ void NumeReEditor::EditBreakpoint(int linenum)
         || (!MarkerOnLine(linenum, MARKER_BREAKPOINT) && !MarkerOnLine(linenum, MARKER_CONDITIONALBREAKPOINT)))
         return;
 
+    // Get the current breakpoint definition
     Breakpoint bp = m_terminal->getBreakpoint(GetFileNameAndPath().ToStdString(), linenum);
 
-    // Edit here
-    wxString newCondition = wxGetTextFromUser(_guilang.get("GUI_MENU_EDITOR_EDITBP_TEXT"), _guilang.get("GUI_MENU_EDITOR_EDITBP_HEAD"), bp.m_condition, this);
+    // Get the expression from the user
+    wxString newCondition = wxGetTextFromUser(_guilang.get("GUI_MENU_EDITOR_EDITBP_TEXT"),
+                                              _guilang.get("GUI_MENU_EDITOR_EDITBP_HEAD"),
+                                              bp.m_condition, this);
 
     if (!newCondition.length())
         return;
 
-    m_terminal->addBreakpoint(GetFileNameAndPath().ToStdString(), linenum, Breakpoint(newCondition.ToStdString()));
+    // Create and update the internal breakpoint
+    // TODO: we might want to check the expression for requirement fulfillment
+    bp = Breakpoint(newCondition.ToStdString());
+    m_terminal->addBreakpoint(GetFileNameAndPath().ToStdString(), linenum, bp);
 
-    if (MarkerOnLine(linenum, MARKER_BREAKPOINT))
+    // Enable the correct type of breakpoint on the margin
+    if (MarkerOnLine(linenum, bp.m_isConditional ? MARKER_BREAKPOINT : MARKER_CONDITIONALBREAKPOINT))
     {
-        MarkerDelete(linenum, MARKER_BREAKPOINT);
-        MarkerAdd(linenum, MARKER_CONDITIONALBREAKPOINT);
+        MarkerDelete(linenum, bp.m_isConditional ? MARKER_BREAKPOINT : MARKER_CONDITIONALBREAKPOINT);
+        MarkerAdd(linenum, bp.m_isConditional ? MARKER_CONDITIONALBREAKPOINT : MARKER_BREAKPOINT);
     }
 }
 

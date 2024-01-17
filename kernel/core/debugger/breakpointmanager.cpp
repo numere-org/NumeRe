@@ -35,7 +35,6 @@ bool Breakpoint::isActive(bool needsLocks)
         return false;
 
     g_logger.info("Breakpoint condition: " + m_condition);
-    NumeReKernel::issueWarning(m_condition);
 
     if (m_condition == "true" || m_condition == "1")
         return true;
@@ -54,23 +53,7 @@ bool Breakpoint::isActive(bool needsLocks)
     // Catch and evaluate all data and cache calls
     if (instance->getMemoryManager().containsTablesOrClusters(m_condition)
         && !instance->getStringParser().isStringExpression(m_condition))
-    {
-        //if (!_parser.HasCachedAccess()
-        //    && _parser.CanCacheAccess()
-        //    && !_parser.GetCachedEquation().length())
-        //    _parser.SetCompiling(true);
-
         sCache = getDataElements(m_condition, _parser, instance->getMemoryManager(), instance->getSettings());
-
-        //if (_parser.IsCompiling()
-        //    && _parser.CanCacheAccess())
-        //{
-        //    _parser.CacheCurrentEquation(m_condition);
-        //    _parser.CacheCurrentTarget(sCache);
-        //}
-        //
-        //_parser.SetCompiling(false);
-    }
 
     // Evaluate std::strings
     if (instance->getStringParser().isStringExpression(m_condition))
