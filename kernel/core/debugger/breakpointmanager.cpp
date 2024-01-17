@@ -51,30 +51,6 @@ bool Breakpoint::isActive(bool needsLocks)
     if (!instance->getDefinitions().call(m_condition))
         throw SyntaxError(SyntaxError::FUNCTION_ERROR, m_condition, SyntaxError::invalid_position);
 
-    // Include procedure and plugin calls
-    /*if (needsLocks)
-    {
-        _parser.PauseLoopMode();
-        _parser.LockPause();
-    }
-
-    // Call the procedure interface function
-    ProcedureInterfaceRetVal nReturn = procedureInterface(m_condition, _parser,
-                                                          *_functionRef, *_dataRef, *_outRef,
-                                                          *_pDataRef, *_scriptRef, *_optionRef, nth_Cmd);
-
-    // Handle the return value
-    if (nReturn == INTERFACE_ERROR)
-        throw SyntaxError(SyntaxError::PROCEDURE_ERROR, m_condition, SyntaxError::invalid_position);
-    else if (nReturn == INTERFACE_EMPTY)
-        m_condition = "false";
-
-    if (needsLocks)
-    {
-        _parser.PauseLoopMode(false);
-        _parser.LockPause(false);
-    }*/
-
     // Catch and evaluate all data and cache calls
     if (instance->getMemoryManager().containsTablesOrClusters(m_condition)
         && !instance->getStringParser().isStringExpression(m_condition))

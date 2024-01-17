@@ -1557,7 +1557,7 @@ value_type* FlowCtrl::evalHeader(int& nNum, std::string& sHeadExpression, bool b
             Procedure* proc = NumeReKernel::getInstance()->getDebugger().getCurrentProcedure();
 
             if (proc)
-                bp.m_condition = proc->_varFactory->resolveVariables(bp.m_condition);
+                bp.m_condition = proc->resolveVariables(bp.m_condition);
 
             replaceLocalVars(bp.m_condition);
         }
@@ -1786,7 +1786,7 @@ NumeRe::Cluster FlowCtrl::evalRangeBasedHeader(std::string& sHeadExpression, int
             Procedure* proc = NumeReKernel::getInstance()->getDebugger().getCurrentProcedure();
 
             if (proc)
-                bp.m_condition = proc->_varFactory->resolveVariables(bp.m_condition);
+                bp.m_condition = proc->resolveVariables(bp.m_condition);
 
             replaceLocalVars(bp.m_condition);
         }
@@ -2765,7 +2765,7 @@ int FlowCtrl::compile(std::string sLine, int nthCmd)
                 Procedure* proc = NumeReKernel::getInstance()->getDebugger().getCurrentProcedure();
 
                 if (proc)
-                    bp.m_condition = proc->_varFactory->resolveVariables(bp.m_condition);
+                    bp.m_condition = proc->resolveVariables(bp.m_condition);
 
                 replaceLocalVars(bp.m_condition);
             }
@@ -3371,7 +3371,7 @@ int FlowCtrl::calc(StringView sLine, int nthCmd)
                 Procedure* proc = NumeReKernel::getInstance()->getDebugger().getCurrentProcedure();
 
                 if (proc)
-                    bp.m_condition = proc->_varFactory->resolveVariables(bp.m_condition);
+                    bp.m_condition = proc->resolveVariables(bp.m_condition);
 
                 replaceLocalVars(bp.m_condition);
             }

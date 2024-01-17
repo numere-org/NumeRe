@@ -56,7 +56,6 @@ class Procedure : public FlowCtrl, public PackageManager
 {
     private:
         friend class NumeReDebugger;
-        friend class FlowCtrl;
         friend class ProcedureVarFactory; // For FlowCtrl Enums
 
         std::fstream fProcedure;
@@ -144,6 +143,14 @@ class Procedure : public FlowCtrl, public PackageManager
         std::string getThisNameSpace() const
         {
             return sThisNameSpace;
+        }
+
+        std::string resolveVariables(const std::string& sCommandLine)
+        {
+            if (_varFactory)
+                return _varFactory->resolveVariables(sCommandLine);
+
+            return sCommandLine;
         }
 };
 
