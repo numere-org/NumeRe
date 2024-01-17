@@ -19,7 +19,6 @@
 
 // Implementation der FlowCtrl-Klasse
 #include "flowctrl.hpp"
-#include "procedurevarfactory.hpp"
 #include "../ui/error.hpp"
 #include "../../kernel.hpp"
 #include "../maths/parser_functions.hpp"
@@ -1539,22 +1538,23 @@ value_type* FlowCtrl::evalHeader(int& nNum, std::string& sHeadExpression, bool b
         || nDebuggerCode == NumeReKernel::DEBUGGER_STEP)
     {
         Breakpoint bp(true);
+        NumeReDebugger& _debugger = NumeReKernel::getInstance()->getDebugger();
 
         if (sHeadExpression.substr(sHeadExpression.find_first_not_of(' '), 2) == "|>")
         {
             nCalcType[nth_Cmd] |= CALCTYPE_DEBUGBREAKPOINT;
             sHeadExpression.erase(sHeadExpression.find_first_not_of(' '), 2);
             StripSpaces(sHeadExpression);
-            bp = NumeReKernel::getInstance()->getDebugger().getBreakpointManager().getBreakpoint(NumeReKernel::getInstance()->getDebugger().getExecutedModule(), getCurrentLineNumber());
+            bp = _debugger.getBreakpointManager().getBreakpoint(_debugger.getExecutedModule(), getCurrentLineNumber());
         }
         else if (nCurrentCalcType & CALCTYPE_DEBUGBREAKPOINT)
         {
-            bp = NumeReKernel::getInstance()->getDebugger().getBreakpointManager().getBreakpoint(NumeReKernel::getInstance()->getDebugger().getExecutedModule(), getCurrentLineNumber());
+            bp = _debugger.getBreakpointManager().getBreakpoint(_debugger.getExecutedModule(), getCurrentLineNumber());
         }
 
         if (bp.m_isConditional)
         {
-            Procedure* proc = NumeReKernel::getInstance()->getDebugger().getCurrentProcedure();
+            Procedure* proc = _debugger.getCurrentProcedure();
 
             if (proc)
                 bp.m_condition = proc->resolveVariables(bp.m_condition);
@@ -1567,7 +1567,7 @@ value_type* FlowCtrl::evalHeader(int& nNum, std::string& sHeadExpression, bool b
             && nDebuggerCode != NumeReKernel::DEBUGGER_STEPOVER
             && bp.isActive(!bLockedPauseMode && bUseLoopParsingMode))
         {
-            NumeReKernel::getInstance()->getDebugger().gatherLoopBasedInformations(sHeadCommand + " (" + sHeadExpression + ")", getCurrentLineNumber(), mVarMap, vVarArray, sVarArray);
+            _debugger.gatherLoopBasedInformations(sHeadCommand + " (" + sHeadExpression + ")", getCurrentLineNumber(), mVarMap, vVarArray, sVarArray);
             nDebuggerCode = evalDebuggerBreakPoint(*_parserRef, *_optionRef);
         }
     }
@@ -1768,22 +1768,23 @@ NumeRe::Cluster FlowCtrl::evalRangeBasedHeader(std::string& sHeadExpression, int
         || nDebuggerCode == NumeReKernel::DEBUGGER_STEP)
     {
         Breakpoint bp(true);
+        NumeReDebugger& _debugger = NumeReKernel::getInstance()->getDebugger();
 
         if (sHeadExpression.substr(sHeadExpression.find_first_not_of(' '), 2) == "|>")
         {
             nCalcType[nth_Cmd] |= CALCTYPE_DEBUGBREAKPOINT;
             sHeadExpression.erase(sHeadExpression.find_first_not_of(' '), 2);
             StripSpaces(sHeadExpression);
-            bp = NumeReKernel::getInstance()->getDebugger().getBreakpointManager().getBreakpoint(NumeReKernel::getInstance()->getDebugger().getExecutedModule(), getCurrentLineNumber());
+            bp = _debugger.getBreakpointManager().getBreakpoint(_debugger.getExecutedModule(), getCurrentLineNumber());
         }
         else if (nCurrentCalcType & CALCTYPE_DEBUGBREAKPOINT)
         {
-            bp = NumeReKernel::getInstance()->getDebugger().getBreakpointManager().getBreakpoint(NumeReKernel::getInstance()->getDebugger().getExecutedModule(), getCurrentLineNumber());
+            bp = _debugger.getBreakpointManager().getBreakpoint(_debugger.getExecutedModule(), getCurrentLineNumber());
         }
 
         if (bp.m_isConditional)
         {
-            Procedure* proc = NumeReKernel::getInstance()->getDebugger().getCurrentProcedure();
+            Procedure* proc = _debugger.getCurrentProcedure();
 
             if (proc)
                 bp.m_condition = proc->resolveVariables(bp.m_condition);
@@ -1796,7 +1797,8 @@ NumeRe::Cluster FlowCtrl::evalRangeBasedHeader(std::string& sHeadExpression, int
             && nDebuggerCode != NumeReKernel::DEBUGGER_STEPOVER
             && bp.isActive(!bLockedPauseMode && bUseLoopParsingMode))
         {
-            NumeReKernel::getInstance()->getDebugger().gatherLoopBasedInformations(sHeadCommand + " (" + sHeadExpression + ")", getCurrentLineNumber(), mVarMap, vVarArray, sVarArray);
+            _debugger.gatherLoopBasedInformations(sHeadCommand + " (" + sHeadExpression + ")", getCurrentLineNumber(),
+                                                  mVarMap, vVarArray, sVarArray);
             nDebuggerCode = evalDebuggerBreakPoint(*_parserRef, *_optionRef);
         }
     }
@@ -2753,16 +2755,17 @@ int FlowCtrl::compile(std::string sLine, int nthCmd)
     if (sLine.substr(sLine.find_first_not_of(' '), 2) == "|>" || nDebuggerCode == NumeReKernel::DEBUGGER_STEP)
     {
         Breakpoint bp(true);
+        NumeReDebugger& _debugger = NumeReKernel::getInstance()->getDebugger();
 
         if (sLine.substr(sLine.find_first_not_of(' '), 2) == "|>")
         {
             nCalcType[nthCmd] |= CALCTYPE_DEBUGBREAKPOINT;
             sLine.erase(sLine.find("|>"), 2);
-            bp = NumeReKernel::getInstance()->getDebugger().getBreakpointManager().getBreakpoint(NumeReKernel::getInstance()->getDebugger().getExecutedModule(), getCurrentLineNumber());
+            bp = _debugger.getBreakpointManager().getBreakpoint(_debugger.getExecutedModule(), getCurrentLineNumber());
 
             if (bp.m_isConditional)
             {
-                Procedure* proc = NumeReKernel::getInstance()->getDebugger().getCurrentProcedure();
+                Procedure* proc = _debugger.getCurrentProcedure();
 
                 if (proc)
                     bp.m_condition = proc->resolveVariables(bp.m_condition);
@@ -2780,7 +2783,7 @@ int FlowCtrl::compile(std::string sLine, int nthCmd)
             && nDebuggerCode != NumeReKernel::DEBUGGER_STEPOVER
             && bp.isActive(!bLockedPauseMode && bUseLoopParsingMode))
         {
-            NumeReKernel::getInstance()->getDebugger().gatherLoopBasedInformations(sLine, getCurrentLineNumber(), mVarMap, vVarArray, sVarArray);
+            _debugger.gatherLoopBasedInformations(sLine, getCurrentLineNumber(), mVarMap, vVarArray, sVarArray);
             nDebuggerCode = evalDebuggerBreakPoint(*_parserRef, *_optionRef);
         }
     }
@@ -3361,14 +3364,15 @@ int FlowCtrl::calc(StringView sLine, int nthCmd)
     if (nCurrentCalcType & CALCTYPE_DEBUGBREAKPOINT || nDebuggerCode == NumeReKernel::DEBUGGER_STEP)
     {
         Breakpoint bp(true);
+        NumeReDebugger& _debugger = NumeReKernel::getInstance()->getDebugger();
 
         if (nCurrentCalcType & CALCTYPE_DEBUGBREAKPOINT)
         {
-            bp = NumeReKernel::getInstance()->getDebugger().getBreakpointManager().getBreakpoint(NumeReKernel::getInstance()->getDebugger().getExecutedModule(), getCurrentLineNumber());
+            bp = _debugger.getBreakpointManager().getBreakpoint(_debugger.getExecutedModule(), getCurrentLineNumber());
 
             if (bp.m_isConditional)
             {
-                Procedure* proc = NumeReKernel::getInstance()->getDebugger().getCurrentProcedure();
+                Procedure* proc = _debugger.getCurrentProcedure();
 
                 if (proc)
                     bp.m_condition = proc->resolveVariables(bp.m_condition);
@@ -3382,8 +3386,8 @@ int FlowCtrl::calc(StringView sLine, int nthCmd)
             && nDebuggerCode != NumeReKernel::DEBUGGER_STEPOVER
             && bp.isActive(!bLockedPauseMode && bUseLoopParsingMode))
         {
-            NumeReKernel::getInstance()->getDebugger().gatherLoopBasedInformations(sLine.to_string(), getCurrentLineNumber(),
-                                                                                   mVarMap, vVarArray, sVarArray);
+            _debugger.gatherLoopBasedInformations(sLine.to_string(), getCurrentLineNumber(),
+                                                  mVarMap, vVarArray, sVarArray);
             nDebuggerCode = evalDebuggerBreakPoint(*_parserRef, *_optionRef);
         }
     }

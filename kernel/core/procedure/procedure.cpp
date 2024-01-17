@@ -2783,6 +2783,24 @@ size_t Procedure::replaceReturnVal(string& sLine, Parser& _parser, const Returnv
 
 
 /////////////////////////////////////////////////
+/// \brief An external interface to the internal
+/// variable factory to get the mangled internal
+/// variable names.
+///
+/// \param sCommandLine const std::string&
+/// \return std::string
+///
+/////////////////////////////////////////////////
+std::string Procedure::resolveVariables(const std::string& sCommandLine) const
+{
+    if (_varFactory)
+        return _varFactory->resolveVariables(sCommandLine);
+
+    return sCommandLine;
+}
+
+
+/////////////////////////////////////////////////
 /// \brief This member function sets the current
 /// procedure object to its original state. It
 /// will be called at the end of the executed
