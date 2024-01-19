@@ -25,6 +25,10 @@
 
 class Memory;
 
+/////////////////////////////////////////////////
+/// \brief This class is representing a Node in the Anova
+/// calculation Tree.
+/////////////////////////////////////////////////
 class FactorNode
 {
 public:
@@ -74,6 +78,10 @@ public:
     }
 };
 
+/////////////////////////////////////////////////
+/// \brief This class provides the functionallity to calculate n way anova
+///  in an recursive Tree structure.
+/////////////////////////////////////////////////
 class AnovaCalculationStructure
 {
 private:
