@@ -420,7 +420,7 @@ class MemoryManager : public NumeRe::FileAdapter, public StringMemory, public Nu
             return vMemory[findTable(sTable)]->getIndex(nCol, vValues, vStringValues);
         }
 
-        std::vector<AnovaResult> getOneWayAnova(const std::string& sTable,
+        std::vector<AnovaResult> getAnova(const std::string& sTable,
                                    const VectorIndex& colCategories, size_t colValues, const VectorIndex& _vIndex, double significance) const
         {
             return vMemory[findTable(sTable)]->getAnova(colCategories, colValues, _vIndex, significance);

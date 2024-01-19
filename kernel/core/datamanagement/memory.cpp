@@ -3761,23 +3761,28 @@ std::vector<mu::value_type> Memory::getIndex(size_t col, const std::vector<mu::v
 /////////////////////////////////////////////////
 std::vector<AnovaResult> Memory::getAnova(const VectorIndex& colCategories, size_t colValues, const VectorIndex& _vIndex, double significance) const
 {
-    bool check_req = false;
-    size_t col_size = getElemsInColumn(colValues);
-    for(size_t i = 0; i < colCategories.size(); i++){
-        if (colCategories[i] > memArray.size() || !memArray[colCategories[i]]
-            || memArray[colCategories[i]]->m_type != TableColumn::TYPE_CATEGORICAL
-            || getElemsInColumn(colCategories[i]) != col_size)
-            check_req = true;
 
-    }
-
-    if (check_req || significance >= 1.0
+    if (significance >= 1.0
         || significance <= 0.0 )
     {
         AnovaResult res;
         res.m_FRatio = NAN;
         return std::vector<AnovaResult> {res};
     }
+
+    size_t col_size = getElemsInColumn(colValues);
+    for(size_t i = 0; i < colCategories.size(); i++)
+        {
+        if (colCategories[i] > memArray.size() || !memArray[colCategories[i]]
+            || memArray[colCategories[i]]->m_type != TableColumn::TYPE_CATEGORICAL
+            || getElemsInColumn(colCategories[i]) != col_size)
+        {
+            AnovaResult res;
+            res.m_FRatio = NAN;
+            return std::vector<AnovaResult> {res};
+        }
+    }
+
 
     colCategories.setOpenEndIndex(getCols()-1);
     _vIndex.setOpenEndIndex(col_size-1);

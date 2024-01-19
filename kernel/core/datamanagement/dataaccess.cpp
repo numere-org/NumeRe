@@ -1827,7 +1827,7 @@ static std::string tableMethod_anova(const std::string& sTableName, std::string 
         }
     }
 
-    std::vector<AnovaResult> res = _kernel->getMemoryManager().getOneWayAnova(sTableName, col1, col2, vIndex, significance);
+    std::vector<AnovaResult> res = _kernel->getMemoryManager().getAnova(sTableName, col1, col2, vIndex, significance);
 
     std::vector<std::string> vRet;
     for(size_t i = 0; i < res.size(); i++)
