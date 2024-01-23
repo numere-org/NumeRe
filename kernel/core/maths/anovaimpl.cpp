@@ -20,6 +20,85 @@
 #include "../datamanagement/memory.hpp"
 
 /////////////////////////////////////////////////
+/// \brief This function calculates the mean and num values for the given node by
+///  first splitting up all values into factor groups and then caluclation of means of these gropus
+///
+/// \param node FactorNode*
+/// \param facIdx size_t
+/// \return void
+///
+/////////////////////////////////////////////////
+void FactorNode::calculateMean(const Memory *mem, const std::vector<std::vector<std::string>> &factors, size_t facIdx)
+{
+    Memory tmp_mem(0);
+    for (size_t i = 0; i < factors[facIdx].size(); i++)
+    {
+        //positions of all elements, which correspond to the passed values
+        std::vector<mu::value_type> catIndex1 = mem->getIndex(facIdx+1, std::vector<mu::value_type>(), std::vector<std::string>(1, factors[facIdx][i]));
+
+        if (mu::isnan(catIndex1.front()))
+            continue;
+
+        if (parent == nullptr)
+        {
+            tmp_mem.memArray.push_back(TblColPtr(mem->memArray[0]->copy(VectorIndex(&catIndex1[0], catIndex1.size(), 0))));
+            catIndex.push_back(catIndex1);
+        } else
+        {
+            // Intersect with parent groups
+            std::vector<std::vector<mu::value_type>> catIndicesParent = parent->catIndex;
+            for(std::vector<mu::value_type> catIndex2 : catIndicesParent)
+            {
+                std::vector<mu::value_type> intersection;
+                for(auto a : catIndex1)
+                    for(auto b : catIndex2)
+                        if(a == b)
+                            intersection.push_back(a);
+
+                int siz = intersection.size();
+                if (intersection.size() == 0)
+                    continue;
+
+                tmp_mem.memArray.push_back(TblColPtr(mem->memArray[0]->copy(VectorIndex(&intersection[0], intersection.size(), 0))));
+                catIndex.push_back(intersection);
+            }
+        }
+    }
+    for (size_t i = 0; i < tmp_mem.memArray.size(); i++)
+    {
+        means.push_back(tmp_mem.avg(VectorIndex(0, VectorIndex::OPEN_END), VectorIndex(i)));
+        nums.push_back(tmp_mem.num(VectorIndex(0, VectorIndex::OPEN_END), VectorIndex(i)));
+    }
+}
+
+/////////////////////////////////////////////////
+/// \brief calculation of Sum of Squares of given node
+///
+/// \param node FactorNode*
+/// \return void
+///
+/////////////////////////////////////////////////
+void FactorNode::calculateSS(const mu::value_type overallMean)
+{
+    for(size_t i = 0; i < means.size(); i++)
+        SS += nums[i] * intPower(means[i]-overallMean,2);
+}
+
+/////////////////////////////////////////////////
+/// \brief calculation of Degrees of fredom of given node
+///
+/// \param node FactorNode*
+/// \param factorCnt size_t
+///
+/////////////////////////////////////////////////
+void FactorNode::calculateDof(size_t factorCnt)
+{
+    dof = (factorCnt-1);
+    if(parent != nullptr)
+        dof *= parent->dof;
+}
+
+/////////////////////////////////////////////////
 /// \brief This helper function does build the Tree up to a given level n
 ///
 /// \param node FactorNode*
@@ -48,67 +127,16 @@ void AnovaCalculationStructure::buildTreeHelper(FactorNode* node, int start, int
             child->parent = node;
 
         //calculate SS for new child
-        calculateMean(child, i);
-        calculateDof(child, factors[i].size());
+        child->calculateMean(mem, factors, i);
+        child->calculateSS(overallMean);
+        child->calculateDof(factors[i].size());
 
         node->addChild(child);
         buildTreeHelper(child, i + 1, n, newSubset);
     }
 }
 
-/////////////////////////////////////////////////
-/// \brief This function calculates the mean and num values for the given node by
-///  first splitting up all values into factor groups and then caluclation of means of these gropus
-///
-/// \param node FactorNode*
-/// \param facIdx size_t
-/// \return void
-///
-/////////////////////////////////////////////////
-void AnovaCalculationStructure::calculateMean(FactorNode* node, size_t facIdx)
-{
-    Memory tmp_mem(0);
-    for (size_t i = 0; i < factors[facIdx].size(); i++)
-    {
-        //positions of all elements, which correspond to the passed values
-        std::vector<mu::value_type> catIndex1 = mem->getIndex(facIdx+1, std::vector<mu::value_type>(), std::vector<std::string>(1, factors[facIdx][i]));
 
-        if (mu::isnan(catIndex1.front()))
-            continue;
-
-        if (node->parent == nullptr)
-        {
-            tmp_mem.memArray.push_back(TblColPtr(mem->memArray[0]->copy(VectorIndex(&catIndex1[0], catIndex1.size(), 0))));
-            node->catIndex.push_back(catIndex1);
-        } else
-        {
-            // Intersect with parent groups
-            std::vector<std::vector<mu::value_type>> catIndicesParent = node->parent->catIndex;
-            for(std::vector<mu::value_type> catIndex2 : catIndicesParent)
-            {
-                std::vector<mu::value_type> intersection;
-                for(auto a : catIndex1)
-                    for(auto b : catIndex2)
-                        if(a == b)
-                            intersection.push_back(a);
-
-                int siz = intersection.size();
-                if (intersection.size() == 0)
-                    continue;
-
-                tmp_mem.memArray.push_back(TblColPtr(mem->memArray[0]->copy(VectorIndex(&intersection[0], intersection.size(), 0))));
-                node->catIndex.push_back(intersection);
-            }
-        }
-    }
-    for (size_t i = 0; i < tmp_mem.memArray.size(); i++)
-    {
-        node->means.push_back(tmp_mem.avg(VectorIndex(0, VectorIndex::OPEN_END), VectorIndex(i)));
-        node->nums.push_back(tmp_mem.num(VectorIndex(0, VectorIndex::OPEN_END), VectorIndex(i)));
-        //no need for variance ?
-        //vVar_[i].push_back(intPower(groupedValues[i].std(VectorIndex(0, VectorIndex::OPEN_END), VectorIndex(j)), 2));
-    }
-}
 
 /////////////////////////////////////////////////
 /// \brief This function is used to trigger calculations for depth after depth level, since values of
@@ -126,7 +154,6 @@ void AnovaCalculationStructure::calculateLevel(FactorNode* node,  size_t depth)
 
     if(node->subset.size() == depth)
     {
-        calculateSS(node);
         calculateSSInteraction(node);
         return;
     }
@@ -135,19 +162,6 @@ void AnovaCalculationStructure::calculateLevel(FactorNode* node,  size_t depth)
         calculateLevel(c, depth);
 
     return;
-}
-
-/////////////////////////////////////////////////
-/// \brief calculation of Sum of Squares of given node
-///
-/// \param node FactorNode*
-/// \return void
-///
-/////////////////////////////////////////////////
-void AnovaCalculationStructure::calculateSS(FactorNode* node)
-{
-    for(size_t i = 0; i < node->means.size(); i++)
-        node->SS += node->nums[i] * intPower(node->means[i]-overallMean,2);
 }
 
 /////////////////////////////////////////////////
@@ -165,20 +179,6 @@ void AnovaCalculationStructure::calculateSSInteraction(FactorNode* node)
 
     std::vector<mu::value_type> child_SS = getAllSubSetSS(node->subset);
     node->SS_interaction = node->SS - std::accumulate(child_SS.begin(), child_SS.end(),mu::value_type());
-}
-
-/////////////////////////////////////////////////
-/// \brief calculation of Degrees of fredom of given node
-///
-/// \param node FactorNode*
-/// \param factorCnt size_t
-///
-/////////////////////////////////////////////////
-void AnovaCalculationStructure::calculateDof(FactorNode* node, size_t factorCnt)
-{
-    node->dof = (factorCnt-1);
-    if(node->parent != nullptr)
-        node->dof *= node->parent->dof;
 }
 
 /////////////////////////////////////////////////
@@ -204,7 +204,6 @@ void AnovaCalculationStructure::calculateSSWithin(FactorNode* node)
         }
     }
 }
-
 
 /////////////////////////////////////////////////
 /// \brief get all SS of elements which are subset of set
@@ -345,8 +344,6 @@ void AnovaCalculationStructure::buildTree(std::vector<std::vector<std::string>> 
 /////////////////////////////////////////////////
 void AnovaCalculationStructure::calculateResults()
 {
-    overallMean = mem->avg(VectorIndex(0, VectorIndex::OPEN_END), VectorIndex(0));
-    overallNum = mem->num(VectorIndex(0, VectorIndex::OPEN_END), VectorIndex(0));
     for(int l = 1; l <= max_depth; l++)
         calculateLevel(root, l);
 

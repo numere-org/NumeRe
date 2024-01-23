@@ -76,6 +76,10 @@ public:
         for (auto child : children)
             delete child;
     }
+
+    void calculateSS(const mu::value_type overallMean);
+    void calculateMean(const Memory *mem, const std::vector<std::vector<std::string>> &factors, size_t facIdx);
+    void calculateDof(size_t factorCnt);
 };
 
 /////////////////////////////////////////////////
@@ -97,12 +101,9 @@ private:
     size_t max_depth = 0;
 
     void buildTreeHelper(FactorNode* node, int start, int n, std::vector<size_t>& currentSet);
-    void calculateMean(FactorNode* node, size_t facIdx);
     void calculateLevel(FactorNode* node,  size_t depth);
 
-    void calculateSS(FactorNode* node);
     void calculateSSInteraction(FactorNode* node);
-    void calculateDof(FactorNode* node, size_t factorCnt);
     void calculateSSWithin(FactorNode* node);
     std::vector<mu::value_type> getAllSubSetSS(std::vector<size_t> set);
     void getAllChild_SS_helper(FactorNode* node, std::vector<size_t> set, std::vector<mu::value_type> &retvec);

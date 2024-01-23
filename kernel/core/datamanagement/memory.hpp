@@ -75,6 +75,7 @@ class Memory : public Sorter
 	    friend class MemoryManager;
 	    friend class NumeRe::FileAdapter;
         friend AnovaCalculationStructure;
+        friend FactorNode;
 
 		NumeRe::TableMetaData m_meta;
 
