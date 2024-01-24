@@ -1833,7 +1833,7 @@ static bool executeCommand(string& sCmd, Parser& _parser, MemoryManager& _data, 
     _fSys.setTokens(_option.getTokenPaths());
     _fSys.setPath(_option.getExePath(), false, _option.getExePath());
     _fSys.declareFileType(".exe");
-    string sParams = cmdParser.getParameterValueAsString("params", "");
+    string sParams = cmdParser.getParameterValueAsString("params", "", true);
     string sWorkpath = cmdParser.getParameterValueAsString("wp", "");
     string sObject = cmdParser.parseExprAsString();
     int nRetVal = 0;

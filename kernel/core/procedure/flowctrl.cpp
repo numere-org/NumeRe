@@ -709,6 +709,28 @@ int FlowCtrl::range_based_for_loop(int nth_Cmd, int nth_loop)
 
 
 /////////////////////////////////////////////////
+/// \brief Simple helper to check multiple
+/// conditional values for their logical
+/// trueness.
+///
+/// \param v mu::value_type*
+/// \param nNum int
+/// \return bool
+///
+/////////////////////////////////////////////////
+static bool isTrue(mu::value_type* v, int nNum)
+{
+    for (int i = 0; i < nNum; i++)
+    {
+        if (v[i] == 0.0 || mu::isnan(v[i]))
+            return false;
+    }
+
+    return true;
+}
+
+
+/////////////////////////////////////////////////
 /// \brief This member function realizes the
 /// WHILE control flow statement. The return
 /// value is either an error value or the end of
@@ -762,7 +784,7 @@ int FlowCtrl::while_loop(int nth_Cmd, int nth_loop)
         // Check, whether the header condition is true.
         // NaN and INF are no "true" values. Return the
         // end of the current block otherwise
-        if (v[0] == 0.0 || mu::isnan(v[0]))
+        if (!isTrue(v, nNum))
             return nJumpTable[nth_Cmd][BLOCK_END];
 
         // This for loop handles the contained commands
@@ -910,7 +932,7 @@ int FlowCtrl::if_fork(int nth_Cmd, int nth_loop)
         v = evalHeader(nNum, sHead, false, nth_Cmd, sHeadCommand);
 
         // If the condition is true, enter the if-case
-        if (v[0] != 0.0 && !mu::isnan(v[0]))
+        if (isTrue(v, nNum))
         {
             // The inner loop goes through the contained
             // commands

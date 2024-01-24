@@ -86,3 +86,4 @@ Added	A simple lexer for INI files was added.
 Applied	Other text files can now be embedded in packages.
 Fixed	In rare circumstances, locally installed packages could trigger a exception, if one wants to install something from the package repository. That has been resolved.
 New	Conditional breakpoints were added as EXPERIMENTAL feature. To create one, create regular breakpoint and then right-click on it and select "Edit breakpoint".
+Fixed	Conditional expressions in "if" and "while", which return multiple values, have now all return values being considered (implictly using "and()").
