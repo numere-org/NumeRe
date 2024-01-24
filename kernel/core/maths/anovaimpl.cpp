@@ -55,7 +55,6 @@ void FactorNode::calculateMean(const Memory *mem, const std::vector<std::vector<
                         if(a == b)
                             intersection.push_back(a);
 
-                int siz = intersection.size();
                 if (intersection.size() == 0)
                     continue;
 

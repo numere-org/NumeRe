@@ -446,6 +446,9 @@
 		<Unit filename="kernel/core/io/zip++.hpp" />
 		<Unit filename="kernel/core/io/zip.cpp" />
 		<Unit filename="kernel/core/io/zip.h" />
+		<Unit filename="kernel/core/maths/anova.hpp" />
+		<Unit filename="kernel/core/maths/anovaimpl.cpp" />
+		<Unit filename="kernel/core/maths/anovaimpl.hpp" />
 		<Unit filename="kernel/core/maths/command_implementations.cpp" />
 		<Unit filename="kernel/core/maths/command_implementations.hpp" />
 		<Unit filename="kernel/core/maths/define.cpp" />
