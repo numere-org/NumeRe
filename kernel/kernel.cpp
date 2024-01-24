@@ -827,17 +827,20 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const std::string& sCommand)
 
             // Eval debugger breakpoints from scripts
             if ((sLine.starts_with("|>") || nDebuggerCode == DEBUGGER_STEP)
-                    && _script.isValid()
-                    && !_procedure.is_writing()
-                    && !_procedure.getCurrentBlockDepth())
+                && _script.isValid()
+                && !_procedure.is_writing()
+                && !_procedure.getCurrentBlockDepth())
             {
-                if (sLine.starts_with("|>"))
-                    sLine.erase(0, 2);
+                Breakpoint bp(true);
 
-                if (_option.useDebugger() && nDebuggerCode != DEBUGGER_LEAVE)
+                if (sLine.starts_with("|>"))
                 {
-                    nDebuggerCode = evalDebuggerBreakPoint(sLine);
+                    sLine.erase(0, 2);
+                    bp = _debugger.getBreakpointManager().getBreakpoint(_script.getScriptFileName(), _script.getCurrentLine()-1);
                 }
+
+                if (_option.useDebugger() && nDebuggerCode != DEBUGGER_LEAVE && bp.isActive(false))
+                    nDebuggerCode = evalDebuggerBreakPoint(sLine);
             }
 
             // Log the current line
@@ -2110,7 +2113,7 @@ bool NumeReKernel::evaluateStrings(std::string& sLine, std::string& sCache, bool
 {
     if (_stringParser.isStringExpression(sLine) || _stringParser.isStringExpression(sCache))
     {
-        auto retVal = _stringParser.evalAndFormat(sLine, sCache, false, true);
+        auto retVal = _stringParser.evalAndFormat(sLine, sCache, false, true, true);
 
         if (retVal == NumeRe::StringParser::STRING_SUCCESS)
         {

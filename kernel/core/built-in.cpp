@@ -203,7 +203,7 @@ bool extractFirstParameterStringValue(const string& sCmd, string& sArgument)
 	sTemp.clear();
 
 	// Parse the string expression
-    NumeReKernel::getInstance()->getStringParser().evalAndFormat(sArgument, sTemp, true);
+    NumeReKernel::getInstance()->getStringParser().evalAndFormat(sArgument, sTemp, true, false, true);
     sArgument = sArgument.substr(1, sArgument.length() - 2);
     return true;
 }
@@ -303,7 +303,7 @@ string evaluateParameterValues(const string& sCmd)
 			sTemp += " -kmq";
 
 			// Parse the string
-			NumeReKernel::getInstance()->getStringParser().evalAndFormat(sTemp, sDummy, true);
+			NumeReKernel::getInstance()->getStringParser().evalAndFormat(sTemp, sDummy, true, false, true);
 
             // Replace the parsed string
 			sReturn.replace(nPos, nLength, sTemp);

@@ -627,6 +627,9 @@ static bool editObject(std::string& sCmd, MemoryManager& _data, Settings& _optio
     if (sObject.ends_with(".dat")
             || sObject.ends_with(".txt")
             || sObject.ends_with(".tex")
+            || sObject.ends_with(".ini")
+            || sObject.ends_with(".cfg")
+            || sObject.ends_with(".conf")
             || sObject.ends_with(".xml")
             || sObject.ends_with(".yaml")
             || sObject.ends_with(".yml")
@@ -1673,7 +1676,7 @@ void plotTableBySize(std::vector<std::string> lineEntries, std::vector<size_t> l
     for (auto& thisEntry : lineEntries)
     {
         thisEntry = '"' + thisEntry + "\" -nq";
-        NumeReKernel::getInstance()->getStringParser().evalAndFormat(thisEntry, sDummy, true);
+        NumeReKernel::getInstance()->getStringParser().evalAndFormat(thisEntry, sDummy, true, false, true);
     }
 
     // Split all columns into multiple lines if necessary
@@ -1830,7 +1833,7 @@ static bool executeCommand(string& sCmd, Parser& _parser, MemoryManager& _data, 
     _fSys.setTokens(_option.getTokenPaths());
     _fSys.setPath(_option.getExePath(), false, _option.getExePath());
     _fSys.declareFileType(".exe");
-    string sParams = cmdParser.getParameterValueAsString("params", "");
+    string sParams = cmdParser.getParameterValueAsString("params", "", true);
     string sWorkpath = cmdParser.getParameterValueAsString("wp", "");
     string sObject = cmdParser.parseExprAsString();
     int nRetVal = 0;
@@ -4135,9 +4138,10 @@ static CommandReturnValues cmd_hist(string& sCmd)
 static CommandReturnValues cmd_help(string& sCmd)
 {
     Settings& _option = NumeReKernel::getInstance()->getSettings();
+    Match _mMatch = findCommand(sCmd);
 
-    if (findCommand(sCmd).nPos + findCommand(sCmd).sString.length() < sCmd.length())
-        doc_Help(sCmd.substr(findCommand(sCmd).nPos + findCommand(sCmd).sString.length()), _option);
+    if (_mMatch.nPos + _mMatch.sString.length() < sCmd.length())
+        doc_Help(sCmd.substr(_mMatch.nPos + _mMatch.sString.length()), _option);
     else
         doc_Help("brief", _option);
 
@@ -4227,7 +4231,7 @@ static CommandReturnValues cmd_pack(string& sCmd)
         {
             sExpression += " -komq";
             std::string sDummy = "";
-            instance->getStringParser().evalAndFormat(sExpression, sDummy, true);
+            instance->getStringParser().evalAndFormat(sExpression, sDummy, true, false, true);
         }
 
         std::vector<std::string> vFileNames;
@@ -5169,7 +5173,7 @@ static CommandReturnValues cmd_print(string& sCmd)
 
     sArgument += " -print";
 
-    NumeReKernel::getInstance()->getStringParser().evalAndFormat(sArgument, sDummy, false);
+    NumeReKernel::getInstance()->getStringParser().evalAndFormat(sArgument, sDummy, false, false, true);
 
     return COMMAND_PROCESSED;
 }

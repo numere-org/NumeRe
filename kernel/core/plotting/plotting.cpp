@@ -365,6 +365,12 @@ Plot::Plot(string& sCmd, MemoryManager& __data, Parser& __parser, Settings& __op
     // if only one plotting command is used
     while (nPlotStart < vPlotCompose.size())
     {
+        // Only delete the contents of the plot data object
+        // if the last command was no "subplot" command, otherwise
+        // one would reset all global plotting parameters
+        if (nPlotStart)
+            _pData.deleteData();
+
         // If this is a multiplot layout then we need to evaluate the global options for every subplot,
         // because we omitted this set further up. We enter this for each "subplot" command.
         if (vPlotCompose.size() > 1 && nMultiplots[0])
@@ -634,8 +640,8 @@ size_t Plot::createSubPlotSet(bool& bAnimateVar, vector<string>& vPlotCompose, s
             // Only delete the contents of the plot data object
             // if the last command was no "subplot" command, otherwise
             // one would reset all global plotting parameters
-            if (bNewSubPlot)
-                _pData.deleteData();
+            //if (bNewSubPlot)
+            //    _pData.deleteData();
 
             // Reset the plot info object
             _pInfo.b2D = false;
@@ -647,7 +653,7 @@ size_t Plot::createSubPlotSet(bool& bAnimateVar, vector<string>& vPlotCompose, s
             vDrawVector.clear();
 
             // Reset the title to avoid double-prints
-            _pData.setTitle("");
+            //_pData.setTitle("");
         }
 
         // Find the current plot command
@@ -1105,7 +1111,10 @@ bool Plot::createPlotOrAnimation(size_t nPlotCompose, size_t nPlotComposeSize, b
 
         // Apply the title line to the graph
         if (_pData.getSettings(PlotData::STR_PLOTTITLE).length())
+        {
             _graph->Title(fromSystemCodePage(_pData.getSettings(PlotData::STR_PLOTTITLE)).c_str(), "", -1.5);
+            _pData.setTitle("");
+        }
 
         // If the user requested an orthogonal projection, then
         // we activate this plotting mode at this location
@@ -4542,8 +4551,9 @@ void Plot::createDataLegends()
                         + _data.getTopHeadLineElement(vNodes[1], sTableName) + ", "
                         + _data.getTopHeadLineElement(vNodes[2], sTableName) + "\"";
                 }
-
             }
+            else
+                sTemp = "\"" + sTemp + "\"";
 
             // Prepend backslashes before opening and closing
             // braces

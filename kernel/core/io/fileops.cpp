@@ -135,7 +135,7 @@ bool moveOrCopyFiles(CommandLineParser& cmdParser)
     sTarget = replacePathSeparator(sTarget);
 
     if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sSource))
-        NumeReKernel::getInstance()->getStringParser().evalAndFormat(sSource, sDummy, true);
+        NumeReKernel::getInstance()->getStringParser().evalAndFormat(sSource, sDummy, true, false, true);
 
     sSource = removeQuotationMarks(sSource);
 
@@ -216,7 +216,7 @@ bool moveOrCopyFiles(CommandLineParser& cmdParser)
         }
 
         if (NumeReKernel::getInstance()->getStringParser().isStringExpression(_sTarget))
-            NumeReKernel::getInstance()->getStringParser().evalAndFormat(_sTarget, sDummy, true);
+            NumeReKernel::getInstance()->getStringParser().evalAndFormat(_sTarget, sDummy, true, false, true);
 
         _sTarget = removeQuotationMarks(_sTarget);
         StripSpaces(_sTarget);
@@ -225,7 +225,7 @@ bool moveOrCopyFiles(CommandLineParser& cmdParser)
             _sTarget.pop_back();
 
         // Validate target file name
-        _sTarget = _fSys.ValidFileName(_sTarget);
+        _sTarget = _fSys.ValidizeAndPrepareName(_sTarget);
 
         if (_sTarget.ends_with("*.dat"))
             _sTarget = _sTarget.substr(0,_sTarget.rfind('/')) + sFile.substr(sFile.rfind('/'));

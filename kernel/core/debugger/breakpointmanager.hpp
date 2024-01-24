@@ -23,20 +23,50 @@
 #include <string>
 #include <vector>
 
+/////////////////////////////////////////////////
+/// \brief Represents the properties of a
+/// breakpoint.
+/////////////////////////////////////////////////
+struct Breakpoint
+{
+    std::string m_originalCondition;
+    std::string m_condition;
+    bool m_enabled;
+    bool m_isConditional;
+
+    Breakpoint(const std::string& condition = "true", bool enable = true) : m_originalCondition(condition), m_condition(condition), m_enabled(enable)
+    {
+        m_isConditional = m_condition.length() && m_condition != "true" && m_condition != "false";
+    }
+
+    Breakpoint(bool enable) : m_originalCondition(enable ? "true" : "false"), m_enabled(enable), m_isConditional(false)
+    {
+        m_condition = m_originalCondition;
+    }
+
+    bool isActive(bool needsLocks);
+};
+
+
+/////////////////////////////////////////////////
+/// \brief Manages all breakpoints set within the
+/// editor.
+/////////////////////////////////////////////////
 class BreakpointManager
 {
     private:
-        std::map<std::string,std::vector<size_t> > mBreakpoints;
+        std::map<std::string, std::map<size_t, Breakpoint>> mBreakpoints;
 
     public:
         BreakpointManager();
         BreakpointManager(const BreakpointManager& _messenger);
 
-        void addBreakpoint(const std::string& _sFilename, size_t nLine);
+        void addBreakpoint(const std::string& _sFilename, size_t nLine, const Breakpoint& bp);
         void removeBreakpoint(const std::string& _sFilename, size_t nLine);
         void clearBreakpoints(const std::string& _sFilename);
-        void passBreakpoints(const std::map<std::string,std::vector<size_t> >& _mBreakpoints);
-        bool isBreakpoint(const std::string& _sFilename, size_t nLine);
+        void passBreakpoints(const std::map<std::string, std::map<size_t, Breakpoint>>& _mBreakpoints);
+        bool isBreakpoint(const std::string& _sFilename, size_t nLine) const;
+        Breakpoint getBreakpoint(const std::string& _sFilename, size_t nLine) const;
 };
 
 #endif // BREAKPOINTMANAGER_HPP

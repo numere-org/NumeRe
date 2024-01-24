@@ -1081,7 +1081,7 @@ wxTreeItemId PackageRepoBrowser::findPackage(const std::string& sPackageFileName
     {
         std::string sPackageUrl = getUrl(child);
 
-        if (sPackageUrl.substr(sPackageUrl.rfind('/')) == "/" + sPackageFileName)
+        if (sPackageUrl.length() && sPackageUrl.substr(sPackageUrl.rfind('/')) == "/" + sPackageFileName)
             return child;
 
         child = m_listCtrl->GetNextSibling(child);

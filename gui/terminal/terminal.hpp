@@ -210,7 +210,8 @@ class NumeReTerminal : public wxWindow, public GenericTerminal, public wxThreadH
 			wxCriticalSectionLocker lock(m_kernelCS);
 			m_bTableEditCanceled = true;
 		}
-		void addBreakpoint(const std::string& _sFilename, size_t nLine);
+		void addBreakpoint(const std::string& _sFilename, size_t nLine, const Breakpoint& bp);
+		Breakpoint getBreakpoint(const std::string& _sFilename, size_t nLine);
         void removeBreakpoint(const std::string& _sFilename, size_t nLine);
         void clearBreakpoints(const std::string& _sFilename);
 

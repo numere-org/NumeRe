@@ -143,6 +143,8 @@ class NumeReDebugger
         std::vector<std::string> getClusters();
         std::vector<std::string> getArguments();
         std::vector<std::string> getGlobals();
+
+        std::string getExecutedModule() const;
 };
 
 

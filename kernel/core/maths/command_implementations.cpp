@@ -3762,6 +3762,14 @@ bool readAudioFile(CommandLineParser& cmdParser)
                 _table->writeDataDirectUnsafe(_targetIdx.row[i], _targetIdx.col[1], sample.right);
         }
 
+        if (nChannels > 1 && _targetIdx.col.size() > 1)
+        {
+            _table->setHeadLineElement(_targetIdx.col[0], "A_L");
+            _table->setHeadLineElement(_targetIdx.col[1], "A_R");
+        }
+        else
+            _table->setHeadLineElement(_targetIdx.col[0], "A");
+
         _table->markModified();
 
         // Create the storage indices
@@ -3864,6 +3872,15 @@ bool seekInAudioFile(CommandLineParser& cmdParser)
     }
 
     _table->markModified();
+
+    if (nChannels > 1 && _targetIdx.col.size() > 1)
+    {
+        _table->setHeadLineElement(_targetIdx.col[0], "A_L");
+        _table->setHeadLineElement(_targetIdx.col[1], "A_R");
+    }
+    else
+        _table->setHeadLineElement(_targetIdx.col[0], "A");
+
     cmdParser.setReturnValue(toString(nLen));
     g_logger.info("Seeked portion read.");
 
@@ -4093,6 +4110,8 @@ bool shortTimeFourierAnalysis(CommandLineParser& cmdParser)
     for (int i = 0; i < _result.GetNy() / 2; i++)
         _data.writeToTable(_target.row[i], _target.col[1], sTargetCache, dFmin + i * dSampleSize); // Fourier f
 
+    _data.convertColumns(sTargetCache, _target.col.subidx(0, 2), "value.f64");
+
     // Define headline
     _data.setHeadLineElement(_target.col[1], sTargetCache, "f [Hz]");
 
@@ -4111,9 +4130,11 @@ bool shortTimeFourierAnalysis(CommandLineParser& cmdParser)
 
             // Update the headline
             if (!i)
-                _data.setHeadLineElement(_target.col[j+2], sTargetCache, "A(" + toString(j + 1) + ")");
+                _data.setHeadLineElement(_target.col[j+2], sTargetCache, "A(f(" + toString(j + 1) + "))");
         }
     }
+
+    _data.convertColumns(sTargetCache, _target.col.subidx(2, _result.GetNy()), "value.f64");
 
     cmdParser.clearReturnValue();
     cmdParser.setReturnValue(sTargetCache);

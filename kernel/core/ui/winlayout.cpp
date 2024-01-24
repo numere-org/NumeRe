@@ -129,7 +129,7 @@ static void evaluateExpression(std::string& sExpr)
     if (instance->getStringParser().isStringExpression(sExpr))
     {
         std::string dummy;
-        NumeRe::StringParser::StringParserRetVal _ret = instance->getStringParser().evalAndFormat(sExpr, dummy, true);
+        NumeRe::StringParser::StringParserRetVal _ret = instance->getStringParser().evalAndFormat(sExpr, dummy, true, false, true);
 
         if (_ret == NumeRe::StringParser::STRING_SUCCESS)
             return;
@@ -644,7 +644,7 @@ void windowCommand(CommandLineParser& cmdParser)
     if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sExpr))
     {
         std::string dummy;
-        NumeReKernel::getInstance()->getStringParser().evalAndFormat(sExpr, dummy, true);
+        NumeReKernel::getInstance()->getStringParser().evalAndFormat(sExpr, dummy, true, false, true);
     }
 
     StripSpaces(sExpr);
@@ -915,7 +915,7 @@ void dialogCommand(CommandLineParser& cmdParser)
     if (kernel->getStringParser().isStringExpression(sExpression))
     {
         std::string sDummy;
-        kernel->getStringParser().evalAndFormat(sExpression, sDummy, true);
+        kernel->getStringParser().evalAndFormat(sExpression, sDummy, true, false, true);
         sExpression = kernel->getAns().serialize();
     }
 

@@ -2261,10 +2261,11 @@ namespace NumeRe
     /// \param sCache std::string&
     /// \param bSilent bool
     /// \param bCheckAssertions bool
+    /// \param bClearVars bool
     /// \return StringParser::StringParserRetVal
     ///
     /////////////////////////////////////////////////
-    StringParser::StringParserRetVal StringParser::evalAndFormat(std::string& sLine, std::string& sCache, bool bSilent, bool bCheckAssertions)
+    StringParser::StringParserRetVal StringParser::evalAndFormat(std::string& sLine, std::string& sCache, bool bSilent, bool bCheckAssertions, bool bClearVars)
     {
         //Timer timer(sLine);
         sLine = " " + sLine + " ";
@@ -2280,7 +2281,8 @@ namespace NumeRe
 
         // Clear the internal string vector variables, because they're
         // all evaluated and processed now
-        removeStringVectorVars();
+        if (bClearVars)
+            removeStringVectorVars();
 
         // Check the results, if the assertion handler is active
         // and the results are not logical only

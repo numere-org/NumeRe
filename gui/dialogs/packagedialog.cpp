@@ -224,7 +224,9 @@ void PackageDialog::OnAddItems(wxCommandEvent& event)
                      _guilang.get("GUI_FILTER_INSTALLABLES") + " (*.nprc, *.nlyt)|*.nprc;*.nlyt|"
                      + _guilang.get("COMMON_FILETYPE_NPRC") + " (*.nprc)|*.nprc|"
                      + _guilang.get("COMMON_FILETYPE_NLYT") + " (*.nlyt)|*.nlyt|"
-                     + _guilang.get("COMMON_FILETYPE_NSCR") + " (*.nscr)|*.nscr",
+                     + _guilang.get("COMMON_FILETYPE_NSCR") + " (*.nscr)|*.nscr|"
+                     + _guilang.get("COMMON_FILETYPE_INI") + " (*.ini)|*.ini|"
+                     + _guilang.get("GUI_FILTER_ALLFILES") + " (*.*)|*.*",
                      wxFD_MULTIPLE);
 
     if (dlg.ShowModal() == wxID_OK)

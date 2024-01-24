@@ -709,6 +709,28 @@ int FlowCtrl::range_based_for_loop(int nth_Cmd, int nth_loop)
 
 
 /////////////////////////////////////////////////
+/// \brief Simple helper to check multiple
+/// conditional values for their logical
+/// trueness.
+///
+/// \param v mu::value_type*
+/// \param nNum int
+/// \return bool
+///
+/////////////////////////////////////////////////
+static bool isTrue(mu::value_type* v, int nNum)
+{
+    for (int i = 0; i < nNum; i++)
+    {
+        if (v[i] == 0.0 || mu::isnan(v[i]))
+            return false;
+    }
+
+    return true;
+}
+
+
+/////////////////////////////////////////////////
 /// \brief This member function realizes the
 /// WHILE control flow statement. The return
 /// value is either an error value or the end of
@@ -762,7 +784,7 @@ int FlowCtrl::while_loop(int nth_Cmd, int nth_loop)
         // Check, whether the header condition is true.
         // NaN and INF are no "true" values. Return the
         // end of the current block otherwise
-        if (v[0] == 0.0 || mu::isnan(v[0]))
+        if (!isTrue(v, nNum))
             return nJumpTable[nth_Cmd][BLOCK_END];
 
         // This for loop handles the contained commands
@@ -910,7 +932,7 @@ int FlowCtrl::if_fork(int nth_Cmd, int nth_loop)
         v = evalHeader(nNum, sHead, false, nth_Cmd, sHeadCommand);
 
         // If the condition is true, enter the if-case
-        if (v[0] != 0.0 && !mu::isnan(v[0]))
+        if (isTrue(v, nNum))
         {
             // The inner loop goes through the contained
             // commands
@@ -1537,20 +1559,37 @@ value_type* FlowCtrl::evalHeader(int& nNum, std::string& sHeadExpression, bool b
         || sHeadExpression.substr(sHeadExpression.find_first_not_of(' '), 2) == "|>"
         || nDebuggerCode == NumeReKernel::DEBUGGER_STEP)
     {
-        if (sHeadExpression.substr(sHeadExpression.find_first_not_of(' '), 2) == "|>")
-            nCalcType[nth_Cmd] |= CALCTYPE_DEBUGBREAKPOINT;
+        Breakpoint bp(true);
+        NumeReDebugger& _debugger = NumeReKernel::getInstance()->getDebugger();
 
         if (sHeadExpression.substr(sHeadExpression.find_first_not_of(' '), 2) == "|>")
         {
+            nCalcType[nth_Cmd] |= CALCTYPE_DEBUGBREAKPOINT;
             sHeadExpression.erase(sHeadExpression.find_first_not_of(' '), 2);
             StripSpaces(sHeadExpression);
+            bp = _debugger.getBreakpointManager().getBreakpoint(_debugger.getExecutedModule(), getCurrentLineNumber());
+        }
+        else if (nCurrentCalcType & CALCTYPE_DEBUGBREAKPOINT)
+        {
+            bp = _debugger.getBreakpointManager().getBreakpoint(_debugger.getExecutedModule(), getCurrentLineNumber());
+        }
+
+        if (bp.m_isConditional)
+        {
+            Procedure* proc = _debugger.getCurrentProcedure();
+
+            if (proc)
+                bp.m_condition = proc->resolveVariables(bp.m_condition);
+
+            replaceLocalVars(bp.m_condition);
         }
 
         if (_optionRef->useDebugger()
             && nDebuggerCode != NumeReKernel::DEBUGGER_LEAVE
-            && nDebuggerCode != NumeReKernel::DEBUGGER_STEPOVER)
+            && nDebuggerCode != NumeReKernel::DEBUGGER_STEPOVER
+            && bp.isActive(!bLockedPauseMode && bUseLoopParsingMode))
         {
-            NumeReKernel::getInstance()->getDebugger().gatherLoopBasedInformations(sHeadCommand + " (" + sHeadExpression + ")", getCurrentLineNumber(), mVarMap, vVarArray, sVarArray);
+            _debugger.gatherLoopBasedInformations(sHeadCommand + " (" + sHeadExpression + ")", getCurrentLineNumber(), mVarMap, vVarArray, sVarArray);
             nDebuggerCode = evalDebuggerBreakPoint(*_parserRef, *_optionRef);
         }
     }
@@ -1674,7 +1713,7 @@ value_type* FlowCtrl::evalHeader(int& nNum, std::string& sHeadExpression, bool b
                 _parserRef->PauseLoopMode();
 
             // Call the std::string parser
-            auto retVal = NumeReKernel::getInstance()->getStringParser().evalAndFormat(sHeadExpression, sCache, true);
+            auto retVal = NumeReKernel::getInstance()->getStringParser().evalAndFormat(sHeadExpression, sCache, true, false, true);
 
             // Evaluate the return value
             if (retVal != NumeRe::StringParser::STRING_NUMERICAL)
@@ -1750,20 +1789,38 @@ NumeRe::Cluster FlowCtrl::evalRangeBasedHeader(std::string& sHeadExpression, int
         || sHeadExpression.substr(sHeadExpression.find_first_not_of(' '), 2) == "|>"
         || nDebuggerCode == NumeReKernel::DEBUGGER_STEP)
     {
-        if (sHeadExpression.substr(sHeadExpression.find_first_not_of(' '), 2) == "|>")
-            nCalcType[nth_Cmd] |= CALCTYPE_DEBUGBREAKPOINT;
+        Breakpoint bp(true);
+        NumeReDebugger& _debugger = NumeReKernel::getInstance()->getDebugger();
 
         if (sHeadExpression.substr(sHeadExpression.find_first_not_of(' '), 2) == "|>")
         {
+            nCalcType[nth_Cmd] |= CALCTYPE_DEBUGBREAKPOINT;
             sHeadExpression.erase(sHeadExpression.find_first_not_of(' '), 2);
             StripSpaces(sHeadExpression);
+            bp = _debugger.getBreakpointManager().getBreakpoint(_debugger.getExecutedModule(), getCurrentLineNumber());
+        }
+        else if (nCurrentCalcType & CALCTYPE_DEBUGBREAKPOINT)
+        {
+            bp = _debugger.getBreakpointManager().getBreakpoint(_debugger.getExecutedModule(), getCurrentLineNumber());
+        }
+
+        if (bp.m_isConditional)
+        {
+            Procedure* proc = _debugger.getCurrentProcedure();
+
+            if (proc)
+                bp.m_condition = proc->resolveVariables(bp.m_condition);
+
+            replaceLocalVars(bp.m_condition);
         }
 
         if (_optionRef->useDebugger()
             && nDebuggerCode != NumeReKernel::DEBUGGER_LEAVE
-            && nDebuggerCode != NumeReKernel::DEBUGGER_STEPOVER)
+            && nDebuggerCode != NumeReKernel::DEBUGGER_STEPOVER
+            && bp.isActive(!bLockedPauseMode && bUseLoopParsingMode))
         {
-            NumeReKernel::getInstance()->getDebugger().gatherLoopBasedInformations(sHeadCommand + " (" + sHeadExpression + ")", getCurrentLineNumber(), mVarMap, vVarArray, sVarArray);
+            _debugger.gatherLoopBasedInformations(sHeadCommand + " (" + sHeadExpression + ")", getCurrentLineNumber(),
+                                                  mVarMap, vVarArray, sVarArray);
             nDebuggerCode = evalDebuggerBreakPoint(*_parserRef, *_optionRef);
         }
     }
@@ -1886,7 +1943,7 @@ NumeRe::Cluster FlowCtrl::evalRangeBasedHeader(std::string& sHeadExpression, int
                 _parserRef->PauseLoopMode();
 
             // Call the std::string parser
-            auto retVal = NumeReKernel::getInstance()->getStringParser().evalAndFormat(sHeadExpression, sCache, true);
+            auto retVal = NumeReKernel::getInstance()->getStringParser().evalAndFormat(sHeadExpression, sCache, true, false, true);
 
             // Evaluate the return value
             if (retVal != NumeRe::StringParser::STRING_NUMERICAL)
@@ -2719,18 +2776,36 @@ int FlowCtrl::compile(std::string sLine, int nthCmd)
     // Eval the debugger breakpoint first
     if (sLine.substr(sLine.find_first_not_of(' '), 2) == "|>" || nDebuggerCode == NumeReKernel::DEBUGGER_STEP)
     {
+        Breakpoint bp(true);
+        NumeReDebugger& _debugger = NumeReKernel::getInstance()->getDebugger();
+
         if (sLine.substr(sLine.find_first_not_of(' '), 2) == "|>")
         {
             nCalcType[nthCmd] |= CALCTYPE_DEBUGBREAKPOINT;
             sLine.erase(sLine.find("|>"), 2);
+            bp = _debugger.getBreakpointManager().getBreakpoint(_debugger.getExecutedModule(), getCurrentLineNumber());
+
+            if (bp.m_isConditional)
+            {
+                Procedure* proc = _debugger.getCurrentProcedure();
+
+                if (proc)
+                    bp.m_condition = proc->resolveVariables(bp.m_condition);
+
+                replaceLocalVars(bp.m_condition);
+            }
+
             StripSpaces(sLine);
             vCmdArray[nthCmd].sCommand.erase(vCmdArray[nthCmd].sCommand.find("|>"), 2);
             StripSpaces(vCmdArray[nthCmd].sCommand);
         }
 
-        if (_optionRef->useDebugger() && nDebuggerCode != NumeReKernel::DEBUGGER_LEAVE && nDebuggerCode != NumeReKernel::DEBUGGER_STEPOVER)
+        if (_optionRef->useDebugger()
+            && nDebuggerCode != NumeReKernel::DEBUGGER_LEAVE
+            && nDebuggerCode != NumeReKernel::DEBUGGER_STEPOVER
+            && bp.isActive(!bLockedPauseMode && bUseLoopParsingMode))
         {
-            NumeReKernel::getInstance()->getDebugger().gatherLoopBasedInformations(sLine, getCurrentLineNumber(), mVarMap, vVarArray, sVarArray);
+            _debugger.gatherLoopBasedInformations(sLine, getCurrentLineNumber(), mVarMap, vVarArray, sVarArray);
             nDebuggerCode = evalDebuggerBreakPoint(*_parserRef, *_optionRef);
         }
     }
@@ -2790,7 +2865,7 @@ int FlowCtrl::compile(std::string sLine, int nthCmd)
 
             sErrorToken = sLine.substr(findCommand(sLine).nPos+6);
             sErrorToken += " -nq";
-            NumeReKernel::getInstance()->getStringParser().evalAndFormat(sErrorToken, sCache, true);
+            NumeReKernel::getInstance()->getStringParser().evalAndFormat(sErrorToken, sCache, true, false, true);
         }
 
         nCalcType[nthCmd] |= CALCTYPE_THROWCOMMAND;
@@ -3124,7 +3199,7 @@ int FlowCtrl::compile(std::string sLine, int nthCmd)
         //if (!bLockedPauseMode && bUseLoopParsingMode)
         //    _parserRef->PauseLoopMode();
 
-        auto retVal = NumeReKernel::getInstance()->getStringParser().evalAndFormat(sLine, sCache, bLoopSupressAnswer, true);
+        auto retVal = NumeReKernel::getInstance()->getStringParser().evalAndFormat(sLine, sCache, bLoopSupressAnswer, true, true);
         NumeReKernel::getInstance()->getStringParser().removeTempStringVectorVars();
 
         if (retVal == NumeRe::StringParser::STRING_SUCCESS)
@@ -3310,10 +3385,31 @@ int FlowCtrl::calc(StringView sLine, int nthCmd)
     // Eval the debugger breakpoint first
     if (nCurrentCalcType & CALCTYPE_DEBUGBREAKPOINT || nDebuggerCode == NumeReKernel::DEBUGGER_STEP)
     {
-        if (_optionRef->useDebugger() && nDebuggerCode != NumeReKernel::DEBUGGER_LEAVE && nDebuggerCode != NumeReKernel::DEBUGGER_STEPOVER)
+        Breakpoint bp(true);
+        NumeReDebugger& _debugger = NumeReKernel::getInstance()->getDebugger();
+
+        if (nCurrentCalcType & CALCTYPE_DEBUGBREAKPOINT)
         {
-            NumeReKernel::getInstance()->getDebugger().gatherLoopBasedInformations(sLine.to_string(), getCurrentLineNumber(),
-                                                                                   mVarMap, vVarArray, sVarArray);
+            bp = _debugger.getBreakpointManager().getBreakpoint(_debugger.getExecutedModule(), getCurrentLineNumber());
+
+            if (bp.m_isConditional)
+            {
+                Procedure* proc = _debugger.getCurrentProcedure();
+
+                if (proc)
+                    bp.m_condition = proc->resolveVariables(bp.m_condition);
+
+                replaceLocalVars(bp.m_condition);
+            }
+        }
+
+        if (_optionRef->useDebugger()
+            && nDebuggerCode != NumeReKernel::DEBUGGER_LEAVE
+            && nDebuggerCode != NumeReKernel::DEBUGGER_STEPOVER
+            && bp.isActive(!bLockedPauseMode && bUseLoopParsingMode))
+        {
+            _debugger.gatherLoopBasedInformations(sLine.to_string(), getCurrentLineNumber(),
+                                                  mVarMap, vVarArray, sVarArray);
             nDebuggerCode = evalDebuggerBreakPoint(*_parserRef, *_optionRef);
         }
     }
@@ -3343,7 +3439,7 @@ int FlowCtrl::calc(StringView sLine, int nthCmd)
             sErrorToken = sBuffer.substr(findCommand(sBuffer).nPos+6);
             sErrorToken += " -nq";
             std::string sDummy;
-            NumeReKernel::getInstance()->getStringParser().evalAndFormat(sErrorToken, sDummy, true);
+            NumeReKernel::getInstance()->getStringParser().evalAndFormat(sErrorToken, sDummy, true, false, true);
         }
 
         throw SyntaxError(SyntaxError::LOOP_THROW, sBuffer, SyntaxError::invalid_position, sErrorToken);
@@ -3685,7 +3781,7 @@ int FlowCtrl::calc(StringView sLine, int nthCmd)
         //    _parserRef->PauseLoopMode();
 
         sBuffer = sLine.to_string();
-        auto retVal = NumeReKernel::getInstance()->getStringParser().evalAndFormat(sBuffer, sDataObject, bLoopSupressAnswer, true);
+        auto retVal = NumeReKernel::getInstance()->getStringParser().evalAndFormat(sBuffer, sDataObject, bLoopSupressAnswer, true, true);
         NumeReKernel::getInstance()->getStringParser().removeTempStringVectorVars();
 
         if (retVal == NumeRe::StringParser::STRING_SUCCESS)

@@ -98,6 +98,7 @@ BEGIN_EVENT_TABLE(NumeReEditor, wxStyledTextCtrl)
     EVT_STC_SAVEPOINTLEFT (-1, NumeReEditor::OnSavePointLeft)
     EVT_STC_AUTOCOMP_SELECTION (-1, NumeReEditor::OnAutoCompletion)
     EVT_MENU			(ID_DEBUG_ADD_BREAKPOINT, NumeReEditor::OnAddBreakpoint)
+    EVT_MENU			(ID_DEBUG_EDIT_BREAKPOINT, NumeReEditor::OnEditBreakpoint)
     EVT_MENU			(ID_DEBUG_REMOVE_BREAKPOINT, NumeReEditor::OnRemoveBreakpoint)
     EVT_MENU			(ID_DEBUG_CLEAR_ALL_BREAKPOINTS, NumeReEditor::OnClearBreakpoints)
     EVT_MENU			(ID_BOOKMARK_ADD, NumeReEditor::OnAddBookmark)
@@ -253,6 +254,10 @@ NumeReEditor::NumeReEditor(NumeReWindow* mframe, Options* options, wxWindow* par
     MarkerDefine(MARKER_BREAKPOINT, wxSTC_MARK_CIRCLE);
     MarkerSetBackground(MARKER_BREAKPOINT, wxColour("red"));
 
+    MarkerDefine(MARKER_CONDITIONALBREAKPOINT, wxSTC_MARK_CIRCLE);
+//    MarkerDefineBitmap(MARKER_CONDITIONALBREAKPOINT, wxBitmap(wxImage(m_mainFrame->getProgramFolder() +  "/icons/color/add-bp.png", wxBITMAP_TYPE_PNG)));
+    MarkerSetBackground(MARKER_CONDITIONALBREAKPOINT, wxColour(128,0,255));
+
     MarkerDefine(MARKER_BOOKMARK, wxSTC_MARK_SMALLRECT);
     MarkerSetBackground(MARKER_BOOKMARK, wxColour(192, 0, 64));
 
@@ -311,6 +316,7 @@ NumeReEditor::NumeReEditor(NumeReWindow* mframe, Options* options, wxWindow* par
     m_popupMenu.AppendSeparator();
 
     m_popupMenu.Append(ID_DEBUG_ADD_BREAKPOINT, _guilang.get("GUI_MENU_EDITOR_ADDBP"));
+    m_popupMenu.Append(ID_DEBUG_EDIT_BREAKPOINT, _guilang.get("GUI_MENU_EDITOR_EDITBP"));
     m_popupMenu.Append(ID_DEBUG_REMOVE_BREAKPOINT, _guilang.get("GUI_MENU_EDITOR_REMOVEBP"));
     m_popupMenu.Append(ID_DEBUG_CLEAR_ALL_BREAKPOINTS, _guilang.get("GUI_MENU_EDITOR_CLEARBP"));
     m_popupMenu.AppendSeparator();
@@ -463,7 +469,7 @@ bool NumeReEditor::SaveFile( const wxString& filename )
 
         return false;
     }
-    else if ((m_fileType == FILE_NSCR || m_fileType == FILE_NPRC) && filecheck.Length() != this->GetLength() - countUmlauts(this->GetText().ToStdString()))
+    else if ((m_fileType == FILE_NSCR || m_fileType == FILE_NPRC) && filecheck.Length() != GetText().length())// - countUmlauts(this->GetText().ToStdString()))
     {
         // if the contents are not matching, restore the backup and signalize that an error occured
         if (wxFileExists(filename + ".backup"))
@@ -473,7 +479,7 @@ bool NumeReEditor::SaveFile( const wxString& filename )
 
         return false;
     }
-    else if ((m_fileType != FILE_NSCR && m_fileType != FILE_NPRC) && !filecheck.Length() && this->GetLength())
+    else if ((m_fileType != FILE_NSCR && m_fileType != FILE_NPRC) && !filecheck.Length() && GetTextLength())
     {
         // if the contents are not matching, restore the backup and signalize that an error occured
         if (wxFileExists(filename + ".backup"))
@@ -3642,9 +3648,9 @@ void NumeReEditor::UpdateSyntaxHighlighting(bool forceUpdate)
 {
     wxString filename = GetFileNameAndPath();
 
-    this->StyleSetBackground(wxSTC_STYLE_DEFAULT, m_options->GetSyntaxStyle(Options::STANDARD).background);
+    StyleSetBackground(wxSTC_STYLE_DEFAULT, m_options->GetSyntaxStyle(Options::STANDARD).background);
 
-    FileFilterType filetype = this->GetFileType(filename);
+    FileFilterType filetype = GetFileType(filename);
 
     if (m_fileType != filetype)
         m_fileType = filetype;
@@ -3663,6 +3669,8 @@ void NumeReEditor::UpdateSyntaxHighlighting(bool forceUpdate)
         || filetype == FILE_MATLAB
         || filetype == FILE_CPP
         || filetype == FILE_DIFF
+        || filetype == FILE_XML
+        || filetype == FILE_INI
         || filetype == FILE_TEXSOURCE)
     {
         SetFoldFlags(wxSTC_FOLDFLAG_LINEAFTER_CONTRACTED);
@@ -4098,6 +4106,7 @@ void NumeReEditor::UpdateSyntaxHighlighting(bool forceUpdate)
         StyleSetForeground(wxSTC_H_TAGEND, wxColour(0,0,255));
         StyleSetBold(wxSTC_H_TAGEND, true);
         StyleSetForeground(wxSTC_H_ATTRIBUTE, wxColour(255,0,0));
+        StyleSetBackground(wxSTC_H_ATTRIBUTE, wxColour(255,255,255));
         StyleSetForeground(wxSTC_H_DOUBLESTRING, wxColour(128,0,255));
         StyleSetBold(wxSTC_H_DOUBLESTRING, true);
         StyleSetForeground(wxSTC_H_SINGLESTRING, wxColour(128,0,255));
@@ -4107,6 +4116,21 @@ void NumeReEditor::UpdateSyntaxHighlighting(bool forceUpdate)
         StyleSetForeground(wxSTC_H_ENTITY, wxColour(64,0,0));
         StyleSetBackground(wxSTC_H_ENTITY, wxColour(255,255,220));
         StyleSetBold(wxSTC_H_ENTITY, true);
+    }
+    else if (filetype == FILE_INI)
+    {
+        SetLexer(wxSTC_LEX_PROPERTIES);
+        SetProperty("fold", "1");
+        StyleSetForeground(wxSTC_PROPS_DEFAULT, wxColour(0,0,0));
+        StyleSetForeground(wxSTC_PROPS_KEY, wxColour(0,0,128));
+        StyleSetBold(wxSTC_PROPS_KEY, true);
+        StyleSetForeground(wxSTC_PROPS_DEFVAL, wxColour(255,0,255));
+        StyleSetForeground(wxSTC_PROPS_ASSIGNMENT, wxColour(255,0,0));
+        StyleSetBackground(wxSTC_PROPS_ASSIGNMENT, wxColour(255,255,255));
+        StyleSetForeground(wxSTC_PROPS_SECTION, wxColour(128,0,0));
+        StyleSetBold(wxSTC_PROPS_SECTION, true);
+        StyleSetForeground(wxSTC_PROPS_COMMENT, wxColour(0,128,0));
+        StyleSetItalic(wxSTC_PROPS_COMMENT, true);
     }
     else
     {
@@ -4375,6 +4399,8 @@ FileFilterType NumeReEditor::GetFileType(const wxString& filename)
         fileType = FILE_DIFF;
 	else if (extension == "nhlp" || extension == "xml" || extension == "npkp")
         fileType = FILE_XML;
+	else if (extension == "ini" || extension == "cfg" || extension == "conf")
+        fileType = FILE_INI;
 
 	return fileType;
 }
@@ -4465,6 +4491,7 @@ void NumeReEditor::ResetEditor()
     EmptyUndoBuffer();
 
     MarkerDeleteAll(MARKER_BREAKPOINT);
+    MarkerDeleteAll(MARKER_CONDITIONALBREAKPOINT);
     MarkerDeleteAll(MARKER_FOCUSEDLINE);
     MarkerDeleteAll(MARKER_MODIFIED);
     MarkerDeleteAll(MARKER_SAVED);
@@ -4491,7 +4518,7 @@ void NumeReEditor::OnRightClick(wxMouseEvent& event)
     wxString clickedWord = m_search->FindClickedWord();
 
     // Determine the marker and breakpoint conditions
-    bool breakpointOnLine = MarkerOnLine(linenum, MARKER_BREAKPOINT);
+    bool breakpointOnLine = MarkerOnLine(linenum, MARKER_BREAKPOINT) || MarkerOnLine(linenum, MARKER_CONDITIONALBREAKPOINT);
     bool bookmarkOnLine = MarkerOnLine(linenum, MARKER_BOOKMARK);
     bool breakpointsAllowed = isNumeReFileType();
 
@@ -4535,6 +4562,7 @@ void NumeReEditor::OnRightClick(wxMouseEvent& event)
     m_popupMenu.Enable(ID_FOLD_CURRENT_BLOCK, isCodeFile());
     m_popupMenu.Enable(ID_HIDE_SELECTION, HasSelection());
     m_popupMenu.Enable(ID_DEBUG_ADD_BREAKPOINT, breakpointsAllowed && !breakpointOnLine);
+    m_popupMenu.Enable(ID_DEBUG_EDIT_BREAKPOINT, breakpointsAllowed && breakpointOnLine);
     m_popupMenu.Enable(ID_DEBUG_REMOVE_BREAKPOINT, breakpointsAllowed && breakpointOnLine);
     m_popupMenu.Enable(ID_BOOKMARK_ADD, !bookmarkOnLine);
     m_popupMenu.Enable(ID_BOOKMARK_REMOVE, bookmarkOnLine);
@@ -5274,6 +5302,22 @@ void NumeReEditor::OnAddBreakpoint(wxCommandEvent& event)
 {
     int linenum = GetLineForMarkerOperation();
     AddBreakpoint(linenum);
+    ResetRightClickLocation();
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Edits a breakpoint at the
+/// right-clicked location.
+///
+/// \param event wxCommandEvent&
+/// \return void
+///
+/////////////////////////////////////////////////
+void NumeReEditor::OnEditBreakpoint(wxCommandEvent& event)
+{
+    int linenum = GetLineForMarkerOperation();
+    EditBreakpoint(linenum);
     ResetRightClickLocation();
 }
 
@@ -7460,7 +7504,7 @@ void NumeReEditor::OnMarginClick(wxStyledTextEvent& event)
             }
 
         }
-        else if (MarkerOnLine(linenum, MARKER_BREAKPOINT) && bCanUseBreakPoints)
+        else if ((MarkerOnLine(linenum, MARKER_BREAKPOINT) || MarkerOnLine(linenum, MARKER_CONDITIONALBREAKPOINT)) && bCanUseBreakPoints)
         {
             // Breakpoint
             RemoveBreakpoint(linenum);
@@ -7495,7 +7539,46 @@ void NumeReEditor::AddBreakpoint(int linenum)
         // Add the breakpoint to the internal
         // logic
         m_breakpoints.Add(markerNum);
-        m_terminal->addBreakpoint(GetFileNameAndPath().ToStdString(), linenum);
+        m_terminal->addBreakpoint(GetFileNameAndPath().ToStdString(), linenum, Breakpoint(true));
+    }
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Edits a breakpoint at the selected
+/// line (if any).
+///
+/// \param linenum int
+/// \return void
+///
+/////////////////////////////////////////////////
+void NumeReEditor::EditBreakpoint(int linenum)
+{
+    if (!isBreakPointAllowed(linenum)
+        || (!MarkerOnLine(linenum, MARKER_BREAKPOINT) && !MarkerOnLine(linenum, MARKER_CONDITIONALBREAKPOINT)))
+        return;
+
+    // Get the current breakpoint definition
+    Breakpoint bp = m_terminal->getBreakpoint(GetFileNameAndPath().ToStdString(), linenum);
+
+    // Get the expression from the user
+    wxString newCondition = wxGetTextFromUser(_guilang.get("GUI_MENU_EDITOR_EDITBP_TEXT"),
+                                              _guilang.get("GUI_MENU_EDITOR_EDITBP_HEAD"),
+                                              bp.m_condition, this);
+
+    if (!newCondition.length())
+        return;
+
+    // Create and update the internal breakpoint
+    // TODO: we might want to check the expression for requirement fulfillment
+    bp = Breakpoint(newCondition.ToStdString());
+    m_terminal->addBreakpoint(GetFileNameAndPath().ToStdString(), linenum, bp);
+
+    // Enable the correct type of breakpoint on the margin
+    if (MarkerOnLine(linenum, bp.m_isConditional ? MARKER_BREAKPOINT : MARKER_CONDITIONALBREAKPOINT))
+    {
+        MarkerDelete(linenum, bp.m_isConditional ? MARKER_BREAKPOINT : MARKER_CONDITIONALBREAKPOINT);
+        MarkerAdd(linenum, bp.m_isConditional ? MARKER_CONDITIONALBREAKPOINT : MARKER_BREAKPOINT);
     }
 }
 
@@ -7513,6 +7596,7 @@ void NumeReEditor::RemoveBreakpoint(int linenum)
     // need to remove the marker handle from the array - use
     // LineFromHandle on debug start and clean up then
     MarkerDelete(linenum, MARKER_BREAKPOINT);
+    MarkerDelete(linenum, MARKER_CONDITIONALBREAKPOINT);
     m_terminal->removeBreakpoint(GetFileNameAndPath().ToStdString(), linenum);
 }
 
@@ -7537,7 +7621,7 @@ void NumeReEditor::SynchronizeBreakpoints()
     while ((line = MarkerNext(line, 1 << MARKER_BREAKPOINT)) != -1)
     {
         if (isBreakPointAllowed(line))
-            m_terminal->addBreakpoint(GetFileNameAndPath().ToStdString(), line);
+            m_terminal->addBreakpoint(GetFileNameAndPath().ToStdString(), line, Breakpoint(true));
         else
             MarkerDelete(line, MARKER_BREAKPOINT);
 

@@ -283,7 +283,13 @@ void doc_Help(const std::string& __sTopic, Settings& _option)
     if (sTopic.front() == '-')
         sTopic.erase(0,1);
 
+    if (sTopic.back() == '-')
+        sTopic.pop_back();
+
     StripSpaces(sTopic);
+
+    if (sTopic.length() > 2 && sTopic.front() == '"' && sTopic.back() == '"')
+        sTopic = toInternalString(sTopic);
 
     // Check for function documentation first
     if (doc_findFunctionDocumentation(sTopic).size())
@@ -316,7 +322,9 @@ void doc_Help(const std::string& __sTopic, Settings& _option)
 
         // content schreiben
         fTeX << ansiToUtf8(sTeX);
-        NumeReKernel::print(_lang.get("DOC_HELP_HTMLEXPORT", _option.getHelpArticleTitle(_option.getHelpIdxKey(sTopic)), sFilename));
+
+        if (_option.systemPrints())
+            NumeReKernel::print(_lang.get("DOC_HELP_HTMLEXPORT", _option.getHelpArticleTitle(_option.getHelpIdxKey(sTopic)), sFilename));
     }
     else
     {
@@ -335,7 +343,9 @@ void doc_Help(const std::string& __sTopic, Settings& _option)
 
             // content schreiben
             fHTML << sHTML;
-            NumeReKernel::print(_lang.get("DOC_HELP_HTMLEXPORT", _option.getHelpArticleTitle(_option.getHelpIdxKey(sTopic)), sFilename));
+
+            if (_option.systemPrints())
+                NumeReKernel::print(_lang.get("DOC_HELP_HTMLEXPORT", _option.getHelpArticleTitle(_option.getHelpIdxKey(sTopic)), sFilename));
         }
         else
             NumeReKernel::setDocumentation(sHTML);

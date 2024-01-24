@@ -76,7 +76,6 @@ class Script : public FileSystem
         std::string handleIncludeSyntax(std::string& sScriptCommand);
         bool handleLocalDefinitions(std::string& sScriptCommand);
 
-
     public:
         Script();
         ~Script();

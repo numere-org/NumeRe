@@ -73,7 +73,7 @@ namespace NumeRe
 
             StringParser(mu::Parser& parser, MemoryManager& data, Settings& option);
             virtual ~StringParser() {}
-            StringParserRetVal evalAndFormat(std::string& sLine, std::string& sCache, bool bSilent = false, bool bCheckAssertions = false);
+            StringParserRetVal evalAndFormat(std::string& sLine, std::string& sCache, bool bSilent = false, bool bCheckAssertions = false, bool bClearVars = false);
             virtual bool isStringExpression(StringView sExpression) override;
     };
 }

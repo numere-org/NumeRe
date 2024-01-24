@@ -1,5 +1,8 @@
 # NumeRe
 [![Download NumeRe](https://img.shields.io/sourceforge/dt/numere.svg)](https://sourceforge.net/projects/numere/files/latest/download)
+
+<img src="https://sourceforge.net/cdn/syndication/badge_img/2548459/oss-community-choice-black" width="200px" />
+
 ## Scientific data analysis for Windows® redefined
 
 Curve fitting | Data analysis | Plotting | Matrix operations | FFT | Extensible Framework | Multiple file formats | Programmable | Open source | Free for everyone
