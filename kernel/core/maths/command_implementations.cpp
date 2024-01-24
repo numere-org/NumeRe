@@ -2599,7 +2599,7 @@ struct FFTData
 /////////////////////////////////////////////////
 static void calculate1dFFT(MemoryManager& _data, Indices& _idx, const std::string& sTargetTable, mglDataC& _fftData, std::vector<size_t>& vAxis, FFTData& _fft)
 {
-    _fftData.Save("D:/Software/NumeRe/save/fftdata.txt");
+    //_fftData.Save("D:/Software/NumeRe/save/fftdata.txt");
 
     if (!_fft.bInverseTrafo)
     {
