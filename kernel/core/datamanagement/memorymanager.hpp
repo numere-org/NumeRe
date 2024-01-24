@@ -420,10 +420,10 @@ class MemoryManager : public NumeRe::FileAdapter, public StringMemory, public Nu
             return vMemory[findTable(sTable)]->getIndex(nCol, vValues, vStringValues);
         }
 
-        AnovaResult getOneWayAnova(const std::string& sTable,
-                                   size_t colCategories, size_t colValues, const VectorIndex& _vIndex, double significance) const
+        std::vector<AnovaResult> getAnova(const std::string& sTable,
+                                   const VectorIndex& colCategories, size_t colValues, const VectorIndex& _vIndex, double significance) const
         {
-            return vMemory[findTable(sTable)]->getOneWayAnova(colCategories, colValues, _vIndex, significance);
+            return vMemory[findTable(sTable)]->getAnova(colCategories, colValues, _vIndex, significance);
         }
 
         mu::value_type getCovariance(const std::string& sTable,

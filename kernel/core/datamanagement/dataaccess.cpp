@@ -1786,18 +1786,27 @@ static std::string tableMethod_anova(const std::string& sTableName, std::string 
     NumeReKernel* _kernel = NumeReKernel::getInstance();
 
     std::string sCols = getNextArgument(sMethodArguments, true);
-    sCols += "," + getNextArgument(sMethodArguments, true);
+    //sCols += "," + getNextArgument(sMethodArguments, true);
 
     int nResults = 0;
     _kernel->getMemoryManager().updateDimensionVariables(sTableName);
     _kernel->getParser().SetExpr(sCols);
     mu::value_type* v = _kernel->getParser().Eval(nResults);
 
-    if (nResults < 2)
+    if (nResults < 1)
         throw SyntaxError(SyntaxError::TOO_FEW_COLS, sTableName + "().anovaof()", ".anovaof(", ".anovaof(");
 
-    size_t col1 = intCast(v[0])-1;
-    size_t col2 = intCast(v[1])-1;
+    auto col1 = VectorIndex(v, nResults, 0);
+
+    sCols = getNextArgument(sMethodArguments, true);
+    nResults = 0;
+    _kernel->getMemoryManager().updateDimensionVariables(sTableName);
+    _kernel->getParser().SetExpr(sCols);
+    v = _kernel->getParser().Eval(nResults);
+
+    if (nResults < 1)
+        throw SyntaxError(SyntaxError::TOO_FEW_COLS, sTableName + "().anovaof()", ".anovaof(", ".anovaof(");
+    size_t col2 = intCast(v[0])-1;
 
     VectorIndex vIndex(0, VectorIndex::OPEN_END);
     double significance = 0.05;
@@ -1818,22 +1827,25 @@ static std::string tableMethod_anova(const std::string& sTableName, std::string 
         }
     }
 
-    AnovaResult res = _kernel->getMemoryManager().getOneWayAnova(sTableName, col1, col2, vIndex, significance);
+    std::vector<AnovaResult> res = _kernel->getMemoryManager().getAnova(sTableName, col1, col2, vIndex, significance);
 
     std::vector<std::string> vRet;
+    for(size_t i = 0; i < res.size(); i++)
+    {
+        std::string prefix = res.size()>1 ? (res[i].prefix + "-") : "";
+        vRet.push_back("\"" + prefix + "FisherRatio\"");
+        vRet.push_back(toString(res[i].m_FRatio));
+        vRet.push_back("\"" + prefix + "FisherSignificanceVal\"");
+        vRet.push_back(toString(res[i].m_significanceVal));
+        vRet.push_back("\"" + prefix + "SignificanceLevel\"");
+        vRet.push_back(toString(res[i].m_significance));
+        vRet.push_back("\"" + prefix + "SignificantVariation\"");
+        vRet.push_back(toString(res[i].m_isSignificant));
+        vRet.push_back("\"" + prefix + "Categories\"");
+        vRet.push_back(toString(res[i].m_numCategories));
+    }
 
-    vRet.push_back("\"FisherRatio\"");
-    vRet.push_back(toString(res.m_FRatio));
-    vRet.push_back("\"FisherSignificanceVal\"");
-    vRet.push_back(toString(res.m_significanceVal));
-    vRet.push_back("\"SignificanceLevel\"");
-    vRet.push_back(toString(res.m_significance));
-    vRet.push_back("\"SignificantVariation\"");
-    vRet.push_back(toString(res.m_isSignificant));
-    vRet.push_back("\"Categories\"");
-    vRet.push_back(toString(res.m_numCategories));
-
-    return _kernel->getStringParser().createTempStringVectorVar(vRet);
+    return _kernel->getStringParser().createTempStringVectorVar(vRet);;
 }
 
 

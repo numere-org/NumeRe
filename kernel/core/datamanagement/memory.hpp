@@ -23,6 +23,7 @@
 #include "sorter.hpp"
 #include "tablecolumn.hpp"
 #include "../maths/filtering.hpp"
+#include "../maths/anovaimpl.hpp"
 
 #ifndef MEMORY_HPP
 #define MEMORY_HPP
@@ -32,18 +33,6 @@ class MemoryManager;
 class Matrix;
 struct StatsLogic;
 
-/////////////////////////////////////////////////
-/// \brief Contains the relevant results of the
-/// ANOVA F test.
-/////////////////////////////////////////////////
-struct AnovaResult
-{
-    mu::value_type m_FRatio;
-    mu::value_type m_significanceVal;
-    mu::value_type m_significance;
-    bool m_isSignificant;
-    size_t m_numCategories;
-};
 
 namespace NumeRe
 {
@@ -85,12 +74,13 @@ class Memory : public Sorter
 	private:
 	    friend class MemoryManager;
 	    friend class NumeRe::FileAdapter;
+        friend AnovaCalculationStructure;
+        friend FactorNode;
 
-	    TableColumnArray memArray;
 		NumeRe::TableMetaData m_meta;
 
 		mutable int nCalcLines;
-
+        TableColumnArray memArray;
 		bool bSaveMutex;
 		bool bSortCaseInsensitive;
 
@@ -206,7 +196,6 @@ class Memory : public Sorter
         std::vector<mu::value_type> findCols(const std::vector<std::string>& vColNames, bool enableRegEx) const;
         std::vector<mu::value_type> countIfEqual(const VectorIndex& _vCols, const std::vector<mu::value_type>& vValues, const std::vector<std::string>& vStringValues) const;
         std::vector<mu::value_type> getIndex(size_t col, const std::vector<mu::value_type>& vValues, const std::vector<std::string>& vStringValues) const;
-        AnovaResult getOneWayAnova(size_t colCategories, size_t colValues, const VectorIndex& _vIndex, double significance) const;
         mu::value_type getCovariance(size_t col1, const VectorIndex& _vIndex1, size_t col2, const VectorIndex& _vIndex2) const;
         mu::value_type getPearsonCorr(size_t col1, const VectorIndex& _vIndex1, size_t col2, const VectorIndex& _vIndex2) const;
         mu::value_type getSpearmanCorr(size_t col1, const VectorIndex& _vIndex1, size_t col2, const VectorIndex& _vIndex2) const;
@@ -217,6 +206,8 @@ class Memory : public Sorter
         bool smooth(VectorIndex _vLine, VectorIndex _vCol, NumeRe::FilterSettings _settings, AppDir Direction = ALL);
         bool retouch(VectorIndex _vLine, VectorIndex _vCol, AppDir Direction = ALL);
         bool resample(VectorIndex _vLine, VectorIndex _vCol, std::pair<size_t,size_t> samples, AppDir Direction = ALL, std::string sFilter = "lanczos3");
+
+        std::vector<AnovaResult> getAnova(const VectorIndex& colCategories, size_t colValues, const VectorIndex& _vIndex, double significance) const;
 
 };
 
