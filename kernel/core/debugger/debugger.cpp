@@ -1015,3 +1015,21 @@ vector<string> NumeReDebugger::getGlobals()
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Returns the filename of the module
+/// currently executed.
+///
+/// \return std::string
+///
+/////////////////////////////////////////////////
+std::string NumeReDebugger::getExecutedModule() const
+{
+    if (vStackTrace.size())
+        return vStackTrace.back().second->sCurrentProcedureName;
+    else if (NumeReKernel::getInstance()->getScript().isValid())
+        return NumeReKernel::getInstance()->getScript().getScriptFileName();
+
+    return "";
+}
+
+

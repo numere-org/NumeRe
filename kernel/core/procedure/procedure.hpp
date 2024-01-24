@@ -109,6 +109,7 @@ class Procedure : public FlowCtrl, public PackageManager
         virtual int catchExceptionForTest(std::exception_ptr e_ptr, bool bSupressAnswer_back, int nLine, bool cleanUp) override;
         size_t GetCurrentLine() const;
         size_t replaceReturnVal(std::string& sLine, mu::Parser& _parser, const Returnvalue& _return, size_t nPos, size_t nPos2, const std::string& sReplaceName);
+        std::string resolveVariables(const std::string& sCommandLine) const;
 
         void setPredefinedFuncs(const std::string& sPredefined)
         {

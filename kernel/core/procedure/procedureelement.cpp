@@ -18,7 +18,6 @@
 
 #include "procedureelement.hpp"
 #include "../utils/tools.hpp"
-#include "../symdef.hpp"
 #include "dependency.hpp"
 #include "includer.hpp"
 #include "../plotting/plotting.hpp"
@@ -42,7 +41,7 @@ ProcedureElement::ProcedureElement(const StyledTextFile& procedureContents, cons
     std::string sCurrentLineCache;
     std::string sProcPlotCompose;
 
-    SymDefManager _symdefs;
+
     std::unique_ptr<Includer> _includer;
     int i = 0;
     int currentLine = 0;

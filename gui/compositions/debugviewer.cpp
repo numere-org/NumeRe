@@ -294,6 +294,20 @@ void DebugViewer::getInformationByStackId(size_t id)
         }
     }
 
+    // Auto-size the corresponding columns
+    m_stacktrace->SetColumnWidth(0, wxLIST_AUTOSIZE);
+    m_stacktrace->SetColumnWidth(1, wxLIST_AUTOSIZE);
+
+    if (m_options->GetShowLinesInStackTrace())
+        m_stacktrace->SetColumnWidth(nLineColumn, wxLIST_AUTOSIZE_USEHEADER);
+    else
+        m_stacktrace->SetColumnWidth(nLineColumn, 0);
+
+    if (m_options->GetShowModulesInStackTrace())
+        m_stacktrace->SetColumnWidth(nModuleColumn, wxLIST_AUTOSIZE);
+    else
+        m_stacktrace->SetColumnWidth(nModuleColumn, 0);
+
     // Update the status bar
     GetStatusBar()->SetStatusText(vModuleInfo[1] + " @ " + vModuleInfo[2]);
 
@@ -463,20 +477,6 @@ void DebugViewer::setDebugInfo(const wxString& title, const std::vector<std::str
         m_stacktrace->SetItem(i, nLineColumn, vStack[i].substr(vStack[i].rfind('\t')+1));
         m_stacktrace->SetItem(i, nModuleColumn, vStack[i].substr(vStack[i].find('\t')+1, vStack[i].rfind('\t') - vStack[i].find('\t') - 1));
     }
-
-    // Auto-size the corresponding columns
-    m_stacktrace->SetColumnWidth(0, wxLIST_AUTOSIZE);
-    m_stacktrace->SetColumnWidth(1, wxLIST_AUTOSIZE);
-
-    if (m_options->GetShowLinesInStackTrace())
-        m_stacktrace->SetColumnWidth(nLineColumn, wxLIST_AUTOSIZE_USEHEADER);
-    else
-        m_stacktrace->SetColumnWidth(nLineColumn, 0);
-
-    if (m_options->GetShowModulesInStackTrace())
-        m_stacktrace->SetColumnWidth(nModuleColumn, wxLIST_AUTOSIZE);
-    else
-        m_stacktrace->SetColumnWidth(nModuleColumn, 0);
 
     // Get the debugger information for the
     // top stack element

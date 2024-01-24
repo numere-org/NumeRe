@@ -21,6 +21,7 @@
 #include <vector>
 #include "procedurecommandline.hpp"
 #include "../io/styledtextfile.hpp"
+#include "../symdef.hpp"
 
 #ifndef PROCEDUREELEMENT_HPP
 #define PROCEDUREELEMENT_HPP
@@ -40,6 +41,7 @@ class ProcedureElement
         std::map<std::string, int> mProcedureList;
         std::string sFileName;
         Dependencies* m_dependencies;
+        SymDefManager _symdefs;
 
         void cleanCurrentLine(std::string& sProcCommandLine, const std::string& sCurrentCommand, const std::string& sFilePath);
 
@@ -54,6 +56,11 @@ class ProcedureElement
         std::string getFileName() const
         {
             return sFileName;
+        }
+
+        void resolveSymbols(std::string& sCommandLine)
+        {
+            _symdefs.resolveSymbols(sCommandLine);
         }
 
         bool isLastLine(int currentline);

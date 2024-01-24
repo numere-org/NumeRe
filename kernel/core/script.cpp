@@ -754,6 +754,7 @@ void Script::evaluateInstallInformation(std::string& sInstallInfoString)
 std::string Script::getNextScriptCommandFromScript()
 {
     std::string sScriptCommand;
+    NumeReKernel* instance = NumeReKernel::getInstance();
 
     // Search for the next valid and non-empty line
     // in the current script
@@ -773,9 +774,24 @@ std::string Script::getNextScriptCommandFromScript()
 
             sScriptCommand += sCurrentLine;
 
-            // Add a breakpoint, if the user has set it in the editor
-            if (NumeReKernel::getInstance()->getDebugger().getBreakpointManager().isBreakpoint(sScriptFileName, nLine-1) && sScriptCommand.substr(0,2) != "|>")
-                sScriptCommand.insert(0, "|> ");
+            if (instance->getDebugger().getBreakpointManager().isBreakpoint(sScriptFileName, nLine-1)
+                || sScriptCommand.starts_with("|>"))
+            {
+                // Add a breakpoint, if the user has set it in the editor
+                if (!sScriptCommand.starts_with("|>"))
+                    sScriptCommand.insert(0, "|> ");
+                else if (!instance->getDebugger().getBreakpointManager().isBreakpoint(sScriptFileName, nLine-1))
+                    instance->getDebugger().getBreakpointManager().addBreakpoint(sScriptFileName, nLine-1, Breakpoint(true));
+
+                Breakpoint bp = instance->getDebugger().getBreakpointManager().getBreakpoint(sScriptFileName, nLine-1);
+
+                if (bp.m_isConditional)
+                {
+                    bp.m_condition = bp.m_originalCondition;
+                    handleLocalDefinitions(bp.m_condition);
+                    instance->getDebugger().getBreakpointManager().addBreakpoint(sScriptFileName, nLine-1, bp);
+                }
+            }
         }
         while (nLine < m_script->getLinesCount() && sScriptCommand.length() > 2 && sScriptCommand.substr(sScriptCommand.length()-2) == "\\\\");
 

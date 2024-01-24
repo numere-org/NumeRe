@@ -257,13 +257,31 @@ void NumeReTerminal::passEditedTable(NumeRe::Table _table)
 ///
 /// \param _sFilename const std::string&
 /// \param nLine size_t
+/// \param bp const Breakpoint&
 /// \return void
 ///
 /////////////////////////////////////////////////
-void NumeReTerminal::addBreakpoint(const std::string& _sFilename, size_t nLine)
+void NumeReTerminal::addBreakpoint(const std::string& _sFilename, size_t nLine, const Breakpoint& bp)
 {
     wxCriticalSectionLocker lock(m_kernelCS);
-    _kernel.getDebugger().getBreakpointManager().addBreakpoint(_sFilename, nLine);
+    _kernel.getDebugger().getBreakpointManager().addBreakpoint(_sFilename, nLine, bp);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This member function gets a breakpoint
+/// of the passed file at the indicated line
+/// number.
+///
+/// \param _sFilename const std::string&
+/// \param nLine size_t
+/// \return Breakpoint
+///
+/////////////////////////////////////////////////
+Breakpoint NumeReTerminal::getBreakpoint(const std::string& _sFilename, size_t nLine)
+{
+    wxCriticalSectionLocker lock(m_kernelCS);
+    return _kernel.getDebugger().getBreakpointManager().getBreakpoint(_sFilename, nLine);
 }
 
 
