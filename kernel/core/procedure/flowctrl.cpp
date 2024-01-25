@@ -1567,12 +1567,10 @@ value_type* FlowCtrl::evalHeader(int& nNum, std::string& sHeadExpression, bool b
             nCalcType[nth_Cmd] |= CALCTYPE_DEBUGBREAKPOINT;
             sHeadExpression.erase(sHeadExpression.find_first_not_of(' '), 2);
             StripSpaces(sHeadExpression);
-            bp = _debugger.getBreakpointManager().getBreakpoint(_debugger.getExecutedModule(), getCurrentLineNumber());
         }
-        else if (nCurrentCalcType & CALCTYPE_DEBUGBREAKPOINT)
-        {
+
+        if (_debugger.getBreakpointManager().isBreakpoint(_debugger.getExecutedModule(), getCurrentLineNumber()))
             bp = _debugger.getBreakpointManager().getBreakpoint(_debugger.getExecutedModule(), getCurrentLineNumber());
-        }
 
         if (bp.m_isConditional)
         {
@@ -1797,12 +1795,10 @@ NumeRe::Cluster FlowCtrl::evalRangeBasedHeader(std::string& sHeadExpression, int
             nCalcType[nth_Cmd] |= CALCTYPE_DEBUGBREAKPOINT;
             sHeadExpression.erase(sHeadExpression.find_first_not_of(' '), 2);
             StripSpaces(sHeadExpression);
-            bp = _debugger.getBreakpointManager().getBreakpoint(_debugger.getExecutedModule(), getCurrentLineNumber());
         }
-        else if (nCurrentCalcType & CALCTYPE_DEBUGBREAKPOINT)
-        {
+
+        if (_debugger.getBreakpointManager().isBreakpoint(_debugger.getExecutedModule(), getCurrentLineNumber()))
             bp = _debugger.getBreakpointManager().getBreakpoint(_debugger.getExecutedModule(), getCurrentLineNumber());
-        }
 
         if (bp.m_isConditional)
         {
@@ -2783,7 +2779,9 @@ int FlowCtrl::compile(std::string sLine, int nthCmd)
         {
             nCalcType[nthCmd] |= CALCTYPE_DEBUGBREAKPOINT;
             sLine.erase(sLine.find("|>"), 2);
-            bp = _debugger.getBreakpointManager().getBreakpoint(_debugger.getExecutedModule(), getCurrentLineNumber());
+
+            if (_debugger.getBreakpointManager().isBreakpoint(_debugger.getExecutedModule(), getCurrentLineNumber()))
+                bp = _debugger.getBreakpointManager().getBreakpoint(_debugger.getExecutedModule(), getCurrentLineNumber());
 
             if (bp.m_isConditional)
             {
@@ -3390,7 +3388,8 @@ int FlowCtrl::calc(StringView sLine, int nthCmd)
 
         if (nCurrentCalcType & CALCTYPE_DEBUGBREAKPOINT)
         {
-            bp = _debugger.getBreakpointManager().getBreakpoint(_debugger.getExecutedModule(), getCurrentLineNumber());
+            if (_debugger.getBreakpointManager().isBreakpoint(_debugger.getExecutedModule(), getCurrentLineNumber()))
+                bp = _debugger.getBreakpointManager().getBreakpoint(_debugger.getExecutedModule(), getCurrentLineNumber());
 
             if (bp.m_isConditional)
             {

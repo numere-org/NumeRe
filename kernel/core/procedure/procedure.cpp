@@ -918,7 +918,10 @@ Returnvalue Procedure::execute(StringView sProc, string sVarList, Parser& _parse
             if ((isBreakPoint || nDebuggerCode == NumeReKernel::DEBUGGER_STEP)
                 && !getCurrentBlockDepth())
             {
-                Breakpoint bp = _debugger.getBreakpointManager().getBreakpoint(sCurrentProcedureName, GetCurrentLine());
+                Breakpoint bp(true);
+
+                if (_debugger.getBreakpointManager().isBreakpoint(sCurrentProcedureName, nCurrentLine))
+                    bp = _debugger.getBreakpointManager().getBreakpoint(sCurrentProcedureName, nCurrentLine);
 
                 if (bp.m_isConditional)
                     bp.m_condition = _varFactory->resolveVariables(bp.m_condition);
