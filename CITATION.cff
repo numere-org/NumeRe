@@ -3,8 +3,15 @@ message: "If you use this software, please cite it as below."
 authors:
 - family-names: "Hänel"
   given-names: "Erik"
+- family-names: "Zehner"
+  given-names: "Raphael"
+- family-names: "Selmi"
+  given-names: "Ayoub"
+- family-names: "Shinde"
+  given-names: "Durvesh"
+- family-names: "Stranner"
+  given-names: "Marco"
 title: "NumeRe: Framework for Numerical Computations"
 version: 1.1.5
-doi: 10.5281/zenodo.1234
 date-released: 2023-05-16
 url: "https://www.numere.org"
