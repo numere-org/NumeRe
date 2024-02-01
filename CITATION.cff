@@ -1,17 +1,18 @@
 cff-version: 1.2.0
-message: "If you use this software, please cite it as below."
+title: 'NumeRe: Framework for Numerical Computations'
+message: 'If you use this software, please cite it as below.'
+type: software
 authors:
-- family-names: "Hänel"
-  given-names: "Erik"
-- family-names: "Zehner"
-  given-names: "Raphael"
-- family-names: "Selmi"
-  given-names: "Ayoub"
-- family-names: "Shinde"
-  given-names: "Durvesh"
-- family-names: "Stranner"
-  given-names: "Marco"
-title: "NumeRe: Framework for Numerical Computations"
+  - family-names: Hänel
+    given-names: Erik
+  - name: NumeRe.org
+    website: 'https://www.numere.org'
+repository-code: 'https://github.com/numere-org/NumeRe'
+url: 'https://www.numere.org'
+abstract: >-
+  Framework for numerical computations, data analysis and
+  visualisation
+license: GPL-3.0
+commit: 2294ec1d4561c588eb5dc0b6b0973a689ac417a6
 version: 1.1.5
-date-released: 2023-05-16
-url: "https://www.numere.org"
+date-released: '2023-05-16'
