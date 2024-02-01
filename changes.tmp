@@ -26,9 +26,9 @@ Added	The plot option margin=MARGIN can be used to control the plot margin size.
 Added	The table method "TAB().convert()" may now autodetect the column type if the second argument is set to "auto" or omitted.
 Added	The table method "TAB().fndcols()" may now support regular expressions.
 Added	The table viewer will now group common table header rows together, creating a virtual hierarchy.
-Added	The terminal now also proposed global variables for auto completion.
+Added	The terminal now also proposes global variables for auto completion.
 Added	Using "statustext", one can now modify the statusbar of window layouts.
-Added	Whole new apps can now be created using the new file dialog and selecting one of the available templates.
+Added	Whole new apps can now be created using the new file dialog and selecting one of the available app templates.
 Applied	Date-time columns are now automatically wide enough for their contents.
 Applied	It's now possible to pipe a window layout encoded as string directly into the "window" command.
 Applied	Other text files can now be embedded in packages.
@@ -38,7 +38,7 @@ Cleaned	"audioread" and "seek" read audiodata as "value.f32" (without complex va
 Cleaned	"hist" will now use categories or logical values to determine the bins, however this only works, if all columns share their type and their category definitions. Otherwise abstract categories are defined.
 Cleaned	"imread" reads images as "value.ui8" data.
 Cleaned	"move" and "copy" can now create the target folders, if necessary.
-Cleaned	"url" now has a progress bar for larger files and accepts now longer transmissins.
+Cleaned	"url" now has a progress bar for larger files and accepts now longer transmissions.
 Cleaned	A "treelist" can now display data using a tree-like layout.
 Cleaned	If the debugger is active, the usual stop button now also works as expected and aborts the whole process.
 Cleaned	Improved the behavior of the table viewer: long strings are now wrapped around and the autosizing feature now informs about longer runtimes.
@@ -56,9 +56,9 @@ Fixed	Curve sets can now be plotted without the need of an additional legend ent
 Fixed	Data expressions may now be used within table methods.
 Fixed	Drawing functions can now be combined into function definitions (e.g. for predefined combinations) and used within "draw" and "draw3d" as expected.
 Fixed	Face() and Facev() functions can be made transparent
-Fixed	Fixed dynamically checking Datetime formats in Excel files.
+Fixed	Cells containing custom date-time formats in Excel are now detected and converted correctly.
 Fixed	If the table name is now longer than 31 characters, an automatic sheet name will be used in XLS exports.
-Fixed	In rare circumstances, locally installed packages could trigger a exception, if one wants to install something from the package repository. That has been resolved.
+Fixed	In rare circumstances, locally installed packages could trigger an exception, if one wants to install something from the package repository. That has been resolved.
 Fixed	Indices are now better checked.
 Fixed	NumeRe does not crash anymore after the print preview of the documentation browser has been closed.
 Fixed	NumeRe will now restore its window, if it is iconized and one double-clicks on any linked file to have the editor scaled correctly.
@@ -73,7 +73,7 @@ Fixed	The static code analyzer will now detect more missing semicolons.
 Fixed	The Table.convert() function has been enhanced to interpret various number formats, accommodating both EU and US decimal separators, as well as space, EU, and US-based thousand separators.
 Fixed	Tokenizer function now parses strings with embedded commas correctly when reading CSV Files.
 Fixed	Using "str.len" in the search bar yielded an uncatched exception message. This was resolved.
-New	A 64 bit version is now available.
+New	A 64 bit version is now available. Using a newer compiler, it is also faster so switching is encouraged.
 New	Conditional breakpoints were added as EXPERIMENTAL feature. To create one, create regular breakpoint and then right-click on it and select "Edit breakpoint".
 New	It's now possible to use relative namespaces with additional tilde characters: "$this~~relative~namespace~..."
 New	The new flow control command "leave" allows jumping out of nested loops completely without the need of unnecessary complex "if-else" checks and boolean flags.

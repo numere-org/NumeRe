@@ -1799,7 +1799,10 @@ void Plot::createStdPlot(size_t nPlotCompose, size_t nPlotComposeSize)
     }
 
     if (nLegends && !_pData.getSettings(PlotData::LOG_SCHEMATIC) && nPlotCompose + 1 == nPlotComposeSize)
+    {
+        _graph->SetMarkSize(1.0);
         _graph->Legend(_pData.getSettings(PlotData::INT_LEGENDPOSITION));
+    }
 }
 
 
@@ -1838,7 +1841,7 @@ bool Plot::plotstd(mglData& _mData, mglData& _mAxisVals, mglData _mData2[3], con
     int nNextStyle = _pInfo.nextStyle();
 
     if (isdigit(_pInfo.sLineStyles[_pInfo.nStyle].back()))
-        _graph->SetMarkSize(_pInfo.sLineStyles[_pInfo.nStyle].back() - '0');
+        _graph->SetMarkSize((_pInfo.sLineStyles[_pInfo.nStyle].back() - '0') * 0.5 + 0.5);
 
     if (nType == PT_FUNCTION)
     {
@@ -2328,25 +2331,25 @@ void Plot::create2dVect()
 static void faceAdapted(mglGraph* _graph, const mglPoint& p1, const mglPoint& p2, const mglPoint& p3, const mglPoint& p4, const std::string& sStyle)
 {
     if (sStyle.substr(0, 1) == "#")
-      {
-          if (size(sStyle) > 1)
-          {
+    {
+        if (size(sStyle) > 1)
+        {
             _graph->Line(p4, p2, sStyle.substr(1, 1).c_str());
             _graph->Line(p2, p1, sStyle.substr(1, 1).c_str());
             _graph->Line(p1, p3, sStyle.substr(1, 1).c_str());
             _graph->Line(p3, p4, sStyle.substr(1, 1).c_str());
-          }
-          else
-          {
+        }
+        else
+        {
             _graph->Line(p4, p2, sStyle.c_str());
             _graph->Line(p2, p1, sStyle.c_str());
             _graph->Line(p1, p3, sStyle.c_str());
             _graph->Line(p3, p4, sStyle.c_str());
-          }
-
+        }
 
         return;
-      }
+    }
+
     if (size(sStyle) == 2)
     {
         _graph->Face(p1, p2, p3, p4, sStyle.substr(1, 1).c_str());
@@ -2365,7 +2368,6 @@ static void faceAdapted(mglGraph* _graph, const mglPoint& p1, const mglPoint& p2
     }
     else
         _graph->Face(p1, p2, p3, p4, sStyle.c_str());
-    return;
 }
 
 
@@ -2477,7 +2479,7 @@ void Plot::create2dDrawing(vector<string>& vDrawVector)
             {
                 mglPoint point1 = mglPoint(vResults[4], vResults[5]);
                 mglPoint point2 = mglPoint(vResults[2], vResults[3]);
-                mglPoint point3 = mglPoint(vResults[0] + vResults[4] - vResults[2], vResults[1] + vResults[5] - vResults[3] + vResults[1], vResults[1] + vResults[2] - vResults[0]);
+                mglPoint point3 = mglPoint(vResults[0] + vResults[4] - vResults[2], vResults[1] + vResults[5] - vResults[3]);
                 mglPoint point4 = mglPoint(vResults[0], vResults[1]);
                 faceAdapted(_graph, point1, point2, point3, point4, sStyle);
             }
@@ -2498,7 +2500,7 @@ void Plot::create2dDrawing(vector<string>& vDrawVector)
             {
                 mglPoint point1 = mglPoint(vResults[0] + vResults[2] - vResults[3], vResults[1] + vResults[3] + vResults[2]);
                 mglPoint point2 = mglPoint(vResults[0] + vResults[2], vResults[1] + vResults[3]);
-                mglPoint point3 = mglPoint(vResults[0] - vResults[3] + vResults[1], vResults[1] + vResults[2] - vResults[0]);
+                mglPoint point3 = mglPoint(vResults[0] - vResults[3], vResults[1] + vResults[2]);
                 mglPoint point4 = mglPoint(vResults[0], vResults[1]);
                 faceAdapted(_graph, point1, point2, point3, point4, sStyle);
             }
@@ -2804,7 +2806,7 @@ void Plot::create3dDrawing(vector<string>& vDrawVector)
                 {
                     mglPoint point1 = mglPoint(vResults[6], vResults[7], vResults[8]);
                     mglPoint point2 = mglPoint(vResults[3], vResults[4], vResults[5]);
-                    mglPoint point3 = mglPoint(vResults[0] + vResults[6] - vResults[3], vResults[1] + vResults[7] - vResults[4], vResults[2] + vResults[8] - vResults[5]);
+                    mglPoint point3 = mglPoint(vResults[9], vResults[10], vResults[11]);
                     mglPoint point4 = mglPoint(vResults[0], vResults[1], vResults[2]);
                     faceAdapted(_graph, point1, point2, point3, point4, sStyle);
                  }
@@ -2835,9 +2837,9 @@ void Plot::create3dDrawing(vector<string>& vDrawVector)
 
             else
                 {
-                    mglPoint point1 = mglPoint(vResults[0] + vResults[6] + vResults[3], vResults[1] + vResults[7] + vResults[4], vResults[2] + vResults[8] + vResults[5]);
-                    mglPoint point2 = mglPoint(vResults[0] + vResults[6], vResults[1] + vResults[4], vResults[2] + vResults[5]);
-                    mglPoint point3 = mglPoint(vResults[0] + vResults[3], vResults[1] + vResults[7], vResults[2] + vResults[8]);
+                    mglPoint point1 = mglPoint(vResults[0] + vResults[6], vResults[1] + vResults[7], vResults[2] + vResults[8]);
+                    mglPoint point2 = mglPoint(vResults[0] + vResults[3], vResults[1] + vResults[4], vResults[2] + vResults[5]);
+                    mglPoint point3 = mglPoint(vResults[0] + vResults[9], vResults[1] + vResults[10], vResults[2] + vResults[11]);
                     mglPoint point4 = mglPoint(vResults[0], vResults[1], vResults[2]);
                     faceAdapted(_graph, point1, point2, point3, point4, sStyle);
                  }
@@ -2949,11 +2951,6 @@ void Plot::create3dDrawing(vector<string>& vDrawVector)
                 point4 = mglPoint(vResults[0], vResults[1], vResults[2]) + _mDy + _mDz;
                 faceAdapted(_graph, point1, point2, point3, point4, sStyle);
 
-            _graph->Face(mglPoint(vResults[0], vResults[1], vResults[2]) + _mDz,
-                         mglPoint(vResults[0], vResults[1], vResults[2]) + _mDx + _mDz,
-                         mglPoint(vResults[0], vResults[1], vResults[2]) + _mDy + _mDz,
-                         mglPoint(vResults[0], vResults[1], vResults[2]) + _mDx + _mDy + _mDz,
-                         sStyle.c_str());
                 point1 = mglPoint(vResults[0], vResults[1], vResults[2]) + _mDz;
                 point2 = mglPoint(vResults[0], vResults[1], vResults[2]) + _mDx + _mDz;
                 point3 = mglPoint(vResults[0], vResults[1], vResults[2]) + _mDy + _mDz;
@@ -3332,6 +3329,7 @@ void Plot::createStd3dPlot(size_t nPlotCompose, size_t nPlotComposeSize)
         && nLegends
         && !_pData.getSettings(PlotData::LOG_SCHEMATIC))
     {
+        _graph->SetMarkSize(1.0);
         if (_pData.getRotateAngle() || _pData.getRotateAngle(1))
             _graph->Legend(1.35, 1.2);
         else
@@ -3370,7 +3368,7 @@ bool Plot::plotstd3d(mglData _mData[3], mglData _mData2[3], const short nType)
     int nNextStyle = _pInfo.nextStyle();
 
     if (isdigit(_pInfo.sLineStyles[_pInfo.nStyle].back()))
-        _graph->SetMarkSize(_pInfo.sLineStyles[_pInfo.nStyle].back() - '0');
+        _graph->SetMarkSize((_pInfo.sLineStyles[_pInfo.nStyle].back() - '0')*0.5 + 0.5);
 
     if (nType == PT_FUNCTION)
     {
