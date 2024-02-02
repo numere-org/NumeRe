@@ -47,6 +47,7 @@ static std::map<std::string,MAF> getParserMafMap()
     mafMap["sum("] = parser_Sum;
     mafMap["avg("] = parser_Avg;
     mafMap["prd("] = parser_product;
+    mafMap["std("] = parser_Std;
     mafMap["norm("] = parser_Norm;
     mafMap["med("] = parser_Med;
     mafMap["pct("] = parser_Pct;

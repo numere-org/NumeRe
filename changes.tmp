@@ -25,7 +25,7 @@ Added	The GUI element state "readonly" was added, which is identical to "disable
 Added	The plot option margin=MARGIN can be used to control the plot margin size.
 Added	The table method "TAB().convert()" may now autodetect the column type if the second argument is set to "auto" or omitted.
 Added	The table method "TAB().fndcols()" may now support regular expressions.
-Added	The table viewer will now group common table header rows together, creating a virtual hierarchy.
+Added	The table viewer will now group common table header rows together, creating a virtual hierarchy and grid lines can be hidden.
 Added	The terminal now also proposes global variables for auto completion.
 Added	Using "statustext", one can now modify the statusbar of window layouts.
 Added	Whole new apps can now be created using the new file dialog and selecting one of the available app templates.
