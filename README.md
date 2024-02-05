@@ -1,5 +1,5 @@
 # NumeRe
-[![Download NumeRe](https://img.shields.io/sourceforge/dt/numere.svg)](https://sourceforge.net/projects/numere/files/latest/download)
+[![Download NumeRe](https://img.shields.io/sourceforge/dt/numere.svg)](https://sourceforge.net/projects/numere/files/latest/download) [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.10617502.svg)](https://doi.org/10.5281/zenodo.10617502)
 
 <img src="https://sourceforge.net/cdn/syndication/badge_img/2548459/oss-community-choice-black" width="200px" />
 
