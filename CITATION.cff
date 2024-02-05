@@ -7,6 +7,9 @@ authors:
     given-names: Erik
   - name: NumeRe.org
     website: 'https://www.numere.org'
+identifiers:
+  - type: doi
+    value: 10.5281/zenodo.10617502
 repository-code: 'https://github.com/numere-org/NumeRe'
 url: 'https://www.numere.org'
 abstract: >-
