@@ -6,6 +6,8 @@
 
 <img src="https://sourceforge.net/cdn/syndication/badge_img/2548459/oss-community-choice-black" width="200px" />
 
+[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/D1D4U57MJ)
+
 ## Scientific data analysis for Windows® redefined
 
 Curve fitting | Data analysis | Plotting | Matrix operations | FFT | Extensible Framework | Multiple file formats | Programmable | Open source | Free for everyone
