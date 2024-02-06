@@ -6,7 +6,7 @@
 
 <img src="https://sourceforge.net/cdn/syndication/badge_img/2548459/oss-community-choice-black" width="200px" />
 
-[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/D1D4U57MJ)
+[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/numere)
 
 ## Scientific data analysis for Windows® redefined
 
