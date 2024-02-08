@@ -1113,7 +1113,8 @@ bool Plot::createPlotOrAnimation(size_t nPlotCompose, size_t nPlotComposeSize, b
         if (_pData.getSettings(PlotData::STR_PLOTTITLE).length())
         {
             _graph->Title(fromSystemCodePage(_pData.getSettings(PlotData::STR_PLOTTITLE)).c_str(), "", -1.5);
-            _pData.setTitle("");
+            if (!_pData.getAnimateSamples())
+                _pData.setTitle("");
         }
 
         // If the user requested an orthogonal projection, then
