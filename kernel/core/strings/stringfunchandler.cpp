@@ -1297,7 +1297,7 @@ namespace NumeRe
             // disable the access caching for this expression
             _parser.DisableAccessCaching();
 
-            DataAccessParser _accessParser(_sObject);
+            DataAccessParser _accessParser(_sObject, false);
 
             if (!_accessParser.getDataObject().length() || !isValidIndexSet(_accessParser.getIndices()))
             {

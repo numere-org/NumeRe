@@ -342,7 +342,7 @@ DataAccessParser CommandLineParser::getExprAsDataObject() const
     if (sExpr.find("??") != std::string::npos)
         sExpr = promptForUserInput(sExpr);
 
-    return DataAccessParser(sExpr);
+    return DataAccessParser(sExpr, false);
 }
 
 

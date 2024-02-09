@@ -3151,7 +3151,7 @@ int FlowCtrl::compile(std::string sLine, int nthCmd)
 
     // Get the data from the used data object
     if (!NumeReKernel::getInstance()->getStringParser().isStringExpression(sLine)
-            && _dataRef->containsTablesOrClusters(sLine))
+        && _dataRef->containsTablesOrClusters(sLine))
     {
         nCalcType[nthCmd] |= CALCTYPE_DATAACCESS;
 
@@ -3188,7 +3188,8 @@ int FlowCtrl::compile(std::string sLine, int nthCmd)
 
     // Evaluate std::string expressions
     if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sLine)
-        || NumeReKernel::getInstance()->getStringParser().isStringExpression(sCache))
+        || (NumeReKernel::getInstance()->getStringParser().isStringExpression(sCache)
+            && !_dataRef->isTable(sCache)))
     {
         // Do not add the byte code, if it was added ad-hoc
         if (!stringParserAdHoc)
@@ -3240,7 +3241,7 @@ int FlowCtrl::compile(std::string sLine, int nthCmd)
         if (bCompiling)
         {
             _parserRef->SetCompiling(true);
-            getIndices(sCache, _idx, *_parserRef, *_dataRef, *_optionRef);
+            getIndices(sCache, _idx, *_parserRef, *_dataRef, *_optionRef, true);
 
             if (sCache[(pos = sCache.find_first_of("({"))] == '{')
                 bWriteToCluster = true;
@@ -3263,7 +3264,7 @@ int FlowCtrl::compile(std::string sLine, int nthCmd)
         }
         else
         {
-            getIndices(sCache, _idx, *_parserRef, *_dataRef, *_optionRef);
+            getIndices(sCache, _idx, *_parserRef, *_dataRef, *_optionRef, true);
             //_idx.col.front() = 0;
             //_idx.row.front() = 0;
 
@@ -3829,7 +3830,7 @@ int FlowCtrl::calc(StringView sLine, int nthCmd)
             if (bCompiling)
             {
                 _parserRef->SetCompiling(true);
-                getIndices(sDataObject, _idx, *_parserRef, *_dataRef, *_optionRef);
+                getIndices(sDataObject, _idx, *_parserRef, *_dataRef, *_optionRef, true);
 
                 if (sDataObject[(pos = sDataObject.find_first_of("({"))] == '{')
                     bWriteToCluster = true;
@@ -3852,7 +3853,7 @@ int FlowCtrl::calc(StringView sLine, int nthCmd)
             }
             else
             {
-                getIndices(sDataObject, _idx, *_parserRef, *_dataRef, *_optionRef);
+                getIndices(sDataObject, _idx, *_parserRef, *_dataRef, *_optionRef, true);
                 //_idx.col.front() = 0;
                 //_idx.row.front() = 0;
 

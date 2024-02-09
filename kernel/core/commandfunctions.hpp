@@ -4611,7 +4611,7 @@ static CommandReturnValues cmd_retouch(string& sCmd)
     if (findCommand(sCmd).sString == "retoque")
         NumeReKernel::issueWarning(_lang.get("COMMON_COMMAND_DEPRECATED", sCmd));
 
-    DataAccessParser _access(sCmd);
+    DataAccessParser _access(sCmd, false);
 
     if (_access.getDataObject().length())
     {

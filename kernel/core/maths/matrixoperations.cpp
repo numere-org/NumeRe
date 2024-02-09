@@ -159,7 +159,7 @@ bool performMatrixOperation(string& sCmd, Parser& _parser, MemoryManager& _data,
         }
 
         if (!bAllowMatrixClearing)
-            getIndices(sTargetName, _idx, _parser, _data, _option);
+            getIndices(sTargetName, _idx, _parser, _data, _option, true);
 
         if (!isValidIndexSet(_idx))
             throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd, sTargetName, _idx.row.to_string() + ", " + _idx.col.to_string());
@@ -1653,7 +1653,7 @@ static Indices getIndicesForMatrix(StringView sCmd, const MatOpCache& _cache, Pa
     parser_declareDataMatrixValuesForIndices(sCmd, _cache, _parser, _data);
 
     // Return the calculated indices
-    return getIndices(sCmd, _parser, _data, _option);
+    return getIndices(sCmd, _parser, _data, _option, false);
 }
 
 

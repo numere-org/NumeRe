@@ -193,7 +193,7 @@ class Memory : public Sorter
         std::vector<mu::value_type> size(const VectorIndex& _vIndex, int dir) const;
         std::vector<mu::value_type> minpos(const VectorIndex& _vIndex, int dir) const;
         std::vector<mu::value_type> maxpos(const VectorIndex& _vIndex, int dir) const;
-        std::vector<mu::value_type> findCols(const std::vector<std::string>& vColNames, bool enableRegEx) const;
+        std::vector<mu::value_type> findCols(const std::vector<std::string>& vColNames, bool enableRegEx, bool autoCreate);
         std::vector<mu::value_type> countIfEqual(const VectorIndex& _vCols, const std::vector<mu::value_type>& vValues, const std::vector<std::string>& vStringValues) const;
         std::vector<mu::value_type> getIndex(size_t col, const std::vector<mu::value_type>& vValues, const std::vector<std::string>& vStringValues) const;
         mu::value_type getCovariance(size_t col1, const VectorIndex& _vIndex1, size_t col2, const VectorIndex& _vIndex2) const;

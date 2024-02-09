@@ -490,7 +490,7 @@ static bool searchAndDeleteTable(const string& sCache, Parser& _parser, MemoryMa
         {
             // Cache was found
             // Get the indices from the cache expression
-            Indices _iDeleteIndex = getIndices(sCache, _parser, _data, _option);
+            Indices _iDeleteIndex = getIndices(sCache, _parser, _data, _option, false);
 
             // Check the indices
             if (!isValidIndexSet(_iDeleteIndex))
@@ -547,7 +547,7 @@ static bool searchAndDeleteCluster(const string& sCluster, Parser& _parser, Memo
         {
             // Cache was found
             // Get the indices from the cache expression
-            Indices _iDeleteIndex = getIndices(sCluster, _parser, _data, _option);
+            Indices _iDeleteIndex = getIndices(sCluster, _parser, _data, _option, false);
 
             // Check the indices
             if (!isValidIndexSet(_iDeleteIndex))
