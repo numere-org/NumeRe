@@ -1,3 +1,4 @@
 Fixed	Titles in animations appear now on every frame again.
 Fixed	The num2string parser operator "#" may now handle floating point values correctly.
 Applied	One can now pass custom axis ticks using a list of strings.
+Fixed	"export" and "save" will now create their target folder automatically.
