@@ -389,30 +389,35 @@ string addMissingVectorComponent(const string& sVectorComponent, const string& s
 /// the first delimiter in the passed string, but
 /// it jumps over parentheses and braces.
 ///
-/// \param sLine const string&
+/// \param sLine StringView
 /// \return size_t
 ///
 /////////////////////////////////////////////////
-size_t getPositionOfFirstDelimiter(const string& sLine)
+size_t getPositionOfFirstDelimiter(StringView sLine)
 {
-	static string sDelimiter = "+-*/ =^&|!<>,\n";
+	static std::string sDelimiter = "+-*/ =^&|!<>,\n";
 
 	// Go through the current line
 	for (size_t i = 0; i < sLine.length(); i++)
 	{
         // Jump over parentheses and braces
 		if (sLine[i] == '(' || sLine[i] == '{')
-			i += getMatchingParenthesis(StringView(sLine, i));
+			i += getMatchingParenthesis(sLine.subview(i));
 
         // Try to find the current character in
         // the defined list of delimiters
-        if (sDelimiter.find(sLine[i]) != string::npos)
+        if (sDelimiter.find(sLine[i]) != std::string::npos
+            && ((sLine[i] != '+' && sLine[i] != '-')
+                || i < 2
+                || sLine.length() < i+2
+                || !(tolower(sLine[i-1]) == 'e' && isdigit(sLine[i-2]))
+                || !isdigit(sLine[i+1])))
             return i;
 	}
 
 	// Nothing was found: return the largest possible
 	// number
-	return string::npos;
+	return std::string::npos;
 }
 
 

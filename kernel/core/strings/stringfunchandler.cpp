@@ -183,7 +183,8 @@ namespace NumeRe
                     if (bLogicalOnly)
                     {
                         argumentParser(sFunctionArgument, dValArg);
-                        std::string sFuncReturnValue = toString(iter->second(&dValArg[0], dValArg.size()));
+                        // Added parentheses for complex results and use cases like #avg(...)
+                        std::string sFuncReturnValue = "(" + toString(iter->second(&dValArg[0], dValArg.size())) + ")";
 
                         // replace the function with the return value
                         sLine.replace(nStartPosition, nEndPosition + 1 - nStartPosition, sFuncReturnValue);
