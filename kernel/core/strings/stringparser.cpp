@@ -349,7 +349,7 @@ namespace NumeRe
             return sLine + " ";
 
         // Create a copy of the current line
-        std::string sLineToParsed = sLine + " ";
+        StringView sLineToParsed = sLine; // + " ";
         std::string sLineToParsedTemp;
 
         size_t nPos = 0;
@@ -364,9 +364,9 @@ namespace NumeRe
             // Ensure that it is not in a string
             if (!isInQuotes(sLineToParsed, nPos, true))
             {
-                std::string sPrefix = "";
-                sLineToParsedTemp += sLineToParsed.substr(0, nPos);
-                sLineToParsed = sLineToParsed.substr(nPos + 1);
+                StringView sPrefix;
+                sLineToParsedTemp += sLineToParsed.subview(0, nPos).to_string();
+                sLineToParsed.trim_front(nPos+1);
 
                 // If the variable starts with a tilde, it's possible that we
                 // need to prepend zeros. Get the prefix here
@@ -376,8 +376,8 @@ namespace NumeRe
                     {
                         if (sLineToParsed[i] != '~')
                         {
-                            sPrefix = sLineToParsed.substr(0, i);
-                            sLineToParsed = sLineToParsed.substr(i);
+                            sPrefix = sLineToParsed.subview(0, i);
+                            sLineToParsed.trim_front(i);
                             break;
                         }
                     }
@@ -394,7 +394,7 @@ namespace NumeRe
                 if (sLineToParsed[0] == '(' || sLineToParsed[0] == '{')
                 {
                     // Get the contents of the current parenthesis
-                    std::string sExpr = sLineToParsed.substr(1, getMatchingParenthesis(sLineToParsed) - 1);
+                    std::string sExpr = sLineToParsed.subview(1, getMatchingParenthesis(sLineToParsed) - 1).to_string();
 
                     // Does it contain strings?
                     if (isStringExpression(sExpr))
@@ -418,8 +418,8 @@ namespace NumeRe
                             sLineToParsedTemp += sExpr;
 
                             // Get the next part of the command line
-                            if (getPositionOfFirstDelimiter(sLineToParsed.substr(n_pos)) < sLineToParsed.length())
-                                sLineToParsed = sLineToParsed.substr(getPositionOfFirstDelimiter(sLineToParsed.substr(n_pos)));
+                            if (getPositionOfFirstDelimiter(sLineToParsed.subview(n_pos)) < sLineToParsed.length())
+                                sLineToParsed.trim_front(getPositionOfFirstDelimiter(sLineToParsed.subview(n_pos)));
                             else
                                 sLineToParsed.clear();
 
@@ -447,7 +447,7 @@ namespace NumeRe
                 else if (sLineToParsed[0] == '"')
                 {
                     // Get the contents of the current string
-                    std::string sExpr = sLineToParsed.substr(1, sLineToParsed.find('"', 1) - 1);
+                    std::string sExpr = sLineToParsed.subview(1, sLineToParsed.find('"', 1) - 1).to_string();
 
                     // Add the zeros, if needed
                     while (sExpr.length() < sPrefix.length() + 2)
@@ -456,7 +456,7 @@ namespace NumeRe
                     // Store the result and continue
                     sLineToParsedTemp += "\"" + sExpr + "\"";
                     if (sLineToParsed.find('"', 1) < sLineToParsed.length() - 1)
-                        sLineToParsed = sLineToParsed.substr(sLineToParsed.find('"', 1) + 1);
+                        sLineToParsed.trim_front(sLineToParsed.find('"', 1) + 1);
                     else
                         sLineToParsed.clear();
                     nPos = 0;
@@ -465,37 +465,38 @@ namespace NumeRe
                 else if (sLineToParsed[0] == '<')
                 {
                     // Does the current object contain a path token?
-                    if (sLineToParsed.find("<>") == 0
-                            || sLineToParsed.find("<this>") == 0
-                            || sLineToParsed.find("<wp>") == 0
-                            || sLineToParsed.find("<loadpath>") == 0
-                            || sLineToParsed.find("<savepath>") == 0
-                            || sLineToParsed.find("<plotpath>") == 0
-                            || sLineToParsed.find("<procpath>") == 0
-                            || sLineToParsed.find("<scriptpath>") == 0)
+                    if (sLineToParsed.starts_with("<>")
+                        || sLineToParsed.starts_with("<this>")
+                        || sLineToParsed.starts_with("<wp>")
+                        || sLineToParsed.starts_with("<loadpath>")
+                        || sLineToParsed.starts_with("<savepath>")
+                        || sLineToParsed.starts_with("<plotpath>")
+                        || sLineToParsed.starts_with("<procpath>")
+                        || sLineToParsed.starts_with("<scriptpath>"))
                     {
                         // Replace the path tokens
-                        if (sLineToParsed.find("<>") == 0 || sLineToParsed.find("<this>") == 0)
+                        if (sLineToParsed.starts_with("<>") || sLineToParsed.starts_with("<this>"))
                             sLineToParsedTemp += "\"" + replacePathSeparator(_option.getExePath()) + "\"";
-                        else if (sLineToParsed.find("<wp>") == 0)
+                        else if (sLineToParsed.starts_with("<wp>"))
                             sLineToParsedTemp += "\"" + replacePathSeparator(_option.getWorkPath()) + "\"";
-                        else if (sLineToParsed.find("<loadpath>") == 0)
+                        else if (sLineToParsed.starts_with("<loadpath>"))
                             sLineToParsedTemp += "\"" + replacePathSeparator(_option.getLoadPath()) + "\"";
-                        else if (sLineToParsed.find("<savepath>") == 0)
+                        else if (sLineToParsed.starts_with("<savepath>"))
                             sLineToParsedTemp += "\"" + replacePathSeparator(_option.getSavePath()) + "\"";
-                        else if (sLineToParsed.find("<plotpath>") == 0)
+                        else if (sLineToParsed.starts_with("<plotpath>"))
                             sLineToParsedTemp += "\"" + replacePathSeparator(_option.getPlotPath()) + "\"";
-                        else if (sLineToParsed.find("<procpath>") == 0)
+                        else if (sLineToParsed.starts_with("<procpath>"))
                             sLineToParsedTemp += "\"" + replacePathSeparator(_option.getProcPath()) + "\"";
                         else
                             sLineToParsedTemp += "\"" + replacePathSeparator(_option.getScriptPath()) + "\"";
-                        sLineToParsed = sLineToParsed.substr(sLineToParsed.find('>') + 1);
+
+                        sLineToParsed.trim_front(sLineToParsed.find('>') + 1);
                     }
                     else if (sLineToParsed.find('>') != std::string::npos)
                     {
                         // If no path token, only use the part in between of the angle brackets
-                        sLineToParsedTemp += "\"" + sLineToParsed.substr(1, sLineToParsed.find('>') - 1) + "\"";
-                        sLineToParsed = sLineToParsed.substr(sLineToParsed.find('>') + 1);
+                        sLineToParsedTemp += "\"" + sLineToParsed.subview(1, sLineToParsed.find('>') - 1) + "\"";
+                        sLineToParsed.trim_front(sLineToParsed.find('>') + 1);
                     }
                     else
                     {
@@ -505,10 +506,10 @@ namespace NumeRe
                     nPos = 0;
                     continue;
                 }
-                else if (containsStringVectorVars(sLineToParsed.substr(0, getPositionOfFirstDelimiter(sLineToParsed.substr(n_pos)))))
+                else if (containsStringVectorVars(sLineToParsed.subview(0, getPositionOfFirstDelimiter(sLineToParsed.subview(n_pos)))))
                 {
                     // Here are string vector variables
-                    std::string sExpr = sLineToParsed.substr(0, getPositionOfFirstDelimiter(sLineToParsed.substr(n_pos)));
+                    std::string sExpr = sLineToParsed.subview(0, getPositionOfFirstDelimiter(sLineToParsed.subview(n_pos))).to_string();
 
                     // Parse the current line
                     StringResult strRes = eval(sExpr, "");
@@ -527,15 +528,15 @@ namespace NumeRe
                     sExpr = createStringVectorVar(strRes.vResult);
                     sLineToParsedTemp += sExpr;
 
-                    if (getPositionOfFirstDelimiter(sLineToParsed.substr(n_pos)) < sLineToParsed.length())
-                        sLineToParsed = sLineToParsed.substr(getPositionOfFirstDelimiter(sLineToParsed.substr(n_pos)));
+                    if (getPositionOfFirstDelimiter(sLineToParsed.subview(n_pos)) < sLineToParsed.length())
+                        sLineToParsed.trim_front(getPositionOfFirstDelimiter(sLineToParsed.subview(n_pos)));
                     else
                         sLineToParsed.clear();
 
                     continue;
                 }
                 else // Set the expression
-                    _parser.SetExpr(sLineToParsed.substr(0, getPositionOfFirstDelimiter(sLineToParsed.substr(n_pos))));
+                    _parser.SetExpr(sLineToParsed.subview(0, getPositionOfFirstDelimiter(sLineToParsed.subview(n_pos))));
 
                 int nResults = 0;
                 mu::value_type* v = 0;
@@ -562,8 +563,8 @@ namespace NumeRe
                 sLineToParsedTemp += sElement;
 
                 // Search for the next delimiter
-                if (getPositionOfFirstDelimiter(sLineToParsed.substr(n_pos)) < sLineToParsed.length())
-                    sLineToParsed = sLineToParsed.substr(getPositionOfFirstDelimiter(sLineToParsed.substr(n_pos)));
+                if (getPositionOfFirstDelimiter(sLineToParsed.subview(n_pos)) < sLineToParsed.length())
+                    sLineToParsed.trim_front(getPositionOfFirstDelimiter(sLineToParsed.subview(n_pos)));
                 else
                     sLineToParsed.clear();
 
@@ -575,21 +576,17 @@ namespace NumeRe
 
         // Append the remaining parts of the current expression
         if (sLineToParsed.length() && sLineToParsedTemp.length())
-            sLineToParsedTemp += sLineToParsed;
+            sLineToParsedTemp += sLineToParsed.to_string();
 
         // Handle remaining vector braces
         if (sLineToParsedTemp.find('{') != std::string::npos)
-        {
             convertVectorToExpression(sLineToParsedTemp, _option);
-        }
 
         // Determine the return value
         if (sLineToParsedTemp.length())
-            sLineToParsed = sLineToParsedTemp;
-        else
-            sLineToParsed = sLine;
+            return sLineToParsedTemp;
 
-        return sLineToParsed;
+        return sLine;
     }
 
 

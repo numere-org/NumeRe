@@ -1825,6 +1825,12 @@ void PlotData::setParams(const std::string& __sCmd, int nType)
 
         if ((nPos = findParameter(sCmd, "cticklabels", '=')))
             sCustomTicks[3] = getArgAtPos(__sCmd, nPos+11, STRINGEXTRACT);
+
+        for (size_t i = 0; i < 4; i++)
+        {
+            // Kind of a hack ...
+            replaceAll(sCustomTicks[i], "\",\"", "\n");
+        }
     }
 
     if (sCmd.find('[') != std::string::npos && (nType == ALL || nType & GLOBAL))
