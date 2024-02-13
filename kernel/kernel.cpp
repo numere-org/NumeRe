@@ -2112,7 +2112,7 @@ bool NumeReKernel::handleFlowControls(std::string& sLine, const std::string& sCu
 bool NumeReKernel::evaluateStrings(std::string& sLine, std::string& sCache, bool& bWriteToCache, KernelStatus& nReturnVal)
 {
     if (_stringParser.isStringExpression(sLine)
-        || (_stringParser.isStringExpression(sCache) && !_memoryManager.isTable(sCache)))
+        || (_stringParser.isStringExpression(sCache) && !_memoryManager.isTable(sCache))) // hack for performance Re:#178
     {
         auto retVal = _stringParser.evalAndFormat(sLine, sCache, false, true, true);
 

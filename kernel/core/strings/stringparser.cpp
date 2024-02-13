@@ -2335,6 +2335,7 @@ namespace NumeRe
         StringExpression strExpr(sExpr);
         size_t nEqPos = strExpr.nEqPos;
 
+        // hack for performance Re:#178
         if (nEqPos)
         {
             std::string sAssignee = sExpression.subview(0, nEqPos).to_string();
