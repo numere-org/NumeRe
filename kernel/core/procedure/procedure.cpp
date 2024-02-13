@@ -427,7 +427,7 @@ Returnvalue Procedure::ProcCalc(string sLine, string sCurrentCommand, int& nByte
     {
         if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sLine)
             || (NumeReKernel::getInstance()->getStringParser().isStringExpression(sCache)
-                && !NumeReKernel::getInstance()->getMemoryManager().isTable(sCache)))
+                && !NumeReKernel::getInstance()->getMemoryManager().isTable(sCache))) // hack for performance Re:#178
         {
             auto retVal = NumeReKernel::getInstance()->getStringParser().evalAndFormat(sLine, sCache, bProcSupressAnswer, true, true);
             NumeReKernel::getInstance()->getStringParser().removeTempStringVectorVars();

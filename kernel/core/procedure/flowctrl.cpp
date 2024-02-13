@@ -3189,7 +3189,7 @@ int FlowCtrl::compile(std::string sLine, int nthCmd)
     // Evaluate std::string expressions
     if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sLine)
         || (NumeReKernel::getInstance()->getStringParser().isStringExpression(sCache)
-            && !_dataRef->isTable(sCache)))
+            && !_dataRef->isTable(sCache))) // hack for performance Re:#178
     {
         // Do not add the byte code, if it was added ad-hoc
         if (!stringParserAdHoc)
