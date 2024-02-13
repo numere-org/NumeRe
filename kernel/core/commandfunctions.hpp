@@ -2172,9 +2172,9 @@ static CommandReturnValues saveDataObject(string& sCmd)
             sFileFormat = cmdParser.getParameterValueAsString("fileformat", "", true, true);
 
         if (cmdParser.getCommand() == "export")
-            sFileName = cmdParser.getFileParameterValue(".dat", "<savepath>", "");
+            sFileName = cmdParser.getFileParameterValueForSaving(".dat", "<savepath>", "");
         else
-            sFileName = cmdParser.getFileParameterValue(".ndat", "<savepath>", "");
+            sFileName = cmdParser.getFileParameterValueForSaving(".ndat", "<savepath>", "");
 
         if (!sFileName.length())
         {

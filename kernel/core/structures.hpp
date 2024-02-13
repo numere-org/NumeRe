@@ -1156,18 +1156,6 @@ class StringViewBase
         }
 
         /////////////////////////////////////////////////
-        /// \brief Reset function.
-        ///
-        /// \return virtual  void
-        ///
-        /////////////////////////////////////////////////
-        virtual inline void clear()
-        {
-            m_start = 0;
-            m_len = 0;
-        }
-
-        /////////////////////////////////////////////////
         /// \brief This member function checks, whether
         /// the passed (absolute) position is part of the
         /// viewed string section. Is mostly used in
@@ -1236,6 +1224,18 @@ class StringViewBase
         /// \brief StringViewBase default constructor.
         /////////////////////////////////////////////////
         StringViewBase() : m_start(0), m_len(0) {}
+
+        /////////////////////////////////////////////////
+        /// \brief Reset function.
+        ///
+        /// \return virtual  void
+        ///
+        /////////////////////////////////////////////////
+        virtual inline void clear()
+        {
+            m_start = 0;
+            m_len = 0;
+        }
 
         /////////////////////////////////////////////////
         /// \brief This member function returns a const
@@ -2364,20 +2364,6 @@ class MutableStringView : public StringViewBase
             m_len = m_data->length();
         }
 
-        /////////////////////////////////////////////////
-        /// \brief Override to clear the internal pointer
-        /// as well.
-        ///
-        /// \return virtual  void
-        ///
-        /////////////////////////////////////////////////
-        virtual inline void clear() override
-        {
-            m_data = nullptr;
-            m_start = 0;
-            m_len = 0;
-        }
-
     public:
         /////////////////////////////////////////////////
         /// \brief MutableStringView default constructor.
@@ -2472,6 +2458,20 @@ class MutableStringView : public StringViewBase
         {
             assign(&data);
             return *this;
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief Override to clear the internal pointer
+        /// as well.
+        ///
+        /// \return virtual  void
+        ///
+        /////////////////////////////////////////////////
+        virtual inline void clear() override
+        {
+            m_data = nullptr;
+            m_start = 0;
+            m_len = 0;
         }
 
         /////////////////////////////////////////////////
@@ -2813,20 +2813,6 @@ class StringView : public StringViewBase
             m_len = m_data->length();
         }
 
-        /////////////////////////////////////////////////
-        /// \brief Override to clear the internal pointer
-        /// as well.
-        ///
-        /// \return virtual  void
-        ///
-        /////////////////////////////////////////////////
-        virtual inline void clear() override
-        {
-            m_data = nullptr;
-            m_start = 0;
-            m_len = 0;
-        }
-
     public:
         /////////////////////////////////////////////////
         /// \brief StringView default constructor.
@@ -2968,6 +2954,20 @@ class StringView : public StringViewBase
         {
             assign(&data);
             return *this;
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief Override to clear the internal pointer
+        /// as well.
+        ///
+        /// \return virtual  void
+        ///
+        /////////////////////////////////////////////////
+        virtual inline void clear() override
+        {
+            m_data = nullptr;
+            m_start = 0;
+            m_len = 0;
         }
 
         /////////////////////////////////////////////////
