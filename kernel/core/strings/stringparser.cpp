@@ -2328,19 +2328,20 @@ namespace NumeRe
     /////////////////////////////////////////////////
     bool StringParser::isStringExpression(StringView sExpression)
     {
-        std::string sExpr = sExpression.to_string();
-        StringExpression strExpr(sExpr);
-        size_t nEqPos = strExpr.nEqPos;
+        size_t nEqPos = findAssignmentOperator(sExpression);
 
         // hack for performance Re:#178
-        if (nEqPos)
+        if (nEqPos != std::string::npos)
         {
-            std::string sAssignee = sExpression.subview(0, nEqPos).to_string();
-            StripSpaces(sAssignee);
+            StringView sAssignee = sExpression.subview(0, nEqPos);
+            sAssignee.strip();
 
-            if (!NumeReKernel::getInstance()->getMemoryManager().isTable(sAssignee) || getMatchingParenthesis(sAssignee)+1 != sAssignee.length())
+            if (!NumeReKernel::getInstance()->getMemoryManager().isTable(sAssignee)
+                || getMatchingParenthesis(sAssignee)+1 != sAssignee.length())
                 nEqPos = 0;
         }
+        else
+            nEqPos = 0;
 
         if (sExpression.find_first_of("\"#", nEqPos) != std::string::npos
 			|| sExpression.find("string(", nEqPos) != std::string::npos

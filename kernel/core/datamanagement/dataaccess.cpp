@@ -249,7 +249,7 @@ static string getLastToken(const string& sLine);
 /// \return size_t
 ///
 /////////////////////////////////////////////////
-static size_t findAssignmentOperator(StringView sCmd)
+size_t findAssignmentOperator(StringView sCmd)
 {
     size_t nQuotes = 0;
 

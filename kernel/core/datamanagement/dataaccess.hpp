@@ -83,6 +83,7 @@ inline bool isValidIndexSet(const Indices& _idx)
 }
 
 std::vector<size_t> getDataGridDimensions(const Indices& _idx, const std::string& sTableName);
+size_t findAssignmentOperator(StringView sCmd);
 
 
 #endif // DATAACCESS_HPP

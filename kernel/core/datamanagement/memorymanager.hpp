@@ -139,6 +139,7 @@ class MemoryManager : public NumeRe::FileAdapter, public StringMemory, public Nu
 		// VALIDATION METHODS
         bool isValid() const;
 		bool isTable(const std::string& sTable) const;
+		bool isTable(StringView sTable) const;
 
         bool isEmpty(const std::string& sTable) const
         {

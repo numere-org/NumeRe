@@ -968,14 +968,39 @@ bool MemoryManager::containsTablesOrClusters(const string& sCmdLine)
 /// the passed table name corresponds to a known
 /// table.
 ///
-/// \param sTable const string&
+/// \param sTable const std::string&
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool MemoryManager::isTable(const string& sTable) const
+bool MemoryManager::isTable(const std::string& sTable) const
 {
     if (mCachesMap.find(sTable.substr(0, sTable.find('('))) != mCachesMap.end())
         return true;
+
+    return false;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This member function returns, whether
+/// the passed table name corresponds to a known
+/// table.
+///
+/// \param sTable StringView
+/// \return bool
+///
+/////////////////////////////////////////////////
+bool MemoryManager::isTable(StringView sTable) const
+{
+    sTable = sTable.subview(0, sTable.find('('));
+
+    for (auto iter = mCachesMap.begin(); iter != mCachesMap.end(); ++iter)
+    {
+        if (sTable == iter->first)
+            return true;
+        else if (sTable < iter->first)
+            return false;
+    }
 
     return false;
 }
