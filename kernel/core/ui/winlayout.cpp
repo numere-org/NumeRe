@@ -569,7 +569,7 @@ static void setParametersInWindow(CommandLineParser& cmdParser, const std::strin
 
             if (_memManager.containsTables(sValue))
             {
-                DataAccessParser _access(sValue);
+                DataAccessParser _access(sValue, false);
                 value.tableValue = _memManager.extractTable(_access.getDataObject(), _access.getIndices().row, _access.getIndices().col);
                 value.stringValue = _access.getDataObject() + "()";
             }

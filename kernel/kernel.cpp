@@ -1047,7 +1047,7 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const std::string& sCommand)
             if (bWriteToCache)
             {
                 // Get the indices from the corresponding function
-                getIndices(sCache, _idx, _parser, _memoryManager, _option);
+                getIndices(sCache, _idx, _parser, _memoryManager, _option, true);
 
                 if (sCache[sCache.find_first_of("({")] == '{')
                 {
@@ -2111,7 +2111,8 @@ bool NumeReKernel::handleFlowControls(std::string& sLine, const std::string& sCu
 /////////////////////////////////////////////////
 bool NumeReKernel::evaluateStrings(std::string& sLine, std::string& sCache, bool& bWriteToCache, KernelStatus& nReturnVal)
 {
-    if (_stringParser.isStringExpression(sLine) || _stringParser.isStringExpression(sCache))
+    if (_stringParser.isStringExpression(sLine)
+        || (_stringParser.isStringExpression(sCache) && !_memoryManager.isTable(sCache))) // hack for performance Re:#178
     {
         auto retVal = _stringParser.evalAndFormat(sLine, sCache, false, true, true);
 

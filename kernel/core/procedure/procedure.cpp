@@ -426,7 +426,8 @@ Returnvalue Procedure::ProcCalc(string sLine, string sCurrentCommand, int& nByte
         || nFlags & ProcedureCommandLine::FLAG_TEMPLATE)
     {
         if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sLine)
-            || NumeReKernel::getInstance()->getStringParser().isStringExpression(sCache))
+            || (NumeReKernel::getInstance()->getStringParser().isStringExpression(sCache)
+                && !NumeReKernel::getInstance()->getMemoryManager().isTable(sCache))) // hack for performance Re:#178
         {
             auto retVal = NumeReKernel::getInstance()->getStringParser().evalAndFormat(sLine, sCache, bProcSupressAnswer, true, true);
             NumeReKernel::getInstance()->getStringParser().removeTempStringVectorVars();
@@ -471,7 +472,7 @@ Returnvalue Procedure::ProcCalc(string sLine, string sCurrentCommand, int& nByte
         if (bWriteToCache)
         {
             // Get the indices from the corresponding function
-            getIndices(sCache, _idx, _parser, _data, _option);
+            getIndices(sCache, _idx, _parser, _data, _option, true);
 
             if (sCache[sCache.find_first_of("({")] == '{')
                 bWriteToCluster = true;

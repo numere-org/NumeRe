@@ -4237,16 +4237,14 @@ bool NumeReWindow::GetFileContents(wxString fileToLoad, wxString &fileContents, 
 	wxFile file(fileToLoad);
 
 	if (!file.IsOpened())
-	{
 		return false;
-	}
 
-	long lng = file.Length();
+	ssize_t lng = file.Length();
 
-	if (lng > 0)
-	{
-		file.ReadAll(&fileContents, wxConvAuto(wxFONTENCODING_CP1252));
-	}
+	if (lng <= 0 || (wxFileOffset)lng != file.Length())
+        return false;
+
+    file.ReadAll(&fileContents, wxConvAuto(wxFONTENCODING_CP1252));
 
     fileName = fn.GetFullName();
     return true;
@@ -6942,11 +6940,6 @@ void NumeReWindow::UpdateLocationIfOpen(const wxFileName& fname, const wxFileNam
 void NumeReWindow::reloadFileIfOpen(const wxString& fname, bool force)
 {
     NumeReEditor* edit;
-    wxString fileContents;
-    wxString fileNameNoPath;
-
-    if (!GetFileContents(fname, fileContents, fileNameNoPath))
-        return;
 
     // Search the file in the list of currently
     // opened files
@@ -6958,6 +6951,12 @@ void NumeReWindow::reloadFileIfOpen(const wxString& fname, bool force)
         if (edit && edit->GetFileNameAndPath() == fname)
         {
             g_logger.info("Reloading '" + fname.ToStdString() + "' to editor.");
+            wxString fileContents;
+            wxString fileNameNoPath;
+
+            if (!GetFileContents(fname, fileContents, fileNameNoPath))
+                return;
+
             m_filesLastSaveTime[fname] = 0;
 
             // If the user has modified the file, as

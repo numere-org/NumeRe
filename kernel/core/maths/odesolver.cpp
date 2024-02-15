@@ -189,7 +189,7 @@ bool Odesolver::solve(const string& sCmd)
     if (!_odeData->isTable(sTarget))
         _odeData->addTable(sTarget, *_odeSettings);
 
-    getIndices(sTarget, _idx, *_odeParser, *_odeData, *_odeSettings);
+    getIndices(sTarget, _idx, *_odeParser, *_odeData, *_odeSettings, true);
 
     if (!isValidIndexSet(_idx))
         return false;

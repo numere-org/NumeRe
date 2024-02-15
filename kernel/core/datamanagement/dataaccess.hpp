@@ -43,7 +43,7 @@ class DataAccessParser
 
     public:
         DataAccessParser();
-        DataAccessParser(StringView sCommand);
+        DataAccessParser(StringView sCommand, bool isAssignment);
         DataAccessParser(const DataAccessParser& _accessParser);
         void evalIndices();
         std::string& getDataObject();
@@ -74,8 +74,8 @@ std::vector<mu::value_type> getDataFromObject(const std::string& sObject, const 
 DataAccessParser getAccessParserForPlotAndFit(StringView sExpression);
 Indices getIndicesForPlotAndFit(const std::string& sExpression, std::string& sDataTable, int& nColumns, bool& openEnd, bool& isCluster);
 
-Indices getIndices(StringView sCmd, mu::Parser& _parser, MemoryManager& _data, const Settings& _option);
-void getIndices(StringView sCmd, Indices& _idx, mu::Parser& _parser, MemoryManager& _data, const Settings& _option);
+Indices getIndices(StringView sCmd, mu::Parser& _parser, MemoryManager& _data, const Settings& _option, bool isAssignment);
+void getIndices(StringView sCmd, Indices& _idx, mu::Parser& _parser, MemoryManager& _data, const Settings& _option, bool isAssignment);
 
 inline bool isValidIndexSet(const Indices& _idx)
 {
@@ -83,6 +83,7 @@ inline bool isValidIndexSet(const Indices& _idx)
 }
 
 std::vector<size_t> getDataGridDimensions(const Indices& _idx, const std::string& sTableName);
+size_t findAssignmentOperator(StringView sCmd);
 
 
 #endif // DATAACCESS_HPP

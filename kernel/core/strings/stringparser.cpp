@@ -79,7 +79,7 @@ namespace NumeRe
         {
             // Check for arguments to parse and
             // get the indices afterwards
-            Indices _idx = getIndices("string(" + parseStringsInIndices(getFunctionArgumentList("string(", sLine, n_pos, nEndPosition).to_string()) + ")", _parser, _data, _option);
+            Indices _idx = getIndices("string(" + parseStringsInIndices(getFunctionArgumentList("string(", sLine, n_pos, nEndPosition).to_string()) + ")", _parser, _data, _option, false);
 
             // Pre-process the indices
             if (_idx.col.isOpenEnd())
@@ -605,7 +605,7 @@ namespace NumeRe
     void StringParser::storeStringToDataObjects(StringResult& strRes, std::string& sObject, size_t& nCurrentComponent, size_t nStrings)
     {
         // Identify the correct table
-        DataAccessParser _accessParser(sObject);
+        DataAccessParser _accessParser(sObject, true);
         //NumeReKernel::print(sObject);
         //NumeReKernel::print(_accessParser.getIndices().row.to_string());
         //NumeReKernel::print(_accessParser.getIndices().sCompiledAccessEquation);
@@ -778,7 +778,7 @@ namespace NumeRe
     /////////////////////////////////////////////////
     void StringParser::storeStringToStringObject(const std::vector<std::string>& vFinal, std::string& sObject, size_t& nCurrentComponent, size_t nStrings)
     {
-        Indices _idx = getIndices(sObject, _parser, _data, _option);
+        Indices _idx = getIndices(sObject, _parser, _data, _option, true);
 
         if (_idx.row.isOpenEnd())
             _idx.row.setRange(0, _idx.row.front()+nStrings-nCurrentComponent-1);
@@ -2328,22 +2328,37 @@ namespace NumeRe
     /////////////////////////////////////////////////
     bool StringParser::isStringExpression(StringView sExpression)
     {
-        if (sExpression.find_first_of("\"#") != std::string::npos
-			|| sExpression.find("string(") != std::string::npos
-			|| sExpression.find("string_cast(") != std::string::npos
-			|| sExpression.find("char(") != std::string::npos
-			|| sExpression.find("getlasterror(") != std::string::npos
-			|| sExpression.find("getuilang(") != std::string::npos
-			|| sExpression.find("getversioninfo(") != std::string::npos
-			|| sExpression.find("valtostr(") != std::string::npos
-			|| sExpression.find("weekday(") != std::string::npos
-            || sExpression.find("to_tex(") != std::string::npos)
+        size_t nEqPos = findAssignmentOperator(sExpression);
+
+        // hack for performance Re:#178
+        if (nEqPos != std::string::npos)
+        {
+            StringView sAssignee = sExpression.subview(0, nEqPos);
+            sAssignee.strip();
+
+            if (!NumeReKernel::getInstance()->getMemoryManager().isTable(sAssignee)
+                || getMatchingParenthesis(sAssignee)+1 != sAssignee.length())
+                nEqPos = 0;
+        }
+        else
+            nEqPos = 0;
+
+        if (sExpression.find_first_of("\"#", nEqPos) != std::string::npos
+			|| sExpression.find("string(", nEqPos) != std::string::npos
+			|| sExpression.find("string_cast(", nEqPos) != std::string::npos
+			|| sExpression.find("char(", nEqPos) != std::string::npos
+			|| sExpression.find("getlasterror(", nEqPos) != std::string::npos
+			|| sExpression.find("getuilang(", nEqPos) != std::string::npos
+			|| sExpression.find("getversioninfo(", nEqPos) != std::string::npos
+			|| sExpression.find("valtostr(", nEqPos) != std::string::npos
+			|| sExpression.find("weekday(", nEqPos) != std::string::npos
+            || sExpression.find("to_tex(", nEqPos) != std::string::npos)
             return true;
 
-		if (containsStringVars(sExpression) || containsStringVectorVars(sExpression))
+		if (containsStringVars(sExpression.subview(nEqPos)) || containsStringVectorVars(sExpression.subview(nEqPos)))
             return true;
 
-        if (sExpression.find('{') == std::string::npos)
+        if (sExpression.find('{', nEqPos) == std::string::npos)
             return false;
 
         const std::map<std::string,NumeRe::Cluster>& mClusterMap = _data.getClusterMap();
@@ -2352,7 +2367,7 @@ namespace NumeRe
         {
             if (iter->second.isMixed() || iter->second.isString())
             {
-                size_t pos = sExpression.find(iter->first + "{");
+                size_t pos = sExpression.find(iter->first + "{", nEqPos);
 
                 if (pos != std::string::npos && (!pos || isDelimiter(sExpression[pos-1])))
                     return true;

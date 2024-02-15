@@ -44,7 +44,7 @@ DataAccessParser::DataAccessParser()
 /// \param sCommand StringView
 ///
 /////////////////////////////////////////////////
-DataAccessParser::DataAccessParser(StringView sCommand)
+DataAccessParser::DataAccessParser(StringView sCommand, bool isAssignment)
 {
     size_t pos = string::npos;
     bIsCluster = false;
@@ -86,7 +86,8 @@ DataAccessParser::DataAccessParser(StringView sCommand)
                     }
 
                     // Calculate the indices
-                    ::getIndices(sCommand.subview(pos), idx, instance->getParser(), instance->getMemoryManager(), instance->getSettings());
+                    ::getIndices(sCommand.subview(pos), idx, instance->getParser(), instance->getMemoryManager(),
+                                 instance->getSettings(), isAssignment);
                     break;
                 }
                 else if (sCommand[i] == '{')
@@ -105,7 +106,8 @@ DataAccessParser::DataAccessParser(StringView sCommand)
                     // Calculate the indices and switch the access
                     // to a cluster access
                     bIsCluster = true;
-                    ::getIndices(sCommand.subview(pos), idx, instance->getParser(), instance->getMemoryManager(), instance->getSettings());
+                    ::getIndices(sCommand.subview(pos), idx, instance->getParser(), instance->getMemoryManager(),
+                                 instance->getSettings(), isAssignment);
                     break;
                 }
                 else
@@ -247,7 +249,7 @@ static string getLastToken(const string& sLine);
 /// \return size_t
 ///
 /////////////////////////////////////////////////
-static size_t findAssignmentOperator(StringView sCmd)
+size_t findAssignmentOperator(StringView sCmd)
 {
     size_t nQuotes = 0;
 
@@ -524,7 +526,7 @@ void replaceDataEntities(string& sLine, const string& sEntity, MemoryManager& _d
 
 		// Reading the indices happens in this function
 		Indices _idx;
-		getIndices(sEntityOccurence, _idx, _parser, _data, _option);
+		getIndices(sEntityOccurence, _idx, _parser, _data, _option, false);
 
 		// check the indices, whether they are possible in the current context
 		if (!isValidIndexSet(_idx))
@@ -691,7 +693,7 @@ static const string handleCachedDataAccess(string& sLine, Parser& _parser, Memor
 		bool isCluster = _access.flags & mu::CachedDataAccess::IS_CLUSTER;
 
 		// Read the indices
-		getIndices(_access.sAccessEquation, _idx, _parser, _data, _option);
+		getIndices(_access.sAccessEquation, _idx, _parser, _data, _option, false);
 
 		// check the indices
 		if (!isValidIndexSet(_idx))
@@ -2409,7 +2411,7 @@ Memory* extractRange(const std::string& sCmd, DataAccessParser& _accessParser, i
 DataAccessParser getAccessParserForPlotAndFit(StringView sExpression)
 {
     // Search for tables and clusters
-    DataAccessParser _accessParser(sExpression);
+    DataAccessParser _accessParser(sExpression, false);
 
     if (!_accessParser.getDataObject().length())
         throw SyntaxError(SyntaxError::TABLE_DOESNT_EXIST, sExpression.to_string(), SyntaxError::invalid_position);

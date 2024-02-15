@@ -4055,7 +4055,7 @@ static CommandReturnValues cmd_smooth(string& sCmd)
 
     DataAccessParser _access = cmdParser.getExprAsDataObject();
 
-    if (_access.getDataObject().length())
+    if (_access.getDataObject().length() && !_access.isCluster())
     {
         if (!isValidIndexSet(_access.getIndices()))
             throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd, _access.getDataObject() + "(", _access.getIndexString());
@@ -4611,7 +4611,7 @@ static CommandReturnValues cmd_retouch(string& sCmd)
     if (findCommand(sCmd).sString == "retoque")
         NumeReKernel::issueWarning(_lang.get("COMMON_COMMAND_DEPRECATED", sCmd));
 
-    DataAccessParser _access(sCmd);
+    DataAccessParser _access(sCmd, false);
 
     if (_access.getDataObject().length())
     {

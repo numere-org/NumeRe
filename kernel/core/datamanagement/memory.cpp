@@ -3601,15 +3601,18 @@ static bool closeEnough(const mu::value_type& v1, const mu::value_type& v2)
 ///
 /// \param vColNames const std::vector<std::string>&
 /// \param enableRegEx bool
+/// \param autoCreate bool
 /// \return std::vector<mu::value_type>
 ///
 /////////////////////////////////////////////////
-std::vector<mu::value_type> Memory::findCols(const std::vector<std::string>& vColNames, bool enableRegEx) const
+std::vector<mu::value_type> Memory::findCols(const std::vector<std::string>& vColNames, bool enableRegEx, bool autoCreate)
 {
     std::vector<mu::value_type> vColIndices;
 
     for (const auto& sName : vColNames)
     {
+        bool found = false;
+
         for (size_t i = 0; i < memArray.size(); i++)
         {
             if (enableRegEx)
@@ -3620,8 +3623,22 @@ std::vector<mu::value_type> Memory::findCols(const std::vector<std::string>& vCo
             else
             {
                 if (memArray[i] && memArray[i]->m_sHeadLine == sName)
+                {
                     vColIndices.push_back(i+1.0);
+                    found = true;
+                }
             }
+        }
+
+        if (!found && !enableRegEx && autoCreate)
+        {
+            int pos = getCols(false);
+            resizeMemory(-1, pos+1);
+            memArray[pos].reset(new ValueColumn);
+            memArray[pos]->m_sHeadLine = sName;
+            g_logger.info("Created new column " + toString(pos+1) + " for '" + sName + "'");
+            vColIndices.push_back(pos+1.0);
+            m_meta.modify();
         }
     }
 

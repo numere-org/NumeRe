@@ -2,3 +2,5 @@ Fixed	Titles in animations appear now on every frame again.
 Fixed	The num2string parser operator "#" may now handle floating point values correctly.
 Applied	One can now pass custom axis ticks using a list of strings.
 Fixed	"export" and "save" will now create their target folder automatically.
+Added	Experimental feature: it is now possible to create new columns in tables if values are assigned to an unknown column using string indexing. The new column will be appended at the end of the table.
+Fixed	Resolved a crash originating from "large file not supported" debug message.

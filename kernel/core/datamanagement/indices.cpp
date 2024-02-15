@@ -42,15 +42,16 @@ static void expandStringIndexVectors(Indices& _idx, MemoryManager& _data);
 /// \param _parser Parser&
 /// \param _data MemoryManager&
 /// \param _option const Settings&
+/// \param isAssignment bool
 /// \return Indices
 ///
 /// \deprecated Marked as deprecated.
 ///
 /////////////////////////////////////////////////
-Indices getIndices(StringView sCmd, Parser& _parser, MemoryManager& _data, const Settings& _option)
+Indices getIndices(StringView sCmd, Parser& _parser, MemoryManager& _data, const Settings& _option, bool isAssignment)
 {
     Indices _idx;
-    getIndices(sCmd, _idx, _parser, _data, _option);
+    getIndices(sCmd, _idx, _parser, _data, _option, isAssignment);
     return _idx;
 }
 
@@ -65,10 +66,11 @@ Indices getIndices(StringView sCmd, Parser& _parser, MemoryManager& _data, const
 /// \param _parser Parser&
 /// \param _data MemoryManager&
 /// \param _option const Settings&
+/// \param isAssignment bool
 /// \return void
 ///
 /////////////////////////////////////////////////
-void getIndices(StringView sCmd, Indices& _idx,  Parser& _parser, MemoryManager& _data, const Settings& _option)
+void getIndices(StringView sCmd, Indices& _idx,  Parser& _parser, MemoryManager& _data, const Settings& _option, bool isAssignment)
 {
     StringView sTableName;
     StringView sIndices;
@@ -160,7 +162,8 @@ void getIndices(StringView sCmd, Indices& _idx,  Parser& _parser, MemoryManager&
                         NumeRe::Cluster& ans = NumeReKernel::getInstance()->getAns();
 
                         if (ans.isString())
-                            idx[i] = _parser.CreateTempVectorVar(_data.findCols(sTableName.to_string(), ans.getInternalStringArray(), false));
+                            idx[i] = _parser.CreateTempVectorVar(_data.findCols(sTableName.to_string(), ans.getInternalStringArray(),
+                                                                                false, isAssignment));
                         else if (idx[i].find(',') != std::string::npos)
                             idx[i] = "{" + idx[i] + "}";
                     }
