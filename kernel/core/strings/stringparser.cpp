@@ -2331,7 +2331,7 @@ namespace NumeRe
         size_t nEqPos = findAssignmentOperator(sExpression);
 
         // hack for performance Re:#178
-        if (nEqPos != std::string::npos)
+        if (nEqPos < sExpression.length())
         {
             StringView sAssignee = sExpression.subview(0, nEqPos);
             sAssignee.strip();

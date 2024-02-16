@@ -941,7 +941,7 @@ bool writeToFile(CommandLineParser& cmdParser)
 
 	bool bAppend = false;
 	bool bTrunc = true;
-	bool bNoQuotes = cmdParser.hasParam("nq") || cmdParser.hasParam("noquotes");
+	bool bNoQuotes = true;
 	bool bKeepEmptyLines = cmdParser.hasParam("keepdim") || cmdParser.hasParam("k");
 	FileSystem _fSys;
 	_fSys.initializeFromKernel();
@@ -999,15 +999,21 @@ bool writeToFile(CommandLineParser& cmdParser)
 
     // Extract the expression
 	std::string sExpression = cmdParser.getExpr();
+	NumeReKernel* instance = NumeReKernel::getInstance();
+
+	// Although this is not detected as string expression, the contents of a table
+	// can contain strings
+	if (!instance->getStringParser().isStringExpression(sExpression)
+        && instance->getMemoryManager().containsTablesOrClusters(sExpression))
+        getDataElements(sExpression, instance->getParser(), instance->getMemoryManager(), instance->getSettings());
 
 	// Parse the expression, which should be a string
-	if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sExpression)
-        || NumeReKernel::getInstance()->getMemoryManager().containsClusters(sExpression))
+	if (instance->getStringParser().isStringExpression(sExpression))
 	{
 		sExpression += " -komq";
 		string sDummy = "";
-		NumeReKernel::getInstance()->getStringParser().evalAndFormat(sExpression, sDummy, true, false, true);
-		sExpression = NumeReKernel::getInstance()->getAns().serialize();
+		instance->getStringParser().evalAndFormat(sExpression, sDummy, true, false, true);
+		sExpression = instance->getAns().serialize();
 	}
 	else
 		throw SyntaxError(SyntaxError::NO_STRING_FOR_WRITING, cmdParser.getCommandLine(), SyntaxError::invalid_position);
