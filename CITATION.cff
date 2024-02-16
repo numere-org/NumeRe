@@ -3,13 +3,13 @@ title: 'NumeRe: Framework for Numerical Computations'
 message: 'If you use this software, please cite it as below.'
 type: software
 authors:
-  - family-names: Hänel
+  - family-names: HÃ¤nel
     given-names: Erik
   - name: NumeRe.org
     website: 'https://www.numere.org'
 identifiers:
   - type: doi
-    value: 10.5281/zenodo.10617502
+    value: 10.5281/zenodo.10617501
 repository-code: 'https://github.com/numere-org/NumeRe'
 url: 'https://www.numere.org'
 abstract: >-
