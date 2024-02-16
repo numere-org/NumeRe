@@ -520,7 +520,7 @@ std::string renderTeX(std::vector<std::string>&& vDocArticle, const std::string&
         // the intended style
         if (vDocArticle[i].find("<example ") != std::string::npos) // Beispiel-Tags
         {
-            sTeX += "\\subsection{"+ _lang.get("DOC_HELP_EXAMPLE_HEADLINE") +"}\n";
+            sTeX += "\\subsection{\\nrexample}\n";
             bool bVerb = false;
             bool bCodeBlock = false;
             bool bPlain = false;
@@ -735,7 +735,7 @@ std::string renderTeX(std::vector<std::string>&& vDocArticle, const std::string&
 
                     vDocArticle[i].replace(pos, endpos+9-pos,
                                            "\n\\subsection{Syntax}\n\\begin{lstlisting}\n" + formatCodeBlock(sExprBlock, false)
-                                                + "\n\\end{lstlisting}\n\\subsection{" + _lang.get("DOC_HELP_DESC_HEADLINE") + "}\n");
+                                                + "\n\\end{lstlisting}\n\\subsection{\\nrdesc}\n");
 
                     pos = vDocArticle[i].find("<syntax>");
                 }
@@ -757,7 +757,7 @@ std::string renderTeX(std::vector<std::string>&& vDocArticle, const std::string&
                     {
                         i = j;
                         sTeX += formatCodeBlock(sCodeContent, false)
-                            + "\\end{lstlisting}\n\\subsection{" + _lang.get("DOC_HELP_DESC_HEADLINE") + "}\n";
+                            + "\\end{lstlisting}\n\\subsection{\\nrdesc}\n";
                         break;
                     }
 
