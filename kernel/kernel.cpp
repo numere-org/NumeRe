@@ -2214,8 +2214,10 @@ std::pair<std::string, size_t> NumeReKernel::getErrorLocation()
 {
     // Find it in a script
     if (_script.isOpen() && _script.isValid())
-        return std::make_pair(_script.getScriptFileName(),
-                              _debugger.getLineNumber() != SyntaxError::invalid_position ? _debugger.getLineNumber() : _script.getCurrentLine()-1);
+        return std::make_pair(_debugger.getErrorModule().length()
+                              ? _debugger.getErrorModule() : _script.getScriptFileName(),
+                              _debugger.getLineNumber() != SyntaxError::invalid_position
+                              ? _debugger.getLineNumber() : _script.getCurrentLine()-1);
 
     // Find it in a procedure
     if (_debugger.getErrorModule().length())
