@@ -2145,7 +2145,7 @@ static CommandReturnValues saveDataObject(string& sCmd)
     // save the copied data
     DataAccessParser _access = cmdParser.getExprAsDataObject();
 
-    if (_access.getDataObject().length())
+    if (_access.getDataObject().length() && !_access.isCluster())
     {
         // Create the new instance
         MemoryManager _cache;

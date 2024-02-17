@@ -8,3 +8,4 @@ Fixed	All headlines in the PDF documentation are now in the correct language.
 Cleaned	"write" now uses "noquotes" as default. The parameter was removed and has no effect any more.
 Fixed	A single table column now also counts as valid input for "write".
 Fixed	Error locations now be found in all locations even if the debugger is not active.
+Fixed	If one tries to save a cluster, then an error message appears instead of a crash.
