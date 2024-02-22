@@ -3733,20 +3733,27 @@ bool readAudioFile(CommandLineParser& cmdParser)
         size_t nChannels = audiofile->getChannels();
 
         // Try to read the entire file
-        _data.resizeTable(nChannels > 1 && _targetIdx.col.size() > 1 ? _targetIdx.col.subidx(0, 2).max()+1 : _targetIdx.col.front()+1,
+        _data.resizeTable(nChannels > 1 && _targetIdx.col.size() > 1
+                          ? _targetIdx.col.subidx(0, 2).max()+1
+                          : _targetIdx.col.front()+1,
                           sTarget);
 
         Memory* _table = _data.getTable(sTarget);
+        int rowmin = _targetIdx.row.subidx(0, nLen).min();
         int rowmax = _targetIdx.row.subidx(0, nLen).max();
 
-        // Write the last row for preallocation
-        _table->writeData(rowmax, _targetIdx.col.front(), 0.0);
+        // Write the first row for conversion and afterwards
+        // last row for preallocation
+        _table->writeData(rowmin, _targetIdx.col.front(), 0.0);
         _table->convertColumns(_targetIdx.col.subidx(0, 1), "value.f32");
+        _table->writeData(rowmax, _targetIdx.col.front(), 0.0);
 
+        // Same for second channel, if any
         if (nChannels > 1 && _targetIdx.col.size() > 1)
         {
-            _table->writeData(rowmax, _targetIdx.col[1], 0.0);
+            _table->writeData(rowmin, _targetIdx.col[1], 0.0);
             _table->convertColumns(_targetIdx.col.subidx(1, 1), "value.f32");
+            _table->writeData(rowmax, _targetIdx.col[1], 0.0);
         }
 
         for (size_t i = 0; i < nLen; i++)
@@ -3846,16 +3853,21 @@ bool seekInAudioFile(CommandLineParser& cmdParser)
                       sTarget);
 
     Memory* _table = _data.getTable(sTarget);
+    int rowmin = _targetIdx.row.subidx(0, nLen).min();
     int rowmax = _targetIdx.row.subidx(0, nLen).max();
 
-    // Write the last row for pre-allocation
-    _table->writeData(rowmax, _targetIdx.col.front(), 0.0);
+    // Write the first row for conversion and afterwards
+    // last row for preallocation
+    _table->writeData(rowmin, _targetIdx.col.front(), 0.0);
     _table->convertColumns(_targetIdx.col.subidx(0, 1), "value.f32");
+    _table->writeData(rowmax, _targetIdx.col.front(), 0.0);
 
+    // Same for second channel, if any
     if (nChannels > 1 && _targetIdx.col.size() > 1)
     {
-        _table->writeData(rowmax, _targetIdx.col[1], 0.0);
+        _table->writeData(rowmin, _targetIdx.col[1], 0.0);
         _table->convertColumns(_targetIdx.col.subidx(1, 1), "value.f32");
+        _table->writeData(rowmax, _targetIdx.col[1], 0.0);
     }
 
     for (size_t i = 0; i < nLen; i++)
@@ -4070,6 +4082,7 @@ bool shortTimeFourierAnalysis(CommandLineParser& cmdParser)
     _real.Create(_idx.row.size());
     _imag.Create(_idx.row.size());
 
+    #pragma omp parallel for
     for (size_t i = 0; i < _idx.row.size(); i++)
     {
         mu::value_type val = _data.getElement(_idx.row[i], _idx.col[1], _accessParser.getDataObject());
@@ -4115,26 +4128,38 @@ bool shortTimeFourierAnalysis(CommandLineParser& cmdParser)
     // Define headline
     _data.setHeadLineElement(_target.col[1], sTargetCache, "f [Hz]");
 
-    // Write the STFA map
-    for (int i = 0; i < _result.GetNx(); i++)
+    Memory* _mem = _data.getTable(sTargetCache);
+
+    // Write first row in slow mode for pre-allocation
+    for (int j = 0; j < _result.GetNy() / 2; j++)
     {
-        if (_target.row[i] == VectorIndex::INVALID)
-            break;
+        if (_target.col[j+2] == VectorIndex::INVALID)
+            continue;
 
-        for (int j = 0; j < _result.GetNy() / 2; j++)
-        {
-            if (_target.col[j+2] == VectorIndex::INVALID)
-                break;
+        // Pre-allocate, first row index has to be valid
+        _mem->writeData(_target.row.front(), _target.col[j+2], _result[(j + _result.GetNy() / 2)*_result.GetNx()]);
 
-            _data.writeToTable(_target.row[i], _target.col[j+2], sTargetCache, _result[i + (j + _result.GetNy() / 2)*_result.GetNx()]);
-
-            // Update the headline
-            if (!i)
-                _data.setHeadLineElement(_target.col[j+2], sTargetCache, "A(f(" + toString(j + 1) + "))");
-        }
+        // Update the headline
+        _mem->setHeadLineElement(_target.col[j+2], "A(f(" + toString(j + 1) + "))");
     }
 
     _data.convertColumns(sTargetCache, _target.col.subidx(2, _result.GetNy()), "value.f64");
+
+    // Write the STFA map in fast mode
+    #pragma omp parallel for
+    for (int j = 0; j < _result.GetNy() / 2; j++)
+    {
+        if (_target.col[j+2] == VectorIndex::INVALID)
+            continue;
+
+        for (int i = 1; i < _result.GetNx(); i++)
+        {
+            if (_target.row[i] == VectorIndex::INVALID)
+                break;
+
+            _mem->writeDataDirectUnsafe(_target.row[i], _target.col[j+2], _result[i + (j + _result.GetNy() / 2)*_result.GetNx()]);
+        }
+    }
 
     cmdParser.clearReturnValue();
     cmdParser.setReturnValue(sTargetCache);

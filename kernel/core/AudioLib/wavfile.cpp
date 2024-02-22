@@ -125,6 +125,8 @@ namespace Audio
 
             m_WavFileStream.seekg(40);
             m_WavFileStream.read((char*)&m_DataBlockLength, 4);
+
+            m_maxVal = getMaxVal(m_Header.bitsPerSample);
         }
 
         return true;
@@ -173,6 +175,7 @@ namespace Audio
         m_Header.bitsPerSample = 16;
         m_Header.bytesPerSecond = m_Header.sampleRate * m_Header.bitsPerSample / 8 * m_Header.channels;
         m_Header.blockAlign = m_Header.bitsPerSample / 8 * m_Header.channels;
+        m_maxVal = getMaxVal(m_Header.bitsPerSample);
 
         m_WavFileStream.open(sName.c_str(), std::ios_base::out | std::ios_base::binary | std::ios_base::trunc);
         m_WavFileStream.write("RIFF    WAVEfmt ", 16);
@@ -194,12 +197,12 @@ namespace Audio
     {
         if (m_WavFileStream.is_open() && m_WavFileStream.good())
         {
-            int16_t channelvalue = sample.leftOrMono * getMaxVal(16);
+            int16_t channelvalue = sample.leftOrMono * m_maxVal;
             m_WavFileStream.write((char*)&channelvalue, 2);
 
             if (m_Header.channels > 1 && !std::isnan(sample.right))
             {
-                channelvalue = sample.right * getMaxVal(16);
+                channelvalue = sample.right * m_maxVal;
                 m_WavFileStream.write((char*)&channelvalue, 2);
             }
         }
@@ -219,13 +222,13 @@ namespace Audio
         if (m_Header.channels == 1)
         {
             m_WavFileStream.read((char*)samples, m_Header.blockAlign);
-            return Sample(convertFromUnsigned(samples[0] / getMaxVal(m_Header.bitsPerSample)));
+            return Sample(convertFromUnsigned(samples[0] / m_maxVal));
         }
         else
         {
             m_WavFileStream.read((char*)&samples[0], m_Header.blockAlign/m_Header.channels);
             m_WavFileStream.read((char*)&samples[1], m_Header.blockAlign/m_Header.channels);
-            return Sample(convertFromUnsigned(samples[0] / getMaxVal(m_Header.bitsPerSample)), convertFromUnsigned(samples[1] / getMaxVal(m_Header.bitsPerSample)));
+            return Sample(convertFromUnsigned(samples[0] / m_maxVal), convertFromUnsigned(samples[1] / m_maxVal));
         }
 
         return Sample(NAN);

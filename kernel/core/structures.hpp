@@ -262,6 +262,8 @@ class VectorIndex
             {
                 if (!std::isnan(indices[i].real()) && !std::isinf(indices[i].real()))
                     vStorage.push_back(intCast(indices[i]) - 1);
+                else
+                    vStorage.push_back(INVALID);
             }
 
             expand = false;

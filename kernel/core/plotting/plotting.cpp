@@ -2407,6 +2407,7 @@ void Plot::create2dDrawing(vector<string>& vDrawVector)
                     break;
                 }
             }
+
             sStyle = sStyle.substr(0, sStyle.rfind(')')) + " -nq";
             NumeReKernel::getInstance()->getStringParser().evalAndFormat(sStyle, sDummy, true);
         }
@@ -2423,6 +2424,7 @@ void Plot::create2dDrawing(vector<string>& vDrawVector)
                     break;
                 }
             }
+
             sTextString += " -nq";
             NumeReKernel::getInstance()->getStringParser().evalAndFormat(sTextString, sDummy, true);
         }

@@ -261,7 +261,12 @@ size_t findAssignmentOperator(StringView sCmd)
         if (!nQuotes)
         {
             if (sCmd[i] == '(' || sCmd[i] == '{')
-                i += getMatchingParenthesis(sCmd.subview(i));
+            {
+                size_t match = getMatchingParenthesis(sCmd.subview(i));
+
+                if (match != std::string::npos)
+                    i += match;
+            }
 
             if (sCmd[i] == '='
                 && i > 0
@@ -823,7 +828,7 @@ static void replaceEntityOccurence(string& sLine, const string& sEntityOccurence
 		{
 			// Calculate the statistical value and replace it with the result
 			// Although it seems to be duplicated code, these are only one-liners for each case
-			if (sLeft == "std(")
+			/*if (sLeft == "std(")
 			{
 				_parser.DisableAccessCaching();
 				sLine = sLine.substr(0, sLine.rfind("std(", sLine.find(sEntityOccurence)))
@@ -914,7 +919,7 @@ static void replaceEntityOccurence(string& sLine, const string& sEntityOccurence
 						+ createTempVar(sEntityReplacement + "~norm", isCluster ? _data.getCluster(sEntityName).norm(_idx.row) : _data.norm(sEntityName, _idx.row, _idx.col), _parser)
 						+ sLine.substr(sLine.find(')', sLine.find(sEntityOccurence) + sEntityOccurence.length()) + 1);
 			}
-			else if (sLeft == "cmp(")
+			else*/ if (sLeft == "cmp(")
 			{
 				// cmp() is more difficult
 				_parser.DisableAccessCaching();

@@ -58,6 +58,7 @@ namespace Audio
             uint32_t m_DataBlockLength;
             const long long int m_StreamOffset = 44;
             bool isNewFile;
+            float m_maxVal;
 
             bool readHeader();
             void closeFile();
