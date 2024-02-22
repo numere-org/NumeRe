@@ -5205,8 +5205,17 @@ void Plot::fitPlotRanges(size_t nPlotCompose, bool bNewSubPlot)
                     _pInfo.ranges[YRANGE].reset(_pInfo.secranges[YRANGE].min(), _pInfo.secranges[YRANGE].max());
             }
 
-            _pInfo.ranges[YRANGE].expand(1.1, (_pData.getLogscale(YRANGE) || _pData.getSettings(PlotData::INT_COORDS) != CARTESIAN
-                                               ? 0.0 : -INFINITY));
+            // Adapt ranges for barcharts to ensure that the zero is part of the interval
+            if (_pData.getSettings(PlotData::FLOAT_BARS) && _pInfo.ranges[YRANGE].min()*_pInfo.ranges[YRANGE].max() >= 0)
+            {
+                if (std::abs(_pInfo.ranges[YRANGE].min()) < std::abs(_pInfo.ranges[YRANGE].max()))
+                    _pInfo.ranges[YRANGE].reset(0.0, _pInfo.ranges[YRANGE].max()*1.05);
+                else
+                    _pInfo.ranges[YRANGE].reset(_pInfo.ranges[YRANGE].min()*1.05, 0.0);
+            }
+            else
+                _pInfo.ranges[YRANGE].expand(1.1, (_pData.getLogscale(YRANGE) || _pData.getSettings(PlotData::INT_COORDS) != CARTESIAN
+                                                   ? 0.0 : -INFINITY));
 
             if (isCmplxPlane)
                 _pInfo.ranges[XRANGE].expand(1.1);
