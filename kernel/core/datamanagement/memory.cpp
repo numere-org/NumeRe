@@ -3126,9 +3126,9 @@ mu::value_type Memory::cmp(const VectorIndex& _vLine, const VectorIndex& _vCol, 
                     return val;
 
                 if (_vLine[0] == _vLine[_vLine.size() - 1])
-                    return _vCol[j] + 1;
+                    return j+1;
 
-                return _vLine[i] + 1;
+                return i+1;
             }
             else if (nType & RETURN_GE && val.real() > dRef.real())
             {
@@ -3138,18 +3138,18 @@ mu::value_type Memory::cmp(const VectorIndex& _vLine, const VectorIndex& _vCol, 
                         return val.real();
 
                     if (_vLine[0] == _vLine[_vLine.size() - 1])
-                        return _vCol[j] + 1;
+                        return j+1;
 
-                    return _vLine[i] + 1;
+                    return i+1;
                 }
 
                 if (nKeep == -1 || val.real() < dKeep)
                 {
                     dKeep = val.real();
                     if (_vLine[0] == _vLine[_vLine.size() - 1])
-                        nKeep = _vCol[j];
+                        nKeep = j;
                     else
-                        nKeep = _vLine[i];
+                        nKeep = i;
                 }
                 else
                     continue;
@@ -3162,18 +3162,18 @@ mu::value_type Memory::cmp(const VectorIndex& _vLine, const VectorIndex& _vCol, 
                         return val.real();
 
                     if (_vLine[0] == _vLine[_vLine.size() - 1])
-                        return _vCol[j] + 1;
+                        return j+1;
 
-                    return _vLine[i] + 1;
+                    return i+1;
                 }
 
                 if (nKeep == -1 || val.real() > dKeep)
                 {
                     dKeep = val.real();
                     if (_vLine[0] == _vLine[_vLine.size() - 1])
-                        nKeep = _vCol[j];
+                        nKeep = j;
                     else
-                        nKeep = _vLine[i];
+                        nKeep = i;
                 }
                 else
                     continue;
@@ -3186,7 +3186,7 @@ mu::value_type Memory::cmp(const VectorIndex& _vLine, const VectorIndex& _vCol, 
     else if (nType & RETURN_VALUE)
         return dKeep;
     else
-        return nKeep + 1;
+        return nKeep+1;
 }
 
 

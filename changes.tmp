@@ -12,3 +12,4 @@ Fixed	If one tries to save a cluster, then an error message appears instead of a
 Fixed	If the values "nan" and "inf" are used within an index vector, then they are treated as invalid values and will always return an invalid value.
 Applied	Increased performance of STFA, audioread and some statistics functions.
 Cleaned	Bar charts now always include the value y=0. In some situations it is reasonable to enable "origin=sliding" as an additional plotting option.
+Fixed	The "cmp()" function does now return the indices with respect to the passed array and not with respect to the arrays origin (MAY BREAK CODE).

@@ -1762,7 +1762,8 @@ namespace NumeRe
             if (_vLine[i] < 0 || _vLine[i] >= (int)vClusterArray.size())
                 continue;
 
-            if (vClusterArray[_vLine[i]]->getType() != ClusterItem::ITEMTYPE_DOUBLE || std::isnan(std::abs(vClusterArray[_vLine[i]]->getDouble())))
+            if (vClusterArray[_vLine[i]]->getType() != ClusterItem::ITEMTYPE_DOUBLE
+                || std::isnan(std::abs(vClusterArray[_vLine[i]]->getDouble())))
                 continue;
 
             if (vClusterArray[_vLine[i]]->getDouble() == dRef)
@@ -1770,7 +1771,7 @@ namespace NumeRe
                 if (nType & RETURN_VALUE)
                     return vClusterArray[_vLine[i]]->getDouble();
 
-                return _vLine[i] + 1;
+                return i+1;
             }
             else if (nType & RETURN_GE && vClusterArray[_vLine[i]]->getDouble().real() > dRef.real())
             {
@@ -1779,13 +1780,13 @@ namespace NumeRe
                     if (nType & RETURN_VALUE)
                         return vClusterArray[_vLine[i]]->getDouble().real();
 
-                    return _vLine[i]+1;
+                    return i+1;
                 }
 
                 if (nKeep == -1 || vClusterArray[_vLine[i]]->getDouble().real() < dKeep.real())
                 {
                     dKeep = vClusterArray[_vLine[i]]->getDouble().real();
-                    nKeep = _vLine[i];
+                    nKeep = i;
                 }
                 else
                     continue;
@@ -1797,13 +1798,13 @@ namespace NumeRe
                     if (nType & RETURN_VALUE)
                         return vClusterArray[_vLine[i]]->getDouble().real();
 
-                    return _vLine[i]+1;
+                    return i+1;
                 }
 
                 if (nKeep == -1 || vClusterArray[_vLine[i]]->getDouble().real() > dKeep.real())
                 {
                     dKeep = vClusterArray[_vLine[i]]->getDouble().real();
-                    nKeep = _vLine[i];
+                    nKeep = i;
                 }
                 else
                     continue;
