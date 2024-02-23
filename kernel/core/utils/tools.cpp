@@ -1649,7 +1649,7 @@ static void parseArg(std::string& sArg, int flags)
     // Read data
     if (instance->getMemoryManager().containsTablesOrClusters(sArg)
         && !instance->getStringParser().isStringExpression(sArg))
-        getDataElements(sArg, instance->getParser(), instance->getMemoryManager(), instance->getSettings());
+        getDataElements(sArg, instance->getParser(), instance->getMemoryManager());
 
     // String evaluation
     if (instance->getStringParser().isStringExpression(sArg))

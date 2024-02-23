@@ -400,7 +400,7 @@ Returnvalue Procedure::ProcCalc(string sLine, string sCurrentCommand, int& nByte
             if (nCurrentByteCode == ProcedureCommandLine::BYTECODE_NOT_PARSED)
                 nByteCode |= ProcedureCommandLine::BYTECODE_DATAACCESS;
 
-            sCache = getDataElements(sLine, _parser, _data, _option);
+            sCache = getDataElements(sLine, _parser, _data);
 
             if (sCache.length() && sCache.find('#') == string::npos)
                 bWriteToCache = true;
@@ -472,7 +472,7 @@ Returnvalue Procedure::ProcCalc(string sLine, string sCurrentCommand, int& nByte
         if (bWriteToCache)
         {
             // Get the indices from the corresponding function
-            getIndices(sCache, _idx, _parser, _data, _option, true);
+            getIndices(sCache, _idx, _parser, _data, true);
 
             if (sCache[sCache.find_first_of("({")] == '{')
                 bWriteToCluster = true;

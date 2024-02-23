@@ -41,17 +41,16 @@ static void expandStringIndexVectors(Indices& _idx, MemoryManager& _data);
 /// \param sCmd StringView
 /// \param _parser Parser&
 /// \param _data MemoryManager&
-/// \param _option const Settings&
 /// \param isAssignment bool
 /// \return Indices
 ///
 /// \deprecated Marked as deprecated.
 ///
 /////////////////////////////////////////////////
-Indices getIndices(StringView sCmd, Parser& _parser, MemoryManager& _data, const Settings& _option, bool isAssignment)
+Indices getIndices(StringView sCmd, Parser& _parser, MemoryManager& _data, bool isAssignment)
 {
     Indices _idx;
-    getIndices(sCmd, _idx, _parser, _data, _option, isAssignment);
+    getIndices(sCmd, _idx, _parser, _data, isAssignment);
     return _idx;
 }
 
@@ -65,12 +64,11 @@ Indices getIndices(StringView sCmd, Parser& _parser, MemoryManager& _data, const
 /// \param _idx Indices&
 /// \param _parser Parser&
 /// \param _data MemoryManager&
-/// \param _option const Settings&
 /// \param isAssignment bool
 /// \return void
 ///
 /////////////////////////////////////////////////
-void getIndices(StringView sCmd, Indices& _idx,  Parser& _parser, MemoryManager& _data, const Settings& _option, bool isAssignment)
+void getIndices(StringView sCmd, Indices& _idx,  Parser& _parser, MemoryManager& _data, bool isAssignment)
 {
     StringView sTableName;
     StringView sIndices;
@@ -121,7 +119,7 @@ void getIndices(StringView sCmd, Indices& _idx,  Parser& _parser, MemoryManager&
 
     // If the argument contains tables, get their values. This leads to a recursion!
     if (_data.containsTablesOrClusters(_idx.sCompiledAccessEquation))
-        getDataElements(_idx.sCompiledAccessEquation, _parser, _data, _option);
+        getDataElements(_idx.sCompiledAccessEquation, _parser, _data);
 
     // update the dimension variables
     if (sCmd[nPos] == '(')

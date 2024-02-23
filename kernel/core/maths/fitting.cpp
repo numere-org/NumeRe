@@ -408,7 +408,6 @@ static vector<double> evaluateFittingParams(FittingData& fitData, string& sCmd, 
     Parser& _parser = NumeReKernel::getInstance()->getParser();
     MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
     FunctionDefinitionManager& _functions = NumeReKernel::getInstance()->getDefinitions();
-    Settings& _option = NumeReKernel::getInstance()->getSettings();
 
     vector<double> vInterVal;
     static const string sBADFUNCTIONS = "ascii(),char(),findfile(),findparam(),gauss(),getopt(),is_string(),rand(),replace(),replaceall(),split(),strfnd(),string_cast(),strrfnd(),strlen(),time(),to_char(),to_cmd(),to_string(),to_value()";
@@ -421,7 +420,7 @@ static vector<double> evaluateFittingParams(FittingData& fitData, string& sCmd, 
 
         if (fitData.sChiMap.length())
         {
-            getIndices(fitData.sChiMap, _idx, _parser, _data, _option, true);
+            getIndices(fitData.sChiMap, _idx, _parser, _data, true);
 
             if (!isValidIndexSet(_idx))
                 throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd, SyntaxError::invalid_position, _idx.row.to_string() + ", " + _idx.col.to_string());
@@ -473,7 +472,7 @@ static vector<double> evaluateFittingParams(FittingData& fitData, string& sCmd, 
 
     // Decode possible interval definitions in the command
     // line option list
-    vInterVal = readAndParseIntervals(sCmd, _parser, _data, _functions, _option, true);
+    vInterVal = readAndParseIntervals(sCmd, _parser, _data, _functions, true);
 
     // Evaluate the contents of the parsed interval definitions
     for (size_t i = 0; i < vInterVal.size(); i += 2)
@@ -631,11 +630,11 @@ static vector<double> evaluateFittingParams(FittingData& fitData, string& sCmd, 
 
         if (_data.containsTablesOrClusters(fitData.sParams))
         {
-            getDataElements(fitData.sParams, _parser, _data, _option);
+            getDataElements(fitData.sParams, _parser, _data);
         }
 
         if (fitData.sParams.find("{") != string::npos && NumeReKernel::getInstance()->getStringParser().isStringExpression(fitData.sParams))
-            convertVectorToExpression(fitData.sParams, _option);
+            convertVectorToExpression(fitData.sParams);
     }
 
     StripSpaces(sCmd);
@@ -647,12 +646,12 @@ static vector<double> evaluateFittingParams(FittingData& fitData, string& sCmd, 
     // Get values from a references data object
     if (_data.containsTablesOrClusters(fitData.sFitFunction))
     {
-        getDataElements(fitData.sFitFunction, _parser, _data, _option);
+        getDataElements(fitData.sFitFunction, _parser, _data);
     }
 
     // Expand remaining vectors
     if (fitData.sFitFunction.find("{") != string::npos)
-        convertVectorToExpression(fitData.sFitFunction, _option);
+        convertVectorToExpression(fitData.sFitFunction);
 
     size_t nPos = 0;
 

@@ -79,7 +79,7 @@ namespace NumeRe
         {
             // Check for arguments to parse and
             // get the indices afterwards
-            Indices _idx = getIndices("string(" + parseStringsInIndices(getFunctionArgumentList("string(", sLine, n_pos, nEndPosition).to_string()) + ")", _parser, _data, _option, false);
+            Indices _idx = getIndices("string(" + parseStringsInIndices(getFunctionArgumentList("string(", sLine, n_pos, nEndPosition).to_string()) + ")", _parser, _data, false);
 
             // Pre-process the indices
             if (_idx.col.isOpenEnd())
@@ -292,7 +292,7 @@ namespace NumeRe
                     sData = vRes.front();
                 }
 
-                getDataElements(sData, _parser, _data, _option,
+                getDataElements(sData, _parser, _data,
                                 REPLACE_NAN | (nStartPos && (sLine[nStartPos-1] == '#' || sLine[nStartPos-1] == '~') ? INSERT_STRINGS : 0));
             }
             else
@@ -302,7 +302,7 @@ namespace NumeRe
                               parseStringsInIndices(getFunctionArgumentList(sOccurence, sLine, nStartPosition, nEndPosition).to_string()));
 
                 // Get the data and parse string expressions
-                replaceDataEntities(sData, sOccurence, _data, _parser, _option,
+                replaceDataEntities(sData, sOccurence, _data, _parser,
                                     REPLACE_NAN | (!isMultArgFunc && nStartPos && (sLine[nStartPos-1] == '#' || sLine[nStartPos-1] == '~') ? INSERT_STRINGS : 0));
             }
 
@@ -580,7 +580,7 @@ namespace NumeRe
 
         // Handle remaining vector braces
         if (sLineToParsedTemp.find('{') != std::string::npos)
-            convertVectorToExpression(sLineToParsedTemp, _option);
+            convertVectorToExpression(sLineToParsedTemp);
 
         // Determine the return value
         if (sLineToParsedTemp.length())
@@ -778,7 +778,7 @@ namespace NumeRe
     /////////////////////////////////////////////////
     void StringParser::storeStringToStringObject(const std::vector<std::string>& vFinal, std::string& sObject, size_t& nCurrentComponent, size_t nStrings)
     {
-        Indices _idx = getIndices(sObject, _parser, _data, _option, true);
+        Indices _idx = getIndices(sObject, _parser, _data, true);
 
         if (_idx.row.isOpenEnd())
             _idx.row.setRange(0, _idx.row.front()+nStrings-nCurrentComponent-1);
@@ -819,7 +819,7 @@ namespace NumeRe
 
         // Handle remaining vector braces
         if (__sObject[nBracePos] == '{')
-            convertVectorToExpression(__sObject, _option);
+            convertVectorToExpression(__sObject);
 
         std::string sObject;
         size_t nStrings = strRes.vResult.size();

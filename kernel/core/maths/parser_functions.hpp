@@ -31,13 +31,13 @@
 // Tools & Stuff
 std::string evaluateTargetOptionInCommand(std::string& sCmd, const std::string& sDefaultTarget, Indices& _idx, mu::Parser& _parser, MemoryManager& _data, const Settings& _option);
 size_t findVariableInExpression(const std::string& sExpr, const std::string& sVarName, size_t nPosStart = 0);
-void convertVectorToExpression(std::string&, const Settings&);
+void convertVectorToExpression(std::string&);
 std::string addMissingVectorComponent(const std::string&, const std::string&, const std::string&, bool);
 mu::value_type* getPointerToVariable(const std::string& sVarName, mu::Parser& _parser);
 std::string promptForUserInput(const std::string& __sCommand);
 int integralFactorial(int nNumber);
 bool evaluateIndices(const std::string& sCache, Indices& _idx, MemoryManager& _data);
-std::vector<double> readAndParseIntervals(std::string& sExpr, mu::Parser& _parser, MemoryManager& _data, FunctionDefinitionManager& _functions, const Settings& _option, bool bEraseInterval = false);
+std::vector<double> readAndParseIntervals(std::string& sExpr, mu::Parser& _parser, MemoryManager& _data, FunctionDefinitionManager& _functions, bool bEraseInterval = false);
 size_t getPositionOfFirstDelimiter(StringView sLine);
 
 #endif

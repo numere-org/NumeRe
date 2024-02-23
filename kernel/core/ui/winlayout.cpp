@@ -136,7 +136,7 @@ static void evaluateExpression(std::string& sExpr)
     }
 
     if (instance->getMemoryManager().containsTablesOrClusters(sExpr))
-        getDataElements(sExpr, instance->getParser(), instance->getMemoryManager(), instance->getSettings());
+        getDataElements(sExpr, instance->getParser(), instance->getMemoryManager());
 
     // Numerical evaluation
     instance->getParser().SetExpr(sExpr);
@@ -461,7 +461,7 @@ static NumeRe::WindowInformation getWindow(const std::string& sExpr)
     std::string sCurExpr = sExpr;
 
     if (NumeReKernel::getInstance()->getMemoryManager().containsTablesOrClusters(sCurExpr))
-        getDataElements(sCurExpr, NumeReKernel::getInstance()->getParser(), NumeReKernel::getInstance()->getMemoryManager(), NumeReKernel::getInstance()->getSettings());
+        getDataElements(sCurExpr, NumeReKernel::getInstance()->getParser(), NumeReKernel::getInstance()->getMemoryManager());
 
     NumeReKernel::getInstance()->getParser().SetExpr(sCurExpr);
     int windowID = intCast(NumeReKernel::getInstance()->getParser().Eval());
@@ -907,7 +907,7 @@ void dialogCommand(CommandLineParser& cmdParser)
 
     // Resolve table accesses
     if (kernel->getMemoryManager().containsTablesOrClusters(sExpression))
-        getDataElements(sExpression, kernel->getParser(), kernel->getMemoryManager(), kernel->getSettings());
+        getDataElements(sExpression, kernel->getParser(), kernel->getMemoryManager());
 
     // Handle strings in the default value
     // expression. This will include also possible path

@@ -53,7 +53,7 @@ bool Breakpoint::isActive(bool needsLocks)
     // Catch and evaluate all data and cache calls
     if (instance->getMemoryManager().containsTablesOrClusters(m_condition)
         && !instance->getStringParser().isStringExpression(m_condition))
-        sCache = getDataElements(m_condition, _parser, instance->getMemoryManager(), instance->getSettings());
+        sCache = getDataElements(m_condition, _parser, instance->getMemoryManager());
 
     // Evaluate std::strings
     if (instance->getStringParser().isStringExpression(m_condition))

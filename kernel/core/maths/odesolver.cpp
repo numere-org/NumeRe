@@ -169,7 +169,7 @@ bool Odesolver::solve(const string& sCmd)
     if (!_odeFunctions->call(sFunc))
         throw SyntaxError(SyntaxError::FUNCTION_ERROR, sCmd, sFunc, sFunc);
     if (_odeData->containsTablesOrClusters(sFunc))
-        getDataElements(sFunc, *_odeParser, *_odeData, *_odeSettings);
+        getDataElements(sFunc, *_odeParser, *_odeData);
 
     if (findParameter(sParams, "target", '='))
     {
@@ -189,7 +189,7 @@ bool Odesolver::solve(const string& sCmd)
     if (!_odeData->isTable(sTarget))
         _odeData->addTable(sTarget, *_odeSettings);
 
-    getIndices(sTarget, _idx, *_odeParser, *_odeData, *_odeSettings, true);
+    getIndices(sTarget, _idx, *_odeParser, *_odeData, true);
 
     if (!isValidIndexSet(_idx))
         return false;
@@ -199,7 +199,7 @@ bool Odesolver::solve(const string& sCmd)
     if (!_odeFunctions->call(sParams))
         throw SyntaxError(SyntaxError::FUNCTION_ERROR, sCmd, sParams, sParams);
     if (_odeData->containsTablesOrClusters(sParams))
-        getDataElements(sParams, *_odeParser, *_odeData, *_odeSettings);
+        getDataElements(sParams, *_odeParser, *_odeData);
 
     //cerr << 4 << endl;
     if (findParameter(sParams, "method", '='))
@@ -292,7 +292,7 @@ bool Odesolver::solve(const string& sCmd)
             nLyapuSamples = nSamples / 100;
     }
     //cerr << 5 << endl;
-    vInterval = readAndParseIntervals(sParams, *_odeParser, *_odeData, *_odeFunctions, *_odeSettings, false);
+    vInterval = readAndParseIntervals(sParams, *_odeParser, *_odeData, *_odeFunctions, false);
     //cerr << 6 << endl;
     if (!vInterval.size() || isnan(vInterval[0]) || isinf(vInterval[0]) || isnan(vInterval[1]) || isinf(vInterval[1]))
         throw SyntaxError(SyntaxError::NO_INTERVAL_FOR_ODE, sCmd, SyntaxError::invalid_position);

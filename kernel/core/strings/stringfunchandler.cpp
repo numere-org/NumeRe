@@ -265,7 +265,6 @@ namespace NumeRe
     {
         Parser& _parser = NumeReKernel::getInstance()->getParser();
         MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
-        Settings& _option = NumeReKernel::getInstance()->getSettings();
         std::string sFuncArgument = __sFuncArgument.to_string();
         value_type* v = 0;
         int nReturn = 0;
@@ -300,7 +299,7 @@ namespace NumeRe
         }
         else if (_data.containsTablesOrClusters(sFuncArgument))
         {
-            getDataElements(sFuncArgument, _parser, _data, _option, false);
+            getDataElements(sFuncArgument, _parser, _data, false);
         }
 
         // Set the expression and evaluate it
@@ -334,7 +333,6 @@ namespace NumeRe
     {
         Parser& _parser = NumeReKernel::getInstance()->getParser();
         MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
-        Settings& _option = NumeReKernel::getInstance()->getSettings();
         std::string sFuncArgument = __sFuncArgument.to_string();
         value_type* v = 0;
         int nReturn = 0;
@@ -366,7 +364,7 @@ namespace NumeRe
         }
         else if (_data.containsTablesOrClusters(sFuncArgument))
         {
-            getDataElements(sFuncArgument, _parser, _data, _option, false);
+            getDataElements(sFuncArgument, _parser, _data, false);
         }
 
         // Set the expression and evaluate it
@@ -443,7 +441,6 @@ namespace NumeRe
     {
         Parser& _parser = NumeReKernel::getInstance()->getParser();
         MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
-        Settings& _option = NumeReKernel::getInstance()->getSettings();
         std::string sFuncArgument = __sFuncArgument.to_string();
 
         // If the current function argument contains strings,
@@ -461,7 +458,7 @@ namespace NumeRe
         }
         else if (_data.containsTablesOrClusters(sFuncArgument))
         {
-            getDataElements(sFuncArgument, _parser, _data, _option, 0);
+            getDataElements(sFuncArgument, _parser, _data, 0);
 
             if (isStringExpression(sFuncArgument))
             {
@@ -480,7 +477,7 @@ namespace NumeRe
         // distribute it to the components of the argument vector
         if (sFuncArgument.find('{') != string::npos || sFuncArgument.find(',') != string::npos)
         {
-            convertVectorToExpression(sFuncArgument, _option);
+            convertVectorToExpression(sFuncArgument);
 
             // As long as the function argument has a length,
             // get the next argument and store it in the vector
@@ -1081,7 +1078,6 @@ namespace NumeRe
     {
         Parser& _parser = NumeReKernel::getInstance()->getParser();
         MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
-        Settings& _option = NumeReKernel::getInstance()->getSettings();
         size_t nStartPosition = 0;
         size_t nEndPosition;
 
@@ -1154,7 +1150,7 @@ namespace NumeRe
                 {
                     std::string sComponent = strRes.vResult[i].to_string();
                     // Legacy function needed to enable {123,456} == to_value("{123,456}") comparison
-                    convertVectorToExpression(sComponent, _option);
+                    convertVectorToExpression(sComponent);
 
                     while (sComponent.length())
                     {
@@ -1223,7 +1219,7 @@ namespace NumeRe
 
             // check for data sets in the evaluation of the `is_string()` arguments
             if (!isStringExpression(sArgument) && _data.containsTablesOrClusters(sArgument))
-                getDataElements(sArgument, _parser, _data, _option);
+                getDataElements(sArgument, _parser, _data);
 
             if (!isStringExpression(sArgument))
             {
@@ -1536,7 +1532,7 @@ namespace NumeRe
                 if (sCnt.length())
                 {
                     if (_data.containsTablesOrClusters(sCnt))
-                        getDataElements(sCnt, _parser, _data, _option);
+                        getDataElements(sCnt, _parser, _data);
 
                     _parser.SetExpr(sCnt);
                     int nCount;
@@ -1548,7 +1544,7 @@ namespace NumeRe
 
             // check for data sets in the evaluation of the `valtostr()` arguments
             if (!isStringExpression(sExpr) && _data.containsTablesOrClusters(sExpr))
-                getDataElements(sExpr, _parser, _data, _option);
+                getDataElements(sExpr, _parser, _data);
 
             if (!isStringExpression(sExpr))
             {

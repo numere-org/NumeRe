@@ -2437,7 +2437,7 @@ void Plot::create2dDrawing(vector<string>& vDrawVector)
         if (sDrawExpr.find('{') != string::npos)
         {
             sDummy = sDrawExpr.to_string();
-            convertVectorToExpression(sDummy, _option);
+            convertVectorToExpression(sDummy);
             sDrawExpr = sDummy;
         }
 
@@ -2756,7 +2756,7 @@ void Plot::create3dDrawing(vector<string>& vDrawVector)
         if (sDrawExpr.find('{') != string::npos)
         {
             sDummy = sDrawExpr.to_string();
-            convertVectorToExpression(sDummy, _option);
+            convertVectorToExpression(sDummy);
             sDrawExpr = sDummy;
         }
 
@@ -3704,7 +3704,7 @@ void Plot::evaluateSubplot(string& sCmd, size_t nMultiplots[2], size_t& nSubPlot
 
             if (_data.containsTablesOrClusters(sSubPlotIDX))
             {
-                getDataElements(sSubPlotIDX, _parser, _data, _option);
+                getDataElements(sSubPlotIDX, _parser, _data);
             }
 
             _parser.SetExpr(sSubPlotIDX);
@@ -3772,7 +3772,7 @@ void Plot::evaluateSubplot(string& sCmd, size_t nMultiplots[2], size_t& nSubPlot
                 throw SyntaxError(SyntaxError::FUNCTION_ERROR, sSubPlotIDX, SyntaxError::invalid_position);
 
             if (_data.containsTablesOrClusters(sSubPlotIDX))
-                getDataElements(sSubPlotIDX, _parser, _data, _option);
+                getDataElements(sSubPlotIDX, _parser, _data);
 
             _parser.SetExpr(sSubPlotIDX);
             int nRes = 0;
@@ -4855,7 +4855,7 @@ void Plot::fillData(double dt_max, int t_animate)
     if (isPlot1D(_pInfo.sCommand))
     {
         if (sFunc.find('{') != string::npos && !_pInfo.bDraw3D && !_pInfo.bDraw)
-            convertVectorToExpression(sFunc, _option);
+            convertVectorToExpression(sFunc);
 
         for (int x = 0; x < _pInfo.nSamples; x++)
         {
@@ -4890,7 +4890,7 @@ void Plot::fillData(double dt_max, int t_animate)
             _defVars.vValue[ZCOORD][0] = 0.0;
 
             if (expressions[k].find('{') != string::npos && !_pInfo.bDraw3D && !_pInfo.bDraw)
-                convertVectorToExpression(expressions[k], _option);
+                convertVectorToExpression(expressions[k]);
 
             _parser.SetExpr(expressions[k]);
             vResults = _parser.Eval(_pInfo.nFunctions);
@@ -4958,7 +4958,7 @@ void Plot::fillData(double dt_max, int t_animate)
     else if (isMesh2D(_pInfo.sCommand))
     {
         if (sFunc.find('{') != string::npos && !_pInfo.bDraw3D && !_pInfo.bDraw)
-            convertVectorToExpression(sFunc, _option);
+            convertVectorToExpression(sFunc);
 
         for (int x = 0; x < _pInfo.nSamples; x++)
         {
@@ -4994,7 +4994,7 @@ void Plot::fillData(double dt_max, int t_animate)
     else if (isMesh3D(_pInfo.sCommand))
     {
         if (sFunc.find('{') != string::npos && !_pInfo.bDraw3D && !_pInfo.bDraw)
-            convertVectorToExpression(sFunc, _option);
+            convertVectorToExpression(sFunc);
 
         for (int x = 0; x < _pInfo.nSamples; x++)
         {
@@ -5043,7 +5043,7 @@ void Plot::fillData(double dt_max, int t_animate)
         for (size_t k = 0; k < vFuncMap.size(); k++)
         {
             if (expressions[k].find('{') != string::npos && !_pInfo.bDraw3D && !_pInfo.bDraw)
-                convertVectorToExpression(expressions[k], _option);
+                convertVectorToExpression(expressions[k]);
 
             _parser.SetExpr(expressions[k]);
 
@@ -5077,7 +5077,7 @@ void Plot::fillData(double dt_max, int t_animate)
         for (size_t k = 0; k < vFuncMap.size(); k++)
         {
             if (expressions[k].find('{') != string::npos && !_pInfo.bDraw3D && !_pInfo.bDraw)
-                convertVectorToExpression(expressions[k], _option);
+                convertVectorToExpression(expressions[k]);
 
             _parser.SetExpr(expressions[k]);
 

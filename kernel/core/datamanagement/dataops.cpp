@@ -478,11 +478,10 @@ void clear_cache(MemoryManager& _data, Settings& _option, bool bIgnore)
 /// \param sCache const string&
 /// \param _parser Parser&
 /// \param _data Datafile&
-/// \param _option const Settings&
 /// \return bool
 ///
 /////////////////////////////////////////////////
-static bool searchAndDeleteTable(const string& sCache, Parser& _parser, MemoryManager& _data, const Settings& _option)
+static bool searchAndDeleteTable(const string& sCache, Parser& _parser, MemoryManager& _data)
 {
     for (auto iter = _data.getTableMap().begin(); iter != _data.getTableMap().end(); ++iter)
     {
@@ -490,7 +489,7 @@ static bool searchAndDeleteTable(const string& sCache, Parser& _parser, MemoryMa
         {
             // Cache was found
             // Get the indices from the cache expression
-            Indices _iDeleteIndex = getIndices(sCache, _parser, _data, _option, false);
+            Indices _iDeleteIndex = getIndices(sCache, _parser, _data, false);
 
             // Check the indices
             if (!isValidIndexSet(_iDeleteIndex))
@@ -535,11 +534,10 @@ static bool searchAndDeleteTable(const string& sCache, Parser& _parser, MemoryMa
 /// \param sCluster const string&
 /// \param _parser Parser&
 /// \param _data Datafile&
-/// \param _option const Settings&
 /// \return bool
 ///
 /////////////////////////////////////////////////
-static bool searchAndDeleteCluster(const string& sCluster, Parser& _parser, MemoryManager& _data, const Settings& _option)
+static bool searchAndDeleteCluster(const string& sCluster, Parser& _parser, MemoryManager& _data)
 {
     for (auto iter = _data.getClusterMap().begin(); iter != _data.getClusterMap().end(); ++iter)
     {
@@ -547,7 +545,7 @@ static bool searchAndDeleteCluster(const string& sCluster, Parser& _parser, Memo
         {
             // Cache was found
             // Get the indices from the cache expression
-            Indices _iDeleteIndex = getIndices(sCluster, _parser, _data, _option, false);
+            Indices _iDeleteIndex = getIndices(sCluster, _parser, _data, false);
 
             // Check the indices
             if (!isValidIndexSet(_iDeleteIndex))
@@ -582,7 +580,6 @@ bool deleteCacheEntry(CommandLineParser& cmdParser)
 {
     Parser& _parser = NumeReKernel::getInstance()->getParser();
     MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
-    const Settings& _option = NumeReKernel::getInstance()->getSettings();
 	bool bSuccess = false;
 
 	// Remove the command from the command line
@@ -598,11 +595,11 @@ bool deleteCacheEntry(CommandLineParser& cmdParser)
 		StripSpaces(sCache);
 
 		// Is it a normal table?
-		if (!_data.isCluster(sCache) && searchAndDeleteTable(sCache, _parser, _data, _option))
+		if (!_data.isCluster(sCache) && searchAndDeleteTable(sCache, _parser, _data))
             bSuccess = true;
 
         // Is it a cluster?
-		if (_data.isCluster(sCache) && searchAndDeleteCluster(sCache, _parser, _data, _option))
+		if (_data.isCluster(sCache) && searchAndDeleteCluster(sCache, _parser, _data))
             bSuccess = true;
 	}
 
@@ -1005,7 +1002,7 @@ bool writeToFile(CommandLineParser& cmdParser)
 	// can contain strings
 	if (!instance->getStringParser().isStringExpression(sExpression)
         && instance->getMemoryManager().containsTablesOrClusters(sExpression))
-        getDataElements(sExpression, instance->getParser(), instance->getMemoryManager(), instance->getSettings());
+        getDataElements(sExpression, instance->getParser(), instance->getMemoryManager());
 
 	// Parse the expression, which should be a string
 	if (instance->getStringParser().isStringExpression(sExpression))

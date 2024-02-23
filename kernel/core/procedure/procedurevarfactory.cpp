@@ -486,7 +486,7 @@ void ProcedureVarFactory::createLocalInlineVars(string sVarList)
 
                 if (_dataRef->containsTablesOrClusters(sVarValue))
                 {
-                    getDataElements(sVarValue, *_parserRef, *_dataRef, *_optionRef);
+                    getDataElements(sVarValue, *_parserRef, *_dataRef);
                 }
 
                 sVarValue = resolveLocalVars(sVarValue, i);
@@ -859,7 +859,7 @@ void ProcedureVarFactory::evaluateProcedureArguments(std::string& currentArg, st
                     _dataRef->addTable(sNewArgName, *_optionRef);
 
                     if (_dataRef->containsTablesOrClusters(sCurrentValue))
-                        getDataElements(sCurrentValue, *_parserRef, *_dataRef, *_optionRef, false);
+                        getDataElements(sCurrentValue, *_parserRef, *_dataRef, false);
 
                     if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sCurrentValue))
                     {
@@ -929,7 +929,7 @@ void ProcedureVarFactory::evaluateProcedureArguments(std::string& currentArg, st
                     std::string sCurrentValue = currentValue;
 
                     if (_dataRef->containsTablesOrClusters(sCurrentValue))
-                        getDataElements(sCurrentValue, *_parserRef, *_dataRef, *_optionRef, false);
+                        getDataElements(sCurrentValue, *_parserRef, *_dataRef, false);
 
                     if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sCurrentValue))
                     {
@@ -1024,7 +1024,7 @@ void ProcedureVarFactory::evaluateProcedureArguments(std::string& currentArg, st
 
                     // Get data, if necessary
                     if (_dataRef->containsTablesOrClusters(currentValue))
-                        getDataElements(currentValue, *_parserRef, *_dataRef, *_optionRef);
+                        getDataElements(currentValue, *_parserRef, *_dataRef);
 
                     // Evaluate strings
                     if (_stringParser.isStringExpression(currentValue))
@@ -1082,7 +1082,7 @@ void ProcedureVarFactory::evaluateProcedureArguments(std::string& currentArg, st
                 {
                     // Get data, if necessary
                     if (_dataRef->containsTablesOrClusters(currentValue))
-                        getDataElements(currentValue, *_parserRef, *_dataRef, *_optionRef);
+                        getDataElements(currentValue, *_parserRef, *_dataRef);
 
                     // Evaluate strings
                     if (_stringParser.isStringExpression(currentValue))
@@ -1198,7 +1198,7 @@ void ProcedureVarFactory::createLocalVars(string sVarList)
 
                 if (!NumeReKernel::getInstance()->getStringParser().isStringExpression(sVarValue) &&  _dataRef->containsTablesOrClusters(sVarValue))
                 {
-                    getDataElements(sVarValue, *_parserRef, *_dataRef, *_optionRef);
+                    getDataElements(sVarValue, *_parserRef, *_dataRef);
                 }
 
                 if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sVarValue))
@@ -1302,7 +1302,7 @@ void ProcedureVarFactory::createLocalStrings(string sStringList)
             sVarValue = resolveLocalStrings(sVarValue + " ", i); // Needs a terminating separator
 
             if (_dataRef->containsTablesOrClusters(sVarValue))
-                getDataElements(sVarValue, *_parserRef, *_dataRef, *_optionRef);
+                getDataElements(sVarValue, *_parserRef, *_dataRef);
 
             if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sVarValue))
             {
@@ -1414,7 +1414,7 @@ void ProcedureVarFactory::createLocalTables(string sTableList)
                 else
                 {
                     if (_dataRef->containsTablesOrClusters(sCurrentValue))
-                        getDataElements(sCurrentValue, *_parserRef, *_dataRef, *_optionRef, false);
+                        getDataElements(sCurrentValue, *_parserRef, *_dataRef, false);
 
                     if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sCurrentValue))
                     {
@@ -1521,7 +1521,7 @@ void ProcedureVarFactory::createLocalClusters(string sClusterList)
                 else
                 {
                     if (_dataRef->containsTablesOrClusters(sCurrentValue))
-                        getDataElements(sCurrentValue, *_parserRef, *_dataRef, *_optionRef, false);
+                        getDataElements(sCurrentValue, *_parserRef, *_dataRef, false);
 
                     if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sCurrentValue))
                     {

@@ -357,7 +357,7 @@ void Interval::refresh()
     {
         // Get the data elements
         if (_data.containsTablesOrClusters(indices.front()))
-            getDataElements(indices.front(), _parser, _data, NumeReKernel::getInstance()->getSettings());
+            getDataElements(indices.front(), _parser, _data);
 
         // Parse the index
         _parser.SetExpr(indices.front());
@@ -388,7 +388,7 @@ void Interval::refresh()
         {
             // Get possible data elements
             if (_data.containsTablesOrClusters(indices[i]))
-                getDataElements(indices[i], _parser, _data, NumeReKernel::getInstance()->getSettings());
+                getDataElements(indices[i], _parser, _data);
 
             _parser.SetExpr(indices[i]);
             m_vInterval.push_back(_parser.Eval().real());

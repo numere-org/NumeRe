@@ -45,7 +45,7 @@ static mu::value_type* evaluateNumerical(int& nResults, std::string sExpression)
     Parser& _parser = NumeReKernel::getInstance()->getParser();
 
     if (_data.containsTablesOrClusters(sExpression))
-        getDataElements(sExpression, _parser, _data, NumeReKernel::getInstance()->getSettings());
+        getDataElements(sExpression, _parser, _data);
 
     _parser.SetExpr(sExpression);
 

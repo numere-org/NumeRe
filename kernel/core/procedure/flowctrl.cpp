@@ -1681,7 +1681,7 @@ value_type* FlowCtrl::evalHeader(int& nNum, std::string& sHeadExpression, bool b
                 && !_parserRef->GetCachedEquation().length())
                 _parserRef->SetCompiling(true);
 
-            sCache = getDataElements(sHeadExpression, *_parserRef, *_dataRef, *_optionRef);
+            sCache = getDataElements(sHeadExpression, *_parserRef, *_dataRef);
 
             // Ad-hoc bytecode adaption
 #warning NOTE (numere#1#08/21/21): Might need some adaption, if bytecode issues are experienced
@@ -1909,7 +1909,7 @@ NumeRe::Cluster FlowCtrl::evalRangeBasedHeader(std::string& sHeadExpression, int
                 && !_parserRef->GetCachedEquation().length())
                 _parserRef->SetCompiling(true);
 
-            sCache = getDataElements(sHeadExpression, *_parserRef, *_dataRef, *_optionRef);
+            sCache = getDataElements(sHeadExpression, *_parserRef, *_dataRef);
 
             // Ad-hoc bytecode adaption
 #warning NOTE (numere#1#08/21/21): Might need some adaption, if bytecode issues are experienced
@@ -3161,7 +3161,7 @@ int FlowCtrl::compile(std::string sLine, int nthCmd)
             _parserRef->SetCompiling(true);
         }
 
-        sCache = getDataElements(sLine, *_parserRef, *_dataRef, *_optionRef);
+        sCache = getDataElements(sLine, *_parserRef, *_dataRef);
 
         if (sCache.length())
             bWriteToCache = true;
@@ -3241,7 +3241,7 @@ int FlowCtrl::compile(std::string sLine, int nthCmd)
         if (bCompiling)
         {
             _parserRef->SetCompiling(true);
-            getIndices(sCache, _idx, *_parserRef, *_dataRef, *_optionRef, true);
+            getIndices(sCache, _idx, *_parserRef, *_dataRef, true);
 
             if (sCache[(pos = sCache.find_first_of("({"))] == '{')
                 bWriteToCluster = true;
@@ -3264,7 +3264,7 @@ int FlowCtrl::compile(std::string sLine, int nthCmd)
         }
         else
         {
-            getIndices(sCache, _idx, *_parserRef, *_dataRef, *_optionRef, true);
+            getIndices(sCache, _idx, *_parserRef, *_dataRef, true);
             //_idx.col.front() = 0;
             //_idx.row.front() = 0;
 
@@ -3750,7 +3750,7 @@ int FlowCtrl::calc(StringView sLine, int nthCmd)
                 _parserRef->SetCompiling(true);
             }
 
-            sDataObject = getDataElements(sBuffer, *_parserRef, *_dataRef, *_optionRef);
+            sDataObject = getDataElements(sBuffer, *_parserRef, *_dataRef);
 
             if (sDataObject.length())
                 bWriteToCache = true;
@@ -3830,7 +3830,7 @@ int FlowCtrl::calc(StringView sLine, int nthCmd)
             if (bCompiling)
             {
                 _parserRef->SetCompiling(true);
-                getIndices(sDataObject, _idx, *_parserRef, *_dataRef, *_optionRef, true);
+                getIndices(sDataObject, _idx, *_parserRef, *_dataRef, true);
 
                 if (sDataObject[(pos = sDataObject.find_first_of("({"))] == '{')
                     bWriteToCluster = true;
@@ -3853,7 +3853,7 @@ int FlowCtrl::calc(StringView sLine, int nthCmd)
             }
             else
             {
-                getIndices(sDataObject, _idx, *_parserRef, *_dataRef, *_optionRef, true);
+                getIndices(sDataObject, _idx, *_parserRef, *_dataRef, true);
                 //_idx.col.front() = 0;
                 //_idx.row.front() = 0;
 

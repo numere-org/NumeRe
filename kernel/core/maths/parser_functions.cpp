@@ -71,7 +71,6 @@ size_t findVariableInExpression(const std::string& sExpr, const std::string& sVa
 /// expression equation.
 ///
 /// \param sLine string&
-/// \param _option const Settings&
 /// \return void
 ///
 /// It is used quite extensively, however, it
@@ -79,7 +78,7 @@ size_t findVariableInExpression(const std::string& sExpr, const std::string& sVa
 /// the parser can cope with the vector syntax
 /// now.
 /////////////////////////////////////////////////
-void convertVectorToExpression(string& sLine, const Settings& _option)
+void convertVectorToExpression(string& sLine)
 {
 	vector<string> vVectors(1, "");
 	vector<string> vScalars(1, "");
@@ -105,7 +104,7 @@ void convertVectorToExpression(string& sLine, const Settings& _option)
             sTemp = getNextArgument(sLine, true);
 
             // Evaluate the single expression part using a recursion
-            convertVectorToExpression(sTemp, _option);
+            convertVectorToExpression(sTemp);
 
             sBuffer += sTemp + ",";
         }
@@ -583,7 +582,7 @@ string evaluateTargetOptionInCommand(string& sCmd, const string& sDefaultTarget,
 			_data.addTable(sTargetTable.substr(0, sTargetTable.find('(')), _option);
 
 		// Read the target indices
-		getIndices(sTargetTable, _idx, _parser, _data, _option, true);
+		getIndices(sTargetTable, _idx, _parser, _data, true);
 		sTargetTable.erase(sTargetTable.find('('));
 
 		// check the indices
@@ -703,12 +702,11 @@ static void readAndParseLegacyIntervals(string& sExpr, const string& sLegacyInte
 /// \param _parser Parser&
 /// \param _data Datafile&
 /// \param _functions Define&
-/// \param _option const Settings&
 /// \param bEraseInterval bool
 /// \return vector<double>
 ///
 /////////////////////////////////////////////////
-vector<double> readAndParseIntervals(string& sExpr, Parser& _parser, MemoryManager& _data, FunctionDefinitionManager& _functions, const Settings& _option, bool bEraseInterval)
+vector<double> readAndParseIntervals(string& sExpr, Parser& _parser, MemoryManager& _data, FunctionDefinitionManager& _functions, bool bEraseInterval)
 {
 	vector<double> vInterval;
 
@@ -718,7 +716,7 @@ vector<double> readAndParseIntervals(string& sExpr, Parser& _parser, MemoryManag
 
 	// If the expression contains data elements, get their contents here
 	if (_data.containsTablesOrClusters(sExpr))
-		getDataElements(sExpr, _parser, _data, _option);
+		getDataElements(sExpr, _parser, _data);
 
 	// Get the interval for x
 	if (findParameter(sExpr, "x", '='))

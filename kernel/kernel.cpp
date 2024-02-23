@@ -1014,7 +1014,7 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const std::string& sCommand)
             // for a cluster
             if (!_stringParser.isStringExpression(sLine) && _memoryManager.containsTablesOrClusters(sLine))
             {
-                sCache = getDataElements(sLine, _parser, _memoryManager, _option);
+                sCache = getDataElements(sLine, _parser, _memoryManager);
 
                 if (sCache.length() && sCache.find('#') == std::string::npos)
                     bWriteToCache = true;
@@ -1047,7 +1047,7 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const std::string& sCommand)
             if (bWriteToCache)
             {
                 // Get the indices from the corresponding function
-                getIndices(sCache, _idx, _parser, _memoryManager, _option, true);
+                getIndices(sCache, _idx, _parser, _memoryManager, true);
 
                 if (sCache[sCache.find_first_of("({")] == '{')
                 {

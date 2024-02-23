@@ -64,8 +64,8 @@ enum DataOptions
 
 bool parser_CheckMultArgFunc(const std::string&, const std::string&);
 
-std::string getDataElements(std::string& sLine, mu::Parser& _parser, MemoryManager& _data, const Settings& _option, int options = REPLACE_NAN);
-void replaceDataEntities(std::string&, const std::string&, MemoryManager&, mu::Parser&, const Settings&, int options = NO_OPTION);
+std::string getDataElements(std::string& sLine, mu::Parser& _parser, MemoryManager& _data, int options = REPLACE_NAN);
+void replaceDataEntities(std::string&, const std::string&, MemoryManager&, mu::Parser&, int options = NO_OPTION);
 Memory* extractRange(const std::string& sCmd, DataAccessParser& _accessParser, int nDesiredCols = -1, bool bSort = false);
 bool isNotEmptyExpression(StringView);
 bool isClusterCandidate(std::string& sLine, std::string& sCluster, bool doCut = true);
@@ -74,8 +74,8 @@ std::vector<mu::value_type> getDataFromObject(const std::string& sObject, const 
 DataAccessParser getAccessParserForPlotAndFit(StringView sExpression);
 Indices getIndicesForPlotAndFit(const std::string& sExpression, std::string& sDataTable, int& nColumns, bool& openEnd, bool& isCluster);
 
-Indices getIndices(StringView sCmd, mu::Parser& _parser, MemoryManager& _data, const Settings& _option, bool isAssignment);
-void getIndices(StringView sCmd, Indices& _idx, mu::Parser& _parser, MemoryManager& _data, const Settings& _option, bool isAssignment);
+Indices getIndices(StringView sCmd, mu::Parser& _parser, MemoryManager& _data, bool isAssignment);
+void getIndices(StringView sCmd, Indices& _idx, mu::Parser& _parser, MemoryManager& _data, bool isAssignment);
 
 inline bool isValidIndexSet(const Indices& _idx)
 {

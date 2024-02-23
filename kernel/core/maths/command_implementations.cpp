@@ -758,7 +758,6 @@ bool differentiate(CommandLineParser& cmdParser)
 {
     Parser& _parser = NumeReKernel::getInstance()->getParser();
     MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
-    const Settings& _option = NumeReKernel::getInstance()->getSettings();
     FunctionDefinitionManager& _functions = NumeReKernel::getInstance()->getDefinitions();
     string sExpr = cmdParser.getExprAsMathExpression();
     string sVar = "";
@@ -843,7 +842,7 @@ bool differentiate(CommandLineParser& cmdParser)
             if (isNotEmptyExpression(sPos))
             {
                 if (_data.containsTablesOrClusters(sPos))
-                    getDataElements(sPos, _parser, _data, _option);
+                    getDataElements(sPos, _parser, _data);
 
                 if (sPos.find(':') != string::npos)
                     sPos.replace(sPos.find(':'), 1, ",");
@@ -1446,13 +1445,13 @@ bool findExtrema(CommandLineParser& cmdParser)
     // If the expression or the parameter list contains
     // data elements, get their values here
     if (_data.containsTablesOrClusters(sExpr))
-        getDataElements(sExpr, _parser, _data, instance->getSettings(), false);
+        getDataElements(sExpr, _parser, _data, false);
 
     if (instance->getStringParser().isStringExpression(sExpr))
         throw SyntaxError(SyntaxError::STRINGS_MAY_NOT_BE_EVALUATED_WITH_CMD, cmdParser.getCommandLine(), SyntaxError::invalid_position, "extrema");
 
     if (_data.containsTablesOrClusters(sParams))
-        getDataElements(sParams, _parser, _data, instance->getSettings(), false);
+        getDataElements(sParams, _parser, _data, false);
 
     // Evaluate the parameters
     if (findParameter(sParams, "min"))
@@ -1906,13 +1905,13 @@ bool findZeroes(CommandLineParser& cmdParser)
     // If the expression or the parameter list contains
     // data elements, get their values here
     if (_data.containsTablesOrClusters(sExpr))
-        getDataElements(sExpr, _parser, _data, NumeReKernel::getInstance()->getSettings(), false);
+        getDataElements(sExpr, _parser, _data, false);
 
     if (instance->getStringParser().isStringExpression(sExpr))
         throw SyntaxError(SyntaxError::STRINGS_MAY_NOT_BE_EVALUATED_WITH_CMD, cmdParser.getCommandLine(), SyntaxError::invalid_position, "zeroes");
 
     if (_data.containsTablesOrClusters(sParams))
-        getDataElements(sParams, _parser, _data, NumeReKernel::getInstance()->getSettings(), false);
+        getDataElements(sParams, _parser, _data, false);
 
     // Evaluate the parameter list
     if (findParameter(sParams, "min") || findParameter(sParams, "down"))
@@ -3206,10 +3205,10 @@ bool evalPoints(CommandLineParser& cmdParser)
     // to any table or cluster
     if (_data.containsTablesOrClusters(sExpr))
     {
-        getDataElements(sExpr, _parser, _data, NumeReKernel::getInstance()->getSettings());
+        getDataElements(sExpr, _parser, _data);
 
         if (sExpr.find("{") != string::npos)
-            convertVectorToExpression(sExpr, NumeReKernel::getInstance()->getSettings());
+            convertVectorToExpression(sExpr);
     }
 
     IntervalSet ivl = cmdParser.parseIntervals();

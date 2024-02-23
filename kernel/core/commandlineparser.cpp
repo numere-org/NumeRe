@@ -300,7 +300,7 @@ std::string CommandLineParser::getExprAsFileName(std::string sFileExt, const std
         NumeReKernel::getInstance()->getStringParser().getStringValues(sFileName);
 
     if (NumeReKernel::getInstance()->getMemoryManager().containsTablesOrClusters(sFileName))
-        getDataElements(sFileName, NumeReKernel::getInstance()->getParser(), NumeReKernel::getInstance()->getMemoryManager(), NumeReKernel::getInstance()->getSettings());
+        getDataElements(sFileName, NumeReKernel::getInstance()->getParser(), NumeReKernel::getInstance()->getMemoryManager());
 
     // Strip the spaces and ensure that there's something left
     StripSpaces(sFileName);
@@ -370,10 +370,10 @@ std::string CommandLineParser::getExprAsMathExpression(bool parseDataObjects) co
         sExpr = promptForUserInput(sExpr);
 
     if (parseDataObjects && instance->getMemoryManager().containsTablesOrClusters(sExpr))
-        getDataElements(sExpr, instance->getParser(), instance->getMemoryManager(), instance->getSettings());
+        getDataElements(sExpr, instance->getParser(), instance->getMemoryManager());
 
     if (!instance->getMemoryManager().containsTablesOrClusters(sExpr) && sExpr.find('{') != std::string::npos)
-        convertVectorToExpression(sExpr, instance->getSettings());
+        convertVectorToExpression(sExpr);
 
     StripSpaces(sExpr);
 
@@ -442,7 +442,7 @@ std::vector<mu::value_type> CommandLineParser::parseExprAsNumericalValues() cons
 
     // Resolve table accesses
     if (instance->getMemoryManager().containsTablesOrClusters(sValue))
-        getDataElements(sValue, instance->getParser(), instance->getMemoryManager(), instance->getSettings());
+        getDataElements(sValue, instance->getParser(), instance->getMemoryManager());
 
     instance->getParser().SetExpr(sValue);
     int nRes;
@@ -571,7 +571,7 @@ std::string CommandLineParser::getFileParameterValue(std::string sFileExt, const
         instance->getStringParser().getStringValues(sParams);
 
     if (instance->getMemoryManager().containsTablesOrClusters(sParams))
-        getDataElements(sParams, instance->getParser(), instance->getMemoryManager(), instance->getSettings());
+        getDataElements(sParams, instance->getParser(), instance->getMemoryManager());
 
     int nParPos = findParameter(sParams, "file", '=');
 

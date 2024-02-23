@@ -109,7 +109,7 @@ bool extractFirstParameterStringValue(const string& sCmd, string& sArgument)
 
     // Get the contents of the contained data tables
 	if (_data.containsTablesOrClusters(sTemp))
-		getDataElements(sTemp, _parser, _data, _option);
+		getDataElements(sTemp, _parser, _data);
 
 	//
 	for (size_t i = 0; i < sTemp.length(); i++)
@@ -263,7 +263,7 @@ string evaluateParameterValues(const string& sCmd)
 		}
 
 		// Parse the interval syntax
-		vInterval = readAndParseIntervals(sTemp, _parser, _data, _functions, _option, true);
+		vInterval = readAndParseIntervals(sTemp, _parser, _data, _functions, true);
 
 		// Append the remaining part of the parameter string to the expression
 		sReturn += sTemp;
@@ -346,7 +346,7 @@ string evaluateParameterValues(const string& sCmd)
 
             // Get data elements
 			if (_data.containsTablesOrClusters(sTemp))
-				getDataElements(sTemp, _parser, _data, _option);
+				getDataElements(sTemp, _parser, _data);
 
             int nResult = 0;
             mu::value_type* v = nullptr;
