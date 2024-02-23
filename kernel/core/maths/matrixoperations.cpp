@@ -340,7 +340,8 @@ static Matrix evalMatOp(string& sCmd, Parser& _parser, MemoryManager& _data, Mat
                             break; // Just to avoid compiler warnings
                         case MATSIG_MAT:
                         {
-                            _cache.vReturnedMatrices.push_back(fIter->second.func(MatFuncData(evalMatOp(sSubExpr, _parser, _data, _cache)), errorInfo));
+                            _cache.vReturnedMatrices.push_back(fIter->second.func(MatFuncData(evalMatOp(sSubExpr, _parser, _data, _cache)),
+                                                                                  errorInfo));
                             break;
                         }
                         case MATSIG_MAT_NOPT:
@@ -350,111 +351,169 @@ static Matrix evalMatOp(string& sCmd, Parser& _parser, MemoryManager& _data, Mat
 
                             if (sSubExpr.length())
                             {
-                                _parser.SetExpr(sSubExpr);
+                                /*_parser.SetExpr(sSubExpr);
                                 v = _parser.Eval(nResults);
-                                n = intCast(v[0]);
+                                n = intCast(v[0]);*/
+                                Matrix mres = evalMatOp(sSubExpr, _parser, _data, _cache);
+                                n = intCast(mres.data()[0]);
                             }
 
-                            _cache.vReturnedMatrices.push_back(fIter->second.func(MatFuncData(evalMatOp(sMatrix, _parser, _data, _cache), n), errorInfo));
+                            _cache.vReturnedMatrices.push_back(fIter->second.func(MatFuncData(evalMatOp(sMatrix, _parser, _data, _cache), n),
+                                                                                  errorInfo));
                             break;
                         }
                         case MATSIG_MAT_MAT:
                         {
                             std::string sMatrix1 = getNextArgument(sSubExpr, true);
-                            _cache.vReturnedMatrices.push_back(fIter->second.func(MatFuncData(evalMatOp(sMatrix1, _parser, _data, _cache), evalMatOp(sSubExpr, _parser, _data, _cache)), errorInfo));
+                            _cache.vReturnedMatrices.push_back(fIter->second.func(MatFuncData(evalMatOp(sMatrix1, _parser, _data, _cache),
+                                                                                              evalMatOp(sSubExpr, _parser, _data, _cache)),
+                                                                                  errorInfo));
                             break;
                         }
                         case MATSIG_MAT_MAT_MAT:
                         {
                             std::string sMatrix1 = getNextArgument(sSubExpr, true);
                             std::string sMatrix2 = getNextArgument(sSubExpr, true);
-                            _cache.vReturnedMatrices.push_back(fIter->second.func(MatFuncData(evalMatOp(sMatrix1, _parser, _data, _cache), evalMatOp(sMatrix2, _parser, _data, _cache), evalMatOp(sSubExpr, _parser, _data, _cache)), errorInfo));
+                            _cache.vReturnedMatrices.push_back(fIter->second.func(MatFuncData(evalMatOp(sMatrix1, _parser, _data, _cache),
+                                                                                              evalMatOp(sMatrix2, _parser, _data, _cache),
+                                                                                              evalMatOp(sSubExpr, _parser, _data, _cache)),
+                                                                                  errorInfo));
                             break;
                         }
                         case MATSIG_MAT_MAT_N:
                         {
                             std::string sMatrix1 = getNextArgument(sSubExpr, true);
                             std::string sMatrix2 = getNextArgument(sSubExpr, true);
-                            _parser.SetExpr(sSubExpr);
+                            /*_parser.SetExpr(sSubExpr);
                             v = _parser.Eval(nResults);
-                            int n = intCast(v[0]); // int n = nResults > 1 ? intCast(v[1]) : 0;
-                            _cache.vReturnedMatrices.push_back(fIter->second.func(MatFuncData(evalMatOp(sMatrix1, _parser, _data, _cache), evalMatOp(sMatrix2, _parser, _data, _cache), n), errorInfo));
+                            int n = intCast(v[0]);*/
+
+                            Matrix mres = evalMatOp(sSubExpr, _parser, _data, _cache);
+                            int n = intCast(mres.data()[0]);
+
+                            _cache.vReturnedMatrices.push_back(fIter->second.func(MatFuncData(evalMatOp(sMatrix1, _parser, _data, _cache),
+                                                                                              evalMatOp(sMatrix2, _parser, _data, _cache), n),
+                                                                                  errorInfo));
                             break;
                         }
                         case MATSIG_MAT_F:
                         {
                             std::string sMatrix = getNextArgument(sSubExpr, true);
 
-                            _parser.SetExpr(sSubExpr);
+                            /*_parser.SetExpr(sSubExpr);
                             v = _parser.Eval(nResults);
-                            mu::value_type fVal = v[0];
+                            mu::value_type fVal = v[0];*/
+                            Matrix mres = evalMatOp(sSubExpr, _parser, _data, _cache);
+                            mu::value_type fVal = mres.data()[0];
 
-                            _cache.vReturnedMatrices.push_back(fIter->second.func(MatFuncData(evalMatOp(sMatrix, _parser, _data, _cache), fVal), errorInfo));
+                            _cache.vReturnedMatrices.push_back(fIter->second.func(MatFuncData(evalMatOp(sMatrix, _parser, _data, _cache),
+                                                                                              fVal), errorInfo));
                             break;
                         }
                         case MATSIG_MAT_F_N:
                         {
                             std::string sMatrix = getNextArgument(sSubExpr, true);
 
-                            _parser.SetExpr(sSubExpr);
+                            /*_parser.SetExpr(sSubExpr);
                             v = _parser.Eval(nResults);
                             mu::value_type fVal = v[0];
-                            int n = nResults > 1 ? intCast(v[1]) : 0;
+                            int n = nResults > 1 ? intCast(v[1]) : 0;*/
 
-                            _cache.vReturnedMatrices.push_back(fIter->second.func(MatFuncData(evalMatOp(sMatrix, _parser, _data, _cache), fVal, n), errorInfo));
+                            Matrix mres = evalMatOp(sSubExpr, _parser, _data, _cache);
+                            mu::value_type fVal = mres.data()[0];
+                            int n = 0;
+
+                            if (mres.data().size() > 1)
+                                n = intCast(mres.data()[1]);
+
+                            _cache.vReturnedMatrices.push_back(fIter->second.func(MatFuncData(evalMatOp(sMatrix, _parser, _data, _cache),
+                                                                                              fVal, n), errorInfo));
                             break;
                         }
                         case MATSIG_MAT_N_MAUTO:
                         {
                             std::string sMatrix = getNextArgument(sSubExpr, true);
 
-                            _parser.SetExpr(sSubExpr);
+                            /*_parser.SetExpr(sSubExpr);
                             v = _parser.Eval(nResults);
                             int n = intCast(v[0]);
                             int m = intCast(v[0]);
 
                             if (nResults > 1)
-                                m = intCast(v[1]);
+                                m = intCast(v[1]);*/
 
-                            _cache.vReturnedMatrices.push_back(fIter->second.func(MatFuncData(evalMatOp(sMatrix, _parser, _data, _cache), n, m), errorInfo));
+                            Matrix mres = evalMatOp(sSubExpr, _parser, _data, _cache);
+                            int n = intCast(mres.data()[0]);
+                            int m = intCast(mres.data()[0]);
+
+                            if (mres.data().size() > 1)
+                                m = intCast(mres.data()[1]);
+
+                            _cache.vReturnedMatrices.push_back(fIter->second.func(MatFuncData(evalMatOp(sMatrix, _parser, _data, _cache),
+                                                                                              n, m), errorInfo));
                             break;
                         }
                         case MATSIG_MAT_N_MOPT:
                         {
                             std::string sMatrix = getNextArgument(sSubExpr, true);
 
-                            _parser.SetExpr(sSubExpr);
+                            /*_parser.SetExpr(sSubExpr);
                             v = _parser.Eval(nResults);
                             int n = intCast(v[0]);
                             int m = 0;
 
                             if (nResults > 1)
-                                m = intCast(v[1]);
+                                m = intCast(v[1]);*/
 
-                            _cache.vReturnedMatrices.push_back(fIter->second.func(MatFuncData(evalMatOp(sMatrix, _parser, _data, _cache), n, m), errorInfo));
+                            Matrix mres = evalMatOp(sSubExpr, _parser, _data, _cache);
+                            int n = intCast(mres.data()[0]);
+                            int m = 0;
+
+                            if (mres.data().size() > 1)
+                                m = intCast(mres.data()[1]);
+
+                            _cache.vReturnedMatrices.push_back(fIter->second.func(MatFuncData(evalMatOp(sMatrix, _parser, _data, _cache),
+                                                                                              n, m), errorInfo));
                             break;
                         }
                         case MATSIG_N_MAUTO:
                         {
-                            _parser.SetExpr(sSubExpr);
+                            /*_parser.SetExpr(sSubExpr);
                             v = _parser.Eval(nResults);
 
                             if (nResults > 1)
                                 _cache.vReturnedMatrices.push_back(fIter->second.func(MatFuncData(intCast(v[0]), intCast(v[1])), errorInfo));
                             else
-                                _cache.vReturnedMatrices.push_back(fIter->second.func(MatFuncData(intCast(v[0]), intCast(v[0])), errorInfo));
+                                _cache.vReturnedMatrices.push_back(fIter->second.func(MatFuncData(intCast(v[0]), intCast(v[0])), errorInfo));*/
+
+                            Matrix mres = evalMatOp(sSubExpr, _parser, _data, _cache);
+
+                            if (mres.data().size() > 1)
+                                _cache.vReturnedMatrices.push_back(fIter->second.func(MatFuncData(intCast(mres.data()[0]),
+                                                                                                  intCast(mres.data()[1])), errorInfo));
+                            else
+                                _cache.vReturnedMatrices.push_back(fIter->second.func(MatFuncData(intCast(mres.data()[0]),
+                                                                                                  intCast(mres.data()[0])), errorInfo));
 
                             break;
                         }
                         case MATSIG_N_MOPT:
                         {
-                            _parser.SetExpr(sSubExpr);
+                            /*_parser.SetExpr(sSubExpr);
                             v = _parser.Eval(nResults);
 
                             if (nResults > 1)
                                 _cache.vReturnedMatrices.push_back(fIter->second.func(MatFuncData(intCast(v[0]), intCast(v[1])), errorInfo));
                             else
-                                _cache.vReturnedMatrices.push_back(fIter->second.func(MatFuncData(intCast(v[0])), errorInfo));
+                                _cache.vReturnedMatrices.push_back(fIter->second.func(MatFuncData(intCast(v[0])), errorInfo));*/
+
+                            Matrix mres = evalMatOp(sSubExpr, _parser, _data, _cache);
+
+                            if (mres.data().size() > 1)
+                                _cache.vReturnedMatrices.push_back(fIter->second.func(MatFuncData(intCast(mres.data()[0]),
+                                                                                                  intCast(mres.data()[1])), errorInfo));
+                            else
+                                _cache.vReturnedMatrices.push_back(fIter->second.func(MatFuncData(intCast(mres.data()[0])), errorInfo));
 
                             break;
                         }

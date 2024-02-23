@@ -13,3 +13,4 @@ Fixed	If the values "nan" and "inf" are used within an index vector, then they a
 Applied	Increased performance of STFA, audioread and some statistics functions.
 Cleaned	Bar charts now always include the value y=0. In some situations it is reasonable to enable "origin=sliding" as an additional plotting option.
 Fixed	The "cmp()" function does now return the indices with respect to the passed array and not with respect to the arrays origin (MAY BREAK CODE).
+Applied	Experimental feature: "matop" functions now also accept matrix results as their scalar inputs. For consecutive scalar inputs, even a single vector can be passed, e.g. "matop zero({1,3})"
