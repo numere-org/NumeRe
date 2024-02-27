@@ -128,6 +128,7 @@ class NumeReEditor : public wxStyledTextCtrl, public wxThreadHelper
 		void UpdateProcedureViewer();
 		std::string GetCurrentFunctionContext(int& nStartingBrace);
 		std::string GetCurrentArgument(const std::string& sCallTip, int nStartingBrace, int& nArgStartPos);
+		void ShowDwellingCallTip(int charpos);
 
 		int CallTipStartPos();
 		void AdvCallTipShow(int pos, const wxString& definition);

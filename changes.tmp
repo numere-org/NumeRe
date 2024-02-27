@@ -14,3 +14,6 @@ Applied	Increased performance of STFA, audioread and some statistics functions.
 Cleaned	Bar charts now always include the value y=0. In some situations it is reasonable to enable "origin=sliding" as an additional plotting option.
 Fixed	The "cmp()" function does now return the indices with respect to the passed array and not with respect to the arrays origin (MAY BREAK CODE).
 Applied	Experimental feature: "matop" functions now also accept matrix results as their scalar inputs. For consecutive scalar inputs, even a single vector can be passed, e.g. "matop zero({1,3})"
+Fixed	Resolved a rare bug occuring, if whitespace was missing after a comma.
+Cleaned	Usability of mouse-over tooltips was improved. It should now be possible to show the fulltips of arguments inside of function parentheses again.
+Added	An optional feature to extract the argument types of functions, methods and procedures based upon their names, was added.

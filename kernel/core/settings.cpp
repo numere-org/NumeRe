@@ -110,6 +110,7 @@ Settings::Settings() : Documentation()
     m_settings[SETTING_B_QUOTEAUTOCOMP] = SettingsValue(true, SettingsValue::SAVE | SettingsValue::IMMUTABLE);
     m_settings[SETTING_B_BLOCKAUTOCOMP] = SettingsValue(true, SettingsValue::SAVE | SettingsValue::IMMUTABLE);
     m_settings[SETTING_B_SMARTSENSE] = SettingsValue(true, SettingsValue::SAVE | SettingsValue::IMMUTABLE);
+    m_settings[SETTING_B_CALLTIP_ARGS] = SettingsValue(false, SettingsValue::SAVE | SettingsValue::IMMUTABLE);
     m_settings[SETTING_S_EDITORFONT] = SettingsValue("consolas 10 windows-1252", SettingsValue::SAVE | SettingsValue::IMMUTABLE);
     m_settings[SETTING_S_TERMINALFONT] = SettingsValue("consolas 8 windows-1252", SettingsValue::SAVE | SettingsValue::IMMUTABLE);
     m_settings[SETTING_S_HISTORYFONT] = SettingsValue("consolas 8 windows-1252", SettingsValue::SAVE | SettingsValue::IMMUTABLE);
