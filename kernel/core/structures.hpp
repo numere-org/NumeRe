@@ -463,7 +463,7 @@ class VectorIndex
         {
             if (vStorage.size() == 2 && !isValid())
                 return 0;
-            else if (vStorage.back() == INVALID)
+            else if (vStorage.back() == INVALID && expand)
                 return 1;
             else if (vStorage.back() == OPEN_END)
                 return -1;

@@ -1139,70 +1139,161 @@ void NumeReEditor::MakeBlockCheck()
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Static function to detect, whether an
+/// argument is a string.
+///
+/// \param viewedArg StringView
+/// \param defaultValue StringView
+/// \return bool
+///
+/////////////////////////////////////////////////
 static bool isString(StringView viewedArg, StringView defaultValue)
 {
     return viewedArg.front() == 's' && viewedArg.length() > 1 && isupper(viewedArg[1]);
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Static function to detect, whether an
+/// argument is a character.
+///
+/// \param viewedArg StringView
+/// \param defaultValue StringView
+/// \return bool
+///
+/////////////////////////////////////////////////
 static bool isChr(StringView viewedArg, StringView defaultValue)
 {
     return viewedArg.front() == 'c' && viewedArg.length() > 1 && isupper(viewedArg[1]);
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Static function to detect, whether an
+/// argument is a float.
+///
+/// \param viewedArg StringView
+/// \param defaultValue StringView
+/// \return bool
+///
+/////////////////////////////////////////////////
 static bool isFloat(StringView viewedArg, StringView defaultValue)
 {
-    return viewedArg == "x"
-        || viewedArg == "y"
-        || viewedArg == "z"
-        || viewedArg == "t"
-        || (viewedArg.front() == 'f' && viewedArg.length() > 1 && isupper(viewedArg[1]));
+    if (viewedArg.length() == 1)
+        return viewedArg == "x"
+            || viewedArg == "y"
+            || viewedArg == "z"
+            || viewedArg == "t"
+            || viewedArg == "p"
+            || viewedArg == "q";
+    else if (viewedArg.length() == 2 && isdigit(viewedArg.back()))
+        return viewedArg.front() == 'x'
+            || viewedArg.front() == 'y'
+            || viewedArg.front() == 'z'
+            || viewedArg.front() == 't'
+            || viewedArg.front() == 'a';
+
+    return viewedArg.front() == 'f' && viewedArg.length() > 1 && isupper(viewedArg[1]);
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Static function to detect, whether an
+/// argument is an integer.
+///
+/// \param viewedArg StringView
+/// \param defaultValue StringView
+/// \return bool
+///
+/////////////////////////////////////////////////
 static bool isInt(StringView viewedArg, StringView defaultValue)
 {
     return viewedArg == "n"
         || viewedArg == "m"
+        || viewedArg == "l"
         || viewedArg == "k"
         || (viewedArg.front() == 'n' && viewedArg.length() > 1 && isupper(viewedArg[1]));
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Static function to detect, whether an
+/// argument is a date-time value.
+///
+/// \param viewedArg StringView
+/// \param defaultValue StringView
+/// \return bool
+///
+/////////////////////////////////////////////////
 static bool isDateTime(StringView viewedArg, StringView defaultValue)
 {
     return viewedArg.front() == 't' && viewedArg.length() > 1 && isupper(viewedArg[1]);
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Static function to detect, whether an
+/// argument is a matrix.
+///
+/// \param viewedArg StringView
+/// \param defaultValue StringView
+/// \return bool
+///
+/////////////////////////////////////////////////
 static bool isMat(StringView viewedArg, StringView defaultValue)
 {
     return viewedArg.front() == 'm' && viewedArg.length() > 1 && isupper(viewedArg[1]);
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Static function to detect, whether an
+/// argument is a boolean value.
+///
+/// \param viewedArg StringView
+/// \param defaultValue StringView
+/// \return bool
+///
+/////////////////////////////////////////////////
 static bool isBool(StringView viewedArg, StringView defaultValue)
 {
     return defaultValue == "true"
-                 || defaultValue == "false"
-                 || ((viewedArg.starts_with("is") || viewedArg.starts_with("as"))
-                     && viewedArg.length() > 2
-                     && isupper(viewedArg[2]));
+        || defaultValue == "false"
+        || ((viewedArg.starts_with("is") || viewedArg.starts_with("as"))
+            && viewedArg.length() > 2
+            && isupper(viewedArg[2]));
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Static function to detect, whether an
+/// argument is a table.
+///
+/// \param viewedArg StringView
+/// \param defaultValue StringView
+/// \return bool
+///
+/////////////////////////////////////////////////
 static bool isTable(StringView viewedArg, StringView defaultValue)
 {
     return viewedArg.ends_with("()");
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Static function to detect, whether an
+/// argument is a cluster.
+///
+/// \param viewedArg StringView
+/// \param defaultValue StringView
+/// \return bool
+///
+/////////////////////////////////////////////////
 static bool isCluster(StringView viewedArg, StringView defaultValue)
 {
     return viewedArg.ends_with("{}");
 }
-
 
 
 /////////////////////////////////////////////////
@@ -1247,6 +1338,7 @@ void NumeReEditor::HandleFunctionCallTip()
         return;
     }
 
+    bool detectArgumentTypes = m_options->getSetting(SETTING_B_CALLTIP_ARGS).active();
     int nStartingBrace = 0;
     int nArgStartPos = 0;
     string sFunctionContext = GetCurrentFunctionContext(nStartingBrace);
@@ -1263,24 +1355,35 @@ void NumeReEditor::HandleFunctionCallTip()
         if (_cTip.sDefinition.find('\n') != string::npos)
             _cTip.sDefinition.erase(_cTip.sDefinition.find('\n'));
 
-        if (_cTip.sDefinition.find(')') != string::npos)
-            _cTip.sDefinition.erase(_cTip.sDefinition.rfind(')') + 1);
+        if (!detectArgumentTypes)
+        {
+            if (_cTip.sDefinition.find(')') != string::npos)
+                _cTip.sDefinition.erase(_cTip.sDefinition.rfind(')') + 1);
+        }
+        else
+        {
+            if (_cTip.sDefinition.find("::") != std::string::npos)
+                _cTip.sDefinition.erase(_cTip.sDefinition.find("::"), _cTip.sDefinition.find("->")-_cTip.sDefinition.find("::"));
+        }
     }
     else if (sFunctionContext.front() == '.')
     {
         _cTip = _provider.getMethod(sFunctionContext.substr(1));
         size_t nDotPos = _cTip.sDefinition.find('.');
 
-        if (_cTip.sDefinition.find(')', nDotPos) != string::npos)
-            _cTip.sDefinition.erase(_cTip.sDefinition.find(')', nDotPos) + 1);
-        else
-            _cTip.sDefinition.erase(_cTip.sDefinition.find(' ', nDotPos));
+        if (!detectArgumentTypes)
+        {
+            if (_cTip.sDefinition.find(')', nDotPos) != string::npos)
+                _cTip.sDefinition.erase(_cTip.sDefinition.find(')', nDotPos) + 1);
+            else
+                _cTip.sDefinition.erase(_cTip.sDefinition.find(' ', nDotPos));
+        }
     }
     else
     {
         _cTip = _provider.getFunction(sFunctionContext);
 
-        if (_cTip.sDefinition.find(')') != string::npos)
+        if (_cTip.sDefinition.find(')') != string::npos && !detectArgumentTypes)
             _cTip.sDefinition.erase(_cTip.sDefinition.find(')') + 1);
     }
 
@@ -1291,12 +1394,13 @@ void NumeReEditor::HandleFunctionCallTip()
     StringView viewedArg(sArgument);
     viewedArg.strip();
 
-    if (viewedArg.length() && m_options->getSetting(SETTING_B_CALLTIP_ARGS).active())
+    if (viewedArg.length() && detectArgumentTypes)
     {
         bool isRef = false;
         bool isVect = false;
         std::string sArgumentType;
 
+        // Is the argument a reference?
         if (viewedArg.front() == '&')
         {
             viewedArg.trim_front(1);
@@ -1311,6 +1415,7 @@ void NumeReEditor::HandleFunctionCallTip()
         viewedArg.strip();
         StringView defaultValue;
 
+        // Remove possible default values
         if (viewedArg.find('=') != std::string::npos)
         {
             defaultValue = viewedArg.subview(viewedArg.find('=')+1);
@@ -1320,6 +1425,7 @@ void NumeReEditor::HandleFunctionCallTip()
             viewedArg.strip();
         }
 
+        // Is the argument a vector?
         if (viewedArg.front() == '{' && viewedArg.back() == '}')
         {
             isVect = true;
@@ -1328,6 +1434,7 @@ void NumeReEditor::HandleFunctionCallTip()
             viewedArg.strip();
         }
 
+        // Detect the argument type
         if (isString(viewedArg, defaultValue))
             sArgumentType = _guilang.get("GUI_EDITOR_ARGCALLTIP_STR", viewedArg.to_string());
         else if (isChr(viewedArg, defaultValue))
@@ -1348,21 +1455,16 @@ void NumeReEditor::HandleFunctionCallTip()
             sArgumentType = _guilang.get("GUI_EDITOR_ARGCALLTIP_CLUSTER", viewedArg.to_string());
         else if (viewedArg == "...")
             sArgumentType = _guilang.get("GUI_EDITOR_ARGCALLTIP_REPEATTYPE");
-        /*else if (sArgument == "x" || sArgument == "y" || sArgument == "z" || sArgument == "x1" || sArgument == "x0")
-            sDefinition += "\n" + _guilang.get("GUI_EDITOR_ARGCALLTIP_FLOAT", sArgument);
-        else if (sArgument == "l" || sArgument == "n" || sArgument == "m" || sArgument == "k" || sArgument == "P" || sArgument == "POS" || sArgument == "LEN")
-            sDefinition += "\n" + _guilang.get("GUI_EDITOR_ARGCALLTIP_INTEGER", sArgument);
-        else if (sArgument == "theta" || sArgument == "phi")
-            sDefinition += "\n" + _guilang.get("GUI_EDITOR_ARGCALLTIP_ANGLE", sArgument);
-        else
-            sDefinition += "\n" + _guilang.get("GUI_EDITOR_ARGCALLTIP_NOHEURISTICS", sArgument);*/
 
+        // Set it to "Any", if no heuristic succeeded
         if (!sArgumentType.length())
             sArgumentType = _guilang.get("GUI_EDITOR_ARGCALLTIP_ANY", viewedArg.to_string());
 
+        // If we detected a reference, add this information here
         if (isRef)
             sArgumentType += " [" + _guilang.get("GUI_EDITOR_ARGCALLTIP_REFERENCE") + "]";
 
+        // If we detected a vector, add this information here
         if (isVect)
             sArgumentType += " [" + _guilang.get("GUI_EDITOR_ARGCALLTIP_VECTOR") + "]";
 
@@ -1543,6 +1645,14 @@ string NumeReEditor::GetCurrentArgument(const string& sCallTip, int nStartingBra
         // decrement the argument count
         if (!(nQuotationMarks % 2) && sArgList[i] == ',')
             nCurrentArg--;
+    }
+
+    // check, if last argument was an ellipsis. We then keep showing this
+    // argument, if the user is already beyond the last argument
+    if (sArgList.ends_with("..."))
+    {
+        nArgStartPos = nParensPos + sArgList.length()-3;
+        return "...";
     }
 
     // Return nothing
