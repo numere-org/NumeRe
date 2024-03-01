@@ -1140,6 +1140,163 @@ void NumeReEditor::MakeBlockCheck()
 
 
 /////////////////////////////////////////////////
+/// \brief Static function to detect, whether an
+/// argument is a string.
+///
+/// \param viewedArg StringView
+/// \param defaultValue StringView
+/// \return bool
+///
+/////////////////////////////////////////////////
+static bool isString(StringView viewedArg, StringView defaultValue)
+{
+    return viewedArg.front() == 's' && viewedArg.length() > 1 && isupper(viewedArg[1]);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Static function to detect, whether an
+/// argument is a character.
+///
+/// \param viewedArg StringView
+/// \param defaultValue StringView
+/// \return bool
+///
+/////////////////////////////////////////////////
+static bool isChr(StringView viewedArg, StringView defaultValue)
+{
+    return viewedArg.front() == 'c' && viewedArg.length() > 1 && isupper(viewedArg[1]);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Static function to detect, whether an
+/// argument is a float.
+///
+/// \param viewedArg StringView
+/// \param defaultValue StringView
+/// \return bool
+///
+/////////////////////////////////////////////////
+static bool isFloat(StringView viewedArg, StringView defaultValue)
+{
+    if (viewedArg.length() == 1)
+        return viewedArg == "x"
+            || viewedArg == "y"
+            || viewedArg == "z"
+            || viewedArg == "t"
+            || viewedArg == "p"
+            || viewedArg == "q";
+    else if (viewedArg.length() == 2 && isdigit(viewedArg.back()))
+        return viewedArg.front() == 'x'
+            || viewedArg.front() == 'y'
+            || viewedArg.front() == 'z'
+            || viewedArg.front() == 't'
+            || viewedArg.front() == 'a';
+
+    return viewedArg.front() == 'f' && viewedArg.length() > 1 && isupper(viewedArg[1]);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Static function to detect, whether an
+/// argument is an integer.
+///
+/// \param viewedArg StringView
+/// \param defaultValue StringView
+/// \return bool
+///
+/////////////////////////////////////////////////
+static bool isInt(StringView viewedArg, StringView defaultValue)
+{
+    return viewedArg == "n"
+        || viewedArg == "m"
+        || viewedArg == "l"
+        || viewedArg == "k"
+        || (viewedArg.front() == 'n' && viewedArg.length() > 1 && isupper(viewedArg[1]));
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Static function to detect, whether an
+/// argument is a date-time value.
+///
+/// \param viewedArg StringView
+/// \param defaultValue StringView
+/// \return bool
+///
+/////////////////////////////////////////////////
+static bool isDateTime(StringView viewedArg, StringView defaultValue)
+{
+    return viewedArg.front() == 't' && viewedArg.length() > 1 && isupper(viewedArg[1]);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Static function to detect, whether an
+/// argument is a matrix.
+///
+/// \param viewedArg StringView
+/// \param defaultValue StringView
+/// \return bool
+///
+/////////////////////////////////////////////////
+static bool isMat(StringView viewedArg, StringView defaultValue)
+{
+    return viewedArg.front() == 'm' && viewedArg.length() > 1 && isupper(viewedArg[1]);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Static function to detect, whether an
+/// argument is a boolean value.
+///
+/// \param viewedArg StringView
+/// \param defaultValue StringView
+/// \return bool
+///
+/////////////////////////////////////////////////
+static bool isBool(StringView viewedArg, StringView defaultValue)
+{
+    return defaultValue == "true"
+        || defaultValue == "false"
+        || ((viewedArg.starts_with("is") || viewedArg.starts_with("as"))
+            && viewedArg.length() > 2
+            && isupper(viewedArg[2]));
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Static function to detect, whether an
+/// argument is a table.
+///
+/// \param viewedArg StringView
+/// \param defaultValue StringView
+/// \return bool
+///
+/////////////////////////////////////////////////
+static bool isTable(StringView viewedArg, StringView defaultValue)
+{
+    return viewedArg.ends_with("()");
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Static function to detect, whether an
+/// argument is a cluster.
+///
+/// \param viewedArg StringView
+/// \param defaultValue StringView
+/// \return bool
+///
+/////////////////////////////////////////////////
+static bool isCluster(StringView viewedArg, StringView defaultValue)
+{
+    return viewedArg.ends_with("{}");
+}
+
+
+/////////////////////////////////////////////////
 /// \brief This function handles the descriptive
 /// function call tip.
 ///
@@ -1164,6 +1321,24 @@ void NumeReEditor::HandleFunctionCallTip()
     if (getFileType() != FILE_NSCR && getFileType() != FILE_NPRC)
         return;
 
+    int currPos = GetCurrentPos();
+
+    // If the last released key is zero, it was a mouse click. Now examine
+    // whether the cursor is now on a syntax element with dwelling calltip
+    // and prefer this over the context calltip
+    if (!m_nLastReleasedKey
+        && (isStyleType(STYLE_FUNCTION, currPos)
+            || isStyleType(STYLE_COMMAND, currPos)
+            || isStyleType(STYLE_PROCEDURE, currPos)
+            || GetStyleAt(currPos) == wxSTC_NSCR_METHOD
+            || GetStyleAt(currPos) == wxSTC_NSCR_CONSTANTS
+            || GetStyleAt(currPos) == wxSTC_NSCR_PREDEFS))
+    {
+        ShowDwellingCallTip(currPos);
+        return;
+    }
+
+    bool detectArgumentTypes = m_options->getSetting(SETTING_B_CALLTIP_ARGS).active();
     int nStartingBrace = 0;
     int nArgStartPos = 0;
     string sFunctionContext = GetCurrentFunctionContext(nStartingBrace);
@@ -1180,54 +1355,124 @@ void NumeReEditor::HandleFunctionCallTip()
         if (_cTip.sDefinition.find('\n') != string::npos)
             _cTip.sDefinition.erase(_cTip.sDefinition.find('\n'));
 
-        if (_cTip.sDefinition.find(')') != string::npos)
-            _cTip.sDefinition.erase(_cTip.sDefinition.rfind(')') + 1);
+        if (!detectArgumentTypes)
+        {
+            if (_cTip.sDefinition.find(')') != string::npos)
+                _cTip.sDefinition.erase(_cTip.sDefinition.rfind(')') + 1);
+        }
+        else
+        {
+            if (_cTip.sDefinition.find("::") != std::string::npos)
+                _cTip.sDefinition.erase(_cTip.sDefinition.find("::"), _cTip.sDefinition.find("->")-_cTip.sDefinition.find("::"));
+        }
     }
     else if (sFunctionContext.front() == '.')
     {
         _cTip = _provider.getMethod(sFunctionContext.substr(1));
         size_t nDotPos = _cTip.sDefinition.find('.');
 
-        if (_cTip.sDefinition.find(')', nDotPos) != string::npos)
-            _cTip.sDefinition.erase(_cTip.sDefinition.find(')', nDotPos) + 1);
-        else
-            _cTip.sDefinition.erase(_cTip.sDefinition.find(' ', nDotPos));
+        if (!detectArgumentTypes)
+        {
+            if (_cTip.sDefinition.find(')', nDotPos) != string::npos)
+                _cTip.sDefinition.erase(_cTip.sDefinition.find(')', nDotPos) + 1);
+            else
+                _cTip.sDefinition.erase(_cTip.sDefinition.find(' ', nDotPos));
+        }
     }
     else
     {
         _cTip = _provider.getFunction(sFunctionContext);
 
-        if (_cTip.sDefinition.find(')') != string::npos)
+        if (_cTip.sDefinition.find(')') != string::npos && !detectArgumentTypes)
             _cTip.sDefinition.erase(_cTip.sDefinition.find(')') + 1);
     }
 
     if (!_cTip.sDefinition.length())
         return;
 
-    string sArgument = GetCurrentArgument(_cTip.sDefinition, nStartingBrace, nArgStartPos);
+    std::string sArgument = GetCurrentArgument(_cTip.sDefinition, nStartingBrace, nArgStartPos);
+    StringView viewedArg(sArgument);
+    viewedArg.strip();
 
-    /*if (sArgument.length())
+    if (viewedArg.length() && detectArgumentTypes)
     {
-        if (sArgument.substr(0,3) == "STR")
-            sDefinition += "\n" + _guilang.get("GUI_EDITOR_ARGCALLTIP_STR", sArgument);
-        else if (sArgument == "CHAR")
-            sDefinition += "\n" + _guilang.get("GUI_EDITOR_ARGCALLTIP_CHAR", sArgument);
-        else if (sArgument == "MAT")
-            sDefinition += "\n" + _guilang.get("GUI_EDITOR_ARGCALLTIP_MAT", sArgument);
-        else if (sArgument == "...")
-            sDefinition += "\n" + _guilang.get("GUI_EDITOR_ARGCALLTIP_REPEATTYPE", sArgument);
-        else if (sArgument == "x" || sArgument == "y" || sArgument == "z" || sArgument == "x1" || sArgument == "x0")
-            sDefinition += "\n" + _guilang.get("GUI_EDITOR_ARGCALLTIP_FLOAT", sArgument);
-        else if (sArgument == "l" || sArgument == "n" || sArgument == "m" || sArgument == "k" || sArgument == "P" || sArgument == "POS" || sArgument == "LEN")
-            sDefinition += "\n" + _guilang.get("GUI_EDITOR_ARGCALLTIP_INTEGER", sArgument);
-        else if (sArgument == "theta" || sArgument == "phi")
-            sDefinition += "\n" + _guilang.get("GUI_EDITOR_ARGCALLTIP_ANGLE", sArgument);
-        else
-            sDefinition += "\n" + _guilang.get("GUI_EDITOR_ARGCALLTIP_NOHEURISTICS", sArgument);
+        bool isRef = false;
+        bool isVect = false;
+        std::string sArgumentType;
 
-    }*/
+        // Is the argument a reference?
+        if (viewedArg.front() == '&')
+        {
+            viewedArg.trim_front(1);
+            isRef = true;
+        }
+        else if (viewedArg.back() == '&')
+        {
+            viewedArg.trim_back(1);
+            isRef = true;
+        }
 
-    if (CallTipActive() && CallTipStartPos() != nStartingBrace)
+        viewedArg.strip();
+        StringView defaultValue;
+
+        // Remove possible default values
+        if (viewedArg.find('=') != std::string::npos)
+        {
+            defaultValue = viewedArg.subview(viewedArg.find('=')+1);
+            viewedArg = viewedArg.subview(0, viewedArg.find('='));
+
+            defaultValue.strip();
+            viewedArg.strip();
+        }
+
+        // Is the argument a vector?
+        if (viewedArg.front() == '{' && viewedArg.back() == '}')
+        {
+            isVect = true;
+            viewedArg.trim_front(1);
+            viewedArg.trim_back(1);
+            viewedArg.strip();
+        }
+
+        // Detect the argument type
+        if (isString(viewedArg, defaultValue))
+            sArgumentType = _guilang.get("GUI_EDITOR_ARGCALLTIP_STR", viewedArg.to_string());
+        else if (isChr(viewedArg, defaultValue))
+            sArgumentType = _guilang.get("GUI_EDITOR_ARGCALLTIP_CHR", viewedArg.to_string());
+        else if (isMat(viewedArg, defaultValue))
+            sArgumentType = _guilang.get("GUI_EDITOR_ARGCALLTIP_MAT", viewedArg.to_string());
+        else if (isInt(viewedArg, defaultValue))
+            sArgumentType = _guilang.get("GUI_EDITOR_ARGCALLTIP_INTEGER", viewedArg.to_string());
+        else if (isFloat(viewedArg, defaultValue))
+            sArgumentType = _guilang.get("GUI_EDITOR_ARGCALLTIP_FLOAT", viewedArg.to_string());
+        else if (isDateTime(viewedArg, defaultValue))
+            sArgumentType = _guilang.get("GUI_EDITOR_ARGCALLTIP_TIME", viewedArg.to_string());
+        else if (isBool(viewedArg, defaultValue))
+            sArgumentType = _guilang.get("GUI_EDITOR_ARGCALLTIP_BOOL", viewedArg.to_string());
+        else if (isTable(viewedArg, defaultValue))
+            sArgumentType = _guilang.get("GUI_EDITOR_ARGCALLTIP_TABLE", viewedArg.to_string());
+        else if (isCluster(viewedArg, defaultValue))
+            sArgumentType = _guilang.get("GUI_EDITOR_ARGCALLTIP_CLUSTER", viewedArg.to_string());
+        else if (viewedArg == "...")
+            sArgumentType = _guilang.get("GUI_EDITOR_ARGCALLTIP_REPEATTYPE");
+
+        // Set it to "Any", if no heuristic succeeded
+        if (!sArgumentType.length())
+            sArgumentType = _guilang.get("GUI_EDITOR_ARGCALLTIP_ANY", viewedArg.to_string());
+
+        // If we detected a reference, add this information here
+        if (isRef)
+            sArgumentType += " [" + _guilang.get("GUI_EDITOR_ARGCALLTIP_REFERENCE") + "]";
+
+        // If we detected a vector, add this information here
+        if (isVect)
+            sArgumentType += " [" + _guilang.get("GUI_EDITOR_ARGCALLTIP_VECTOR") + "]";
+
+        if (sArgumentType.length())
+            _cTip.sDefinition += "\n" + strfill(" ", nArgStartPos + sArgument.find(viewedArg.to_string()), ' ') + sArgumentType;
+    }
+
+    if (CallTipActive() && (CallTipStartPos() != nStartingBrace || m_sCallTipContent != _cTip.sDefinition))
     {
         AdvCallTipCancel();
         AdvCallTipShow(nStartingBrace, _cTip.sDefinition);
@@ -1402,9 +1647,168 @@ string NumeReEditor::GetCurrentArgument(const string& sCallTip, int nStartingBra
             nCurrentArg--;
     }
 
+    // check, if last argument was an ellipsis. We then keep showing this
+    // argument, if the user is already beyond the last argument
+    if (sArgList.ends_with("..."))
+    {
+        nArgStartPos = nParensPos + sArgList.length()-3;
+        return "...";
+    }
+
     // Return nothing
     return "";
 }
+
+
+/////////////////////////////////////////////////
+/// \brief Show the dwelling calltip, if the
+/// cursor is on an element providing such an
+/// information.
+///
+/// \param charpos int
+/// \return void
+///
+/////////////////////////////////////////////////
+void NumeReEditor::ShowDwellingCallTip(int charpos)
+{
+    int startPosition = WordStartPosition(charpos, true);
+    int endPosition = WordEndPosition(charpos, true);
+    static NumeRe::CallTipProvider _provider = *m_terminal->getProvider();
+
+    wxString selection = this->GetTextRange(startPosition, endPosition);
+    NumeRe::CallTip _cTip;
+
+    if (GetStyleAt(charpos) == wxSTC_NSCR_FUNCTION)
+        _cTip = _provider.getFunction(selection.ToStdString());
+    else if (GetStyleAt(charpos) == wxSTC_NSCR_COMMAND
+             || GetStyleAt(charpos) == wxSTC_NSCR_PROCEDURE_COMMANDS)
+    {
+        // Is it a block?
+        int id = getBlockID(selection);
+
+        if (id != wxNOT_FOUND)
+        {
+            if (CallTipActive() && m_nCallTipStart == startPosition)
+                return;
+
+            AdvCallTipCancel();
+
+            size_t lastpos = 0;
+            size_t nLength = 0;
+            size_t lastpos2 = 0;
+
+            // Get the block definition
+            SyntaxBlockDefinition blockDef = vBlockDefs[id];
+
+            // Construct the tooltip
+            std::string sBlock = addLinebreaks(realignLangString(_guilang.get("PARSERFUNCS_LISTCMD_CMD_"
+                                                                              + toUpperCase(blockDef.startWord)
+                                                                              + "_*"), lastpos)) + "\n  [...]\n";
+
+            if (selection != blockDef.startWord)
+                nLength = sBlock.length() + countUmlauts(sBlock);
+
+            // Include middle words
+            if (blockDef.middleWord1.length())
+            {
+                sBlock += addLinebreaks(realignLangString(_guilang.get("PARSERFUNCS_LISTCMD_CMD_"
+                                                                       + toUpperCase(blockDef.middleWord1)
+                                                                       + "_*"), lastpos2)) + "\n  [...]\n";
+
+                if (selection != blockDef.startWord && selection != blockDef.middleWord1)
+                    nLength = sBlock.length() + countUmlauts(sBlock);
+            }
+
+            // Include middle words
+            if (blockDef.middleWord2.length())
+            {
+                sBlock += addLinebreaks(_guilang.get("PARSERFUNCS_LISTCMD_CMD_"
+                                                     + toUpperCase(blockDef.middleWord2) + "_*"))
+                                                     + "\n  [...]\n";
+
+                if (selection != blockDef.startWord && selection != blockDef.middleWord1 && selection != blockDef.middleWord2)
+                    nLength = sBlock.length() + countUmlauts(sBlock);
+            }
+
+            // Add the last word
+            sBlock += addLinebreaks(realignLangString(_guilang.get("PARSERFUNCS_LISTCMD_CMD_"
+                                                                   + toUpperCase(blockDef.endWord)
+                                                                   + "_*"), lastpos));
+
+            // Display the tooltip and highlight the corresponding positions
+            AdvCallTipShow(startPosition, sBlock);
+            CallTipSetHighlight(nLength, selection.length() + nLength);
+            return;
+        }
+        else
+            _cTip = _provider.getCommand(selection.ToStdString());
+    }
+    else if (GetStyleAt(charpos) == wxSTC_NSCR_PROCEDURES)
+    {
+        if (GetCharAt(charpos) != '$')
+            startPosition--;
+
+        // If we are already showing this tooltip or the function context, do nothing
+        if (CallTipActive() && m_nCallTipStart == startPosition)
+            return;
+
+        AdvCallTipCancel();
+
+        wxString proc = m_search->FindMarkedProcedure(charpos);
+
+        if (!proc.length())
+            return;
+
+        wxString procdef = m_search->FindProcedureDefinition();
+        wxString flags = "";
+
+        if (!procdef.length())
+            procdef = m_clickedProcedure + "(...)";
+
+        size_t nSepPos = std::string::npos;
+
+        if (procdef.find("::") != std::string::npos)
+            nSepPos = procdef.find("::");
+        else if (procdef.find(" -> ") != std::string::npos)
+            nSepPos = procdef.find(" -> ");
+        else if (procdef.find('\n') != std::string::npos)
+            nSepPos = procdef.find('\n');
+
+        if (nSepPos != std::string::npos)
+        {
+            flags = procdef.substr(nSepPos);
+            procdef.erase(nSepPos);
+        }
+
+        if (flags.find('\n') != string::npos)
+            AdvCallTipShow(startPosition, procdef + flags);
+        else
+            AdvCallTipShow(startPosition, procdef + flags + "\n    " + _guilang.get("GUI_EDITOR_CALLTIP_PROC2"));
+
+        CallTipSetHighlight(0, procdef.length());
+        return;
+    }
+    else if (GetStyleAt(charpos) == wxSTC_NSCR_OPTION)
+        _cTip = _provider.getOption(selection.ToStdString());
+    else if (GetStyleAt(charpos) == wxSTC_NSCR_METHOD)
+        _cTip = _provider.getMethod(selection.ToStdString());
+    else if (GetStyleAt(charpos) == wxSTC_NSCR_PREDEFS)
+        _cTip = _provider.getPredef(selection.ToStdString());
+    else if (GetStyleAt(charpos) == wxSTC_NSCR_CONSTANTS)
+        _cTip = _provider.getConstant(selection.ToStdString());
+
+    if (_cTip.sDefinition.length())
+    {
+        if (CallTipActive() && m_nCallTipStart == startPosition)
+            return;
+        else
+            AdvCallTipCancel();
+
+        AdvCallTipShow(startPosition, _cTip.sDefinition + (_cTip.sDocumentation.length() ? "\n" + _cTip.sDocumentation : ""));
+        CallTipSetHighlight(_cTip.nStart, _cTip.nEnd);
+    }
+}
+
 
 
 /////////////////////////////////////////////////
@@ -1745,143 +2149,7 @@ void NumeReEditor::OnMouseDwell(wxStyledTextEvent& event)
         || !HasFocus())
         return;
 
-    int charpos = event.GetPosition();
-    int startPosition = WordStartPosition(charpos, true);
-    int endPosition = WordEndPosition(charpos, true);
-    static NumeRe::CallTipProvider _provider = *m_terminal->getProvider();
-
-    wxString selection = this->GetTextRange(startPosition, endPosition);
-    NumeRe::CallTip _cTip;
-
-    if (GetStyleAt(charpos) == wxSTC_NSCR_FUNCTION)
-        _cTip = _provider.getFunction(selection.ToStdString());
-    else if (GetStyleAt(charpos) == wxSTC_NSCR_COMMAND
-             || GetStyleAt(charpos) == wxSTC_NSCR_PROCEDURE_COMMANDS)
-    {
-        // Is it a block?
-        int id = getBlockID(selection);
-
-        if (id != wxNOT_FOUND)
-        {
-            if (CallTipActive() && m_nCallTipStart == startPosition)
-                return;
-
-            AdvCallTipCancel();
-
-            size_t lastpos = 0;
-            size_t nLength = 0;
-            size_t lastpos2 = 0;
-
-            // Get the block definition
-            SyntaxBlockDefinition blockDef = vBlockDefs[id];
-
-            // Construct the tooltip
-            std::string sBlock = addLinebreaks(realignLangString(_guilang.get("PARSERFUNCS_LISTCMD_CMD_"
-                                                                              + toUpperCase(blockDef.startWord)
-                                                                              + "_*"), lastpos)) + "\n  [...]\n";
-
-            if (selection != blockDef.startWord)
-                nLength = sBlock.length() + countUmlauts(sBlock);
-
-            // Include middle words
-            if (blockDef.middleWord1.length())
-            {
-                sBlock += addLinebreaks(realignLangString(_guilang.get("PARSERFUNCS_LISTCMD_CMD_"
-                                                                       + toUpperCase(blockDef.middleWord1)
-                                                                       + "_*"), lastpos2)) + "\n  [...]\n";
-
-                if (selection != blockDef.startWord && selection != blockDef.middleWord1)
-                    nLength = sBlock.length() + countUmlauts(sBlock);
-            }
-
-            // Include middle words
-            if (blockDef.middleWord2.length())
-            {
-                sBlock += addLinebreaks(_guilang.get("PARSERFUNCS_LISTCMD_CMD_"
-                                                     + toUpperCase(blockDef.middleWord2) + "_*"))
-                                                     + "\n  [...]\n";
-
-                if (selection != blockDef.startWord && selection != blockDef.middleWord1 && selection != blockDef.middleWord2)
-                    nLength = sBlock.length() + countUmlauts(sBlock);
-            }
-
-            // Add the last word
-            sBlock += addLinebreaks(realignLangString(_guilang.get("PARSERFUNCS_LISTCMD_CMD_"
-                                                                   + toUpperCase(blockDef.endWord)
-                                                                   + "_*"), lastpos));
-
-            // Display the tooltip and highlight the corresponding positions
-            AdvCallTipShow(startPosition, sBlock);
-            CallTipSetHighlight(nLength, selection.length() + nLength);
-            return;
-        }
-        else
-            _cTip = _provider.getCommand(selection.ToStdString());
-    }
-    else if (GetStyleAt(charpos) == wxSTC_NSCR_PROCEDURES)
-    {
-        if (GetCharAt(charpos) != '$')
-            startPosition--;
-
-        // If we are already showing this tooltip or the function context, do nothing
-        if (CallTipActive() && m_nCallTipStart == startPosition)
-            return;
-
-        AdvCallTipCancel();
-
-        wxString proc = m_search->FindMarkedProcedure(charpos);
-
-        if (!proc.length())
-            return;
-
-        wxString procdef = m_search->FindProcedureDefinition();
-        wxString flags = "";
-
-        if (!procdef.length())
-            procdef = m_clickedProcedure + "(...)";
-
-        size_t nSepPos = std::string::npos;
-
-        if (procdef.find("::") != std::string::npos)
-            nSepPos = procdef.find("::");
-        else if (procdef.find(" -> ") != std::string::npos)
-            nSepPos = procdef.find(" -> ");
-        else if (procdef.find('\n') != std::string::npos)
-            nSepPos = procdef.find('\n');
-
-        if (nSepPos != std::string::npos)
-        {
-            flags = procdef.substr(nSepPos);
-            procdef.erase(nSepPos);
-        }
-
-        if (flags.find('\n') != string::npos)
-            AdvCallTipShow(startPosition, procdef + flags);
-        else
-            AdvCallTipShow(startPosition, procdef + flags + "\n    " + _guilang.get("GUI_EDITOR_CALLTIP_PROC2"));
-
-        CallTipSetHighlight(0, procdef.length());
-        return;
-    }
-    else if (GetStyleAt(charpos) == wxSTC_NSCR_OPTION)
-        _cTip = _provider.getOption(selection.ToStdString());
-    else if (GetStyleAt(charpos) == wxSTC_NSCR_METHOD)
-        _cTip = _provider.getMethod(selection.ToStdString());
-    else if (GetStyleAt(charpos) == wxSTC_NSCR_PREDEFS)
-        _cTip = _provider.getPredef(selection.ToStdString());
-    else if (GetStyleAt(charpos) == wxSTC_NSCR_CONSTANTS)
-        _cTip = _provider.getConstant(selection.ToStdString());
-
-    if (_cTip.sDefinition.length())
-    {
-        if (CallTipActive() && m_nCallTipStart == startPosition)
-            return;
-        else
-            AdvCallTipCancel();
-
-        AdvCallTipShow(startPosition, _cTip.sDefinition + (_cTip.sDocumentation.length() ? "\n" + _cTip.sDocumentation : ""));
-        CallTipSetHighlight(_cTip.nStart, _cTip.nEnd);
-    }
+    ShowDwellingCallTip(event.GetPosition());
 }
 
 

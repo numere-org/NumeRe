@@ -290,6 +290,7 @@ void OptionsDialog::CreateEditorPage()
     m_IconsOnTabs = panel->CreateCheckBox(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_SHOW_ICONS_ON_TABS"));
     m_useTabs = panel->CreateCheckBox(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_USE_TABS"));
     m_lineLengthIndicator = panel->CreateCheckBox(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_SHOW_LINE_LENGTH_INDICATOR"));
+    m_calltipDetectArgs = panel->CreateCheckBox(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_CALLTIP_DETECT_ARGS"));
     m_caretBlinkTime = panel->CreateSpinControl(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_CARET_BLINK_TIME"), 100, 2000, 500);
 
     group = panel->createGroup(_guilang.get("GUI_OPTIONS_AUTOCOMPLETION"));
@@ -862,6 +863,7 @@ bool OptionsDialog::EvaluateOptions()
     mSettings[SETTING_B_AUTOSAVEEXECUTION].active() = m_saveBeforeExecuting->IsChecked();
     mSettings[SETTING_B_LINELENGTH].active() = m_lineLengthIndicator->IsChecked();
     mSettings[SETTING_B_POINTTOERROR].active() = m_alwaysPointToError->IsChecked();
+    mSettings[SETTING_B_CALLTIP_ARGS].active() = m_calltipDetectArgs->IsChecked();
     mSettings[SETTING_B_SAVESASHS].active() = m_saveSashPositions->IsChecked();
     mSettings[SETTING_B_SAVEWINDOWSIZE].active() = m_saveWindowPosition->IsChecked();
     mSettings[SETTING_S_TOOLBARICONSTYLE].stringval() = m_iconStyle->GetValue();
@@ -977,6 +979,7 @@ void OptionsDialog::InitializeDialog()
     m_blockAutoComp->SetValue(mSettings[SETTING_B_BLOCKAUTOCOMP].active());
     m_quoteAutoComp->SetValue(mSettings[SETTING_B_QUOTEAUTOCOMP].active());
     m_smartSense->SetValue(mSettings[SETTING_B_SMARTSENSE].active());
+    m_calltipDetectArgs->SetValue(mSettings[SETTING_B_CALLTIP_ARGS].active());
     m_saveBeforeExecuting->SetValue(mSettings[SETTING_B_AUTOSAVEEXECUTION].active());
     m_lineLengthIndicator->SetValue(mSettings[SETTING_B_LINELENGTH].active());
     m_alwaysPointToError->SetValue(mSettings[SETTING_B_POINTTOERROR].active());

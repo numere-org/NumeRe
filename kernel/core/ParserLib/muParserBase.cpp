@@ -985,7 +985,7 @@ namespace mu
 					continue;
 
                 // Find the last character before the alphabetic part
-				size_t nSep = sExpr.find_last_of(" +-*/(=:?&|<>!%{^", i - 1) + 1;
+				size_t nSep = sExpr.find_last_of(" +-*/(=:?&|<>!%{^,", i - 1) + 1;
 				// Extract the function
 				std::string sFunc = sExpr.subview(nSep, i - nSep).to_string();
 

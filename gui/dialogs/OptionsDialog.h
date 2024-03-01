@@ -218,6 +218,7 @@ class OptionsDialog: public wxDialog
         wxCheckBox* m_smartSense;
         wxCheckBox* m_lineLengthIndicator;
         wxCheckBox* m_alwaysPointToError;
+        wxCheckBox* m_calltipDetectArgs;
 
         wxSpinCtrl* m_debuggerFocusLine;
         wxCheckBox* m_debuggerShowLineNumbers;
