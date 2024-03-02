@@ -3680,8 +3680,6 @@ static CommandReturnValues cmd_set(string& sCmd)
     Parser& _parser = NumeReKernel::getInstance()->getParser();
     Settings& _option = NumeReKernel::getInstance()->getSettings();
     FunctionDefinitionManager& _functions = NumeReKernel::getInstance()->getDefinitions();
-    Output& _out = NumeReKernel::getInstance()->getOutput();
-    Script& _script = NumeReKernel::getInstance()->getScript();
     PlotData& _pData = NumeReKernel::getInstance()->getPlottingData();
 
     std::map<std::string, SettingsValue>& mSettings = _option.getSettings();
@@ -3745,13 +3743,11 @@ static CommandReturnValues cmd_set(string& sCmd)
                         _fSys.setTokens(_option.getTokenPaths());
                         _fSys.setPath(sArgument, true, _data.getProgramPath());
 
+                        // Update value in settings object
                         iter->second.stringval() = _fSys.getPath();
 
-                        _out.setPath(mSettings[SETTING_S_SAVEPATH].stringval(), false, mSettings[SETTING_S_EXEPATH].stringval());
-                        _data.setSavePath(mSettings[SETTING_S_SAVEPATH].stringval());
-                        _data.setPath(mSettings[SETTING_S_LOADPATH].stringval(), false, mSettings[SETTING_S_EXEPATH].stringval());
-                        _script.setPath(mSettings[SETTING_S_SCRIPTPATH].stringval(), false, mSettings[SETTING_S_EXEPATH].stringval());
-                        _pData.setPath(mSettings[SETTING_S_PLOTPATH].stringval(), false, mSettings[SETTING_S_EXEPATH].stringval());
+                        // Synchronize all other objects
+                        NumeReKernel::getInstance()->synchronizePathSettings();
 
                         if (iter->second.isUiModifying())
                             NumeReKernel::modifiedSettings = true;
