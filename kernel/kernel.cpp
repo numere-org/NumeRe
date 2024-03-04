@@ -123,6 +123,40 @@ void NumeReKernel::setKernelSettings(const Settings& _settings)
 {
     _option.copySettings(_settings);
     _debugger.setActive(_settings.useDebugger());
+
+    synchronizePathSettings();
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This member function synchronizes all
+/// core elements' paths with those in the
+/// settings object. Intended to be used after
+/// settings have changed.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
+void NumeReKernel::synchronizePathSettings()
+{
+    const std::string sExePath = _option.getExePath();
+    const std::string sTokens = _option.getTokenPaths();
+
+    // Set paths
+    _out.setPath(_option.getSavePath(), false, sExePath);
+    _memoryManager.setSavePath(_option.getSavePath());
+    _memoryManager.setPath(_option.getLoadPath(), false, sExePath);
+    _script.setPath(_option.getScriptPath(), false, sExePath);
+    _pData.setPath(_option.getPlotPath(), false, sExePath);
+    _procedure.setPath(_option.getScriptPath(), false, sExePath);
+
+    // Set tokens
+    _out.setTokens(sTokens);
+    _memoryManager.setTokens(sTokens);
+    _script.setTokens(sTokens);
+    _pData.setTokens(sTokens);
+    _procedure.setTokens(sTokens);
+    _fSys.setTokens(sTokens);
 }
 
 
@@ -2344,10 +2378,10 @@ void NumeReKernel::CloseSession()
     _memoryManager.removeTablesFromMemory();
 
     // --> Konfiguration aus den Objekten zusammenfassen und anschliessend speichern <--
-    _option.getSetting(SETTING_S_SAVEPATH).stringval() = _out.getPath();
+    /*_option.getSetting(SETTING_S_SAVEPATH).stringval() = _out.getPath();
     _option.getSetting(SETTING_S_LOADPATH).stringval() = _memoryManager.getPath();
     _option.getSetting(SETTING_S_PLOTPATH).stringval() = _pData.getPath();
-    _option.getSetting(SETTING_S_SCRIPTPATH).stringval() = _script.getPath();
+    _option.getSetting(SETTING_S_SCRIPTPATH).stringval() = _script.getPath();*/
 
     // Save the function definitions
     if (_option.controlDefinitions() && _functions.getDefinedFunctions())

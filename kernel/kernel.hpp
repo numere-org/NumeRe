@@ -363,6 +363,7 @@ class NumeReKernel
         void saveData();
         Settings getKernelSettings();
         void setKernelSettings(const Settings& _settings);
+        void synchronizePathSettings();
         std::vector<std::string> getPathSettings() const;
         const std::vector<Package>& getInstalledPackages() const;
         std::map<std::string, std::string> getMenuMap() const;
