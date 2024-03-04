@@ -17,3 +17,4 @@ Applied	Experimental feature: "matop" functions now also accept matrix results a
 Fixed	Resolved a rare bug occuring, if whitespace was missing after a comma.
 Cleaned	Usability of mouse-over tooltips was improved. It should now be possible to show the fulltips of arguments inside of function parentheses again.
 Added	An optional feature to extract the argument types of functions, methods and procedures based upon their names, was added.
+Fixed	Restored "gradient" effect in plots using the "area" option.

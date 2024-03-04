@@ -1840,6 +1840,7 @@ bool Plot::plotstd(mglData& _mData, mglData& _mAxisVals, mglData _mData2[3], con
     }
 
     int nNextStyle = _pInfo.nextStyle();
+    std::string sAreaGradient = std::string("a") + _pData.getColors()[_pInfo.nStyle] + "{" + _pData.getColors()[_pInfo.nStyle] + "9}";
 
     if (isdigit(_pInfo.sLineStyles[_pInfo.nStyle].back()))
         _graph->SetMarkSize((_pInfo.sLineStyles[_pInfo.nStyle].back() - '0') * 0.5 + 0.5);
@@ -1856,8 +1857,7 @@ bool Plot::plotstd(mglData& _mData, mglData& _mAxisVals, mglData _mData2[3], con
                          ("a" + _pInfo.sLineStyles[nNextStyle]).c_str());
         }
         else if (_pData.getSettings(PlotData::LOG_AREA) || _pData.getSettings(PlotData::LOG_REGION)) // Fallback for region with only single plot
-            _graph->Area(_mAxisVals, _mData,
-                         ("a" + _pInfo.sLineStyles[_pInfo.nStyle] + "{" + _pData.getColors()[_pInfo.nStyle] + "9}").c_str());
+            _graph->Area(_mAxisVals, _mData, sAreaGradient.c_str());
         else
             _graph->Plot(_mAxisVals, _mData, ("a" + _pInfo.sLineStyles[_pInfo.nStyle]).c_str());
     }
@@ -1889,8 +1889,7 @@ bool Plot::plotstd(mglData& _mData, mglData& _mAxisVals, mglData _mData2[3], con
                                  ("a" + _pInfo.sLineStyles[nNextStyle]).c_str());
                 }
                 else if (_pData.getSettings(PlotData::LOG_AREA) || _pData.getSettings(PlotData::LOG_REGION))
-                    _graph->Area(_mAxisVals, _mData,
-                                 ("a" + _pInfo.sLineStyles[_pInfo.nStyle] + "{" + _pData.getColors()[_pInfo.nStyle] + "9}").c_str());
+                    _graph->Area(_mAxisVals, _mData, sAreaGradient.c_str());
                 else if (_pData.getSettings(PlotData::LOG_STEPPLOT))
                     _graph->Step(_mAxisVals, _mData,
                                  (_pInfo.sLineStyles[_pInfo.nStyle]).c_str());
@@ -1908,8 +1907,7 @@ bool Plot::plotstd(mglData& _mData, mglData& _mAxisVals, mglData _mData2[3], con
                     _graph->Step(_mAxisVals, _mData,
                                  (_pInfo.sLineStyles[_pInfo.nStyle]).c_str());
                 else if (_pData.getSettings(PlotData::LOG_AREA))
-                    _graph->Area(_mAxisVals, _mData,
-                                 ("a" + _pInfo.sLineStyles[_pInfo.nStyle] + "{" + _pData.getColors()[_pInfo.nStyle] + "9}").c_str());
+                    _graph->Area(_mAxisVals, _mData, sAreaGradient.c_str());
                 else
                     _graph->Plot(_mAxisVals, _mData,
                                  ("a" + expandStyleForCurveArray(_pInfo.sConPointStyles[_pInfo.nStyle], _mData.ny > 1)).c_str());
@@ -3368,6 +3366,7 @@ bool Plot::plotstd3d(mglData _mData[3], mglData _mData2[3], const short nType)
         }
     }
 
+    std::string sAreaGradient = std::string("a") + _pData.getColors()[_pInfo.nStyle] + "{" + _pData.getColors()[_pInfo.nStyle] + "9}";
     int nNextStyle = _pInfo.nextStyle();
 
     if (isdigit(_pInfo.sLineStyles[_pInfo.nStyle].back()))
@@ -3389,8 +3388,7 @@ bool Plot::plotstd3d(mglData _mData[3], mglData _mData2[3], const short nType)
                          ("a" + _pInfo.sLineStyles[nNextStyle]).c_str());
         }
         else
-            _graph->Area(_mData[XCOORD], _mData[YCOORD], _mData[ZCOORD],
-                         ("a" + _pInfo.sLineStyles[_pInfo.nStyle] + "{" + _pData.getColors()[_pInfo.nStyle] + "9}").c_str());
+            _graph->Area(_mData[XCOORD], _mData[YCOORD], _mData[ZCOORD], sAreaGradient.c_str());
     }
     else
     {
@@ -3404,8 +3402,7 @@ bool Plot::plotstd3d(mglData _mData[3], mglData _mData2[3], const short nType)
                     _graph->Bars(_mData[XCOORD], _mData[YCOORD], _mData[ZCOORD],
                                  (_pInfo.sLineStyles[_pInfo.nStyle] + "^").c_str());
                 else if (_pData.getSettings(PlotData::LOG_AREA) || _pData.getSettings(PlotData::LOG_REGION))
-                    _graph->Area(_mData[XCOORD], _mData[YCOORD], _mData[ZCOORD],
-                                 ("a" + _pInfo.sLineStyles[_pInfo.nStyle] + "{" + _pData.getColors()[_pInfo.nStyle] + "9}").c_str());
+                    _graph->Area(_mData[XCOORD], _mData[YCOORD], _mData[ZCOORD], sAreaGradient.c_str());
                 else
                     _graph->Plot(_mData[XCOORD], _mData[YCOORD], _mData[ZCOORD],
                                  ("a" + _pInfo.sLineStyles[_pInfo.nStyle]).c_str());
@@ -3417,8 +3414,7 @@ bool Plot::plotstd3d(mglData _mData[3], mglData _mData2[3], const short nType)
                     _graph->Bars(_mData[XCOORD], _mData[YCOORD], _mData[ZCOORD],
                                  (_pInfo.sLineStyles[_pInfo.nStyle] + "^").c_str());
                 else if (_pData.getSettings(PlotData::LOG_AREA))
-                    _graph->Area(_mData[XCOORD], _mData[YCOORD], _mData[ZCOORD],
-                                 ("a" + _pInfo.sLineStyles[_pInfo.nStyle] + "{" + _pData.getColors()[_pInfo.nStyle] + "9}").c_str());
+                    _graph->Area(_mData[XCOORD], _mData[YCOORD], _mData[ZCOORD], sAreaGradient.c_str());
                 else
                     _graph->Plot(_mData[XCOORD], _mData[YCOORD], _mData[ZCOORD],
                                  ("a" + _pInfo.sConPointStyles[_pInfo.nStyle]).c_str());
