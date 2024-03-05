@@ -19,3 +19,4 @@ Cleaned	Usability of mouse-over tooltips was improved. It should now be possible
 Added	An optional feature to extract the argument types of functions, methods and procedures based upon their names, was added.
 Fixed	Root paths changed via the settings dialog now have the correct effect and will be stored for future sessions.
 Fixed	Restored "gradient" effect in plots using the "area" option.
+Cleaned	The plugin interface and its documentation was cleaned

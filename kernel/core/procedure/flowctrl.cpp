@@ -1396,7 +1396,7 @@ int FlowCtrl::try_catch(int nth_Cmd, int nth_loop)
                                                                                    mVarMap, vVarArray, sVarArray);
             getErrorInformationForDebugger();
             NumeReKernel::getInstance()->getDebugger().showError(std::current_exception());
-            nCalcType[__i] = CALCTYPE_NONE;
+            //nCalcType[__i] = CALCTYPE_NONE; // NOTE: This has been deactivated because the compilation process is destructive and a complete recompilation is not possible at this point
 
             ErrorType type = getErrorType(std::current_exception());
 

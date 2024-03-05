@@ -966,7 +966,7 @@ void ProcedureVarFactory::evaluateProcedureArguments(std::string& currentArg, st
             currentValue = sTempCluster;
         }
 
-        if (currentValue.find('{') != string::npos)
+        if (!isMacro && currentValue.find('{') != string::npos) // changed, because obsolete in macro context
             currentValue.erase(currentValue.find('{'));
     }
     else

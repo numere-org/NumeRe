@@ -543,10 +543,7 @@ bool PackageManager::loadPlugins()
 /////////////////////////////////////////////////
 bool PackageManager::evalPluginCmd(std::string& sCmd)
 {
-    std::string sExpr = "";
-    std::string sParams = "";
-    std::string sCommand = "";
-    std::string sCommandLine = "";
+    std::string sCommandLine;
     Package _plugin;
 
     if (!vPackageInfo.size())
@@ -581,64 +578,30 @@ bool PackageManager::evalPluginCmd(std::string& sCmd)
     // If the argument list expects an expression, expression
     // and parameters are determined different than without
     // an expression
-    if (sPluginVarList.find("<EXPRESSION>") != std::string::npos)
+    CommandLineParser cmdParser(sCommandLine, sPluginVarList.find("<EXPRESSION>") != std::string::npos
+                                              || sPluginVarList.find("<EXPRSTRING>") != std::string::npos
+                                              ? CommandLineParser::CMD_EXPR_set_PAR : CommandLineParser::CMD_PAR);
+
+    std::string sParams = cmdParser.getParameterList();
+    std::string sExpr = cmdParser.getExpr();
+    std::vector<std::string> vParList = cmdParser.getAllParametersWithValues();
+    std::string sParList;
+
+    for (size_t i = 0; i < vParList.size(); i++)
     {
-        if (sCommandLine.find("-set") != std::string::npos || sCommandLine.find("--") != std::string::npos)
-        {
-            if (sCommandLine.find("-set") != std::string::npos)
-                sParams = sCommandLine.substr(sCommandLine.find("-set"));
-            else
-                sParams = sCommandLine.substr(sCommandLine.find("--"));
-        }
+        if (sParList.length())
+            sParList += ", ";
 
-        if (sParams.length())
-        {
-            sExpr = sCommandLine.substr(sCommandLine.find(_plugin.sCommand)+_plugin.sCommand.length());
-            sExpr.erase(sExpr.find(sParams));
-            StripSpaces(sParams);
-        }
-        else
-            sExpr = sCommandLine.substr(sCommandLine.find(_plugin.sCommand)+_plugin.sCommand.length());
-
-        StripSpaces(sExpr);
-        sParams = "\"" + sParams + "\"";
-    }
-    else if (sPluginVarList.find("<PARAMSTRING>") != std::string::npos)
-    {
-        if (sCommandLine.find('-') != std::string::npos)
-            sParams = sCommandLine.substr(sCommandLine.find('-', sCommandLine.find(_plugin.sCommand)));
-
-        StripSpaces(sParams);
-        sParams = "\"" + sParams + "\"";
-    }
-
-    sCommand = "\"" + sCommandLine + "\"";
-
-    for (size_t i = 1; i < sCommandLine.length()-1; i++)
-    {
-        if (sCommandLine[i] == '"' && sCommandLine[i-1] != '\\')
-            sCommandLine.insert(i,1,'\\');
-    }
-
-    if (sParams.length())
-    {
-        for (size_t i = 1; i < sParams.length()-1; i++)
-        {
-            if (sParams[i] == '"' && sParams[i-1] != '\\')
-                sParams.insert(i,1,'\\');
-        }
+        sParList += "\"" + vParList[i] + "\", " + cmdParser.getParameterValue(vParList[i]);
     }
 
     // Replace the procedure argument list with the
     // corresponding command line tags
-    while (sPluginVarList.find("<CMDSTRING>") != std::string::npos)
-        sPluginVarList.replace(sPluginVarList.find("<CMDSTRING>"), 11, sCommand);
-
-    while (sPluginVarList.find("<EXPRESSION>") != std::string::npos)
-        sPluginVarList.replace(sPluginVarList.find("<EXPRESSION>"), 12, sExpr);
-
-    while (sPluginVarList.find("<PARAMSTRING>") != std::string::npos)
-        sPluginVarList.replace(sPluginVarList.find("<PARAMSTRING>"), 13, sParams);
+    replaceAll(sPluginVarList, "<EXPRESSION>", sExpr.c_str());
+    replaceAll(sPluginVarList, "<EXPRSTRING>", toExternalString(sExpr).c_str());
+    replaceAll(sPluginVarList, "<CMDSTRING>", toExternalString(sCommandLine).c_str());
+    replaceAll(sPluginVarList, "<PARAMSTRING>", toExternalString(sParams).c_str());
+    replaceAll(sPluginVarList, "<PARAMLIST>", ("{" + sParList + "}").c_str());
 
     // If the plugin should have a return value,
     // add a corresponding tag to the command line
