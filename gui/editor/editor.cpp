@@ -1948,7 +1948,7 @@ void NumeReEditor::OnKeyRel(wxKeyEvent& event)
     if (this->GetSelections() <= 1)
         MakeBraceCheck();
 
-    m_nLastReleasedKey = event.GetKeyCode();
+    m_nLastReleasedKey = (event.AltDown() || event.ControlDown()) ? WXK_CONTROL : event.GetKeyCode();
 
     MakeBlockCheck();
     event.Skip();

@@ -1055,8 +1055,8 @@ bool Script::handleLocalDefinitions(string& sScriptCommand)
     else
     {
         // Simply replace the current call
+        _localDef.call(sScriptCommand);
         _symdefs.resolveSymbols(sScriptCommand);
-        return _localDef.call(sScriptCommand);
     }
 
     return true;

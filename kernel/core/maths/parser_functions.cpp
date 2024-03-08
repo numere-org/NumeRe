@@ -53,7 +53,7 @@ size_t findVariableInExpression(const std::string& sExpr, const std::string& sVa
     {
         if ((!nMatch || sDelimiterLeft.find(sExpr[nMatch-1]) != string::npos)
             && (nMatch + sVarName.length() >= sExpr.length() || sDelimiterRight.find(sExpr[nMatch+sVarName.length()]) != string::npos)
-            && !isInQuotes(sExpr, nMatch))
+            && !isInQuotes(sExpr, nMatch, true))
         {
             return nMatch;
         }

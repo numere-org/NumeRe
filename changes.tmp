@@ -20,3 +20,4 @@ Added	An optional feature to extract the argument types of functions, methods an
 Fixed	Root paths changed via the settings dialog now have the correct effect and will be stored for future sessions.
 Fixed	Restored "gradient" effect in plots using the "area" option.
 Cleaned	The plugin interface and its documentation was cleaned
+Fixed	The auto-indentation functionality does not interfere with CTRL-Z any more.
