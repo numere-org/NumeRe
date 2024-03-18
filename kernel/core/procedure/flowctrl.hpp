@@ -127,6 +127,7 @@ class FlowCtrl
 
         int nCurrentCommand;
         Returnvalue ReturnVal;
+        bool bIsSyntaxHelper;
         bool bUseLoopParsingMode;
         bool bLockedPauseMode;
         bool bFunctionsReplaced;
@@ -184,7 +185,7 @@ class FlowCtrl
         virtual int catchExceptionForTest(std::exception_ptr e_ptr, bool bSupressAnswer_back, int nLine, bool cleanUp = false);
 
     public:
-        FlowCtrl();
+        FlowCtrl(bool asSyntaxHelper = false);
         virtual ~FlowCtrl();
 
         int getCurrentBlockDepth() const;

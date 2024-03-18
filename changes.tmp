@@ -21,3 +21,5 @@ Fixed	Root paths changed via the settings dialog now have the correct effect and
 Fixed	Restored "gradient" effect in plots using the "area" option.
 Cleaned	The plugin interface and its documentation was cleaned
 Fixed	The auto-indentation functionality does not interfere with CTRL-Z any more.
+Fixed	The "Start from current line" functionality can now handle "declare", "include" and "lclfunc" as expected.
+Cleaned	The command "start SCRIPT -fromline=line" does now also work in terminal.

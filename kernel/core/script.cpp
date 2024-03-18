@@ -60,11 +60,11 @@ Script::~Script()
 /// \brief This member function opens the script
 /// with the passed file name.
 ///
-/// \param _sScriptFileName string&
+/// \param _sScriptFileName std::string&
 /// \return void
 ///
 /////////////////////////////////////////////////
-void Script::openScript(string& _sScriptFileName, int nFromLine)
+void Script::openScript(std::string& _sScriptFileName, int nFromLine)
 {
     // Close an already opened script
     if (m_script)
@@ -90,12 +90,39 @@ void Script::openScript(string& _sScriptFileName, int nFromLine)
         nInstallModeFlags = ENABLE_DEFAULTS;
         sHelpID = "";
         sInstallID = "";
-
-        // Set the line to start from if requested by user
-        nLine = nFromLine;
-
+        nLine = 0;
         _localDef.reset();
         _symdefs.clear();
+        int nBlockStartLine = 0;
+        static FlowCtrl flowCtrlSyntaxHelper(true);
+
+        // Advance to the requested start line and parse file specific
+        // constants, includes and function definitions
+        while (nLine < nFromLine)
+        {
+            std::string sCmdline = getNextScriptCommand();
+
+            // Detect possible flow control blocks
+            if (flowCtrlSyntaxHelper.getCurrentBlockDepth() > 0)
+                flowCtrlSyntaxHelper.addToControlFlowBlock(sCmdline, nLine);
+            else if (flowCtrlSyntaxHelper.isFlowCtrlStatement(findCommand(sCmdline).sString))
+            {
+                flowCtrlSyntaxHelper.addToControlFlowBlock(sCmdline, nLine);
+
+                // Store the start position, if this block is longer than
+                // one line. Note that the current line has incremented after
+                // we read a line from the script
+                if (flowCtrlSyntaxHelper.getCurrentBlockDepth() > 0)
+                    nBlockStartLine = nLine-1;
+            }
+        }
+
+        // If we're still inside a block, go back to its start position
+        if (nLine == nFromLine && flowCtrlSyntaxHelper.getCurrentBlockDepth() > 0)
+        {
+            flowCtrlSyntaxHelper.reset();
+            nLine = nBlockStartLine;
+        }
     }
 }
 

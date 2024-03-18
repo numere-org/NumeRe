@@ -67,9 +67,13 @@ static std::string extractHeaderExpression(const std::string& sExpr)
 
 /////////////////////////////////////////////////
 /// \brief Default constructor.
+///
+/// \param asSyntaxHelper bool
+///
 /////////////////////////////////////////////////
-FlowCtrl::FlowCtrl()
+FlowCtrl::FlowCtrl(bool asSyntaxHelper)
 {
+    bIsSyntaxHelper = asSyntaxHelper;
     _parserRef = nullptr;
     _dataRef = nullptr;
     _outRef = nullptr;
@@ -2070,7 +2074,8 @@ void FlowCtrl::addToControlFlowBlock(MutableStringView __sCmd, int nCurrentLine)
     if (__sCmd == "abort")
     {
         reset();
-        NumeReKernel::print(_lang.get("LOOP_SETCOMMAND_ABORT"));
+        if (!bIsSyntaxHelper)
+            NumeReKernel::print(_lang.get("LOOP_SETCOMMAND_ABORT"));
         return;
     }
 
@@ -2416,7 +2421,14 @@ void FlowCtrl::addToControlFlowBlock(MutableStringView __sCmd, int nCurrentLine)
     if (vCmdArray.size())
     {
         if (!getCurrentBlockDepth() && vCmdArray.back().bFlowCtrlStatement)
-            eval();
+        {
+            // The syntax helper only detects blocks but it doesn't execute
+            // them
+            if (!bIsSyntaxHelper)
+                eval();
+            else
+                reset();
+        }
     }
 
     // If there's something left in the current cache,
