@@ -182,7 +182,13 @@ namespace NumeRe
                     // If we only have numerical values, evaluate the MAF numerically
                     if (bLogicalOnly)
                     {
-                        argumentParser(sFunctionArgument, dValArg);
+                        while (sFunctionArgument.length())
+                        {
+                            d_vect currentVals;
+                            argumentParser(getNextViewedArgument(sFunctionArgument), currentVals);
+                            dValArg.insert(dValArg.end(), currentVals.begin(), currentVals.end());
+                        }
+
                         // Added parentheses for complex results and use cases like #avg(...)
                         std::string sFuncReturnValue = "(" + toString(iter->second(&dValArg[0], dValArg.size())) + ")";
 
