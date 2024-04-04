@@ -4204,6 +4204,8 @@ void Plot::extractDataValues(const std::vector<std::string>& vDataPlots)
                 || _pData.getSettings(PlotData::LOG_OHLC)
                 || _pData.getSettings(PlotData::LOG_CANDLESTICK)
                 || !(_pData.getSettings(PlotData::LOG_XERROR) || _pData.getSettings(PlotData::LOG_YERROR));
+            bool isStackedBars = _pData.getSettings(PlotData::LOG_STACKEDBARS)
+                && (isHbar || _pData.getSettings(PlotData::FLOAT_BARS) != 0.0);
 
 
             // Calculate the data ranges
@@ -4230,14 +4232,39 @@ void Plot::extractDataValues(const std::vector<std::string>& vDataPlots)
                 else
                     dataRanges[XRANGE+isHbar] = dataRanges[XRANGE+isHbar].combine(axisrange);
 
-                for (size_t layer = 0; layer < std::max((size_t)1u, isMultiDataSet*m_manager.assets[typeCounter].getLayers()); layer++)
+                if (isStackedBars)
                 {
-                    IntervalSet datIvl = m_manager.assets[typeCounter].getDataIntervals(layer);
+                    // For stacked bars, we first have to add all data up to get the correct
+                    // interval for this data
+                    mglData stacked = m_manager.assets[typeCounter].data.front().first;
+                    Interval stackedInterval(stacked.Minimal(), stacked.Maximal());
+
+                    for (size_t layer = 1; layer < m_manager.assets[typeCounter].getLayers(); layer++)
+                    {
+                        stacked += m_manager.assets[typeCounter].data[layer].first;
+                        // Due to the fall-like representation, intermediate minimal and maximal
+                        // values still count for the total minimal and maximal interval,
+                        // therefore we combine all intermediate steps
+                        stackedInterval = stackedInterval.combine(Interval(stacked.Minimal(),
+                                                                           stacked.Maximal()));
+                    }
 
                     if (m_manager.assets[typeCounter].boundAxes.find('r') != std::string::npos)
-                        secDataRanges[YRANGE-isHbar] = secDataRanges[YRANGE-isHbar].combine(datIvl[datIvlID]);
+                        secDataRanges[YRANGE-isHbar] = secDataRanges[YRANGE-isHbar].combine(stackedInterval);
                     else
-                        dataRanges[YRANGE-isHbar] = dataRanges[YRANGE-isHbar].combine(datIvl[datIvlID]);
+                        dataRanges[YRANGE-isHbar] = dataRanges[YRANGE-isHbar].combine(stackedInterval);
+                }
+                else
+                {
+                    for (size_t layer = 0; layer < std::max((size_t)1u, isMultiDataSet*m_manager.assets[typeCounter].getLayers()); layer++)
+                    {
+                        IntervalSet datIvl = m_manager.assets[typeCounter].getDataIntervals(layer);
+
+                        if (m_manager.assets[typeCounter].boundAxes.find('r') != std::string::npos)
+                            secDataRanges[YRANGE-isHbar] = secDataRanges[YRANGE-isHbar].combine(datIvl[datIvlID]);
+                        else
+                            dataRanges[YRANGE-isHbar] = dataRanges[YRANGE-isHbar].combine(datIvl[datIvlID]);
+                    }
                 }
             }
         }
@@ -5202,7 +5229,18 @@ void Plot::fitPlotRanges(size_t nPlotCompose, bool bNewSubPlot)
             }
 
             // Adapt ranges for barcharts to ensure that the zero is part of the interval
-            if (_pData.getSettings(PlotData::FLOAT_BARS) && _pInfo.ranges[YRANGE].min()*_pInfo.ranges[YRANGE].max() >= 0)
+            if (_pData.getSettings(PlotData::FLOAT_HBARS)
+                && _pInfo.ranges[XRANGE].min()*_pInfo.ranges[XRANGE].max() >= 0
+                && !_pData.getRangeSetting(0))
+            {
+                if (std::abs(_pInfo.ranges[XRANGE].min()) < std::abs(_pInfo.ranges[XRANGE].max()))
+                    _pInfo.ranges[XRANGE].reset(0.0, _pInfo.ranges[XRANGE].max());
+                else
+                    _pInfo.ranges[XRANGE].reset(_pInfo.ranges[XRANGE].min(), 0.0);
+            }
+
+            if (_pData.getSettings(PlotData::FLOAT_BARS)
+                && _pInfo.ranges[YRANGE].min()*_pInfo.ranges[YRANGE].max() >= 0)
             {
                 if (std::abs(_pInfo.ranges[YRANGE].min()) < std::abs(_pInfo.ranges[YRANGE].max()))
                     _pInfo.ranges[YRANGE].reset(0.0, _pInfo.ranges[YRANGE].max()*1.05);
@@ -5485,8 +5523,11 @@ void Plot::passRangesToGraph()
     else
         _graph->SetRange('z', _pInfo.ranges[ZRANGE].min() / _pData.getAxisScale(ZRANGE), _pInfo.ranges[ZRANGE].max() / _pData.getAxisScale(ZRANGE));
 
-    if (_pData.getSettings(PlotData::FLOAT_BARS) && m_manager.hasDataPlots() && !_pInfo.b2D)
+    if ((_pData.getSettings(PlotData::FLOAT_BARS) || _pData.getSettings(PlotData::FLOAT_HBARS))
+        && m_manager.hasDataPlots()
+        && !_pInfo.b2D)
     {
+        bool isHbar = _pData.getSettings(PlotData::FLOAT_HBARS);
         int nMinbars = -1;
 
         for (size_t k = 0; k < m_manager.assets.size(); k++)
@@ -5499,25 +5540,29 @@ void Plot::passRangesToGraph()
         if (nMinbars < 2)
             nMinbars = 2;
 
-        if (_pData.getInvertion(XRANGE))
-            _graph->SetRange('x',
-                             (_pInfo.ranges[XRANGE].max() - _pInfo.ranges[XRANGE].range() / (double)(2 * (nMinbars - 1))) / _pData.getAxisScale(XRANGE),
-                             (_pInfo.ranges[XRANGE].min() + _pInfo.ranges[XRANGE].range() / (double)(2 * (nMinbars - 1))) / _pData.getAxisScale(XRANGE));
+        double dBarWidth = _pInfo.ranges[XRANGE+isHbar].range() / (2.0 * (nMinbars - 1.0));
+
+        if (_pData.getInvertion(XRANGE+isHbar))
+            _graph->SetRange('x'+isHbar,
+                             (_pInfo.ranges[XRANGE+isHbar].max()-dBarWidth) / _pData.getAxisScale(XRANGE+isHbar),
+                             (_pInfo.ranges[XRANGE+isHbar].min()+dBarWidth) / _pData.getAxisScale(XRANGE+isHbar));
         else
-            _graph->SetRange('x',
-                             (_pInfo.ranges[XRANGE].min() - _pInfo.ranges[XRANGE].range() / (double)(2 * (nMinbars - 1))) / _pData.getAxisScale(XRANGE),
-                             (_pInfo.ranges[XRANGE].max() + _pInfo.ranges[XRANGE].range() / (double)(2 * (nMinbars - 1))) / _pData.getAxisScale(XRANGE));
+            _graph->SetRange('x'+isHbar,
+                             (_pInfo.ranges[XRANGE+isHbar].min()-dBarWidth) / _pData.getAxisScale(XRANGE+isHbar),
+                             (_pInfo.ranges[XRANGE+isHbar].max()+dBarWidth) / _pData.getAxisScale(XRANGE+isHbar));
 
         if (_pInfo.sCommand == "plot3d")
         {
+            dBarWidth = _pInfo.ranges[YRANGE].range() / (2.0 * (nMinbars - 1.0));
+
             if (_pData.getInvertion(YRANGE))
                 _graph->SetRange('y',
-                             (_pInfo.ranges[YRANGE].max() - _pInfo.ranges[YRANGE].range() / (double)(2 * (nMinbars - 1))) / _pData.getAxisScale(YRANGE),
-                             (_pInfo.ranges[YRANGE].min() + _pInfo.ranges[YRANGE].range() / (double)(2 * (nMinbars - 1))) / _pData.getAxisScale(YRANGE));
+                             (_pInfo.ranges[YRANGE].max() - dBarWidth) / _pData.getAxisScale(YRANGE),
+                             (_pInfo.ranges[YRANGE].min() + dBarWidth) / _pData.getAxisScale(YRANGE));
             else
                 _graph->SetRange('y',
-                             (_pInfo.ranges[YRANGE].min() - _pInfo.ranges[YRANGE].range() / (double)(2 * (nMinbars - 1))) / _pData.getAxisScale(YRANGE),
-                             (_pInfo.ranges[YRANGE].max() + _pInfo.ranges[YRANGE].range() / (double)(2 * (nMinbars - 1))) / _pData.getAxisScale(YRANGE));
+                             (_pInfo.ranges[YRANGE].min() - dBarWidth) / _pData.getAxisScale(YRANGE),
+                             (_pInfo.ranges[YRANGE].max() + dBarWidth) / _pData.getAxisScale(YRANGE));
         }
     }
 
@@ -5647,7 +5692,10 @@ void Plot::passRangesToGraph()
     // --> Gitter-, Koordinaten- und Achsenbeschriftungen <--
     CoordSettings();
 
-    if (_pData.getAxisScale(XRANGE) != 1.0 || _pData.getAxisScale(YRANGE) != 1.0 || _pData.getAxisScale(ZRANGE) != 1.0 || _pData.getAxisScale(CRANGE) != 1.0)
+    if (_pData.getAxisScale(XRANGE) != 1.0
+        || _pData.getAxisScale(YRANGE) != 1.0
+        || _pData.getAxisScale(ZRANGE) != 1.0
+        || _pData.getAxisScale(CRANGE) != 1.0)
     {
         if (_pData.getInvertion(XRANGE))
             _graph->SetRange('x', _pInfo.ranges[XRANGE].max(), _pInfo.ranges[XRANGE].min());
@@ -5664,8 +5712,11 @@ void Plot::passRangesToGraph()
         else
             _graph->SetRange('z', _pInfo.ranges[ZRANGE].min(), _pInfo.ranges[ZRANGE].max());
 
-        if (_pData.getSettings(PlotData::FLOAT_BARS) && m_manager.hasDataPlots() && !_pInfo.b2D)
+        if ((_pData.getSettings(PlotData::FLOAT_BARS) || _pData.getSettings(PlotData::FLOAT_HBARS))
+            && m_manager.hasDataPlots()
+            && !_pInfo.b2D)
         {
+            bool isHbar = _pData.getSettings(PlotData::FLOAT_HBARS);
             int nMinbars = -1;
 
             for (size_t k = 0; k < m_manager.assets.size(); k++)
@@ -5678,25 +5729,29 @@ void Plot::passRangesToGraph()
             if (nMinbars < 2)
                 nMinbars = 2;
 
-            if (_pData.getInvertion(XRANGE))
-                _graph->SetRange('x',
-                                 _pInfo.ranges[XRANGE].max() - _pInfo.ranges[XRANGE].range() / (double)(2 * (nMinbars - 1)),
-                                 _pInfo.ranges[XRANGE].min() + _pInfo.ranges[XRANGE].range() / (double)(2 * (nMinbars - 1)));
+            double dBarWidth = _pInfo.ranges[XRANGE+isHbar].range() / (2.0 * (nMinbars - 1.0));
+
+            if (_pData.getInvertion(XRANGE+isHbar))
+                _graph->SetRange('x'+isHbar,
+                                 _pInfo.ranges[XRANGE+isHbar].max() - dBarWidth,
+                                 _pInfo.ranges[XRANGE+isHbar].min() + dBarWidth);
             else
-                _graph->SetRange('x',
-                                 _pInfo.ranges[XRANGE].min() - _pInfo.ranges[XRANGE].range() / (double)(2 * (nMinbars - 1)),
-                                 _pInfo.ranges[XRANGE].max() + _pInfo.ranges[XRANGE].range() / (double)(2 * (nMinbars - 1)));
+                _graph->SetRange('x'+isHbar,
+                                 _pInfo.ranges[XRANGE+isHbar].min() - dBarWidth,
+                                 _pInfo.ranges[XRANGE+isHbar].max() + dBarWidth);
 
             if (_pInfo.sCommand == "plot3d")
             {
+                dBarWidth = _pInfo.ranges[YRANGE].range() / (2.0 * (nMinbars - 1.0));
+
                 if (_pData.getInvertion(YRANGE))
                     _graph->SetRange('y',
-                                     _pInfo.ranges[YRANGE].max() - _pInfo.ranges[YRANGE].range() / (double)(2 * (nMinbars - 1)),
-                                     _pInfo.ranges[YRANGE].min() + _pInfo.ranges[YRANGE].range() / (double)(2 * (nMinbars - 1)));
+                                 _pInfo.ranges[YRANGE].max() - dBarWidth,
+                                 _pInfo.ranges[YRANGE].min() + dBarWidth);
                 else
                     _graph->SetRange('y',
-                                     _pInfo.ranges[YRANGE].min() - _pInfo.ranges[YRANGE].range() / (double)(2 * (nMinbars - 1)),
-                                     _pInfo.ranges[YRANGE].max() + _pInfo.ranges[YRANGE].range() / (double)(2 * (nMinbars - 1)));
+                                 _pInfo.ranges[YRANGE].min() - dBarWidth,
+                                 _pInfo.ranges[YRANGE].max() + dBarWidth);
             }
         }
 
@@ -7310,6 +7365,9 @@ string Plot::CoordFunc(const std::string& sFuncDef, double dPhiScale, double dTh
 string Plot::composeColoursForBarChart(long int nNum)
 {
     string sColours;
+
+    if (_pData.getSettings(PlotData::LOG_STACKEDBARS))
+        sColours = "a";
 
     for (int i = 0; i < nNum; i++)
     {

@@ -88,6 +88,7 @@ class PlotData : public FileSystem
             LOG_REGION,
             LOG_SCHEMATIC,
             LOG_SILENTMODE,
+            LOG_STACKEDBARS,
             LOG_STEPPLOT,
             LOG_TABLE,
             LOG_OHLC,

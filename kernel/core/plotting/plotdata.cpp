@@ -155,6 +155,7 @@ static std::map<std::string,std::pair<PlotData::LogicalPlotSetting,PlotData::Par
     mGenericSwitches.emplace("colorbar", std::make_pair(PlotData::LOG_COLORBAR, PlotData::LOCAL));
     mGenericSwitches.emplace("orthoproject", std::make_pair(PlotData::LOG_ORTHOPROJECT, PlotData::GLOBAL));
     mGenericSwitches.emplace("area", std::make_pair(PlotData::LOG_AREA, PlotData::LOCAL));
+    mGenericSwitches.emplace("stacked", std::make_pair(PlotData::LOG_STACKEDBARS, PlotData::LOCAL));
     mGenericSwitches.emplace("steps", std::make_pair(PlotData::LOG_STEPPLOT, PlotData::LOCAL));
     mGenericSwitches.emplace("boxplot", std::make_pair(PlotData::LOG_BOXPLOT, PlotData::LOCAL));
     mGenericSwitches.emplace("ohlc", std::make_pair(PlotData::LOG_OHLC, PlotData::LOCAL));
@@ -2063,6 +2064,7 @@ void PlotData::deleteData(bool bGraphFinished /* = false*/)
     }
 
     logicalSettings[LOG_PARAMETRIC] = false;
+    logicalSettings[LOG_STACKEDBARS] = false;
     nRequestedLayers = 1;
     intSettings[INT_LEGENDSTYLE] = 0;
 
