@@ -86,6 +86,7 @@
 #define SETTING_V_POS_SASH_H          "ui.position.horizontalsash"
 #define SETTING_V_POS_SASH_T          "ui.position.terminalsash"
 #define SETTING_S_WINDOWSIZE          "ui.windowsize"
+#define SETTING_S_UITHEME             "ui.theme"
 #define SETTING_B_PRINTINCOLOR        "print.usecolor"
 #define SETTING_B_PRINTLINENUMBERS    "print.linenumbers"
 #define SETTING_B_SAVESESSION         "save.session"
@@ -178,6 +179,8 @@
 #define DEFAULT_ST_INSTALL       "128:128:128-255:255:255-0001"
 #define DEFAULT_ST_DEFVARS       "0:0:160-255:255:255-1101"
 #define DEFAULT_ST_ACTIVELINE    "0:0:0-221:230:255-0000"
+
+#define DEFAULT_ST_UITHEME       "210:210:210-255:255:255-0000"
 
 
 

@@ -17,11 +17,35 @@
 ******************************************************************************/
 
 #include "viewerbook.hpp"
+#include "tabartprovider.hpp"
+#include "../../common/Options.h"
+#include <wx/aui/dockart.h>
 
 BEGIN_EVENT_TABLE(ViewerBook, wxAuiNotebook)
 	EVT_AUINOTEBOOK_DRAG_MOTION     (-1, ViewerBook::OnTabMove)
 END_EVENT_TABLE()
 
+
+/////////////////////////////////////////////////
+/// \brief ViewerBook constructor. Sets
+/// automatically the correct tab art provider.
+///
+/// \param parent wxWindow*
+/// \param id wxWindowID
+/// \param activeCol const wxColour&
+/// \param position const wxPoint&
+/// \param size const wxSize&
+/// \param style int
+/// \param name const wxString&
+///
+/////////////////////////////////////////////////
+ViewerBook::ViewerBook(wxWindow* parent, wxWindowID id, const wxColour& activeCol, const wxPoint& position, const wxSize& size, int style, const wxString& name)
+            : wxAuiNotebook(parent, id, position, size, style | wxAUI_NB_TAB_MOVE | wxNB_TOP), m_skipFocus(false)
+{
+    SetArtProvider(new TabArtProvider(activeCol));
+    // This is the way, the internal sash can be coloured!
+    m_mgr.GetArtProvider()->SetColor(wxAUI_DOCKART_SASH_COLOUR, activeCol.ChangeLightness(Options::PANEL));
+}
 
 /////////////////////////////////////////////////
 /// \brief This event handler fixes the issue

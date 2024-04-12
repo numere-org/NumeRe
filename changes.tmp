@@ -25,3 +25,5 @@ Fixed	The "Start from current line" functionality can now handle "declare", "inc
 Cleaned	The command "start SCRIPT -fromline=line" does now also work in terminal.
 Fixed	The two functions "pct()" and "cmp()" are now working correctly in all scenarios.
 Added	The new plotting option "stacked" enables the stacking of bars and hbars on each other.
+Applied	There's experimental support for coloured window themes. If you want to test it, the setting can be found at the end of the syntax colour list.
+Fixed	Resolved a regression introduced with this version.

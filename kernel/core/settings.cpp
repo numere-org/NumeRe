@@ -162,6 +162,8 @@ Settings::Settings() : Documentation()
     m_settings[SETTING_S_ST_DEFVARS] = SettingsValue(DEFAULT_ST_DEFVARS, SettingsValue::SAVE | SettingsValue::HIDDEN);
     m_settings[SETTING_S_ST_ACTIVELINE] = SettingsValue(DEFAULT_ST_ACTIVELINE, SettingsValue::SAVE | SettingsValue::HIDDEN);
 
+    m_settings[SETTING_S_UITHEME] = SettingsValue(DEFAULT_ST_UITHEME, SettingsValue::SAVE | SettingsValue::HIDDEN);
+
 
 	sSettings_ini = "numere.ini";
 }
@@ -562,7 +564,7 @@ std::string Settings::replaceExePath(const std::string& _sPath)
     const std::string& sPath = m_settings[SETTING_S_EXEPATH].stringval();
     std::string sReturn = _sPath;
 
-    if (sReturn.find(sPath) != std::string::npos)
+    if (sReturn.starts_with(sPath + (sPath.back() != '/' ? "/" : "")))
         sReturn.replace(sReturn.find(sPath), sPath.length(), "<>");
 
     return sReturn;

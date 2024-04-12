@@ -51,6 +51,7 @@ DebugViewer::DebugViewer(wxWindow* parent, Options* _options, const wxString& ti
     m_options = _options;
     nLineColumn = 0;
     nModuleColumn = 0;
+    SyntaxStyles uiTheme = _options->GetSyntaxStyle(Options::UI_THEME);
 
     // Create the toolbar
     initializeToolbar();
@@ -59,11 +60,13 @@ DebugViewer::DebugViewer(wxWindow* parent, Options* _options, const wxString& ti
     int widths[] = {-2, -1};
     wxStatusBar* sb = CreateStatusBar(2);
     sb->SetStatusWidths(2, widths);
+    sb->SetBackgroundColour(uiTheme.foreground.ChangeLightness(Options::STATUSBAR));
 
     b_transferredControl = false;
 
     // initialize the controls: create the panel
     wxPanel* panel = new wxPanel(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL | wxBORDER_THEME);
+    panel->SetBackgroundColour(uiTheme.foreground.ChangeLightness(Options::PANEL));
 
     // Create vertical and horizontal sizers
     wxBoxSizer* vsizer = new wxBoxSizer(wxVERTICAL);
@@ -152,7 +155,7 @@ void DebugViewer::initializeToolbar()
 
     // Get the frame toolbar
     wxToolBar* tb = CreateToolBar(wxTB_HORZ_TEXT);
-    tb->SetBackgroundColour(*wxWHITE);
+    tb->SetBackgroundColour(m_options->GetSyntaxStyle(Options::UI_THEME).background.ChangeLightness(Options::TOOLBAR));
 
     // Get the application path
     NumeReWindow* app = static_cast<NumeReWindow*>(GetParent());
@@ -553,6 +556,7 @@ void DebugViewer::OnExecutionFinished()
     m_errorMessage->Refresh();
     GetStatusBar()->SetStatusText(_guilang.get("DBG_FINISHED"), 1);
     SetTitle("NumeRe: Debugger  [" + _guilang.get("DBG_FINISHED") + "]");
+    b_transferredControl = false;
 }
 
 

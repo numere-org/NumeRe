@@ -18,6 +18,8 @@
 
 #include "tableeditpanel.hpp"
 #include "../../kernel/core/datamanagement/container.hpp"
+#include "../NumeReWindow.h"
+#include "../../common/Options.h"
 
 #define ID_TABLEEDIT_OK 10101
 #define ID_TABLEEDIT_CANCEL 10102
@@ -46,6 +48,10 @@ END_EVENT_TABLE()
 /////////////////////////////////////////////////
 TablePanel::TablePanel(wxFrame* parent, wxWindowID id, wxStatusBar* statusbar, bool readOnly) : wxPanel(parent, id, wxDefaultPosition, wxDefaultSize, wxBORDER_STATIC | wxTAB_TRAVERSAL)
 {
+    SyntaxStyles uiTheme = static_cast<NumeReWindow*>(parent->GetParent())->getOptions()->GetSyntaxStyle(Options::UI_THEME);
+    statusbar->SetBackgroundColour(uiTheme.foreground.ChangeLightness(Options::STATUSBAR));
+    SetBackgroundColour(uiTheme.foreground.ChangeLightness(Options::PANEL));
+
     finished = false;
     m_terminal = nullptr;
     m_infoBar = new wxInfoBar(this);
@@ -63,6 +69,7 @@ TablePanel::TablePanel(wxFrame* parent, wxWindowID id, wxStatusBar* statusbar, b
 
     grid = new TableViewer(this, wxID_ANY, statusbar, this, wxDefaultPosition, wxDefaultSize, wxWANTS_CHARS | wxBORDER_STATIC);
     grid->SetTableReadOnly(readOnly);
+    grid->SetLabelBackgroundColour(uiTheme.foreground.ChangeLightness(Options::GRIDLABELS));
 
     vsizer->Add(new wxStaticText(this, wxID_ANY, _guilang.get("GUI_TABLEPANEL_DESCRIPTION")), 0, wxALIGN_LEFT | wxBOTTOM, 5);
     vsizer->Add(m_commentField, 1, wxALIGN_CENTER_HORIZONTAL | wxEXPAND | wxBOTTOM, 5);

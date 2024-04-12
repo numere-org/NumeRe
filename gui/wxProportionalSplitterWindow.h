@@ -16,22 +16,79 @@
 #include <wx/splitter.h>
 #include <cmath>
 
+
+class ThemedSplitterWindow : public wxSplitterWindow
+{
+    private:
+        wxColour m_themeColour;
+
+    public:
+        ThemedSplitterWindow(wxWindow* parent, wxWindowID id = wxID_ANY, long style = wxSP_3D)
+            : wxSplitterWindow(parent, id, wxDefaultPosition, wxDefaultSize, style | wxFULL_REPAINT_ON_RESIZE)
+        {
+            m_themeColour = wxColour(240,240,240);
+
+            // Connect event handlers
+            Connect(GetId(), wxEVT_COMMAND_SPLITTER_SASH_POS_CHANGED,
+                    (wxObjectEventFunction)(wxEventFunction)&ThemedSplitterWindow::OnSashPosChanged);
+
+            // Connect event handlers
+            Connect(GetId(), wxEVT_PAINT,
+                    (wxObjectEventFunction)(wxEventFunction)&ThemedSplitterWindow::OnRepaint);
+        }
+
+        void SetThemeColour(const wxColour& theme)
+        {
+            m_themeColour = theme;
+            Refresh();
+        }
+
+        void OnSashPosChanged(wxSplitterEvent& event)
+        {
+            Refresh();
+        }
+
+        void OnRepaint(wxPaintEvent& event)
+        {
+            wxPaintDC myDC(this);
+
+            myDC.SetBrush(m_themeColour);
+            myDC.SetPen(*wxTRANSPARENT_PEN);
+
+            if (GetSplitMode() == wxSPLIT_VERTICAL)
+            {
+                myDC.DrawRectangle
+                (
+                    GetSashPosition(),
+                    0,
+                    GetSashSize(),
+                    GetSize().GetHeight()
+                );
+            }
+            else
+            {
+                myDC.DrawRectangle
+                (
+                    0,
+                    GetSashPosition(),
+                    GetSize().GetWidth(),
+                    GetSashSize()
+                );
+            }
+        }
+};
+
+
 /////////////////////////////////////////////////
 /// \brief This class represents a splitter
 /// window, which can controlled using a floating
 /// point proportion instead of absolute values.
 /////////////////////////////////////////////////
-class ProportionalSplitterWindow : public wxSplitterWindow
+class ProportionalSplitterWindow : public ThemedSplitterWindow
 {
         enum { MIN_PANE_SIZE = 1 };
 
     public:
-        /////////////////////////////////////////////////
-        /// \brief Default constructor.
-        /////////////////////////////////////////////////
-        ProportionalSplitterWindow() : wxSplitterWindow(), splitPercent_(0.5f), m_charHeight(0), m_defaultHeight(false)
-        {}
-
         /////////////////////////////////////////////////
         /// \brief Construct a proportional splitter
         /// window using a set of parameters.
@@ -39,14 +96,11 @@ class ProportionalSplitterWindow : public wxSplitterWindow
         /// \param parent wxWindow*
         /// \param id wxWindowID
         /// \param proportion float
-        /// \param pos const wxPoint&
-        /// \param size const wxSize&
         /// \param style long
         ///
         /////////////////////////////////////////////////
-        ProportionalSplitterWindow(wxWindow* parent, wxWindowID id = wxID_ANY, float proportion = 0.5f,
-                                   const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxDefaultSize, long style = wxSP_3D)
-            : wxSplitterWindow(parent, id, pos, size, style), splitPercent_(fabs(proportion))
+        ProportionalSplitterWindow(wxWindow* parent, wxWindowID id = wxID_ANY, float proportion = 0.5f, long style = wxSP_3D)
+            : ThemedSplitterWindow(parent, id, style), splitPercent_(fabs(proportion))
         {
             wxASSERT_MSG( GetParent(), wxT("wxProportionalSplitterWindow parent window ptr cannot be null") );
 
@@ -56,6 +110,10 @@ class ProportionalSplitterWindow : public wxSplitterWindow
             // Connect event handlers
             Connect(GetId(), wxEVT_COMMAND_SPLITTER_SASH_POS_CHANGED,
                     (wxObjectEventFunction)(wxEventFunction)&ProportionalSplitterWindow::OnSashPosChanged );
+
+            // Connect event handlers
+            Connect(GetId(), wxEVT_PAINT,
+                    (wxObjectEventFunction)(wxEventFunction)&ProportionalSplitterWindow::OnRepaint );
 
             // prevents double-click unsplit
             SetMinimumPaneSize(MIN_PANE_SIZE);
@@ -168,6 +226,7 @@ class ProportionalSplitterWindow : public wxSplitterWindow
 
             m_defaultHeight = false;
             SetSashPosition(parSize-rint((1.0 - splitPercent_)*parSize / m_charHeight)*m_charHeight + GetSashSize(), false);
+            Refresh();
 
             event.Skip();
         }

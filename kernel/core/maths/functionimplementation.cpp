@@ -2405,6 +2405,9 @@ value_type parser_ivl(const value_type& x, const value_type& x0, const value_typ
     if (rb > 2)
         rb = 2;
 
+    if (std::isnan(x.real()))
+        return 0;
+
     if (x.real() < x0.real() && lb)
         return 0;
     else if (x.real() < x0.real())

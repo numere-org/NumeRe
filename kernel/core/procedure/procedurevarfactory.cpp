@@ -746,7 +746,8 @@ void ProcedureVarFactory::evaluateProcedureArguments(std::string& currentArg, st
     NumeReDebugger& _debugger = NumeReKernel::getInstance()->getDebugger();
     NumeRe::StringParser& _stringParser = NumeReKernel::getInstance()->getStringParser();
     bool isTemplate = _currentProcedure->getProcedureFlags() & ProcedureCommandLine::FLAG_TEMPLATE;
-    bool isMacro = _currentProcedure->getProcedureFlags() & ProcedureCommandLine::FLAG_MACRO || inliningMode;
+    bool isMacro = _currentProcedure->getProcedureFlags() & ProcedureCommandLine::FLAG_MACRO;
+    bool isMacroOrInlining = isMacro || inliningMode;
 
     // Evaluate procedure calls first (but not for tables)
     if (currentValue.find('$') != string::npos
@@ -803,7 +804,7 @@ void ProcedureVarFactory::evaluateProcedureArguments(std::string& currentArg, st
             if (currentValue.find('(') != string::npos)
                 currentValue.erase(currentValue.find('('));
         }
-        else if (!isRef && !isMacro) // Macros do the old copy-paste logic
+        else if (!isRef && !isMacroOrInlining) // Macros do the old copy-paste logic
         {
 #warning TODO (numere#1#02/27/22): This behavior will be deprecated with v1.1.5
             if (!_optionRef->getSetting(SETTING_B_TABLEREFS).active()
@@ -911,7 +912,7 @@ void ProcedureVarFactory::evaluateProcedureArguments(std::string& currentArg, st
             _debugger.gatherInformations(this, currentValue, _currentProcedure->getCurrentProcedureName(), _currentProcedure->GetCurrentLine());
             _debugger.throwException(SyntaxError(SyntaxError::CANNOT_PASS_LITERAL_PER_REFERENCE, currentValue, "", currentArg));
         }
-        else if (!isRef && !isMacro) // Macros do the old copy-paste logic
+        else if (!isRef && !isMacroOrInlining) // Macros do the old copy-paste logic
         {
             // Create a local variable
             std::string sNewArgName = "_~"+sProcName+"_~A_"+toString(nth_procedure)+"_"+currentArg.substr(0, currentArg.length()-1);
@@ -987,7 +988,7 @@ void ProcedureVarFactory::evaluateProcedureArguments(std::string& currentArg, st
                 _debugger.throwException(SyntaxError(SyntaxError::CANNOT_PASS_LITERAL_PER_REFERENCE, currentValue, "", currentArg));
             }
         }
-        else if (!isMacro) // macros do the old copy-paste logic
+        else if (!isMacroOrInlining) // macros do the old copy-paste logic
         {
             // Create a local variable
             std::string sNewArgName = createMangledArgName(currentArg);

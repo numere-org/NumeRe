@@ -171,7 +171,9 @@ wxMGL::wxMGL(wxWindow* parent, wxWindowID id, const wxPoint& pos, const wxSize& 
         for (int i = ID_GRAPH_DRAW_FIRST+1; i < ID_GRAPH_DRAW_LAST; i++)
             m_parentFrame->Bind(wxEVT_MENU, &wxMGL::OnMenuEvent, this, i);
 
+        NumeReWindow* app = static_cast<NumeReWindow*>(m_parentFrame->GetParent());
         statusbar = m_parentFrame->CreateStatusBar(3);
+        statusbar->SetBackgroundColour(app->getOptions()->GetSyntaxStyle(Options::UI_THEME).foreground.ChangeLightness(Options::STATUSBAR));
         int nWidths[] = {-2,-1,-1};
         statusbar->SetFieldsCount(3, nWidths);
 
@@ -258,7 +260,7 @@ void wxMGL::InitializeToolbar()
     NumeReWindow* app = static_cast<NumeReWindow*>(m_parentFrame->GetParent());
 
     toptoolbar = m_parentFrame->CreateToolBar(wxTB_HORIZONTAL | wxTB_FLAT);
-    toptoolbar->SetBackgroundColour(*wxWHITE);
+    toptoolbar->SetBackgroundColour(app->getOptions()->GetSyntaxStyle(Options::UI_THEME).background.ChangeLightness(Options::TOOLBAR));
 
     toptoolbar->AddTool(ID_GRAPH_EXPORT, _guilang.get("GUI_GRAPH_EXPORT"), app->getToolbarIcon("save"), _guilang.get("GUI_GRAPH_EXPORT"));
     toptoolbar->AddTool(ID_GRAPH_COPY, _guilang.get("GUI_GRAPH_COPY"), app->getToolbarIcon("copy"), _guilang.get("GUI_GRAPH_COPY"));

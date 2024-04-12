@@ -25,8 +25,7 @@
 class ViewerBook : public wxAuiNotebook
 {
     public:
-        ViewerBook(wxWindow* parent, wxWindowID id = wxID_ANY, const wxPoint& position = wxDefaultPosition, const wxSize& size = wxDefaultSize, int style = 0, const wxString& name = wxNotebookNameStr)
-            : wxAuiNotebook(parent, id, position, size, style | wxAUI_NB_TAB_MOVE | wxNB_TOP), m_skipFocus(false) {}
+        ViewerBook(wxWindow* parent, wxWindowID id = wxID_ANY, const wxColour& activeCol = wxColour(208,208,208), const wxPoint& position = wxDefaultPosition, const wxSize& size = wxDefaultSize, int style = 0, const wxString& name = wxNotebookNameStr);
 
         void OnTabMove(wxAuiNotebookEvent& event);
         int GetTabFromPoint(const wxPoint& pt);

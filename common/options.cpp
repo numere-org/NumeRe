@@ -92,6 +92,8 @@ SyntaxStyles Options::GetDefaultSyntaxStyle(size_t i) const
             return SyntaxStyles(DEFAULT_ST_DEFVARS);
         case Styles::ACTIVE_LINE:
             return SyntaxStyles(DEFAULT_ST_ACTIVELINE);
+        case Styles::UI_THEME:
+            return SyntaxStyles(DEFAULT_ST_UITHEME);
         case Styles::STYLE_END:
             break;
         // missing default intended => will result in warning, if a enum case is not handled in switch
@@ -276,14 +278,14 @@ wxArrayString Options::GetStyleIdentifier() const
 {
     wxArrayString sReturn;
     sReturn.Add("STANDARD");
-    sReturn.Add("CONSOLE_STD");
+    sReturn.Add("CONSOLE STD");
     sReturn.Add("COMMAND");
     sReturn.Add("COMMENT");
     sReturn.Add("DOCUMENTATIONCOMMENT");
     sReturn.Add("DOCUMENTATIONKEYWORD");
     sReturn.Add("OPTION");
     sReturn.Add("FUNCTION");
-    sReturn.Add("CUSTOM_FUNCTION");
+    sReturn.Add("CUSTOM FUNCTION");
     sReturn.Add("CLUSTER");
     sReturn.Add("CONSTANT");
     sReturn.Add("SPECIALVAL");
@@ -293,11 +295,12 @@ wxArrayString Options::GetStyleIdentifier() const
     sReturn.Add("OPERATOR");
     sReturn.Add("PROCEDURE");
     sReturn.Add("NUMBER");
-    sReturn.Add("PROCEDURE_COMMAND");
+    sReturn.Add("PROCEDURE COMMAND");
     sReturn.Add("METHODS");
     sReturn.Add("INSTALL");
-    sReturn.Add("DEFAULT_VARS");
-    sReturn.Add("ACTIVE_LINE");
+    sReturn.Add("DEFAULT VARS");
+    sReturn.Add("ACTIVE LINE");
+    sReturn.Add("UI THEME");
 
     return sReturn;
 }
@@ -443,6 +446,8 @@ std::string Options::syntaxStylesToString(Styles style) const
             return SETTING_S_ST_DEFVARS;
         case Styles::ACTIVE_LINE:
             return SETTING_S_ST_ACTIVELINE;
+        case Styles::UI_THEME:
+            return SETTING_S_UITHEME;
         case Styles::STYLE_END:
             break;
     }

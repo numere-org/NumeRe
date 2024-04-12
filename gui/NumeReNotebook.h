@@ -21,12 +21,10 @@ class EditorNotebook : public wxAuiNotebook
     public:
         EditorNotebook(wxWindow* parent, wxWindowID id,
                        IconManager* icons,
+                       NumeReWindow* toplevelParent,
                        const wxPoint& pos = wxDefaultPosition,
                        const wxSize& size = wxDefaultSize, long style = 0);
         ~EditorNotebook();
-
-        void SetTopParent(NumeReWindow* window)
-            {m_top_parent = window;}
 
         void SetShowPathsOrIconsOnTabs(bool showText, bool showIcons);
         void SetTabText(size_t nTab, const wxString& text);

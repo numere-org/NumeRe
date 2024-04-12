@@ -7,13 +7,11 @@
 #include "../common/vcsmanager.hpp"
 #include "editor/editor.h"
 
-#include <wx/wx.h>
-#include <wx/msgdlg.h>
-#include <wx/notebook.h>
-#include <windows.h>
-#include <commctrl.h>
+#include <wx/aui/dockart.h>
 
 #include "../common/datastructures.h"
+#include "compositions/tabartprovider.hpp"
+
 
 BEGIN_EVENT_TABLE(EditorNotebook, wxAuiNotebook)
 	EVT_AUINOTEBOOK_BUTTON      	(-1, EditorNotebook::OnButtonClicked)
@@ -34,19 +32,24 @@ END_EVENT_TABLE()
 /// \param parent wxWindow*
 /// \param id wxWindowID
 /// \param icons IconManager*
+/// \param toplevelParent NumeReWindow*
 /// \param pos const wxPoint&
 /// \param size const wxSize&
 /// \param style long
 ///
 /////////////////////////////////////////////////
-EditorNotebook::EditorNotebook(wxWindow* parent, wxWindowID id, IconManager* icons, const wxPoint& pos, const wxSize& size, long style) : wxAuiNotebook(parent, id, pos, size, style | wxAUI_NB_DEFAULT_STYLE | wxAUI_NB_WINDOWLIST_BUTTON /*, name*/)
+EditorNotebook::EditorNotebook(wxWindow* parent, wxWindowID id, IconManager* icons, NumeReWindow* toplevelParent, const wxPoint& pos, const wxSize& size, long style) : wxAuiNotebook(parent, id, pos, size, style | wxAUI_NB_DEFAULT_STYLE | wxAUI_NB_WINDOWLIST_BUTTON /*, name*/)
 {
     m_mouseFocus = false;
-    m_top_parent = nullptr;
+    m_top_parent = toplevelParent;
     m_showPathsOnTabs = false;
     m_showIconsOnTabs = false;
     m_manager = icons;
     SetImageList(icons->GetImageList());
+    SyntaxStyles uiTheme = toplevelParent->getOptions()->GetSyntaxStyle(Options::UI_THEME);
+    SetArtProvider(new TabArtProvider(uiTheme.foreground, true));
+    // This is the way, the internal sash can be coloured!
+    m_mgr.GetArtProvider()->SetColor(wxAUI_DOCKART_SASH_COLOUR, uiTheme.foreground.ChangeLightness(Options::PANEL));
 }
 
 

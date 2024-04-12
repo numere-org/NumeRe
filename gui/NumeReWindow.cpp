@@ -518,15 +518,9 @@ NumeReWindow::NumeReWindow(const wxString& title, const wxPoint& pos, const wxSi
 
     g_logger.debug("Creating window elements.");
     // Create the main frame splitters
-    m_splitProjectEditor = new wxSplitterWindow(this, ID_SPLITPROJECTEDITOR, wxDefaultPosition, wxDefaultSize, wxBORDER_THEME);
-    m_splitEditorOutput = new ProportionalSplitterWindow(m_splitProjectEditor, ID_SPLITEDITOROUTPUT, 0.75, wxDefaultPosition, wxDefaultSize, wxSP_3DSASH);
-    m_splitCommandHistory = new ProportionalSplitterWindow(m_splitEditorOutput, wxID_ANY, 0.75, wxDefaultPosition, wxDefaultSize, wxSP_3DSASH);
-
-    // Create the different notebooks
-    m_book = new EditorNotebook(m_splitEditorOutput, ID_NOTEBOOK_ED, m_iconManager);
-    m_book->SetTopParent(this);
-    m_noteTerm = new ViewerBook(m_splitCommandHistory, wxID_ANY, wxDefaultPosition, wxDefaultSize);
-    m_treeBook = new ViewerBook(m_splitProjectEditor, wxID_ANY, wxDefaultPosition, wxDefaultSize);
+    m_splitProjectEditor = new ThemedSplitterWindow(this, ID_SPLITPROJECTEDITOR,  wxBORDER_THEME);
+    m_splitEditorOutput = new ProportionalSplitterWindow(m_splitProjectEditor, ID_SPLITEDITOROUTPUT, 0.75, wxSP_3DSASH);
+    m_splitCommandHistory = new ProportionalSplitterWindow(m_splitEditorOutput, wxID_ANY, 0.75, wxSP_3DSASH);
 
     // Prepare the application settings
     m_options = new Options();
@@ -538,6 +532,18 @@ NumeReWindow::NumeReWindow(const wxString& title, const wxPoint& pos, const wxSi
     m_terminal->set_mode_flag(GenericTerminal::CURSORINVISIBLE);
     m_termContainer->SetTerminal(m_terminal);
     m_terminal->SetParent(this);
+
+    SyntaxStyles uiTheme = m_options->GetSyntaxStyle(Options::UI_THEME);
+
+    // Set styles of splitters
+    m_splitProjectEditor->SetThemeColour(uiTheme.foreground.ChangeLightness(Options::PANEL));
+    m_splitEditorOutput->SetThemeColour(uiTheme.foreground.ChangeLightness(Options::PANEL));
+    m_splitCommandHistory->SetThemeColour(uiTheme.foreground.ChangeLightness(Options::PANEL));
+
+    // Create the different notebooks
+    m_book = new EditorNotebook(m_splitEditorOutput, ID_NOTEBOOK_ED, m_iconManager, this);
+    m_noteTerm = new ViewerBook(m_splitCommandHistory, wxID_ANY, uiTheme.foreground);
+    m_treeBook = new ViewerBook(m_splitProjectEditor, wxID_ANY, uiTheme.foreground);
 
     // Get the character height from the terminal
     m_splitEditorOutput->SetCharHeigth(m_terminal->getTextHeight());
@@ -563,12 +569,17 @@ NumeReWindow::NumeReWindow(const wxString& title, const wxPoint& pos, const wxSi
     // Create the contents of file and symbols tree
     m_filePanel = new TreePanel(m_treeBook, wxID_ANY);
     m_fileTree = new FileTree(m_filePanel, ID_PROJECTTREE, wxDefaultPosition, wxDefaultSize, wxTR_TWIST_BUTTONS | wxTR_HAS_BUTTONS | wxTR_NO_LINES | wxTR_FULL_ROW_HIGHLIGHT);
+    m_filePanel->SetBackgroundColour(uiTheme.foreground.ChangeLightness(Options::PANEL));
+    m_fileTree->SetBackgroundColour(uiTheme.background.ChangeLightness(Options::TREE));
     TreeSearchCtrl* fileSearchCtrl = new TreeSearchCtrl(m_filePanel, wxID_ANY, _guilang.get("GUI_SEARCH_FILES"), _guilang.get("GUI_SEARCH_CALLTIP_TREE"), m_fileTree, false, true);
     m_filePanel->AddWindows(fileSearchCtrl, m_fileTree);
     m_treeBook->AddPage(m_filePanel, _guilang.get("GUI_FILETREE"));
 
     m_functionPanel = new TreePanel(m_treeBook, wxID_ANY);
     m_functionTree = new FileTree(m_functionPanel, ID_FUNCTIONTREE, wxDefaultPosition, wxDefaultSize, wxTR_TWIST_BUTTONS | wxTR_HAS_BUTTONS | wxTR_NO_LINES | wxTR_FULL_ROW_HIGHLIGHT | wxTR_HIDE_ROOT);
+    m_functionPanel->SetBackgroundColour(uiTheme.foreground.ChangeLightness(Options::PANEL));
+    m_functionTree->SetBackgroundColour(uiTheme.background.ChangeLightness(Options::TREE));
+
     TreeSearchCtrl* functionSearchCtrl = new TreeSearchCtrl(m_functionPanel, wxID_ANY, _guilang.get("GUI_SEARCH_SYMBOLS"), _guilang.get("GUI_SEARCH_CALLTIP_TREE"), m_functionTree, true);
     m_functionPanel->AddWindows(functionSearchCtrl, m_functionTree);
     m_treeBook->AddPage(m_functionPanel, _guilang.get("GUI_FUNCTIONTREE"));
@@ -603,6 +614,7 @@ NumeReWindow::NumeReWindow(const wxString& title, const wxPoint& pos, const wxSi
     m_setSelection = false;
 
     m_statusBar = new NumeReStatusbar(this);
+    m_statusBar->SetBackgroundColour(uiTheme.foreground.ChangeLightness(Options::STATUSBAR));
     SetStatusBar(m_statusBar);
 
     // Redirect the menu help strings to the
@@ -4351,7 +4363,7 @@ void NumeReWindow::Ready()
     if (m_statusBar)
         m_statusBar->Ready();
 
-    if (m_debugViewer)
+    if (m_debugViewer && m_debugViewer->hasControl())
     {
         m_debugViewer->OnExecutionFinished();
 
@@ -5632,9 +5644,7 @@ void NumeReWindow::UpdateToolbar()
     delete t;
     SetToolBar(nullptr);
     t = CreateToolBar(style);//new wxToolBar(this, -1, wxDefaultPosition, wxDefaultSize, style);
-    t->SetBackgroundColour(*wxWHITE);
-    //t->SetBackgroundColour(wxColour(221,230,255));
-//    t->SetBackgroundColour(wxColour(46,110,150));
+    t->SetBackgroundColour(m_options->GetSyntaxStyle(Options::UI_THEME).background.ChangeLightness(Options::TOOLBAR));
 
     t->AddTool(ID_MENU_NEW_ASK, _guilang.get("GUI_TB_NEW"), getToolbarIcon("new-file"), _guilang.get("GUI_TB_NEW_TTP"), wxITEM_DROPDOWN);
 

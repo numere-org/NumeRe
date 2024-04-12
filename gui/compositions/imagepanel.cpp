@@ -23,6 +23,7 @@
 #include "imagepanel.hpp"
 #include "../../kernel/core/ui/language.hpp"
 #include "../NumeReWindow.h"
+#include "../../common/Options.h"
 
 extern Language _guilang;
 
@@ -70,7 +71,7 @@ ImagePanel::ImagePanel(wxFrame* parent) : wxPanel(parent, wxID_ANY, wxDefaultPos
     NumeReWindow* app = static_cast<NumeReWindow*>(parent->GetParent());
 
     toptoolbar = parentFrame->CreateToolBar(wxTB_HORIZONTAL | wxTB_FLAT);
-    toptoolbar->SetBackgroundColour(*wxWHITE);
+    toptoolbar->SetBackgroundColour(app->getOptions()->GetSyntaxStyle(Options::UI_THEME).background.ChangeLightness(Options::TOOLBAR));
 
     toptoolbar->AddTool(ID_SAVEIMAGE, _guilang.get("GUI_TB_SAVE"), app->getToolbarIcon("save"), _guilang.get("GUI_TB_SAVE_TTP"));
     toptoolbar->AddTool(ID_COPYIMAGE, _guilang.get("GUI_TB_COPY"), app->getToolbarIcon("copy"), _guilang.get("GUI_TB_COPY"));

@@ -2334,7 +2334,8 @@ static StringVector strfnc_num(StringFuncArgs& funcArgs)
 
         for (size_t i = 0; i < funcArgs.sMultiArg.size(); i++)
         {
-            if (funcArgs.sMultiArg[i].length())
+            if (funcArgs.sMultiArg[i].length()
+                && (funcArgs.sMultiArg.is_string(i) || funcArgs.sMultiArg[i] != "nan"))
                 nRet++;
         }
 

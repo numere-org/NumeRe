@@ -107,7 +107,6 @@ class wxTabCtrl;
 class IntIntHashmap;
 class WindowPointerArray;
 class wxPanel;
-class wxSplitterWindow;
 class OptionsDialog;
 class wxFileConfig;
 class wxTelnet;
@@ -127,6 +126,7 @@ class wxListCtrl;
 class wxBitmap;
 class CompilerOutputPanel;
 class IconManager;
+class ThemedSplitterWindow;
 class ProportionalSplitterWindow;
 class wxCHMHelpController;
 class DebugViewer;
@@ -408,7 +408,7 @@ class NumeReWindow : public wxFrame
         /*! Holds the command window and the history window*/
         ProportionalSplitterWindow* m_splitCommandHistory;
         /*! Holds the project tree and the editor notebook */
-        wxSplitterWindow* m_splitProjectEditor;
+        ThemedSplitterWindow* m_splitProjectEditor;
         /*! Displays the output from the compiler */
         CompilerOutputPanel* m_outputPanel;
         /*! The main terminal widget container*/

@@ -298,7 +298,18 @@ class Options : public Settings
             INSTALL,
             DEFAULT_VARS,
             ACTIVE_LINE,
+            UI_THEME,
             STYLE_END
+		};
+
+		enum UiThemeShades
+		{
+		    TOOLBAR = 100,
+		    PANEL = 140,
+		    TREE = 100,
+		    EDITORMARGIN = 160,
+		    STATUSBAR = 160,
+		    GRIDLABELS = 140
 		};
 
         /////////////////////////////////////////////////

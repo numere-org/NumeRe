@@ -259,6 +259,7 @@
 		<Unit filename="gui/compositions/imagepanel.hpp" />
 		<Unit filename="gui/compositions/procedureviewer.cpp" />
 		<Unit filename="gui/compositions/procedureviewer.hpp" />
+		<Unit filename="gui/compositions/tabartprovider.hpp" />
 		<Unit filename="gui/compositions/tableeditpanel.cpp" />
 		<Unit filename="gui/compositions/tableeditpanel.hpp" />
 		<Unit filename="gui/compositions/tableviewer.cpp" />

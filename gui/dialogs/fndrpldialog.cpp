@@ -19,6 +19,9 @@
 #include "fndrpldialog.hpp"
 #include "../globals.hpp"
 #include "../../kernel/core/ui/language.hpp"
+#include "../NumeReWindow.h"
+#include "../../common/Options.h"
+
 extern Language _guilang;
 
 
@@ -75,6 +78,7 @@ bool FindReplaceDialog::Create(wxWindow *parent,
                                         const wxString& title,
                                         int style)
 {
+    SyntaxStyles uiTheme = static_cast<NumeReWindow*>(parent)->getOptions()->GetSyntaxStyle(Options::UI_THEME);
     parent = GetParentForModalDialog(parent, style);
 
     if ( !wxDialog::Create(parent, wxID_ANY, title,
@@ -92,9 +96,11 @@ bool FindReplaceDialog::Create(wxWindow *parent,
 
     bool isPda = (wxSystemSettings::GetScreenType() <= wxSYS_SCREEN_PDA);
 
-    m_tabs = new ViewerBook(this, wxID_ANY, wxDefaultPosition , wxSize(470*g_pixelScale,230*g_pixelScale));
+    m_tabs = new ViewerBook(this, wxID_ANY, uiTheme.foreground, wxDefaultPosition , wxSize(470*g_pixelScale,230*g_pixelScale));
     ViewerPanel* findpage = new ViewerPanel(m_tabs, wxID_ANY);
     ViewerPanel* replacepage = new ViewerPanel(m_tabs, wxID_ANY);
+    findpage->SetBackgroundColour(uiTheme.foreground.ChangeLightness(Options::PANEL));
+    replacepage->SetBackgroundColour(uiTheme.foreground.ChangeLightness(Options::PANEL));
 
     wxBoxSizer *leftsizer_find = new wxBoxSizer( wxVERTICAL );
     wxBoxSizer *leftsizer_replace = new wxBoxSizer( wxVERTICAL );

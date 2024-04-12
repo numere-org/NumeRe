@@ -25,6 +25,7 @@
 #include "controls/treedata.hpp"
 #include "compositions/treepanel.hpp"
 #include "../kernel/core/ui/language.hpp"
+#include "wxProportionalSplitterWindow.h"
 #include <vector>
 #include <string>
 #include <wx/artprov.h>
@@ -55,16 +56,22 @@ DocumentationBrowser::DocumentationBrowser(wxWindow* parent, const wxString& tit
     wxString programPath = mainwindow->getProgramFolder();
     m_manager = new IconManager(programPath);
 
+    SyntaxStyles uiTheme = mainwindow->getOptions()->GetSyntaxStyle(Options::UI_THEME);
+
     // Create the status bar and the window splitter
-    this->CreateStatusBar();
+    wxStatusBar* sb = this->CreateStatusBar();
+    sb->SetBackgroundColour(uiTheme.foreground.ChangeLightness(Options::STATUSBAR));
     prepareToolbar(mainwindow);
-    wxSplitterWindow* splitter = new wxSplitterWindow(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxSP_3D | wxBORDER_THEME);
+    ThemedSplitterWindow* splitter = new ThemedSplitterWindow(this, wxID_ANY, wxSP_3D | wxBORDER_THEME);
+    splitter->SetThemeColour(uiTheme.foreground.ChangeLightness(Options::PANEL));
 
     // Create the tree and the viewer objects as childs
     // of the window splitter
     TreePanel* treePanel = new TreePanel(splitter, wxID_ANY);
+    treePanel->SetBackgroundColour(uiTheme.foreground.ChangeLightness(Options::PANEL));
     m_doctree = new wxTreeCtrl(treePanel, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTR_SINGLE | wxTR_FULL_ROW_HIGHLIGHT | wxTR_NO_LINES | wxTR_TWIST_BUTTONS);
     m_doctree->SetImageList(m_manager->GetImageList());
+    m_doctree->SetBackgroundColour(uiTheme.background.ChangeLightness(Options::TREE));
     TreeSearchCtrl* treeSearchCtrl = new TreeSearchCtrl(treePanel,
                                                         wxID_ANY,
                                                         _guilang.get("GUI_SEARCH_DOCUMENTATION"),
@@ -75,6 +82,7 @@ DocumentationBrowser::DocumentationBrowser(wxWindow* parent, const wxString& tit
 
     m_docTabs = new ViewerBook(splitter,
                                wxID_ANY,
+                               uiTheme.foreground,
                                wxDefaultPosition,
                                wxDefaultSize,
                                wxAUI_NB_CLOSE_ON_ACTIVE_TAB | wxAUI_NB_MIDDLE_CLICK_CLOSE | wxAUI_NB_SCROLL_BUTTONS | wxAUI_NB_WINDOWLIST_BUTTON);
@@ -134,7 +142,7 @@ void DocumentationBrowser::prepareToolbar(NumeReWindow* mainwindow)
 {
     // Create a new tool bar
     wxToolBar* tb = this->CreateToolBar();
-    tb->SetBackgroundColour(*wxWHITE);
+    tb->SetBackgroundColour(mainwindow->getOptions()->GetSyntaxStyle(Options::UI_THEME).background.ChangeLightness(Options::TOOLBAR));
 
     // Fill the tool bar with tools
     tb->AddTool(ID_HELP_HOME, _guilang.get("GUI_TB_DOCBROWSER_HOME"), mainwindow->getToolbarIcon("home"),

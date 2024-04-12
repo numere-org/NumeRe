@@ -148,7 +148,7 @@ void NumeReKernel::synchronizePathSettings()
     _memoryManager.setPath(_option.getLoadPath(), false, sExePath);
     _script.setPath(_option.getScriptPath(), false, sExePath);
     _pData.setPath(_option.getPlotPath(), false, sExePath);
-    _procedure.setPath(_option.getScriptPath(), false, sExePath);
+    _procedure.setPath(_option.getProcPath(), false, sExePath);
 
     // Set tokens
     _out.setTokens(sTokens);
