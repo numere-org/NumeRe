@@ -1,29 +1,29 @@
-Fixed	Titles in animations appear now on every frame again.
-Fixed	The num2string parser operator "#" may now handle floating point values correctly.
-Applied	One can now pass custom axis ticks using a list of strings.
-Fixed	"export" and "save" will now create their target folder automatically.
+Added	An optional feature to extract the argument types of functions, methods and procedures based upon their names, was added.
 Added	Experimental feature: it is now possible to create new columns in tables if values are assigned to an unknown column using string indexing. The new column will be appended at the end of the table.
-Fixed	Resolved a crash originating from "large file not supported" debug message.
-Fixed	All headlines in the PDF documentation are now in the correct language.
+Added	The new plotting option "stacked" enables the stacking of bars and hbars on each other.
+Applied	Experimental feature: "matop" functions now also accept matrix results as their scalar inputs. For consecutive scalar inputs, even a single vector can be passed, e.g. "matop zero({1,3})"
+Applied	Increased performance of STFA, audioread and some statistics functions.
+Applied	One can now pass custom axis ticks using a list of strings.
+Applied	There's experimental support for coloured window themes. If you want to test it, the setting can be found at the end of the syntax colour list.
 Cleaned	"write" now uses "noquotes" as default. The parameter was removed and has no effect any more.
+Cleaned	Bar charts now always include the value y=0. In some situations it is reasonable to enable "origin=sliding" as an additional plotting option.
+Cleaned	The command "start SCRIPT -fromline=line" does now also work in terminal.
+Cleaned	The plugin interface and its documentation was cleaned
+Cleaned	Usability of mouse-over tooltips was improved. It should now be possible to show the fulltips of arguments inside of function parentheses again.
+Fixed	"export" and "save" will now create their target folder automatically.
 Fixed	A single table column now also counts as valid input for "write".
+Fixed	All headlines in the PDF documentation are now in the correct language.
 Fixed	Error locations now be found in all locations even if the debugger is not active.
 Fixed	If one tries to save a cluster, then an error message appears instead of a crash.
 Fixed	If the values "nan" and "inf" are used within an index vector, then they are treated as invalid values and will always return an invalid value.
-Applied	Increased performance of STFA, audioread and some statistics functions.
-Cleaned	Bar charts now always include the value y=0. In some situations it is reasonable to enable "origin=sliding" as an additional plotting option.
-Fixed	The "cmp()" function does now return the indices with respect to the passed array and not with respect to the arrays origin (MAY BREAK CODE).
-Applied	Experimental feature: "matop" functions now also accept matrix results as their scalar inputs. For consecutive scalar inputs, even a single vector can be passed, e.g. "matop zero({1,3})"
+Fixed	Resolved a crash originating from "large file not supported" debug message.
 Fixed	Resolved a rare bug occuring, if whitespace was missing after a comma.
-Cleaned	Usability of mouse-over tooltips was improved. It should now be possible to show the fulltips of arguments inside of function parentheses again.
-Added	An optional feature to extract the argument types of functions, methods and procedures based upon their names, was added.
-Fixed	Root paths changed via the settings dialog now have the correct effect and will be stored for future sessions.
-Fixed	Restored "gradient" effect in plots using the "area" option.
-Cleaned	The plugin interface and its documentation was cleaned
-Fixed	The auto-indentation functionality does not interfere with CTRL-Z any more.
-Fixed	The "Start from current line" functionality can now handle "declare", "include" and "lclfunc" as expected.
-Cleaned	The command "start SCRIPT -fromline=line" does now also work in terminal.
-Fixed	The two functions "pct()" and "cmp()" are now working correctly in all scenarios.
-Added	The new plotting option "stacked" enables the stacking of bars and hbars on each other.
-Applied	There's experimental support for coloured window themes. If you want to test it, the setting can be found at the end of the syntax colour list.
 Fixed	Resolved a regression introduced with this version.
+Fixed	Restored "gradient" effect in plots using the "area" option.
+Fixed	Root paths changed via the settings dialog now have the correct effect and will be stored for future sessions.
+Fixed	The "cmp()" function does now return the indices with respect to the passed array and not with respect to the arrays origin (MAY BREAK CODE).
+Fixed	The "Start from current line" functionality can now handle "declare", "include" and "lclfunc" as expected.
+Fixed	The auto-indentation functionality does not interfere with CTRL-Z any more.
+Fixed	The num2string parser operator "#" may now handle floating point values correctly.
+Fixed	The two functions "pct()" and "cmp()" are now working correctly in all scenarios.
+Fixed	Titles in animations appear now on every frame again.

@@ -17,5 +17,5 @@ abstract: >-
   visualisation
 license: GPL-3.0
 commit: 166d0b7356822b115137fbe1da9e9ef5592f8fe3
-version: 1.1.6.2402
-date-released: '2024-02-05'
+version: 1.1.6.2404
+date-released: '2024-04-18'
