@@ -16,6 +16,6 @@ abstract: >-
   Framework for numerical computations, data analysis and
   visualisation
 license: GPL-3.0
-commit: 166d0b7356822b115137fbe1da9e9ef5592f8fe3
+commit: a2964d130fba3a95da358ade80998f41cbd810ef
 version: 1.1.6.2404
 date-released: '2024-04-18'
