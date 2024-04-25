@@ -3819,6 +3819,38 @@ std::vector<AnovaResult> Memory::getAnova(const VectorIndex& colCategories, size
     return ft.getResults();
 }
 
+std::vector<mu::value_type> Memory::getKMeans(const VectorIndex& colCategories, size_t nClusters, size_t maxIterations) const
+{
+
+    std::vector<mu::value_type> clusters;
+
+    // Ensure that we have data
+    if (memArray.size() <= colCategories[0] || !memArray[colCategories[0]])
+    {
+        clusters.resize(memArray[colCategories[0]]->size(), NAN);
+        return clusters;
+    }
+
+    Memory _mem(colCategories.size());
+    for(size_t i = 0; i < colCategories.size(); i++)
+    {
+        if(memArray[colCategories[i]]->m_type != TableColumn::TYPE_VALUE)
+            return clusters;
+
+        _mem.memArray[i].reset(memArray[colCategories[i]]->copy());
+    }
+
+    // TODO check that all cols have same size
+
+    size_t col_size = getElemsInColumn(colCategories[0]);
+    clusters.resize(col_size, 0);
+
+    // Step 1 Init choose random data Points
+
+
+
+    return clusters;
+}
 
 /////////////////////////////////////////////////
 /// \brief Implements the cov() table method and

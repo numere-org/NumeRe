@@ -1866,9 +1866,9 @@ static std::string tableMethod_kmeans(const std::string& sTableName, std::string
     mu::value_type* v = _kernel->getParser().Eval(nResults);
 
     if (nResults < 1)
-        throw SyntaxError(SyntaxError::TOO_FEW_COLS, sTableName + "().anovaof()", ".anovaof(", ".anovaof(");
+        throw SyntaxError(SyntaxError::TOO_FEW_COLS, sTableName + "().kmeansof()", ".kmeansof(", ".kmeansof(");
 
-    auto col1 = VectorIndex(v, nResults, 0);
+    auto cols = VectorIndex(v, nResults, 0);
 
     sCols = getNextArgument(sMethodArguments, true);
     nResults = 0;
@@ -1877,7 +1877,7 @@ static std::string tableMethod_kmeans(const std::string& sTableName, std::string
     v = _kernel->getParser().Eval(nResults);
 
     if (nResults < 1)
-        throw SyntaxError(SyntaxError::TOO_FEW_COLS, sTableName + "().anovaof()", ".anovaof(", ".anovaof(");
+        throw SyntaxError(SyntaxError::TOO_FEW_COLS, sTableName + "().kmeansof()", ".kmeansof(", ".kmeansof(");
     size_t nClusters = intCast(v[0]);
 
     VectorIndex vIndex(0, VectorIndex::OPEN_END);
@@ -1891,7 +1891,7 @@ static std::string tableMethod_kmeans(const std::string& sTableName, std::string
         maxIterations = v[0].real();
     }
 
-    //_kernel->getParser().SetVectorVar(sResultVectorName, _kernel->getMemoryManager().getBins(sTableName, col, nBins));
+    _kernel->getParser().SetVectorVar(sResultVectorName, _kernel->getMemoryManager().getKMeans(sTableName, cols, nClusters, maxIterations));
 
     return sResultVectorName;
 }
