@@ -1853,6 +1853,49 @@ static std::string tableMethod_anova(const std::string& sTableName, std::string 
 }
 
 
+static std::string tableMethod_kmeans(const std::string& sTableName, std::string sMethodArguments, const std::string& sResultVectorName)
+{
+    NumeReKernel* _kernel = NumeReKernel::getInstance();
+
+    std::string sCols = getNextArgument(sMethodArguments, true);
+    //sCols += "," + getNextArgument(sMethodArguments, true);
+
+    int nResults = 0;
+    _kernel->getMemoryManager().updateDimensionVariables(sTableName);
+    _kernel->getParser().SetExpr(sCols);
+    mu::value_type* v = _kernel->getParser().Eval(nResults);
+
+    if (nResults < 1)
+        throw SyntaxError(SyntaxError::TOO_FEW_COLS, sTableName + "().anovaof()", ".anovaof(", ".anovaof(");
+
+    auto col1 = VectorIndex(v, nResults, 0);
+
+    sCols = getNextArgument(sMethodArguments, true);
+    nResults = 0;
+    _kernel->getMemoryManager().updateDimensionVariables(sTableName);
+    _kernel->getParser().SetExpr(sCols);
+    v = _kernel->getParser().Eval(nResults);
+
+    if (nResults < 1)
+        throw SyntaxError(SyntaxError::TOO_FEW_COLS, sTableName + "().anovaof()", ".anovaof(", ".anovaof(");
+    size_t nClusters = intCast(v[0]);
+
+    VectorIndex vIndex(0, VectorIndex::OPEN_END);
+    size_t maxIterations = 100;
+
+    if (sMethodArguments.length())
+    {
+        _kernel->getMemoryManager().updateDimensionVariables(sTableName);
+        _kernel->getParser().SetExpr(getNextArgument(sMethodArguments, true));
+        v = _kernel->getParser().Eval(nResults);
+        maxIterations = v[0].real();
+    }
+
+    //_kernel->getParser().SetVectorVar(sResultVectorName, _kernel->getMemoryManager().getBins(sTableName, col, nBins));
+
+    return sResultVectorName;
+}
+
 /////////////////////////////////////////////////
 /// \brief Realizes the "binsof()" table method.
 ///
@@ -2251,6 +2294,7 @@ static std::map<std::string, TableMethod> getInplaceTableMethods()
     mTableMethods["rankof"] = tableMethod_rank;
     mTableMethods["zscoreof"] = tableMethod_zscore;
     mTableMethods["anovaof"] = tableMethod_anova;
+    mTableMethods["kmeansof"] = tableMethod_kmeans;
     mTableMethods["binsof"] = tableMethod_binsof;
     mTableMethods["insertcells"] = tableMethod_insertBlock;
     mTableMethods["insertcols"] = tableMethod_insertCols;
