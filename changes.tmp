@@ -1,2 +1,3 @@
 Cleaned	Some file types do no longer require automatic conversion upon file load.
 Cleaned	If the debugger is in control and the user tries to close the application, a confirmation dialog appears.
+Added	The font size within "text()" can now adapted in 9 distinct steps.

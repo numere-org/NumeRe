@@ -2656,16 +2656,22 @@ void Plot::create2dDrawing(vector<string>& vDrawVector)
         }
         else if (sCurrentDrawingFunction.starts_with("text("))
         {
+            double dTextSize = -1;
+
             if (!sTextString.length())
             {
                 sTextString = sStyle;
                 sStyle = "k";
             }
 
+            if (sStyle.find_first_of("0123456789") != std::string::npos)
+                dTextSize = StrToDb(sStyle.substr(sStyle.find_first_of("0123456789"), 1));
+
             if (nFunctions >= 4)
-                _graph->Puts(mglPoint(vResults[0], vResults[1]), mglPoint(vResults[2], vResults[3]), sTextString.c_str(), sStyle.c_str());
+                _graph->Puts(mglPoint(vResults[0], vResults[1]),
+                             mglPoint(vResults[2], vResults[3]), sTextString.c_str(), sStyle.c_str(), dTextSize);
             else if (nFunctions >= 2)
-                _graph->Puts(mglPoint(vResults[0], vResults[1]), sTextString.c_str(), sStyle.c_str());
+                _graph->Puts(mglPoint(vResults[0], vResults[1]), sTextString.c_str(), sStyle.c_str(), dTextSize);
             else
                 continue;
         }
@@ -3088,16 +3094,22 @@ void Plot::create3dDrawing(vector<string>& vDrawVector)
         }
         else if (sCurrentDrawingFunction.starts_with("text("))
         {
+            double dTextSize = -1;
+
             if (!sTextString.length())
             {
                 sTextString = sStyle;
                 sStyle = "k";
             }
 
+            if (sStyle.find_first_of("0123456789") != std::string::npos)
+                dTextSize = StrToDb(sStyle.substr(sStyle.find_first_of("0123456789"), 1));
+
             if (nFunctions >= 6)
-                _graph->Puts(mglPoint(vResults[0], vResults[1], vResults[2]), mglPoint(vResults[3], vResults[4], vResults[5]), sTextString.c_str(), sStyle.c_str());
+                _graph->Puts(mglPoint(vResults[0], vResults[1], vResults[2]),
+                             mglPoint(vResults[3], vResults[4], vResults[5]), sTextString.c_str(), sStyle.c_str(), dTextSize);
             else if (nFunctions >= 3)
-                _graph->Puts(mglPoint(vResults[0], vResults[1], vResults[2]), sTextString.c_str(), sStyle.c_str());
+                _graph->Puts(mglPoint(vResults[0], vResults[1], vResults[2]), sTextString.c_str(), sStyle.c_str(), dTextSize);
             else
                 continue;
         }
