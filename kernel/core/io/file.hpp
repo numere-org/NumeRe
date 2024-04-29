@@ -50,8 +50,9 @@ namespace NumeRe
         int32_t versionBuild;
         float fileVersion;
         __time64_t timeStamp;
+        bool needsConversion;
 
-        FileHeaderInfo() : sFileExtension(), sFileName(), sTableName(), sComment(), nRows(0), nCols(0), versionMajor(-1), versionMinor(-1), versionBuild(-1), timeStamp(0) {}
+        FileHeaderInfo() : sFileExtension(), sFileName(), sTableName(), sComment(), nRows(0), nCols(0), versionMajor(-1), versionMinor(-1), versionBuild(-1), timeStamp(0), needsConversion(true) {}
     };
 
 
@@ -75,6 +76,7 @@ namespace NumeRe
             int64_t nRows;
             int64_t nCols;
             unsigned short nPrecFields;
+            bool needsConversion;
 
             // Flag for using external data, i.e. data, which won't be deleted
             // by this class upon calling "clearStorage()" or the destructor
@@ -842,6 +844,7 @@ namespace NumeRe
                 sFileExtension = file.sFileExtension;
                 sTableName = file.sTableName;
                 sComment = file.sComment;
+                needsConversion = file.needsConversion;
 
                 // Creates only the vector but leaves the
                 // actual columns untouched
@@ -862,7 +865,7 @@ namespace NumeRe
             /// \param fileName const std::string&
             ///
             /////////////////////////////////////////////////
-            GenericFile(const std::string& fileName) : FileSystem(), nRows(0), nCols(0), nPrecFields(7), useExternalData(false), fileData(nullptr)
+            GenericFile(const std::string& fileName) : FileSystem(), nRows(0), nCols(0), nPrecFields(7), useExternalData(false), fileData(nullptr), needsConversion(true)
             {
                 // Initializes the file system from the kernel
                 initializeFromKernel();
@@ -1099,6 +1102,7 @@ namespace NumeRe
                 info.sFileName = sFileName;
                 info.sTableName = getTableName();
                 info.sComment = sComment;
+                info.needsConversion = needsConversion;
 
                 return info;
             }
@@ -1590,6 +1594,7 @@ namespace NumeRe
                 info.versionBuild = versionBuild;
                 info.fileVersion = fileVersionRead;
                 info.timeStamp = timeStamp;
+                info.needsConversion = needsConversion;
 
                 return info;
             }
