@@ -1199,6 +1199,25 @@ void NumeReWindow::OnClose(wxCloseEvent &event)
     m_appClosing = true;
     g_logger.info("Closing NumeRe.");
 
+    // If the debugger is still in control, show a confirmation dialog to the user,
+    // which can be declined
+    if (m_debugViewer && m_debugViewer->hasControl())
+    {
+        g_logger.info("Debugger still running ...");
+        int ret = wxMessageBox(_guilang.get("GUI_DLG_CLOSE_DEBUGGING"), _guilang.get("GUI_DLG_CLOSE_DEBUGGING_TITLE"),
+                               wxCENTER | wxYES_NO, this);
+
+        if (ret == wxNO && event.CanVeto())
+        {
+            event.Veto();
+            m_appClosing = false;
+            return;
+        }
+
+        m_debugViewer->OnDebugCancel();
+        g_logger.info("Debugger stopped.");
+    }
+
 
     if (!CloseAllFiles())
     {

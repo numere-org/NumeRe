@@ -865,7 +865,7 @@ namespace NumeRe
             /// \param fileName const std::string&
             ///
             /////////////////////////////////////////////////
-            GenericFile(const std::string& fileName) : FileSystem(), nRows(0), nCols(0), nPrecFields(7), useExternalData(false), fileData(nullptr), needsConversion(true)
+            GenericFile(const std::string& fileName) : FileSystem(), nRows(0), nCols(0), nPrecFields(7), needsConversion(true), useExternalData(false), fileData(nullptr)
             {
                 // Initializes the file system from the kernel
                 initializeFromKernel();
