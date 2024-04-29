@@ -3819,36 +3819,133 @@ std::vector<AnovaResult> Memory::getAnova(const VectorIndex& colCategories, size
     return ft.getResults();
 }
 
-std::vector<mu::value_type> Memory::getKMeans(const VectorIndex& colCategories, size_t nClusters, size_t maxIterations) const
+// todo do we already have something similar ?
+static bool isUnique(const std::vector<mu::value_type>& newVector, const std::vector<std::vector<mu::value_type>>& centroids)
+{
+    return std::none_of(centroids.begin(), centroids.end(),
+                        [&newVector](const std::vector<mu::value_type>& centroid) {
+                            return newVector == centroid;
+                        });
+}
+
+// todo do we already have ?
+static double calculateL2Norm(const std::vector<mu::value_type>& vec1, const std::vector<mu::value_type>& vec2) {
+
+    mu::value_type sum = 0.0;
+    for (size_t i = 0; i < vec1.size(); ++i) {
+        sum += (vec1[i] - vec2[i]) * (vec1[i] - vec2[i]);
+    }
+    // todo do we have sqrt für value_type
+    return std::sqrt(sum.real());
+}
+
+// todo temp
+static std::vector<int> getIndices(const std::vector<mu::value_type>& vec, mu::value_type value) {
+    std::vector<int> indices;
+    auto it = vec.begin();
+
+    while ((it = std::find(it, vec.end(), value)) != vec.end()) {
+        indices.push_back(std::distance(vec.begin(), it));
+        ++it;  // Move past the last found element
+    }
+
+    return indices;
+}
+
+std::vector<mu::value_type> Memory::getKMeans(const VectorIndex& columns, size_t nClusters, size_t maxIterations) const
 {
 
     std::vector<mu::value_type> clusters;
 
     // Ensure that we have data
-    if (memArray.size() <= colCategories[0] || !memArray[colCategories[0]])
+    if (memArray.size() <= columns[0] || !memArray[columns[0]])
     {
-        clusters.resize(memArray[colCategories[0]]->size(), NAN);
+        clusters.resize(memArray[columns[0]]->size(), NAN);
         return clusters;
     }
 
-    Memory _mem(colCategories.size());
-    for(size_t i = 0; i < colCategories.size(); i++)
+    /*
+    Memory _mem(columns.size());
+    for(size_t i = 0; i < columns.size(); i++)
     {
-        if(memArray[colCategories[i]]->m_type != TableColumn::TYPE_VALUE)
+        if(memArray[columns[i]]->m_type != TableColumn::TYPE_VALUE)
             return clusters;
 
-        _mem.memArray[i].reset(memArray[colCategories[i]]->copy());
+        _mem.memArray[i].reset(memArray[columns[i]]->copy());
     }
-
+    */
     // TODO check that all cols have same size
 
-    size_t col_size = getElemsInColumn(colCategories[0]);
+    // todo check into one if ?
+    size_t col_size = getElemsInColumn(columns[0]);
+    if(col_size < nClusters)
+        return clusters;
+
+
     clusters.resize(col_size, 0);
+    std::vector<std::vector<mu::value_type>> centroids; //(nClusters);
+    // todo really like this ???
 
     // Step 1 Init choose random data Points
+    for(size_t i = 0; i < nClusters; )
+    {
+        size_t randinit = rand()%col_size;
+        std::vector<mu::value_type> new_value = readMem(VectorIndex({randinit}), columns);
+        //todo check if not already used
+        if(isUnique(new_value, centroids))
+            centroids.push_back(new_value);
+            i++;
+    }
 
+    for(size_t iteration = 0; iteration < maxIterations; iteration++)
+    {
+        // Step 2 assign points to closest Cluster centroid
+        size_t change = 0;
+        for(size_t i = 0; i < col_size; i++)
+        {
+            std::vector<mu::value_type> value = readMem(VectorIndex({i}), columns);
+            double dis = calculateL2Norm(value, centroids[0]);
+            size_t idx = 0;
+            for(size_t j = 1; j < nClusters; j++)
+            {
+                double dis2 = calculateL2Norm(value, centroids[j]);
+                if(dis2 < dis){
+                    dis = dis2;
+                    idx = j;
+                }
+            }
 
+            if(clusters[i] != mu::value_type(idx))
+            {
+                clusters[i] = idx;
+                change++;
+            }
 
+        }
+
+        // stop criteria: all points remain in same cluster
+        if(change == 0)
+            break;
+
+        // Step 3 calculate new clusters
+        change = 0;
+        for(size_t i = 0; i < nClusters; i++)
+        {
+            // todo could be done with Memory::getIndex
+            VectorIndex indices(getIndices(clusters, mu::value_type(i)));
+            for(size_t elemIdx = 0; elemIdx < columns.size(); elemIdx++)
+            {
+                mu::value_type new_val = avg(indices, VectorIndex(elemIdx));
+                if(!closeEnough(centroids[i][elemIdx], new_val)){
+                    centroids[i][elemIdx] = new_val;
+                    change++;
+                }
+            }
+        }
+        // stop criteria: all centroids stay same
+        if(change == 0)
+            break;
+    }
     return clusters;
 }
 
