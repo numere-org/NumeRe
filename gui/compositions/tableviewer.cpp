@@ -1419,7 +1419,8 @@ void TableViewer::replaceTabSign(wxString& text)
 /////////////////////////////////////////////////
 void TableViewer::createZeroElementTable()
 {
-    SetTable(new GridNumeReTable(NumeRe::Table(1, 1)), true);
+    SetTable(new GridNumeReTable(NumeRe::Table(1, 1),
+                                 NumeReKernel::getInstance()->getSettings().getSetting(SETTING_B_SHOWQMARKS).active()), true);
 
     isGridNumeReTable = true;
     nFirstNumRow = 1;
@@ -1554,7 +1555,7 @@ void TableViewer::SetData(NumeRe::Container<std::string>& _stringTable, const st
         return;
     }
 
-    this->CreateGrid(_stringTable.getRows()+1, _stringTable.getCols()+1);
+    CreateGrid(_stringTable.getRows()+1, _stringTable.getCols()+1);
 
     // String tables and clusters do not have a headline
     nFirstNumRow = 0;
@@ -1562,18 +1563,18 @@ void TableViewer::SetData(NumeRe::Container<std::string>& _stringTable, const st
 
     for (size_t i = 0; i < _stringTable.getRows()+1; i++)
     {
-        this->SetRowLabelValue(i, GetRowLabelValue(i));
+        SetRowLabelValue(i, GetRowLabelValue(i));
 
         for (size_t j = 0; j < _stringTable.getCols()+1; j++)
         {
             if (i == _stringTable.getRows() || j == _stringTable.getCols())
             {
-                this->SetColLabelValue(j, toString(j+1));
+                SetColLabelValue(j, toString(j+1));
                 continue;
             }
 
             if (_stringTable.get(i, j).length())
-                this->SetCellValue(i, j, replaceControlCharacters(_stringTable.get(i, j)));
+                SetCellValue(i, j, replaceControlCharacters(_stringTable.get(i, j)));
         }
     }
 
@@ -1589,7 +1590,7 @@ void TableViewer::SetData(NumeRe::Container<std::string>& _stringTable, const st
 
     layoutGrid();
 
-    updateStatusBar(wxGridCellCoordsContainer(wxGridCellCoords(0,0), wxGridCellCoords(this->GetRows()-1, this->GetCols()-1)));
+    updateStatusBar(wxGridCellCoordsContainer(wxGridCellCoords(0,0), wxGridCellCoords(GetRows()-1, GetCols()-1)));
 }
 
 
@@ -1622,7 +1623,8 @@ void TableViewer::SetData(NumeRe::Table& _table, const std::string& sName, const
     // Store the number headlines and create the data
     // providing object
     nFirstNumRow = _table.getHeadCount();
-    SetTable(new GridNumeReTable(std::move(_table)), true);
+    SetTable(new GridNumeReTable(std::move(_table),
+                                 NumeReKernel::getInstance()->getSettings().getSetting(SETTING_B_SHOWQMARKS).active()), true);
     isGridNumeReTable = true;
 
     layoutGrid();
