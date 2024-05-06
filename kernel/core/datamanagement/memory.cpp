@@ -3819,7 +3819,15 @@ std::vector<AnovaResult> Memory::getAnova(const VectorIndex& colCategories, size
     return ft.getResults();
 }
 
-// todo do we already have something similar ?
+
+/////////////////////////////////////////////////
+/// \brief check if value type vector is already in a vector of vectors
+///
+/// \param newVector const std::vector<mu::value_type>&
+/// \param centroids const std::vector<std::vector<mu::value_type>>&
+/// \return bool
+///
+/////////////////////////////////////////////////
 static bool isUnique(const std::vector<mu::value_type>& newVector, const std::vector<std::vector<mu::value_type>>& centroids)
 {
     return std::none_of(centroids.begin(), centroids.end(),
@@ -3828,18 +3836,35 @@ static bool isUnique(const std::vector<mu::value_type>& newVector, const std::ve
                         });
 }
 
-// todo do we already have ?
+
+/////////////////////////////////////////////////
+/// \brief Calculate L2 Norm of 2 given value type vectors
+///
+/// \param vec1 const std::vector<mu::value_type>&
+/// \param vec2 const std::vector<mu::value_type>&
+/// \return double
+///
+/////////////////////////////////////////////////
 static double calculateL2Norm(const std::vector<mu::value_type>& vec1, const std::vector<mu::value_type>& vec2) {
 
     mu::value_type sum = 0.0;
     for (size_t i = 0; i < vec1.size(); ++i) {
         sum += (vec1[i] - vec2[i]) * (vec1[i] - vec2[i]);
     }
+
     // todo do we have sqrt für value_type
     return std::sqrt(sum.real());
 }
 
-// todo temp
+
+/////////////////////////////////////////////////
+/// \brief get all Indices of elements with given value
+///
+/// \param vec const std::vector<mu::value_type>&
+/// \param value mu::value_type
+/// \return std::vector<int>
+///
+/////////////////////////////////////////////////
 static std::vector<int> getIndices(const std::vector<mu::value_type>& vec, mu::value_type value) {
     std::vector<int> indices;
     auto it = vec.begin();
@@ -3852,9 +3877,18 @@ static std::vector<int> getIndices(const std::vector<mu::value_type>& vec, mu::v
     return indices;
 }
 
+/////////////////////////////////////////////////
+/// \brief calculate kmeans
+///
+/// \param columns const VectorIndex&
+/// \param nClusters size_t
+/// \param maxIterations size_t
+/// \param init_method size_t    if 2 kmeans++ is used, random seeds otherwise
+/// \return KMeansResult
+///
+/////////////////////////////////////////////////
 KMeansResult Memory::getKMeans(const VectorIndex& columns, size_t nClusters, size_t maxIterations, size_t init_method) const
 {
-
     std::vector<mu::value_type> clusters;
 
     // Ensure that we have data
@@ -3864,30 +3898,25 @@ KMeansResult Memory::getKMeans(const VectorIndex& columns, size_t nClusters, siz
         return KMeansResult();
     }
 
-    /*
-    Memory _mem(columns.size());
+    //Memory _mem(columns.size());
+    // todo is there a more efficient way utilizing the Memory class?
+    // -> currently always get element as vector from Memory class
+    // -> is there a better way to access each data row ?
+
     for(size_t i = 0; i < columns.size(); i++)
     {
         if(memArray[columns[i]]->m_type != TableColumn::TYPE_VALUE)
-            return clusters;
+            return KMeansResult();
 
-        _mem.memArray[i].reset(memArray[columns[i]]->copy());
+        //_mem.memArray[i].reset(memArray[columns[i]]->copy());
     }
-    */
-    // TODO check that all cols have same size
 
-    // todo check into one if ?
     size_t col_size = getElemsInColumn(columns[0]);
     if(col_size < nClusters)
         return KMeansResult();
 
-
     clusters.resize(col_size, 0);
     std::vector<std::vector<mu::value_type>> centroids; //(nClusters);
-
-    //todo is it even worth to check a seed is not used twice? should be quite low propability the same seed is picked twice
-    std::vector<size_t> init_seed;
-
 
     // Step 1 Initialization: Calculate starting centroids
     if (init_method == 2)
@@ -3903,8 +3932,7 @@ KMeansResult Memory::getKMeans(const VectorIndex& columns, size_t nClusters, siz
         for(size_t i = 1; i < nClusters; i++)
         {
             // todo this loop could propably be also be included into the standard Algorithm Loop
-            // however this could get less readable because at more variables have to be added
-
+            // however this could be less readable because at more variables have to be added
 
             // K++ Step 2: calculate distance to nearest centroid
             std::vector<double> distance_vec;
@@ -3935,12 +3963,12 @@ KMeansResult Memory::getKMeans(const VectorIndex& columns, size_t nClusters, siz
         }
     }
     else
-    {   // Run standard Init: Random Seeds
+    {
+        // Run standard Init: Random Seeds
         for(size_t i = 0; i < nClusters; )
         {
             size_t randinit = rand()%col_size;
             std::vector<mu::value_type> new_value = readMem(VectorIndex({randinit}), columns);
-            //todo check if not already used
             if(isUnique(new_value, centroids))
             {
                 centroids.push_back(new_value);
@@ -3958,13 +3986,13 @@ KMeansResult Memory::getKMeans(const VectorIndex& columns, size_t nClusters, siz
         for(size_t i = 0; i < col_size; i++)
         {
             std::vector<mu::value_type> value = readMem(VectorIndex({i}), columns);
-            double dis = calculateL2Norm(value, centroids[0]);
+            double min_distance = calculateL2Norm(value, centroids[0]);
             size_t idx = 0;
             for(size_t j = 1; j < nClusters; j++)
             {
-                double dis2 = calculateL2Norm(value, centroids[j]);
-                if(dis2 < dis){
-                    dis = dis2;
+                double curr_distance = calculateL2Norm(value, centroids[j]);
+                if(curr_distance < min_distance){
+                    min_distance = curr_distance;
                     idx = j;
                 }
             }
@@ -3975,7 +4003,7 @@ KMeansResult Memory::getKMeans(const VectorIndex& columns, size_t nClusters, siz
                 change++;
             }
 
-            inertia += std::pow(dis,2);
+            inertia += std::pow(min_distance,2);
         }
 
         // stop criteria: all points remain in same cluster
@@ -3986,7 +4014,6 @@ KMeansResult Memory::getKMeans(const VectorIndex& columns, size_t nClusters, siz
         change = 0;
         for(size_t i = 0; i < nClusters; i++)
         {
-            // todo could be done with Memory::getIndex
             VectorIndex indices(getIndices(clusters, mu::value_type(i)));
             for(size_t elemIdx = 0; elemIdx < columns.size(); elemIdx++)
             {
@@ -3997,6 +4024,7 @@ KMeansResult Memory::getKMeans(const VectorIndex& columns, size_t nClusters, siz
                 }
             }
         }
+
         // stop criteria: all centroids stay same
         if(change == 0)
             break;

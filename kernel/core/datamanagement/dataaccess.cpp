@@ -1776,6 +1776,7 @@ static std::string tableMethod_zscore(const std::string& sTableName, std::string
 }
 
 
+
 /////////////////////////////////////////////////
 /// \brief Realizes the "anovaof()" table method.
 ///
@@ -1852,7 +1853,15 @@ static std::string tableMethod_anova(const std::string& sTableName, std::string 
     return _kernel->getStringParser().createTempStringVectorVar(vRet);;
 }
 
-
+/////////////////////////////////////////////////
+/// \brief Realizes the "kmeansof()" table method.
+///
+/// \param sTableName const std::string&
+/// \param sMethodArguments std::string
+/// \param sResultVectorName const std::string&
+/// \return std::string
+///
+/////////////////////////////////////////////////
 static std::string tableMethod_kmeans(const std::string& sTableName, std::string sMethodArguments, const std::string& sResultVectorName)
 {
     NumeReKernel* _kernel = NumeReKernel::getInstance();
