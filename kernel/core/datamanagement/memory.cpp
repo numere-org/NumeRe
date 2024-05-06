@@ -3831,9 +3831,8 @@ std::vector<AnovaResult> Memory::getAnova(const VectorIndex& colCategories, size
 static bool isUnique(const std::vector<mu::value_type>& newVector, const std::vector<std::vector<mu::value_type>>& centroids)
 {
     return std::none_of(centroids.begin(), centroids.end(),
-                        [&newVector](const std::vector<mu::value_type>& centroid) {
-                            return newVector == centroid;
-                        });
+                        [&newVector](const std::vector<mu::value_type>& centroid)
+                        { return newVector == centroid; });
 }
 
 
@@ -3845,10 +3844,12 @@ static bool isUnique(const std::vector<mu::value_type>& newVector, const std::ve
 /// \return double
 ///
 /////////////////////////////////////////////////
-static double calculateL2Norm(const std::vector<mu::value_type>& vec1, const std::vector<mu::value_type>& vec2) {
+static double calculateL2Norm(const std::vector<mu::value_type>& vec1, const std::vector<mu::value_type>& vec2)
+{
 
     mu::value_type sum = 0.0;
-    for (size_t i = 0; i < vec1.size(); ++i) {
+    for (size_t i = 0; i < vec1.size(); ++i)
+    {
         sum += (vec1[i] - vec2[i]) * (vec1[i] - vec2[i]);
     }
 
@@ -3865,11 +3866,13 @@ static double calculateL2Norm(const std::vector<mu::value_type>& vec1, const std
 /// \return std::vector<int>
 ///
 /////////////////////////////////////////////////
-static std::vector<int> getIndices(const std::vector<mu::value_type>& vec, mu::value_type value) {
+static std::vector<int> getIndices(const std::vector<mu::value_type>& vec, mu::value_type value)
+{
     std::vector<int> indices;
     auto it = vec.begin();
 
-    while ((it = std::find(it, vec.end(), value)) != vec.end()) {
+    while ((it = std::find(it, vec.end(), value)) != vec.end())
+    {
         indices.push_back(std::distance(vec.begin(), it));
         ++it;  // Move past the last found element
     }
