@@ -3852,7 +3852,7 @@ static std::vector<int> getIndices(const std::vector<mu::value_type>& vec, mu::v
     return indices;
 }
 
-std::vector<mu::value_type> Memory::getKMeans(const VectorIndex& columns, size_t nClusters, size_t maxIterations) const
+KMeansResult Memory::getKMeans(const VectorIndex& columns, size_t nClusters, size_t maxIterations, size_t init_method) const
 {
 
     std::vector<mu::value_type> clusters;
@@ -3861,7 +3861,7 @@ std::vector<mu::value_type> Memory::getKMeans(const VectorIndex& columns, size_t
     if (memArray.size() <= columns[0] || !memArray[columns[0]])
     {
         clusters.resize(memArray[columns[0]]->size(), NAN);
-        return clusters;
+        return KMeansResult();
     }
 
     /*
@@ -3879,28 +3879,74 @@ std::vector<mu::value_type> Memory::getKMeans(const VectorIndex& columns, size_t
     // todo check into one if ?
     size_t col_size = getElemsInColumn(columns[0]);
     if(col_size < nClusters)
-        return clusters;
+        return KMeansResult();
 
 
     clusters.resize(col_size, 0);
     std::vector<std::vector<mu::value_type>> centroids; //(nClusters);
     // todo really like this ???
 
-    // Step 1 Init choose random data Points
-    for(size_t i = 0; i < nClusters; )
+    // Step 1 Initialization: Calculate starting centroids
+    if (init_method == 2)
     {
+        // Run KMeans ++ init
+        // https://www.geeksforgeeks.org/ml-k-means-algorithm/
+
+        // K++ Step 1: randomly select first centroid
         size_t randinit = rand()%col_size;
         std::vector<mu::value_type> new_value = readMem(VectorIndex({randinit}), columns);
-        //todo check if not already used
-        if(isUnique(new_value, centroids))
+        centroids.push_back(new_value);
+
+        for(size_t i = 1; i < nClusters; i++)
+        {
+            // todo this loop could propably be also be included into the standard Algorithm Loop
+            // however this could get less readable because at more variables have to be added
+            std::vector<double> distance_vec;
+            for(size_t i = 0; i < col_size; i++)
+            {
+                std::vector<mu::value_type> value = readMem(VectorIndex({i}), columns);
+                double dis = calculateL2Norm(value, centroids[0]);
+                size_t idx = 0;
+                for(size_t j = 1; j < centroids.size(); j++)
+                {
+                    double dis2 = calculateL2Norm(value, centroids[j]);
+                    if(dis2 < dis){
+                        dis = dis2;
+                        idx = j;
+                    }
+                }
+                distance_vec.push_back(dis);
+                if(clusters[i] != mu::value_type(idx))
+                {
+                    clusters[i] = idx;
+                }
+            }
+            size_t max_elem_idx = std::distance(distance_vec.begin(), std::max_element(distance_vec.begin(), distance_vec.end()));
+            std::vector<mu::value_type> new_value = readMem(VectorIndex({max_elem_idx}), columns);
             centroids.push_back(new_value);
-            i++;
+        }
+    }
+    else
+    {   // Run standard Init: Random Seeds
+        for(size_t i = 0; i < nClusters; )
+        {
+            size_t randinit = rand()%col_size;
+            std::vector<mu::value_type> new_value = readMem(VectorIndex({randinit}), columns);
+            //todo check if not already used
+            if(isUnique(new_value, centroids))
+            {
+                centroids.push_back(new_value);
+                i++;
+            }
+        }
     }
 
+    long double inertia = 0;
     for(size_t iteration = 0; iteration < maxIterations; iteration++)
     {
         // Step 2 assign points to closest Cluster centroid
         size_t change = 0;
+        inertia = 0;
         for(size_t i = 0; i < col_size; i++)
         {
             std::vector<mu::value_type> value = readMem(VectorIndex({i}), columns);
@@ -3921,6 +3967,7 @@ std::vector<mu::value_type> Memory::getKMeans(const VectorIndex& columns, size_t
                 change++;
             }
 
+            inertia += std::pow(dis,2);
         }
 
         // stop criteria: all points remain in same cluster
@@ -3946,7 +3993,11 @@ std::vector<mu::value_type> Memory::getKMeans(const VectorIndex& columns, size_t
         if(change == 0)
             break;
     }
-    return clusters;
+
+    KMeansResult res;
+    res.cluster_labels = clusters;
+    res.inertia = inertia;
+    return res;
 }
 
 /////////////////////////////////////////////////

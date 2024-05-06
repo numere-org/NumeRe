@@ -46,6 +46,11 @@ namespace NumeRe
 /////////////////////////////////////////////////
 typedef std::vector<std::string> ValueVector;
 
+struct KMeansResult
+{
+    std::vector<mu::value_type> cluster_labels;
+    long double inertia;
+};
 
 /////////////////////////////////////////////////
 /// \brief This class represents a single table
@@ -208,8 +213,7 @@ class Memory : public Sorter
         bool resample(VectorIndex _vLine, VectorIndex _vCol, std::pair<size_t,size_t> samples, AppDir Direction = ALL, std::string sFilter = "lanczos3");
 
         std::vector<AnovaResult> getAnova(const VectorIndex& colCategories, size_t colValues, const VectorIndex& _vIndex, double significance) const;
-        std::vector<mu::value_type> getKMeans(const VectorIndex& colCategories, size_t nClusters, size_t maxIterations) const;
-
+        KMeansResult getKMeans(const VectorIndex& colCategories, size_t nClusters, size_t maxIterations, size_t init_method) const;
 };
 
 #endif

@@ -1878,10 +1878,13 @@ static std::string tableMethod_kmeans(const std::string& sTableName, std::string
 
     if (nResults < 1)
         throw SyntaxError(SyntaxError::TOO_FEW_COLS, sTableName + "().kmeansof()", ".kmeansof(", ".kmeansof(");
+
     size_t nClusters = intCast(v[0]);
 
     VectorIndex vIndex(0, VectorIndex::OPEN_END);
+
     size_t maxIterations = 100;
+    size_t init_method = 1;
 
     if (sMethodArguments.length())
     {
@@ -1889,10 +1892,17 @@ static std::string tableMethod_kmeans(const std::string& sTableName, std::string
         _kernel->getParser().SetExpr(getNextArgument(sMethodArguments, true));
         v = _kernel->getParser().Eval(nResults);
         maxIterations = v[0].real();
+
+        if (sMethodArguments.length())
+        {
+            _kernel->getMemoryManager().updateDimensionVariables(sTableName);
+            _kernel->getParser().SetExpr(getNextArgument(sMethodArguments, true));
+            v = _kernel->getParser().Eval(nResults);
+            init_method = v[0].real();
+        }
     }
 
-    _kernel->getParser().SetVectorVar(sResultVectorName, _kernel->getMemoryManager().getKMeans(sTableName, cols, nClusters, maxIterations));
-
+    _kernel->getParser().SetVectorVar(sResultVectorName, _kernel->getMemoryManager().getKMeans(sTableName, cols, nClusters, maxIterations, init_method).cluster_labels);
     return sResultVectorName;
 }
 
