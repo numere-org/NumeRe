@@ -1885,6 +1885,7 @@ static std::string tableMethod_kmeans(const std::string& sTableName, std::string
 
     size_t maxIterations = 100;
     size_t init_method = 1;
+    size_t n_init = 10;
 
     if (sMethodArguments.length())
     {
@@ -1899,10 +1900,33 @@ static std::string tableMethod_kmeans(const std::string& sTableName, std::string
             _kernel->getParser().SetExpr(getNextArgument(sMethodArguments, true));
             v = _kernel->getParser().Eval(nResults);
             init_method = v[0].real();
+
+            if (sMethodArguments.length())
+            {
+                _kernel->getMemoryManager().updateDimensionVariables(sTableName);
+                _kernel->getParser().SetExpr(getNextArgument(sMethodArguments, true));
+                v = _kernel->getParser().Eval(nResults);
+                n_init = v[0].real();
+            }
+            else
+            {
+                // scikit: When n_init='auto', the number of runs depends on the value of init: 10 if using init='random' or init is a callable; 1 if using init='k-means++'
+                if(init_method == 2)
+                    n_init = 1;
+            }
         }
     }
 
-    _kernel->getParser().SetVectorVar(sResultVectorName, _kernel->getMemoryManager().getKMeans(sTableName, cols, nClusters, maxIterations, init_method).cluster_labels);
+    KMeansResult bestRes = _kernel->getMemoryManager().getKMeans(sTableName, cols, nClusters, maxIterations, init_method);
+
+    for(int re_inits = 1; re_inits < n_init; re_inits++)
+    {
+        KMeansResult res = _kernel->getMemoryManager().getKMeans(sTableName, cols, nClusters, maxIterations, init_method);
+        if(res.inertia < bestRes.inertia)
+            bestRes = res;
+    }
+
+    _kernel->getParser().SetVectorVar(sResultVectorName, bestRes.cluster_labels);
     return sResultVectorName;
 }
 

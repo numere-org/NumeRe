@@ -3884,7 +3884,10 @@ KMeansResult Memory::getKMeans(const VectorIndex& columns, size_t nClusters, siz
 
     clusters.resize(col_size, 0);
     std::vector<std::vector<mu::value_type>> centroids; //(nClusters);
-    // todo really like this ???
+
+    //todo is it even worth to check a seed is not used twice? should be quite low propability the same seed is picked twice
+    std::vector<size_t> init_seed;
+
 
     // Step 1 Initialization: Calculate starting centroids
     if (init_method == 2)
@@ -3901,6 +3904,9 @@ KMeansResult Memory::getKMeans(const VectorIndex& columns, size_t nClusters, siz
         {
             // todo this loop could propably be also be included into the standard Algorithm Loop
             // however this could get less readable because at more variables have to be added
+
+
+            // K++ Step 2: calculate distance to nearest centroid
             std::vector<double> distance_vec;
             for(size_t i = 0; i < col_size; i++)
             {
@@ -3921,6 +3927,8 @@ KMeansResult Memory::getKMeans(const VectorIndex& columns, size_t nClusters, siz
                     clusters[i] = idx;
                 }
             }
+
+            // K++ Step 3: add new centroid at point with highest distance to nearest neighbour
             size_t max_elem_idx = std::distance(distance_vec.begin(), std::max_element(distance_vec.begin(), distance_vec.end()));
             std::vector<mu::value_type> new_value = readMem(VectorIndex({max_elem_idx}), columns);
             centroids.push_back(new_value);
