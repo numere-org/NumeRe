@@ -4000,6 +4000,7 @@ KMeansResult Memory::getKMeans(const VectorIndex& columns, size_t nClusters, siz
                 }
             }
 
+            idx++;
             if(clusters[i] != mu::value_type(idx))
             {
                 clusters[i] = idx;
@@ -4017,7 +4018,7 @@ KMeansResult Memory::getKMeans(const VectorIndex& columns, size_t nClusters, siz
         change = 0;
         for(size_t i = 0; i < nClusters; i++)
         {
-            VectorIndex indices(getIndices(clusters, mu::value_type(i)));
+            VectorIndex indices(getIndices(clusters, mu::value_type(i+1)));
             for(size_t elemIdx = 0; elemIdx < columns.size(); elemIdx++)
             {
                 mu::value_type new_val = avg(indices, VectorIndex(elemIdx));
