@@ -2738,6 +2738,23 @@ value_type parser_isnan(const value_type& v)
 
 
 /////////////////////////////////////////////////
+/// \brief This function returns the utc offset
+///
+/// \return value_type
+///
+/////////////////////////////////////////////////
+value_type parser_get_utc_offset()
+{
+    auto now = std::chrono::system_clock::now();
+    std::time_t now_c = std::chrono::system_clock::to_time_t(now);
+    std::tm* tm_ptr = std::gmtime(&now_c);
+    int utc_offset_seconds = std::mktime(tm_ptr) - now_c;
+    int utc_offset_hours = utc_offset_seconds / 3600;
+    return utc_offset_hours;
+}
+
+
+/////////////////////////////////////////////////
 /// \brief This function numerically defines a
 /// valid value range (the value is set to NaN,
 /// if outside of this range).

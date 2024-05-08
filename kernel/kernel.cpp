@@ -462,6 +462,10 @@ void NumeReKernel::defineConst()
     _parser.DefineConst("_gamma_p", 2.6752219e8);
     _parser.DefineConst("_feigenbaum_delta", 4.66920160910299067185);
     _parser.DefineConst("_feigenbaum_alpha", 2.50290787509589282228);
+    _parser.DefineConst("_day_secs", 86400);
+    _parser.DefineConst("_hour_secs", 3600 );
+     _parser.DefineConst("_week_secs", 604800);
+    _parser.DefineConst("_year_secs", 31536000);
     _parser.DefineConst("nan", NAN);
     _parser.DefineConst("inf", INFINITY);
     _parser.DefineConst("void", NAN);
@@ -645,9 +649,11 @@ void NumeReKernel::defineFunctions()
     _parser.DefineFun("student_t_cdf_q", parser_rd_student_t_cdf_q);          // student_t_cdf_q(x, nu)
     _parser.DefineFun("student_t_inv_p", parser_rd_student_t_inv_p);          // student_t_inv_p(p, nu)
     _parser.DefineFun("student_t_inv_q", parser_rd_student_t_inv_q);          // student_t_inv_q(q, nu)
-    _parser.DefineFun("as_date", parser_as_date, true);                         // as_date(nYear, nMounth, nDay)
-    _parser.DefineFun("as_time", parser_as_time, true);                         // as_time(nHours, nMinutes, nSeconds, nMilli, nMicro)
-
+    _parser.DefineFun("as_date", parser_as_date, true);                       // as_date(nYear, nMonth, nDay)
+    _parser.DefineFun("as_time", parser_as_time, true);                       // as_time(nHours, nMinutes, nSeconds, nMilli, nMicro)
+    _parser.DefineFun("getutcofset", parser_get_utc_offset, true);            // getutcofset()
+    //_parser.DefineFun("is_leapyear", parser_is_leap_year, true);              // is_leap_year(nYear)
+    //_parser.DefineFun("is_daylightsavingtime", parser_is_daylightsavingtime); // is_daylightsavingtime(nYear, nMonth, nDay)
 
     /////////////////////////////////////////////////////////////////////
     // NOTE:
