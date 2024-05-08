@@ -1159,10 +1159,13 @@ Returnvalue Procedure::execute(StringView sProc, string sVarList, Parser& _parse
                     if (sReturnValue == "void")
                         nReturnType = 0;
                     else if (sReturnValue.find('(') != std::string::npos
-                             && sReturnValue.substr(sReturnValue.find('(')) == "()"
+                             && getMatchingParenthesis(sReturnValue) == sReturnValue.length()-1
                              && _data.isTable(sReturnValue.substr(0, sReturnValue.find('('))))
                     {
-                        _ReturnVal.sReturnedTable = sReturnValue.substr(0, sReturnValue.find('('));
+                        DataAccessParser _accessParser(sReturnValue, false);
+                        _accessParser.evalIndices();
+                        _ReturnVal.sReturnedTable = _accessParser.getDataObject();
+                        _ReturnVal.sourceIdx = _accessParser.getIndices();
                         _ReturnVal.delayDelete = _varFactory->delayDeletionOfReturnedTable(_ReturnVal.sReturnedTable);
                     }
                     else if (sReturnValue.length())
@@ -2738,14 +2741,17 @@ size_t Procedure::replaceReturnVal(string& sLine, Parser& _parser, const Returnv
         StripSpaces(sTargetTable);
 
         if (sTargetTable.find('(') != std::string::npos
-            && sTargetTable.substr(sTargetTable.find('(')) == "()"
+            && getMatchingParenthesis(sTargetTable) == sTargetTable.length()-1
             && sLine.substr(nPos2).find_first_not_of(" ;") == std::string::npos)
         {
-            sTargetTable.erase(sTargetTable.find('('));
-
             // Copy efficient move operations
-            if (_return.delayDelete)
+            if (_return.delayDelete
+                && sTargetTable.ends_with("()")
+                && _return.sourceIdx.row.isFullRange(_data.getLines(_return.sReturnedTable)-1)
+                && _return.sourceIdx.col.isFullRange(_data.getCols(_return.sReturnedTable)-1))
             {
+                sTargetTable.erase(sTargetTable.find('('));
+
                 if (!_data.isTable(sTargetTable))
                     _data.renameTable(_return.sReturnedTable, sTargetTable, true);
                 else
@@ -2755,10 +2761,19 @@ size_t Procedure::replaceReturnVal(string& sLine, Parser& _parser, const Returnv
                 }
             }
             else
-                _data.copyTable(_return.sReturnedTable, sTargetTable);
+            {
+                if (!_data.isTable(sTargetTable))
+                    _data.addTable(sTargetTable, NumeReKernel::getInstance()->getSettings());
 
-            std::string sTempVar = _parser.CreateTempVectorVar(std::vector<mu::value_type>({_data.getLines(sTargetTable),
-                                                                                            _data.getCols(sTargetTable)}));
+                DataAccessParser _accessParser(sTargetTable, true);
+                _data.copyTable(_return.sReturnedTable, _return.sourceIdx, _accessParser.getDataObject(), _accessParser.getIndices());
+
+                if (_return.delayDelete)
+                    _data.deleteTable(_return.sReturnedTable);
+            }
+
+            std::string sTempVar = _parser.CreateTempVectorVar(std::vector<mu::value_type>({_return.sourceIdx.row.size(),
+                                                                                            _return.sourceIdx.col.size()}));
             sLine = sTempVar + sLine.substr(nPos2);
             return sTempVar.length();
         }

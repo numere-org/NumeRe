@@ -2,3 +2,8 @@ Cleaned	Some file types do no longer require automatic conversion upon file load
 Cleaned	If the debugger is in control and the user tries to close the application, a confirmation dialog appears.
 Added	The font size within "text()" can now adapted in 9 distinct steps.
 Added	Strings in tables shown in the table viewer can now be shown without the surrounding quotation marks, if the corresponding setting value is changed. This does not apply for clusters.
+Added	It's now also possible to copy only a part of a table to another table at a desired location using "TAB(i1:i2,j1:j2) = TAB2(i1:i2,j1:j1)" syntax.
+Applied	Plots of large data sets have been sped up by downsampling the used data to result image size before plotting it.
+Cleaned	Indentation of wrapped lines in created documentation now works as expected (not falling back to the beginning of the line any longer).
+Fixed	Resolved a rarely occuring off-by-one error within the possibility to start a script from a specific line.
+Applied	Improved some internals to speed up some calculations.

@@ -118,11 +118,13 @@ void Script::openScript(std::string& _sScriptFileName, int nFromLine)
         }
 
         // If we're still inside a block, go back to its start position
-        if (nLine == nFromLine && flowCtrlSyntaxHelper.getCurrentBlockDepth() > 0)
+        if (nLine >= nFromLine && flowCtrlSyntaxHelper.getCurrentBlockDepth() > 0)
         {
             flowCtrlSyntaxHelper.reset();
             nLine = nBlockStartLine;
         }
+        else if (nLine > nFromLine)
+            nLine = nFromLine; // This is a quick fix for problems, which arise from empty lines
     }
 }
 

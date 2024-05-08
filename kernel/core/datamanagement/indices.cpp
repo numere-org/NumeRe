@@ -82,7 +82,7 @@ void getIndices(StringView sCmd, Indices& _idx,  Parser& _parser, MemoryManager&
     size_t nClosingParens = getMatchingParenthesis(sCmd.subview(nPos));
 
     // Return, if the closing parenthesis is missing
-    if (nClosingParens == string::npos)
+    if (nClosingParens == std::string::npos)
         return;
 
     sTableName = sCmd.subview(0, nPos);
@@ -110,16 +110,17 @@ void getIndices(StringView sCmd, Indices& _idx,  Parser& _parser, MemoryManager&
     // This is the handler for the abbreviation TABLE() == TABLE(:,:)
     if (!sIndices.length())
     {
-        _idx.row = VectorIndex(0LL, VectorIndex::OPEN_END);
-        _idx.col = VectorIndex(0LL, VectorIndex::OPEN_END);
+        _idx.row = VectorIndex(0, VectorIndex::OPEN_END);
+        _idx.col = VectorIndex(0, VectorIndex::OPEN_END);
         return;
     }
-    else
-        _idx.sCompiledAccessEquation.assign(sIndices.begin(), sIndices.end());
 
+    _idx.sCompiledAccessEquation.assign(sIndices.begin(), sIndices.end());
+// 510
     // If the argument contains tables, get their values. This leads to a recursion!
     if (_data.containsTablesOrClusters(_idx.sCompiledAccessEquation))
         getDataElements(_idx.sCompiledAccessEquation, _parser, _data);
+// 1000
 
     // update the dimension variables
     if (sCmd[nPos] == '(')
@@ -130,9 +131,10 @@ void getIndices(StringView sCmd, Indices& _idx,  Parser& _parser, MemoryManager&
         //_idx.row.setIndex(0,0);
         //_idx.col.setIndex(0,0);
         //return;
-
+// 1050
 #warning TODO (numere#3#08/15/21): Checking for string variables here is inefficient
-    if (NumeReKernel::getInstance()->getStringParser().isStringExpression(_idx.sCompiledAccessEquation))
+    static NumeRe::StringParser& _stringParser = NumeReKernel::getInstance()->getStringParser();
+    if (_stringParser.isStringExpression(_idx.sCompiledAccessEquation))
     {
         EndlessVector<std::string> idxDims = getAllArguments(_idx.sCompiledAccessEquation);
         g_logger.debug("_idx.sCompiledAccessEquation contains string vector vars " + _idx.sCompiledAccessEquation);
@@ -179,9 +181,9 @@ void getIndices(StringView sCmd, Indices& _idx,  Parser& _parser, MemoryManager&
 
             _idx.sCompiledAccessEquation += dim;
         }
-
     }
 
+// 1350
     // If the argument contains a comma, handle it as a usual index list
     handleArgumentForIndices(_idx, _parser, _data, _idx.sCompiledAccessEquation, sCmd);
 
@@ -189,6 +191,7 @@ void getIndices(StringView sCmd, Indices& _idx,  Parser& _parser, MemoryManager&
     if (!_idx.row.checkRange() || !_idx.col.checkRange())
         throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd.to_string(), nPos+1,
                           _idx.row.to_string() + ", " + _idx.col.to_string());
+// 1800
 }
 
 
@@ -216,10 +219,10 @@ static void handleArgumentForIndices(Indices& _idx, Parser& _parser, MemoryManag
 
     // extract the (textual) indices from the argument list and store it in sI and sJ
     extractIndexList(sArgument, vLines, vCols);
-        //_idx.row.setIndex(0,0);
-        //_idx.col.setIndex(0,0);
-        //return;
-
+//        _idx.row.setIndex(0,0);
+//        _idx.col.setIndex(0,0);
+//        return;
+//1450
     // Detect, whether the line indices are candidates
     // for vectors
     if (vLines.size() == 1)
@@ -331,12 +334,9 @@ static void handleIndexVectors(Parser& _parser, VectorIndex& _vIdx, StringView s
         _parser.SetExpr(sIndex);
         v = _parser.Eval(nResults);
 
-        if (nResults > 1)
-        {
-            // vector
+        if (nResults > 1) // vector
             _vIdx = VectorIndex(v, nResults, 0);
-        }
-        else if (!isnan(v[0].real()) && intCast(v[0]) > 0) // single index
+        else if (!isnan(v[0].real())) // single index
             _vIdx.front() = intCast(v[0]) - 1;
     }
 }

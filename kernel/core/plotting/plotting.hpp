@@ -55,6 +55,8 @@ class Plot
         std::string sOutputName;
         std::string sCurrentExpr;
         size_t nLegends;
+        size_t nHeight;
+        size_t nWidth;
 
         MemoryManager& _data;
         mu::Parser& _parser;

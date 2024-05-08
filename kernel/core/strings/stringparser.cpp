@@ -2361,7 +2361,7 @@ namespace NumeRe
         if (sExpression.find('{', nEqPos) == std::string::npos)
             return false;
 
-        const std::map<std::string,NumeRe::Cluster>& mClusterMap = _data.getClusterMap();
+        static const std::map<std::string,NumeRe::Cluster>& mClusterMap = _data.getClusterMap();
 
         for (auto iter = mClusterMap.begin(); iter != mClusterMap.end(); ++iter)
         {

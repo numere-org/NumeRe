@@ -253,7 +253,7 @@ wxString GridNumeReTable::GetValue(int row, int col)
     else if (row - getNumHeadlines() >= (int)_table.getLines() || col >= (int)_table.getCols())
         return "";
     else if (!m_showQMarks)
-        return removeQuotationMarks(replaceControlCharacters(_table.getValueAsString(row - getNumHeadlines(), col)));
+        return removeQuotationMarks(_table.getValueAsString(row - getNumHeadlines(), col));
     else
         return replaceControlCharacters(_table.getValueAsString(row - getNumHeadlines(), col));
 }

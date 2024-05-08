@@ -337,21 +337,27 @@ string getDataElements(std::string& sLine, mu::Parser& _parser, MemoryManager& _
 
             // Direct assignment shortcut
             if (sCache.find('(') != std::string::npos
-                && sCache.substr(sCache.find('(')) == "()"
-                && sCache.find_first_of(" +-*/?:!%&|<>=") == std::string::npos)
+                && getMatchingParenthesis(sCache) == sCache.length()-1)
             {
                 std::string source = sLine.substr(eq_pos+1);
                 StripSpaces(source);
 
                 // Is the source also a complete table
                 if (source.find('(') != std::string::npos
-                    && source.substr(source.find("(")) == "()"
-                    && source.find_first_of(" +-*/?:!%&|<>=") == std::string::npos
+                    && getMatchingParenthesis(source) == source.length()-1
                     && _data.isTable(source))
                 {
-                    _data.copyTable(source, sCache);
-                    sLine = _parser.CreateTempVectorVar(std::vector<mu::value_type>({_data.getLines(source.substr(0, source.find("("))),
-                                                                                     _data.getCols(source.substr(0, source.find("(")))}));
+                    if (!_data.isTable(sCache))
+                        _data.addTable(sCache, NumeReKernel::getInstance()->getSettings());
+
+                    DataAccessParser src(source, false);
+                    DataAccessParser tgt(sCache, true);
+
+                    src.evalIndices();
+
+                    _data.copyTable(src.getDataObject(), src.getIndices(), tgt.getDataObject(), tgt.getIndices());
+                    sLine = _parser.CreateTempVectorVar(std::vector<mu::value_type>({src.getIndices().row.size(),
+                                                                                     src.getIndices().col.size()}));
                     return "";
                 }
             }

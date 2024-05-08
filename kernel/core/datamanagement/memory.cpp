@@ -1939,8 +1939,8 @@ void Memory::insertCopiedTable(NumeRe::Table _table, const VectorIndex& lines, c
     // We construct separate objects because they might be overwritten
     deleteBulk(VectorIndex(lines), VectorIndex(cols));
 
-    lines.setOpenEndIndex(lines.front() + transpose ? _table.getCols()-1 : _table.getLines()-1);
-    cols.setOpenEndIndex(cols.front() + transpose ? _table.getLines()-1 : _table.getCols()-1);
+    lines.setOpenEndIndex(lines.front() + (transpose ? _table.getCols()-1 : _table.getLines()-1));
+    cols.setOpenEndIndex(cols.front() + (transpose ? _table.getLines()-1 : _table.getCols()-1));
 
     resizeMemory(lines.max()+1, cols.max()+1);
 

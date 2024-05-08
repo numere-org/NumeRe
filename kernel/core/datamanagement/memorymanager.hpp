@@ -343,6 +343,7 @@ class MemoryManager : public NumeRe::FileAdapter, public StringMemory, public Nu
 		}
 
 		void copyTable(const std::string& source, const std::string& target);
+		void copyTable(const std::string& source, const Indices& sourceIdx, const std::string& target, const Indices& targetIdx);
 
 
 		// TABLE EXTRACTOR AND IMPORTER METHODS

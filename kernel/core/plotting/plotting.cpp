@@ -976,58 +976,50 @@ size_t Plot::createSubPlotSet(bool& bAnimateVar, vector<string>& vPlotCompose, s
 /////////////////////////////////////////////////
 void Plot::applyPlotSizeAndQualitySettings()
 {
+    double factor = NAN;
+
     // Apply the quality and image dimension settings to the overall result
     // image. This affects also a whole multiplot and is therefore done before
     // the first plot is rendered.
     // If the user requests a specific size, we'll preferably using this
     if (_pData.getSettings(PlotData::INT_SIZE_X) > 0 && _pData.getSettings(PlotData::INT_SIZE_Y) > 0)
-        _graph->SetSize(_pData.getSettings(PlotData::INT_SIZE_X), _pData.getSettings(PlotData::INT_SIZE_Y));
+    {
+        nHeight = _pData.getSettings(PlotData::INT_SIZE_Y);
+        nWidth = _pData.getSettings(PlotData::INT_SIZE_X);
+    }
     else if (_pData.getSettings(PlotData::LOG_SILENTMODE) || !_pData.getSettings(PlotData::LOG_OPENIMAGE))
     {
         // Switch between fullHD and the normal resolution
         if (_pData.getSettings(PlotData::INT_HIGHRESLEVEL) == 2)
-        {
-            double dHeight = sqrt(1920.0 * 1440.0 / _pData.getSettings(PlotData::FLOAT_ASPECT));
-            _graph->SetSize((int)lrint(_pData.getSettings(PlotData::FLOAT_ASPECT)*dHeight), (int)lrint(dHeight));
-        }
+            factor = 1920.0 * 1440.0;
         else
-        {
-            double dHeight = sqrt(1280.0 * 960.0 / _pData.getSettings(PlotData::FLOAT_ASPECT));
-            _graph->SetSize((int)lrint(_pData.getSettings(PlotData::FLOAT_ASPECT)*dHeight), (int)lrint(dHeight));
-        }
+            factor = 1280.0 * 960.0;
     }
     else
     {
         // This section is for printing to the GraphViewer window
         // we use different resolutions here
         if (_pData.getAnimateSamples() && !_pData.getSettings(PlotData::STR_FILENAME).length())
-        {
-            // Animation size (faster for rendering)
-            double dHeight = sqrt(640.0 * 480.0 / _pData.getSettings(PlotData::FLOAT_ASPECT));
-            _graph->SetSize((int)lrint(_pData.getSettings(PlotData::FLOAT_ASPECT)*dHeight), (int)lrint(dHeight));
-        }
+            factor = 640.0 * 480.0; // Animation size (faster for rendering)
         else if (_pData.getSettings(PlotData::INT_HIGHRESLEVEL) == 2)
-        {
-            // Hires output
-            double dHeight = sqrt(1280.0 * 960.0 / _pData.getSettings(PlotData::FLOAT_ASPECT));
-            _graph->SetSize((int)lrint(_pData.getSettings(PlotData::FLOAT_ASPECT)*dHeight), (int)lrint(dHeight));
-        }
+            factor = 1280.0 * 960.0; // Hires output
         else
-        {
-            // Standard output
-            double dHeight = sqrt(800.0 * 600.0 / _pData.getSettings(PlotData::FLOAT_ASPECT));
-            _graph->SetSize((int)lrint(_pData.getSettings(PlotData::FLOAT_ASPECT)*dHeight), (int)lrint(dHeight));
-        }
+            factor = 800.0 * 600.0; // Standard output
     }
+
+    if (!isnan(factor))
+    {
+        factor = sqrt(factor / _pData.getSettings(PlotData::FLOAT_ASPECT));
+        nHeight = rint(factor);
+        nWidth = rint(_pData.getSettings(PlotData::FLOAT_ASPECT)*factor);
+    }
+
+    _graph->SetSize(nWidth, nHeight);
 
     // Copy the font and select the font size
     _graph->CopyFont(&_fontData);
-    //_graph->SetFontSizePT(8 * ((double)(1 + _pData.getSettings(PlotData::FLOAT_TEXTSIZE)) / 6.0), 72);
     _graph->SetFontSizeCM(0.22 * (1.0 + _pData.getSettings(PlotData::FLOAT_TEXTSIZE)) / 6.0, 72);
     _graph->SetFlagAdv(1, MGL_FULL_CURV);
-    //_graph->SubPlot(1,1,0, "");
-    //_graph->SubPlot(1,1,0, "");
-
 }
 
 
@@ -1243,6 +1235,9 @@ void Plot::create2dPlot(size_t nPlotCompose, size_t nPlotComposeSize)
 
     if (_pData.getSettings(PlotData::INT_CONTLINES) % 2)
         _mContVec.a[_pData.getSettings(PlotData::INT_CONTLINES)/2] = _pInfo.ranges[ZRANGE].middle();
+
+    // Resize the matrices to fit in the created image
+    m_manager.resize(nWidth, nHeight);
 
     // Apply curvilinear coordinates
     if (!_pData.getSettings(PlotData::LOG_PARAMETRIC))
@@ -2280,6 +2275,10 @@ void Plot::create2dVect()
 {
     mglData* _mData_x = nullptr;
     mglData* _mData_y = nullptr;
+
+    // Reduce the samples if they are larger than
+    // half of the image pixel dimensions
+    m_manager.resize(nWidth/15, nHeight/15);
 
     for (size_t i = 0; i < m_manager.assets.size(); i++)
     {

@@ -846,6 +846,7 @@ void MemoryManager::copyTable(const std::string& source, const std::string& targ
 {
     Memory* sourceTable = vMemory[findTable(source.substr(0, source.find('(')))];
 
+    // Create the target table, if it does not exist
     if (!exists(target.substr(0, target.find('('))))
         addTable(target, NumeReKernel::getInstance()->getSettings());
 
@@ -853,6 +854,40 @@ void MemoryManager::copyTable(const std::string& source, const std::string& targ
 
     // Use the assignment operator overload
     *targetTable = *sourceTable;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Copy some contents of one table to
+/// another one (and create the missing table
+/// automatically, if needed). Overload for only
+/// copying a part of a table.
+///
+/// \param source const std::string&
+/// \param sourceIdx const Indices&
+/// \param target const std::string&
+/// \param targetIdx const Indices&
+/// \return void
+///
+/////////////////////////////////////////////////
+void MemoryManager::copyTable(const std::string& source, const Indices& sourceIdx, const std::string& target, const Indices& targetIdx)
+{
+    if (sourceIdx.row.isFullRange(getLines(source)-1) && sourceIdx.col.isFullRange(getCols(source)-1)
+        && targetIdx.row.isFullRange(getLines(target)-1) && targetIdx.col.isFullRange(getCols(target)-1))
+    {
+        copyTable(source, target);
+        return;
+    }
+
+    // Get the extract as a table
+    NumeRe::Table extract = extractTable(source, sourceIdx.row, sourceIdx.col);
+
+    // Create the target table, if it does not exist
+    if (!exists(target.substr(0, target.find('('))))
+        addTable(target, NumeReKernel::getInstance()->getSettings());
+
+    // Insert the copied table at the new location
+    insertCopiedTable(extract, target, targetIdx.row, targetIdx.col, false);
 }
 
 
@@ -959,7 +994,64 @@ bool MemoryManager::updateDimensionVariables(StringView sTableName)
 /////////////////////////////////////////////////
 bool MemoryManager::containsTablesOrClusters(const string& sCmdLine)
 {
-    return containsTables(sCmdLine) || containsClusters(sCmdLine);
+    if (sCmdLine.find_first_of("({") == std::string::npos)
+        return false;
+
+    // Check the first character directly
+    size_t nQuotes = sCmdLine.front() == '"';
+
+    // Search through the expression -> We do not need to examine the first character
+    for (size_t i = 1; i < sCmdLine.length(); i++)
+    {
+        // Consider quotation marks
+        if (sCmdLine[i] == '"' && sCmdLine[i-1] != '\\')
+            nQuotes++;
+
+        if (nQuotes % 2)
+            continue;
+
+        // Is this a candidate for a table
+        if (sCmdLine[i] == '('
+            && (isalnum(sCmdLine[i-1]) || sCmdLine[i-1] == '_' || sCmdLine[i-1] == '~'))
+        {
+            size_t nStartPos = i-1;
+
+            // Try to find the starting position
+            while (nStartPos > 0 && (isalnum(sCmdLine[nStartPos-1]) || sCmdLine[nStartPos-1] == '_' || sCmdLine[nStartPos-1] == '~'))
+            {
+                nStartPos--;
+            }
+
+            // Try to find the candidate in the internal map
+            if (mCachesMap.find(sCmdLine.substr(nStartPos, i - nStartPos)) != mCachesMap.end())
+                return true;
+        }
+
+        // Is this a candidate for a table
+        if (sCmdLine[i] == '{'
+            && (isalnum(sCmdLine[i-1]) || sCmdLine[i-1] == '_' || sCmdLine[i-1] == '~' || sCmdLine[i-1] == '[' || sCmdLine[i-1] == ']'))
+        {
+            size_t nStartPos = i-1;
+
+            // Try to find the starting position
+            while (nStartPos > 0 && (isalnum(sCmdLine[nStartPos-1])
+                                     || sCmdLine[nStartPos-1] == '_'
+                                     || sCmdLine[nStartPos-1] == '~'
+                                     || sCmdLine[nStartPos-1] == '['
+                                     || sCmdLine[nStartPos-1] == ']'))
+            {
+                nStartPos--;
+            }
+
+            // Try to find the candidate in the internal map
+            if (mClusterMap.find(sCmdLine.substr(nStartPos, i - nStartPos)) != mClusterMap.end())
+                return true;
+        }
+    }
+
+    return false;
+
+    //return containsTables(sCmdLine) || containsClusters(sCmdLine);
 }
 
 
@@ -1010,25 +1102,44 @@ bool MemoryManager::isTable(StringView sTable) const
 /// \brief This member function detects, whether
 /// a table is used in the current expression.
 ///
-/// \param sExpression const string&
+/// \param sExpression const std::string&
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool MemoryManager::containsTables(const string& sExpression)
+bool MemoryManager::containsTables(const std::string& sExpression)
 {
-    size_t nQuotes = 0;
-
-    if (sExpression.find('(') == string::npos)
+    if (sExpression.find('(') == std::string::npos)
         return false;
 
-    // Search through the expression
-    for (size_t i = 0; i < sExpression.length(); i++)
+    // Check the first character directly
+    size_t nQuotes = sExpression.front() == '"';
+
+    // Search through the expression -> We do not need to examine the first character
+    for (size_t i = 1; i < sExpression.length(); i++)
     {
         // Consider quotation marks
-        if (sExpression[i] == '"' && (!i || sExpression[i-1] != '\\'))
+        if (sExpression[i] == '"' && sExpression[i-1] != '\\')
             nQuotes++;
 
-        if (!(nQuotes % 2))
+        // Is this a candidate for a table
+        if (!(nQuotes % 2)
+            && sExpression[i] == '('
+            && (isalnum(sExpression[i-1]) || sExpression[i-1] == '_' || sExpression[i-1] == '~'))
+        {
+            size_t nStartPos = i-1;
+
+            // Try to find the starting position
+            while (nStartPos > 0 && (isalnum(sExpression[nStartPos-1]) || sExpression[nStartPos-1] == '_' || sExpression[nStartPos-1] == '~'))
+            {
+                nStartPos--;
+            }
+
+            // Try to find the candidate in the internal map
+            if (mCachesMap.find(sExpression.substr(nStartPos, i - nStartPos)) != mCachesMap.end())
+                return true;
+        }
+
+        /*if (!(nQuotes % 2))
         {
             // If the current character might probably be an
             // identifier for a table, search for the next
@@ -1050,7 +1161,7 @@ bool MemoryManager::containsTables(const string& sExpression)
                         return true;
                 }
             }
-        }
+        }*/
     }
 
     return false;

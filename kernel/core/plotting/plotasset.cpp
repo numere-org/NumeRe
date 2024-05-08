@@ -752,3 +752,43 @@ void PlotAssetManager::applyCoordSys(CoordinateSystem coords, size_t every)
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Restrict the number of elements to the
+/// target size, i.e. do not use more pixels than
+/// actually contained in the created image.
+///
+/// \param x_max size_t
+/// \param y_max size_t
+/// \return void
+///
+/////////////////////////////////////////////////
+void PlotAssetManager::resize(size_t x_max, size_t y_max)
+{
+    const double tol = 1.1;
+
+    for (size_t i = 0; i < assets.size(); i++)
+    {
+        // If any of the two axes are longer than the max size
+        // including the tolerance, which we introduce to avoid situations
+        // where we need to correct for a few pixels
+        if (assets[i].axes[XCOORD].GetNN() > x_max*tol
+            || assets[i].axes[YCOORD].GetNN() > y_max*tol)
+        {
+            // Determine the total scale by finding the maximal correction factor
+            int nx = assets[i].axes[XCOORD].GetNN();
+            int ny = assets[i].axes[YCOORD].GetNN();
+            double scale = std::max(nx / (double)x_max, ny / (double)y_max);
+
+            // All elements need to be resized by the common scaling factor
+            assets[i].axes[XCOORD] = assets[i].axes[XCOORD].Resize(nx / scale);
+            assets[i].axes[YCOORD] = assets[i].axes[YCOORD].Resize(ny / scale);
+
+            for (size_t j = 0; j < assets[i].data.size(); j++)
+            {
+                assets[i].data[j].first = assets[i].data[j].first.Resize(nx / scale, ny / scale);
+                assets[i].data[j].second = assets[i].data[j].second.Resize(nx / scale, ny / scale);
+            }
+        }
+    }
+}
+

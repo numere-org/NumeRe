@@ -794,6 +794,20 @@ class VectorIndex
 
         /////////////////////////////////////////////////
         /// \brief This member function determines,
+        /// whether the managed range contains the full
+        /// range of the target data set.
+        ///
+        /// \param max_range int
+        /// \return bool
+        ///
+        /////////////////////////////////////////////////
+        inline bool isFullRange(int max_range) const
+        {
+            return expand && vStorage.front() == 0 && (vStorage.back() == OPEN_END || vStorage.back() >= max_range);
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief This member function determines,
         /// whether the internal index set referres to
         /// the table headlines.
         ///
@@ -3173,6 +3187,7 @@ struct Returnvalue
     std::vector<std::string> vStringVal;
     std::string sReturnedTable;
     bool delayDelete;
+    Indices sourceIdx;
 
     Returnvalue() : delayDelete(false) {}
 

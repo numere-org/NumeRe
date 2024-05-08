@@ -254,7 +254,7 @@ static void doc_ReplaceTokensForTeX(std::string& sDocParagraph)
             //replaceAll(sCode, "\\n", "\n");
             replaceAll(sCode, "&amp;", "&");
 
-            sDocParagraph.replace(k, sDocParagraph.find("</code>", k+6)+7-k, "\\lstinline`" + sCode + "`");
+            sDocParagraph.replace(k, sDocParagraph.find("</code>", k+6)+7-k, "\\lstinline[keepspaces=true]`" + sCode + "`");
             k += sCode.length() + 12;
         }
 
@@ -424,7 +424,7 @@ static std::vector<std::pair<std::string, std::string>> parseList(std::vector<st
             replaceAll(sText, "&lt;", "<");
             replaceAll(sText, "&gt;", ">");
 
-            replaceAll(sNode, "\\\\", "`\\newline\\lstinline`");
+            replaceAll(sNode, "\\\\", "`\\newline\\lstinline[keepspaces=true]`");
             replaceAll(sNode, "&quot;", "\"");
             replaceAll(sNode, "&lt;", "<");
             replaceAll(sNode, "&gt;", ">");
@@ -796,7 +796,7 @@ std::string renderTeX(std::vector<std::string>&& vDocArticle, const std::string&
 
                 for (const auto& iter : vList)
                 {
-                    sTeX += "    \\lstinline`" + iter.first + "` & " + iter.second + "\\\\ \n";
+                    sTeX += "    \\lstinline[keepspaces=true]`" + iter.first + "` & " + iter.second + "\\\\ \n";
                 }
 
                 sTeX += "\\bottomrule\n\\end{longtable}\n\\end{small}\n";

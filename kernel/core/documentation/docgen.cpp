@@ -542,7 +542,7 @@ std::string DocumentationGenerator::parseDocumentation(const StyledTextFile& fil
                 if (sTextRange.substr(j, 2) == "!!")
                 {
                     sTextRange.replace(j, 2, "`");
-                    sTextRange.replace(i, 2, "\\lstinline`");
+                    sTextRange.replace(i, 2, "\\lstinline[keepspaces=true]`");
                     break;
                 }
             }
