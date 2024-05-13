@@ -2764,13 +2764,11 @@ value_type parser_get_utc_offset()
 /////////////////////////////////////////////////
 value_type parser_is_leap_year(const value_type& nYear)
 {
-    if (intCast(nYear) % 4 == 0)
-        {
-        if (intCast(nYear) % 100 != 0 || intCast(nYear) % 400 == 0)
-        {
+    if (intCast(nYear) % 4 == 0){
+        if (intCast(nYear) % 100 != 0 || intCast(nYear) % 400 == 0) {
             return 1.0;
         }
-        }
+    }
     return 0.0;
 }
 
