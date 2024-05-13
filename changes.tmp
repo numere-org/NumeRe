@@ -1,6 +1,7 @@
 Added	An optional feature to extract the argument types of functions, methods and procedures based upon their names, was added.
 Added	Experimental feature: it is now possible to create new columns in tables if values are assigned to an unknown column using string indexing. The new column will be appended at the end of the table.
 Added	The new plotting option "stacked" enables the stacking of bars and hbars on each other.
+Added   More time-related constants and functions
 Applied	Experimental feature: "matop" functions now also accept matrix results as their scalar inputs. For consecutive scalar inputs, even a single vector can be passed, e.g. "matop zero({1,3})"
 Applied	Increased performance of STFA, audioread and some statistics functions.
 Applied	One can now pass custom axis ticks using a list of strings.
