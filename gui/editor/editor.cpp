@@ -1341,6 +1341,7 @@ void NumeReEditor::HandleFunctionCallTip()
     bool detectArgumentTypes = m_options->getSetting(SETTING_B_CALLTIP_ARGS).active();
     int nStartingBrace = 0;
     int nArgStartPos = 0;
+    size_t nDotPos = 0;
     string sFunctionContext = GetCurrentFunctionContext(nStartingBrace);
     static NumeRe::CallTipProvider _provider = *m_terminal->getProvider();
     NumeRe::CallTip _cTip;
@@ -1369,7 +1370,7 @@ void NumeReEditor::HandleFunctionCallTip()
     else if (sFunctionContext.front() == '.')
     {
         _cTip = _provider.getMethod(sFunctionContext.substr(1));
-        size_t nDotPos = _cTip.sDefinition.find('.');
+        nDotPos = _cTip.sDefinition.find('.');
 
         if (!detectArgumentTypes)
         {
@@ -1471,6 +1472,11 @@ void NumeReEditor::HandleFunctionCallTip()
         if (sArgumentType.length())
             _cTip.sDefinition += "\n" + strfill(" ", nArgStartPos + sArgument.find(viewedArg.to_string()), ' ') + sArgumentType;
     }
+
+    // Adapt the starting position so that the opening braces align
+    if (_cTip.sDefinition.find("(", nDotPos) != std::string::npos
+        && _cTip.sDefinition.find("(", nDotPos) <= GetColumn(nStartingBrace))
+        nStartingBrace -= _cTip.sDefinition.find("(", nDotPos);
 
     if (CallTipActive() && (CallTipStartPos() != nStartingBrace || m_sCallTipContent != _cTip.sDefinition))
     {

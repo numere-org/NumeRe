@@ -2040,6 +2040,39 @@ static StringVector strfnc_strunique(StringFuncArgs& funcArgs)
 
 
 /////////////////////////////////////////////////
+/// \brief Implementaton of the strjoin()
+/// function.
+///
+/// \param funcArgs StringFuncArgs&
+/// \return StringVector
+///
+/////////////////////////////////////////////////
+static StringVector strfnc_strjoin(StringFuncArgs& funcArgs)
+{
+    std::string sJoined;
+    std::string sSeparator = funcArgs.sArg2.view().to_string();
+
+    // Set the default mode, if necessary
+    if (funcArgs.nArg1 == DEFAULT_NUM_ARG)
+        funcArgs.nArg1 = 0;
+
+    for (size_t i = 0; i < funcArgs.sMultiArg.size(); i++)
+    {
+        // Only insert the separator if either the string as well
+        // as the following one have a length or if also empty strings
+        // shall be kept and this is the second string to be added
+        if ((sJoined.length() && funcArgs.sMultiArg[i].length())
+            || (i && funcArgs.nArg1))
+            sJoined += sSeparator;
+
+        sJoined += funcArgs.sMultiArg[i].to_string();
+    }
+
+    return "\"" + sJoined + "\"";
+}
+
+
+/////////////////////////////////////////////////
 /// \brief Implementation of the getkeyval()
 /// function.
 ///
@@ -2915,6 +2948,7 @@ static std::map<std::string, StringFuncHandle> getStringFuncHandles()
     mHandleTable["strip"]               = StringFuncHandle(STR_STR_STR_VALOPT_VALOPT, strfnc_strip, false);
     mHandleTable["strfnd"]              = StringFuncHandle(STR_STR_VALOPT, strfnc_strfnd, false);
     mHandleTable["strfndall"]           = StringFuncHandle(STR_STR_VALOPT_VALOPT, strfnc_strfndall, false);
+    mHandleTable["strjoin"]             = StringFuncHandle(STR_STROPT_VALOPT, strfnc_strjoin, true);
     mHandleTable["strlen"]              = StringFuncHandle(STR, strfnc_strlen, false);
     mHandleTable["strmatch"]            = StringFuncHandle(STR_STR_VALOPT, strfnc_strmatch, false);
     mHandleTable["strmatchall"]         = StringFuncHandle(STR_STR_VALOPT_VALOPT, strfnc_strmatchall, false);

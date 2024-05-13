@@ -7,3 +7,5 @@ Applied	Plots of large data sets have been sped up by downsampling the used data
 Cleaned	Indentation of wrapped lines in created documentation now works as expected (not falling back to the beginning of the line any longer).
 Fixed	Resolved a rarely occuring off-by-one error within the possibility to start a script from a specific line.
 Applied	Improved some internals to speed up some calculations.
+Added	New string function "strjoin()" will allow for concatenation of a vector of strings into a single string with an optional separator.
+Applied	The function context tooltip will now align with the opening brace whereever possible.

@@ -653,8 +653,11 @@ void replaceDataEntities(string& sLine, const string& sEntity, MemoryManager& _d
 			_parser.SetVectorVar(sEntityReplacement, vEntityContents);
 
 			// Cache the current access if needed
-			mu::CachedDataAccess _access = {sEntityName + (isCluster ? "{" + _idx.sCompiledAccessEquation + "}" : "(" + _idx.sCompiledAccessEquation + ")") , sEntityReplacement, sEntityName, isCluster ? mu::CachedDataAccess::IS_CLUSTER : mu::CachedDataAccess::NO_FLAG};
-			_parser.CacheCurrentAccess(_access);
+			if (_parser.IsCompiling() && _parser.CanCacheAccess())
+            {
+                mu::CachedDataAccess _access = {sEntityName + (isCluster ? "{" + _idx.sCompiledAccessEquation + "}" : "(" + _idx.sCompiledAccessEquation + ")") , sEntityReplacement, sEntityName, isCluster ? mu::CachedDataAccess::IS_CLUSTER : mu::CachedDataAccess::NO_FLAG};
+                _parser.CacheCurrentAccess(_access);
+            }
 
 			// Replace the occurences
 			replaceEntityOccurence(sLine, sEntityOccurence, sEntityName, sEntityReplacement, _idx, _data, _parser, isCluster);
