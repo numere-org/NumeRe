@@ -2755,6 +2755,61 @@ value_type parser_get_utc_offset()
 
 
 /////////////////////////////////////////////////
+/// \brief This function returns whether the year
+/// is a leap year
+///
+/// \param nYear const value_type&
+/// \return value_type
+///
+/////////////////////////////////////////////////
+value_type parser_is_leap_year(const value_type& nYear)
+{
+    if (intCast(nYear) % 4 == 0)
+        {
+        if (intCast(nYear) % 100 != 0 || intCast(nYear) % 400 == 0)
+        {
+            return 1.0;
+        }
+        }
+    return 0.0;
+}
+
+
+
+/////////////////////////////////////////////////
+/// \brief This function returns whether the
+/// current time is a summer time
+///
+/// \param vElements const value_type*
+/// \param nElements int
+/// \return value_type
+///
+/////////////////////////////////////////////////
+value_type parser_is_daylightsavingtime(const value_type* vElements, int nElements)
+{
+    int year = nElements > 0 ? intCast(vElements[0].real()) : 1970;
+    int month = nElements > 1 ? intCast(vElements[1].real()) : 1;
+    int day = nElements > 2 ? intCast(vElements[2].real()) : 1;
+
+    std::tm time_info = {};
+    time_info.tm_year = year - 1900;
+    time_info.tm_mon = month - 1;
+    time_info.tm_mday = day;
+    time_info.tm_hour = 12;          // Set to noon to avoid ambiguity
+
+    std::time_t timestamp = std::mktime(&time_info);
+    std::tm* local_time = std::localtime(&timestamp);
+
+    if (local_time != nullptr && local_time->tm_isdst > 0) {
+        return 1.0;
+    } else {
+        return 0.0;
+    }
+
+}
+
+
+/////////////////////////////////////////////////
 /// \brief This function numerically defines a
 /// valid value range (the value is set to NaN,
 /// if outside of this range).
