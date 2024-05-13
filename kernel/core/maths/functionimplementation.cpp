@@ -2803,7 +2803,6 @@ value_type parser_is_daylightsavingtime(const value_type* vElements, int nElemen
     } else {
         return 0.0;
     }
-
 }
 
 
