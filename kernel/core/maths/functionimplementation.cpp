@@ -453,7 +453,7 @@ value_type parser_mph(const value_type& v)
 
 
 /////////////////////////////////////////////////
-/// \brief Conversion function for 1°C.
+/// \brief Conversion function for 1Â°C.
 ///
 /// \param v const value_type&
 /// \return value_type
@@ -468,7 +468,7 @@ value_type parser_Celsius(const value_type& v)
 
 
 /////////////////////////////////////////////////
-/// \brief Conversion function for 1°F.
+/// \brief Conversion function for 1Â°F.
 ///
 /// \param v const value_type&
 /// \return value_type
@@ -1725,7 +1725,7 @@ value_type parser_HermitePolynomial(const value_type& vn, const value_type& v)
 /////////////////////////////////////////////////
 /// \brief This function calculates the nucleic
 /// core binding energy according the Bethe
-/// Weizsäcker formula.
+/// WeizsÃ¤cker formula.
 ///
 /// \param vN const value_type&
 /// \param vZ const value_type&
@@ -2762,8 +2762,9 @@ value_type parser_get_utc_offset()
 /// \return value_type
 ///
 /////////////////////////////////////////////////
-value_type parser_is_leap_year(const value_type& nYear)
+value_type parser_is_leap_year(const value_type& nDate)
 {
+    int nYear = (int)dateFromTimePoint(to_timePoint(nDate.real())).year();
     if (intCast(nYear) % 4 == 0){
         if (intCast(nYear) % 100 != 0 || intCast(nYear) % 400 == 0) {
             return 1.0;
