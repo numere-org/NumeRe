@@ -3880,6 +3880,24 @@ static std::vector<int> getIndices(const std::vector<mu::value_type>& vec, mu::v
     return indices;
 }
 
+
+/////////////////////////////////////////////////
+/// \brief parse string to KmeansInit enum
+///
+/// \param init_type const std::string&
+/// \return Memory::KmeansInit
+///
+/////////////////////////////////////////////////
+Memory::KmeansInit Memory::stringToKmeansInit(const std::string& init_type)
+{
+    if (init_type == "random")
+        return INIT_RANDOM;
+    else if (init_type == "kmeans++")
+        return INIT_KMEANSPP;
+
+    return INVALID;
+}
+
 /////////////////////////////////////////////////
 /// \brief calculate kmeans
 ///
@@ -3890,7 +3908,7 @@ static std::vector<int> getIndices(const std::vector<mu::value_type>& vec, mu::v
 /// \return KMeansResult
 ///
 /////////////////////////////////////////////////
-KMeansResult Memory::getKMeans(const VectorIndex& columns, size_t nClusters, size_t maxIterations, size_t init_method) const
+KMeansResult Memory::getKMeans(const VectorIndex& columns, size_t nClusters, size_t maxIterations, std::string init_method) const
 {
     std::vector<mu::value_type> clusters;
 
@@ -3921,15 +3939,16 @@ KMeansResult Memory::getKMeans(const VectorIndex& columns, size_t nClusters, siz
     clusters.resize(col_size, 0);
     std::vector<std::vector<mu::value_type>> centroids; //(nClusters);
 
+    Memory::KmeansInit init = Memory::stringToKmeansInit(init_method);
     // Step 1 Initialization: Calculate starting centroids
-    if (init_method == 2)
+    if (init == INIT_KMEANSPP)
     {
         // Run KMeans ++ init
         // https://www.geeksforgeeks.org/ml-k-means-algorithm/
 
         // K++ Step 1: randomly select first centroid
         size_t randinit = rand()%col_size;
-        std::vector<mu::value_type> new_value = readMem(VectorIndex({randinit}), columns);
+        std::vector<mu::value_type> new_value = readMem(VectorIndex(randinit), columns);
         centroids.push_back(new_value);
 
         for(size_t i = 1; i < nClusters; i++)
@@ -3941,7 +3960,7 @@ KMeansResult Memory::getKMeans(const VectorIndex& columns, size_t nClusters, siz
             std::vector<double> distance_vec;
             for(size_t i = 0; i < col_size; i++)
             {
-                std::vector<mu::value_type> value = readMem(VectorIndex({i}), columns);
+                std::vector<mu::value_type> value = readMem(VectorIndex(i), columns);
                 double dis = calculateL2Norm(value, centroids[0]);
                 size_t idx = 0;
                 for(size_t j = 1; j < centroids.size(); j++)
@@ -3961,17 +3980,17 @@ KMeansResult Memory::getKMeans(const VectorIndex& columns, size_t nClusters, siz
 
             // K++ Step 3: add new centroid at point with highest distance to nearest neighbour
             size_t max_elem_idx = std::distance(distance_vec.begin(), std::max_element(distance_vec.begin(), distance_vec.end()));
-            std::vector<mu::value_type> new_value = readMem(VectorIndex({max_elem_idx}), columns);
+            std::vector<mu::value_type> new_value = readMem(VectorIndex(max_elem_idx), columns);
             centroids.push_back(new_value);
         }
     }
-    else
+    else if(init == INIT_RANDOM || init == INVALID)
     {
         // Run standard Init: Random Seeds
         for(size_t i = 0; i < nClusters; )
         {
             size_t randinit = rand()%col_size;
-            std::vector<mu::value_type> new_value = readMem(VectorIndex({randinit}), columns);
+            std::vector<mu::value_type> new_value = readMem(VectorIndex(randinit), columns);
             if(isUnique(new_value, centroids))
             {
                 centroids.push_back(new_value);
@@ -3988,7 +4007,7 @@ KMeansResult Memory::getKMeans(const VectorIndex& columns, size_t nClusters, siz
         inertia = 0;
         for(size_t i = 0; i < col_size; i++)
         {
-            std::vector<mu::value_type> value = readMem(VectorIndex({i}), columns);
+            std::vector<mu::value_type> value = readMem(VectorIndex(i), columns);
             double min_distance = calculateL2Norm(value, centroids[0]);
             size_t idx = 0;
             for(size_t j = 1; j < nClusters; j++)

@@ -1874,9 +1874,6 @@ static std::string tableMethod_kmeans(const std::string& sTableName, std::string
     _kernel->getParser().SetExpr(sCols);
     mu::value_type* v = _kernel->getParser().Eval(nResults);
 
-    if (nResults < 1)
-        throw SyntaxError(SyntaxError::TOO_FEW_COLS, sTableName + "().kmeansof()", ".kmeansof(", ".kmeansof(");
-
     auto cols = VectorIndex(v, nResults, 0);
 
     sCols = getNextArgument(sMethodArguments, true);
@@ -1885,30 +1882,39 @@ static std::string tableMethod_kmeans(const std::string& sTableName, std::string
     _kernel->getParser().SetExpr(sCols);
     v = _kernel->getParser().Eval(nResults);
 
-    if (nResults < 1)
-        throw SyntaxError(SyntaxError::TOO_FEW_COLS, sTableName + "().kmeansof()", ".kmeansof(", ".kmeansof(");
-
     size_t nClusters = intCast(v[0]);
-
     VectorIndex vIndex(0, VectorIndex::OPEN_END);
 
     size_t maxIterations = 100;
-    size_t init_method = 1;
+    std::string init_method = "random";
     size_t n_init = 10;
 
     if (sMethodArguments.length())
     {
         _kernel->getMemoryManager().updateDimensionVariables(sTableName);
         _kernel->getParser().SetExpr(getNextArgument(sMethodArguments, true));
+        // if all numerical
+        // _kernel->getParser().SetExpr(sMethodArguments);
         v = _kernel->getParser().Eval(nResults);
         maxIterations = v[0].real();
 
         if (sMethodArguments.length())
         {
             _kernel->getMemoryManager().updateDimensionVariables(sTableName);
-            _kernel->getParser().SetExpr(getNextArgument(sMethodArguments, true));
-            v = _kernel->getParser().Eval(nResults);
-            init_method = v[0].real();
+            init_method = getNextArgument(sMethodArguments, true);
+
+            // if not valid, just go with random
+            if (_kernel->getStringParser().isStringExpression(init_method))
+            {
+                std::string sDummy;
+                init_method += " -nq";
+                NumeRe::StringParser::StringParserRetVal res = _kernel->getStringParser().evalAndFormat(init_method, sDummy, true);
+            }
+            else
+            {
+                init_method = "random";
+            }
+
 
             if (sMethodArguments.length())
             {
@@ -1920,7 +1926,7 @@ static std::string tableMethod_kmeans(const std::string& sTableName, std::string
             else
             {
                 // scikit: When n_init='auto', the number of runs depends on the value of init: 10 if using init='random' or init is a callable; 1 if using init='k-means++'
-                if(init_method == 2)
+                if(init_method != "random")
                     n_init = 1;
             }
         }

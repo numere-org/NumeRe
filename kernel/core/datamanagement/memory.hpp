@@ -76,6 +76,13 @@ class Memory : public Sorter
             RANK_FRACTIONAL
         };
 
+        enum KmeansInit
+        {
+            INVALID,
+            INIT_RANDOM,
+            INIT_KMEANSPP
+        };
+
 	private:
 	    friend class MemoryManager;
 	    friend class NumeRe::FileAdapter;
@@ -213,7 +220,10 @@ class Memory : public Sorter
         bool resample(VectorIndex _vLine, VectorIndex _vCol, std::pair<size_t,size_t> samples, AppDir Direction = ALL, std::string sFilter = "lanczos3");
 
         std::vector<AnovaResult> getAnova(const VectorIndex& colCategories, size_t colValues, const VectorIndex& _vIndex, double significance) const;
-        KMeansResult getKMeans(const VectorIndex& colCategories, size_t nClusters, size_t maxIterations, size_t init_method) const;
+
+
+        static KmeansInit stringToKmeansInit(const std::string& init_type);
+        KMeansResult getKMeans(const VectorIndex& colCategories, size_t nClusters, size_t maxIterations, std::string init_method) const;
 };
 
 #endif
