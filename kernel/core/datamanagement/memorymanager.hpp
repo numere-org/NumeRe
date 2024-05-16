@@ -427,7 +427,7 @@ class MemoryManager : public NumeRe::FileAdapter, public StringMemory, public Nu
             return vMemory[findTable(sTable)]->getAnova(colCategories, colValues, _vIndex, significance);
         }
 
-        KMeansResult getKMeans(const std::string& sTable, const VectorIndex& cols, size_t nClusters, size_t maxIterations, std::string init_method) const
+        KMeansResult getKMeans(const std::string& sTable, const VectorIndex& cols, size_t nClusters, size_t maxIterations, Memory::KmeansInit init_method) const
         {
 
             return vMemory[findTable(sTable)]->getKMeans(cols, nClusters, maxIterations, init_method);

@@ -223,7 +223,7 @@ class Memory : public Sorter
 
 
         static KmeansInit stringToKmeansInit(const std::string& init_type);
-        KMeansResult getKMeans(const VectorIndex& colCategories, size_t nClusters, size_t maxIterations, std::string init_method) const;
+        KMeansResult getKMeans(const VectorIndex& colCategories, size_t nClusters, size_t maxIterations, Memory::KmeansInit init_method) const;
 };
 
 #endif

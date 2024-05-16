@@ -3866,7 +3866,7 @@ static double calculateL2Norm(const std::vector<mu::value_type>& vec1, const std
 /// \return std::vector<int>
 ///
 /////////////////////////////////////////////////
-static std::vector<int> getIndices(const std::vector<mu::value_type>& vec, mu::value_type value)
+static std::vector<int> findIndicesOfValue(const std::vector<mu::value_type>& vec, mu::value_type value)
 {
     std::vector<int> indices;
     auto it = vec.begin();
@@ -3904,32 +3904,22 @@ Memory::KmeansInit Memory::stringToKmeansInit(const std::string& init_type)
 /// \param columns const VectorIndex&
 /// \param nClusters size_t
 /// \param maxIterations size_t
-/// \param init_method size_t    if 2 kmeans++ is used, random seeds otherwise
+/// \param init_method Memory::KmeansInit
 /// \return KMeansResult
 ///
 /////////////////////////////////////////////////
-KMeansResult Memory::getKMeans(const VectorIndex& columns, size_t nClusters, size_t maxIterations, std::string init_method) const
+KMeansResult Memory::getKMeans(const VectorIndex& columns, size_t nClusters, size_t maxIterations, Memory::KmeansInit init_method) const
 {
     std::vector<mu::value_type> clusters;
 
-    // Ensure that we have data
-    if (memArray.size() <= columns[0] || !memArray[columns[0]])
-    {
-        clusters.resize(memArray[columns[0]]->size(), NAN);
-        return KMeansResult();
-    }
 
-    //Memory _mem(columns.size());
-    // todo is there a more efficient way utilizing the Memory class?
-    // -> currently always get element as vector from Memory class
-    // -> is there a better way to access each data row ?
 
     for(size_t i = 0; i < columns.size(); i++)
     {
-        if(memArray[columns[i]]->m_type != TableColumn::TYPE_VALUE)
+        if(memArray.size() <= columns[0] || !memArray[columns[0]] ||          // check if column does have data
+           memArray[columns[i]]->m_type != TableColumn::TYPE_VALUE ||         // Data has to be numerical
+           getElemsInColumn(columns[0]) != getElemsInColumn(columns[i]))      // All columns should have same size
             return KMeansResult();
-
-        //_mem.memArray[i].reset(memArray[columns[i]]->copy());
     }
 
     size_t col_size = getElemsInColumn(columns[0]);
@@ -3939,15 +3929,17 @@ KMeansResult Memory::getKMeans(const VectorIndex& columns, size_t nClusters, siz
     clusters.resize(col_size, 0);
     std::vector<std::vector<mu::value_type>> centroids; //(nClusters);
 
-    Memory::KmeansInit init = Memory::stringToKmeansInit(init_method);
+    // Random generator
+    mt19937 mt(time(nullptr));
+
     // Step 1 Initialization: Calculate starting centroids
-    if (init == INIT_KMEANSPP)
+    if (init_method == INIT_KMEANSPP)
     {
         // Run KMeans ++ init
         // https://www.geeksforgeeks.org/ml-k-means-algorithm/
 
         // K++ Step 1: randomly select first centroid
-        size_t randinit = rand()%col_size;
+        size_t randinit = mt()%col_size;
         std::vector<mu::value_type> new_value = readMem(VectorIndex(randinit), columns);
         centroids.push_back(new_value);
 
@@ -3984,12 +3976,12 @@ KMeansResult Memory::getKMeans(const VectorIndex& columns, size_t nClusters, siz
             centroids.push_back(new_value);
         }
     }
-    else if(init == INIT_RANDOM || init == INVALID)
+    else if(init_method == INIT_RANDOM || init_method == INVALID)
     {
         // Run standard Init: Random Seeds
         for(size_t i = 0; i < nClusters; )
         {
-            size_t randinit = rand()%col_size;
+            size_t randinit = mt()%col_size;
             std::vector<mu::value_type> new_value = readMem(VectorIndex(randinit), columns);
             if(isUnique(new_value, centroids))
             {
@@ -4026,7 +4018,7 @@ KMeansResult Memory::getKMeans(const VectorIndex& columns, size_t nClusters, siz
                 change++;
             }
 
-            inertia += std::pow(min_distance,2);
+            inertia += intPower(min_distance,2);
         }
 
         // stop criteria: all points remain in same cluster
@@ -4037,7 +4029,7 @@ KMeansResult Memory::getKMeans(const VectorIndex& columns, size_t nClusters, siz
         change = 0;
         for(size_t i = 0; i < nClusters; i++)
         {
-            VectorIndex indices(getIndices(clusters, mu::value_type(i+1)));
+            VectorIndex indices(findIndicesOfValue(clusters, mu::value_type(i+1)));
             for(size_t elemIdx = 0; elemIdx < columns.size(); elemIdx++)
             {
                 mu::value_type new_val = avg(indices, VectorIndex(elemIdx));

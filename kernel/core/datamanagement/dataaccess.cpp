@@ -1886,35 +1886,33 @@ static std::string tableMethod_kmeans(const std::string& sTableName, std::string
     VectorIndex vIndex(0, VectorIndex::OPEN_END);
 
     size_t maxIterations = 100;
-    std::string init_method = "random";
+    Memory::KmeansInit init_method = Memory::KmeansInit::INIT_RANDOM;
     size_t n_init = 10;
 
     if (sMethodArguments.length())
     {
         _kernel->getMemoryManager().updateDimensionVariables(sTableName);
         _kernel->getParser().SetExpr(getNextArgument(sMethodArguments, true));
-        // if all numerical
-        // _kernel->getParser().SetExpr(sMethodArguments);
         v = _kernel->getParser().Eval(nResults);
         maxIterations = v[0].real();
 
         if (sMethodArguments.length())
         {
             _kernel->getMemoryManager().updateDimensionVariables(sTableName);
-            init_method = getNextArgument(sMethodArguments, true);
+            std::string init_string = getNextArgument(sMethodArguments, true);
 
             // if not valid, just go with random
-            if (_kernel->getStringParser().isStringExpression(init_method))
+            if (_kernel->getStringParser().isStringExpression(init_string))
             {
                 std::string sDummy;
-                init_method += " -nq";
-                NumeRe::StringParser::StringParserRetVal res = _kernel->getStringParser().evalAndFormat(init_method, sDummy, true);
+                init_string += " -nq";
+                NumeRe::StringParser::StringParserRetVal res = _kernel->getStringParser().evalAndFormat(init_string, sDummy, true);
+                init_method = Memory::stringToKmeansInit(init_string);
             }
             else
             {
-                init_method = "random";
+                init_method = Memory::KmeansInit::INIT_RANDOM;
             }
-
 
             if (sMethodArguments.length())
             {
@@ -1926,7 +1924,7 @@ static std::string tableMethod_kmeans(const std::string& sTableName, std::string
             else
             {
                 // scikit: When n_init='auto', the number of runs depends on the value of init: 10 if using init='random' or init is a callable; 1 if using init='k-means++'
-                if(init_method != "random")
+                if(init_method != Memory::KmeansInit::INIT_RANDOM)
                     n_init = 1;
             }
         }
