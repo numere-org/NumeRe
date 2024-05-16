@@ -10,3 +10,4 @@ Applied	Improved some internals to speed up some calculations.
 Added	New string function "strjoin()" will allow for concatenation of a vector of strings into a single string with an optional separator.
 Applied	The function context tooltip will now align with the opening brace whereever possible.
 Added	More shortcuts have been added to the table viewer, especially the arrow-shift and arrow-ctrl key kombinations.
+New	The new table method modifier ".cells()" together with ".rows" or ".cols" allows for selection of table cells along the direction of application.

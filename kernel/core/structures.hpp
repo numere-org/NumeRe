@@ -695,6 +695,31 @@ class VectorIndex
         }
 
         /////////////////////////////////////////////////
+        /// \brief Apply an additional offset to all
+        /// index values within this vector.
+        ///
+        /// \param offset int
+        /// \return void
+        ///
+        /////////////////////////////////////////////////
+        void apply_offset(int offset)
+        {
+            if (expand)
+            {
+                vStorage.front() = vStorage.front() > INVALID ? vStorage.front()+offset : vStorage.front();
+                vStorage.back() = vStorage.back() > INVALID ? vStorage.back()+offset : vStorage.back();
+            }
+            else
+            {
+                for (size_t i = 0; i < vStorage.size(); i++)
+                {
+                    if (vStorage[i] > INVALID)
+                        vStorage[i] += offset;
+                }
+            }
+        }
+
+        /////////////////////////////////////////////////
         /// \brief This member function returns a STL
         /// vector, which will resemble the indices
         /// stored internally. This includes that the

@@ -227,18 +227,18 @@ std::vector<size_t> DataAccessParser::getDataGridDimensions() const
 }
 
 
-static void resolveTablesAndClusters(string& sLine, Parser& _parser, MemoryManager& _data, int options);
-static const string handleCachedDataAccess(string& sLine, Parser& _parser, MemoryManager& _data);
-static void replaceEntityStringOccurence(string& sLine, const string& sEntityOccurence, const string& sEntityStringReplacement);
-static void replaceEntityOccurence(string& sLine, const string& sEntityOccurence, const string& sEntityName, const string& sEntityReplacement, const Indices& _idx, MemoryManager& _data, Parser& _parser, bool isCluster);
-static string createMafDataAccessString(const string& sAccessString, Parser& _parser);
-static string createEveryDefinition(const string& sLine, Parser& _parser);
-static string createMafVectorName(string sAccessString);
-static vector<mu::value_type> MafDataAccess(MemoryManager& _data, const string& sMafname, const string& sCache, const string& sMafAccess);
-static string getMafFromAccessString(const string& sAccessString);
-static string getMafAccessString(const string& sLine, const string& sEntity);
-static void handleMafDataAccess(string& sLine, const string& sMafAccess, Parser& _parser, MemoryManager& _data);
-static string getLastToken(const string& sLine);
+static void resolveTablesAndClusters(std::string& sLine, Parser& _parser, MemoryManager& _data, int options);
+static const string handleCachedDataAccess(std::string& sLine, Parser& _parser, MemoryManager& _data);
+static void replaceEntityStringOccurence(std::string& sLine, const std::string& sEntityOccurence, const std::string& sEntityStringReplacement);
+static void replaceEntityOccurence(std::string& sLine, const std::string& sEntityOccurence, const std::string& sEntityName, const std::string& sEntityReplacement, const Indices& _idx, MemoryManager& _data, Parser& _parser, bool isCluster);
+static string createMafDataAccessString(const std::string& sAccessString, Parser& _parser);
+static string createEveryCellDefinition(const std::string& sLine, const std::string& sType, Parser& _parser);
+static string createMafVectorName(std::string sAccessString);
+static vector<mu::value_type> MafDataAccess(MemoryManager& _data, const std::string& sMafname, const std::string& sCache, const std::string& sMafAccess);
+static string getMafFromAccessString(const std::string& sAccessString);
+static string getMafAccessString(const std::string& sLine, const std::string& sEntity);
+static void handleMafDataAccess(std::string& sLine, const std::string& sMafAccess, Parser& _parser, MemoryManager& _data);
+static string getLastToken(const std::string& sLine);
 
 
 /////////////////////////////////////////////////
@@ -1071,7 +1071,10 @@ static string createMafDataAccessString(const string& sAccessString, Parser& _pa
 		sDataMaf += "lines";
 
 	if (sAccessString.find(".every(") != string::npos)
-		sDataMaf += createEveryDefinition(sAccessString, _parser);
+		sDataMaf += createEveryCellDefinition(sAccessString, "every", _parser);
+
+	if (sAccessString.find(".cells(") != string::npos)
+		sDataMaf += createEveryCellDefinition(sAccessString, "cells", _parser);
 
 	return sDataMaf;
 }
@@ -1238,20 +1241,21 @@ static vector<mu::value_type> MafDataAccess(MemoryManager& _data, const string& 
 /// definition from the methods, which the
 /// Datafile class is able to parse.
 ///
-/// \param sLine const string&
+/// \param sLine const std::string&
+/// \param sType const std::string&
 /// \param _parser Parser&
 /// \return string
 ///
 /////////////////////////////////////////////////
-static string createEveryDefinition(const string& sLine, Parser& _parser)
+static std::string createEveryCellDefinition(const std::string& sLine, const std::string& sType, Parser& _parser)
 {
-	string sExpr = sLine.substr(sLine.find(".every(") + 6);
+	std::string sExpr = sLine.substr(sLine.find("." + sType + "(") + 1 + sType.length());
 	sExpr.erase(getMatchingParenthesis(sExpr)+1);
 
 	// Resolve possible remaining calls to data tables or clusters
 	getDataElements(sExpr, _parser, NumeReKernel::getInstance()->getMemoryManager());
 
-	return "every=" + sExpr + " ";
+	return sType + "=" + sExpr + " ";
 }
 
 

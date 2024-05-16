@@ -660,31 +660,41 @@ void MemoryManager::overwriteColumn(int col, const std::string& _sCache, TableCo
 
 /////////////////////////////////////////////////
 /// \brief This member function extracts and
-/// parses the \c every expression part of a MAF
-/// call.
+/// parses the \c every or \c cell expression
+/// part of a MAF call.
 ///
-/// \param sDir string&
-/// \param sTableName const string&
+/// \param sDir std::string&
+/// \param sType const std::string&
+/// \param sTableName const std::string&
 /// \return VectorIndex
 ///
 /////////////////////////////////////////////////
-VectorIndex MemoryManager::parseEvery(string& sDir, const string& sTableName) const
+VectorIndex MemoryManager::parseEveryCell(std::string& sDir, const std::string& sType, const std::string& sTableName) const
 {
-    if (sDir.find("every=") != string::npos && (sDir.find("cols") != string::npos || sDir.find("lines") != string::npos))
+    int iterationDimension;
+
+    if (sType == "every")
+        iterationDimension = sDir.find("cols") != std::string::npos ? getCols(sTableName) : getLines(sTableName);
+    else
+        iterationDimension = sDir.find("cols") != std::string::npos ? getLines(sTableName) : getCols(sTableName);
+
+    if (sDir.find(sType + "=(") != std::string::npos
+        && (sDir.find("cols") != std::string::npos || sDir.find("lines") != std::string::npos))
     {
-        string sEvery = getArgAtPos(sDir, sDir.find("every=")+6);
-        StripSpaces(sEvery);
+        std::string sEveryCell = sDir.substr(sDir.find(sType + "=(") + sType.length()+1);
+        sEveryCell.erase(getMatchingParenthesis(sEveryCell)+1);
+        StripSpaces(sEveryCell);
         Parser& _parser = NumeReKernel::getInstance()->getParser();
         _parser.DisableAccessCaching();
-        sDir.erase(sDir.find("every="));
+        updateDimensionVariables(sTableName);
 
-        if (sEvery.front() == '(' && sEvery.back() == ')')
-            sEvery = sEvery.substr(1, sEvery.length()-2);
+        if (sEveryCell.front() == '(' && sEveryCell.back() == ')')
+            sEveryCell = sEveryCell.substr(1, sEveryCell.length()-2);
 
-        if (sEvery.front() == '{' && sEvery.back() == '}')
+        if (sEveryCell.front() == '{' && sEveryCell.back() == '}')
         {
             // Definition contains a vector expression
-            _parser.SetExpr(sEvery);
+            _parser.SetExpr(sEveryCell);
             int nResults;
             mu::value_type* v = _parser.Eval(nResults);
 
@@ -693,16 +703,16 @@ VectorIndex MemoryManager::parseEvery(string& sDir, const string& sTableName) co
         else
         {
             // Usual expression
-            _parser.SetExpr(sEvery);
+            _parser.SetExpr(sEveryCell);
             int nResults;
             mu::value_type* v = _parser.Eval(nResults);
 
             if (nResults == 1)
             {
                 // Single result: usual every=a,a representation
-                vector<int> idx;
+                std::vector<int> idx;
 
-                for (long long int i = intCast(v[0])-1; i < (sDir.find("cols") != string::npos ? getCols(sTableName, false) : getLines(sTableName, false)); i += intCast(v[0]))
+                for (int i = intCast(v[0])-1; i < iterationDimension; i += intCast(v[0]))
                 {
                     idx.push_back(i);
                 }
@@ -712,9 +722,9 @@ VectorIndex MemoryManager::parseEvery(string& sDir, const string& sTableName) co
             else if (nResults == 2)
             {
                 // Two results: usual every=a,b representation
-                vector<int> idx;
+                std::vector<int> idx;
 
-                for (long long int i = intCast(v[0])-1; i < (sDir.find("cols") != string::npos ? getCols(sTableName, false) : getLines(sTableName, false)); i += intCast(v[1]))
+                for (int i = intCast(v[0])-1; i < iterationDimension; i += intCast(v[1]))
                 {
                     idx.push_back(i);
                 }
@@ -726,7 +736,7 @@ VectorIndex MemoryManager::parseEvery(string& sDir, const string& sTableName) co
         }
     }
 
-    return VectorIndex(0, (sDir.find("cols") != string::npos ? getCols(sTableName, false) : getLines(sTableName, false))-1);
+    return VectorIndex(0, iterationDimension-1);
 }
 
 
@@ -736,57 +746,60 @@ VectorIndex MemoryManager::parseEvery(string& sDir, const string& sTableName) co
 /// of the MAFs use this abstraction (except
 /// \c cmp and \c pct).
 ///
-/// \param sTableName string& const
-/// \param sDir string
+/// \param sTableName std::string& const
+/// \param sDir std::string
 /// \param MAF (mu::value_type*)
-/// \return vector<mu::value_type>
+/// \return std::vector<mu::value_type>
 ///
 /////////////////////////////////////////////////
-vector<mu::value_type> MemoryManager::resolveMAF(const string& sTableName, string sDir, mu::value_type (MemoryManager::*MAF)(const string&, long long int, long long int, long long int, long long int) const) const
+std::vector<mu::value_type> MemoryManager::resolveMAF(const std::string& sTableName, std::string sDir, mu::value_type (MemoryManager::*MAF)(const std::string&, const VectorIndex&, const VectorIndex&) const) const
 {
-    vector<mu::value_type> vResults;
-    long long int nlines = getLines(sTableName, false);
-    long long int ncols = getCols(sTableName, false);
+    std::vector<mu::value_type> vResults;
+    int nlines = getLines(sTableName, false);
+    int ncols = getCols(sTableName, false);
 
     // Find the "grid" parameter and use it as an offset
-    long long int nGridOffset = sDir.find("grid") != string::npos ? 2 : 0;
+    int nGridOffset = sDir.find("grid") != std::string::npos ? 2 : 0;
 
     // If a grid is required, get the grid dimensions
     // of this table
     if (nGridOffset)
     {
-        std::vector<mu::value_type> vSize = vMemory[findTable(sTableName)]->size(VectorIndex(), GRID);
+        std::vector<mu::value_type> vSize = vMemory[findTable(sTableName)]->size(VectorIndex(), VectorIndex(), GRID);
         nlines = vSize.front().real();
         ncols = vSize.back().real()+nGridOffset; // compensate the offset
     }
 
     // Get the vector index corresponding to a possible
     // every definition
-    VectorIndex _idx = parseEvery(sDir, sTableName);
+    VectorIndex _everyIdx = parseEveryCell(sDir, "every", sTableName);
+    VectorIndex _cellsIdx = parseEveryCell(sDir, "cells", sTableName);
 
     // Resolve the actual call to the MAF
-    if (sDir.find("cols") != string::npos)
+    if (sDir.find("cols") != std::string::npos)
     {
-        for (size_t i = 0; i < _idx.size(); i++)
+        for (size_t i = 0; i < _everyIdx.size(); i++)
         {
-            if (_idx[i]+nGridOffset < 0 || _idx[i]+nGridOffset >= ncols)
+            if (_everyIdx[i]+nGridOffset < 0 || _everyIdx[i]+nGridOffset >= ncols)
                 continue;
 
-            vResults.push_back((this->*MAF)(sTableName, 0, nlines-1, _idx[i]+nGridOffset, -1));
+            vResults.push_back((this->*MAF)(sTableName, _cellsIdx, VectorIndex(_everyIdx[i]+nGridOffset)));
         }
     }
-    else if (sDir.find("lines") != string::npos)
+    else if (sDir.find("lines") != std::string::npos)
     {
-        for (size_t i = 0; i < _idx.size(); i++)
+        _cellsIdx.apply_offset(nGridOffset);
+
+        for (size_t i = 0; i < _everyIdx.size(); i++)
         {
-            if (_idx[i] < 0 || _idx[i] >= nlines)
+            if (_everyIdx[i] < 0 || _everyIdx[i] >= nlines)
                 continue;
 
-            vResults.push_back((this->*MAF)(sTableName, _idx[i], -1, nGridOffset, ncols-1));
+            vResults.push_back((this->*MAF)(sTableName, VectorIndex(_everyIdx[i]), _cellsIdx));
         }
     }
     else
-        vResults.push_back((this->*MAF)(sTableName, 0, nlines-1, nGridOffset, ncols-1));
+        vResults.push_back((this->*MAF)(sTableName, VectorIndex(0, VectorIndex::OPEN_END), VectorIndex(nGridOffset, VectorIndex::OPEN_END)));
 
     if (!vResults.size())
         vResults.push_back(NAN);
@@ -961,7 +974,7 @@ void MemoryManager::melt(Memory* _mem, const string& sTable, bool overrideTarget
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool MemoryManager::updateDimensionVariables(StringView sTableName)
+bool MemoryManager::updateDimensionVariables(StringView sTableName) const
 {
     // Determine the type of table
     if (sTableName != "string")
