@@ -1877,7 +1877,6 @@ static std::string tableMethod_kmeans(const std::string& sTableName, std::string
     auto cols = VectorIndex(v, nResults, 0);
 
     sCols = getNextArgument(sMethodArguments, true);
-    nResults = 0;
     _kernel->getMemoryManager().updateDimensionVariables(sTableName);
     _kernel->getParser().SetExpr(sCols);
     v = _kernel->getParser().Eval(nResults);
