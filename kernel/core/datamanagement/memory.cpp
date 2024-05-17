@@ -3910,10 +3910,6 @@ Memory::KmeansInit Memory::stringToKmeansInit(const std::string& init_type)
 /////////////////////////////////////////////////
 KMeansResult Memory::getKMeans(const VectorIndex& columns, size_t nClusters, size_t maxIterations, Memory::KmeansInit init_method) const
 {
-    std::vector<mu::value_type> clusters;
-
-
-
     for(size_t i = 0; i < columns.size(); i++)
     {
         if(memArray.size() <= columns[0] || !memArray[columns[0]] ||          // check if column does have data
@@ -3926,8 +3922,8 @@ KMeansResult Memory::getKMeans(const VectorIndex& columns, size_t nClusters, siz
     if(col_size < nClusters)
         return KMeansResult();
 
-    clusters.resize(col_size, 0);
-    std::vector<std::vector<mu::value_type>> centroids; //(nClusters);
+    std::vector<mu::value_type> clusters(col_size, 0);
+    std::vector<std::vector<mu::value_type>> centroids;
 
     // Random generator
     mt19937 mt(time(nullptr));
@@ -3958,7 +3954,8 @@ KMeansResult Memory::getKMeans(const VectorIndex& columns, size_t nClusters, siz
                 for(size_t j = 1; j < centroids.size(); j++)
                 {
                     double dis2 = calculateL2Norm(value, centroids[j]);
-                    if(dis2 < dis){
+                    if(dis2 < dis)
+                    {
                         dis = dis2;
                         idx = j;
                     }
@@ -4005,7 +4002,8 @@ KMeansResult Memory::getKMeans(const VectorIndex& columns, size_t nClusters, siz
             for(size_t j = 1; j < nClusters; j++)
             {
                 double curr_distance = calculateL2Norm(value, centroids[j]);
-                if(curr_distance < min_distance){
+                if(curr_distance < min_distance)
+                {
                     min_distance = curr_distance;
                     idx = j;
                 }
@@ -4033,7 +4031,8 @@ KMeansResult Memory::getKMeans(const VectorIndex& columns, size_t nClusters, siz
             for(size_t elemIdx = 0; elemIdx < columns.size(); elemIdx++)
             {
                 mu::value_type new_val = avg(indices, VectorIndex(elemIdx));
-                if(!closeEnough(centroids[i][elemIdx], new_val)){
+                if(!closeEnough(centroids[i][elemIdx], new_val))
+                {
                     centroids[i][elemIdx] = new_val;
                     change++;
                 }
