@@ -21,9 +21,6 @@
 #include "../../kernel.hpp"
 #include <vector>
 
-using namespace std;
-using namespace mu;
-
 
 /////////////////////////////////////////////////
 /// \brief DataAccessParser default constructor.
@@ -46,7 +43,7 @@ DataAccessParser::DataAccessParser()
 /////////////////////////////////////////////////
 DataAccessParser::DataAccessParser(StringView sCommand, bool isAssignment)
 {
-    size_t pos = string::npos;
+    size_t pos = std::string::npos;
     bIsCluster = false;
 
     // Get a pointer to the current kernel instance
@@ -60,13 +57,13 @@ DataAccessParser::DataAccessParser(StringView sCommand, bool isAssignment)
         {
             // Is this a possible character start
             // for a data object identifier?
-            if (pos == string::npos && (sCommand[i] == '_' || isalpha(sCommand[i])))
+            if (pos == std::string::npos && (sCommand[i] == '_' || isalpha(sCommand[i])))
                 pos = i;
 
             // Is a possible start character available
             // and the current character is not part of a
             // valid object identifier character set?
-            if (pos != string::npos && sCommand[i] != '_' && sCommand[i] != '~' && !isalnum(sCommand[i]))
+            if (pos != std::string::npos && sCommand[i] != '_' && sCommand[i] != '~' && !isalnum(sCommand[i]))
             {
                 // If the current character is an opening parenthesis
                 // or an opening brace, parse the identified data
@@ -81,7 +78,7 @@ DataAccessParser::DataAccessParser(StringView sCommand, bool isAssignment)
                     if (!instance->getMemoryManager().isTable(sDataObject) && sDataObject != "string")
                     {
                         sDataObject.clear();
-                        pos = string::npos;
+                        pos = std::string::npos;
                         continue;
                     }
 
@@ -99,7 +96,7 @@ DataAccessParser::DataAccessParser(StringView sCommand, bool isAssignment)
                     if (!instance->getMemoryManager().isCluster(sDataObject))
                     {
                         sDataObject.clear();
-                        pos = string::npos;
+                        pos = std::string::npos;
                         continue;
                     }
 
@@ -111,7 +108,7 @@ DataAccessParser::DataAccessParser(StringView sCommand, bool isAssignment)
                     break;
                 }
                 else
-                    pos = string::npos;
+                    pos = std::string::npos;
             }
         }
     }
@@ -137,10 +134,13 @@ DataAccessParser::DataAccessParser(const DataAccessParser& _accessParser)
 /// \brief Evaluates open end indices using the
 /// identified data object size.
 ///
+/// \param asMatrix bool Set to false to use the
+/// first column for determining the number of
+/// rows.
 /// \return void
 ///
 /////////////////////////////////////////////////
-void DataAccessParser::evalIndices()
+void DataAccessParser::evalIndices(bool asMatrix)
 {
     MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
 
@@ -148,8 +148,10 @@ void DataAccessParser::evalIndices()
     {
         if (bIsCluster)
             idx.row.setRange(0, _data.getCluster(sDataObject).size()-1);
-        else
+        else if (asMatrix)
             idx.row.setRange(0, _data.getLines(sDataObject)-1);
+        else
+            idx.row.setRange(0, _data.getColElements(idx.col.subidx(0, 1), sDataObject)-1);
     }
 
     if (idx.col.isOpenEnd())
@@ -166,10 +168,10 @@ void DataAccessParser::evalIndices()
 /// \brief Returns a reference to the data object
 /// identifier.
 ///
-/// \return string&
+/// \return std::string&
 ///
 /////////////////////////////////////////////////
-string& DataAccessParser::getDataObject()
+std::string& DataAccessParser::getDataObject()
 {
     return sDataObject;
 }
@@ -215,7 +217,21 @@ bool DataAccessParser::isCluster() const
 
 
 /////////////////////////////////////////////////
-/// \brief Covenience wrapper method for the
+/// \brief Determines, whether the data access
+/// contains indices corresponding to a matrix
+/// access.
+///
+/// \return bool
+///
+/////////////////////////////////////////////////
+bool DataAccessParser::isMatrix() const
+{
+    return idx.col.size() > 1 && idx.row.size() > 1;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Convenience wrapper method for the
 /// global function.
 ///
 /// \return std::vector<size_t>
@@ -227,18 +243,18 @@ std::vector<size_t> DataAccessParser::getDataGridDimensions() const
 }
 
 
-static void resolveTablesAndClusters(std::string& sLine, Parser& _parser, MemoryManager& _data, int options);
-static const string handleCachedDataAccess(std::string& sLine, Parser& _parser, MemoryManager& _data);
-static void replaceEntityStringOccurence(std::string& sLine, const std::string& sEntityOccurence, const std::string& sEntityStringReplacement);
-static void replaceEntityOccurence(std::string& sLine, const std::string& sEntityOccurence, const std::string& sEntityName, const std::string& sEntityReplacement, const Indices& _idx, MemoryManager& _data, Parser& _parser, bool isCluster);
-static string createMafDataAccessString(const std::string& sAccessString, Parser& _parser);
-static string createEveryCellDefinition(const std::string& sLine, const std::string& sType, Parser& _parser);
-static string createMafVectorName(std::string sAccessString);
-static vector<mu::value_type> MafDataAccess(MemoryManager& _data, const std::string& sMafname, const std::string& sCache, const std::string& sMafAccess);
-static string getMafFromAccessString(const std::string& sAccessString);
-static string getMafAccessString(const std::string& sLine, const std::string& sEntity);
-static void handleMafDataAccess(std::string& sLine, const std::string& sMafAccess, Parser& _parser, MemoryManager& _data);
-static string getLastToken(const std::string& sLine);
+static void resolveTablesAndClusters(std::string& sLine, mu::Parser& _parser, MemoryManager& _data, int options);
+static std::string handleCachedDataAccess(std::string& sLine, mu::Parser& _parser, MemoryManager& _data);
+static void replaceSingleAccess(std::string& sLine, const std::string& sEntityOccurence, DataAccessParser&& _access, MemoryManager& _data, mu::Parser& _parser, int options);
+static void replaceEntityOccurence(std::string& sLine, const std::string& sEntityOccurence, const std::string& sEntityName, const std::string& sEntityReplacement, const Indices& _idx, MemoryManager& _data, mu::Parser& _parser, bool isCluster);
+static std::string createMafDataAccessString(const std::string& sAccessString, mu::Parser& _parser);
+static std::string createEveryCellDefinition(const std::string& sLine, const std::string& sType, mu::Parser& _parser);
+static std::string createMafVectorName(std::string sAccessString);
+static std::vector<mu::value_type> MafDataAccess(MemoryManager& _data, const std::string& sMafname, const std::string& sCache, const std::string& sMafAccess);
+static std::string getMafFromAccessString(const std::string& sAccessString);
+static std::string getMafAccessString(const std::string& sLine, const std::string& sEntity);
+static void handleMafDataAccess(std::string& sLine, const std::string& sMafAccess, mu::Parser& _parser, MemoryManager& _data);
+static StringView getLastToken(StringView sLine);
 
 
 /////////////////////////////////////////////////
@@ -292,14 +308,14 @@ size_t findAssignmentOperator(StringView sCmd)
 /// \param _parser mu::Parser&
 /// \param _data Datafile&
 /// \param options int
-/// \return string
+/// \return std::string
 ///
 /// This function actually delegates the hard work
 /// to replaceDataEntities(), which is itself
 /// public and replaces all calls to a single
 /// data entity.
 /////////////////////////////////////////////////
-string getDataElements(std::string& sLine, mu::Parser& _parser, MemoryManager& _data, int options)
+std::string getDataElements(std::string& sLine, mu::Parser& _parser, MemoryManager& _data, int options)
 {
 	// Evaluate possible cached equations
 	if ((_parser.HasCachedAccess() || _parser.GetCachedEquation().length()) && !_parser.IsCompiling())
@@ -309,9 +325,8 @@ string getDataElements(std::string& sLine, mu::Parser& _parser, MemoryManager& _
 	if (!validateParenthesisNumber(sLine))
 		throw SyntaxError(SyntaxError::UNMATCHED_PARENTHESIS, sLine, sLine.find_first_of("({[]})"));
 
-	string sCache;             // Rueckgabe-string: Ggf. der linke Teil der Gleichung, falls es sich um eine Zuweisung handelt
-	string sLine_Temp;         // temporaerer string, da wir die string-Referenz nicht unnoetig veraendern wollen
-	size_t eq_pos = string::npos;                // int zum Zwischenspeichern der Position des "="
+	std::string sCache;             // Rueckgabe-string: Ggf. der linke Teil der Gleichung, falls es sich um eine Zuweisung handelt
+	size_t eq_pos = std::string::npos;                // int zum Zwischenspeichern der Position des "="
 
 
 	/* --> Jetzt folgt der ganze Spass fuer "cache(". Hier ist relativ viel aehnlich, allerdings gibt es
@@ -339,18 +354,33 @@ string getDataElements(std::string& sLine, mu::Parser& _parser, MemoryManager& _
             if (sCache.find('(') != std::string::npos
                 && getMatchingParenthesis(sCache) == sCache.length()-1)
             {
-                std::string source = sLine.substr(eq_pos+1);
-                StripSpaces(source);
+                StringView source(sLine, eq_pos+1);
+                source.strip();
 
                 // Is the source also a complete table
                 if (source.find('(') != std::string::npos
                     && getMatchingParenthesis(source) == source.length()-1
                     && _data.isTable(source))
                 {
+                    // We need to parse the source first, because it might be a
+                    // standard vector access, which does not work with this copy
+                    // logic
+                    DataAccessParser src(source, false);
+
+                    // If it is not a matrix, fall back to standard parsing
+                    if (!src.isMatrix())
+                    {
+                        // Convert the StringView first, because its internal data
+                        // will be mutated in the next step
+                        std::string s = source.to_string();
+                        sLine.erase(0, eq_pos+1);
+                        replaceSingleAccess(sLine, s, std::move(src), _data, _parser, options);
+                        return sCache;
+                    }
+
                     if (!_data.isTable(sCache))
                         _data.addTable(sCache, NumeReKernel::getInstance()->getSettings());
 
-                    DataAccessParser src(source, false);
                     DataAccessParser tgt(sCache, true);
 
                     src.evalIndices();
@@ -363,7 +393,7 @@ string getDataElements(std::string& sLine, mu::Parser& _parser, MemoryManager& _
             }
         }
 
-		if (eq_pos == string::npos              // gar kein "="?
+		if (eq_pos == std::string::npos              // gar kein "="?
             || !_data.containsTablesOrClusters(sCache))   // nur links von "cache("?
 		{
             resolveTablesAndClusters(sLine, _parser, _data, options);
@@ -386,24 +416,16 @@ string getDataElements(std::string& sLine, mu::Parser& _parser, MemoryManager& _
 			// --> Gibt's innerhalb von "cache()" nochmal einen Ausdruck "cache("? <--
 			if (_data.containsTablesOrClusters(sCache.substr(sCache.find_first_of("({") + 1)))
 			{
-				sLine_Temp = sCache.substr(sCache.find_first_of("({") + 1);
+				std::string sLine_Temp = sCache.substr(sCache.find_first_of("({") + 1);
                 resolveTablesAndClusters(sLine_Temp, _parser, _data, options);
 				sCache = sCache.substr(0, sCache.find_first_of("({") + 1) + sLine_Temp;
 			}
 
-			sLine_Temp = sLine.substr(eq_pos + 1);
+			sLine.erase(0, eq_pos + 1);
 
 			// --> Gibt es rechts von "=" nochmals "cache("? <--
-			if (_data.containsTablesOrClusters(sLine_Temp))
-			{
-				/* --> Ja? Geht eigentlich trotzdem wie oben, mit Ausnahme, dass ueberall wo "sLine" aufgetreten ist,
-				 *     nun "sLine_Temp" auftritt <--
-				 */
-                resolveTablesAndClusters(sLine_Temp, _parser, _data, options);
-			}
-
-			// --> sLine_Temp an sLine zuweisen <--
-			sLine = sLine_Temp;
+			if (_data.containsTablesOrClusters(sLine))
+                resolveTablesAndClusters(sLine, _parser, _data, options);
 		}
 	}
 
@@ -415,21 +437,21 @@ string getDataElements(std::string& sLine, mu::Parser& _parser, MemoryManager& _
 /// \brief Resolves every call to a cluster or a
 /// table.
 ///
-/// \param sLine string&
-/// \param _parser Parser&
+/// \param sLine std::string&
+/// \param _parser mu::Parser&
 /// \param _data Datafile&
 /// \param options int
 /// \return void
 ///
 /////////////////////////////////////////////////
-static void resolveTablesAndClusters(string& sLine, Parser& _parser, MemoryManager& _data, int options)
+static void resolveTablesAndClusters(std::string& sLine, mu::Parser& _parser, MemoryManager& _data, int options)
 {
     // Try to find every cache and handle its contents
     if (_data.containsTables(sLine))
     {
         for (auto iter = _data.getTableMap().begin(); iter != _data.getTableMap().end(); iter++)
         {
-            if (sLine.find((iter->first) + "(") != string::npos)
+            if (sLine.find((iter->first) + "(") != std::string::npos)
                 replaceDataEntities(sLine, iter->first + "(", _data, _parser, options);
         }
     }
@@ -439,7 +461,7 @@ static void resolveTablesAndClusters(string& sLine, Parser& _parser, MemoryManag
     {
         for (auto iter = _data.getClusterMap().begin(); iter != _data.getClusterMap().end(); iter++)
         {
-            if (sLine.find((iter->first) + "{") != string::npos)
+            if (sLine.find((iter->first) + "{") != std::string::npos)
                 replaceDataEntities(sLine, iter->first + "{", _data, _parser, options);
         }
     }
@@ -451,10 +473,10 @@ static void resolveTablesAndClusters(string& sLine, Parser& _parser, MemoryManag
 /// single data entity with an internal vector or
 /// its value, respectively.
 ///
-/// \param sLine string&
-/// \param sEntity const string&
+/// \param sLine std::string&
+/// \param sEntity const std::string&
 /// \param _data Datafile&
-/// \param _parser Parser&
+/// \param _parser mu::Parser&
 /// \param options int
 /// \return void
 ///
@@ -463,21 +485,13 @@ static void resolveTablesAndClusters(string& sLine, Parser& _parser, MemoryManag
 /// to any data entity included in the current call
 /// to the specified data entity.
 /////////////////////////////////////////////////
-void replaceDataEntities(string& sLine, const string& sEntity, MemoryManager& _data, Parser& _parser, int options)
+void replaceDataEntities(std::string& sLine, const std::string& sEntity, MemoryManager& _data, mu::Parser& _parser, int options)
 {
-	string sEntityOccurence = "";
-	string sEntityName = sEntity.substr(0, sEntity.length()-1);
 	size_t nPos = 0;
-	bool bWriteStrings = false;
-	bool bWriteFileName = false;
 	bool isCluster = sEntity.back() == '{';
-	vector<mu::value_type> vEntityContents;
-	string sEntityReplacement = "";
-	string sEntityStringReplacement = "";
-	NumeRe::StringParser& _stringParser = NumeReKernel::getInstance()->getStringParser();
 
 	// handle MAF methods. sEntity already has "(" at its back
-	while (!isCluster && (nPos = sLine.find(sEntity + ").", nPos)) != string::npos)
+	while (!isCluster && (nPos = sLine.find(sEntity + ").", nPos)) != std::string::npos)
 	{
 		if (isInQuotes(sLine, nPos, true) || (nPos && !isDelimiter(sLine[nPos-1])))
 		{
@@ -491,7 +505,7 @@ void replaceDataEntities(string& sLine, const string& sEntity, MemoryManager& _d
 	nPos = 0;
 
 	// handle logical table accesses
-	while (!isCluster && (nPos = sLine.find(sEntity + ")", nPos)) != string::npos)
+	while (!isCluster && (nPos = sLine.find(sEntity + ")", nPos)) != std::string::npos)
 	{
 		if (isInQuotes(sLine, nPos, true) || (nPos && !isDelimiter(sLine[nPos-1])))
 		{
@@ -499,27 +513,21 @@ void replaceDataEntities(string& sLine, const string& sEntity, MemoryManager& _d
 			continue;
 		}
 
-		sLine.replace(nPos, sEntity.length()+1, (_data.getCols(sEntity.substr(0, sEntity.length()-1)) ? "true" : "false"));
+		sLine.replace(nPos, sEntity.length()+1, (_data.getCols(StringView(sEntity, 0, sEntity.length()-1)) ? "true" : "false"));
 	}
 
-	if (sLine.find(sEntity) == string::npos)
+	if (sLine.find(sEntity) == std::string::npos)
 		return;
 
 	nPos = 0;
-	/* --> Diese Schleife ersetzt nacheinander alle Stellen, in denen sEntity auftritt, durch "Vektoren", die
-	 *     in einer anderen Funktion weiterverarbeitet werden koennen. <--
-	 */
+
+	// Replace all remaining occurences with actual vectors
 	do
 	{
-		/* --> Zunaechst muessen wir herausfinden welche(s) Datenelement(e) wir aus der Datafile-Tabelle
-		 *     extrahieren sollen. Dies wird durch die Syntax data(i,j) bestimmt, wobei i der Zeilen- und
-		 *     j der Spaltenindex ist. i und j koennen mittels der Syntax "i_0:i_1" bzw. "j_0:j_1" einen
-		 *     Bereich bestimmen, allerdings (noch) keine Matrix. (Also entweder nur i oder j) <--
-		 * --> Speichere zunaechst den Teil des Strings nach "data(" in si_pos[0] <--
-		 */
-		sEntityOccurence = sLine.substr(sLine.find(sEntity, nPos));
+		// Locate the next entity occurence
 		nPos = sLine.find(sEntity, nPos);
 
+		// Ensure that this is delimited occurence
 		if (nPos && (!isDelimiter(sLine[nPos-1]) || isInQuotes(sLine, nPos)))
 		{
 			nPos++;
@@ -527,145 +535,160 @@ void replaceDataEntities(string& sLine, const string& sEntity, MemoryManager& _d
 		}
 
 		// Get the current entity
-		sEntityOccurence = sEntityOccurence.substr(0, getMatchingParenthesis(sEntityOccurence) + 1);
-		vEntityContents.clear();
-		sEntityReplacement.clear();
-		sEntityStringReplacement.clear();
+		StringView sEntityOccurence(sLine, nPos);
+		sEntityOccurence = sEntityOccurence.subview(0, getMatchingParenthesis(sEntityOccurence) + 1);
 
-		// Reading the indices happens in this function
-		Indices _idx;
-		getIndices(sEntityOccurence, _idx, _parser, _data, false);
-
-		// check the indices, whether they are possible in the current context
-		if (!isValidIndexSet(_idx))
-			throw SyntaxError(SyntaxError::INVALID_INDEX, sLine, SyntaxError::invalid_position, _idx.row.to_string() + ", " + _idx.col.to_string());
-
-		if (!isCluster && _idx.row.isOpenEnd() && _idx.col.isOpenEnd())
-			throw SyntaxError(SyntaxError::NO_MATRIX, sLine, SyntaxError::invalid_position);
-
-		// evaluate the indices regarding the possible combinations:
-		// -1: no index
-		// -2: larges possible index
-		// -3: string access in the current dimension
-
-		if (!isCluster && _idx.col.isOpenEnd())
-			_idx.col.setRange(0, _data.getCols(sEntityName, false)-1);
-
-		if (!isCluster && _idx.row.isOpenEnd())
-			_idx.row.setRange(0, _data.getColElements(_idx.col.subidx(0, 1), sEntityName)-1);
-		else if (isCluster && _idx.row.isOpenEnd())
-            _idx.row.setRange(0, _data.getCluster(sEntityName).size()-1);
-
-		if (_idx.row.isString())
-			bWriteStrings = true;
-
-		if (_idx.col.isString())
-			bWriteFileName = true;
-
-		// Handle the filename and headline access different from the usual data access
-		if (!isCluster && bWriteFileName)
-		{
-			// Get the file name (or the cache table name)
-			sEntityStringReplacement = "\"" + _data.getDataFileName(sEntityName) + "\"";
-		}
-		else if (!isCluster && bWriteStrings)
-		{
-		    vector<string> vStringContents;
-
-			// Get the headlines
-            for (size_t j = 0; j < _idx.col.size(); j++)
-                vStringContents.push_back("\"" + _data.getHeadLineElement(_idx.col[j], sEntityName) + "\"");
-
-            sEntityStringReplacement = _stringParser.createTempStringVectorVar(vStringContents);
-		}
-		else if (!isCluster)
-		{
-			// This is a usual data access
-			// create a vector containing the data
-#warning NOTE (numere#1#08/17/21): Might be the source of some bytecode issues
-			if (options & INSERT_STRINGS)
-                sEntityStringReplacement = _stringParser.createTempStringVectorVar(_data.getElementAsString(_idx.row, _idx.col, sEntityName));
-			else if (_data.getType(_idx.col, sEntityName) > TableColumn::STRINGLIKE)
-                sEntityStringReplacement = _stringParser.createTempStringVectorVar(_data.getElementMixed(_idx.row, _idx.col, sEntityName));
-            else
-                vEntityContents = _data.getElement(_idx.row, _idx.col, sEntityName);
-		}
-		else if (isCluster)
-		{
-		    // Get a reference to the current cluster
-		    NumeRe::Cluster& cluster = _data.getCluster(sEntityName);
-
-		    // If the cluster contains only doubles,
-		    // create a vector, otherwise insert the
-		    // mixed vector representation
-		    if (!cluster.size())
-                vEntityContents.push_back(NAN);
-		    else if (cluster.isDouble())
-            {
-                // Create the vector using the indices
-                for (size_t i = 0; i < _idx.row.size(); i++)
-                    vEntityContents.push_back(cluster.getDouble(_idx.row[i]));
-            }
-            else
-            {
-                if (_idx.row.size() == 1)
-                {
-                    // Only a single element - needs no vector braces
-                    if (cluster.getType(_idx.row.front()) == NumeRe::ClusterItem::ITEMTYPE_DOUBLE)
-                        vEntityContents.push_back(cluster.getDouble(_idx.row.front()));
-                    else
-                        sEntityStringReplacement = _stringParser.createTempStringVectorVar({cluster.getParserString(_idx.row.front())});
-                }
-                else
-                {
-                    // Prepare a string vector
-                    vector<string> vStringContents;
-
-                    // Create the string vector representation
-                    // using the calculated indices
-                    for (size_t i = 0; i < _idx.row.size(); i++)
-                    {
-                        if (cluster.getType(_idx.row[i]) == NumeRe::ClusterItem::ITEMTYPE_DOUBLE)
-                            vStringContents.push_back(toCmdString(cluster.getDouble(_idx.row[i])));
-                        else
-                            vStringContents.push_back(cluster.getParserString(_idx.row[i]));
-                    }
-
-                    sEntityStringReplacement = _stringParser.createTempStringVectorVar(vStringContents);
-                }
-            }
-		}
-
-		// replace the occurences
-		if (sEntityStringReplacement.length())
-		{
-			// Replace the strings (we don't need caching here)
-			_parser.DisableAccessCaching();
-			replaceEntityStringOccurence(sLine, sEntityOccurence, sEntityStringReplacement);
-		}
-		else
-		{
-			// Replace the numerical occurences
-			// Define the vector name
-			sEntityReplacement = replaceToVectorname(sEntityOccurence);
-
-			// Set the vector variable and its value for the parser
-			_parser.SetVectorVar(sEntityReplacement, vEntityContents);
-
-			// Cache the current access if needed
-			if (_parser.IsCompiling() && _parser.CanCacheAccess())
-            {
-                mu::CachedDataAccess _access = {sEntityName + (isCluster ? "{" + _idx.sCompiledAccessEquation + "}" : "(" + _idx.sCompiledAccessEquation + ")") , sEntityReplacement, sEntityName, isCluster ? mu::CachedDataAccess::IS_CLUSTER : mu::CachedDataAccess::NO_FLAG};
-                _parser.CacheCurrentAccess(_access);
-            }
-
-			// Replace the occurences
-			replaceEntityOccurence(sLine, sEntityOccurence, sEntityName, sEntityReplacement, _idx, _data, _parser, isCluster);
-		}
+		// Decode and replace the current detected data entity access
+		replaceSingleAccess(sLine, sEntityOccurence.to_string(), DataAccessParser(sEntityOccurence, false), _data, _parser, options);
 	}
-	while (sLine.find(sEntity, nPos) != string::npos);
+	while (sLine.find(sEntity, nPos) != std::string::npos);
+}
 
-	return;
+
+/////////////////////////////////////////////////
+/// \brief Decode and replace a single detected
+/// data entity access.
+///
+/// \param sLine std::string&
+/// \param sEntityOccurence const std::string&
+/// \param _access DataAccessParser&&
+/// \param _data MemoryManager&
+/// \param _parser mu::Parser&
+/// \param options int
+/// \return void
+///
+/////////////////////////////////////////////////
+static void replaceSingleAccess(std::string& sLine, const std::string& sEntityOccurence, DataAccessParser&& _access, MemoryManager& _data, mu::Parser& _parser, int options)
+{
+    std::vector<mu::value_type> vEntityContents;
+    std::string sEntityStringReplacement;
+    const std::string& sEntityName = _access.getDataObject();
+    bool bWriteStrings = false;
+    bool bWriteFileName = false;
+    bool isCluster = _access.isCluster();
+    Indices& _idx = _access.getIndices();
+    NumeRe::StringParser& _stringParser = NumeReKernel::getInstance()->getStringParser();
+
+    // check the indices, whether they are possible in the current context
+    if (!isValidIndexSet(_idx))
+        throw SyntaxError(SyntaxError::INVALID_INDEX, sLine, SyntaxError::invalid_position, _access.getIndexString());
+
+    if (!isCluster && _access.isMatrix())
+        throw SyntaxError(SyntaxError::NO_MATRIX, sLine, SyntaxError::invalid_position);
+
+    // evaluate the indices
+    _access.evalIndices(false);
+
+    if (_idx.row.isString())
+        bWriteStrings = true;
+
+    if (_idx.col.isString())
+        bWriteFileName = true;
+
+    // Handle the filename and headline access different from the usual data access
+    if (!isCluster && bWriteFileName)
+    {
+        // Get the file name (or the cache table name)
+        sEntityStringReplacement = "\"" + _data.getDataFileName(sEntityName) + "\"";
+    }
+    else if (!isCluster && bWriteStrings)
+    {
+        std::vector<std::string> vStringContents;
+
+        // Get the headlines
+        for (size_t j = 0; j < _idx.col.size(); j++)
+            vStringContents.push_back("\"" + _data.getHeadLineElement(_idx.col[j], sEntityName) + "\"");
+
+        sEntityStringReplacement = _stringParser.createTempStringVectorVar(vStringContents);
+    }
+    else if (!isCluster)
+    {
+        // This is a usual data access
+        // create a vector containing the data
+#warning NOTE (numere#1#08/17/21): Might be the source of some bytecode issues
+        if (options & INSERT_STRINGS)
+            sEntityStringReplacement = _stringParser.createTempStringVectorVar(_data.getElementAsString(_idx.row, _idx.col, sEntityName));
+        else if (_data.getType(_idx.col, sEntityName) > TableColumn::STRINGLIKE)
+            sEntityStringReplacement = _stringParser.createTempStringVectorVar(_data.getElementMixed(_idx.row, _idx.col, sEntityName));
+        else
+            vEntityContents = _data.getElement(_idx.row, _idx.col, sEntityName);
+    }
+    else if (isCluster)
+    {
+        // Get a reference to the current cluster
+        NumeRe::Cluster& cluster = _data.getCluster(sEntityName);
+
+        // If the cluster contains only doubles,
+        // create a vector, otherwise insert the
+        // mixed vector representation
+        if (!cluster.size())
+            vEntityContents.push_back(NAN);
+        else if (cluster.isDouble())
+        {
+            // Create the vector using the indices
+            for (size_t i = 0; i < _idx.row.size(); i++)
+                vEntityContents.push_back(cluster.getDouble(_idx.row[i]));
+        }
+        else
+        {
+            if (_idx.row.size() == 1)
+            {
+                // Only a single element - needs no vector braces
+                if (cluster.getType(_idx.row.front()) == NumeRe::ClusterItem::ITEMTYPE_DOUBLE)
+                    vEntityContents.push_back(cluster.getDouble(_idx.row.front()));
+                else
+                    sEntityStringReplacement = _stringParser.createTempStringVectorVar({cluster.getParserString(_idx.row.front())});
+            }
+            else
+            {
+                // Prepare a string vector
+                std::vector<std::string> vStringContents;
+
+                // Create the string vector representation
+                // using the calculated indices
+                for (size_t i = 0; i < _idx.row.size(); i++)
+                {
+                    if (cluster.getType(_idx.row[i]) == NumeRe::ClusterItem::ITEMTYPE_DOUBLE)
+                        vStringContents.push_back(toCmdString(cluster.getDouble(_idx.row[i])));
+                    else
+                        vStringContents.push_back(cluster.getParserString(_idx.row[i]));
+                }
+
+                sEntityStringReplacement = _stringParser.createTempStringVectorVar(vStringContents);
+            }
+        }
+    }
+
+    // replace the occurences
+    if (sEntityStringReplacement.length())
+    {
+        // Replace the strings (we don't need caching here)
+        _parser.DisableAccessCaching();
+        replaceAll(sLine, sEntityOccurence, sEntityStringReplacement);
+    }
+    else
+    {
+        // Replace the numerical occurences
+        // Define the vector name
+        std::string sEntityReplacement = replaceToVectorname(sEntityOccurence);
+
+        // Set the vector variable and its value for the parser
+        _parser.SetVectorVar(sEntityReplacement, vEntityContents);
+
+        // Cache the current access if needed
+        if (_parser.IsCompiling() && _parser.CanCacheAccess())
+        {
+            mu::CachedDataAccess _access = {sEntityName + (isCluster
+                                                           ? "{" + _idx.sCompiledAccessEquation + "}"
+                                                           : "(" + _idx.sCompiledAccessEquation + ")"),
+                                            sEntityReplacement, sEntityName,
+                                            isCluster ? mu::CachedDataAccess::IS_CLUSTER : mu::CachedDataAccess::NO_FLAG};
+            _parser.CacheCurrentAccess(_access);
+        }
+
+        // Replace the occurences
+        replaceEntityOccurence(sLine, sEntityOccurence, sEntityName, sEntityReplacement, _idx, _data, _parser, isCluster);
+    }
 }
 
 
@@ -674,13 +697,13 @@ void replaceDataEntities(string& sLine, const string& sEntity, MemoryManager& _d
 /// access strings, which may be available in the
 /// parser.
 ///
-/// \param sLine string&
-/// \param _parser Parser&
+/// \param sLine std::string&
+/// \param _parser mu::Parser&
 /// \param _data Datafile&
-/// \return string
+/// \return std::string
 ///
 /////////////////////////////////////////////////
-static const string handleCachedDataAccess(string& sLine, Parser& _parser, MemoryManager& _data)
+static std::string handleCachedDataAccess(std::string& sLine, mu::Parser& _parser, MemoryManager& _data)
 {
 	for (size_t i = 0; i < _parser.HasCachedAccess(); i++)
 	{
@@ -756,27 +779,19 @@ static const string handleCachedDataAccess(string& sLine, Parser& _parser, Memor
 }
 
 
-/////////////////////////////////////////////////
-/// \brief This function simply replaces every
-/// occurences of the entity with its replacement.
-///
-/// \param sLine string&
-/// \param sEntityOccurence const string&
-/// \param sEntityStringReplacement const string&
-/// \return void
-///
-/////////////////////////////////////////////////
-static void replaceEntityStringOccurence(string& sLine, const string& sEntityOccurence, const string& sEntityStringReplacement)
-{
-	size_t nPos = 0;
-	while ((nPos = sLine.find(sEntityOccurence)) != string::npos)
-	{
-		sLine.replace(nPos, sEntityOccurence.length(), sEntityStringReplacement);
-	}
-}
 
-
-static std::string createTempVar(const std::string& sVectName, const mu::value_type& val, Parser& _parser)
+/////////////////////////////////////////////////
+/// \brief Small helper function for
+/// replaceEntityOccurence to create a temporary
+/// name based upon a defined variable name.
+///
+/// \param sVectName const std::string&
+/// \param val const mu::value_type&
+/// \param _parser mu::Parser&
+/// \return std::string
+///
+/////////////////////////////////////////////////
+static std::string createTempVar(const std::string& sVectName, const mu::value_type& val, mu::Parser& _parser)
 {
     _parser.SetVectorVar(sVectName, {val});
     return sVectName;
@@ -788,25 +803,25 @@ static std::string createTempVar(const std::string& sVectName, const mu::value_t
 /// of the entity with either the vector name for
 /// the parser or with its statistics value.
 ///
-/// \param sLine string&
-/// \param sEntityOccurence const string&
-/// \param sEntityName const string&
-/// \param sEntityReplacement const string&
+/// \param sLine std::string&
+/// \param sEntityOccurence const std::string&
+/// \param sEntityName const std::string&
+/// \param sEntityReplacement const std::string&
 /// \param _idx const Indices&
 /// \param _data Datafile&
-/// \param _parser Parser&
+/// \param _parser mu::Parser&
 /// \param isCluster bool
 /// \return void
 ///
 /////////////////////////////////////////////////
-static void replaceEntityOccurence(string& sLine, const string& sEntityOccurence, const string& sEntityName, const string& sEntityReplacement, const Indices& _idx, MemoryManager& _data, Parser& _parser, bool isCluster)
+static void replaceEntityOccurence(std::string& sLine, const std::string& sEntityOccurence, const std::string& sEntityName, const std::string& sEntityReplacement, const Indices& _idx, MemoryManager& _data, mu::Parser& _parser, bool isCluster)
 {
 	sLine = " " + sLine + " ";
 
 	size_t nPos = 0;
 
 	// As long as the entity occurs
-	while ((nPos = sLine.find(sEntityOccurence, nPos)) != string::npos)
+	while ((nPos = sLine.find(sEntityOccurence, nPos)) != std::string::npos)
 	{
 	    // if the last character before the current occurence is
 	    // alphanumeric, then ignore this occurence
@@ -817,7 +832,7 @@ static void replaceEntityOccurence(string& sLine, const string& sEntityOccurence
         }
 
 		// Get the last token
-		string sLeft = getLastToken(sLine.substr(0, nPos));
+		StringView sLeft = getLastToken(StringView(sLine, 0, nPos));
 
 		// Find the next character, which is no whitespace
         size_t nNextNonWhiteSpace = sLine.find_first_not_of(" ", nPos + sEntityOccurence.length());
@@ -931,17 +946,19 @@ static void replaceEntityOccurence(string& sLine, const string& sEntityOccurence
 				_parser.DisableAccessCaching();
 				mu::value_type dRef = 0.0;
 				int nType = 0;
-				string sArg = "";
-				sLeft = sLine.substr(sLine.find(sLeft) + sLeft.length(), getMatchingParenthesis(StringView(sLine, sLine.find(sLeft) + sLeft.length() - 1)) - 1);
-				sArg = getNextArgument(sLeft, true);
-				sArg = getNextArgument(sLeft, true);
+				std::string sArg = "";
+				size_t start = sLine.find(sLeft.to_string());
+                sLeft = StringView(sLine, start + sLeft.length(),
+                                   getMatchingParenthesis(StringView(sLine, start + sLeft.length() - 1)) - 1);
+				getNextViewedArgument(sLeft);
+				sArg = getNextViewedArgument(sLeft).to_string();
 
 				if (_data.containsTablesOrClusters(sArg))
 					getDataElements(sArg, _parser, _data);
 
 				_parser.SetExpr(sArg);
 				dRef = _parser.Eval();
-				sArg = getNextArgument(sLeft, true);
+				sArg = getNextViewedArgument(sLeft).to_string();
 
 				if (_data.containsTablesOrClusters(sArg))
 					getDataElements(sArg, _parser, _data);
@@ -957,10 +974,12 @@ static void replaceEntityOccurence(string& sLine, const string& sEntityOccurence
 				// pct() is more difficult
 				_parser.DisableAccessCaching();
 				mu::value_type dPct = 0.5;
-				string sArg = "";
-				sLeft = sLine.substr(sLine.find(sLeft) + sLeft.length(), getMatchingParenthesis(StringView(sLine, sLine.find(sLeft) + sLeft.length() - 1)) - 1);
-				sArg = getNextArgument(sLeft, true);
-				sArg = getNextArgument(sLeft, true);
+				std::string sArg = "";
+				size_t start = sLine.find(sLeft.to_string());
+                sLeft = StringView(sLine, start + sLeft.length(),
+                                   getMatchingParenthesis(StringView(sLine, start + sLeft.length() - 1)) - 1);
+				getNextViewedArgument(sLeft);
+				sArg = getNextViewedArgument(sLeft).to_string();
 
 				if (_data.containsTablesOrClusters(sArg))
 					getDataElements(sArg, _parser, _data);
@@ -982,19 +1001,19 @@ static void replaceEntityOccurence(string& sLine, const string& sEntityOccurence
 /// \brief This function handles the MAF data
 /// access using methods.
 ///
-/// \param sLine string&
-/// \param sMafAccess const string&
-/// \param _parser Parser&
+/// \param sLine std::string&
+/// \param sMafAccess const std::string&
+/// \param _parser mu::Parser&
 /// \param _data Datafile&
 /// \return void
 ///
 /////////////////////////////////////////////////
-static void handleMafDataAccess(string& sLine, const string& sMafAccess, Parser& _parser, MemoryManager& _data)
+static void handleMafDataAccess(std::string& sLine, const std::string& sMafAccess, mu::Parser& _parser, MemoryManager& _data)
 {
 	size_t nPos = 0;
 
 	// Replace the access string with its corresponding vector name
-	string sMafVectorName = createMafVectorName(sMafAccess);
+	std::string sMafVectorName = createMafVectorName(sMafAccess);
 
 	// Only store the value, if it is not a string literal (i.e. the name)
 	if (!NumeReKernel::getInstance()->getStringParser().isStringExpression(sMafVectorName))
@@ -1031,7 +1050,7 @@ static void handleMafDataAccess(string& sLine, const string& sMafAccess, Parser&
     }
 
 	// Replace every occurence
-	while ((nPos = sLine.find(sMafAccess, nPos)) != string::npos)
+	while ((nPos = sLine.find(sMafAccess, nPos)) != std::string::npos)
 	{
 		if (isInQuotes(sLine, nPos, true))
 		{
@@ -1048,32 +1067,32 @@ static void handleMafDataAccess(string& sLine, const string& sMafAccess, Parser&
 /// \brief This function returns the modifier
 /// list obtained from the method string.
 ///
-/// \param sAccessString const string&
-/// \param _parser Parser&
-/// \return string
+/// \param sAccessString const std::string&
+/// \param _parser mu::Parser&
+/// \return std::string
 ///
 /// Pass 'DATA().FNC().cols().rows().grid().every(a,b)'
 /////////////////////////////////////////////////
-static string createMafDataAccessString(const string& sAccessString, Parser& _parser)
+static std::string createMafDataAccessString(const std::string& sAccessString, mu::Parser& _parser)
 {
-	string sDataMaf;
+	std::string sDataMaf;
 
-	if (sAccessString.find(".grid") != string::npos)
+	if (sAccessString.find(".grid") != std::string::npos)
 		sDataMaf += "grid";
 
-	if (sAccessString.find(".cols") != string::npos)
+	if (sAccessString.find(".cols") != std::string::npos)
 		sDataMaf += "cols";
 
-	if (sAccessString.find(".lines") != string::npos)
+	if (sAccessString.find(".lines") != std::string::npos)
 		sDataMaf += "lines";
 
-	if (sAccessString.find(".rows") != string::npos)
+	if (sAccessString.find(".rows") != std::string::npos)
 		sDataMaf += "lines";
 
-	if (sAccessString.find(".every(") != string::npos)
+	if (sAccessString.find(".every(") != std::string::npos)
 		sDataMaf += createEveryCellDefinition(sAccessString, "every", _parser);
 
-	if (sAccessString.find(".cells(") != string::npos)
+	if (sAccessString.find(".cells(") != std::string::npos)
 		sDataMaf += createEveryCellDefinition(sAccessString, "cells", _parser);
 
 	return sDataMaf;
@@ -1130,17 +1149,17 @@ static std::string getMafFromAccessString(const std::string& sAccessString)
 /// \brief This function returns the first MAF
 /// access in the passed sLine string.
 ///
-/// \param sLine const string&
-/// \param sEntity const string&
-/// \return string
+/// \param sLine const std::string&
+/// \param sEntity const std::string&
+/// \return std::string
 ///
 /////////////////////////////////////////////////
-static string getMafAccessString(const string& sLine, const string& sEntity)
+static std::string getMafAccessString(const std::string& sLine, const std::string& sEntity)
 {
 	size_t nPos = 0;
-	static string sDelim = "+-*/^%&| ,=<>!()[]{}"; // delimiters (no "."!)
+	static std::string sDelim = "+-*/^%&| ,=<>!()[]{}"; // delimiters (no "."!)
 
-	if ((nPos = sLine.find(sEntity + ").")) != string::npos)
+	if ((nPos = sLine.find(sEntity + ").")) != std::string::npos)
 	{
 		// go through the string and try to find a MAF acces
 		for (size_t i = nPos; i < sLine.length(); i++)
@@ -1151,7 +1170,7 @@ static string getMafAccessString(const string& sLine, const string& sEntity)
 			if (i >= sLine.length())
 				return sLine.substr(nPos);
 
-			if (sDelim.find(sLine[i]) != string::npos)
+			if (sDelim.find(sLine[i]) != std::string::npos)
 				return sLine.substr(nPos, i - nPos);
 
 			if (i + 1 == sLine.length())
@@ -1169,13 +1188,13 @@ static string getMafAccessString(const string& sLine, const string& sEntity)
 /// access and returns the vector of the results.
 ///
 /// \param _data Datafile&
-/// \param sMafname const string&
-/// \param sCache const string&
-/// \param sMafAccess const string&
-/// \return vector<mu::value_type>
+/// \param sMafname const std::string&
+/// \param sCache const std::string&
+/// \param sMafAccess const std::string&
+/// \return std::vector<mu::value_type>
 ///
 /////////////////////////////////////////////////
-static vector<mu::value_type> MafDataAccess(MemoryManager& _data, const string& sMafname, const string& sCache, const string& sMafAccess)
+static std::vector<mu::value_type> MafDataAccess(MemoryManager& _data, const std::string& sMafname, const std::string& sCache, const std::string& sMafAccess)
 {
 	if (sMafname == "std")
 		return _data.std(sCache, sMafAccess);
@@ -1232,7 +1251,7 @@ static vector<mu::value_type> MafDataAccess(MemoryManager& _data, const string& 
 		return _data.minpos(sCache, sMafAccess);
 
 	// return a vector with one NAN
-	return vector<mu::value_type>(1, NAN);
+	return std::vector<mu::value_type>(1, NAN);
 }
 
 
@@ -1243,11 +1262,11 @@ static vector<mu::value_type> MafDataAccess(MemoryManager& _data, const string& 
 ///
 /// \param sLine const std::string&
 /// \param sType const std::string&
-/// \param _parser Parser&
+/// \param _parser mu::Parser&
 /// \return string
 ///
 /////////////////////////////////////////////////
-static std::string createEveryCellDefinition(const std::string& sLine, const std::string& sType, Parser& _parser)
+static std::string createEveryCellDefinition(const std::string& sLine, const std::string& sType, mu::Parser& _parser)
 {
 	std::string sExpr = sLine.substr(sLine.find("." + sType + "(") + 1 + sType.length());
 	sExpr.erase(getMatchingParenthesis(sExpr)+1);
@@ -2283,11 +2302,11 @@ static std::map<std::string, TableMethod> getInplaceTableMethods()
 /// vector name obtained from the MAF method
 /// string.
 ///
-/// \param sAccessString string
-/// \return string
+/// \param sAccessString std::string
+/// \return std::string
 ///
 /////////////////////////////////////////////////
-static string createMafVectorName(string sAccessString)
+static std::string createMafVectorName(std::string sAccessString)
 {
     static std::map<std::string, TableMethod> mMethods = getInplaceTableMethods();
     std::string sTableName = sAccessString.substr(0, sAccessString.find("()."));
@@ -2335,33 +2354,41 @@ static string createMafVectorName(string sAccessString)
 /// of the current string, e.g. a function name,
 /// etc.
 ///
-/// \param sLine const string&
-/// \return string
+/// \param sLine StringView
+/// \return StringView
 ///
 /////////////////////////////////////////////////
-static string getLastToken(const string& sLine)
+static StringView getLastToken(StringView sLine)
 {
-	string sToken = sLine;
 	size_t pos;
-	// Strip the spaces, because the string may end with "... FUNCTION(   "
-	StripSpaces(sToken);
 
-	if (sToken.back() == '(')
+	// Strip the spaces, because the string may end with "... FUNCTION(   "
+	sLine.strip();
+
+	if (sLine.length() && sLine.back() == '(')
 	{
 		// Probably a function name here
-		pos = sToken.find_last_of(" !%&|<>=?:.,/*-+^(){}#", sToken.length() - 2);
-		if (pos == string::npos)
-			return sToken;
-		sToken.erase(0, pos + 1);
-		return sToken;
+		pos = sLine.find_last_of(" !%&|<>=?:.,/*-+^(){}#", sLine.length() - 2);
+
+		if (pos == std::string::npos)
+			return sLine;
+
+        // Remove leading characters including the found
+        // operator
+        sLine.trim_front(pos+1);
+		return sLine;
 	}
 
 	// Can be every thing else
-	pos = sToken.find_last_of(" !%&|<>=?:.,/*-+^(){}#");
-	if (pos == string::npos)
-		return sToken;
-	sToken.erase(0, pos + 1);
-	return sToken;
+	pos = sLine.find_last_of(" !%&|<>=?:.,/*-+^(){}#");
+
+	if (pos == std::string::npos)
+		return sLine;
+
+    // Remove leading characters including the found
+    // operator
+    sLine.trim_front(pos+1);
+	return sLine;
 }
 
 
@@ -2443,15 +2470,15 @@ DataAccessParser getAccessParserForPlotAndFit(StringView sExpression)
 /// return them optimized for the plotting and
 /// the fitting algorithm.
 ///
-/// \param sExpression const string&
-/// \param sDataTable string&
+/// \param sExpression const std::string&
+/// \param sDataTable std::string&
 /// \param nColumns int&
 /// \param openEnd bool&
 /// \param isCluster bool&
 /// \return Indices
 ///
 /////////////////////////////////////////////////
-Indices getIndicesForPlotAndFit(const string& sExpression, string& sDataTable, int& nColumns, bool& openEnd, bool& isCluster)
+Indices getIndicesForPlotAndFit(const std::string& sExpression, std::string& sDataTable, int& nColumns, bool& openEnd, bool& isCluster)
 {
     Indices _idx;
     openEnd = false;
@@ -2497,7 +2524,7 @@ bool isNotEmptyExpression(StringView sExpr)
 	if (!sExpr.length())
 		return false;
 
-	return sExpr.find_first_not_of(' ') != string::npos;
+	return sExpr.find_first_not_of(' ') != std::string::npos;
 }
 
 
@@ -2508,17 +2535,17 @@ bool isNotEmptyExpression(StringView sExpr)
 /// (if selected using doCut) and declares the
 /// new cluster, if it is not known up to now.
 ///
-/// \param sLine string&
-/// \param sCluster string&
+/// \param sLine std::string&
+/// \param sCluster std::string&
 /// \param doCut bool
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool isClusterCandidate(string& sLine, string& sCluster, bool doCut)
+bool isClusterCandidate(std::string& sLine, std::string& sCluster, bool doCut)
 {
     // Do nothing, if the current line does not contain
     // an assignment operator
-    if (findAssignmentOperator(sLine) == string::npos || sLine[sLine.find_first_not_of(' ')] == '-')
+    if (findAssignmentOperator(sLine) == std::string::npos || sLine[sLine.find_first_not_of(' ')] == '-')
         return false;
 
     size_t nQuotes = 0;
@@ -2557,7 +2584,7 @@ bool isClusterCandidate(string& sLine, string& sCluster, bool doCut)
 
                 size_t nextCharPos = sLine.find_first_not_of(' ');
 
-                if (nextCharPos != string::npos && sLine[nextCharPos] == '=' && sLine[nextCharPos+1] != '=')
+                if (nextCharPos != std::string::npos && sLine[nextCharPos] == '=' && sLine[nextCharPos+1] != '=')
                     sLine.erase(start, nextCharPos + 1);
             }
 
@@ -2590,8 +2617,8 @@ bool isClusterCandidate(string& sLine, string& sCluster, bool doCut)
 /// automatically between tables and clusters.
 ///
 /// \param sObject const std::string&
-/// \param i long longint
-/// \param j long longint
+/// \param i long long int
+/// \param j long long int
 /// \param isCluster bool
 /// \return mu::value_type
 ///
@@ -2618,7 +2645,7 @@ mu::value_type getDataFromObject(const std::string& sObject, long long int i, lo
 ///
 /// \param sObject const std::string&
 /// \param vRows const VectorIndex&
-/// \param j long longint
+/// \param j long long int
 /// \param isCluster bool
 /// \return std::vector<mu::value_type>
 ///
@@ -2656,18 +2683,18 @@ std::vector<mu::value_type> getDataFromObject(const std::string& sObject, const 
 /// argument located between sLeft and sRight is
 /// part of a multi-argument function.
 ///
-/// \param sLeft const string&
-/// \param sRight const string&
+/// \param sLeft StringView
+/// \param sRight StringView
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool parser_CheckMultArgFunc(const string& sLeft, const string& sRight)
+bool parser_CheckMultArgFunc(StringView sLeft, StringView sRight)
 {
     // Get the last token form the left side (can be the name of a function, for example)
-	string sFunc = getLastToken(sLeft);
+	StringView sFunc = getLastToken(sLeft);
 
 	// If it doesn't end with a parenthesis, it cannot be a function
-	if (sFunc.back() != '(')
+	if (!sFunc.length() || sFunc.back() != '(')
 		return false;
 
 	bool bCMP = false;
@@ -2683,7 +2710,7 @@ bool parser_CheckMultArgFunc(const string& sLeft, const string& sRight)
 				break;
 			else if (sRight[i] == ',')
 			{
-				if (sRight.find(')', i + 1) != string::npos)
+				if (sRight.find(')', i + 1) != std::string::npos)
 					bCMP = true;
 				else
 					return false;
