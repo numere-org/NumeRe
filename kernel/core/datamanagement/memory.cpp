@@ -3846,15 +3846,17 @@ static bool isUnique(const std::vector<mu::value_type>& newVector, const std::ve
 /////////////////////////////////////////////////
 static double calculateL2Norm(const std::vector<mu::value_type>& vec1, const std::vector<mu::value_type>& vec2)
 {
+    // for norm of omplex => z * conj(z)
+    // conjugate a complex number z = a + bi -> z* = a - bi
 
     mu::value_type sum = 0.0;
     for (size_t i = 0; i < vec1.size(); ++i)
     {
-        sum += (vec1[i] - vec2[i]) * (vec1[i] - vec2[i]);
+        sum += (vec1[i] - vec2[i]) * (conj(vec1[i] - vec2[i]));
     }
 
-    // todo do we have sqrt für value_type
-    return std::sqrt(sum.real());
+    // no need for sqrt in our case
+    return sum.real();
 }
 
 
@@ -3926,8 +3928,7 @@ KMeansResult Memory::getKMeans(const VectorIndex& columns, size_t nClusters, siz
     std::vector<std::vector<mu::value_type>> centroids;
 
     // Random generator
-    mt19937 mt(time(nullptr));
-
+    mt19937 mt = getRandGenInstance();
     // Step 1 Initialization: Calculate starting centroids
     if (init_method == INIT_KMEANSPP)
     {
@@ -3941,9 +3942,6 @@ KMeansResult Memory::getKMeans(const VectorIndex& columns, size_t nClusters, siz
 
         for(size_t i = 1; i < nClusters; i++)
         {
-            // todo this loop could propably be also be included into the standard Algorithm Loop
-            // however this could be less readable because at more variables have to be added
-
             // K++ Step 2: calculate distance to nearest centroid
             std::vector<double> distance_vec;
             for(size_t i = 0; i < col_size; i++)
