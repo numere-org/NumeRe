@@ -501,7 +501,7 @@ std::string renderTeX(std::vector<std::string>&& vDocArticle, const std::string&
     if (vDocArticle[0] == "NO_ENTRY_FOUND") // Nix gefunden
         return "";
 
-    bool isIndex = (vDocArticle[0] == "Index");
+    //bool isIndex = (vDocArticle[0] == "Index");
 
     // Hack for "chi^2"
     replaceAll(vDocArticle[0], "^2", "$^2$");
@@ -767,8 +767,9 @@ std::string renderTeX(std::vector<std::string>&& vDocArticle, const std::string&
         }
         else if (vDocArticle[i].find("<list") != std::string::npos) // Alle LIST-Tags (umgewandelt zu TABLE)
         {
-            std::vector<std::pair<std::string, std::string>> vList = parseList(vDocArticle, i);
+            bool isEnum = vDocArticle[i].find("type=\"enum\"", vDocArticle[i].find("<list")) != std::string::npos;
             bool isUList = true;
+            std::vector<std::pair<std::string, std::string>> vList = parseList(vDocArticle, i);
 
             for (const auto& iter : vList)
             {
@@ -779,7 +780,18 @@ std::string renderTeX(std::vector<std::string>&& vDocArticle, const std::string&
                 }
             }
 
-            if (isUList)
+            if (isEnum)
+            {
+                sTeX += "\\begin{enumerate}\n";
+
+                for (const auto& iter : vList)
+                {
+                    sTeX += "  \\item " + iter.second + "\n";
+                }
+
+                sTeX += "\\end{enumerate}\n";
+            }
+            else if (isUList)
             {
                 sTeX += "\\begin{itemize}\n";
 

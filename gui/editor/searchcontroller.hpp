@@ -37,9 +37,7 @@ class SearchController
         NumeReTerminal* m_terminal;
 
 		wxString FindProcedureDefinitionInLocalFile(const wxString& procedurename);
-
-		void AppendToDocumentation(wxString& sDocumentation, const wxString& sNewDocLine);
-		std::string CleanDocumentation(const wxString& __sDoc);
+		std::string CleanDocumentation(std::string sDocumentation);
 
 
     public:

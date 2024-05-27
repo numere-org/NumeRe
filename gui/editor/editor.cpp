@@ -40,6 +40,7 @@
 #include <string>
 #include <set>
 #include <memory>
+#include <regex>
 
 #include "editor.h"
 #include "../NumeReWindow.h"
@@ -734,8 +735,8 @@ void NumeReEditor::OnChar( wxStyledTextEvent& event )
 {
     ClearDblClkIndicator();
     const wxChar chr = event.GetKey();
-    const int currentLine = GetCurrentLine();
-    const int currentPos = GetCurrentPos();
+    int currentLine = GetCurrentLine();
+    int currentPos = GetCurrentPos();
     int wordstartpos = WordStartPosition(currentPos, true);
 
     MarkerDeleteAll(MARKER_FOCUSEDLINE);
@@ -1011,44 +1012,102 @@ void NumeReEditor::OnChar( wxStyledTextEvent& event )
 
     // if line indicator setting is active, provide autowrapping for comments
     bool isLineIndicatorActive = m_options->getSetting(SETTING_B_LINELENGTH).active();
-    const int columnPos = GetColumn(currentPos);
     bool isNumereFile = m_fileType == FILE_NSCR || m_fileType == FILE_NPRC || m_fileType == FILE_NLYT;
+    bool isComment = isStyleType(STYLE_COMMENT, currentPos) && isStyleType(STYLE_COMMENT, GetLineIndentPosition(currentLine)+1);
 
-    if (isNumereFile
-        && isLineIndicatorActive
-        && (columnPos > LINELENGTH_COLUMN)
-        && isStyleType(STYLE_COMMENT, currentPos)
-        && isStyleType(STYLE_COMMENT, GetLineIndentPosition(currentLine)+1))
+    // The whole wrap shall be considered as a single action undoable with one
+    // user interaction
+    BeginUndoAction();
+
+    while (isNumereFile
+           && isLineIndicatorActive
+           && isComment
+           && (GetColumn(currentPos) > LINELENGTH_COLUMN))
     {
         // Only calculate this information if really necessary
         int lineBreakPos = WordStartPosition(FindColumn(currentLine, LINELENGTH_COLUMN), true);
+        int charsToErase = 0;
+
+        // Ensure that we do not break right after an opening brace or
+        // the corresponding function name
+        while (isOpeningBrace(GetCharAt(lineBreakPos-1)))
+        {
+            while (isOpeningBrace(GetCharAt(lineBreakPos-1)))
+                lineBreakPos--;
+
+            lineBreakPos = WordStartPosition(lineBreakPos, true);
+        }
+
+        // Ensure that trailing whitespaces right after the linebreak
+        // position will be removed
+        if (std::isblank(GetCharAt(lineBreakPos)))
+            charsToErase = WordEndPosition(lineBreakPos, false) - lineBreakPos;
 
         // Wrap only, if the breaking point before last word on line is more than half of LINELENGTH_COLUMN after the indentation
         bool isWordSmall = (lineBreakPos - GetLineIndentPosition(currentLine)) > (LINELENGTH_COLUMN/2);
 
-        if (isWordSmall)
+        if (!isWordSmall)
+            break;
+
+        // Get the start of the last line to use as a reference for indentation
+        wxString sLineStart = GetTextRange(PositionFromLine(currentLine), GetLineIndentPosition(currentLine)+20);
+
+        // Handle also enumerations. Those have to follow
+        // the DIGIT.WHITESPACE pattern
+        if (sLineStart.find_first_not_of("#*! \t") != std::string::npos
+            && std::isdigit(sLineStart[sLineStart.find_first_not_of("#*! ")]))
         {
-            // Get the start of the last line to use as a reference for indentation
-            wxString sLineStart = GetTextRange(PositionFromLine(currentLine), GetLineIndentPosition(currentLine)+20);
-            sLineStart.erase(sLineStart.find_first_not_of("#*! -\t"));
-            sLineStart.Replace("-", " ");
+            size_t enumStart = sLineStart.find_first_not_of("#*! \t");
+            size_t enumLength = 1;
 
-            if (GetStyleAt(currentPos) == wxSTC_NSCR_COMMENT_LINE
-                || GetStyleAt(currentPos) == wxSTC_NSCR_DOCCOMMENT_LINE)
-            {
-                InsertText(lineBreakPos, "\r\n" + sLineStart);
-                GotoPos(currentPos+2+sLineStart.length());
-            }
-            else if (isStyleType(NumeReEditor::STYLE_COMMENT_BLOCK, currentPos))
-            {
-                sLineStart.Replace("#*", " *");
-                sLineStart.Replace("!", "");
+            while (sLineStart.length() > enumStart+enumLength && std::isdigit(sLineStart[enumStart+enumLength]))
+                enumLength++;
 
-                InsertText(lineBreakPos, "\r\n"+sLineStart);
-                GotoPos(currentPos+2+sLineStart.length());
+            if (sLineStart.length() > enumStart+enumLength+2
+                && sLineStart.compare(enumStart+enumLength, 2, ". ") == 0
+                && sLineStart.find_first_not_of(' ', enumStart+enumLength+1) != std::string::npos)
+            {
+                enumLength++;
+
+                sLineStart.erase(sLineStart.find_first_not_of(' ', enumStart+enumLength));
+                sLineStart.replace(enumStart, enumLength, enumLength, wxUniChar(' '));
             }
+            else
+                sLineStart.erase(enumStart);
         }
+        else
+            sLineStart.erase(sLineStart.find_first_not_of("#*! -\t"));
+
+        sLineStart.Replace("-", " ");
+
+        if (GetStyleAt(currentPos) == wxSTC_NSCR_COMMENT_LINE
+            || GetStyleAt(currentPos) == wxSTC_NSCR_DOCCOMMENT_LINE)
+        {
+            if (charsToErase)
+                DeleteRange(lineBreakPos, charsToErase);
+
+            InsertText(lineBreakPos, "\r\n" + sLineStart);
+            GotoPos(currentPos+2+sLineStart.length() - std::min(charsToErase, currentPos-lineBreakPos));
+        }
+        else if (isStyleType(NumeReEditor::STYLE_COMMENT_BLOCK, currentPos))
+        {
+            sLineStart.Replace("#*", " *");
+            sLineStart.Replace("!", "");
+
+            if (charsToErase)
+                DeleteRange(lineBreakPos, charsToErase);
+
+            InsertText(lineBreakPos, "\r\n"+sLineStart);
+            GotoPos(currentPos+2+sLineStart.length() - std::min(charsToErase, currentPos-lineBreakPos));
+        }
+        else
+            break;
+
+        currentLine = GetCurrentLine();
+        currentPos = GetCurrentPos();
     }
+
+    EndUndoAction();
 
     Colourise(0, -1);
 
@@ -8925,7 +8984,9 @@ string NumeReEditor::addLinebreaks(const string& sLine, bool onlyDocumentation /
     size_t nDescStart = sReturn.find("- ");
     size_t nIndentPos = 4;
     size_t nLastLineBreak = 0;
-    bool isItemize = false;
+    size_t addIndent = 0;
+    static const std::regex expr("    (\\d+\\.|-) +(?=\\S+)");
+    std::smatch match;
 
     // Handle the first indent depending on whether this is
     // only a documentation string or a whole definition
@@ -8948,10 +9009,12 @@ string NumeReEditor::addLinebreaks(const string& sLine, bool onlyDocumentation /
         {
             nLastLineBreak = i;
 
-            if (sReturn.substr(i, 7) == "\n    - ")
-                isItemize = true;
+            std::string sCandidate = sReturn.substr(i+1, 15);
+
+            if (std::regex_search(sCandidate, match, expr) && match.position(0) == 0)
+                addIndent = match.length(0)-4;
             else
-                isItemize = false;
+                addIndent = 0;
         }
 
         if ((i == nMAXLINE && !nLastLineBreak)
@@ -8962,7 +9025,7 @@ string NumeReEditor::addLinebreaks(const string& sLine, bool onlyDocumentation /
                 if (sReturn[j] == ' ')
                 {
                     sReturn[j] = '\n';
-                    sReturn.insert(j + 1, nIndentPos + 2*isItemize, ' ');
+                    sReturn.insert(j + 1, nIndentPos + addIndent, ' ');
                     nLastLineBreak = j;
                     break;
                 }
@@ -8981,14 +9044,14 @@ string NumeReEditor::addLinebreaks(const string& sLine, bool onlyDocumentation /
                         continue;
 
                     sReturn.insert(j + 1, "\n");
-                    sReturn.insert(j + 2, nIndentPos + 2*isItemize, ' ');
+                    sReturn.insert(j + 2, nIndentPos + addIndent, ' ');
                     nLastLineBreak = j + 1;
                     break;
                 }
                 else if (sReturn[j] == ',' && j != (int)i && sReturn[j + 1] != ' ')
                 {
                     sReturn.insert(j + 1, "\n");
-                    sReturn.insert(j + 2, nIndentPos + 2*isItemize, ' ');
+                    sReturn.insert(j + 2, nIndentPos + addIndent, ' ');
                     nLastLineBreak = j + 1;
                     break;
                 }

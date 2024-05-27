@@ -852,8 +852,9 @@ std::string renderHTML(std::vector<std::string>&& vDocArticle, bool generateFile
         }
         else if (vDocArticle[i].find("<list") != std::string::npos) // Alle LIST-Tags (umgewandelt zu TABLE)
         {
-            std::vector<std::pair<std::string, std::string>> vList = parseList(vDocArticle, i, generateFile, _option);
+            bool isEnum = vDocArticle[i].find("type=\"enum\"", vDocArticle[i].find("<list")) != std::string::npos;
             bool isUList = true;
+            std::vector<std::pair<std::string, std::string>> vList = parseList(vDocArticle, i, generateFile, _option);
 
             for (const auto& iter : vList)
             {
@@ -864,7 +865,18 @@ std::string renderHTML(std::vector<std::string>&& vDocArticle, bool generateFile
                 }
             }
 
-            if (isUList)
+            if (isEnum)
+            {
+                sHTML += "<ol>\n";
+
+                for (const auto& iter : vList)
+                {
+                    sHTML += "  <li>" + iter.second + "</li>\n";
+                }
+
+                sHTML += "</ol>\n";
+            }
+            else if (isUList)
             {
                 sHTML += "<ul>\n";
 

@@ -11,3 +11,7 @@ Added	New string function "strjoin()" will allow for concatenation of a vector o
 Applied	The function context tooltip will now align with the opening brace whereever possible.
 Added	More shortcuts have been added to the table viewer, especially the arrow-shift and arrow-ctrl key kombinations.
 New	The new table method modifier ".cells()" together with ".rows" or ".cols" allows for selection of table cells along the direction of application.
+Cleaned	If the line length indicator is active, then lines longer than twice the indicated length will be wrapped completely, i.e., wrapped multiple times.
+Fixed	If comment lines are wrapped automatically, orphan whitespaces at the beginning of the wrapped line resulting from leading punctuation characters are now removed (corresponding to known word wrapping behaviors).
+Fixed	If comment lines are wrapped automatically, they are not longer wrapped right after opening braces.
+Added	Documentation block comments now also support enumerations.
