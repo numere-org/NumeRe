@@ -1,3 +1,4 @@
+Added	A new Table method to perform kmeans clustering on specified columns of numberical data. kmeansof({columns}, #clusters, maxIterations = 100, init-method="random", re-initializations=10)
 Added	An optional feature to extract the argument types of functions, methods and procedures based upon their names, was added.
 Added	Experimental feature: it is now possible to create new columns in tables if values are assigned to an unknown column using string indexing. The new column will be appended at the end of the table.
 Added	The new plotting option "stacked" enables the stacking of bars and hbars on each other.
