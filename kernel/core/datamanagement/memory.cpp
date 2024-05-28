@@ -3928,7 +3928,7 @@ KMeansResult Memory::getKMeans(const VectorIndex& columns, size_t nClusters, siz
     std::vector<std::vector<mu::value_type>> centroids;
 
     // Random generator
-    mt19937 mt = getRandGenInstance();
+    std::mt19937& mt = getRandGenInstance();
     // Step 1 Initialization: Calculate starting centroids
     if (init_method == INIT_KMEANSPP)
     {
