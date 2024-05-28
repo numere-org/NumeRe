@@ -428,6 +428,12 @@ class MemoryManager : public NumeRe::FileAdapter, public StringMemory, public Nu
             return vMemory[findTable(sTable)]->getAnova(colCategories, colValues, _vIndex, significance);
         }
 
+        KMeansResult getKMeans(const std::string& sTable, const VectorIndex& cols, size_t nClusters, size_t maxIterations, Memory::KmeansInit init_method) const
+        {
+
+            return vMemory[findTable(sTable)]->getKMeans(cols, nClusters, maxIterations, init_method);
+        }
+
         mu::value_type getCovariance(const std::string& sTable,
                                      size_t col1, const VectorIndex& _vIndex1, size_t col2, const VectorIndex& _vIndex2) const
         {

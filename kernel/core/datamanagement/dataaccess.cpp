@@ -1808,6 +1808,7 @@ static std::string tableMethod_zscore(const std::string& sTableName, std::string
 }
 
 
+
 /////////////////////////////////////////////////
 /// \brief Realizes the "anovaof()" table method.
 ///
@@ -1884,6 +1885,94 @@ static std::string tableMethod_anova(const std::string& sTableName, std::string 
     return _kernel->getStringParser().createTempStringVectorVar(vRet);;
 }
 
+/////////////////////////////////////////////////
+/// \brief Realizes the "kmeansof()" table method.
+///
+/// \param sTableName const std::string&
+/// \param sMethodArguments std::string
+/// \param sResultVectorName const std::string&
+/// \return std::string
+///
+/////////////////////////////////////////////////
+static std::string tableMethod_kmeans(const std::string& sTableName, std::string sMethodArguments, const std::string& sResultVectorName)
+{
+    NumeReKernel* _kernel = NumeReKernel::getInstance();
+
+    std::string sCols = getNextArgument(sMethodArguments, true);
+    //sCols += "," + getNextArgument(sMethodArguments, true);
+
+    int nResults = 0;
+    _kernel->getMemoryManager().updateDimensionVariables(sTableName);
+    _kernel->getParser().SetExpr(sCols);
+    mu::value_type* v = _kernel->getParser().Eval(nResults);
+
+    auto cols = VectorIndex(v, nResults, 0);
+
+    sCols = getNextArgument(sMethodArguments, true);
+    _kernel->getMemoryManager().updateDimensionVariables(sTableName);
+    _kernel->getParser().SetExpr(sCols);
+    v = _kernel->getParser().Eval(nResults);
+
+    size_t nClusters = intCast(v[0]);
+    VectorIndex vIndex(0, VectorIndex::OPEN_END);
+
+    size_t maxIterations = 100;
+    Memory::KmeansInit init_method = Memory::KmeansInit::INIT_RANDOM;
+    size_t n_init = 10;
+
+    if (sMethodArguments.length())
+    {
+        _kernel->getMemoryManager().updateDimensionVariables(sTableName);
+        _kernel->getParser().SetExpr(getNextArgument(sMethodArguments, true));
+        v = _kernel->getParser().Eval(nResults);
+        maxIterations = intCast(v[0]);
+
+        if (sMethodArguments.length())
+        {
+            _kernel->getMemoryManager().updateDimensionVariables(sTableName);
+            std::string init_string = getNextArgument(sMethodArguments, true);
+
+            // if not valid, just go with random
+            if (_kernel->getStringParser().isStringExpression(init_string))
+            {
+                std::string sDummy;
+                init_string += " -nq";
+                _kernel->getStringParser().evalAndFormat(init_string, sDummy, true);
+                init_method = Memory::stringToKmeansInit(init_string);
+            }
+            else
+            {
+                init_method = Memory::KmeansInit::INIT_RANDOM;
+            }
+
+            if (sMethodArguments.length())
+            {
+                _kernel->getMemoryManager().updateDimensionVariables(sTableName);
+                _kernel->getParser().SetExpr(getNextArgument(sMethodArguments, true));
+                v = _kernel->getParser().Eval(nResults);
+                n_init = intCast(v[0]);
+            }
+            else
+            {
+                // scikit: When n_init='auto', the number of runs depends on the value of init: 10 if using init='random' or init is a callable; 1 if using init='k-means++'
+                if(init_method != Memory::KmeansInit::INIT_RANDOM)
+                    n_init = 1;
+            }
+        }
+    }
+
+    KMeansResult bestRes = _kernel->getMemoryManager().getKMeans(sTableName, cols, nClusters, maxIterations, init_method);
+
+    for(size_t re_inits = 1; re_inits < n_init; re_inits++)
+    {
+        KMeansResult res = _kernel->getMemoryManager().getKMeans(sTableName, cols, nClusters, maxIterations, init_method);
+        if(res.inertia < bestRes.inertia)
+            bestRes = res;
+    }
+
+    _kernel->getParser().SetVectorVar(sResultVectorName, bestRes.cluster_labels);
+    return sResultVectorName;
+}
 
 /////////////////////////////////////////////////
 /// \brief Realizes the "binsof()" table method.
@@ -2283,6 +2372,7 @@ static std::map<std::string, TableMethod> getInplaceTableMethods()
     mTableMethods["rankof"] = tableMethod_rank;
     mTableMethods["zscoreof"] = tableMethod_zscore;
     mTableMethods["anovaof"] = tableMethod_anova;
+    mTableMethods["kmeansof"] = tableMethod_kmeans;
     mTableMethods["binsof"] = tableMethod_binsof;
     mTableMethods["insertcells"] = tableMethod_insertBlock;
     mTableMethods["insertcols"] = tableMethod_insertCols;

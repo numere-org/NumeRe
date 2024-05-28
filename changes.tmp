@@ -15,3 +15,4 @@ Cleaned	If the line length indicator is active, then lines longer than twice the
 Fixed	If comment lines are wrapped automatically, orphan whitespaces at the beginning of the wrapped line resulting from leading punctuation characters are now removed (corresponding to known word wrapping behaviors).
 Fixed	If comment lines are wrapped automatically, they are not longer wrapped right after opening braces.
 Added	Documentation block comments now also support enumerations.
+Added	A new Table method to perform kmeans clustering on specified columns of numberical data. kmeansof({columns}, #clusters, maxIterations = 100, init-method="random", re-initializations=10)

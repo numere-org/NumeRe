@@ -40,6 +40,7 @@
 #include <string>
 #include <set>
 #include <memory>
+#include <cctype>
 #include <regex>
 
 #include "editor.h"
@@ -1040,7 +1041,7 @@ void NumeReEditor::OnChar( wxStyledTextEvent& event )
 
         // Ensure that trailing whitespaces right after the linebreak
         // position will be removed
-        if (std::isblank(GetCharAt(lineBreakPos)))
+        if (::isblank(GetCharAt(lineBreakPos)))
             charsToErase = WordEndPosition(lineBreakPos, false) - lineBreakPos;
 
         // Wrap only, if the breaking point before last word on line is more than half of LINELENGTH_COLUMN after the indentation

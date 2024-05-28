@@ -3848,6 +3848,234 @@ std::vector<AnovaResult> Memory::getAnova(const VectorIndex& colCategories, size
 
 
 /////////////////////////////////////////////////
+/// \brief check if value type vector is already in a vector of vectors
+///
+/// \param newVector const std::vector<mu::value_type>&
+/// \param centroids const std::vector<std::vector<mu::value_type>>&
+/// \return bool
+///
+/////////////////////////////////////////////////
+static bool isUnique(const std::vector<mu::value_type>& newVector, const std::vector<std::vector<mu::value_type>>& centroids)
+{
+    return std::none_of(centroids.begin(), centroids.end(),
+                        [&newVector](const std::vector<mu::value_type>& centroid)
+                        { return newVector == centroid; });
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Calculate L2 Norm of 2 given value type vectors
+///
+/// \param vec1 const std::vector<mu::value_type>&
+/// \param vec2 const std::vector<mu::value_type>&
+/// \return double
+///
+/////////////////////////////////////////////////
+static double calculateL2Norm(const std::vector<mu::value_type>& vec1, const std::vector<mu::value_type>& vec2)
+{
+    // for norm of omplex => z * conj(z)
+    // conjugate a complex number z = a + bi -> z* = a - bi
+
+    mu::value_type sum = 0.0;
+    for (size_t i = 0; i < vec1.size(); ++i)
+    {
+        sum += (vec1[i] - vec2[i]) * (conj(vec1[i] - vec2[i]));
+    }
+
+    // no need for sqrt in our case
+    return sum.real();
+}
+
+
+/////////////////////////////////////////////////
+/// \brief get all Indices of elements with given value
+///
+/// \param vec const std::vector<mu::value_type>&
+/// \param value mu::value_type
+/// \return std::vector<int>
+///
+/////////////////////////////////////////////////
+static std::vector<int> findIndicesOfValue(const std::vector<mu::value_type>& vec, mu::value_type value)
+{
+    std::vector<int> indices;
+    auto it = vec.begin();
+
+    while ((it = std::find(it, vec.end(), value)) != vec.end())
+    {
+        indices.push_back(std::distance(vec.begin(), it));
+        ++it;  // Move past the last found element
+    }
+
+    return indices;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief parse string to KmeansInit enum
+///
+/// \param init_type const std::string&
+/// \return Memory::KmeansInit
+///
+/////////////////////////////////////////////////
+Memory::KmeansInit Memory::stringToKmeansInit(const std::string& init_type)
+{
+    if (init_type == "random")
+        return INIT_RANDOM;
+    else if (init_type == "kmeans++")
+        return INIT_KMEANSPP;
+
+    return INVALID;
+}
+
+/////////////////////////////////////////////////
+/// \brief calculate kmeans
+///
+/// \param columns const VectorIndex&
+/// \param nClusters size_t
+/// \param maxIterations size_t
+/// \param init_method Memory::KmeansInit
+/// \return KMeansResult
+///
+/////////////////////////////////////////////////
+KMeansResult Memory::getKMeans(const VectorIndex& columns, size_t nClusters, size_t maxIterations, Memory::KmeansInit init_method) const
+{
+    for(size_t i = 0; i < columns.size(); i++)
+    {
+        if(memArray.size() <= columns[0] || !memArray[columns[0]] ||          // check if column does have data
+           memArray[columns[i]]->m_type != TableColumn::TYPE_VALUE ||         // Data has to be numerical
+           getElemsInColumn(columns[0]) != getElemsInColumn(columns[i]))      // All columns should have same size
+            return KMeansResult();
+    }
+
+    size_t col_size = getElemsInColumn(columns[0]);
+    if(col_size < nClusters)
+        return KMeansResult();
+
+    std::vector<mu::value_type> clusters(col_size, 0);
+    std::vector<std::vector<mu::value_type>> centroids;
+
+    // Random generator
+    std::mt19937& mt = getRandGenInstance();
+    // Step 1 Initialization: Calculate starting centroids
+    if (init_method == INIT_KMEANSPP)
+    {
+        // Run KMeans ++ init
+        // https://www.geeksforgeeks.org/ml-k-means-algorithm/
+
+        // K++ Step 1: randomly select first centroid
+        size_t randinit = mt()%col_size;
+        std::vector<mu::value_type> new_value = readMem(VectorIndex(randinit), columns);
+        centroids.push_back(new_value);
+
+        for(size_t i = 1; i < nClusters; i++)
+        {
+            // K++ Step 2: calculate distance to nearest centroid
+            std::vector<double> distance_vec;
+            for(size_t i = 0; i < col_size; i++)
+            {
+                std::vector<mu::value_type> value = readMem(VectorIndex(i), columns);
+                double dis = calculateL2Norm(value, centroids[0]);
+                size_t idx = 0;
+                for(size_t j = 1; j < centroids.size(); j++)
+                {
+                    double dis2 = calculateL2Norm(value, centroids[j]);
+                    if(dis2 < dis)
+                    {
+                        dis = dis2;
+                        idx = j;
+                    }
+                }
+                distance_vec.push_back(dis);
+                if(clusters[i] != mu::value_type(idx))
+                {
+                    clusters[i] = idx;
+                }
+            }
+
+            // K++ Step 3: add new centroid at point with highest distance to nearest neighbour
+            size_t max_elem_idx = std::distance(distance_vec.begin(), std::max_element(distance_vec.begin(), distance_vec.end()));
+            std::vector<mu::value_type> new_value = readMem(VectorIndex(max_elem_idx), columns);
+            centroids.push_back(new_value);
+        }
+    }
+    else if(init_method == INIT_RANDOM || init_method == INVALID)
+    {
+        // Run standard Init: Random Seeds
+        for(size_t i = 0; i < nClusters; )
+        {
+            size_t randinit = mt()%col_size;
+            std::vector<mu::value_type> new_value = readMem(VectorIndex(randinit), columns);
+            if(isUnique(new_value, centroids))
+            {
+                centroids.push_back(new_value);
+                i++;
+            }
+        }
+    }
+
+    long double inertia = 0;
+    for(size_t iteration = 0; iteration < maxIterations; iteration++)
+    {
+        // Step 2 assign points to closest Cluster centroid
+        size_t change = 0;
+        inertia = 0;
+        for(size_t i = 0; i < col_size; i++)
+        {
+            std::vector<mu::value_type> value = readMem(VectorIndex(i), columns);
+            double min_distance = calculateL2Norm(value, centroids[0]);
+            size_t idx = 0;
+            for(size_t j = 1; j < nClusters; j++)
+            {
+                double curr_distance = calculateL2Norm(value, centroids[j]);
+                if(curr_distance < min_distance)
+                {
+                    min_distance = curr_distance;
+                    idx = j;
+                }
+            }
+
+            idx++;
+            if(clusters[i] != mu::value_type(idx))
+            {
+                clusters[i] = idx;
+                change++;
+            }
+
+            inertia += intPower(min_distance,2);
+        }
+
+        // stop criteria: all points remain in same cluster
+        if(change == 0)
+            break;
+
+        // Step 3 calculate new clusters
+        change = 0;
+        for(size_t i = 0; i < nClusters; i++)
+        {
+            VectorIndex indices(findIndicesOfValue(clusters, mu::value_type(i+1)));
+            for(size_t elemIdx = 0; elemIdx < columns.size(); elemIdx++)
+            {
+                mu::value_type new_val = avg(indices, VectorIndex(elemIdx));
+                if(!closeEnough(centroids[i][elemIdx], new_val))
+                {
+                    centroids[i][elemIdx] = new_val;
+                    change++;
+                }
+            }
+        }
+
+        // stop criteria: all centroids stay same
+        if(change == 0)
+            break;
+    }
+
+    KMeansResult res;
+    res.cluster_labels = clusters;
+    res.inertia = inertia;
+    return res;
+}
+
+/////////////////////////////////////////////////
 /// \brief Implements the cov() table method and
 /// calculates the covariance of the two selected
 /// columns.

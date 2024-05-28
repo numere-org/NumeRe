@@ -46,6 +46,11 @@ namespace NumeRe
 /////////////////////////////////////////////////
 typedef std::vector<std::string> ValueVector;
 
+struct KMeansResult
+{
+    std::vector<mu::value_type> cluster_labels;
+    long double inertia;
+};
 
 /////////////////////////////////////////////////
 /// \brief This class represents a single table
@@ -69,6 +74,13 @@ class Memory : public Sorter
             RANK_DENSE,
             RANK_COMPETETIVE,
             RANK_FRACTIONAL
+        };
+
+        enum KmeansInit
+        {
+            INVALID,
+            INIT_RANDOM,
+            INIT_KMEANSPP
         };
 
 	private:
@@ -209,6 +221,9 @@ class Memory : public Sorter
 
         std::vector<AnovaResult> getAnova(const VectorIndex& colCategories, size_t colValues, const VectorIndex& _vIndex, double significance) const;
 
+
+        static KmeansInit stringToKmeansInit(const std::string& init_type);
+        KMeansResult getKMeans(const VectorIndex& colCategories, size_t nClusters, size_t maxIterations, Memory::KmeansInit init_method) const;
 };
 
 #endif
