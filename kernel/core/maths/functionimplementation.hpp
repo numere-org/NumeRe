@@ -161,8 +161,8 @@ value_type parser_acsch(const value_type&);
 value_type parser_as_date(const value_type*, int);
 value_type parser_as_time(const value_type*, int);
 value_type parser_get_utc_offset();
-value_type parser_is_daylightsavingtime(const value_type*, int);
-value_type parser_is_leap_year(const value_type& nYear);
+value_type parser_is_daylightsavingtime(const value_type&);
+value_type parser_is_leap_year(const value_type&);
 
 // Distribution functions
 value_type parser_rd_laplace_rd(const value_type& a);

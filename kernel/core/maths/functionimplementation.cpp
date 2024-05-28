@@ -2745,12 +2745,10 @@ value_type parser_isnan(const value_type& v)
 /////////////////////////////////////////////////
 value_type parser_get_utc_offset()
 {
-    auto now = std::chrono::system_clock::now();
-    std::time_t now_c = std::chrono::system_clock::to_time_t(now);
-    std::tm* tm_ptr = std::gmtime(&now_c);
-    int utc_offset_seconds = std::mktime(tm_ptr) - now_c;
-    int utc_offset_hours = utc_offset_seconds / 3600;
-    return utc_offset_hours;
+    time_zone tz = getCurrentTimeZone();
+    int utc_offset = tz.Bias.count() + tz.DayLightBias.count();
+    // return values in seconds
+    return utc_offset * 60;
 }
 
 
@@ -2764,7 +2762,9 @@ value_type parser_get_utc_offset()
 /////////////////////////////////////////////////
 value_type parser_is_leap_year(const value_type& nDate)
 {
-    int nYear = (int)dateFromTimePoint(to_timePoint(nDate.real())).year();
+    time_stamp ts = getTimeStampFromTimePoint(to_timePoint(nDate.real()));
+    int nYear = int(ts.m_ymd.year());
+
     if (intCast(nYear) % 4 == 0){
         if (intCast(nYear) % 100 != 0 || intCast(nYear) % 400 == 0) {
             return 1.0;
@@ -2784,11 +2784,12 @@ value_type parser_is_leap_year(const value_type& nDate)
 /// \return value_type
 ///
 /////////////////////////////////////////////////
-value_type parser_is_daylightsavingtime(const value_type* vElements, int nElements)
+value_type parser_is_daylightsavingtime(const value_type& nDate)
 {
-    int year = nElements > 0 ? intCast(vElements[0].real()) : 1970;
-    int month = nElements > 1 ? intCast(vElements[1].real()) : 1;
-    int day = nElements > 2 ? intCast(vElements[2].real()) : 1;
+    time_stamp ts = getTimeStampFromTimePoint(to_timePoint(nDate.real()));
+    int year = int(ts.m_ymd.year());
+    int day = unsigned(ts.m_ymd.day());
+    int month = unsigned(ts.m_ymd.month());
 
     std::tm time_info = {};
     time_info.tm_year = year - 1900;

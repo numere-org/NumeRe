@@ -651,9 +651,9 @@ void NumeReKernel::defineFunctions()
     _parser.DefineFun("student_t_inv_q", parser_rd_student_t_inv_q);          // student_t_inv_q(q, nu)
     _parser.DefineFun("as_date", parser_as_date, true);                       // as_date(nYear, nMonth, nDay)
     _parser.DefineFun("as_time", parser_as_time, true);                       // as_time(nHours, nMinutes, nSeconds, nMilli, nMicro)
-    _parser.DefineFun("getutcofset", parser_get_utc_offset, true);            // getutcofset()
-    _parser.DefineFun("is_leapyear", parser_is_leap_year, true);              // is_leap_year(nYear)
-    _parser.DefineFun("is_daylightsavingtime", parser_is_daylightsavingtime); // is_daylightsavingtime(nYear, nMonth, nDay)
+    _parser.DefineFun("get_utc_offset", parser_get_utc_offset, true);         // get_utc_offset()
+    _parser.DefineFun("is_leapyear", parser_is_leap_year, true);              // is_leap_year(nDate)
+    _parser.DefineFun("is_daylightsavingtime", parser_is_daylightsavingtime); // is_daylightsavingtime(nDate)
 
     /////////////////////////////////////////////////////////////////////
     // NOTE:
