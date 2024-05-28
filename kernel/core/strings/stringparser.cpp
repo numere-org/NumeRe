@@ -93,7 +93,7 @@ namespace NumeRe
 
             // Handle multi-argument functions or return
             // the stored strings directly
-            if (parser_CheckMultArgFunc(sLine.substr(0, n_pos), sLine.substr(nEndPosition + 1)))
+            if (parser_CheckMultArgFunc(StringView(sLine, 0, n_pos), StringView(sLine, nEndPosition + 1)))
             {
                 std::string sLeft = sLine.substr(0, n_pos);
                 StripSpaces(sLeft);
@@ -268,9 +268,9 @@ namespace NumeRe
             size_t nEndPos = nEndPosition;
             bool isMultArgFunc = false;
             // Handle multi-argument functions
-            if (parser_CheckMultArgFunc(sLine.substr(0, nStartPosition), sLine.substr(nEndPosition + 1)))
+            if (parser_CheckMultArgFunc(StringView(sLine, 0, nStartPosition), StringView(sLine, nEndPosition + 1)))
             {
-                if (nStartPosition > 4 && sLine.substr(sLine.rfind('(', nStartPosition) - 4, 5) == "norm(")
+                if (nStartPosition > 4 && StringView(sLine, sLine.rfind('(', nStartPosition) - 4, 5) == "norm(")
                     nStartPos -= 5;
                 else
                     nStartPos -= 4;
@@ -2361,7 +2361,7 @@ namespace NumeRe
         if (sExpression.find('{', nEqPos) == std::string::npos)
             return false;
 
-        const std::map<std::string,NumeRe::Cluster>& mClusterMap = _data.getClusterMap();
+        static const std::map<std::string,NumeRe::Cluster>& mClusterMap = _data.getClusterMap();
 
         for (auto iter = mClusterMap.begin(); iter != mClusterMap.end(); ++iter)
         {

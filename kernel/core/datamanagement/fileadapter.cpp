@@ -172,8 +172,15 @@ namespace NumeRe
             file->getData(&_mem->memArray);
             delete file;
             g_logger.debug("Data copied.");
-            _mem->convert();
-            g_logger.debug("Data converted.");
+
+            // Is it actually necessary to apply some automatic
+            // conversion to the data?
+            if (info.needsConversion)
+            {
+                _mem->convert();
+                g_logger.debug("Data converted.");
+            }
+
             _mem->shrink();
             condenseDataSet(_mem);
             _mem->createTableHeaders();

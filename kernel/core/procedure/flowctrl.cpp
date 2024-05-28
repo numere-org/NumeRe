@@ -2902,10 +2902,13 @@ int FlowCtrl::compile(std::string sLine, int nthCmd)
             return FLOWCTRL_RETURN;
         }
         else if (sReturnValue.find('(') != std::string::npos
-                 && sReturnValue.substr(sReturnValue.find('(')) == "()"
+                 && getMatchingParenthesis(sReturnValue) == sReturnValue.length()-1
                  && _dataRef->isTable(sReturnValue.substr(0, sReturnValue.find('('))))
         {
-            ReturnVal.sReturnedTable = sReturnValue.substr(0, sReturnValue.find('('));
+            DataAccessParser _accessParser(sReturnValue, false);
+            _accessParser.evalIndices();
+            ReturnVal.sReturnedTable = _accessParser.getDataObject();
+            ReturnVal.sourceIdx = _accessParser.getIndices();
             bReturnSignal = true;
             return FLOWCTRL_RETURN;
         }
@@ -3460,7 +3463,6 @@ int FlowCtrl::calc(StringView sLine, int nthCmd)
     // Handle the return command
     if (nCurrentCalcType & CALCTYPE_RETURNCOMMAND)
     {
-
         std::string sReturnValue = sLine.subview(sLine.find("return") + 6).to_string();
         StripSpaces(sReturnValue);
 
@@ -3476,10 +3478,13 @@ int FlowCtrl::calc(StringView sLine, int nthCmd)
             return FLOWCTRL_RETURN;
         }
         else if (sReturnValue.find('(') != std::string::npos
-                 && sReturnValue.substr(sReturnValue.find('(')) == "()"
+                 && getMatchingParenthesis(sReturnValue) == sReturnValue.length()-1
                  && _dataRef->isTable(sReturnValue.substr(0, sReturnValue.find('('))))
         {
-            ReturnVal.sReturnedTable = sReturnValue.substr(0, sReturnValue.find('('));
+            DataAccessParser _accessParser(sReturnValue, false);
+            _accessParser.evalIndices();
+            ReturnVal.sReturnedTable = _accessParser.getDataObject();
+            ReturnVal.sourceIdx = _accessParser.getIndices();
             bReturnSignal = true;
             return FLOWCTRL_RETURN;
         }

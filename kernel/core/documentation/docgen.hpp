@@ -50,6 +50,7 @@ class DocumentationGenerator : public FileSystem
         std::string createParametersTable(const std::vector<std::string>& vParams) const;
         std::string createReturnsTable(const std::vector<std::string>& vParams) const;
         size_t findListItem(const std::string& sTextRange, size_t& nLength) const;
+        size_t findEnumItem(const std::string& sTextRange, size_t& nLength) const;
 
         std::string createMainProcedure(std::string sFileName) const;
         std::string createLaTeXFileName(std::string sFileName) const;

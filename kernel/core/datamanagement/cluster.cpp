@@ -2037,19 +2037,42 @@ namespace NumeRe
     /////////////////////////////////////////////////
     bool ClusterManager::containsClusters(const std::string& sCmdLine) const
     {
-        size_t nQuotes = 0;
-
         if (sCmdLine.find('{') == std::string::npos)
             return false;
 
-        // Search through the expression
-        for (size_t i = 0; i < sCmdLine.length(); i++)
+        size_t nQuotes = sCmdLine.front() == '"';
+
+        // Search through the expression -> We do not need to examine the first character
+        for (size_t i = 1; i < sCmdLine.length(); i++)
         {
             // Consider quotation marks
-            if (sCmdLine[i] == '"' && (!i || sCmdLine[i-1] != '\\'))
+            if (sCmdLine[i] == '"' && sCmdLine[i-1] != '\\')
                 nQuotes++;
 
-            if (!(nQuotes % 2))
+            // Is this a candidate for a cluster
+            if (!(nQuotes % 2)
+                && sCmdLine[i] == '{'
+                && (isalnum(sCmdLine[i-1]) || sCmdLine[i-1] == '_' || sCmdLine[i-1] == '~' || sCmdLine[i] == '[' || sCmdLine[i] == ']'))
+            {
+                size_t nStartPos = i-1;
+
+                // Try to find the starting position
+                while (nStartPos > 0
+                       && (isalnum(sCmdLine[nStartPos-1])
+                           || sCmdLine[nStartPos-1] == '_'
+                           || sCmdLine[nStartPos-1] == '~'
+                           || sCmdLine[nStartPos-1] == '['
+                           || sCmdLine[nStartPos-1] == ']'))
+                {
+                    nStartPos--;
+                }
+
+                // Try to find the candidate in the internal map
+                if (mClusterMap.find(sCmdLine.substr(nStartPos, i - nStartPos)) != mClusterMap.end())
+                    return true;
+            }
+
+            /*if (!(nQuotes % 2))
             {
                 // If the current character might probably be an
                 // identifier for a table, search for the next
@@ -2071,7 +2094,7 @@ namespace NumeRe
                             return true;
                     }
                 }
-            }
+            }*/
         }
 
         return false;

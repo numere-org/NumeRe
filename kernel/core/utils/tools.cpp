@@ -2308,10 +2308,11 @@ static StringView getNextCommandLineToken(StringView& sArgList, char cSep)
             continue;
 
         // Jump over parentheses
-        if ((sArgList[i] == '(' || sArgList[i] == '[' || sArgList[i] == '{' ) && (nMatching = getMatchingParenthesis(sArgList.subview(i))) != string::npos)
+        if ((sArgList[i] == '(' || sArgList[i] == '[' || sArgList[i] == '{' )
+             && (nMatching = getMatchingParenthesis(sArgList.subview(i))) != std::string::npos)
             i += nMatching;
 
-        // A comma was found -> break the loop
+        // A separator was found -> break the loop
         if (sArgList[i] == cSep)
         {
             nPos = i;

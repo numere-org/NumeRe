@@ -169,7 +169,7 @@ void convertVectorToExpression(string& sLine)
 		}
 
 		// Ensure that we didn't copy the argument of a multi-argument function
-		if (parser_CheckMultArgFunc(vScalars.back(), sTemp.substr(sTemp.find('}', nPos) + 1)))
+		if (parser_CheckMultArgFunc(vScalars.back(), StringView(sTemp, sTemp.find('}', nPos) + 1)))
 		{
 			vScalars.back() += vVectors.back();
 			sTemp.erase(0, getMatchingParenthesis(StringView(sTemp, nPos)) + nPos + 1);

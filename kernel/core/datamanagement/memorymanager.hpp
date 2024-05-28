@@ -57,8 +57,8 @@ class MemoryManager : public NumeRe::FileAdapter, public StringMemory, public Nu
 		void reorderColumn(size_t _nLayer, const std::vector<int>& vIndex, long long int i1, long long int i2, long long int j1 = 0);
 		bool loadFromNewCacheFile();
 		bool loadFromLegacyCacheFile();
-		VectorIndex parseEvery(std::string& sDir, const std::string& sTableName) const;
-        std::vector<mu::value_type> resolveMAF(const std::string& sTableName, std::string sDir, mu::value_type (MemoryManager::*MAF)(const std::string&, long long int, long long int, long long int, long long int) const) const;
+		VectorIndex parseEveryCell(std::string& sDir, const std::string& sType, const std::string& sTableName) const;
+        std::vector<mu::value_type> resolveMAF(const std::string& sTableName, std::string sDir, mu::value_type (MemoryManager::*MAF)(const std::string&, const VectorIndex&, const VectorIndex&) const) const;
 
         virtual bool saveLayer(std::string _sFileName, const std::string& _sTable, unsigned short nPrecision, std::string sExt = "") override
 		{
@@ -108,9 +108,9 @@ class MemoryManager : public NumeRe::FileAdapter, public StringMemory, public Nu
 		enum AppDir {LINES = Memory::LINES, COLS = Memory::COLS, GRID = Memory::GRID, ALL = Memory::ALL};
 
 		// Variables for the parser
-		mu::value_type tableLinesCount;
-		mu::value_type tableColumnsCount;
-        bool updateDimensionVariables(StringView sTableName);
+		mutable mu::value_type tableLinesCount;
+		mutable mu::value_type tableColumnsCount;
+        bool updateDimensionVariables(StringView sTableName) const;
 
 
         // OTHER METHODS
@@ -343,6 +343,7 @@ class MemoryManager : public NumeRe::FileAdapter, public StringMemory, public Nu
 		}
 
 		void copyTable(const std::string& source, const std::string& target);
+		void copyTable(const std::string& source, const Indices& sourceIdx, const std::string& target, const Indices& targetIdx);
 
 
 		// TABLE EXTRACTOR AND IMPORTER METHODS
@@ -635,6 +636,8 @@ class MemoryManager : public NumeRe::FileAdapter, public StringMemory, public Nu
 		    return vMemory[findTable(_sTable)]->getMetaData();
 		}
 
+
+
         // WRITE ACCESS METHODS
 		inline void writeToTable(int _nLine, int _nCol, const std::string& _sCache, const mu::value_type& _dData)
 		{
@@ -672,6 +675,7 @@ class MemoryManager : public NumeRe::FileAdapter, public StringMemory, public Nu
 		{
 		    vMemory[findTable(_sTable)]->setMetaData(meta);
 		}
+
 
 
 		// MAF METHODS
@@ -753,12 +757,12 @@ class MemoryManager : public NumeRe::FileAdapter, public StringMemory, public Nu
             // of this table
             if (nGridOffset)
             {
-                std::vector<mu::value_type> vSize = vMemory[findTable(sTable)]->size(VectorIndex(), GRID);
+                std::vector<mu::value_type> vSize = vMemory[findTable(sTable)]->size(VectorIndex(), VectorIndex(), GRID);
                 nlines = vSize.front().real();
                 ncols = vSize.back().real()+nGridOffset; // compensate the offset
             }
 
-            VectorIndex _idx = parseEvery(sDir, sTable);
+            VectorIndex _idx = parseEveryCell(sDir, "every", sTable);
 
             if (sDir.find("cols") != std::string::npos)
             {
@@ -801,12 +805,12 @@ class MemoryManager : public NumeRe::FileAdapter, public StringMemory, public Nu
             // of this table
             if (nGridOffset)
             {
-                std::vector<mu::value_type> vSize = vMemory[findTable(sTable)]->size(VectorIndex(), GRID);
+                std::vector<mu::value_type> vSize = vMemory[findTable(sTable)]->size(VectorIndex(), VectorIndex(), GRID);
                 nlines = vSize.front().real();
                 ncols = vSize.back().real()+nGridOffset; // compensate the offset
             }
 
-            VectorIndex _idx = parseEvery(sDir, sTable);
+            VectorIndex _idx = parseEveryCell(sDir, "every", sTable);
 
             if (sDir.find("cols") != std::string::npos)
             {
@@ -839,43 +843,53 @@ class MemoryManager : public NumeRe::FileAdapter, public StringMemory, public Nu
 
 		std::vector<mu::value_type> size(const std::string& sTable, std::string sDir) const
         {
-            VectorIndex _idx = parseEvery(sDir, sTable);
+            VectorIndex _everyIdx = parseEveryCell(sDir, "every", sTable);
+            VectorIndex _cellsIdx = parseEveryCell(sDir, "cells", sTable);
 
             if (sDir.find("cols") != std::string::npos)
-                return vMemory[findTable(sTable)]->size(_idx, COLS | (sDir.find("grid") != std::string::npos ? GRID : 0));
+                return vMemory[findTable(sTable)]->size(_everyIdx, _cellsIdx, COLS | (sDir.find("grid") != std::string::npos ? GRID : 0));
             else if (sDir.find("lines") != std::string::npos)
-                return vMemory[findTable(sTable)]->size(_idx, LINES | (sDir.find("grid") != std::string::npos ? GRID : 0));
+                return vMemory[findTable(sTable)]->size(_everyIdx, _cellsIdx, LINES | (sDir.find("grid") != std::string::npos ? GRID : 0));
             else
-                return vMemory[findTable(sTable)]->size(VectorIndex(), sDir.find("grid") != std::string::npos ? GRID : ALL);
+                return vMemory[findTable(sTable)]->size(VectorIndex(),
+                                                        VectorIndex(),
+                                                        sDir.find("grid") != std::string::npos ? GRID : ALL);
         }
 
 		std::vector<mu::value_type> minpos(const std::string& sTable, std::string sDir) const
         {
-            VectorIndex _idx = parseEvery(sDir, sTable);
+            VectorIndex _everyIdx = parseEveryCell(sDir, "every", sTable);
+            VectorIndex _cellsIdx = parseEveryCell(sDir, "cells", sTable);
 
             if (sDir.find("cols") != std::string::npos)
-                return vMemory[findTable(sTable)]->minpos(_idx, COLS | (sDir.find("grid") != std::string::npos ? GRID : 0));
+                return vMemory[findTable(sTable)]->minpos(_everyIdx, _cellsIdx, COLS | (sDir.find("grid") != std::string::npos ? GRID : 0));
             else if (sDir.find("lines") != std::string::npos)
-                return vMemory[findTable(sTable)]->minpos(_idx, LINES | (sDir.find("grid") != std::string::npos ? GRID : 0));
+                return vMemory[findTable(sTable)]->minpos(_everyIdx, _cellsIdx, LINES | (sDir.find("grid") != std::string::npos ? GRID : 0));
             else
-                return vMemory[findTable(sTable)]->minpos(VectorIndex(0, VectorIndex::OPEN_END), sDir.find("grid") != std::string::npos ? GRID : ALL);
+                return vMemory[findTable(sTable)]->minpos(VectorIndex(0, VectorIndex::OPEN_END),
+                                                          VectorIndex(0, VectorIndex::OPEN_END),
+                                                          sDir.find("grid") != std::string::npos ? GRID : ALL);
         }
 
 		std::vector<mu::value_type> maxpos(const std::string& sTable, std::string sDir) const
         {
-            VectorIndex _idx = parseEvery(sDir, sTable);
+            VectorIndex _everyIdx = parseEveryCell(sDir, "every", sTable);
+            VectorIndex _cellsIdx = parseEveryCell(sDir, "cells", sTable);
 
             if (sDir.find("cols") != std::string::npos)
-                return vMemory[findTable(sTable)]->maxpos(_idx, COLS | (sDir.find("grid") != std::string::npos ? GRID : 0));
+                return vMemory[findTable(sTable)]->maxpos(_everyIdx, _cellsIdx, COLS | (sDir.find("grid") != std::string::npos ? GRID : 0));
             else if (sDir.find("lines") != std::string::npos)
-                return vMemory[findTable(sTable)]->maxpos(_idx, LINES | (sDir.find("grid") != std::string::npos ? GRID : 0));
+                return vMemory[findTable(sTable)]->maxpos(_everyIdx, _cellsIdx, LINES | (sDir.find("grid") != std::string::npos ? GRID : 0));
             else
-                return vMemory[findTable(sTable)]->maxpos(VectorIndex(0, VectorIndex::OPEN_END), sDir.find("grid") != std::string::npos ? GRID : ALL);
+                return vMemory[findTable(sTable)]->maxpos(VectorIndex(0, VectorIndex::OPEN_END),
+                                                          VectorIndex(0, VectorIndex::OPEN_END),
+                                                          sDir.find("grid") != std::string::npos ? GRID : ALL);
         }
 
 
+
         // IMPLEMENTATIONS FOR THE MAFS
-		inline mu::value_type std(const std::string& _sCache, long long int i1, long long int i2, long long int j1 = 0, long long int j2 = -1) const
+		inline mu::value_type std(const std::string& _sCache, int i1, int i2, int j1 = 0, int j2 = -1) const
 		{
 			return vMemory[findTable(_sCache)]->std(VectorIndex(i1, i2), VectorIndex(j1, j2));
 		}
@@ -885,7 +899,7 @@ class MemoryManager : public NumeRe::FileAdapter, public StringMemory, public Nu
 			return vMemory[findTable(_sCache)]->std(_vLine, _vCol);
 		}
 
-		inline mu::value_type avg(const std::string& _sCache, long long int i1, long long int i2, long long int j1 = 0, long long int j2 = -1) const
+		inline mu::value_type avg(const std::string& _sCache, int i1, int i2, int j1 = 0, int j2 = -1) const
 		{
 			return vMemory[findTable(_sCache)]->avg(VectorIndex(i1, i2), VectorIndex(j1, j2));
 		}
@@ -895,7 +909,7 @@ class MemoryManager : public NumeRe::FileAdapter, public StringMemory, public Nu
 			return vMemory[findTable(_sCache)]->avg(_vLine, _vCol);
 		}
 
-		inline mu::value_type max(const std::string& _sCache, long long int i1, long long int i2, long long int j1 = 0, long long int j2 = -1) const
+		inline mu::value_type max(const std::string& _sCache, int i1, int i2, int j1 = 0, int j2 = -1) const
 		{
 			return vMemory[findTable(_sCache)]->max(VectorIndex(i1, i2), VectorIndex(j1, j2));
 		}
@@ -905,7 +919,7 @@ class MemoryManager : public NumeRe::FileAdapter, public StringMemory, public Nu
 			return vMemory[findTable(_sCache)]->max(_vLine, _vCol);
 		}
 
-		inline mu::value_type min(const std::string& _sCache, long long int i1, long long int i2, long long int j1 = 0, long long int j2 = -1) const
+		inline mu::value_type min(const std::string& _sCache, int i1, int i2, int j1 = 0, int j2 = -1) const
 		{
 			return vMemory[findTable(_sCache)]->min(VectorIndex(i1, i2), VectorIndex(j1, j2));
 		}
@@ -920,7 +934,7 @@ class MemoryManager : public NumeRe::FileAdapter, public StringMemory, public Nu
 			return vMemory[findTable(_sCache)]->prd(_vLine, _vCol);
 		}
 
-		inline mu::value_type prd(const std::string& _sCache, long long int i1, long long int i2, long long int j1 = 0, long long int j2 = -1) const
+		inline mu::value_type prd(const std::string& _sCache, int i1, int i2, int j1 = 0, int j2 = -1) const
 		{
 			return vMemory[findTable(_sCache)]->prd(VectorIndex(i1, i2), VectorIndex(j1, j2));
 		}
@@ -930,7 +944,7 @@ class MemoryManager : public NumeRe::FileAdapter, public StringMemory, public Nu
 			return vMemory[findTable(_sCache)]->sum(_vLine, _vCol);
 		}
 
-		inline mu::value_type sum(const std::string& _sCache, long long int i1, long long int i2, long long int j1 = 0, long long int j2 = -1) const
+		inline mu::value_type sum(const std::string& _sCache, int i1, int i2, int j1 = 0, int j2 = -1) const
 		{
 			return vMemory[findTable(_sCache)]->sum(VectorIndex(i1, i2), VectorIndex(j1, j2));
 		}
@@ -940,12 +954,12 @@ class MemoryManager : public NumeRe::FileAdapter, public StringMemory, public Nu
 			return vMemory[findTable(_sCache)]->num(_vLine, _vCol);
 		}
 
-		inline mu::value_type num(const std::string& _sCache, long long int i1, long long int i2, long long int j1 = 0, long long int j2 = -1) const
+		inline mu::value_type num(const std::string& _sCache, int i1, int i2, int j1 = 0, int j2 = -1) const
 		{
 			return vMemory[findTable(_sCache)]->num(VectorIndex(i1, i2), VectorIndex(j1, j2));
 		}
 
-		inline mu::value_type and_func(const std::string& _sCache, long long int i1, long long int i2, long long int j1 = 0, long long int j2 = -1) const
+		inline mu::value_type and_func(const std::string& _sCache, int i1, int i2, int j1 = 0, int j2 = -1) const
 		{
 			return vMemory[findTable(_sCache)]->and_func(VectorIndex(i1, i2), VectorIndex(j1, j2));
 		}
@@ -955,7 +969,7 @@ class MemoryManager : public NumeRe::FileAdapter, public StringMemory, public Nu
 			return vMemory[findTable(_sCache)]->and_func(_vLine, _vCol);
 		}
 
-		inline mu::value_type or_func(const std::string& _sCache, long long int i1, long long int i2, long long int j1 = 0, long long int j2 = -1) const
+		inline mu::value_type or_func(const std::string& _sCache, int i1, int i2, int j1 = 0, int j2 = -1) const
 		{
 			return vMemory[findTable(_sCache)]->or_func(VectorIndex(i1, i2), VectorIndex(j1, j2));
 		}
@@ -965,7 +979,7 @@ class MemoryManager : public NumeRe::FileAdapter, public StringMemory, public Nu
 			return vMemory[findTable(_sCache)]->or_func(_vLine, _vCol);
 		}
 
-		inline mu::value_type xor_func(const std::string& _sCache, long long int i1, long long int i2, long long int j1 = 0, long long int j2 = -1) const
+		inline mu::value_type xor_func(const std::string& _sCache, int i1, int i2, int j1 = 0, int j2 = -1) const
 		{
 			return vMemory[findTable(_sCache)]->xor_func(VectorIndex(i1, i2), VectorIndex(j1, j2));
 		}
@@ -980,7 +994,7 @@ class MemoryManager : public NumeRe::FileAdapter, public StringMemory, public Nu
 			return vMemory[findTable(_sCache)]->cnt(_vLine, _vCol);
 		}
 
-		inline mu::value_type cnt(const std::string& _sCache, long long int i1, long long int i2, long long int j1 = 0, long long int j2 = -1) const
+		inline mu::value_type cnt(const std::string& _sCache, int i1, int i2, int j1 = 0, int j2 = -1) const
 		{
 			return vMemory[findTable(_sCache)]->cnt(VectorIndex(i1, i2), VectorIndex(j1, j2));
 		}
@@ -990,7 +1004,7 @@ class MemoryManager : public NumeRe::FileAdapter, public StringMemory, public Nu
 			return vMemory[findTable(_sCache)]->norm(_vLine, _vCol);
 		}
 
-		inline mu::value_type norm(const std::string& _sCache, long long int i1, long long int i2, long long int j1 = 0, long long int j2 = -1) const
+		inline mu::value_type norm(const std::string& _sCache, int i1, int i2, int j1 = 0, int j2 = -1) const
 		{
 			return vMemory[findTable(_sCache)]->norm(VectorIndex(i1, i2), VectorIndex(j1, j2));
 		}
@@ -1000,7 +1014,7 @@ class MemoryManager : public NumeRe::FileAdapter, public StringMemory, public Nu
 			return vMemory[findTable(_sCache)]->cmp(_vLine, _vCol, dRef, nType);
 		}
 
-		inline mu::value_type cmp(const std::string& _sCache, long long int i1, long long int i2, long long int j1 = 0, long long int j2 = -1, mu::value_type dRef = 0.0, int nType = 0) const
+		inline mu::value_type cmp(const std::string& _sCache, int i1, int i2, int j1 = 0, int j2 = -1, mu::value_type dRef = 0.0, int nType = 0) const
 		{
 			return vMemory[findTable(_sCache)]->cmp(VectorIndex(i1, i2), VectorIndex(j1, j2), dRef, nType);
 		}
@@ -1010,7 +1024,7 @@ class MemoryManager : public NumeRe::FileAdapter, public StringMemory, public Nu
 			return vMemory[findTable(_sCache)]->med(_vLine, _vCol);
 		}
 
-		inline mu::value_type med(const std::string& _sCache, long long int i1, long long int i2, long long int j1 = 0, long long int j2 = -1) const
+		inline mu::value_type med(const std::string& _sCache, int i1, int i2, int j1 = 0, int j2 = -1) const
 		{
 			return vMemory[findTable(_sCache)]->med(VectorIndex(i1, i2), VectorIndex(j1, j2));
 		}
@@ -1020,7 +1034,7 @@ class MemoryManager : public NumeRe::FileAdapter, public StringMemory, public Nu
 			return vMemory[findTable(_sCache)]->pct(_vLine, _vCol, dPct);
 		}
 
-		inline mu::value_type pct(const std::string& _sCache, long long int i1, long long int i2, long long int j1 = 0, long long int j2 = -1, mu::value_type dPct = 0.5) const
+		inline mu::value_type pct(const std::string& _sCache, int i1, int i2, int j1 = 0, int j2 = -1, mu::value_type dPct = 0.5) const
 		{
 			return vMemory[findTable(_sCache)]->pct(VectorIndex(i1, i2), VectorIndex(j1, j2), dPct);
 		}

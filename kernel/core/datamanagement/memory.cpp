@@ -1939,8 +1939,8 @@ void Memory::insertCopiedTable(NumeRe::Table _table, const VectorIndex& lines, c
     // We construct separate objects because they might be overwritten
     deleteBulk(VectorIndex(lines), VectorIndex(cols));
 
-    lines.setOpenEndIndex(lines.front() + transpose ? _table.getCols()-1 : _table.getLines()-1);
-    cols.setOpenEndIndex(cols.front() + transpose ? _table.getLines()-1 : _table.getCols()-1);
+    lines.setOpenEndIndex(lines.front() + (transpose ? _table.getCols()-1 : _table.getLines()-1));
+    cols.setOpenEndIndex(cols.front() + (transpose ? _table.getLines()-1 : _table.getCols()-1));
 
     resizeMemory(lines.max()+1, cols.max()+1);
 
@@ -2965,9 +2965,9 @@ mu::value_type Memory::cnt(const VectorIndex& _vLine, const VectorIndex& _vCol) 
 
     // Calculate the size in the corresponding direction first
     if (_vCol.size() == 1 && _vLine.size() > 1)
-        vDimLen = size(_vCol, AppDir::COLS);
+        vDimLen = size(_vCol, VectorIndex(0, VectorIndex::OPEN_END), AppDir::COLS);
     else if (_vCol.size() > 1 && _vLine.size() == 1)
-        vDimLen = size(_vLine, AppDir::LINES);
+        vDimLen = size(_vLine, VectorIndex(0, VectorIndex::OPEN_END), AppDir::LINES);
 
     for (size_t j = 0; j < _vCol.size(); j++)
     {
@@ -3331,12 +3331,13 @@ mu::value_type Memory::pct(const VectorIndex& _vLine, const VectorIndex& _vCol, 
 /// \brief Implementation of the SIZE multi
 /// argument function.
 ///
-/// \param _vIndex const VectorIndex&
+/// \param _everyIdx const VectorIndex&
+/// \param _cellsIdx const VectorIndex&
 /// \param dir int Bitcomposition of AppDir values
 /// \return std::vector<mu::value_type>
 ///
 /////////////////////////////////////////////////
-std::vector<mu::value_type> Memory::size(const VectorIndex& _vIndex, int dir) const
+std::vector<mu::value_type> Memory::size(const VectorIndex& _everyIdx, const VectorIndex& _cellsIdx, int dir) const
 {
     if (!memArray.size())
         return std::vector<mu::value_type>(2, 0.0);
@@ -3344,8 +3345,9 @@ std::vector<mu::value_type> Memory::size(const VectorIndex& _vIndex, int dir) co
     int lines = getLines(false);
     int cols = getCols(false);
 
-    _vIndex.setOpenEndIndex(dir & LINES ? lines-1 : cols-1);
     int nGridOffset = 2*((dir & GRID) != 0);
+    _everyIdx.setOpenEndIndex(dir & LINES ? lines-1 : cols-1);
+    _cellsIdx.setOpenEndIndex(dir & LINES ? cols-1-nGridOffset : lines-1);
 
     // Handle simple things first
     if (dir == ALL)
@@ -3357,14 +3359,14 @@ std::vector<mu::value_type> Memory::size(const VectorIndex& _vIndex, int dir) co
         // Compute the sizes of the table rows
         std::vector<mu::value_type> vSizes;
 
-        for (size_t i = 0; i < _vIndex.size(); i++)
+        for (size_t i = 0; i < _everyIdx.size(); i++)
         {
-            if (_vIndex[i] < 0 || _vIndex[i] >= lines)
+            if (_everyIdx[i] < 0 || _everyIdx[i] >= lines)
                 continue;
 
-            for (int j = memArray.size()-1; j >= 0; j--)
+            for (int j = _cellsIdx.size()-1; j >= 0; j--)
             {
-                if (memArray[j] && memArray[j]->isValid(_vIndex[i]))
+                if (memArray[_cellsIdx[j]+nGridOffset] && memArray[_cellsIdx[j]+nGridOffset]->isValid(_everyIdx[i]))
                 {
                     vSizes.push_back(j+1 - nGridOffset);
                     break;
@@ -3382,12 +3384,25 @@ std::vector<mu::value_type> Memory::size(const VectorIndex& _vIndex, int dir) co
         // Compute the sizes of the table columns
         std::vector<mu::value_type> vSizes;
 
-        for (size_t j = 0; j < _vIndex.size(); j++)
+        for (size_t j = 0; j < _everyIdx.size(); j++)
         {
-            if (_vIndex[j] < nGridOffset || _vIndex[j] >= cols)
+            if (_everyIdx[j]+nGridOffset < 0 || _everyIdx[j]+nGridOffset >= cols)
                 continue;
 
-            vSizes.push_back(getElemsInColumn(_vIndex[j]));
+            if (!memArray[_everyIdx[j]+nGridOffset])
+            {
+                vSizes.push_back(0);
+                continue;
+            }
+
+            for (int i = _cellsIdx.size()-1; i >= 0; i--)
+            {
+                if (memArray[_everyIdx[j]+nGridOffset]->isValid(_cellsIdx[i]))
+                {
+                    vSizes.push_back(i+1);
+                    break;
+                }
+            }
         }
 
         if (!vSizes.size())
@@ -3404,12 +3419,13 @@ std::vector<mu::value_type> Memory::size(const VectorIndex& _vIndex, int dir) co
 /// \brief Implementation of the MINPOS multi
 /// argument function.
 ///
-/// \param _vIndex const VectorIndex&
+/// \param _everyIdx const VectorIndex&
+/// \param _cellsIdx const VectorIndex&
 /// \param dir int
 /// \return std::vector<mu::value_type>
 ///
 /////////////////////////////////////////////////
-std::vector<mu::value_type> Memory::minpos(const VectorIndex& _vIndex, int dir) const
+std::vector<mu::value_type> Memory::minpos(const VectorIndex& _everyIdx, const VectorIndex& _cellsIdx, int dir) const
 {
     if (!memArray.size())
         return std::vector<mu::value_type>(1, NAN);
@@ -3417,14 +3433,15 @@ std::vector<mu::value_type> Memory::minpos(const VectorIndex& _vIndex, int dir) 
     int lines = getLines(false);
     int cols = getCols(false);
 
-    _vIndex.setOpenEndIndex(dir & COLS ? cols-1 : lines-1);
     int nGridOffset = 2*((dir & GRID) != 0);
+    _everyIdx.setOpenEndIndex(dir & COLS ? cols-1 : lines-1);
+    _cellsIdx.setOpenEndIndex(dir & LINES ? cols-1-nGridOffset : lines-1);
 
     // If a grid is required, get the grid dimensions
     // of this table
     if (nGridOffset)
     {
-        std::vector<mu::value_type> vSize = size(VectorIndex(), GRID);
+        std::vector<mu::value_type> vSize = size(VectorIndex(), VectorIndex(), GRID);
         lines = vSize.front().real();
         cols = vSize.back().real()+nGridOffset; // compensate the offset
     }
@@ -3435,12 +3452,13 @@ std::vector<mu::value_type> Memory::minpos(const VectorIndex& _vIndex, int dir) 
     {
         std::vector<mu::value_type> vPos;
 
-        for (size_t j = 0; j < _vIndex.size(); j++)
+        for (size_t j = 0; j < _everyIdx.size(); j++)
         {
-            if (_vIndex[j] < nGridOffset || _vIndex[j] >= cols)
+            if (_everyIdx[j]+nGridOffset < 0 || _everyIdx[j]+nGridOffset >= cols)
                 continue;
 
-            vPos.push_back(cmp(VectorIndex(0, VectorIndex::OPEN_END), VectorIndex(_vIndex[j]), min(VectorIndex(0, VectorIndex::OPEN_END), VectorIndex(_vIndex[j])), 0));
+            vPos.push_back(cmp(_cellsIdx, VectorIndex(_everyIdx[j]+nGridOffset),
+                               min(_cellsIdx, VectorIndex(_everyIdx[j]+nGridOffset)), 0));
         }
 
         if (!vPos.size())
@@ -3452,20 +3470,23 @@ std::vector<mu::value_type> Memory::minpos(const VectorIndex& _vIndex, int dir) 
     std::vector<mu::value_type> vPos;
     double dMin = NAN;
     size_t pos = 0;
+    VectorIndex _cellsTemp = _cellsIdx;
+    _cellsTemp.apply_offset(nGridOffset);
 
     // Compute the results for LINES and find as
     // well the global minimal value, which will be used
     // for GRID and ALL
-    for (size_t i = 0; i < _vIndex.size(); i++)
+    for (size_t i = 0; i < _everyIdx.size(); i++)
     {
-        if (_vIndex[i] < 0 || _vIndex[i] >= lines)
+        if (_everyIdx[i] < 0 || _everyIdx[i] >= lines)
             continue;
 
-        vPos.push_back(cmp(VectorIndex(_vIndex[i]), VectorIndex(nGridOffset, VectorIndex::OPEN_END), min(VectorIndex(_vIndex[i]), VectorIndex(nGridOffset, VectorIndex::OPEN_END)), 0));
+        vPos.push_back(cmp(VectorIndex(_everyIdx[i]), _cellsTemp,
+                           min(VectorIndex(_everyIdx[i]), _cellsTemp), 0));
 
-        if (isnan(dMin) || dMin > readMem(_vIndex[i], intCast(vPos.back())-1).real())
+        if (isnan(dMin) || dMin > readMem(_everyIdx[i], intCast(vPos.back())-1).real())
         {
-            dMin = readMem(_vIndex[i], intCast(vPos.back())-1).real();
+            dMin = readMem(_everyIdx[i], intCast(vPos.back())-1).real();
             pos = i;
         }
     }
@@ -3475,7 +3496,7 @@ std::vector<mu::value_type> Memory::minpos(const VectorIndex& _vIndex, int dir) 
 
     // Use the global minimal value for ALL and GRID
     if (dir == ALL || dir == GRID)
-        return std::vector<mu::value_type>({_vIndex[pos]+1, vPos[pos]});
+        return std::vector<mu::value_type>({_everyIdx[pos]+1, vPos[pos]});
 
     return vPos;
 }
@@ -3485,12 +3506,13 @@ std::vector<mu::value_type> Memory::minpos(const VectorIndex& _vIndex, int dir) 
 /// \brief Implementation of the MAXPOS multi
 /// argument function.
 ///
-/// \param _vIndex const VectorIndex&
+/// \param _everyIdx const VectorIndex&
+/// \param _cellsIdx const VectorIndex&
 /// \param dir int
 /// \return std::vector<mu::value_type>
 ///
 /////////////////////////////////////////////////
-std::vector<mu::value_type> Memory::maxpos(const VectorIndex& _vIndex, int dir) const
+std::vector<mu::value_type> Memory::maxpos(const VectorIndex& _everyIdx, const VectorIndex& _cellsIdx, int dir) const
 {
     if (!memArray.size())
         return std::vector<mu::value_type>(1, NAN);
@@ -3498,14 +3520,15 @@ std::vector<mu::value_type> Memory::maxpos(const VectorIndex& _vIndex, int dir) 
     int lines = getLines(false);
     int cols = getCols(false);
 
-    _vIndex.setOpenEndIndex(dir & COLS ? cols-1 : lines-1);
     int nGridOffset = 2*((dir & GRID) != 0);
+    _everyIdx.setOpenEndIndex(dir & COLS ? cols-1 : lines-1);
+    _cellsIdx.setOpenEndIndex(dir & LINES ? cols-1-nGridOffset : lines-1);
 
     // If a grid is required, get the grid dimensions
     // of this table
     if (nGridOffset)
     {
-        std::vector<mu::value_type> vSize = size(VectorIndex(), GRID);
+        std::vector<mu::value_type> vSize = size(VectorIndex(), VectorIndex(), GRID);
         lines = vSize.front().real();
         cols = vSize.back().real()+nGridOffset; // compensate the offset
     }
@@ -3516,12 +3539,13 @@ std::vector<mu::value_type> Memory::maxpos(const VectorIndex& _vIndex, int dir) 
     {
         std::vector<mu::value_type> vPos;
 
-        for (size_t j = 0; j < _vIndex.size(); j++)
+        for (size_t j = 0; j < _everyIdx.size(); j++)
         {
-            if (_vIndex[j] < nGridOffset || _vIndex[j] >= cols)
+            if (_everyIdx[j]+nGridOffset < 0 || _everyIdx[j]+nGridOffset >= cols)
                 continue;
 
-            vPos.push_back(cmp(VectorIndex(0, VectorIndex::OPEN_END), VectorIndex(_vIndex[j]), max(VectorIndex(0, VectorIndex::OPEN_END), VectorIndex(_vIndex[j])), 0));
+            vPos.push_back(cmp(_cellsIdx, VectorIndex(_everyIdx[j]+nGridOffset),
+                               max(_cellsIdx, VectorIndex(_everyIdx[j]+nGridOffset)), 0));
         }
 
         if (!vPos.size())
@@ -3533,20 +3557,23 @@ std::vector<mu::value_type> Memory::maxpos(const VectorIndex& _vIndex, int dir) 
     std::vector<mu::value_type> vPos;
     double dMax = NAN;
     size_t pos;
+    VectorIndex _cellsTemp = _cellsIdx;
+    _cellsTemp.apply_offset(nGridOffset);
 
     // Compute the results for LINES and find as
     // well the global maximal value, which will be used
     // for GRID and ALL
-    for (size_t i = 0; i < _vIndex.size(); i++)
+    for (size_t i = 0; i < _everyIdx.size(); i++)
     {
-        if (_vIndex[i] < 0 || _vIndex[i] >= lines)
+        if (_everyIdx[i] < 0 || _everyIdx[i] >= lines)
             continue;
 
-        vPos.push_back(cmp(VectorIndex(_vIndex[i]), VectorIndex(nGridOffset, VectorIndex::OPEN_END), max(VectorIndex(_vIndex[i]), VectorIndex(nGridOffset, VectorIndex::OPEN_END)), 0));
+        vPos.push_back(cmp(VectorIndex(_everyIdx[i]), _cellsTemp,
+                           max(VectorIndex(_everyIdx[i]), _cellsTemp), 0));
 
-        if (isnan(dMax) || dMax < readMem(_vIndex[i], intCast(vPos.back())-1).real())
+        if (isnan(dMax) || dMax < readMem(_everyIdx[i], intCast(vPos.back())-1).real())
         {
-            dMax = readMem(_vIndex[i], intCast(vPos.back())-1).real();
+            dMax = readMem(_everyIdx[i], intCast(vPos.back())-1).real();
             pos = i;
         }
     }
@@ -3556,7 +3583,7 @@ std::vector<mu::value_type> Memory::maxpos(const VectorIndex& _vIndex, int dir) 
 
     // Use the global maximal value for ALL and GRID
     if (dir == ALL || dir == GRID)
-        return std::vector<mu::value_type>({_vIndex[pos]+1, vPos[pos]});
+        return std::vector<mu::value_type>({_everyIdx[pos]+1, vPos[pos]});
 
     return vPos;
 }
@@ -4840,7 +4867,7 @@ bool Memory::smooth(VectorIndex _vLine, VectorIndex _vCol, NumeRe::FilterSetting
 
     if (bUseAppendedZeroes)
     {
-        std::vector<double> sizes = mu::real(size(_vCol, AppDir::COLS));
+        std::vector<double> sizes = mu::real(size(_vCol, VectorIndex(0, VectorIndex::OPEN_END), AppDir::COLS));
         nRowCount = *std::max_element(sizes.begin(), sizes.end());
     }
 

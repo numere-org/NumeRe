@@ -202,9 +202,9 @@ class Memory : public Sorter
         mu::value_type cmp(const VectorIndex& _vLine, const VectorIndex& _vCol, mu::value_type dRef = 0.0, int _nType = 0) const;
         mu::value_type med(const VectorIndex& _vLine, const VectorIndex& _vCol) const;
         mu::value_type pct(const VectorIndex& _vLine, const VectorIndex& _vCol, mu::value_type dPct = 0.5) const;
-        std::vector<mu::value_type> size(const VectorIndex& _vIndex, int dir) const;
-        std::vector<mu::value_type> minpos(const VectorIndex& _vIndex, int dir) const;
-        std::vector<mu::value_type> maxpos(const VectorIndex& _vIndex, int dir) const;
+        std::vector<mu::value_type> size(const VectorIndex& _everyIdx, const VectorIndex& _cellsIdx, int dir) const;
+        std::vector<mu::value_type> minpos(const VectorIndex& _everyIdx, const VectorIndex& _cellsIdx, int dir) const;
+        std::vector<mu::value_type> maxpos(const VectorIndex& _everyIdx, const VectorIndex& _cellsIdx, int dir) const;
         std::vector<mu::value_type> findCols(const std::vector<std::string>& vColNames, bool enableRegEx, bool autoCreate);
         std::vector<mu::value_type> countIfEqual(const VectorIndex& _vCols, const std::vector<mu::value_type>& vValues, const std::vector<std::string>& vStringValues) const;
         std::vector<mu::value_type> getIndex(size_t col, const std::vector<mu::value_type>& vValues, const std::vector<std::string>& vStringValues) const;

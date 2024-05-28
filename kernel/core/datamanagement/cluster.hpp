@@ -446,7 +446,7 @@ namespace NumeRe
     /////////////////////////////////////////////////
     class ClusterManager
     {
-        private:
+        protected:
             std::map<std::string, Cluster> mClusterMap;
 
             std::string validateClusterName(const std::string& sCluster);

@@ -47,6 +47,7 @@ class TableViewer : public wxGrid
         bool readOnly;
         bool isGridNumeReTable;
         wxGridCellCoords lastCursorPosition;
+        wxGridCellCoords selectionStart;
         wxGridCellCoordsArray selectedCells;
         std::vector<int> m_currentColTypes;
         std::string m_displayName;
@@ -58,6 +59,7 @@ class TableViewer : public wxGrid
 
         void layoutGrid();
 
+        void moveCursor(int key, bool shiftDown, bool controlDown);
         void OnKeyDown(wxKeyEvent& event);
         void OnChar(wxKeyEvent& event);
         void OnEnter(wxMouseEvent& event);
@@ -136,6 +138,7 @@ class TableViewer : public wxGrid
             ID_MENU_REMOVE_COL,
             ID_MENU_REMOVE_CELL,
             ID_MENU_COPY,
+            ID_MENU_CUT,
             ID_MENU_PASTE,
             ID_MENU_PASTE_HERE,
             ID_MENU_RELOAD,

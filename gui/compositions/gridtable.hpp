@@ -36,11 +36,12 @@ class GridNumeReTable : public wxGridTableBase
         NumeRe::Table _table;
         int getNumHeadlines() const;
         mu::value_type value;
+        bool m_showQMarks;
 
     public:
         GridNumeReTable();
         GridNumeReTable(int numRows, int numCols);
-        GridNumeReTable(NumeRe::Table&& _extTable);
+        GridNumeReTable(NumeRe::Table&& _extTable, bool showQMarks);
         virtual ~GridNumeReTable() {}
 
         NumeRe::Table getTable()

@@ -20,6 +20,8 @@
 #include "editor.h"
 #include "../terminal/terminal.hpp"
 
+#include <regex>
+
 using namespace std;
 
 /////////////////////////////////////////////////
@@ -522,7 +524,7 @@ wxString SearchController::FindProcedureDefinitionInLocalFile(const wxString& pr
                 sProcDef += " " + sFlags;
             }
 
-            wxString sDocumentation;
+            std::string sDocumentation;
 
             // Find now the documentations - documentation lines above
             // the current line are preferred:
@@ -535,14 +537,14 @@ wxString SearchController::FindProcedureDefinitionInLocalFile(const wxString& pr
                     {
                         for (int curline = docline+1; curline < m_editor->LineFromPosition(procedures[i]); curline++)
                         {
-                            wxString curdocline = m_editor->GetLine(curline);
-                            curdocline.erase(0, curdocline.find_first_not_of(" \t#*!"));
+                            std::string curdocline = m_editor->GetLine(curline).ToStdString();
+                            curdocline.erase(0, curdocline.find_first_not_of("#*!"));
                             curdocline.erase(curdocline.find_first_of("\r\n"));
 
                             if (curdocline.find("*#") != string::npos)
                                 curdocline.erase(curdocline.find("*#"));
 
-                            AppendToDocumentation(sDocumentation, curdocline);
+                            NumeRe::AppendToDocumentation(sDocumentation, curdocline);
                         }
                     }
                     break;
@@ -562,11 +564,11 @@ wxString SearchController::FindProcedureDefinitionInLocalFile(const wxString& pr
                         {
                             for (int curline = m_editor->LineFromPosition(procedures[i])+1; curline < docline; curline++)
                             {
-                                wxString curdocline = m_editor->GetLine(curline);
-                                curdocline.erase(0, curdocline.find_first_not_of(" \t#*!"));
+                                std::string curdocline = m_editor->GetLine(curline).ToStdString();
+                                curdocline.erase(0, curdocline.find_first_not_of("#*!"));
                                 curdocline.erase(curdocline.find_first_of("\r\n"));
 
-                                AppendToDocumentation(sDocumentation, curdocline);
+                                NumeRe::AppendToDocumentation(sDocumentation, curdocline);
                             }
                         }
                         break;
@@ -581,9 +583,9 @@ wxString SearchController::FindProcedureDefinitionInLocalFile(const wxString& pr
             if (sDocumentation.length())
             {
                 if (sDocumentation.substr(0, 3) == "-> ")
-                    sProcDef += " " + sDocumentation.ToStdString();
+                    sProcDef += " " + sDocumentation;
                 else
-                    sProcDef += "\n" + sDocumentation.ToStdString();
+                    sProcDef += "\n" + sDocumentation;
             }
 
             return sProcDef;
@@ -607,84 +609,16 @@ wxString SearchController::GetNameOfNamingProcedure()
 
 
 /////////////////////////////////////////////////
-/// \brief Appends the text to the current documentation.
-///
-/// \param sDocumentation wxString&
-/// \param sNewDocLine const wxString&
-/// \return void
-///
-/// This member function appends a found documentation line to the overall
-/// documentation and converts some TeX-commands into plain
-/// text and rudimentary styling.
-/////////////////////////////////////////////////
-void SearchController::AppendToDocumentation(wxString& sDocumentation, const wxString& sNewDocLine)
-{
-    static bool bBeginEnd = false;
-
-    if (sNewDocLine.find_first_not_of(" \t") == string::npos)
-    {
-        if (sDocumentation.length())
-            sDocumentation += "\n    ";
-
-        return;
-    }
-
-    // Handle some special TeX commands and rudimentary lists
-    if (sNewDocLine.find("\\begin{") != string::npos && sNewDocLine.find("\\end{") == string::npos)
-    {
-        if (sDocumentation.length() && sDocumentation[sDocumentation.length()-1] != '\n')
-            sDocumentation += "\n    ";
-
-        bBeginEnd = true;
-    }
-    else if (sNewDocLine.find("\\begin{") == string::npos && sNewDocLine.find("\\end{") != string::npos)
-    {
-        if (sDocumentation.length() && sDocumentation[sDocumentation.length()-1] != '\n')
-            sDocumentation += "\n    ";
-
-        bBeginEnd = false;
-    }
-    else if ((sNewDocLine.length()
-              && (sNewDocLine.substr(sNewDocLine.find_first_not_of(" \t"), 2) == "- "
-                  || sNewDocLine.substr(sNewDocLine.find_first_not_of(" \t"), 7) == "\\param "
-                  || sNewDocLine.substr(sNewDocLine.find_first_not_of(" \t"), 8) == "\\remark ")) || bBeginEnd)
-    {
-        if (sDocumentation.length() && sDocumentation[sDocumentation.length()-1] != '\n')
-            sDocumentation += "\n    ";
-    }
-    else
-    {
-        if (sDocumentation.length() && sDocumentation[sDocumentation.length()-1] != ' ')
-            sDocumentation += " ";
-    }
-
-    sDocumentation += sNewDocLine.substr(sNewDocLine.find_first_not_of(" \t"));
-    size_t nPos = sDocumentation.find("\\procedure{");
-
-    if (nPos != string::npos)
-        sDocumentation.erase(nPos, sDocumentation.find('}', nPos)+1 - nPos);
-    else if ((nPos = sDocumentation.find("\\procedure ")) != string::npos)
-    {
-        size_t nPos2 = nPos + 10;
-        nPos2 = sDocumentation.find_first_not_of(" \r\n", nPos2);
-        nPos2 = sDocumentation.find_first_of(" \r\n", nPos2);
-        sDocumentation.erase(nPos, nPos2-nPos);
-    }
-}
-
-
-/////////////////////////////////////////////////
 /// \brief Checks layout and finishes styling of the documentation string.
 ///
-/// \param __sDoc const wxString&
-/// \return string
+/// \param sDocumentation std::string
+/// \return std::string
 ///
 /// This member function checks the layout of the found documentations
 /// and applies some special modifications.
 /////////////////////////////////////////////////
-string SearchController::CleanDocumentation(const wxString& __sDoc)
+std::string SearchController::CleanDocumentation(std::string sDocumentation)
 {
-    string sDocumentation = __sDoc.ToStdString();
     std::string sReturns;
 
     if (sDocumentation.find_first_not_of(" \n") != string::npos)

@@ -203,6 +203,69 @@ void TableViewer::layoutGrid()
 
 
 /////////////////////////////////////////////////
+/// \brief Move the cursor around with the arrow
+/// keys also considering the modifier keys (i.e.
+/// keeping or adding to a rectangular selection).
+///
+/// \param key int
+/// \param shiftDown bool
+/// \param controlDown bool
+/// \return void
+///
+/////////////////////////////////////////////////
+void TableViewer::moveCursor(int key, bool shiftDown, bool controlDown)
+{
+    if (shiftDown && (!IsSelection() || !selectionStart))
+        selectionStart = wxGridCellCoords(GetCursorRow(), GetCursorColumn());
+
+    // CTRL down -> move to the end of the blocks
+    if (controlDown)
+    {
+        switch (key)
+        {
+            case WXK_UP:
+                MoveCursorUpBlock(false);
+                break;
+            case WXK_DOWN:
+                MoveCursorDownBlock(false);
+                break;
+            case WXK_LEFT:
+                MoveCursorLeftBlock(false);
+                break;
+            case WXK_RIGHT:
+                MoveCursorRightBlock(false);
+                break;
+        }
+    }
+    else
+    {
+        // Otherwise just move one cell
+        switch (key)
+        {
+            case WXK_UP:
+                MoveCursorUp(false);
+                break;
+            case WXK_DOWN:
+                MoveCursorDown(false);
+                break;
+            case WXK_LEFT:
+                MoveCursorLeft(false);
+                break;
+            case WXK_RIGHT:
+                MoveCursorRight(false);
+                break;
+        }
+    }
+
+    // If the shift key is pressed, extend the selection
+    if (shiftDown)
+        SelectBlock(selectionStart, wxGridCellCoords(GetCursorRow(), GetCursorColumn()));
+    else
+        selectionStart.Set(-1, -1);
+}
+
+
+/////////////////////////////////////////////////
 /// \brief This member function tracks the
 /// entered keys and processes a keybord
 /// navigation.
@@ -216,29 +279,28 @@ void TableViewer::OnKeyDown(wxKeyEvent& event)
     // connecting the ESC Key with closing the table
     if (event.GetKeyCode() == WXK_ESCAPE)
         m_parent->Close();
-    else if (event.GetKeyCode() == WXK_UP)
-        this->MoveCursorUp(false);
-    else if (event.GetKeyCode() == WXK_DOWN)
-        this->MoveCursorDown(false);
+    else if (event.GetKeyCode() == WXK_UP
+             || event.GetKeyCode() == WXK_DOWN
+             || event.GetKeyCode() == WXK_LEFT
+             || event.GetKeyCode() == WXK_RIGHT)
+        moveCursor(event.GetKeyCode(), event.ShiftDown(), event.ControlDown());
+    else if (event.ControlDown())
+    {
+        if (event.ShiftDown() && event.GetKeyCode() == 'C')
+            copyContents();
+        else if (event.ShiftDown() && event.GetKeyCode() == 'V')
+            pasteContents();
+        else if (event.GetKeyCode() == 'A')
+            SelectAll();
+    }
     else if (event.GetKeyCode() == WXK_RETURN)
-        this->MoveCursorDown(false);
-    else if (event.GetKeyCode() == WXK_LEFT)
-        this->MoveCursorLeft(false);
-    else if (event.GetKeyCode() == WXK_RIGHT)
-        this->MoveCursorRight(false);
+        MoveCursorDown(false);
     else if (event.GetKeyCode() == WXK_TAB)
-        this->MoveCursorRight(false);
+        MoveCursorRight(false);
     else if (event.GetKeyCode() == WXK_DELETE)
     {
         if (!readOnly)
             deleteSelection();
-    }
-    else if (event.ControlDown() && event.ShiftDown())
-    {
-        if (event.GetKeyCode() == 'C')
-            copyContents();
-        else if (event.GetKeyCode() == 'V')
-            pasteContents();
     }
     else
         event.Skip();
@@ -377,6 +439,10 @@ void TableViewer::OnCellRangeSelect(wxGridRangeSelectEvent& event)
     }
     else
         selectedCells.Clear();
+
+    // Reset the keyboard selection mode
+    if (wxGetMouseState().LeftIsDown())
+        selectionStart.Set(-1, -1);
 }
 
 
@@ -1317,6 +1383,7 @@ void TableViewer::createMenuBar()
     wxMenu* menuEdit = new wxMenu();
 
     menuEdit->Append(ID_MENU_COPY, _guilang.get("GUI_COPY_TABLE_CONTENTS") + "\tCtrl-C");
+    menuEdit->Append(ID_MENU_CUT, _guilang.get("GUI_CUT_TABLE_CONTENTS") + "\tCtrl-X");
     menuEdit->Append(ID_MENU_PASTE, _guilang.get("GUI_PASTE_TABLE_CONTENTS") + "\tCtrl-V");
     menuEdit->Append(ID_MENU_PASTE_HERE, _guilang.get("GUI_PASTE_TABLE_CONTENTS_HERE") + "\tCtrl-Shift-V");
     menuEdit->AppendSeparator();
@@ -1419,7 +1486,8 @@ void TableViewer::replaceTabSign(wxString& text)
 /////////////////////////////////////////////////
 void TableViewer::createZeroElementTable()
 {
-    SetTable(new GridNumeReTable(NumeRe::Table(1, 1)), true);
+    SetTable(new GridNumeReTable(NumeRe::Table(1, 1),
+                                 NumeReKernel::getInstance()->getSettings().getSetting(SETTING_B_SHOWQMARKS).active()), true);
 
     isGridNumeReTable = true;
     nFirstNumRow = 1;
@@ -1554,7 +1622,7 @@ void TableViewer::SetData(NumeRe::Container<std::string>& _stringTable, const st
         return;
     }
 
-    this->CreateGrid(_stringTable.getRows()+1, _stringTable.getCols()+1);
+    CreateGrid(_stringTable.getRows()+1, _stringTable.getCols()+1);
 
     // String tables and clusters do not have a headline
     nFirstNumRow = 0;
@@ -1562,18 +1630,18 @@ void TableViewer::SetData(NumeRe::Container<std::string>& _stringTable, const st
 
     for (size_t i = 0; i < _stringTable.getRows()+1; i++)
     {
-        this->SetRowLabelValue(i, GetRowLabelValue(i));
+        SetRowLabelValue(i, GetRowLabelValue(i));
 
         for (size_t j = 0; j < _stringTable.getCols()+1; j++)
         {
             if (i == _stringTable.getRows() || j == _stringTable.getCols())
             {
-                this->SetColLabelValue(j, toString(j+1));
+                SetColLabelValue(j, toString(j+1));
                 continue;
             }
 
             if (_stringTable.get(i, j).length())
-                this->SetCellValue(i, j, replaceControlCharacters(_stringTable.get(i, j)));
+                SetCellValue(i, j, replaceControlCharacters(_stringTable.get(i, j)));
         }
     }
 
@@ -1589,7 +1657,7 @@ void TableViewer::SetData(NumeRe::Container<std::string>& _stringTable, const st
 
     layoutGrid();
 
-    updateStatusBar(wxGridCellCoordsContainer(wxGridCellCoords(0,0), wxGridCellCoords(this->GetRows()-1, this->GetCols()-1)));
+    updateStatusBar(wxGridCellCoordsContainer(wxGridCellCoords(0,0), wxGridCellCoords(GetRows()-1, GetCols()-1)));
 }
 
 
@@ -1622,7 +1690,8 @@ void TableViewer::SetData(NumeRe::Table& _table, const std::string& sName, const
     // Store the number headlines and create the data
     // providing object
     nFirstNumRow = _table.getHeadCount();
-    SetTable(new GridNumeReTable(std::move(_table)), true);
+    SetTable(new GridNumeReTable(std::move(_table),
+                                 NumeReKernel::getInstance()->getSettings().getSetting(SETTING_B_SHOWQMARKS).active()), true);
     isGridNumeReTable = true;
 
     layoutGrid();
@@ -1648,7 +1717,7 @@ void TableViewer::SetTableReadOnly(bool isReadOnly)
 
     if (!readOnly)
     {
-        if (m_popUpMenu.FindItem(ID_MENU_PASTE))
+        if (m_popUpMenu.FindItem(ID_MENU_CUT))
         {
             for (int i = 0; i < nFirstNumRow; i++)
             {
@@ -1657,6 +1726,7 @@ void TableViewer::SetTableReadOnly(bool isReadOnly)
                     SetCellSize(i, j, 1, 1);
                 }
             }
+            m_popUpMenu.Enable(ID_MENU_CUT, true);
             m_popUpMenu.Enable(ID_MENU_PASTE, true);
             m_popUpMenu.Enable(ID_MENU_PASTE_HERE, true);
             m_popUpMenu.Enable(ID_MENU_INSERT_ROW, true);
@@ -1668,6 +1738,7 @@ void TableViewer::SetTableReadOnly(bool isReadOnly)
         }
         else
         {
+            m_popUpMenu.Append(ID_MENU_CUT, _guilang.get("GUI_CUT_TABLE_CONTENTS"));
             m_popUpMenu.Append(ID_MENU_PASTE, _guilang.get("GUI_PASTE_TABLE_CONTENTS"));
             m_popUpMenu.Append(ID_MENU_PASTE_HERE, _guilang.get("GUI_PASTE_TABLE_CONTENTS_HERE"));
             m_popUpMenu.AppendSeparator();
@@ -1692,9 +1763,10 @@ void TableViewer::SetTableReadOnly(bool isReadOnly)
     }
     else
     {
-        if (m_popUpMenu.FindItem(ID_MENU_PASTE))
+        if (m_popUpMenu.FindItem(ID_MENU_CUT))
         {
             groupHeaders(0, GetNumberCols(), 0);
+            m_popUpMenu.Enable(ID_MENU_CUT, false);
             m_popUpMenu.Enable(ID_MENU_PASTE, false);
             m_popUpMenu.Enable(ID_MENU_PASTE_HERE, false);
             m_popUpMenu.Enable(ID_MENU_INSERT_ROW, false);
@@ -1713,6 +1785,7 @@ void TableViewer::SetTableReadOnly(bool isReadOnly)
 
             if (editMenu)
             {
+                editMenu->Enable(ID_MENU_CUT, false);
                 editMenu->Enable(ID_MENU_PASTE, false);
                 editMenu->Enable(ID_MENU_PASTE_HERE, false);
                 editMenu->Enable(ID_MENU_INSERT_ROW, false);
@@ -1887,6 +1960,13 @@ void TableViewer::OnMenu(wxCommandEvent& event)
             break;
         case ID_MENU_COPY:
             copyContents();
+            break;
+        case ID_MENU_CUT:
+            copyContents();
+
+            if (!readOnly)
+                deleteSelection();
+
             break;
         case ID_MENU_PASTE:
             pasteContents();

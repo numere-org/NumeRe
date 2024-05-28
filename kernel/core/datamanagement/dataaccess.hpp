@@ -45,11 +45,14 @@ class DataAccessParser
         DataAccessParser();
         DataAccessParser(StringView sCommand, bool isAssignment);
         DataAccessParser(const DataAccessParser& _accessParser);
-        void evalIndices();
+        DataAccessParser(DataAccessParser&& moved) = default;
+        DataAccessParser& operator=(const DataAccessParser& copied) = default;
+        void evalIndices(bool asMatrix = true);
         std::string& getDataObject();
         std::string getIndexString();
         Indices& getIndices();
         bool isCluster() const;
+        bool isMatrix() const;
         std::vector<size_t> getDataGridDimensions() const;
 };
 
@@ -62,7 +65,7 @@ enum DataOptions
 };
 
 
-bool parser_CheckMultArgFunc(const std::string&, const std::string&);
+bool parser_CheckMultArgFunc(StringView, StringView);
 
 std::string getDataElements(std::string& sLine, mu::Parser& _parser, MemoryManager& _data, int options = REPLACE_NAN);
 void replaceDataEntities(std::string&, const std::string&, MemoryManager&, mu::Parser&, int options = NO_OPTION);

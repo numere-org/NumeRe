@@ -695,6 +695,31 @@ class VectorIndex
         }
 
         /////////////////////////////////////////////////
+        /// \brief Apply an additional offset to all
+        /// index values within this vector.
+        ///
+        /// \param offset int
+        /// \return void
+        ///
+        /////////////////////////////////////////////////
+        void apply_offset(int offset)
+        {
+            if (expand)
+            {
+                vStorage.front() = vStorage.front() > INVALID ? vStorage.front()+offset : vStorage.front();
+                vStorage.back() = vStorage.back() > INVALID ? vStorage.back()+offset : vStorage.back();
+            }
+            else
+            {
+                for (size_t i = 0; i < vStorage.size(); i++)
+                {
+                    if (vStorage[i] > INVALID)
+                        vStorage[i] += offset;
+                }
+            }
+        }
+
+        /////////////////////////////////////////////////
         /// \brief This member function returns a STL
         /// vector, which will resemble the indices
         /// stored internally. This includes that the
@@ -790,6 +815,20 @@ class VectorIndex
         inline bool isOpenEnd() const
         {
             return vStorage.back() == OPEN_END;
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief This member function determines,
+        /// whether the managed range contains the full
+        /// range of the target data set.
+        ///
+        /// \param max_range int
+        /// \return bool
+        ///
+        /////////////////////////////////////////////////
+        inline bool isFullRange(int max_range) const
+        {
+            return expand && vStorage.front() == 0 && (vStorage.back() == OPEN_END || vStorage.back() >= max_range);
         }
 
         /////////////////////////////////////////////////
@@ -3173,6 +3212,7 @@ struct Returnvalue
     std::vector<std::string> vStringVal;
     std::string sReturnedTable;
     bool delayDelete;
+    Indices sourceIdx;
 
     Returnvalue() : delayDelete(false) {}
 

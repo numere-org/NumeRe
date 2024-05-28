@@ -216,6 +216,7 @@ class PlotAssetManager
         void weightedRange(int coord, Interval& ivl) const;
         bool hasDataPlots() const;
         void applyCoordSys(CoordinateSystem coords, size_t every = 1);
+        void resize(size_t x_max, size_t y_max);
 };
 
 #endif // PLOTASSET_HPP

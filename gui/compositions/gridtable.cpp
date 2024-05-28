@@ -20,11 +20,13 @@
 #include "../../kernel/core/utils/stringtools.hpp"
 #include "../../kernel/core/datamanagement/tablecolumnimpl.hpp"
 
+std::string removeQuotationMarks(const std::string& sString);
+
 
 /////////////////////////////////////////////////
 /// \brief Default constructor.
 /////////////////////////////////////////////////
-GridNumeReTable::GridNumeReTable()
+GridNumeReTable::GridNumeReTable() : m_showQMarks(true)
 {
     _table = NumeRe::Table();
 }
@@ -38,7 +40,7 @@ GridNumeReTable::GridNumeReTable()
 /// \param numCols int
 ///
 /////////////////////////////////////////////////
-GridNumeReTable::GridNumeReTable(int numRows, int numCols)
+GridNumeReTable::GridNumeReTable(int numRows, int numCols) : m_showQMarks(true)
 {
     _table = NumeRe::Table(numRows-2, numCols-1);
 }
@@ -49,9 +51,10 @@ GridNumeReTable::GridNumeReTable(int numRows, int numCols)
 /// of the passed table.
 ///
 /// \param _extTable NumeRe::Table&&
+/// \param showQMarks bool
 ///
 /////////////////////////////////////////////////
-GridNumeReTable::GridNumeReTable(NumeRe::Table&& _extTable)
+GridNumeReTable::GridNumeReTable(NumeRe::Table&& _extTable, bool showQMarks) : m_showQMarks(showQMarks)
 {
     _table = std::move(_extTable);
 }
@@ -249,6 +252,8 @@ wxString GridNumeReTable::GetValue(int row, int col)
         return _table.getCleanHeadPart(col, row);
     else if (row - getNumHeadlines() >= (int)_table.getLines() || col >= (int)_table.getCols())
         return "";
+    else if (!m_showQMarks)
+        return removeQuotationMarks(_table.getValueAsString(row - getNumHeadlines(), col));
     else
         return replaceControlCharacters(_table.getValueAsString(row - getNumHeadlines(), col));
 }

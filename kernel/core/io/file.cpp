@@ -838,7 +838,7 @@ namespace NumeRe
         isLegacy(false), timeStamp(0), versionMajor(0), versionMinor(0),
         versionBuild(0), fileVersionRead(1.0f)
     {
-        // Empty constructor
+        needsConversion = false;
     }
 
 
@@ -2754,7 +2754,7 @@ namespace NumeRe
     //
     JcampDX::JcampDX(const string& filename) : GenericFile(filename)
     {
-        // Empty constructor
+        needsConversion = false;
     }
 
 
@@ -4462,7 +4462,7 @@ namespace NumeRe
     //
     IgorBinaryWave::IgorBinaryWave(const string& filename) : GenericFile(filename), bXZSlice(false)
     {
-        // Empty constructor
+        needsConversion = false;
     }
 
 
@@ -4750,7 +4750,7 @@ namespace NumeRe
     //
     ZygoDat::ZygoDat(const string& filename) : GenericFile(filename)
     {
-        // Empty constructor
+        needsConversion = false;
     }
 
 

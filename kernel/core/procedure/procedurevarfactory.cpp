@@ -724,9 +724,9 @@ static bool isCompleteTable(StringView sArgumentValue, MemoryManager* _dataRef)
 {
     size_t pos = sArgumentValue.find('(');
 
-    return _dataRef->isTable(sArgumentValue.to_string()) && (sArgumentValue.subview(pos, 2) == "()"
-                                                             || sArgumentValue.subview(pos, 3) == "(:)"
-                                                             || sArgumentValue.subview(pos, 5) == "(:,:)");
+    return _dataRef->isTable(sArgumentValue) && (sArgumentValue.subview(pos, 2) == "()"
+                                                 || sArgumentValue.subview(pos, 3) == "(:)"
+                                                 || sArgumentValue.subview(pos, 5) == "(:,:)");
 }
 
 
@@ -820,16 +820,22 @@ void ProcedureVarFactory::evaluateProcedureArguments(std::string& currentArg, st
             {
                 if (_currentProcedure->getProcedureFlags() & ProcedureCommandLine::FLAG_INLINE)
                 {
-                    _debugger.gatherInformations(this, sArgumentList, _currentProcedure->getCurrentProcedureName(), _currentProcedure->GetCurrentLine());
+                    _debugger.gatherInformations(this, sArgumentList,
+                                                 _currentProcedure->getCurrentProcedureName(),
+                                                 _currentProcedure->GetCurrentLine());
                     _debugger.throwException(SyntaxError(SyntaxError::INLINE_PROCEDURE_IS_NOT_INLINE, sArgumentList, SyntaxError::invalid_position));
                 }
 
                 currentValue.insert(0, sNewArgName + "() = ");
-                FlowCtrl::ProcedureInterfaceRetVal nReturn = _currentProcedure->procedureInterface(currentValue, *_parserRef, *_functionRef, *_dataRef, *_outRef, *_pDataRef, *_scriptRef, *_optionRef, nth_procedure);
+                FlowCtrl::ProcedureInterfaceRetVal nReturn = _currentProcedure->procedureInterface(currentValue, *_parserRef, *_functionRef,
+                                                                                                   *_dataRef, *_outRef, *_pDataRef,
+                                                                                                   *_scriptRef, *_optionRef, nth_procedure);
 
                 if (nReturn == FlowCtrl::INTERFACE_ERROR)
                 {
-                    _debugger.gatherInformations(this, sArgumentList, _currentProcedure->getCurrentProcedureName(), _currentProcedure->GetCurrentLine());
+                    _debugger.gatherInformations(this, sArgumentList,
+                                                 _currentProcedure->getCurrentProcedureName(),
+                                                 _currentProcedure->GetCurrentLine());
                     _debugger.throwException(SyntaxError(SyntaxError::PROCEDURE_ERROR, sArgumentList, SyntaxError::invalid_position));
                 }
                 else if (nReturn == FlowCtrl::INTERFACE_EMPTY)
@@ -848,8 +854,16 @@ void ProcedureVarFactory::evaluateProcedureArguments(std::string& currentArg, st
                 }
             }
 
-            if (isCompleteTable(currentValue, _dataRef))
-                _dataRef->copyTable(currentValue.substr(0, currentValue.find('(')), sNewArgName);
+            if (_dataRef->isTable(currentValue)
+                && getMatchingParenthesis(currentValue) == currentValue.length()-1)
+            {
+                DataAccessParser _access(currentValue, false);
+                _access.evalIndices();
+                Indices tgt;
+                tgt.row = VectorIndex(0, VectorIndex::OPEN_END);
+                tgt.col = VectorIndex(0, VectorIndex::OPEN_END);
+                _dataRef->copyTable(_access.getDataObject(), _access.getIndices(), sNewArgName, tgt);
+            }
             else
             {
                 // Evaluate the expression and create a new
@@ -881,7 +895,9 @@ void ProcedureVarFactory::evaluateProcedureArguments(std::string& currentArg, st
                 }
                 catch (...)
                 {
-                    _debugger.gatherInformations(this, sArgumentList, _currentProcedure->getCurrentProcedureName(), _currentProcedure->GetCurrentLine());
+                    _debugger.gatherInformations(this, sArgumentList,
+                                                 _currentProcedure->getCurrentProcedureName(),
+                                                 _currentProcedure->GetCurrentLine());
                     _debugger.showError(current_exception());
 
                     if (_dataRef->isTable(sNewArgName))
@@ -1410,8 +1426,16 @@ void ProcedureVarFactory::createLocalTables(string sTableList)
                     }
                 }
 
-                if (isCompleteTable(sCurrentValue, _dataRef))
-                    _dataRef->copyTable(sCurrentValue.substr(0, sCurrentValue.find('(')), currentVar);
+                if (_dataRef->isTable(sCurrentValue)
+                    && getMatchingParenthesis(sCurrentValue) == sCurrentValue.length()-1)
+                {
+                    DataAccessParser _access(sCurrentValue, false);
+                    _access.evalIndices();
+                    Indices tgt;
+                    tgt.row = VectorIndex(0, VectorIndex::OPEN_END);
+                    tgt.col = VectorIndex(0, VectorIndex::OPEN_END);
+                    _dataRef->copyTable(_access.getDataObject(), _access.getIndices(), currentVar, tgt);
+                }
                 else
                 {
                     if (_dataRef->containsTablesOrClusters(sCurrentValue))

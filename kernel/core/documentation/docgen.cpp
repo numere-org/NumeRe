@@ -23,6 +23,8 @@
 #include "../procedure/dependency.hpp"
 #include "../ui/winlayout.hpp"
 
+#include <regex>
+
 
 /////////////////////////////////////////////////
 /// \brief This member function finds all
@@ -242,9 +244,11 @@ std::string DocumentationGenerator::convertToLaTeX(const std::string& sFileName)
 std::string DocumentationGenerator::getStrippedRange(const StyledTextFile& file, int pos1, int pos2, bool encode) const
 {
     std::string sTextRange = file.getTextRange(pos1, pos2);
+    bool isDocumentation = file.getStyleAt(pos1) == StyledTextFile::COMMENT_DOC_LINE
+        || file.getStyleAt(pos1) == StyledTextFile::COMMENT_DOC_BLOCK;
 
     // Remove leading whitespaces
-    while (sTextRange.front() == ' ' || sTextRange.front() == '\r' || sTextRange.front() == '\n' )
+    while ((!isDocumentation && sTextRange.front() == ' ') || sTextRange.front() == '\r' || sTextRange.front() == '\n' )
         sTextRange.erase(0, 1);
 
     // Remove trailing whitespaces
@@ -409,7 +413,7 @@ std::string DocumentationGenerator::parseDocumentation(const StyledTextFile& fil
     }
 
     // Handle unordered lists
-    if (sTextRange.find("- ") != std::string::npos) // thats a unordered list
+    if (sTextRange.find("- ") != std::string::npos) // thats an unordered list
     {
         size_t nItemizeStart = 0;
         size_t nLength = 0;
@@ -430,11 +434,50 @@ std::string DocumentationGenerator::parseDocumentation(const StyledTextFile& fil
                 if ((sTextRange[i] == '\n' && sTextRange.substr(i, nLength) != sIndent) || i + 1 == sTextRange.length())
                 {
                     if (sTextRange[i] == '\n')
-                        sTextRange.insert(i+1, "\\end{itemize}");
+                        sTextRange.insert(i+1, "\\end{itemize}\n");
                     else
-                        sTextRange += "\n\\end{itemize}";
+                        sTextRange += "\n\\end{itemize}\n";
 
                     sTextRange.insert(nItemizeStart + 1, "\\begin{itemize}\n");
+                    break;
+                }
+            }
+        }
+    }
+
+    // Handle ordered lists
+    if (std::regex_search(sTextRange, std::regex("( *\\d+\\. +)(?=\\S+)"))) // thats an ordered list
+    {
+        size_t nItemizeStart = 0;
+        size_t nLength = 0;
+        size_t currentLength;
+
+        while ((nItemizeStart = findEnumItem(sTextRange, nLength)) != std::string::npos)
+        {
+            std::string sIndent = "\n" + std::string(nLength, ' ');
+
+            for (size_t i = nItemizeStart; i < sTextRange.length(); i++)
+            {
+                if (sTextRange[i] == '\n' && sTextRange.substr(i, nLength+1) != sIndent)
+                {
+                    // This either a new enumeration item or the end
+                    if (findEnumItem(sTextRange.substr(i+1), currentLength) == 0
+                        && currentLength == nLength)
+                        sTextRange.replace(i + 1, nLength-1, "\t\\item");
+                    else
+                    {
+                        sTextRange.insert(i+1, "\\end{enumerate}\n");
+                        sTextRange.replace(nItemizeStart, nLength-1, "\t\\item");
+                        sTextRange.insert(nItemizeStart, "\\begin{enumerate}\n");
+                        break;
+                    }
+                }
+                else if (i+1 == sTextRange.length())
+                {
+                    // The last character, needs now the environment
+                    sTextRange.replace(nItemizeStart, nLength-1, "\t\\item");
+                    sTextRange.insert(nItemizeStart, "\\begin{enumerate}\n");
+                    sTextRange += "\n\\end{enumerate}\n";
                     break;
                 }
             }
@@ -542,7 +585,7 @@ std::string DocumentationGenerator::parseDocumentation(const StyledTextFile& fil
                 if (sTextRange.substr(j, 2) == "!!")
                 {
                     sTextRange.replace(j, 2, "`");
-                    sTextRange.replace(i, 2, "\\lstinline`");
+                    sTextRange.replace(i, 2, "\\lstinline[keepspaces=true]`");
                     break;
                 }
             }
@@ -630,7 +673,11 @@ std::string DocumentationGenerator::createReturnsTable(const std::vector<std::st
         nDescPos = sReturnValue.find_first_not_of(' ', sReturnValue.find(' ', 9));
 
         sTable += "\t!!" + sReturnValue.substr(8, sReturnValue.find(' ', 9) - 8) + "!! & ";
-        sTable += sReturnValue.substr(nDescPos) + "\\\\\n";
+
+        if (nDescPos != std::string::npos)
+            sTable += sReturnValue.substr(nDescPos) + "\\\\\n";
+        else
+            sTable += "[Return value description] \\\\\n";
     }
 
     // Append the table foot and return
@@ -663,6 +710,36 @@ size_t DocumentationGenerator::findListItem(const std::string& sTextRange, size_
     nLength = nItemCandidate - nItemStart + 2;
 
     return nItemStart;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This helper function finds the
+/// next enum item in the passed documentation
+/// string.
+///
+/// \param sTextRange const std::string&
+/// \param nLength size_t&
+/// \return size_t
+///
+/////////////////////////////////////////////////
+size_t DocumentationGenerator::findEnumItem(const std::string& sTextRange, size_t& nLength) const
+{
+    std::smatch match;
+
+    // Regex for WHITESPACES DIGITS . WHITESPACE(S) ANYCHARACTER
+    static std::regex expr("( *\\d+\\. +)(?=\\S+)");
+
+    if (std::regex_search(sTextRange, match, expr))
+    {
+        if (match.position(0) && sTextRange[match.position(0)-1] != '\n')
+            return std::string::npos;
+
+        nLength = match.length(0);
+        return match.position(0);
+    }
+
+    return std::string::npos;
 }
 
 
