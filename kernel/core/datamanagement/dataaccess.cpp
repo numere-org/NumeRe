@@ -1925,7 +1925,7 @@ static std::string tableMethod_kmeans(const std::string& sTableName, std::string
         _kernel->getMemoryManager().updateDimensionVariables(sTableName);
         _kernel->getParser().SetExpr(getNextArgument(sMethodArguments, true));
         v = _kernel->getParser().Eval(nResults);
-        maxIterations = v[0].real();
+        maxIterations = intCast(v[0]);
 
         if (sMethodArguments.length())
         {
@@ -1937,7 +1937,7 @@ static std::string tableMethod_kmeans(const std::string& sTableName, std::string
             {
                 std::string sDummy;
                 init_string += " -nq";
-                NumeRe::StringParser::StringParserRetVal res = _kernel->getStringParser().evalAndFormat(init_string, sDummy, true);
+                _kernel->getStringParser().evalAndFormat(init_string, sDummy, true);
                 init_method = Memory::stringToKmeansInit(init_string);
             }
             else
@@ -1950,7 +1950,7 @@ static std::string tableMethod_kmeans(const std::string& sTableName, std::string
                 _kernel->getMemoryManager().updateDimensionVariables(sTableName);
                 _kernel->getParser().SetExpr(getNextArgument(sMethodArguments, true));
                 v = _kernel->getParser().Eval(nResults);
-                n_init = v[0].real();
+                n_init = intCast(v[0]);
             }
             else
             {
@@ -1963,7 +1963,7 @@ static std::string tableMethod_kmeans(const std::string& sTableName, std::string
 
     KMeansResult bestRes = _kernel->getMemoryManager().getKMeans(sTableName, cols, nClusters, maxIterations, init_method);
 
-    for(int re_inits = 1; re_inits < n_init; re_inits++)
+    for(size_t re_inits = 1; re_inits < n_init; re_inits++)
     {
         KMeansResult res = _kernel->getMemoryManager().getKMeans(sTableName, cols, nClusters, maxIterations, init_method);
         if(res.inertia < bestRes.inertia)
