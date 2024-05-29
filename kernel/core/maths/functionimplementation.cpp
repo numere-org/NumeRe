@@ -2748,7 +2748,7 @@ value_type parser_get_utc_offset()
     time_zone tz = getCurrentTimeZone();
     int utc_offset = tz.Bias.count() + tz.DayLightBias.count();
     // return values in seconds
-    return utc_offset * 60;
+    return -1 * utc_offset * 60;
 }
 
 
