@@ -260,6 +260,27 @@ wxString GridNumeReTable::GetValue(int row, int col)
 
 
 /////////////////////////////////////////////////
+/// \brief This virtual member function returns
+/// the value of the selected cell as "editable"
+/// string, i.e. without additional unit.
+///
+/// \param row int
+/// \param col int
+/// \return wxString
+///
+/////////////////////////////////////////////////
+wxString GridNumeReTable::GetEditableValue(int row, int col)
+{
+    if (row < getNumHeadlines() && col < (int)_table.getCols())
+        return _table.getCleanHeadPart(col, row);
+    else if (row - getNumHeadlines() >= (int)_table.getLines() || col >= (int)_table.getCols())
+        return "";
+    else
+        return replaceControlCharacters(_table.getValueAsInternalString(row - getNumHeadlines(), col));
+}
+
+
+/////////////////////////////////////////////////
 /// \brief This virtual member function sets the
 /// passed value in the internal buffer. It's
 /// decided automatically, whether it's stored as

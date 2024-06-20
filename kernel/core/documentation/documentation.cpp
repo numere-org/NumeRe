@@ -73,7 +73,7 @@ static void doc_splitDocumentation(const std::string& sDefinition, std::vector<s
             {
                 sText = vSplitted[i].substr(vSplitted[i].find(": ")+2);
                 sNode = vSplitted[i].substr(5, vSplitted[i].find(": ")-5);
-                replaceAll(sNode, "\"", "");
+                replaceAll(sNode, "\"", "&quot;");
             }
             else
                 sText = vSplitted[i].substr(5);

@@ -384,13 +384,18 @@ void NumeReKernel::defineOperators()
     _parser.DefinePostfixOprt("'Gs", parser_Gauss);
     _parser.DefinePostfixOprt("'Ps", parser_Poise);
     _parser.DefinePostfixOprt("'mol", parser_mol);
+    _parser.DefinePostfixOprt("'y", parser_year);
+    _parser.DefinePostfixOprt("'wk", parser_week);
+    _parser.DefinePostfixOprt("'d", parser_day);
+    _parser.DefinePostfixOprt("'h", parser_hour);
+    _parser.DefinePostfixOprt("'min", parser_minute);
     _parser.DefinePostfixOprt("!", parser_Faculty);
     _parser.DefinePostfixOprt("!!", parser_doubleFaculty);
     _parser.DefinePostfixOprt("i", parser_imaginaryUnit);
 
     // --> Logisches NICHT <--
     _parser.DefineInfixOprt("!", parser_Not);
-    _parser.DefineInfixOprt("+", parser_Ignore);
+    _parser.DefineInfixOprt("+", parser_Identity);
 
     // --> Operatoren <--
     _parser.DefineOprt("%", parser_Mod, prMUL_DIV, oaLEFT);
@@ -561,7 +566,7 @@ void NumeReKernel::defineFunctions()
     _parser.DefineFun("gamma", parser_gamma);                                 // gamma(x)
     _parser.DefineFun("cmp", parser_compare);                                 // cmp(crit,a,b,c,...,type)
     _parser.DefineFun("is_string", parser_is_string);                         // is_string(EXPR)
-    _parser.DefineFun("to_value", parser_Ignore);                             // to_value(STRING)
+    _parser.DefineFun("to_value", parser_Identity);                             // to_value(STRING)
     _parser.DefineFun("time", parser_time, false);                            // time()
     _parser.DefineFun("clock", parser_clock, false);                          // clock()
     _parser.DefineFun("sleep", parser_sleep, false);                          // sleep(millisecnds)

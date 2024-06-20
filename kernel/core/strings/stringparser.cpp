@@ -284,13 +284,17 @@ namespace NumeRe
             // Is the current data access a method?
             if (sData.find("().") != std::string::npos)
             {
-                if (containsStringVectorVars(sData))
-                {
-                    bool temp;
-                    std::vector<std::string> vRes = evaluateStringVectors(sData);
-                    applyElementaryStringOperations(vRes, temp);
-                    sData = vRes.front();
-                }
+#warning FIXME (numere#1#06/05/24): Commented out, bc it does not seem to be necessary any more
+                //NumeReKernel::print(sData);
+                //if (containsStringVectorVars(sData))
+                //{
+                //    bool temp;
+                //    std::vector<std::string> vRes = evaluateStringVectors(sData);
+                //    applyElementaryStringOperations(vRes, temp);
+                //    sData = vRes.front();
+                //}
+
+                //NumeReKernel::print(sData);
 
                 getDataElements(sData, _parser, _data,
                                 REPLACE_NAN | (nStartPos && (sLine[nStartPos-1] == '#' || sLine[nStartPos-1] == '~') ? INSERT_STRINGS : 0));

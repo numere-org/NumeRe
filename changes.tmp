@@ -16,3 +16,6 @@ Fixed	If comment lines are wrapped automatically, orphan whitespaces at the begi
 Fixed	If comment lines are wrapped automatically, they are not longer wrapped right after opening braces.
 Added	Documentation block comments now also support enumerations.
 Added	A new Table method to perform kmeans clustering on specified columns of numberical data. kmeansof({columns}, #clusters, maxIterations = 100, init-method="random", re-initializations=10)
+Fixed	Procedures with relative namespaces can also be used within control flow blocks.
+New	Table columns can now have (physical) units to represent data even better. The units will be detected automatically (if possible), or you can use the dedicated methods to modify the unit of each column.
+New	The table method "TAB().toSIunits()" can be used for symbolic unit calculations.

@@ -1582,7 +1582,7 @@ static void listUnitConversions(const Settings& _option) //PRSRFUNC_LISTUNITS_*
     printUnits("1'kn",  _lang.get("PARSERFUNCS_LISTUNITS_UNIT_KNOTS"),            "L / T",       "0.5144444...    [m/s]", _option.getWindow());
     printUnits("1'l",   _lang.get("PARSERFUNCS_LISTUNITS_UNIT_LITERS"),           "L^3",         "1e-3    [m^3]", _option.getWindow());
     printUnits("1'ly",  _lang.get("PARSERFUNCS_LISTUNITS_UNIT_LIGHTYEAR"),        "L",           "9.4607305e15      [m]", _option.getWindow());
-    printUnits("1'mile", _lang.get("PARSERFUNCS_LISTUNITS_UNIT_MILE"),             "L",           "1609.344      [m]", _option.getWindow());
+    printUnits("1'mile", _lang.get("PARSERFUNCS_LISTUNITS_UNIT_MILE"),            "L",           "1609.344      [m]", _option.getWindow());
     printUnits("1'mol", _lang.get("PARSERFUNCS_LISTUNITS_UNIT_MOL"),              "N",           "6.022140857e23      ---", _option.getWindow());
     printUnits("1'mph", _lang.get("PARSERFUNCS_LISTUNITS_UNIT_VELOCITY"),         "L / T",       "0.44703722    [m/s]", _option.getWindow());
     printUnits("1'Ps",  _lang.get("PARSERFUNCS_LISTUNITS_UNIT_POISE"),            "M / (L T)",   "0.1   [Pa s]", _option.getWindow());
@@ -1590,8 +1590,13 @@ static void listUnitConversions(const Settings& _option) //PRSRFUNC_LISTUNITS_*
     printUnits("1'psi", _lang.get("PARSERFUNCS_LISTUNITS_UNIT_PSI"),              "M / (L T^2)", "6894.7573     [Pa]", _option.getWindow());
     printUnits("1'TC",  _lang.get("PARSERFUNCS_LISTUNITS_UNIT_CELSIUS"),          "Theta",       "274.15      [K]", _option.getWindow());
     printUnits("1'TF",  _lang.get("PARSERFUNCS_LISTUNITS_UNIT_FAHRENHEIT"),       "Theta",       "255.92778      [K]", _option.getWindow());
-    printUnits("1'Torr", _lang.get("PARSERFUNCS_LISTUNITS_UNIT_TORR"),             "M / (L T^2)", "133.322     [Pa]", _option.getWindow());
+    printUnits("1'Torr", _lang.get("PARSERFUNCS_LISTUNITS_UNIT_TORR"),            "M / (L T^2)", "133.322     [Pa]", _option.getWindow());
     printUnits("1'yd",  _lang.get("PARSERFUNCS_LISTUNITS_UNIT_YARD"),             "L",           "0.9144      [m]", _option.getWindow());
+    printUnits("1'y",  _lang.get("PARSERFUNCS_LISTUNITS_UNIT_YEAR"),              "T",           "31557600      [s]", _option.getWindow());
+    printUnits("1'wk",  _lang.get("PARSERFUNCS_LISTUNITS_UNIT_WEEK"),             "T",           "604800      [s]", _option.getWindow());
+    printUnits("1'd",  _lang.get("PARSERFUNCS_LISTUNITS_UNIT_DAY"),               "T",           "86400      [s]", _option.getWindow());
+    printUnits("1'h",  _lang.get("PARSERFUNCS_LISTUNITS_UNIT_HOUR"),              "T",           "3600      [s]", _option.getWindow());
+    printUnits("1'min",  _lang.get("PARSERFUNCS_LISTUNITS_UNIT_MINUTE"),          "T",           "60      [s]", _option.getWindow());
     NumeReKernel::printPreFmt("|\n");
     printUnits("1'G",   "(giga)",             "---",           "1e9      ---", _option.getWindow());
     printUnits("1'M",   "(mega)",             "---",           "1e6      ---", _option.getWindow());

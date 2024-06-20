@@ -61,6 +61,7 @@ class GridNumeReTable : public wxGridTableBase
         virtual void* GetValueAsCustom(int row, int col, const wxString& sTypeName);
 
         virtual wxString GetValue(int row, int col);
+        virtual wxString GetEditableValue(int row, int col);
         virtual void SetValue(int row, int col, const wxString& value);
 
         virtual void Clear();

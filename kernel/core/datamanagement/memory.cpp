@@ -33,6 +33,7 @@
 #include "../maths/resampler.h"
 #include "../maths/statslogic.hpp"
 #include "../maths/matdatastructures.hpp"
+#include "../maths/units.hpp"
 
 #ifdef __GNUWIN64__
 #define MAX_TABLE_COLS (INT_MAX-1)/2
@@ -43,8 +44,6 @@
 
 
 using namespace std;
-
-
 
 /////////////////////////////////////////////////
 /// \brief Default constructor.
@@ -1132,6 +1131,68 @@ vector<string> Memory::getHeadLineElement(const VectorIndex& _vCol) const
 
 
 /////////////////////////////////////////////////
+/// \brief Returns the unit of the selected
+/// column.
+///
+/// \param nCol int
+/// \return std::string
+///
+/////////////////////////////////////////////////
+std::string Memory::getUnit(int nCol) const
+{
+    if (nCol < memArray.size() && memArray[nCol])
+        return memArray[nCol]->m_sUnit;
+
+    return "";
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Returns the values in SI units, if a
+/// conversion is known.
+///
+/// \param nCol size_t
+/// \return std::vector<mu::value_type>
+///
+/////////////////////////////////////////////////
+std::vector<mu::value_type> Memory::asSiUnits(size_t nCol) const
+{
+    if (nCol < memArray.size() && memArray[nCol] && TableColumn::isValueType(memArray[nCol]->m_type))
+    {
+        std::vector<mu::value_type> vConverted = memArray[nCol]->getValue(VectorIndex(0, VectorIndex::OPEN_END));
+        UnitConversion convert = getUnitConversion(memArray[nCol]->m_sUnit);
+
+        for (size_t i = 0; i < vConverted.size(); i++)
+        {
+            vConverted[i] = convert(vConverted[i]);
+        }
+
+        return vConverted;
+    }
+
+    return std::vector<mu::value_type>(1, NAN);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Show the conversion from the selected
+/// column's unit to the corresponding SI units.
+///
+/// \param nCol size_t
+/// \param mode UnitConversionMode
+/// \return std::string
+///
+/////////////////////////////////////////////////
+std::string Memory::showUnitConversion(size_t nCol, UnitConversionMode mode) const
+{
+    if (nCol < memArray.size() && memArray[nCol] && TableColumn::isValueType(memArray[nCol]->m_type))
+        return printUnitConversion(memArray[nCol]->m_sUnit, mode);
+
+    return "";
+}
+
+
+/////////////////////////////////////////////////
 /// \brief Writes a new table column headline to
 /// the selected column.
 ///
@@ -1155,6 +1216,68 @@ bool Memory::setHeadLineElement(size_t _i, const std::string& _sHead)
     m_meta.modify();
 
     return true;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Set the unit of the selected column.
+///
+/// \param nCol int
+/// \param sUnit const std::string&
+/// \return void
+///
+/////////////////////////////////////////////////
+bool Memory::setUnit(int nCol, const std::string& sUnit)
+{
+    if (nCol >= memArray.size())
+    {
+        if (!resizeMemory(1, nCol + 1))
+            return false;
+    }
+
+    if (!memArray[nCol])
+    {
+        memArray[nCol].reset(new DEFAULT_COL_TYPE);
+        memArray[nCol]->m_sHeadLine = TableColumn::getDefaultColumnHead(nCol+1);
+    }
+
+    memArray[nCol]->m_sUnit = sUnit;
+    m_meta.modify();
+
+    return true;
+
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Converts the selected columns to SI
+/// units, if a conversion is known and returns
+/// the new units.
+///
+/// \param _vCols const VectorIndex&
+/// \param mode UnitConversionMode
+/// \return std::vector<std::string>
+///
+/////////////////////////////////////////////////
+std::vector<std::string> Memory::toSiUnits(const VectorIndex& _vCols, UnitConversionMode mode)
+{
+    std::vector<std::string> vUnits;
+    _vCols.setOpenEndIndex(getCols()-1);
+
+    for (size_t i = 0; i < _vCols.size(); i++)
+    {
+        if (_vCols[i] < memArray.size() && memArray[_vCols[i]] && TableColumn::isValueType(memArray[_vCols[i]]->m_type))
+        {
+            memArray[_vCols[i]]->setValue(VectorIndex(0, VectorIndex::OPEN_END), asSiUnits(_vCols[i]));
+            std::string sUnit = getUnitConversion(memArray[_vCols[i]]->m_sUnit).formatUnit(mode);
+            memArray[_vCols[i]]->m_sUnit = sUnit;
+            vUnits.push_back(sUnit);
+        }
+        else
+            vUnits.push_back("");
+    }
+
+    return vUnits;
 }
 
 
@@ -1978,7 +2101,7 @@ void Memory::insertCopiedTable(NumeRe::Table _table, const VectorIndex& lines, c
                     continue;
                 }
 
-                memArray[cols[j]]->m_sHeadLine = tabCol->m_sHeadLine;
+                memArray[cols[j]]->assignMetaData(tabCol);
             }
             else if (tabCol->m_type != memArray[cols[j]]->m_type)
             {

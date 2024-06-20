@@ -24,42 +24,9 @@
 #define FUNCTIONIMPLEMENTATION_HPP
 
 #include "../ParserLib/muParser.h"
+#include "units.hpp"
 
 using namespace mu;
-
-// Scaling operator callback functions
-value_type parser_Mega(const value_type&);
-value_type parser_Giga(const value_type&);
-value_type parser_Kilo(const value_type&);
-value_type parser_Milli(const value_type&);
-value_type parser_Micro(const value_type&);
-value_type parser_Nano(const value_type&);
-
-// Unit conversion callback functions
-value_type parser_ElectronVolt(const value_type&);
-value_type parser_Fermi(const value_type&);
-value_type parser_Angstroem(const value_type&);
-value_type parser_Barn(const value_type&);
-value_type parser_Torr(const value_type&);
-value_type parser_AstroUnit(const value_type&);
-value_type parser_Lightyear(const value_type&);
-value_type parser_Parsec(const value_type&);
-value_type parser_Mile(const value_type&);
-value_type parser_Yard(const value_type&);
-value_type parser_Foot(const value_type&);
-value_type parser_Inch(const value_type&);
-value_type parser_Calorie(const value_type&);
-value_type parser_PSI(const value_type&);
-value_type parser_Knoten(const value_type&);
-value_type parser_liter(const value_type&);
-value_type parser_kmh(const value_type&);
-value_type parser_mph(const value_type&);
-value_type parser_Celsius(const value_type&);
-value_type parser_Fahrenheit(const value_type&);
-value_type parser_Curie(const value_type&);
-value_type parser_Gauss(const value_type&);
-value_type parser_Poise(const value_type&);
-value_type parser_mol(const value_type&);
 
 // Imaginary unit
 value_type parser_imaginaryUnit(const value_type&);
@@ -204,7 +171,6 @@ value_type parser_rd_student_t_inv_q(const value_type& q, const value_type& nu);
 
 // Operator functions
 value_type parser_Not(const value_type&);
-value_type parser_Ignore(const value_type&);
 value_type parser_Mod(const value_type&, const value_type&);
 value_type parser_XOR(const value_type&, const value_type&);
 value_type parser_BinOR(const value_type&, const value_type&);

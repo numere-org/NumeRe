@@ -1906,53 +1906,21 @@ void Procedure::extractProcedureInformation(const string& sCmdLine, size_t nPos,
     sArgList.erase(getMatchingParenthesis(sArgList));
     sArgList.erase(0, 1);
 
-    if (__sName.find('~') == string::npos)
+    if (__sName.front() != '\'' && __sName.find('~') == std::string::npos)
         __sName = sNameSpace + __sName;
 
-    if (__sName.starts_with("this~"))
-        __sName.replace(0, 4, sThisNameSpace);
-
-    // Handle the special case of absolute paths
-    if (sCmdLine[nPos] == '\'')
-    {
-        __sName = sCmdLine.substr(nPos + 1, sCmdLine.find('\'', nPos + 1) - nPos - 1);
-    }
-
     // Create a valid filename first
-    sFileName = __sName;
+    sFileName = nameSpaceToPath(__sName, sThisNameSpace, sProcNames.substr(sProcNames.rfind(';') + 1));
+
+    // Ensure that we have a file name
+    if (!sFileName.length())
+        throw SyntaxError(SyntaxError::PRIVATE_PROCEDURE_CALLED, sCmdLine, SyntaxError::invalid_position, "thisfile");
 
     // Now remove the namespace stuff
     if (__sName.find('~') != string::npos)
         sProcName = __sName.substr(__sName.rfind('~')+1);
     else
         sProcName = __sName;
-
-    // Handle namespaces
-    if (sFileName.find('~') != string::npos)
-    {
-        if (sFileName.starts_with("thisfile~"))
-        {
-            if (sProcNames.length())
-                sFileName = sProcNames.substr(sProcNames.rfind(';') + 1);
-            else
-            {
-                throw SyntaxError(SyntaxError::PRIVATE_PROCEDURE_CALLED, sCmdLine, SyntaxError::invalid_position, "thisfile");
-            }
-        }
-        else
-        {
-            for (size_t i = 0; i < sFileName.length(); i++)
-            {
-                if (sFileName[i] == '~')
-                {
-                    if (sFileName.length() > 5 && i >= 4 && sFileName.substr(i - 4, 5) == "main~")
-                        sFileName = sFileName.substr(0, i - 4) + sFileName.substr(i + 1);
-                    else
-                        sFileName[i] = '/';
-                }
-            }
-        }
-    }
 
     // Use the filesystem to determine a valid file name
     sFileName = ValidFileName(sFileName, ".nprc");

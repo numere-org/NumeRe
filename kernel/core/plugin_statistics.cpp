@@ -338,6 +338,10 @@ static void createStatsOutput(Output& _out, const std::vector<std::vector<double
     {
         // Write the table column headlines
         std::string sHeadline = _data.getHeadLineElement(_idx.col[j], sTable);
+        std::string sUnit = _data.getUnit(_idx.col[j], sTable);
+
+        if (sUnit.length())
+            sUnit.insert(0, 1, ' ');
 
         for (int i = 0; i < nHeadlines; i++)
         {
@@ -364,10 +368,7 @@ static void createStatsOutput(Output& _out, const std::vector<std::vector<double
         {
             for (int n = STATS_AVG; n < STATS_FIELD_COUNT; n++)
             {
-                if (n == STATS_CONFINT)
-                    sOverview[nHeadlines + n][j+1] = "--- %";
-                else
-                    sOverview[nHeadlines + n][j+1] = "---";
+                sOverview[nHeadlines + n][j+1] = "---";
             }
 
             continue;
@@ -378,8 +379,10 @@ static void createStatsOutput(Output& _out, const std::vector<std::vector<double
         {
             if (n == STATS_CONFINT)
                 sOverview[nHeadlines + n][j+1] = toString(vStats[n][j], nPrecision) + " %";
-            else
+            else if (n == STATS_CNT || n == STATS_NUM || n == STATS_S_T || n == STATS_EXC || n == STATS_SKEW)
                 sOverview[nHeadlines + n][j+1] = toString(vStats[n][j], nPrecision);
+            else
+                sOverview[nHeadlines + n][j+1] = toString(vStats[n][j], nPrecision) + sUnit;
         }
     }
 

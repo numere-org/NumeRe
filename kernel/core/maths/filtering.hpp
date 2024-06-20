@@ -489,10 +489,10 @@ namespace NumeRe
             /// size.
             ///
             /// \param _view const FileView&
-            /// \return long long int
+            /// \return size_t
             ///
             /////////////////////////////////////////////////
-            long long int findColumn(const FileView& _view)
+            size_t findColumn(const FileView& _view)
             {
                 std::vector<size_t> vWindowSizes;
 
@@ -513,7 +513,7 @@ namespace NumeRe
                     return 0;
                 }
 
-                for (long long int j = 0; j < vWindowSizes.size(); j++)
+                for (size_t j = 0; j < vWindowSizes.size(); j++)
                 {
                     // Found a perfect match?
                     if (m_windowSize.first == vWindowSizes[j])
@@ -587,13 +587,13 @@ namespace NumeRe
                     FileView _view(_file);
 
                     // Find the possible window sizes
-                    long long int j = findColumn(_view);
+                    int64_t j = findColumn(_view);
 
                     // First element in the column is the
                     // central element in the matrix
                     m_filterKernel[m_windowSize.first/2][m_windowSize.first/2] = _view.getElement(m_windowSize.first*m_windowSize.first/2, j).real();
 
-                    for (long long int i = 0; i < m_windowSize.first*m_windowSize.first/2; i++)
+                    for (long long int i = 0; i < (long long int)(m_windowSize.first*m_windowSize.first/2); i++)
                     {
                         // left part
                         m_filterKernel[m_windowSize.first - 1 - i % m_windowSize.first][i / m_windowSize.first] = _view.getElement(i, j).real();

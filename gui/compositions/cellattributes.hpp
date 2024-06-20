@@ -504,7 +504,7 @@ class CombinedCellEditor : public wxGridCellEditor
             GridNumeReTable* _tab = static_cast<GridNumeReTable*>(grid->GetTable());
 
             // Get the value of the current cell as string
-            m_value = _tab->GetValue(row, col);
+            m_value = _tab->GetEditableValue(row, col);
             m_finished = false;
 
             // Get the column types of the table

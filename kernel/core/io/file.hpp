@@ -219,7 +219,7 @@ namespace NumeRe
             /// \return std::pair<size_t, size_t>
             ///
             /////////////////////////////////////////////////
-            std::pair<size_t, size_t> calculateCellExtents(const std::string& sContents)
+            std::pair<size_t, size_t> calculateCellExtents(const std::string& sContents, const std::string& sUnit)
             {
                 // Prepare the std::pair<> to contain the extents of the cell.
                 // (One line is the minimal value)
@@ -254,6 +254,14 @@ namespace NumeRe
 
                         nLastLineBreak = i+1;
                     }*/
+                }
+
+                if (sUnit.length())
+                {
+                    pCellExtents.second++;
+
+                    if (pCellExtents.first < sUnit.length()+2)
+                        pCellExtents.first = sUnit.length()+2;
                 }
 
                 // Examine the last part of the string, which won't be
@@ -324,6 +332,11 @@ namespace NumeRe
                 // the for loop
                 if (!nLineNumber)
                     return sHeadLine.substr(nLastLineBreak);
+
+                // If we have only one line remaining, we return the unit instead
+                // (if any)
+                if (nLineNumber == 1 && fileData->at(nCol)->m_sUnit.length())
+                    return "[" + fileData->at(nCol)->m_sUnit + "]";
 
                 // Not enough lines in this string, return a whitespace character
                 return " ";

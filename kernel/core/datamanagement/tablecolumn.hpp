@@ -59,6 +59,7 @@ struct TableColumn
     };
 
     std::string m_sHeadLine;
+    std::string m_sUnit;
     ColumnType m_type;
 
     TableColumn() : m_type(TYPE_NONE) {}
@@ -81,6 +82,7 @@ struct TableColumn
     virtual void setValue(size_t elem, const std::string& sValue) = 0;
     virtual void setValue(size_t elem, const mu::value_type& vValue) = 0;
 
+    void assignMetaData(const TableColumn* column);
     TableColumn* copy() const;
     virtual TableColumn* copy(const VectorIndex& idx) const = 0;
     virtual void assign(const TableColumn* column) = 0;

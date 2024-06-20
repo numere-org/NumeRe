@@ -8019,14 +8019,14 @@ void NumeReEditor::AddProcedureDocumentation()
     if (LineFromPosition(nProcedureHeadPosition) != GetCurrentLine())
         return;
 
-    string sProcedureName = m_search->FindMarkedProcedure(nProcedureHeadPosition + 11, false).ToStdString();
+    std::string sProcedureName = m_search->FindMarkedProcedure(nProcedureHeadPosition + 11, false).ToStdString();
     sProcedureName.erase(sProcedureName.find('('));
     replaceAll(sProcedureName, "_", "\\_");
 
-    string sDocumentation = "##! \\procedure " + sProcedureName.substr(1) + "\r\n##! [Procedure description]";
+    std::string sDocumentation = "##! \\procedure " + sProcedureName.substr(1) + "\r\n##! PROCEDURE DESCRIPTION";
 
     // Get the argument list
-    string sFunctionArgumentList = getFunctionArgumentList(LineFromPosition(nProcedureHeadPosition)).ToStdString();
+    std::string sFunctionArgumentList = getFunctionArgumentList(LineFromPosition(nProcedureHeadPosition)).ToStdString();
 
     if (sFunctionArgumentList.length())
         sDocumentation += "\r\n##!";
@@ -8034,11 +8034,11 @@ void NumeReEditor::AddProcedureDocumentation()
     // Separate the argument list and prepare the template
     while (sFunctionArgumentList.length())
     {
-        string sCurArg = getNextArgument(sFunctionArgumentList, true);
-        string sDefault;
+        std::string sCurArg = getNextArgument(sFunctionArgumentList, true);
+        std::string sDefault;
 
         // Remove default arguments from the list and store them separately
-        if (sCurArg.find('=') != string::npos)
+        if (sCurArg.find('=') != std::string::npos)
         {
             sDefault = sCurArg.substr(sCurArg.find_first_not_of(" =\t", sCurArg.find('=')));
             sCurArg.erase(sCurArg.find_last_not_of(" =", sCurArg.find('='))+1);
@@ -8050,7 +8050,7 @@ void NumeReEditor::AddProcedureDocumentation()
         if (sDefault.length())
             sDocumentation += "(!!=" + sDefault + "!!) ";
 
-        sDocumentation += "[Parameter description]";
+        sDocumentation += "PARAMETER DESCRIPTION";
     }
 
     // Insert the text before the procedure head

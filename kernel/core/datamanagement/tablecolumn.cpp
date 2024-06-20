@@ -154,6 +154,24 @@ void TableColumn::setValue(const VectorIndex& idx, mu::value_type* _dData, size_
 
 
 /////////////////////////////////////////////////
+/// \brief Assign the generic meta data from the
+/// passed column.
+///
+/// \param column const TableColumn*
+/// \return void
+///
+/////////////////////////////////////////////////
+void TableColumn::assignMetaData(const TableColumn* column)
+{
+    if (!column)
+        return;
+
+    m_sHeadLine = column->m_sHeadLine;
+    m_sUnit = column->m_sUnit;
+}
+
+
+/////////////////////////////////////////////////
 /// \brief Simplification wrapper around the
 /// indiced copy method to copy the whole column.
 ///

@@ -1411,6 +1411,182 @@ static std::string tableMethod_categories(const std::string& sTableName, std::st
 
 
 /////////////////////////////////////////////////
+/// \brief Realizes the "getunit()" table method.
+///
+/// \param sTableName const std::string&
+/// \param sMethodArguments std::string
+/// \param sResultVectorName const std::string&
+/// \return std::string
+///
+/////////////////////////////////////////////////
+static std::string tableMethod_getunit(const std::string& sTableName, std::string sMethodArguments, const std::string& sResultVectorName)
+{
+    NumeReKernel* _kernel = NumeReKernel::getInstance();
+    int nResults = 0;
+    _kernel->getMemoryManager().updateDimensionVariables(sTableName);
+    _kernel->getParser().SetExpr(sMethodArguments);
+    mu::value_type* v = _kernel->getParser().Eval(nResults);
+
+    ValueVector vUnits;
+
+    for (int i : VectorIndex(v, nResults, 0))
+    {
+        vUnits.push_back("\"" + _kernel->getMemoryManager().getUnit(i, sTableName) + "\"");
+    }
+
+    return _kernel->getStringParser().createTempStringVectorVar(vUnits);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Realizes the "setunit()" table method.
+///
+/// \param sTableName const std::string&
+/// \param sMethodArguments std::string
+/// \param sResultVectorName const std::string&
+/// \return std::string
+///
+/////////////////////////////////////////////////
+static std::string tableMethod_setunit(const std::string& sTableName, std::string sMethodArguments, const std::string& sResultVectorName)
+{
+    NumeReKernel* _kernel = NumeReKernel::getInstance();
+    std::string sColumns = getNextArgument(sMethodArguments, true);
+    std::vector<std::string> vUnits;
+
+    if (_kernel->getStringParser().isStringExpression(sMethodArguments))
+    {
+        std::string sDummy;
+        sMethodArguments += " -nq";
+        NumeRe::StringParser::StringParserRetVal res = _kernel->getStringParser().evalAndFormat(sMethodArguments, sDummy, true);
+
+        if (res == NumeRe::StringParser::STRING_NUMERICAL)
+            return "\"\"";
+
+        vUnits = _kernel->getAns().getInternalStringArray();
+    }
+
+    int nResults = 0;
+    _kernel->getMemoryManager().updateDimensionVariables(sTableName);
+    _kernel->getParser().SetExpr(sColumns);
+    mu::value_type* v = _kernel->getParser().Eval(nResults);
+
+    for (int i = 0; i < (vUnits.size() > 1 ? std::min((int)vUnits.size(), nResults) : nResults); i++)
+    {
+        _kernel->getMemoryManager().setUnit(intCast(v[i])-1, sTableName, vUnits.size() > 1 ? vUnits[i] : vUnits.front());
+    }
+
+    for (std::string& sUnit : vUnits)
+    {
+        sUnit = "\"" + sUnit + "\"";
+    }
+
+    return _kernel->getStringParser().createTempStringVectorVar(vUnits);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Realizes the "toSIunits()" table
+/// method.
+///
+/// \param sTableName const std::string&
+/// \param sMethodArguments std::string
+/// \param sResultVectorName const std::string&
+/// \return std::string
+///
+/////////////////////////////////////////////////
+static std::string tableMethod_toSiUnits(const std::string& sTableName, std::string sMethodArguments, const std::string& sResultVectorName)
+{
+    NumeReKernel* _kernel = NumeReKernel::getInstance();
+    std::string sColumns = getNextArgument(sMethodArguments, true);
+    std::vector<std::string> vUnits;
+
+    UnitConversionMode mode = MODE_DIRECT;
+
+    int nResults = 0;
+    mu::value_type* v = nullptr;
+    _kernel->getMemoryManager().updateDimensionVariables(sTableName);
+    _kernel->getParser().SetExpr(sColumns);
+    v = _kernel->getParser().Eval(nResults);
+    VectorIndex vCols(v, nResults, 0);
+
+    if (sMethodArguments.length())
+    {
+        std::string sMode = getNextArgument(sMethodArguments, true);
+
+        if (_kernel->getStringParser().isStringExpression(sMode))
+        {
+            std::string sDummy;
+            sMode += " -nq";
+            NumeRe::StringParser::StringParserRetVal res = _kernel->getStringParser().evalAndFormat(sMode, sDummy, true);
+
+            if (res == NumeRe::StringParser::STRING_NUMERICAL)
+                return "\"\"";
+
+            if (sMode == "base")
+                mode = MODE_BASESI;
+            else if (sMode == "simplify")
+                mode = MODE_SIMPLIFY;
+        }
+
+        if (sMethodArguments.length())
+        {
+            _kernel->getMemoryManager().updateDimensionVariables(sTableName);
+            _kernel->getParser().SetExpr(sMethodArguments);
+            v = _kernel->getParser().Eval(nResults);
+
+            if (v[0] != 0.0)
+            {
+                for (int i : vCols)
+                {
+                    vUnits.push_back("\"" + _kernel->getMemoryManager().getTable(sTableName)->showUnitConversion(i, mode) + "\"");
+                }
+
+                return _kernel->getStringParser().createTempStringVectorVar(vUnits);
+            }
+        }
+    }
+
+    vUnits = _kernel->getMemoryManager().getTable(sTableName)->toSiUnits(vCols, mode);
+
+    for (std::string& sUnit : vUnits)
+    {
+        sUnit = "\"" + sUnit + "\"";
+    }
+
+    return _kernel->getStringParser().createTempStringVectorVar(vUnits);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Realizes the "inSIunits()" table
+/// method.
+///
+/// \param sTableName const std::string&
+/// \param sMethodArguments std::string
+/// \param sResultVectorName const std::string&
+/// \return std::string
+///
+/////////////////////////////////////////////////
+static std::string tableMethod_asSiUnits(const std::string& sTableName, std::string sMethodArguments, const std::string& sResultVectorName)
+{
+    NumeReKernel* _kernel = NumeReKernel::getInstance();
+
+    std::string sCols = getNextArgument(sMethodArguments, true);
+
+    int nResults = 0;
+    _kernel->getMemoryManager().updateDimensionVariables(sTableName);
+    _kernel->getParser().SetExpr(sCols);
+    mu::value_type* v = _kernel->getParser().Eval(nResults);
+
+    size_t col = intCast(v[0])-1;
+
+    _kernel->getParser().SetVectorVar(sResultVectorName, _kernel->getMemoryManager().getTable(sTableName)->asSiUnits(col));
+
+    return sResultVectorName;
+}
+
+
+/////////////////////////////////////////////////
 /// \brief Realizes the "categorize()" table
 /// method.
 ///
@@ -1808,7 +1984,6 @@ static std::string tableMethod_zscore(const std::string& sTableName, std::string
 }
 
 
-
 /////////////////////////////////////////////////
 /// \brief Realizes the "anovaof()" table method.
 ///
@@ -1884,6 +2059,7 @@ static std::string tableMethod_anova(const std::string& sTableName, std::string 
 
     return _kernel->getStringParser().createTempStringVectorVar(vRet);;
 }
+
 
 /////////////////////////////////////////////////
 /// \brief Realizes the "kmeansof()" table method.
@@ -1973,6 +2149,7 @@ static std::string tableMethod_kmeans(const std::string& sTableName, std::string
     _kernel->getParser().SetVectorVar(sResultVectorName, bestRes.cluster_labels);
     return sResultVectorName;
 }
+
 
 /////////////////////////////////////////////////
 /// \brief Realizes the "binsof()" table method.
@@ -2382,6 +2559,10 @@ static std::map<std::string, TableMethod> getInplaceTableMethods()
     mTableMethods["removerows"] = tableMethod_removeRows;
     mTableMethods["reordercols"] = tableMethod_reorderCols;
     mTableMethods["reorderrows"] = tableMethod_reorderRows;
+    mTableMethods["getunit"] = tableMethod_getunit;
+    mTableMethods["setunit"] = tableMethod_setunit;
+    mTableMethods["toSIunits"] = tableMethod_toSiUnits;
+    mTableMethods["inSIunits"] = tableMethod_asSiUnits;
 
     return mTableMethods;
 }

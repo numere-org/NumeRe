@@ -88,6 +88,22 @@ static ConvertibleType detectCommonType(const std::vector<std::string>& vVals, i
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Simple helper for formatting the
+/// optional unit as part of a string.
+///
+/// \param sUnit const std::string&
+/// \return std::string
+///
+/////////////////////////////////////////////////
+static std::string formatUnit(const std::string& sUnit)
+{
+    if (sUnit.length())
+        return " " + sUnit;
+
+    return "";
+}
+
 
 /////////////////////////////////////////////////
 /// \brief Returns the selected value as a string
@@ -108,7 +124,7 @@ std::string DateTimeColumn::getValueAsString(size_t elem) const
 
 /////////////////////////////////////////////////
 /// \brief Returns the contents as an internal
-/// string (i.e. without quotation marks).
+/// string (i.e. without quotation marks or unit).
 ///
 /// \param elem size_t
 /// \return std::string
@@ -133,7 +149,7 @@ std::string DateTimeColumn::getValueAsInternalString(size_t elem) const
 /////////////////////////////////////////////////
 std::string DateTimeColumn::getValueAsParserString(size_t elem) const
 {
-    return "\"" + getValueAsInternalString(elem) + "\"";
+    return "\"" + getValueAsInternalString(elem) + formatUnit(m_sUnit) + "\"";
 }
 
 
@@ -147,7 +163,7 @@ std::string DateTimeColumn::getValueAsParserString(size_t elem) const
 /////////////////////////////////////////////////
 std::string DateTimeColumn::getValueAsStringLiteral(size_t elem) const
 {
-    return getValueAsInternalString(elem);
+    return getValueAsInternalString(elem) + formatUnit(m_sUnit);
 }
 
 
@@ -220,7 +236,7 @@ DateTimeColumn* DateTimeColumn::copy(const VectorIndex& idx) const
     idx.setOpenEndIndex(size()-1);
 
     DateTimeColumn* col = new DateTimeColumn(idx.size());
-    col->m_sHeadLine = m_sHeadLine;
+    col->assignMetaData(this);
 
     for (size_t i = 0; i < idx.size(); i++)
     {
@@ -243,7 +259,7 @@ void DateTimeColumn::assign(const TableColumn* column)
 {
     if (column->m_type == TableColumn::TYPE_DATETIME || column->m_type == TableColumn::TYPE_VALUE)
     {
-        m_sHeadLine = column->m_sHeadLine;
+        assignMetaData(column);
         m_data.clear();
 
         for (const auto& val : static_cast<const DateTimeColumn*>(column)->m_data)
@@ -475,7 +491,7 @@ TableColumn* DateTimeColumn::convert(ColumnType type)
         }
     }
 
-    col->m_sHeadLine = m_sHeadLine;
+    col->assignMetaData(this);
     return col;
 }
 
@@ -496,6 +512,20 @@ TableColumn* DateTimeColumn::convert(ColumnType type)
 /////////////////////////////////////////////////
 std::string LogicalColumn::getValueAsString(size_t elem) const
 {
+    return getValueAsInternalString(elem) + formatUnit(m_sUnit);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Returns the contents as an internal
+/// string (i.e. without quotation marks or unit).
+///
+/// \param elem size_t
+/// \return std::string
+///
+/////////////////////////////////////////////////
+std::string LogicalColumn::getValueAsInternalString(size_t elem) const
+{
     if (elem < m_data.size())
     {
         if (m_data[elem] == LOGICAL_FALSE)
@@ -505,20 +535,6 @@ std::string LogicalColumn::getValueAsString(size_t elem) const
     }
 
     return "nan";
-}
-
-
-/////////////////////////////////////////////////
-/// \brief Returns the contents as an internal
-/// string (i.e. without quotation marks).
-///
-/// \param elem size_t
-/// \return std::string
-///
-/////////////////////////////////////////////////
-std::string LogicalColumn::getValueAsInternalString(size_t elem) const
-{
-    return getValueAsString(elem);
 }
 
 
@@ -619,7 +635,7 @@ LogicalColumn* LogicalColumn::copy(const VectorIndex& idx) const
     idx.setOpenEndIndex(size()-1);
 
     LogicalColumn* col = new LogicalColumn(idx.size());
-    col->m_sHeadLine = m_sHeadLine;
+    col->assignMetaData(this);
 
     for (size_t i = 0; i < idx.size(); i++)
     {
@@ -643,7 +659,7 @@ void LogicalColumn::assign(const TableColumn* column)
 {
     if (column->m_type == TableColumn::TYPE_LOGICAL)
     {
-        m_sHeadLine = column->m_sHeadLine;
+        assignMetaData(column);
         m_data = static_cast<const LogicalColumn*>(column)->m_data;
     }
     else
@@ -878,7 +894,7 @@ TableColumn* LogicalColumn::convert(ColumnType type)
         }
     }
 
-    col->m_sHeadLine = m_sHeadLine;
+    col->assignMetaData(this);
     return col;
 }
 
@@ -898,13 +914,13 @@ TableColumn* LogicalColumn::convert(ColumnType type)
 /////////////////////////////////////////////////
 std::string StringColumn::getValueAsString(size_t elem) const
 {
-    return getValueAsParserString(elem);
+    return "\"" + getValueAsInternalString(elem) + "\"" + formatUnit(m_sUnit);
 }
 
 
 /////////////////////////////////////////////////
 /// \brief Returns the contents as an internal
-/// string (i.e. without quotation marks).
+/// string (i.e. without quotation marks or unit).
 ///
 /// \param elem size_t
 /// \return std::string
@@ -929,7 +945,7 @@ std::string StringColumn::getValueAsInternalString(size_t elem) const
 /////////////////////////////////////////////////
 std::string StringColumn::getValueAsParserString(size_t elem) const
 {
-    return "\"" + getValueAsInternalString(elem) + "\"";
+    return "\"" + getValueAsInternalString(elem) + formatUnit(m_sUnit) + "\"";
 }
 
 
@@ -943,7 +959,7 @@ std::string StringColumn::getValueAsParserString(size_t elem) const
 /////////////////////////////////////////////////
 std::string StringColumn::getValueAsStringLiteral(size_t elem) const
 {
-    return toExternalString(getValueAsInternalString(elem));
+    return toExternalString(getValueAsInternalString(elem)) + formatUnit(m_sUnit);
 }
 
 
@@ -1015,7 +1031,7 @@ StringColumn* StringColumn::copy(const VectorIndex& idx) const
     idx.setOpenEndIndex(size()-1);
 
     StringColumn* col = new StringColumn(idx.size());
-    col->m_sHeadLine = m_sHeadLine;
+    col->assignMetaData(this);
 
     for (size_t i = 0; i < idx.size(); i++)
     {
@@ -1039,7 +1055,7 @@ void StringColumn::assign(const TableColumn* column)
 {
     if (column->m_type == TableColumn::TYPE_STRING)
     {
-        m_sHeadLine = column->m_sHeadLine;
+        assignMetaData(column);
         m_data = static_cast<const StringColumn*>(column)->m_data;
     }
     else
@@ -1295,7 +1311,7 @@ TableColumn* StringColumn::convert(ColumnType type)
         {
             col = new CategoricalColumn(m_data.size());
             col->setValue(VectorIndex(0, VectorIndex::OPEN_END), m_data);
-            col->m_sHeadLine = m_sHeadLine;
+            col->assignMetaData(this);
             return col;
         }
         default:
@@ -1349,7 +1365,7 @@ TableColumn* StringColumn::convert(ColumnType type)
         }
     }
 
-    col->m_sHeadLine = m_sHeadLine;
+    col->assignMetaData(this);
     return col;
 }
 
@@ -1376,7 +1392,7 @@ std::string CategoricalColumn::getValueAsString(size_t elem) const
 
 /////////////////////////////////////////////////
 /// \brief Returns the contents as an internal
-/// string (i.e. without quotation marks).
+/// string (i.e. without quotation marks or unit).
 ///
 /// \param elem size_t
 /// \return std::string
@@ -1401,7 +1417,7 @@ std::string CategoricalColumn::getValueAsInternalString(size_t elem) const
 /////////////////////////////////////////////////
 std::string CategoricalColumn::getValueAsParserString(size_t elem) const
 {
-    return "\"" + getValueAsInternalString(elem) + "\"";
+    return "\"" + getValueAsInternalString(elem) + formatUnit(m_sUnit) + "\"";
 }
 
 
@@ -1415,7 +1431,7 @@ std::string CategoricalColumn::getValueAsParserString(size_t elem) const
 /////////////////////////////////////////////////
 std::string CategoricalColumn::getValueAsStringLiteral(size_t elem) const
 {
-    return getValueAsInternalString(elem);
+    return getValueAsInternalString(elem) + formatUnit(m_sUnit);
 }
 
 
@@ -1509,7 +1525,7 @@ CategoricalColumn* CategoricalColumn::copy(const VectorIndex& idx) const
     idx.setOpenEndIndex(size()-1);
 
     CategoricalColumn* col = new CategoricalColumn(idx.size());
-    col->m_sHeadLine = m_sHeadLine;
+    col->assignMetaData(this);
 
     for (size_t i = 0; i < idx.size(); i++)
     {
@@ -1535,7 +1551,7 @@ void CategoricalColumn::assign(const TableColumn* column)
 {
     if (column->m_type == TableColumn::TYPE_CATEGORICAL)
     {
-        m_sHeadLine = column->m_sHeadLine;
+        assignMetaData(column);
         m_data = static_cast<const CategoricalColumn*>(column)->m_data;
         m_categories = static_cast<const CategoricalColumn*>(column)->m_categories;
     }
@@ -1793,7 +1809,7 @@ TableColumn* CategoricalColumn::convert(ColumnType type)
         {
             col = new StringColumn(m_data.size());
             col->setValue(VectorIndex(0, VectorIndex::OPEN_END), TableColumn::getValueAsInternalString(VectorIndex(0, VectorIndex::OPEN_END)));
-            col->m_sHeadLine = m_sHeadLine;
+            col->assignMetaData(this);
             return col;
         }
         case TableColumn::TYPE_CATEGORICAL:
@@ -1848,7 +1864,7 @@ TableColumn* CategoricalColumn::convert(ColumnType type)
         }
     }
 
-    col->m_sHeadLine = m_sHeadLine;
+    col->assignMetaData(this);
     return col;
 }
 
@@ -1915,9 +1931,13 @@ void convert_if_empty(TblColPtr& col, size_t colNo, TableColumn::ColumnType type
     if (!col || (col->m_type != type && !col->size()))
     {
         std::string sHead = TableColumn::getDefaultColumnHead(colNo);
+        std::string sUnit;
 
         if (col)
+        {
             sHead = col->m_sHeadLine;
+            sUnit = col->m_sUnit;
+        }
 
         switch (type)
         {
@@ -1943,6 +1963,7 @@ void convert_if_empty(TblColPtr& col, size_t colNo, TableColumn::ColumnType type
         }
 
         col->m_sHeadLine = sHead;
+        col->m_sUnit = sUnit;
     }
 }
 
@@ -2011,6 +2032,7 @@ void convert_for_overwrite(TblColPtr& col, size_t colNo, TableColumn::ColumnType
         return;
 
     std::string sHeadLine = col->m_sHeadLine;
+    std::string sUnit = col->m_sUnit;
 
     if (!sHeadLine.length())
         sHeadLine = TableColumn::getDefaultColumnHead(colNo);
@@ -2021,24 +2043,28 @@ void convert_for_overwrite(TblColPtr& col, size_t colNo, TableColumn::ColumnType
         {
             col.reset(new StringColumn);
             col->m_sHeadLine = sHeadLine;
+            col->m_sUnit = sUnit;
             break;
         }
         case TableColumn::TYPE_DATETIME:
         {
             col.reset(new DateTimeColumn);
             col->m_sHeadLine = sHeadLine;
+            col->m_sUnit = sUnit;
             break;
         }
         case TableColumn::TYPE_LOGICAL:
         {
             col.reset(new LogicalColumn);
             col->m_sHeadLine = sHeadLine;
+            col->m_sUnit = sUnit;
             break;
         }
         case TableColumn::TYPE_CATEGORICAL:
         {
             col.reset(new CategoricalColumn);
             col->m_sHeadLine = sHeadLine;
+            col->m_sUnit = sUnit;
             break;
         }
         default:
@@ -2047,6 +2073,7 @@ void convert_for_overwrite(TblColPtr& col, size_t colNo, TableColumn::ColumnType
             {
                 col.reset(createValueTypeColumn(type));
                 col->m_sHeadLine = sHeadLine;
+                col->m_sUnit = sUnit;
             }
         }
     }
@@ -2116,7 +2143,7 @@ TableColumn* convertNumericType(TableColumn::ColumnType type, TableColumn* curre
     if (col)
     {
         col->setValue(VectorIndex(0, nNumElements-1), current->getValue(VectorIndex(0, nNumElements-1)));
-        col->m_sHeadLine = current->m_sHeadLine;
+        col->assignMetaData(current);
     }
 
     return col;

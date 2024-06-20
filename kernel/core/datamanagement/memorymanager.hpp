@@ -619,6 +619,14 @@ class MemoryManager : public NumeRe::FileAdapter, public StringMemory, public Nu
             return getHeadLineElement(_i, _sTable).substr(0, getHeadLineElement(_i, _sTable).find('\n'));
         }
 
+        std::string getUnit(int _i, const std::string& _sTable) const
+        {
+            if (exists(_sTable))
+                return vMemory[findTable(_sTable)]->getUnit(_i);
+
+            return "";
+        }
+
 		int getAppendedZeroes(int _i, const std::string& _sTable) const
 		{
 			return vMemory[findTable(_sTable)]->getAppendedZeroes(_i);
@@ -662,6 +670,11 @@ class MemoryManager : public NumeRe::FileAdapter, public StringMemory, public Nu
 		bool setHeadLineElement(int _i, const std::string& _sTable, std::string _sHead)
 		{
 			return vMemory[findTable(_sTable)]->setHeadLineElement(_i, _sHead);
+		}
+
+		bool setUnit(int _i, const std::string& _sTable, const std::string& _sUnit)
+		{
+		    return vMemory[findTable(_sTable)]->setUnit(_i, _sUnit);
 		}
 
 		void overwriteColumn(int col, const std::string& _sCache, TableColumn::ColumnType type);

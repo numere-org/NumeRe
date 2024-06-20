@@ -38,8 +38,6 @@ extern Language _lang;
 
 namespace NumeRe
 {
-    using namespace std;
-
     // This function determines the correct class to be used for the filename
     // passed to this function. If there's no fitting file type, a null pointer
     // is returned. The calling function is responsible for clearing the
@@ -95,11 +93,41 @@ namespace NumeRe
     }
 
 
+    /////////////////////////////////////////////////
+    /// \brief Static helper function to detect and
+    /// extract the possible unit in a column table
+    /// headline.
+    ///
+    /// \param sColumnHead StringView
+    /// \return std::pair<std::string,std::string>
+    ///
+    /////////////////////////////////////////////////
+    static std::pair<std::string,std::string> findAndParseUnit(StringView sColumnHead)
+    {
+        sColumnHead.strip();
+        size_t pos = sColumnHead.rfind('[');
+        /*if (sColumnHead.find(" in ") != std::string::npos)
+            return std::make_pair(sColumnHead.substr(0, sColumnHead.find(" in ")),
+                                  sColumnHead.substr(sColumnHead.find(" in ")+4));
+        else*/
+        if (sColumnHead.back() == ']'
+            && pos != std::string::npos
+            && pos
+            && getMatchingParenthesis(sColumnHead.subview(pos))+pos == sColumnHead.length()-1)
+        {
+            if (sColumnHead[pos-1] == ' ' || sColumnHead[pos-1] == '\n')
+                return std::make_pair(sColumnHead.subview(0, pos-1).to_string(),
+                                      sColumnHead.subview(pos+1, sColumnHead.length()-pos-2).to_string());
+        }
+
+        return std::make_pair(sColumnHead.to_string(), std::string());
+    }
+
     //////////////////////////////////////////////
     // class TextDataFile
     //////////////////////////////////////////////
     //
-    TextDataFile::TextDataFile(const string& filename) : GenericFile(filename)
+    TextDataFile::TextDataFile(const std::string& filename) : GenericFile(filename)
     {
         // Empty constructor
     }
@@ -120,13 +148,13 @@ namespace NumeRe
     /////////////////////////////////////////////////
     void TextDataFile::readFile()
     {
-        open(ios::in);
+        open(std::ios::in);
 
 		long long int nLine = 0;
 		long long int nComment = 0;
 
 		// Read the text file contents to memory
-		vector<string> vFileContents = readTextFile(true);
+		std::vector<std::string> vFileContents = readTextFile(true);
 
 		// Ensure that the file was not empty
 		if (!vFileContents.size())
@@ -203,7 +231,7 @@ namespace NumeRe
             }
 
             // Tokenize the current line
-            vector<string> vLine = tokenize(vFileContents[i], " ", GenericFile::SKIP_EMPTY);
+            std::vector<std::string> vLine = tokenize(vFileContents[i], " ", GenericFile::SKIP_EMPTY);
 
             // Ensure that the number of columns is matching
             // If it does not match, then we did not determine
@@ -243,7 +271,7 @@ namespace NumeRe
     void TextDataFile::writeFile()
     {
         // Open the file
-        open(ios::out | ios::trunc);
+        open(std::ios::out | std::ios::trunc);
 
         // Write the header
         writeHeader();
@@ -251,7 +279,7 @@ namespace NumeRe
         // Get the necessary column widths and the number
         // of lines, which are needed for the column heads
         size_t nNumberOfHeadlines = 1u;
-        vector<size_t> vColumns =  calculateColumnWidths(nNumberOfHeadlines);
+        std::vector<size_t> vColumns =  calculateColumnWidths(nNumberOfHeadlines);
 
         // Write the column heads and append a separator
         writeTableHeads(vColumns, nNumberOfHeadlines);
@@ -271,7 +299,7 @@ namespace NumeRe
     /////////////////////////////////////////////////
     void TextDataFile::writeHeader()
     {
-        string sBuild = AutoVersion::YEAR;
+        std::string sBuild = AutoVersion::YEAR;
         sBuild += "-";
         sBuild += AutoVersion::MONTH;
         sBuild += "-";
@@ -286,7 +314,7 @@ namespace NumeRe
         fFileStream << "#\n";
         fFileStream << "# " + _lang.get("OUTPUT_PRINTLEGAL_LINE4", getTimeStamp(false)) << "\n";
         fFileStream << "#\n";
-        fFileStream << "# " + _lang.get("OUTPUT_PRINTLEGAL_STD") << "\n#" << endl;
+        fFileStream << "# " + _lang.get("OUTPUT_PRINTLEGAL_STD") << "\n#" << std::endl;
     }
 
 
@@ -294,12 +322,12 @@ namespace NumeRe
     /// \brief This member function is used to write
     /// the table heads into the target file.
     ///
-    /// \param vColumnWidth const vector<size_t>&
+    /// \param vColumnWidth const std::vector<size_t>&
     /// \param nNumberOfLines size_t
     /// \return void
     ///
     /////////////////////////////////////////////////
-    void TextDataFile::writeTableHeads(const vector<size_t>& vColumnWidth, size_t nNumberOfLines)
+    void TextDataFile::writeTableHeads(const std::vector<size_t>& vColumnWidth, size_t nNumberOfLines)
     {
         for (size_t i = 0; i < nNumberOfLines; i++)
         {
@@ -328,11 +356,11 @@ namespace NumeRe
     /// \brief This member function is used to write
     /// the data in memory to the target text file.
     ///
-    /// \param vColumnWidth const vector<size_t>&
+    /// \param vColumnWidth const std::vector<size_t>&
     /// \return void
     ///
     /////////////////////////////////////////////////
-    void TextDataFile::writeTableContents(const vector<size_t>& vColumnWidth)
+    void TextDataFile::writeTableContents(const std::vector<size_t>& vColumnWidth)
     {
         for (long long int i = 0; i < nRows; i++)
         {
@@ -364,11 +392,11 @@ namespace NumeRe
     /// \brief This member function draws a separator
     /// based upon the overall width of the columns.
     ///
-    /// \param vColumnWidth const vector<size_t>&
+    /// \param vColumnWidth const std::vector<size_t>&
     /// \return void
     ///
     /////////////////////////////////////////////////
-    void TextDataFile::addSeparator(const vector<size_t>& vColumnWidth)
+    void TextDataFile::addSeparator(const std::vector<size_t>& vColumnWidth)
     {
         fFileStream << "#=";
 
@@ -391,15 +419,15 @@ namespace NumeRe
     /// heads in the text file and stores them in
     /// memory.
     ///
-    /// \param vFileContents vector<string>&
+    /// \param vFileContents std::vector<std::string>&
     /// \param nComment long longint
     /// \return void
     ///
     /////////////////////////////////////////////////
-    void TextDataFile::decodeTableHeads(vector<string>& vFileContents, long long int nComment)
+    void TextDataFile::decodeTableHeads(std::vector<std::string>& vFileContents, long long int nComment)
     {
 		long long int _nHeadline = 0;
-        string sCommentSign = "#";
+        std::string sCommentSign = "#";
 
         // If the length of the file is larger than 14 lines, then
         // append equal signs to the comment sign
@@ -443,7 +471,7 @@ namespace NumeRe
                 if (vFileContents[i][0] == '#')
                 {
                     // Starting with a "#" sign
-                    if (vFileContents[i].find(' ') != string::npos)
+                    if (vFileContents[i].find(' ') != std::string::npos)
                     {
                         // Insert a whitespace character right after
                         // the comment character to make it separatable
@@ -490,7 +518,7 @@ namespace NumeRe
                 {
                     if (vFileContents[i-1][0] == '#')
                     {
-                        if ((nCols > 1 && vFileContents[i-1].find(' ') != string::npos)
+                        if ((nCols > 1 && vFileContents[i-1].find(' ') != std::string::npos)
                             || (nCols == 1 && vFileContents[i-1].length() > 1))
                         {
                             // Insert a whitespace character right after
@@ -522,7 +550,7 @@ namespace NumeRe
 
                         if (i > 1
                             && vFileContents[i-2][0] == '#'
-                            && ((vFileContents[i-2].find(' ') != string::npos && nCols > 1)
+                            && ((vFileContents[i-2].find(' ') != std::string::npos && nCols > 1)
                                 || (nCols == 1 && vFileContents[i-2].length() > 1)))
                         {
                             // Insert a whitespace character right after
@@ -551,7 +579,7 @@ namespace NumeRe
                     }
                     else if (!isNumeric(vFileContents[i-1]))
                     {
-                        if ((vFileContents[i-1].find(' ') != string::npos && nCols > 1)
+                        if ((vFileContents[i-1].find(' ') != std::string::npos && nCols > 1)
                             || (nCols == 1 && vFileContents[i-1].length() > 1))
                         {
                             // Insert a whitespace character right after
@@ -583,7 +611,7 @@ namespace NumeRe
 
                         if (i > 1
                             && vFileContents[i-2][0] == '#'
-                            && ((vFileContents[i-2].find(' ') != string::npos && nCols > 1)
+                            && ((vFileContents[i-2].find(' ') != std::string::npos && nCols > 1)
                                 || (nCols == 1 && vFileContents[i-2].length() > 1)))
                         {
                             // Insert a whitespace character right after
@@ -648,8 +676,8 @@ namespace NumeRe
                             // which we introduced before, we abort at this
                             // line, because we already know the number of
                             // tokens in this line
-                            if (vFileContents[k].find(" _ ") != string::npos
-                                || (vFileContents[k].find_first_not_of(" #") != string::npos && vFileContents[k][vFileContents[k].find_first_not_of(" #")] == '_')
+                            if (vFileContents[k].find(" _ ") != std::string::npos
+                                || (vFileContents[k].find_first_not_of(" #") != std::string::npos && vFileContents[k][vFileContents[k].find_first_not_of(" #")] == '_')
                                 || vFileContents[k].back() == '_')
                             {
                                 break;
@@ -701,7 +729,7 @@ namespace NumeRe
                         }
 
                         bool bBreakSignal = false;
-                        vector<string> vHeadline;
+                        std::vector<std::string> vHeadline;
                         vHeadline.resize((size_t)(2*nCols), "");
 
                         // Go now through the selected headlines and
@@ -720,7 +748,7 @@ namespace NumeRe
                                 break;
 
                             // Tokenize the current line
-                            vector<string> vLine = tokenize(vFileContents[k], " ", GenericFile::SKIP_EMPTY);
+                            std::vector<std::string> vLine = tokenize(vFileContents[k], " ", GenericFile::SKIP_EMPTY);
 
                             // Remove the comment character from the list
                             // of tokens
@@ -743,7 +771,7 @@ namespace NumeRe
                                 }
 
                                 // Ignore placeholder tokens
-                                if (vLine[j].find_first_not_of('_') == string::npos)
+                                if (vLine[j].find_first_not_of('_') == std::string::npos)
                                     continue;
 
                                 // Strip all underscores from the
@@ -780,7 +808,9 @@ namespace NumeRe
                             if (!fileData->at(col))
                                 fileData->at(col).reset(new StringColumn);
 
-                            fileData->at(col)->m_sHeadLine = vHeadline[col];
+                            std::pair<std::string, std::string> headAndUnit = findAndParseUnit(vHeadline[col]);
+                            fileData->at(col)->m_sHeadLine = headAndUnit.first;
+                            fileData->at(col)->m_sUnit = headAndUnit.second;
                         }
 
                         // Return here
@@ -798,12 +828,12 @@ namespace NumeRe
     /// number of lines needed for the column heads.
     ///
     /// \param nNumberOfLines size_t&
-    /// \return vector<size_t>
+    /// \return std::vector<size_t>
     ///
     /////////////////////////////////////////////////
-    vector<size_t> TextDataFile::calculateColumnWidths(size_t& nNumberOfLines)
+    std::vector<size_t> TextDataFile::calculateColumnWidths(size_t& nNumberOfLines)
     {
-        vector<size_t> vColumnWidths;
+        std::vector<size_t> vColumnWidths;
         const size_t NUMBERFIELDLENGTH = nPrecFields + 7;
 
         // Go through the column heads in memory, determine
@@ -818,8 +848,8 @@ namespace NumeRe
                 continue;
             }
 
-            pair<size_t, size_t> pCellExtents = calculateCellExtents(fileData->at(j)->m_sHeadLine);
-            vColumnWidths.push_back(max(NUMBERFIELDLENGTH, pCellExtents.first));
+            std::pair<size_t, size_t> pCellExtents = calculateCellExtents(fileData->at(j)->m_sHeadLine, fileData->at(j)->m_sUnit);
+            vColumnWidths.push_back(std::max(NUMBERFIELDLENGTH, pCellExtents.first));
 
             if (nNumberOfLines < pCellExtents.second)
                 nNumberOfLines = pCellExtents.second;
@@ -833,7 +863,7 @@ namespace NumeRe
     // class NumeReDataFile
     //////////////////////////////////////////////
     //
-    NumeReDataFile::NumeReDataFile(const string& filename)
+    NumeReDataFile::NumeReDataFile(const std::string& filename)
         : GenericFile(filename),
         isLegacy(false), timeStamp(0), versionMajor(0), versionMinor(0),
         versionBuild(0), fileVersionRead(1.0f)
@@ -956,7 +986,7 @@ namespace NumeRe
         // the cache file would be overwritten by each
         // table in memory completely)
         if (!is_open())
-            open(ios::binary | ios::in | ios::out | ios::trunc);
+            open(std::ios::binary | std::ios::in | std::ios::out | std::ios::trunc);
 
         // Write the file header
         writeHeader();
@@ -996,7 +1026,7 @@ namespace NumeRe
             return;
         }
 
-        writeStringField(col->m_sHeadLine);
+        writeStringField(col->m_sHeadLine + (col->m_sUnit.length() ? " [" + col->m_sUnit + "]" : ""));
 
         if (TableColumn::isValueType(col->m_type)
             || col->m_type == TableColumn::TYPE_DATETIME
@@ -1123,7 +1153,7 @@ namespace NumeRe
         // header. We created special functions for
         // reading and deleting arbitary data types
         int64_t size;
-        string type;
+        std::string type;
         void* data = readGenericField(type, size);
 
         // Version 2.1 introduces 64 bit time stamps
@@ -1149,7 +1179,7 @@ namespace NumeRe
         else
         {
             // Determine the data type of the table
-            string dataType = readStringField();
+            std::string dataType = readStringField();
 
             // Ensure that the data type is DOUBLE
             if (dataType != "DTYPE=DOUBLE")
@@ -1196,7 +1226,7 @@ namespace NumeRe
         // Open the file in binary mode, if it's not
         // already open
         if (!is_open())
-            open(ios::binary | ios::in);
+            open(std::ios::binary | std::ios::in);
 
         // Read the file header and determine,
         // whether the file is in legacy mode
@@ -1281,7 +1311,7 @@ namespace NumeRe
     /////////////////////////////////////////////////
     void NumeReDataFile::readColumn(TblColPtr& col)
     {
-        std::string sHeadLine = readStringField();
+        std::pair<std::string,std::string> headAndUnit = findAndParseUnit(readStringField());
         std::string sDataType = readStringField();
 
         if (sDataType == "DTYPE=NONE")
@@ -1290,7 +1320,8 @@ namespace NumeRe
         if (sDataType == "DTYPE=COMPLEX")
         {
             col.reset(new ValueColumn);
-            col->m_sHeadLine = sHeadLine;
+            col->m_sHeadLine = headAndUnit.first;
+            col->m_sUnit = headAndUnit.second;
             int64_t size = 0;
             mu::value_type* values = readNumBlock<mu::value_type>(size);
             col->setValue(VectorIndex(0, VectorIndex::OPEN_END), std::vector<mu::value_type>(values, values+size));
@@ -1299,7 +1330,8 @@ namespace NumeRe
         else if (sDataType == "DTYPE=LOGICAL")
         {
             col.reset(new LogicalColumn);
-            col->m_sHeadLine = sHeadLine;
+            col->m_sHeadLine = headAndUnit.first;
+            col->m_sUnit = headAndUnit.second;
             int64_t size = 0;
             mu::value_type* values = readNumBlock<mu::value_type>(size);
             col->setValue(VectorIndex(0, VectorIndex::OPEN_END), std::vector<mu::value_type>(values, values+size));
@@ -1308,7 +1340,8 @@ namespace NumeRe
         else if (sDataType == "DTYPE=DATETIME")
         {
             col.reset(new DateTimeColumn);
-            col->m_sHeadLine = sHeadLine;
+            col->m_sHeadLine = headAndUnit.first;
+            col->m_sUnit = headAndUnit.second;
             int64_t size = 0;
             mu::value_type* values = readNumBlock<mu::value_type>(size);
             col->setValue(VectorIndex(0, VectorIndex::OPEN_END), std::vector<mu::value_type>(values, values+size));
@@ -1317,7 +1350,8 @@ namespace NumeRe
         else if (sDataType == "DTYPE=STRING")
         {
             col.reset(new StringColumn);
-            col->m_sHeadLine = sHeadLine;
+            col->m_sHeadLine = headAndUnit.first;
+            col->m_sUnit = headAndUnit.second;
             int64_t size = 0;
             std::string* strings = readStringBlock(size);
             col->setValue(VectorIndex(0, VectorIndex::OPEN_END), std::vector<std::string>(strings, strings+size));
@@ -1326,7 +1360,8 @@ namespace NumeRe
         else if (sDataType == "DTYPE=CATEGORICAL")
         {
             col.reset(new CategoricalColumn);
-            col->m_sHeadLine = sHeadLine;
+            col->m_sHeadLine = headAndUnit.first;
+            col->m_sUnit = headAndUnit.second;
             int64_t size = 0;
             std::string* strings = readStringBlock(size);
             col->setValue(VectorIndex(0, VectorIndex::OPEN_END), std::vector<std::string>(strings, strings+size));
@@ -1345,7 +1380,7 @@ namespace NumeRe
     /////////////////////////////////////////////////
     void NumeReDataFile::readColumnV4(TblColPtr& col)
     {
-        std::string sHeadLine = readStringField();
+        std::pair<std::string,std::string> headAndUnit = findAndParseUnit(readStringField());
         std::string sDataType = readStringField();
 
         if (sDataType == "DTYPE=NONE")
@@ -1370,7 +1405,8 @@ namespace NumeRe
             else // All others fall back to a generic value column
                 col.reset(new ValueColumn);
 
-            col->m_sHeadLine = sHeadLine;
+            col->m_sHeadLine = headAndUnit.first;
+            col->m_sUnit = headAndUnit.second;
             int64_t size = 0;
             mu::value_type* values = readNumBlock<mu::value_type>(size);
             col->setValue(VectorIndex(0, VectorIndex::OPEN_END), std::vector<mu::value_type>(values, values+size));
@@ -1392,7 +1428,8 @@ namespace NumeRe
             else // All others fall back to a generic string column
                 col.reset(new StringColumn);
 
-            col->m_sHeadLine = sHeadLine;
+            col->m_sHeadLine = headAndUnit.first;
+            col->m_sUnit = headAndUnit.second;
             int64_t size = 0;
             std::string* strings = readStringBlock(size);
             col->setValue(VectorIndex(0, VectorIndex::OPEN_END), std::vector<std::string>(strings, strings+size));
@@ -1632,7 +1669,7 @@ namespace NumeRe
     // class CacheFile
     //////////////////////////////////////////////
     //
-    CacheFile::CacheFile(const string& filename) : NumeReDataFile(filename), nIndexPos(0u)
+    CacheFile::CacheFile(const std::string& filename) : NumeReDataFile(filename), nIndexPos(0u)
     {
         // Empty constructor
     }
@@ -1736,7 +1773,7 @@ namespace NumeRe
     void CacheFile::readCacheHeader()
     {
         // Open the file in binary mode
-        open(ios::binary | ios::in);
+        open(std::ios::binary | std::ios::in);
 
         // Read the basic information
         versionMajor = readNumField<int32_t>();
@@ -1766,7 +1803,7 @@ namespace NumeRe
         // Create the file index array. This array
         // may be used to support memory paging
         // in a future version of NumeRe
-        vFileIndex = vector<uint32_t>(nNumberOfTables, 0u);
+        vFileIndex = std::vector<uint32_t>(nNumberOfTables, 0u);
 
         // Read the file index information in
         // the file to the newly created file
@@ -1789,7 +1826,7 @@ namespace NumeRe
     {
         // Open the file in binary mode and truncate
         // all its contents
-        open(ios::binary | ios::in | ios::out | ios::trunc);
+        open(std::ios::binary | std::ios::in | std::ios::out | std::ios::trunc);
 
         writeNumField<int32_t>(AutoVersion::MAJOR);
         writeNumField<int32_t>(AutoVersion::MINOR);
@@ -1816,7 +1853,7 @@ namespace NumeRe
     // class CassyLabx
     //////////////////////////////////////////////
     //
-    CassyLabx::CassyLabx(const string& filename) : GenericFile(filename)
+    CassyLabx::CassyLabx(const std::string& filename) : GenericFile(filename)
     {
         // Empty constructor
     }
@@ -1839,24 +1876,24 @@ namespace NumeRe
     void CassyLabx::readFile()
     {
         // Open the filestream in text mode
-        open(ios::in);
+        open(std::ios::in);
 
-        string sLabx = "";
-        string sLabx_substr = "";
+        std::string sLabx = "";
+        std::string sLabx_substr = "";
         long long int nLine = 0;
 
         // Get the whole content of the file in a
         // single string
         while (!fFileStream.eof())
         {
-            getline(fFileStream, sLabx_substr);
+            std::getline(fFileStream, sLabx_substr);
             StripSpaces(sLabx_substr);
             sLabx += sLabx_substr;
         }
 
         // Ensure that the least minimal information
         // is available in the file
-        if (!sLabx.length() || sLabx.find("<allchannels count=") == string::npos)
+        if (!sLabx.length() || sLabx.find("<allchannels count=") == std::string::npos)
             throw SyntaxError(SyntaxError::DATAFILE_NOT_EXIST, "", SyntaxError::invalid_position, sFileName);
 
         // Extract the information on the number of
@@ -1870,8 +1907,9 @@ namespace NumeRe
         if (!nCols)
             throw SyntaxError(SyntaxError::CANNOT_READ_FILE, sFileName, SyntaxError::invalid_position, sFileName);
 
-        vector<string> vHeadLines;
-        vector<string> vCols;
+        std::vector<std::string> vHeadLines;
+        std::vector<std::string> vUnits;
+        std::vector<std::string> vCols;
 
         // Start extracting the actual data from the
         // file
@@ -1890,13 +1928,14 @@ namespace NumeRe
             // column in the corresponding
             // headline vector. Consider also the
             // possible available unit
-            if (sLabx_substr.find("<unit />") != string::npos && sLabx_substr.find("<unit />") < sLabx_substr.find("<unit>"))
-                vHeadLines.push_back(sLabx_substr.substr(sLabx_substr.find("<quantity>")+10, sLabx_substr.find("</quantity>")-sLabx_substr.find("<quantity>")-10));
+            vHeadLines.push_back(sLabx_substr.substr(sLabx_substr.find("<quantity>")+10,
+                                                     sLabx_substr.find("</quantity>")-sLabx_substr.find("<quantity>")-10));
+
+            if (sLabx_substr.find("<unit />") != std::string::npos && sLabx_substr.find("<unit />") < sLabx_substr.find("<unit>"))
+                vUnits.push_back("");
             else
-            {
-                vHeadLines.push_back(sLabx_substr.substr(sLabx_substr.find("<quantity>")+10, sLabx_substr.find("</quantity>")-sLabx_substr.find("<quantity>")-10)
-                    + "_[" + sLabx_substr.substr(sLabx_substr.find("<unit>")+6, sLabx_substr.find("</unit>")-sLabx_substr.find("<unit>")-6) + "]");
-            }
+                vUnits.push_back(sLabx_substr.substr(sLabx_substr.find("<unit>")+6,
+                                                     sLabx_substr.find("</unit>")-sLabx_substr.find("<unit>")-6));
 
             // Convert UTF8 to WinCP1252 and erase the
             // already extracted part from the string
@@ -1923,6 +1962,7 @@ namespace NumeRe
         {
             fileData->at(i).reset(new F64ValueColumn);
             fileData->at(i)->m_sHeadLine = vHeadLines[i];
+            fileData->at(i)->m_sUnit = vUnits[i];
         }
 
         long long int nElements = 0;
@@ -1934,7 +1974,7 @@ namespace NumeRe
         {
             // Only do something, if the current
             // column contains some values
-            if (vCols[i].find("<values count=\"0\" />") == string::npos)
+            if (vCols[i].find("<values count=\"0\" />") == std::string::npos)
             {
                 // Get the number of elements in
                 // the current column
@@ -1944,7 +1984,7 @@ namespace NumeRe
 
                 // Copy the elements into the internal
                 // storage
-                for (long long int j = 0; j < min(nElements, nRows); j++)
+                for (long long int j = 0; j < std::min(nElements, nRows); j++)
                 {
                     fileData->at(i)->setValue(j, extractValueFromTag(vCols[i].substr(vCols[i].find("<value"),
                                                                                      vCols[i].find('<', vCols[i].find('/'))-vCols[i].find("<value"))));
@@ -1960,11 +2000,11 @@ namespace NumeRe
     /// \brief This simple member function extracts
     /// the numerical value of the XML tag string.
     ///
-    /// \param sTag const string&
+    /// \param sTag const std::string&
     /// \return double
     ///
     /////////////////////////////////////////////////
-    double CassyLabx::extractValueFromTag(const string& sTag)
+    double CassyLabx::extractValueFromTag(const std::string& sTag)
     {
         return StrToDb(sTag.substr(7, sTag.find('<', 7)-7));
     }
@@ -1974,7 +2014,7 @@ namespace NumeRe
     // class CommaSeparatedValues
     //////////////////////////////////////////////
     //
-    CommaSeparatedValues::CommaSeparatedValues(const string& filename) : GenericFile(filename)
+    CommaSeparatedValues::CommaSeparatedValues(const std::string& filename) : GenericFile(filename)
     {
         // Empty constructor
     }
@@ -2017,18 +2057,18 @@ namespace NumeRe
     void CommaSeparatedValues::readFile()
     {
         // Open the file stream in text mode
-        open(ios::in);
+        open(std::ios::in);
 
         // Create the needed variabels
 		char cSep = 0;
         long long int nLine = 0;
 		long long int nComment = 0;
-		vector<string> vHeadLine;
+		std::vector<std::string> vHeadLine;
 
 		// Read the whole file to a vector and
 		// get the number of lines available in
 		// the data file
-		vector<string> vFileData = readTextFile(true);
+		std::vector<std::string> vFileData = readTextFile(true);
 
 		// Combine all cells, which are spread over
 		// multiple lines into a single row by checking
@@ -2071,18 +2111,18 @@ namespace NumeRe
 
         // Define the set of valid letters numeric and
         // append the separator character
-        string sValidSymbols = "0123456789.,;-+eE INFAinfa/";
+        std::string sValidSymbols = "0123456789.,;-+eE INFAinfa/";
         sValidSymbols += cSep;
 
         // Search for non-numeric characters in the first
         // line of the file. Extract the possible table
         // column heads and note, when the table heads were
         // extracted from the file
-        if (vFileData[0].find_first_not_of(sValidSymbols) != string::npos)
+        if (vFileData[0].find_first_not_of(sValidSymbols) != std::string::npos)
         {
             // Tokenize the current line using the
             // separator character
-            vector<string> vTokens = tokenize(vFileData[0], string(1, cSep), GenericFile::CONSIDER_QMARKS);
+            std::vector<std::string> vTokens = tokenize(vFileData[0], std::string(1, cSep), GenericFile::CONSIDER_QMARKS);
 
             for (size_t i = 0; i < vTokens.size(); i++)
             {
@@ -2136,7 +2176,9 @@ namespace NumeRe
         {
             for (long long int j = 0; j < nCols; j++)
             {
-                fileData->at(j)->m_sHeadLine = vHeadLine[j];
+                std::pair<std::string,std::string> headAndUnit = findAndParseUnit(vHeadLine[j]);
+                fileData->at(j)->m_sHeadLine = headAndUnit.first;
+                fileData->at(j)->m_sUnit = headAndUnit.second;
             }
         }
 		else
@@ -2146,7 +2188,7 @@ namespace NumeRe
 		    // column head
 			if (nCols == 1)
 			{
-                if (sFileName.find('/') == string::npos)
+                if (sFileName.find('/') == std::string::npos)
                     fileData->at(0)->m_sHeadLine = sFileName.substr(0, sFileName.rfind('.'));
                 else
                     fileData->at(0)->m_sHeadLine = sFileName.substr(sFileName.rfind('/')+1, sFileName.rfind('.')-1-sFileName.rfind('/'));
@@ -2163,7 +2205,7 @@ namespace NumeRe
                 continue;
 
             // Tokenize the current line
-            vector<string> vTokens = tokenize(vFileData[i], string(1, cSep), GenericFile::CONSIDER_QMARKS);
+            std::vector<std::string> vTokens = tokenize(vFileData[i], std::string(1, cSep), GenericFile::CONSIDER_QMARKS);
 
             // Decode each token
             for (size_t j = 0; j < vTokens.size(); j++)
@@ -2190,7 +2232,7 @@ namespace NumeRe
     {
         // Open the file in text mode and truncate
         // all its contents
-        open(ios::out | ios::trunc);
+        open(std::ios::out | std::ios::trunc);
 
         // Write the headers
         writeHeader();
@@ -2251,7 +2293,7 @@ namespace NumeRe
             if (!fileData->at(j))
                 continue;
 
-            pair<size_t, size_t> pCellExtents = calculateCellExtents(fileData->at(j)->m_sHeadLine);
+            std::pair<std::size_t, std::size_t> pCellExtents = calculateCellExtents(fileData->at(j)->m_sHeadLine, fileData->at(j)->m_sUnit);
 
             if (nNumberOfHeadlines < pCellExtents.second)
                 nNumberOfHeadlines = pCellExtents.second;
@@ -2280,35 +2322,41 @@ namespace NumeRe
     /// the most common characters are checked first
     /// and the uncommon ones afterwards.
     ///
-    /// \param vTextData const vector<string>&
+    /// \param vTextData const std::vector<std::string>&
     /// \return char
     ///
     /////////////////////////////////////////////////
-    char CommaSeparatedValues::findSeparator(const vector<string>& vTextData)
+    char CommaSeparatedValues::findSeparator(const std::vector<std::string>& vTextData)
     {
         char cSep = 0;
 
-        if (vTextData[0].find('.') != string::npos && vTextData[0].find(',') != string::npos && vTextData[0].find('\t') != string::npos)
+        if (vTextData[0].find('.') != std::string::npos
+            && vTextData[0].find(',') != std::string::npos
+            && vTextData[0].find('\t') != std::string::npos)
             cSep = ',';
-		else if (vTextData[0].find(';') != string::npos && (vTextData[0].find(',') != string::npos || vTextData[0].find('.') != string::npos) && vTextData[0].find('\t') != string::npos)
+        else if (vTextData[0].find(';') != std::string::npos
+                 && (vTextData[0].find(',') != std::string::npos || vTextData[0].find('.') != std::string::npos)
+                 && vTextData[0].find('\t') != std::string::npos)
             cSep = ';';
-		else if (vTextData[0].find('\t') != string::npos)
+		else if (vTextData[0].find('\t') != std::string::npos)
             cSep = '\t';
-        else if (vTextData[0].find(';') != string::npos)
+        else if (vTextData[0].find(';') != std::string::npos)
             cSep = ';';
-        else if (vTextData[0].find(',') != string::npos)
+        else if (vTextData[0].find(',') != std::string::npos)
             cSep = ',';
-        else if (vTextData[0].find(' ') != string::npos && vTextData.size() > 1 && vTextData[1].find(' ') != string::npos)
+        else if (vTextData[0].find(' ') != std::string::npos
+                 && vTextData.size() > 1
+                 && vTextData[1].find(' ') != std::string::npos)
             cSep = ' ';
         else
         {
-            if (vTextData[0].find(',') != string::npos)
+            if (vTextData[0].find(',') != std::string::npos)
                 cSep = ',';
-            else if (vTextData[0].find(';') != string::npos)
+            else if (vTextData[0].find(';') != std::string::npos)
                 cSep = ';';
-            else if (vTextData[0].find('\t') != string::npos)
+            else if (vTextData[0].find('\t') != std::string::npos)
                 cSep = '\t';
-            else if (vTextData[0].find(' ') != string::npos)
+            else if (vTextData[0].find(' ') != std::string::npos)
                 cSep = ' ';
             else
                 cSep = ','; // Fallback if this file does only contain a single column
@@ -2415,7 +2463,7 @@ namespace NumeRe
     // class LaTeXTable
     //////////////////////////////////////////////
     //
-    LaTeXTable::LaTeXTable(const string& filename) : GenericFile(filename)
+    LaTeXTable::LaTeXTable(const std::string& filename) : GenericFile(filename)
     {
         // Empty constructor
     }
@@ -2439,18 +2487,18 @@ namespace NumeRe
     {
         // Open the file in text mode and
         // truncate all its contents
-        open(ios::trunc | ios::out);
+        open(std::ios::trunc | std::ios::out);
 
         // Prepare a label for the table
-        string sLabel = sFileName;
+        std::string sLabel = sFileName;
 
-        if (sLabel.find('/') != string::npos)
+        if (sLabel.find('/') != std::string::npos)
             sLabel.erase(0, sLabel.rfind('/')+1);
 
-        if (sLabel.find(".tex") != string::npos)
+        if (sLabel.find(".tex") != std::string::npos)
             sLabel.erase(sLabel.rfind(".tex"));
 
-        while (sLabel.find(' ') != string::npos)
+        while (sLabel.find(' ') != std::string::npos)
             sLabel[sLabel.find(' ')] = '_';
 
         // Write the legal header stuff
@@ -2466,7 +2514,7 @@ namespace NumeRe
         {
             fFileStream << "\\begin{table}[htb]\n";
             fFileStream << "\\centering\n";
-            string sPrint = "\\begin{tabular}{";
+            std::string sPrint = "\\begin{tabular}{";
 
             for (long long int j = 0; j < nCols; j++)
                 sPrint += "c";
@@ -2479,7 +2527,7 @@ namespace NumeRe
         }
         else
         {
-            string sPrint = "\\begin{longtable}{";
+            std::string sPrint = "\\begin{longtable}{";
 
             for (long long int j = 0; j < nCols; j++)
                 sPrint += "c";
@@ -2548,7 +2596,7 @@ namespace NumeRe
             fFileStream << "\\end{longtable}\n";
         }
 
-        fFileStream << flush;
+        fFileStream << std::flush;
     }
 
 
@@ -2561,7 +2609,7 @@ namespace NumeRe
     /////////////////////////////////////////////////
     void LaTeXTable::writeHeader()
     {
-        string sBuild = AutoVersion::YEAR;
+        std::string sBuild = AutoVersion::YEAR;
         sBuild += "-";
         sBuild += AutoVersion::MONTH;
         sBuild += "-";
@@ -2576,7 +2624,7 @@ namespace NumeRe
         fFileStream << "%\n";
         fFileStream << "% " + _lang.get("OUTPUT_PRINTLEGAL_LINE4", getTimeStamp(false)) << "\n";
         fFileStream << "%\n";
-        fFileStream << "% " + _lang.get("OUTPUT_PRINTLEGAL_TEX") << "\n%" << endl;
+        fFileStream << "% " + _lang.get("OUTPUT_PRINTLEGAL_TEX") << "\n%" << std::endl;
     }
 
 
@@ -2591,7 +2639,7 @@ namespace NumeRe
     /////////////////////////////////////////////////
     void LaTeXTable::writeTableHeads()
     {
-        string sPrint = "";
+        std::string sPrint = "";
 
         // Copy the contents to the string and
         // consider the number of lines needed
@@ -2637,7 +2685,7 @@ namespace NumeRe
             if (!fileData->at(i))
                 continue;
 
-            auto extents = calculateCellExtents(fileData->at(i)->m_sHeadLine);
+            auto extents = calculateCellExtents(fileData->at(i)->m_sHeadLine, fileData->at(i)->m_sUnit);
 
             if (extents.second > headlines)
                 headlines = extents.second;
@@ -2652,13 +2700,13 @@ namespace NumeRe
     /// ASCII characters into their corresponding
     /// LaTeX entities.
     ///
-    /// \param _sText const string&
+    /// \param _sText const std::string&
     /// \return string
     ///
     /////////////////////////////////////////////////
-    string LaTeXTable::replaceNonASCII(const string& _sText)
+    std::string LaTeXTable::replaceNonASCII(const std::string& _sText)
     {
-        string sReturn = _sText;
+        std::string sReturn = _sText;
 
         for (size_t i = 0; i < sReturn.length(); i++)
         {
@@ -2699,7 +2747,7 @@ namespace NumeRe
                 sReturn.insert(i,1,'\\');
         }
 
-        if (sReturn.find("+/-") != string::npos)
+        if (sReturn.find("+/-") != std::string::npos)
         {
             sReturn = sReturn.substr(0, sReturn.find("+/-"))
                     + "$\\pm$"
@@ -2715,12 +2763,12 @@ namespace NumeRe
     /// as LaTeX number string.
     ///
     /// \param number const mu::value_type&
-    /// \return string
+    /// \return std::string
     ///
     /////////////////////////////////////////////////
-    string LaTeXTable::formatNumber(const mu::value_type& number)
+    std::string LaTeXTable::formatNumber(const mu::value_type& number)
     {
-        string sNumber = toString(number, nPrecFields);
+        std::string sNumber = toString(number, nPrecFields);
 
         // Handle floating point numbers with
         // exponents correctly
@@ -2752,7 +2800,7 @@ namespace NumeRe
     // class JcampDX
     //////////////////////////////////////////////
     //
-    JcampDX::JcampDX(const string& filename) : GenericFile(filename)
+    JcampDX::JcampDX(const std::string& filename) : GenericFile(filename)
     {
         needsConversion = false;
     }
@@ -2807,7 +2855,7 @@ namespace NumeRe
     void JcampDX::readFile()
     {
         // Open the file in text mode
-        open(ios::in);
+        open(std::ios::in);
 
         // Create some temporary buffer variables
 		size_t nTableStart = 0;
@@ -3058,7 +3106,7 @@ namespace NumeRe
         for (size_t j = nTableStart; j < nDataStart-1; j++)
         {
             // Omit comments
-            if (vFileContents[j].find("$$") != string::npos)
+            if (vFileContents[j].find("$$") != std::string::npos)
                 vFileContents[j].erase(vFileContents[j].find("$$"));
 
             // Get the x and y scaling factors
@@ -3099,27 +3147,25 @@ namespace NumeRe
         if (meta.m_xUnit.length())
         {
             if (toUpperCase(meta.m_xUnit) == "1/CM")
-                meta.m_xUnit = "Wave number k [cm^-1]";
+                meta.m_xUnit = "Wave number k|1/cm";
             else if (toUpperCase(meta.m_xUnit) == "MICROMETERS")
-                meta.m_xUnit = "Wave length lambda [mu m]";
+                meta.m_xUnit = "Wave length lambda|mu m";
             else if (toUpperCase(meta.m_xUnit) == "NANOMETERS")
-                meta.m_xUnit = "Wave length lambda [nm]";
+                meta.m_xUnit = "Wave length lambda|nm";
             else if (toUpperCase(meta.m_xUnit) == "SECONDS")
-                meta.m_xUnit = "Time t [s]";
+                meta.m_xUnit = "Time t|s";
             else if (toUpperCase(meta.m_xUnit) == "1/S" || toUpperCase(meta.m_xUnit) == "1/SECONDS")
-                meta.m_xUnit = "Frequency f [Hz]";
-            else
-                meta.m_xUnit = "[" + meta.m_xUnit + "]";
+                meta.m_xUnit = "Frequency f|Hz";
         }
 
         if (meta.m_yUnit.length())
         {
             if (toUpperCase(meta.m_yUnit) == "TRANSMITTANCE")
-                meta.m_yUnit = "Transmittance";
+                meta.m_yUnit = "Transmittance|%";
             else if (toUpperCase(meta.m_yUnit) == "REFLECTANCE")
-                meta.m_yUnit = "Reflectance";
+                meta.m_yUnit = "Reflectance|%";
             else if (toUpperCase(meta.m_yUnit) == "ABSORBANCE")
-                meta.m_yUnit = "Absorbance";
+                meta.m_yUnit = "Absorbance|%";
             else if (toUpperCase(meta.m_yUnit) == "KUBELKA-MUNK")
                 meta.m_yUnit = "Kubelka-Munk";
             else if (toUpperCase(meta.m_yUnit) == "ARBITRARY UNITS" || meta.m_yUnit.starts_with("Intensity"))
@@ -3128,8 +3174,14 @@ namespace NumeRe
 
         meta.m_deltaX = (meta.m_lastX - meta.m_firstX) / (meta.m_points - 1);
         size_t currentRow = 0;
-        fileData->at(nPageOffset + 0)->m_sHeadLine = meta.m_xUnit;
-        fileData->at(nPageOffset + 1)->m_sHeadLine = meta.m_yUnit;
+        fileData->at(nPageOffset + 0)->m_sHeadLine = meta.m_xUnit.substr(0, meta.m_xUnit.find('|'));
+        fileData->at(nPageOffset + 1)->m_sHeadLine = meta.m_yUnit.substr(0, meta.m_yUnit.find('|'));
+
+        if (meta.m_xUnit.find('|') != std::string::npos)
+            fileData->at(nPageOffset + 0)->m_sUnit = meta.m_xUnit.substr(meta.m_xUnit.find('|')+1);
+
+        if (meta.m_yUnit.find('|') != std::string::npos)
+            fileData->at(nPageOffset + 1)->m_sUnit = meta.m_yUnit.substr(meta.m_yUnit.find('|')+1);
 
         // Now go through the actual data section
         // of the file and convert it into
@@ -3146,7 +3198,7 @@ namespace NumeRe
                 continue;
 
             // Omit comments
-            if (vFileContents[j].find("$$") != string::npos)
+            if (vFileContents[j].find("$$") != std::string::npos)
             {
                 vFileContents[j].erase(vFileContents[j].find("$$"));
                 StripSpaces(vFileContents[j]);
@@ -3213,13 +3265,13 @@ namespace NumeRe
     /// characters and underscores from the label
     /// name itself and converting it into upper case.
     ///
-    /// \param sLine string&
+    /// \param sLine std::string&
     /// \return void
     ///
     /////////////////////////////////////////////////
-    void JcampDX::parseLabel(string& sLine)
+    void JcampDX::parseLabel(std::string& sLine)
     {
-        if (sLine.find("##") == string::npos || sLine.find('=') == string::npos)
+        if (sLine.find("##") == std::string::npos || sLine.find('=') == std::string::npos)
             return;
 
         for (size_t i = 0; i < sLine.length(); i++)
@@ -3418,7 +3470,7 @@ namespace NumeRe
     // class OpenDocumentSpreadSheet
     //////////////////////////////////////////////
     //
-    OpenDocumentSpreadSheet::OpenDocumentSpreadSheet(const string& filename) : GenericFile(filename)
+    OpenDocumentSpreadSheet::OpenDocumentSpreadSheet(const std::string& filename) : GenericFile(filename)
     {
         // Empty constructor
     }
@@ -3606,9 +3658,13 @@ namespace NumeRe
             nTableId++;
         } while ((table = table->NextSiblingElement("table:table")));
 
-        // Now calculate the total number of rows in this data set
+        // Now calculate the total number of rows in this data set and
+        // separate column headers and their units
         for (TblColPtr& col : *fileData)
         {
+            std::pair<std::string,std::string> headAndUnit = findAndParseUnit(col->m_sHeadLine);
+            col->m_sHeadLine = headAndUnit.first;
+            col->m_sUnit = headAndUnit.second;
             nRows = col->size() > nRows ? col->size() : nRows;
         }
     }
@@ -3637,7 +3693,7 @@ namespace NumeRe
     // class XLSSpreadSheet
     //////////////////////////////////////////////
     //
-    XLSSpreadSheet::XLSSpreadSheet(const string& filename) : GenericFile(filename)
+    XLSSpreadSheet::XLSSpreadSheet(const std::string& filename) : GenericFile(filename)
     {
         // Empty constructor
     }
@@ -3667,9 +3723,9 @@ namespace NumeRe
         long long int nExcelCols = 0;
         long long int nOffset = 0;
         long long int nCommentLines = 0;
-        vector<long long int> vCommentLines;
+        std::vector<long long int> vCommentLines;
         bool bBreakSignal = false;
-        string sEntry;
+        std::string sEntry;
 
         // Ensure that the XLS file is readable
         if (!_excel.Load(sFileName.c_str()))
@@ -3846,6 +3902,14 @@ namespace NumeRe
 
             nOffset += nExcelCols;
         }
+
+        // Now separate column headers and their units
+        for (TblColPtr& col : *fileData)
+        {
+            std::pair<std::string,std::string> headAndUnit = findAndParseUnit(col->m_sHeadLine);
+            col->m_sHeadLine = headAndUnit.first;
+            col->m_sUnit = headAndUnit.second;
+        }
     }
 
 
@@ -3863,8 +3927,8 @@ namespace NumeRe
         YExcel::BasicExcelWorksheet* _sheet;
         YExcel::BasicExcelCell* _cell;
 
-        string sHeadLine;
-        string sSheetName = getTableName();
+        std::string sHeadLine;
+        std::string sSheetName = getTableName();
 
         if (sSheetName.length() > MAXSHEETLENGTH)
             sSheetName = "Table";
@@ -3896,7 +3960,7 @@ namespace NumeRe
             if (!_cell)
                 throw SyntaxError(SyntaxError::CANNOT_SAVE_FILE, sFileName, SyntaxError::invalid_position, sFileName);
 
-            sHeadLine = fileData->at(j)->m_sHeadLine;
+            sHeadLine = fileData->at(j)->m_sHeadLine + (fileData->at(j)->m_sUnit.length() ? " [" + fileData->at(j)->m_sUnit + "]" : "");
 
             // Replace newlines with the corresponding character code
             for (size_t i = 0; i < sHeadLine.length(); i++)
@@ -3944,7 +4008,7 @@ namespace NumeRe
     // class XLSXSpreadSheet
     //////////////////////////////////////////////
     //
-    XLSXSpreadSheet::XLSXSpreadSheet(const string& filename) : GenericFile(filename)
+    XLSXSpreadSheet::XLSXSpreadSheet(const std::string& filename) : GenericFile(filename)
     {
         // Empty constructor
     }
@@ -4025,11 +4089,11 @@ namespace NumeRe
 
         const int MAXXLSXCOLS = 16384;
 
-        vector<long long int> vCommentLines;
-        string sEntry;
-        string sSheetContent;
-        string sStringsContent;
-        string sCellLocation;
+        std::vector<long long int> vCommentLines;
+        std::string sEntry;
+        std::string sSheetContent;
+        std::string sStringsContent;
+        std::string sCellLocation;
 
         // We use TinyXML-2 as XML libary in this case
         tinyxml2::XMLDocument _workbook;
@@ -4148,7 +4212,7 @@ namespace NumeRe
                     {
                         // If the attribute signalizes a
                         // non-string element, we abort here
-                        if (_element->Attribute("t") != string("s"))
+                        if (_element->Attribute("t") != std::string("s"))
                         {
                             bBreakSignal = true;
                             break;
@@ -4321,7 +4385,7 @@ namespace NumeRe
                     // catch textual cells and store them
                     // in the corresponding table column
                     // head
-                    if (_element->Attribute("t") && _element->Attribute("t") == string("s"))
+                    if (_element->Attribute("t") && _element->Attribute("t") == std::string("s"))
                     {
                         //Handle text
                         int nPos = 0;
@@ -4361,7 +4425,7 @@ namespace NumeRe
                         std::string sValue = utf8parser(_element->FirstChildElement("v")->GetText());
 
                         // Decode styles
-                        if (_element->Attribute("t") && _element->Attribute("t") == string("b"))
+                        if (_element->Attribute("t") && _element->Attribute("t") == std::string("b"))
                             sValue = sValue == "0" ? "false" : "true";
                         else if (_element->Attribute("s") && cellXfs && cellXfs->FirstChildElement())
                         {
@@ -4414,6 +4478,15 @@ namespace NumeRe
 
             nOffset += nColmax-nColmin+1;
         }
+
+        // Now separate column headers and their units
+        for (TblColPtr& col : *fileData)
+        {
+            std::pair<std::string,std::string> headAndUnit = findAndParseUnit(col->m_sHeadLine);
+            col->m_sHeadLine = headAndUnit.first;
+            col->m_sUnit = headAndUnit.second;
+            nRows = col->size() > nRows ? col->size() : nRows;
+        }
     }
 
 
@@ -4421,16 +4494,16 @@ namespace NumeRe
     /// \brief This member function converts the
     /// usual Excel indices into numerical ones.
     ///
-    /// \param _sIndices const string&
+    /// \param _sIndices const std::string&
     /// \param nLine int&
     /// \param nCol int&
     /// \return void
     ///
     /////////////////////////////////////////////////
-    void XLSXSpreadSheet::evalIndices(const string& _sIndices, int& nLine, int& nCol)
+    void XLSXSpreadSheet::evalIndices(const std::string& _sIndices, int& nLine, int& nCol)
     {
         //A1 -> IV65536
-        string sIndices = toUpperCase(_sIndices);
+        std::string sIndices = toUpperCase(_sIndices);
 
         for (size_t i = 0; i < sIndices.length(); i++)
         {
@@ -4460,7 +4533,7 @@ namespace NumeRe
     // class IgorBinaryWave
     //////////////////////////////////////////////
     //
-    IgorBinaryWave::IgorBinaryWave(const string& filename) : GenericFile(filename), bXZSlice(false)
+    IgorBinaryWave::IgorBinaryWave(const std::string& filename) : GenericFile(filename), bXZSlice(false)
     {
         needsConversion = false;
     }
@@ -4632,7 +4705,7 @@ namespace NumeRe
         // table column head
         for (long long int j = 0; j < nFirstCol; j++)
         {
-            fileData->at(j)->m_sHeadLine = cName + string("_[")+(char)('x'+j)+string("]");
+            fileData->at(j)->m_sHeadLine = cName + std::string("_[")+(char)('x'+j)+std::string("]");
 
             for (long long int i = 0; i < nDim[j]; i++)
             {
@@ -4659,9 +4732,9 @@ namespace NumeRe
             // Write the corresponding table column
             // head
             if (nCols == 2 && !j)
-                fileData->at(1)->m_sHeadLine = cName + string("_[y]");
+                fileData->at(1)->m_sHeadLine = cName + std::string("_[y]");
             else
-                fileData->at(j+nFirstCol)->m_sHeadLine = cName + string("_["+toString(j+1)+"]");
+                fileData->at(j+nFirstCol)->m_sHeadLine = cName + std::string("_["+toString(j+1)+"]");
 
             // Write the actual data to the table.
             // We have to take care about the type
@@ -4748,7 +4821,7 @@ namespace NumeRe
     // class ZygoDat
     //////////////////////////////////////////////
     //
-    ZygoDat::ZygoDat(const string& filename) : GenericFile(filename)
+    ZygoDat::ZygoDat(const std::string& filename) : GenericFile(filename)
     {
         needsConversion = false;
     }
@@ -4828,7 +4901,9 @@ namespace NumeRe
         for (const ZygoLib::InterferogramData& layer : fileContent)
         {
             fileData->at(colOffset)->m_sHeadLine = "x";
+            fileData->at(colOffset)->m_sUnit = "m";
             fileData->at(colOffset+1)->m_sHeadLine = "y";
+            fileData->at(colOffset+1)->m_sUnit = "m";
 
             // Write the x column
             for (uint16_t i = 0; i < layer.header.cn_width; i++)
@@ -4852,7 +4927,10 @@ namespace NumeRe
                 for (uint16_t j = 0; j < layer.header.cn_height; j++)
                 {
                     if (!i)
+                    {
                         fileData->at(j+colOffset+2)->m_sHeadLine = "z(x(:),y(" + toString(j+1) + "))";
+                        fileData->at(j+colOffset+2)->m_sUnit = "m";
+                    }
 
                     fileData->at(j+colOffset+2)->setValue(i, layer.phaseMatrix[j][i]);
                 }

@@ -355,52 +355,74 @@ struct NumberFormatsVoter
     /////////////////////////////////////////////////
     int getFormat()
     {
-        if(m_num_format_votes[FMT_INVALID] > 0)
+        if (m_num_format_votes[FMT_INVALID])
             return NUM_INVALID;
 
         int cnt_set = 0;
         int num_format = 0;
-        if(m_num_format_votes[FMT_K_EU] > 0)
+
+        if (m_num_format_votes[FMT_K_EU])
         {
             num_format |= NUM_K_EU;
             cnt_set++;
         }
-        if(m_num_format_votes[FMT_K_US] > 0)
+
+        if (m_num_format_votes[FMT_K_US])
         {
             num_format |= NUM_K_US;
             cnt_set++;
         }
-        if(m_num_format_votes[FMT_K_SPACE] > 0)
+
+        if (m_num_format_votes[FMT_K_SPACE])
         {
             num_format |= NUM_K_SPACE;
             cnt_set++;
         }
 
-        if(cnt_set > 1)
+        if (cnt_set > 1)
             return NUM_INVALID;
 
-        //If no thousands seperator was set increase cnt, to also handle the case where both decimal separators are set invalidly.
-        if(cnt_set == 0)
+        // If no thousands seperator was set increase cnt, to also handle the case where both decimal separators are set invalidly.
+        if (cnt_set == 0)
             cnt_set++;
 
-        // IF we have some ambigious votes that correspont to unique decimals use these to set thousands seperator.
-        if(m_num_format_votes[FMT_DEC_EU] > 0)
+        // If we have some ambigious votes that correspont to unique decimals use these to set thousands seperator.
+        if (m_num_format_votes[FMT_DEC_EU])
         {
-            num_format |= NUM_DECIMAL_EU | (m_num_format_votes[FMT_AMBIGIOUS_DOT] > 0 ? NUM_K_EU : 0);
+            num_format |= NUM_DECIMAL_EU | (m_num_format_votes[FMT_AMBIGIOUS_DOT] ? NUM_K_EU : 0);
             cnt_set++;
         }
 
-        if(m_num_format_votes[FMT_DEC_US] > 0)
+        if (m_num_format_votes[FMT_DEC_US])
         {
-            num_format |= NUM_DECIMAL_US | (m_num_format_votes[FMT_AMBIGIOUS_COM] > 0 ? NUM_K_US : 0);
+            num_format |= NUM_DECIMAL_US | (m_num_format_votes[FMT_AMBIGIOUS_COM] ? NUM_K_US : 0);
             cnt_set++;
         }
 
-        if(cnt_set > 2)
+        if (cnt_set > 2)
             return NUM_INVALID;
 
-        // if nothing found at all -> return US
-        return cnt_set == 0 ? NUM_DECIMAL_US | NUM_K_US : num_format;
+        // We're happy, if we detected at least the decimals
+        if (num_format & (NUM_DECIMAL_EU | NUM_DECIMAL_US))
+            return num_format;
+
+        // This is the fallback section, if we had no votes on
+        // decimals or only ambiguous votes. We use heuristics
+        // to solve this problem.
+        //
+        // Use thousands to detect decimals
+        if (num_format & (NUM_K_EU | NUM_K_SPACE))
+            return num_format | NUM_DECIMAL_EU;
+
+        if (num_format & NUM_K_US)
+            return num_format | NUM_DECIMAL_US;
+
+        // Do we have ambigous votes? Handle them as decimals, if only comma => it is EU
+        if (m_num_format_votes[FMT_AMBIGIOUS_COM] && !m_num_format_votes[FMT_AMBIGIOUS_DOT])
+            return NUM_K_EU | NUM_DECIMAL_EU;
+
+        // If both or only dot it is US, which is fallback for everything
+        return NUM_DECIMAL_US | NUM_K_US;
     }
 };
 

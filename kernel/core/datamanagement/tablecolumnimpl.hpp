@@ -80,15 +80,13 @@ class GenericValueColumn : public TableColumn
         /////////////////////////////////////////////////
         virtual std::string getValueAsString(size_t elem) const override
         {
-            if (elem < m_data.size())
-                return toCmdString(m_data[elem]);
-
-            return "nan";
+            return getValueAsInternalString(elem) + (this->m_sUnit.length() ? " " + this->m_sUnit : "");
         }
 
         /////////////////////////////////////////////////
         /// \brief Returns the contents as an internal
-        /// string (i.e. without quotation marks).
+        /// string (i.e. without quotation marks and
+        /// unit).
         ///
         /// \param elem size_t
         /// \return std::string
@@ -96,7 +94,10 @@ class GenericValueColumn : public TableColumn
         /////////////////////////////////////////////////
         virtual std::string getValueAsInternalString(size_t elem) const override
         {
-            return getValueAsString(elem);
+            if (elem < m_data.size())
+                return toString(std::complex<double>(m_data[elem]), 14);
+
+            return "nan";
         }
 
         /////////////////////////////////////////////////
@@ -124,7 +125,7 @@ class GenericValueColumn : public TableColumn
         {
 #warning FIXME (numere#1#11/09/23): Using the explicit constructor is a hack
             if (elem < m_data.size())
-                return toString(mu::value_type(m_data[elem]), NumeReKernel::getInstance()->getSettings().getPrecision());
+                return toString(std::complex<double>(m_data[elem]), NumeReKernel::getInstance()->getSettings().getPrecision()) + (this->m_sUnit.length() ? " " + this->m_sUnit : "");
 
             return "nan";
         }
@@ -176,7 +177,7 @@ class GenericValueColumn : public TableColumn
         {
             if (column->m_type == m_type)
             {
-                m_sHeadLine = column->m_sHeadLine;
+                assignMetaData(column);
                 m_data = static_cast<const GenericValueColumn*>(column)->m_data;
                 m_numElements = static_cast<const GenericValueColumn*>(column)->m_numElements;
             }
@@ -413,7 +414,7 @@ class GenericValueColumn : public TableColumn
                 }
             }
 
-            col->m_sHeadLine = m_sHeadLine;
+            col->assignMetaData(this);
             return col;
         }
 
@@ -502,7 +503,7 @@ class BaseFloatColumn : public GenericValueColumn<T, COLTYPE>
             idx.setOpenEndIndex(this->getNumFilledElements()-1);
 
             BaseFloatColumn* col = new BaseFloatColumn(idx.size());
-            col->m_sHeadLine = this->m_sHeadLine;
+            col->assignMetaData(this);
 
             for (size_t i = 0; i < idx.size(); i++)
             {
@@ -597,7 +598,7 @@ class BaseComplexColumn : public GenericValueColumn<T, COLTYPE>
             idx.setOpenEndIndex(this->getNumFilledElements()-1);
 
             BaseComplexColumn* col = new BaseComplexColumn(idx.size());
-            col->m_sHeadLine = this->m_sHeadLine;
+            col->assignMetaData(this);
 
             for (size_t i = 0; i < idx.size(); i++)
             {
@@ -698,7 +699,7 @@ class BaseIntColumn : public GenericValueColumn<T, COLTYPE>
             idx.setOpenEndIndex(nNumElements-1);
 
             BaseIntColumn* col = new BaseIntColumn(idx.size());
-            col->m_sHeadLine = this->m_sHeadLine;
+            col->assignMetaData(this);
 
             for (size_t i = 0; i < idx.size(); i++)
             {

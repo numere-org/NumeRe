@@ -24,6 +24,7 @@
 #include "tablecolumn.hpp"
 #include "../maths/filtering.hpp"
 #include "../maths/anovaimpl.hpp"
+#include "../maths/units.hpp"
 
 #ifndef MEMORY_HPP
 #define MEMORY_HPP
@@ -147,6 +148,9 @@ class Memory : public Sorter
 		void copyElementsInto(std::vector<mu::value_type>* vTarget, const VectorIndex& _vLine, const VectorIndex& _vCol) const;
 		std::string getHeadLineElement(size_t _i) const;
 		std::vector<std::string> getHeadLineElement(const VectorIndex& _vCol) const;
+		std::string getUnit(int nCol) const;
+		std::vector<mu::value_type> asSiUnits(size_t nCol) const;
+		std::string showUnitConversion(size_t nCol, UnitConversionMode mode) const;
 		size_t getAppendedZeroes(size_t _i) const;
 		size_t getHeadlineCount() const;
 		std::string getComment() const;
@@ -162,6 +166,8 @@ class Memory : public Sorter
 		void writeData(Indices& _idx, mu::value_type* _dData, size_t _nNum);
 		void writeData(Indices& _idx, const ValueVector& _values);
 		bool setHeadLineElement(size_t _i, const std::string& _sHead);
+		bool setUnit(int nCol, const std::string& sUnit);
+		std::vector<std::string> toSiUnits(const VectorIndex& _vCols, UnitConversionMode mode);
 		void writeComment(const std::string& comment);
 		void setMetaData(const NumeRe::TableMetaData& meta);
 		void markModified();

@@ -1732,21 +1732,21 @@ static double extractLaTeXExponent(std::string& sExpr)
 /////////////////////////////////////////////////
 static StringVector strfnc_textparse(StringFuncArgs& funcArgs)
 {
-    StringView sView1 = funcArgs.sArg1.view();
-    StringView sView2 = funcArgs.sArg2.view();
+    StringView sSearchString = funcArgs.sArg1.view();
+    StringView sPattern = funcArgs.sArg2.view();
 
     // Exclude border cases
-    if (!sView1.length())
+    if (!sSearchString.length())
         return StringVector::empty_string();
 
-    if (!sView2.length())
-        return "\"" + sView1.to_string() + "\"";
+    if (!sPattern.length())
+        return "\"" + sSearchString.to_string() + "\"";
 
     // Ensure that the indices are valid
     if (funcArgs.nArg1 < 1)
         funcArgs.nArg1 = 1;
 
-    if ((size_t)funcArgs.nArg1 > sView1.length())
+    if ((size_t)funcArgs.nArg1 > sSearchString.length())
         return StringVector::empty_string();
 
     if (funcArgs.nArg2 == DEFAULT_NUM_ARG)
@@ -1759,18 +1759,183 @@ static StringVector strfnc_textparse(StringFuncArgs& funcArgs)
 
     StringVector sParsedStrings;
     size_t lastPosition = funcArgs.nArg1 - 1;
-    static std::string sIDENTIFIERCHARS = "sfaLlthbo";
+    static const std::string sIDENTIFIERCHARS = "sfaLlthbo";
+
+    std::vector<StringView> vPatterns;
+
+    // Tokenize the search pattern
+    while (sPattern.length())
+    {
+        // Handle single char pattern stubs first
+        if (sPattern.length() == 1)
+        {
+            vPatterns.push_back(sPattern);
+            break;
+        }
+
+        for (size_t i = 0; i < sPattern.length()-1; i++)
+        {
+            if (sPattern[i] == '%' && sIDENTIFIERCHARS.find(sPattern[i+1]) != std::string::npos)
+            {
+                vPatterns.push_back(sPattern.subview(0, i));
+                vPatterns.push_back(sPattern.subview(i, 2));
+
+                if (vPatterns.back() == "%s")
+                    sParsedStrings.push_back("");
+                else if (vPatterns.back() != "%a")
+                    sParsedStrings.push_back(std::complex<double>(NAN));
+
+                sPattern.trim_front(i+2);
+                break;
+            }
+
+            if (i+2 == sPattern.length())
+            {
+                vPatterns.push_back(sPattern);
+                sPattern.clear();
+                break;
+            }
+        }
+    }
 
     // If the search string starts with whitespaces and the
     // pattern doesn't start with a percentage sign, search
     // for the first non-whitespace character
-    if (sView2.front() != '%' && sView1.front() == ' ')
+    if (!vPatterns.front().length() && sSearchString.front() == ' ')
     {
-        lastPosition = sView1.find_first_not_of(' ');
+        lastPosition = sSearchString.find_first_not_of(' ');
+
+        if (lastPosition == std::string::npos)
+            return sParsedStrings;
+    }
+    else if (vPatterns.front().length())
+    {
+        lastPosition = sSearchString.find(vPatterns.front().to_string());
+
+        if (lastPosition == std::string::npos)
+            return sParsedStrings;
+
+        lastPosition += vPatterns.front().length();
     }
 
+    size_t nth_token = 0;
+
+    // Patterns and identifiers are alternating, starting with
+    // identifiers
+    for (size_t n = 1; n < vPatterns.size(); n+=2)
+    {
+        size_t pos = sSearchString.length() + lastPosition;
+        StringView nextPattern;
+
+        if (vPatterns.size() > n+1)
+            nextPattern = vPatterns[n+1];
+
+        if (nextPattern.length())
+            pos = sSearchString.find(nextPattern.to_string(), lastPosition);
+
+        if (pos == std::string::npos)
+            return sParsedStrings;
+
+        // Append the found token
+        if (vPatterns[n] == "%s")
+            sParsedStrings.getRef(nth_token) = "\"" + sSearchString.subview(lastPosition, pos - lastPosition).to_string() + "\"";
+        else if (vPatterns[n] == "%h")
+            sParsedStrings.getRef(nth_token) = toString(convertBaseToDecimal(sSearchString.subview(lastPosition, pos - lastPosition), HEX), 20);
+        else if (vPatterns[n] == "%o")
+            sParsedStrings.getRef(nth_token) = toString(convertBaseToDecimal(sSearchString.subview(lastPosition, pos - lastPosition), OCT), 20);
+        else if (vPatterns[n] == "%b")
+            sParsedStrings.getRef(nth_token) = toString(convertBaseToDecimal(sSearchString.subview(lastPosition, pos - lastPosition), BIN), 20);
+        else if (vPatterns[n] == "%l")
+            sParsedStrings.getRef(nth_token) = toString(convertBaseToDecimal(sSearchString.subview(lastPosition, pos - lastPosition), LOG), 20);
+        else if (vPatterns[n] == "%t")
+            sParsedStrings.getRef(nth_token) = toString(mu::value_type(to_double(StrToTime(sSearchString.subview(lastPosition, pos - lastPosition).to_string()))), 20);
+        else if (vPatterns[n] == "%f")
+        {
+            std::string sFloatingPoint = sSearchString.subview(lastPosition, pos - lastPosition).to_string();
+
+            if (sFloatingPoint.find('.') == std::string::npos)
+                replaceAll(sFloatingPoint, ",", ".");
+
+            sParsedStrings.getRef(nth_token) = toString(isConvertible(sFloatingPoint, CONVTYPE_VALUE) ? StrToCmplx(sFloatingPoint) : NAN, 20);
+        }
+        else if (vPatterns[n] == "%L")
+        {
+            std::string sLaTeXFormatted = sSearchString.subview(lastPosition, pos - lastPosition).to_string();
+            StripSpaces(sLaTeXFormatted);
+
+            if (sLaTeXFormatted.front() == '$' && sLaTeXFormatted.back() == '$')
+            {
+                sLaTeXFormatted = sLaTeXFormatted.substr(1, sLaTeXFormatted.length()-2);
+                StripSpaces(sLaTeXFormatted);
+            }
+
+            replaceAll(sLaTeXFormatted, "{,}", ".");
+            replaceAll(sLaTeXFormatted, "\\times", "*");
+            replaceAll(sLaTeXFormatted, "\\cdot", "*");
+            replaceAll(sLaTeXFormatted, "2\\pi", "6.283185");
+            replaceAll(sLaTeXFormatted, "\\pi", "3.1415926");
+            replaceAll(sLaTeXFormatted, "\\infty", "inf");
+            replaceAll(sLaTeXFormatted, "---", "nan");
+            replaceAll(sLaTeXFormatted, "\\,", " ");
+            // 1.0*10^{-5} 1.0*10^2 1.0*10^3 2.5^{0.5}
+
+            if (sLaTeXFormatted.find('^') != std::string::npos)
+            {
+                mu::value_type vVal = 0;
+                mu::value_type vValFinal = 0;
+
+                size_t nOpPos = std::string::npos;
+
+                // Go through all exponents and parse them into complex double format
+                while (sLaTeXFormatted.length())
+                {
+                    nOpPos = sLaTeXFormatted.find_first_of("*^");
+                    vVal = StrToCmplx(sLaTeXFormatted.substr(0, nOpPos));
+
+                    if (sLaTeXFormatted[nOpPos] == '*')
+                    {
+                        sLaTeXFormatted.erase(0, nOpPos+1);
+                        nOpPos = sLaTeXFormatted.find('^');
+                        mu::value_type vBase = StrToCmplx(sLaTeXFormatted.substr(0, nOpPos));
+                        sLaTeXFormatted.erase(0, nOpPos+1);
+                        vVal *= std::pow(vBase, extractLaTeXExponent(sLaTeXFormatted));
+                    }
+                    else
+                    {
+                        sLaTeXFormatted.erase(0, nOpPos+1);
+                        vVal = std::pow(vVal, extractLaTeXExponent(sLaTeXFormatted));
+                    }
+
+                    if (sLaTeXFormatted.find_first_not_of(" *") != std::string::npos
+                        && tolower(sLaTeXFormatted[sLaTeXFormatted.find_first_not_of(" *")]) == 'i')
+                    {
+                        vVal = mu::value_type(vVal.imag(), vVal.real());
+                        sLaTeXFormatted.erase(0, sLaTeXFormatted.find_first_of("iI")+1);
+                    }
+
+                    vValFinal += vVal;
+
+                    if (sLaTeXFormatted.find_first_not_of(' ') == std::string::npos)
+                        break;
+                }
+
+
+                sParsedStrings.getRef(nth_token) = toString(vValFinal, 20);
+            }
+            else // This can handle simple multiplications
+                sParsedStrings.getRef(nth_token) = toString(StrToCmplx(sLaTeXFormatted), 20);
+        }
+
+        if (vPatterns[n] != "%a")
+            nth_token++;
+
+        // Store the position of the separator
+        lastPosition = pos + nextPattern.length();
+    }
+
+
     // Go through the pattern
-    for (size_t i = 0; i < sView2.length(); i++)
+    /*for (size_t i = 0; i < sView2.length(); i++)
     {
         // Ensure that the last position is considered
         if (lastPosition > (size_t)funcArgs.nArg2)
@@ -1803,8 +1968,17 @@ static StringVector strfnc_textparse(StringFuncArgs& funcArgs)
 
             // Ensure that the found position is inside
             // the right border
-            if (pos > (size_t)funcArgs.nArg2 && (size_t)funcArgs.nArg2 < sView1.length())
+            if (pos >= std::min((size_t)funcArgs.nArg2, sView1.length()))
+            {
+                // Nothing found. Set the corresponding default value and
+                // break
+                if (sView2.subview(i, 2) == "%s" || sView2.subview(i, 2) == "%a")
+                    sParsedStrings.push_back("");
+                else
+                    sParsedStrings.push_back(std::complex<double>(NAN));
+
                 break;
+            }
 
             // Append the found token
             if (sView2.subview(i, 2) == "%s")
@@ -1902,7 +2076,7 @@ static StringVector strfnc_textparse(StringFuncArgs& funcArgs)
         }
         else
             lastPosition++;
-    }
+    }*/
 
     return sParsedStrings;
 }
