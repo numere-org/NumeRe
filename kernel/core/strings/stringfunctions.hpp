@@ -25,6 +25,7 @@
 #include <regex>
 #include <sstream>
 #include <libsha.hpp>
+#include "../../../externals/stduuid/include/uuid.h"
 
 #define DEFAULT_NUM_ARG INT_MIN
 // define the "End of transmission block" as string separator
@@ -2970,6 +2971,20 @@ static StringVector strfnc_getuilang(StringFuncArgs& funcArgs)
     return sLang;
 }
 
+// TODO NEW
+static StringVector strfnc_getuuid(StringFuncArgs& funcArgs)
+{
+
+    std::mt19937& generator = getRandGenInstance();
+    uuids::uuid_random_generator gen{generator};
+
+    uuids::uuid const id = gen();
+    StringVector sLang;
+
+    sLang.push_back("HERE ");
+    return sLang;
+}
+
 
 /////////////////////////////////////////////////
 /// \brief Implementation of the sha256()
@@ -3086,6 +3101,7 @@ static std::map<std::string, StringFuncHandle> getStringFuncHandles()
     mHandleTable["getversioninfo"]      = StringFuncHandle(NOARGS, strfnc_getversioninfo, false);
     mHandleTable["getopt"]              = StringFuncHandle(STR_VAL, strfnc_getopt, false);
     mHandleTable["getuilang"]           = StringFuncHandle(NOARGS, strfnc_getuilang, false);
+    mHandleTable["uuid"]                = StringFuncHandle(NOARGS, strfnc_getuuid, false);
     mHandleTable["idxtolog"]            = StringFuncHandle(VAL, strfnc_idxtolog, true);
     mHandleTable["is_alnum"]            = StringFuncHandle(STR, strfnc_isalnum, false);
     mHandleTable["is_alpha"]            = StringFuncHandle(STR, strfnc_isalpha, false);

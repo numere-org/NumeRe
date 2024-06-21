@@ -2353,6 +2353,7 @@ namespace NumeRe
 			|| sExpression.find("char(", nEqPos) != std::string::npos
 			|| sExpression.find("getlasterror(", nEqPos) != std::string::npos
 			|| sExpression.find("getuilang(", nEqPos) != std::string::npos
+            || sExpression.find("uuid(", nEqPos) != std::string::npos
 			|| sExpression.find("getversioninfo(", nEqPos) != std::string::npos
 			|| sExpression.find("valtostr(", nEqPos) != std::string::npos
 			|| sExpression.find("weekday(", nEqPos) != std::string::npos
