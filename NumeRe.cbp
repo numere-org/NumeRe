@@ -145,6 +145,7 @@
 			<Add option="-D_WIN32_WINNT=0x0601" />
 			<Add directory="$(wx)/lib/gcc_lib/mswu" />
 			<Add directory="$(wx)/include" />
+			<Add directory="externals/stduuid" />
 		</Compiler>
 		<ResourceCompiler>
 			<Add directory="$(wx)/include/" />
@@ -228,6 +229,12 @@
 		<Unit filename="externals/dtl/dtl/dtl.hpp" />
 		<Unit filename="externals/dtl/dtl/functors.hpp" />
 		<Unit filename="externals/dtl/dtl/variables.hpp" />
+		<Unit filename="externals/stduuid/catch/catch.hpp" />
+		<Unit filename="externals/stduuid/catch/catch_reporter_automake.hpp" />
+		<Unit filename="externals/stduuid/catch/catch_reporter_sonarqube.hpp" />
+		<Unit filename="externals/stduuid/catch/catch_reporter_tap.hpp" />
+		<Unit filename="externals/stduuid/catch/catch_reporter_teamcity.hpp" />
+		<Unit filename="externals/stduuid/include/uuid.h" />
 		<Unit filename="externals/tinyxml2/tinyxml2.cpp" />
 		<Unit filename="externals/tinyxml2/tinyxml2.h" />
 		<Unit filename="gui/DirTraverser.cpp" />

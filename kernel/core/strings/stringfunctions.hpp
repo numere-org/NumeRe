@@ -2971,7 +2971,14 @@ static StringVector strfnc_getuilang(StringFuncArgs& funcArgs)
     return sLang;
 }
 
-// TODO NEW
+
+/////////////////////////////////////////////////
+/// \brief Create UUID via std::uuid Lib
+///
+/// \param funcArgs StringFuncArgs&
+/// \return StringVector
+///
+/////////////////////////////////////////////////
 static StringVector strfnc_getuuid(StringFuncArgs& funcArgs)
 {
 
@@ -2979,9 +2986,9 @@ static StringVector strfnc_getuuid(StringFuncArgs& funcArgs)
     uuids::uuid_random_generator gen{generator};
 
     uuids::uuid const id = gen();
-    StringVector sLang;
 
-    sLang.push_back("HERE ");
+    StringVector sLang;
+    sLang.push_back(uuids::to_string(id));
     return sLang;
 }
 
