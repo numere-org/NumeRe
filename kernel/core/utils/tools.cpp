@@ -2531,6 +2531,7 @@ bool containsStrings(const string& sLine)
             || sLine.find("char(") != string::npos
             || sLine.find("getlasterror(") != string::npos
             || sLine.find("getuilang(") != string::npos
+            || sLine.find("uuid(") != string::npos
             || sLine.find("getversioninfo(") != string::npos
             || sLine.find("valtostr(") != string::npos
             || sLine.find("weekday(") != string::npos
