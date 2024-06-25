@@ -748,13 +748,13 @@ VectorIndex MemoryManager::parseEveryCell(std::string& sDir, const std::string& 
 ///
 /// \param sTableName std::string& const
 /// \param sDir std::string
-/// \param MAF (mu::value_type*)
-/// \return std::vector<mu::value_type>
+/// \param MAF (std::complex<double>*)
+/// \return std::vector<std::complex<double>>
 ///
 /////////////////////////////////////////////////
-std::vector<mu::value_type> MemoryManager::resolveMAF(const std::string& sTableName, std::string sDir, mu::value_type (MemoryManager::*MAF)(const std::string&, const VectorIndex&, const VectorIndex&) const) const
+std::vector<std::complex<double>> MemoryManager::resolveMAF(const std::string& sTableName, std::string sDir, std::complex<double> (MemoryManager::*MAF)(const std::string&, const VectorIndex&, const VectorIndex&) const) const
 {
-    std::vector<mu::value_type> vResults;
+    std::vector<std::complex<double>> vResults;
     int nlines = getLines(sTableName, false);
     int ncols = getCols(sTableName, false);
 
@@ -765,7 +765,7 @@ std::vector<mu::value_type> MemoryManager::resolveMAF(const std::string& sTableN
     // of this table
     if (nGridOffset)
     {
-        std::vector<mu::value_type> vSize = vMemory[findTable(sTableName)]->size(VectorIndex(), VectorIndex(), GRID);
+        std::vector<std::complex<double>> vSize = vMemory[findTable(sTableName)]->size(VectorIndex(), VectorIndex(), GRID);
         nlines = vSize.front().real();
         ncols = vSize.back().real()+nGridOffset; // compensate the offset
     }

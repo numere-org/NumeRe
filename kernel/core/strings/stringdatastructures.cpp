@@ -82,10 +82,10 @@ StringView StringVector::getVectorized(size_t i) const
 /// singleton).
 ///
 /// \param i size_t
-/// \return mu::value_type
+/// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
-mu::value_type StringVector::getNumericalVectorized(size_t i) const
+std::complex<double> StringVector::getNumericalVectorized(size_t i) const
 {
     if ((i >= size() && size() > 1) || !getVectorized(i).length())
         return NAN;
@@ -357,14 +357,14 @@ void StringVector::push_back(const char* sStr)
 
 
 /////////////////////////////////////////////////
-/// \brief Append a mu::value_type to the end of
+/// \brief Append a std::complex<double> to the end of
 /// this vector.
 ///
-/// \param vVal const mu::value_type&
+/// \param vVal const std::complex<double>&
 /// \return void
 ///
 /////////////////////////////////////////////////
-void StringVector::push_back(const mu::value_type& vVal)
+void StringVector::push_back(const std::complex<double>& vVal)
 {
     std::vector<std::string>::push_back(toString(vVal, 20));
 }
@@ -803,12 +803,12 @@ std::vector<bool> StringVector::xor_f(const StringVector& sVect) const
 /// values. Makes only sense, if the contents are
 /// actually numerical.
 ///
-/// \return std::vector<mu::value_type>
+/// \return std::vector<std::complex<double>>
 ///
 /////////////////////////////////////////////////
-std::vector<mu::value_type> StringVector::get_numerical() const
+std::vector<std::complex<double>> StringVector::get_numerical() const
 {
-    std::vector<mu::value_type> vRet(size());
+    std::vector<std::complex<double>> vRet(size());
 
     for (size_t i = 0; i < vRet.size(); i++)
     {

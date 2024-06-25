@@ -111,7 +111,7 @@ namespace NumeRe
             void setMetaData(const TableMetaData& meta);
             void setHead(size_t i, const std::string& _sHead);
             void setHeadPart(size_t i, size_t part, const std::string& _sHead);
-            void setValue(size_t i, size_t j, const mu::value_type& _dValue);
+            void setValue(size_t i, size_t j, const std::complex<double>& _dValue);
             void setValueAsString(size_t i, size_t j, const std::string& _sValue);
             void setColumn(size_t j, TableColumn* column);
             bool setColumnType(size_t j, TableColumn::ColumnType _type);
@@ -123,7 +123,7 @@ namespace NumeRe
             std::string getHead(size_t i) const;
             std::string getCleanHead(size_t i) const;
             std::string getCleanHeadPart(size_t i, size_t part = 0) const;
-            mu::value_type getValue(size_t i, size_t j) const;
+            std::complex<double> getValue(size_t i, size_t j) const;
             std::string getValueAsString(size_t i, size_t j) const;
             std::string getValueAsInternalString(size_t i, size_t j) const;
             TableColumn* getColumn(size_t j) const;

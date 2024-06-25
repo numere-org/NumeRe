@@ -352,7 +352,7 @@ size_t Memory::getSize() const
 /// \return double
 ///
 /////////////////////////////////////////////////
-mu::value_type Memory::readMem(size_t _nLine, size_t _nCol) const
+std::complex<double> Memory::readMem(size_t _nLine, size_t _nCol) const
 {
     if (memArray.size() > _nCol && memArray[_nCol])
         return memArray[_nCol]->getValue(_nLine);
@@ -365,16 +365,16 @@ mu::value_type Memory::readMem(size_t _nLine, size_t _nCol) const
 /// \brief This static helper function calculates
 /// the average value respecting NaNs.
 ///
-/// \param values const std::vector<mu::value_type>&
-/// \return mu::value_type
+/// \param values const std::vector<std::complex<double>>&
+/// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
-static mu::value_type nanAvg(const std::vector<mu::value_type>& values)
+static std::complex<double> nanAvg(const std::vector<std::complex<double>>& values)
 {
-    mu::value_type sum = 0.0;
+    std::complex<double> sum = 0.0;
     double c = 0.0;
 
-    for (mu::value_type val : values)
+    for (std::complex<double> val : values)
     {
         if (!mu::isnan(val))
         {
@@ -397,10 +397,10 @@ static mu::value_type nanAvg(const std::vector<mu::value_type>& values)
 ///
 /// \param _dLine double
 /// \param _dCol double
-/// \return mu::value_type
+/// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
-mu::value_type Memory::readMemInterpolated(double _dLine, double _dCol) const
+std::complex<double> Memory::readMemInterpolated(double _dLine, double _dCol) const
 {
     if (isnan(_dLine) || isnan(_dCol))
         return NAN;
@@ -414,17 +414,17 @@ mu::value_type Memory::readMemInterpolated(double _dLine, double _dCol) const
     double y = _dCol - nBaseCol;
 
     // Find the surrounding four entries
-    mu::value_type f00 = readMem(nBaseLine, nBaseCol);
-    mu::value_type f10 = readMem(nBaseLine+1, nBaseCol);
-    mu::value_type f01 = readMem(nBaseLine, nBaseCol+1);
-    mu::value_type f11 = readMem(nBaseLine+1, nBaseCol+1);
+    std::complex<double> f00 = readMem(nBaseLine, nBaseCol);
+    std::complex<double> f10 = readMem(nBaseLine+1, nBaseCol);
+    std::complex<double> f01 = readMem(nBaseLine, nBaseCol+1);
+    std::complex<double> f11 = readMem(nBaseLine+1, nBaseCol+1);
 
     // If all are NAN, return NAN
     if (mu::isnan(f00) && mu::isnan(f01) && mu::isnan(f10) && mu::isnan(f11))
         return NAN;
 
     // Get the average respecting NaNs
-    mu::value_type dNanAvg = nanAvg({f00, f01, f10, f11});
+    std::complex<double> dNanAvg = nanAvg({f00, f01, f10, f11});
 
     // Otherwise set NAN to zero
     f00 = mu::isnan(f00) ? dNanAvg : f00;
@@ -443,12 +443,12 @@ mu::value_type Memory::readMemInterpolated(double _dLine, double _dCol) const
 ///
 /// \param _vLine const VectorIndex&
 /// \param _vCol const VectorIndex&
-/// \return std::vector<mu::value_type>
+/// \return std::vector<std::complex<double>>
 ///
 /////////////////////////////////////////////////
-std::vector<mu::value_type> Memory::readMem(const VectorIndex& _vLine, const VectorIndex& _vCol) const
+std::vector<std::complex<double>> Memory::readMem(const VectorIndex& _vLine, const VectorIndex& _vCol) const
 {
-    std::vector<mu::value_type> vReturn;
+    std::vector<std::complex<double>> vReturn;
 
     if ((_vLine.size() > 1 && _vCol.size() > 1) || !memArray.size())
         vReturn.push_back(NAN);
@@ -514,7 +514,7 @@ Matrix Memory::readMemAsMatrix(const VectorIndex& _vLine, const VectorIndex& _vC
 
         // Get the complete column as a whole because it seems
         // to be much faster (VTABLE issues? Cache locality?)
-        std::vector<mu::value_type> vEntries = memArray[_vCol[j]]->getValue(_vLine);
+        std::vector<std::complex<double>> vEntries = memArray[_vCol[j]]->getValue(_vLine);
 
         for (size_t i = 0; i < vEntries.size(); i++)
         {
@@ -790,13 +790,13 @@ Memory* Memory::extractRange(const VectorIndex& _vLine, const VectorIndex& _vCol
 /// of the vector instance by directly writing to
 /// the target instance.
 ///
-/// \param vTarget vector<mu::value_type>*
+/// \param vTarget vector<std::complex<double>>*
 /// \param _vLine const VectorIndex&
 /// \param _vCol const VectorIndex&
 /// \return void
 ///
 /////////////////////////////////////////////////
-void Memory::copyElementsInto(vector<mu::value_type>* vTarget, const VectorIndex& _vLine, const VectorIndex& _vCol) const
+void Memory::copyElementsInto(vector<std::complex<double>>* vTarget, const VectorIndex& _vLine, const VectorIndex& _vCol) const
 {
     if ((_vLine.size() > 1 && _vCol.size() > 1) || !memArray.size())
         vTarget->assign(1, NAN);
@@ -1152,14 +1152,14 @@ std::string Memory::getUnit(int nCol) const
 /// conversion is known.
 ///
 /// \param nCol size_t
-/// \return std::vector<mu::value_type>
+/// \return std::vector<std::complex<double>>
 ///
 /////////////////////////////////////////////////
-std::vector<mu::value_type> Memory::asSiUnits(size_t nCol) const
+std::vector<std::complex<double>> Memory::asSiUnits(size_t nCol) const
 {
     if (nCol < memArray.size() && memArray[nCol] && TableColumn::isValueType(memArray[nCol]->m_type))
     {
-        std::vector<mu::value_type> vConverted = memArray[nCol]->getValue(VectorIndex(0, VectorIndex::OPEN_END));
+        std::vector<std::complex<double>> vConverted = memArray[nCol]->getValue(VectorIndex(0, VectorIndex::OPEN_END));
         UnitConversion convert = getUnitConversion(memArray[nCol]->m_sUnit);
 
         for (size_t i = 0; i < vConverted.size(); i++)
@@ -1170,7 +1170,7 @@ std::vector<mu::value_type> Memory::asSiUnits(size_t nCol) const
         return vConverted;
     }
 
-    return std::vector<mu::value_type>(1, NAN);
+    return std::vector<std::complex<double>>(1, NAN);
 }
 
 
@@ -1410,11 +1410,11 @@ NumeRe::TableMetaData Memory::getMetaData() const
 ///
 /// \param _nLine int
 /// \param _nCol int
-/// \param _dData const mu::value_type&
+/// \param _dData const std::complex<double>&
 /// \return void
 ///
 /////////////////////////////////////////////////
-void Memory::writeData(int _nLine, int _nCol, const mu::value_type& _dData)
+void Memory::writeData(int _nLine, int _nCol, const std::complex<double>& _dData)
 {
     if (!memArray.size() && mu::isnan(_dData))
         return;
@@ -1440,11 +1440,11 @@ void Memory::writeData(int _nLine, int _nCol, const mu::value_type& _dData)
 ///
 /// \param _nLine int
 /// \param _nCol int
-/// \param _dData const mu::value_type&
+/// \param _dData const std::complex<double>&
 /// \return void
 ///
 /////////////////////////////////////////////////
-void Memory::writeDataDirect(int _nLine, int _nCol, const mu::value_type& _dData)
+void Memory::writeDataDirect(int _nLine, int _nCol, const std::complex<double>& _dData)
 {
     convert_if_empty(memArray[_nCol], _nCol, TableColumn::TYPE_VALUE);
     memArray[_nCol]->setValue(_nLine, _dData);
@@ -1462,11 +1462,11 @@ void Memory::writeDataDirect(int _nLine, int _nCol, const mu::value_type& _dData
 ///
 /// \param _nLine int
 /// \param _nCol int
-/// \param _dData const mu::value_type&
+/// \param _dData const std::complex<double>&
 /// \return void
 ///
 /////////////////////////////////////////////////
-void Memory::writeDataDirectUnsafe(int _nLine, int _nCol, const mu::value_type& _dData)
+void Memory::writeDataDirectUnsafe(int _nLine, int _nCol, const std::complex<double>& _dData)
 {
     memArray[_nCol]->setValue(_nLine, _dData);
 }
@@ -1508,12 +1508,12 @@ void Memory::writeData(int _nLine, int _nCol, const std::string& sValue)
 /// necessary.
 ///
 /// \param _idx Indices&
-/// \param _dData mu::value_type*
+/// \param _dData std::complex<double>*
 /// \param _nNum size_t
 /// \return void
 ///
 /////////////////////////////////////////////////
-void Memory::writeData(Indices& _idx, mu::value_type* _dData, size_t _nNum)
+void Memory::writeData(Indices& _idx, std::complex<double>* _dData, size_t _nNum)
 {
     int nDirection = LINES;
 
@@ -1587,11 +1587,11 @@ void Memory::writeData(Indices& _idx, mu::value_type* _dData, size_t _nNum)
 /// if necessary.
 ///
 /// \param _idx Indices&
-/// \param _dData const mu::value_type&
+/// \param _dData const std::complex<double>&
 /// \return void
 ///
 /////////////////////////////////////////////////
-void Memory::writeSingletonData(Indices& _idx, const mu::value_type& _dData)
+void Memory::writeSingletonData(Indices& _idx, const std::complex<double>& _dData)
 {
     bool rewriteColumn = false;
 
@@ -2659,16 +2659,16 @@ void Memory::calculateStats(const VectorIndex& _vLine, const VectorIndex& _vCol,
 ///
 /// \param _vLine const VectorIndex&
 /// \param _vCol const VectorIndex&
-/// \return mu::value_type
+/// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
-mu::value_type Memory::std(const VectorIndex& _vLine, const VectorIndex& _vCol) const
+std::complex<double> Memory::std(const VectorIndex& _vLine, const VectorIndex& _vCol) const
 {
     if (!memArray.size())
         return NAN;
 
-    mu::value_type dAvg = avg(_vLine, _vCol);
-    mu::value_type dStd = 0.0;
+    std::complex<double> dAvg = avg(_vLine, _vCol);
+    std::complex<double> dStd = 0.0;
 
     int lines = getLines(false);
     int cols = getCols(false);
@@ -2692,10 +2692,10 @@ mu::value_type Memory::std(const VectorIndex& _vLine, const VectorIndex& _vCol) 
 ///
 /// \param _vLine const VectorIndex&
 /// \param _vCol const VectorIndex&
-/// \return mu::value_type
+/// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
-mu::value_type Memory::avg(const VectorIndex& _vLine, const VectorIndex& _vCol) const
+std::complex<double> Memory::avg(const VectorIndex& _vLine, const VectorIndex& _vCol) const
 {
     if (!memArray.size())
         return NAN;
@@ -2710,10 +2710,10 @@ mu::value_type Memory::avg(const VectorIndex& _vLine, const VectorIndex& _vCol) 
 ///
 /// \param _vLine const VectorIndex&
 /// \param _vCol const VectorIndex&
-/// \return mu::value_type
+/// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
-mu::value_type Memory::max(const VectorIndex& _vLine, const VectorIndex& _vCol) const
+std::complex<double> Memory::max(const VectorIndex& _vLine, const VectorIndex& _vCol) const
 {
     if (!memArray.size())
         return NAN;
@@ -2745,10 +2745,10 @@ mu::value_type Memory::max(const VectorIndex& _vLine, const VectorIndex& _vCol) 
 ///
 /// \param _vLine const VectorIndex&
 /// \param _vCol const VectorIndex&
-/// \return mu::value_type
+/// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
-mu::value_type Memory::min(const VectorIndex& _vLine, const VectorIndex& _vCol) const
+std::complex<double> Memory::min(const VectorIndex& _vLine, const VectorIndex& _vCol) const
 {
     if (!memArray.size())
         return NAN;
@@ -2780,15 +2780,15 @@ mu::value_type Memory::min(const VectorIndex& _vLine, const VectorIndex& _vCol) 
 ///
 /// \param _vLine const VectorIndex&
 /// \param _vCol const VectorIndex&
-/// \return mu::value_type
+/// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
-mu::value_type Memory::prd(const VectorIndex& _vLine, const VectorIndex& _vCol) const
+std::complex<double> Memory::prd(const VectorIndex& _vLine, const VectorIndex& _vCol) const
 {
     if (!memArray.size())
         return NAN;
 
-    mu::value_type dPrd = 1.0;
+    std::complex<double> dPrd = 1.0;
 
     int lines = getLines(false);
     int cols = getCols(false);
@@ -2814,15 +2814,15 @@ mu::value_type Memory::prd(const VectorIndex& _vLine, const VectorIndex& _vCol) 
 ///
 /// \param _vLine const VectorIndex&
 /// \param _vCol const VectorIndex&
-/// \return mu::value_type
+/// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
-mu::value_type Memory::sum(const VectorIndex& _vLine, const VectorIndex& _vCol) const
+std::complex<double> Memory::sum(const VectorIndex& _vLine, const VectorIndex& _vCol) const
 {
     if (!memArray.size())
         return NAN;
 
-    mu::value_type dSum = 0.0;
+    std::complex<double> dSum = 0.0;
 
     int lines = getLines(false);
     int cols = getCols(false);
@@ -2848,10 +2848,10 @@ mu::value_type Memory::sum(const VectorIndex& _vLine, const VectorIndex& _vCol) 
 ///
 /// \param _vLine const VectorIndex&
 /// \param _vCol const VectorIndex&
-/// \return mu::value_type
+/// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
-mu::value_type Memory::num(const VectorIndex& _vLine, const VectorIndex& _vCol) const
+std::complex<double> Memory::num(const VectorIndex& _vLine, const VectorIndex& _vCol) const
 {
     if (!memArray.size())
         return 0;
@@ -2894,10 +2894,10 @@ mu::value_type Memory::num(const VectorIndex& _vLine, const VectorIndex& _vCol) 
 ///
 /// \param _vLine const VectorIndex&
 /// \param _vCol const VectorIndex&
-/// \return mu::value_type
+/// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
-mu::value_type Memory::and_func(const VectorIndex& _vLine, const VectorIndex& _vCol) const
+std::complex<double> Memory::and_func(const VectorIndex& _vLine, const VectorIndex& _vCol) const
 {
     if (!memArray.size())
         return 0.0;
@@ -2954,10 +2954,10 @@ mu::value_type Memory::and_func(const VectorIndex& _vLine, const VectorIndex& _v
 ///
 /// \param _vLine const VectorIndex&
 /// \param _vCol const VectorIndex&
-/// \return mu::value_type
+/// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
-mu::value_type Memory::or_func(const VectorIndex& _vLine, const VectorIndex& _vCol) const
+std::complex<double> Memory::or_func(const VectorIndex& _vLine, const VectorIndex& _vCol) const
 {
     if (!memArray.size())
         return 0.0;
@@ -3006,10 +3006,10 @@ mu::value_type Memory::or_func(const VectorIndex& _vLine, const VectorIndex& _vC
 ///
 /// \param _vLine const VectorIndex&
 /// \param _vCol const VectorIndex&
-/// \return mu::value_type
+/// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
-mu::value_type Memory::xor_func(const VectorIndex& _vLine, const VectorIndex& _vCol) const
+std::complex<double> Memory::xor_func(const VectorIndex& _vLine, const VectorIndex& _vCol) const
 {
     if (!memArray.size())
         return 0.0;
@@ -3068,10 +3068,10 @@ mu::value_type Memory::xor_func(const VectorIndex& _vLine, const VectorIndex& _v
 ///
 /// \param _vLine const VectorIndex&
 /// \param _vCol const VectorIndex&
-/// \return mu::value_type
+/// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
-mu::value_type Memory::cnt(const VectorIndex& _vLine, const VectorIndex& _vCol) const
+std::complex<double> Memory::cnt(const VectorIndex& _vLine, const VectorIndex& _vCol) const
 {
     if (!memArray.size())
         return 0;
@@ -3084,7 +3084,7 @@ mu::value_type Memory::cnt(const VectorIndex& _vLine, const VectorIndex& _vCol) 
     _vLine.setOpenEndIndex(lines-1);
     _vCol.setOpenEndIndex(cols-1);
 
-    std::vector<mu::value_type> vDimLen;
+    std::vector<std::complex<double>> vDimLen;
 
     // Calculate the size in the corresponding direction first
     if (_vCol.size() == 1 && _vLine.size() > 1)
@@ -3134,15 +3134,15 @@ mu::value_type Memory::cnt(const VectorIndex& _vLine, const VectorIndex& _vCol) 
 ///
 /// \param _vLine const VectorIndex&
 /// \param _vCol const VectorIndex&
-/// \return mu::value_type
+/// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
-mu::value_type Memory::norm(const VectorIndex& _vLine, const VectorIndex& _vCol) const
+std::complex<double> Memory::norm(const VectorIndex& _vLine, const VectorIndex& _vCol) const
 {
     if (!memArray.size())
         return NAN;
 
-    mu::value_type dNorm = 0.0;
+    std::complex<double> dNorm = 0.0;
 
     int lines = getLines(false);
     int cols = getCols(false);
@@ -3168,12 +3168,12 @@ mu::value_type Memory::norm(const VectorIndex& _vLine, const VectorIndex& _vCol)
 ///
 /// \param _vLine const VectorIndex&
 /// \param _vCol const VectorIndex&
-/// \param dRef mu::value_type
+/// \param dRef std::complex<double>
 /// \param _nType int
-/// \return mu::value_type
+/// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
-mu::value_type Memory::cmp(const VectorIndex& _vLine, const VectorIndex& _vCol, mu::value_type dRef, int _nType) const
+std::complex<double> Memory::cmp(const VectorIndex& _vLine, const VectorIndex& _vCol, std::complex<double> dRef, int _nType) const
 {
     if (!memArray.size())
         return NAN;
@@ -3238,7 +3238,7 @@ mu::value_type Memory::cmp(const VectorIndex& _vLine, const VectorIndex& _vCol, 
                 continue;
             }
 
-            mu::value_type val = readMem(_vLine[i], _vCol[j]);
+            std::complex<double> val = readMem(_vLine[i], _vCol[j]);
 
             if (mu::isnan(val))
                 continue;
@@ -3319,10 +3319,10 @@ mu::value_type Memory::cmp(const VectorIndex& _vLine, const VectorIndex& _vCol, 
 ///
 /// \param _vLine const VectorIndex&
 /// \param _vCol const VectorIndex&
-/// \return mu::value_type
+/// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
-mu::value_type Memory::med(const VectorIndex& _vLine, const VectorIndex& _vCol) const
+std::complex<double> Memory::med(const VectorIndex& _vLine, const VectorIndex& _vCol) const
 {
     if (!memArray.size())
         return NAN;
@@ -3360,7 +3360,7 @@ mu::value_type Memory::med(const VectorIndex& _vLine, const VectorIndex& _vCol) 
                 continue;
             }
 
-            mu::value_type val = readMem(_vLine[i], _vCol[j]);
+            std::complex<double> val = readMem(_vLine[i], _vCol[j]);
 
             if (!mu::isnan(val))
                 vData.push_back(val.real());
@@ -3385,11 +3385,11 @@ mu::value_type Memory::med(const VectorIndex& _vLine, const VectorIndex& _vCol) 
 ///
 /// \param _vLine const VectorIndex&
 /// \param _vCol const VectorIndex&
-/// \param dPct mu::value_type
-/// \return mu::value_type
+/// \param dPct std::complex<double>
+/// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
-mu::value_type Memory::pct(const VectorIndex& _vLine, const VectorIndex& _vCol, mu::value_type dPct) const
+std::complex<double> Memory::pct(const VectorIndex& _vLine, const VectorIndex& _vCol, std::complex<double> dPct) const
 {
     if (!memArray.size())
         return NAN;
@@ -3430,7 +3430,7 @@ mu::value_type Memory::pct(const VectorIndex& _vLine, const VectorIndex& _vCol, 
                 continue;
             }
 
-            mu::value_type val = readMem(_vLine[i], _vCol[j]);
+            std::complex<double> val = readMem(_vLine[i], _vCol[j]);
 
             if (!mu::isnan(val))
                 vData.push_back(val.real());
@@ -3457,13 +3457,13 @@ mu::value_type Memory::pct(const VectorIndex& _vLine, const VectorIndex& _vCol, 
 /// \param _everyIdx const VectorIndex&
 /// \param _cellsIdx const VectorIndex&
 /// \param dir int Bitcomposition of AppDir values
-/// \return std::vector<mu::value_type>
+/// \return std::vector<std::complex<double>>
 ///
 /////////////////////////////////////////////////
-std::vector<mu::value_type> Memory::size(const VectorIndex& _everyIdx, const VectorIndex& _cellsIdx, int dir) const
+std::vector<std::complex<double>> Memory::size(const VectorIndex& _everyIdx, const VectorIndex& _cellsIdx, int dir) const
 {
     if (!memArray.size())
-        return std::vector<mu::value_type>(2, 0.0);
+        return std::vector<std::complex<double>>(2, 0.0);
 
     int lines = getLines(false);
     int cols = getCols(false);
@@ -3474,13 +3474,13 @@ std::vector<mu::value_type> Memory::size(const VectorIndex& _everyIdx, const Vec
 
     // Handle simple things first
     if (dir == ALL)
-        return std::vector<mu::value_type>({lines, cols});
+        return std::vector<std::complex<double>>({lines, cols});
     else if (dir == GRID)
-        return std::vector<mu::value_type>({getFilledElemsInColumn(0), getFilledElemsInColumn(1)});
+        return std::vector<std::complex<double>>({getFilledElemsInColumn(0), getFilledElemsInColumn(1)});
     else if (dir & LINES)
     {
         // Compute the sizes of the table rows
-        std::vector<mu::value_type> vSizes;
+        std::vector<std::complex<double>> vSizes;
 
         for (size_t i = 0; i < _everyIdx.size(); i++)
         {
@@ -3505,7 +3505,7 @@ std::vector<mu::value_type> Memory::size(const VectorIndex& _everyIdx, const Vec
     else if (dir & COLS)
     {
         // Compute the sizes of the table columns
-        std::vector<mu::value_type> vSizes;
+        std::vector<std::complex<double>> vSizes;
 
         for (size_t j = 0; j < _everyIdx.size(); j++)
         {
@@ -3534,7 +3534,7 @@ std::vector<mu::value_type> Memory::size(const VectorIndex& _everyIdx, const Vec
         return vSizes;
     }
 
-    return std::vector<mu::value_type>(2, 0.0);
+    return std::vector<std::complex<double>>(2, 0.0);
 }
 
 
@@ -3545,13 +3545,13 @@ std::vector<mu::value_type> Memory::size(const VectorIndex& _everyIdx, const Vec
 /// \param _everyIdx const VectorIndex&
 /// \param _cellsIdx const VectorIndex&
 /// \param dir int
-/// \return std::vector<mu::value_type>
+/// \return std::vector<std::complex<double>>
 ///
 /////////////////////////////////////////////////
-std::vector<mu::value_type> Memory::minpos(const VectorIndex& _everyIdx, const VectorIndex& _cellsIdx, int dir) const
+std::vector<std::complex<double>> Memory::minpos(const VectorIndex& _everyIdx, const VectorIndex& _cellsIdx, int dir) const
 {
     if (!memArray.size())
-        return std::vector<mu::value_type>(1, NAN);
+        return std::vector<std::complex<double>>(1, NAN);
 
     int lines = getLines(false);
     int cols = getCols(false);
@@ -3564,7 +3564,7 @@ std::vector<mu::value_type> Memory::minpos(const VectorIndex& _everyIdx, const V
     // of this table
     if (nGridOffset)
     {
-        std::vector<mu::value_type> vSize = size(VectorIndex(), VectorIndex(), GRID);
+        std::vector<std::complex<double>> vSize = size(VectorIndex(), VectorIndex(), GRID);
         lines = vSize.front().real();
         cols = vSize.back().real()+nGridOffset; // compensate the offset
     }
@@ -3573,7 +3573,7 @@ std::vector<mu::value_type> Memory::minpos(const VectorIndex& _everyIdx, const V
     // results for ALL and GRID using the results for LINES
     if (dir & COLS)
     {
-        std::vector<mu::value_type> vPos;
+        std::vector<std::complex<double>> vPos;
 
         for (size_t j = 0; j < _everyIdx.size(); j++)
         {
@@ -3590,7 +3590,7 @@ std::vector<mu::value_type> Memory::minpos(const VectorIndex& _everyIdx, const V
         return vPos;
     }
 
-    std::vector<mu::value_type> vPos;
+    std::vector<std::complex<double>> vPos;
     double dMin = NAN;
     size_t pos = 0;
     VectorIndex _cellsTemp = _cellsIdx;
@@ -3615,11 +3615,11 @@ std::vector<mu::value_type> Memory::minpos(const VectorIndex& _everyIdx, const V
     }
 
     if (!vPos.size())
-        return std::vector<mu::value_type>(1, NAN);
+        return std::vector<std::complex<double>>(1, NAN);
 
     // Use the global minimal value for ALL and GRID
     if (dir == ALL || dir == GRID)
-        return std::vector<mu::value_type>({_everyIdx[pos]+1, vPos[pos]});
+        return std::vector<std::complex<double>>({_everyIdx[pos]+1, vPos[pos]});
 
     return vPos;
 }
@@ -3632,13 +3632,13 @@ std::vector<mu::value_type> Memory::minpos(const VectorIndex& _everyIdx, const V
 /// \param _everyIdx const VectorIndex&
 /// \param _cellsIdx const VectorIndex&
 /// \param dir int
-/// \return std::vector<mu::value_type>
+/// \return std::vector<std::complex<double>>
 ///
 /////////////////////////////////////////////////
-std::vector<mu::value_type> Memory::maxpos(const VectorIndex& _everyIdx, const VectorIndex& _cellsIdx, int dir) const
+std::vector<std::complex<double>> Memory::maxpos(const VectorIndex& _everyIdx, const VectorIndex& _cellsIdx, int dir) const
 {
     if (!memArray.size())
-        return std::vector<mu::value_type>(1, NAN);
+        return std::vector<std::complex<double>>(1, NAN);
 
     int lines = getLines(false);
     int cols = getCols(false);
@@ -3651,7 +3651,7 @@ std::vector<mu::value_type> Memory::maxpos(const VectorIndex& _everyIdx, const V
     // of this table
     if (nGridOffset)
     {
-        std::vector<mu::value_type> vSize = size(VectorIndex(), VectorIndex(), GRID);
+        std::vector<std::complex<double>> vSize = size(VectorIndex(), VectorIndex(), GRID);
         lines = vSize.front().real();
         cols = vSize.back().real()+nGridOffset; // compensate the offset
     }
@@ -3660,7 +3660,7 @@ std::vector<mu::value_type> Memory::maxpos(const VectorIndex& _everyIdx, const V
     // results for ALL and GRID using the results for LINES
     if (dir & COLS)
     {
-        std::vector<mu::value_type> vPos;
+        std::vector<std::complex<double>> vPos;
 
         for (size_t j = 0; j < _everyIdx.size(); j++)
         {
@@ -3677,7 +3677,7 @@ std::vector<mu::value_type> Memory::maxpos(const VectorIndex& _everyIdx, const V
         return vPos;
     }
 
-    std::vector<mu::value_type> vPos;
+    std::vector<std::complex<double>> vPos;
     double dMax = NAN;
     size_t pos;
     VectorIndex _cellsTemp = _cellsIdx;
@@ -3702,11 +3702,11 @@ std::vector<mu::value_type> Memory::maxpos(const VectorIndex& _everyIdx, const V
     }
 
     if (!vPos.size())
-        return std::vector<mu::value_type>(1, NAN);
+        return std::vector<std::complex<double>>(1, NAN);
 
     // Use the global maximal value for ALL and GRID
     if (dir == ALL || dir == GRID)
-        return std::vector<mu::value_type>({_everyIdx[pos]+1, vPos[pos]});
+        return std::vector<std::complex<double>>({_everyIdx[pos]+1, vPos[pos]});
 
     return vPos;
 }
@@ -3733,12 +3733,12 @@ static bool closeEnough(double d1, double d2)
 /// two complex values are actually close enough
 /// to be considered equal.
 ///
-/// \param v1 const mu::value_type&
-/// \param v2 const mu::value_type&
+/// \param v1 const std::complex<double>&
+/// \param v2 const std::complex<double>&
 /// \return bool
 ///
 /////////////////////////////////////////////////
-static bool closeEnough(const mu::value_type& v1, const mu::value_type& v2)
+static bool closeEnough(const std::complex<double>& v1, const std::complex<double>& v2)
 {
     return closeEnough(v1.real(), v2.real()) && closeEnough(v1.imag(), v2.imag());
 }
@@ -3752,12 +3752,12 @@ static bool closeEnough(const mu::value_type& v1, const mu::value_type& v2)
 /// \param vColNames const std::vector<std::string>&
 /// \param enableRegEx bool
 /// \param autoCreate bool
-/// \return std::vector<mu::value_type>
+/// \return std::vector<std::complex<double>>
 ///
 /////////////////////////////////////////////////
-std::vector<mu::value_type> Memory::findCols(const std::vector<std::string>& vColNames, bool enableRegEx, bool autoCreate)
+std::vector<std::complex<double>> Memory::findCols(const std::vector<std::string>& vColNames, bool enableRegEx, bool autoCreate)
 {
-    std::vector<mu::value_type> vColIndices;
+    std::vector<std::complex<double>> vColIndices;
 
     for (const auto& sName : vColNames)
     {
@@ -3806,15 +3806,15 @@ std::vector<mu::value_type> Memory::findCols(const std::vector<std::string>& vCo
 /// returns the corresponding sums.
 ///
 /// \param _vCols const VectorIndex&
-/// \param vValues const std::vector<mu::value_type>&
+/// \param vValues const std::vector<std::complex<double>>&
 /// \param vStringValues const std::vector<std::string>&
-/// \return std::vector<mu::value_type>
+/// \return std::vector<std::complex<double>>
 ///
 /////////////////////////////////////////////////
-std::vector<mu::value_type> Memory::countIfEqual(const VectorIndex& _vCols, const std::vector<mu::value_type>& vValues,
+std::vector<std::complex<double>> Memory::countIfEqual(const VectorIndex& _vCols, const std::vector<std::complex<double>>& vValues,
                                                  const std::vector<std::string>& vStringValues) const
 {
-    std::vector<mu::value_type> vCounted;
+    std::vector<std::complex<double>> vCounted;
 
     for (size_t j = 0; j < _vCols.size(); j++)
     {
@@ -3867,18 +3867,18 @@ std::vector<mu::value_type> Memory::countIfEqual(const VectorIndex& _vCols, cons
 /// and returns them as an index.
 ///
 /// \param col size_t
-/// \param vValues const std::vector<mu::value_type>&
+/// \param vValues const std::vector<std::complex<double>>&
 /// \param vStringValues const std::vector<std::string>&
-/// \return std::vector<mu::value_type>
+/// \return std::vector<std::complex<double>>
 ///
 /////////////////////////////////////////////////
-std::vector<mu::value_type> Memory::getIndex(size_t col, const std::vector<mu::value_type>& vValues,
+std::vector<std::complex<double>> Memory::getIndex(size_t col, const std::vector<std::complex<double>>& vValues,
                                              const std::vector<std::string>& vStringValues) const
 {
-    std::vector<mu::value_type> vIndex;
+    std::vector<std::complex<double>> vIndex;
 
     if (col >= memArray.size() || !memArray[col])
-        return std::vector<mu::value_type>(1, NAN);
+        return std::vector<std::complex<double>>(1, NAN);
 
     if (vValues.size())
     {
@@ -3973,15 +3973,15 @@ std::vector<AnovaResult> Memory::getAnova(const VectorIndex& colCategories, size
 /////////////////////////////////////////////////
 /// \brief check if value type vector is already in a vector of vectors
 ///
-/// \param newVector const std::vector<mu::value_type>&
-/// \param centroids const std::vector<std::vector<mu::value_type>>&
+/// \param newVector const std::vector<std::complex<double>>&
+/// \param centroids const std::vector<std::vector<std::complex<double>>>&
 /// \return bool
 ///
 /////////////////////////////////////////////////
-static bool isUnique(const std::vector<mu::value_type>& newVector, const std::vector<std::vector<mu::value_type>>& centroids)
+static bool isUnique(const std::vector<std::complex<double>>& newVector, const std::vector<std::vector<std::complex<double>>>& centroids)
 {
     return std::none_of(centroids.begin(), centroids.end(),
-                        [&newVector](const std::vector<mu::value_type>& centroid)
+                        [&newVector](const std::vector<std::complex<double>>& centroid)
                         { return newVector == centroid; });
 }
 
@@ -3989,17 +3989,17 @@ static bool isUnique(const std::vector<mu::value_type>& newVector, const std::ve
 /////////////////////////////////////////////////
 /// \brief Calculate L2 Norm of 2 given value type vectors
 ///
-/// \param vec1 const std::vector<mu::value_type>&
-/// \param vec2 const std::vector<mu::value_type>&
+/// \param vec1 const std::vector<std::complex<double>>&
+/// \param vec2 const std::vector<std::complex<double>>&
 /// \return double
 ///
 /////////////////////////////////////////////////
-static double calculateL2Norm(const std::vector<mu::value_type>& vec1, const std::vector<mu::value_type>& vec2)
+static double calculateL2Norm(const std::vector<std::complex<double>>& vec1, const std::vector<std::complex<double>>& vec2)
 {
     // for norm of omplex => z * conj(z)
     // conjugate a complex number z = a + bi -> z* = a - bi
 
-    mu::value_type sum = 0.0;
+    std::complex<double> sum = 0.0;
     for (size_t i = 0; i < vec1.size(); ++i)
     {
         sum += (vec1[i] - vec2[i]) * (conj(vec1[i] - vec2[i]));
@@ -4013,12 +4013,12 @@ static double calculateL2Norm(const std::vector<mu::value_type>& vec1, const std
 /////////////////////////////////////////////////
 /// \brief get all Indices of elements with given value
 ///
-/// \param vec const std::vector<mu::value_type>&
-/// \param value mu::value_type
+/// \param vec const std::vector<std::complex<double>>&
+/// \param value std::complex<double>
 /// \return std::vector<int>
 ///
 /////////////////////////////////////////////////
-static std::vector<int> findIndicesOfValue(const std::vector<mu::value_type>& vec, mu::value_type value)
+static std::vector<int> findIndicesOfValue(const std::vector<std::complex<double>>& vec, std::complex<double> value)
 {
     std::vector<int> indices;
     auto it = vec.begin();
@@ -4074,8 +4074,8 @@ KMeansResult Memory::getKMeans(const VectorIndex& columns, size_t nClusters, siz
     if(col_size < nClusters)
         return KMeansResult();
 
-    std::vector<mu::value_type> clusters(col_size, 0);
-    std::vector<std::vector<mu::value_type>> centroids;
+    std::vector<std::complex<double>> clusters(col_size, 0);
+    std::vector<std::vector<std::complex<double>>> centroids;
 
     // Random generator
     std::mt19937& mt = getRandGenInstance();
@@ -4087,7 +4087,7 @@ KMeansResult Memory::getKMeans(const VectorIndex& columns, size_t nClusters, siz
 
         // K++ Step 1: randomly select first centroid
         size_t randinit = mt()%col_size;
-        std::vector<mu::value_type> new_value = readMem(VectorIndex(randinit), columns);
+        std::vector<std::complex<double>> new_value = readMem(VectorIndex(randinit), columns);
         centroids.push_back(new_value);
 
         for(size_t i = 1; i < nClusters; i++)
@@ -4096,7 +4096,7 @@ KMeansResult Memory::getKMeans(const VectorIndex& columns, size_t nClusters, siz
             std::vector<double> distance_vec;
             for(size_t i = 0; i < col_size; i++)
             {
-                std::vector<mu::value_type> value = readMem(VectorIndex(i), columns);
+                std::vector<std::complex<double>> value = readMem(VectorIndex(i), columns);
                 double dis = calculateL2Norm(value, centroids[0]);
                 size_t idx = 0;
                 for(size_t j = 1; j < centroids.size(); j++)
@@ -4109,7 +4109,7 @@ KMeansResult Memory::getKMeans(const VectorIndex& columns, size_t nClusters, siz
                     }
                 }
                 distance_vec.push_back(dis);
-                if(clusters[i] != mu::value_type(idx))
+                if(clusters[i] != std::complex<double>(idx))
                 {
                     clusters[i] = idx;
                 }
@@ -4117,7 +4117,7 @@ KMeansResult Memory::getKMeans(const VectorIndex& columns, size_t nClusters, siz
 
             // K++ Step 3: add new centroid at point with highest distance to nearest neighbour
             size_t max_elem_idx = std::distance(distance_vec.begin(), std::max_element(distance_vec.begin(), distance_vec.end()));
-            std::vector<mu::value_type> new_value = readMem(VectorIndex(max_elem_idx), columns);
+            std::vector<std::complex<double>> new_value = readMem(VectorIndex(max_elem_idx), columns);
             centroids.push_back(new_value);
         }
     }
@@ -4127,7 +4127,7 @@ KMeansResult Memory::getKMeans(const VectorIndex& columns, size_t nClusters, siz
         for(size_t i = 0; i < nClusters; )
         {
             size_t randinit = mt()%col_size;
-            std::vector<mu::value_type> new_value = readMem(VectorIndex(randinit), columns);
+            std::vector<std::complex<double>> new_value = readMem(VectorIndex(randinit), columns);
             if(isUnique(new_value, centroids))
             {
                 centroids.push_back(new_value);
@@ -4144,7 +4144,7 @@ KMeansResult Memory::getKMeans(const VectorIndex& columns, size_t nClusters, siz
         inertia = 0;
         for(size_t i = 0; i < col_size; i++)
         {
-            std::vector<mu::value_type> value = readMem(VectorIndex(i), columns);
+            std::vector<std::complex<double>> value = readMem(VectorIndex(i), columns);
             double min_distance = calculateL2Norm(value, centroids[0]);
             size_t idx = 0;
             for(size_t j = 1; j < nClusters; j++)
@@ -4158,7 +4158,7 @@ KMeansResult Memory::getKMeans(const VectorIndex& columns, size_t nClusters, siz
             }
 
             idx++;
-            if(clusters[i] != mu::value_type(idx))
+            if(clusters[i] != std::complex<double>(idx))
             {
                 clusters[i] = idx;
                 change++;
@@ -4175,10 +4175,10 @@ KMeansResult Memory::getKMeans(const VectorIndex& columns, size_t nClusters, siz
         change = 0;
         for(size_t i = 0; i < nClusters; i++)
         {
-            VectorIndex indices(findIndicesOfValue(clusters, mu::value_type(i+1)));
+            VectorIndex indices(findIndicesOfValue(clusters, std::complex<double>(i+1)));
             for(size_t elemIdx = 0; elemIdx < columns.size(); elemIdx++)
             {
-                mu::value_type new_val = avg(indices, VectorIndex(elemIdx));
+                std::complex<double> new_val = avg(indices, VectorIndex(elemIdx));
                 if(!closeEnough(centroids[i][elemIdx], new_val))
                 {
                     centroids[i][elemIdx] = new_val;
@@ -4207,20 +4207,20 @@ KMeansResult Memory::getKMeans(const VectorIndex& columns, size_t nClusters, siz
 /// \param _vIndex1 const VectorIndex&
 /// \param col2 size_t
 /// \param _vIndex2 const VectorIndex&
-/// \return mu::value_type
+/// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
-mu::value_type Memory::getCovariance(size_t col1, const VectorIndex& _vIndex1, size_t col2, const VectorIndex& _vIndex2) const
+std::complex<double> Memory::getCovariance(size_t col1, const VectorIndex& _vIndex1, size_t col2, const VectorIndex& _vIndex2) const
 {
     _vIndex1.setOpenEndIndex(getElemsInColumn(col1)-1);
     _vIndex2.setOpenEndIndex(getElemsInColumn(col2)-1);
 
     size_t minSize = std::min(_vIndex1.size(), _vIndex2.size());
 
-    mu::value_type vAvg1 = avg(_vIndex1.subidx(0, minSize), VectorIndex(col1));
-    mu::value_type vAvg2 = avg(_vIndex2.subidx(0, minSize), VectorIndex(col2));
+    std::complex<double> vAvg1 = avg(_vIndex1.subidx(0, minSize), VectorIndex(col1));
+    std::complex<double> vAvg2 = avg(_vIndex2.subidx(0, minSize), VectorIndex(col2));
 
-    mu::value_type vCov = 0.0;
+    std::complex<double> vCov = 0.0;
 
     for (size_t i = 0; i < minSize; i++)
     {
@@ -4240,10 +4240,10 @@ mu::value_type Memory::getCovariance(size_t col1, const VectorIndex& _vIndex1, s
 /// \param _vIndex1 const VectorIndex&
 /// \param col2 size_t
 /// \param _vIndex2 const VectorIndex&
-/// \return mu::value_type
+/// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
-mu::value_type Memory::getPearsonCorr(size_t col1, const VectorIndex& _vIndex1, size_t col2, const VectorIndex& _vIndex2) const
+std::complex<double> Memory::getPearsonCorr(size_t col1, const VectorIndex& _vIndex1, size_t col2, const VectorIndex& _vIndex2) const
 {
     _vIndex1.setOpenEndIndex(getElemsInColumn(col1)-1);
     _vIndex2.setOpenEndIndex(getElemsInColumn(col2)-1);
@@ -4264,10 +4264,10 @@ mu::value_type Memory::getPearsonCorr(size_t col1, const VectorIndex& _vIndex1, 
 /// \param _vIndex1 const VectorIndex&
 /// \param col2 size_t
 /// \param _vIndex2 const VectorIndex&
-/// \return mu::value_type
+/// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
-mu::value_type Memory::getSpearmanCorr(size_t col1, const VectorIndex& _vIndex1, size_t col2, const VectorIndex& _vIndex2) const
+std::complex<double> Memory::getSpearmanCorr(size_t col1, const VectorIndex& _vIndex1, size_t col2, const VectorIndex& _vIndex2) const
 {
     _vIndex1.setOpenEndIndex(getElemsInColumn(col1)-1);
     _vIndex2.setOpenEndIndex(getElemsInColumn(col2)-1);
@@ -4289,13 +4289,13 @@ mu::value_type Memory::getSpearmanCorr(size_t col1, const VectorIndex& _vIndex1,
 /// \brief Evaluate the identical ranked values
 /// according the selected ranking strategy.
 ///
-/// \param vRank std::vector<mu::value_type>&
+/// \param vRank std::vector<std::complex<double>>&
 /// \param nEqualRanks size_t&
 /// \param _strat Memory::RankingStrategy
 /// \return void
 ///
 /////////////////////////////////////////////////
-static void evaluateRankingStrategy(std::vector<mu::value_type>& vRank, size_t& nEqualRanks, Memory::RankingStrategy _strat)
+static void evaluateRankingStrategy(std::vector<std::complex<double>>& vRank, size_t& nEqualRanks, Memory::RankingStrategy _strat)
 {
     switch (_strat)
     {
@@ -4309,7 +4309,7 @@ static void evaluateRankingStrategy(std::vector<mu::value_type>& vRank, size_t& 
             break;
         case Memory::RANK_FRACTIONAL:
         {
-            mu::value_type val = vRank.back();
+            std::complex<double> val = vRank.back();
             vRank.pop_back();
             vRank.insert(vRank.end(), nEqualRanks+1, val+0.5*nEqualRanks);
             vRank.push_back(val+(nEqualRanks+1.0));
@@ -4328,10 +4328,10 @@ static void evaluateRankingStrategy(std::vector<mu::value_type>& vRank, size_t& 
 /// \param col size_t
 /// \param _vIndex const VectorIndex&
 /// \param _strat Memory::RankingStrategy
-/// \return std::vector<mu::value_type>
+/// \return std::vector<std::complex<double>>
 ///
 /////////////////////////////////////////////////
-std::vector<mu::value_type> Memory::getRank(size_t col, const VectorIndex& _vIndex, Memory::RankingStrategy _strat) const
+std::vector<std::complex<double>> Memory::getRank(size_t col, const VectorIndex& _vIndex, Memory::RankingStrategy _strat) const
 {
     _vIndex.setOpenEndIndex(getElemsInColumn(col)-1);
 
@@ -4339,7 +4339,7 @@ std::vector<mu::value_type> Memory::getRank(size_t col, const VectorIndex& _vInd
     _mem.memArray.back().reset(memArray[col]->copy(_vIndex));
 
     std::vector<int> vIndex = _mem.sortElements(0, _mem.getLines(false)-1, 0, -1, "-index");
-    std::vector<mu::value_type> vRank(1, 1.0);
+    std::vector<std::complex<double>> vRank(1, 1.0);
     size_t nEqualRanks = 0;
 
     if (_mem.memArray.back()->m_type < TableColumn::TYPE_CATEGORICAL)
@@ -4385,7 +4385,7 @@ std::vector<mu::value_type> Memory::getRank(size_t col, const VectorIndex& _vInd
         vRank.pop_back();
     }
 
-    std::vector<mu::value_type> vRankReordered(vRank);
+    std::vector<std::complex<double>> vRankReordered(vRank);
 
     for (size_t i = 0; i < vIndex.size(); i++)
     {
@@ -4402,17 +4402,17 @@ std::vector<mu::value_type> Memory::getRank(size_t col, const VectorIndex& _vInd
 ///
 /// \param col size_t
 /// \param _vIndex const VectorIndex&
-/// \return std::vector<mu::value_type>
+/// \return std::vector<std::complex<double>>
 ///
 /////////////////////////////////////////////////
-std::vector<mu::value_type> Memory::getZScore(size_t col, const VectorIndex& _vIndex) const
+std::vector<std::complex<double>> Memory::getZScore(size_t col, const VectorIndex& _vIndex) const
 {
     _vIndex.setOpenEndIndex(getElemsInColumn(col)-1);
 
-    std::vector<mu::value_type> vZScore;
+    std::vector<std::complex<double>> vZScore;
 
-    mu::value_type avgVal = avg(_vIndex, VectorIndex(col));
-    mu::value_type stdVal = std(_vIndex, VectorIndex(col));
+    std::complex<double> avgVal = avg(_vIndex, VectorIndex(col));
+    std::complex<double> stdVal = std(_vIndex, VectorIndex(col));
 
     for (size_t i = 0; i < _vIndex.size(); i++)
     {
@@ -4429,12 +4429,12 @@ std::vector<mu::value_type> Memory::getZScore(size_t col, const VectorIndex& _vI
 ///
 /// \param col size_t
 /// \param nBins size_t
-/// \return std::vector<mu::value_type>
+/// \return std::vector<std::complex<double>>
 ///
 /////////////////////////////////////////////////
-std::vector<mu::value_type> Memory::getBins(size_t col, size_t nBins) const
+std::vector<std::complex<double>> Memory::getBins(size_t col, size_t nBins) const
 {
-    std::vector<mu::value_type> vBins;
+    std::vector<std::complex<double>> vBins;
 
     // Ensure that we have data
     if (memArray.size() <= col || !memArray[col])
@@ -4838,7 +4838,7 @@ void Memory::smoothingWindow1D(const VectorIndex& _vLine, const VectorIndex& _vC
 {
     auto sizes = _filter->getWindowSize();
 
-    mu::value_type sum = 0.0;
+    std::complex<double> sum = 0.0;
     NumeRe::FilterBuffer& filterBuffer = _filter->getBuffer();
 
     // Apply the filter to the data
@@ -4904,7 +4904,7 @@ void Memory::smoothingWindow2D(const VectorIndex& _vLine, const VectorIndex& _vC
     auto sizes = _filter->getWindowSize();
     NumeRe::FilterBuffer2D& filterBuffer = _filter->get2DBuffer();
 
-    mu::value_type sum = 0.0;
+    std::complex<double> sum = 0.0;
 
     // Apply the filter to the data
     for (size_t n = 0; n < sizes.first; n++)
@@ -4922,7 +4922,7 @@ void Memory::smoothingWindow2D(const VectorIndex& _vLine, const VectorIndex& _vC
     if (_filter->isConvolution())
     {
         if (j == 1)
-            filterBuffer.push(std::vector<mu::value_type>());
+            filterBuffer.push(std::vector<std::complex<double>>());
 
         filterBuffer.back().push_back(sum);
     }

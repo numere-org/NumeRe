@@ -173,10 +173,10 @@ std::string DateTimeColumn::getValueAsStringLiteral(size_t elem) const
 /// does not exist.
 ///
 /// \param elem size_t
-/// \return mu::value_type
+/// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
-mu::value_type DateTimeColumn::getValue(size_t elem) const
+std::complex<double> DateTimeColumn::getValue(size_t elem) const
 {
     if (elem < m_data.size())
         return m_data[elem];
@@ -206,11 +206,11 @@ void DateTimeColumn::setValue(size_t elem, const std::string& sValue)
 /// \brief Set a single numerical value.
 ///
 /// \param elem size_t
-/// \param vValue const mu::value_type&
+/// \param vValue const std::complex<double>&
 /// \return void
 ///
 /////////////////////////////////////////////////
-void DateTimeColumn::setValue(size_t elem, const mu::value_type& vValue)
+void DateTimeColumn::setValue(size_t elem, const std::complex<double>& vValue)
 {
     if (elem >= m_data.size() && mu::isnan(vValue))
         return;
@@ -572,10 +572,10 @@ std::string LogicalColumn::getValueAsStringLiteral(size_t elem) const
 /// does not exist.
 ///
 /// \param elem size_t
-/// \return mu::value_type
+/// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
-mu::value_type LogicalColumn::getValue(size_t elem) const
+std::complex<double> LogicalColumn::getValue(size_t elem) const
 {
     if (elem < m_data.size() && m_data[elem] != LOGICAL_NAN)
         return m_data[elem] ? 1.0 : 0.0;
@@ -605,11 +605,11 @@ void LogicalColumn::setValue(size_t elem, const std::string& sValue)
 /// \brief Set a single numerical value.
 ///
 /// \param elem size_t
-/// \param vValue const mu::value_type&
+/// \param vValue const std::complex<double>&
 /// \return void
 ///
 /////////////////////////////////////////////////
-void LogicalColumn::setValue(size_t elem, const mu::value_type& vValue)
+void LogicalColumn::setValue(size_t elem, const std::complex<double>& vValue)
 {
     if (elem >= m_data.size() && mu::isnan(vValue))
         return;
@@ -968,10 +968,10 @@ std::string StringColumn::getValueAsStringLiteral(size_t elem) const
 /// conversion is not possible.
 ///
 /// \param elem size_t
-/// \return mu::value_type
+/// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
-mu::value_type StringColumn::getValue(size_t elem) const
+std::complex<double> StringColumn::getValue(size_t elem) const
 {
     return NAN;
 }
@@ -1001,11 +1001,11 @@ void StringColumn::setValue(size_t elem, const std::string& sValue)
 /// \brief Set a single numerical value.
 ///
 /// \param elem size_t
-/// \param vValue const mu::value_type&
+/// \param vValue const std::complex<double>&
 /// \return void
 ///
 /////////////////////////////////////////////////
-void StringColumn::setValue(size_t elem, const mu::value_type& vValue)
+void StringColumn::setValue(size_t elem, const std::complex<double>& vValue)
 {
     if (elem >= m_data.size() && mu::isnan(vValue))
         return;
@@ -1440,10 +1440,10 @@ std::string CategoricalColumn::getValueAsStringLiteral(size_t elem) const
 /// conversion is not possible.
 ///
 /// \param elem size_t
-/// \return mu::value_type
+/// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
-mu::value_type CategoricalColumn::getValue(size_t elem) const
+std::complex<double> CategoricalColumn::getValue(size_t elem) const
 {
     if (elem < m_data.size() && m_data[elem] != CATEGORICAL_NAN)
         return m_data[elem]+1;
@@ -1490,11 +1490,11 @@ void CategoricalColumn::setValue(size_t elem, const std::string& sValue)
 /// \brief Set a single numerical value.
 ///
 /// \param elem size_t
-/// \param vValue const mu::value_type&
+/// \param vValue const std::complex<double>&
 /// \return void
 ///
 /////////////////////////////////////////////////
-void CategoricalColumn::setValue(size_t elem, const mu::value_type& vValue)
+void CategoricalColumn::setValue(size_t elem, const std::complex<double>& vValue)
 {
     if (elem >= m_data.size() && mu::isnan(vValue))
         return;

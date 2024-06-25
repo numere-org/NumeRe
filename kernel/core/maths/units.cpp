@@ -1577,8 +1577,8 @@ static double detectSiScaling(StringView& sUnit)
 /// allow the latter reduction of the compose
 /// fraction.
 ///
-/// \param unit SingleUnit
-/// \return std::vector<SingleUnitConversion>
+/// \param unit Unit
+/// \return std::vector<UnitFunction>
 ///
 /////////////////////////////////////////////////
 static std::vector<UnitFunction> getUnitFunction(Unit unit)

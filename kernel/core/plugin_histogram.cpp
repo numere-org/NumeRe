@@ -210,7 +210,7 @@ static std::vector<std::vector<double>> calculateHist1dData(MemoryManager& _data
                 // are part of the current bin interval
                 for (size_t l = 0; l < _idx.row.size(); l++)
                 {
-                    mu::value_type val = _data.getElement(_idx.row[l], _idx.col[i], _histParams.sTable);
+                    std::complex<double> val = _data.getElement(_idx.row[l], _idx.col[i], _histParams.sTable);
 
                     if (isXLog)
                     {
@@ -2019,7 +2019,7 @@ void plugin_histogram(CommandLineParser& cmdParser)
     if (!_data.isValueLike(_idx.col, _histParams.sTable))
         throw SyntaxError(SyntaxError::WRONG_COLUMN_TYPE, cmdParser.getCommandLine(), _histParams.sTable+"(", _histParams.sTable);
 
-    std::vector<mu::value_type> vResults;
+    std::vector<std::complex<double>> vResults;
 
     // Get the number of selected bins
     if (cmdParser.hasParam("bins"))

@@ -35,7 +35,7 @@ class GridNumeReTable : public wxGridTableBase
     private:
         NumeRe::Table _table;
         int getNumHeadlines() const;
-        mu::value_type value;
+        std::complex<double> value;
         bool m_showQMarks;
 
     public:
@@ -77,8 +77,8 @@ class GridNumeReTable : public wxGridTableBase
 
         double min(const wxGridCellCoordsContainer& coords) const;
         double max(const wxGridCellCoordsContainer& coords) const;
-        mu::value_type avg(const wxGridCellCoordsContainer& coords) const;
-        mu::value_type sum(const wxGridCellCoordsContainer& coords) const;
+        std::complex<double> avg(const wxGridCellCoordsContainer& coords) const;
+        std::complex<double> sum(const wxGridCellCoordsContainer& coords) const;
         std::string serialize(const wxGridCellCoordsContainer& coords) const;
 
         std::vector<int> getColumnTypes() const;

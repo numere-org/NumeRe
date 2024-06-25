@@ -1120,13 +1120,13 @@ wxGridCellCoords TableViewer::CreateEmptyGridSpace(int rows, int headrows, int c
 ///
 /// \param row int
 /// \param col int
-/// \return mu::value_type
+/// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
-mu::value_type TableViewer::CellToCmplx(int row, int col)
+std::complex<double> TableViewer::CellToCmplx(int row, int col)
 {
     if (isGridNumeReTable)
-        return *static_cast<mu::value_type*>(GetTable()->GetValueAsCustom(row, col, "complex"));
+        return *static_cast<std::complex<double>*>(GetTable()->GetValueAsCustom(row, col, "complex"));
 
     if (GetCellValue(row, col)[0] != '"' && isNumerical(GetCellValue(row, col).ToStdString()))
         return StrToCmplx(GetCellValue(row, col).ToStdString());
@@ -1204,16 +1204,16 @@ double TableViewer::calculateMax(const wxGridCellCoordsContainer& coords)
 /// sum of the selected cells.
 ///
 /// \param coords const wxGridCellCoordsContainer&
-/// \return mu::value_type
+/// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
-mu::value_type TableViewer::calculateSum(const wxGridCellCoordsContainer& coords)
+std::complex<double> TableViewer::calculateSum(const wxGridCellCoordsContainer& coords)
 {
     if (isGridNumeReTable)
         return static_cast<GridNumeReTable*>(GetTable())->sum(coords);
 
     const wxGridCellsExtent& cellExtent = coords.getExtent();
-    mu::value_type dSum = 0;
+    std::complex<double> dSum = 0;
 
     for (int i = cellExtent.m_topleft.GetRow(); i <= cellExtent.m_bottomright.GetRow(); i++)
     {
@@ -1236,16 +1236,16 @@ mu::value_type TableViewer::calculateSum(const wxGridCellCoordsContainer& coords
 /// average of the selected cells.
 ///
 /// \param coords const wxGridCellCoordsContainer&
-/// \return mu::value_type
+/// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
-mu::value_type TableViewer::calculateAvg(const wxGridCellCoordsContainer& coords)
+std::complex<double> TableViewer::calculateAvg(const wxGridCellCoordsContainer& coords)
 {
     if (isGridNumeReTable)
         return static_cast<GridNumeReTable*>(GetTable())->avg(coords);
 
     const wxGridCellsExtent& cellExtent = coords.getExtent();
-    mu::value_type dSum = 0;
+    std::complex<double> dSum = 0;
     int nCount = 0;
 
     for (int i = cellExtent.m_topleft.GetRow(); i <= cellExtent.m_bottomright.GetRow(); i++)
@@ -1328,8 +1328,8 @@ void TableViewer::updateStatusBar(const wxGridCellCoordsContainer& coords, wxGri
 
     double dMin = calculateMin(coords);
     double dMax = calculateMax(coords);
-    mu::value_type dSum = calculateSum(coords);
-    mu::value_type dAvg = calculateAvg(coords);
+    std::complex<double> dSum = calculateSum(coords);
+    std::complex<double> dAvg = calculateAvg(coords);
 
     if (isDateTime && !isnan(dMin))
     {

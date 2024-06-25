@@ -158,11 +158,11 @@ class AdvStringCellRenderer : public wxGridCellAutoWrapStringRenderer
             wxGridCellAttr* customAttr = attr.Clone();
 
             if (grid.GetTable()->CanGetValueAs(row, col, "complex"))
-                customAttr->SetBackgroundColour(m_shader.getColour(*static_cast<mu::value_type*>(grid.GetTable()->GetValueAsCustom(row, col, "complex"))));
+                customAttr->SetBackgroundColour(m_shader.getColour(*static_cast<std::complex<double>*>(grid.GetTable()->GetValueAsCustom(row, col, "complex"))));
             else if (grid.GetTable()->CanGetValueAs(row, col, wxGRID_VALUE_NUMBER) || grid.GetTable()->CanGetValueAs(row, col, "datetime"))
-                customAttr->SetBackgroundColour(m_shader.getColour(mu::value_type(grid.GetTable()->GetValueAsDouble(row, col))));
+                customAttr->SetBackgroundColour(m_shader.getColour(std::complex<double>(grid.GetTable()->GetValueAsDouble(row, col))));
             else if (grid.GetTable()->CanGetValueAs(row, col, wxGRID_VALUE_BOOL))
-                customAttr->SetBackgroundColour(m_shader.getColour(mu::value_type(grid.GetTable()->GetValueAsBool(row, col))));
+                customAttr->SetBackgroundColour(m_shader.getColour(std::complex<double>(grid.GetTable()->GetValueAsBool(row, col))));
             else
                 customAttr->SetBackgroundColour(m_shader.getColour(grid.GetTable()->GetValue(row, col)));
 

@@ -60,11 +60,11 @@ namespace NumeRe
     /// \brief Private double vector assignment
     /// function.
     ///
-    /// \param vVals const std::vector<mu::value_type>&
+    /// \param vVals const std::vector<std::complex<double>>&
     /// \return void
     ///
     /////////////////////////////////////////////////
-    void Cluster::assign(const std::vector<mu::value_type>& vVals)
+    void Cluster::assign(const std::vector<std::complex<double>>& vVals)
     {
         bSortCaseInsensitive = false;
 
@@ -112,11 +112,11 @@ namespace NumeRe
     ///
     /// \param _idx Indices
     /// \param nNum int
-    /// \param data mu::value_type*
+    /// \param data std::complex<double>*
     /// \return void
     ///
     /////////////////////////////////////////////////
-    void Cluster::assignVectorResults(Indices _idx, int nNum, mu::value_type* data)
+    void Cluster::assignVectorResults(Indices _idx, int nNum, std::complex<double>* data)
     {
         if (nGlobalType != ClusterItem::ITEMTYPE_DOUBLE)
             nGlobalType = ClusterItem::ITEMTYPE_INVALID;
@@ -289,11 +289,11 @@ namespace NumeRe
     /// double cluster item at the back of the
     /// internal cluster array buffer.
     ///
-    /// \param val const mu::value_type&
+    /// \param val const std::complex<double>&
     /// \return void
     ///
     /////////////////////////////////////////////////
-    void Cluster::push_back(const mu::value_type& val)
+    void Cluster::push_back(const std::complex<double>& val)
     {
         vClusterArray.push_back(new ClusterDoubleItem(val));
 
@@ -375,7 +375,7 @@ namespace NumeRe
         for (size_t i = 0; i < vClusterArray.size(); i++)
         {
             if (vClusterArray[i]->getType() == ClusterItem::ITEMTYPE_DOUBLE)
-                nBytes += sizeof(mu::value_type);
+                nBytes += sizeof(std::complex<double>);
             else if (vClusterArray[i]->getType() == ClusterItem::ITEMTYPE_STRING)
                 nBytes += sizeof(char) * (vClusterArray[i]->getParserString().capacity()-2);
         }
@@ -535,10 +535,10 @@ namespace NumeRe
     /// of the i-th cluster item in memory as a value.
     ///
     /// \param i size_t
-    /// \return mu::value_type
+    /// \return std::complex<double>
     ///
     /////////////////////////////////////////////////
-    mu::value_type Cluster::getDouble(size_t i) const
+    std::complex<double> Cluster::getDouble(size_t i) const
     {
         if (vClusterArray.size() > i)
             return vClusterArray[i]->getDouble();
@@ -554,11 +554,11 @@ namespace NumeRe
     /// on-the-fly.
     ///
     /// \param i size_t
-    /// \param value const mu::value_type&
+    /// \param value const std::complex<double>&
     /// \return void
     ///
     /////////////////////////////////////////////////
-    void Cluster::setDouble(size_t i, const mu::value_type& value)
+    void Cluster::setDouble(size_t i, const std::complex<double>& value)
     {
         // Create new items if needed
         while (vClusterArray.size() <= i)
@@ -582,12 +582,12 @@ namespace NumeRe
     /// \brief This member function returns the data
     /// of all cluster items memory as a value vector.
     ///
-    /// \return std::vector<mu::value_type>
+    /// \return std::vector<std::complex<double>>
     ///
     /////////////////////////////////////////////////
-    std::vector<mu::value_type> Cluster::getDoubleArray() const
+    std::vector<std::complex<double>> Cluster::getDoubleArray() const
     {
-        std::vector<mu::value_type> vArray;
+        std::vector<std::complex<double>> vArray;
 
         for (size_t i = 0; i < vClusterArray.size(); i++)
         {
@@ -604,12 +604,12 @@ namespace NumeRe
     /// passed to the function. This function is used
     /// for cached memory accesses.
     ///
-    /// \param vTarget std::vector<mu::value_type>*
+    /// \param vTarget std::vector<std::complex<double>>*
     /// \param _vLine const VectorIndex&
     /// \return void
     ///
     /////////////////////////////////////////////////
-    void Cluster::insertDataInArray(std::vector<mu::value_type>* vTarget, const VectorIndex& _vLine)
+    void Cluster::insertDataInArray(std::vector<std::complex<double>>* vTarget, const VectorIndex& _vLine)
     {
         if (vTarget == nullptr)
             return;
@@ -651,11 +651,11 @@ namespace NumeRe
     /// type of the cluster items is adapted
     /// on-the-fly.
     ///
-    /// \param vVals const std::vector<mu::value_type>&
+    /// \param vVals const std::vector<std::complex<double>>&
     /// \return void
     ///
     /////////////////////////////////////////////////
-    void Cluster::setDoubleArray(const std::vector<mu::value_type>& vVals)
+    void Cluster::setDoubleArray(const std::vector<std::complex<double>>& vVals)
     {
         // Free the internal memory first
         clear();
@@ -690,11 +690,11 @@ namespace NumeRe
     /// on-the-fly.
     ///
     /// \param nNum int
-    /// \param data mu::value_type*
+    /// \param data std::complex<double>*
     /// \return void
     ///
     /////////////////////////////////////////////////
-    void Cluster::setDoubleArray(int nNum, mu::value_type* data)
+    void Cluster::setDoubleArray(int nNum, std::complex<double>* data)
     {
         // Free the internal memory first
         clear();
@@ -731,11 +731,11 @@ namespace NumeRe
     ///
     /// \param _idx Indices
     /// \param nNum int
-    /// \param data mu::value_type*
+    /// \param data std::complex<double>*
     /// \return void
     ///
     /////////////////////////////////////////////////
-    void Cluster::assignResults(Indices _idx, int nNum, mu::value_type* data)
+    void Cluster::assignResults(Indices _idx, int nNum, std::complex<double>* data)
     {
         // If the indices indicate a complete override
         // do that here and return
@@ -1202,17 +1202,17 @@ namespace NumeRe
     /// "value" are ignored.
     ///
     /// \param _vLine const VectorIndex&
-    /// \return mu::value_type
+    /// \return std::complex<double>
     ///
     /////////////////////////////////////////////////
-    mu::value_type Cluster::std(const VectorIndex& _vLine)
+    std::complex<double> Cluster::std(const VectorIndex& _vLine)
     {
         if (!vClusterArray.size())
             return NAN;
 
         // Calculate the average of the referenced items
-        mu::value_type dAvg = avg(_vLine);
-        mu::value_type dStd = 0.0;
+        std::complex<double> dAvg = avg(_vLine);
+        std::complex<double> dStd = 0.0;
         size_t nInvalid = 0;
 
         // Apply the operation and ignore invalid or non-double items
@@ -1240,15 +1240,15 @@ namespace NumeRe
     /// ignored.
     ///
     /// \param _vLine const VectorIndex&
-    /// \return mu::value_type
+    /// \return std::complex<double>
     ///
     /////////////////////////////////////////////////
-    mu::value_type Cluster::avg(const VectorIndex& _vLine)
+    std::complex<double> Cluster::avg(const VectorIndex& _vLine)
     {
         if (!vClusterArray.size())
             return NAN;
 
-        mu::value_type dAvg = 0.0;
+        std::complex<double> dAvg = 0.0;
         size_t nInvalid = 0;
 
         // Apply the operation and ignore invalid or non-double items
@@ -1276,10 +1276,10 @@ namespace NumeRe
     /// ignored.
     ///
     /// \param _vLine const VectorIndex&
-    /// \return mu::value_type
+    /// \return std::complex<double>
     ///
     /////////////////////////////////////////////////
-    mu::value_type Cluster::max(const VectorIndex& _vLine)
+    std::complex<double> Cluster::max(const VectorIndex& _vLine)
     {
         if (!vClusterArray.size() || isString())
             return NAN;
@@ -1348,10 +1348,10 @@ namespace NumeRe
     /// ignored.
     ///
     /// \param _vLine const VectorIndex&
-    /// \return mu::value_type
+    /// \return std::complex<double>
     ///
     /////////////////////////////////////////////////
-    mu::value_type Cluster::min(const VectorIndex& _vLine)
+    std::complex<double> Cluster::min(const VectorIndex& _vLine)
     {
         if (!vClusterArray.size() || isString())
             return NAN;
@@ -1420,15 +1420,15 @@ namespace NumeRe
     /// ignored.
     ///
     /// \param _vLine const VectorIndex&
-    /// \return mu::value_type
+    /// \return std::complex<double>
     ///
     /////////////////////////////////////////////////
-    mu::value_type Cluster::prd(const VectorIndex& _vLine)
+    std::complex<double> Cluster::prd(const VectorIndex& _vLine)
     {
         if (!vClusterArray.size())
             return NAN;
 
-        mu::value_type dPrd = 1.0;
+        std::complex<double> dPrd = 1.0;
 
         // Apply the operation and ignore invalid or non-double items
         for (size_t i = 0; i < _vLine.size(); i++)
@@ -1453,15 +1453,15 @@ namespace NumeRe
     /// ignored.
     ///
     /// \param _vLine const VectorIndex&
-    /// \return mu::value_type
+    /// \return std::complex<double>
     ///
     /////////////////////////////////////////////////
-    mu::value_type Cluster::sum(const VectorIndex& _vLine)
+    std::complex<double> Cluster::sum(const VectorIndex& _vLine)
     {
         if (!vClusterArray.size() && isString())
             return NAN;
 
-        mu::value_type dSum = 0.0;
+        std::complex<double> dSum = 0.0;
 
         // Apply the operation and ignore invalid or non-double items
         for (size_t i = 0; i < _vLine.size(); i++)
@@ -1517,10 +1517,10 @@ namespace NumeRe
     /// have a valid value (depending on their type).
     ///
     /// \param _vLine const VectorIndex&
-    /// \return mu::value_type
+    /// \return std::complex<double>
     ///
     /////////////////////////////////////////////////
-    mu::value_type Cluster::num(const VectorIndex& _vLine)
+    std::complex<double> Cluster::num(const VectorIndex& _vLine)
     {
         if (!vClusterArray.size())
             return 0;
@@ -1548,10 +1548,10 @@ namespace NumeRe
     /// do not have the type "value" are ignored.
     ///
     /// \param _vLine const VectorIndex&
-    /// \return mu::value_type
+    /// \return std::complex<double>
     ///
     /////////////////////////////////////////////////
-    mu::value_type Cluster::and_func(const VectorIndex& _vLine)
+    std::complex<double> Cluster::and_func(const VectorIndex& _vLine)
     {
         if (!vClusterArray.size())
             return 0.0;
@@ -1584,10 +1584,10 @@ namespace NumeRe
     /// do not have the type "value" are ignored.
     ///
     /// \param _vLine const VectorIndex&
-    /// \return mu::value_type
+    /// \return std::complex<double>
     ///
     /////////////////////////////////////////////////
-    mu::value_type Cluster::or_func(const VectorIndex& _vLine)
+    std::complex<double> Cluster::or_func(const VectorIndex& _vLine)
     {
         if (!vClusterArray.size())
             return 0.0;
@@ -1614,10 +1614,10 @@ namespace NumeRe
     /// ignored.
     ///
     /// \param _vLine const VectorIndex&
-    /// \return mu::value_type
+    /// \return std::complex<double>
     ///
     /////////////////////////////////////////////////
-    mu::value_type Cluster::xor_func(const VectorIndex& _vLine)
+    std::complex<double> Cluster::xor_func(const VectorIndex& _vLine)
     {
         if (!vClusterArray.size())
             return 0.0;
@@ -1654,10 +1654,10 @@ namespace NumeRe
     /// index points to a valid location.
     ///
     /// \param _vLine const VectorIndex&
-    /// \return mu::value_type
+    /// \return std::complex<double>
     ///
     /////////////////////////////////////////////////
-    mu::value_type Cluster::cnt(const VectorIndex& _vLine)
+    std::complex<double> Cluster::cnt(const VectorIndex& _vLine)
     {
         if (!vClusterArray.size())
             return 0;
@@ -1681,15 +1681,15 @@ namespace NumeRe
     /// "value" are ignored.
     ///
     /// \param _vLine const VectorIndex&
-    /// \return mu::value_type
+    /// \return std::complex<double>
     ///
     /////////////////////////////////////////////////
-    mu::value_type Cluster::norm(const VectorIndex& _vLine)
+    std::complex<double> Cluster::norm(const VectorIndex& _vLine)
     {
         if (!vClusterArray.size())
             return NAN;
 
-        mu::value_type dNorm = 0.0;
+        std::complex<double> dNorm = 0.0;
 
         // Apply the operation and ignore invalid or non-double items
         for (size_t i = 0; i < _vLine.size(); i++)
@@ -1715,12 +1715,12 @@ namespace NumeRe
     /// have the type "value" are ignored.
     ///
     /// \param _vLine const VectorIndex&
-    /// \param dRef mu::value_type
+    /// \param dRef std::complex<double>
     /// \param _nType int
-    /// \return mu::value_type
+    /// \return std::complex<double>
     ///
     /////////////////////////////////////////////////
-    mu::value_type Cluster::cmp(const VectorIndex& _vLine, mu::value_type dRef, int _nType)
+    std::complex<double> Cluster::cmp(const VectorIndex& _vLine, std::complex<double> dRef, int _nType)
     {
         if (!vClusterArray.size())
             return NAN;
@@ -1735,7 +1735,7 @@ namespace NumeRe
 
         int nType = 0;
 
-        mu::value_type dKeep = dRef;
+        std::complex<double> dKeep = dRef;
         int nKeep = -1;
 
         if (_nType > 0)
@@ -1827,10 +1827,10 @@ namespace NumeRe
     /// ignored.
     ///
     /// \param _vLine const VectorIndex&
-    /// \return mu::value_type
+    /// \return std::complex<double>
     ///
     /////////////////////////////////////////////////
-    mu::value_type Cluster::med(const VectorIndex& _vLine)
+    std::complex<double> Cluster::med(const VectorIndex& _vLine)
     {
         if (!vClusterArray.size())
             return NAN;
@@ -1893,11 +1893,11 @@ namespace NumeRe
     /// "value" are ignored.
     ///
     /// \param _vLine const VectorIndex&
-    /// \param dPct mu::value_type
-    /// \return mu::value_type
+    /// \param dPct std::complex<double>
+    /// \return std::complex<double>
     ///
     /////////////////////////////////////////////////
-    mu::value_type Cluster::pct(const VectorIndex& _vLine, mu::value_type dPct)
+    std::complex<double> Cluster::pct(const VectorIndex& _vLine, std::complex<double> dPct)
     {
         if (!vClusterArray.size())
             return NAN;

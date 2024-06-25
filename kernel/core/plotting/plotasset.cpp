@@ -81,7 +81,7 @@ void PlotAsset::create(PlotType _t, size_t nDim, size_t nAxes, const std::vector
 /// \brief Convenience function to write multi-
 /// dimensional data to the internal data object.
 ///
-/// \param val const mu::value_type&
+/// \param val const std::complex<double>&
 /// \param layer size_t
 /// \param x size_t
 /// \param y size_t
@@ -89,7 +89,7 @@ void PlotAsset::create(PlotType _t, size_t nDim, size_t nAxes, const std::vector
 /// \return void
 ///
 /////////////////////////////////////////////////
-void PlotAsset::writeData(const mu::value_type& val, size_t layer, size_t x, size_t y, size_t z)
+void PlotAsset::writeData(const std::complex<double>& val, size_t layer, size_t x, size_t y, size_t z)
 {
     if (layer >= data.size()
         || x >= (size_t)data[layer].first.nx

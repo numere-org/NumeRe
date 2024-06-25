@@ -369,6 +369,8 @@
 		<Unit filename="kernel/core/ParserLib/muParserToken.h" />
 		<Unit filename="kernel/core/ParserLib/muParserTokenReader.cpp" />
 		<Unit filename="kernel/core/ParserLib/muParserTokenReader.h" />
+		<Unit filename="kernel/core/ParserLib/muStructures.cpp" />
+		<Unit filename="kernel/core/ParserLib/muStructures.hpp" />
 		<Unit filename="kernel/core/built-in.cpp" />
 		<Unit filename="kernel/core/built-in.hpp" />
 		<Unit filename="kernel/core/commandfunctions.hpp" />
