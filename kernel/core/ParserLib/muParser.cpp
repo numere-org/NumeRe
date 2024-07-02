@@ -55,95 +55,95 @@ namespace mu
 
     //---------------------------------------------------------------------------
     // Trigonometric function
-    value_type Parser::Sin(const value_type& v)
+    Array Parser::Sin(const Array& v)
     {
-        return MathImpl<value_type>::Sin(v);
+        return apply(std::sin, v);
     }
-    value_type Parser::Cos(const value_type& v)
+    Array Parser::Cos(const Array& v)
     {
-        return MathImpl<value_type>::Cos(v);
+        return apply(std::cos, v);
     }
-    value_type Parser::Tan(const value_type& v)
+    Array Parser::Tan(const Array& v)
     {
-        return MathImpl<value_type>::Tan(v);
+        return apply(std::tan, v);
     }
-    value_type Parser::ASin(const value_type& v)
+    Array Parser::ASin(const Array& v)
     {
-        return MathImpl<value_type>::ASin(v);
+        return apply(std::asin, v);
     }
-    value_type Parser::ACos(const value_type& v)
+    Array Parser::ACos(const Array& v)
     {
-        return MathImpl<value_type>::ACos(v);
+        return apply(std::acos, v);
     }
-    value_type Parser::ATan(const value_type& v)
+    Array Parser::ATan(const Array& v)
     {
-        return MathImpl<value_type>::ATan(v);
+        return apply(std::atan, v);
     }
     value_type Parser::ATan2(const value_type& v1, const value_type& v2)
     {
-        return MathImpl<double>::ATan2(v1.real(), v2.real());
+        return v1;// MathImpl<double>::ATan2(v1.real(), v2.real());
     }
-    value_type Parser::Sinh(const value_type& v)
+    Array Parser::Sinh(const Array& v)
     {
-        return MathImpl<value_type>::Sinh(v);
+        return apply(std::sinh, v);
     }
-    value_type Parser::Cosh(const value_type& v)
+    Array Parser::Cosh(const Array& v)
     {
-        return MathImpl<value_type>::Cosh(v);
+        return apply(std::cosh, v);
     }
-    value_type Parser::Tanh(const value_type& v)
+    Array Parser::Tanh(const Array& v)
     {
-        return MathImpl<value_type>::Tanh(v);
+        return apply(std::tanh, v);
     }
-    value_type Parser::ASinh(const value_type& v)
+    Array Parser::ASinh(const Array& v)
     {
-        return MathImpl<value_type>::ASinh(v);
+        return apply(std::asinh, v);
     }
-    value_type Parser::ACosh(const value_type& v)
+    Array Parser::ACosh(const Array& v)
     {
-        return MathImpl<value_type>::ACosh(v);
+        return apply(std::acosh, v);
     }
-    value_type Parser::ATanh(const value_type& v)
+    Array Parser::ATanh(const Array& v)
     {
-        return MathImpl<value_type>::ATanh(v);
+        return apply(std::atanh, v);
     }
 
     //---------------------------------------------------------------------------
     // Logarithm functions
-    value_type Parser::Log2(const value_type& v)
+    Array Parser::Log2(const Array& v)
     {
-        return MathImpl<value_type>::Log2(v);     // Logarithm base 2
+        return apply(MathImpl<std::complex<double>>::Log2, v);     // Logarithm base 2
     }
-    value_type Parser::Log10(const value_type& v)
+    Array Parser::Log10(const Array& v)
     {
-        return MathImpl<value_type>::Log10(v);    // Logarithm base 10
+        return apply(MathImpl<std::complex<double>>::Log10, v);    // Logarithm base 10
     }
-    value_type Parser::Ln(const value_type& v)
+    Array Parser::Ln(const Array& v)
     {
-        return MathImpl<value_type>::Log(v);      // Logarithm base e (natural logarithm)
+        return apply(std::log, v);     // Logarithm base e (natural logarithm)
     }
 
     //---------------------------------------------------------------------------
     //  misc
-    value_type Parser::Exp(const value_type& v)
+    Array Parser::Exp(const Array& v)
     {
-        return MathImpl<value_type>::Exp(v);
+        return apply(MathImpl<std::complex<double>>::Exp, v);
     }
-    value_type Parser::Abs(const value_type& v)
+    Array Parser::Abs(const Array& v)
     {
-        return (v.real() == 0.0 || v.imag() == 0.0) ? (std::abs(v.real()) + std::abs(v.imag())) : std::abs(v); //MathImpl<value_type>::Abs(v);
+        return v; //apply(MathImpl<std::complex<double>>::Abs, v); //(v.real() == 0.0 || v.imag() == 0.0) ? (std::abs(v.real()) + std::abs(v.imag())) : std::abs(v); //MathImpl<value_type>::Abs(v);
     }
-    value_type Parser::Sqrt(const value_type& v)
+    Array Parser::Sqrt(const Array& v)
     {
-        return MathImpl<value_type>::Sqrt(v);
+        return apply(MathImpl<std::complex<double>>::Sqrt, v);
     }
-    value_type Parser::Rint(const value_type& v)
+    Array Parser::Rint(const Array& v)
     {
-        return value_type(MathImpl<double>::Rint(v.real()), MathImpl<double>::Rint(v.imag()));
+        return v;// value_type(MathImpl<double>::Rint(v.real()), MathImpl<double>::Rint(v.imag()));
     }
-    value_type Parser::Sign(const value_type& v)
+    Array Parser::Sign(const Array& v)
     {
-        return value_type(MathImpl<double>::Sign(v.real()), MathImpl<double>::Sign(v.imag()));
+        return v;//value_type(MathImpl<double>::Sign(v.real()), MathImpl<double>::Sign(v.imag()));
     }
 
     //---------------------------------------------------------------------------
@@ -151,9 +151,19 @@ namespace mu
         \param v The value to negate
         \return -v
     */
-    value_type Parser::UnaryMinus(const value_type& v)
+    Array Parser::UnaryMinus(const Array& v)
     {
         return -v;
+    }
+
+    Array Parser::UnaryPlus(const Array& v)
+    {
+        return v;
+    }
+
+    Array Parser::LogicalNot(const Array& v)
+    {
+        return !v;
     }
 
     //---------------------------------------------------------------------------
@@ -214,9 +224,9 @@ namespace mu
         \param [out] a_fVal Pointer where the value should be stored in case one is found.
         \return 1 if a value was found 0 otherwise.
     */
-    int Parser::IsVal(const char_type* a_szExpr, int* a_iPos, value_type* a_fVal)
+    int Parser::IsVal(const char_type* a_szExpr, int* a_iPos, Value* a_fVal)
     {
-        value_type fVal(0);
+        std::complex<double> fVal(0);
 
         stringstream_type stream(a_szExpr);
         stream.seekg(0);        // todo:  check if this really is necessary
@@ -228,7 +238,7 @@ namespace mu
             return 0;
 
         *a_iPos += (int)iEnd;
-        *a_fVal = fVal;
+        *a_fVal = Numerical(fVal);
         return 1;
     }
 
@@ -327,7 +337,7 @@ namespace mu
     */
     void Parser::InitConst()
     {
-        DefineConst("_pi", (value_type)PARSER_CONST_PI);
+        DefineConst("_pi", Numerical(PARSER_CONST_PI));
     }
 
     //---------------------------------------------------------------------------
@@ -338,6 +348,8 @@ namespace mu
     void Parser::InitOprt()
     {
         DefineInfixOprt("-", UnaryMinus);
+        DefineInfixOprt("+", UnaryPlus);
+        DefineInfixOprt("!", LogicalNot);
     }
 
     //---------------------------------------------------------------------------
@@ -380,38 +392,42 @@ namespace mu
 
       http://sourceforge.net/forum/forum.php?thread_id=1994611&forum_id=462843
     */
-    value_type Parser::Diff(value_type* a_Var,
-                            value_type  a_fPos,
-                            value_type  a_fEpsilon,
-                            size_t order)
+    std::vector<Array> Parser::Diff(Value* a_Var,
+                       const Array& a_fPos,
+                       Value fEpsilon,
+                       size_t order)
     {
-        value_type fBuf(*a_Var),
-                   fEpsilon(a_fEpsilon),
-                   fRes;
-        std::array<value_type, 5> f;
+        Value fBuf(*a_Var);
+        std::vector<Array> fRes;
+        std::array<Array, 5> f;
         std::array<double, 5> factors = {-2, -1, 0, 1, 2};
 
         // Backwards compatible calculation of epsilon inc case the user doesnt provide
         // his own epsilon
-        if (fEpsilon == 0.0)
-            fEpsilon = (a_fPos == 0.0) ? (value_type)1e-10 : (value_type)(1e-7*std::abs(a_fPos)*intPower(10, 2*(order-1)));
-
-
-        for (size_t i = 0; i < f.size(); i++)
+        if (fEpsilon == Value(0.0))
         {
-            *a_Var = a_fPos + factors[i] * fEpsilon;
-            f[i] = Eval();
+            Array absVal = Abs(a_fPos);
+            fEpsilon = (a_fPos == Value(0.0)) ? Value(1e-10) : Value(1e-7*Max(&absVal, 1).front()*intPower(10, 2*(order-1)));
         }
 
-        // Reference: https://web.media.mit.edu/~crtaylor/calculator.html
-        if (order == 1)
-            fRes = ( f[0]  - 8.0 * f[1]              + 8.0 * f[3] - f[4]) / (12.0 * fEpsilon);
-        else if (order == 2)
-            fRes = (-f[0] + 16.0 * f[1] - 30.0*f[2] + 16.0 * f[3] - f[4]) / (12.0 * fEpsilon * fEpsilon);
-        else if (order == 3)
-            fRes = (-f[0]  + 2.0 * f[1]              - 2.0 * f[3] + f[4]) / (2.0 * fEpsilon * fEpsilon * fEpsilon);
-        else
-            return NAN;
+        for (size_t n = 0; n < a_fPos.size(); n++)
+        {
+            for (size_t i = 0; i < f.size(); i++)
+            {
+                *a_Var = a_fPos[n] + Value(factors[i]) * fEpsilon;
+                f[i] = Eval().front();
+            }
+
+            // Reference: https://web.media.mit.edu/~crtaylor/calculator.html
+            if (order == 1)
+                fRes.push_back(( f[0]  - Value(8.0) * f[1]              + Value(8.0) * f[3] - f[4]) / (Value(12.0) * fEpsilon));
+            else if (order == 2)
+                fRes.push_back((-f[0] + Value(16.0) * f[1] - Value(30.0)*f[2] + Value(16.0) * f[3] - f[4]) / (Value(12.0) * fEpsilon * fEpsilon));
+            else if (order == 3)
+                fRes.push_back((-f[0]  + Value(2.0) * f[1]              - Value(2.0) * f[3] + f[4]) / (Value(2.0) * fEpsilon * fEpsilon * fEpsilon));
+            else
+                fRes.push_back(Value(NAN));
+        }
 
         *a_Var = fBuf; // restore variable
         return fRes;

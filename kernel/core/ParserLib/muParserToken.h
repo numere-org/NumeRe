@@ -57,18 +57,17 @@ namespace mu
 
      \author (C) 2004-2012 Ingo Berg
     */
-    template<typename TBase, typename TString>
     class ParserToken
     {
         private:
 
             ECmdCode  m_iCode;  ///< Type of the token; The token type is a constant of type #ECmdCode.
             ETypeCode m_iType;
-            void*  m_pTok;      ///< Stores Token pointer; not applicable for all tokens
+            Variable*  m_var;      ///< Stores Token pointer; not applicable for all tokens
             int  m_iIdx;        ///< An otional index to an external buffer storing the token data
-            TString m_strTok;   ///< Token string
-            TString m_strVal;   ///< Value for string variables
-            value_type m_fVal;  ///< the value
+            std::string m_strTok;   ///< Token string
+            std::string m_strVal;   ///< Value for string variables
+            Array m_fVal;  ///< the value
             std::unique_ptr<ParserCallback> m_pCallback;
 
         public:
@@ -83,7 +82,7 @@ namespace mu
             ParserToken()
                 : m_iCode(cmUNKNOWN)
                 , m_iType(tpVOID)
-                , m_pTok(0)
+                , m_var(nullptr)
                 , m_iIdx(-1)
                 , m_strTok()
                 , m_pCallback()
@@ -123,7 +122,7 @@ namespace mu
             void Assign(const ParserToken& a_Tok)
             {
                 m_iCode = a_Tok.m_iCode;
-                m_pTok = a_Tok.m_pTok;
+                m_var = a_Tok.m_var;
                 m_strTok = a_Tok.m_strTok;
                 m_iIdx = a_Tok.m_iIdx;
                 m_strVal = a_Tok.m_strVal;
@@ -142,9 +141,9 @@ namespace mu
               \pre [assert] a_iType!=cmVAL
               \pre [assert] a_iType!=cmFUNC
               \post m_fVal = 0
-              \post m_pTok = 0
+              \post m_vars = 0
             */
-            ParserToken& Set(ECmdCode a_iType, const TString& a_strTok = TString())
+            ParserToken& Set(ECmdCode a_iType, const std::string& a_strTok = std::string())
             {
                 // The following types cant be set this way, they have special Set functions
                 assert(a_iType != cmVAR);
@@ -153,7 +152,7 @@ namespace mu
 
                 m_iCode = a_iType;
                 m_iType = tpVOID;
-                m_pTok = 0;
+                m_var = nullptr;
                 m_strTok = a_strTok;
                 m_iIdx = -1;
 
@@ -162,7 +161,7 @@ namespace mu
 
             //------------------------------------------------------------------------------
             /** \brief Set Callback type. */
-            ParserToken& Set(const ParserCallback& a_pCallback, const TString& a_sTok)
+            ParserToken& Set(const ParserCallback& a_pCallback, const std::string& a_sTok)
             {
                 assert(a_pCallback.GetAddr());
 
@@ -171,7 +170,7 @@ namespace mu
                 m_strTok = a_sTok;
                 m_pCallback.reset(new ParserCallback(a_pCallback));
 
-                m_pTok = 0;
+                m_var = nullptr;
                 m_iIdx = -1;
 
                 return *this;
@@ -183,7 +182,7 @@ namespace mu
                 Member variables not necessary for value tokens will be invalidated.
                 \throw nothrow
             */
-            ParserToken& SetVal(TBase a_fVal, const TString& a_strTok = TString())
+            ParserToken& SetVal(const Array& a_fVal, const std::string& a_strTok = std::string())
             {
                 m_iCode = cmVAL;
                 m_iType = tpDBL;
@@ -191,7 +190,7 @@ namespace mu
                 m_strTok = a_strTok;
                 m_iIdx = -1;
 
-                m_pTok = 0;
+                m_var = nullptr;
                 m_pCallback.reset(0);
 
                 return *this;
@@ -203,13 +202,13 @@ namespace mu
                 Member variables not necessary for variable tokens will be invalidated.
                 \throw nothrow
             */
-            ParserToken& SetVar(TBase* a_pVar, const TString& a_strTok)
+            ParserToken& SetVar(Variable* a_pVar, const std::string& a_strTok)
             {
                 m_iCode = cmVAR;
                 m_iType = tpDBL;
                 m_strTok = a_strTok;
                 m_iIdx = -1;
-                m_pTok = (void*)a_pVar;
+                m_var = a_pVar;
                 m_pCallback.reset(0);
                 return *this;
             }
@@ -220,14 +219,14 @@ namespace mu
                 Member variables not necessary for variable tokens will be invalidated.
                 \throw nothrow
             */
-            ParserToken& SetString(const TString& a_strTok, std::size_t a_iSize)
+            ParserToken& SetString(const std::string& a_strTok, std::size_t a_iSize)
             {
                 m_iCode = cmSTRING;
                 m_iType = tpSTR;
                 m_strTok = a_strTok;
                 m_iIdx = static_cast<int>(a_iSize);
 
-                m_pTok = 0;
+                m_var = nullptr;
                 m_pCallback.reset(0);
                 return *this;
             }
@@ -327,7 +326,7 @@ namespace mu
             /** \brief Return the address of the callback function assoziated with
                        function and operator tokens.
 
-                \return The pointer stored in #m_pTok.
+                \return The pointer stored in #m_vars.
                 \throw exception_type if token type is non of:
                        <ul>
                          <li>cmFUNC</li>
@@ -349,14 +348,14 @@ namespace mu
                 Only applicable to variable and value tokens.
                 \throw exception_type if token is no value/variable token.
             */
-            TBase GetVal() const
+            Array GetVal() const
             {
                 switch (m_iCode)
                 {
                     case cmVAL:
                         return m_fVal;
                     case cmVAR:
-                        return *((TBase*)m_pTok);
+                        return *m_var;
                     default:
                         throw ParserError(ecVAL_EXPECTED);
                 }
@@ -368,12 +367,12 @@ namespace mu
               Valid only if m_iType==CmdVar.
               \throw exception_type if token is no variable token.
             */
-            TBase* GetVar() const
+            Variable* GetVar() const
             {
                 if (m_iCode != cmVAR)
                     throw ParserError(ecINTERNAL_ERROR);
 
-                return (TBase*)m_pTok;
+                return m_var;
             }
 
             //------------------------------------------------------------------------------
@@ -400,7 +399,7 @@ namespace mu
                 \throw nothrow
                 \sa m_strTok
             */
-            const TString& GetAsString() const
+            const std::string& GetAsString() const
             {
                 return m_strTok;
             }

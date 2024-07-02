@@ -186,6 +186,7 @@ static std::map<std::string, std::string> getColorSchemes()
     std::map<std::string, std::string> mColorSchemes;
 
     mColorSchemes.emplace("rainbow", "BbcyrR");
+    mColorSchemes.emplace("turbo", "{M3}n{c4}{e6}yq{R3}");
     mColorSchemes.emplace("grey", "kw");
     mColorSchemes.emplace("hot", "{R1}{r4}qy");
     mColorSchemes.emplace("cold", "{B2}n{c8}");

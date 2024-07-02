@@ -34,6 +34,7 @@ namespace mu
     };
 
 
+    // Abstraction of numerical values
     struct Numerical
     {
         std::complex<double> val;
@@ -42,6 +43,7 @@ namespace mu
         Numerical(const std::complex<double>& data = 0.0);
 
         Numerical operator+(const Numerical& other) const;
+        Numerical operator-() const;
         Numerical operator-(const Numerical& other) const;
         Numerical operator/(const Numerical& other) const;
         Numerical operator*(const Numerical& other) const;
@@ -53,6 +55,7 @@ namespace mu
     };
 
 
+    // 1.2 or "hello" or 2+3i
     class Value
     {
         public:
@@ -62,6 +65,12 @@ namespace mu
 
             Value(const Numerical& data);
             Value(bool logical);
+            Value(int value);
+            Value(unsigned int value);
+            Value(size_t value);
+            Value(int64_t value);
+            Value(double value);
+            Value(const std::complex<double>& value);
             Value(const std::string& sData);
 
             virtual ~Value();
@@ -71,6 +80,7 @@ namespace mu
             DataType getType() const;
             std::string getTypeAsString() const;
 
+            bool isVoid() const;
             bool isValid() const;
             bool isNumerical() const;
             bool isString() const;
@@ -82,6 +92,7 @@ namespace mu
             const Numerical& getNum() const;
 
             Value operator+(const Value& other) const;
+            Value operator-() const;
             Value operator-(const Value& other) const;
             Value operator/(const Value& other) const;
             Value operator*(const Value& other) const;
@@ -118,7 +129,8 @@ namespace mu
     };
 
 
-    class Variable : public Value
+    // a
+    /*class Variable : public Value // public std::vector<Value>
     {
         public:
             Variable();
@@ -130,9 +142,27 @@ namespace mu
 
             Variable& operator=(const Value& other);
             Variable& operator=(const Variable& other);
-    };
+    };*/
 
 
+    //class Array;
+
+    // {a,b,c,d,...}
+    /*class VarArray : public std::vector<Variable*>
+    {
+        public:
+            VarArray& operator=(const Array& values);
+
+            bool operator==(const VarArray& other);
+
+            bool isNull() const;
+            std::string print() const;
+    };*/
+
+    class Variable;
+
+
+    // {1,2,3,4,...}
     class Array : public std::vector<Value>
     {
         public:
@@ -141,6 +171,7 @@ namespace mu
             Array(Array&& other) = default;
 
             Array(const Value& singleton);
+            Array(const Variable& var);
             Array(const std::vector<Numerical>& other);
             Array(const std::vector<std::string>& other);
 
@@ -148,9 +179,10 @@ namespace mu
 
             std::vector<DataType> getType() const;
             DataType getCommonType() const;
-            bool isSingleton() const;
+            bool isScalar() const;
 
             Array operator+(const Array& other) const;
+            Array operator-() const;
             Array operator-(const Array& other) const;
             Array operator/(const Array& other) const;
             Array operator*(const Array& other) const;
@@ -160,6 +192,7 @@ namespace mu
             Array& operator*=(const Array& other);
 
             Array pow(const Array& exponent) const;
+            Array pow(const Numerical& exponent) const;
 
             operator bool() const;
 
@@ -177,13 +210,77 @@ namespace mu
             std::vector<std::string> to_string() const;
             std::string print() const;
 
+            Value& get(size_t i);
+            const Value& get(size_t i) const;
+
         private:
             mutable DataType m_commonType;
             static const Value m_default;
-
-            Value& get(size_t i);
-            const Value& get(size_t i) const;
     };
+
+
+    class Variable : public Array
+    {
+        public:
+            Variable();
+            Variable(const Value& data);
+            Variable(const Array& data);
+            Variable(const Variable& data);
+            Variable(Array&& data);
+            Variable(Variable&& data) = default;
+
+            Variable& operator=(const Value& other);
+            Variable& operator=(const Array& other);
+            Variable& operator=(const Variable& other);
+
+            void overwrite(const Array& other);
+    };
+
+
+    // {a,b,c,d,...}
+    class VarArray : public std::vector<Variable*>
+    {
+        public:
+            VarArray& operator=(const Array& values);
+            VarArray& operator=(const std::vector<Array>& arrayList);
+
+            bool operator==(const VarArray& other) const;
+
+            bool isNull() const;
+            std::string print() const;
+    };
+
+    Array operator+(const Array& arr, const Value& v);
+    Array operator-(const Array& arr, const Value& v);
+    Array operator*(const Array& arr, const Value& v);
+    Array operator/(const Array& arr, const Value& v);
+
+    Array operator+(const Value& v, const Array& arr);
+    Array operator-(const Value& v, const Array& arr);
+    Array operator*(const Value& v, const Array& arr);
+    Array operator/(const Value& v, const Array& arr);
+
+
+
+
+    Array apply(std::complex<double>(*)(const std::complex<double>&),
+                const Array& a);
+    Array apply(Value(*)(const Value&),
+                const Array& a);
+    Array apply(std::complex<double>(*)(const std::complex<double>&, const std::complex<double>&),
+                const Array& a1, const Array& a2);
+    Array apply(Value(*)(const Value&, const Value&),
+                const Array& a1, const Array& a2);
+    Array apply(std::complex<double>(*)(const std::complex<double>&, const std::complex<double>&, const std::complex<double>&),
+                const Array& a1, const Array& a2, const Array& a3);
+    Array apply(std::complex<double>(*)(const std::complex<double>&, const std::complex<double>&, const std::complex<double>&, const std::complex<double>&),
+                const Array& a1, const Array& a2, const Array& a3, const Array& a4);
+    Array apply(std::complex<double>(*)(const std::complex<double>&, const std::complex<double>&, const std::complex<double>&, const std::complex<double>&, const std::complex<double>&),
+                const Array& a1, const Array& a2, const Array& a3, const Array& a4, const Array& a5);
+    Array apply(std::complex<double>(*)(const std::complex<double>*, int),
+                const Array* arrs, int elems);
+    Array apply(Value(*)(const Value*, int),
+                const Array* arrs, int elems);
 
 }
 

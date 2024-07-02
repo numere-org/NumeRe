@@ -51,7 +51,7 @@ namespace mu
 	    \brief This file contains the class definition of the muparser engine.
 	*/
 
-    typedef std::map<std::string,std::vector<value_type>> vectormap_type;
+    typedef std::map<std::string,Array> vectormap_type;
 
 
 	//--------------------------------------------------------------------------------------------------
@@ -85,7 +85,7 @@ namespace mu
 			typedef ParserTokenReader token_reader_type;
 
 			/** \brief Type used for parser tokens. */
-			typedef ParserToken<value_type, string_type> token_type;
+			typedef ParserToken token_type;
 
 		public:
 
@@ -96,7 +96,7 @@ namespace mu
 			typedef ParserError exception_type;
 
 			mutable std::map<std::string, std::string>* mVarMapPntr;
-			mutable std::list<mu::value_type*> m_lDataStorage;
+			mutable std::list<Variable*> m_lDataStorage;
 
 			// Bytecode caching and loop caching interface section
 			void ActivateLoopMode(size_t _nLoopLength);
@@ -129,8 +129,8 @@ namespace mu
 
 			virtual ~ParserBase();
 
-			value_type  Eval();
-			value_type* Eval(int& nStackSize);
+			Array  Eval();
+			Array* Eval(int& nStackSize);
 			void Eval(value_type* results, int nBulkSize);
 
 			void SetExpr(StringView a_sExpr);
@@ -163,9 +163,9 @@ namespace mu
 							unsigned a_iPri = 0,
 							EOprtAssociativity a_eAssociativity = oaLEFT,
 							bool optimizeAway = true);
-			void DefineConst(const string_type& a_sName, value_type a_fVal);
+			void DefineConst(const string_type& a_sName, Value a_fVal);
 			void DefineStrConst(const string_type& a_sName, const string_type& a_strVal);
-			void DefineVar(const string_type& a_sName, value_type* a_fVar);
+			void DefineVar(const string_type& a_sName, Variable* a_fVar);
 			void DefinePostfixOprt(const string_type& a_strFun, fun_type1 a_pOprt, bool optimizeAway = true);
 			void DefineInfixOprt(const string_type& a_strName, fun_type1 a_pOprt, int a_iPrec = prINFIX, bool optimizeAway = true);
 
@@ -183,7 +183,7 @@ namespace mu
 			const valmap_type& GetConst() const;
 			const string_type& GetExpr() const;
 			const funmap_type& GetFunDef() const;
-			const std::map<std::string, std::vector<mu::value_type> >& GetVectors() const;
+			const vectormap_type& GetVectors() const;
 			string_type GetVersion(EParserVersionInfo eInfo = pviFULL) const;
 
 			const char_type** GetOprtDef() const;
@@ -206,9 +206,9 @@ namespace mu
 						int a_iPos = (int)mu::string_type::npos,
 						const string_type& a_strTok = string_type() ) const;
 
-			string_type CreateTempVectorVar(const std::vector<mu::value_type>& vVar);
-			void SetVectorVar(const std::string& sVarName, const std::vector<mu::value_type>& vVar, bool bAddVectorType = false);
-			std::vector<mu::value_type>* GetVectorVar(const std::string& sVarName);
+			std::string CreateTempVectorVar(const Array& vVar);
+			void SetVectorVar(const std::string& sVarName, const Array& vVar, bool bAddVectorType = false);
+			Array* GetVectorVar(const std::string& sVarName);
 			void UpdateVectorVar(const std::string& sVarName);
 			void ClearVectorVars(bool bIgnoreProcedureVects = false);
 			bool ContainsVectorVars(StringView sExpr, bool ignoreSingletons);
@@ -272,10 +272,10 @@ namespace mu
 			bool compileVectorsInMultiArgFunc(MutableStringView& sExpr, size_t& nPos);
 			size_t FindMultiArgFunc(StringView sExpr, size_t nPos, std::string& sMultArgFunc);
 			void compileVectorExpansion(MutableStringView sSubExpr, const std::string& sVectorVarName);
-            void expandVector(mu::value_type dFirst,
-                              const mu::value_type& dLast,
-                              const mu::value_type& dIncrement,
-                              std::vector<mu::value_type>& vResults);
+            void expandVector(std::complex<double> dFirst,
+                              const std::complex<double>& dLast,
+                              const std::complex<double>& dIncrement,
+                              Array& vResults);
 			void evaluateTemporaryVectors(const VectorEvaluation& vectEval, int nStackSize);
 			string_type getNextVarObject(std::string& sArgList, bool bCut);
 			string_type getNextVectorVarIndex();
@@ -300,9 +300,6 @@ namespace mu
 			void ApplyFunc(ParserStack<token_type>& a_stOpt,
 						   ParserStack<token_type>& a_stVal,
 						   int iArgCount) const;
-
-			token_type ApplyStrFunc(const token_type& a_FunTok,
-									const std::vector<token_type>& a_vArg) const;
 
 			int GetOprtPrecedence(const token_type& a_Tok) const;
 			EOprtAssociativity GetOprtAssociativity(const token_type& a_Tok) const;

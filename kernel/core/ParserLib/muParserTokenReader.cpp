@@ -280,6 +280,7 @@ namespace mu
 			return SaveBeforeReturn(tok); // Check for variable tokens
 		if ( IsStrVarTok(tok) )
 			return SaveBeforeReturn(tok); // Check for string variables
+#warning FIXME (numere#1#06/29/24): Handle string values correctly
 		if ( IsString(tok) )
 			return SaveBeforeReturn(tok); // Check for String tokens
 		if (IsInfixOpTok(tok))
@@ -384,6 +385,7 @@ namespace mu
 	*/
 	bool ParserTokenReader::IsBuiltIn(token_type& a_Tok)
 	{
+#warning FIXME (numere#1#06/29/24): Handle Vector braces correctly and add vector index brackets
 		const char_type** const pOprtDef = m_pParser->GetOprtDef(),
 								*const szFormula = m_strFormula.c_str();
 
@@ -740,7 +742,7 @@ namespace mu
 		assert(m_pParser);
 
 		string_type strTok;
-		value_type fVal(0);
+		Value fVal(0);
 		int iEnd(0);
 
 		// 2.) Check for user defined constant
@@ -876,10 +878,11 @@ namespace mu
 		}
 
 		// If a factory is available implicitely create new variables
+#warning FIXME (numere#1#06/29/24): Make the var factory built-in
 		if (m_pFactory)
 		{
-			value_type* fVar = m_pFactory(strTok.c_str(), m_pFactoryData);
-			a_Tok.SetVar(fVar, strTok );
+			Variable* fVar = m_pFactory(strTok.c_str(), m_pFactoryData);
+			a_Tok.SetVar(fVar, strTok);
 
 			// Do not use m_pParser->DefineVar( strTok, fVar );
 			// in order to define the new variable, it will clear the
@@ -892,7 +895,7 @@ namespace mu
 		}
 		else
 		{
-			a_Tok.SetVar((value_type*)&m_fZero, strTok);
+			a_Tok.SetVar((Variable*)&m_fZero, strTok);
 			m_UsedVar[strTok] = 0;  // Add variable to used-var-list
 		}
 
@@ -920,6 +923,7 @@ namespace mu
 		std::size_t iEnd(0), iSkip(0);
 
 		// parser over escaped '\"' end replace them with '"'
+#warning FIXME (numere#1#06/29/24): Handle also all other escaped sequences correctly (or use corresponding function)
 		for (iEnd = (int)strBuf.find( _nrT("\"") ); iEnd != 0 && iEnd != string_type::npos; iEnd = (int)strBuf.find( _nrT("\""), iEnd))
 		{
 			if (strBuf[iEnd - 1] != '\\')

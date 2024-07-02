@@ -23,10 +23,24 @@
 #include <shobjidl.h>
 
 #include "filesystem.hpp"
+#ifndef PARSERSTANDALONE
 #include "../../kernel.hpp"
+#else
+#include "../utils/tools.hpp"
+#endif
 #include "../utils/datetimetools.hpp"
 
 std::string removeQuotationMarks(const std::string& sString);
+
+#ifdef PARSERSTANDALONE
+std::string removeQuotationMarks(const std::string& sString)
+{
+    if (sString.find('"') == std::string::npos || sString.front() != '"' || sString.back() != '"')
+        return sString;
+
+    return sString.substr(1, sString.length() - 2);
+}
+#endif
 
 
 /////////////////////////////////////////////////
@@ -132,12 +146,16 @@ std::string FileSystem::cleanPath(std::string sFilePath, bool checkInvalidChars)
             sFilePath[i] = (char)0xDF;
         else if (sFilePath[i] == '~')
         {
+#ifndef PARSERSTANDALONE
             NumeReKernel::issueWarning("INTERNAL ISSUE: Replaced a tilde character in \"" + sFilePath + "\" with a slash. This should not happen. Consider informing the development team about this warning and how to recreate it. Thank you.");
+#endif
             sFilePath[i] = '/';
         }
         else if (sINVALID_CHARS.find(sFilePath[i]) != std::string::npos)
         {
+#ifndef PARSERSTANDALONE
             NumeReKernel::issueWarning("Replaced an invalid character in \"" + sFilePath + "\" with an underscore. This should not happen. Consider informing the development team about this warning and how to recreate it. Thank you.");
+#endif
             sFilePath[i] = '_';
         }
     }
@@ -581,7 +599,11 @@ std::string FileSystem::ValidFileName(std::string _sFileName, const std::string 
             if (sValid == ".*")
                 sValid = _sFileName.substr(0,nPos);
             else
+#ifndef PARSERSTANDALONE
                 throw SyntaxError(SyntaxError::INVALID_FILETYPE, _sFileName, _sFileName.substr(nPos), _sFileName);
+#else
+                throw std::runtime_error("INVALID_FILETYPE");
+#endif
         }
     }
     else
@@ -1262,11 +1284,13 @@ bool FileSystem::isFile(const std::string& _sPath) const
 /////////////////////////////////////////////////
 void FileSystem::initializeFromKernel()
 {
+#ifndef PARSERSTANDALONE
     NumeReKernel* _instance = NumeReKernel::getInstance();
 
     if (!_instance)
         return;
 
     assign(_instance->getFileSystem());
+#endif
 }
 

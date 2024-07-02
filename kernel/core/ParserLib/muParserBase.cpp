@@ -25,8 +25,8 @@
 
 #include "muParserBase.h"
 #include "muParserTemplateMagic.h"
-#include "../../kernel.hpp"
-#include "../utils/stringtools.hpp"
+#include "muHelpers.hpp"
+#include "../utils/tools.hpp"
 #include "../structures.hpp"
 
 //--- Standard includes ------------------------------------------------------------------------
@@ -42,20 +42,6 @@
 using namespace std;
 
 size_t getMatchingParenthesis(const StringView&);
-mu::value_type parser_Num(const mu::value_type*, int);
-mu::value_type parser_Cnt(const mu::value_type*, int);
-mu::value_type parser_and(const mu::value_type*, int);
-mu::value_type parser_or(const mu::value_type*, int);
-mu::value_type parser_Norm(const mu::value_type*, int);
-mu::value_type parser_product(const mu::value_type*, int);
-mu::value_type parser_Sum(const mu::value_type*, int);
-mu::value_type parser_Avg(const mu::value_type*, int);
-mu::value_type parser_Med(const mu::value_type*, int);
-mu::value_type parser_Pct(const mu::value_type*, int);
-mu::value_type parser_Std(const mu::value_type*, int);
-mu::value_type parser_compare(const mu::value_type*, int);
-mu::value_type parser_Min(const mu::value_type*, int);
-mu::value_type parser_Max(const mu::value_type*, int);
 
 
 
@@ -69,7 +55,7 @@ mu::value_type parser_Max(const mu::value_type*, int);
 
 namespace mu
 {
-    std::vector<double> real(const std::vector<value_type>& vVec)
+    std::vector<double> real(const std::vector<std::complex<double>>& vVec)
     {
 	    std::vector<double> vReal;
 
@@ -80,7 +66,7 @@ namespace mu
     }
 
 
-	std::vector<double> imag(const std::vector<value_type>& vVec)
+	std::vector<double> imag(const std::vector<std::complex<double>>& vVec)
 	{
 	    std::vector<double> vImag;
 
@@ -91,9 +77,9 @@ namespace mu
 	}
 
 
-	value_type rint(value_type v)
+	std::complex<double> rint(std::complex<double> v)
 	{
-	    return value_type(std::rint(v.real()), std::rint(v.imag()));
+	    return std::complex<double>(std::rint(v.real()), std::rint(v.imag()));
 	}
 
 
@@ -110,14 +96,14 @@ namespace mu
     {
         std::vector<value_type> vIdx;
 
-        for (int i = 0; i < n; i++)
-        {
-            if (v[i] != 0.0)
-                vIdx.push_back(i+1);
-        }
-
-        if (!vIdx.size())
-            vIdx.push_back(0.0);
+        //for (int i = 0; i < n; i++)
+        //{
+        //    if (v[i] != 0.0)
+        //        vIdx.push_back(i+1);
+        //}
+        //
+        //if (!vIdx.size())
+        //    vIdx.push_back(0.0);
 
         return vIdx;
     }
@@ -134,23 +120,24 @@ namespace mu
     /////////////////////////////////////////////////
     std::vector<value_type> parser_idxtolog(const value_type* v, int n)
     {
-        if (!n)
-            return std::vector<value_type>(1, 0.0);
+        //if (!n)
+        //    return std::vector<value_type>(1, 0.0);
+        return std::vector<value_type>();
 
-        value_type maxIdx = parser_Max(v, n);
-
-        if (std::isnan(maxIdx.real()))
-            return std::vector<value_type>(1, 0.0);
-
-        std::vector<value_type> vLogical(maxIdx.real(), 0.0);
-
-        for (int i = 0; i < n; i++)
-        {
-            if (v[i].real() > 0)
-                vLogical[v[i].real()-1] = 1.0;
-        }
-
-        return vLogical;
+        //value_type maxIdx = parser_Max(v, n);
+        //
+        //if (std::isnan(maxIdx.real()))
+        //    return std::vector<value_type>(1, 0.0);
+        //
+        //std::vector<value_type> vLogical(maxIdx.real(), 0.0);
+        //
+        //for (int i = 0; i < n; i++)
+        //{
+        //    if (v[i].real() > 0)
+        //        vLogical[v[i].real()-1] = 1.0;
+        //}
+        //
+        //return vLogical;
     }
 
 
@@ -160,19 +147,19 @@ namespace mu
     /// multiplication operator with a scalar
     /// optimization.
     ///
-    /// \param __x const value_type&
-    /// \param __y const value_type&
-    /// \return value_type
+    /// \param __x const std::complex<double>&
+    /// \param __y const std::complex<double>&
+    /// \return std::complex<double>
     ///
     /////////////////////////////////////////////////
-    inline value_type operator*(const value_type& __x, const value_type& __y)
+    inline std::complex<double> operator*(const std::complex<double>& __x, const std::complex<double>& __y)
     {
         if (__x.imag() == 0.0)
-            return value_type(__y.real()*__x.real(), __y.imag()*__x.real());
+            return std::complex<double>(__y.real()*__x.real(), __y.imag()*__x.real());
         else if (__y.imag() == 0.0)
-            return value_type(__x.real()*__y.real(), __x.imag()*__y.real());
+            return std::complex<double>(__x.real()*__y.real(), __x.imag()*__y.real());
 
-        value_type __r = __x;
+        std::complex<double> __r = __x;
         __r *= __y;
         return __r;
     }
@@ -182,17 +169,17 @@ namespace mu
     /// \brief Custom implementation for the complex
     /// division operator with a scalar optimization.
     ///
-    /// \param __x const value_type&
-    /// \param __y const value_type&
-    /// \return value_type
+    /// \param __x const std::complex<double>&
+    /// \param __y const std::complex<double>&
+    /// \return std::complex<double>
     ///
     /////////////////////////////////////////////////
-    inline value_type operator/(const value_type& __x, const value_type& __y)
+    inline std::complex<double> operator/(const std::complex<double>& __x, const std::complex<double>& __y)
     {
         if (__y.imag() == 0.0)
-            return value_type(__x.real() / __y.real(), __x.imag() / __y.real());
+            return std::complex<double>(__x.real() / __y.real(), __x.imag() / __y.real());
 
-        value_type __r = __x;
+        std::complex<double> __r = __x;
         __r /= __y;
         return __r;
     }
@@ -444,12 +431,12 @@ namespace mu
 			if (mVectorVars.find(pExpr->substr(nStart, nEnd - nStart)) != mVectorVars.end())
 				return;
 
-			std::vector<mu::value_type> vVar;
+			Array vVar;
 
 			if (GetVar().find(pExpr->substr(nStart, nEnd - nStart)) != GetVar().end())
-				vVar.push_back(*(GetVar().find(pExpr->substr(nStart, nEnd - nStart))->second));
+				vVar = *(GetVar().find(pExpr->substr(nStart, nEnd - nStart))->second);
 			else
-				vVar.push_back(0.0);
+				vVar.push_back(Value(Numerical(0.0)));
 
 			SetVectorVar(pExpr->substr(nStart, nEnd - nStart), vVar);
 		}
@@ -617,6 +604,7 @@ namespace mu
 	{
 		string_type st;
 
+#warning FIXME (numere#1#06/29/24): Evaluate which of those segments is still necessary
 		// Perform the pre-evaluation of the vectors first
 		if (a_sExpr.find_first_of("{}") != string::npos || ContainsVectorVars(a_sExpr, true))
         {
@@ -706,7 +694,7 @@ namespace mu
 				{
 				    // This is vector expansion: e.g. "{1:10}"
 					// Store the result in a new temporary vector
-                    string sVectorVarName = CreateTempVectorVar(vResults);
+                    string sVectorVarName = CreateTempVectorVar(vResults.front());
 
 				    // Get the expression and evaluate the expansion
 					compileVectorExpansion(sExpr.subview(i + 1, j - i - 1), sVectorVarName);
@@ -737,14 +725,14 @@ namespace mu
                             vResults.insert(vResults.end(), v, v+nResults);
 						    // Store the variable names
 						    getTarget().create(sExpr.subview(i + 1, j - i - 1), m_pTokenReader->GetUsedVar());
-							SetVectorVar("_~TRGTVCT[~]", vResults);
+							SetVectorVar("_~TRGTVCT[~]", vResults.front());
 							sExpr.replace(i, j + 1 - i, "_~TRGTVCT[~]");
 						}
 						else
 						{
 						    // This is a usual vector
 						    // Create a new temporary vector name
-                            std::string sVectorVarName = CreateTempVectorVar(vResults);
+                            std::string sVectorVarName = CreateTempVectorVar(vResults.front());
                             m_compilingState.m_vectEval.create(sVectorVarName);
                             int nResults;
                             // Calculate and store the results in the target vector
@@ -851,15 +839,15 @@ namespace mu
     /// still in valid range and therefore can be
     /// done to expand the vector.
     ///
-    /// \param current const mu::value_type&
-    /// \param last const mu::value_type&
-    /// \param d const mu::value_type&
+    /// \param current const std::complex<double>&
+    /// \param last const std::complex<double>&
+    /// \param d const std::complex<double>&
     /// \return bool
     ///
     /////////////////////////////////////////////////
-    static bool stepIsStillPossible(const mu::value_type& current, const mu::value_type& last, const mu::value_type& d)
+    static bool stepIsStillPossible(const std::complex<double>& current, const std::complex<double>& last, const std::complex<double>& d)
 	{
-	    mu::value_type fact(d.real() >= 0.0 ? 1.0 : -1.0, d.imag() >= 0.0 ? 1.0 : -1.0);
+	    std::complex<double> fact(d.real() >= 0.0 ? 1.0 : -1.0, d.imag() >= 0.0 ? 1.0 : -1.0);
 
 	    return (current.real() * fact.real()) <= (last.real() * fact.real())
             && (current.imag() * fact.imag()) <= (last.imag() * fact.imag());
@@ -871,14 +859,14 @@ namespace mu
     /// Private member used by
     /// ParserBase::compileVectorExpansion().
     ///
-    /// \param dFirst mu::value_type
-    /// \param dLast const mu::value_type&
-    /// \param dIncrement const mu::value_type&
-    /// \param vResults vector<mu::value_type>&
+    /// \param dFirst std::complex<double>
+    /// \param dLast const std::complex<double>&
+    /// \param dIncrement const std::complex<double>&
+    /// \param vResults vector<std::complex<double>>&
     /// \return void
     ///
     /////////////////////////////////////////////////
-	void ParserBase::expandVector(mu::value_type dFirst, const mu::value_type& dLast, const mu::value_type& dIncrement, vector<mu::value_type>& vResults)
+	void ParserBase::expandVector(std::complex<double> dFirst, const std::complex<double>& dLast, const std::complex<double>& dIncrement, Array& vResults)
 	{
 		// ignore impossible combinations. Store only
 		// the accessible value
@@ -888,18 +876,18 @@ namespace mu
             || (dFirst.imag() > dLast.imag() && dIncrement.imag() > 0)
             || dIncrement == 0.0)
 		{
-			vResults.push_back(dFirst);
+			vResults.push_back(Numerical(dFirst));
 			return;
 		}
 
 		// Store the first value
-		vResults.push_back(dFirst);
+		vResults.push_back(Numerical(dFirst));
 
 		// As long as the next step is possible, add the increment
 		while (stepIsStillPossible(dFirst+dIncrement, dLast+1e-10*dIncrement, dIncrement))
         {
             dFirst += dIncrement;
-            vResults.push_back(dFirst);
+            vResults.push_back(Numerical(dFirst));
         }
 	}
 
@@ -930,7 +918,7 @@ namespace mu
             // Set the argument of the function as expression and evaluate it recursively
             vector<mu::value_type> vResults;
             int nResults;
-            string sVectorVarName = CreateTempVectorVar(vResults);
+            string sVectorVarName = CreateTempVectorVar(vResults.front());
             SetExpr(sExpr.subview(nMultiArgParens + 1, nClosingParens - nMultiArgParens - 1));
             m_compilingState.m_vectEval.create(sVectorVarName, sMultiArgFunc);
             Eval(nResults);
@@ -1184,7 +1172,7 @@ namespace mu
 	    \post Will reset the Parser to string parsing mode.
 	    \throw ParserException in case the name contains invalid signs or a_pVar is NULL.
 	*/
-	void ParserBase::DefineVar(const string_type& a_sName, value_type* a_pVar)
+	void ParserBase::DefineVar(const string_type& a_sName, Variable* a_pVar)
 	{
 		if (a_pVar == 0)
 			Error(ecINVALID_VAR_PTR);
@@ -1213,7 +1201,7 @@ namespace mu
 	    \post Will reset the Parser to string parsing mode.
 	    \throw ParserException in case the name contains invalid signs.
 	*/
-	void ParserBase::DefineConst(const string_type& a_sName, value_type a_fVal)
+	void ParserBase::DefineConst(const string_type& a_sName, Value a_fVal)
 	{
 		CheckName(a_sName, ValidNameChars());
 		m_ConstDef[a_sName] = a_fVal;
@@ -1353,12 +1341,12 @@ namespace mu
 		return m_FunDef;
 	}
 
-	const std::map<std::string, std::vector<mu::value_type> >& ParserBase::GetVectors() const
+	const vectormap_type& ParserBase::GetVectors() const
 	{
 	    for (auto iter = mVectorVars.begin(); iter != mVectorVars.end(); ++iter)
         {
             if (m_VarDef.find(iter->first) != m_VarDef.end()) // FIX needed because both maps do not have to be identical
-                iter->second[0] = *(m_VarDef.find(iter->first)->second);
+                iter->second = *(m_VarDef.find(iter->first)->second);
         }
 
 	    return mVectorVars;
@@ -1369,56 +1357,9 @@ namespace mu
 	const string_type& ParserBase::GetExpr() const
 	{
 	    if (g_DbgDumpStack)
-            NumeReKernel::print("Current Eq: \"" + m_state->m_expr + "\"");
+            print("Current Eq: \"" + m_state->m_expr + "\"");
 
 	    return m_state->m_expr;
-	}
-
-	//---------------------------------------------------------------------------
-	/** \brief Execute a function that takes a single string argument.
-	    \param a_FunTok Function token.
-	    \throw exception_type If the function token is not a string function
-	*/
-	ParserBase::token_type ParserBase::ApplyStrFunc(const token_type& a_FunTok,
-			const std::vector<token_type>& a_vArg) const
-	{
-		if (a_vArg.back().GetCode() != cmSTRING)
-			Error(ecSTRING_EXPECTED, m_pTokenReader->GetPos(), a_FunTok.GetAsString());
-
-		token_type  valTok;
-		generic_fun_type pFunc = a_FunTok.GetFuncAddr();
-		assert(pFunc);
-
-		try
-		{
-			// Collect the function arguments from the value stack
-			switch (a_FunTok.GetArgCount())
-			{
-				case 0:
-					valTok.SetVal( ((strfun_type1)pFunc)(a_vArg[0].GetAsString().c_str()) );
-					break;
-				case 1:
-					valTok.SetVal( ((strfun_type2)pFunc)(a_vArg[1].GetAsString().c_str(),
-														 a_vArg[0].GetVal()) );
-					break;
-				case 2:
-					valTok.SetVal( ((strfun_type3)pFunc)(a_vArg[2].GetAsString().c_str(),
-														 a_vArg[1].GetVal(),
-														 a_vArg[0].GetVal()) );
-					break;
-				default:
-					Error(ecINTERNAL_ERROR);
-			}
-		}
-		catch (ParserError& /*e*/)
-		{
-			Error(ecVAL_EXPECTED, m_pTokenReader->GetPos(), a_FunTok.GetAsString());
-		}
-
-		// string functions won't be optimized
-		m_compilingState.m_byteCode.AddStrFun(pFunc, a_FunTok.GetArgCount(), a_vArg.back().GetIdx());
-
-		return valTok;
 	}
 
 	//---------------------------------------------------------------------------
@@ -1477,15 +1418,6 @@ namespace mu
 
 		switch (funTok.GetCode())
 		{
-			case  cmFUNC_STR:
-				stArg.push_back(a_stVal.pop());
-
-				if ( stArg.back().GetType() == tpSTR && funTok.GetType() != tpSTR )
-					Error(ecVAL_EXPECTED, m_pTokenReader->GetPos(), funTok.GetAsString());
-
-				ApplyStrFunc(funTok, stArg);
-				break;
-
 			case  cmFUNC_BULK:
 				m_compilingState.m_byteCode.AddBulkFun(funTok.GetFuncAddr(), (int)stArg.size());
 				break;
@@ -1508,7 +1440,7 @@ namespace mu
 
 		// Push dummy value representing the function result to the stack
 		token_type token;
-		token.SetVal(1);
+		token.SetVal(Array(Numerical(1.0)));
 		a_stVal.push(token);
 	}
 
@@ -1577,7 +1509,7 @@ namespace mu
 			else
 				m_compilingState.m_byteCode.AddOp(optTok.GetCode());
 
-			resTok.SetVal(1);
+			resTok.SetVal(Array(Numerical(1.0)));
 			a_stVal.push(resTok);
 		}
 	}
@@ -1653,27 +1585,27 @@ namespace mu
 
 		// Note: The check for nOffset==0 and nThreadID here is not necessary but
 		//       brings a minor performance gain when not in bulk mode.
-		value_type* Stack = nullptr;
+		Array* Stack = nullptr;
 
 		Stack = ((nOffset == 0) && (nThreadID == 0))
             ? &m_state->m_stackBuffer[0]
             : &m_state->m_stackBuffer[nThreadID * (m_state->m_stackBuffer.size() / nMaxThreads)];
 
-		value_type buf;
+		Array buf;
 		int sidx(0);
 
-        for (const SToken* pTok = m_state->m_byteCode.GetBase(); pTok->Cmd != cmEND ; ++pTok)
+        for (SToken* pTok = m_state->m_byteCode.GetBase(); pTok->Cmd != cmEND ; ++pTok)
         {
             switch (pTok->Cmd)
             {
                 // built in binary operators
                 case  cmLE:
                     --sidx;
-                    Stack[sidx]  = Stack[sidx].real() <= Stack[sidx + 1].real();
+                    Stack[sidx]  = Stack[sidx] <= Stack[sidx + 1];
                     continue;
                 case  cmGE:
                     --sidx;
-                    Stack[sidx]  = Stack[sidx].real() >= Stack[sidx + 1].real();
+                    Stack[sidx]  = Stack[sidx] >= Stack[sidx + 1];
                     continue;
                 case  cmNEQ:
                     --sidx;
@@ -1685,11 +1617,11 @@ namespace mu
                     continue;
                 case  cmLT:
                     --sidx;
-                    Stack[sidx]  = Stack[sidx].real() < Stack[sidx + 1].real();
+                    Stack[sidx]  = Stack[sidx] < Stack[sidx + 1];
                     continue;
                 case  cmGT:
                     --sidx;
-                    Stack[sidx]  = Stack[sidx].real() > Stack[sidx + 1].real();
+                    Stack[sidx]  = Stack[sidx] > Stack[sidx + 1];
                     continue;
                 case  cmADD:
                     --sidx;
@@ -1710,30 +1642,30 @@ namespace mu
 
                 case  cmPOW:
                     --sidx;
-                    Stack[sidx]  = MathImpl<value_type>::Pow(Stack[sidx], Stack[1 + sidx]);
+                    Stack[sidx] = Stack[sidx].pow(Stack[1+sidx]);
                     continue;
 
                 case  cmLAND:
                     --sidx;
-                    Stack[sidx]  = Stack[sidx] != 0.0 && Stack[sidx + 1] != 0.0;
+                    Stack[sidx]  = Stack[sidx] && Stack[sidx + 1];
                     continue;
                 case  cmLOR:
                     --sidx;
-                    Stack[sidx]  = Stack[sidx] != 0.0 || Stack[sidx + 1] != 0.0;
+                    Stack[sidx]  = Stack[sidx] || Stack[sidx + 1];
                     continue;
 
                 case  cmASSIGN:
                     --sidx;
-                    Stack[sidx] = *pTok->Oprt.ptr = Stack[sidx + 1];
+                    Stack[sidx] = *pTok->Oprt().var = Stack[sidx + 1];
                     continue;
 
                 case  cmIF:
                     if (Stack[sidx--] == 0.0)
-                        pTok += pTok->Oprt.offset;
+                        pTok += pTok->Oprt().offset;
                     continue;
 
                 case  cmELSE:
-                    pTok += pTok->Oprt.offset;
+                    pTok += pTok->Oprt().offset;
                     continue;
 
                 case  cmENDIF:
@@ -1741,138 +1673,138 @@ namespace mu
 
                 // value and variable tokens
                 case  cmVAL:
-                    Stack[++sidx] =  pTok->Val.data2;
+                    Stack[++sidx] =  pTok->Val().data2;
                     continue;
 
                 case  cmVAR:
-                    Stack[++sidx] = *(pTok->Val.ptr + pTok->Val.isVect*nOffset);
+                    Stack[++sidx] = *pTok->Val().var;
                     continue;
 
                 case  cmVARPOW2:
-                    buf = *(pTok->Val.ptr + pTok->Val.isVect*nOffset);
+                    buf = *pTok->Val().var;
                     Stack[++sidx] = buf * buf;
                     continue;
 
                 case  cmVARPOW3:
-                    buf = *(pTok->Val.ptr + pTok->Val.isVect*nOffset);
+                    buf = *pTok->Val().var;
                     Stack[++sidx] = buf * buf * buf;
                     continue;
 
                 case  cmVARPOW4:
-                    buf = *(pTok->Val.ptr + pTok->Val.isVect*nOffset);
+                    buf = *pTok->Val().var;
                     Stack[++sidx] = buf * buf * buf * buf;
                     continue;
 
                 case  cmVARPOWN:
-                    Stack[++sidx] = intPower(*(pTok->Val.ptr + pTok->Val.isVect*nOffset), pTok->Val.data.real());
+                    Stack[++sidx] = Array(*pTok->Val().var).pow(pTok->Val().data);
                     continue;
 
                 case  cmVARMUL:
-                    Stack[++sidx] = *(pTok->Val.ptr + pTok->Val.isVect*nOffset) * pTok->Val.data + pTok->Val.data2;
+                    Stack[++sidx] = Array(*pTok->Val().var) * pTok->Val().data + pTok->Val().data2;
                     continue;
 
                 // Next is treatment of numeric functions
                 case  cmFUNC:
                     {
-                        int iArgCount = pTok->Fun.argc;
+                        int iArgCount = pTok->Fun().argc;
 
                         // switch according to argument count
                         switch (iArgCount)
                         {
                             case 0:
                                 sidx += 1;
-                                Stack[sidx] = (*(fun_type0)pTok->Fun.ptr)();
+                                Stack[sidx] = (*(fun_type0)pTok->Fun().ptr)();
                                 continue;
                             case 1:
-                                Stack[sidx] = (*(fun_type1)pTok->Fun.ptr)(Stack[sidx]);
+                                Stack[sidx] = (*(fun_type1)pTok->Fun().ptr)(Stack[sidx]);
                                 continue;
                             case 2:
                                 sidx -= 1;
-                                Stack[sidx] = (*(fun_type2)pTok->Fun.ptr)(Stack[sidx],
-                                                                          Stack[sidx + 1]);
+                                Stack[sidx] = (*(fun_type2)pTok->Fun().ptr)(Stack[sidx],
+                                                                            Stack[sidx + 1]);
                                 continue;
                             case 3:
                                 sidx -= 2;
-                                Stack[sidx] = (*(fun_type3)pTok->Fun.ptr)(Stack[sidx],
-                                                                          Stack[sidx + 1],
-                                                                          Stack[sidx + 2]);
+                                Stack[sidx] = (*(fun_type3)pTok->Fun().ptr)(Stack[sidx],
+                                                                            Stack[sidx + 1],
+                                                                            Stack[sidx + 2]);
                                 continue;
                             case 4:
                                 sidx -= 3;
-                                Stack[sidx] = (*(fun_type4)pTok->Fun.ptr)(Stack[sidx],
-                                                                          Stack[sidx + 1],
-                                                                          Stack[sidx + 2],
-                                                                          Stack[sidx + 3]);
+                                Stack[sidx] = (*(fun_type4)pTok->Fun().ptr)(Stack[sidx],
+                                                                            Stack[sidx + 1],
+                                                                            Stack[sidx + 2],
+                                                                            Stack[sidx + 3]);
                                 continue;
                             case 5:
                                 sidx -= 4;
-                                Stack[sidx] = (*(fun_type5)pTok->Fun.ptr)(Stack[sidx],
-                                                                          Stack[sidx + 1],
-                                                                          Stack[sidx + 2],
-                                                                          Stack[sidx + 3],
-                                                                          Stack[sidx + 4]);
+                                Stack[sidx] = (*(fun_type5)pTok->Fun().ptr)(Stack[sidx],
+                                                                            Stack[sidx + 1],
+                                                                            Stack[sidx + 2],
+                                                                            Stack[sidx + 3],
+                                                                            Stack[sidx + 4]);
                                 continue;
                             case 6:
                                 sidx -= 5;
-                                Stack[sidx] = (*(fun_type6)pTok->Fun.ptr)(Stack[sidx],
-                                                                          Stack[sidx + 1],
-                                                                          Stack[sidx + 2],
-                                                                          Stack[sidx + 3],
-                                                                          Stack[sidx + 4],
-                                                                          Stack[sidx + 5]);
+                                Stack[sidx] = (*(fun_type6)pTok->Fun().ptr)(Stack[sidx],
+                                                                            Stack[sidx + 1],
+                                                                            Stack[sidx + 2],
+                                                                            Stack[sidx + 3],
+                                                                            Stack[sidx + 4],
+                                                                            Stack[sidx + 5]);
                                 continue;
                             case 7:
                                 sidx -= 6;
-                                Stack[sidx] = (*(fun_type7)pTok->Fun.ptr)(Stack[sidx],
-                                                                          Stack[sidx + 1],
-                                                                          Stack[sidx + 2],
-                                                                          Stack[sidx + 3],
-                                                                          Stack[sidx + 4],
-                                                                          Stack[sidx + 5],
-                                                                          Stack[sidx + 6]);
+                                Stack[sidx] = (*(fun_type7)pTok->Fun().ptr)(Stack[sidx],
+                                                                            Stack[sidx + 1],
+                                                                            Stack[sidx + 2],
+                                                                            Stack[sidx + 3],
+                                                                            Stack[sidx + 4],
+                                                                            Stack[sidx + 5],
+                                                                            Stack[sidx + 6]);
                                 continue;
                             case 8:
                                 sidx -= 7;
-                                Stack[sidx] = (*(fun_type8)pTok->Fun.ptr)(Stack[sidx],
-                                                                          Stack[sidx + 1],
-                                                                          Stack[sidx + 2],
-                                                                          Stack[sidx + 3],
-                                                                          Stack[sidx + 4],
-                                                                          Stack[sidx + 5],
-                                                                          Stack[sidx + 6],
-                                                                          Stack[sidx + 7]);
+                                Stack[sidx] = (*(fun_type8)pTok->Fun().ptr)(Stack[sidx],
+                                                                            Stack[sidx + 1],
+                                                                            Stack[sidx + 2],
+                                                                            Stack[sidx + 3],
+                                                                            Stack[sidx + 4],
+                                                                            Stack[sidx + 5],
+                                                                            Stack[sidx + 6],
+                                                                            Stack[sidx + 7]);
                                 continue;
                             case 9:
                                 sidx -= 8;
-                                Stack[sidx] = (*(fun_type9)pTok->Fun.ptr)(Stack[sidx],
-                                                                          Stack[sidx + 1],
-                                                                          Stack[sidx + 2],
-                                                                          Stack[sidx + 3],
-                                                                          Stack[sidx + 4],
-                                                                          Stack[sidx + 5],
-                                                                          Stack[sidx + 6],
-                                                                          Stack[sidx + 7],
-                                                                          Stack[sidx + 8]);
+                                Stack[sidx] = (*(fun_type9)pTok->Fun().ptr)(Stack[sidx],
+                                                                            Stack[sidx + 1],
+                                                                            Stack[sidx + 2],
+                                                                            Stack[sidx + 3],
+                                                                            Stack[sidx + 4],
+                                                                            Stack[sidx + 5],
+                                                                            Stack[sidx + 6],
+                                                                            Stack[sidx + 7],
+                                                                            Stack[sidx + 8]);
                                 continue;
                             case 10:
                                 sidx -= 9;
-                                Stack[sidx] = (*(fun_type10)pTok->Fun.ptr)(Stack[sidx],
-                                                                           Stack[sidx + 1],
-                                                                           Stack[sidx + 2],
-                                                                           Stack[sidx + 3],
-                                                                           Stack[sidx + 4],
-                                                                           Stack[sidx + 5],
-                                                                           Stack[sidx + 6],
-                                                                           Stack[sidx + 7],
-                                                                           Stack[sidx + 8],
-                                                                           Stack[sidx + 9]);
+                                Stack[sidx] = (*(fun_type10)pTok->Fun().ptr)(Stack[sidx],
+                                                                             Stack[sidx + 1],
+                                                                             Stack[sidx + 2],
+                                                                             Stack[sidx + 3],
+                                                                             Stack[sidx + 4],
+                                                                             Stack[sidx + 5],
+                                                                             Stack[sidx + 6],
+                                                                             Stack[sidx + 7],
+                                                                             Stack[sidx + 8],
+                                                                             Stack[sidx + 9]);
                                 continue;
                             default:
                                 if (iArgCount > 0) // function with variable arguments store the number as a negative value
                                     Error(ecINTERNAL_ERROR, 1);
 
                                 sidx -= -iArgCount - 1;
-                                Stack[sidx] = (*(multfun_type)pTok->Fun.ptr)(&Stack[sidx], -iArgCount);
+                                Stack[sidx] = (*(multfun_type)pTok->Fun().ptr)(&Stack[sidx], -iArgCount);
                                 continue;
                         }
                     }
@@ -1901,23 +1833,23 @@ namespace mu
         for (size_t nOffset = 1; nOffset < nVectorLength; ++nOffset)
         {
             int nThreadID = omp_get_thread_num();
-            value_type* Stack = &m_state->m_stackBuffer[nThreadID * nBufferOffset];
-            value_type buf;
+            Array* Stack = &m_state->m_stackBuffer[nThreadID * nBufferOffset];
+            Array buf;
             int sidx(0);
 
             // Run the bytecode
-            for (const SToken* pTok = m_state->m_byteCode.GetBase(); pTok->Cmd != cmEND ; ++pTok)
+            for (SToken* pTok = m_state->m_byteCode.GetBase(); pTok->Cmd != cmEND ; ++pTok)
             {
                 switch (pTok->Cmd)
                 {
                     // built in binary operators
                     case  cmLE:
                         --sidx;
-                        Stack[sidx]  = Stack[sidx].real() <= Stack[sidx + 1].real();
+                        Stack[sidx]  = Stack[sidx] <= Stack[sidx + 1];
                         continue;
                     case  cmGE:
                         --sidx;
-                        Stack[sidx]  = Stack[sidx].real() >= Stack[sidx + 1].real();
+                        Stack[sidx]  = Stack[sidx] >= Stack[sidx + 1];
                         continue;
                     case  cmNEQ:
                         --sidx;
@@ -1929,11 +1861,11 @@ namespace mu
                         continue;
                     case  cmLT:
                         --sidx;
-                        Stack[sidx]  = Stack[sidx].real() < Stack[sidx + 1].real();
+                        Stack[sidx]  = Stack[sidx] < Stack[sidx + 1];
                         continue;
                     case  cmGT:
                         --sidx;
-                        Stack[sidx]  = Stack[sidx].real() > Stack[sidx + 1].real();
+                        Stack[sidx]  = Stack[sidx] > Stack[sidx + 1];
                         continue;
                     case  cmADD:
                         --sidx;
@@ -1954,30 +1886,30 @@ namespace mu
 
                     case  cmPOW:
                         --sidx;
-                        Stack[sidx]  = MathImpl<value_type>::Pow(Stack[sidx], Stack[1 + sidx]);
+                        Stack[sidx] = Stack[sidx].pow(Stack[1+sidx]);
                         continue;
 
                     case  cmLAND:
                         --sidx;
-                        Stack[sidx]  = Stack[sidx] != 0.0 && Stack[sidx + 1] != 0.0;
+                        Stack[sidx]  = Stack[sidx] && Stack[sidx + 1];
                         continue;
                     case  cmLOR:
                         --sidx;
-                        Stack[sidx]  = Stack[sidx] != 0.0 || Stack[sidx + 1] != 0.0;
+                        Stack[sidx]  = Stack[sidx] || Stack[sidx + 1];
                         continue;
 
                     case  cmASSIGN:
                         --sidx;
-                        Stack[sidx] = *pTok->Oprt.ptr = Stack[sidx + 1];
+                        Stack[sidx] = *pTok->Oprt().var = Stack[sidx + 1];
                         continue;
 
                     case  cmIF:
                         if (Stack[sidx--] == 0.0)
-                            pTok += pTok->Oprt.offset;
+                            pTok += pTok->Oprt().offset;
                         continue;
 
                     case  cmELSE:
-                        pTok += pTok->Oprt.offset;
+                        pTok += pTok->Oprt().offset;
                         continue;
 
                     case  cmENDIF:
@@ -1985,139 +1917,139 @@ namespace mu
 
                     // value and variable tokens
                     case  cmVAL:
-                        Stack[++sidx] =  pTok->Val.data2;
+                        Stack[++sidx] = pTok->Val().data2;
                         continue;
 
                     case  cmVAR:
-                        Stack[++sidx] = *(pTok->Val.ptr + pTok->Val.isVect*nOffset);
-                        //NumeReKernel::print(toString(*(pTok->Val.ptr + pTok->Val.isVect*nOffset), 14));
+                        Stack[++sidx] = *pTok->Val().var;
+                        //print(toString(*(pTok->Val.ptr + pTok->Val.isVect*nOffset), 14));
                         continue;
 
                     case  cmVARPOW2:
-                        buf = *(pTok->Val.ptr + pTok->Val.isVect*nOffset);
+                        buf = *pTok->Val().var;
                         Stack[++sidx] = buf * buf;
                         continue;
 
                     case  cmVARPOW3:
-                        buf = *(pTok->Val.ptr + pTok->Val.isVect*nOffset);
+                        buf = *pTok->Val().var;
                         Stack[++sidx] = buf * buf * buf;
                         continue;
 
                     case  cmVARPOW4:
-                        buf = *(pTok->Val.ptr + pTok->Val.isVect*nOffset);
+                        buf = *pTok->Val().var;
                         Stack[++sidx] = buf * buf * buf * buf;
                         continue;
 
                     case  cmVARPOWN:
-                        Stack[++sidx] = intPower(*(pTok->Val.ptr + pTok->Val.isVect*nOffset), pTok->Val.data.real());
+                        Stack[++sidx] = Array(*pTok->Val().var).pow(pTok->Val().data);
                         continue;
 
                     case  cmVARMUL:
-                        Stack[++sidx] = *(pTok->Val.ptr + pTok->Val.isVect*nOffset) * pTok->Val.data + pTok->Val.data2;
+                        Stack[++sidx] = Array(*pTok->Val().var) * pTok->Val().data + pTok->Val().data2;
                         continue;
 
                     // Next is treatment of numeric functions
                     case  cmFUNC:
                         {
-                            int iArgCount = pTok->Fun.argc;
+                            int iArgCount = pTok->Fun().argc;
 
                             // switch according to argument count
                             switch (iArgCount)
                             {
                                 case 0:
                                     sidx += 1;
-                                    Stack[sidx] = (*(fun_type0)pTok->Fun.ptr)();
+                                    Stack[sidx] = (*(fun_type0)pTok->Fun().ptr)();
                                     continue;
                                 case 1:
-                                    Stack[sidx] = (*(fun_type1)pTok->Fun.ptr)(Stack[sidx]);
+                                    Stack[sidx] = (*(fun_type1)pTok->Fun().ptr)(Stack[sidx]);
                                     continue;
                                 case 2:
                                     sidx -= 1;
-                                    Stack[sidx] = (*(fun_type2)pTok->Fun.ptr)(Stack[sidx],
-                                                                              Stack[sidx + 1]);
+                                    Stack[sidx] = (*(fun_type2)pTok->Fun().ptr)(Stack[sidx],
+                                                                                Stack[sidx + 1]);
                                     continue;
                                 case 3:
                                     sidx -= 2;
-                                    Stack[sidx] = (*(fun_type3)pTok->Fun.ptr)(Stack[sidx],
-                                                                              Stack[sidx + 1],
-                                                                              Stack[sidx + 2]);
+                                    Stack[sidx] = (*(fun_type3)pTok->Fun().ptr)(Stack[sidx],
+                                                                                Stack[sidx + 1],
+                                                                                Stack[sidx + 2]);
                                     continue;
                                 case 4:
                                     sidx -= 3;
-                                    Stack[sidx] = (*(fun_type4)pTok->Fun.ptr)(Stack[sidx],
-                                                                              Stack[sidx + 1],
-                                                                              Stack[sidx + 2],
-                                                                              Stack[sidx + 3]);
+                                    Stack[sidx] = (*(fun_type4)pTok->Fun().ptr)(Stack[sidx],
+                                                                                Stack[sidx + 1],
+                                                                                Stack[sidx + 2],
+                                                                                Stack[sidx + 3]);
                                     continue;
                                 case 5:
                                     sidx -= 4;
-                                    Stack[sidx] = (*(fun_type5)pTok->Fun.ptr)(Stack[sidx],
-                                                                              Stack[sidx + 1],
-                                                                              Stack[sidx + 2],
-                                                                              Stack[sidx + 3],
-                                                                              Stack[sidx + 4]);
+                                    Stack[sidx] = (*(fun_type5)pTok->Fun().ptr)(Stack[sidx],
+                                                                                Stack[sidx + 1],
+                                                                                Stack[sidx + 2],
+                                                                                Stack[sidx + 3],
+                                                                                Stack[sidx + 4]);
                                     continue;
                                 case 6:
                                     sidx -= 5;
-                                    Stack[sidx] = (*(fun_type6)pTok->Fun.ptr)(Stack[sidx],
-                                                                              Stack[sidx + 1],
-                                                                              Stack[sidx + 2],
-                                                                              Stack[sidx + 3],
-                                                                              Stack[sidx + 4],
-                                                                              Stack[sidx + 5]);
+                                    Stack[sidx] = (*(fun_type6)pTok->Fun().ptr)(Stack[sidx],
+                                                                                Stack[sidx + 1],
+                                                                                Stack[sidx + 2],
+                                                                                Stack[sidx + 3],
+                                                                                Stack[sidx + 4],
+                                                                                Stack[sidx + 5]);
                                     continue;
                                 case 7:
                                     sidx -= 6;
-                                    Stack[sidx] = (*(fun_type7)pTok->Fun.ptr)(Stack[sidx],
-                                                                              Stack[sidx + 1],
-                                                                              Stack[sidx + 2],
-                                                                              Stack[sidx + 3],
-                                                                              Stack[sidx + 4],
-                                                                              Stack[sidx + 5],
-                                                                              Stack[sidx + 6]);
+                                    Stack[sidx] = (*(fun_type7)pTok->Fun().ptr)(Stack[sidx],
+                                                                                Stack[sidx + 1],
+                                                                                Stack[sidx + 2],
+                                                                                Stack[sidx + 3],
+                                                                                Stack[sidx + 4],
+                                                                                Stack[sidx + 5],
+                                                                                Stack[sidx + 6]);
                                     continue;
                                 case 8:
                                     sidx -= 7;
-                                    Stack[sidx] = (*(fun_type8)pTok->Fun.ptr)(Stack[sidx],
-                                                                              Stack[sidx + 1],
-                                                                              Stack[sidx + 2],
-                                                                              Stack[sidx + 3],
-                                                                              Stack[sidx + 4],
-                                                                              Stack[sidx + 5],
-                                                                              Stack[sidx + 6],
-                                                                              Stack[sidx + 7]);
+                                    Stack[sidx] = (*(fun_type8)pTok->Fun().ptr)(Stack[sidx],
+                                                                                Stack[sidx + 1],
+                                                                                Stack[sidx + 2],
+                                                                                Stack[sidx + 3],
+                                                                                Stack[sidx + 4],
+                                                                                Stack[sidx + 5],
+                                                                                Stack[sidx + 6],
+                                                                                Stack[sidx + 7]);
                                     continue;
                                 case 9:
                                     sidx -= 8;
-                                    Stack[sidx] = (*(fun_type9)pTok->Fun.ptr)(Stack[sidx],
-                                                                              Stack[sidx + 1],
-                                                                              Stack[sidx + 2],
-                                                                              Stack[sidx + 3],
-                                                                              Stack[sidx + 4],
-                                                                              Stack[sidx + 5],
-                                                                              Stack[sidx + 6],
-                                                                              Stack[sidx + 7],
-                                                                              Stack[sidx + 8]);
+                                    Stack[sidx] = (*(fun_type9)pTok->Fun().ptr)(Stack[sidx],
+                                                                                Stack[sidx + 1],
+                                                                                Stack[sidx + 2],
+                                                                                Stack[sidx + 3],
+                                                                                Stack[sidx + 4],
+                                                                                Stack[sidx + 5],
+                                                                                Stack[sidx + 6],
+                                                                                Stack[sidx + 7],
+                                                                                Stack[sidx + 8]);
                                     continue;
                                 case 10:
                                     sidx -= 9;
-                                    Stack[sidx] = (*(fun_type10)pTok->Fun.ptr)(Stack[sidx],
-                                                                               Stack[sidx + 1],
-                                                                               Stack[sidx + 2],
-                                                                               Stack[sidx + 3],
-                                                                               Stack[sidx + 4],
-                                                                               Stack[sidx + 5],
-                                                                               Stack[sidx + 6],
-                                                                               Stack[sidx + 7],
-                                                                               Stack[sidx + 8],
-                                                                               Stack[sidx + 9]);
+                                    Stack[sidx] = (*(fun_type10)pTok->Fun().ptr)(Stack[sidx],
+                                                                                 Stack[sidx + 1],
+                                                                                 Stack[sidx + 2],
+                                                                                 Stack[sidx + 3],
+                                                                                 Stack[sidx + 4],
+                                                                                 Stack[sidx + 5],
+                                                                                 Stack[sidx + 6],
+                                                                                 Stack[sidx + 7],
+                                                                                 Stack[sidx + 8],
+                                                                                 Stack[sidx + 9]);
                                     continue;
                                 default:
                                     if (iArgCount > 0) // function with variable arguments store the number as a negative value
                                         Error(ecINTERNAL_ERROR, 1);
 
                                     sidx -= -iArgCount - 1;
-                                    Stack[sidx] = (*(multfun_type)pTok->Fun.ptr)(&Stack[sidx], -iArgCount);
+                                    Stack[sidx] = (*(multfun_type)pTok->Fun().ptr)(&Stack[sidx], -iArgCount);
                                     continue;
                             }
                         }
@@ -2140,7 +2072,7 @@ namespace mu
 	void ParserBase::CreateRPN()
 	{
 	    if (g_DbgDumpStack)
-            NumeReKernel::print("Parsing: \"" + m_pTokenReader->GetExpr() + "\"");
+            print("Parsing: \"" + m_pTokenReader->GetExpr() + "\"");
 
 		if (!m_pTokenReader->GetExpr().length())
 			Error(ecUNEXPECTED_EOF, 0);
@@ -2174,20 +2106,21 @@ namespace mu
 
 				case cmVAR:
 					stVal.push(opt);
-					m_compilingState.m_byteCode.AddVar( static_cast<value_type*>(opt.GetVar()) );
+					m_compilingState.m_byteCode.AddVar(opt.GetVar());
 
-					if (mVectorVars.size())
+#warning FIXME (numere#1#06/29/24): Has to be checked
+					/*if (mVectorVars.size())
 					{
 						if (mVectorVars.find(opt.GetAsString()) != mVectorVars.end())
                         {
-                            mVectorVars[opt.GetAsString()][0] = *opt.GetVar();
+                            mVectorVars[opt.GetAsString()][0] = opt.GetVar();
 							break;
                         }
 
 						std::vector<mu::value_type> vVar;
-						vVar.push_back(*(opt.GetVar()));
+						vVar.push_back((opt.GetVar()));
 						SetVectorVar(opt.GetAsString(), vVar, true);
-					}
+					}*/
 
 					break;
 
@@ -2633,76 +2566,76 @@ namespace mu
 		ParserStack<token_type> stOprt(a_stOprt),
 					stVal(a_stVal);
 
-        NumeReKernel::print("Value stack:");
-        NumeReKernel::printPreFmt("|-> ");
+        print("Value stack:");
+        printFormatted("|-> ");
 
 		while ( !stVal.empty() )
 		{
 			token_type val = stVal.pop();
 
             if (val.GetType() == tpSTR)
-                NumeReKernel::printPreFmt(" \"" + val.GetAsString() + "\" ");
+                printFormatted(" \"" + val.GetAsString() + "\" ");
 			else
-                NumeReKernel::printPreFmt(" " + toString(val.GetVal(), 7) + " ");
+                printFormatted(" " + val.GetVal().print() + " ");
 		}
 
-		NumeReKernel::printPreFmt("  \n");
-		NumeReKernel::printPreFmt("|-> Operator stack:\n");
+		printFormatted("  \n");
+		printFormatted("|-> Operator stack:\n");
 
 		while ( !stOprt.empty() )
 		{
 			if (stOprt.top().GetCode() <= cmASSIGN)
 			{
-			    NumeReKernel::printPreFmt("|   OPRT_INTRNL \"" + string(ParserBase::c_DefaultOprt[stOprt.top().GetCode()]) + "\"\n");
+			    printFormatted("|   OPRT_INTRNL \"" + string(ParserBase::c_DefaultOprt[stOprt.top().GetCode()]) + "\"\n");
 			}
 			else
 			{
 				switch (stOprt.top().GetCode())
 				{
 					case cmVAR:
-					    NumeReKernel::printPreFmt("|   VAR\n");
+					    printFormatted("|   VAR\n");
 						break;
 					case cmVAL:
-						NumeReKernel::printPreFmt("|   VAL\n");
+						printFormatted("|   VAL\n");
 						break;
 					case cmFUNC:
-					    NumeReKernel::printPreFmt("|   FUNC \"" + stOprt.top().GetAsString() + "\"\n");
+					    printFormatted("|   FUNC \"" + stOprt.top().GetAsString() + "\"\n");
 						break;
 					case cmFUNC_BULK:
-						NumeReKernel::printPreFmt("|   FUNC_BULK \"" + stOprt.top().GetAsString() + "\"\n");
+						printFormatted("|   FUNC_BULK \"" + stOprt.top().GetAsString() + "\"\n");
 						break;
 					case cmOPRT_INFIX:
-						NumeReKernel::printPreFmt("|   OPRT_INF \"" + stOprt.top().GetAsString() + "\"\n");
+						printFormatted("|   OPRT_INF \"" + stOprt.top().GetAsString() + "\"\n");
 						break;
 					case cmOPRT_BIN:
-						NumeReKernel::printPreFmt("|   OPRT_BIN \"" + stOprt.top().GetAsString() + "\"\n");
+						printFormatted("|   OPRT_BIN \"" + stOprt.top().GetAsString() + "\"\n");
 						break;
 					case cmFUNC_STR:
-						NumeReKernel::printPreFmt("|   FUNC_STR\n");
+						printFormatted("|   FUNC_STR\n");
 						break;
 					case cmEND:
-						NumeReKernel::printPreFmt("|   END\n");
+						printFormatted("|   END\n");
 						break;
 					case cmUNKNOWN:
-						NumeReKernel::printPreFmt("|   UNKNOWN\n");
+						printFormatted("|   UNKNOWN\n");
 						break;
 					case cmBO:
-						NumeReKernel::printPreFmt("|   BRACKET \"(\"\n");
+						printFormatted("|   BRACKET \"(\"\n");
 						break;
 					case cmBC:
-						NumeReKernel::printPreFmt("|   BRACKET \")\"\n");
+						printFormatted("|   BRACKET \")\"\n");
 						break;
 					case cmIF:
-						NumeReKernel::printPreFmt("|   IF\n");
+						printFormatted("|   IF\n");
 						break;
 					case cmELSE:
-						NumeReKernel::printPreFmt("|   ELSE\n");
+						printFormatted("|   ELSE\n");
 						break;
 					case cmENDIF:
-						NumeReKernel::printPreFmt("|   ENDIF\n");
+						printFormatted("|   ENDIF\n");
 						break;
 					default:
-					    NumeReKernel::printPreFmt("|   " + toString(stOprt.top().GetCode()) + "\n");
+					    printFormatted("|   " + toString(stOprt.top().GetCode()) + "\n");
 						break;
 				}
 			}
@@ -2831,7 +2764,7 @@ namespace mu
     void ParserBase::evaluateTemporaryVectors(const VectorEvaluation& vectEval, int nStackSize)
 	{
 	    //g_logger.debug("Accessing " + vectEval.m_targetVect);
-        std::vector<mu::value_type>* vTgt = GetVectorVar(vectEval.m_targetVect);
+        Array* vTgt = GetVectorVar(vectEval.m_targetVect);
 
         switch (vectEval.m_type)
         {
@@ -2842,7 +2775,7 @@ namespace mu
                 for (size_t i = 0, n = 0; i < m_state->m_vectEval.m_componentDefs.size(); i++, n++)
                 {
                     if (m_state->m_vectEval.m_componentDefs[i] == 1)
-                        vTgt->push_back(m_buffer[n]);
+                        vTgt->insert(vTgt->end(), m_buffer[n].begin(), m_buffer[n].end());
                     else
                     {
                         int nComps = m_state->m_vectEval.m_componentDefs[i];
@@ -2850,13 +2783,24 @@ namespace mu
                         // This is an expansion. There are two possible cases
                         if (nComps == 2)
                         {
-                            mu::value_type diff = m_buffer[n+1] - m_buffer[n];
-                            diff.real(diff.real() > 0.0 ? 1.0 : (diff.real() < 0.0 ? -1.0 : 0.0));
-                            diff.imag(diff.imag() > 0.0 ? 1.0 : (diff.imag() < 0.0 ? -1.0 : 0.0));
-                            expandVector(m_buffer[n], m_buffer[n+1], diff, *vTgt);
+                            Array diff = m_buffer[n+1] - m_buffer[n];
+
+                            for (size_t v = 0; v < diff.size(); v++)
+                            {
+                                Numerical d = diff[v].getNum();
+                                d.val.real(d.val.real() > 0.0 ? 1.0 : (d.val.real() < 0.0 ? -1.0 : 0.0));
+                                d.val.imag(d.val.imag() > 0.0 ? 1.0 : (d.val.imag() < 0.0 ? -1.0 : 0.0));
+                                expandVector(m_buffer[n][v].getNum().val, m_buffer[n+1][v].getNum().val, d.val, *vTgt);
+                            }
+
                         }
                         else if (nComps == 3)
-                            expandVector(m_buffer[n], m_buffer[n+2], m_buffer[n+1], *vTgt);
+                        {
+                            for (size_t v = 0; v < std::max({m_buffer[n].size(), m_buffer[n+1].size(), m_buffer[n+2].size()}); v++)
+                            {
+                                expandVector(m_buffer[n][v].getNum().val, m_buffer[n+2][v].getNum().val, m_buffer[n+1][v].getNum().val, *vTgt);
+                            }
+                        }
 
                         n += nComps-1;
                     }
@@ -2865,11 +2809,12 @@ namespace mu
                 break;
             }
 
-            case VectorEvaluation::EVALTYPE_VECTOR:
+#warning FIXME (numere#1#06/29/24): Those segments have to be checked
+            /*case VectorEvaluation::EVALTYPE_VECTOR:
                 vTgt->assign(m_buffer.begin(), m_buffer.begin() + nStackSize);
-                break;
+                break;*/
 
-            case VectorEvaluation::EVALTYPE_MULTIARGFUNC:
+            /*case VectorEvaluation::EVALTYPE_MULTIARGFUNC:
             {
                 // Apply the needed multi-argument function
                 if (m_FunDef.find(m_state->m_vectEval.m_mafunc) != m_FunDef.end())
@@ -2883,7 +2828,7 @@ namespace mu
                     *vTgt = parser_idxtolog(&m_buffer[0], nStackSize);
 
                 break;
-            }
+            }*/
 
         }
 
@@ -2905,7 +2850,7 @@ namespace mu
 	    std::string s;
 
 	    for (int i = 0; i < nElems; i++)
-            s += toString(buffer[i], 5) + ",";
+            s += buffer[i].print() + ",";
 
         s.pop_back();
 
@@ -2937,10 +2882,11 @@ namespace mu
         m_buffer.assign(m_state->m_stackBuffer.begin()+1,
                         m_state->m_stackBuffer.begin()+nStackSize+1);
 
-        if (mVectorVars.size())
+#warning FIXME (numere#1#06/29/24): This segment has to be checked
+        /*if (mVectorVars.size())
         {
             std::vector<std::vector<value_type>*> vUsedVectorVars;
-            std::vector<value_type*> vUsedVectorVarAddresses;
+            VarArray vUsedVectorVarAddresses;
             varmap_type& vars = m_state->m_usedVar;
             size_t nVectorLength = 0;
 
@@ -3004,19 +2950,6 @@ namespace mu
 
                     ParseCmdCodeBulkParallel(nVectorLength);
 
-                    /*size_t nBufferOffset = m_state->m_stackBuffer.size() / nMaxThreads;
-
-                    #pragma omp parallel for //schedule(static, (nVectorLength-1)/nMaxThreads)
-                    for (size_t i = 1; i < nVectorLength; ++i)
-                    {
-                        int nThreadID = omp_get_thread_num();
-                        ParseCmdCodeBulk(i, nThreadID);
-
-                        for (int j = 0; j < nStackSize; j++)
-                        {
-                            m_buffer[i*nStackSize + j] = m_state->m_stackBuffer[nThreadID*nBufferOffset + j + 1];
-                        }
-                    }*/
                     //g_logger.info("Ran parallel");
                 }
 
@@ -3033,7 +2966,7 @@ namespace mu
                 // Repeat the first component to resolve possible overwrites (needs additional time)
                 (this->*m_pParseFormula)();
             }
-        }
+        }*/
 
         // assign the results of the calculation to a possible
         // temporary vector
@@ -3047,7 +2980,7 @@ namespace mu
             evaluateTemporaryVectors(m_state->m_vectEval, nStackSize);
 
         if (g_DbgDumpStack)
-            NumeReKernel::print("ParserBase::Eval() @ ["
+            print("ParserBase::Eval() @ ["
                                 + toString(nthLoopElement) + "," + toString(nthLoopPartEquation)
                                 + "] m_buffer[:] = {" + printVector(m_buffer, nStackSize) + "}");
 
@@ -3070,18 +3003,15 @@ namespace mu
     /// \brief Single-value wrapper around the
     /// vectorized overload of this member function.
     ///
-    /// \return value_type
+    /// \return Array
     ///
     /////////////////////////////////////////////////
-	value_type ParserBase::Eval() // declared as deprecated
+	Array ParserBase::Eval() // declared as deprecated
 	{
-	    value_type* v;
+	    Array* v;
 	    int nResults;
 
 	    v = Eval(nResults);
-
-	    if (!nResults)
-            return NAN;
 
 	    return v[0];
 	}
@@ -3101,7 +3031,7 @@ namespace mu
         if (!bMakeLoopByteCode)
         {
             if (g_DbgDumpStack)
-                NumeReKernel::print("DEBUG: Activated loop mode");
+                print("DEBUG: Activated loop mode");
 
             nthLoopElement = 0;
             nCurrVectorIndex = 0;
@@ -3127,7 +3057,7 @@ namespace mu
         if (bMakeLoopByteCode)
         {
             if (g_DbgDumpStack)
-                NumeReKernel::print("DEBUG: Deactivated loop mode");
+                print("DEBUG: Deactivated loop mode");
             nthLoopElement = 0;
             nthLoopPartEquation = 0;
             nCurrVectorIndex = 0;
@@ -3404,7 +3334,7 @@ namespace mu
         if (bMakeLoopByteCode)
         {
             if (g_DbgDumpStack)
-                NumeReKernel::print("DEBUG: Set loop pause mode to: " + toString(_bPause));
+                print("DEBUG: Set loop pause mode to: " + toString(_bPause));
 
             bPauseLoopByteCode = _bPause;
 
@@ -3520,16 +3450,16 @@ namespace mu
     /// vector into the internal storage referencing
     /// it with a auto-generated variable name.
     ///
-    /// \param vVar const std::vector<mu::value_type>&
-    /// \return string_type
+    /// \param vVar const Array&
+    /// \return std::string
     ///
     /////////////////////////////////////////////////
-	string_type ParserBase::CreateTempVectorVar(const std::vector<mu::value_type>& vVar)
+	std::string ParserBase::CreateTempVectorVar(const Array& vVar)
 	{
-	    string_type sTempVarName = "_~TV[" + getNextVectorVarIndex() + "]";
+	    std::string sTempVarName = "_~TV[" + getNextVectorVarIndex() + "]";
 
         if (!vVar.size())
-            SetVectorVar(sTempVarName, std::vector<mu::value_type>(1, 0.0), false);
+            SetVectorVar(sTempVarName, Array(Numerical(0.0)), false);
         else
             SetVectorVar(sTempVarName, vVar, false);
 
@@ -3543,13 +3473,15 @@ namespace mu
     /// it with the passed name.
     ///
     /// \param sVarName const std::string&
-    /// \param vVar const std::vector<mu::value_type>&
+    /// \param vVar const Array&
     /// \param bAddVectorType bool
     /// \return void
     ///
     /////////////////////////////////////////////////
-	void ParserBase::SetVectorVar(const std::string& sVarName, const std::vector<mu::value_type>& vVar, bool bAddVectorType)
+	void ParserBase::SetVectorVar(const std::string& sVarName, const Array& vVar, bool bAddVectorType)
 	{
+#warning FIXME (numere#1#06/27/24): Check and evaluate vector vars
+
 		if (!vVar.size())
 			return;
 
@@ -3558,17 +3490,13 @@ namespace mu
 		if (!bAddVectorType && mVectorVars.find(sVarName) == mVectorVars.end() && m_VarDef.find(sVarName) == m_VarDef.end())
 		{
 		    // Create the storage for a new variable
-		    m_lDataStorage.push_back(new mu::value_type);
-
-		    // Assign the first element of the vector
-		    // to this storage
-		    *m_lDataStorage.back() = vVar[0];
+		    m_lDataStorage.push_back(new Variable(vVar));
 
 		    // Define a new variable
 		    DefineVar(sVarName, m_lDataStorage.back());
 		}
 		else if (!bAddVectorType && m_VarDef.find(sVarName) != m_VarDef.end())
-			*(m_VarDef.find(sVarName)->second) = vVar[0];
+			m_VarDef.find(sVarName)->second->overwrite(vVar);
 
 		mVectorVars[sVarName] = vVar;
 	}
@@ -3579,10 +3507,10 @@ namespace mu
     /// to the vector stored internally.
     ///
     /// \param sVarName const std::string&
-    /// \return std::vector<mu::value_type>*
+    /// \return Array*
     ///
     /////////////////////////////////////////////////
-	std::vector<mu::value_type>* ParserBase::GetVectorVar(const std::string& sVarName)
+	Array* ParserBase::GetVectorVar(const std::string& sVarName)
 	{
 		if (mVectorVars.find(sVarName) == mVectorVars.end())
 			return nullptr;

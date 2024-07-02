@@ -29,6 +29,7 @@
 #include <string>
 #include <stack>
 #include <vector>
+#include <variant>
 
 #include "muParserDef.h"
 #include "muParserError.h"
@@ -41,39 +42,70 @@
 
 namespace mu
 {
+    struct SValData
+    {
+        Variable* var;
+        Array  data;
+        Array  data2;
+        bool isVect;
+    };
+
+    struct SFunData
+    {
+        // Note: generic_fun_type is merely a placeholder. The real type could be
+        //       anything between gun_type1 and fun_type9. I can't use a void
+        //       pointer due to constraints in the ANSI standard which allows
+        //       data pointers and function pointers to differ in size.
+        generic_fun_type ptr;
+        int   argc;
+        int   idx;
+    };
+
+    struct SOprtData
+    {
+        Variable* var;
+        int offset;
+    };
+
 	struct SToken
 	{
 		ECmdCode Cmd;
+        std::variant<SValData, SFunData, SOprtData> m_data;
 
-		union
+		SToken()
 		{
-			struct //SValData
-			{
-				value_type* ptr;
-				value_type  data;
-				value_type  data2;
-				bool isVect;
-			} Val;
+		    Cmd = cmUNKNOWN;
+        }
 
-			struct //SFunData
-			{
-				// Note: generic_fun_type is merely a placeholder. The real type could be
-				//       anything between gun_type1 and fun_type9. I can't use a void
-				//       pointer due to constraints in the ANSI standard which allows
-				//       data pointers and function pointers to differ in size.
-				generic_fun_type ptr;
-				int   argc;
-				int   idx;
-			} Fun;
+		SValData& Val()
+		{
+		    return std::get<SValData>(m_data);
+		}
 
-			struct //SOprtData
-			{
-				value_type* ptr;
-				int offset;
-			} Oprt;
-		};
+		const SValData& Val() const
+		{
+		    return std::get<SValData>(m_data);
+		}
 
-		SToken() {Cmd = cmUNKNOWN; Val.ptr = nullptr;}
+		SFunData& Fun()
+		{
+		    return std::get<SFunData>(m_data);
+		}
+
+		const SFunData& Fun() const
+		{
+		    return std::get<SFunData>(m_data);
+		}
+
+		SOprtData& Oprt()
+		{
+		    return std::get<SOprtData>(m_data);
+		}
+
+		const SOprtData& Oprt() const
+		{
+		    return std::get<SOprtData>(m_data);
+		}
 	};
 
 
@@ -91,7 +123,7 @@ namespace mu
 		private:
 
 			/** \brief Token type for internal use only. */
-			typedef ParserToken<value_type, string_type> token_type;
+			typedef ParserToken token_type;
 
 			/** \brief Token vector for storing the RPN. */
 			typedef std::vector<SToken> rpn_type;
@@ -116,24 +148,23 @@ namespace mu
 			ParserByteCode& operator=(const ParserByteCode& a_ByteCode);
 			void Assign(const ParserByteCode& a_ByteCode);
 
-			void AddVar(value_type* a_pVar);
-			void AddVal(value_type a_fVal);
+			void AddVar(Variable* a_pVar);
+			void AddVal(const Array& a_fVal);
 			void AddOp(ECmdCode a_Oprt);
 			void AddIfElse(ECmdCode a_Oprt);
-			void AddAssignOp(value_type* a_pVar);
+			void AddAssignOp(Variable* a_pVar);
 			void AddFun(generic_fun_type a_pFun, int a_iArgc, bool optimizeAway);
 			void AddBulkFun(generic_fun_type a_pFun, int a_iArgc);
-			void AddStrFun(generic_fun_type a_pFun, int a_iArgc, int a_iIdx);
 
 			void EnableOptimizer(bool bStat);
 
 			void Finalize();
-			void ChangeVar(value_type* a_pOldVar, value_type* a_pNewVar, bool isVect);
+			void ChangeVar(Variable* a_pOldVar, Variable* a_pNewVar, bool isVect);
 			void clear();
 			std::size_t GetMaxStackSize() const;
 			std::size_t GetSize() const;
 
-			const SToken* GetBase() const;
+			SToken* GetBase();
 			void AsciiDump();
 	};
 

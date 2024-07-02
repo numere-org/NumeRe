@@ -42,51 +42,43 @@
 #include <gsl/gsl_cdf.h>
 #include <noise/noise.h>
 #include <omp.h>
+#include <windows.h>
 
 #include "student_t.hpp"
+#ifndef PARSERSTANDALONE
 #include "../datamanagement/memorymanager.hpp"
+#endif
 #include "../utils/tools.hpp"
 #include "../version.h"
 
-
-using namespace std;
-
 int nErrorIndices[2] = {-1,-1};
-string sErrorToken = "";
+std::string sErrorToken = "";
 extern time_t tTimeZero;
-volatile sig_atomic_t exitsignal = 0;
 
 /*
  * Ende der globalen Variablen
  */
-
-/////////////////////////////////////////////////
-/// \brief Function representing the logical NOT
-/// operator.
-///
-/// \param v const value_type&
-/// \return value_type
-///
-/////////////////////////////////////////////////
-value_type parser_Not(const value_type& v)
-{
-    if (isinf(v) || isnan(v))
-        return NAN;
-    return v == 0.0;
-}
 
 
 /////////////////////////////////////////////////
 /// \brief Multiplies a number with the imaginary
 /// unit.
 ///
-/// \param v const value_type&
-/// \return value_type
+/// \param v const mu::Array&
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
-value_type parser_imaginaryUnit(const value_type& v)
+mu::Array parser_imaginaryUnit(const mu::Array& v)
 {
-    return value_type(v.imag() != 0.0 ? -v.imag() : 0.0, v.real());
+    mu::Array res;
+
+    for (size_t i = 0; i < v.size(); i++)
+    {
+        res.push_back(mu::Numerical(std::complex<double>(v[i].getNum().val.imag() != 0.0 ? -v[i].getNum().val.imag() : 0.0,
+                                                         v[i].getNum().val.real())));
+    }
+
+    return res;
 }
 
 
@@ -94,13 +86,20 @@ value_type parser_imaginaryUnit(const value_type& v)
 /// \brief Extracts the real part of a complex
 /// number.
 ///
-/// \param v const value_type&
-/// \return value_type
+/// \param v const mu::Array&
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
-value_type parser_real(const value_type& v)
+mu::Array parser_real(const mu::Array& v)
 {
-    return v.real();
+    mu::Array res;
+
+    for (size_t i = 0; i < v.size(); i++)
+    {
+        res.push_back(mu::Numerical(v[i].getNum().val.real()));
+    }
+
+    return res;
 }
 
 
@@ -108,13 +107,20 @@ value_type parser_real(const value_type& v)
 /// \brief Extracts the imaginary part of a
 /// complex number.
 ///
-/// \param v const value_type&
-/// \return value_type
+/// \param v const mu::Array&
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
-value_type parser_imag(const value_type& v)
+mu::Array parser_imag(const mu::Array& v)
 {
-    return v.imag();
+    mu::Array res;
+
+    for (size_t i = 0; i < v.size(); i++)
+    {
+        res.push_back(mu::Numerical(v[i].getNum().val.imag()));
+    }
+
+    return res;
 }
 
 
@@ -123,13 +129,21 @@ value_type parser_imag(const value_type& v)
 /// into polar representation and returns it as a
 /// new complex number.
 ///
-/// \param v const value_type&
-/// \return value_type
+/// \param v const mu::Array&
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
-value_type parser_rect2polar(const value_type& v)
+mu::Array parser_rect2polar(const mu::Array& v)
 {
-    return value_type(std::abs(v), std::arg(v));
+    mu::Array res;
+
+    for (size_t i = 0; i < v.size(); i++)
+    {
+        res.push_back(mu::Numerical(std::complex<double>(std::abs(v[i].getNum().val),
+                                                         std::arg(v[i].getNum().val))));
+    }
+
+    return res;
 }
 
 
@@ -138,13 +152,21 @@ value_type parser_rect2polar(const value_type& v)
 /// rectangular representation and returns it as
 /// a new complex number.
 ///
-/// \param v const value_type&
-/// \return value_type
+/// \param v const mu::Array&
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
-value_type parser_polar2rect(const value_type& v)
+mu::Array parser_polar2rect(const mu::Array& v)
 {
-    return std::polar(v.real(), v.imag());
+    mu::Array res;
+
+    for (size_t i = 0; i < v.size(); i++)
+    {
+        res.push_back(mu::Numerical(std::complex<double>(v[i].getNum().val.real(),
+                                                         v[i].getNum().val.imag())));
+    }
+
+    return res;
 }
 
 
@@ -152,13 +174,13 @@ value_type parser_polar2rect(const value_type& v)
 /// \brief Calculates the complex conjugate
 /// number of the passed complex number.
 ///
-/// \param v const value_type&
-/// \return value_type
+/// \param v const mu::Array&
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
-value_type parser_conj(const value_type& v)
+mu::Array parser_conj(const mu::Array& v)
 {
-    return std::conj(v);
+    return mu::apply(std::conj, v);
 }
 
 
@@ -166,33 +188,36 @@ value_type parser_conj(const value_type& v)
 /// \brief Construct a complex number from two
 /// real numbers.
 ///
-/// \param re const value_type&
-/// \param im const value_type&
-/// \return value_type
+/// \param re const mu::Array&
+/// \param im const mu::Array&
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
-value_type parser_complex(const value_type& re, const value_type& im)
+mu::Array parser_complex(const mu::Array& re, const mu::Array& im)
 {
-    return value_type(re.real(), im.real());
+    mu::Array res;
+
+    for (size_t i = 0; i < std::max(re.size(), im.size()); i++)
+    {
+        res.push_back(mu::Numerical(std::complex<double>(re[i].getNum().val.real(),
+                                                         im[i].getNum().val.real())));
+    }
+
+    return res;
 }
 
 
-/////////////////////////////////////////////////
-/// \brief Function representing the faculty of
-/// any natural number.
-///
-/// \param v const value_type&
-/// \return value_type
-///
-/////////////////////////////////////////////////
-value_type parser_Faculty(const value_type& v)
+static std::complex<double> factorial_impl(const std::complex<double>& v)
 {
-    if (isnan(v) || isinf(v))
+    if (mu::isnan(v) || mu::isinf(v))
         return NAN;
-    value_type vResult = 1.0; // Ausgabe-Variable
+
+    std::complex<double> vResult = 1.0; // Ausgabe-Variable
+
     // --> Falls v == 0 ist, dann ist die Fakultaet 1 und nicht 0. Fangen wir hier ab <--
     if (intCast(v) == 0)
         return 1;
+
     if (intCast(v) < 0)
         return NAN;
 
@@ -203,6 +228,40 @@ value_type parser_Faculty(const value_type& v)
     {
         vResult *= i;
     }
+
+    return vResult;
+
+}
+
+/////////////////////////////////////////////////
+/// \brief Function representing the faculty of
+/// any natural number.
+///
+/// \param v const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
+mu::Array parser_Faculty(const mu::Array& v)
+{
+    return mu::apply(factorial_impl, v);
+}
+
+
+static std::complex<double> double_factorial_impl(const std::complex<double>& v)
+{
+    if (mu::isnan(v) || mu::isinf(v))
+        return NAN;
+
+    std::complex<double> vResult = 1.0;
+
+    if (intCast(v) < 0)
+        return NAN;
+
+    for (int n = intCast(std::abs(v)); n > 0; n -= 2)
+    {
+        vResult *= n;
+    }
+
     return vResult;
 }
 
@@ -211,37 +270,19 @@ value_type parser_Faculty(const value_type& v)
 /// \brief Function representing the double
 /// faculty of any natural number.
 ///
-/// \param v const value_type&
-/// \return value_type
+/// \param v const mu::Array&
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
-value_type parser_doubleFaculty(const value_type& v)
+mu::Array parser_doubleFaculty(const mu::Array& v)
 {
-    if (isnan(v) || isinf(v))
-        return NAN;
-    value_type vResult = 1.0;
-    if (intCast(v) < 0)
-        return NAN;
-    for (int n = intCast(fabs(v)); n > 0; n -= 2)
-    {
-        vResult *= n;
-    }
-    return vResult;
+    return mu::apply(double_factorial_impl, v);
 }
 
 
-/////////////////////////////////////////////////
-/// \brief Function representing the binomial
-/// coefficient.
-///
-/// \param v1 const value_type&
-/// \param v2 const value_type&
-/// \return value_type
-///
-/////////////////////////////////////////////////
-value_type parser_Binom(const value_type& v1, const value_type& v2)
+static std::complex<double> binom_impl(const std::complex<double>& v1, const std::complex<double>& v2)
 {
-    if (isnan(v1) || isnan(v2) || isinf(v1) || isinf(v2))
+    if (mu::isnan(v1) || mu::isnan(v2) || mu::isinf(v1) || mu::isinf(v2))
         return NAN;
     /* --> Bevor wir die bekannte Formel verwenden, pruefen wir einige Spezialfaelle, die den
      *     Algorithmus deutlich beschleunigen. Hier sei der Artikel auf Wikipedia zum Binomial-
@@ -261,10 +302,25 @@ value_type parser_Binom(const value_type& v1, const value_type& v2)
     {
         /* --> In allen anderen Faellen muessen wir den Binomialkoeffzienten muehsam mithilfe der Formel
          *     binom(v1,v2) = v1!/(v2!*(v1-v2)!) ausrechnen. Das machen wir, indem wir die Funktion
-         *     parser_Faculty(value_type) aufrufen <--
+         *     parser_Faculty(mu::Array) aufrufen <--
          */
-        return parser_Faculty(v1) / (parser_Faculty(v2)*parser_Faculty(intCast(v1) - intCast(v2)));
+        return factorial_impl(v1) / (factorial_impl(v2)*factorial_impl(intCast(v1) - intCast(v2)));
     }
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Function representing the binomial
+/// coefficient.
+///
+/// \param v1 const mu::Array&
+/// \param v2 const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
+mu::Array parser_Binom(const mu::Array& v1, const mu::Array& v2)
+{
+    return mu::apply(binom_impl, v1, v2);
 }
 
 
@@ -272,22 +328,53 @@ value_type parser_Binom(const value_type& v1, const value_type& v2)
 /// \brief This function returns the number of
 /// valid elements in its array.
 ///
-/// \param vElements const value_type*
+/// \param vElements const mu::Array*
 /// \param nElements int
-/// \return value_type
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
-value_type parser_Num(const value_type* vElements, int nElements)
+mu::Array parser_Num(const mu::Array* vElements, int nElements)
 {
-    int nReturn = nElements;
+    size_t elems;
+
+    if (nElements == 1)
+    {
+        elems = vElements[0].size();
+
+        for (size_t i = 0; i < vElements[0].size(); i++)
+        {
+            if (!vElements[0][i].isValid())
+                elems--;
+        }
+    }
+    else
+    {
+        elems = nElements;
+
+        for (int i = 0; i < nElements; i++)
+        {
+            if (!vElements[i].front().isValid())
+                elems--;
+        }
+    }
+
+    return mu::Array(mu::Numerical(elems));
+    /*mu::Array ret;
 
     for (int i = 0; i < nElements; i++)
     {
-        if (isnan(vElements[i]) || isinf(vElements[i]))
-            nReturn--;
+        size_t elems = vElements[i].size();
+
+        for (size_t j = 0; j < vElements[i].size(); j++)
+        {
+            if (!vElements[i][j].isValid())
+                elems--;
+        }
+
+        ret.push_back(Numerical(elems));
     }
 
-    return nReturn;
+    return ret;*/
 }
 
 
@@ -296,14 +383,31 @@ value_type parser_Num(const value_type* vElements, int nElements)
 /// number of elements in its array (even the
 /// invalid ones).
 ///
-/// \param vElements const value_type*
+/// \param vElements const mu::Array*
 /// \param nElements int
-/// \return value_type
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
-value_type parser_Cnt(const value_type* vElements, int nElements)
+mu::Array parser_Cnt(const mu::Array* vElements, int nElements)
 {
-    return nElements;
+    if (nElements == 1)
+        return mu::Array(mu::Numerical(vElements[0].size()));
+
+    return mu::Array(mu::Numerical(nElements));
+    /*mu::Array ret;
+
+    for (int i = 0; i < nElements; i++)
+    {
+        ret.push_back(vElements[i].size());
+    }
+
+    return ret;*/
+}
+
+
+static mu::Value conj(const mu::Value& val)
+{
+    return mu::Numerical(std::conj(val.getNum().val));
 }
 
 
@@ -312,23 +416,35 @@ value_type parser_Cnt(const value_type* vElements, int nElements)
 /// deviation of the elements in the passed
 /// array.
 ///
-/// \param vElements const value_type*
+/// \param vElements const mu::Array*
 /// \param nElements int
-/// \return value_type
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
-value_type parser_Std(const value_type* vElements, int nElements)
+mu::Array parser_Std(const mu::Array* vElements, int nElements)
 {
-    value_type vStd = 0.0;
-    value_type vMean = parser_Avg(vElements, nElements);
+    mu::Value vStd = 0.0;
+    mu::Value vMean = parser_Avg(vElements, nElements).front();
+    mu::Value vNum = parser_Num(vElements, nElements).front();
 
-    for (int i = 0; i < nElements; i++)
+    if (nElements == 1)
     {
-        if (!isnan(vElements[i]))
-            vStd += (vElements[i] - vMean) * conj(vElements[i] - vMean);
+        for (size_t i = 0; i < vElements[0].size(); i++)
+        {
+            if (vElements[0][i].isValid())
+                vStd += (vElements[0][i] - vMean) * conj(vElements[0][i] - vMean);
+        }
+    }
+    else
+    {
+        for (int i = 0; i < nElements; i++)
+        {
+            if (vElements[i].front().isValid())
+                vStd += (vElements[i].front() - vMean) * conj(vElements[i].front() - vMean);
+        }
     }
 
-    return sqrt(vStd / (parser_Num(vElements, nElements)-1.0));
+    return mu::Value(std::sqrt((vStd / (vNum-mu::Numerical(1.0))).getNum().val));
 }
 
 
@@ -336,19 +452,30 @@ value_type parser_Std(const value_type* vElements, int nElements)
 /// \brief This function calculates the product
 /// of all elements in the passed array.
 ///
-/// \param vElements const value_type*
+/// \param vElements const mu::Array*
 /// \param nElements int
-/// \return value_type
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
-value_type parser_product(const value_type* vElements, int nElements)
+mu::Array parser_product(const mu::Array* vElements, int nElements)
 {
-    value_type vProd = 1.0;
+    mu::Value vProd = 1.0;
 
-    for (int i = 0; i < nElements; i++)
+    if (nElements == 1)
     {
-        if (!isnan(vElements[i]))
-            vProd *= vElements[i];
+        for (size_t i = 0; i < vElements[0].size(); i++)
+        {
+            if (vElements[0][i].isValid())
+                vProd *= vElements[0][i];
+        }
+    }
+    else
+    {
+        for (int i = 0; i < nElements; i++)
+        {
+            if (vElements[i].front().isValid())
+                vProd *= vElements[i].front();
+        }
     }
 
     return vProd;
@@ -359,22 +486,33 @@ value_type parser_product(const value_type* vElements, int nElements)
 /// \brief This function calculates the vector
 /// norm of the elements in the passed array.
 ///
-/// \param vElements const value_type*
+/// \param vElements const mu::Array*
 /// \param nElements int
-/// \return value_type
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
-value_type parser_Norm(const value_type* vElements, int nElements)
+mu::Array parser_Norm(const mu::Array* vElements, int nElements)
 {
-    value_type vResult = 0.0;
+    mu::Value vProd = 0.0;
 
-    for (int i = 0; i < nElements; i++)
+    if (nElements == 1)
     {
-        if (!isnan(vElements[i]))
-            vResult += vElements[i] * conj(vElements[i]);
+        for (size_t i = 0; i < vElements[0].size(); i++)
+        {
+            if (vElements[0][i].isValid())
+                vProd += vElements[0][i] * conj(vElements[0][i]);
+        }
+    }
+    else
+    {
+        for (int i = 0; i < nElements; i++)
+        {
+            if (vElements[i].front().isValid())
+                vProd += vElements[i].front() * conj(vElements[i].front());
+        }
     }
 
-    return sqrt(vResult);
+    return mu::Value(std::sqrt(vProd.getNum().val));
 }
 
 
@@ -382,19 +520,22 @@ value_type parser_Norm(const value_type* vElements, int nElements)
 /// \brief This function calculates the median of
 /// the elements in the passed array.
 ///
-/// \param vElements const value_type*
+/// \param vElements const mu::Array*
 /// \param nElements int
-/// \return value_type
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
-value_type parser_Med(const value_type* vElements, int nElements)
+mu::Array parser_Med(const mu::Array* vElements, int nElements)
 {
+#warning FIXME (numere#1#06/29/24): This does only work with the Memory manager compiled in.
+#ifndef PARSERSTANDALONE
     Memory _mem;
 
     for (int i = 0; i < nElements; i++)
         _mem.writeData(i, 0, vElements[i]);
 
     return _mem.med(VectorIndex(0, nElements-1), VectorIndex(0));
+#endif // PARSERSTANDALONE
 }
 
 
@@ -402,32 +543,26 @@ value_type parser_Med(const value_type* vElements, int nElements)
 /// \brief This function calculates the selected
 /// percentile of the passed array.
 ///
-/// \param vElements const value_type*
+/// \param vElements const mu::Array*
 /// \param nElements int
-/// \return value_type
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
-value_type parser_Pct(const value_type* vElements, int nElements)
+mu::Array parser_Pct(const mu::Array* vElements, int nElements)
 {
+#warning FIXME (numere#1#06/29/24): This does only work with the Memory manager compiled in.
+#ifndef PARSERSTANDALONE
     Memory _mem;
 
     for (int i = 0; i < nElements-1; i++)
         _mem.writeData(i, 0, vElements[i]);
 
     return _mem.pct(VectorIndex(0, nElements-2), VectorIndex(0), vElements[nElements-1]);
+#endif // PARSERSTANDALONE
 }
 
 
-/////////////////////////////////////////////////
-/// \brief This function searches for elements of
-/// a specified type in the passed array.
-///
-/// \param vElements const value_type*
-/// \param nElements int
-/// \return value_type
-///
-/////////////////////////////////////////////////
-value_type parser_compare(const value_type* vElements, int nElements)
+static mu::Value compare_impl(const mu::Array& vElements, const mu::Value& value, const mu::Value& mode)
 {
     enum
     {
@@ -439,19 +574,16 @@ value_type parser_compare(const value_type* vElements, int nElements)
 
     int nType = 0;
 
-    if (nElements < 3)
-        return NAN;
-
-    value_type vRef = vElements[nElements-2];
-    value_type vKeep = vRef;
+    mu::Value vRef = value;
+    mu::Value vKeep = vRef;
     int nKeep = -1;
 
-    if (vElements[nElements-1].real() > 0)
+    if (mode > mu::Value(0.0))
         nType = RETURN_GE;
-    else if (vElements[nElements-1].real() < 0)
+    else if (mode < mu::Value(0.0))
         nType = RETURN_LE;
 
-    switch (intCast(fabs(vElements[nElements-1])))
+    switch (intCast(fabs(mode.getNum().val)))
     {
         case 2:
             nType |= RETURN_VALUE;
@@ -464,9 +596,9 @@ value_type parser_compare(const value_type* vElements, int nElements)
             break;
     }
 
-    for (int i = 0; i < nElements-2; i++)
+    for (size_t i = 0; i < vElements.size(); i++)
     {
-        if (isnan(vElements[i]) || isinf(vElements[i]))
+        if (!vElements[i].isValid())
             continue;
 
         if (vElements[i] == vRef)
@@ -476,37 +608,37 @@ value_type parser_compare(const value_type* vElements, int nElements)
 
             return i+1;
         }
-        else if (nType & RETURN_GE && vElements[i].real() > vRef.real())
+        else if (nType & RETURN_GE && vElements[i] > vRef)
         {
             if (nType & RETURN_FIRST)
             {
                 if (nType & RETURN_VALUE)
-                    return vElements[i].real();
+                    return vElements[i];
 
                 return i+1;
             }
 
-            if (nKeep == -1 || vElements[i].real() < vKeep.real())
+            if (nKeep == -1 || vElements[i] < vKeep)
             {
-                vKeep = vElements[i].real();
+                vKeep = vElements[i];
                 nKeep = i;
             }
             else
                 continue;
         }
-        else if (nType & RETURN_LE && vElements[i].real() < vRef.real())
+        else if (nType & RETURN_LE && vElements[i] < vRef)
         {
             if (nType & RETURN_FIRST)
             {
                 if (nType & RETURN_VALUE)
-                    return vElements[i].real();
+                    return vElements[i];
 
                 return i+1;
             }
 
-            if (nKeep == -1 || vElements[i].real() > vKeep.real())
+            if (nKeep == -1 || vElements[i] > vKeep)
             {
-                vKeep = vElements[i].real();
+                vKeep = vElements[i];
                 nKeep = i;
             }
             else
@@ -523,25 +655,60 @@ value_type parser_compare(const value_type* vElements, int nElements)
 }
 
 
+
+/////////////////////////////////////////////////
+/// \brief This function searches for elements of
+/// a specified type in the passed array.
+///
+/// \param vElements const mu::Array&
+/// \param value const mu::Array&
+/// \param mode const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
+mu::Array parser_compare(const mu::Array& vElements, const mu::Array& value, const mu::Array& mode)
+{
+    mu::Array res;
+
+    for (size_t i = 0; i < std::max(value.size(), mode.size()); i++)
+    {
+        res.push_back(compare_impl(vElements, value.get(i), mode.get(i)));
+    }
+
+    return res;
+}
+
+
 /////////////////////////////////////////////////
 /// \brief This function calculates the logical
 /// AND operation between all elements in the
 /// passed array.
 ///
-/// \param vElements const value_type*
+/// \param vElements const mu::Array*
 /// \param nElements int
-/// \return value_type
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
-value_type parser_and(const value_type* vElements, int nElements)
+mu::Array parser_and(const mu::Array* vElements, int nElements)
 {
-    for (int i = 0; i < nElements; i++)
+    if (nElements == 1)
     {
-        if (isnan(vElements[i]) || vElements[i] == 0.0)
-            return 0.0;
+        for (size_t i = 0; i < vElements[0].size(); i++)
+        {
+            if (!vElements[0][i].isValid() || !vElements[0][i])
+                return mu::Value(false);
+        }
+    }
+    else
+    {
+        for (int i = 0; i < nElements; i++)
+        {
+            if (!vElements[i].front().isValid() || !vElements[i].front())
+                return mu::Value(false);
+        }
     }
 
-    return 1.0;
+    return mu::Value(true);
 }
 
 
@@ -550,20 +717,31 @@ value_type parser_and(const value_type* vElements, int nElements)
 /// OR operation between all elements in the
 /// passed array.
 ///
-/// \param vElements const value_type*
+/// \param vElements const mu::Array*
 /// \param nElements int
-/// \return value_type
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
-value_type parser_or(const value_type* vElements, int nElements)
+mu::Array parser_or(const mu::Array* vElements, int nElements)
 {
-    for (int i = 0; i < nElements; i++)
+    if (nElements == 1)
     {
-        if (vElements[i] != 0.0 && !isnan(vElements[i]))
-            return 1.0;
+        for (size_t i = 0; i < vElements[0].size(); i++)
+        {
+            if (vElements[0][i].isValid() || vElements[0][i])
+                return mu::Value(true);
+        }
+    }
+    else
+    {
+        for (int i = 0; i < nElements; i++)
+        {
+            if (vElements[i].front().isValid() || vElements[i].front())
+                return mu::Value(true);
+        }
     }
 
-    return 0.0;
+    return mu::Value(false);
 }
 
 
@@ -572,27 +750,43 @@ value_type parser_or(const value_type* vElements, int nElements)
 /// XOR operation between all elements in the
 /// passed array.
 ///
-/// \param vElements const value_type*
+/// \param vElements const mu::Array*
 /// \param nElements int
-/// \return value_type
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
-value_type parser_xor(const value_type* vElements, int nElements)
+mu::Array parser_xor(const mu::Array* vElements, int nElements)
 {
     bool isTrue = false;
-    for (int i = 0; i < nElements; i++)
+
+    if (nElements == 1)
     {
-        if (vElements[i] != 0.0 && !isnan(vElements[i]))
+        for (size_t i = 0; i < vElements[0].size(); i++)
         {
-            if (!isTrue)
-                isTrue = true;
-            else
-                return 0.0;
+            if (vElements[0][i].isValid() || vElements[0][i])
+            {
+                if (!isTrue)
+                    isTrue = true;
+                else
+                    return mu::Value(false);
+            }
         }
     }
-    if (isTrue)
-        return 1.0;
-    return 0.0;
+    else
+    {
+        for (int i = 0; i < nElements; i++)
+        {
+            if (vElements[i].front().isValid() || vElements[i].front())
+            {
+                if (!isTrue)
+                    isTrue = true;
+                else
+                    return mu::Value(false);
+            }
+        }
+    }
+
+    return mu::Value(isTrue);
 }
 
 
@@ -600,24 +794,24 @@ value_type parser_xor(const value_type* vElements, int nElements)
 /// \brief This function implements an abstract
 /// polynomial of an arbitrary order.
 ///
-/// \param vElements const value_type*
+/// \param vElements const mu::Array*
 /// \param nElements int
-/// \return value_type
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
-value_type parser_polynomial(const value_type* vElements, int nElements)
+mu::Array parser_polynomial(const mu::Array* vElements, int nElements)
 {
     if (!nElements)
-        return NAN;
+        return mu::Value(NAN);
     else if (nElements == 1)
-        return 0.0;
+        return mu::Value(0.0);
 
-    value_type dResult = vElements[1];
+    mu::Array res = vElements[1];
 
     for (int i = 2; i < nElements; i++)
-        dResult += vElements[i] * intPower(vElements[0], i-1);
+        res += vElements[i] * vElements[0].pow(mu::Numerical(i-1));
 
-    return dResult;
+    return res;
 }
 
 
@@ -625,39 +819,65 @@ value_type parser_polynomial(const value_type* vElements, int nElements)
 /// \brief This function implements the perlin
 /// noise function.
 ///
-/// \param vElements const value_type*
+/// \param vElements const mu::Array*
 /// \param nElements int
-/// \return value_type
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
-value_type parser_perlin(const value_type* vElements, int nElements)
+mu::Array parser_perlin(const mu::Array* vElements, int nElements)
 {
     // perlin(x,y,z,seed,freq,oct,pers)
     if (!nElements)
-        return NAN;
+        return mu::Value(NAN);
 
     noise::module::Perlin perlinNoise;
 
-    switch (nElements)
+    size_t nCount = 0;
+
+    for (int i = 0; i < nElements; i++)
     {
-        case 1:
-            return perlinNoise.GetValue(vElements[0].real(), 0, 0);
-        case 2:
-            return perlinNoise.GetValue(vElements[0].real(), vElements[1].real(), 0);
-        case 3:
-            return perlinNoise.GetValue(vElements[0].real(), vElements[1].real(), vElements[2].real());
-        case 7: // fallthrough intended
-            perlinNoise.SetPersistence(vElements[6].real());
-        case 6: // fallthrough intended
-            perlinNoise.SetOctaveCount(intCast(vElements[5]));
-        case 5: // fallthrough intended
-            perlinNoise.SetFrequency(vElements[4].real());
-        case 4:
-            perlinNoise.SetSeed(intCast(vElements[3].real()));
-            return perlinNoise.GetValue(vElements[0].real(), vElements[1].real(), vElements[2].real());
+        nCount = std::max(nCount, vElements[i].size());
     }
 
-    return NAN;
+    mu::Array res;
+
+    for (size_t i = 0; i < nCount; i++)
+    {
+        switch (nElements)
+        {
+            case 1:
+                res.push_back(perlinNoise.GetValue(vElements[0].get(i).getNum().val.real(),
+                                                   0,
+                                                   0));
+                break;
+            case 2:
+                res.push_back(perlinNoise.GetValue(vElements[0].get(i).getNum().val.real(),
+                                                   vElements[1].get(i).getNum().val.real(),
+                                                   0));
+                break;
+            case 3:
+                res.push_back(perlinNoise.GetValue(vElements[0].get(i).getNum().val.real(),
+                                                   vElements[1].get(i).getNum().val.real(),
+                                                   vElements[2].get(i).getNum().val.real()));
+                break;
+            case 7: // fallthrough intended
+                perlinNoise.SetPersistence(vElements[6].get(i).getNum().val.real());
+            case 6: // fallthrough intended
+                perlinNoise.SetOctaveCount(intCast(vElements[5].get(i).getNum().val));
+            case 5: // fallthrough intended
+                perlinNoise.SetFrequency(vElements[4].get(i).getNum().val.real());
+            case 4:
+                perlinNoise.SetSeed(intCast(vElements[3].get(i).getNum().val.real()));
+                res.push_back(perlinNoise.GetValue(vElements[0].get(i).getNum().val.real(),
+                                                   vElements[1].get(i).getNum().val.real(),
+                                                   vElements[2].get(i).getNum().val.real()));
+                break;
+            default:
+                res.push_back(NAN);
+        }
+    }
+
+    return res;
 }
 
 
@@ -665,19 +885,30 @@ value_type parser_perlin(const value_type* vElements, int nElements)
 /// \brief This function summarizes all elements
 /// in the passed array.
 ///
-/// \param vElements const value_type*
+/// \param vElements const mu::Array*
 /// \param nElements int
-/// \return value_type
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
-value_type parser_Sum(const value_type* vElements, int nElements)
+mu::Array parser_Sum(const mu::Array* vElements, int nElements)
 {
-    value_type fRes = 0;
+    mu::Value fRes = 0.0;
 
-    for (int i = 0; i < nElements; ++i)
+    if (nElements == 1)
     {
-        if (!isnan(vElements[i]))
-            fRes += vElements[i];
+        for (size_t i = 0; i < vElements[0].size(); i++)
+        {
+            if (vElements[0][i].isValid())
+                fRes += vElements[0][i];
+        }
+    }
+    else
+    {
+        for (int i = 0; i < nElements; i++)
+        {
+            if (vElements[i].front().isValid())
+                fRes += vElements[i].front();
+        }
     }
 
     return fRes;
@@ -688,12 +919,12 @@ value_type parser_Sum(const value_type* vElements, int nElements)
 /// \brief This function calculates the average
 /// of all elements in passed array.
 ///
-/// \param vElements const value_type*
+/// \param vElements const mu::Array*
 /// \param nElements int
-/// \return value_type
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
-value_type parser_Avg(const value_type* vElements, int nElements)
+mu::Array parser_Avg(const mu::Array* vElements, int nElements)
 {
     return parser_Sum(vElements, nElements) / parser_Num(vElements, nElements);
 }
@@ -703,34 +934,36 @@ value_type parser_Avg(const value_type* vElements, int nElements)
 /// \brief This function calculates the minimal
 /// value of all elements in the passed array.
 ///
-/// \param vElements const value_type*
+/// \param vElements const mu::Array*
 /// \param nElements int
-/// \return value_type
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
-value_type parser_Min(const value_type* vElements, int nElements)
+mu::Array parser_Min(const mu::Array* vElements, int nElements)
 {
-    value_type fRes = vElements[0].real();
+    if (!nElements)
+        return mu::Value(NAN);
 
-    for (int i = 0; i < nElements; ++i)
+    mu::Value res = vElements[0][0];
+
+    if (nElements == 1)
     {
-        if (!isnan(fRes))
-            break;
-
-        if (!isnan(vElements[i].real()))
-            fRes = vElements[i].real();
+        for (size_t i = 1; i < vElements[0].size(); i++)
+        {
+            if (!res.isValid() || (vElements[0][i].isValid() && vElements[0][i] < res))
+                res = vElements[0][i];
+        }
+    }
+    else
+    {
+        for (int i = 1; i < nElements; i++)
+        {
+            if (!res.isValid() || (vElements[i].front().isValid() && vElements[i].front() < res))
+                res = vElements[i].front();
+        }
     }
 
-    if (isnan(fRes))
-        return fRes;
-
-    for (int i = 0; i < nElements; ++i)
-    {
-        if (!isnan(vElements[i].real()))
-            fRes = std::min(fRes.real(), vElements[i].real());
-    }
-
-    return fRes;
+    return res;
 }
 
 
@@ -738,34 +971,36 @@ value_type parser_Min(const value_type* vElements, int nElements)
 /// \brief This function calculates the maximal
 /// value of all elements in the passed array.
 ///
-/// \param vElements const value_type*
+/// \param vElements const mu::Array*
 /// \param nElements int
-/// \return value_type
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
-value_type parser_Max(const value_type* vElements, int nElements)
+mu::Array parser_Max(const mu::Array* vElements, int nElements)
 {
-    value_type fRes = vElements[0].real();
+    if (!nElements)
+        return mu::Value(NAN);
 
-    for (int i = 0; i < nElements; ++i)
+    mu::Value res = vElements[0][0];
+
+    if (nElements == 1)
     {
-        if (!isnan(fRes))
-            break;
-
-        if (!isnan(vElements[i].real()))
-            fRes = vElements[i].real();
+        for (size_t i = 1; i < vElements[0].size(); i++)
+        {
+            if (!res.isValid() || (vElements[0][i].isValid() && vElements[0][i] > res))
+                res = vElements[0][i];
+        }
+    }
+    else
+    {
+        for (int i = 1; i < nElements; i++)
+        {
+            if (!res.isValid() || (vElements[i].front().isValid() && vElements[i].front() > res))
+                res = vElements[i].front();
+        }
     }
 
-    if (isnan(fRes))
-        return fRes;
-
-    for (int i = 0; i < nElements; ++i)
-    {
-        if (!isnan(vElements[i].real()))
-            fRes = std::max(fRes.real(), vElements[i].real());
-    }
-
-    return fRes;
+    return res;
 }
 
 
@@ -773,18 +1008,13 @@ value_type parser_Max(const value_type* vElements, int nElements)
 /// \brief This function returns the index of the
 /// (first) minimal value in the array.
 ///
-/// \param vElements const value_type*
-/// \param nElements int
-/// \return value_type
+/// \param vElements const mu::Array&
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
-value_type parser_MinPos(const value_type* vElements, int nElements)
+mu::Array parser_MinPos(const mu::Array& vElements)
 {
-    vector<value_type> vData(vElements, vElements+nElements);
-    vData.push_back(parser_Min(vElements, nElements));
-    vData.push_back(0);
-
-    return parser_compare(&vData[0], vData.size());
+    return parser_compare(vElements, parser_Min(&vElements, 1), mu::Value(0.0));
 }
 
 
@@ -792,39 +1022,39 @@ value_type parser_MinPos(const value_type* vElements, int nElements)
 /// \brief This function returns the index of the
 /// (first) maximal value in the array.
 ///
-/// \param vElements const value_type*
-/// \param nElements int
-/// \return value_type
+/// \param vElements const mu::Array&
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
-value_type parser_MaxPos(const value_type* vElements, int nElements)
+mu::Array parser_MaxPos(const mu::Array& vElements)
 {
-    vector<value_type> vData(vElements, vElements+nElements);
-    vData.push_back(parser_Max(vElements, nElements));
-    vData.push_back(0);
-
-    return parser_compare(&vData[0], vData.size());
+    return parser_compare(vElements, parser_Max(&vElements, 1), mu::Value(0.0));
 }
 
+
+static std::complex<double> round_impl(const std::complex<double>& vToRound, const std::complex<double>& vDecimals)
+{
+    if (mu::isinf(vToRound) || mu::isinf(vDecimals) || mu::isnan(vToRound) || mu::isnan(vDecimals))
+        return NAN;
+
+    double dDecimals = intPower(10, -abs(intCast(vDecimals)));
+    std::complex<double> vRounded = vToRound / dDecimals;
+    vRounded = std::complex<double>(std::round(vRounded.real()), std::round(vRounded.imag()));
+    return vRounded * dDecimals;
+}
 
 /////////////////////////////////////////////////
 /// \brief This function rounds the passed value
 /// to the selected number of decimals.
 ///
-/// \param vToRound const value_type&
-/// \param vDecimals const value_type&
-/// \return value_type
+/// \param vToRound const mu::Array&
+/// \param vDecimals const mu::Array&
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
-value_type parser_round(const value_type& vToRound, const value_type& vDecimals)
+mu::Array parser_round(const mu::Array& vToRound, const mu::Array& vDecimals)
 {
-    if (isinf(vToRound) || isinf(vDecimals) || isnan(vToRound) || isnan(vDecimals))
-        return NAN;
-
-    double dDecimals = intPower(10, -abs(intCast(vDecimals)));
-    value_type vRounded = vToRound / dDecimals;
-    vRounded = value_type(std::round(vRounded.real()), std::round(vRounded.imag()));
-    return vRounded * dDecimals;
+    return mu::apply(round_impl, vToRound, vDecimals);
 }
 
 
@@ -832,16 +1062,13 @@ value_type parser_round(const value_type& vToRound, const value_type& vDecimals)
 /// \brief This function converts degree to
 /// radian.
 ///
-/// \param v const value_type&
-/// \return value_type
+/// \param v const mu::Array&
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
-value_type parser_toRadian(const value_type& v)
+mu::Array parser_toRadian(const mu::Array& v)
 {
-    if (isinf(v) || isnan(v))
-        return NAN;
-
-    return v / 180.0 * M_PI;
+    return v * mu::Value(M_PI/180.0);
 }
 
 
@@ -849,36 +1076,61 @@ value_type parser_toRadian(const value_type& v)
 /// \brief This function converts radian to
 /// degree.
 ///
-/// \param v const value_type&
-/// \return value_type
+/// \param v const mu::Array&
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
-value_type parser_toDegree(const value_type& v)
+mu::Array parser_toDegree(const mu::Array& v)
 {
-    if (isinf(v) || isnan(v))
-        return NAN;
-
-    return v / M_PI * 180.0;
+    return v * mu::Value(180.0 / M_PI);
 }
 
 
-/////////////////////////////////////////////////
-/// \brief This function calculates the real part
-/// of the selected spherical harmonics.
-///
-/// \param vl const value_type&
-/// \param vm const value_type&
-/// \param theta const value_type&
-/// \param phi const value_type&
-/// \return value_type
-///
-/////////////////////////////////////////////////
-value_type parser_SphericalHarmonics(const value_type& vl, const value_type& vm, const value_type& theta, const value_type& phi)
+static std::complex<double> LegendrePolynomial_impl(const std::complex<double>& vn, const std::complex<double>& v)
 {
-    if (isinf(vl.real()) || isnan(vl.real())
-        || isinf(vm.real()) || isnan(vm.real())
-        || isinf(theta.real()) || isnan(theta.real())
-        || isinf(phi.real()) || isnan(phi.real()))
+    if (mu::isinf(vn) || mu::isnan(vn) || mu::isinf(v) || mu::isnan(v))
+        return NAN;
+    int n = intCast(fabs(vn));
+
+    std::complex<double> dResult = 0.0;
+    for (int k = 0; k <= n/2; k++)
+    {
+        dResult += intPower(-1,k)*binom_impl(n,k)*binom_impl(2*(n-k),n)*intPower(v,n-2*k);
+    }
+    dResult *= intPower(2, -n);
+    return dResult;
+}
+
+
+static std::complex<double> AssociatedLegendrePolynomial_impl(const std::complex<double>& vl, const std::complex<double>& vm, const std::complex<double>& v)
+{
+    if (mu::isinf(vl) || mu::isnan(vl) || mu::isinf(vm) || mu::isnan(vm) || mu::isinf(v) || mu::isnan(v))
+        return NAN;
+    int l = intCast(fabs(vl));
+    int m = intCast(fabs(vm));
+    if (m > l)
+        return NAN;
+    if (!m)
+        return LegendrePolynomial_impl(l,v);
+    else if (m < 0)
+        return intPower(-1.0,m)* factorial_impl(l-m) / factorial_impl(l+m) * AssociatedLegendrePolynomial_impl(l,m,v);
+    else if (l == m)
+        return intPower(-1.0,l)*double_factorial_impl((2.0*l-1.0))*pow(1.0-v*v,(double)l/2.0);//intPower(sqrt(1-v*v), l);
+    else if (m == l-1)
+        return v*(2.0*l-1.0)*intPower(-1.0,l-1)*double_factorial_impl((2.0*l-3.0))*pow(1.0-v*v,((double)l-1.0)/2.0);//intPower(sqrt(1-v*v), l-1);
+    else
+        return 1.0/(double)(l-m)*(v*(2.0*l-1)*AssociatedLegendrePolynomial_impl(l-1,m,v) - (double)(l+m-1)*AssociatedLegendrePolynomial_impl(l-2,m,v));
+
+    return 0.0;
+}
+
+
+static std::complex<double> SphericalHarmonics_impl(const std::complex<double>& vl, const std::complex<double>& vm, const std::complex<double>& theta, const std::complex<double>& phi)
+{
+    if (std::isinf(vl.real()) || std::isnan(vl.real())
+        || std::isinf(vm.real()) || std::isnan(vm.real())
+        || std::isinf(theta.real()) || std::isnan(theta.real())
+        || std::isinf(phi.real()) || std::isnan(phi.real()))
         return NAN;
 
     int l = intCast(fabs(vl));
@@ -887,8 +1139,46 @@ value_type parser_SphericalHarmonics(const value_type& vl, const value_type& vm,
     if (abs(m) > l)
         return NAN;
     else
-        return sqrt((2.0*l+1.0) * parser_Faculty(l-m) / (4.0 * M_PI * parser_Faculty(l+m)))
-            * parser_AssociatedLegendrePolynomial(l, m, cos(theta.real())) * exp(value_type(0, m*phi.real()));
+        return std::sqrt((2.0*l+1.0) * factorial_impl(l-m) / (4.0 * M_PI * factorial_impl(l+m)))
+            * AssociatedLegendrePolynomial_impl(l, m, std::cos(theta.real())) * std::exp(std::complex<double>(0, m*phi.real()));
+
+    return 0.0;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This function calculates the real part
+/// of the selected spherical harmonics.
+///
+/// \param vl const mu::Array&
+/// \param vm const mu::Array&
+/// \param theta const mu::Array&
+/// \param phi const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
+mu::Array parser_SphericalHarmonics(const mu::Array& vl, const mu::Array& vm, const mu::Array& theta, const mu::Array& phi)
+{
+    return mu::apply(SphericalHarmonics_impl, vl, vm, theta, phi);
+}
+
+
+static std::complex<double> imSphericalHarmonics_impl(const std::complex<double>& vl, const std::complex<double>& vm, const std::complex<double>& theta, const std::complex<double>& phi)
+{
+    if (std::isinf(vl.real()) || std::isnan(vl.real())
+        || std::isinf(vm.real()) || std::isnan(vm.real())
+        || std::isinf(theta.real()) || std::isnan(theta.real())
+        || std::isinf(phi.real()) || std::isnan(phi.real()))
+        return NAN;
+
+    int l = intCast(fabs(vl));
+    int m = intCast(vm);
+
+    if (abs(m) > l)
+        return NAN;
+    else
+        return std::sqrt((2.0*l+1.0) * factorial_impl(l-m) / (4.0 * M_PI * factorial_impl(l+m)))
+            * AssociatedLegendrePolynomial_impl(l, m, std::cos(theta.real())) * std::sin(m*phi.real());
 
     return 0.0;
 }
@@ -898,63 +1188,16 @@ value_type parser_SphericalHarmonics(const value_type& vl, const value_type& vm,
 /// \brief This function calculates the imaginary
 /// part of the selected spherical harmonics.
 ///
-/// \param vl const value_type&
-/// \param vm const value_type&
-/// \param theta const value_type&
-/// \param phi const value_type&
-/// \return value_type
+/// \param vl const mu::Array&
+/// \param vm const mu::Array&
+/// \param theta const mu::Array&
+/// \param phi const mu::Array&
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
-value_type parser_imSphericalHarmonics(const value_type& vl, const value_type& vm, const value_type& theta, const value_type& phi)
+mu::Array parser_imSphericalHarmonics(const mu::Array& vl, const mu::Array& vm, const mu::Array& theta, const mu::Array& phi)
 {
-    if (isinf(vl.real()) || isnan(vl.real())
-        || isinf(vm.real()) || isnan(vm.real())
-        || isinf(theta.real()) || isnan(theta.real())
-        || isinf(phi.real()) || isnan(phi.real()))
-        return NAN;
-
-    int l = intCast(fabs(vl));
-    int m = intCast(vm);
-
-    if (abs(m) > l)
-        return NAN;
-    else
-        return sqrt((2.0*l+1.0) * parser_Faculty(l-m) / (4.0 * M_PI * parser_Faculty(l+m)))
-            * parser_AssociatedLegendrePolynomial(l, m, cos(theta.real())) * sin(m*phi.real());
-
-    return 0.0;
-}
-
-
-/////////////////////////////////////////////////
-/// \brief This function calculates the selected
-/// Zernike polynomials.
-///
-/// \param vn const value_type&
-/// \param vm const value_type&
-/// \param rho const value_type&
-/// \param phi const value_type&
-/// \return value_type
-///
-/////////////////////////////////////////////////
-value_type parser_Zernike(const value_type& vn, const value_type& vm, const value_type& rho, const value_type& phi)
-{
-    if (isinf(vn.real()) || isnan(vn.real())
-        || isinf(vm.real()) || isnan(vm.real())
-        || isinf(rho) || isnan(rho)
-        || isinf(phi) || isnan(phi))
-        return NAN;
-
-    int n = intCast(vn);
-    int m = intCast(vm);
-
-    if (n < abs(m))
-        return NAN;
-
-    if (m < 0)
-        return parser_ZernikeRadial(n, -m, rho) * sin(-(double)m*phi);
-    else
-        return parser_ZernikeRadial(n, m, rho) * cos((double)m*phi);
+    return mu::apply(imSphericalHarmonics_impl, vl, vm, theta, phi);
 }
 
 
@@ -964,16 +1207,16 @@ value_type parser_Zernike(const value_type& vn, const value_type& vm, const valu
 ///
 /// \param n int
 /// \param m int
-/// \param rho const value_type&
-/// \return value_type
+/// \param rho const std::complex<double>&
+/// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
-value_type parser_ZernikeRadial(int n, int m, const value_type& rho)
+static std::complex<double> zernikeRadial_impl(int n, int m, const std::complex<double>& rho)
 {
-    value_type vReturn = 0;
-    value_type vNorm = 0;
+    std::complex<double> vReturn = 0;
+    std::complex<double> vNorm = 0;
 
-    if (fabs(rho) > 1.0)
+    if (std::abs(rho) > 1.0)
         return NAN;
 
     if ((n-m) % 2)
@@ -983,13 +1226,13 @@ value_type parser_ZernikeRadial(int n, int m, const value_type& rho)
     {
         if (k % 2)
         {
-            vReturn -= parser_Faculty(n-k)*intPower(rho, n-2*k)/(parser_Faculty(k)*parser_Faculty((n+m)/2.0-k)*parser_Faculty((n-m)/2.0-k));
-            vNorm -= parser_Faculty(n-k)/(parser_Faculty(k)*parser_Faculty((n+m)/2.0-k)*parser_Faculty((n-m)/2.0-k));
+            vReturn -= factorial_impl(n-k)*intPower(rho, n-2*k)/(factorial_impl(k)*factorial_impl((n+m)/2.0-k)*factorial_impl((n-m)/2.0-k));
+            vNorm -= factorial_impl(n-k)/(factorial_impl(k)*factorial_impl((n+m)/2.0-k)*factorial_impl((n-m)/2.0-k));
         }
         else
         {
-            vReturn += parser_Faculty(n-k)*intPower(rho, n-2*k)/(parser_Faculty(k)*parser_Faculty((n+m)/2.0-k)*parser_Faculty((n-m)/2.0-k));
-            vNorm += parser_Faculty(n-k)/(parser_Faculty(k)*parser_Faculty((n+m)/2.0-k)*parser_Faculty((n-m)/2.0-k));
+            vReturn += factorial_impl(n-k)*intPower(rho, n-2*k)/(factorial_impl(k)*factorial_impl((n+m)/2.0-k)*factorial_impl((n-m)/2.0-k));
+            vNorm += factorial_impl(n-k)/(factorial_impl(k)*factorial_impl((n+m)/2.0-k)*factorial_impl((n-m)/2.0-k));
         }
     }
 
@@ -997,37 +1240,72 @@ value_type parser_ZernikeRadial(int n, int m, const value_type& rho)
 }
 
 
-/////////////////////////////////////////////////
-/// \brief This function calculates the cardinal
-/// sine of x.
-///
-/// \param v const value_type&
-/// \return value_type
-///
-/////////////////////////////////////////////////
-value_type parser_SinusCardinalis(const value_type& v)
+static std::complex<double> Zernike_impl(const std::complex<double>& vn, const std::complex<double>& vm, const std::complex<double>& rho, const std::complex<double>& phi)
 {
-    if (isinf(v) || isnan(v))
+    if (std::isinf(vn.real()) || std::isnan(vn.real())
+        || std::isinf(vm.real()) || std::isnan(vm.real())
+        || mu::isinf(rho) || mu::isnan(rho)
+        || mu::isinf(phi) || mu::isnan(phi))
         return NAN;
-    if (v == 0.0)
-        return 1.0;
+
+    int n = intCast(vn);
+    int m = intCast(vm);
+
+    if (n < abs(m))
+        return NAN;
+
+    if (m < 0)
+        return zernikeRadial_impl(n, -m, rho) * std::sin(-(double)m*phi);
     else
-        return sin(v)/v;
+        return zernikeRadial_impl(n, m, rho) * std::cos((double)m*phi);
 }
 
 
 /////////////////////////////////////////////////
-/// \brief This function calculates the spherical
-/// bessel function.
+/// \brief This function calculates the selected
+/// Zernike polynomials.
 ///
-/// \param vn const value_type&
-/// \param vc const value_type&
-/// \return value_type
+/// \param vn const mu::Array&
+/// \param vm const mu::Array&
+/// \param rho const mu::Array&
+/// \param phi const mu::Array&
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
-value_type parser_SphericalBessel(const value_type& vn, const value_type& vc)
+mu::Array parser_Zernike(const mu::Array& vn, const mu::Array& vm, const mu::Array& rho, const mu::Array& phi)
 {
-    if (isinf(vn) || isinf(vc) || isnan(vn) || isnan(vc))
+    return mu::apply(Zernike_impl, vn, vm, rho, phi);
+}
+
+
+static std::complex<double> SinusCardinalis_impl(const std::complex<double>& v)
+{
+    if (mu::isinf(v) || mu::isnan(v))
+        return NAN;
+
+    if (v == 0.0)
+        return 1.0;
+    else
+        return std::sin(v)/v;
+}
+
+/////////////////////////////////////////////////
+/// \brief This function calculates the cardinal
+/// sine of x.
+///
+/// \param v const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
+mu::Array parser_SinusCardinalis(const mu::Array& v)
+{
+    return mu::apply(SinusCardinalis_impl, v);
+}
+
+
+static std::complex<double> SphericalBessel_impl(const std::complex<double>& vn, const std::complex<double>& vc)
+{
+    if (mu::isinf(vn) || mu::isinf(vc) || mu::isnan(vn) || mu::isnan(vc))
         return NAN;
     int n = intCast(fabs(vn));
     double v = vc.real();
@@ -1065,18 +1343,25 @@ value_type parser_SphericalBessel(const value_type& vn, const value_type& vc)
 }
 
 
+
 /////////////////////////////////////////////////
 /// \brief This function calculates the spherical
-/// von Neumann function.
+/// bessel function.
 ///
-/// \param vn const value_type&
-/// \param vc const value_type&
-/// \return value_type
+/// \param vn const mu::Array&
+/// \param vc const mu::Array&
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
-value_type parser_SphericalNeumann(const value_type& vn, const value_type& vc)
+mu::Array parser_SphericalBessel(const mu::Array& vn, const mu::Array& vc)
 {
-    if (isinf(vn) || isnan(vn) || isinf(vc) || isnan(vc))
+    return mu::apply(SphericalBessel_impl, vn, vc);
+}
+
+
+static std::complex<double> SphericalNeumann_impl(const std::complex<double>& vn, const std::complex<double>& vc)
+{
+    if (mu::isinf(vn) || mu::isnan(vn) || mu::isinf(vc) || mu::isnan(vc))
         return NAN;
     int n = intCast(fabs(vn));
     double v = vc.real();
@@ -1113,27 +1398,32 @@ value_type parser_SphericalNeumann(const value_type& vn, const value_type& vc)
 
 
 /////////////////////////////////////////////////
+/// \brief This function calculates the spherical
+/// von Neumann function.
+///
+/// \param vn const mu::Array&
+/// \param vc const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
+mu::Array parser_SphericalNeumann(const mu::Array& vn, const mu::Array& vc)
+{
+    return mu::apply(SphericalNeumann_impl, vn, vc);
+}
+
+
+/////////////////////////////////////////////////
 /// \brief This function calculates the Legendre
 /// polynomials of the selected order.
 ///
-/// \param vn const value_type&
-/// \param v const value_type&
-/// \return value_type
+/// \param vn const mu::Array&
+/// \param v const mu::Array&
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
-value_type parser_LegendrePolynomial(const value_type& vn, const value_type& v)
+mu::Array parser_LegendrePolynomial(const mu::Array& vn, const mu::Array& v)
 {
-    if (isinf(vn) || isnan(vn) || isinf(v) || isnan(v))
-        return NAN;
-    int n = intCast(fabs(vn));
-
-    value_type dResult = 0.0;
-    for (int k = 0; k <= n/2; k++)
-    {
-        dResult += intPower(-1,k)*parser_Binom(n,k)*parser_Binom(2*(n-k),n)*intPower(v,n-2*k);
-    }
-    dResult *= intPower(2, -n);
-    return dResult;
+    return mu::apply(LegendrePolynomial_impl, vn, v);
 }
 
 
@@ -1142,32 +1432,30 @@ value_type parser_LegendrePolynomial(const value_type& vn, const value_type& v)
 /// associated Legendre polynomials of the
 /// selected order.
 ///
-/// \param vl const value_type&
-/// \param vm const value_type&
-/// \param v const value_type&
-/// \return value_type
+/// \param vl const mu::Array&
+/// \param vm const mu::Array&
+/// \param v const mu::Array&
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
-value_type parser_AssociatedLegendrePolynomial(const value_type& vl, const value_type& vm, const value_type& v)
+mu::Array parser_AssociatedLegendrePolynomial(const mu::Array& vl, const mu::Array& vm, const mu::Array& v)
 {
-    if (isinf(vl) || isnan(vl) || isinf(vm) || isnan(vm) || isinf(v) || isnan(v))
-        return NAN;
-    int l = intCast(fabs(vl));
-    int m = intCast(fabs(vm));
-    if (m > l)
-        return NAN;
-    if (!m)
-        return parser_LegendrePolynomial(l,v);
-    else if (m < 0)
-        return intPower(-1.0,m)* parser_Faculty(l-m) / parser_Faculty(l+m) * parser_AssociatedLegendrePolynomial(l,m,v);
-    else if (l == m)
-        return intPower(-1.0,l)*parser_doubleFaculty((2.0*l-1.0))*pow(1.0-v*v,(double)l/2.0);//intPower(sqrt(1-v*v), l);
-    else if (m == l-1)
-        return v*(2.0*l-1.0)*intPower(-1.0,l-1)*parser_doubleFaculty((2.0*l-3.0))*pow(1.0-v*v,((double)l-1.0)/2.0);//intPower(sqrt(1-v*v), l-1);
-    else
-        return 1.0/(double)(l-m)*(v*(2.0*l-1)*parser_AssociatedLegendrePolynomial(l-1,m,v) - (double)(l+m-1)*parser_AssociatedLegendrePolynomial(l-2,m,v));
+    return mu::apply(AssociatedLegendrePolynomial_impl, vl, vm, v);
+}
 
-    return 0.0;
+
+static std::complex<double> LaguerrePolynomial_impl(const std::complex<double>& vn, const std::complex<double>& v)
+{
+    if (mu::isinf(vn) || mu::isnan(vn) || mu::isinf(v) || mu::isnan(v))
+        return NAN;
+    int n = intCast(fabs(vn));
+
+    std::complex<double> dResult = 0.0;
+    for (int k = 0; k <= n; k++)
+    {
+        dResult += intPower(-v,k)*binom_impl(n,k)/factorial_impl(k);
+    }
+    return dResult;
 }
 
 
@@ -1175,21 +1463,34 @@ value_type parser_AssociatedLegendrePolynomial(const value_type& vl, const value
 /// \brief This function calculates the Laguerre
 /// polynomials of the selected order.
 ///
-/// \param vn const value_type&
-/// \param v const value_type&
-/// \return value_type
+/// \param vn const mu::Array&
+/// \param v const mu::Array&
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
-value_type parser_LaguerrePolynomial(const value_type& vn, const value_type& v)
+mu::Array parser_LaguerrePolynomial(const mu::Array& vn, const mu::Array& v)
 {
-    if (isinf(vn) || isnan(vn) || isinf(v) || isnan(v))
+    return mu::apply(LaguerrePolynomial_impl, vn, v);
+}
+
+
+static std::complex<double> AssociatedLaguerrePolynomial_impl(const std::complex<double>& vn, const std::complex<double>& vk, const std::complex<double>& v)
+{
+    if (mu::isinf(vn) || mu::isnan(vn) || mu::isinf(vk) || mu::isnan(vk) || mu::isinf(v) || mu::isnan(v))
         return NAN;
     int n = intCast(fabs(vn));
+    int k = intCast(fabs(vk));
+//    if (k > n)
+//        return NAN;
 
-    value_type dResult = 0.0;
-    for (int k = 0; k <= n; k++)
+    if (n == 0)
+        return 1.0;
+
+    std::complex<double> dResult = 0.0;
+    std::complex<double> vFaculty = factorial_impl(n+k);
+    for (int m = 0; m <= n; m++)
     {
-        dResult += intPower(-v,k)*parser_Binom(n,k)/parser_Faculty(k);
+        dResult += vFaculty * intPower(-v,m) / (factorial_impl(n-m)*factorial_impl(k+m)*factorial_impl(m));
     }
     return dResult;
 }
@@ -1200,46 +1501,21 @@ value_type parser_LaguerrePolynomial(const value_type& vn, const value_type& v)
 /// associated Laguerre polynomials of the
 /// selected order.
 ///
-/// \param vn const value_type&
-/// \param vk const value_type&
-/// \param v const value_type&
-/// \return value_type
+/// \param vn const mu::Array&
+/// \param vk const mu::Array&
+/// \param v const mu::Array&
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
-value_type parser_AssociatedLaguerrePolynomial(const value_type& vn, const value_type& vk, const value_type& v)
+mu::Array parser_AssociatedLaguerrePolynomial(const mu::Array& vn, const mu::Array& vk, const mu::Array& v)
 {
-    if (isinf(vn) || isnan(vn) || isinf(vk) || isnan(vk) || isinf(v) || isnan(v))
-        return NAN;
-    int n = intCast(fabs(vn));
-    int k = intCast(fabs(vk));
-//    if (k > n)
-//        return NAN;
-
-    if (n == 0)
-        return 1.0;
-
-    value_type dResult = 0.0;
-    value_type vFaculty = parser_Faculty(n+k);
-    for (int m = 0; m <= n; m++)
-    {
-        dResult += vFaculty * intPower(-v,m) / (parser_Faculty(n-m)*parser_Faculty(k+m)*parser_Faculty(m));
-    }
-    return dResult;
+    return mu::apply(AssociatedLaguerrePolynomial_impl, vn, vk, v);
 }
 
 
-/////////////////////////////////////////////////
-/// \brief This function calculates the Hermite
-/// polynomials of the selected order.
-///
-/// \param vn const value_type&
-/// \param v const value_type&
-/// \return value_type
-///
-/////////////////////////////////////////////////
-value_type parser_HermitePolynomial(const value_type& vn, const value_type& v)
+static std::complex<double> HermitePolynomial_impl(const std::complex<double>& vn, const std::complex<double>& v)
 {
-    if (isinf(vn) || isnan(vn) || isinf(v) || isnan(v))
+    if (mu::isinf(vn) || mu::isnan(vn) || mu::isinf(v) || mu::isnan(v))
         return NAN;
     int n = intCast(fabs(vn));
 
@@ -1250,25 +1526,30 @@ value_type parser_HermitePolynomial(const value_type& vn, const value_type& v)
         case 2: return 4.0*v*v - 2.0;
         case 3: return 8.0*v*v*v - 12.0*v;
         case 4: return 16.0*v*v*v*v - 48.0*v*v + 12.0;
-        default: return 2.0*v*parser_HermitePolynomial(n-1,v) - 2.0*(double)(n-1)*parser_HermitePolynomial(n-2,v);
+        default: return 2.0*v*HermitePolynomial_impl(n-1,v) - 2.0*(double)(n-1)*HermitePolynomial_impl(n-2,v);
     }
     return 0.0;
 }
 
 
 /////////////////////////////////////////////////
-/// \brief This function calculates the nucleic
-/// core binding energy according the Bethe
-/// Weizsäcker formula.
+/// \brief This function calculates the Hermite
+/// polynomials of the selected order.
 ///
-/// \param vN const value_type&
-/// \param vZ const value_type&
-/// \return value_type
+/// \param vn const mu::Array&
+/// \param v const mu::Array&
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
-value_type parser_BetheWeizsaecker(const value_type& vN, const value_type& vZ)
+mu::Array parser_HermitePolynomial(const mu::Array& vn, const mu::Array& v)
 {
-    if (isinf(vN.real()) || isnan(vN.real()) || isinf(vZ.real()) || isnan(vZ.real()))
+    return mu::apply(HermitePolynomial_impl, vn, v);
+}
+
+
+static std::complex<double> BetheWeizsaecker_impl(const std::complex<double>& vN, const std::complex<double>& vZ)
+{
+    if (std::isinf(vN.real()) || std::isnan(vN.real()) || std::isinf(vZ.real()) || std::isnan(vZ.real()))
         return NAN;
     // nan/inf
     double a_V = 15.67;
@@ -1279,9 +1560,8 @@ value_type parser_BetheWeizsaecker(const value_type& vN, const value_type& vZ)
     double A = vN.real() + vZ.real();
     double dEnergy = 0.0;
     int delta = 0;
-    unsigned int N = (unsigned int)intCast(parser_round(vN,0));
-    unsigned int Z = (unsigned int)intCast(parser_round(vZ,0));
-
+    unsigned int N = (unsigned int)intCast(round_impl(vN,0));
+    unsigned int Z = (unsigned int)intCast(round_impl(vZ,0));
 
     if (A < 0 || vZ.real() < 0 || vN.real() < 0)
         return NAN;
@@ -1292,7 +1572,6 @@ value_type parser_BetheWeizsaecker(const value_type& vN, const value_type& vZ)
     else if (!(N % 2 || Z % 2))
         delta = 1;
 
-
     dEnergy = a_V*A - a_S*pow(A,2.0/3.0) - a_F*(vN.real()-vZ.real())*(vN.real()-vZ.real())/A - a_C*vZ.real()*(vZ.real()-1)/pow(A,1.0/3.0) + (double)delta*a_p/sqrt(A);
     if (dEnergy >= 0)
         return dEnergy;
@@ -1302,33 +1581,36 @@ value_type parser_BetheWeizsaecker(const value_type& vN, const value_type& vZ)
 
 
 /////////////////////////////////////////////////
-/// \brief This function represents the Heaviside
-/// (theta) function.
+/// \brief This function calculates the nucleic
+/// core binding energy according the Bethe
+/// Weizsäcker formula.
 ///
-/// \param v const value_type&
-/// \return value_type
+/// \param vN const mu::Array&
+/// \param vZ const mu::Array&
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
-value_type parser_Heaviside(const value_type& v)
+mu::Array parser_BetheWeizsaecker(const mu::Array& vN, const mu::Array& vZ)
 {
-    if (isinf(v.real()) || isnan(v.real()))
-        return NAN;
-
-    return v.real() >= 0.0;
+    return mu::apply(BetheWeizsaecker_impl, vN, vZ);
 }
 
 
 /////////////////////////////////////////////////
-/// \brief This function calculates the angle of
-/// a vector and the x axis in the x-y plane (the
-/// azimuthal angle phi).
+/// \brief This function represents the Heaviside
+/// (theta) function.
 ///
-/// \param x const value_type&
-/// \param y const value_type&
-/// \return value_type
+/// \param v const mu::Array&
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
-value_type parser_phi(const value_type& x, const value_type& y)
+mu::Array parser_Heaviside(const mu::Array& v)
+{
+    return v >= mu::Value(0.0);
+}
+
+
+static std::complex<double> phi_impl(const std::complex<double>& x, const std::complex<double>& y)
 {
     if (isinf(x.real()) || isnan(x.real()) || isinf(y.real()) || isnan(y.real()))
         return NAN;
@@ -1338,21 +1620,25 @@ value_type parser_phi(const value_type& x, const value_type& y)
 }
 
 
-// --> Polarwinkel theta <--
 /////////////////////////////////////////////////
 /// \brief This function calculates the angle of
-/// a vector and the z axis in any z-r plane (the
-/// polar angle theta).
+/// a vector and the x axis in the x-y plane (the
+/// azimuthal angle phi).
 ///
-/// \param x const value_type&
-/// \param y const value_type&
-/// \param z const value_type&
-/// \return value_type
+/// \param x const mu::Array&
+/// \param y const mu::Array&
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
-value_type parser_theta(const value_type& x, const value_type& y, const value_type& z)
+mu::Array parser_phi(const mu::Array& x, const mu::Array& y)
 {
-    if (isinf(x) || isnan(x) || isinf(y) || isnan(y) || isinf(z) || isnan(z))
+    return mu::apply(phi_impl, x, y);
+}
+
+
+std::complex<double> theta_impl(const std::complex<double>& x, const std::complex<double>& y, const std::complex<double>& z)
+{
+    if (mu::isinf(x) || mu::isnan(x) || mu::isinf(y) || mu::isnan(y) || mu::isinf(z) || mu::isnan(z))
         return NAN;
     if (x == 0.0 && y == 0.0 && z == 0.0)
         return M_PI/2;
@@ -1361,22 +1647,55 @@ value_type parser_theta(const value_type& x, const value_type& y, const value_ty
 
 
 /////////////////////////////////////////////////
+/// \brief This function calculates the angle of
+/// a vector and the z axis in any z-r plane (the
+/// polar angle theta).
+///
+/// \param x const mu::Array&
+/// \param y const mu::Array&
+/// \param z const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
+mu::Array parser_theta(const mu::Array& x, const mu::Array& y, const mu::Array& z)
+{
+    return mu::apply(theta_impl, x, y, z);
+}
+
+
+static std::complex<double> rand_impl(const std::complex<double>& vRandMin, const std::complex<double>& vRandMax)
+{
+    if (mu::isinf(vRandMin) || mu::isnan(vRandMin) || mu::isinf(vRandMax) || mu::isnan(vRandMax))
+        return NAN;
+
+    static std::uniform_real_distribution<double> randDist(0, 1);
+    return randDist(getRandGenInstance()) * (vRandMax - vRandMin) + vRandMin;
+}
+
+
+static std::complex<double> gauss_rand_impl(const std::complex<double>& vRandAvg, const std::complex<double>& vRandstd)
+{
+    if (mu::isinf(vRandAvg) || mu::isnan(vRandAvg) || mu::isinf(vRandstd) || mu::isnan(vRandstd))
+        return NAN;
+
+    static std::normal_distribution<double> randDist(0, 1);
+    return randDist(getRandGenInstance()) * fabs(vRandstd) + vRandAvg;
+}
+
+
+/////////////////////////////////////////////////
 /// \brief This function returns a uniformly
 /// distributed random number between both
 /// boundaries.
 ///
-/// \param vRandMin const value_type&
-/// \param vRandMax const value_type&
-/// \return value_type
+/// \param vRandMin const mu::Array&
+/// \param vRandMax const mu::Array&
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
-value_type parser_Random(const value_type& vRandMin, const value_type& vRandMax)
+mu::Array parser_Random(const mu::Array& vRandMin, const mu::Array& vRandMax)
 {
-    if (isinf(vRandMin) || isnan(vRandMin) || isinf(vRandMax) || isnan(vRandMax))
-        return NAN;
-
-    static uniform_real_distribution<double> randDist(0, 1);
-    return randDist(getRandGenInstance()) * (vRandMax - vRandMin) + vRandMin;
+    return mu::apply(rand_impl, vRandMin, vRandMax);
 }
 
 
@@ -1385,18 +1704,28 @@ value_type parser_Random(const value_type& vRandMin, const value_type& vRandMax)
 /// distributed random number using the passed
 /// values as mean and standard deviation.
 ///
-/// \param vRandAvg const value_type&
-/// \param vRandstd const value_type&
-/// \return value_type
+/// \param vRandAvg const mu::Array&
+/// \param vRandStd const mu::Array&
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
-value_type parser_gRandom(const value_type& vRandAvg, const value_type& vRandstd)
+mu::Array parser_gRandom(const mu::Array& vRandAvg, const mu::Array& vRandStd)
 {
-    if (isinf(vRandAvg) || isnan(vRandAvg) || isinf(vRandstd) || isnan(vRandstd))
-        return NAN;
+    return mu::apply(gauss_rand_impl, vRandAvg, vRandStd);
+}
 
-    static normal_distribution<double> randDist(0, 1);
-    return randDist(getRandGenInstance()) * fabs(vRandstd) + vRandAvg;
+static std::complex<double> erf_impl(const std::complex<double>& x)
+{
+    if (mu::isinf(x.real()) || mu::isnan(x.real()))
+        return NAN;
+    return std::erf(x.real());
+}
+
+static std::complex<double> erfc_impl(const std::complex<double>& x)
+{
+    if (mu::isinf(x.real()) || mu::isnan(x.real()))
+        return NAN;
+    return std::erfc(x.real());
 }
 
 
@@ -1404,15 +1733,13 @@ value_type parser_gRandom(const value_type& vRandAvg, const value_type& vRandstd
 /// \brief This function calculates the gaussian
 /// error function.
 ///
-/// \param x const value_type&
-/// \return value_type
+/// \param x const mu::Array&
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
-value_type parser_erf(const value_type& x)
+mu::Array parser_erf(const mu::Array& x)
 {
-    if (isinf(x.real()) || isnan(x.real()))
-        return NAN;
-    return erf(x.real());
+    return mu::apply(erf_impl, x);
 }
 
 
@@ -1420,29 +1747,18 @@ value_type parser_erf(const value_type& x)
 /// \brief This function calculates the
 /// complementary gaussian error function.
 ///
-/// \param x const value_type&
-/// \return value_type
+/// \param x const mu::Array&
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
-value_type parser_erfc(const value_type& x)
+mu::Array parser_erfc(const mu::Array& x)
 {
-    if (isinf(x.real()) || isnan(x.real()))
-        return NAN;
-    return erfc(x.real());
+    return mu::apply(erfc_impl, x);
 }
 
-
-/////////////////////////////////////////////////
-/// \brief This function calculates the
-/// riemannian Gamma function.
-///
-/// \param x const value_type&
-/// \return value_type
-///
-/////////////////////////////////////////////////
-value_type parser_gamma(const value_type& x)
+static std::complex<double> gamma_impl(const std::complex<double>& x)
 {
-    if (isinf(x) || isnan(x))
+    if (mu::isinf(x) || mu::isnan(x))
         return NAN;
 
     if (x.imag() == 0.0)
@@ -1457,16 +1773,42 @@ value_type parser_gamma(const value_type& x)
 
 
 /////////////////////////////////////////////////
+/// \brief This function calculates the
+/// riemannian Gamma function.
+///
+/// \param x const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
+mu::Array parser_gamma(const mu::Array& x)
+{
+    return mu::apply(gamma_impl, x);
+}
+
+
+static std::complex<double>AiryA_impl(const std::complex<double>& x)
+{
+    return gsl_sf_airy_Ai(x.real(), GSL_PREC_DOUBLE);
+}
+
+
+static std::complex<double>AiryB_impl(const std::complex<double>& x)
+{
+    return gsl_sf_airy_Bi(x.real(), GSL_PREC_DOUBLE);
+}
+
+
+/////////////////////////////////////////////////
 /// \brief This function calculates the Airy
 /// function Ai(x).
 ///
-/// \param x const value_type&
-/// \return value_type
+/// \param x const mu::Array&
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
-value_type parser_AiryA(const value_type& x)
+mu::Array parser_AiryA(const mu::Array& x)
 {
-    return gsl_sf_airy_Ai(x.real(), GSL_PREC_DOUBLE);
+    return mu::apply(AiryA_impl, x);
 }
 
 
@@ -1474,26 +1816,17 @@ value_type parser_AiryA(const value_type& x)
 /// \brief This function calculates the Airy
 /// function Bi(x).
 ///
-/// \param x const value_type&
-/// \return value_type
+/// \param x const mu::Array&
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
-value_type parser_AiryB(const value_type& x)
+mu::Array parser_AiryB(const mu::Array& x)
 {
-    return gsl_sf_airy_Bi(x.real(), GSL_PREC_DOUBLE);
+    return mu::apply(AiryB_impl, x);
 }
 
 
-/////////////////////////////////////////////////
-/// \brief This function calculates the regulary
-/// bessel function.
-///
-/// \param n const value_type&
-/// \param x const value_type&
-/// \return value_type
-///
-/////////////////////////////////////////////////
-value_type parser_RegularCylBessel(const value_type& n, const value_type& x)
+static std::complex<double> RegularCylBessel_impl(const std::complex<double>& n, const std::complex<double>& x)
 {
     if (n.real() >= 0.0)
         return gsl_sf_bessel_Jn(intCast(n), x.real());
@@ -1502,16 +1835,7 @@ value_type parser_RegularCylBessel(const value_type& n, const value_type& x)
 }
 
 
-/////////////////////////////////////////////////
-/// \brief This function calculates the
-/// irregulary bessel (von Neumann) function.
-///
-/// \param n const value_type&
-/// \param x const value_type&
-/// \return value_type
-///
-/////////////////////////////////////////////////
-value_type parser_IrregularCylBessel(const value_type& n, const value_type& x)
+static std::complex<double> IrregularCylBessel_impl(const std::complex<double>& n, const std::complex<double>& x)
 {
     if (x != 0.0 && n.real() >= 0.0)
         return x.real()/fabs(x.real())*gsl_sf_bessel_Yn(intCast(n), fabs(x.real()));
@@ -1521,20 +1845,41 @@ value_type parser_IrregularCylBessel(const value_type& n, const value_type& x)
 
 
 /////////////////////////////////////////////////
-/// \brief This function returns the value of the
-/// elliptic intergal F(phi,k).
+/// \brief This function calculates the regulary
+/// bessel function.
 ///
-/// \param phic const value_type&
-/// \param kc const value_type&
-/// \return value_type
+/// \param n const mu::Array&
+/// \param x const mu::Array&
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
-value_type parser_EllipticF(const value_type& phic, const value_type& kc)
+mu::Array parser_RegularCylBessel(const mu::Array& n, const mu::Array& x)
+{
+    return mu::apply(RegularCylBessel_impl, n, x);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This function calculates the
+/// irregulary bessel (von Neumann) function.
+///
+/// \param n const mu::Array&
+/// \param x const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
+mu::Array parser_IrregularCylBessel(const mu::Array& n, const mu::Array& x)
+{
+    return mu::apply(IrregularCylBessel_impl, n, x);
+}
+
+
+static std::complex<double> EllipticF_impl(const std::complex<double>& phic, const std::complex<double>& kc)
 {
     double k = kc.real();
     double phi = phic.real();
 
-    if (isnan(k) || isnan(phi) || isinf(k) || isinf(phi))
+    if (mu::isnan(k) || mu::isnan(phi) || mu::isinf(k) || mu::isinf(phi))
         return NAN;
 
     if (k < 0 || k >= 1)
@@ -1558,21 +1903,12 @@ value_type parser_EllipticF(const value_type& phic, const value_type& kc)
 }
 
 
-/////////////////////////////////////////////////
-/// \brief This function returns the value of the
-/// elliptic intergal E(phi,k).
-///
-/// \param phic const value_type&
-/// \param kc const value_type&
-/// \return value_type
-///
-/////////////////////////////////////////////////
-value_type parser_EllipticE(const value_type& phic, const value_type& kc)
+static std::complex<double> EllipticE_impl(const std::complex<double>& phic, const std::complex<double>& kc)
 {
     double phi = phic.real();
     double k = kc.real();
 
-    if (isnan(k) || isnan(phi) || isinf(k) || isinf(phi))
+    if (mu::isnan(k) || mu::isnan(phi) || mu::isinf(k) || mu::isinf(phi))
         return NAN;
 
     if (k < 0 || k >= 1)
@@ -1596,19 +1932,9 @@ value_type parser_EllipticE(const value_type& phic, const value_type& kc)
 }
 
 
-/////////////////////////////////////////////////
-/// \brief This function returns the value of the
-/// elliptic intergal Pi(phi,n,k).
-///
-/// \param phi const value_type&
-/// \param n const value_type&
-/// \param k const value_type&
-/// \return value_type
-///
-/////////////////////////////////////////////////
-value_type parser_EllipticP(const value_type& phi, const value_type& n, const value_type& k)
+static std::complex<double> EllipticP_impl(const std::complex<double>& phi, const std::complex<double>& n, const std::complex<double>& k)
 {
-    if (isnan(k.real()) || isnan(phi.real()) || isinf(k.real()) || isinf(phi.real()) || isnan(n.real()) || isinf(n.real()))
+    if (mu::isnan(k.real()) || mu::isnan(phi.real()) || mu::isinf(k.real()) || mu::isinf(phi.real()) || mu::isnan(n.real()) || mu::isinf(n.real()))
         return NAN;
 
     if (k.real() < 0 || k.real() >= 1)
@@ -1632,18 +1958,9 @@ value_type parser_EllipticP(const value_type& phi, const value_type& n, const va
 }
 
 
-/////////////////////////////////////////////////
-/// \brief This function returns the value of the
-/// elliptic intergal D(phi,k).
-///
-/// \param phi const value_type&
-/// \param k const value_type&
-/// \return value_type
-///
-/////////////////////////////////////////////////
-value_type parser_EllipticD(const value_type& phi, const value_type& k)
+static std::complex<double> EllipticD_impl(const std::complex<double>& phi, const std::complex<double>& k)
 {
-    if (isnan(k.real()) || isnan(phi.real()) || isinf(k.real()) || isinf(phi.real()))
+    if (mu::isnan(k.real()) || mu::isnan(phi.real()) || mu::isinf(k.real()) || mu::isinf(phi.real()))
         return NAN;
 
     if (k.real() < 0 || k.real() >= 1)
@@ -1688,22 +2005,88 @@ value_type parser_EllipticD(const value_type& phi, const value_type& k)
 
 /////////////////////////////////////////////////
 /// \brief This function returns the value of the
-/// Beta function.
+/// elliptic intergal F(phi,k).
 ///
-/// \param a const value_type&
-/// \param b const value_type&
-/// \return value_type
+/// \param phic const mu::Array&
+/// \param kc const mu::Array&
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
-value_type parser_beta(const value_type& a, const value_type& b)
+mu::Array parser_EllipticF(const mu::Array& phic, const mu::Array& kc)
 {
-    if (isnan(a.real()) || isnan(b.real()) || isinf(a.real()) || isinf(b.real()))
+    return mu::apply(EllipticF_impl, phic, kc);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This function returns the value of the
+/// elliptic intergal E(phi,k).
+///
+/// \param phic const mu::Array&
+/// \param kc const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
+mu::Array parser_EllipticE(const mu::Array& phic, const mu::Array& kc)
+{
+    return mu::apply(EllipticE_impl, phic, kc);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This function returns the value of the
+/// elliptic intergal Pi(phi,n,k).
+///
+/// \param phi const mu::Array&
+/// \param n const mu::Array&
+/// \param k const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
+mu::Array parser_EllipticP(const mu::Array& phi, const mu::Array& n, const mu::Array& k)
+{
+    return mu::apply(EllipticP_impl, phi, n, k);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This function returns the value of the
+/// elliptic intergal D(phi,k).
+///
+/// \param phi const mu::Array&
+/// \param k const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
+mu::Array parser_EllipticD(const mu::Array& phi, const mu::Array& k)
+{
+    return mu::apply(EllipticD_impl, phi, k);
+}
+
+
+static std::complex<double> beta_impl(const std::complex<double>& a, const std::complex<double>& b)
+{
+    if (mu::isnan(a.real()) || mu::isnan(b.real()) || mu::isinf(a.real()) || mu::isinf(b.real()))
         return NAN;
 
     if ((intCast(a) == (int)a.real() && a.real() < 0) || (intCast(b) == (int)b.real() && b.real() < 0))
         return NAN;
 
     return gsl_sf_beta(a.real(), b.real());
+}
+
+/////////////////////////////////////////////////
+/// \brief This function returns the value of the
+/// Beta function.
+///
+/// \param a const mu::Array&
+/// \param b const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
+mu::Array parser_beta(const mu::Array& a, const mu::Array& b)
+{
+    return mu::apply(beta_impl, a, b);
 }
 
 
@@ -1725,7 +2108,7 @@ static double ek(int k, int N)
         return vLookUp[k-1];
 
     for (int j = k; j <= N; j++)
-        sum += parser_Binom((double)N, (double)j).real();
+        sum += binom_impl((double)N, (double)j).real();
 
     vLookUp.push_back(sum);
 
@@ -1765,23 +2148,15 @@ static std::complex<double> complex_zeta(const std::complex<double>& s)
 }
 
 
-/////////////////////////////////////////////////
-/// \brief This function returns the value of the
-/// Zeta function.
-///
-/// \param s const value_type&
-/// \return value_type
-///
-/////////////////////////////////////////////////
-value_type parser_zeta(const value_type& s)
+static std::complex<double> zeta_impl(const std::complex<double>& s)
 {
-    if (isnan(s) || isinf(s))
+    if (mu::isnan(s) || mu::isinf(s))
         return NAN;
 
     // Use the functional equation to swap negative
     // real numbers into the positive half-plane
     if (s.real() < 0.0)
-        return std::pow(2.0, s)*std::pow(M_PI, s-1.0)*sin(0.5*M_PI*s)*parser_gamma(1.0-s)*complex_zeta(1.0-s);
+        return std::pow(2.0, s)*std::pow(M_PI, s-1.0)*sin(0.5*M_PI*s)*gamma_impl(1.0-s)*complex_zeta(1.0-s);
 
     return complex_zeta(s);
 }
@@ -1789,32 +2164,45 @@ value_type parser_zeta(const value_type& s)
 
 /////////////////////////////////////////////////
 /// \brief This function returns the value of the
-/// Clausen function.
+/// Zeta function.
 ///
-/// \param x const value_type&
-/// \return value_type
+/// \param s const mu::Array&
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
-value_type parser_clausen(const value_type& x)
+mu::Array parser_zeta(const mu::Array& s)
 {
-    if (isnan(x.real()) || isinf(x.real()))
+    return mu::apply(zeta_impl, s);
+}
+
+
+static std::complex<double> clausen_impl(const std::complex<double>& x)
+{
+    if (mu::isnan(x.real()) || mu::isinf(x.real()))
         return NAN;
 
     return gsl_sf_clausen(x.real());
 }
 
 
+
 /////////////////////////////////////////////////
 /// \brief This function returns the value of the
-/// Digamma function.
+/// Clausen function.
 ///
-/// \param x const value_type&
-/// \return value_type
+/// \param x const mu::Array&
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
-value_type parser_digamma(const value_type& x)
+mu::Array parser_clausen(const mu::Array& x)
 {
-    if (isnan(x.real()) || isinf(x.real()))
+    return mu::apply(clausen_impl, x);
+}
+
+
+static std::complex<double> digamma_impl(const std::complex<double>& x)
+{
+    if (mu::isnan(x.real()) || mu::isinf(x.real()))
         return NAN;
 
     if (x.real() == 0.0)
@@ -1828,17 +2216,22 @@ value_type parser_digamma(const value_type& x)
 
 
 /////////////////////////////////////////////////
-/// \brief This function returns the value if the
-/// Polygamma function.
+/// \brief This function returns the value of the
+/// Digamma function.
 ///
-/// \param n const value_type&
-/// \param x const value_type&
-/// \return value_type
+/// \param x const mu::Array&
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
-value_type parser_polygamma(const value_type& n, const value_type& x)
+mu::Array parser_digamma(const mu::Array& x)
 {
-    if (isnan(n.real()) || isnan(x.real()) || isinf(n.real()) || isinf(x.real()) || x.real() <= 0 || n.real() < 0)
+    return mu::apply(digamma_impl, x);
+}
+
+
+static std::complex<double> polygamma_impl(const std::complex<double>& n, const std::complex<double>& x)
+{
+    if (mu::isnan(n.real()) || mu::isnan(x.real()) || mu::isinf(n.real()) || mu::isinf(x.real()) || x.real() <= 0 || n.real() < 0)
         return NAN;
 
     return gsl_sf_psi_n(intCast(n), x.real());
@@ -1846,16 +2239,23 @@ value_type parser_polygamma(const value_type& n, const value_type& x)
 
 
 /////////////////////////////////////////////////
-/// \brief This function returns the value of the
-/// Dilogarithm Li2(x).
+/// \brief This function returns the value if the
+/// Polygamma function.
 ///
-/// \param x const value_type&
-/// \return value_type
+/// \param n const mu::Array&
+/// \param x const mu::Array&
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
-value_type parser_dilogarithm(const value_type& x)
+mu::Array parser_polygamma(const mu::Array& n, const mu::Array& x)
 {
-    if (isnan(x) || isinf(x))
+    return mu::apply(polygamma_impl, n, x);
+}
+
+
+static std::complex<double> dilogarithm_impl(const std::complex<double>& x)
+{
+    if (mu::isnan(x) || mu::isinf(x))
         return NAN;
 
     if (x.imag() == 0.0)
@@ -1865,65 +2265,76 @@ value_type parser_dilogarithm(const value_type& x)
     gsl_sf_result im;
 
     gsl_sf_complex_dilog_xy_e(x.real(), x.imag(), &re, &im);
-    return value_type(re.val, im.val);
+    return std::complex<double>(re.val, im.val);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This function returns the value of the
+/// Dilogarithm Li2(x).
+///
+/// \param x const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
+mu::Array parser_dilogarithm(const mu::Array& x)
+{
+    return mu::apply(dilogarithm_impl, x);
+}
+
+
+static std::complex<double> floor_impl(const std::complex<double>& x)
+{
+    return std::complex<double>(std::floor(x.real()), std::floor(x.imag()));
+}
+
+static std::complex<double> roof_impl(const std::complex<double>& x)
+{
+    return std::complex<double>(std::ceil(x.real()), std::ceil(x.imag()));
 }
 
 
 /////////////////////////////////////////////////
 /// \brief This is the floor function.
 ///
-/// \param x const value_type&
-/// \return value_type
+/// \param x const mu::Array&
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
-value_type parser_floor(const value_type& x)
+mu::Array parser_floor(const mu::Array& x)
 {
-    return value_type(floor(x.real()), floor(x.imag()));
+    return mu::apply(floor_impl, x);
 }
 
 
 /////////////////////////////////////////////////
 /// \brief This is the roof (ceil) function.
 ///
-/// \param x const value_type&
-/// \return value_type
+/// \param x const mu::Array&
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
-value_type parser_roof(const value_type& x)
+mu::Array parser_roof(const mu::Array& x)
 {
-    return value_type(ceil(x.real()), ceil(x.imag()));
+    return mu::apply(roof_impl, x);
 }
 
 
 /////////////////////////////////////////////////
 /// \brief This is the rect function.
 ///
-/// \param x const value_type&
-/// \param x0 const value_type&
-/// \param x1 const value_type&
-/// \return value_type
+/// \param x const mu::Array&
+/// \param x0 const mu::Array&
+/// \param x1 const mu::Array&
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
-value_type parser_rect(const value_type& x, const value_type& x0, const value_type& x1)
+mu::Array parser_rect(const mu::Array& x, const mu::Array& x0, const mu::Array& x1)
 {
-    return (x.real() > x1.real() || x.real() < x0.real()) ? 0.0 : 1.0;
+    return x > x1 || x < x0;
 }
 
-
-/////////////////////////////////////////////////
-/// \brief This function describes an interval
-/// with borders of a selected type (including,
-/// excluding, ignore).
-///
-/// \param x const value_type&
-/// \param x0 const value_type&
-/// \param x1 const value_type&
-/// \param lborder const value_type&
-/// \param rborder const value_type&
-/// \return value_type
-///
-/////////////////////////////////////////////////
-value_type parser_ivl(const value_type& x, const value_type& x0, const value_type& x1, const value_type& lborder, const value_type& rborder)
+static std::complex<double> ivl_impl(const std::complex<double>& x, const std::complex<double>& x0, const std::complex<double>& x1, const std::complex<double>& lborder, const std::complex<double>& rborder)
 {
     double lb = lborder.real();
     double rb = rborder.real();
@@ -1965,18 +2376,26 @@ value_type parser_ivl(const value_type& x, const value_type& x0, const value_typ
     return 1;
 }
 
+/////////////////////////////////////////////////
+/// \brief This function describes an interval
+/// with borders of a selected type (including,
+/// excluding, ignore).
+///
+/// \param x const mu::Array&
+/// \param x0 const mu::Array&
+/// \param x1 const mu::Array&
+/// \param lborder const mu::Array&
+/// \param rborder const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
+mu::Array parser_ivl(const mu::Array& x, const mu::Array& x0, const mu::Array& x1, const mu::Array& lborder, const mu::Array& rborder)
+{
+    return mu::apply(ivl_impl, x, x0, x1, lborder, rborder);
+}
 
-/////////////////////////////////////////////////
-/// \brief This function returns the Student
-/// factor s_t for the selected degrees of
-/// freedom and a confidence interval.
-///
-/// \param vFreedoms const value_type&
-/// \param vAlpha const value_type&
-/// \return value_type
-///
-/////////////////////////////////////////////////
-value_type parser_studentFactor(const value_type& vFreedoms, const value_type& vAlpha)
+
+static std::complex<double> studentFactor_impl(const std::complex<double>& vFreedoms, const std::complex<double>& vAlpha)
 {
     if (vAlpha.real() >= 1.0 || vAlpha.real() <= 0.0 || vFreedoms.real() < 2.0)
         return NAN;
@@ -1986,17 +2405,42 @@ value_type parser_studentFactor(const value_type& vFreedoms, const value_type& v
 
 
 /////////////////////////////////////////////////
+/// \brief This function returns the Student
+/// factor s_t for the selected degrees of
+/// freedom and a confidence interval.
+///
+/// \param vFreedoms const mu::Array&
+/// \param vAlpha const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
+mu::Array parser_studentFactor(const mu::Array& vFreedoms, const mu::Array& vAlpha)
+{
+    return mu::apply(studentFactor_impl, vFreedoms, vAlpha);
+}
+
+static std::complex<double> gcd_impl(const std::complex<double>& n, const std::complex<double>& k)
+{
+    return boost::math::gcd(intCast(n), intCast(k));
+}
+
+static std::complex<double> lcm_impl(const std::complex<double>& n, const std::complex<double>& k)
+{
+    return boost::math::lcm(intCast(n), intCast(k));
+}
+
+/////////////////////////////////////////////////
 /// \brief This function returns the greatest
 /// common divisor of both argments.
 ///
-/// \param n const value_type&
-/// \param k const value_type&
-/// \return value_type
+/// \param n const mu::Array&
+/// \param k const mu::Array&
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
-value_type parser_gcd(const value_type& n, const value_type& k)
+mu::Array parser_gcd(const mu::Array& n, const mu::Array& k)
 {
-    return boost::math::gcd(intCast(n), intCast(k));
+    return mu::apply(gcd_impl, n, k);
 }
 
 
@@ -2004,14 +2448,27 @@ value_type parser_gcd(const value_type& n, const value_type& k)
 /// \brief This function returns the least common
 /// multiple of both arguments.
 ///
-/// \param n const value_type&
-/// \param k const value_type&
-/// \return value_type
+/// \param n const mu::Array&
+/// \param k const mu::Array&
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
-value_type parser_lcm(const value_type& n, const value_type& k)
+mu::Array parser_lcm(const mu::Array& n, const mu::Array& k)
 {
-    return boost::math::lcm(intCast(n), intCast(k));
+    return mu::apply(lcm_impl, n, k);
+}
+
+
+static std::complex<double> mod_impl(const std::complex<double>& v1, const std::complex<double>& v2)
+{
+    if (std::isinf(v2.real()) || std::isnan(v2.real()) || std::isinf(v2.imag()) || std::isnan(v2.imag()))
+        return NAN;
+
+    std::complex<double> div = v1 / v2;
+    div = std::complex<double>(std::floor(div.real()),
+                               std::floor(div.imag()));
+
+    return v1 - div * v2;
 }
 
 
@@ -2019,21 +2476,41 @@ value_type parser_lcm(const value_type& n, const value_type& k)
 /// \brief This function represents the Modulo
 /// operator.
 ///
-/// \param v1 const value_type&
-/// \param v2 const value_type&
-/// \return value_type
+/// \param v1 const mu::Array&
+/// \param v2 const mu::Array&
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
-value_type parser_Mod(const value_type& v1, const value_type& v2)
+mu::Array parser_Mod(const mu::Array& v1, const mu::Array& v2)
 {
-    if (std::isinf(v2.real()) || std::isnan(v2.real()) || std::isinf(v2.imag()) || std::isnan(v2.imag()))
+    return mu::apply(mod_impl, v1, v2);
+}
+
+
+static std::complex<double> xor_impl(const std::complex<double>& v1, const std::complex<double>& v2)
+{
+    if (mu::isinf(v1) || mu::isnan(v1) || mu::isinf(v2) || mu::isnan(v2))
         return NAN;
 
-    mu::value_type div = v1 / v2;
-    div = mu::value_type(std::floor(div.real()),
-                         std::floor(div.imag()));
+    return (v1 != 0.0) xor (v2 != 0.0);
+}
 
-    return v1 - div * v2;
+
+static std::complex<double> binOr_impl(const std::complex<double>& v1, const std::complex<double>& v2)
+{
+    if (mu::isinf(v1) || mu::isnan(v1) || mu::isinf(v2) || mu::isnan(v2))
+        return NAN;
+
+    return intCast(v1) | intCast(v2);
+}
+
+
+static std::complex<double> binAnd_impl(const std::complex<double>& v1, const std::complex<double>& v2)
+{
+    if (mu::isinf(v1) || mu::isnan(v1) || mu::isinf(v2) || mu::isnan(v2))
+        return NAN;
+
+    return intCast(v1) & intCast(v2);
 }
 
 
@@ -2041,17 +2518,14 @@ value_type parser_Mod(const value_type& v1, const value_type& v2)
 /// \brief This function represent the XOR
 /// operator.
 ///
-/// \param v1 const value_type&
-/// \param v2 const value_type&
-/// \return value_type
+/// \param v1 const mu::Array&
+/// \param v2 const mu::Array&
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
-value_type parser_XOR(const value_type& v1, const value_type& v2)
+mu::Array parser_XOR(const mu::Array& v1, const mu::Array& v2)
 {
-    if (isinf(v1) || isnan(v1) || isinf(v2) || isnan(v2))
-        return NAN;
-
-    return (v1 != 0.0) xor (v2 != 0.0);
+    return mu::apply(xor_impl, v1, v2);
 }
 
 
@@ -2059,17 +2533,14 @@ value_type parser_XOR(const value_type& v1, const value_type& v2)
 /// \brief This function represents the binary
 /// OR operator.
 ///
-/// \param v1 const value_type&
-/// \param v2 const value_type&
-/// \return value_type
+/// \param v1 const mu::Array&
+/// \param v2 const mu::Array&
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
-value_type parser_BinOR(const value_type& v1, const value_type& v2)
+mu::Array parser_BinOR(const mu::Array& v1, const mu::Array& v2)
 {
-    if (isinf(v1) || isnan(v1) || isinf(v2) || isnan(v2))
-        return NAN;
-
-    return intCast(v1) | intCast(v2);
+    return mu::apply(binOr_impl, v1, v2);
 }
 
 
@@ -2077,17 +2548,14 @@ value_type parser_BinOR(const value_type& v1, const value_type& v2)
 /// \brief This function represents the binary
 /// AND operator.
 ///
-/// \param v1 const value_type&
-/// \param v2 const value_type&
-/// \return value_type
+/// \param v1 const mu::Array&
+/// \param v2 const mu::Array&
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
-value_type parser_BinAND(const value_type& v1, const value_type& v2)
+mu::Array parser_BinAND(const mu::Array& v1, const mu::Array& v2)
 {
-    if (isinf(v1) || isnan(v1) || isinf(v2) || isnan(v2))
-        return NAN;
-
-    return intCast(v1) & intCast(v2);
+    return mu::apply(binAnd_impl, v1, v2);
 }
 
 
@@ -2096,16 +2564,30 @@ value_type parser_BinAND(const value_type& v1, const value_type& v2)
 /// of the string is_string() function. Used as a
 /// fallback.
 ///
-/// \param v const value_type&
-/// \return const value_type&
+/// \param v const mu::Array&
+/// \return const mu::Array&
 ///
 /////////////////////////////////////////////////
-value_type parser_is_string(const value_type& v)
+mu::Array parser_is_string(const mu::Array& v)
 {
-    if (isnan(v) || isinf(v))
-        return NAN;
+    mu::Array res;
 
-    return 0.0;
+    for (const auto& val : v)
+    {
+        switch (val.getType())
+        {
+            case mu::TYPE_VOID:
+                res.push_back(mu::Value(NAN));
+                break;
+            case mu::TYPE_STRING:
+                res.push_back(mu::Value(true));
+                break;
+            default:
+                res.push_back(mu::Value(false));
+        }
+    }
+
+    return res;
 }
 
 
@@ -2113,12 +2595,12 @@ value_type parser_is_string(const value_type& v)
 /// \brief This function returns the current UNIX
 /// time.
 ///
-/// \return value_type
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
-value_type parser_time()
+mu::Array parser_time()
 {
-    return to_double(sys_time_now());
+    return mu::Value(to_double(sys_time_now()));
 }
 
 
@@ -2126,12 +2608,12 @@ value_type parser_time()
 /// \brief This function returns the current CPU
 /// clock count.
 ///
-/// \return value_type
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
-value_type parser_clock()
+mu::Array parser_clock()
 {
-    return (double)clock();
+    return mu::Value((int64_t)clock());
 }
 
 
@@ -2139,32 +2621,24 @@ value_type parser_clock()
 /// \brief Sleeps for the passed amount of
 /// milliseconds and returns this number.
 ///
-/// \param milliseconds const value_type&
-/// \return value_type
+/// \param ms const mu::Array&
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
-value_type parser_sleep(const value_type& milliseconds)
+mu::Array parser_sleep(const mu::Array& ms)
 {
-    Sleep(intCast(milliseconds));
-    return intCast(milliseconds);
+    int64_t msec = intCast(ms.front().getNum().val);
+    Sleep(msec);
+    return mu::Value(msec);
 }
 
 
-/////////////////////////////////////////////////
-/// \brief Calculates the logarithm of x using
-/// the base b.
-///
-/// \param b const value_type&
-/// \param x const value_type&
-/// \return value_type
-///
-/////////////////////////////////////////////////
-value_type parser_log_b(const value_type& b, const value_type& x)
+static std::complex<double> log_b_impl(const std::complex<double>& b, const std::complex<double>& x)
 {
-    if (isnan(b.real()) || isnan(x) || isinf(b.real()) || x.real() <= 0.0 || b.real() <= 0.0)
+    if (std::isnan(b.real()) || mu::isnan(x) || std::isinf(b.real()) || x.real() <= 0.0 || b.real() <= 0.0)
         return NAN;
 
-    if (isinf(x))
+    if (mu::isinf(x))
         return INFINITY;
 
     return log10(x) / log10(b.real());
@@ -2172,15 +2646,30 @@ value_type parser_log_b(const value_type& b, const value_type& x)
 
 
 /////////////////////////////////////////////////
+/// \brief Calculates the logarithm of x using
+/// the base b.
+///
+/// \param b const mu::Array&
+/// \param x const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
+mu::Array parser_log_b(const mu::Array& b, const mu::Array& x)
+{
+    return mu::apply(log_b_impl, b, x);
+}
+
+
+/////////////////////////////////////////////////
 /// \brief Returns the version number of NumeRe
 /// as a natural number.
 ///
-/// \return value_type
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
-value_type parser_numereversion()
+mu::Array parser_numereversion()
 {
-    return 100.0*AutoVersion::MAJOR+10.0*AutoVersion::MINOR + AutoVersion::BUILD + std::atof(AutoVersion::UBUNTU_VERSION_STYLE) / 100.0;
+    return mu::Value(100.0*AutoVersion::MAJOR+10.0*AutoVersion::MINOR + AutoVersion::BUILD + std::atof(AutoVersion::UBUNTU_VERSION_STYLE) / 100.0);
 }
 
 
@@ -2188,28 +2677,44 @@ value_type parser_numereversion()
 /// \brief Returns the number of available OMP
 /// threads.
 ///
-/// \return value_type
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
-value_type parser_omp_threads()
+mu::Array parser_omp_threads()
 {
-    return omp_get_max_threads();
+    return mu::Value(omp_get_max_threads());
 }
 
 
-/////////////////////////////////////////////////
-/// \brief This function converts UNIX time
-/// values into a selected part of a time stamp.
-///
-/// \param vTime const value_type&
-/// \param vType const value_type&
-/// \return value_type
-///
-/////////////////////////////////////////////////
-value_type parser_date(const value_type& vTime, const value_type& vType)
+static mu::Value date_impl(const mu::Value& vTime, const mu::Value& vType)
 {
-    sys_time_point tp = to_timePoint(vTime.real());
-    int nType = (int)rint(vType.real());
+    sys_time_point tp = to_timePoint(vTime.getNum().val.real());
+    int nType = 0;
+
+    if (vType.getType() == mu::TYPE_STRING)
+    {
+        const std::string& sType = vType.getStr();
+
+        if (sType == "ymd")
+            nType = -1;
+        else if (sType == "hms")
+            nType = -2;
+        else if (sType == "year")
+            nType = 1;
+        else if (sType == "mth")
+            nType = 2;
+        else if (sType == "day")
+            nType = 3;
+        else if (sType == "hour")
+            nType = 4;
+        else if (sType == "min")
+            nType = 5;
+        else if (sType == "sec")
+            nType = 6;
+    }
+    else
+        nType = std::rint(vType.getNum().val.real());
+
     time_stamp ltm = getTimeStampFromTimePoint(tp);
 
     switch (nType)
@@ -2243,17 +2748,38 @@ value_type parser_date(const value_type& vTime, const value_type& vType)
 }
 
 
+static std::complex<double> weeknum_impl(const std::complex<double>& vTime)
+{
+    return getWeekNum(to_timePoint(vTime.real()));
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This function converts UNIX time
+/// values into a selected part of a time stamp.
+///
+/// \param vTime const mu::Array&
+/// \param vType const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
+mu::Array parser_date(const mu::Array& vTime, const mu::Array& vType)
+{
+    return mu::apply(date_impl, vTime, vType);
+}
+
+
 /////////////////////////////////////////////////
 /// \brief This function returns the calendar
 /// week associated with the passed time value.
 ///
-/// \param vTime const value_type&
-/// \return value_type
+/// \param vTime const mu::Array&
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
-value_type parser_weeknum(const value_type& vTime)
+mu::Array parser_weeknum(const mu::Array& vTime)
 {
-    return getWeekNum(to_timePoint(vTime.real()));
+    return mu::apply(weeknum_impl, vTime);
 }
 
 
@@ -2261,28 +2787,17 @@ value_type parser_weeknum(const value_type& vTime)
 /// \brief Returns, whether the selected value is
 /// NaN.
 ///
-/// \param v const value_type&
-/// \return value_type
+/// \param v const mu::Array&
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
-value_type parser_isnan(const value_type& v)
+mu::Array parser_isnan(const mu::Array& v)
 {
     return v != v;
 }
 
 
-/////////////////////////////////////////////////
-/// \brief This function numerically defines a
-/// valid value range (the value is set to NaN,
-/// if outside of this range).
-///
-/// \param v const value_type&
-/// \param vLeft const value_type&
-/// \param vRight const value_type&
-/// \return value_type
-///
-/////////////////////////////////////////////////
-value_type parser_interval(const value_type& v, const value_type& vLeft, const value_type& vRight)
+static std::complex<double> interval_impl(const std::complex<double>& v, const std::complex<double>& vLeft, const std::complex<double>& vRight)
 {
     if (vRight.real() <= vLeft.real())
         return NAN;
@@ -2294,23 +2809,46 @@ value_type parser_interval(const value_type& v, const value_type& vLeft, const v
 }
 
 
-/////////////////////////////////////////////////
-/// \brief This function returns the cotangent of
-/// the passed value.
-///
-/// \param x const value_type&
-/// \return value_type
-///
-/////////////////////////////////////////////////
-value_type parser_cot(const value_type& x)
+static std::complex<double> cot_impl(const std::complex<double>& x)
 {
-    if (isnan(x) || isinf(x))
+    if (mu::isnan(x) || mu::isinf(x))
         return NAN;
 
     if (sin(x) == 0.0)
         return INFINITY;
 
-    return cos(x) / sin(x);
+    return std::cos(x) / std::sin(x);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This function numerically defines a
+/// valid value range (the value is set to NaN,
+/// if outside of this range).
+///
+/// \param v const mu::Array&
+/// \param vLeft const mu::Array&
+/// \param vRight const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
+mu::Array parser_interval(const mu::Array& v, const mu::Array& vLeft, const mu::Array& vRight)
+{
+    return mu::apply(interval_impl, v, vLeft, vRight);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This function returns the cotangent of
+/// the passed value.
+///
+/// \param x const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
+mu::Array parser_cot(const mu::Array& x)
+{
+    return mu::apply(cot_impl, x);
 }
 
 
@@ -2322,17 +2860,17 @@ value_type parser_cot(const value_type& x)
 ///
 /// \param a_szName const char_type*
 /// \param a_pUserData void*
-/// \return value_type*
+/// \return mu::Array*
 ///
 /////////////////////////////////////////////////
-value_type* parser_AddVariable(const char_type* a_szName, void* a_pUserData)
+mu::Array* parser_AddVariable(const mu::char_type* a_szName, void* a_pUserData)
 {
     // Cast the passed void pointer to a the data storage list
-    std::list<mu::value_type*>* m_lDataStorage = static_cast<std::list<mu::value_type*>* >(a_pUserData);
+    std::list<mu::Array*>* m_lDataStorage = static_cast<std::list<mu::Array*>* >(a_pUserData);
 
     // Create the storage for a new variable
-    m_lDataStorage->push_back(new mu::value_type);
-    *(m_lDataStorage->back()) = 0.0;
+    m_lDataStorage->push_back(new mu::Array);
+    *(m_lDataStorage->back()) = mu::Value(0.0);
 
     // Return the address of the newly created storage
     return m_lDataStorage->back();
@@ -2343,13 +2881,13 @@ value_type* parser_AddVariable(const char_type* a_szName, void* a_pUserData)
 /// \brief This function returns the secant of
 /// the passed value.
 ///
-/// \param x const value_type&
-/// \return value_type
+/// \param x const mu::Array&
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
-value_type parser_sec(const value_type& x)
+mu::Array parser_sec(const mu::Array& x)
 {
-    return 1.0 / std::cos(x);
+    return mu::Value(1.0) / mu::apply(std::cos, x);
 }
 
 
@@ -2357,13 +2895,13 @@ value_type parser_sec(const value_type& x)
 /// \brief This function returns the cosecant of
 /// the passed value.
 ///
-/// \param x const value_type&
-/// \return value_type
+/// \param x const mu::Array&
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
-value_type parser_csc(const value_type& x)
+mu::Array parser_csc(const mu::Array& x)
 {
-    return 1.0 / std::sin(x);
+    return mu::Value(1.0) / mu::apply(std::sin, x);
 }
 
 
@@ -2371,13 +2909,13 @@ value_type parser_csc(const value_type& x)
 /// \brief This function returns the inverse
 /// secant of the passed value.
 ///
-/// \param x const value_type&
-/// \return value_type
+/// \param x const mu::Array&
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
-value_type parser_asec(const value_type& x)
+mu::Array parser_asec(const mu::Array& x)
 {
-    return std::acos(1.0 / x);
+    return mu::apply(std::acos, mu::Value(1.0) / x);
 }
 
 
@@ -2385,13 +2923,13 @@ value_type parser_asec(const value_type& x)
 /// \brief This function returns the inverse
 /// cosecant of the passed value.
 ///
-/// \param x const value_type&
-/// \return value_type
+/// \param x const mu::Array&
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
-value_type parser_acsc(const value_type& x)
+mu::Array parser_acsc(const mu::Array& x)
 {
-    return std::asin(1.0 / x);
+    return mu::apply(std::asin, mu::Value(1.0) / x);
 }
 
 
@@ -2399,13 +2937,13 @@ value_type parser_acsc(const value_type& x)
 /// \brief This function returns the hyperbolic
 /// secant of the passed value.
 ///
-/// \param x const value_type&
-/// \return value_type
+/// \param x const mu::Array&
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
-value_type parser_sech(const value_type& x)
+mu::Array parser_sech(const mu::Array& x)
 {
-    return 1.0 / std::cosh(x);
+    return mu::Value(1.0) / mu::apply(std::cosh, x);
 }
 
 
@@ -2413,13 +2951,13 @@ value_type parser_sech(const value_type& x)
 /// \brief This function returns the hyperbolic
 /// cosecant of the passed value.
 ///
-/// \param x const value_type&
-/// \return value_type
+/// \param x const mu::Array&
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
-value_type parser_csch(const value_type& x)
+mu::Array parser_csch(const mu::Array& x)
 {
-    return 1.0 / std::sinh(x);
+    return mu::Value(1.0) / mu::apply(std::sinh, x);
 }
 
 
@@ -2427,13 +2965,13 @@ value_type parser_csch(const value_type& x)
 /// \brief This function returns the inverse
 /// hyperbolic secant of the passed value.
 ///
-/// \param x const value_type&
-/// \return value_type
+/// \param x const mu::Array&
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
-value_type parser_asech(const value_type& x)
+mu::Array parser_asech(const mu::Array& x)
 {
-    return std::acosh(1.0 / x);
+    return mu::apply(std::acosh, mu::Value(1.0) / x);
 }
 
 
@@ -2441,55 +2979,35 @@ value_type parser_asech(const value_type& x)
 /// \brief This function returns the inverse
 /// hyperbolic cosecant of the passed value.
 ///
-/// \param x const value_type&
-/// \return value_type
+/// \param x const mu::Array&
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
-value_type parser_acsch(const value_type& x)
+mu::Array parser_acsch(const mu::Array& x)
 {
-    return std::asinh(1.0 / x);
+    return mu::apply(std::asinh, mu::Value(1.0) / x);
 }
 
 
-/////////////////////////////////////////////////
-/// \brief This function returns the date from
-/// the passed vElements.
-///
-/// \param vElements const value_type*
-/// \param nElements int
-/// \return value_type
-///
-/////////////////////////////////////////////////
-value_type parser_as_date(const value_type* vElements, int nElements)
+static mu::Value as_date_impl(const mu::Value* vElements, int nElements)
 {
-
-    int year = nElements > 0 ? intCast(vElements[0].real()) : 1970;
-    int month = nElements > 1 ? intCast(vElements[1].real()) : 1;
-    int day = nElements > 2 ? intCast(vElements[2].real()) : 1;
+    int year = nElements > 0 ? intCast(vElements[0].getNum().val.real()) : 1970;
+    int month = nElements > 1 ? intCast(vElements[1].getNum().val.real()) : 1;
+    int day = nElements > 2 ? intCast(vElements[2].getNum().val.real()) : 1;
 
     time_stamp ts;
     ts.m_ymd = date::year{year}/ date::month{month}/ date::day{day};
-    return to_double(getTimePointFromTimeStamp(ts));
-
+    return mu::Value(to_double(getTimePointFromTimeStamp(ts)));
 }
 
 
-/////////////////////////////////////////////////
-/// \brief This function returns the time from
-/// the passed vElements
-///
-/// \param vElements const value_type*
-/// \param nElements int
-/// \return value_type
-///
-/////////////////////////////////////////////////
-value_type parser_as_time(const value_type* vElements, int nElements)
+static mu::Value as_time_impl(const mu::Value* vElements, int nElements)
 {
-    int hours = nElements > 0 ? intCast(vElements[0].real()) : 0;
-    int minutes = nElements > 1 ? intCast(vElements[1].real()) : 0;
-    int seconds = nElements > 2 ? intCast(vElements[2].real()) : 0;
-    int milliseconds = nElements > 3 ? intCast(vElements[3].real()) : 0;
-    int microseconds = nElements > 4 ? intCast(vElements[4].real()) : 0;
+    int hours = nElements > 0 ? intCast(vElements[0].getNum().val.real()) : 0;
+    int minutes = nElements > 1 ? intCast(vElements[1].getNum().val.real()) : 0;
+    int seconds = nElements > 2 ? intCast(vElements[2].getNum().val.real()) : 0;
+    int milliseconds = nElements > 3 ? intCast(vElements[3].getNum().val.real()) : 0;
+    int microseconds = nElements > 4 ? intCast(vElements[4].getNum().val.real()) : 0;
 
     time_stamp ts;
     ts.m_hours = std::chrono::hours(hours);
@@ -2503,18 +3021,48 @@ value_type parser_as_time(const value_type* vElements, int nElements)
     date::day d{1u};
     ts.m_ymd = y/m/d;
 
-    return to_double(getTimePointFromTimeStamp(ts));
+    return mu::Value(to_double(getTimePointFromTimeStamp(ts)));
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This function returns the date from
+/// the passed vElements.
+///
+/// \param vElements const mu::Array*
+/// \param nElements int
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
+mu::Array parser_as_date(const mu::Array* vElements, int nElements)
+{
+    return mu::apply(as_date_impl, vElements, nElements);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This function returns the time from
+/// the passed vElements
+///
+/// \param vElements const mu::Array*
+/// \param nElements int
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
+mu::Array parser_as_time(const mu::Array* vElements, int nElements)
+{
+    return mu::apply(as_time_impl, vElements, nElements);
 }
 
 /////////////////////////////////////////////////
 /// \brief This function returns a random value
 /// from the Laplace distribution function.
 ///
-/// \param a const value_type&
-/// \return value_type
+/// \param a const std::complex<double>&
+/// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
-value_type parser_rd_laplace_rd(const value_type& a)
+static std::complex<double> parser_rd_laplace_rd(const std::complex<double>& a)
 {
     // Check the input values
     if (mu::isnan(a) || a.imag() != 0 || a.real() <= 0)
@@ -2530,12 +3078,12 @@ value_type parser_rd_laplace_rd(const value_type& a)
 /// density function p at a given position for the
 /// Laplace distribution function.
 ///
-/// \param x const value_type&
-/// \param a const value_type&
-/// \return value_type
+/// \param x const std::complex<double>&
+/// \param a const std::complex<double>&
+/// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
-value_type parser_rd_laplace_pdf(const value_type& x, const value_type& a)
+static std::complex<double> parser_rd_laplace_pdf(const std::complex<double>& x, const std::complex<double>& a)
 {
     // Check the input values
     if (mu::isnan(x) || mu::isnan(a) || x.imag() != 0 || a.imag() != 0 || a.real() == 0.0)
@@ -2551,12 +3099,12 @@ value_type parser_rd_laplace_pdf(const value_type& x, const value_type& a)
 /// density function p at a given position for the
 /// Laplace distribution function.
 ///
-/// \param x const value_type&
-/// \param a const value_type&
-/// \return value_type
+/// \param x const std::complex<double>&
+/// \param a const std::complex<double>&
+/// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
-value_type parser_rd_laplace_cdf_p(const value_type& x, const value_type& a)
+static std::complex<double> parser_rd_laplace_cdf_p(const std::complex<double>& x, const std::complex<double>& a)
 {
     // Check the input values
     if (mu::isnan(x) || mu::isnan(a) || x.imag() != 0 || a.imag() != 0 || a.real() <= 0)
@@ -2572,15 +3120,15 @@ value_type parser_rd_laplace_cdf_p(const value_type& x, const value_type& a)
 /// density function q at a given position for the
 /// Laplace distribution function.
 ///
-/// \param x const value_type&
-/// \param a const value_type&
-/// \return value_type
+/// \param x const std::complex<double>&
+/// \param a const std::complex<double>&
+/// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
-value_type parser_rd_laplace_cdf_q(const value_type& x, const value_type& a)
+static std::complex<double> parser_rd_laplace_cdf_q(const std::complex<double>& x, const std::complex<double>& a)
 {
     // Get the result from the existing p variant
-    return mu::value_type(1) - parser_rd_laplace_cdf_p(x, a);
+    return std::complex<double>(1) - parser_rd_laplace_cdf_p(x, a);
 }
 
 
@@ -2589,12 +3137,12 @@ value_type parser_rd_laplace_cdf_q(const value_type& x, const value_type& a)
 /// the cumulative density function p at a given
 /// position for the Laplace distribution function.
 ///
-/// \param p const value_type&
-/// \param a const value_type&
-/// \return value_type
+/// \param p const std::complex<double>&
+/// \param a const std::complex<double>&
+/// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
-value_type parser_rd_laplace_inv_p(const value_type& p, const value_type& a)
+static std::complex<double> parser_rd_laplace_inv_p(const std::complex<double>& p, const std::complex<double>& a)
 {
     // Check the input values
     if (mu::isnan(p) || mu::isnan(a) || p.imag() != 0 || a.imag() != 0 || a.real() <= 0 || p.real() < 0 || p.real() > 1)
@@ -2610,12 +3158,12 @@ value_type parser_rd_laplace_inv_p(const value_type& p, const value_type& a)
 /// the cumulative density function q at a given
 /// position for the Laplace distribution function.
 ///
-/// \param q const value_type&
-/// \param a const value_type&
-/// \return value_type
+/// \param q const std::complex<double>&
+/// \param a const std::complex<double>&
+/// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
-value_type parser_rd_laplace_inv_q(const value_type& q, const value_type& a)
+static std::complex<double> parser_rd_laplace_inv_q(const std::complex<double>& q, const std::complex<double>& a)
 {
     // Check the input values
     if (mu::isnan(q) || mu::isnan(a) || q.imag() != 0 || a.imag() != 0 || a.real() <= 0 || q.real() < 0 || q.real() > 1)
@@ -2630,11 +3178,11 @@ value_type parser_rd_laplace_inv_q(const value_type& q, const value_type& a)
 /// \brief This function returns a random value
 /// from the Cauchy distribution function.
 ///
-/// \param a const value_type&
-/// \return value_type
+/// \param a const std::complex<double>&
+/// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
-value_type parser_rd_cauchy_rd(const value_type& a)
+static std::complex<double> parser_rd_cauchy_rd(const std::complex<double>& a)
 {
     // Check the input values
     if (mu::isnan(a) || a.imag() != 0 || a.real() <= 0)
@@ -2650,12 +3198,12 @@ value_type parser_rd_cauchy_rd(const value_type& a)
 /// density function p at a given position for the
 /// Cauchy distribution function.
 ///
-/// \param x const value_type&
-/// \param a const value_type&
-/// \return value_type
+/// \param x const std::complex<double>&
+/// \param a const std::complex<double>&
+/// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
-value_type parser_rd_cauchy_pdf(const value_type& x, const value_type& a)
+static std::complex<double> parser_rd_cauchy_pdf(const std::complex<double>& x, const std::complex<double>& a)
 {
     // Check the input values
     if (mu::isnan(x) || mu::isnan(a) || x.imag() != 0 || a.imag() != 0 || a.real() == 0)
@@ -2671,12 +3219,12 @@ value_type parser_rd_cauchy_pdf(const value_type& x, const value_type& a)
 /// density function p at a given position for the
 /// Cauchy distribution function.
 ///
-/// \param x const value_type&
-/// \param a const value_type&
-/// \return value_type
+/// \param x const std::complex<double>&
+/// \param a const std::complex<double>&
+/// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
-value_type parser_rd_cauchy_cdf_p(const value_type& x, const value_type& a)
+static std::complex<double> parser_rd_cauchy_cdf_p(const std::complex<double>& x, const std::complex<double>& a)
 {
     // Check the input values
     if (mu::isnan(x) || mu::isnan(a) || x.imag() != 0 || a.imag() != 0 || a.real() <= 0)
@@ -2692,15 +3240,15 @@ value_type parser_rd_cauchy_cdf_p(const value_type& x, const value_type& a)
 /// density function q at a given position for the
 /// Cauchy distribution function.
 ///
-/// \param x const value_type&
-/// \param a const value_type&
-/// \return value_type
+/// \param x const std::complex<double>&
+/// \param a const std::complex<double>&
+/// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
-value_type parser_rd_cauchy_cdf_q(const value_type& x, const value_type& a)
+static std::complex<double> parser_rd_cauchy_cdf_q(const std::complex<double>& x, const std::complex<double>& a)
 {
     // Get the result from the existing p variant
-    return mu::value_type(1) - parser_rd_cauchy_cdf_p(x, a);
+    return std::complex<double>(1) - parser_rd_cauchy_cdf_p(x, a);
 }
 
 
@@ -2709,12 +3257,12 @@ value_type parser_rd_cauchy_cdf_q(const value_type& x, const value_type& a)
 /// the cumulative density function p at a given
 /// position for the Cauchy distribution function.
 ///
-/// \param p const value_type&
-/// \param a const value_type&
-/// \return value_type
+/// \param p const std::complex<double>&
+/// \param a const std::complex<double>&
+/// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
-value_type parser_rd_cauchy_inv_p(const value_type& p, const value_type& a)
+static std::complex<double> parser_rd_cauchy_inv_p(const std::complex<double>& p, const std::complex<double>& a)
 {
     // Check the input values
     if (mu::isnan(p) || mu::isnan(a) || p.imag() != 0 || a.imag() != 0 || a.real() <= 0 || p.real() < 0 || p.real() > 1)
@@ -2730,12 +3278,12 @@ value_type parser_rd_cauchy_inv_p(const value_type& p, const value_type& a)
 /// the cumulative density function q at a given
 /// position for the Cauchy distribution function.
 ///
-/// \param q const value_type&
-/// \param a const value_type&
-/// \return value_type
+/// \param q const std::complex<double>&
+/// \param a const std::complex<double>&
+/// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
-value_type parser_rd_cauchy_inv_q(const value_type& q, const value_type& a)
+static std::complex<double> parser_rd_cauchy_inv_q(const std::complex<double>& q, const std::complex<double>& a)
 {
     // Check the input values
     if (mu::isnan(q) || mu::isnan(a) || q.imag() != 0 || a.imag() != 0 || a.real() <= 0 || q.real() < 0 || q.real() > 1)
@@ -2750,11 +3298,11 @@ value_type parser_rd_cauchy_inv_q(const value_type& q, const value_type& a)
 /// \brief This function returns a random value
 /// from the Rayleigh distribution function.
 ///
-/// \param sigma const value_type&
-/// \return value_type
+/// \param sigma const std::complex<double>&
+/// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
-value_type parser_rd_rayleigh_rd(const value_type& sigma)
+static std::complex<double> parser_rd_rayleigh_rd(const std::complex<double>& sigma)
 {
     // Check the input values
     if (mu::isnan(sigma) || sigma.imag() != 0 || sigma.real() <= 0)
@@ -2770,12 +3318,12 @@ value_type parser_rd_rayleigh_rd(const value_type& sigma)
 /// density function p at a given position for the
 /// Rayleigh distribution function.
 ///
-/// \param x const value_type&
-/// \param sigma const value_type&
-/// \return value_type
+/// \param x const std::complex<double>&
+/// \param sigma const std::complex<double>&
+/// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
-value_type parser_rd_rayleigh_pdf(const value_type& x, const value_type& sigma)
+static std::complex<double> parser_rd_rayleigh_pdf(const std::complex<double>& x, const std::complex<double>& sigma)
 {
     // Check the input values
     if (mu::isnan(x) || mu::isnan(sigma) || x.imag() != 0 || sigma.imag() != 0 || sigma.real() == 0 || x.real() < 0)
@@ -2791,12 +3339,12 @@ value_type parser_rd_rayleigh_pdf(const value_type& x, const value_type& sigma)
 /// density function p at a given position for the
 /// Rayleigh distribution function.
 ///
-/// \param x const value_type&
-/// \param sigma const value_type&
-/// \return value_type
+/// \param x const std::complex<double>&
+/// \param sigma const std::complex<double>&
+/// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
-value_type parser_rd_rayleigh_cdf_p(const value_type& x, const value_type& sigma)
+static std::complex<double> parser_rd_rayleigh_cdf_p(const std::complex<double>& x, const std::complex<double>& sigma)
 {
     // Check the input values
     if (mu::isnan(x) || mu::isnan(sigma) || x.imag() != 0 || sigma.imag() != 0 || sigma.real() <= 0 || x.real() < 0)
@@ -2812,15 +3360,15 @@ value_type parser_rd_rayleigh_cdf_p(const value_type& x, const value_type& sigma
 /// density function q at a given position for the
 /// Rayleigh distribution function.
 ///
-/// \param x const value_type&
-/// \param sigma const value_type&
-/// \return value_type
+/// \param x const std::complex<double>&
+/// \param sigma const std::complex<double>&
+/// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
-value_type parser_rd_rayleigh_cdf_q(const value_type& x, const value_type& sigma)
+static std::complex<double> parser_rd_rayleigh_cdf_q(const std::complex<double>& x, const std::complex<double>& sigma)
 {
     // Get the result from the existing p variant
-    return mu::value_type(1) - parser_rd_rayleigh_cdf_p(x, sigma);
+    return std::complex<double>(1) - parser_rd_rayleigh_cdf_p(x, sigma);
 }
 
 
@@ -2829,12 +3377,12 @@ value_type parser_rd_rayleigh_cdf_q(const value_type& x, const value_type& sigma
 /// the cumulative density function p at a given
 /// position for the Rayleigh distribution function.
 ///
-/// \param p const value_type&
-/// \param sigma const value_type&
-/// \return value_type
+/// \param p const std::complex<double>&
+/// \param sigma const std::complex<double>&
+/// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
-value_type parser_rd_rayleigh_inv_p(const value_type& p, const value_type& sigma)
+static std::complex<double> parser_rd_rayleigh_inv_p(const std::complex<double>& p, const std::complex<double>& sigma)
 {
     // Check the input values
     if (mu::isnan(p) || mu::isnan(sigma) || p.imag() != 0 || sigma.imag() != 0 || sigma.real() <= 0 || p.real() < 0 || p.real() > 1)
@@ -2850,12 +3398,12 @@ value_type parser_rd_rayleigh_inv_p(const value_type& p, const value_type& sigma
 /// the cumulative density function q at a given
 /// position for the Rayleigh distribution function.
 ///
-/// \param q const value_type&
-/// \param sigma const value_type&
-/// \return value_type
+/// \param q const std::complex<double>&
+/// \param sigma const std::complex<double>&
+/// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
-value_type parser_rd_rayleigh_inv_q(const value_type& q, const value_type& sigma)
+static std::complex<double> parser_rd_rayleigh_inv_q(const std::complex<double>& q, const std::complex<double>& sigma)
 {
     // Check the input values
     if (mu::isnan(q) || mu::isnan(sigma) || q.imag() != 0 || sigma.imag() != 0 || sigma.real() <= 0 || q.real() < 0 || q.real() > 1)
@@ -2867,28 +3415,14 @@ value_type parser_rd_rayleigh_inv_q(const value_type& q, const value_type& sigma
 
 
 /////////////////////////////////////////////////
-/// \brief This function returns a random value
-/// from the Landau distribution function.
-///
-/// \return value_type
-///
-/////////////////////////////////////////////////
-value_type parser_rd_landau_rd()
-{
-    // Get the value from the probability density function
-    return gsl_ran_landau(getGslRandGenInstance());
-}
-
-
-/////////////////////////////////////////////////
 /// \brief his function computes the probability
 /// density function p at a given position for the
 /// Landau distribution function.
 ///
-/// \return value_type
+/// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
-value_type parser_rd_landau_pdf(const value_type& x)
+static std::complex<double> parser_rd_landau_pdf(const std::complex<double>& x)
 {
     // Check the input values
     if (mu::isnan(x) || x.imag() != 0)
@@ -2903,12 +3437,12 @@ value_type parser_rd_landau_pdf(const value_type& x)
 /// \brief This function returns a random value
 /// from the Levy alpha-stable distribution function.
 ///
-/// \param c const value_type&
-/// \param alpha const value_type&
-/// \return value_type
+/// \param c const std::complex<double>&
+/// \param alpha const std::complex<double>&
+/// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
-value_type parser_rd_levyAlphaStable_rd(const value_type& c, const value_type& alpha)
+static std::complex<double> parser_rd_levyAlphaStable_rd(const std::complex<double>& c, const std::complex<double>& alpha)
 {
     // Check the input values
     if (mu::isnan(c) || c.imag() != 0 || c.real() < 0 || mu::isnan(alpha) || alpha.imag() != 0 || alpha.real() <= 0 || alpha.real() > 2)
@@ -2923,12 +3457,12 @@ value_type parser_rd_levyAlphaStable_rd(const value_type& c, const value_type& a
 /// \brief This function returns a random value
 /// from the Fisher F-distribution function.
 ///
-/// \param nu1 const value_type&
-/// \param nu2 const value_type&
-/// \return value_type
+/// \param nu1 const std::complex<double>&
+/// \param nu2 const std::complex<double>&
+/// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
-value_type parser_rd_fisher_f_rd(const value_type& nu1, const value_type& nu2)
+static std::complex<double> parser_rd_fisher_f_rd(const std::complex<double>& nu1, const std::complex<double>& nu2)
 {
     // Check the input values
     if (mu::isnan(nu1) || nu1.imag() != 0 || nu1.real() <= 0 || mu::isnan(nu2) || nu2.imag() != 0 || nu2.real() <= 0 || !isInt(nu1.real()) || !isInt(nu2.real()))
@@ -2944,13 +3478,13 @@ value_type parser_rd_fisher_f_rd(const value_type& nu1, const value_type& nu2)
 /// density function p at a given position for the
 /// Fisher F-distribution function.
 ///
-/// \param x const value_type&
-/// \param nu1 const value_type&
-/// \param nu2 const value_type&
-/// \return value_type
+/// \param x const std::complex<double>&
+/// \param nu1 const std::complex<double>&
+/// \param nu2 const std::complex<double>&
+/// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
-value_type parser_rd_fisher_f_pdf(const value_type& x, const value_type& nu1, const value_type& nu2)
+static std::complex<double> parser_rd_fisher_f_pdf(const std::complex<double>& x, const std::complex<double>& nu1, const std::complex<double>& nu2)
 {
     // Check the input values
     if (mu::isnan(x) || mu::isnan(nu1) || mu::isnan(nu2) || x.imag() != 0 || nu1.imag() != 0 || nu2.imag() != 0 || nu1.real() <= 0 || nu2.real() <= 0 || x.real() < 0 || !isInt(nu1.real()) || !isInt(nu2.real()))
@@ -2966,13 +3500,13 @@ value_type parser_rd_fisher_f_pdf(const value_type& x, const value_type& nu1, co
 /// density function p at a given position for the
 /// Fisher F-distribution function.
 ///
-/// \param x const value_type&
-/// \param nu1 const value_type&
-/// \param nu2 const value_type&
-/// \return value_type
+/// \param x const std::complex<double>&
+/// \param nu1 const std::complex<double>&
+/// \param nu2 const std::complex<double>&
+/// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
-value_type parser_rd_fisher_f_cdf_p(const value_type& x, const value_type& nu1, const value_type& nu2)
+static std::complex<double> parser_rd_fisher_f_cdf_p(const std::complex<double>& x, const std::complex<double>& nu1, const std::complex<double>& nu2)
 {
     // Check the input values
     if (mu::isnan(x) || mu::isnan(nu1) || mu::isnan(nu2) || x.imag() != 0 || nu1.imag() != 0 || nu2.imag() != 0 || nu1.real() <= 0 || nu2.real() <= 0 || x.real() < 0 || !isInt(nu1.real()) || !isInt(nu2.real()))
@@ -2988,16 +3522,16 @@ value_type parser_rd_fisher_f_cdf_p(const value_type& x, const value_type& nu1, 
 /// density function q at a given position for the
 /// Fisher F-distribution function.
 ///
-/// \param x const value_type&
-/// \param nu1 const value_type&
-/// \param nu2 const value_type&
-/// \return value_type
+/// \param x const std::complex<double>&
+/// \param nu1 const std::complex<double>&
+/// \param nu2 const std::complex<double>&
+/// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
-value_type parser_rd_fisher_f_cdf_q(const value_type& x, const value_type& nu1, const value_type& nu2)
+static std::complex<double> parser_rd_fisher_f_cdf_q(const std::complex<double>& x, const std::complex<double>& nu1, const std::complex<double>& nu2)
 {
     // Get the result from the existing p variant
-    return mu::value_type(1) - parser_rd_fisher_f_cdf_p(x, nu1, nu2);
+    return std::complex<double>(1) - parser_rd_fisher_f_cdf_p(x, nu1, nu2);
 }
 
 
@@ -3006,13 +3540,13 @@ value_type parser_rd_fisher_f_cdf_q(const value_type& x, const value_type& nu1, 
 /// the cumulative density function p at a given
 /// position for the Fisher F-distribution function.
 ///
-/// \param p const value_type&
-/// \param nu1 const value_type&
-/// \param nu2 const value_type&
-/// \return value_type
+/// \param p const std::complex<double>&
+/// \param nu1 const std::complex<double>&
+/// \param nu2 const std::complex<double>&
+/// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
-value_type parser_rd_fisher_f_inv_p(const value_type& p, const value_type& nu1, const value_type& nu2)
+static std::complex<double> parser_rd_fisher_f_inv_p(const std::complex<double>& p, const std::complex<double>& nu1, const std::complex<double>& nu2)
 {
     // Check the input values
     if (mu::isnan(p) || mu::isnan(nu1) || mu::isnan(nu2) || p.imag() != 0 || nu1.imag() != 0 || nu2.imag() != 0 || p.real() < 0 || p.real() > 1 || nu1.real() <= 0 || nu2.real() <= 0 || !isInt(nu1.real()) || !isInt(nu2.real()))
@@ -3028,13 +3562,13 @@ value_type parser_rd_fisher_f_inv_p(const value_type& p, const value_type& nu1, 
 /// the cumulative density function q at a given
 /// position for the Fisher F-distribution function.
 ///
-/// \param q const value_type&
-/// \param nu1 const value_type&
-/// \param nu2 const value_type&
-/// \return value_type
+/// \param q const std::complex<double>&
+/// \param nu1 const std::complex<double>&
+/// \param nu2 const std::complex<double>&
+/// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
-value_type parser_rd_fisher_f_inv_q(const value_type& q, const value_type& nu1, const value_type& nu2)
+static std::complex<double> parser_rd_fisher_f_inv_q(const std::complex<double>& q, const std::complex<double>& nu1, const std::complex<double>& nu2)
 {
     // Check the input values
     if (mu::isnan(q) || mu::isnan(nu1) || mu::isnan(nu2) || q.imag() != 0 || nu1.imag() != 0 || nu2.imag() != 0 || q.real() < 0 || q.real() > 1 || nu1.real() <= 0 || nu2.real() <= 0 || !isInt(nu1.real()) || !isInt(nu2.real()))
@@ -3049,12 +3583,12 @@ value_type parser_rd_fisher_f_inv_q(const value_type& q, const value_type& nu1, 
 /// \brief This function returns a random value
 /// from the Weibull-distribution function.
 ///
-/// \param a const value_type&
-/// \param b const value_type&
-/// \return value_type
+/// \param a const std::complex<double>&
+/// \param b const std::complex<double>&
+/// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
-value_type parser_rd_weibull_rd(const value_type& a, const value_type& b)
+static std::complex<double> parser_rd_weibull_rd(const std::complex<double>& a, const std::complex<double>& b)
 {
     // Check the input values
     if (mu::isnan(a) || a.real() == 0 || mu::isnan(b))
@@ -3070,13 +3604,13 @@ value_type parser_rd_weibull_rd(const value_type& a, const value_type& b)
 /// density function p at a given position for the
 /// Weibull-distribution function.
 ///
-/// \param x const value_type&
-/// \param a const value_type&
-/// \param b const value_type&
-/// \return value_type
+/// \param x const std::complex<double>&
+/// \param a const std::complex<double>&
+/// \param b const std::complex<double>&
+/// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
-value_type parser_rd_weibull_pdf(const value_type& x, const value_type& a, const value_type& b)
+static std::complex<double> parser_rd_weibull_pdf(const std::complex<double>& x, const std::complex<double>& a, const std::complex<double>& b)
 {
     // Check the input values
     if (mu::isnan(a) || a.real() == 0 || mu::isnan(b) || mu::isnan(x) || x.real() < 0)
@@ -3092,13 +3626,13 @@ value_type parser_rd_weibull_pdf(const value_type& x, const value_type& a, const
 /// density function p at a given position for the
 /// Weibull-distribution function.
 ///
-/// \param x const value_type&
-/// \param a const value_type&
-/// \param b const value_type&
-/// \return value_type
+/// \param x const std::complex<double>&
+/// \param a const std::complex<double>&
+/// \param b const std::complex<double>&
+/// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
-value_type parser_rd_weibull_cdf_p(const value_type& x, const value_type& a, const value_type& b)
+static std::complex<double> parser_rd_weibull_cdf_p(const std::complex<double>& x, const std::complex<double>& a, const std::complex<double>& b)
 {
     // Check the input values
     if (mu::isnan(a) || a.real() == 0 || mu::isnan(b) || mu::isnan(x) || x.real() < 0)
@@ -3114,13 +3648,13 @@ value_type parser_rd_weibull_cdf_p(const value_type& x, const value_type& a, con
 /// density function q at a given position for the
 /// Weibull-distribution function.
 ///
-/// \param x const value_type&
-/// \param a const value_type&
-/// \param b const value_type&
-/// \return value_type
+/// \param x const std::complex<double>&
+/// \param a const std::complex<double>&
+/// \param b const std::complex<double>&
+/// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
-value_type parser_rd_weibull_cdf_q(const value_type& x, const value_type& a, const value_type& b)
+static std::complex<double> parser_rd_weibull_cdf_q(const std::complex<double>& x, const std::complex<double>& a, const std::complex<double>& b)
 {
     if (mu::isnan(a) || a.real() == 0 || mu::isnan(b) || mu::isnan(x) || x.real() < 0)
         return NAN;
@@ -3135,13 +3669,13 @@ value_type parser_rd_weibull_cdf_q(const value_type& x, const value_type& a, con
 /// the cumulative density function p at a given
 /// position for the Weibull-distribution function.
 ///
-/// \param p const value_type&
-/// \param a const value_type&
-/// \param b const value_type&
-/// \return value_type
+/// \param p const std::complex<double>&
+/// \param a const std::complex<double>&
+/// \param b const std::complex<double>&
+/// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
-value_type parser_rd_weibull_inv_p(const value_type& p, const value_type& a, const value_type& b)
+static std::complex<double> parser_rd_weibull_inv_p(const std::complex<double>& p, const std::complex<double>& a, const std::complex<double>& b)
 {
     // Check the input values
     if (mu::isnan(a) || a.real() == 0 || mu::isnan(b) || mu::isnan(p) || p.real() < 0 || p.real() > 1)
@@ -3157,13 +3691,13 @@ value_type parser_rd_weibull_inv_p(const value_type& p, const value_type& a, con
 /// the cumulative density function q at a given
 /// position for the Weibull-distribution function.
 ///
-/// \param q const value_type&
-/// \param a const value_type&
-/// \param b const value_type&
-/// \return value_type
+/// \param q const std::complex<double>&
+/// \param a const std::complex<double>&
+/// \param b const std::complex<double>&
+/// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
-value_type parser_rd_weibull_inv_q(const value_type& q, const value_type& a, const value_type& b)
+static std::complex<double> parser_rd_weibull_inv_q(const std::complex<double>& q, const std::complex<double>& a, const std::complex<double>& b)
 {
     // Check the input values
     if (mu::isnan(a) || a.real() == 0 || mu::isnan(b) || mu::isnan(q) || q.real() < 0 || q.real() > 1)
@@ -3178,11 +3712,11 @@ value_type parser_rd_weibull_inv_q(const value_type& q, const value_type& a, con
 /// \brief This function returns a random value
 /// from the Student t-distribution function.
 ///
-/// \param nu const value_type&
-/// \return value_type
+/// \param nu const std::complex<double>&
+/// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
-value_type parser_rd_student_t_rd(const value_type& nu)
+static std::complex<double> parser_rd_student_t_rd(const std::complex<double>& nu)
 {
     // Check the input values
     if (mu::isnan(nu) || nu.imag() != 0 || nu.real() <= 0 || !isInt(nu.real()))
@@ -3198,12 +3732,12 @@ value_type parser_rd_student_t_rd(const value_type& nu)
 /// density function p at a given position for the
 /// Student t-distribution function.
 ///
-/// \param x const value_type&
-/// \param nu const value_type&
-/// \return value_type
+/// \param x const std::complex<double>&
+/// \param nu const std::complex<double>&
+/// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
-value_type parser_rd_student_t_pdf(const value_type& x, const value_type& nu)
+static std::complex<double> parser_rd_student_t_pdf(const std::complex<double>& x, const std::complex<double>& nu)
 {
     // Check the input values
     if (mu::isnan(x) || mu::isnan(nu) || x.imag() != 0 || nu.imag() != 0 || nu.real() <= 0 || !isInt(nu.real()))
@@ -3219,12 +3753,12 @@ value_type parser_rd_student_t_pdf(const value_type& x, const value_type& nu)
 /// density function p at a given position for the
 /// Student t-distribution function.
 ///
-/// \param x const value_type&
-/// \param nu const value_type&
-/// \return value_type
+/// \param x const std::complex<double>&
+/// \param nu const std::complex<double>&
+/// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
-value_type parser_rd_student_t_cdf_p(const value_type& x, const value_type& nu)
+static std::complex<double> parser_rd_student_t_cdf_p(const std::complex<double>& x, const std::complex<double>& nu)
 {
     // Check the input values
     if (mu::isnan(x) || mu::isnan(nu) || x.imag() != 0 || nu.imag() != 0 || nu.real() <= 0 || !isInt(nu.real()))
@@ -3240,15 +3774,15 @@ value_type parser_rd_student_t_cdf_p(const value_type& x, const value_type& nu)
 /// density function q at a given position for the
 /// Student t-distribution function.
 ///
-/// \param x const value_type&
-/// \param nu const value_type&
-/// \return value_type
+/// \param x const std::complex<double>&
+/// \param nu const std::complex<double>&
+/// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
-value_type parser_rd_student_t_cdf_q(const value_type& x, const value_type& nu)
+static std::complex<double> parser_rd_student_t_cdf_q(const std::complex<double>& x, const std::complex<double>& nu)
 {
     // Get the result from the existing p variant
-    return mu::value_type(1) - parser_rd_student_t_cdf_p(x, nu);
+    return std::complex<double>(1) - parser_rd_student_t_cdf_p(x, nu);
 }
 
 
@@ -3257,12 +3791,12 @@ value_type parser_rd_student_t_cdf_q(const value_type& x, const value_type& nu)
 /// the cumulative density function p at a given
 /// position for the Student t-distribution function.
 ///
-/// \param p const value_type&
-/// \param nu const value_type&
-/// \return value_type
+/// \param p const std::complex<double>&
+/// \param nu const std::complex<double>&
+/// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
-value_type parser_rd_student_t_inv_p(const value_type& p, const value_type& nu)
+static std::complex<double> parser_rd_student_t_inv_p(const std::complex<double>& p, const std::complex<double>& nu)
 {
     // Check the input values
     if (mu::isnan(p) || mu::isnan(nu) || p.imag() != 0 || nu.imag() != 0 || p.real() < 0 || p.real() > 1 || nu.real() <= 0 || !isInt(nu.real()))
@@ -3278,12 +3812,12 @@ value_type parser_rd_student_t_inv_p(const value_type& p, const value_type& nu)
 /// the cumulative density function q at a given
 /// position for the Student t-distribution function.
 ///
-/// \param q const value_type&
-/// \param nu const value_type&
-/// \return value_type
+/// \param q const std::complex<double>&
+/// \param nu const std::complex<double>&
+/// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
-value_type parser_rd_student_t_inv_q(const value_type& q, const value_type& nu)
+static std::complex<double> parser_rd_student_t_inv_q(const std::complex<double>& q, const std::complex<double>& nu)
 {
     // Check the input values
     if (mu::isnan(q) || mu::isnan(nu) || q.imag() != 0 || nu.imag() != 0 || q.real() < 0 || q.real() > 1 || nu.real() <= 0 || !isInt(nu.real()))
@@ -3292,3 +3826,626 @@ value_type parser_rd_student_t_inv_q(const value_type& q, const value_type& nu)
     // Get the value from the probability density function
     return gsl_cdf_tdist_Qinv(q.real(), intCast(nu.real()));
 }
+
+
+
+/////////////////////////////////////////////////
+/// \brief This function returns a random value
+/// from the Laplace distribution function.
+///
+/// \param a const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
+mu::Array parser_rd_laplace_rd(const mu::Array& a)
+{
+    return mu::apply(parser_rd_laplace_rd, a);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This function computes the probability
+/// density function p at a given position for the
+/// Laplace distribution function.
+///
+/// \param x const mu::Array&
+/// \param a const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
+mu::Array parser_rd_laplace_pdf(const mu::Array& x, const mu::Array& a)
+{
+    return mu::apply(parser_rd_laplace_pdf, x, a);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This function computes the cumulative
+/// density function p at a given position for the
+/// Laplace distribution function.
+///
+/// \param x const mu::Array&
+/// \param a const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
+mu::Array parser_rd_laplace_cdf_p(const mu::Array& x, const mu::Array& a)
+{
+    return mu::apply(parser_rd_laplace_cdf_p, x, a);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This function computes the cumulative
+/// density function q at a given position for the
+/// Laplace distribution function.
+///
+/// \param x const mu::Array&
+/// \param a const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
+mu::Array parser_rd_laplace_cdf_q(const mu::Array& x, const mu::Array& a)
+{
+    // Get the result from the existing p variant
+    return mu::apply(parser_rd_laplace_cdf_q, x, a);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This function computes the inverse of
+/// the cumulative density function p at a given
+/// position for the Laplace distribution function.
+///
+/// \param p const mu::Array&
+/// \param a const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
+mu::Array parser_rd_laplace_inv_p(const mu::Array& p, const mu::Array& a)
+{
+    return mu::apply(parser_rd_laplace_inv_p, p, a);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This function computes the inverse of
+/// the cumulative density function q at a given
+/// position for the Laplace distribution function.
+///
+/// \param q const mu::Array&
+/// \param a const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
+mu::Array parser_rd_laplace_inv_q(const mu::Array& q, const mu::Array& a)
+{
+    return mu::apply(parser_rd_laplace_inv_q, q, a);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This function returns a random value
+/// from the Cauchy distribution function.
+///
+/// \param a const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
+mu::Array parser_rd_cauchy_rd(const mu::Array& a)
+{
+    return mu::apply(parser_rd_cauchy_rd, a);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This function computes the probability
+/// density function p at a given position for the
+/// Cauchy distribution function.
+///
+/// \param x const mu::Array&
+/// \param a const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
+mu::Array parser_rd_cauchy_pdf(const mu::Array& x, const mu::Array& a)
+{
+    return mu::apply(parser_rd_cauchy_pdf, x, a);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This function computes the cumulative
+/// density function p at a given position for the
+/// Cauchy distribution function.
+///
+/// \param x const mu::Array&
+/// \param a const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
+mu::Array parser_rd_cauchy_cdf_p(const mu::Array& x, const mu::Array& a)
+{
+    return mu::apply(parser_rd_cauchy_cdf_p, x, a);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This function computes the cumulative
+/// density function q at a given position for the
+/// Cauchy distribution function.
+///
+/// \param x const mu::Array&
+/// \param a const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
+mu::Array parser_rd_cauchy_cdf_q(const mu::Array& x, const mu::Array& a)
+{
+    return mu::apply(parser_rd_cauchy_cdf_q, x, a);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This function computes the inverse of
+/// the cumulative density function p at a given
+/// position for the Cauchy distribution function.
+///
+/// \param p const mu::Array&
+/// \param a const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
+mu::Array parser_rd_cauchy_inv_p(const mu::Array& p, const mu::Array& a)
+{
+    return mu::apply(parser_rd_cauchy_inv_p, p, a);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This function computes the inverse of
+/// the cumulative density function q at a given
+/// position for the Cauchy distribution function.
+///
+/// \param q const mu::Array&
+/// \param a const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
+mu::Array parser_rd_cauchy_inv_q(const mu::Array& q, const mu::Array& a)
+{
+    return mu::apply(parser_rd_cauchy_inv_q, q, a);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This function returns a random value
+/// from the Rayleigh distribution function.
+///
+/// \param sigma const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
+mu::Array parser_rd_rayleigh_rd(const mu::Array& sigma)
+{
+    return mu::apply(parser_rd_rayleigh_rd, sigma);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This function computes the probability
+/// density function p at a given position for the
+/// Rayleigh distribution function.
+///
+/// \param x const mu::Array&
+/// \param sigma const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
+mu::Array parser_rd_rayleigh_pdf(const mu::Array& x, const mu::Array& sigma)
+{
+    return mu::apply(parser_rd_rayleigh_pdf, x, sigma);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This function computes the cumulative
+/// density function p at a given position for the
+/// Rayleigh distribution function.
+///
+/// \param x const mu::Array&
+/// \param sigma const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
+mu::Array parser_rd_rayleigh_cdf_p(const mu::Array& x, const mu::Array& sigma)
+{
+    return mu::apply(parser_rd_rayleigh_cdf_p, x, sigma);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This function computes the cumulative
+/// density function q at a given position for the
+/// Rayleigh distribution function.
+///
+/// \param x const mu::Array&
+/// \param sigma const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
+mu::Array parser_rd_rayleigh_cdf_q(const mu::Array& x, const mu::Array& sigma)
+{
+    return mu::apply(parser_rd_rayleigh_cdf_q, x, sigma);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This function computes the inverse of
+/// the cumulative density function p at a given
+/// position for the Rayleigh distribution function.
+///
+/// \param p const mu::Array&
+/// \param sigma const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
+mu::Array parser_rd_rayleigh_inv_p(const mu::Array& p, const mu::Array& sigma)
+{
+    return mu::apply(parser_rd_rayleigh_inv_p, p, sigma);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This function computes the inverse of
+/// the cumulative density function q at a given
+/// position for the Rayleigh distribution function.
+///
+/// \param q const mu::Array&
+/// \param sigma const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
+mu::Array parser_rd_rayleigh_inv_q(const mu::Array& q, const mu::Array& sigma)
+{
+    return mu::apply(parser_rd_rayleigh_inv_q, q, sigma);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This function returns a random value
+/// from the Landau distribution function.
+///
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
+mu::Array parser_rd_landau_rd()
+{
+#warning FIXME (numere#1#07/02/24): Solve the problem with random number generators
+    // Get the value from the probability density function
+    return mu::Value(gsl_ran_landau(getGslRandGenInstance()));
+}
+
+
+/////////////////////////////////////////////////
+/// \brief his function computes the probability
+/// density function p at a given position for the
+/// Landau distribution function.
+///
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
+mu::Array parser_rd_landau_pdf(const mu::Array& x)
+{
+    return mu::apply(parser_rd_landau_pdf, x);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This function returns a random value
+/// from the Levy alpha-stable distribution function.
+///
+/// \param c const mu::Array&
+/// \param alpha const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
+mu::Array parser_rd_levyAlphaStable_rd(const mu::Array& c, const mu::Array& alpha)
+{
+    return mu::apply(parser_rd_levyAlphaStable_rd, c, alpha);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This function returns a random value
+/// from the Fisher F-distribution function.
+///
+/// \param nu1 const mu::Array&
+/// \param nu2 const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
+mu::Array parser_rd_fisher_f_rd(const mu::Array& nu1, const mu::Array& nu2)
+{
+    return mu::apply(parser_rd_fisher_f_rd, nu1, nu2);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This function computes the probability
+/// density function p at a given position for the
+/// Fisher F-distribution function.
+///
+/// \param x const mu::Array&
+/// \param nu1 const mu::Array&
+/// \param nu2 const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
+mu::Array parser_rd_fisher_f_pdf(const mu::Array& x, const mu::Array& nu1, const mu::Array& nu2)
+{
+    return mu::apply(parser_rd_fisher_f_pdf, x, nu1, nu2);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This function computes the cumulative
+/// density function p at a given position for the
+/// Fisher F-distribution function.
+///
+/// \param x const mu::Array&
+/// \param nu1 const mu::Array&
+/// \param nu2 const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
+mu::Array parser_rd_fisher_f_cdf_p(const mu::Array& x, const mu::Array& nu1, const mu::Array& nu2)
+{
+    return mu::apply(parser_rd_fisher_f_cdf_p, x, nu1, nu2);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This function computes the cumulative
+/// density function q at a given position for the
+/// Fisher F-distribution function.
+///
+/// \param x const mu::Array&
+/// \param nu1 const mu::Array&
+/// \param nu2 const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
+mu::Array parser_rd_fisher_f_cdf_q(const mu::Array& x, const mu::Array& nu1, const mu::Array& nu2)
+{
+    return mu::apply(parser_rd_fisher_f_cdf_q, x, nu1, nu2);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This function computes the inverse of
+/// the cumulative density function p at a given
+/// position for the Fisher F-distribution function.
+///
+/// \param p const mu::Array&
+/// \param nu1 const mu::Array&
+/// \param nu2 const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
+mu::Array parser_rd_fisher_f_inv_p(const mu::Array& p, const mu::Array& nu1, const mu::Array& nu2)
+{
+    return mu::apply(parser_rd_fisher_f_inv_p, p, nu1, nu2);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This function computes the inverse of
+/// the cumulative density function q at a given
+/// position for the Fisher F-distribution function.
+///
+/// \param q const mu::Array&
+/// \param nu1 const mu::Array&
+/// \param nu2 const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
+mu::Array parser_rd_fisher_f_inv_q(const mu::Array& q, const mu::Array& nu1, const mu::Array& nu2)
+{
+    return mu::apply(parser_rd_fisher_f_inv_q, q, nu1, nu2);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This function returns a random value
+/// from the Weibull-distribution function.
+///
+/// \param a const mu::Array&
+/// \param b const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
+mu::Array parser_rd_weibull_rd(const mu::Array& a, const mu::Array& b)
+{
+    return mu::apply(parser_rd_weibull_rd, a, b);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This function computes the probability
+/// density function p at a given position for the
+/// Weibull-distribution function.
+///
+/// \param x const mu::Array&
+/// \param a const mu::Array&
+/// \param b const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
+mu::Array parser_rd_weibull_pdf(const mu::Array& x, const mu::Array& a, const mu::Array& b)
+{
+    return mu::apply(parser_rd_weibull_pdf, x, a, b);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This function computes the cumulative
+/// density function p at a given position for the
+/// Weibull-distribution function.
+///
+/// \param x const mu::Array&
+/// \param a const mu::Array&
+/// \param b const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
+mu::Array parser_rd_weibull_cdf_p(const mu::Array& x, const mu::Array& a, const mu::Array& b)
+{
+    return mu::apply(parser_rd_weibull_cdf_p, x, a, b);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This function computes the cumulative
+/// density function q at a given position for the
+/// Weibull-distribution function.
+///
+/// \param x const mu::Array&
+/// \param a const mu::Array&
+/// \param b const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
+mu::Array parser_rd_weibull_cdf_q(const mu::Array& x, const mu::Array& a, const mu::Array& b)
+{
+    return mu::apply(parser_rd_weibull_cdf_q, x, a, b);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This function computes the inverse of
+/// the cumulative density function p at a given
+/// position for the Weibull-distribution function.
+///
+/// \param p const mu::Array&
+/// \param a const mu::Array&
+/// \param b const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
+mu::Array parser_rd_weibull_inv_p(const mu::Array& p, const mu::Array& a, const mu::Array& b)
+{
+    return mu::apply(parser_rd_weibull_inv_p, p, a, b);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This function computes the inverse of
+/// the cumulative density function q at a given
+/// position for the Weibull-distribution function.
+///
+/// \param q const mu::Array&
+/// \param a const mu::Array&
+/// \param b const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
+mu::Array parser_rd_weibull_inv_q(const mu::Array& q, const mu::Array& a, const mu::Array& b)
+{
+    return mu::apply(parser_rd_weibull_inv_q, q, a, b);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This function returns a random value
+/// from the Student t-distribution function.
+///
+/// \param nu const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
+mu::Array parser_rd_student_t_rd(const mu::Array& nu)
+{
+    return mu::apply(parser_rd_student_t_rd, nu);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This function computes the probability
+/// density function p at a given position for the
+/// Student t-distribution function.
+///
+/// \param x const mu::Array&
+/// \param nu const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
+mu::Array parser_rd_student_t_pdf(const mu::Array& x, const mu::Array& nu)
+{
+    return mu::apply(parser_rd_student_t_pdf, x, nu);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This function computes the cumulative
+/// density function p at a given position for the
+/// Student t-distribution function.
+///
+/// \param x const mu::Array&
+/// \param nu const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
+mu::Array parser_rd_student_t_cdf_p(const mu::Array& x, const mu::Array& nu)
+{
+    return mu::apply(parser_rd_student_t_cdf_p, x, nu);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This function computes the cumulative
+/// density function q at a given position for the
+/// Student t-distribution function.
+///
+/// \param x const mu::Array&
+/// \param nu const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
+mu::Array parser_rd_student_t_cdf_q(const mu::Array& x, const mu::Array& nu)
+{
+    return mu::apply(parser_rd_student_t_cdf_q, x, nu);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This function computes the inverse of
+/// the cumulative density function p at a given
+/// position for the Student t-distribution function.
+///
+/// \param p const mu::Array&
+/// \param nu const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
+mu::Array parser_rd_student_t_inv_p(const mu::Array& p, const mu::Array& nu)
+{
+    return mu::apply(parser_rd_student_t_inv_p, p, nu);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This function computes the inverse of
+/// the cumulative density function q at a given
+/// position for the Student t-distribution function.
+///
+/// \param q const mu::Array&
+/// \param nu const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
+mu::Array parser_rd_student_t_inv_q(const mu::Array& q, const mu::Array& nu)
+{
+    return mu::apply(parser_rd_student_t_inv_q, q, nu);
+}
+

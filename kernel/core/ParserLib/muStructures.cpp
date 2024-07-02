@@ -66,7 +66,6 @@ namespace mu
 
 
 
-
     Numerical::Numerical(double data) : val(data)
     { }
 
@@ -76,6 +75,11 @@ namespace mu
     Numerical Numerical::operator+(const Numerical& other) const
     {
         return val + other.val;
+    }
+
+    Numerical Numerical::operator-() const
+    {
+        return -val;
     }
 
     Numerical Numerical::operator-(const Numerical& other) const
@@ -116,7 +120,6 @@ namespace mu
         val *= other.val;
         return *this;
     }
-
 
 
 
@@ -165,6 +168,48 @@ namespace mu
         m_type = TYPE_NUMERICAL;
         m_data = new Numerical;
         static_cast<Numerical*>(m_data)->val = logical;
+    }
+
+    Value::Value(int value)
+    {
+        m_type = TYPE_NUMERICAL;
+        m_data = new Numerical;
+        static_cast<Numerical*>(m_data)->val = value;
+    }
+
+    Value::Value(unsigned int value)
+    {
+        m_type = TYPE_NUMERICAL;
+        m_data = new Numerical;
+        static_cast<Numerical*>(m_data)->val = value;
+    }
+
+    Value::Value(size_t value)
+    {
+        m_type = TYPE_NUMERICAL;
+        m_data = new Numerical;
+        static_cast<Numerical*>(m_data)->val = value;
+    }
+
+    Value::Value(int64_t value)
+    {
+        m_type = TYPE_NUMERICAL;
+        m_data = new Numerical;
+        static_cast<Numerical*>(m_data)->val = value;
+    }
+
+    Value::Value(double value)
+    {
+        m_type = TYPE_NUMERICAL;
+        m_data = new Numerical;
+        static_cast<Numerical*>(m_data)->val = value;
+    }
+
+    Value::Value(const std::complex<double>& value)
+    {
+        m_type = TYPE_NUMERICAL;
+        m_data = new Numerical;
+        static_cast<Numerical*>(m_data)->val = value;
     }
 
     Value::Value(const std::string& sData)
@@ -229,9 +274,16 @@ namespace mu
         return "void";
     }
 
+    bool Value::isVoid() const
+    {
+        return m_type == TYPE_VOID;
+    }
+
     bool Value::isValid() const
     {
-        return m_type != TYPE_VOID && m_data;
+        return m_type != TYPE_VOID
+            && m_data
+            && ((isString() && getStr().length()) || (isNumerical() && !isnan(getNum().val)));
     }
 
     bool Value::isNumerical() const
@@ -293,6 +345,14 @@ namespace mu
             return getNum() + other.getNum();
         else if (common == TYPE_STRING)
             return getStr() + other.getStr();
+
+        throw std::runtime_error("Value type invalid or operation not supported.");
+    }
+
+    Value Value::operator-() const
+    {
+        if (m_type == TYPE_NUMERICAL)
+            return -getNum();
 
         throw std::runtime_error("Value type invalid or operation not supported.");
     }
@@ -503,6 +563,7 @@ namespace mu
 
 
 
+    /*
     Variable::Variable() : Value()
     { }
 
@@ -579,6 +640,62 @@ namespace mu
 
 
 
+    VarArray& VarArray::operator=(const Array& values)
+    {
+        if (values.isSingleton())
+        {
+            for (size_t i = 0; i < size(); i++)
+            {
+                *operator[](i) = values.front();
+            }
+
+            return *this;
+        }
+
+        for (size_t i = 0; i < std::min(size(), values.size()); i++)
+        {
+            *operator[](i) = values[i];
+        }
+
+        return *this;
+    }
+
+    bool VarArray::operator==(const VarArray& other) const
+    {
+        if (size() != other.size())
+            return false;
+
+        for (size_t i = 0; i < size(); i++)
+        {
+            if (operator[](i) != other[i])
+                return false;
+        }
+
+        return true;
+    }
+
+    bool VarArray::isNull() const
+    {
+        return size() == 0u;
+    }
+
+    std::string VarArray::print() const
+    {
+        std::string ret;
+
+        for (size_t i = 0; i < size(); i++)
+        {
+            if (ret.size())
+                ret += ", ";
+
+            ret += toHexString((size_t)operator[](i));
+        }
+
+        return "{" + ret + "}";
+    }*/
+
+
+
 
     Array::Array() : std::vector<Value>(), m_commonType(TYPE_VOID)
     { }
@@ -587,6 +704,9 @@ namespace mu
     { }
 
     Array::Array(const Value& singleton) : std::vector<Value>({singleton}), m_commonType(singleton.getType())
+    { }
+
+    Array::Array(const Variable& var) : std::vector<Value>(var), m_commonType(var.m_commonType)
     { }
 
     Array::Array(const std::vector<Numerical>& other) : std::vector<Value>(other.size()), m_commonType(TYPE_NUMERICAL)
@@ -622,7 +742,7 @@ namespace mu
             types.push_back(operator[](i).getType());
 
             if (m_commonType == TYPE_VOID)
-                m_commonType == types.back();
+                m_commonType = types.back();
 
             if (m_commonType != types.back())
                 m_commonType = TYPE_MIXED;
@@ -639,7 +759,7 @@ namespace mu
         return m_commonType;
     }
 
-    bool Array::isSingleton() const
+    bool Array::isScalar() const
     {
         return size() == 1u;
     }
@@ -651,6 +771,18 @@ namespace mu
         for (size_t i = 0; i < std::max(size(), other.size()); i++)
         {
             ret.push_back(get(i) + other.get(i));
+        }
+
+        return ret;
+    }
+
+    Array Array::operator-() const
+    {
+        Array ret;
+
+        for (size_t i = 0; i < size(); i++)
+        {
+            ret.push_back(-get(i));
         }
 
         return ret;
@@ -759,6 +891,18 @@ namespace mu
         for (size_t i = 0; i < std::max(size(), exponent.size()); i++)
         {
             ret.push_back(get(i).pow(exponent.get(i)));
+        }
+
+        return ret;
+    }
+
+    Array Array::pow(const Numerical& exponent) const
+    {
+        Array ret;
+
+        for (size_t i = 0; i < size(); i++)
+        {
+            ret.push_back(get(i).pow(exponent));
         }
 
         return ret;
@@ -930,6 +1074,401 @@ namespace mu
 
         return operator[](i);
     }
+
+
+
+
+    Variable::Variable() : Array()
+    { }
+
+    Variable::Variable(const Value& data) : Array(data)
+    { }
+
+    Variable::Variable(const Array& data) : Array(data)
+    { }
+
+    Variable::Variable(const Variable& data) : Array(data)
+    { }
+
+    Variable::Variable(Array&& data) : Array(data)
+    { }
+
+    Variable& Variable::operator=(const Value& other)
+    {
+        if (getCommonType() == TYPE_VOID || getCommonType() == other.getType())
+        {
+            Array::operator=(Array(other));
+            return *this;
+        }
+
+        throw std::runtime_error("Cannot assign a different type to an already initialized variable.");
+    }
+
+    Variable& Variable::operator=(const Array& other)
+    {
+        if (getCommonType() == TYPE_VOID || getType() == other.getType())
+        {
+            Array::operator=(other);
+            return *this;
+        }
+
+        throw std::runtime_error("Cannot assign a different type to an already initialized variable.");
+    }
+
+    Variable& Variable::operator=(const Variable& other)
+    {
+        if (getCommonType() == TYPE_VOID || getType() == other.getType())
+        {
+            Array::operator=(other);
+            return *this;
+        }
+
+        throw std::runtime_error("Cannot assign a different type to an already initialized variable.");
+    }
+
+    void Variable::overwrite(const Array& other)
+    {
+        Array::operator=(other);
+    }
+
+
+
+    VarArray& VarArray::operator=(const Array& values)
+    {
+        if (values.isScalar())
+        {
+            for (size_t i = 0; i < size(); i++)
+            {
+                *operator[](i) = values.front();
+            }
+
+            return *this;
+        }
+
+        for (size_t i = 0; i < std::min(size(), values.size()); i++)
+        {
+            *operator[](i) = values[i];
+        }
+
+        return *this;
+    }
+
+    VarArray& VarArray::operator=(const std::vector<Array>& arrayList)
+    {
+        if (arrayList.size() == 1u)
+        {
+            for (size_t i = 0; i < size(); i++)
+            {
+                *operator[](i) = arrayList.front();
+            }
+
+            return *this;
+        }
+
+        for (size_t i = 0; i < std::min(size(), arrayList.size()); i++)
+        {
+            *operator[](i) = arrayList[i];
+        }
+
+        return *this;
+    }
+
+    bool VarArray::operator==(const VarArray& other) const
+    {
+        if (size() != other.size())
+            return false;
+
+        for (size_t i = 0; i < size(); i++)
+        {
+            if (operator[](i) != other[i])
+                return false;
+        }
+
+        return true;
+    }
+
+    bool VarArray::isNull() const
+    {
+        return size() == 0u;
+    }
+
+    std::string VarArray::print() const
+    {
+        std::string ret;
+
+        for (size_t i = 0; i < size(); i++)
+        {
+            if (ret.size())
+                ret += ", ";
+
+            ret += toHexString((size_t)operator[](i));
+        }
+
+        return "{" + ret + "}";
+    }
+
+
+
+    const std::string Value::m_defString;
+    const Numerical Value::m_defVal;
+    const Value Array::m_default;
+
+
+    Array operator+(const Array& arr, const Value& v)
+    {
+        Array ret;
+
+        for (const auto& a : arr)
+        {
+            ret.push_back(a+v);
+        }
+
+        return ret;
+    }
+
+    Array operator-(const Array& arr, const Value& v)
+    {
+        Array ret;
+
+        for (const auto& a : arr)
+        {
+            ret.push_back(a-v);
+        }
+
+        return ret;
+    }
+
+    Array operator*(const Array& arr, const Value& v)
+    {
+        Array ret;
+
+        for (const auto& a : arr)
+        {
+            ret.push_back(a*v);
+        }
+
+        return ret;
+    }
+
+    Array operator/(const Array& arr, const Value& v)
+    {
+        Array ret;
+
+        for (const auto& a : arr)
+        {
+            ret.push_back(a/v);
+        }
+
+        return ret;
+    }
+
+    Array operator+(const Value& v, const Array& arr)
+    {
+        return arr+v;
+    }
+
+    Array operator-(const Value& v, const Array& arr)
+    {
+        Array ret;
+
+        for (const auto& a : arr)
+        {
+            ret.push_back(v-a);
+        }
+
+        return ret;
+    }
+
+    Array operator*(const Value& v, const Array& arr)
+    {
+        return arr*v;
+    }
+
+    Array operator/(const Value& v, const Array& arr)
+    {
+        Array ret;
+
+        for (const auto& a : arr)
+        {
+            ret.push_back(v/a);
+        }
+
+        return ret;
+    }
+
+
+
+    Array apply(std::complex<double>(*func)(const std::complex<double>&), const Array& a)
+    {
+        Array ret;
+
+        for (const auto& val : a)
+        {
+            if (val.isNumerical())
+                ret.push_back(Numerical(func(val.getNum().val)));
+            else
+                ret.push_back(Numerical(NAN));
+        }
+
+        return ret;
+    }
+
+    Array apply(Value(*func)(const Value&), const Array& a)
+    {
+        Array ret;
+
+        for (const auto& val : a)
+        {
+            ret.push_back(func(val));
+        }
+
+        return ret;
+    }
+
+    Array apply(Value(*func)(const Value&, const Value&), const Array& a1, const Array& a2)
+    {
+        Array ret;
+
+        for (size_t i = 0; i < std::max(a1.size(), a2.size()); i++)
+        {
+            ret.push_back(func(a1.get(i), a2.get(i)));
+        }
+
+        return ret;
+    }
+
+    Array apply(std::complex<double>(*func)(const std::complex<double>&, const std::complex<double>&), const Array& a1, const Array& a2)
+    {
+        Array ret;
+
+        for (size_t i = 0; i < std::max(a1.size(), a2.size()); i++)
+        {
+            if (a1.get(i).isNumerical()
+                && a2.get(i).isNumerical())
+                ret.push_back(Numerical(func(a1.get(i).getNum().val,
+                                             a2.get(i).getNum().val)));
+            else
+                ret.push_back(Numerical(NAN));
+        }
+
+        return ret;
+    }
+
+    Array apply(std::complex<double>(*func)(const std::complex<double>&, const std::complex<double>&, const std::complex<double>&), const Array& a1, const Array& a2, const Array& a3)
+    {
+        Array ret;
+
+        for (size_t i = 0; i < std::max({a1.size(), a2.size(), a3.size()}); i++)
+        {
+            if (a1.get(i).isNumerical()
+                && a2.get(i).isNumerical()
+                && a3.get(i).isNumerical())
+                ret.push_back(Numerical(func(a1.get(i).getNum().val,
+                                             a2.get(i).getNum().val,
+                                             a3.get(i).getNum().val)));
+            else
+                ret.push_back(Numerical(NAN));
+        }
+
+        return ret;
+    }
+
+    Array apply(std::complex<double>(*func)(const std::complex<double>&, const std::complex<double>&, const std::complex<double>&, const std::complex<double>&), const Array& a1, const Array& a2, const Array& a3, const Array& a4)
+    {
+        Array ret;
+
+        for (size_t i = 0; i < std::max({a1.size(), a2.size(), a3.size(), a4.size()}); i++)
+        {
+            if (a1.get(i).isNumerical()
+                && a2.get(i).isNumerical()
+                && a3.get(i).isNumerical()
+                && a4.get(i).isNumerical())
+                ret.push_back(Numerical(func(a1.get(i).getNum().val,
+                                             a2.get(i).getNum().val,
+                                             a3.get(i).getNum().val,
+                                             a4.get(i).getNum().val)));
+            else
+                ret.push_back(Numerical(NAN));
+        }
+
+        return ret;
+    }
+
+    Array apply(std::complex<double>(*func)(const std::complex<double>&, const std::complex<double>&, const std::complex<double>&, const std::complex<double>&, const std::complex<double>&), const Array& a1, const Array& a2, const Array& a3, const Array& a4, const Array& a5)
+    {
+        Array ret;
+
+        for (size_t i = 0; i < std::max({a1.size(), a2.size(), a3.size(), a4.size(), a5.size()}); i++)
+        {
+            if (a1.get(i).isNumerical()
+                && a2.get(i).isNumerical()
+                && a3.get(i).isNumerical()
+                && a4.get(i).isNumerical()
+                && a5.get(i).isNumerical())
+                ret.push_back(Numerical(func(a1.get(i).getNum().val,
+                                             a2.get(i).getNum().val,
+                                             a3.get(i).getNum().val,
+                                             a4.get(i).getNum().val,
+                                             a5.get(i).getNum().val)));
+            else
+                ret.push_back(Numerical(NAN));
+        }
+
+        return ret;
+    }
+
+    Array apply(std::complex<double>(*func)(const std::complex<double>*, int), const Array* arrs, int elems)
+    {
+        size_t nCount = 0;
+
+        for (int i = 0; i < elems; i++)
+        {
+            nCount = std::max(nCount, arrs[i].size());
+        }
+
+        mu::Array res;
+
+        for (size_t i = 0; i < nCount; i++)
+        {
+            std::vector<std::complex<double>> vVals;
+
+            for (int e = 0; e < elems; e++)
+            {
+                vVals.push_back(arrs[e].get(i).getNum().val);
+            }
+
+            res.push_back(Numerical(func(&vVals[0], elems)));
+        }
+
+        return res;
+    }
+
+    Array apply(Value(*func)(const Value*, int), const Array* arrs, int elems)
+    {
+        size_t nCount = 0;
+
+        for (int i = 0; i < elems; i++)
+        {
+            nCount = std::max(nCount, arrs[i].size());
+        }
+
+        mu::Array res;
+
+        for (size_t i = 0; i < nCount; i++)
+        {
+            std::vector<Value> vVals;
+
+            for (int e = 0; e < elems; e++)
+            {
+                vVals.push_back(arrs[e].get(i));
+            }
+
+            res.push_back(func(&vVals[0], elems));
+        }
+
+        return res;
+    }
+
 }
 
 

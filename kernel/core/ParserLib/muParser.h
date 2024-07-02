@@ -59,54 +59,58 @@ namespace mu
     virtual void InitOprt() override;
     virtual void OnDetectVar(string_type *pExpr, int &nStart, int &nEnd) override;
 
-    value_type Diff(value_type *a_Var,
-                    value_type a_fPos,
-                    value_type a_fEpsilon = 0,
-                    size_t order = 1);
+    std::vector<Array> Diff(Value *a_Var,
+                            const Array& a_fPos,
+                            Value a_fEpsilon = 0.0,
+                            size_t order = 1);
 
   protected:
 
     // Trigonometric functions
-    static value_type  Sin(const value_type&);
-    static value_type  Cos(const value_type&);
-    static value_type  Tan(const value_type&);
-    static value_type  Tan2(const value_type&, const value_type&);
+#warning FIXME (numere#1#06/29/24): Move those to function implementation file
+    static Array  Sin(const Array&);
+    static Array  Cos(const Array&);
+    static Array  Tan(const Array&);
+    static Array  Tan2(const Array&, const Array&);
     // arcus functions
-    static value_type  ASin(const value_type&);
-    static value_type  ACos(const value_type&);
-    static value_type  ATan(const value_type&);
-    static value_type  ATan2(const value_type&, const value_type&);
+    static Array  ASin(const Array&);
+    static Array  ACos(const Array&);
+    static Array  ATan(const Array&);
+    static Array  ATan2(const Array&, const Array&);
 
     // hyperbolic functions
-    static value_type  Sinh(const value_type&);
-    static value_type  Cosh(const value_type&);
-    static value_type  Tanh(const value_type&);
+    static Array  Sinh(const Array&);
+    static Array  Cosh(const Array&);
+    static Array  Tanh(const Array&);
     // arcus hyperbolic functions
-    static value_type  ASinh(const value_type&);
-    static value_type  ACosh(const value_type&);
-    static value_type  ATanh(const value_type&);
+    static Array  ASinh(const Array&);
+    static Array  ACosh(const Array&);
+    static Array  ATanh(const Array&);
     // Logarithm functions
-    static value_type  Log2(const value_type&);  // Logarithm Base 2
-    static value_type  Log10(const value_type&); // Logarithm Base 10
-    static value_type  Ln(const value_type&);    // Logarithm Base e (natural logarithm)
+    static Array  Log2(const Array&);  // Logarithm Base 2
+    static Array  Log10(const Array&); // Logarithm Base 10
+    static Array  Ln(const Array&);    // Logarithm Base e (natural logarithm)
     // misc
-    static value_type  Exp(const value_type&);
-    static value_type  Abs(const value_type&);
-    static value_type  Sqrt(const value_type&);
-    static value_type  Rint(const value_type&);
-    static value_type  Sign(const value_type&);
+    static Array  Exp(const Array&);
+    static Array  Abs(const Array&);
+    static Array  Sqrt(const Array&);
+    static Array  Rint(const Array&);
+    static Array  Sign(const Array&);
 
     // Prefix operators
     // !!! Unary Minus is a MUST if you want to use negative signs !!!
-    static value_type  UnaryMinus(const value_type&);
+    static Array  UnaryMinus(const Array&);
+    static Array  UnaryPlus(const Array&);
+    static Array  LogicalNot(const Array&);
 
     // Functions with variable number of arguments
-    static value_type Sum(const value_type*, int);  // sum
-    static value_type Avg(const value_type*, int);  // mean value
-    static value_type Min(const value_type*, int);  // minimum
-    static value_type Max(const value_type*, int);  // maximum
+#warning FIXME (numere#1#06/29/24): Some of those should stay here
+    static Array Sum(const Array*, int);  // sum
+    static Array Avg(const Array*, int);  // mean value
+    static Array Min(const Array*, int);  // minimum
+    static Array Max(const Array*, int);  // maximum
 
-    static int IsVal(const char_type* a_szExpr, int *a_iPos, value_type *a_fVal);
+    static int IsVal(const char_type* a_szExpr, int *a_iPos, Value *a_fVal);
   };
 } // namespace mu
 

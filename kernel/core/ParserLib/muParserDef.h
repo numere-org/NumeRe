@@ -33,6 +33,7 @@
 #include <vector>
 
 #include "muParserFixes.h"
+#include "muStructures.hpp"
 
 /** \file
     \brief This file contains standard definitions used by the parser.
@@ -51,7 +52,7 @@
   This datatype must be a built in value type. You can not use custom classes.
   It should be working with all types except "int"!
 */
-#define MUP_BASETYPE std::complex<double>
+#define MUP_BASETYPE mu::Array
 
 /** \brief Activate this option in order to compile with OpenMP support.
 
@@ -270,54 +271,54 @@ namespace mu
     // Data container types
 
     /** \brief Type used for storing variables. */
-    typedef std::map<string_type, value_type*> varmap_type;
+    typedef std::map<string_type, Variable*> varmap_type;
 
     /** \brief Type used for storing constants. */
-    typedef std::map<string_type, value_type> valmap_type;
+    typedef std::map<string_type, Value> valmap_type;
 
     /** \brief Type for assigning a string name to an index in the internal string table. */
     typedef std::map<string_type, std::size_t> strmap_type;
 
     /** \brief Type used for storing an array of values. */
-    typedef std::vector<value_type> valbuf_type;
+    typedef std::vector<Array> valbuf_type;
 
     // Parser callbacks
 
     /** \brief Callback type used for functions without arguments. */
-    typedef value_type (*generic_fun_type)();
+    typedef Array (*generic_fun_type)();
 
     /** \brief Callback type used for functions without arguments. */
-    typedef value_type (*fun_type0)();
+    typedef Array (*fun_type0)();
 
     /** \brief Callback type used for functions with a single arguments. */
-    typedef value_type (*fun_type1)(const value_type&);
+    typedef Array (*fun_type1)(const Array&);
 
     /** \brief Callback type used for functions with two arguments. */
-    typedef value_type (*fun_type2)(const value_type&, const value_type&);
+    typedef Array (*fun_type2)(const Array&, const Array&);
 
     /** \brief Callback type used for functions with three arguments. */
-    typedef value_type (*fun_type3)(const value_type&, const value_type&, const value_type&);
+    typedef Array (*fun_type3)(const Array&, const Array&, const Array&);
 
     /** \brief Callback type used for functions with four arguments. */
-    typedef value_type (*fun_type4)(const value_type&, const value_type&, const value_type&, const value_type&);
+    typedef Array (*fun_type4)(const Array&, const Array&, const Array&, const Array&);
 
     /** \brief Callback type used for functions with five arguments. */
-    typedef value_type (*fun_type5)(const value_type&, const value_type&, const value_type&, const value_type&, const value_type&);
+    typedef Array (*fun_type5)(const Array&, const Array&, const Array&, const Array&, const Array&);
 
     /** \brief Callback type used for functions with five arguments. */
-    typedef value_type (*fun_type6)(const value_type&, const value_type&, const value_type&, const value_type&, const value_type&, const value_type&);
+    typedef Array (*fun_type6)(const Array&, const Array&, const Array&, const Array&, const Array&, const Array&);
 
     /** \brief Callback type used for functions with five arguments. */
-    typedef value_type (*fun_type7)(const value_type&, const value_type&, const value_type&, const value_type&, const value_type&, const value_type&, const value_type&);
+    typedef Array (*fun_type7)(const Array&, const Array&, const Array&, const Array&, const Array&, const Array&, const Array&);
 
     /** \brief Callback type used for functions with five arguments. */
-    typedef value_type (*fun_type8)(const value_type&, const value_type&, const value_type&, const value_type&, const value_type&, const value_type&, const value_type&, const value_type&);
+    typedef Array (*fun_type8)(const Array&, const Array&, const Array&, const Array&, const Array&, const Array&, const Array&, const Array&);
 
     /** \brief Callback type used for functions with five arguments. */
-    typedef value_type (*fun_type9)(const value_type&, const value_type&, const value_type&, const value_type&, const value_type&, const value_type&, const value_type&, const value_type&, const value_type&);
+    typedef Array (*fun_type9)(const Array&, const Array&, const Array&, const Array&, const Array&, const Array&, const Array&, const Array&, const Array&);
 
     /** \brief Callback type used for functions with five arguments. */
-    typedef value_type (*fun_type10)(const value_type&, const value_type&, const value_type&, const value_type&, const value_type&, const value_type&, const value_type&, const value_type&, const value_type&, const value_type&);
+    typedef Array (*fun_type10)(const Array&, const Array&, const Array&, const Array&, const Array&, const Array&, const Array&, const Array&, const Array&, const Array&);
 
     /** \brief Callback type used for functions without arguments. */
     typedef value_type (*bulkfun_type0)(int, int);
@@ -353,7 +354,7 @@ namespace mu
     typedef value_type (*bulkfun_type10)(int, int, value_type, value_type, value_type, value_type, value_type, value_type, value_type, value_type, value_type, value_type);
 
     /** \brief Callback type used for functions with a variable argument list. */
-    typedef value_type (*multfun_type)(const value_type*, int);
+    typedef Array (*multfun_type)(const Array*, int);
 
     /** \brief Callback type used for functions taking a string as an argument. */
     typedef value_type (*strfun_type1)(const char_type*);
@@ -365,23 +366,23 @@ namespace mu
     typedef value_type (*strfun_type3)(const char_type*, value_type, value_type);
 
     /** \brief Callback used for functions that identify values in a string. */
-    typedef int (*identfun_type)(const char_type* sExpr, int* nPos, value_type* fVal);
+    typedef int (*identfun_type)(const char_type* sExpr, int* nPos, Value* fVal);
 
     /** \brief Callback used for variable creation factory functions. */
-    typedef value_type* (*facfun_type)(const char_type*, void*);
+    typedef Variable* (*facfun_type)(const char_type*, void*);
 
     // Forward declarations
-    inline bool isinf(const value_type& v)
+    inline bool isinf(const std::complex<double>& v)
 	{
 	    return std::isinf(v.real()) || std::isinf(v.imag());
 	}
 
-	inline bool isnan(const value_type& v)
+	inline bool isnan(const std::complex<double>& v)
 	{
 	    return v != v;
 	}
 
-	inline bool isreal(value_type* v, int nElem)
+	inline bool isreal(std::complex<double>* v, int nElem)
 	{
 	    for (int i = 0; i < nElem; i++)
         {
@@ -392,9 +393,9 @@ namespace mu
         return true;
 	}
 
-    std::vector<double> real(const std::vector<value_type>& vVec);
-    std::vector<double> imag(const std::vector<value_type>& vVec);
-    value_type rint(value_type v);
+    std::vector<double> real(const std::vector<std::complex<double>>& vVec);
+    std::vector<double> imag(const std::vector<std::complex<double>>& vVec);
+    std::complex<double> rint(std::complex<double> v);
 
 } // end of namespace
 

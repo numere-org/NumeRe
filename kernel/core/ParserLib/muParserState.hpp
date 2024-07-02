@@ -188,7 +188,7 @@ namespace mu
     /////////////////////////////////////////////////
 	struct ExpressionTarget
 	{
-	    std::vector<mu::value_type*> m_targets;
+	    VarArray m_targets;
 
 	    void create(StringView sTargets, const varmap_type& usedVars);
 	    void assign(const valbuf_type& buffer, int nResults);
