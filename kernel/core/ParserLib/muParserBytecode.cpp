@@ -286,6 +286,7 @@ namespace mu
 							m_vRPN[sz-2].Val().var = m_vRPN[sz-2].Val().var != nullptr ? m_vRPN[sz-2].Val().var : m_vRPN[sz-1].Val().var; // variable
 							m_vRPN[sz-2].Val().data2 += Array(Numerical((a_Oprt == cmSUB) ? -1.0 : 1.0)) * m_vRPN[sz-1].Val().data2; // offset
 							m_vRPN[sz-2].Val().data += Array(Numerical((a_Oprt == cmSUB) ? -1.0 : 1.0)) * m_vRPN[sz-1].Val().data; // multiplikatior
+							m_vRPN[sz-2].Val().data2.zerosToVoid(); // To convert VARMUL-Offsets to void
 							m_vRPN[sz-2].Val().isVect = false;
 							m_vRPN.pop_back();
 							bOptimized = true;
@@ -299,7 +300,7 @@ namespace mu
 							m_vRPN[sz-2].Cmd = cmVARMUL;
 							m_vRPN[sz-2].Val().var = m_vRPN[sz-2].Val().var != nullptr ? m_vRPN[sz-2].Val().var : m_vRPN[sz-1].Val().var;
 							m_vRPN[sz-2].Val().data = m_vRPN[sz-2].Val().data2 + m_vRPN[sz-1].Val().data2;
-							m_vRPN[sz-2].Val().data2 = Array(Numerical(0.0));
+							m_vRPN[sz-2].Val().data2 = Array(Value());
 							m_vRPN[sz-2].Val().isVect = false;
 							m_vRPN.pop_back();
 							bOptimized = true;
@@ -322,6 +323,7 @@ namespace mu
 								m_vRPN[sz-2].Val().data  = m_vRPN[sz-1].Val().data  * m_vRPN[sz-2].Val().data2;
 								m_vRPN[sz-2].Val().data2 = m_vRPN[sz-1].Val().data2 * m_vRPN[sz-2].Val().data2;
 							}
+							m_vRPN[sz-2].Val().data2.zerosToVoid(); // To convert VARMUL-Offsets to void
 							m_vRPN.pop_back();
 							bOptimized = true;
 						}
@@ -723,6 +725,10 @@ namespace mu
 
 				case cmVARPOW4:
 					printFormatted("VARPOW4 \t[" + m_vRPN[i].Val().var->print() + "]\n");
+					break;
+
+				case cmVARPOWN:
+					printFormatted("VARPOWN \t[" + m_vRPN[i].Val().var->print() + "] ^ [" + m_vRPN[i].Val().data.print() + "]\n");
 					break;
 
 				case cmVARMUL:

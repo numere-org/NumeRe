@@ -278,6 +278,7 @@ namespace mu
 			return SaveBeforeReturn(tok); // Check for values / constant tokens
 		if ( IsVarTok(tok) )
 			return SaveBeforeReturn(tok); // Check for variable tokens
+#warning FIXME (numere#1#07/04/24): This is (hopefully) dead
 		if ( IsStrVarTok(tok) )
 			return SaveBeforeReturn(tok); // Check for string variables
 #warning FIXME (numere#1#06/29/24): Handle string values correctly
@@ -452,6 +453,28 @@ namespace mu
 						break;
 
 					case cmBC:
+						if (m_iSynFlags & noBC)
+							Error(ecUNEXPECTED_PARENS, m_iPos, pOprtDef[i]);
+
+						m_iSynFlags  = noBO | noVAR | noVAL | noFUN | noINFIXOP | noSTR | noASSIGN;
+
+						if (--m_iBrackets < 0)
+							Error(ecUNEXPECTED_PARENS, m_iPos, pOprtDef[i]);
+						break;
+
+					case cmVO:
+						if (m_iSynFlags & noBO)
+							Error(ecUNEXPECTED_PARENS, m_iPos, pOprtDef[i]);
+
+						/*if (m_lastTok.GetCode() == cmFUNC)
+							m_iSynFlags = noOPT | noEND | noARG_SEP | noPOSTOP | noASSIGN | noIF | noELSE;
+						else*/
+							m_iSynFlags = noBC | noOPT | noEND | noARG_SEP | noPOSTOP | noASSIGN | noIF | noELSE;
+
+						++m_iBrackets;
+						break;
+
+					case cmVC:
 						if (m_iSynFlags & noBC)
 							Error(ecUNEXPECTED_PARENS, m_iPos, pOprtDef[i]);
 
@@ -940,8 +963,9 @@ namespace mu
 		if (m_iSynFlags & noSTR)
 			Error(ecUNEXPECTED_STR, m_iPos, strTok);
 
-		m_pParser->m_vStringBuf.push_back(strTok); // Store string in internal buffer
-		a_Tok.SetString(strTok, m_pParser->m_vStringBuf.size());
+		//m_pParser->m_vStringBuf.push_back(strTok); // Store string in internal buffer
+		//a_Tok.SetString(strTok, m_pParser->m_vStringBuf.size());
+		a_Tok.SetVal(mu::Value(strTok), strTok);
 
 		m_iPos += (int)strTok.length() + 2 + (int)iSkip;  // +2 wg Anführungszeichen; +iSkip für entfernte escape zeichen
 		m_iSynFlags = noANY ^ ( noARG_SEP | noBC | noOPT | noEND );

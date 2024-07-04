@@ -171,6 +171,8 @@ namespace mu
         cmASSIGN,              ///< Operator item:  Assignment operator
         cmBO,                  ///< Operator item:  opening bracket
         cmBC,                  ///< Operator item:  closing bracket
+        cmVO,                  ///< Operator item:  opening vector brace
+        cmVC,                  ///< Operator item:  closing vector brace
         cmIF,                  ///< For use in the ternary if-then-else operator
         cmELSE,                ///< For use in the ternary if-then-else operator
         cmENDIF,               ///< For use in the ternary if-then-else operator

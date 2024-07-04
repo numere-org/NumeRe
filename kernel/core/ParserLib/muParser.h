@@ -66,37 +66,6 @@ namespace mu
 
   protected:
 
-    // Trigonometric functions
-#warning FIXME (numere#1#06/29/24): Move those to function implementation file
-    static Array  Sin(const Array&);
-    static Array  Cos(const Array&);
-    static Array  Tan(const Array&);
-    static Array  Tan2(const Array&, const Array&);
-    // arcus functions
-    static Array  ASin(const Array&);
-    static Array  ACos(const Array&);
-    static Array  ATan(const Array&);
-    static Array  ATan2(const Array&, const Array&);
-
-    // hyperbolic functions
-    static Array  Sinh(const Array&);
-    static Array  Cosh(const Array&);
-    static Array  Tanh(const Array&);
-    // arcus hyperbolic functions
-    static Array  ASinh(const Array&);
-    static Array  ACosh(const Array&);
-    static Array  ATanh(const Array&);
-    // Logarithm functions
-    static Array  Log2(const Array&);  // Logarithm Base 2
-    static Array  Log10(const Array&); // Logarithm Base 10
-    static Array  Ln(const Array&);    // Logarithm Base e (natural logarithm)
-    // misc
-    static Array  Exp(const Array&);
-    static Array  Abs(const Array&);
-    static Array  Sqrt(const Array&);
-    static Array  Rint(const Array&);
-    static Array  Sign(const Array&);
-
     // Prefix operators
     // !!! Unary Minus is a MUST if you want to use negative signs !!!
     static Array  UnaryMinus(const Array&);

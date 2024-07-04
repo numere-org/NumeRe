@@ -882,6 +882,86 @@ mu::Array parser_perlin(const mu::Array* vElements, int nElements)
 
 
 /////////////////////////////////////////////////
+/// \brief Adaption of the logtoidx() function
+/// for 1D data arrays.
+///
+/// \param v const mu::Array*
+/// \param n int
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
+mu::Array parser_logtoidx(const mu::Array* v, int n)
+{
+    mu::Array vIdx;
+
+    if (n == 1)
+    {
+        for (size_t i = 0; i < v[0].size(); i++)
+        {
+            if (v[0][i].isValid() && v[0][i])
+                vIdx.push_back(mu::Value(i+1));
+        }
+    }
+    else
+    {
+        for (int i = 0; i < n; i++)
+        {
+            if (v[i].front().isValid() && v[i].front())
+                vIdx.push_back(mu::Value(i+1));
+        }
+    }
+
+    if (!vIdx.size())
+        vIdx.push_back(mu::Value(0));
+
+    return vIdx;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Adaption of the idxtolog() function
+/// for 1D data arrays.
+///
+/// \param v const mu::Array*
+/// \param n int
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
+mu::Array parser_idxtolog(const mu::Array* v, int n)
+{
+    if (!n)
+        return mu::Value(false);
+
+    mu::Array maxIdx = parser_Max(v, n);
+
+    if (mu::isnan(maxIdx.front().getNum().val.real()))
+        return mu::Value(false);
+
+    mu::Array vLogical;
+    vLogical.resize(maxIdx.front().getNum().val.real(), mu::Value(false));
+
+    if (n == 1)
+    {
+        for (size_t i = 0; i < v[0].size(); i++)
+        {
+            if (v[0][i].isValid() || v[0][i] > mu::Value(0))
+                vLogical[intCast(v[0][i].getNum().val)-1] = mu::Value(true);
+        }
+    }
+    else
+    {
+        for (int i = 0; i < n; i++)
+        {
+            if (v[i].front().isValid() || v[i].front() > mu::Value(0))
+                vLogical[intCast(v[i].front().getNum().val)-1] = mu::Value(true);
+        }
+    }
+
+    return vLogical;
+}
+
+
+/////////////////////////////////////////////////
 /// \brief This function summarizes all elements
 /// in the passed array.
 ///
@@ -892,7 +972,7 @@ mu::Array parser_perlin(const mu::Array* vElements, int nElements)
 /////////////////////////////////////////////////
 mu::Array parser_Sum(const mu::Array* vElements, int nElements)
 {
-    mu::Value fRes = 0.0;
+    mu::Value fRes;
 
     if (nElements == 1)
     {
@@ -1042,6 +1122,25 @@ static std::complex<double> round_impl(const std::complex<double>& vToRound, con
     vRounded = std::complex<double>(std::round(vRounded.real()), std::round(vRounded.imag()));
     return vRounded * dDecimals;
 }
+
+
+static std::complex<double> parser_rint(const std::complex<double>& val)
+{
+    return std::complex<double>(std::rint(val.real()), std::rint(val.imag()));
+}
+
+/////////////////////////////////////////////////
+/// \brief Implements the rint() function.
+///
+/// \param a const mu::Array&
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
+mu::Array parser_rint(const mu::Array& a)
+{
+    return mu::apply(parser_rint, a);
+}
+
 
 /////////////////////////////////////////////////
 /// \brief This function rounds the passed value
@@ -2560,6 +2659,28 @@ mu::Array parser_BinAND(const mu::Array& v1, const mu::Array& v2)
 
 
 /////////////////////////////////////////////////
+/// \brief Internal alias function to construct a
+/// vector from a list of elements.
+///
+/// \param arrs const mu::Array*
+/// \param n int
+/// \return mu::Array
+///
+/////////////////////////////////////////////////
+mu::Array parser_vectorConstruct(const mu::Array* arrs, int n)
+{
+    mu::Array res;
+
+    for (int i = 0; i < n; i++)
+    {
+        res.insert(res.end(), arrs[i].begin(), arrs[i].end());
+    }
+
+    return res;
+}
+
+
+/////////////////////////////////////////////////
 /// \brief This function is a numerical version
 /// of the string is_string() function. Used as a
 /// fallback.
@@ -2630,6 +2751,68 @@ mu::Array parser_sleep(const mu::Array& ms)
     int64_t msec = intCast(ms.front().getNum().val);
     Sleep(msec);
     return mu::Value(msec);
+}
+
+
+mu::Array parser_exp(const mu::Array& a)
+{
+    return mu::apply(std::exp, a);
+}
+
+
+static std::complex<double> parser_abs(const std::complex<double>& val)
+{
+    if (val.imag() == 0.0)
+        return std::abs(val.real());
+
+    return std::abs(val);
+}
+
+mu::Array parser_abs(const mu::Array& a)
+{
+    return mu::apply(parser_abs, a);
+}
+
+
+mu::Array parser_sqrt(const mu::Array& a)
+{
+    return mu::apply(std::sqrt, a);
+}
+
+
+static std::complex<double> parser_sign(const std::complex<double>& val)
+{
+    return std::complex<double>(val.real() == 0.0 ? 0 : (val.real() > 0.0 ? 1.0 : -1.0),
+                                val.imag() == 0.0 ? 0 : (val.imag() > 0.0 ? 1.0 : -1.0));
+}
+
+mu::Array parser_sign(const mu::Array& a)
+{
+    return mu::apply(parser_sign, a);
+}
+
+
+static std::complex<double> parser_log2(const std::complex<double>& val)
+{
+    return val.imag() == 0.0 ? std::log2(val.real()) : std::log(val) / std::log(2.0);
+}
+
+
+mu::Array parser_log2(const mu::Array& a)
+{
+    return mu::apply(parser_log2, a);
+}
+
+
+mu::Array parser_log10(const mu::Array& a)
+{
+    return mu::apply(std::log10, a);
+}
+
+
+mu::Array parser_ln(const mu::Array& a)
+{
+    return mu::apply(std::log, a);
 }
 
 
@@ -2874,6 +3057,78 @@ mu::Array* parser_AddVariable(const mu::char_type* a_szName, void* a_pUserData)
 
     // Return the address of the newly created storage
     return m_lDataStorage->back();
+}
+
+
+mu::Array parser_sin(const mu::Array& a)
+{
+    return mu::apply(std::sin, a);
+}
+
+
+mu::Array parser_cos(const mu::Array& a)
+{
+    return mu::apply(std::cos, a);
+}
+
+
+mu::Array parser_tan(const mu::Array& a)
+{
+    return mu::apply(std::tan, a);
+}
+
+
+mu::Array parser_asin(const mu::Array& a)
+{
+    return mu::apply(std::asin, a);
+}
+
+
+mu::Array parser_acos(const mu::Array& a)
+{
+    return mu::apply(std::acos, a);
+}
+
+
+mu::Array parser_atan(const mu::Array& a)
+{
+    return mu::apply(std::atan, a);
+}
+
+
+mu::Array parser_sinh(const mu::Array& a)
+{
+    return mu::apply(std::sinh, a);
+}
+
+
+mu::Array parser_cosh(const mu::Array& a)
+{
+    return mu::apply(std::cosh, a);
+}
+
+
+mu::Array parser_tanh(const mu::Array& a)
+{
+    return mu::apply(std::tanh, a);
+}
+
+
+mu::Array parser_asinh(const mu::Array& a)
+{
+    return mu::apply(std::asinh, a);
+}
+
+
+mu::Array parser_acosh(const mu::Array& a)
+{
+    return mu::apply(std::acosh, a);
+}
+
+
+mu::Array parser_atanh(const mu::Array& a)
+{
+    return mu::apply(std::atanh, a);
 }
 
 

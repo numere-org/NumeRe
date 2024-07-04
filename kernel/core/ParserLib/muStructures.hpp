@@ -213,6 +213,8 @@ namespace mu
             Value& get(size_t i);
             const Value& get(size_t i) const;
 
+            void zerosToVoid();
+
         private:
             mutable DataType m_commonType;
             static const Value m_default;

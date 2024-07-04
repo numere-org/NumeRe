@@ -306,7 +306,7 @@ namespace mu
 
     const std::string& Value::getStr() const
     {
-        if (!isValid())
+        if (isVoid())
             return m_defString;
 
         if (!isString())
@@ -325,7 +325,7 @@ namespace mu
 
     const Numerical& Value::getNum() const
     {
-        if (!isValid())
+        if (isVoid())
             return m_defVal;
 
         if (!isNumerical())
@@ -390,7 +390,15 @@ namespace mu
         DataType common = detectCommonType(other);
 
         if (common == TYPE_MIXED)
+        {
+            // special allowed cases: str*int and int*str
+            if (m_type == TYPE_NUMERICAL && isInt(getNum().val))
+                return mu::Value(strRepeat(other.getStr(), intCast(getNum().val)));
+            else if (other.m_type == TYPE_NUMERICAL && isInt(other.getNum().val))
+                return mu::Value(strRepeat(getStr(), intCast(other.getNum().val)));
+
             throw std::runtime_error("Value types do not match.");
+        }
 
         if (common == TYPE_NUMERICAL)
             return getNum() * other.getNum();
@@ -400,6 +408,9 @@ namespace mu
 
     Value& Value::operator+=(const Value& other)
     {
+        if (m_type == TYPE_VOID)
+            return operator=(other);
+
         if (m_type != other.m_type)
             throw std::runtime_error("Value types do not match or index out of bounds.");
 
@@ -415,6 +426,9 @@ namespace mu
 
     Value& Value::operator-=(const Value& other)
     {
+        if (m_type == TYPE_VOID)
+            return operator=(-other);
+
         if (m_type != other.m_type)
             throw std::runtime_error("Value types do not match or index out of bounds.");
 
@@ -441,8 +455,19 @@ namespace mu
 
     Value& Value::operator*=(const Value& other)
     {
+        if (m_type == TYPE_VOID)
+            return operator=(other);
+
         if (m_type != other.m_type)
+        {
+            // special allowed cases: str*=int and int*=str
+            if (m_type == TYPE_NUMERICAL && isInt(getNum().val))
+                return operator=(mu::Value(strRepeat(other.getStr(), intCast(getNum().val))));
+            else if (other.m_type == TYPE_NUMERICAL && isInt(other.getNum().val))
+                return operator=(mu::Value(strRepeat(getStr(), intCast(other.getNum().val))));
+
             throw std::runtime_error("Value types do not match or index out of bounds.");
+        }
 
         if (isNumerical())
             getNum() *= other.getNum();
@@ -477,7 +502,7 @@ namespace mu
 
     Value Value::operator!() const
     {
-        return !bool();
+        return !bool(*this);
     }
 
     Value Value::operator==(const Value& other) const
@@ -509,17 +534,17 @@ namespace mu
 
     Value Value::operator>=(const Value& other) const
     {
-        return !operator<(other) || operator==(other);
+        return !operator<(other);
     }
 
     Value Value::operator&&(const Value& other) const
     {
-        return bool() && bool(other);
+        return bool(*this) && bool(other);
     }
 
     Value Value::operator||(const Value& other) const
     {
-        return bool() || bool(other);
+        return bool(*this) || bool(other);
     }
 
     std::string Value::print() const
@@ -830,7 +855,7 @@ namespace mu
             operator=(operator+(other));
         else
         {
-            for (size_t i = 0; i < other.size(); i++)
+            for (size_t i = 0; i < size(); i++)
             {
                 operator[](i) += other.get(i);
             }
@@ -845,7 +870,7 @@ namespace mu
             operator=(operator-(other));
         else
         {
-            for (size_t i = 0; i < other.size(); i++)
+            for (size_t i = 0; i < size(); i++)
             {
                 operator[](i) -= other.get(i);
             }
@@ -860,7 +885,7 @@ namespace mu
             operator=(operator/(other));
         else
         {
-            for (size_t i = 0; i < other.size(); i++)
+            for (size_t i = 0; i < size(); i++)
             {
                 operator[](i) /= other.get(i);
             }
@@ -875,7 +900,7 @@ namespace mu
             operator=(operator*(other));
         else
         {
-            for (size_t i = 0; i < other.size(); i++)
+            for (size_t i = 0; i < size(); i++)
             {
                 operator[](i) *= other.get(i);
             }
@@ -1046,13 +1071,16 @@ namespace mu
 
         for (size_t i = 0; i < size(); i++)
         {
-            if (ret.size())
+            if (ret.length())
                 ret += ", ";
 
             ret += operator[](i).print();
         }
 
-        return "{" + ret + "}";
+        if (size() > 1)
+            return "{" + ret + "}";
+
+        return ret;
     }
 
     Value& Array::get(size_t i)
@@ -1070,12 +1098,25 @@ namespace mu
         if (size() == 1u)
             return front();
         else if (size() <= i)
+#warning FIXME (numere#1#07/04/24): void-initialized fails for most operations. Is that reasonable?
             return m_default;
 
         return operator[](i);
     }
 
+    void Array::zerosToVoid()
+    {
+        if (getCommonType() != TYPE_NUMERICAL)
+            return;
 
+        for (size_t i = 0; i < size(); i++)
+        {
+            if (operator[](i).getNum().val == 0.0)
+                operator[](i).clear();
+        }
+
+        m_commonType = TYPE_VOID;
+    }
 
 
     Variable::Variable() : Array()
@@ -1106,7 +1147,7 @@ namespace mu
 
     Variable& Variable::operator=(const Array& other)
     {
-        if (getCommonType() == TYPE_VOID || getType() == other.getType())
+        if (getCommonType() == TYPE_VOID || (getCommonType() == other.getCommonType() && getCommonType() != TYPE_MIXED))
         {
             Array::operator=(other);
             return *this;

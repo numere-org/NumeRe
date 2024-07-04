@@ -221,6 +221,7 @@ namespace mu
             */
             ParserToken& SetString(const std::string& a_strTok, std::size_t a_iSize)
             {
+#warning FIXME (numere#1#07/04/24): This is (hopefully) dead
                 m_iCode = cmSTRING;
                 m_iType = tpSTR;
                 m_strTok = a_strTok;

@@ -43,109 +43,15 @@ using namespace std;
     \brief Implementation of the standard floating point parser.
 */
 
-mu::value_type parser_Sum(const mu::value_type*, int);
-mu::value_type parser_Avg(const mu::value_type*, int);
-mu::value_type parser_Min(const mu::value_type*, int);
-mu::value_type parser_Max(const mu::value_type*, int);
+mu::Array parser_Sum(const mu::Array*, int);
+mu::Array parser_Avg(const mu::Array*, int);
+mu::Array parser_Min(const mu::Array*, int);
+mu::Array parser_Max(const mu::Array*, int);
+mu::Array parser_abs(const mu::Array& a);
 
 /** \brief Namespace for mathematical applications. */
 namespace mu
 {
-
-
-    //---------------------------------------------------------------------------
-    // Trigonometric function
-    Array Parser::Sin(const Array& v)
-    {
-        return apply(std::sin, v);
-    }
-    Array Parser::Cos(const Array& v)
-    {
-        return apply(std::cos, v);
-    }
-    Array Parser::Tan(const Array& v)
-    {
-        return apply(std::tan, v);
-    }
-    Array Parser::ASin(const Array& v)
-    {
-        return apply(std::asin, v);
-    }
-    Array Parser::ACos(const Array& v)
-    {
-        return apply(std::acos, v);
-    }
-    Array Parser::ATan(const Array& v)
-    {
-        return apply(std::atan, v);
-    }
-    value_type Parser::ATan2(const value_type& v1, const value_type& v2)
-    {
-        return v1;// MathImpl<double>::ATan2(v1.real(), v2.real());
-    }
-    Array Parser::Sinh(const Array& v)
-    {
-        return apply(std::sinh, v);
-    }
-    Array Parser::Cosh(const Array& v)
-    {
-        return apply(std::cosh, v);
-    }
-    Array Parser::Tanh(const Array& v)
-    {
-        return apply(std::tanh, v);
-    }
-    Array Parser::ASinh(const Array& v)
-    {
-        return apply(std::asinh, v);
-    }
-    Array Parser::ACosh(const Array& v)
-    {
-        return apply(std::acosh, v);
-    }
-    Array Parser::ATanh(const Array& v)
-    {
-        return apply(std::atanh, v);
-    }
-
-    //---------------------------------------------------------------------------
-    // Logarithm functions
-    Array Parser::Log2(const Array& v)
-    {
-        return apply(MathImpl<std::complex<double>>::Log2, v);     // Logarithm base 2
-    }
-    Array Parser::Log10(const Array& v)
-    {
-        return apply(MathImpl<std::complex<double>>::Log10, v);    // Logarithm base 10
-    }
-    Array Parser::Ln(const Array& v)
-    {
-        return apply(std::log, v);     // Logarithm base e (natural logarithm)
-    }
-
-    //---------------------------------------------------------------------------
-    //  misc
-    Array Parser::Exp(const Array& v)
-    {
-        return apply(MathImpl<std::complex<double>>::Exp, v);
-    }
-    Array Parser::Abs(const Array& v)
-    {
-        return v; //apply(MathImpl<std::complex<double>>::Abs, v); //(v.real() == 0.0 || v.imag() == 0.0) ? (std::abs(v.real()) + std::abs(v.imag())) : std::abs(v); //MathImpl<value_type>::Abs(v);
-    }
-    Array Parser::Sqrt(const Array& v)
-    {
-        return apply(MathImpl<std::complex<double>>::Sqrt, v);
-    }
-    Array Parser::Rint(const Array& v)
-    {
-        return v;// value_type(MathImpl<double>::Rint(v.real()), MathImpl<double>::Rint(v.imag()));
-    }
-    Array Parser::Sign(const Array& v)
-    {
-        return v;//value_type(MathImpl<double>::Sign(v.real()), MathImpl<double>::Sign(v.imag()));
-    }
-
     //---------------------------------------------------------------------------
     /** \brief Callback for the unary minus operator.
         \param v The value to negate
@@ -287,40 +193,6 @@ namespace mu
         }
         else
         {
-            // trigonometric functions
-            DefineFun("sin", Sin);
-            DefineFun("cos", Cos);
-            DefineFun("tan", Tan);
-            // arcus functions
-            DefineFun("asin", ASin);
-            DefineFun("arcsin", ASin);
-            DefineFun("acos", ACos);
-            DefineFun("arccos", ACos);
-            DefineFun("atan", ATan);
-            DefineFun("arctan", ATan);
-            DefineFun("atan2", ATan2);
-            // hyperbolic functions
-            DefineFun("sinh", Sinh);
-            DefineFun("cosh", Cosh);
-            DefineFun("tanh", Tanh);
-            // arcus hyperbolic functions
-            DefineFun("asinh", ASinh);
-            DefineFun("arsinh", ASinh);
-            DefineFun("acosh", ACosh);
-            DefineFun("arcosh", ACosh);
-            DefineFun("atanh", ATanh);
-            DefineFun("artanh", ATanh);
-            // Logarithm functions
-            DefineFun("log2", Log2);
-            DefineFun("log10", Log10);
-            DefineFun("log", Log10);
-            DefineFun("ln", Ln);
-            // misc
-            DefineFun("exp", Exp);
-            DefineFun("sqrt", Sqrt);
-            DefineFun("sign", Sign);
-            DefineFun("rint", Rint);
-            DefineFun("abs", Abs);
             // Functions with variable number of arguments
             DefineFun("sum", Sum);
             DefineFun("avg", Avg);
@@ -406,7 +278,7 @@ namespace mu
         // his own epsilon
         if (fEpsilon == Value(0.0))
         {
-            Array absVal = Abs(a_fPos);
+            Array absVal = parser_abs(a_fPos);
             fEpsilon = (a_fPos == Value(0.0)) ? Value(1e-10) : Value(1e-7*Max(&absVal, 1).front()*intPower(10, 2*(order-1)));
         }
 

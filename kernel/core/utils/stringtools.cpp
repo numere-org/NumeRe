@@ -1913,6 +1913,31 @@ void replaceAll(MutableStringView sToModify, StringView sToRep, StringView sNewV
 
 
 /////////////////////////////////////////////////
+/// \brief Repeat a string nCount times.
+///
+/// \param sStr const std::string&
+/// \param nCount int
+/// \return std::string
+///
+/////////////////////////////////////////////////
+std::string strRepeat(const std::string& sStr, int nCount)
+{
+    if (nCount <= 0)
+        return "";
+
+    std::string ret;
+
+    while (nCount)
+    {
+        ret += sStr;
+        nCount--;
+    }
+
+    return ret;
+}
+
+
+/////////////////////////////////////////////////
 /// \brief This function is a simple wrapper for
 /// replaceAll() and specialized to remove
 /// control characters from strings.

@@ -84,65 +84,6 @@ namespace mu
 
 
     /////////////////////////////////////////////////
-    /// \brief Adaption of the logtoidx() function
-    /// for 1D data arrays.
-    ///
-    /// \param v const value_type*
-    /// \param n int
-    /// \return std::vector<value_type>
-    ///
-    /////////////////////////////////////////////////
-    std::vector<value_type> parser_logtoidx(const value_type* v, int n)
-    {
-        std::vector<value_type> vIdx;
-
-        //for (int i = 0; i < n; i++)
-        //{
-        //    if (v[i] != 0.0)
-        //        vIdx.push_back(i+1);
-        //}
-        //
-        //if (!vIdx.size())
-        //    vIdx.push_back(0.0);
-
-        return vIdx;
-    }
-
-
-    /////////////////////////////////////////////////
-    /// \brief Adaption of the idxtolog() function
-    /// for 1D data arrays.
-    ///
-    /// \param v const value_type*
-    /// \param n int
-    /// \return std::vector<value_type>
-    ///
-    /////////////////////////////////////////////////
-    std::vector<value_type> parser_idxtolog(const value_type* v, int n)
-    {
-        //if (!n)
-        //    return std::vector<value_type>(1, 0.0);
-        return std::vector<value_type>();
-
-        //value_type maxIdx = parser_Max(v, n);
-        //
-        //if (std::isnan(maxIdx.real()))
-        //    return std::vector<value_type>(1, 0.0);
-        //
-        //std::vector<value_type> vLogical(maxIdx.real(), 0.0);
-        //
-        //for (int i = 0; i < n; i++)
-        //{
-        //    if (v[i].real() > 0)
-        //        vLogical[v[i].real()-1] = 1.0;
-        //}
-        //
-        //return vLogical;
-    }
-
-
-
-    /////////////////////////////////////////////////
     /// \brief Custom implementation for the complex
     /// multiplication operator with a scalar
     /// optimization.
@@ -204,7 +145,8 @@ namespace mu
 		_nrT("+"),  _nrT("-"),   _nrT("*"),
 		_nrT("/"),  _nrT("^"),   _nrT("&&"),
 		_nrT("||"), _nrT("="),   _nrT("("),
-		_nrT(")"),   _nrT("?"),  _nrT(":"), 0
+		_nrT(")"),  _nrT("{"),  _nrT("}"),
+		_nrT("?"),  _nrT(":"), 0
 	};
 
 	//------------------------------------------------------------------------------
@@ -606,14 +548,14 @@ namespace mu
 
 #warning FIXME (numere#1#06/29/24): Evaluate which of those segments is still necessary
 		// Perform the pre-evaluation of the vectors first
-		if (a_sExpr.find_first_of("{}") != string::npos || ContainsVectorVars(a_sExpr, true))
+		/*if (a_sExpr.find_first_of("{}") != string::npos || ContainsVectorVars(a_sExpr, true))
         {
             st = a_sExpr.to_string();
             a_sExpr = compileVectors(st);
 
             if (a_sExpr.find_first_of("{}") != string::npos)
                 Error(ecMISSING_PARENS, a_sExpr.to_string(), a_sExpr.find_first_of("{}"), "{}");
-        }
+        }*/
 
 		// Now check, whether the pre-evaluated formula was already parsed into the bytecode
 		// -> Return, if that is true
@@ -1153,6 +1095,7 @@ namespace mu
 	*/
 	void ParserBase::DefineStrConst(const string_type& a_strName, const string_type& a_strVal)
 	{
+#warning FIXME (numere#1#07/04/24): This is (hopefully) dead
 		// Test if a constant with that names already exists
 		if (m_StrVarDef.find(a_strName) != m_StrVarDef.end())
 			Error(ecNAME_CONFLICT);
@@ -1524,6 +1467,7 @@ namespace mu
 	{
 		while (stOpt.size() &&
 				stOpt.top().GetCode() != cmBO &&
+				stOpt.top().GetCode() != cmVO &&
 				stOpt.top().GetCode() != cmIF)
 		{
 			token_type tok = stOpt.top();
@@ -2099,6 +2043,7 @@ namespace mu
 				// Next three are different kind of value entries
 				//
 				case cmSTRING:
+#warning FIXME (numere#1#07/04/24): This is (hopefully) dead
 					opt.SetIdx((int)m_vStringBuf.size());      // Assign buffer index to token
 					stVal.push(opt);
 					m_vStringBuf.push_back(opt.GetAsString()); // Store string in internal buffer
@@ -2153,18 +2098,21 @@ namespace mu
 					break;
 
 				case cmBC:
+				case cmVC:
 					{
 						// The argument count for parameterless functions is zero
 						// by default an opening bracket sets parameter count to 1
 						// in preparation of arguments to come. If the last token
 						// was an opening bracket we know better...
-						if (opta.GetCode() == cmBO)
+						if ((opta.GetCode() == cmBO && opt.GetCode() == cmBC)
+                            || (opta.GetCode() == cmVO && opt.GetCode() == cmVC))
 							--stArgCount.top();
 
 						ApplyRemainingOprt(stOpt, stVal);
 
 						// Check if the bracket content has been evaluated completely
-						if (stOpt.size() && stOpt.top().GetCode() == cmBO)
+						if (stOpt.size() && ((stOpt.top().GetCode() == cmBO && opt.GetCode() == cmBC)
+                                             || (stOpt.top().GetCode() == cmVO && opt.GetCode() == cmVC)))
 						{
 							// if opt is ")" and opta is "(" the bracket has been evaluated, now its time to check
 							// if there is either a function or a sign pending
@@ -2264,6 +2212,12 @@ namespace mu
 				//
 				// Last section contains functions and operators implicitely mapped to functions
 				//
+				case cmVO:
+                {
+                    ParserToken tok;
+                    tok.Set(m_FunDef.at("vc"), "vc");
+				    stOpt.push(tok);
+                }
 				case cmBO:
 					stArgCount.push(1);
 					stOpt.push(opt);
@@ -2296,8 +2250,8 @@ namespace mu
 			// Commented out - might be necessary for deep debugging stuff
 			//if (ParserBase::g_DbgDumpStack)
 			//{
-			//	StackDump(stVal, stOpt);
-			//	m_compilingState.m_byteCode.AsciiDump();
+				StackDump(stVal, stOpt);
+				m_compilingState.m_byteCode.AsciiDump();
 			//}
 		} // while (true)
 
@@ -2624,6 +2578,12 @@ namespace mu
 						break;
 					case cmBC:
 						printFormatted("|   BRACKET \")\"\n");
+						break;
+					case cmVO:
+						printFormatted("|   VECTOR \"{\"\n");
+						break;
+					case cmVC:
+						printFormatted("|   VECTOR \"}\"\n");
 						break;
 					case cmIF:
 						printFormatted("|   IF\n");
