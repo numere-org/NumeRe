@@ -108,7 +108,7 @@ namespace mu
 		// optimization does not apply
 		SToken tok;
 		tok.Cmd       = cmVAR;
-		tok.m_data = SValData{.var{a_pVar}, .data{Numerical(1.0)}, .data2{Numerical(0.0)}, .isVect{false}};
+		tok.m_data = SValData{.var{a_pVar}, .data{Numerical(1.0)}, .isVect{false}};
 		m_vRPN.push_back(tok);
 	}
 
@@ -282,10 +282,23 @@ namespace mu
                                    || (m_vRPN[sz-2].Val().var != nullptr && m_vRPN[sz-1].Val().var== nullptr)
                                    || (m_vRPN[sz-2].Val().var == m_vRPN[sz-1].Val().var));
 
+                            // String vars are not commutative
+                            if (m_vRPN[sz-2].Val().var == nullptr
+                                && m_vRPN[sz-1].Val().var != nullptr
+                                && m_vRPN[sz-1].Val().var->getCommonType() != TYPE_NUMERICAL)
+                                break;
+
 							m_vRPN[sz-2].Cmd = cmVARMUL;
-							m_vRPN[sz-2].Val().var = m_vRPN[sz-2].Val().var != nullptr ? m_vRPN[sz-2].Val().var : m_vRPN[sz-1].Val().var; // variable
-							m_vRPN[sz-2].Val().data2 += Array(Numerical((a_Oprt == cmSUB) ? -1.0 : 1.0)) * m_vRPN[sz-1].Val().data2; // offset
-							m_vRPN[sz-2].Val().data += Array(Numerical((a_Oprt == cmSUB) ? -1.0 : 1.0)) * m_vRPN[sz-1].Val().data; // multiplikatior
+
+							// Update var pointer
+							m_vRPN[sz-2].Val().var = m_vRPN[sz-2].Val().var != nullptr ? m_vRPN[sz-2].Val().var : m_vRPN[sz-1].Val().var;
+
+							// Ensure type compatibility for offset by avoiding converting void to numerical
+							if (m_vRPN[sz-1].Val().data2.size() && m_vRPN[sz-1].Val().data2.getCommonType() != TYPE_VOID)
+                                m_vRPN[sz-2].Val().data2 += Array(Numerical((a_Oprt == cmSUB) ? -1.0 : 1.0)) * m_vRPN[sz-1].Val().data2;
+
+							// Update scale factor
+							m_vRPN[sz-2].Val().data += Array(Numerical((a_Oprt == cmSUB) ? -1.0 : 1.0)) * m_vRPN[sz-1].Val().data;
 							m_vRPN[sz-2].Val().data2.zerosToVoid(); // To convert VARMUL-Offsets to void
 							m_vRPN[sz-2].Val().isVect = false;
 							m_vRPN.pop_back();
@@ -374,6 +387,7 @@ namespace mu
 	{
 		SToken tok;
 		tok.Cmd = a_Oprt;
+		tok.m_data = SOprtData{.offset{0}};
 		m_vRPN.push_back(tok);
 	}
 

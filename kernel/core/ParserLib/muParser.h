@@ -37,50 +37,49 @@
 
 namespace mu
 {
-  /** \brief Mathematical expressions parser.
+    /** \brief Mathematical expressions parser.
 
-    Standard implementation of the mathematical expressions parser.
-    Can be used as a reference implementation for subclassing the parser.
+      Standard implementation of the mathematical expressions parser.
+      Can be used as a reference implementation for subclassing the parser.
 
-    <small>
-    (C) 2011 Ingo Berg<br>
-    muparser(at)gmx.de
-    </small>
-  */
-  /* final */ class Parser : public ParserBase
-  {
-  public:
+      <small>
+      (C) 2011 Ingo Berg<br>
+      muparser(at)gmx.de
+      </small>
+    */
+    /* final */ class Parser : public ParserBase
+    {
+        public:
 
-    Parser();
+            Parser();
 
-    virtual void InitCharSets() override;
-    virtual void InitFun() override;
-    virtual void InitConst() override;
-    virtual void InitOprt() override;
-    virtual void OnDetectVar(string_type *pExpr, int &nStart, int &nEnd) override;
+            virtual void InitCharSets() override;
+            virtual void InitFun() override;
+            virtual void InitConst() override;
+            virtual void InitOprt() override;
+            virtual void OnDetectVar(string_type* pExpr, int& nStart, int& nEnd) override;
 
-    std::vector<Array> Diff(Value *a_Var,
-                            const Array& a_fPos,
-                            Value a_fEpsilon = 0.0,
-                            size_t order = 1);
+            std::vector<Array> Diff(Value* a_Var,
+                                    const Array& a_fPos,
+                                    Value a_fEpsilon = 0.0,
+                                    size_t order = 1);
 
-  protected:
+        protected:
 
-    // Prefix operators
-    // !!! Unary Minus is a MUST if you want to use negative signs !!!
-    static Array  UnaryMinus(const Array&);
-    static Array  UnaryPlus(const Array&);
-    static Array  LogicalNot(const Array&);
+            // Prefix operators
+            // !!! Unary Minus is a MUST if you want to use negative signs !!!
+            static Array  UnaryMinus(const Array&);
+            static Array  UnaryPlus(const Array&);
+            static Array  LogicalNot(const Array&);
 
-    // Functions with variable number of arguments
-#warning FIXME (numere#1#06/29/24): Some of those should stay here
-    static Array Sum(const Array*, int);  // sum
-    static Array Avg(const Array*, int);  // mean value
-    static Array Min(const Array*, int);  // minimum
-    static Array Max(const Array*, int);  // maximum
+            // Functions with variable number of arguments
+            static Array Sum(const Array*, int);  // sum
+            static Array Avg(const Array*, int);  // mean value
+            static Array Min(const Array*, int);  // minimum
+            static Array Max(const Array*, int);  // maximum
 
-    static int IsVal(const char_type* a_szExpr, int *a_iPos, Value *a_fVal);
-  };
+            static int IsVal(const char_type* a_szExpr, int* a_iPos, Value* a_fVal);
+    };
 } // namespace mu
 
 #endif

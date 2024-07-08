@@ -2659,28 +2659,6 @@ mu::Array parser_BinAND(const mu::Array& v1, const mu::Array& v2)
 
 
 /////////////////////////////////////////////////
-/// \brief Internal alias function to construct a
-/// vector from a list of elements.
-///
-/// \param arrs const mu::Array*
-/// \param n int
-/// \return mu::Array
-///
-/////////////////////////////////////////////////
-mu::Array parser_vectorConstruct(const mu::Array* arrs, int n)
-{
-    mu::Array res;
-
-    for (int i = 0; i < n; i++)
-    {
-        res.insert(res.end(), arrs[i].begin(), arrs[i].end());
-    }
-
-    return res;
-}
-
-
-/////////////////////////////////////////////////
 /// \brief This function is a numerical version
 /// of the string is_string() function. Used as a
 /// fallback.
@@ -3032,31 +3010,6 @@ mu::Array parser_interval(const mu::Array& v, const mu::Array& vLeft, const mu::
 mu::Array parser_cot(const mu::Array& x)
 {
     return mu::apply(cot_impl, x);
-}
-
-
-/////////////////////////////////////////////////
-/// \brief This function represents the numerical
-/// variable factory. New memory is allocated in
-/// this function and stored in an internal list
-/// managed by the parser.
-///
-/// \param a_szName const char_type*
-/// \param a_pUserData void*
-/// \return mu::Array*
-///
-/////////////////////////////////////////////////
-mu::Array* parser_AddVariable(const mu::char_type* a_szName, void* a_pUserData)
-{
-    // Cast the passed void pointer to a the data storage list
-    std::list<mu::Array*>* m_lDataStorage = static_cast<std::list<mu::Array*>* >(a_pUserData);
-
-    // Create the storage for a new variable
-    m_lDataStorage->push_back(new mu::Array);
-    *(m_lDataStorage->back()) = mu::Value(0.0);
-
-    // Return the address of the newly created storage
-    return m_lDataStorage->back();
 }
 
 

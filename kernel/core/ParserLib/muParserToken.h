@@ -214,25 +214,6 @@ namespace mu
             }
 
             //------------------------------------------------------------------------------
-            /** \brief Make this token a variable token.
-
-                Member variables not necessary for variable tokens will be invalidated.
-                \throw nothrow
-            */
-            ParserToken& SetString(const std::string& a_strTok, std::size_t a_iSize)
-            {
-#warning FIXME (numere#1#07/04/24): This is (hopefully) dead
-                m_iCode = cmSTRING;
-                m_iType = tpSTR;
-                m_strTok = a_strTok;
-                m_iIdx = static_cast<int>(a_iSize);
-
-                m_var = nullptr;
-                m_pCallback.reset(0);
-                return *this;
-            }
-
-            //------------------------------------------------------------------------------
             /** \brief Set an index associated with the token related data.
 
                 In cmSTRFUNC - This is the index to a string table in the main parser.

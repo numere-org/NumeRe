@@ -41,6 +41,7 @@ int main()
 {
     mu::Parser _parser;
     _parser.EnableDebugDump(true, false);
+    _parser.EnableVarFactory();
 
     // trigonometric functions
     _parser.DefineFun("sin", parser_sin);
@@ -81,7 +82,6 @@ int main()
 
     _parser.DefineFun("logtoidx", parser_logtoidx);
     _parser.DefineFun("idxtolog", parser_idxtolog);
-    _parser.DefineFun("vc", parser_vectorConstruct);
     _parser.DefineFun("strlen", parser_strlen);
 
     std::string sInput;

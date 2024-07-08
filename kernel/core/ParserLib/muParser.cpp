@@ -77,7 +77,7 @@ namespace mu
         \param [in] a_afArg Vector with the function arguments
         \param [in] a_iArgc The size of a_afArg
     */
-    value_type Parser::Sum(const value_type* a_afArg, int a_iArgc)
+    Array Parser::Sum(const Array* a_afArg, int a_iArgc)
     {
         if (!a_iArgc)
             throw exception_type(_nrT("too few arguments for function sum."));
@@ -89,7 +89,7 @@ namespace mu
         \param [in] a_afArg Vector with the function arguments
         \param [in] a_iArgc The size of a_afArg
     */
-    value_type Parser::Avg(const value_type* a_afArg, int a_iArgc)
+    Array Parser::Avg(const Array* a_afArg, int a_iArgc)
     {
         if (!a_iArgc)
             throw exception_type(_nrT("too few arguments for function avg."));
@@ -102,7 +102,7 @@ namespace mu
         \param [in] a_afArg Vector with the function arguments
         \param [in] a_iArgc The size of a_afArg
     */
-    value_type Parser::Min(const value_type* a_afArg, int a_iArgc)
+    Array Parser::Min(const Array* a_afArg, int a_iArgc)
     {
         if (!a_iArgc)
             throw exception_type(_nrT("too few arguments for function min."));
@@ -115,7 +115,7 @@ namespace mu
         \param [in] a_afArg Vector with the function arguments
         \param [in] a_iArgc The size of a_afArg
     */
-    value_type Parser::Max(const value_type* a_afArg, int a_iArgc)
+    Array Parser::Max(const Array* a_afArg, int a_iArgc)
     {
         if (!a_iArgc)
             throw exception_type(_nrT("too few arguments for function max."));
@@ -198,6 +198,10 @@ namespace mu
             DefineFun("avg", Avg);
             DefineFun("min", Min);
             DefineFun("max", Max);
+
+            DefineFun(MU_VECTOR_CREATE, ParserBase::VectorCreate);
+            DefineFun(MU_VECTOR_EXP2, ParserBase::expandVector2);
+            DefineFun(MU_VECTOR_EXP3, ParserBase::expandVector3);
         }
     }
 

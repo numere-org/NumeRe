@@ -127,6 +127,30 @@ namespace mu
 
 
 
+    /////////////////////////////////////////////////
+    /// \brief This function represents the numerical
+    /// variable factory. New memory is allocated in
+    /// this function and stored in an internal list
+    /// managed by the parser.
+    ///
+    /// \param a_szName const char_type*
+    /// \param a_pUserData void*
+    /// \return Variable*
+    ///
+    /////////////////////////////////////////////////
+    static Variable* VarFactory(const mu::char_type* a_szName, void* a_pUserData)
+    {
+        // Cast the passed void pointer to a the data storage list
+        std::list<Variable*>* m_varStorage = static_cast<std::list<Variable*>* >(a_pUserData);
+
+        // Create the storage for a new variable initialized to void
+        m_varStorage->push_back(new Variable(Value()));
+
+        // Return the address of the newly created storage
+        return m_varStorage->back();
+    }
+
+
 	std::locale ParserBase::s_locale = std::locale(std::locale::classic(), new change_dec_sep<char_type>('.'));
 
 	bool ParserBase::g_DbgDumpCmdCode = false;
@@ -224,7 +248,7 @@ namespace mu
 	//---------------------------------------------------------------------------
 	ParserBase::~ParserBase()
 	{
-        for (auto iter = m_lDataStorage.begin(); iter != m_lDataStorage.end(); ++iter)
+        for (auto iter = m_varStorage.begin(); iter != m_varStorage.end(); ++iter)
             delete *iter;
 	}
 
@@ -452,13 +476,11 @@ namespace mu
 	}
 
 	//---------------------------------------------------------------------------
-	/** \brief Set a function that can create variable pointer for unknown expression variables.
-	    \param a_pFactory A pointer to the variable factory.
-	    \param pUserData A user defined context pointer.
+	/** \brief Enable the internal variable factory
 	*/
-	void ParserBase::SetVarFactory(facfun_type a_pFactory, void* pUserData)
+	void ParserBase::EnableVarFactory()
 	{
-		m_pTokenReader->SetVarCreator(a_pFactory, pUserData);
+		m_pTokenReader->SetVarCreator(VarFactory, &m_varStorage);
 	}
 
 	//---------------------------------------------------------------------------
@@ -777,6 +799,33 @@ namespace mu
 
 
     /////////////////////////////////////////////////
+    /// \brief Internal alias function to construct a
+    /// vector from a list of elements.
+    ///
+    /// \param arrs const mu::Array*
+    /// \param n int
+    /// \return mu::Array
+    ///
+    /////////////////////////////////////////////////
+    Array ParserBase::VectorCreate(const Array* arrs, int n)
+    {
+        // If no arguments have been passed, we simpl
+        // return void
+        if (!n)
+            return mu::Value();
+
+        mu::Array res;
+
+        for (int i = 0; i < n; i++)
+        {
+            res.insert(res.end(), arrs[i].begin(), arrs[i].end());
+        }
+
+        return res;
+    }
+
+
+    /////////////////////////////////////////////////
     /// \brief Determines, whether the passed step is
     /// still in valid range and therefore can be
     /// done to expand the vector.
@@ -793,6 +842,61 @@ namespace mu
 
 	    return (current.real() * fact.real()) <= (last.real() * fact.real())
             && (current.imag() * fact.imag()) <= (last.imag() * fact.imag());
+	}
+
+
+    /////////////////////////////////////////////////
+    /// \brief This function expands the vector from
+    /// two indices.
+    ///
+    /// \param firstVal const Array&
+    /// \param lastVal const Array&
+    /// \return Array
+    ///
+    /////////////////////////////////////////////////
+	Array ParserBase::expandVector2(const Array& firstVal, const Array& lastVal)
+	{
+	    Array ret;
+        Array diff = lastVal - firstVal;
+
+        for (size_t v = 0; v < diff.size(); v++)
+        {
+            Numerical d = diff[v].getNum();
+            d.val.real(d.val.real() > 0.0 ? 1.0 : (d.val.real() < 0.0 ? -1.0 : 0.0));
+            d.val.imag(d.val.imag() > 0.0 ? 1.0 : (d.val.imag() < 0.0 ? -1.0 : 0.0));
+            expandVector(firstVal.get(v).getNum().val,
+                         lastVal.get(v).getNum().val,
+                         d.val,
+                         ret);
+        }
+
+        return ret;
+	}
+
+
+    /////////////////////////////////////////////////
+    /// \brief This function expands the vector from
+    /// three indices.
+    ///
+    /// \param firstVal const Array&
+    /// \param incr const Array&
+    /// \param lastVal const Array&
+    /// \return Array
+    ///
+    /////////////////////////////////////////////////
+	Array ParserBase::expandVector3(const Array& firstVal, const Array& incr, const Array& lastVal)
+	{
+	    Array ret;
+
+        for (size_t v = 0; v < std::max({firstVal.size(), lastVal.size(), incr.size()}); v++)
+        {
+            expandVector(firstVal.get(v).getNum().val,
+                         lastVal.get(v).getNum().val,
+                         incr[v].getNum().val,
+                         ret);
+        }
+
+        return ret;
 	}
 
 
@@ -1096,6 +1200,7 @@ namespace mu
 	void ParserBase::DefineStrConst(const string_type& a_strName, const string_type& a_strVal)
 	{
 #warning FIXME (numere#1#07/04/24): This is (hopefully) dead
+        print("DefineStrConst");
 		// Test if a constant with that names already exists
 		if (m_StrVarDef.find(a_strName) != m_StrVarDef.end())
 			Error(ecNAME_CONFLICT);
@@ -1164,6 +1269,9 @@ namespace mu
 				return -5;
 			case cmARG_SEP:
 				return -4;
+			case cmEXP2: // Vector expansions have higher priorities than argument separators
+			case cmEXP3:
+				return -3;
 			case cmASSIGN:
 				return -1;
 			case cmELSE:
@@ -1317,6 +1425,7 @@ namespace mu
 								int a_iArgCount) const
 	{
 		assert(m_pTokenReader.get());
+		static ParserCallback ValidZeroArgument = m_FunDef.at(MU_VECTOR_CREATE);
 
 		// Operator stack empty or does not contain tokens with callback functions
 		if (a_stOpt.empty() || a_stOpt.top().GetFuncAddr() == 0 )
@@ -1369,7 +1478,8 @@ namespace mu
 			case  cmOPRT_POSTFIX:
 			case  cmOPRT_INFIX:
 			case  cmFUNC:
-				if (funTok.GetArgCount() == -1 && iArgCount == 0)
+			    // Check, whether enough arguments are available (with some special exceptions)
+				if (funTok.GetArgCount() == -1 && iArgCount == 0 && funTok.GetFuncAddr() != ValidZeroArgument.GetAddr())
 					Error(ecTOO_FEW_PARAMS, m_pTokenReader->GetPos(), funTok.GetAsString());
 
                 m_compilingState.m_byteCode.AddFun(funTok.GetFuncAddr(),
@@ -1468,6 +1578,8 @@ namespace mu
 		while (stOpt.size() &&
 				stOpt.top().GetCode() != cmBO &&
 				stOpt.top().GetCode() != cmVO &&
+				stOpt.top().GetCode() != cmEXP2 &&
+				stOpt.top().GetCode() != cmEXP3 &&
 				stOpt.top().GetCode() != cmIF)
 		{
 			token_type tok = stOpt.top();
@@ -2026,6 +2138,7 @@ namespace mu
 		token_type opta, opt;  // for storing operators
 		token_type val, tval;  // for storing value
 		string_type strBuf;    // buffer for string function arguments
+		bool vectorCreateMode = false;
 
 		//ReInit();
 
@@ -2042,13 +2155,6 @@ namespace mu
 				//
 				// Next three are different kind of value entries
 				//
-				case cmSTRING:
-#warning FIXME (numere#1#07/04/24): This is (hopefully) dead
-					opt.SetIdx((int)m_vStringBuf.size());      // Assign buffer index to token
-					stVal.push(opt);
-					m_vStringBuf.push_back(opt.GetAsString()); // Store string in internal buffer
-					break;
-
 				case cmVAR:
 					stVal.push(opt);
 					m_compilingState.m_byteCode.AddVar(opt.GetVar());
@@ -2075,9 +2181,33 @@ namespace mu
 					break;
 
 				case cmELSE:
+				    if (stOpt.size())
+                    {
+                        if (stOpt.top().GetCode() == cmBO)
+                            Error(ecMISPLACED_COLON, m_pTokenReader->GetPos());
+                        else if (vectorCreateMode) // falls cmVO => index operator, braucht vllcjt noch ein cmIDX
+						{
+						    ApplyRemainingOprt(stOpt, stVal);
+
+						    if (stOpt.top().GetCode() == cmVO && stVal.size() > 0)
+                            {
+                                ParserToken tok;
+                                tok.Set(cmEXP2, MU_VECTOR_EXP2);
+                                stOpt.push(tok);
+                            }
+                            else if (stOpt.top().GetCode() == cmEXP2 && stVal.size() > 1)
+                                stOpt.top().Set(cmEXP3, MU_VECTOR_EXP3);
+                            else
+                                Error(ecMISPLACED_COLON, m_pTokenReader->GetPos());
+
+						    break;
+						}
+
+                    }
+
 					m_nIfElseCounter--;
 
-					if (m_nIfElseCounter < 0)
+					if (m_nIfElseCounter < 0) // zweiter noetiger check
 						Error(ecMISPLACED_COLON, m_pTokenReader->GetPos());
 
 					ApplyRemainingOprt(stOpt, stVal);
@@ -2091,14 +2221,38 @@ namespace mu
 						Error(ecUNEXPECTED_ARG_SEP, m_pTokenReader->GetPos());
 
 					++stArgCount.top();
-				// fallthrough intentional (no break!)
 
+				// fallthrough intentional (no break!)
 				case cmEND:
 					ApplyRemainingOprt(stOpt, stVal);
+
+					if (stOpt.size())
+                    {
+                        if (stOpt.top().GetCode() == cmEXP2)
+                        {
+                            if (stVal.size() < 2)
+                                Error(opt.GetCode() == cmEND ? ecUNEXPECTED_EOF : ecUNEXPECTED_ARG_SEP,
+                                      m_pTokenReader->GetPos());
+
+                            stOpt.top().Set(m_FunDef.at(MU_VECTOR_EXP2), MU_VECTOR_EXP2);
+                            ApplyFunc(stOpt, stVal, 2);
+                        }
+                        else if (stOpt.top().GetCode() == cmEXP3 && stVal.size() > 2)
+                        {
+                            if (stVal.size() < 3)
+                                Error(opt.GetCode() == cmEND ? ecUNEXPECTED_EOF : ecUNEXPECTED_ARG_SEP,
+                                      m_pTokenReader->GetPos());
+
+                            stOpt.top().Set(m_FunDef.at(MU_VECTOR_EXP3), MU_VECTOR_EXP3);
+                            ApplyFunc(stOpt, stVal, 3);
+                        }
+                    }
 					break;
 
-				case cmBC:
 				case cmVC:
+				    vectorCreateMode = false;
+				    // fallthrough intended
+				case cmBC:
 					{
 						// The argument count for parameterless functions is zero
 						// by default an opening bracket sets parameter count to 1
@@ -2109,6 +2263,26 @@ namespace mu
 							--stArgCount.top();
 
 						ApplyRemainingOprt(stOpt, stVal);
+
+						if (stOpt.size())
+                        {
+                            if (stOpt.top().GetCode() == cmEXP2)
+                            {
+                                if (stVal.size() < 2)
+                                    Error(ecUNEXPECTED_PARENS, m_pTokenReader->GetPos());
+
+                                stOpt.top().Set(m_FunDef.at(MU_VECTOR_EXP2), MU_VECTOR_EXP2);
+                                ApplyFunc(stOpt, stVal, 2);
+                            }
+                            else if (stOpt.top().GetCode() == cmEXP3)
+                            {
+                                if (stVal.size() < 3)
+                                    Error(ecUNEXPECTED_PARENS, m_pTokenReader->GetPos());
+
+                                stOpt.top().Set(m_FunDef.at(MU_VECTOR_EXP3), MU_VECTOR_EXP3);
+                                ApplyFunc(stOpt, stVal, 3);
+                            }
+                        }
 
 						// Check if the bracket content has been evaluated completely
 						if (stOpt.size() && ((stOpt.top().GetCode() == cmBO && opt.GetCode() == cmBC)
@@ -2215,9 +2389,11 @@ namespace mu
 				case cmVO:
                 {
                     ParserToken tok;
-                    tok.Set(m_FunDef.at("vc"), "vc");
+                    tok.Set(m_FunDef.at(MU_VECTOR_CREATE), MU_VECTOR_CREATE);
 				    stOpt.push(tok);
+				    vectorCreateMode = true;
                 }
+                // fallthrough intended
 				case cmBO:
 					stArgCount.push(1);
 					stOpt.push(opt);
@@ -2251,7 +2427,7 @@ namespace mu
 			//if (ParserBase::g_DbgDumpStack)
 			//{
 				StackDump(stVal, stOpt);
-				m_compilingState.m_byteCode.AsciiDump();
+			//	m_compilingState.m_byteCode.AsciiDump();
 			//}
 		} // while (true)
 
@@ -2322,7 +2498,7 @@ namespace mu
 	*/
 	void  ParserBase::Error(EErrorCodes a_iErrc, int a_iPos, const string_type& a_sTok) const
 	{
-		throw exception_type(a_iErrc, a_sTok, m_pTokenReader->GetExpr(), a_iPos);
+        throw exception_type(a_iErrc, a_sTok, m_pTokenReader->GetExpr(), a_iPos);
 	}
 
 	//---------------------------------------------------------------------------
@@ -2369,12 +2545,12 @@ namespace mu
 		{
 		    // Search for the variable in the internal storage and
 		    // remove it
-		    for (auto iter = m_lDataStorage.begin(); iter != m_lDataStorage.end(); ++iter)
+		    for (auto iter = m_varStorage.begin(); iter != m_varStorage.end(); ++iter)
             {
                 if (item->second == *iter)
                 {
                     delete *iter;
-                    m_lDataStorage.erase(iter);
+                    m_varStorage.erase(iter);
                     break;
                 }
             }
@@ -2585,6 +2761,12 @@ namespace mu
 					case cmVC:
 						printFormatted("|   VECTOR \"}\"\n");
 						break;
+					case cmEXP2:
+						printFormatted("|   VECT-EXP A:B\n");
+						break;
+					case cmEXP3:
+						printFormatted("|   VECT-EXP A:B:C\n");
+						break;
 					case cmIF:
 						printFormatted("|   IF\n");
 						break;
@@ -2706,7 +2888,7 @@ namespace mu
             return sIndex;
         }
         else
-            return toString(m_lDataStorage.size()); //nVectorIndex);
+            return toString(m_varStorage.size()); //nVectorIndex);
 	}
 
 
@@ -3450,10 +3632,10 @@ namespace mu
 		if (!bAddVectorType && mVectorVars.find(sVarName) == mVectorVars.end() && m_VarDef.find(sVarName) == m_VarDef.end())
 		{
 		    // Create the storage for a new variable
-		    m_lDataStorage.push_back(new Variable(vVar));
+		    m_varStorage.push_back(new Variable(vVar));
 
 		    // Define a new variable
-		    DefineVar(sVarName, m_lDataStorage.back());
+		    DefineVar(sVarName, m_varStorage.back());
 		}
 		else if (!bAddVectorType && m_VarDef.find(sVarName) != m_VarDef.end())
 			m_VarDef.find(sVarName)->second->overwrite(vVar);

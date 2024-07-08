@@ -42,6 +42,10 @@
 #include "muParserError.h"
 #include "muParserState.hpp"
 
+#define MU_VECTOR_CREATE "_~vect~create"
+#define MU_VECTOR_EXP2 "_~vect~exp2"
+#define MU_VECTOR_EXP3 "_~vect~exp3"
+
 class StringView;
 class MutableStringView;
 
@@ -96,7 +100,7 @@ namespace mu
 			typedef ParserError exception_type;
 
 			mutable std::map<std::string, std::string>* mVarMapPntr;
-			mutable std::list<Variable*> m_lDataStorage;
+			mutable std::list<Variable*> m_varStorage;
 
 			// Bytecode caching and loop caching interface section
 			void ActivateLoopMode(size_t _nLoopLength);
@@ -134,7 +138,7 @@ namespace mu
 			void Eval(value_type* results, int nBulkSize);
 
 			void SetExpr(StringView a_sExpr);
-			void SetVarFactory(facfun_type a_pFactory, void* pUserData = NULL);
+			void EnableVarFactory();
 
 			void SetDecSep(char_type cDecSep);
 			void SetThousandsSep(char_type cThousandsSep = 0);
@@ -266,16 +270,23 @@ namespace mu
 					char_type m_cThousandsSep;
 			};
 
+            static Array VectorCreate(const Array*, int);  // vector creation
+            static Array expandVector2(const Array& firstVal,
+                                       const Array& lastVal);
+            static Array expandVector3(const Array& firstVal,
+                                       const Array& incr,
+                                       const Array& lastVal);
+            static void expandVector(std::complex<double> dFirst,
+                                     const std::complex<double>& dLast,
+                                     const std::complex<double>& dIncrement,
+                                     Array& vResults);
+
 		private:
 			void replaceLocalVars(MutableStringView sLine);
 			MutableStringView compileVectors(MutableStringView sExpr);
 			bool compileVectorsInMultiArgFunc(MutableStringView& sExpr, size_t& nPos);
 			size_t FindMultiArgFunc(StringView sExpr, size_t nPos, std::string& sMultArgFunc);
 			void compileVectorExpansion(MutableStringView sSubExpr, const std::string& sVectorVarName);
-            void expandVector(std::complex<double> dFirst,
-                              const std::complex<double>& dLast,
-                              const std::complex<double>& dIncrement,
-                              Array& vResults);
 			void evaluateTemporaryVectors(const VectorEvaluation& vectEval, int nStackSize);
 			string_type getNextVarObject(std::string& sArgList, bool bCut);
 			string_type getNextVectorVarIndex();

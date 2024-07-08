@@ -1086,7 +1086,7 @@ void ProcedureVarFactory::evaluateProcedureArguments(std::string& currentArg, st
                     {
                         mu::value_type* newVar = new mu::value_type;
                         *newVar = v[0];
-                        _parserRef->m_lDataStorage.push_back(newVar);
+                        _parserRef->m_varStorage.push_back(newVar);
                         _parserRef->DefineVar(sNewArgName, newVar);
                         currentValue = sNewArgName;
                         mLocalArgs[sNewArgName] = NUMTYPE;

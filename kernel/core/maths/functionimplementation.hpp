@@ -193,10 +193,7 @@ mu::Array parser_Mod(const mu::Array&, const mu::Array&);
 mu::Array parser_XOR(const mu::Array&, const mu::Array&);
 mu::Array parser_BinOR(const mu::Array&, const mu::Array&);
 mu::Array parser_BinAND(const mu::Array&, const mu::Array&);
-mu::Array parser_vectorConstruct(const mu::Array*, int);
 
-// Numerical variable factory
-mu::Array* parser_AddVariable(const mu::char_type*, void*);
 
 
 #endif

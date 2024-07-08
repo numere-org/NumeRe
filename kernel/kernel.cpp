@@ -322,10 +322,6 @@ void NumeReKernel::StartUp(NumeReTerminal* _parent, const std::string& __sPath, 
     _parser.DefineVar("ncols", &_memoryManager.tableColumnsCount);
     _parser.DefineVar("nlen", &_memoryManager.dClusterElementsCount);
 
-    // --> VAR-FACTORY Deklarieren (Irgendwo muessen die ganzen Variablen-Werte ja auch gespeichert werden) <--
-    g_logger.debug("Creating variable factory.");
-    _parser.SetVarFactory(parser_AddVariable, &(_parser.m_lDataStorage));
-
     // Define the operators
     g_logger.debug("Defining operators.");
     defineOperators();

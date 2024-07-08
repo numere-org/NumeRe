@@ -166,8 +166,8 @@ namespace mu
         cmMUL,                 ///< Operator item:  multiply
         cmDIV,                 ///< Operator item:  division
         cmPOW,                 ///< Operator item:  y to the power of ...
-        cmLAND,
-        cmLOR,
+        cmLAND,                ///< Operator item:  logical and
+        cmLOR,                 ///< Operator item:  logical or
         cmASSIGN,              ///< Operator item:  Assignment operator
         cmBO,                  ///< Operator item:  opening bracket
         cmBC,                  ///< Operator item:  closing bracket
@@ -176,6 +176,8 @@ namespace mu
         cmIF,                  ///< For use in the ternary if-then-else operator
         cmELSE,                ///< For use in the ternary if-then-else operator
         cmENDIF,               ///< For use in the ternary if-then-else operator
+        cmEXP2,                ///< The two-value expansion operator
+        cmEXP3,                ///< The three-value expansion operator
         cmARG_SEP,             ///< function argument separator
         cmVAL,                 ///< value item
 

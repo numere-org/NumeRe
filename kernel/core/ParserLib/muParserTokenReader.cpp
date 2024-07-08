@@ -31,6 +31,7 @@
 
 #include "muParserTokenReader.h"
 #include "muParserBase.h"
+#include "../utils/tools.hpp"
 
 /** \file
     \brief This file contains the parser token reader implementation.
@@ -127,6 +128,7 @@ namespace mu
 		, m_UsedVar()
 		, m_fZero(0)
 		, m_iBrackets(0)
+		, m_iVBrackets(0)
 		, m_lastTok()
 		, m_cArgSep(',')
 	{
@@ -278,10 +280,6 @@ namespace mu
 			return SaveBeforeReturn(tok); // Check for values / constant tokens
 		if ( IsVarTok(tok) )
 			return SaveBeforeReturn(tok); // Check for variable tokens
-#warning FIXME (numere#1#07/04/24): This is (hopefully) dead
-		if ( IsStrVarTok(tok) )
-			return SaveBeforeReturn(tok); // Check for string variables
-#warning FIXME (numere#1#06/29/24): Handle string values correctly
 		if ( IsString(tok) )
 			return SaveBeforeReturn(tok); // Check for String tokens
 		if (IsInfixOpTok(tok))
@@ -386,7 +384,6 @@ namespace mu
 	*/
 	bool ParserTokenReader::IsBuiltIn(token_type& a_Tok)
 	{
-#warning FIXME (numere#1#06/29/24): Handle Vector braces correctly and add vector index brackets
 		const char_type** const pOprtDef = m_pParser->GetOprtDef(),
 								*const szFormula = m_strFormula.c_str();
 
@@ -436,7 +433,7 @@ namespace mu
 							Error(ecUNEXPECTED_OPERATOR, m_iPos, pOprtDef[i]);
 						}
 
-						m_iSynFlags  = noBC | noOPT | noARG_SEP | noPOSTOP | noASSIGN | noIF | noELSE;
+						m_iSynFlags  = noBC | noVC | noOPT | noARG_SEP | noPOSTOP | noASSIGN | noIF | noELSE;
 						m_iSynFlags |= ( (i != cmEND) && ( i != cmBC) ) ? noEND : 0;
 						break;
 
@@ -445,9 +442,9 @@ namespace mu
 							Error(ecUNEXPECTED_PARENS, m_iPos, pOprtDef[i]);
 
 						if (m_lastTok.GetCode() == cmFUNC)
-							m_iSynFlags = noOPT | noEND | noARG_SEP | noPOSTOP | noASSIGN | noIF | noELSE;
+							m_iSynFlags = noOPT | noEND | noARG_SEP | noPOSTOP | noASSIGN | noIF | noELSE | noVC;
 						else
-							m_iSynFlags = noBC | noOPT | noEND | noARG_SEP | noPOSTOP | noASSIGN | noIF | noELSE;
+							m_iSynFlags = noBC | noOPT | noEND | noARG_SEP | noPOSTOP | noASSIGN | noIF | noELSE | noVC;
 
 						++m_iBrackets;
 						break;
@@ -456,14 +453,14 @@ namespace mu
 						if (m_iSynFlags & noBC)
 							Error(ecUNEXPECTED_PARENS, m_iPos, pOprtDef[i]);
 
-						m_iSynFlags  = noBO | noVAR | noVAL | noFUN | noINFIXOP | noSTR | noASSIGN;
+						m_iSynFlags  = noBO | noVAR | noVAL | noFUN | noINFIXOP | noSTR | noASSIGN | noVO;
 
 						if (--m_iBrackets < 0)
 							Error(ecUNEXPECTED_PARENS, m_iPos, pOprtDef[i]);
 						break;
 
 					case cmVO:
-						if (m_iSynFlags & noBO)
+						if (m_iSynFlags & noVO)
 							Error(ecUNEXPECTED_PARENS, m_iPos, pOprtDef[i]);
 
 						/*if (m_lastTok.GetCode() == cmFUNC)
@@ -471,31 +468,31 @@ namespace mu
 						else*/
 							m_iSynFlags = noBC | noOPT | noEND | noARG_SEP | noPOSTOP | noASSIGN | noIF | noELSE;
 
-						++m_iBrackets;
+						++m_iVBrackets;
 						break;
 
 					case cmVC:
-						if (m_iSynFlags & noBC)
-							Error(ecUNEXPECTED_PARENS, m_iPos, pOprtDef[i]);
+						if (m_iSynFlags & noVC)
+							Error(ecUNEXPECTED_VPARENS, m_iPos, pOprtDef[i]);
 
-						m_iSynFlags  = noBO | noVAR | noVAL | noFUN | noINFIXOP | noSTR | noASSIGN;
+						m_iSynFlags  = noBO | noVAR | noVAL | noFUN | noINFIXOP | noSTR | noASSIGN | noVO;
 
-						if (--m_iBrackets < 0)
-							Error(ecUNEXPECTED_PARENS, m_iPos, pOprtDef[i]);
+						if (--m_iVBrackets < 0)
+							Error(ecUNEXPECTED_VPARENS, m_iPos, pOprtDef[i]);
 						break;
 
 					case cmELSE:
 						if (m_iSynFlags & noELSE)
 							Error(ecUNEXPECTED_CONDITIONAL, m_iPos, pOprtDef[i]);
 
-						m_iSynFlags = noBC | noPOSTOP | noEND | noOPT | noIF | noELSE;
+						m_iSynFlags = noBC | noVC | noPOSTOP | noEND | noOPT | noIF | noELSE;
 						break;
 
 					case cmIF:
 						if (m_iSynFlags & noIF)
 							Error(ecUNEXPECTED_CONDITIONAL, m_iPos, pOprtDef[i]);
 
-						m_iSynFlags = noBC | noPOSTOP | noEND | noOPT | noIF | noELSE;
+						m_iSynFlags = noBC | noVC | noPOSTOP | noEND | noOPT | noIF | noELSE;
 						break;
 
 					default:      // The operator is listed in c_DefaultOprt, but not here. This is a bad thing...
@@ -526,7 +523,7 @@ namespace mu
 			if (m_iSynFlags & noARG_SEP)
 				Error(ecUNEXPECTED_ARG_SEP, m_iPos, szSep);
 
-			m_iSynFlags  = noBC | noOPT | noEND | noARG_SEP | noPOSTOP | noASSIGN;
+			m_iSynFlags  = noBC | noVC | noOPT | noEND | noARG_SEP | noPOSTOP | noASSIGN;
 			m_iPos++;
 			a_Tok.Set(cmARG_SEP, szSep);
 			return true;
@@ -591,7 +588,7 @@ namespace mu
 			if (m_iSynFlags & noINFIXOP)
 				Error(ecUNEXPECTED_OPERATOR, m_iPos, a_Tok.GetAsString());
 
-			m_iSynFlags = noPOSTOP | noINFIXOP | noOPT | noBC | noSTR | noASSIGN;
+			m_iSynFlags = noPOSTOP | noINFIXOP | noOPT | noBC | noVC | noSTR | noASSIGN;
 			return true;
 		}
 
@@ -697,7 +694,7 @@ namespace mu
 				}
 
 				m_iPos += (int)sID.length();
-				m_iSynFlags  = noBC | noOPT | noARG_SEP | noPOSTOP | noEND | noBC | noASSIGN;
+				m_iSynFlags  = noBC | noOPT | noARG_SEP | noPOSTOP | noEND | noVC | noASSIGN;
 				return true;
 			}
 		}
@@ -744,7 +741,7 @@ namespace mu
 			a_Tok.Set(it->second, sTok);
 			m_iPos += (int)it->first.length();
 
-			m_iSynFlags = noVAL | noVAR | noFUN | noBO | noPOSTOP | noSTR | noASSIGN;
+			m_iSynFlags = noVAL | noVAR | noFUN | noBO | noVO | noPOSTOP | noSTR | noASSIGN;
 			return true;
 		}
 
@@ -782,7 +779,7 @@ namespace mu
 				if (m_iSynFlags & noVAL)
 					Error(ecUNEXPECTED_VAL, m_iPos - (int)strTok.length(), strTok);
 
-				m_iSynFlags = noVAL | noVAR | noFUN | noBO | noINFIXOP | noSTR | noASSIGN;
+				m_iSynFlags = noVAL | noVAR | noFUN | noBO | noVO | noINFIXOP | noSTR | noASSIGN;
 				return true;
 			}
 		}
@@ -800,7 +797,7 @@ namespace mu
 					Error(ecUNEXPECTED_VAL, m_iPos - (int)strTok.length(), strTok);
 
 				a_Tok.SetVal(fVal, strTok);
-				m_iSynFlags = noVAL | noVAR | noFUN | noBO | noINFIXOP | noSTR | noASSIGN;
+				m_iSynFlags = noVAL | noVAR | noFUN | noBO | noVO | noINFIXOP | noSTR | noASSIGN;
 				return true;
 			}
 		}
@@ -841,38 +838,10 @@ namespace mu
 		a_Tok.SetVar(item->second, strTok);
 		m_UsedVar[item->first] = item->second;  // Add variable to used-var-list
 
-		m_iSynFlags = noVAL | noVAR | noFUN | noBO | noINFIXOP | noSTR;
+		m_iSynFlags = noVAL | noVAR | noFUN | noBO | noVO | noINFIXOP | noSTR;
 
 //  Zur Info hier die SynFlags von IsVal():
 //    m_iSynFlags = noVAL | noVAR | noFUN | noBO | noINFIXOP | noSTR | noASSIGN;
-		return true;
-	}
-
-	//---------------------------------------------------------------------------
-	bool ParserTokenReader::IsStrVarTok(token_type& a_Tok)
-	{
-		if (!m_pStrVarDef || !m_pStrVarDef->size())
-			return false;
-
-		string_type strTok;
-		int iEnd = ExtractToken(m_pParser->ValidNameChars(), strTok, m_iPos);
-		if (iEnd == m_iPos)
-			return false;
-
-		strmap_type::const_iterator item =  m_pStrVarDef->find(strTok);
-		if (item == m_pStrVarDef->end())
-			return false;
-
-		if (m_iSynFlags & noSTR)
-			Error(ecUNEXPECTED_VAR, m_iPos, strTok);
-
-		m_iPos = iEnd;
-		if (!m_pParser->m_vStringVarBuf.size())
-			Error(ecINTERNAL_ERROR);
-
-		a_Tok.SetString(m_pParser->m_vStringVarBuf[item->second], m_pParser->m_vStringVarBuf.size() );
-
-		m_iSynFlags = noANY ^ ( noBC | noOPT | noEND | noARG_SEP);
 		return true;
 	}
 
@@ -925,7 +894,7 @@ namespace mu
 		m_iPos = iEnd;
 
 		// Call the variable factory in order to let it define a new parser variable
-		m_iSynFlags = noVAL | noVAR | noFUN | noBO | noPOSTOP | noINFIXOP | noSTR;
+		m_iSynFlags = noVAL | noVAR | noFUN | noBO | noVO | noPOSTOP | noINFIXOP | noSTR;
 		return true;
 	}
 
@@ -942,15 +911,15 @@ namespace mu
 		if (m_strFormula[m_iPos] != '"')
 			return false;
 
-		string_type strBuf(&m_strFormula[m_iPos + 1]);
+		string_type strBuf(&m_strFormula[m_iPos+1]);
 		std::size_t iEnd(0), iSkip(0);
 
 		// parser over escaped '\"' end replace them with '"'
-#warning FIXME (numere#1#06/29/24): Handle also all other escaped sequences correctly (or use corresponding function)
 		for (iEnd = (int)strBuf.find( _nrT("\"") ); iEnd != 0 && iEnd != string_type::npos; iEnd = (int)strBuf.find( _nrT("\""), iEnd))
 		{
 			if (strBuf[iEnd - 1] != '\\')
 				break;
+
 			strBuf.replace(iEnd - 1, 2, _nrT("\"") );
 			iSkip++;
 		}
@@ -963,12 +932,11 @@ namespace mu
 		if (m_iSynFlags & noSTR)
 			Error(ecUNEXPECTED_STR, m_iPos, strTok);
 
-		//m_pParser->m_vStringBuf.push_back(strTok); // Store string in internal buffer
-		//a_Tok.SetString(strTok, m_pParser->m_vStringBuf.size());
-		a_Tok.SetVal(mu::Value(strTok), strTok);
+		m_iPos += (int)strTok.length() +2+ (int)iSkip;  // +iSkip für entfernte escape zeichen+2 for quotation marks
 
-		m_iPos += (int)strTok.length() + 2 + (int)iSkip;  // +2 wg Anführungszeichen; +iSkip für entfernte escape zeichen
-		m_iSynFlags = noANY ^ ( noARG_SEP | noBC | noOPT | noEND );
+		// Replace all other known escaped characters and remove the surrounding quotation marks
+		a_Tok.SetVal(mu::Value(toInternalString("\"" + strTok + "\"")), strTok);
+		m_iSynFlags = noVAL | noVAR | noFUN | noBO | noVO | noINFIXOP | noSTR | noASSIGN;
 
 		return true;
 	}

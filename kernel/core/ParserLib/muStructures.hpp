@@ -128,37 +128,6 @@ namespace mu
             DataType detectCommonType(const Value& other) const;
     };
 
-
-    // a
-    /*class Variable : public Value // public std::vector<Value>
-    {
-        public:
-            Variable();
-            Variable(const Value& data);
-            Variable(const Variable& data);
-            Variable(Value&& data);
-            Variable(Variable&& data);
-            ~Variable();
-
-            Variable& operator=(const Value& other);
-            Variable& operator=(const Variable& other);
-    };*/
-
-
-    //class Array;
-
-    // {a,b,c,d,...}
-    /*class VarArray : public std::vector<Variable*>
-    {
-        public:
-            VarArray& operator=(const Array& values);
-
-            bool operator==(const VarArray& other);
-
-            bool isNull() const;
-            std::string print() const;
-    };*/
-
     class Variable;
 
 
