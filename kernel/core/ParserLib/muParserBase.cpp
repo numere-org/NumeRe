@@ -392,9 +392,9 @@ namespace mu
 	//---------------------------------------------------------------------------
 	void ParserBase::OnDetectVar(string_type* pExpr, int& nStart, int& nEnd)
 	{
-		if (mVectorVars.size())
+		/*if (mInternalVars.size())
 		{
-			if (mVectorVars.find(pExpr->substr(nStart, nEnd - nStart)) != mVectorVars.end())
+			if (mInternalVars.find(pExpr->substr(nStart, nEnd - nStart)) != mInternalVars.end())
 				return;
 
 			Array vVar;
@@ -405,7 +405,7 @@ namespace mu
 				vVar.push_back(Value(Numerical(0.0)));
 
 			SetVectorVar(pExpr->substr(nStart, nEnd - nStart), vVar);
-		}
+		}*/
 	}
 
 	//---------------------------------------------------------------------------
@@ -619,11 +619,11 @@ namespace mu
 
 		// Resolve vectors, which are part of a multi-argument
 		// function's parentheses
-		for (auto iter = mVectorVars.begin(); iter != mVectorVars.end(); ++iter)
+		for (auto iter = mInternalVars.begin(); iter != mInternalVars.end(); ++iter)
         {
             size_t match = 0;
 
-            if (iter->second.size() == 1)
+            if (iter->second->size() == 1)
                 continue;
 
             while ((match = sExpr.find(iter->first, match)) != string::npos)
@@ -658,7 +658,7 @@ namespace mu
 				{
 				    // This is vector expansion: e.g. "{1:10}"
 					// Store the result in a new temporary vector
-                    string sVectorVarName = CreateTempVectorVar(vResults.front());
+                    string sVectorVarName = CreateTempVar(vResults.front());
 
 				    // Get the expression and evaluate the expansion
 					compileVectorExpansion(sExpr.subview(i + 1, j - i - 1), sVectorVarName);
@@ -683,20 +683,21 @@ namespace mu
 								&& sExpr[sExpr.find('=', j) + 1] != '=')
 						{
 						    // This is a target vector
+#warning FIXME (numere#1#07/08/24): Target vectors do not work yet
                             int nResults;
                             value_type* v = Eval(nResults);
                             // Store the results in the target vector
                             vResults.insert(vResults.end(), v, v+nResults);
 						    // Store the variable names
 						    getTarget().create(sExpr.subview(i + 1, j - i - 1), m_pTokenReader->GetUsedVar());
-							SetVectorVar("_~TRGTVCT[~]", vResults.front());
+							SetInternalVar("_~TRGTVCT[~]", vResults.front());
 							sExpr.replace(i, j + 1 - i, "_~TRGTVCT[~]");
 						}
 						else
 						{
 						    // This is a usual vector
 						    // Create a new temporary vector name
-                            std::string sVectorVarName = CreateTempVectorVar(vResults.front());
+                            std::string sVectorVarName = CreateTempVar(vResults.front());
                             m_compilingState.m_vectEval.create(sVectorVarName);
                             int nResults;
                             // Calculate and store the results in the target vector
@@ -964,7 +965,7 @@ namespace mu
             // Set the argument of the function as expression and evaluate it recursively
             vector<mu::value_type> vResults;
             int nResults;
-            string sVectorVarName = CreateTempVectorVar(vResults.front());
+            string sVectorVarName = CreateTempVar(vResults.front());
             SetExpr(sExpr.subview(nMultiArgParens + 1, nClosingParens - nMultiArgParens - 1));
             m_compilingState.m_vectEval.create(sVectorVarName, sMultiArgFunc);
             Eval(nResults);
@@ -1392,15 +1393,9 @@ namespace mu
 		return m_FunDef;
 	}
 
-	const vectormap_type& ParserBase::GetVectors() const
+	const varmap_type& ParserBase::GetInternalVars() const
 	{
-	    for (auto iter = mVectorVars.begin(); iter != mVectorVars.end(); ++iter)
-        {
-            if (m_VarDef.find(iter->first) != m_VarDef.end()) // FIX needed because both maps do not have to be identical
-                iter->second = *(m_VarDef.find(iter->first)->second);
-        }
-
-	    return mVectorVars;
+	    return mInternalVars;
 	}
 
 	//---------------------------------------------------------------------------
@@ -2158,21 +2153,6 @@ namespace mu
 				case cmVAR:
 					stVal.push(opt);
 					m_compilingState.m_byteCode.AddVar(opt.GetVar());
-
-#warning FIXME (numere#1#06/29/24): Has to be checked
-					/*if (mVectorVars.size())
-					{
-						if (mVectorVars.find(opt.GetAsString()) != mVectorVars.end())
-                        {
-                            mVectorVars[opt.GetAsString()][0] = opt.GetVar();
-							break;
-                        }
-
-						std::vector<mu::value_type> vVar;
-						vVar.push_back((opt.GetVar()));
-						SetVectorVar(opt.GetAsString(), vVar, true);
-					}*/
-
 					break;
 
 				case cmVAL:
@@ -2906,7 +2886,7 @@ namespace mu
     void ParserBase::evaluateTemporaryVectors(const VectorEvaluation& vectEval, int nStackSize)
 	{
 	    //g_logger.debug("Accessing " + vectEval.m_targetVect);
-        Array* vTgt = GetVectorVar(vectEval.m_targetVect);
+        Array* vTgt = GetInternalVar(vectEval.m_targetVect);
 
         switch (vectEval.m_type)
         {
@@ -2973,8 +2953,6 @@ namespace mu
             }*/
 
         }
-
-        UpdateVectorVar(m_state->m_vectEval.m_targetVect);
 	}
 
 
@@ -3596,14 +3574,14 @@ namespace mu
     /// \return std::string
     ///
     /////////////////////////////////////////////////
-	std::string ParserBase::CreateTempVectorVar(const Array& vVar)
+	std::string ParserBase::CreateTempVar(const Array& vVar)
 	{
 	    std::string sTempVarName = "_~TV[" + getNextVectorVarIndex() + "]";
 
         if (!vVar.size())
-            SetVectorVar(sTempVarName, Array(Numerical(0.0)), false);
+            SetInternalVar(sTempVarName, Value());
         else
-            SetVectorVar(sTempVarName, vVar, false);
+            SetInternalVar(sTempVarName, vVar);
 
         return sTempVarName;
 	}
@@ -3616,11 +3594,10 @@ namespace mu
     ///
     /// \param sVarName const std::string&
     /// \param vVar const Array&
-    /// \param bAddVectorType bool
     /// \return void
     ///
     /////////////////////////////////////////////////
-	void ParserBase::SetVectorVar(const std::string& sVarName, const Array& vVar, bool bAddVectorType)
+	void ParserBase::SetInternalVar(const std::string& sVarName, const Array& vVar)
 	{
 #warning FIXME (numere#1#06/27/24): Check and evaluate vector vars
 
@@ -3629,7 +3606,7 @@ namespace mu
 
         //g_logger.debug("Declaring " + sVarName);
 
-		if (!bAddVectorType && mVectorVars.find(sVarName) == mVectorVars.end() && m_VarDef.find(sVarName) == m_VarDef.end())
+		if (m_VarDef.find(sVarName) == m_VarDef.end())
 		{
 		    // Create the storage for a new variable
 		    m_varStorage.push_back(new Variable(vVar));
@@ -3637,66 +3614,46 @@ namespace mu
 		    // Define a new variable
 		    DefineVar(sVarName, m_varStorage.back());
 		}
-		else if (!bAddVectorType && m_VarDef.find(sVarName) != m_VarDef.end())
-			m_VarDef.find(sVarName)->second->overwrite(vVar);
+		else
+			m_VarDef.find(sVarName)->second->overwrite(vVar); // Force-overwrite in this case
 
-		mVectorVars[sVarName] = vVar;
+        mInternalVars[sVarName] = m_VarDef[sVarName];
 	}
 
 
     /////////////////////////////////////////////////
     /// \brief This member function returns a pointer
-    /// to the vector stored internally.
+    /// to the variable stored internally.
     ///
     /// \param sVarName const std::string&
-    /// \return Array*
+    /// \return Variable*
     ///
     /////////////////////////////////////////////////
-	Array* ParserBase::GetVectorVar(const std::string& sVarName)
+	Variable* ParserBase::GetInternalVar(const std::string& sVarName)
 	{
-		if (mVectorVars.find(sVarName) == mVectorVars.end())
+		if (mInternalVars.find(sVarName) == mInternalVars.end())
 			return nullptr;
 
-		return &mVectorVars[sVarName];
-	}
-
-
-    /////////////////////////////////////////////////
-    /// \brief This member function updates the
-    /// corresponding variable of a vector with the
-    /// previously newly assigned value.
-    ///
-    /// \param sVarName const std::string&
-    /// \return void
-    ///
-    /////////////////////////////////////////////////
-	void ParserBase::UpdateVectorVar(const std::string& sVarName)
-	{
-		if (mVectorVars.find(sVarName) == mVectorVars.end())
-			return;
-
-        //g_logger.debug("Updating " + sVarName + " Exists: " + toString(GetVar().find(sVarName) != GetVar().end()));
-
-		*(GetVar().find(sVarName)->second) = mVectorVars[sVarName][0];
+		return mInternalVars[sVarName];
 	}
 
 
     /////////////////////////////////////////////////
     /// \brief This member function cleares the
-    /// internal vector storage.
+    /// internal variable storage.
     ///
     /// \param bIgnoreProcedureVects bool
     /// \return void
     ///
     /////////////////////////////////////////////////
-	void ParserBase::ClearVectorVars(bool bIgnoreProcedureVects)
+	void ParserBase::ClearInternalVars(bool bIgnoreProcedureVects)
 	{
-		if (!mVectorVars.size())
+		if (!mInternalVars.size())
 			return;
 
-		auto iter = mVectorVars.begin();
+		auto iter = mInternalVars.begin();
 
-		while (iter != mVectorVars.end())
+		while (iter != mInternalVars.end())
 		{
 			string siter = iter->first;
 
@@ -3709,16 +3666,16 @@ namespace mu
 				}
 
 				RemoveVar(iter->first);
-				iter = mVectorVars.erase(iter);
+				iter = mInternalVars.erase(iter);
 			}
 			else
-				iter = mVectorVars.erase(iter); //iter++;
+				iter = mInternalVars.erase(iter); //iter++;
 		}
 
-		if (!bIgnoreProcedureVects || !mVectorVars.size())
+		if (!bIgnoreProcedureVects || !mInternalVars.size())
         {
             //g_logger.debug("Clearing vector vars and target.");
-			mVectorVars.clear();
+			mInternalVars.clear();
             m_compilingTarget.clear();
         }
 	}
@@ -3733,11 +3690,11 @@ namespace mu
     /// \return bool
     ///
     /////////////////////////////////////////////////
-	bool ParserBase::ContainsVectorVars(StringView sExpr, bool ignoreSingletons)
+	bool ParserBase::ContainsInternalVars(StringView sExpr, bool ignoreSingletons)
 	{
-	    for (auto iter = mVectorVars.begin(); iter != mVectorVars.end(); ++iter)
+	    for (auto iter = mInternalVars.begin(); iter != mInternalVars.end(); ++iter)
         {
-            if (ignoreSingletons && iter->second.size() == 1)
+            if (ignoreSingletons && iter->second->size() == 1)
                 continue;
 
             size_t nPos = sExpr.find(iter->first);

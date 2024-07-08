@@ -870,7 +870,6 @@ namespace mu
 		}
 
 		// If a factory is available implicitely create new variables
-#warning FIXME (numere#1#06/29/24): Make the var factory built-in
 		if (m_pFactory)
 		{
 			Variable* fVar = m_pFactory(strTok.c_str(), m_pFactoryData);

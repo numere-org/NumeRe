@@ -55,9 +55,6 @@ namespace mu
 	    \brief This file contains the class definition of the muparser engine.
 	*/
 
-    typedef std::map<std::string,Array> vectormap_type;
-
-
 	//--------------------------------------------------------------------------------------------------
 	/** \brief Mathematical expressions parser (base parser engine).
 	    \author (C) 2012 Ingo Berg
@@ -184,10 +181,10 @@ namespace mu
 			void RemoveVar(const string_type& a_strVarName);
 			const varmap_type& GetUsedVar();
 			const varmap_type& GetVar() const;
+			const varmap_type& GetInternalVars() const;
 			const valmap_type& GetConst() const;
 			const string_type& GetExpr() const;
 			const funmap_type& GetFunDef() const;
-			const vectormap_type& GetVectors() const;
 			string_type GetVersion(EParserVersionInfo eInfo = pviFULL) const;
 
 			const char_type** GetOprtDef() const;
@@ -210,12 +207,11 @@ namespace mu
 						int a_iPos = (int)mu::string_type::npos,
 						const string_type& a_strTok = string_type() ) const;
 
-			std::string CreateTempVectorVar(const Array& vVar);
-			void SetVectorVar(const std::string& sVarName, const Array& vVar, bool bAddVectorType = false);
-			Array* GetVectorVar(const std::string& sVarName);
-			void UpdateVectorVar(const std::string& sVarName);
-			void ClearVectorVars(bool bIgnoreProcedureVects = false);
-			bool ContainsVectorVars(StringView sExpr, bool ignoreSingletons);
+			std::string CreateTempVar(const Array& vVar);
+			void SetInternalVar(const std::string& sVarName, const Array& vVar);
+			Variable* GetInternalVar(const std::string& sVarName);
+			void ClearInternalVars(bool bIgnoreProcedureVects = false);
+			bool ContainsInternalVars(StringView sExpr, bool ignoreSingletons);
 
 		protected:
 
@@ -344,7 +340,7 @@ namespace mu
 			/** \brief Maximum number of threads spawned by OpenMP when using the bulk mode. */
 			//static const int s_MaxNumOpenMPThreads = 4;
 
-			mutable vectormap_type mVectorVars;
+			mutable varmap_type mInternalVars;
 
 			size_t nthLoopElement;
 			size_t nthLoopPartEquation;
