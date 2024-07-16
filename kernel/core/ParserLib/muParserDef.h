@@ -183,11 +183,13 @@ namespace mu
 
         // Variable and optimization block
         cmVAR,                 ///< variable item
+        cmVARARRAY,
         cmVARPOW2,
         cmVARPOW3,
         cmVARPOW4,
         cmVARPOWN,
         cmVARMUL,
+        cmREVVARMUL,
         cmVAR_END,             ///< Only for identifying the end of the variable block
 
         // operators and functions
@@ -198,6 +200,7 @@ namespace mu
         cmOPRT_BIN,            ///< user defined binary operator
         cmOPRT_POSTFIX,        ///< code for postfix operators
         cmOPRT_INFIX,          ///< code for infix operators
+        cmVAL2STR,             ///< code for special var2str operator
         cmEND,                 ///< end of formula
         cmUNKNOWN              ///< uninitialized item
     };

@@ -61,14 +61,16 @@ namespace mu
     {
         private:
 
-            ECmdCode  m_iCode;  ///< Type of the token; The token type is a constant of type #ECmdCode.
+            ECmdCode  m_iCode;      ///< Type of the token; The token type is a constant of type #ECmdCode.
             ETypeCode m_iType;
-            Variable*  m_var;      ///< Stores Token pointer; not applicable for all tokens
-            int  m_iIdx;        ///< An otional index to an external buffer storing the token data
+            Variable*  m_var;       ///< Stores Token pointer; not applicable for all tokens
+            int  m_iIdx;            ///< An otional index to an external buffer storing the token data
             std::string m_strTok;   ///< Token string
             std::string m_strVal;   ///< Value for string variables
-            Array m_fVal;  ///< the value
+            Array m_fVal;           ///< the value
+            VarArray m_varArray;
             std::unique_ptr<ParserCallback> m_pCallback;
+            size_t m_val2StrLen;    ///< Length of val2str operator
 
         public:
 
@@ -130,6 +132,8 @@ namespace mu
                 m_fVal = a_Tok.m_fVal;
                 // create new callback object if a_Tok has one
                 m_pCallback.reset(a_Tok.m_pCallback.get() ? a_Tok.m_pCallback->Clone() : 0);
+                m_val2StrLen = a_Tok.m_val2StrLen;
+                m_varArray = a_Tok.m_varArray;
             }
 
             //------------------------------------------------------------------------------
@@ -155,6 +159,19 @@ namespace mu
                 m_var = nullptr;
                 m_strTok = a_strTok;
                 m_iIdx = -1;
+                m_val2StrLen = 0;
+
+                return *this;
+            }
+
+            ParserToken& SetVal2Str(size_t len)
+            {
+                m_iCode = cmVAL2STR;
+                m_iType = tpVOID;
+                m_var = nullptr;
+                m_strTok = "#";
+                m_iIdx = -1;
+                m_val2StrLen = len;
 
                 return *this;
             }
@@ -172,6 +189,7 @@ namespace mu
 
                 m_var = nullptr;
                 m_iIdx = -1;
+                m_val2StrLen = 0;
 
                 return *this;
             }
@@ -210,6 +228,18 @@ namespace mu
                 m_iIdx = -1;
                 m_var = a_pVar;
                 m_pCallback.reset(0);
+                return *this;
+            }
+
+            ParserToken& SetVarArray(const VarArray& a_varArray, const std::string& a_strTok)
+            {
+                m_iCode = cmVARARRAY;
+                m_iType = tpDBL;
+                m_strTok = a_strTok;
+                m_iIdx = -1;
+                m_var = nullptr;
+                m_pCallback.reset(0);
+                m_varArray = a_varArray;
                 return *this;
             }
 
@@ -357,6 +387,14 @@ namespace mu
                 return m_var;
             }
 
+            VarArray GetVarArray() const
+            {
+                if (m_iCode != cmVARARRAY)
+                    throw ParserError(ecINTERNAL_ERROR);
+
+                return m_varArray;
+            }
+
             //------------------------------------------------------------------------------
             /** \brief Return the number of function arguments.
 
@@ -384,6 +422,11 @@ namespace mu
             const std::string& GetAsString() const
             {
                 return m_strTok;
+            }
+
+            size_t GetLen() const
+            {
+                return m_val2StrLen;
             }
     };
 } // namespace mu

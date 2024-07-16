@@ -1297,6 +1297,8 @@ namespace mu
 				return  prMUL_DIV;
 			case cmPOW:
 				return  prPOW;
+            case cmVAL2STR:
+                return prINFIX;
 
 			// user defined binary operators
 			case cmOPRT_INFIX:
@@ -1543,16 +1545,14 @@ namespace mu
 					   optTok  = a_stOpt.pop(),
 					   resTok;
 
-			if ( valTok1.GetType() != valTok2.GetType() ||
-					(valTok1.GetType() == tpSTR && valTok2.GetType() == tpSTR) )
-				Error(ecOPRT_TYPE_CONFLICT, m_pTokenReader->GetPos(), optTok.GetAsString());
-
 			if (optTok.GetCode() == cmASSIGN)
 			{
-				if (valTok2.GetCode() != cmVAR)
+			    if (valTok2.GetCode() == cmVARARRAY)
+                    m_compilingState.m_byteCode.AddAssignOp(valTok2.GetVarArray());
+				else if (valTok2.GetCode() == cmVAR)
+                    m_compilingState.m_byteCode.AddAssignOp(valTok2.GetVar());
+                else
 					Error(ecUNEXPECTED_OPERATOR, -1, _nrT("="));
-
-				m_compilingState.m_byteCode.AddAssignOp(valTok2.GetVar());
 			}
 			else
 				m_compilingState.m_byteCode.AddOp(optTok.GetCode());
@@ -1560,6 +1560,22 @@ namespace mu
 			resTok.SetVal(Array(Numerical(1.0)));
 			a_stVal.push(resTok);
 		}
+	}
+
+	void ParserBase::ApplyVal2Str(ParserStack<token_type>& a_stOpt,
+								  ParserStack<token_type>& a_stVal) const
+	{
+        MUP_ASSERT(a_stVal.size() >= 1);
+        token_type valTok1 = a_stVal.pop(),
+                   optTok  = a_stOpt.pop(),
+                   resTok;
+
+        m_compilingState.m_byteCode.AddVal(Value(int(optTok.GetLen())));
+        m_compilingState.m_byteCode.AddOp(cmVAL2STR);
+
+        // Push a dummy value to the stack
+        resTok.SetVal(Array(Numerical(1.0)));
+        a_stVal.push(resTok);
 	}
 
 	//---------------------------------------------------------------------------
@@ -1605,6 +1621,10 @@ namespace mu
 				case cmELSE:
 					ApplyIfElse(stOpt, stVal);
 					break;
+
+                case cmVAL2STR:
+                    ApplyVal2Str(stOpt, stVal);
+                    break;
 
 				default:
 					Error(ecINTERNAL_ERROR);
@@ -1705,9 +1725,14 @@ namespace mu
                     Stack[sidx]  = Stack[sidx] || Stack[sidx + 1];
                     continue;
 
+                case  cmVAL2STR:
+                    --sidx;
+                    Stack[sidx]  = val2Str(Stack[sidx], Stack[sidx+1].front().getNum().val.real());
+                    continue;
+
                 case  cmASSIGN:
                     --sidx;
-                    Stack[sidx] = *pTok->Oprt().var = Stack[sidx + 1];
+                    Stack[sidx] = pTok->Oprt().var = Stack[sidx + 1];
                     continue;
 
                 case  cmIF:
@@ -1731,6 +1756,10 @@ namespace mu
                     Stack[++sidx] = *pTok->Val().var;
                     continue;
 
+                case  cmVARARRAY:
+                    Stack[++sidx] = pTok->Oprt().var.asArray();
+                    continue;
+
                 case  cmVARPOW2:
                     buf = *pTok->Val().var;
                     Stack[++sidx] = buf * buf;
@@ -1752,6 +1781,10 @@ namespace mu
 
                 case  cmVARMUL:
                     Stack[++sidx] = Array(*pTok->Val().var) * pTok->Val().data + pTok->Val().data2;
+                    continue;
+
+                case  cmREVVARMUL:
+                    Stack[++sidx] = pTok->Val().data2 + Array(*pTok->Val().var) * pTok->Val().data;
                     continue;
 
                 // Next is treatment of numeric functions
@@ -1949,9 +1982,14 @@ namespace mu
                         Stack[sidx]  = Stack[sidx] || Stack[sidx + 1];
                         continue;
 
+                    case  cmVAL2STR:
+                        --sidx;
+                        Stack[sidx]  = val2Str(Stack[sidx], Stack[sidx+1].front().getNum().val.real());
+                        continue;
+
                     case  cmASSIGN:
                         --sidx;
-                        Stack[sidx] = *pTok->Oprt().var = Stack[sidx + 1];
+                        Stack[sidx] = pTok->Oprt().var = Stack[sidx + 1];
                         continue;
 
                     case  cmIF:
@@ -1976,6 +2014,10 @@ namespace mu
                         //print(toString(*(pTok->Val.ptr + pTok->Val.isVect*nOffset), 14));
                         continue;
 
+                    case  cmVARARRAY:
+                        Stack[++sidx] = pTok->Oprt().var.asArray();
+                        continue;
+
                     case  cmVARPOW2:
                         buf = *pTok->Val().var;
                         Stack[++sidx] = buf * buf;
@@ -1997,6 +2039,10 @@ namespace mu
 
                     case  cmVARMUL:
                         Stack[++sidx] = Array(*pTok->Val().var) * pTok->Val().data + pTok->Val().data2;
+                        continue;
+
+                    case  cmREVVARMUL:
+                        Stack[++sidx] = pTok->Val().data2 + Array(*pTok->Val().var) * pTok->Val().data;
                         continue;
 
                     // Next is treatment of numeric functions
@@ -2134,6 +2180,7 @@ namespace mu
 		token_type val, tval;  // for storing value
 		string_type strBuf;    // buffer for string function arguments
 		bool vectorCreateMode = false;
+		bool varArrayCandidate = false;
 
 		//ReInit();
 
@@ -2156,11 +2203,13 @@ namespace mu
 					break;
 
 				case cmVAL:
+				    varArrayCandidate = false;
 					stVal.push(opt);
 					m_compilingState.m_byteCode.AddVal( opt.GetVal() );
 					break;
 
 				case cmELSE:
+				    varArrayCandidate = false;
 				    if (stOpt.size())
                     {
                         if (stOpt.top().GetCode() == cmBO)
@@ -2204,6 +2253,7 @@ namespace mu
 
 				// fallthrough intentional (no break!)
 				case cmEND:
+				    //varArrayCandidate = false;
 					ApplyRemainingOprt(stOpt, stVal);
 
 					if (stOpt.size())
@@ -2279,6 +2329,30 @@ namespace mu
 
 							stOpt.pop(); // Take opening bracket from stack
 
+							if (varArrayCandidate)
+                            {
+                                // Remove the vector create function
+                                stOpt.pop();
+
+                                VarArray arr;
+
+                                // Remove all vars except of the var array one
+                                for (int i = 0; i < iArgCount-1; i++)
+                                {
+                                    arr.insert(arr.begin(), stVal.top().GetVar());
+                                    stVal.pop();
+                                    m_compilingState.m_byteCode.pop();
+                                }
+
+                                arr.insert(arr.begin(), stVal.top().GetVar());
+                                stVal.top().SetVarArray(arr, "");
+                                m_compilingState.m_byteCode.pop();
+                                m_compilingState.m_byteCode.AddVarArray(arr);
+                                varArrayCandidate = false;
+
+                                break;
+                            }
+
 							if (iArgCount > 1 && ( stOpt.size() == 0 ||
 												   (stOpt.top().GetCode() != cmFUNC &&
 													stOpt.top().GetCode() != cmFUNC_BULK &&
@@ -2323,7 +2397,7 @@ namespace mu
 				case cmPOW:
 				case cmASSIGN:
 				case cmOPRT_BIN:
-
+                    varArrayCandidate = false;
 					// A binary operator (user defined or built in) has been found.
 					while ( stOpt.size() &&
 							stOpt.top().GetCode() != cmBO &&
@@ -2352,6 +2426,8 @@ namespace mu
 
 						if (stOpt.top().GetCode() == cmOPRT_INFIX)
 							ApplyFunc(stOpt, stVal, 1);
+                        else if (stOpt.top().GetCode() == cmVAL2STR)
+                            ApplyVal2Str(stOpt, stVal);
 						else
 							ApplyBinOprt(stOpt, stVal);
 					} // while ( ... )
@@ -2372,23 +2448,29 @@ namespace mu
                     tok.Set(m_FunDef.at(MU_VECTOR_CREATE), MU_VECTOR_CREATE);
 				    stOpt.push(tok);
 				    vectorCreateMode = true;
+				    varArrayCandidate = true;
                 }
                 // fallthrough intended
 				case cmBO:
 					stArgCount.push(1);
 					stOpt.push(opt);
+					if (opt.GetCode() == cmBO)
+                        varArrayCandidate = false;
 					break;
 
 				case cmOPRT_INFIX:
+				case cmVAL2STR:
 				case cmFUNC:
 				case cmFUNC_BULK:
 				case cmFUNC_STR:
 					stOpt.push(opt);
+					varArrayCandidate = false;
 					break;
 
 				case cmOPRT_POSTFIX:
 					stOpt.push(opt);
 					ApplyFunc(stOpt, stVal, 1);  // this is the postfix operator
+					varArrayCandidate = false;
 					break;
 
 				default:
@@ -2685,6 +2767,8 @@ namespace mu
 
             if (val.GetType() == tpSTR)
                 printFormatted(" \"" + val.GetAsString() + "\" ");
+            else if (val.GetCode() == cmVARARRAY)
+                printFormatted(" VARARRAY ");
 			else
                 printFormatted(" " + val.GetVal().print() + " ");
 		}
@@ -2746,6 +2830,9 @@ namespace mu
 						break;
 					case cmEXP3:
 						printFormatted("|   VECT-EXP A:B:C\n");
+						break;
+					case cmVAL2STR:
+						printFormatted("|   VAL2STR\n");
 						break;
 					case cmIF:
 						printFormatted("|   IF\n");

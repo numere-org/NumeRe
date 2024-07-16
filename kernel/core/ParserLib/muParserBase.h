@@ -300,6 +300,8 @@ namespace mu
 									ParserStack<token_type>& a_stVal) const;
 			void ApplyBinOprt(ParserStack<token_type>& a_stOpt,
 							  ParserStack<token_type>& a_stVal) const;
+			void ApplyVal2Str(ParserStack<token_type>& a_stOpt,
+							  ParserStack<token_type>& a_stVal) const;
 
 			void ApplyIfElse(ParserStack<token_type>& a_stOpt,
 							 ParserStack<token_type>& a_stVal) const;

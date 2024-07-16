@@ -183,6 +183,7 @@ namespace mu
             const Value& get(size_t i) const;
 
             void zerosToVoid();
+            bool isCommutative() const;
 
         private:
             mutable DataType m_commonType;
@@ -212,13 +213,19 @@ namespace mu
     class VarArray : public std::vector<Variable*>
     {
         public:
-            VarArray& operator=(const Array& values);
+            VarArray() = default;
+            VarArray(Variable* var);
+            VarArray(const VarArray& other) = default;
+            VarArray(VarArray&& other) = default;
+            VarArray& operator=(const VarArray& other) = default;
+            Array operator=(const Array& values);
             VarArray& operator=(const std::vector<Array>& arrayList);
 
             bool operator==(const VarArray& other) const;
 
             bool isNull() const;
             std::string print() const;
+            Array asArray() const;
     };
 
     Array operator+(const Array& arr, const Value& v);

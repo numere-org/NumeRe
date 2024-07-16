@@ -52,5 +52,27 @@ namespace mu
         NumeReKernel::toggleTableStatus();
 #endif
     }
+
+    Array val2Str(const Array& arr, size_t nLen)
+    {
+        Array res;
+
+        for (const auto& val : arr)
+        {
+            std::string sStr;
+
+            if (val.isString())
+                sStr = val.getStr();
+            else
+                sStr = val.print();
+
+            if (sStr.length() < nLen)
+                sStr.insert(0, std::string(nLen-sStr.length(), '0'));
+
+            res.push_back(sStr);
+        }
+
+        return res;
+    }
 }
 

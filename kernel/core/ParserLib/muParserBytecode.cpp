@@ -112,6 +112,18 @@ namespace mu
 		m_vRPN.push_back(tok);
 	}
 
+	void ParserByteCode::AddVarArray(const VarArray& a_varArray)
+	{
+		++m_iStackPos;
+		m_iMaxStackSize = std::max(m_iMaxStackSize, (size_t)m_iStackPos);
+
+		// optimization does not apply
+		SToken tok;
+		tok.Cmd       = cmVARARRAY;
+		tok.m_data = SOprtData{.var{a_varArray}, .offset{0}};
+		m_vRPN.push_back(tok);
+	}
+
 	//---------------------------------------------------------------------------
 	/** \brief Add a Variable pointer to bytecode.
 
@@ -205,6 +217,11 @@ namespace mu
 				m_vRPN.pop_back();
 				break;
 
+            case cmVAL2STR:
+                x = val2Str(x, y.front().getNum().val.real());
+                m_vRPN.pop_back();
+                break;
+
 			default:
 				break;
 		} // switch opcode
@@ -282,13 +299,18 @@ namespace mu
                                    || (m_vRPN[sz-2].Val().var != nullptr && m_vRPN[sz-1].Val().var== nullptr)
                                    || (m_vRPN[sz-2].Val().var == m_vRPN[sz-1].Val().var));
 
-                            // String vars are not commutative
+                            // Some vars might not be commutative
                             if (m_vRPN[sz-2].Val().var == nullptr
                                 && m_vRPN[sz-1].Val().var != nullptr
-                                && m_vRPN[sz-1].Val().var->getCommonType() != TYPE_NUMERICAL)
-                                break;
+                                && !m_vRPN[sz-1].Val().var->isCommutative())
+                                m_vRPN[sz-2].Cmd = cmREVVARMUL; // Only makes sense, if variables are really not commutative
+                            else
+                                m_vRPN[sz-2].Cmd = cmVARMUL;
 
-							m_vRPN[sz-2].Cmd = cmVARMUL;
+                            if (m_vRPN[sz-2].Cmd == cmVARMUL
+                                && m_vRPN[sz-1].Cmd == cmVAR
+                                && !m_vRPN[sz-2].Val().var->isCommutative())
+                                break; // Do not chain operations of variables, which are not commutative
 
 							// Update var pointer
 							m_vRPN[sz-2].Val().var = m_vRPN[sz-2].Val().var != nullptr ? m_vRPN[sz-2].Val().var : m_vRPN[sz-1].Val().var;
@@ -409,6 +431,17 @@ namespace mu
 		SToken tok;
 		tok.Cmd = cmASSIGN;
 		tok.m_data = SOprtData{.var{a_pVar}, .offset{0}};
+		m_vRPN.push_back(tok);
+	}
+
+
+	void ParserByteCode::AddAssignOp(const VarArray& a_varArray)
+	{
+		--m_iStackPos;
+
+		SToken tok;
+		tok.Cmd = cmASSIGN;
+		tok.m_data = SOprtData{.var{a_varArray}, .offset{0}};
 		m_vRPN.push_back(tok);
 	}
 
@@ -599,6 +632,12 @@ namespace mu
 		m_vRPN.push_back(tok);
 	}
 
+	void ParserByteCode::pop()
+	{
+	    if (m_vRPN.size())
+            m_vRPN.pop_back();
+	}
+
 	//---------------------------------------------------------------------------
 	/** \brief Add end marker to bytecode.
 
@@ -729,6 +768,10 @@ namespace mu
 				    printFormatted("VAR \t[" + m_vRPN[i].Val().var->print() + "]\n");
 					break;
 
+				case cmVARARRAY:
+				    printFormatted("VARARR \t[" + m_vRPN[i].Oprt().var.print() + "]\n");
+					break;
+
 				case cmVARPOW2:
 				    printFormatted("VARPOW2 \t[" + m_vRPN[i].Val().var->print() + "]\n");
 					break;
@@ -748,6 +791,11 @@ namespace mu
 				case cmVARMUL:
 					printFormatted("VARMUL \t[" + m_vRPN[i].Val().var->print() + "]");
 					printFormatted(" * [" + m_vRPN[i].Val().data.print() + "] + [" + m_vRPN[i].Val().data2.print() + "]\n");
+					break;
+
+				case cmREVVARMUL:
+					printFormatted("REVVARMUL \t[" + m_vRPN[i].Val().data2.print() + "]");
+					printFormatted(" + [" + m_vRPN[i].Val().var->print() + "] * [" + m_vRPN[i].Val().data.print() + "]\n");
 					break;
 
 				case cmFUNC:
@@ -793,6 +841,9 @@ namespace mu
 				case cmPOW:
 					printFormatted("POW\n");
 					break;
+				case cmVAL2STR:
+					printFormatted("VAL2STR\n");
+					break;
 
 				case cmIF:
 				    printFormatted("IF\t[OFFSET: " + toString(m_vRPN[i].Oprt().offset) + "]\n");
@@ -807,7 +858,7 @@ namespace mu
 					break;
 
 				case cmASSIGN:
-					printFormatted("ASSIGN \t[" + m_vRPN[i].Oprt().var->print() + "]\n");
+					printFormatted("ASSIGN \t[" + m_vRPN[i].Oprt().var.print() + "]\n");
 					break;
 
 				default:

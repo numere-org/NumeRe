@@ -475,7 +475,7 @@ namespace mu
 						if (m_iSynFlags & noVC)
 							Error(ecUNEXPECTED_VPARENS, m_iPos, pOprtDef[i]);
 
-						m_iSynFlags  = noBO | noVAR | noVAL | noFUN | noINFIXOP | noSTR | noASSIGN | noVO;
+						m_iSynFlags  = noBO | noVAR | noVAL | noFUN | noINFIXOP | noSTR | noVO;
 
 						if (--m_iVBrackets < 0)
 							Error(ecUNEXPECTED_VPARENS, m_iPos, pOprtDef[i]);
@@ -574,6 +574,18 @@ namespace mu
 		int iEnd = ExtractToken(m_pParser->ValidInfixOprtChars(), sTok, m_iPos);
 		if (iEnd == m_iPos)
 			return false;
+
+        if (sTok.front() == '#' && sTok.find_first_not_of('~', 1) == std::string::npos)
+        {
+            m_iPos += sTok.length();
+            a_Tok.SetVal2Str(sTok.length());
+
+            if (m_iSynFlags & noINFIXOP)
+				Error(ecUNEXPECTED_OPERATOR, m_iPos, a_Tok.GetAsString());
+
+			m_iSynFlags = noPOSTOP | noINFIXOP | noOPT | noBC | noVC | noSTR | noASSIGN;
+			return true;
+        }
 
 		// iteraterate over all postfix operator strings
 		funmap_type::const_reverse_iterator it = m_pInfixOprtDef->rbegin();

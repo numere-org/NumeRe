@@ -63,7 +63,7 @@ namespace mu
 
     struct SOprtData
     {
-        Variable* var;
+        VarArray var;
         int offset;
     };
 
@@ -149,12 +149,16 @@ namespace mu
 			void Assign(const ParserByteCode& a_ByteCode);
 
 			void AddVar(Variable* a_pVar);
+			void AddVarArray(const VarArray& a_varArray);
 			void AddVal(const Array& a_fVal);
 			void AddOp(ECmdCode a_Oprt);
 			void AddIfElse(ECmdCode a_Oprt);
 			void AddAssignOp(Variable* a_pVar);
+			void AddAssignOp(const VarArray& a_varArray);
 			void AddFun(generic_fun_type a_pFun, int a_iArgc, bool optimizeAway);
 			void AddBulkFun(generic_fun_type a_pFun, int a_iArgc);
+
+			void pop();
 
 			void EnableOptimizer(bool bStat);
 

@@ -983,6 +983,11 @@ namespace mu
         m_commonType = TYPE_VOID;
     }
 
+    bool Array::isCommutative() const
+    {
+        return getCommonType() == TYPE_NUMERICAL;
+    }
+
 
     Variable::Variable() : Array()
     { }
@@ -1038,8 +1043,12 @@ namespace mu
     }
 
 
+    VarArray::VarArray(Variable* var) : std::vector<Variable*>(1, var)
+    {
+        //
+    }
 
-    VarArray& VarArray::operator=(const Array& values)
+    Array VarArray::operator=(const Array& values)
     {
         if (values.isScalar())
         {
@@ -1047,16 +1056,18 @@ namespace mu
             {
                 *operator[](i) = values.front();
             }
-
-            return *this;
         }
-
-        for (size_t i = 0; i < std::min(size(), values.size()); i++)
+        else if (size() == 1)
+            *front() = values;
+        else
         {
-            *operator[](i) = values[i];
+            for (size_t i = 0; i < std::min(size(), values.size()); i++)
+            {
+                *operator[](i) = values[i];
+            }
         }
 
-        return *this;
+        return values;
     }
 
     VarArray& VarArray::operator=(const std::vector<Array>& arrayList)
@@ -1110,7 +1121,22 @@ namespace mu
             ret += toHexString((size_t)operator[](i));
         }
 
-        return "{" + ret + "}";
+        if (size() > 1)
+            return "{" + ret + "}";
+
+        return ret;
+    }
+
+    Array VarArray::asArray() const
+    {
+        Array ret;
+
+        for (size_t i = 0; i < size(); i++)
+        {
+            ret.insert(ret.end(), operator[](i)->begin(), operator[](i)->end());
+        }
+
+        return ret;
     }
 
 

@@ -20,12 +20,14 @@
 #define MUHELPERS_HPP
 
 #include <string>
+#include "muStructures.hpp"
 
 namespace mu
 {
     void print(const std::string& msg);
     void printFormatted(const std::string& msg);
     void toggleTableMode();
+    Array val2Str(const Array& arr, size_t nLen);
 }
 
 #endif // MUHELPERS_HPP
