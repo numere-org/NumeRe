@@ -41,7 +41,6 @@ int main()
 {
     mu::Parser _parser;
     _parser.EnableDebugDump(true, false);
-    _parser.EnableVarFactory();
 
     // trigonometric functions
     _parser.DefineFun("sin", parser_sin);
@@ -115,8 +114,10 @@ int main()
 
         try
         {
+            mu::Array* res;
+
             _parser.SetExpr(sInput);
-            mu::Array* res = _parser.Eval(nResults);
+            res = _parser.Eval(nResults);
 
             for (int i = 0; i < nResults; i++)
             {

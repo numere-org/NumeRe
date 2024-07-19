@@ -78,7 +78,7 @@ namespace mu
             static Array Min(const Array*, int);  // minimum
             static Array Max(const Array*, int);  // maximum
 
-            static int IsVal(const char_type* a_szExpr, int* a_iPos, Value* a_fVal);
+            static int IsVal(StringView a_szExpr, int* a_iPos, Value* a_fVal);
     };
 } // namespace mu
 

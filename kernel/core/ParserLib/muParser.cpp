@@ -130,20 +130,20 @@ namespace mu
         \param [out] a_fVal Pointer where the value should be stored in case one is found.
         \return 1 if a value was found 0 otherwise.
     */
-    int Parser::IsVal(const char_type* a_szExpr, int* a_iPos, Value* a_fVal)
+    int Parser::IsVal(StringView a_szExpr, int* a_iPos, Value* a_fVal)
     {
         std::complex<double> fVal(0);
 
-        stringstream_type stream(a_szExpr);
-        stream.seekg(0);        // todo:  check if this really is necessary
+        stringstream_type stream(a_szExpr.get_viewed_string());
+        stream.seekg(a_szExpr.get_offset());        // todo:  check if this really is necessary
         stream.imbue(Parser::s_locale);
         stream >> fVal;
         stringstream_type::pos_type iEnd = stream.tellg(); // Position after reading
 
-        if (iEnd == (stringstream_type::pos_type) - 1)
+        if (!stream.eof() && iEnd == (stringstream_type::pos_type)-1)
             return 0;
 
-        *a_iPos += (int)iEnd;
+        *a_iPos += (int)(iEnd-a_szExpr.get_offset());
         *a_fVal = Numerical(fVal);
         return 1;
     }

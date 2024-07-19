@@ -37,6 +37,9 @@
 
 #include "muParserDef.h"
 #include "muParserToken.h"
+#include "muVarFactory.hpp"
+
+#include "../structures.hpp"
 
 /** \file
     \brief This file contains the parser token reader definition.
@@ -63,12 +66,11 @@ namespace mu
             ParserTokenReader* Clone(ParserBase* a_pParent) const;
 
             void AddValIdent(identfun_type a_pCallback);
-            void SetVarCreator(facfun_type a_pFactory, void* pUserData);
-            void SetFormula(const string_type& a_strFormula);
+            void SetFormula(StringView a_strFormula);
             void SetArgSep(char_type cArgSep);
 
             int GetPos() const;
-            const string_type& GetExpr() const;
+            StringView GetExpr() const;
             varmap_type& GetUsedVar();
             char_type GetArgSep() const;
 
@@ -134,7 +136,7 @@ namespace mu
             token_type& SaveBeforeReturn(const token_type& tok);
 
             ParserBase* m_pParser;
-            string_type m_strFormula;
+            StringView m_strFormula;
             int  m_iPos;
             int  m_iSynFlags;
             bool m_bIgnoreUndefVar;
@@ -144,10 +146,7 @@ namespace mu
             const funmap_type* m_pInfixOprtDef;
             const funmap_type* m_pOprtDef;
             const valmap_type* m_pConstDef;
-            const strmap_type* m_pStrVarDef;
-            varmap_type* m_pVarDef;  ///< The only non const pointer to parser internals
-            facfun_type m_pFactory;
-            void* m_pFactoryData;
+            std::shared_ptr<VarFactory> m_factory;
             std::list<identfun_type> m_vIdentFun; ///< Value token identification function
             varmap_type m_UsedVar;
             Variable m_fZero;      ///< Dummy value of zero, referenced by undefined variables

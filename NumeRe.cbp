@@ -1818,6 +1818,8 @@
 		<Unit filename="kernel/core/ParserLib/muParserTokenReader.h" />
 		<Unit filename="kernel/core/ParserLib/muStructures.cpp" />
 		<Unit filename="kernel/core/ParserLib/muStructures.hpp" />
+		<Unit filename="kernel/core/ParserLib/muVarFactory.cpp" />
+		<Unit filename="kernel/core/ParserLib/muVarFactory.hpp" />
 		<Unit filename="kernel/core/ParserLib/parserstandalone.cpp">
 			<Option target="ParserLib_x64" />
 		</Unit>

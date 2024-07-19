@@ -105,6 +105,7 @@
 #define MUP_ASSERT(COND)
 #endif
 
+class StringView;
 
 namespace mu
 {
@@ -373,10 +374,7 @@ namespace mu
     typedef value_type (*strfun_type3)(const char_type*, value_type, value_type);
 
     /** \brief Callback used for functions that identify values in a string. */
-    typedef int (*identfun_type)(const char_type* sExpr, int* nPos, Value* fVal);
-
-    /** \brief Callback used for variable creation factory functions. */
-    typedef Variable* (*facfun_type)(const char_type*, void*);
+    typedef int (*identfun_type)(StringView sExpr, int* nPos, Value* fVal);
 
     // Forward declarations
     inline bool isinf(const std::complex<double>& v)

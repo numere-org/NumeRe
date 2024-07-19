@@ -87,15 +87,12 @@ namespace mu
 		m_UsedVar         = a_Reader.m_UsedVar;
 		m_pFunDef         = a_Reader.m_pFunDef;
 		m_pConstDef       = a_Reader.m_pConstDef;
-		m_pVarDef         = a_Reader.m_pVarDef;
-		m_pStrVarDef      = a_Reader.m_pStrVarDef;
+		m_factory         = a_Reader.m_factory;
 		m_pPostOprtDef    = a_Reader.m_pPostOprtDef;
 		m_pInfixOprtDef   = a_Reader.m_pInfixOprtDef;
 		m_pOprtDef        = a_Reader.m_pOprtDef;
 		m_bIgnoreUndefVar = a_Reader.m_bIgnoreUndefVar;
 		m_vIdentFun       = a_Reader.m_vIdentFun;
-		m_pFactory        = a_Reader.m_pFactory;
-		m_pFactoryData    = a_Reader.m_pFactoryData;
 		m_iBrackets       = a_Reader.m_iBrackets;
 		m_cArgSep         = a_Reader.m_cArgSep;
 	}
@@ -120,10 +117,6 @@ namespace mu
 		, m_pInfixOprtDef(NULL)
 		, m_pOprtDef(NULL)
 		, m_pConstDef(NULL)
-		, m_pStrVarDef(NULL)
-		, m_pVarDef(NULL)
-		, m_pFactory(NULL)
-		, m_pFactoryData(NULL)
 		, m_vIdentFun()
 		, m_UsedVar()
 		, m_fZero(0)
@@ -172,13 +165,6 @@ namespace mu
 	}
 
 	//---------------------------------------------------------------------------
-	void ParserTokenReader::SetVarCreator(facfun_type a_pFactory, void* pUserData)
-	{
-		m_pFactory = a_pFactory;
-		m_pFactoryData = pUserData;
-	}
-
-	//---------------------------------------------------------------------------
 	/** \brief Return the current position of the token reader in the formula string.
 
 	    \return #m_iPos
@@ -195,7 +181,7 @@ namespace mu
 	    \return #m_strFormula
 	    \throw nothrow
 	*/
-	const string_type& ParserTokenReader::GetExpr() const
+	StringView ParserTokenReader::GetExpr() const
 	{
 		return m_strFormula;
 	}
@@ -213,7 +199,7 @@ namespace mu
 	    Sets the formula position index to zero and set Syntax flags to default for initial formula parsing.
 	    \pre [assert] triggered if a_szFormula==0
 	*/
-	void ParserTokenReader::SetFormula(const string_type& a_strFormula)
+	void ParserTokenReader::SetFormula(StringView a_strFormula)
 	{
 		m_strFormula = a_strFormula;
 		ReInit();
@@ -258,12 +244,11 @@ namespace mu
 		assert(m_pParser);
 
 		std::stack<int> FunArgs;
-		const char_type* szFormula = m_strFormula.c_str();
 		token_type tok;
 		m_lastTok.GetCode();
 
 		// Ignore all non printable characters when reading the expression
-		while (szFormula[m_iPos] > 0 && szFormula[m_iPos] <= 0x20)
+		while (m_strFormula[m_iPos] > 0 && m_strFormula[m_iPos] <= 0x20)
 			++m_iPos;
 
 		if ( IsEOF(tok) )
@@ -294,7 +279,7 @@ namespace mu
 		// (The GetUsedVar function must suppress the error for
 		// undefined variables in order to collect all variable
 		// names including the undefined ones.)
-		if ( (m_bIgnoreUndefVar || m_pFactory) && IsUndefVarTok(tok) )
+		if ( (m_bIgnoreUndefVar || m_factory) && IsUndefVarTok(tok) )
 			return SaveBeforeReturn(tok);
 
 		// Check for unknown token
@@ -306,7 +291,7 @@ namespace mu
 		if (iEnd != m_iPos)
 			Error(ecUNASSIGNABLE_TOKEN, m_iPos, strTok);
 
-		Error(ecUNASSIGNABLE_TOKEN, m_iPos, m_strFormula.substr(m_iPos));
+		Error(ecUNASSIGNABLE_TOKEN, m_iPos, m_strFormula.subview(m_iPos).to_string());
 		return token_type(); // never reached
 	}
 
@@ -318,8 +303,7 @@ namespace mu
 		m_pOprtDef      = &a_pParent->m_OprtDef;
 		m_pInfixOprtDef = &a_pParent->m_InfixOprtDef;
 		m_pPostOprtDef  = &a_pParent->m_PostOprtDef;
-		m_pVarDef       = &a_pParent->m_VarDef;
-		m_pStrVarDef    = &a_pParent->m_StrVarDef;
+		m_factory       = a_pParent->m_factory;
 		m_pConstDef     = &a_pParent->m_ConstDef;
 	}
 
@@ -336,14 +320,11 @@ namespace mu
 										string_type& a_sTok,
 										int a_iPos) const
 	{
-		int iEnd = (int)m_strFormula.find_first_not_of(a_szCharSet, a_iPos);
-
-		if (iEnd == (int)string_type::npos)
-			iEnd = (int)m_strFormula.length();
+		size_t iEnd = std::min(m_strFormula.find_first_not_of(a_szCharSet, a_iPos), m_strFormula.length());
 
 		// Assign token string if there was something found
 		if (a_iPos != iEnd)
-			a_sTok = string_type( m_strFormula.begin() + a_iPos, m_strFormula.begin() + iEnd);
+			a_sTok = m_strFormula.subview(a_iPos, iEnd-a_iPos).to_string();
 
 		return iEnd;
 	}
@@ -356,17 +337,14 @@ namespace mu
 	  in operator tokens. To avoid this this function checks specifically
 	  for operator tokens.
 	*/
-	int ParserTokenReader::ExtractOperatorToken(string_type& a_sTok,
-			int a_iPos) const
+	int ParserTokenReader::ExtractOperatorToken(string_type& a_sTok, int a_iPos) const
 	{
-		int iEnd = (int)m_strFormula.find_first_not_of(m_pParser->ValidInfixOprtChars(), a_iPos);
-		if (iEnd == (int)string_type::npos)
-			iEnd = (int)m_strFormula.length();
+		size_t iEnd = std::min(m_strFormula.find_first_not_of(m_pParser->ValidInfixOprtChars(), a_iPos), m_strFormula.length());
 
 		// Assign token string if there was something found
 		if (a_iPos != iEnd)
 		{
-			a_sTok = string_type( m_strFormula.begin() + a_iPos, m_strFormula.begin() + iEnd);
+			a_sTok = m_strFormula.subview(a_iPos, iEnd-a_iPos).to_string();
 			return iEnd;
 		}
 		else
@@ -384,15 +362,15 @@ namespace mu
 	*/
 	bool ParserTokenReader::IsBuiltIn(token_type& a_Tok)
 	{
-		const char_type** const pOprtDef = m_pParser->GetOprtDef(),
-								*const szFormula = m_strFormula.c_str();
+		const char_type** pOprtDef = m_pParser->GetOprtDef();
 
 		// Compare token with function and operator strings
 		// check string for operator/function
 		for (int i = 0; pOprtDef[i]; i++)
 		{
 			std::size_t len( std::char_traits<char_type>::length(pOprtDef[i]) );
-			if ( string_type(pOprtDef[i]) == string_type(szFormula + m_iPos, szFormula + m_iPos + len) )
+
+			if (m_strFormula.match(pOprtDef[i], m_iPos))
 			{
 				switch (i)
 				{
@@ -511,9 +489,7 @@ namespace mu
 	//---------------------------------------------------------------------------
 	bool ParserTokenReader::IsArgSep(token_type& a_Tok)
 	{
-		const char_type* szFormula = m_strFormula.c_str();
-
-		if (szFormula[m_iPos] == m_cArgSep)
+		if (m_strFormula[m_iPos] == m_cArgSep)
 		{
 			// copy the separator into null terminated string
 			char_type szSep[2];
@@ -542,12 +518,10 @@ namespace mu
 	*/
 	bool ParserTokenReader::IsEOF(token_type& a_Tok)
 	{
-		const char_type* szFormula = m_strFormula.c_str();
-
 		// check for EOF
-		if ( !szFormula[m_iPos] /*|| szFormula[m_iPos] == '\n'*/)
+		if (m_iPos >= m_strFormula.length() || m_strFormula[m_iPos] == 0)
 		{
-			if ( m_iSynFlags & noEND )
+			if (m_iSynFlags & noEND)
 				Error(ecUNEXPECTED_EOF, m_iPos);
 
 			if (m_iBrackets > 0)
@@ -637,8 +611,7 @@ namespace mu
 			return false;
 
 		// Check if the next sign is an opening bracket
-		const char_type* szFormula = m_strFormula.c_str();
-		if (szFormula[iEnd] != '(')
+		if (m_strFormula[iEnd] != '(')
 			return false;
 
 		a_Tok.Set(item->second, strTok);
@@ -658,7 +631,6 @@ namespace mu
 	*/
 	bool ParserTokenReader::IsOprt(token_type& a_Tok)
 	{
-		const char_type* const szExpr = m_strFormula.c_str();
 		string_type strTok;
 
 		int iEnd = ExtractOperatorToken(strTok, m_iPos);
@@ -682,8 +654,7 @@ namespace mu
 		funmap_type::const_reverse_iterator it = m_pOprtDef->rbegin();
 		for ( ; it != m_pOprtDef->rend(); ++it)
 		{
-			const string_type& sID = it->first;
-			if ( sID == string_type(szExpr + m_iPos, szExpr + m_iPos + sID.length()) )
+			if (m_strFormula.match(it->first, m_iPos))
 			{
 				a_Tok.Set(it->second, strTok);
 
@@ -705,7 +676,7 @@ namespace mu
 
 				}
 
-				m_iPos += (int)sID.length();
+				m_iPos += (int)(it->first.length());
 				m_iSynFlags  = noBC | noOPT | noARG_SEP | noPOSTOP | noEND | noVC | noASSIGN;
 				return true;
 			}
@@ -802,9 +773,10 @@ namespace mu
 		for (item = m_vIdentFun.begin(); item != m_vIdentFun.end(); ++item)
 		{
 			int iStart = m_iPos;
-			if ( (*item)(m_strFormula.c_str() + m_iPos, &m_iPos, &fVal) == 1 )
+			if ( (*item)(m_strFormula.subview(m_iPos), &m_iPos, &fVal) == 1 )
 			{
-				strTok.assign(m_strFormula.c_str(), iStart, m_iPos);
+			    strTok = m_strFormula.subview(iStart, m_iPos-iStart).to_string();
+				//strTok.assign(m_strFormula.c_str(), iStart, m_iPos);
 				if (m_iSynFlags & noVAL)
 					Error(ecUNEXPECTED_VAL, m_iPos - (int)strTok.length(), strTok);
 
@@ -824,7 +796,7 @@ namespace mu
 	*/
 	bool ParserTokenReader::IsVarTok(token_type& a_Tok)
 	{
-		if (!m_pVarDef->size())
+		if (m_factory->Empty())
 			return false;
 
 		string_type strTok;
@@ -832,8 +804,9 @@ namespace mu
 		if (iEnd == m_iPos)
 			return false;
 
-		varmap_type::const_iterator item =  m_pVarDef->find(strTok);
-		if (item == m_pVarDef->end())
+        Variable* var = m_factory->Get(strTok);
+
+		if (!var)
 			return false;
 
 		if (m_iSynFlags & noVAR)
@@ -844,11 +817,12 @@ namespace mu
 			Error(ecUNEXPECTED_VAR, m_iPos, strTok);
         }
 
-		m_pParser->OnDetectVar(&m_strFormula, m_iPos, iEnd);
+        // Disabled, because not needed
+		//m_pParser->OnDetectVar(&m_strFormula, m_iPos, iEnd);
 
 		m_iPos = iEnd;
-		a_Tok.SetVar(item->second, strTok);
-		m_UsedVar[item->first] = item->second;  // Add variable to used-var-list
+		a_Tok.SetVar(var, strTok);
+		m_UsedVar[strTok] = var;  // Add variable to used-var-list
 
 		m_iSynFlags = noVAL | noVAR | noFUN | noBO | noVO | noINFIXOP | noSTR;
 
@@ -882,18 +856,10 @@ namespace mu
 		}
 
 		// If a factory is available implicitely create new variables
-		if (m_pFactory)
+		if (m_factory)
 		{
-			Variable* fVar = m_pFactory(strTok.c_str(), m_pFactoryData);
+			Variable* fVar = m_factory->Create(strTok);
 			a_Tok.SetVar(fVar, strTok);
-
-			// Do not use m_pParser->DefineVar( strTok, fVar );
-			// in order to define the new variable, it will clear the
-			// m_UsedVar array which will kill previousely defined variables
-			// from the list
-			// This is safe because the new variable can never override an existing one
-			// because they are checked first!
-			(*m_pVarDef)[strTok] = fVar;
 			m_UsedVar[strTok] = fVar;  // Add variable to used-var-list
 		}
 		else
@@ -922,7 +888,7 @@ namespace mu
 		if (m_strFormula[m_iPos] != '"')
 			return false;
 
-		string_type strBuf(&m_strFormula[m_iPos+1]);
+		std::string strBuf = m_strFormula.subview(m_iPos+1).to_string();
 		std::size_t iEnd(0), iSkip(0);
 
 		// parser over escaped '\"' end replace them with '"'

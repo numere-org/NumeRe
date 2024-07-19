@@ -127,30 +127,6 @@ namespace mu
 
 
 
-    /////////////////////////////////////////////////
-    /// \brief This function represents the numerical
-    /// variable factory. New memory is allocated in
-    /// this function and stored in an internal list
-    /// managed by the parser.
-    ///
-    /// \param a_szName const char_type*
-    /// \param a_pUserData void*
-    /// \return Variable*
-    ///
-    /////////////////////////////////////////////////
-    static Variable* VarFactory(const mu::char_type* a_szName, void* a_pUserData)
-    {
-        // Cast the passed void pointer to a the data storage list
-        std::list<Variable*>* m_varStorage = static_cast<std::list<Variable*>* >(a_pUserData);
-
-        // Create the storage for a new variable initialized to void
-        m_varStorage->push_back(new Variable(Value()));
-
-        // Return the address of the newly created storage
-        return m_varStorage->back();
-    }
-
-
 	std::locale ParserBase::s_locale = std::locale(std::locale::classic(), new change_dec_sep<char_type>('.'));
 
 	bool ParserBase::g_DbgDumpCmdCode = false;
@@ -180,21 +156,19 @@ namespace mu
 	ParserBase::ParserBase()
 		: m_pParseFormula(&ParserBase::ParseString)
 		, m_compilingState()
-		, m_vStringBuf()
 		, m_pTokenReader()
 		, m_FunDef()
 		, m_PostOprtDef()
 		, m_InfixOprtDef()
 		, m_OprtDef()
 		, m_ConstDef()
-		, m_StrVarDef()
-		, m_VarDef()
 		, m_bBuiltInOp(true)
 		, m_sNameChars()
 		, m_sOprtChars()
 		, m_sInfixOprtChars()
 		, m_nIfElseCounter(0)
 	{
+	    m_factory.reset(new VarFactory);
 		InitTokenReader();
 		nthLoopElement = 0;
 		nthLoopPartEquation = 0;
@@ -214,42 +188,15 @@ namespace mu
 	  Tha parser can be safely copy constructed but the bytecode is reset during
 	  copy construction.
 	*/
-	ParserBase::ParserBase(const ParserBase& a_Parser)
-		: m_pParseFormula(&ParserBase::ParseString)
-		, m_compilingState()
-		, m_vStringBuf()
-		, m_pTokenReader()
-		, m_FunDef()
-		, m_PostOprtDef()
-		, m_InfixOprtDef()
-		, m_OprtDef()
-		, m_ConstDef()
-		, m_StrVarDef()
-		, m_VarDef()
-		, m_bBuiltInOp(true)
-		, m_sNameChars()
-		, m_sOprtChars()
-		, m_sInfixOprtChars()
-		, m_nIfElseCounter(0)
+	ParserBase::ParserBase(const ParserBase& a_Parser) : ParserBase()
 	{
-		m_pTokenReader.reset(new token_reader_type(this));
-		nthLoopElement = 0;
-		bMakeLoopByteCode = false;
-		bPauseLoopByteCode = false;
-		bPauseLock = false;
-		m_state = &m_compilingState;
-		nMaxThreads = omp_get_max_threads(); //std::min(omp_get_max_threads(), s_MaxNumOpenMPThreads);
-
-		mVarMapPntr = nullptr;
-
 		Assign(a_Parser);
 	}
 
 	//---------------------------------------------------------------------------
 	ParserBase::~ParserBase()
 	{
-        for (auto iter = m_varStorage.begin(); iter != m_varStorage.end(); ++iter)
-            delete *iter;
+	    //
 	}
 
 	//---------------------------------------------------------------------------
@@ -284,15 +231,11 @@ namespace mu
 		// by resetting the parse function.
 		ReInit();
 
-		m_ConstDef        = a_Parser.m_ConstDef;         // Copy user define constants
-		m_VarDef          = a_Parser.m_VarDef;           // Copy user defined variables
-		m_bBuiltInOp      = a_Parser.m_bBuiltInOp;
-		m_vStringBuf      = a_Parser.m_vStringBuf;
-		m_compilingState  = a_Parser.m_compilingState;
-		m_StrVarDef       = a_Parser.m_StrVarDef;
-		m_vStringVarBuf   = a_Parser.m_vStringVarBuf;
-		m_nIfElseCounter  = a_Parser.m_nIfElseCounter;
-		m_pTokenReader.reset(a_Parser.m_pTokenReader->Clone(this));
+		m_ConstDef = a_Parser.m_ConstDef;         // Copy user define constants
+		m_bBuiltInOp = a_Parser.m_bBuiltInOp;
+		m_nIfElseCounter = a_Parser.m_nIfElseCounter;
+		m_factory = a_Parser.m_factory; // Get a reference to the original var factory
+		m_pTokenReader.reset(a_Parser.m_pTokenReader->Clone(this)); // Needs the correct factory
 
 		// Copy function and operator callbacks
 		m_FunDef = a_Parser.m_FunDef;             // Copy function definitions
@@ -303,6 +246,7 @@ namespace mu
 		m_sNameChars = a_Parser.m_sNameChars;
 		m_sOprtChars = a_Parser.m_sOprtChars;
 		m_sInfixOprtChars = a_Parser.m_sInfixOprtChars;
+		nCurrVectorIndex = a_Parser.nCurrVectorIndex;
 	}
 
 	//---------------------------------------------------------------------------
@@ -368,7 +312,6 @@ namespace mu
 	void ParserBase::ReInit()
 	{
 		m_pParseFormula = &ParserBase::ParseString;
-		m_vStringBuf.clear();
 		m_compilingState.clear();
 		m_pTokenReader->ReInit();
 		m_nIfElseCounter = 0;
@@ -476,14 +419,6 @@ namespace mu
 	}
 
 	//---------------------------------------------------------------------------
-	/** \brief Enable the internal variable factory
-	*/
-	void ParserBase::EnableVarFactory()
-	{
-		m_pTokenReader->SetVarCreator(VarFactory, &m_varStorage);
-	}
-
-	//---------------------------------------------------------------------------
 	/** \brief Add a function or operator callback to the parser. */
 	void ParserBase::AddCallback( const string_type& a_strName,
 								  const ParserCallback& a_Callback,
@@ -566,7 +501,7 @@ namespace mu
     /////////////////////////////////////////////////
 	void ParserBase::SetExpr(StringView a_sExpr)
 	{
-		string_type st;
+		//string_type st;
 
 #warning FIXME (numere#1#06/29/24): Evaluate which of those segments is still necessary
 		// Perform the pre-evaluation of the vectors first
@@ -590,13 +525,17 @@ namespace mu
                  && m_state->m_valid)
 			m_state->m_valid = 0;
 
-		string_type sBuf(a_sExpr.to_string() + " ");
-
 		if (mVarMapPntr)
-			replaceLocalVars(sBuf);
+        {
+            MutableStringView mut = a_sExpr.make_mutable();
+			replaceLocalVars(mut);
+			a_sExpr = mut;
+        }
+
+		//string_type sBuf(a_sExpr.to_string() + " ");
 
         // Pass the formula to the token reader
-		m_pTokenReader->SetFormula(sBuf);
+		m_pTokenReader->SetFormula(a_sExpr);
 
 		// Re-initialize the parser
 		ReInit();
@@ -1193,26 +1132,6 @@ namespace mu
 					ValidOprtChars() );
 	}
 
-	//---------------------------------------------------------------------------
-	/** \brief Define a new string constant.
-	    \param [in] a_strName The name of the constant.
-	    \param [in] a_strVal the value of the constant.
-	*/
-	void ParserBase::DefineStrConst(const string_type& a_strName, const string_type& a_strVal)
-	{
-#warning FIXME (numere#1#07/04/24): This is (hopefully) dead
-        print("DefineStrConst");
-		// Test if a constant with that names already exists
-		if (m_StrVarDef.find(a_strName) != m_StrVarDef.end())
-			Error(ecNAME_CONFLICT);
-
-		CheckName(a_strName, ValidNameChars());
-
-		m_vStringVarBuf.push_back(a_strVal);           // Store variable string in internal buffer
-		m_StrVarDef[a_strName] = m_vStringBuf.size();  // bind buffer index to variable name
-
-		ReInit();
-	}
 
 	//---------------------------------------------------------------------------
 	/** \brief Add a user defined variable.
@@ -1232,14 +1151,7 @@ namespace mu
 
 		CheckName(a_sName, ValidNameChars());
 
-		bool makeReInit = false;
-
-		if (m_VarDef.find(a_sName) != m_VarDef.end())
-            makeReInit = true;
-
-		m_VarDef[a_sName] = a_pVar;
-
-		if (makeReInit)
+		if (m_factory->Add(a_sName, a_pVar))
             ReInit();
 	}
 
@@ -1369,7 +1281,7 @@ namespace mu
 	/** \brief Return a map containing the used variables only. */
 	const varmap_type& ParserBase::GetVar() const
 	{
-		return m_VarDef;
+		return m_factory->m_VarDef;
 	}
 
 	//---------------------------------------------------------------------------
@@ -2529,7 +2441,7 @@ namespace mu
 	{
 		CreateRPN();
         m_compilingState.m_usedVar = m_pTokenReader->GetUsedVar();
-        m_compilingState.m_expr = m_pTokenReader->GetExpr();
+        m_compilingState.m_expr = m_pTokenReader->GetExpr().to_string();
         StripSpaces(m_compilingState.m_expr);
 
 		if (bMakeLoopByteCode
@@ -2560,7 +2472,7 @@ namespace mu
 	*/
 	void  ParserBase::Error(EErrorCodes a_iErrc, int a_iPos, const string_type& a_sTok) const
 	{
-        throw exception_type(a_iErrc, a_sTok, m_pTokenReader->GetExpr(), a_iPos);
+        throw exception_type(a_iErrc, a_sTok, m_pTokenReader->GetExpr().to_string(), a_iPos);
 	}
 
 	//---------------------------------------------------------------------------
@@ -2588,7 +2500,7 @@ namespace mu
 	*/
 	void ParserBase::ClearVar()
 	{
-		m_VarDef.clear();
+		m_factory->Clear();
 		ReInit();
 	}
 
@@ -2600,26 +2512,8 @@ namespace mu
 	*/
 	void ParserBase::RemoveVar(const string_type& a_strVarName)
 	{
-		varmap_type::iterator item = m_VarDef.find(a_strVarName);
-		//g_logger.debug("Trying to delete " + a_strVarName);
-
-		if (item != m_VarDef.end())
-		{
-		    // Search for the variable in the internal storage and
-		    // remove it
-		    for (auto iter = m_varStorage.begin(); iter != m_varStorage.end(); ++iter)
-            {
-                if (item->second == *iter)
-                {
-                    delete *iter;
-                    m_varStorage.erase(iter);
-                    break;
-                }
-            }
-
-			m_VarDef.erase(item);
-			ReInit();
-		}
+	    if (m_factory->Remove(a_strVarName))
+            ReInit();
 	}
 
 	//------------------------------------------------------------------------------
@@ -2643,7 +2537,6 @@ namespace mu
 	void ParserBase::ClearConst()
 	{
 		m_ConstDef.clear();
-		m_StrVarDef.clear();
 		ReInit();
 	}
 
@@ -2857,96 +2750,16 @@ namespace mu
 
     /////////////////////////////////////////////////
     /// \brief This member function returns the next
-    /// comma-separated expression object from the
-    /// passed argument list.
-    ///
-    /// \param sArgList std::string&
-    /// \param bCut bool
-    /// \return string_type
-    ///
-    /////////////////////////////////////////////////
-	string_type ParserBase::getNextVarObject(std::string& sArgList, bool bCut)
-	{
-		int nParenthesis = 0;
-		int nVektorbrace = 0;
-		size_t nPos = 0;
-
-		// Find the next "top-level" expression object, which
-		// is separated by a comma
-		for (size_t i = 0; i < sArgList.length(); i++)
-		{
-			if (sArgList[i] == '(')
-				nParenthesis++;
-
-            if (sArgList[i] == ')')
-				nParenthesis--;
-
-			if (sArgList[i] == '{')
-			{
-				nVektorbrace++;
-				i++;
-			}
-
-			if (sArgList[i] == '}')
-			{
-				nVektorbrace--;
-				i++;
-			}
-
-			if (sArgList[i] == ',' && !nParenthesis && !nVektorbrace)
-			{
-				nPos = i;
-				break;
-			}
-		}
-
-		// Nothing found: use everything
-		if (!nPos && sArgList[0] != ',')
-			nPos = sArgList.length();
-
-        // First position: remove the comma
-        // and return an empty string
-		if (!nPos)
-		{
-			if (bCut && sArgList[0] == ',')
-				sArgList.erase(0, 1);
-
-			return "";
-		}
-
-		// Extract the argument
-		std::string sArg = sArgList.substr(0, nPos);
-
-		// Strip whitespaces from front and back
-		while (sArg.front() == ' ' || sArg.front() == '\t')
-			sArg.erase(0, 1);
-
-		while (sArg.back() == ' ' || sArg.back() == '\t')
-			sArg.erase(sArg.length() - 1);
-
-        // Remove the argument and the trailing comma
-        // from the argument list
-		if (bCut && sArgList.length() > nPos + 1)
-			sArgList = sArgList.substr(nPos + 1);
-		else if (bCut)
-			sArgList = "";
-
-		return sArg;
-	}
-
-
-    /////////////////////////////////////////////////
-    /// \brief This member function returns the next
     /// free vector index, which can be used to
     /// create a new temporary vector.
     ///
     /// \return string_type
     ///
     /// This function is called by
-    /// ParserBase::CreateTempVectorVar(), which
+    /// ParserBase::CreateTempVar(), which
     /// creates the actual vector.
     /////////////////////////////////////////////////
-	string_type ParserBase::getNextVectorVarIndex()
+	string_type ParserBase::getNextTempVarIndex()
 	{
 	    if (bMakeLoopByteCode)
         {
@@ -2955,7 +2768,7 @@ namespace mu
             return sIndex;
         }
         else
-            return toString(m_varStorage.size()); //nVectorIndex);
+            return toString(m_factory->ManagedSize());
 	}
 
 
@@ -3663,7 +3476,7 @@ namespace mu
     /////////////////////////////////////////////////
 	std::string ParserBase::CreateTempVar(const Array& vVar)
 	{
-	    std::string sTempVarName = "_~TV[" + getNextVectorVarIndex() + "]";
+	    std::string sTempVarName = "_~TV[" + getNextTempVarIndex() + "]";
 
         if (!vVar.size())
             SetInternalVar(sTempVarName, Value());
@@ -3686,25 +3499,20 @@ namespace mu
     /////////////////////////////////////////////////
 	void ParserBase::SetInternalVar(const std::string& sVarName, const Array& vVar)
 	{
-#warning FIXME (numere#1#06/27/24): Check and evaluate vector vars
-
 		if (!vVar.size())
 			return;
 
-        //g_logger.debug("Declaring " + sVarName);
+        Variable* var = m_factory->Get(sVarName);
 
-		if (m_VarDef.find(sVarName) == m_VarDef.end())
+		if (!var)
 		{
-		    // Create the storage for a new variable
-		    m_varStorage.push_back(new Variable(vVar));
-
-		    // Define a new variable
-		    DefineVar(sVarName, m_varStorage.back());
+		    var = m_factory->Create(sVarName);
+		    *var = vVar;
 		}
 		else
-			m_VarDef.find(sVarName)->second->overwrite(vVar); // Force-overwrite in this case
+			var->overwrite(vVar); // Force-overwrite in this case
 
-        mInternalVars[sVarName] = m_VarDef[sVarName];
+        mInternalVars[sVarName] = var;
 	}
 
 
