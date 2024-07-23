@@ -410,6 +410,16 @@ namespace mu
                 return m_pCallback->GetArgc();
             }
 
+            int GetOptArgCount() const
+            {
+                assert(m_pCallback.get());
+
+                if (!m_pCallback->GetAddr())
+                    throw ParserError(ecINTERNAL_ERROR);
+
+                return m_pCallback->GetOptC();
+            }
+
             //------------------------------------------------------------------------------
             /** \brief Return the token identifier.
 

@@ -52,6 +52,8 @@ namespace mu
         Numerical& operator-=(const Numerical& other);
         Numerical& operator/=(const Numerical& other);
         Numerical& operator*=(const Numerical& other);
+
+        int64_t asInt() const;
     };
 
 
@@ -149,6 +151,7 @@ namespace mu
             std::vector<DataType> getType() const;
             DataType getCommonType() const;
             bool isScalar() const;
+            bool isDefault() const;
 
             Array operator+(const Array& other) const;
             Array operator-() const;
@@ -238,6 +241,16 @@ namespace mu
     Array operator*(const Value& v, const Array& arr);
     Array operator/(const Value& v, const Array& arr);
 
+    Array operator+(const Array& arr, double v);
+    Array operator-(const Array& arr, double v);
+    Array operator*(const Array& arr, double v);
+    Array operator/(const Array& arr, double v);
+
+    Array operator+(double v, const Array& arr);
+    Array operator-(double v, const Array& arr);
+    Array operator*(double v, const Array& arr);
+    Array operator/(double v, const Array& arr);
+
 
 
 
@@ -245,16 +258,29 @@ namespace mu
                 const Array& a);
     Array apply(Value(*)(const Value&),
                 const Array& a);
+    Array apply(std::string(*)(const std::string&),
+                const Array& a);
+
     Array apply(std::complex<double>(*)(const std::complex<double>&, const std::complex<double>&),
                 const Array& a1, const Array& a2);
     Array apply(Value(*)(const Value&, const Value&),
                 const Array& a1, const Array& a2);
+
     Array apply(std::complex<double>(*)(const std::complex<double>&, const std::complex<double>&, const std::complex<double>&),
                 const Array& a1, const Array& a2, const Array& a3);
+    Array apply(Value(*)(const Value&, const Value&, const Value&),
+                const Array& a1, const Array& a2, const Array& a3);
+
     Array apply(std::complex<double>(*)(const std::complex<double>&, const std::complex<double>&, const std::complex<double>&, const std::complex<double>&),
                 const Array& a1, const Array& a2, const Array& a3, const Array& a4);
+    Array apply(Value(*)(const Value&, const Value&, const Value&, const Value&),
+                const Array& a1, const Array& a2, const Array& a3, const Array& a4);
+
     Array apply(std::complex<double>(*)(const std::complex<double>&, const std::complex<double>&, const std::complex<double>&, const std::complex<double>&, const std::complex<double>&),
                 const Array& a1, const Array& a2, const Array& a3, const Array& a4, const Array& a5);
+    Array apply(Value(*)(const Value&, const Value&, const Value&, const Value&, const Value&),
+                const Array& a1, const Array& a2, const Array& a3, const Array& a4, const Array& a5);
+
     Array apply(std::complex<double>(*)(const std::complex<double>*, int),
                 const Array* arrs, int elems);
     Array apply(Value(*)(const Value*, int),

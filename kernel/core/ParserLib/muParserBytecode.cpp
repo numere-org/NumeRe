@@ -269,7 +269,7 @@ namespace mu
 								m_vRPN[sz - 2].Cmd = cmVARPOW3;
 							else if (m_vRPN[sz - 1].Val().data2 == 4.0)
 								m_vRPN[sz - 2].Cmd = cmVARPOW4;
-							else if (m_vRPN[sz - 1].Val().data2 == (double)intCast(m_vRPN[sz - 1].Val().data2.front().getNum().val))
+							else if (m_vRPN[sz - 1].Val().data2 == (double)m_vRPN[sz - 1].Val().data2.front().getNum().asInt())
 							{
 							    m_vRPN[sz - 2].Cmd = cmVARPOWN;
 							    m_vRPN[sz - 2].Val().data = m_vRPN[sz - 1].Val().data2;

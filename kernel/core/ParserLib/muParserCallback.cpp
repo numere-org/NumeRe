@@ -32,432 +32,438 @@
 
 namespace mu
 {
-  //---------------------------------------------------------------------------
-  ParserCallback::ParserCallback(fun_type0 a_pFun, bool optimizeAway)
-    :m_pFun((void*)a_pFun)
-    ,m_iArgc(0)
-    ,m_iPri(-1)
-    ,m_eOprtAsct(oaNONE)
-    ,m_iCode(cmFUNC)
-    ,m_iType(tpDBL)
-    ,m_bAllowOpti(optimizeAway)
-  {}
+    //---------------------------------------------------------------------------
+    ParserCallback::ParserCallback(fun_type0 a_pFun, bool optimizeAway, int numOpt)
+        : m_pFun((void*)a_pFun)
+        , m_iArgc(0)
+        , m_iOptArgC(0)
+        , m_iPri(-1)
+        , m_eOprtAsct(oaNONE)
+        , m_iCode(cmFUNC)
+        , m_iType(tpDBL)
+        , m_bAllowOpti(optimizeAway)
+    {}
 
-  //---------------------------------------------------------------------------
-  ParserCallback::ParserCallback(fun_type1 a_pFun, bool optimizeAway, int a_iPrec, ECmdCode a_iCode)
-    :m_pFun((void*)a_pFun)
-    ,m_iArgc(1)
-    ,m_iPri(a_iPrec)
-    ,m_eOprtAsct(oaNONE)
-    ,m_iCode(a_iCode)
-    ,m_iType(tpDBL)
-    ,m_bAllowOpti(optimizeAway)
-  {}
-
-
-  //---------------------------------------------------------------------------
-  /** \brief Constructor for constructing funcstion callbacks taking two arguments.
-      \throw nothrow
-  */
-  ParserCallback::ParserCallback(fun_type2 a_pFun, bool optimizeAway)
-    :m_pFun((void*)a_pFun)
-    ,m_iArgc(2)
-    ,m_iPri(-1)
-    ,m_eOprtAsct(oaNONE)
-    ,m_iCode(cmFUNC)
-    ,m_iType(tpDBL)
-    ,m_bAllowOpti(optimizeAway)
-  {}
-
-  //---------------------------------------------------------------------------
-  /** \brief Constructor for constructing binary operator callbacks.
-      \param a_pFun Pointer to a static function taking two arguments
-      \param optimizeAway A flag indicating this funcation can be optimized
-      \param a_iPrec The operator precedence
-      \param a_eOprtAsct The operators associativity
-      \throw nothrow
-  */
-  ParserCallback::ParserCallback(fun_type2 a_pFun,
-                                 bool optimizeAway,
-                                 int a_iPrec,
-                                 EOprtAssociativity a_eOprtAsct)
-    :m_pFun((void*)a_pFun)
-    ,m_iArgc(2)
-    ,m_iPri(a_iPrec)
-    ,m_eOprtAsct(a_eOprtAsct)
-    ,m_iCode(cmOPRT_BIN)
-    ,m_iType(tpDBL)
-    ,m_bAllowOpti(optimizeAway)
-  {}
-
-  //---------------------------------------------------------------------------
-  ParserCallback::ParserCallback(fun_type3 a_pFun, bool optimizeAway)
-    :m_pFun((void*)a_pFun)
-    ,m_iArgc(3)
-    ,m_iPri(-1)
-    ,m_eOprtAsct(oaNONE)
-    ,m_iCode(cmFUNC)
-    ,m_iType(tpDBL)
-    ,m_bAllowOpti(optimizeAway)
-  {}
+    //---------------------------------------------------------------------------
+    ParserCallback::ParserCallback(fun_type1 a_pFun, bool optimizeAway, int numOpt, int a_iPrec, ECmdCode a_iCode)
+        : m_pFun((void*)a_pFun)
+        , m_iArgc(1)
+        , m_iOptArgC(numOpt)
+        , m_iPri(a_iPrec)
+        , m_eOprtAsct(oaNONE)
+        , m_iCode(a_iCode)
+        , m_iType(tpDBL)
+        , m_bAllowOpti(optimizeAway)
+    {
+        m_iOptArgC = std::min(m_iArgc, m_iOptArgC);
+    }
 
 
-  //---------------------------------------------------------------------------
-  ParserCallback::ParserCallback(fun_type4 a_pFun, bool optimizeAway)
-    :m_pFun((void*)a_pFun)
-    ,m_iArgc(4)
-    ,m_iPri(-1)
-    ,m_eOprtAsct(oaNONE)
-    ,m_iCode(cmFUNC)
-    ,m_iType(tpDBL)
-    ,m_bAllowOpti(optimizeAway)
-  {}
+    //---------------------------------------------------------------------------
+    /** \brief Constructor for constructing funcstion callbacks taking two arguments.
+        \throw nothrow
+    */
+    ParserCallback::ParserCallback(fun_type2 a_pFun, bool optimizeAway, int numOpt)
+        : m_pFun((void*)a_pFun)
+        , m_iArgc(2)
+        , m_iOptArgC(numOpt)
+        , m_iPri(-1)
+        , m_eOprtAsct(oaNONE)
+        , m_iCode(cmFUNC)
+        , m_iType(tpDBL)
+        , m_bAllowOpti(optimizeAway)
+    {
+        m_iOptArgC = std::min(m_iArgc, m_iOptArgC);
+    }
+
+    //---------------------------------------------------------------------------
+    /** \brief Constructor for constructing binary operator callbacks.
+        \param a_pFun Pointer to a static function taking two arguments
+        \param optimizeAway A flag indicating this funcation can be optimized
+        \param a_iPrec The operator precedence
+        \param a_eOprtAsct The operators associativity
+        \throw nothrow
+    */
+    ParserCallback::ParserCallback(fun_type2 a_pFun,
+                                   bool optimizeAway,
+                                   int a_iPrec,
+                                   EOprtAssociativity a_eOprtAsct)
+        : m_pFun((void*)a_pFun)
+        , m_iArgc(2)
+        , m_iOptArgC(0)
+        , m_iPri(a_iPrec)
+        , m_eOprtAsct(a_eOprtAsct)
+        , m_iCode(cmOPRT_BIN)
+        , m_iType(tpDBL)
+        , m_bAllowOpti(optimizeAway)
+    {
+        m_iOptArgC = std::min(m_iArgc, m_iOptArgC);
+    }
+
+    //---------------------------------------------------------------------------
+    ParserCallback::ParserCallback(fun_type3 a_pFun, bool optimizeAway, int numOpt)
+        : m_pFun((void*)a_pFun)
+        , m_iArgc(3)
+        , m_iOptArgC(numOpt)
+        , m_iPri(-1)
+        , m_eOprtAsct(oaNONE)
+        , m_iCode(cmFUNC)
+        , m_iType(tpDBL)
+        , m_bAllowOpti(optimizeAway)
+    {
+        m_iOptArgC = std::min(m_iArgc, m_iOptArgC);
+    }
 
 
-  //---------------------------------------------------------------------------
-  ParserCallback::ParserCallback(fun_type5 a_pFun, bool optimizeAway)
-    :m_pFun((void*)a_pFun)
-    ,m_iArgc(5)
-    ,m_iPri(-1)
-    ,m_eOprtAsct(oaNONE)
-    ,m_iCode(cmFUNC)
-    ,m_iType(tpDBL)
-    ,m_bAllowOpti(optimizeAway)
-  {}
-
-  //---------------------------------------------------------------------------
-  ParserCallback::ParserCallback(fun_type6 a_pFun, bool optimizeAway)
-    :m_pFun((void*)a_pFun)
-    ,m_iArgc(6)
-    ,m_iPri(-1)
-    ,m_eOprtAsct(oaNONE)
-    ,m_iCode(cmFUNC)
-    ,m_iType(tpDBL)
-    ,m_bAllowOpti(optimizeAway)
-  {}
-
-  //---------------------------------------------------------------------------
-  ParserCallback::ParserCallback(fun_type7 a_pFun, bool optimizeAway)
-    :m_pFun((void*)a_pFun)
-    ,m_iArgc(7)
-    ,m_iPri(-1)
-    ,m_eOprtAsct(oaNONE)
-    ,m_iCode(cmFUNC)
-    ,m_iType(tpDBL)
-    ,m_bAllowOpti(optimizeAway)
-  {}
-
-  //---------------------------------------------------------------------------
-  ParserCallback::ParserCallback(fun_type8 a_pFun, bool optimizeAway)
-    :m_pFun((void*)a_pFun)
-    ,m_iArgc(8)
-    ,m_iPri(-1)
-    ,m_eOprtAsct(oaNONE)
-    ,m_iCode(cmFUNC)
-    ,m_iType(tpDBL)
-    ,m_bAllowOpti(optimizeAway)
-  {}
-
-  //---------------------------------------------------------------------------
-  ParserCallback::ParserCallback(fun_type9 a_pFun, bool optimizeAway)
-    :m_pFun((void*)a_pFun)
-    ,m_iArgc(9)
-    ,m_iPri(-1)
-    ,m_eOprtAsct(oaNONE)
-    ,m_iCode(cmFUNC)
-    ,m_iType(tpDBL)
-    ,m_bAllowOpti(optimizeAway)
-  {}
-
-  //---------------------------------------------------------------------------
-  ParserCallback::ParserCallback(fun_type10 a_pFun, bool optimizeAway)
-    :m_pFun((void*)a_pFun)
-    ,m_iArgc(10)
-    ,m_iPri(-1)
-    ,m_eOprtAsct(oaNONE)
-    ,m_iCode(cmFUNC)
-    ,m_iType(tpDBL)
-    ,m_bAllowOpti(optimizeAway)
-  {}
-
-  //---------------------------------------------------------------------------
-  ParserCallback::ParserCallback(bulkfun_type0 a_pFun, bool optimizeAway)
-    :m_pFun((void*)a_pFun)
-    ,m_iArgc(0)
-    ,m_iPri(-1)
-    ,m_eOprtAsct(oaNONE)
-    ,m_iCode(cmFUNC_BULK)
-    ,m_iType(tpDBL)
-    ,m_bAllowOpti(optimizeAway)
-  {}
-
-  //---------------------------------------------------------------------------
-  ParserCallback::ParserCallback(bulkfun_type1 a_pFun, bool optimizeAway)
-    :m_pFun((void*)a_pFun)
-    ,m_iArgc(1)
-    ,m_iPri(-1)
-    ,m_eOprtAsct(oaNONE)
-    ,m_iCode(cmFUNC_BULK)
-    ,m_iType(tpDBL)
-    ,m_bAllowOpti(optimizeAway)
-  {}
+    //---------------------------------------------------------------------------
+    ParserCallback::ParserCallback(fun_type4 a_pFun, bool optimizeAway, int numOpt)
+        : m_pFun((void*)a_pFun)
+        , m_iArgc(4)
+        , m_iOptArgC(numOpt)
+        , m_iPri(-1)
+        , m_eOprtAsct(oaNONE)
+        , m_iCode(cmFUNC)
+        , m_iType(tpDBL)
+        , m_bAllowOpti(optimizeAway)
+    {
+        m_iOptArgC = std::min(m_iArgc, m_iOptArgC);
+    }
 
 
-  //---------------------------------------------------------------------------
-  /** \brief Constructor for constructing funcstion callbacks taking two arguments.
-      \throw nothrow
-  */
-  ParserCallback::ParserCallback(bulkfun_type2 a_pFun, bool optimizeAway)
-    :m_pFun((void*)a_pFun)
-    ,m_iArgc(2)
-    ,m_iPri(-1)
-    ,m_eOprtAsct(oaNONE)
-    ,m_iCode(cmFUNC_BULK)
-    ,m_iType(tpDBL)
-    ,m_bAllowOpti(optimizeAway)
-  {}
+    //---------------------------------------------------------------------------
+    ParserCallback::ParserCallback(fun_type5 a_pFun, bool optimizeAway, int numOpt)
+        : m_pFun((void*)a_pFun)
+        , m_iArgc(5)
+        , m_iOptArgC(numOpt)
+        , m_iPri(-1)
+        , m_eOprtAsct(oaNONE)
+        , m_iCode(cmFUNC)
+        , m_iType(tpDBL)
+        , m_bAllowOpti(optimizeAway)
+    {
+        m_iOptArgC = std::min(m_iArgc, m_iOptArgC);
+    }
 
-  //---------------------------------------------------------------------------
-  ParserCallback::ParserCallback(bulkfun_type3 a_pFun, bool optimizeAway)
-    :m_pFun((void*)a_pFun)
-    ,m_iArgc(3)
-    ,m_iPri(-1)
-    ,m_eOprtAsct(oaNONE)
-    ,m_iCode(cmFUNC_BULK)
-    ,m_iType(tpDBL)
-    ,m_bAllowOpti(optimizeAway)
-  {}
+    //---------------------------------------------------------------------------
+    ParserCallback::ParserCallback(fun_type6 a_pFun, bool optimizeAway, int numOpt)
+        : m_pFun((void*)a_pFun)
+        , m_iArgc(6)
+        , m_iOptArgC(numOpt)
+        , m_iPri(-1)
+        , m_eOprtAsct(oaNONE)
+        , m_iCode(cmFUNC)
+        , m_iType(tpDBL)
+        , m_bAllowOpti(optimizeAway)
+    {
+        m_iOptArgC = std::min(m_iArgc, m_iOptArgC);
+    }
 
+    //---------------------------------------------------------------------------
+    ParserCallback::ParserCallback(fun_type7 a_pFun, bool optimizeAway, int numOpt)
+        : m_pFun((void*)a_pFun)
+        , m_iArgc(7)
+        , m_iOptArgC(numOpt)
+        , m_iPri(-1)
+        , m_eOprtAsct(oaNONE)
+        , m_iCode(cmFUNC)
+        , m_iType(tpDBL)
+        , m_bAllowOpti(optimizeAway)
+    {
+        m_iOptArgC = std::min(m_iArgc, m_iOptArgC);
+    }
 
-  //---------------------------------------------------------------------------
-  ParserCallback::ParserCallback(bulkfun_type4 a_pFun, bool optimizeAway)
-    :m_pFun((void*)a_pFun)
-    ,m_iArgc(4)
-    ,m_iPri(-1)
-    ,m_eOprtAsct(oaNONE)
-    ,m_iCode(cmFUNC_BULK)
-    ,m_iType(tpDBL)
-    ,m_bAllowOpti(optimizeAway)
-  {}
+    //---------------------------------------------------------------------------
+    ParserCallback::ParserCallback(fun_type8 a_pFun, bool optimizeAway, int numOpt)
+        : m_pFun((void*)a_pFun)
+        , m_iArgc(8)
+        , m_iOptArgC(numOpt)
+        , m_iPri(-1)
+        , m_eOprtAsct(oaNONE)
+        , m_iCode(cmFUNC)
+        , m_iType(tpDBL)
+        , m_bAllowOpti(optimizeAway)
+    {
+        m_iOptArgC = std::min(m_iArgc, m_iOptArgC);
+    }
 
+    //---------------------------------------------------------------------------
+    ParserCallback::ParserCallback(fun_type9 a_pFun, bool optimizeAway, int numOpt)
+        : m_pFun((void*)a_pFun)
+        , m_iArgc(9)
+        , m_iOptArgC(numOpt)
+        , m_iPri(-1)
+        , m_eOprtAsct(oaNONE)
+        , m_iCode(cmFUNC)
+        , m_iType(tpDBL)
+        , m_bAllowOpti(optimizeAway)
+    {
+        m_iOptArgC = std::min(m_iArgc, m_iOptArgC);
+    }
 
-  //---------------------------------------------------------------------------
-  ParserCallback::ParserCallback(bulkfun_type5 a_pFun, bool optimizeAway)
-    :m_pFun((void*)a_pFun)
-    ,m_iArgc(5)
-    ,m_iPri(-1)
-    ,m_eOprtAsct(oaNONE)
-    ,m_iCode(cmFUNC_BULK)
-    ,m_iType(tpDBL)
-    ,m_bAllowOpti(optimizeAway)
-  {}
+    //---------------------------------------------------------------------------
+    ParserCallback::ParserCallback(fun_type10 a_pFun, bool optimizeAway, int numOpt)
+        : m_pFun((void*)a_pFun)
+        , m_iArgc(10)
+        , m_iOptArgC(numOpt)
+        , m_iPri(-1)
+        , m_eOprtAsct(oaNONE)
+        , m_iCode(cmFUNC)
+        , m_iType(tpDBL)
+        , m_bAllowOpti(optimizeAway)
+    {
+        m_iOptArgC = std::min(m_iArgc, m_iOptArgC);
+    }
 
-  //---------------------------------------------------------------------------
-  ParserCallback::ParserCallback(bulkfun_type6 a_pFun, bool optimizeAway)
-    :m_pFun((void*)a_pFun)
-    ,m_iArgc(6)
-    ,m_iPri(-1)
-    ,m_eOprtAsct(oaNONE)
-    ,m_iCode(cmFUNC_BULK)
-    ,m_iType(tpDBL)
-    ,m_bAllowOpti(optimizeAway)
-  {}
+    //---------------------------------------------------------------------------
+    ParserCallback::ParserCallback(bulkfun_type0 a_pFun, bool optimizeAway)
+        : m_pFun((void*)a_pFun)
+        , m_iArgc(0)
+        , m_iPri(-1)
+        , m_eOprtAsct(oaNONE)
+        , m_iCode(cmFUNC_BULK)
+        , m_iType(tpDBL)
+        , m_bAllowOpti(optimizeAway)
+    {}
 
-  //---------------------------------------------------------------------------
-  ParserCallback::ParserCallback(bulkfun_type7 a_pFun, bool optimizeAway)
-    :m_pFun((void*)a_pFun)
-    ,m_iArgc(7)
-    ,m_iPri(-1)
-    ,m_eOprtAsct(oaNONE)
-    ,m_iCode(cmFUNC_BULK)
-    ,m_iType(tpDBL)
-    ,m_bAllowOpti(optimizeAway)
-  {}
-
-  //---------------------------------------------------------------------------
-  ParserCallback::ParserCallback(bulkfun_type8 a_pFun, bool optimizeAway)
-    :m_pFun((void*)a_pFun)
-    ,m_iArgc(8)
-    ,m_iPri(-1)
-    ,m_eOprtAsct(oaNONE)
-    ,m_iCode(cmFUNC_BULK)
-    ,m_iType(tpDBL)
-    ,m_bAllowOpti(optimizeAway)
-  {}
-
-  //---------------------------------------------------------------------------
-  ParserCallback::ParserCallback(bulkfun_type9 a_pFun, bool optimizeAway)
-    :m_pFun((void*)a_pFun)
-    ,m_iArgc(9)
-    ,m_iPri(-1)
-    ,m_eOprtAsct(oaNONE)
-    ,m_iCode(cmFUNC_BULK)
-    ,m_iType(tpDBL)
-    ,m_bAllowOpti(optimizeAway)
-  {}
-
-  //---------------------------------------------------------------------------
-  ParserCallback::ParserCallback(bulkfun_type10 a_pFun, bool optimizeAway)
-    :m_pFun((void*)a_pFun)
-    ,m_iArgc(10)
-    ,m_iPri(-1)
-    ,m_eOprtAsct(oaNONE)
-    ,m_iCode(cmFUNC_BULK)
-    ,m_iType(tpDBL)
-    ,m_bAllowOpti(optimizeAway)
-  {}
-
-
-  //---------------------------------------------------------------------------
-  ParserCallback::ParserCallback(multfun_type a_pFun, bool optimizeAway)
-    :m_pFun((void*)a_pFun)
-    ,m_iArgc(-1)
-    ,m_iPri(-1)
-    ,m_eOprtAsct(oaNONE)
-    ,m_iCode(cmFUNC)
-    ,m_iType(tpDBL)
-    ,m_bAllowOpti(optimizeAway)
-  {}
+    //---------------------------------------------------------------------------
+    ParserCallback::ParserCallback(bulkfun_type1 a_pFun, bool optimizeAway)
+        : m_pFun((void*)a_pFun)
+        , m_iArgc(1)
+        , m_iPri(-1)
+        , m_eOprtAsct(oaNONE)
+        , m_iCode(cmFUNC_BULK)
+        , m_iType(tpDBL)
+        , m_bAllowOpti(optimizeAway)
+    {}
 
 
-  //---------------------------------------------------------------------------
-  ParserCallback::ParserCallback(strfun_type1 a_pFun, bool optimizeAway)
-    :m_pFun((void*)a_pFun)
-    ,m_iArgc(0)
-    ,m_iPri(-1)
-    ,m_eOprtAsct(oaNONE)
-    ,m_iCode(cmFUNC_STR)
-    ,m_iType(tpSTR)
-    ,m_bAllowOpti(optimizeAway)
-  {}
+    //---------------------------------------------------------------------------
+    /** \brief Constructor for constructing funcstion callbacks taking two arguments.
+        \throw nothrow
+    */
+    ParserCallback::ParserCallback(bulkfun_type2 a_pFun, bool optimizeAway)
+        : m_pFun((void*)a_pFun)
+        , m_iArgc(2)
+        , m_iPri(-1)
+        , m_eOprtAsct(oaNONE)
+        , m_iCode(cmFUNC_BULK)
+        , m_iType(tpDBL)
+        , m_bAllowOpti(optimizeAway)
+    {}
+
+    //---------------------------------------------------------------------------
+    ParserCallback::ParserCallback(bulkfun_type3 a_pFun, bool optimizeAway)
+        : m_pFun((void*)a_pFun)
+        , m_iArgc(3)
+        , m_iPri(-1)
+        , m_eOprtAsct(oaNONE)
+        , m_iCode(cmFUNC_BULK)
+        , m_iType(tpDBL)
+        , m_bAllowOpti(optimizeAway)
+    {}
 
 
-  //---------------------------------------------------------------------------
-  ParserCallback::ParserCallback(strfun_type2 a_pFun, bool optimizeAway)
-    :m_pFun((void*)a_pFun)
-    ,m_iArgc(1)
-    ,m_iPri(-1)
-    ,m_eOprtAsct(oaNONE)
-    ,m_iCode(cmFUNC_STR)
-    ,m_iType(tpSTR)
-    ,m_bAllowOpti(optimizeAway)
-  {}
+    //---------------------------------------------------------------------------
+    ParserCallback::ParserCallback(bulkfun_type4 a_pFun, bool optimizeAway)
+        : m_pFun((void*)a_pFun)
+        , m_iArgc(4)
+        , m_iPri(-1)
+        , m_eOprtAsct(oaNONE)
+        , m_iCode(cmFUNC_BULK)
+        , m_iType(tpDBL)
+        , m_bAllowOpti(optimizeAway)
+    {}
 
 
-  //---------------------------------------------------------------------------
-  ParserCallback::ParserCallback(strfun_type3 a_pFun, bool optimizeAway)
-    :m_pFun((void*)a_pFun)
-    ,m_iArgc(2)
-    ,m_iPri(-1)
-    ,m_eOprtAsct(oaNONE)
-    ,m_iCode(cmFUNC_STR)
-    ,m_iType(tpSTR)
-    ,m_bAllowOpti(optimizeAway)
-  {}
+    //---------------------------------------------------------------------------
+    ParserCallback::ParserCallback(bulkfun_type5 a_pFun, bool optimizeAway)
+        : m_pFun((void*)a_pFun)
+        , m_iArgc(5)
+        , m_iPri(-1)
+        , m_eOprtAsct(oaNONE)
+        , m_iCode(cmFUNC_BULK)
+        , m_iType(tpDBL)
+        , m_bAllowOpti(optimizeAway)
+    {}
+
+    //---------------------------------------------------------------------------
+    ParserCallback::ParserCallback(bulkfun_type6 a_pFun, bool optimizeAway)
+        : m_pFun((void*)a_pFun)
+        , m_iArgc(6)
+        , m_iPri(-1)
+        , m_eOprtAsct(oaNONE)
+        , m_iCode(cmFUNC_BULK)
+        , m_iType(tpDBL)
+        , m_bAllowOpti(optimizeAway)
+    {}
+
+    //---------------------------------------------------------------------------
+    ParserCallback::ParserCallback(bulkfun_type7 a_pFun, bool optimizeAway)
+        : m_pFun((void*)a_pFun)
+        , m_iArgc(7)
+        , m_iPri(-1)
+        , m_eOprtAsct(oaNONE)
+        , m_iCode(cmFUNC_BULK)
+        , m_iType(tpDBL)
+        , m_bAllowOpti(optimizeAway)
+    {}
+
+    //---------------------------------------------------------------------------
+    ParserCallback::ParserCallback(bulkfun_type8 a_pFun, bool optimizeAway)
+        : m_pFun((void*)a_pFun)
+        , m_iArgc(8)
+        , m_iPri(-1)
+        , m_eOprtAsct(oaNONE)
+        , m_iCode(cmFUNC_BULK)
+        , m_iType(tpDBL)
+        , m_bAllowOpti(optimizeAway)
+    {}
+
+    //---------------------------------------------------------------------------
+    ParserCallback::ParserCallback(bulkfun_type9 a_pFun, bool optimizeAway)
+        : m_pFun((void*)a_pFun)
+        , m_iArgc(9)
+        , m_iPri(-1)
+        , m_eOprtAsct(oaNONE)
+        , m_iCode(cmFUNC_BULK)
+        , m_iType(tpDBL)
+        , m_bAllowOpti(optimizeAway)
+    {}
+
+    //---------------------------------------------------------------------------
+    ParserCallback::ParserCallback(bulkfun_type10 a_pFun, bool optimizeAway)
+        : m_pFun((void*)a_pFun)
+        , m_iArgc(10)
+        , m_iPri(-1)
+        , m_eOprtAsct(oaNONE)
+        , m_iCode(cmFUNC_BULK)
+        , m_iType(tpDBL)
+        , m_bAllowOpti(optimizeAway)
+    {}
 
 
-  //---------------------------------------------------------------------------
-  /** \brief Default constructor.
-      \throw nothrow
-  */
-  ParserCallback::ParserCallback()
-    :m_pFun(0)
-    ,m_iArgc(0)
-    ,m_iPri(-1)
-    ,m_eOprtAsct(oaNONE)
-    ,m_iCode(cmUNKNOWN)
-    ,m_iType(tpVOID)
-    ,m_bAllowOpti(0)
-  {}
+    //---------------------------------------------------------------------------
+    ParserCallback::ParserCallback(multfun_type a_pFun, bool optimizeAway, int numOpt)
+        : m_pFun((void*)a_pFun)
+        , m_iArgc(-1)
+        , m_iOptArgC(0)
+        , m_iPri(-1)
+        , m_eOprtAsct(oaNONE)
+        , m_iCode(cmFUNC)
+        , m_iType(tpDBL)
+        , m_bAllowOpti(optimizeAway)
+    {}
 
 
-  //---------------------------------------------------------------------------
-  /** \brief Copy constructor.
-      \throw nothrow
-  */
-  ParserCallback::ParserCallback(const ParserCallback &ref)
-  {
-    m_pFun       = ref.m_pFun;
-    m_iArgc      = ref.m_iArgc;
-    m_bAllowOpti = ref.m_bAllowOpti;
-    m_iCode      = ref.m_iCode;
-    m_iType      = ref.m_iType;
-    m_iPri       = ref.m_iPri;
-    m_eOprtAsct  = ref.m_eOprtAsct;
-  }
-
-  //---------------------------------------------------------------------------
-  /** \brief Clone this instance and return a pointer to the new instance. */
-  ParserCallback* ParserCallback::Clone() const
-  {
-    return new ParserCallback(*this);
-  }
-
-  //---------------------------------------------------------------------------
-  /** \brief Return tru if the function is conservative.
-
-      Conservative functions return always the same result for the same argument.
-      \throw nothrow
-  */
-  bool ParserCallback::IsOptimizable() const
-  {
-    return m_bAllowOpti;
-  }
-
-  //---------------------------------------------------------------------------
-  /** \brief Get the callback address for the parser function.
-
-      The type of the address is void. It needs to be recasted according to the
-      argument number to the right type.
-
-      \throw nothrow
-      \return #pFun
-  */
-  void* ParserCallback::GetAddr() const
-  {
-    return m_pFun;
-  }
-
-  //---------------------------------------------------------------------------
-  /** \brief Return the callback code. */
-  ECmdCode  ParserCallback::GetCode() const
-  {
-    return m_iCode;
-  }
-
-  //---------------------------------------------------------------------------
-  ETypeCode ParserCallback::GetType() const
-  {
-    return m_iType;
-  }
+    //---------------------------------------------------------------------------
+    /** \brief Default constructor.
+        \throw nothrow
+    */
+    ParserCallback::ParserCallback()
+        : m_pFun(0)
+        , m_iArgc(0)
+        , m_iOptArgC(0)
+        , m_iPri(-1)
+        , m_eOprtAsct(oaNONE)
+        , m_iCode(cmUNKNOWN)
+        , m_iType(tpVOID)
+        , m_bAllowOpti(0)
+    {}
 
 
-  //---------------------------------------------------------------------------
-  /** \brief Return the operator precedence.
-      \throw nothrown
+    //---------------------------------------------------------------------------
+    /** \brief Copy constructor.
+        \throw nothrow
+    */
+    ParserCallback::ParserCallback(const ParserCallback& ref)
+    {
+        m_pFun       = ref.m_pFun;
+        m_iArgc      = ref.m_iArgc;
+        m_iOptArgC   = ref.m_iOptArgC;
+        m_bAllowOpti = ref.m_bAllowOpti;
+        m_iCode      = ref.m_iCode;
+        m_iType      = ref.m_iType;
+        m_iPri       = ref.m_iPri;
+        m_eOprtAsct  = ref.m_eOprtAsct;
+    }
 
-     Only valid if the callback token is an operator token (binary or infix).
-  */
-  int ParserCallback::GetPri()  const
-  {
-    return m_iPri;
-  }
+    //---------------------------------------------------------------------------
+    /** \brief Clone this instance and return a pointer to the new instance. */
+    ParserCallback* ParserCallback::Clone() const
+    {
+        return new ParserCallback(*this);
+    }
 
-  //---------------------------------------------------------------------------
-  /** \brief Return the operators associativity.
-      \throw nothrown
+    //---------------------------------------------------------------------------
+    /** \brief Return tru if the function is conservative.
 
-     Only valid if the callback token is a binary operator token.
-  */
-  EOprtAssociativity ParserCallback::GetAssociativity() const
-  {
-    return m_eOprtAsct;
-  }
+        Conservative functions return always the same result for the same argument.
+        \throw nothrow
+    */
+    bool ParserCallback::IsOptimizable() const
+    {
+        return m_bAllowOpti;
+    }
 
-  //---------------------------------------------------------------------------
-  /** \brief Returns the number of function Arguments. */
-  int ParserCallback::GetArgc() const
-  {
-    return m_iArgc;
-  }
+    //---------------------------------------------------------------------------
+    /** \brief Get the callback address for the parser function.
+
+        The type of the address is void. It needs to be recasted according to the
+        argument number to the right type.
+
+        \throw nothrow
+        \return #pFun
+    */
+    void* ParserCallback::GetAddr() const
+    {
+        return m_pFun;
+    }
+
+    //---------------------------------------------------------------------------
+    /** \brief Return the callback code. */
+    ECmdCode  ParserCallback::GetCode() const
+    {
+        return m_iCode;
+    }
+
+    //---------------------------------------------------------------------------
+    ETypeCode ParserCallback::GetType() const
+    {
+        return m_iType;
+    }
+
+
+    //---------------------------------------------------------------------------
+    /** \brief Return the operator precedence.
+        \throw nothrown
+
+       Only valid if the callback token is an operator token (binary or infix).
+    */
+    int ParserCallback::GetPri()  const
+    {
+        return m_iPri;
+    }
+
+    //---------------------------------------------------------------------------
+    /** \brief Return the operators associativity.
+        \throw nothrown
+
+       Only valid if the callback token is a binary operator token.
+    */
+    EOprtAssociativity ParserCallback::GetAssociativity() const
+    {
+        return m_eOprtAsct;
+    }
+
+    //---------------------------------------------------------------------------
+    /** \brief Returns the number of function Arguments. */
+    int ParserCallback::GetArgc() const
+    {
+        return m_iArgc;
+    }
+
+    int ParserCallback::GetOptC() const
+    {
+        return m_iOptArgC;
+    }
 } // namespace mu

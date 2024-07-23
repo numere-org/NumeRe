@@ -82,6 +82,7 @@ int main()
     _parser.DefineFun("logtoidx", parser_logtoidx);
     _parser.DefineFun("idxtolog", parser_idxtolog);
     _parser.DefineFun("strlen", parser_strlen);
+    _parser.DefineFun("landau_rd", parser_rd_landau_rd, false, 1);
 
     std::string sInput;
     int nResults;

@@ -3209,6 +3209,8 @@
 			<Option target="Deep Debug_x64" />
 			<Option target="Dr Memory_x64" />
 		</Unit>
+		<Unit filename="kernel/core/strings/functionimplementation.cpp" />
+		<Unit filename="kernel/core/strings/functionimplementation.hpp" />
 		<Unit filename="kernel/core/strings/stringdatastructures.cpp">
 			<Option target="Debug" />
 			<Option target="Release" />

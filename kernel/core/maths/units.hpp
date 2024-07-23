@@ -22,64 +22,64 @@
 #include "../ParserLib/muParser.h"
 #include "../structures.hpp"
 
-mu::value_type parser_Identity(const mu::value_type&);
+mu::Array parser_Identity(const mu::Array&);
 
 // Scaling operator callback functions
-mu::value_type parser_Mega(const mu::value_type&);
-mu::value_type parser_Giga(const mu::value_type&);
-mu::value_type parser_Kilo(const mu::value_type&);
-mu::value_type parser_Milli(const mu::value_type&);
-mu::value_type parser_Micro(const mu::value_type&);
-mu::value_type parser_Nano(const mu::value_type&);
+mu::Array parser_Mega(const mu::Array&);
+mu::Array parser_Giga(const mu::Array&);
+mu::Array parser_Kilo(const mu::Array&);
+mu::Array parser_Milli(const mu::Array&);
+mu::Array parser_Micro(const mu::Array&);
+mu::Array parser_Nano(const mu::Array&);
 
 // Unit conversion callback functions
-mu::value_type parser_ElectronVolt(const mu::value_type&);
-mu::value_type parser_Fermi(const mu::value_type&);
-mu::value_type parser_Angstroem(const mu::value_type&);
-mu::value_type parser_Barn(const mu::value_type&);
-mu::value_type parser_Torr(const mu::value_type&);
-mu::value_type parser_AstroUnit(const mu::value_type&);
-mu::value_type parser_Lightyear(const mu::value_type&);
-mu::value_type parser_Parsec(const mu::value_type&);
-mu::value_type parser_Mile(const mu::value_type&);
-mu::value_type parser_NauticalMile(const mu::value_type&);
-mu::value_type parser_Yard(const mu::value_type&);
-mu::value_type parser_Foot(const mu::value_type&);
-mu::value_type parser_Inch(const mu::value_type&);
-mu::value_type parser_Calorie(const mu::value_type&);
-mu::value_type parser_PSI(const mu::value_type&);
-mu::value_type parser_Knoten(const mu::value_type&);
-mu::value_type parser_liter(const mu::value_type&);
-mu::value_type parser_kmh(const mu::value_type&);
-mu::value_type parser_mph(const mu::value_type&);
-mu::value_type parser_Celsius(const mu::value_type&);
-mu::value_type parser_Fahrenheit(const mu::value_type&);
-mu::value_type parser_Curie(const mu::value_type&);
-mu::value_type parser_Gauss(const mu::value_type&);
-mu::value_type parser_Poise(const mu::value_type&);
-mu::value_type parser_Bar(const mu::value_type&);
-mu::value_type parser_Dyn(const mu::value_type&);
-mu::value_type parser_Erg(const mu::value_type&);
-mu::value_type parser_mol(const mu::value_type&);
-mu::value_type parser_gon(const mu::value_type&);
-mu::value_type parser_deg(const mu::value_type&);
-mu::value_type parser_lb(const mu::value_type&);
-mu::value_type parser_oz(const mu::value_type&);
-mu::value_type parser_bbarrel(const mu::value_type&);
-mu::value_type parser_barrel(const mu::value_type&);
-mu::value_type parser_gallon(const mu::value_type&);
-mu::value_type parser_pH(const mu::value_type&);
-mu::value_type parser_beaufort(const mu::value_type&);
-mu::value_type parser_BRT(const mu::value_type&);
-mu::value_type parser_PS(const mu::value_type&);
-mu::value_type parser_hp(const mu::value_type&);
+mu::Array parser_ElectronVolt(const mu::Array&);
+mu::Array parser_Fermi(const mu::Array&);
+mu::Array parser_Angstroem(const mu::Array&);
+mu::Array parser_Barn(const mu::Array&);
+mu::Array parser_Torr(const mu::Array&);
+mu::Array parser_AstroUnit(const mu::Array&);
+mu::Array parser_Lightyear(const mu::Array&);
+mu::Array parser_Parsec(const mu::Array&);
+mu::Array parser_Mile(const mu::Array&);
+mu::Array parser_NauticalMile(const mu::Array&);
+mu::Array parser_Yard(const mu::Array&);
+mu::Array parser_Foot(const mu::Array&);
+mu::Array parser_Inch(const mu::Array&);
+mu::Array parser_Calorie(const mu::Array&);
+mu::Array parser_PSI(const mu::Array&);
+mu::Array parser_Knoten(const mu::Array&);
+mu::Array parser_liter(const mu::Array&);
+mu::Array parser_kmh(const mu::Array&);
+mu::Array parser_mph(const mu::Array&);
+mu::Array parser_Celsius(const mu::Array&);
+mu::Array parser_Fahrenheit(const mu::Array&);
+mu::Array parser_Curie(const mu::Array&);
+mu::Array parser_Gauss(const mu::Array&);
+mu::Array parser_Poise(const mu::Array&);
+mu::Array parser_Bar(const mu::Array&);
+mu::Array parser_Dyn(const mu::Array&);
+mu::Array parser_Erg(const mu::Array&);
+mu::Array parser_mol(const mu::Array&);
+mu::Array parser_gon(const mu::Array&);
+mu::Array parser_deg(const mu::Array&);
+mu::Array parser_lb(const mu::Array&);
+mu::Array parser_oz(const mu::Array&);
+mu::Array parser_bbarrel(const mu::Array&);
+mu::Array parser_barrel(const mu::Array&);
+mu::Array parser_gallon(const mu::Array&);
+mu::Array parser_pH(const mu::Array&);
+mu::Array parser_beaufort(const mu::Array&);
+mu::Array parser_BRT(const mu::Array&);
+mu::Array parser_PS(const mu::Array&);
+mu::Array parser_hp(const mu::Array&);
 
 // Time specific conversions
-mu::value_type parser_year(const mu::value_type&);
-mu::value_type parser_week(const mu::value_type&);
-mu::value_type parser_day(const mu::value_type&);
-mu::value_type parser_hour(const mu::value_type&);
-mu::value_type parser_minute(const mu::value_type&);
+mu::Array parser_year(const mu::Array&);
+mu::Array parser_week(const mu::Array&);
+mu::Array parser_day(const mu::Array&);
+mu::Array parser_hour(const mu::Array&);
+mu::Array parser_minute(const mu::Array&);
 
 // Conversion structure and helper
 enum UnitConversionMode
@@ -101,10 +101,10 @@ struct UnitFunction
     double m_sourceExp = 1.0; // Part inherited from original unit
     double m_scale = 1.0; // Scalefactor
     bool m_nonlinear = false;
-    mu::value_type (*m_conv)(const mu::value_type&) = parser_Identity;
+    mu::Array (*m_conv)(const mu::Array&) = parser_Identity;
 
     // Conversion function
-    mu::value_type operator()(const mu::value_type& val);
+    mu::Array operator()(const mu::Array& val);
 };
 
 /////////////////////////////////////////////////
@@ -117,7 +117,7 @@ struct UnitConversion
     std::vector<UnitFunction> m_convs;
 
     // Conversion function
-    mu::value_type operator()(mu::value_type val);
+    mu::Array operator()(mu::Array val);
     // Format the unit as string
     std::string formatUnit(UnitConversionMode mode);
 };

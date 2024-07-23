@@ -819,62 +819,48 @@ mu::Array parser_polynomial(const mu::Array* vElements, int nElements)
 /// \brief This function implements the perlin
 /// noise function.
 ///
-/// \param vElements const mu::Array*
-/// \param nElements int
+/// \param x const mu::Array&
+/// \param y const mu::Array& OPTIONAL
+/// \param z const mu::Array& OPTIONAL
+/// \param seed const mu::Array& OPTIONAL
+/// \param freq const mu::Array& OPTIONAL
+/// \param octave const mu::Array& OPTIONAL
+/// \param persistence const mu::Array& OPTIONAL
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_perlin(const mu::Array* vElements, int nElements)
+mu::Array parser_perlin(const mu::Array& x, const mu::Array& y, const mu::Array& z, const mu::Array& seed, const mu::Array& freq, const mu::Array& octave, const mu::Array& persistence)
 {
-    // perlin(x,y,z,seed,freq,oct,pers)
-    if (!nElements)
-        return mu::Value(NAN);
-
     noise::module::Perlin perlinNoise;
-
-    size_t nCount = 0;
-
-    for (int i = 0; i < nElements; i++)
-    {
-        nCount = std::max(nCount, vElements[i].size());
-    }
 
     mu::Array res;
 
-    for (size_t i = 0; i < nCount; i++)
+    for (size_t i = 0; i < std::max({x.size(), y.size(), z.size(), seed.size(), freq.size(), octave.size(), persistence.size()}); i++)
     {
-        switch (nElements)
-        {
-            case 1:
-                res.push_back(perlinNoise.GetValue(vElements[0].get(i).getNum().val.real(),
-                                                   0,
-                                                   0));
-                break;
-            case 2:
-                res.push_back(perlinNoise.GetValue(vElements[0].get(i).getNum().val.real(),
-                                                   vElements[1].get(i).getNum().val.real(),
-                                                   0));
-                break;
-            case 3:
-                res.push_back(perlinNoise.GetValue(vElements[0].get(i).getNum().val.real(),
-                                                   vElements[1].get(i).getNum().val.real(),
-                                                   vElements[2].get(i).getNum().val.real()));
-                break;
-            case 7: // fallthrough intended
-                perlinNoise.SetPersistence(vElements[6].get(i).getNum().val.real());
-            case 6: // fallthrough intended
-                perlinNoise.SetOctaveCount(intCast(vElements[5].get(i).getNum().val));
-            case 5: // fallthrough intended
-                perlinNoise.SetFrequency(vElements[4].get(i).getNum().val.real());
-            case 4:
-                perlinNoise.SetSeed(intCast(vElements[3].get(i).getNum().val.real()));
-                res.push_back(perlinNoise.GetValue(vElements[0].get(i).getNum().val.real(),
-                                                   vElements[1].get(i).getNum().val.real(),
-                                                   vElements[2].get(i).getNum().val.real()));
-                break;
-            default:
-                res.push_back(NAN);
-        }
+        if (!persistence.isDefault())
+            perlinNoise.SetPersistence(persistence.get(i).getNum().val.real());
+
+        if (!octave.isDefault())
+            perlinNoise.SetOctaveCount(octave.get(i).getNum().asInt());
+
+        if (!freq.isDefault())
+            perlinNoise.SetFrequency(freq.get(i).getNum().val.real());
+
+        if (!seed.isDefault())
+            perlinNoise.SetSeed(seed.get(i).getNum().asInt());
+
+        if (z.isDefault() && y.isDefault())
+            res.push_back(perlinNoise.GetValue(x.get(i).getNum().val.real(),
+                                               0,
+                                               0));
+        else if (z.isDefault())
+            res.push_back(perlinNoise.GetValue(x.get(i).getNum().val.real(),
+                                               y.get(i).getNum().val.real(),
+                                               0));
+        else
+            res.push_back(perlinNoise.GetValue(x.get(i).getNum().val.real(),
+                                               y.get(i).getNum().val.real(),
+                                               z.get(i).getNum().val.real()));
     }
 
     return res;
@@ -945,7 +931,7 @@ mu::Array parser_idxtolog(const mu::Array* v, int n)
         for (size_t i = 0; i < v[0].size(); i++)
         {
             if (v[0][i].isValid() || v[0][i] > mu::Value(0))
-                vLogical[intCast(v[0][i].getNum().val)-1] = mu::Value(true);
+                vLogical[v[0][i].getNum().asInt()-1] = mu::Value(true);
         }
     }
     else
@@ -953,7 +939,7 @@ mu::Array parser_idxtolog(const mu::Array* v, int n)
         for (int i = 0; i < n; i++)
         {
             if (v[i].front().isValid() || v[i].front() > mu::Value(0))
-                vLogical[intCast(v[i].front().getNum().val)-1] = mu::Value(true);
+                vLogical[v[i].front().getNum().asInt()-1] = mu::Value(true);
         }
     }
 
@@ -2676,7 +2662,7 @@ mu::Array parser_is_string(const mu::Array& v)
         switch (val.getType())
         {
             case mu::TYPE_VOID:
-                res.push_back(mu::Value(NAN));
+                res.push_back(mu::Value());
                 break;
             case mu::TYPE_STRING:
                 res.push_back(mu::Value(true));
@@ -2726,7 +2712,7 @@ mu::Array parser_clock()
 /////////////////////////////////////////////////
 mu::Array parser_sleep(const mu::Array& ms)
 {
-    int64_t msec = intCast(ms.front().getNum().val);
+    int64_t msec = ms.front().getNum().asInt();
     Sleep(msec);
     return mu::Value(msec);
 }
@@ -3197,32 +3183,22 @@ mu::Array parser_acsch(const mu::Array& x)
 }
 
 
-static mu::Value as_date_impl(const mu::Value* vElements, int nElements)
+static mu::Value as_date_impl(const mu::Value& year, const mu::Value& month, const mu::Value& day)
 {
-    int year = nElements > 0 ? intCast(vElements[0].getNum().val.real()) : 1970;
-    int month = nElements > 1 ? intCast(vElements[1].getNum().val.real()) : 1;
-    int day = nElements > 2 ? intCast(vElements[2].getNum().val.real()) : 1;
-
     time_stamp ts;
-    ts.m_ymd = date::year{year}/ date::month{month}/ date::day{day};
+    ts.m_ymd = date::year{year.getNum().asInt()}/date::month{month.getNum().asInt()}/date::day{day.getNum().asInt()};
     return mu::Value(to_double(getTimePointFromTimeStamp(ts)));
 }
 
 
-static mu::Value as_time_impl(const mu::Value* vElements, int nElements)
+static mu::Value as_time_impl(const mu::Value& hours, const mu::Value& minutes, const mu::Value& seconds, const mu::Value& milliseconds, const mu::Value& microseconds)
 {
-    int hours = nElements > 0 ? intCast(vElements[0].getNum().val.real()) : 0;
-    int minutes = nElements > 1 ? intCast(vElements[1].getNum().val.real()) : 0;
-    int seconds = nElements > 2 ? intCast(vElements[2].getNum().val.real()) : 0;
-    int milliseconds = nElements > 3 ? intCast(vElements[3].getNum().val.real()) : 0;
-    int microseconds = nElements > 4 ? intCast(vElements[4].getNum().val.real()) : 0;
-
     time_stamp ts;
-    ts.m_hours = std::chrono::hours(hours);
-    ts.m_minutes = std::chrono::minutes(minutes);
-    ts.m_seconds = std::chrono::seconds(seconds);
-    ts.m_millisecs = std::chrono::milliseconds(milliseconds);
-    ts.m_microsecs = std::chrono::microseconds(microseconds);
+    ts.m_hours = std::chrono::hours(hours.getNum().asInt());
+    ts.m_minutes = std::chrono::minutes(minutes.getNum().asInt());
+    ts.m_seconds = std::chrono::seconds(seconds.getNum().asInt());
+    ts.m_millisecs = std::chrono::milliseconds(milliseconds.getNum().asInt());
+    ts.m_microsecs = std::chrono::microseconds(microseconds.getNum().asInt());
 
     date::year y{1970u};
     date::month m{1u};
@@ -3237,14 +3213,17 @@ static mu::Value as_time_impl(const mu::Value* vElements, int nElements)
 /// \brief This function returns the date from
 /// the passed vElements.
 ///
-/// \param vElements const mu::Array*
-/// \param nElements int
+/// \param year const mu::Array&
+/// \param month const mu::Array& OPTIONAL
+/// \param day const mu::Array& OPTIONAL
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_as_date(const mu::Array* vElements, int nElements)
+mu::Array parser_as_date(const mu::Array& year, const mu::Array& month, const mu::Array& day)
 {
-    return mu::apply(as_date_impl, vElements, nElements);
+    return mu::apply(as_date_impl, year,
+                     month.isDefault() ? mu::Value(1.0) : month,
+                     day.isDefault() ? mu::Value(1.0) : day);
 }
 
 
@@ -3252,14 +3231,21 @@ mu::Array parser_as_date(const mu::Array* vElements, int nElements)
 /// \brief This function returns the time from
 /// the passed vElements
 ///
-/// \param vElements const mu::Array*
-/// \param nElements int
+/// \param h const mu::Array&
+/// \param m const mu::Array& OPTIONAL
+/// \param s const mu::Array& OPTIONAL
+/// \param ms const mu::Array& OPTIONAL
+/// \param mus const mu::Array& OPTIONAL
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_as_time(const mu::Array* vElements, int nElements)
+mu::Array parser_as_time(const mu::Array& h, const mu::Array& m, const mu::Array& s, const mu::Array& ms, const mu::Array& mus)
 {
-    return mu::apply(as_time_impl, vElements, nElements);
+    return mu::apply(as_time_impl, h,
+                     m.isDefault() ? mu::Value(0.0) : m,
+                     s.isDefault() ? mu::Value(0.0) : s,
+                     ms.isDefault() ? mu::Value(0.0) : ms,
+                     mus.isDefault() ? mu::Value(0.0) : mus);
 }
 
 /////////////////////////////////////////////////
@@ -4324,14 +4310,27 @@ mu::Array parser_rd_rayleigh_inv_q(const mu::Array& q, const mu::Array& sigma)
 /// \brief This function returns a random value
 /// from the Landau distribution function.
 ///
+/// \param n const mu::Array& OPTIONAL
 /// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::Array parser_rd_landau_rd()
+mu::Array parser_rd_landau_rd(const mu::Array& n)
 {
-#warning FIXME (numere#1#07/02/24): Solve the problem with random number generators
-    // Get the value from the probability density function
-    return mu::Value(gsl_ran_landau(getGslRandGenInstance()));
+    if (n.isDefault())
+    {
+    #warning FIXME (numere#1#07/02/24): Solve the problem with random number generators
+        // Get the value from the probability density function
+        return mu::Value(gsl_ran_landau(getGslRandGenInstance()));
+    }
+
+    mu::Array ret;
+
+    for (size_t i = 0; i < n.front().getNum().asInt(); i++)
+    {
+        ret.push_back(mu::Value(gsl_ran_landau(getGslRandGenInstance())));
+    }
+
+    return ret;
 }
 
 

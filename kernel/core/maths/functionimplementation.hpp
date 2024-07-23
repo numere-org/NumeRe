@@ -59,7 +59,6 @@ mu::Array parser_and(const mu::Array*, int);
 mu::Array parser_or(const mu::Array*, int);
 mu::Array parser_xor(const mu::Array*, int);
 mu::Array parser_polynomial(const mu::Array*, int);
-mu::Array parser_perlin(const mu::Array*, int);
 mu::Array parser_logtoidx(const mu::Array*, int);
 mu::Array parser_idxtolog(const mu::Array*, int);
 mu::Array parser_toRadian(const mu::Array&);
@@ -144,8 +143,11 @@ mu::Array parser_sech(const mu::Array&);
 mu::Array parser_csch(const mu::Array&);
 mu::Array parser_asech(const mu::Array&);
 mu::Array parser_acsch(const mu::Array&);
-mu::Array parser_as_date(const mu::Array*, int);
-mu::Array parser_as_time(const mu::Array*, int);
+
+mu::Array parser_as_date(const mu::Array&, const mu::Array&, const mu::Array&); // OPT=2
+mu::Array parser_as_time(const mu::Array&, const mu::Array&, const mu::Array&, const mu::Array&, const mu::Array&); // OPT=4
+
+mu::Array parser_perlin(const mu::Array&, const mu::Array&, const mu::Array&, const mu::Array&, const mu::Array&, const mu::Array, const mu::Array&); // OPT=6
 
 // Distribution functions
 mu::Array parser_rd_laplace_rd(const mu::Array& a);
@@ -166,7 +168,7 @@ mu::Array parser_rd_rayleigh_cdf_p(const mu::Array& x, const mu::Array& sigma);
 mu::Array parser_rd_rayleigh_cdf_q(const mu::Array& x, const mu::Array& sigma);
 mu::Array parser_rd_rayleigh_inv_p(const mu::Array& p, const mu::Array& sigma);
 mu::Array parser_rd_rayleigh_inv_q(const mu::Array& q, const mu::Array& sigma);
-mu::Array parser_rd_landau_rd();
+mu::Array parser_rd_landau_rd(const mu::Array& n); // OPT=1
 mu::Array parser_rd_landau_pdf(const mu::Array& x);
 mu::Array parser_rd_levyAlphaStable_rd(const mu::Array& c, const mu::Array& alpha);
 mu::Array parser_rd_fisher_f_rd(const mu::Array& nu1, const mu::Array& nu2);

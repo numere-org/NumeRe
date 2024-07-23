@@ -50,18 +50,18 @@ namespace mu
     class ParserCallback
     {
         public:
-            ParserCallback(fun_type0  a_pFun, bool optimizeAway);
-            ParserCallback(fun_type1  a_pFun, bool optimizeAway, int a_iPrec = -1, ECmdCode a_iCode = cmFUNC);
+            ParserCallback(fun_type0  a_pFun, bool optimizeAway, int numOpt);
+            ParserCallback(fun_type1  a_pFun, bool optimizeAway, int numOpt, int a_iPrec = -1, ECmdCode a_iCode = cmFUNC);
             ParserCallback(fun_type2  a_pFun, bool optimizeAway, int a_iPrec, EOprtAssociativity a_eAssociativity);
-            ParserCallback(fun_type2  a_pFun, bool optimizeAway);
-            ParserCallback(fun_type3  a_pFun, bool optimizeAway);
-            ParserCallback(fun_type4  a_pFun, bool optimizeAway);
-            ParserCallback(fun_type5  a_pFun, bool optimizeAway);
-            ParserCallback(fun_type6  a_pFun, bool optimizeAway);
-            ParserCallback(fun_type7  a_pFun, bool optimizeAway);
-            ParserCallback(fun_type8  a_pFun, bool optimizeAway);
-            ParserCallback(fun_type9  a_pFun, bool optimizeAway);
-            ParserCallback(fun_type10 a_pFun, bool optimizeAway);
+            ParserCallback(fun_type2  a_pFun, bool optimizeAway, int numOpt);
+            ParserCallback(fun_type3  a_pFun, bool optimizeAway, int numOpt);
+            ParserCallback(fun_type4  a_pFun, bool optimizeAway, int numOpt);
+            ParserCallback(fun_type5  a_pFun, bool optimizeAway, int numOpt);
+            ParserCallback(fun_type6  a_pFun, bool optimizeAway, int numOpt);
+            ParserCallback(fun_type7  a_pFun, bool optimizeAway, int numOpt);
+            ParserCallback(fun_type8  a_pFun, bool optimizeAway, int numOpt);
+            ParserCallback(fun_type9  a_pFun, bool optimizeAway, int numOpt);
+            ParserCallback(fun_type10 a_pFun, bool optimizeAway, int numOpt);
 
             ParserCallback(bulkfun_type0  a_pFun, bool optimizeAway);
             ParserCallback(bulkfun_type1  a_pFun, bool optimizeAway);
@@ -75,10 +75,7 @@ namespace mu
             ParserCallback(bulkfun_type9  a_pFun, bool optimizeAway);
             ParserCallback(bulkfun_type10 a_pFun, bool optimizeAway);
 
-            ParserCallback(multfun_type a_pFun, bool optimizeAway);
-            ParserCallback(strfun_type1 a_pFun, bool optimizeAway);
-            ParserCallback(strfun_type2 a_pFun, bool optimizeAway);
-            ParserCallback(strfun_type3 a_pFun, bool optimizeAway);
+            ParserCallback(multfun_type a_pFun, bool optimizeAway, int numOpt);
             ParserCallback();
             ParserCallback(const ParserCallback& a_Fun);
 
@@ -91,6 +88,7 @@ namespace mu
             int GetPri()  const;
             EOprtAssociativity GetAssociativity() const;
             int GetArgc() const;
+            int GetOptC() const;
 
         private:
             void* m_pFun;                   ///< Pointer to the callback function, casted to void
@@ -101,6 +99,7 @@ namespace mu
                 they represent the actual number of arguments found.
             */
             int   m_iArgc;
+            int   m_iOptArgC;
             int   m_iPri;                   ///< Valid only for binary and infix operators; Operator precedence.
             EOprtAssociativity m_eOprtAsct; ///< Operator associativity; Valid only for binary operators
             ECmdCode  m_iCode;

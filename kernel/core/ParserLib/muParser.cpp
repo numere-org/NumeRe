@@ -143,7 +143,7 @@ namespace mu
         if (!stream.eof() && iEnd == (stringstream_type::pos_type)-1)
             return 0;
 
-        *a_iPos += (int)(iEnd-a_szExpr.get_offset());
+        *a_iPos += (int)(iEnd-(long long int)a_szExpr.get_offset());
         *a_fVal = Numerical(fVal);
         return 1;
     }
@@ -174,35 +174,24 @@ namespace mu
     */
     void Parser::InitCharSets()
     {
-        DefineNameChars( _nrT("0123456789_abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ[]~\\") );
-        DefineOprtChars( _nrT("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ+-*^/?<>=#!$%&|~'_{}") );
-        DefineInfixOprtChars( _nrT("/+-*^?<>=#!$%&|~'_") );
+        DefineNameChars("0123456789_abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ[]~\\");
+        DefineOprtChars("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ+-*^/?<>=#!$%&|~'_{}");
+        DefineInfixOprtChars("/+-*^?<>=#!$%&|~'_");
     }
 
     //---------------------------------------------------------------------------
     /** \brief Initialize the default functions. */
     void Parser::InitFun()
     {
-        if (mu::TypeInfo<mu::value_type>::IsInteger())
-        {
-            // When setting MUP_BASETYPE to an integer type
-            // Place functions for dealing with integer values here
-            // ...
-            // ...
-            // ...
-        }
-        else
-        {
-            // Functions with variable number of arguments
-            DefineFun("sum", Sum);
-            DefineFun("avg", Avg);
-            DefineFun("min", Min);
-            DefineFun("max", Max);
+        // Functions with variable number of arguments
+        DefineFun("sum", Sum);
+        DefineFun("avg", Avg);
+        DefineFun("min", Min);
+        DefineFun("max", Max);
 
-            DefineFun(MU_VECTOR_CREATE, ParserBase::VectorCreate);
-            DefineFun(MU_VECTOR_EXP2, ParserBase::expandVector2);
-            DefineFun(MU_VECTOR_EXP3, ParserBase::expandVector3);
-        }
+        DefineFun(MU_VECTOR_CREATE, ParserBase::VectorCreate);
+        DefineFun(MU_VECTOR_EXP2, ParserBase::expandVector2);
+        DefineFun(MU_VECTOR_EXP3, ParserBase::expandVector3);
     }
 
     //---------------------------------------------------------------------------
@@ -283,7 +272,7 @@ namespace mu
         if (fEpsilon == Value(0.0))
         {
             Array absVal = parser_abs(a_fPos);
-            fEpsilon = (a_fPos == Value(0.0)) ? Value(1e-10) : Value(1e-7*Max(&absVal, 1).front()*intPower(10, 2*(order-1)));
+            fEpsilon = (a_fPos == Value(0.0)) ? Value(1e-10) : Value(Value(1e-7)*Max(&absVal, 1).front()*intPower(10, 2*(order-1)));
         }
 
         for (size_t n = 0; n < a_fPos.size(); n++)

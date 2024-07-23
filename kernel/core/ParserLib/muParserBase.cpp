@@ -1066,7 +1066,7 @@ namespace mu
 									   bool optimizeAway)
 	{
 		AddCallback(a_sName,
-					ParserCallback(a_pFun, optimizeAway, prPOSTFIX, cmOPRT_POSTFIX),
+					ParserCallback(a_pFun, optimizeAway, 0, prPOSTFIX, cmOPRT_POSTFIX),
 					m_PostOprtDef,
 					ValidOprtChars() );
 	}
@@ -1099,7 +1099,7 @@ namespace mu
 									 bool optimizeAway)
 	{
 		AddCallback(a_sName,
-					ParserCallback(a_pFun, optimizeAway, a_iPrec, cmOPRT_INFIX),
+					ParserCallback(a_pFun, optimizeAway, 0, a_iPrec, cmOPRT_INFIX),
 					m_InfixOprtDef,
 					ValidInfixOprtChars() );
 	}
@@ -1350,18 +1350,13 @@ namespace mu
 
 		// determine how many parameters the function needs. To remember iArgCount includes the
 		// string parameter whilst GetArgCount() counts only numeric parameters.
-		int iArgRequired = funTok.GetArgCount() + ((funTok.GetType() == tpSTR) ? 1 : 0);
-
-		// Thats the number of numerical parameters
-		int iArgNumerical = iArgCount - ((funTok.GetType() == tpSTR) ? 1 : 0);
-
-		if (funTok.GetCode() == cmFUNC_STR && iArgCount - iArgNumerical > 1)
-			Error(ecINTERNAL_ERROR);
+		int iArgRequired = funTok.GetArgCount();
+		int iArgOptional = funTok.GetOptArgCount();
 
 		if (funTok.GetArgCount() >= 0 && iArgCount > iArgRequired)
 			Error(ecTOO_MANY_PARAMS, m_pTokenReader->GetPos() - 1, funTok.GetAsString());
 
-		if (funTok.GetCode() != cmOPRT_BIN && iArgCount < iArgRequired )
+		if (funTok.GetCode() != cmOPRT_BIN && iArgCount < iArgRequired - iArgOptional)
 			Error(ecTOO_FEW_PARAMS, m_pTokenReader->GetPos() - 1, funTok.GetAsString());
 
 		if (funTok.GetCode() == cmFUNC_STR && iArgCount > iArgRequired )
@@ -1370,12 +1365,22 @@ namespace mu
 		// Collect the numeric function arguments from the value stack and store them
 		// in a vector
 		std::vector<token_type> stArg;
-		for (int i = 0; i < iArgNumerical; ++i)
+		for (int i = 0; i < iArgCount; ++i)
 		{
 			stArg.push_back( a_stVal.pop() );
 			if ( stArg.back().GetType() == tpSTR && funTok.GetType() != tpSTR )
 				Error(ecVAL_EXPECTED, m_pTokenReader->GetPos(), funTok.GetAsString());
 		}
+
+		if (iArgCount < iArgRequired)
+        {
+            int added = 0;
+            while (iArgCount+added < iArgRequired)
+            {
+                m_compilingState.m_byteCode.AddVal(Array());
+                added++;
+            }
+        }
 
 		switch (funTok.GetCode())
 		{
@@ -1392,7 +1397,7 @@ namespace mu
 					Error(ecTOO_FEW_PARAMS, m_pTokenReader->GetPos(), funTok.GetAsString());
 
                 m_compilingState.m_byteCode.AddFun(funTok.GetFuncAddr(),
-                                                   (funTok.GetArgCount() == -1) ? -iArgNumerical : iArgNumerical,
+                                                   (funTok.GetArgCount() == -1) ? -iArgCount : iArgRequired,
                                                    funTok.IsOptimizable());
 				break;
             default:

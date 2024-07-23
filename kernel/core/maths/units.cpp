@@ -25,11 +25,11 @@
 /// \brief Identity function. Used for ignoring
 /// functions and parameters in special cases.
 ///
-/// \param v const mu::value_type&
-/// \return mu::value_type
+/// \param v const mu::Array&
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::value_type parser_Identity(const mu::value_type& v)
+mu::Array parser_Identity(const mu::Array& v)
 {
     return v;
 }
@@ -38,14 +38,12 @@ mu::value_type parser_Identity(const mu::value_type& v)
 /////////////////////////////////////////////////
 /// \brief Conversion function for 1M.
 ///
-/// \param a_fVal const mu::value_type&
-/// \return mu::value_type
+/// \param a_fVal const mu::Array&
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::value_type parser_Mega(const mu::value_type& a_fVal)
+mu::Array parser_Mega(const mu::Array& a_fVal)
 {
-    if (mu::isinf(a_fVal) || mu::isnan(a_fVal))
-        return NAN;
     return a_fVal * 1e6;
 }
 
@@ -53,14 +51,12 @@ mu::value_type parser_Mega(const mu::value_type& a_fVal)
 /////////////////////////////////////////////////
 /// \brief Conversion function for 1m.
 ///
-/// \param a_fVal const mu::value_type&
-/// \return mu::value_type
+/// \param a_fVal const mu::Array&
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::value_type parser_Milli(const mu::value_type& a_fVal)
+mu::Array parser_Milli(const mu::Array& a_fVal)
 {
-    if (mu::isinf(a_fVal) || mu::isnan(a_fVal))
-        return NAN;
     return a_fVal * 1e-3;
 }
 
@@ -68,14 +64,12 @@ mu::value_type parser_Milli(const mu::value_type& a_fVal)
 /////////////////////////////////////////////////
 /// \brief Conversion function for 1G.
 ///
-/// \param a_fVal const mu::value_type&
-/// \return mu::value_type
+/// \param a_fVal const mu::Array&
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::value_type parser_Giga(const mu::value_type& a_fVal)
+mu::Array parser_Giga(const mu::Array& a_fVal)
 {
-    if (mu::isinf(a_fVal) || mu::isnan(a_fVal))
-        return NAN;
     return a_fVal * 1e9;
 }
 
@@ -83,14 +77,12 @@ mu::value_type parser_Giga(const mu::value_type& a_fVal)
 /////////////////////////////////////////////////
 /// \brief Conversion function for 1k.
 ///
-/// \param a_fVal const mu::value_type&
-/// \return mu::value_type
+/// \param a_fVal const mu::Array&
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::value_type parser_Kilo(const mu::value_type& a_fVal)
+mu::Array parser_Kilo(const mu::Array& a_fVal)
 {
-    if (mu::isinf(a_fVal) || mu::isnan(a_fVal))
-        return NAN;
     return a_fVal * 1e3;
 }
 
@@ -98,14 +90,12 @@ mu::value_type parser_Kilo(const mu::value_type& a_fVal)
 /////////////////////////////////////////////////
 /// \brief Conversion function for 1mu.
 ///
-/// \param a_fVal const mu::value_type&
-/// \return mu::value_type
+/// \param a_fVal const mu::Array&
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::value_type parser_Micro(const mu::value_type& a_fVal)
+mu::Array parser_Micro(const mu::Array& a_fVal)
 {
-    if (mu::isinf(a_fVal) || mu::isnan(a_fVal))
-        return NAN;
     return a_fVal * 1e-6;
 }
 
@@ -113,14 +103,12 @@ mu::value_type parser_Micro(const mu::value_type& a_fVal)
 /////////////////////////////////////////////////
 /// \brief Conversion function for 1n.
 ///
-/// \param a_fVal const mu::value_type&
-/// \return mu::value_type
+/// \param a_fVal const mu::Array&
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::value_type parser_Nano(const mu::value_type& a_fVal)
+mu::Array parser_Nano(const mu::Array& a_fVal)
 {
-    if (mu::isinf(a_fVal) || mu::isnan(a_fVal))
-        return NAN;
     return a_fVal * 1e-9;
 }
 
@@ -128,14 +116,12 @@ mu::value_type parser_Nano(const mu::value_type& a_fVal)
 /////////////////////////////////////////////////
 /// \brief Conversion function for 1eV.
 ///
-/// \param v const mu::value_type&
-/// \return mu::value_type
+/// \param v const mu::Array&
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::value_type parser_ElectronVolt(const mu::value_type& v)
+mu::Array parser_ElectronVolt(const mu::Array& v)
 {
-    if (mu::isinf(v) || mu::isnan(v))
-        return NAN;
     return v * 1.60217657e-19;
 }
 
@@ -143,14 +129,12 @@ mu::value_type parser_ElectronVolt(const mu::value_type& v)
 /////////////////////////////////////////////////
 /// \brief Conversion function for 1fm.
 ///
-/// \param v const mu::value_type&
-/// \return mu::value_type
+/// \param v const mu::Array&
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::value_type parser_Fermi(const mu::value_type& v)
+mu::Array parser_Fermi(const mu::Array& v)
 {
-    if (mu::isinf(v) || mu::isnan(v))
-        return NAN;
     return v * 1e-15;
 }
 
@@ -158,14 +142,12 @@ mu::value_type parser_Fermi(const mu::value_type& v)
 /////////////////////////////////////////////////
 /// \brief Conversion function for 1A.
 ///
-/// \param v const mu::value_type&
-/// \return mu::value_type
+/// \param v const mu::Array&
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::value_type parser_Angstroem(const mu::value_type& v)
+mu::Array parser_Angstroem(const mu::Array& v)
 {
-    if (mu::isinf(v) || mu::isnan(v))
-        return NAN;
     return v * 1e-10;
 }
 
@@ -173,14 +155,12 @@ mu::value_type parser_Angstroem(const mu::value_type& v)
 /////////////////////////////////////////////////
 /// \brief Conversion function for 1bn.
 ///
-/// \param v const mu::value_type&
-/// \return mu::value_type
+/// \param v const mu::Array&
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::value_type parser_Barn(const mu::value_type& v)
+mu::Array parser_Barn(const mu::Array& v)
 {
-    if (mu::isinf(v) || mu::isnan(v))
-        return NAN;
     return v * 1e-28;
 }
 
@@ -188,14 +168,12 @@ mu::value_type parser_Barn(const mu::value_type& v)
 /////////////////////////////////////////////////
 /// \brief Conversion function for 1Torr/1mmhg.
 ///
-/// \param v const mu::value_type&
-/// \return mu::value_type
+/// \param v const mu::Array&
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::value_type parser_Torr(const mu::value_type& v)
+mu::Array parser_Torr(const mu::Array& v)
 {
-    if (mu::isinf(v) || mu::isnan(v))
-        return NAN;
     return v * 101325.0/760.0;
 }
 
@@ -203,14 +181,12 @@ mu::value_type parser_Torr(const mu::value_type& v)
 /////////////////////////////////////////////////
 /// \brief Conversion function for 1AU.
 ///
-/// \param v const mu::value_type&
-/// \return mu::value_type
+/// \param v const mu::Array&
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::value_type parser_AstroUnit(const mu::value_type& v)
+mu::Array parser_AstroUnit(const mu::Array& v)
 {
-    if (mu::isinf(v) || mu::isnan(v))
-        return NAN;
     return v * 149597870700.0;
 }
 
@@ -218,14 +194,12 @@ mu::value_type parser_AstroUnit(const mu::value_type& v)
 /////////////////////////////////////////////////
 /// \brief Conversion function for 1ly.
 ///
-/// \param v const mu::value_type&
-/// \return mu::value_type
+/// \param v const mu::Array&
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::value_type parser_Lightyear(const mu::value_type& v)
+mu::Array parser_Lightyear(const mu::Array& v)
 {
-    if (mu::isinf(v) || mu::isnan(v))
-        return NAN;
     return v * 9460730472580800.0;
 }
 
@@ -233,14 +207,12 @@ mu::value_type parser_Lightyear(const mu::value_type& v)
 /////////////////////////////////////////////////
 /// \brief Conversion function for 1pc.
 ///
-/// \param v const mu::value_type&
-/// \return mu::value_type
+/// \param v const mu::Array&
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::value_type parser_Parsec(const mu::value_type& v)
+mu::Array parser_Parsec(const mu::Array& v)
 {
-    if (mu::isinf(v) || mu::isnan(v))
-        return NAN;
     return v * 30856775777948584.2;
 }
 
@@ -248,14 +220,12 @@ mu::value_type parser_Parsec(const mu::value_type& v)
 /////////////////////////////////////////////////
 /// \brief Conversion function for 1mi.
 ///
-/// \param v const mu::value_type&
-/// \return mu::value_type
+/// \param v const mu::Array&
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::value_type parser_Mile(const mu::value_type& v)
+mu::Array parser_Mile(const mu::Array& v)
 {
-    if (mu::isinf(v) || mu::isnan(v))
-        return NAN;
     return v * 1609.344;
 }
 
@@ -263,14 +233,12 @@ mu::value_type parser_Mile(const mu::value_type& v)
 /////////////////////////////////////////////////
 /// \brief Conversion function for 1NM.
 ///
-/// \param v const mu::value_type&
-/// \return mu::value_type
+/// \param v const mu::Array&
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::value_type parser_NauticalMile(const mu::value_type& v)
+mu::Array parser_NauticalMile(const mu::Array& v)
 {
-    if (mu::isinf(v) || mu::isnan(v))
-        return NAN;
     return v * 1852.0;
 }
 
@@ -278,14 +246,12 @@ mu::value_type parser_NauticalMile(const mu::value_type& v)
 /////////////////////////////////////////////////
 /// \brief Conversion function for 1yd.
 ///
-/// \param v const mu::value_type&
-/// \return mu::value_type
+/// \param v const mu::Array&
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::value_type parser_Yard(const mu::value_type& v)
+mu::Array parser_Yard(const mu::Array& v)
 {
-    if (mu::isinf(v) || mu::isnan(v))
-        return NAN;
     return v * 0.9144;
 }
 
@@ -293,14 +259,12 @@ mu::value_type parser_Yard(const mu::value_type& v)
 /////////////////////////////////////////////////
 /// \brief Conversion function for 1ft.
 ///
-/// \param v const mu::value_type&
-/// \return mu::value_type
+/// \param v const mu::Array&
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::value_type parser_Foot(const mu::value_type& v)
+mu::Array parser_Foot(const mu::Array& v)
 {
-    if (mu::isinf(v) || mu::isnan(v))
-        return NAN;
     return v * 0.3048;
 }
 
@@ -308,14 +272,12 @@ mu::value_type parser_Foot(const mu::value_type& v)
 /////////////////////////////////////////////////
 /// \brief Conversion function for 1in.
 ///
-/// \param v const mu::value_type&
-/// \return mu::value_type
+/// \param v const mu::Array&
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::value_type parser_Inch(const mu::value_type& v)
+mu::Array parser_Inch(const mu::Array& v)
 {
-    if (mu::isinf(v) || mu::isnan(v))
-        return NAN;
     return v * 0.0254;
 }
 
@@ -323,14 +285,12 @@ mu::value_type parser_Inch(const mu::value_type& v)
 /////////////////////////////////////////////////
 /// \brief Conversion function for 1cal.
 ///
-/// \param v const mu::value_type&
-/// \return mu::value_type
+/// \param v const mu::Array&
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::value_type parser_Calorie(const mu::value_type& v)
+mu::Array parser_Calorie(const mu::Array& v)
 {
-    if (mu::isinf(v) || mu::isnan(v))
-        return NAN;
     return v * 4.1868;
 }
 
@@ -338,14 +298,12 @@ mu::value_type parser_Calorie(const mu::value_type& v)
 /////////////////////////////////////////////////
 /// \brief Conversion function for 1psi.
 ///
-/// \param v const mu::value_type&
-/// \return mu::value_type
+/// \param v const mu::Array&
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::value_type parser_PSI(const mu::value_type& v)
+mu::Array parser_PSI(const mu::Array& v)
 {
-    if (mu::isinf(v) || mu::isnan(v))
-        return NAN;
     return v * 6894.75729;
 }
 
@@ -353,14 +311,12 @@ mu::value_type parser_PSI(const mu::value_type& v)
 /////////////////////////////////////////////////
 /// \brief Conversion function for 1kn.
 ///
-/// \param v const mu::value_type&
-/// \return mu::value_type
+/// \param v const mu::Array&
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::value_type parser_Knoten(const mu::value_type& v)
+mu::Array parser_Knoten(const mu::Array& v)
 {
-    if (mu::isinf(v) || mu::isnan(v))
-        return NAN;
     return v * 463.0 / 900.0;
 }
 
@@ -368,14 +324,12 @@ mu::value_type parser_Knoten(const mu::value_type& v)
 /////////////////////////////////////////////////
 /// \brief Conversion function for 1l.
 ///
-/// \param v const mu::value_type&
-/// \return mu::value_type
+/// \param v const mu::Array&
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::value_type parser_liter(const mu::value_type& v)
+mu::Array parser_liter(const mu::Array& v)
 {
-    if (mu::isinf(v) || mu::isnan(v))
-        return NAN;
     return v * 1e-3;
 }
 
@@ -383,14 +337,12 @@ mu::value_type parser_liter(const mu::value_type& v)
 /////////////////////////////////////////////////
 /// \brief Conversion function for 1kmh.
 ///
-/// \param v const mu::value_type&
-/// \return mu::value_type
+/// \param v const mu::Array&
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::value_type parser_kmh(const mu::value_type& v)
+mu::Array parser_kmh(const mu::Array& v)
 {
-    if (mu::isinf(v) || mu::isnan(v))
-        return NAN;
     return v / 3.6;
 }
 
@@ -398,14 +350,12 @@ mu::value_type parser_kmh(const mu::value_type& v)
 /////////////////////////////////////////////////
 /// \brief Conversion function for 1mph.
 ///
-/// \param v const mu::value_type&
-/// \return mu::value_type
+/// \param v const mu::Array&
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::value_type parser_mph(const mu::value_type& v)
+mu::Array parser_mph(const mu::Array& v)
 {
-    if (mu::isinf(v) || mu::isnan(v))
-        return NAN;
     return v * 1.609334 / 3.6;
 }
 
@@ -413,14 +363,12 @@ mu::value_type parser_mph(const mu::value_type& v)
 /////////////////////////////////////////////////
 /// \brief Conversion function for 1°C.
 ///
-/// \param v const mu::value_type&
-/// \return mu::value_type
+/// \param v const mu::Array&
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::value_type parser_Celsius(const mu::value_type& v)
+mu::Array parser_Celsius(const mu::Array& v)
 {
-    if (mu::isinf(v) || mu::isnan(v))
-        return NAN;
     return v + 273.15;
 }
 
@@ -428,14 +376,12 @@ mu::value_type parser_Celsius(const mu::value_type& v)
 /////////////////////////////////////////////////
 /// \brief Conversion function for 1°F.
 ///
-/// \param v const mu::value_type&
-/// \return mu::value_type
+/// \param v const mu::Array&
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::value_type parser_Fahrenheit(const mu::value_type& v)
+mu::Array parser_Fahrenheit(const mu::Array& v)
 {
-    if (mu::isinf(v) || mu::isnan(v))
-        return NAN;
     return (v + 459.67) * 5.0 / 9.0;
 }
 
@@ -443,14 +389,12 @@ mu::value_type parser_Fahrenheit(const mu::value_type& v)
 /////////////////////////////////////////////////
 /// \brief Conversion function for 1C.
 ///
-/// \param v const mu::value_type&
-/// \return mu::value_type
+/// \param v const mu::Array&
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::value_type parser_Curie(const mu::value_type& v)
+mu::Array parser_Curie(const mu::Array& v)
 {
-    if (mu::isinf(v) || mu::isnan(v))
-        return NAN;
     return v * 3.7e10;
 }
 
@@ -458,14 +402,12 @@ mu::value_type parser_Curie(const mu::value_type& v)
 /////////////////////////////////////////////////
 /// \brief Conversion function for 1Gs.
 ///
-/// \param v const mu::value_type&
-/// \return mu::value_type
+/// \param v const mu::Array&
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::value_type parser_Gauss(const mu::value_type& v)
+mu::Array parser_Gauss(const mu::Array& v)
 {
-    if (mu::isinf(v) || mu::isnan(v))
-        return NAN;
     return v * 1e-4;
 }
 
@@ -473,14 +415,12 @@ mu::value_type parser_Gauss(const mu::value_type& v)
 /////////////////////////////////////////////////
 /// \brief Conversion function for 1Ps.
 ///
-/// \param v const mu::value_type&
-/// \return mu::value_type
+/// \param v const mu::Array&
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::value_type parser_Poise(const mu::value_type& v)
+mu::Array parser_Poise(const mu::Array& v)
 {
-    if (mu::isinf(v) || mu::isnan(v))
-        return NAN;
     return v * 1e-1;
 }
 
@@ -488,14 +428,12 @@ mu::value_type parser_Poise(const mu::value_type& v)
 /////////////////////////////////////////////////
 /// \brief Conversion function for 1bar.
 ///
-/// \param v const mu::value_type&
-/// \return mu::value_type
+/// \param v const mu::Array&
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::value_type parser_Bar(const mu::value_type& v)
+mu::Array parser_Bar(const mu::Array& v)
 {
-    if (mu::isinf(v) || mu::isnan(v))
-        return NAN;
     return v * 1e5;
 }
 
@@ -503,14 +441,12 @@ mu::value_type parser_Bar(const mu::value_type& v)
 /////////////////////////////////////////////////
 /// \brief Conversion function for 1dyn.
 ///
-/// \param v const mu::value_type&
-/// \return mu::value_type
+/// \param v const mu::Array&
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::value_type parser_Dyn(const mu::value_type& v)
+mu::Array parser_Dyn(const mu::Array& v)
 {
-    if (mu::isinf(v) || mu::isnan(v))
-        return NAN;
     return v * 1e-5;
 }
 
@@ -518,14 +454,12 @@ mu::value_type parser_Dyn(const mu::value_type& v)
 /////////////////////////////////////////////////
 /// \brief Conversion function for 1erg.
 ///
-/// \param v const mu::value_type&
-/// \return mu::value_type
+/// \param v const mu::Array&
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::value_type parser_Erg(const mu::value_type& v)
+mu::Array parser_Erg(const mu::Array& v)
 {
-    if (mu::isinf(v) || mu::isnan(v))
-        return NAN;
     return v * 1e-7;
 }
 
@@ -533,14 +467,12 @@ mu::value_type parser_Erg(const mu::value_type& v)
 /////////////////////////////////////////////////
 /// \brief Conversion function for 1mol.
 ///
-/// \param v const mu::value_type&
-/// \return mu::value_type
+/// \param v const mu::Array&
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::value_type parser_mol(const mu::value_type& v)
+mu::Array parser_mol(const mu::Array& v)
 {
-    if (mu::isinf(v) || mu::isnan(v))
-        return NAN;
     return v * 6.022140857E23;
 }
 
@@ -548,14 +480,12 @@ mu::value_type parser_mol(const mu::value_type& v)
 /////////////////////////////////////////////////
 /// \brief Conversion function for 1gon.
 ///
-/// \param v const mu::value_type&
-/// \return mu::value_type
+/// \param v const mu::Array&
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::value_type parser_gon(const mu::value_type& v)
+mu::Array parser_gon(const mu::Array& v)
 {
-    if (mu::isinf(v) || mu::isnan(v))
-        return NAN;
     return v * M_PI / 200.0;
 }
 
@@ -563,14 +493,12 @@ mu::value_type parser_gon(const mu::value_type& v)
 /////////////////////////////////////////////////
 /// \brief Conversion function for 1gon.
 ///
-/// \param v const mu::value_type&
-/// \return mu::value_type
+/// \param v const mu::Array&
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::value_type parser_deg(const mu::value_type& v)
+mu::Array parser_deg(const mu::Array& v)
 {
-    if (mu::isinf(v) || mu::isnan(v))
-        return NAN;
     return v * M_PI / 180.0;
 }
 
@@ -578,14 +506,12 @@ mu::value_type parser_deg(const mu::value_type& v)
 /////////////////////////////////////////////////
 /// \brief Conversion function for 1lb.
 ///
-/// \param v const mu::value_type&
-/// \return mu::value_type
+/// \param v const mu::Array&
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::value_type parser_lb(const mu::value_type& v)
+mu::Array parser_lb(const mu::Array& v)
 {
-    if (mu::isinf(v) || mu::isnan(v))
-        return NAN;
     return v * 0.45359237;
 }
 
@@ -593,14 +519,12 @@ mu::value_type parser_lb(const mu::value_type& v)
 /////////////////////////////////////////////////
 /// \brief Conversion function for 1oz.
 ///
-/// \param v const mu::value_type&
-/// \return mu::value_type
+/// \param v const mu::Array&
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::value_type parser_oz(const mu::value_type& v)
+mu::Array parser_oz(const mu::Array& v)
 {
-    if (mu::isinf(v) || mu::isnan(v))
-        return NAN;
     return parser_lb(v/16.0);
 }
 
@@ -608,14 +532,12 @@ mu::value_type parser_oz(const mu::value_type& v)
 /////////////////////////////////////////////////
 /// \brief Conversion function for 1bbl.
 ///
-/// \param v const mu::value_type&
-/// \return mu::value_type
+/// \param v const mu::Array&
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::value_type parser_bbarrel(const mu::value_type& v)
+mu::Array parser_bbarrel(const mu::Array& v)
 {
-    if (mu::isinf(v) || mu::isnan(v))
-        return NAN;
     return v * 0.158987294928;
 }
 
@@ -623,14 +545,12 @@ mu::value_type parser_bbarrel(const mu::value_type& v)
 /////////////////////////////////////////////////
 /// \brief Conversion function for 1bl.
 ///
-/// \param v const mu::value_type&
-/// \return mu::value_type
+/// \param v const mu::Array&
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::value_type parser_barrel(const mu::value_type& v)
+mu::Array parser_barrel(const mu::Array& v)
 {
-    if (mu::isinf(v) || mu::isnan(v))
-        return NAN;
     return v * 0.1192405;
 }
 
@@ -638,14 +558,12 @@ mu::value_type parser_barrel(const mu::value_type& v)
 /////////////////////////////////////////////////
 /// \brief Conversion function for 1gal.
 ///
-/// \param v const mu::value_type&
-/// \return mu::value_type
+/// \param v const mu::Array&
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::value_type parser_gallon(const mu::value_type& v)
+mu::Array parser_gallon(const mu::Array& v)
 {
-    if (mu::isinf(v) || mu::isnan(v))
-        return NAN;
     return parser_barrel(v/31.5);
 }
 
@@ -653,59 +571,51 @@ mu::value_type parser_gallon(const mu::value_type& v)
 /////////////////////////////////////////////////
 /// \brief Conversion function for 1pH.
 ///
-/// \param v const mu::value_type&
-/// \return mu::value_type
+/// \param v const mu::Array&
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::value_type parser_pH(const mu::value_type& v)
+mu::Array parser_pH(const mu::Array& v)
 {
-    if (mu::isinf(v) || mu::isnan(v))
-        return NAN;
-    return std::pow(mu::value_type(10.0), -v);
+    return mu::Array(mu::Value(10.0)).pow(-v);
 }
 
 
 /////////////////////////////////////////////////
 /// \brief Conversion function for 1bft.
 ///
-/// \param v const mu::value_type&
-/// \return mu::value_type
+/// \param v const mu::Array&
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::value_type parser_beaufort(const mu::value_type& v)
+mu::Array parser_beaufort(const mu::Array& v)
 {
-    if (mu::isinf(v) || mu::isnan(v) || v.real() < 0 || v.imag() < 0)
-        return NAN;
-    return 0.836 * std::pow(v, 1.5);
+    return 0.836 * v.pow(mu::Value(1.5));
 }
 
 
 /////////////////////////////////////////////////
 /// \brief Conversion function for 1BRT.
 ///
-/// \param v const mu::value_type&
-/// \return mu::value_type
+/// \param v const mu::Array&
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::value_type parser_BRT(const mu::value_type& v)
+mu::Array parser_BRT(const mu::Array& v)
 {
-    if (mu::isinf(v) || mu::isnan(v))
-        return NAN;
-    return v * 100.0 * intPower(parser_Foot(1.0), 3);
+    return v * 100.0 * intPower(parser_Foot(mu::Value(1.0)), 3);
 }
 
 
 /////////////////////////////////////////////////
 /// \brief Conversion function for 1PS.
 ///
-/// \param v const mu::value_type&
-/// \return mu::value_type
+/// \param v const mu::Array&
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::value_type parser_PS(const mu::value_type& v)
+mu::Array parser_PS(const mu::Array& v)
 {
-    if (mu::isinf(v) || mu::isnan(v))
-        return NAN;
     return v * 735.49875;
 }
 
@@ -713,14 +623,12 @@ mu::value_type parser_PS(const mu::value_type& v)
 /////////////////////////////////////////////////
 /// \brief Conversion function for 1hp.
 ///
-/// \param v const mu::value_type&
-/// \return mu::value_type
+/// \param v const mu::Array&
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::value_type parser_hp(const mu::value_type& v)
+mu::Array parser_hp(const mu::Array& v)
 {
-    if (mu::isinf(v) || mu::isnan(v))
-        return NAN;
     return v * 76.0402249 * 9.80665;
 }
 
@@ -728,44 +636,38 @@ mu::value_type parser_hp(const mu::value_type& v)
 /////////////////////////////////////////////////
 /// \brief Conversion function for 1year.
 ///
-/// \param v const mu::value_type&
-/// \return mu::value_type
+/// \param v const mu::Array&
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::value_type parser_year(const mu::value_type& v)
+mu::Array parser_year(const mu::Array& v)
 {
-    if (mu::isinf(v) || mu::isnan(v))
-        return NAN;
-    return v * 365.25*parser_day(1.0);
+    return v * 365.25*parser_day(mu::Value(1.0));
 }
 
 
 /////////////////////////////////////////////////
 /// \brief Conversion function for 1week.
 ///
-/// \param v const mu::value_type&
-/// \return mu::value_type
+/// \param v const mu::Array&
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::value_type parser_week(const mu::value_type& v)
+mu::Array parser_week(const mu::Array& v)
 {
-    if (mu::isinf(v) || mu::isnan(v))
-        return NAN;
-    return v * 7.0*parser_day(1.0);
+    return v * 7.0*parser_day(mu::Value(1.0));
 }
 
 
 /////////////////////////////////////////////////
 /// \brief Conversion function for 1day.
 ///
-/// \param v const mu::value_type&
-/// \return mu::value_type
+/// \param v const mu::Array&
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::value_type parser_day(const mu::value_type& v)
+mu::Array parser_day(const mu::Array& v)
 {
-    if (mu::isinf(v) || mu::isnan(v))
-        return NAN;
     return v * 24.0*3600.0;
 }
 
@@ -773,14 +675,12 @@ mu::value_type parser_day(const mu::value_type& v)
 /////////////////////////////////////////////////
 /// \brief Conversion function for 1day.
 ///
-/// \param v const mu::value_type&
-/// \return mu::value_type
+/// \param v const mu::Array&
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::value_type parser_hour(const mu::value_type& v)
+mu::Array parser_hour(const mu::Array& v)
 {
-    if (mu::isinf(v) || mu::isnan(v))
-        return NAN;
     return v * 3600.0;
 }
 
@@ -788,14 +688,12 @@ mu::value_type parser_hour(const mu::value_type& v)
 /////////////////////////////////////////////////
 /// \brief Conversion function for 1minute.
 ///
-/// \param v const mu::value_type&
-/// \return mu::value_type
+/// \param v const mu::Array&
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::value_type parser_minute(const mu::value_type& v)
+mu::Array parser_minute(const mu::Array& v)
 {
-    if (mu::isinf(v) || mu::isnan(v))
-        return NAN;
     return v * 60.0;
 }
 
@@ -1255,26 +1153,26 @@ struct Unit
 /// This operator qualifies this structure as a
 /// functor.
 ///
-/// \param val const mu::value_type&
-/// \return mu::value_type
+/// \param val const mu::Array&
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::value_type UnitFunction::operator()(const mu::value_type& val)
+mu::Array UnitFunction::operator()(const mu::Array& val)
 {
     // TODO °C and °F are affine transforms and do not follow the
     // generic convention
     if (m_nonlinear)
     {
         if (m_sourceExp < 0.0)
-            return 1.0 / std::pow(m_conv(m_scale * std::pow(1.0/val, 1/std::abs(m_sourceExp))), std::abs(m_sourceExp));
+            return 1.0 / m_conv(m_scale * (1.0/val).pow(mu::Value(1/std::abs(m_sourceExp)))).pow(mu::Value(std::abs(m_sourceExp)));
 
-        return std::pow(m_conv(m_scale * std::pow(val, 1/std::abs(m_sourceExp))), std::abs(m_sourceExp));
+        return m_conv(m_scale * val.pow(mu::Value(1/std::abs(m_sourceExp)))).pow(mu::Value(std::abs(m_sourceExp)));
     }
 
     if (m_sourceExp < 0.0)
-        return val / std::pow(m_conv(m_scale), std::abs(m_sourceExp));
+        return val / m_conv(mu::Value(m_scale)).pow(mu::Value(std::abs(m_sourceExp)));
 
-    return val * std::pow(m_conv(m_scale), m_sourceExp);
+    return val * m_conv(mu::Value(m_scale)).pow(mu::Value(m_sourceExp));
 }
 
 
@@ -1290,11 +1188,11 @@ mu::value_type UnitFunction::operator()(const mu::value_type& val)
 /// This operator qualifies this structure as a
 /// functor.
 ///
-/// \param val mu::value_type
-/// \return mu::value_type
+/// \param val mu::Array
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
-mu::value_type UnitConversion::operator()(mu::value_type val)
+mu::Array UnitConversion::operator()(mu::Array val)
 {
     for (auto& conv : m_convs)
     {
@@ -1859,6 +1757,6 @@ std::string printUnitConversion(StringView sUnit, UnitConversionMode mode)
 
     UnitConversion convert = getUnitConversion(sUnit);
 
-    return "1 " + sUnit + " = " + toString(convert(1.0), 7) + " " + convert.formatUnit(mode);
+    return "1 " + sUnit + " = " + toString(convert(mu::Value(1.0)).front().getNum().val, 7) + " " + convert.formatUnit(mode);
 }
 

@@ -153,9 +153,9 @@ namespace mu
 			    \param optimizeAway A flag indicating this function may be optimized
 			*/
 			template<typename T>
-			void DefineFun(const string_type& a_strName, T a_pFun, bool optimizeAway = true)
+			void DefineFun(const string_type& a_strName, T a_pFun, bool optimizeAway = true, int numOpt = 0)
 			{
-				AddCallback( a_strName, ParserCallback(a_pFun, optimizeAway), m_FunDef, ValidNameChars() );
+				AddCallback( a_strName, ParserCallback(a_pFun, optimizeAway, numOpt), m_FunDef, ValidNameChars() );
 			}
 
 			void DefineOprt(const string_type& a_strName,
