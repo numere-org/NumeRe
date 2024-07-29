@@ -132,7 +132,6 @@ namespace mu
 
 			Array  Eval();
 			Array* Eval(int& nStackSize);
-			void Eval(value_type* results, int nBulkSize);
 
 			void SetExpr(StringView a_sExpr);
 

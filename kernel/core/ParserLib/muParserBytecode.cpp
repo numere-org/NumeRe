@@ -304,13 +304,12 @@ namespace mu
                                 && m_vRPN[sz-1].Val().var != nullptr
                                 && !m_vRPN[sz-1].Val().var->isCommutative())
                                 m_vRPN[sz-2].Cmd = cmREVVARMUL; // Only makes sense, if variables are really not commutative
-                            else
-                                m_vRPN[sz-2].Cmd = cmVARMUL;
-
-                            if (m_vRPN[sz-2].Cmd == cmVARMUL
+                            else if (m_vRPN[sz-2].Cmd == cmVARMUL
                                 && m_vRPN[sz-1].Cmd == cmVAR
                                 && !m_vRPN[sz-2].Val().var->isCommutative())
                                 break; // Do not chain operations of variables, which are not commutative
+                            else
+                                m_vRPN[sz-2].Cmd = cmVARMUL;
 
 							// Update var pointer
 							m_vRPN[sz-2].Val().var = m_vRPN[sz-2].Val().var != nullptr ? m_vRPN[sz-2].Val().var : m_vRPN[sz-1].Val().var;
@@ -613,23 +612,6 @@ namespace mu
 		}
 
 
-	}
-
-	//---------------------------------------------------------------------------
-	/** \brief Add a bulk function to bytecode.
-
-	    \param a_iArgc Number of arguments, negative numbers indicate multiarg functions.
-	    \param a_pFun Pointer to function callback.
-	*/
-	void ParserByteCode::AddBulkFun(generic_fun_type a_pFun, int a_iArgc)
-	{
-		m_iStackPos = m_iStackPos - a_iArgc + 1;
-		m_iMaxStackSize = std::max(m_iMaxStackSize, (size_t)m_iStackPos);
-
-		SToken tok;
-		tok.Cmd = cmFUNC_BULK;
-		tok.m_data = SFunData{.ptr{a_pFun}, .argc{a_iArgc}, .idx{0}};
-		m_vRPN.push_back(tok);
 	}
 
 	void ParserByteCode::pop()

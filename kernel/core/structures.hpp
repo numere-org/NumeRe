@@ -3208,8 +3208,7 @@ struct Point
 /////////////////////////////////////////////////
 struct Returnvalue
 {
-    std::vector<mu::value_type> vNumVal;
-    std::vector<std::string> vStringVal;
+    std::vector<mu::Array> valArray;
     std::string sReturnedTable;
     bool delayDelete;
     Indices sourceIdx;
@@ -3219,20 +3218,9 @@ struct Returnvalue
     // clear method
     void clear()
     {
-        vNumVal.clear();
-        vStringVal.clear();
+        valArray.clear();
         sReturnedTable.clear();
         delayDelete = false;
-    }
-
-    // boolean checkers
-    bool isString() const
-    {
-        return vStringVal.size();
-    }
-    bool isNumeric() const
-    {
-        return vNumVal.size() && !vStringVal.size();
     }
 };
 
@@ -3244,7 +3232,7 @@ struct Returnvalue
 struct DefaultVariables
 {
     std::string sName[4] = {"x", "y", "z", "t"};
-    mu::value_type vValue[4][4];
+    mu::Variable vValue[4][4];
 };
 
 

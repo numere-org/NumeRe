@@ -22,20 +22,10 @@
 #include "../ui/language.hpp"
 #include "../structures.hpp"
 #include "../maths/functionimplementation.hpp"
+#include "../strings/functionimplementation.hpp"
 
 Language _lang;
 
-static mu::Array parser_strlen(const mu::Array& a)
-{
-    mu::Array res;
-
-    for (const auto& val : a)
-    {
-        res.push_back(val.getStr().length());
-    }
-
-    return res;
-}
 
 int main()
 {
@@ -81,7 +71,11 @@ int main()
 
     _parser.DefineFun("logtoidx", parser_logtoidx);
     _parser.DefineFun("idxtolog", parser_idxtolog);
-    _parser.DefineFun("strlen", parser_strlen);
+    _parser.DefineFun("strlen", strfnc_strlen);
+    _parser.DefineFun("substr", strfnc_substr, true, 1);
+    _parser.DefineFun("firstch", strfnc_firstch);
+    _parser.DefineFun("lastch", strfnc_lastch);
+    _parser.DefineFun("strjoin", strfnc_strjoin, true, 2);
     _parser.DefineFun("landau_rd", parser_rd_landau_rd, false, 1);
 
     std::string sInput;

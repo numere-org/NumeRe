@@ -37,7 +37,7 @@
 class Matrix
 {
     private:
-        std::vector<mu::value_type> m_storage;       ///< The internal buffer
+        mu::Array m_storage;       ///< The internal buffer
         size_t m_rows;                               ///< Number of rows
         size_t m_cols;                               ///< Number of columns
         bool m_transpose;                            ///< Is this Matrix transposed
@@ -48,10 +48,10 @@ class Matrix
         ///
         /// \param i size_t
         /// \param j size_t
-        /// \return mu::value_type&
+        /// \return mu::Value&
         ///
         /////////////////////////////////////////////////
-        mu::value_type& get(size_t i, size_t j)
+        mu::Value& get(size_t i, size_t j)
         {
             return m_transpose ? m_storage[i*m_cols + j] : m_storage[i + j*m_rows];
         }
@@ -62,10 +62,10 @@ class Matrix
         ///
         /// \param i size_t
         /// \param j size_t
-        /// \return const mu::value_type&
+        /// \return const mu::Value&
         ///
         /////////////////////////////////////////////////
-        const mu::value_type& get(size_t i, size_t j) const
+        const mu::Value& get(size_t i, size_t j) const
         {
             return m_transpose ? m_storage[i*m_cols + j] : m_storage[i + j*m_rows];
         }
@@ -82,7 +82,7 @@ class Matrix
         {
             if (m_transpose)
             {
-                std::vector<mu::value_type> buffer(m_cols*m_rows);
+                mu::Array buffer(m_cols*m_rows);
 
                 for (size_t i = 0; i < m_rows; i++)
                 {
@@ -108,10 +108,10 @@ class Matrix
         ///
         /// \param r size_t
         /// \param c size_t
-        /// \param init const mu::value_type&
+        /// \param init const mu::Value&
         ///
         /////////////////////////////////////////////////
-        Matrix(size_t r, size_t c = 1u, const mu::value_type& init = NAN) : m_rows(r), m_cols(c), m_transpose(false)
+        Matrix(size_t r, size_t c = 1u, const mu::Value& init = NAN) : m_rows(r), m_cols(c), m_transpose(false)
         {
             m_storage.resize(r*c, init);
         }
@@ -134,10 +134,10 @@ class Matrix
         /// \brief Construct a matrix from a vector
         /// matrix.
         ///
-        /// \param vectMatrix const std::vector<std::vector<mu::value_type>>&
+        /// \param vectMatrix const std::vector<std::vector<std::complex<double>>>&
         ///
         /////////////////////////////////////////////////
-        Matrix(const std::vector<std::vector<mu::value_type>>& vectMatrix) : Matrix()
+        Matrix(const std::vector<std::vector<std::complex<double>>>& vectMatrix) : Matrix()
         {
             m_rows = vectMatrix.size();
             m_cols = vectMatrix[0].size();
@@ -161,11 +161,11 @@ class Matrix
         ///
         /// \param r size_t
         /// \param c size_t
-        /// \param vVals mu::value_type*
+        /// \param vVals mu::Value*
         /// \param nVals int
         ///
         /////////////////////////////////////////////////
-        Matrix(size_t r, size_t c, mu::value_type* vVals, int nVals)
+        Matrix(size_t r, size_t c, mu::Value* vVals, int nVals)
         {
             assign(r, c, vVals, nVals);
         }
@@ -203,12 +203,12 @@ class Matrix
         ///
         /// \param r size_t
         /// \param c size_t
-        /// \param vVals mu::value_type*
+        /// \param vVals mu::Value*
         /// \param nVals int
         /// \return void
         ///
         /////////////////////////////////////////////////
-        void assign(size_t r, size_t c, mu::value_type* vVals, int nVals)
+        void assign(size_t r, size_t c, mu::Value* vVals, int nVals)
         {
             m_storage.assign(vVals, vVals+std::min(r*c, (size_t)nVals));
             m_rows = r;
@@ -222,11 +222,11 @@ class Matrix
         ///
         /// \param r size_t
         /// \param c size_t
-        /// \param vVals const std::vector<mu::value_type>&
+        /// \param vVals const std::vector<std::complex<double>>&
         /// \return void
         ///
         /////////////////////////////////////////////////
-        void assign(size_t r, size_t c, const std::vector<mu::value_type>& vVals)
+        void assign(size_t r, size_t c, const std::vector<std::complex<double>>& vVals)
         {
             m_storage.assign(vVals.begin(), vVals.begin()+std::min(r*c, vVals.size()));
             m_rows = r;
@@ -239,10 +239,10 @@ class Matrix
         /// \brief Get a reference to the internal data
         /// structure.
         ///
-        /// \return std::vector<mu::value_type>&
+        /// \return mu::Array&
         ///
         /////////////////////////////////////////////////
-        std::vector<mu::value_type>& data()
+        mu::Array& data()
         {
             return m_storage;
         }
@@ -251,10 +251,10 @@ class Matrix
         /// \brief Get a const reference to the internal
         /// data structure.
         ///
-        /// \return const std::vector<mu::value_type>&
+        /// \return const mu::Array&
         ///
         /////////////////////////////////////////////////
-        const std::vector<mu::value_type>& data() const
+        const mu::Array& data() const
         {
             return m_storage;
         }
@@ -351,7 +351,7 @@ class Matrix
         {
             for (auto& v : m_storage)
             {
-                if (mu::isnan(v) || mu::isinf(v))
+                if (!v.isValid())
                     return true;
             }
 
@@ -376,10 +376,10 @@ class Matrix
         ///
         /// \param i size_t
         /// \param j size_t
-        /// \return mu::value_type&
+        /// \return mu::Value&
         ///
         /////////////////////////////////////////////////
-        mu::value_type& operator()(size_t i, size_t j = 0u)
+        mu::Value& operator()(size_t i, size_t j = 0u)
         {
             if (i >= m_rows || j >= m_cols)
                 throw SyntaxError(SyntaxError::INVALID_INDEX, "INTERNAL INDEXING ERROR",
@@ -395,10 +395,10 @@ class Matrix
         ///
         /// \param i size_t
         /// \param j size_t
-        /// \return const mu::value_type&
+        /// \return const mu::Value&
         ///
         /////////////////////////////////////////////////
-        const mu::value_type& operator()(size_t i, size_t j = 0u) const
+        const mu::Value& operator()(size_t i, size_t j = 0u) const
         {
             if (i >= m_rows || j >= m_cols)
                 throw SyntaxError(SyntaxError::INVALID_INDEX, "INTERNAL INDEXING ERROR",
@@ -424,7 +424,7 @@ class Matrix
                 return;
 
             // Use a buffer
-            std::vector<mu::value_type> buffer(r*c);
+            mu::Array buffer(r*c);
 
             // Copy the remaining elements
             #pragma omp parallel for

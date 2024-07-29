@@ -61,7 +61,7 @@ static inline std::string printMatrixDim(const Matrix& mat)
 /// \return Matrix
 ///
 /////////////////////////////////////////////////
-static Matrix createFilledMatrix(size_t n, size_t m, const mu::value_type& val)
+static Matrix createFilledMatrix(size_t n, size_t m, const std::complex<double>& val)
 {
     return Matrix(n, m, val);
 }
@@ -176,10 +176,10 @@ static Matrix calcTrace(const MatFuncData& funcData, const MatFuncErrorInfo& err
 ///
 /// \param _mMatrix const Matrix&
 /// \param vRemovedLines std::vector<int>
-/// \return mu::value_type
+/// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
-static mu::value_type calcDeterminant(const Matrix& _mMatrix, std::vector<int> vRemovedLines)
+static std::complex<double> calcDeterminant(const Matrix& _mMatrix, std::vector<int> vRemovedLines)
 {
     // simple Sonderfaelle
     if (_mMatrix.rows() == 1)
@@ -199,7 +199,7 @@ static mu::value_type calcDeterminant(const Matrix& _mMatrix, std::vector<int> v
     }
 
     int nSign = 1;
-    mu::value_type dDet = 0.0;
+    std::complex<double> dDet = 0.0;
 
     for (size_t i = 0; i < _mMatrix.rows(); i++)
     {
@@ -512,7 +512,7 @@ static Matrix createShuffledMatrix(const MatFuncData& funcData, const MatFuncErr
         std::uniform_real_distribution<double> randDist(i, nBase-1);
 
         int nIndex = rint(randDist(getRandGenInstance()));
-        mu::value_type dTemp = _mBase(i);
+        std::complex<double> dTemp = _mBase(i);
         _mBase(i) = _mBase(nIndex);
         _mBase(nIndex) = dTemp;
     }
@@ -549,7 +549,7 @@ static Matrix invertMatrix(const MatFuncData& funcData, const MatFuncErrorInfo& 
     Matrix _mInverse = identityMatrix(MatFuncData(funcData.mat1.rows()), errorInfo);
     Matrix _mToInvert = funcData.mat1;
 
-    mu::value_type dDet = getDeterminant(funcData, errorInfo)(0);
+    std::complex<double> dDet = getDeterminant(funcData, errorInfo)(0);
 
     if (dDet == 0.0)
         throw SyntaxError(SyntaxError::MATRIX_IS_NOT_INVERTIBLE, errorInfo.command, errorInfo.position);
@@ -603,7 +603,7 @@ static Matrix invertMatrix(const MatFuncData& funcData, const MatFuncErrorInfo& 
             {
                 if (i != j) //vertauschen
                 {
-                    mu::value_type dElement;
+                    std::complex<double> dElement;
 
                     for (size_t _j = 0; _j < _mToInvert.cols(); _j++)
                     {
@@ -619,7 +619,7 @@ static Matrix invertMatrix(const MatFuncData& funcData, const MatFuncErrorInfo& 
                 }
                 else //Gauss-Elimination
                 {
-                    mu::value_type dPivot = _mToInvert(i, j);
+                    std::complex<double> dPivot = _mToInvert(i, j);
 
                     for (size_t _j = 0; _j < _mToInvert.cols(); _j++)
                     {
@@ -629,7 +629,7 @@ static Matrix invertMatrix(const MatFuncData& funcData, const MatFuncErrorInfo& 
 
                     for (size_t _i = i+1; _i < _mToInvert.rows(); _i++)
                     {
-                        mu::value_type dFactor = _mToInvert(_i, j);
+                        std::complex<double> dFactor = _mToInvert(_i, j);
 
                         if (dFactor == 0.0) // Bereits 0???
                             continue;
@@ -772,10 +772,10 @@ static Matrix logToIndex(const MatFuncData& funcData, const MatFuncErrorInfo& er
 /// \param rowCount size_t
 /// \param colStart int
 /// \param colCount size_t
-/// \return mu::value_type
+/// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
-static mu::value_type calculateStats(const Matrix& mat, StatsLogic logic, int rowStart, size_t rowCount, int colStart, size_t colCount)
+static std::complex<double> calculateStats(const Matrix& mat, StatsLogic logic, int rowStart, size_t rowCount, int colStart, size_t colCount)
 {
     constexpr size_t MINTHREADCOUNT = 100;
     constexpr size_t MINELEMENTPERCOL = 100;
@@ -1240,8 +1240,8 @@ static Matrix matrixMovAvg(const MatFuncData& funcData, const MatFuncErrorInfo& 
         {
             if (!isnan(funcData.mat1(i, j)))
             {
-                mu::value_type sum = calculateStats(funcData.mat1, StatsLogic(StatsLogic::OPERATION_ADD),
-                                                    i-funcData.nVal, 2*funcData.nVal+1, j-funcData.mVal, 2*funcData.mVal+1);
+                std::complex<double> sum = calculateStats(funcData.mat1, StatsLogic(StatsLogic::OPERATION_ADD),
+                                                          i-funcData.nVal, 2*funcData.nVal+1, j-funcData.mVal, 2*funcData.mVal+1);
 
                 double num = calculateStats(funcData.mat1, StatsLogic(StatsLogic::OPERATION_NUM),
                                             i-funcData.nVal, 2*funcData.nVal+1, j-funcData.mVal, 2*funcData.mVal+1).real();
@@ -1307,14 +1307,14 @@ static Matrix matrixMovStd(const MatFuncData& funcData, const MatFuncErrorInfo& 
         {
             if (!isnan(funcData.mat1(i, j)))
             {
-                mu::value_type sum = calculateStats(funcData.mat1, StatsLogic(StatsLogic::OPERATION_ADD),
-                                                    i-funcData.nVal, 2*funcData.nVal+1, j-funcData.mVal, 2*funcData.mVal+1);
+                std::complex<double> sum = calculateStats(funcData.mat1, StatsLogic(StatsLogic::OPERATION_ADD),
+                                                          i-funcData.nVal, 2*funcData.nVal+1, j-funcData.mVal, 2*funcData.mVal+1);
 
                 double num = calculateStats(funcData.mat1, StatsLogic(StatsLogic::OPERATION_NUM),
                                             i-funcData.nVal, 2*funcData.nVal+1, j-funcData.mVal, 2*funcData.mVal+1).real();
 
-                mu::value_type std = calculateStats(funcData.mat1, StatsLogic(StatsLogic::OPERATION_ADDSQSUB, 0.0, sum/num),
-                                                    i-funcData.nVal, 2*funcData.nVal+1, j-funcData.mVal, 2*funcData.mVal+1);
+                std::complex<double> std = calculateStats(funcData.mat1, StatsLogic(StatsLogic::OPERATION_ADDSQSUB, 0.0, sum/num),
+                                                          i-funcData.nVal, 2*funcData.nVal+1, j-funcData.mVal, 2*funcData.mVal+1);
 
                 if (num > 1)
                     _mResult(i, j) = std::sqrt(std / (num - 1.0));
@@ -1624,9 +1624,9 @@ static Matrix matrixCmp(const MatFuncData& funcData, const MatFuncErrorInfo& err
     Matrix _mCoords = createFilledMatrix(2, 1, 0.0);
     _mCoords(0) = -1;
 
-    mu::value_type dValue = funcData.fVal;
+    std::complex<double> dValue = funcData.fVal;
     int nType = funcData.nVal;
-    mu::value_type dKeep = dValue;
+    std::complex<double> dKeep = dValue;
 
     for (size_t i = 0; i < funcData.mat1.rows(); i++)
     {
@@ -2088,11 +2088,11 @@ static Matrix matrixRepMat(const MatFuncData& funcData, const MatFuncErrorInfo& 
 /// std::list::remove_if() called in
 /// getUniqueList().
 ///
-/// \param value const mu::value_type&
+/// \param value const std::complex<double>&
 /// \return bool
 ///
 /////////////////////////////////////////////////
-static bool is_nan(const mu::value_type& value)
+static bool is_nan(const std::complex<double>& value)
 {
     return isnan(value);
 }
@@ -2103,12 +2103,12 @@ static bool is_nan(const mu::value_type& value)
 /// called in getUniqueList(). Determines a
 /// real-only order.
 ///
-/// \param value1 const mu::value_type&
-/// \param value2 const mu::value_type&
+/// \param value1 const std::complex<double>&
+/// \param value2 const std::complex<double>&
 /// \return bool
 ///
 /////////////////////////////////////////////////
-static bool isSmallerRealOnly(const mu::value_type& value1, const mu::value_type& value2)
+static bool isSmallerRealOnly(const std::complex<double>& value1, const std::complex<double>& value2)
 {
     return value1.real() < value2.real();
 }
@@ -2119,18 +2119,18 @@ static bool isSmallerRealOnly(const mu::value_type& value1, const mu::value_type
 /// the implementation of the \c unique()
 /// function.
 ///
-/// \param _list std::list<mu::value_type>&
-/// \return std::vector<mu::value_type>
+/// \param _list std::list<std::complex<double>>&
+/// \return std::vector<std::complex<double>>
 ///
 /////////////////////////////////////////////////
-static std::vector<mu::value_type> getUniqueList(std::list<mu::value_type>& _list)
+static std::vector<std::complex<double>> getUniqueList(std::list<std::complex<double>>& _list)
 {
     _list.remove_if(is_nan);
 
     if (_list.empty())
-        return std::vector<mu::value_type>(1, NAN);
+        return std::vector<std::complex<double>>(1, NAN);
 
-    std::vector<mu::value_type> vReturn;
+    std::vector<std::complex<double>> vReturn;
 
     for (auto& val : _list)
     {
@@ -2159,7 +2159,7 @@ static Matrix matrixUnique(const MatFuncData& funcData, const MatFuncErrorInfo& 
         throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, errorInfo.command, errorInfo.position);
 
     // Create a std::list and the return value
-    std::list<mu::value_type> dataList;
+    std::list<std::complex<double>> dataList;
     Matrix _mReturn;
 
     // Depending on the dimensions of the passed matrix, change
@@ -2184,7 +2184,7 @@ static Matrix matrixUnique(const MatFuncData& funcData, const MatFuncErrorInfo& 
         if (!funcData.nVal)
         {
             // funcData.nVal == 0 -> Roll out the total matrix and return it as a overall row vector
-            Matrix retVal = matrixReshape(MatFuncData(funcData.mat1, mu::value_type(1.0), funcData.mat1.rows()*funcData.mat1.cols()),
+            Matrix retVal = matrixReshape(MatFuncData(funcData.mat1, std::complex<double>(1.0), funcData.mat1.rows()*funcData.mat1.cols()),
                                           errorInfo);
             dataList.assign(retVal.data().begin(), retVal.data().end());
             auto uniqueList = getUniqueList(dataList);
@@ -2192,7 +2192,7 @@ static Matrix matrixUnique(const MatFuncData& funcData, const MatFuncErrorInfo& 
         }
         else if (funcData.nVal == 1)
         {
-            std::vector<std::vector<mu::value_type>> mBuffer;
+            std::vector<std::vector<std::complex<double>>> mBuffer;
 
             // Make the rows unique
             for (size_t i = 0; i < funcData.mat1.rows(); i++)
@@ -2209,7 +2209,7 @@ static Matrix matrixUnique(const MatFuncData& funcData, const MatFuncErrorInfo& 
         }
         else
         {
-            std::vector<std::vector<mu::value_type>> mBuffer;
+            std::vector<std::vector<std::complex<double>>> mBuffer;
 
             // Make the columns unique
             for (size_t j = 0; j < funcData.mat1.cols(); j++)
@@ -2255,7 +2255,7 @@ static Matrix matrixCumSum(const MatFuncData& funcData, const MatFuncErrorInfo& 
         _mReturn = funcData.mat1;
 
         // (Any) vector
-        std::vector<mu::value_type>& dat = _mReturn.data();
+        std::vector<std::complex<double>>& dat = _mReturn.data();
 
         for (size_t i = 1; i < dat.size(); i++)
         {
@@ -2268,10 +2268,10 @@ static Matrix matrixCumSum(const MatFuncData& funcData, const MatFuncErrorInfo& 
         if (!funcData.nVal)
         {
             // funcData.nVal == 0 -> Roll out the total matrix and return it as a overall row vector
-            _mReturn = matrixReshape(MatFuncData(funcData.mat1, mu::value_type(1.0), funcData.mat1.rows()*funcData.mat1.cols()),
+            _mReturn = matrixReshape(MatFuncData(funcData.mat1, std::complex<double>(1.0), funcData.mat1.rows()*funcData.mat1.cols()),
                                      errorInfo);
             // (Any) vector
-            std::vector<mu::value_type>& dat = _mReturn.data();
+            std::vector<std::complex<double>>& dat = _mReturn.data();
 
             for (size_t i = 1; i < dat.size(); i++)
             {
@@ -2330,7 +2330,7 @@ static Matrix matrixCumPrd(const MatFuncData& funcData, const MatFuncErrorInfo& 
         _mReturn = funcData.mat1;
 
         // (Any) vector
-        std::vector<mu::value_type>& dat = _mReturn.data();
+        std::vector<std::complex<double>>& dat = _mReturn.data();
 
         for (size_t i = 1; i < dat.size(); i++)
         {
@@ -2343,10 +2343,10 @@ static Matrix matrixCumPrd(const MatFuncData& funcData, const MatFuncErrorInfo& 
         if (!funcData.nVal)
         {
             // funcData.nVal == 0 -> Roll out the total matrix and return it as a overall row vector
-            _mReturn = matrixReshape(MatFuncData(funcData.mat1, mu::value_type(1.0), funcData.mat1.rows()*funcData.mat1.cols()),
+            _mReturn = matrixReshape(MatFuncData(funcData.mat1, std::complex<double>(1.0), funcData.mat1.rows()*funcData.mat1.cols()),
                                      errorInfo);
             // (Any) vector
-            std::vector<mu::value_type>& dat = _mReturn.data();
+            std::vector<std::complex<double>>& dat = _mReturn.data();
 
             for (size_t i = 1; i < dat.size(); i++)
             {
@@ -2549,7 +2549,7 @@ static Matrix solveLGS(const MatFuncData& funcData, const MatFuncErrorInfo& erro
             {
                 if (i != j) //vertauschen
                 {
-                    mu::value_type dElement;
+                    std::complex<double> dElement;
 
                     for (size_t _j = 0; _j < _mToSolve.cols(); _j++)
                     {
@@ -2562,7 +2562,7 @@ static Matrix solveLGS(const MatFuncData& funcData, const MatFuncErrorInfo& erro
                 }
                 else //Gauss-Elimination
                 {
-                    mu::value_type dPivot = _mToSolve(i, j);
+                    std::complex<double> dPivot = _mToSolve(i, j);
 
                     for (size_t _j = 0; _j < _mToSolve.cols(); _j++)
                     {
@@ -2572,7 +2572,7 @@ static Matrix solveLGS(const MatFuncData& funcData, const MatFuncErrorInfo& erro
                     #pragma omp parallel for
                     for (size_t _i = i+1; _i < _mToSolve.rows(); _i++)
                     {
-                        mu::value_type dFactor = _mToSolve(_i, j);
+                        std::complex<double> dFactor = _mToSolve(_i, j);
 
                         if (dFactor == 0.0) // Bereits 0???
                             continue;
@@ -2626,7 +2626,7 @@ static Matrix solveLGS(const MatFuncData& funcData, const MatFuncErrorInfo& erro
                 {
                     if (!vIsZerosLine[_i])
                     {
-                        mu::value_type dElement;
+                        std::complex<double> dElement;
 
                         for (size_t _j = 0; _j < _mToSolve.cols(); _j++)
                         {
@@ -2696,7 +2696,7 @@ static Matrix diagonalMatrix(const MatFuncData& funcData, const MatFuncErrorInfo
     if (funcData.mat1.isEmpty())
         throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, errorInfo.command, errorInfo.position);
 
-    Matrix _reshapedMat = matrixReshape(MatFuncData(funcData.mat1, mu::value_type(funcData.mat1.rows() * funcData.mat1.cols()), 1),
+    Matrix _reshapedMat = matrixReshape(MatFuncData(funcData.mat1, std::complex<double>(funcData.mat1.rows() * funcData.mat1.cols()), 1),
                                         errorInfo);
     Matrix _diagonalMat = createFilledMatrix(_reshapedMat.rows(), _reshapedMat.rows(), 0.0);
 
@@ -2976,8 +2976,8 @@ static Matrix coordsToGrid(const MatFuncData& funcData, const MatFuncErrorInfo& 
         for (size_t j = 0; j < gcoords.cols(); j++)
         {
             size_t pos = findNearestLowerGridAxisValue(funcData.mat1, j, gcoords(i, j).real()); // find the lower grid axis value assuming sorted axis
-            mu::value_type off = gcoords(i, j) - funcData.mat1(pos, j); // should be smaller than grid interval, but might be negative
-            mu::value_type interval = pos+1 < funcData.mat1.rows()
+            std::complex<double> off = gcoords(i, j) - funcData.mat1(pos, j); // should be smaller than grid interval, but might be negative
+            std::complex<double> interval = pos+1 < funcData.mat1.rows()
                 ? funcData.mat1(pos+1, j) - funcData.mat1(pos, j)
                 : funcData.mat1(pos, j) - funcData.mat1(pos-1, j); // the grid interval. Might also be negative
 
@@ -2996,10 +2996,10 @@ static Matrix coordsToGrid(const MatFuncData& funcData, const MatFuncErrorInfo& 
 /// \param mat const Matrix&
 /// \param row int
 /// \param col int
-/// \return mu::value_type
+/// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
-static mu::value_type readMat(const Matrix& mat, int row, int col)
+static std::complex<double> readMat(const Matrix& mat, int row, int col)
 {
     if (row < (int)mat.rows() && col < (int)mat.cols() && row >= 0 && col >= 0)
         return mat(row, col);
@@ -3018,7 +3018,7 @@ static mu::value_type readMat(const Matrix& mat, int row, int col)
 /// \return double
 ///
 /////////////////////////////////////////////////
-static mu::value_type bilinearInterpolation(const Matrix& mat, double row, double col)
+static std::complex<double> bilinearInterpolation(const Matrix& mat, double row, double col)
 {
     if (std::isnan(row) || std::isnan(col))
         return NAN;
@@ -3032,10 +3032,10 @@ static mu::value_type bilinearInterpolation(const Matrix& mat, double row, doubl
     double y = col - nBaseCol;
 
     // Find the surrounding four entries
-    mu::value_type f00 = readMat(mat, nBaseLine, nBaseCol);
-    mu::value_type f10 = readMat(mat, nBaseLine+1, nBaseCol);
-    mu::value_type f01 = readMat(mat, nBaseLine, nBaseCol+1);
-    mu::value_type f11 = readMat(mat, nBaseLine+1, nBaseCol+1);
+    std::complex<double> f00 = readMat(mat, nBaseLine, nBaseCol);
+    std::complex<double> f10 = readMat(mat, nBaseLine+1, nBaseCol);
+    std::complex<double> f01 = readMat(mat, nBaseLine, nBaseCol+1);
+    std::complex<double> f11 = readMat(mat, nBaseLine+1, nBaseCol+1);
 
     // If all are NAN, return NAN
     if (isnan(f00) && isnan(f01) && isnan(f10) && isnan(f11))
@@ -3320,13 +3320,13 @@ static Matrix polyLength(const MatFuncData& funcData, const MatFuncErrorInfo& er
 /// \param inMatrix const Matrix&
 /// \param rows const VectorIndex&
 /// \param cols const VectorIndex&
-/// \return mu::value_type
+/// \return std::complex<double>
 ///
 /////////////////////////////////////////////////
-static mu::value_type applyKernel(const Matrix& kernel, const Matrix& inMatrix, const VectorIndex& rows, const VectorIndex& cols, const size_t startRow, const size_t startCol)
+static std::complex<double> applyKernel(const Matrix& kernel, const Matrix& inMatrix, const VectorIndex& rows, const VectorIndex& cols, const size_t startRow, const size_t startCol)
 {
     // Init the result to zero
-    mu::value_type result(0);
+    std::complex<double> result(0);
 
     // Perform element wise multiplication and sum up each result
     for (size_t i = 0; i < kernel.rows(); i++)
@@ -3424,7 +3424,7 @@ Matrix convolution(Matrix& mat1, Matrix& mat2)
     // Replace all nans with zeros
     for (size_t i = 0; i < mat1.rows(); i++)
         for (size_t j = 0; j < mat1.cols(); j++)
-            mat1(i, j) = mu::isnan(mat1(i, j)) ? mu::value_type(0.0) : mat1(i, j);
+            mat1(i, j) = mu::isnan(mat1(i, j)) ? std::complex<double>(0.0) : mat1(i, j);
 
     // Perform the transformation
     _fftData1.FFT("xy");
@@ -3438,7 +3438,7 @@ Matrix convolution(Matrix& mat1, Matrix& mat2)
     // Replace all nans with zeros
     for (size_t i = 0; i < mat2.rows(); i++)
         for (size_t j = 0; j < mat2.cols(); j++)
-            mat2(i, j) = mu::isnan(mat2(i, j)) ? mu::value_type(0.0) : mat2(i, j);
+            mat2(i, j) = mu::isnan(mat2(i, j)) ? std::complex<double>(0.0) : mat2(i, j);
 
     // Perform the transformation
     _fftData2.FFT("xy");

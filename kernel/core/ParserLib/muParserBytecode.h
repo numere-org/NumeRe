@@ -156,7 +156,6 @@ namespace mu
 			void AddAssignOp(Variable* a_pVar);
 			void AddAssignOp(const VarArray& a_varArray);
 			void AddFun(generic_fun_type a_pFun, int a_iArgc, bool optimizeAway);
-			void AddBulkFun(generic_fun_type a_pFun, int a_iArgc);
 
 			void pop();
 

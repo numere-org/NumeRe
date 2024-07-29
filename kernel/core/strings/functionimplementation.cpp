@@ -256,7 +256,7 @@ mu::Array strfnc_firstch(const mu::Array& a)
         if (!a[i].getStr().length())
             ret.push_back("");
         else
-            ret.push_back(a[i].getStr().front());
+            ret.push_back(std::string(1, a[i].getStr().front()));
     }
 
     return ret;
@@ -272,7 +272,7 @@ mu::Array strfnc_lastch(const mu::Array& a)
         if (!a[i].getStr().length())
             ret.push_back("");
         else
-            ret.push_back(a[i].getStr().back());
+            ret.push_back(std::string(1, a[i].getStr().back()));
     }
 
     return ret;
@@ -640,10 +640,10 @@ mu::Array strfnc_isdir(const mu::Array& a)
 {
     mu::Array ret;
 
-    for (size_t i = 0; i < a.size(); i++)
-    {
-        ret.push_back(is_dir(a[i].getStr()));
-    }
+//    for (size_t i = 0; i < a.size(); i++)
+//    {
+//        ret.push_back(is_dir(a[i].getStr()));
+//    }
 
     return ret;
 }
@@ -653,10 +653,10 @@ mu::Array strfnc_isfile(const mu::Array& a)
 {
     mu::Array ret;
 
-    for (size_t i = 0; i < a.size(); i++)
-    {
-        ret.push_back(is_file(a[i].getStr()));
-    }
+//    for (size_t i = 0; i < a.size(); i++)
+//    {
+//        ret.push_back(is_file(a[i].getStr()));
+//    }
 
     return ret;
 }
@@ -1978,94 +1978,94 @@ mu::Array strfnc_regex(const mu::Array& rgx, const mu::Array& sStr, const mu::Ar
 {
     mu::Array ret;
 
-    for (size_t i = 0; i < std::max({rgx.size(), sStr.size(), pos.size(), len.size()}); i++)
-    {
-        StringView r = rgx.get(i).getStr();
-        StringView s = sStr.get(i).getStr();
-
-        int64_t p = 1;
-        int64_t l = s.length();
-
-        if (!r.length())
-        {
-            ret.push_back(0);
-            ret.push_back(0);
-            continue;
-        }
-
-        if (!pos.isDefault())
-            p = std::max(p, std::min(l, pos.get(i).getNum().asInt()));
-
-        if (!len.isDefault())
-            p = std::min(l, pos.get(i).getNum().asInt());
-
-        try
-        {
-            std::smatch match;
-            std::regex expr(r.to_string());
-            std::string sStr = s.subview(p-1, l).to_string();
-
-            if (std::regex_search(sStr, match, expr))
-            {
-                ret.push_back(match.position(0) + (size_t)p);
-                ret.push_back(match.length(0));
-            }
-            else
-            {
-                ret.push_back(0);
-                ret.push_back(0);
-            }
-        }
-        catch (std::regex_error& e)
-        {
-            std::string message;
-
-            switch (e.code())
-            {
-                case std::regex_constants::error_collate:
-                    message = _lang.get("ERR_NR_"+toString(SyntaxError::INVALID_REGEX)+"_COLLATE");
-                    break;
-                case std::regex_constants::error_ctype:
-                    message = _lang.get("ERR_NR_"+toString(SyntaxError::INVALID_REGEX)+"_CTYPE");
-                    break;
-                case std::regex_constants::error_escape:
-                    message = _lang.get("ERR_NR_"+toString(SyntaxError::INVALID_REGEX)+"_ESCAPE");
-                    break;
-                case std::regex_constants::error_backref:
-                    message = _lang.get("ERR_NR_"+toString(SyntaxError::INVALID_REGEX)+"_BACKREF");
-                    break;
-                case std::regex_constants::error_brack:
-                    message = _lang.get("ERR_NR_"+toString(SyntaxError::INVALID_REGEX)+"_BRACK");
-                    break;
-                case std::regex_constants::error_paren:
-                    message = _lang.get("ERR_NR_"+toString(SyntaxError::INVALID_REGEX)+"_PAREN");
-                    break;
-                case std::regex_constants::error_brace:
-                    message = _lang.get("ERR_NR_"+toString(SyntaxError::INVALID_REGEX)+"_BRACE");
-                    break;
-                case std::regex_constants::error_badbrace:
-                    message = _lang.get("ERR_NR_"+toString(SyntaxError::INVALID_REGEX)+"_BADBRACE");
-                    break;
-                case std::regex_constants::error_range:
-                    message = _lang.get("ERR_NR_"+toString(SyntaxError::INVALID_REGEX)+"_RANGE");
-                    break;
-                case std::regex_constants::error_space:
-                    message = _lang.get("ERR_NR_"+toString(SyntaxError::INVALID_REGEX)+"_SPACE");
-                    break;
-                case std::regex_constants::error_badrepeat:
-                    message = _lang.get("ERR_NR_"+toString(SyntaxError::INVALID_REGEX)+"_BADREPEAT");
-                    break;
-                case std::regex_constants::error_complexity:
-                    message =_lang.get("ERR_NR_"+toString(SyntaxError::INVALID_REGEX)+"_COMPLEXITY");
-                    break;
-                case std::regex_constants::error_stack:
-                    message = _lang.get("ERR_NR_"+toString(SyntaxError::INVALID_REGEX)+"_STACK");
-                    break;
-            }
-
-            throw SyntaxError(SyntaxError::INVALID_REGEX, r.to_string(), SyntaxError::invalid_position, message);
-        }
-    }
+//    for (size_t i = 0; i < std::max({rgx.size(), sStr.size(), pos.size(), len.size()}); i++)
+//    {
+//        StringView r = rgx.get(i).getStr();
+//        StringView s = sStr.get(i).getStr();
+//
+//        int64_t p = 1;
+//        int64_t l = s.length();
+//
+//        if (!r.length())
+//        {
+//            ret.push_back(0);
+//            ret.push_back(0);
+//            continue;
+//        }
+//
+//        if (!pos.isDefault())
+//            p = std::max(p, std::min(l, pos.get(i).getNum().asInt()));
+//
+//        if (!len.isDefault())
+//            p = std::min(l, pos.get(i).getNum().asInt());
+//
+//        try
+//        {
+//            std::smatch match;
+//            std::regex expr(r.to_string());
+//            std::string sStr = s.subview(p-1, l).to_string();
+//
+//            if (std::regex_search(sStr, match, expr))
+//            {
+//                ret.push_back(match.position(0) + (size_t)p);
+//                ret.push_back(match.length(0));
+//            }
+//            else
+//            {
+//                ret.push_back(0);
+//                ret.push_back(0);
+//            }
+//        }
+//        catch (std::regex_error& e)
+//        {
+//            std::string message;
+//
+//            switch (e.code())
+//            {
+//                case std::regex_constants::error_collate:
+//                    message = _lang.get("ERR_NR_"+toString(SyntaxError::INVALID_REGEX)+"_COLLATE");
+//                    break;
+//                case std::regex_constants::error_ctype:
+//                    message = _lang.get("ERR_NR_"+toString(SyntaxError::INVALID_REGEX)+"_CTYPE");
+//                    break;
+//                case std::regex_constants::error_escape:
+//                    message = _lang.get("ERR_NR_"+toString(SyntaxError::INVALID_REGEX)+"_ESCAPE");
+//                    break;
+//                case std::regex_constants::error_backref:
+//                    message = _lang.get("ERR_NR_"+toString(SyntaxError::INVALID_REGEX)+"_BACKREF");
+//                    break;
+//                case std::regex_constants::error_brack:
+//                    message = _lang.get("ERR_NR_"+toString(SyntaxError::INVALID_REGEX)+"_BRACK");
+//                    break;
+//                case std::regex_constants::error_paren:
+//                    message = _lang.get("ERR_NR_"+toString(SyntaxError::INVALID_REGEX)+"_PAREN");
+//                    break;
+//                case std::regex_constants::error_brace:
+//                    message = _lang.get("ERR_NR_"+toString(SyntaxError::INVALID_REGEX)+"_BRACE");
+//                    break;
+//                case std::regex_constants::error_badbrace:
+//                    message = _lang.get("ERR_NR_"+toString(SyntaxError::INVALID_REGEX)+"_BADBRACE");
+//                    break;
+//                case std::regex_constants::error_range:
+//                    message = _lang.get("ERR_NR_"+toString(SyntaxError::INVALID_REGEX)+"_RANGE");
+//                    break;
+//                case std::regex_constants::error_space:
+//                    message = _lang.get("ERR_NR_"+toString(SyntaxError::INVALID_REGEX)+"_SPACE");
+//                    break;
+//                case std::regex_constants::error_badrepeat:
+//                    message = _lang.get("ERR_NR_"+toString(SyntaxError::INVALID_REGEX)+"_BADREPEAT");
+//                    break;
+//                case std::regex_constants::error_complexity:
+//                    message =_lang.get("ERR_NR_"+toString(SyntaxError::INVALID_REGEX)+"_COMPLEXITY");
+//                    break;
+//                case std::regex_constants::error_stack:
+//                    message = _lang.get("ERR_NR_"+toString(SyntaxError::INVALID_REGEX)+"_STACK");
+//                    break;
+//            }
+//
+//            throw SyntaxError(SyntaxError::INVALID_REGEX, r.to_string(), SyntaxError::invalid_position, message);
+//        }
+//    }
 
     return ret;
 }
@@ -2201,8 +2201,8 @@ mu::Array strfnc_justify(const mu::Array& arr, const mu::Array& align)
 mu::Array strfnc_getlasterror()
 {
     mu::Array ret;
-    ret.push_back(errorTypeToString(getLastErrorType()));
-    ret.push_back(getLastErrorMessage());
+//    ret.push_back(errorTypeToString(getLastErrorType()));
+//    ret.push_back(getLastErrorMessage());
     return ret;
 }
 

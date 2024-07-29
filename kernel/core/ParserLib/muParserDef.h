@@ -195,8 +195,6 @@ namespace mu
 
         // operators and functions
         cmFUNC,                ///< Code for a generic function item
-        cmFUNC_STR,            ///< Code for a function with a string parameter
-        cmFUNC_BULK,           ///< Special callbacks for Bulk mode with an additional parameter for the bulk index
         cmSTRING,              ///< Code for a string token
         cmOPRT_BIN,            ///< user defined binary operator
         cmOPRT_POSTFIX,        ///< code for postfix operators
@@ -257,7 +255,7 @@ namespace mu
 
       Normally this is a floating point type either single or double precision.
     */
-    typedef MUP_BASETYPE value_type;
+    //typedef MUP_BASETYPE value_type;
 
     /** \brief The stringtype used by the parser.
 
@@ -328,50 +326,8 @@ namespace mu
     /** \brief Callback type used for functions with five arguments. */
     typedef Array (*fun_type10)(const Array&, const Array&, const Array&, const Array&, const Array&, const Array&, const Array&, const Array&, const Array&, const Array&);
 
-    /** \brief Callback type used for functions without arguments. */
-    typedef value_type (*bulkfun_type0)(int, int);
-
-    /** \brief Callback type used for functions with a single arguments. */
-    typedef value_type (*bulkfun_type1)(int, int, value_type);
-
-    /** \brief Callback type used for functions with two arguments. */
-    typedef value_type (*bulkfun_type2)(int, int, value_type, value_type);
-
-    /** \brief Callback type used for functions with three arguments. */
-    typedef value_type (*bulkfun_type3)(int, int, value_type, value_type, value_type);
-
-    /** \brief Callback type used for functions with four arguments. */
-    typedef value_type (*bulkfun_type4)(int, int, value_type, value_type, value_type, value_type);
-
-    /** \brief Callback type used for functions with five arguments. */
-    typedef value_type (*bulkfun_type5)(int, int, value_type, value_type, value_type, value_type, value_type);
-
-    /** \brief Callback type used for functions with five arguments. */
-    typedef value_type (*bulkfun_type6)(int, int, value_type, value_type, value_type, value_type, value_type, value_type);
-
-    /** \brief Callback type used for functions with five arguments. */
-    typedef value_type (*bulkfun_type7)(int, int, value_type, value_type, value_type, value_type, value_type, value_type, value_type);
-
-    /** \brief Callback type used for functions with five arguments. */
-    typedef value_type (*bulkfun_type8)(int, int, value_type, value_type, value_type, value_type, value_type, value_type, value_type, value_type);
-
-    /** \brief Callback type used for functions with five arguments. */
-    typedef value_type (*bulkfun_type9)(int, int, value_type, value_type, value_type, value_type, value_type, value_type, value_type, value_type, value_type);
-
-    /** \brief Callback type used for functions with five arguments. */
-    typedef value_type (*bulkfun_type10)(int, int, value_type, value_type, value_type, value_type, value_type, value_type, value_type, value_type, value_type, value_type);
-
     /** \brief Callback type used for functions with a variable argument list. */
     typedef Array (*multfun_type)(const Array*, int);
-
-    /** \brief Callback type used for functions taking a string as an argument. */
-    typedef value_type (*strfun_type1)(const char_type*);
-
-    /** \brief Callback type used for functions taking a string and a value as arguments. */
-    typedef value_type (*strfun_type2)(const char_type*, value_type);
-
-    /** \brief Callback type used for functions taking a string and two values as arguments. */
-    typedef value_type (*strfun_type3)(const char_type*, value_type, value_type);
 
     /** \brief Callback used for functions that identify values in a string. */
     typedef int (*identfun_type)(StringView sExpr, int* nPos, Value* fVal);

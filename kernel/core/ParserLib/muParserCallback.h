@@ -63,18 +63,6 @@ namespace mu
             ParserCallback(fun_type9  a_pFun, bool optimizeAway, int numOpt);
             ParserCallback(fun_type10 a_pFun, bool optimizeAway, int numOpt);
 
-            ParserCallback(bulkfun_type0  a_pFun, bool optimizeAway);
-            ParserCallback(bulkfun_type1  a_pFun, bool optimizeAway);
-            ParserCallback(bulkfun_type2  a_pFun, bool optimizeAway);
-            ParserCallback(bulkfun_type3  a_pFun, bool optimizeAway);
-            ParserCallback(bulkfun_type4  a_pFun, bool optimizeAway);
-            ParserCallback(bulkfun_type5  a_pFun, bool optimizeAway);
-            ParserCallback(bulkfun_type6  a_pFun, bool optimizeAway);
-            ParserCallback(bulkfun_type7  a_pFun, bool optimizeAway);
-            ParserCallback(bulkfun_type8  a_pFun, bool optimizeAway);
-            ParserCallback(bulkfun_type9  a_pFun, bool optimizeAway);
-            ParserCallback(bulkfun_type10 a_pFun, bool optimizeAway);
-
             ParserCallback(multfun_type a_pFun, bool optimizeAway, int numOpt);
             ParserCallback();
             ParserCallback(const ParserCallback& a_Fun);

@@ -554,7 +554,7 @@ namespace mu
     /////////////////////////////////////////////////
 	MutableStringView ParserBase::compileVectors(MutableStringView sExpr)
 	{
-		std::vector<mu::value_type> vResults;
+		std::vector<Array> vResults;
 
 		// Resolve vectors, which are part of a multi-argument
 		// function's parentheses
@@ -624,7 +624,7 @@ namespace mu
 						    // This is a target vector
 #warning FIXME (numere#1#07/08/24): Target vectors do not work yet
                             int nResults;
-                            value_type* v = Eval(nResults);
+                            Array* v = Eval(nResults);
                             // Store the results in the target vector
                             vResults.insert(vResults.end(), v, v+nResults);
 						    // Store the variable names
@@ -902,7 +902,7 @@ namespace mu
             size_t nClosingParens = getMatchingParenthesis(sExpr.subview(nMultiArgParens)) + nMultiArgParens;
 
             // Set the argument of the function as expression and evaluate it recursively
-            vector<mu::value_type> vResults;
+            std::vector<Array> vResults;
             int nResults;
             string sVectorVarName = CreateTempVar(vResults.front());
             SetExpr(sExpr.subview(nMultiArgParens + 1, nClosingParens - nMultiArgParens - 1));
@@ -1359,9 +1359,6 @@ namespace mu
 		if (funTok.GetCode() != cmOPRT_BIN && iArgCount < iArgRequired - iArgOptional)
 			Error(ecTOO_FEW_PARAMS, m_pTokenReader->GetPos() - 1, funTok.GetAsString());
 
-		if (funTok.GetCode() == cmFUNC_STR && iArgCount > iArgRequired )
-			Error(ecTOO_MANY_PARAMS, m_pTokenReader->GetPos() - 1, funTok.GetAsString());
-
 		// Collect the numeric function arguments from the value stack and store them
 		// in a vector
 		std::vector<token_type> stArg;
@@ -1384,10 +1381,6 @@ namespace mu
 
 		switch (funTok.GetCode())
 		{
-			case  cmFUNC_BULK:
-				m_compilingState.m_byteCode.AddBulkFun(funTok.GetFuncAddr(), (int)stArg.size());
-				break;
-
 			case  cmOPRT_BIN:
 			case  cmOPRT_POSTFIX:
 			case  cmOPRT_INFIX:
@@ -2270,10 +2263,8 @@ namespace mu
                                 break;
                             }
 
-							if (iArgCount > 1 && ( stOpt.size() == 0 ||
-												   (stOpt.top().GetCode() != cmFUNC &&
-													stOpt.top().GetCode() != cmFUNC_BULK &&
-													stOpt.top().GetCode() != cmFUNC_STR) ) )
+							if (iArgCount > 1
+                                && (stOpt.size() == 0 || stOpt.top().GetCode() != cmFUNC))
 								Error(ecUNEXPECTED_ARG, m_pTokenReader->GetPos());
 
 							// The opening bracket was popped from the stack now check if there
@@ -2378,8 +2369,6 @@ namespace mu
 				case cmOPRT_INFIX:
 				case cmVAL2STR:
 				case cmFUNC:
-				case cmFUNC_BULK:
-				case cmFUNC_STR:
 					stOpt.push(opt);
 					varArrayCandidate = false;
 					break;
@@ -2693,17 +2682,11 @@ namespace mu
 					case cmFUNC:
 					    printFormatted("|   FUNC \"" + stOprt.top().GetAsString() + "\"\n");
 						break;
-					case cmFUNC_BULK:
-						printFormatted("|   FUNC_BULK \"" + stOprt.top().GetAsString() + "\"\n");
-						break;
 					case cmOPRT_INFIX:
 						printFormatted("|   OPRT_INF \"" + stOprt.top().GetAsString() + "\"\n");
 						break;
 					case cmOPRT_BIN:
 						printFormatted("|   OPRT_BIN \"" + stOprt.top().GetAsString() + "\"\n");
-						break;
-					case cmFUNC_STR:
-						printFormatted("|   FUNC_STR\n");
 						break;
 					case cmEND:
 						printFormatted("|   END\n");
@@ -2893,10 +2876,10 @@ namespace mu
     /// "x+y,sin(x),cos(y)").
     ///
     /// \param nStackSize int&
-    /// \return value_type*
+    /// \return Array*
     ///
     /////////////////////////////////////////////////
-	value_type* ParserBase::Eval(int& nStackSize)
+	Array* ParserBase::Eval(int& nStackSize)
 	{
 	    // Run the evaluation
         (this->*m_pParseFormula)();
@@ -3410,64 +3393,6 @@ namespace mu
 
         return false;
     }
-
-
-    /////////////////////////////////////////////////
-    /// \brief This member function evaluates the
-    /// expression in parallel. Is not used at the
-    /// moment.
-    ///
-    /// \param results value_type*
-    /// \param nBulkSize int
-    /// \return void
-    ///
-    /////////////////////////////////////////////////
-	void ParserBase::Eval(value_type* results, int nBulkSize)
-	{
-		CreateRPN();
-
-#ifdef MUP_USE_OPENMP
-//#define DEBUG_OMP_STUFF
-#ifdef DEBUG_OMP_STUFF
-		int* pThread = new int[nBulkSize];
-		int* pIdx = new int[nBulkSize];
-#endif
-
-		int nMaxThreads = std::min(omp_get_max_threads(), s_MaxNumOpenMPThreads);
-		int nThreadID, ct = 0;
-		omp_set_num_threads(nMaxThreads);
-
-		#pragma omp parallel for schedule(static, nBulkSize/nMaxThreads) private(nThreadID)
-		for (int i = 0; i < nBulkSize; ++i)
-		{
-			nThreadID = omp_get_thread_num();
-			results[i] = ParseCmdCodeBulk(i, nThreadID);
-
-#ifdef DEBUG_OMP_STUFF
-			#pragma omp critical
-			{
-				pThread[ct] = nThreadID;
-				pIdx[ct] = i;
-				ct++;
-			}
-#endif
-		}
-
-#ifdef DEBUG_OMP_STUFF
-		FILE* pFile = fopen("bulk_dbg.txt", "w");
-		for (int i = 0; i < nBulkSize; ++i)
-		{
-			fprintf(pFile, "idx: %d  thread: %d \n", pIdx[i], pThread[i]);
-		}
-
-		delete [] pIdx;
-		delete [] pThread;
-
-		fclose(pFile);
-#endif
-#endif
-
-	}
 
 
     /////////////////////////////////////////////////

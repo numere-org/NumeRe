@@ -559,7 +559,7 @@ class Assertion
         void reset();
         void resetStats();
         void enable(const std::string& sExpr);
-        void checkAssertion(mu::value_type* v, int nNum);
+        void checkAssertion(mu::Array* v, int nNum);
         void checkAssertion(const Matrix& _mMatrix);
         void checkAssertion(const StringResult& strRes);
         AssertionStats getStats() const;

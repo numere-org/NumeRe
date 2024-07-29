@@ -320,10 +320,11 @@ namespace mu
 										string_type& a_sTok,
 										int a_iPos) const
 	{
-		size_t iEnd = std::min(m_strFormula.find_first_not_of(a_szCharSet, a_iPos), m_strFormula.length());
+		size_t iEnd = std::min(m_strFormula.find_first_not_of(a_szCharSet, a_iPos),
+                               m_strFormula.length());
 
 		// Assign token string if there was something found
-		if (a_iPos != iEnd)
+		if (a_iPos != (int)iEnd)
 			a_sTok = m_strFormula.subview(a_iPos, iEnd-a_iPos).to_string();
 
 		return iEnd;
@@ -339,10 +340,11 @@ namespace mu
 	*/
 	int ParserTokenReader::ExtractOperatorToken(string_type& a_sTok, int a_iPos) const
 	{
-		size_t iEnd = std::min(m_strFormula.find_first_not_of(m_pParser->ValidInfixOprtChars(), a_iPos), m_strFormula.length());
+		size_t iEnd = std::min(m_strFormula.find_first_not_of(m_pParser->ValidInfixOprtChars(), a_iPos),
+                               m_strFormula.length());
 
 		// Assign token string if there was something found
-		if (a_iPos != iEnd)
+		if (a_iPos != (int)iEnd)
 		{
 			a_sTok = m_strFormula.subview(a_iPos, iEnd-a_iPos).to_string();
 			return iEnd;
@@ -519,7 +521,7 @@ namespace mu
 	bool ParserTokenReader::IsEOF(token_type& a_Tok)
 	{
 		// check for EOF
-		if (m_iPos >= m_strFormula.length() || m_strFormula[m_iPos] == 0)
+		if (m_iPos >= (int)m_strFormula.length() || m_strFormula[m_iPos] == 0)
 		{
 			if (m_iSynFlags & noEND)
 				Error(ecUNEXPECTED_EOF, m_iPos);
