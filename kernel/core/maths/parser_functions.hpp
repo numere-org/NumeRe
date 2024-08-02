@@ -33,7 +33,7 @@ std::string evaluateTargetOptionInCommand(std::string& sCmd, const std::string& 
 size_t findVariableInExpression(const std::string& sExpr, const std::string& sVarName, size_t nPosStart = 0);
 void convertVectorToExpression(std::string&);
 std::string addMissingVectorComponent(const std::string&, const std::string&, const std::string&, bool);
-mu::value_type* getPointerToVariable(const std::string& sVarName, mu::Parser& _parser);
+mu::Variable* getPointerToVariable(const std::string& sVarName, mu::Parser& _parser);
 std::string promptForUserInput(const std::string& __sCommand);
 int integralFactorial(int nNumber);
 bool evaluateIndices(const std::string& sCache, Indices& _idx, MemoryManager& _data);

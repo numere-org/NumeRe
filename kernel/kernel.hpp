@@ -50,7 +50,7 @@
 #include "core/procedure/procedure.hpp"
 #include "core/procedure/procedurelibrary.hpp"
 
-#include "core/strings/stringparser.hpp"
+//#include "core/strings/stringparser.hpp"
 
 #include "core/ui/error.hpp"
 #include "core/ui/language.hpp"
@@ -149,7 +149,7 @@ class NumeReKernel
         Output _out;
         MemoryManager _memoryManager;
         mu::Parser _parser;
-        NumeRe::StringParser _stringParser;
+        //NumeRe::StringParser _stringParser;
         FunctionDefinitionManager _functions;
         PlotData _pData;
         Script _script;
@@ -171,7 +171,7 @@ class NumeReKernel
         bool executePlugins(std::string& sLine);
         bool handleFlowControls(std::string& sLine, const std::string& sCurrentCommand, KernelStatus& nReturnVal);
         bool evaluateStrings(std::string& sLine, std::string& sCache, bool& bWriteToCache, KernelStatus& nReturnVal);
-        void createCalculationAnswer(int nNum, mu::value_type* v);
+        void createCalculationAnswer(int nNum, mu::Array* v);
         void printErrorMessage(const std::string& errMsg, const std::string& errDesc, const std::string& expr, size_t pos);
         void resetAfterError();
         std::string getGreeting();
@@ -228,7 +228,7 @@ class NumeReKernel
         static void flush();
         static void print(const std::string& __sLine, bool printingEnabled = true);
         static void printPreFmt(const std::string& __sLine, bool printingEnabled = true);
-        static std::string formatResultOutput(int nNum, mu::value_type* v);
+        static std::string formatResultOutput(int nNum, mu::Array* v);
         static std::string formatResultOutput(const std::vector<std::string>& vStringResults);
         static void issueWarning(std::string sWarningMessage);
         static void failMessage(std::string sFailMessage);
@@ -285,10 +285,10 @@ class NumeReKernel
             return _parser;
         }
 
-        NumeRe::StringParser& getStringParser()
-        {
-            return _stringParser;
-        }
+//        NumeRe::StringParser& getStringParser()
+//        {
+//            return _stringParser;
+//        }
 
         FunctionDefinitionManager& getDefinitions()
         {

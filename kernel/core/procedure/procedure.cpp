@@ -23,7 +23,7 @@
 #include <memory>
 #define MAX_PROCEDURE_STACK_SIZE 2000000
 
-extern value_type vAns;
+extern mu::Variable vAns;
 
 using namespace std;
 
@@ -117,7 +117,7 @@ void Procedure::init()
 /// \param sLine string
 /// \param sCurrentCommand string
 /// \param nByteCode int&
-/// \param _parser Parser&
+/// \param _parser mu::Parser&
 /// \param _functions Define&
 /// \param _data Datafile&
 /// \param _option Settings&
@@ -127,18 +127,18 @@ void Procedure::init()
 /// \return Returnvalue
 ///
 /////////////////////////////////////////////////
-Returnvalue Procedure::ProcCalc(string sLine, string sCurrentCommand, int& nByteCode, Parser& _parser, FunctionDefinitionManager& _functions, MemoryManager& _data, Settings& _option, Output& _out, PlotData& _pData, Script& _script)
+Returnvalue Procedure::ProcCalc(string sLine, string sCurrentCommand, int& nByteCode, mu::Parser& _parser, FunctionDefinitionManager& _functions, MemoryManager& _data, Settings& _option, Output& _out, PlotData& _pData, Script& _script)
 {
     Returnvalue thisReturnVal;
     int nNum = 0;
     int nCurrentByteCode = nByteCode;
-    value_type* v = nullptr;
+    mu::Array* v = nullptr;
 
     // Do not clear the vector variables, if we are currently part of a
     // loop, because the loop uses the cached vector variables for
     // speeding up the whole calculation process
     if (!_parser.ActiveLoopMode() || (!_parser.IsLockedPause() && !(nFlags & ProcedureCommandLine::FLAG_INLINE)))
-        _parser.ClearVectorVars(true);
+        _parser.ClearInternalVars(true);
 
     // Check, whether the user pressed "ESC"
     if (NumeReKernel::GetAsyncCancelState())
@@ -152,7 +152,7 @@ Returnvalue Procedure::ProcCalc(string sLine, string sCurrentCommand, int& nByte
     // Ignore empty lines
     if (!sLine.length() || sLine[0] == '@')
     {
-        thisReturnVal.vNumVal.push_back(NAN);
+        thisReturnVal.valArray.push_back(mu::Value());
         return thisReturnVal;
     }
 
@@ -199,12 +199,8 @@ Returnvalue Procedure::ProcCalc(string sLine, string sCurrentCommand, int& nByte
                 StripSpaces(sCmdString);
 
                 // Parse strings, if the argument contains some
-                if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sCmdString))
-                {
-                    sCmdString += " -nq";
-                    std::string sDummy;
-                    NumeReKernel::getInstance()->getStringParser().evalAndFormat(sCmdString, sDummy, true);
-                }
+                _parser.SetExpr(sCmdString);
+                sCmdString = _parser.Eval().printVals();
 
                 // Replace the current command line
                 sLine = sLine.substr(0, nPos - 6) + sCmdString + sLine.substr(nPos + nParPos + 1);
@@ -228,15 +224,11 @@ Returnvalue Procedure::ProcCalc(string sLine, string sCurrentCommand, int& nByte
         {
             string sErrorToken;
 
-            if (sLine.length() > 6 && NumeReKernel::getInstance()->getStringParser().isStringExpression(sLine))
+            if (sLine.length() > 6)
             {
-                if (NumeReKernel::getInstance()->getStringParser().containsStringVars(sLine))
-                    NumeReKernel::getInstance()->getStringParser().getStringValues(sLine);
-
-                getStringArgument(sLine, sErrorToken);
-                sErrorToken += " -nq";
-                std::string sDummy;
-                NumeReKernel::getInstance()->getStringParser().evalAndFormat(sErrorToken, sDummy, true);
+                sErrorToken = sLine.substr(findCommand(sLine).nPos+6);
+                _parser.SetExpr(sErrorToken);
+                sErrorToken = _parser.Eval().printVals();
             }
 
             if (nCurrentByteCode == ProcedureCommandLine::BYTECODE_NOT_PARSED)
@@ -297,13 +289,13 @@ Returnvalue Procedure::ProcCalc(string sLine, string sCurrentCommand, int& nByte
                     if (nCurrentByteCode == ProcedureCommandLine::BYTECODE_NOT_PARSED)
                         nByteCode |= ProcedureCommandLine::BYTECODE_COMMAND;
 
-                    thisReturnVal.vNumVal.push_back(NAN);
+                    thisReturnVal.valArray.push_back(mu::Value());
                     return thisReturnVal;
                 default:
                     if (nCurrentByteCode == ProcedureCommandLine::BYTECODE_NOT_PARSED)
                         nByteCode |= ProcedureCommandLine::BYTECODE_COMMAND;
 
-                    thisReturnVal.vNumVal.push_back(NAN);
+                    thisReturnVal.valArray.push_back(mu::Value());
                     return thisReturnVal;  // Keywort "mode"
             }
 
@@ -378,7 +370,7 @@ Returnvalue Procedure::ProcCalc(string sLine, string sCurrentCommand, int& nByte
             addToControlFlowBlock(sLine, nCurrentLine);
 
             // Return now to the calling function
-            thisReturnVal.vNumVal.push_back(NAN);
+            thisReturnVal.valArray.push_back(mu::Value());
             return thisReturnVal;
         }
     }
@@ -394,8 +386,7 @@ Returnvalue Procedure::ProcCalc(string sLine, string sCurrentCommand, int& nByte
         || nCurrentByteCode & ProcedureCommandLine::BYTECODE_DATAACCESS
         || nFlags & ProcedureCommandLine::FLAG_TEMPLATE)
     {
-        if (!NumeReKernel::getInstance()->getStringParser().isStringExpression(sLine)
-            && _data.containsTablesOrClusters(sLine))
+        if (_data.containsTablesOrClusters(sLine))
         {
             if (nCurrentByteCode == ProcedureCommandLine::BYTECODE_NOT_PARSED)
                 nByteCode |= ProcedureCommandLine::BYTECODE_DATAACCESS;
@@ -404,11 +395,6 @@ Returnvalue Procedure::ProcCalc(string sLine, string sCurrentCommand, int& nByte
 
             if (sCache.length() && sCache.find('#') == string::npos)
                 bWriteToCache = true;
-
-            // Ad-hoc bytecode adaption
-#warning NOTE (numere#1#08/21/21): Might need some adaption, if bytecode issues are experienced
-            if (nCurrentByteCode && NumeReKernel::getInstance()->getStringParser().isStringExpression(sLine))
-                nCurrentByteCode |= ProcedureCommandLine::BYTECODE_STRING;
         }
         else if (isClusterCandidate(sLine, sCache))
         {
@@ -416,47 +402,6 @@ Returnvalue Procedure::ProcCalc(string sLine, string sCurrentCommand, int& nByte
 
             if (nCurrentByteCode == ProcedureCommandLine::BYTECODE_NOT_PARSED)
                 nByteCode |= ProcedureCommandLine::BYTECODE_DATAACCESS;
-        }
-    }
-
-    // If the current line contains a string value or a string variable,
-    // call the string parser and handle the return value
-    if (nCurrentByteCode == ProcedureCommandLine::BYTECODE_NOT_PARSED
-        || nCurrentByteCode & ProcedureCommandLine::BYTECODE_STRING
-        || nFlags & ProcedureCommandLine::FLAG_TEMPLATE)
-    {
-        if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sLine)
-            || (NumeReKernel::getInstance()->getStringParser().isStringExpression(sCache)
-                && !NumeReKernel::getInstance()->getMemoryManager().isTable(sCache))) // hack for performance Re:#178
-        {
-            auto retVal = NumeReKernel::getInstance()->getStringParser().evalAndFormat(sLine, sCache, bProcSupressAnswer, true, true);
-            NumeReKernel::getInstance()->getStringParser().removeTempStringVectorVars();
-
-            if (nCurrentByteCode == ProcedureCommandLine::BYTECODE_NOT_PARSED)
-                nByteCode |= ProcedureCommandLine::BYTECODE_STRING;
-
-            // Handle the return value
-            if (retVal == NumeRe::StringParser::STRING_SUCCESS)
-            {
-                // Only strings
-                thisReturnVal.vStringVal = NumeReKernel::getInstance()->getAns().to_string();
-                return thisReturnVal;
-            }
-
-#warning NOTE (erik.haenel#3#): This is changed due to double writes in combination with c{nlen+1} = VAL
-            // Other: numerical values
-            //if (sCache.length() && _data.containsTablesOrClusters(sCache) && !bWriteToCache)
-            //    bWriteToCache = true;
-
-            if (sCache.length())
-            {
-                bWriteToCache = false;
-                sCache.clear();
-            }
-
-            // Ensure that the correct variables are available, because
-            // the user might have used "to_value()" or something similar
-            replaceLocalVars(sLine);
         }
     }
 
@@ -496,18 +441,10 @@ Returnvalue Procedure::ProcCalc(string sLine, string sCurrentCommand, int& nByte
     _assertionHandler.checkAssertion(v, nNum);
 
     // Copy the return values
-    if (nNum > 1)
-    {
-        for (int i = 0; i < nNum; ++i)
-            thisReturnVal.vNumVal.push_back(v[i]);
-    }
-    else
-    {
-        thisReturnVal.vNumVal.push_back(v[0]);
-    }
+    thisReturnVal.valArray.assign(v, v+nNum);
 
-    vAns = v[0];
-    NumeReKernel::getInstance()->getAns().setDoubleArray(nNum, v);
+    vAns.overwrite(v[0]);
+    NumeReKernel::getInstance()->getAns().setValueArray(v[0]);
 
     // Print the output to the console, if it isn't suppressed
     if (!bProcSupressAnswer)
@@ -520,15 +457,15 @@ Returnvalue Procedure::ProcCalc(string sLine, string sCurrentCommand, int& nByte
         if (bWriteToCluster)
         {
             NumeRe::Cluster& cluster = _data.getCluster(sCache);
-            cluster.assignResults(_idx, nNum, v);
+            cluster.assignResults(_idx, v[0]);
         }
         else
-            _data.writeToTable(_idx, sCache, v, nNum);
+            _data.writeToTable(_idx, sCache, v[0]);
     }
 
     // Clear the vector variables after the loop returned
     if (!_parser.ActiveLoopMode() || (!_parser.IsLockedPause() && !(nFlags & ProcedureCommandLine::FLAG_INLINE)))
-        _parser.ClearVectorVars(true);
+        _parser.ClearInternalVars(true);
 
     return thisReturnVal;
 }
@@ -1106,17 +1043,13 @@ Returnvalue Procedure::execute(StringView sProc, string sVarList, Parser& _parse
         {
             if (sCurrentCommand == "throw")
             {
-                string sErrorToken;
+                std::string sErrorToken;
 
-                if (sProcCommandLine.length() > 6 && NumeReKernel::getInstance()->getStringParser().isStringExpression(sProcCommandLine))
+                if (sProcCommandLine.length() > 6)
                 {
-                    if (NumeReKernel::getInstance()->getStringParser().containsStringVars(sProcCommandLine))
-                        NumeReKernel::getInstance()->getStringParser().getStringValues(sProcCommandLine);
-
                     sErrorToken = sProcCommandLine.substr(findCommand(sProcCommandLine).nPos+6);
-                    sErrorToken += " -nq";
-                    string sDummy = "";
-                    NumeReKernel::getInstance()->getStringParser().evalAndFormat(sErrorToken, sDummy, true);
+                    _parser.SetExpr(sErrorToken);
+                    sErrorToken = _parser.Eval().printVals();
                 }
 
                 if (nCurrentByteCode == ProcedureCommandLine::BYTECODE_NOT_PARSED)
@@ -1126,7 +1059,8 @@ Returnvalue Procedure::execute(StringView sProc, string sVarList, Parser& _parse
 
                 try
                 {
-                    _debugger.throwException(SyntaxError(SyntaxError::PROCEDURE_THROW, sProcCommandLine, SyntaxError::invalid_position, sErrorToken));
+                    _debugger.throwException(SyntaxError(SyntaxError::PROCEDURE_THROW,
+                                                         sProcCommandLine, SyntaxError::invalid_position, sErrorToken));
                 }
                 catch (...)
                 {
@@ -1242,8 +1176,8 @@ Returnvalue Procedure::execute(StringView sProc, string sVarList, Parser& _parse
     resetProcedure(_parser, bSupressAnswer_back);
 
     // Determine the return value
-    if (nReturnType && !_ReturnVal.vNumVal.size() && !_ReturnVal.vStringVal.size())
-        _ReturnVal.vNumVal.push_back(1.0);
+    if (nReturnType && !_ReturnVal.valArray.size())
+        _ReturnVal.valArray.push_back(mu::Value(1.0));
 
     return _ReturnVal;
 }
@@ -1256,7 +1190,7 @@ Returnvalue Procedure::execute(StringView sProc, string sVarList, Parser& _parse
 /// a new instance of this class on the heap.
 ///
 /// \param sLine string&
-/// \param _parser Parser&
+/// \param _parser mu::Parser&
 /// \param _functions Define&
 /// \param _data Datafile&
 /// \param _out Output&
@@ -1267,7 +1201,7 @@ Returnvalue Procedure::execute(StringView sProc, string sVarList, Parser& _parse
 /// \return FlowCtrl::ProcedureInterfaceRetVal
 ///
 /////////////////////////////////////////////////
-FlowCtrl::ProcedureInterfaceRetVal Procedure::procedureInterface(string& sLine, Parser& _parser, FunctionDefinitionManager& _functions, MemoryManager& _data, Output& _out, PlotData& _pData, Script& _script, Settings& _option, int nth_command)
+FlowCtrl::ProcedureInterfaceRetVal Procedure::procedureInterface(string& sLine, mu::Parser& _parser, FunctionDefinitionManager& _functions, MemoryManager& _data, Output& _out, PlotData& _pData, Script& _script, Settings& _option, int nth_command)
 {
     // Create a new procedure object on the heap
     std::unique_ptr<Procedure> _procedure(new Procedure(*this));
@@ -1429,17 +1363,7 @@ FlowCtrl::ProcedureInterfaceRetVal Procedure::procedureInterface(string& sLine, 
                         return nReturn;
                     }
 
-                    if (_return.vStringVal.size())
-                    {
-                        string sReturn = "{";
-
-                        for (size_t v = 0; v < _return.vStringVal.size(); v++)
-                            sReturn += _return.vStringVal[v] + ",";
-
-                        sReturn.back() = '}';
-                        sLine.replace(sLine.find("<<RETURNVAL>>"), 13, sReturn);
-                    }
-                    else if (_return.sReturnedTable.length())
+                    if (_return.sReturnedTable.length())
                     {
                         std::string sTargetTable = sLine.substr(0, sLine.find("<<RETURNVAL>>"));
 
@@ -1468,7 +1392,7 @@ FlowCtrl::ProcedureInterfaceRetVal Procedure::procedureInterface(string& sLine, 
                             else
                                 _data.copyTable(_return.sReturnedTable, sTargetTable);
 
-                            sLine = _parser.CreateTempVectorVar(std::vector<mu::value_type>({_data.getLines(sTargetTable),
+                            sLine = _parser.CreateTempVar(std::vector<std::complex<double>>({_data.getLines(sTargetTable),
                                                                                              _data.getCols(sTargetTable)}))
                                     + sLine.substr(sLine.find("<<RETURNVAL>>")+13);
                         }
@@ -1482,8 +1406,9 @@ FlowCtrl::ProcedureInterfaceRetVal Procedure::procedureInterface(string& sLine, 
                     }
                     else
                     {
-                        _parser.SetVectorVar("_~PLUGIN[" + _procedure->getPluginProcName() + "~" + toString(nthRecursion) + "]", _return.vNumVal);
-                        sLine.replace(sLine.find("<<RETURNVAL>>"), 13, "_~PLUGIN[" + _procedure->getPluginProcName() + "~" + toString(nth_command + nthRecursion) + "]");
+                        std::string sVarName = "_~PLUGIN[" + _procedure->getPluginProcName() + "~" + toString(nthRecursion) + "]";
+                        _parser.SetInternalVar(sVarName, _return.valArray.front());
+                        sLine.replace(sLine.find("<<RETURNVAL>>"), 13, sVarName);
                     }
                 }
             }
@@ -2310,7 +2235,7 @@ vector<string> Procedure::getInlined(const string& sProc, const string& sArgumen
         else if (findCommand(sCommandLine).sString == "str")
         {
             varFactory.createLocalStrings(sCommandLine.substr(findCommand(sCommandLine).nPos + 4));
-            sCommandLine = varFactory.sInlineStringDef + ";";
+            sCommandLine = varFactory.sInlineVarDef + ";";
             inlineClusters.insert(sCommandLine.substr(0, sCommandLine.find('{')));
         }
 
@@ -2665,7 +2590,7 @@ size_t Procedure::GetCurrentLine() const
 /// parser.
 ///
 /// \param sLine string&
-/// \param _parser Parser&
+/// \param _parser mu::Parser&
 /// \param _return const Returnvalue&
 /// \param nPos size_t
 /// \param nPos2 size_t
@@ -2673,7 +2598,7 @@ size_t Procedure::GetCurrentLine() const
 /// \return size_t
 ///
 /////////////////////////////////////////////////
-size_t Procedure::replaceReturnVal(string& sLine, Parser& _parser, const Returnvalue& _return, size_t nPos, size_t nPos2, const string& sReplaceName)
+size_t Procedure::replaceReturnVal(string& sLine, mu::Parser& _parser, const Returnvalue& _return, size_t nPos, size_t nPos2, const string& sReplaceName)
 {
     // If the return value is passed to the "return" command, then
     // simply use the current value as the next return value and
@@ -2690,15 +2615,7 @@ size_t Procedure::replaceReturnVal(string& sLine, Parser& _parser, const Returnv
     }
 
     // Replace depending on the type
-    if (_return.isString())
-    {
-        // String value, transform the return value
-        // into a string vector
-        string sReturn = NumeReKernel::getInstance()->getStringParser().createTempStringVectorVar(_return.vStringVal);
-        sLine = sLine.substr(0, nPos) + sReturn + sLine.substr(nPos2);
-        return sReturn.length();
-    }
-    else if (_return.sReturnedTable.length())
+    if (_return.sReturnedTable.length())
     {
         std::string sTargetTable = sLine.substr(0, nPos);
         MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
@@ -2740,7 +2657,7 @@ size_t Procedure::replaceReturnVal(string& sLine, Parser& _parser, const Returnv
                     _data.deleteTable(_return.sReturnedTable);
             }
 
-            std::string sTempVar = _parser.CreateTempVectorVar(std::vector<mu::value_type>({_return.sourceIdx.row.size(),
+            std::string sTempVar = _parser.CreateTempVar(std::vector<std::complex<double>>({_return.sourceIdx.row.size(),
                                                                                             _return.sourceIdx.col.size()}));
             sLine = sTempVar + sLine.substr(nPos2);
             return sTempVar.length();
@@ -2753,12 +2670,12 @@ size_t Procedure::replaceReturnVal(string& sLine, Parser& _parser, const Returnv
 
         return _data.isEmpty(_return.sReturnedTable) ? 5 : 4;
     }
-    else if (_return.isNumeric())
+    else if (_return.valArray.size())
     {
         // Numerical value, use the procedure name
         // to derive a vector name and declare the
         // corresponding vector
-        _parser.SetVectorVar(sReplaceName, _return.vNumVal);
+        _parser.SetInternalVar(sReplaceName, _return.valArray.front());
         sLine = sLine.substr(0, nPos) + sReplaceName +  sLine.substr(nPos2);
 
         return sReplaceName.length();

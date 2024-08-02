@@ -44,7 +44,7 @@ enum
 #define BLOCK_MIDDLE 1
 #define PROCEDURE_INTERFACE 2
 #define JUMP_TABLE_ELEMENTS 3 // The maximal number of elements
-extern value_type vAns;
+extern mu::Variable vAns;
 
 using namespace std;
 
@@ -193,13 +193,13 @@ int FlowCtrl::for_loop(int nth_Cmd, int nth_loop)
 {
     int nVarAdress = 0;
     int nInc = 1;
-    int nLoopCount = 0;
-    int nFirstVal;
-    int nLastVal;
+    int64_t nLoopCount = 0;
+    int64_t nFirstVal;
+    int64_t nLastVal;
     bPrintedStatus = false;
 
     int nNum = 0;
-    value_type* v = 0;
+    mu::Array* v = 0;
 
     if (!vCmdArray[nth_Cmd].sFlowCtrlHeader.length())
     {
@@ -236,8 +236,8 @@ int FlowCtrl::for_loop(int nth_Cmd, int nth_loop)
 
     // Store the left and right boundary of the
     // loop index
-    nFirstVal = intCast(v[0]);
-    nLastVal = intCast(v[1]);
+    nFirstVal = v[0].getAsScalarInt();
+    nLastVal = v[1].getAsScalarInt();
 
     // Depending on the order of the boundaries, we
     // have to consider the incrementation variable
@@ -254,9 +254,9 @@ int FlowCtrl::for_loop(int nth_Cmd, int nth_loop)
     // Evaluate the whole for loop. The outer loop does the
     // loop index management (the actual "for" command), the
     // inner loop runs through the contained command lines
-    for (int __i = nFirstVal; (nInc)*__i <= nInc * nLastVal; __i += nInc)
+    for (int64_t __i = nFirstVal; (nInc)*__i <= nInc * nLastVal; __i += nInc)
     {
-        vVarArray[nVarAdress] = __i;
+        vVarArray[nVarAdress] = mu::Value(__i);
 
         // Ensure that the loop is aborted, if the
         // maximal number of repetitions has been
@@ -366,7 +366,7 @@ int FlowCtrl::for_loop(int nth_Cmd, int nth_loop)
 
         // The variable value might have been changed
         // snychronize the index
-        __i = intCast(vVarArray[nVarAdress]);
+        __i = vVarArray[nVarAdress].getAsScalarInt();
 
         // Print the status to the terminal, if it is required
         if (!nth_loop && !bMask && bSilent)
@@ -467,8 +467,6 @@ int FlowCtrl::range_based_for_loop(int nth_Cmd, int nth_loop)
     if (nVarAdress < 0)
         return FLOWCTRL_ERROR;
 
-    NumeRe::StringParser& _stringParser = NumeReKernel::getInstance()->getStringParser();
-
     // Evaluate the header of the for loop and
     // assign the result to the iterator
     NumeRe::Cluster range = evalRangeBasedHeader(sHead, nth_Cmd, "for");
@@ -504,7 +502,7 @@ int FlowCtrl::range_based_for_loop(int nth_Cmd, int nth_loop)
             vCmdArray[nth_Cmd].nRFStepping = vIters.size()-1;
             varType = CLUSTERVAR;
         }
-        else if (range.isDouble())
+        else
         {
             // Create a local variable
             mVarMap[sVarArray[nVarAdress]] = "_~LOOP_" + sVarArray[nVarAdress] + "_" + toString(nthRecursion);
@@ -513,32 +511,12 @@ int FlowCtrl::range_based_for_loop(int nth_Cmd, int nth_loop)
             _parserRef->DefineVar(sVarArray[nVarAdress], &vVarArray[nVarAdress]);
             varType = NUMVAR;
         }
-        else if (range.isString())
-        {
-            // Create a local string variable
-            mVarMap[sVarArray[nVarAdress]] = "_~LOOP_" + sVarArray[nVarAdress] + "_" + toString(nthRecursion);
-            replaceLocalVars(sVarArray[nVarAdress], mVarMap[sVarArray[nVarAdress]], nth_Cmd, nJumpTable[nth_Cmd][BLOCK_END]);
-            sVarArray[nVarAdress] = mVarMap[sVarArray[nVarAdress]];
-            _stringParser.setStringValue(sVarArray[nVarAdress], "");
-            varType = STRINGVAR;
-        }
-        else
-        {
-            // Create a cluster in all other cases as this is the
-            // only variant type available
-            mVarMap[sVarArray[nVarAdress]] = _dataRef->createTemporaryCluster(sVarArray[nVarAdress]);
-            replaceLocalVars(sVarArray[nVarAdress], mVarMap[sVarArray[nVarAdress]], nth_Cmd, nJumpTable[nth_Cmd][BLOCK_END]);
-            sVarArray[nVarAdress] = mVarMap[sVarArray[nVarAdress]];
-            varType = CLUSTERVAR;
-        }
     }
     else
     {
         // Find the type of the current iterator variable
         if (sVarArray[nVarAdress].find('{') != std::string::npos)
             varType = CLUSTERVAR;
-        else if (_stringParser.isStringVar(sVarArray[nVarAdress]))
-            varType = STRINGVAR;
         else
             varType = NUMVAR;
     }
@@ -559,10 +537,7 @@ int FlowCtrl::range_based_for_loop(int nth_Cmd, int nth_loop)
         switch (varType)
         {
             case NUMVAR:
-                vVarArray[nVarAdress] = range.getDouble(i);
-                break;
-            case STRINGVAR:
-                _stringParser.setStringValue(sVarArray[nVarAdress], range.getInternalString(i));
+                vVarArray[nVarAdress].overwrite(range.getValue(i));
                 break;
             default:
             {
@@ -717,16 +692,16 @@ int FlowCtrl::range_based_for_loop(int nth_Cmd, int nth_loop)
 /// conditional values for their logical
 /// trueness.
 ///
-/// \param v mu::value_type*
+/// \param v mu::Array*
 /// \param nNum int
 /// \return bool
 ///
 /////////////////////////////////////////////////
-static bool isTrue(mu::value_type* v, int nNum)
+static bool isTrue(mu::Array* v, int nNum)
 {
     for (int i = 0; i < nNum; i++)
     {
-        if (v[i] == 0.0 || mu::isnan(v[i]))
+        if (!(bool)v[i])
             return false;
     }
 
@@ -754,7 +729,7 @@ int FlowCtrl::while_loop(int nth_Cmd, int nth_loop)
     std::string sWhile_Condition_Back = sWhile_Condition;
     bPrintedStatus = false;
     int nLoopCount = 0;
-    value_type* v = 0;
+    mu::Array* v = 0;
     int nNum = 0;
 
     // Show a working indicator, if it's necessary
@@ -913,7 +888,7 @@ int FlowCtrl::if_fork(int nth_Cmd, int nth_loop)
     int nElse = nJumpTable[nth_Cmd][BLOCK_MIDDLE]; // Position of next else/elseif
     int nEndif = nJumpTable[nth_Cmd][BLOCK_END];
     bPrintedStatus = false;
-    value_type* v;
+    mu::Array* v;
     int nNum = 0;
     std::string sHeadCommand = "if";
 
@@ -1165,7 +1140,7 @@ int FlowCtrl::switch_fork(int nth_Cmd, int nth_loop)
     int nNextCase = nJumpTable[nth_Cmd][BLOCK_MIDDLE]; // Position of next case/default
     int nSwitchEnd = nJumpTable[nth_Cmd][BLOCK_END];
     bPrintedStatus = false;
-    value_type* v;
+    mu::Array* v;
     int nNum = 0;
 
     // Evaluate the header of the current switch statement and its cases
@@ -1549,10 +1524,10 @@ int FlowCtrl::try_catch(int nth_Cmd, int nth_loop)
 /// \param bIsForHead bool
 /// \param nth_Cmd int
 /// \param sHeadCommand const std::string&
-/// \return value_type*
+/// \return mu::Array*
 ///
 /////////////////////////////////////////////////
-value_type* FlowCtrl::evalHeader(int& nNum, std::string& sHeadExpression, bool bIsForHead, int nth_Cmd, const std::string& sHeadCommand)
+mu::Array* FlowCtrl::evalHeader(int& nNum, std::string& sHeadExpression, bool bIsForHead, int nth_Cmd, const std::string& sHeadCommand)
 {
     int nCurrentCalcType = nCalcType[nth_Cmd];
     std::string sCache;
@@ -1621,7 +1596,7 @@ value_type* FlowCtrl::evalHeader(int& nNum, std::string& sHeadExpression, bool b
     // If the expression is numerical-only, evaluate it here
     if (nCurrentCalcType & CALCTYPE_NUMERICAL)
     {
-        mu::value_type* v;
+        mu::Array* v;
 
         // As long as bytecode parsing is not globally available,
         // this condition has to stay at this place
@@ -1673,9 +1648,8 @@ value_type* FlowCtrl::evalHeader(int& nNum, std::string& sHeadExpression, bool b
     // Catch and evaluate all data and cache calls
     if (nCurrentCalcType & CALCTYPE_DATAACCESS || !nCurrentCalcType)
     {
-        if ((nCurrentCalcType && !(nCurrentCalcType & CALCTYPE_STRING))
-            || (_dataRef->containsTablesOrClusters(sHeadExpression)
-                && !NumeReKernel::getInstance()->getStringParser().isStringExpression(sHeadExpression)))
+        if (nCurrentCalcType
+            || _dataRef->containsTablesOrClusters(sHeadExpression))
         {
             if (!nCurrentCalcType)
                 nCalcType[nth_Cmd] |= CALCTYPE_DATAACCESS;
@@ -1687,10 +1661,6 @@ value_type* FlowCtrl::evalHeader(int& nNum, std::string& sHeadExpression, bool b
 
             sCache = getDataElements(sHeadExpression, *_parserRef, *_dataRef);
 
-            // Ad-hoc bytecode adaption
-#warning NOTE (numere#1#08/21/21): Might need some adaption, if bytecode issues are experienced
-            if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sHeadExpression))
-                nCurrentCalcType |= CALCTYPE_STRING;
 
             if (_parserRef->IsCompiling()
                 && _parserRef->CanCacheAccess())
@@ -1700,57 +1670,6 @@ value_type* FlowCtrl::evalHeader(int& nNum, std::string& sHeadExpression, bool b
             }
 
             _parserRef->SetCompiling(false);
-        }
-    }
-
-    // Evaluate std::strings
-    if (nCurrentCalcType & CALCTYPE_STRING || !nCurrentCalcType)
-    {
-        if (nCurrentCalcType || NumeReKernel::getInstance()->getStringParser().isStringExpression(sHeadExpression))
-        {
-            if (!nCurrentCalcType)
-                nCalcType[nth_Cmd] |= CALCTYPE_STRING;
-
-            if (!bLockedPauseMode && bUseLoopParsingMode)
-                _parserRef->PauseLoopMode();
-
-            // Call the std::string parser
-            auto retVal = NumeReKernel::getInstance()->getStringParser().evalAndFormat(sHeadExpression, sCache, true, false, true);
-
-            // Evaluate the return value
-            if (retVal != NumeRe::StringParser::STRING_NUMERICAL)
-            {
-                StripSpaces(sHeadExpression);
-
-                if (bIsForHead)
-                {
-                    NumeReKernel::getInstance()->getDebugger().gatherLoopBasedInformations(sHeadExpression,
-                                                                                           getCurrentLineNumber(),
-                                                                                           mVarMap, vVarArray, sVarArray);
-
-                    NumeReKernel::getInstance()->getDebugger().throwException(SyntaxError(SyntaxError::CANNOT_EVAL_FOR,
-                                                                                          sHeadExpression,
-                                                                                          SyntaxError::invalid_position));
-                }
-                else
-                {
-                    StripSpaces(sHeadExpression);
-
-                    if (sHeadExpression != "\"\"")
-                        sHeadExpression = "true";
-                    else
-                        sHeadExpression = "false";
-                }
-            }
-
-            // It's possible that the user might have done
-            // something weird with std::string operations transformed
-            // into a regular expression. Replace the local
-            // variables here
-            replaceLocalVars(sHeadExpression);
-
-            if (!bLockedPauseMode && bUseLoopParsingMode)
-                _parserRef->PauseLoopMode(false);
         }
     }
 
@@ -1780,7 +1699,7 @@ value_type* FlowCtrl::evalHeader(int& nNum, std::string& sHeadExpression, bool b
 NumeRe::Cluster FlowCtrl::evalRangeBasedHeader(std::string& sHeadExpression, int nth_Cmd, const std::string& sHeadCommand)
 {
     NumeRe::Cluster result;
-    mu::value_type* v;
+    mu::Array* v;
     int nNum;
     int nCurrentCalcType = nCalcType[nth_Cmd];
     std::string sCache;
@@ -1862,7 +1781,7 @@ NumeRe::Cluster FlowCtrl::evalRangeBasedHeader(std::string& sHeadExpression, int
             v = _parserRef->Eval(nNum);
         } while (_parserRef->IsNotLastStackItem());
 
-        result.setDoubleArray(nNum, v);
+        result.setValueArray(v[0]);
         return result;
     }
 
@@ -1901,9 +1820,8 @@ NumeRe::Cluster FlowCtrl::evalRangeBasedHeader(std::string& sHeadExpression, int
     // Catch and evaluate all data and cache calls
     if (nCurrentCalcType & CALCTYPE_DATAACCESS || !nCurrentCalcType)
     {
-        if ((nCurrentCalcType && !(nCurrentCalcType & CALCTYPE_STRING))
-            || (_dataRef->containsTablesOrClusters(sHeadExpression)
-                && !NumeReKernel::getInstance()->getStringParser().isStringExpression(sHeadExpression)))
+        if (nCurrentCalcType
+            || _dataRef->containsTablesOrClusters(sHeadExpression))
         {
             if (!nCurrentCalcType)
                 nCalcType[nth_Cmd] |= CALCTYPE_DATAACCESS;
@@ -1914,11 +1832,6 @@ NumeRe::Cluster FlowCtrl::evalRangeBasedHeader(std::string& sHeadExpression, int
                 _parserRef->SetCompiling(true);
 
             sCache = getDataElements(sHeadExpression, *_parserRef, *_dataRef);
-
-            // Ad-hoc bytecode adaption
-#warning NOTE (numere#1#08/21/21): Might need some adaption, if bytecode issues are experienced
-            if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sHeadExpression))
-                nCurrentCalcType |= CALCTYPE_STRING;
 
             if (_parserRef->IsCompiling()
                 && _parserRef->CanCacheAccess())
@@ -1931,42 +1844,6 @@ NumeRe::Cluster FlowCtrl::evalRangeBasedHeader(std::string& sHeadExpression, int
         }
     }
 
-    // Evaluate std::strings
-    if (nCurrentCalcType & CALCTYPE_STRING || !nCurrentCalcType)
-    {
-        if (nCurrentCalcType || NumeReKernel::getInstance()->getStringParser().isStringExpression(sHeadExpression))
-        {
-            if (!nCurrentCalcType)
-                nCalcType[nth_Cmd] |= CALCTYPE_STRING;
-
-            if (!bLockedPauseMode && bUseLoopParsingMode)
-                _parserRef->PauseLoopMode();
-
-            // Call the std::string parser
-            auto retVal = NumeReKernel::getInstance()->getStringParser().evalAndFormat(sHeadExpression, sCache, true, false, true);
-
-            // Evaluate the return value
-            if (retVal != NumeRe::StringParser::STRING_NUMERICAL)
-            {
-                result = NumeReKernel::getInstance()->getAns();
-
-                if (!bLockedPauseMode && bUseLoopParsingMode)
-                    _parserRef->PauseLoopMode(false);
-
-                return result;
-            }
-
-            // It's possible that the user might have done
-            // something weird with std::string operations transformed
-            // into a regular expression. Replace the local
-            // variables here
-            replaceLocalVars(sHeadExpression);
-
-            if (!bLockedPauseMode && bUseLoopParsingMode)
-                _parserRef->PauseLoopMode(false);
-        }
-    }
-
     // Evalute the already prepared equation
     if (!_parserRef->IsAlreadyParsed(sHeadExpression))
         _parserRef->SetExpr(sHeadExpression);
@@ -1975,7 +1852,7 @@ NumeRe::Cluster FlowCtrl::evalRangeBasedHeader(std::string& sHeadExpression, int
         nCalcType[nth_Cmd] |= CALCTYPE_NUMERICAL;
 
     v = _parserRef->Eval(nNum);
-    result.setDoubleArray(nNum, v);
+    result.setValueArray(v[0]);
     return result;
 }
 
@@ -2476,7 +2353,7 @@ void FlowCtrl::eval()
         bLockedPauseMode = true;
 
     if (!_parserRef->ActiveLoopMode() || !_parserRef->IsLockedPause())
-        _parserRef->ClearVectorVars(true);
+        _parserRef->ClearInternalVars(true);
 
     // Evaluate the user options
     if (_optionRef->useMaskDefault())
@@ -2649,12 +2526,7 @@ void FlowCtrl::reset()
     for (size_t i = 0; i < sVarArray.size(); i++)
     {
         if (sVarArray[i].find('{') == std::string::npos && sVarArray[i].find("->") == std::string::npos)
-        {
-            if (NumeReKernel::getInstance()->getStringParser().isStringVar(sVarArray[i]))
-                NumeReKernel::getInstance()->getStringParser().removeStringVar(sVarArray[i]);
-            else
-                _parserRef->RemoveVar(sVarArray[i]);
-        }
+            _parserRef->RemoveVar(sVarArray[i]);
     }
 
     if (mVarMap.size())
@@ -2724,7 +2596,7 @@ void FlowCtrl::reset()
 
     // Remove obsolete vector variables
     if (_parserRef && (!_parserRef->ActiveLoopMode() || !_parserRef->IsLockedPause()))
-        _parserRef->ClearVectorVars(true);
+        _parserRef->ClearInternalVars(true);
 
     for (const auto& cst : inlineClusters)
         _dataRef->removeCluster(cst.substr(0, cst.find('{')));
@@ -2759,7 +2631,7 @@ int FlowCtrl::compile(std::string sLine, int nthCmd)
     std::string sCache;
     std::string sCommand;
 
-    value_type* v = 0;
+    mu::Array* v = 0;
     int nNum = 0;
     Indices _idx;
     bool bCompiling = false;
@@ -2868,14 +2740,11 @@ int FlowCtrl::compile(std::string sLine, int nthCmd)
     {
         std::string sErrorToken;
 
-        if (sLine.length() > 6 && NumeReKernel::getInstance()->getStringParser().isStringExpression(sLine))
+        if (sLine.length() > 6)
         {
-            if (NumeReKernel::getInstance()->getStringParser().containsStringVars(sLine))
-                NumeReKernel::getInstance()->getStringParser().getStringValues(sLine);
-
             sErrorToken = sLine.substr(findCommand(sLine).nPos+6);
-            sErrorToken += " -nq";
-            NumeReKernel::getInstance()->getStringParser().evalAndFormat(sErrorToken, sCache, true, false, true);
+            _parserRef->SetExpr(sErrorToken);
+            sErrorToken = _parserRef->Eval().printVals();
         }
 
         nCalcType[nthCmd] |= CALCTYPE_THROWCOMMAND;
@@ -2914,7 +2783,7 @@ int FlowCtrl::compile(std::string sLine, int nthCmd)
         }
         else if (!sReturnValue.length())
         {
-            ReturnVal.vNumVal.push_back(1.0);
+            ReturnVal.valArray.push_back(mu::Value(1.0));
             bReturnSignal = true;
             return FLOWCTRL_RETURN;
         }
@@ -2941,8 +2810,8 @@ int FlowCtrl::compile(std::string sLine, int nthCmd)
         v = _parserRef->Eval(nNum);
         _assertionHandler.checkAssertion(v, nNum);
 
-        vAns = v[0];
-        NumeReKernel::getInstance()->getAns().setDoubleArray(nNum, v);
+        vAns.overwrite(v[0]);
+        NumeReKernel::getInstance()->getAns().setValueArray(v[0]);
 
         if (!bLoopSupressAnswer)
         {
@@ -3017,13 +2886,8 @@ int FlowCtrl::compile(std::string sLine, int nthCmd)
 
             std::string sCmdString = sLine.substr(nPos + 1, nParPos - 1);
             StripSpaces(sCmdString);
-
-            if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sCmdString))
-            {
-                sCmdString += " -nq";
-                NumeReKernel::getInstance()->getStringParser().evalAndFormat(sCmdString, sCache, true);
-                sCache = "";
-            }
+            _parserRef->SetExpr(sCmdString);
+            sCmdString = _parserRef->Eval().printVals();
 
             sLine = sLine.substr(0, nPos - 6) + sCmdString + sLine.substr(nPos + nParPos + 1);
             nPos -= 5;
@@ -3162,11 +3026,8 @@ int FlowCtrl::compile(std::string sLine, int nthCmd)
     // Expand recursive expressions, if not already done
     evalRecursiveExpressions(sLine);
 
-    bool stringParserAdHoc = false;
-
     // Get the data from the used data object
-    if (!NumeReKernel::getInstance()->getStringParser().isStringExpression(sLine)
-        && _dataRef->containsTablesOrClusters(sLine))
+    if (_dataRef->containsTablesOrClusters(sLine))
     {
         nCalcType[nthCmd] |= CALCTYPE_DATAACCESS;
 
@@ -3181,11 +3042,6 @@ int FlowCtrl::compile(std::string sLine, int nthCmd)
         if (sCache.length())
             bWriteToCache = true;
 
-        // Ad-hoc bytecode adaption
-#warning NOTE (numere#1#08/21/21): Might need some adaption, if bytecode issues are experienced
-        if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sLine))
-            stringParserAdHoc = true;
-
         if (_parserRef->IsCompiling() && _parserRef->CanCacheAccess())
         {
             _parserRef->CacheCurrentEquation(sLine);
@@ -3198,54 +3054,6 @@ int FlowCtrl::compile(std::string sLine, int nthCmd)
     {
         bWriteToCache = true;
         nCalcType[nthCmd] |= CALCTYPE_DATAACCESS;
-    }
-
-
-    // Evaluate std::string expressions
-    if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sLine)
-        || (NumeReKernel::getInstance()->getStringParser().isStringExpression(sCache)
-            && !_dataRef->isTable(sCache))) // hack for performance Re:#178
-    {
-        // Do not add the byte code, if it was added ad-hoc
-        if (!stringParserAdHoc)
-            nCalcType[nthCmd] |= CALCTYPE_STRING | CALCTYPE_DATAACCESS;
-
-        //if (!bLockedPauseMode && bUseLoopParsingMode)
-        //    _parserRef->PauseLoopMode();
-
-        auto retVal = NumeReKernel::getInstance()->getStringParser().evalAndFormat(sLine, sCache, bLoopSupressAnswer, true, true);
-        NumeReKernel::getInstance()->getStringParser().removeTempStringVectorVars();
-
-        if (retVal == NumeRe::StringParser::STRING_SUCCESS)
-        {
-            //if (!bLockedPauseMode && bUseLoopParsingMode)
-            //    _parserRef->PauseLoopMode(false);
-
-            if (returnCommand)
-            {
-                ReturnVal.vStringVal = NumeReKernel::getInstance()->getAns().to_string();
-                bReturnSignal = true;
-                return FLOWCTRL_RETURN;
-            }
-
-            return FLOWCTRL_OK;
-        }
-
-        replaceLocalVars(sLine);
-
-#warning NOTE (erik.haenel#3#): This is changed due to double writes in combination with c{nlen+1} = VAL
-        //if (sCache.length() && _dataRef->containsTablesOrClusters(sCache) && !bWriteToCache)
-        //    bWriteToCache = true;
-
-        if (sCache.length())
-        {
-            bWriteToCache = false;
-            sCache.clear();
-        }
-
-
-        //if (!bLockedPauseMode && bUseLoopParsingMode)
-        //    _parserRef->PauseLoopMode(false);
     }
 
     // Get the target indices of the target data object
@@ -3305,8 +3113,8 @@ int FlowCtrl::compile(std::string sLine, int nthCmd)
     v = _parserRef->Eval(nNum);
     _assertionHandler.checkAssertion(v, nNum);
 
-    vAns = v[0];
-    NumeReKernel::getInstance()->getAns().setDoubleArray(nNum, v);
+    vAns.overwrite(v[0]);
+    NumeReKernel::getInstance()->getAns().setValueArray(v[0]);
 
     // Do only add the bytecode flag, if it does not depend on
     // previous operations
@@ -3337,16 +3145,14 @@ int FlowCtrl::compile(std::string sLine, int nthCmd)
     {
         // Is it a cluster?
         if (bWriteToCluster)
-            _dataRef->getCluster(sCache).assignResults(_idx, nNum, v);
+            _dataRef->getCluster(sCache).assignResults(_idx, v[0]);
         else
-            _dataRef->writeToTable(_idx, sCache, v, nNum);
+            _dataRef->writeToTable(_idx, sCache, v[0]);
     }
 
     if (returnCommand)
     {
-        for (int i = 0; i < nNum; i++)
-            ReturnVal.vNumVal.push_back(v[i]);
-
+        ReturnVal.valArray.assign(v, v+nNum);
         bReturnSignal = true;
         return FLOWCTRL_RETURN;
     }
@@ -3369,7 +3175,7 @@ int FlowCtrl::compile(std::string sLine, int nthCmd)
 /////////////////////////////////////////////////
 int FlowCtrl::calc(StringView sLine, int nthCmd)
 {
-    value_type* v = 0;
+    mu::Array* v = 0;
     int nNum = 0;
     NumeRe::Cluster& ans = NumeReKernel::getInstance()->getAns();
 
@@ -3446,15 +3252,11 @@ int FlowCtrl::calc(StringView sLine, int nthCmd)
         std::string sErrorToken;
         sBuffer = sLine.to_string();
 
-        if (sLine.length() > 6 && NumeReKernel::getInstance()->getStringParser().isStringExpression(sBuffer))
+        if (sLine.length() > 6)
         {
-            if (NumeReKernel::getInstance()->getStringParser().containsStringVars(sBuffer))
-                NumeReKernel::getInstance()->getStringParser().getStringValues(sBuffer);
-
             sErrorToken = sBuffer.substr(findCommand(sBuffer).nPos+6);
-            sErrorToken += " -nq";
-            std::string sDummy;
-            NumeReKernel::getInstance()->getStringParser().evalAndFormat(sErrorToken, sDummy, true, false, true);
+            _parserRef->SetExpr(sErrorToken);
+            sErrorToken = _parserRef->Eval().printVals();
         }
 
         throw SyntaxError(SyntaxError::LOOP_THROW, sBuffer, SyntaxError::invalid_position, sErrorToken);
@@ -3490,7 +3292,7 @@ int FlowCtrl::calc(StringView sLine, int nthCmd)
         }
         else if (!sReturnValue.length())
         {
-            ReturnVal.vNumVal.push_back(1.0);
+            ReturnVal.valArray.push_back(mu::Value(1.0));
             bReturnSignal = true;
             return FLOWCTRL_RETURN;
         }
@@ -3527,8 +3329,8 @@ int FlowCtrl::calc(StringView sLine, int nthCmd)
         // Check only the last expression
         _assertionHandler.checkAssertion(v, nNum);
 
-        vAns = v[0];
-        ans.setDoubleArray(nNum, v);
+        vAns.overwrite(v[0]);
+        ans.setValueArray(v[0]);
 
         if (!bLoopSupressAnswer)
             NumeReKernel::print(NumeReKernel::formatResultOutput(nNum, v));
@@ -3598,12 +3400,8 @@ int FlowCtrl::calc(StringView sLine, int nthCmd)
             std::string sCmdString = sBuffer.substr(nPos + 1, nParPos - 1);
             StripSpaces(sCmdString);
 
-            if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sCmdString))
-            {
-                sCmdString += " -nq";
-                std::string sDummy;
-                NumeReKernel::getInstance()->getStringParser().evalAndFormat(sCmdString, sDummy, true);
-            }
+            _parserRef->SetExpr(sCmdString);
+            sCmdString = _parserRef->Eval().printVals();
 
             sBuffer = sBuffer.substr(0, nPos - 6) + sCmdString + sBuffer.substr(nPos + nParPos + 1);
             nPos -= 5;
@@ -3757,9 +3555,7 @@ int FlowCtrl::calc(StringView sLine, int nthCmd)
     {
         sBuffer = sLine.to_string();
         // --> Datafile/Cache! <--
-        if (!(nCurrentCalcType & CALCTYPE_STRING)
-            || (!NumeReKernel::getInstance()->getStringParser().isStringExpression(sBuffer)
-                && _dataRef->containsTablesOrClusters(sBuffer)))
+        if (_dataRef->containsTablesOrClusters(sBuffer))
         {
             if (!_parserRef->HasCachedAccess() && _parserRef->CanCacheAccess() && !_parserRef->GetCachedEquation().length())
             {
@@ -3772,11 +3568,6 @@ int FlowCtrl::calc(StringView sLine, int nthCmd)
             if (sDataObject.length())
                 bWriteToCache = true;
 
-            // Ad-hoc bytecode adaption
-#warning NOTE (numere#1#08/21/21): Might need some adaption, if bytecode issues are experienced
-            if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sBuffer))
-                nCurrentCalcType |= CALCTYPE_STRING;
-
             if (_parserRef->IsCompiling() && _parserRef->CanCacheAccess())
             {
                 _parserRef->CacheCurrentEquation(sBuffer);
@@ -3787,49 +3578,6 @@ int FlowCtrl::calc(StringView sLine, int nthCmd)
         }
         else if (isClusterCandidate(sBuffer, sDataObject))
             bWriteToCache = true;
-
-        sLine = StringView(sBuffer);
-    }
-
-    // Evaluate std::string expressions
-    if (nCurrentCalcType & CALCTYPE_STRING)
-    {
-        //if (!bLockedPauseMode && bUseLoopParsingMode)
-        //    _parserRef->PauseLoopMode();
-
-        sBuffer = sLine.to_string();
-        auto retVal = NumeReKernel::getInstance()->getStringParser().evalAndFormat(sBuffer, sDataObject, bLoopSupressAnswer, true, true);
-        NumeReKernel::getInstance()->getStringParser().removeTempStringVectorVars();
-
-        if (retVal == NumeRe::StringParser::STRING_SUCCESS)
-        {
-            //if (!bLockedPauseMode && bUseLoopParsingMode)
-            //    _parserRef->PauseLoopMode(false);
-
-            if (nCurrentCalcType & CALCTYPE_RETURNCOMMAND)
-            {
-                bReturnSignal = true;
-                ReturnVal.vStringVal = NumeReKernel::getInstance()->getAns().to_string();
-                return FLOWCTRL_RETURN;
-            }
-
-            return FLOWCTRL_OK;
-        }
-
-        replaceLocalVars(sBuffer);
-
-#warning NOTE (erik.haenel#3#): This is changed due to double writes in combination with c{nlen+1} = VAL
-        //if (sDataObject.length() && _dataRef->containsTablesOrClusters(sDataObject) && !bWriteToCache)
-        //    bWriteToCache = true;
-
-        if (sDataObject.length())
-        {
-            bWriteToCache = false;
-            sDataObject.clear();
-        }
-
-        //if (!bLockedPauseMode && bUseLoopParsingMode)
-        //    _parserRef->PauseLoopMode(false);
 
         sLine = StringView(sBuffer);
     }
@@ -3897,8 +3645,8 @@ int FlowCtrl::calc(StringView sLine, int nthCmd)
     v = _parserRef->Eval(nNum);
     _assertionHandler.checkAssertion(v, nNum);
 
-    vAns = v[0];
-    ans.setDoubleArray(nNum, v);
+    vAns.overwrite(v[0]);
+    ans.setValueArray(v[0]);
 
     if (!bLoopSupressAnswer)
         NumeReKernel::print(NumeReKernel::formatResultOutput(nNum, v));
@@ -3910,16 +3658,14 @@ int FlowCtrl::calc(StringView sLine, int nthCmd)
     {
         // Is it a cluster?
         if (bWriteToCluster)
-            _dataRef->getCluster(sDataObject).assignResults(_idx, nNum, v);
+            _dataRef->getCluster(sDataObject).assignResults(_idx, v[0]);
         else
-            _dataRef->writeToTable(_idx, sDataObject, v, nNum);
+            _dataRef->writeToTable(_idx, sDataObject, v[0]);
     }
 
     if (nCurrentCalcType & CALCTYPE_RETURNCOMMAND)
     {
-        for (int i = 0; i < nNum; i++)
-            ReturnVal.vNumVal.push_back(v[i]);
-
+        ReturnVal.valArray.assign(v, v+nNum);
         bReturnSignal = true;
         return FLOWCTRL_RETURN;
     }

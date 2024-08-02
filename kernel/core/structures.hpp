@@ -249,19 +249,17 @@ class VectorIndex
         /// The third argument is used only to avoid
         /// misinterpretation from the compiler.
         ///
-        /// \param indices const std::complex<double>*
-        /// \param nResults int
-        /// \param unused int
+        /// \param indices const mu::Array&
         ///
         /////////////////////////////////////////////////
-        VectorIndex(const std::complex<double>* indices, int nResults, int unused)
+        VectorIndex(const mu::Array& indices)
         {
             // Store the indices and convert them to integers
             // using the intCast() function
-            for (int i = 0; i < nResults; i++)
+            for (size_t i = 0; i < indices.size(); i++)
             {
-                if (!std::isnan(indices[i].real()) && !std::isinf(indices[i].real()))
-                    vStorage.push_back(intCast(indices[i]) - 1);
+                if (!std::isnan(indices[i].getNum().val.real()) && !std::isinf(indices[i].getNum().val.real()))
+                    vStorage.push_back(intCast(indices[i].getNum().val) - 1);
                 else
                     vStorage.push_back(INVALID);
             }

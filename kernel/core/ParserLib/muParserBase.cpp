@@ -1133,10 +1133,38 @@ namespace mu
 	}
 
 
+    /////////////////////////////////////////////////
+    /// \brief Create a new variable within the
+    /// parser, which is handled by the parser's
+    /// varfactory.
+    ///
+    /// \param a_sName const string_type&
+    /// \return Variable*
+    ///
+    /////////////////////////////////////////////////
+	Variable* ParserBase::CreateVar(const string_type& a_sName)
+	{
+	    // Test if a constant with that names already exists
+		if (m_ConstDef.find(a_sName) != m_ConstDef.end())
+			Error(ecNAME_CONFLICT);
+
+		CheckName(a_sName, ValidNameChars());
+
+		bool needsReInit = bool needsReInit = m_factory->m_VarDef.find(a_sName) != m_factory->m_VarDef.end();
+
+	    Variable* var = m_factory->Create(a_sName);
+
+	    if (needsReInit)
+            ReInit();
+
+	    return var;
+	}
+
+
 	//---------------------------------------------------------------------------
-	/** \brief Add a user defined variable.
+	/** \brief Add a user defined variable and without taking the ownership.
 	    \param [in] a_sName the variable name
-	    \param [in] a_pVar A pointer to the variable vaule.
+	    \param [in] a_pVar A pointer to the variable
 	    \post Will reset the Parser to string parsing mode.
 	    \throw ParserException in case the name contains invalid signs or a_pVar is NULL.
 	*/
@@ -2502,7 +2530,8 @@ namespace mu
 	/** \brief Remove a variable from internal storage.
 	    \throw nothrow
 
-	    Removes a variable if it exists. If the Variable does not exist nothing will be done.
+	    Removes a variable if it exists. If the variable was created internally, its
+	    associated memory is freed. If the Variable does not exist nothing will be done.
 	*/
 	void ParserBase::RemoveVar(const string_type& a_strVarName)
 	{

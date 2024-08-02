@@ -361,22 +361,21 @@ void Interval::refresh()
 
         // Parse the index
         _parser.SetExpr(indices.front());
-        mu::value_type* v;
-        int nResults;
+        mu::Array v;
 
         // Get the return values
-        v = _parser.Eval(nResults);
+        v = _parser.Eval();
 
         // Assign the values depending on their
         // number
-        if (nResults == 1)
-            m_vInterval.assign(2, v[0].real());
+        if (v.size() == 1)
+            m_vInterval.assign(2, v.front().getNum().val.real());
         else
         {
             m_vInterval.clear();
 
-            for (int i = 0; i < nResults; i++)
-                m_vInterval.push_back(v[i].real());
+            for (size_t i = 0; i < v.size(); i++)
+                m_vInterval.push_back(v[i].getNum().val.real());
         }
     }
     else
@@ -391,7 +390,7 @@ void Interval::refresh()
                 getDataElements(indices[i], _parser, _data);
 
             _parser.SetExpr(indices[i]);
-            m_vInterval.push_back(_parser.Eval().real());
+            m_vInterval.push_back(_parser.Eval().front().getNum().val.real());
         }
     }
 }

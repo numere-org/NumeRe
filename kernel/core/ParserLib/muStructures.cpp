@@ -217,6 +217,13 @@ namespace mu
         static_cast<Numerical*>(m_data)->val = value;
     }
 
+    Value::Value(const std::complex<float>& value)
+    {
+        m_type = TYPE_NUMERICAL;
+        m_data = new Numerical;
+        static_cast<Numerical*>(m_data)->val = value;
+    }
+
     Value::Value(const std::string& sData)
     {
         m_type = TYPE_STRING;
@@ -552,13 +559,34 @@ namespace mu
         return bool(*this) || bool(other);
     }
 
-    std::string Value::print() const
+    std::string Value::print(size_t chrs) const
     {
         if (isNumerical())
-            return ::toString(getNum().val, 7);
+            return ::toString(getNum().val, chrs > 0 ? chrs : 7);
 
         if (isString())
+        {
+            if (chrs > 0)
+                return ellipsize(toExternalString(getStr()), chrs);
+
             return toExternalString(getStr());
+        }
+
+        return "void";
+    }
+
+    std::string Value::printVal(size_t chrs) const
+    {
+        if (isNumerical())
+            return ::toString(getNum().val, chrs > 0 ? chrs : 7);
+
+        if (isString())
+        {
+            if (chrs > 0)
+                return ellipsize(getStr(), chrs);
+
+            return getStr();
+        }
 
         return "void";
     }
@@ -577,6 +605,19 @@ namespace mu
 
         m_type = TYPE_VOID;
         m_data = nullptr;
+    }
+
+    size_t Value::getBytes() const
+    {
+        switch (m_type)
+        {
+            case TYPE_STRING:
+                return getStr().length();
+            case TYPE_NUMERICAL:
+                return getNum().val.imag() != 0.0 ? 16 : 8;
+        }
+
+        return 0;
     }
 
     DataType Value::detectCommonType(const Value& other) const
@@ -604,6 +645,14 @@ namespace mu
 
     Array::Array(const Variable& var) : std::vector<Value>(var), m_commonType(var.m_commonType)
     { }
+
+    Array::Array(const std::vector<std::complex<double>>& other) : std::vector<Value>(other.size()), m_commonType(TYPE_NUMERICAL)
+    {
+        for (size_t i = 0; i < other.size(); i++)
+        {
+            operator[](i) = other[i];
+        }
+    }
 
     Array::Array(const std::vector<Numerical>& other) : std::vector<Value>(other.size()), m_commonType(TYPE_NUMERICAL)
     {
@@ -654,6 +703,25 @@ namespace mu
 
         return m_commonType;
     }
+
+    std::string Array::getCommonTypeAsString() const
+    {
+        switch (getCommonType())
+        {
+            case TYPE_NUMERICAL:
+            {
+                if (front().getNum().val.imag() != 0.0)
+                    return "complex";
+
+                return "double";
+            }
+            case TYPE_STRING:
+                return "string";
+        }
+
+        return "void";
+    }
+
 
     bool Array::isScalar() const
     {
@@ -929,6 +997,35 @@ namespace mu
         return ret;
     }
 
+    int64_t Array::getAsScalarInt() const
+    {
+        return intCast(front().getNum().asInt());
+    }
+
+    std::vector<std::string> Array::as_str_vector() const
+    {
+        std::vector<std::string> ret;
+
+        for (size_t i = 0; i < size(); i++)
+        {
+            ret.push_back(operator[](i).getStr());
+        }
+
+        return ret;
+    }
+
+    std::vector<std::complex<double>> Array::as_cmplx_vector() const
+    {
+        std::vector<std::complex<double>> ret;
+
+        for (size_t i = 0; i < size(); i++)
+        {
+            ret.push_back(operator[](i).getNum().val);
+        }
+
+        return ret;
+    }
+
     std::vector<std::string> Array::to_string() const
     {
         std::vector<std::string> ret;
@@ -941,7 +1038,7 @@ namespace mu
         return ret;
     }
 
-    std::string Array::print() const
+    std::string Array::print(size_t chrs) const
     {
         if (isDefault())
             return "DEFVAL";
@@ -953,13 +1050,43 @@ namespace mu
             if (ret.length())
                 ret += ", ";
 
-            ret += operator[](i).print();
+            ret += operator[](i).print(chrs);
         }
 
         if (size() > 1)
             return "{" + ret + "}";
 
         return ret;
+    }
+
+    std::string Array::printVals(size_t chrs) const
+    {
+        if (isDefault())
+            return "void";
+
+        std::string ret;
+
+        for (size_t i = 0; i < size(); i++)
+        {
+            if (ret.length())
+                ret += ", ";
+
+            ret += operator[](i).printVal(chrs);
+        }
+
+        return ret;
+    }
+
+    size_t Array::getBytes() const
+    {
+        size_t bytes = 0;
+
+        for (size_t i = 0; i < size(); i++)
+        {
+            bytes += operator[](i).getBytes();
+        }
+
+        return bytes;
     }
 
     Value& Array::get(size_t i)

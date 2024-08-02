@@ -111,38 +111,52 @@ namespace NumeRe
     /// values using vectors as indices.
     ///
     /// \param _idx Indices
-    /// \param nNum int
-    /// \param data std::complex<double>*
+    /// \param data const mu::Array&
     /// \return void
     ///
     /////////////////////////////////////////////////
-    void Cluster::assignVectorResults(Indices _idx, int nNum, std::complex<double>* data)
+    void Cluster::assignVectorResults(Indices _idx, const mu::Array& data)
     {
-        if (nGlobalType != ClusterItem::ITEMTYPE_DOUBLE)
-            nGlobalType = ClusterItem::ITEMTYPE_INVALID;
+        nGlobalType = ClusterItem::ITEMTYPE_INVALID;
 
-        if (nNum == 1)
+        if (data.size() == 1)
             _idx.row.setOpenEndIndex(std::max((size_t)_idx.row.front(), size()) - 1);
 
         // Assign the single results
         for (size_t i = 0; i < _idx.row.size(); i++)
         {
-            if (nNum > 1 && (size_t)nNum <= i)
+            if (data.size() > 1 && data.size() <= i)
                 return;
 
             // Expand the current cluster on-the-fly
             while (_idx.row[i] >= (int)vClusterArray.size())
                 push_back(new ClusterDoubleItem(NAN));
 
-            // Assign the value and expand singletons
-            if (vClusterArray[_idx.row[i]]->getType() != ClusterItem::ITEMTYPE_DOUBLE)
+            if (data.get(i).isNumerical())
             {
-                // Re-create the current item as double
-                delete vClusterArray[_idx.row[i]];
-                vClusterArray[_idx.row[i]] = new ClusterDoubleItem(nNum == 1 ? data[0] : data[i]);
+                // Assign the value and expand singletons
+                if (vClusterArray[_idx.row[i]]->getType() != ClusterItem::ITEMTYPE_DOUBLE)
+                {
+                    // Re-create the current item as double
+                    delete vClusterArray[_idx.row[i]];
+                    vClusterArray[_idx.row[i]] = new ClusterDoubleItem(data.get(i).getNum().val);
+                }
+                else
+                    vClusterArray[_idx.row[i]]->setDouble(data.get(i).getNum().val);
             }
-            else
-                vClusterArray[_idx.row[i]]->setDouble(nNum == 1 ? data[0] : data[i]);
+            else if (data.get(i).isString())
+            {
+                // Assign the value and expand singletons
+                if (vClusterArray[_idx.row[i]]->getType() != ClusterItem::ITEMTYPE_STRING)
+                {
+                    // Re-create the current item as double
+                    delete vClusterArray[_idx.row[i]];
+                    vClusterArray[_idx.row[i]] = new ClusterStringItem(data.get(i).getStr());
+                }
+                else
+                    vClusterArray[_idx.row[i]]->setString(data.get(i).getStr());
+            }
+
         }
     }
 
@@ -530,6 +544,27 @@ namespace NumeRe
     }
 
 
+    mu::Value Cluster::getValue(size_t i) const
+    {
+        if (getType(i) == ClusterItem::ITEMTYPE_DOUBLE)
+            return vClusterArray[i]->getDouble();
+
+        if (getType(i) == ClusterItem::ITEMTYPE_STRING)
+            return vClusterArray[i]->getString();
+
+        return mu::Value();
+    }
+
+
+    void Cluster::setValue(size_t i, const mu::Value& v)
+    {
+        if (v.getType() == mu::TYPE_STRING)
+            setString(i, v.getStr());
+        else if (v.getType() == mu::TYPE_NUMERICAL)
+            setDouble(i, v.getNum().val);
+    }
+
+
     /////////////////////////////////////////////////
     /// \brief This member function returns the data
     /// of the i-th cluster item in memory as a value.
@@ -604,15 +639,17 @@ namespace NumeRe
     /// passed to the function. This function is used
     /// for cached memory accesses.
     ///
-    /// \param vTarget std::vector<std::complex<double>>*
+    /// \param vTarget mu::Variable*
     /// \param _vLine const VectorIndex&
     /// \return void
     ///
     /////////////////////////////////////////////////
-    void Cluster::insertDataInArray(std::vector<std::complex<double>>* vTarget, const VectorIndex& _vLine)
+    void Cluster::insertDataInArray(mu::Variable* vTarget, const VectorIndex& _vLine)
     {
         if (vTarget == nullptr)
             return;
+
+        vTarget->clear();
 
         // Try to resize the array as copy-efficient as
         // possible
@@ -620,7 +657,6 @@ namespace NumeRe
             vTarget->resize(1, NAN);
         else
         {
-            vTarget->clear();
             vTarget->resize(_vLine.size(), NAN);
 
             // Insert the elements in the passed array
@@ -630,7 +666,14 @@ namespace NumeRe
                 for (size_t i = 0; i < _vLine.size(); i++)
                 {
                     if (_vLine[i] < (int)vClusterArray.size() && _vLine[i] >= 0)
-                        (*vTarget)[i] = vClusterArray[_vLine[i]]->getDouble();
+                    {
+                        if (vClusterArray[_vLine[i]]->getType() == ClusterItem::ITEMTYPE_DOUBLE)
+                            (*vTarget)[i] = vClusterArray[_vLine[i]]->getDouble();
+                        else if (vClusterArray[_vLine[i]]->getType() == ClusterItem::ITEMTYPE_STRING)
+                            (*vTarget)[i] = vClusterArray[_vLine[i]]->getString();
+                        else
+                            (*vTarget)[i] = mu::Value(NAN);
+                    }
                 }
             }
             else
@@ -638,8 +681,72 @@ namespace NumeRe
                 for (size_t i = 0; i < _vLine.size(); i++)
                 {
                     if (_vLine[i] < (int)vClusterArray.size() && _vLine[i] >= 0)
-                        (*vTarget)[i] = vClusterArray[_vLine[i]]->getDouble();
+                    {
+                        if (vClusterArray[_vLine[i]]->getType() == ClusterItem::ITEMTYPE_DOUBLE)
+                            (*vTarget)[i] = vClusterArray[_vLine[i]]->getDouble();
+                        else if (vClusterArray[_vLine[i]]->getType() == ClusterItem::ITEMTYPE_STRING)
+                            (*vTarget)[i] = vClusterArray[_vLine[i]]->getString();
+                        else
+                            (*vTarget)[i] = mu::Value(NAN);
+                    }
                 }
+            }
+        }
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief This member function assigns values as
+    /// data for the all cluster items in memory. The
+    /// type of the cluster items is adapted
+    /// on-the-fly.
+    ///
+    /// \param a const mu::Array&
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
+    void Cluster::setValueArray(const mu::Array& a)
+    {
+        // Free the internal memory first
+        clear();
+
+        // Create empty space
+        vClusterArray.resize(a.size(), nullptr);
+        nGlobalType = ClusterItem::ITEMTYPE_INVALID;
+
+        switch (a.getCommonType())
+        {
+            case mu::TYPE_MIXED:
+                nGlobalType = ClusterItem::ITEMTYPE_MIXED;
+                break;
+            case mu::TYPE_NUMERICAL:
+                nGlobalType = ClusterItem::ITEMTYPE_DOUBLE;
+                break;
+            case mu::TYPE_STRING:
+                nGlobalType = ClusterItem::ITEMTYPE_STRING;
+                break;
+        }
+
+        // Write data to the free space
+        if (a.size() > 100000)
+        {
+            #pragma omp parallel for
+            for (size_t i = 0; i < a.size(); i++)
+            {
+                if (a[i].isNumerical())
+                    vClusterArray[i] = new ClusterDoubleItem(a[i].getNum().val);
+                else if (a[i].isString())
+                    vClusterArray[i] = new ClusterStringItem(a[i].getStr());
+            }
+        }
+        else
+        {
+            for (size_t i = 0; i < a.size(); i++)
+            {
+                if (a[i].isNumerical())
+                    vClusterArray[i] = new ClusterDoubleItem(a[i].getNum().val);
+                else if (a[i].isString())
+                    vClusterArray[i] = new ClusterStringItem(a[i].getStr());
             }
         }
     }
@@ -730,24 +837,23 @@ namespace NumeRe
     /// is adapted on-the-fly.
     ///
     /// \param _idx Indices
-    /// \param nNum int
-    /// \param data std::complex<double>*
+    /// \param data const mu::Array&
     /// \return void
     ///
     /////////////////////////////////////////////////
-    void Cluster::assignResults(Indices _idx, int nNum, std::complex<double>* data)
+    void Cluster::assignResults(Indices _idx, const mu::Array& data)
     {
         // If the indices indicate a complete override
         // do that here and return
         if (_idx.row.isOpenEnd() && _idx.row.front() == 0)
         {
-            setDoubleArray(nNum, data);
+            setValueArray(data);
             return;
         }
 
         // Assign the results depending on the type of the
         // passed indices
-        assignVectorResults(_idx, nNum, data);
+        assignVectorResults(_idx, data);
     }
 
 

@@ -1589,11 +1589,11 @@ Indices getIndices(const string& sCmd, const Matrix& _mMatrix, Parser& _parser, 
 /// parser_ShowMatrixResult() to be accessible
 /// from the outside.
 ///
-/// \param _mMatrix const vector<vector<mu::value_type>>&
+/// \param _mMatrix const vector<vector<std::complex<double>>>&
 /// \return void
 ///
 /////////////////////////////////////////////////
-void showMatrix(const vector<vector<mu::value_type> >& _mMatrix)
+void showMatrix(const vector<vector<std::complex<double>>>& _mMatrix)
 {
     showMatrixResult(Matrix(_mMatrix), NumeReKernel::getInstance()->getSettings());
 }

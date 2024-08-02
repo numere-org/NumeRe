@@ -72,8 +72,8 @@ void replaceDataEntities(std::string&, const std::string&, MemoryManager&, mu::P
 Memory* extractRange(const std::string& sCmd, DataAccessParser& _accessParser, int nDesiredCols = -1, bool bSort = false);
 bool isNotEmptyExpression(StringView);
 bool isClusterCandidate(std::string& sLine, std::string& sCluster, bool doCut = true);
-mu::value_type getDataFromObject(const std::string& sObject, long long int i, long long int j, bool isCluster);
-std::vector<mu::value_type> getDataFromObject(const std::string& sObject, const VectorIndex& vRows, long long int j, bool isCluster);
+mu::Value getDataFromObject(const std::string& sObject, long long int i, long long int j, bool isCluster);
+mu::Array getDataFromObject(const std::string& sObject, const VectorIndex& vRows, long long int j, bool isCluster);
 DataAccessParser getAccessParserForPlotAndFit(StringView sExpression);
 Indices getIndicesForPlotAndFit(const std::string& sExpression, std::string& sDataTable, int& nColumns, bool& openEnd, bool& isCluster);
 

@@ -108,8 +108,8 @@ class MemoryManager : public NumeRe::FileAdapter, public StringMemory, public Nu
 		enum AppDir {LINES = Memory::LINES, COLS = Memory::COLS, GRID = Memory::GRID, ALL = Memory::ALL};
 
 		// Variables for the parser
-		mutable std::complex<double> tableLinesCount;
-		mutable std::complex<double> tableColumnsCount;
+		mutable mu::Variable tableLinesCount;
+		mutable mu::Variable tableColumnsCount;
         bool updateDimensionVariables(StringView sTableName) const;
 
 
@@ -409,21 +409,19 @@ class MemoryManager : public NumeRe::FileAdapter, public StringMemory, public Nu
         }
 
         std::vector<std::complex<double>> countIfEqual(const std::string& sTable, const VectorIndex& _vCols,
-                                                 const std::vector<std::complex<double>>& vValues,
-                                                 const std::vector<std::string>& vStringValues) const
+                                                       const mu::Array& vValues) const
         {
-            return vMemory[findTable(sTable)]->countIfEqual(_vCols, vValues, vStringValues);
+            return vMemory[findTable(sTable)]->countIfEqual(_vCols, vValues);
         }
 
         std::vector<std::complex<double>> getIndex(const std::string& sTable, size_t nCol,
-                                             const std::vector<std::complex<double>>& vValues,
-                                             const std::vector<std::string>& vStringValues) const
+                                                   const mu::Array& vValues) const
         {
-            return vMemory[findTable(sTable)]->getIndex(nCol, vValues, vStringValues);
+            return vMemory[findTable(sTable)]->getIndex(nCol, vValues);
         }
 
         std::vector<AnovaResult> getAnova(const std::string& sTable,
-                                   const VectorIndex& colCategories, size_t colValues, const VectorIndex& _vIndex, double significance) const
+                                          const VectorIndex& colCategories, size_t colValues, const VectorIndex& _vIndex, double significance) const
         {
             return vMemory[findTable(sTable)]->getAnova(colCategories, colValues, _vIndex, significance);
         }
@@ -529,7 +527,7 @@ class MemoryManager : public NumeRe::FileAdapter, public StringMemory, public Nu
 
 
         // READ ACCESS METHODS
-        std::complex<double> getElement(int _nLine, int _nCol, const std::string& _sTable) const
+        mu::Value getElement(int _nLine, int _nCol, const std::string& _sTable) const
 		{
 		    if (exists(_sTable))
                 return vMemory[findTable(_sTable)]->readMem(_nLine, _nCol);
@@ -537,28 +535,12 @@ class MemoryManager : public NumeRe::FileAdapter, public StringMemory, public Nu
             return NAN;
 		}
 
-		std::vector<std::complex<double>> getElement(const VectorIndex& _vLine, const VectorIndex& _vCol, const std::string& _sTable) const
+		mu::Array getElement(const VectorIndex& _vLine, const VectorIndex& _vCol, const std::string& _sTable) const
 		{
 		    if (exists(_sTable))
                 return vMemory[findTable(_sTable)]->readMem(_vLine, _vCol);
 
             return std::vector<std::complex<double>>();
-		}
-
-		ValueVector getElementMixed(const VectorIndex& _vLine, const VectorIndex& _vCol, const std::string& _sTable) const
-		{
-		    if (exists(_sTable))
-                return vMemory[findTable(_sTable)]->readMixedMem(_vLine, _vCol);
-
-            return ValueVector();
-		}
-
-		ValueVector getElementAsString(const VectorIndex& _vLine, const VectorIndex& _vCol, const std::string& _sTable) const
-		{
-		    if (exists(_sTable))
-                return vMemory[findTable(_sTable)]->readMemAsString(_vLine, _vCol);
-
-            return ValueVector();
 		}
 
 		TableColumn::ColumnType getType(const VectorIndex& _vCol, const std::string& _sTable) const
@@ -577,15 +559,15 @@ class MemoryManager : public NumeRe::FileAdapter, public StringMemory, public Nu
             return false;
 		}
 
-		ValueVector getCategoryList(const VectorIndex& _vCol, const std::string& _sTable) const
+		mu::Array getCategoryList(const VectorIndex& _vCol, const std::string& _sTable) const
 		{
 		    if (exists(_sTable))
                 return vMemory[findTable(_sTable)]->getCategoryList(_vCol);
 
-            return ValueVector();
+            return mu::Array();
 		}
 
-		void copyElementsInto(std::vector<std::complex<double>>* vTarget, const VectorIndex& _vLine, const VectorIndex& _vCol, const std::string& _sTable) const
+		void copyElementsInto(mu::Variable* vTarget, const VectorIndex& _vLine, const VectorIndex& _vCol, const std::string& _sTable) const
 		{
 			vMemory[findTable(_sTable)]->copyElementsInto(vTarget, _vLine, _vCol);
 		}
@@ -647,24 +629,14 @@ class MemoryManager : public NumeRe::FileAdapter, public StringMemory, public Nu
 
 
         // WRITE ACCESS METHODS
-		inline void writeToTable(int _nLine, int _nCol, const std::string& _sCache, const std::complex<double>& _dData)
+		inline void writeToTable(int _nLine, int _nCol, const std::string& _sCache, const mu::Value& _dData)
 		{
 			vMemory[findTable(_sCache)]->writeData(_nLine, _nCol, _dData);
 		}
 
-		inline void writeToTable(int _nLine, int _nCol, const std::string& _sCache, const std::string& _sValue)
+		inline void writeToTable(Indices& _idx, const std::string& _sCache, const mu::Array& _dData)
 		{
-			vMemory[findTable(_sCache)]->writeData(_nLine, _nCol, _sValue);
-		}
-
-		inline void writeToTable(Indices& _idx, const std::string& _sCache, std::complex<double>* _dData, size_t _nNum)
-		{
-			vMemory[findTable(_sCache)]->writeData(_idx, _dData, _nNum);
-		}
-
-		inline void writeToTable(Indices& _idx, const std::string& _sCache, const ValueVector& _values)
-		{
-			vMemory[findTable(_sCache)]->writeData(_idx, _values);
+			vMemory[findTable(_sCache)]->writeData(_idx, _dData);
 		}
 
 		bool setHeadLineElement(int _i, const std::string& _sTable, std::string _sHead)

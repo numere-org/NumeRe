@@ -72,6 +72,7 @@ namespace mu
             Value(size_t value);
             Value(int64_t value);
             Value(double value);
+            Value(const std::complex<float>& value);
             Value(const std::complex<double>& value);
             Value(const std::string& sData);
 
@@ -118,8 +119,10 @@ namespace mu
             Value operator&&(const Value& other) const;
             Value operator||(const Value& other) const;
 
-            std::string print() const;
+            std::string print(size_t chrs = 0) const;
+            std::string printVal(size_t chrs = 0) const;
             void clear();
+            size_t getBytes() const;
 
         protected:
             void* m_data;
@@ -143,6 +146,7 @@ namespace mu
 
             Array(const Value& singleton);
             Array(const Variable& var);
+            Array(const std::vector<std::complex<double>>& other);
             Array(const std::vector<Numerical>& other);
             Array(const std::vector<std::string>& other);
 
@@ -150,6 +154,7 @@ namespace mu
 
             std::vector<DataType> getType() const;
             DataType getCommonType() const;
+            std::string getCommonTypeAsString() const;
             bool isScalar() const;
             bool isDefault() const;
 
@@ -179,8 +184,14 @@ namespace mu
             Array operator&&(const Array& other) const;
             Array operator||(const Array& other) const;
 
+            int64_t getAsScalarInt() const;
+
+            std::vector<std::string> as_str_vector() const;
+            std::vector<std::complex<double>> as_cmplx_vector() const;
             std::vector<std::string> to_string() const;
-            std::string print() const;
+            std::string print(size_t chrs = 0) const;
+            std::string printVals(size_t chrs = 0) const;
+            size_t getBytes() const;
 
             Value& get(size_t i);
             const Value& get(size_t i) const;

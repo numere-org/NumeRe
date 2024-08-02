@@ -48,8 +48,7 @@ class NumeReDebugger
         std::string sErraticCommand;
         std::string sErraticModule;
         std::string sErrorMessage;
-        std::map<std::string,mu::value_type> mLocalVars;
-        std::map<std::string,std::string> mLocalStrings;
+        std::map<std::string,mu::Array> mLocalVars;
         std::map<std::string,std::string> mLocalTables;
         std::map<std::string,std::string> mLocalClusters;
         std::map<std::string,std::string> mArguments;
@@ -63,6 +62,7 @@ class NumeReDebugger
         void resetBP();
         void formatMessage();
         std::string decodeType(std::string& sArgumentValue, const std::string& sArgumentName = "");
+        std::vector<std::string> getVars(mu::DataType dt);
 
     public:
         NumeReDebugger();
@@ -126,14 +126,13 @@ class NumeReDebugger
         void gatherInformations(ProcedureVarFactory* _varFactory,
                                 const std::string& _sErraticCommand, const std::string& _sErraticModule, size_t _nLineNumber);
 
-        void gatherInformations(const std::map<std::string, std::pair<std::string, mu::value_type*>>& _mLocalVars,
-                                const std::map<std::string, std::pair<std::string, std::string>>& _mLocalStrings,
+        void gatherInformations(const std::map<std::string, std::pair<std::string, mu::Variable*>>& _mLocalVars,
                                 const std::map<std::string, std::string>& _mLocalTables,
                                 const std::map<std::string, std::string>& _mLocalClusters,
                                 const std::map<std::string, std::string>& _mArguments,
                                 const std::string& _sErraticCommand, const std::string& _sErraticModule, size_t _nLineNumber);
 
-        void gatherLoopBasedInformations(const std::string& _sErraticCommand, size_t _nLineNumber, std::map<std::string,std::string>& mVarMap, const std::vector<mu::value_type>& vVarArray, const std::vector<std::string>& sVarArray);
+        void gatherLoopBasedInformations(const std::string& _sErraticCommand, size_t _nLineNumber, std::map<std::string,std::string>& mVarMap, const std::vector<mu::Variable>& vVarArray, const std::vector<std::string>& sVarArray);
 
         std::vector<std::string> getModuleInformations();
         std::vector<std::string> getStackTrace();

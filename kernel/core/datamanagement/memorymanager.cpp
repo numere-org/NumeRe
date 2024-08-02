@@ -696,23 +696,23 @@ VectorIndex MemoryManager::parseEveryCell(std::string& sDir, const std::string& 
             // Definition contains a vector expression
             _parser.SetExpr(sEveryCell);
             int nResults;
-            mu::value_type* v = _parser.Eval(nResults);
+            mu::Array* v = _parser.Eval(nResults);
 
-            return VectorIndex(v, nResults, 0);
+            return VectorIndex(v[0]);
         }
         else
         {
             // Usual expression
             _parser.SetExpr(sEveryCell);
             int nResults;
-            mu::value_type* v = _parser.Eval(nResults);
+            mu::Array* v = _parser.Eval(nResults);
 
             if (nResults == 1)
             {
                 // Single result: usual every=a,a representation
                 std::vector<int> idx;
 
-                for (int i = intCast(v[0])-1; i < iterationDimension; i += intCast(v[0]))
+                for (int i = v[0].getAsScalarInt()-1; i < iterationDimension; i += v[0].getAsScalarInt())
                 {
                     idx.push_back(i);
                 }
@@ -724,7 +724,7 @@ VectorIndex MemoryManager::parseEveryCell(std::string& sDir, const std::string& 
                 // Two results: usual every=a,b representation
                 std::vector<int> idx;
 
-                for (int i = intCast(v[0])-1; i < iterationDimension; i += intCast(v[1]))
+                for (int i = v[0].getAsScalarInt()-1; i < iterationDimension; i += v[1].getAsScalarInt())
                 {
                     idx.push_back(i);
                 }
@@ -732,7 +732,7 @@ VectorIndex MemoryManager::parseEveryCell(std::string& sDir, const std::string& 
                 return VectorIndex(idx);
             }
             else //arbitrary results: use it as if it was a vector
-                return VectorIndex(v, nResults, 0);
+                return VectorIndex(v[0]);
         }
     }
 

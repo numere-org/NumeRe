@@ -163,6 +163,7 @@ namespace mu
 							EOprtAssociativity a_eAssociativity = oaLEFT,
 							bool optimizeAway = true);
 			void DefineConst(const string_type& a_sName, Value a_fVal);
+			Variable* CreateVar(const string_type& a_sName);
 			void DefineVar(const string_type& a_sName, Variable* a_fVar);
 			void DefinePostfixOprt(const string_type& a_strFun, fun_type1 a_pOprt, bool optimizeAway = true);
 			void DefineInfixOprt(const string_type& a_strName, fun_type1 a_pOprt, int a_iPrec = prINFIX, bool optimizeAway = true);

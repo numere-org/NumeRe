@@ -99,26 +99,6 @@ bool validateParenthesisNumber(StringView sCmd);
 void addArgumentQuotes(std::string& sToAdd, const std::string& sParam);
 void addArgumentQuotes(std::string& sToAdd, size_t pos);
 
-/** \brief Calculates the power of a number using an integer as exponent
- *
- * \param dNumber double
- * \param nExponent int
- * \return double
- *
- */
-double intPower(double dNumber, int nExponent);
-std::complex<double> intPower(const std::complex<double>& dNumber, int nExponent);
-
-std::string getNextArgument(std::string& sArgList, bool bCut = true);
-std::string getNextIndex(std::string& sArgList, bool bCut = true);
-std::string getNextSemiColonSeparatedToken(std::string& sArgList, bool bCut = true);
-StringView getNextViewedArgument(StringView& sView);
-StringView getNextViewedIndex(StringView& sView);
-EndlessVector<StringView> getAllArguments(StringView sArgList);
-EndlessVector<std::string> getAllArguments(std::string sArgList);
-EndlessVector<std::string> getAllIndices(std::string sArgList);
-EndlessVector<std::string> getAllSemiColonSeparatedTokens(std::string sArgList);
-
 
 /** \brief Checks, whether the "to_cmd()" function was used
  *

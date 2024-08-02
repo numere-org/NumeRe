@@ -3212,7 +3212,6 @@
 		<Unit filename="kernel/core/strings/functionimplementation.cpp" />
 		<Unit filename="kernel/core/strings/functionimplementation.hpp" />
 		<Unit filename="kernel/core/strings/stringdatastructures.cpp">
-			<Option target="Debug" />
 			<Option target="Release" />
 			<Option target="Profiling" />
 			<Option target="Deep Debug" />
@@ -3222,7 +3221,6 @@
 			<Option target="Dr Memory_x64" />
 		</Unit>
 		<Unit filename="kernel/core/strings/stringdatastructures.hpp">
-			<Option target="Debug" />
 			<Option target="Release" />
 			<Option target="Profiling" />
 			<Option target="Deep Debug" />
@@ -3232,7 +3230,6 @@
 			<Option target="Dr Memory_x64" />
 		</Unit>
 		<Unit filename="kernel/core/strings/stringexpression.hpp">
-			<Option target="Debug" />
 			<Option target="Release" />
 			<Option target="Profiling" />
 			<Option target="Deep Debug" />
@@ -3242,7 +3239,6 @@
 			<Option target="Dr Memory_x64" />
 		</Unit>
 		<Unit filename="kernel/core/strings/stringfunchandler.cpp">
-			<Option target="Debug" />
 			<Option target="Release" />
 			<Option target="Profiling" />
 			<Option target="Deep Debug" />
@@ -3252,7 +3248,6 @@
 			<Option target="Dr Memory_x64" />
 		</Unit>
 		<Unit filename="kernel/core/strings/stringfunchandler.hpp">
-			<Option target="Debug" />
 			<Option target="Release" />
 			<Option target="Profiling" />
 			<Option target="Deep Debug" />
@@ -3262,7 +3257,6 @@
 			<Option target="Dr Memory_x64" />
 		</Unit>
 		<Unit filename="kernel/core/strings/stringfunctions.hpp">
-			<Option target="Debug" />
 			<Option target="Release" />
 			<Option target="Profiling" />
 			<Option target="Deep Debug" />
@@ -3272,7 +3266,6 @@
 			<Option target="Dr Memory_x64" />
 		</Unit>
 		<Unit filename="kernel/core/strings/stringlogicparser.cpp">
-			<Option target="Debug" />
 			<Option target="Release" />
 			<Option target="Profiling" />
 			<Option target="Deep Debug" />
@@ -3282,7 +3275,6 @@
 			<Option target="Dr Memory_x64" />
 		</Unit>
 		<Unit filename="kernel/core/strings/stringlogicparser.hpp">
-			<Option target="Debug" />
 			<Option target="Release" />
 			<Option target="Profiling" />
 			<Option target="Deep Debug" />
@@ -3292,7 +3284,6 @@
 			<Option target="Dr Memory_x64" />
 		</Unit>
 		<Unit filename="kernel/core/strings/stringparser.cpp">
-			<Option target="Debug" />
 			<Option target="Release" />
 			<Option target="Profiling" />
 			<Option target="Deep Debug" />
@@ -3302,7 +3293,6 @@
 			<Option target="Dr Memory_x64" />
 		</Unit>
 		<Unit filename="kernel/core/strings/stringparser.hpp">
-			<Option target="Debug" />
 			<Option target="Release" />
 			<Option target="Profiling" />
 			<Option target="Deep Debug" />
@@ -3312,7 +3302,6 @@
 			<Option target="Dr Memory_x64" />
 		</Unit>
 		<Unit filename="kernel/core/strings/stringvarfactory.cpp">
-			<Option target="Debug" />
 			<Option target="Release" />
 			<Option target="Profiling" />
 			<Option target="Deep Debug" />
@@ -3322,7 +3311,6 @@
 			<Option target="Dr Memory_x64" />
 		</Unit>
 		<Unit filename="kernel/core/strings/stringvarfactory.hpp">
-			<Option target="Debug" />
 			<Option target="Release" />
 			<Option target="Profiling" />
 			<Option target="Deep Debug" />

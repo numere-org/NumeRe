@@ -349,13 +349,18 @@ size_t Memory::getSize() const
 ///
 /// \param _nLine size_t
 /// \param _nCol size_t
-/// \return double
+/// \return mu::Value
 ///
 /////////////////////////////////////////////////
-std::complex<double> Memory::readMem(size_t _nLine, size_t _nCol) const
+mu::Value Memory::readMem(size_t _nLine, size_t _nCol) const
 {
     if (memArray.size() > _nCol && memArray[_nCol])
-        return memArray[_nCol]->getValue(_nLine);
+    {
+        if (memArray[_nCol]->m_type == TableColumn::TYPE_STRING)
+            return memArray[_nCol]->getValueAsInternalString(_nLine);
+        else
+            return memArray[_nCol]->getValue(_nLine);
+    }
 
     return NAN;
 }
@@ -397,10 +402,10 @@ static std::complex<double> nanAvg(const std::vector<std::complex<double>>& valu
 ///
 /// \param _dLine double
 /// \param _dCol double
-/// \return std::complex<double>
+/// \return mu::Value
 ///
 /////////////////////////////////////////////////
-std::complex<double> Memory::readMemInterpolated(double _dLine, double _dCol) const
+mu::Value Memory::readMemInterpolated(double _dLine, double _dCol) const
 {
     if (isnan(_dLine) || isnan(_dCol))
         return NAN;
@@ -414,26 +419,31 @@ std::complex<double> Memory::readMemInterpolated(double _dLine, double _dCol) co
     double y = _dCol - nBaseCol;
 
     // Find the surrounding four entries
-    std::complex<double> f00 = readMem(nBaseLine, nBaseCol);
-    std::complex<double> f10 = readMem(nBaseLine+1, nBaseCol);
-    std::complex<double> f01 = readMem(nBaseLine, nBaseCol+1);
-    std::complex<double> f11 = readMem(nBaseLine+1, nBaseCol+1);
+    mu::Value f00 = readMem(nBaseLine, nBaseCol);
+    mu::Value f10 = readMem(nBaseLine+1, nBaseCol);
+    mu::Value f01 = readMem(nBaseLine, nBaseCol+1);
+    mu::Value f11 = readMem(nBaseLine+1, nBaseCol+1);
+
+    f00 = f00.isNumerical() ? f00 : mu::Value(NAN);
+    f10 = f10.isNumerical() ? f10 : mu::Value(NAN);
+    f01 = f01.isNumerical() ? f01 : mu::Value(NAN);
+    f11 = f11.isNumerical() ? f11 : mu::Value(NAN);
 
     // If all are NAN, return NAN
-    if (mu::isnan(f00) && mu::isnan(f01) && mu::isnan(f10) && mu::isnan(f11))
+    if (!f00.isValid() && !f01.isValid() && !f10.isValid() && !f11.isValid())
         return NAN;
 
     // Get the average respecting NaNs
-    std::complex<double> dNanAvg = nanAvg({f00, f01, f10, f11});
+    std::complex<double> dNanAvg = nanAvg({f00.getNum().val, f01.getNum().val, f10.getNum().val, f11.getNum().val});
 
     // Otherwise set NAN to zero
-    f00 = mu::isnan(f00) ? dNanAvg : f00;
-    f10 = mu::isnan(f10) ? dNanAvg : f10;
-    f01 = mu::isnan(f01) ? dNanAvg : f01;
-    f11 = mu::isnan(f11) ? dNanAvg : f11;
+    f00 = mu::isnan(f00.getNum().val) ? dNanAvg : f00;
+    f10 = mu::isnan(f10.getNum().val) ? dNanAvg : f10;
+    f01 = mu::isnan(f01.getNum().val) ? dNanAvg : f01;
+    f11 = mu::isnan(f11.getNum().val) ? dNanAvg : f11;
 
     //     f(0,0) (1-x) (1-y) + f(1,0) x (1-y) + f(0,1) (1-x) y + f(1,1) x y
-    return f00*(1.0-x)*(1.0-y)    + f10*x*(1.0-y)    + f01*(1.0-x)*y    + f11*x*y;
+    return f00*mu::Value((1.0-x)*(1.0-y)) + f10*mu::Value(x*(1.0-y)) + f01*mu::Value((1.0-x)*y) + f11*mu::Value(x*y);
 }
 
 
@@ -443,12 +453,12 @@ std::complex<double> Memory::readMemInterpolated(double _dLine, double _dCol) co
 ///
 /// \param _vLine const VectorIndex&
 /// \param _vCol const VectorIndex&
-/// \return std::vector<std::complex<double>>
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
-std::vector<std::complex<double>> Memory::readMem(const VectorIndex& _vLine, const VectorIndex& _vCol) const
+mu::Array Memory::readMem(const VectorIndex& _vLine, const VectorIndex& _vCol) const
 {
-    std::vector<std::complex<double>> vReturn;
+    mu::Array vReturn;
 
     if ((_vLine.size() > 1 && _vCol.size() > 1) || !memArray.size())
         vReturn.push_back(NAN);
@@ -480,7 +490,10 @@ std::vector<std::complex<double>> Memory::readMem(const VectorIndex& _vLine, con
                     continue;
                 }
 
-                vReturn[j + i * _vCol.size()] = memArray[_vCol[j]]->getValue(_vLine[i]);
+                if (memArray[_vCol[j]]->m_type == TableColumn::TYPE_STRING)
+                    vReturn[j + i * _vCol.size()] = memArray[_vCol[j]]->getValueAsInternalString(_vLine[i]);
+                else
+                    vReturn[j + i * _vCol.size()] = memArray[_vCol[j]]->getValue(_vLine[i]);
             }
         }
     }
@@ -553,18 +566,18 @@ Matrix Memory::readMemAsMatrix(const VectorIndex& _vLine, const VectorIndex& _vC
 ///
 /// \param _vLine const VectorIndex&
 /// \param _vCol const VectorIndex&
-/// \return ValueVector
+/// \return mu::Array
 ///
 /////////////////////////////////////////////////
-ValueVector Memory::readMixedMem(const VectorIndex& _vLine, const VectorIndex& _vCol) const
+mu::Array Memory::readMemAsString(const VectorIndex& _vLine, const VectorIndex& _vCol) const
 {
-    ValueVector vReturn;
+    mu::Array vReturn;
 
     if ((_vLine.size() > 1 && _vCol.size() > 1) || !memArray.size())
         vReturn.push_back("");
     else
     {
-        vReturn.resize(_vLine.size()*_vCol.size(), "\"\"");
+        vReturn.resize(_vLine.size()*_vCol.size(), "");
 
         //#pragma omp parallel for
         for (size_t j = 0; j < _vCol.size(); j++)
@@ -590,59 +603,7 @@ ValueVector Memory::readMixedMem(const VectorIndex& _vLine, const VectorIndex& _
                     continue;
                 }
 
-                vReturn[j + i * _vCol.size()] = memArray[_vCol[j]]->getValueAsString(_vLine[i]);
-            }
-        }
-    }
-
-    return vReturn;
-}
-
-
-/////////////////////////////////////////////////
-/// \brief This member function returns the
-/// elements stored at the selected positions.
-///
-/// \param _vLine const VectorIndex&
-/// \param _vCol const VectorIndex&
-/// \return ValueVector
-///
-/////////////////////////////////////////////////
-ValueVector Memory::readMemAsString(const VectorIndex& _vLine, const VectorIndex& _vCol) const
-{
-    ValueVector vReturn;
-
-    if ((_vLine.size() > 1 && _vCol.size() > 1) || !memArray.size())
-        vReturn.push_back("");
-    else
-    {
-        vReturn.resize(_vLine.size()*_vCol.size(), "\"\"");
-
-        //#pragma omp parallel for
-        for (size_t j = 0; j < _vCol.size(); j++)
-        {
-            if (_vCol[j] < 0)
-                continue;
-
-            int elems = getElemsInColumn(_vCol[j]);
-
-            if (!elems)
-                continue;
-
-            for (size_t i = 0; i < _vLine.size(); i++)
-            {
-                if (_vLine[i] < 0)
-                    continue;
-
-                if (_vLine[i] >= elems)
-                {
-                    if (_vLine.isExpanded() && _vLine.isOrdered())
-                        break;
-
-                    continue;
-                }
-
-                vReturn[j + i * _vCol.size()] = memArray[_vCol[j]]->getValueAsParserString(_vLine[i]);
+                vReturn[j + i * _vCol.size()] = memArray[_vCol[j]]->getValueAsInternalString(_vLine[i]);
             }
         }
     }
@@ -790,13 +751,13 @@ Memory* Memory::extractRange(const VectorIndex& _vLine, const VectorIndex& _vCol
 /// of the vector instance by directly writing to
 /// the target instance.
 ///
-/// \param vTarget vector<std::complex<double>>*
+/// \param vTarget mu::Variable*
 /// \param _vLine const VectorIndex&
 /// \param _vCol const VectorIndex&
 /// \return void
 ///
 /////////////////////////////////////////////////
-void Memory::copyElementsInto(vector<std::complex<double>>* vTarget, const VectorIndex& _vLine, const VectorIndex& _vCol) const
+void Memory::copyElementsInto(mu::Variable* vTarget, const VectorIndex& _vLine, const VectorIndex& _vCol) const
 {
     if ((_vLine.size() > 1 && _vCol.size() > 1) || !memArray.size())
         vTarget->assign(1, NAN);
@@ -1164,7 +1125,7 @@ std::vector<std::complex<double>> Memory::asSiUnits(size_t nCol) const
 
         for (size_t i = 0; i < vConverted.size(); i++)
         {
-            vConverted[i] = convert(vConverted[i]);
+            vConverted[i] = convert(mu::Value(vConverted[i])).front().getNum().val;
         }
 
         return vConverted;
@@ -1410,22 +1371,26 @@ NumeRe::TableMetaData Memory::getMetaData() const
 ///
 /// \param _nLine int
 /// \param _nCol int
-/// \param _dData const std::complex<double>&
+/// \param _dData const mu::Value&
 /// \return void
 ///
 /////////////////////////////////////////////////
-void Memory::writeData(int _nLine, int _nCol, const std::complex<double>& _dData)
+void Memory::writeData(int _nLine, int _nCol, const mu::Value& _dData)
 {
-    if (!memArray.size() && mu::isnan(_dData))
+    if (!memArray.size() && !_dData.isValid())
         return;
 
     if ((int)memArray.size() <= _nCol)
         resizeMemory(_nLine+1, _nCol+1);
 
-    convert_if_empty(memArray[_nCol], _nCol, TableColumn::TYPE_VALUE);
-    memArray[_nCol]->setValue(_nLine, _dData);
+    convert_if_empty(memArray[_nCol], _nCol, _dData.isNumerical() ? TableColumn::TYPE_VALUE : TableColumn::TYPE_STRING);
 
-    if (nCalcLines != -1 && (mu::isnan(_dData) || _nLine >= nCalcLines))
+    if (_dData.isNumerical())
+        memArray[_nCol]->setValue(_nLine, _dData.getNum().val);
+    else
+        memArray[_nCol]->setValue(_nLine, _dData.getStr());
+
+    if (nCalcLines != -1 && (!_dData.isValid() || _nLine >= nCalcLines))
         nCalcLines = -1;
 
     m_meta.modify();
@@ -1473,164 +1438,17 @@ void Memory::writeDataDirectUnsafe(int _nLine, int _nCol, const std::complex<dou
 
 
 /////////////////////////////////////////////////
-/// \brief Writes string data to the internal
-/// table.
-///
-/// \param _nLine int
-/// \param _nCol int
-/// \param sValue const std::string&
-/// \return void
-///
-/////////////////////////////////////////////////
-void Memory::writeData(int _nLine, int _nCol, const std::string& sValue)
-{
-    if (!memArray.size() && !sValue.length())
-        return;
-
-    if ((int)memArray.size() <= _nCol)
-        resizeMemory(_nLine+1, _nCol+1);
-
-    convert_if_empty(memArray[_nCol], _nCol, TableColumn::TYPE_STRING);
-    memArray[_nCol]->setValue(_nLine, sValue);
-
-    if (!sValue.length() || _nLine >= nCalcLines)
-        nCalcLines = -1;
-
-    // --> Setze den Zeitstempel auf "jetzt", wenn der Memory eben noch gespeichert war <--
-    m_meta.modify();
-}
-
-
-/////////////////////////////////////////////////
-/// \brief This member function writes a whole
-/// array of data to the selected table range.
-/// The table is automatically enlarged, if
-/// necessary.
-///
-/// \param _idx Indices&
-/// \param _dData std::complex<double>*
-/// \param _nNum size_t
-/// \return void
-///
-/////////////////////////////////////////////////
-void Memory::writeData(Indices& _idx, std::complex<double>* _dData, size_t _nNum)
-{
-    int nDirection = LINES;
-
-    if (_nNum == 1)
-    {
-        writeSingletonData(_idx, _dData[0]);
-        return;
-    }
-
-    bool rewriteColumn = false;
-
-    if (_idx.row.front() == 0 && _idx.row.isOpenEnd())
-        rewriteColumn = true;
-
-    _idx.row.setOpenEndIndex(_idx.row.front() + _nNum - 1);
-    _idx.col.setOpenEndIndex(_idx.col.front() + _nNum - 1);
-
-    if (_idx.row.size() > 1)
-        nDirection = COLS;
-    else if (_idx.col.size() > 1)
-        nDirection = LINES;
-
-    for (size_t i = 0; i < _idx.row.size(); i++)
-    {
-        for (size_t j = 0; j < _idx.col.size(); j++)
-        {
-            if (!i && _idx.col[j] >= (int)memArray.size())
-                resizeMemory(i, _idx.col[j]+1);
-
-            if (!i)
-                convert_if_empty(memArray[_idx.col[j]], _idx.col[j], TableColumn::TYPE_VALUE);
-
-            if (nDirection == COLS)
-            {
-                if (!i
-                    && rewriteColumn
-                    && ((memArray[_idx.col[j]]->m_type != TableColumn::TYPE_DATETIME
-                         && !TableColumn::isValueType(memArray[_idx.col[j]]->m_type))
-                        || !mu::isreal(_dData, _nNum)))
-                    convert_for_overwrite(memArray[_idx.col[j]], _idx.col[j], TableColumn::TYPE_VALUE);
-
-                if (_nNum > i)
-                {
-                    memArray[_idx.col[j]]->setValue(_idx.row[i], _dData[i]);
-
-                    if (nCalcLines != -1 && (nCalcLines <= _idx.row[i] || mu::isnan(_dData[i])))
-                        nCalcLines = -1;
-                }
-            }
-            else
-            {
-                if (_nNum > j)
-                {
-                    memArray[_idx.col[j]]->setValue(_idx.row[i], _dData[j]);
-
-                    if (nCalcLines != -1 && (nCalcLines <= _idx.row[i] || mu::isnan(_dData[j])))
-                        nCalcLines = -1;
-                }
-            }
-        }
-    }
-
-    m_meta.modify();
-}
-
-
-/////////////////////////////////////////////////
-/// \brief This member function writes multiple
-/// copies of a single value to a range in the
-/// table. The table is automatically enlarged,
-/// if necessary.
-///
-/// \param _idx Indices&
-/// \param _dData const std::complex<double>&
-/// \return void
-///
-/////////////////////////////////////////////////
-void Memory::writeSingletonData(Indices& _idx, const std::complex<double>& _dData)
-{
-    bool rewriteColumn = false;
-
-    if (_idx.row.front() == 0 && _idx.row.isOpenEnd())
-        rewriteColumn = true;
-
-    _idx.row.setOpenEndIndex(std::max(_idx.row.front(), getLines(false)) - 1);
-    _idx.col.setOpenEndIndex(std::max(_idx.col.front(), getCols(false)) - 1);
-
-    for (size_t i = 0; i < _idx.row.size(); i++)
-    {
-        for (size_t j = 0; j < _idx.col.size(); j++)
-        {
-            if (!i
-                && rewriteColumn
-                && (int)memArray.size() > _idx.col[j]
-                && (_dData.imag()
-                    || (memArray[_idx.col[j]]->m_type != TableColumn::TYPE_DATETIME
-                        && !TableColumn::isValueType(memArray[_idx.col[j]]->m_type))))
-                convert_for_overwrite(memArray[_idx.col[j]], _idx.col[j], TableColumn::TYPE_VALUE);
-
-            writeData(_idx.row[i], _idx.col[j], _dData);
-        }
-    }
-}
-
-
-/////////////////////////////////////////////////
 /// \brief This member function writes a whole
 /// array of values to the selected table range.
 /// The table is automatically enlarged, if
 /// necessary.
 ///
 /// \param _idx Indices&
-/// \param _values const ValueVector&
+/// \param _values const mu::Array&
 /// \return void
 ///
 /////////////////////////////////////////////////
-void Memory::writeData(Indices& _idx, const ValueVector& _values)
+void Memory::writeData(Indices& _idx, const mu::Array& _values)
 {
     int nDirection = LINES;
 
@@ -1660,7 +1478,15 @@ void Memory::writeData(Indices& _idx, const ValueVector& _values)
             if (nDirection == COLS)
             {
                 if (!i && rewriteColumn && (int)memArray.size() > _idx.col[j])
-                    convert_for_overwrite(memArray[_idx.col[j]], _idx.col[j], TableColumn::TYPE_STRING);
+                {
+                    if (_values[i].isNumerical()
+                        && (_values[i].getNum().val.imag()
+                            || (memArray[_idx.col[j]]->m_type != TableColumn::TYPE_DATETIME
+                                && !TableColumn::isValueType(memArray[_idx.col[j]]->m_type))))
+                        convert_for_overwrite(memArray[_idx.col[j]], _idx.col[j], TableColumn::TYPE_VALUE);
+                    else if (_values[i].isString())
+                        convert_for_overwrite(memArray[_idx.col[j]], _idx.col[j], TableColumn::TYPE_STRING);
+                }
 
                 if (_values.size() > i)
                     writeData(_idx.row[i], _idx.col[j], _values[i]);
@@ -1682,11 +1508,11 @@ void Memory::writeData(Indices& _idx, const ValueVector& _values)
 /// if necessary.
 ///
 /// \param _idx Indices&
-/// \param _sValue const std::string&
+/// \param _value const mu::Value&
 /// \return void
 ///
 /////////////////////////////////////////////////
-void Memory::writeSingletonData(Indices& _idx, const std::string& _sValue)
+void Memory::writeSingletonData(Indices& _idx, const mu::Value& _value)
 {
     bool rewriteColumn = false;
 
@@ -1701,9 +1527,20 @@ void Memory::writeSingletonData(Indices& _idx, const std::string& _sValue)
         for (size_t j = 0; j < _idx.col.size(); j++)
         {
             if (!i && rewriteColumn && (int)memArray.size() > _idx.col[j])
+            {
+                if (_value.isNumerical()
+                    && (_value.getNum().val.imag()
+                        || (memArray[_idx.col[j]]->m_type != TableColumn::TYPE_DATETIME
+                            && !TableColumn::isValueType(memArray[_idx.col[j]]->m_type))))
+                    convert_for_overwrite(memArray[_idx.col[j]], _idx.col[j], TableColumn::TYPE_VALUE);
+                else if (_value.isString())
+                    convert_for_overwrite(memArray[_idx.col[j]], _idx.col[j], TableColumn::TYPE_STRING);
+            }
+
+            if (!i && rewriteColumn && (int)memArray.size() > _idx.col[j])
                 convert_for_overwrite(memArray[_idx.col[j]], _idx.col[j], TableColumn::TYPE_STRING);
 
-            writeData(_idx.row[i], _idx.col[j], _sValue);
+            writeData(_idx.row[i], _idx.col[j], _value);
         }
     }
 }
@@ -2617,7 +2454,7 @@ void Memory::calculateStats(const VectorIndex& _vLine, const VectorIndex& _vCol,
                     continue;
                 }
 
-                operation[j](readMem(_vLine[i], _vCol[j]));
+                operation[j](readMem(_vLine[i], _vCol[j]).getNum().val);
             }
         }
     }
@@ -2646,7 +2483,7 @@ void Memory::calculateStats(const VectorIndex& _vLine, const VectorIndex& _vCol,
                     continue;
                 }
 
-                operation[j](readMem(_vLine[i], _vCol[j]));
+                operation[j](readMem(_vLine[i], _vCol[j]).getNum().val);
             }
         }
     }
@@ -3238,7 +3075,7 @@ std::complex<double> Memory::cmp(const VectorIndex& _vLine, const VectorIndex& _
                 continue;
             }
 
-            std::complex<double> val = readMem(_vLine[i], _vCol[j]);
+            std::complex<double> val = readMem(_vLine[i], _vCol[j]).getNum().val;
 
             if (mu::isnan(val))
                 continue;
@@ -3360,7 +3197,7 @@ std::complex<double> Memory::med(const VectorIndex& _vLine, const VectorIndex& _
                 continue;
             }
 
-            std::complex<double> val = readMem(_vLine[i], _vCol[j]);
+            std::complex<double> val = readMem(_vLine[i], _vCol[j]).getNum().val;
 
             if (!mu::isnan(val))
                 vData.push_back(val.real());
@@ -3430,7 +3267,7 @@ std::complex<double> Memory::pct(const VectorIndex& _vLine, const VectorIndex& _
                 continue;
             }
 
-            std::complex<double> val = readMem(_vLine[i], _vCol[j]);
+            std::complex<double> val = readMem(_vLine[i], _vCol[j]).getNum().val;
 
             if (!mu::isnan(val))
                 vData.push_back(val.real());
@@ -3607,9 +3444,9 @@ std::vector<std::complex<double>> Memory::minpos(const VectorIndex& _everyIdx, c
         vPos.push_back(cmp(VectorIndex(_everyIdx[i]), _cellsTemp,
                            min(VectorIndex(_everyIdx[i]), _cellsTemp), 0));
 
-        if (isnan(dMin) || dMin > readMem(_everyIdx[i], intCast(vPos.back())-1).real())
+        if (isnan(dMin) || dMin > readMem(_everyIdx[i], intCast(vPos.back())-1).getNum().val.real())
         {
-            dMin = readMem(_everyIdx[i], intCast(vPos.back())-1).real();
+            dMin = readMem(_everyIdx[i], intCast(vPos.back())-1).getNum().val.real();
             pos = i;
         }
     }
@@ -3694,9 +3531,9 @@ std::vector<std::complex<double>> Memory::maxpos(const VectorIndex& _everyIdx, c
         vPos.push_back(cmp(VectorIndex(_everyIdx[i]), _cellsTemp,
                            max(VectorIndex(_everyIdx[i]), _cellsTemp), 0));
 
-        if (isnan(dMax) || dMax < readMem(_everyIdx[i], intCast(vPos.back())-1).real())
+        if (isnan(dMax) || dMax < readMem(_everyIdx[i], intCast(vPos.back())-1).getNum().val.real())
         {
-            dMax = readMem(_everyIdx[i], intCast(vPos.back())-1).real();
+            dMax = readMem(_everyIdx[i], intCast(vPos.back())-1).getNum().val.real();
             pos = i;
         }
     }
@@ -3806,13 +3643,11 @@ std::vector<std::complex<double>> Memory::findCols(const std::vector<std::string
 /// returns the corresponding sums.
 ///
 /// \param _vCols const VectorIndex&
-/// \param vValues const std::vector<std::complex<double>>&
-/// \param vStringValues const std::vector<std::string>&
+/// \param vValues const mu::Array&
 /// \return std::vector<std::complex<double>>
 ///
 /////////////////////////////////////////////////
-std::vector<std::complex<double>> Memory::countIfEqual(const VectorIndex& _vCols, const std::vector<std::complex<double>>& vValues,
-                                                 const std::vector<std::string>& vStringValues) const
+std::vector<std::complex<double>> Memory::countIfEqual(const VectorIndex& _vCols, const mu::Array& vValues) const
 {
     std::vector<std::complex<double>> vCounted;
 
@@ -3821,35 +3656,19 @@ std::vector<std::complex<double>> Memory::countIfEqual(const VectorIndex& _vCols
         if (_vCols[j] >= (int)memArray.size() || !memArray[_vCols[j]])
             continue;
 
-        if (vValues.size())
+        for (const auto& val : vValues)
         {
-            for (const auto& val : vValues)
+            size_t count = 0;
+
+            for (size_t i = 0; i < memArray[_vCols[j]]->size(); i++)
             {
-                size_t count = 0;
-
-                for (size_t i = 0; i < memArray[_vCols[j]]->size(); i++)
-                {
-                    if (closeEnough(memArray[_vCols[j]]->getValue(i), val))
-                        count++;
-                }
-
-                vCounted.push_back(count);
+                if (val.isNumerical()
+                    ? closeEnough(memArray[_vCols[j]]->getValue(i), val.getNum().val)
+                    : memArray[_vCols[j]]->getValueAsInternalString(i) == val.getStr())
+                    count++;
             }
-        }
-        else
-        {
-            for (const auto& sVal : vStringValues)
-            {
-                size_t count = 0;
 
-                for (size_t i = 0; i < memArray[_vCols[j]]->size(); i++)
-                {
-                    if (memArray[_vCols[j]]->getValueAsInternalString(i) == sVal)
-                        count++;
-                }
-
-                vCounted.push_back(count);
-            }
+            vCounted.push_back(count);
         }
     }
 
@@ -3867,45 +3686,28 @@ std::vector<std::complex<double>> Memory::countIfEqual(const VectorIndex& _vCols
 /// and returns them as an index.
 ///
 /// \param col size_t
-/// \param vValues const std::vector<std::complex<double>>&
-/// \param vStringValues const std::vector<std::string>&
+/// \param vValues const mu::Array&
 /// \return std::vector<std::complex<double>>
 ///
 /////////////////////////////////////////////////
-std::vector<std::complex<double>> Memory::getIndex(size_t col, const std::vector<std::complex<double>>& vValues,
-                                             const std::vector<std::string>& vStringValues) const
+std::vector<std::complex<double>> Memory::getIndex(size_t col, const mu::Array& vValues) const
 {
     std::vector<std::complex<double>> vIndex;
 
     if (col >= memArray.size() || !memArray[col])
         return std::vector<std::complex<double>>(1, NAN);
 
-    if (vValues.size())
+    for (const auto& val : vValues)
     {
-        for (const auto& val : vValues)
-        {
-            if (vIndex.size())
-                vIndex.push_back(NAN);
+        if (vIndex.size())
+            vIndex.push_back(NAN);
 
-            for (size_t i = 0; i < memArray[col]->size(); i++)
-            {
-                if (closeEnough(memArray[col]->getValue(i), val))
-                    vIndex.push_back(i+1);
-            }
-        }
-    }
-    else
-    {
-        for (const auto& sVal : vStringValues)
+        for (size_t i = 0; i < memArray[col]->size(); i++)
         {
-            if (vIndex.size())
-                vIndex.push_back(NAN);
-
-            for (size_t i = 0; i < memArray[col]->size(); i++)
-            {
-                if (memArray[col]->getValueAsInternalString(i) == sVal)
-                    vIndex.push_back(i+1);
-            }
+            if (val.isNumerical()
+                ? closeEnough(memArray[col]->getValue(i), val.getNum().val)
+                : memArray[col]->getValueAsInternalString(i) == val.getStr())
+                vIndex.push_back(i+1);
         }
     }
 
@@ -4064,14 +3866,14 @@ KMeansResult Memory::getKMeans(const VectorIndex& columns, size_t nClusters, siz
 {
     for(size_t i = 0; i < columns.size(); i++)
     {
-        if(memArray.size() <= columns[0] || !memArray[columns[0]] ||          // check if column does have data
-           memArray[columns[i]]->m_type != TableColumn::TYPE_VALUE ||         // Data has to be numerical
-           getElemsInColumn(columns[0]) != getElemsInColumn(columns[i]))      // All columns should have same size
+        if (memArray.size() <= columns[0] || !memArray[columns[0]] ||          // check if column does have data
+            memArray[columns[i]]->m_type != TableColumn::TYPE_VALUE ||         // Data has to be numerical
+            getElemsInColumn(columns[0]) != getElemsInColumn(columns[i]))      // All columns should have same size
             return KMeansResult();
     }
 
     size_t col_size = getElemsInColumn(columns[0]);
-    if(col_size < nClusters)
+    if (col_size < nClusters)
         return KMeansResult();
 
     std::vector<std::complex<double>> clusters(col_size, 0);
@@ -4087,7 +3889,7 @@ KMeansResult Memory::getKMeans(const VectorIndex& columns, size_t nClusters, siz
 
         // K++ Step 1: randomly select first centroid
         size_t randinit = mt()%col_size;
-        std::vector<std::complex<double>> new_value = readMem(VectorIndex(randinit), columns);
+        std::vector<std::complex<double>> new_value = readMem(VectorIndex(randinit), columns).as_cmplx_vector();
         centroids.push_back(new_value);
 
         for(size_t i = 1; i < nClusters; i++)
@@ -4096,7 +3898,7 @@ KMeansResult Memory::getKMeans(const VectorIndex& columns, size_t nClusters, siz
             std::vector<double> distance_vec;
             for(size_t i = 0; i < col_size; i++)
             {
-                std::vector<std::complex<double>> value = readMem(VectorIndex(i), columns);
+                std::vector<std::complex<double>> value = readMem(VectorIndex(i), columns).as_cmplx_vector();
                 double dis = calculateL2Norm(value, centroids[0]);
                 size_t idx = 0;
                 for(size_t j = 1; j < centroids.size(); j++)
@@ -4117,17 +3919,17 @@ KMeansResult Memory::getKMeans(const VectorIndex& columns, size_t nClusters, siz
 
             // K++ Step 3: add new centroid at point with highest distance to nearest neighbour
             size_t max_elem_idx = std::distance(distance_vec.begin(), std::max_element(distance_vec.begin(), distance_vec.end()));
-            std::vector<std::complex<double>> new_value = readMem(VectorIndex(max_elem_idx), columns);
+            std::vector<std::complex<double>> new_value = readMem(VectorIndex(max_elem_idx), columns).as_cmplx_vector();
             centroids.push_back(new_value);
         }
     }
-    else if(init_method == INIT_RANDOM || init_method == INVALID)
+    else if (init_method == INIT_RANDOM || init_method == INVALID)
     {
         // Run standard Init: Random Seeds
         for(size_t i = 0; i < nClusters; )
         {
             size_t randinit = mt()%col_size;
-            std::vector<std::complex<double>> new_value = readMem(VectorIndex(randinit), columns);
+            std::vector<std::complex<double>> new_value = readMem(VectorIndex(randinit), columns).as_cmplx_vector();
             if(isUnique(new_value, centroids))
             {
                 centroids.push_back(new_value);
@@ -4144,7 +3946,7 @@ KMeansResult Memory::getKMeans(const VectorIndex& columns, size_t nClusters, siz
         inertia = 0;
         for(size_t i = 0; i < col_size; i++)
         {
-            std::vector<std::complex<double>> value = readMem(VectorIndex(i), columns);
+            std::vector<std::complex<double>> value = readMem(VectorIndex(i), columns).as_cmplx_vector();
             double min_distance = calculateL2Norm(value, centroids[0]);
             size_t idx = 0;
             for(size_t j = 1; j < nClusters; j++)
@@ -4342,41 +4144,20 @@ std::vector<std::complex<double>> Memory::getRank(size_t col, const VectorIndex&
     std::vector<std::complex<double>> vRank(1, 1.0);
     size_t nEqualRanks = 0;
 
-    if (_mem.memArray.back()->m_type < TableColumn::TYPE_CATEGORICAL)
+    for (size_t i = 1; i < vIndex.size(); i++)
     {
-        for (size_t i = 1; i < vIndex.size(); i++)
+        // Indices are already 1-based and NANs are always at the end
+        if (!_mem.readMem(vIndex[i]-1, 0).isValid())
+            vRank.push_back(NAN);
+        else if (_mem.readMem(vIndex[i]-1, 0) != _mem.readMem(vIndex[i-1]-1, 0))
         {
-            // Indices are already 1-based and NANs are always at the end
-            if (mu::isnan(_mem.readMem(vIndex[i]-1, 0)))
-                vRank.push_back(NAN);
-            else if (_mem.readMem(vIndex[i]-1, 0) != _mem.readMem(vIndex[i-1]-1, 0))
-            {
-                if (nEqualRanks)
-                    evaluateRankingStrategy(vRank, nEqualRanks, _strat);
-                else
-                    vRank.push_back(vRank.back()+1.0);
-            }
+            if (nEqualRanks)
+                evaluateRankingStrategy(vRank, nEqualRanks, _strat);
             else
-                nEqualRanks++;
+                vRank.push_back(vRank.back()+1.0);
         }
-    }
-    else
-    {
-        TableColumn* col = _mem.memArray.back().get();
-
-        for (size_t i = 1; i < vIndex.size(); i++)
-        {
-            // Indices are already 1-based
-            if (col->getValueAsInternalString(vIndex[i]-1) != col->getValueAsInternalString(vIndex[i-1]-1))
-            {
-                if (nEqualRanks)
-                    evaluateRankingStrategy(vRank, nEqualRanks, _strat);
-                else
-                    vRank.push_back(vRank.back()+1.0);
-            }
-            else
-                nEqualRanks++;
-        }
+        else
+            nEqualRanks++;
     }
 
     if (nEqualRanks)
@@ -4416,7 +4197,7 @@ std::vector<std::complex<double>> Memory::getZScore(size_t col, const VectorInde
 
     for (size_t i = 0; i < _vIndex.size(); i++)
     {
-        vZScore.push_back((readMem(_vIndex[i], col) - avgVal) / stdVal);
+        vZScore.push_back((readMem(_vIndex[i], col).getNum().val - avgVal) / stdVal);
     }
 
     return vZScore;
@@ -4596,7 +4377,7 @@ bool Memory::retouch1D(const VectorIndex& _vLine, const VectorIndex& _vCol, AppD
                                 {
                                     writeData(_vLine[i],
                                               _vCol[__j],
-                                              (readMem(_vLine[i], _vCol[_j]) - readMem(_vLine[i], _vCol[j-1])) / (double)(_j - j) * (double)(__j - j + 1) + readMem(_vLine[i], _vCol[j-1]));
+                                              (readMem(_vLine[i], _vCol[_j]) - readMem(_vLine[i], _vCol[j-1])) / mu::Value(_j - j) * mu::Value(__j - j + 1) + readMem(_vLine[i], _vCol[j-1]));
                                 }
 
                                 markModified = true;
@@ -4646,7 +4427,7 @@ bool Memory::retouch1D(const VectorIndex& _vLine, const VectorIndex& _vCol, AppD
                                 {
                                     writeData(_vLine[__i],
                                               _vCol[j],
-                                              (readMem(_vLine[_i], _vCol[j]) - readMem(_vLine[i-1], _vCol[j])) / (double)(_i - i) * (double)(__i - i + 1) + readMem(_vLine[i-1], _vCol[j]));
+                                              (readMem(_vLine[_i], _vCol[j]) - readMem(_vLine[i-1], _vCol[j])) / mu::Value(_i - i) * mu::Value(__i - i + 1) + readMem(_vLine[i-1], _vCol[j]));
                                 }
 
                                 markModified = true;
@@ -4721,10 +4502,10 @@ bool Memory::retouch2D(const VectorIndex& _vLine, const VectorIndex& _vCol)
                 t = _boundary.rf() < _vLine.front() ? _boundary.re() : _boundary.rf();
                 b = _boundary.re() > _vLine.last() ? _boundary.rf() : _boundary.re();
 
-                _region.setBoundaries(readMem(VectorIndex(_boundary.rf(), _boundary.re()), VectorIndex(l)),
-                                      readMem(VectorIndex(_boundary.rf(), _boundary.re()), VectorIndex(r)),
-                                      readMem(VectorIndex(t), VectorIndex(_boundary.cf(), _boundary.ce())),
-                                      readMem(VectorIndex(b), VectorIndex(_boundary.cf(), _boundary.ce())));
+                _region.setBoundaries(readMem(VectorIndex(_boundary.rf(), _boundary.re()), VectorIndex(l)).as_cmplx_vector(),
+                                      readMem(VectorIndex(_boundary.rf(), _boundary.re()), VectorIndex(r)).as_cmplx_vector(),
+                                      readMem(VectorIndex(t), VectorIndex(_boundary.cf(), _boundary.ce())).as_cmplx_vector(),
+                                      readMem(VectorIndex(b), VectorIndex(_boundary.cf(), _boundary.ce())).as_cmplx_vector());
 
                 for (long long int _n = _boundary.rf()+1; _n < _boundary.re(); _n++)
                 {
@@ -4733,7 +4514,7 @@ bool Memory::retouch2D(const VectorIndex& _vLine, const VectorIndex& _vCol)
                         writeData(_n, _m,
                                   _region.retouch(_n - _boundary.rf() - 1,
                                                   _m - _boundary.cf() - 1,
-                                                  readMem(_n, _m),
+                                                  readMem(_n, _m).getNum().val,
                                                   med(VectorIndex(_n-1, _n+1), VectorIndex(_m-1, _m+1))));
                     }
                 }
@@ -4845,9 +4626,9 @@ void Memory::smoothingWindow1D(const VectorIndex& _vLine, const VectorIndex& _vC
     for (size_t n = 0; n < sizes.first; n++)
     {
         if (!_filter->isConvolution())
-            writeData(_vLine[i+n*(!smoothLines)], _vCol[j+n*smoothLines], _filter->apply(n, 0, readMem(_vLine[i+n*(!smoothLines)], _vCol[j+n*smoothLines])));
+            writeData(_vLine[i+n*(!smoothLines)], _vCol[j+n*smoothLines], _filter->apply(n, 0, readMem(_vLine[i+n*(!smoothLines)], _vCol[j+n*smoothLines]).getNum().val));
         else
-            sum += _filter->apply(n, 0, readMem(_vLine[i+n*(!smoothLines)], _vCol[j+n*smoothLines]));
+            sum += _filter->apply(n, 0, readMem(_vLine[i+n*(!smoothLines)], _vCol[j+n*smoothLines]).getNum().val);
     }
 
     // If the filter is a convolution, store the new value here
@@ -4912,9 +4693,9 @@ void Memory::smoothingWindow2D(const VectorIndex& _vLine, const VectorIndex& _vC
         for (size_t m = 0; m < sizes.second; m++)
         {
             if (!_filter->isConvolution())
-                writeData(_vLine[i+n], _vCol[j+m], _filter->apply(n, m, readMem(_vLine[i+n], _vCol[j+m])));
+                writeData(_vLine[i+n], _vCol[j+m], _filter->apply(n, m, readMem(_vLine[i+n], _vCol[j+m]).getNum().val));
             else
-                sum += _filter->apply(n, m, readMem(_vLine[i+n], _vCol[j+m]));
+                sum += _filter->apply(n, m, readMem(_vLine[i+n], _vCol[j+m]).getNum().val);
         }
     }
 
@@ -5299,7 +5080,7 @@ bool Memory::resample(VectorIndex _vLine, VectorIndex _vCol, std::pair<size_t,si
     {
         for (size_t j = 0; j < _vCol.size(); j++)
         {
-            dInputSamples[j] = readMem(_vLine[i], _vCol[j]).real();
+            dInputSamples[j] = readMem(_vLine[i], _vCol[j]).getNum().val.real();
         }
 
         // If the resampler doesn't accept a further line

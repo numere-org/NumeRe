@@ -21,6 +21,11 @@
 #include "../kernel.hpp"
 #include "io/fileops.hpp"
 #include "datamanagement/dataops.hpp"
+
+//static std::string evaluateParameterValues(const std::string& sCmd);
+//static bool extractFirstParameterStringValue(const std::string& sCmd, std::string& sArgument);
+static bool parseCmdArg(const std::string& sCmd, size_t nPos, mu::Parser& _parser, size_t& nArgument);
+
 #include "commandfunctions.hpp"
 
 
@@ -95,7 +100,7 @@ CommandReturnValues commandHandler(string& sCmd)
 /// It will also parse it directly, which means
 /// that it won't contain further string operations.
 /////////////////////////////////////////////////
-bool extractFirstParameterStringValue(const string& sCmd, string& sArgument)
+/*static bool extractFirstParameterStringValue(const string& sCmd, string& sArgument)
 {
     // Don't do anything, if no string is found in this expression
 	if (!NumeReKernel::getInstance()->getStringParser().isStringExpression(sCmd))
@@ -206,7 +211,7 @@ bool extractFirstParameterStringValue(const string& sCmd, string& sArgument)
     NumeReKernel::getInstance()->getStringParser().evalAndFormat(sArgument, sTemp, true, false, true);
     sArgument = sArgument.substr(1, sArgument.length() - 2);
     return true;
-}
+}*/
 
 
 /////////////////////////////////////////////////
@@ -219,11 +224,10 @@ bool extractFirstParameterStringValue(const string& sCmd, string& sArgument)
 /// \return string
 ///
 /////////////////////////////////////////////////
-string evaluateParameterValues(const string& sCmd)
+/*static string evaluateParameterValues(const string& sCmd)
 {
     Parser& _parser = NumeReKernel::getInstance()->getParser();
     MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
-    Settings& _option = NumeReKernel::getInstance()->getSettings();
     FunctionDefinitionManager& _functions = NumeReKernel::getInstance()->getDefinitions();
 
 	string sReturn = sCmd;
@@ -268,10 +272,6 @@ string evaluateParameterValues(const string& sCmd)
 		// Append the remaining part of the parameter string to the expression
 		sReturn += sTemp;
 	}
-
-	// Get the string var values, if any
-	if (NumeReKernel::getInstance()->getStringParser().containsStringVars(sReturn))
-		NumeReKernel::getInstance()->getStringParser().getStringValues(sReturn);
 
 	// Repeat as long as an equal sign is found after
 	// the current position in the command line
@@ -349,7 +349,7 @@ string evaluateParameterValues(const string& sCmd)
 				getDataElements(sTemp, _parser, _data);
 
             int nResult = 0;
-            mu::value_type* v = nullptr;
+            mu::Array* v = nullptr;
 
             // If the string contains a colon operator,
             // replace it with a comma
@@ -369,7 +369,7 @@ string evaluateParameterValues(const string& sCmd)
 
             // convert the doubles into strings and remove the trailing comma
             for (int i = 0; i < nResult; i++)
-                sTemp += toString(v[i], _option.getPrecision()) + ":";
+                sTemp += v[i].print() + ":";
 
             sTemp.pop_back();
 
@@ -405,7 +405,7 @@ string evaluateParameterValues(const string& sCmd)
 	}
 
 	return sReturn;
-}
+}*/
 
 
 /////////////////////////////////////////////////
@@ -420,7 +420,7 @@ string evaluateParameterValues(const string& sCmd)
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool parseCmdArg(const string& sCmd, size_t nPos, Parser& _parser, size_t& nArgument)
+static bool parseCmdArg(const string& sCmd, size_t nPos, Parser& _parser, size_t& nArgument)
 {
 	if (!sCmd.length() || !nPos)
 		return false;
@@ -439,11 +439,12 @@ bool parseCmdArg(const string& sCmd, size_t nPos, Parser& _parser, size_t& nArgu
         sArg = sArg.substr(0, sArg.find(' '));
 
     _parser.SetExpr(sArg);
+    mu::Array res = _parser.Eval();
 
-    if (isnan(_parser.Eval().real()) || isinf(_parser.Eval().real()))
+    if (mu::isnan(res.front()) || mu::isinf(_parser.Eval().front().getNum().val))
         return false;
 
-    nArgument = abs(intCast(_parser.Eval()));
+    nArgument = abs(res.getAsScalarInt());
     return true;
 }
 

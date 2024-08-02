@@ -331,7 +331,7 @@ namespace NumeRe
             void assign(const Cluster& cluster);
             void assign(const std::vector<std::complex<double>>& vVals);
             void assign(const std::vector<std::string>& vStrings);
-            void assignVectorResults(Indices _idx, int nNum, std::complex<double>* data);
+            void assignVectorResults(Indices _idx, const mu::Array& data);
             virtual int compare(int i, int j, int col) override;
             virtual bool isValue(int line, int col) override;
             void reorderElements(std::vector<int> vIndex, int i1, int i2);
@@ -392,13 +392,16 @@ namespace NumeRe
 
             unsigned short getType(size_t i) const;
 
+            mu::Value getValue(size_t i) const;
+            void setValue(size_t i, const mu::Value& v);
             std::complex<double> getDouble(size_t i) const;
             void setDouble(size_t i, const std::complex<double>& value);
             std::vector<std::complex<double>> getDoubleArray() const;
-            void insertDataInArray(std::vector<std::complex<double>>* vTarget, const VectorIndex& _vLine);
+            void insertDataInArray(mu::Variable* vTarget, const VectorIndex& _vLine);
+            void setValueArray(const mu::Array& a);
             void setDoubleArray(const std::vector<std::complex<double>>& vVals);
             void setDoubleArray(int nNum, std::complex<double>* data);
-            void assignResults(Indices _idx, int nNum, std::complex<double>* data);
+            void assignResults(Indices _idx, const mu::Array& data);
 
             std::string getString(size_t i) const;
             std::string getInternalString(size_t i) const;
